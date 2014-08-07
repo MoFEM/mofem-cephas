@@ -27,17 +27,14 @@
 #ifndef __NEUMANM_FORCES_HPP
 #define __NEUMANN_FORCES_HPP
 
-#include "ForcesAndSurcesCore.hpp"
-#include "FEM.h"
-
 namespace MoFEM {
 
 struct MethodsForOp {
 
-  virtual PetscErrorCode scaleNf(const FieldInterface::FEMethod *fe,ublas::vector<FieldData> &Nf) = 0;
+  virtual PetscErrorCode scaleNf(const FEMethod *fe,ublas::vector<FieldData> &Nf) = 0;
 
   static PetscErrorCode applyScale(
-    const FieldInterface::FEMethod *fe,
+    const FEMethod *fe,
     boost::ptr_vector<MethodsForOp> &methodsOp,ublas::vector<FieldData> &Nf) {
     PetscErrorCode ierr;
     PetscFunctionBegin;

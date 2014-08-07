@@ -17,21 +17,17 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#include "FieldInterface.hpp"
-#include "FieldCore.hpp"
+#include <MoFEM.hpp>
+#include <Projection10NodeCoordsOnField.hpp>
 
-#include "ForcesAndSurcesCore.hpp"
+#include <moab/Skinner.hpp>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-  #include<cblas.h>
-  #include<lapack_wrap.h>
-#ifdef __cplusplus
-}
-#endif
+#include <boost/iostreams/tee.hpp>
+#include <boost/iostreams/stream.hpp>
+#include <fstream>
+#include <iostream>
 
-#include "FluidPressure.hpp"
+#include <FluidPressure.hpp>
 
 #include <boost/iostreams/tee.hpp>
 #include <boost/iostreams/stream.hpp>
@@ -53,7 +49,7 @@ int main(int argc, char *argv[]) {
 
   PetscInitialize(&argc,&argv,(char *)0,help);
 
-  Core mb_instance;
+  moab::Core mb_instance;
   Interface& moab = mb_instance;
 
   PetscBool flg = PETSC_TRUE;
@@ -68,7 +64,7 @@ int main(int argc, char *argv[]) {
   rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
 
   //Create MoFEM (Joseph) database
-  FieldCore core(moab);
+  MoFEM::Core core(moab);
   FieldInterface& mField = core;
 
   //set entitities bit level

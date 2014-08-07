@@ -17,17 +17,8 @@
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
 configure_file(
-  ${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.txt.in
-  ${CMAKE_CURRENT_BINARY_DIR}/CMakeLists.txt
+  ${PROJECT_SOURCE_DIR}/examples.in/ultraweak.in/CMakeLists.txt.in
+  ${PROJECT_SOURCE_DIR}/examples/ultraweak/CMakeLists.txt
   @ONLY
 )
-
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/CMakeLists.txt DESTINATION ${CMAKE_INSTALL_PREFIX}/examples)
-
-add_subdirectory(include)
-add_subdirectory(src)
-
-add_subdirectory(thermal)
-add_subdirectory(ultraweak)
-
 

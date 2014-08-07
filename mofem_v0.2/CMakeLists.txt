@@ -134,7 +134,7 @@ configure_file(
 install(FILES ${PROJECT_BINARY_DIR}/MoFEMConfig.cmake DESTINATION ${CMAKE_INSTALL_PREFIX})
 install(FILES ${PROJECT_BINARY_DIR}/MoFEMConfig-version.cmake DESTINATION ${CMAKE_INSTALL_PREFIX})
 
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples")
+add_subdirectory("${PROJECT_SOURCE_DIR}/examples.in")
 
 #add a target to generate API documentation with Doxygen
 find_package(Doxygen)

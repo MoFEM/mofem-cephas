@@ -17,18 +17,17 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#include "FieldInterface.hpp"
-#include "FieldCore.hpp"
+#include <MoFEM.hpp>
+#include <Projection10NodeCoordsOnField.hpp>
 
-#include "SurfacePressureComplexForLazy.hpp"
+#include <moab/Skinner.hpp>
 
 #include <boost/iostreams/tee.hpp>
 #include <boost/iostreams/stream.hpp>
 #include <fstream>
 #include <iostream>
 
-#include "FEM.h"
-#include "Projection10NodeCoordsOnField.hpp"
+#include <SurfacePressureComplexForLazy.hpp>
 
 namespace bio = boost::iostreams;
 using bio::tee_device;

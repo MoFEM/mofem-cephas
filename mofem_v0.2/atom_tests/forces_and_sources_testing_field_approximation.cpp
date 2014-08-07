@@ -20,7 +20,7 @@
 #include <MoFEM.hpp>
 #include <Projection10NodeCoordsOnField.hpp>
 
-
+#include <boost/numeric/ublas/vector_proxy.hpp>
 #include <FiledApproximation.hpp>
 
 #include <boost/iostreams/tee.hpp>
@@ -157,7 +157,7 @@ int main(int argc, char *argv[]) {
       "TEST_PROBLEM","TEST_FE","FIELD1",A,F,function_evaluator);
   }
 
-  /*ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+  ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
   ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
@@ -179,15 +179,9 @@ int main(int argc, char *argv[]) {
   ierr = KSPDestroy(&solver); CHKERRQ(ierr);
   ierr = VecDestroy(&D); CHKERRQ(ierr);
   ierr = VecDestroy(&F); CHKERRQ(ierr);
-  ierr = MatDestroy(&A); CHKERRQ(ierr);*/
+  ierr = MatDestroy(&A); CHKERRQ(ierr);
 
-  /*PostProcDisplacementsOnRefMesh fe_postproc(moab,"FIELD1");
-  ierr = mField.loop_finite_elements("TEST_PROBLEM","TEST_FE",fe_postproc);  CHKERRQ(ierr);
-  if(pcomm->rank()==0) {
-    rval = fe_postproc.moab_post_proc.write_file("out_post_proc.vtk","VTK",""); CHKERR_PETSC(rval);
-  }*/
-
-  /*EntityHandle fe_meshset = mField.get_finite_element_meshset("TEST_FE");
+  EntityHandle fe_meshset = mField.get_finite_element_meshset("TEST_FE");
   Range tets;
   rval = moab.get_entities_by_type(fe_meshset,MBTET,tets,true); CHKERR_PETSC(rval);
   Range tets_edges;
@@ -247,7 +241,7 @@ int main(int argc, char *argv[]) {
     double val = fabs(dit->get_FieldData())<eps ? 0.0 : dit->get_FieldData();
     my_split << dit->get_petsc_gloabl_dof_idx() << " " << val << endl;
 
-  }*/
+  }
 
   ierr = PetscFinalize(); CHKERRQ(ierr);
 

@@ -17,16 +17,17 @@
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
 configure_file(
-  ${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.txt.in
-  ${CMAKE_CURRENT_BINARY_DIR}/CMakeLists.txt
+  ${PROJECT_SOURCE_DIR}/examples.in/CMakeLists.txt.in
+  ${PROJECT_SOURCE_DIR}/examples/CMakeLists.txt
   @ONLY
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/CMakeLists.txt DESTINATION ${CMAKE_INSTALL_PREFIX}/examples/thermal)
+install(DIRECTORY ${PROJECT_SOURCE_DIR}/examples DESTINATION ${CMAKE_INSTALL_PREFIX})
 
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/README DESTINATION ${CMAKE_INSTALL_PREFIX}/examples/thermal)
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/thermal_steady.cpp DESTINATION ${CMAKE_INSTALL_PREFIX}/examples/thermal)
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/thermal_unsteady.cpp DESTINATION ${CMAKE_INSTALL_PREFIX}/examples/thermal)
+add_subdirectory(include.in)
+add_subdirectory(src.in)
 
+add_subdirectory(thermal.in)
+add_subdirectory(ultraweak.in)
 
 

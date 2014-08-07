@@ -17,25 +17,23 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#include "FieldInterface.hpp"
-#include "FieldCore.hpp"
+#include <MoFEM.hpp>
 
-#include "ForcesAndSurcesCore.hpp"
-#include "TsCtx.hpp"
-#include "ThermalElement.hpp"
-#include "DirichletBC.hpp"
+#include <DirichletBC.hpp>
+#include <PotsProcOnRefMesh.hpp>
+#include <ThermalElement.hpp>
 
-#include "FEM.h"
-#include "FEMethod_UpLevelStudent.hpp"
-#include "PostProcVertexMethod.hpp"
-#include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
+#include <Projection10NodeCoordsOnField.hpp>
 
 #include <boost/iostreams/tee.hpp>
 #include <boost/iostreams/stream.hpp>
 #include <fstream>
 #include <iostream>
 
-#include <petscksp.h>
+#include <boost/iostreams/tee.hpp>
+#include <boost/iostreams/stream.hpp>
+#include <fstream>
+#include <iostream>
 
 namespace bio = boost::iostreams;
 using bio::tee_device;
@@ -52,7 +50,7 @@ int main(int argc, char *argv[]) {
 
   PetscInitialize(&argc,&argv,(char *)0,help);
 
-  Core mb_instance;
+  moab::Core mb_instance;
   Interface& moab = mb_instance;
   int rank;
   MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
@@ -74,7 +72,7 @@ int main(int argc, char *argv[]) {
   BARRIER_RANK_END(pcomm) 
 
   //Create MoFEM (Joseph) database
-  FieldCore core(moab);
+  MoFEM::Core core(moab);
   FieldInterface& mField = core;
 
   //set entitities bit level

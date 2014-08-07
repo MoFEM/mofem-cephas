@@ -16,16 +16,6 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
-configure_file(
-  ${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.txt.in
-  ${CMAKE_CURRENT_BINARY_DIR}/CMakeLists.txt
-  @ONLY
-)
-
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/CMakeLists.txt DESTINATION ${CMAKE_INSTALL_PREFIX}/examples/ultraweak)
-
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/README DESTINATION ${CMAKE_INSTALL_PREFIX}/examples/ultraweak)
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/transport.cpp DESTINATION ${CMAKE_INSTALL_PREFIX}/examples/ultraweak)
 
 
 

@@ -16,10 +16,11 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
-install(FILES 
-  UltaWeakTransportElement.hpp
-  DESTINATION ${CMAKE_INSTALL_PREFIX}/examples/include)
-
+configure_file(
+  ${PROJECT_SOURCE_DIR}/examples.in/thermal.in/CMakeLists.txt.in
+  ${PROJECT_SOURCE_DIR}/examples/thermal/CMakeLists.txt
+  @ONLY
+)
 
 
 
