@@ -107,7 +107,9 @@ PetscErrorCode DisplacementBCFEMethodPreAndPostProc::preProcess() {
   ierr = iNitalize(); CHKERRQ(ierr);
 
   if(snes_ctx == CTX_SNESNONE && ts_ctx == CTX_TSNONE) {
-    ierr = VecSetValues(snes_x,dofsIndices.size(),&dofsIndices[0],&dofsValues[0],INSERT_VALUES); CHKERRQ(ierr);
+    if(dofsIndices.size()!=0) {
+      ierr = VecSetValues(snes_x,dofsIndices.size(),&dofsIndices[0],&dofsValues[0],INSERT_VALUES); CHKERRQ(ierr);
+    }
     ierr = VecAssemblyBegin(snes_x); CHKERRQ(ierr);
     ierr = VecAssemblyEnd(snes_x); CHKERRQ(ierr);
   }
@@ -116,7 +118,9 @@ PetscErrorCode DisplacementBCFEMethodPreAndPostProc::preProcess() {
     case CTX_SNESNONE: {} 
     break;
     case CTX_SNESSETFUNCTION: {
-      ierr = VecSetValues(snes_x,dofsIndices.size(),&dofsIndices[0],&dofsValues[0],INSERT_VALUES); CHKERRQ(ierr);
+      if(dofsIndices.size()!=0) {
+	ierr = VecSetValues(snes_x,dofsIndices.size(),&dofsIndices[0],&dofsValues[0],INSERT_VALUES); CHKERRQ(ierr);
+      }
       ierr = VecAssemblyBegin(snes_x); CHKERRQ(ierr);
       ierr = VecAssemblyEnd(snes_x); CHKERRQ(ierr);
     }
@@ -132,7 +136,9 @@ PetscErrorCode DisplacementBCFEMethodPreAndPostProc::preProcess() {
     case CTX_TSNONE: {}
     break;
     case CTX_TSSETIFUNCTION: {
-      ierr = VecSetValues(ts_u,dofsIndices.size(),&dofsIndices[0],&dofsValues[0],INSERT_VALUES); CHKERRQ(ierr);
+      if(dofsIndices.size()!=0) {
+	ierr = VecSetValues(ts_u,dofsIndices.size(),&dofsIndices[0],&dofsValues[0],INSERT_VALUES); CHKERRQ(ierr);
+      }
       ierr = VecAssemblyBegin(ts_u); CHKERRQ(ierr);
       ierr = VecAssemblyEnd(ts_u); CHKERRQ(ierr);
     }

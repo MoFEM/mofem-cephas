@@ -1,0 +1,113 @@
+reset 
+ 
+brick x 100 y 100 z 270 ##change z (full span)
+ 
+brick x 125 y 125 z 25 
+brick x 210 y 25 z 25 
+unite volume 2 3  
+ 
+move Volume 2 x 0 y 0 z -122.50 include_merged  ##change z (half span - half support width)
+split curve 41  distance 5 from vertex 18   
+split curve 42  distance 5 from vertex 21   
+split curve 44  distance 5 from vertex 24   
+split curve 45  distance 5 from vertex 19   
+create curve vertex 35  vertex 36  on surface 21   
+create curve vertex 34  vertex 33  on surface 20   
+imprint tolerant surface 21  with curve 65  merge   
+imprint tolerant surface 20  with curve 66  merge   
+delete curve 65 66  
+split curve 39  distance 5 from vertex 17   
+split curve 38  distance 5 from vertex 22   
+split curve 47  distance 5 from vertex 20   
+split curve 48  distance 5 from vertex 23   
+create curve vertex 41  vertex 42  on surface 19   
+create curve vertex 43  vertex 44  on surface 22   
+imprint tolerant surface 19  with curve 77 merge   
+imprint tolerant surface 22  with curve 78  merge   
+delete curve 77 78  
+Volume 2  copy move x 0 y 0 z 245 ##change z  (full span - support width)
+unite volume all  
+ 
+brick x 100 y 100 z 270 ##change z (full span)
+brick x 400 y 400 z 270 ##change z (full span)
+subtract volume 5  from volume 6  
+Compress Ids All 
+chop volume 1 with volume 2 
+Compress Ids All 
+ 
+create Cylinder height 270 radius 50 ##change height (full span)
+rotate Volume 4 angle 90  about Y include_merged 
+Compress Ids All 
+move Volume 4 location surface 34  include_merged  
+rotate Volume 4 angle -45 about Y include_merged 
+chop volume 3  with volume 4  
+webcut volume 5  with general plane plane x spin axis y angle 45 noimprint nomerge 
+Compress Ids All 
+ 
+#Boundary conditions  
+merge volume all group_results  
+split curve 37 38 61 47 48 49 53 57 fraction 0.5  
+create Displacement  on vertex 110 dof 1 dof 2 dof 3 fix 0  
+create Displacement  on vertex 105 dof 1 dof 2 dof 3 fix 0  
+create Displacement  on vertex 107 dof 1 dof 2 dof 3 fix 0  
+create force  on vertex 112  force value -1 direction  y   
+  
+#Create Block Set with Vertices to ploat load-disp. path    
+block 3 vertex 112 97 98   
+block 3 name 'LoadPath'    
+   
+#Merge Volumes    
+imprint volume all     
+merge volume all     
+   
+#Material Properties     
+block 1 volume 3 4 5      
+block 1 name "MAT_ELASTIC_Graphite"       
+block 1 attribute count 10       
+block 1 attribute index 1 0.8   
+block 1 attribute index 2 0.2      
+   
+block 2 volume 1 2      
+block 2 name "MAT_ELASTIC_Steel"       
+block 2 attribute count 10       
+block 2 attribute index 1 21   
+block 2 attribute index 2 0.3      
+   
+#Create nodesets and sidesets for fracture constraints      
+#Boundary edges      
+sideset 100 curve all     
+sideset 100 curve 156 145 143 146 154 142 144 132 131  remove   
+sideset 100 curve 185 198  remove   
+   
+#Boundary vertices      
+nodeset 101 vertex all    
+nodeset 101 vertex 89 90 99 100 91 92 remove   
+   
+#Boundary surfaces      
+sideset 102 surface all      
+sideset 102 surface 61 53 54 38 39 45 44 36 37 42 43 remove       
+   
+sideset 102 surface 75 remove   
+sideset 10200 surface 75   
+   
+#Crack surface   
+sideset 200 surface 53   
+   
+#Crack front   
+sideset 201 curve 143   
+   
+#!Meshing    
+volume all scheme tetmesh       
+volume all size auto factor 7
+#!Mesh Crack Surface (those elemenst are streched)   
+surface 53  size auto factor 7
+   
+#!Mesh All   
+mesh surface 53   
+mesh volume all    
+   
+ 
+   
+ 
+
+
