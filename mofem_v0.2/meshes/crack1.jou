@@ -41,6 +41,6 @@ mesh volume 7
 
 ##refine curve 27 29 numsplit 5 bias 1.0 depth 1 smoot
  
-save as "/Users/likask/MyBuild/mofem-bitbucket/mofem_v0.1/meshes/crack1.cub" overwrite 
+save as "/Users/likask/MyBuild/mofem-bitbucket/mofem_v0.2/meshes/crack1.cub" overwrite 
 
 

@@ -42,7 +42,7 @@ block 1 name "MAT_ELASTIC_TRANSISO_1"
 block 2 name "PotentialFlow" 
 
 block 1 description 'Transverse Isotropic material properties' 
-save as "/Users/likask/MyBuild/mofem-bitbucket/mofem_v0.1/meshes/trans_isotropic_cube.cub" overwrite
+save as "/Users/likask/MyBuild/mofem-bitbucket/mofem_v0.2/meshes/trans_isotropic_cube.cub" overwrite
 
 
 

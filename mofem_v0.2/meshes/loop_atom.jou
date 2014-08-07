@@ -37,4 +37,4 @@ while a<=11:
     cubit.cmd('nodeset ' + str(a) + ' name ' + str(sideNames[a-1])) 
     a = a + 1 
 
-cubit.cmd('save as "/Users/michaelcortis/Documents/PhD/moFEM/mofem_v0.1/meshes/loop_atom.cub" overwrite')
+cubit.cmd('save as "/Users/michaelcortis/Documents/PhD/moFEM/mofem_v0.2/meshes/loop_atom.cub" overwrite')

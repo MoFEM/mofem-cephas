@@ -39,7 +39,7 @@ volume all scheme Tetmesh
 volume all size auto factor 9
 mesh volume all
 
-save as "/Users/likask/MyBuild/mofem-bitbucket/mofem_v0.1/meshes/LShapeCoarseBodyForce.cub" overwrite
+save as "/Users/likask/MyBuild/mofem-bitbucket/mofem_v0.2/meshes/LShapeCoarseBodyForce.cub" overwrite
 
 
 

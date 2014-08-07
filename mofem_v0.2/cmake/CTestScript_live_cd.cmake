@@ -13,7 +13,7 @@ endif(NOT DASHBOARDTEST)
 find_program(CTEST_MEMORYCHECK_COMMAND NAMES valgrind)
 SET(CTEST_MEMORYCHECK_COMMAND_OPTIONS 
   "--trace-children=yes --quiet --tool=memcheck --leak-check=yes --show-reachable=yes --num-callers=50 --verbose --demangle=yes --gen-suppressions=all")
-SET(CTEST_MEMORYCHECK_SUPPRESSIONS_FILE "$ENV{HOME}/tmp/mofem/source/mofem_v0.1/cmake/live-cd-valgrind.supp")
+SET(CTEST_MEMORYCHECK_SUPPRESSIONS_FILE "$ENV{HOME}/tmp/mofem/source/mofem_v0.2/cmake/live-cd-valgrind.supp")
 
 include(CTestScript.cmake)
 
