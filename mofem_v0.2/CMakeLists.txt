@@ -28,6 +28,7 @@ set(CMAKE_C_COMPILER ${PETSCVAR_CC} )
 string(REGEX MATCH  "^.*mpicxx" PETSCVAR_CXX_ "${PETSCVAR_CXX}")
 message(${PETSCVAR_CXX_})
 set(CMAKE_CXX_COMPILER ${PETSCVAR_CXX_})
+
 #get mpipath bin directory
 string(REGEX REPLACE "mpicc" "" "MPI_BIN_PATH" ${CMAKE_C_COMPILER})
 find_program(MPI_RUN mpirun HINTS ${MPI_BIN_PATH} PATH ${MPI_BIN_PATH})
@@ -113,7 +114,29 @@ file(COPY
 enable_testing()
 include(CTest)
 
-# add a target to generate API documentation with Doxygen
+add_subdirectory("${PROJECT_SOURCE_DIR}/scripts")
+add_subdirectory("${PROJECT_SOURCE_DIR}/third_party")
+add_subdirectory("${PROJECT_SOURCE_DIR}/include")
+add_subdirectory("${PROJECT_SOURCE_DIR}/src")
+add_subdirectory("${PROJECT_SOURCE_DIR}/finite_element_library")
+add_subdirectory("${PROJECT_SOURCE_DIR}/atom_tests")
+
+#add generation of examplaes
+configure_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/MoFEMConfig.cmake.in
+  ${CMAKE_CURRENT_BINARY_DIR}/MoFEMConfig.cmake
+  )
+
+configure_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/MoFEMConfig-version.cmake.in
+  ${CMAKE_CURRENT_BINARY_DIR}/MoFEMConfig-version.cmake
+  )
+install(FILES ${PROJECT_BINARY_DIR}/MoFEMConfig.cmake DESTINATION ${CMAKE_INSTALL_PREFIX})
+install(FILES ${PROJECT_BINARY_DIR}/MoFEMConfig-version.cmake DESTINATION ${CMAKE_INSTALL_PREFIX})
+
+add_subdirectory("${PROJECT_SOURCE_DIR}/examples")
+
+#add a target to generate API documentation with Doxygen
 find_package(Doxygen)
 if(DOXYGEN_FOUND)
 configure_file(
@@ -129,27 +152,5 @@ add_custom_target(doc
   COMMENT "Generating API documentation with Doxygen" VERBATIM
   )
 endif(DOXYGEN_FOUND)
-
-add_subdirectory("${PROJECT_SOURCE_DIR}/scripts")
-add_subdirectory("${PROJECT_SOURCE_DIR}/third_party")
-add_subdirectory("${PROJECT_SOURCE_DIR}/include")
-add_subdirectory("${PROJECT_SOURCE_DIR}/src")
-add_subdirectory("${PROJECT_SOURCE_DIR}/finite_element_library")
-
-configure_file(
-  ${CMAKE_CURRENT_SOURCE_DIR}/MoFEMConfig.cmake.in
-  ${CMAKE_CURRENT_BINARY_DIR}/MoFEMConfig.cmake
-  )
-
-configure_file(
-  ${CMAKE_CURRENT_SOURCE_DIR}/MoFEMConfig-version.cmake.in
-  ${CMAKE_CURRENT_BINARY_DIR}/MoFEMConfig-version.cmake
-  )
-
-install(FILES ${PROJECT_BINARY_DIR}/MoFEMConfig.cmake DESTINATION ${CMAKE_INSTALL_PREFIX})
-install(FILES ${PROJECT_BINARY_DIR}/MoFEMConfig-version.cmake DESTINATION ${CMAKE_INSTALL_PREFIX})
-
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples")
-
 
 

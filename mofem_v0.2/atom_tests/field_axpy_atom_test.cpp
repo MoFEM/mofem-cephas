@@ -17,8 +17,7 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#include "FieldInterface.hpp"
-#include "FieldCore.hpp"
+#include <MoFEM.hpp>
 
 using namespace MoFEM;
 
@@ -64,7 +63,7 @@ int main(int argc, char *argv[]) {
 
   PetscInitialize(&argc,&argv,PETSC_NULL,help);
 
-  Core mb_instance;
+  moab::Core mb_instance;
   Interface& moab = mb_instance;
   int rank;
   MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
@@ -90,7 +89,7 @@ int main(int argc, char *argv[]) {
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
   //Create MoFEM (Joseph) database
-  FieldCore core(moab);
+  MoFEM::Core core(moab);
   FieldInterface& mField = core;
 
   //ref meshset ref level 0

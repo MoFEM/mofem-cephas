@@ -17,20 +17,8 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#include "FEM.h"
-
-#include "FieldInterface.hpp"
-#include "FieldCore.hpp"
-
-#include <boost/numeric/ublas/matrix.hpp>
-#include <boost/numeric/ublas/matrix_proxy.hpp>
-#include <boost/numeric/ublas/vector.hpp>
-
-#include "Projection10NodeCoordsOnField.hpp"
-
-#include "FEM.h"
-#include "FEMethod_UpLevelStudent.hpp"
-#include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
+#include <MoFEM.hpp>
+#include <Projection10NodeCoordsOnField.hpp>
 
 using namespace MoFEM;
 
@@ -60,11 +48,11 @@ double roundn(double n) {
 
 int main(int argc, char *argv[]) {
 
-  try {
-
   PetscInitialize(&argc,&argv,(char *)0,help);
 
-  Core mb_instance;
+  try {
+
+  moab::Core mb_instance;
   Interface& moab = mb_instance;
   int rank;
   MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
@@ -86,7 +74,7 @@ int main(int argc, char *argv[]) {
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
-  FieldCore core(moab);
+  MoFEM::Core core(moab);
   FieldInterface& mField = core;
 
   //add filds
@@ -182,14 +170,6 @@ int main(int argc, char *argv[]) {
         
     }
 
-  PostProcDisplacementsOnRefMesh fe_postproc(moab,"MESH_NODE_POSITIONS");
-  ierr = mField.loop_finite_elements("TET_PROBLEM","TET_ELEM",fe_postproc);  CHKERRQ(ierr);
-
-  /*if(pcomm->rank()==0) {
-    rval = fe_postproc.moab_post_proc.write_file("out_post_proc.vtk","VTK",""); CHKERR_PETSC(rval);
-  }*/
-
-  PetscFinalize();
 
   } catch (const char* msg) {
     SETERRQ(PETSC_COMM_SELF,1,msg);
@@ -199,5 +179,6 @@ int main(int argc, char *argv[]) {
     SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   }
 
+  PetscFinalize();
 
 }
