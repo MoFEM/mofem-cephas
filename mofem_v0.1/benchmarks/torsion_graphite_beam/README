@@ -28,7 +28,7 @@ Example run
 * -d directory name
 * -p number of processors
 
-./convergence_study.sh -f torsion_concrete_450L_coarse.cub -l -1 -g 8e-6 -o 1,2,3,4 -r 1 -p $NPROC
+./convergence_study.sh -f torsion_GCMB_450L_coarse.cub -l -1 -g 2.3e-5 -o 1,2,3,4 -r 1 -p $NPROC
 
 2) Calculation of crack propagation
 
@@ -37,10 +37,12 @@ Example run
 * There are two possible methods:
 
 Smooth crack propagation:
-./arc_length.sh -f $DIRNAME/out_spatial_2_1.h5m -a 1 -n 500 -g 8e-6 -t 1e-8 -i 12 -p $NPROC
+For the coarse meshes: ./arc_length.sh -f $DIRNAME/out_spatial_2_1.h5m -a 1 -n 500 -g 2.3e-5 -t 1e-8 -i 12 -p $NPROC
+For the medium meshes: ./arc_length.sh -f $DIRNAME/out_spatial_2_1.h5m -a 0.5 -n 500 -g 2.3e-5 -t 1e-8 -i 12 -p $NPROC
 
 Crack propagation with face splitting:
-./face_split_arc_length.sh -f $DIRNAME/out_spatial_2_1.h5m -a 1 -n 500 -g 8e-6 -t 1e-8 -i 12 -p $NPROC
+For the coarse meshes: ./face_split_arc_length.sh -f $DIRNAME/out_spatial_2_1.h5m -a 1 -n 500 -g 2.3e-5 -t 1e-8 -i 12 -p $NPROC
+For the medium meshes: ./face_split_arc_length.sh -f $DIRNAME/out_spatial_2_1.h5m -a 0.5 -n 500 -g 2.3e-5 -t 1e-8 -i 12 -p $NPROC
 
 Making plots
 ============
@@ -55,4 +57,4 @@ Making plots
 The scaling factor is the product of the external load, the area over which the load is applied and the inverse of the scaling applied to E.
 
 For the coarse meshes: ./plot_graphs.sh -o 1,2,3,4 -r 1 -ent 1,429 -dim 0,1,2 -s 1e4*1*1
-For the medium meshes: ./plot_graphs.sh -o 1,2,3,4 -r 1 -ent 1,2156 -dim 0,1,2 -s 1e4*1*1
+For the medium meshse: ./plot_graphs.sh -o 1,2,3,4 -r 1 -ent 1,2156 -dim 0,1,2 -s 1e4*1*1
