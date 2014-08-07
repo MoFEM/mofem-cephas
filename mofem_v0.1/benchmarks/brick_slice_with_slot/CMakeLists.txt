@@ -16,32 +16,23 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
-cm_export_file("../../meshes/torsion_concrete_270L_coarse.jou" export_files_torsion_concrete_beam)
-cm_export_file("../../meshes/torsion_concrete_270L_medium.jou" export_files_torsion_concrete_beam)
-cm_export_file("../../meshes/torsion_concrete_450L_coarse.jou" export_files_torsion_concrete_beam)
-cm_export_file("../../meshes/torsion_concrete_450L_medium.jou" export_files_torsion_concrete_beam)
+cm_export_file("../../meshes/brick_slice_with_slot.jou" export_files_brick_slice_with_slot)
 
 install(FILES ${CMAKE_BINARY_DIR}/examples/material_forces/arc_length.sh 
-  DESTINATION mofem/benchmarks/torsion_concrete_beam
+  DESTINATION mofem/benchmarks/brick_slice_with_slot
   PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE)
 install(FILES ${CMAKE_BINARY_DIR}/examples/material_forces/convergence_study.sh 
-  DESTINATION mofem/benchmarks/torsion_concrete_beam
+  DESTINATION mofem/benchmarks/brick_slice_with_slot
+  PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE )
+install(FILES ${CMAKE_BINARY_DIR}/examples/material_forces/face_split_arc_length.sh 
+  DESTINATION mofem/benchmarks/brick_slice_with_slot
   PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE )
 
 #script for making plots for torsion example only
-install(FILES ${CMAKE_SOURCE_DIR}/benchmarks/torsion_concrete_beam/plot_graphs.sh
-  DESTINATION mofem/benchmarks/torsion_concrete_beam
-  PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE )
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/torsion_concrete_270L_coarse.jou
-  DESTINATION mofem/benchmarks/torsion_concrete_beam
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/brick_slice_with_slot.jou
+  DESTINATION mofem/benchmarks/brick_slice_with_slot
   PERMISSIONS OWNER_READ OWNER_WRITE )
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/torsion_concrete_270L_medium.jou
-  DESTINATION mofem/benchmarks/torsion_concrete_beam
-  PERMISSIONS OWNER_READ OWNER_WRITE )
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/torsion_concrete_450L_coarse.jou
-  DESTINATION mofem/benchmarks/torsion_concrete_beam
-  PERMISSIONS OWNER_READ OWNER_WRITE )
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/torsion_concrete_450L_medium.jou
-  DESTINATION mofem/benchmarks/torsion_concrete_beam
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/plot_graphs.sh
+  DESTINATION mofem/benchmarks/brick_slice_with_slot
   PERMISSIONS OWNER_READ OWNER_WRITE )
 
