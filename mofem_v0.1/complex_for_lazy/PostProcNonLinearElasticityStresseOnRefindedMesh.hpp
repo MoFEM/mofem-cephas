@@ -199,7 +199,7 @@ struct PostProcStressNonLinearElasticity: public PostProcDisplacementsOnRefMesh 
       A1.resize(3);
       a1.resize(3);
       cblas_dcopy(3,&material_data->fibre_vector_a1[0],1,&*A1.data().begin(),1);
-      if (sum(A1)>0){
+      if (norm_2(A1)>0){
       //a1 current configuration
       a1=prod(F,A1);
       rval = moab_post_proc.tag_set_data(th_fibreDirection1,&mit->second,1,&*a1.data().begin()); CHKERR_PETSC(rval);
@@ -220,7 +220,7 @@ struct PostProcStressNonLinearElasticity: public PostProcDisplacementsOnRefMesh 
       A2.resize(3);
       a2.resize(3);
       cblas_dcopy(3,&material_data->fibre_vector_a2[0],1,&*A2.data().begin(),1);
-      if (sum(A2)>0){
+      if (norm_2(A2)>0){
       //a2 current configuration
       a2=prod(F,A2);
       rval = moab_post_proc.tag_set_data(th_fibreDirection2,&mit->second,1,&*a2.data().begin()); CHKERR_PETSC(rval);

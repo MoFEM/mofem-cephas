@@ -16,15 +16,9 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
-#include subdirectory
-include_directories("${PROJECT_SOURCE_DIR}/benchmarks")
+add_executable(transport transport.cpp)
+target_link_libraries(transport mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
 
-#add executable library form subdirectory
-add_subdirectory("${PROJECT_SOURCE_DIR}/benchmarks/three_point_bending_graphite_simple_notch_symmetric")
-add_subdirectory("${PROJECT_SOURCE_DIR}/benchmarks/three_point_bending_graphite_corner_notch")
-#add_subdirectory("${PROJECT_SOURCE_DIR}/benchmarks/torsion_concrete_beam")
-add_subdirectory("${PROJECT_SOURCE_DIR}/benchmarks/plate_stability")
-add_subdirectory("${PROJECT_SOURCE_DIR}/benchmarks/brick_slice")
-add_subdirectory("${PROJECT_SOURCE_DIR}/benchmarks/horizontal_crack")
-#add_subdirectory("${PROJECT_SOURCE_DIR}/benchmarks/torsion_graphite_beam")
-#add_subdirectory("${PROJECT_SOURCE_DIR}/benchmarks/brick_slice_with_slot")
+file(COPY
+    ${CMAKE_CURRENT_SOURCE_DIR}/README
+    DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)

@@ -31,9 +31,8 @@ add_subdirectory("${PROJECT_SOURCE_DIR}/examples/arc_length_nonlinear_interface"
 add_subdirectory("${PROJECT_SOURCE_DIR}/examples/mesh_smoothing")
 add_subdirectory("${PROJECT_SOURCE_DIR}/examples/material_forces")
 add_subdirectory("${PROJECT_SOURCE_DIR}/examples/potential_flow")
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples/RVE_cube")
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples/RVE_cube_with_inclusion")
 add_subdirectory("${PROJECT_SOURCE_DIR}/examples/RVE_trans")
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples/moisture_transport")
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples/moisture_transport_oldElement")
+add_subdirectory("${PROJECT_SOURCE_DIR}/examples/ultraweak")
+
+
 
