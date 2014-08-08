@@ -138,9 +138,9 @@ namespace MoFEM {
     PetscErrorCode setMoistureFiniteElementRhsOperators(string field_name,Vec &F) {
       PetscFunctionBegin;
       map<int,BlockData>::iterator sit = setOfBlocks.begin();
+      feRhs.get_op_to_do_Rhs().push_back(new OpGetGradAtGaussPts(field_name,commonData));
       for(;sit!=setOfBlocks.end();sit++) {
         //add finite element
-        feRhs.get_op_to_do_Rhs().push_back(new OpGetGradAtGaussPts(field_name,commonData));
         feRhs.get_op_to_do_Rhs().push_back(new OpMoistureRhs(field_name,F,sit->second,commonData));
       }
       PetscFunctionReturn(0);
@@ -231,6 +231,10 @@ namespace MoFEM {
                             int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
         PetscFunctionBegin;
         
+        if(dAta.tEts.find(getMoFEMFEPtr()->get_ent()) == dAta.tEts.end()) {
+          PetscFunctionReturn(0);
+        }
+
         try {
           
           if(data.getIndices().size()==0) PetscFunctionReturn(0);
@@ -298,10 +302,8 @@ namespace MoFEM {
       map<int,BlockData>::iterator sit = setOfBlocks.begin();
       for(;sit!=setOfBlocks.end();sit++) {
         //add finite elemen
-        cout<<"Hi 1 "<<endl;
 
         feLhs.get_op_to_do_Lhs().push_back(new OpMoistureLhs(field_name,A,sit->second,commonData));
-        cout<<"Hi 2 "<<endl;
 
       }
       //      cout<<"field_name = "<<field_name<<endl;
@@ -343,6 +345,11 @@ namespace MoFEM {
                             DataForcesAndSurcesCore::EntData &row_data,
                             DataForcesAndSurcesCore::EntData &col_data) {
         PetscFunctionBegin;
+        
+        if(dAta.tEts.find(getMoFEMFEPtr()->get_ent()) == dAta.tEts.end()) {
+          PetscFunctionReturn(0);
+        }
+
         try {
           
           if(row_data.getIndices().size()==0) PetscFunctionReturn(0);
@@ -353,7 +360,7 @@ namespace MoFEM {
           K.resize(nb_row,nb_col);
           bzero(&*K.data().begin(),nb_row*nb_col*sizeof(double));
           
-          cout<<"dAta.dIffusivity = "<<dAta.dIffusivity<<endl;
+//          cout<<"dAta.dIffusivity = "<<dAta.dIffusivity<<endl;
 
           for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
             //            cout<<"gg = "<<gg<<endl;
