@@ -188,11 +188,11 @@ add_test(mesh_insert_T_4seasons_interface_atom_test_compare ${CMAKE_COMMAND} -E 
 #foces and sources functions Test
 add_executable(forces_and_sources_getting_orders_indices_atom_test forces_and_sources_getting_orders_indices_atom_test.cpp)
 target_link_libraries(forces_and_sources_getting_orders_indices_atom_test
-  mofem_third_party
-  mofem_approx
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
+  mofem_approx
+  mofem_third_party
   ${PROJECT_LIBS})
 
 add_test(forces_and_sources_getting_orders_indices_test 
@@ -203,11 +203,11 @@ add_test(forces_and_sources_getting_orders_indices_test_compare ${CMAKE_COMMAND}
 
 add_executable(forces_and_sources_getting_mult_H1_H1_atom_test forces_and_sources_getting_mult_H1_H1_atom_test.cpp)
 target_link_libraries(forces_and_sources_getting_mult_H1_H1_atom_test 
-  mofem_third_party
-  mofem_approx
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
+  mofem_approx
+  mofem_third_party
   ${PROJECT_LIBS})
 
 add_test(forces_and_sources_getting_mult_H1_H1_test 
@@ -218,11 +218,11 @@ add_test(forces_and_sources_getting_mult_H1_H1_test_compare ${CMAKE_COMMAND} -E 
 
 add_executable(forces_and_sources_calculate_jacobian forces_and_sources_calculate_jacobian.cpp)
 target_link_libraries(forces_and_sources_calculate_jacobian
-  mofem_third_party
-  mofem_approx
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
+  mofem_approx
+  mofem_third_party
   ${PROJECT_LIBS})
 
 add_test(forces_and_sources_calculate_jacobian_test
@@ -233,11 +233,11 @@ add_test(forces_and_sources_calculate_jacobian_test_compare ${CMAKE_COMMAND} -E 
 
 add_executable(forces_and_sources_testing_volume_element forces_and_sources_testing_volume_element.cpp)
 target_link_libraries(forces_and_sources_testing_volume_element
-  mofem_third_party
-  mofem_approx
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
+  mofem_approx
+  mofem_third_party
   ${PROJECT_LIBS})
 
 add_test(forces_and_sources_testing_volume_element_test
@@ -248,11 +248,11 @@ add_test(forces_and_sources_testing_volume_element_test_compare ${CMAKE_COMMAND}
 
 add_executable(forces_and_sources_testing_field_approximation forces_and_sources_testing_field_approximation.cpp) 
 target_link_libraries(forces_and_sources_testing_field_approximation 
-  mofem_third_party
-  mofem_approx
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
+  mofem_approx
+  mofem_third_party
   ${PROJECT_LIBS})
 
 add_test(forces_and_sources_testing_field_approximation_test
@@ -265,11 +265,12 @@ add_test(forces_and_sources_testing_field_approximation_test_compare ${CMAKE_COM
 # body forces test
 add_executable(forces_and_sources_body_force_atom forces_and_sources_body_force_atom_test.cpp)
 target_link_libraries(forces_and_sources_body_force_atom 
-  mofem_third_party
-  mofem_approx
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_third_party
   ${PROJECT_LIBS})
 
 cm_export_file("../meshes/elasticity_atom_test_body_force.cub" export_atom_tests)
@@ -282,11 +283,11 @@ add_test(forces_and_sources_body_force_atom_test_compare ${CMAKE_COMMAND} -E com
 
 add_executable(forces_and_sources_getting_higher_order_skin_normals_atom forces_and_sources_getting_higher_order_skin_normals_atom_tets.cpp)
 target_link_libraries(forces_and_sources_getting_higher_order_skin_normals_atom 
-  mofem_third_party
-  mofem_approx
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
+  mofem_approx
+  mofem_third_party
   ${PROJECT_LIBS})
 
 add_test(forces_and_sources_getting_higher_order_skin_normals_atom_test
@@ -297,11 +298,11 @@ add_test(forces_and_sources_getting_higher_order_skin_normals_atom_test_compare 
 
 add_executable(forces_and_sources_testing_triangle_element forces_and_sources_testing_triangle_element.cpp)
 target_link_libraries(forces_and_sources_testing_triangle_element  
-  mofem_third_party
-  mofem_approx
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
+  mofem_approx
+  mofem_third_party
   ${PROJECT_LIBS})
 
 add_test(forces_and_sources_testing_triangle_element_test
@@ -312,11 +313,11 @@ add_test(forces_and_sources_testing_triangle_element_test_compare ${CMAKE_COMMAN
 
 add_executable(forces_and_sources_testing_edge_element forces_and_sources_testing_edge_element.cpp)
 target_link_libraries(forces_and_sources_testing_edge_element 
-  mofem_third_party
-  mofem_approx
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
+  mofem_approx
+  mofem_third_party
   ${PROJECT_LIBS})
 
 add_test(forces_and_sources_testing_edge_element_test
@@ -327,11 +328,11 @@ add_test(forces_and_sources_testing_edge_element_test_compare ${CMAKE_COMMAND} -
 
 add_executable(forces_and_sources_testing_vertex_element forces_and_sources_testing_vertex_element.cpp)
 target_link_libraries(forces_and_sources_testing_vertex_element
-  mofem_third_party
-  mofem_approx
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
+  mofem_approx
+  mofem_third_party
   ${PROJECT_LIBS})
 
 add_test(forces_and_sources_testing_vertex_element_test
@@ -342,11 +343,11 @@ add_test(forces_and_sources_testing_vertex_element_test_compare ${CMAKE_COMMAND}
 
 add_executable(forces_and_sources_neumann_forces_atom forces_and_sources_neumann_forces_atom_test.cpp)
 target_link_libraries(forces_and_sources_neumann_forces_atom
-  mofem_third_party
-  mofem_approx
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
+  mofem_approx
+  mofem_third_party
   ${PROJECT_LIBS})
 
 cm_export_file("../meshes/elasticity_atom_test_01X.cub" export_atom_tests)
@@ -371,11 +372,11 @@ add_test(forces_and_sources_neumann_sphre_pressure_test_compare ${CMAKE_COMMAND}
 cm_export_file("../meshes/fluid_presssure_cub_test.cub" export_atom_tests)
 add_executable(forces_and_sources_fluid_pressure_element_atom forces_and_sources_fluid_pressure_element.cpp)
 target_link_libraries(forces_and_sources_fluid_pressure_element_atom
-  mofem_third_party
-  mofem_approx
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
+  mofem_approx
+  mofem_third_party
   ${PROJECT_LIBS})
 
 add_test(forces_and_sources_fluid_pressure_element_atom_test
@@ -389,11 +390,11 @@ cm_export_file("../meshes/simple_thermal_problem.cub" export_atom_tests)
 add_executable(forces_and_sources_thermal_elem_atom forces_and_sources_thermal_elem.cpp)
 target_link_libraries(forces_and_sources_thermal_elem_atom
   mofem_finite_element_library
-  mofem_third_party
-  mofem_approx
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
+  mofem_approx
+  mofem_third_party
   ${PROJECT_LIBS})
 
 add_test(forces_and_sources_thermal_elem_atom_test ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_thermal_elem_atom 
@@ -406,12 +407,12 @@ add_test(forces_and_sources_thermal_elem_atom_test_compare ${CMAKE_COMMAND} -E c
 add_executable(forces_and_sources_thermal_elem_unsteady_atom forces_and_sources_thermal_elem_unsteady.cpp)
 target_link_libraries(forces_and_sources_thermal_elem_unsteady_atom 
   mofem_finite_element_library
-  mofem_third_party
-  mofem_approx
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
   mofem_petsc
+  mofem_approx
+  mofem_third_party
   ${PROJECT_LIBS})
 
 add_test(forces_and_sources_thermal_elem_unsteady_atom_test ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_thermal_elem_unsteady_atom 
@@ -428,11 +429,11 @@ add_test(forces_and_sources_thermal_elem_unsteady_atom_test_compare ${CMAKE_COMM
 cm_export_file("../meshes/elasticity_atom_test_thermal_expansion.cub" export_atom_tests)
 add_executable(forces_and_sources_thermal_stress_elem forces_and_sources_thermal_stress_elem.cpp)
 target_link_libraries(forces_and_sources_thermal_stress_elem
-  mofem_third_party
-  mofem_approx
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
+  mofem_approx
+  mofem_third_party
   ${PROJECT_LIBS})
 
 add_test(forces_and_sources_thermal_stress_elem_atom_test ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_thermal_stress_elem
@@ -457,11 +458,11 @@ add_test(record_series_atom_test_compare ${CMAKE_COMMAND} -E compare_files
 # add test for hdiv space
 add_executable(forces_and_sources_hdiv_approximation_functions forces_and_sources_hdiv_approximation_functions.cpp)
 target_link_libraries(forces_and_sources_hdiv_approximation_functions
-  mofem_third_party
-  mofem_approx
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
+  mofem_approx
+  mofem_third_party
   ${PROJECT_LIBS})
 
 add_test(forces_and_sources_hdiv_approximation_functions_atom ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_hdiv_approximation_functions)
@@ -472,11 +473,11 @@ add_test(forces_and_sources_hdiv_approximation_functions_atom_compare ${CMAKE_CO
 # add test for hdiv space - check approximation continuity
 add_executable(forces_and_sources_hdiv_continuity_check forces_and_sources_hdiv_continuity_check.cpp)
 target_link_libraries(forces_and_sources_hdiv_continuity_check 
-  mofem_third_party
-  mofem_approx
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
+  mofem_approx
+  mofem_third_party
   ${PROJECT_LIBS})
 
 add_test(forces_and_sources_hdiv_continuity_check_atom ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_hdiv_continuity_check -my_file sphere.cub)
@@ -487,11 +488,11 @@ add_test(forces_and_sources_hdiv_continuity_check_atom_compare ${CMAKE_COMMAND} 
 # add test for hdvi divergence operator
 add_executable(forces_and_sources_hdiv_divergence_operator forces_and_sources_hdiv_divergence_operator.cpp)
 target_link_libraries(forces_and_sources_hdiv_divergence_operator
-  mofem_third_party
-  mofem_approx
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
+  mofem_approx
+  mofem_third_party
   ${PROJECT_LIBS})
 
 add_test(forces_and_sources_hdiv_divergence_operator_atom ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_hdiv_divergence_operator)
@@ -499,12 +500,12 @@ add_test(forces_and_sources_hdiv_divergence_operator_atom ${MPI_RUN} -np 1 ${CMA
 # add test for ultra weak finite element
 add_executable(forces_and_sources_ultra_weak_transport forces_and_sources_ultra_weak_transport.cpp)
 target_link_libraries(forces_and_sources_ultra_weak_transport
-  mofem_third_party
-  mofem_approx
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
   mofem_petsc
+  mofem_approx
+  mofem_third_party
   ${PROJECT_LIBS})
 
 add_test(forces_and_sources_ultra_weak_transport_atom ${MPI_RUN} -np 2
