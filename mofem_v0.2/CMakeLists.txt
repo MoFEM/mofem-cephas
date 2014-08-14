@@ -37,7 +37,7 @@ include(cmake/ResolveCompilerPaths.cmake)
 project(MoFEM C Fortran CXX)
 
 #SIGMA tools
-include(cmake/FindTETGEN.cmake)
+include(cmake/FindTetGen.cmake)
 include(cmake/FindTriangle.cmake)
 include(cmake/FindiMesh.cmake)
 include(cmake/FindCGM.cmake)
