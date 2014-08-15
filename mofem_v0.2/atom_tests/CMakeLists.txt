@@ -39,9 +39,6 @@ link_directories("${PROJECT_BINARY_DIR}/src/finite_elements")
 include_directories("${PROJECT_SOURCE_DIR}/finite_element_library")
 link_directories("${PROJECT_BINARY_DIR}/finite_element_library")
 
-include_directories("${PROJECT_SOURCE_DIR}/examples/include")
-link_directories("${PROJECT_BINARY_DIR}/examples/src")
-
 # cubit_bc_test 
 cm_export_file("../meshes/disp01.cub" export_atom_tests)
 cm_export_file("../meshes/force01.cub" export_atom_tests)

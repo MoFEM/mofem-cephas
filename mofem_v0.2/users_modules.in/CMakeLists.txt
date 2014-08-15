@@ -17,11 +17,11 @@
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
 configure_file(
-  ${PROJECT_SOURCE_DIR}/user_modules.in/CMakeLists.txt.in
-  ${PROJECT_SOURCE_DIR}/user_modules/CMakeLists.txt
+  ${PROJECT_SOURCE_DIR}/users_modules.in/CMakeLists.txt.in
+  ${PROJECT_SOURCE_DIR}/users_modules/CMakeLists.txt
   @ONLY
 )
 
-install(DIRECTORY ${PROJECT_SOURCE_DIR}/user_modules DESTINATION ${CMAKE_INSTALL_PREFIX})
+install(DIRECTORY ${PROJECT_SOURCE_DIR}/users_modules DESTINATION ${CMAKE_INSTALL_PREFIX})
 
 
