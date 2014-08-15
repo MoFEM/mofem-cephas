@@ -24,7 +24,7 @@ file(COPY
 # implementing independent application it will be using instead project
 # directories.
 
-add_executable(transport ${MoFEM_PROJECT_SOURCE_DIR}/examples/ultraweak/transport.cpp)
+add_executable(transport ${MoFEM_PROJECT_SOURCE_DIR}/users_modules/ultraweak/transport.cpp)
 target_link_libraries(transport
   mofem_cblas
   mofem_third_party
