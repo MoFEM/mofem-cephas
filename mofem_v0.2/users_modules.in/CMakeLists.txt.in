@@ -75,6 +75,7 @@ add_library(users_modules_obsolete
   ${MoFEM_PROJECT_SOURCE_DIR}/users_modules/obsolete/c_impl/complex_for_lazy.c
 )
 
+add_subdirectory(elasticity)
 
 
 
