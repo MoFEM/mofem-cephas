@@ -20,7 +20,7 @@
 #ifndef __POSTPROCDISPLACEMENTANDSTRAINONREFINDEDMESH_HPP__
 #define __POSTPROCDISPLACEMENTANDSTRAINONREFINDEDMESH_HPP__
 
-using namespace MoFEM;
+namespace ObosleteUsersModules {
 
 struct PostProcOnRefMesh_Base {
     //this is moab mesh of all refined elements
@@ -653,6 +653,7 @@ struct PostProcL2VelocitiesFieldsAndGradientOnRefMesh: public PostProcDisplaceme
 
 };
 
+}
 
 #endif //__POSTPROCDISPLACEMENTANDSTRAINONREFINDEDMESH_HPP__
 

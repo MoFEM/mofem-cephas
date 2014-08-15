@@ -20,7 +20,7 @@
 #ifndef __POSTPROCVERTEXMETHOD_HPP__
 #define __POSTPROCVERTEXMETHOD_HPP__
 
-using namespace MoFEM;
+namespace ObosleteUsersModules {
 
 // Write Displacements DOFS on Vertices
 struct PostProcVertexMethod: public FieldInterface::EntMethod {
@@ -112,5 +112,7 @@ struct PostProcVertexMethod: public FieldInterface::EntMethod {
     }
 
 };
+
+}
 
 #endif // __POSTPROCVERTEXMETHOD_HPP__
