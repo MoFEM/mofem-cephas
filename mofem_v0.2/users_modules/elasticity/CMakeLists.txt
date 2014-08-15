@@ -37,9 +37,12 @@ file(COPY
 
 #testing
 add_test(ElasticityTest 
-  ${MPI_RUN} -np 4 ${CMAKE_CURRENT_BINARY_DIR}/elasticity 
+  ${MoFEM_MPI_RUN} -np 4 ${CMAKE_CURRENT_BINARY_DIR}/elasticity 
   -my_file LShape.cub 
-  -ksp_type fgmres -pc_type mumps -ksp_monitor -log_summary)
+  -ksp_type fgmres 
+  -pc_type lu 
+  -pc_factor_mat_solver_package mumps
+  -ksp_monitor -log_summary)
 
 
 

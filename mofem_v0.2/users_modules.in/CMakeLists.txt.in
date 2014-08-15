@@ -59,6 +59,10 @@ link_directories("${MoFEM_PROJECT_BINARY_DIR}/third_party/cblas")
 
 link_directories(${PROJECT_BINARY_DIR})
 
+#add executable library form subdirectory
+enable_testing()
+include(CTest)
+
 add_subdirectory(thermal)
 add_subdirectory(ultraweak)
 
@@ -71,6 +75,7 @@ add_library(users_modules_obsolete
   ${MoFEM_PROJECT_SOURCE_DIR}/users_modules/obsolete/impl/ArcLengthTools.cpp
   ${MoFEM_PROJECT_SOURCE_DIR}/users_modules/obsolete/impl/FEMethod_ComplexForLazy.cpp
   ${MoFEM_PROJECT_SOURCE_DIR}/users_modules/obsolete/impl/FEMethod_SurfaceConstrains.cpp
+  ${MoFEM_PROJECT_SOURCE_DIR}/users_modules/obsolete/impl/FEMethod_LowLevelStudent.cpp
   ${MoFEM_PROJECT_SOURCE_DIR}/users_modules/obsolete/impl/FEMethod_UpLevelStudent.cpp
   ${MoFEM_PROJECT_SOURCE_DIR}/users_modules/obsolete/impl/SurfacePressureComplexForLazy.cpp
   ${MoFEM_PROJECT_SOURCE_DIR}/users_modules/obsolete/impl/MatShellConstrainsByMarkAinsworth.cpp

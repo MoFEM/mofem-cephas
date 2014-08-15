@@ -47,7 +47,6 @@ struct FEMethod_LowLevelStudent: public FEMethod {
   PetscErrorCode GlobIndices();
   PetscErrorCode LocalIndices();
   PetscErrorCode DataOp();
-  PetscErrorCode ParentData(const string &fe_name);
 
   typedef FEDofMoFEMEntity_multiIndex::index<Composite_Name_Type_And_Side_Number_mi_tag>::type dofs_by_Composite;
   typedef FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_Type_And_Side_Number_mi_tag>::type numered_dofs_by_Composite;

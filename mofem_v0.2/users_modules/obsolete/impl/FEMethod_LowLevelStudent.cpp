@@ -17,11 +17,12 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
+#include <MoFEM.hpp>
+using namespace MoFEM;
 
-#include "FEMethod_LowLevelStudent.hpp"
-#include "FEM.h"
+#include <FEMethod_LowLevelStudent.hpp>
 
-namespace MoFEM {
+namespace ObosleteUsersModules {
 
 const int debug = 1;
 
@@ -439,40 +440,6 @@ PetscErrorCode FEMethod_LowLevelStudent::LocalIndices() {
       break;
     default:
       SETERRQ(PETSC_COMM_SELF,1,"not implemented");
-  }
-  PetscFunctionReturn(0);
-}
-PetscErrorCode FEMethod_LowLevelStudent::ParentData(const string &_fe_name) {
-  PetscFunctionBegin;
-  if(ParentMethod == NULL) {
-    ParentMethod = new FEMethod_LowLevelStudent(moab,verbose);
-    ierr = ParentMethod->setProblem(problemPtr); CHKERRQ(ierr);
-    ierr = ParentMethod->setDofs(dofsPtr); CHKERRQ(ierr);
-    ierr = ParentMethod->setFiniteElements(refinedFiniteElementsPtr,finiteElementsPtr); CHKERRQ(ierr);
-    ierr = ParentMethod->setFiniteElementsEntities(finiteElementsEntitiesPtr); CHKERRQ(ierr);
-    ierr = ParentMethod->setAdjacencies(adjacenciesPtr); CHKERRQ(ierr);
-    ierr = ParentMethod->preProcess(); CHKERRQ(ierr);
-  }
-  EntityHandle parent = fePtr->get_parent_ent();
-  if(verbose>2) {
-    PetscPrintf(PETSC_COMM_WORLD,"Parent ent %u\n",parent);
-  }
-  EntMoFEMFiniteElement_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator 
-    miit =  finiteElementsEntitiesPtr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(_fe_name,parent));
-  EntMoFEMFiniteElement_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator 
-    hi_miit = finiteElementsEntitiesPtr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(_fe_name,parent));
-  if(distance(miit,hi_miit) > 1) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
-  for(;miit!=hi_miit;miit++) {
-    if(verbose>2) {
-      ostringstream ss;
-      ss << *miit << endl;
-      PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
-    }
-    assert(ParentMethod!=NULL);
-    assert(ParentMethod->fePtr==NULL);
-    ParentMethod->fe_ent_ptr = &*miit;
-    ierr = ParentMethod->setData( const_cast<FEDofMoFEMEntity_multiIndex*>(&(miit->data_dofs)) ); CHKERRQ(ierr);
-    ierr = ParentMethod->InitDataStructures();
   }
   PetscFunctionReturn(0);
 }
