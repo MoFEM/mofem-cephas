@@ -23,17 +23,16 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#include "SurfacePressureComplexForLazy.hpp"
-#include "FEM.h"
+
+#include <MoFEM.hpp>
+#include <SurfacePressureComplexForLazy.hpp>
 
 extern "C" {
-
-#include "complex_for_lazy.h"
-
-void tetcircumcenter_tp(double a[3],double b[3],double c[3], double d[3],
-  double circumcenter[3],double *xi,double *eta,double *zeta);
-void tricircumcenter3d_tp(double a[3],double b[3],double c[3],
-  double circumcenter[3],double *xi,double *eta);
+  #include "complex_for_lazy.h"
+  void tetcircumcenter_tp(double a[3],double b[3],double c[3], double d[3],
+    double circumcenter[3],double *xi,double *eta,double *zeta);
+  void tricircumcenter3d_tp(double a[3],double b[3],double c[3],
+    double circumcenter[3],double *xi,double *eta);
 }
 
 namespace MoFEM {
@@ -41,8 +40,6 @@ namespace MoFEM {
 PetscErrorCode NeummanForcesSurfaceComplexForLazy::
   AuxMethodSpatial::doWork(int side, EntityType type, DataForcesAndSurcesCore::EntData &data) {
   PetscFunctionBegin;
-
-  //cerr << "AuxMethodSpatial\n";
 
   try {
 

@@ -20,10 +20,6 @@
 #ifndef __COMPLEX_FOR_LAZY_H__
 #define __COMPLEX_FOR_LAZY_H__
 
-#include "FEM.h"
-#include "H1HdivHcurlL2.h"
-#include "assert.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif

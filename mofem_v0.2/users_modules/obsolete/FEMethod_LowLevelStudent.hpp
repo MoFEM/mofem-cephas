@@ -28,7 +28,7 @@ namespace MoFEM {
  * This class give user some data structures and methods on those that
  * structures which could be useful.
 */
-struct FEMethod_LowLevelStudent: public FieldInterface::FEMethod {
+struct FEMethod_LowLevelStudent: public FEMethod {
   Interface& moab;
 
   //

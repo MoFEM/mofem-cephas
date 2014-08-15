@@ -17,47 +17,39 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-
-#include "FieldInterface.hpp"
-
-#include <boost/numeric/ublas/matrix.hpp>
-#include <boost/numeric/ublas/matrix_proxy.hpp>
-#include <boost/numeric/ublas/io.hpp>
-
-using namespace boost::numeric;
-
-#include "FEMethod_SurfaceConstrains.hpp"
-
-#include<FEM.h>
-#include<H1HdivHcurlL2.h>
+#include <MoFEM.hpp>
 
 #include <moab/ParallelComm.hpp>
-#include <MBParallelConventions.h>
 
 #include <math.h>
 #include <complex>
-
 extern "C" {
   #include "/usr/include/complex.h"
 }
 
 extern "C" {
-
-void tetcircumcenter_tp(double a[3],double b[3],double c[3], double d[3],
-  double circumcenter[3],double *xi,double *eta,double *zeta);
-void tricircumcenter3d_tp(double a[3],double b[3],double c[3],
-  double circumcenter[3],double *xi,double *eta);
-
+  void tetcircumcenter_tp(double a[3],double b[3],double c[3], double d[3],
+    double circumcenter[3],double *xi,double *eta,double *zeta);
+  void tricircumcenter3d_tp(double a[3],double b[3],double c[3],
+    double circumcenter[3],double *xi,double *eta);
 }
+
+#include <boost/numeric/ublas/matrix.hpp>
+#include <boost/numeric/ublas/matrix_proxy.hpp>
+#include <boost/numeric/ublas/io.hpp>
+
+#include "FEMethod_SurfaceConstrains.hpp"
+
+using namespace boost::numeric;
 
 namespace MoFEM {
 
 const int debug_constrains = 1;
 
 PetscErrorCode ConstrainSurfacGeometry::preProcess() {
-    PetscFunctionBegin;
-    PetscFunctionReturn(0);
-  }
+  PetscFunctionBegin;
+  PetscFunctionReturn(0);
+}
 
 void ConstrainSurfacGeometry::runInConstructor() {
     diffNTRI.resize(6);

@@ -224,7 +224,7 @@ struct PCShellCtx {
       SnesCtx.get_postProcess_to_do_Rhs().push_back(&PrePostFE); //finally, assemble F_lambda
   \endcode
  */
-struct PrePostProcessFEMethod_For_F_lambda: public FieldInterface::FEMethod {
+struct PrePostProcessFEMethod_For_F_lambda: public FEMethod {
   
   FieldInterface& mField;
   ArcLengthCtx *arc_ptr;

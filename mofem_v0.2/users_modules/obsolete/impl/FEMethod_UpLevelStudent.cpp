@@ -17,8 +17,10 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#include "FEMethod_UpLevelStudent.hpp"
-#include "FEM.h"
+#include <MoFEM.hpp>
+
+#include <FEMethod_LowLevelStudent.hpp>
+#include <FEMethod_UpLevelStudent.hpp>
 
 namespace MoFEM {
 

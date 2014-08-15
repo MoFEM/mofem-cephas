@@ -22,7 +22,7 @@
 
 namespace MoFEM {
 
-struct ConstrainSurfacGeometry:public FieldInterface::FEMethod {
+struct ConstrainSurfacGeometry:public FEMethod {
   ErrorCode rval;
   PetscErrorCode ierr;
   FieldInterface& mField;
@@ -82,9 +82,9 @@ struct ConstraunSurfaceGeometryRhs: public ConstrainSurfacGeometry {
   PetscErrorCode aSsemble(bool transpose,bool nonlinear);
 };
 
-struct SnesConstrainSurfacGeometryTools: public FieldInterface::FEMethod {
+struct SnesConstrainSurfacGeometryTools: public FEMethod {
 
-  PetscErrorCode setElemData(FieldInterface::FEMethod &e) {
+  PetscErrorCode setElemData(FEMethod &e) {
     PetscFunctionBegin;
     //copy all elem that to other FEMethod class
     e.problemPtr = problemPtr;
