@@ -21,15 +21,6 @@
 #ifndef __MOABFEMETHOD_COMPLEXFORLAZY_HPP__
 #define __MOABFEMETHOD_COMPLEXFORLAZY_HPP__
 
-#include "FieldInterface.hpp"
-#include "CoreDataStructures.hpp"
-#include "FEMethod_UpLevelStudent.hpp"
-#include "complex_for_lazy.h"
-
-#include <boost/numeric/ublas/matrix.hpp>
-#include <boost/numeric/ublas/matrix_proxy.hpp>
-#include <boost/numeric/ublas/io.hpp>
-
 using namespace boost::numeric;
 
 namespace MoFEM {

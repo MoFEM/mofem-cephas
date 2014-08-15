@@ -17,19 +17,8 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-
-
 #ifndef __MOABFEMETHOD_LOWLEVELSTUDENT_HPP__
 #define __MOABFEMETHOD_LOWLEVELSTUDENT_HPP__
-
-#include "FieldInterface.hpp"
-#include "CoreDataStructures.hpp"
-
-#include <boost/numeric/ublas/matrix.hpp>
-#include <boost/numeric/ublas/matrix_proxy.hpp>
-#include <boost/numeric/ublas/io.hpp>
-
-using namespace boost::numeric;
 
 namespace MoFEM {
 

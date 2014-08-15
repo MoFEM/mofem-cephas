@@ -21,21 +21,6 @@
 #ifndef __MOABFEMETHOD_DRIVERCOMPLEXFORLAZY_HPP__
 #define __MOABFEMETHOD_DRIVERCOMPLEXFORLAZY_HPP__
 
-#include "FieldInterface.hpp"
-#include "FieldCore.hpp"
-
-#include "SnesCtx.hpp"
-#include "FEMethod_ComplexForLazy.hpp"
-#include "ArcLengthTools.hpp"
-
-#include "petscShellMATs_ConstrainsByMarkAinsworth.hpp"
-#include "FEMethod_SurfaceConstrains.hpp"
-
-extern "C" {
-#include "gm_rule.h"
-}
-
-using namespace boost::numeric;
 
 namespace MoFEM {
 

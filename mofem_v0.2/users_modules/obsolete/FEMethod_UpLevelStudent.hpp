@@ -20,17 +20,6 @@
 #ifndef __MOABFEMETHOD_UPLEVELSTUDENT_HPP__
 #define __MOABFEMETHOD_UPLEVELSTUDENT_HPP__
 
-#include "CoreDataStructures.hpp"
-#include "FieldInterface.hpp"
-#include "FEMethod_LowLevelStudent.hpp"
-#include "DirichletBC.hpp"
-
-#include <boost/numeric/ublas/matrix.hpp>
-#include <boost/numeric/ublas/matrix_proxy.hpp>
-#include <boost/numeric/ublas/io.hpp>
-
-using namespace boost::numeric;
-
 namespace MoFEM {
 
 struct FEMethod_UpLevelStudent_ExceptionNegatvieTetVolume: public MofemException {

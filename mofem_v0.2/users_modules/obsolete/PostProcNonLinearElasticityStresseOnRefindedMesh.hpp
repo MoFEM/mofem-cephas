@@ -20,11 +20,6 @@
 #ifndef __POSTPROCNONLINEARELASTICITYSTRESSEONREFINDEDMESH_HPP__
 #define __POSTPROCNONLINEARELASTICITYSTRESSEONREFINDEDMESH_HPP__
 
-
-#include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
-#include "FEMethod_ComplexForLazy.hpp"
-#include "complex_for_lazy.h"
-
 using namespace MoFEM;
 
 struct PostProcStressNonLinearElasticity: public PostProcDisplacementsOnRefMesh {
