@@ -22,6 +22,8 @@ find_package(MoFEM 0.2.0
   REQUIRED HINTS ${MOFEM_DIR} ../ ../../ $ENV{MOFEM_DIR}
 )
 
+include(${MoFEM_PROJECT_SOURCE_DIR}/cmake/ExportFile.cmake)
+
 set(CMAKE_C_COMPILER ${MoFEM_CMAKE_C_COMPILER}) 
 set(CMAKE_CXX_COMPILER ${MoFEM_CMAKE_CXX_COMPILER})
 
