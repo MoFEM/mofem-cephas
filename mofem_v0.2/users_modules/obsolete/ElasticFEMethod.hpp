@@ -20,12 +20,7 @@
 #ifndef __ELASTICFEMETHOD_HPP__
 #define __ELASTICFEMETHOD_HPP__
 
-#include <boost/numeric/ublas/symmetric.hpp>
-extern "C" {
-#include <gm_rule.h>
-}
-
-namespace MoFEM {
+namespace ObosleteUsersModules {
 
 struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 
