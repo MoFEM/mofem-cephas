@@ -83,6 +83,7 @@ add_library(users_modules_obsolete
 )
 
 add_subdirectory(elasticity)
+add_subdirectory(arc_length_nonlinear_elasticity)
 
 
 

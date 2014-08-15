@@ -547,7 +547,7 @@ struct MeshSmoothingFEMethod: public EshelbyFEMethod {
 
 };
 
-struct ArcLengthElemFEMethod: public FieldInterface::FEMethod {
+struct ArcLengthElemFEMethod: public FEMethod {
 
   Interface& moab;
   ArcLengthCtx* arc_ptr;
