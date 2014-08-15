@@ -20,10 +20,13 @@
 #ifndef __POSTPROCVERTEXMETHOD_HPP__
 #define __POSTPROCVERTEXMETHOD_HPP__
 
+using namespace MoFEM;
+
 namespace ObosleteUsersModules {
 
 // Write Displacements DOFS on Vertices
-struct PostProcVertexMethod: public FieldInterface::EntMethod {
+struct PostProcVertexMethod: public EntMethod {
+
     ErrorCode rval;
     PetscErrorCode ierr;
     Interface& moab;
@@ -78,21 +81,21 @@ struct PostProcVertexMethod: public FieldInterface::EntMethod {
     PetscErrorCode operator()() {
       PetscFunctionBegin;
 
-      if(dof_ptr->get_ent_type()!=MBVERTEX) PetscFunctionReturn(0);
-      if(dof_ptr->get_name() != field_name) PetscFunctionReturn(0);
+      if(dofPtr->get_ent_type()!=MBVERTEX) PetscFunctionReturn(0);
+      if(dofPtr->get_name() != field_name) PetscFunctionReturn(0);
 
-      EntityHandle ent = dof_ptr->get_ent();
-      int dof_rank = dof_ptr->get_dof_rank();
+      EntityHandle ent = dofPtr->get_ent();
+      int dof_rank = dofPtr->get_dof_rank();
       double fval;
       if(V_glob_array == NULL) {
-	fval = dof_ptr->get_FieldData();
+	fval = dofPtr->get_FieldData();
       } else {
-	fval = V_glob_array[dofPtr->get_petsc_gloabl_dof_idx()];
+	fval = V_glob_array[dofNumeredPtr->get_petsc_gloabl_dof_idx()];
       }
       Range::iterator nit = find(nodes.begin(),nodes.end(),ent);
       if(nit==nodes.end()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
       unsigned int pos = std::distance(nodes.begin(),nit);
-      pos = dof_ptr->get_max_rank()*pos+dof_rank;
+      pos = dofPtr->get_max_rank()*pos+dof_rank;
       if(pos>vals.size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
       vals[pos] = fval;
       //cerr << pos << " --> " << fval << " ent " << ent << endl;

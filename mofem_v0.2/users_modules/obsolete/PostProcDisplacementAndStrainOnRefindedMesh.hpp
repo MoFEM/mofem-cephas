@@ -23,13 +23,14 @@
 namespace ObosleteUsersModules {
 
 struct PostProcOnRefMesh_Base {
+
     //this is moab mesh of all refined elements
     Interface& moab_post_proc;
-    Core mb_instance_post_proc;
+    moab::Core mb_instance_post_proc;
 
     //this is moab mesh for reference element
     Interface& moab_ref;
-    Core mb_instance_ref;
+    moab::Core mb_instance_ref;
 
     int max_level;
     vector<EntityHandle> meshset_level;
@@ -66,19 +67,20 @@ struct PostProcOnRefMesh_Base {
       rval = moab_ref.create_element(MBTET,nodes,4,tet); CHKERR_PETSC(rval);
 
       //
-      FieldCore core_ref(moab_ref,-1);
-      FieldInterface& mField_ref = core_ref;
-      ierr = mField_ref.seed_ref_level_3D(0,BitRefLevel().set(0)); CHKERRQ(ierr);
+      MoFEM::Core core_ref(moab_ref,-1);
+      FieldInterface& m_field_ref = core_ref;
+      MeshRefinment& m_ref_ref = core_ref; 
+      ierr = m_field_ref.seed_ref_level_3D(0,BitRefLevel().set(0)); CHKERRQ(ierr);
 
       for(int ll = 0;ll<max_level;ll++) {
 	PetscPrintf(PETSC_COMM_WORLD,"Refine Level %d\n",ll);
 	rval = moab_ref.create_meshset(MESHSET_SET,meshset_level[ll]); CHKERR_PETSC(rval);
-	ierr = mField_ref.get_entities_by_ref_level(BitRefLevel().set(ll),BitRefLevel().set(),meshset_level[ll]); CHKERRQ(ierr);
-	ierr = mField_ref.add_verices_in_the_middel_of_edges(meshset_level[ll],BitRefLevel().set(ll+1)); CHKERRQ(ierr);
-	ierr = mField_ref.refine_TET(meshset_level[ll],BitRefLevel().set(ll+1)); CHKERRQ(ierr);
+	ierr = m_field_ref.get_entities_by_ref_level(BitRefLevel().set(ll),BitRefLevel().set(),meshset_level[ll]); CHKERRQ(ierr);
+	ierr = m_ref_ref.add_verices_in_the_middel_of_edges(meshset_level[ll],BitRefLevel().set(ll+1)); CHKERRQ(ierr);
+	ierr = m_ref_ref.refine_TET(meshset_level[ll],BitRefLevel().set(ll+1)); CHKERRQ(ierr);
       }
       rval = moab_ref.create_meshset(MESHSET_SET,meshset_level[max_level]); CHKERR_PETSC(rval);
-      ierr = mField_ref.get_entities_by_ref_level(BitRefLevel().set(max_level),BitRefLevel().set(),meshset_level[max_level]); CHKERRQ(ierr);
+      ierr = m_field_ref.get_entities_by_ref_level(BitRefLevel().set(max_level),BitRefLevel().set(),meshset_level[max_level]); CHKERRQ(ierr);
 
       std::vector<double> ref_coords;
       rval = moab_ref.get_vertex_coordinates(ref_coords); CHKERR_PETSC(rval);
@@ -108,8 +110,6 @@ struct PostProcOnRefMesh_Base {
 
 struct PostProcDisplacementsOnRefMesh: public FEMethod_UpLevelStudent,PostProcOnRefMesh_Base {
     ParallelComm* pcomm;
-    PetscLogDouble t1,t2;
-    PetscLogDouble v1,v2;
 
     string field_name;
     PostProcDisplacementsOnRefMesh(Interface& _moab,string _field_name = "DISPLACEMENT"): 
@@ -121,9 +121,6 @@ struct PostProcDisplacementsOnRefMesh: public FEMethod_UpLevelStudent,PostProcOn
 
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
-      PetscPrintf(PETSC_COMM_WORLD,"Start PostProc\n",pcomm->rank(),v2-v1,t2-t1);
-      ierr = PetscTime(&v1); CHKERRQ(ierr);
-      ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
 
       if(init_ref) PetscFunctionReturn(0);
       
@@ -207,9 +204,6 @@ struct PostProcDisplacementsOnRefMesh: public FEMethod_UpLevelStudent,PostProcOn
     PetscErrorCode postProcess() {
       PetscFunctionBegin;
       ierr = do_postproc(); CHKERRQ(ierr);
-      ierr = PetscTime(&v2); CHKERRQ(ierr);
-      ierr = PetscGetCPUTime(&t2); CHKERRQ(ierr);
-      PetscPrintf(PETSC_COMM_WORLD,"End PostProc: Rank %d Time = %f CPU Time = %f\n",pcomm->rank(),v2-v1,t2-t1);
       PetscFunctionReturn(0);
     }
 
@@ -496,14 +490,9 @@ struct PostProcScalarFieldsAndGradientOnRefMesh: public FEMethod_UpLevelStudent,
       pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
     }
 
-  PetscLogDouble t1,t2;
-  PetscLogDouble v1,v2;
   Tag th_scalar,th_grad_scalar,th_positions;
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
-    PetscPrintf(PETSC_COMM_WORLD,"Start PostProc\n",pcomm->rank(),v2-v1,t2-t1);
-    ierr = PetscTime(&v1); CHKERRQ(ierr);
-    ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
     if(init_ref) PetscFunctionReturn(0);
     ierr = do_preprocess(); CHKERRQ(ierr);
     double def_VAL[3] = {0,0,0};
@@ -595,9 +584,6 @@ struct PostProcScalarFieldsAndGradientOnRefMesh: public FEMethod_UpLevelStudent,
   PetscErrorCode postProcess() {
     PetscFunctionBegin;
     ierr = do_postproc(); CHKERRQ(ierr);
-    ierr = PetscTime(&v2); CHKERRQ(ierr);
-    ierr = PetscGetCPUTime(&t2); CHKERRQ(ierr);
-    PetscPrintf(PETSC_COMM_WORLD,"End PostProc: Rank %d Time = %f CPU Time = %f\n",pcomm->rank(),v2-v1,t2-t1);
     PetscFunctionReturn(0);
   }
 

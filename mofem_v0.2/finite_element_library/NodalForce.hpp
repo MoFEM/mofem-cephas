@@ -144,7 +144,7 @@ struct MetaNodalForces {
 	rval = mField.get_moab().tag_get_by_ptr(thScale,&root_meshset,1,(const void**)&sCale); CHKERR_THROW(rval);
       }
     }
-    PetscErrorCode scaleNf(const FieldInterface::FEMethod *fe,ublas::vector<FieldData> &Nf) {
+    PetscErrorCode scaleNf(const FEMethod *fe,ublas::vector<FieldData> &Nf) {
       PetscFunctionBegin;
       Nf *= *sCale;
       PetscFunctionReturn(0);

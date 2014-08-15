@@ -16,9 +16,8 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
-add_executable(elasticity elasticity.cpp)
+add_executable(elasticity ${MoFEM_PROJECT_SOURCE_DIR}/users_modules/elasticity/elasticity.cpp)
 target_link_libraries(elasticity 
-  users_modules_obsolete
   mofem_finite_element_library
   mofem_finite_elements
   mofem_interfaces
@@ -27,6 +26,7 @@ target_link_libraries(elasticity
   mofem_approx
   mofem_third_party
   mofem_cblas
+  users_modules_obsolete
   ${MoFEM_PROJECT_LIBS})
 
 cm_export_file("LShape.cub" export_files_elasticity)
@@ -39,7 +39,7 @@ file(COPY
 add_test(ElasticityTest 
   ${MPI_RUN} -np 4 ${CMAKE_CURRENT_BINARY_DIR}/elasticity 
   -my_file LShape.cub 
-  -ksp_type fgmres -pc_type mumps -log_summary)
+  -ksp_type fgmres -pc_type mumps -ksp_monitor -log_summary)
 
 
 
