@@ -20,7 +20,7 @@
 #ifndef __MOABFEMETHOD_LOWLEVELSTUDENT_HPP__
 #define __MOABFEMETHOD_LOWLEVELSTUDENT_HPP__
 
-namespace MoFEM {
+namespace ObosleteUsersModules {
 
 /** 
  * \brief The core user interface for FE method

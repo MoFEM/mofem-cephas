@@ -22,7 +22,7 @@
 #define __MOABFEMETHOD_DRIVERCOMPLEXFORLAZY_HPP__
 
 
-namespace MoFEM {
+namespace ObosleteUsersModules {
 
 struct NonLinearSpatialElasticFEMthod: public FEMethod_ComplexForLazy {
 

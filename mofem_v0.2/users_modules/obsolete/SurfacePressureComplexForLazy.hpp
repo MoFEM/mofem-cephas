@@ -26,7 +26,7 @@
 #ifndef __COMPLEX_FOR_LAZY_NEUMANM_FORCES_HPP
 #define __COMPLEX_FOR_LAZY_NEUMANN_FORCES_HPP
 
-namespace MoFEM {
+namespace ObosleteUsersModules {
 
 struct NeummanForcesSurfaceComplexForLazy {
 

@@ -25,6 +25,8 @@
 
 
 #include <MoFEM.hpp>
+
+using namespace MoFEM;
 #include <SurfacePressureComplexForLazy.hpp>
 
 extern "C" {
@@ -35,7 +37,7 @@ extern "C" {
     double circumcenter[3],double *xi,double *eta);
 }
 
-namespace MoFEM {
+namespace ObosleteUsersModules {
 
 PetscErrorCode NeummanForcesSurfaceComplexForLazy::
   AuxMethodSpatial::doWork(int side, EntityType type, DataForcesAndSurcesCore::EntData &data) {

@@ -20,7 +20,7 @@
 #ifndef __MOABSURFACECONSTRAINS_HPP__
 #define __MOABSURFACECONSTRAINS_HPP__
 
-namespace MoFEM {
+namespace ObosleteUsersModules {
 
 struct ConstrainSurfacGeometry:public FEMethod {
   ErrorCode rval;

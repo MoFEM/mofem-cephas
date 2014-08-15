@@ -22,7 +22,7 @@
 
 using namespace boost::numeric;
 
-namespace MoFEM {
+namespace ObosleteUsersModules {
 
 struct FEMethod_ComplexForLazy_Data: public FEMethod_UpLevelStudent {
 

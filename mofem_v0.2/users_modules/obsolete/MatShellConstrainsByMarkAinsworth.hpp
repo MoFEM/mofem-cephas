@@ -20,7 +20,7 @@
 #ifndef __MOABCONSTRAINSBYMARKAINSWORTH_HPP__
 #define __MOABCONSTRAINSBYMARKAINSWORTH_HPP__
 
-namespace MoFEM {
+namespace ObosleteUsersModules {
 
 /**
   * \brief structure for projection matries

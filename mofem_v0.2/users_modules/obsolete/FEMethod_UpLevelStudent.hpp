@@ -20,7 +20,7 @@
 #ifndef __MOABFEMETHOD_UPLEVELSTUDENT_HPP__
 #define __MOABFEMETHOD_UPLEVELSTUDENT_HPP__
 
-namespace MoFEM {
+namespace ObosleteUsersModules {
 
 struct FEMethod_UpLevelStudent_ExceptionNegatvieTetVolume: public MofemException {
   FEMethod_UpLevelStudent_ExceptionNegatvieTetVolume(): 

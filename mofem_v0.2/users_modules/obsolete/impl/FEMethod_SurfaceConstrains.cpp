@@ -18,6 +18,7 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 #include <MoFEM.hpp>
+using namespace MoFEM;
 
 #include <moab/ParallelComm.hpp>
 
@@ -42,7 +43,7 @@ extern "C" {
 
 using namespace boost::numeric;
 
-namespace MoFEM {
+namespace ObosleteUsersModules {
 
 const int debug_constrains = 1;
 

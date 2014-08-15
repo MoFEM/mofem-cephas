@@ -20,7 +20,7 @@
 #ifndef __POSTPROCNONLINEARELASTICITYSTRESSEONREFINDEDMESH_HPP__
 #define __POSTPROCNONLINEARELASTICITYSTRESSEONREFINDEDMESH_HPP__
 
-using namespace MoFEM;
+namespace ObosleteUsersModules {
 
 struct PostProcStressNonLinearElasticity: public PostProcDisplacementsOnRefMesh {
 
@@ -237,6 +237,8 @@ struct PostProcStressNonLinearElasticity: public PostProcDisplacementsOnRefMesh 
       PetscFunctionReturn(0);
   }
 };
+
+}
 
 #endif //__POSTPROCNONLINEARELASTICITYSTRESSEONREFINDEDMESH_HPP__
 

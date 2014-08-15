@@ -18,11 +18,12 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 #include <MoFEM.hpp>
+using namespace MoFEM;
 
 #include <FEMethod_LowLevelStudent.hpp>
 #include <FEMethod_UpLevelStudent.hpp>
 
-namespace MoFEM {
+namespace ObosleteUsersModules {
 
 FEMethod_UpLevelStudent::FEMethod_UpLevelStudent(Interface& _moab,int _verbose): FEMethod_LowLevelStudent(_moab,_verbose) {
   double def_V = 0;

@@ -20,7 +20,7 @@
 #ifndef __ARCLEGHTTOOLS_HPP__
 #define __ARCLEGHTTOOLS_HPP__
 
-namespace MoFEM {
+namespace ObosleteUsersModules {
 
 /**
  * Store variables for ArcLength analaysis

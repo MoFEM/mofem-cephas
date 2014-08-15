@@ -18,9 +18,11 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 #include <MoFEM.hpp>
+using namespace MoFEM;
+
 #include <MatShellConstrainsByMarkAinsworth.hpp>
 
-namespace MoFEM {
+namespace ObosleteUsersModules {
 
 PetscErrorCode matPROJ_ctx::InitQorP(Vec x) {
     PetscFunctionBegin;

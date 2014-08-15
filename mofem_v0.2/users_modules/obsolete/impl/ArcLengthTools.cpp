@@ -18,9 +18,11 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 #include <MoFEM.hpp>
+
+using namespace MoFEM;
 #include <ArcLengthTools.hpp>
 
-namespace MoFEM {
+namespace ObosleteUsersModules {
 
 PetscErrorCode arc_length_mult_shell(Mat A,Vec x,Vec f) {
   PetscFunctionBegin;
