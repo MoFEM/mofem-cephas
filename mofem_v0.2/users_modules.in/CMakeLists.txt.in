@@ -60,6 +60,25 @@ link_directories(${PROJECT_BINARY_DIR})
 add_subdirectory(thermal)
 add_subdirectory(ultraweak)
 
+# Obsolete
+
+include_directories(${MoFEM_PROJECT_SOURCE_DIR}/obsolete)
+include_directories(${MoFEM_PROJECT_SOURCE_DIR}/obsolete/c)
+
+add_library(users_modules_obsolete
+  ${MoFEM_PROJECT_SOURCE_DIR}/users_modules/obsolete/impl/ArcLengthTools.cpp
+  ${MoFEM_PROJECT_SOURCE_DIR}/users_modules/obsolete/impl/FEMethod_ComplexForLazy.cpp
+  ${MoFEM_PROJECT_SOURCE_DIR}/users_modules/obsolete/impl/FEMethod_SurfaceConstrains.cpp
+  ${MoFEM_PROJECT_SOURCE_DIR}/users_modules/obsolete/impl/FEMethod_UpLevelStudent.cpp
+  ${MoFEM_PROJECT_SOURCE_DIR}/users_modules/obsolete/impl/SurfacePressureComplexForLazy.cpp
+  ${MoFEM_PROJECT_SOURCE_DIR}/users_modules/obsolete/impl/MatShellConstrainsByMarkAinsworth.cpp
+  ${MoFEM_PROJECT_SOURCE_DIR}/users_modules/obsolete/c_impl/complex_for_lazy.c
+)
+
+
+
+
+
 
 
 
