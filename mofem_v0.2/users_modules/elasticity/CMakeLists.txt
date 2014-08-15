@@ -19,9 +19,7 @@
 add_executable(elasticity elasticity.cpp)
 target_link_libraries(elasticity mofem_student_body mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
 
-cm_export_file("../../meshes/LShape.cub" export_files_elasticity)
-cm_export_file("../../meshes/LShapeCoarse.cub" export_files_elasticity)
-cm_export_file("../../meshes/LShapeDense.cub" export_files_elasticity)
+cm_export_file("LShapeCoarse.cub" export_files_elasticity)
 
 file(COPY
     ${CMAKE_CURRENT_SOURCE_DIR}/README
