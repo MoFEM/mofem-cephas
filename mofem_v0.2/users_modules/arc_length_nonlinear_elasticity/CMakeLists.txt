@@ -19,17 +19,19 @@
 #include subdirectory
 include_directories("${MoFEM_PROJECT_SOURCE_DIR}/users_modules/arc_length_nonlinear_elasticity")
 
-add_executable(arc_length_nonlinear_elasticity ${MoFEM_PROJECT_SOURCE_DIR}/users_modules/arc_length_nonlinear_elasticity/arc_length_nonlinear_elasticity.cpp)
+add_executable(arc_length_nonlinear_elasticity 
+  ${MoFEM_PROJECT_SOURCE_DIR}/users_modules/arc_length_nonlinear_elasticity/arc_length_nonlinear_elasticity.cpp)
 target_link_libraries(arc_length_nonlinear_elasticity 
   mofem_finite_element_library
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
   mofem_petsc
+  users_modules_obsolete
+  complex_for_lazy_obsolete
   mofem_approx
   mofem_third_party
   mofem_cblas
-  users_modules_obsolete
   ${MoFEM_PROJECT_LIBS})
 
 cm_export_file("dome_thin_symm.cub" export_files_arc_length_nonlinearelasticity)

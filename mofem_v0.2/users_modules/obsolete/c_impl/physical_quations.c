@@ -17,7 +17,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with mofem. If not, see <http://www.gnu.org/licenses/>. */
 
-
 static enum phisical_equation_volume ph_eq_vol = hooke;
 void set_PhysicalEquationNumber(enum phisical_equation_volume eq) {
   ph_eq_vol = eq;

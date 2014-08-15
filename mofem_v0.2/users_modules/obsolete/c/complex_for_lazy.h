@@ -24,8 +24,6 @@
 extern "C" {
 #endif
 
-#include "/usr/include/complex.h"
-
 enum phisical_equation_volume { hooke = 0, stvenant_kirchhoff = 1,neohookean = 2,eberleinholzapfel1 = 3};
 void set_PhysicalEquationNumber(enum phisical_equation_volume eq);
 enum phisical_equation_volume get_PhysicalEquationNumber();

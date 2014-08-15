@@ -1206,7 +1206,6 @@ PetscErrorCode KExt_hh_hierarchical(double eps,int order,int *order_edge,
 	  int nb_dofs_edge = NBEDGE_H1(order_edge[ee]);
 	  for(nn = 0;nn<nb_dofs_edge;nn++) {
 	    for(dd = 0;dd<3;dd++) {
-	      assert(ii+9*3*nn + 9*dd < 3*nb_dofs_edge*9);
 	      KExt_edgeh[ee][ii+9*3*nn + 9*dd] += g_w[gg]*N_edge[ee][nb_dofs_edge*gg+nn]*normal_imag[dd]*traction[2];
 	      KExt_edgeh[ee][ii+9*3*nn + 9*dd] += g_w[gg]*N_edge[ee][nb_dofs_edge*gg+nn]*s1_imag[dd]*traction[0];
 	      KExt_edgeh[ee][ii+9*3*nn + 9*dd] += g_w[gg]*N_edge[ee][nb_dofs_edge*gg+nn]*s2_imag[dd]*traction[1];

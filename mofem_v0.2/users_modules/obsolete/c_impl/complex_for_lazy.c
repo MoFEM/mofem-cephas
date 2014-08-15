@@ -17,6 +17,15 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with mofem. If not, see <http://www.gnu.org/licenses/>. */
 
+
+#include "petsc.h"
+#include "/usr/include/complex.h"
+
+#include "cblas.h"
+#include "lapack_wrap.h"
+#include "fem_tools.h"
+#include "h1_hdiv_hcurl_l2.h"
+
 #include "complex_for_lazy.h"
 
 #include "physical_quations.c"

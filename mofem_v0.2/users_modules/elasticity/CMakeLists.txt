@@ -23,10 +23,10 @@ target_link_libraries(elasticity
   mofem_interfaces
   mofem_multi_indices
   mofem_petsc
+  users_modules_obsolete
   mofem_approx
   mofem_third_party
   mofem_cblas
-  users_modules_obsolete
   ${MoFEM_PROJECT_LIBS})
 
 cm_export_file("LShape.cub" export_files_elasticity)

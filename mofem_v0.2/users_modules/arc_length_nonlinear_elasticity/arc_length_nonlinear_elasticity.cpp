@@ -54,6 +54,9 @@ extern "C" {
 #include <FEMethod_ComplexForLazy.hpp>
 #include <FEMethod_DriverComplexForLazy.hpp>
 
+#include <SurfacePressureComplexForLazy.hpp>
+#include <PostProcNonLinearElasticityStresseOnRefindedMesh.hpp>
+
 using namespace ObosleteUsersModules;
 
 ErrorCode rval;
@@ -98,17 +101,6 @@ int main(int argc, char *argv[]) {
   rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
-
-  /*Range tets;
-  rval = moab.get_entities_by_type(0,MBTET,tets,true);  CHKERR_PETSC(rval);
-  for(Range::iterator tit = tets.begin();tit!=tets.end();tit++) {
-    cout << "tet: " << *tit << " conn: ";
-    Range conn;
-    rval = moab.get_connectivity(&*tit,1,conn);  CHKERR_PETSC(rval);
-    ostream_iterator<EntityHandle> out_it (std::cout,", ");
-    copy ( conn.begin(), conn.end(), out_it ); 
-    cout << endl;
-  }*/
 
   //data stored on mesh for restart
   Tag th_step_size,th_step;
@@ -297,13 +289,11 @@ int main(int argc, char *argv[]) {
   double poisson_ratio = 0.25;
 	
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
-    cout << endl << *it << endl;
     //Get block name
     string name = it->get_Cubit_name();
     if (name.compare(0,11,"MAT_ELASTIC") == 0) {
       Mat_Elastic mydata;
       ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
-      cout << mydata;
       young_modulus=mydata.data.Young;
       poisson_ratio=mydata.data.Poisson;
     }
@@ -339,7 +329,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.get_problem("ELASTIC_MECHANICS",&my_dirichlet_bc.problemPtr); CHKERRQ(ierr);
   ierr = my_dirichlet_bc.iNitalize(); CHKERRQ(ierr);
 
-  struct MyPrePostProcessFEMethod: public FieldInterface::FEMethod {
+  struct MyPrePostProcessFEMethod: public FEMethod {
     
     FieldInterface& m_field;
     ArcLengthCtx *arc_ptr;
@@ -409,7 +399,7 @@ int main(int argc, char *argv[]) {
 
   };
 
-  struct AssembleLambdaFEMethod: public FieldInterface::FEMethod {
+  struct AssembleLambdaFEMethod: public FEMethod {
     
     FieldInterface& m_field;
     ArcLengthCtx *arc_ptr;

@@ -27,7 +27,7 @@ include(${MoFEM_PROJECT_SOURCE_DIR}/cmake/ExportFile.cmake)
 set(CMAKE_C_COMPILER ${MoFEM_CMAKE_C_COMPILER}) 
 set(CMAKE_CXX_COMPILER ${MoFEM_CMAKE_CXX_COMPILER})
 
-project(MoFEM_Examples CXX)
+project(MoFEM_Examples C CXX)
 
 include_directories(
   ${MoFEM_PROJECT_INCLUDE_DIRECTORIES}
@@ -79,6 +79,9 @@ add_library(users_modules_obsolete
   ${MoFEM_PROJECT_SOURCE_DIR}/users_modules/obsolete/impl/FEMethod_UpLevelStudent.cpp
   ${MoFEM_PROJECT_SOURCE_DIR}/users_modules/obsolete/impl/SurfacePressureComplexForLazy.cpp
   ${MoFEM_PROJECT_SOURCE_DIR}/users_modules/obsolete/impl/MatShellConstrainsByMarkAinsworth.cpp
+)
+
+add_library(complex_for_lazy_obsolete
   ${MoFEM_PROJECT_SOURCE_DIR}/users_modules/obsolete/c_impl/complex_for_lazy.c
 )
 
