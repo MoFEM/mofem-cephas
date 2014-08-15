@@ -26,26 +26,26 @@ file(COPY
 
 add_executable(thermal_steady ${MoFEM_PROJECT_SOURCE_DIR}/users_modules/thermal/thermal_steady.cpp)
 target_link_libraries(thermal_steady 
-  mofem_cblas
-  mofem_third_party
   mofem_finite_element_library
-  mofem_approx
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
   mofem_petsc
+  mofem_approx
+  mofem_third_party
+  mofem_cblas
   ${MoFEM_PROJECT_LIBS})
 
 add_executable(thermal_unseady ${MoFEM_PROJECT_SOURCE_DIR}/users_modules/thermal/thermal_unsteady.cpp)
 target_link_libraries(thermal_unseady 
-  mofem_cblas
-  mofem_third_party
   mofem_finite_element_library
-  mofem_approx
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
   mofem_petsc
+  mofem_approx
+  mofem_third_party
+  mofem_cblas
   ${MoFEM_PROJECT_LIBS})
 
 

@@ -26,14 +26,14 @@ file(COPY
 
 add_executable(transport ${MoFEM_PROJECT_SOURCE_DIR}/users_modules/ultraweak/transport.cpp)
 target_link_libraries(transport
-  mofem_cblas
-  mofem_third_party
   mofem_finite_element_library
-  mofem_approx
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
   mofem_petsc
+  mofem_approx
+  mofem_third_party
+  mofem_cblas
   ${MoFEM_PROJECT_LIBS})
 
 
