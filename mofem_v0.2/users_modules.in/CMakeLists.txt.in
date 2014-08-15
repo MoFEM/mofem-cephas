@@ -55,10 +55,11 @@ link_directories("${MoFEM_PROJECT_BINARY_DIR}/finite_element_library")
 link_directories("${MoFEM_PROJECT_BINARY_DIR}/third_party")
 link_directories("${MoFEM_PROJECT_BINARY_DIR}/third_party/cblas")
 
+link_directories(${PROJECT_BINARY_DIR})
+
+
 include_directories(${MoFEM_PROJECT_SOURCE_DIR}/user_modules/include)
 include_directories(${MoFEM_PROJECT_SOURCE_DIR}/user_modules/include_obsolete)
-
-link_directories(${PROJECT_BINARY_DIR})
 
 add_subdirectory(src)
 add_subdirectory(src_obsolete)
