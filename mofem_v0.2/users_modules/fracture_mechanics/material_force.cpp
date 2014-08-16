@@ -17,10 +17,48 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#include "ConfigurationalFractureMechanics.hpp"
-#include "FieldCore.hpp"
-
+#include <MoFEM.hpp>
 using namespace MoFEM;
+
+#include <DirichletBC.hpp>
+
+#include <Projection10NodeCoordsOnField.hpp>
+
+#include <boost/numeric/ublas/vector_proxy.hpp>
+#include <boost/numeric/ublas/matrix.hpp>
+#include <boost/numeric/ublas/matrix_proxy.hpp>
+#include <boost/numeric/ublas/vector.hpp>
+
+#include <SurfacePressure.hpp>
+#include <NodalForce.hpp>
+#include <FluidPressure.hpp>
+#include <BodyForce.hpp>
+#include <ThermalStressElement.hpp>
+
+#include <FEMethod_LowLevelStudent.hpp>
+#include <FEMethod_UpLevelStudent.hpp>
+
+#include <PostProcVertexMethod.hpp>
+#include <PostProcDisplacementAndStrainOnRefindedMesh.hpp>
+
+extern "C" {
+  #include <complex_for_lazy.h>
+}
+
+#include <ArcLengthTools.hpp>
+#include <FEMethod_ComplexForLazy.hpp>
+#include <FEMethod_DriverComplexForLazy.hpp>
+
+#include <SurfacePressureComplexForLazy.hpp>
+#include <PostProcNonLinearElasticityStresseOnRefindedMesh.hpp>
+
+#include <moab/Skinner.hpp>
+#include <moab/AdaptiveKDTree.hpp>
+
+#include <FaceSplittingTool.hpp>
+#include <ConfigurationalFractureMechanics.hpp>
+
+using namespace ObosleteUsersModules;
 
 ErrorCode rval;
 PetscErrorCode ierr;

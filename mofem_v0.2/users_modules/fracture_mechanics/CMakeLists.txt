@@ -15,38 +15,88 @@
 #
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
-  
-add_executable(spatial_problem spatial_problem.cpp 
-  FaceSplittingTool.cpp 
-  ConfigurationalFractureMechanics.cpp)
-target_link_libraries(spatial_problem mofem_complex_for_lazy mofem_student_body mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
+ 
 
-add_executable(material_force material_force.cpp
-  FaceSplittingTool.cpp
-  ConfigurationalFractureMechanics.cpp)
-target_link_libraries(material_force mofem_complex_for_lazy mofem_student_body mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
+include_directories(${MoFEM_PROJECT_SOURCE_DIR}/users_modules/fracture_mechanics)
+ 
+add_executable(spatial_problem 
+  ${MoFEM_PROJECT_SOURCE_DIR}/users_modules/fracture_mechanics/spatial_problem.cpp 
+  ${MoFEM_PROJECT_SOURCE_DIR}/users_modules/fracture_mechanics/FaceSplittingTool.cpp 
+  ${MoFEM_PROJECT_SOURCE_DIR}/users_modules/fracture_mechanics/ConfigurationalFractureMechanics.cpp
+)
 
-add_executable(arc_length_material_coupled arc_length_material_coupled.cpp
-  FaceSplittingTool.cpp
-  ConfigurationalFractureMechanics.cpp)
-target_link_libraries(arc_length_material_coupled mofem_complex_for_lazy mofem_student_body mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
+target_link_libraries(spatial_problem
+  mofem_finite_element_library
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  users_modules_obsolete
+  complex_for_lazy_obsolete
+  mofem_approx
+  mofem_third_party
+  mofem_cblas
+  ${MoFEM_PROJECT_LIBS})
 
-add_executable(split_faces split_faces.cpp
-  FaceSplittingTool.cpp
-  ConfigurationalFractureMechanics.cpp)
-target_link_libraries(split_faces mofem_complex_for_lazy mofem_student_body mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
+add_executable(material_force 
+  ${MoFEM_PROJECT_SOURCE_DIR}/users_modules/fracture_mechanics/material_force.cpp
+  ${MoFEM_PROJECT_SOURCE_DIR}/users_modules/fracture_mechanics/FaceSplittingTool.cpp
+  ${MoFEM_PROJECT_SOURCE_DIR}/users_modules/fracture_mechanics/ConfigurationalFractureMechanics.cpp
+)
+target_link_libraries(material_force 
+  mofem_finite_element_library
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  users_modules_obsolete
+  complex_for_lazy_obsolete
+  mofem_approx
+  mofem_third_party
+  mofem_cblas
+  ${MoFEM_PROJECT_LIBS})
+
+add_executable(arc_length_material_coupled 
+  ${MoFEM_PROJECT_SOURCE_DIR}/users_modules/fracture_mechanics/arc_length_material_coupled.cpp
+  ${MoFEM_PROJECT_SOURCE_DIR}/users_modules/fracture_mechanics/FaceSplittingTool.cpp
+  ${MoFEM_PROJECT_SOURCE_DIR}/users_modules/fracture_mechanics/ConfigurationalFractureMechanics.cpp
+)
+target_link_libraries(arc_length_material_coupled 
+  mofem_finite_element_library
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  users_modules_obsolete
+  complex_for_lazy_obsolete
+  mofem_approx
+  mofem_third_party
+  mofem_cblas
+  ${MoFEM_PROJECT_LIBS})
+
+add_executable(split_faces
+  ${MoFEM_PROJECT_SOURCE_DIR}/users_modules/fracture_mechanics/split_faces.cpp
+  ${MoFEM_PROJECT_SOURCE_DIR}/users_modules/fracture_mechanics/FaceSplittingTool.cpp
+  ${MoFEM_PROJECT_SOURCE_DIR}/users_modules/fracture_mechanics/ConfigurationalFractureMechanics.cpp
+)
+target_link_libraries(split_faces 
+  mofem_finite_element_library
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  users_modules_obsolete
+  complex_for_lazy_obsolete
+  mofem_approx
+  mofem_third_party
+  mofem_cblas
+  ${MoFEM_PROJECT_LIBS})
 
 file(COPY
     ${CMAKE_CURRENT_SOURCE_DIR}/README
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
 
-install(TARGETS spatial_problem DESTINATION bin)
-install(TARGETS material_force DESTINATION bin)
-install(TARGETS arc_length_material_coupled DESTINATION bin)
-
-cm_export_file("../../meshes/crack1.cub" export_files_material_mechanics)
-cm_export_file("../../meshes/T3_horiz.cub" export_files_material_mechanics)
-cm_export_file("../../meshes/brick_slice_thermal.cub" export_files_material_mechanics)
+cm_export_file("crack1.cub" export_files_material_mechanics)
 
 configure_file(
   "${CMAKE_CURRENT_SOURCE_DIR}/convergence_study.sh.in"
@@ -66,11 +116,10 @@ configure_file(
   @ONLY
   )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/convergence_study.sh DESTINATION bin PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE )
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/arc_length.sh DESTINATION bin PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/face_split_arc_length.sh DESTINATION bin PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE)
-
 #testing
-add_test(ConvergenceStudy_sh ${CMAKE_CURRENT_BINARY_DIR}/convergence_study.sh -f crack1.cub -l 1e-4 -o 2 -r 1 -d TEST_SIF)
-add_test(ArcLength_sh ${CMAKE_CURRENT_BINARY_DIR}/arc_length.sh -f TEST_SIF/out_spatial_2_1.h5m -a 2e-3 -n 1 -g 1e-6 -d TEST_ARC --snes_linesearch_type=basic --my_nb_sub_steps=1)
+add_test(ConvergenceStudy_sh ${CMAKE_CURRENT_BINARY_DIR}/convergence_study.sh
+  -f crack1.cub -l 1e-4 -o 2 -r 1 -d TEST_SIF)
+add_test(ArcLength_sh ${CMAKE_CURRENT_BINARY_DIR}/arc_length.sh
+  -f TEST_SIF/out_spatial_2_1.h5m -a 2e-3 -n 1 -g 1e-6 -d TEST_ARC 
+  --snes_linesearch_type=basic --my_nb_sub_steps=1)
 

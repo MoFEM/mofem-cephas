@@ -20,12 +20,7 @@
 #ifndef __CONFIGURATIONAL_MECHANICS_HPP__
 #define __CONFIGURATIONAL_MECHANICS_HPP__
 
-#include "FieldInterface.hpp"
-
-#include "FEMethod_DriverComplexForLazy.hpp"
-#include "PostProcNonLinearElasticityStresseOnRefindedMesh.hpp"
-
-using namespace MoFEM;
+using namespace ObosleteUsersModules;
 
 struct ConfigurationalFractureMechanics {
  
@@ -114,7 +109,7 @@ struct ConfigurationalFractureMechanics {
   PetscScalar ave_j,min_j,max_j;
   PetscErrorCode griffith_g(FieldInterface& mField,string problem);
 
- struct ArcLengthElemFEMethod: public FieldInterface::FEMethod {
+ struct ArcLengthElemFEMethod: public FEMethod {
 
     FieldInterface& mField;
     ConfigurationalFractureMechanics *conf_prob;

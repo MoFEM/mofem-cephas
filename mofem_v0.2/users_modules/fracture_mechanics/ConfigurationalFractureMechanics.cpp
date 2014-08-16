@@ -17,26 +17,51 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#include "SurfacePressureComplexForLazy.hpp"
-#include "SurfacePressure.hpp"
-#include "NodalForce.hpp"
+#include <MoFEM.hpp>
+using namespace MoFEM;
 
-#include "ConfigurationalFractureMechanics.hpp"
-#include "FieldCore.hpp"
+#include <DirichletBC.hpp>
 
-#include "FEMethod_ComplexConstArea.hpp"
+#include <Projection10NodeCoordsOnField.hpp>
 
-#include "PostProcVertexMethod.hpp"
-#include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
-#include "petscShellMATs_ConstrainsByMarkAinsworth.hpp"
-#include "FaceSplittingTool.hpp"
+#include <boost/numeric/ublas/vector_proxy.hpp>
+#include <boost/numeric/ublas/matrix.hpp>
+#include <boost/numeric/ublas/matrix_proxy.hpp>
+#include <boost/numeric/ublas/vector.hpp>
 
-#include<moab/Skinner.hpp>
-#include<petscsnes.h>
+#include <SurfacePressure.hpp>
+#include <NodalForce.hpp>
 
-#ifndef __SDIR__
-#define __SDIR__ "unknown file source"
-#endif
+#include <FEMethod_LowLevelStudent.hpp>
+#include <FEMethod_UpLevelStudent.hpp>
+#include <FEMethod_SurfaceConstrains.hpp>
+
+#include <PostProcVertexMethod.hpp>
+#include <PostProcDisplacementAndStrainOnRefindedMesh.hpp>
+
+extern "C" {
+  #include <complex_for_lazy.h>
+}
+
+#include <ArcLengthTools.hpp>
+#include <MatShellConstrainsByMarkAinsworth.hpp>
+#include <FEMethod_ComplexForLazy.hpp>
+#include <FEMethod_DriverComplexForLazy.hpp>
+
+#include <SurfacePressureComplexForLazy.hpp>
+#include <PostProcNonLinearElasticityStresseOnRefindedMesh.hpp>
+
+#include <moab/Skinner.hpp>
+#include <moab/AdaptiveKDTree.hpp>
+
+#include <petsctime.h>
+
+#include <FEMethod_ComplexConstArea.hpp>
+
+#include <FaceSplittingTool.hpp>
+#include <ConfigurationalFractureMechanics.hpp>
+
+using namespace ObosleteUsersModules;
 
 using namespace MoFEM;
 
@@ -56,7 +81,7 @@ struct CrackFrontData {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode setCrackFrontIndices(FieldInterface::FEMethod *fe_ptr,string &material_field_name,vector<DofIdx>& GlobIndices,bool not_at_crack_front) {
+  PetscErrorCode setCrackFrontIndices(FEMethod *fe_ptr,string &material_field_name,vector<DofIdx>& GlobIndices,bool not_at_crack_front) {
     PetscFunctionBegin;
     if(!crackFrontEdgeNodes.empty()) {
     for(_IT_GET_FEROW_BY_NAME_DOFS_FOR_LOOP_(fe_ptr,material_field_name,dof)) {
@@ -2190,7 +2215,7 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_mesh_smooting_problem(Fie
 
   SnesCtx snes_ctx(mField,"MESH_SMOOTHING_PROBLEM");
 
-  struct SNES_set_global_VecCreateGhost: public FieldInterface::FEMethod {
+  struct SNES_set_global_VecCreateGhost: public FEMethod {
     FieldInterface& mField;
     SNES_set_global_VecCreateGhost(FieldInterface& _mField): mField(_mField) {} 
     PetscErrorCode ierr;
@@ -2377,7 +2402,7 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
 
   ierr = fix_all_but_one(mField,corners_nodes,fraction_treshold); CHKERRQ(ierr);
 
-  struct MyPrePostProcessFEMethod: public FieldInterface::FEMethod {
+  struct MyPrePostProcessFEMethod: public FEMethod {
     
     FieldInterface& mField;
     ArcLengthCtx *arc_ptr;
@@ -2430,7 +2455,7 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
 
   };
 
-  struct AssembleLambdaFEMethod: public FieldInterface::FEMethod {
+  struct AssembleLambdaFEMethod: public FEMethod {
     
     FieldInterface& mField;
     ArcLengthCtx *arc_ptr;
@@ -2795,11 +2820,11 @@ PetscErrorCode ConfigurationalFractureMechanics::calculate_material_forces(Field
   PetscBool flg = PETSC_TRUE;
   ierr = PetscOptionsGetReal(PETSC_NULL,"-my_thermal_expansion",&material_fe.thermal_expansion,&flg); CHKERRQ(ierr);
   material_fe.snes_f = F_Material;
-  material_fe.set_snes_ctx(FieldInterface::SnesMethod::CTX_SNESSETFUNCTION);
+  material_fe.set_snes_ctx(SnesMethod::CTX_SNESSETFUNCTION);
   FixBcAtEntities fix_material_pts(mField,"MESH_NODE_POSITIONS",corners_nodes);
   fix_material_pts.snes_x = PETSC_NULL;
   fix_material_pts.snes_f = F_Material;
-  fix_material_pts.set_snes_ctx(FieldInterface::SnesMethod::CTX_SNESSETFUNCTION);
+  fix_material_pts.set_snes_ctx(SnesMethod::CTX_SNESSETFUNCTION);
 
   ierr = VecZeroEntries(F_Material); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(F_Material,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);

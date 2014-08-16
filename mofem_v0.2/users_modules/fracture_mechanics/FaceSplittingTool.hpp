@@ -17,29 +17,19 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-
 #ifndef __FACESPLITTINGTOOL_HPP__
 #define __FACESPLITTINGTOOL_HPP__
-
-#include "FieldInterface.hpp"
-#include "CoreDataStructures.hpp"
-
-#include <moab/AdaptiveKDTree.hpp>
-#include <boost/numeric/ublas/matrix.hpp>
-#include <boost/numeric/ublas/matrix_proxy.hpp>
-#include <boost/numeric/ublas/io.hpp>
-
-using namespace boost::numeric;
-
 
 namespace MoFEM {
 
 struct FaceSplittingTools {
 
   FieldInterface& mField;
+  MeshRefinment* rEfiner;
+  PrismInterface* prismInterface; 
   
   Interface& moab_distance_from_crack_surface;
-  Core mb_instance_distance_from_crack_surface;
+  moab::Core mb_instance_distance_from_crack_surface;
   AdaptiveKDTree kdTree_DistanceFromCrackSurface;
 
   FaceSplittingTools(FieldInterface& _mField): 
@@ -68,6 +58,9 @@ struct FaceSplittingTools {
     mField.get_moab().tag_get_by_ptr(th_meshIntefaceBitLevels,&root_meshset,1,(const void**)&ptr_meshIntefaceBitLevels);
     meshRefineBitLevels.ptr = ptr_meshRefineBitLevels;
     meshIntefaceBitLevels.ptr = ptr_meshIntefaceBitLevels;
+
+    mField.query_interface(rEfiner);
+    mField.query_interface(prismInterface);
 
   }
 

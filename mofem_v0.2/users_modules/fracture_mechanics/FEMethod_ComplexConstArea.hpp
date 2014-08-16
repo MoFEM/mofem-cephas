@@ -33,6 +33,7 @@ void tricircumcenter3d_tp(double a[3],double b[3],double c[3],
   double circumcenter[3],double *xi,double *eta);
 }
 
+using namespace ObosleteUsersModules;
 
 namespace MoFEM {
 
@@ -41,7 +42,7 @@ namespace MoFEM {
   * dN/dX = (1/A) * [ Spin[dX/dksi]*dN/deta - Spin[dX/deta]*dN/dksi ]
   *
   */
-struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
+struct C_CONSTANT_AREA_FEMethod: public FEMethod {
 
   ErrorCode rval;
   PetscErrorCode ierr;
@@ -591,7 +592,7 @@ struct dCTgc_CONSTANT_AREA_FEMethod: public C_CONSTANT_AREA_FEMethod {
   
 };
 
-struct Snes_CTgc_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
+struct Snes_CTgc_CONSTANT_AREA_FEMethod: public FEMethod {
 
   FieldInterface& mField;
   matPROJ_ctx &proj_ctx;

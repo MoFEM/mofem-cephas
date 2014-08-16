@@ -20,19 +20,23 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#include "FaceSplittingTool.hpp"
-#include "FEM.h"
-#include "complex_for_lazy.h"
+#include <MoFEM.hpp>
+using namespace MoFEM;
 
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <boost/numeric/ublas/io.hpp>
 
-#include<moab/Skinner.hpp>
-#include<moab/AdaptiveKDTree.hpp>
+#include <moab/Skinner.hpp>
+#include <moab/AdaptiveKDTree.hpp>
 
 #include <moab/ParallelComm.hpp>
-#include <MBParallelConventions.h>
+
+extern "C" {
+  #include <complex_for_lazy.h>
+}
+
+#include <FaceSplittingTool.hpp>
 
 namespace MoFEM {
 
@@ -1445,8 +1449,8 @@ PetscErrorCode FaceSplittingTools::meshRefine(const int verb) {
       last_ref_bit++;
       meshRefineBitLevels.push_back(last_ref_bit);     
       BitRefLevel last_ref = BitRefLevel().set(meshRefineBitLevels.back());
-      ierr = mField.add_verices_in_the_middel_of_edges(edges_to_refine,last_ref,2); CHKERRQ(ierr);
-      ierr = mField.refine_TET(level_tets,last_ref,false); CHKERRQ(ierr);
+      ierr = rEfiner->add_verices_in_the_middel_of_edges(edges_to_refine,last_ref,2); CHKERRQ(ierr);
+      ierr = rEfiner->refine_TET(level_tets,last_ref,false); CHKERRQ(ierr);
       ierr = mField.seed_ref_level_3D(level_tets,preserve_ref); CHKERRQ(ierr);
       
       for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,cubit_it)) {
@@ -1505,7 +1509,7 @@ PetscErrorCode FaceSplittingTools::splitFaces(const int verb) {
 
     EntityHandle meshset_interface;
     ierr = mField.get_Cubit_msId_meshset(200,SIDESET,meshset_interface); CHKERRQ(ierr);
-    ierr = mField.get_msId_3dENTS_sides(meshset_interface,current_ref,true,verb); CHKERRQ(ierr);
+    ierr = prismInterface->get_msId_3dENTS_sides(meshset_interface,current_ref,true,verb); CHKERRQ(ierr);
 
     int last_ref_bit = meshRefineBitLevels.back();
     if(!meshIntefaceBitLevels.empty()) {
@@ -1517,7 +1521,7 @@ PetscErrorCode FaceSplittingTools::splitFaces(const int verb) {
     meshIntefaceBitLevels.push_back(last_ref_bit);
     BitRefLevel last_ref = BitRefLevel().set(last_ref_bit);
   
-    ierr = mField.get_msId_3dENTS_split_sides(
+    ierr = prismInterface->get_msId_3dENTS_split_sides(
       bit_meshset,last_ref,
       inheret_ents_from_level,inheret_ents_from_level_mask,
       meshset_interface,false,true); CHKERRQ(ierr);
