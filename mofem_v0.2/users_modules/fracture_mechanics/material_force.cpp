@@ -20,40 +20,26 @@
 #include <MoFEM.hpp>
 using namespace MoFEM;
 
-#include <DirichletBC.hpp>
-
-#include <Projection10NodeCoordsOnField.hpp>
-
-#include <boost/numeric/ublas/vector_proxy.hpp>
-#include <boost/numeric/ublas/matrix.hpp>
-#include <boost/numeric/ublas/matrix_proxy.hpp>
-#include <boost/numeric/ublas/vector.hpp>
-
-#include <SurfacePressure.hpp>
-#include <NodalForce.hpp>
-#include <FluidPressure.hpp>
-#include <BodyForce.hpp>
-#include <ThermalStressElement.hpp>
-
 #include <FEMethod_LowLevelStudent.hpp>
 #include <FEMethod_UpLevelStudent.hpp>
-
-#include <PostProcVertexMethod.hpp>
-#include <PostProcDisplacementAndStrainOnRefindedMesh.hpp>
+#include <ArcLengthTools.hpp>
+#include <MatShellConstrainsByMarkAinsworth.hpp>
 
 extern "C" {
   #include <complex_for_lazy.h>
 }
 
-#include <ArcLengthTools.hpp>
 #include <FEMethod_ComplexForLazy.hpp>
 #include <FEMethod_DriverComplexForLazy.hpp>
 
-#include <SurfacePressureComplexForLazy.hpp>
-#include <PostProcNonLinearElasticityStresseOnRefindedMesh.hpp>
-
 #include <moab/Skinner.hpp>
 #include <moab/AdaptiveKDTree.hpp>
+
+#include <petsctime.h>
+
+#include <PostProcVertexMethod.hpp>
+#include <PostProcDisplacementAndStrainOnRefindedMesh.hpp>
+#include <PostProcNonLinearElasticityStresseOnRefindedMesh.hpp>
 
 #include <FaceSplittingTool.hpp>
 #include <ConfigurationalFractureMechanics.hpp>
@@ -71,7 +57,7 @@ int main(int argc, char *argv[]) {
 
   PetscInitialize(&argc,&argv,(char *)0,help);
 
-  Core mb_instance;
+  moab::Core mb_instance;
   Interface& moab = mb_instance;
   int rank;
   MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
@@ -97,7 +83,7 @@ int main(int argc, char *argv[]) {
   ierr = PetscTime(&v1); CHKERRQ(ierr);
   ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
 
-  FieldCore core(moab);
+  MoFEM::Core core(moab);
   FieldInterface& mField = core;
 
   ConfigurationalFractureMechanics conf_prob(mField);
