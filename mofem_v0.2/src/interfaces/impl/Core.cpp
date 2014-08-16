@@ -86,6 +86,10 @@ PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr)
     ptr = static_cast<MeshRefinment*>(this);
   } else if(type == typeid(SeriesRecorder)) {
     ptr = static_cast<SeriesRecorder*>(this);
+  } else if(type == typeid(PrismInterface)) {
+    ptr = static_cast<PrismInterface*>(this);
+  } else {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"unknown inteface");
   }
   PetscFunctionReturn(0);
 }

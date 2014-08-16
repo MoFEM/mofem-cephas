@@ -1449,6 +1449,7 @@ PetscErrorCode FaceSplittingTools::meshRefine(const int verb) {
       last_ref_bit++;
       meshRefineBitLevels.push_back(last_ref_bit);     
       BitRefLevel last_ref = BitRefLevel().set(meshRefineBitLevels.back());
+      ierr = mField.query_interface(rEfiner); CHKERRQ(ierr);
       ierr = rEfiner->add_verices_in_the_middel_of_edges(edges_to_refine,last_ref,2); CHKERRQ(ierr);
       ierr = rEfiner->refine_TET(level_tets,last_ref,false); CHKERRQ(ierr);
       ierr = mField.seed_ref_level_3D(level_tets,preserve_ref); CHKERRQ(ierr);
@@ -1509,6 +1510,7 @@ PetscErrorCode FaceSplittingTools::splitFaces(const int verb) {
 
     EntityHandle meshset_interface;
     ierr = mField.get_Cubit_msId_meshset(200,SIDESET,meshset_interface); CHKERRQ(ierr);
+    ierr = mField.query_interface(prismInterface); CHKERRQ(ierr);
     ierr = prismInterface->get_msId_3dENTS_sides(meshset_interface,current_ref,true,verb); CHKERRQ(ierr);
 
     int last_ref_bit = meshRefineBitLevels.back();

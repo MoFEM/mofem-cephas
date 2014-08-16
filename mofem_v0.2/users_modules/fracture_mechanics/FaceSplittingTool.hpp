@@ -59,9 +59,6 @@ struct FaceSplittingTools {
     meshRefineBitLevels.ptr = ptr_meshRefineBitLevels;
     meshIntefaceBitLevels.ptr = ptr_meshIntefaceBitLevels;
 
-    mField.query_interface(rEfiner);
-    mField.query_interface(prismInterface);
-
   }
 
   ~FaceSplittingTools() {

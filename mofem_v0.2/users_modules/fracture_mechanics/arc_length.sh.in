@@ -237,7 +237,7 @@ if [ -z ${NBSPLIT+x} ]; then
 fi
 
 BIN_PATH="@CMAKE_CURRENT_BINARY_DIR@"
-MPIRUN="@MPI_RUN@ -np $NB_PROC"
+MPIRUN="@MoFEM_MPI_RUN@ -np $NB_PROC"
 
 if [ -z ${SHOWME+x} ]; then
   cp $FILE $DIR_NAME/
