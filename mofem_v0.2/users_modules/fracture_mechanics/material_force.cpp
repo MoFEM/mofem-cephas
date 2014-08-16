@@ -84,10 +84,10 @@ int main(int argc, char *argv[]) {
   ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
 
   MoFEM::Core core(moab);
-  FieldInterface& mField = core;
+  FieldInterface& m_field = core;
 
-  ConfigurationalFractureMechanics conf_prob(mField);
-  ierr = main_material_forces(mField,conf_prob); CHKERRQ(ierr);
+  ConfigurationalFractureMechanics conf_prob(m_field);
+  ierr = main_material_forces(m_field,conf_prob); CHKERRQ(ierr);
 
   if(pcomm->rank()==0) {
     rval = moab.write_file("out_material.h5m"); CHKERR_PETSC(rval);
@@ -96,35 +96,35 @@ int main(int argc, char *argv[]) {
   if(pcomm->rank()==0) {
     EntityHandle out_meshset;
     rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
-    ierr = mField.problem_get_FE("ELASTIC_MECHANICS","ELASTIC",out_meshset); CHKERRQ(ierr);
+    ierr = m_field.problem_get_FE("ELASTIC_MECHANICS","ELASTIC",out_meshset); CHKERRQ(ierr);
     rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
     rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
   }
 
   //ref meshset ref level 0
   Tag th_my_ref_level;
-  rval = mField.get_moab().tag_get_handle("_MY_REFINMENT_LEVEL",th_my_ref_level); CHKERR_PETSC(rval);
-  const EntityHandle root_meshset = mField.get_moab().get_root_set();
+  rval = m_field.get_moab().tag_get_handle("_MY_REFINMENT_LEVEL",th_my_ref_level); CHKERR_PETSC(rval);
+  const EntityHandle root_meshset = m_field.get_moab().get_root_set();
   BitRefLevel *ptr_bit_level0;
-  rval = mField.get_moab().tag_get_by_ptr(th_my_ref_level,&root_meshset,1,(const void**)&ptr_bit_level0); CHKERR_PETSC(rval);
+  rval = m_field.get_moab().tag_get_by_ptr(th_my_ref_level,&root_meshset,1,(const void**)&ptr_bit_level0); CHKERR_PETSC(rval);
   BitRefLevel& bit_level0 = *ptr_bit_level0;
 
   if(pcomm->rank()==0) {
 
     Range level_tris;
-    ierr = mField.get_entities_by_type_and_ref_level(bit_level0,BitRefLevel().set(),MBTRI,level_tris); CHKERRQ(ierr);
+    ierr = m_field.get_entities_by_type_and_ref_level(bit_level0,BitRefLevel().set(),MBTRI,level_tris); CHKERRQ(ierr);
 
     Range SurfacesFaces;
-    ierr = mField.get_Cubit_msId_entities_by_dimension(102,SIDESET,2,SurfacesFaces,true); CHKERRQ(ierr);
+    ierr = m_field.get_Cubit_msId_entities_by_dimension(102,SIDESET,2,SurfacesFaces,true); CHKERRQ(ierr);
     SurfacesFaces = intersect(SurfacesFaces,level_tris);
     Range CrackSurfacesFaces;
-    ierr = mField.get_Cubit_msId_entities_by_dimension(200,SIDESET,2,CrackSurfacesFaces,true); CHKERRQ(ierr);
+    ierr = m_field.get_Cubit_msId_entities_by_dimension(200,SIDESET,2,CrackSurfacesFaces,true); CHKERRQ(ierr);
     CrackSurfacesFaces = intersect(CrackSurfacesFaces,level_tris);
-    for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SIDESET,it)) {
+    for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,SIDESET,it)) {
       int msId = it->get_msId();
       if((msId < 10200)||(msId >= 10300)) continue;
       Range SurfacesFaces_msId;
-      ierr = mField.get_Cubit_msId_entities_by_dimension(msId,SIDESET,2,SurfacesFaces_msId,true); CHKERRQ(ierr);
+      ierr = m_field.get_Cubit_msId_entities_by_dimension(msId,SIDESET,2,SurfacesFaces_msId,true); CHKERRQ(ierr);
       SurfacesFaces_msId = intersect(SurfacesFaces_msId,level_tris);
       SurfacesFaces.insert(SurfacesFaces_msId.begin(),SurfacesFaces_msId.end());
     }

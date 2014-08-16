@@ -82,13 +82,13 @@ int main(int argc, char *argv[]) {
   ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
 
   MoFEM::Core core(moab);
-  FieldInterface& mField = core;
+  FieldInterface& m_field = core;
 
-  ConfigurationalFractureMechanics conf_prob(mField);
-  ierr = conf_prob.set_material_fire_wall(mField); CHKERRQ(ierr);
+  ConfigurationalFractureMechanics conf_prob(m_field);
+  ierr = conf_prob.set_material_fire_wall(m_field); CHKERRQ(ierr);
 
-  ierr = main_arc_length_setup(mField,conf_prob); CHKERRQ(ierr);
-  ierr = main_arc_length_solve(mField,conf_prob); CHKERRQ(ierr);
+  ierr = main_arc_length_setup(m_field,conf_prob); CHKERRQ(ierr);
+  ierr = main_arc_length_solve(m_field,conf_prob); CHKERRQ(ierr);
 
   if(pcomm->rank()==0) {
     rval = moab.write_file("out_arc_length.h5m"); CHKERR_PETSC(rval);
@@ -96,16 +96,16 @@ int main(int argc, char *argv[]) {
 
   //ref meshset ref level 0
   Tag th_my_ref_level;
-  rval = mField.get_moab().tag_get_handle("_MY_REFINMENT_LEVEL",th_my_ref_level); CHKERR_PETSC(rval);
-  const EntityHandle root_meshset = mField.get_moab().get_root_set();
+  rval = m_field.get_moab().tag_get_handle("_MY_REFINMENT_LEVEL",th_my_ref_level); CHKERR_PETSC(rval);
+  const EntityHandle root_meshset = m_field.get_moab().get_root_set();
   BitRefLevel *ptr_bit_level0;
-  rval = mField.get_moab().tag_get_by_ptr(th_my_ref_level,&root_meshset,1,(const void**)&ptr_bit_level0); CHKERR_PETSC(rval);
+  rval = m_field.get_moab().tag_get_by_ptr(th_my_ref_level,&root_meshset,1,(const void**)&ptr_bit_level0); CHKERR_PETSC(rval);
   BitRefLevel& bit_level0 = *ptr_bit_level0;
 
   if(pcomm->rank()==0) {
     EntityHandle out_meshset;
     rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
-    ierr = mField.get_entities_by_type_and_ref_level(bit_level0,BitRefLevel().set(),MBEDGE,out_meshset); CHKERRQ(ierr);
+    ierr = m_field.get_entities_by_type_and_ref_level(bit_level0,BitRefLevel().set(),MBEDGE,out_meshset); CHKERRQ(ierr);
     rval = moab.write_file("out_edges.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
     rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
   }
@@ -113,7 +113,7 @@ int main(int argc, char *argv[]) {
   if(pcomm->rank()==0) {
     EntityHandle out_meshset;
     rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
-    ierr = mField.problem_get_FE("COUPLED_PROBLEM","MATERIAL_COUPLED",out_meshset); CHKERRQ(ierr);
+    ierr = m_field.problem_get_FE("COUPLED_PROBLEM","MATERIAL_COUPLED",out_meshset); CHKERRQ(ierr);
     rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
     rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
   }
