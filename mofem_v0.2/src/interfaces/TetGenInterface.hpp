@@ -23,21 +23,31 @@
 
 #include "FieldUnknownInterface.hpp"
 
+struct tetgenio;
+
 namespace MoFEM {
 
-static const MOFEMuuid IDD_MOFEMFieldInterface = MOFEMuuid( BitIntefaceId(TETGEN_INTERFACE) );
+static const MOFEMuuid IDD_MOFEMTetGegInterface = MOFEMuuid( BitIntefaceId(TETGEN_INTERFACE) );
 
 struct TetGenInterface: public FieldUnknownInterface {
 
-  FieldInterface& mField;
-  TetGenInterface(FieldInterface& m_field): mField(m_field) {};
+  PetscErrorCode queryInterface(const MOFEMuuid& uuid, FieldUnknownInterface** iface);
 
-  PetscErrorCode tEtraedralize(
-    char *switches,
-    EntityHandle in_meshset,const BitRefLevel &bit_in,
-    EntityHandle out_meshset,const BitRefLevel &bit_out);
+  MoFEM::Core& cOre;
+  TetGenInterface(MoFEM::Core& core): cOre(core) {};
 
+  PetscErrorCode inData(
+    Range& ents,tetgenio& in,
+    map<EntityHandle,unsigned long>& moab_tetgen_map,
+    map<unsigned long,EntityHandle>& tetgen_moab_map);
+
+  PetscErrorCode outData(
+    Range& ents,tetgenio& in,tetgenio& out,
+    map<EntityHandle,unsigned long>& moab_tetgen_map,
+    map<unsigned long,EntityHandle>& tetgen_moab_map);
 
 };
 
 }
+
+#endif //__TETGENINTERFACE_HPP__

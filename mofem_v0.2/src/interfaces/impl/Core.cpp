@@ -42,6 +42,8 @@
 
 #include <CoreDataStructures.hpp>
 
+#include <TetGenInterface.hpp>
+
 namespace MoFEM {
 
 const static int debug = 1;
@@ -82,6 +84,17 @@ PetscErrorCode Core::queryInterface(const MOFEMuuid& uuid,FieldUnknownInterface*
 
 PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr) {
   PetscFunctionBegin;
+  
+  #ifdef WITH_TETGEM
+  if(type == typeid(TetGenInterface)) {
+    if(iFaces.find(IDD_MOFEMTetGegInterface.uUId.to_ulong()) == iFaces.end()) {
+      iFaces[IDD_MOFEMTetGegInterface.uUId.to_ulong()] = new TetGenInterface(*this);
+    }
+    ptr = iFaces.at(IDD_MOFEMTetGegInterface.uUId.to_ulong());
+    PetscFunctionReturn(0);
+  }
+  #endif
+
   if(type == typeid(MeshRefinment)) {
     ptr = static_cast<MeshRefinment*>(this);
   } else if(type == typeid(SeriesRecorder)) {

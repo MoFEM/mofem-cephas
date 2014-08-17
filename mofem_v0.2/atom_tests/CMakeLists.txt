@@ -514,3 +514,20 @@ add_test(forces_and_sources_ultra_weak_transport_atom_compare ${CMAKE_COMMAND} -
   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_ultra_weak_transport.txt
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_ultra_weak_transport.txt)
 
+
+if(TETGEN_LIBRARY) 
+
+  add_executable(tetgen_interface tetgen_interface.cpp)
+  target_link_libraries(tetgen_interface
+    mofem_finite_elements
+    mofem_interfaces
+    mofem_multi_indices
+    mofem_petsc
+    mofem_approx
+    mofem_third_party
+    ${PROJECT_LIBS})
+
+
+endif(TETGEN_LIBRARY)
+
+

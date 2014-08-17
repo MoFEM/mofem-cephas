@@ -36,7 +36,6 @@ struct Core:
   public FieldInterface, MeshRefinment, PrismInterface, SeriesRecorder {
 
   PetscErrorCode queryInterface(const MOFEMuuid& uuid, FieldUnknownInterface** iface);
-
   PetscErrorCode query_interface_type(const std::type_info& iface_type, void*& ptr);
 
   Core(Interface& _moab,int _verbose = 1);
@@ -44,7 +43,7 @@ struct Core:
 
   private:
 
-  boost::ptr_map<int,void *> iFaces;
+  boost::ptr_map<unsigned long,FieldUnknownInterface *> iFaces;
 
   //Database
   ErrorCode rval;
