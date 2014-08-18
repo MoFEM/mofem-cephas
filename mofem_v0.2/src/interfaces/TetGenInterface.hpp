@@ -46,6 +46,9 @@ struct TetGenInterface: public FieldUnknownInterface {
     map<EntityHandle,unsigned long>& moab_tetgen_map,
     map<unsigned long,EntityHandle>& tetgen_moab_map);
 
+  PetscErrorCode setFacetMarkers(
+    Raneg ents,int marker,tetgenio& in);
+
 };
 
 }

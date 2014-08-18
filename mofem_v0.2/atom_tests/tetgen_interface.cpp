@@ -17,8 +17,13 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#include <MoFEM.hpp>
 
+#include <tetgen.h>
+#ifdef REAL
+  #undef REAL
+#endif
+
+#include <MoFEM.hpp>
 #include <TetGenInterface.hpp>
 
 using namespace MoFEM;
@@ -54,10 +59,11 @@ int main(int argc, char *argv[]) {
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
-  //Create MoFEM (Joseph) database
+  //Create MoFEM (Joseph) databas
   MoFEM::Core core(moab);
-  FieldInterface& mField = core;
-    
+  FieldInterface& m_field = core;
+   
+
 
         
   } catch (const char* msg) {

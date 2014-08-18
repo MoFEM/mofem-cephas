@@ -23,10 +23,12 @@
 
 #ifdef WITH_TETGEM
 
-//include TetGen header
 #include <tetgen.h>
+#ifdef REAL
+  #undef REAL
+#endif
 
-#endif //WITH_TETGEM
+#endif
 
 #include <petscsys.h>
 #include <petscvec.h> 
@@ -35,7 +37,6 @@
 #include <petscts.h> 
 
 #include <moab/ParallelComm.hpp>
-
 #include <boost/ptr_container/ptr_map.hpp>
 
 #include <version.h>
@@ -43,7 +44,6 @@
 #include <h1_hdiv_hcurl_l2.h>
 
 #include <Common.hpp>
-
 #include <LoopMethods.hpp>
 #include <Core.hpp>
 
@@ -86,7 +86,7 @@ PetscErrorCode TetGenInterface::inData(
   in.firstnumber = 0;
 
   in.numberofpoints = ents.subset_by_dimension(0).size();
-  in.pointlist = new REAL[in.numberofpoints * 3];
+  in.pointlist = new double[in.numberofpoints * 3];
   rval = m_field.get_moab().get_coords(ents.subset_by_dimension(0),in.pointlist); CHKERR_PETSC(rval);
 
   Range::iterator it = ents.subset_by_dimension(0).begin();
@@ -112,6 +112,7 @@ PetscErrorCode TetGenInterface::inData(
   in.numberoffacets = ents.subset_by_type(MBTRI).size();
   in.facetlist = new tetgenio::facet[in.numberoffacets];
   in.facetmarkerlist = new int[in.numberoffacets];
+  bzero(in.facetmarkerlist,in.numberoffacets*sizeof(int));
   it = ents.subset_by_dimension(2).begin();
   for(int ii = 0;it!=ents.subset_by_dimension(2).end();it++,ii++) {
     tetgenio::facet *f = &(in.facetlist[ii]);
@@ -146,7 +147,7 @@ PetscErrorCode TetGenInterface::outData(
   int ii = 0;
   for(;ii<out.numberofpoints;ii++) {
     if(ii<in.numberofpoints) {
-      if(memcmp(&in.pointlist[3*ii],&out.pointlist[3*ii],3*sizeof(REAL)) == 0) {
+      if(memcmp(&in.pointlist[3*ii],&out.pointlist[3*ii],3*sizeof(double)) == 0) {
 	unsigned long iii = MBVERTEX|(ii<<sizeof(int));
 	if(tetgen_moab_map.find(iii)!=tetgen_moab_map.end()) {
 	  continue;
@@ -184,6 +185,14 @@ PetscErrorCode TetGenInterface::outData(
     tetgen_moab_map[MBTET|(ii<<sizeof(int))] = tet;
   }
 
+
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode TetGenInterface::setFacetMarkers(
+  const int msId,const CubitBC_BitSet CubitBCType,
+  tetgenio& in) {
+  PetscFunctionBegin;
 
   PetscFunctionReturn(0);
 }
