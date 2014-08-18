@@ -17,6 +17,7 @@
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
 cm_export_file("../../meshes/brick_slice_with_slot.jou" export_files_brick_slice_with_slot)
+cm_export_file("../../meshes/brick_slice_with_slot.cub" export_files_brick_slice_with_slot)
 
 install(FILES ${CMAKE_BINARY_DIR}/examples/material_forces/arc_length.sh 
   DESTINATION mofem/benchmarks/brick_slice_with_slot
@@ -30,6 +31,9 @@ install(FILES ${CMAKE_BINARY_DIR}/examples/material_forces/face_split_arc_length
 
 #script for making plots for torsion example only
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/brick_slice_with_slot.jou
+  DESTINATION mofem/benchmarks/brick_slice_with_slot
+  PERMISSIONS OWNER_READ OWNER_WRITE )
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/brick_slice_with_slot.cub
   DESTINATION mofem/benchmarks/brick_slice_with_slot
   PERMISSIONS OWNER_READ OWNER_WRITE )
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/plot_graphs.sh
