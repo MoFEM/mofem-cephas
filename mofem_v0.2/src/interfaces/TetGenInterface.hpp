@@ -46,8 +46,10 @@ struct TetGenInterface: public FieldUnknownInterface {
     map<EntityHandle,unsigned long>& moab_tetgen_map,
     map<unsigned long,EntityHandle>& tetgen_moab_map);
 
-  PetscErrorCode setFacetMarkers(
-    Range& ents,int marker,tetgenio& in);
+  PetscErrorCode setFacetMarkers(Range& ents,map<EntityHandle,unsigned long>& moab_tetgen_map,int marker,tetgenio& in); 
+  PetscErrorCode setFacetMarkers(EntityHandle ent[],int nb_ents,map<EntityHandle,unsigned long>& moab_tetgen_map,int marker,tetgenio& in); 
+
+  PetscErrorCode tetRahedralize(char switches[],tetgenio& in,tetgenio& out);
 
 };
 

@@ -63,11 +63,33 @@ int main(int argc, char *argv[]) {
   MoFEM::Core core(moab);
   FieldInterface& m_field = core;
 
+  BitRefLevel bit_level0;
+  bit_level0.set(0);
+  ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
+    
+  Range nodes;
+  rval = moab.get_entities_by_type(0,MBVERTEX,nodes,false); CHKERR_PETSC(rval);
+
+  tetgenio in,out;
+  map<EntityHandle,unsigned long> moab_tetgen_map;
+  map<unsigned long,EntityHandle> tetgen_moab_map;
+
   TetGenInterface *tetgen_iface;
   ierr = m_field.query_interface(tetgen_iface); CHKERRQ(ierr);
-   
 
+  ierr = tetgen_iface->inData(nodes,in,moab_tetgen_map,tetgen_moab_map); CHKERRQ(ierr);
+  char switches[] = "";
+  ierr = tetgen_iface->tetRahedralize(switches,in,out); CHKERRQ(ierr);
+  Range ents_out;
+  ierr = tetgen_iface->outData(ents_out,in,out,moab_tetgen_map,tetgen_moab_map); CHKERRQ(ierr);
 
+  BitRefLevel bit_level1;
+  bit_level1.set(1);
+  ierr = m_field.seed_ref_level_3D(ents_out,bit_level1); CHKERRQ(ierr);
+  EntityHandle meshset_level1;
+  rval = moab.create_meshset(MESHSET_SET,meshset_level1); CHKERR_PETSC(rval);
+  ierr = m_field.get_entities_by_type_and_ref_level(bit_level1,BitRefLevel().set(),MBTET,meshset_level1); CHKERRQ(ierr);
+  rval = moab.write_file("level1.vtk","VTK","",&meshset_level1,1); CHKERR_PETSC(rval);
         
   } catch (const char* msg) {
     SETERRQ(PETSC_COMM_SELF,1,msg);

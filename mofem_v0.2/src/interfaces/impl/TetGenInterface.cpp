@@ -90,44 +90,49 @@ PetscErrorCode TetGenInterface::inData(
   rval = m_field.get_moab().get_coords(ents.subset_by_dimension(0),in.pointlist); CHKERR_PETSC(rval);
 
   Range::iterator it = ents.subset_by_dimension(0).begin();
-  for(int ii = 0;it != ents.subset_by_dimension(0).begin(); it++,ii++) {
-    tetgen_moab_map[MBVERTEX|(ii<<sizeof(int))] = *it;
-    moab_tetgen_map[*it] = MBVERTEX|(ii<<sizeof(int));
+  for(int ii = 0;it != ents.subset_by_dimension(0).end(); it++,ii++) {
+    unsigned long iii = MBVERTEX|(ii<<sizeof(int));
+    tetgen_moab_map[iii] = *it;
+    moab_tetgen_map[*it] = iii;
   }
 
   in.numberoftetrahedra = ents.subset_by_type(MBTET).size();
   in.tetrahedronlist = new int[4*ents.subset_by_type(MBTET).size()];
-  it = ents.subset_by_type(MBTET).begin();
-  for(int ii = 0;it!=ents.subset_by_type(MBTET).end();it++,ii++) {
-    int num_nodes;
-    const EntityHandle* conn;
-    rval = m_field.get_moab().get_connectivity(*it,conn,num_nodes,true); CHKERR_THROW(rval);
-    tetgen_moab_map[MBTET|(ii<<sizeof(int))] = *it;
-    moab_tetgen_map[*it] = MBTET|(ii<<sizeof(int));
-    for(int nn = 0;nn<4;nn++) {
-      in.tetrahedronlist[4*ii+nn] = moab_tetgen_map[conn[nn]]>>sizeof(int);
+  if(in.numberoftetrahedra>0) {
+    it = ents.subset_by_type(MBTET).begin();
+    for(int ii = 0;it!=ents.subset_by_type(MBTET).end();it++,ii++) {
+      int num_nodes;
+      const EntityHandle* conn;
+      rval = m_field.get_moab().get_connectivity(*it,conn,num_nodes,true); CHKERR_THROW(rval);
+      tetgen_moab_map[MBTET|(ii<<sizeof(int))] = *it;
+      moab_tetgen_map[*it] = MBTET|(ii<<sizeof(int));
+      for(int nn = 0;nn<4;nn++) {
+	in.tetrahedronlist[4*ii+nn] = moab_tetgen_map[conn[nn]]>>sizeof(int);
+      }
     }
   }
 
   in.numberoffacets = ents.subset_by_type(MBTRI).size();
-  in.facetlist = new tetgenio::facet[in.numberoffacets];
-  in.facetmarkerlist = new int[in.numberoffacets];
-  bzero(in.facetmarkerlist,in.numberoffacets*sizeof(int));
-  it = ents.subset_by_dimension(2).begin();
-  for(int ii = 0;it!=ents.subset_by_dimension(2).end();it++,ii++) {
-    tetgenio::facet *f = &(in.facetlist[ii]);
-    f->numberofpolygons = 1;
-    f->polygonlist = new tetgenio::polygon[f->numberofpolygons];
-    f->numberofholes = 0;
-    f->holelist = NULL;
-    tetgenio::polygon *p = &f->polygonlist[0];
-    int num_nodes;
-    const EntityHandle* conn;
-    rval = m_field.get_moab().get_connectivity(*it,conn,num_nodes,true); CHKERR_THROW(rval);
-    p->numberofvertices = num_nodes;
-    p->vertexlist = new int[p->numberofvertices];
-    for(int nn = 0;nn<num_nodes;nn++) {
-      p->vertexlist[nn] = moab_tetgen_map[conn[nn]]>>sizeof(int);
+  if(in.numberoffacets>0) {
+    in.facetlist = new tetgenio::facet[in.numberoffacets];
+    in.facetmarkerlist = new int[in.numberoffacets];
+    bzero(in.facetmarkerlist,in.numberoffacets*sizeof(int));
+    it = ents.subset_by_dimension(2).begin();
+    for(int ii = 0;it!=ents.subset_by_dimension(2).end();it++,ii++) {
+      tetgenio::facet *f = &(in.facetlist[ii]);
+      f->numberofpolygons = 1;
+      f->polygonlist = new tetgenio::polygon[f->numberofpolygons];
+      f->numberofholes = 0;
+      f->holelist = NULL;
+      tetgenio::polygon *p = &f->polygonlist[0];
+      int num_nodes;
+      const EntityHandle* conn;
+      rval = m_field.get_moab().get_connectivity(*it,conn,num_nodes,true); CHKERR_THROW(rval);
+      p->numberofvertices = num_nodes;
+      p->vertexlist = new int[p->numberofvertices];
+      for(int nn = 0;nn<num_nodes;nn++) {
+	p->vertexlist[nn] = moab_tetgen_map[conn[nn]]>>sizeof(int);
+      }
     }
   }
 
@@ -160,6 +165,7 @@ PetscErrorCode TetGenInterface::outData(
     rval = m_field.get_moab().create_vertex(&out.pointlist[3*ii],node); CHKERR_PETSC(rval);
     moab_tetgen_map[node] = MBVERTEX|(ii<<sizeof(int));
     tetgen_moab_map[MBVERTEX|(ii<<sizeof(int))] = node;
+    ents.insert(node);
   }
 
   ii = 0;
@@ -183,17 +189,46 @@ PetscErrorCode TetGenInterface::outData(
     rval = m_field.get_moab().create_element(MBTET,conn,4,tet); CHKERR_PETSC(rval);
     moab_tetgen_map[tet] = MBTET|(ii<<sizeof(int));
     tetgen_moab_map[MBTET|(ii<<sizeof(int))] = tet;
+    ents.insert(tet);
   }
 
 
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode TetGenInterface::setFacetMarkers(Range& ents,int marker,tetgenio& in) {
+PetscErrorCode TetGenInterface::setFacetMarkers(Range& ents,map<EntityHandle,unsigned long>& moab_tetgen_map,int marker,tetgenio& in) {
   PetscFunctionBegin;
+
+  Range::iterator it = ents.subset_by_dimension(2).begin();
+  for(;it!=ents.subset_by_dimension(2).end();it++) {
+    int ii = moab_tetgen_map[*it]>>sizeof(int);
+    in.facetmarkerlist[ii] = marker;
+  }
 
   PetscFunctionReturn(0);
 }
+PetscErrorCode TetGenInterface::setFacetMarkers(EntityHandle ent[],int nb_ents,map<EntityHandle,unsigned long>& moab_tetgen_map,int marker,tetgenio& in) {
+  PetscFunctionBegin;
+
+  int jj = 0;
+  for(;jj<nb_ents;jj++) {
+    int ii = moab_tetgen_map[ent[jj]]>>sizeof(int);
+    in.facetmarkerlist[ii] = marker;
+  }
+
+  PetscFunctionReturn(0);
+}
+PetscErrorCode TetGenInterface::tetRahedralize(char switches[],tetgenio& in,tetgenio& out) {
+  PetscFunctionBegin;
+
+  tetgenbehavior a;
+  a.parse_commandline(switches);
+  tetrahedralize(&a,&in,&out);
+
+  PetscFunctionReturn(0);
+}
+
+
 
 }
 
