@@ -62,6 +62,9 @@ int main(int argc, char *argv[]) {
   //Create MoFEM (Joseph) databas
   MoFEM::Core core(moab);
   FieldInterface& m_field = core;
+
+  TetGenInterface *tetgen_iface;
+  ierr = m_field.query_interface(tetgen_iface); CHKERRQ(ierr);
    
 
 

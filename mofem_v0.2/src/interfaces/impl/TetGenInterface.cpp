@@ -189,9 +189,7 @@ PetscErrorCode TetGenInterface::outData(
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode TetGenInterface::setFacetMarkers(
-  const int msId,const CubitBC_BitSet CubitBCType,
-  tetgenio& in) {
+PetscErrorCode TetGenInterface::setFacetMarkers(Range& ents,int marker,tetgenio& in) {
   PetscFunctionBegin;
 
   PetscFunctionReturn(0);
