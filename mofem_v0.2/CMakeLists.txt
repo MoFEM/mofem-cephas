@@ -37,7 +37,7 @@ include(cmake/ResolveCompilerPaths.cmake)
 project(MoFEM C Fortran CXX)
 
 #SIGMA tools
-include(cmake/FindTETGEN.cmake)
+include(cmake/FindTetGen.cmake)
 include(cmake/FindTriangle.cmake)
 include(cmake/FindiMesh.cmake)
 include(cmake/FindCGM.cmake)
@@ -134,7 +134,7 @@ configure_file(
 install(FILES ${PROJECT_BINARY_DIR}/MoFEMConfig.cmake DESTINATION ${CMAKE_INSTALL_PREFIX})
 install(FILES ${PROJECT_BINARY_DIR}/MoFEMConfig-version.cmake DESTINATION ${CMAKE_INSTALL_PREFIX})
 
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples.in")
+add_subdirectory("${PROJECT_SOURCE_DIR}/users_modules.in")
 
 #add a target to generate API documentation with Doxygen
 find_package(Doxygen)

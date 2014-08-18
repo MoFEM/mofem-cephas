@@ -23,6 +23,8 @@
 #include <definitions.h>
 #include <h1_hdiv_hcurl_l2.h>
 
+PetscErrorCode Spin(double *spinOmega,double *vecOmega);
+
 PetscErrorCode Hdiv_EdgeFaceShapeFunctions_MBTET(
   int *faces_nodes,int *p,double *N,double *diffN,double *PHI_f_e[4][3],double *diffPHI_f_e[4][3],int GDIM) {
   PetscFunctionBegin;

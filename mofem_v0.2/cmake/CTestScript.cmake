@@ -1,6 +1,6 @@
-set(GID_SOURCE_REPO "$ENV{HOME}/tmp/mofem/source")
+set(GID_SOURCE_REPO "$ENV{HOME}/tmp/cephas/source")
 set(CTEST_SOURCE_DIRECTORY "${GID_SOURCE_REPO}/mofem_v0.2")
-set(CTEST_BINARY_DIRECTORY "$ENV{HOME}/tmp/mofem/build")
+set(CTEST_BINARY_DIRECTORY "$ENV{HOME}/tmp/cephas/build")
 
 set(CTEST_PROJECT_NAME "MoFEM")
 set(CTEST_CMAKE_GENERATOR "Unix Makefiles")
@@ -13,7 +13,7 @@ find_program(CTEST_GIT_COMMAND NAMES git)
 
 if(NOT EXISTS "${CTEST_SOURCE_DIRECTORY}")
   set(INIT_REPOSITORY "YES")
-  set(CTEST_CHECKOUT_COMMAND "${CTEST_GIT_COMMAND} clone --branch ${CTEST_BRANCH} https://bitbucket.org/likask/mofem-joseph.git ${GID_SOURCE_REPO}")
+  set(CTEST_CHECKOUT_COMMAND "${CTEST_GIT_COMMAND} clone --branch ${CTEST_BRANCH} https://bitbucket.org/likask/mofem-cephas.git ${GID_SOURCE_REPO}")
 else(EXISTS "${CTEST_SOURCE_DIRECTORY}")
   set(CTEST_CHECKOUT_COMMAND "${CTEST_GIT_COMMAND} submodule update")
 endif()
@@ -59,24 +59,13 @@ set(CTEST_CUSTOM_MEMCHECK_IGNORE
   cubit_bc_atom_test_mat_elastic_transiso_compare
   cubit_bc_atom_test_mat_interf_compare
   cubit_bc_atom_test_inlet_outlet_compare
-  elasticity_atom_test_01X_compare
-  elasticity_atom_test_01Y_compare
-  elasticity_atom_test_01Z_compare
-  traniso_mat_test_compare
-  l2_atom_approximation_compare
-  mesh_smoothing_atom_test_compare
+  cubit_meshset_loop_test_compare
+  field_axpy_compare
+  projection_from_10node_tet_atom_compare
+  mesh_refine_atom_test_compare
   mesh_insert_interface_atom_test_compare
   mesh_insert_T_interface_atom_test_compare
   mesh_insert_T_4seasons_interface_atom_test_compare
-  mesh_refine_atom_test_compare
-  nonlinear_elasticity_atom_pressure_compare
-  nonlinear_elasticity_atom_sheer_force_compare
-  arc_length_nonlinear_elasticity_atom_compare
-  field_axpy_compare
-  nonlinear_elasticity_atom_thermal_compare
-  arc_length_nonlinear_elasticity_thermal_atom_compare
-  projection_from_10node_tet_atom_compare
-  cubit_meshset_loop_test_compare
   forces_and_sources_getting_orders_indices_test_compare
   forces_and_sources_getting_mult_H1_H1_test_compare
   forces_and_sources_calculate_jacobian_test_compare
@@ -90,28 +79,14 @@ set(CTEST_CUSTOM_MEMCHECK_IGNORE
   forces_and_sources_neumann_elasticity_atom_test_01X_pressure_compare
   forces_and_sources_neumann_elasticity_atom_test_01X_compare
   forces_and_sources_neumann_sphre_pressure_test_compare
-  forces_and_sources_neumann_forces_complex_for_lazy_atom_test_compare
   forces_and_sources_fluid_pressure_element_atom_test_compare
   forces_and_sources_thermal_elem_atom_test_compare
   forces_and_sources_thermal_elem_unsteady_atom_test_compare
   forces_and_sources_thermal_stress_elem_atom_test_compare
   record_series_atom_test_compare
-  homogenisation_disp_atom_test_1_compare
-  homogenisation_trac_atom_test_1_compare
-  homogenisation_periodic_atom_test_1_compare
-  #this stuff is too big
-  SimpleElasticityTest
-  SimpleInterfaceTest
-  SimpleInterfaceTestHalfCrack
-  LinearDynamicsElasticity
-  SimpleNonLinearElasticityTest
-  ArcLengthNonLinearElasticityTest
-  ArcLengthInterfaceTest
-  SimpleMeshSmoothingTest
-  SimpleMeshSmoothingTest_LagrangeMultipliers
-  SimpleLaplacianProblem
-  ConvergenceStudy_sh
-  ArcLength_sh
+  forces_and_sources_hdiv_approximation_functions_atom_compare
+  forces_and_sources_hdiv_continuity_check_atom_compare
+  forces_and_sources_ultra_weak_transport_atom_compare
 )
 
 if(${DOTEST} GREATER 0)

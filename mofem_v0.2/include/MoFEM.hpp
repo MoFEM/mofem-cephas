@@ -20,7 +20,6 @@
 #ifndef __MOFEM_HPP__
 #define __MOFEM_HPP__
 
-
 #include <moab/ParallelComm.hpp>
 
 #include <petscsys.h>

@@ -21,6 +21,7 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 */
 
+
 #include <moab/ParallelComm.hpp>
 
 #include <boost/ptr_container/ptr_map.hpp>
@@ -41,6 +42,8 @@
 #include <Core.hpp>
 
 #include <CoreDataStructures.hpp>
+
+#include <TetGenInterface.hpp>
 
 namespace MoFEM {
 
@@ -82,10 +85,25 @@ PetscErrorCode Core::queryInterface(const MOFEMuuid& uuid,FieldUnknownInterface*
 
 PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr) {
   PetscFunctionBegin;
+  
+  #ifdef WITH_TETGEM
+  if(type == typeid(TetGenInterface)) {
+    if(iFaces.find(IDD_MOFEMTetGegInterface.uUId.to_ulong()) == iFaces.end()) {
+      iFaces[IDD_MOFEMTetGegInterface.uUId.to_ulong()] = new TetGenInterface(*this);
+    }
+    ptr = iFaces.at(IDD_MOFEMTetGegInterface.uUId.to_ulong());
+    PetscFunctionReturn(0);
+  }
+  #endif
+
   if(type == typeid(MeshRefinment)) {
     ptr = static_cast<MeshRefinment*>(this);
   } else if(type == typeid(SeriesRecorder)) {
     ptr = static_cast<SeriesRecorder*>(this);
+  } else if(type == typeid(PrismInterface)) {
+    ptr = static_cast<PrismInterface*>(this);
+  } else {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"unknown inteface");
   }
   PetscFunctionReturn(0);
 }

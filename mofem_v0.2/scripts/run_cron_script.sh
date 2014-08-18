@@ -1,6 +1,6 @@
 #!/bin/sh
 
-CTEST_SCRIPTS_FILE_PATH=/home/lukasz/bitbucket/mofem-joseph/mofem_v0.2/cmake
+CTEST_SCRIPTS_FILE_PATH=/home/lukasz/mofem-cephas/mofem_v0.2/cmake
 CTSET_SCRIPT=CTestScript_rdb-srv1.cmake
 CWD=`pwd`
 

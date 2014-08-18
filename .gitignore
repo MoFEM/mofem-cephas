@@ -1,3 +1,1 @@
-mofem_v0.2/examples/CMakeLists.txt
-mofem_v0.2/examples/thermal/CMakeLists.txt
-mofem_v0.2/examples/ultraweak/CMakeLists.txt
+mofem_v0.2/users_modules/CMakeLists.txt
