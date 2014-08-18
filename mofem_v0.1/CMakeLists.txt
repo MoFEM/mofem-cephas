@@ -100,6 +100,8 @@ include_directories("${PROJECT_SOURCE_DIR}/third_party")
 include_directories("${PROJECT_SOURCE_DIR}/third_party/cblas")
 link_directories("${PROJECT_BINARY_DIR}/third_party/cblas")
 include_directories("${PROJECT_SOURCE_DIR}/homogenisation")
+include_directories("${PROJECT_SOURCE_DIR}/stochastic")
+
 
 add_library(mofem_Field 
   FieldInterface.cpp
@@ -180,6 +182,8 @@ include(CTest)
 add_subdirectory("${PROJECT_SOURCE_DIR}/atom_tests")
 add_subdirectory("${PROJECT_SOURCE_DIR}/examples")
 add_subdirectory("${PROJECT_SOURCE_DIR}/benchmarks")
+
+add_subdirectory("${PROJECT_SOURCE_DIR}/stochastic")
 
 install(DIRECTORY "${PROJECT_SOURCE_DIR}/benchmarks" DESTINATION mofem)
 
