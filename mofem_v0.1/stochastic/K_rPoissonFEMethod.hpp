@@ -38,6 +38,8 @@ namespace MoFEM {
       
     }
     
+    
+    
     PetscErrorCode calculateD(double young, double nu) {
       PetscFunctionBegin;
       D.resize(6,6);
