@@ -109,7 +109,7 @@ struct PrismInterface: public FieldUnknownInterface {
    * \param add_iterfece_entities add prism elements at interface
    * \param recuslsive do meshesets in the meshset
    * 
-   * note inheret_from_bit_level is need to be specidied to some meshset
+   * note inheret_from_bit_level is need to be specified to some meshsets
    * with interfaces. Some nodes on some refinment levels dividing edges but
    * not splitting faces. Inhereteing those nodes will not split faces.
    *

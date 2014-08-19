@@ -43,7 +43,9 @@ namespace MoFEM {
 
 
 PetscErrorCode FaceSplittingTools::initBitLevelData(BitRefLevel bit_mesh) {
-  petscFunctionBegin;
+  PetscFunctionBegin;
+
+  PetscErrorCode ierr;
 
   mesh_level_nodes.clear();
   mesh_level_edges.clear();
@@ -57,19 +59,12 @@ PetscErrorCode FaceSplittingTools::initBitLevelData(BitRefLevel bit_mesh) {
 
   PetscFunctionReturn(0);
 }
-PetscErrorCode FaceSplittingTools::calculateDistanceCrackFrontNodesFromCrackSurface(double alpha,int verb) {
-  PetscFunctionBegin;
-  Range crack_front_edges;
-  ierr = mField.get_Cubit_msId_entities_by_dimension(201,SIDESET,1,crack_front_edges,true); CHKERRQ(ierr);
-  crack_front_edges = intersect(crack_front_edges,mesh_level_edges);
-  Range crack_front_edges_nodes;
-  rval = mField.get_moab().get_connectivity(crack_front_edges,crack_front_edges_nodes,true); CHKERR_PETSC(rval);
-  ierr = calculateDistanceFromCrackSurface(crack_front_edges_nodes,alpha,verb); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
-}
 
 PetscErrorCode FaceSplittingTools::meshRefine(const int verb) {
   PetscFunctionBegin;
+
+  PetscErrorCode ierr;
+  ErrorCode rval;
 
   PetscBool flg = PETSC_TRUE;
   PetscInt nb_ref_levels;
@@ -157,7 +152,7 @@ PetscErrorCode FaceSplittingTools::meshRefine(const int verb) {
       if(edges_to_refine.empty()) continue; 
 
       int last_ref_bit = meshRefineBitLevels.back();
-      If(!meshIntefaceBitLevels.empty()) {
+      if(!meshIntefaceBitLevels.empty()) {
 	if(last_ref_bit<meshIntefaceBitLevels.back()) {
 	  last_ref_bit = meshIntefaceBitLevels.back();
 	}
@@ -199,6 +194,9 @@ PetscErrorCode FaceSplittingTools::meshRefine(const int verb) {
 PetscErrorCode FaceSplittingTools::splitFaces(const int verb) {
   PetscFunctionBegin;
 
+  PetscErrorCode ierr;
+  ErrorCode rval;
+
   const RefMoFEMEntity_multiIndex *refinedEntitiesPtr_ptr;
   ierr = mField.get_ref_ents(&refinedEntitiesPtr_ptr); CHKERRQ(ierr);
   BitRefLevel back_up_level;
@@ -206,6 +204,7 @@ PetscErrorCode FaceSplittingTools::splitFaces(const int verb) {
 
   EntityHandle bit_meshset;
   rval = mField.get_moab().create_meshset(MESHSET_SET,bit_meshset); CHKERR_PETSC(rval);
+  BitRefLevel current_ref = BitRefLevel().set(meshRefineBitLevels.back());
   ierr = mField.get_entities_by_type_and_ref_level(current_ref,BitRefLevel().set(),MBTET,bit_meshset); CHKERRQ(ierr);
   ierr = mField.seed_finite_elements(bit_meshset); CHKERRQ(ierr);
 

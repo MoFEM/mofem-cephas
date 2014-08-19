@@ -31,12 +31,6 @@ struct FaceSplittingTools {
   FaceSplittingTools(FieldInterface& _mField): 
     mField(_mField) {
 
-    kdTree_rootMeshset_DistanceFromCrackSurface = 0;
-    opositeFrontEdges = 0;
-    crackFrontTests = 0;
-    chopTetsFaces = 0;
-    selectedCrackFaces = 0;
-
     int def_bit_level_vec[BITREFLEVEL_SIZE];
     bzero(def_bit_level_vec,BITREFLEVEL_SIZE*sizeof(int));
     mField.get_moab().tag_get_handle(
