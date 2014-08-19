@@ -37,72 +37,74 @@ struct K_rsFEMethod: public ElasticFEMethod {
         
     }
 
-    PetscErrorCode calculateD(double young, double nu) {
-      PetscFunctionBegin;
+//    PetscErrorCode calculateD(double young, double nu) {
+//      PetscFunctionBegin;
+//
+//      cout<<"young "<<young<<endl;
+//      cout<<"nu "<<nu<<endl;
+//
+//      
+//      double E1=1/((1+nu)*(1-2*nu));
+//      D(0,0)=1-nu; D(0,1)=nu;   D(0,2)=nu;    D(0,3)=0;          D(0,4)=0;          D(0,5)=0;
+//      D(1,0)=nu;   D(1,1)=1-nu; D(1,2)=nu;    D(1,3)=0;          D(1,4)=0;          D(1,5)=0;
+//      D(2,0)=nu;   D(2,1)=nu;   D(2,2)=1-nu;  D(2,3)=0;          D(2,4)=0;          D(2,5)=0;
+//      D(3,0)=0;    D(3,1)=0;    D(3,2)=0;     D(3,3)=(1-2*nu)/2; D(3,4)=0;          D(3,5)=0;
+//      D(4,0)=0;    D(4,1)=0;    D(4,2)=0;     D(4,3)=0;          D(4,4)=(1-2*nu)/2; D(4,5)=0;
+//      D(5,0)=0;    D(5,1)=0;    D(5,2)=0;     D(5,3)=0;          D(5,4)=0;          D(5,5)=(1-2*nu)/2;
+//      D=E1*D;
+//      //cerr << D_lambda << endl;
+//      //cerr << D_mu << endl;
+//      //cerr << D << endl;
+//
+//      PetscFunctionReturn(0);
+//    }
 
-      D.resize(6,6);
-      
-      double E1=1/((1+nu)*(1-2*nu));
-      D(0,0)=1-nu; D(0,1)=nu;   D(0,2)=nu;    D(0,3)=0;          D(0,4)=0;          D(0,5)=0;
-      D(1,0)=nu;   D(1,1)=1-nu; D(1,2)=nu;    D(1,3)=0;          D(1,4)=0;          D(1,5)=0;
-      D(2,0)=nu;   D(2,1)=nu;   D(2,2)=1-nu;  D(2,3)=0;          D(2,4)=0;          D(2,5)=0;
-      D(3,0)=0;    D(3,1)=0;    D(3,2)=0;     D(3,3)=(1-2*nu)/2; D(3,4)=0;          D(3,5)=0;
-      D(4,0)=0;    D(4,1)=0;    D(4,2)=0;     D(4,3)=0;          D(4,4)=(1-2*nu)/2; D(4,5)=0;
-      D(5,0)=0;    D(5,1)=0;    D(5,2)=0;     D(5,3)=0;          D(5,4)=0;          D(5,5)=(1-2*nu)/2;
-      D=E1*D;
-      //cerr << D_lambda << endl;
-      //cerr << D_mu << endl;
-      //cerr << D << endl;
-
-      PetscFunctionReturn(0);
-    }
-
-    virtual PetscErrorCode GetMatParameters(double *_young,double *_pois) {
-      PetscFunctionBegin;
-
-      *_young = young;
-      *_pois = pois;
-
-
-      if(propeties_from_BLOCKSET_MAT_ELASTICSET) {
-	EntityHandle ent = fePtr->get_ent();
-	for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_ELASTICSET,it)) {
-
-	  Mat_Elastic mydata;
-	  ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
-
-	  Range meshsets;
-	  rval = moab.get_entities_by_type(it->meshset,MBENTITYSET,meshsets,true); CHKERR_PETSC(rval);
-	  meshsets.insert(it->meshset);
-	  for(Range::iterator mit = meshsets.begin();mit != meshsets.end(); mit++) {
-	    if( moab.contains_entities(*mit,&ent,1) ) {
-	      *_young = mydata.data.Young;
-	      *_pois  = mydata.data.Poisson;
-	    PetscFunctionReturn(0);  
-	  }
-	}
-
-      }
-
-      SETERRQ(PETSC_COMM_SELF,1,
-	"Element is not in elestic block, however you run linear elastic analysis with that element\n"
-	"top tip: check if you update block sets after mesh refinments or interface insertion");
-
-      }
-
-      PetscFunctionReturn(0);
-    }
+//    virtual PetscErrorCode GetMatParameters(double *_young,double *_pois) {
+//      PetscFunctionBegin;
+//
+//      *_young = young;
+//      *_pois = pois;
+//
+//
+//      if(propeties_from_BLOCKSET_MAT_ELASTICSET) {
+//	EntityHandle ent = fePtr->get_ent();
+//	for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_ELASTICSET,it)) {
+//
+//	  Mat_Elastic mydata;
+//	  ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+//
+//	  Range meshsets;
+//	  rval = moab.get_entities_by_type(it->meshset,MBENTITYSET,meshsets,true); CHKERR_PETSC(rval);
+//	  meshsets.insert(it->meshset);
+//	  for(Range::iterator mit = meshsets.begin();mit != meshsets.end(); mit++) {
+//	    if( moab.contains_entities(*mit,&ent,1) ) {
+//	      *_young = mydata.data.Young;
+//	      *_pois  = mydata.data.Poisson;
+//	    PetscFunctionReturn(0);  
+//	  }
+//	}
+//
+//      }
+//
+//      SETERRQ(PETSC_COMM_SELF,1,
+//	"Element is not in elestic block, however you run linear elastic analysis with that element\n"
+//	"top tip: check if you update block sets after mesh refinments or interface insertion");
+//
+//      }
+//
+//      PetscFunctionReturn(0);
+//    }
 
   
 
 
-    ublas::matrix<ublas::matrix<FieldData> > K;
-    ublas::matrix<FieldData> BD;
-    virtual PetscErrorCode Stiffness() {
-      PetscFunctionBegin;
-
-      double _young,_pois;
-      ierr = GetMatParameters(&_young,&_pois); CHKERRQ(ierr);
+//    ublas::matrix<ublas::matrix<FieldData> > K;
+//    ublas::matrix<FieldData> BD;
+//    virtual PetscErrorCode Stiffness() {
+//      PetscFunctionBegin;
+//
+//      double _young,_pois;
+//      ierr = GetMatParameters(&_young,&_pois); CHKERRQ(ierr);
 //      ierr = calculateD(_young,_pois); CHKERRQ(ierr);
 
 //      K.resize(row_mat,col_mat);
@@ -144,12 +146,12 @@ struct K_rsFEMethod: public ElasticFEMethod {
 //	  }
 //	}
 //      }
-      PetscFunctionReturn(0);
-    }
-
-    virtual PetscErrorCode Lhs() {
-      PetscFunctionBegin;
-      ierr = Stiffness(); CHKERRQ(ierr);
+//      PetscFunctionReturn(0);
+//    }
+//
+//    virtual PetscErrorCode Lhs() {
+//      PetscFunctionBegin;
+//      ierr = Stiffness(); CHKERRQ(ierr);
 //      for(int rr = 0;rr<row_mat;rr++) {
 //	if(RowGlob[rr].size()==0) continue;
 //	for(int cc = rr;cc<col_mat;cc++) {
@@ -163,8 +165,8 @@ struct K_rsFEMethod: public ElasticFEMethod {
 //	  }
 //	}
 //      }
-      PetscFunctionReturn(0);
-    }
+//      PetscFunctionReturn(0);
+//    }
 
 //    virtual PetscErrorCode Rhs() {
 //      PetscFunctionBegin;

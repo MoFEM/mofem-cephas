@@ -24,7 +24,7 @@
 
 #include "FEMethod_UpLevelStudent.hpp"
 #include "ElasticFEMethod.hpp"
-#include "K_rFEMethod.hpp"
+#include "K_rPoissonFEMethod.hpp"
 
 #include "ForcesAndSurcesCore.hpp"
 #include "SnesCtx.hpp"
@@ -163,7 +163,6 @@ int main(int argc, char *argv[]) {
   ierr = mField.modify_finite_element_add_field_col("K","DISPLACEMENT"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_data("K","DISPLACEMENT"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_data("K","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
-
   
   //Define rows/cols and element data
   ierr = mField.modify_finite_element_add_field_row("K_r","DISP_r"); CHKERRQ(ierr);
@@ -179,10 +178,13 @@ int main(int argc, char *argv[]) {
 
   //define problems
   ierr = mField.add_problem("STOCHASIC_PROBLEM"); CHKERRQ(ierr);
+  ierr = mField.add_problem("STOCHASIC_ZERO_ORDER_PROBLEM"); CHKERRQ(ierr);
+  ierr = mField.add_problem("STOCHASIC_FISRT_ORDER_PROBLEM"); CHKERRQ(ierr);
+  ierr = mField.add_problem("STOCHASIC_SECOND_ORDER_PROBLEM"); CHKERRQ(ierr);
 
   //set finite elements for problem
   ierr = mField.modify_problem_add_finite_element("STOCHASIC_PROBLEM","K"); CHKERRQ(ierr);
-  ierr = mField.modify_problem_add_finite_element("STOCHASIC_PROBLEM","K_r"); CHKERRQ(ierr);
+  ierr = mField.modify_problem_add_finite_element("STOCHASIC_FISRT_ORDER_PROBLEM","K_r"); CHKERRQ(ierr);
   ierr = mField.modify_problem_add_finite_element("STOCHASIC_PROBLEM","K_rs"); CHKERRQ(ierr);
 
   //set refinment level for problem

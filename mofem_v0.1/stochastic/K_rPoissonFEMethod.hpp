@@ -40,16 +40,21 @@ struct K_rFEMethod: public ElasticFEMethod {
     PetscErrorCode calculateD(double young, double nu) {
       PetscFunctionBegin;
 
-      D.resize(6,6);
+      D.clear();
+      cout<<"D = "<<D;
+      D00=(2*young*(nu^2 + 2*nu - 2))/(nu + 1)^2;
+      D01=-(young*(2*nu^2 + 4*nu - 1))/(nu + 1)^2;
+      D33=(young*(4*nu^2 + 8*nu - 5))/(2*(nu + 1)^2);
+
+      D(0,0)=D00;  D(0,1)=D01;  D(0,2)=D01;
+      D(1,0)=nu;   D(1,1)=1-nu; D(1,2)=nu;
+      D(2,0)=nu;   D(2,1)=nu;   D(2,2)=1-nu;
+                                              D(3,3)=(1-2*nu)/2; D(3,4)=0;
+                                                                 D(4,4)=(1-2*nu)/2; 
+                                                                                    D(5,5)=(1-2*nu)/2;
+
       
-      double E1=1/((1+nu)*(1-2*nu));
-      D(0,0)=1-nu; D(0,1)=nu;   D(0,2)=nu;    D(0,3)=0;          D(0,4)=0;          D(0,5)=0;
-      D(1,0)=nu;   D(1,1)=1-nu; D(1,2)=nu;    D(1,3)=0;          D(1,4)=0;          D(1,5)=0;
-      D(2,0)=nu;   D(2,1)=nu;   D(2,2)=1-nu;  D(2,3)=0;          D(2,4)=0;          D(2,5)=0;
-      D(3,0)=0;    D(3,1)=0;    D(3,2)=0;     D(3,3)=(1-2*nu)/2; D(3,4)=0;          D(3,5)=0;
-      D(4,0)=0;    D(4,1)=0;    D(4,2)=0;     D(4,3)=0;          D(4,4)=(1-2*nu)/2; D(4,5)=0;
-      D(5,0)=0;    D(5,1)=0;    D(5,2)=0;     D(5,3)=0;          D(5,4)=0;          D(5,5)=(1-2*nu)/2;
-      D=E1*D;
+      
       //cerr << D_lambda << endl;
       //cerr << D_mu << endl;
       //cerr << D << endl;
