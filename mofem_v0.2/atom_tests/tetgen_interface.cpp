@@ -34,6 +34,7 @@ ErrorCode rval;
 PetscErrorCode ierr;
 
 static char help[] = "...\n\n";
+static int debug = 0;
 
 int main(int argc, char *argv[]) {
 
@@ -90,7 +91,7 @@ int main(int argc, char *argv[]) {
   EntityHandle meshset_level1;
   rval = moab.create_meshset(MESHSET_SET,meshset_level1); CHKERR_PETSC(rval);
   ierr = m_field.get_entities_by_type_and_ref_level(bit_level1,BitRefLevel().set(),MBTET,meshset_level1); CHKERRQ(ierr);
-  rval = moab.write_file("level1.vtk","VTK","",&meshset_level1,1); CHKERR_PETSC(rval);
+  if(debug) rval = moab.write_file("level1.vtk","VTK","",&meshset_level1,1); CHKERR_PETSC(rval);
 
   Skinner skin(&moab);
   Range outer_surface_skin;
@@ -117,7 +118,7 @@ int main(int argc, char *argv[]) {
   EntityHandle meshset_level2;
   rval = moab.create_meshset(MESHSET_SET,meshset_level2); CHKERR_PETSC(rval);
   ierr = m_field.get_entities_by_type_and_ref_level(bit_level2,BitRefLevel().set(),MBTET,meshset_level2); CHKERRQ(ierr);
-  rval = moab.write_file("level2.vtk","VTK","",&meshset_level2,1); CHKERR_PETSC(rval);
+  if(debug) rval = moab.write_file("level2.vtk","VTK","",&meshset_level2,1); CHKERR_PETSC(rval);
 
   in.deinitialize();
   out.deinitialize();
@@ -133,12 +134,22 @@ int main(int argc, char *argv[]) {
   ierr = tetgen_iface->inData(tets,in,moab_tetgen_map,tetgen_moab_map); CHKERRQ(ierr);
   ierr = tetgen_iface->setFaceCubitSideSetMarkers(moab_tetgen_map,in); CHKERRQ(ierr);
 
-  char switches3[] = "prq";
+  char switches3[] = "pY";
   ierr = tetgen_iface->tetRahedralize(switches3,in,out); CHKERRQ(ierr);
   BitRefLevel bit_level3;
   bit_level3.set(3);
   ierr = tetgen_iface->outData(bit_level3,in,out,moab_tetgen_map,tetgen_moab_map); CHKERRQ(ierr);
   ierr = tetgen_iface->getFaceCubitSideSetMarkers(tetgen_moab_map,out); CHKERRQ(ierr);
+
+
+  tetgenio out2;
+  char switches4[] = "rqa";
+  ierr = tetgen_iface->tetRahedralize(switches4,out,out2); CHKERRQ(ierr);
+  BitRefLevel bit_level4;
+  bit_level4.set(4);
+  ierr = tetgen_iface->outData(bit_level4,out,out2,moab_tetgen_map,tetgen_moab_map); CHKERRQ(ierr);
+  ierr = tetgen_iface->getFaceCubitSideSetMarkers(tetgen_moab_map,out2); CHKERRQ(ierr);
+
 
   Tag th;
   int def_marker = 0;
@@ -152,6 +163,7 @@ int main(int argc, char *argv[]) {
     rval = moab.get_entities_by_type(sit->meshset,MBTRI,faces,true); CHKERR_PETSC(rval);
     Range::iterator it = faces.begin();
     for(;it!=faces.end();it++) {
+      //cerr << id << endl;
       rval = moab.tag_set_data(th,&*it,1,&id); CHKERR_PETSC(rval);
     }
 
@@ -160,7 +172,13 @@ int main(int argc, char *argv[]) {
   EntityHandle meshset_level3;
   rval = moab.create_meshset(MESHSET_SET,meshset_level3); CHKERR_PETSC(rval);
   ierr = m_field.get_entities_by_type_and_ref_level(bit_level3,BitRefLevel().set(),MBTRI,meshset_level3); CHKERRQ(ierr);
-  rval = moab.write_file("level3.vtk","VTK","",&meshset_level3,1); CHKERR_PETSC(rval);
+  if(debug) rval = moab.write_file("level3.vtk","VTK","",&meshset_level3,1); CHKERR_PETSC(rval);
+
+  EntityHandle meshset_level4;
+  rval = moab.create_meshset(MESHSET_SET,meshset_level4); CHKERR_PETSC(rval);
+  ierr = m_field.get_entities_by_type_and_ref_level(bit_level4,BitRefLevel().set(),MBTRI,meshset_level4); CHKERRQ(ierr);
+  if(debug) rval = moab.write_file("level4.vtk","VTK","",&meshset_level4,1); CHKERR_PETSC(rval);
+
         
   } catch (const char* msg) {
     SETERRQ(PETSC_COMM_SELF,1,msg);

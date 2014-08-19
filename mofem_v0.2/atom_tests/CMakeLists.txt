@@ -517,15 +517,16 @@ add_test(forces_and_sources_ultra_weak_transport_atom_compare ${CMAKE_COMMAND} -
 
 if(TETGEN_LIBRARY) 
 
+  cm_export_file("../meshes/PeelTest.cub" export_atom_tests)
+
   add_executable(tetgen_interface tetgen_interface.cpp)
   target_link_libraries(tetgen_interface
-    mofem_finite_elements
     mofem_interfaces
     mofem_multi_indices
-    mofem_petsc
-    mofem_approx
-    mofem_third_party
     ${PROJECT_LIBS})
+
+add_test(tetgen_interface_atom ${MPI_RUN} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/tetgen_interface -my_file PeelTest.cub)
 
 
 endif(TETGEN_LIBRARY)

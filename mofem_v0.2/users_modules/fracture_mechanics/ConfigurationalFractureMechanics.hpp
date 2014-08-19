@@ -159,8 +159,5 @@ PetscErrorCode main_rescale_load_factor(FieldInterface& mField,ConfigurationalFr
 PetscErrorCode main_arc_length_setup(FieldInterface& mField,ConfigurationalFractureMechanics& conf_prob);
 PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFractureMechanics& conf_prob,bool face_splitting = false);
 
-//face splitting
-PetscErrorCode main_face_splitting_restart(FieldInterface& mField,ConfigurationalFractureMechanics& conf_prob);
-
 
 #endif //__CONFIGURATIONAL_MECHANICS_HPP__

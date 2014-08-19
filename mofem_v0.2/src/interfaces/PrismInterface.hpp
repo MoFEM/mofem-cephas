@@ -111,7 +111,7 @@ struct PrismInterface: public FieldUnknownInterface {
    * 
    * note inheret_from_bit_level is need to be specidied to some meshset
    * with interfaces. Some nodes on some refinment levels dividing edges but
-   * not splitting faces. Inhereteing thise nodes will not split faces.
+   * not splitting faces. Inhereteing those nodes will not split faces.
    *
    */
   virtual PetscErrorCode get_msId_3dENTS_split_sides(

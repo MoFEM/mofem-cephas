@@ -74,23 +74,6 @@ target_link_libraries(arc_length_material_coupled
   mofem_cblas
   ${MoFEM_PROJECT_LIBS})
 
-add_executable(split_faces
-  ${MoFEM_PROJECT_SOURCE_DIR}/users_modules/fracture_mechanics/split_faces.cpp
-  ${MoFEM_PROJECT_SOURCE_DIR}/users_modules/fracture_mechanics/FaceSplittingTool.cpp
-  ${MoFEM_PROJECT_SOURCE_DIR}/users_modules/fracture_mechanics/ConfigurationalFractureMechanics.cpp
-)
-target_link_libraries(split_faces 
-  mofem_finite_element_library
-  mofem_finite_elements
-  mofem_interfaces
-  mofem_multi_indices
-  mofem_petsc
-  users_modules_obsolete
-  complex_for_lazy_obsolete
-  mofem_approx
-  mofem_third_party
-  mofem_cblas
-  ${MoFEM_PROJECT_LIBS})
 
 file(COPY
     ${CMAKE_CURRENT_SOURCE_DIR}/README
@@ -110,19 +93,10 @@ configure_file(
   @ONLY
   )
 
-configure_file(
-  "${CMAKE_CURRENT_SOURCE_DIR}/face_split_arc_length.sh.in"
-  "${CMAKE_CURRENT_SOURCE_DIR}/face_split_arc_length.sh"
-  @ONLY
-  )
-
 file(COPY convergence_study.sh 
   DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
   FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE)
 file(COPY arc_length.sh
-  DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
-  FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE)
-file(COPY face_split_arc_length.sh
   DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
   FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE)
 

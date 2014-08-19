@@ -123,10 +123,9 @@ PetscErrorCode TetGenInterface::inData(
     Range faces = ents.subset_by_dimension(2);
     it = faces.begin();
     for(int ii = 0;it!=faces.end();it++,ii++) {
-      tetgen_moab_map[
-	m_field.get_moab().type_from_handle(*it)|ii<<sizeof(int)] = *it;
-      moab_tetgen_map[*it] = 
-	m_field.get_moab().type_from_handle(*it)|ii<<sizeof(int);
+      int iii = m_field.get_moab().type_from_handle(*it)|ii<<sizeof(int);
+      tetgen_moab_map[iii] = *it;
+      moab_tetgen_map[*it] = iii;
       tetgenio::facet *f = &(in.facetlist[ii]);
       f->numberofpolygons = 1;
       f->polygonlist = new tetgenio::polygon[f->numberofpolygons];
@@ -250,15 +249,14 @@ PetscErrorCode TetGenInterface::setFaceCubitSideSetMarkers(map<EntityHandle,unsi
   FieldInterface& m_field = cOre;
 
   int shift = 0;
-
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,SIDESET,sit)) {
     Range faces;
     rval = m_field.get_moab().get_entities_by_type(sit->meshset,MBTRI,faces,true); CHKERR_PETSC(rval);
     Range::iterator it = faces.begin();
     for(;it!=faces.end();it++) {
       if(moab_tetgen_map.find(*it)!=moab_tetgen_map.end()) {
-	int ii  = moab_tetgen_map[*it]>>sizeof(int);
-	in.facetmarkerlist[ii] = (in.facetmarkerlist[ii])|(1<<shift);
+	int ii = moab_tetgen_map[*it]>>sizeof(int);
+	in.facetmarkerlist[ii] |= 1<<shift;
       }
     }
     shift++;
@@ -281,12 +279,10 @@ PetscErrorCode TetGenInterface::getFaceCubitSideSetMarkers(map<EntityHandle,unsi
 
   int ii = 0;
   for(;ii<out.numberoftrifaces;ii++) {
-    int sh = 0;
-    for(;sh<shift;sh++) {
+    for(int sh = 0;sh<shift;sh++) {
       if(out.trifacemarkerlist[ii]&(1<<sh)) {
 	EntityHandle conn[3];
-	int nn = 0;
-	for(;nn<3;nn++) {
+	for(int nn = 0;nn<3;nn++) {
 	  int iii = MBVERTEX|(out.trifacelist[3*ii+nn]<<sizeof(int));
 	  if(tetgen_moab_map.find(iii) == tetgen_moab_map.end()) {
 	    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency between TetGen and MoAB");
