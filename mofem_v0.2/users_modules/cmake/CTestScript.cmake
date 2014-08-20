@@ -1,5 +1,5 @@
-set(CTEST_SOURCE_DIRECTORY "/tmp/cephas/debug_examples/users_modules")
-set(CTEST_BINARY_DIRECTORY "/tmp/cephas/debug_examples/build")
+set(CTEST_SOURCE_DIRECTORY "/home/lukasz/tmp/cephas_users_modules/users_modules")
+set(CTEST_BINARY_DIRECTORY "/home/lukasz/tmp/cephas_users_modules/build")
 
 set(CTEST_PROJECT_NAME "MoFEM-UsersModules")
 set(CTEST_CMAKE_GENERATOR "Unix Makefiles")
