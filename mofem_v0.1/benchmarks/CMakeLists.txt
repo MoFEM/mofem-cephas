@@ -22,10 +22,15 @@ include_directories("${PROJECT_SOURCE_DIR}/benchmarks")
 #add executable library form subdirectory
 add_subdirectory("${PROJECT_SOURCE_DIR}/benchmarks/three_point_bending_graphite_simple_notch_symmetric")
 add_subdirectory("${PROJECT_SOURCE_DIR}/benchmarks/three_point_bending_graphite_corner_notch")
-add_subdirectory("${PROJECT_SOURCE_DIR}/benchmarks/torsion_concrete_beam")
+#add_subdirectory("${PROJECT_SOURCE_DIR}/benchmarks/torsion_concrete_beam")
 add_subdirectory("${PROJECT_SOURCE_DIR}/benchmarks/plate_stability")
 add_subdirectory("${PROJECT_SOURCE_DIR}/benchmarks/brick_slice")
 add_subdirectory("${PROJECT_SOURCE_DIR}/benchmarks/horizontal_crack")
+<<<<<<< HEAD
 add_subdirectory("${PROJECT_SOURCE_DIR}/benchmarks/torsion_graphite_beam")
 add_subdirectory("${PROJECT_SOURCE_DIR}/benchmarks/brick_slice_with_slot")
 add_subdirectory("${PROJECT_SOURCE_DIR}/benchmarks/three_point_bending_PMMA")
+=======
+#add_subdirectory("${PROJECT_SOURCE_DIR}/benchmarks/torsion_graphite_beam")
+#add_subdirectory("${PROJECT_SOURCE_DIR}/benchmarks/brick_slice_with_slot")
+>>>>>>> 9303b875b746430daa098d6ffad75909bc60f649
