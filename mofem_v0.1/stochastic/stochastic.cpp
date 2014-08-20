@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
+/* Copyright (C) 2013, Zahur.Ullah (Zahur.Ullah@glasgow.ac.uk)
  * --------------------------------------------------------------
  * FIXME: DESCRIPTION
  */
@@ -25,6 +25,7 @@
 #include "FEMethod_UpLevelStudent.hpp"
 #include "ElasticFEMethod.hpp"
 #include "K_rPoissonFEMethod.hpp"
+#include "K_rsPoissonFEMethod.hpp"
 
 #include "ForcesAndSurcesCore.hpp"
 #include "SnesCtx.hpp"
@@ -33,8 +34,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-  #include<cblas.h>
-  #include<lapack_wrap.h>
+#include<cblas.h>
+#include<lapack_wrap.h>
 #ifdef __cplusplus
 }
 #endif
@@ -69,7 +70,7 @@ const double poisson_ratio = 0.0;
 
 PetscErrorCode write_soltion(FieldInterface &mField,const string out_file, const string out_ref_file) {
   PetscFunctionBegin;
-
+  
   PostProcVertexMethod ent_method(mField.get_moab(),"DISPLACEMENT");
   ierr = mField.loop_dofs("STOCHASIC_PROBLEM","DISPLACEMENT",ROW,ent_method); CHKERRQ(ierr);
   PostProcVertexMethod ent_method1(mField.get_moab(),"DISP_r");
@@ -78,7 +79,7 @@ PetscErrorCode write_soltion(FieldInterface &mField,const string out_file, const
   ierr = mField.loop_dofs("DISP_rs",ent_method2); CHKERRQ(ierr);
   
   ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
-
+  
   if(pcomm->rank()==0) {
     EntityHandle out_meshset;
     rval = mField.get_moab().create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
@@ -86,30 +87,34 @@ PetscErrorCode write_soltion(FieldInterface &mField,const string out_file, const
     rval = mField.get_moab().write_file(out_file.c_str(),"VTK","",&out_meshset,1); CHKERR_PETSC(rval);
     rval = mField.get_moab().delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
   }
- 
-//  if(pcomm->rank()==0) {
-//
-//    PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh fe_post_proc_method(
-//      mField,"DISPLACEMENT",LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
-//    fe_post_proc_method.do_broadcast = false;
-//    ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","ELASTIC",fe_post_proc_method,0,pcomm->size());  CHKERRQ(ierr);
-//    rval = fe_post_proc_method.moab_post_proc.write_file(out_ref_file.c_str(),"VTK",""); CHKERR_PETSC(rval);
-//  }
-
+  
+  //  if(pcomm->rank()==0) {
+  //
+  //    PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh fe_post_proc_method(
+  //      mField,"DISPLACEMENT",LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
+  //    fe_post_proc_method.do_broadcast = false;
+  //    ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","ELASTIC",fe_post_proc_method,0,pcomm->size());  CHKERRQ(ierr);
+  //    rval = fe_post_proc_method.moab_post_proc.write_file(out_ref_file.c_str(),"VTK",""); CHKERR_PETSC(rval);
+  //  }
+  
   PetscFunctionReturn(0);
 }
 
 int main(int argc, char *argv[]) {
-
+  
   PetscInitialize(&argc,&argv,(char *)0,help);
-
+  
   Core mb_instance;
   Interface& moab = mb_instance;
   int rank;
   MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
-
+  // ===========================================================================
+  //
+  //  I. READ MESH DATA AND FINITE ELEMENT ANALYSIS CONTROL PARAMETERS FROM FILE
+  //
+  // ===========================================================================
   //Reade parameters from line command
   PetscBool flg = PETSC_TRUE;
   char mesh_file_name[255];
@@ -122,21 +127,21 @@ int main(int argc, char *argv[]) {
   if(flg != PETSC_TRUE) {
     order = 5;
   }
-    
+  
   //Read mesh to MOAB
   const char *option;
   //option = "PARALLEL=BCAST_DELETE;"
-      //"PARTITION=GEOM_DIMENSION,PARTITION_VAL=3,PARTITION_DISTRIBUTE";//;DEBUG_IO";
+  //"PARTITION=GEOM_DIMENSION,PARTITION_VAL=3,PARTITION_DISTRIBUTE";//;DEBUG_IO";
   option = "";
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
-
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
+  
   //Create MoFEM (Joseph) database
   FieldCore core(moab);
   FieldInterface& mField = core;
-
+  
   //ref meshset ref level 0
   ierr = mField.seed_ref_level_3D(0,0); CHKERRQ(ierr);
-
+  
   // stl::bitset see for more details
   BitRefLevel bit_level0;
   bit_level0.set(0);
@@ -144,9 +149,14 @@ int main(int argc, char *argv[]) {
   rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
   ierr = mField.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
   ierr = mField.get_entities_by_ref_level(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
-
+  
+  // ===========================================================================
+  //
+  // II. DEFINE PROBLEM
+  //
+  // ===========================================================================
   //Define problem
-
+  
   //Fields
   ierr = mField.add_field("DISPLACEMENT",H1,3,MF_ZERO); CHKERRQ(ierr);
   ierr = mField.add_field("MESH_NODE_POSITIONS",H1,3,MF_ZERO); CHKERRQ(ierr);
@@ -154,10 +164,10 @@ int main(int argc, char *argv[]) {
   //Adding sotchastic field
   ierr = mField.add_field("DISP_r",H1,3,MF_ZERO); CHKERRQ(ierr);
   ierr = mField.add_field("DISP_rs",H1,3,MF_ZERO); CHKERRQ(ierr);
-
+  
   //FE
   ierr = mField.add_finite_element("K",MF_ZERO); CHKERRQ(ierr);
-
+  
   //Define rows/cols and element data
   ierr = mField.modify_finite_element_add_field_row("K","DISPLACEMENT"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_col("K","DISPLACEMENT"); CHKERRQ(ierr);
@@ -168,25 +178,30 @@ int main(int argc, char *argv[]) {
   
   //define problems
   ierr = mField.add_problem("STOCHASIC_PROBLEM"); CHKERRQ(ierr);
-
+  
   //set finite elements for problem
   ierr = mField.modify_problem_add_finite_element("STOCHASIC_PROBLEM","K"); CHKERRQ(ierr);
-
+  
   //set refinment level for problem
   ierr = mField.modify_problem_ref_level_add_bit("STOCHASIC_PROBLEM",bit_level0); CHKERRQ(ierr);
- 
+  
+  // ===========================================================================
+  //
+  // III. DECLARE PROBLEM
+  //
+  // ===========================================================================
   //Declare problem
-
+  
   //add entitities (by tets) to the field
   ierr = mField.add_ents_to_field_by_TETs(0,"DISPLACEMENT"); CHKERRQ(ierr);
   ierr = mField.add_ents_to_field_by_TETs(0,"DISP_r"); CHKERRQ(ierr);
   ierr = mField.add_ents_to_field_by_TETs(0,"DISP_rs"); CHKERRQ(ierr);
-
+  
   ierr = mField.add_ents_to_field_by_TETs(0,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
-
+  
   //add finite elements entities
   ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"K",MBTET); CHKERRQ(ierr);
-
+  
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
   //int order = 5;
@@ -201,7 +216,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.set_field_order(0,MBTRI,"DISP_r",order_st); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBEDGE,"DISP_r",order_st); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBVERTEX,"DISP_r",1); CHKERRQ(ierr);
-
+  
   ierr = mField.set_field_order(0,MBTET,"DISP_rs",order_st); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBTRI,"DISP_rs",order_st); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBEDGE,"DISP_rs",order_st); CHKERRQ(ierr);
@@ -211,40 +226,44 @@ int main(int argc, char *argv[]) {
   ierr = mField.set_field_order(0,MBTRI,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBEDGE,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
-
+  
   ierr = MetaNeummanForces::addNeumannBCElements(mField,"STOCHASIC_PROBLEM","DISPLACEMENT"); CHKERRQ(ierr);
   ierr = MetaNodalForces::addNodalForceElement(mField,"STOCHASIC_PROBLEM","DISPLACEMENT"); CHKERRQ(ierr);
-
+  // ===========================================================================
+  //
+  //  IV. BUILD
+  //
+  // ===========================================================================
   //build database
-
+  
   //build field
   ierr = mField.build_fields(); CHKERRQ(ierr);
-
+  
   //build finite elemnts
   ierr = mField.build_finite_elements(); CHKERRQ(ierr);
-
+  
   //build adjacencies
   ierr = mField.build_adjacencies(bit_level0); CHKERRQ(ierr);
-
+  
   //build problem
   ierr = mField.build_problems(); CHKERRQ(ierr);
-
-  //mesh partitioning 
-
+  
+  //mesh partitioning
+  
   //partition
   ierr = mField.partition_problem("STOCHASIC_PROBLEM"); CHKERRQ(ierr);
   ierr = mField.partition_finite_elements("STOCHASIC_PROBLEM"); CHKERRQ(ierr);
   //what are ghost nodes, see Petsc Manual
   ierr = mField.partition_ghost_dofs("STOCHASIC_PROBLEM"); CHKERRQ(ierr);
-
+  
   //mField.list_dofs_by_field_name("DISPLACEMENT",true);
-
+  
   //print bcs
   ierr = mField.print_cubit_displacement_set(); CHKERRQ(ierr);
   ierr = mField.print_cubit_force_set(); CHKERRQ(ierr);
   //print block sets with materials
   ierr = mField.print_cubit_materials_set(); CHKERRQ(ierr);
-
+  
   //create matrices
   Vec F,dF,ddF,D,dD,ddD;
   ierr = mField.VecCreateGhost("STOCHASIC_PROBLEM",ROW,&F); CHKERRQ(ierr);
@@ -254,35 +273,35 @@ int main(int argc, char *argv[]) {
   ierr = mField.VecCreateGhost("STOCHASIC_PROBLEM",COL,&D); CHKERRQ(ierr);
   ierr = mField.VecCreateGhost("STOCHASIC_PROBLEM",COL,&dD); CHKERRQ(ierr);
   ierr = mField.VecCreateGhost("STOCHASIC_PROBLEM",COL,&ddD); CHKERRQ(ierr);
-
+  
   Mat Aij;
   ierr = mField.MatCreateMPIAIJWithArrays("STOCHASIC_PROBLEM",&Aij); CHKERRQ(ierr);
-
+  
   struct MyElasticFEMethod: public ElasticFEMethod {
-    MyElasticFEMethod(FieldInterface& _mField,Mat &_Aij,Vec &_D,Vec& _F,double _lambda,double _mu): 
-      ElasticFEMethod(_mField,_Aij,_D,_F,_lambda,_mu) {};
-
+    MyElasticFEMethod(FieldInterface& _mField,Mat &_Aij,Vec &_D,Vec& _F,double _lambda,double _mu):
+    ElasticFEMethod(_mField,_Aij,_D,_F,_lambda,_mu) {};
+    
     PetscErrorCode Fint(Vec F_int) {
       PetscFunctionBegin;
       ierr = ElasticFEMethod::Fint(); CHKERRQ(ierr);
       for(int rr = 0;rr<row_mat;rr++) {
-          if(RowGlob[rr].size()!=f_int[rr].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-          if(RowGlob[rr].size()==0) continue;
-          f_int[rr] *= -1; //This is not SNES we solve K*D = -RES
-          ierr = VecSetValues(F_int,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f_int[rr].data()[0]),ADD_VALUES); CHKERRQ(ierr);
+        if(RowGlob[rr].size()!=f_int[rr].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+        if(RowGlob[rr].size()==0) continue;
+        f_int[rr] *= -1; //This is not SNES we solve K*D = -RES
+        ierr = VecSetValues(F_int,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f_int[rr].data()[0]),ADD_VALUES); CHKERRQ(ierr);
       }
       PetscFunctionReturn(0);
     }
-
+    
   };
-
+  
   Projection10NodeCoordsOnField ent_method_material(mField,"MESH_NODE_POSITIONS");
   ierr = mField.loop_dofs("MESH_NODE_POSITIONS",ent_method_material); CHKERRQ(ierr);
-
+  
   //Assemble F and Aij
   DisplacementBCFEMethodPreAndPostProc my_dirichlet_bc(mField,"DISPLACEMENT",Aij,D,F);
   MyElasticFEMethod my_fe(mField,Aij,D,F,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
-
+  
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -294,8 +313,8 @@ int main(int argc, char *argv[]) {
   //loop elems for K
   ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","K",my_fe);  CHKERRQ(ierr);
   //Need to create 2 loops over K_r and K_rs
-
-
+  
+  
   
   //forces and preassures on surface
   boost::ptr_map<string,NeummanForcesSurface> neumann_forces;
@@ -313,87 +332,139 @@ int main(int argc, char *argv[]) {
   }
   //postproc
   ierr = mField.problem_basic_method_postProcess("STOCHASIC_PROBLEM",my_dirichlet_bc); CHKERRQ(ierr);
-
+  
   //set matrix possitives define and symetric for cholesky and icc preceonditionser
   ierr = MatSetOption(Aij,MAT_SPD,PETSC_TRUE); CHKERRQ(ierr);
-
+  
   ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
   ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
-
+  
   PetscSynchronizedFlush(PETSC_COMM_WORLD);
-
-//  //Matrix View
-//  MatView(Aij,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
-//  std::string wait;
-//  std::cin >> wait;
-
-  //Solver
+  
+  //  //Matrix View
+  //  MatView(Aij,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
+  //  std::string wait;
+  //  std::cin >> wait;
+  // ===========================================================================
+  //
+  //  V. SOLUTION PHASE
+  //
+  // ===========================================================================
   KSP solver;
   ierr = KSPCreate(PETSC_COMM_WORLD,&solver); CHKERRQ(ierr);
   ierr = KSPSetOperators(solver,Aij,Aij,SAME_NONZERO_PATTERN); CHKERRQ(ierr);
   ierr = KSPSetFromOptions(solver); CHKERRQ(ierr);
   ierr = KSPSetUp(solver); CHKERRQ(ierr);
-
-  //Zero Order
+  
+  /*****************************************************************************
+   *
+   *  1. SOLVE THE ZEROTH-ORDER FINITE ELEMENT EQUILIBRIUM EQUATION
+   *     [K][U] = [F]
+   *
+   ****************************************************************************/
   ierr = KSPSolve(solver,F,D); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = mField.set_global_VecCreateGhost("STOCHASIC_PROBLEM",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   
-//  ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-//  ierr = VecView(D,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-
+  //  ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+  //  ierr = VecView(D,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
   
   
+  /*****************************************************************************
+   *
+   *  2. SOLVE THE FIRST-ORDER FINITE ELEMENT EQUILIBRIUM EQUATION
+   *     [K][U_r] = -[K_r][U}
+   *
+   ****************************************************************************/
+  // 2.1
   ierr = VecZeroEntries(dF); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(dF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(dF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   
+  // 2.2 define/apply boundary condition
   DisplacementBCFEMethodPreAndPostProc my_dirichlet_bc1(mField,"DISPLACEMENT",Aij,dD,dF);
-  K_rPoissonFEMethod my_fe_k_r(mField,Aij,D,dF,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
-  //preproc
   ierr = mField.problem_basic_method_preProcess("STOCHASIC_PROBLEM",my_dirichlet_bc1); CHKERRQ(ierr);
+  
+  // 2.3 construct the first-order derivative of global stiffness matrix
+  K_rPoissonFEMethod my_fe_k_r(mField,Aij,D,dF,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
   ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","K",my_fe_k_r);  CHKERRQ(ierr);
-  //postproc
+  
+  // 2.4
   ierr = mField.problem_basic_method_postProcess("STOCHASIC_PROBLEM",my_dirichlet_bc1); CHKERRQ(ierr);
-
+  // 2.5
   ierr = VecGhostUpdateBegin(dF,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(dF,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecAssemblyBegin(dF); CHKERRQ(ierr);
   ierr = VecAssemblyEnd(dF); CHKERRQ(ierr);
-  ierr = VecView(dF,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-
-   //First order
-   ierr = KSPSolve(solver,dF,dD); CHKERRQ(ierr);
-   ierr = VecGhostUpdateBegin(dD,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-   ierr = VecGhostUpdateEnd(dD,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+//  ierr = VecView(dF,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
   
-  ierr = VecView(dD,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+  // 2.6 solve the finite element equation to get answer for
+  //     the first order partial derivative of nodal displacement
+  ierr = KSPSolve(solver,dF,dD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(dD,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(dD,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  // 2.7
+//  ierr = VecView(dD,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
   ierr = mField.set_other_global_VecCreateGhost("STOCHASIC_PROBLEM","DISPLACEMENT","DISP_r",ROW,dD,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   
+  /*****************************************************************************
+   *
+   *  3. SOLVE THE SECOND-ORDER FINITE ELEMENT EQUILIBRIUM EQUATION
+   *     [K][U_rs] = -[K_rs][U]-2[K_r][U_s]
+   *
+   ****************************************************************************/
+  // 3.1
+  ierr = VecZeroEntries(ddF); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(ddF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(ddF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  
+  // 3.2 define/apply boundary condition
+  DisplacementBCFEMethodPreAndPostProc my_dirichlet_bc2(mField,"DISPLACEMENT",Aij,ddD,ddF);
+  K_rsPoissonFEMethod my_fe_k_rs(mField,Aij,D,ddF,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
+  
+  // 3.3 construct the first-order derivative of global stiffness matrix
+  ierr = mField.problem_basic_method_preProcess("STOCHASIC_PROBLEM",my_dirichlet_bc2); CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","K",my_fe_k_rs);  CHKERRQ(ierr);
+  
+  // 3.4
+  ierr = mField.problem_basic_method_postProcess("STOCHASIC_PROBLEM",my_dirichlet_bc2); CHKERRQ(ierr);
+  
+  // 3.5
+  ierr = VecGhostUpdateBegin(ddF,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(ddF,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = VecAssemblyBegin(ddF); CHKERRQ(ierr);
+  ierr = VecAssemblyEnd(ddF); CHKERRQ(ierr);
+//  ierr = VecView(ddF,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+  
+  // 3.6 solve the finite element equation to get answer for
+  //     the second order partial derivative of nodal displacement
+  ierr = KSPSolve(solver,ddF,ddD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(ddD,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(ddD,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  
+//  ierr = VecView(ddD,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+  ierr = mField.set_other_global_VecCreateGhost("STOCHASIC_PROBLEM","DISPLACEMENT","DISP_rs",ROW,ddD,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  
+  // ===========================================================================
+  //
+  //  VI. OUTPUT
+  //
+  // ===========================================================================
   //Save data on mesh
   ierr = write_soltion(mField,"out.vtk","out_post_proc.vtk");   CHKERRQ(ierr);
-
+  ierr = KSPDestroy(&solver); CHKERRQ(ierr);
   
-  
-//  ierr = KSPDestroy(&solver); CHKERRQ(ierr);
-
-  
-  //Save data on mesh
-  //ierr = write_soltion(mField,"out.vtk","out_post_proc.vtk");   CHKERRQ(ierr);
-  
-
-      
-  //Destroy matrices
+   //Destroy matrices
   ierr = VecDestroy(&F); CHKERRQ(ierr);
   ierr = VecDestroy(&D); CHKERRQ(ierr);
   ierr = MatDestroy(&Aij); CHKERRQ(ierr);
-
+  
   PetscSynchronizedFlush(PETSC_COMM_WORLD);
-
+  
   PetscFinalize();
-
+  
 }
 
