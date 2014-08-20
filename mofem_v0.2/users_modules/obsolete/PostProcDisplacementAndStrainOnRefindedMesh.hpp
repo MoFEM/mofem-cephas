@@ -111,9 +111,11 @@ struct PostProcOnRefMesh_Base {
 struct PostProcDisplacementsOnRefMesh: public FEMethod_UpLevelStudent,PostProcOnRefMesh_Base {
     ParallelComm* pcomm;
 
+    Interface& mOab;
     string field_name;
+
     PostProcDisplacementsOnRefMesh(Interface& _moab,string _field_name = "DISPLACEMENT"): 
-      FEMethod_UpLevelStudent(_moab),PostProcOnRefMesh_Base(), field_name(_field_name) {
+      FEMethod_UpLevelStudent(_moab),PostProcOnRefMesh_Base(),mOab(_moab),field_name(_field_name) {
       pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
     }
 
@@ -144,6 +146,16 @@ struct PostProcDisplacementsOnRefMesh: public FEMethod_UpLevelStudent,PostProcOn
       PetscFunctionBegin;
       ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
 
+      Tag th_block_id;
+      int def_marker = 0;
+      rval = mOab.tag_get_handle("BLOCKID",1,MB_TYPE_INTEGER,th_block_id,MB_TAG_CREAT|MB_TAG_SPARSE,&def_marker); CHKERR_PETSC(rval); 
+      Tag th_block_id_pp;
+      rval = moab_post_proc.tag_get_handle("BLOCKID",1,MB_TYPE_INTEGER,th_block_id_pp,MB_TAG_CREAT|MB_TAG_SPARSE,&def_marker); CHKERR_PETSC(rval); 
+
+      EntityHandle fe_ent = fePtr->get_ent();
+      int block_id;
+      rval = mOab.tag_get_data(th_block_id,&fe_ent,1,&block_id); CHKERR_PETSC(rval);
+
       Range ref_nodes;
       rval = moab_ref.get_entities_by_type(meshset_level[max_level],MBVERTEX,ref_nodes); CHKERR_PETSC(rval);
       if(4*ref_nodes.size()!=g_NTET.size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
@@ -167,6 +179,7 @@ struct PostProcDisplacementsOnRefMesh: public FEMethod_UpLevelStudent,PostProcOn
 	}
 	EntityHandle ref_tet;
 	rval = moab_post_proc.create_element(MBTET,conn_post_proc,4,ref_tet); CHKERR_PETSC(rval);
+	rval = moab_post_proc.tag_set_data(th_block_id_pp,&ref_tet,1,&block_id); CHKERR_PETSC(rval);
       }
 
       //Get displacements at Gauss points
@@ -341,10 +354,10 @@ struct PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh: public Pos
         ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
         
         Range meshsets;
-        rval = moab.get_entities_by_type(it->meshset,MBENTITYSET,meshsets,true); CHKERR_PETSC(rval);
+        rval = mOab.get_entities_by_type(it->meshset,MBENTITYSET,meshsets,true); CHKERR_PETSC(rval);
         meshsets.insert(it->meshset);
         for(Range::iterator mit = meshsets.begin();mit != meshsets.end(); mit++) {
-          if( moab.contains_entities(*mit,&ent,1) ) {
+          if( mOab.contains_entities(*mit,&ent,1) ) {
             *_lambda = LAMBDA(mydata.data.Young,mydata.data.Poisson);
             *_mu = MU(mydata.data.Young,mydata.data.Poisson);
             PetscFunctionReturn(0);

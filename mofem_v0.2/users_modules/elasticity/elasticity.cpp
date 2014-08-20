@@ -324,6 +324,28 @@ int main(int argc, char *argv[]) {
   ierr = KSPSetUp(solver); CHKERRQ(ierr);
 
   SeriesRecorder& recorder = core;
+  {
+
+    Tag th;
+    int def_marker = 0;
+    rval = moab.tag_get_handle("BLOCKID",1,MB_TYPE_INTEGER,th,MB_TAG_CREAT|MB_TAG_SPARSE,&def_marker); CHKERR_THROW(rval); 
+
+    for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,sit)) {
+
+      int id = sit->get_msId();
+
+      Range tets;
+      rval = moab.get_entities_by_type(sit->meshset,MBTET,tets,true); CHKERR_PETSC(rval);
+      Range::iterator it = tets.begin();
+      for(;it!=tets.end();it++) {
+	//cerr << id << endl;
+	rval = moab.tag_set_data(th,&*it,1,&id); CHKERR_PETSC(rval);
+      }
+
+    }
+
+
+  }
 
   if(m_field.check_field("TEMP")) {
     
