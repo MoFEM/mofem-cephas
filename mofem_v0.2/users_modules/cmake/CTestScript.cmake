@@ -20,23 +20,16 @@ set(CTEST_TEST_TIMEOUT 1200)
 # Perform the CDashTesting
 ctest_start(${DASHBOARDTEST})
 
-if(FORCETESTING) 
-  set(DOTEST 1)
-  message ("Force build")
-endif(FORCETESTING)
-
 set(CTEST_CUSTOM_MEMCHECK_IGNORE
   ${CTEST_CUSTOM_MEMCHECK_IGNORE}
   #compare
 )
 
-if(${DOTEST} GREATER 0)
-  ctest_configure()
-  ctest_build()
-  ctest_test()
-  if(CTEST_COVERAGE_COMMAND)
-    ctest_coverage()
-  endif(CTEST_COVERAGE_COMMAND)
-  ctest_submit()
-endif(${DOTEST} GREATER 0)
+ctest_configure()
+ctest_build()
+ctest_test()
+if(CTEST_COVERAGE_COMMAND)
+  ctest_coverage()
+endif(CTEST_COVERAGE_COMMAND)
+ctest_submit()
 
