@@ -15,7 +15,7 @@ else
   touch /home/lukasz/tests.lock
   cd $CTEST_SCRIPTS_FILE_PATH
   /usr/bin/ctest -VV --http1.0 -S $CTSET_SCRIPT >> /home/lukasz/tests.log 2>&1
-  if [-f /home/lukasz/tmp/cephas/source/has_bin_build]; then
+  if [ -f /home/lukasz/tmp/cephas/source/has_bin_build ]; then
     rm /home/lukasz/tmp/cephas/source/has_bin_build
     cd $BUILD_DIR
     /usr/bin/make install
