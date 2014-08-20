@@ -63,6 +63,16 @@ link_directories(${PROJECT_BINARY_DIR})
 enable_testing()
 include(CTest)
 
+#add coverage
+if(WITHCOVERAGE) 
+  set(GCC_COVERAGE_COMPILE_FLAGS "-Wall -fprofile-arcs -ftest-coverage")
+  add_definitions(${GCC_COVERAGE_COMPILE_FLAGS})
+  set(CMAKE_EXE_LINKER_FLAGS "${GCC_COVERAGE_COMPILE_FLAGS}")
+endif(WITHCOVERAGE) 
+
+
+# Users modules
+
 add_subdirectory(thermal)
 add_subdirectory(ultraweak)
 
