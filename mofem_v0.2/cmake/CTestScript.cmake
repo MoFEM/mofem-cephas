@@ -102,3 +102,9 @@ if(${DOTEST} GREATER 0)
   ctest_submit()
 endif(${DOTEST} GREATER 0)
 
+if(${DOTEST} GREATER 0)
+  file(WRITE ${CTEST_BINARY_DIRECTORY}/has_bin_build "1")
+endif(${DOTEST} GREATER 0)
+
+
+

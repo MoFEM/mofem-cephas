@@ -16,9 +16,12 @@ else
   cd $CTEST_SCRIPTS_FILE_PATH
   /usr/bin/ctest -VV --http1.0 -S $CTSET_SCRIPT >> /home/lukasz/tests.log 2>&1
   cd $BUILD_DIR
-  /usr/bin/make install
-  chmod u+x $CTEST_USER_MODULES_PATH/scripts/run_cron_script.sh
-  $CTEST_USER_MODULES_PATH/scripts/run_cron_script.sh
+  if [-f has_bin_build] then
+    /usr/bin/make install
+    rm has_bin_build
+    chmod u+x $CTEST_USER_MODULES_PATH/scripts/run_cron_script.sh
+    $CTEST_USER_MODULES_PATH/scripts/run_cron_script.sh
+  fi  
   cd $CWD  
   rm -v /home/lukasz/tests.lock
 fi
