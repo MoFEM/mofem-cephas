@@ -1,8 +1,14 @@
 #!/bin/sh
 
-CTEST_SCRIPTS_FILE_PATH=/home/lukasz/mofem-cephas/mofem_v0.2/cmake
-CTSET_SCRIPT=CTestScript_rdb-srv1.cmake
 CWD=`pwd`
+
+CTEST_SCRIPTS_FILE_PATH=/home/lukasz/mofem-cephas/mofem_v0.2/cmake
+CTEST_USER_MODULES_PATH=/tmp/cephas/debug_examples/users_modules/
+CTSET_SCRIPT=CTestScript_rdb-srv1.cmake
+
+BUILD_DIR=/home/lukasz/tmp/cephas/build
+
+
 
 if test -f /home/lukasz/tests.lock
 then
@@ -11,6 +17,9 @@ else
   touch /home/lukasz/tests.lock
   cd $CTEST_SCRIPTS_FILE_PATH
   /usr/bin/ctest -VV --http1.0 -S $CTSET_SCRIPT >> /home/lukasz/tests.log 2>&1
-  cd $CWD
+  cd $BUILD_DIR
+  /usr/bin/make install
+  $CTEST_USER_MODULES_PATH/scripts/run_cron_script.sh
+  cd $CWD  
   rm -v /home/lukasz/tests.lock
 fi
