@@ -76,6 +76,12 @@ if(STAND_ALLONE_USERS_MODULES)
   set(UM_SOURCE_DIR ${PROJECT_SOURCE_DIR})
 endif(STAND_ALLONE_USERS_MODULES)
 
+# third party libraries
+if(TETGEN_LIBRARY) 
+  include_directories("${TETGEN_DIR}/include")
+  add_definitions( -DWITH_TETGEM )
+endif(TETGEN_LIBRARY)
+
 # Users modules
 
 add_subdirectory(thermal)

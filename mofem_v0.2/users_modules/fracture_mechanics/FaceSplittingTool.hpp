@@ -20,8 +20,6 @@
 #ifndef __FACESPLITTINGTOOL_HPP__
 #define __FACESPLITTINGTOOL_HPP__
 
-namespace MoFEM {
-
 struct FaceSplittingTools {
 
   FieldInterface& mField;
@@ -58,13 +56,6 @@ struct FaceSplittingTools {
     PetscFunctionReturn(0);
   }
 
-  //Init bit level data
-  Range mesh_level_nodes;
-  Range mesh_level_edges;
-  Range mesh_level_tris;
-  Range mesh_level_tets;
-  PetscErrorCode initBitLevelData(const BitRefLevel bit_mesh);
-
   //Split new crack front faces
   Tag th_meshRefineBitLevels,th_meshIntefaceBitLevels;
   int *ptr_meshRefineBitLevels,*ptr_meshIntefaceBitLevels;
@@ -90,11 +81,15 @@ struct FaceSplittingTools {
   PetscErrorCode meshRefine(const int verb = -1);
   PetscErrorCode splitFaces(const int verb = -1);
 
+  #ifdef WITH_TETGEM
 
+  boost::ptr_vector<tetgenio> tetGenData;
+  PetscErrorCode rebuildMeshWithTetGen(char switches[],Range &ents);
+
+  #endif
 
 };
 
-}
 
 #endif // __FACESPLITTINGTOOL_HPP__
 

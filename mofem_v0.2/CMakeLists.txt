@@ -63,13 +63,13 @@ get_git_head_revision(GIT_REFSPEC GIT_SHA1)
 # to the source code
 configure_file(
   "${PROJECT_SOURCE_DIR}/include/config.h.in"
-  "${PROJECT_BINARY_DIR}/include/config.h"
+  "${PROJECT_SOURCE_DIR}/include/config.h"
   )
 configure_file(
   "${PROJECT_SOURCE_DIR}/include/version.h.in"
-  "${PROJECT_BINARY_DIR}/include/version.h"
+  "${PROJECT_SOURCE_DIR}/include/version.h"
   )
-include_directories("${PROJECT_BINARY_DIR}/include")
+include_directories("${PROJECT_SOURCE_DIR}/include")
 
 #add coverage
 if(WITHCOVERAGE) 

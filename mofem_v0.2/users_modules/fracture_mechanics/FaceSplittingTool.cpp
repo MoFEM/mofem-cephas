@@ -20,12 +20,23 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
+#ifdef WITH_TETGEM
+
+#include <tetgen.h>
+#ifdef REAL
+  #undef REAL
+#endif
+
+#endif
+
 #include <MoFEM.hpp>
 using namespace MoFEM;
 
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <boost/numeric/ublas/io.hpp>
+
+#include <boost/ptr_container/ptr_vector.hpp>
 
 #include <moab/Skinner.hpp>
 #include <moab/AdaptiveKDTree.hpp>
@@ -37,28 +48,7 @@ extern "C" {
 }
 
 #include <FaceSplittingTool.hpp>
-
-namespace MoFEM {
-
-
-
-PetscErrorCode FaceSplittingTools::initBitLevelData(BitRefLevel bit_mesh) {
-  PetscFunctionBegin;
-
-  PetscErrorCode ierr;
-
-  mesh_level_nodes.clear();
-  mesh_level_edges.clear();
-  mesh_level_tris.clear();
-  mesh_level_tets.clear();
-
-  ierr = mField.get_entities_by_type_and_ref_level(bit_mesh,BitRefLevel().set(),MBVERTEX,mesh_level_nodes); CHKERRQ(ierr); 
-  ierr = mField.get_entities_by_type_and_ref_level(bit_mesh,BitRefLevel().set(),MBEDGE,mesh_level_edges); CHKERRQ(ierr);
-  ierr = mField.get_entities_by_type_and_ref_level(bit_mesh,BitRefLevel().set(),MBTRI,mesh_level_tris); CHKERRQ(ierr);
-  ierr = mField.get_entities_by_type_and_ref_level(bit_mesh,BitRefLevel().set(),MBTET,mesh_level_tets); CHKERRQ(ierr);
-
-  PetscFunctionReturn(0);
-}
+#include <TetGenInterface.hpp>
 
 PetscErrorCode FaceSplittingTools::meshRefine(const int verb) {
   PetscFunctionBegin;
@@ -99,11 +89,6 @@ PetscErrorCode FaceSplittingTools::meshRefine(const int verb) {
       SETERRQ(PETSC_COMM_SELF,1,"modification unsuccessfull");
     }
   }
-
-  Range preserve_ref_tets;
-  ierr = mField.get_entities_by_type_and_ref_level(
-    preserve_ref,BitRefLevel().set(),MBTET,preserve_ref_tets); CHKERRQ(ierr);
-  ierr = mField.seed_finite_elements(preserve_ref_tets); CHKERRQ(ierr);
 
   int current_ref_bit = meshRefineBitLevels.first();
   for(int ll = 1;ll<nb_ref_levels+1;ll++) {
@@ -265,9 +250,57 @@ PetscErrorCode FaceSplittingTools::splitFaces(const int verb) {
   PetscFunctionReturn(0);
 }
 
+#ifdef WITH_TETGEM
+
+PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(char switches[],Range &ents) {
+  PetscFunctionBegin;
+
+  PetscErrorCode ierr;
+  ErrorCode rval;
+
+  BitRefLevel bit_mesh = meshIntefaceBitLevels.back();
+
+  Range crack_edges;
+  ierr = mField.get_Cubit_msId_entities_by_dimension(201,SIDESET,1,crack_edges,true); CHKERRQ(ierr);
+  Range crack_edges_nodes;
+  rval = mField.get_moab().get_connectivity(crack_edges,crack_edges_nodes,true); CHKERR_PETSC(rval);
+  
+  Range crack_edges_nodes_tets;
+  rval = mField.get_moab().get_adjacencies(
+    crack_edges_nodes,3,false,crack_edges_nodes_tets,Interface::UNION); CHKERR_PETSC(rval);
+
+  Range mesh_level_tets;
+  ierr = mField.get_entities_by_type_and_ref_level(bit_mesh,BitRefLevel().set(),MBTET,mesh_level_tets); CHKERRQ(ierr);
+  crack_edges_nodes_tets = intersect(crack_edges_nodes_tets,mesh_level_tets);
+  Range crack_edges_nodes_tets_nodes;
+  rval = mField.get_moab().get_connectivity(crack_edges_nodes_tets,crack_edges_nodes_tets_nodes,true); CHKERR_PETSC(rval);
+
+  Range crack_edges_nodes_tets_nodes_tets;
+  rval = mField.get_moab().get_adjacencies(
+    crack_edges_nodes_tets,3,false,crack_edges_nodes_tets_nodes_tets,Interface::UNION); CHKERR_PETSC(rval);
+
+  Range& tets = crack_edges_nodes_tets_nodes_tets;
+  Skinner skin(&mField.get_moab());
+  Range tets_skin;
+  rval = skin.find_skin(0,tets,false,tets_skin); CHKERR(rval);
+  Range mesh_level_tets_skin;
+  rval = skin.find_skin(0,mesh_level_tets,false,mesh_level_tets_skin); CHKERR(rval);
+
+  TetGenInterface *tetgen_iface;
+  ierr = mField.query_interface(tetgen_iface); CHKERRQ(ierr);
+
+  if(tetGenData.size()<1) {
+    tetGenData.push_back(new tetgenio);
+  }
+  tetgenio &in = tetGenData.back();
+  
 
 
 
 
+  PetscFunctionReturn(0);
 }
+
+#endif
+
 
