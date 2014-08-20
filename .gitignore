@@ -1,1 +1,4 @@
 mofem_v0.2/users_modules/CMakeLists.txt
+mofem_v0.2/include/config.h
+mofem_v0.2/include/version.h
+
