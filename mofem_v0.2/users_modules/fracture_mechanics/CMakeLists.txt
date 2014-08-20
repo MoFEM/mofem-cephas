@@ -18,14 +18,18 @@
  
 
 include_directories(${MoFEM_PROJECT_SOURCE_DIR}/users_modules/fracture_mechanics)
- 
-add_executable(spatial_problem 
-  ${MoFEM_PROJECT_SOURCE_DIR}/users_modules/fracture_mechanics/spatial_problem.cpp 
+
+add_library(fracture_mechanics
   ${MoFEM_PROJECT_SOURCE_DIR}/users_modules/fracture_mechanics/FaceSplittingTool.cpp 
   ${MoFEM_PROJECT_SOURCE_DIR}/users_modules/fracture_mechanics/ConfigurationalFractureMechanics.cpp
 )
 
+ 
+add_executable(spatial_problem 
+  ${MoFEM_PROJECT_SOURCE_DIR}/users_modules/fracture_mechanics/spatial_problem.cpp 
+)
 target_link_libraries(spatial_problem
+  fracture_mechanics
   mofem_finite_element_library
   mofem_finite_elements
   mofem_interfaces
@@ -40,10 +44,9 @@ target_link_libraries(spatial_problem
 
 add_executable(material_force 
   ${MoFEM_PROJECT_SOURCE_DIR}/users_modules/fracture_mechanics/material_force.cpp
-  ${MoFEM_PROJECT_SOURCE_DIR}/users_modules/fracture_mechanics/FaceSplittingTool.cpp
-  ${MoFEM_PROJECT_SOURCE_DIR}/users_modules/fracture_mechanics/ConfigurationalFractureMechanics.cpp
 )
 target_link_libraries(material_force 
+  fracture_mechanics
   mofem_finite_element_library
   mofem_finite_elements
   mofem_interfaces
@@ -58,10 +61,9 @@ target_link_libraries(material_force
 
 add_executable(arc_length_material_coupled 
   ${MoFEM_PROJECT_SOURCE_DIR}/users_modules/fracture_mechanics/arc_length_material_coupled.cpp
-  ${MoFEM_PROJECT_SOURCE_DIR}/users_modules/fracture_mechanics/FaceSplittingTool.cpp
-  ${MoFEM_PROJECT_SOURCE_DIR}/users_modules/fracture_mechanics/ConfigurationalFractureMechanics.cpp
 )
 target_link_libraries(arc_length_material_coupled 
+  fracture_mechanics
   mofem_finite_element_library
   mofem_finite_elements
   mofem_interfaces
@@ -73,7 +75,6 @@ target_link_libraries(arc_length_material_coupled
   mofem_third_party
   mofem_cblas
   ${MoFEM_PROJECT_LIBS})
-
 
 file(COPY
     ${CMAKE_CURRENT_SOURCE_DIR}/README
