@@ -90,7 +90,7 @@ set(CTEST_CUSTOM_MEMCHECK_IGNORE
 )
 
 if(${DOTEST} GREATER 0)
-  file(WRITE ${CTEST_BINARY_DIRECTORY}/has_bin_build "1")
+  file(WRITE $ENV{HOME}/tmp/cephas/has_bin_build "1")
 endif(${DOTEST} GREATER 0)
 
 if(${DOTEST} GREATER 0)
