@@ -8,8 +8,6 @@ CTSET_SCRIPT=CTestScript_rdb-srv1.cmake
 
 BUILD_DIR=/home/lukasz/tmp/cephas/build
 
-
-
 if test -f /home/lukasz/tests.lock
 then
   echo "lock"
@@ -19,6 +17,7 @@ else
   /usr/bin/ctest -VV --http1.0 -S $CTSET_SCRIPT >> /home/lukasz/tests.log 2>&1
   cd $BUILD_DIR
   /usr/bin/make install
+  chmod u+x $CTEST_USER_MODULES_PATH/scripts/run_cron_script.sh
   $CTEST_USER_MODULES_PATH/scripts/run_cron_script.sh
   cd $CWD  
   rm -v /home/lukasz/tests.lock
