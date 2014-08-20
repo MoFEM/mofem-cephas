@@ -3,7 +3,7 @@
 CWD=`pwd`
 
 CTEST_SCRIPTS_FILE_PATH=/home/lukasz/mofem-cephas/mofem_v0.2/cmake
-CTEST_USER_MODULES_PATH=/tmp/cephas/debug_examples/users_modules/
+CTEST_USER_MODULES_PATH=/home/lukasz/tmp/cephas_users_modules/users_modules/
 CTSET_SCRIPT=CTestScript_rdb-srv1.cmake
 
 BUILD_DIR=/home/lukasz/tmp/cephas/build

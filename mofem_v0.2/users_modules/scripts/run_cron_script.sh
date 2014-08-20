@@ -1,6 +1,6 @@
 #!/bin/sh
 
-CTEST_SCRIPTS_FILE_PATH=/tmp/cephas/debug_examples/users_modules/cmake
+CTEST_SCRIPTS_FILE_PATH=/home/lukasz/tmp/cephas_users_modules/users_modules/cmake
 CTSET_SCRIPT=CTestScript_rdb-srv1.cmake
 CWD=`pwd`
 
