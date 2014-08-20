@@ -3486,6 +3486,9 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
       nb_sub_steps = 20;
     }
 
+    int its_d;
+    ierr = PetscOptionsGetInt("","-my_its_d",&its_d,&flg); CHKERRQ(ierr);
+
     bool at_least_one_step_converged = false;
     conf_prob.freeze_all_but_one = false;
     double _da_ = (aa == 0) ? 0 : da;
@@ -3500,8 +3503,6 @@ PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFract
       if(reason > 0) {
 	if(da > 0) {
 	  if(aa > 0 && ii == 0) {
-	    int its_d;
-	    ierr = PetscOptionsGetInt("","-my_its_d",&its_d,&flg); CHKERRQ(ierr);
 	    if(flg != PETSC_TRUE) {
 	      its_d = 8;
 	    }
