@@ -1,4 +1,4 @@
-set(CTEST_BUILD_OPTIONS "/tmp/cephas/debug_examples/users_modules")
+set(CTEST_BUILD_OPTIONS "-DCMAKE_CXX_FLAGS=-I/opt/local_boost_1_54_0/include /tmp/cephas/debug_examples/users_modules")
 
 set(CTEST_SITE "rdb-srv1")
 set(CTEST_BUILD_NAME "Linux-mpicxx")
