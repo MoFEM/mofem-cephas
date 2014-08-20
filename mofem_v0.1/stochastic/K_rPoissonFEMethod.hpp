@@ -186,7 +186,6 @@ namespace MoFEM {
       if(ColGlob[col_mat1].size()!=0) {
         ierr = GetDataVector("DISPLACEMENT",MBTET,D_elm[col_mat1]); CHKERRQ(ierr);
         //        cout<<"Faces D_elm[col_mat] = "<< D_elm[col_mat1] << endl;
-        col_mat++;
       }
       
       f_re.resize(row_mat);
@@ -230,7 +229,7 @@ namespace MoFEM {
     PetscErrorCode operator()() {
       PetscFunctionBegin;
       ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
-      //      cout<<"Hi from K_rPoissonFEMethod "<<endl;
+//      cout<<"Hi from K_rPoissonFEMethod "<<endl;
       //      cout<<"fieldName "<<fieldName<<endl;
       ierr = GetMatrices(); CHKERRQ(ierr);
       
