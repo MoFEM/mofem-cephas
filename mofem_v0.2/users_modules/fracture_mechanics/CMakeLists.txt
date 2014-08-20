@@ -17,16 +17,16 @@
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
  
 
-include_directories(${MoFEM_PROJECT_SOURCE_DIR}/users_modules/fracture_mechanics)
+include_directories(${UM_SOURCE_DIR}/fracture_mechanics)
 
 add_library(fracture_mechanics
-  ${MoFEM_PROJECT_SOURCE_DIR}/users_modules/fracture_mechanics/FaceSplittingTool.cpp 
-  ${MoFEM_PROJECT_SOURCE_DIR}/users_modules/fracture_mechanics/ConfigurationalFractureMechanics.cpp
+  ${UM_SOURCE_DIR}/fracture_mechanics/FaceSplittingTool.cpp 
+  ${UM_SOURCE_DIR}/fracture_mechanics/ConfigurationalFractureMechanics.cpp
 )
 
  
 add_executable(spatial_problem 
-  ${MoFEM_PROJECT_SOURCE_DIR}/users_modules/fracture_mechanics/spatial_problem.cpp 
+  ${UM_SOURCE_DIR}/fracture_mechanics/spatial_problem.cpp 
 )
 target_link_libraries(spatial_problem
   fracture_mechanics
@@ -43,7 +43,7 @@ target_link_libraries(spatial_problem
   ${MoFEM_PROJECT_LIBS})
 
 add_executable(material_force 
-  ${MoFEM_PROJECT_SOURCE_DIR}/users_modules/fracture_mechanics/material_force.cpp
+  ${UM_SOURCE_DIR}/fracture_mechanics/material_force.cpp
 )
 target_link_libraries(material_force 
   fracture_mechanics
@@ -60,7 +60,7 @@ target_link_libraries(material_force
   ${MoFEM_PROJECT_LIBS})
 
 add_executable(arc_length_material_coupled 
-  ${MoFEM_PROJECT_SOURCE_DIR}/users_modules/fracture_mechanics/arc_length_material_coupled.cpp
+  ${UM_SOURCE_DIR}/fracture_mechanics/arc_length_material_coupled.cpp
 )
 target_link_libraries(arc_length_material_coupled 
   fracture_mechanics

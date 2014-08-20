@@ -24,7 +24,7 @@ file(COPY
 # implementing independent application it will be using instead project
 # directories.
 
-add_executable(thermal_steady ${MoFEM_PROJECT_SOURCE_DIR}/users_modules/thermal/thermal_steady.cpp)
+add_executable(thermal_steady ${UM_SOURCE_DIR}/thermal/thermal_steady.cpp)
 target_link_libraries(thermal_steady 
   mofem_finite_element_library
   mofem_finite_elements
@@ -36,7 +36,7 @@ target_link_libraries(thermal_steady
   mofem_cblas
   ${MoFEM_PROJECT_LIBS})
 
-add_executable(thermal_unseady ${MoFEM_PROJECT_SOURCE_DIR}/users_modules/thermal/thermal_unsteady.cpp)
+add_executable(thermal_unseady ${UM_SOURCE_DIR}/thermal/thermal_unsteady.cpp)
 target_link_libraries(thermal_unseady 
   mofem_finite_element_library
   mofem_finite_elements
