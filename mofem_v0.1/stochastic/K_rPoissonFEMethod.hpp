@@ -38,6 +38,8 @@ namespace MoFEM {
       
     }
     
+    
+    
     PetscErrorCode calculateD(double young, double nu) {
       PetscFunctionBegin;
       D.resize(6,6);
@@ -48,7 +50,7 @@ namespace MoFEM {
       D33=(young*(4*nu*nu + 8*nu - 5))/(2*pow((nu + 1),2));
       
       D(0,0)=D00;  D(0,1)=D01;  D(0,2)=D01;
-      D(1,0)=D01;  D(1,1)=D00;  D(1,2)=nu;
+      D(1,0)=D01;  D(1,1)=D00;  D(1,2)=D01;
       D(2,0)=D01;  D(2,1)=D01;   D(2,2)=D00;
       D(3,3)=D33;
       D(4,4)=D33;
@@ -123,7 +125,7 @@ namespace MoFEM {
                       w,&*D.data().begin(),D.size2(),
                       &*row_Mat.data().begin(),row_Mat.size2(),
                       0.,&*BD.data().begin(),BD.size2());
-          for(int cc = rr;cc<col_mat;cc++) {
+          for(int cc = 0;cc<col_mat;cc++) {
             if(ColGlob[cc].size()==0) continue;
             ublas::matrix<FieldData> &col_Mat = (colBMatrices[cc])[gg];
             if(gg == 0) {
@@ -160,24 +162,61 @@ namespace MoFEM {
       
       D_elm.resize(col_mat);
       
-      int col_mat1 = 0;  //only nodes (1st order)
+      int col_mat1 = 0;  //nodes
       ierr = GetDataVector("DISPLACEMENT",D_elm[col_mat1]); CHKERRQ(ierr);
-      //       cout<<"D_elm[col_mat] = "<< D_elm[col_mat1] << endl;
+      //       cout<<"D_elm[col_mat1] = "<< D_elm[col_mat1] << endl;
+      col_mat1++;
+      
+      for(int ee=0; ee<6; ee++) { //edges
+        if(ColGlob[col_mat1].size()!=0) {
+          ierr = GetDataVector("DISPLACEMENT",MBEDGE,D_elm[col_mat1],ee); CHKERRQ(ierr);
+          //          cout<<"Edges D_elm[col_mat1] = "<< D_elm[col_mat1] << endl;
+          col_mat1++;
+        }
+      }
+      
+      for(int ff=0; ff<4; ff++) { //faces
+        if(ColGlob[col_mat1].size()!=0) {
+          ierr = GetDataVector("DISPLACEMENT",MBTRI,D_elm[col_mat1],ff); CHKERRQ(ierr);
+          //          cout<<"Faces D_elm[col_mat1] = "<< D_elm[col_mat1] << endl;
+          col_mat1++;
+        }
+      }
+      
+      if(ColGlob[col_mat1].size()!=0) {
+        ierr = GetDataVector("DISPLACEMENT",MBTET,D_elm[col_mat1]); CHKERRQ(ierr);
+        //        cout<<"Faces D_elm[col_mat] = "<< D_elm[col_mat1] << endl;
+        col_mat++;
+      }
       
       f_re.resize(row_mat);
       for(int rr = 0;rr<row_mat;rr++) {
         if(RowGlob[rr].size()==0) continue;
-        for(int cc = rr;cc<col_mat;cc++) {
+        
+        int rr_start=0;
+        for(int cc = 0;cc<col_mat;cc++) {
           if(ColGlob[cc].size()==0) continue;
-          //                  cout<<""<<prod( K(rr,cc), D_elm[cc])<<endl;
-          f_re[rr] = -prod( K(rr,cc), D_elm[cc] );
-        }
+//          cout<<"rr "<<rr<<endl;
+//          cout<<"cc "<<cc<<endl;
+          if(rr_start == 0) {
+//            cout<<"K(rr,cc) "<<K(rr,cc)<<endl;
+//            cout<<"D_elm[cc] "<<D_elm[cc]<<endl;
+            f_re[rr] =  -prod(K(rr,cc),D_elm[cc]);
+            rr_start++;
+          } else {
+            f_re[rr] -= prod(K(rr,cc),D_elm[cc]);
+          }
+         }
+//        cout<<"f_re[rr] "<<f_re[rr]<<endl;
       }
+
+      
       for(int rr = 0;rr<row_mat;rr++) {
         if(RowGlob[rr].size()==0) continue;
         if(RowGlob[rr].size()!=f_re[rr].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
         ierr = VecSetValues(dF,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f_re[rr].data()[0]),ADD_VALUES); CHKERRQ(ierr);
       }
+
       PetscFunctionReturn(0);
     }
     
@@ -186,12 +225,12 @@ namespace MoFEM {
       PetscFunctionBegin;
       PetscFunctionReturn(0);
     }
-
     
-     PetscErrorCode operator()() {
+    
+    PetscErrorCode operator()() {
       PetscFunctionBegin;
       ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
-//      cout<<"Hi from K_rPoissonFEMethod "<<endl;
+      //      cout<<"Hi from K_rPoissonFEMethod "<<endl;
       //      cout<<"fieldName "<<fieldName<<endl;
       ierr = GetMatrices(); CHKERRQ(ierr);
       

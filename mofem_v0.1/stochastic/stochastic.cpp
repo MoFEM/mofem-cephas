@@ -351,7 +351,7 @@ int main(int argc, char *argv[]) {
   ierr = VecGhostUpdateBegin(dF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(dF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   
-  DisplacementBCFEMethodPreAndPostProc my_dirichlet_bc1(mField,"DISP_r",Aij,dD,dF);
+  DisplacementBCFEMethodPreAndPostProc my_dirichlet_bc1(mField,"DISPLACEMENT",Aij,dD,dF);
   K_rPoissonFEMethod my_fe_k_r(mField,Aij,D,dF,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
   //preproc
   ierr = mField.problem_basic_method_preProcess("STOCHASIC_PROBLEM",my_dirichlet_bc1); CHKERRQ(ierr);
