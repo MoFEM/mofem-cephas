@@ -566,8 +566,8 @@ int main(int argc, char *argv[]) {
       ierr = my_arc_method.set_dlambda_to_x(D,dlambda); CHKERRQ(ierr);
     } else if(step == 2) {
       ierr = arc_ctx->set_alpha_and_beta(1,0); CHKERRQ(ierr);
-      ierr = my_arc_method.calulate_dx_and_dlambda(D); CHKERRQ(ierr);
-      ierr = my_arc_method.calulate_lambda_int(step_size); CHKERRQ(ierr);
+      ierr = my_arc_method.calculate_dx_and_dlambda(D); CHKERRQ(ierr);
+      ierr = my_arc_method.calculate_lambda_int(step_size); CHKERRQ(ierr);
       step_size0 = step_size;
       ierr = arc_ctx->set_s(step_size); CHKERRQ(ierr);
       double dlambda = arc_ctx->dlambda;
@@ -580,9 +580,9 @@ int main(int argc, char *argv[]) {
       ierr = VecAXPY(D,1.,arc_ctx->dx); CHKERRQ(ierr);
       ierr = my_arc_method.set_dlambda_to_x(D,dlambda); CHKERRQ(ierr);
     } else {
-      ierr = my_arc_method.calulate_dx_and_dlambda(D); CHKERRQ(ierr);
+      ierr = my_arc_method.calculate_dx_and_dlambda(D); CHKERRQ(ierr);
       double step_size1 = step_size;
-      ierr = my_arc_method.calulate_lambda_int(step_size); CHKERRQ(ierr);
+      ierr = my_arc_method.calculate_lambda_int(step_size); CHKERRQ(ierr);
       //step_size0_1/step_size0 = step_stize1/step_size
       //step_size0_1 = step_size0*(step_stize1/step_size)
       step_size0 = step_size0*(step_size1/step_size);
@@ -604,7 +604,7 @@ int main(int argc, char *argv[]) {
     //Distribute displacements on all processors
     ierr = mField.set_global_VecCreateGhost("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
-    //Update History and Calulate Residual
+    //Update History and Calculate Residual
     //Tell Interface method that kappa is upadated
     int_my_fe.snes_ctx = FieldInterface::FEMethod::CTX_SNESNONE;
     ierr = int_my_fe.set_ctx_int(NonLinearInterfaceFEMethod::ctx_KappaUpdate); CHKERRQ(ierr);

@@ -607,13 +607,13 @@ PetscErrorCode ForcesAndSurcesCore::shapeTETFunctions_Hdiv(
 
     PetscErrorCode ierr;
 
-    //calulate shape function for tet, needed to construct shape functions for h_div 
+    //calculate shape function for tet, needed to construct shape functions for h_div 
 
     if(data.dataOnEntities[MBVERTEX][0].getN().size1() != (unsigned int)G_DIM) {
       data.dataOnEntities[MBVERTEX][0].getN().resize(G_DIM,4);
       ierr = ShapeMBTET(&*data.dataOnEntities[MBVERTEX][0].getN().data().begin(),G_X,G_Y,G_Z,G_DIM); CHKERRQ(ierr);
     }
-    //that is cheep to calate, no harm done if recalulated
+    //that is cheep to calate, no harm done if recalculated
     data.dataOnEntities[MBVERTEX][0].getDiffN().resize(4,3);
     ierr = ShapeDiffMBTET(&*data.dataOnEntities[MBVERTEX][0].getDiffN().data().begin()); CHKERRQ(ierr);
 

@@ -42,7 +42,7 @@ struct FEMethod_ComplexForLazy_Data: public FEMethod_UpLevelStudent {
 
 };
 
-/** \brief The user interface for NonLineae FE method (tangent is calulated
+/** \brief The user interface for NonLineae FE method (tangent is calculated
  * using complex direvatives)
  * 
  * This class give user some data structures and methods on those that
