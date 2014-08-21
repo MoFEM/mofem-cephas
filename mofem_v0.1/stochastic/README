@@ -3,3 +3,5 @@ Example run
 ===========
 
 make && ./stochastic -my_file ~/Documents/Post-Doc\ Data/Analysis/Meshes/stochastic/stochastic.cub -my_order 1
+
+make && ./stochastic_2var -my_file ~/Documents/Post-Doc\ Data/Analysis/Meshes/stochastic/stochastic.cub -my_order 1

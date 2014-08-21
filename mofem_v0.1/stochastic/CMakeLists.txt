@@ -19,4 +19,7 @@
 add_executable(stochastic stochastic.cpp)
 target_link_libraries(stochastic mofem_student_body mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
 
+add_executable(stochastic_2var stochastic_2var.cpp)
+target_link_libraries(stochastic_2var mofem_student_body mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
+
 
