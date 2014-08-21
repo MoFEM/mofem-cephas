@@ -17,8 +17,8 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef __K_RFEMETHOD_HPP__
-#define __K_RFEMETHOD_HPP__
+#ifndef __K_RPOISSONFEMETHOD_HPP__
+#define __K_RPOISSONFEMETHOD_HPP__
 
 #include <boost/numeric/ublas/symmetric.hpp>
 extern "C" {
@@ -45,9 +45,10 @@ namespace MoFEM {
       D.resize(6,6);
       D.clear();
       double D00,D01,D33;
-      D00=(2*young*(nu*nu + 2*nu - 2)) /pow((nu + 1),2);
-      D01=-(young*(2*nu*nu + 4*nu - 1))/pow((nu + 1),2);
-      D33=(young*(4*nu*nu + 8*nu - 5))/(2*pow((nu + 1),2));
+      
+      D00=-(2*young*nu*(nu - 2))/pow((2*nu*nu + nu - 1),2);
+      D01=(young*(2*nu*nu + 1))/pow((2*nu*nu + nu - 1),2);
+      D33=-young/(2*pow((nu + 1),2));
       
       D(0,0)=D00;  D(0,1)=D01;  D(0,2)=D01;
       D(1,0)=D01;  D(1,1)=D00;  D(1,2)=D01;
@@ -104,7 +105,7 @@ namespace MoFEM {
       double _young,_pois;
       ierr = GetMatParameters(&_young,&_pois); CHKERRQ(ierr);
       ierr = calculateD(_young,_pois); CHKERRQ(ierr);
-      //      cout<<" D "<<D<<endl;
+//      cout<<" D "<<D<<endl;
       //      cout<<" row_mat "<<row_mat<<endl;
       //      cout<<" col_mat "<<col_mat<<endl;
       K.resize(row_mat,col_mat);
@@ -245,4 +246,4 @@ namespace MoFEM {
   
 }
 
-#endif //__K_RFEMETHOD_HPP__
+#endif //__K_RPOISSONFEMETHOD_HPP__
