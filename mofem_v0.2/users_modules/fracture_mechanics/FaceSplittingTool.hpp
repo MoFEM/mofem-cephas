@@ -83,8 +83,11 @@ struct FaceSplittingTools {
 
   #ifdef WITH_TETGEM
 
+  map<EntityHandle,unsigned long> moabTetGenMap;
+  map<unsigned long,EntityHandle> tetGenMoabMap;
+
   boost::ptr_vector<tetgenio> tetGenData;
-  PetscErrorCode rebuildMeshWithTetGen(char switches[],Range &ents);
+  PetscErrorCode rebuildMeshWithTetGen(char switches[],const int verb = -1);
 
   #endif
 
