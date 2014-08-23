@@ -316,7 +316,7 @@ PetscErrorCode TetGenInterface::getReginData(map<EntityHandle,unsigned long>& te
     int jj = 0;
     for(;jj<nbattributes;jj++) {
       double id = out.tetrahedronattributelist[ii*nbattributes+jj];
-      cerr << id << endl;
+      //cerr << id << endl;
       int iii = MBTET|(ii<<sizeof(int));
       if(tetgen_moab_map.find(iii)==tetgen_moab_map.end()) {
 	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,
@@ -328,17 +328,21 @@ PetscErrorCode TetGenInterface::getReginData(map<EntityHandle,unsigned long>& te
   }
   PetscFunctionReturn(0);
 }
-
 PetscErrorCode TetGenInterface::tetRahedralize(char switches[],tetgenio& in,tetgenio& out) {
   PetscFunctionBegin;
-
   tetgenbehavior a;
   a.parse_commandline(switches);
   tetrahedralize(&a,&in,&out);
-
   PetscFunctionReturn(0);
 }
-
+PetscErrorCode TetGenInterface::load_poly(char file_name[],tetgenio& in) {
+  PetscFunctionBegin;
+  if(!in.load_poly(file_name)) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,
+      "can not read TetGen poly file");
+  }
+  PetscFunctionReturn(0);
+}
 
 
 }

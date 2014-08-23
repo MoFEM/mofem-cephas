@@ -101,7 +101,7 @@ int main(int argc, char *argv[]) {
   moab_tetgen_map.clear();
   tetgen_moab_map.clear();
 
-  /*Skinner skin(&moab);
+  Skinner skin(&moab);
   Range outer_surface_skin;
   rval = skin.find_skin(0,tets,false,outer_surface_skin); CHKERR(rval);
 
@@ -144,10 +144,9 @@ int main(int argc, char *argv[]) {
     one.insert(*tets.begin());
     regions.push_back(pair<Range,int>(one,id));
   }
-  ierr = tetgen_iface->setReginData(regions,in);  CHKERRQ(ierr);*/
-
+  ierr = tetgen_iface->setReginData(regions,in);  CHKERRQ(ierr);
   
-  in.load_poly("bar2");
+  //in.load_poly("bar2");
   //in.save_nodes("in");
   //in.save_poly("in");
 
@@ -159,7 +158,8 @@ int main(int argc, char *argv[]) {
   ierr = tetgen_iface->getTiangleAttributes(tetgen_moab_map,out); CHKERRQ(ierr);
   ierr = tetgen_iface->getReginData(tetgen_moab_map,out); CHKERRQ(ierr);
 
-  out.save_elements("out");
+  char tetgen_out_file_name[] = "out";
+  out.save_elements(tetgen_out_file_name);
 
   EntityHandle meshset_level2;
   rval = moab.create_meshset(MESHSET_SET,meshset_level2); CHKERR_PETSC(rval);

@@ -66,6 +66,8 @@ struct TetGenInterface: public FieldUnknownInterface {
 
   PetscErrorCode tetRahedralize(char switches[],tetgenio& in,tetgenio& out);
 
+  PetscErrorCode load_poly(char file_name[],tetgenio& in);
+
 };
 
 }
