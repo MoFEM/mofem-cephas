@@ -135,14 +135,12 @@ int main(int argc, char *argv[]) {
 
   ierr = tetgen_iface->setFaceData(markers,in,moab_tetgen_map,tetgen_moab_map);  CHKERRQ(ierr);
 
-  vector<pair<Range,int> > regions;
+  vector<pair<EntityHandle,int> > regions;
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,bit)) {
     int id = bit->get_msId();
     Range tets;
     rval = moab.get_entities_by_type(bit->meshset,MBTET,tets,true); CHKERR_PETSC(rval);
-    Range one;
-    one.insert(*tets.begin());
-    regions.push_back(pair<Range,int>(one,id));
+    regions.push_back(pair<EntityHandle,int>(*tets.begin(),-id));
   }
   ierr = tetgen_iface->setReginData(regions,in);  CHKERRQ(ierr);
   
@@ -150,8 +148,7 @@ int main(int argc, char *argv[]) {
   //in.save_nodes("in");
   //in.save_poly("in");
 
-  char switches2[] = "pYAz";
-  ierr = tetgen_iface->tetRahedralize(switches2,in,out); CHKERRQ(ierr);
+  ierr = tetgen_iface->tetRahedralize(switches,in,out); CHKERRQ(ierr);
   BitRefLevel bit_level2;
   bit_level2.set(2);
   ierr = tetgen_iface->outData(in,out,moab_tetgen_map,tetgen_moab_map,bit_level2); CHKERRQ(ierr);

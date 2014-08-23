@@ -264,47 +264,41 @@ PetscErrorCode TetGenInterface::getTiangleAttributes(
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode TetGenInterface::setReginData(vector<pair<Range,int> >& regions,tetgenio& in) {
+PetscErrorCode TetGenInterface::setReginData(vector<pair<EntityHandle,int> >& regions,tetgenio& in) {
   PetscFunctionBegin;
   ErrorCode rval;
   FieldInterface& m_field = cOre;
-  int nb = 0;
-  vector<pair<Range,int> >::iterator it = regions.begin();
-  for(int ii = 0;it!=regions.end();it++,ii++) {
-    nb += it->first.size();
-  }
-  in.numberofregions = nb;
-  in.regionlist = new double[5*nb];
+  in.numberofregions = regions.size();
+  in.regionlist = new double[5*in.numberofregions];
   int kk = 0;
-  it = regions.begin();
+  vector<pair<EntityHandle,int> >::iterator it = regions.begin();
   for(int ii = 0;it!=regions.end();it++,ii++) {
-    Range& ents = it->first;
-    Range::iterator iit = ents.begin();
-    for(int jj = 0;iit!=ents.end();iit++,jj++) {
-      double coords[3];
-      switch(m_field.get_moab().type_from_handle(*iit)) {
-	case MBTET: {
-	    int num_nodes;
-	    const EntityHandle* conn;
-	    rval = m_field.get_moab().get_connectivity(*iit,conn,num_nodes,true); CHKERR_PETSC(rval);
-	    double _coords[12];
-	    rval = m_field.get_moab().get_coords(conn,num_nodes,_coords); CHKERR_PETSC(rval);
-	    coords[0] = (_coords[0] + _coords[3] + _coords[6] + _coords[9 ])/4.;
-	    coords[1] = (_coords[1] + _coords[4] + _coords[7] + _coords[10])/4.;
-	    coords[2] = (_coords[2] + _coords[5] + _coords[8] + _coords[11])/4.;
-	  }
-	  break;
-	default:
-	  SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
+    double coords[3];
+    switch(m_field.get_moab().type_from_handle(it->first)) {
+      case MBVERTEX: {
+	rval = m_field.get_moab().get_coords(&it->first,1,coords); CHKERR_PETSC(rval);
       }
-      for(int nn = 0;nn<3;nn++) {
-	in.regionlist[kk++] = coords[nn];
+      break;
+      case MBTET: {
+	int num_nodes;
+	const EntityHandle* conn;
+	rval = m_field.get_moab().get_connectivity(it->first,conn,num_nodes,true); CHKERR_PETSC(rval);
+	double _coords[12];
+	rval = m_field.get_moab().get_coords(conn,num_nodes,_coords); CHKERR_PETSC(rval);
+	coords[0] = (_coords[0] + _coords[3] + _coords[6] + _coords[9 ])/4.;
+	coords[1] = (_coords[1] + _coords[4] + _coords[7] + _coords[10])/4.;
+	coords[2] = (_coords[2] + _coords[5] + _coords[8] + _coords[11])/4.;
       }
-      in.regionlist[kk++] = ii;
-      in.regionlist[kk++] = ii;
+      break;
+      default:
+	SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
     }
+    for(int nn = 0;nn<3;nn++) {
+      in.regionlist[kk++] = coords[nn];
+    }
+    in.regionlist[kk++] = it->second;
+    in.regionlist[kk++] = it->second;
   }
-
   PetscFunctionReturn(0);
 }
 PetscErrorCode TetGenInterface::getReginData(
@@ -314,6 +308,10 @@ PetscErrorCode TetGenInterface::getReginData(
   ErrorCode rval;
   FieldInterface& m_field = cOre;
   int nbattributes = out.numberoftetrahedronattributes;
+  if(nbattributes==0) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,
+      "tetgen has no regions attribites");
+  }
   Tag th_region;
   double def_marker = 0;
   rval = m_field.get_moab().tag_get_handle(
@@ -324,7 +322,6 @@ PetscErrorCode TetGenInterface::getReginData(
     int jj = 0;
     for(;jj<nbattributes;jj++) {
       double id = out.tetrahedronattributelist[ii*nbattributes+jj];
-      //cerr << id << endl;
       int iii = MBTET|(ii<<sizeof(int));
       if(tetgen_moab_map.find(iii)==tetgen_moab_map.end()) {
 	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,

@@ -160,15 +160,11 @@ int main(int argc, char *argv[]) {
     ierr = face_splitting_tools.splitFaces(); CHKERRQ(ierr);
   }
 
+  #ifdef WITH_TETGEM
+    char switches[] = "pYAz";
+    ierr = face_splitting_tools.rebuildMeshWithTetGen(switches,1); CHKERRQ(ierr);	
+  #endif
   bit_level0 = BitRefLevel().set(face_splitting_tools.meshIntefaceBitLevels.back());
-
-  char switches[] = "pY";
-  ierr = face_splitting_tools.rebuildMeshWithTetGen(switches,1); CHKERRQ(ierr);
-
-  PetscFinalize();
-
-  return 0;
-
 
   //load factor
   double *t_val;

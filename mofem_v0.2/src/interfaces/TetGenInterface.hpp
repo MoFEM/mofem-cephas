@@ -67,7 +67,7 @@ struct TetGenInterface: public FieldUnknownInterface {
     tetGenMoab_Map& tetgen_moab_map,tetgenio& out,
     Range *ents = NULL,idxRange_Map *ents_map = NULL);
 
-  PetscErrorCode setReginData(vector<pair<Range,int> >& regions,tetgenio& in);
+  PetscErrorCode setReginData(vector<pair<EntityHandle,int> >& regions,tetgenio& in);
   PetscErrorCode getReginData(
     tetGenMoab_Map& tetgen_moab_map,tetgenio& out,
     Range *ents = NULL,idxRange_Map *ents_map = NULL);
