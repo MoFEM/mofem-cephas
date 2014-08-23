@@ -271,9 +271,6 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(char switches[],const i
   Range crack_edges_nodes;
   rval = mField.get_moab().get_connectivity(crack_edges,crack_edges_nodes,true); CHKERR_PETSC(rval);
 
-  rval = mField.get_moab().get_connectivity(mesh_level_tets,crack_edges_nodes,true); CHKERR_PETSC(rval);
-
-  
   //tets adj. to nodes
   Range crack_edges_nodes_tets;
   rval = mField.get_moab().get_adjacencies(
@@ -394,6 +391,9 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(char switches[],const i
       ierr = mField.get_moab().add_entities(bit->get_meshset(),mit->second); CHKERRQ(ierr);
     }
   }
+
+  //add rest of elements to last bit level
+  ierr = mField.seed_ref_level_3D(subtract(mesh_level_tets,tets1),last_ref); CHKERRQ(ierr);
 
   //split faces
   ierr = splitFaces(); CHKERRQ(ierr);

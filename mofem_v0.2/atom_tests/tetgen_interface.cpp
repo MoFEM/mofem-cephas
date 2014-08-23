@@ -148,8 +148,7 @@ int main(int argc, char *argv[]) {
   //in.save_nodes("in");
   //in.save_poly("in");
 
-  char switches2[] = "pYAz";
-  ierr = tetgen_iface->tetRahedralize(switches2,in,out); CHKERRQ(ierr);
+  ierr = tetgen_iface->tetRahedralize(switches,in,out); CHKERRQ(ierr);
   BitRefLevel bit_level2;
   bit_level2.set(2);
   ierr = tetgen_iface->outData(in,out,moab_tetgen_map,tetgen_moab_map,bit_level2); CHKERRQ(ierr);
