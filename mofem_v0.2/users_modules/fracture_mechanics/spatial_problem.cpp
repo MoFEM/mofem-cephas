@@ -162,7 +162,7 @@ int main(int argc, char *argv[]) {
 
   bit_level0 = BitRefLevel().set(face_splitting_tools.meshIntefaceBitLevels.back());
 
-  char switches[] = "pY";
+  char switches[] = "p";
   ierr = face_splitting_tools.rebuildMeshWithTetGen(switches,1); CHKERRQ(ierr);
 
   PetscFinalize();
