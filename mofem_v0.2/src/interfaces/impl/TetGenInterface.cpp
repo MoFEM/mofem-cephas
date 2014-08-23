@@ -120,9 +120,10 @@ PetscErrorCode TetGenInterface::inData(
   PetscFunctionReturn(0);
 }
 PetscErrorCode TetGenInterface::outData(
-  Range& ents,tetgenio& in,tetgenio& out,
+  tetgenio& in,tetgenio& out,
   map<EntityHandle,unsigned long>& moab_tetgen_map,
-  map<unsigned long,EntityHandle>& tetgen_moab_map) {
+  map<unsigned long,EntityHandle>& tetgen_moab_map,
+  Range *ents) {
   PetscFunctionBegin;
 
   FieldInterface& m_field = cOre;
@@ -145,7 +146,7 @@ PetscErrorCode TetGenInterface::outData(
     rval = m_field.get_moab().create_vertex(&out.pointlist[3*ii],node); CHKERR_PETSC(rval);
     moab_tetgen_map[node] = MBVERTEX|(ii<<sizeof(int));
     tetgen_moab_map[MBVERTEX|(ii<<sizeof(int))] = node;
-    ents.insert(node);
+    if(ents!=NULL) ents->insert(node);
   }
 
   ii = 0;
@@ -154,7 +155,7 @@ PetscErrorCode TetGenInterface::outData(
     if(ii<in.numberoftetrahedra) {
       if(memcmp(&in.tetrahedronlist[4*ii],&out.tetrahedronlist[4*ii],4*sizeof(int)) == 0) {
 	if(tetgen_moab_map.find(iii)!=tetgen_moab_map.end()) {
-          ents.insert(tetgen_moab_map[iii]);
+          if(ents!=NULL) ents->insert(tetgen_moab_map[iii]);
 	  continue;
 	} else {
 	  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency between TetGen and MoAB");
@@ -173,19 +174,20 @@ PetscErrorCode TetGenInterface::outData(
     rval = m_field.get_moab().create_element(MBTET,conn,4,tet); CHKERR_PETSC(rval);
     moab_tetgen_map[tet] = iii;
     tetgen_moab_map[iii] = tet;
-    ents.insert(tet);
+    if(ents!=NULL) ents->insert(tet);
   }
 
   PetscFunctionReturn(0);
 }
 PetscErrorCode TetGenInterface::outData(
-  BitRefLevel bit,tetgenio& in,tetgenio& out,
+  tetgenio& in,tetgenio& out,
   map<EntityHandle,unsigned long>& moab_tetgen_map,
-  map<unsigned long,EntityHandle>& tetgen_moab_map) {
+  map<unsigned long,EntityHandle>& tetgen_moab_map,
+  BitRefLevel bit) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
   Range ents;
-  ierr = outData(ents,in,out,moab_tetgen_map,tetgen_moab_map); CHKERRQ(ierr);
+  ierr = outData(in,out,moab_tetgen_map,tetgen_moab_map,&ents); CHKERRQ(ierr);
   //cerr << ents.size() << endl;
   FieldInterface& m_field = cOre;
   ierr = m_field.seed_ref_level_3D(ents.subset_by_type(MBTET),bit); CHKERRQ(ierr);
@@ -230,7 +232,9 @@ PetscErrorCode TetGenInterface::setFaceData(
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode TetGenInterface::getTiangleAttributes(map<EntityHandle,unsigned long>& tetgen_moab_map,tetgenio& out) {
+PetscErrorCode TetGenInterface::getTiangleAttributes(
+  map<EntityHandle,unsigned long>& tetgen_moab_map,tetgenio& out,
+  Range *ents,idxRange_Map *ents_map) {
   PetscFunctionBegin;
   ErrorCode rval;
   FieldInterface& m_field = cOre;
@@ -254,6 +258,8 @@ PetscErrorCode TetGenInterface::getTiangleAttributes(map<EntityHandle,unsigned l
     if(face.size()!=1) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency between TetGen and MoAB");
     }
+    if(ents!=NULL) ents->merge(face);
+    if(ents_map!=NULL) (*ents_map)[out.trifacemarkerlist[ii]].merge(face);
     rval = m_field.get_moab().tag_set_data(th_attribute,&*face.begin(),1,&out.trifacemarkerlist[ii]); CHKERR_PETSC(rval);
   }
   PetscFunctionReturn(0);
@@ -301,7 +307,9 @@ PetscErrorCode TetGenInterface::setReginData(vector<pair<Range,int> >& regions,t
 
   PetscFunctionReturn(0);
 }
-PetscErrorCode TetGenInterface::getReginData(map<EntityHandle,unsigned long>& tetgen_moab_map,tetgenio& out) {
+PetscErrorCode TetGenInterface::getReginData(
+  map<EntityHandle,unsigned long>& tetgen_moab_map,tetgenio& out,
+  Range *ents,idxRange_Map *ents_map) {
   PetscFunctionBegin;
   ErrorCode rval;
   FieldInterface& m_field = cOre;
@@ -324,6 +332,8 @@ PetscErrorCode TetGenInterface::getReginData(map<EntityHandle,unsigned long>& te
       }
       EntityHandle ent = tetgen_moab_map[iii];
       rval = m_field.get_moab().tag_set_data(th_region,&ent,1,&id); CHKERR_PETSC(rval);
+      if(ents!=NULL) ents->insert(ent);
+      if(ents_map!=NULL) (*ents_map)[id].insert(ent);
     }
   }
   PetscFunctionReturn(0);
@@ -335,7 +345,7 @@ PetscErrorCode TetGenInterface::tetRahedralize(char switches[],tetgenio& in,tetg
   tetrahedralize(&a,&in,&out);
   PetscFunctionReturn(0);
 }
-PetscErrorCode TetGenInterface::load_poly(char file_name[],tetgenio& in) {
+PetscErrorCode TetGenInterface::loadPoly(char file_name[],tetgenio& in) {
   PetscFunctionBegin;
   if(!in.load_poly(file_name)) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,

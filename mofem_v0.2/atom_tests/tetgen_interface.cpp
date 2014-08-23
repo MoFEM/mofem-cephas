@@ -86,7 +86,7 @@ int main(int argc, char *argv[]) {
   ierr = tetgen_iface->tetRahedralize(switches,in,out); CHKERRQ(ierr);
   BitRefLevel bit_level1;
   bit_level1.set(1);
-  ierr = tetgen_iface->outData(bit_level1,in,out,moab_tetgen_map,tetgen_moab_map); CHKERRQ(ierr);
+  ierr = tetgen_iface->outData(in,out,moab_tetgen_map,tetgen_moab_map,bit_level1); CHKERRQ(ierr);
 
   EntityHandle meshset_level1;
   rval = moab.create_meshset(MESHSET_SET,meshset_level1); CHKERR_PETSC(rval);
@@ -114,9 +114,9 @@ int main(int argc, char *argv[]) {
     side_set_faces.merge(faces);
   }
 
-  Range surface_nodes;
-  rval = moab.get_connectivity(unite(side_set_faces,outer_surface_skin),surface_nodes,true); CHKERR_PETSC(rval);
-  ierr = tetgen_iface->inData(surface_nodes,in,moab_tetgen_map,tetgen_moab_map); CHKERRQ(ierr);
+  //Range surface_nodes;
+  //rval = moab.get_connectivity(unite(side_set_faces,outer_surface_skin),surface_nodes,true); CHKERR_PETSC(rval);
+  ierr = tetgen_iface->inData(nodes,in,moab_tetgen_map,tetgen_moab_map); CHKERRQ(ierr);
 
   vector<pair<Range,int> > markers;
   outer_surface_skin = subtract(outer_surface_skin,side_set_faces);
@@ -150,11 +150,11 @@ int main(int argc, char *argv[]) {
   //in.save_nodes("in");
   //in.save_poly("in");
 
-  char switches2[] = "pqAaz";
+  char switches2[] = "pYAz";
   ierr = tetgen_iface->tetRahedralize(switches2,in,out); CHKERRQ(ierr);
   BitRefLevel bit_level2;
   bit_level2.set(2);
-  ierr = tetgen_iface->outData(bit_level2,in,out,moab_tetgen_map,tetgen_moab_map); CHKERRQ(ierr);
+  ierr = tetgen_iface->outData(in,out,moab_tetgen_map,tetgen_moab_map,bit_level2); CHKERRQ(ierr);
   ierr = tetgen_iface->getTiangleAttributes(tetgen_moab_map,out); CHKERRQ(ierr);
   ierr = tetgen_iface->getReginData(tetgen_moab_map,out); CHKERRQ(ierr);
 

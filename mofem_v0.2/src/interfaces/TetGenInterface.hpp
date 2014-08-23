@@ -36,37 +36,46 @@ struct TetGenInterface: public FieldUnknownInterface {
   MoFEM::Core& cOre;
   TetGenInterface(MoFEM::Core& core): cOre(core) {};
 
+  typedef map<EntityHandle,unsigned long> moabTetGen_Map;
+  typedef map<unsigned long,EntityHandle> tetGenMoab_Map;
+  typedef map<int,Range> idxRange_Map;
+
   PetscErrorCode inData(
     Range& ents,tetgenio& in,
-    map<EntityHandle,unsigned long>& moab_tetgen_map,
-    map<unsigned long,EntityHandle>& tetgen_moab_map);
+    moabTetGen_Map& moab_tetgen_map,
+    tetGenMoab_Map& tetgen_moab_map);
 
   PetscErrorCode outData(
-    Range& ents,tetgenio& in,tetgenio& out,
-    map<EntityHandle,unsigned long>& moab_tetgen_map,
-    map<unsigned long,EntityHandle>& tetgen_moab_map);
+    tetgenio& in,tetgenio& out,
+    moabTetGen_Map& moab_tetgen_map,
+    tetGenMoab_Map& tetgen_moab_map,
+    Range *ents = NULL);
 
   PetscErrorCode outData(
-    BitRefLevel bit,tetgenio& in,tetgenio& out,
-    map<EntityHandle,unsigned long>& moab_tetgen_map,
-    map<unsigned long,EntityHandle>& tetgen_moab_map);
+    tetgenio& in,tetgenio& out,
+    moabTetGen_Map& moab_tetgen_map,
+    tetGenMoab_Map& tetgen_moab_map,
+    BitRefLevel bit);
 
   PetscErrorCode setFaceData(
     vector<pair<Range,int> >& markers,
     tetgenio& in,
-    map<EntityHandle,unsigned long>& moab_tetgen_map,
-    map<unsigned long,EntityHandle>& tetgen_moab_map);
+    moabTetGen_Map& moab_tetgen_map,
+    tetGenMoab_Map& tetgen_moab_map);
 
   PetscErrorCode getTiangleAttributes(
-    map<EntityHandle,unsigned long>& tetgen_moab_map,
-    tetgenio& out);
+    tetGenMoab_Map& tetgen_moab_map,tetgenio& out,
+    Range *ents = NULL,idxRange_Map *ents_map = NULL);
 
   PetscErrorCode setReginData(vector<pair<Range,int> >& regions,tetgenio& in);
-  PetscErrorCode getReginData(map<EntityHandle,unsigned long>& tetgen_moab_map,tetgenio& out);
+  PetscErrorCode getReginData(
+    tetGenMoab_Map& tetgen_moab_map,tetgenio& out,
+    Range *ents = NULL,idxRange_Map *ents_map = NULL);
 
   PetscErrorCode tetRahedralize(char switches[],tetgenio& in,tetgenio& out);
+  PetscErrorCode loadPoly(char file_name[],tetgenio& in);
 
-  PetscErrorCode load_poly(char file_name[],tetgenio& in);
+
 
 };
 
