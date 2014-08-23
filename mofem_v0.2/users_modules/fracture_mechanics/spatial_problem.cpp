@@ -61,7 +61,7 @@ static char help[] = "...\n\n";
 
 int main(int argc, char *argv[]) {
 
-  try {
+  //try {
 
   PetscInitialize(&argc,&argv,(char *)0,help);
 
@@ -113,7 +113,6 @@ int main(int argc, char *argv[]) {
   rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
   BARRIER_RANK_END(pcomm) 
 
-
   PetscLogDouble t1,t2;
   PetscLogDouble v1,v2;
   ierr = PetscTime(&v1); CHKERRQ(ierr);
@@ -162,6 +161,14 @@ int main(int argc, char *argv[]) {
   }
 
   bit_level0 = BitRefLevel().set(face_splitting_tools.meshIntefaceBitLevels.back());
+
+  char switches[] = "pY";
+  ierr = face_splitting_tools.rebuildMeshWithTetGen(switches,1); CHKERRQ(ierr);
+
+  PetscFinalize();
+
+  return 0;
+
 
   //load factor
   double *t_val;
@@ -216,9 +223,9 @@ int main(int argc, char *argv[]) {
 
   PetscFinalize();
 
-  } catch (const char* msg) {
-    SETERRQ(PETSC_COMM_SELF,1,msg);
-  }
+  //} catch (const char* msg) {
+    //SETERRQ(PETSC_COMM_SELF,1,msg);
+  //}
 
   return 0;
 }

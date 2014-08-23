@@ -364,7 +364,7 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode seed_ref_level_3D(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1) = 0;
 
   /**
-   * \brief seed 3D entities (Volume entities only) in the meshset and their adjacencies (only TETs adjencies) in a particular BitRefLevel
+   * \brief seed 3D entities (Volume entities only) in the range and their adjacencies (only TETs adjencies) in a particular BitRefLevel
    */ 
   virtual PetscErrorCode seed_ref_level_3D(const Range &ents3d,const BitRefLevel &bit,int verb = -1) = 0;
 
