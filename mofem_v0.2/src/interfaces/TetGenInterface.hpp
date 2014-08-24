@@ -76,6 +76,12 @@ struct TetGenInterface: public FieldUnknownInterface {
   PetscErrorCode loadPoly(char file_name[],tetgenio& in);
 
 
+  //Tools for TetGen
+
+  PetscErrorCode checkPlanar_Trinagle(double coords[],bool *result,const double eps = 1e-9);
+  PetscErrorCode groupPlanar_Triangle(Range &tris,vector<Range> &sorted,const double eps = 1e-9);
+  PetscErrorCode groupRegion_Triangle(Range &tris,vector<vector<Range> > &sorted,const double eps = 1e-9);
+  PetscErrorCode makePolygonFacet(Range &ents,Range &polygons);
 
 };
 

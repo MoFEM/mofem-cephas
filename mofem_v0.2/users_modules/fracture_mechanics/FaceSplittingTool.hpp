@@ -91,6 +91,10 @@ struct FaceSplittingTools {
 
   #endif
 
+  PetscErrorCode addcrackFront_to_Cubit201();
+
+
+
 };
 
 

@@ -61,7 +61,7 @@ static char help[] = "...\n\n";
 
 int main(int argc, char *argv[]) {
 
-  //try {
+  try {
 
   PetscInitialize(&argc,&argv,(char *)0,help);
 
@@ -155,16 +155,22 @@ int main(int argc, char *argv[]) {
     ierr = face_splitting_tools.meshRefine(); CHKERRQ(ierr);
   }
 
-  if(!conf_prob.material_FirelWall->operator[](ConfigurationalFractureMechanics::FW_add_crack)) {
-    conf_prob.material_FirelWall->set(ConfigurationalFractureMechanics::FW_add_crack);
-    ierr = face_splitting_tools.splitFaces(); CHKERRQ(ierr);
-  }
+  //if(!conf_prob.material_FirelWall->operator[](ConfigurationalFractureMechanics::FW_add_crack)) {
+    //conf_prob.material_FirelWall->set(ConfigurationalFractureMechanics::FW_add_crack);
+    //ierr = face_splitting_tools.splitFaces(); CHKERRQ(ierr);
+  //}
 
   #ifdef WITH_TETGEM
-    char switches[] = "pYAz";
-    ierr = face_splitting_tools.rebuildMeshWithTetGen(switches,1); CHKERRQ(ierr);	
+    char switches1[] = "pAz";
+    ierr = face_splitting_tools.rebuildMeshWithTetGen(switches1,1); CHKERRQ(ierr);	
+    //char switches2[] = "rO/1AzFV";
+    //ierr = face_splitting_tools.rebuildMeshWithTetGen(switches2,1); CHKERRQ(ierr);	
   #endif
   bit_level0 = BitRefLevel().set(face_splitting_tools.meshIntefaceBitLevels.back());
+
+  //PetscFinalize();
+  //return 0;
+
 
   //load factor
   double *t_val;
@@ -219,9 +225,9 @@ int main(int argc, char *argv[]) {
 
   PetscFinalize();
 
-  //} catch (const char* msg) {
-    //SETERRQ(PETSC_COMM_SELF,1,msg);
-  //}
+  } catch (const char* msg) {
+    SETERRQ(PETSC_COMM_SELF,1,msg);
+  }
 
   return 0;
 }
