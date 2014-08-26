@@ -60,6 +60,15 @@ namespace MoFEM {
       X_mat.resize(rank_field,1.5*rank_field+1.5);  X_mat.clear();  // for rank_field=3 X_mat.resize(3,6)  and for rank_field=1 X_mat.resize(1,3)
       nodes_coord.resize(3,3);
       gauss_coord.resize(3,g_TRI_dim);
+      
+//      cout<<"row_mat  =  "<<row_mat<<endl;
+//      cout<<"RowGlob[0].size()  =  "<<RowGlob[0].size()<<endl;
+//      cout<<"RowGlob[1].size()  =  "<<RowGlob[1].size()<<endl;
+//      cout<<"RowGlob[2].size()  =  "<<RowGlob[2].size()<<endl;
+//      cout<<"RowGlob[3].size()  =  "<<RowGlob[3].size()<<endl;
+//      cout<<"RowGlob[3].size()  =  "<<RowGlob[4].size()<<endl;
+
+      
       D_mat.resize(row_mat);
       Lamda.resize(row_mat);
       
@@ -122,7 +131,7 @@ namespace MoFEM {
 //            cout<<"row_mat  =  "<<row_mat<<endl;
 //            cout<< " D_mat[rr] =  "<<D_mat[rr]<<endl;
         
-        //To get Lambda for stress calculation
+         //To get Lambda for stress calculation
         Lamda[rr].resize(RowGlob[rr].size());
         switch(rr) {
           case 0:  //for nodes
@@ -136,8 +145,9 @@ namespace MoFEM {
                 Lamda[rr][rank_field*nn+iit->get_dof_rank()]=iit->get_FieldData();
               }
             }
-//                    for(int ii=0; ii<Lamda[rr].size(); ii++) cout<<Lamda[rr][ii]<<" ";
-//                    cout<<endl;
+            
+//            for(int ii=0; ii<Lamda[rr].size(); ii++) cout<<Lamda[rr][ii]<<" ";
+//            cout<<endl;
             break;
             
           case 1:  case 2:  case 3: { //For edges

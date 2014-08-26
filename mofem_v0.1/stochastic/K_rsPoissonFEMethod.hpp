@@ -296,17 +296,17 @@ struct K_rsPoissonFEMethod: public ElasticFEMethod {
         //          cout<<"rr "<<rr<<endl;
         //          cout<<"cc "<<cc<<endl;
         if(rr_start == 0) {
-          //            cout<<"K(rr,cc) "<<K(rr,cc)<<endl;
-          //            cout<<"D_elm[cc] "<<D_elm[cc]<<endl;
+//            cout<<"K_r(rr,cc) "<<K_r(rr,cc)<<endl;
+//            cout<<"D_elm_r[cc] "<<D_elm_r[cc]<<endl;
           f_el_rs[rr] = - prod( K_rs(rr,cc), D_elm[cc] )
           - 2*prod(K_r(rr,cc), D_elm_r[cc]);
           rr_start++;
         } else {
-          f_el_rs[rr] = -prod( K_rs(rr,cc), D_elm[cc] )
-          - 2*prod(K_r(rr,cc), D_elm_r[cc]);
+          f_el_rs[rr] -= prod( K_rs(rr,cc), D_elm[cc] )
+          + 2*prod(K_r(rr,cc), D_elm_r[cc]);
         }
       }
-      //cout<<"f_re[rr] "<<f_el_rs[rr]<<endl;
+//      cout<<"f_el_rs[rr] "<<f_el_rs[rr]<<endl;
     }
     
     // assemble the obtained element nodal forces, fe_rs, into the

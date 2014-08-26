@@ -22,4 +22,13 @@ target_link_libraries(stochastic mofem_student_body mofem_forces_and_sources mof
 add_executable(stochastic_2var stochastic_2var.cpp)
 target_link_libraries(stochastic_2var mofem_student_body mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
 
+add_executable(RVE_stochastic_Cube_Disp RVE_stochastic_Cube_Disp.cpp)
+target_link_libraries(RVE_stochastic_Cube_Disp mofem_student_body mofem_homogenisation mofem_Field ${PROJECT_LIBS})
+
+add_executable(RVE_stochastic_Cube_Traction RVE_stochastic_Cube_Traction.cpp)
+target_link_libraries(RVE_stochastic_Cube_Traction mofem_student_body mofem_homogenisation mofem_Field ${PROJECT_LIBS})
+
+add_executable(RVE_stochastic_Cube_Periodic RVE_stochastic_Cube_Periodic.cpp)
+target_link_libraries(RVE_stochastic_Cube_Periodic mofem_student_body mofem_homogenisation mofem_Field ${PROJECT_LIBS})
+
 
