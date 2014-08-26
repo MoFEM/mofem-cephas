@@ -532,6 +532,11 @@ PetscErrorCode TetGenInterface::groupRegion_Triangle(Range &tris,vector<vector<R
 }
 PetscErrorCode TetGenInterface::makePolygonFacet(Range &ents,Range &polygons) {
   PetscFunctionBegin;
+  //FIXME: assumes that are no holes
+
+  if(ents.empty()) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"no ents to build polygon");
+  }
 
   FieldInterface& m_field = cOre;
 
@@ -571,10 +576,18 @@ PetscErrorCode TetGenInterface::makePolygonFacet(Range &ents,Range &polygons) {
     polygon_nodes.push_back(add_node);
     //cerr << "\t" << add_node << endl;
   } while(1);
-  EntityHandle polygon;
-  rval = m_field.get_moab().create_element(
-    MBPOLYGON,&polygon_nodes[0],polygon_nodes.size(),polygon); CHKERR_PETSC(rval);
-  polygons.insert(polygon);
+
+  Range existing_polygon;
+  rval = m_field.get_moab().get_adjacencies(
+    &polygon_nodes[0],polygon_nodes.size(),2,true,existing_polygon); CHKERR_PETSC(rval);
+  if(existing_polygon.empty()) {
+    EntityHandle polygon;
+    rval = m_field.get_moab().create_element(
+      MBPOLYGON,&polygon_nodes[0],polygon_nodes.size(),polygon); CHKERR_PETSC(rval);
+    polygons.insert(polygon);
+  } else {
+    polygons.merge(existing_polygon);
+  }
 
   PetscFunctionReturn(0);
 }
