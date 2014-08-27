@@ -539,8 +539,8 @@ if(TETGEN_LIBRARY)
     mofem_third_party
     ${PROJECT_LIBS})
 
-add_test(tetgen_interface_atom ${MPI_RUN} -np 1
-  ${CMAKE_CURRENT_BINARY_DIR}/tetgen_interface -my_file Tinterface.cub)
+  add_test(tetgen_interface_atom ${MPI_RUN} -np 1
+    ${CMAKE_CURRENT_BINARY_DIR}/tetgen_interface -my_file Tinterface.cub)
 
 
 endif(TETGEN_LIBRARY)
@@ -549,6 +549,9 @@ if(ADOL-C_LIBRARY)
 
   add_executable(adol-c_atom adol-c_atom.cpp)
   target_link_libraries(adol-c_atom ${PROJECT_LIBS})
+
+  add_test(adol-c_atom_test ${MPI_RUN} -np 1
+    ${CMAKE_CURRENT_BINARY_DIR}/adol-c_atom)
 
 
 endif(ADOL-C_LIBRARY)

@@ -85,7 +85,7 @@ int main() {
         reverse(tag,1,1,i,u,Z);        /* evaluate the (i+1)-st deriv. */
     } /* end for */
 
-    return 1;
+    return 0;
 } /* end main */
 
 
