@@ -259,6 +259,15 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(char switches[],const i
   PetscErrorCode ierr;
   ErrorCode rval;
   Skinner skin(&mField.get_moab());
+  Range merged_polygons;
+
+  { //cleaning polygons
+
+    Range polygons;
+    rval = mField.get_moab().get_entities_by_type(0,MBPOLYGON,polygons); CHKERR_PETSC(rval);
+    rval = mField.get_moab().delete_entities(polygons); CHKERR_PETSC(rval);
+
+  }
 
   //get last refined bit level tets
   BitRefLevel bit_mesh = BitRefLevel().set(meshRefineBitLevels.back());
@@ -309,8 +318,13 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(char switches[],const i
   }
   tetgenio &in = tetGenData.back();
 
+  //nodes
   if(tetGenData.size()==1) {
     ierr = tetgen_iface->inData(nodes1,in,moabTetGenMap,tetGenMoabMap); CHKERRQ(ierr);
+  }
+
+  //facets
+  if(1) {
 
     Tag th_attribute;
     int def_marker = 0;
@@ -388,15 +402,20 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(char switches[],const i
       Range &id_nodes_and_edges = attributes_vertex_and_edges_map[mit->first];
       //sorting and grouping domiains with coplanar faces
       vector<vector<Range> > sorted;
+      int nb_ents = mit->second.size();
       ierr = tetgen_iface->groupRegion_Triangle(mit->second,sorted,1e-9); CHKERRQ(ierr);
-      /*cerr << mit->first << " " << mit->second.size();
-      cerr << " " << sorted.size() << endl;
-      for(int vv = 0;vv<sorted.size();vv++) {
-	cerr << "\tnb_groups. " << vv << " " << sorted[vv].size() << endl;
-	for(int vvv = 0;vvv<sorted[vv].size();vvv++) {
-	  cerr << "\t\tnb_ents. " << vvv << " " << sorted[vv][vvv].size() << endl;
+      if(verb>1) {
+	cerr << "face attribute " << mit->first 
+	  << " number of triangle entities " << nb_ents
+	  << " number of faces disjoint regions " << sorted.size() << endl;
+	for(int vv = 0;vv<sorted.size();vv++) {
+	  cerr << "\tnb of disjoint region " << vv 
+	    << " nb of noplanar subregions " << sorted[vv].size() << endl;
+	  for(int vvv = 0;vvv<sorted[vv].size();vvv++) {
+	    cerr << "\t\tnb of subregion " << vvv << " nb elemes in subregion " << sorted[vv][vvv].size() << endl;
+	  }
 	}
-      }*/
+      }
       vector<vector<Range> >::iterator vit = sorted.begin();
       for(;vit!=sorted.end();vit++) {
 	vector<Range>::iterator viit = vit->begin();
@@ -413,6 +432,7 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(char switches[],const i
 	    vector<int> polygon_attributes(polygons.size(),mit->first);
 	    rval = mField.get_moab().tag_set_data(th_attribute,polygons,&*polygon_attributes.begin()); CHKERR_PETSC(rval);
 	    markers.push_back(pair<Range,int>(unite(polygons,imprinted_nodes_and_edges),mit->first));
+	    merged_polygons.merge(polygons);
 	  } else {
 	    markers.push_back(pair<Range,int>(*viit,mit->first));
 	  }
@@ -422,6 +442,24 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(char switches[],const i
 
     }
     ierr = tetgen_iface->setFaceData(markers,in,moabTetGenMap,tetGenMoabMap); CHKERRQ(ierr);
+
+    if(verb>0) {
+      //0
+      Range polygons;
+      rval = mField.get_moab().get_entities_by_type(0,MBPOLYGON,polygons); CHKERR_PETSC(rval);
+      if(!polygons.empty()) {
+	EntityHandle meshset;
+	rval = mField.get_moab().create_meshset(MESHSET_SET,meshset); CHKERR_PETSC(rval);
+	mField.get_moab().add_entities(meshset,polygons);
+	rval = mField.get_moab().write_file("rebuild_with_split_faces_tet_gen_mesh_0.vtk","VTK","",&meshset,1); CHKERR_PETSC(rval);
+	rval = mField.get_moab().delete_entities(&meshset,1); CHKERR_PETSC(rval);
+      }
+    }
+
+  }
+  
+  //regions
+  if(1) {
 
     //make regions
     vector<pair<EntityHandle,int> > regions;
@@ -439,6 +477,16 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(char switches[],const i
       }
     }
     ierr = tetgen_iface->setReginData(regions,in);  CHKERRQ(ierr);
+
+  }
+
+  if(verb>1) {
+    char tetgen_in_file_name[] = "in";
+    in.save_nodes(tetgen_in_file_name);
+    in.save_elements(tetgen_in_file_name);
+    in.save_faces(tetgen_in_file_name);
+    in.save_edges(tetgen_in_file_name);
+    in.save_poly(tetgen_in_file_name);
   }
 
   //generate new mesh
@@ -492,42 +540,32 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(char switches[],const i
     //cerr << BitRefLevel().set(meshIntefaceBitLevels.back()) << endl;
 
     EntityHandle meshset_level;
-    //0
-    rval = mField.get_moab().create_meshset(MESHSET_SET,meshset_level); CHKERR_PETSC(rval);
-    ierr = mField.get_entities_by_type_and_ref_level(last_ref,BitRefLevel().set(),MBTRI,meshset_level); CHKERRQ(ierr);
-    rval = mField.get_moab().write_file("rebuild_with_split_faces_tet_gen_mesh_0.vtk","VTK","",&meshset_level,1); CHKERR_PETSC(rval);
-    rval = mField.get_moab().delete_entities(&meshset_level,1); CHKERR_PETSC(rval);
     //1
     rval = mField.get_moab().create_meshset(MESHSET_SET,meshset_level); CHKERR_PETSC(rval);
-    ierr = mField.get_entities_by_type_and_ref_level(last_ref,BitRefLevel().set(),MBTET,meshset_level); CHKERRQ(ierr);
+    ierr = mField.get_entities_by_type_and_ref_level(last_ref,BitRefLevel().set(),MBTRI,meshset_level); CHKERRQ(ierr);
     rval = mField.get_moab().write_file("rebuild_with_split_faces_tet_gen_mesh_1.vtk","VTK","",&meshset_level,1); CHKERR_PETSC(rval);
     rval = mField.get_moab().delete_entities(&meshset_level,1); CHKERR_PETSC(rval);
     //2
     rval = mField.get_moab().create_meshset(MESHSET_SET,meshset_level); CHKERR_PETSC(rval);
-    BitRefLevel last_int_ref = BitRefLevel().set(meshIntefaceBitLevels.back());
-    ierr = mField.get_entities_by_type_and_ref_level(last_int_ref,BitRefLevel().set(),MBTRI,meshset_level); CHKERRQ(ierr);
+    ierr = mField.get_entities_by_type_and_ref_level(last_ref,BitRefLevel().set(),MBTET,meshset_level); CHKERRQ(ierr);
     rval = mField.get_moab().write_file("rebuild_with_split_faces_tet_gen_mesh_2.vtk","VTK","",&meshset_level,1); CHKERR_PETSC(rval);
     rval = mField.get_moab().delete_entities(&meshset_level,1); CHKERR_PETSC(rval);
     //3
     rval = mField.get_moab().create_meshset(MESHSET_SET,meshset_level); CHKERR_PETSC(rval);
-    ierr = mField.get_entities_by_type_and_ref_level(last_int_ref,BitRefLevel().set(),MBTET,meshset_level); CHKERRQ(ierr);
+    BitRefLevel last_int_ref = BitRefLevel().set(meshIntefaceBitLevels.back());
+    ierr = mField.get_entities_by_type_and_ref_level(last_int_ref,BitRefLevel().set(),MBTRI,meshset_level); CHKERRQ(ierr);
     rval = mField.get_moab().write_file("rebuild_with_split_faces_tet_gen_mesh_3.vtk","VTK","",&meshset_level,1); CHKERR_PETSC(rval);
     rval = mField.get_moab().delete_entities(&meshset_level,1); CHKERR_PETSC(rval);
     //4
     rval = mField.get_moab().create_meshset(MESHSET_SET,meshset_level); CHKERR_PETSC(rval);
-    ierr = mField.get_entities_by_type_and_ref_level(bit_mesh,BitRefLevel().set(),MBTET,meshset_level); CHKERRQ(ierr);
+    ierr = mField.get_entities_by_type_and_ref_level(last_int_ref,BitRefLevel().set(),MBTET,meshset_level); CHKERRQ(ierr);
     rval = mField.get_moab().write_file("rebuild_with_split_faces_tet_gen_mesh_4.vtk","VTK","",&meshset_level,1); CHKERR_PETSC(rval);
     rval = mField.get_moab().delete_entities(&meshset_level,1); CHKERR_PETSC(rval);
     //5
-    Range polygons;
-    rval = mField.get_moab().get_entities_by_type(0,MBPOLYGON,polygons); CHKERR_PETSC(rval);
-    if(!polygons.empty()) {
-      EntityHandle meshset;
-      rval = mField.get_moab().create_meshset(MESHSET_SET,meshset); CHKERR_PETSC(rval);
-      mField.get_moab().add_entities(meshset,polygons);
-      rval = mField.get_moab().write_file("rebuild_with_split_faces_tet_gen_mesh_5.vtk","VTK","",&meshset,1); CHKERR_PETSC(rval);
-      rval = mField.get_moab().delete_entities(&meshset,1); CHKERR_PETSC(rval);
-    }
+    rval = mField.get_moab().create_meshset(MESHSET_SET,meshset_level); CHKERR_PETSC(rval);
+    ierr = mField.get_entities_by_type_and_ref_level(bit_mesh,BitRefLevel().set(),MBTET,meshset_level); CHKERRQ(ierr);
+    rval = mField.get_moab().write_file("rebuild_with_split_faces_tet_gen_mesh_5.vtk","VTK","",&meshset_level,1); CHKERR_PETSC(rval);
+    rval = mField.get_moab().delete_entities(&meshset_level,1); CHKERR_PETSC(rval);
 
     //save elems
     if(verb>1) {
@@ -536,10 +574,12 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(char switches[],const i
       out.save_elements(tetgen_out_file_name);
       out.save_faces(tetgen_out_file_name);
       out.save_edges(tetgen_out_file_name);
-      out.save_neighbors(tetgen_out_file_name);
       out.save_poly(tetgen_out_file_name);
     }
   }
+
+  //claening
+  rval = mField.get_moab().delete_entities(merged_polygons); CHKERR_PETSC(rval);
 
   PetscFunctionReturn(0);
 }

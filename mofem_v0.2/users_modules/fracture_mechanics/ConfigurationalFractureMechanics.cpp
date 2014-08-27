@@ -3666,7 +3666,6 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
 	Range nodes;
 	rval = m_field.get_moab().get_entities_by_type(it->meshset,MBVERTEX,nodes,true); CHKERR_PETSC(rval);
 	for(Range::iterator nit = nodes.begin();nit!=nodes.end();nit++) {
-
 	  double coords[3];
 	  rval = m_field.get_moab().get_coords(&*nit,1,coords); CHKERR_PETSC(rval);
 	  for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_ENT_FOR_LOOP_(problemPtr,*nit,dof)) {
@@ -3691,16 +3690,16 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
     PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT);
 
     #ifdef WITH_TETGEM
-      //if(aa==0) {
-	char switches[] = "pYAVz";
+      if(aa==0) {
+	char switches[] = "pO2/7AVz";
 	face_splitting_tools.moabTetGenMap.clear();
 	face_splitting_tools.tetGenMoabMap.clear();
 	face_splitting_tools.tetGenData.clear();
-	ierr = face_splitting_tools.rebuildMeshWithTetGen(switches,1); CHKERRQ(ierr);
-      /*} else {
-	char switches[] = "rS0O/1AVz";
-	ierr = face_splitting_tools.rebuildMeshWithTetGen(switches,1); CHKERRQ(ierr);
-      }*/
+	ierr = face_splitting_tools.rebuildMeshWithTetGen(switches,2); CHKERRQ(ierr);
+      } else {
+	char switches[] = "rO2/7AVz";
+	ierr = face_splitting_tools.rebuildMeshWithTetGen(switches,2); CHKERRQ(ierr);
+      }
       bit_level0 = BitRefLevel().set(face_splitting_tools.meshIntefaceBitLevels.back());
       //retart analysis
       ierr = main_arc_length_restart(m_field,conf_prob); CHKERRQ(ierr);

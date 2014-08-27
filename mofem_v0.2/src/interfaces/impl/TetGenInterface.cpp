@@ -346,6 +346,10 @@ PetscErrorCode TetGenInterface::getReginData(
       "tetgen has no regions attribites");
   }
   Tag th_region;
+  rval = m_field.get_moab().tag_get_handle("TETGEN_REGION",th_region);
+  if(rval == MB_SUCCESS) {
+    rval = m_field.get_moab().tag_delete(th_region); CHKERR_PETSC(rval); 
+  }
   double def_marker = 0;
   rval = m_field.get_moab().tag_get_handle(
     "TETGEN_REGION",nbattributes,MB_TYPE_DOUBLE,
@@ -430,12 +434,6 @@ PetscErrorCode TetGenInterface::groupPlanar_Triangle(Range &tris,vector<Range> &
       bool repeat = false;
       free.clear();
 
-      //get connectivity
-      Range vit_conn;
-      rval = m_field.get_moab().get_connectivity(&*(vit->begin()),1,vit_conn,true); CHKERR_PETSC(rval);
-      double coords[12];
-      rval = m_field.get_moab().get_coords(vit_conn,coords); CHKERR_PETSC(rval);
-
       //get edges on vit skin
       Range skin_edges;
       rval = skin.find_skin(0,*vit,false,skin_edges); CHKERR(rval);
@@ -449,13 +447,14 @@ PetscErrorCode TetGenInterface::groupPlanar_Triangle(Range &tris,vector<Range> &
       rval = m_field.get_moab().get_adjacencies(
         skin_edges,2,false,skin_edges_tris,Interface::UNION); CHKERR_PETSC(rval);
       //get tris which are part of facet
-      skin_edges_tris = intersect(skin_edges_tris,tris);
+      Range inner_tris = intersect(skin_edges_tris,*vit);
+      Range outer_tris = intersect(skin_edges_tris,tris);
 
       //tris coplanar with vit tris
       Range coplanar_tris;
 
-      Range::iterator tit = skin_edges_tris.begin();
-      for(;tit!=skin_edges_tris.end();tit++) {
+      Range::iterator tit = outer_tris.begin();
+      for(;tit!=outer_tris.end();tit++) {
         Range tit_conn;
         rval = m_field.get_moab().get_connectivity(&*tit,1,tit_conn,true); CHKERR_PETSC(rval);
         tit_conn = subtract(tit_conn,skin_edges_nodes);
@@ -463,6 +462,26 @@ PetscErrorCode TetGenInterface::groupPlanar_Triangle(Range &tris,vector<Range> &
 	  coplanar_tris.insert(*tit);
 	  repeat = true;
 	} else {
+	  Range tit_edges;
+	  rval = m_field.get_moab().get_adjacencies(
+	    &*tit,1,1,false,tit_edges,Interface::UNION); CHKERR_PETSC(rval);
+	  tit_edges = intersect(tit_edges,skin_edges);
+	  if(tit_edges.size()!=1) {
+	    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+	  }	  
+	  Range inner_tri;
+ 	  rval = m_field.get_moab().get_adjacencies(
+	    tit_edges,1,false,inner_tri,Interface::UNION); CHKERR_PETSC(rval);
+	  if(inner_tri.size()!=1) {
+	    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+	  }	  
+	  //get connectivity
+	  int num_nodes;
+	  const EntityHandle* inner_tri_conn;
+	  rval = m_field.get_moab().get_connectivity(
+	    *inner_tri.begin(),inner_tri_conn,num_nodes,true); CHKERR_PETSC(rval);
+	  double coords[12];
+	  rval = m_field.get_moab().get_coords(inner_tri_conn,3,coords); CHKERR_PETSC(rval);
 	  rval = m_field.get_moab().get_coords(&*tit_conn.begin(),1,&coords[9]); CHKERR_PETSC(rval);
 	  bool coplanar;
 	  ierr = checkPlanar_Trinagle(coords,&coplanar,eps); CHKERRQ(ierr);

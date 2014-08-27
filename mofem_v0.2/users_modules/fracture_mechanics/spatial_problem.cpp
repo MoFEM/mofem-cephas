@@ -162,15 +162,14 @@ int main(int argc, char *argv[]) {
 
   #ifdef WITH_TETGEM
     char switches1[] = "pAz";
-    ierr = face_splitting_tools.rebuildMeshWithTetGen(switches1,1); CHKERRQ(ierr);	
-
-    face_splitting_tools.moabTetGenMap.clear();
+    ierr = face_splitting_tools.rebuildMeshWithTetGen(switches1,2); CHKERRQ(ierr);	
+    /*face_splitting_tools.moabTetGenMap.clear();
     face_splitting_tools.tetGenMoabMap.clear();
-    face_splitting_tools.tetGenData.clear();
-    char switches2[] = "pAz";
-    ierr = face_splitting_tools.rebuildMeshWithTetGen(switches2,1); CHKERRQ(ierr);	
-    char switches3[] = "rS0O/1AVz";
-    ierr = face_splitting_tools.rebuildMeshWithTetGen(switches3,1); CHKERRQ(ierr);	
+    face_splitting_tools.tetGenData.clear();*/
+    //char switches2[] = "pAz";
+    //ierr = face_splitting_tools.rebuildMeshWithTetGen(switches2,2); CHKERRQ(ierr);	
+    /*char switches3[] = "rS0O/1AVz";
+    ierr = face_splitting_tools.rebuildMeshWithTetGen(switches3,1); CHKERRQ(ierr);*/
   #endif
   bit_level0 = BitRefLevel().set(face_splitting_tools.meshIntefaceBitLevels.back());
 
