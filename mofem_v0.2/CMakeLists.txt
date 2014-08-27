@@ -43,7 +43,7 @@ include(cmake/FindiMesh.cmake)
 include(cmake/FindCGM.cmake)
 include(cmake/FindLASSO.cmake)
 include(cmake/FindMESHKIT.cmake)
-include(cmake/FindADEPT.cmake)
+include(cmake/FindADOL-C.cmake)
 
 #PETSC tools
 include(cmake/FindTAO.cmake)
@@ -100,7 +100,7 @@ endif(TAO_LIBRARY)
 resolve_libraries(PROJECT_LIBS "
   ${MOAB_LIBS_LINK}
   ${TETGEN_LIBRARY}
-  ${ADEPT_LIBRARY}
+  ${ADOL-C_LIBRARY}
   -L${PETSC_DIR}/${PETSC_ARCH}/lib 
   ${PETSCVAR_PETSC_WITH_EXTERNAL_LIB}
   ${TAO_LIBRARY}

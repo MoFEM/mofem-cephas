@@ -545,4 +545,13 @@ add_test(tetgen_interface_atom ${MPI_RUN} -np 1
 
 endif(TETGEN_LIBRARY)
 
+if(ADOL-C_LIBRARY)
+
+  add_executable(adol-c_atom adol-c_atom.cpp)
+  target_link_libraries(adol-c_atom ${PROJECT_LIBS})
+
+
+endif(ADOL-C_LIBRARY)
+
+
 
