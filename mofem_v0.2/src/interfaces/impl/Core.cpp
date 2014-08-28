@@ -45,6 +45,14 @@
 
 #include <TetGenInterface.hpp>
 
+#ifdef WITH_NETGEN
+  namespace nglib {
+  #include <nglib.h>
+  }
+  using namespace nglib;
+  #include <NetGenInterface.hpp>
+#endif
+
 namespace MoFEM {
 
 const static int debug = 1;
@@ -86,12 +94,22 @@ PetscErrorCode Core::queryInterface(const MOFEMuuid& uuid,FieldUnknownInterface*
 PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr) {
   PetscFunctionBegin;
   
-  #ifdef WITH_TETGEM
+  #ifdef WITH_TETGEN
   if(type == typeid(TetGenInterface)) {
     if(iFaces.find(IDD_MOFEMTetGegInterface.uUId.to_ulong()) == iFaces.end()) {
       iFaces[IDD_MOFEMTetGegInterface.uUId.to_ulong()] = new TetGenInterface(*this);
     }
     ptr = iFaces.at(IDD_MOFEMTetGegInterface.uUId.to_ulong());
+    PetscFunctionReturn(0);
+  }
+  #endif
+
+  #ifdef WITH_NETGEN
+  if(type == typeid(NetGenInterface)) {
+    if(iFaces.find(IDD_MOFEMNetGegInterface.uUId.to_ulong()) == iFaces.end()) {
+      iFaces[IDD_MOFEMNetGegInterface.uUId.to_ulong()] = new NetGenInterface(*this);
+    }
+    ptr = iFaces.at(IDD_MOFEMNetGegInterface.uUId.to_ulong());
     PetscFunctionReturn(0);
   }
   #endif
@@ -308,8 +326,17 @@ const MoFEMField* Core::get_field_structure(const string& name) {
   return &*miit;
 }
 BitFieldId Core::get_field_shift() {
-  assert((unsigned int)*f_shift<BitFieldId().set().to_ulong());
-  return (BitFieldId)(1<<(((*f_shift)++)-1)); 
+  if(*f_shift >= BITFIELDID_SIZE) {
+    char msg[] = "number of fields exceeded";
+    PetscTraceBackErrorHandler(
+      PETSC_COMM_WORLD,
+      __LINE__,PETSC_FUNCTION_NAME,__FILE__,
+      MOFEM_DATA_INSONSISTENCY,PETSC_ERROR_INITIAL,msg,PETSC_NULL);
+    PetscMPIAbortErrorHandler(PETSC_COMM_WORLD,
+      __LINE__,PETSC_FUNCTION_NAME,__FILE__,
+      MOFEM_DATA_INSONSISTENCY,PETSC_ERROR_INITIAL,msg,PETSC_NULL);
+  }
+  return BitFieldId().set(((*f_shift)++)-1);
 }
 BitFEId Core::get_BitFEId() {
   assert((unsigned int)*MoFEMFiniteElement_shift<BitFEId().set().to_ulong());

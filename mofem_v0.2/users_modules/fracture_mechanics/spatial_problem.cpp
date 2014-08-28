@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#ifdef WITH_TETGEM
+#ifdef WITH_TETGEN
 
 #include <tetgen.h>
 #ifdef REAL
@@ -160,21 +160,69 @@ int main(int argc, char *argv[]) {
     ierr = face_splitting_tools.splitFaces(); CHKERRQ(ierr);
   }
 
-  #ifdef WITH_TETGEM
-    char switches1[] = "pAz";
-    ierr = face_splitting_tools.rebuildMeshWithTetGen(switches1,2); CHKERRQ(ierr);	
-    /*face_splitting_tools.moabTetGenMap.clear();
-    face_splitting_tools.tetGenMoabMap.clear();
-    face_splitting_tools.tetGenData.clear();*/
-    //char switches2[] = "pAz";
-    //ierr = face_splitting_tools.rebuildMeshWithTetGen(switches2,2); CHKERRQ(ierr);	
-    /*char switches3[] = "rS0O/1AVz";
-    ierr = face_splitting_tools.rebuildMeshWithTetGen(switches3,1); CHKERRQ(ierr);*/
-  #endif
-  bit_level0 = BitRefLevel().set(face_splitting_tools.meshIntefaceBitLevels.back());
+  #ifdef WITH_TETGEN
 
-  //PetscFinalize();
-  //return 0;
+    /*{
+
+      cerr << "bit_level0 " << bit_level0 << endl;
+      EntityHandle meshset_level;
+      rval = m_field.get_moab().create_meshset(MESHSET_SET,meshset_level); CHKERR_PETSC(rval);
+      ierr = m_field.get_entities_by_type_and_ref_level(bit_level0,BitRefLevel().set(),MBTET,meshset_level); CHKERRQ(ierr);
+      rval = m_field.get_moab().write_file("out0.vtk","VTK","",&meshset_level,1); CHKERR_PETSC(rval);
+      rval = m_field.get_moab().delete_entities(&meshset_level,1); CHKERR_PETSC(rval);
+
+      BitRefLevel bit_mesh = BitRefLevel().set(face_splitting_tools.meshRefineBitLevels.back());
+      cerr << "bit_mesh " << bit_mesh << endl;
+
+      rval = m_field.get_moab().create_meshset(MESHSET_SET,meshset_level); CHKERR_PETSC(rval);
+      ierr = m_field.get_entities_by_type_and_ref_level(bit_mesh,BitRefLevel().set(),MBTET,meshset_level); CHKERRQ(ierr);
+      rval = m_field.get_moab().write_file("out1.vtk","VTK","",&meshset_level,1); CHKERR_PETSC(rval);
+      rval = m_field.get_moab().delete_entities(&meshset_level,1); CHKERR_PETSC(rval);
+
+    }*/
+
+    /*vector<string> switches1;
+    if(pcomm->rank() == 0) {
+      switches1.push_back("rp178sqRS0JVV");
+    } else {
+      switches1.push_back("rp178sqRS0JQ");
+    }
+    ierr = face_splitting_tools.rebuildMeshWithTetGen(switches1,0); CHKERRQ(ierr);*/
+
+    /*for(int ii = 0;ii<=200;ii++) {
+      
+      cerr << "Debug step " << ii << endl;
+
+      double v[] = { 0.01,0.0,0 };
+      ierr = face_splitting_tools.moveFrontNodesByVec(v); CHKERRQ(ierr);
+
+      face_splitting_tools.moabTetGenMap.clear();
+      face_splitting_tools.tetGenMoabMap.clear();
+      face_splitting_tools.tetGenData.clear();
+      ierr = face_splitting_tools.rebuildMeshWithTetGen(switches1,2); CHKERRQ(ierr);	
+
+      BitRefLevel bit_level1 = BitRefLevel().set(face_splitting_tools.meshIntefaceBitLevels.back());
+      EntityHandle meshset_level;
+      rval = m_field.get_moab().create_meshset(MESHSET_SET,meshset_level); CHKERR_PETSC(rval);
+      ierr = m_field.get_entities_by_type_and_ref_level(bit_level1,BitRefLevel().set(),MBTET,meshset_level); CHKERRQ(ierr);
+
+      ostringstream ss1;
+      ss1 << "test_prop_" << ii << ".vtk";
+
+      rval = m_field.get_moab().write_file(ss1.str().c_str(),"VTK","",&meshset_level,1); CHKERR_PETSC(rval);
+      rval = m_field.get_moab().delete_entities(&meshset_level,1); CHKERR_PETSC(rval);
+
+      ostringstream ss3;
+      ss3 << "restart_" << ii << ".h5m";
+      rval = m_field.get_moab().write_file(ss3.str().c_str()); CHKERR_PETSC(rval);
+  }
+
+  PetscFinalize();
+  return 0;*/
+
+  #endif
+
+  bit_level0 = BitRefLevel().set(face_splitting_tools.meshIntefaceBitLevels.back());
 
   //load factor
   double *t_val;

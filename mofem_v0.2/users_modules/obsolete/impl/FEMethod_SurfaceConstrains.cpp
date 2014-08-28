@@ -135,7 +135,7 @@ PetscErrorCode ConstrainSurfacGeometry::cOnstrain(double *dofs_iX,double *C,doub
   if(adj_side_elems.size()==0) {
     Range adj_tets_on_surface;
     BitRefLevel bit_tet_on_surface;
-    bit_tet_on_surface.set(BITREFLEVEL_SIZE-1);
+    bit_tet_on_surface.set(BITREFLEVEL_SIZE-2);
     ierr = mField.get_adjacencies(bit_tet_on_surface,&fAce,1,3,adj_tets_on_surface,Interface::INTERSECT,0); CHKERRQ(ierr);
     adj_side_elems.insert(*adj_tets_on_surface.begin());
   }

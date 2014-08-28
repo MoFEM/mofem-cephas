@@ -79,8 +79,26 @@ endif(STAND_ALLONE_USERS_MODULES)
 # third party libraries
 if(TETGEN_LIBRARY) 
   include_directories("${TETGEN_DIR}/include")
-  add_definitions( -DWITH_TETGEM )
+  add_definitions( -DWITH_TETGEN )
+  message(STATUS "WITH TETEGEN")
 endif(TETGEN_LIBRARY)
+
+if(NETGEN_LIBRARY) 
+  include_directories("${NETGEN_DIR}/include")
+  include_directories("${NETGEN_SRC_DIR}/libsrc/include")
+  add_definitions( -DWITH_NETGEN )
+  message(STATUS "WITH NETEGEN")
+endif(NETGEN_LIBRARY)
+
+if(CGAL_DIR) 
+  find_package(CGAL HINTS ${CGAL_DIR}/lib/CGAL)
+  if(CGAL_CONFIG_LOADED) 
+    include_directories(${CGAL_INCLUDE_DIRS})
+    link_directories(${CGAL_LIBRARIES_DIR})
+    add_definitions( -DWITH_CGAL )
+    message(STATUS "WITH CGAL")
+  endif(CGAL_CONFIG_LOADED)
+endif(CGAL_DIR)
 
 # Users modules
 
@@ -103,7 +121,7 @@ add_library(users_modules_obsolete
 )
 
 add_library(complex_for_lazy_obsolete
-  ${MoFEM_PROJECT_SOURCE_DIR}/users_modules/obsolete/c_impl/complex_for_lazy.c
+  ${UM_SOURCE_DIR}/obsolete/c_impl/complex_for_lazy.c
 )
 
 add_subdirectory(elasticity)

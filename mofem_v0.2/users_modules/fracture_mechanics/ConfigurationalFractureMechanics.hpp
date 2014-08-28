@@ -80,7 +80,7 @@ struct ConfigurationalFractureMechanics {
   PetscErrorCode crackfront_partition_problems(FieldInterface& m_field,string problem);
   PetscErrorCode set_spatial_positions(FieldInterface& m_field);
   PetscErrorCode set_material_positions(FieldInterface& m_field);
-  PetscErrorCode set_coordinates_from_material_solution(FieldInterface& m_field);
+  PetscErrorCode set_coordinates_from_material_solution(FieldInterface& m_field,bool only_crack_front = false);
 
   PostProcStressNonLinearElasticity *fe_post_proc_stresses_method;
   PetscErrorCode solve_spatial_problem(FieldInterface& m_field,SNES *snes,bool postproc = true);
@@ -92,7 +92,7 @@ struct ConfigurationalFractureMechanics {
   double aRea,lambda,energy;
   int nb_un_freez_nodes;
   bool freeze_all_but_one;
-  PetscErrorCode solve_coupled_problem(FieldInterface& m_field,SNES *snes,const double da,const double fraction_treshold = 5e-2);
+  PetscErrorCode solve_coupled_problem(FieldInterface& m_field,SNES *snes,double da,const double fraction_treshold = 1e-1);
 
   PetscErrorCode calculate_material_forces(FieldInterface& m_field,string problem,string fe);
   PetscErrorCode surface_projection_data(FieldInterface& m_field,string problem);
@@ -128,6 +128,7 @@ struct ConfigurationalFractureMechanics {
     ~ArcLengthElemFEMethod();
 
     double aRea,aRea0,lambda_int;
+    double resSpatialNrm2,resCrackFrontNrm2;
 
     PetscErrorCode set_dlambda_to_x(Vec x,double dlambda);
     PetscErrorCode calulate_area();

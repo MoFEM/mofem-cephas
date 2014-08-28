@@ -45,17 +45,29 @@ struct TetGenInterface: public FieldUnknownInterface {
     moabTetGen_Map& moab_tetgen_map,
     tetGenMoab_Map& tetgen_moab_map);
 
-  PetscErrorCode outData(
-    tetgenio& in,tetgenio& out,
+  enum tetGenNodesTypes { RIDGEVERTEX = 0, FREESEGVERTEX = 1, FREEFACETVERTEX = 2, FREEVOLVERTEX = 3 };
+
+  PetscErrorCode setGeomData(
+    tetgenio& in,
     moabTetGen_Map& moab_tetgen_map,
     tetGenMoab_Map& tetgen_moab_map,
-    Range *ents = NULL);
+    map<int,Range> &type_ents);
 
   PetscErrorCode outData(
     tetgenio& in,tetgenio& out,
     moabTetGen_Map& moab_tetgen_map,
     tetGenMoab_Map& tetgen_moab_map,
-    BitRefLevel bit);
+    Range *ents = NULL,
+    bool id_in_tags = false,
+    bool error_if_created = false);
+
+  PetscErrorCode outData(
+    tetgenio& in,tetgenio& out,
+    moabTetGen_Map& moab_tetgen_map,
+    tetGenMoab_Map& tetgen_moab_map,
+    BitRefLevel bit,
+    bool id_in_tags = false,
+    bool error_if_created = false);
 
   PetscErrorCode setFaceData(
     vector<pair<Range,int> >& markers,
@@ -63,9 +75,9 @@ struct TetGenInterface: public FieldUnknownInterface {
     moabTetGen_Map& moab_tetgen_map,
     tetGenMoab_Map& tetgen_moab_map);
 
-  PetscErrorCode getTiangleAttributes(
+  PetscErrorCode getTriangleMarkers(
     tetGenMoab_Map& tetgen_moab_map,tetgenio& out,
-    Range *ents = NULL,idxRange_Map *ents_map = NULL);
+    Range *ents = NULL,idxRange_Map *ents_map = NULL,bool only_non_zero = true);
 
   PetscErrorCode setReginData(vector<pair<EntityHandle,int> >& regions,tetgenio& in);
   PetscErrorCode getReginData(
@@ -75,15 +87,15 @@ struct TetGenInterface: public FieldUnknownInterface {
   PetscErrorCode tetRahedralize(char switches[],tetgenio& in,tetgenio& out);
   PetscErrorCode loadPoly(char file_name[],tetgenio& in);
 
-
-  //Tools for TetGen
+  //Tools for TetGen, i.e. geometry reconstruction from mesh
 
   PetscErrorCode checkPlanar_Trinagle(double coords[],bool *result,const double eps = 1e-9);
   PetscErrorCode groupPlanar_Triangle(Range &tris,vector<Range> &sorted,const double eps = 1e-9);
   PetscErrorCode groupRegion_Triangle(Range &tris,vector<vector<Range> > &sorted,const double eps = 1e-9);
 
   //FIXME: assumes that are no holes
-  PetscErrorCode makePolygonFacet(Range &ents,Range &polygons); 
+  PetscErrorCode makePolygonFacet(Range &ents,Range &polygons,
+    bool reduce_edges = false,Range *not_reducable_nodes = NULL,const double eps = 1e-9); 
 
 };
 

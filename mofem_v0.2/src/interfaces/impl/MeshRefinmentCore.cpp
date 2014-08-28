@@ -108,7 +108,7 @@ PetscErrorCode Core::add_verices_in_the_middel_of_edges(const EntityHandle meshs
 }
 PetscErrorCode Core::add_verices_in_the_middel_of_edges(const Range &_edges,const BitRefLevel &bit,int verb) {
   PetscFunctionBegin;
-  Range edges = _edges;
+  Range edges = _edges.subset_by_type(MBEDGE);
   typedef RefMoFEMEntity_multiIndex::index<Composite_EntityType_And_ParentEntityType_mi_tag>::type ref_ents_by_composite;
   ref_ents_by_composite &ref_ents = refinedEntities.get<Composite_EntityType_And_ParentEntityType_mi_tag>();
   ref_ents_by_composite::iterator miit = ref_ents.lower_bound(boost::make_tuple(MBVERTEX,MBEDGE));
@@ -128,12 +128,20 @@ PetscErrorCode Core::add_verices_in_the_middel_of_edges(const Range &_edges,cons
   }
   Range::iterator eit = edges.begin();
   for(;eit!=edges.end();eit++) {
-    RefMoFEMEntity_multiIndex_view_by_parent_entity::iterator miit_view = ref_parent_ents_view.find(*eit);
-    const EntityHandle* conn; 
-    int num_nodes; 
-    rval = moab.get_connectivity(*eit,conn,num_nodes,true);  CHKERR_PETSC(rval);
-    assert(num_nodes==2);
+    bool add_vertex = false;
+    RefMoFEMEntity_multiIndex_view_by_parent_entity::iterator miit_view;
+    if(ref_parent_ents_view.empty()) {
+      add_vertex = true;
+    } else {
+      miit_view = ref_parent_ents_view.find(*eit);
+    }
     if(miit_view == ref_parent_ents_view.end()||ref_parent_ents_view.empty()) {
+      const EntityHandle* conn; 
+      int num_nodes; 
+      rval = moab.get_connectivity(*eit,conn,num_nodes,true);  CHKERR_PETSC(rval);
+      if(num_nodes !=2 ) {
+	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"edge should have 2 edges");
+      }
       double coords[num_nodes*3]; 
       rval = moab.get_coords(conn,num_nodes,coords); CHKERR_PETSC(rval);
       cblas_daxpy(3,1.,&coords[3],1,coords,1);
@@ -143,7 +151,7 @@ PetscErrorCode Core::add_verices_in_the_middel_of_edges(const Range &_edges,cons
       rval = moab.tag_set_data(th_RefParentHandle,&node,1,&*eit); CHKERR_PETSC(rval);
       rval = moab.tag_set_data(th_RefBitLevel,&node,1,&bit); CHKERR_PETSC(rval);
       pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ent = refinedEntities.insert(RefMoFEMEntity(moab,node));
-      if(!p_ent.second) SETERRQ(PETSC_COMM_SELF,1,"this entity is there");
+      if(!p_ent.second) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"this entity is there");
       if(verbose>2) {
 	ostringstream ss;
 	ss << *(p_ent.first) << endl;
@@ -151,8 +159,11 @@ PetscErrorCode Core::add_verices_in_the_middel_of_edges(const Range &_edges,cons
       }
     } else {
       const EntityHandle node = (*miit_view)->get_ref_ent();
+      if((*miit_view)->get_ent_type() != MBVERTEX) {
+	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"child of edge should be vertex");
+      }
       bool success = refinedEntities.modify(refinedEntities.get<MoABEnt_mi_tag>().find(node),RefMoFEMEntity_change_add_bit(bit));
-      if(!success) SETERRQ(PETSC_COMM_SELF,1,"inconsistency in data");
+      if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"inconsistency in data");
     }
   }
   PetscFunctionReturn(0);
@@ -201,7 +212,8 @@ PetscErrorCode Core::refine_TET(const Range &_tets,const BitRefLevel &bit,const 
     const EntityHandle* conn; 
     int num_nodes; 
     moab.get_connectivity(*tit,conn,num_nodes,true); 
-    assert(num_nodes==4);
+    //Range _tit_edges;
+    //rval = moab.get_adjacencies(&*tit,1,1,true,_tit_edges); CHKERR_PETSC(rval);
     for(int nn = 0;nn<num_nodes;nn++) {
       bool success = refinedEntities.modify(refinedEntities.get<MoABEnt_mi_tag>().find(conn[nn]),RefMoFEMEntity_change_add_bit(bit));
       if(!success) SETERRQ(PETSC_COMM_SELF,1,"can not set refinement bit level to tet node");
@@ -215,7 +227,7 @@ PetscErrorCode Core::refine_TET(const Range &_tets,const BitRefLevel &bit,const 
     //hash map of nodes (RefMoFEMEntity) by edges (EntityHandle)
     map<EntityHandle /*edge*/,const RefMoFEMEntity* /*node*/> map_ref_nodes_by_edges; 
     for(int ee = 0;ee<6;ee++) { 
-      EntityHandle edge = no_handle;
+      EntityHandle edge;
       rval = moab.side_element(*tit,1,ee,edge);  CHKERR_PETSC(rval);
       RefMoFEMEntity_multiIndex_view_by_parent_entity::iterator miit_view;
       miit_view = ref_parent_ents_view.find(edge);
@@ -223,11 +235,44 @@ PetscErrorCode Core::refine_TET(const Range &_tets,const BitRefLevel &bit,const 
 	if(((*miit_view)->get_BitRefLevel()&bit).any()) {
 	  edge_new_nodes[ee] = (*miit_view)->get_ref_ent(); 
 	  map_ref_nodes_by_edges[(*miit_view)->get_parent_ent()] = &**miit_view;
+	  {
+	    const EntityHandle* conn_edge; 
+	    int num_nodes; 
+	    moab.get_connectivity(edge,conn_edge,num_nodes,true); 
+	    if(conn_edge[0] == edge_new_nodes[ee]) {
+	      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+	    }
+	    if(conn_edge[1] == edge_new_nodes[ee]) {
+	      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+	    }
+	  }
 	  split_edges[parent_edges_bit.count()] = ee;
 	  parent_edges_bit.set(ee,1);
 	}
       }
     }
+    for(int ee = 0;ee<6;ee++) {
+      if(edge_new_nodes[ee] == no_handle) continue;
+      for(int nn = 0;nn<4;nn++) {
+	if(conn[nn] == edge_new_nodes[ee]) {
+	    cerr << conn[0] << " "
+		<< conn[1] << " "
+		<< conn[2] << " "
+		<< conn[3] << " : "
+		<< edge_new_nodes[ee] << endl;
+	    for(int eee = 0;eee<6;eee++) { 
+	      EntityHandle edge;
+	      rval = moab.side_element(*tit,1,eee,edge);  CHKERR_PETSC(rval);
+	      const EntityHandle* conn_edge; 
+	      int num_nodes; 
+	      moab.get_connectivity(edge,conn_edge,num_nodes,true); 
+	      cerr << conn_edge[0] << " " << conn_edge[1] << endl;
+	    }
+	    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+	  }
+      }
+    }
+
     // swap nodes forward
     EntityHandle _conn_[4];
     copy(&conn[0],&conn[4],&_conn_[0]);
@@ -272,6 +317,16 @@ PetscErrorCode Core::refine_TET(const Range &_tets,const BitRefLevel &bit,const 
 	break;
       case 1:
 	sub_type = 0;
+	/*for(int nn = 0;nn<4;nn++) {
+	  if(_conn_[nn] == edge_new_nodes[split_edges[0]]) {
+	    cerr << _conn_[0] << " "
+	      << _conn_[1] << " "
+	      << _conn_[2] << " "
+	      << _conn_[3] << " : "
+	      << edge_new_nodes[split_edges[0]] << endl;
+	    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+	  }
+	}*/
 	tet_type_1(_conn_,split_edges[0],edge_new_nodes[split_edges[0]],new_tets_conns);
 	nb_new_tets = 2;
 	break;
@@ -364,12 +419,41 @@ PetscErrorCode Core::refine_TET(const Range &_tets,const BitRefLevel &bit,const 
 	      rval = moab.create_element(MBTET,&new_tets_conns[4*tt],4,ref_tets[tt]); CHKERR_PETSC(rval);
 	    } else {
 	      if(new_tets_conns_tet.size()!=1) {
-		SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+		SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
 	      }
 	      ref_tets[tt] = new_tets_conns_tet[0];
 	    }
 	  } else {
 	    rval = moab.create_element(MBTET,&new_tets_conns[4*tt],4,ref_tets[tt]); CHKERR_PETSC(rval);
+	  }
+	  Range ref_tet_nodes;
+	  rval = moab.get_connectivity(&ref_tets[tt],1,ref_tet_nodes,true); CHKERR_PETSC(rval);
+	  if(ref_tet_nodes.size()!=4) {
+	    cerr << tt << " " << nb_new_tets << " " << sub_type << " " << parent_edges_bit << endl;
+	    cerr << _conn_[0] << " "
+	      << _conn_[1] << " "
+	      << _conn_[2] << " "
+	      << _conn_[3] << endl;
+
+	    cerr << edge_new_nodes[0] << " "
+	      << edge_new_nodes[1] << " "
+	      << edge_new_nodes[2] << " "
+	      << edge_new_nodes[3] << " "
+	      << edge_new_nodes[4] << " "
+	      << edge_new_nodes[5] << endl;
+
+	    cerr << split_edges[0] << " "
+	      << split_edges[1] << " "
+	      << split_edges[2] << " "
+	      << split_edges[3] << " "
+	      << split_edges[4] << " "
+	      << split_edges[5] << endl;
+
+	    cerr << new_tets_conns[4*tt+0] << " " 
+	      << new_tets_conns[4*tt+1] << " " 
+	      << new_tets_conns[4*tt+2] << " " 
+	      << new_tets_conns[4*tt+3] << endl << endl;
+	    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"tetrahedral should have 4 nodes");
 	  }
 	  int ref_type[2];
 	  ref_type[0] = parent_edges_bit.count();
@@ -398,14 +482,14 @@ PetscErrorCode Core::refine_TET(const Range &_tets,const BitRefLevel &bit,const 
       }
     }
     //debug
-    miit_composite = by_composite.lower_bound(boost::make_tuple(*tit,parent_edges_bit.to_ulong()));
+    /*miit_composite = by_composite.lower_bound(boost::make_tuple(*tit,parent_edges_bit.to_ulong()));
     hi_miit_composite = by_composite.upper_bound(boost::make_tuple(*tit,parent_edges_bit.to_ulong()));
     if(miit_composite!=hi_miit_composite) {
       if(distance(miit_composite,hi_miit_composite)!=(unsigned int)nb_new_tets) {
 	SETERRQ2(PETSC_COMM_SELF,1,"data inconsistency %u != %u",
 	  distance(miit_composite,hi_miit_composite),(unsigned int)nb_new_tets);
       }
-    }
+    }*/
     //find parents for new edges and faces
     //get tet edges and faces
     Range tit_edges,tit_faces;
@@ -451,6 +535,9 @@ PetscErrorCode Core::refine_TET(const Range &_tets,const BitRefLevel &bit,const 
     for(Range::iterator reit = ref_edges.begin();reit!=ref_edges.end();reit++) {
       Range ref_edges_nodes;
       rval = moab.get_connectivity(&*reit,1,ref_edges_nodes,true); CHKERR_PETSC(rval);
+      if(ref_edges_nodes.size()!=2) {
+	SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, edge should have 2 nodes");
+      }
       //check if ref edge is an coarse edge
       int ee = 0;
       for(;ee<6;ee++) {
@@ -511,6 +598,19 @@ PetscErrorCode Core::refine_TET(const Range &_tets,const BitRefLevel &bit,const 
 	}
 	continue;
       }
+      
+      //this will help to debug error
+      Range ref_edges_nodes_tets;
+      rval = moab.get_adjacencies(ref_edges_nodes,3,true,ref_edges_nodes_tets,Interface::UNION); CHKERR_PETSC(rval);
+      ref_edges_nodes_tets = intersect(ref_edges_nodes_tets,tets);
+      ref_edges_nodes_tets.insert(*reit);
+
+      EntityHandle meshset_out;
+      rval = moab.create_meshset(MESHSET_SET,meshset_out); CHKERR_PETSC(rval);
+      rval = moab.add_entities(meshset_out,ref_edges_nodes_tets); CHKERR_PETSC(rval);
+      rval = moab.write_file("debug_error.vtk","VTK","",&meshset_out,1); CHKERR_PETSC(rval);
+      rval = moab.delete_entities(&meshset_out,1); CHKERR_PETSC(rval);
+
       //refined edge is not child of any edge, face or tetrahedral, this is imposible edge
       SETERRQ(PETSC_COMM_SELF,1,"impossible refined edge");
     }

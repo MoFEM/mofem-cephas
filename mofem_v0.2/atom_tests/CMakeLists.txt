@@ -545,6 +545,18 @@ if(TETGEN_LIBRARY)
 
 endif(TETGEN_LIBRARY)
 
+if(NETGEN_LIBRARY) 
+
+  add_executable(netgen_interface netgen_interface.cpp)
+  target_link_libraries(netgen_interface
+    mofem_interfaces
+    mofem_multi_indices
+    mofem_approx
+    mofem_third_party
+    ${PROJECT_LIBS})
+
+endif(NETGEN_LIBRARY)
+
 if(ADOL-C_LIBRARY)
 
   add_executable(adol-c_atom adol-c_atom.cpp)

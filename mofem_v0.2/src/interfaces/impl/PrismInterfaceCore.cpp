@@ -59,7 +59,7 @@ PetscErrorCode Core::get_msId_3dENTS_sides(const int msId,const CubitBC_BitSet C
 PetscErrorCode Core::get_msId_3dENTS_sides(const EntityHandle SIDESET,const BitRefLevel mesh_bit_level,const bool recursive,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-  Range mesh_level_ents3d;
+  Range mesh_level_ents3d,mesh_level_ents3d_tris;
   Range mesh_level_tris;
   Range mesh_level_edges;
   Range mesh_level_nodes;
@@ -68,6 +68,8 @@ PetscErrorCode Core::get_msId_3dENTS_sides(const EntityHandle SIDESET,const BitR
     ierr = get_entities_by_type_and_ref_level(mesh_bit_level,BitRefLevel().set(),MBTRI,mesh_level_tris); CHKERRQ(ierr);
     ierr = get_entities_by_type_and_ref_level(mesh_bit_level,BitRefLevel().set(),MBEDGE,mesh_level_edges); CHKERRQ(ierr);
     ierr = get_entities_by_type_and_ref_level(mesh_bit_level,BitRefLevel().set(),MBVERTEX,mesh_level_nodes); CHKERRQ(ierr);
+    rval = moab.get_adjacencies(mesh_level_ents3d,2,false,mesh_level_ents3d_tris,Interface::UNION); CHKERR_PETSC(rval);
+
   }
   Range mesh_level_prisms;
   if(mesh_bit_level.any()) {
@@ -79,7 +81,7 @@ PetscErrorCode Core::get_msId_3dENTS_sides(const EntityHandle SIDESET,const BitR
   Range triangles;
   rval = moab.get_entities_by_type(SIDESET,MBTRI,triangles,recursive);  CHKERR_PETSC(rval);
   if(mesh_bit_level.any()) {
-    triangles = intersect(triangles,mesh_level_tris);
+    triangles = intersect(triangles,mesh_level_ents3d_tris);
   }
   if(verb>1) {
     PetscPrintf(PETSC_COMM_WORLD,"Nb. of triangles in set %u\n",triangles.size());
@@ -109,7 +111,7 @@ PetscErrorCode Core::get_msId_3dENTS_sides(const EntityHandle SIDESET,const BitR
   if(verb>3) PetscPrintf(PETSC_COMM_WORLD,"skin_faces_edges %u\n",skin_faces_edges.size());
   //note: that skin faces edges do not contain internal boundary
   //note: that prisms are not included in ents3d, so if ents3d have border with other inteface is like external boundary 
-  //skin edges bondart are internal edge <- skin_faces_edges contains edges which are on the body boundary <- that is the trick
+  //skin edges boundary are internal edge <- skin_faces_edges contains edges which are on the body boundary <- that is the trick
   skin_edges_boundary = subtract(skin_edges_boundary,skin_faces_edges); // from skin edges subtract edges from skin faces of 3d ents (only internal edges)
   if(verb>3) {
     EntityHandle out_meshset;
@@ -170,6 +172,9 @@ PetscErrorCode Core::get_msId_3dENTS_sides(const EntityHandle SIDESET,const BitR
     //add tets to side
     side_ents3d.insert(adj_ents3d.begin(),adj_ents3d.end());
   } while (nb_side_ents3d != side_ents3d.size());
+  if(ents3d_with_prisms.size() == side_ents3d.size()) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"all tets on one side, no-interface");
+  }
   //other side ents
   Range other_side = subtract(ents3d_with_prisms,side_ents3d);
   //side nodes
@@ -253,15 +258,18 @@ PetscErrorCode Core::get_msId_3dENTS_split_sides(
   if(children.size()!=3) {
     SETERRQ(PETSC_COMM_SELF,1,"should be 3 child meshsets, each of them contains tets on two sides of interface");
   }
-  //faces of interface
-  Range triangles;
-  rval = moab.get_entities_by_type(SIDESET,MBTRI,triangles,recursive);  CHKERR_PETSC(rval);
   //3d ents on "father" side
   Range side_ents3d;
   rval = moab.get_entities_by_handle(children[0],side_ents3d,false);  CHKERR_PETSC(rval);
   //3d ents on "mather" side
   Range other_ents3d;
   rval = moab.get_entities_by_handle(children[1],other_ents3d,false);  CHKERR_PETSC(rval);
+  //faces of interface
+  Range triangles;
+  rval = moab.get_entities_by_type(SIDESET,MBTRI,triangles,recursive);  CHKERR_PETSC(rval);
+  Range side_ents3d_tris;
+  rval = moab.get_adjacencies(side_ents3d,2,true,side_ents3d_tris,Interface::UNION); CHKERR_PETSC(rval);
+  triangles = intersect(triangles,side_ents3d_tris);
   //nodes on interface but not on crack front (those should not be splitted)
   Range nodes;
   rval = moab.get_entities_by_type(children[2],MBVERTEX,nodes,false);  CHKERR_PETSC(rval);
@@ -323,7 +331,7 @@ PetscErrorCode Core::get_msId_3dENTS_split_sides(
       child_it = refinedEntities.find((*child_iit)->get_ref_ent());
       BitRefLevel bit_child = child_it->get_BitRefLevel();
       if( (inheret_from_bit_level&bit_child).none() ) {
-	SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
       }
       child_entity = child_it->get_ref_ent();
     }
