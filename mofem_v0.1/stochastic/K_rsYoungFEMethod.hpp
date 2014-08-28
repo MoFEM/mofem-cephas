@@ -38,7 +38,7 @@ namespace MoFEM {
       
     }
     //   with respect to young modulus
-    PetscErrorCode calculateD_r(double young, double nu) {
+    virtual PetscErrorCode calculateD_r(double young, double nu) {
       PetscFunctionBegin;
       D.resize(6,6);
       D.clear();
@@ -62,7 +62,7 @@ namespace MoFEM {
     
     //F: calculate the second-order derivative of constitutive matrix
     //   with respect to young modulus 2 times
-    PetscErrorCode calculateD_rs(double young, double nu) {
+    virtual PetscErrorCode calculateD_rs(double young, double nu) {
       PetscFunctionBegin;
       D.resize(6,6);
       D.clear(); // Initiate D_rs to zero

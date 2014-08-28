@@ -37,7 +37,7 @@ struct K_rYoungPoissonFEMethod: public K_rsPoissonFEMethod {
     }
     //F: calculate the first-order derivative of constitutive matrix  
     //   with respect to Poisson's ratio
-    PetscErrorCode calculateD_r(double young, double nu) {
+    virtual PetscErrorCode calculateD_r(double young, double nu) {
       PetscFunctionBegin;
       D.resize(6,6);
       D.clear();
@@ -60,7 +60,7 @@ struct K_rYoungPoissonFEMethod: public K_rsPoissonFEMethod {
 
     //F: calculate the second-order derivative of constitutive matrix 
     //   with respect to Poisson's ratio
-    PetscErrorCode calculateD_rs(double young, double nu) {
+    virtual PetscErrorCode calculateD_rs(double young, double nu) {
       PetscFunctionBegin;
       D.resize(6,6);
       D.clear(); // Initiate D_rs to zero
