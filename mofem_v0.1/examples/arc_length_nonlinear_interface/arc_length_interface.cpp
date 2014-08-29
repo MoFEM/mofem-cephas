@@ -706,7 +706,7 @@ int main(int argc, char *argv[]) {
     cout<<"Reduction factor -my_its_d --> REDUCTION = (its_d/no_of_iterations)^0.5\n";
     cout<<"or adjust the absolute and relative tolerance, -snes_atol & -snes_rtol\n";
     cout<<"YOU CAN RESTART USING THE DESIRED RESTART H5M MESH FILE, NOTE -my_ms continues for the previous";
-    cout<<"***********************************************************************\n\n";
+    cout<<"\n***********************************************************************\n\n";
     break;
     }
     
