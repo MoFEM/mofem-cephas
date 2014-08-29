@@ -591,6 +591,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.set_other_global_VecCreateGhost("STOCHASIC_PROBLEM","Lagrange_mul_disp","Lagrange_mul_disp",ROW,dD_E,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 //  ierr = VecView(dD,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
   
+
   //----------------------------------------------------------------------------
   // b. Calculating first-order homogenized stress
   //----------------------------------------------------------------------------
