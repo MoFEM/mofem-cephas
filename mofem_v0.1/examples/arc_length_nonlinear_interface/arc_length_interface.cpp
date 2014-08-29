@@ -32,6 +32,8 @@
 #include "PostProcVertexMethod.hpp"
 #include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
 
+#define DATAFILENAME "load_disp.txt"
+
 using namespace MoFEM;
 
 ErrorCode rval;
@@ -68,12 +70,20 @@ int main(int argc, char *argv[]) {
     max_steps = 5;
   }
 
+  int its_d;
+  ierr = PetscOptionsGetInt("","-my_its_d",&its_d,&flg); CHKERRQ(ierr);
+  if(flg != PETSC_TRUE) {
+    its_d = 6;
+  }
+
   PetscInt order;
   ierr = PetscOptionsGetInt(PETSC_NULL,"-my_order",&order,&flg); CHKERRQ(ierr);
   if(flg != PETSC_TRUE) {
     order = 2;
   }
 
+  //Delete data_file of post_processing if exist
+  remove( "load_disp.txt" );
 
   //Read mesh to MOAB
   const char *option;
@@ -305,14 +315,42 @@ int main(int argc, char *argv[]) {
   ierr = VecDuplicate(F,&F_body_force); CHKERRQ(ierr);
   Mat Aij;
   ierr = mField.MatCreateMPIAIJWithArrays("ELASTIC_MECHANICS",&Aij); CHKERRQ(ierr);
-
+  
   //Assemble F and Aij
-  const double young_modulus = 1;
-  const double poisson_ratio = 0.0;
-  const double h = 1;
-  const double beta = 0;
-  const double ft = 1;
-  const double Gf = 1;
+  double young_modulus=1;
+  double poisson_ratio=0.0;
+  double h = 1;
+  double beta = 0;
+  double ft = 1;
+  double Gf = 1;
+  
+  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it))
+  {
+    cout << endl << *it << endl;
+    
+    //Get block name
+    string name = it->get_Cubit_name();
+    
+    if (name.compare(0,11,"MAT_ELASTIC") == 0)
+    {
+      Mat_Elastic mydata;
+      ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+      cout << mydata;
+      young_modulus=mydata.data.Young;
+      poisson_ratio=mydata.data.Poisson;
+    }
+    else if (name.compare(0,10,"MAT_INTERF") == 0)
+    {
+      Mat_Interf mydata;
+      ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+      cout << mydata;
+      h = mydata.data.alpha;
+      beta = mydata.data.beta;
+      ft = mydata.data.ft;
+      Gf = mydata.data.Gf;
+    }
+  }
+  
 
   struct MyArcLengthIntElemFEMethod: public ArcLengthIntElemFEMethod {
     FieldInterface& mField;
@@ -331,28 +369,33 @@ int main(int argc, char *argv[]) {
 
     };
 
-    PetscErrorCode potsProcessLoadPath() {
+    PetscErrorCode postProcessLoadPath() {
       PetscFunctionBegin;
+      FILE *datafile;
+      PetscFOpen(PETSC_COMM_WORLD,DATAFILENAME,"a+",&datafile);
       NumeredDofMoFEMEntity_multiIndex &numered_dofs_rows = const_cast<NumeredDofMoFEMEntity_multiIndex&>(problemPtr->numered_dofs_rows);
       NumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator lit;
       lit = numered_dofs_rows.get<FieldName_mi_tag>().find("LAMBDA");
       if(lit == numered_dofs_rows.get<FieldName_mi_tag>().end()) PetscFunctionReturn(0);
       Range::iterator nit = PostProcNodes.begin();
       for(;nit!=PostProcNodes.end();nit++) {
-	NumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator dit,hi_dit;
-	dit = numered_dofs_rows.get<MoABEnt_mi_tag>().lower_bound(*nit);
-	hi_dit = numered_dofs_rows.get<MoABEnt_mi_tag>().upper_bound(*nit);
-	double coords[3];
-	rval = moab.get_coords(&*nit,1,coords);  CHKERR_THROW(rval);
-	for(;dit!=hi_dit;dit++) {
-	  PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e -> ",lit->get_name().c_str(),lit->get_dof_rank(),lit->get_FieldData());
-	  PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e ",dit->get_name().c_str(),dit->get_dof_rank(),dit->get_FieldData());
-	  PetscPrintf(PETSC_COMM_WORLD,"-> %3.4f %3.4f %3.4f\n",coords[0],coords[1],coords[2]);
-	}
+        NumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator dit,hi_dit;
+        dit = numered_dofs_rows.get<MoABEnt_mi_tag>().lower_bound(*nit);
+        hi_dit = numered_dofs_rows.get<MoABEnt_mi_tag>().upper_bound(*nit);
+        double coords[3];
+        rval = moab.get_coords(&*nit,1,coords);  CHKERR_THROW(rval);
+        for(;dit!=hi_dit;dit++) {
+          PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e -> ",lit->get_name().c_str(),lit->get_dof_rank(),lit->get_FieldData());
+          PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e ",dit->get_name().c_str(),dit->get_dof_rank(),dit->get_FieldData());
+          PetscPrintf(PETSC_COMM_WORLD,"-> %3.4f %3.4f %3.4f\n",coords[0],coords[1],coords[2]);
+          if (dit->get_dof_rank()==0) {//print displacement and load factor in x-dir
+            PetscFPrintf(PETSC_COMM_WORLD,datafile,"%6.4e %6.4e \n",dit->get_FieldData(),lit->get_FieldData());
+          }
+        }
+        fclose(datafile);
       }
       PetscFunctionReturn(0);
     }
-
   };
 
   struct MyPrePostProcessFEMethodRhs: public FieldInterface::FEMethod {
@@ -507,7 +550,6 @@ int main(int argc, char *argv[]) {
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ARC_LENGTH",&my_arc_method));
   snes_ctx.get_postProcess_to_do_Mat().push_back(&my_dirichlet_bc);
 
-  int its_d = 6;
   double gamma = 0.5,reduction = 1;
   double step_size0;
   //step = 1;
@@ -638,7 +680,7 @@ int main(int argc, char *argv[]) {
     PostProcVertexMethod ent_method(moab);
     ierr = mField.loop_dofs("ELASTIC_MECHANICS","DISPLACEMENT",COL,ent_method); CHKERRQ(ierr);
     //
-    ierr = my_arc_method.potsProcessLoadPath(); CHKERRQ(ierr);
+    ierr = my_arc_method.postProcessLoadPath(); CHKERRQ(ierr);
     //
     if(step % 1 == 0) {
       if(pcomm->rank()==0) {
@@ -655,6 +697,19 @@ int main(int argc, char *argv[]) {
       }
     }
 
+    SNESConvergedReason reason;
+    SNESGetConvergedReason(snes, &reason);
+    if (reason!=2) {//2 is ABSOLUTE OF FNORM CONVERGENCE
+    cout<<"\n*********************************************************************\n";
+    cout<<"Converges failed to reach ||F||<atol\n";
+    cout<<"LOADING IS TERMINATED!!!!\nChoose a suitable reduction step -my_sr, or\n";
+    cout<<"Reduction factor -my_its_d --> REDUCTION = (its_d/no_of_iterations)^0.5\n";
+    cout<<"or adjust the absolute and relative tolerance, -snes_atol & -snes_rtol\n";
+    cout<<"YOU CAN RESTART USING THE DESIRED RESTART H5M MESH FILE, NOTE -my_ms continues for the previous";
+    cout<<"***********************************************************************\n\n";
+    break;
+    }
+    
   }
 
   //Save data on mesh
