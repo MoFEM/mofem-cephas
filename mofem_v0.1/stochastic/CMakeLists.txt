@@ -34,4 +34,7 @@ target_link_libraries(RVE_stochastic_Cube_Traction mofem_student_body mofem_homo
 add_executable(RVE_stochastic_Cube_Periodic RVE_stochastic_Cube_Periodic.cpp)
 target_link_libraries(RVE_stochastic_Cube_Periodic mofem_student_body mofem_homogenisation mofem_Field ${PROJECT_LIBS})
 
+add_executable(RVE_stochastic_Cube_Disp_2vars RVE_stochastic_Cube_Disp_2vars.cpp)
+target_link_libraries(RVE_stochastic_Cube_Disp_2vars mofem_student_body mofem_homogenisation mofem_Field ${PROJECT_LIBS})
+
 
