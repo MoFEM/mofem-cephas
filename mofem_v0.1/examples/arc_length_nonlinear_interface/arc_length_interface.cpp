@@ -82,8 +82,10 @@ int main(int argc, char *argv[]) {
     order = 2;
   }
 
-  //Delete data_file of post_processing if exist
-  remove( "load_disp.txt" );
+  //Check if new start or restart. If new start, delete previous load_disp.txt
+  if (string(mesh_file_name).find("restart") == std::string::npos) {
+    remove( "load_disp.txt" );
+  }
 
   //Read mesh to MOAB
   const char *option;
