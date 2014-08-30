@@ -161,6 +161,18 @@ PetscErrorCode GradientOfDeformation(double *diffN,double *dofs,double *F);
  * \param dim dimension
  */
 PetscErrorCode Lagrange_basis(int p,double s,double *diff_s,double *L,double *diffL,const int dim);
+/** 
+ * \brief Calculate Gegenbauer Polynomials and their derivatives
+ *
+ * \param p is approximation order
+ * \param alpha Gegenbauer factor
+ * \param s is is position [-1,1]
+ * \param diff_s direvatives of shape functions
+ * \param L appeoximation functions
+ * \param diffL direvatives
+ * \param dim dimension
+ */
+PetscErrorCode Gegenbauer_polynomials(int p,double alpha, double s,double *diff_s,double *L,double *diffL,const int dim);
 
 //2 Node edge
 PetscErrorCode ShapeMBEDGE(double *N,const double *G_X,int DIM);
