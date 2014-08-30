@@ -138,7 +138,6 @@ struct PostProcStressNonLinearElasticity: public PostProcDisplacementsOnRefMesh 
 
     map<EntityHandle,EntityHandle>::iterator mit = node_map.begin();
     int gg =0;
-    int i=0;
     for(;mit!=node_map.end();mit++) {
 
       ublas::matrix< double > F(3,3);
