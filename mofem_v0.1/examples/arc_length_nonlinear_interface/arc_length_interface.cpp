@@ -374,7 +374,7 @@ int main(int argc, char *argv[]) {
     PetscErrorCode postProcessLoadPath() {
       PetscFunctionBegin;
       FILE *datafile;
-      PetscFOpen(PETSC_COMM_WORLD,DATAFILENAME,"a+",&datafile);
+      PetscFOpen(PETSC_COMM_SELF,DATAFILENAME,"a+",&datafile);
       NumeredDofMoFEMEntity_multiIndex &numered_dofs_rows = const_cast<NumeredDofMoFEMEntity_multiIndex&>(problemPtr->numered_dofs_rows);
       NumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator lit;
       lit = numered_dofs_rows.get<FieldName_mi_tag>().find("LAMBDA");
