@@ -625,6 +625,7 @@ int main(int argc, char *argv[]) {
       ierr = my_arc_method.set_dlambda_to_x(D,dlambda); CHKERRQ(ierr);
     } else {
       ierr = my_arc_method.calculate_dx_and_dlambda(D); CHKERRQ(ierr);
+      ierr = my_arc_method.calculate_lambda_int(step_size); CHKERRQ(ierr);
       //step_size0_1/step_size0 = step_stize1/step_size
       //step_size0_1 = step_size0*(step_stize1/step_size)
       step_size *= reduction;
