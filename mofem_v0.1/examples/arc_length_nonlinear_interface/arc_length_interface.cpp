@@ -391,11 +391,12 @@ int main(int argc, char *argv[]) {
           PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e ",dit->get_name().c_str(),dit->get_dof_rank(),dit->get_FieldData());
           PetscPrintf(PETSC_COMM_WORLD,"-> %3.4f %3.4f %3.4f\n",coords[0],coords[1],coords[2]);
           if (dit->get_dof_rank()==0) {//print displacement and load factor in x-dir
-            PetscFPrintf(PETSC_COMM_WORLD,datafile,"%6.4e %6.4e \n",dit->get_FieldData(),lit->get_FieldData());
+            PetscFPrintf(PETSC_COMM_WORLD,datafile,"%6.4e %6.4e ",dit->get_FieldData(),lit->get_FieldData());
           }
         }
-        fclose(datafile);
       }
+      PetscFPrintf(PETSC_COMM_WORLD,datafile,"\n");
+      fclose(datafile);
       PetscFunctionReturn(0);
     }
   };
@@ -553,13 +554,11 @@ int main(int argc, char *argv[]) {
   snes_ctx.get_postProcess_to_do_Mat().push_back(&my_dirichlet_bc);
 
   double gamma = 0.5,reduction = 1;
-  double step_size0;
   //step = 1;
   if(step == 1) {
     step_size = step_size_reduction;
   } else {
-    reduction = step_size;
-    step_size0 = step_size_reduction;
+    reduction = step_size_reduction;
     step++;
   }
 
@@ -598,6 +597,8 @@ int main(int argc, char *argv[]) {
   }
   ierr = SnesRhs(snes,D,F,&snes_ctx); CHKERRQ(ierr);
 
+  bool converged_state  = false;
+  
   for(;step<max_steps;step++) {
 
     if(step == 1) {
@@ -612,7 +613,6 @@ int main(int argc, char *argv[]) {
       ierr = arc_ctx->set_alpha_and_beta(1,0); CHKERRQ(ierr);
       ierr = my_arc_method.calculate_dx_and_dlambda(D); CHKERRQ(ierr);
       ierr = my_arc_method.calculate_lambda_int(step_size); CHKERRQ(ierr);
-      step_size0 = step_size;
       ierr = arc_ctx->set_s(step_size); CHKERRQ(ierr);
       double dlambda = arc_ctx->dlambda;
       double dx_nrm;
@@ -625,11 +625,8 @@ int main(int argc, char *argv[]) {
       ierr = my_arc_method.set_dlambda_to_x(D,dlambda); CHKERRQ(ierr);
     } else {
       ierr = my_arc_method.calculate_dx_and_dlambda(D); CHKERRQ(ierr);
-      double step_size1 = step_size;
-      ierr = my_arc_method.calculate_lambda_int(step_size); CHKERRQ(ierr);
       //step_size0_1/step_size0 = step_stize1/step_size
       //step_size0_1 = step_size0*(step_stize1/step_size)
-      step_size0 = step_size0*(step_size1/step_size);
       step_size *= reduction;
       ierr = arc_ctx->set_s(step_size); CHKERRQ(ierr);
       double dlambda = reduction*arc_ctx->dlambda; double dx_nrm;
@@ -663,26 +660,37 @@ int main(int argc, char *argv[]) {
     ierr = SNESGetIterationNumber(snes,&its); CHKERRQ(ierr);
     ierr = PetscPrintf(PETSC_COMM_WORLD,"number of Newton iterations = %D\n",its); CHKERRQ(ierr);
 
-    if(step > 1) {
-      if(its>0) {
-	reduction = pow((double)its_d/(double)(its+1),gamma);
-	if(step_size*reduction > 10*step_size0) {
-	  reduction = 1;
-	}
-	ierr = PetscPrintf(PETSC_COMM_WORLD,"reduction step_size (step_size,step_size0) = %6.4e (%6.4e,%6.4e)\n",reduction,step_size,step_size0); CHKERRQ(ierr);
-      } else reduction = 1;
-    }
-
+    SNESConvergedReason reason;
+    ierr = SNESGetConvergedReason(snes,&reason); CHKERRQ(ierr);
+    
+    if (reason < 0) {
+      ierr = arc_ctx->set_alpha_and_beta(1,0); CHKERRQ(ierr);
+      reduction =0.1;
+      converged_state = false;
+      continue;
+    } else {
+      if (step > 1 && converged_state) {
+        reduction = pow((double)its_d/(double)(its+1),gamma);
+        ierr = PetscPrintf(PETSC_COMM_WORLD,"reduction step_size = %6.4e\n", reduction); CHKERRQ(ierr);
+      }
+      
     //Save data on mesh
     ierr = mField.set_global_VecCreateGhost("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = mField.set_other_global_VecCreateGhost(
       "ELASTIC_MECHANICS","DISPLACEMENT","X0_DISPLACEMENT",COL,arc_ctx->x0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    
+      converged_state = true;
+    }
     //
     PostProcVertexMethod ent_method(moab);
     ierr = mField.loop_dofs("ELASTIC_MECHANICS","DISPLACEMENT",COL,ent_method); CHKERRQ(ierr);
     //
-    ierr = my_arc_method.postProcessLoadPath(); CHKERRQ(ierr);
+    if (reason > 0) {
+      FILE *datafile;
+      PetscFOpen(PETSC_COMM_SELF,DATAFILENAME,"a+",&datafile);
+      PetscFPrintf(PETSC_COMM_WORLD,datafile,"%d %d ",reason,its);
+      fclose(datafile);
+      ierr = my_arc_method.postProcessLoadPath(); CHKERRQ(ierr);
+    }
     //
     if(step % 1 == 0) {
       if(pcomm->rank()==0) {
@@ -697,19 +705,6 @@ int main(int argc, char *argv[]) {
 	rval = moab.write_file(ss.str().c_str(),"VTK","",&out_meshset,1); CHKERR_PETSC(rval);
 	rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
       }
-    }
-
-    SNESConvergedReason reason;
-    SNESGetConvergedReason(snes, &reason);
-    if (reason!=2) {//2 is ABSOLUTE OF FNORM CONVERGENCE
-    cout<<"\n*********************************************************************\n";
-    cout<<"Converges failed to reach ||F||<atol\n";
-    cout<<"LOADING IS TERMINATED!!!!\nChoose a suitable reduction step -my_sr, or\n";
-    cout<<"Reduction factor -my_its_d --> REDUCTION = (its_d/no_of_iterations)^0.5\n";
-    cout<<"or adjust the absolute and relative tolerance, -snes_atol & -snes_rtol\n";
-    cout<<"YOU CAN RESTART USING THE DESIRED RESTART H5M MESH FILE, NOTE -my_ms continues for the previous";
-    cout<<"\n***********************************************************************\n\n";
-    break;
     }
     
   }
