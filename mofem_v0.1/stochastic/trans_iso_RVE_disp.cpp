@@ -24,6 +24,7 @@
 #include <petscksp.h>
 
 #include "K_rPoissonP_ElasticFEMethodTransIso.hpp"
+#include "K_rsPoissonP_ElasticFEMethodTransIso.hpp"
 
 #include "ElasticFEMethod.hpp"
 #include "ElasticFEMethodTransIso.hpp"
@@ -525,21 +526,67 @@ int main(int argc, char *argv[]) {
     }
   }
   cout<< "\n\n";
+
+  
+  /*****************************************************************************
+   *     SOLVE THE SECOND-ORDER FINITE ELEMENT EQUILIBRIUM EQUATION
+   *     [K][U_rs] = -[K_rs][U]-2[K_r][U_s]
+   ****************************************************************************/
+  ierr = VecZeroEntries(ddF); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(ddF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(ddF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  
+  K_rsPoissonP_ElasticFEMethodTransIso my_fe_k_rs(mField,Aij,D,ddF,"DISP_r");
+  ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","TRAN_ISOTROPIC_ELASTIC",my_fe_k_rs);  CHKERRQ(ierr);
+  
+  
+  ierr = VecGhostUpdateBegin(ddF,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(ddF,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = VecAssemblyBegin(ddF); CHKERRQ(ierr);
+  ierr = VecAssemblyEnd(ddF); CHKERRQ(ierr);
+  //  ierr = VecView(ddF,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+  
+  ierr = KSPSolve(solver,ddF,ddD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(ddD,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(ddD,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = mField.set_other_global_VecCreateGhost("STOCHASIC_PROBLEM","DISPLACEMENT","DISP_rs",ROW,ddD,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = mField.set_other_global_VecCreateGhost("STOCHASIC_PROBLEM","Lagrange_mul_disp","Lagrange_mul_disp",ROW,ddD,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  //  ierr = VecView(ddD,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+  
+  /***********************************************************************************************************
+   *  second order homogenized stress
+   ***********************************************************************************************************/
+  
+  Vec Stress_Homo_rs;
+  ierr = VecCreateMPI(PETSC_COMM_WORLD, 6, 6*pcomm->size(), &Stress_Homo_rs);  CHKERRQ(ierr);
+  ierr = VecZeroEntries(Stress_Homo_rs); CHKERRQ(ierr);
+  
+  //    ierr = VecView(D,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+  ElasticFE_RVELagrange_Homogenized_Stress_Disp MyFE_RVEHomoStressDisp_rs(mField,Aij,D,F,&RVE_volume, applied_strain, Stress_Homo_rs,"DISP_rs","Lagrange_mul_disp",field_rank);
+  ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","Lagrange_elem",MyFE_RVEHomoStressDisp_rs);  CHKERRQ(ierr);
+  
+  if(pcomm->rank()==0){
+    PetscScalar    *avec_r;
+    VecGetArray(Stress_Homo_rs, &avec_r);
+    
+    cout<< "\nStress_Homo_rs = \n\n";
+    for(int ii=0; ii<6; ii++){
+      cout <<*avec_r<<endl; ;
+      avec_r++;
+    }
+  }
+  cout<< "\n\n";
   //=============================================================================================================
 
   
   
-  
-  
-  
-  
-  
-  
-  
-  
   PostProcVertexMethod ent_method(moab);
   ierr = mField.loop_dofs("STOCHASIC_PROBLEM","DISPLACEMENT",ROW,ent_method); CHKERRQ(ierr);
-  
+  PostProcVertexMethod ent_method_r(mField.get_moab(),"DISP_r");
+  ierr = mField.loop_dofs("DISP_r",ent_method_r); CHKERRQ(ierr);
+  PostProcVertexMethod ent_method_rs(mField.get_moab(),"DISP_rs");
+  ierr = mField.loop_dofs("DISP_rs",ent_method_rs); CHKERRQ(ierr);
+
   if(pcomm->rank()==0) {
     EntityHandle out_meshset;
     rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
@@ -550,10 +597,17 @@ int main(int argc, char *argv[]) {
     rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
   }
   
-  
   //detroy matrices
+  //Destroy matrices
   ierr = VecDestroy(&F); CHKERRQ(ierr);
+  ierr = VecDestroy(&dF); CHKERRQ(ierr);
+  ierr = VecDestroy(&ddF); CHKERRQ(ierr);
+  
+  
   ierr = VecDestroy(&D); CHKERRQ(ierr);
+  ierr = VecDestroy(&dD); CHKERRQ(ierr);
+  ierr = VecDestroy(&ddD); CHKERRQ(ierr);
+ 
   ierr = MatDestroy(&Aij); CHKERRQ(ierr);
   ierr = KSPDestroy(&solver); CHKERRQ(ierr);
   ierr = VecDestroy(&RVE_volume_Vec); CHKERRQ(ierr);

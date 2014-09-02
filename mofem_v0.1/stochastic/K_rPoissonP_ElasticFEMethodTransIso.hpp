@@ -53,10 +53,7 @@ namespace MoFEM {
 
     
     
-    
-    
-    //--------------------------------------------------------------------------------------------------------------------------------------------------//
-    PetscErrorCode calculateD_r(double _E_p,double _E_z, double _nu_p,double _nu_pz, double _G_zp) {
+    virtual PetscErrorCode calculateD_r(double _E_p,double _E_z, double _nu_p,double _nu_pz, double _G_zp) {
       PetscFunctionBegin;
       
       ///Get Stiffness Matrix
@@ -117,10 +114,10 @@ namespace MoFEM {
       
       PetscFunctionReturn(0);
     }
-    //--------------------------------------------------------------------------------------------------------------------------------------------------//
 
     
-    //---------------------------------------------------------------------------------------------------------------//
+    
+    
     PetscErrorCode Stiffness() {
       PetscFunctionBegin;
       
@@ -150,7 +147,7 @@ namespace MoFEM {
                       w,&*D_At_GaussPoint[gg].data().begin(),D_At_GaussPoint[gg].size2(),
                       &*row_Mat.data().begin(),row_Mat.size2(),
                       0.,&*BD.data().begin(),BD.size2());
-          for(int cc = rr;cc<col_mat;cc++) {
+          for(int cc = 0;cc<col_mat;cc++) {
             if(ColGlob[cc].size()==0) continue;
             ublas::matrix<FieldData> &col_Mat = (colBMatrices[cc])[gg];
             if(gg == 0) {
@@ -175,7 +172,6 @@ namespace MoFEM {
       PetscFunctionReturn(0);
       
     }
-    //-------------------------------------------------------------------------------------------------------------------//
 
     vector<ublas::vector<FieldData> > f_re;
     virtual PetscErrorCode Rhs() {
