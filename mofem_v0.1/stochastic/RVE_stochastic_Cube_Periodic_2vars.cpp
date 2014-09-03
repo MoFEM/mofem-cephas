@@ -42,15 +42,13 @@
 #include <petscksp.h>
 
 #include "ElasticFEMethod.hpp"
-#include "K_r_PSFEMethod.hpp"
-#include "K_rs_PSFEMethod.hpp"
 
-#include "K_r_Young_PSFEMethod.hpp"
-#include "K_r_Poisson_PSFEMethod.hpp"
+#include "K_rYoungFEMethod.hpp"
+#include "K_rPoissonFEMethod.hpp"
 
-#include "K_rs_Young_PSFEMethod.hpp"
-#include "K_rs_EP_PSFEMethod.hpp"
-#include "K_rs_Poisson_PSFEMethod.hpp"
+#include "K_rsYoungFEMethod.hpp"
+#include "K_rYoungPoissonFEMethod.hpp"
+#include "K_rsPoissonFEMethod.hpp"
 
 #include "ElasticFE_RVELagrange_Periodic.hpp"
 #include "ElasticFE_RVELagrange_RigidBodyTranslation.hpp"
@@ -847,7 +845,7 @@ int main(int argc, char *argv[]) {
   ierr = VecGhostUpdateBegin(dF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(dF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   
-  K_r_Young_PSFEMethod my_fe_k_r_E(mField,Aij,D,dF,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
+  K_rYoungFEMethod my_fe_k_r_E(mField,Aij,D,dF,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
   ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","ELASTIC",my_fe_k_r_E);  CHKERRQ(ierr);
   
   ierr = VecGhostUpdateBegin(dF,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
@@ -899,7 +897,7 @@ int main(int argc, char *argv[]) {
   ierr = VecGhostUpdateBegin(dF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(dF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   
-  K_r_Poisson_PSFEMethod my_fe_k_r_P(mField,Aij,D,dF,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
+  K_rPoissonFEMethod my_fe_k_r_P(mField,Aij,D,dF,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
   ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","ELASTIC",my_fe_k_r_P);  CHKERRQ(ierr);
   
   ierr = VecGhostUpdateBegin(dF,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
@@ -957,7 +955,7 @@ int main(int argc, char *argv[]) {
   ierr = VecGhostUpdateBegin(ddF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(ddF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   
-  K_rs_Young_PSFEMethod my_fe_k_rs_EE(mField,Aij,D,ddF,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio),"DISP_r_E");
+  K_rsYoungFEMethod my_fe_k_rs_EE(mField,Aij,D,ddF,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio),"DISP_r_E");
   ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","ELASTIC",my_fe_k_rs_EE);  CHKERRQ(ierr);
   
   ierr = VecGhostUpdateBegin(ddF,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
@@ -1007,7 +1005,7 @@ int main(int argc, char *argv[]) {
   ierr = VecGhostUpdateBegin(ddF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(ddF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   
-  K_rs_EP_PSFEMethod my_fe_k_rs_EP(mField,Aij,D,ddF,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio),"DISP_r_P");
+  K_rYoungPoissonFEMethod my_fe_k_rs_EP(mField,Aij,D,ddF,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio),"DISP_r_P");
   ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","ELASTIC",my_fe_k_rs_EP);  CHKERRQ(ierr);
   
   ierr = VecGhostUpdateBegin(ddF,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
@@ -1058,7 +1056,7 @@ int main(int argc, char *argv[]) {
   ierr = VecGhostUpdateBegin(ddF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(ddF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   
-  K_rs_Poisson_PSFEMethod my_fe_k_rs_PP(mField,Aij,D,ddF,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio),"DISP_r_P");
+  K_rsPoissonFEMethod my_fe_k_rs_PP(mField,Aij,D,ddF,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio),"DISP_r_P");
   ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","ELASTIC",my_fe_k_rs_PP);  CHKERRQ(ierr);
   
   ierr = VecGhostUpdateBegin(ddF,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
