@@ -24,8 +24,8 @@
 #include <petscksp.h>
 
 #include "ElasticFEMethod.hpp"
-#include "K_rPoissonFEMethod.hpp"
-#include "K_rsPoissonFEMethod.hpp"
+#include "Iso_Rhs_r_PSFEM.hpp"
+#include "Iso_Rhs_rs_PSFEM.hpp"
 
 #include "ElasticFE_RVELagrange_Traction.hpp"
 #include "ElasticFE_RVELagrange_Homogenized_Stress_Traction.hpp"

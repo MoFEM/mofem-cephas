@@ -43,12 +43,8 @@
 
 #include "ElasticFEMethod.hpp"
 
-#include "K_rYoungFEMethod.hpp"
-#include "K_rPoissonFEMethod.hpp"
-
-#include "K_rsYoungFEMethod.hpp"
-#include "K_rYoungPoissonFEMethod.hpp"
-#include "K_rsPoissonFEMethod.hpp"
+#include "Iso_Rhs_r_PSFEM.hpp"
+#include "Iso_Rhs_rs_PSFEM.hpp"
 
 #include "ElasticFE_RVELagrange_Traction.hpp"
 #include "ElasticFE_RVELagrange_Homogenized_Stress_Traction.hpp"

@@ -46,15 +46,8 @@
 
 #include "ElasticFEMethod.hpp"
 
-#include "K_rYoungFEMethod.hpp"
-#include "K_rPoissonFEMethod.hpp"
-
-#include "K_rsYoungFEMethod.hpp"
-#include "K_rYoungPoissonFEMethod.hpp"
-#include "K_rsPoissonFEMethod.hpp"
-
-#include "K_rs_EmEPf_FEMethod.hpp"
-#include "K_rs_PmEPf_FEMethod.hpp"
+#include "Iso_Rhs_r_PSFEM.hpp"
+#include "Iso_Rhs_rs_PSFEM.hpp"
 
 #include "ElasticFE_RVELagrange_Disp.hpp"
 #include "ElasticFE_RVELagrange_Homogenized_Stress_Disp.hpp"
@@ -546,12 +539,6 @@ int main(int argc, char *argv[]) {
   ierr = mField.set_field_order(0,MBVERTEX,"DISP_rs_EmPf",1); CHKERRQ(ierr);
 
   // 2nd order -2
-  /*
-  ierr = mField.set_field_order(0,MBTET,"DISP_rs_PmEm",order_st); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBTRI,"DISP_rs_PmEm",order_st); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBEDGE,"DISP_rs_PmEm",order_st); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBVERTEX,"DISP_rs_PmEm",1); CHKERRQ(ierr);
-  */
   ierr = mField.set_field_order(0,MBTET,"DISP_rs_PmPm",order_st); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBTRI,"DISP_rs_PmPm",order_st); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBEDGE,"DISP_rs_PmPm",order_st); CHKERRQ(ierr);
@@ -568,18 +555,6 @@ int main(int argc, char *argv[]) {
   ierr = mField.set_field_order(0,MBVERTEX,"DISP_rs_PmPf",1); CHKERRQ(ierr);
 
   // 2nd order -3
-  /*
-  ierr = mField.set_field_order(0,MBTET,"DISP_rs_EfEm",order_st); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBTRI,"DISP_rs_EfEm",order_st); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBEDGE,"DISP_rs_EfEm",order_st); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBVERTEX,"DISP_rs_EfEm",1); CHKERRQ(ierr);
-
-  ierr = mField.set_field_order(0,MBTET,"DISP_rs_EfPm",order_st); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBTRI,"DISP_rs_EfPm",order_st); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBEDGE,"DISP_rs_EfPm",order_st); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBVERTEX,"DISP_rs_EfPm",1); CHKERRQ(ierr);
-  */
-
   ierr = mField.set_field_order(0,MBTET,"DISP_rs_EfEf",order_st); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBTRI,"DISP_rs_EfEf",order_st); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBEDGE,"DISP_rs_EfEf",order_st); CHKERRQ(ierr);
@@ -592,22 +567,6 @@ int main(int argc, char *argv[]) {
   ierr = mField.set_field_order(0,MBVERTEX,"DISP_rs_EfPf",1); CHKERRQ(ierr);
 
   // 2nd order-4
-  /*
-  ierr = mField.set_field_order(0,MBTET,"DISP_rs_PfEm",order_st); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBTRI,"DISP_rs_PfEm",order_st); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBEDGE,"DISP_rs_PfEm",order_st); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBVERTEX,"DISP_rs_PfEm",1); CHKERRQ(ierr);
-
-  ierr = mField.set_field_order(0,MBTET,"DISP_rs_PfPm",order_st); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBTRI,"DISP_rs_PfPm",order_st); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBEDGE,"DISP_rs_PfPm",order_st); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBVERTEX,"DISP_rs_PfPm",1); CHKERRQ(ierr);
-
-  ierr = mField.set_field_order(0,MBTET,"DISP_rs_PfEf",order_st); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBTRI,"DISP_rs_PfEf",order_st); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBEDGE,"DISP_rs_PfEf",order_st); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBVERTEX,"DISP_rs_PfEf",1); CHKERRQ(ierr);
-  */
   ierr = mField.set_field_order(0,MBTET,"DISP_rs_PfPf",order_st); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBTRI,"DISP_rs_PfPf",order_st); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBEDGE,"DISP_rs_PfPf",order_st); CHKERRQ(ierr);

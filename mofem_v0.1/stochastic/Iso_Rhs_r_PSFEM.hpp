@@ -1,4 +1,6 @@
-/* Copyright (C) 2014, Zahur Ullah (Zahur.Ullah@glasgow.ac.uk)
+/* Copyright (C) 2014, 
+ Zahur Ullah (Zahur.Ullah@glasgow.ac.uk)
+ Xiao-Yi Zhou (xiaoyi.zhou@ncl.ac.uk)
  * --------------------------------------------------------------
  * Implemnetation of the stochastic finite element componenet K_r
  */
@@ -17,8 +19,8 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef __K_RPOISSONFEMETHOD_HPP__
-#define __K_RPOISSONFEMETHOD_HPP__
+#ifndef __ISO_RHS_R_PSFEM_HPP__
+#define __ISO_RHS_R_PSFEM_HPP__
 
 #include <boost/numeric/ublas/symmetric.hpp>
 extern "C" {
@@ -37,8 +39,6 @@ namespace MoFEM {
     ElasticFEMethod( _mField,_Aij,_X,_F,0,0,"DISPLACEMENT"),young(_young),pois(_pois),dF(_F) {
       
     }
-    
-    
     
     virtual PetscErrorCode calculateD(double young, double nu) {
       PetscFunctionBegin;
@@ -62,10 +62,8 @@ namespace MoFEM {
     
     virtual PetscErrorCode GetMatParameters(double *_young,double *_pois) {
       PetscFunctionBegin;
-      
       *_young = young;
       *_pois = pois;
-      
       
       if(propeties_from_BLOCKSET_MAT_ELASTICSET) {
         EntityHandle ent = fePtr->get_ent();
@@ -233,9 +231,7 @@ namespace MoFEM {
 //      cout<<"Hi from K_rPoissonFEMethod "<<endl;
       //      cout<<"fieldName "<<fieldName<<endl;
       ierr = GetMatrices(); CHKERRQ(ierr);
-      
       ierr = Rhs(); CHKERRQ(ierr);
-      
       ierr = OpStudentEnd(); CHKERRQ(ierr);
       PetscFunctionReturn(0);
     }
@@ -244,6 +240,41 @@ namespace MoFEM {
   };
   
   
+  struct K_rYoungFEMethod: public K_rPoissonFEMethod {
+    
+    K_rYoungFEMethod( FieldInterface& _mField,Mat &_Aij,Vec _X,Vec _F,double _young,double _pois):
+    K_rPoissonFEMethod( _mField,_Aij,_X,_F,_young,_pois) {
+      
+    }
+    
+    virtual PetscErrorCode calculateD(double young, double nu) {
+      PetscFunctionBegin;
+      D.resize(6,6);
+      D.clear();
+      
+      double D00,D01,D33,constt;
+      constt=1/((1+nu)*(1-2*nu));
+      
+      D00=constt*(1-nu);
+      D01=constt*nu;
+      D33=constt*(1-2*nu)/2;
+      
+      D(0,0)=D00;  D(0,1)=D01;  D(0,2)=D01;
+      D(1,0)=D01;  D(1,1)=D00;  D(1,2)=D01;
+      D(2,0)=D01;  D(2,1)=D01;   D(2,2)=D00;
+      D(3,3)=D33;
+      D(4,4)=D33;
+      D(5,5)=D33;
+      //      cout<<"D = "<<D;
+      PetscFunctionReturn(0);
+    }
+    
+    
+    
+  };
+
+  
+  
 }
 
-#endif //__K_RPOISSONFEMETHOD_HPP__
+#endif //__ISO_RHS_R_PSFEM_HPP__

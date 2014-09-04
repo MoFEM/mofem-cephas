@@ -33,16 +33,8 @@
 #include "FEMethod_UpLevelStudent.hpp"
 #include "ElasticFEMethod.hpp"
 
-#include "K_rPoissonFEMethod.hpp"
-#include "K_rYoungFEMethod.hpp"
-#include "K_rsPoissonFEMethod.hpp"
-#include "K_rsYoungFEMethod.hpp"
-#include "K_rYoungPoissonFEMethod.hpp"
-
-
-#include "K_rs_EmEPf_FEMethod.hpp"
-
-#include "K_rs_PmEPf_FEMethod.hpp"
+#include "Iso_Rhs_r_PSFEM.hpp"
+#include "Iso_Rhs_rs_PSFEM.hpp"
 
 #include "ForcesAndSurcesCore.hpp"
 #include "SnesCtx.hpp"
