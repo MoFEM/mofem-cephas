@@ -64,9 +64,7 @@ PetscErrorCode ierr;
 static char help[] = "...\n\n";
 
 // =============================================================================
-//
 //  SETTING FOR OUTPUTS
-//
 // =============================================================================
 PetscErrorCode write_soltion(FieldInterface &mField,const string out_file, const string out_ref_file) {
   PetscFunctionBegin;
@@ -74,66 +72,31 @@ PetscErrorCode write_soltion(FieldInterface &mField,const string out_file, const
   PostProcVertexMethod ent_method(mField.get_moab(),"DISPLACEMENT");
   ierr = mField.loop_dofs("STOCHASIC_PROBLEM","DISPLACEMENT",ROW,ent_method); CHKERRQ(ierr);
 
+  const char* args[] = {"_r_Em",    "_r_Pm",    "_r_Ef",    "_r_Pf",    // 1st order
+    "_rs_EmEm", "_rs_EmPm", "_rs_EmEf", "_rs_EmPf", // 2nd order
+    "_rs_PmPm", "_rs_PmEf", "_rs_PmPf",
+    "_rs_EfEf", "_rs_EfPf",
+    "_rs_PfPf"};
+  vector<string> stochastic_fields(args, args+14);
   
-  // 1st-order partial derivative of displacement
-  // ... with respect to Em
-  PostProcVertexMethod ent_method_r_Em(mField.get_moab(),"DISP_r_Em");
-  ierr = mField.loop_dofs("DISP_r_Em",ent_method_r_Em); CHKERRQ(ierr);
-  // ... with respect to Pm
-  PostProcVertexMethod ent_method_r_Pm(mField.get_moab(),"DISP_r_Pm");
-  ierr = mField.loop_dofs("DISP_r_Pm",ent_method_r_Pm); CHKERRQ(ierr);
-  // ... with respect to Ef
-  PostProcVertexMethod ent_method_r_Ef(mField.get_moab(),"DISP_r_Ef");
-  ierr = mField.loop_dofs("DISP_r_Ef",ent_method_r_Ef); CHKERRQ(ierr);
-  // ... with respect to Pf
-  PostProcVertexMethod ent_method_r_Pf(mField.get_moab(),"DISP_r_Pf");
-  ierr = mField.loop_dofs("DISP_r_Pf",ent_method_r_Pf); CHKERRQ(ierr);
-
-  // 2nd-order partial derivative of displacement 
-  // ... with respect to Em Em
-  PostProcVertexMethod ent_method_rs_EmEm(mField.get_moab(),"DISP_rs_EmEm");
-  ierr = mField.loop_dofs("DISP_rs_EmEm",ent_method_rs_EmEm); CHKERRQ(ierr);
-  // ... with respect to Em Pm
-  PostProcVertexMethod ent_method_rs_EmPm(mField.get_moab(),"DISP_rs_EmPm");
-  ierr = mField.loop_dofs("DISP_rs_EmPm",ent_method_rs_EmPm); CHKERRQ(ierr);
-  // ... with respect to Em Ef
-  PostProcVertexMethod ent_method_rs_EmEf(mField.get_moab(),"DISP_rs_EmEf");
-  ierr = mField.loop_dofs("DISP_rs_EmEf",ent_method_rs_EmEf); CHKERRQ(ierr);
-  // ... with respect to Em Pf
-  PostProcVertexMethod ent_method_rs_EmPf(mField.get_moab(),"DISP_rs_EmPf");
-  ierr = mField.loop_dofs("DISP_rs_EmPf",ent_method_rs_EmPf); CHKERRQ(ierr);
-
-  // ... with respect to Pm Pm
-  PostProcVertexMethod ent_method_rs_PmPm(mField.get_moab(),"DISP_rs_PmPm");
-  ierr = mField.loop_dofs("DISP_rs_PmPm",ent_method_rs_PmPm); CHKERRQ(ierr);
-  // ... with respect to Pm Ef
-  PostProcVertexMethod ent_method_rs_PmEf(mField.get_moab(),"DISP_rs_PmEf");
-  ierr = mField.loop_dofs("DISP_rs_PmEf",ent_method_rs_PmEf); CHKERRQ(ierr);
-  // ... with respect to Pm Pf
-  PostProcVertexMethod ent_method_rs_PmPf(mField.get_moab(),"DISP_rs_PmPf");
-  ierr = mField.loop_dofs("DISP_rs_PmPf",ent_method_rs_PmPf); CHKERRQ(ierr);
-
-  // ... with respect to Ef Ef
-  PostProcVertexMethod ent_method_rs_EfEf(mField.get_moab(),"DISP_rs_EfEf");
-  ierr = mField.loop_dofs("DISP_rs_EfEf",ent_method_rs_EfEf); CHKERRQ(ierr);
-  // ... with respect to Ef Pf
-  PostProcVertexMethod ent_method_rs_EfPf(mField.get_moab(),"DISP_rs_EfPf");
-  ierr = mField.loop_dofs("DISP_rs_EfPf",ent_method_rs_EfPf); CHKERRQ(ierr);
-
-  // ... with respect to Pf Pf
-  PostProcVertexMethod ent_method_rs_PfPf(mField.get_moab(),"DISP_rs_PfPf");
-  ierr = mField.loop_dofs("DISP_rs_PfPf",ent_method_rs_PfPf); CHKERRQ(ierr);
+  for(int ii=0; ii<14; ii++ )
+  {
+    ostringstream ss_field;
+    ss_field << "DISP" << stochastic_fields[ii];
+    
+    PostProcVertexMethod ent_method_r(mField.get_moab(),ss_field.str().c_str());
+    ierr = mField.loop_dofs(ss_field.str().c_str(),ent_method_r); CHKERRQ(ierr);
+  }
   
   ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
-  
   if(pcomm->rank()==0) {
     EntityHandle out_meshset;
     rval = mField.get_moab().create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
-    ierr = mField.problem_get_FE("STOCHASIC_PROBLEM","ELASTIC",out_meshset); CHKERRQ(ierr);
+    ierr = mField.problem_get_FE("STOCHASIC_PROBLEM","K_Matrix",out_meshset); CHKERRQ(ierr);
+    ierr = mField.problem_get_FE("STOCHASIC_PROBLEM","K_Inclusion",out_meshset); CHKERRQ(ierr);
     rval = mField.get_moab().write_file(out_file.c_str(),"VTK","",&out_meshset,1); CHKERR_PETSC(rval);
     rval = mField.get_moab().delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
   }
-  
   PetscFunctionReturn(0);
 }
 
@@ -147,16 +110,12 @@ int main(int argc, char *argv[]) {
   int rank;
   MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
   // ===========================================================================
-  //
   //  I. READ MESH DATA AND FINITE ELEMENT ANALYSIS CONTROL PARAMETERS FROM FILE
-  //
   // ===========================================================================
 
   /*****************************************************************************
-   *
    * Read parameters from line command
-   *
-   ****************************************************************************/  
+   ****************************************************************************/
   PetscBool flg = PETSC_TRUE;
   char mesh_file_name[255];
   ierr = PetscOptionsGetString(PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
@@ -170,10 +129,8 @@ int main(int argc, char *argv[]) {
   }
   
   /*****************************************************************************
-   *
-   * Read Applied strain on the RVE (vector of length 6) 
+   * Read Applied strain on the RVE (vector of length 6)
    * strain=[xx, yy, zz, xy, xz, zy]^T
-   *
    ****************************************************************************/
   double myapplied_strain[6];
   int nmax=6;
@@ -184,9 +141,7 @@ int main(int argc, char *argv[]) {
   cout<<"applied_strain ="<<applied_strain<<endl;
   
   /*****************************************************************************
-   *
    * Transfer mesh data to MOAB database
-   *
    ****************************************************************************/
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
@@ -205,9 +160,7 @@ int main(int argc, char *argv[]) {
   FieldInterface& mField = core;
  
   /*****************************************************************************
-   *
    * Seting nodal coordinates on the surface to make sure they are periodic
-   *
    ****************************************************************************/
   
   Range SurTrisNeg, SurTrisPos;
@@ -221,7 +174,6 @@ int main(int argc, char *argv[]) {
   cout<<" All nodes on negative surfaces " << SurNodesNeg.size()<<endl;
   rval = moab.get_connectivity(SurTrisPos,SurNodesPos,true); CHKERR_PETSC(rval);
   cout<<" All nodes on positive surfaces " << SurNodesPos.size()<<endl;
-  
   
   double roundfact=1000.0;   double coords_nodes[3];
   //Populating the Multi-index container with nodes on -ve faces
@@ -247,10 +199,8 @@ int main(int argc, char *argv[]) {
   }
 
   //----------------------------------------------------------------------------
- 
   //ref meshset ref level 0
   ierr = mField.seed_ref_level_3D(0,0); CHKERRQ(ierr);
-  
   /*****************************************************************************
    *
    * Select element into various mesh-set
@@ -293,9 +243,7 @@ int main(int argc, char *argv[]) {
   rval = moab.add_entities(meshset_Inclusion,TetsInBlock_stiff_inc);CHKERR_PETSC(rval);
 
   // ===========================================================================
-  //
   // II. DEFINE PROBLEM
-  //
   // ===========================================================================
   
   //Fields
@@ -304,7 +252,6 @@ int main(int argc, char *argv[]) {
   ierr = mField.add_field("Lagrange_mul_disp",H1,field_rank); CHKERRQ(ierr);
   
   /*****************************************************************************
-   *
    * Add stochastic field
    * (total 14 field for 1st and 2nd order stochastic PSFEM)
    ****************************************************************************/
@@ -318,17 +265,14 @@ int main(int argc, char *argv[]) {
   for(int ii=0; ii<14; ii++ )
   {
     ostringstream ss_field;
-    ss_field << "DISP" << stochastic_fields[ii]<<endl;
+    ss_field << "DISP" << stochastic_fields[ii];
 //    cout<<ss_field.str().c_str()<<endl;
     ierr = mField.add_field(ss_field.str().c_str(),H1,field_rank,MF_ZERO); CHKERRQ(ierr);
   }
   
   /*****************************************************************************
-   *
    * Create finite element for the defined fields
-   *
    ****************************************************************************/
-  ierr = mField.add_finite_element("ELASTIC"); CHKERRQ(ierr);
   ierr = mField.add_finite_element("K_Matrix"); CHKERRQ(ierr);
   ierr = mField.add_finite_element("K_Inclusion"); CHKERRQ(ierr);
   ierr = mField.add_finite_element("Lagrange_elem"); CHKERRQ(ierr);
@@ -343,12 +287,6 @@ int main(int argc, char *argv[]) {
    * [K][H_rs U] = - [H_rs K][U] - 2[D_r K][D_s U]          Second-order problem 
    *
    ****************************************************************************/  
-  //Define rows/cols and element data
-  ierr = mField.modify_finite_element_add_field_row("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_col("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
-  // required for solving zeroth-order problem
-  ierr = mField.modify_finite_element_add_field_data("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
-
   // Define rows/cols and element data for K_Matrix
   ierr = mField.modify_finite_element_add_field_row("K_Matrix","DISPLACEMENT"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_col("K_Matrix","DISPLACEMENT"); CHKERRQ(ierr);
@@ -356,11 +294,10 @@ int main(int argc, char *argv[]) {
   ierr = mField.modify_finite_element_add_field_data("K_Matrix","DISPLACEMENT"); CHKERRQ(ierr);
   // required for solving first problem
   
-  
   for(int ii=0; ii<4; ii++ )
   {
     ostringstream ss_field;
-    ss_field << "DISP" << stochastic_fields[ii]<<endl;
+    ss_field << "DISP" << stochastic_fields[ii];
 //    cout<<ss_field.str().c_str()<<endl;
     ierr = mField.modify_finite_element_add_field_data("K_Matrix",ss_field.str().c_str()); CHKERRQ(ierr);
   }
@@ -372,11 +309,10 @@ int main(int argc, char *argv[]) {
   ierr = mField.modify_finite_element_add_field_data("K_Inclusion","DISPLACEMENT"); CHKERRQ(ierr);
   // required for solving first problem
   
-  
   for(int ii=0; ii<4; ii++ )
   {
     ostringstream ss_field;
-    ss_field << "DISP" << stochastic_fields[ii]<<endl;
+    ss_field << "DISP" << stochastic_fields[ii];
 //    cout<<ss_field.str().c_str()<<endl;
     ierr = mField.modify_finite_element_add_field_data("K_Inclusion",ss_field.str().c_str()); CHKERRQ(ierr);
   }
@@ -396,32 +332,23 @@ int main(int argc, char *argv[]) {
   ierr = mField.modify_finite_element_add_field_data("Lagrange_elem","DISPLACEMENT"); CHKERRQ(ierr);
   
   //======================================================================================================
-
-  
   //define problems
   ierr = mField.add_problem("STOCHASIC_PROBLEM"); CHKERRQ(ierr);
   
-  
   //set finite elements for problem
-  ierr = mField.modify_problem_add_finite_element("STOCHASIC_PROBLEM","ELASTIC"); CHKERRQ(ierr);
   ierr = mField.modify_problem_add_finite_element("STOCHASIC_PROBLEM","K_Matrix"); CHKERRQ(ierr);
   ierr = mField.modify_problem_add_finite_element("STOCHASIC_PROBLEM","K_Inclusion"); CHKERRQ(ierr);
   ierr = mField.modify_problem_add_finite_element("STOCHASIC_PROBLEM","Lagrange_elem"); CHKERRQ(ierr);
-  
   
   //set refinment level for problem
   ierr = mField.modify_problem_ref_level_add_bit("STOCHASIC_PROBLEM",bit_level0); CHKERRQ(ierr);
 
   // ===========================================================================
-  //
   // III. DECLARE PROBLEM
-  //
   // ===========================================================================
 
   /*****************************************************************************
-   *
    * Add entitities (by tets) to the field
-   *
    ****************************************************************************/
   // Zeroth order
   ierr = mField.add_ents_to_field_by_TETs(0,"DISPLACEMENT",2); CHKERRQ(ierr);
@@ -429,18 +356,14 @@ int main(int argc, char *argv[]) {
   for(int ii=0; ii<14; ii++ )
   {
     ostringstream ss_field;
-    ss_field << "DISP" << stochastic_fields[ii]<<endl;
+    ss_field << "DISP" << stochastic_fields[ii];
 //    cout<<ss_field.str().c_str()<<endl;
     ierr = mField.add_ents_to_field_by_TETs(0,ss_field.str().c_str()); CHKERRQ(ierr);
   }
 
-  
   /*****************************************************************************
-   *
    * Add finite elements entities
-   *
-   ****************************************************************************/   
-  ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"ELASTIC",MBTET); CHKERRQ(ierr);
+   ****************************************************************************/
   ierr = mField.add_ents_to_finite_element_by_TETs(meshset_Matrix,"K_Matrix",true); CHKERRQ(ierr);
   ierr = mField.add_ents_to_finite_element_by_TETs(meshset_Inclusion,"K_Inclusion",true); CHKERRQ(ierr);
 
@@ -449,7 +372,6 @@ int main(int argc, char *argv[]) {
   ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SideSet 103 = %d\n",SurfacesFaces.size()); CHKERRQ(ierr);
   ierr = mField.add_ents_to_finite_element_by_TRIs(SurfacesFaces,"Lagrange_elem"); CHKERRQ(ierr);
   
-
   //to create meshset from range
   EntityHandle BoundFacesMeshset;
   rval = moab.create_meshset(MESHSET_SET,BoundFacesMeshset); CHKERR_PETSC(rval);
@@ -458,7 +380,6 @@ int main(int argc, char *argv[]) {
   ierr = mField.add_ents_to_field_by_TRIs(BoundFacesMeshset,"Lagrange_mul_disp",2); CHKERRQ(ierr);
 
   /*****************************************************************************
-   *
    * Set applied order
    ****************************************************************************/
 // int order = 5;
@@ -467,12 +388,11 @@ int main(int argc, char *argv[]) {
   ierr = mField.set_field_order(0,MBEDGE,"DISPLACEMENT",order); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBVERTEX,"DISPLACEMENT",1); CHKERRQ(ierr);
   
-  //
   int order_st=order;
   for(int ii=0; ii<14; ii++ )
   {
     ostringstream ss_field;
-    ss_field << "DISP" << stochastic_fields[ii]<<endl;
+    ss_field << "DISP" << stochastic_fields[ii];
 //    cout<<ss_field.str().c_str()<<endl;
     ierr = mField.set_field_order(0,MBTET,ss_field.str().c_str(),order_st); CHKERRQ(ierr);
     ierr = mField.set_field_order(0,MBTRI,ss_field.str().c_str(),order_st); CHKERRQ(ierr);
@@ -486,9 +406,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.set_field_order(0,MBVERTEX,"Lagrange_mul_disp",1); CHKERRQ(ierr); 
 
   // ===========================================================================
-  //
   //  IV. BUILD DATABASE
-  //
   // ===========================================================================
   
   //build field
@@ -503,11 +421,8 @@ int main(int argc, char *argv[]) {
   //build problem
   ierr = mField.build_problems(); CHKERRQ(ierr);
   
-  
   // ===========================================================================
-  //
   //  V. MESH PARTITION
-  //
   // ===========================================================================
   
   //partition
@@ -520,16 +435,12 @@ int main(int argc, char *argv[]) {
   ierr = mField.print_cubit_materials_set(); CHKERRQ(ierr);
 
   // ===========================================================================
-  //
   //  VI. SOLUTION PHASE
-  //
-  // =========================================================================== 
+  // ===========================================================================
 
   /*****************************************************************************
-   *
    *  0. PREPARATION FOR PROCESSING SOLVE
-   *
-   ****************************************************************************/ 
+   ****************************************************************************/
   Vec F,dF,ddF; // vectors
   Vec D,dD,ddD;
   
@@ -577,7 +488,8 @@ cout<<"solution 1"<<endl;
   ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = MatZeroEntries(Aij); CHKERRQ(ierr);
   
-  ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","ELASTIC",my_fe);  CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","K_Matrix",my_fe);  CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","K_Inclusion",my_fe);  CHKERRQ(ierr);
   ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","Lagrange_elem",MyFE_RVELagrange);  CHKERRQ(ierr);
   
   ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
@@ -591,7 +503,6 @@ cout<<"solution 1"<<endl;
   //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
   //ierr = MatView(Aij,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
   
-  
 ////Matrix View
 //MatView(Aij,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
 //std::string wait;
@@ -599,27 +510,24 @@ cout<<"solution 1"<<endl;
 
 cout<<"solution"<<endl;
   /*****************************************************************************
-   *
-   *  2. Get the volume of RVE 
-   *
-   ****************************************************************************/ 
+   *  2. Get the volume of RVE
+   ****************************************************************************/
   double RVE_volume;    RVE_volume=0.0;  //RVE volume for full RVE We need this for stress calculation
   Vec RVE_volume_Vec;
   ierr = VecCreateMPI(PETSC_COMM_WORLD, 1, pcomm->size(), &RVE_volume_Vec);  CHKERRQ(ierr);
   ierr = VecZeroEntries(RVE_volume_Vec); CHKERRQ(ierr);
   
   RVEVolume MyRVEVol(mField,Aij,D,F,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio), RVE_volume_Vec);
-  ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","ELASTIC",MyRVEVol);  CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","K_Matrix",MyRVEVol);  CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","K_Inclusion",MyRVEVol);  CHKERRQ(ierr);
   //    ierr = VecView(RVE_volume_Vec,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
   ierr = VecSum(RVE_volume_Vec, &RVE_volume);  CHKERRQ(ierr);
     cout<<"Final RVE_volume = "<< RVE_volume <<endl;
   
   /*****************************************************************************
-   *
    *  3. SOLVE THE ZEROTH-ORDER FINITE ELEMENT EQUILIBRIUM EQUATION
    *     [K][U] = [F]
-   *
-   ****************************************************************************/
+  ****************************************************************************/
 
   //----------------------------------------------------------------------------
   // 3.1 Solving the equation to get nodal displacement
@@ -663,484 +571,137 @@ cout<<"solution"<<endl;
   }
   cout<< "\n\n";
   
-  
-  
    /*****************************************************************************
-   *
-   *  4. SOLVE THE FIRST-ORDER FINITE ELEMENT EQUILIBRIUM EQUATION
-   *     [K][U_r] = -[K_r][U}  due to both young and poisson
+   *  SOLVE THE FIRST-ORDER AND SECOND-ORDER FINITE ELEMENT EQUILIBRIUM EQUATION
+   *  1st order-[K][U_r] = -[K_r][U}  due to both young and poisson
+   *  2nd order-[K][U_rs] = -[K_rs][U]-2[K_r][U_s]
    *
    ****************************************************************************/
+  for(int ii=0; ii<14; ii++){
+    ierr = VecZeroEntries(dF); CHKERRQ(ierr);
+    ierr = VecGhostUpdateBegin(dF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecGhostUpdateEnd(dF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    
+    if (ii==0){//due to Young's modulus of matrix
+      K_rYoungFEMethod my_fe_k_r_Em(mField,Aij,D,dF,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
+      ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","K_Matrix",my_fe_k_r_Em);  CHKERRQ(ierr);}
+    else if (ii==1){//due to Poisson's ratio of matrix
+      K_rPoissonFEMethod my_fe_k_r_Pm(mField,Aij,D,dF,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
+      ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","K_Matrix",my_fe_k_r_Pm);  CHKERRQ(ierr);}
+    else if (ii==2){//due to Young's modulus of fibre/inclusion
+      K_rYoungFEMethod my_fe_k_r_Ef(mField,Aij,D,dF,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
+      ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","K_Inclusion",my_fe_k_r_Ef);  CHKERRQ(ierr);}
+    else if (ii==3){//due to Poisson's ratio of fibre/inclusion
+      K_rPoissonFEMethod my_fe_k_r_Pf(mField,Aij,D,dF,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
+      ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","K_Inclusion",my_fe_k_r_Pf);  CHKERRQ(ierr);}
+    else if (ii==4){//due to Young's modulus of matrix
+      K_rsYoungFEMethod my_fe_k_rs_EmEm(mField,Aij,D,dF,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio),"DISP_r_Em");
+      ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","K_Matrix",my_fe_k_rs_EmEm);  CHKERRQ(ierr);}
+    else if (ii==5){//due to Young's modulus and Poisson's ratio of matrix
+      K_rYoungPoissonFEMethod my_fe_k_rs_EmPm(mField,Aij,D,dF,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio),"DISP_r_Pm");
+      ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","K_Matrix",my_fe_k_rs_EmPm);  CHKERRQ(ierr);}
+    else if (ii==6){//due to Young's modulus of matrix and Young's modulus of fibre/inclusion
+      K_rs_EmEPf_FEMethod my_fe_k_rs_EmEf(mField,Aij,D,dF,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio),"DISP_r_Ef");
+      ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","K_Matrix",my_fe_k_rs_EmEf);  CHKERRQ(ierr);}
+    else if (ii==7){//due to Young's modulus of matrix and Poisson's ratio of fibre/inclusion
+      K_rs_EmEPf_FEMethod my_fe_k_rs_EmPf(mField,Aij,D,dF,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio),"DISP_r_Pf");
+      ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","K_Matrix",my_fe_k_rs_EmPf);  CHKERRQ(ierr);}
+    else if (ii==8){//due to Poisson's ratio of matrix
+      K_rsPoissonFEMethod my_fe_k_rs_PmPm(mField,Aij,D,dF,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio),"DISP_r_Pm");
+      ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","K_Matrix",my_fe_k_rs_PmPm);  CHKERRQ(ierr);}
+    else if (ii==9){//due to Poisson's ratio of matrix and Young's modulus of fibre/inclusion
+      K_rs_PmEPf_FEMethod my_fe_k_rs_PmEf(mField,Aij,D,dF,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio),"DISP_r_Ef");
+      ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","K_Matrix",my_fe_k_rs_PmEf);  CHKERRQ(ierr);}
+    else if (ii==10){//due to Poisson's ratio of matrix and Poisson's ratio of fibre/inclusion
+      K_rs_PmEPf_FEMethod my_fe_k_rs_PmPf(mField,Aij,D,dF,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio),"DISP_r_Pf");
+      ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","K_Matrix",my_fe_k_rs_PmPf);  CHKERRQ(ierr);}
+    else if (ii==11){//due to Young's modulus of fibre/inclusion
+      K_rsYoungFEMethod my_fe_k_rs_EfEf(mField,Aij,D,dF,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio),"DISP_r_Ef");
+      ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","K_Inclusion",my_fe_k_rs_EfEf);  CHKERRQ(ierr);}
+    else if (ii==12){//due to Young's modulus and Poisson's ratio of fibre/inclusion
+      K_rYoungPoissonFEMethod my_fe_k_rs_EfPf(mField,Aij,D,dF,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio),"DISP_r_Pf");
+      ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","K_Inclusion",my_fe_k_rs_EfPf);  CHKERRQ(ierr);}
+    else if (ii==13){//due to Poisson's ratio of fibre/inclusion
+      K_rsPoissonFEMethod my_fe_k_rs_PfPf(mField,Aij,D,dF,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio),"DISP_r_Pf");
+      ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","K_Inclusion",my_fe_k_rs_PfPf);  CHKERRQ(ierr);
+    }
 
-  // ====================================
-  // 4.1 due to Young's modulus of matrix
-  // ====================================
-
-  
-  for(int ii=0; ii<2; ii++){
-  
-  ierr = VecZeroEntries(dF); CHKERRQ(ierr);
-  ierr = VecGhostUpdateBegin(dF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(dF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  
-  K_rYoungFEMethod my_fe_k_r(mField,Aij,D,dF,0,0);
-  K_rPoissonFEMethod my_fe_k_r(mField,Aij,D,dF,0,0);
-  
-  ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","K_Matrix",my_fe_k_r_Em);  CHKERRQ(ierr);
-  
-  ierr = VecGhostUpdateBegin(dF,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(dF,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-  ierr = VecAssemblyBegin(dF); CHKERRQ(ierr);
-  ierr = VecAssemblyEnd(dF); CHKERRQ(ierr);
-  
-  ierr = KSPSolve(solver,dF,dD); CHKERRQ(ierr);
-  ierr = VecGhostUpdateBegin(dD,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(dD,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  
-  ierr = mField.set_other_global_VecCreateGhost("STOCHASIC_PROBLEM","DISPLACEMENT","DISP_r_Em",ROW,dD,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-  ierr = mField.set_other_global_VecCreateGhost("STOCHASIC_PROBLEM","Lagrange_mul_disp","Lagrange_mul_disp",ROW,dD,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-
-  }
-  
-  
-  
-  // ====================================
-  // 4.2 due to Poisson's ratio of matrix
-  // ====================================
-  ierr = VecZeroEntries(dF); CHKERRQ(ierr);
-  ierr = VecGhostUpdateBegin(dF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(dF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-
-  K_rPoissonFEMethod my_fe_k_r_Pm(mField,Aij,D,dF,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
-  ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","K_Matrix",my_fe_k_r_Pm);  CHKERRQ(ierr);
-
-  ierr = VecGhostUpdateBegin(dF,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(dF,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-  ierr = VecAssemblyBegin(dF); CHKERRQ(ierr);
-  ierr = VecAssemblyEnd(dF); CHKERRQ(ierr);
-  
-  ierr = KSPSolve(solver,dF,dD_Pm); CHKERRQ(ierr);
-  ierr = VecGhostUpdateBegin(dD_Pm,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(dD_Pm,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  
-  ierr = mField.set_other_global_VecCreateGhost("STOCHASIC_PROBLEM","DISPLACEMENT","DISP_r_Pm",ROW,dD_Pm,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-  ierr = mField.set_other_global_VecCreateGhost("STOCHASIC_PROBLEM","Lagrange_mul_disp","Lagrange_mul_disp",ROW,dD_Pm,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-  
-
-
-   // =============================================
-  // 4.3 due to Young's modulus of fibre/inclusion
-  // =============================================
-
-  ierr = VecZeroEntries(dF); CHKERRQ(ierr);
-  ierr = VecGhostUpdateBegin(dF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(dF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  
-  K_rYoungFEMethod my_fe_k_r_Ef(mField,Aij,D,dF,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
-  ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","K_Inclusion",my_fe_k_r_Ef);  CHKERRQ(ierr);
-  
-  ierr = VecGhostUpdateBegin(dF,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(dF,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-  ierr = VecAssemblyBegin(dF); CHKERRQ(ierr);
-  ierr = VecAssemblyEnd(dF); CHKERRQ(ierr);
-  
-  ierr = KSPSolve(solver,dF,dD_Ef); CHKERRQ(ierr);
-  ierr = VecGhostUpdateBegin(dD_Ef,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(dD_Ef,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  
-  ierr = mField.set_other_global_VecCreateGhost("STOCHASIC_PROBLEM","DISPLACEMENT","DISP_r_Ef",ROW,dD_Ef,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-  ierr = mField.set_other_global_VecCreateGhost("STOCHASIC_PROBLEM","Lagrange_mul_disp","Lagrange_mul_disp",ROW,dD_Ef,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-
-  
-  // =============================================
-  // 4.4 due to Poisson's ratio of fibre/inclusion
-  // =============================================
-
-  ierr = VecZeroEntries(dF); CHKERRQ(ierr);
-  ierr = VecGhostUpdateBegin(dF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(dF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-
-  K_rPoissonFEMethod my_fe_k_r_Pf(mField,Aij,D,dF,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
-  ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","K_Inclusion",my_fe_k_r_Pf);  CHKERRQ(ierr);
-
-  ierr = VecGhostUpdateBegin(dF,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(dF,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-  ierr = VecAssemblyBegin(dF); CHKERRQ(ierr);
-  ierr = VecAssemblyEnd(dF); CHKERRQ(ierr);
-  
-  ierr = KSPSolve(solver,dF,dD_Pf); CHKERRQ(ierr);
-  ierr = VecGhostUpdateBegin(dD_Pf,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(dD_Pf,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  
-  ierr = mField.set_other_global_VecCreateGhost("STOCHASIC_PROBLEM","DISPLACEMENT","DISP_r_Pf",ROW,dD_Pf,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-  ierr = mField.set_other_global_VecCreateGhost("STOCHASIC_PROBLEM","Lagrange_mul_disp","Lagrange_mul_disp",ROW,dD_Pf,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-  
-  
-  
-//  /*****************************************************************************
-//   *
-//   *  5. SOLVE THE SECOND-ORDER FINITE ELEMENT EQUILIBRIUM EQUATION
-//   *     [K][U_rs] = -[K_rs][U]-2[K_r][U_s]
-//   *
-//   ****************************************************************************/
-//
-//  // ====================================
-//  // 5.1 due to Young's modulus of matrix
-//  // ====================================
-//  //----------------------------------------------------------------------------
-//  // a. Solving the equation to get nodal displacement
-//  //----------------------------------------------------------------------------
-//  ierr = VecZeroEntries(ddF); CHKERRQ(ierr);
-//  ierr = VecGhostUpdateBegin(ddF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-//  ierr = VecGhostUpdateEnd(ddF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-//  
-//  K_rsYoungFEMethod my_fe_k_rs_EmEm(mField,Aij,D,ddF,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio),"DISP_r_Em");
-//  ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","K_Matrix",my_fe_k_rs_EmEm);  CHKERRQ(ierr);
-//  
-//  ierr = VecGhostUpdateBegin(ddF,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-//  ierr = VecGhostUpdateEnd(ddF,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-//  ierr = VecAssemblyBegin(ddF); CHKERRQ(ierr);
-//  ierr = VecAssemblyEnd(ddF); CHKERRQ(ierr);
-////  ierr = VecView(ddF,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-//  
-//  ierr = KSPSolve(solver,ddF,ddD_EmEm); CHKERRQ(ierr);
-//  ierr = VecGhostUpdateBegin(ddD_EmEm,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-//  ierr = VecGhostUpdateEnd(ddD_EmEm,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-//  ierr = mField.set_other_global_VecCreateGhost("STOCHASIC_PROBLEM","DISPLACEMENT","DISP_rs_EmEm",ROW,ddD_EmEm,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-//  ierr = mField.set_other_global_VecCreateGhost("STOCHASIC_PROBLEM","Lagrange_mul_disp","Lagrange_mul_disp",ROW,ddD_EmEm,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-////  ierr = VecView(ddD,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-//
-//
-//  // ========================================================
-//  // 5.2 due to Young's modulus and Poisson's ratio of matrix
-//  // ========================================================
-//  //----------------------------------------------------------------------------
-//  // a. Solving the equation to get nodal displacement
-//  //----------------------------------------------------------------------------
-//  ierr = VecZeroEntries(ddF); CHKERRQ(ierr);
-//  ierr = VecGhostUpdateBegin(ddF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-//  ierr = VecGhostUpdateEnd(ddF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-//  
-//  K_rYoungPoissonFEMethod my_fe_k_rs_EmPm(mField,Aij,D,ddF,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio),"DISP_r_Pm");
-//  ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","K_Matrix",my_fe_k_rs_EmPm);  CHKERRQ(ierr);
-//  
-//  ierr = VecGhostUpdateBegin(ddF,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-//  ierr = VecGhostUpdateEnd(ddF,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-//  ierr = VecAssemblyBegin(ddF); CHKERRQ(ierr);
-//  ierr = VecAssemblyEnd(ddF); CHKERRQ(ierr);
-////  ierr = VecView(ddF,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-//  
-//  ierr = KSPSolve(solver,ddF,ddD_EmPm); CHKERRQ(ierr);
-//  ierr = VecGhostUpdateBegin(ddD_EmPm,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-//  ierr = VecGhostUpdateEnd(ddD_EmPm,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-//  ierr = mField.set_other_global_VecCreateGhost("STOCHASIC_PROBLEM","DISPLACEMENT","DISP_rs_EmPm",ROW,ddD_EmPm,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-//  ierr = mField.set_other_global_VecCreateGhost("STOCHASIC_PROBLEM","Lagrange_mul_disp","Lagrange_mul_disp",ROW,ddD_EmPm,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-////  ierr = VecView(ddD,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-//
-//  // ===========================================================================
-//  // 5.3 due to Young's modulus of matrix and Young's modulus of fibre/inclusion
-//  // ===========================================================================
-//  //----------------------------------------------------------------------------
-//  // a. Solving the equation to get nodal displacement
-//  //----------------------------------------------------------------------------
-//  ierr = VecZeroEntries(ddF); CHKERRQ(ierr);
-//  ierr = VecGhostUpdateBegin(ddF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-//  ierr = VecGhostUpdateEnd(ddF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-//  
-//  K_rs_EmEPf_FEMethod my_fe_k_rs_EmEf(mField,Aij,D,ddF,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio),"DISP_r_Ef");
-//  ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","K_Matrix",my_fe_k_rs_EmEf);  CHKERRQ(ierr);
-//  
-//  ierr = VecGhostUpdateBegin(ddF,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-//  ierr = VecGhostUpdateEnd(ddF,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-//  ierr = VecAssemblyBegin(ddF); CHKERRQ(ierr);
-//  ierr = VecAssemblyEnd(ddF); CHKERRQ(ierr);
-////  ierr = VecView(ddF,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-//  
-//  ierr = KSPSolve(solver,ddF,ddD_EmEf); CHKERRQ(ierr);
-//  ierr = VecGhostUpdateBegin(ddD_EmEf,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-//  ierr = VecGhostUpdateEnd(ddD_EmEf,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-//  ierr = mField.set_other_global_VecCreateGhost("STOCHASIC_PROBLEM","DISPLACEMENT","DISP_rs_EmEf",ROW,ddD_EmEf,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-//  ierr = mField.set_other_global_VecCreateGhost("STOCHASIC_PROBLEM","Lagrange_mul_disp","Lagrange_mul_disp",ROW,ddD_EmEf,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-////  ierr = VecView(ddD,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-//
-//  // ===========================================================================
-//  // 5.4 due to Young's modulus of matrix and Poisson's ratio of fibre/inclusion
-//  // ===========================================================================
-//  //----------------------------------------------------------------------------
-//  // a. Solving the equation to get nodal displacement
-//  //----------------------------------------------------------------------------
-//  ierr = VecZeroEntries(ddF); CHKERRQ(ierr);
-//  ierr = VecGhostUpdateBegin(ddF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-//  ierr = VecGhostUpdateEnd(ddF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-//  
-//  K_rs_EmEPf_FEMethod my_fe_k_rs_EmPf(mField,Aij,D,ddF,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio),"DISP_r_Pf");
-//  ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","K_Matrix",my_fe_k_rs_EmPf);  CHKERRQ(ierr);
-//  
-//  ierr = VecGhostUpdateBegin(ddF,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-//  ierr = VecGhostUpdateEnd(ddF,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-//  ierr = VecAssemblyBegin(ddF); CHKERRQ(ierr);
-//  ierr = VecAssemblyEnd(ddF); CHKERRQ(ierr);
-////  ierr = VecView(ddF,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-//  
-//  ierr = KSPSolve(solver,ddF,ddD_EmPf); CHKERRQ(ierr);
-//  ierr = VecGhostUpdateBegin(ddD_EmPf,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-//  ierr = VecGhostUpdateEnd(ddD_EmPf,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-//  ierr = mField.set_other_global_VecCreateGhost("STOCHASIC_PROBLEM","DISPLACEMENT","DISP_rs_EmPf",ROW,ddD_EmPf,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-//  ierr = mField.set_other_global_VecCreateGhost("STOCHASIC_PROBLEM","Lagrange_mul_disp","Lagrange_mul_disp",ROW,ddD_EmPf,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-////  ierr = VecView(ddD,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-//
-//  // ====================================
-//  // 5.5 due to Poisson's ratio of matrix
-//  // ====================================
-//  //----------------------------------------------------------------------------
-//  // a. Solving the equation to get nodal displacement
-//  //----------------------------------------------------------------------------
-//  ierr = VecZeroEntries(ddF); CHKERRQ(ierr);
-//  ierr = VecGhostUpdateBegin(ddF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-//  ierr = VecGhostUpdateEnd(ddF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-//  
-//  K_rsPoissonFEMethod my_fe_k_rs_PmPm(mField,Aij,D,ddF,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio),"DISP_r_Pm");
-//  ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","K_Matrix",my_fe_k_rs_PmPm);  CHKERRQ(ierr);
-//  
-//  ierr = VecGhostUpdateBegin(ddF,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-//  ierr = VecGhostUpdateEnd(ddF,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-//  ierr = VecAssemblyBegin(ddF); CHKERRQ(ierr);
-//  ierr = VecAssemblyEnd(ddF); CHKERRQ(ierr);
-////  ierr = VecView(ddF,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-//  
-//  ierr = KSPSolve(solver,ddF,ddD_PmPm); CHKERRQ(ierr);
-//  ierr = VecGhostUpdateBegin(ddD_PmPm,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-//  ierr = VecGhostUpdateEnd(ddD_PmPm,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-//  ierr = mField.set_other_global_VecCreateGhost("STOCHASIC_PROBLEM","DISPLACEMENT","DISP_rs_PmPm",ROW,ddD_PmPm,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-//  ierr = mField.set_other_global_VecCreateGhost("STOCHASIC_PROBLEM","Lagrange_mul_disp","Lagrange_mul_disp",ROW,ddD_PmPm,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-////  ierr = VecView(ddD_PP,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-//
-//  // ===========================================================================
-//  // 5.6 due to Poisson's ratio of matrix and Young's modulus of fibre/inclusion
-//  // ===========================================================================
-//  //----------------------------------------------------------------------------
-//  // a. Solving the equation to get nodal displacement
-//  //----------------------------------------------------------------------------
-//  ierr = VecZeroEntries(ddF); CHKERRQ(ierr);
-//  ierr = VecGhostUpdateBegin(ddF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-//  ierr = VecGhostUpdateEnd(ddF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-//  
-//  K_rs_PmEPf_FEMethod my_fe_k_rs_PmEf(mField,Aij,D,ddF,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio),"DISP_r_Ef");
-//  ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","K_Matrix",my_fe_k_rs_PmEf);  CHKERRQ(ierr);
-//  
-//  ierr = VecGhostUpdateBegin(ddF,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-//  ierr = VecGhostUpdateEnd(ddF,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-//  ierr = VecAssemblyBegin(ddF); CHKERRQ(ierr);
-//  ierr = VecAssemblyEnd(ddF); CHKERRQ(ierr);
-////  ierr = VecView(ddF,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-//  
-//  ierr = KSPSolve(solver,ddF,ddD_PmEf); CHKERRQ(ierr);
-//  ierr = VecGhostUpdateBegin(ddD_PmEf,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-//  ierr = VecGhostUpdateEnd(ddD_PmEf,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-//  ierr = mField.set_other_global_VecCreateGhost("STOCHASIC_PROBLEM","DISPLACEMENT","DISP_rs_PmEf",ROW,ddD_PmEf,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-//  ierr = mField.set_other_global_VecCreateGhost("STOCHASIC_PROBLEM","Lagrange_mul_disp","Lagrange_mul_disp",ROW,ddD_PmEf,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-////  ierr = VecView(ddD_PP,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-//
-//  // ===========================================================================
-//  // 5.7 due to Poisson's ratio of matrix and Poisson's ratio of fibre/inclusion
-//  // ===========================================================================
-//  //----------------------------------------------------------------------------
-//  // a. Solving the equation to get nodal displacement
-//  //----------------------------------------------------------------------------
-//  ierr = VecZeroEntries(ddF); CHKERRQ(ierr);
-//  ierr = VecGhostUpdateBegin(ddF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-//  ierr = VecGhostUpdateEnd(ddF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-//  
-//  K_rs_PmEPf_FEMethod my_fe_k_rs_PmPf(mField,Aij,D,ddF,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio),"DISP_r_Pf");
-//  ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","K_Matrix",my_fe_k_rs_PmPf);  CHKERRQ(ierr);
-//  
-//  ierr = VecGhostUpdateBegin(ddF,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-//  ierr = VecGhostUpdateEnd(ddF,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-//  ierr = VecAssemblyBegin(ddF); CHKERRQ(ierr);
-//  ierr = VecAssemblyEnd(ddF); CHKERRQ(ierr);
-////  ierr = VecView(ddF,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-//  
-//  ierr = KSPSolve(solver,ddF,ddD_PmPf); CHKERRQ(ierr);
-//  ierr = VecGhostUpdateBegin(ddD_PmPf,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-//  ierr = VecGhostUpdateEnd(ddD_PmPf,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-//  ierr = mField.set_other_global_VecCreateGhost("STOCHASIC_PROBLEM","DISPLACEMENT","DISP_rs_PmPf",ROW,ddD_PmPf,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-//  ierr = mField.set_other_global_VecCreateGhost("STOCHASIC_PROBLEM","Lagrange_mul_disp","Lagrange_mul_disp",ROW,ddD_PmPf,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-////  ierr = VecView(ddD_PP,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-//
-//  // =============================================
-//  // 5.8 due to Young's modulus of fibre/inclusion
-//  // =============================================
-//  //----------------------------------------------------------------------------
-//  // a. Solving the equation to get nodal displacement
-//  //----------------------------------------------------------------------------
-//  ierr = VecZeroEntries(ddF); CHKERRQ(ierr);
-//  ierr = VecGhostUpdateBegin(ddF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-//  ierr = VecGhostUpdateEnd(ddF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-//  
-//  K_rsYoungFEMethod my_fe_k_rs_EfEf(mField,Aij,D,ddF,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio),"DISP_r_Ef");
-//  ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","K_Inclusion",my_fe_k_rs_EfEf);  CHKERRQ(ierr);
-//  
-//  ierr = VecGhostUpdateBegin(ddF,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-//  ierr = VecGhostUpdateEnd(ddF,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-//  ierr = VecAssemblyBegin(ddF); CHKERRQ(ierr);
-//  ierr = VecAssemblyEnd(ddF); CHKERRQ(ierr);
-////  ierr = VecView(ddF,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-//  
-//  ierr = KSPSolve(solver,ddF,ddD_EfEf); CHKERRQ(ierr);
-//  ierr = VecGhostUpdateBegin(ddD_EfEf,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-//  ierr = VecGhostUpdateEnd(ddD_EfEf,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-//  ierr = mField.set_other_global_VecCreateGhost("STOCHASIC_PROBLEM","DISPLACEMENT","DISP_rs_EfEf",ROW,ddD_EfEf,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-//  ierr = mField.set_other_global_VecCreateGhost("STOCHASIC_PROBLEM","Lagrange_mul_disp","Lagrange_mul_disp",ROW,ddD_EfEf,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-////  ierr = VecView(ddD,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-//
-//  // =================================================================
-//  // 5.9 due to Young's modulus and Poisson's ratio of fibre/inclusion
-//  // =================================================================
-//  //----------------------------------------------------------------------------
-//  // a. Solving the equation to get nodal displacement
-//  //----------------------------------------------------------------------------
-//  ierr = VecZeroEntries(ddF); CHKERRQ(ierr);
-//  ierr = VecGhostUpdateBegin(ddF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-//  ierr = VecGhostUpdateEnd(ddF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-//  
-//  K_rYoungPoissonFEMethod my_fe_k_rs_EfPf(mField,Aij,D,ddF,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio),"DISP_r_Pf");
-//  ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","K_Inclusion",my_fe_k_rs_EfPf);  CHKERRQ(ierr);
-//  
-//  ierr = VecGhostUpdateBegin(ddF,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-//  ierr = VecGhostUpdateEnd(ddF,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-//  ierr = VecAssemblyBegin(ddF); CHKERRQ(ierr);
-//  ierr = VecAssemblyEnd(ddF); CHKERRQ(ierr);
-////  ierr = VecView(ddF,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-//  
-//  ierr = KSPSolve(solver,ddF,ddD_EfPf); CHKERRQ(ierr);
-//  ierr = VecGhostUpdateBegin(ddD_EfPf,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-//  ierr = VecGhostUpdateEnd(ddD_EfPf,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-//  ierr = mField.set_other_global_VecCreateGhost("STOCHASIC_PROBLEM","DISPLACEMENT","DISP_rs_EfPf",ROW,ddD_EfPf,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-//  ierr = mField.set_other_global_VecCreateGhost("STOCHASIC_PROBLEM","Lagrange_mul_disp","Lagrange_mul_disp",ROW,ddD_EfPf,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-////  ierr = VecView(ddD,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-//
-//  // ==============================================
-//  // 5.10 due to Poisson's ratio of fibre/inclusion
-//  // ==============================================
-//  //----------------------------------------------------------------------------
-//  // a. Solving the equation to get nodal displacement
-//  //----------------------------------------------------------------------------
-//  ierr = VecZeroEntries(ddF); CHKERRQ(ierr);
-//  ierr = VecGhostUpdateBegin(ddF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-//  ierr = VecGhostUpdateEnd(ddF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-//  
-//  K_rsPoissonFEMethod my_fe_k_rs_PfPf(mField,Aij,D,ddF,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio),"DISP_r_Pf");
-//  ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","K_Inclusion",my_fe_k_rs_PfPf);  CHKERRQ(ierr);
-//  
-//  ierr = VecGhostUpdateBegin(ddF,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-//  ierr = VecGhostUpdateEnd(ddF,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-//  ierr = VecAssemblyBegin(ddF); CHKERRQ(ierr);
-//  ierr = VecAssemblyEnd(ddF); CHKERRQ(ierr);
-////  ierr = VecView(ddF,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-//  
-//  ierr = KSPSolve(solver,ddF,ddD_PfPf); CHKERRQ(ierr);
-//  ierr = VecGhostUpdateBegin(ddD_PfPf,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-//  ierr = VecGhostUpdateEnd(ddD_PfPf,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-//  ierr = mField.set_other_global_VecCreateGhost("STOCHASIC_PROBLEM","DISPLACEMENT","DISP_rs_PfPf",ROW,ddD_PfPf,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-//  ierr = mField.set_other_global_VecCreateGhost("STOCHASIC_PROBLEM","Lagrange_mul_disp","Lagrange_mul_disp",ROW,ddD_PfPf,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-////  ierr = VecView(ddD_PP,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-//
-  
-  //----------------------------------------------------------------------------
-  // b. Calculating homogenized stress
-  //----------------------------------------------------------------------------
-  
-  
-  for(int ii=0; ii<14; ii++ )
-  {
+    ierr = VecGhostUpdateBegin(dF,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = VecGhostUpdateEnd(dF,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = VecAssemblyBegin(dF); CHKERRQ(ierr);
+    ierr = VecAssemblyEnd(dF); CHKERRQ(ierr);
+    
+    ierr = KSPSolve(solver,dF,dD); CHKERRQ(ierr);
+    ierr = VecGhostUpdateBegin(dD,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecGhostUpdateEnd(dD,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    
     ostringstream ss_field;
-    ss_field << "DISP" << stochastic_fields[ii]<<endl;
+    ss_field << "DISP" << stochastic_fields[ii];
     cout<<ss_field.str().c_str()<<endl;
+    ierr = mField.set_other_global_VecCreateGhost("STOCHASIC_PROBLEM","DISPLACEMENT",ss_field.str().c_str(),ROW,dD,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = mField.set_other_global_VecCreateGhost("STOCHASIC_PROBLEM","Lagrange_mul_disp","Lagrange_mul_disp",ROW,dD,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     
-    Vec Stress_Homo_r_Em;
-    ierr = VecCreateMPI(PETSC_COMM_WORLD, 6, 6*pcomm->size(), &Stress_Homo_r_Em);  CHKERRQ(ierr);
-    ierr = VecZeroEntries(Stress_Homo_r_Em); CHKERRQ(ierr);
+    /*****************************************************************************
+     Calculating homogenized stress
+     ****************************************************************************/
+    Vec Stress_Homo_r;
+    ierr = VecCreateMPI(PETSC_COMM_WORLD, 6, 6*pcomm->size(), &Stress_Homo_r);  CHKERRQ(ierr);
+    ierr = VecZeroEntries(Stress_Homo_r); CHKERRQ(ierr);
     
-    ElasticFE_RVELagrange_Homogenized_Stress_Disp MyFE_RVEHomoStressDisp_r_Em(mField,Aij,D,F,&RVE_volume, applied_strain, Stress_Homo_r_Em,ss_field.str().c_str(),"Lagrange_mul_disp",field_rank);
-    ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","Lagrange_elem",MyFE_RVEHomoStressDisp_r_Em);  CHKERRQ(ierr);
+    ElasticFE_RVELagrange_Homogenized_Stress_Disp MyFE_RVEHomoStressDisp_r(mField,Aij,D,F,&RVE_volume, applied_strain, Stress_Homo_r,ss_field.str().c_str(),"Lagrange_mul_disp",field_rank);
+    ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","Lagrange_elem",MyFE_RVEHomoStressDisp_r);  CHKERRQ(ierr);
     
     if(pcomm->rank()==0){
-      PetscScalar    *avec_r_Em;
-      VecGetArray(Stress_Homo_r_Em, &avec_r_Em);
+      PetscScalar    *avec_r;
+      VecGetArray(Stress_Homo_r, &avec_r);
       
       cout<< "\nStress_Homo_r_Em = \n\n";
       for(int ii=0; ii<6; ii++){
         cout.precision(15);
-        cout <<*avec_r_Em<<endl;
-        avec_r_Em++;
+        cout <<*avec_r<<endl;
+        avec_r++;
       }
     }
     cout<< "\n\n";
   }
+  
+  // ===========================================================================
+  //  VII. OUTPUT
+  // ===========================================================================
+  //Save data on mesh
+  ierr = write_soltion(mField,"out.vtk","out_post_proc.vtk");   CHKERRQ(ierr);
 
+  ofstream TheFile;
+  TheFile.open("Result.txt",ofstream::out); 
+  if(pcomm->rank()==0){
+    PetscScalar    *avec;
+    VecGetArray(Stress_Homo, &avec);
+    
+    for(int ii=0; ii<6; ii++){
+      TheFile<<setprecision(15)<<*avec<<'\n';
+      avec++;
+    }
+  }
+  TheFile.close();
+
+  // ===========================================================================
+  //  VIII. FINISH
+  // ===========================================================================
+  //Destroy matrices
+  ierr = VecDestroy(&F); CHKERRQ(ierr);
+  ierr = VecDestroy(&dF); CHKERRQ(ierr);
+
+  ierr = VecDestroy(&D); CHKERRQ(ierr);
+  ierr = VecDestroy(&dD); CHKERRQ(ierr);
+
+  ierr = MatDestroy(&Aij); CHKERRQ(ierr);
+  ierr = KSPDestroy(&solver); CHKERRQ(ierr);
+
+  ierr = PetscTime(&v2);CHKERRQ(ierr);
+  ierr = PetscGetCPUTime(&t2);CHKERRQ(ierr);
   
-  
-  
-  
-//  // ===========================================================================
-//  //
-//  //  VII. OUTPUT
-//  //
-//  // =========================================================================== 
-//  //Save data on mesh
-//  ierr = write_soltion(mField,"out.vtk","out_post_proc.vtk");   CHKERRQ(ierr);
-//
-//  ofstream TheFile;
-//  TheFile.open("Result.txt",ofstream::out); 
-//  if(pcomm->rank()==0){
-//    PetscScalar    *avec;
-//    VecGetArray(Stress_Homo, &avec);
-//    
-//    for(int ii=0; ii<6; ii++){
-//      TheFile<<setprecision(15)<<*avec<<'\n';
-//      avec++;
-//    }
-//  }
-//  TheFile.close();
-//
-//  // ===========================================================================
-//  //
-//  //  VIII. FINISH
-//  //
-//  // ===========================================================================   
-//  //Destroy matrices
-//  ierr = VecDestroy(&F); CHKERRQ(ierr);
-//  ierr = VecDestroy(&dF); CHKERRQ(ierr);
-//  ierr = VecDestroy(&ddF); CHKERRQ(ierr);
-//
-//  
-//  ierr = VecDestroy(&D); CHKERRQ(ierr);
-//  ierr = VecDestroy(&dD_Em); CHKERRQ(ierr);
-//  ierr = VecDestroy(&dD_Pm); CHKERRQ(ierr);
-//  ierr = VecDestroy(&dD_Ef); CHKERRQ(ierr);
-//  ierr = VecDestroy(&dD_Pf); CHKERRQ(ierr);
-//  ierr = VecDestroy(&ddD_EmEm); CHKERRQ(ierr);
-//  ierr = VecDestroy(&ddD_EmPm); CHKERRQ(ierr);
-//  ierr = VecDestroy(&ddD_EmEf); CHKERRQ(ierr);
-//  ierr = VecDestroy(&ddD_EmPf); CHKERRQ(ierr);
-//  ierr = VecDestroy(&ddD_PmPm); CHKERRQ(ierr);
-//  ierr = VecDestroy(&ddD_PmEf); CHKERRQ(ierr);
-//  ierr = VecDestroy(&ddD_PmPf); CHKERRQ(ierr);
-//  ierr = VecDestroy(&ddD_EfEf); CHKERRQ(ierr);
-//  ierr = VecDestroy(&ddD_EfPf); CHKERRQ(ierr);
-//  ierr = VecDestroy(&ddD_PfPf); CHKERRQ(ierr);
-//
-//  ierr = MatDestroy(&Aij); CHKERRQ(ierr);
-//  ierr = KSPDestroy(&solver); CHKERRQ(ierr);
-//  
-//  
-//  ierr = PetscTime(&v2);CHKERRQ(ierr);
-//  ierr = PetscGetCPUTime(&t2);CHKERRQ(ierr);
-//  
-//  PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Total Rank %d Time = %f CPU Time = %f\n",pcomm->rank(),v2-v1,t2-t1);
-//  PetscSynchronizedFlush(PETSC_COMM_WORLD);
-  
+  PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Total Rank %d Time = %f CPU Time = %f\n",pcomm->rank(),v2-v1,t2-t1);
+  PetscSynchronizedFlush(PETSC_COMM_WORLD);
   PetscFinalize();
-  
 }
 
