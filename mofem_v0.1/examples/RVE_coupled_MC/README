@@ -1,0 +1,10 @@
+Check before run
+================
+
+* Check where is your mesh file
+* Check what verion of openmpi (or other MPI library) are you using
+
+Example run
+===========
+
+make && mpirun -np 1 ./RVE_Coupled_Cube_Disp -my_file ~/Documents/Post-Doc\ Data/Analysis/Meshes/Coupled_RVE_MC/Coupled_Cube_RVE_MC.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0 -myapplied_congrad 1.0,0.0,0.0

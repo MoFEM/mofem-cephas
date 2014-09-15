@@ -64,7 +64,7 @@ int main(int argc, char *argv[]) {
     order = 1;
   }
   
-  //Applied strain on the RVE (vector of length 6) strain=[xx, yy, zz, xy, xz, zy]^T
+  //Applied strain on the RVE (vector of length 3) strain=[xx, yy, zz]^T
   double myapplied_strain[3];
   int nmax=3;
   ierr = PetscOptionsGetRealArray(PETSC_NULL,"-myapplied_strain",myapplied_strain,&nmax,&flg); CHKERRQ(ierr);

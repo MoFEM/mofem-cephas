@@ -35,5 +35,5 @@ add_subdirectory("${PROJECT_SOURCE_DIR}/examples/RVE_trans")
 add_subdirectory("${PROJECT_SOURCE_DIR}/examples/ultraweak")
 add_subdirectory("${PROJECT_SOURCE_DIR}/examples/moisture_transport")
 add_subdirectory("${PROJECT_SOURCE_DIR}/examples/moisture_transport_oldElement")
-
+add_subdirectory("${PROJECT_SOURCE_DIR}/examples/RVE_coupled_MC")
 
