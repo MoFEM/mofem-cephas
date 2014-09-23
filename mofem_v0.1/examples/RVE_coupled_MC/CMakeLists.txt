@@ -19,6 +19,8 @@
 add_executable(RVE_Coupled_Cube_Disp RVE_Coupled_Cube_Disp.cpp)
 target_link_libraries(RVE_Coupled_Cube_Disp mofem_student_body mofem_homogenisation mofem_Field ${PROJECT_LIBS})
 
+add_executable(RVE_Coupled_Cube_Disp_staggered RVE_Coupled_Cube_Disp_staggered.cpp)
+target_link_libraries(RVE_Coupled_Cube_Disp_staggered mofem_student_body mofem_homogenisation mofem_Field ${PROJECT_LIBS})
 
 file(COPY
     ${CMAKE_CURRENT_SOURCE_DIR}/README

@@ -16,7 +16,6 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
-
 add_executable(RVE_Cube_MT_Disp RVE_Cube_MT_Disp.cpp)
 target_link_libraries(RVE_Cube_MT_Disp mofem_student_body mofem_homogenisation mofem_Field ${PROJECT_LIBS})
 
@@ -25,4 +24,7 @@ target_link_libraries(RVE_Cube_MT_Trac mofem_student_body mofem_homogenisation m
 
 add_executable(RVE_Cube_MT_Periodic RVE_Cube_MT_Periodic.cpp)
 target_link_libraries(RVE_Cube_MT_Periodic mofem_student_body mofem_homogenisation mofem_Field ${PROJECT_LIBS})
+
+add_executable(moisture_transold moisture_transold.cpp)
+target_link_libraries(moisture_transold mofem_student_body mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
 

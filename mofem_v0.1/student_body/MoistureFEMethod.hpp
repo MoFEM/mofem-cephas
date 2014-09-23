@@ -39,6 +39,10 @@ namespace MoFEM {
     FEMethod_UpLevelStudent(_mField.get_moab(),1), mField(_mField),
     Aij(_Aij),Data(_D),F(_F){
       
+      snes_B = &Aij;
+      snes_x = Data;
+      snes_f = F;
+
       pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
       
       RowGlob.resize(1+6+4+1);
@@ -74,9 +78,14 @@ namespace MoFEM {
     vector<vector<ublas::matrix<FieldData> > > colNMatrices;
     vector<vector<ublas::matrix<FieldData> > > colDiffNMatrices;
     
+    vector< ublas::matrix<FieldData> > invH;
+    vector< FieldData > detH;
+
     vector<double> g_NTET,g_NTRI;
     const double* G_W_TET;
     const double* G_W_TRI;
+    const double *G_TET_W;
+
     
     ublas::matrix<FieldData> D;
     virtual PetscErrorCode calculateD(double _Moist_diffusivity) {
@@ -119,24 +128,42 @@ namespace MoFEM {
     
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
-      PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Start Assembly\n");
-      ierr = PetscTime(&v1); CHKERRQ(ierr);
-      ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
+//      PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Start Assembly\n");
+//      ierr = PetscTime(&v1); CHKERRQ(ierr);
+//      ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
       PetscFunctionReturn(0);
     }
     
+    
+    
     PetscErrorCode postProcess() {
       PetscFunctionBegin;
-      // Note MAT_FLUSH_ASSEMBLY
-      ierr = MatAssemblyBegin(Aij,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-      ierr = MatAssemblyEnd(Aij,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-      ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
-      ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
-      ierr = PetscTime(&v2); CHKERRQ(ierr);
-      ierr = PetscGetCPUTime(&t2); CHKERRQ(ierr);
-      PetscSynchronizedPrintf(PETSC_COMM_WORLD,"End Assembly: Rank %d Time = %f CPU Time = %f\n",pcomm->rank(),v2-v1,t2-t1);
+      switch(snes_ctx) {
+        case CTX_SNESNONE: {
+          // Note MAT_FLUSH_ASSEMBLY
+          ierr = MatAssemblyBegin(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+          ierr = MatAssemblyEnd(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+          ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
+          ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+        }
+          break;
+        case CTX_SNESSETFUNCTION: {
+          ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
+          ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+        }
+          break;
+        case CTX_SNESSETJACOBIAN: {
+          // Note MAT_FLUSH_ASSEMBLY
+          ierr = MatAssemblyBegin(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+          ierr = MatAssemblyEnd(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+        }
+          break;
+        default:
+          SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+      }
       PetscFunctionReturn(0);
     }
+ 
     
     virtual PetscErrorCode GetMatricesRows() {
       PetscFunctionBegin;
@@ -226,6 +253,111 @@ namespace MoFEM {
       PetscFunctionReturn(0);
     }
     
+    virtual PetscErrorCode Rhs() {
+      PetscFunctionBegin;
+      ierr = Fint(snes_f); CHKERRQ(ierr);
+      PetscFunctionReturn(0);
+    }
+
+    vector<ublas::vector<FieldData> > f_int;
+    virtual PetscErrorCode Fint() {
+      PetscFunctionBegin;
+      try {
+        //Higher order approximation of geometry
+        ierr = GetHierarchicalGeometryApproximation(invH,detH); CHKERRQ(ierr);
+        double diffusivity;
+        ierr = GetMatParameters(&diffusivity); CHKERRQ(ierr);
+        //      cout<< "Moist_diffusivity "<<diffusivity<<endl;
+        ierr = calculateD(diffusivity); CHKERRQ(ierr);
+        //    cout<< "D "<<D<<endl;
+        
+        //Gradient at Gauss points;
+        vector< ublas::matrix< FieldData > > GradU_at_GaussPt;
+        ierr = GetGaussDiffDataVector("CONC",GradU_at_GaussPt); CHKERRQ(ierr);
+        unsigned int g_dim = g_NTET.size()/4;
+        assert(GradU_at_GaussPt.size() == g_dim);
+        NOT_USED(g_dim);
+        vector< ublas::matrix< FieldData > >::iterator viit = GradU_at_GaussPt.begin();
+        
+        int gg = 0;
+        for(;viit!=GradU_at_GaussPt.end();viit++,gg++) {
+          try {
+            ublas::matrix< FieldData > GradU = *viit;
+            if(!invH.empty()) {
+              //GradU =
+              //[ dU/dChi1 dU/dChi2 dU/dChi3 ]
+              //[ dV/dChi1 dV/dChi2 dU/dChi3 ]
+              //[ dW/dChi1 dW/dChi2 dW/dChi3 ]
+              //H =
+              //[ dX1/dChi1 dX1/dChi2 dX1/dChi3 ]
+              //[ dX2/dChi1 dX2/dChi2 dX2/dChi3 ]
+              //[ dX3/dChi1 dX3/dChi2 dX3/dChi3 ]
+              //invH =
+              //[ dChi1/dX1 dChi1/dX2 dChi1/dX3 ]
+              //[ dChi2/dX1 dChi2/dX2 dChi2/dX3 ]
+              //[ dChi3/dX1 dChi3/dX2 dChi3/dX3 ]
+              //GradU =
+              //[ dU/dX1 dU/dX2 dU/dX3 ]
+              //[ dV/dX1 dV/dX2 dV/dX3 ] = GradU * invH
+              //[ dW/dX1 dW/dX2 dW/dX3 ]
+              GradU = prod( GradU, invH[gg] );
+            }
+            ublas::matrix< FieldData > Strain = GradU;
+
+//            cout<<"GradU "<<GradU<<endl;
+//            cout<<"Strain "<<Strain<<endl;
+            ublas::vector< FieldData > VoightStrain(3);
+            VoightStrain[0] = Strain(0,0);
+            VoightStrain[1] = Strain(0,1);
+            VoightStrain[2] = Strain(0,2);
+            double w = V*G_TET_W[gg];
+            ublas::vector<FieldData> VoightStress = prod(w*D,VoightStrain);
+            //BT * VoigtStress
+            f_int.resize(row_mat);
+
+            for(int rr = 0;rr<row_mat;rr++) {
+              if(RowGlob[rr].size()==0) continue;
+              ublas::matrix<FieldData> &B = (rowDiffNMatrices[rr])[gg];
+              if(gg == 0) {
+                f_int[rr] = prod( trans(B), VoightStress );
+              } else {
+                f_int[rr] += prod( trans(B), VoightStress );
+              }
+            }
+          } catch (const std::exception& ex) {
+            ostringstream ss;
+            ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
+            SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+          }
+        }
+
+        
+      } catch (const std::exception& ex) {
+        ostringstream ss;
+        ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
+        SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+      }
+      
+      PetscFunctionReturn(0);
+    }
+    
+    virtual PetscErrorCode Fint(Vec F_int) {
+      PetscFunctionBegin;
+      try {
+        ierr = Fint(); CHKERRQ(ierr);
+        for(int rr = 0;rr<row_mat;rr++) {
+          if(RowGlob[rr].size()==0) continue;
+          if(RowGlob[rr].size()!=f_int[rr].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+          ierr = VecSetValues(F_int,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f_int[rr].data()[0]),ADD_VALUES); CHKERRQ(ierr);
+        }
+      } catch (const std::exception& ex) {
+        ostringstream ss;
+        ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
+        SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+      }
+      PetscFunctionReturn(0);
+    }
+   
     
     ublas::matrix<ublas::matrix<FieldData> > K;
     ublas::matrix<FieldData> BD;
@@ -261,6 +393,7 @@ namespace MoFEM {
             if(gg == 0) {
               s = 0;
               K(rr,cc).resize(BD.size2(),col_Mat.size2());
+              K(rr,cc).clear();
             }
             //ublas::noalias(K(rr,cc)) = prod(trans(BD) , col_Mat ); // int BT*D*B
             cblas_dgemm(CblasRowMajor,CblasTrans,CblasNoTrans,
@@ -275,8 +408,6 @@ namespace MoFEM {
       PetscFunctionReturn(0);
     }
     
-    
-    
     virtual PetscErrorCode Lhs() {
       PetscFunctionBegin;
       ierr = Stiffness(); CHKERRQ(ierr);
@@ -286,10 +417,10 @@ namespace MoFEM {
           if(ColGlob[cc].size()==0) continue;
           if(RowGlob[rr].size()!=K(rr,cc).size1()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
           if(ColGlob[cc].size()!=K(rr,cc).size2()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-          ierr = MatSetValues(Aij,RowGlob[rr].size(),&(RowGlob[rr])[0],ColGlob[cc].size(),&(ColGlob[cc])[0],&(K(rr,cc).data())[0],ADD_VALUES); CHKERRQ(ierr);
+          ierr = MatSetValues(*snes_B,RowGlob[rr].size(),&(RowGlob[rr])[0],ColGlob[cc].size(),&(ColGlob[cc])[0],&(K(rr,cc).data())[0],ADD_VALUES); CHKERRQ(ierr);
           if(rr!=cc) {
             K(cc,rr) = trans(K(rr,cc));
-            ierr = MatSetValues(Aij,ColGlob[cc].size(),&(ColGlob[cc])[0],RowGlob[rr].size(),&(RowGlob[rr])[0],&(K(cc,rr).data())[0],ADD_VALUES); CHKERRQ(ierr);
+            ierr = MatSetValues(*snes_B,ColGlob[cc].size(),&(ColGlob[cc])[0],RowGlob[rr].size(),&(RowGlob[rr])[0],&(K(cc,rr).data())[0],ADD_VALUES); CHKERRQ(ierr);
           }
           
         }
@@ -302,14 +433,34 @@ namespace MoFEM {
     PetscErrorCode operator()() {
       PetscFunctionBegin;
       ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
-      
 //      cout<<"Hi from Moisture Transport Class "<<endl;
       ierr = GetMatrices(); CHKERRQ(ierr);
-      ierr = Lhs(); CHKERRQ(ierr);
+      switch(snes_ctx) {
+        case CTX_SNESNONE: {
+//          cout<<"Hi from CTX_SNESNONE"<<endl;
+          ierr = Lhs(); CHKERRQ(ierr);
+          ierr = Rhs(); CHKERRQ(ierr);
+        }
+          break;
+        case CTX_SNESSETFUNCTION: {
+//          cout<<"Hi from CTX_SNESSETFUNCTION"<<endl;
+//          ierr = Rhs(); CHKERRQ(ierr);
+        }
+          break;
+        case CTX_SNESSETJACOBIAN: {
+//          cout<<"Hi from CTX_SNESSETJACOBIAN"<<endl;
+          ierr = Lhs(); CHKERRQ(ierr);
+        }
+          break;
+        default:
+          SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+      }
       
       ierr = OpStudentEnd(); CHKERRQ(ierr);
+      
       PetscFunctionReturn(0);
     }
+    
     
   };
   

@@ -23,7 +23,7 @@
 #include "cholesky.hpp"
 #include <petscksp.h>
 
-#include "ElasticFEMethod.hpp"
+#include "Coupled_MechFEMethod.hpp"
 #include "MoistureFEMethod.hpp"
 #include "Coupled_MechMoistureFEMethod.hpp"
 
@@ -33,6 +33,7 @@
 
 #include "PostProcVertexMethod.hpp"
 #include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
+#include "FEMethod_DriverComplexForLazy.hpp"
 
 using namespace MoFEM;
 
@@ -138,7 +139,8 @@ int main(int argc, char *argv[]) {
   ierr = mField.modify_finite_element_add_field_row("Kuu","DISPLACEMENT"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_col("Kuu","DISPLACEMENT"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_data("Kuu","DISPLACEMENT"); CHKERRQ(ierr);
-  
+  ierr = mField.modify_finite_element_add_field_data("Kuu","CONC"); CHKERRQ(ierr);
+
   //Define rows/cols and element data for Kcc
   ierr = mField.modify_finite_element_add_field_row("Kcc","CONC"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_col("Kcc","CONC"); CHKERRQ(ierr);
@@ -281,79 +283,62 @@ int main(int argc, char *argv[]) {
   Mat Aij;
   ierr = mField.MatCreateMPIAIJWithArrays("COUPLED_MECH_MOIS",&Aij); CHKERRQ(ierr);
   
-  struct MyElasticFEMethod: public ElasticFEMethod {
-    MyElasticFEMethod(FieldInterface& _mField, Mat &_Aij,Vec &_D,Vec& _F,double _lambda,double _mu):
-    ElasticFEMethod(_mField,_Aij,_D,_F,_lambda,_mu) {};
-    
-    PetscErrorCode Fint(Vec F_int) {
-      PetscFunctionBegin;
-      ierr = ElasticFEMethod::Fint(); CHKERRQ(ierr);
-      for(int rr = 0;rr<row_mat;rr++) {
-        if(RowGlob[rr].size()!=f_int[rr].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-        if(RowGlob[rr].size()==0) continue;
-        f_int[rr] *= -1; //This is not SNES we solve K*D = -RES
-        ierr = VecSetValues(F_int,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f_int[rr].data()[0]),ADD_VALUES); CHKERRQ(ierr);
-      }
-      PetscFunctionReturn(0);
-    }
-    
-  };
-
   //Assemble F and Aij
+//  SpatialPositionsBCFEMethodPreAndPostProc MyDirichletBC(mField,"DISPLACEMENT",Aij,D,F);
+  SnesCtx snes_ctx(mField,"COUPLED_MECH_MOIS");
   const double young_modulus = 1;
   const double poisson_ratio = 0.0;
-  MyElasticFEMethod my_fe_mech(mField,Aij,D,F,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
+  
+  Coupled_MechFEMethod my_fe_mech(mField,Aij,D,F,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
   MoistureFEMethod my_fe_mois(mField,Aij,D,F);
   Coupled_MechMoistureFEMethod my_fe_coupled_mechmois(mField,Aij,D,F);
   ElasticFE_RVELagrange_Disp MyFE_RVELagrange_mech(mField,Aij,D,F,applied_strain,"DISPLACEMENT","Lagrange_mul_disp",field_rank_mech);
   ElasticFE_RVELagrange_Disp MyFE_RVELagrange_mois(mField,Aij,D,F,applied_congrad,"CONC","Lagrange_mul_conc",field_rank_mois);
 
-  ierr = VecZeroEntries(F); CHKERRQ(ierr);
-  ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = MatZeroEntries(Aij); CHKERRQ(ierr);
-  
-  ierr = mField.loop_finite_elements("COUPLED_MECH_MOIS","Kuu",my_fe_mech);  CHKERRQ(ierr);
-  ierr = mField.loop_finite_elements("COUPLED_MECH_MOIS","Kcc",my_fe_mois);  CHKERRQ(ierr);
-  ierr = mField.loop_finite_elements("COUPLED_MECH_MOIS","Kuc",my_fe_coupled_mechmois);  CHKERRQ(ierr);
+  SNES snes;
+  ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);
+  ierr = SNESSetApplicationContext(snes,&snes_ctx); CHKERRQ(ierr);
+  ierr = SNESSetFunction(snes,F,SnesRhs,&snes_ctx); CHKERRQ(ierr);
+  ierr = SNESSetJacobian(snes,Aij,Aij,SnesMat,&snes_ctx); CHKERRQ(ierr);
+  ierr = SNESSetFromOptions(snes); CHKERRQ(ierr);
 
-//  ierr = mField.loop_finite_elements("COUPLED_MECH_MOIS","Lagrange_elm_disp",MyFE_RVELagrange_mech);  CHKERRQ(ierr);
-//  ierr = mField.loop_finite_elements("COUPLED_MECH_MOIS","Lagrange_elm_conc",MyFE_RVELagrange_mois);  CHKERRQ(ierr);
+  SnesCtx::loops_to_do_type& loops_to_do_Rhs = snes_ctx.get_loops_to_do_Rhs();
+//  snes_ctx.get_preProcess_to_do_Rhs().push_back(&MyDirichletBC);
+  loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("Kuu",&my_fe_mech));
+  loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("Kcc",&my_fe_mois));
+  loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("Kuc",&my_fe_coupled_mechmois));
+  loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("Lagrange_elm_disp",&MyFE_RVELagrange_mech));
+  loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("Lagrange_elm_conc",&MyFE_RVELagrange_mois));
+//  snes_ctx.get_postProcess_to_do_Rhs().push_back(&MyDirichletBC);
+
+//  SnesCtx::loops_to_do_type& loops_to_do_Mat = snes_ctx.get_loops_to_do_Mat();
+////  snes_ctx.get_preProcess_to_do_Mat().push_back(&MyDirichletBC);
+//  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("Kuu",&my_fe_mech));
+//  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("Kcc",&my_fe_mois));
+//  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("Kuc",&my_fe_coupled_mechmois));
+//  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("Lagrange_elm_disp",&MyFE_RVELagrange_mech));
+//  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("Lagrange_elm_conc",&MyFE_RVELagrange_mois));
+////  snes_ctx.get_postProcess_to_do_Mat().push_back(&MyDirichletBC);
 //
-//  ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-//  ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-//  ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
-//  ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
-//  ierr = MatAssemblyBegin(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-//  ierr = MatAssemblyEnd(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-//  
-//  PetscSynchronizedFlush(PETSC_COMM_WORLD);
-//  //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-//  //ierr = MatView(Aij,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-//  
-//  //Matrix View
-//  MatView(Aij,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
-//  std::string wait;
-//  std::cin >> wait;
+//  ierr = mField.set_local_VecCreateGhost("COUPLED_MECH_MOIS",COL,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+//  ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+//  ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 //
-//  //Solver
-//  KSP solver;
-//  ierr = KSPCreate(PETSC_COMM_WORLD,&solver); CHKERRQ(ierr);
-//  ierr = KSPSetOperators(solver,Aij,Aij,SAME_NONZERO_PATTERN); CHKERRQ(ierr);
-//  ierr = KSPSetFromOptions(solver); CHKERRQ(ierr);
-//  ierr = KSPSetUp(solver); CHKERRQ(ierr);
-//  
-//  ierr = KSPSolve(solver,F,D); CHKERRQ(ierr);
+//  ierr = SNESSolve(snes,PETSC_NULL,D); CHKERRQ(ierr);
+//  int its;
+//  ierr = SNESGetIterationNumber(snes,&its); CHKERRQ(ierr);
+//  ierr = PetscPrintf(PETSC_COMM_WORLD,"number of Newton iterations = %D\n",its); CHKERRQ(ierr);
+//
 //  ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 //  ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 //  
-//  //  ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-//  //  ierr = VecView(D,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-//  
+//  //Save data on mesh
+//  ierr = mField.set_global_VecCreateGhost("COUPLED_MECH_MOIS",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+//  ierr = VecView(D,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 //  
 //  //Save data on mesh
 //  ierr = mField.set_global_VecCreateGhost("COUPLED_MECH_MOIS",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-//  //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+//  ierr = VecView(D,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 //  
 //  //Calculation of Homogenized stress
 //  //=======================================================================================================================================================
