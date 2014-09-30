@@ -82,6 +82,8 @@ namespace MoFEM {
   };
   
   
+  
+  //********************************************************************************
   PetscErrorCode ElasticFE_RVELagrange_Disp::preProcess() {
     PetscFunctionBegin;
 //    PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Start Assembly\n");
@@ -91,6 +93,7 @@ namespace MoFEM {
     PetscFunctionReturn(0);
   }
   
+  //********************************************************************************
   PetscErrorCode ElasticFE_RVELagrange_Disp::postProcess() {
     PetscFunctionBegin;
     
@@ -119,7 +122,7 @@ namespace MoFEM {
     PetscFunctionReturn(0);
   }
   
-  
+  //********************************************************************************
   PetscErrorCode ElasticFE_RVELagrange_Disp::GetN_and_Indices() {
     PetscFunctionBegin;
     
@@ -350,7 +353,7 @@ namespace MoFEM {
   }
   
   
-  
+  //********************************************************************************
   PetscErrorCode ElasticFE_RVELagrange_Disp::Get_H_mat() {
     PetscFunctionBegin;
     H_mat.resize(row_mat);
@@ -370,7 +373,7 @@ namespace MoFEM {
   
   
   
-  
+  //********************************************************************************
   PetscErrorCode ElasticFE_RVELagrange_Disp::Stiffness() {
     PetscFunctionBegin;
     //        cout<<" row_mat; "<<row_mat<<endl;
@@ -436,6 +439,7 @@ namespace MoFEM {
     PetscFunctionReturn(0);
   }
   
+  //********************************************************************************
   PetscErrorCode ElasticFE_RVELagrange_Disp::Lhs() {
     PetscFunctionBegin;
     ierr = Stiffness(); CHKERRQ(ierr);
@@ -453,14 +457,15 @@ namespace MoFEM {
     //Assembly trans(C) with size (3Nx3M), where M is number of nodes on boundary and N are total nodes
     for(int rr = 0;rr<row_mat;rr++) {
       for(int cc = 0;cc<row_mat;cc++) {
-        NTN(rr,cc) = trans(NTN(rr,cc));
-        ierr = MatSetValues(*snes_B,ColGlob[cc].size(),&(ColGlob[cc])[0],RowGlob[rr].size(),&(RowGlob[rr])[0],&(NTN(rr,cc).data())[0],ADD_VALUES); CHKERRQ(ierr);
+        ublas::matrix<FieldData> trans_NTN = trans(NTN(rr,cc));
+        ierr = MatSetValues(*snes_B,ColGlob[cc].size(),&(ColGlob[cc])[0],RowGlob[rr].size(),&(RowGlob[rr])[0],&(trans_NTN.data())[0],ADD_VALUES); CHKERRQ(ierr);
       }
     }
     PetscFunctionReturn(0);
   }
   
   
+  //********************************************************************************
   //Calculate the right hand side vector, i.e. f=D_max * applied_strain and assemble it into the global force vector F
   PetscErrorCode ElasticFE_RVELagrange_Disp::Rhs() {
     PetscFunctionBegin;
@@ -545,6 +550,10 @@ namespace MoFEM {
       
       //Assemble D_mat into global force vector F
       f=prod(D_mat[rr], applied_strain);
+
+//      cout<<"f "<<f<<endl;
+
+      if (snes_ctx==CTX_SNESSETFUNCTION) {f*=-1;}
       ierr = VecSetValues(snes_f,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f.data())[0],ADD_VALUES); CHKERRQ(ierr);
     }
     
@@ -552,38 +561,126 @@ namespace MoFEM {
   }
   
   
-  PetscErrorCode ElasticFE_RVELagrange_Disp::Lhs() {
+  //********************************************************************************
+  vector<ublas::vector<FieldData> > f_ext;
+  vector<ublas::vector<FieldData> > f_ext_trans;
+  
+  PetscErrorCode ElasticFE_RVELagrange_Disp::Rhs_fext() {
     PetscFunctionBegin;
     ierr = Stiffness(); CHKERRQ(ierr);
     
+    ublas::vector<ublas::vector<FieldData> > Data_elm_main;  //u for each element
+    ublas::vector<ublas::vector<FieldData> > Data_elm_Lamda; //lambda (Lagrange multiplieres) for each element
+
+//    cout<<"row_mat = "<< row_mat << endl;
+    Data_elm_main.resize(row_mat);
+    Data_elm_Lamda.resize(row_mat);
     
+    for(int rr=0; rr<row_mat; rr++){
+        Data_elm_main[rr].resize(RowGlob[rr].size());
+        Data_elm_Lamda[rr].resize(RowGlob[rr].size());
+
+        switch(rr) {
+          case 0:  //for nodes
+//            cout<<"For nodes"<<endl;
+            const EntityHandle* conn;
+            int num_nodes;
+            rval = mField.get_moab().get_connectivity(fePtr->get_ent(),conn,num_nodes,true); CHKERR_PETSC(rval);
+            //                    cout<<"num_nodes  =  "<<num_nodes<<endl;
+            for(int nn = 0;nn<num_nodes; nn++) {
+              for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_(mField,field_main,conn[nn],iit)) {
+                Data_elm_main[rr][rank_field*nn+iit->get_dof_rank()]=iit->get_FieldData();
+              }
+              for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_(mField,field_lagrange,conn[nn],iit)) {
+                Data_elm_Lamda[rr][rank_field*nn+iit->get_dof_rank()]=iit->get_FieldData();
+              }
+            }
+//            cout<<"field "<<field_main<<endl;
+//            for(int ii=0; ii<Data_elm_main[rr].size(); ii++) cout<<Data_elm_main[rr][ii]<<" ";
+//            cout<<endl;
+//            cout<<"field "<<field_lagrange<<endl;
+//            for(int ii=0; ii<Data_elm_Lamda[rr].size(); ii++) cout<<Data_elm_Lamda[rr][ii]<<" ";
+//            cout<<endl;
+            break;
+          case 1:  case 2:  case 3: { //For edges
+//            cout<<"For Edges"<<endl;
+            EntityHandle edge;
+            rval = moab.side_element(fePtr->get_ent(),1,rr-1,edge); CHKERR_PETSC(rval);
+            for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_(mField,field_main,edge,iit)) {
+              Data_elm_main[rr][iit->get_EntDofIdx()]=iit->get_FieldData();
+            }
+            for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_(mField,field_lagrange,edge,iit)) {
+              Data_elm_Lamda[rr][iit->get_EntDofIdx()]=iit->get_FieldData();
+            }
+//            cout<<"field "<<field_main<<endl;
+//            for(int ii=0; ii<Data_elm_main[rr].size(); ii++) cout<<Data_elm_main[rr][ii]<<" ";
+//            cout<<endl;
+//            cout<<"field "<<field_lagrange<<endl;
+//            for(int ii=0; ii<Data_elm_Lamda[rr].size(); ii++) cout<<Data_elm_Lamda[rr][ii]<<" ";
+//            cout<<endl;
+            break;
+          }
+            
+          case 4: //for face
+//            cout<<"For Face"<<endl;
+            for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_(mField,field_main,fePtr->get_ent(),iit)) {
+              Data_elm_main[rr][iit->get_EntDofIdx()]=iit->get_FieldData();
+            }
+            for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_(mField,field_lagrange,fePtr->get_ent(),iit)) {
+              Data_elm_Lamda[rr][iit->get_EntDofIdx()]=iit->get_FieldData();
+            }
+//            cout<<"field "<<field_main<<endl;
+//            for(int ii=0; ii<Data_elm_main[rr].size(); ii++) cout<<Data_elm_main[rr][ii]<<" ";
+//            cout<<endl;
+//            cout<<"field "<<field_lagrange<<endl;
+//            for(int ii=0; ii<Data_elm_Lamda[rr].size(); ii++) cout<<Data_elm_Lamda[rr][ii]<<" ";
+//            cout<<endl;
+            break;
+        }
+      }
+
+    f_ext.resize(row_mat);    //cu * u
+    f_ext_trans.resize(row_mat);  //trans(c)*lamda
     
+    for(int rr = 0;rr<row_mat;rr++) {
+      if(RowGlob[rr].size()==0) continue;
+      int rr_start=0;
+      for(int cc = 0;cc<row_mat;cc++) {
+        if(ColGlob[cc].size()==0) continue;
+//        cout<<"rr "<<rr<<endl;
+//        cout<<"cc "<<cc<<endl;
+//        cout<<"NTN(rr,cc) "<<NTN(rr,cc)<<endl;
+//        cout<<"Data_elm_main[cc] "<<Data_elm_main[cc]<<endl;
+//        cout<<"Data_elm_Lamda[cc] "<<Data_elm_Lamda[cc]<<endl;
+//        cout<<"f_ext[rr] "<<f_ext[rr]<<endl;
+//        cout<<"f_ext_trans[rr] "<<f_ext_trans[rr]<<endl;
+        if(rr_start == 0) {
+          f_ext[rr]       =  prod(NTN(rr,cc),Data_elm_main[cc]);
+          f_ext_trans[rr] =  prod(Data_elm_Lamda[cc], trans(NTN(rr,cc)));
+          rr_start++;
+        } else {
+          f_ext[rr]       +=  prod(NTN(rr,cc),Data_elm_main[cc]);
+          f_ext_trans[rr] +=  prod(Data_elm_Lamda[cc], trans(NTN(rr,cc)));
+        }
+//        cout<<"f_ext[rr] "<<f_ext[rr]<<endl;
+//        cout<<"f_ext_trans[rr] "<<f_ext_trans[rr]<<endl;
+      }
+    }
     
-    
-    
-    
-//    //Assembly C with size (3M x 3N), where M is number of nodes on boundary and N are total nodes
-//    for(int rr = 0;rr<row_mat;rr++) {
-//      for(int cc = 0;cc<row_mat;cc++) {
-//        if(ColGlob[cc].size()==0) continue;
-//        if(RowGlob[rr].size()!=NTN(rr,cc).size1()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-//        if(ColGlob[cc].size()!=NTN(rr,cc).size2()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-//        ierr = MatSetValues(*snes_B,RowGlob[rr].size(),&(RowGlob[rr])[0],ColGlob[cc].size(),&(ColGlob[cc])[0],&(NTN(rr,cc).data())[0],ADD_VALUES); CHKERRQ(ierr);
-//      }
-//    }
-//    
-//    //Assembly trans(C) with size (3Nx3M), where M is number of nodes on boundary and N are total nodes
-//    for(int rr = 0;rr<row_mat;rr++) {
-//      for(int cc = 0;cc<row_mat;cc++) {
-//        NTN(rr,cc) = trans(NTN(rr,cc));
-//        ierr = MatSetValues(*snes_B,ColGlob[cc].size(),&(ColGlob[cc])[0],RowGlob[rr].size(),&(RowGlob[rr])[0],&(NTN(rr,cc).data())[0],ADD_VALUES); CHKERRQ(ierr);
-//      }
-//    }
+    for(int rr = 0;rr<row_mat;rr++) {
+      if(RowGlob[rr].size()==0) continue;
+      if(RowGlob[rr].size()!=f_ext[rr].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+//      cout<<"ColGlob[rr] "<<ColGlob[rr].size()<<endl;
+//      cout<<"f_ext_trans[rr] "<<f_ext_trans[rr]<<endl;
+      if(ColGlob[rr].size()!=f_ext_trans[rr].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+      ierr = VecSetValues(snes_f,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f_ext[rr].data()[0]),ADD_VALUES); CHKERRQ(ierr);
+      ierr = VecSetValues(snes_f,ColGlob[rr].size(),&(ColGlob[rr])[0],&(f_ext_trans[rr].data()[0]),ADD_VALUES); CHKERRQ(ierr);
+    }
+//    std::string wait;
+//    std::cin >> wait;
     PetscFunctionReturn(0);
   }
-
-  
-  
+//********************************************************************************
   
   PetscErrorCode ElasticFE_RVELagrange_Disp::operator()() {
     PetscFunctionBegin;

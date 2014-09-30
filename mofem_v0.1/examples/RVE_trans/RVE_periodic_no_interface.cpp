@@ -447,9 +447,9 @@ int main(int argc, char *argv[]) {
     cout<<"YcoordMin "<<YcoordMin << "      YcoordMax "<<YcoordMax <<endl;
     cout<<"ZcoordMin "<<ZcoordMin << "      ZcoordMax "<<ZcoordMax <<endl;
     
-    XcoordMin =-1.5;      XcoordMax =1.5;
-    YcoordMin =-0.15;      YcoordMax =0.15;
-    ZcoordMin =-0.195;      ZcoordMax =0.585;
+//    XcoordMin =-1.5;      XcoordMax =1.5;
+//    YcoordMin =-0.15;      YcoordMax =0.15;
+//    ZcoordMin =-0.195;      ZcoordMax =0.585;
 
     //Creating Prisims between triangles on -ve and +ve faces
     typedef Face_CenPos_Handle_multiIndex::index<Tri_Hand_tag>::type::iterator Tri_Hand_iterator;

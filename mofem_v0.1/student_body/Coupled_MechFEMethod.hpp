@@ -101,10 +101,13 @@ namespace MoFEM {
       double conc_gauss;
       K.resize(row_mat,col_mat);
       int g_dim = g_NTET.size()/4;
+//      cout<<"g_dim  = " <<g_dim<<endl;
       for(int rr = 0;rr<row_mat;rr++) {
         if(RowGlob[rr].size()==0) continue;
         for(int gg = 0;gg<g_dim;gg++) {
           conc_gauss=(conc[gg])[0];
+//          cout<<"conc_gauss "<<conc_gauss<<endl;
+
           ierr = calculateD_mech(_young,_pois,conc_gauss); CHKERRQ(ierr);
 //          cout<<"D "<<D<<endl;
 
@@ -161,7 +164,7 @@ namespace MoFEM {
         vector< ublas::vector< FieldData > > conc;
         ierr = GetGaussDataVector("CONC",conc); CHKERRQ(ierr);
         double conc_gauss;
-        //      cout<<"conc[0] "<<conc[0]<<endl;
+//      cout<<"conc[0] "<<conc[0]<<endl;
         
         //Gradient at Gauss points;
         vector< ublas::matrix< FieldData > > GradU_at_GaussPt;
@@ -174,6 +177,7 @@ namespace MoFEM {
         for(;viit!=GradU_at_GaussPt.end();viit++,gg++) {
           try {
             ublas::matrix< FieldData > GradU = *viit;
+//            cout<<"GradU "<<GradU<<endl;
             if(!invH.empty()) {
               //GradU =
               //[ dU/dChi1 dU/dChi2 dU/dChi3 ]
@@ -223,7 +227,7 @@ namespace MoFEM {
             SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
           }
         }
-        
+
       } catch (const std::exception& ex) {
         ostringstream ss;
         ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;

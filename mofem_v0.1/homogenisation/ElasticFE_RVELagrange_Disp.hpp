@@ -76,7 +76,8 @@ namespace MoFEM {
     ublas::vector<ublas::matrix<FieldData> > D_mat;
     ublas::vector<FieldData> f; //f.resize(9);
     virtual PetscErrorCode Rhs();
-    
+    virtual PetscErrorCode Rhs_fext();
+
     //Loop over all the elements
     PetscErrorCode operator()();
     

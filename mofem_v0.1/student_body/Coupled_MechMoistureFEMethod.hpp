@@ -57,7 +57,9 @@ namespace MoFEM {
       G_W_TET = G_TET_W45;
       
       dE_dc=-3000;
-      beta=0.0001e9;
+//      beta=0.0001e9;
+      beta=0.0001;
+
     };
     
     ErrorCode rval;
@@ -134,9 +136,9 @@ namespace MoFEM {
       D.clear();
       
       //Assuming linear relation between moisture and E
-      young=young-3000*conc_gauss;
+      young=young+dE_dc*conc_gauss;
       //      cout<<"conc_gauss "<<conc_gauss<<endl;
-      //      cout<<"young "<<young<<endl<<endl;
+//      cout<<"young "<<young<<endl<<endl;
       
       double D00,D01,D33,constt;
       constt=young/((1+nu)*(1-2*nu));
@@ -296,7 +298,7 @@ namespace MoFEM {
     }
     
     /******************************************************************************************
-     Kuc=integral (BT  dD/dc strain dE/dc [Ni])
+     Kuc calculation
      ******************************************************************************************/
     ublas::matrix< FieldData > I;
     ublas::matrix<ublas::matrix<FieldData> > K;
@@ -317,7 +319,7 @@ namespace MoFEM {
       //moisture concentration at gasus point
       vector< ublas::vector< FieldData > > conc;
       ierr = GetGaussDataVector("CONC",conc); CHKERRQ(ierr);
-      cout<<"conc[0] "<<conc[0]<<endl;
+//      cout<<"conc[0] "<<conc[0]<<endl;
       
       //calculate strain
       //Gradient at Gauss points;
@@ -331,6 +333,8 @@ namespace MoFEM {
       for(int gg = 0;gg<g_dim;gg++,viit++) {
         //strain claculation
         ublas::matrix< FieldData > GradU = *viit;
+//        cout<<"GradU "<<GradU<<endl;
+
         ublas::matrix< FieldData > Strain = 0.5*( GradU + trans(GradU) );
         ublas::matrix< FieldData > VoightStrain(6,1);
         VoightStrain(0,0) = Strain(0,0);
@@ -350,7 +354,7 @@ namespace MoFEM {
           
 //          cout<<"prod(D,beta*I) "<<prod(D,beta*I)<<endl;
 //          cout<<"prod(dD_dE*dE_dc,(VoightStrain-beta*conc_gauss*I)) "<<prod(dD_dE*dE_dc,(VoightStrain-beta*conc_gauss*I))<<endl;
-          ublas::matrix<FieldData> AA=prod(dD_dE*dE_dc,(VoightStrain-beta*conc_gauss*I))-prod(D,beta*I);
+          ublas::matrix<FieldData> AA=prod(dD_dE*dE_dc,(VoightStrain-beta*abs(conc_gauss)*I))-prod(D,beta*I);
           double w = V*G_W_TET[gg];
           row_Mat = prod(w*trans(Bmat),AA);
           
@@ -389,13 +393,14 @@ namespace MoFEM {
       PetscFunctionReturn(0);
     }
 
-    //******************************************************************************************
+     //******************************************************************************************
     vector<ublas::vector<FieldData> > f_int;
     virtual PetscErrorCode Fint() {
       PetscFunctionBegin;
       try {
         ublas::vector< FieldData >  Ivec;  Ivec.resize(6);  Ivec.clear();
         Ivec[0] = 1;  Ivec[1] = 1;  Ivec[2] = 1;
+//        cout<<"Ivec "<<Ivec<<endl;
         double _young,_pois;
         ierr = GetMatParameters_mech(&_young,&_pois); CHKERRQ(ierr);
         
@@ -403,7 +408,7 @@ namespace MoFEM {
         vector< ublas::vector< FieldData > > conc;
         ierr = GetGaussDataVector("CONC",conc); CHKERRQ(ierr);
         double conc_gauss;
-        //      cout<<"conc[0] "<<conc[0]<<endl;
+//        cout<<"conc[0] "<<conc[0]<<endl;
 
         //Gradient at Gauss points;
         vector< ublas::matrix< FieldData > > GradU_at_GaussPt;
@@ -417,6 +422,8 @@ namespace MoFEM {
           try {
             ublas::matrix< FieldData > GradU = *viit;
             ublas::matrix< FieldData > Strain = 0.5*( GradU + trans(GradU) );
+//            cout<<"GradU "<<GradU<<endl;
+
             ublas::vector< FieldData > VoightStrain(6);
             VoightStrain[0] = Strain(0,0);
             VoightStrain[1] = Strain(1,1);
@@ -429,7 +436,10 @@ namespace MoFEM {
             ierr = calculateD_mech(_young,_pois,conc_gauss); CHKERRQ(ierr);
             //        cout<<"D "<<D<<endl;
             
-            ublas::vector< FieldData > StrianSwell=beta*Ivec*conc_gauss;
+            ublas::vector< FieldData > StrianSwell=beta*Ivec*abs(conc_gauss);
+//            cout<<"VoightStrain "<<VoightStrain<<endl;
+//            cout<<"StrianSwell "<<StrianSwell<<endl;
+            
             VoightStrain=VoightStrain-StrianSwell;
             
             double w = V*G_W_TET[gg];
@@ -453,6 +463,7 @@ namespace MoFEM {
             SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
           }
         }
+
         
       } catch (const std::exception& ex) {
         ostringstream ss;
@@ -463,13 +474,18 @@ namespace MoFEM {
       PetscFunctionReturn(0);
     }
    
-    //******************************************************************************************
+    
+     //******************************************************************************************
     virtual PetscErrorCode Fint(Vec F_int) {
       PetscFunctionBegin;
       try {
         ierr = Fint(); CHKERRQ(ierr);
         for(int rr = 0;rr<row_mat;rr++) {
           if(RowGlob[rr].size()==0) continue;
+//          cout<<"f_int[rr] "<<f_int[rr]<<endl;
+          
+          f_int[rr]*=1;
+          
           if(RowGlob[rr].size()!=f_int[rr].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
           ierr = VecSetValues(F_int,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f_int[rr].data()[0]),ADD_VALUES); CHKERRQ(ierr);
         }
@@ -484,20 +500,23 @@ namespace MoFEM {
     PetscErrorCode operator()() {
       PetscFunctionBegin;
       ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
-      cout<<"Hi from Coupled_MechMoistureFEMethod Class "<<endl;
+//      cout<<"Hi from Coupled_MechMoistureFEMethod Class "<<endl;
       ierr = GetMatrices(); CHKERRQ(ierr);
       
       switch(snes_ctx) {
         case CTX_SNESNONE: {
+//          cout<<"CTX_SNESNONE "<<endl;
           ierr = Rhs(); CHKERRQ(ierr);
           ierr = Lhs(); CHKERRQ(ierr);
         }
         break;
         case CTX_SNESSETFUNCTION: {
+//          cout<<"CTX_SNESSETFUNCTION "<<endl;
           ierr = Rhs(); CHKERRQ(ierr);
         }
         break;
         case CTX_SNESSETJACOBIAN: {
+//          cout<<"CTX_SNESSETJACOBIAN "<<endl;
           ierr = Lhs(); CHKERRQ(ierr);
         }
         break;

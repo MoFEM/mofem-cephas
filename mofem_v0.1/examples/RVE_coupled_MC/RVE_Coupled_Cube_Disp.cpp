@@ -146,7 +146,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.modify_finite_element_add_field_col("Kcc","CONC"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_data("Kcc","CONC"); CHKERRQ(ierr);
 
-  //Define rows/cols and element data for Kuc
+//  //Define rows/cols and element data for Kuc
   ierr = mField.modify_finite_element_add_field_row("Kuc","DISPLACEMENT"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_col("Kuc","CONC"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_data("Kuc","DISPLACEMENT"); CHKERRQ(ierr);
@@ -167,7 +167,6 @@ int main(int argc, char *argv[]) {
   ierr = mField.modify_finite_element_add_field_data("Lagrange_elm_disp","Lagrange_mul_disp"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_data("Lagrange_elm_disp","DISPLACEMENT"); CHKERRQ(ierr);
   //=====================================================================================================
-
   
   //Moisture (Cu and CuT)
   //=====================================================================================================
@@ -288,13 +287,58 @@ int main(int argc, char *argv[]) {
   SnesCtx snes_ctx(mField,"COUPLED_MECH_MOIS");
   const double young_modulus = 1;
   const double poisson_ratio = 0.0;
-  
+    
   Coupled_MechFEMethod my_fe_mech(mField,Aij,D,F,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
   MoistureFEMethod my_fe_mois(mField,Aij,D,F);
   Coupled_MechMoistureFEMethod my_fe_coupled_mechmois(mField,Aij,D,F);
+  
+
   ElasticFE_RVELagrange_Disp MyFE_RVELagrange_mech(mField,Aij,D,F,applied_strain,"DISPLACEMENT","Lagrange_mul_disp",field_rank_mech);
   ElasticFE_RVELagrange_Disp MyFE_RVELagrange_mois(mField,Aij,D,F,applied_congrad,"CONC","Lagrange_mul_conc",field_rank_mois);
 
+  
+//  //*********************************************************************************************************
+//  //to solve linear problem
+//  //*********************************************************************************************************
+//  ierr = VecZeroEntries(F); CHKERRQ(ierr);
+//  ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+//  ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+//  ierr = MatZeroEntries(Aij); CHKERRQ(ierr);
+//  
+//  ierr = mField.loop_finite_elements("COUPLED_MECH_MOIS","Kuu",my_fe_mech);  CHKERRQ(ierr);
+////  ierr = mField.loop_finite_elements("COUPLED_MECH_MOIS","Kcc",my_fe_mois);  CHKERRQ(ierr);
+//  ierr = mField.loop_finite_elements("COUPLED_MECH_MOIS","Lagrange_elm_disp",MyFE_RVELagrange_mech);  CHKERRQ(ierr);
+////  ierr = mField.loop_finite_elements("COUPLED_MECH_MOIS","Lagrange_elm_conc",MyFE_RVELagrange_mois);  CHKERRQ(ierr);
+//
+//  ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+//  ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+//  ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
+//  ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
+//  ierr = MatAssemblyBegin(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+//  ierr = MatAssemblyEnd(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+//  
+//  PetscSynchronizedFlush(PETSC_COMM_WORLD);
+//  //Matrix View
+//  MatView(Aij,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
+//  std::string wait;
+//  std::cin >> wait;
+//
+//  //Solver
+//  KSP solverM;
+//  ierr = KSPCreate(PETSC_COMM_WORLD,&solverM); CHKERRQ(ierr);
+//  ierr = KSPSetOperators(solverM,Aij,Aij,SAME_NONZERO_PATTERN); CHKERRQ(ierr);
+//  ierr = KSPSetFromOptions(solverM); CHKERRQ(ierr);
+//  ierr = KSPSetUp(solverM); CHKERRQ(ierr);
+//  
+//  ierr = KSPSolve(solverM,F,D); CHKERRQ(ierr);
+//  ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+//  ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+//  
+//  //Save data on mesh
+//  ierr = mField.set_global_VecCreateGhost("COUPLED_MECH_MOIS",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+//  ierr = VecView(D,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+//  //*********************************************************************************************************
+  
   SNES snes;
   ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);
   ierr = SNESSetApplicationContext(snes,&snes_ctx); CHKERRQ(ierr);
@@ -304,94 +348,95 @@ int main(int argc, char *argv[]) {
 
   SnesCtx::loops_to_do_type& loops_to_do_Rhs = snes_ctx.get_loops_to_do_Rhs();
 //  snes_ctx.get_preProcess_to_do_Rhs().push_back(&MyDirichletBC);
-  loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("Kuu",&my_fe_mech));
+//  loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("Kuu",&my_fe_mech));  // we are calculting this already in Kuc
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("Kcc",&my_fe_mois));
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("Kuc",&my_fe_coupled_mechmois));
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("Lagrange_elm_disp",&MyFE_RVELagrange_mech));
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("Lagrange_elm_conc",&MyFE_RVELagrange_mois));
 //  snes_ctx.get_postProcess_to_do_Rhs().push_back(&MyDirichletBC);
 
-//  SnesCtx::loops_to_do_type& loops_to_do_Mat = snes_ctx.get_loops_to_do_Mat();
-////  snes_ctx.get_preProcess_to_do_Mat().push_back(&MyDirichletBC);
-//  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("Kuu",&my_fe_mech));
-//  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("Kcc",&my_fe_mois));
-//  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("Kuc",&my_fe_coupled_mechmois));
-//  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("Lagrange_elm_disp",&MyFE_RVELagrange_mech));
-//  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("Lagrange_elm_conc",&MyFE_RVELagrange_mois));
-////  snes_ctx.get_postProcess_to_do_Mat().push_back(&MyDirichletBC);
-//
-//  ierr = mField.set_local_VecCreateGhost("COUPLED_MECH_MOIS",COL,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-//  ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-//  ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-//
-//  ierr = SNESSolve(snes,PETSC_NULL,D); CHKERRQ(ierr);
-//  int its;
-//  ierr = SNESGetIterationNumber(snes,&its); CHKERRQ(ierr);
-//  ierr = PetscPrintf(PETSC_COMM_WORLD,"number of Newton iterations = %D\n",its); CHKERRQ(ierr);
-//
-//  ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-//  ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-//  
-//  //Save data on mesh
-//  ierr = mField.set_global_VecCreateGhost("COUPLED_MECH_MOIS",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  SnesCtx::loops_to_do_type& loops_to_do_Mat = snes_ctx.get_loops_to_do_Mat();
+//  snes_ctx.get_preProcess_to_do_Mat().push_back(&MyDirichletBC);
+  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("Kuu",&my_fe_mech));
+  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("Kcc",&my_fe_mois));
+  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("Kuc",&my_fe_coupled_mechmois));
+  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("Lagrange_elm_disp",&MyFE_RVELagrange_mech));
+  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("Lagrange_elm_conc",&MyFE_RVELagrange_mois));
+//  snes_ctx.get_postProcess_to_do_Mat().push_back(&MyDirichletBC);
+
+  ierr = mField.set_local_VecCreateGhost("COUPLED_MECH_MOIS",COL,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+
+  ierr = SNESSolve(snes,PETSC_NULL,D); CHKERRQ(ierr);
+  int its;
+  ierr = SNESGetIterationNumber(snes,&its); CHKERRQ(ierr);
+  ierr = PetscPrintf(PETSC_COMM_WORLD,"number of Newton iterations = %D\n",its); CHKERRQ(ierr);
+
+  ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  
+  //Save data on mesh
+  ierr = mField.set_global_VecCreateGhost("COUPLED_MECH_MOIS",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 //  ierr = VecView(D,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-//  
-//  //Save data on mesh
-//  ierr = mField.set_global_VecCreateGhost("COUPLED_MECH_MOIS",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-//  ierr = VecView(D,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-//  
-//  //Calculation of Homogenized stress
-//  //=======================================================================================================================================================
-//  double RVE_volume;    RVE_volume=0.0;  //RVE volume for full RVE We need this for stress calculation
-//  Vec RVE_volume_Vec;
-//  ierr = VecCreateMPI(PETSC_COMM_WORLD, 1, pcomm->size(), &RVE_volume_Vec);  CHKERRQ(ierr);
-//  ierr = VecZeroEntries(RVE_volume_Vec); CHKERRQ(ierr);
-//  
-//  RVEVolume MyRVEVol(mField,Aij,D,F,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio), RVE_volume_Vec);
-//  ierr = mField.loop_finite_elements("COUPLED_MECH_MOIS","ELASTIC",MyRVEVol);  CHKERRQ(ierr);
-//  //    ierr = VecView(RVE_volume_Vec,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-//  ierr = VecSum(RVE_volume_Vec, &RVE_volume);  CHKERRQ(ierr);
-////    cout<<"Final RVE_volume = "<< RVE_volume <<endl;
-//  
-//  
-//  //create a vector for 6 components of homogenized stress
-//  Vec Stress_Homo;
-//  ierr = VecCreateMPI(PETSC_COMM_WORLD, 6, 6*pcomm->size(), &Stress_Homo);  CHKERRQ(ierr);
-//  ierr = VecZeroEntries(Stress_Homo); CHKERRQ(ierr);
-//  
-//  //    ierr = VecView(D,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-//  ElasticFE_RVELagrange_Homogenized_Stress_Disp MyFE_RVEHomoStressDisp(mField,Aij,D,F,&RVE_volume, applied_strain, Stress_Homo,"DISPLACEMENT","Lagrange_mul_disp",field_rank);
-//  ierr = mField.loop_finite_elements("COUPLED_MECH_MOIS","Lagrange_elem",MyFE_RVEHomoStressDisp);  CHKERRQ(ierr);
-//  
-////  if(pcomm->rank()) cout<< " Stress_Homo =  "<<endl;
-////  ierr = VecView(Stress_Homo,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-//  
-//  if(pcomm->rank()==0){
-//    PetscScalar    *avec;
-//    VecGetArray(Stress_Homo, &avec);
-//    
-//    cout<< "\nStress_Homo = \n\n";
-//    for(int ii=0; ii<6; ii++){
-//      cout <<*avec<<endl; ;
-//      avec++;
-//    }
-//  }
-//  cout<< "\n\n";
-//
-//  //=======================================================================================================================================================
-//
-//  
-//  PostProcVertexMethod ent_method(moab);
-//  ierr = mField.loop_dofs("COUPLED_MECH_MOIS","DISPLACEMENT",ROW,ent_method); CHKERRQ(ierr);
-//  
-//  if(pcomm->rank()==0) {
-//    EntityHandle out_meshset;
-//    rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
-//    ierr = mField.problem_get_FE("COUPLED_MECH_MOIS","ELASTIC",out_meshset); CHKERRQ(ierr);
-//    rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
-//    rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
-//  }
-//  
+//  ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+
+
+  PostProcVertexMethod ent_method(mField.get_moab(),"DISPLACEMENT");
+  ierr = mField.loop_dofs("COUPLED_MECH_MOIS","DISPLACEMENT",ROW,ent_method); CHKERRQ(ierr);
+  PostProcVertexMethod ent_method1(mField.get_moab(),"CONC");
+  ierr = mField.loop_dofs("CONC",ent_method1); CHKERRQ(ierr);
+
+  if(pcomm->rank()==0) {
+    EntityHandle out_meshset;
+    rval = mField.get_moab().create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
+    ierr = mField.problem_get_FE("COUPLED_MECH_MOIS","Kuu",out_meshset); CHKERRQ(ierr);
+    rval = mField.get_moab().write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
+    rval = mField.get_moab().delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
+  }
+
+  
+  //Calculation of Homogenized stress
+  //=======================================================================================================================================================
+  double RVE_volume;    RVE_volume=0.0;  //RVE volume for full RVE We need this for stress calculation
+  Vec RVE_volume_Vec;
+  ierr = VecCreateMPI(PETSC_COMM_WORLD, 1, pcomm->size(), &RVE_volume_Vec);  CHKERRQ(ierr);
+  ierr = VecZeroEntries(RVE_volume_Vec); CHKERRQ(ierr);
+  
+  RVEVolume MyRVEVol(mField,Aij,D,F,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio), RVE_volume_Vec);
+  ierr = mField.loop_finite_elements("COUPLED_MECH_MOIS","Kuu",MyRVEVol);  CHKERRQ(ierr);
+  //    ierr = VecView(RVE_volume_Vec,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+  ierr = VecSum(RVE_volume_Vec, &RVE_volume);  CHKERRQ(ierr);
+    cout<<"Final RVE_volume = "<< RVE_volume <<endl;
+  
+  
+  //create a vector for 6 components of homogenized stress
+  Vec Stress_Homo;
+  ierr = VecCreateMPI(PETSC_COMM_WORLD, 6, 6*pcomm->size(), &Stress_Homo);  CHKERRQ(ierr);
+  ierr = VecZeroEntries(Stress_Homo); CHKERRQ(ierr);
+  
+  //    ierr = VecView(D,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+  ElasticFE_RVELagrange_Homogenized_Stress_Disp MyFE_RVEHomoStressDisp(mField,Aij,D,F,&RVE_volume, applied_strain, Stress_Homo,"DISPLACEMENT","Lagrange_mul_disp",field_rank_mech);
+  ierr = mField.loop_finite_elements("COUPLED_MECH_MOIS","Lagrange_elm_disp",MyFE_RVEHomoStressDisp);  CHKERRQ(ierr);
+  
+//  if(pcomm->rank()) cout<< " Stress_Homo =  "<<endl;
+//  ierr = VecView(Stress_Homo,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+  
+  if(pcomm->rank()==0){
+    PetscScalar    *avec;
+    VecGetArray(Stress_Homo, &avec);
+    
+    cout<< "\nStress_Homo = \n\n";
+    for(int ii=0; ii<6; ii++){
+      cout <<*avec<<endl; ;
+      avec++;
+    }
+  }
+  cout<< "\n\n";
+
+  //=======================================================================================================================================================
+
+  
 //  //PostProcDisplacemenysAndStarinOnRefMesh fe_post_proc_method(moab);
 //  PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh fe_post_proc_method(mField,"DISPLACEMENT",LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
 //  ierr = mField.loop_finite_elements("COUPLED_MECH_MOIS","ELASTIC",fe_post_proc_method);  CHKERRQ(ierr);

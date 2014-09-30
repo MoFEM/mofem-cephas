@@ -146,13 +146,11 @@ namespace MoFEM {
               break;
             case 1:  case 2:  case 3:  //For edges
               //                    cout<<"For Edges"<<endl;
-              for(int ee=0; ee<3; ee++) {
                 EntityHandle edge;
                 rval = moab.side_element(Tri_Prism,1,rr-1,edge); CHKERR_PETSC(rval);
                 for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_(mField,field_lagrange,edge,iit)) {
                   Lamda[rr][iit->get_EntDofIdx()]=iit->get_FieldData();
                 }
-              }
               //                        for(int ii=0; ii<Lamda[rr].size(); ii++) cout<<Lamda[rr][ii]<<" ";
               //                        cout<<endl;
               break;

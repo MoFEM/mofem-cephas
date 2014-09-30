@@ -310,8 +310,11 @@ namespace MoFEM {
             VoightStrain[0] = Strain(0,0);
             VoightStrain[1] = Strain(0,1);
             VoightStrain[2] = Strain(0,2);
-            double w = V*G_TET_W[gg];
+//            cout<<"VoightStrain "<<VoightStrain<<endl;
+            double w = V*G_W_TET[gg];
+//            cout<<"w "<<w<<endl;
             ublas::vector<FieldData> VoightStress = prod(w*D,VoightStrain);
+//            cout<<"VoightStress "<<VoightStress<<endl;
             //BT * VoigtStress
             f_int.resize(row_mat);
 
@@ -348,6 +351,7 @@ namespace MoFEM {
         for(int rr = 0;rr<row_mat;rr++) {
           if(RowGlob[rr].size()==0) continue;
           if(RowGlob[rr].size()!=f_int[rr].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+//          cout<<"f_int[rr] moisture "<<f_int[rr]<<endl;
           ierr = VecSetValues(F_int,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f_int[rr].data()[0]),ADD_VALUES); CHKERRQ(ierr);
         }
       } catch (const std::exception& ex) {
@@ -444,7 +448,7 @@ namespace MoFEM {
           break;
         case CTX_SNESSETFUNCTION: {
 //          cout<<"Hi from CTX_SNESSETFUNCTION"<<endl;
-//          ierr = Rhs(); CHKERRQ(ierr);
+          ierr = Rhs(); CHKERRQ(ierr);
         }
           break;
         case CTX_SNESSETJACOBIAN: {
