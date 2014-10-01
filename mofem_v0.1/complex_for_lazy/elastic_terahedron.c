@@ -130,7 +130,7 @@ PetscErrorCode HierarhicalDeformationGradient(
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode Calulate_Stresses_at_GaussPoint(
+PetscErrorCode Calculate_Stresses_at_GaussPoint(
   int *order_max_edge,int *order_max_face,int order_max_volume,
   int *order_X_edge,int *order_X_face,int order_X_volume,
   int *order_x_edge,int *order_x_face,int order_x_volume,

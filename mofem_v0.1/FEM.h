@@ -81,17 +81,17 @@ void print_mat_sym_upper(double *M,int m,int n);
 /// priint complex matrix
 void print_mat_complex(__CLPK_doublecomplex *M,int m,int n);
 
-/// \brief calulate shape functions of trianangle
+/// \brief calculate shape functions of trianangle
 /// \param N shape function array
 /// \param X array of Guass X coordinates 
 /// \param Y array of Guass Y coordinates 
 /// \param G_DIM number of Gauss points
-/// calulate shape function of MBTRI
+/// calculate shape function of MBTRI
 PetscErrorCode ShapeMBTRI(double *N,const double *X,const double *Y,const int G_DIM);
-/// calulate direvatives of shape functions
+/// calculate direvatives of shape functions
 PetscErrorCode ShapeDiffMBTRI(double *diffN);
 
-/// calulate face nornam
+/// calculate face nornam
 /// \param diffN direvatives of shape functions
 /// \param coords is position of the nodes
 /// \param normal vector
@@ -99,11 +99,11 @@ PetscErrorCode ShapeFaceNormalMBTRI(double *diffN,const double *coords,double *n
 PetscErrorCode ShapeFaceBaseMBTRI(
   double *diffN,const double *coords,
   double *normal,double *s1,double *s2);
-/// calulate direvative of normal in respect to nodal positions
+/// calculate direvative of normal in respect to nodal positions
 PetscErrorCode ShapeFaceDiffNormal_MBTRI(double *diffN,const double *coords,double *diff_normal);
-/// calulate jacobioan 
+/// calculate jacobioan 
 void ShapeJacMBTRI(double *diffN,const double *coords,double *Jac);
-/// calulate direvatives of shape functions in space
+/// calculate direvatives of shape functions in space
 void ShapeDiffMBTRIinvJ(double *diffN,double *invJac,double *diffNinvJac);
 /// caluate shape functions
 PetscErrorCode ShapeMBTET(double *N,const double *G_X,const double *G_Y,const double *G_Z,int DIM);
@@ -111,16 +111,16 @@ PetscErrorCode ShapeMBTET(double *N,const double *G_X,const double *G_Y,const do
 PetscErrorCode ShapeDiffMBTET(double *diffN);
 /// determinad of jacobian
 double Shape_detJac(double *Jac);
-/// calulate jacobian
+/// calculate jacobian
 PetscErrorCode ShapeJacMBTET(double *diffN,const double *coords,double *Jac);
-// calulate inverse of jacobian
+// calculate inverse of jacobian
 PetscErrorCode Shape_invJac(double *Jac);
-/// calulate TET volume
+/// calculate TET volume
 double Shape_intVolumeMBTET(double *diffN,const double *coords);
-/// calulate shape functions direvatives in space
+/// calculate shape functions direvatives in space
 PetscErrorCode ShapeDiffMBTETinvJ(double *diffN,double *invJac,double *diffNinvJac);
 
-/// calulate spin matrix from vector
+/// calculate spin matrix from vector
 // \param spinOmega is a spin matrxi
 // \param vecOmega is a spin vector
 PetscErrorCode Spin(double *spinOmega,double *vecOmega);
@@ -151,7 +151,7 @@ PetscErrorCode ShapeMBTET_inverse(double *N,double *diffN,const double *elem_coo
 PetscErrorCode GradientOfDeformation(double *diffN,double *dofs,double *F);
 
 /** 
- * \brief Calulate Lagrange approximation basis
+ * \brief Calculate Lagrange approximation basis
  *
  * \param p is approximation order
  * \param s is is position [-1,1]
@@ -161,6 +161,18 @@ PetscErrorCode GradientOfDeformation(double *diffN,double *dofs,double *F);
  * \param dim dimension
  */
 PetscErrorCode Lagrange_basis(int p,double s,double *diff_s,double *L,double *diffL,const int dim);
+/** 
+ * \brief Calculate Gegenbauer Polynomials and their derivatives
+ *
+ * \param p is approximation order
+ * \param alpha Gegenbauer factor
+ * \param s is is position [-1,1]
+ * \param diff_s direvatives of shape functions
+ * \param L appeoximation functions
+ * \param diffL direvatives
+ * \param dim dimension
+ */
+PetscErrorCode Gegenbauer_polynomials(int p,double alpha, double s,double *diff_s,double *L,double *diffL,const int dim);
 
 //2 Node edge
 PetscErrorCode ShapeMBEDGE(double *N,const double *G_X,int DIM);

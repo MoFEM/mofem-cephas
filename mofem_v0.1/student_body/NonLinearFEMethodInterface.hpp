@@ -42,7 +42,7 @@ namespace MoFEM {
  * vector<ublas::vector<FieldData,ublas::bounded_array<FieldData, 3> > > gap_loc;
  *
  * Having calculated gap, based on physical equation for interface, cohesive
- * forces are calculated. In particular,  RhsInt() function calulates vector of
+ * forces are calculated. In particular,  RhsInt() function calculates vector of
  * internal forces . In LhsInt() { ... }, tangent element stiffness matrix is
  * calculated.
  *
@@ -76,7 +76,7 @@ struct NonLinearInterfaceFEMethod: public InterfaceFEMethod {
 
   ublas::vector<FieldData> g;
 
-  /** \brief calulate gap norm
+  /** \brief calculate gap norm
    *
    */
   virtual PetscErrorCode Calc_g() {
@@ -97,7 +97,7 @@ struct NonLinearInterfaceFEMethod: public InterfaceFEMethod {
     PetscFunctionReturn(0);
   }
 
-  /** \brief calulate local and global material elastic stiffnes matrix for inteface
+  /** \brief calculate local and global material elastic stiffnes matrix for inteface
    *
    */
   virtual PetscErrorCode CalcDglob(const double _omega_) {
@@ -112,7 +112,7 @@ struct NonLinearInterfaceFEMethod: public InterfaceFEMethod {
     PetscFunctionReturn(0);
   }
   
-  /** \brief calulate damage variable
+  /** \brief calculate damage variable
    *
    */
   virtual PetscErrorCode Calc_omega(const double _kappa_,double& _omega_) {
@@ -139,7 +139,7 @@ struct NonLinearInterfaceFEMethod: public InterfaceFEMethod {
   }
 
   
-  /** \brief calulate local and global material elastic stiffnes matrix for inteface
+  /** \brief calculate local and global material elastic stiffnes matrix for inteface
    *
    */
   virtual PetscErrorCode CalcTangetDglob(const double _omega_,const double _g_,const ublas::vector<FieldData,ublas::bounded_array<FieldData, 3> >& _gap_loc_) {
@@ -172,7 +172,7 @@ struct NonLinearInterfaceFEMethod: public InterfaceFEMethod {
     PetscFunctionReturn(0);
   }
 
-  /** \brief calulate internal force vector
+  /** \brief calculate internal force vector
    *
    */
   PetscErrorCode RhsInt() {
@@ -224,7 +224,7 @@ struct NonLinearInterfaceFEMethod: public InterfaceFEMethod {
     PetscFunctionReturn(0);
   }
 
-  /** calulate elemement tangent matrix
+  /** calculate elemement tangent matrix
    *
    */
   PetscErrorCode LhsInt() {
@@ -408,9 +408,9 @@ struct ArcLengthIntElemFEMethod: public FieldInterface::FEMethod {
     PetscFunctionBegin;
     switch(snes_ctx) {
       case CTX_SNESSETFUNCTION: { 
-	ierr = calulate_dx_and_dlambda(snes_x); CHKERRQ(ierr);
-	ierr = calulate_db(); CHKERRQ(ierr);
-	ierr = calulate_lambda_int(lambda_int); CHKERRQ(ierr);
+	ierr = calculate_dx_and_dlambda(snes_x); CHKERRQ(ierr);
+	ierr = calculate_db(); CHKERRQ(ierr);
+	ierr = calculate_lambda_int(lambda_int); CHKERRQ(ierr);
       }
       break;
       default:
@@ -419,7 +419,7 @@ struct ArcLengthIntElemFEMethod: public FieldInterface::FEMethod {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode calulate_lambda_int(double &_lambda_int_) {
+  PetscErrorCode calculate_lambda_int(double &_lambda_int_) {
     PetscFunctionBegin;
     ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
     NumeredDofMoFEMEntity_multiIndex::index<PetscLocalIdx_mi_tag>::type::iterator dit,hi_dit;
@@ -461,7 +461,7 @@ struct ArcLengthIntElemFEMethod: public FieldInterface::FEMethod {
     PetscFunctionReturn(0);
   }
 
-  virtual PetscErrorCode calulate_db() {
+  virtual PetscErrorCode calculate_db() {
     PetscFunctionBegin;
     ierr = VecZeroEntries(arc_ptr->db); CHKERRQ(ierr);
     ierr = VecGhostUpdateBegin(arc_ptr->db,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -492,7 +492,7 @@ struct ArcLengthIntElemFEMethod: public FieldInterface::FEMethod {
 
     switch(snes_ctx) {
       case CTX_SNESSETFUNCTION: {
-	//calulate residual for arc length row
+	//calculate residual for arc length row
 	arc_ptr->res_lambda = lambda_int - arc_ptr->s;
 	ierr = VecSetValue(snes_f,arc_ptr->get_petsc_gloabl_dof_idx(),arc_ptr->res_lambda,ADD_VALUES); CHKERRQ(ierr);
 	PetscPrintf(PETSC_COMM_SELF,"\tres_lambda = %6.4e lambda_int = %6.4e s = %6.4e\n",
@@ -500,7 +500,7 @@ struct ArcLengthIntElemFEMethod: public FieldInterface::FEMethod {
       }
       break; 
       case CTX_SNESSETJACOBIAN: {
-	//calulate diagonal therm
+	//calculate diagonal therm
 	double diag = arc_ptr->beta*sqrt(arc_ptr->F_lambda2);
 	ierr = VecSetValue(GhostDiag,0,diag,INSERT_VALUES); CHKERRQ(ierr);
 	ierr = MatSetValue(*snes_B,arc_ptr->get_petsc_gloabl_dof_idx(),arc_ptr->get_petsc_gloabl_dof_idx(),1,ADD_VALUES); CHKERRQ(ierr);
@@ -536,7 +536,7 @@ struct ArcLengthIntElemFEMethod: public FieldInterface::FEMethod {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode calulate_dx_and_dlambda(Vec &x) {
+  PetscErrorCode calculate_dx_and_dlambda(Vec &x) {
     PetscFunctionBegin;
     //dx
     ierr = VecCopy(x,arc_ptr->dx); CHKERRQ(ierr);
@@ -552,7 +552,7 @@ struct ArcLengthIntElemFEMethod: public FieldInterface::FEMethod {
     //brodcast dlambda
     int part = arc_ptr->get_part();
     MPI_Bcast(&(arc_ptr->dlambda),1,MPI_DOUBLE,part,PETSC_COMM_WORLD);
-    //calulate dx2 (dot product)
+    //calculate dx2 (dot product)
     ierr = VecDot(arc_ptr->dx,arc_ptr->dx,&arc_ptr->dx2); CHKERRQ(ierr);
     PetscPrintf(PETSC_COMM_WORLD,"\tdlambda = %6.4e dx2 = %6.4e\n",arc_ptr->dlambda,arc_ptr->dx2);
     PetscFunctionReturn(0);

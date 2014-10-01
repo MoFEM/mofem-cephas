@@ -578,7 +578,7 @@ struct ThermalElement {
 
     ublas::vector<FieldData> Nf;
 
-    /** \brief calulate heat flux 
+    /** \brief calculate heat flux 
       *
       * F = int_S N^T * flux dS
       *

@@ -587,8 +587,8 @@ struct ArcLengthElemFEMethod: public FieldInterface::FEMethod {
     PetscFunctionBegin;
     switch(snes_ctx) {
       case CTX_SNESSETFUNCTION: { 
-	ierr = calulate_dx_and_dlambda(snes_x); CHKERRQ(ierr);
-	ierr = calulate_db(); CHKERRQ(ierr);
+	ierr = calculate_dx_and_dlambda(snes_x); CHKERRQ(ierr);
+	ierr = calculate_db(); CHKERRQ(ierr);
       }
       break;
       case CTX_SNESSETJACOBIAN: {
@@ -600,13 +600,13 @@ struct ArcLengthElemFEMethod: public FieldInterface::FEMethod {
     PetscFunctionReturn(0);
   }
 
-  double calulate_lambda_int() {
+  double calculate_lambda_int() {
     PetscFunctionBegin;
     return arc_ptr->alpha*arc_ptr->dx2 + pow(arc_ptr->dlambda,2)*pow(arc_ptr->beta,2)*arc_ptr->F_lambda2;
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode calulate_db() {
+  PetscErrorCode calculate_db() {
     PetscFunctionBegin;
     //db
     ierr = VecCopy(arc_ptr->dx,arc_ptr->db); CHKERRQ(ierr);
@@ -619,7 +619,7 @@ struct ArcLengthElemFEMethod: public FieldInterface::FEMethod {
 
     switch(snes_ctx) {
       case CTX_SNESSETFUNCTION: {
-	arc_ptr->res_lambda = calulate_lambda_int() - pow(arc_ptr->s,2);
+	arc_ptr->res_lambda = calculate_lambda_int() - pow(arc_ptr->s,2);
 	ierr = VecSetValue(snes_f,arc_ptr->get_petsc_gloabl_dof_idx(),arc_ptr->res_lambda,ADD_VALUES); CHKERRQ(ierr);
 	PetscPrintf(PETSC_COMM_SELF,"\tres_lambda = %6.4e\n",arc_ptr->res_lambda);
       }
@@ -664,7 +664,7 @@ struct ArcLengthElemFEMethod: public FieldInterface::FEMethod {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode calulate_dx_and_dlambda(Vec x) {
+  PetscErrorCode calculate_dx_and_dlambda(Vec x) {
     PetscFunctionBegin;
     //dx
     ierr = VecCopy(x,arc_ptr->dx); CHKERRQ(ierr);

@@ -1557,7 +1557,7 @@ struct FieldInterface: public FieldUnknownInterface {
     * \brief structure for User Loop Methods on finite elements
     * \ingroup mofem_loop_methods
     *
-    * It can be used to calulate stiffnes matrices, residuals, load vectors etc.
+    * It can be used to calculate stiffnes matrices, residuals, load vectors etc.
     */  
   struct FEMethod: public BasicMethod {
     FEMethod();
@@ -1571,7 +1571,7 @@ struct FieldInterface: public FieldUnknownInterface {
 
     /** \brief function is run for every finite element 
      *
-     * It is used to calulate element local matrices and assembly. It can be
+     * It is used to calculate element local matrices and assembly. It can be
      * used for post-processing.
      */
     PetscErrorCode operator()();
