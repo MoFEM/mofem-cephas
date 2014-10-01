@@ -69,7 +69,7 @@ struct MoFEMField {
     if(b != 0) return b;
     for(int ll = 1;ll<BITFIELDID_SIZE/32;ll++) {
       BitFieldId id;
-      id = (*tag_id_data)>>32;
+      id = (*tag_id_data)>>ll*32;
       b = ll*32+ffsl(id.to_ulong()); 
       if(b != 0) return b;
     }
