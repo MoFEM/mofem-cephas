@@ -255,7 +255,8 @@ const MoFEMField* FieldCore::get_field_structure(const string& name) {
   return &*miit;
 }
 BitFieldId FieldCore::get_field_shift() {
-  return BitFieldId().set(((*f_shift)++)-1);
+  //assert((unsigned int)*f_shift<BitFieldId().set().to_ulong());
+  return BitFieldId().set(((*f_shift)++)-1);//(BitFieldId)(1<<(((*f_shift)++)-1)); 
 }
 BitFEId FieldCore::get_BitFEId() {
   assert((unsigned int)*MoFEMFiniteElement_shift<BitFEId().set().to_ulong());
