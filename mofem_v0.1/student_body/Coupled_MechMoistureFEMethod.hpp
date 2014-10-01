@@ -354,7 +354,7 @@ namespace MoFEM {
           
 //          cout<<"prod(D,beta*I) "<<prod(D,beta*I)<<endl;
 //          cout<<"prod(dD_dE*dE_dc,(VoightStrain-beta*conc_gauss*I)) "<<prod(dD_dE*dE_dc,(VoightStrain-beta*conc_gauss*I))<<endl;
-          ublas::matrix<FieldData> AA=prod(dD_dE*dE_dc,(VoightStrain-beta*abs(conc_gauss)*I))-prod(D,beta*I);
+          ublas::matrix<FieldData> AA=prod(dD_dE*dE_dc,(VoightStrain-beta*conc_gauss*I))-prod(D,beta*I);
           double w = V*G_W_TET[gg];
           row_Mat = prod(w*trans(Bmat),AA);
           
@@ -436,7 +436,7 @@ namespace MoFEM {
             ierr = calculateD_mech(_young,_pois,conc_gauss); CHKERRQ(ierr);
             //        cout<<"D "<<D<<endl;
             
-            ublas::vector< FieldData > StrianSwell=beta*Ivec*abs(conc_gauss);
+            ublas::vector< FieldData > StrianSwell=beta*Ivec*conc_gauss;
 //            cout<<"VoightStrain "<<VoightStrain<<endl;
 //            cout<<"StrianSwell "<<StrianSwell<<endl;
             

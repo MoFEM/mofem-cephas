@@ -395,9 +395,9 @@ int main(int argc, char *argv[]) {
     rval = mField.get_moab().delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
   }
 
-  
-  //Calculation of Homogenized stress
-  //=======================================================================================================================================================
+  //===================================================================================================================
+  // RVE Volume
+  //===================================================================================================================
   double RVE_volume;    RVE_volume=0.0;  //RVE volume for full RVE We need this for stress calculation
   Vec RVE_volume_Vec;
   ierr = VecCreateMPI(PETSC_COMM_WORLD, 1, pcomm->size(), &RVE_volume_Vec);  CHKERRQ(ierr);
@@ -409,67 +409,76 @@ int main(int argc, char *argv[]) {
   ierr = VecSum(RVE_volume_Vec, &RVE_volume);  CHKERRQ(ierr);
     cout<<"Final RVE_volume = "<< RVE_volume <<endl;
   
-  
+  //===================================================================================================================
+  //Homogenized stress (Mechanical)
+  //===================================================================================================================
   //create a vector for 6 components of homogenized stress
-  Vec Stress_Homo;
-  ierr = VecCreateMPI(PETSC_COMM_WORLD, 6, 6*pcomm->size(), &Stress_Homo);  CHKERRQ(ierr);
-  ierr = VecZeroEntries(Stress_Homo); CHKERRQ(ierr);
+  Vec Stress_Homo_mech;
+  ierr = VecCreateMPI(PETSC_COMM_WORLD, 6, 6*pcomm->size(), &Stress_Homo_mech);  CHKERRQ(ierr);
+  ierr = VecZeroEntries(Stress_Homo_mech); CHKERRQ(ierr);
   
   //    ierr = VecView(D,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-  ElasticFE_RVELagrange_Homogenized_Stress_Disp MyFE_RVEHomoStressDisp(mField,Aij,D,F,&RVE_volume, applied_strain, Stress_Homo,"DISPLACEMENT","Lagrange_mul_disp",field_rank_mech);
-  ierr = mField.loop_finite_elements("COUPLED_MECH_MOIS","Lagrange_elm_disp",MyFE_RVEHomoStressDisp);  CHKERRQ(ierr);
+  ElasticFE_RVELagrange_Homogenized_Stress_Disp MyFE_RVEHomoStressDisp_mech(mField,Aij,D,F,&RVE_volume, applied_strain, Stress_Homo_mech,"DISPLACEMENT","Lagrange_mul_disp",field_rank_mech);
+  ierr = mField.loop_finite_elements("COUPLED_MECH_MOIS","Lagrange_elm_disp",MyFE_RVEHomoStressDisp_mech);  CHKERRQ(ierr);
   
-//  if(pcomm->rank()) cout<< " Stress_Homo =  "<<endl;
-//  ierr = VecView(Stress_Homo,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+//  if(pcomm->rank()) cout<< " Stress_Homo_mech =  "<<endl;
+//  ierr = VecView(Stress_Homo_mech,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
   
   if(pcomm->rank()==0){
     PetscScalar    *avec;
-    VecGetArray(Stress_Homo, &avec);
+    VecGetArray(Stress_Homo_mech, &avec);
     
-    cout<< "\nStress_Homo = \n\n";
+    cout<< "\nStress_Homo_mech = \n\n";
     for(int ii=0; ii<6; ii++){
       cout <<*avec<<endl; ;
       avec++;
     }
   }
   cout<< "\n\n";
-
-  //=======================================================================================================================================================
+  
+  //===================================================================================================================
+  //Homogenized flux (Moisture)
+  //===================================================================================================================
+  //create a vector for 3 components of homogenized flux
+  Vec Stress_Homo_moist;
+  ierr = VecCreateMPI(PETSC_COMM_WORLD, 3, 3*pcomm->size(), &Stress_Homo_moist);  CHKERRQ(ierr);
+  ierr = VecZeroEntries(Stress_Homo_moist); CHKERRQ(ierr);
+  
+  //    ierr = VecView(D,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+  ElasticFE_RVELagrange_Homogenized_Stress_Disp MyFE_RVEHomoStressDisp_mois(mField,Aij,D,F,&RVE_volume, applied_strain, Stress_Homo_moist,"CONC","Lagrange_mul_conc",field_rank_mois);
+  ierr = mField.loop_finite_elements("COUPLED_MECH_MOIS","Lagrange_elm_conc",MyFE_RVEHomoStressDisp_mois);  CHKERRQ(ierr);
+  
+  //  if(pcomm->rank()) cout<< " Stress_Homo_moist =  "<<endl;
+  //  ierr = VecView(Stress_Homo_moist,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+  
+  if(pcomm->rank()==0){
+    PetscScalar    *avec;
+    VecGetArray(Stress_Homo_moist, &avec);
+    
+    cout<< "\nFlux_Homo_moist = \n\n";
+    for(int ii=0; ii<3; ii++){
+      cout <<*avec<<endl; ;
+      avec++;
+    }
+  }
+  cout<< "\n\n";
+  
+  //===================================================================================================================
 
   
-//  //PostProcDisplacemenysAndStarinOnRefMesh fe_post_proc_method(moab);
-//  PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh fe_post_proc_method(mField,"DISPLACEMENT",LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
-//  ierr = mField.loop_finite_elements("COUPLED_MECH_MOIS","ELASTIC",fe_post_proc_method);  CHKERRQ(ierr);
-//  
-//  if(pcomm->rank()==0) {
-//    rval = fe_post_proc_method.moab_post_proc.write_file("out_post_proc.vtk","VTK",""); CHKERR_PETSC(rval);
-//  }
-//  
-//  //End Disp
-//  /*Range ents;*/
-//  //ierr = mField.get_Cubit_msId_entities_by_dimension(1,NodeSet,0,ents,true); CHKERRQ(ierr);
-//  //for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"DISPLACEMENT",dit)) {
-//  //if(find(ents.begin(),ents.end(),dit->get_ent())!=ents.end()) {
-//  //PetscSynchronizedPrintf(PETSC_COMM_WORLD, "val = %6.7e\n",dit->get_FieldData());
-//  //}
-//  /*}*/
-//  
-//  //Support stresses
-//  //Range ents;
-//  //ierr = mField.get_Cubit_msId_entities_by_dimension(4,NodeSet,0,ents,true); CHKERRQ(ierr);
-//  
-//  //Destroy matrices
-//  ierr = VecDestroy(&F); CHKERRQ(ierr);
-//  ierr = VecDestroy(&D); CHKERRQ(ierr);
-//  ierr = MatDestroy(&Aij); CHKERRQ(ierr);
+  //Destroy matrices
+  ierr = VecDestroy(&F); CHKERRQ(ierr);
+  ierr = VecDestroy(&D); CHKERRQ(ierr);
+  ierr = MatDestroy(&Aij); CHKERRQ(ierr);
+  ierr = SNESDestroy(&snes); CHKERRQ(ierr);
 //  ierr = KSPDestroy(&solver); CHKERRQ(ierr);
-//  
-//  
-//  ierr = PetscTime(&v2);CHKERRQ(ierr);
-//  ierr = PetscGetCPUTime(&t2);CHKERRQ(ierr);
-//  
-//  PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Total Rank %d Time = %f CPU Time = %f\n",pcomm->rank(),v2-v1,t2-t1);
-//  PetscSynchronizedFlush(PETSC_COMM_WORLD);
+  
+  
+  ierr = PetscTime(&v2);CHKERRQ(ierr);
+  ierr = PetscGetCPUTime(&t2);CHKERRQ(ierr);
+  
+  PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Total Rank %d Time = %f CPU Time = %f\n",pcomm->rank(),v2-v1,t2-t1);
+  PetscSynchronizedFlush(PETSC_COMM_WORLD);
   
   PetscFinalize();
   
