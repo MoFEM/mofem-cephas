@@ -64,7 +64,17 @@ struct MoFEMField {
   inline string get_name() const { return string((char *)tag_name_data,tag_name_size); };	
   inline FieldSpace get_space() const { return *tag_space_data; };
   inline ApproximationRank get_max_rank() const { return *tag_rank_data; };
-  inline unsigned int get_bit_number() const { return ffsl(((BitFieldId*)tag_id_data)->to_ulong()); }
+  inline unsigned int get_bit_number() const { 
+    int b = ffsl(((BitFieldId*)tag_id_data)->to_ulong()); 
+    if(b != 0) return b;
+    for(int ll = 1;ll<BITFIELDID_SIZE/32;ll++) {
+      BitFieldId id;
+      id = (*tag_id_data)>>32;
+      b = ll*32+ffsl(id.to_ulong()); 
+      if(b != 0) return b;
+    }
+    return 0;
+  }
   const MoFEMField* get_MoFEMField_ptr() const { return this; };
   friend ostream& operator<<(ostream& os,const MoFEMField& e);
 };
