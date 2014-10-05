@@ -152,9 +152,9 @@ struct interface_RefMoFEMEntity {
  * type multiIndex container for RefMoFEMEntity
  * \ingroup ent_multi_indices 
  *
- * \param hashed_unique MoABEnt_mi_tag 
+ * \param hashed_unique Ent_mi_tag 
  * \param ordered_non_unique Meshset_mi_tag 
- * \param ordered_non_unique MoABEnt_MoABEnt_mi_tag
+ * \param ordered_non_unique Ent_Ent_mi_tag
  * \param ordered_non_unique EntType_mi_tag
  * \param ordered_non_unique ParentEntType_mi_tag
  * \param ordered_non_unique Composite_EntityType_And_ParentEntityType_mi_tag
@@ -164,11 +164,11 @@ typedef multi_index_container<
   RefMoFEMEntity,
   indexed_by<
     hashed_unique<
-      tag<MoABEnt_mi_tag>, member<RefMoFEMEntity::BasicMoFEMEntity,EntityHandle,&RefMoFEMEntity::ent> >,
+      tag<Ent_mi_tag>, member<RefMoFEMEntity::BasicMoFEMEntity,EntityHandle,&RefMoFEMEntity::ent> >,
     hashed_unique<
-      tag<MoABEnt_Owner_mi_tag>, member<RefMoFEMEntity::BasicMoFEMEntity,EntityHandle,&RefMoFEMEntity::moab_owner_handle> >,
+      tag<Ent_Owner_mi_tag>, member<RefMoFEMEntity::BasicMoFEMEntity,EntityHandle,&RefMoFEMEntity::moab_owner_handle> >,
     ordered_non_unique<
-      tag<MoABEnt_MoABEnt_mi_tag>, const_mem_fun<RefMoFEMEntity,EntityHandle,&RefMoFEMEntity::get_parent_ent> >,
+      tag<Ent_Ent_mi_tag>, const_mem_fun<RefMoFEMEntity,EntityHandle,&RefMoFEMEntity::get_parent_ent> >,
     ordered_non_unique<
       tag<EntType_mi_tag>, const_mem_fun<RefMoFEMEntity::BasicMoFEMEntity,EntityType,&RefMoFEMEntity::get_ent_type> >,
     ordered_non_unique<
@@ -375,7 +375,7 @@ struct MoFEMEntity_change_order {
  * \param ordered_non_unique<
  *    tag<FieldName_mi_tag>, const_mem_fun<MoFEMEntity::interface_type_MoFEMField,boost::string_ref,&MoFEMEntity::get_name_ref> >,
  * \param hashed_non_unique<
- *    tag<MoABEnt_mi_tag>, const_mem_fun<MoFEMEntity,EntityHandle,&MoFEMEntity::get_ent> >,
+ *    tag<Ent_mi_tag>, const_mem_fun<MoFEMEntity,EntityHandle,&MoFEMEntity::get_ent> >,
  * \param ordered_non_unique<
  *   tag<Composite_Name_And_Ent_mi_tag>, 
  *     composite_key<
@@ -394,7 +394,7 @@ typedef multi_index_container<
     ordered_non_unique<
       tag<FieldName_mi_tag>, const_mem_fun<MoFEMEntity::interface_type_MoFEMField,boost::string_ref,&MoFEMEntity::get_name_ref> >,
     hashed_non_unique<
-      tag<MoABEnt_mi_tag>, const_mem_fun<MoFEMEntity,EntityHandle,&MoFEMEntity::get_ent> >,
+      tag<Ent_mi_tag>, const_mem_fun<MoFEMEntity,EntityHandle,&MoFEMEntity::get_ent> >,
     ordered_non_unique<
       tag<Composite_Name_And_Ent_mi_tag>, 
       composite_key<

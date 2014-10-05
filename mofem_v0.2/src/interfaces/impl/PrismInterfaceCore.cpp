@@ -285,9 +285,9 @@ PetscErrorCode Core::get_msId_3dENTS_split_sides(
     PetscPrintf(PETSC_COMM_WORLD,"side_ents3d %u\n",side_ents3d.size());
     PetscPrintf(PETSC_COMM_WORLD,"nodes %u\n",nodes.size());
   }
-  typedef RefMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type ref_ents_by_ent_type;
+  typedef RefMoFEMEntity_multiIndex::index<Ent_mi_tag>::type ref_ents_by_ent_type;
   typedef RefMoFEMEntity_multiIndex::index<Composite_EntityType_And_ParentEntityType_mi_tag>::type ref_ents_by_composite;
-  ref_ents_by_ent_type &ref_ents_by_ent = refinedEntities.get<MoABEnt_mi_tag>();
+  ref_ents_by_ent_type &ref_ents_by_ent = refinedEntities.get<Ent_mi_tag>();
   RefMoFEMEntity_multiIndex_view_by_parent_entity ref_parent_ents_view;
   //create view index by parent entity
   {
@@ -409,9 +409,9 @@ PetscErrorCode Core::get_msId_3dENTS_split_sides(
     //here is created new or prism is on inteface
     EntityHandle existing_ent = 0;
     /* check if tet element whith new connectivity is in database*/ 
-    RefMoFEMElement_multiIndex::index<MoABEnt_MoABEnt_mi_tag>::type::iterator child_iit,hi_child_iit;
-    child_iit = refinedFiniteElements.get<MoABEnt_MoABEnt_mi_tag>().lower_bound(*eit3d);
-    hi_child_iit = refinedFiniteElements.get<MoABEnt_MoABEnt_mi_tag>().upper_bound(*eit3d);
+    RefMoFEMElement_multiIndex::index<Ent_Ent_mi_tag>::type::iterator child_iit,hi_child_iit;
+    child_iit = refinedFiniteElements.get<Ent_Ent_mi_tag>().lower_bound(*eit3d);
+    hi_child_iit = refinedFiniteElements.get<Ent_Ent_mi_tag>().upper_bound(*eit3d);
     for(;child_iit!=hi_child_iit;child_iit++) {
       const EntityHandle* conn_ref_tet;
       rval = moab.get_connectivity(child_iit->get_ref_ent(),conn_ref_tet,num_nodes,true); CHKERR_PETSC(rval);
@@ -439,13 +439,13 @@ PetscErrorCode Core::get_msId_3dENTS_split_sides(
 	    rval = moab.create_element(MBTET,new_conn,4,tet); CHKERR_PETSC(rval);
 	    rval = moab.tag_set_data(th_RefParentHandle,&tet,1,&*eit3d); CHKERR_PETSC(rval);
 	  } else {
-	    RefMoFEMElement_multiIndex::index<MoABEnt_mi_tag>::type::iterator rit,new_rit;
-	    rit = refinedFiniteElements.get<MoABEnt_mi_tag>().find(*eit3d);
-	    if(rit==refinedFiniteElements.get<MoABEnt_mi_tag>().end()) {
+	    RefMoFEMElement_multiIndex::index<Ent_mi_tag>::type::iterator rit,new_rit;
+	    rit = refinedFiniteElements.get<Ent_mi_tag>().find(*eit3d);
+	    if(rit==refinedFiniteElements.get<Ent_mi_tag>().end()) {
 	      SETERRQ(PETSC_COMM_SELF,1,"can't find this in database");
 	    }
-	    new_rit  = refinedFiniteElements.get<MoABEnt_mi_tag>().find(*new_conn_tet.begin());
-	    if(new_rit==refinedFiniteElements.get<MoABEnt_mi_tag>().end()) {
+	    new_rit  = refinedFiniteElements.get<Ent_mi_tag>().find(*new_conn_tet.begin());
+	    if(new_rit==refinedFiniteElements.get<Ent_mi_tag>().end()) {
 	      SETERRQ(PETSC_COMM_SELF,1,"can't find this in database");
 	    }    
 	    tet = *new_conn_tet.begin();
@@ -707,9 +707,9 @@ PetscErrorCode Core::get_msId_3dENTS_split_sides(
 	SETERRQ1(PETSC_COMM_SELF,1,"wrong parent %lu",parent_tri);
       }
       if(new_ents_in_database.find(face[ff])==new_ents_in_database.end()) {
-	RefMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator miit_ref_ent 
-	    = refinedEntities.get<MoABEnt_mi_tag>().find(face[ff]);
-	if(miit_ref_ent==refinedEntities.get<MoABEnt_mi_tag>().end()) {
+	RefMoFEMEntity_multiIndex::index<Ent_mi_tag>::type::iterator miit_ref_ent 
+	    = refinedEntities.get<Ent_mi_tag>().find(face[ff]);
+	if(miit_ref_ent==refinedEntities.get<Ent_mi_tag>().end()) {
 	  SETERRQ(PETSC_COMM_SELF,1,"this is not in database, but should not be");
 	}
       }

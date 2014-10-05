@@ -1494,7 +1494,7 @@ struct FieldInterface: public FieldUnknownInterface {
     *
     * \param fe_name
     */
-  virtual EntMoFEMFiniteElement_multiIndex::index<MoFEMFiniteElement_name_mi_tag>::type::iterator get_fes_moabfield_by_name_begin(const string &fe_name) = 0;
+  virtual EntMoFEMFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator get_fes_moabfield_by_name_begin(const string &fe_name) = 0;
 
   /** 
     * \brief get end iterator of finite elements of given name (instead you can use _IT_GET_FES_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)
@@ -1505,11 +1505,11 @@ struct FieldInterface: public FieldUnknownInterface {
     *
     * \param fe_name
     */
-  virtual EntMoFEMFiniteElement_multiIndex::index<MoFEMFiniteElement_name_mi_tag>::type::iterator get_fes_moabfield_by_name_end(const string &fe_name) = 0;
+  virtual EntMoFEMFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator get_fes_moabfield_by_name_end(const string &fe_name) = 0;
 
   ///loop over all finite elements from a moFEM field and FE
   #define _IT_GET_FES_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT) \
-    EntMoFEMFiniteElement_multiIndex::index<MoFEMFiniteElement_name_mi_tag>::type::iterator IT = MFIELD.get_fes_moabfield_by_name_begin(NAME); \
+    EntMoFEMFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator IT = MFIELD.get_fes_moabfield_by_name_begin(NAME); \
       IT != MFIELD.get_fes_moabfield_by_name_end(NAME); IT++
 
 

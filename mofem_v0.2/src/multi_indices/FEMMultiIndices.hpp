@@ -172,18 +172,18 @@ struct ptrWrapperRefMoFEMElement: public interface_RefMoFEMElement<RefMoFEMEleme
  * type multiIndex container for RefMoFEMElement
  * \ingroup fe_multi_indices
  *
- * \param hashed_unique MoABEnt_mi_tag 
+ * \param hashed_unique Ent_mi_tag 
  * \param ordered_non_unique Meshset_mi_tag 
- * \param ordered_non_unique MoABEnt_MoABEnt_mi_tag
+ * \param ordered_non_unique Ent_Ent_mi_tag
  * \param ordered_non_unique Composite_of_ParentEnt_And_BitsOfRefinedEdges_mi_tag
  */
 typedef multi_index_container<
   ptrWrapperRefMoFEMElement,
   indexed_by<
     hashed_unique<
-      tag<MoABEnt_mi_tag>, const_mem_fun<ptrWrapperRefMoFEMElement::interface_type_RefMoFEMEntity,EntityHandle,&ptrWrapperRefMoFEMElement::get_ref_ent> >,
+      tag<Ent_mi_tag>, const_mem_fun<ptrWrapperRefMoFEMElement::interface_type_RefMoFEMEntity,EntityHandle,&ptrWrapperRefMoFEMElement::get_ref_ent> >,
     ordered_non_unique<
-      tag<MoABEnt_MoABEnt_mi_tag>, const_mem_fun<ptrWrapperRefMoFEMElement::interface_type_RefMoFEMEntity,EntityHandle,&ptrWrapperRefMoFEMElement::get_parent_ent> >,
+      tag<Ent_Ent_mi_tag>, const_mem_fun<ptrWrapperRefMoFEMElement::interface_type_RefMoFEMEntity,EntityHandle,&ptrWrapperRefMoFEMElement::get_parent_ent> >,
     ordered_non_unique<
       tag<EntType_mi_tag>, const_mem_fun<ptrWrapperRefMoFEMElement::interface_type_RefMoFEMEntity,EntityType,&ptrWrapperRefMoFEMElement::get_ent_type> >,
     ordered_non_unique<
@@ -445,9 +445,9 @@ struct interface_NumeredMoFEMFiniteElement: public interface_EntMoFEMFiniteEleme
  * \param ordered_unique<
       tag<Unique_mi_tag>, member<EntMoFEMFiniteElement,GlobalUId,&EntMoFEMFiniteElement::global_uid> >,
  * \param    ordered_non_unique<
-      tag<MoABEnt_mi_tag>, <br> const_mem_fun<EntMoFEMFiniteElement,EntityHandle,&EntMoFEMFiniteElement::get_ent> >,
+      tag<Ent_mi_tag>, <br> const_mem_fun<EntMoFEMFiniteElement,EntityHandle,&EntMoFEMFiniteElement::get_ent> >,
  * \param    ordered_non_unique<
-      tag<MoFEMFiniteElement_name_mi_tag>, <br> const_mem_fun<EntMoFEMFiniteElement::interface_type_MoFEMFiniteElement,boost::string_ref,&EntMoFEMFiniteElement::get_name_ref> >,
+      tag<FiniteElement_name_mi_tag>, <br> const_mem_fun<EntMoFEMFiniteElement::interface_type_MoFEMFiniteElement,boost::string_ref,&EntMoFEMFiniteElement::get_name_ref> >,
  * \param    ordered_non_unique<
       tag<BitFEId_mi_tag>, <br> const_mem_fun<EntMoFEMFiniteElement::interface_type_MoFEMFiniteElement,BitFEId,&EntMoFEMFiniteElement::get_id>, LtBit<BitFEId> >,
  * \param    ordered_non_unique<
@@ -465,9 +465,9 @@ typedef multi_index_container<
     ordered_unique<
       tag<Unique_mi_tag>, member<EntMoFEMFiniteElement,GlobalUId,&EntMoFEMFiniteElement::global_uid> >,
     ordered_non_unique<
-      tag<MoABEnt_mi_tag>, const_mem_fun<EntMoFEMFiniteElement,EntityHandle,&EntMoFEMFiniteElement::get_ent> >,
+      tag<Ent_mi_tag>, const_mem_fun<EntMoFEMFiniteElement,EntityHandle,&EntMoFEMFiniteElement::get_ent> >,
     ordered_non_unique<
-      tag<MoFEMFiniteElement_name_mi_tag>, const_mem_fun<EntMoFEMFiniteElement::interface_type_MoFEMFiniteElement,boost::string_ref,&EntMoFEMFiniteElement::get_name_ref> >,
+      tag<FiniteElement_name_mi_tag>, const_mem_fun<EntMoFEMFiniteElement::interface_type_MoFEMFiniteElement,boost::string_ref,&EntMoFEMFiniteElement::get_name_ref> >,
     ordered_non_unique<
       tag<BitFEId_mi_tag>, const_mem_fun<EntMoFEMFiniteElement::interface_type_MoFEMFiniteElement,BitFEId,&EntMoFEMFiniteElement::get_id>, LtBit<BitFEId> >,
     ordered_non_unique<
@@ -488,9 +488,9 @@ typedef multi_index_container<
  * \param  ordered_unique<
       tag<Unique_mi_tag>, const_mem_fun<NumeredMoFEMFiniteElement::interface_type_EntMoFEMFiniteElement,GlobalUId,&NumeredMoFEMFiniteElement::get_global_unique_id> >,
  * \param    ordered_non_unique<
-      tag<MoFEMFiniteElement_name_mi_tag>, <br> const_mem_fun<NumeredMoFEMFiniteElement::interface_type_MoFEMFiniteElement,string,&NumeredMoFEMFiniteElement::get_name> >,
+      tag<FiniteElement_name_mi_tag>, <br> const_mem_fun<NumeredMoFEMFiniteElement::interface_type_MoFEMFiniteElement,string,&NumeredMoFEMFiniteElement::get_name> >,
  * \param    ordered_non_unique<
-      tag<MoFEMFiniteElement_Part_mi_tag>, <br> member<NumeredMoFEMFiniteElement,unsigned int,&NumeredMoFEMFiniteElement::part> >,
+      tag<FiniteElement_Part_mi_tag>, <br> member<NumeredMoFEMFiniteElement,unsigned int,&NumeredMoFEMFiniteElement::part> >,
  * \param    ordered_non_unique<
       tag<Composite_mi_tag>,       
       composite_key< <br>
@@ -504,11 +504,11 @@ typedef multi_index_container<
     ordered_unique<
       tag<Unique_mi_tag>, const_mem_fun<NumeredMoFEMFiniteElement::interface_type_EntMoFEMFiniteElement,GlobalUId,&NumeredMoFEMFiniteElement::get_global_unique_id> >,
     ordered_non_unique<
-      tag<MoFEMFiniteElement_name_mi_tag>, const_mem_fun<NumeredMoFEMFiniteElement::interface_type_MoFEMFiniteElement,boost::string_ref,&NumeredMoFEMFiniteElement::get_name_ref> >,
+      tag<FiniteElement_name_mi_tag>, const_mem_fun<NumeredMoFEMFiniteElement::interface_type_MoFEMFiniteElement,boost::string_ref,&NumeredMoFEMFiniteElement::get_name_ref> >,
     ordered_non_unique<
-      tag<MoFEMFiniteElement_Part_mi_tag>, member<NumeredMoFEMFiniteElement,unsigned int,&NumeredMoFEMFiniteElement::part> >,
+      tag<FiniteElement_Part_mi_tag>, member<NumeredMoFEMFiniteElement,unsigned int,&NumeredMoFEMFiniteElement::part> >,
     ordered_non_unique<
-      tag<MoABEnt_mi_tag>, const_mem_fun<NumeredMoFEMFiniteElement::interface_type_EntMoFEMFiniteElement,EntityHandle,&NumeredMoFEMFiniteElement::get_ent> >,
+      tag<Ent_mi_tag>, const_mem_fun<NumeredMoFEMFiniteElement::interface_type_EntMoFEMFiniteElement,EntityHandle,&NumeredMoFEMFiniteElement::get_ent> >,
     ordered_non_unique<
       tag<Composite_Name_And_Ent_mi_tag>,       
       composite_key<
@@ -532,11 +532,11 @@ typedef multi_index_container<
   MoFEMFiniteElement,
   indexed_by<
     hashed_unique<
-      tag<MoFEMFiniteElement_Meshset_mi_tag>, member<MoFEMFiniteElement,EntityHandle,&MoFEMFiniteElement::meshset> >,
+      tag<FiniteElement_Meshset_mi_tag>, member<MoFEMFiniteElement,EntityHandle,&MoFEMFiniteElement::meshset> >,
     hashed_unique<
       tag<BitFEId_mi_tag>, const_mem_fun<MoFEMFiniteElement,BitFEId,&MoFEMFiniteElement::get_id>, HashBit<BitFEId>, EqBit<BitFEId> >,
     ordered_unique<
-      tag<MoFEMFiniteElement_name_mi_tag>, const_mem_fun<MoFEMFiniteElement,boost::string_ref,&MoFEMFiniteElement::get_name_ref> >
+      tag<FiniteElement_name_mi_tag>, const_mem_fun<MoFEMFiniteElement,boost::string_ref,&MoFEMFiniteElement::get_name_ref> >
   > > MoFEMFiniteElement_multiIndex;
 
 }

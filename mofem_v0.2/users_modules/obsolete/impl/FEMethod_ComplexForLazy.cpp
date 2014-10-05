@@ -389,9 +389,9 @@ PetscErrorCode FEMethod_ComplexForLazy::GetData(
 	      ss << *eit << endl;
 	      PetscPrintf(PETSC_COMM_WORLD,"%s",ss.str().c_str());
 	    }
-	    RefMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator reit;
-	    reit = refinedEntitiesPtr->get<MoABEnt_mi_tag>().find(sit->ent);
-	    if(reit != refinedEntitiesPtr->get<MoABEnt_mi_tag>().end()) {
+	    RefMoFEMEntity_multiIndex::index<Ent_mi_tag>::type::iterator reit;
+	    reit = refinedEntitiesPtr->get<Ent_mi_tag>().find(sit->ent);
+	    if(reit != refinedEntitiesPtr->get<Ent_mi_tag>().end()) {
 	      ostringstream ss;
 	      ss << *reit << endl;
 	      PetscPrintf(PETSC_COMM_WORLD,"%s",ss.str().c_str());

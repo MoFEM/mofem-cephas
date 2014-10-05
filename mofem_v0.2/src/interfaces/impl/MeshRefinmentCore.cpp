@@ -162,7 +162,7 @@ PetscErrorCode Core::add_verices_in_the_middel_of_edges(const Range &_edges,cons
       if((*miit_view)->get_ent_type() != MBVERTEX) {
 	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"child of edge should be vertex");
       }
-      bool success = refinedEntities.modify(refinedEntities.get<MoABEnt_mi_tag>().find(node),RefMoFEMEntity_change_add_bit(bit));
+      bool success = refinedEntities.modify(refinedEntities.get<Ent_mi_tag>().find(node),RefMoFEMEntity_change_add_bit(bit));
       if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"inconsistency in data");
     }
   }
@@ -179,8 +179,8 @@ PetscErrorCode Core::refine_TET(const Range &_tets,const BitRefLevel &bit,const 
   PetscFunctionBegin;
   //FIXME: refinment is based on entity handlers, should work on global ids of nodes, this will allow parallelize agortihm in the future
   PetscFunctionBegin;
-  typedef RefMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type ref_ents_by_ent;
-  ref_ents_by_ent &ref_ents_ent = refinedEntities.get<MoABEnt_mi_tag>();
+  typedef RefMoFEMEntity_multiIndex::index<Ent_mi_tag>::type ref_ents_by_ent;
+  ref_ents_by_ent &ref_ents_ent = refinedEntities.get<Ent_mi_tag>();
   // find all verices which parent is edge
   typedef RefMoFEMEntity_multiIndex::index<Composite_EntityType_And_ParentEntityType_mi_tag>::type ref_ents_by_composite;
   ref_ents_by_composite &ref_ents = refinedEntities.get<Composite_EntityType_And_ParentEntityType_mi_tag>();
@@ -194,8 +194,8 @@ PetscErrorCode Core::refine_TET(const Range &_tets,const BitRefLevel &bit,const 
       SETERRQ(PETSC_COMM_SELF,1,"non uniqe insertion");
     }
   }
-  typedef RefMoFEMElement_multiIndex::index<MoABEnt_mi_tag>::type ref_MoFEMFiniteElement_by_ent;
-  ref_MoFEMFiniteElement_by_ent &ref_MoFEMFiniteElement = refinedFiniteElements.get<MoABEnt_mi_tag>();
+  typedef RefMoFEMElement_multiIndex::index<Ent_mi_tag>::type ref_MoFEMFiniteElement_by_ent;
+  ref_MoFEMFiniteElement_by_ent &ref_MoFEMFiniteElement = refinedFiniteElements.get<Ent_mi_tag>();
   typedef RefMoFEMElement_multiIndex::index<Composite_of_ParentEnt_And_BitsOfRefinedEdges_mi_tag>::type ref_ent_by_composite;
   ref_ent_by_composite &by_composite = refinedFiniteElements.get<Composite_of_ParentEnt_And_BitsOfRefinedEdges_mi_tag>();
   //
@@ -215,7 +215,7 @@ PetscErrorCode Core::refine_TET(const Range &_tets,const BitRefLevel &bit,const 
     //Range _tit_edges;
     //rval = moab.get_adjacencies(&*tit,1,1,true,_tit_edges); CHKERR_PETSC(rval);
     for(int nn = 0;nn<num_nodes;nn++) {
-      bool success = refinedEntities.modify(refinedEntities.get<MoABEnt_mi_tag>().find(conn[nn]),RefMoFEMEntity_change_add_bit(bit));
+      bool success = refinedEntities.modify(refinedEntities.get<Ent_mi_tag>().find(conn[nn]),RefMoFEMEntity_change_add_bit(bit));
       if(!success) SETERRQ(PETSC_COMM_SELF,1,"can not set refinement bit level to tet node");
     }
     //get edges
@@ -675,7 +675,7 @@ PetscErrorCode Core::refine_PRISM(const EntityHandle meshset,const BitRefLevel &
   //FIXME: refinment is based on entity handlers, should work on global ids of nodes, this will allow parallelize agortihm in the future
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-  typedef RefMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type ref_ENTs_by_ent;
+  typedef RefMoFEMEntity_multiIndex::index<Ent_mi_tag>::type ref_ENTs_by_ent;
   typedef RefMoFEMElement_multiIndex::index<Composite_of_ParentEnt_And_BitsOfRefinedEdges_mi_tag>::type ref_fe_by_composite;
   ref_fe_by_composite &ref_fe_by_comp = refinedFiniteElements.get<Composite_of_ParentEnt_And_BitsOfRefinedEdges_mi_tag>();
   //find all verices which parent is edge
@@ -695,7 +695,7 @@ PetscErrorCode Core::refine_PRISM(const EntityHandle meshset,const BitRefLevel &
   rval = moab.get_entities_by_type(meshset,MBPRISM,prisms,false); CHKERR_PETSC(rval);
   Range::iterator pit = prisms.begin();
   for(;pit!=prisms.end();pit++) {
-    ref_ENTs_by_ent::iterator miit_prism = refinedEntities.get<MoABEnt_mi_tag>().find(*pit);   
+    ref_ENTs_by_ent::iterator miit_prism = refinedEntities.get<Ent_mi_tag>().find(*pit);   
     if(miit_prism==refinedEntities.end()) SETERRQ(PETSC_COMM_SELF,1,"this prism is not in ref database");
     if(verb>3) {
       ostringstream ss;
@@ -829,7 +829,7 @@ PetscErrorCode Core::refine_PRISM(const EntityHandle meshset,const BitRefLevel &
 PetscErrorCode Core::refine_MESHSET(const EntityHandle meshset,const BitRefLevel &bit,const bool recursive,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-  typedef RefMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type ref_ENTs_by_ent;
+  typedef RefMoFEMEntity_multiIndex::index<Ent_mi_tag>::type ref_ENTs_by_ent;
   ref_ENTs_by_ent::iterator miit = refinedEntities.find(meshset);
   if(miit==refinedEntities.end()) SETERRQ(PETSC_COMM_SELF,1,"this meshset is not in ref database");
   ierr = update_meshset_by_entities_children(meshset,bit,meshset,MBEDGE,recursive,verb); CHKERRQ(ierr);

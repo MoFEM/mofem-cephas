@@ -238,9 +238,9 @@ PetscErrorCode FaceSplittingTools::splitFaces(const int verb) {
 
       for(Range::iterator tit = tets_on_surface.begin();tit!=tets_on_surface.end();tit++) {
 
-	RefMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator mit;
-	mit = refinedEntitiesPtr_ptr->get<MoABEnt_mi_tag>().find(*tit);
-	if(mit == refinedEntitiesPtr_ptr->get<MoABEnt_mi_tag>().end()) {
+	RefMoFEMEntity_multiIndex::index<Ent_mi_tag>::type::iterator mit;
+	mit = refinedEntitiesPtr_ptr->get<Ent_mi_tag>().find(*tit);
+	if(mit == refinedEntitiesPtr_ptr->get<Ent_mi_tag>().end()) {
 	  SETERRQ(PETSC_COMM_SELF,1,"no such tet in database");
 	}
 	bool success;
@@ -271,9 +271,9 @@ PetscErrorCode FaceSplittingTools::splitFaces(const int verb) {
       }
 
       for(Range::iterator eit = ents_to_set_level.begin();eit!=ents_to_set_level.end();eit++) {
-	RefMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator mit;
-	mit = refinedEntitiesPtr_ptr->get<MoABEnt_mi_tag>().find(*eit);
-	if(mit == refinedEntitiesPtr_ptr->get<MoABEnt_mi_tag>().end()) {
+	RefMoFEMEntity_multiIndex::index<Ent_mi_tag>::type::iterator mit;
+	mit = refinedEntitiesPtr_ptr->get<Ent_mi_tag>().find(*eit);
+	if(mit == refinedEntitiesPtr_ptr->get<Ent_mi_tag>().end()) {
 	  SETERRQ(PETSC_COMM_SELF,1,"no such tet in database");
 	}
 	bool success;

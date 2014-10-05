@@ -737,8 +737,8 @@ PetscErrorCode Core::set_field_order(const Range &ents,const BitFieldId id,const
       if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
     } else {
       *(ApproximationOrder*)tag_data_order[ee] = order;
-      RefMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator miit_ref_ent = refinedEntities.get<MoABEnt_mi_tag>().find(*eit);
-      if(miit_ref_ent==refinedEntities.get<MoABEnt_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"database inconsistency");
+      RefMoFEMEntity_multiIndex::index<Ent_mi_tag>::type::iterator miit_ref_ent = refinedEntities.get<Ent_mi_tag>().find(*eit);
+      if(miit_ref_ent==refinedEntities.get<Ent_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"database inconsistency");
       try { 
 	MoFEMEntity moabent(moab,&*miit,&*miit_ref_ent);
 	//if(moabent.get_order_nb_dofs(moabent.get_max_order())==0) continue; 
@@ -835,8 +835,8 @@ PetscErrorCode Core::dofs_NoField(const BitFieldId id,map<EntityType,int> &dof_c
   field_set_by_id::iterator miit = set_id.find(id);
   if(miit == set_id.end()) SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"field not found");
   //serch if field meshset is in database
-  RefMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator miit_ref_ent = refinedEntities.get<MoABEnt_mi_tag>().find(miit->meshset);
-  if(miit_ref_ent==refinedEntities.get<MoABEnt_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"database inconsistency");
+  RefMoFEMEntity_multiIndex::index<Ent_mi_tag>::type::iterator miit_ref_ent = refinedEntities.get<Ent_mi_tag>().find(miit->meshset);
+  if(miit_ref_ent==refinedEntities.get<Ent_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"database inconsistency");
   pair<MoFEMEntity_multiIndex::iterator,bool> e_miit;
   try {
     //create database entity
@@ -895,7 +895,7 @@ PetscErrorCode Core::dofs_L2H1HcurlHdiv(const BitFieldId id,map<EntityType,int> 
   if(verb==-1) verb = verbose;
   //field it
   typedef MoFEMField_multiIndex::index<BitFieldId_mi_tag>::type field_set_by_id;
-  typedef RefMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type ref_ents_by_ents;
+  typedef RefMoFEMEntity_multiIndex::index<Ent_mi_tag>::type ref_ents_by_ents;
   //find field
   const field_set_by_id &set_id = moabFields.get<BitFieldId_mi_tag>();
   field_set_by_id::iterator miit = set_id.find(id);
@@ -907,8 +907,8 @@ PetscErrorCode Core::dofs_L2H1HcurlHdiv(const BitFieldId id,map<EntityType,int> 
   Range::iterator eit = ents_of_id_meshset.begin();
   for(;eit!=ents_of_id_meshset.end();eit++) {
     // check if ent is in ref meshset
-    RefMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator miit_ref_ent = refinedEntities.get<MoABEnt_mi_tag>().find(*eit);
-    if(miit_ref_ent==refinedEntities.get<MoABEnt_mi_tag>().end()) {
+    RefMoFEMEntity_multiIndex::index<Ent_mi_tag>::type::iterator miit_ref_ent = refinedEntities.get<Ent_mi_tag>().find(*eit);
+    if(miit_ref_ent==refinedEntities.get<Ent_mi_tag>().end()) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"database inconsistency");
     }
     // create mofem entity linked to ref ent
@@ -1085,8 +1085,8 @@ PetscErrorCode Core::list_fields() const {
 PetscErrorCode Core::add_finite_element(const string &MoFEMFiniteElement_name,enum MoFEMTypes bh) {
   PetscFunctionBegin;
   *build_MoFEM &= 1<<0;
-  typedef MoFEMFiniteElement_multiIndex::index<MoFEMFiniteElement_name_mi_tag>::type finiteElements_by_name;
-  finiteElements_by_name &MoFEMFiniteElement_name_set = finiteElements.get<MoFEMFiniteElement_name_mi_tag>();
+  typedef MoFEMFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type finiteElements_by_name;
+  finiteElements_by_name &MoFEMFiniteElement_name_set = finiteElements.get<FiniteElement_name_mi_tag>();
   finiteElements_by_name::iterator it_MoFEMFiniteElement = MoFEMFiniteElement_name_set.find(MoFEMFiniteElement_name);
   if(bh == MF_EXCL) {
     if(it_MoFEMFiniteElement!=MoFEMFiniteElement_name_set.end()) {
@@ -1118,8 +1118,8 @@ PetscErrorCode Core::add_finite_element(const string &MoFEMFiniteElement_name,en
 PetscErrorCode Core::modify_finite_element_adjacency_table(const string &MoFEMFiniteElement_name,const EntityType type,ElementAdjacencyFunct function) {
   PetscFunctionBegin;
   *build_MoFEM &= 1<<0;
-  typedef MoFEMFiniteElement_multiIndex::index<MoFEMFiniteElement_name_mi_tag>::type finiteElements_by_name;
-  finiteElements_by_name &MoFEMFiniteElement_name_set = finiteElements.get<MoFEMFiniteElement_name_mi_tag>();
+  typedef MoFEMFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type finiteElements_by_name;
+  finiteElements_by_name &MoFEMFiniteElement_name_set = finiteElements.get<FiniteElement_name_mi_tag>();
   finiteElements_by_name::iterator it_MoFEMFiniteElement = MoFEMFiniteElement_name_set.find(MoFEMFiniteElement_name);
   if(it_MoFEMFiniteElement==MoFEMFiniteElement_name_set.end()) SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"this MoFEMFiniteElement is there");
   const_cast<MoFEMFiniteElement*>(&*it_MoFEMFiniteElement)->element_adjacency_table[type] = function;
@@ -1128,8 +1128,8 @@ PetscErrorCode Core::modify_finite_element_adjacency_table(const string &MoFEMFi
 PetscErrorCode Core::modify_finite_element_add_field_data(const string &MoFEMFiniteElement_name,const string &name_data) {
   PetscFunctionBegin;
   *build_MoFEM &= 1<<0;
-  typedef MoFEMFiniteElement_multiIndex::index<MoFEMFiniteElement_name_mi_tag>::type finiteElements_by_name;
-  finiteElements_by_name &MoFEMFiniteElement_name_set = finiteElements.get<MoFEMFiniteElement_name_mi_tag>();
+  typedef MoFEMFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type finiteElements_by_name;
+  finiteElements_by_name &MoFEMFiniteElement_name_set = finiteElements.get<FiniteElement_name_mi_tag>();
   finiteElements_by_name::iterator it_MoFEMFiniteElement = MoFEMFiniteElement_name_set.find(MoFEMFiniteElement_name);
   if(it_MoFEMFiniteElement==MoFEMFiniteElement_name_set.end()) SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"this MoFEMFiniteElement is there");
   try {
@@ -1143,8 +1143,8 @@ PetscErrorCode Core::modify_finite_element_add_field_data(const string &MoFEMFin
 PetscErrorCode Core::modify_finite_element_add_field_row(const string &MoFEMFiniteElement_name,const string &name_row) {
   PetscFunctionBegin;
   *build_MoFEM &= 1<<0;
-  typedef MoFEMFiniteElement_multiIndex::index<MoFEMFiniteElement_name_mi_tag>::type finiteElements_by_name;
-  finiteElements_by_name &MoFEMFiniteElement_name_set = finiteElements.get<MoFEMFiniteElement_name_mi_tag>();
+  typedef MoFEMFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type finiteElements_by_name;
+  finiteElements_by_name &MoFEMFiniteElement_name_set = finiteElements.get<FiniteElement_name_mi_tag>();
   finiteElements_by_name::iterator it_MoFEMFiniteElement = MoFEMFiniteElement_name_set.find(MoFEMFiniteElement_name);
   if(it_MoFEMFiniteElement==MoFEMFiniteElement_name_set.end()) SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"this < %s > is not there",MoFEMFiniteElement_name.c_str());
   try {
@@ -1158,8 +1158,8 @@ PetscErrorCode Core::modify_finite_element_add_field_row(const string &MoFEMFini
 PetscErrorCode Core::modify_finite_element_add_field_col(const string &MoFEMFiniteElement_name,const string &name_col) {
   PetscFunctionBegin;
   *build_MoFEM &= 1<<0;
-  typedef MoFEMFiniteElement_multiIndex::index<MoFEMFiniteElement_name_mi_tag>::type finiteElements_by_name;
-  finiteElements_by_name &MoFEMFiniteElement_name_set = finiteElements.get<MoFEMFiniteElement_name_mi_tag>();
+  typedef MoFEMFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type finiteElements_by_name;
+  finiteElements_by_name &MoFEMFiniteElement_name_set = finiteElements.get<FiniteElement_name_mi_tag>();
   finiteElements_by_name::iterator it_MoFEMFiniteElement = MoFEMFiniteElement_name_set.find(MoFEMFiniteElement_name);
   if(it_MoFEMFiniteElement==MoFEMFiniteElement_name_set.end()) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"this MoFEMFiniteElement is there");
   try {
@@ -1173,8 +1173,8 @@ PetscErrorCode Core::modify_finite_element_add_field_col(const string &MoFEMFini
 PetscErrorCode Core::modify_finite_element_off_field_data(const string &MoFEMFiniteElement_name,const string &name_data) {
   PetscFunctionBegin;
   *build_MoFEM &= 1<<0;
-  typedef MoFEMFiniteElement_multiIndex::index<MoFEMFiniteElement_name_mi_tag>::type finiteElements_by_name;
-  finiteElements_by_name &MoFEMFiniteElement_name_set = finiteElements.get<MoFEMFiniteElement_name_mi_tag>();
+  typedef MoFEMFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type finiteElements_by_name;
+  finiteElements_by_name &MoFEMFiniteElement_name_set = finiteElements.get<FiniteElement_name_mi_tag>();
   finiteElements_by_name::iterator it_MoFEMFiniteElement = MoFEMFiniteElement_name_set.find(MoFEMFiniteElement_name);
   if(it_MoFEMFiniteElement==MoFEMFiniteElement_name_set.end()) SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"this MoFEMFiniteElement is there");
   try {
@@ -1188,8 +1188,8 @@ PetscErrorCode Core::modify_finite_element_off_field_data(const string &MoFEMFin
 PetscErrorCode Core::modify_finite_element_off_field_row(const string &MoFEMFiniteElement_name,const string &name_row) {
   PetscFunctionBegin;
   *build_MoFEM &= 1<<0;
-  typedef MoFEMFiniteElement_multiIndex::index<MoFEMFiniteElement_name_mi_tag>::type finiteElements_by_name;
-  finiteElements_by_name &MoFEMFiniteElement_name_set = finiteElements.get<MoFEMFiniteElement_name_mi_tag>();
+  typedef MoFEMFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type finiteElements_by_name;
+  finiteElements_by_name &MoFEMFiniteElement_name_set = finiteElements.get<FiniteElement_name_mi_tag>();
   finiteElements_by_name::iterator it_MoFEMFiniteElement = MoFEMFiniteElement_name_set.find(MoFEMFiniteElement_name);
   if(it_MoFEMFiniteElement==MoFEMFiniteElement_name_set.end()) SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"this < %s > is not there",MoFEMFiniteElement_name.c_str());
   try {
@@ -1203,8 +1203,8 @@ PetscErrorCode Core::modify_finite_element_off_field_row(const string &MoFEMFini
 PetscErrorCode Core::modify_finite_element_off_field_col(const string &MoFEMFiniteElement_name,const string &name_col) {
   PetscFunctionBegin;
   *build_MoFEM &= 1<<0;
-  typedef MoFEMFiniteElement_multiIndex::index<MoFEMFiniteElement_name_mi_tag>::type finiteElements_by_name;
-  finiteElements_by_name &MoFEMFiniteElement_name_set = finiteElements.get<MoFEMFiniteElement_name_mi_tag>();
+  typedef MoFEMFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type finiteElements_by_name;
+  finiteElements_by_name &MoFEMFiniteElement_name_set = finiteElements.get<FiniteElement_name_mi_tag>();
   finiteElements_by_name::iterator it_MoFEMFiniteElement = MoFEMFiniteElement_name_set.find(MoFEMFiniteElement_name);
   if(it_MoFEMFiniteElement==MoFEMFiniteElement_name_set.end()) SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"this MoFEMFiniteElement is there");
   try {
@@ -1216,8 +1216,8 @@ PetscErrorCode Core::modify_finite_element_off_field_col(const string &MoFEMFini
   PetscFunctionReturn(0);
 }
 BitFEId Core::get_BitFEId(const string& name) const {
-  typedef MoFEMFiniteElement_multiIndex::index<MoFEMFiniteElement_name_mi_tag>::type finiteElements_by_name;
-  const finiteElements_by_name& set = finiteElements.get<MoFEMFiniteElement_name_mi_tag>();
+  typedef MoFEMFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type finiteElements_by_name;
+  const finiteElements_by_name& set = finiteElements.get<FiniteElement_name_mi_tag>();
   finiteElements_by_name::iterator miit = set.find(name);
   if(miit==set.end()) THROW_AT_LINE(("finite element < "+name+" > not found (top tip: check spelling)").c_str());
   return miit->get_id();
@@ -1273,8 +1273,8 @@ PetscErrorCode Core::add_problem(const BitProblemId id,const string& name) {
 PetscErrorCode Core::add_problem(const string& name,enum MoFEMTypes bh,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-  typedef MoFEMProblem_multiIndex::index<MoFEMProblem_mi_tag>::type moFEMProblems_by_name;
-  const moFEMProblems_by_name& set = moFEMProblems.get<MoFEMProblem_mi_tag>();
+  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type moFEMProblems_by_name;
+  const moFEMProblems_by_name& set = moFEMProblems.get<Problem_mi_tag>();
   moFEMProblems_by_name::iterator miit = set.find(name);
   if(miit==set.end()) {
     BitProblemId id = get_problem_shift();
@@ -1285,8 +1285,8 @@ PetscErrorCode Core::add_problem(const string& name,enum MoFEMTypes bh,int verb)
   PetscFunctionReturn(0);
 }
 BitProblemId Core::get_BitProblemId(const string& name) const {
-  typedef MoFEMProblem_multiIndex::index<MoFEMProblem_mi_tag>::type moFEMProblems_by_name;
-  const moFEMProblems_by_name& set = moFEMProblems.get<MoFEMProblem_mi_tag>();
+  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type moFEMProblems_by_name;
+  const moFEMProblems_by_name& set = moFEMProblems.get<Problem_mi_tag>();
   moFEMProblems_by_name::iterator miit = set.find(name);
   return miit->get_id();
 }
@@ -1493,8 +1493,8 @@ PetscErrorCode Core::add_ents_to_finite_element_by_MESHSET(const EntityHandle me
 PetscErrorCode Core::modify_problem_add_finite_element(const string &name_problem,const string &MoFEMFiniteElement_name) {
   PetscFunctionBegin;
   try {
-    typedef MoFEMProblem_multiIndex::index<MoFEMProblem_mi_tag>::type moFEMProblems_by_name;
-    moFEMProblems_by_name& set = moFEMProblems.get<MoFEMProblem_mi_tag>();
+    typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type moFEMProblems_by_name;
+    moFEMProblems_by_name& set = moFEMProblems.get<Problem_mi_tag>();
     moFEMProblems_by_name::iterator miit = set.find(name_problem);
     ostringstream ss;
     ss << name_problem;
@@ -1509,8 +1509,8 @@ PetscErrorCode Core::modify_problem_add_finite_element(const string &name_proble
 }
 PetscErrorCode Core::modify_problem_ref_level_add_bit(const string &name_problem,const BitRefLevel &bit) {
   PetscFunctionBegin;
-  typedef MoFEMProblem_multiIndex::index<MoFEMProblem_mi_tag>::type moFEMProblems_by_name;
-  moFEMProblems_by_name& set = moFEMProblems.get<MoFEMProblem_mi_tag>();
+  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type moFEMProblems_by_name;
+  moFEMProblems_by_name& set = moFEMProblems.get<Problem_mi_tag>();
   moFEMProblems_by_name::iterator miit = set.find(name_problem);
   ostringstream ss;
   ss << name_problem;
@@ -1521,8 +1521,8 @@ PetscErrorCode Core::modify_problem_ref_level_add_bit(const string &name_problem
 }
 PetscErrorCode Core::modify_problem_ref_level_set_bit(const string &name_problem,const BitRefLevel &bit) {
   PetscFunctionBegin;
-  typedef MoFEMProblem_multiIndex::index<MoFEMProblem_mi_tag>::type moFEMProblems_by_name;
-  moFEMProblems_by_name& set = moFEMProblems.get<MoFEMProblem_mi_tag>();
+  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type moFEMProblems_by_name;
+  moFEMProblems_by_name& set = moFEMProblems.get<Problem_mi_tag>();
   moFEMProblems_by_name::iterator miit = set.find(name_problem);
   ostringstream ss;
   ss << name_problem;
@@ -1533,8 +1533,8 @@ PetscErrorCode Core::modify_problem_ref_level_set_bit(const string &name_problem
 }
 PetscErrorCode Core::modify_problem_dof_mask_ref_level_set_bit(const string &name_problem,const BitRefLevel &bit) {
   PetscFunctionBegin;
-  typedef MoFEMProblem_multiIndex::index<MoFEMProblem_mi_tag>::type moFEMProblems_by_name;
-  moFEMProblems_by_name& set = moFEMProblems.get<MoFEMProblem_mi_tag>();
+  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type moFEMProblems_by_name;
+  moFEMProblems_by_name& set = moFEMProblems.get<Problem_mi_tag>();
   moFEMProblems_by_name::iterator miit = set.find(name_problem);
   ostringstream ss;
   ss << name_problem;
@@ -1586,7 +1586,7 @@ PetscErrorCode Core::build_finite_element_uids_view(EntMoFEMFiniteElement &ent_f
   PetscFunctionBegin;
   if(!(*build_MoFEM)&(1<<0)) SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"fields not build");
   typedef MoFEMField_multiIndex::index<BitFieldId_mi_tag>::type field_by_id;
-  typedef RefMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type ref_ent_by_ent;
+  typedef RefMoFEMEntity_multiIndex::index<Ent_mi_tag>::type ref_ent_by_ent;
   typedef DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type dof_set_type;
   field_by_id &moabFields_by_id = moabFields.get<BitFieldId_mi_tag>();
   dof_set_type& dof_set = dofsMoabField.get<Composite_Name_And_Ent_mi_tag>();
@@ -1628,8 +1628,8 @@ PetscErrorCode Core::build_finite_element_uids_view(EntMoFEMFiniteElement &ent_f
     //this part is to build MoFEMFiniteElement_dof_uid_view
     Range::iterator eit2 = adj_ents.begin();
     for(;eit2!=adj_ents.end();eit2++) {
-      ref_ent_by_ent::iterator ref_ent_miit = refinedEntities.get<MoABEnt_mi_tag>().find(*eit2);
-      if(ref_ent_miit==refinedEntities.get<MoABEnt_mi_tag>().end()) {
+      ref_ent_by_ent::iterator ref_ent_miit = refinedEntities.get<Ent_mi_tag>().find(*eit2);
+      if(ref_ent_miit==refinedEntities.get<Ent_mi_tag>().end()) {
 	SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"ref ent not in database"); 
       }
       const BitRefLevel& bit_ref_ent = ref_ent_miit->get_BitRefLevel();
@@ -1681,7 +1681,7 @@ PetscErrorCode Core::build_finite_element_uids_view(EntMoFEMFiniteElement &ent_f
 PetscErrorCode Core::build_finite_elements(int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-  typedef RefMoFEMElement_multiIndex::index<MoABEnt_mi_tag>::type ref_MoFEMFiniteElement_by_ent;
+  typedef RefMoFEMElement_multiIndex::index<Ent_mi_tag>::type ref_MoFEMFiniteElement_by_ent;
   MoFEMFiniteElement_multiIndex::iterator MoFEMFiniteElement_miit = finiteElements.begin();
   // loop Finite Elements
   for(;MoFEMFiniteElement_miit!=finiteElements.end();MoFEMFiniteElement_miit++) {
@@ -1697,8 +1697,8 @@ PetscErrorCode Core::build_finite_elements(int verb) {
       // note: iterator is a wrapper
       // check if is in refinedFiniteElements database
       ref_MoFEMFiniteElement_by_ent::iterator ref_MoFEMFiniteElement_miit; 
-      ref_MoFEMFiniteElement_miit = refinedFiniteElements.get<MoABEnt_mi_tag>().find(*eit);
-      if(ref_MoFEMFiniteElement_miit == refinedFiniteElements.get<MoABEnt_mi_tag>().end()) {
+      ref_MoFEMFiniteElement_miit = refinedFiniteElements.get<Ent_mi_tag>().find(*eit);
+      if(ref_MoFEMFiniteElement_miit == refinedFiniteElements.get<Ent_mi_tag>().end()) {
 	ostringstream ss;
 	ss << "ref MoFEMFiniteElement not in database ent = " << *eit;
 	ss << " type " << moab.type_from_handle(*eit);
@@ -1948,8 +1948,8 @@ PetscErrorCode Core::simple_partition_problem(const string &name,const int all_o
     PetscPrintf(PETSC_COMM_WORLD,"Simple partition problem %s\n",name.c_str());
   }
   // find p_miit
-  typedef MoFEMProblem_multiIndex::index<MoFEMProblem_mi_tag>::type moFEMProblems_by_name;
-  moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<MoFEMProblem_mi_tag>();
+  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type moFEMProblems_by_name;
+  moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<Problem_mi_tag>();
   moFEMProblems_by_name::iterator p_miit = moFEMProblems_set.find(name);
   if(p_miit==moFEMProblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem < %s > is not found (top tip: check spelling)",name.c_str());
   typedef boost::multi_index::index<NumeredDofMoFEMEntity_multiIndex,Idx_mi_tag>::type NumeredDofMoFEMEntitys_by_idx;
@@ -2044,9 +2044,9 @@ PetscErrorCode Core::partition_problem(const string &name,int verb) {
     PetscPrintf(PETSC_COMM_WORLD,"Partition problem %s\n",name.c_str());
   }
   typedef NumeredDofMoFEMEntity_multiIndex::index<Idx_mi_tag>::type NumeredDofMoFEMEntitys_by_idx;
-  typedef MoFEMProblem_multiIndex::index<MoFEMProblem_mi_tag>::type moFEMProblems_by_name;
+  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type moFEMProblems_by_name;
   //find p_miit
-  moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<MoFEMProblem_mi_tag>();
+  moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<Problem_mi_tag>();
   moFEMProblems_by_name::iterator p_miit = moFEMProblems_set.find(name);
   if(p_miit==moFEMProblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem with name %s not defined (top tip check spelling)",name.c_str());
   DofIdx nb_dofs_row = p_miit->get_nb_dofs_row();
@@ -2243,10 +2243,10 @@ PetscErrorCode Core::compose_problem(const string &name,const string &problem_fo
   if(!(*build_MoFEM&(1<<2))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"entFEAdjacencies not build");
   if(!(*build_MoFEM&(1<<3))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"moFEMProblems not build");
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
-  typedef MoFEMProblem_multiIndex::index<MoFEMProblem_mi_tag>::type moFEMProblems_by_name;
+  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type moFEMProblems_by_name;
   typedef NumeredDofMoFEMEntity_multiIndex::index<Unique_mi_tag>::type NumeredDofMoFEMEntitys_by_uid;
   //find p_miit
-  moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<MoFEMProblem_mi_tag>();
+  moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<Problem_mi_tag>();
   moFEMProblems_by_name::iterator p_miit = moFEMProblems_set.find(name);
   if(p_miit==moFEMProblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem with name %s not defined (top tip check spelling)",name.c_str());
   if(verb>0) {
@@ -2484,9 +2484,9 @@ PetscErrorCode Core::partition_finite_elements(const string &name,bool do_skip,i
   if(!(*build_MoFEM&(1<<3))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"partitions not build");
   if(!(*build_MoFEM&(1<<4))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"partitions moFEMProblems not build");
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
-  typedef MoFEMProblem_multiIndex::index<MoFEMProblem_mi_tag>::type moFEMProblems_by_name;
+  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type moFEMProblems_by_name;
   //find p_miit
-  moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<MoFEMProblem_mi_tag>();
+  moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<Problem_mi_tag>();
   moFEMProblems_by_name::iterator p_miit = moFEMProblems_set.find(name);
   if(p_miit == moFEMProblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem < %s > not found (top tip: check spelling)",name.c_str());
   NumeredMoFEMFiniteElement_multiIndex& numeredFiniteElements = const_cast<NumeredMoFEMFiniteElement_multiIndex&>(p_miit->numeredFiniteElements);
@@ -2561,9 +2561,9 @@ PetscErrorCode Core::partition_finite_elements(const string &name,bool do_skip,i
     }
   }
   if(verb>0) {
-    typedef NumeredMoFEMFiniteElement_multiIndex::index<MoFEMFiniteElement_Part_mi_tag>::type NumeredMoFEMFiniteElement_multiIndex_by_part;
-    NumeredMoFEMFiniteElement_multiIndex_by_part::iterator MoFEMFiniteElement_miit = numeredFiniteElements.get<MoFEMFiniteElement_Part_mi_tag>().lower_bound(pcomm->rank());
-    NumeredMoFEMFiniteElement_multiIndex_by_part::iterator hi_MoMoFEMFiniteElement_miitFEMFE_miit = numeredFiniteElements.get<MoFEMFiniteElement_Part_mi_tag>().upper_bound(pcomm->rank());
+    typedef NumeredMoFEMFiniteElement_multiIndex::index<FiniteElement_Part_mi_tag>::type NumeredMoFEMFiniteElement_multiIndex_by_part;
+    NumeredMoFEMFiniteElement_multiIndex_by_part::iterator MoFEMFiniteElement_miit = numeredFiniteElements.get<FiniteElement_Part_mi_tag>().lower_bound(pcomm->rank());
+    NumeredMoFEMFiniteElement_multiIndex_by_part::iterator hi_MoMoFEMFiniteElement_miitFEMFE_miit = numeredFiniteElements.get<FiniteElement_Part_mi_tag>().upper_bound(pcomm->rank());
     int count = distance(MoFEMFiniteElement_miit,hi_MoMoFEMFiniteElement_miitFEMFE_miit);
     ostringstream ss;
     ss << *p_miit;
@@ -2698,9 +2698,9 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const string &problem_name,i
   test_matrix_fill_in method(moab,A);
 
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
-  typedef MoFEMProblem_multiIndex::index<MoFEMProblem_mi_tag>::type moFEMProblems_by_name;
+  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type moFEMProblems_by_name;
   //find p_miit
-  moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<MoFEMProblem_mi_tag>();
+  moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<Problem_mi_tag>();
   moFEMProblems_by_name::iterator p_miit = moFEMProblems_set.find(problem_name);
   if(p_miit == moFEMProblems_set.end()) {
     SETERRQ1(PETSC_COMM_SELF,1,"problem < %s > not found (top tip: check spelling)",problem_name.c_str());
@@ -2737,9 +2737,9 @@ PetscErrorCode Core::partition_ghost_dofs(const string &name,int verb) {
   if(!(*build_MoFEM&(1<<4))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"partitions moFEMProblems not build");
   if(!(*build_MoFEM&(1<<5))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"partitions finite elements not build");
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
-  typedef MoFEMProblem_multiIndex::index<MoFEMProblem_mi_tag>::type moFEMProblems_by_name;
+  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type moFEMProblems_by_name;
   //find p_miit
-  moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<MoFEMProblem_mi_tag>();
+  moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<Problem_mi_tag>();
   moFEMProblems_by_name::iterator p_miit = moFEMProblems_set.find(name);
   //
   DofIdx &nb_row_ghost_dofs = *((DofIdx*)p_miit->tag_ghost_nbdof_data_row);
@@ -2749,9 +2749,9 @@ PetscErrorCode Core::partition_ghost_dofs(const string &name,int verb) {
   nb_col_ghost_dofs = 0;
   if(pcomm->size()>1) {
     NumeredDofMoFEMEntity_multiIndex_uid_view_ordered ghost_idx_col_view,ghost_idx_row_view;
-    NumeredMoFEMFiniteElement_multiIndex::index<MoFEMFiniteElement_Part_mi_tag>::type::iterator fe_it,hi_fe_it;
-    fe_it = p_miit->numeredFiniteElements.get<MoFEMFiniteElement_Part_mi_tag>().lower_bound(pcomm->rank());
-    hi_fe_it = p_miit->numeredFiniteElements.get<MoFEMFiniteElement_Part_mi_tag>().upper_bound(pcomm->rank());
+    NumeredMoFEMFiniteElement_multiIndex::index<FiniteElement_Part_mi_tag>::type::iterator fe_it,hi_fe_it;
+    fe_it = p_miit->numeredFiniteElements.get<FiniteElement_Part_mi_tag>().lower_bound(pcomm->rank());
+    hi_fe_it = p_miit->numeredFiniteElements.get<FiniteElement_Part_mi_tag>().upper_bound(pcomm->rank());
     for(;fe_it!=hi_fe_it;fe_it++) {
       typedef FENumeredDofMoFEMEntity_multiIndex::iterator dof_it;
       if(fe_it->rows_dofs.size()>0) {
@@ -2828,9 +2828,9 @@ PetscErrorCode Core::seed_finite_elements(const EntityHandle meshset,int verb) {
 PetscErrorCode Core::seed_finite_elements(const Range &entities,int verb) {
   PetscFunctionBegin;
   for(Range::iterator eit = entities.begin();eit!=entities.end();eit++) {
-    RefMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator 
-      eiit = refinedEntities.get<MoABEnt_mi_tag>().find(*eit);
-    if(eiit == refinedEntities.get<MoABEnt_mi_tag>().end())  {
+    RefMoFEMEntity_multiIndex::index<Ent_mi_tag>::type::iterator 
+      eiit = refinedEntities.get<Ent_mi_tag>().find(*eit);
+    if(eiit == refinedEntities.get<Ent_mi_tag>().end())  {
       SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"entity is not in database");
     }
     if(eiit->get_BitRefLevel().none()) continue;
@@ -3191,8 +3191,8 @@ PetscErrorCode Core::update_field_meshset_by_entities_children(const string name
 }
 PetscErrorCode Core::update_finite_element_meshset_by_entities_children(const string name,const BitRefLevel &child_bit,const EntityType fe_ent_type,int verb) {
   PetscFunctionBegin;
-  typedef MoFEMFiniteElement_multiIndex::index<MoFEMFiniteElement_name_mi_tag>::type finiteElements_by_name;
-  const finiteElements_by_name& set = finiteElements.get<MoFEMFiniteElement_name_mi_tag>();
+  typedef MoFEMFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type finiteElements_by_name;
+  const finiteElements_by_name& set = finiteElements.get<FiniteElement_name_mi_tag>();
   finiteElements_by_name::iterator miit = set.find(name);
   if(miit==set.end()) THROW_AT_LINE(("finite element < "+name+" > not found (top tip: check spelling)").c_str());
   EntityHandle meshset = miit->get_meshset();
@@ -3201,13 +3201,13 @@ PetscErrorCode Core::update_finite_element_meshset_by_entities_children(const st
 }
 PetscErrorCode Core::problem_get_FE(const string &problem_name,const string &fe_name,const EntityHandle meshset) {
   PetscFunctionBegin;
-  typedef MoFEMProblem_multiIndex::index<MoFEMProblem_mi_tag>::type moFEMProblems_by_name;
-  moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<MoFEMProblem_mi_tag>();
+  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type moFEMProblems_by_name;
+  moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<Problem_mi_tag>();
   moFEMProblems_by_name::iterator p_miit = moFEMProblems_set.find(problem_name);
   if(p_miit == moFEMProblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"no such problem like < %s >",problem_name.c_str());
   NumeredMoFEMFiniteElement_multiIndex &numeredFiniteElements = const_cast<NumeredMoFEMFiniteElement_multiIndex&>(p_miit->numeredFiniteElements);
-  NumeredMoFEMFiniteElement_multiIndex::index<MoFEMFiniteElement_name_mi_tag>::type::iterator miit = numeredFiniteElements.get<MoFEMFiniteElement_name_mi_tag>().lower_bound(fe_name);
-  for(;miit!=numeredFiniteElements.get<MoFEMFiniteElement_name_mi_tag>().upper_bound(fe_name);miit++) {
+  NumeredMoFEMFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator miit = numeredFiniteElements.get<FiniteElement_name_mi_tag>().lower_bound(fe_name);
+  for(;miit!=numeredFiniteElements.get<FiniteElement_name_mi_tag>().upper_bound(fe_name);miit++) {
     EntityHandle ent = miit->get_ent();
     rval = moab.add_entities(meshset,&ent,1); CHKERR_PETSC(rval);
     int part = miit->get_part();
@@ -3321,9 +3321,9 @@ PetscErrorCode Core::get_Cubit_meshsets(const unsigned int CubitBCType,Range &me
 }
 PetscErrorCode Core::VecCreateGhost(const string &name,RowColData rc,Vec *V) {
   PetscFunctionBegin;
-  typedef MoFEMProblem_multiIndex::index<MoFEMProblem_mi_tag>::type moFEMProblems_by_name;
+  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type moFEMProblems_by_name;
   typedef NumeredDofMoFEMEntity_multiIndex::index<PetscLocalIdx_mi_tag>::type dofs_by_local_idx;
-  moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<MoFEMProblem_mi_tag>();
+  moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<Problem_mi_tag>();
   moFEMProblems_by_name::iterator p_miit = moFEMProblems_set.find(name);
   if(p_miit==moFEMProblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"no such problem %s (top tip check spelling)",name.c_str());
   DofIdx nb_dofs,nb_local_dofs,nb_ghost_dofs;
@@ -3357,8 +3357,8 @@ PetscErrorCode Core::VecCreateGhost(const string &name,RowColData rc,Vec *V) {
 PetscErrorCode Core::VecScatterCreate(Vec xin,string &x_problem,RowColData x_rc,Vec yin,string &y_problem,RowColData y_rc,VecScatter *newctx,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-  typedef MoFEMProblem_multiIndex::index<MoFEMProblem_mi_tag>::type moFEMProblems_by_name;
-  moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<MoFEMProblem_mi_tag>();
+  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type moFEMProblems_by_name;
+  moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<Problem_mi_tag>();
   moFEMProblems_by_name::iterator p_x = moFEMProblems_set.find(x_problem);
   if(p_x==moFEMProblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"no such problem %s (top tip check spelling)",x_problem.c_str());
   moFEMProblems_by_name::iterator p_y = moFEMProblems_set.find(y_problem);
@@ -3428,9 +3428,9 @@ PetscErrorCode Core::MatCreateSeqAIJWithArrays(const string &name,Mat *Aij,Petsc
 }
 PetscErrorCode Core::set_local_VecCreateGhost(const string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) {
   PetscFunctionBegin;
-  typedef MoFEMProblem_multiIndex::index<MoFEMProblem_mi_tag>::type moFEMProblems_by_name;
+  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type moFEMProblems_by_name;
   typedef NumeredDofMoFEMEntity_multiIndex::index<PetscLocalIdx_mi_tag>::type dofs_by_local_idx;
-  moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<MoFEMProblem_mi_tag>();
+  moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<Problem_mi_tag>();
   moFEMProblems_by_name::iterator p_miit = moFEMProblems_set.find(name);
   if(p_miit==moFEMProblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem < %s > not found (top tip: check spelling)",name.c_str()); 
   dofs_by_local_idx *dofs;
@@ -3549,8 +3549,8 @@ PetscErrorCode Core::set_global_VecCreateGhost(const MoFEMProblem *problemPtr,Ro
 }
 PetscErrorCode Core::set_global_VecCreateGhost(const string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) {
   PetscFunctionBegin;
-  typedef MoFEMProblem_multiIndex::index<MoFEMProblem_mi_tag>::type moFEMProblems_by_name;
-  moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<MoFEMProblem_mi_tag>();
+  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type moFEMProblems_by_name;
+  moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<Problem_mi_tag>();
   moFEMProblems_by_name::iterator p_miit = moFEMProblems_set.find(name);
   if(p_miit==moFEMProblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem < %s > not found (top tip: check spelling)",name.c_str());
   ierr = set_global_VecCreateGhost(&*p_miit,rc,V,mode,scatter_mode); CHKERRQ(ierr);
@@ -3647,8 +3647,8 @@ PetscErrorCode Core::set_other_local_VecCreateGhost(
   const string &name,const string& field_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-  typedef MoFEMProblem_multiIndex::index<MoFEMProblem_mi_tag>::type moFEMProblems_by_name;
-  moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<MoFEMProblem_mi_tag>();
+  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type moFEMProblems_by_name;
+  moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<Problem_mi_tag>();
   moFEMProblems_by_name::iterator p_miit = moFEMProblems_set.find(name);
   if(p_miit==moFEMProblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem < %s > not found",name.c_str());
   ierr = set_other_local_VecCreateGhost(&*p_miit,field_name,cpy_field_name,rc,V,mode,scatter_mode,verb); CHKERRQ(ierr);
@@ -3660,9 +3660,9 @@ PetscErrorCode Core::set_other_global_VecCreateGhost(
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
-  typedef MoFEMProblem_multiIndex::index<MoFEMProblem_mi_tag>::type moFEMProblems_by_name;
+  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type moFEMProblems_by_name;
   typedef NumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type dofs_by_name;
-  moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<MoFEMProblem_mi_tag>();
+  moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<Problem_mi_tag>();
   moFEMProblems_by_name::iterator p_miit = moFEMProblems_set.find(name);
   if(p_miit==moFEMProblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem < %s > not found",name.c_str());
   dofs_by_name *dofs;
@@ -3870,9 +3870,9 @@ PetscErrorCode Core::field_scale(const double alpha,const string& field_name) {
 PetscErrorCode Core::problem_basic_method_preProcess(const string &problem_name,BasicMethod &method,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-  typedef MoFEMProblem_multiIndex::index<MoFEMProblem_mi_tag>::type moFEMProblems_by_name;
+  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type moFEMProblems_by_name;
   // find p_miit
-  moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<MoFEMProblem_mi_tag>();
+  moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<Problem_mi_tag>();
   moFEMProblems_by_name::iterator p_miit = moFEMProblems_set.find(problem_name);
   if(p_miit == moFEMProblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem is not in database %s",problem_name.c_str());
   // finite element
@@ -3886,9 +3886,9 @@ PetscErrorCode Core::problem_basic_method_preProcess(const string &problem_name,
 PetscErrorCode Core::problem_basic_method_postProcess(const string &problem_name,BasicMethod &method,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-  typedef MoFEMProblem_multiIndex::index<MoFEMProblem_mi_tag>::type moFEMProblems_by_name;
+  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type moFEMProblems_by_name;
   // find p_miit
-  moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<MoFEMProblem_mi_tag>();
+  moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<Problem_mi_tag>();
   moFEMProblems_by_name::iterator p_miit = moFEMProblems_set.find(problem_name);
   if(p_miit == moFEMProblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem is not in database %s",problem_name.c_str());
   // finite element
@@ -3911,9 +3911,9 @@ PetscErrorCode Core::loop_finite_elements(
   const string &problem_name,const string &fe_name,FEMethod &method,int lower_rank,int upper_rank,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-  typedef MoFEMProblem_multiIndex::index<MoFEMProblem_mi_tag>::type moFEMProblems_by_name;
+  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type moFEMProblems_by_name;
   // find p_miit
-  moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<MoFEMProblem_mi_tag>();
+  moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<Problem_mi_tag>();
   moFEMProblems_by_name::iterator p_miit = moFEMProblems_set.find(problem_name);
   if(p_miit == moFEMProblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem is not in database %s",problem_name.c_str());
   // finite element
@@ -3951,10 +3951,10 @@ PetscErrorCode Core::loop_dofs(const string &problem_name,const string &field_na
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   //ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
-  typedef MoFEMProblem_multiIndex::index<MoFEMProblem_mi_tag>::type moFEMProblems_by_name;
+  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type moFEMProblems_by_name;
   typedef NumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type dofs_by_name;
   // find p_miit
-  moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<MoFEMProblem_mi_tag>();
+  moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<Problem_mi_tag>();
   moFEMProblems_by_name::iterator p_miit = moFEMProblems_set.find(problem_name);
   if(p_miit == moFEMProblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem not in database %s",problem_name.c_str());
   SET_BASIC_METHOD(&*p_miit);
@@ -4015,8 +4015,8 @@ PetscErrorCode Core::get_ref_ents(const RefMoFEMEntity_multiIndex **refinedEntit
 }
 PetscErrorCode Core::get_problem(const string &problem_name,const MoFEMProblem **problemPtr) {
   PetscFunctionBegin;
-  typedef MoFEMProblem_multiIndex::index<MoFEMProblem_mi_tag>::type moFEMProblems_by_name;
-  moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<MoFEMProblem_mi_tag>();
+  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type moFEMProblems_by_name;
+  moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<Problem_mi_tag>();
   moFEMProblems_by_name::iterator p_miit = moFEMProblems_set.find(problem_name);
   if(p_miit == moFEMProblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem < %s > not found, (top tip: check spelling)",problem_name.c_str());
   *problemPtr = &*p_miit;
@@ -4056,11 +4056,11 @@ PetscErrorCode Core::get_finite_elements(const MoFEMFiniteElement_multiIndex **f
   *finiteElements_ptr = &finiteElements;
   PetscFunctionReturn(0);
 }
-EntMoFEMFiniteElement_multiIndex::index<MoFEMFiniteElement_name_mi_tag>::type::iterator Core::get_fes_moabfield_by_name_begin(const string &fe_name) {
-  return finiteElementsMoFEMEnts.get<MoFEMFiniteElement_name_mi_tag>().lower_bound(fe_name);
+EntMoFEMFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator Core::get_fes_moabfield_by_name_begin(const string &fe_name) {
+  return finiteElementsMoFEMEnts.get<FiniteElement_name_mi_tag>().lower_bound(fe_name);
 }
-EntMoFEMFiniteElement_multiIndex::index<MoFEMFiniteElement_name_mi_tag>::type::iterator Core::get_fes_moabfield_by_name_end(const string &fe_name) {
-  return finiteElementsMoFEMEnts.get<MoFEMFiniteElement_name_mi_tag>().upper_bound(fe_name);
+EntMoFEMFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator Core::get_fes_moabfield_by_name_end(const string &fe_name) {
+  return finiteElementsMoFEMEnts.get<FiniteElement_name_mi_tag>().upper_bound(fe_name);
 }
 PetscErrorCode Core::check_number_of_ents_in_ents_field(const string& name) {
   PetscFunctionBegin;
@@ -4093,15 +4093,15 @@ PetscErrorCode Core::check_number_of_ents_in_ents_field() {
 }
 PetscErrorCode Core::check_number_of_ents_in_ents_finite_element(const string& name) {
   PetscFunctionBegin;
-  MoFEMFiniteElement_multiIndex::index<MoFEMFiniteElement_name_mi_tag>::type::iterator it;
-  it = finiteElements.get<MoFEMFiniteElement_name_mi_tag>().find(name);
-  if(it == finiteElements.get<MoFEMFiniteElement_name_mi_tag>().end()) {
+  MoFEMFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator it;
+  it = finiteElements.get<FiniteElement_name_mi_tag>().find(name);
+  if(it == finiteElements.get<FiniteElement_name_mi_tag>().end()) {
     SETERRQ1(PETSC_COMM_SELF,1,"finite element not found < %s >",name.c_str());
   }
   EntityHandle meshset = it->get_meshset();
   int num_entities;
   rval = moab.get_number_entities_by_handle(meshset,num_entities); CHKERR_PETSC(rval);
-  if(finiteElementsMoFEMEnts.get<MoFEMFiniteElement_name_mi_tag>().count(it->get_name().c_str()) 
+  if(finiteElementsMoFEMEnts.get<FiniteElement_name_mi_tag>().count(it->get_name().c_str()) 
     != (unsigned int)num_entities) {
     SETERRQ1(PETSC_COMM_SELF,1,"not equal number of entities in meshset and finite elements multiindex < %s >",it->get_name().c_str());
   }
@@ -4109,13 +4109,13 @@ PetscErrorCode Core::check_number_of_ents_in_ents_finite_element(const string& n
 }
 PetscErrorCode Core::check_number_of_ents_in_ents_finite_element() {
   PetscFunctionBegin;
-  MoFEMFiniteElement_multiIndex::index<MoFEMFiniteElement_name_mi_tag>::type::iterator it;
-  it = finiteElements.get<MoFEMFiniteElement_name_mi_tag>().begin();
-  for(;it!=finiteElements.get<MoFEMFiniteElement_name_mi_tag>().end();it++) {
+  MoFEMFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator it;
+  it = finiteElements.get<FiniteElement_name_mi_tag>().begin();
+  for(;it!=finiteElements.get<FiniteElement_name_mi_tag>().end();it++) {
     EntityHandle meshset = it->get_meshset();
     int num_entities;
     rval = moab.get_number_entities_by_handle(meshset,num_entities); CHKERR_PETSC(rval);
-    if(finiteElementsMoFEMEnts.get<MoFEMFiniteElement_name_mi_tag>().count(it->get_name().c_str()) 
+    if(finiteElementsMoFEMEnts.get<FiniteElement_name_mi_tag>().count(it->get_name().c_str()) 
       != (unsigned int)num_entities) {
       SETERRQ1(PETSC_COMM_SELF,1,"not equal number of entities in meshset and finite elements multiindex < %s >",it->get_name().c_str());
     }
@@ -4371,12 +4371,12 @@ PetscErrorCode Core::clear_adjacencies_finite_elements(const string &name,const 
   if(verb==-1) verb = verbose;
   Range::iterator eit = ents.begin();
   for(;eit!=ents.end();eit++) {
-    MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_multiIndex::index<MoABFEEnt_mi_tag>::type::iterator ait,hi_ait;
-    ait = entFEAdjacencies.get<MoABFEEnt_mi_tag>().lower_bound(*eit);
-    hi_ait = entFEAdjacencies.get<MoABFEEnt_mi_tag>().upper_bound(*eit);
+    MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_multiIndex::index<FEEnt_mi_tag>::type::iterator ait,hi_ait;
+    ait = entFEAdjacencies.get<FEEnt_mi_tag>().lower_bound(*eit);
+    hi_ait = entFEAdjacencies.get<FEEnt_mi_tag>().upper_bound(*eit);
     for(;ait!=hi_ait;) {
       if(ait->EntMoFEMFiniteElement_ptr->get_name() == name) {
-	ait = entFEAdjacencies.get<MoABFEEnt_mi_tag>().erase(ait);
+	ait = entFEAdjacencies.get<FEEnt_mi_tag>().erase(ait);
       } else {
 	ait++;
       }
@@ -4412,12 +4412,12 @@ PetscErrorCode Core::clear_adjacencies_entities(const string &name,const Range &
   if(verb==-1) verb = verbose;
   Range::iterator eit = ents.begin();
   for(;eit!=ents.end();eit++) {
-    MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_multiIndex::index<MoABEnt_mi_tag>::type::iterator ait,hi_ait;
-    ait = entFEAdjacencies.get<MoABEnt_mi_tag>().lower_bound(*eit);
-    hi_ait = entFEAdjacencies.get<MoABEnt_mi_tag>().upper_bound(*eit);
+    MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_multiIndex::index<Ent_mi_tag>::type::iterator ait,hi_ait;
+    ait = entFEAdjacencies.get<Ent_mi_tag>().lower_bound(*eit);
+    hi_ait = entFEAdjacencies.get<Ent_mi_tag>().upper_bound(*eit);
     for(;ait!=hi_ait;) {
       if(ait->MoFEMEntity_ptr->get_name() == name) {
-	ait = entFEAdjacencies.get<MoABEnt_mi_tag>().erase(ait);
+	ait = entFEAdjacencies.get<Ent_mi_tag>().erase(ait);
       } else {
 	ait++;
       }
@@ -4604,9 +4604,9 @@ PetscErrorCode Core::delete_ents_by_bit_ref(const BitRefLevel &bit,const BitRefL
   if(remove_parent) { //remove parent
     Range::iterator eit = ents_to_delete.begin();
     for(;eit != ents_to_delete.end();eit++) {
-      RefMoFEMEntity_multiIndex::index<MoABEnt_MoABEnt_mi_tag>::type::iterator pit,hi_pit;
-      pit = refinedEntities.get<MoABEnt_MoABEnt_mi_tag>().lower_bound(*eit);
-      hi_pit = refinedEntities.get<MoABEnt_MoABEnt_mi_tag>().upper_bound(*eit);
+      RefMoFEMEntity_multiIndex::index<Ent_Ent_mi_tag>::type::iterator pit,hi_pit;
+      pit = refinedEntities.get<Ent_Ent_mi_tag>().lower_bound(*eit);
+      hi_pit = refinedEntities.get<Ent_Ent_mi_tag>().upper_bound(*eit);
       for(;pit!=hi_pit;pit++) {
 	EntityHandle ent = pit->get_ref_ent();
 	if(ents_to_delete.find(ent) != ents_to_delete.end()) {
