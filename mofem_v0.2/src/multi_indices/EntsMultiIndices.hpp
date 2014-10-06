@@ -369,7 +369,7 @@ struct MoFEMEntity_change_order {
  * \ingroup ent_multi_indices 
  *
  * \param ordered_unique<
- *    tag<Unique_mi_tag>, member<MoFEMEntity,LocalUId,&MoFEMEntity::local_uid> >,
+ *    tag<Unique_mi_tag>, member<MoFEMEntity,GlobalUId,&MoFEMEntity::local_uid> >,
  * \param ordered_non_unique<
  *    tag<BitFieldId_mi_tag>, const_mem_fun<MoFEMEntity::interface_type_MoFEMField,const BitFieldId&,&MoFEMEntity::get_id>, LtBit<BitFieldId> >,
  * \param ordered_non_unique<

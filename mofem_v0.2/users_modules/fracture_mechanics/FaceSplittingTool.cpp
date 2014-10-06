@@ -182,7 +182,7 @@ PetscErrorCode FaceSplittingTools::splitFaces(const int verb) {
     BitRefLevel last_ref = BitRefLevel().set(last_ref_bit);
   
     ierr = prismInterface->get_msId_3dENTS_split_sides(
-      bit_meshset,last_ref,meshset_interface,false,true); CHKERRQ(ierr);
+      bit_meshset,last_ref,meshset_interface,true,true); CHKERRQ(ierr);
 
     //add refined ent to cubit meshsets
     for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,cubit_it)) {
@@ -589,7 +589,7 @@ PetscErrorCode FaceSplittingTools::crackFrontEdgeLengths(
 	//SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
       }
       double l = length_map2[*eiit];
-      if(l<(ave_l2-2*sdev_l2)) {
+      if(l<(ave_l2-sdev_l2)) {
 	eit_to_remove.insert(*eiit);
       }
     }

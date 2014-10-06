@@ -1608,6 +1608,7 @@ PetscErrorCode Core::build_finite_element_uids_view(EntMoFEMFiniteElement &ent_f
   };
   unsigned int nb_view_dofs[Last];
   for(int ss = 0;ss<Last;ss++) {
+    MoFEMFiniteElement_dof_uid_view[ss]->clear();
     nb_view_dofs[ss] = 0;
   }
   //lopp over all fields in database
