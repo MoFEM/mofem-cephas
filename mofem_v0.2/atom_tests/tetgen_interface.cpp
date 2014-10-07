@@ -105,7 +105,7 @@ int main(int argc, char *argv[]) {
   Range outer_surface_skin;
   rval = skin.find_skin(0,tets,false,outer_surface_skin); CHKERR(rval);
 
-  //ierr = tetgen_iface->inData(nodes,in,moab_tetgen_map,tetgen_moab_map); CHKERRQ(ierr);
+  ierr = tetgen_iface->inData(nodes,in,moab_tetgen_map,tetgen_moab_map); CHKERRQ(ierr);
   
   Range side_set_faces;
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,SIDESET,sit)) {
@@ -114,18 +114,47 @@ int main(int argc, char *argv[]) {
     side_set_faces.merge(faces);
   }
 
-  //Range surface_nodes;
-  //rval = moab.get_connectivity(unite(side_set_faces,outer_surface_skin),surface_nodes,true); CHKERR_PETSC(rval);
-  ierr = tetgen_iface->inData(nodes,in,moab_tetgen_map,tetgen_moab_map); CHKERRQ(ierr);
-
   vector<pair<Range,int> > markers;
   outer_surface_skin = subtract(outer_surface_skin,side_set_faces);
-  Range::iterator it = outer_surface_skin.begin();
-  for(;it!=outer_surface_skin.end();it++) {
-    Range ent;
-    ent.insert(*it);
-    markers.push_back(pair<Range,int>(ent,-1));
+  vector<vector<Range> > sorted_outer_surface_skin;
+  int nb_ents = outer_surface_skin.size();
+  ierr = tetgen_iface->groupRegion_Triangle(outer_surface_skin,sorted_outer_surface_skin,1e-10); CHKERRQ(ierr);
+  if(debug>0) {
+    cerr << " number of triangle entities " << nb_ents
+      << " number of faces disjoint regions " << sorted_outer_surface_skin.size() << endl;
+    for(unsigned int vv = 0;vv<sorted_outer_surface_skin.size();vv++) {
+      cerr << "\tnb of disjoint region " << vv 
+	<< " nb of noplanar subregions " << sorted_outer_surface_skin[vv].size() << endl;
+      for(unsigned int vvv = 0;vvv<sorted_outer_surface_skin[vv].size();vvv++) {
+	cerr << "\t\tnb of subregion " << vvv << " nb elemes in subregion " << sorted_outer_surface_skin[vv][vvv].size() << endl;
+      }
+    }
   }
+
+  vector<vector<Range> >::iterator vit = sorted_outer_surface_skin.begin();
+  for(;vit!=sorted_outer_surface_skin.end();vit++) {
+    vector<Range>::iterator viit = vit->begin();
+    for(;viit!=vit->end();viit++) {
+      Range polygons;
+      ierr = tetgen_iface->makePolygonFacet(*viit,polygons); CHKERRQ(ierr);
+      Range aa;
+      rval = moab.get_connectivity(*viit,aa,true); CHKERR_PETSC(rval);
+      Range viit_edges;
+      rval = m_field.get_moab().get_adjacencies(
+        *viit,1,false,viit_edges,Interface::UNION); CHKERR_PETSC(rval);
+      for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,SIDESET,sit)) {
+	Range faces;
+	rval = moab.get_entities_by_type(sit->meshset,MBTRI,faces,true); CHKERR_PETSC(rval);
+	Range faces_edges;
+	rval = m_field.get_moab().get_adjacencies(
+	  faces,1,false,faces_edges,Interface::UNION); CHKERR_PETSC(rval);
+	aa.merge(intersect(faces_edges,viit_edges));
+      }
+      markers.push_back(pair<Range,int>(unite(polygons,aa),-1));
+      //markers.push_back(pair<Range,int>(polygons,-1));
+    }
+  }
+
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,SIDESET,sit)) {
     int id = sit->get_msId();
     Range faces;
@@ -133,7 +162,8 @@ int main(int argc, char *argv[]) {
     markers.push_back(pair<Range,int>(faces,id));
   }
 
-  ierr = tetgen_iface->setFaceData(markers,in,moab_tetgen_map,tetgen_moab_map);  CHKERRQ(ierr);
+  ierr = tetgen_iface->inData(nodes,in,moab_tetgen_map,tetgen_moab_map); CHKERRQ(ierr);
+  ierr = tetgen_iface->setFaceData(markers,in,moab_tetgen_map,tetgen_moab_map); CHKERRQ(ierr);
 
   vector<pair<EntityHandle,int> > regions;
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,bit)) {
@@ -144,19 +174,26 @@ int main(int argc, char *argv[]) {
   }
   ierr = tetgen_iface->setReginData(regions,in);  CHKERRQ(ierr);
   
-  //in.load_poly("bar2");
-  //in.save_nodes("in");
-  //in.save_poly("in");
+  if(debug>0) {
+    char tetgen_in_file_name[] = "in";
+    in.save_nodes(tetgen_in_file_name);
+    in.save_elements(tetgen_in_file_name);
+    in.save_faces(tetgen_in_file_name);
+    in.save_edges(tetgen_in_file_name);
+    in.save_poly(tetgen_in_file_name);
+  }
 
-  ierr = tetgen_iface->tetRahedralize(switches,in,out); CHKERRQ(ierr);
+
+  char switches2[] = "pYA";  
+  ierr = tetgen_iface->tetRahedralize(switches2,in,out); CHKERRQ(ierr);
   BitRefLevel bit_level2;
   bit_level2.set(2);
   ierr = tetgen_iface->outData(in,out,moab_tetgen_map,tetgen_moab_map,bit_level2); CHKERRQ(ierr);
-  ierr = tetgen_iface->getTiangleAttributes(tetgen_moab_map,out); CHKERRQ(ierr);
+  ierr = tetgen_iface->getTriangleMarkers(tetgen_moab_map,out); CHKERRQ(ierr);
   ierr = tetgen_iface->getReginData(tetgen_moab_map,out); CHKERRQ(ierr);
 
-  char tetgen_out_file_name[] = "out";
-  out.save_elements(tetgen_out_file_name);
+  //char tetgen_out_file_name[] = "out";
+  //out.save_elements(tetgen_out_file_name);
 
   EntityHandle meshset_level2;
   rval = moab.create_meshset(MESHSET_SET,meshset_level2); CHKERR_PETSC(rval);

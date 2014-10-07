@@ -302,25 +302,25 @@ struct FEMethod: public BasicMethod {
     * \ingroup mofem_loop_methods
     */
   #define _IT_GET_FEROW_DOFS_BY_ENT_FOR_LOOP_(FE,ENT,IT) \
-    FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator \
-    IT = FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type>(FE->rowPtr->get<MoABEnt_mi_tag>(),ENT); \
-    IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type>(FE->rowPtr->get<MoABEnt_mi_tag>(),ENT); IT++
+    FENumeredDofMoFEMEntity_multiIndex::index<Ent_mi_tag>::type::iterator \
+    IT = FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<Ent_mi_tag>::type>(FE->rowPtr->get<Ent_mi_tag>(),ENT); \
+    IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<Ent_mi_tag>::type>(FE->rowPtr->get<Ent_mi_tag>(),ENT); IT++
 
   /** \brief loop over all dofs which are on a particular FE column and given element entity (handle from moab)
     * \ingroup mofem_loop_methods
     */
   #define _IT_GET_FECOL_DOFS_BY_ENT_FOR_LOOP_(FE,ENT,IT) \
-  FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator \
-    IT = FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type>(FE->colPtr->get<MoABEnt_mi_tag>(),ENT); \
-    IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type>(FE->colPtr->get<MoABEnt_mi_tag>(),ENT); IT++
+  FENumeredDofMoFEMEntity_multiIndex::index<Ent_mi_tag>::type::iterator \
+    IT = FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<Ent_mi_tag>::type>(FE->colPtr->get<Ent_mi_tag>(),ENT); \
+    IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<Ent_mi_tag>::type>(FE->colPtr->get<Ent_mi_tag>(),ENT); IT++
 
   /** \brief loop over all dofs which are on a particular FE data and given element entity (handle from moab)
     * \ingroup mofem_loop_methods
     */
   #define _IT_GET_FEDATA_DOFS_BY_ENT_FOR_LOOP_(FE,ENT,IT) \
-  FEDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator \
-    IT = FE->get_begin<FEDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type>(FE->dataPtr->get<MoABEnt_mi_tag>(),ENT); \
-    IT != FE->get_end<FEDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type>(FE->dataPtr->get<MoABEnt_mi_tag>(),ENT); IT++
+  FEDofMoFEMEntity_multiIndex::index<Ent_mi_tag>::type::iterator \
+    IT = FE->get_begin<FEDofMoFEMEntity_multiIndex::index<Ent_mi_tag>::type>(FE->dataPtr->get<Ent_mi_tag>(),ENT); \
+    IT != FE->get_end<FEDofMoFEMEntity_multiIndex::index<Ent_mi_tag>::type>(FE->dataPtr->get<Ent_mi_tag>(),ENT); IT++
 
   template<class MULTIINDEX>
   typename MULTIINDEX::iterator get_begin(const MULTIINDEX &index,const string &field_name,const EntityHandle ent) const {

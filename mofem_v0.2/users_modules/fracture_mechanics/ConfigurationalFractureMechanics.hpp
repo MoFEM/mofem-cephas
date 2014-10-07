@@ -46,13 +46,13 @@ struct ConfigurationalFractureMechanics {
   matPROJ_ctx *projSurfaceCtx,*projFrontCtx;
 
   BitRefLevel *ptr_bit_level0;
-  ConfigurationalFractureMechanics(FieldInterface& mField): projSurfaceCtx(NULL),projFrontCtx(NULL) {
+  ConfigurationalFractureMechanics(FieldInterface& m_field): projSurfaceCtx(NULL),projFrontCtx(NULL) {
 
     ErrorCode rval;
     Tag th_my_ref_level;
-    rval = mField.get_moab().tag_get_handle("_MY_REFINMENT_LEVEL",th_my_ref_level); CHKERR_THROW(rval);
-    const EntityHandle root_meshset = mField.get_moab().get_root_set();
-    rval = mField.get_moab().tag_get_by_ptr(th_my_ref_level,&root_meshset,1,(const void**)&ptr_bit_level0); CHKERR_THROW(rval);
+    rval = m_field.get_moab().tag_get_handle("_MY_REFINMENT_LEVEL",th_my_ref_level); CHKERR_THROW(rval);
+    const EntityHandle root_meshset = m_field.get_moab().get_root_set();
+    rval = m_field.get_moab().tag_get_by_ptr(th_my_ref_level,&root_meshset,1,(const void**)&ptr_bit_level0); CHKERR_THROW(rval);
 
     fe_post_proc_stresses_method = NULL;
 
@@ -64,50 +64,48 @@ struct ConfigurationalFractureMechanics {
     }
   }
   
-  PetscErrorCode set_material_fire_wall(FieldInterface& mField);
-  PetscErrorCode thermal_field(FieldInterface& mField);
-  PetscErrorCode spatial_problem_definition(FieldInterface& mField); 
-  PetscErrorCode material_problem_definition(FieldInterface& mField);
-  PetscErrorCode mesh_smoothing_problem_definition(FieldInterface& mField);
-  PetscErrorCode coupled_problem_definition(FieldInterface& mField);
-  PetscErrorCode arclength_problem_definition(FieldInterface& mField);
-  PetscErrorCode constrains_problem_definition(FieldInterface& mField);
-  PetscErrorCode constrains_crack_front_problem_definition(FieldInterface& mField,string problem);
-  PetscErrorCode spatial_partition_problems(FieldInterface& mField);
-  PetscErrorCode material_partition_problems(FieldInterface& mField);
-  PetscErrorCode coupled_partition_problems(FieldInterface& mField);
-  PetscErrorCode constrains_partition_problems(FieldInterface& mField,string problem);
-  PetscErrorCode crackfront_partition_problems(FieldInterface& mField,string problem);
-  PetscErrorCode set_spatial_positions(FieldInterface& mField);
-  PetscErrorCode set_material_positions(FieldInterface& mField);
-  PetscErrorCode set_coordinates_from_material_solution(FieldInterface& mField);
+  PetscErrorCode set_material_fire_wall(FieldInterface& m_field);
+  PetscErrorCode thermal_field(FieldInterface& m_field);
+  PetscErrorCode spatial_problem_definition(FieldInterface& m_field); 
+  PetscErrorCode material_problem_definition(FieldInterface& m_field);
+  PetscErrorCode coupled_problem_definition(FieldInterface& m_field);
+  PetscErrorCode arclength_problem_definition(FieldInterface& m_field);
+  PetscErrorCode constrains_problem_definition(FieldInterface& m_field);
+  PetscErrorCode constrains_crack_front_problem_definition(FieldInterface& m_field,string problem);
+  PetscErrorCode spatial_partition_problems(FieldInterface& m_field);
+  PetscErrorCode material_partition_problems(FieldInterface& m_field);
+  PetscErrorCode coupled_partition_problems(FieldInterface& m_field);
+  PetscErrorCode constrains_partition_problems(FieldInterface& m_field,string problem);
+  PetscErrorCode crackfront_partition_problems(FieldInterface& m_field,string problem);
+  PetscErrorCode set_spatial_positions(FieldInterface& m_field);
+  PetscErrorCode set_material_positions(FieldInterface& m_field);
+  PetscErrorCode set_coordinates_from_material_solution(FieldInterface& m_field,bool only_crack_front = false);
 
   PostProcStressNonLinearElasticity *fe_post_proc_stresses_method;
-  PetscErrorCode solve_spatial_problem(FieldInterface& mField,SNES *snes,bool postproc = true);
-  PetscErrorCode solve_material_problem(FieldInterface& mField,SNES *snes);
-  PetscErrorCode solve_mesh_smooting_problem(FieldInterface& mField,SNES *snes);
+  PetscErrorCode solve_spatial_problem(FieldInterface& m_field,SNES *snes,bool postproc = true);
+  PetscErrorCode solve_material_problem(FieldInterface& m_field,SNES *snes);
 
-  PetscErrorCode fix_all_but_one(FieldInterface& mField,Range &fix_nodes,const double fraction_treshold);
+  PetscErrorCode fix_all_but_one(FieldInterface& m_field,Range &fix_nodes,const double fraction_treshold);
 
   double aRea,lambda,energy;
   int nb_un_freez_nodes;
   bool freeze_all_but_one;
-  PetscErrorCode solve_coupled_problem(FieldInterface& mField,SNES *snes,const double da,const double fraction_treshold = 5e-2);
+  PetscErrorCode solve_coupled_problem(FieldInterface& m_field,SNES *snes,double da,const double fraction_treshold = 1e-1);
 
-  PetscErrorCode calculate_material_forces(FieldInterface& mField,string problem,string fe);
-  PetscErrorCode surface_projection_data(FieldInterface& mField,string problem);
-  PetscErrorCode delete_surface_projection_data(FieldInterface& mField);
-  PetscErrorCode project_force_vector(FieldInterface& mField,string problem);
-  PetscErrorCode front_projection_data(FieldInterface& mField,string problem);
-  PetscErrorCode delete_front_projection_data(FieldInterface& mField);
-  PetscErrorCode griffith_force_vector(FieldInterface& mField,string problem);
+  PetscErrorCode calculate_material_forces(FieldInterface& m_field,string problem,string fe);
+  PetscErrorCode surface_projection_data(FieldInterface& m_field,string problem);
+  PetscErrorCode delete_surface_projection_data(FieldInterface& m_field);
+  PetscErrorCode project_force_vector(FieldInterface& m_field,string problem);
+  PetscErrorCode front_projection_data(FieldInterface& m_field,string problem);
+  PetscErrorCode delete_front_projection_data(FieldInterface& m_field);
+  PetscErrorCode griffith_force_vector(FieldInterface& m_field,string problem);
 
-  PetscErrorCode project_form_th_projection_tag(FieldInterface& mField,string problem,bool do_not_project = false);
+  PetscErrorCode project_form_th_projection_tag(FieldInterface& m_field,string problem,bool do_not_project = false);
 
   map<EntityHandle,double> map_ent_g,map_ent_j;
   PetscScalar ave_g,min_g,max_g;
   PetscScalar ave_j,min_j,max_j;
-  PetscErrorCode griffith_g(FieldInterface& mField,string problem);
+  PetscErrorCode griffith_g(FieldInterface& m_field,string problem);
 
  struct ArcLengthElemFEMethod: public FEMethod {
 
@@ -128,6 +126,7 @@ struct ConfigurationalFractureMechanics {
     ~ArcLengthElemFEMethod();
 
     double aRea,aRea0,lambda_int;
+    double resSpatialNrm2,resCrackFrontNrm2;
 
     PetscErrorCode set_dlambda_to_x(Vec x,double dlambda);
     PetscErrorCode calulate_area();
@@ -146,18 +145,19 @@ struct ConfigurationalFractureMechanics {
 PetscErrorCode SNESMonitorSpatialAndSmoothing_FEMEthod(SNES snes,PetscInt its,PetscReal fgnorm,void *dummy);
 
 
-PetscErrorCode main_spatial_solution(FieldInterface& mField,ConfigurationalFractureMechanics& conf_prob);
-PetscErrorCode main_material_forces(FieldInterface& mField,ConfigurationalFractureMechanics& conf_prob);
+PetscErrorCode main_spatial_solution(FieldInterface& m_field,ConfigurationalFractureMechanics& conf_prob);
+PetscErrorCode main_material_forces(FieldInterface& m_field,ConfigurationalFractureMechanics& conf_prob);
 
 //crack propagation 
 
 /** \brief rescale load factor, such that maximally stressed crack front node has griffithe energy equal to gc
   *
   */
-PetscErrorCode main_rescale_load_factor(FieldInterface& mField,ConfigurationalFractureMechanics& conf_prob);
+PetscErrorCode main_rescale_load_factor(FieldInterface& m_field,ConfigurationalFractureMechanics& conf_prob);
 
-PetscErrorCode main_arc_length_setup(FieldInterface& mField,ConfigurationalFractureMechanics& conf_prob);
-PetscErrorCode main_arc_length_solve(FieldInterface& mField,ConfigurationalFractureMechanics& conf_prob,bool face_splitting = false);
+PetscErrorCode main_arc_length_setup(FieldInterface& m_field,ConfigurationalFractureMechanics& conf_prob);
+PetscErrorCode main_arc_length_restart(FieldInterface& m_field,ConfigurationalFractureMechanics& conf_prob);
+PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFractureMechanics& conf_prob);
 
 
 #endif //__CONFIGURATIONAL_MECHANICS_HPP__

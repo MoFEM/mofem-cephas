@@ -28,32 +28,34 @@ struct FaceSplittingTools {
   
   FaceSplittingTools(FieldInterface& _mField): 
     mField(_mField) {
-
+    
+    ErrorCode rval;
+    
     int def_bit_level_vec[BITREFLEVEL_SIZE];
     bzero(def_bit_level_vec,BITREFLEVEL_SIZE*sizeof(int));
-    mField.get_moab().tag_get_handle(
+    rval = mField.get_moab().tag_get_handle(
       "_MESHREFINEBITLEVELS",BITREFLEVEL_SIZE*sizeof(int),MB_TYPE_OPAQUE,
-      th_meshRefineBitLevels,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_bit_level_vec); 
-    mField.get_moab().tag_get_handle(
+      th_meshRefineBitLevels,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_bit_level_vec);  CHKERR(rval);
+    rval = mField.get_moab().tag_get_handle(
       "_MESHINTEFACEBITLEVELS",BITREFLEVEL_SIZE*sizeof(int),MB_TYPE_OPAQUE,
-      th_meshIntefaceBitLevels,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_bit_level_vec); 
+      th_meshIntefaceBitLevels,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_bit_level_vec); CHKERR(rval);
     const EntityHandle root_meshset = mField.get_moab().get_root_set();
 
-    mField.get_moab().tag_get_by_ptr(th_meshRefineBitLevels,&root_meshset,1,(const void**)&ptr_meshRefineBitLevels);
-    mField.get_moab().tag_get_by_ptr(th_meshIntefaceBitLevels,&root_meshset,1,(const void**)&ptr_meshIntefaceBitLevels);
+    rval = mField.get_moab().tag_get_by_ptr(th_meshRefineBitLevels,&root_meshset,1,(const void**)&ptr_meshRefineBitLevels); CHKERR(rval);
+    rval = mField.get_moab().tag_get_by_ptr(th_meshIntefaceBitLevels,&root_meshset,1,(const void**)&ptr_meshIntefaceBitLevels); CHKERR(rval);
     meshRefineBitLevels.ptr = ptr_meshRefineBitLevels;
     meshIntefaceBitLevels.ptr = ptr_meshIntefaceBitLevels;
 
-  }
+    EntityHandle def_meshset = 0;
+    rval = mField.get_moab().tag_get_handle(
+      "_TETGEN_GEOMETRY",1,MB_TYPE_HANDLE,
+      th_Polygons,MB_TAG_CREAT|MB_TAG_MESH,&def_meshset); CHKERR(rval);
+    rval = mField.get_moab().tag_get_data(th_Polygons,&root_meshset,1,&polygonsMeshset); CHKERR(rval);
+    if(polygonsMeshset == 0) {
+      rval = mField.get_moab().create_meshset(MESHSET_SET,polygonsMeshset); CHKERR(rval);
+      rval = mField.get_moab().tag_set_data(th_Polygons,&root_meshset,1,&polygonsMeshset); CHKERR(rval);
+    }
 
-  ~FaceSplittingTools() {
-    cleanMeshsets();
-  }
- 
-  PetscErrorCode cleanMeshsets() {
-    PetscFunctionBegin;
-
-    PetscFunctionReturn(0);
   }
 
   //Split new crack front faces
@@ -78,16 +80,31 @@ struct FaceSplittingTools {
   BitRefLevelVector meshRefineBitLevels;
   BitRefLevelVector meshIntefaceBitLevels;
 
-  PetscErrorCode meshRefine(const int verb = -1);
-  PetscErrorCode splitFaces(const int verb = -1);
+  PetscErrorCode meshRefine(const int verb = 0);
+  PetscErrorCode splitFaces(const int verb = 0);
 
-  #ifdef WITH_TETGEM
+  //add edges to crack front
+  PetscErrorCode addCrackFront_to_Cubit201(int verb = 0);
+  PetscErrorCode roundCornersFillGaps_in_Cubit200(int nb,int verb = 0);
+
+  //calulate lebghth of edges adjacent to crack front
+  PetscErrorCode crackFrontEdgeLengths(BitRefLevel bit_mesh,Range &to_split,Range &to_remove,int verb = 0);
+
+  //move front nodes
+  PetscErrorCode moveFrontNodesByVec(double v[]);
+
+  EntityHandle polygonsMeshset;
+  Tag th_Polygons;
+
+  #ifdef WITH_TETGEN
 
   map<EntityHandle,unsigned long> moabTetGenMap;
   map<unsigned long,EntityHandle> tetGenMoabMap;
 
   boost::ptr_vector<tetgenio> tetGenData;
-  PetscErrorCode rebuildMeshWithTetGen(char switches[],const int verb = -1);
+  PetscErrorCode rebuildMeshWithTetGen(
+    vector<string> &switches,const int verb = -1);
+
 
   #endif
 

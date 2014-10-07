@@ -38,14 +38,25 @@ project(MoFEM C Fortran CXX)
 
 #SIGMA tools
 include(cmake/FindTetGen.cmake)
+include(cmake/FindNetGen.cmake)
 include(cmake/FindTriangle.cmake)
 include(cmake/FindiMesh.cmake)
 include(cmake/FindCGM.cmake)
 include(cmake/FindLASSO.cmake)
 include(cmake/FindMESHKIT.cmake)
+include(cmake/FindADOL-C.cmake)
 
 #PETSC tools
 include(cmake/FindTAO.cmake)
+
+#CGAL tools
+#find_package(CGAL HINTS ${CGAL_DIR}/lib/CGAL)
+#if(CGAL_CONFIG_LOADED) 
+#  include_directories(${CGAL_INCLUDE_DIRS})
+#  link_directories(${CGAL_LIBRARIES_DIR})
+#  add_definitions( -DWITH_CGAL )
+#  message(STATUS ${CGAL_Core_LIBRARY})
+#endif(CGAL_CONFIG_LOADED)
 
 #other
 include(cmake/ExportFile.cmake)
@@ -99,6 +110,8 @@ endif(TAO_LIBRARY)
 resolve_libraries(PROJECT_LIBS "
   ${MOAB_LIBS_LINK}
   ${TETGEN_LIBRARY}
+  ${NETGEN_LIBRARY}
+  ${ADOL-C_LIBRARY}
   -L${PETSC_DIR}/${PETSC_ARCH}/lib 
   ${PETSCVAR_PETSC_WITH_EXTERNAL_LIB}
   ${TAO_LIBRARY}

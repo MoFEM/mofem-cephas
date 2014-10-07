@@ -386,9 +386,9 @@ int main(int argc, char *argv[]) {
       NumeredDofMoFEMEntity_multiIndex &numered_dofs_rows = const_cast<NumeredDofMoFEMEntity_multiIndex&>(problemPtr->numered_dofs_rows);
       Range::iterator nit = nodeSet.begin();
       for(;nit!=nodeSet.end();nit++) {
-	NumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator dit,hi_dit;
-	dit = numered_dofs_rows.get<MoABEnt_mi_tag>().lower_bound(*nit);
-	hi_dit = numered_dofs_rows.get<MoABEnt_mi_tag>().upper_bound(*nit);
+	NumeredDofMoFEMEntity_multiIndex::index<Ent_mi_tag>::type::iterator dit,hi_dit;
+	dit = numered_dofs_rows.get<Ent_mi_tag>().lower_bound(*nit);
+	hi_dit = numered_dofs_rows.get<Ent_mi_tag>().upper_bound(*nit);
 	for(;dit!=hi_dit;dit++) {
 	  PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e -> ","LAMBDA",0,arc_ptr->get_FieldData());
 	  PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e\n",dit->get_name().c_str(),dit->get_dof_rank(),dit->get_FieldData());

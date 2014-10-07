@@ -31,6 +31,9 @@ if(TETGEN_LIBRARY)
   set(MOFEM_INTERFACES_SRC ${MOFEM_INTERFACES_SRC} impl/TetGenInterface.cpp)
 endif(TETGEN_LIBRARY)
 
+if(NETGEN_LIBRARY) 
+  set(MOFEM_INTERFACES_SRC ${MOFEM_INTERFACES_SRC} impl/NetGenInterface.cpp)
+endif(NETGEN_LIBRARY)
 
 add_library(mofem_interfaces
   ${MOFEM_INTERFACES_SRC}
