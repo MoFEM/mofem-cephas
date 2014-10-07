@@ -68,7 +68,6 @@ struct ConfigurationalFractureMechanics {
   PetscErrorCode thermal_field(FieldInterface& m_field);
   PetscErrorCode spatial_problem_definition(FieldInterface& m_field); 
   PetscErrorCode material_problem_definition(FieldInterface& m_field);
-  PetscErrorCode mesh_smoothing_problem_definition(FieldInterface& m_field);
   PetscErrorCode coupled_problem_definition(FieldInterface& m_field);
   PetscErrorCode arclength_problem_definition(FieldInterface& m_field);
   PetscErrorCode constrains_problem_definition(FieldInterface& m_field);
@@ -85,7 +84,6 @@ struct ConfigurationalFractureMechanics {
   PostProcStressNonLinearElasticity *fe_post_proc_stresses_method;
   PetscErrorCode solve_spatial_problem(FieldInterface& m_field,SNES *snes,bool postproc = true);
   PetscErrorCode solve_material_problem(FieldInterface& m_field,SNES *snes);
-  PetscErrorCode solve_mesh_smooting_problem(FieldInterface& m_field,SNES *snes);
 
   PetscErrorCode fix_all_but_one(FieldInterface& m_field,Range &fix_nodes,const double fraction_treshold);
 
