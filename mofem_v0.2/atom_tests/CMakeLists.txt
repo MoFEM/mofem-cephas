@@ -145,13 +145,12 @@ cm_export_file("../meshes/sphere.cub" export_atom_tests)
 add_executable(projection_from_10node_tet_atom projection_from_10node_tet.cpp)
 target_link_libraries(projection_from_10node_tet_atom 
   mofem_cblas
-  mofem_third_party
   mofem_finite_element_library
-  mofem_approx
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
-  mofem_petsc
+  mofem_approx
+  mofem_third_party
   ${PROJECT_LIBS})
 
 add_test(projection_from_10node_tet_atom ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/projection_from_10node_tet_atom -my_file sphere.cub -log_summary)
@@ -535,6 +534,7 @@ if(TETGEN_LIBRARY)
   target_link_libraries(tetgen_interface
     mofem_interfaces
     mofem_multi_indices
+    mofem_petsc
     mofem_approx
     mofem_third_party
     ${PROJECT_LIBS})
