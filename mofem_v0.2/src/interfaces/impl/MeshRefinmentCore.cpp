@@ -128,10 +128,10 @@ PetscErrorCode Core::add_verices_in_the_middel_of_edges(const Range &_edges,cons
   }
   Range::iterator eit = edges.begin();
   for(;eit!=edges.end();eit++) {
-    bool add_vertex = false;
+    //bool add_vertex = false;
     RefMoFEMEntity_multiIndex_view_by_parent_entity::iterator miit_view;
     if(ref_parent_ents_view.empty()) {
-      add_vertex = true;
+      //add_vertex = true;
     } else {
       miit_view = ref_parent_ents_view.find(*eit);
     }
