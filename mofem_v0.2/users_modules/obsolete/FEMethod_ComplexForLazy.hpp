@@ -62,7 +62,7 @@ struct FEMethod_ComplexForLazy: public virtual FEMethod_ComplexForLazy_Data {
   double thermal_load_factor;
 
   PetscBool flg_alpha2,flg_gamma;
-  double alpha2,gamma;
+  double alpha2,alpha22,gamma;
 
   string spatial_field_name;
   string material_field_name;	

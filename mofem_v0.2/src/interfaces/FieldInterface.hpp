@@ -364,7 +364,7 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode seed_ref_level_3D(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1) = 0;
 
   /**
-   * \brief seed 3D entities (Volume entities only) in the meshset and their adjacencies (only TETs adjencies) in a particular BitRefLevel
+   * \brief seed 3D entities (Volume entities only) in the range and their adjacencies (only TETs adjencies) in a particular BitRefLevel
    */ 
   virtual PetscErrorCode seed_ref_level_3D(const Range &ents3d,const BitRefLevel &bit,int verb = -1) = 0;
 
@@ -1494,7 +1494,7 @@ struct FieldInterface: public FieldUnknownInterface {
     *
     * \param fe_name
     */
-  virtual EntMoFEMFiniteElement_multiIndex::index<MoFEMFiniteElement_name_mi_tag>::type::iterator get_fes_moabfield_by_name_begin(const string &fe_name) = 0;
+  virtual EntMoFEMFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator get_fes_moabfield_by_name_begin(const string &fe_name) = 0;
 
   /** 
     * \brief get end iterator of finite elements of given name (instead you can use _IT_GET_FES_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)
@@ -1505,11 +1505,11 @@ struct FieldInterface: public FieldUnknownInterface {
     *
     * \param fe_name
     */
-  virtual EntMoFEMFiniteElement_multiIndex::index<MoFEMFiniteElement_name_mi_tag>::type::iterator get_fes_moabfield_by_name_end(const string &fe_name) = 0;
+  virtual EntMoFEMFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator get_fes_moabfield_by_name_end(const string &fe_name) = 0;
 
   ///loop over all finite elements from a moFEM field and FE
   #define _IT_GET_FES_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT) \
-    EntMoFEMFiniteElement_multiIndex::index<MoFEMFiniteElement_name_mi_tag>::type::iterator IT = MFIELD.get_fes_moabfield_by_name_begin(NAME); \
+    EntMoFEMFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator IT = MFIELD.get_fes_moabfield_by_name_begin(NAME); \
       IT != MFIELD.get_fes_moabfield_by_name_end(NAME); IT++
 
 

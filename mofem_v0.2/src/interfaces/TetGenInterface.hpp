@@ -36,18 +36,66 @@ struct TetGenInterface: public FieldUnknownInterface {
   MoFEM::Core& cOre;
   TetGenInterface(MoFEM::Core& core): cOre(core) {};
 
+  typedef map<EntityHandle,unsigned long> moabTetGen_Map;
+  typedef map<unsigned long,EntityHandle> tetGenMoab_Map;
+  typedef map<int,Range> idxRange_Map;
+
   PetscErrorCode inData(
     Range& ents,tetgenio& in,
-    map<EntityHandle,unsigned long>& moab_tetgen_map,
-    map<unsigned long,EntityHandle>& tetgen_moab_map);
+    moabTetGen_Map& moab_tetgen_map,
+    tetGenMoab_Map& tetgen_moab_map);
+
+  enum tetGenNodesTypes { RIDGEVERTEX = 0, FREESEGVERTEX = 1, FREEFACETVERTEX = 2, FREEVOLVERTEX = 3 };
+
+  PetscErrorCode setGeomData(
+    tetgenio& in,
+    moabTetGen_Map& moab_tetgen_map,
+    tetGenMoab_Map& tetgen_moab_map,
+    map<int,Range> &type_ents);
 
   PetscErrorCode outData(
-    Range& ents,tetgenio& in,tetgenio& out,
-    map<EntityHandle,unsigned long>& moab_tetgen_map,
-    map<unsigned long,EntityHandle>& tetgen_moab_map);
+    tetgenio& in,tetgenio& out,
+    moabTetGen_Map& moab_tetgen_map,
+    tetGenMoab_Map& tetgen_moab_map,
+    Range *ents = NULL,
+    bool id_in_tags = false,
+    bool error_if_created = false);
 
-  PetscErrorCode setFacetMarkers(
-    Raneg ents,int marker,tetgenio& in);
+  PetscErrorCode outData(
+    tetgenio& in,tetgenio& out,
+    moabTetGen_Map& moab_tetgen_map,
+    tetGenMoab_Map& tetgen_moab_map,
+    BitRefLevel bit,
+    bool id_in_tags = false,
+    bool error_if_created = false);
+
+  PetscErrorCode setFaceData(
+    vector<pair<Range,int> >& markers,
+    tetgenio& in,
+    moabTetGen_Map& moab_tetgen_map,
+    tetGenMoab_Map& tetgen_moab_map);
+
+  PetscErrorCode getTriangleMarkers(
+    tetGenMoab_Map& tetgen_moab_map,tetgenio& out,
+    Range *ents = NULL,idxRange_Map *ents_map = NULL,bool only_non_zero = true);
+
+  PetscErrorCode setReginData(vector<pair<EntityHandle,int> >& regions,tetgenio& in);
+  PetscErrorCode getReginData(
+    tetGenMoab_Map& tetgen_moab_map,tetgenio& out,
+    Range *ents = NULL,idxRange_Map *ents_map = NULL);
+
+  PetscErrorCode tetRahedralize(char switches[],tetgenio& in,tetgenio& out);
+  PetscErrorCode loadPoly(char file_name[],tetgenio& in);
+
+  //Tools for TetGen, i.e. geometry reconstruction from mesh
+
+  PetscErrorCode checkPlanar_Trinagle(double coords[],bool *result,const double eps = 1e-9);
+  PetscErrorCode groupPlanar_Triangle(Range &tris,vector<Range> &sorted,const double eps = 1e-9);
+  PetscErrorCode groupRegion_Triangle(Range &tris,vector<vector<Range> > &sorted,const double eps = 1e-9);
+
+  //FIXME: assumes that are no holes
+  PetscErrorCode makePolygonFacet(Range &ents,Range &polygons,
+    bool reduce_edges = false,Range *not_reducable_nodes = NULL,const double eps = 1e-9); 
 
 };
 

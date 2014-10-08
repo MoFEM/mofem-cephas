@@ -38,14 +38,25 @@ project(MoFEM C Fortran CXX)
 
 #SIGMA tools
 include(cmake/FindTetGen.cmake)
+include(cmake/FindNetGen.cmake)
 include(cmake/FindTriangle.cmake)
 include(cmake/FindiMesh.cmake)
 include(cmake/FindCGM.cmake)
 include(cmake/FindLASSO.cmake)
 include(cmake/FindMESHKIT.cmake)
+include(cmake/FindADOL-C.cmake)
 
 #PETSC tools
 include(cmake/FindTAO.cmake)
+
+#CGAL tools
+#find_package(CGAL HINTS ${CGAL_DIR}/lib/CGAL)
+#if(CGAL_CONFIG_LOADED) 
+#  include_directories(${CGAL_INCLUDE_DIRS})
+#  link_directories(${CGAL_LIBRARIES_DIR})
+#  add_definitions( -DWITH_CGAL )
+#  message(STATUS ${CGAL_Core_LIBRARY})
+#endif(CGAL_CONFIG_LOADED)
 
 #other
 include(cmake/ExportFile.cmake)
@@ -63,13 +74,13 @@ get_git_head_revision(GIT_REFSPEC GIT_SHA1)
 # to the source code
 configure_file(
   "${PROJECT_SOURCE_DIR}/include/config.h.in"
-  "${PROJECT_BINARY_DIR}/include/config.h"
+  "${PROJECT_SOURCE_DIR}/include/config.h"
   )
 configure_file(
   "${PROJECT_SOURCE_DIR}/include/version.h.in"
-  "${PROJECT_BINARY_DIR}/include/version.h"
+  "${PROJECT_SOURCE_DIR}/include/version.h"
   )
-include_directories("${PROJECT_BINARY_DIR}/include")
+include_directories("${PROJECT_SOURCE_DIR}/include")
 
 #add coverage
 if(WITHCOVERAGE) 
@@ -98,6 +109,9 @@ endif(TAO_LIBRARY)
 
 resolve_libraries(PROJECT_LIBS "
   ${MOAB_LIBS_LINK}
+  ${TETGEN_LIBRARY}
+  ${NETGEN_LIBRARY}
+  ${ADOL-C_LIBRARY}
   -L${PETSC_DIR}/${PETSC_ARCH}/lib 
   ${PETSCVAR_PETSC_WITH_EXTERNAL_LIB}
   ${TAO_LIBRARY}

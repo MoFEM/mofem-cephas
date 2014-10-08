@@ -72,9 +72,9 @@ typedef multi_index_container<
     ordered_non_unique<
       tag<Unique_mi_tag>, const_mem_fun<MoFEMEntityEntMoFEMFiniteElementAdjacencyMap,GlobalUId,&MoFEMEntityEntMoFEMFiniteElementAdjacencyMap::get_ent_unique_id> >,
     ordered_non_unique<
-      tag<MoABFEEnt_mi_tag>, const_mem_fun<MoFEMEntityEntMoFEMFiniteElementAdjacencyMap,EntityHandle,&MoFEMEntityEntMoFEMFiniteElementAdjacencyMap::get_MoFEMFiniteElement_entity_handle> >,
+      tag<FEEnt_mi_tag>, const_mem_fun<MoFEMEntityEntMoFEMFiniteElementAdjacencyMap,EntityHandle,&MoFEMEntityEntMoFEMFiniteElementAdjacencyMap::get_MoFEMFiniteElement_entity_handle> >,
     ordered_non_unique<
-      tag<MoABEnt_mi_tag>, const_mem_fun<MoFEMEntityEntMoFEMFiniteElementAdjacencyMap,EntityHandle,&MoFEMEntityEntMoFEMFiniteElementAdjacencyMap::get_ent_entity_handle> >
+      tag<Ent_mi_tag>, const_mem_fun<MoFEMEntityEntMoFEMFiniteElementAdjacencyMap,EntityHandle,&MoFEMEntityEntMoFEMFiniteElementAdjacencyMap::get_ent_entity_handle> >
   > > MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_multiIndex;
 
 }

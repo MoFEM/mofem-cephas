@@ -59,6 +59,8 @@ add_executable(cubit_bc_test cubit_bc_test.cpp)
 target_link_libraries(cubit_bc_test
   mofem_interfaces
   mofem_multi_indices
+  mofem_approx
+  mofem_third_party
   ${PROJECT_LIBS})
 
 add_test(cubit_bc_atom_test_disp01 ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file disp01.cub)
@@ -110,6 +112,8 @@ add_executable(loops_atom_test loops_atom_test.cpp)
 target_link_libraries(loops_atom_test 
   mofem_interfaces
   mofem_multi_indices
+  mofem_approx
+  mofem_third_party
   ${PROJECT_LIBS})
 
 add_test(cubit_meshset_loop_test ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/loops_atom_test -my_file loop_atom.cub -log_summary)
@@ -126,6 +130,8 @@ target_link_libraries(field_axpy_atom_test
   mofem_interfaces
   mofem_multi_indices
   mofem_petsc
+  mofem_approx
+  mofem_third_party
   ${PROJECT_LIBS})
 
 add_test(field_axpy ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/field_axpy_atom_test -my_file elasticity_atom_test_01X_pressure.cub -log_summary)
@@ -160,6 +166,8 @@ add_executable(mesh_refine_atom mesh_refine_atom.cpp)
 target_link_libraries(mesh_refine_atom
   mofem_interfaces
   mofem_multi_indices
+  mofem_approx
+  mofem_third_party
   ${PROJECT_LIBS})
 
 add_test(mesh_refine_atom ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/mesh_refine_atom -my_file templar.cub -log_summary)
@@ -173,6 +181,8 @@ add_executable(mesh_insert_interface_atom mesh_insert_interface_atom.cpp)
 target_link_libraries(mesh_insert_interface_atom 
   mofem_interfaces
   mofem_multi_indices
+  mofem_approx
+  mofem_third_party
   ${PROJECT_LIBS})
 
 add_test(mesh_insert_interface_atom ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/mesh_insert_interface_atom -my_file templar.cub -log_summary)
@@ -444,6 +454,8 @@ add_executable(record_series_atom record_series_atom.cpp)
 target_link_libraries(record_series_atom 
   mofem_interfaces
   mofem_multi_indices
+  mofem_approx
+  mofem_third_party
   ${PROJECT_LIBS})
 
 add_test(record_series_atom_test ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/record_series_atom
@@ -517,17 +529,44 @@ add_test(forces_and_sources_ultra_weak_transport_atom_compare ${CMAKE_COMMAND} -
 
 if(TETGEN_LIBRARY) 
 
+  cm_export_file("../meshes/Tinterface.cub" export_atom_tests)
+
   add_executable(tetgen_interface tetgen_interface.cpp)
   target_link_libraries(tetgen_interface
-    mofem_finite_elements
     mofem_interfaces
     mofem_multi_indices
-    mofem_petsc
     mofem_approx
     mofem_third_party
     ${PROJECT_LIBS})
 
+  add_test(tetgen_interface_atom ${MPI_RUN} -np 1
+    ${CMAKE_CURRENT_BINARY_DIR}/tetgen_interface -my_file Tinterface.cub)
+
 
 endif(TETGEN_LIBRARY)
+
+if(NETGEN_LIBRARY) 
+
+  add_executable(netgen_interface netgen_interface.cpp)
+  target_link_libraries(netgen_interface
+    mofem_interfaces
+    mofem_multi_indices
+    mofem_approx
+    mofem_third_party
+    ${PROJECT_LIBS})
+
+endif(NETGEN_LIBRARY)
+
+if(ADOL-C_LIBRARY)
+
+  add_executable(adol-c_atom adol-c_atom.cpp)
+  target_link_libraries(adol-c_atom ${PROJECT_LIBS})
+
+  add_test(adol-c_atom_test ${MPI_RUN} -np 1
+    ${CMAKE_CURRENT_BINARY_DIR}/adol-c_atom)
+
+
+endif(ADOL-C_LIBRARY)
+
 
 

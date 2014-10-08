@@ -43,7 +43,7 @@ FEMethod_ComplexForLazy::FEMethod_ComplexForLazy(FieldInterface& _mField,analysi
     FEMethod_ComplexForLazy_Data(_mField,_verbose),
     type_of_analysis(_type),type_of_forces(conservative),
     lambda(_lambda),mu(_mu),thermal_expansion(_thermal_expansion),ptr_matctx(NULL),
-    eps(1e-10),thermal_load_factor(1),
+    eps(1e-10),thermal_load_factor(1),alpha22(1),
     spatial_field_name("SPATIAL_POSITION"),
     material_field_name("MESH_NODE_POSITIONS"),
     termal_field_name("TEMPERATURE") {
@@ -389,9 +389,9 @@ PetscErrorCode FEMethod_ComplexForLazy::GetData(
 	      ss << *eit << endl;
 	      PetscPrintf(PETSC_COMM_WORLD,"%s",ss.str().c_str());
 	    }
-	    RefMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator reit;
-	    reit = refinedEntitiesPtr->get<MoABEnt_mi_tag>().find(sit->ent);
-	    if(reit != refinedEntitiesPtr->get<MoABEnt_mi_tag>().end()) {
+	    RefMoFEMEntity_multiIndex::index<Ent_mi_tag>::type::iterator reit;
+	    reit = refinedEntitiesPtr->get<Ent_mi_tag>().find(sit->ent);
+	    if(reit != refinedEntitiesPtr->get<Ent_mi_tag>().end()) {
 	      ostringstream ss;
 	      ss << *reit << endl;
 	      PetscPrintf(PETSC_COMM_WORLD,"%s",ss.str().c_str());
@@ -689,6 +689,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
 	  KHH.resize(12,12);
 	  double coords_edges[2*3*6];
 	  double alpha2_array[4] = { alpha2,alpha2,alpha2,alpha2 };
+	  cblas_dscal(4,alpha22,alpha2_array,1);
 	  ierr = get_edges_from_elem_coords(&coords[0],coords_edges); CHKERRQ(ierr);
 	  ierr = quality_volume_length_K(eps*r,V,alpha2_array,gamma,&diffNTETinvJac[0],coords_edges,&dofs_X.data()[0],NULL,&*KHH.data().begin(),NULL); CHKERRQ(ierr);
 	}
@@ -835,6 +836,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetFint() {
 	    }
 	    double coords_edges[2*3*6];
 	    double alpha2_array[4] = { alpha2,alpha2,alpha2,alpha2 };
+	    cblas_dscal(4,alpha22,alpha2_array,1);
 	    ierr = get_edges_from_elem_coords(&coords[0],coords_edges); CHKERRQ(ierr);
 	    ierr = quality_volume_length_F(V,alpha2_array,gamma,&diffNTETinvJac[0],coords_edges,
 	      &dofs_X.data()[0],NULL,NULL,NULL,quality0,quality,b,

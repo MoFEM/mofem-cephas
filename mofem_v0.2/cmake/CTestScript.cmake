@@ -90,6 +90,10 @@ set(CTEST_CUSTOM_MEMCHECK_IGNORE
 )
 
 if(${DOTEST} GREATER 0)
+  file(WRITE ${GID_SOURCE_REPO}/has_bin_build "1")
+endif(${DOTEST} GREATER 0)
+
+if(${DOTEST} GREATER 0)
   ctest_configure()
   ctest_build()
   if(CTEST_MEMORYCHECK_COMMAND)
@@ -101,4 +105,5 @@ if(${DOTEST} GREATER 0)
   endif(CTEST_COVERAGE_COMMAND)
   ctest_submit()
 endif(${DOTEST} GREATER 0)
+
 

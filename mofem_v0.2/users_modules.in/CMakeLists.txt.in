@@ -63,6 +63,45 @@ link_directories(${PROJECT_BINARY_DIR})
 enable_testing()
 include(CTest)
 
+#add coverage
+if(WITHCOVERAGE) 
+  set(GCC_COVERAGE_COMPILE_FLAGS "-Wall -fprofile-arcs -ftest-coverage")
+  add_definitions(${GCC_COVERAGE_COMPILE_FLAGS})
+  set(CMAKE_EXE_LINKER_FLAGS "${GCC_COVERAGE_COMPILE_FLAGS}")
+endif(WITHCOVERAGE) 
+
+# source path
+set(UM_SOURCE_DIR ${MoFEM_PROJECT_SOURCE_DIR}/users_modules)
+if(STAND_ALLONE_USERS_MODULES)
+  set(UM_SOURCE_DIR ${PROJECT_SOURCE_DIR})
+endif(STAND_ALLONE_USERS_MODULES)
+
+# third party libraries
+if(TETGEN_LIBRARY) 
+  include_directories("${TETGEN_DIR}/include")
+  add_definitions( -DWITH_TETGEN )
+  message(STATUS "WITH TETEGEN")
+endif(TETGEN_LIBRARY)
+
+if(NETGEN_LIBRARY) 
+  include_directories("${NETGEN_DIR}/include")
+  include_directories("${NETGEN_SRC_DIR}/libsrc/include")
+  add_definitions( -DWITH_NETGEN )
+  message(STATUS "WITH NETEGEN")
+endif(NETGEN_LIBRARY)
+
+if(CGAL_DIR) 
+  find_package(CGAL HINTS ${CGAL_DIR}/lib/CGAL)
+  if(CGAL_CONFIG_LOADED) 
+    include_directories(${CGAL_INCLUDE_DIRS})
+    link_directories(${CGAL_LIBRARIES_DIR})
+    add_definitions( -DWITH_CGAL )
+    message(STATUS "WITH CGAL")
+  endif(CGAL_CONFIG_LOADED)
+endif(CGAL_DIR)
+
+# Users modules
+
 add_subdirectory(thermal)
 add_subdirectory(ultraweak)
 
@@ -72,17 +111,17 @@ include_directories(${MoFEM_PROJECT_SOURCE_DIR}/users_modules/obsolete)
 include_directories(${MoFEM_PROJECT_SOURCE_DIR}/users_modules/obsolete/c)
 
 add_library(users_modules_obsolete
-  ${MoFEM_PROJECT_SOURCE_DIR}/users_modules/obsolete/impl/ArcLengthTools.cpp
-  ${MoFEM_PROJECT_SOURCE_DIR}/users_modules/obsolete/impl/FEMethod_ComplexForLazy.cpp
-  ${MoFEM_PROJECT_SOURCE_DIR}/users_modules/obsolete/impl/FEMethod_SurfaceConstrains.cpp
-  ${MoFEM_PROJECT_SOURCE_DIR}/users_modules/obsolete/impl/FEMethod_LowLevelStudent.cpp
-  ${MoFEM_PROJECT_SOURCE_DIR}/users_modules/obsolete/impl/FEMethod_UpLevelStudent.cpp
-  ${MoFEM_PROJECT_SOURCE_DIR}/users_modules/obsolete/impl/SurfacePressureComplexForLazy.cpp
-  ${MoFEM_PROJECT_SOURCE_DIR}/users_modules/obsolete/impl/MatShellConstrainsByMarkAinsworth.cpp
+  ${UM_SOURCE_DIR}/obsolete/impl/ArcLengthTools.cpp
+  ${UM_SOURCE_DIR}/obsolete/impl/FEMethod_ComplexForLazy.cpp
+  ${UM_SOURCE_DIR}/obsolete/impl/FEMethod_SurfaceConstrains.cpp
+  ${UM_SOURCE_DIR}/obsolete/impl/FEMethod_LowLevelStudent.cpp
+  ${UM_SOURCE_DIR}/obsolete/impl/FEMethod_UpLevelStudent.cpp
+  ${UM_SOURCE_DIR}/obsolete/impl/SurfacePressureComplexForLazy.cpp
+  ${UM_SOURCE_DIR}/obsolete/impl/MatShellConstrainsByMarkAinsworth.cpp
 )
 
 add_library(complex_for_lazy_obsolete
-  ${MoFEM_PROJECT_SOURCE_DIR}/users_modules/obsolete/c_impl/complex_for_lazy.c
+  ${UM_SOURCE_DIR}/obsolete/c_impl/complex_for_lazy.c
 )
 
 add_subdirectory(elasticity)
