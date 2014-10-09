@@ -73,7 +73,7 @@ struct GenericAttributeData {
       SETERRQ(PETSC_COMM_SELF,1,"It makes no sense for the generic attribute type");
       PetscFunctionReturn(0);
     }
-    virtual PetscErrorCode set_data(vector<double>& attributes) {
+    virtual PetscErrorCode set_data(void *tag_ptr,unsigned int size) {
       PetscFunctionBegin;
       SETERRQ(PETSC_COMM_SELF,1,"It makes no sense for the generic attribute type");
       PetscFunctionReturn(0);
@@ -114,14 +114,13 @@ struct BlockSetAttributes: public GenericAttributeData {
       memcpy(&data, &attributes[0],8*attributes.size());
       PetscFunctionReturn(0);
     }
-    virtual PetscErrorCode set_data(vector<double>& attributes) {
+    virtual PetscErrorCode set_data(void *tag_ptr,unsigned int size) {
       PetscFunctionBegin;
-      if(8*attributes.size()>sizeof(data)) {
+      if(size>sizeof(data)) {
 	SETERRQ(PETSC_COMM_SELF,1,
 	  "data inconsistency, please review the number of material properties defined");
       }
-      void *ptr = &attributes[0];
-      memcpy(ptr,&data,8*attributes.size());
+      memcpy(tag_ptr,&data,size);
       PetscFunctionReturn(0);
     }
     
@@ -166,13 +165,13 @@ struct Mat_Elastic: public GenericAttributeData {
         memcpy(&data, &attributes[0],8*attributes.size());
         PetscFunctionReturn(0);
     }
-    virtual PetscErrorCode set_data(vector<double>& attributes) {
+    virtual PetscErrorCode set_data(void *tag_ptr,unsigned int size) {
       PetscFunctionBegin;
-      if(8*attributes.size()>sizeof(data)) {
+      if(size>sizeof(data)) {
 	SETERRQ(PETSC_COMM_SELF,1,
 	  "data inconsistency, please review the number of material properties defined");
       }
-      memcpy(&attributes[0],&data,8*attributes.size());
+      memcpy(tag_ptr,&data,size);
       PetscFunctionReturn(0);
     }
     
@@ -218,16 +217,16 @@ struct Mat_Thermal: public GenericAttributeData {
     memcpy(&data, &attributes[0],8*attributes.size());
     PetscFunctionReturn(0);
   }
-  virtual PetscErrorCode set_data(vector<double>& attributes) {
+  virtual PetscErrorCode set_data(void *tag_ptr,unsigned int size) {
     PetscFunctionBegin;
-    if(8*attributes.size()>sizeof(data)) {
+    if(size>sizeof(data)) {
       SETERRQ(PETSC_COMM_SELF,1,
 	"data inconsistency, please review the number of material properties defined");
     }
-    memcpy(&attributes[0],&data,8*attributes.size());
+    memcpy(tag_ptr,&data,size);
     PetscFunctionReturn(0);
   }
-        
+
   /*! \brief Print Mat_Elastic data
   */
   friend ostream& operator<<(ostream& os,const Mat_Thermal& e);
@@ -266,13 +265,13 @@ struct Block_BodyForces: public GenericAttributeData {
     memcpy(&data, &attributes[0],8*attributes.size());
     PetscFunctionReturn(0);
   }
-  virtual PetscErrorCode set_data(vector<double>& attributes) {
+  virtual PetscErrorCode set_data(void *tag_ptr,unsigned int size) {
     PetscFunctionBegin;
-    if(8*attributes.size()>sizeof(data)) {
+    if(size>sizeof(data)) {
       SETERRQ(PETSC_COMM_SELF,1,
 	"data inconsistency, please review the number of material properties defined");
     }
-    memcpy(&attributes[0],&data,8*attributes.size());
+    memcpy(tag_ptr,&data,size);
     PetscFunctionReturn(0);
   }
         
@@ -313,16 +312,16 @@ struct Block_BodyForces: public GenericAttributeData {
       
       PetscFunctionReturn(0);
     }
-    virtual PetscErrorCode set_data(vector<double>& attributes) {
+    virtual PetscErrorCode set_data(void *tag_ptr,unsigned int size) {
       PetscFunctionBegin;
-      if(8*attributes.size()>sizeof(data)) {
+      if(size>sizeof(data)) {
 	SETERRQ(PETSC_COMM_SELF,1,
 	  "data inconsistency, please review the number of material properties defined");
       }
-      memcpy(&attributes[0],&data,8*attributes.size());
+      memcpy(tag_ptr,&data,size);
       PetscFunctionReturn(0);
     }
-    
+   
     /*! \brief Print Mat_Elastic_TransIso data
      */
     friend ostream& operator<<(ostream& os,const Mat_Elastic_TransIso& e);
@@ -352,14 +351,14 @@ struct Mat_Interf: public GenericAttributeData {
     memcpy(&data, &attributes[0], sizeof(data));
     PetscFunctionReturn(0);
   }
-  virtual PetscErrorCode set_data(vector<double>& attributes) {
+  virtual PetscErrorCode set_data(void *tag_ptr,unsigned int size) {
     PetscFunctionBegin;
-    if(8*attributes.size()>sizeof(data)) {
+    if(size>sizeof(data)) {
       SETERRQ(PETSC_COMM_SELF,1,
 	"data inconsistency, please review the number of material properties defined");
-      }
-      memcpy(&attributes[0],&data,8*attributes.size());
-      PetscFunctionReturn(0);
+    }
+    memcpy(tag_ptr,&data,size);
+    PetscFunctionReturn(0);
   }
       
   /*! \brief Print Mat_Interf data
@@ -879,9 +878,8 @@ struct CubitMeshSets {
     if((CubitBCType&data.type).none()) {
         SETERRQ(PETSC_COMM_SELF,1,"attributes are not for _ATTRIBUTE_TYPE_ structure");
     }
-    vector<double> attributes;
-    ierr = get_Cubit_attributes(attributes); CHKERRQ(ierr);
-    ierr = data.set_data(const_cast<vector<double>&>(attributes)); CHKERRQ(ierr);
+    double *ptr = const_cast<double*>(tag_block_attributes);
+    ierr = data.set_data(ptr,8*tag_block_attributes_size); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
      
