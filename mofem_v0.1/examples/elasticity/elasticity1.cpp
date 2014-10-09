@@ -274,15 +274,15 @@ int main(int argc, char *argv[]) {
   double YoungNew=1000.0;
   double PoissonNew=0.3;;
   
-//  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,BLOCKSET|MAT_ELASTICSET,it)) {
-//    cout<<"HI from MAT elastic "<<endl;
-//
-//    Mat_Elastic mydata;
-//    ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
-//    mydata.data.Young   = YoungNew;
-//    mydata.data.Poisson = PoissonNew;
-//    ierr = it->set_attribute_data_structure(mydata); CHKERRQ(ierr);
-//  }
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,BLOCKSET|MAT_ELASTICSET,it)) {
+    cout<<"HI from MAT elastic "<<endl;
+
+    Mat_Elastic mydata;
+    ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+    mydata.data.Young   = YoungNew;
+    mydata.data.Poisson = PoissonNew;
+    ierr = it->set_attribute_data_structure(mydata); CHKERRQ(ierr);
+  }
 //  std::string wait;
 //  std::cin >> wait;
 
