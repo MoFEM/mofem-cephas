@@ -65,7 +65,7 @@ struct FEMethod_UpLevelStudent: public FEMethod_LowLevelStudent {
   /** \brief Initate data structures for running FE methods
    *
    * It has to be run at the begining of the function when Interface PRISM
-   * element is evaluated. The matrix element shape functions are calulated in
+   * element is evaluated. The matrix element shape functions are calculated in
    * the form that degrees of shepe functon on one face (face4), have negative
    * value comparing to oposite face. For example 
    * gap = ShapeN_FunForPrism * nodal_displacements.
