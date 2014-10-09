@@ -307,7 +307,7 @@ struct C_CONSTANT_AREA_FEMethod: public FEMethod {
       cpow((x_normal[0].r+I*x_normal[0].i),2+I*0)+
       cpow((x_normal[1].r+I*x_normal[1].i),2+I*0)+
       cpow((x_normal[2].r+I*x_normal[2].i),2+I*0));
-    // calulate dA/dX 
+    // calculate dA/dX 
     __CLPK_doublecomplex xNSpinX_xi[3],xNSpinX_eta[3];
     bzero(xNSpinX_xi,3*sizeof(__CLPK_doublecomplex));
     bzero(xNSpinX_eta,3*sizeof(__CLPK_doublecomplex));

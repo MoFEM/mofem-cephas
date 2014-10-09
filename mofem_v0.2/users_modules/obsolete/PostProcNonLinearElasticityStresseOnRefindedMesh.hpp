@@ -58,18 +58,19 @@ struct PostProcStressNonLinearElasticity: public PostProcDisplacementsOnRefMesh 
 
     ierr = do_operator(); CHKERRQ(ierr);
 
-    ierr = fe_method.setProblem(problemPtr); CHKERRQ(ierr);
-    ierr = fe_method.setFields(fieldsPtr); CHKERRQ(ierr);
-    ierr = fe_method.setEnts(refinedEntitiesPtr,entitiesPtr); CHKERRQ(ierr);
-    ierr = fe_method.setDofs(dofsPtr); CHKERRQ(ierr);
-    ierr = fe_method.setFiniteElements(refinedFiniteElementsPtr,finiteElementsPtr); CHKERRQ(ierr);
-    ierr = fe_method.setFiniteElementsEntities(finiteElementsEntitiesPtr); CHKERRQ(ierr);
-    ierr = fe_method.setAdjacencies(adjacenciesPtr); CHKERRQ(ierr);
-
-    ierr = fe_method.setFE(fePtr); CHKERRQ(ierr);
-    ierr = fe_method.setData(dataPtr); CHKERRQ(ierr);
-    ierr = fe_method.setRowData(rowPtr); CHKERRQ(ierr);
-    ierr = fe_method.setColData(colPtr); CHKERRQ(ierr);
+    fe_method.problemPtr = problemPtr; 
+    fe_method.fieldsPtr = fieldsPtr;
+    fe_method.refinedEntitiesPtr = refinedEntitiesPtr;
+    fe_method.entitiesPtr = entitiesPtr;
+    fe_method.dofsPtr = dofsPtr;
+    fe_method.refinedFiniteElementsPtr = refinedFiniteElementsPtr;
+    fe_method.finiteElementsPtr = finiteElementsPtr;
+    fe_method.finiteElementsEntitiesPtr = finiteElementsEntitiesPtr;
+    fe_method.adjacenciesPtr = adjacenciesPtr;
+    fe_method.fePtr = fePtr;
+    fe_method.dataPtr = dataPtr;
+    fe_method.rowPtr = rowPtr;
+    fe_method.colPtr = colPtr;
 
     remeber_g_NTET = fe_method.g_NTET;
     fe_method.g_NTET = g_NTET;
