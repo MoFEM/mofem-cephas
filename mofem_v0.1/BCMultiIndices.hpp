@@ -70,9 +70,14 @@ struct GenericAttributeData {
     PetscErrorCode ierr;
     
     virtual PetscErrorCode fill_data(const vector<double>& attributes) {
-        PetscFunctionBegin;
-        SETERRQ(PETSC_COMM_SELF,1,"It makes no sense for the generic attribute type");
-        PetscFunctionReturn(0);
+      PetscFunctionBegin;
+      SETERRQ(PETSC_COMM_SELF,1,"It makes no sense for the generic attribute type");
+      PetscFunctionReturn(0);
+    }
+    virtual PetscErrorCode set_data(vector<double>& attributes) {
+      PetscFunctionBegin;
+      SETERRQ(PETSC_COMM_SELF,1,"It makes no sense for the generic attribute type");
+      PetscFunctionReturn(0);
     }
 
 };
@@ -108,6 +113,16 @@ struct BlockSetAttributes: public GenericAttributeData {
       }
       bzero(&data,sizeof(data));
       memcpy(&data, &attributes[0],8*attributes.size());
+      PetscFunctionReturn(0);
+    }
+    virtual PetscErrorCode set_data(vector<double>& attributes) {
+      PetscFunctionBegin;
+      if(8*attributes.size()>sizeof(data)) {
+	SETERRQ(PETSC_COMM_SELF,1,
+	  "data inconsistency, please review the number of material properties defined");
+      }
+      void *ptr = &attributes[0];
+      memcpy(ptr,&data,8*attributes.size());
       PetscFunctionReturn(0);
     }
     
@@ -152,6 +167,15 @@ struct Mat_Elastic: public GenericAttributeData {
         memcpy(&data, &attributes[0],8*attributes.size());
         PetscFunctionReturn(0);
     }
+    virtual PetscErrorCode set_data(vector<double>& attributes) {
+      PetscFunctionBegin;
+      if(8*attributes.size()>sizeof(data)) {
+	SETERRQ(PETSC_COMM_SELF,1,
+	  "data inconsistency, please review the number of material properties defined");
+      }
+      memcpy(&attributes[0],&data,8*attributes.size());
+      PetscFunctionReturn(0);
+    }
     
     /*! \brief Print Mat_Elastic data
      */
@@ -193,6 +217,15 @@ struct Mat_Thermal: public GenericAttributeData {
     }
     bzero(&data,sizeof(data));
     memcpy(&data, &attributes[0],8*attributes.size());
+    PetscFunctionReturn(0);
+  }
+  virtual PetscErrorCode set_data(vector<double>& attributes) {
+    PetscFunctionBegin;
+    if(8*attributes.size()>sizeof(data)) {
+      SETERRQ(PETSC_COMM_SELF,1,
+	"data inconsistency, please review the number of material properties defined");
+    }
+    memcpy(&attributes[0],&data,8*attributes.size());
     PetscFunctionReturn(0);
   }
         
@@ -279,6 +312,15 @@ struct Block_BodyForces: public GenericAttributeData {
     memcpy(&data, &attributes[0],8*attributes.size());
     PetscFunctionReturn(0);
   }
+  virtual PetscErrorCode set_data(vector<double>& attributes) {
+    PetscFunctionBegin;
+    if(8*attributes.size()>sizeof(data)) {
+      SETERRQ(PETSC_COMM_SELF,1,
+	"data inconsistency, please review the number of material properties defined");
+    }
+    memcpy(&attributes[0],&data,8*attributes.size());
+    PetscFunctionReturn(0);
+  }
         
   /*! \brief Print Mat_Elastic data
   */
@@ -317,6 +359,15 @@ struct Block_BodyForces: public GenericAttributeData {
       
       PetscFunctionReturn(0);
     }
+    virtual PetscErrorCode set_data(vector<double>& attributes) {
+      PetscFunctionBegin;
+      if(8*attributes.size()>sizeof(data)) {
+	SETERRQ(PETSC_COMM_SELF,1,
+	  "data inconsistency, please review the number of material properties defined");
+      }
+      memcpy(&attributes[0],&data,8*attributes.size());
+      PetscFunctionReturn(0);
+    }
     
     /*! \brief Print Mat_Elastic_TransIso data
      */
@@ -324,35 +375,43 @@ struct Block_BodyForces: public GenericAttributeData {
     
   };
 
-    /*! \struct Mat_Interf
-     *  \brief Linear interface data structure
-     */
-    struct Mat_Interf: public GenericAttributeData {
-        struct __attribute__ ((packed)) _data_{
-            double alpha; // Elastic modulus multiplier
-						double beta;  // Damage Coupling multiplier between normal and shear (g=sqrt(gn^2 + beta(gt1^2 + gt2^2)))
-						double ft;    // Maximum stress of crack
-						double Gf;    // Fracture Energy
-        };
-        
-        _data_ data;
-        
-        const CubitBC_BitSet type;
-        Mat_Interf(): type(MAT_INTERFSET) {};
-        
-        virtual PetscErrorCode fill_data(const vector<double>& attributes) {
-            PetscFunctionBegin;
-            //Fill data
-            if(8*attributes.size()!=sizeof(data)) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, please review the number of material properties defined");
-            memcpy(&data, &attributes[0], sizeof(data));
-            PetscFunctionReturn(0);
-        }
-        
-        /*! \brief Print Mat_Interf data
-         */
-        friend ostream& operator<<(ostream& os,const Mat_Interf& e);
-        
-    };
+/*! \struct Mat_Interf
+ *  \brief Linear interface data structure
+ */
+struct Mat_Interf: public GenericAttributeData {
+  struct __attribute__ ((packed)) _data_{
+    double alpha; // Elastic modulus multiplier
+    double beta;  // Damage Coupling multiplier between normal and shear (g=sqrt(gn^2 + beta(gt1^2 + gt2^2)))
+    double ft;    // Maximum stress of crack
+    double Gf;    // Fracture Energy
+  };
+      
+  _data_ data;
+      
+  const CubitBC_BitSet type;
+  Mat_Interf(): type(MAT_INTERFSET) {};
+      
+  virtual PetscErrorCode fill_data(const vector<double>& attributes) {
+    PetscFunctionBegin;
+    //Fill data
+    if(8*attributes.size()!=sizeof(data)) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, please review the number of material properties defined");
+    memcpy(&data, &attributes[0], sizeof(data));
+    PetscFunctionReturn(0);
+  }
+  virtual PetscErrorCode set_data(vector<double>& attributes) {
+    PetscFunctionBegin;
+    if(8*attributes.size()>sizeof(data)) {
+      SETERRQ(PETSC_COMM_SELF,1,
+	"data inconsistency, please review the number of material properties defined");
+      }
+      memcpy(&attributes[0],&data,8*attributes.size());
+      PetscFunctionReturn(0);
+  }
+      
+  /*! \brief Print Mat_Interf data
+    */
+  friend ostream& operator<<(ostream& os,const Mat_Interf& e);
+};
 
 /*! \struct Mat_Elastic with Fibres
  *  \brief Elastic material data structure
@@ -388,6 +447,7 @@ struct Mat_Elastic_EberleinHolzapfel1: public Mat_Elastic {
         memcpy(&data, &attributes[0],8*attributes.size());
         PetscFunctionReturn(0);
     }
+
     
     /*! \brief Print Mat_Elastic data
      */
@@ -856,6 +916,18 @@ struct CubitMeshSets {
     vector<double> attributes;
     ierr = get_Cubit_attributes(attributes); CHKERRQ(ierr);
     ierr = data.fill_data(attributes); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+  template<class _ATTRIBUTE_TYPE_>
+  PetscErrorCode set_attribute_data_structure(_ATTRIBUTE_TYPE_ &data) const {
+    PetscFunctionBegin;
+    PetscErrorCode ierr;
+    if((CubitBCType&data.type).none()) {
+        SETERRQ(PETSC_COMM_SELF,1,"attributes are not for _ATTRIBUTE_TYPE_ structure");
+    }
+    vector<double> attributes;
+    ierr = get_Cubit_attributes(attributes); CHKERRQ(ierr);
+    ierr = data.set_data(const_cast<vector<double>&>(attributes)); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
      
