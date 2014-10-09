@@ -87,7 +87,7 @@ struct FaceSplittingTools {
   PetscErrorCode addCrackFront_to_Cubit201(int verb = 0);
   PetscErrorCode roundCornersFillGaps_in_Cubit200(int nb,int verb = 0);
 
-  //calulate lebghth of edges adjacent to crack front
+  //calculate lebghth of edges adjacent to crack front
   PetscErrorCode crackFrontEdgeLengths(BitRefLevel bit_mesh,Range &to_split,Range &to_remove,int verb = 0);
 
   //move front nodes

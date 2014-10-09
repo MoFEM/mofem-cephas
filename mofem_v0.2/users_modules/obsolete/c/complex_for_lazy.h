@@ -47,7 +47,7 @@ PetscErrorCode ElshebyStress_PullBack(__CLPK_doublecomplex *det_xH,__CLPK_double
 
 PetscErrorCode ThermalDeformationGradient(const double alpha,const double lambda,const double i_lambda,__CLPK_doublecomplex xT,__CLPK_doublecomplex *xF);
 
-PetscErrorCode Calulate_Stresses_at_GaussPoint(
+PetscErrorCode Calculate_Stresses_at_GaussPoint(
   int *order_max_edge,int *order_max_face,int order_max_volume,
   int *order_X_edge,int *order_X_face,int order_X_volume,
   int *order_x_edge,int *order_x_face,int order_x_volume,

@@ -73,7 +73,7 @@ struct matPROJ_ctx {
   PetscErrorCode RecalculateCTandCCT();
   PetscErrorCode DestroyQorP();
   PetscErrorCode InitQTKQ();
-  PetscErrorCode RecalulateCTC();
+  PetscErrorCode RecalculateCTC();
   PetscErrorCode DestroyQTKQ();
 
   friend PetscErrorCode matQ_mult_shell(Mat Q,Vec x,Vec f);

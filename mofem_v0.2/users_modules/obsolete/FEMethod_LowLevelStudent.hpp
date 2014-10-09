@@ -122,7 +122,7 @@ struct FEMethod_LowLevelStudent: public FEMethod {
   N_Matrix_EntType col_diffN_Matrix_elem;
 
   /**
-   * \brief Calulate element GRADIENT matrices
+   * \brief Calculate element GRADIENT matrices
    *
    * [ dN1/dx	....	.... 	]
    * [ dN1/dy	.... 	....	]
@@ -144,7 +144,7 @@ struct FEMethod_LowLevelStudent: public FEMethod {
   const EntMoFEMFiniteElement *fe_ent_ptr;
 
   /**
-   * calulate element shape functions
+   * calculate element shape functions
    *
    * \param _gNTET_ vector of shape functions at Gauss pts.
    */

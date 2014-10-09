@@ -188,7 +188,7 @@ struct UltraWeakTransportElement {
     PetscFunctionReturn(0);
   }
 
-  /** \brief tau,sigma in Hdiv, calulates Aij = Asemble int sigma_dot_tau dTet 
+  /** \brief tau,sigma in Hdiv, calculates Aij = Asemble int sigma_dot_tau dTet 
     */
   struct OpTauDotSigma_HdivHdiv: public TetElementForcesAndSourcesCore::UserDataOperator {
 
@@ -325,7 +325,7 @@ struct UltraWeakTransportElement {
 
   };
 
-  /** \brief u in L2 and tau in Hdiv, calulates Aij = Asemble int u * div(tau) dTet 
+  /** \brief u in L2 and tau in Hdiv, calculates Aij = Asemble int u * div(tau) dTet 
     */
   struct OpDivTauU_HdivL2: public TetElementForcesAndSourcesCore::UserDataOperator {
 
@@ -400,7 +400,7 @@ struct UltraWeakTransportElement {
 
   };
 
-  /** \brief V in L2 and sigma in Hdiv, calulates Aij = Asemble int V * div(sigma) dTet 
+  /** \brief V in L2 and sigma in Hdiv, calculates Aij = Asemble int V * div(sigma) dTet 
     */
   struct OpVDotDivSigma_L2Hdiv: public TetElementForcesAndSourcesCore::UserDataOperator {
 
@@ -545,7 +545,7 @@ struct UltraWeakTransportElement {
 
   };
 
-  /** \brief calulate source therms
+  /** \brief calculate source therms
     */
   struct OpL2Source: public TetElementForcesAndSourcesCore::UserDataOperator {
 
@@ -888,7 +888,7 @@ struct UltraWeakTransportElement {
   };
 
 
-  /** \brief calulate error evaluator
+  /** \brief calculate error evaluator
     */
   struct OpError_L2Norm: public TetElementForcesAndSourcesCore::UserDataOperator {
 
