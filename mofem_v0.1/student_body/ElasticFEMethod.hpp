@@ -125,6 +125,10 @@ namespace MoFEM {
           meshsets.insert(it->meshset);
           for(Range::iterator mit = meshsets.begin();mit != meshsets.end(); mit++) {
             if( moab.contains_entities(*mit,&ent,1) ) {
+              
+              cout<< "mydata.data.Young "<<mydata.data.Young<<endl;
+              cout<< "mydata.data.P ratio "<<mydata.data.Poisson<<endl<<endl;
+
               *_lambda = LAMBDA(mydata.data.Young,mydata.data.Poisson);
               *_mu = MU(mydata.data.Young,mydata.data.Poisson);
               PetscFunctionReturn(0);

@@ -57,8 +57,9 @@ namespace MoFEM {
       G_W_TET = G_TET_W45;
       
       dE_dc=-3000;
-//      beta=0.0001e9;
       beta=0.0001;
+//      dE_dc=0;
+//      beta=0;
 
     };
     

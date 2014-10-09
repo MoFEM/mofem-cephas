@@ -43,7 +43,8 @@ namespace MoFEM {
       
       //Assuming linear relation between moisture and E
       young=young-3000*conc_gauss;
-//      cout<<"conc_gauss "<<conc_gauss<<endl;
+
+      cout<<"conc_gauss "<<conc_gauss<<endl;
 //      cout<<"young "<<young<<endl<<endl;
 
       double D00,D01,D33,constt;

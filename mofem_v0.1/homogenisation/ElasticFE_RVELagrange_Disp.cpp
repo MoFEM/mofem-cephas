@@ -548,12 +548,22 @@ namespace MoFEM {
       }
       //cout<< " D_mat[rr] =  "<<D_mat[rr]<<endl<<endl;
       
-      //Assemble D_mat into global force vector F
       f=prod(D_mat[rr], applied_strain);
-
 //      cout<<"f "<<f<<endl;
-
+      
+      if(rank_field==1){  //RHS=D_mat*applied_strain + initial_macro_concentraion
+        ublas::vector<FieldData> f_unit; f_unit.resize(f.size());
+        for(int ii=0; ii<f.size(); ii++){
+          f_unit(ii)=1.0;
+        }
+        f=0*f+0.2*f_unit;   //adding initial moisture concentraiton
+//        cout<<"f "<<f<<endl<<endl;
+      }
+      
+      
       if (snes_ctx==CTX_SNESSETFUNCTION) {f*=-1;}
+      
+      //Assemble D_mat into global force vector F
       ierr = VecSetValues(snes_f,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f.data())[0],ADD_VALUES); CHKERRQ(ierr);
     }
     

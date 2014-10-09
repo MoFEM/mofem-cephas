@@ -19,6 +19,9 @@
 add_executable(elasticity elasticity.cpp)
 target_link_libraries(elasticity mofem_student_body mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
 
+add_executable(elasticity1 elasticity1.cpp)
+target_link_libraries(elasticity1 mofem_student_body mofem_forces_and_sources mofem_Field ${PROJECT_LIBS})
+
 cm_export_file("../../meshes/LShape.cub" export_files_elasticity)
 cm_export_file("../../meshes/LShapeCoarse.cub" export_files_elasticity)
 cm_export_file("../../meshes/LShapeDense.cub" export_files_elasticity)
