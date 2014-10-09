@@ -3602,7 +3602,7 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
 	if(da > 0) {
 	  if(aa > 0 && ii == 0) {
 	    if(flg != PETSC_TRUE) {
-	      its_d = 8;
+	      its_d = 5;
 	    }
 	    double gamma = 0.5,reduction = 1;
 	    reduction = pow((double)its_d/(double)(its+1),gamma);
