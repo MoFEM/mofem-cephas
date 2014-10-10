@@ -952,7 +952,7 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(vector<string> &switche
     rval = mField.get_moab().get_adjacencies(t1_side,2,false,t1_side_tris,Interface::UNION); CHKERR_PETSC(rval);
     crack_surface_tris = intersect(crack_surface_tris,t1_side_tris);
 
-    // calulate nornals
+    // calculate nornals
     double diffN[3*2];
     ierr = ShapeDiffMBTRI(diffN); CHKERRQ(ierr);
     map<EntityHandle,vector<double> > normal_map;
