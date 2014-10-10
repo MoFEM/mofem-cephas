@@ -380,6 +380,11 @@ int main(int argc, char *argv[]) {
 
 	ierr = VecScale(F_thermal,-1); CHKERRQ(ierr);
 	ierr = VecAXPY(F_thermal,1,F); CHKERRQ(ierr);
+
+        my_dirichlet_bc.snes_x = D;
+        my_dirichlet_bc.snes_f = F_thermal;
+	ierr = m_field.problem_basic_method_postProcess("ELASTIC_PROB",my_dirichlet_bc); CHKERRQ(ierr);
+
 	ierr = KSPSolve(solver,F_thermal,D); CHKERRQ(ierr);
 	ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -417,6 +422,11 @@ int main(int argc, char *argv[]) {
 
       ierr = VecScale(F_thermal,-1); CHKERRQ(ierr);
       ierr = VecAXPY(F_thermal,1,F); CHKERRQ(ierr);
+
+      my_dirichlet_bc.snes_x = D;
+      my_dirichlet_bc.snes_f = F_thermal;
+      ierr = m_field.problem_basic_method_postProcess("ELASTIC_PROB",my_dirichlet_bc); CHKERRQ(ierr);
+
       ierr = KSPSolve(solver,F_thermal,D); CHKERRQ(ierr);
       ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
       ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
