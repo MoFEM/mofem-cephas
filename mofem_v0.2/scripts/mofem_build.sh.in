@@ -2,7 +2,7 @@
 
 MOFEM_SOURCE=@CMAKE_SOURCE_DIR@
 MOFEM_BUILD=@CMAKE_BINARY_DIR@
-
+MOFEM_INSTALL_PREFIX=@CMAKE_INSTALL_PREFIX@
 
 DATE=`date "+DATE-%Y-%m-%d_TIME_%H_%M_%S"`
 
@@ -17,4 +17,7 @@ mkdir $LOG_DIR/$DATE
 
 make -j 4 install 2>&1 | tee $MOFEM_BUILD/$LOG_DIR/$DATE/build_log
 make doc | tee $MOFEM_BUILD/$LOG_DIR/$DATE/doc_build_log
+
+cd $MOFEM_INSTALL_PREFIX
+make -j 4 install 2>&1 | tee $MOFEM_BUILD/$LOG_DIR/$DATE/build_log
 
