@@ -17,10 +17,25 @@
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
 
-include_directories("${PROJECT_SOURCE_DIR}/src/approximation")
-include_directories("${PROJECT_SOURCE_DIR}/src/finite_elements")
-include_directories("${PROJECT_SOURCE_DIR}/src/interaces")
-include_directories("${PROJECT_SOURCE_DIR}/src/multi_indices")
-include_directories("${PROJECT_SOURCE_DIR}/src/petsc")
+configure_file(
+  "${CMAKE_CURRENT_SOURCE_DIR}/mofem_build.sh.in"
+  "${CMAKE_CURRENT_BINARY_DIR}/mofem_build.sh"
+  @ONLY
+  )
 
+configure_file(
+  "${CMAKE_CURRENT_SOURCE_DIR}/mofem_fast_check.sh.in"
+  "${CMAKE_CURRENT_BINARY_DIR}/mofem_fast_check.sh"
+  @ONLY
+  )
+
+configure_file(
+  "${CMAKE_CURRENT_SOURCE_DIR}/mofem_update.sh.in"
+  "${CMAKE_CURRENT_BINARY_DIR}/mofem_update.sh"
+  @ONLY
+  )
+
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/mofem_build.sh DESTINATION bin PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE )
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/mofem_fast_check.sh DESTINATION bin PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/mofem_update.sh DESTINATION bin PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE )
 
