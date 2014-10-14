@@ -26,5 +26,6 @@ if [ ! -d "$LOG_DIR" ]; then
 fi
 mkdir $LOG_DIR/$DATE
 
+make clean
 make -j 4 2>&1 | tee $MOFEM_BUILD/$LOG_DIR/$DATE/build_log
 
