@@ -225,17 +225,23 @@ int main(int argc, char *argv[]) {
     if (name.compare(0,20,"MAT_ELASTIC_TRANSISO") == 0) {
       Mat_Elastic_TransIso mydata;
       ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+      ierr = it->set_attribute_data_structure(mydata); CHKERRQ(ierr);
+      ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
       //Print data
       cout << mydata;
       myfile << mydata;
     } else if (name.compare(0,11,"MAT_ELASTIC") == 0) {
       Mat_Elastic mydata;
       ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+      ierr = it->set_attribute_data_structure(mydata); CHKERRQ(ierr);
+      ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
       //Print data
       cout << mydata;
       myfile << mydata;
     } else if (name.compare(0,10,"MAT_INTERF") == 0) {
       Mat_Interf mydata;
+      ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+      ierr = it->set_attribute_data_structure(mydata); CHKERRQ(ierr);
       ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
       //Print data
       cout << mydata;

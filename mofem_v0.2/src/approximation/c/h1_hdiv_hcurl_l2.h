@@ -46,7 +46,7 @@ extern "C" {
 #define NBVOLUME_VOLUME_HDIV(P) ((P>3) ? ((P-3)*(P-2)*(P-1)/2) : 0)
 
 /** 
- * \brief Calulate Lagrange approximation basis
+ * \brief Calculate Lagrange approximation basis
  *
  * \param p is approximation order
  * \param s is is position [-1,1]

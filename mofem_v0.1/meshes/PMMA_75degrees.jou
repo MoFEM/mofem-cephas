@@ -1,0 +1,80 @@
+reset
+
+brick x 260 y 60 z 10
+webcut volume 1  with plane xplane offset 120 noimprint merge 
+webcut volume 2  with plane xplane offset -120 noimprint merge
+webcut volume 2  with plane xplane offset 0 noimprint merge 
+webcut volume 2  with plane xplane offset 2.5 noimprint merge
+webcut volume 4  with plane xplane offset -2.5 noimprint merge
+unite volume 4 5
+sweep surface 51 perpendicular distance 2.5
+unite volume 6 4 2
+
+create Cylinder height 200 radius 20
+rotate Volume 7 angle 90 about Y include_merged
+Compress Ids All 
+move Volume 4 location surface 17  include_merged
+rotate Volume 4 angle -15 about Y include_merged
+chop volume 3 with volume 4
+webcut volume 5 with general plane plane x spin axis y angle 15 noimprint nomerge
+Compress Ids All
+ 
+#Merge Volumes    
+imprint volume all     
+merge volume all     
+    
+#Material Properties   
+#scaling factor = 1e-3     
+block 1 volume all      
+block 1 name "MAT_ELASTIC_pmma"       
+block 1 attribute count 10       
+#Elastic modulus E = 2800N/mm2       
+#Poisson's ratio v = 0.38    
+block 1 attribute index 1 2.8    
+block 1 attribute index 2 0.38       
+    
+#Apply displacement bcs    
+create Displacement  on curve 10 dof 1 dof 2 dof 3 fix 0.0    
+create displacement on curve 19 dof 2 dof 3 fix 0.0   
+   
+#Loading     
+#scaling factor = 1e-3    
+#Apply pressure with magnitude = F/(pad_w x pad_l)       
+#F = 2.4kN, pad_w = 5mm, pad_l = 10mm   
+#P = 48N * 1e-3   
+create pressure on surface 14 magnitude 0.048   
+   
+##Create Block Set with Vertices to ploat load-disp. path   
+block 2 vertex 33 34 24 21 22 23   
+block 2 name 'LoadPath'   
+   
+#Create nodesets and sidesets for fracture constraints       
+#Boundary edges       
+sideset 100 curve all      
+sideset 100 curve 41 42 52 53 54 55 56 64 66 remove     
+     
+#Boundary vertices       
+nodeset 101 vertex all     
+nodeset 101 vertex 25 26 27 28 35 36 remove       
+     
+#Boundary surfaces       
+sideset 102 surface all       
+sideset 102 surface 25 3 8 26 33 remove     
+     
+#Crack surface     
+sideset 200 surface 25     
+     
+#Crack front     
+sideset 201 curve 53    
+   
+Meshing    
+volume all scheme tetmesh       
+volume all size auto factor 7    
+surface 25 size auto factor 8   
+mesh surface 25    
+mesh volume all    
+  
+  
+  
+  
+  

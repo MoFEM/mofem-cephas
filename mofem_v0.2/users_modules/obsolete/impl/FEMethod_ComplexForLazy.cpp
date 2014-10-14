@@ -311,7 +311,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetData(
 	  map<LocalUId,FieldData> map_edge_dofs;
 	  for(;eiit!=hi_eiit;eiit++) dofs_edge_data[ee][eiit->get_EntDofIdx()] = eiit->get_FieldData();
 	  if(diffH1edgeNinvJac[ee].size() < (unsigned int)NBEDGE_H1(order_edges[ee])) {
-	    SETERRQ(PETSC_COMM_SELF,1,"not enugh shape functions calulated");
+	    SETERRQ(PETSC_COMM_SELF,1,"not enugh shape functions calculated");
 	  }
 	} else {
 	  order_edges[ee] = 0;
@@ -331,7 +331,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetData(
 	  assert(dofs_face_data[ff].size() == 3*(unsigned int)NBFACE_H1(order_faces[ff]));
 	  for(;fiit!=hi_fiit;fiit++) dofs_face_data[ff][fiit->get_EntDofIdx()] = fiit->get_FieldData();
 	  if(diffH1faceNinvJac[ff].size() < (unsigned int)NBFACE_H1(order_faces[ff])) {
-	    SETERRQ(PETSC_COMM_SELF,1,"not enugh shape functions calulated");
+	    SETERRQ(PETSC_COMM_SELF,1,"not enugh shape functions calculated");
 	  }
 	} else {
 	  order_faces[ff] = 0;
@@ -348,7 +348,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetData(
 	assert(dofs_volume.size() == (unsigned int)3*NBVOLUME_H1(order_volume));
 	for(;viit!=hi_viit;viit++) dofs_volume[viit->get_EntDofIdx()] = viit->get_FieldData();
 	if(diffH1elemNinvJac.size() < (unsigned int)NBVOLUME_H1(order_volume)) {
-	  SETERRQ(PETSC_COMM_SELF,1,"not enugh shape functions calulated");
+	  SETERRQ(PETSC_COMM_SELF,1,"not enugh shape functions calculated");
 	}
       } else {
 	order_volume = 0;

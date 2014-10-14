@@ -478,7 +478,7 @@ struct TangentWithMeshSmoothingFrontConstrain_FEMethod: public C_CONSTANT_AREA_F
 	double r = cblas_dnrm2(3,center,1);
 	for(int nn = 0;nn<3;nn++) {
 	  for(int dd = 0;dd<3;dd++) {
-	    // ---> calulate tangent starts here
+	    // ---> calculate tangent starts here
 	    ublas::vector<double,ublas::bounded_array<double,9> > idofs_X(9,0);
 	    idofs_X[nn*3+dd] = r*eps;
 	    ublas::vector<double,ublas::bounded_array<double,9> > dELEM_CONSTRAIN1(9);
@@ -519,7 +519,7 @@ struct TangentWithMeshSmoothingFrontConstrain_FEMethod: public C_CONSTANT_AREA_F
 		1,&disp_dofs_col_idx[3*nn+dd],
 		&dELEM_CONSTRAIN1[3*nnn],ADD_VALUES); CHKERRQ(ierr);
 	    }
-	    // ---> calulate tangent end here
+	    // ---> calculate tangent end here
 	  }
 	}
       }
@@ -1985,7 +1985,7 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& m_fi
     ierr = MatShellSetOperation(RT,MATOP_MULT,(void(*)(void))matRT_mult_shell); CHKERRQ(ierr);
   }
   
-  //calulate tangent griffith force
+  //calculate tangent griffith force
   matPROJ_ctx projFrontCtx_tangent(m_field,problem,"C_CRACKFRONT_MATRIX");
   ierr = m_field.MatCreateMPIAIJWithArrays("C_CRACKFRONT_MATRIX",&projFrontCtx_tangent.C); CHKERRQ(ierr);
   C_FRONT_TANGENT_FEMethod C_TANGENT_ELEM(m_field,projFrontCtx_tangent.C,Q,"LAMBDA_CRACKFRONT_AREA");
@@ -2731,12 +2731,12 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   ierr = arc_elem.set_dlambda_to_x(D,0); CHKERRQ(ierr);
   ierr = VecCopy(D,arc_ctx.x0); CHKERRQ(ierr);
   ierr = arc_elem.get_dlambda(D); CHKERRQ(ierr);
-  //calulate rhs and F_lambda
+  //calculate rhs and F_lambda
   ierr = arc_ctx.set_alpha_and_beta(0,1); CHKERRQ(ierr);
   ierr = SnesRhs(*snes,D,F,&arc_snes_ctx); CHKERRQ(ierr);
   //set s
   ierr = arc_ctx.set_alpha_and_beta(1,0); CHKERRQ(ierr);
-  ierr = arc_elem.calulate_lambda_int(); CHKERRQ(ierr);
+  ierr = arc_elem.calculate_lambda_int(); CHKERRQ(ierr);
   ierr = arc_ctx.set_s(arc_elem.lambda_int+da/arc_elem.aRea0); CHKERRQ(ierr);
 
   SNESLineSearch linesearch;
@@ -2991,7 +2991,7 @@ ConfigurationalFractureMechanics::ArcLengthElemFEMethod::~ArcLengthElemFEMethod(
   ierr = PetscFree(isIdx); CHKERRABORT(PETSC_COMM_WORLD,ierr);
   ierr = VecDestroy(&lambdaVec); CHKERRABORT(PETSC_COMM_WORLD,ierr);
 }
-PetscErrorCode ConfigurationalFractureMechanics::ArcLengthElemFEMethod::calulate_area() {
+PetscErrorCode ConfigurationalFractureMechanics::ArcLengthElemFEMethod::calculate_area() {
   PetscFunctionBegin;
 
   ErrorCode rval;
@@ -3014,7 +3014,7 @@ PetscErrorCode ConfigurationalFractureMechanics::ArcLengthElemFEMethod::calulate
   }
   ierr = VecRestoreArray(surfaceDofs,&array); CHKERRABORT(PETSC_COMM_SELF,ierr);
 
-  //calulate crack surface area
+  //calculate crack surface area
   aRea = 0;
   aRea0 = 0;
   ublas::vector<double,ublas::bounded_array<double,6> > diffNTRI(6);
@@ -3040,15 +3040,15 @@ PetscErrorCode ConfigurationalFractureMechanics::ArcLengthElemFEMethod::calulate
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode ConfigurationalFractureMechanics::ArcLengthElemFEMethod::calulate_lambda_int() {
+PetscErrorCode ConfigurationalFractureMechanics::ArcLengthElemFEMethod::calculate_lambda_int() {
   PetscFunctionBegin;
   PetscErrorCode ierr;
-  ierr = calulate_area(); CHKERRQ(ierr);
+  ierr = calculate_area(); CHKERRQ(ierr);
   lambda_int = arc_ptr->alpha*aRea/aRea0 + arc_ptr->dlambda*arc_ptr->beta*sqrt(arc_ptr->F_lambda2);
   //PetscPrintf(PETSC_COMM_WORLD,"\tsurface crack area = %6.4e lambda_int = %6.4e\n",aRea,lambda_int);
   PetscFunctionReturn(0);
 }
-PetscErrorCode ConfigurationalFractureMechanics::ArcLengthElemFEMethod::calulate_db() {
+PetscErrorCode ConfigurationalFractureMechanics::ArcLengthElemFEMethod::calculate_db() {
   PetscFunctionBegin;
   PetscErrorCode ierr;
   if(arc_ptr->alpha!=0) {
@@ -3109,13 +3109,13 @@ PetscErrorCode ConfigurationalFractureMechanics::ArcLengthElemFEMethod::preProce
 	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
 	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
 	ierr = get_dlambda(snes_x); CHKERRQ(ierr);
-	ierr = calulate_lambda_int(); CHKERRQ(ierr);
+	ierr = calculate_lambda_int(); CHKERRQ(ierr);
       }
       break;
     case CTX_SNESSETJACOBIAN: 
 	ierr = MatAssemblyBegin(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
 	ierr = MatAssemblyEnd(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-	ierr = calulate_db(); CHKERRQ(ierr);
+	ierr = calculate_db(); CHKERRQ(ierr);
       break;
     default:
       break;
@@ -3128,7 +3128,7 @@ PetscErrorCode ConfigurationalFractureMechanics::ArcLengthElemFEMethod::operator
   //get dlambda dof 
   switch(snes_ctx) {
     case CTX_SNESSETFUNCTION: {
-      //calulate residual for arc length row
+      //calculate residual for arc length row
       arc_ptr->res_lambda = lambda_int - arc_ptr->s;
       ierr = VecSetValue(snes_f,arc_ptr->get_petsc_gloabl_dof_idx(),arc_ptr->res_lambda,INSERT_VALUES); CHKERRQ(ierr);
       PetscPrintf(PETSC_COMM_SELF,"\n");
@@ -3137,7 +3137,7 @@ PetscErrorCode ConfigurationalFractureMechanics::ArcLengthElemFEMethod::operator
 	,arc_ptr->res_lambda,aRea,aRea/aRea0);
     } break; 
     case CTX_SNESSETJACOBIAN: {
-      //calulate diagonal therm
+      //calculate diagonal therm
       double diag = arc_ptr->beta*sqrt(arc_ptr->F_lambda2);
       ierr = VecSetValue(ghostDiag,0,diag,INSERT_VALUES); CHKERRQ(ierr);
       ierr = MatSetValue(snes_B,arc_ptr->get_petsc_gloabl_dof_idx(),arc_ptr->get_petsc_gloabl_dof_idx(),1,INSERT_VALUES); CHKERRQ(ierr);
@@ -3563,7 +3563,7 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
       SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_gc (what is the fracture energy ?)");
     }
 
-    //calulate initial load factor
+    //calculate initial load factor
     if(step == 0) {
       ierr = main_rescale_load_factor(m_field,conf_prob); CHKERRQ(ierr);
     }
@@ -3755,10 +3755,10 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
 	face_splitting_tools.tetGenData.clear();
 	vector<string> switches1;
 	if(pcomm->rank() == 0) {
-	  switches1.push_back("rp177sqRS0JVV");
+	  switches1.push_back("rp175sqRS0JVV");
 	  ierr = face_splitting_tools.rebuildMeshWithTetGen(switches1,3); CHKERRQ(ierr);	
 	} else {
-	  switches1.push_back("rp177sqRS0JQ");
+	  switches1.push_back("rp175sqRS0JQ");
 	  ierr = face_splitting_tools.rebuildMeshWithTetGen(switches1,0); CHKERRQ(ierr);	
 	}
       }
@@ -3808,7 +3808,7 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
       ierr = SNESSetFromOptions(snes); CHKERRQ(ierr);
       ierr = conf_prob.solve_spatial_problem(m_field,&snes,false); CHKERRQ(ierr);
       ierr = SNESDestroy(&snes); CHKERRQ(ierr);
-      //calulate Griffth forces
+      //calculate Griffth forces
       ierr = conf_prob.calculate_material_forces(m_field,"COUPLED_PROBLEM","MATERIAL_COUPLED"); CHKERRQ(ierr);
       ierr = conf_prob.front_projection_data(m_field,"COUPLED_PROBLEM"); CHKERRQ(ierr);
       ierr = conf_prob.surface_projection_data(m_field,"COUPLED_PROBLEM"); CHKERRQ(ierr);

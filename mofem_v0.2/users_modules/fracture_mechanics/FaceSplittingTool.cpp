@@ -383,7 +383,7 @@ PetscErrorCode FaceSplittingTools::roundCornersFillGaps_in_Cubit200(int nb,int v
       Range adj_edges;
       rval = mField.get_moab().get_adjacencies(&*fit,1,1,false,adj_edges); CHKERR_PETSC(rval);
       adj_edges = intersect(adj_edges,skin_edges);
-      if(adj_edges.size()>=nb) {
+      if(adj_edges.size()>=(unsigned int)nb) {
 	rval = mField.get_moab().get_adjacencies(
 	  crack_surface_tris,3,false,crack_surface_tris_tets,Interface::UNION); CHKERR_PETSC(rval);
 	crack_surface_tris_tets = intersect(crack_surface_tris_tets,mesh_level_tets);
@@ -952,7 +952,7 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(vector<string> &switche
     rval = mField.get_moab().get_adjacencies(t1_side,2,false,t1_side_tris,Interface::UNION); CHKERR_PETSC(rval);
     crack_surface_tris = intersect(crack_surface_tris,t1_side_tris);
 
-    // calulate nornals
+    // calculate nornals
     double diffN[3*2];
     ierr = ShapeDiffMBTRI(diffN); CHKERRQ(ierr);
     map<EntityHandle,vector<double> > normal_map;
