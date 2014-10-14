@@ -20,12 +20,6 @@ make -j 4 install 2>&1 | tee $MOFEM_BUILD/$LOG_DIR/$DATE/build_log
 make doc | tee $MOFEM_BUILD/$LOG_DIR/$DATE/doc_build_log
 
 #build users modules
-cd $MOFEM_INSTALL_PREFIX
-if [ ! -d "$LOG_DIR" ]; then
-  mkdir $LOG_DIR
-fi
-mkdir $LOG_DIR/$DATE
-
 make clean
-make -j 4 2>&1 | tee $MOFEM_BUILD/$LOG_DIR/$DATE/build_log
+make -j 4 2>&1 | tee $MOFEM_BUILD/$LOG_DIR/$DATE/build_users_modules_log
 
