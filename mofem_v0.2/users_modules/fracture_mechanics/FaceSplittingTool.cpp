@@ -884,6 +884,14 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(vector<string> &switche
       t0_faces_nodes,3,false,t0_faces_nodes_tets,Interface::UNION); CHKERR_PETSC(rval);
     t0 = subtract(t0,t0_faces_nodes_tets);
 
+    if(verb >= 0) {
+      EntityHandle meshset_out;
+      rval = mField.get_moab().create_meshset(MESHSET_SET,meshset_out); CHKERR_PETSC(rval);
+      ierr = mField.get_moab().add_entities(meshset_out,t0); CHKERRQ(ierr);
+      rval = mField.get_moab().write_file("debug_t0_tets.vtk","VTK","",&meshset_out,1); CHKERR_PETSC(rval);
+      rval = mField.get_moab().delete_entities(&meshset_out,1); CHKERR_PETSC(rval);
+    }
+
     //consider tets with bad qualuty
     Range t0_corrected;
     t0_corrected.clear();
@@ -921,6 +929,14 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(vector<string> &switche
       }
     }
     t0 = t0_corrected;
+
+    if(verb >= 0) {
+      EntityHandle meshset_out;
+      rval = mField.get_moab().create_meshset(MESHSET_SET,meshset_out); CHKERR_PETSC(rval);
+      ierr = mField.get_moab().add_entities(meshset_out,t0); CHKERRQ(ierr);
+      rval = mField.get_moab().write_file("debug_t0_tets_bad_quality.vtk","VTK","",&meshset_out,1); CHKERR_PETSC(rval);
+      rval = mField.get_moab().delete_entities(&meshset_out,1); CHKERR_PETSC(rval);
+    }
 
     rval = mField.get_moab().get_adjacencies(
      crack_surface_tris,3,false,t0,Interface::UNION); CHKERR_PETSC(rval);
