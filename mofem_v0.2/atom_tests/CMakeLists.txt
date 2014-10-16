@@ -60,6 +60,7 @@ target_link_libraries(cubit_bc_test
   mofem_interfaces
   mofem_multi_indices
   mofem_approx
+  mofem_cblas
   mofem_third_party
   ${PROJECT_LIBS})
 
@@ -113,6 +114,7 @@ target_link_libraries(loops_atom_test
   mofem_interfaces
   mofem_multi_indices
   mofem_approx
+  mofem_cblas
   mofem_third_party
   ${PROJECT_LIBS})
 
@@ -126,11 +128,11 @@ cm_export_file("../meshes/elasticity_atom_test_01X_pressure.cub" export_atom_tes
 
 add_executable(field_axpy_atom_test field_axpy_atom_test.cpp)
 target_link_libraries(field_axpy_atom_test 
-  mofem_cblas
   mofem_interfaces
   mofem_multi_indices
   mofem_petsc
   mofem_approx
+  mofem_cblas
   mofem_third_party
   ${PROJECT_LIBS})
 
@@ -144,12 +146,12 @@ cm_export_file("../meshes/sphere.cub" export_atom_tests)
 
 add_executable(projection_from_10node_tet_atom projection_from_10node_tet.cpp)
 target_link_libraries(projection_from_10node_tet_atom 
-  mofem_cblas
   mofem_finite_element_library
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
   mofem_approx
+  mofem_cblas
   mofem_third_party
   ${PROJECT_LIBS})
 
@@ -166,6 +168,7 @@ target_link_libraries(mesh_refine_atom
   mofem_interfaces
   mofem_multi_indices
   mofem_approx
+  mofem_cblas
   mofem_third_party
   ${PROJECT_LIBS})
 
@@ -181,6 +184,7 @@ target_link_libraries(mesh_insert_interface_atom
   mofem_interfaces
   mofem_multi_indices
   mofem_approx
+  mofem_cblas
   mofem_third_party
   ${PROJECT_LIBS})
 
@@ -198,6 +202,7 @@ target_link_libraries(forces_and_sources_getting_orders_indices_atom_test
   mofem_interfaces
   mofem_multi_indices
   mofem_approx
+  mofem_cblas
   mofem_third_party
   ${PROJECT_LIBS})
 
@@ -213,6 +218,7 @@ target_link_libraries(forces_and_sources_getting_mult_H1_H1_atom_test
   mofem_interfaces
   mofem_multi_indices
   mofem_approx
+  mofem_cblas
   mofem_third_party
   ${PROJECT_LIBS})
 
@@ -228,6 +234,7 @@ target_link_libraries(forces_and_sources_calculate_jacobian
   mofem_interfaces
   mofem_multi_indices
   mofem_approx
+  mofem_cblas
   mofem_third_party
   ${PROJECT_LIBS})
 
@@ -243,6 +250,7 @@ target_link_libraries(forces_and_sources_testing_volume_element
   mofem_interfaces
   mofem_multi_indices
   mofem_approx
+  mofem_cblas
   mofem_third_party
   ${PROJECT_LIBS})
 
@@ -258,6 +266,7 @@ target_link_libraries(forces_and_sources_testing_field_approximation
   mofem_interfaces
   mofem_multi_indices
   mofem_approx
+  mofem_cblas
   mofem_third_party
   ${PROJECT_LIBS})
 
@@ -276,6 +285,7 @@ target_link_libraries(forces_and_sources_body_force_atom
   mofem_multi_indices
   mofem_petsc
   mofem_approx
+  mofem_cblas
   mofem_third_party
   ${PROJECT_LIBS})
 
@@ -293,6 +303,7 @@ target_link_libraries(forces_and_sources_getting_higher_order_skin_normals_atom
   mofem_interfaces
   mofem_multi_indices
   mofem_approx
+  mofem_cblas
   mofem_third_party
   ${PROJECT_LIBS})
 
@@ -308,6 +319,7 @@ target_link_libraries(forces_and_sources_testing_triangle_element
   mofem_interfaces
   mofem_multi_indices
   mofem_approx
+  mofem_cblas
   mofem_third_party
   ${PROJECT_LIBS})
 
@@ -323,6 +335,7 @@ target_link_libraries(forces_and_sources_testing_edge_element
   mofem_interfaces
   mofem_multi_indices
   mofem_approx
+  mofem_cblas
   mofem_third_party
   ${PROJECT_LIBS})
 
@@ -338,6 +351,7 @@ target_link_libraries(forces_and_sources_testing_vertex_element
   mofem_interfaces
   mofem_multi_indices
   mofem_approx
+  mofem_cblas
   mofem_third_party
   ${PROJECT_LIBS})
 
@@ -353,6 +367,7 @@ target_link_libraries(forces_and_sources_neumann_forces_atom
   mofem_interfaces
   mofem_multi_indices
   mofem_approx
+  mofem_cblas
   mofem_third_party
   ${PROJECT_LIBS})
 
@@ -382,6 +397,7 @@ target_link_libraries(forces_and_sources_fluid_pressure_element_atom
   mofem_interfaces
   mofem_multi_indices
   mofem_approx
+  mofem_cblas
   mofem_third_party
   ${PROJECT_LIBS})
 
@@ -400,6 +416,7 @@ target_link_libraries(forces_and_sources_thermal_elem_atom
   mofem_interfaces
   mofem_multi_indices
   mofem_approx
+  mofem_cblas
   mofem_third_party
   ${PROJECT_LIBS})
 
@@ -418,6 +435,7 @@ target_link_libraries(forces_and_sources_thermal_elem_unsteady_atom
   mofem_multi_indices
   mofem_petsc
   mofem_approx
+  mofem_cblas
   mofem_third_party
   ${PROJECT_LIBS})
 
@@ -439,6 +457,7 @@ target_link_libraries(forces_and_sources_thermal_stress_elem
   mofem_interfaces
   mofem_multi_indices
   mofem_approx
+  mofem_cblas
   mofem_third_party
   ${PROJECT_LIBS})
 
@@ -454,6 +473,7 @@ target_link_libraries(record_series_atom
   mofem_interfaces
   mofem_multi_indices
   mofem_approx
+  mofem_cblas
   mofem_third_party
   ${PROJECT_LIBS})
 
@@ -470,6 +490,7 @@ target_link_libraries(forces_and_sources_hdiv_approximation_functions
   mofem_interfaces
   mofem_multi_indices
   mofem_approx
+  mofem_cblas
   mofem_third_party
   ${PROJECT_LIBS})
 
@@ -485,6 +506,7 @@ target_link_libraries(forces_and_sources_hdiv_continuity_check
   mofem_interfaces
   mofem_multi_indices
   mofem_approx
+  mofem_cblas
   mofem_third_party
   ${PROJECT_LIBS})
 
@@ -500,6 +522,7 @@ target_link_libraries(forces_and_sources_hdiv_divergence_operator
   mofem_interfaces
   mofem_multi_indices
   mofem_approx
+  mofem_cblas
   mofem_third_party
   ${PROJECT_LIBS})
 
@@ -513,6 +536,7 @@ target_link_libraries(forces_and_sources_ultra_weak_transport
   mofem_multi_indices
   mofem_petsc
   mofem_approx
+  mofem_cblas
   mofem_third_party
   ${PROJECT_LIBS})
 
@@ -536,6 +560,7 @@ if(TETGEN_LIBRARY)
     mofem_multi_indices
     mofem_petsc
     mofem_approx
+    mofem_cblas
     mofem_third_party
     ${PROJECT_LIBS})
 
@@ -552,6 +577,7 @@ if(NETGEN_LIBRARY)
     mofem_interfaces
     mofem_multi_indices
     mofem_approx
+    mofem_cblas
     mofem_third_party
     ${PROJECT_LIBS})
 
