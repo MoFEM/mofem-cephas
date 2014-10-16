@@ -240,7 +240,12 @@ BIN_PATH="@CMAKE_CURRENT_BINARY_DIR@"
 MPIRUN="@MoFEM_MPI_RUN@ -np $NB_PROC"
 
 if [ -z ${SHOWME+x} ]; then
-  cp $FILE $DIR_NAME/
+  TEST_FILE="$DIR_NAME/$(basename $FILE)"
+  echo $TEST_FILE;
+  if [ ! -f $TEST_FILE ]; then
+    echo $FILE $DIR_NAME/
+    cp $FILE $DIR_NAME/
+  fi
   cd $DIR_NAME
 fi
 
