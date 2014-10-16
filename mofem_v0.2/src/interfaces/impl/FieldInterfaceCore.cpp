@@ -1547,8 +1547,7 @@ PetscErrorCode Core::build_finite_element_data_dofs(EntMoFEMFiniteElement &ent_f
   PetscFunctionBegin;
   if(!(*build_MoFEM)&(1<<0)) SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"fields not build");
   FEDofMoFEMEntity_multiIndex &data_dofs = const_cast<FEDofMoFEMEntity_multiIndex&>(ent_fe.data_dofs);
-  //data_dofs.clear();
-  //clear data dofs multiindex //FIXME should be cleaned when dofs are cleaned form datasets
+  data_dofs.clear(); //clear data dofs multiindex //FIXME should be cleaned when dofs are cleaned form datasets
   DofMoFEMEntity_multiIndex_active_view data_view;
   ierr = ent_fe.get_MoFEMFiniteElement_data_dof_view(dofsMoabField,data_view,Interface::UNION); CHKERRQ(ierr);
   DofMoFEMEntity_multiIndex_active_view::nth_index<1>::type::iterator viit_data,hi_viit_data;

@@ -3590,7 +3590,8 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
     bool at_least_one_step_converged = false;
     conf_prob.freeze_all_but_one = false;
     double _da_ = (aa == 0) ? 0 : da;
-    for(int ii = 0;ii<nb_sub_steps;ii++) {
+    int ii = 0;
+    for(;ii<nb_sub_steps;ii++) {
       ierr = PetscPrintf(PETSC_COMM_WORLD,"\n* number of substeps = %D _da_ = %6.4e\n\n",ii,_da_); CHKERRQ(ierr);
       ierr = conf_prob.solve_coupled_problem(m_field,&snes,_da_); CHKERRQ(ierr);
       int its;
@@ -3602,7 +3603,7 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
 	if(da > 0) {
 	  if(aa > 0 && ii == 0) {
 	    if(flg != PETSC_TRUE) {
-	      its_d = 8;
+	      its_d = 5;
 	    }
 	    double gamma = 0.5,reduction = 1;
 	    reduction = pow((double)its_d/(double)(its+1),gamma);
@@ -3666,6 +3667,11 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
     }
     ierr = VecDestroy(&D0); CHKERRQ(ierr);
     ierr = SNESDestroy(&snes); CHKERRQ(ierr);
+
+    double reduction = pow(2./(ii+1),0.5);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"\n* change of da = %6.4e\n\n",reduction); CHKERRQ(ierr);
+    da *= reduction;
+    da = fmax(da,1e-2*da_0);
 
     ierr = conf_prob.set_coordinates_from_material_solution(m_field,false); CHKERRQ(ierr);
 

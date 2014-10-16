@@ -41,7 +41,14 @@ DofMoFEMEntity::DofMoFEMEntity(const MoFEMEntity *_MoFEMEntity_ptr,const Approxi
     ss << "at " << __LINE__ << " in " << __FILE__;
     ss << " field_ptr->tag_dof_order_data==NULL";
     ss << " (top tip: check if order set to vertices is 1)";
-    throw(ss.str().c_str());
+    //throw(ss.str().c_str());
+    PetscTraceBackErrorHandler(
+	PETSC_COMM_WORLD,
+	__LINE__,PETSC_FUNCTION_NAME,__FILE__,
+	MOFEM_DATA_INSONSISTENCY,PETSC_ERROR_INITIAL,ss.str().c_str(),PETSC_NULL);
+    PetscMPIAbortErrorHandler(PETSC_COMM_WORLD,
+	__LINE__,PETSC_FUNCTION_NAME,__FILE__,
+	MOFEM_DATA_INSONSISTENCY,PETSC_ERROR_INITIAL,ss.str().c_str(),PETSC_NULL);
   }
   assert(field_ptr->tag_dof_rank_data!=NULL);
   ((ApproximationOrder*)field_ptr->tag_dof_order_data)[dof] = _dof_order;
