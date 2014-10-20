@@ -24,7 +24,7 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 #ifndef __COMPLEX_FOR_LAZY_NEUMANM_FORCES_HPP
-#define __COMPLEX_FOR_LAZY_NEUMANN_FORCES_HPP
+#define __COMPLEX_FOR_LAZY_NEUMANM_FORCES_HPP
 
 namespace ObosleteUsersModules {
 
@@ -232,5 +232,5 @@ struct NeummanForcesSurfaceComplexForLazy {
 
 }
 
-#endif //__COMPLEX_FOR_LAZY_NEUMAN_FORCES_HPP
+#endif //__COMPLEX_FOR_LAZY_NEUMANM_FORCES_HPP
 
