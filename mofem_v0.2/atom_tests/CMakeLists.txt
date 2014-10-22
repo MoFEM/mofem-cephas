@@ -118,7 +118,7 @@ target_link_libraries(loops_atom_test
   mofem_third_party
   ${PROJECT_LIBS})
 
-add_test(cubit_meshset_loop_test ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/loops_atom_test -my_file loop_atom.cub -log_summary)
+add_test(cubit_meshset_loop_test ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/loops_atom_test -my_file loop_atom.cub)
 add_test(cubit_meshset_loop_test_compare ${CMAKE_COMMAND} -E compare_files 
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/loop_atom.cub.txt
   ${CMAKE_BINARY_DIR}/atom_tests/loop_atom.cub.txt)
@@ -136,7 +136,7 @@ target_link_libraries(field_axpy_atom_test
   mofem_third_party
   ${PROJECT_LIBS})
 
-add_test(field_axpy ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/field_axpy_atom_test -my_file elasticity_atom_test_01X_pressure.cub -log_summary)
+add_test(field_axpy ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/field_axpy_atom_test -my_file elasticity_atom_test_01X_pressure.cub)
 add_test(field_axpy_compare ${CMAKE_COMMAND} -E compare_files 
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/field_axpy_test.txt 
   ${CMAKE_BINARY_DIR}/atom_tests/field_axpy_test.txt)
@@ -155,7 +155,7 @@ target_link_libraries(projection_from_10node_tet_atom
   mofem_third_party
   ${PROJECT_LIBS})
 
-add_test(projection_from_10node_tet_atom ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/projection_from_10node_tet_atom -my_file sphere.cub -log_summary)
+add_test(projection_from_10node_tet_atom ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/projection_from_10node_tet_atom -my_file sphere.cub)
 add_test(projection_from_10node_tet_atom_compare ${CMAKE_COMMAND} -E compare_files 
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/10node_sphere.txt
   ${CMAKE_BINARY_DIR}/atom_tests/10node_sphere.txt)
@@ -172,7 +172,7 @@ target_link_libraries(mesh_refine_atom
   mofem_third_party
   ${PROJECT_LIBS})
 
-add_test(mesh_refine_atom ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/mesh_refine_atom -my_file templar.cub -log_summary)
+add_test(mesh_refine_atom ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/mesh_refine_atom -my_file templar.cub)
 add_test(mesh_refine_atom_test_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/mesh_refine.txt ${CMAKE_BINARY_DIR}/atom_tests/mesh_refine.txt)
 
 #mesh_insert_interface_atom
@@ -188,11 +188,11 @@ target_link_libraries(mesh_insert_interface_atom
   mofem_third_party
   ${PROJECT_LIBS})
 
-add_test(mesh_insert_interface_atom ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/mesh_insert_interface_atom -my_file templar.cub -log_summary)
+add_test(mesh_insert_interface_atom ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/mesh_insert_interface_atom -my_file templar.cub)
 add_test(mesh_insert_interface_atom_test_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/mesh_insert_interface.txt ${CMAKE_BINARY_DIR}/atom_tests/mesh_insert_interface.txt)
-add_test(mesh_insert_T_interface_atom ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/mesh_insert_interface_atom -my_file Tinterface.cub -log_summary)
+add_test(mesh_insert_T_interface_atom ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/mesh_insert_interface_atom -my_file Tinterface.cub)
 add_test(mesh_insert_T_interface_atom_test_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/mesh_insert_T_interface.txt ${CMAKE_BINARY_DIR}/atom_tests/mesh_insert_interface.txt)
-add_test(mesh_insert_T_4seasons_interface_atom ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/mesh_insert_interface_atom -my_file 4seasons.cub -log_summary)
+add_test(mesh_insert_T_4seasons_interface_atom ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/mesh_insert_interface_atom -my_file 4seasons.cub)
 add_test(mesh_insert_T_4seasons_interface_atom_test_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/mesh_insert_T_4seasons_interface.txt ${CMAKE_BINARY_DIR}/atom_tests/mesh_insert_interface.txt)
 
 #foces and sources functions Test
@@ -543,8 +543,7 @@ target_link_libraries(forces_and_sources_ultra_weak_transport
 add_test(forces_and_sources_ultra_weak_transport_atom ${MPI_RUN} -np 2
   ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_ultra_weak_transport -my_file simple_thermal_problem.cub 
   -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor 
-  -my_max_post_proc_ref_level 1 -my_order 0
-  -log_summary)
+  -my_max_post_proc_ref_level 1 -my_order 0)
 add_test(forces_and_sources_ultra_weak_transport_atom_compare ${CMAKE_COMMAND} -E compare_files 
   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_ultra_weak_transport.txt
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_ultra_weak_transport.txt)

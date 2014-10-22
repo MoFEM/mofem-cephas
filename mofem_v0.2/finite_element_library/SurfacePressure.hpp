@@ -24,8 +24,8 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 
-#ifndef __NEUMANM_FORCES_HPP
-#define __NEUMANN_FORCES_HPP
+#ifndef __SURFACE_PERSSURE_HPP
+#define __SURFACE_PERSSURE_HPP
 
 namespace MoFEM {
 
@@ -44,6 +44,8 @@ struct MethodsForOp {
     }
     PetscFunctionReturn(0);
   }
+  
+  virtual ~MethodsForOp() {}
 
 };
 
@@ -433,7 +435,8 @@ struct MetaNeummanForces {
 
 }
 
-#endif //__NEUMAN_FORCES_HPP
+#endif //__SURFACE_PERSSURE_HPP
+
 
 /***************************************************************************//**
  * \defgroup mofem_static_boundary_conditions Static boundary conditions 
