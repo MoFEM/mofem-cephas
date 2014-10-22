@@ -9,7 +9,7 @@ if(ADOL-C_DIR)
 endif(ADOL-C_DIR)
 
 find_library(ADOL-C_LIBRARY NAMES adolc PATHS "${ADOL-C_DIR}/lib")
-message(STATUS ${ADEPT_LIBRARY})
+message(STATUS ${ADOL-C_LIBRARY})
 
 if(ADOL-C_LIBRARY) 
   include_directories("${ADOL-C_DIR}/include")
