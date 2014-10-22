@@ -12,7 +12,7 @@ else
 fi
 
 cd $MOFEM_INSTALL_PREFIX
-if [ -f $HOME/.mofem_config/ctest_user_modules_script]; then
+if [ -f $HOME/.mofem_config/ctest_user_modules_script ]; then
   ctest -VV -S $HOME/.mofem_config/ctest_user_modules_script
 else 
   ctest -D Experimental
