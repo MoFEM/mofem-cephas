@@ -5,7 +5,15 @@ MOFEM_BUILD=@CMAKE_BINARY_DIR@
 MOFEM_INSTALL_PREFIX=@CMAKE_INSTALL_PREFIX@
 
 cd $MOFEM_BUILD
-ctest -D Experimental
+if [ -f $HOME/.mofem_config/ctest_script ]; then
+  ctest -VV -S $HOME/.mofem_config/ctest_script
+else
+  ctest -D Experimental
+fi
 
 cd $MOFEM_INSTALL_PREFIX
-ctest -D Experimental
+if [ -f $HOME/.mofem_config/ctest_user_modules_script]; then
+  ctest -VV -S $HOME/.mofem_config/ctest_user_modules_script
+else 
+  ctest -D Experimental
+fi
