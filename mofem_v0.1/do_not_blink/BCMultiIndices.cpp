@@ -568,11 +568,12 @@ ostream& operator<<(ostream& os,const Mat_Thermal& e)
   
   ostream& operator<<(ostream& os,const Mat_Moisture& e)
   {
+    
     os << endl << "Material Properties" << endl;
     os << "-------------------" << endl;
     os << "Diffusivity  = " << e.data.Diffusivity << endl;
-    os << "User attribute 1 = " << e.data.User1 << endl;
-    os << "User attribute 2 = " << e.data.User2 << endl;
+    os << "Viscosity = " << e.data.Viscosity << endl;
+    os << "Permeability = " << e.data.Permeability << endl;
     os << "User attribute 3 = " << e.data.User3 << endl;
     os << "User attribute 4 = " << e.data.User4 << endl;
     os << "User attribute 5 = " << e.data.User5 << endl;

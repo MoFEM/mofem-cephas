@@ -241,8 +241,8 @@ struct Mat_Thermal: public GenericAttributeData {
   struct Mat_Moisture: public GenericAttributeData {
     struct __attribute__ ((packed)) _data_{
       double Diffusivity; // moisture diffusivity
-      double User1; // User attribute 1
-      double User2; // User attribute 2
+      double Viscosity; // Viscosity of water
+      double Permeability; // Permeability of material
       double User3; // User attribute 3
       double User4; // User attribute 4
       double User5; // User attribute 5
@@ -261,7 +261,7 @@ struct Mat_Thermal: public GenericAttributeData {
     virtual PetscErrorCode fill_data(const vector<double>& attributes) {
       PetscFunctionBegin;
       if(attributes.size()<min_number_of_atributes) {
-        SETERRQ(PETSC_COMM_SELF,1,"moisture diffusivity is not defined. (top tip: check number of THERMAL block atributes)");
+        SETERRQ(PETSC_COMM_SELF,1,"moisture diffusivity is not defined. (top tip: check number of MOISTURE block atributes)");
       }
       if(8*attributes.size()>sizeof(data)) {
         SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, please review the number of material properties defined");
