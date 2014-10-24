@@ -1,0 +1,309 @@
+#include "FEM.h"
+
+#include "FieldInterface.hpp"
+#include "FieldCore.hpp"
+#include "ForcesAndSurcesCore.hpp"
+
+#include <boost/iostreams/tee.hpp>
+#include <boost/iostreams/stream.hpp>
+#include <fstream>
+#include <iostream>
+
+#include<moab/Skinner.hpp>
+
+namespace bio = boost::iostreams;
+using bio::tee_device;
+using bio::stream;
+
+using namespace MoFEM;
+
+static char help[] = "...\n\n";
+
+int main(int argc, char *argv[]) {
+
+  ErrorCode rval;
+  PetscErrorCode ierr;
+
+  PetscInitialize(&argc,&argv,(char *)0,help);
+
+  Core mb_instance;
+  Interface& moab = mb_instance;
+  int rank;
+  MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
+
+  //create one tet
+  double tet_coords[] = {
+    0,0,0,
+    0.5,0,0,
+    0,0.5,0,
+    0,0,0.5 
+  };
+
+  EntityHandle nodes[4];
+  for(int nn = 0;nn<4;nn++) {
+    rval = moab.create_vertex(&tet_coords[3*nn],nodes[nn]); CHKERR_PETSC(rval);
+  }
+
+  EntityHandle tet;
+  rval = moab.create_element(MBTET,nodes,4,tet); CHKERR_PETSC(rval);
+
+  ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
+  if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
+
+  //create MoFEM (Joseph) database
+  FieldCore core(moab);
+  FieldInterface& mField = core;
+  //meshset consisting all entities in mesh
+  EntityHandle root_set = moab.get_root_set(); 
+
+  //set entitities bit level
+  BitRefLevel bit_level0;
+  bit_level0.set(0);
+  EntityHandle meshset_level0;
+  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
+  ierr = mField.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
+
+  //fields
+  ierr = mField.add_field("HDIV",HDIV,1); CHKERRQ(ierr);
+  //add entities to field
+  ierr = mField.add_ents_to_field_by_TETs(root_set,"HDIV"); CHKERRQ(ierr);
+  //set app. order
+  int order = 4;
+  ierr = mField.set_field_order(root_set,MBTET,"HDIV",order); CHKERRQ(ierr);
+  ierr = mField.set_field_order(root_set,MBTRI,"HDIV",order); CHKERRQ(ierr);
+  //build field
+  ierr = mField.build_fields(); CHKERRQ(ierr);
+
+  //finite elements
+  ierr = mField.add_finite_element("TET_FE"); CHKERRQ(ierr);
+  ierr = mField.add_finite_element("SKIN_FE"); CHKERRQ(ierr);
+
+  //Define rows/cols and element data
+  ierr = mField.modify_finite_element_add_field_row("TET_FE","HDIV"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_col("TET_FE","HDIV"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("TET_FE","HDIV"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_row("SKIN_FE","HDIV"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_col("SKIN_FE","HDIV"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("SKIN_FE","HDIV"); CHKERRQ(ierr);
+  //add entities to finite element
+  ierr = mField.add_ents_to_finite_element_by_TETs(root_set,"TET_FE"); CHKERRQ(ierr);
+  Range tets;
+  ierr = mField.get_entities_by_type_and_ref_level(BitRefLevel().set(0),BitRefLevel().set(),MBTET,tets); CHKERRQ(ierr);
+  Skinner skin(&moab);
+  Range skin_faces; // skin faces from 3d ents
+  rval = skin.find_skin(0,tets,false,skin_faces); CHKERR(rval);
+  ierr = mField.add_ents_to_finite_element_by_TRIs(skin_faces,"SKIN_FE"); CHKERRQ(ierr);
+
+  //build finite elemnts
+  ierr = mField.build_finite_elements(); CHKERRQ(ierr);
+
+  //build adjacencies
+  ierr = mField.build_adjacencies(bit_level0); CHKERRQ(ierr);
+
+  //problem
+  ierr = mField.add_problem("TEST_PROBLEM"); CHKERRQ(ierr);
+  //set finite elements for problem
+  ierr = mField.modify_problem_add_finite_element("TEST_PROBLEM","TET_FE"); CHKERRQ(ierr);
+  ierr = mField.modify_problem_add_finite_element("TEST_PROBLEM","SKIN_FE"); CHKERRQ(ierr);
+  //set refinment level for problem
+  ierr = mField.modify_problem_ref_level_add_bit("TEST_PROBLEM",bit_level0); CHKERRQ(ierr);
+  //build problem
+  ierr = mField.build_problems(); CHKERRQ(ierr);
+
+  //mesh partitioning 
+  //partition
+  ierr = mField.simple_partition_problem("TEST_PROBLEM"); CHKERRQ(ierr);
+  ierr = mField.partition_finite_elements("TEST_PROBLEM"); CHKERRQ(ierr);
+  //what are ghost nodes, see Petsc Manual
+  ierr = mField.partition_ghost_dofs("TEST_PROBLEM"); CHKERRQ(ierr);
+
+  struct OpTetDivergence: public TetElementForcesAndSourcesCore::UserDataOperator {
+
+    FieldData &dIv;
+    OpTetDivergence(FieldData &div):
+      TetElementForcesAndSourcesCore::UserDataOperator("HDIV"),dIv(div) {}
+
+    PetscErrorCode doWork(
+      int side,
+      EntityType type,
+      DataForcesAndSurcesCore::EntData &data) {
+      PetscFunctionBegin;
+
+      if(type != MBTRI && type != MBTET) PetscFunctionReturn(0);
+
+
+      PetscErrorCode ierr;
+
+      if(data.getFieldData().size()==0) PetscFunctionReturn(0);
+
+      //cout << "type " << type << " side " << side << endl;
+
+      int nb_gauss_pts = data.getDiffHdivN().size1();
+      int nb_dofs = data.getFieldData().size();
+
+      ublas::vector<FieldData> div_vec;
+      div_vec.resize(nb_dofs,0);
+
+      int gg = 0;
+      for(;gg<nb_gauss_pts;gg++) {
+	ierr = getDivergenceMatrixOperato_Hdiv(side,type,data,gg,div_vec); CHKERRQ(ierr);
+	//cout << std::fixed << div_vec << endl;
+	unsigned int dd = 0;
+	for(;dd<div_vec.size();dd++) {
+	  double w = getGaussPts()(3,gg)*getVolume();
+	  if(getHoGaussPtsDetJac().size()>0) {
+	    w *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
+	  }
+	  dIv += div_vec[dd]*w;
+	}
+	//cout << std::fixed << data.getDiffHdivN(gg) << endl;
+      }
+
+      //cout << std::fixed << data.getDiffHdivN() << endl;
+      //cout << endl;
+
+
+      PetscFunctionReturn(0);
+    }	
+
+  };
+
+  struct MyFE: public TetElementForcesAndSourcesCore {
+
+    MyFE(FieldInterface &m_field): TetElementForcesAndSourcesCore(m_field) {}
+    int getRule(int order) { return order; }; //order/2; };
+
+  };
+
+  struct MyTriFE: public TriElementForcesAndSurcesCore {
+
+    MyTriFE(FieldInterface &m_field): TriElementForcesAndSurcesCore(m_field) {}
+    int getRule(int order) { return order; };//2*order; }; //order/2; };
+
+  };
+
+  struct OpFacesFluxes: public TriElementForcesAndSurcesCore::UserDataOperator {
+
+    double &dIv;
+    OpFacesFluxes(double &div):
+      TriElementForcesAndSurcesCore::UserDataOperator("HDIV"),
+      dIv(div) {}
+
+    PetscErrorCode doWork(
+      int side,
+      EntityType type,
+      DataForcesAndSurcesCore::EntData &data) {
+      PetscFunctionBegin;
+
+      if(type != MBTRI) PetscFunctionReturn(0);
+
+      int nb_gauss_pts = data.getHdivN().size1();
+      int nb_dofs = data.getFieldData().size();
+
+      int gg = 0;
+      for(;gg<nb_gauss_pts;gg++) {
+	int dd = 0;
+	for(;dd<nb_dofs;dd++) {
+	  double area;
+	  ublas::vector<double> n;
+	  if(getNormals_at_GaussPt().size1() == (unsigned int)nb_gauss_pts) {
+	    n = getNormals_at_GaussPt(gg);
+	    area = norm_2(getNormals_at_GaussPt(gg))*0.5;
+	  } else {
+	    n = getNormal();
+	    area = getArea();
+	  }
+	  n /= norm_2(n);
+	  dIv += 
+	    ( n[0]*data.getHdivN(gg)(dd,0) +
+	      n[1]*data.getHdivN(gg)(dd,1) +
+	      n[2]*data.getHdivN(gg)(dd,2) )
+	    *getGaussPts()(2,gg)*area;
+	}
+	//cout << getNormal() << endl;
+      }
+ 
+      PetscFunctionReturn(0);
+    }
+
+  };
+
+  double divergence_vol = 0;
+  double divergence_skin = 0;
+
+
+  MyFE tet_fe(mField);
+  tet_fe.get_op_to_do_Rhs().push_back(new OpTetDivergence(divergence_vol));
+
+  MyTriFE skin_fe(mField);
+  skin_fe.get_op_to_do_Rhs().push_back(new OpFacesFluxes(divergence_skin));
+
+  ierr = mField.loop_finite_elements("TEST_PROBLEM","TET_FE",tet_fe);  CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("TEST_PROBLEM","SKIN_FE",skin_fe);  CHKERRQ(ierr);
+ 
+  cout.precision(12);
+
+  cout << "divergence_vol " << divergence_vol << endl;
+  cout << "divergence_skin " << divergence_skin << endl;
+
+  const double eps = 1e-6;
+  if(fabs(divergence_vol-1.-1./3)>eps) {
+     SETERRQ2(PETSC_COMM_SELF,MOFEM_ATOM_TEST_INVALID,"invalid divergence_vol = %6.4e, should be %6.4e\n",
+	divergence_vol,1+1./3.);
+  }
+  if(fabs(divergence_skin-1.-1./3)>eps) {
+     SETERRQ2(PETSC_COMM_SELF,MOFEM_ATOM_TEST_INVALID,"invalid fluxes = %6.4e, should be %6.4e\n",
+	divergence_skin,1+1./3.);
+  }
+
+  ierr = mField.add_field("MESH_NODE_POSITIONS",H1,3); CHKERRQ(ierr);
+
+  ierr = mField.add_ents_to_field_by_TETs(0,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBEDGE,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTRI,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTET,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
+
+  ierr = mField.modify_finite_element_add_field_data("TET_FE","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("SKIN_FE","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+
+  ierr = mField.build_fields(); CHKERRQ(ierr);
+  ierr = mField.build_finite_elements(); CHKERRQ(ierr);
+  ierr = mField.build_adjacencies(bit_level0); CHKERRQ(ierr);
+  ierr = mField.build_problems(); CHKERRQ(ierr);
+
+  //mesh partitioning 
+  ierr = mField.simple_partition_problem("TEST_PROBLEM"); CHKERRQ(ierr);
+  ierr = mField.partition_finite_elements("TEST_PROBLEM"); CHKERRQ(ierr);
+  ierr = mField.partition_ghost_dofs("TEST_PROBLEM"); CHKERRQ(ierr);
+
+  for(_IT_GET_DOFS_FIELD_BY_NAME_AND_TYPE_FOR_LOOP_(mField,"MESH_NODE_POSITIONS",MBVERTEX,dof)) {
+    EntityHandle vert = dof->get_ent();
+    double coords[3];
+    rval = moab.get_coords(&vert,1,coords); CHKERR(rval);
+    coords[0] *= 2;
+    coords[1] *= 4;
+    coords[2] *= 0.5;
+
+    dof->get_FieldData() = coords[dof->get_dof_rank()];
+  }
+
+  divergence_vol = 0;
+  divergence_skin = 0;
+
+  ierr = mField.loop_finite_elements("TEST_PROBLEM","TET_FE",tet_fe);  CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("TEST_PROBLEM","SKIN_FE",skin_fe);  CHKERRQ(ierr);
+ 
+  cout.precision(12);
+
+  cout << "divergence_vol " << divergence_vol << endl;
+  cout << "divergence_skin " << divergence_skin << endl;
+
+  if(fabs(divergence_skin-divergence_vol)>eps) {
+     SETERRQ2(PETSC_COMM_SELF,MOFEM_ATOM_TEST_INVALID,"invalid surface flux or divergence or both\n",
+	divergence_skin,divergence_vol);
+  }
+
+
+  ierr = PetscFinalize(); CHKERRQ(ierr);
+}
