@@ -17,17 +17,15 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#include "FEM.h"
+#include <MoFEM.hpp>
 
-#include "FieldInterface.hpp"
-#include "FieldCore.hpp"
+#include <DirichletBC.hpp>
+#include <PotsProcOnRefMesh.hpp>
 
-#include "ForcesAndSurcesCore.hpp"
-#include "TsCtx.hpp"
-#include "PotsProcOnRefMesh.hpp"
+#include <cholesky.hpp>
+#include <UltaWeakTransportElement.hpp>
 
-#include "cholesky.hpp"
-#include "UltaWeakTransportElement.hpp"
+#include <Projection10NodeCoordsOnField.hpp>
 
 #include <boost/iostreams/tee.hpp>
 #include <boost/iostreams/stream.hpp>
@@ -35,8 +33,6 @@
 #include <iostream>
 
 #include <moab/Skinner.hpp>
-#include <petscksp.h>
-
 
 namespace bio = boost::iostreams;
 using bio::tee_device;
@@ -53,7 +49,7 @@ int main(int argc, char *argv[]) {
 
   PetscInitialize(&argc,&argv,(char *)0,help);
 
-  Core mb_instance;
+  moab::Core mb_instance;
   Interface& moab = mb_instance;
   int rank;
   MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
@@ -75,7 +71,7 @@ int main(int argc, char *argv[]) {
   BARRIER_RANK_END(pcomm) 
 
   //Create MoFEM (Joseph) database
-  FieldCore core(moab);
+  MoFEM::Core core(moab);
   FieldInterface& m_field = core;
 
   //set entitities bit level

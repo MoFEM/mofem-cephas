@@ -28,23 +28,35 @@ set(CMAKE_C_COMPILER ${PETSCVAR_CC} )
 string(REGEX MATCH  "^.*mpicxx" PETSCVAR_CXX_ "${PETSCVAR_CXX}")
 message(${PETSCVAR_CXX_})
 set(CMAKE_CXX_COMPILER ${PETSCVAR_CXX_})
+
 #get mpipath bin directory
 string(REGEX REPLACE "mpicc" "" "MPI_BIN_PATH" ${CMAKE_C_COMPILER})
-find_program(MPI_RUN mpirun HINTS ${MPI_BIN_PATH} PATH ${MPI_BIN_PATH})
+find_program(MPI_RUN mpirun HINTS ${MPI_BIN_PATH} /usr/bin PATH ${MPI_BIN_PATH})
 include(cmake/ResolveCompilerPaths.cmake)
 
 project(MoFEM C Fortran CXX)
 
 #SIGMA tools
-include(cmake/FindTETGEN.cmake)
+include(cmake/FindTetGen.cmake)
+include(cmake/FindNetGen.cmake)
 include(cmake/FindTriangle.cmake)
 include(cmake/FindiMesh.cmake)
 include(cmake/FindCGM.cmake)
 include(cmake/FindLASSO.cmake)
 include(cmake/FindMESHKIT.cmake)
+include(cmake/FindADOL-C.cmake)
 
 #PETSC tools
 include(cmake/FindTAO.cmake)
+
+#CGAL tools
+#find_package(CGAL HINTS ${CGAL_DIR}/lib/CGAL)
+#if(CGAL_CONFIG_LOADED) 
+#  include_directories(${CGAL_INCLUDE_DIRS})
+#  link_directories(${CGAL_LIBRARIES_DIR})
+#  add_definitions( -DWITH_CGAL )
+#  message(STATUS ${CGAL_Core_LIBRARY})
+#endif(CGAL_CONFIG_LOADED)
 
 #other
 include(cmake/ExportFile.cmake)
@@ -62,13 +74,13 @@ get_git_head_revision(GIT_REFSPEC GIT_SHA1)
 # to the source code
 configure_file(
   "${PROJECT_SOURCE_DIR}/include/config.h.in"
-  "${PROJECT_BINARY_DIR}/include/config.h"
+  "${PROJECT_SOURCE_DIR}/include/config.h"
   )
 configure_file(
   "${PROJECT_SOURCE_DIR}/include/version.h.in"
-  "${PROJECT_BINARY_DIR}/include/version.h"
+  "${PROJECT_SOURCE_DIR}/include/version.h"
   )
-include_directories("${PROJECT_BINARY_DIR}/include")
+include_directories("${PROJECT_SOURCE_DIR}/include")
 
 #add coverage
 if(WITHCOVERAGE) 
@@ -97,6 +109,9 @@ endif(TAO_LIBRARY)
 
 resolve_libraries(PROJECT_LIBS "
   ${MOAB_LIBS_LINK}
+  ${TETGEN_LIBRARY}
+  ${NETGEN_LIBRARY}
+  ${ADOL-C_LIBRARY}
   -L${PETSC_DIR}/${PETSC_ARCH}/lib 
   ${PETSCVAR_PETSC_WITH_EXTERNAL_LIB}
   ${TAO_LIBRARY}
@@ -113,7 +128,29 @@ file(COPY
 enable_testing()
 include(CTest)
 
-# add a target to generate API documentation with Doxygen
+add_subdirectory("${PROJECT_SOURCE_DIR}/scripts")
+add_subdirectory("${PROJECT_SOURCE_DIR}/third_party")
+add_subdirectory("${PROJECT_SOURCE_DIR}/include")
+add_subdirectory("${PROJECT_SOURCE_DIR}/src")
+add_subdirectory("${PROJECT_SOURCE_DIR}/finite_element_library")
+add_subdirectory("${PROJECT_SOURCE_DIR}/atom_tests")
+
+#add generation of examplaes
+configure_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/MoFEMConfig.cmake.in
+  ${CMAKE_CURRENT_BINARY_DIR}/MoFEMConfig.cmake
+  )
+
+configure_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/MoFEMConfig-version.cmake.in
+  ${CMAKE_CURRENT_BINARY_DIR}/MoFEMConfig-version.cmake
+  )
+install(FILES ${PROJECT_BINARY_DIR}/MoFEMConfig.cmake DESTINATION ${CMAKE_INSTALL_PREFIX})
+install(FILES ${PROJECT_BINARY_DIR}/MoFEMConfig-version.cmake DESTINATION ${CMAKE_INSTALL_PREFIX})
+
+add_subdirectory("${PROJECT_SOURCE_DIR}/users_modules.in")
+
+#add a target to generate API documentation with Doxygen
 find_package(Doxygen)
 if(DOXYGEN_FOUND)
 configure_file(
@@ -129,27 +166,5 @@ add_custom_target(doc
   COMMENT "Generating API documentation with Doxygen" VERBATIM
   )
 endif(DOXYGEN_FOUND)
-
-add_subdirectory("${PROJECT_SOURCE_DIR}/scripts")
-add_subdirectory("${PROJECT_SOURCE_DIR}/third_party")
-add_subdirectory("${PROJECT_SOURCE_DIR}/include")
-add_subdirectory("${PROJECT_SOURCE_DIR}/src")
-add_subdirectory("${PROJECT_SOURCE_DIR}/finite_element_library")
-
-configure_file(
-  ${CMAKE_CURRENT_SOURCE_DIR}/MoFEMConfig.cmake.in
-  ${CMAKE_CURRENT_BINARY_DIR}/MoFEMConfig.cmake
-  )
-
-configure_file(
-  ${CMAKE_CURRENT_SOURCE_DIR}/MoFEMConfig-version.cmake.in
-  ${CMAKE_CURRENT_BINARY_DIR}/MoFEMConfig-version.cmake
-  )
-
-install(FILES ${PROJECT_BINARY_DIR}/MoFEMConfig.cmake DESTINATION ${CMAKE_INSTALL_PREFIX})
-install(FILES ${PROJECT_BINARY_DIR}/MoFEMConfig-version.cmake DESTINATION ${CMAKE_INSTALL_PREFIX})
-
-add_subdirectory("${PROJECT_SOURCE_DIR}/examples")
-
 
 

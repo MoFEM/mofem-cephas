@@ -81,7 +81,7 @@ typedef multi_index_container<
   const MoFEMEntity*,
   indexed_by<
     hashed_non_unique<
-      tag<MoABEnt_mi_tag>, const_mem_fun<MoFEMEntity,EntityHandle,&MoFEMEntity::get_ent> >
+      tag<Ent_mi_tag>, const_mem_fun<MoFEMEntity,EntityHandle,&MoFEMEntity::get_ent> >
   > > MoFEMEntity_multiIndex_ent_view;
 
 typedef multi_index_container<

@@ -4,10 +4,10 @@
 ## # The following are required to uses Dart and the Cdash dashboard
 ##   ENABLE_TESTING()
 ##   INCLUDE(CTest)
-set(CTEST_PROJECT_NAME "MoFEM")
-set(CTEST_NIGHTLY_START_TIME "01:00:00 BST")
+set(CTEST_PROJECT_NAME "Cephas")
+set(CTEST_NIGHTLY_START_TIME "01:00:00 UTC")
 
 set(CTEST_DROP_METHOD "http")
 set(CTEST_DROP_SITE "cdash.eng.gla.ac.uk")
-set(CTEST_DROP_LOCATION "/cdash/submit.php?project=MoFEM")
+set(CTEST_DROP_LOCATION "/cdash/submit.php?project=Cephas")
 set(CTEST_DROP_SITE_CDASH TRUE)

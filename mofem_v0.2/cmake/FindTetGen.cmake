@@ -11,6 +11,7 @@ message(STATUS ${TETGEN_LIBRARY})
 
 if(TETGEN_LIBRARY) 
   include_directories("${TETGEN_DIR}/include")
+  add_definitions( -DWITH_TETGEN )
 endif(TETGEN_LIBRARY)
 
 

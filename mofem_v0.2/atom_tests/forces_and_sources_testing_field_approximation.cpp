@@ -17,22 +17,17 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#include "FEM.h"
+#include <MoFEM.hpp>
+#include <Projection10NodeCoordsOnField.hpp>
 
-#include "FieldInterface.hpp"
-#include "FieldCore.hpp"
-#include "ForcesAndSurcesCore.hpp"
-#include "FiledApproximation.hpp"
+#include <boost/numeric/ublas/vector_proxy.hpp>
+#include <FiledApproximation.hpp>
 
 #include <boost/iostreams/tee.hpp>
 #include <boost/iostreams/stream.hpp>
 #include <fstream>
 #include <iostream>
 
-#include "FEMethod_UpLevelStudent.hpp"
-#include "PostProcVertexMethod.hpp"
-#include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
-#include "Projection10NodeCoordsOnField.hpp"
 
 namespace bio = boost::iostreams;
 using bio::tee_device;
@@ -63,7 +58,7 @@ int main(int argc, char *argv[]) {
 
   PetscInitialize(&argc,&argv,(char *)0,help);
 
-  Core mb_instance;
+  moab::Core mb_instance;
   Interface& moab = mb_instance;
   int rank;
   MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
@@ -76,7 +71,7 @@ int main(int argc, char *argv[]) {
   }
 
   //Create MoFEM (Joseph) database
-  FieldCore core(moab);
+  MoFEM::Core core(moab);
   FieldInterface& mField = core;
 
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
@@ -156,10 +151,10 @@ int main(int argc, char *argv[]) {
   ierr = mField.VecCreateGhost("TEST_PROBLEM",COL,&D); CHKERRQ(ierr);
 
   {
-  MyFunApprox function_evaluator;
-  FieldApproximationH1<MyFunApprox> field_approximation(mField);
-  field_approximation.loopMatrixAndVector(
-    "TEST_PROBLEM","TEST_FE","FIELD1",A,F,function_evaluator);
+    MyFunApprox function_evaluator;
+    FieldApproximationH1<MyFunApprox> field_approximation(mField);
+    field_approximation.loopMatrixAndVector(
+      "TEST_PROBLEM","TEST_FE","FIELD1",A,F,function_evaluator);
   }
 
   ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
@@ -185,12 +180,6 @@ int main(int argc, char *argv[]) {
   ierr = VecDestroy(&D); CHKERRQ(ierr);
   ierr = VecDestroy(&F); CHKERRQ(ierr);
   ierr = MatDestroy(&A); CHKERRQ(ierr);
-
-  /*PostProcDisplacementsOnRefMesh fe_postproc(moab,"FIELD1");
-  ierr = mField.loop_finite_elements("TEST_PROBLEM","TEST_FE",fe_postproc);  CHKERRQ(ierr);
-  if(pcomm->rank()==0) {
-    rval = fe_postproc.moab_post_proc.write_file("out_post_proc.vtk","VTK",""); CHKERR_PETSC(rval);
-  }*/
 
   EntityHandle fe_meshset = mField.get_finite_element_meshset("TEST_FE");
   Range tets;

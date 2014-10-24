@@ -1,0 +1,46 @@
+reset
+ 
+brick x 2 y 5 z 0.8
+
+create Cylinder height 0.8 major radius 1. minor radius 1.
+move Volume 2 location surface 4  include_merged
+webcut volume 2 with plane yplane imprint merge
+
+chop volume 1 with volume 2
+chop volume 5 with volume 3
+
+Imprint  All
+Merge All
+
+block 1 volume all  
+block 1 name 'MAT_ELASTIC' 
+block 1 attribute count 2 
+block 1 attribute index 1 10.0 
+block 1 attribute index 2 0.3 
+
+Sideset 100  curve all 
+sideset 100 curve 32 29 33 48 30 28 49 47 27 1 5  remove
+nodeset 101 vertex all 
+nodeset 101 vertex 19 20 remove
+Sideset 102  surface all
+sideset 102 surface 29 18  19 6 remove
+Sideset 10200  surface 6
+
+Sideset 200  surface 19
+Sideset 201  curve 29
+
+create Displacement name '' on surface 3  dof 1 dof 2 dof 3 fix 0
+#create Displacement name '' on surface 6  dof 3 fix 0 
+create pressure name '' on surface 5  magnitude 1
+
+volume all scheme Tetmesh 
+volume all size auto factor 6
+mesh volume 4  
+mesh volume 6 
+mesh volume 7 
+
+##refine curve 27 29 numsplit 5 bias 1.0 depth 1 smoot
+ 
+save as "/Users/likask/MyBuild/mofem-bitbucket/mofem_v0.2/meshes/crack1.cub" overwrite 
+
+

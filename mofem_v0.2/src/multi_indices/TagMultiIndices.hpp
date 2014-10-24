@@ -33,20 +33,20 @@ namespace MoFEM {
   struct CubitMeshSets_name {};
   struct BitFieldId_mi_tag {};
   struct Unique_mi_tag {};
-  struct MoABEnt_mi_tag {};
-  struct MoABFEEnt_mi_tag {};
+  struct Ent_mi_tag {};
+  struct FEEnt_mi_tag {};
   struct EntType_mi_tag {};
   struct Composite_unique_mi_tag {};
   struct Composite_mi_tag {};
   struct Composite_mi_tag2 {};
   struct Composite_mi_tag3 {};
-  struct MoFEMFiniteElement_Meshset_mi_tag {};
+  struct FiniteElement_Meshset_mi_tag {};
   struct BitFEId_mi_tag {};
-  struct MoFEMFiniteElement_name_mi_tag {};
+  struct FiniteElement_name_mi_tag {};
   struct SideNumber_mi_tag{};
-  struct MoABEnt_MoABEnt_mi_tag {};
-  struct MoABEnt_Owner_mi_tag {};
-  struct MoABEnt_mi_tag2 {};
+  struct Ent_Ent_mi_tag {};
+  struct Ent_Owner_mi_tag {};
+  struct Ent_mi_tag2 {};
   struct Idx_mi_tag { 
     static const bool IamNotPartitioned;
     /// extract dof index from iterator 
@@ -66,16 +66,16 @@ namespace MoFEM {
     template<class IT>
     static DofIdx get_index(const IT &it) { return it->petsc_gloabl_dof_idx; }
   };
-  struct Unique_MoABEnt_mi_tag {};
-  struct Unique_MoFEMFiniteElement_mi_tag {};
-  struct MoABEnt_MoFEMFiniteElement_mi_tag {};
+  struct Unique_Ent_mi_tag {};
+  struct Unique_FiniteElement_mi_tag {};
+  struct Ent_FiniteElement_mi_tag {};
   struct Meshset_mi_tag {};
   /// MultiIndex Tag for field name
   struct FieldName_mi_tag {};
   struct BitFieldId_space_mi_tag {};
-  struct MoFEMFiniteElement_Part_mi_tag {};
+  struct FiniteElement_Part_mi_tag {};
   struct BitProblemId_mi_tag {};
-  struct MoFEMProblem_mi_tag {};
+  struct Problem_mi_tag {};
   struct ParentEntType_mi_tag {};
 
   struct Composite_EntType_and_ParentEntType_mi_tag {};

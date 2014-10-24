@@ -17,7 +17,7 @@
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
 #multi_indices
-add_library(mofem_interfaces
+set(MOFEM_INTERFACES_SRC
   impl/LoopMethods.cpp
   #Core
   impl/Core.cpp
@@ -27,16 +27,17 @@ add_library(mofem_interfaces
   impl/SeriesRecorderCore.cpp
 )
 
+if(TETGEN_LIBRARY) 
+  set(MOFEM_INTERFACES_SRC ${MOFEM_INTERFACES_SRC} impl/TetGenInterface.cpp)
+endif(TETGEN_LIBRARY)
 
-#install(FILES   
-#  Core.hpp
-#  FieldInterface.hpp
-#  FieldUnknownInterface.hpp
-#  LoopMethods.hpp
-#  MeshRefinment.hpp
-#  PrismInterface.hpp
-#  SeriesRecorder.hpp
-#  DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
+if(NETGEN_LIBRARY) 
+  set(MOFEM_INTERFACES_SRC ${MOFEM_INTERFACES_SRC} impl/NetGenInterface.cpp)
+endif(NETGEN_LIBRARY)
+
+add_library(mofem_interfaces
+  ${MOFEM_INTERFACES_SRC}
+)
 
 install(TARGETS mofem_interfaces DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
 

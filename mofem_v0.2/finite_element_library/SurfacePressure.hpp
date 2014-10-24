@@ -24,20 +24,17 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 
-#ifndef __NEUMANM_FORCES_HPP
-#define __NEUMANN_FORCES_HPP
-
-#include "ForcesAndSurcesCore.hpp"
-#include "FEM.h"
+#ifndef __SURFACE_PERSSURE_HPP
+#define __SURFACE_PERSSURE_HPP
 
 namespace MoFEM {
 
 struct MethodsForOp {
 
-  virtual PetscErrorCode scaleNf(const FieldInterface::FEMethod *fe,ublas::vector<FieldData> &Nf) = 0;
+  virtual PetscErrorCode scaleNf(const FEMethod *fe,ublas::vector<FieldData> &Nf) = 0;
 
   static PetscErrorCode applyScale(
-    const FieldInterface::FEMethod *fe,
+    const FEMethod *fe,
     boost::ptr_vector<MethodsForOp> &methodsOp,ublas::vector<FieldData> &Nf) {
     PetscErrorCode ierr;
     PetscFunctionBegin;
@@ -47,6 +44,8 @@ struct MethodsForOp {
     }
     PetscFunctionReturn(0);
   }
+  
+  virtual ~MethodsForOp() {}
 
 };
 
@@ -436,7 +435,8 @@ struct MetaNeummanForces {
 
 }
 
-#endif //__NEUMAN_FORCES_HPP
+#endif //__SURFACE_PERSSURE_HPP
+
 
 /***************************************************************************//**
  * \defgroup mofem_static_boundary_conditions Static boundary conditions 

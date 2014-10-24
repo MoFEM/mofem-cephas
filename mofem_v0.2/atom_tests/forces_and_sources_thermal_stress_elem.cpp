@@ -17,33 +17,15 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#include "FieldInterface.hpp"
-#include "FieldCore.hpp"
+#include <MoFEM.hpp>
 
-#include "ForcesAndSurcesCore.hpp"
-#include "SnesCtx.hpp"
-#include "TsCtx.hpp"
-#ifdef __cplusplus
-extern "C" {
-#endif
-  #include<cblas.h>
-  #include<lapack_wrap.h>
-#ifdef __cplusplus
-}
-#endif
-#include "ThermalStressElement.hpp"
-
-#include "FEM.h"
-#include "FEMethod_UpLevelStudent.hpp"
-#include "PostProcVertexMethod.hpp"
-#include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
+#include <DirichletBC.hpp>
+#include <ThermalStressElement.hpp>
 
 #include <boost/iostreams/tee.hpp>
 #include <boost/iostreams/stream.hpp>
 #include <fstream>
 #include <iostream>
-
-#include <petscksp.h>
 
 namespace bio = boost::iostreams;
 using bio::tee_device;
@@ -60,7 +42,7 @@ int main(int argc, char *argv[]) {
 
   PetscInitialize(&argc,&argv,(char *)0,help);
 
-  Core mb_instance;
+  moab::Core mb_instance;
   Interface& moab = mb_instance;
   int rank;
   MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
@@ -82,7 +64,7 @@ int main(int argc, char *argv[]) {
   BARRIER_RANK_END(pcomm) 
 
   //Create MoFEM (Joseph) database
-  FieldCore core(moab);
+  MoFEM::Core core(moab);
   FieldInterface& mField = core;
 
   //set entitities bit level
@@ -159,16 +141,6 @@ int main(int argc, char *argv[]) {
   ierr = mField.loop_finite_elements("PROB","ELAS",thermal_stress_elem.getLoopThermalStressRhs()); CHKERRQ(ierr);
   ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
   ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
-
-  /*ierr = mField.set_global_VecCreateGhost("PROB",COL,F,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-  PostProcVertexMethod ent_method(moab,"DISP");
-  ierr = mField.loop_dofs("PROB","DISP",COL,ent_method); CHKERRQ(ierr);
-  EntityHandle out_meshset;
-  rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
-  ierr = mField.problem_get_FE("PROB","ELAS",out_meshset); CHKERRQ(ierr);
-  rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
-  rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
-  ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);*/
 
   PetscViewer viewer;
   ierr = PetscViewerASCIIOpen(PETSC_COMM_WORLD,"forces_and_sources_thermal_stress_elem.txt",&viewer); CHKERRQ(ierr);

@@ -17,8 +17,7 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#include "FieldInterface.hpp"
-#include "FieldCore.hpp"
+#include <MoFEM.hpp>
 
 using namespace MoFEM;
 
@@ -38,7 +37,7 @@ int main(int argc, char *argv[]) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
 
-  Core mb_instance;
+  moab::Core mb_instance;
   Interface& moab = mb_instance;
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
@@ -47,19 +46,20 @@ int main(int argc, char *argv[]) {
   option = "";//"PARALLEL=BCAST";//;DEBUG_IO";
   rval = moab.load_file(mesh_file_name, 0, option); CHKERR(rval); 
 
-  FieldCore core(moab);
-  FieldInterface& mField = core;
+  MoFEM::Core core(moab);
+  FieldInterface& m_field = core;
+  MeshRefinment& refine = core;
 
   BitRefLevel bit_level0;
   bit_level0.set(0);
-  ierr = mField.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
+  ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
 
   BitRefLevel bit_level1;
   bit_level1.set(1);
 
   EntityHandle meshset_level0;
   rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
-  ierr = mField.get_entities_by_ref_level(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
+  ierr = m_field.get_entities_by_ref_level(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
 
   // random mesh refinment
   EntityHandle meshset_ref_edges;
@@ -74,17 +74,17 @@ int main(int argc, char *argv[]) {
       ierr = moab.add_entities(meshset_ref_edges,&*eit,1); CHKERRQ(ierr);
     }
   }
-  ierr = mField.add_verices_in_the_middel_of_edges(meshset_ref_edges,bit_level1); CHKERRQ(ierr);
-  ierr = mField.refine_TET(meshset_level0,bit_level1); CHKERRQ(ierr);
+  ierr = refine.add_verices_in_the_middel_of_edges(meshset_ref_edges,bit_level1); CHKERRQ(ierr);
+  ierr = refine.refine_TET(meshset_level0,bit_level1); CHKERRQ(ierr);
   //PetscAttachDebugger ();
-  //ierr = mField.shift_right_bit_ref(1); CHKERRQ(ierr);
+  //ierr = m_field.shift_right_bit_ref(1); CHKERRQ(ierr);
 
   ofstream myfile;
   myfile.open("mesh_refine.txt");
 
   EntityHandle out_meshset_tet;
   rval = moab.create_meshset(MESHSET_SET,out_meshset_tet); CHKERR_PETSC(rval);
-  ierr = mField.get_entities_by_type_and_ref_level(bit_level1,BitRefLevel().set(),MBTET,out_meshset_tet); CHKERRQ(ierr);
+  ierr = m_field.get_entities_by_type_and_ref_level(bit_level1,BitRefLevel().set(),MBTET,out_meshset_tet); CHKERRQ(ierr);
   Range tets;
   rval = moab.get_entities_by_handle(out_meshset_tet,tets); CHKERR_PETSC(rval);
   for(Range::iterator tit = tets.begin();tit!=tets.end();tit++) {

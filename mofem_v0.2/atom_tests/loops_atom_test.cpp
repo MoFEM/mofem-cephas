@@ -17,8 +17,7 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#include "FieldInterface.hpp"
-#include "FieldCore.hpp"
+#include <MoFEM.hpp>
 
 using namespace MoFEM;
 
@@ -29,11 +28,11 @@ static char help[] = "...\n\n";
 
 int main(int argc, char *argv[]) {
 
-  try {
-    
   PetscInitialize(&argc,&argv,(char *)0,help);
 
-  Core mb_instance;
+  try {
+    
+  moab::Core mb_instance;
   Interface& moab = mb_instance;
   int rank;
   MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
@@ -54,7 +53,7 @@ int main(int argc, char *argv[]) {
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
   //Create MoFEM (Joseph) database
-  FieldCore core(moab);
+  MoFEM::Core core(moab);
   FieldInterface& mField = core;
     
   //Open mesh_file_name.txt for writing
@@ -101,12 +100,12 @@ int main(int argc, char *argv[]) {
   
   //Close mesh_file_name.txt
   myfile.close();
-
-  PetscFinalize();
-        
+       
   } catch (const char* msg) {
     SETERRQ(PETSC_COMM_SELF,1,msg);
   }
 
+  PetscFinalize();
+ 
 }
 
