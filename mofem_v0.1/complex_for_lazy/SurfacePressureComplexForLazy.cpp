@@ -216,14 +216,18 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::rHs() {
   ierr = VecSetValues(f,
     9,dofs_x_indices,
     &*fExtNode.data().begin(),ADD_VALUES); CHKERRQ(ierr);
-  ierr = VecSetValues(f,
-    dOfs_x_face_indices.size(),dofs_x_face_indices,
-    &*fExtFace.data().begin(),ADD_VALUES); CHKERRQ(ierr);
+  if(dOfs_x_face_indices.size()>0) {
+    ierr = VecSetValues(f,
+      dOfs_x_face_indices.size(),dofs_x_face_indices,
+      &*fExtFace.data().begin(),ADD_VALUES); CHKERRQ(ierr);
+  }
   for(int ee = 0;ee<3;ee++) {
     //cerr << dOfs_x_edge_indices[ee] << endl;
-    ierr = VecSetValues(f,
-      dOfs_x_edge_indices[ee].size(),dofs_x_edge_indices[ee],
-      Fext_edge[ee],ADD_VALUES); CHKERRQ(ierr);
+    if(dOfs_x_edge_indices[ee].size()>0) {
+      ierr = VecSetValues(f,
+	dOfs_x_edge_indices[ee].size(),dofs_x_edge_indices[ee],
+	Fext_edge[ee],ADD_VALUES); CHKERRQ(ierr);
+    }
   }
 
   } catch (exception& ex) {
