@@ -116,7 +116,7 @@ int main(int argc, char *argv[]) {
 	//face spliting job done
 	ierr = face_splitting.cleanMeshsets(); CHKERRQ(ierr);
 
-	//solve spatial problem and calulate griffith forces
+	//solve spatial problem and calculate griffith forces
 
 	//project and set coords
 	conf_prob.material_FirelWall->operator[](ConfigurationalFractureMechanics::FW_set_spatial_positions) = 0;
@@ -260,7 +260,7 @@ int main(int argc, char *argv[]) {
 	ierr = conf_prob.solve_spatial_problem(mField,&snes,false); CHKERRQ(ierr);
 	ierr = SNESDestroy(&snes); CHKERRQ(ierr);
 
-	//calulate Griffth forces
+	//calculate Griffth forces
 	ierr = conf_prob.calculate_material_forces(mField,"COUPLED_PROBLEM","MATERIAL_COUPLED"); CHKERRQ(ierr);
 	ierr = conf_prob.front_projection_data(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);
 	ierr = conf_prob.surface_projection_data(mField,"COUPLED_PROBLEM"); CHKERRQ(ierr);

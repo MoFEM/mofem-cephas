@@ -27,6 +27,7 @@
 #include "ElasticFEMethodDynamics.hpp"
 #include "SurfacePressure.hpp"
 #include "NodalForce.hpp"
+#include "BodyForce.hpp"
 
 using namespace MoFEM;
 
@@ -100,14 +101,14 @@ int main(int argc, char *argv[]) {
   //Define problem
 
   //Fields
-  ierr = mField.add_field("DISPLACEMENT",H1,3); CHKERRQ(ierr);
-  ierr = mField.add_field("VELOCITIES",L2,3); CHKERRQ(ierr);
+  ierr = mField.add_field("DISPLACEMENT",H1,3,MF_ZERO); CHKERRQ(ierr);
+  ierr = mField.add_field("VELOCITIES",L2,3,MF_ZERO); CHKERRQ(ierr);
 
   //FE
-  ierr = mField.add_finite_element("STIFFNESS"); CHKERRQ(ierr);
-  ierr = mField.add_finite_element("MASS"); CHKERRQ(ierr);
-  ierr = mField.add_finite_element("COPUPLING_VV"); CHKERRQ(ierr);
-  ierr = mField.add_finite_element("COPUPLING_VU"); CHKERRQ(ierr);
+  ierr = mField.add_finite_element("STIFFNESS",MF_ZERO); CHKERRQ(ierr);
+  ierr = mField.add_finite_element("MASS",MF_ZERO); CHKERRQ(ierr);
+  ierr = mField.add_finite_element("COPUPLING_VV",MF_ZERO); CHKERRQ(ierr);
+  ierr = mField.add_finite_element("COPUPLING_VU",MF_ZERO); CHKERRQ(ierr);
 
 
   //Define rows/cols and element data
@@ -183,6 +184,19 @@ int main(int argc, char *argv[]) {
   ierr = MetaNeummanForces::addNeumannBCElements(mField,"ELASTIC_MECHANICS","DISPLACEMENT"); CHKERRQ(ierr);
   ierr = MetaNodalForces::addNodalForceElement(mField,"ELASTIC_MECHANICS","DISPLACEMENT"); CHKERRQ(ierr);
 
+  //body forces
+  ierr = mField.add_finite_element("BODY_FORCE",MF_ZERO); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_row("BODY_FORCE","DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_col("BODY_FORCE","DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("BODY_FORCE","DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","BODY_FORCE"); CHKERRQ(ierr);
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|BLOCK_BODYFORCESSET,it)) {
+    Range tets;
+    rval = mField.get_moab().get_entities_by_type(it->meshset,MBTET,tets,true); CHKERR_PETSC(rval);
+    ierr = mField.add_ents_to_finite_element_by_TETs(tets,"BODY_FORCE"); CHKERRQ(ierr);
+  }
+
+
   /****/
   //build database
 
@@ -234,7 +248,9 @@ int main(int argc, char *argv[]) {
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
       ierr = iNitalize(); CHKERRQ(ierr);
-      ierr = VecSetValues(ts_u,dofsIndices.size(),&dofsIndices[0],&dofsValues[0],INSERT_VALUES); CHKERRQ(ierr);
+      if(dofsIndices.size()>0) {
+	ierr = VecSetValues(ts_u,dofsIndices.size(),&dofsIndices[0],&dofsValues[0],INSERT_VALUES); CHKERRQ(ierr);
+      }
       ierr = VecAssemblyBegin(ts_u); CHKERRQ(ierr);
       ierr = VecAssemblyEnd(ts_u); CHKERRQ(ierr);
       PetscFunctionReturn(0);
@@ -333,6 +349,17 @@ int main(int argc, char *argv[]) {
   for(;fit!=nodal_forces.end();fit++) {
     loops_to_do_Rhs.push_back(TsCtx::loop_pair_type(fit->first,&fit->second->getLoopFe()));
   }
+  //body forecs
+  BodyFroceConstantField body_forces_methods(mField);
+  bool add_body_forces = false;
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|BLOCK_BODYFORCESSET,it)) {
+    add_body_forces = true;
+    ierr = body_forces_methods.addBlock("DISPLACEMENT",F,it->get_msId()); CHKERRQ(ierr);
+  }
+  if(add_body_forces) {
+    loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("BODY_FORCE",&body_forces_methods.getLoopFe()));
+  }
+
   //postprocess
   ts_ctx.get_postProcess_to_do_IFunction().push_back(&my_dirichlet_bc);
 

@@ -126,7 +126,7 @@ PetscErrorCode ConstrainSurfacGeometry::cOnstrain(double *dofs_iX,double *C,doub
 	x_dofs_X[nn*3+dd].i = 0;
       }
   }}
-  //calulate normal
+  //calculate normal
   __CLPK_doublecomplex x_normal[3];
   ierr = ShapeFaceNormalMBTRI_complex(&diffNTRI[0],x_dofs_X,x_normal); CHKERRQ(ierr);
   //set direction if crack or interface surface

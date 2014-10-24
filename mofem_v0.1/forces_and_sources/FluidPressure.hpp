@@ -56,12 +56,12 @@ struct FluidPressure {
   PetscErrorCode ierr;
   ErrorCode rval;
 
-  struct OpCalulatePressure: public TriElementForcesAndSurcesCore::UserDataOperator {
+  struct OpCalculatePressure: public TriElementForcesAndSurcesCore::UserDataOperator {
     Vec F;
     FluidData &dAta;
     bool allowNegativePressure; ///< allows for negative pressures
     bool hoGeometry;
-    OpCalulatePressure(const string field_name,Vec _F,FluidData &data,
+    OpCalculatePressure(const string field_name,Vec _F,FluidData &data,
       bool allow_negative_pressure,bool ho_geometry):
       TriElementForcesAndSurcesCore::UserDataOperator(field_name),
       F(_F),dAta(data),allowNegativePressure(allow_negative_pressure),hoGeometry(ho_geometry) {}
@@ -178,7 +178,7 @@ struct FluidPressure {
     map<MeshSetId,FluidData>::iterator sit = setOfFluids.begin();
     for(;sit!=setOfFluids.end();sit++) {
       //add finite element
-      fe.get_op_to_do_Rhs().push_back(new OpCalulatePressure(field_name,F,sit->second,allow_negative_pressure,ho_geometry));
+      fe.get_op_to_do_Rhs().push_back(new OpCalculatePressure(field_name,F,sit->second,allow_negative_pressure,ho_geometry));
     }
     PetscFunctionReturn(0);
   }

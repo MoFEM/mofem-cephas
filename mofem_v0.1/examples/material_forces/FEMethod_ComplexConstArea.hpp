@@ -52,7 +52,7 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
 
   C_CONSTANT_AREA_FEMethod(FieldInterface& _mField,Mat _C,Mat _Q,string _lambda_field_name,int _verbose = 0):
     mField(_mField),moab(_mField.get_moab()),C(_C),Q(_Q),lambda_field_name(_lambda_field_name),verbose(_verbose) { 
-    //calulate face shape functions direvatives
+    //calculate face shape functions direvatives
     diffNTRI.resize(3,2);
     ShapeDiffMBTRI(&*diffNTRI.data().begin());
     //shape functions Gauss integration weigths
@@ -205,7 +205,7 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
   }
 
   /**
-   * \brief calulate direvatives
+   * \brief calculate direvatives
    *
    */
   PetscErrorCode calcDirevatives(double *diffNTRI,double *dofs_X,double *dofs_iX,
@@ -241,7 +241,7 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
 	order[1] = 0;
       }
     }
-    //calulate tangent vectors
+    //calculate tangent vectors
     //those vectors are in plane of face
     for(int nn = 0; nn<3; nn++) {
       diffX_xi[0] += dofs_X[3*order[nn] + 0]*diffNTRI[2*nn+0]; // unit [ m ]
@@ -268,7 +268,7 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
     __CLPK_doublecomplex xSpinX_xi[9],xSpinX_eta[9];
     ierr = make_complex_matrix(SpinX_xi,iSpinX_xi,xSpinX_xi); CHKERRQ(ierr); // unit [ m ]
     ierr = make_complex_matrix(SpinX_eta,iSpinX_eta,xSpinX_eta); CHKERRQ(ierr); // unit [ m ]
-    //calulate complex face normal vector
+    //calculate complex face normal vector
     __CLPK_doublecomplex x_one = { 1, 0 };
     __CLPK_doublecomplex x_zero = { 0, 0 };
     __CLPK_doublecomplex x_normal[3];
@@ -303,7 +303,7 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
       cpow((x_normal[0].r+I*x_normal[0].i),2)+
       cpow((x_normal[1].r+I*x_normal[1].i),2)+
       cpow((x_normal[2].r+I*x_normal[2].i),2));
-    // calulate dA/dX 
+    // calculate dA/dX 
     __CLPK_doublecomplex xNSpinX_xi[3],xNSpinX_eta[3];
     bzero(xNSpinX_xi,3*sizeof(__CLPK_doublecomplex));
     bzero(xNSpinX_eta,3*sizeof(__CLPK_doublecomplex));
@@ -338,7 +338,7 @@ struct C_CONSTANT_AREA_FEMethod: public FieldInterface::FEMethod {
 	double iSpinA[9];
 	ierr = Spin(iSpinA,iA); CHKERRQ(ierr); // unit [1/m]
 	__CLPK_doublecomplex xSpinA[9];
-	// make spin matrix to calulate cross product
+	// make spin matrix to calculate cross product
 	ierr = make_complex_matrix(SpinA,iSpinA,xSpinA); CHKERRQ(ierr); 
 	__CLPK_doublecomplex xT[3];
 	cblas_zgemv(CblasRowMajor,CblasNoTrans,3,3,&x_scalar,xSpinA,3,x_normal,1,&x_zero,xT,1); // unit [1/m]
@@ -510,7 +510,7 @@ struct C_FRONT_TANGENT_FEMethod: public C_CONSTANT_AREA_FEMethod {
 
 /** 
   * 
-  * Calulate direcative of dA^2/dX^2 
+  * Calculate direcative of dA^2/dX^2 
   *
   */
 struct dCTgc_CONSTANT_AREA_FEMethod: public C_CONSTANT_AREA_FEMethod {
