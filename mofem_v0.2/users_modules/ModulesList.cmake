@@ -5,8 +5,9 @@ add_subdirectory(ultraweak)
 
 # Obsolete
 
-include_directories(${MoFEM_PROJECT_SOURCE_DIR}/users_modules/obsolete)
-include_directories(${MoFEM_PROJECT_SOURCE_DIR}/users_modules/obsolete/c)
+include_directories(${UM_SOURCE_DIR}/obsolete)
+include_directories(${UM_SOURCE_DIR}/obsolete/c)
+include_directories(${UM_SOURCE_DIR}/obsolete/c_impl)
 
 add_library(users_modules_obsolete
   ${UM_SOURCE_DIR}/obsolete/impl/ArcLengthTools.cpp
