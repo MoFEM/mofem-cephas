@@ -289,6 +289,16 @@ struct Core:
         PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
     }
     
+    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(this_mField,BLOCKSET|MAT_MOISTURESET,it)) {
+      Mat_Moisture data;
+      ierr = it->get_attribute_data_structure(data); CHKERRQ(ierr);
+      ostringstream ss;
+      ss << *it << endl;
+      ss << data;
+      PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
+    }
+
+    
     PetscFunctionReturn(0);
   }
 
@@ -571,7 +581,7 @@ PetscErrorCode Core::create_Mat(
       ierr = PetscLayoutDestroy(&layout); CHKERRQ(ierr);
       if(verb > 0) {
 	PetscSynchronizedPrintf(PETSC_COMM_WORLD,"\tcreate_Mat: row lower %d row upper %d\n",rstart,rend);
-	PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT); 
+	//PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT); 
       }
       miit_row = dofs_row_by_idx.lower_bound(rstart);
       hi_miit_row = dofs_row_by_idx.lower_bound(rend);
@@ -690,6 +700,9 @@ PetscErrorCode Core::create_Mat(
     } else {
       SETERRQ(PETSC_COMM_SELF,PETSC_ERR_ARG_NULL,"not implemented");
     }
+
+    //MatView(*M,PETSC_VIEWER_STDOUT_WORLD);
+
 
     PetscLogEventEnd(USER_EVENT_createMat,0,0,0,0);
     PetscFunctionReturn(0);

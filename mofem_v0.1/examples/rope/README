@@ -1,0 +1,14 @@
+#Generate fibre direction in Model using Potential Flow Problem
+
+make && mpirun -np 1 ./potential_flow_int_rope -my_file ~/Documents/moFEM/mofem-joseph/mofem-joseph/mofem_v0.1/examples/rope/pisces.cub -ksp_type fgmres -ksp_gmres_restart 1000 -pc_type asm -sub_pc_type lu -ksp_monitor -my_order 1
+
+
+#example how to run the actual problem
+make &&  mpirun -np 1 ./wire_interface_new_ver -my_file solution1.h5m -ksp_type fgmres -pc_type asm -sub_pc_type lu -ksp_monitor -my_order 1
+
+#Output
+
+out.vtk - computational mesh
+out_post_proc.vtk - refinded mesh of TETs for prostrocesing
+out_post_proc_prisms.vtk - refinded mesh of PRISMs for prostrocesing
+

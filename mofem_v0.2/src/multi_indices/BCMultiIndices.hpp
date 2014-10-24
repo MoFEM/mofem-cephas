@@ -59,6 +59,7 @@ enum CubitBC {
   MAT_INTERFSET = 1 <<14,
   MAT_THERMALSET = 1<<15,	///< block name is "MAT_THERMAL"
   BLOCK_BODYFORCESSET = 1<<16,	///< block name is "BODY_FORCES"
+  MAT_MOISTURESET = 1<<17, ///< block name is "MAT_MOISTURE"
   LASTCUBITSET
 };
 
@@ -231,7 +232,52 @@ struct Mat_Thermal: public GenericAttributeData {
   */
   friend ostream& operator<<(ostream& os,const Mat_Thermal& e);
 };
+  
+ 
+  /*! \struct Mat_Moisture
+   *  \brief moisture transport material data structure
+   */
+  
+  struct Mat_Moisture: public GenericAttributeData {
+    struct __attribute__ ((packed)) _data_{
+      double Diffusivity; // moisture diffusivity
+      double Viscosity; // Viscosity of water
+      double Permeability; // Permeability of material
+      double User3; // User attribute 3
+      double User4; // User attribute 4
+      double User5; // User attribute 5
+      double User6; // User attribute 6
+      double User7; // User attribute 7
+      double User8; // User attribute 8
+      double User9; // User attribute 9
+    };
+    
+    _data_ data;
+    
+    const CubitBC_BitSet type;
+    const unsigned int min_number_of_atributes;
+    Mat_Moisture(): type(MAT_MOISTURESET),min_number_of_atributes(1) {};
+    
+    virtual PetscErrorCode fill_data(const vector<double>& attributes) {
+      PetscFunctionBegin;
+      if(attributes.size()<min_number_of_atributes) {
+        SETERRQ(PETSC_COMM_SELF,1,"moisture diffusivity is not defined. (top tip: check number of MOISTURE block atributes)");
+      }
+      if(8*attributes.size()>sizeof(data)) {
+        SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, please review the number of material properties defined");
+      }
+      bzero(&data,sizeof(data));
+      memcpy(&data, &attributes[0],8*attributes.size());
+      PetscFunctionReturn(0);
+    }
+    
+    /*! \brief Print Mat_Elastic data
+     */
+    friend ostream& operator<<(ostream& os,const Mat_Moisture& e);
+  };
 
+  
+  
 /** \brief Body force data structure
   */
 struct Block_BodyForces: public GenericAttributeData {

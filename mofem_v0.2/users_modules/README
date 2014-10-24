@@ -1,0 +1,18 @@
+Pleas add your config files to ModulesList.cmake fiele. 
+
+In each module you can have two type directory data, 
+  1) Simple
+  2) Extended
+
+1) Simple ditectory structure consist no subdrectories.
+2) Extended data struture consist subdirectories,
+
+  / <-- programs from which you build executable
+  -> /src <- hpp files
+  -> /src/impl <- cpp files form library
+  -> /meshes
+  -> /data
+  
+Each module should have README fiele.
+
+

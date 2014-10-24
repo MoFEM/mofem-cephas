@@ -1,0 +1,117 @@
+
+1.  With interface elements between the fibrea and matrix
+
+===================================  To generate fibres directions for all BCs (Displacement, Traction and Periodic)   ========================================
+#Generate fibre direction in Model using Potential Flow Problem
+make &&  mpirun -np 1 ./potential_flow_all -my_file ~/Documents/Post-Doc\ Data/Analysis/Meshes/Trans_RVE/RVE.cub -ksp_type fgmres -ksp_gmres_restart 1000 -pc_type asm -sub_pc_type lu -ksp_monitor -my_order 1
+
+
+===================================Linear Displacement boundary conditions========================================
+#To run the actual problem
+make && mpirun -np 1 ./RVE_disp -my_file solution1.h5m -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0 
+
+
+===================================Traction boundary conditions========================================
+#To run the actual problem
+make && mpirun -np 1 ./RVE_trac -my_file solution1.h5m -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0 
+
+
+
+===================================Periodic boundary conditions========================================
+#To run the actual problem
+make && mpirun -np 1 ./RVE_periodic -my_file solution1.h5m -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0 
+
+
+
+2.  With no interface elements between the fibrea and matrix
+
+===================================  To generate fibres directions for all BCs (Displacement, Traction and Periodic)   ========================================
+#Generate fibre direction in Model using Potential Flow Problem
+make &&  mpirun -np 1 ./potential_flow_all_no_interface -my_file ~/Documents/Post-Doc\ Data/Analysis/Meshes/Trans_RVE/RVE.cub -ksp_type fgmres -ksp_gmres_restart 1000 -pc_type asm -sub_pc_type lu -ksp_monitor -my_order 1
+
+===================================Linear Displacement boundary conditions========================================
+make && mpirun -np 1 ./RVE_disp_no_interface -my_file solution1.h5m -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0
+
+===================================Periodic boundary conditions========================================
+make && mpirun -np 1 ./RVE_periodic_no_interface -my_file solution1.h5m  -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0
+
+===================================Traction boundary conditions========================================
+make && mpirun -np 1 ./RVE_trac_no_interface -my_file solution1.h5m -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0
+
+
+===================================For Server use ========================================
+
+on screen and save the terminal output use the following at the end
+| tee RVE_output.log
+
+
+=================== With interface =============================
+mpirun -np 2 ./potential_flow_all -my_file RVE.cub -ksp_type fgmres -ksp_gmres_restart 1000 -pc_type asm -sub_pc_type lu -ksp_monitor -my_order 4
+
+mpirun -np 2 ./RVE_disp -my_file solution1.h5m -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 4 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0
+mpirun -np 2 ./RVE_periodic -my_file solution1.h5m -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 4 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0
+mpirun -np 2 ./RVE_trac -my_file solution1.h5m -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 4 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0
+
+
+
+=================== Without interface =============================
+mpirun -np 1 ./potential_flow_all_no_interface -my_file RVE.cub -ksp_type fgmres -ksp_gmres_restart 1000 -pc_type asm -sub_pc_type lu -ksp_monitor -my_order 1
+
+mpirun -np 1 ./RVE_disp_no_interface -my_file solution1.h5m -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 3 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0
+
+mpirun -np 1 ./RVE_periodic_no_interface -my_file solution1.h5m -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 3 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0
+
+mpirun -np 1 ./RVE_trac_no_interface -my_file solution1.h5m -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 3 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0
+
+
+
+
+mpirun -np 3 ./RVE_disp_no_interface -my_file solution1.h5m -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 3 -myapplied_strain 0.0,1.0,0.0,0.0,0.0,0.0
+
+mpirun -np 3 ./RVE_periodic_no_interface -my_file solution1.h5m -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 3 -myapplied_strain 0.0,1.0,0.0,0.0,0.0,0.0
+
+mpirun -np 3 ./RVE_trac_no_interface -my_file solution1.h5m -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 3 -myapplied_strain 0.0,1.0,0.0,0.0,0.0,0.0
+
+
+
+mpirun -np 3 ./RVE_disp_no_interface -my_file solution1.h5m -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 3 -myapplied_strain 0.0,0.0,1.0,0.0,0.0,0.0
+
+mpirun -np 3 ./RVE_periodic_no_interface -my_file solution1.h5m -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 3 -myapplied_strain 0.0,0.0,1.0,0.0,0.0,0.0
+
+mpirun -np 3 ./RVE_trac_no_interface -my_file solution1.h5m -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 3 -myapplied_strain 0.0,0.0,1.0,0.0,0.0,0.0
+
+
+mpirun -np 3 ./RVE_disp_no_interface -my_file solution1.h5m -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 3 -myapplied_strain 0.0,0.0,0.0,1.0,0.0,0.0
+
+mpirun -np 3 ./RVE_periodic_no_interface -my_file solution1.h5m -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 3 -myapplied_strain 0.0,0.0,0.0,1.0,0.0,0.0
+
+mpirun -np 3 ./RVE_trac_no_interface -my_file solution1.h5m -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 3 -myapplied_strain 0.0,0.0,0.0,1.0,0.0,0.0
+
+
+
+mpirun -np 3 ./RVE_disp_no_interface -my_file solution1.h5m -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 3 -myapplied_strain 0.0,0.0,0.0,0.0,1.0,0.0
+
+mpirun -np 3 ./RVE_periodic_no_interface -my_file solution1.h5m -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 3 -myapplied_strain 0.0,0.0,0.0,0.0,1.0,0.0
+
+mpirun -np 3 ./RVE_trac_no_interface -my_file solution1.h5m -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 3 -myapplied_strain 0.0,0.0,0.0,0.0,1.0,0.0
+
+
+
+mpirun -np 3 ./RVE_disp_no_interface -my_file solution1.h5m -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 3 -myapplied_strain 0.0,0.0,0.0,0.0,0.0,1.0
+
+mpirun -np 3 ./RVE_periodic_no_interface -my_file solution1.h5m -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 3 -myapplied_strain 0.0,0.0,0.0,0.0,0.0,1.0
+
+mpirun -np 3 ./RVE_trac_no_interface -my_file solution1.h5m -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 3 -myapplied_strain 0.0,0.0,0.0,0.0,0.0,1.0
+
+
+
+
+
+
+
+
+
+
+
+
+

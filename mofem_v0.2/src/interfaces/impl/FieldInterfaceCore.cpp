@@ -895,7 +895,7 @@ PetscErrorCode Core::dofs_L2H1HcurlHdiv(const BitFieldId id,map<EntityType,int> 
   if(verb==-1) verb = verbose;
   //field it
   typedef MoFEMField_multiIndex::index<BitFieldId_mi_tag>::type field_set_by_id;
-  typedef RefMoFEMEntity_multiIndex::index<Ent_mi_tag>::type ref_ents_by_ents;
+  //typedef RefMoFEMEntity_multiIndex::index<Ent_mi_tag>::type ref_ents_by_ents;
   //find field
   const field_set_by_id &set_id = moabFields.get<BitFieldId_mi_tag>();
   field_set_by_id::iterator miit = set_id.find(id);
@@ -1733,7 +1733,7 @@ PetscErrorCode Core::build_adjacencies(const Range &ents,int verb) {
   if(verb==-1) verb = verbose;
   if(!(*build_MoFEM)&(1<<0)) SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"field not build");
   if(!(*build_MoFEM)&(1<<1)) SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"fe not build");
-  typedef MoFEMEntity_multiIndex::index<Unique_mi_tag>::type ents_by_uid;
+  //typedef MoFEMEntity_multiIndex::index<Unique_mi_tag>::type ents_by_uid;
   EntMoFEMFiniteElement_multiIndex::iterator fit = finiteElementsMoFEMEnts.begin();
   for(;fit!=finiteElementsMoFEMEnts.end();fit++) {
     if(!ents.empty()) {
@@ -3876,7 +3876,7 @@ PetscErrorCode Core::problem_basic_method_preProcess(const string &problem_name,
   moFEMProblems_by_name::iterator p_miit = moFEMProblems_set.find(problem_name);
   if(p_miit == moFEMProblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem is not in database %s",problem_name.c_str());
   // finite element
-  typedef NumeredMoFEMFiniteElement_multiIndex::index<Composite_mi_tag>::type FEs_by_composite;
+  //typedef NumeredMoFEMFiniteElement_multiIndex::index<Composite_mi_tag>::type FEs_by_composite;
   SET_BASIC_METHOD(&*p_miit)
   PetscLogEventBegin(USER_EVENT_preProcess,0,0,0,0);
   ierr = method.preProcess(); CHKERRQ(ierr);
@@ -3892,7 +3892,7 @@ PetscErrorCode Core::problem_basic_method_postProcess(const string &problem_name
   moFEMProblems_by_name::iterator p_miit = moFEMProblems_set.find(problem_name);
   if(p_miit == moFEMProblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem is not in database %s",problem_name.c_str());
   // finite element
-  typedef NumeredMoFEMFiniteElement_multiIndex::index<Composite_mi_tag>::type FEs_by_composite;
+  //typedef NumeredMoFEMFiniteElement_multiIndex::index<Composite_mi_tag>::type FEs_by_composite;
   SET_BASIC_METHOD(&*p_miit)
   PetscLogEventBegin(USER_EVENT_postProcess,0,0,0,0);
   ierr = method.postProcess(); CHKERRQ(ierr);
