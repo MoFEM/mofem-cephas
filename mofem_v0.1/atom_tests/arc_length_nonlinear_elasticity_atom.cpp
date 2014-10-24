@@ -544,8 +544,8 @@ int main(int argc, char *argv[]) {
       //ierr = MyFE.potsProcessLoadPath(); CHKERRQ(ierr);
     } else if(step == 2) {
       ierr = arc_ctx->set_alpha_and_beta(1,0); CHKERRQ(ierr);
-      ierr = arc_method.calulate_dx_and_dlambda(D); CHKERRQ(ierr);
-      step_size = sqrt(arc_method.calulate_lambda_int());
+      ierr = arc_method.calculate_dx_and_dlambda(D); CHKERRQ(ierr);
+      step_size = sqrt(arc_method.calculate_lambda_int());
       ierr = arc_ctx->set_s(step_size); CHKERRQ(ierr);
       double dlambda = arc_ctx->dlambda;
       double dx_nrm;
@@ -557,7 +557,7 @@ int main(int argc, char *argv[]) {
       ierr = VecAXPY(D,1.,arc_ctx->dx); CHKERRQ(ierr);
       ierr = arc_method.set_dlambda_to_x(D,dlambda); CHKERRQ(ierr);
     } else {
-      ierr = arc_method.calulate_dx_and_dlambda(D); CHKERRQ(ierr);
+      ierr = arc_method.calculate_dx_and_dlambda(D); CHKERRQ(ierr);
       step_size *= reduction;
       ierr = arc_ctx->set_s(step_size); CHKERRQ(ierr);
       double dlambda = reduction*arc_ctx->dlambda;

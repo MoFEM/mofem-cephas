@@ -32,6 +32,8 @@
 #include "PostProcVertexMethod.hpp"
 #include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
 
+#define DATAFILENAME "load_disp.txt"
+
 using namespace MoFEM;
 
 ErrorCode rval;
@@ -68,12 +70,22 @@ int main(int argc, char *argv[]) {
     max_steps = 5;
   }
 
+  int its_d;
+  ierr = PetscOptionsGetInt("","-my_its_d",&its_d,&flg); CHKERRQ(ierr);
+  if(flg != PETSC_TRUE) {
+    its_d = 6;
+  }
+
   PetscInt order;
   ierr = PetscOptionsGetInt(PETSC_NULL,"-my_order",&order,&flg); CHKERRQ(ierr);
   if(flg != PETSC_TRUE) {
     order = 2;
   }
 
+  //Check if new start or restart. If new start, delete previous load_disp.txt
+  if (string(mesh_file_name).find("restart") == std::string::npos) {
+    remove( "load_disp.txt" );
+  }
 
   //Read mesh to MOAB
   const char *option;
@@ -305,14 +317,42 @@ int main(int argc, char *argv[]) {
   ierr = VecDuplicate(F,&F_body_force); CHKERRQ(ierr);
   Mat Aij;
   ierr = mField.MatCreateMPIAIJWithArrays("ELASTIC_MECHANICS",&Aij); CHKERRQ(ierr);
-
+  
   //Assemble F and Aij
-  const double young_modulus = 1;
-  const double poisson_ratio = 0.0;
-  const double h = 1;
-  const double beta = 0;
-  const double ft = 1;
-  const double Gf = 1;
+  double young_modulus=1;
+  double poisson_ratio=0.0;
+  double h = 1;
+  double beta = 0;
+  double ft = 1;
+  double Gf = 1;
+  
+  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it))
+  {
+    cout << endl << *it << endl;
+    
+    //Get block name
+    string name = it->get_Cubit_name();
+    
+    if (name.compare(0,11,"MAT_ELASTIC") == 0)
+    {
+      Mat_Elastic mydata;
+      ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+      cout << mydata;
+      young_modulus=mydata.data.Young;
+      poisson_ratio=mydata.data.Poisson;
+    }
+    else if (name.compare(0,10,"MAT_INTERF") == 0)
+    {
+      Mat_Interf mydata;
+      ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+      cout << mydata;
+      h = mydata.data.alpha;
+      beta = mydata.data.beta;
+      ft = mydata.data.ft;
+      Gf = mydata.data.Gf;
+    }
+  }
+  
 
   struct MyArcLengthIntElemFEMethod: public ArcLengthIntElemFEMethod {
     FieldInterface& mField;
@@ -331,28 +371,34 @@ int main(int argc, char *argv[]) {
 
     };
 
-    PetscErrorCode potsProcessLoadPath() {
+    PetscErrorCode postProcessLoadPath() {
       PetscFunctionBegin;
+      FILE *datafile;
+      PetscFOpen(PETSC_COMM_SELF,DATAFILENAME,"a+",&datafile);
       NumeredDofMoFEMEntity_multiIndex &numered_dofs_rows = const_cast<NumeredDofMoFEMEntity_multiIndex&>(problemPtr->numered_dofs_rows);
       NumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator lit;
       lit = numered_dofs_rows.get<FieldName_mi_tag>().find("LAMBDA");
       if(lit == numered_dofs_rows.get<FieldName_mi_tag>().end()) PetscFunctionReturn(0);
       Range::iterator nit = PostProcNodes.begin();
       for(;nit!=PostProcNodes.end();nit++) {
-	NumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator dit,hi_dit;
-	dit = numered_dofs_rows.get<MoABEnt_mi_tag>().lower_bound(*nit);
-	hi_dit = numered_dofs_rows.get<MoABEnt_mi_tag>().upper_bound(*nit);
-	double coords[3];
-	rval = moab.get_coords(&*nit,1,coords);  CHKERR_THROW(rval);
-	for(;dit!=hi_dit;dit++) {
-	  PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e -> ",lit->get_name().c_str(),lit->get_dof_rank(),lit->get_FieldData());
-	  PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e ",dit->get_name().c_str(),dit->get_dof_rank(),dit->get_FieldData());
-	  PetscPrintf(PETSC_COMM_WORLD,"-> %3.4f %3.4f %3.4f\n",coords[0],coords[1],coords[2]);
-	}
+        NumeredDofMoFEMEntity_multiIndex::index<MoABEnt_mi_tag>::type::iterator dit,hi_dit;
+        dit = numered_dofs_rows.get<MoABEnt_mi_tag>().lower_bound(*nit);
+        hi_dit = numered_dofs_rows.get<MoABEnt_mi_tag>().upper_bound(*nit);
+        double coords[3];
+        rval = moab.get_coords(&*nit,1,coords);  CHKERR_THROW(rval);
+        for(;dit!=hi_dit;dit++) {
+          PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e -> ",lit->get_name().c_str(),lit->get_dof_rank(),lit->get_FieldData());
+          PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e ",dit->get_name().c_str(),dit->get_dof_rank(),dit->get_FieldData());
+          PetscPrintf(PETSC_COMM_WORLD,"-> %3.4f %3.4f %3.4f\n",coords[0],coords[1],coords[2]);
+          if (dit->get_dof_rank()==0) {//print displacement and load factor in x-dir
+            PetscFPrintf(PETSC_COMM_WORLD,datafile,"%6.4e %6.4e ",dit->get_FieldData(),lit->get_FieldData());
+          }
+        }
       }
+      PetscFPrintf(PETSC_COMM_WORLD,datafile,"\n");
+      fclose(datafile);
       PetscFunctionReturn(0);
     }
-
   };
 
   struct MyPrePostProcessFEMethodRhs: public FieldInterface::FEMethod {
@@ -507,15 +553,12 @@ int main(int argc, char *argv[]) {
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ARC_LENGTH",&my_arc_method));
   snes_ctx.get_postProcess_to_do_Mat().push_back(&my_dirichlet_bc);
 
-  int its_d = 6;
   double gamma = 0.5,reduction = 1;
-  double step_size0;
   //step = 1;
   if(step == 1) {
     step_size = step_size_reduction;
   } else {
-    reduction = step_size;
-    step_size0 = step_size_reduction;
+    reduction = step_size_reduction;
     step++;
   }
 
@@ -554,6 +597,8 @@ int main(int argc, char *argv[]) {
   }
   ierr = SnesRhs(snes,D,F,&snes_ctx); CHKERRQ(ierr);
 
+  bool converged_state  = false;
+  
   for(;step<max_steps;step++) {
 
     if(step == 1) {
@@ -566,9 +611,8 @@ int main(int argc, char *argv[]) {
       ierr = my_arc_method.set_dlambda_to_x(D,dlambda); CHKERRQ(ierr);
     } else if(step == 2) {
       ierr = arc_ctx->set_alpha_and_beta(1,0); CHKERRQ(ierr);
-      ierr = my_arc_method.calulate_dx_and_dlambda(D); CHKERRQ(ierr);
-      ierr = my_arc_method.calulate_lambda_int(step_size); CHKERRQ(ierr);
-      step_size0 = step_size;
+      ierr = my_arc_method.calculate_dx_and_dlambda(D); CHKERRQ(ierr);
+      ierr = my_arc_method.calculate_lambda_int(step_size); CHKERRQ(ierr);
       ierr = arc_ctx->set_s(step_size); CHKERRQ(ierr);
       double dlambda = arc_ctx->dlambda;
       double dx_nrm;
@@ -580,12 +624,10 @@ int main(int argc, char *argv[]) {
       ierr = VecAXPY(D,1.,arc_ctx->dx); CHKERRQ(ierr);
       ierr = my_arc_method.set_dlambda_to_x(D,dlambda); CHKERRQ(ierr);
     } else {
-      ierr = my_arc_method.calulate_dx_and_dlambda(D); CHKERRQ(ierr);
-      double step_size1 = step_size;
-      ierr = my_arc_method.calulate_lambda_int(step_size); CHKERRQ(ierr);
+      ierr = my_arc_method.calculate_dx_and_dlambda(D); CHKERRQ(ierr);
+      ierr = my_arc_method.calculate_lambda_int(step_size); CHKERRQ(ierr);
       //step_size0_1/step_size0 = step_stize1/step_size
       //step_size0_1 = step_size0*(step_stize1/step_size)
-      step_size0 = step_size0*(step_size1/step_size);
       step_size *= reduction;
       ierr = arc_ctx->set_s(step_size); CHKERRQ(ierr);
       double dlambda = reduction*arc_ctx->dlambda; double dx_nrm;
@@ -604,7 +646,7 @@ int main(int argc, char *argv[]) {
     //Distribute displacements on all processors
     ierr = mField.set_global_VecCreateGhost("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
-    //Update History and Calulate Residual
+    //Update History and Calculate Residual
     //Tell Interface method that kappa is upadated
     int_my_fe.snes_ctx = FieldInterface::FEMethod::CTX_SNESNONE;
     ierr = int_my_fe.set_ctx_int(NonLinearInterfaceFEMethod::ctx_KappaUpdate); CHKERRQ(ierr);
@@ -619,26 +661,37 @@ int main(int argc, char *argv[]) {
     ierr = SNESGetIterationNumber(snes,&its); CHKERRQ(ierr);
     ierr = PetscPrintf(PETSC_COMM_WORLD,"number of Newton iterations = %D\n",its); CHKERRQ(ierr);
 
-    if(step > 1) {
-      if(its>0) {
-	reduction = pow((double)its_d/(double)(its+1),gamma);
-	if(step_size*reduction > 10*step_size0) {
-	  reduction = 1;
-	}
-	ierr = PetscPrintf(PETSC_COMM_WORLD,"reduction step_size (step_size,step_size0) = %6.4e (%6.4e,%6.4e)\n",reduction,step_size,step_size0); CHKERRQ(ierr);
-      } else reduction = 1;
-    }
-
+    SNESConvergedReason reason;
+    ierr = SNESGetConvergedReason(snes,&reason); CHKERRQ(ierr);
+    
+    if (reason < 0) {
+      ierr = arc_ctx->set_alpha_and_beta(1,0); CHKERRQ(ierr);
+      reduction =0.1;
+      converged_state = false;
+      continue;
+    } else {
+      if (step > 1 && converged_state) {
+        reduction = pow((double)its_d/(double)(its+1),gamma);
+        ierr = PetscPrintf(PETSC_COMM_WORLD,"reduction step_size = %6.4e\n", reduction); CHKERRQ(ierr);
+      }
+      
     //Save data on mesh
     ierr = mField.set_global_VecCreateGhost("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = mField.set_other_global_VecCreateGhost(
       "ELASTIC_MECHANICS","DISPLACEMENT","X0_DISPLACEMENT",COL,arc_ctx->x0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    
+      converged_state = true;
+    }
     //
     PostProcVertexMethod ent_method(moab);
     ierr = mField.loop_dofs("ELASTIC_MECHANICS","DISPLACEMENT",COL,ent_method); CHKERRQ(ierr);
     //
-    ierr = my_arc_method.potsProcessLoadPath(); CHKERRQ(ierr);
+    if (reason > 0) {
+      FILE *datafile;
+      PetscFOpen(PETSC_COMM_SELF,DATAFILENAME,"a+",&datafile);
+      PetscFPrintf(PETSC_COMM_WORLD,datafile,"%d %d ",reason,its);
+      fclose(datafile);
+      ierr = my_arc_method.postProcessLoadPath(); CHKERRQ(ierr);
+    }
     //
     if(step % 1 == 0) {
       if(pcomm->rank()==0) {
@@ -654,7 +707,7 @@ int main(int argc, char *argv[]) {
 	rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
       }
     }
-
+    
   }
 
   //Save data on mesh

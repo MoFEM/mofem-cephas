@@ -1,0 +1,57 @@
+Check before run
+================
+
+* Check where is your mesh file
+* Check what version of openmpi (or other MPI library) you are using
+
+Note
+====
+
+* Pleasw note that E,gc and F_external are scaled such that, E has unit [ 1 N/mm2 ]
+* Mesh dimensions are in millimetres
+
+Example run
+===========
+
+1) Calculation of stress intensity factor K1
+
+* Calculation of Griffith energy and SIF for mode K1.
+* Calculate problem for four approximation orders, i.e. 1 (linear), 2 (quadratic), 3 (cubic), 4 (quartic).
+* Calculate problem for one refinement level (in proximity of crack front).
+
+* convergence_study.sh NAME_OF_SCRIPT
+* -f NAME_OF_FILE 
+* -l VALUE_OF_LOAD_FACTOR 
+* -g REFERENCE_GRIFFITH_ENERGY 
+* -o APPROX_ORDERS_SEPARATED_BY_COMMAS 
+* -r REFINEMENT_LEVELS_SEPARATED_BY_COMMAS
+* -d directory name
+* -p number of processors
+
+./convergence_study.sh -f brick_slice_with_slot.cub -l -1 -g 2.3e-5 -o 1,2,3 -r 1 -p $NPROC
+
+2) Calculation of crack propagation
+
+* Crack propagation as an input file uses previously obtained solution from step (1)
+* Note that linear elements (1st order) have sheer locking, and usually give overstiff solution
+* There are two possible methods:
+
+Smooth crack propagation:
+./arc_length.sh -f $DIRNAME/out_spatial_1_1.h5m -a 5 -n 500 -g 2.3e-5 -t 1e-8 -p $NPROC
+
+Crack propagation with face splitting:
+./face_split_arc_length.sh -f $DIRNAME/out_spatial_1_1.h5m -a 5 -n 500 -g 2.3e-5 -t 1e-8 -p $NPROC
+
+Making plots
+============
+
+* plot_graphs.sh NAME_OF_SCRIPT 
+* -o APPROX_ORDERS_SEPARATED_BY_COMMAS 
+* -r REFINEMENT_LEVELS_SEPARATED_BY_COMMAS
+* -ent DESIRED_ENTITIY
+* -dim DESIRED_DIMENSION
+* -s SCALING_FACTOR
+
+The scaling factor is the product of the external load, the area over which the load is applied and the inverse of the scaling applied to E.
+
+./plot_graphs.sh -o 1,2,3 -r 1 -ent 813,6172 -dim 0,1,2 -s 1e4*1*1355.519433

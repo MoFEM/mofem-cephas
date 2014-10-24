@@ -260,6 +260,10 @@ struct ThermalElement {
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
 
+      if(dAta.tEts.find(getMoFEMFEPtr()->get_ent()) == dAta.tEts.end()) {
+	PetscFunctionReturn(0);
+      }
+
       try {
 
       if(data.getIndices().size()==0) PetscFunctionReturn(0);
@@ -347,6 +351,10 @@ struct ThermalElement {
       DataForcesAndSurcesCore::EntData &row_data,
       DataForcesAndSurcesCore::EntData &col_data) {
       PetscFunctionBegin;
+
+      if(dAta.tEts.find(getMoFEMFEPtr()->get_ent()) == dAta.tEts.end()) {
+	PetscFunctionReturn(0);
+      }
 
       try {
   
@@ -570,7 +578,7 @@ struct ThermalElement {
 
     ublas::vector<FieldData> Nf;
 
-    /** \brief calulate heat flux 
+    /** \brief calculate heat flux 
       *
       * F = int_S N^T * flux dS
       *
@@ -939,9 +947,9 @@ struct ThermalElement {
   PetscErrorCode setThermalFiniteElementRhsOperators(string field_name,Vec &F) {
     PetscFunctionBegin;
     map<int,BlockData>::iterator sit = setOfBlocks.begin();
+    feRhs.get_op_to_do_Rhs().push_back(new OpGetGradAtGaussPts(field_name,commonData));
     for(;sit!=setOfBlocks.end();sit++) {
       //add finite element
-      feRhs.get_op_to_do_Rhs().push_back(new OpGetGradAtGaussPts(field_name,commonData));
       feRhs.get_op_to_do_Rhs().push_back(new OpThermalRhs(field_name,F,sit->second,commonData));
     }
     PetscFunctionReturn(0);

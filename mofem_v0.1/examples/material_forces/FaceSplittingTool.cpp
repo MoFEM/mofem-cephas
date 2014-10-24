@@ -231,7 +231,7 @@ PetscErrorCode FaceSplittingTools::buildKDTreeForCrackSurface(
     ierr = ShapeFaceNormalMBTRI(diffN,coords,normal); CHKERRQ(ierr);
     double nrm2 = cblas_dnrm2(3,normal,1);
     cblas_dscal(3,1./nrm2,normal,1);
-    //calulate cracl surface normal
+    //calculate cracl surface normal
     rval = moab_distance_from_crack_surface.tag_set_data(th_normal,&new_elem,1,normal); CHKERR_PETSC(rval);
   }
 
@@ -1305,7 +1305,7 @@ PetscErrorCode FaceSplittingTools::chopTetsUntilNonOneLeftOnlyCrackSurfaceFaces(
   crack_front_tets_faces_nodes_front = subtract(crack_front_tets_faces_nodes,crack_front_edges_nodes);
   rval = mField.get_moab().add_entities(chopTetsFaces,crack_front_tets_faces_nodes_front); CHKERR_PETSC(rval);
 
-  //calulate quality of choped faces
+  //calculate quality of choped faces
   double q;
   ierr = calculate_qualityAfterProjectingNodes(
     crack_front_tets_faces_nodes_front,mesh_level_tets,crack_front_edges_nodes,q); CHKERRQ(ierr);

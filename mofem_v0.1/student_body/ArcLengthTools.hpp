@@ -301,7 +301,7 @@ struct PrePostProcessFEMethod_For_F_lambda: public FieldInterface::FEMethod {
  * solves K*pc_x = pc_f
  * solves K*x_lambda = -dF_lambda
  * solves ddlambda = ( res_lambda - db*x_lambda )/( diag + db*pc_x )
- * calulate pc_x = pc_x + ddlambda*x_lambda
+ * calculate pc_x = pc_x + ddlambda*x_lambda
  */
 PetscErrorCode pc_apply_arc_length(PC pc,Vec pc_f,Vec pc_x);
 

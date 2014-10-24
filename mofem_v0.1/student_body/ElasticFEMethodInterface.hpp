@@ -127,7 +127,7 @@ struct InterfaceFEMethod: public FEMethod_UpLevelStudent,ToolsInterfaceFEMethod 
   vector<ublas::vector<FieldData,ublas::bounded_array<FieldData, 3> > > gap_loc;
 
 
-  /* \brief calulate gap in global and local coorinates
+  /* \brief calculate gap in global and local coorinates
     *
     * Function, make a loop for all gauss points, and calculate gap ( separation
     * of interface ). We have three types of shape functions, for nodes, edges and
