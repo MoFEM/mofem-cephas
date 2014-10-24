@@ -248,7 +248,9 @@ int main(int argc, char *argv[]) {
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
       ierr = iNitalize(); CHKERRQ(ierr);
-      ierr = VecSetValues(ts_u,dofsIndices.size(),&dofsIndices[0],&dofsValues[0],INSERT_VALUES); CHKERRQ(ierr);
+      if(dofsIndices.size()>0) {
+	ierr = VecSetValues(ts_u,dofsIndices.size(),&dofsIndices[0],&dofsValues[0],INSERT_VALUES); CHKERRQ(ierr);
+      }
       ierr = VecAssemblyBegin(ts_u); CHKERRQ(ierr);
       ierr = VecAssemblyEnd(ts_u); CHKERRQ(ierr);
       PetscFunctionReturn(0);
