@@ -30,8 +30,8 @@ namespace MoFEM {
     Vec Stress_Homo;
     double *RVE_volume;
     
-    ElasticFE_RVELagrange_Homogenized_Stress_Periodic(FieldInterface& _mField,Mat &_Aij,Vec &_D,Vec& _F,double *_RVE_volume, ublas::vector<FieldData> _applied_strain, Vec& _Stress_Homo):
-    ElasticFE_RVELagrange_Periodic(_mField,_Aij, _D, _F, _applied_strain), DVec(_D), Stress_Homo(_Stress_Homo),RVE_volume(_RVE_volume) {};
+    ElasticFE_RVELagrange_Homogenized_Stress_Periodic(FieldInterface& _mField,Mat &_Aij,Vec &_D,Vec& _F,double *_RVE_volume, ublas::vector<FieldData> _applied_strain, Vec& _Stress_Homo, const string& _field_main, const string& _field_lagrange, int _rank_field):
+    ElasticFE_RVELagrange_Periodic(_mField,_Aij, _D, _F, _applied_strain, _field_main, _field_lagrange, _rank_field), DVec(_D), Stress_Homo(_Stress_Homo),RVE_volume(_RVE_volume) {};
     
     PetscErrorCode preProcess();
     PetscErrorCode postProcess();

@@ -82,6 +82,12 @@ struct CubitDisplacementDirichletBC: public BaseDirichletBC {
   PetscErrorCode SetDirichletBC_to_FieldData(FieldInterface::FEMethod *fe_method_ptr,Vec D);
 
 };
+    
+struct CubitDisplacementDirihletBC_MatZeroRowsColumns: public CubitDisplacementDirihletBC {
+
+  
+    
+};
 
 }
 

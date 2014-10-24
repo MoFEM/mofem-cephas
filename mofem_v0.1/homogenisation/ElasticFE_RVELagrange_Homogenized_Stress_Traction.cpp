@@ -51,14 +51,14 @@ namespace MoFEM {
     
     PetscErrorCode ElasticFE_RVELagrange_Homogenized_Stress_Traction::Calculate_Homo_Stress() {
       PetscFunctionBegin;
-      X_mat.resize(3,6);    X_mat.clear();
+      X_mat.resize(rank_field,1.5*rank_field+1.5);  X_mat.clear();  // for rank_field=3 X_mat.resize(3,6)  and for rank_field=1 X_mat.resize(1,3)
       nodes_coord.resize(3,3);
       gauss_coord.resize(3,g_TRI_dim);
       D_mat.resize(row_mat);
       Lamda.resize(row_mat);
       
       ublas::vector<FieldData>  Stress_Homo_elem;
-      Stress_Homo_elem.resize(6);   Stress_Homo_elem.clear();   //homogenised stress for one element (triangle)
+      Stress_Homo_elem.resize(1.5*rank_field+1.5);   Stress_Homo_elem.clear();   //homogenised stress for one element (triangle)
       
       //used to calculate the coordinates of a Gauss points
       nodes_coord(0,0)=coords_face[0]; nodes_coord(0,1)=coords_face[3]; nodes_coord(0,2)=coords_face[6];
@@ -68,19 +68,29 @@ namespace MoFEM {
       //coordinates for all gauss points
       gauss_coord=prod(nodes_coord, g_NTRI_mat);
       
-      //            cout<<"g_NTRI_mat "<<g_NTRI_mat<<endl<<endl;
-      //            cout<<"nodes_coord "<<nodes_coord<<endl<<endl;
-      //            cout<<"gauss_coord "<<gauss_coord<<endl<<endl;
-      //            std::string wait;
-      //            std::cin >> wait;
+//            cout<<"g_NTRI_mat "<<g_NTRI_mat<<endl<<endl;
+//            cout<<"nodes_coord "<<nodes_coord<<endl<<endl;
+//            cout<<"gauss_coord "<<gauss_coord<<endl<<endl;
+//            std::string wait;
+//            std::cin >> wait;
       
       for(int rr=0; rr<1; rr++){
         for(int gg = 0;gg<g_TRI_dim;gg++) {
           double w = area*G_W_TRI[gg];
-          X_mat(0,0)=2.0*gauss_coord(0,gg);  X_mat(0,3)=gauss_coord(1,gg);  X_mat(0,4)=gauss_coord(2,gg);
-          X_mat(1,1)=2.0*gauss_coord(1,gg);  X_mat(1,3)=gauss_coord(0,gg);  X_mat(1,5)=gauss_coord(2,gg);
-          X_mat(2,2)=2.0*gauss_coord(2,gg);  X_mat(2,4)=gauss_coord(0,gg);  X_mat(2,5)=gauss_coord(1,gg);
-          X_mat=0.5*X_mat;
+          
+          switch(rank_field) {
+            case 3:
+              X_mat(0,0)=2.0*gauss_coord(0,gg);  X_mat(0,3)=gauss_coord(1,gg);  X_mat(0,4)=gauss_coord(2,gg);
+              X_mat(1,1)=2.0*gauss_coord(1,gg);  X_mat(1,3)=gauss_coord(0,gg);  X_mat(1,5)=gauss_coord(2,gg);
+              X_mat(2,2)=2.0*gauss_coord(2,gg);  X_mat(2,4)=gauss_coord(0,gg);  X_mat(2,5)=gauss_coord(1,gg);
+              X_mat=0.5*X_mat;
+              break;
+            case 1:
+              X_mat(0,0)=gauss_coord(0,gg);  X_mat(0,1)=gauss_coord(1,gg);  X_mat(0,2)=gauss_coord(2,gg);
+              break;
+            default:
+              SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+          }
           
           ublas::matrix<FieldData> &row_Mat = (rowNMatrices[rr])[gg];
           ublas::matrix<FieldData> &col_Mat = X_mat;
@@ -113,28 +123,35 @@ namespace MoFEM {
         //                cout<< " D_mat[rr] =  "<<D_mat[rr]<<endl;
         Lamda[rr].resize(RowGlob[rr].size());
         
-        for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"Lagrange_mul_disp",iit)) {
+        for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,field_lagrange,iit)) {
           //                        cout<<"iit->get_EntDofIdx() "<<iit->get_EntDofIdx()<<endl;
           Lamda[rr][iit->get_EntDofIdx()]=iit->get_FieldData();
         }
         Stress_Homo_elem+=prod(trans(D_mat[rr]), -1*Lamda[rr]);   //Lamda is reaction force (so multiply for -1 to get the force)
       }
-      
-      //            cout<< "rank "<< pcomm->rank() << " Stress_Homo after  =   "<<Stress_Homo_elem<<endl;
-      int Indices[6]={0, 1, 2, 3, 4, 5};
-      ierr = VecSetValues(Stress_Homo,6,Indices,&(Stress_Homo_elem.data())[0],ADD_VALUES); CHKERRQ(ierr);
+//            cout<< "rank "<< pcomm->rank() << " Stress_Homo after  =   "<<Stress_Homo_elem<<endl;
+      int Indices6[6]={0, 1, 2, 3, 4, 5};
+      int Indices3[3]={0, 1, 2};
+      switch(rank_field) {
+        case 3:
+          ierr = VecSetValues(Stress_Homo,6,Indices6,&(Stress_Homo_elem.data())[0],ADD_VALUES); CHKERRQ(ierr);
+          break;
+        case 1:
+          ierr = VecSetValues(Stress_Homo,3,Indices3,&(Stress_Homo_elem.data())[0],ADD_VALUES); CHKERRQ(ierr);
+          break;
+        default:
+          SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+      }
       PetscFunctionReturn(0);
     }
     
-    
-    
+  
     PetscErrorCode ElasticFE_RVELagrange_Homogenized_Stress_Traction::operator()() {
       PetscFunctionBegin;
-      //            cout<<"Hi from class ElasticFE_RVELagrange_Homogenized_Stress_Traction"<<endl;
+//      cout<<"Hi from class ElasticFE_RVELagrange_Homogenized_Stress_Traction"<<endl;
       ierr = GetN_and_Indices(); CHKERRQ(ierr); //It will be used from the Class ElasticFE_RVELagrange_Traction
       ierr = Get_H_mat();   //It will be used from the Class ElasticFE_RVELagrange_Traction
       ierr = Calculate_Homo_Stress(); CHKERRQ(ierr);
-      
       PetscFunctionReturn(0);
     }
     

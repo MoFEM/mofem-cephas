@@ -1,0 +1,68 @@
+Check before run
+================
+
+* Check where is your mesh file
+* Check what version of openmpi (or other MPI library) you are using
+
+
+How to run Example
+===========
+
+1) First run the potential flow problem, which will generate the fibre directions using 
+
+mpirun -np 1 ./potential_flow_all -my_file RVE.cub -ksp_type fgmres -ksp_gmres_restart 1000 -pc_type asm -sub_pc_type lu -ksp_monitor -my_order 1
+
+where 
+	-np 1 		->  run on one processor (can be increase accordingly)
+  	-my_order 1	->  using 1st order (can be increase if wish to use high order)
+
+Input
+	RVE.cub  -> input CUBIT mesh file with material parameters
+Output
+	solution1.h5m           -> input for consequent RVE_disp, RVE_trac and RVE_periodic problems
+	out_all_mesh.vtk 	-> full mesh including fibres and matrix
+	out_potential_flow 	-> All fibres with potential field
+	out_potential_flow1     -> fibres1 with potential field
+	out_potential_flow2     -> fibres2 with potential field
+	out_potential_flow3     -> fibres3 with potential field
+	out_potential_flow4     -> fibres4 with potential field
+
+
+2) To run the RVE using linear displacement boundary conditions use 
+
+mpirun -np 1 ./RVE_disp -my_file solution1.h5m -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0 
+ 
+where 
+	myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0  is an applied macro-strain as [Sig_xx, Sig_yy, Sig_zz, Sig_xy, Sig_xz, Sig_zy]
+
+Input
+	solution1.h5m is an input file generated from potential flow problem in step-1
+Output
+	out.vtk ->output with all potential and displacement field
+
+	and gives homogenised stress in the command line as 
+	Process [0]
+	86796.5
+	11483.7
+	13393.5
+	1638.5
+	-853.033
+	-523.879
+
+
+3) To run the RVE using traction boundary conditions use 
+
+mpirun -np 1 ./RVE_trac -my_file solution1.h5m -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0
+
+	same input and out put as given in linear displacement case
+
+
+
+3) To run the RVE using periodic boundary conditions use 
+
+mpirun -np 1 ./RVE_periodic -my_file solution1.h5m -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0
+
+	same input and out put as given in linear displacement case
+
+
+
