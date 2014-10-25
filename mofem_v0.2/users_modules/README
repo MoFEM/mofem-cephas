@@ -8,6 +8,7 @@ In each module you can have two type directory data,
 2) Extended data struture consist subdirectories,
 
   / <-- programs from which you build executable
+  -> /atom_tests
   -> /src <- hpp files
   -> /src/impl <- cpp files form library
   -> /meshes
