@@ -1,6 +1,6 @@
 #!/bin/sh
 
-if test -f /home/lukasz/tests.lock
+if test -f /home/lukasz/tests_cephas.lock
 then
   echo "lock"
 else
@@ -9,9 +9,9 @@ else
   CTEST_USER_MODULES_PATH=/home/lukasz/tmp/cephas_users_modules/users_modules/
   CTSET_SCRIPT=CTestScript_rdb-srv1_continous.cmake
   BUILD_DIR=/home/lukasz/tmp/cephas/build
-  touch /home/lukasz/tests.lock
+  touch /home/lukasz/tests_cephas.lock
   cd $CTEST_SCRIPTS_FILE_PATH
-  /usr/bin/ctest -VV --http1.0 -S $CTSET_SCRIPT >> /home/lukasz/tests.log 2>&1
+  /usr/bin/ctest -VV --http1.0 -S $CTSET_SCRIPT >> /home/lukasz/tests_cephas.log 2>&1
   if [ -f /home/lukasz/tmp/cephas/source/has_bin_build ]; then
     rm /home/lukasz/tmp/cephas/source/has_bin_build
     cd $BUILD_DIR
@@ -20,5 +20,5 @@ else
     $CTEST_USER_MODULES_PATH/scripts/run_cron_script.sh
   fi  
   cd $CWD
-  rm -v /home/lukasz/tests.lock
+  rm -v /home/lukasz/tests_cephas.lock
 fi
