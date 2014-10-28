@@ -878,19 +878,27 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(vector<string> &switche
     Range t0_faces_nodes;
     rval = mField.get_moab().get_connectivity(t0_faces,t0_faces_nodes,true); CHKERR_PETSC(rval);
     t0_faces_nodes = subtract(t0_faces_nodes,crack_edges_nodes);
-    t0_faces_nodes = subtract(t0_faces_nodes,mesh_level_tets_skin_nodes);
+    {
+      Range f0_nodes;
+      rval = mField.get_moab().get_connectivity(f0,f0_nodes,true); CHKERR_PETSC(rval);
+      f0_nodes = subtract(f0_nodes,crack_edges_nodes);
+      f0_nodes = subtract(mesh_level_tets_skin_nodes,f0_nodes);
+      f0_nodes.merge(corners_edges_nodes);
+      t0_faces_nodes = subtract(t0_faces_nodes,f0_nodes);
+    }
+
     Range t0_faces_nodes_tets;
     rval = mField.get_moab().get_adjacencies(
       t0_faces_nodes,3,false,t0_faces_nodes_tets,Interface::UNION); CHKERR_PETSC(rval);
     t0 = subtract(t0,t0_faces_nodes_tets);
 
-    if(verb >= 0) {
+    /*if(verb >= 0) {
       EntityHandle meshset_out;
       rval = mField.get_moab().create_meshset(MESHSET_SET,meshset_out); CHKERR_PETSC(rval);
       ierr = mField.get_moab().add_entities(meshset_out,t0); CHKERRQ(ierr);
       rval = mField.get_moab().write_file("debug_t0_tets.vtk","VTK","",&meshset_out,1); CHKERR_PETSC(rval);
       rval = mField.get_moab().delete_entities(&meshset_out,1); CHKERR_PETSC(rval);
-    }
+    }*/
 
     //consider tets with bad qualuty
     Range t0_corrected;
@@ -938,13 +946,13 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(vector<string> &switche
       rval = mField.get_moab().delete_entities(&meshset_out,1); CHKERR_PETSC(rval);
     }
 
-    rval = mField.get_moab().get_adjacencies(
+    /*rval = mField.get_moab().get_adjacencies(
      crack_surface_tris,3,false,t0,Interface::UNION); CHKERR_PETSC(rval);
     Range f1; // faces on skin without faces adjacent to crack front
     rval = mField.get_moab().get_adjacencies(
       t0,2,false,f1,Interface::UNION); CHKERR_PETSC(rval);
     f1 = intersect(f1,mesh_level_tets_skin);
-    f1 = subtract(f1,f0);
+    f1 = subtract(f1,f0);*/
 
     Range t1_side; // tets only on one side of crack surface
     int nb_t1_side;

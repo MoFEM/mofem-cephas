@@ -58,7 +58,7 @@ struct NonLinearInterfaceFEMethod: public InterfaceFEMethod {
   Tag th_damaged_prism;
 
   NonLinearInterfaceFEMethod(
-      FieldInterface& _mField,Mat &_Aij,Vec _X,Vec _F,
+      FieldInterface& _mField,Mat _Aij,Vec _X,Vec _F,
       double _young_modulus, double _h,double _beta,double _ft,double _Gf, string _field_name,
       interface_materials_context _int_mat_ctx = ctx_IntLinearSoftening): 
       InterfaceFEMethod(_mField,_Aij,_X,_F,_young_modulus,_field_name),
@@ -259,7 +259,7 @@ struct NonLinearInterfaceFEMethod: public InterfaceFEMethod {
 	  if(ColGlob[cc].size()==0) continue;
 	  if(RowGlob[rr].size()!=K(rr,cc).size1()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	  if(ColGlob[cc].size()!=K(rr,cc).size2()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-	  ierr = MatSetValues(*snes_B,RowGlob[rr].size(),&(RowGlob[rr])[0],ColGlob[cc].size(),&(ColGlob[cc])[0],&(K(rr,cc).data())[0],ADD_VALUES); CHKERRQ(ierr);
+	  ierr = MatSetValues(snes_B,RowGlob[rr].size(),&(RowGlob[rr])[0],ColGlob[cc].size(),&(ColGlob[cc])[0],&(K(rr,cc).data())[0],ADD_VALUES); CHKERRQ(ierr);
 	}
     }
     PetscFunctionReturn(0);
@@ -503,7 +503,7 @@ struct ArcLengthIntElemFEMethod: public FieldInterface::FEMethod {
 	//calculate diagonal therm
 	double diag = arc_ptr->beta*sqrt(arc_ptr->F_lambda2);
 	ierr = VecSetValue(GhostDiag,0,diag,INSERT_VALUES); CHKERRQ(ierr);
-	ierr = MatSetValue(*snes_B,arc_ptr->get_petsc_gloabl_dof_idx(),arc_ptr->get_petsc_gloabl_dof_idx(),1,ADD_VALUES); CHKERRQ(ierr);
+	ierr = MatSetValue(snes_B,arc_ptr->get_petsc_gloabl_dof_idx(),arc_ptr->get_petsc_gloabl_dof_idx(),1,ADD_VALUES); CHKERRQ(ierr);
       }
       break;
       default:
@@ -526,8 +526,8 @@ struct ArcLengthIntElemFEMethod: public FieldInterface::FEMethod {
 	arc_ptr->diag = *diag;
 	ierr = VecRestoreArray(GhostDiag,&diag); CHKERRQ(ierr);
 	PetscPrintf(PETSC_COMM_WORLD,"\tdiag = %6.4e\n",arc_ptr->diag);
-	ierr = MatAssemblyBegin(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-	ierr = MatAssemblyEnd(*snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatAssemblyBegin(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	ierr = MatAssemblyEnd(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
       }
       break;
       default:

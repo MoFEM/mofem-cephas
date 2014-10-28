@@ -320,7 +320,7 @@ int main(int argc, char *argv[]) {
   ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
-  //calculate residuals 
+  //calulate residuals 
   ufe.feVol.get_op_to_do_Lhs().clear();
   ufe.feVol.get_op_to_do_Rhs().clear();
 

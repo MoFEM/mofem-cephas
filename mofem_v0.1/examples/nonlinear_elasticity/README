@@ -1,0 +1,13 @@
+Check before run
+================
+
+* Check where is your mesh file
+* Check what verion of openmoi (or other MPI library) are you using
+
+Example run
+===========
+mpirun -np 4 ./nonlinear_elasticity -my_file LShapeCoarse.cub \
+  -ksp_type fgmres -pc_type asm -sub_pc_type lu -ksp_atol 1e-10 -ksp_rtol 1e-6 \
+  -snes_monitor -snes_type newtonls -snes_linesearch_type bt -snes_max_it 
+   -snes_atol 1e-8 -snes_rtol 1e-8 
+
