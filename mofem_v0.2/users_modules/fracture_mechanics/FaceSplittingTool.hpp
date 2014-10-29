@@ -108,6 +108,8 @@ struct FaceSplittingTools {
 
   #endif
 
+  //PestcErrorCode meshCut(Range &t1,Range &n1,int verb = 0);
+
 };
 
 
