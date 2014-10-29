@@ -3667,7 +3667,7 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
     ierr = VecDestroy(&D0); CHKERRQ(ierr);
     ierr = SNESDestroy(&snes); CHKERRQ(ierr);
 
-    double reduction = pow(2./(fmax(ii,3)-1),0.5);
+    double reduction = pow(2./(fmax(ii+1,3)-1),0.5);
     ierr = PetscPrintf(PETSC_COMM_WORLD,"\n* change of da = %6.4e (nb. sub-steps %d) \n\n",reduction,ii); CHKERRQ(ierr);
     da *= reduction;
     da = fmax(da,1e-1*da_0);
