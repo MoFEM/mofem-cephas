@@ -1497,7 +1497,7 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(vector<string> &switche
 
   }
 
-  if(verb>1) {
+  if(verb>10) {
     char tetgen_in_file_name[] = "in";
     in.save_nodes(tetgen_in_file_name);
     in.save_elements(tetgen_in_file_name);
@@ -1519,7 +1519,7 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(vector<string> &switche
   }
   tetgenio &out = tetGenData.back();
   //save elems
-  if(verb>1) {
+  if(verb>10) {
     char tetgen_out_file_name[] = "out";
     out.save_nodes(tetgen_out_file_name);
     out.save_elements(tetgen_out_file_name);
