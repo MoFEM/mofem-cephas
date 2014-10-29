@@ -3670,7 +3670,7 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
     double reduction = pow(2./(ii+1),0.5);
     ierr = PetscPrintf(PETSC_COMM_WORLD,"\n* change of da = %6.4e\n\n",reduction); CHKERRQ(ierr);
     da *= reduction;
-    da = fmax(da,1e-2*da_0);
+    da = fmax(da,1e-1*da_0);
 
     ierr = conf_prob.set_coordinates_from_material_solution(m_field,false); CHKERRQ(ierr);
 
