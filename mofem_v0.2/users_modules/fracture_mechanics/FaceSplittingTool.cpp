@@ -126,7 +126,7 @@ PetscErrorCode FaceSplittingTools::meshRefine(const int verb) {
     ierr = mField.seed_ref_level_3D(level_tets,BitRefLevel().set(BITREFLEVEL_SIZE-1)); CHKERRQ(ierr);
   }
 
-  if(verb>0) {
+  if(verb>10) {
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
     if(pcomm->rank()==0) {
       EntityHandle out_meshset;
@@ -225,7 +225,7 @@ PetscErrorCode FaceSplittingTools::splitFaces(const int verb) {
       tets_on_surface_faces = intersect(tets_on_surface_faces,interface_tris);
       
       if(pcomm->rank()>0) {
-	if(verb>3) {    
+	if(verb>10) {    
 	  EntityHandle out_meshset;
 	  rval = mField.get_moab().create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
 	  rval = mField.get_moab().add_entities(out_meshset,tets_on_surface); CHKERR_PETSC(rval);
@@ -300,7 +300,7 @@ PetscErrorCode FaceSplittingTools::splitFaces(const int verb) {
   BitRefLevel& bit_level0 = *ptr_bit_level0;
   bit_level0 = BitRefLevel().set(meshIntefaceBitLevels.back());
 
-  if(verb>0) {    
+  if(verb>10) {    
     if(pcomm->rank()==0) {
       EntityHandle out_meshset;
       rval = mField.get_moab().create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
@@ -701,7 +701,7 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(vector<string> &switche
     bzero(meshIntefaceBitLevels.ptr,(BITREFLEVEL_SIZE-1)*sizeof(int));
     meshRefineBitLevels.push_back(0);
 
-    if(verb>0) {
+    if(verb>10) {
 
       BitRefLevel last_ref = BitRefLevel().set(meshRefineBitLevels.back());
 
@@ -938,7 +938,7 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(vector<string> &switche
     }
     t0 = t0_corrected;
 
-    if(verb >= 0) {
+    if(verb >= 10) {
       EntityHandle meshset_out;
       rval = mField.get_moab().create_meshset(MESHSET_SET,meshset_out); CHKERR_PETSC(rval);
       ierr = mField.get_moab().add_entities(meshset_out,t0); CHKERRQ(ierr);
@@ -1167,7 +1167,7 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(vector<string> &switche
     f0_edges_nodes = subtract(f0_edges_nodes,corners_edges_nodes);
     nodes_on_new_surface = subtract(nodes_on_new_surface,f0_edges_nodes);
 
-    if(verb >= 0) {
+    if(verb >= 10) {
       EntityHandle meshset_out;
       rval = mField.get_moab().create_meshset(MESHSET_SET,meshset_out); CHKERR_PETSC(rval);
       ierr = mField.get_moab().add_entities(meshset_out,edges_to_split); CHKERRQ(ierr);
@@ -1223,7 +1223,7 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(vector<string> &switche
       rval = mField.get_moab().get_adjacencies(
 	mesh_level_tets_skin,1,false,mesh_level_tets_skin_edges,Interface::UNION); CHKERR_PETSC(rval);
 
-      if(verb>0) {
+      if(verb>10) {
 
 	BitRefLevel last_ref = BitRefLevel().set(meshRefineBitLevels.back());
 	EntityHandle meshset_out;
@@ -1310,7 +1310,7 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(vector<string> &switche
       /*if(crack_edges0!=crack_edges1)*/ {
 	//split faces
 	ierr = splitFaces(); CHKERRQ(ierr);
-	if(verb>0) {
+	if(verb>10) {
 	  BitRefLevel last_int_ref = BitRefLevel().set(meshIntefaceBitLevels.back());
 	  EntityHandle meshset_out;
 	  rval = mField.get_moab().create_meshset(MESHSET_SET,meshset_out); CHKERR_PETSC(rval);
@@ -1463,7 +1463,7 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(vector<string> &switche
     ents_to_tetgen.merge(region_tets_skin_without_boundary_edges);
     ents_to_tetgen.merge(region_tets_skin_boundary);
 
-    if(verb > 0) {
+    if(verb > 10) {
       BitRefLevel last_ref = BitRefLevel().set(meshRefineBitLevels.back());
       EntityHandle meshset_out;
       //0
@@ -1557,7 +1557,7 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(vector<string> &switche
     }
   }
 
-  if(verb>0) {
+  if(verb>10) {
 
     BitRefLevel last_ref = BitRefLevel().set(meshRefineBitLevels.back());
 
@@ -1585,7 +1585,7 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(vector<string> &switche
   //split faces
   ierr = splitFaces(2); CHKERRQ(ierr);
 
-  if(verb>0) {
+  if(verb>10) {
 
     BitRefLevel last_int_ref = BitRefLevel().set(meshIntefaceBitLevels.back());
 
