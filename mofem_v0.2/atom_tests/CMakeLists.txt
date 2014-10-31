@@ -593,5 +593,19 @@ if(ADOL-C_LIBRARY)
 
 endif(ADOL-C_LIBRARY)
 
+add_executable(node_merge node_merge.cpp)
+target_link_libraries(node_merge
+    mofem_interfaces
+    mofem_multi_indices
+    mofem_petsc
+    mofem_approx
+    mofem_cblas
+    mofem_third_party
+    ${PROJECT_LIBS})
+
+cm_export_file("../meshes/node_merge_test.cub" export_atom_tests)
+add_test(node_merge ${MPI_RUN} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/node_merge -my_file node_merge_test.cub)
+
 
 
