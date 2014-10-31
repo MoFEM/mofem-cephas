@@ -4,8 +4,8 @@ In each module you can have two type directory data,
   1) Simple
   2) Extended
 
-1) Simple ditectory structure consist no subdrectories.
-2) Extended data struture consist subdirectories,
+1) Simple ditectory structure consist no subdrectories. e.g. elasticity
+2) Extended data struture consist subdirectories, e.g. homogenisation
 
   / <-- programs from which you build executable
   -> /atom_tests

@@ -21,7 +21,7 @@
 #ifndef __POTENTIALFLOWFEMETHOD_HPP__
 #define __POTENTIALFLOWFEMETHOD_HPP__
 
-namespace MoFEM {
+namespace ObosleteUsersModules {
 
 struct LaplacianElem: public FEMethod_UpLevelStudent {
 
