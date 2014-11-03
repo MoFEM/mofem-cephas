@@ -3667,10 +3667,10 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
     ierr = VecDestroy(&D0); CHKERRQ(ierr);
     ierr = SNESDestroy(&snes); CHKERRQ(ierr);
 
-    double reduction = pow(2./(ii+1),0.5);
-    ierr = PetscPrintf(PETSC_COMM_WORLD,"\n* change of da = %6.4e\n\n",reduction); CHKERRQ(ierr);
+    double reduction = pow(2./(fmax(ii+1,3)-1),0.5);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"\n* change of da = %6.4e (nb. sub-steps %d) \n\n",reduction,ii); CHKERRQ(ierr);
     da *= reduction;
-    da = fmax(da,1e-2*da_0);
+    da = fmax(da,1e-1*da_0);
 
     ierr = conf_prob.set_coordinates_from_material_solution(m_field,false); CHKERRQ(ierr);
 
@@ -3761,7 +3761,7 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
 	vector<string> switches1;
 	if(pcomm->rank() == 0) {
 	  switches1.push_back("rp175sqRS0JVV");
-	  ierr = face_splitting_tools.rebuildMeshWithTetGen(switches1,3); CHKERRQ(ierr);	
+	  ierr = face_splitting_tools.rebuildMeshWithTetGen(switches1,0); CHKERRQ(ierr);	
 	} else {
 	  switches1.push_back("rp175sqRS0JQ");
 	  ierr = face_splitting_tools.rebuildMeshWithTetGen(switches1,0); CHKERRQ(ierr);	

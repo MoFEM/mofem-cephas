@@ -26,24 +26,7 @@
 #ifndef __LINEAR_DYNAMICS_ELASTICITY_HPP
 #define __LINEAR_DYNAMICS_ELASTICITY_HPP
 
-#include "FieldInterface.hpp"
-#include "FieldCore.hpp"
-#include "FEMethod_UpLevelStudent.hpp"
-#include "cholesky.hpp"
-#include <petscksp.h>
-
-#include "ElasticFEMethod.hpp"
-#include "PostProcVertexMethod.hpp"
-#include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
-
-#include "TsCtx.hpp"
-
-using namespace MoFEM;
-
-ErrorCode rval;
-PetscErrorCode ierr;
-
-namespace MoFEM {
+namespace ObosleteUsersModules {
 
 /** \brief FE method for elastic dynamics
   *
