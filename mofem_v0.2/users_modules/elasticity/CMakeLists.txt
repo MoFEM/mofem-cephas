@@ -29,6 +29,19 @@ target_link_libraries(elasticity
   mofem_cblas
   ${MoFEM_PROJECT_LIBS})
 
+add_executable(dynamics dynamics.cpp)
+target_link_libraries(dynamics
+  mofem_finite_element_library
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  users_modules_obsolete
+  mofem_approx
+  mofem_third_party
+  mofem_cblas
+  ${MoFEM_PROJECT_LIBS})
+
 cm_export_file("LShape.cub" export_files_elasticity)
 
 file(COPY
@@ -37,12 +50,21 @@ file(COPY
 
 #testing
 add_test(ElasticityTest 
-  ${MoFEM_MPI_RUN} -np 4 ${CMAKE_CURRENT_BINARY_DIR}/elasticity 
+  ${MoFEM_MPI_RUN} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/elasticity 
   -my_file LShape.cub 
   -ksp_type fgmres 
   -pc_type lu 
   -pc_factor_mat_solver_package mumps
   -ksp_monitor -log_summary)
 
+add_test(DynamicsTest
+  ${MoFEM_MPI_RUN} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/dynamics
+  -my_file LShape.cub
+  -ksp_type fgmres 
+  -pc_type asm -sub_pc_type lu -ksp_atol 1e-10 -ksp_rtol 1e-10 
+  -snes_monitor -snes_type newtonls -snes_linesearch_type basic 
+  -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 
+  -ts_monitor -ts_type alpha -ts_dt 0.1 -ts_final_time 1
+  -log_summary)
 
 

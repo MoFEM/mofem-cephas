@@ -23,11 +23,34 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#include "FEM.h"
-#include "ElasticFEMethodDynamics.hpp"
-#include "SurfacePressure.hpp"
-#include "NodalForce.hpp"
-#include "BodyForce.hpp"
+#include <MoFEM.hpp>
+using namespace MoFEM;
+
+#include <DirichletBC.hpp>
+
+#include <Projection10NodeCoordsOnField.hpp>
+
+#include <boost/numeric/ublas/vector_proxy.hpp>
+#include <boost/numeric/ublas/matrix.hpp>
+#include <boost/numeric/ublas/matrix_proxy.hpp>
+#include <boost/numeric/ublas/vector.hpp>
+
+#include <SurfacePressure.hpp>
+#include <NodalForce.hpp>
+#include <FluidPressure.hpp>
+#include <BodyForce.hpp>
+#include <ThermalStressElement.hpp>
+
+#include <FEMethod_LowLevelStudent.hpp>
+#include <FEMethod_UpLevelStudent.hpp>
+
+#include <PostProcVertexMethod.hpp>
+#include <PostProcDisplacementAndStrainOnRefindedMesh.hpp>
+
+#include <ElasticFEMethod.hpp>
+
+using namespace boost::numeric;
+using namespace ObosleteUsersModules;
 
 using namespace MoFEM;
 
