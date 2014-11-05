@@ -3527,7 +3527,7 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
   }
 
   if(step == 0) {
-    ierr = conf_prob.set_material_positions(m_field); CHKERRQ(ierr);
+    //ierr = conf_prob.set_material_positions(m_field); CHKERRQ(ierr);
   }
 
   Tag th_t_val;
@@ -3762,15 +3762,6 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
 	Range new_nodes;
 	ierr = face_splitting_tools.propagateBySplit(new_nodes,edges_to_cat,0); CHKERRQ(ierr);
 	ierr = face_splitting_tools.conerProblem(new_nodes,0); CHKERRQ(ierr);
-	edges_to_cat.clear();
-	ierr = face_splitting_tools.getCornerEdges(edges_to_cat,0);
-	if(edges_to_cat.size()>0) {
-	  new_nodes.clear();
-	  ierr = face_splitting_tools.propagateBySplit(new_nodes,edges_to_cat,0); CHKERRQ(ierr);
-	  if(new_nodes.size()>0) {
-	    ierr = face_splitting_tools.conerProblem(new_nodes,0); CHKERRQ(ierr);
-	  }
-	}
       }
 
       {
