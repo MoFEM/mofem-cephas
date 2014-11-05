@@ -115,7 +115,7 @@ struct UltraWeakTransportElement {
     PetscFunctionReturn(0);
   }
 
-  /** \brief data for calulation het conductivity and heat capacity elements
+  /** \brief data for evaluation of het conductivity and heat capacity elements
     * \infroup mofem_thermal_elem 
     */
   struct BlockData {

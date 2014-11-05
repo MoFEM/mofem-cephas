@@ -29,7 +29,6 @@ add_library(user_modules_homogenisation
   ${UM_SOURCE_DIR}/homogenisation/src/impl/ElasticFE_RVELagrange_Homogenized_Stress_Periodic.cpp
 )
 
-
 # ===================== Simple cube ============================================
 
 add_executable(Cube_Disp ${UM_SOURCE_DIR}/homogenisation/Cube_Disp.cpp)
@@ -148,4 +147,10 @@ target_link_libraries(Darceys_Flow
   mofem_finite_element_library mofem_finite_elements mofem_interfaces mofem_multi_indices mofem_petsc users_modules_obsolete user_modules_homogenisation
   mofem_approx mofem_third_party mofem_cblas ${MoFEM_PROJECT_LIBS})
 
+add_executable(Darceys_Capillary_and_Diffusion_Flow ${UM_SOURCE_DIR}/homogenisation/Darceys_Capillary_and_Diffusion_Flow.cpp)
+target_link_libraries(Darceys_Capillary_and_Diffusion_Flow
+  mofem_finite_element_library mofem_finite_elements mofem_interfaces mofem_multi_indices mofem_petsc users_modules_obsolete user_modules_homogenisation
+  mofem_approx mofem_third_party mofem_cblas ${MoFEM_PROJECT_LIBS})
+
+add_subdirectory(atom_tests)
 

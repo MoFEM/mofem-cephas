@@ -233,6 +233,22 @@ struct C_CONSTANT_AREA_FEMethod: public FEMethod {
       adj_side_elems.insert(*adj_tets_on_surface.begin());
     }
     if(adj_side_elems.size()!=1) {
+      adj_side_elems.clear();
+      ierr = mField.get_adjacencies(bit,&face,1,3,adj_side_elems,Interface::INTERSECT,5); CHKERRQ(ierr);
+      Range::iterator it = adj_side_elems.begin();
+      for(;it!=adj_side_elems.end();it++) {	
+	Range nodes;
+	rval = mField.get_moab().get_connectivity(&*it,1,nodes,true); CHKERR_PETSC(rval);
+	PetscPrintf(PETSC_COMM_WORLD,"%lu %lu %lu %lu\n",nodes[0],nodes[1],nodes[2],nodes[3]);
+      }
+      ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
+      if(pcomm->rank()==0) {
+	EntityHandle out_meshset;
+	rval = mField.get_moab().create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
+	rval = mField.get_moab().add_entities(out_meshset,adj_side_elems); CHKERR_PETSC(rval);
+	rval = mField.get_moab().add_entities(out_meshset,&face,1); CHKERR_PETSC(rval);
+	rval = mField.get_moab().write_file("debug_error.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
+      }
       SETERRQ1(PETSC_COMM_SELF,1,"expect 1 tet but is %u",adj_side_elems.size());
     }
     EntityHandle side_elem = *adj_side_elems.begin();

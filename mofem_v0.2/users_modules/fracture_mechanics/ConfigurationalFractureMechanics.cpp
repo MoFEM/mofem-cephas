@@ -2756,12 +2756,14 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   ierr = SNESSolve(*snes,PETSC_NULL,D); CHKERRQ(ierr);
   int its;
   ierr = SNESGetIterationNumber(*snes,&its); CHKERRQ(ierr);
-  ierr = PetscPrintf(PETSC_COMM_WORLD,"number of Newton iterations = %D\n",its); CHKERRQ(ierr);
+  total_its = its;
   ierr = SNESGetConvergedReason(*snes,&reason); CHKERRQ(ierr);
   if(reason < 0) {
     ierr = SNESLineSearchSetType(linesearch,SNESLINESEARCHL2); CHKERRQ(ierr);
     ierr = SNESSetConvergenceTest(*snes,MySnesConvernceTest_SNESLINESEARCHL2,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
     ierr = SNESSolve(*snes,PETSC_NULL,D); CHKERRQ(ierr);
+    ierr = SNESGetIterationNumber(*snes,&its); CHKERRQ(ierr);
+    total_its += its;
     ierr = SNESGetConvergedReason(*snes,&reason); CHKERRQ(ierr);
     int its;
     ierr = SNESGetIterationNumber(*snes,&its); CHKERRQ(ierr);
@@ -2776,10 +2778,9 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
 	ierr = SNESLineSearchSetType(linesearch,SNESLINESEARCHL2); CHKERRQ(ierr);
 	ierr = SNESSetConvergenceTest(*snes,MySnesConvernceTest_SNESLINESEARCHL2,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
 	ierr = SNESSolve(*snes,PETSC_NULL,D); CHKERRQ(ierr);
-	ierr = SNESGetConvergedReason(*snes,&reason); CHKERRQ(ierr);
-	int its;
 	ierr = SNESGetIterationNumber(*snes,&its); CHKERRQ(ierr);
-	ierr = PetscPrintf(PETSC_COMM_WORLD,"number of Newton iterations = %D\n",its); CHKERRQ(ierr);
+	total_its += its;
+	ierr = SNESGetConvergedReason(*snes,&reason); CHKERRQ(ierr);
 	if(reason < 0) {
 	  ierr = m_field.set_global_VecCreateGhost("COUPLED_PROBLEM",COL,D0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 	  ierr = VecCopy(D0,D); CHKERRQ(ierr);
@@ -3594,9 +3595,7 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
     for(;ii<nb_sub_steps;ii++) {
       ierr = PetscPrintf(PETSC_COMM_WORLD,"\n* number of substeps = %D _da_ = %6.4e\n\n",ii,_da_); CHKERRQ(ierr);
       ierr = conf_prob.solve_coupled_problem(m_field,&snes,_da_); CHKERRQ(ierr);
-      int its;
-      ierr = SNESGetIterationNumber(snes,&its); CHKERRQ(ierr);
-      if(its == 0) break;
+      if(conf_prob.total_its == 0) break;
       SNESConvergedReason reason;
       ierr = SNESGetConvergedReason(snes,&reason); CHKERRQ(ierr);
       if(reason > 0) {
@@ -3606,7 +3605,7 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
 	      its_d = 5;
 	    }
 	    double gamma = 0.5,reduction = 1;
-	    reduction = pow((double)its_d/(double)(its+1),gamma);
+	    reduction = pow((double)its_d/(double)(conf_prob.total_its+1),gamma);
 	    const double max_da_reduction = 10;
 	    if(reduction<1 || da < max_da_reduction*da_0) {
 	      ierr = PetscPrintf(PETSC_COMM_WORLD,"\n* change of da = %6.4e\n\n",reduction); CHKERRQ(ierr);
@@ -3668,10 +3667,10 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
     ierr = VecDestroy(&D0); CHKERRQ(ierr);
     ierr = SNESDestroy(&snes); CHKERRQ(ierr);
 
-    double reduction = pow(2./(ii+1),0.5);
-    ierr = PetscPrintf(PETSC_COMM_WORLD,"\n* change of da = %6.4e\n\n",reduction); CHKERRQ(ierr);
+    double reduction = pow(2./(fmax(ii+1,3)-1),0.5);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"\n* change of da = %6.4e (nb. sub-steps %d) \n\n",reduction,ii); CHKERRQ(ierr);
     da *= reduction;
-    da = fmax(da,1e-2*da_0);
+    da = fmax(da,1e-1*da_0);
 
     ierr = conf_prob.set_coordinates_from_material_solution(m_field,false); CHKERRQ(ierr);
 
@@ -3762,7 +3761,7 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
 	vector<string> switches1;
 	if(pcomm->rank() == 0) {
 	  switches1.push_back("rp175sqRS0JVV");
-	  ierr = face_splitting_tools.rebuildMeshWithTetGen(switches1,3); CHKERRQ(ierr);	
+	  ierr = face_splitting_tools.rebuildMeshWithTetGen(switches1,0); CHKERRQ(ierr);	
 	} else {
 	  switches1.push_back("rp175sqRS0JQ");
 	  ierr = face_splitting_tools.rebuildMeshWithTetGen(switches1,0); CHKERRQ(ierr);	

@@ -5,8 +5,9 @@ add_subdirectory(ultraweak)
 
 # Obsolete
 
-include_directories(${MoFEM_PROJECT_SOURCE_DIR}/users_modules/obsolete)
-include_directories(${MoFEM_PROJECT_SOURCE_DIR}/users_modules/obsolete/c)
+include_directories(${UM_SOURCE_DIR}/obsolete)
+include_directories(${UM_SOURCE_DIR}/obsolete/c)
+include_directories(${UM_SOURCE_DIR}/obsolete/c_impl)
 
 add_library(users_modules_obsolete
   ${UM_SOURCE_DIR}/obsolete/impl/ArcLengthTools.cpp
@@ -22,6 +23,7 @@ add_library(complex_for_lazy_obsolete
   ${UM_SOURCE_DIR}/obsolete/c_impl/complex_for_lazy.c
 )
 
+add_subdirectory(atom_tests)
 add_subdirectory(elasticity)
 add_subdirectory(arc_length_nonlinear_elasticity)
 add_subdirectory(fracture_mechanics)

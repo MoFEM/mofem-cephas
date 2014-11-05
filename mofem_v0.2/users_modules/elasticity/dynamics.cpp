@@ -23,11 +23,35 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#include "FEM.h"
-#include "ElasticFEMethodDynamics.hpp"
-#include "SurfacePressure.hpp"
-#include "NodalForce.hpp"
-#include "BodyForce.hpp"
+#include <MoFEM.hpp>
+using namespace MoFEM;
+
+#include <DirichletBC.hpp>
+
+#include <Projection10NodeCoordsOnField.hpp>
+
+#include <boost/numeric/ublas/vector_proxy.hpp>
+#include <boost/numeric/ublas/matrix.hpp>
+#include <boost/numeric/ublas/matrix_proxy.hpp>
+#include <boost/numeric/ublas/vector.hpp>
+
+#include <SurfacePressure.hpp>
+#include <NodalForce.hpp>
+#include <FluidPressure.hpp>
+#include <BodyForce.hpp>
+#include <ThermalStressElement.hpp>
+
+#include <FEMethod_LowLevelStudent.hpp>
+#include <FEMethod_UpLevelStudent.hpp>
+
+#include <PostProcVertexMethod.hpp>
+#include <PostProcDisplacementAndStrainOnRefindedMesh.hpp>
+
+#include <ElasticFEMethod.hpp>
+#include <ElasticFEMethodDynamics.hpp>
+
+using namespace boost::numeric;
+using namespace ObosleteUsersModules;
 
 using namespace MoFEM;
 
@@ -35,7 +59,7 @@ static char help[] = "...\n\n";
 
 struct TimeForceScale: public MethodsForOp {
 
-  PetscErrorCode scaleNf(const FieldInterface::FEMethod *fe,ublas::vector<FieldData> &Nf) {
+  PetscErrorCode scaleNf(const FEMethod *fe,ublas::vector<FieldData> &Nf) {
     PetscFunctionBegin;
 
     double ts_t = fe->ts_t;
@@ -54,9 +78,13 @@ struct TimeForceScale: public MethodsForOp {
 
 int main(int argc, char *argv[]) {
 
+
+  ErrorCode rval;
+  PetscErrorCode ierr;
+
   PetscInitialize(&argc,&argv,(char *)0,help);
 
-  Core mb_instance;
+  moab::Core mb_instance;
   Interface& moab = mb_instance;
   int rank;
   MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
@@ -76,14 +104,8 @@ int main(int argc, char *argv[]) {
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
-  //We need that for code profiling
-  PetscLogDouble t1,t2;
-  PetscLogDouble v1,v2;
-  ierr = PetscTime(&v1); CHKERRQ(ierr);
-  ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
-
   //Create MoFEM (Joseph) database
-  FieldCore core(moab);
+  MoFEM::Core core(moab);
   FieldInterface& mField = core;
 
   //ref meshset ref level 0
@@ -283,7 +305,7 @@ int main(int argc, char *argv[]) {
 
   };
 
-  struct UpdateAndControl: public FieldInterface::FEMethod {
+  struct UpdateAndControl: public FEMethod {
 
     TS tS;
     int jacobianLag;
@@ -441,12 +463,6 @@ int main(int argc, char *argv[]) {
   ierr = VecDestroy(&D); CHKERRQ(ierr);
   ierr = VecDestroy(&F); CHKERRQ(ierr);
   ierr = TSDestroy(&ts);CHKERRQ(ierr);
-
-  ierr = PetscTime(&v2);CHKERRQ(ierr);
-  ierr = PetscGetCPUTime(&t2);CHKERRQ(ierr);
-
-  PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Total Rank %d Time = %f CPU Time = %f\n",pcomm->rank(),v2-v1,t2-t1);
-  PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT);
 
   PetscFinalize();
 

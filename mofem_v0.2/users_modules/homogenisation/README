@@ -76,7 +76,8 @@ make && mpirun -np 1 ./RVE_diffusion_and_capillary -my_file ../users_modules/hom
 
 
 
-
-
+copy out put files to symlink on Desktop
+-------------------------------------------------------------
+cp out.vtk ../../../mnt/home/Desktop/symlink
 
 
