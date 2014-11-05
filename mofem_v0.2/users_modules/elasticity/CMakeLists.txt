@@ -29,7 +29,7 @@ target_link_libraries(elasticity
   mofem_cblas
   ${MoFEM_PROJECT_LIBS})
 
-add_executable(dynamics dynamics.cpp)
+add_executable(dynamics ${UM_SOURCE_DIR}/elasticity/dynamics.cpp)
 target_link_libraries(dynamics
   mofem_finite_element_library
   mofem_finite_elements
