@@ -131,3 +131,21 @@ target_link_libraries(MoistureTrans_Periodic
   mofem_finite_element_library mofem_finite_elements mofem_interfaces mofem_multi_indices mofem_petsc users_modules_obsolete user_modules_homogenisation
   mofem_approx mofem_third_party mofem_cblas ${MoFEM_PROJECT_LIBS})
 
+# ===================== Coupled Mechanical and moisture transport ============================================
+add_executable(Coupled_Mech_MoistureTrans_Staggered ${UM_SOURCE_DIR}/homogenisation/Coupled_Mech_MoistureTrans_Staggered.cpp)
+target_link_libraries(Coupled_Mech_MoistureTrans_Staggered
+  mofem_finite_element_library mofem_finite_elements mofem_interfaces mofem_multi_indices mofem_petsc users_modules_obsolete user_modules_homogenisation
+  mofem_approx mofem_third_party mofem_cblas ${MoFEM_PROJECT_LIBS})
+
+add_executable(Coupled_Mech_MoistureTrans ${UM_SOURCE_DIR}/homogenisation/Coupled_Mech_MoistureTrans.cpp)
+target_link_libraries(Coupled_Mech_MoistureTrans
+  mofem_finite_element_library mofem_finite_elements mofem_interfaces mofem_multi_indices mofem_petsc users_modules_obsolete user_modules_homogenisation
+  mofem_approx mofem_third_party mofem_cblas ${MoFEM_PROJECT_LIBS})
+
+# ===================== Darceys Flow ============================================
+add_executable(Darceys_Flow ${UM_SOURCE_DIR}/homogenisation/Darceys_Flow.cpp)
+target_link_libraries(Darceys_Flow
+  mofem_finite_element_library mofem_finite_elements mofem_interfaces mofem_multi_indices mofem_petsc users_modules_obsolete user_modules_homogenisation
+  mofem_approx mofem_third_party mofem_cblas ${MoFEM_PROJECT_LIBS})
+
+
