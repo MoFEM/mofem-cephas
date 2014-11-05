@@ -41,6 +41,9 @@ struct Core:
   Core(Interface& _moab,int _verbose = 1);
   ~Core();
 
+  Tag get_th_RefParentHandle() { return th_RefParentHandle; }
+  Tag get_th_RefBitLevel() { return th_RefBitLevel; }
+
   private:
 
   boost::ptr_map<unsigned long,FieldUnknownInterface *> iFaces;

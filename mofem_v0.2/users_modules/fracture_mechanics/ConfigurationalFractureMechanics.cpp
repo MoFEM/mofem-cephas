@@ -2079,6 +2079,7 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& m_fi
     }
     if(dd != 6) SETERRQ1(PETSC_COMM_SELF,1,"can not find griffith force vector at node %ld",diit->get_ent());
     double j = norm_2(material_force)/(norm_2(griffith_force)/gc);
+    j = copysign(j,g_val);
     map_ent_j[ent] = j;
     if(diit->get_part()==pcomm->rank()) {
       ierr = VecSetValue(JVec,diit->get_petsc_gloabl_dof_idx(),j,INSERT_VALUES); CHKERRQ(ierr);
@@ -3754,6 +3755,24 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
     PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT);
 
     #ifdef WITH_TETGEN
+
+      {
+	Range edges_to_cat;
+	ierr = face_splitting_tools.getCornerEdges(edges_to_cat,10);
+	Range new_nodes;
+	ierr = face_splitting_tools.propagateBySplit(new_nodes,edges_to_cat,10); CHKERRQ(ierr);
+	ierr = face_splitting_tools.conerProblem(new_nodes,10); CHKERRQ(ierr);
+	edges_to_cat.clear();
+	ierr = face_splitting_tools.getCornerEdges(edges_to_cat,10);
+	if(edges_to_cat.size()>0) {
+	  new_nodes.clear();
+	  ierr = face_splitting_tools.propagateBySplit(new_nodes,edges_to_cat,10); CHKERRQ(ierr);
+	  if(new_nodes.size()>0) {
+	    ierr = face_splitting_tools.conerProblem(new_nodes,10); CHKERRQ(ierr);
+	  }
+	}
+      }
+
       {
 	face_splitting_tools.moabTetGenMap.clear();
 	face_splitting_tools.tetGenMoabMap.clear();
@@ -3768,38 +3787,6 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
 	}
       }
       bit_level0 = BitRefLevel().set(face_splitting_tools.meshIntefaceBitLevels.back());
-      /*{
-	Range SurfacesFaces;
-	ierr = m_field.get_Cubit_msId_entities_by_dimension(102,SIDESET,2,SurfacesFaces,true); CHKERRQ(ierr);
-	Range CrackSurfacesFaces;
-	ierr = m_field.get_Cubit_msId_entities_by_dimension(200,SIDESET,2,CrackSurfacesFaces,true); CHKERRQ(ierr);
-	for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,SIDESET,it)) {
-	  int msId = it->get_msId();
-	  if((msId < 10200)||(msId >= 10300)) continue;
-	  Range SurfacesFaces_msId;
-	  ierr = m_field.get_Cubit_msId_entities_by_dimension(msId,SIDESET,2,SurfacesFaces_msId,true); CHKERRQ(ierr);
-	  SurfacesFaces.insert(SurfacesFaces_msId.begin(),SurfacesFaces_msId.end());
-	}
-
-	Range level_tris;
-	ierr = m_field.get_entities_by_type_and_ref_level(bit_level0,BitRefLevel().set(),MBTRI,level_tris); CHKERRQ(ierr);
-	SurfacesFaces = intersect(SurfacesFaces,level_tris);
-
-	EntityHandle out_meshset;
-	rval = m_field.get_moab().create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
-	rval = m_field.get_moab().add_entities(out_meshset,SurfacesFaces); CHKERR_PETSC(rval);
-	rval = m_field.get_moab().add_entities(out_meshset,CrackSurfacesFaces); CHKERR_PETSC(rval);
-
-	ostringstream ss1;
-	ss1 << "after_rebuild_surfaceA_" << step << ".vtk";
-	rval = m_field.get_moab().write_file(ss1.str().c_str(),"VTK","",&out_meshset,1); CHKERR_PETSC(rval);
-
-	rval = m_field.get_moab().add_entities(out_meshset,level_tris); CHKERR_PETSC(rval);
-	ostringstream ss2;
-	ss2 << "after_rebuild_surfaceB_" << step << ".vtk";
-	rval = m_field.get_moab().write_file(ss2.str().c_str(),"VTK","",&out_meshset,1); CHKERR_PETSC(rval);
-	rval = m_field.get_moab().delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
-      }*/
 
       //retart analysis
       ierr = main_arc_length_restart(m_field,conf_prob); CHKERRQ(ierr);

@@ -4661,7 +4661,7 @@ PetscErrorCode Core::delete_ents_by_bit_ref(const BitRefLevel &bit,const BitRefL
   }
   //delete entities form moab
   for(int dd = 3;dd>=0;dd--) {
-    rval = moab.delete_entities(ents_to_delete.subset_by_dimension(dd)); CHKERR_PETSC(rval);
+    rval = moab.delete_entities(ents_to_delete.subset_by_dimension(dd)); //CHKERR_PETSC(rval);
   }
   PetscFunctionReturn(0);
 }
