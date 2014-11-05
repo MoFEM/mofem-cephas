@@ -1369,11 +1369,9 @@ PetscErrorCode FaceSplittingTools::getCornerEdges(Range &edges_to_cat,int verb) 
     int freez = 0;
     rval = mField.get_moab().tag_get_data(th_freez,&*nit,1,&freez); CHKERR_PETSC(rval);
     if(freez != 0) {
-      cerr << "AAAAAAAAAAAAAAAAAAAAAAAAAAA " << *nit << endl;
       nit = crack_edges_nodes_on_skin.erase(nit);
     }
   }
-  cerr << crack_edges_nodes_on_skin << endl;
 
   if(crack_edges_nodes_on_skin.empty()) {
     PetscFunctionReturn(0);
