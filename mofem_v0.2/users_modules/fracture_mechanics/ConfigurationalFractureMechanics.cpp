@@ -3595,7 +3595,7 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
     conf_prob.freeze_all_but_one = false;
     double _da_ = (aa == 0) ? 0 : da;
     int ii = 0;
-    for(;ii<nb_sub_steps;ii++) {
+    /*for(;ii<nb_sub_steps;ii++) {
       ierr = PetscPrintf(PETSC_COMM_WORLD,"\n* number of substeps = %D _da_ = %6.4e\n\n",ii,_da_); CHKERRQ(ierr);
       ierr = conf_prob.solve_coupled_problem(m_field,&snes,_da_); CHKERRQ(ierr);
       if(conf_prob.total_its == 0) break;
@@ -3666,7 +3666,7 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
 	}
       }
 
-    }
+    }*/
     ierr = VecDestroy(&D0); CHKERRQ(ierr);
     ierr = SNESDestroy(&snes); CHKERRQ(ierr);
 
@@ -3771,7 +3771,7 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
 	  ierr = face_splitting_tools.rebuildMeshWithTetGen(switches1,0); CHKERRQ(ierr);	
 	}
 	Range edges_to_cat;
-	ierr = face_splitting_tools.getCornerEdges(edges_to_cat,0);
+	ierr = face_splitting_tools.getCornerEdges(edges_to_cat,0); CHKERRQ(ierr);
 	if(edges_to_cat.size()>0) {
 	  Range new_nodes;
 	  ierr = face_splitting_tools.propagateBySplit(new_nodes,edges_to_cat,0); CHKERRQ(ierr);

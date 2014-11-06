@@ -1323,8 +1323,10 @@ PetscErrorCode FaceSplittingTools::getCornerEdges(Range &edges_to_cat,int verb) 
   //corner edges and nodes
   Range corners_edges;
   ierr = mField.get_Cubit_msId_entities_by_dimension(100,SIDESET,1,corners_edges,true); CHKERRQ(ierr);
+  corners_edges = intersect(corners_edges,mesh_level_edges);
   Range surfaces;
   ierr = mField.get_Cubit_msId_entities_by_dimension(102,SIDESET,2,surfaces,true); CHKERRQ(ierr);
+  surfaces = intersect(surfaces,mesh_level_tris);
   map<int,Range> surfaces_edges_map;
   rval = skin.find_skin(0,surfaces,false,surfaces_edges_map[102]); CHKERR_PETSC(rval);
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SIDESET,it)) {
@@ -1333,6 +1335,7 @@ PetscErrorCode FaceSplittingTools::getCornerEdges(Range &edges_to_cat,int verb) 
     EntityHandle meshset = it->get_meshset();
     surfaces.clear();
     rval = mField.get_moab().get_entities_by_type(meshset,MBTRI,surfaces,true); CHKERR_PETSC(rval);
+    surfaces = intersect(surfaces,mesh_level_tris);
     rval = skin.find_skin(0,surfaces,false,surfaces_edges_map[msId]); CHKERR_PETSC(rval);
   }
   for(map<int,Range>::iterator mit = surfaces_edges_map.begin();mit!=surfaces_edges_map.end();mit++) {
