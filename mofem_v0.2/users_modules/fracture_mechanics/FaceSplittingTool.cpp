@@ -1307,12 +1307,18 @@ PetscErrorCode FaceSplittingTools::getCornerEdges(Range &edges_to_cat,int verb) 
   //crack surfaces
   Range crack_surface_tris;
   ierr = mField.get_Cubit_msId_entities_by_dimension(200,SIDESET,2,crack_surface_tris,true); CHKERRQ(ierr);
+  crack_surface_tris = intersect(crack_surface_tris,mesh_level_tris);
   Range crack_surface_skin;
   rval = skin.find_skin(0,crack_surface_tris,false,crack_surface_skin); CHKERR(rval);
   Range crack_surface_tris_edges;
   rval = mField.get_moab().get_adjacencies(
     crack_surface_tris,1,false,crack_surface_tris_edges,Interface::UNION); CHKERR_PETSC(rval);
-  crack_surface_tris = intersect(crack_surface_tris,mesh_level_tris);
+  Range crack_surface_tris_nodes;
+  rval = mField.get_moab().get_connectivity(crack_surface_tris,crack_surface_tris_nodes,true); CHKERR_PETSC(rval);
+  crack_surface_tris_nodes = subtract(crack_surface_tris_nodes,crack_edges_nodes);
+  Range crack_surface_tris_nodes_tets;
+  rval = mField.get_moab().get_adjacencies(
+    crack_surface_tris_nodes,3,false,crack_surface_tris_nodes_tets,Interface::UNION); CHKERR_PETSC(rval);
 
   //corner edges and nodes
   Range corners_edges;
@@ -1372,6 +1378,7 @@ PetscErrorCode FaceSplittingTools::getCornerEdges(Range &edges_to_cat,int verb) 
     rval = mField.get_moab().get_adjacencies(
       &*nit,1,3,false,nit_tets,Interface::UNION); CHKERR_PETSC(rval);
     nit_tets = intersect(nit_tets,mesh_level_tets);
+    nit_tets = subtract(nit_tets,crack_surface_tris_nodes_tets);
     Range nit_tets_edges;
     rval = mField.get_moab().get_adjacencies(
       nit_tets,1,false,nit_tets_edges,Interface::UNION); CHKERR_PETSC(rval);
