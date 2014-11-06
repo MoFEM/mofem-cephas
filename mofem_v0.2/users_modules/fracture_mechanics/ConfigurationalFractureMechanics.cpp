@@ -3771,7 +3771,7 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
 	  ierr = face_splitting_tools.rebuildMeshWithTetGen(switches1,0); CHKERRQ(ierr);	
 	}
 	Range edges_to_cat;
-	ierr = face_splitting_tools.getCornerEdges(edges_to_cat,0);
+	ierr = face_splitting_tools.getCornerEdges(edges_to_cat,0); CHKERRQ(ierr);
 	if(edges_to_cat.size()>0) {
 	  Range new_nodes;
 	  ierr = face_splitting_tools.propagateBySplit(new_nodes,edges_to_cat,0); CHKERRQ(ierr);
