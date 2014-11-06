@@ -1,0 +1,27 @@
+reset
+
+brick x 1 y 1 z 0.5
+
+create temperature  on surface 4  value 0
+create temperature  on surface 6  value 100
+
+block 1 volume 1  
+block 1 name 'MAT_MOISTURE' 
+block 1 attribute count 3
+block 1 attribute index 1 1  #Diffusivity
+block 1 attribute index 2 1  #Viscosity
+block 1 attribute index 3 1  #Permeability
+
+volume all scheme Tetmesh 
+volume all size auto factor 10
+mesh volume all 
+ 
+save as "/Users/zahur/Documents/Post-Doc Data/Analysis/Meshes/moisture/simple_moisture_problem.cub" overwrite
+
+
+
+
+
+
+
+
