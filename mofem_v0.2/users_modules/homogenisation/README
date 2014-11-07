@@ -68,9 +68,9 @@ Simple Darceys Flow Problem
 make && mpirun -np 1 ./Darceys_Flow -my_file ../users_modules/homogenisation/meshes/Darceys_simple.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor   -my_order 1
 
 
-RVE with both capillary and diffusion transport
+RVE with both capillary (for fibres) and diffusion (for matrix) transport
 =======================================================
-make && mpirun -np 1 ./RVE_diffusion_and_capillary -my_file ../users_modules/homogenisation/meshes/Darceys_and_Diffusion.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1 -myapplied_ConGrad 1.0,0.0,0.0 -myapplied_PressGrad 1.0,0.0,0.0
+make && mpirun -np 1 ./Darceys_Capillary_and_Diffusion_Flow -my_file ../users_modules/homogenisation/meshes/Darceys_and_Diffusion.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1 -myapplied_ConGrad 1.0,0.0,0.0 -myapplied_PressGrad 1.0,0.0,0.0
 
 
 

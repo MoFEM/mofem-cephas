@@ -1,7 +1,7 @@
 #!python
 cubit.cmd('new')
 
-autofactor=8; 
+autofactor=10; 
 cubit.cmd('brick x 1 y 1 z 1')
 cubit.cmd('brick x 1 y 0.4 z 0.4')
 
@@ -52,11 +52,16 @@ str1='volume all size auto factor '+str(autofactor); cubit.cmd(str1)
 cubit.cmd('volume all scheme tetmesh')  
 cubit.cmd('mesh volume all')  
 
-cubit.cmd('sideset 101 surface 20 10 19 18')  # all -ve boundary surfaces  
-cubit.cmd('sideset 102 surface 21 17 22 12')  # all +ve boundary surfaces  
-cubit.cmd('sideset 103 surface 20 10 19 18 21 17 22 12')  # all boundary surfaces  
+#cubit.cmd('sideset 101 surface 20 10 19 18')  # all -ve boundary surfaces  
+#cubit.cmd('sideset 102 surface 21 17 22 12')  # all +ve boundary surfaces  
+#cubit.cmd('sideset 103 surface 20 10 19 18 21 17 22 12')  # all boundary surfaces  
 
-cubit.cmd('save as "/Users/zahur/Documents/Post-Doc Data/Analysis/Meshes/moisture/diffusion_and_darceys.cub" overwrite')
+cubit.cmd('sideset 101 surface 10 12')  # all boundary surface for fibres  
+cubit.cmd('sideset 102 surface 17 18 19 20 21 22')  # all boundary surface for matrix  
+
+cubit.cmd('save as "/Users/zahur/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/homogenisation/meshes/Darceys_and_Diffusion.cub" overwrite')
+
+
 
 
 
