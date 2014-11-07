@@ -2577,7 +2577,7 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   //meshs moothing
   MyMeshSmoothingFEMethod smoother(m_field);
   ierr = smoother.initCrackFrontData(m_field); CHKERRQ(ierr);
-  set_qual_ver(0);
+  set_qual_ver(3);
   //constrains
   SnesConstrainSurfacGeometry constrain_body_surface(m_field,"LAMBDA_SURFACE");
   constrain_body_surface.nonlinear = true;
