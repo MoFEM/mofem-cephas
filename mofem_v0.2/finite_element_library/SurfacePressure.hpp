@@ -191,7 +191,7 @@ struct NeummanForcesSurface {
 	  } else {
 	    force = dAta.data.data.value1*getNormal()[rr];
 	  }
-	  cblas_daxpy(nb_row_dofs,val*force,&data.getN()(gg,0),1,&Nf[rr],rank);
+	  cblas_daxpy(nb_row_dofs,0.5*val*force,&data.getN()(gg,0),1,&Nf[rr],rank);
 
 	}
 
