@@ -44,9 +44,10 @@ enum MoFEMInterfaces {
   BASIC_METHOD = 1<<2|1<<3|1<<4,
   FE_METHOD = 1<<2|1<<3|1<<4|1<<5,
   ENT_METHOD = 1<<2|1<<3|1<<4|1<<6,
-  //Inepemdent Interfaces
+  //Independet Interfaces
   TETGEN_INTERFACE = 1<<3|1<<4,
-  NETGEN_INTERFACE = 1<<3|1<<5
+  NETGEN_INTERFACE = 1<<3|1<<5,
+  NODEMERGER_INTERFACE = 1<<3|1<<6
 };
 
 /** \brief Error handling

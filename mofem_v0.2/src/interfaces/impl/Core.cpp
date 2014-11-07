@@ -53,6 +53,8 @@
   #include <NetGenInterface.hpp>
 #endif
 
+#include <NodeMerger.hpp>
+
 namespace MoFEM {
 
 const static int debug = 1;
@@ -113,6 +115,15 @@ PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr)
     PetscFunctionReturn(0);
   }
   #endif
+
+  //Node merger
+  if(type == typeid(NodeMergerInterface)) {
+    if(iFaces.find(IDD_MOFENNodeMerger.uUId.to_ulong()) == iFaces.end()) {
+      iFaces[IDD_MOFENNodeMerger.uUId.to_ulong()] = new NodeMergerInterface(*this);
+    }
+    ptr = iFaces.at(IDD_MOFENNodeMerger.uUId.to_ulong());
+    PetscFunctionReturn(0);
+  } 
 
   if(type == typeid(MeshRefinment)) {
     ptr = static_cast<MeshRefinment*>(this);

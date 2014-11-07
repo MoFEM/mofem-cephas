@@ -25,6 +25,7 @@ set(MOFEM_INTERFACES_SRC
   impl/MeshRefinmentCore.cpp
   impl/PrismInterfaceCore.cpp
   impl/SeriesRecorderCore.cpp
+  impl/NodeMerger.cpp
 )
 
 if(TETGEN_LIBRARY) 
