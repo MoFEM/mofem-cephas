@@ -28,4 +28,5 @@ add_subdirectory(elasticity)
 add_subdirectory(arc_length_nonlinear_elasticity)
 add_subdirectory(fracture_mechanics)
 add_subdirectory(homogenisation)
+add_subdirectory(analytical_dirihlet_boundary_conditions)
 
