@@ -114,6 +114,7 @@ int main(int argc, char *argv[]) {
   ThermalElement thermal_elements(m_field);
   ierr = thermal_elements.addThermalElements("THERMAL_PROBLEM","TEMP"); CHKERRQ(ierr);
   ierr = thermal_elements.addThermalFluxElement("THERMAL_PROBLEM","TEMP"); CHKERRQ(ierr);
+  ierr = thermal_elements.addThermalConvectionElement("THERMAL_PROBLEM","TEMP"); CHKERRQ(ierr);
 
   /****/
   //build database
@@ -148,6 +149,8 @@ int main(int argc, char *argv[]) {
   ierr = thermal_elements.setThermalFiniteElementRhsOperators("TEMP",F); CHKERRQ(ierr);
   ierr = thermal_elements.setThermalFiniteElementLhsOperators("TEMP",A); CHKERRQ(ierr);
   ierr = thermal_elements.setThermalFluxFiniteElementRhsOperators("TEMP",F); CHKERRQ(ierr);
+  ierr = thermal_elements.setThermalConvectionFiniteElementLhsOperators("TEMP",A); CHKERRQ(ierr);
+  ierr = thermal_elements.setThermalConvectionFiniteElementRhsOperators("TEMP",F); CHKERRQ(ierr);
 
   ierr = VecZeroEntries(T); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -164,6 +167,8 @@ int main(int argc, char *argv[]) {
   ierr = m_field.loop_finite_elements("THERMAL_PROBLEM","THERMAL_FE",thermal_elements.getLoopFeRhs()); CHKERRQ(ierr);
   ierr = m_field.loop_finite_elements("THERMAL_PROBLEM","THERMAL_FE",thermal_elements.getLoopFeLhs()); CHKERRQ(ierr);
   ierr = m_field.loop_finite_elements("THERMAL_PROBLEM","THERMAL_FLUX_FE",thermal_elements.getLoopFeFlux()); CHKERRQ(ierr);
+  ierr = m_field.loop_finite_elements("THERMAL_PROBLEM","THERMAL_CONVECTION_FE",thermal_elements.getLoopFeConvectionRhs()); CHKERRQ(ierr);
+  ierr = m_field.loop_finite_elements("THERMAL_PROBLEM","THERMAL_CONVECTION_FE",thermal_elements.getLoopFeConvectionLhs()); CHKERRQ(ierr);
 
   //postproc
   ierr = m_field.problem_basic_method_postProcess("THERMAL_PROBLEM",my_dirichlet_bc); CHKERRQ(ierr);

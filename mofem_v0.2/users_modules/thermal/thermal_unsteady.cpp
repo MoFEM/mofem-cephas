@@ -118,6 +118,8 @@ int main(int argc, char *argv[]) {
   ThermalElement thermal_elements(m_field);
   ierr = thermal_elements.addThermalElements("THERMAL_PROBLEM","TEMP"); CHKERRQ(ierr);
   ierr = thermal_elements.addThermalFluxElement("THERMAL_PROBLEM","TEMP"); CHKERRQ(ierr);
+  ierr = thermal_elements.addThermalConvectionElement("THERMAL_PROBLEM","TEMP"); CHKERRQ(ierr);
+  ierr = thermal_elements.addThermalRadiationElement("THERMAL_PROBLEM","TEMP"); CHKERRQ(ierr);
   //add rate of temerature to data field of finite element
   ierr = m_field.modify_finite_element_add_field_data("THERMAL_FE","TEMP_RATE"); CHKERRQ(ierr);
 
