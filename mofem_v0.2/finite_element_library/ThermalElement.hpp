@@ -763,19 +763,19 @@ struct ThermalElement {
   /* \brief operator to calculate radiation therms on body surface and assemble to rhs of transient equations(Residual Vector)
     * \infroup mofem_thermal_elem
     */
-    struct OpRadiation_Rhs:public TriElementForcesAndSurcesCore::UserDataOperator {
+    struct OpRadiationRhs:public TriElementForcesAndSurcesCore::UserDataOperator {
         
 	CommonData &commonData; //get the temperature or temperature Rate from CommonData
         RadiationData &dAta;
         bool ho_geometry;
         bool useTsF;
-        OpRadiation_Rhs(const string field_name,RadiationData &data,CommonData &common_data,bool _ho_geometry = false):
+        OpRadiationRhs(const string field_name,RadiationData &data,CommonData &common_data,bool _ho_geometry = false):
             TriElementForcesAndSurcesCore::UserDataOperator(field_name),
             commonData(common_data),dAta(data),ho_geometry(_ho_geometry),useTsF(true) {}
   
   
         Vec F;
-        OpRadiation_Rhs(const string field_name,Vec _F,RadiationData &data,CommonData &common_data,bool _ho_geometry = false):
+        OpRadiationRhs(const string field_name,Vec _F,RadiationData &data,CommonData &common_data,bool _ho_geometry = false):
             TriElementForcesAndSurcesCore::UserDataOperator(field_name),
             commonData(common_data),dAta(data),ho_geometry(_ho_geometry),useTsF(false),F(_F) {}
   
@@ -853,17 +853,18 @@ struct ThermalElement {
     */
   struct OpConvectionRhs:public TriElementForcesAndSurcesCore::UserDataOperator {
 
+    CommonData &commonData; //get the temperature or temperature Rate from CommonData
     ConvectionData &dAta;
     bool ho_geometry;
     bool useTsF;
-    OpConvectionRhs(const string field_name,ConvectionData &data,bool _ho_geometry = false):
+    OpConvectionRhs(const string field_name,ConvectionData &data,CommonData &common_data,bool _ho_geometry = false):
       TriElementForcesAndSurcesCore::UserDataOperator(field_name),
-      dAta(data),ho_geometry(_ho_geometry),useTsF(true) {}
+      commonData(common_data),dAta(data),ho_geometry(_ho_geometry),useTsF(true) {}
 
     Vec F;
-    OpConvectionRhs(const string field_name,Vec _F,ConvectionData &data,bool _ho_geometry = false):
+    OpConvectionRhs(const string field_name,Vec _F,ConvectionData &data,CommonData &common_data,bool _ho_geometry = false):
       TriElementForcesAndSurcesCore::UserDataOperator(field_name),
-      dAta(data),ho_geometry(_ho_geometry),useTsF(false),F(_F) {}
+      commonData(common_data),dAta(data),ho_geometry(_ho_geometry),useTsF(false),F(_F) {}
 
     ublas::vector<FieldData> Nf;
 
@@ -892,15 +893,18 @@ struct ThermalElement {
       //cerr << getNormals_at_GaussPt() << endl;
 
       for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
-        double convectionConst;
-        double val = getGaussPts()(2,gg);
-        if(ho_geometry) {
-          double area = norm_2(getNormals_at_GaussPt(gg));
-          convectionConst = dAta.cOnvection*dAta.tEmperature*area;
-        }   else {
-          convectionConst = dAta.cOnvection*dAta.tEmperature*getArea();
-        }
-        ublas::noalias(Nf) += val*convectionConst*data.getN(gg,nb_row_dofs);
+
+	double T_at_Gauss_pt = commonData.temperatureAtGaussPts[gg];
+	double convectionConst;
+	if(ho_geometry) {
+	  double area = norm_2(getNormals_at_GaussPt(gg));
+	  convectionConst = dAta.cOnvection*area*(T_at_Gauss_pt-dAta.tEmperature);
+	} else {
+	  convectionConst = dAta.cOnvection*getArea()*(T_at_Gauss_pt-dAta.tEmperature);
+	}
+	double val = getGaussPts()(2,gg)*convectionConst;
+	ublas::noalias(Nf) += val*data.getN(gg,nb_row_dofs);
+				
       }
 
       //cerr << "VecSetValues\n";
@@ -1064,9 +1068,12 @@ struct ThermalElement {
              problemPtr,ROW,ts_u,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
       BitRefLevel proble_bit_level = problemPtr->get_BitRefLevel();
-      ierr = mField.record_begin(seriesName); CHKERRQ(ierr);
-      ierr = mField.record_field(seriesName,tempName,proble_bit_level,mask); CHKERRQ(ierr);
-      ierr = mField.record_end(seriesName); CHKERRQ(ierr);
+
+      SeriesRecorder *recorder_ptr;
+      ierr = mField.query_interface(recorder_ptr); CHKERRQ(ierr);
+      ierr = recorder_ptr->record_begin(seriesName); CHKERRQ(ierr);
+      ierr = recorder_ptr->record_field(seriesName,tempName,proble_bit_level,mask); CHKERRQ(ierr);
+      ierr = recorder_ptr->record_end(seriesName); CHKERRQ(ierr);
 
       PetscFunctionReturn(0);
     }
@@ -1336,7 +1343,8 @@ struct ThermalElement {
     map<int,ConvectionData>::iterator sit = setOfConvection.begin();
     for(;sit!=setOfConvection.end();sit++) {
       //add finite element
-      feConvectionRhs.get_op_to_do_Rhs().push_back(new OpConvectionRhs(field_name,F,sit->second,ho_geometry));
+      feConvectionRhs.get_op_to_do_Rhs().push_back(new OpGetTemperatureAtGaussPts(field_name,commonData));
+      feConvectionRhs.get_op_to_do_Rhs().push_back(new OpConvectionRhs(field_name,F,sit->second,commonData,ho_geometry));
     }
     PetscFunctionReturn(0);
   }
@@ -1354,13 +1362,16 @@ struct ThermalElement {
     PetscFunctionReturn(0);
   }
 
-
-
   /** \brief set up operators for unsedy heat flux; convection; radiation problem
     * \infroup mofem_thermal_elem
     */
   PetscErrorCode setTimeSteppingProblem(TsCtx &ts_ctx,string field_name,string rate_name,const string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
     PetscFunctionBegin;
+ 
+    bool ho_geometry = false;
+    if(mField.check_field(mesh_nodals_positions)) {
+      ho_geometry = true;
+    }
 
     {
       map<int,BlockData>::iterator sit = setOfBlocks.begin();
@@ -1378,87 +1389,56 @@ struct ThermalElement {
         feRhs.get_op_to_do_Rhs().push_back(new OpHeatCapacityRhs(field_name,sit->second,commonData));
       }
     }
-    
-        {
-            bool ho_geometry = false;
-            if(mField.check_field(mesh_nodals_positions)) {
-                ho_geometry = true;
-            }
-            map<int,FluxData>::iterator sit = setOfFluxes.begin();
-            for(;sit!=setOfFluxes.end();sit++) {
-                //add finite element
-                feFlux.get_op_to_do_Rhs().push_back(new OpHeatFlux(field_name,sit->second,ho_geometry));
-            }
-        }
-    
-    
-        // Convection
-        {
-            bool ho_geometry = false;
-            if(mField.check_field(mesh_nodals_positions)) {
-                ho_geometry = true;
-            }
-            map<int,ConvectionData>::iterator sit = setOfConvection.begin();
-            for(;sit!=setOfConvection.end();sit++) {
-                //add finite element
-                feConvectionRhs.get_op_to_do_Rhs().push_back(new OpConvectionRhs(field_name,sit->second,ho_geometry));
-            }
-        }
-        {
-            bool ho_geometry = false;
-            if(mField.check_field(mesh_nodals_positions)) {
-                ho_geometry = true;
-            }
-            map<int,ConvectionData>::iterator sit = setOfConvection.begin();
-            for(;sit!=setOfConvection.end();sit++) {
-                //add finite element
-                feConvectionLhs.get_op_to_do_Lhs().push_back(new OpConvectionLhs(field_name,sit->second,ho_geometry));
-            }
-        }    
-    
-        {
-            bool ho_geometry = false;
-            if(mField.check_field(mesh_nodals_positions)) {
-                ho_geometry = true;
-            }
-            map<int,RadiationData>::iterator sit = setOfRadiation.begin();
-            for(;sit!=setOfRadiation.end();sit++) {
-                //add finite element
-                feRadiationRhs.get_op_to_do_Rhs().push_back(new OpRadiation_Rhs(field_name,sit->second,commonData,ho_geometry));
-            }
-        }
-    
+  
+    //Flux
     {
-            bool ho_geometry = false;
-            if(mField.check_field(mesh_nodals_positions)) {
-                ho_geometry = true;
-            }
-            map<int,ConvectionData>::iterator sit = setOfConvection.begin();
-            for(;sit!=setOfConvection.end();sit++) {
-                //add finite element
-                feConvectionRhs.get_op_to_do_Rhs().push_back(new OpConvectionRhs(field_name,sit->second,commonData,ho_geometry));
-            }
-        }
+      map<int,FluxData>::iterator sit = setOfFluxes.begin();
+      for(;sit!=setOfFluxes.end();sit++) {
+        //add finite element
+        feFlux.get_op_to_do_Rhs().push_back(new OpHeatFlux(field_name,sit->second,ho_geometry));
+      }
+    }
     
-        {
-            bool ho_geometry = false;
-            if(mField.check_field(mesh_nodals_positions)) {
-                ho_geometry = true;
-            }
-            map<int,RadiationData>::iterator sit = setOfRadiation.begin();
-            for(;sit!=setOfRadiation.end();sit++) {
-                //add finite element
-                feRadiationLhs.get_op_to_do_Lhs().push_back(new OpRadiationLhs(field_name,sit->second,commonData,ho_geometry));
-            }
-        }
+    
+    // Convection
+    {
+      map<int,ConvectionData>::iterator sit = setOfConvection.begin();
+      for(;sit!=setOfConvection.end();sit++) {
+        //add finite element
+	feConvectionRhs.get_op_to_do_Rhs().push_back(new OpGetTemperatureAtGaussPts(field_name,commonData));
+        feConvectionRhs.get_op_to_do_Rhs().push_back(new OpConvectionRhs(field_name,sit->second,commonData,ho_geometry));
+      }
+    }
+    {
+      map<int,ConvectionData>::iterator sit = setOfConvection.begin();
+      for(;sit!=setOfConvection.end();sit++) {
+	//add finite element
+	feConvectionLhs.get_op_to_do_Lhs().push_back(new OpConvectionLhs(field_name,sit->second,ho_geometry));
+      }
+    }
+
+    //Radiation
+    {
+      map<int,RadiationData>::iterator sit = setOfRadiation.begin();
+      for(;sit!=setOfRadiation.end();sit++) {
+	//add finite element
+	feRadiationRhs.get_op_to_do_Rhs().push_back(new OpGetTemperatureAtGaussPts(field_name,commonData));
+        feRadiationRhs.get_op_to_do_Rhs().push_back(new OpRadiationRhs(field_name,sit->second,commonData,ho_geometry));
+      }
+    }
+    {
+      map<int,RadiationData>::iterator sit = setOfRadiation.begin();
+      for(;sit!=setOfRadiation.end();sit++) {
+        //add finite element
+        feRadiationLhs.get_op_to_do_Lhs().push_back(new OpRadiationLhs(field_name,sit->second,commonData,ho_geometry));
+      }
+    }
 
     //rhs
     TsCtx::loops_to_do_type& loops_to_do_Rhs = ts_ctx.get_loops_to_do_IFunction();
     loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("THERMAL_FE",&feRhs));
     loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("THERMAL_FLUX_FE",&feFlux));
-    
     loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("THERMAL_CONVECTION_FE",&feConvectionRhs));
-    loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("THERMAL_RADIATION_FE",&feConvectionRhs));
     loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("THERMAL_RADIATION_FE",&feRadiationRhs));
     
     //lhs
