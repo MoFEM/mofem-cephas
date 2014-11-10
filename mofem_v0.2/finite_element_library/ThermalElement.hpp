@@ -201,11 +201,12 @@ struct ThermalElement {
   /** \brief opearator to caulate tempereature  and rate of temperature at Gauss points
     * \infroup mofem_thermal_elem
     */
-  struct OpGetFieldAtGaussPts: public TetElementForcesAndSourcesCore::UserDataOperator {
+  template<typename OP>
+  struct OpGetFieldAtGaussPts: public OP::UserDataOperator {
 
     ublas::vector<double> &fieldAtGaussPts;
     OpGetFieldAtGaussPts(const string field_name,ublas::vector<double> &field_at_gauss_pts):
-      TetElementForcesAndSourcesCore::UserDataOperator(field_name),
+      OP::UserDataOperator(field_name),
       fieldAtGaussPts(field_at_gauss_pts) {}
 
     /** \brief operator calculating temperature and rate of temperature
@@ -249,17 +250,25 @@ struct ThermalElement {
   /** \brief operator to calculate tempereature at Gauss pts
     * \infroup mofem_thermal_elem
     */
-  struct OpGetTemperatureAtGaussPts: public OpGetFieldAtGaussPts {
-    OpGetTemperatureAtGaussPts(const string field_name,CommonData &common_data):
-      OpGetFieldAtGaussPts(field_name,common_data.temperatureAtGaussPts) {}
+  struct OpGetTetTemperatureAtGaussPts: public OpGetFieldAtGaussPts<TetElementForcesAndSourcesCore> {
+    OpGetTetTemperatureAtGaussPts(const string field_name,CommonData &common_data):
+      OpGetFieldAtGaussPts<TetElementForcesAndSourcesCore>(field_name,common_data.temperatureAtGaussPts) {}
+  };
+
+  /** \brief operator to calculate tempereature at Gauss pts
+    * \infroup mofem_thermal_elem
+    */
+  struct OpGetTriTemperatureAtGaussPts: public OpGetFieldAtGaussPts<TriElementForcesAndSurcesCore> {
+    OpGetTriTemperatureAtGaussPts(const string field_name,CommonData &common_data):
+      OpGetFieldAtGaussPts<TriElementForcesAndSurcesCore>(field_name,common_data.temperatureAtGaussPts) {}
   };
 
   /** \brief operator to calculate temperature rate at Gauss pts
     * \infroup mofem_thermal_elem
     */
-  struct OpGetRateAtGaussPts: public OpGetFieldAtGaussPts {
-    OpGetRateAtGaussPts(const string field_name,CommonData &common_data):
-      OpGetFieldAtGaussPts(field_name,common_data.temperatureRateAtGaussPts) {}
+  struct OpGetTetRateAtGaussPts: public OpGetFieldAtGaussPts<TetElementForcesAndSourcesCore> {
+    OpGetTetRateAtGaussPts(const string field_name,CommonData &common_data):
+      OpGetFieldAtGaussPts<TetElementForcesAndSourcesCore>(field_name,common_data.temperatureRateAtGaussPts) {}
   };
 
   /** \biref operator to calculate right hand side of heat conductivity terms
@@ -1343,7 +1352,7 @@ struct ThermalElement {
     map<int,ConvectionData>::iterator sit = setOfConvection.begin();
     for(;sit!=setOfConvection.end();sit++) {
       //add finite element
-      feConvectionRhs.get_op_to_do_Rhs().push_back(new OpGetTemperatureAtGaussPts(field_name,commonData));
+      feConvectionRhs.get_op_to_do_Rhs().push_back(new OpGetTriTemperatureAtGaussPts(field_name,commonData));
       feConvectionRhs.get_op_to_do_Rhs().push_back(new OpConvectionRhs(field_name,F,sit->second,commonData,ho_geometry));
     }
     PetscFunctionReturn(0);
@@ -1378,12 +1387,12 @@ struct ThermalElement {
       for(;sit!=setOfBlocks.end();sit++) {
         //add finite element
         //those methods are to calulate matrices on Lhs
-        //  feLhs.get_op_to_do_Lhs().push_back(new OpGetTemperatureAtGaussPts(field_name,commonData));
+        //  feLhs.get_op_to_do_Lhs().push_back(new OpGetTetTemperatureAtGaussPts(field_name,commonData));
         feLhs.get_op_to_do_Lhs().push_back(new OpThermalLhs(field_name,sit->second,commonData));
         feLhs.get_op_to_do_Lhs().push_back(new OpHeatCapacityLsh(field_name,sit->second,commonData));
         //those methods are to calulate vectors on Rhs
-        feRhs.get_op_to_do_Rhs().push_back(new OpGetTemperatureAtGaussPts(field_name,commonData));
-        feRhs.get_op_to_do_Rhs().push_back(new OpGetRateAtGaussPts(rate_name,commonData));
+        feRhs.get_op_to_do_Rhs().push_back(new OpGetTetTemperatureAtGaussPts(field_name,commonData));
+        feRhs.get_op_to_do_Rhs().push_back(new OpGetTetRateAtGaussPts(rate_name,commonData));
         feRhs.get_op_to_do_Rhs().push_back(new OpGetGradAtGaussPts(field_name,commonData));
         feRhs.get_op_to_do_Rhs().push_back(new OpThermalRhs(field_name,sit->second,commonData));
         feRhs.get_op_to_do_Rhs().push_back(new OpHeatCapacityRhs(field_name,sit->second,commonData));
@@ -1405,7 +1414,7 @@ struct ThermalElement {
       map<int,ConvectionData>::iterator sit = setOfConvection.begin();
       for(;sit!=setOfConvection.end();sit++) {
         //add finite element
-	feConvectionRhs.get_op_to_do_Rhs().push_back(new OpGetTemperatureAtGaussPts(field_name,commonData));
+	feConvectionRhs.get_op_to_do_Rhs().push_back(new OpGetTriTemperatureAtGaussPts(field_name,commonData));
         feConvectionRhs.get_op_to_do_Rhs().push_back(new OpConvectionRhs(field_name,sit->second,commonData,ho_geometry));
       }
     }
@@ -1422,7 +1431,7 @@ struct ThermalElement {
       map<int,RadiationData>::iterator sit = setOfRadiation.begin();
       for(;sit!=setOfRadiation.end();sit++) {
 	//add finite element
-	feRadiationRhs.get_op_to_do_Rhs().push_back(new OpGetTemperatureAtGaussPts(field_name,commonData));
+	feRadiationRhs.get_op_to_do_Rhs().push_back(new OpGetTriTemperatureAtGaussPts(field_name,commonData));
         feRadiationRhs.get_op_to_do_Rhs().push_back(new OpRadiationRhs(field_name,sit->second,commonData,ho_geometry));
       }
     }
@@ -1430,6 +1439,7 @@ struct ThermalElement {
       map<int,RadiationData>::iterator sit = setOfRadiation.begin();
       for(;sit!=setOfRadiation.end();sit++) {
         //add finite element
+	feRadiationLhs.get_op_to_do_Rhs().push_back(new OpGetTriTemperatureAtGaussPts(field_name,commonData));
         feRadiationLhs.get_op_to_do_Lhs().push_back(new OpRadiationLhs(field_name,sit->second,commonData,ho_geometry));
       }
     }
