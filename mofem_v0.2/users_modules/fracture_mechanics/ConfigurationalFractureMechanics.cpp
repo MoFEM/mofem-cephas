@@ -1162,10 +1162,28 @@ PetscErrorCode ConfigurationalFractureMechanics::constrains_crack_front_problem_
   PetscErrorCode ierr;
   ErrorCode rval;
 
-  Range level_tris,level_edges,level_nodes;
+  Range level_tets,level_tris,level_edges,level_nodes;
+  ierr = m_field.get_entities_by_type_and_ref_level(*ptr_bit_level0,BitRefLevel().set(),MBTET,level_tets); CHKERRQ(ierr);
   ierr = m_field.get_entities_by_type_and_ref_level(*ptr_bit_level0,BitRefLevel().set(),MBVERTEX,level_nodes); CHKERRQ(ierr);
   ierr = m_field.get_entities_by_type_and_ref_level(*ptr_bit_level0,BitRefLevel().set(),MBTRI,level_tris); CHKERRQ(ierr);
   ierr = m_field.get_entities_by_type_and_ref_level(*ptr_bit_level0,BitRefLevel().set(),MBEDGE,level_edges); CHKERRQ(ierr);
+
+  Range body_surface_nodes;
+  {
+    Range surfaces;
+    ierr = m_field.get_Cubit_msId_entities_by_dimension(102,SIDESET,2,surfaces,true); CHKERRQ(ierr);
+    surfaces = intersect(surfaces,level_tris);
+    for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,SIDESET,it)) {
+      int msId = it->get_msId();
+      if((msId < 10200)||(msId >= 10300)) continue;
+      Range surf;
+      rval = m_field.get_moab().get_entities_by_type(it->get_meshset(),MBTRI,surf,true); CHKERR_PETSC(rval);
+      surf = intersect(surf,level_tris);
+      surfaces.merge(surf);
+    }
+    rval = m_field.get_moab().get_connectivity(surfaces,body_surface_nodes,true); CHKERR_PETSC(rval);
+  }
+
 
   //Fields
   ierr = m_field.add_field("LAMBDA_CRACKFRONT_AREA",H1,1,MF_ZERO); CHKERRQ(ierr);
@@ -1219,12 +1237,7 @@ PetscErrorCode ConfigurationalFractureMechanics::constrains_crack_front_problem_
     rval = m_field.get_moab().get_connectivity(crack_front_edges,crack_front_nodes,true); CHKERR_PETSC(rval);
     crack_front_nodes = intersect(crack_front_nodes,level_nodes);
     ierr = PetscPrintf(PETSC_COMM_WORLD,"number of Front Nodes = %d\n",crack_front_nodes.size()); CHKERRQ(ierr);
-
-    Range surfaces_faces;
-    ierr = m_field.get_Cubit_msId_entities_by_dimension(102,SIDESET,2,surfaces_faces,true); CHKERRQ(ierr);
-    Range surfaces_nodes;
-    rval = m_field.get_moab().get_connectivity(surfaces_faces,surfaces_nodes,true); CHKERR_PETSC(rval);
-    Range tangent_crack_front_nodes = subtract(crack_front_nodes,surfaces_nodes);
+    Range tangent_crack_front_nodes = subtract(crack_front_nodes,body_surface_nodes);
     ierr = PetscPrintf(PETSC_COMM_WORLD,"number of Tangent Crack Front Nodes = %d\n",tangent_crack_front_nodes.size()); CHKERRQ(ierr);
 
     Range crack_surfaces_edge_faces;
@@ -2564,7 +2577,7 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   //meshs moothing
   MyMeshSmoothingFEMethod smoother(m_field);
   ierr = smoother.initCrackFrontData(m_field); CHKERRQ(ierr);
-  set_qual_ver(0);
+  set_qual_ver(3);
   //constrains
   SnesConstrainSurfacGeometry constrain_body_surface(m_field,"LAMBDA_SURFACE");
   constrain_body_surface.nonlinear = true;
@@ -3527,7 +3540,7 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
   }
 
   if(step == 0) {
-    ierr = conf_prob.set_material_positions(m_field); CHKERRQ(ierr);
+    //ierr = conf_prob.set_material_positions(m_field); CHKERRQ(ierr);
   }
 
   Tag th_t_val;
@@ -3758,18 +3771,11 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
 
       {
 	Range edges_to_cat;
-	ierr = face_splitting_tools.getCornerEdges(edges_to_cat,0);
-	Range new_nodes;
-	ierr = face_splitting_tools.propagateBySplit(new_nodes,edges_to_cat,0); CHKERRQ(ierr);
-	ierr = face_splitting_tools.conerProblem(new_nodes,0); CHKERRQ(ierr);
-	edges_to_cat.clear();
-	ierr = face_splitting_tools.getCornerEdges(edges_to_cat,0);
+	ierr = face_splitting_tools.getCornerEdges(edges_to_cat,0); CHKERRQ(ierr);
 	if(edges_to_cat.size()>0) {
-	  new_nodes.clear();
+	  Range new_nodes;
 	  ierr = face_splitting_tools.propagateBySplit(new_nodes,edges_to_cat,0); CHKERRQ(ierr);
-	  if(new_nodes.size()>0) {
-	    ierr = face_splitting_tools.conerProblem(new_nodes,0); CHKERRQ(ierr);
-	  }
+	  ierr = face_splitting_tools.conerProblem(new_nodes,0); CHKERRQ(ierr);
 	}
       }
 
@@ -3786,8 +3792,8 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
 	  ierr = face_splitting_tools.rebuildMeshWithTetGen(switches1,0); CHKERRQ(ierr);	
 	}
       }
-      bit_level0 = BitRefLevel().set(face_splitting_tools.meshIntefaceBitLevels.back());
 
+      bit_level0 = BitRefLevel().set(face_splitting_tools.meshIntefaceBitLevels.back());
       //retart analysis
       ierr = main_arc_length_restart(m_field,conf_prob); CHKERRQ(ierr);
       //project and set coords

@@ -30,7 +30,7 @@
 #include <moab/ParallelComm.hpp>
 #include <boost/ptr_container/ptr_map.hpp>
 
-#include <version.h>
+//#include <version.h>
 #include <definitions.h>
 
 #include <Common.hpp>
