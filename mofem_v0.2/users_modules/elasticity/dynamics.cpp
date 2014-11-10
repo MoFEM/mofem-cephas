@@ -50,31 +50,88 @@ using namespace MoFEM;
 #include <ElasticFEMethod.hpp>
 #include <ElasticFEMethodDynamics.hpp>
 
+#include <iostream>
+#include <string>
+
 using namespace boost::numeric;
 using namespace ObosleteUsersModules;
 
 using namespace MoFEM;
 
 static char help[] = "...\n\n";
-
+static std::vector< pair<double, double> > ts;
+static int r=0;
 struct TimeForceScale: public MethodsForOp {
-
-  PetscErrorCode scaleNf(const FEMethod *fe,ublas::vector<FieldData> &Nf) {
+    PetscErrorCode scaleNf(const FEMethod *fe,ublas::vector<FieldData> &Nf) {
     PetscFunctionBegin;
 
+    if(r==0){
+    ErrorCode rval;
+    PetscErrorCode ierr;
+    char time_file_name[255];
+    PetscBool flg = PETSC_TRUE;
+    ierr = PetscOptionsGetString(PETSC_NULL,"-my_time_data",time_file_name,255,&flg); CHKERRQ(ierr);
+    if(flg != PETSC_TRUE) {
+    SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_time_data (time_data FILE NEEDED)");}
+    ifstream time_data;
+    time_data.open(time_file_name);
+    if(time_data.fail()) cerr << "Error opening time data file"<<endl;
+    double no1 = 0.0, no2 = 0.0;
+    std::string line;
+    while( getline(time_data, line) ){
+    sscanf(line.c_str(),"%lf %lf", &no1, &no2);
+    ts.push_back( std::make_pair<double,double>(no1, no2) );}
+    time_data.close();
+    cout << ts.size() <<" items founds! "<< endl;
+    r=1;
+    }
+        
     double ts_t = fe->ts_t;
+    double scale = 0.0;
+    double diff=1e-3;
     
-    //Triangular loading over 10s (maximum at 5)
-    double scale = 0;
-    if(ts_t < 5.) scale = ts_t/5.;
+      
+      for (int i = 0; i < ts.size(); ++i){
+          int j=i-1;
+          int n=ts.size()-1;
+        if ((ts_t > (ts[0]).first)&&(ts_t< (ts[n]).first)){
+              
+            if (ts_t <= (ts[i]).first){
+            
+                if(abs(ts_t-(ts[i]).first) < diff) scale=(ts[i]).second;
+                
+                else scale=((ts[j]).second)+(((ts[i]).second)-((ts[j]).second))* ((ts_t-((ts[j]).first))/(((ts[i]).first)-((ts[j]).first)));
+          
+                break;
+            }
+            
+        }
+        else if (ts_t <= (ts[0]).first)   scale=(ts[0]).second;
+        else if (ts_t >= (ts[n]).first)   scale=(ts[n]).second;
+          }
+          cout<< "ts_t:" << ts_t << endl;
+          cout<< "scale:" << scale << endl;
+      
+//Here you can define time function rather than read from a file
+      //Triangular loading over 10s (maximum at 5)
+    /*double scale = 0;
+    if(ts_t < 3.) scale = ts_t/5.;
     if(ts_t > 5.) scale = 1.+(5.-ts_t)/5.;
-    if(ts_t > 10.) scale = 0;
+    if(ts_t > 10.) scale = 0;*/
     Nf *= scale;
 
     PetscFunctionReturn(0);
-  }
-
+    }
+//  }
 };
+
+
+
+
+
+
+
+
 
 int main(int argc, char *argv[]) {
 
