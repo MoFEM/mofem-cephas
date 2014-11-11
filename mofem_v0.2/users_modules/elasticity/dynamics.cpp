@@ -66,6 +66,7 @@ struct TimeForceScale: public MethodsForOp {
     PetscFunctionBegin;
 
     if(r==0){
+        
     ErrorCode rval;
     PetscErrorCode ierr;
     char time_file_name[255];
