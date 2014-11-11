@@ -74,7 +74,7 @@ using namespace ObosleteUsersModules;
 
 using namespace MoFEM;
 
-phisical_equation_volume eq_solid = hooke; /*stvenant_kirchhoff;*/
+//phisical_equation_volume eq_solid = hooke; /*stvenant_kirchhoff;*/
 
 struct CrackFrontData {
 
@@ -1373,6 +1373,7 @@ PetscErrorCode ConfigurationalFractureMechanics::set_spatial_positions(FieldInte
     if(dof_ptr->get_ent_type()!=MBVERTEX) {
       double &fval = dof_ptr->get_FieldData();
       fval = 0;
+      continue;
     }
     EntityHandle ent = dof_ptr->get_ent();
     int dof_rank = dof_ptr->get_dof_rank();
@@ -1397,7 +1398,11 @@ PetscErrorCode ConfigurationalFractureMechanics::set_material_positions(FieldInt
   EntityHandle node = 0;
   double coords[3];
   for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(m_field,"MESH_NODE_POSITIONS",dof_ptr)) {
-    if(dof_ptr->get_ent_type()!=MBVERTEX) continue;
+    if(dof_ptr->get_ent_type()!=MBVERTEX) {
+      double &fval = dof_ptr->get_FieldData();
+      fval = 0;
+      continue;
+    }
     EntityHandle ent = dof_ptr->get_ent();
     int dof_rank = dof_ptr->get_dof_rank();
     double &fval = dof_ptr->get_FieldData();
@@ -1463,6 +1468,8 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_spatial_problem(FieldInte
 
   PetscErrorCode ierr;
 
+  set_PhysicalEquationNumber(hooke);
+
   //create matrices
   Vec F;
   ierr = m_field.VecCreateGhost("ELASTIC_MECHANICS",COL,&F); CHKERRQ(ierr);
@@ -1496,6 +1503,7 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_spatial_problem(FieldInte
 
   NeummanForcesSurfaceComplexForLazy neumann_forces(m_field,Aij,F);
   NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE &fe_forces = neumann_forces.getLoopSpatialFe();
+  //fe_forces.typeOfForces = NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::NONCONSERVATIVE;
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET,it)) {
     ierr = fe_forces.addForce(it->get_msId()); CHKERRQ(ierr);
   }
@@ -2312,6 +2320,8 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   ErrorCode rval;
   PetscBool flg;
 
+  set_PhysicalEquationNumber(hooke);
+
   ierr = front_projection_data(m_field,"COUPLED_PROBLEM"); CHKERRQ(ierr);
 
   //create matrices
@@ -2627,6 +2637,7 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   double *scale_rhs = &(scaled_reference_load);
   NeummanForcesSurfaceComplexForLazy neumann_forces(m_field,K,arc_ctx.F_lambda,scale_lhs,scale_rhs);
   NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE &fe_forces = neumann_forces.getLoopSpatialFe();
+  //fe_forces.typeOfForces = NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::NONCONSERVATIVE;
   fe_forces.uSeF = true; 
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET,it)) {
     ierr = fe_forces.addForce(it->get_msId()); CHKERRQ(ierr);
@@ -2880,6 +2891,8 @@ PetscErrorCode ConfigurationalFractureMechanics::calculate_material_forces(Field
   PetscFunctionBegin;
 
   PetscErrorCode ierr;
+
+  set_PhysicalEquationNumber(hooke);
 
   Range CornersEdges,corners_nodes;
   ierr = m_field.get_Cubit_msId_entities_by_dimension(100,SIDESET,1,CornersEdges,true); CHKERRQ(ierr);

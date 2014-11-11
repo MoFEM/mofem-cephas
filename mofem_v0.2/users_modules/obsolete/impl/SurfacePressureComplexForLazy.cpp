@@ -242,6 +242,10 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::rHs() {
 PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::lHs() {
   PetscFunctionBegin;
 
+  if(typeOfForces == NONCONSERVATIVE) {
+    PetscFunctionReturn(0);
+  }
+
   try {
 
   double center[3];
