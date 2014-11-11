@@ -29,3 +29,10 @@ add_subdirectory(arc_length_nonlinear_elasticity)
 add_subdirectory(fracture_mechanics)
 add_subdirectory(homogenisation)
 
+include_directories("${MoFEM_PROJECT_SOURCE_DIR}/users_modules/analytical_dirihlet_boundary_conditions/src")
+add_subdirectory(analytical_dirihlet_boundary_conditions)
+
+include_directories("${MoFEM_PROJECT_SOURCE_DIR}/users_modules/convective_mass_element/src")
+add_subdirectory(convective_mass_element)
+
+
