@@ -13,6 +13,7 @@ message(STATUS ${ADOL-C_LIBRARY})
 
 if(ADOL-C_LIBRARY) 
   include_directories("${ADOL-C_DIR}/include")
+  add_definitions( -DWITH_ADOL_C )
 endif(ADOL-C_LIBRARY)
 
 

@@ -7,12 +7,12 @@ Check before run
 Example Static (elastcity)
 ==========================
 
-mpirun -np 2 ./elasticity -my_file LShapeCoarse.cub -ksp_type fgmres -pc_type asm -sub_pc_type lu -ksp_monitor
+mpirun -np 2 ./elasticity -my_file LShape.cub -ksp_type fgmres -pc_type asm -sub_pc_type lu -ksp_monitor -my_order 2
 
 Example dynamic (dynamic)
 ==========================
 
-mpirun -np 2 ./dynamics -my_file LShapeCoarse.cub -ksp_type fgmres -ksp_gmres_restart 1000 -pc_type asm -sub_pc_type lu -ksp_atol 1e-10 -ksp_rtol 1e-10 -snes_monitor -snes_type newtonls -snes_linesearch_type basic -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 -ts_monitor -ts_type alpha -ts_dt 0.01 -ts_final_time 50 -time_data_file data.txt | tee log
+mpirun -np 2 ./dynamics -my_file LShape.cub -ksp_type fgmres -ksp_gmres_restart 1000 -pc_type asm -sub_pc_type lu -ksp_atol 1e-10 -ksp_rtol 1e-10 -snes_monitor -snes_type newtonls -snes_linesearch_type basic -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 -ts_monitor -ts_type alpha -ts_dt 0.01 -ts_final_time 50  | tee log
 
 -my_disp_order 2 - sets order of approx. for displacements 
 -my_velocity_order 1 - sets order of approx. for velocities

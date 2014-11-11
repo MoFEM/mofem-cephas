@@ -24,11 +24,19 @@
 #include <ThermalElement.hpp>
 
 #include <Projection10NodeCoordsOnField.hpp>
+#include <AnalyticalDirihlet.hpp>
 
 #include <boost/iostreams/tee.hpp>
 #include <boost/iostreams/stream.hpp>
 #include <fstream>
 #include <iostream>
+
+#include <boost/iostreams/tee.hpp>
+#include <boost/iostreams/stream.hpp>
+#include <fstream>
+#include <iostream>
+
+static int debug = 1;
 
 namespace bio = boost::iostreams;
 using bio::tee_device;
@@ -81,29 +89,15 @@ int main(int argc, char *argv[]) {
   ierr = m_field.add_field("TEMP",H1,1); CHKERRQ(ierr);
 
   //Problem
-  ierr = m_field.add_problem("THERMAL_PROBLEM"); CHKERRQ(ierr);
+  ierr = m_field.add_problem("TEST_PROBLEM"); CHKERRQ(ierr);
+  ierr = m_field.add_problem("BC_PROBLEM"); CHKERRQ(ierr);
 
   //set refinment level for problem
-  ierr = m_field.modify_problem_ref_level_add_bit("THERMAL_PROBLEM",bit_level0); CHKERRQ(ierr);
+  ierr = m_field.modify_problem_ref_level_add_bit("TEST_PROBLEM",bit_level0); CHKERRQ(ierr);
+  ierr = m_field.modify_problem_ref_level_add_bit("BC_PROBLEM",bit_level0); CHKERRQ(ierr);
 
   //meshset consisting all entities in mesh
   EntityHandle root_set = moab.get_root_set(); 
-  //add entities to field
-  ierr = m_field.add_ents_to_field_by_TETs(root_set,"TEMP"); CHKERRQ(ierr);
-
-  //set app. order
-  //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
-  PetscInt order;
-  ierr = PetscOptionsGetInt(PETSC_NULL,"-my_order",&order,&flg); CHKERRQ(ierr);
-  if(flg != PETSC_TRUE) {
-    order = 2;
-  }
-
-  ierr = m_field.set_field_order(root_set,MBTET,"TEMP",order); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(root_set,MBTRI,"TEMP",order); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(root_set,MBEDGE,"TEMP",order); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(root_set,MBVERTEX,"TEMP",1); CHKERRQ(ierr);
-
   ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,3); CHKERRQ(ierr);
   ierr = m_field.add_ents_to_field_by_TETs(root_set,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0,MBTET,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
@@ -111,10 +105,27 @@ int main(int argc, char *argv[]) {
   ierr = m_field.set_field_order(0,MBEDGE,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
 
+  //add entities to field
+  ierr = m_field.add_ents_to_field_by_TETs(root_set,"TEMP"); CHKERRQ(ierr);
+ 
+  //set app. order
+  //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
+  int order = 1;
+  ierr = m_field.set_field_order(root_set,MBTET,"TEMP",order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(root_set,MBTRI,"TEMP",order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(root_set,MBEDGE,"TEMP",order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(root_set,MBVERTEX,"TEMP",1); CHKERRQ(ierr);
+
   ThermalElement thermal_elements(m_field);
-  ierr = thermal_elements.addThermalElements("THERMAL_PROBLEM","TEMP"); CHKERRQ(ierr);
-  ierr = thermal_elements.addThermalFluxElement("THERMAL_PROBLEM","TEMP"); CHKERRQ(ierr);
-  ierr = thermal_elements.addThermalConvectionElement("THERMAL_PROBLEM","TEMP"); CHKERRQ(ierr);
+  ierr = thermal_elements.addThermalElements("TEST_PROBLEM","TEMP"); CHKERRQ(ierr);
+
+  Range bc_tris;
+  for(_IT_CUBITMESHSETS_BY_NAME_FOR_LOOP_(m_field,"ANALYTICAL_BC",it)) {
+    rval = moab.get_entities_by_type(it->get_meshset(),MBTRI,bc_tris,true); CHKERR_PETSC(rval);
+  }
+
+  AnalyticalDirihletBC analytical_bc(m_field,bc_tris);
+  ierr = analytical_bc.initializeProblem(m_field,"BC_PROBLEM","BC_FE","TEMP"); CHKERRQ(ierr);
 
   /****/
   //build database
@@ -133,45 +144,58 @@ int main(int argc, char *argv[]) {
   /****/
   //mesh partitioning 
   //partition
-  ierr = m_field.partition_problem("THERMAL_PROBLEM"); CHKERRQ(ierr);
-  ierr = m_field.partition_finite_elements("THERMAL_PROBLEM"); CHKERRQ(ierr);
+  ierr = m_field.simple_partition_problem("TEST_PROBLEM"); CHKERRQ(ierr);
+  ierr = m_field.partition_finite_elements("TEST_PROBLEM"); CHKERRQ(ierr);
   //what are ghost nodes, see Petsc Manual
-  ierr = m_field.partition_ghost_dofs("THERMAL_PROBLEM"); CHKERRQ(ierr);
-  
+  ierr = m_field.partition_ghost_dofs("TEST_PROBLEM"); CHKERRQ(ierr);
+
+  ierr = m_field.simple_partition_problem("BC_PROBLEM"); CHKERRQ(ierr);
+  ierr = m_field.partition_finite_elements("BC_PROBLEM"); CHKERRQ(ierr);
+  //what are ghost nodes, see Petsc Manual
+  ierr = m_field.partition_ghost_dofs("BC_PROBLEM"); CHKERRQ(ierr);
+
   Vec F;
-  ierr = m_field.VecCreateGhost("THERMAL_PROBLEM",ROW,&F); CHKERRQ(ierr);
+  ierr = m_field.VecCreateGhost("TEST_PROBLEM",ROW,&F); CHKERRQ(ierr);
   Vec T;
   ierr = VecDuplicate(F,&T); CHKERRQ(ierr);
   Mat A;
-  ierr = m_field.MatCreateMPIAIJWithArrays("THERMAL_PROBLEM",&A); CHKERRQ(ierr);
+  ierr = m_field.MatCreateMPIAIJWithArrays("TEST_PROBLEM",&A); CHKERRQ(ierr);
 
-  TemperatureBCFEMethodPreAndPostProc my_dirichlet_bc(m_field,"TEMP",A,T,F);
   ierr = thermal_elements.setThermalFiniteElementRhsOperators("TEMP",F); CHKERRQ(ierr);
   ierr = thermal_elements.setThermalFiniteElementLhsOperators("TEMP",A); CHKERRQ(ierr);
   ierr = thermal_elements.setThermalFluxFiniteElementRhsOperators("TEMP",F); CHKERRQ(ierr);
-  ierr = thermal_elements.setThermalConvectionFiniteElementLhsOperators("TEMP",A); CHKERRQ(ierr);
-  ierr = thermal_elements.setThermalConvectionFiniteElementRhsOperators("TEMP",F); CHKERRQ(ierr);
 
   ierr = VecZeroEntries(T); CHKERRQ(ierr);
-  ierr = VecGhostUpdateBegin(T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
-  ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = MatZeroEntries(A); CHKERRQ(ierr);
+
+  //analytical dirihlet bc
+  AnalyticalDirihletBC::DirihletBC analytical_ditihlet_bc(m_field,"TEMP",A,T,F);
+
+  //solve for ditihlet bc dofs
+  ierr = analytical_bc.setProblem(m_field,"BC_PROBLEM"); CHKERRQ(ierr);
+  
+  struct AnaliticalFunction {
+    static double fUN(double x,double y,double z) {
+      return pow(x,1);
+    }
+  };
+
+  ierr = analytical_bc.setApproxOps(m_field,"TEMP",AnaliticalFunction::fUN); CHKERRQ(ierr);
+  ierr = analytical_bc.solveProblem(m_field,"BC_PROBLEM","BC_FE",analytical_ditihlet_bc); CHKERRQ(ierr);
+
+  ierr = analytical_bc.destroyProblem(); CHKERRQ(ierr);
   
   //preproc
-  ierr = m_field.problem_basic_method_preProcess("THERMAL_PROBLEM",my_dirichlet_bc); CHKERRQ(ierr);
-  ierr = m_field.set_global_VecCreateGhost("THERMAL_PROBLEM",ROW,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = m_field.problem_basic_method_preProcess("TEST_PROBLEM",analytical_ditihlet_bc); CHKERRQ(ierr);
+  ierr = m_field.set_global_VecCreateGhost("TEST_PROBLEM",ROW,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
-  ierr = m_field.loop_finite_elements("THERMAL_PROBLEM","THERMAL_FE",thermal_elements.getLoopFeRhs()); CHKERRQ(ierr);
-  ierr = m_field.loop_finite_elements("THERMAL_PROBLEM","THERMAL_FE",thermal_elements.getLoopFeLhs()); CHKERRQ(ierr);
-  ierr = m_field.loop_finite_elements("THERMAL_PROBLEM","THERMAL_FLUX_FE",thermal_elements.getLoopFeFlux()); CHKERRQ(ierr);
-  ierr = m_field.loop_finite_elements("THERMAL_PROBLEM","THERMAL_CONVECTION_FE",thermal_elements.getLoopFeConvectionRhs()); CHKERRQ(ierr);
-  ierr = m_field.loop_finite_elements("THERMAL_PROBLEM","THERMAL_CONVECTION_FE",thermal_elements.getLoopFeConvectionLhs()); CHKERRQ(ierr);
+  ierr = m_field.loop_finite_elements("TEST_PROBLEM","THERMAL_FE",thermal_elements.getLoopFeRhs()); CHKERRQ(ierr);
+  ierr = m_field.loop_finite_elements("TEST_PROBLEM","THERMAL_FE",thermal_elements.getLoopFeLhs()); CHKERRQ(ierr);
+  ierr = m_field.loop_finite_elements("TEST_PROBLEM","THERMAL_FLUX_FE",thermal_elements.getLoopFeFlux()); CHKERRQ(ierr);
 
   //postproc
-  ierr = m_field.problem_basic_method_postProcess("THERMAL_PROBLEM",my_dirichlet_bc); CHKERRQ(ierr);
+  ierr = m_field.problem_basic_method_postProcess("TEST_PROBLEM",analytical_ditihlet_bc); CHKERRQ(ierr);
 
   ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
@@ -193,44 +217,36 @@ int main(int argc, char *argv[]) {
   ierr = VecGhostUpdateBegin(T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
-  ierr = m_field.problem_basic_method_preProcess("THERMAL_PROBLEM",my_dirichlet_bc); CHKERRQ(ierr);
+  ierr = m_field.problem_basic_method_preProcess("TEST_PROBLEM",analytical_ditihlet_bc); CHKERRQ(ierr);
 
   //Save data on mesh
-  ierr = m_field.set_global_VecCreateGhost("THERMAL_PROBLEM",ROW,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = m_field.set_global_VecCreateGhost("TEST_PROBLEM",ROW,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
-  //Range ref_edges;
-  //ierr = m_field.get_entities_by_type_and_ref_level(bit_level0,BitRefLevel().set(),MBEDGE,ref_edges); CHKERRQ(ierr);
-  //rval = moab.list_entities(ref_edges); CHKERR_PETSC(rval);
-  //m_field.list_dofs_by_field_name("TEMP");
+  PetscViewer viewer;
+  PetscViewerASCIIOpen(PETSC_COMM_WORLD,"thermal_with_analytical_bc.txt",&viewer);
+  ierr = VecChop(T,1e-4); CHKERRQ(ierr);
+  ierr = VecView(T,viewer); CHKERRQ(ierr);
+  ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
 
-  if(pcomm->rank()==0) {
-    rval = moab.write_file("solution.h5m"); CHKERR_PETSC(rval);
+  if(debug) {
+    ProjectionFieldOn10NodeTet ent_method_on_10nodeTet(m_field,"TEMP",true,false,"TEMP");
+    ierr = m_field.loop_dofs("TEMP",ent_method_on_10nodeTet); CHKERRQ(ierr);
+    ent_method_on_10nodeTet.set_nodes = false;
+    ierr = m_field.loop_dofs("TEMP",ent_method_on_10nodeTet); CHKERRQ(ierr);
+    if(pcomm->rank()==0) {
+      EntityHandle out_meshset;
+      rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
+      ierr = m_field.problem_get_FE("TEST_PROBLEM","THERMAL_FE",out_meshset); CHKERRQ(ierr);
+      rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
+      rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
+    }
   }
-
-  /*EntityHandle fe_meshset = m_field.get_finite_element_meshset("THERMAL_FE");
-  Range tets;
-  rval = moab.get_entities_by_type(fe_meshset,MBTET,tets,true); CHKERR_PETSC(rval);
-  Range tets_edges;
-  rval = moab.get_adjacencies(tets,1,false,tets_edges,Interface::UNION); CHKERR(rval);
-  EntityHandle edges_meshset;
-  rval = moab.create_meshset(MESHSET_SET,edges_meshset); CHKERR_PETSC(rval);
-  rval = moab.add_entities(edges_meshset,tets); CHKERR_PETSC(rval);
-  rval = moab.add_entities(edges_meshset,tets_edges); CHKERR_PETSC(rval);
-  rval = moab.convert_entities(edges_meshset,true,false,false); CHKERR_PETSC(rval);*/
-
-  ProjectionFieldOn10NodeTet ent_method_on_10nodeTet(m_field,"TEMP",true,false,"TEMP");
-  ierr = m_field.loop_dofs("TEMP",ent_method_on_10nodeTet); CHKERRQ(ierr);
-  ent_method_on_10nodeTet.set_nodes = false;
-  ierr = m_field.loop_dofs("TEMP",ent_method_on_10nodeTet); CHKERRQ(ierr);
-
-  if(pcomm->rank()==0) {
-    EntityHandle out_meshset;
-    rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
-    ierr = m_field.problem_get_FE("THERMAL_PROBLEM","THERMAL_FE",out_meshset); CHKERRQ(ierr);
-    rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
-    rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
-  }
+  //Matrix View
+  //MatView(A,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
+  //ierr = VecView(T,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+  ///std::string wait;
+  //std::cin >> wait;
 
   ierr = MatDestroy(&A); CHKERRQ(ierr);
   ierr = VecDestroy(&F); CHKERRQ(ierr);

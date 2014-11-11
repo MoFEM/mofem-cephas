@@ -980,18 +980,18 @@ struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
  * \ingroup mofem_forces_and_sources
  *
  * User is implementing own operator at Guass piint level, by own object
- * derived from VertexElementForcesAndSurcesCoreL::UserDataOperator.  Arbitrary
+ * derived from VertexElementForcesAndSourcesCoreL::UserDataOperator.  Arbitrary
  * number of operator added pushing objects to vecUserOpN and
  * vecUserOpSymmNN. 
  *
  */
-struct VertexElementForcesAndSurcesCore: public ForcesAndSurcesCore {
+struct VertexElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 
   DataForcesAndSurcesCore data;
   DerivedDataForcesAndSurcesCore derivedData;
   string meshPositionsFieldName;
 
-  VertexElementForcesAndSurcesCore(FieldInterface &_mField):
+  VertexElementForcesAndSourcesCore(FieldInterface &_mField):
     ForcesAndSurcesCore(_mField),data(MBVERTEX),derivedData(data) {};
 
   ErrorCode rval;
@@ -1013,13 +1013,13 @@ struct VertexElementForcesAndSurcesCore: public ForcesAndSurcesCore {
     inline ublas::vector<double>& getCoords() { return ptrFE->coords; }
     inline const FEMethod* getFEMethod() { return ptrFE; }
     inline const NumeredMoFEMFiniteElement* getMoFEMFEPtr() { return ptrFE->fePtr; };
-    PetscErrorCode setPtrFE(VertexElementForcesAndSurcesCore *ptr) { 
+    PetscErrorCode setPtrFE(VertexElementForcesAndSourcesCore *ptr) { 
       PetscFunctionBegin;
       ptrFE = ptr;
       PetscFunctionReturn(0);
     }
     private:
-    VertexElementForcesAndSurcesCore *ptrFE; 
+    VertexElementForcesAndSourcesCore *ptrFE; 
   };
 
   boost::ptr_vector<UserDataOperator> vecUserOpN; 

@@ -2249,7 +2249,7 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode VertexElementForcesAndSurcesCore::operator()() {
+PetscErrorCode VertexElementForcesAndSourcesCore::operator()() {
   PetscFunctionBegin;
 
   if(fePtr->get_ent_type() != MBVERTEX) PetscFunctionReturn(0);

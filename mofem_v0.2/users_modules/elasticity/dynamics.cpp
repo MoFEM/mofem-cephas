@@ -65,7 +65,8 @@ static std::vector< pair<double, double> > ts;
 static int r=0;
 
 struct TimeForceScale: public MethodsForOp {
-    
+
+//Hassan: This function to read data file (once) and save it in a pair vector ts
     PetscErrorCode timeData(){
         ErrorCode rval;
         PetscErrorCode ierr;
@@ -73,20 +74,22 @@ struct TimeForceScale: public MethodsForOp {
         PetscBool flg = PETSC_TRUE;
         ierr = PetscOptionsGetString(PETSC_NULL,"-time_data_file",time_file_name,255,&flg); CHKERRQ(ierr);
         if(flg != PETSC_TRUE) {
-            SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -time_data_file (time_data FILE NEEDED)");}
-        ifstream time_data;
-        time_data.open(time_file_name);
-        if(time_data.fail()) cerr << "Error opening time data file"<<endl;
+        SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -time_data_file (time_data FILE NEEDED)");}
+        
+        FILE *time_data;
+        ierr =PetscFOpen(PETSC_COMM_SELF,time_file_name,"r",&time_data);CHKERRQ(ierr);
         double no1 = 0.0, no2 = 0.0;
-        std::string line;
-        while( getline(time_data, line) ){
-            sscanf(line.c_str(),"%lf %lf", &no1, &no2);
-            ts.push_back( std::make_pair<double,double>(no1, no2) );}
-        time_data.close();
-        cout << ts.size() <<" items founds! "<< endl;
+        
+        while(! feof (time_data)){
+        fscanf(time_data,"%lf %lf",&no1,&no2);
+        ts.push_back(std::make_pair<double,double>(no1, no2));
+        }
+        
+        ierr =PetscFClose(PETSC_COMM_SELF, time_data);CHKERRQ(ierr);
+        
         r=1;
-    }
-    
+        }
+//Hassan: this fuction will loop over data in pair vector ts to find load scale based on ts_t
     PetscErrorCode scaleNf(const FEMethod *fe,ublas::vector<FieldData> &Nf) {
         PetscFunctionBegin;
         if(r==0) timeData();
@@ -113,11 +116,9 @@ struct TimeForceScale: public MethodsForOp {
             else if (ts_t <= (ts[0]).first)   scale=(ts[0]).second;
             else if (ts_t >= (ts[n]).first)   scale=(ts[n]).second;
         }
-        cout<< "ts_t:" << ts_t << endl;
-        cout<< "scale:" << scale << endl;
-        
-        //Here you can define time function rather than read from a file
-        //Triangular loading over 10s (maximum at 5)
+                
+//Hassan : Here you can define time function rather than read from a file
+//Triangular loading over 10s (maximum at 5)
         /*double scale = 0;
          if(ts_t < 3.) scale = ts_t/5.;
          if(ts_t > 5.) scale = 1.+(5.-ts_t)/5.;

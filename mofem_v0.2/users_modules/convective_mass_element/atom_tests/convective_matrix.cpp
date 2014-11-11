@@ -1,6 +1,12 @@
 /* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
  * --------------------------------------------------------------
- * FIXME: DESCRIPTION
+ *
+ * Test for linar elastic dynamics.
+ *
+ * This is not exactly procedure for linear elatic dynamics, since jacobian is
+ * evaluated at every time step and snes procedure is involved. However it is
+ * implemented like that, to test methodology for general nonlinear problem.
+ *
  */
 
 /* This file is part of MoFEM.
@@ -17,57 +23,57 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#include "FieldInterface.hpp"
-#include "FieldCore.hpp"
-
-#include "SurfacePressureComplexForLazy.hpp"
-
-#include "FEM.h"
-#include "FEMethod_UpLevelStudent.hpp"
-#include "PostProcVertexMethod.hpp"
-#include "PostProcDisplacementAndStrainOnRefindedMesh.hpp"
-#include "PostProcNonLinearElasticityStresseOnRefindedMesh.hpp"
-
-#include "FEMethod_DriverComplexForLazy.hpp"
-
+#include <MoFEM.hpp>
 using namespace MoFEM;
+
+#include <DirichletBC.hpp>
+
+#include <Projection10NodeCoordsOnField.hpp>
+
+#include <boost/numeric/ublas/vector_proxy.hpp>
+#include <boost/numeric/ublas/matrix.hpp>
+#include <boost/numeric/ublas/matrix_proxy.hpp>
+#include <boost/numeric/ublas/vector.hpp>
+
+#include <SurfacePressure.hpp>
+#include <NodalForce.hpp>
+#include <FluidPressure.hpp>
+#include <BodyForce.hpp>
+#include <ThermalStressElement.hpp>
+
+#include <FEMethod_LowLevelStudent.hpp>
+#include <FEMethod_UpLevelStudent.hpp>
+
+#include <PostProcVertexMethod.hpp>
+#include <PostProcDisplacementAndStrainOnRefindedMesh.hpp>
+
+extern "C" {
+  #include <complex_for_lazy.h>
+}
+
+#include <ArcLengthTools.hpp>
+#include <FEMethod_ComplexForLazy.hpp>
+#include <FEMethod_DriverComplexForLazy.hpp>
+
+#include <SurfacePressureComplexForLazy.hpp>
+#include <PostProcNonLinearElasticityStresseOnRefindedMesh.hpp>
+
+#include <adolc/adolc.h> 
+#include <ConvectiveMassElement.hpp>
+
+using namespace ObosleteUsersModules;
 
 ErrorCode rval;
 PetscErrorCode ierr;
 
 static char help[] = "...\n\n";
 
-//Rounding
-#define RND_EPS 1e-6
-double roundn(double n) {
-  //break n into fractional part (fract) and integral part (intp)
-  double fract, intp;
-  fract = modf(n,&intp);
-  // case where n approximates zero, set n to "positive" zero
-  if (abs(intp)==0) {
-    if(abs(fract)<=RND_EPS) {
-      n=0.000;
-    }
-  }
-  return n;
-}
-
-
-struct NL_ElasticFEMethod: public NonLinearSpatialElasticFEMthod {
-
-  NL_ElasticFEMethod(FieldInterface& _mField,double _lambda,double _mu,int _verbose = 0): 
-      FEMethod_ComplexForLazy_Data(_mField,_verbose), 
-      NonLinearSpatialElasticFEMthod(_mField,_lambda,_mu,_verbose)  {
-    set_PhysicalEquationNumber(hooke);
-  }
-
-};
 
 int main(int argc, char *argv[]) {
 
   PetscInitialize(&argc,&argv,(char *)0,help);
 
-  Core mb_instance;
+  moab::Core mb_instance;
   Interface& moab = mb_instance;
   int rank;
   MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
@@ -85,12 +91,7 @@ int main(int argc, char *argv[]) {
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
-  PetscLogDouble t1,t2;
-  PetscLogDouble v1,v2;
-  ierr = PetscTime(&v1); CHKERRQ(ierr);
-  ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
-
-  FieldCore core(moab);
+  MoFEM::Core core(moab);
   FieldInterface& mField = core;
 
   Range CubitSIDESETs_meshsets;
@@ -158,17 +159,6 @@ int main(int argc, char *argv[]) {
     ierr = mField.add_ents_to_finite_element_by_TRIs(tris,"NEUAMNN_FE"); CHKERRQ(ierr);
   }
 
-  #ifdef NONLINEAR_TEMPERATUTE
-
-  ierr = mField.add_field("TEMPERATURE",H1,1); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_data("ELASTIC","TEMPERATURE"); CHKERRQ(ierr);
-  ierr = mField.add_ents_to_field_by_TETs(0,"TEMPERATURE"); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBTET,"TEMPERATURE",1); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBTRI,"TEMPERATURE",1); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBEDGE,"TEMPERATURE",1); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBVERTEX,"TEMPERATURE",1); CHKERRQ(ierr);
-
-  #endif //NONLINEAR_TEMPERATUTE
 
   //build field
   ierr = mField.build_fields(); CHKERRQ(ierr);
@@ -189,24 +179,6 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  #ifdef NONLINEAR_TEMPERATUTE
-
-  {
-    EntityHandle node = 0;
-    double coords[3];
-    for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"TEMPERATURE",dof_ptr)) {
-      if(dof_ptr->get_ent_type()!=MBVERTEX) continue;
-      EntityHandle ent = dof_ptr->get_ent();
-      if(node!=ent) {
-	rval = moab.get_coords(&ent,1,coords); CHKERR_PETSC(rval);
-	node = ent;
-      }
-      double &fval = dof_ptr->get_FieldData();
-      fval = coords[0];
-    }
-  }
-
-  #endif //NONLINEAR_TEMPERATUTE
 
   //build finite elemnts
   ierr = mField.build_finite_elements(); CHKERRQ(ierr);
@@ -222,7 +194,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.partition_finite_elements("ELASTIC_MECHANICS"); CHKERRQ(ierr);
   ierr = mField.partition_ghost_dofs("ELASTIC_MECHANICS"); CHKERRQ(ierr);
 
-  //create matrices
+  /*//create matrices
   Vec F;
   ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",COL,&F); CHKERRQ(ierr);
   Vec D;
@@ -233,9 +205,6 @@ int main(int argc, char *argv[]) {
   const double young_modulus = 1.;
   const double poisson_ratio = 0.;
   NL_ElasticFEMethod my_fe(mField,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
-  #ifdef NONLINEAR_TEMPERATUTE
-  my_fe.thermal_expansion = 0.1;
-  #endif //NONLINEAR_TEMPERATUTE
 
   NeummanForcesSurfaceComplexForLazy neumann_forces(mField,Aij,F);
   NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE &fe_spatial = neumann_forces.getLoopSpatialFe();
@@ -280,55 +249,8 @@ int main(int argc, char *argv[]) {
   ierr = SNESGetIterationNumber(snes,&its); CHKERRQ(ierr);
   ierr = PetscPrintf(PETSC_COMM_WORLD,"number of Newton iterations = %D\n",its); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);*/
 
-  {
-
-    //Open mesh_file_name.txt for writing
-    ofstream myfile;
-    #ifdef NONLINEAR_TEMPERATUTE
-    myfile.open(("nonlinear_thermal_expansion_"+string(mesh_file_name)+".txt").c_str());
-    #else
-    myfile.open(("nonlinear_"+string(mesh_file_name)+".txt").c_str());
-    #endif
-    
-    //Output displacements
-    cout << "<<<< Displacements (X-Translation, Y-Translation, Z-Translation) >>>>>" << endl;
-    myfile << "<<<< Displacements (X-Translation, Y-Translation, Z-Translation) >>>>>" << endl;
-    
-    for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"SPATIAL_POSITION",dof_ptr))
-    {
-        if(dof_ptr->get_ent_type()!=MBVERTEX) continue;
-  
-	double coords[3];
-	EntityHandle ent = dof_ptr->get_ent();
-	rval = moab.get_coords(&ent,1,coords); CHKERR_PETSC(rval);
-        
-        if(dof_ptr->get_dof_rank()==0)
-        {
-            //Round and truncate to 3 decimal places
-            double fval = dof_ptr->get_FieldData()-coords[dof_ptr->get_dof_rank()];
-            cout << boost::format("%.3lf") % roundn(fval) << "  ";
-            myfile << boost::format("%.3lf") % roundn(fval) << "  ";
-        }
-        if(dof_ptr->get_dof_rank()==1)
-        {
-            //Round and truncate to 3 decimal places
-            double fval = dof_ptr->get_FieldData()-coords[dof_ptr->get_dof_rank()];
-            cout << boost::format("%.3lf") % roundn(fval) << "  ";
-            myfile << boost::format("%.3lf") % roundn(fval) << "  ";
-        }
-        if(dof_ptr->get_dof_rank()==2)
-        {
-            //Round and truncate to 3 decimal places
-            double fval = dof_ptr->get_FieldData()-coords[dof_ptr->get_dof_rank()];
-            cout << boost::format("%.3lf") % roundn(fval) << endl;
-            myfile << boost::format("%.3lf") % roundn(fval) << endl;
-        }
-        
-    }
-
-  }
 
   /*//Save data on mesh
   ierr = mField.set_global_VecCreateGhost("ELASTIC_MECHANICS",Col,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
@@ -352,20 +274,16 @@ int main(int argc, char *argv[]) {
   }*/
 
   //detroy matrices
-  ierr = VecDestroy(&F); CHKERRQ(ierr);
+  /*ierr = VecDestroy(&F); CHKERRQ(ierr);
   ierr = VecDestroy(&D); CHKERRQ(ierr);
   ierr = MatDestroy(&Aij); CHKERRQ(ierr);
-  ierr = SNESDestroy(&snes); CHKERRQ(ierr);
-
-  ierr = PetscTime(&v2);CHKERRQ(ierr);
-  ierr = PetscGetCPUTime(&t2);CHKERRQ(ierr);
-
-  PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Total Rank %d Time = %f CPU Time = %f\n",pcomm->rank(),v2-v1,t2-t1);
-  PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT);
+  ierr = SNESDestroy(&snes); CHKERRQ(ierr);*/
 
   PetscFinalize();
 
   return 0;
+
+
 }
 
 
