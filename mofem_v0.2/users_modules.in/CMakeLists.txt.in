@@ -100,6 +100,12 @@ if(CGAL_DIR)
   endif(CGAL_CONFIG_LOADED)
 endif(CGAL_DIR)
 
+if(ADOL-C_LIBRARY) 
+  include_directories("${ADOL-C_DIR}/include")
+  add_definitions( -DWITH_ADOL_C )
+  message(STATUS "WITH ADLOC-C")
+endif(ADOL-C_LIBRARY)
+
 include(ModulesList.cmake)
 
 

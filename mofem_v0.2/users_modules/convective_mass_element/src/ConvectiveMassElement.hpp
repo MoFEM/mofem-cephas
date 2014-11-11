@@ -25,11 +25,9 @@
 #ifndef __CONVECTIVE_MASS_ELEMENT_HPP
 #define __CONVECTIVE_MASS_ELEMENT_HPP
 
-#ifndef ADOLC
+#ifndef WITH_ADOL_C
   #error "MoFEM need to be compiled with ADOL-C"
 #endif 
-
-namespace MoFEM {
 
 /** \brief struture grouping operators and data used for calulation of mass (convective) element
   * \ingroup convective_mass_elem
@@ -1062,13 +1060,13 @@ struct ConvectiveMassElement {
     ErrorCode rval;
     PetscErrorCode ierr;
   
-    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_ELASTICSET,it)) {
+    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|BLOCK_BODYFORCESSET,it)) {
       int id = it->get_msId();
       EntityHandle meshset = it->get_meshset();
       rval = mField.get_moab().get_entities_by_type(meshset,MBTET,setOfBlocks[id].tEts,true); CHKERR_PETSC(rval);
-      Mat_Elastic mydata;
+      Block_BodyForces mydata;
       ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
-      setOfBlocks[id].rho0 = mydata.data.Density;
+      setOfBlocks[id].rho0 = mydata.data.density;
     }
     PetscFunctionReturn(0);
   }
@@ -1187,12 +1185,11 @@ struct ConvectiveMassElement {
 
 };
 
-}
 
 #endif //__CONVECTIVE_MASS_ELEMENT_HPP
 
 /***************************************************************************//**
- * \defgroup convective_mass_elem (Convective) Mass Eleement
+ * \defgroup convective_mass_elem (Convective) Mass Element
  * \ingroup mofem_forces_and_sources 
  ******************************************************************************/
 
