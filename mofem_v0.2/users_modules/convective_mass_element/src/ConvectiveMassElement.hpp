@@ -487,8 +487,8 @@ struct ConvectiveMassElement {
     CommonData &commonData;
     int tAg;
 
-    OpMassLhs_dM_dX(const string field_name,BlockData &data,CommonData &common_data,int tag):
-      TetElementForcesAndSourcesCore::UserDataOperator(field_name),
+    OpMassLhs_dM_dX(const string field_name,const string col_field,BlockData &data,CommonData &common_data,int tag):
+      TetElementForcesAndSourcesCore::UserDataOperator(field_name,col_field),
       dAta(data),commonData(common_data),tAg(tag) { }
 
     ublas::vector<adouble> a;
@@ -603,9 +603,9 @@ struct ConvectiveMassElement {
 	  trace_off();
 
 	  if(gg == 0) {
-	    jac_row_ptr.resize(a_dX.size());
-	    jac.resize(nb_active_vars,a_f.size());
-	    for(int nn1 = 0;nn1<nb_active_vars;nn1++) {
+	    jac_row_ptr.resize(3);
+	    jac.resize(3,nb_active_vars);
+	    for(int nn1 = 0;nn1<3;nn1++) {
 	      jac_row_ptr[nn1] = &jac(nn1,0);     
 	    }
 	    k.resize(row_data.getIndices().size(),col_data.getIndices().size(),0);
@@ -614,8 +614,9 @@ struct ConvectiveMassElement {
 
 	  int r;
 	  r = jacobian(
-	    tAg,nb_active_vars,a_f.size(),
+	    tAg,3,nb_active_vars,
 	    active_ptr,&jac_row_ptr[0]);
+	  cerr << "jac " << jac << endl;
 
 	  double val = getVolume()*getGaussPts()(3,gg);
 	  for(unsigned int dd1 = 0;dd1<row_data.getN().size2();dd1++) {
@@ -627,6 +628,12 @@ struct ConvectiveMassElement {
 	      }
 	    }
 	  }
+
+	  ierr = MatSetValues(getFEMethod()->ts_B,
+	    row_data.getIndices().size(),&*row_data.getIndices().data().begin(),
+	    col_data.getIndices().size(),&*col_data.getIndices().data().begin(),
+	    &*k.data().begin(),ADD_VALUES); CHKERRQ(ierr);
+
 
 	}
 
@@ -643,8 +650,8 @@ struct ConvectiveMassElement {
 
   struct OpMassLhs_dM_dx: public OpMassLhs_dM_dX  {
 
-    OpMassLhs_dM_dx(const string field_name,BlockData &data,CommonData &common_data,int tag):
-      OpMassLhs_dM_dX(field_name,data,common_data,tag) {}
+    OpMassLhs_dM_dx(const string field_name,const string col_field,BlockData &data,CommonData &common_data,int tag):
+      OpMassLhs_dM_dX(field_name,col_field,data,common_data,tag) {}
 
     ublas::vector<double> dx;
     ublas::vector<adouble> a_dx;
@@ -677,8 +684,8 @@ struct ConvectiveMassElement {
 
   struct OpMassLhs_dM_dc: public OpMassLhs_dM_dX  {
 
-    OpMassLhs_dM_dc(const string field_name,BlockData &data,CommonData &common_data,int tag):
-      OpMassLhs_dM_dX(field_name,data,common_data,tag) {}
+    OpMassLhs_dM_dc(const string field_name,const string col_field,BlockData &data,CommonData &common_data,int tag):
+      OpMassLhs_dM_dX(field_name,col_field,data,common_data,tag) {}
 
     ublas::vector<double> dc;
     ublas::vector<adouble> a_dc;
@@ -709,8 +716,8 @@ struct ConvectiveMassElement {
 
   struct OpMassLhs_dM_da: public OpMassLhs_dM_dX  {
 
-    OpMassLhs_dM_da(const string field_name,BlockData &data,CommonData &common_data,int tag):
-      OpMassLhs_dM_dX(field_name,data,common_data,tag) {}
+    OpMassLhs_dM_da(const string field_name,const string col_field,BlockData &data,CommonData &common_data,int tag):
+      OpMassLhs_dM_dX(field_name,col_field,data,common_data,tag) {}
 
     ublas::vector<double> dv;
     ublas::vector<adouble> a_dv;
@@ -740,8 +747,8 @@ struct ConvectiveMassElement {
 
   struct OpMassLhs_dM_dv: public OpMassLhs_dM_dX  {
 
-    OpMassLhs_dM_dv(const string field_name,BlockData &data,CommonData &common_data,int tag):
-      OpMassLhs_dM_dX(field_name,data,common_data,tag) {}
+    OpMassLhs_dM_dv(const string field_name,const string col_field,BlockData &data,CommonData &common_data,int tag):
+      OpMassLhs_dM_dX(field_name,col_field,data,common_data,tag) {}
 
     ublas::vector<double> dv;
     ublas::vector<adouble> a_dv;
@@ -1283,6 +1290,7 @@ struct ConvectiveMassElement {
     }
     sit = setOfBlocks.begin();
     for(;sit!=setOfBlocks.end();sit++) {
+      feVelLhs.get_op_to_do_Lhs().push_back(new OpMassLhs_dM_da(spatial_position_field_name,velocity_field_name,sit->second,commonData,tAg));
     }
 
     PetscFunctionReturn(0);
@@ -1318,8 +1326,8 @@ struct ConvectiveMassElement {
       feVelLhs.get_op_to_do_Lhs().push_back(new OpVelocityLhs_dV_dx(velocity_field_name,spatial_position_field_name,sit->second,commonData,tAg));
       feVelLhs.get_op_to_do_Lhs().push_back(new OpVelocityLhs_dV_dv(velocity_field_name,velocity_field_name,sit->second,commonData,tAg));
       if(ale) {
-	//feVelLhs.get_op_to_do_Lhs().push_back(new OpVelocityLhs_dV_dX(spatial_position_field_name,sit->second,commonData,tAg));
-	//feVelLhs.get_op_to_do_Lhs().push_back(new OpVelocityLhs_dV_dot_W(spatial_position_field_name,sit->second,commonData,tAg));
+	feVelLhs.get_op_to_do_Lhs().push_back(new OpVelocityLhs_dV_dX(velocity_field_name,material_position_field_name,sit->second,commonData,tAg));
+	feVelLhs.get_op_to_do_Lhs().push_back(new OpVelocityLhs_dV_dot_W(velocity_field_name,material_position_field_name,sit->second,commonData,tAg));
       }
     }
 
