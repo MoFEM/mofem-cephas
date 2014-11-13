@@ -1290,7 +1290,7 @@ struct ConvectiveMassElement {
     }
     sit = setOfBlocks.begin();
     for(;sit!=setOfBlocks.end();sit++) {
-      feVelLhs.get_op_to_do_Lhs().push_back(new OpMassLhs_dM_da(spatial_position_field_name,velocity_field_name,sit->second,commonData,tAg));
+      feMassLhs.get_op_to_do_Lhs().push_back(new OpMassLhs_dM_da(spatial_position_field_name,velocity_field_name,sit->second,commonData,tAg));
     }
 
     PetscFunctionReturn(0);
