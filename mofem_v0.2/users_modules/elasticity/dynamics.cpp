@@ -67,6 +67,7 @@ struct TimeForceScale: public MethodsForOp {
     ErrorCode rval;
     PetscErrorCode ierr;
     PetscErrorCode timeData(){
+        PetscFunctionBegin;
         char time_file_name[255];
         PetscBool flg = PETSC_TRUE;
         ierr = PetscOptionsGetString(PETSC_NULL,"-time_data_file",time_file_name,255,&flg); CHKERRQ(ierr);
@@ -76,11 +77,20 @@ struct TimeForceScale: public MethodsForOp {
         ierr =PetscFOpen(PETSC_COMM_SELF,time_file_name,"r",&time_data);CHKERRQ(ierr);
         double no1 = 0.0, no2 = 0.0;
         while(! feof (time_data)){
-        fscanf(time_data,"%lf %lf",&no1,&no2);
+            int n = fscanf(time_data,"%lf %lf",&no1,&no2);
+            if ((n <= 0)||((no1==0)&&(no2==0))){
+             fgetc(time_data);
+            continue;
+            }
+        if(n != 2){
+        cout << " ERROR INSUFFICIENT NUMBER OF ARGUMENTS IN TIME DATA FILE " << endl;
+        CHKERRABORT(PETSC_COMM_SELF,1);
+        }
         ts.push_back(std::make_pair<double,double>(no1, no2));
         }
         ierr =PetscFClose(PETSC_COMM_SELF, time_data);CHKERRQ(ierr);
         r=1;
+        PetscFunctionReturn(0);
         }
 
 //Hassan: this fuction will loop over data in pair vector ts to find load scale based on ts_t
