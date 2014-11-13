@@ -57,10 +57,8 @@ using namespace boost::numeric;
 using namespace ObosleteUsersModules;
 using namespace MoFEM;
 static char help[] = "...\n\n";
-
 struct TimeForceScale: public MethodsForOp {
 //Hassan: This function to read data file (once) and save it in a pair vector ts
-   
     std::vector< pair<double, double> > ts;
     int r;
     TimeForceScale() { r=0; };
@@ -123,7 +121,6 @@ struct TimeForceScale: public MethodsForOp {
         PetscFunctionReturn(0);
         }
 };
-
 
 
 int main(int argc, char *argv[]) {
