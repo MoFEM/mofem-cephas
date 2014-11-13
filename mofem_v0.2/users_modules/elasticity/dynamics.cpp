@@ -62,9 +62,9 @@ struct TimeForceScale: public MethodsForOp {
 //Hassan: This function to read data file (once) and save it in a pair vector ts
    
     map<double,double> tSeries;
-    int readFile;
+    int readFile,debug;
 
-    TimeForceScale(): readFile(0) {};
+    TimeForceScale(): readFile(0),debug(0) {};
 
     ErrorCode rval;
     PetscErrorCode ierr;
@@ -121,7 +121,9 @@ struct TimeForceScale: public MethodsForOp {
 	s0 = tit->second;
 	scale = s0;
       }
-      PetscPrintf(PETSC_COMM_WORLD,"\t ** force scale %3.2e time %3.2e\n",scale,ts_t);
+      if(debug) {
+	PetscPrintf(PETSC_COMM_WORLD,"\t ** force scale %3.2e time %3.2e\n",scale,ts_t);
+      }
       //Hassan : Here you can define time function rather than read from a file
       //Triangular loading over 10s (maximum at 5)
       /*double scale = 0;
