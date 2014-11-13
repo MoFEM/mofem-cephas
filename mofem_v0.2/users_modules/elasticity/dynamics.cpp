@@ -57,14 +57,16 @@ using namespace boost::numeric;
 using namespace ObosleteUsersModules;
 using namespace MoFEM;
 static char help[] = "...\n\n";
-static std::vector< pair<double, double> > ts;
-static int r=0;
 
 struct TimeForceScale: public MethodsForOp {
 //Hassan: This function to read data file (once) and save it in a pair vector ts
+   
+    std::vector< pair<double, double> > ts;
+    int r;
+    TimeForceScale() { r=0; };
+    ErrorCode rval;
+    PetscErrorCode ierr;
     PetscErrorCode timeData(){
-        ErrorCode rval;
-        PetscErrorCode ierr;
         char time_file_name[255];
         PetscBool flg = PETSC_TRUE;
         ierr = PetscOptionsGetString(PETSC_NULL,"-time_data_file",time_file_name,255,&flg); CHKERRQ(ierr);
@@ -80,10 +82,11 @@ struct TimeForceScale: public MethodsForOp {
         ierr =PetscFClose(PETSC_COMM_SELF, time_data);CHKERRQ(ierr);
         r=1;
         }
+
 //Hassan: this fuction will loop over data in pair vector ts to find load scale based on ts_t
-    PetscErrorCode scaleNf(const FEMethod *fe,ublas::vector<FieldData> &Nf) {
+        PetscErrorCode scaleNf(const FEMethod *fe,ublas::vector<FieldData> &Nf) {
         PetscFunctionBegin;
-        if(r==0) timeData();
+            if(r==0) timeData();
         double ts_t = fe->ts_t;
         double scale = 0.0;
         double diff=1e-3;
@@ -108,10 +111,8 @@ struct TimeForceScale: public MethodsForOp {
          if(ts_t > 10.) scale = 0;*/
         Nf *= scale;
         PetscFunctionReturn(0);
-    }
+        }
 };
-
-
 
 
 
