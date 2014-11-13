@@ -244,6 +244,11 @@ int main(int argc, char *argv[]) {
   ierr = inertia.setConvectiveMassOperators("SPATIAL_VELOCITY","SPATIAL_POSITION"); CHKERRQ(ierr);
   ierr = inertia.setVelocityOperators("SPATIAL_VELOCITY","SPATIAL_POSITION"); CHKERRQ(ierr);
 
+  inertia.getLoopFeMassRhs().ts_F = F;
+  inertia.getLoopFeMassRhs().ts_a = 1;
+  inertia.getLoopFeMassLhs().ts_B = Aij;
+  inertia.getLoopFeMassLhs().ts_a = 1;
+
   inertia.getLoopFeVelRhs().ts_F = F;
   inertia.getLoopFeVelRhs().ts_a = 1;
   inertia.getLoopFeVelLhs().ts_B = Aij;
