@@ -62,7 +62,7 @@ struct ConvectiveMassElement {
      * More details about algorithm 
      * http://people.sc.fsu.edu/~jburkardt/cpp_src/gm_rule/gm_rule.html
     **/
-    int getRule(int order) { return order-1; };
+    int getRule(int order) { return order; };
   };
   
   MyVolumeFE feMassRhs; ///< cauclate right hand side for tetrahedral elements
@@ -320,9 +320,9 @@ struct ConvectiveMassElement {
       inv_a(0,0) = a(1,1)*a(2,2)-a(1,2)*a(2,1);
       inv_a(0,1) = a(0,2)*a(2,1)-a(0,1)*a(2,2);
       inv_a(0,2) = a(0,1)*a(1,2)-a(0,2)*a(1,1);
-      inv_a(1,0) = a(1,2)*a(2,1)-a(1,0)*a(2,2);
+      inv_a(1,0) = a(1,2)*a(2,0)-a(1,0)*a(2,2);
       inv_a(1,1) = a(0,0)*a(2,2)-a(0,2)*a(2,0);
-      inv_a(1,2) = a(0,2)*a(2,0)-a(0,0)*a(1,2);
+      inv_a(1,2) = a(0,2)*a(1,0)-a(0,0)*a(1,2);
       inv_a(2,0) = a(1,0)*a(2,1)-a(1,1)*a(2,0);
       inv_a(2,1) = a(0,1)*a(2,0)-a(0,0)*a(2,1);
       inv_a(2,2) = a(0,0)*a(1,1)-a(0,1)*a(1,0);
@@ -653,12 +653,12 @@ struct ConvectiveMassElement {
 	    }
 	  }
 
-	  ierr = MatSetValues(getFEMethod()->ts_B,
-	    row_data.getIndices().size(),&*row_data.getIndices().data().begin(),
-	    col_data.getIndices().size(),&*col_data.getIndices().data().begin(),
-	    &*k.data().begin(),ADD_VALUES); CHKERRQ(ierr);
-
 	}
+
+	ierr = MatSetValues(getFEMethod()->ts_B,
+	  row_data.getIndices().size(),&*row_data.getIndices().data().begin(),
+	  col_data.getIndices().size(),&*col_data.getIndices().data().begin(),
+	  &*k.data().begin(),ADD_VALUES); CHKERRQ(ierr);
 
       } catch (const std::exception& ex) {
 	ostringstream ss;
@@ -793,8 +793,8 @@ struct ConvectiveMassElement {
 	  if(commonData.meshPositionGradientAtGaussPts.size()>0) {
 	    noalias(H) = commonData.meshPositionGradientAtGaussPts[gg];
 	  } else {
+	    H.clear();
 	    for(int dd = 0;dd<3;dd++) {
-	      H.clear();
 	      H(dd,dd) = 1;
 	    }
 	  }
@@ -1012,12 +1012,12 @@ struct ConvectiveMassElement {
 	  }
 	  //cerr << k << endl;
 
-	  ierr = MatSetValues(getFEMethod()->ts_B,
-	    row_data.getIndices().size(),&*row_data.getIndices().data().begin(),
-	    col_data.getIndices().size(),&*col_data.getIndices().data().begin(),
-	    &*k.data().begin(),ADD_VALUES); CHKERRQ(ierr);
-
 	}
+
+	ierr = MatSetValues(getFEMethod()->ts_B,
+	  row_data.getIndices().size(),&*row_data.getIndices().data().begin(),
+	  col_data.getIndices().size(),&*col_data.getIndices().data().begin(),
+	  &*k.data().begin(),ADD_VALUES); CHKERRQ(ierr);
 
       } catch (const std::exception& ex) {
 	ostringstream ss;
@@ -1042,14 +1042,15 @@ struct ConvectiveMassElement {
       PetscFunctionBegin;
 
       //active
-      dx.resize(col_data.getIndices().size(),0);
-      a_dx.resize(dx.size());
+      int nb_dofs = col_data.getIndices().size();
+      dx.resize(nb_dofs,0);
+      a_dx.resize(nb_dofs);
       for(unsigned int nn = 0;nn<dx.size();nn++) {
 	a_dx[nn] <<= dx[nn];
       }
 
-      ublas::vector<double> N = col_data.getN(gg,dx.size()/3);
-      ublas::matrix<double> diffN = trans(col_data.getDiffN(gg,a_dx.size()/3));
+      ublas::vector<double> N = col_data.getN(gg,nb_dofs/3);
+      ublas::matrix<double> diffN = trans(col_data.getDiffN(gg,nb_dofs/3));
       for(unsigned int nn1 = 0;nn1<3;nn1++) {
 	for(unsigned int dd = 0;dd<a_dx.size()/3;dd++) {
 	  dot_w[nn1] += N[dd]*a_dx[3*dd+nn1]*getFEMethod()->ts_a;
@@ -1061,7 +1062,7 @@ struct ConvectiveMassElement {
 	}
       }
       active_ptr = &*dx.data().begin();
-      nb_active_vars = dx.size();
+      nb_active_vars = nb_dofs;
 
       PetscFunctionReturn(0);
     }
@@ -1080,21 +1081,22 @@ struct ConvectiveMassElement {
       PetscFunctionBegin;
 
       //active
-      dv.resize(col_data.getIndices().size(),0);
-      a_dv.resize(dv.size());
-      for(unsigned int nn = 0;nn<dv.size();nn++) {
+      int nb_dofs = col_data.getIndices().size();
+      dv.resize(nb_dofs,0);
+      a_dv.resize(nb_dofs);
+      for(unsigned int nn = 0;nn<nb_dofs;nn++) {
 	a_dv[nn] <<= dv[nn];
       }
 
-      ublas::vector<double> N = col_data.getN(gg,dv.size()/3);
+      ublas::vector<double> N = col_data.getN(gg,nb_dofs/3);
       for(unsigned int nn1 = 0;nn1<3;nn1++) {
-	for(unsigned int dd = 0;dd<a_dv.size()/3;dd++) {
+	for(unsigned int dd = 0;dd<nb_dofs/3;dd++) {
 	  v[nn1] += N[dd]*a_dv[3*dd+nn1];
 	}
       }
 
       active_ptr = &*dv.data().begin();
-      nb_active_vars = dv.size();
+      nb_active_vars = nb_dofs;
 
       PetscFunctionReturn(0);
     }
