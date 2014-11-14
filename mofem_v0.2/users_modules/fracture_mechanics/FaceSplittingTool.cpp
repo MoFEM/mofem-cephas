@@ -219,7 +219,7 @@ PetscErrorCode FaceSplittingTools::splitFaces(const int verb) {
       interface_tris_nodes_tets_nodes_minus_surface_nodes_tets,last_ref_tets);
 
     Range tets_on_surface = subtract(interface_tris_nodes_tets,interface_tris_nodes_tets_nodes_minus_surface_nodes_tets);
-    if(tets_on_surface.size()>0) {
+    if(0) {//tets_on_surface.size()>0) { //swith off removing tets on surface
       Range tets_on_surface_faces;
       rval = mField.get_moab().get_adjacencies(
 	tets_on_surface,2,false,tets_on_surface_faces,Interface::UNION); CHKERR_PETSC(rval);
