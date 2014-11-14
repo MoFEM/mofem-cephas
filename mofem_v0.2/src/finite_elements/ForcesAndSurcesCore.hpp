@@ -444,7 +444,7 @@ struct ForcesAndSurcesCore: public FEMethod {
 
 };
 
-/** \brief base operator to do operations at Gauss Pt. leve
+/** \brief base operator to do operations at Gauss Pt. level
   * \ingroup mofem_forces_and_sources
   */
 struct DataOperator {
