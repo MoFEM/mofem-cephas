@@ -50,35 +50,92 @@ using namespace MoFEM;
 #include <ElasticFEMethod.hpp>
 #include <ElasticFEMethodDynamics.hpp>
 
+#include <iostream>
+#include <string>
+
 using namespace boost::numeric;
 using namespace ObosleteUsersModules;
-
 using namespace MoFEM;
-
 static char help[] = "...\n\n";
 
 struct TimeForceScale: public MethodsForOp {
+//Hassan: This function to read data file (once) and save it in a pair vector ts
+   
+    map<double,double> tSeries;
+    int readFile,debug;
 
-  PetscErrorCode scaleNf(const FEMethod *fe,ublas::vector<FieldData> &Nf) {
-    PetscFunctionBegin;
+    TimeForceScale(): readFile(0),debug(0) {};
 
-    double ts_t = fe->ts_t;
-    
-    //Triangular loading over 10s (maximum at 5)
-    double scale = 0;
-    if(ts_t < 5.) scale = ts_t/5.;
-    if(ts_t > 5.) scale = 1.+(5.-ts_t)/5.;
-    if(ts_t > 10.) scale = 0;
-    Nf *= scale;
+    ErrorCode rval;
+    PetscErrorCode ierr;
 
-    PetscFunctionReturn(0);
-  }
+    PetscErrorCode timeData() {
+      PetscFunctionBegin;
+      char time_file_name[255];
+      PetscBool flg = PETSC_TRUE;
+      ierr = PetscOptionsGetString(PETSC_NULL,"-my_time_data_file",time_file_name,255,&flg); CHKERRQ(ierr);
+      if(flg != PETSC_TRUE) {
+	SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_time_data_file (time_data FILE NEEDED)");
+      }
+      FILE *time_data;
+      ierr = PetscFOpen(PETSC_COMM_SELF,time_file_name,"r",&time_data); CHKERRQ(ierr);
+      double no1 = 0.0, no2 = 0.0;
+      while(! feof (time_data)){
+        int n = fscanf(time_data,"%lf %lf",&no1,&no2);
+        if((n <= 0)||((no1==0)&&(no2==0))) {
+          fgetc(time_data);
+	  continue;
+	}
+	if(n != 2){
+	  SETERRQ(PETSC_COMM_SELF,1,"read data file error (check input time data file)");
+	  //cout << " ERROR INSUFFICIENT NUMBER OF ARGUMENTS IN TIME DATA FILE " << endl;
+	  //CHKERRABORT(PETSC_COMM_SELF,1);
+	}
+	tSeries[no1] = no2;
+	PetscPrintf(PETSC_COMM_WORLD,"** read time series %3.2e time %3.2e\n",no1,no2);
+      }
+      ierr =PetscFClose(PETSC_COMM_SELF, time_data);CHKERRQ(ierr);
+      readFile=1;
+      PetscFunctionReturn(0);
+    }
 
+    //Hassan: this fuction will loop over data in pair vector ts to find load scale based on ts_t
+    PetscErrorCode scaleNf(const FEMethod *fe,ublas::vector<FieldData> &Nf) {
+      PetscFunctionBegin;
+      if(readFile==0) {
+	ierr = timeData(); CHKERRQ(ierr);
+      }
+      double ts_t = fe->ts_t;
+      double scale = 0;
+      double t0,t1,s0,s1,dt;
+      map<double, double>::iterator tit = tSeries.begin();
+      for(;tit!=tSeries.end();tit++) {
+	if(tit->first > ts_t) {
+	  t1 = tit->first;
+	  s1 = tit->second;
+	  dt = ts_t - t0;
+	  scale = s0 + ( (s1-s0)/(t1-t0) )*dt;
+	  break;
+	}
+	t0 = tit->first;
+	s0 = tit->second;
+	scale = s0;
+      }
+      if(debug) {
+	PetscPrintf(PETSC_COMM_WORLD,"\t ** force scale %3.2e time %3.2e\n",scale,ts_t);
+      }
+      //Hassan : Here you can define time function rather than read from a file
+      //Triangular loading over 10s (maximum at 5)
+      /*double scale = 0;
+      if(ts_t < 3.) scale = ts_t/5.;
+      if(ts_t > 5.) scale = 1.+(5.-ts_t)/5.;
+      if(ts_t > 10.) scale = 0;*/
+      Nf *= scale;
+      PetscFunctionReturn(0);
+    }
 };
 
 int main(int argc, char *argv[]) {
-
-
   ErrorCode rval;
   PetscErrorCode ierr;
 
