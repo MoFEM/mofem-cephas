@@ -68,7 +68,6 @@ PetscErrorCode ierr;
 
 static char help[] = "...\n\n";
 
-
 struct NL_ElasticFEMethod: public NonLinearSpatialElasticFEMthod {
 
   NL_ElasticFEMethod(FieldInterface& _mField,double _lambda,double _mu,int _verbose = 0): 
@@ -76,6 +75,29 @@ struct NL_ElasticFEMethod: public NonLinearSpatialElasticFEMthod {
       NonLinearSpatialElasticFEMthod(_mField,_lambda,_mu,_verbose)  {
     set_PhysicalEquationNumber(hooke);
   }
+
+  PetscErrorCode preProcess() {
+    PetscFunctionBegin;
+
+    switch (ts_ctx) {
+      case CTX_TSSETIFUNCTION: {
+	snes_ctx = CTX_SNESSETFUNCTION;
+	snes_f = ts_F;
+	break;
+      }
+      case CTX_TSSETIJACOBIAN: {
+	snes_ctx = CTX_SNESSETJACOBIAN;
+	snes_B = ts_B;
+	break;
+      }
+      default:
+      break;
+    }
+
+    ierr = NonLinearSpatialElasticFEMthod::preProcess(); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
 
 };
 
@@ -313,14 +335,22 @@ int main(int argc, char *argv[]) {
 
 
   //left hand side 
-
-
+  //preprocess
+  ts_ctx.get_preProcess_to_do_IJacobian().push_back(&my_dirihlet_bc);
+  //fe loops
+  TsCtx::loops_to_do_type& loops_to_do_Mat = ts_ctx.get_loops_to_do_IJacobian();
+  loops_to_do_Mat.push_back(TsCtx::loop_pair_type("ELASTIC",&my_fe));
+  loops_to_do_Mat.push_back(TsCtx::loop_pair_type("NEUAMNN_FE",&fe_spatial));
+  loops_to_do_Mat.push_back(TsCtx::loop_pair_type("MASS_ELEMENT",&inertia.getLoopFeMassLhs()));
+  loops_to_do_Mat.push_back(TsCtx::loop_pair_type("VELOCITY_ELEMENT",&inertia.getLoopFeVelLhs()));
+  //postrocess
+  ts_ctx.get_postProcess_to_do_IJacobian().push_back(&my_dirihlet_bc);
+  ts_ctx.get_postProcess_to_do_IJacobian().push_back(&update_and_control);
 
   ierr = VecDestroy(&F); CHKERRQ(ierr);
   ierr = VecDestroy(&D); CHKERRQ(ierr);
   ierr = MatDestroy(&Aij); CHKERRQ(ierr);
   ierr = TSDestroy(&ts);CHKERRQ(ierr);
-
  
   /*SnesCtx snes_ctx(m_field,"ELASTIC_MECHANICS");
   

@@ -441,6 +441,27 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::calcTrac
   PetscFunctionReturn(0);
 }
 
+PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::preProcess() {
+  PetscFunctionBegin;
+
+  switch(ts_ctx) {
+    case CTX_TSSETIFUNCTION: {
+      snes_ctx = CTX_SNESSETFUNCTION;
+      snes_f = ts_F;
+      break;
+    }
+    case CTX_TSSETIJACOBIAN: {
+      snes_ctx = CTX_SNESSETJACOBIAN;
+      snes_B = ts_B;
+      break;
+    }
+    default:
+    break;
+  }
+
+  PetscFunctionReturn(0);
+}
+
 PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::operator()() {
   PetscFunctionBegin;
 
