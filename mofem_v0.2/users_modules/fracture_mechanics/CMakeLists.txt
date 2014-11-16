@@ -83,13 +83,13 @@ file(COPY
 cm_export_file("crack1.cub" export_files_material_mechanics)
 
 configure_file(
-  "${CMAKE_CURRENT_SOURCE_DIR}/convergence_study.sh.in"
+  "${UM_SOURCE_DIR}/fracture_mechanics/convergence_study.sh.in"
   "${CMAKE_CURRENT_SOURCE_DIR}/convergence_study.sh"
   @ONLY
   )
 
 configure_file(
-  "${CMAKE_CURRENT_SOURCE_DIR}/arc_length.sh.in"
+  "${UM_SOURCE_DIR}/fracture_mechanics/arc_length.sh.in"
   "${CMAKE_CURRENT_SOURCE_DIR}/arc_length.sh"
   @ONLY
   )
