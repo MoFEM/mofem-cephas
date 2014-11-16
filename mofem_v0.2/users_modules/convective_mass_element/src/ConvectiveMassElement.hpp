@@ -1104,12 +1104,12 @@ struct ConvectiveMassElement {
   };
 
 
-  PetscErrorCode setBlocks() {
+  PetscErrorCode setBlocks(bool get_density_form_elastic_block_set = true) {
     PetscFunctionBegin;
     ErrorCode rval;
     PetscErrorCode ierr;
   
-    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|BLOCK_BODYFORCESSET,it)) {
+    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|BODYFORCESSET,it)) {
       int id = it->get_msId();
       EntityHandle meshset = it->get_meshset();
       rval = mField.get_moab().get_entities_by_type(meshset,MBTET,setOfBlocks[id].tEts,true); CHKERR_PETSC(rval);
@@ -1118,6 +1118,18 @@ struct ConvectiveMassElement {
       setOfBlocks[id].rho0 = mydata.data.density;
       //cerr << setOfBlocks[id].tEts << endl;
     }
+
+    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_ELASTICSET,it)) {
+      int id = it->get_msId();
+      EntityHandle meshset = it->get_meshset();
+      rval = mField.get_moab().get_entities_by_type(meshset,MBTET,setOfBlocks[id].tEts,true); CHKERR_PETSC(rval);
+      Mat_Elastic mydata;
+      ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+      setOfBlocks[id].rho0 = mydata.data.User1;
+      //cerr << setOfBlocks[id].tEts << endl;
+    }
+
+
     PetscFunctionReturn(0);
   }
 
