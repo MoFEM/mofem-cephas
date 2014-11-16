@@ -266,7 +266,7 @@ int main(int argc, char *argv[]) {
   ierr = inertia.setConvectiveMassOperators("SPATIAL_VELOCITY","SPATIAL_POSITION"); CHKERRQ(ierr);
   ierr = inertia.setVelocityOperators("SPATIAL_VELOCITY","SPATIAL_POSITION"); CHKERRQ(ierr);
 
-  inertia.getLoopFeMassRhs().ts_F = F;
+  /*inertia.getLoopFeMassRhs().ts_F = F;
   inertia.getLoopFeMassRhs().ts_a = 1;
   inertia.getLoopFeMassLhs().ts_B = Aij;
   inertia.getLoopFeMassLhs().ts_a = 1;
@@ -293,7 +293,7 @@ int main(int argc, char *argv[]) {
   MatView(Aij,PETSC_VIEWER_DRAW_WORLD);
   //MatView(Aij,PETSC_VIEWER_STDOUT_WORLD);
   std::string wait;
-  std::cin >> wait;
+  std::cin >> wait;*/
 
  struct UpdateAndControl: public FEMethod {
 
@@ -347,72 +347,38 @@ int main(int argc, char *argv[]) {
   ts_ctx.get_postProcess_to_do_IJacobian().push_back(&my_dirihlet_bc);
   ts_ctx.get_postProcess_to_do_IJacobian().push_back(&update_and_control);
 
-  ierr = VecDestroy(&F); CHKERRQ(ierr);
-  ierr = VecDestroy(&D); CHKERRQ(ierr);
-  ierr = MatDestroy(&Aij); CHKERRQ(ierr);
-  ierr = TSDestroy(&ts);CHKERRQ(ierr);
- 
-  /*SnesCtx snes_ctx(m_field,"ELASTIC_MECHANICS");
-  
-  SNES snes;
-  ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);
-  ierr = SNESSetApplicationContext(snes,&snes_ctx); CHKERRQ(ierr);
-  ierr = SNESSetFunction(snes,F,SnesRhs,&snes_ctx); CHKERRQ(ierr);
-  ierr = SNESSetJacobian(snes,Aij,Aij,SnesMat,&snes_ctx); CHKERRQ(ierr);
-  ierr = SNESSetFromOptions(snes); CHKERRQ(ierr);
+  ierr = TSSetIFunction(ts,F,f_TSSetIFunction,&ts_ctx); CHKERRQ(ierr);
+  ierr = TSSetIJacobian(ts,Aij,Aij,f_TSSetIJacobian,&ts_ctx); CHKERRQ(ierr);
+  ierr = TSMonitorSet(ts,f_TSMonitorSet,&ts_ctx,PETSC_NULL); CHKERRQ(ierr);
 
-  SnesCtx::loops_to_do_type& loops_to_do_Rhs = snes_ctx.get_loops_to_do_Rhs();
-  snes_ctx.get_preProcess_to_do_Rhs().push_back(&my_dirihlet_bc);
-  loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ELASTIC",&my_fe));
-  loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("NEUAMNN_FE",&fe_spatial));
-  snes_ctx.get_postProcess_to_do_Rhs().push_back(&my_dirihlet_bc);
-
-  SnesCtx::loops_to_do_type& loops_to_do_Mat = snes_ctx.get_loops_to_do_Mat();
-  snes_ctx.get_preProcess_to_do_Mat().push_back(&my_dirihlet_bc);
-  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ELASTIC",&my_fe));
-  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("NEUAMNN_FE",&fe_spatial));
-  snes_ctx.get_postProcess_to_do_Mat().push_back(&my_dirihlet_bc);
+  double ftime = 1;
+  ierr = TSSetDuration(ts,PETSC_DEFAULT,ftime); CHKERRQ(ierr);
+  ierr = TSSetSolution(ts,D); CHKERRQ(ierr);
+  ierr = TSSetFromOptions(ts); CHKERRQ(ierr);
 
   ierr = m_field.set_local_VecCreateGhost("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
-  double step_size = -1.;
-  ierr = neumann_forces.setForceScale(step_size); CHKERRQ(ierr);
-  ierr = SNESSolve(snes,PETSC_NULL,D); CHKERRQ(ierr);
-  int its;
-  ierr = SNESGetIterationNumber(snes,&its); CHKERRQ(ierr);
-  ierr = PetscPrintf(PETSC_COMM_WORLD,"number of Newton iterations = %D\n",its); CHKERRQ(ierr);
-  ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);*/
+  ierr = TSSolve(ts,D); CHKERRQ(ierr);
+  ierr = TSGetTime(ts,&ftime); CHKERRQ(ierr);
+
+  PetscInt steps,snesfails,rejects,nonlinits,linits;
+  ierr = TSGetTimeStepNumber(ts,&steps); CHKERRQ(ierr);
+  ierr = TSGetSNESFailures(ts,&snesfails); CHKERRQ(ierr);
+  ierr = TSGetStepRejections(ts,&rejects); CHKERRQ(ierr);
+  ierr = TSGetSNESIterations(ts,&nonlinits); CHKERRQ(ierr);
+  ierr = TSGetKSPIterations(ts,&linits); CHKERRQ(ierr);
+  PetscPrintf(PETSC_COMM_WORLD,
+    "steps %D (%D rejected, %D SNES fails), ftime %g, nonlinits %D, linits %D\n",
+    steps,rejects,snesfails,ftime,nonlinits,linits);
 
 
-  /*//Save data on mesh
-  ierr = m_field.set_global_VecCreateGhost("ELASTIC_MECHANICS",Col,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-  //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-  PostProcVertexMethod ent_method(moab,"SPATIAL_POSITION");
-  ierr = m_field.loop_dofs("ELASTIC_MECHANICS","SPATIAL_POSITION",Col,ent_method); CHKERRQ(ierr);
-
-  if(pcomm->rank()==0) {
-    EntityHandle out_meshset;
-    rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
-    ierr = m_field.problem_get_FE("ELASTIC_MECHANICS","ELASTIC",out_meshset); CHKERRQ(ierr);
-    rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
-    rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
-  }
-
-  PostProcFieldsAndGradientOnRefMesh fe_post_proc_method(moab);
-  ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",fe_post_proc_method);  CHKERRQ(ierr);
-  PetscSynchronizedFlush(PETSC_COMM_WORLD);
-  if(pcomm->rank()==0) {
-    rval = fe_post_proc_method.moab_post_proc.write_file("out_post_proc.vtk","VTK",""); CHKERR_PETSC(rval);
-  }*/
-
-  //detroy matrices
-  /*ierr = VecDestroy(&F); CHKERRQ(ierr);
+  ierr = VecDestroy(&F); CHKERRQ(ierr);
   ierr = VecDestroy(&D); CHKERRQ(ierr);
   ierr = MatDestroy(&Aij); CHKERRQ(ierr);
-  ierr = SNESDestroy(&snes); CHKERRQ(ierr);*/
+  ierr = TSDestroy(&ts);CHKERRQ(ierr);
+ 
 
   PetscFinalize();
 
