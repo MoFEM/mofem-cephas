@@ -57,71 +57,83 @@ using namespace boost::numeric;
 using namespace ObosleteUsersModules;
 using namespace MoFEM;
 static char help[] = "...\n\n";
+
 struct TimeForceScale: public MethodsForOp {
 //Hassan: This function to read data file (once) and save it in a pair vector ts
-    std::vector< pair<double, double> > ts;
-    int r;
-    TimeForceScale() { r=0; };
+   
+    map<double,double> tSeries;
+    int readFile,debug;
+
+    TimeForceScale(): readFile(0),debug(0) {};
+
     ErrorCode rval;
     PetscErrorCode ierr;
-    PetscErrorCode timeData(){
-        PetscFunctionBegin;
-        char time_file_name[255];
-        PetscBool flg = PETSC_TRUE;
-        ierr = PetscOptionsGetString(PETSC_NULL,"-time_data_file",time_file_name,255,&flg); CHKERRQ(ierr);
-        if(flg != PETSC_TRUE) {
-        SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -time_data_file (time_data FILE NEEDED)");}
-        FILE *time_data;
-        ierr =PetscFOpen(PETSC_COMM_SELF,time_file_name,"r",&time_data);CHKERRQ(ierr);
-        double no1 = 0.0, no2 = 0.0;
-        while(! feof (time_data)){
-            int n = fscanf(time_data,"%lf %lf",&no1,&no2);
-            if ((n <= 0)||((no1==0)&&(no2==0))){
-             fgetc(time_data);
-            continue;
-            }
-        if(n != 2){
-        cout << " ERROR INSUFFICIENT NUMBER OF ARGUMENTS IN TIME DATA FILE " << endl;
-        CHKERRABORT(PETSC_COMM_SELF,1);
-        }
-        ts.push_back(std::make_pair<double,double>(no1, no2));
-        }
-        ierr =PetscFClose(PETSC_COMM_SELF, time_data);CHKERRQ(ierr);
-        r=1;
-        PetscFunctionReturn(0);
-        }
 
-//Hassan: this fuction will loop over data in pair vector ts to find load scale based on ts_t
-        PetscErrorCode scaleNf(const FEMethod *fe,ublas::vector<FieldData> &Nf) {
-        PetscFunctionBegin;
-            if(r==0) timeData();
-        double ts_t = fe->ts_t;
-        double scale = 0.0;
-        double diff=1e-3;
-        for (int i = 0; i < ts.size(); ++i){
-            int j=i-1;
-            int n=ts.size()-1;
-            if ((ts_t > (ts[0]).first)&&(ts_t< (ts[n]).first)){
-                if (ts_t <= (ts[i]).first){
-                    if(abs(ts_t-(ts[i]).first) < diff) scale=(ts[i]).second;
-                    else scale=((ts[j]).second)+(((ts[i]).second)-((ts[j]).second))*((ts_t-((ts[j]).first))/(((ts[i]).first)-((ts[j]).first)));
-                    break;
-                }
-            }
-            else if (ts_t <= (ts[0]).first)   scale=(ts[0]).second;
-            else if (ts_t >= (ts[n]).first)   scale=(ts[n]).second;
-        }
-//Hassan : Here you can define time function rather than read from a file
-//Triangular loading over 10s (maximum at 5)
-        /*double scale = 0;
-         if(ts_t < 3.) scale = ts_t/5.;
-         if(ts_t > 5.) scale = 1.+(5.-ts_t)/5.;
-         if(ts_t > 10.) scale = 0;*/
-        Nf *= scale;
-        PetscFunctionReturn(0);
-        }
+    PetscErrorCode timeData() {
+      PetscFunctionBegin;
+      char time_file_name[255];
+      PetscBool flg = PETSC_TRUE;
+      ierr = PetscOptionsGetString(PETSC_NULL,"-my_time_data_file",time_file_name,255,&flg); CHKERRQ(ierr);
+      if(flg != PETSC_TRUE) {
+	SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_time_data_file (time_data FILE NEEDED)");
+      }
+      FILE *time_data;
+      ierr = PetscFOpen(PETSC_COMM_SELF,time_file_name,"r",&time_data); CHKERRQ(ierr);
+      double no1 = 0.0, no2 = 0.0;
+      while(! feof (time_data)){
+        int n = fscanf(time_data,"%lf %lf",&no1,&no2);
+        if((n <= 0)||((no1==0)&&(no2==0))) {
+          fgetc(time_data);
+	  continue;
+	}
+	if(n != 2){
+	  SETERRQ(PETSC_COMM_SELF,1,"read data file error (check input time data file)");
+	  //cout << " ERROR INSUFFICIENT NUMBER OF ARGUMENTS IN TIME DATA FILE " << endl;
+	  //CHKERRABORT(PETSC_COMM_SELF,1);
+	}
+	tSeries[no1] = no2;
+	PetscPrintf(PETSC_COMM_WORLD,"** read time series %3.2e time %3.2e\n",no1,no2);
+      }
+      ierr =PetscFClose(PETSC_COMM_SELF, time_data);CHKERRQ(ierr);
+      readFile=1;
+      PetscFunctionReturn(0);
+    }
+
+    //Hassan: this fuction will loop over data in pair vector ts to find load scale based on ts_t
+    PetscErrorCode scaleNf(const FEMethod *fe,ublas::vector<FieldData> &Nf) {
+      PetscFunctionBegin;
+      if(readFile==0) {
+	ierr = timeData(); CHKERRQ(ierr);
+      }
+      double ts_t = fe->ts_t;
+      double scale = 0;
+      double t0,t1,s0,s1,dt;
+      map<double, double>::iterator tit = tSeries.begin();
+      for(;tit!=tSeries.end();tit++) {
+	if(tit->first > ts_t) {
+	  t1 = tit->first;
+	  s1 = tit->second;
+	  dt = ts_t - t0;
+	  scale = s0 + ( (s1-s0)/(t1-t0) )*dt;
+	  break;
+	}
+	t0 = tit->first;
+	s0 = tit->second;
+	scale = s0;
+      }
+      if(debug) {
+	PetscPrintf(PETSC_COMM_WORLD,"\t ** force scale %3.2e time %3.2e\n",scale,ts_t);
+      }
+      //Hassan : Here you can define time function rather than read from a file
+      //Triangular loading over 10s (maximum at 5)
+      /*double scale = 0;
+      if(ts_t < 3.) scale = ts_t/5.;
+      if(ts_t > 5.) scale = 1.+(5.-ts_t)/5.;
+      if(ts_t > 10.) scale = 0;*/
+      Nf *= scale;
+      PetscFunctionReturn(0);
+    }
 };
-
 
 int main(int argc, char *argv[]) {
   ErrorCode rval;
@@ -151,81 +163,81 @@ int main(int argc, char *argv[]) {
 
   //Create MoFEM (Joseph) database
   MoFEM::Core core(moab);
-  FieldInterface& mField = core;
+  FieldInterface& m_field = core;
 
   //ref meshset ref level 0
-  ierr = mField.seed_ref_level_3D(0,0); CHKERRQ(ierr);
+  ierr = m_field.seed_ref_level_3D(0,0); CHKERRQ(ierr);
 
   // stl::bitset see for more details
   BitRefLevel bit_level0;
   bit_level0.set(0);
   EntityHandle meshset_level0;
   rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
-  ierr = mField.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
-  ierr = mField.get_entities_by_ref_level(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
+  ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
+  ierr = m_field.get_entities_by_ref_level(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
 
   /***/
   //Define problem
 
   //Fields
-  ierr = mField.add_field("DISPLACEMENT",H1,3,MF_ZERO); CHKERRQ(ierr);
-  ierr = mField.add_field("VELOCITIES",L2,3,MF_ZERO); CHKERRQ(ierr);
+  ierr = m_field.add_field("DISPLACEMENT",H1,3,MF_ZERO); CHKERRQ(ierr);
+  ierr = m_field.add_field("VELOCITIES",L2,3,MF_ZERO); CHKERRQ(ierr);
 
   //FE
-  ierr = mField.add_finite_element("STIFFNESS",MF_ZERO); CHKERRQ(ierr);
-  ierr = mField.add_finite_element("MASS",MF_ZERO); CHKERRQ(ierr);
-  ierr = mField.add_finite_element("COPUPLING_VV",MF_ZERO); CHKERRQ(ierr);
-  ierr = mField.add_finite_element("COPUPLING_VU",MF_ZERO); CHKERRQ(ierr);
+  ierr = m_field.add_finite_element("STIFFNESS",MF_ZERO); CHKERRQ(ierr);
+  ierr = m_field.add_finite_element("MASS",MF_ZERO); CHKERRQ(ierr);
+  ierr = m_field.add_finite_element("COPUPLING_VV",MF_ZERO); CHKERRQ(ierr);
+  ierr = m_field.add_finite_element("COPUPLING_VU",MF_ZERO); CHKERRQ(ierr);
 
 
   //Define rows/cols and element data
   //STIFFNESS
-  ierr = mField.modify_finite_element_add_field_row("STIFFNESS","DISPLACEMENT"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_col("STIFFNESS","DISPLACEMENT"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_data("STIFFNESS","DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_row("STIFFNESS","DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_col("STIFFNESS","DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_data("STIFFNESS","DISPLACEMENT"); CHKERRQ(ierr);
 
   //MASS
-  ierr = mField.modify_finite_element_add_field_row("MASS","DISPLACEMENT"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_col("MASS","VELOCITIES"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_data("MASS","DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_row("MASS","DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_col("MASS","VELOCITIES"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_data("MASS","DISPLACEMENT"); CHKERRQ(ierr);
 
   //COPUPLING
   //VV
-  ierr = mField.modify_finite_element_add_field_row("COPUPLING_VV","VELOCITIES"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_col("COPUPLING_VV","VELOCITIES"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_data("COPUPLING_VV","DISPLACEMENT"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_data("COPUPLING_VV","VELOCITIES"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_row("COPUPLING_VV","VELOCITIES"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_col("COPUPLING_VV","VELOCITIES"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_data("COPUPLING_VV","DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_data("COPUPLING_VV","VELOCITIES"); CHKERRQ(ierr);
   //VU
-  ierr = mField.modify_finite_element_add_field_row("COPUPLING_VU","VELOCITIES"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_col("COPUPLING_VU","DISPLACEMENT"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_data("COPUPLING_VU","DISPLACEMENT"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_data("COPUPLING_VU","VELOCITIES"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_row("COPUPLING_VU","VELOCITIES"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_col("COPUPLING_VU","DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_data("COPUPLING_VU","DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_data("COPUPLING_VU","VELOCITIES"); CHKERRQ(ierr);
 
   //define problems
-  ierr = mField.add_problem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
+  ierr = m_field.add_problem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
 
   //set finite elements for problem
-  ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","STIFFNESS"); CHKERRQ(ierr);
-  ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","MASS"); CHKERRQ(ierr);
-  ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","COPUPLING_VV"); CHKERRQ(ierr);
-  ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","COPUPLING_VU"); CHKERRQ(ierr);
+  ierr = m_field.modify_problem_add_finite_element("ELASTIC_MECHANICS","STIFFNESS"); CHKERRQ(ierr);
+  ierr = m_field.modify_problem_add_finite_element("ELASTIC_MECHANICS","MASS"); CHKERRQ(ierr);
+  ierr = m_field.modify_problem_add_finite_element("ELASTIC_MECHANICS","COPUPLING_VV"); CHKERRQ(ierr);
+  ierr = m_field.modify_problem_add_finite_element("ELASTIC_MECHANICS","COPUPLING_VU"); CHKERRQ(ierr);
 
   //set refinment level for problem
-  ierr = mField.modify_problem_ref_level_add_bit("ELASTIC_MECHANICS",bit_level0); CHKERRQ(ierr);
+  ierr = m_field.modify_problem_ref_level_add_bit("ELASTIC_MECHANICS",bit_level0); CHKERRQ(ierr);
 
   /***/
   //Declare problem
 
   //add entitities (by tets) to the field
-  ierr = mField.add_ents_to_field_by_TETs(0,"DISPLACEMENT"); CHKERRQ(ierr);
-  ierr = mField.add_ents_to_field_by_TETs(0,"VELOCITIES"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_TETs(0,"DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_TETs(0,"VELOCITIES"); CHKERRQ(ierr);
 
 
   //add finite elements entities
-  ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"STIFFNESS",MBTET); CHKERRQ(ierr);
-  ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"MASS",MBTET); CHKERRQ(ierr);
-  ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"COPUPLING_VV",MBTET); CHKERRQ(ierr);
-  ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"COPUPLING_VU",MBTET); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"STIFFNESS",MBTET); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"MASS",MBTET); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"COPUPLING_VV",MBTET); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"COPUPLING_VU",MBTET); CHKERRQ(ierr);
 
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
@@ -234,33 +246,33 @@ int main(int argc, char *argv[]) {
   if(flg!=PETSC_TRUE) {
     disp_order = 1;	
   }
-  ierr = mField.set_field_order(0,MBTET,"DISPLACEMENT",disp_order); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBTRI,"DISPLACEMENT",disp_order); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBEDGE,"DISPLACEMENT",disp_order); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBVERTEX,"DISPLACEMENT",1); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBTET,"DISPLACEMENT",disp_order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBTRI,"DISPLACEMENT",disp_order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBEDGE,"DISPLACEMENT",disp_order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBVERTEX,"DISPLACEMENT",1); CHKERRQ(ierr);
   PetscInt vel_order;
   ierr = PetscOptionsGetInt(PETSC_NULL,"-my_vel_order",&vel_order,&flg); CHKERRQ(ierr);
   if(flg!=PETSC_TRUE) {
     vel_order = 1;	
   }
-  ierr = mField.set_field_order(0,MBTET,"VELOCITIES",vel_order); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBTRI,"VELOCITIES",vel_order); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBEDGE,"VELOCITIES",vel_order); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBVERTEX,"VELOCITIES",1); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBTET,"VELOCITIES",vel_order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBTRI,"VELOCITIES",vel_order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBEDGE,"VELOCITIES",vel_order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBVERTEX,"VELOCITIES",1); CHKERRQ(ierr);
 
-  ierr = MetaNeummanForces::addNeumannBCElements(mField,"ELASTIC_MECHANICS","DISPLACEMENT"); CHKERRQ(ierr);
-  ierr = MetaNodalForces::addNodalForceElement(mField,"ELASTIC_MECHANICS","DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = MetaNeummanForces::addNeumannBCElements(m_field,"ELASTIC_MECHANICS","DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = MetaNodalForces::addNodalForceElement(m_field,"ELASTIC_MECHANICS","DISPLACEMENT"); CHKERRQ(ierr);
 
   //body forces
-  ierr = mField.add_finite_element("BODY_FORCE",MF_ZERO); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_row("BODY_FORCE","DISPLACEMENT"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_col("BODY_FORCE","DISPLACEMENT"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_data("BODY_FORCE","DISPLACEMENT"); CHKERRQ(ierr);
-  ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","BODY_FORCE"); CHKERRQ(ierr);
-  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|BLOCK_BODYFORCESSET,it)) {
+  ierr = m_field.add_finite_element("BODY_FORCE",MF_ZERO); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_row("BODY_FORCE","DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_col("BODY_FORCE","DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_data("BODY_FORCE","DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = m_field.modify_problem_add_finite_element("ELASTIC_MECHANICS","BODY_FORCE"); CHKERRQ(ierr);
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,BLOCKSET|BLOCK_BODYFORCESSET,it)) {
     Range tets;
-    rval = mField.get_moab().get_entities_by_type(it->meshset,MBTET,tets,true); CHKERR_PETSC(rval);
-    ierr = mField.add_ents_to_finite_element_by_TETs(tets,"BODY_FORCE"); CHKERRQ(ierr);
+    rval = m_field.get_moab().get_entities_by_type(it->meshset,MBTET,tets,true); CHKERR_PETSC(rval);
+    ierr = m_field.add_ents_to_finite_element_by_TETs(tets,"BODY_FORCE"); CHKERRQ(ierr);
   }
 
 
@@ -268,49 +280,49 @@ int main(int argc, char *argv[]) {
   //build database
 
   //build field
-  ierr = mField.build_fields(); CHKERRQ(ierr);
+  ierr = m_field.build_fields(); CHKERRQ(ierr);
 
   //build finite elemnts
-  ierr = mField.build_finite_elements(); CHKERRQ(ierr);
+  ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
 
   //build adjacencies
-  ierr = mField.build_adjacencies(bit_level0); CHKERRQ(ierr);
+  ierr = m_field.build_adjacencies(bit_level0); CHKERRQ(ierr);
 
   //build problem
-  ierr = mField.build_problems(); CHKERRQ(ierr);
+  ierr = m_field.build_problems(); CHKERRQ(ierr);
 
   /****/
   //mesh partitioning 
 
   //partition
-  ierr = mField.partition_problem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
-  ierr = mField.partition_finite_elements("ELASTIC_MECHANICS"); CHKERRQ(ierr);
+  ierr = m_field.partition_problem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
+  ierr = m_field.partition_finite_elements("ELASTIC_MECHANICS"); CHKERRQ(ierr);
   //what are ghost nodes, see Petsc Manual
-  ierr = mField.partition_ghost_dofs("ELASTIC_MECHANICS"); CHKERRQ(ierr);
+  ierr = m_field.partition_ghost_dofs("ELASTIC_MECHANICS"); CHKERRQ(ierr);
 
   //print bcs
-  ierr = mField.print_cubit_displacement_set(); CHKERRQ(ierr);
-  ierr = mField.print_cubit_force_set(); CHKERRQ(ierr);
+  ierr = m_field.print_cubit_displacement_set(); CHKERRQ(ierr);
+  ierr = m_field.print_cubit_force_set(); CHKERRQ(ierr);
   //print block sets with materials
-  ierr = mField.print_cubit_materials_set(); CHKERRQ(ierr);
+  ierr = m_field.print_cubit_materials_set(); CHKERRQ(ierr);
 
   //create matrices
   Vec D,F;
-  ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",COL,&D); CHKERRQ(ierr);
-  ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",ROW,&F); CHKERRQ(ierr);
+  ierr = m_field.VecCreateGhost("ELASTIC_MECHANICS",COL,&D); CHKERRQ(ierr);
+  ierr = m_field.VecCreateGhost("ELASTIC_MECHANICS",ROW,&F); CHKERRQ(ierr);
   Mat Aij;
-  ierr = mField.MatCreateMPIAIJWithArrays("ELASTIC_MECHANICS",&Aij); CHKERRQ(ierr);
+  ierr = m_field.MatCreateMPIAIJWithArrays("ELASTIC_MECHANICS",&Aij); CHKERRQ(ierr);
 
   //TS
-  TsCtx ts_ctx(mField,"ELASTIC_MECHANICS");
+  TsCtx ts_ctx(m_field,"ELASTIC_MECHANICS");
 
   const double YoungModulus = 1;
   const double PoissonRatio = 0.;
   const double rho = 1;
 
   struct DynamicBCFEMethodPreAndPostProc: public DisplacementBCFEMethodPreAndPostProc {
-    DynamicBCFEMethodPreAndPostProc(FieldInterface& _mField,const string &_field_name,
-    Mat &_Aij,Vec _X,Vec _F): DisplacementBCFEMethodPreAndPostProc(_mField,_field_name,_Aij,_X,_F) {}
+    DynamicBCFEMethodPreAndPostProc(FieldInterface& _m_field,const string &_field_name,
+    Mat &_Aij,Vec _X,Vec _F): DisplacementBCFEMethodPreAndPostProc(_m_field,_field_name,_Aij,_X,_F) {}
 
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
@@ -371,8 +383,8 @@ int main(int argc, char *argv[]) {
   ierr = TSCreate(PETSC_COMM_WORLD,&ts); CHKERRQ(ierr);
   ierr = TSSetType(ts,TSBEULER); CHKERRQ(ierr);
 
-  DynamicBCFEMethodPreAndPostProc my_dirichlet_bc(mField,"DISPLACEMENT",Aij,D,F);
-  DynamicElasticFEMethod my_fe(mField,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),rho);
+  DynamicBCFEMethodPreAndPostProc my_dirichlet_bc(m_field,"DISPLACEMENT",Aij,D,F);
+  DynamicElasticFEMethod my_fe(m_field,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),rho);
   UpdateAndControl update_and_control(ts);
 
   //Right hand side
@@ -386,17 +398,17 @@ int main(int argc, char *argv[]) {
   loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("COPUPLING_VU",&my_fe));
   //Neumann boundary conditions
   boost::ptr_map<string,NeummanForcesSurface> neumann_forces;
-  ierr = MetaNeummanForces::setNeumannFiniteElementOperators(mField,neumann_forces,F,"DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = MetaNeummanForces::setNeumannFiniteElementOperators(m_field,neumann_forces,F,"DISPLACEMENT"); CHKERRQ(ierr);
   string fe_name_str ="FORCE_FE";
-  neumann_forces.insert(fe_name_str,new NeummanForcesSurface(mField));
-  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET|FORCESET,it)) {
+  neumann_forces.insert(fe_name_str,new NeummanForcesSurface(m_field));
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET,it)) {
     ierr = neumann_forces.at(fe_name_str).addForce("DISPLACEMENT",F,it->get_msId());  CHKERRQ(ierr);
     neumann_forces.at(fe_name_str).methodsOp.push_back(new TimeForceScale());
 
   }
   fe_name_str = "PRESSURE_FE";
-  neumann_forces.insert(fe_name_str,new NeummanForcesSurface(mField));
-  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SIDESET|PRESSURESET,it)) {
+  neumann_forces.insert(fe_name_str,new NeummanForcesSurface(m_field));
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,SIDESET|PRESSURESET,it)) {
     ierr = neumann_forces.at(fe_name_str).addPreassure("DISPLACEMENT",F,it->get_msId()); CHKERRQ(ierr);
     neumann_forces.at(fe_name_str).methodsOp.push_back(new TimeForceScale());
   }
@@ -407,8 +419,8 @@ int main(int argc, char *argv[]) {
   //nodal forces
   boost::ptr_map<string,NodalForce> nodal_forces;
   fe_name_str ="FORCE_FE";
-  nodal_forces.insert(fe_name_str,new NodalForce(mField));
-  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET|FORCESET,it)) {
+  nodal_forces.insert(fe_name_str,new NodalForce(m_field));
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET,it)) {
     ierr = nodal_forces.at(fe_name_str).addForce("DISPLACEMENT",F,it->get_msId());  CHKERRQ(ierr);
     nodal_forces.at(fe_name_str).methodsOp.push_back(new TimeForceScale());
   }
@@ -417,9 +429,9 @@ int main(int argc, char *argv[]) {
     loops_to_do_Rhs.push_back(TsCtx::loop_pair_type(fit->first,&fit->second->getLoopFe()));
   }
   //body forecs
-  BodyFroceConstantField body_forces_methods(mField);
+  BodyFroceConstantField body_forces_methods(m_field);
   bool add_body_forces = false;
-  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|BLOCK_BODYFORCESSET,it)) {
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,BLOCKSET|BLOCK_BODYFORCESSET,it)) {
     add_body_forces = true;
     ierr = body_forces_methods.addBlock("DISPLACEMENT",F,it->get_msId()); CHKERRQ(ierr);
   }
@@ -475,29 +487,29 @@ int main(int argc, char *argv[]) {
     steps,rejects,snesfails,ftime,nonlinits,linits);
 
   //Save data on mesh
-  ierr = mField.set_global_VecCreateGhost("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = m_field.set_global_VecCreateGhost("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
   PostProcVertexMethod ent_method(moab);
-  ierr = mField.loop_dofs("ELASTIC_MECHANICS","DISPLACEMENT",ROW,ent_method); CHKERRQ(ierr);
+  ierr = m_field.loop_dofs("ELASTIC_MECHANICS","DISPLACEMENT",ROW,ent_method); CHKERRQ(ierr);
 
   if(pcomm->rank()==0) {
     EntityHandle out_meshset;
     rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
-    ierr = mField.problem_get_FE("ELASTIC_MECHANICS","STIFFNESS",out_meshset); CHKERRQ(ierr);
+    ierr = m_field.problem_get_FE("ELASTIC_MECHANICS","STIFFNESS",out_meshset); CHKERRQ(ierr);
     rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
     rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
   }
 
   PostProcDisplacemenysAndStarinOnRefMesh fe_post_proc_method(moab,"DISPLACEMENT");
-  ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","STIFFNESS",fe_post_proc_method);  CHKERRQ(ierr);
+  ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","STIFFNESS",fe_post_proc_method);  CHKERRQ(ierr);
   PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT);
   if(pcomm->rank()==0) {
     rval = fe_post_proc_method.moab_post_proc.write_file("out_post_proc.vtk","VTK",""); CHKERR_PETSC(rval);
   }
 
   PostProcL2VelocitiesFieldsAndGradientOnRefMesh fe_post_proc_velocities(moab);
-  ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","COPUPLING_VV",fe_post_proc_velocities);  CHKERRQ(ierr);
+  ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","COPUPLING_VV",fe_post_proc_velocities);  CHKERRQ(ierr);
   PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT);
   if(pcomm->rank()==0) {
     rval = fe_post_proc_velocities.moab_post_proc.write_file("out_post_proc_velocities.vtk","VTK",""); CHKERR_PETSC(rval);

@@ -110,7 +110,7 @@ int main(int argc, char *argv[]) {
  
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
-  int order = 1;
+  int order = 2;
   ierr = m_field.set_field_order(root_set,MBTET,"TEMP",order); CHKERRQ(ierr);
   ierr = m_field.set_field_order(root_set,MBTRI,"TEMP",order); CHKERRQ(ierr);
   ierr = m_field.set_field_order(root_set,MBEDGE,"TEMP",order); CHKERRQ(ierr);

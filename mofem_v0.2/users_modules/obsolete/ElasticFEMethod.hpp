@@ -98,7 +98,8 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       PetscFunctionReturn(0);
     }
 
-    virtual PetscErrorCode GetMatParameters(double *_lambda,double *_mu) {
+    virtual PetscErrorCode GetMatParameters(double *_lambda,double *_mu,
+      double *_User1 = NULL,double *_User2 = NULL) {
       PetscFunctionBegin;
 
       *_lambda = lambda;
@@ -119,6 +120,8 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	    if( moab.contains_entities(*mit,&ent,1) ) {
 	      *_lambda = LAMBDA(mydata.data.Young,mydata.data.Poisson);
 	      *_mu = MU(mydata.data.Young,mydata.data.Poisson);
+	      if(_User1!=NULL) *_User1 = mydata.data.User1;
+	      if(_User2!=NULL) *_User2 = mydata.data.User2;
 	    PetscFunctionReturn(0);  
 	  }
 	}
