@@ -3797,10 +3797,10 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
 	face_splitting_tools.tetGenData.clear();
 	vector<string> switches1;
 	if(pcomm->rank() == 0) {
-	  switches1.push_back("rp175sqRS0JVV");
+	  switches1.push_back("rp178sqRS0JVV");
 	  ierr = face_splitting_tools.rebuildMeshWithTetGen(switches1,0); CHKERRQ(ierr);	
 	} else {
-	  switches1.push_back("rp175sqRS0JQ");
+	  switches1.push_back("rp178sqRS0JQ");
 	  ierr = face_splitting_tools.rebuildMeshWithTetGen(switches1,0); CHKERRQ(ierr);	
 	}
       }

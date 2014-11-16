@@ -74,6 +74,8 @@ double roundn(double n) {
   return n;
 }
 
+static int debug = 1;
+
 
 struct NL_ElasticFEMethod: public NonLinearSpatialElasticFEMthod {
 
@@ -347,11 +349,13 @@ int main(int argc, char *argv[]) {
 
   }
 
-  /*//Save data on mesh
-  ierr = mField.set_global_VecCreateGhost("ELASTIC_MECHANICS",Col,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  if(debug) {
+
+  //Save data on mesh
+  ierr = mField.set_global_VecCreateGhost("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
   PostProcVertexMethod ent_method(moab,"SPATIAL_POSITION");
-  ierr = mField.loop_dofs("ELASTIC_MECHANICS","SPATIAL_POSITION",Col,ent_method); CHKERRQ(ierr);
+  ierr = mField.loop_dofs("ELASTIC_MECHANICS","SPATIAL_POSITION",COL,ent_method); CHKERRQ(ierr);
 
   if(pcomm->rank()==0) {
     EntityHandle out_meshset;
@@ -363,10 +367,11 @@ int main(int argc, char *argv[]) {
 
   PostProcFieldsAndGradientOnRefMesh fe_post_proc_method(moab);
   ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",fe_post_proc_method);  CHKERRQ(ierr);
-  PetscSynchronizedFlush(PETSC_COMM_WORLD);
   if(pcomm->rank()==0) {
     rval = fe_post_proc_method.moab_post_proc.write_file("out_post_proc.vtk","VTK",""); CHKERR_PETSC(rval);
-  }*/
+  }
+
+  }
 
   //detroy matrices
   ierr = VecDestroy(&F); CHKERRQ(ierr);
