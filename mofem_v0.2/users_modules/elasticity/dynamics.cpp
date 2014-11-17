@@ -80,6 +80,7 @@ struct TimeForceScale: public MethodsForOp {
       FILE *time_data;
       ierr = PetscFOpen(PETSC_COMM_SELF,time_file_name,"r",&time_data); CHKERRQ(ierr);
       double no1 = 0.0, no2 = 0.0;
+      tSeries[no1] = no2;
       while(! feof (time_data)){
         int n = fscanf(time_data,"%lf %lf",&no1,&no2);
         if((n <= 0)||((no1==0)&&(no2==0))) {
