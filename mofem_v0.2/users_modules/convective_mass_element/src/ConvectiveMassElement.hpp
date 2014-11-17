@@ -351,10 +351,10 @@ struct ConvectiveMassElement {
       ierr = dEterminatnt(F,detF); CHKERRQ(ierr);
   
       //calulate current density
-      TYPE rho = detF*rho0;
+      TYPE rho = rho0;//detF*rho0;
   
       //momentum rate
-      dp_dt = rho*(a + prod(grad_v,c));
+      dp_dt = rho*(a);// + prod(grad_v,c));
   
       PetscFunctionReturn(0);
     }
@@ -424,6 +424,7 @@ struct ConvectiveMassElement {
 
 	ublas::vector<double> nf;
 	nf.resize(3*row_data.getN().size2(),0);
+	nf.clear();
   
 	for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
 
@@ -433,10 +434,11 @@ struct ConvectiveMassElement {
 
 	  ublas::vector<double> c(3);
 	  if(commonData.meshPositionAtGaussPts.size()>0) {
-	    noalias(c) = commonData.meshPositionAtGaussPts[gg]*getFEMethod()->ts_a;
+	    noalias(c) = commonData.meshPositionAtGaussPts[gg];
 	  } else {
 	    c.clear();
 	  }
+	  c *= getFEMethod()->ts_a;
 
 	  ublas::matrix<double> H(3,3);
 	  if(commonData.meshPositionGradientAtGaussPts.size()>0) {
@@ -524,11 +526,12 @@ struct ConvectiveMassElement {
       c.resize(3);
       if(commonData.meshPositionAtGaussPts.size()>0) {
 	for(int nn = 0;nn<3;nn++) {
-	  c[nn] = commonData.meshPositionAtGaussPts[gg][nn]*getFEMethod()->ts_a;
+	  c[nn] = commonData.meshPositionAtGaussPts[gg][nn];
 	}
       } else {
 	c.clear();
       }
+      c *= getFEMethod()->ts_a;
 
       a.resize(3);
       for(int nn = 0;nn<3;nn++) {
@@ -1228,7 +1231,7 @@ struct ConvectiveMassElement {
     sit = setOfBlocks.begin();
     for(;sit!=setOfBlocks.end();sit++) {
       feMassLhs.get_op_to_do_Lhs().push_back(new OpMassLhs_dM_dv(spatial_position_field_name,velocity_field_name,sit->second,commonData,tAg));
-      feMassLhs.get_op_to_do_Lhs().push_back(new OpMassLhs_dM_dx(spatial_position_field_name,spatial_position_field_name,sit->second,commonData,tAg));
+      //feMassLhs.get_op_to_do_Lhs().push_back(new OpMassLhs_dM_dx(spatial_position_field_name,spatial_position_field_name,sit->second,commonData,tAg));
       if(mField.check_field(material_position_field_name)) {
 	feMassLhs.get_op_to_do_Lhs().push_back(new OpMassLhs_dM_dX(spatial_position_field_name,material_position_field_name,sit->second,commonData,tAg));
       }
