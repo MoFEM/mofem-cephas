@@ -408,7 +408,7 @@ struct ConvectiveMassElement {
 
     OpMassRhs(const string field_name,BlockData &data,CommonData &common_data):
       TetElementForcesAndSourcesCore::UserDataOperator(field_name),
-      dAta(data),commonData(common_data) {}
+      dAta(data),commonData(common_data) { }
  
     PetscErrorCode doWork(
       int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data) {
@@ -489,7 +489,7 @@ struct ConvectiveMassElement {
 
     OpMassLhs_dM_dX(const string field_name,const string col_field,BlockData &data,CommonData &common_data,int tag):
       TetElementForcesAndSourcesCore::UserDataOperator(field_name,col_field),
-      dAta(data),commonData(common_data),tAg(tag) { }
+      dAta(data),commonData(common_data),tAg(tag) { symm = false; }
 
     ublas::vector<adouble> a;
     ublas::matrix<adouble> g;
@@ -759,7 +759,7 @@ struct ConvectiveMassElement {
 
     OpVelocityRhs(const string field_name,BlockData &data,CommonData &common_data):
       TetElementForcesAndSourcesCore::UserDataOperator(field_name),
-      dAta(data),commonData(common_data) {}
+      dAta(data),commonData(common_data) { }
  
     PetscErrorCode doWork(
       int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data) {
@@ -775,6 +775,7 @@ struct ConvectiveMassElement {
 
 	ublas::vector<double> nf;
 	nf.resize(3*row_data.getN().size2(),0);
+	nf.clear();
   
 	for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
 
@@ -784,10 +785,11 @@ struct ConvectiveMassElement {
 
 	  ublas::vector<double> dot_W(3);
 	  if(commonData.meshPositionAtGaussPts.size()>0) {
-	   noalias(dot_W) = commonData.meshPositionAtGaussPts[gg]*getFEMethod()->ts_a;
+	   noalias(dot_W) = commonData.meshPositionAtGaussPts[gg];
 	  } else {
 	    dot_W.clear();
 	  }
+	  dot_W *= getFEMethod()->ts_a;
 
 	  ublas::matrix<double> H(3,3);
 	  if(commonData.meshPositionGradientAtGaussPts.size()>0) {
@@ -847,7 +849,7 @@ struct ConvectiveMassElement {
 
     OpVelocityLhs_dV_dX(const string vel_field,const string field_name,BlockData &data,CommonData &common_data,int tag):
       TetElementForcesAndSourcesCore::UserDataOperator(vel_field,field_name),
-      dAta(data),commonData(common_data),tAg(tag) { }
+      dAta(data),commonData(common_data),tAg(tag) { symm = false;  }
 
     ublas::vector<adouble> v;
     ublas::vector<adouble> dot_u;
@@ -870,10 +872,11 @@ struct ConvectiveMassElement {
 
       dot_W.resize(3);
       if(commonData.meshPositionAtGaussPts.size()>0) {
-	noalias(dot_W) = commonData.meshPositionAtGaussPts[gg]*getFEMethod()->ts_a;
+	noalias(dot_W) = commonData.meshPositionAtGaussPts[gg];
       } else {
 	dot_W.clear();
       }
+      dot_W *= getFEMethod()->ts_a;
 
       H.resize(3,3);
       if(commonData.meshPositionGradientAtGaussPts.size()>0) {
@@ -957,7 +960,7 @@ struct ConvectiveMassElement {
 
 	  adouble detH;
 	  ierr = dEterminatnt(H,detH); CHKERRQ(ierr);
-	  noalias(a_res) = v - dot_u*detH;
+	  noalias(a_res) = (v - dot_u)*detH;
 	  //cerr << "a_res " << a_res << endl;
 
 	  //dependant
