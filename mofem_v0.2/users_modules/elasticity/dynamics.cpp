@@ -141,8 +141,13 @@ int main(int argc, char *argv[]) {
 
   PetscInitialize(&argc,&argv,(char *)0,help);
 
+  //Cereat MOAB
   moab::Core mb_instance;
   Interface& moab = mb_instance;
+  //Create MoFEM (Joseph) database
+  MoFEM::Core core(moab);
+  FieldInterface& m_field = core;
+
   int rank;
   MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
 
@@ -161,9 +166,6 @@ int main(int argc, char *argv[]) {
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
-  //Create MoFEM (Joseph) database
-  MoFEM::Core core(moab);
-  FieldInterface& m_field = core;
 
   //ref meshset ref level 0
   ierr = m_field.seed_ref_level_3D(0,0); CHKERRQ(ierr);
