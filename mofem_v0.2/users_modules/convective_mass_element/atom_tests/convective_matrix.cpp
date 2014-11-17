@@ -312,40 +312,17 @@ int main(int argc, char *argv[]) {
 
   };
 
-  /*struct ZeroVectorsAndMatrixes: public FEMethod {
-
-   PetscErrorCode preProcess() {
-      PetscFunctionBegin;
-      switch (ts_ctx) {
-	case CTX_TSSETIFUNCTION: {
-	  ierr = VecZeroEntries(ts_F); CHKERRQ(ierr);
-	  break;
-	}
-	case CTX_TSSETIJACOBIAN: {
-	  ierr = MatZeroEntries(ts_B); CHKERRQ(ierr);
-	  break;
-	}
-	default:
-	break;
-      }
-      PetscFunctionReturn(0);
-    }
-
-  };*/
-
   TS ts;
   ierr = TSCreate(PETSC_COMM_WORLD,&ts); CHKERRQ(ierr);
   ierr = TSSetType(ts,TSBEULER); CHKERRQ(ierr);
 
   UpdateAndControl update_and_control(ts);
-  //ZeroVectorsAndMatrixes zero_vectors_and_matrixes;
 
   //TS
   TsCtx ts_ctx(m_field,"ELASTIC_MECHANICS");
 
   //right hand side
   //preprocess
-  //ts_ctx.get_preProcess_to_do_IFunction().push_back(&zero_vectors_and_matrixes);
   ts_ctx.get_preProcess_to_do_IFunction().push_back(&my_dirihlet_bc);
   //fe looops
   TsCtx::loops_to_do_type& loops_to_do_Rhs = ts_ctx.get_loops_to_do_IFunction();
@@ -356,9 +333,9 @@ int main(int argc, char *argv[]) {
   //postproc
   ts_ctx.get_postProcess_to_do_IFunction().push_back(&my_dirihlet_bc);
 
+
   //left hand side 
   //preprocess
-  //ts_ctx.get_preProcess_to_do_IJacobian().push_back(&zero_vectors_and_matrixes);
   ts_ctx.get_preProcess_to_do_IJacobian().push_back(&my_dirihlet_bc);
   //fe loops
   TsCtx::loops_to_do_type& loops_to_do_Mat = ts_ctx.get_loops_to_do_IJacobian();
