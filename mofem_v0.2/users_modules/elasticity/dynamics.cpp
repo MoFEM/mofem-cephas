@@ -64,7 +64,7 @@ struct TimeForceScale: public MethodsForOp {
     map<double,double> tSeries;
     int readFile,debug;
 
-    TimeForceScale(): readFile(0),debug(0) {};
+    TimeForceScale(): readFile(0),debug(1) {};
 
     ErrorCode rval;
     PetscErrorCode ierr;
@@ -80,6 +80,7 @@ struct TimeForceScale: public MethodsForOp {
       FILE *time_data;
       ierr = PetscFOpen(PETSC_COMM_SELF,time_file_name,"r",&time_data); CHKERRQ(ierr);
       double no1 = 0.0, no2 = 0.0;
+      tSeries[no1] = no2;
       while(! feof (time_data)){
         int n = fscanf(time_data,"%lf %lf",&no1,&no2);
         if((n <= 0)||((no1==0)&&(no2==0))) {
@@ -400,13 +401,11 @@ int main(int argc, char *argv[]) {
   loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("COPUPLING_VU",&my_fe));
   //Neumann boundary conditions
   boost::ptr_map<string,NeummanForcesSurface> neumann_forces;
-  ierr = MetaNeummanForces::setNeumannFiniteElementOperators(m_field,neumann_forces,F,"DISPLACEMENT"); CHKERRQ(ierr);
   string fe_name_str ="FORCE_FE";
   neumann_forces.insert(fe_name_str,new NeummanForcesSurface(m_field));
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET,it)) {
     ierr = neumann_forces.at(fe_name_str).addForce("DISPLACEMENT",F,it->get_msId());  CHKERRQ(ierr);
     neumann_forces.at(fe_name_str).methodsOp.push_back(new TimeForceScale());
-
   }
   fe_name_str = "PRESSURE_FE";
   neumann_forces.insert(fe_name_str,new NeummanForcesSurface(m_field));
@@ -416,6 +415,7 @@ int main(int argc, char *argv[]) {
   }
   boost::ptr_map<string,NeummanForcesSurface>::iterator mit = neumann_forces.begin();
   for(;mit!=neumann_forces.end();mit++) {
+    if(mit->second->methodsOp.size() == 0) continue;
     loops_to_do_Rhs.push_back(TsCtx::loop_pair_type(mit->first,&mit->second->getLoopFe()));
   }
   //nodal forces
