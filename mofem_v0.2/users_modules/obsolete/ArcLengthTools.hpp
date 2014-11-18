@@ -175,7 +175,7 @@ struct ArcLengthMatShell {
       }
       ierr = VecRestoreArray(ksp_x,&array); CHKERRQ(ierr);
     } 
-    int part = arc_ptr->get_part();
+    unsigned int part = arc_ptr->get_part();
     //MPI_Bcast(lambda,1,MPI_DOUBLE,part,PETSC_COMM_WORLD);
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
     Vec lambda_ghost;
