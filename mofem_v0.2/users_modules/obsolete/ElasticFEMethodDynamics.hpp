@@ -264,7 +264,7 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
 //Hassan: specify how often (per step) to print output files
           PetscBool flg = PETSC_TRUE;
           PetscInt prt;
-          ierr = PetscOptionsGetInt(PETSC_NULL,"-print_output_every",&prt,&flg); CHKERRQ(ierr);
+          ierr = PetscOptionsGetInt(PETSC_NULL,"-my_output_prt",&prt,&flg); CHKERRQ(ierr);
           if(flg!=PETSC_TRUE) {
               prt = 10;
           }

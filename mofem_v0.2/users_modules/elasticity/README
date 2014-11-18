@@ -12,13 +12,13 @@ mpirun -np 2 ./elasticity -my_file LShape.cub -ksp_type fgmres -pc_type asm -sub
 Example dynamic (dynamic)
 ==========================
 
-mpirun -np 2 ./dynamics -my_file LShape.cub -ksp_type fgmres -ksp_gmres_restart 1000 -pc_type asm -sub_pc_type lu -ksp_atol 1e-10 -ksp_rtol 1e-10 -snes_monitor -snes_type newtonls -snes_linesearch_type basic -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 -ts_monitor -ts_type alpha -ts_dt 0.01 -ts_final_time 50 -my_time_data_file data.txt -print_output_every 10  | tee log
+mpirun -np 2 ./dynamics -my_file LShape.cub -ksp_type fgmres -ksp_gmres_restart 1000 -pc_type asm -sub_pc_type lu -ksp_atol 1e-10 -ksp_rtol 1e-10 -snes_monitor -snes_type newtonls -snes_linesearch_type basic -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 -ts_monitor -ts_type alpha -ts_dt 0.01 -ts_final_time 50 -my_time_data_file data.txt -my_output_prt 10  | tee log
 
 -my_disp_order 2 - sets order of approx. for displacements 
 -my_velocity_order 1 - sets order of approx. for velocities
 -my_max_post_proc_ref_level 2 - sets order of refinment for postporocessing mesh
 -my_time_data - a txt file of two column to set time line and load scale 
--print_output_every  specify how often (per step) to print output files
+-my_output_prt  specify how often (per step) to print output files
 
 Example thermo-elasticity
 =========================
