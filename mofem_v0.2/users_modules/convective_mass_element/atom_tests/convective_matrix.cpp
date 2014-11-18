@@ -200,6 +200,20 @@ int main(int argc, char *argv[]) {
   ierr = m_field.set_field_order(0,MBEDGE,"SPATIAL_VELOCITY",order_velocity); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0,MBVERTEX,"SPATIAL_VELOCITY",1); CHKERRQ(ierr);
 
+  ierr = m_field.add_field("DOT_SPATIAL_POSITION",H1,3); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_TETs(0,"DOT_SPATIAL_POSITION"); CHKERRQ(ierr);
+  int order = 1;
+  ierr = m_field.set_field_order(0,MBTET,"DOT_SPATIAL_POSITION",order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBTRI,"DOT_SPATIAL_POSITION",order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBEDGE,"DOT_SPATIAL_POSITION",orde); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBVERTEX,"DOT_SPATIAL_POSITION",1); CHKERRQ(ierr);
+  ierr = m_field.add_field("DOT_SPATIAL_VELOCITY",H1,3); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_TETs(0,"DOT_SPATIAL_VELOCITY"); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBTET,"DOT_SPATIAL_VELOCITY",order_velocity); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBTRI,"DOT_SPATIAL_VELOCITY",order_velocity); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBEDGE,"DOT_SPATIAL_VELOCITY",order_velocity); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBVERTEX,"DOT_SPATIAL_VELOCITY",1); CHKERRQ(ierr);
+
   ConvectiveMassElement inertia(m_field,1);
   ierr = inertia.setBlocks(); CHKERRQ(ierr);
   ierr = inertia.addConvectiveMassElement("MASS_ELEMENT","SPATIAL_VELOCITY","SPATIAL_POSITION"); CHKERRQ(ierr);
@@ -285,7 +299,7 @@ int main(int argc, char *argv[]) {
   //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
   ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","MASS_ELEMENT",inertia.getLoopFeMassLhs()); CHKERRQ(ierr);
-  ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","VELOCITY_ELEMENT",inertia.getLoopFeVelLhs()); CHKERRQ(ierr);
+  //ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","VELOCITY_ELEMENT",inertia.getLoopFeVelLhs()); CHKERRQ(ierr);
 
   ierr = MatAssemblyBegin(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
   ierr = MatAssemblyEnd(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
@@ -306,7 +320,7 @@ int main(int argc, char *argv[]) {
       PetscErrorCode ierr;
       SNES snes;
       ierr = TSGetSNES(tS,&snes); CHKERRQ(ierr);
-      ierr = SNESSetLagJacobian(snes,jacobianLag); CHKERRQ(ierr);
+      //ierr = SNESSetLagJacobian(snes,jacobianLag); CHKERRQ(ierr);
       PetscFunctionReturn(0);
     }
 
@@ -317,32 +331,35 @@ int main(int argc, char *argv[]) {
   ierr = TSSetType(ts,TSBEULER); CHKERRQ(ierr);
 
   UpdateAndControl update_and_control(ts);
+  ConvectiveMassElement::UpdateAndControl(m_field,ts,"SPATIAL_VELOCITY","SPATIAL_POSITION");
 
   //TS
   TsCtx ts_ctx(m_field,"ELASTIC_MECHANICS");
 
   //right hand side
   //preprocess
+  ts_ctx.get_preProcess_to_do_IFunction().push_back(&update_and_control);
   ts_ctx.get_preProcess_to_do_IFunction().push_back(&my_dirihlet_bc);
   //fe looops
   TsCtx::loops_to_do_type& loops_to_do_Rhs = ts_ctx.get_loops_to_do_IFunction();
   loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("ELASTIC",&my_fe));
   loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("NEUAMNN_FE",&fe_spatial));
-  loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("MASS_ELEMENT",&inertia.getLoopFeMassRhs()));
   loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("VELOCITY_ELEMENT",&inertia.getLoopFeVelRhs()));
+  loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("MASS_ELEMENT",&inertia.getLoopFeMassRhs()));
   //postproc
   ts_ctx.get_postProcess_to_do_IFunction().push_back(&my_dirihlet_bc);
 
 
   //left hand side 
   //preprocess
+  ts_ctx.get_preProcess_to_do_IFunction().push_back(&update_and_control);
   ts_ctx.get_preProcess_to_do_IJacobian().push_back(&my_dirihlet_bc);
   //fe loops
   TsCtx::loops_to_do_type& loops_to_do_Mat = ts_ctx.get_loops_to_do_IJacobian();
   loops_to_do_Mat.push_back(TsCtx::loop_pair_type("ELASTIC",&my_fe));
   loops_to_do_Mat.push_back(TsCtx::loop_pair_type("NEUAMNN_FE",&fe_spatial));
-  loops_to_do_Mat.push_back(TsCtx::loop_pair_type("MASS_ELEMENT",&inertia.getLoopFeMassLhs()));
   loops_to_do_Mat.push_back(TsCtx::loop_pair_type("VELOCITY_ELEMENT",&inertia.getLoopFeVelLhs()));
+  loops_to_do_Mat.push_back(TsCtx::loop_pair_type("MASS_ELEMENT",&inertia.getLoopFeMassLhs()));
   //postrocess
   ts_ctx.get_postProcess_to_do_IJacobian().push_back(&my_dirihlet_bc);
   ts_ctx.get_postProcess_to_do_IJacobian().push_back(&update_and_control);
