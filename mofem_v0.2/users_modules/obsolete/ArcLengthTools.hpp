@@ -179,7 +179,7 @@ struct ArcLengthMatShell {
     //MPI_Bcast(lambda,1,MPI_DOUBLE,part,PETSC_COMM_WORLD);
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
     Vec lambda_ghost;
-    if(pcomm->rank()==0) {
+    if(pcomm->rank()==part) {
       ierr = VecCreateGhostWithArray(PETSC_COMM_WORLD,1,1,0,PETSC_NULL,lambda,&lambda_ghost); CHKERRQ(ierr);
     } else {
       int one[] = {0};
