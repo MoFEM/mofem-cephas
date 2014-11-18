@@ -3124,7 +3124,19 @@ PetscErrorCode ConfigurationalFractureMechanics::ArcLengthElemFEMethod::get_dlam
   }
   //brodcast dlambda
   int part = arc_ptr->get_part();
-  MPI_Bcast(&(arc_ptr->dlambda),1,MPI_DOUBLE,part,PETSC_COMM_WORLD);
+  //MPI_Bcast(&(arc_ptr->dlambda),1,MPI_DOUBLE,part,PETSC_COMM_WORLD);
+  ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
+  Vec lambda_ghost;
+  if(pcomm->rank()==part) {
+    ierr = VecCreateGhostWithArray(PETSC_COMM_WORLD,1,1,0,PETSC_NULL,&(arc_ptr->dlambda),&lambda_ghost); CHKERRQ(ierr);
+  } else {
+    int one[] = {0};
+    ierr = VecCreateGhostWithArray(PETSC_COMM_WORLD,0,1,1,one,&(arc_ptr->dlambda),&lambda_ghost); CHKERRQ(ierr);
+  }
+  ierr = VecGhostUpdateBegin(lambda_ghost,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(lambda_ghost,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecDestroy(&lambda_ghost); CHKERRQ(ierr);
+
   PetscPrintf(PETSC_COMM_WORLD,"\tload factor increment dlambda = %6.4e\n",arc_ptr->dlambda);
   PetscFunctionReturn(0);
 }
