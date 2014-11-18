@@ -176,8 +176,18 @@ struct ArcLengthMatShell {
       ierr = VecRestoreArray(ksp_x,&array); CHKERRQ(ierr);
     } 
     int part = arc_ptr->get_part();
-    MPI_Bcast(lambda,1,MPI_DOUBLE,part,PETSC_COMM_WORLD);
-
+    //MPI_Bcast(lambda,1,MPI_DOUBLE,part,PETSC_COMM_WORLD);
+    ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
+    Vec lambda_ghost;
+    if(pcomm->rank()==0) {
+      ierr = VecCreateGhostWithArray(PETSC_COMM_WORLD,1,1,0,PETSC_NULL,lambda,&lambda_ghost); CHKERRQ(ierr);
+    } else {
+      int one[] = {0};
+      ierr = VecCreateGhostWithArray(PETSC_COMM_WORLD,0,1,1,one,lambda,&lambda_ghost); CHKERRQ(ierr);
+    }
+    ierr = VecGhostUpdateBegin(lambda_ghost,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecGhostUpdateEnd(lambda_ghost,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecDestroy(&lambda_ghost); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
   ~ArcLengthMatShell() { }
