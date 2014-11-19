@@ -62,35 +62,14 @@ static char help[] = "...\n\n";
 const double young_modulus = 1;
 const double poisson_ratio = 0.0;
 
-PetscErrorCode write_soltion(FieldInterface &mField_Macro,const string out_file, const string out_ref_file) {
-  PetscFunctionBegin;
-
-  PostProcVertexMethod ent_method(mField_Macro.get_moab(),"DISP_MACORO");
-  ierr = mField_Macro.loop_dofs("ELASTIC_PROB","DISP_MACORO",ROW,ent_method); CHKERRQ(ierr);
- 
-  ParallelComm* pcomm = ParallelComm::get_pcomm(&mField_Macro.get_moab(),MYPCOMM_INDEX);
-
-  if(pcomm->rank()==0) {
-    EntityHandle out_meshset;
-    rval = mField_Macro.get_moab().create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
-    ierr = mField_Macro.problem_get_FE("ELASTIC_PROB","DISP_MACORO",out_meshset); CHKERRQ(ierr);
-    rval = mField_Macro.get_moab().write_file(out_file.c_str(),"VTK","",&out_meshset,1); CHKERR_PETSC(rval);
-    rval = mField_Macro.get_moab().delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
-  }
- 
-  if(pcomm->rank()==0) {
-
-    PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh fe_post_proc_method(
-      mField_Macro,"DISP_MACORO",LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
-    fe_post_proc_method.do_broadcast = false;
-    ierr = mField_Macro.loop_finite_elements("ELASTIC_PROB","DISP_MACORO",fe_post_proc_method,0,pcomm->size());  CHKERRQ(ierr);
-    rval = fe_post_proc_method.moab_post_proc.write_file(out_ref_file.c_str(),"VTK",""); CHKERR_PETSC(rval);
-  }
-
-  PetscFunctionReturn(0);
-}
 
 int main(int argc, char *argv[]) {
+  
+  
+  //=============================================================================================================
+  //  Micro (RVE) Problme
+  //=============================================================================================================
+
   PetscInitialize(&argc,&argv,(char *)0,help);
 
   moab::Core mb_instance_RVE;
@@ -633,19 +612,6 @@ int main(int argc, char *argv[]) {
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
 //=============================================================================================================
 //  Macro Problme
 //=============================================================================================================
@@ -846,11 +812,24 @@ int main(int argc, char *argv[]) {
   ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   
-  ierr = VecView(D,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+//  ierr = VecView(D,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
   //Save data on mesh
   ierr = mField_Macro.set_global_VecCreateGhost("ELASTIC_PROB",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-  ierr = write_soltion(mField_Macro,"out.vtk","out_post_proc.vtk");   CHKERRQ(ierr);
+  
+  ProjectionFieldOn10NodeTet ent_method_on_10nodeTet(mField_Macro,"DISP_MACORO",true,false,"DISP_MACORO");
+  ierr = mField_Macro.loop_dofs("DISP_MACORO",ent_method_on_10nodeTet); CHKERRQ(ierr);
+  ent_method_on_10nodeTet.set_nodes = false;
+  ierr = mField_Macro.loop_dofs("DISP_MACORO",ent_method_on_10nodeTet); CHKERRQ(ierr);
+  
+  if(pcomm->rank()==0) {
+    EntityHandle out_meshset;
+    rval = moab_Macro.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
+    ierr = mField_Macro.problem_get_FE("ELASTIC_PROB","ELASTIC_MACRO",out_meshset); CHKERRQ(ierr);
+    rval = moab_Macro.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
+    rval = moab_Macro.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
+  }
+
   
   //Destroy matrices
   ierr = VecDestroy(&F); CHKERRQ(ierr);

@@ -10,17 +10,18 @@ unite volume all
 block 1 volume all 
 block 1 name 'MAT_ELASTIC'
 block 1 attribute count 2
-block 1 attribute index 1 1
-block 1 attribute index 2 0 
+block 1 attribute index 1 1000
+block 1 attribute index 2 0.3 
 
 create Displacement  on surface 3 dof 1 dof 2 dof 3 fix 0
-create force  on surface 12  vector 1 0 0 0 0 0 
+create force  on surface 12  vector 1000 0 0 0 0 0 
 
 volume all scheme Tetmesh
-volume all size auto factor 9
+volume all size auto factor 8
 mesh volume all
 
 save as "/Users/zahur/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/homogenisation/meshes/LShape.cub" overwrite
+
 
 
 
