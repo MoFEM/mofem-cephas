@@ -202,10 +202,9 @@ int main(int argc, char *argv[]) {
 
   ierr = m_field.add_field("DOT_SPATIAL_POSITION",H1,3); CHKERRQ(ierr);
   ierr = m_field.add_ents_to_field_by_TETs(0,"DOT_SPATIAL_POSITION"); CHKERRQ(ierr);
-  int order = 1;
   ierr = m_field.set_field_order(0,MBTET,"DOT_SPATIAL_POSITION",order); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0,MBTRI,"DOT_SPATIAL_POSITION",order); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(0,MBEDGE,"DOT_SPATIAL_POSITION",orde); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBEDGE,"DOT_SPATIAL_POSITION",order); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0,MBVERTEX,"DOT_SPATIAL_POSITION",1); CHKERRQ(ierr);
   ierr = m_field.add_field("DOT_SPATIAL_VELOCITY",H1,3); CHKERRQ(ierr);
   ierr = m_field.add_ents_to_field_by_TETs(0,"DOT_SPATIAL_VELOCITY"); CHKERRQ(ierr);
