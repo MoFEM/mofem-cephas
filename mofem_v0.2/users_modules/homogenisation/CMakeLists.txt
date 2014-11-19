@@ -28,6 +28,8 @@ add_library(user_modules_homogenisation
   ${UM_SOURCE_DIR}/homogenisation/src/impl/ElasticFE_RVELagrange_Homogenized_Stress_Traction.cpp
   ${UM_SOURCE_DIR}/homogenisation/src/impl/ElasticFE_RVELagrange_Periodic.cpp
   ${UM_SOURCE_DIR}/homogenisation/src/impl/ElasticFE_RVELagrange_Homogenized_Stress_Periodic.cpp
+  ${UM_SOURCE_DIR}/homogenisation/src/impl/ElasticFE_RVELagrange_Disp_Multi_Rhs.cpp
+  ${UM_SOURCE_DIR}/homogenisation/src/impl/ElasticFE_RVELagrange_Homogenized_Stress_Disp_Multi_Rhs.cpp
 )
 
 add_subdirectory(atom_tests)
@@ -154,5 +156,43 @@ add_executable(Darceys_Capillary_and_Diffusion_Flow ${UM_SOURCE_DIR}/homogenisat
 target_link_libraries(Darceys_Capillary_and_Diffusion_Flow
   mofem_finite_element_library mofem_finite_elements mofem_interfaces mofem_multi_indices mofem_petsc users_modules_obsolete user_modules_homogenisation
   mofem_approx mofem_third_party mofem_cblas ${MoFEM_PROJECT_LIBS})
+
+# ===================== Macro unsteady moisture transport  ============================================
+add_executable(Macro_usteady_moisture ${UM_SOURCE_DIR}/homogenisation/Macro_usteady_moisture.cpp)
+target_link_libraries(Macro_usteady_moisture
+  mofem_finite_element_library
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_third_party
+  mofem_cblas
+  ${MoFEM_PROJECT_LIBS})
+
+# ===================== FE2 elasticity  ============================================
+add_executable(FE2_Elasticity ${UM_SOURCE_DIR}/homogenisation/FE2_Elasticity.cpp)
+target_link_libraries(FE2_Elasticity
+  mofem_finite_element_library mofem_finite_elements mofem_interfaces mofem_multi_indices mofem_petsc users_modules_obsolete user_modules_homogenisation
+  mofem_approx mofem_third_party mofem_cblas ${MoFEM_PROJECT_LIBS})
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

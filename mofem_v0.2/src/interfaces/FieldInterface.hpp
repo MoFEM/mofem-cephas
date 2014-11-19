@@ -567,6 +567,16 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode add_ents_to_field_by_TRIs(const EntityHandle meshset,const string& name,int verb = -1) = 0;
 
   /** 
+    * \brief set field entities form adjacencies of triangles
+    * \ingroup mofem_field
+    *
+    * The lower dimension entities are added depending on the space type
+    * \param range triangles
+    * \param name of the field
+    */
+  virtual PetscErrorCode add_ents_to_field_by_TRIs(const Range &tris,const string& name,int verb = -1) = 0;
+
+  /** 
     * \brief set field entities from adjacencies of tetrahedrals
     * \ingroup mofem_field
     *

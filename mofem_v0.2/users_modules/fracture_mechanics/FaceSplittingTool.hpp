@@ -108,7 +108,9 @@ struct FaceSplittingTools {
 
   #endif
 
-  //PestcErrorCode meshCut(Range &t1,Range &n1,int verb = 0);
+  PetscErrorCode getCornerEdges(Range &edges_to_cat,int verb = 0);
+  PetscErrorCode propagateBySplit(Range &new_nodes,Range &edges_to_cat,int verb = 0);
+  PetscErrorCode conerProblem(Range &new_nodes,int verb = 0);
 
 };
 

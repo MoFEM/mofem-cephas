@@ -35,8 +35,7 @@ using namespace MoFEM;
 #include <PostProcVertexMethod.hpp>
 #include <PostProcDisplacementAndStrainOnRefindedMesh.hpp>
 
-#include <MoistureElement.hpp>
-#include "DarcysElement.hpp"
+#include <Diffusion_and_Capillary_Element.hpp>
 
 using namespace boost::numeric;
 using namespace ObosleteUsersModules;
@@ -44,6 +43,7 @@ using namespace ObosleteUsersModules;
 #include "ElasticFE_RVELagrange_Disp.hpp"
 #include "ElasticFE_RVELagrange_Homogenized_Stress_Disp.hpp"
 #include "RVEVolume.hpp"
+
 
 ErrorCode rval;
 PetscErrorCode ierr;
@@ -80,7 +80,7 @@ int main(int argc, char *argv[]) {
   applied_ConGrad.resize(3);
   cblas_dcopy(3, &myapplied_ConGrad[0], 1, &applied_ConGrad(0), 1);
   cout<<"applied_ConGrad ="<<applied_ConGrad<<endl;
-  
+
   //Applied concentration gradient on the RVE (vector of length 3) strain=[xx, yy, zz]^T
   double myapplied_PressGrad[3];
   ierr = PetscOptionsGetRealArray(PETSC_NULL,"-myapplied_PressGrad",myapplied_PressGrad,&nmax,&flg); CHKERRQ(ierr);
@@ -88,7 +88,6 @@ int main(int argc, char *argv[]) {
   applied_PressGrad.resize(3);
   cblas_dcopy(3, &myapplied_PressGrad[0], 1, &applied_PressGrad(0), 1);
   cout<<"applied_PressGrad ="<<applied_PressGrad<<endl;
-  
   
   //Read mesh to MOAB
   const char *option;
@@ -118,66 +117,68 @@ int main(int argc, char *argv[]) {
   ierr = mField.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
   ierr = mField.get_entities_by_ref_level(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
   
+  /***/
+  //Define problem
   //Field
   int field_rank=1;
   ierr = mField.add_field("CONC",H1,field_rank); CHKERRQ(ierr);
+  ierr = mField.add_field("LAGRANGE_MUL_FIELD_CONC",H1,field_rank); CHKERRQ(ierr);
   ierr = mField.add_field("PRESSURE",H1,field_rank); CHKERRQ(ierr);
-  ierr = mField.add_field("FIELD_LAGRANGE_MUL_CONC",H1,field_rank); CHKERRQ(ierr);
-  ierr = mField.add_field("FIELD_LAGRANGE_MUL_PRESSURE",H1,field_rank); CHKERRQ(ierr);
-  
-  //problem
-  ierr = mField.add_problem("MOISTURE_PROBLEM"); CHKERRQ(ierr);
+  ierr = mField.add_field("LAGRANGE_MUL_FIELD_PRESSURE",H1,field_rank); CHKERRQ(ierr);
 
- //meshset consisting all entities in mesh
+  //Problem
+  ierr = mField.add_problem("DIFFUSION_PROBLEM"); CHKERRQ(ierr);
+  ierr = mField.add_problem("CAPILLARY_PROBLEM"); CHKERRQ(ierr);
+
+  //meshset consisting all entities in mesh
   EntityHandle root_set = moab.get_root_set();
-  
-  MoistureElement diffusion_elements(mField);
-  DarcysElement darceys_elements(mField);
-  ierr = darceys_elements.addDarceysElements("MOISTURE_PROBLEM","CONC"); CHKERRQ(ierr);
-  ierr = darceys_elements.addDarceysElements("MOISTURE_PROBLEM","PRESSURE"); CHKERRQ(ierr);
 
-  //FE diffusion
-  ierr = mField.add_finite_element("FE_LAGRANGE_DIFFUSION"); CHKERRQ(ierr);
-  ierr = mField.add_finite_element("FE_LAGRANGE_CAPILLARY"); CHKERRQ(ierr);
-  //=======================================================================================
-  // rows and columns for FE_LAGRANGE_DIFFUSION
-  //=======================================================================================
-  //C row as Lagrange_mul_disp and col as DISPLACEMENT
-  ierr = mField.modify_finite_element_add_field_row("FE_LAGRANGE_DIFFUSION","FIELD_LAGRANGE_MUL_CONC"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_col("FE_LAGRANGE_DIFFUSION","CONC"); CHKERRQ(ierr);
+  //FE
+  MoistureElement moisture_elements(mField);
+  ierr = moisture_elements.addDiffusionElements("DIFFUSION_PROBLEM","CONC"); CHKERRQ(ierr);
+  ierr = moisture_elements.addCapillaryElements("CAPILLARY_PROBLEM","PRESSURE"); CHKERRQ(ierr);
   
-  //CT col as Lagrange_mul_disp and row as DISPLACEMENT
-  ierr = mField.modify_finite_element_add_field_row("FE_LAGRANGE_DIFFUSION","CONC"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_col("FE_LAGRANGE_DIFFUSION","FIELD_LAGRANGE_MUL_CONC"); CHKERRQ(ierr);
+  ierr = mField.add_finite_element("LAGRANGE_FE_CONC"); CHKERRQ(ierr);
+  ierr = mField.add_finite_element("LAGRANGE_FE_PRESSURE"); CHKERRQ(ierr);
   
-  //data
-  ierr = mField.modify_finite_element_add_field_data("FE_LAGRANGE_DIFFUSION","FIELD_LAGRANGE_MUL_CONC"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_data("FE_LAGRANGE_DIFFUSION","CONC"); CHKERRQ(ierr);
-  
-  //=======================================================================================
-  // rows and columns for FE_LAGRANGE_CAPILLARY
-  //=======================================================================================
-  //C row as Lagrange_mul_disp and col as DISPLACEMENT
-  ierr = mField.modify_finite_element_add_field_row("FE_LAGRANGE_CAPILLARY","FIELD_LAGRANGE_MUL_PRESSURE"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_col("FE_LAGRANGE_CAPILLARY","PRESSURE"); CHKERRQ(ierr);
-  
-  //CT col as Lagrange_mul_disp and row as DISPLACEMENT
-  ierr = mField.modify_finite_element_add_field_row("FE_LAGRANGE_CAPILLARY","PRESSURE"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_col("FE_LAGRANGE_CAPILLARY","FIELD_LAGRANGE_MUL_PRESSURE"); CHKERRQ(ierr);
-  
-  //data
-  ierr = mField.modify_finite_element_add_field_data("FE_LAGRANGE_CAPILLARY","FIELD_LAGRANGE_MUL_PRESSURE"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_data("FE_LAGRANGE_CAPILLARY","PRESSURE"); CHKERRQ(ierr);
-  //=======================================================================================
+  //Diffusion transport (C and C^T)
+  //=====================================================================================================
+  //C
+  ierr = mField.modify_finite_element_add_field_row("LAGRANGE_FE_CONC","LAGRANGE_MUL_FIELD_CONC"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_col("LAGRANGE_FE_CONC","CONC"); CHKERRQ(ierr);
+  //C^T
+  ierr = mField.modify_finite_element_add_field_row("LAGRANGE_FE_CONC","CONC"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_col("LAGRANGE_FE_CONC","LAGRANGE_MUL_FIELD_CONC"); CHKERRQ(ierr);
+  //Data
+  ierr = mField.modify_finite_element_add_field_data("LAGRANGE_FE_CONC","LAGRANGE_MUL_FIELD_CONC"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("LAGRANGE_FE_CONC","CONC"); CHKERRQ(ierr);
+  //=====================================================================================================
 
+  //Cappillary transport (C and C^T)
+  //=====================================================================================================
+  //C
+  ierr = mField.modify_finite_element_add_field_row("LAGRANGE_FE_PRESSURE","LAGRANGE_MUL_FIELD_PRESSURE"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_col("LAGRANGE_FE_PRESSURE","PRESSURE"); CHKERRQ(ierr);
+  //C^T
+  ierr = mField.modify_finite_element_add_field_row("LAGRANGE_FE_PRESSURE","PRESSURE"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_col("LAGRANGE_FE_PRESSURE","LAGRANGE_MUL_FIELD_PRESSURE"); CHKERRQ(ierr);
+  //Data
+  ierr = mField.modify_finite_element_add_field_data("LAGRANGE_FE_PRESSURE","LAGRANGE_MUL_FIELD_PRESSURE"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("LAGRANGE_FE_PRESSURE","PRESSURE"); CHKERRQ(ierr);
+  //=====================================================================================================
+  
+  
   //set finite elements for problem
-  ierr = mField.modify_problem_add_finite_element("MOISTURE_PROBLEM","FE_LAGRANGE_DIFFUSION"); CHKERRQ(ierr);
-  ierr = mField.modify_problem_add_finite_element("MOISTURE_PROBLEM","FE_LAGRANGE_CAPILLARY"); CHKERRQ(ierr);
+  ierr = mField.modify_problem_add_finite_element("DIFFUSION_PROBLEM","LAGRANGE_FE_CONC"); CHKERRQ(ierr);
+  ierr = mField.modify_problem_add_finite_element("CAPILLARY_PROBLEM","LAGRANGE_FE_PRESSURE"); CHKERRQ(ierr);
 
   //set refinment level for problem
-  ierr = mField.modify_problem_ref_level_add_bit("MOISTURE_PROBLEM",bit_level0); CHKERRQ(ierr);
+  ierr = mField.modify_problem_ref_level_add_bit("DIFFUSION_PROBLEM",bit_level0); CHKERRQ(ierr);
+  ierr = mField.modify_problem_ref_level_add_bit("CAPILLARY_PROBLEM",bit_level0); CHKERRQ(ierr);
 
-  //add entities to field
+  /***/
+  //Declare problem
+  //adding
   Range TetsMatix, TetsFibre;
   ierr = mField.get_Cubit_msId_entities_by_dimension(1,BLOCKSET,3,TetsMatix,true); CHKERRQ(ierr);
   ierr = mField.get_Cubit_msId_entities_by_dimension(2,BLOCKSET,3,TetsFibre,true); CHKERRQ(ierr);
@@ -185,20 +186,20 @@ int main(int argc, char *argv[]) {
   ierr = PetscPrintf(PETSC_COMM_WORLD,"number of tets in MAT_MOISTURE_FIBRE = %d\n",TetsFibre.size()); CHKERRQ(ierr);
   ierr = mField.add_ents_to_field_by_TETs(TetsMatix,"CONC",2); CHKERRQ(ierr);
   ierr = mField.add_ents_to_field_by_TETs(TetsFibre,"PRESSURE",2); CHKERRQ(ierr);
-  
-  Range BoundFibres, BoundMarix;
+
+  Range BoundFibres, BoundMatrix;
   ierr = mField.get_Cubit_msId_entities_by_dimension(101,SIDESET,2,BoundFibres,true); CHKERRQ(ierr);
   ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SideSet 101 = %d\n",BoundFibres.size()); CHKERRQ(ierr);
-  ierr = mField.get_Cubit_msId_entities_by_dimension(102,SIDESET,2,BoundMarix,true); CHKERRQ(ierr);
-  ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SideSet 102 = %d\n",BoundMarix.size()); CHKERRQ(ierr);
-  EntityHandle BoundFibresMeshset, BoundMarixMeshset;
-  rval = moab.create_meshset(MESHSET_SET,BoundFibresMeshset); CHKERR_PETSC(rval);
-  rval = moab.create_meshset(MESHSET_SET,BoundMarixMeshset); CHKERR_PETSC(rval);
-	rval = moab.add_entities(BoundFibresMeshset,BoundFibres); CHKERR_PETSC(rval);
-	rval = moab.add_entities(BoundMarixMeshset,BoundMarix); CHKERR_PETSC(rval);
-  ierr = mField.add_ents_to_field_by_TRIs(BoundFibresMeshset,"FIELD_LAGRANGE_MUL_PRESSURE",2); CHKERRQ(ierr);
-  ierr = mField.add_ents_to_field_by_TRIs(BoundMarixMeshset,"FIELD_LAGRANGE_MUL_CONC",2); CHKERRQ(ierr);
-  
+  ierr = mField.get_Cubit_msId_entities_by_dimension(102,SIDESET,2,BoundMatrix,true); CHKERRQ(ierr);
+  ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SideSet 102 = %d\n",BoundMatrix.size()); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_finite_element_by_TRIs(BoundMatrix,"LAGRANGE_FE_CONC"); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_finite_element_by_TRIs(BoundFibres,"LAGRANGE_FE_PRESSURE"); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_field_by_TRIs(BoundMatrix,"LAGRANGE_MUL_FIELD_CONC",2); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_field_by_TRIs(BoundFibres,"LAGRANGE_MUL_FIELD_PRESSURE",2); CHKERRQ(ierr);
+
+  //set app. order
+  //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
+  //int order = 5;
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
   ierr = mField.set_field_order(root_set,MBTET,"CONC",order); CHKERRQ(ierr);
@@ -211,99 +212,131 @@ int main(int argc, char *argv[]) {
   ierr = mField.set_field_order(root_set,MBEDGE,"PRESSURE",order); CHKERRQ(ierr);
   ierr = mField.set_field_order(root_set,MBVERTEX,"PRESSURE",1); CHKERRQ(ierr);
 
-  ierr = mField.set_field_order(0,MBTRI,"FIELD_LAGRANGE_MUL_CONC",order); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBEDGE,"FIELD_LAGRANGE_MUL_CONC",order); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBVERTEX,"FIELD_LAGRANGE_MUL_CONC",1); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTRI,"LAGRANGE_MUL_FIELD_CONC",order); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBEDGE,"LAGRANGE_MUL_FIELD_CONC",order); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBVERTEX,"LAGRANGE_MUL_FIELD_CONC",1); CHKERRQ(ierr);
 
-  ierr = mField.set_field_order(0,MBTRI,"FIELD_LAGRANGE_MUL_PRESSURE",order); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBEDGE,"FIELD_LAGRANGE_MUL_PRESSURE",order); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBVERTEX,"FIELD_LAGRANGE_MUL_PRESSURE",1); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBTRI,"LAGRANGE_MUL_FIELD_PRESSURE",order); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBEDGE,"LAGRANGE_MUL_FIELD_PRESSURE",order); CHKERRQ(ierr);
+  ierr = mField.set_field_order(0,MBVERTEX,"LAGRANGE_MUL_FIELD_PRESSURE",1); CHKERRQ(ierr);
 
   /****/
   //build database
   //build field
   ierr = mField.build_fields(); CHKERRQ(ierr);
+  
   //build finite elemnts
   ierr = mField.build_finite_elements(); CHKERRQ(ierr);
+  
   //build adjacencies
   ierr = mField.build_adjacencies(bit_level0); CHKERRQ(ierr);
+  
   //build problem
   ierr = mField.build_problems(); CHKERRQ(ierr);
   
+  
+  /****/
+  //mesh partitioning
+  
+  //partition
+  ierr = mField.partition_problem("DIFFUSION_PROBLEM"); CHKERRQ(ierr);
+  ierr = mField.partition_problem("CAPILLARY_PROBLEM"); CHKERRQ(ierr);
+  ierr = mField.partition_finite_elements("DIFFUSION_PROBLEM"); CHKERRQ(ierr);
+  ierr = mField.partition_finite_elements("CAPILLARY_PROBLEM"); CHKERRQ(ierr);
+  //what are ghost nodes, see Petsc Manual
+  ierr = mField.partition_ghost_dofs("DIFFUSION_PROBLEM"); CHKERRQ(ierr);
+  ierr = mField.partition_ghost_dofs("CAPILLARY_PROBLEM"); CHKERRQ(ierr);
 
-//  /****/
-//  //mesh partitioning
-//  
-//  //partition
-//  ierr = mField.partition_problem("MOISTURE_PROBLEM"); CHKERRQ(ierr);
-//  ierr = mField.partition_finite_elements("MOISTURE_PROBLEM"); CHKERRQ(ierr);
-//  //what are ghost nodes, see Petsc Manual
-//  ierr = mField.partition_ghost_dofs("MOISTURE_PROBLEM"); CHKERRQ(ierr);
-//  
-//  //print block sets with materials
-//  ierr = mField.print_cubit_materials_set(); CHKERRQ(ierr);
-//  
-//  //create matrices (here F, D and A are matrices for the full problem)
-//  Vec F,D;
-//  ierr = mField.VecCreateGhost("MOISTURE_PROBLEM",ROW,&F); CHKERRQ(ierr);
-//  ierr = mField.VecCreateGhost("MOISTURE_PROBLEM",COL,&D); CHKERRQ(ierr);
-//  Mat A;
-//  ierr = mField.MatCreateMPIAIJWithArrays("MOISTURE_PROBLEM",&A); CHKERRQ(ierr);
+  //print block sets with materials
+  ierr = mField.print_cubit_materials_set(); CHKERRQ(ierr);
+  
+  //create matrices (here F, D and A are matrices for the full problem)
+  Vec F_Dif,D_Dif,F_Cap,D_Cap;   //Here Dif=Diffusivity & Cap=Capillary
+  ierr = mField.VecCreateGhost("DIFFUSION_PROBLEM",ROW,&F_Dif); CHKERRQ(ierr);
+  ierr = mField.VecCreateGhost("CAPILLARY_PROBLEM",ROW,&F_Cap); CHKERRQ(ierr);
+  ierr = mField.VecCreateGhost("DIFFUSION_PROBLEM",COL,&D_Dif); CHKERRQ(ierr);
+  ierr = mField.VecCreateGhost("CAPILLARY_PROBLEM",COL,&D_Cap); CHKERRQ(ierr);
+
+  Mat A_Dif,A_Cap;
+  ierr = mField.MatCreateMPIAIJWithArrays("DIFFUSION_PROBLEM",&A_Dif); CHKERRQ(ierr);
+  ierr = mField.MatCreateMPIAIJWithArrays("CAPILLARY_PROBLEM",&A_Cap); CHKERRQ(ierr);
+  
+  ierr = moisture_elements.setDiffusionElementLhsOperators("CONC",A_Dif); CHKERRQ(ierr);
+  ierr = moisture_elements.setCapillaryElementLhsOperators("PRESSURE",A_Cap); CHKERRQ(ierr);
+  ElasticFE_RVELagrange_Disp MyFE_RVELagrange_conc(mField,A_Dif,D_Dif,F_Dif,applied_ConGrad,"CONC","LAGRANGE_MUL_FIELD_CONC",field_rank);
+  ElasticFE_RVELagrange_Disp MyFE_RVELagrange_pressure(mField,A_Cap,D_Cap,F_Cap,applied_PressGrad,"PRESSURE","LAGRANGE_MUL_FIELD_PRESSURE",field_rank);
+
+  ierr = VecZeroEntries(F_Dif); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(F_Dif,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(F_Dif,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = MatZeroEntries(A_Dif); CHKERRQ(ierr);
+
+  ierr = VecZeroEntries(F_Cap); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(F_Cap,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(F_Cap,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = MatZeroEntries(A_Cap); CHKERRQ(ierr);
+
+  ierr = mField.loop_finite_elements("DIFFUSION_PROBLEM","DIFFUSION_FE",moisture_elements.getLoopFeLhsDiffusion()); CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("DIFFUSION_PROBLEM","LAGRANGE_FE_CONC",MyFE_RVELagrange_conc);  CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("CAPILLARY_PROBLEM","CAPILLARY_FE",moisture_elements.getLoopFeLhsCapillary()); CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("CAPILLARY_PROBLEM","LAGRANGE_FE_PRESSURE",MyFE_RVELagrange_pressure);  CHKERRQ(ierr);
+
 //
-//  MoistureElement diffusion_elements(mField);
-//  DarcysElement darceys_elements(mField);
-//
-//  ierr = diffusion_elements.setMoistureFiniteElementLhsOperators("CONC",A); CHKERRQ(ierr);
-//  ElasticFE_RVELagrange_Disp MyFE_RVELagrange_conc(mField,A,D,F,applied_ConGrad,"CONC","FIELD_LAGRANGE_MUL_CONC",field_rank);
-//
-//  ierr = darceys_elements.setDarceysFiniteElementLhsOperators("PRESSURE",A); CHKERRQ(ierr);
-//  ElasticFE_RVELagrange_Disp MyFE_RVELagrange_pressure(mField,A,D,F,applied_PressGrad,"PRESSURE","FIELD_LAGRANGE_MUL_PRESSURE",field_rank);
-//
-//  ierr = VecZeroEntries(F); CHKERRQ(ierr);
-//  ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-//  ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-//  ierr = MatZeroEntries(A); CHKERRQ(ierr);
-//
-////  ierr = mField.loop_finite_elements("MOISTURE_PROBLEM","FE_DIFFUSION",diffusion_elements.getLoopFeLhs()); CHKERRQ(ierr);
-////  ierr = mField.loop_finite_elements("MOISTURE_PROBLEM","FE_LAGRANGE_DIFFUSION",MyFE_RVELagrange_conc);  CHKERRQ(ierr);
-////
-////  ierr = mField.loop_finite_elements("MOISTURE_PROBLEM","FE_CAPILLARY",darceys_elements.getLoopFeLhs()); CHKERRQ(ierr);
-////  ierr = mField.loop_finite_elements("MOISTURE_PROBLEM","FE_LAGRANGE_CAPILLARY",MyFE_RVELagrange_pressure);  CHKERRQ(ierr);
-////
-//  ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-//  ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-//  ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
-//  ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
-//  ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-//  ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-//
+  ierr = VecGhostUpdateBegin(F_Dif,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(F_Dif,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = VecAssemblyBegin(F_Dif); CHKERRQ(ierr);
+  ierr = VecAssemblyEnd(F_Dif); CHKERRQ(ierr);
+  ierr = MatAssemblyBegin(A_Dif,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+  ierr = MatAssemblyEnd(A_Dif,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+
+  
+  ierr = VecGhostUpdateBegin(F_Cap,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(F_Cap,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = VecAssemblyBegin(F_Cap); CHKERRQ(ierr);
+  ierr = VecAssemblyEnd(F_Cap); CHKERRQ(ierr);
+  ierr = MatAssemblyBegin(A_Cap,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+  ierr = MatAssemblyEnd(A_Cap,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+
 //  //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-//ierr = MatView(A,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-//  
+//  ierr = MatView(A_Dif,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+//  cout<<"\n\n\n\n\n\n"<<endl;
+//  ierr = MatView(A_Cap,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+
 //  //Matrix View
 //  MatView(A,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
 //  std::string wait;
 //  std::cin >> wait;
-//
-//  //Solver
-//  KSP solver;
-//  ierr = KSPCreate(PETSC_COMM_WORLD,&solver); CHKERRQ(ierr);
-//  ierr = KSPSetOperators(solver,A,A); CHKERRQ(ierr);
-//  ierr = KSPSetFromOptions(solver); CHKERRQ(ierr);
-//  ierr = KSPSetUp(solver); CHKERRQ(ierr);
-//  
-//  ierr = KSPSolve(solver,F,D); CHKERRQ(ierr);
-//  ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-//  ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-//  
-////  ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-////  ierr = VecView(C,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-//  
-//  
-//  //Save data on mesh
-//  ierr = mField.set_global_VecCreateGhost("MOISTURE_PROBLEM",ROW,C,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-//  //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-//  
+
+  //Solver
+  KSP solver_Dif;
+  ierr = KSPCreate(PETSC_COMM_WORLD,&solver_Dif); CHKERRQ(ierr);
+  ierr = KSPSetOperators(solver_Dif,A_Dif,A_Dif); CHKERRQ(ierr);
+  ierr = KSPSetFromOptions(solver_Dif); CHKERRQ(ierr);
+  ierr = KSPSetUp(solver_Dif); CHKERRQ(ierr);
+  
+  ierr = KSPSolve(solver_Dif,F_Dif,D_Dif); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(D_Dif,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(D_Dif,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  
+  //Save data on mesh
+  ierr = mField.set_global_VecCreateGhost("DIFFUSION_PROBLEM",ROW,D_Dif,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+
+  //Solver
+  KSP solver_Cap;
+  ierr = KSPCreate(PETSC_COMM_WORLD,&solver_Cap); CHKERRQ(ierr);
+  ierr = KSPSetOperators(solver_Cap,A_Cap,A_Cap); CHKERRQ(ierr);
+  ierr = KSPSetFromOptions(solver_Cap); CHKERRQ(ierr);
+  ierr = KSPSetUp(solver_Cap); CHKERRQ(ierr);
+  
+  ierr = KSPSolve(solver_Cap,F_Cap,D_Cap); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(D_Cap,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(D_Cap,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  
+  //Save data on mesh
+  ierr = mField.set_global_VecCreateGhost("CAPILLARY_PROBLEM",ROW,D_Cap,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+
+
+
 //  //Calculation of Homogenized stress
 //  //=======================================================================================================================================================
 //  const double young_modulus = 1;
@@ -346,30 +379,34 @@ int main(int argc, char *argv[]) {
 //  cout<< "\n\n";
 //
 //  //=======================================================================================================================================================
-//
-//  ProjectionFieldOn10NodeTet ent_method_on_10nodeTet(mField,"CONC",true,false,"CONC");
-//  ierr = mField.loop_dofs("CONC",ent_method_on_10nodeTet); CHKERRQ(ierr);
-//  ent_method_on_10nodeTet.set_nodes = false;
-//  ierr = mField.loop_dofs("CONC",ent_method_on_10nodeTet); CHKERRQ(ierr);
-//
-//  
-//  if(pcomm->rank()==0) {
-//    EntityHandle out_meshset;
-//    rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
-//    ierr = mField.problem_get_FE("MOISTURE_PROBLEM","MOISTURE_FE",out_meshset); CHKERRQ(ierr);
-//    rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
-//    rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
-//  }
-//  
-//  //PostProcDisplacemenysAndStarinOnRefMesh fe_post_proc_method(moab);
-//  PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh fe_post_proc_method(mField,"CONC",LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
-//  ierr = mField.loop_finite_elements("MOISTURE_PROBLEM","MOISTURE_FE",fe_post_proc_method);  CHKERRQ(ierr);
-//  
-//  if(pcomm->rank()==0) {
-//    rval = fe_post_proc_method.moab_post_proc.write_file("out_post_proc.vtk","VTK",""); CHKERR_PETSC(rval);
-//  }
-//  
-//   
+
+  ProjectionFieldOn10NodeTet ent_method_on_10nodeTet_Dif(mField,"CONC",true,false,"CONC");
+  ierr = mField.loop_dofs("CONC",ent_method_on_10nodeTet_Dif); CHKERRQ(ierr);
+  ent_method_on_10nodeTet_Dif.set_nodes = false;
+  ierr = mField.loop_dofs("CONC",ent_method_on_10nodeTet_Dif); CHKERRQ(ierr);
+
+  if(pcomm->rank()==0) {
+    EntityHandle out_meshset_Dif;
+    rval = moab.create_meshset(MESHSET_SET,out_meshset_Dif); CHKERR_PETSC(rval);
+    ierr = mField.problem_get_FE("DIFFUSION_PROBLEM","DIFFUSION_FE",out_meshset_Dif); CHKERRQ(ierr);
+    rval = moab.write_file("out_Dif.vtk","VTK","",&out_meshset_Dif,1); CHKERR_PETSC(rval);
+    rval = moab.delete_entities(&out_meshset_Dif,1); CHKERR_PETSC(rval);
+  }
+  
+  ProjectionFieldOn10NodeTet ent_method_on_10nodeTet_Cap(mField,"PRESSURE",true,false,"PRESSURE");
+  ierr = mField.loop_dofs("PRESSURE",ent_method_on_10nodeTet_Cap); CHKERRQ(ierr);
+  ent_method_on_10nodeTet_Cap.set_nodes = false;
+  ierr = mField.loop_dofs("PRESSURE",ent_method_on_10nodeTet_Cap); CHKERRQ(ierr);
+  
+  if(pcomm->rank()==0) {
+    EntityHandle out_meshset_Cap;
+    rval = moab.create_meshset(MESHSET_SET,out_meshset_Cap); CHKERR_PETSC(rval);
+    ierr = mField.problem_get_FE("CAPILLARY_PROBLEM","CAPILLARY_FE",out_meshset_Cap); CHKERRQ(ierr);
+    rval = moab.write_file("out_Cap.vtk","VTK","",&out_meshset_Cap,1); CHKERR_PETSC(rval);
+    rval = moab.delete_entities(&out_meshset_Cap,1); CHKERR_PETSC(rval);
+  }
+
+  
 //  //Destroy matrices
 //  ierr = VecDestroy(&F); CHKERRQ(ierr);
 //  ierr = VecDestroy(&C); CHKERRQ(ierr);

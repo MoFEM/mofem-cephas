@@ -95,7 +95,7 @@ int main(int argc, char *argv[]) {
   rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
-  
+
   //We need that for code profiling
   PetscLogDouble t1,t2;
   PetscLogDouble v1,v2;
@@ -150,7 +150,7 @@ int main(int argc, char *argv[]) {
   //define problems
   ierr = mField.add_problem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
   
-  
+
   //set finite elements for problem
   ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","ELASTIC"); CHKERRQ(ierr);
   ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","Lagrange_elem"); CHKERRQ(ierr);
@@ -254,13 +254,13 @@ int main(int argc, char *argv[]) {
     }
     
   };
-  
+
   //Assemble F and Aij
   const double young_modulus = 1;
   const double poisson_ratio = 0.0;
   MyElasticFEMethod my_fe(mField,Aij,D,F,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
   ElasticFE_RVELagrange_Disp MyFE_RVELagrange(mField,Aij,D,F,applied_strain,"DISPLACEMENT","Lagrange_mul_disp",field_rank);
-  
+
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -280,11 +280,11 @@ int main(int argc, char *argv[]) {
   //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
   //ierr = MatView(Aij,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
   
-  
-  ////Matrix View
-  //MatView(Aij,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
-  //std::string wait;
-  //std::cin >> wait;
+
+////Matrix View
+//MatView(Aij,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
+//std::string wait;
+//std::cin >> wait;
   
   //Solver
   KSP solver;
@@ -292,11 +292,11 @@ int main(int argc, char *argv[]) {
   ierr = KSPSetOperators(solver,Aij,Aij); CHKERRQ(ierr);
   ierr = KSPSetFromOptions(solver); CHKERRQ(ierr);
   ierr = KSPSetUp(solver); CHKERRQ(ierr);
-  
+
   ierr = KSPSolve(solver,F,D); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  
+
   //  ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
   //  ierr = VecView(D,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
   
@@ -316,7 +316,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyRVEVol);  CHKERRQ(ierr);
   //    ierr = VecView(RVE_volume_Vec,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
   ierr = VecSum(RVE_volume_Vec, &RVE_volume);  CHKERRQ(ierr);
-  cout<<"Final RVE_volume = "<< RVE_volume <<endl;
+    cout<<"Final RVE_volume = "<< RVE_volume <<endl;
   
   
   //create a vector for 6 components of homogenized stress
@@ -326,10 +326,10 @@ int main(int argc, char *argv[]) {
   
   //    ierr = VecView(D,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
   ElasticFE_RVELagrange_Homogenized_Stress_Disp MyFE_RVEHomoStressDisp(mField,Aij,D,F,&RVE_volume, applied_strain, Stress_Homo,"DISPLACEMENT","Lagrange_mul_disp",field_rank);
-  ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","Lagrange_elem",MyFE_RVEHomoStressDisp);  CHKERRQ(ierr);
+   ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","Lagrange_elem",MyFE_RVEHomoStressDisp);  CHKERRQ(ierr);
   
-  //  if(pcomm->rank()) cout<< " Stress_Homo =  "<<endl;
-  //  ierr = VecView(Stress_Homo,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+//  if(pcomm->rank()) cout<< " Stress_Homo =  "<<endl;
+//  ierr = VecView(Stress_Homo,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
   
   if(pcomm->rank()==0){
     PetscScalar    *avec;
@@ -342,9 +342,9 @@ int main(int argc, char *argv[]) {
     }
   }
   cout<< "\n\n";
-  
+
   //=======================================================================================================================================================
-  
+
   
   PostProcVertexMethod ent_method(moab);
   ierr = mField.loop_dofs("ELASTIC_MECHANICS","DISPLACEMENT",ROW,ent_method); CHKERRQ(ierr);

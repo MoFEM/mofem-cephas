@@ -70,14 +70,23 @@ make && mpirun -np 1 ./Darceys_Flow -my_file ../users_modules/homogenisation/mes
 
 RVE with both capillary (for fibres) and diffusion (for matrix) transport
 =======================================================
-make && mpirun -np 1 ./Darceys_Capillary_and_Diffusion_Flow -my_file ../users_modules/homogenisation/meshes/Darceys_and_Diffusion.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1 -myapplied_ConGrad 1.0,0.0,0.0 -myapplied_PressGrad 1.0,0.0,0.0
+make Darceys_Capillary_and_Diffusion_Flow && mpirun -np 1 ./Darceys_Capillary_and_Diffusion_Flow -my_file ../users_modules/homogenisation/meshes/Darceys_and_Diffusion.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1 -myapplied_ConGrad 1.0,0.0,0.0 -myapplied_PressGrad 1.0,0.0,0.0
 
 
+Moisture macro unsteady problem
+=======================================================
+make Macro_usteady_moisture && mpirun -np 1 ./Macro_usteady_moisture   -my_file ../users_modules/homogenisation/meshes/Macro_usteady_moisture.cub   -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor   -snes_type newtonls -snes_linesearch_type basic -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 -snes_monitor   -ts_monitor -ts_type beuler -ts_dt 0.0025 -ts_final_time 0.06 -snes_lag_jacobian -2  -my_order 1 -my_max_post_proc_ref_level 1
+
+
+FE2 Elasticity
+=======================================================
+make FE2_Elasticity && mpirun -np 1 ./FE2_Elasticity -my_file_macro ../users_modules/homogenisation/meshes/LShape.cub -my_file_RVE ../users_modules/homogenisation/meshes/Cube.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1
 
 
 
 copy out put files to symlink on Desktop
 -------------------------------------------------------------
 cp out.vtk ../../../mnt/home/Desktop/symlink
+cp *.vtk  ../../../mnt/home/Desktop/symlink
 
 

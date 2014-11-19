@@ -400,6 +400,13 @@ PetscErrorCode Core::add_ents_to_field_by_EDGEs(const EntityHandle meshset,const
 }
 PetscErrorCode Core::add_ents_to_field_by_TRIs(const EntityHandle meshset,const BitFieldId id,int verb) {
   PetscFunctionBegin;
+  Range tris;
+  rval = moab.get_entities_by_type(meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
+  ierr = add_ents_to_field_by_TRIs(tris,id,verb); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+PetscErrorCode Core::add_ents_to_field_by_TRIs(const Range &tris,const BitFieldId id,int verb) {
+  PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   *build_MoFEM = 0;
   EntityHandle idm = no_handle;
@@ -410,8 +417,7 @@ PetscErrorCode Core::add_ents_to_field_by_TRIs(const EntityHandle meshset,const 
   }
   FieldSpace space;
   rval = moab.tag_get_data(th_FieldSpace,&idm,1,&space); CHKERR_PETSC(rval);
-  Range nodes,tris,edges;
-  rval = moab.get_entities_by_type(meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
+  Range nodes,edges;
   switch (space) {
     case L2:
       rval = moab.add_entities(idm,tris); CHKERR_PETSC(rval);
@@ -467,6 +473,17 @@ PetscErrorCode Core::add_ents_to_field_by_TRIs(const EntityHandle meshset,const 
   *build_MoFEM = 0;
   try {
     ierr = add_ents_to_field_by_TRIs(meshset,get_BitFieldId(name),verb);  CHKERRQ(ierr);
+  } catch  (const char* msg) {
+    SETERRQ(PETSC_COMM_SELF,1,msg);
+  }
+  PetscFunctionReturn(0);
+}
+PetscErrorCode Core::add_ents_to_field_by_TRIs(const Range &tris,const string& name,int verb) {
+  PetscFunctionBegin;
+  if(verb==-1) verb = verbose;
+  *build_MoFEM = 0;
+  try {
+    ierr = add_ents_to_field_by_TRIs(tris,get_BitFieldId(name),verb);  CHKERRQ(ierr);
   } catch  (const char* msg) {
     SETERRQ(PETSC_COMM_SELF,1,msg);
   }
@@ -4661,7 +4678,7 @@ PetscErrorCode Core::delete_ents_by_bit_ref(const BitRefLevel &bit,const BitRefL
   }
   //delete entities form moab
   for(int dd = 3;dd>=0;dd--) {
-    rval = moab.delete_entities(ents_to_delete.subset_by_dimension(dd)); CHKERR_PETSC(rval);
+    rval = moab.delete_entities(ents_to_delete.subset_by_dimension(dd)); //CHKERR_PETSC(rval);
   }
   PetscFunctionReturn(0);
 }

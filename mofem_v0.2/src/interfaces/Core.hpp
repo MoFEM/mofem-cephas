@@ -41,6 +41,9 @@ struct Core:
   Core(Interface& _moab,int _verbose = 1);
   ~Core();
 
+  Tag get_th_RefParentHandle() { return th_RefParentHandle; }
+  Tag get_th_RefBitLevel() { return th_RefBitLevel; }
+
   private:
 
   boost::ptr_map<unsigned long,FieldUnknownInterface *> iFaces;
@@ -341,6 +344,8 @@ struct Core:
   PetscErrorCode add_ents_to_field_by_EDGEs(const EntityHandle meshset,const string& name,int verb = -1);
   PetscErrorCode add_ents_to_field_by_TRIs(const EntityHandle meshset,const BitFieldId id,int verb = -1);
   PetscErrorCode add_ents_to_field_by_TRIs(const EntityHandle meshset,const string& name,int verb = -1);
+  PetscErrorCode add_ents_to_field_by_TRIs(const Range &tris,const BitFieldId id,int verb = -1);
+  PetscErrorCode add_ents_to_field_by_TRIs(const Range &tris,const string& name,int verb = -1);
   PetscErrorCode add_ents_to_field_by_TETs(const Range &tets,const BitFieldId id,int verb = -1);
   PetscErrorCode add_ents_to_field_by_TETs(const EntityHandle meshset,const BitFieldId id,int verb = -1);
   PetscErrorCode add_ents_to_field_by_TETs(const Range &tets,const string& name,int verb = -1);
