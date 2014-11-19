@@ -308,29 +308,11 @@ int main(int argc, char *argv[]) {
   std::string wait;
   std::cin >> wait;*/
 
- struct UpdateAndControl: public FEMethod {
-
-    TS tS;
-    int jacobianLag;
-    UpdateAndControl(TS _ts): tS(_ts),jacobianLag(1) {}
-
-    PetscErrorCode postProcess() {
-      PetscFunctionBegin;
-      PetscErrorCode ierr;
-      SNES snes;
-      ierr = TSGetSNES(tS,&snes); CHKERRQ(ierr);
-      //ierr = SNESSetLagJacobian(snes,jacobianLag); CHKERRQ(ierr);
-      PetscFunctionReturn(0);
-    }
-
-  };
-
   TS ts;
   ierr = TSCreate(PETSC_COMM_WORLD,&ts); CHKERRQ(ierr);
   ierr = TSSetType(ts,TSBEULER); CHKERRQ(ierr);
 
-  UpdateAndControl update_and_control(ts);
-  ConvectiveMassElement::UpdateAndControl(m_field,ts,"SPATIAL_VELOCITY","SPATIAL_POSITION");
+  ConvectiveMassElement::UpdateAndControl update_and_control(m_field,ts,"SPATIAL_VELOCITY","SPATIAL_POSITION");
 
   //TS
   TsCtx ts_ctx(m_field,"ELASTIC_MECHANICS");
@@ -351,7 +333,7 @@ int main(int argc, char *argv[]) {
 
   //left hand side 
   //preprocess
-  ts_ctx.get_preProcess_to_do_IFunction().push_back(&update_and_control);
+  ts_ctx.get_preProcess_to_do_IJacobian().push_back(&update_and_control);
   ts_ctx.get_preProcess_to_do_IJacobian().push_back(&my_dirihlet_bc);
   //fe loops
   TsCtx::loops_to_do_type& loops_to_do_Mat = ts_ctx.get_loops_to_do_IJacobian();
