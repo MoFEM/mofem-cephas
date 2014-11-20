@@ -722,9 +722,9 @@ struct ConvectiveMassElement {
 	  //cerr << "H: " << H << endl;
 	  //ierr = calulateVelocity(dot_w,dot_W,h,H,dot_u); CHKERRQ(ierr);
 
-	  //double detH;
-	  //ierr = dEterminatnt(H,detH); CHKERRQ(ierr);
-	  ublas::vector<double> res = v;//(v - dot_w);//*detH;
+	  double detH;
+	  ierr = dEterminatnt(H,detH); CHKERRQ(ierr);
+	  ublas::vector<double> res = (v - dot_w)*detH;
 	  double val = getVolume()*getGaussPts()(3,gg);
 	  res *= val;
 
@@ -860,9 +860,9 @@ struct ConvectiveMassElement {
 	  ierr = setActive(col_data,gg); CHKERRQ(ierr);
 	  //ierr = calulateVelocity(dot_w,dot_W,h,H,dot_u); CHKERRQ(ierr);
 	  //cerr << "dot_u " << dot_u << endl;
-	  //adouble detH;
-	  //ierr = dEterminatnt(H,detH); CHKERRQ(ierr);
-	  noalias(a_res) = v;//(v - dot_w);//*detH;
+	  adouble detH;
+	  ierr = dEterminatnt(H,detH); CHKERRQ(ierr);
+	  noalias(a_res) = (v - dot_w)*detH;
 	  //cerr << "a_res " << a_res << endl;
 	  //dependant
 	  res.resize(3);
