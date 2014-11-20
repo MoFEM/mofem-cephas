@@ -223,6 +223,7 @@ int main(int argc, char *argv[]) {
   //build field
   ierr = m_field.build_fields(); CHKERRQ(ierr);
 
+  double scale_positions = 2; 
   {
     EntityHandle node = 0;
     double coords[3];
@@ -235,10 +236,26 @@ int main(int argc, char *argv[]) {
 	rval = moab.get_coords(&ent,1,coords); CHKERR_PETSC(rval);
 	node = ent;
       }
-      fval = coords[dof_rank];
+      fval = scale_positions*coords[dof_rank];
     }
   }
 
+  double scale_velocities = 4;
+  {
+    EntityHandle node = 0;
+    double coords[3];
+    for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(m_field,"DOT_SPATIAL_POSITION",dof_ptr)) {
+      if(dof_ptr->get_ent_type()!=MBVERTEX) continue;
+      EntityHandle ent = dof_ptr->get_ent();
+      int dof_rank = dof_ptr->get_dof_rank();
+      double &fval = dof_ptr->get_FieldData();
+      if(node!=ent) {
+	rval = moab.get_coords(&ent,1,coords); CHKERR_PETSC(rval);
+	node = ent;
+      }
+      fval = scale_velocities*coords[dof_rank];
+    }
+  }
 
   //build finite elemnts
   ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
@@ -279,7 +296,7 @@ int main(int argc, char *argv[]) {
   ierr = inertia.setConvectiveMassOperators("SPATIAL_VELOCITY","SPATIAL_POSITION"); CHKERRQ(ierr);
   ierr = inertia.setVelocityOperators("SPATIAL_VELOCITY","SPATIAL_POSITION"); CHKERRQ(ierr);
 
-  /*inertia.getLoopFeMassRhs().ts_F = F;
+  inertia.getLoopFeMassRhs().ts_F = F;
   inertia.getLoopFeMassRhs().ts_a = 1;
   inertia.getLoopFeMassLhs().ts_B = Aij;
   inertia.getLoopFeMassLhs().ts_a = 1;
@@ -295,20 +312,29 @@ int main(int argc, char *argv[]) {
   ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
   ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
-  //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
   ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","MASS_ELEMENT",inertia.getLoopFeMassLhs()); CHKERRQ(ierr);
-  //ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","VELOCITY_ELEMENT",inertia.getLoopFeVelLhs()); CHKERRQ(ierr);
-
+  ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","VELOCITY_ELEMENT",inertia.getLoopFeVelLhs()); CHKERRQ(ierr);
   ierr = MatAssemblyBegin(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
   ierr = MatAssemblyEnd(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 
-  MatView(Aij,PETSC_VIEWER_DRAW_WORLD);
-  //MatView(Aij,PETSC_VIEWER_STDOUT_WORLD);
-  std::string wait;
-  std::cin >> wait;*/
+  PetscViewer viewer;
+  ierr = PetscViewerASCIIOpen(PETSC_COMM_WORLD,"convective_matrix.txt",&viewer); CHKERRQ(ierr);
 
-  TS ts;
+  //ierr = VecChop(F,1e-4); CHKERRQ(ierr);
+  ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+  ierr = VecView(F,viewer); CHKERRQ(ierr);
+  
+  //MatView(Aij,PETSC_VIEWER_DRAW_WORLD);
+  MatChop(Aij,1e-4);
+  MatView(Aij,PETSC_VIEWER_STDOUT_WORLD);
+  MatView(Aij,viewer);
+  //std::string wait;
+  //std::cin >> wait;
+
+  ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
+
+  /*TS ts;
   ierr = TSCreate(PETSC_COMM_WORLD,&ts); CHKERRQ(ierr);
   ierr = TSSetType(ts,TSBEULER); CHKERRQ(ierr);
 
@@ -369,12 +395,13 @@ int main(int argc, char *argv[]) {
   PetscPrintf(PETSC_COMM_WORLD,
     "steps %D (%D rejected, %D SNES fails), ftime %g, nonlinits %D, linits %D\n",
     steps,rejects,snesfails,ftime,nonlinits,linits);
+  ierr = TSDestroy(&ts);CHKERRQ(ierr);
+  */
 
 
   ierr = VecDestroy(&F); CHKERRQ(ierr);
   ierr = VecDestroy(&D); CHKERRQ(ierr);
   ierr = MatDestroy(&Aij); CHKERRQ(ierr);
-  ierr = TSDestroy(&ts);CHKERRQ(ierr);
  
 
   PetscFinalize();
