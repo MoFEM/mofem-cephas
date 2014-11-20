@@ -296,7 +296,7 @@ struct NeummanForcesSurface {
     PetscFunctionReturn(0);
   }
 
-   PetscErrorCode addFlux(const string field_name,Vec &F,int ms_id,bool ho_geometry = false) {
+  PetscErrorCode addFlux(const string field_name,Vec &F,int ms_id,bool ho_geometry = false) {
     PetscFunctionBegin;
     PetscErrorCode ierr;
     ErrorCode rval;

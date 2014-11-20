@@ -1039,7 +1039,7 @@ struct ThermalElement {
       PetscFunctionBegin;
       PetscErrorCode ierr;
       ierr = mField.set_other_local_VecCreateGhost(
-             problemPtr,tempName,rateName,ROW,ts_u_t,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+        problemPtr,tempName,rateName,ROW,ts_u_t,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
       PetscFunctionReturn(0);
     }
 
