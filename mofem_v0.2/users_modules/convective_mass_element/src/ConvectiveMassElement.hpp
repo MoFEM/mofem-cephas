@@ -428,7 +428,8 @@ struct ConvectiveMassElement {
       
       //active
       int nb_dofs = col_data.getIndices().size();
-      dX.resize(nb_dofs,0);
+      dX.resize(nb_dofs);
+      dX.clear();
       a_dX.resize(nb_dofs);
       for(unsigned int nn = 0;nn<nb_dofs;nn++) {
 	a_dX[nn] <<= dX[nn];
@@ -578,7 +579,8 @@ struct ConvectiveMassElement {
       
       //active
       int nb_dofs = col_data.getIndices().size();
-      dx.resize(nb_dofs,0);
+      dx.resize(nb_dofs);
+      dx.clear();
       a_dx.resize(nb_dofs);
       for(unsigned int nn = 0;nn<nb_dofs;nn++) {
 	a_dx[nn] <<= dx[nn];
