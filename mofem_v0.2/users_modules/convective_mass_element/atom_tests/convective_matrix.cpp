@@ -333,7 +333,6 @@ int main(int argc, char *argv[]) {
 
   //left hand side 
   //preprocess
-  ts_ctx.get_preProcess_to_do_IJacobian().push_back(&update_and_control);
   ts_ctx.get_preProcess_to_do_IJacobian().push_back(&my_dirihlet_bc);
   //fe loops
   TsCtx::loops_to_do_type& loops_to_do_Mat = ts_ctx.get_loops_to_do_IJacobian();
