@@ -17,10 +17,10 @@
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
 #include subdirectory
-include_directories("${MoFEM_PROJECT_SOURCE_DIR}/users_modules/arc_length_nonlinear_elasticity")
+include_directories("${MoFEM_PROJECT_SOURCE_DIR}/users_modules/nonlinear_elasticity")
 
 add_executable(arc_length_nonlinear_elasticity 
-  ${MoFEM_PROJECT_SOURCE_DIR}/users_modules/arc_length_nonlinear_elasticity/arc_length_nonlinear_elasticity.cpp)
+  ${MoFEM_PROJECT_SOURCE_DIR}/users_modules/nonlinear_elasticity/arc_length_nonlinear_elasticity.cpp)
 target_link_libraries(arc_length_nonlinear_elasticity 
   mofem_finite_element_library
   mofem_finite_elements

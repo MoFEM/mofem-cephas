@@ -183,7 +183,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.modify_finite_element_add_field_data("BODY_FORCE","DISPLACEMENT"); CHKERRQ(ierr);
   ierr = m_field.modify_finite_element_add_field_data("BODY_FORCE","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
   ierr = m_field.modify_problem_add_finite_element("ELASTIC_PROB","BODY_FORCE"); CHKERRQ(ierr);
-  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,BLOCKSET|BLOCK_BODYFORCESSET,it)) {
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,BLOCKSET|BODYFORCESSET,it)) {
     Range tets;
     rval = m_field.get_moab().get_entities_by_type(it->meshset,MBTET,tets,true); CHKERR_PETSC(rval);
     ierr = m_field.add_ents_to_finite_element_by_TETs(tets,"BODY_FORCE"); CHKERRQ(ierr);
@@ -296,7 +296,7 @@ int main(int argc, char *argv[]) {
   }
   //body forces
   BodyFroceConstantField body_forces_methods(m_field);
-  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,BLOCKSET|BLOCK_BODYFORCESSET,it)) {
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,BLOCKSET|BODYFORCESSET,it)) {
     ierr = body_forces_methods.addBlock("DISPLACEMENT",F,it->get_msId()); CHKERRQ(ierr);
   }
   ierr = m_field.loop_finite_elements("ELASTIC_PROB","BODY_FORCE",body_forces_methods.getLoopFe()); CHKERRQ(ierr);

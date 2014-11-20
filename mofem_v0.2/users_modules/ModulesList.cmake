@@ -25,7 +25,7 @@ add_library(complex_for_lazy_obsolete
 
 add_subdirectory(atom_tests)
 add_subdirectory(elasticity)
-add_subdirectory(arc_length_nonlinear_elasticity)
+add_subdirectory(nonlinear_elasticity)
 add_subdirectory(fracture_mechanics)
 add_subdirectory(homogenisation)
 

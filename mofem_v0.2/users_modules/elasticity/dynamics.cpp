@@ -142,8 +142,13 @@ int main(int argc, char *argv[]) {
 
   PetscInitialize(&argc,&argv,(char *)0,help);
 
+  //Cereat MOAB
   moab::Core mb_instance;
   Interface& moab = mb_instance;
+  //Create MoFEM (Joseph) database
+  MoFEM::Core core(moab);
+  FieldInterface& m_field = core;
+
   int rank;
   MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
 
@@ -162,9 +167,6 @@ int main(int argc, char *argv[]) {
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
-  //Create MoFEM (Joseph) database
-  MoFEM::Core core(moab);
-  FieldInterface& m_field = core;
 
   //ref meshset ref level 0
   ierr = m_field.seed_ref_level_3D(0,0); CHKERRQ(ierr);
@@ -270,7 +272,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.modify_finite_element_add_field_col("BODY_FORCE","DISPLACEMENT"); CHKERRQ(ierr);
   ierr = m_field.modify_finite_element_add_field_data("BODY_FORCE","DISPLACEMENT"); CHKERRQ(ierr);
   ierr = m_field.modify_problem_add_finite_element("ELASTIC_MECHANICS","BODY_FORCE"); CHKERRQ(ierr);
-  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,BLOCKSET|BLOCK_BODYFORCESSET,it)) {
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,BLOCKSET|BODYFORCESSET,it)) {
     Range tets;
     rval = m_field.get_moab().get_entities_by_type(it->meshset,MBTET,tets,true); CHKERR_PETSC(rval);
     ierr = m_field.add_ents_to_finite_element_by_TETs(tets,"BODY_FORCE"); CHKERRQ(ierr);
@@ -431,7 +433,7 @@ int main(int argc, char *argv[]) {
   //body forecs
   BodyFroceConstantField body_forces_methods(m_field);
   bool add_body_forces = false;
-  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,BLOCKSET|BLOCK_BODYFORCESSET,it)) {
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,BLOCKSET|BODYFORCESSET,it)) {
     add_body_forces = true;
     ierr = body_forces_methods.addBlock("DISPLACEMENT",F,it->get_msId()); CHKERRQ(ierr);
   }

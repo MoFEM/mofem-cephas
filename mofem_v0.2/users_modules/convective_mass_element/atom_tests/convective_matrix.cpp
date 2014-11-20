@@ -15,7 +15,7 @@
  * Free Software Foundation, either version 3 of the License, or (at your
  * option) any later version.
  *
- * MoFEM is distributed in the hope that it will be useful, but WITHOUT
+ /* MoFEM is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
  * License for more details.
@@ -68,7 +68,6 @@ PetscErrorCode ierr;
 
 static char help[] = "...\n\n";
 
-
 struct NL_ElasticFEMethod: public NonLinearSpatialElasticFEMthod {
 
   NL_ElasticFEMethod(FieldInterface& _mField,double _lambda,double _mu,int _verbose = 0): 
@@ -76,6 +75,29 @@ struct NL_ElasticFEMethod: public NonLinearSpatialElasticFEMthod {
       NonLinearSpatialElasticFEMthod(_mField,_lambda,_mu,_verbose)  {
     set_PhysicalEquationNumber(hooke);
   }
+
+  PetscErrorCode preProcess() {
+    PetscFunctionBegin;
+
+    switch (ts_ctx) {
+      case CTX_TSSETIFUNCTION: {
+	snes_ctx = CTX_SNESSETFUNCTION;
+	snes_f = ts_F;
+	break;
+      }
+      case CTX_TSSETIJACOBIAN: {
+	snes_ctx = CTX_SNESSETJACOBIAN;
+	snes_B = ts_B;
+	break;
+      }
+      default:
+      break;
+    }
+
+    ierr = NonLinearSpatialElasticFEMthod::preProcess(); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
 
 };
 
@@ -178,6 +200,19 @@ int main(int argc, char *argv[]) {
   ierr = m_field.set_field_order(0,MBEDGE,"SPATIAL_VELOCITY",order_velocity); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0,MBVERTEX,"SPATIAL_VELOCITY",1); CHKERRQ(ierr);
 
+  ierr = m_field.add_field("DOT_SPATIAL_POSITION",H1,3); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_TETs(0,"DOT_SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBTET,"DOT_SPATIAL_POSITION",order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBTRI,"DOT_SPATIAL_POSITION",order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBEDGE,"DOT_SPATIAL_POSITION",order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBVERTEX,"DOT_SPATIAL_POSITION",1); CHKERRQ(ierr);
+  ierr = m_field.add_field("DOT_SPATIAL_VELOCITY",H1,3); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_TETs(0,"DOT_SPATIAL_VELOCITY"); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBTET,"DOT_SPATIAL_VELOCITY",order_velocity); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBTRI,"DOT_SPATIAL_VELOCITY",order_velocity); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBEDGE,"DOT_SPATIAL_VELOCITY",order_velocity); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBVERTEX,"DOT_SPATIAL_VELOCITY",1); CHKERRQ(ierr);
+
   ConvectiveMassElement inertia(m_field,1);
   ierr = inertia.setBlocks(); CHKERRQ(ierr);
   ierr = inertia.addConvectiveMassElement("MASS_ELEMENT","SPATIAL_VELOCITY","SPATIAL_POSITION"); CHKERRQ(ierr);
@@ -188,6 +223,7 @@ int main(int argc, char *argv[]) {
   //build field
   ierr = m_field.build_fields(); CHKERRQ(ierr);
 
+  double scale_positions = 2; 
   {
     EntityHandle node = 0;
     double coords[3];
@@ -200,10 +236,26 @@ int main(int argc, char *argv[]) {
 	rval = moab.get_coords(&ent,1,coords); CHKERR_PETSC(rval);
 	node = ent;
       }
-      fval = coords[dof_rank];
+      fval = scale_positions*coords[dof_rank];
     }
   }
 
+  double scale_velocities = 4;
+  {
+    EntityHandle node = 0;
+    double coords[3];
+    for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(m_field,"DOT_SPATIAL_POSITION",dof_ptr)) {
+      if(dof_ptr->get_ent_type()!=MBVERTEX) continue;
+      EntityHandle ent = dof_ptr->get_ent();
+      int dof_rank = dof_ptr->get_dof_rank();
+      double &fval = dof_ptr->get_FieldData();
+      if(node!=ent) {
+	rval = moab.get_coords(&ent,1,coords); CHKERR_PETSC(rval);
+	node = ent;
+      }
+      fval = scale_velocities*coords[dof_rank];
+    }
+  }
 
   //build finite elemnts
   ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
@@ -260,129 +312,97 @@ int main(int argc, char *argv[]) {
   ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
   ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
-  //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
   ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","MASS_ELEMENT",inertia.getLoopFeMassLhs()); CHKERRQ(ierr);
   ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","VELOCITY_ELEMENT",inertia.getLoopFeVelLhs()); CHKERRQ(ierr);
-
   ierr = MatAssemblyBegin(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
   ierr = MatAssemblyEnd(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 
-  MatView(Aij,PETSC_VIEWER_DRAW_WORLD);
-  //MatView(Aij,PETSC_VIEWER_STDOUT_WORLD);
-  std::string wait;
-  std::cin >> wait;
+  PetscViewer viewer;
+  ierr = PetscViewerASCIIOpen(PETSC_COMM_WORLD,"convective_matrix.txt",&viewer); CHKERRQ(ierr);
 
- struct UpdateAndControl: public FEMethod {
+  //ierr = VecChop(F,1e-4); CHKERRQ(ierr);
+  ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+  ierr = VecView(F,viewer); CHKERRQ(ierr);
+  
+  //MatView(Aij,PETSC_VIEWER_DRAW_WORLD);
+  MatChop(Aij,1e-4);
+  MatView(Aij,PETSC_VIEWER_STDOUT_WORLD);
+  MatView(Aij,viewer);
+  //std::string wait;
+  //std::cin >> wait;
 
-    TS tS;
-    int jacobianLag;
-    UpdateAndControl(TS _ts): tS(_ts),jacobianLag(-1) {}
+  ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
 
-    PetscErrorCode postProcess() {
-      PetscFunctionBegin;
-      PetscErrorCode ierr;
-      SNES snes;
-      ierr = TSGetSNES(tS,&snes); CHKERRQ(ierr);
-      ierr = SNESSetLagJacobian(snes,jacobianLag); CHKERRQ(ierr);
-      PetscFunctionReturn(0);
-    }
-
-  };
-
-  TS ts;
+  /*TS ts;
   ierr = TSCreate(PETSC_COMM_WORLD,&ts); CHKERRQ(ierr);
   ierr = TSSetType(ts,TSBEULER); CHKERRQ(ierr);
 
-  UpdateAndControl update_and_control(ts);
+  ConvectiveMassElement::UpdateAndControl update_and_control(m_field,ts,"SPATIAL_VELOCITY","SPATIAL_POSITION");
 
   //TS
   TsCtx ts_ctx(m_field,"ELASTIC_MECHANICS");
 
   //right hand side
   //preprocess
+  ts_ctx.get_preProcess_to_do_IFunction().push_back(&update_and_control);
   ts_ctx.get_preProcess_to_do_IFunction().push_back(&my_dirihlet_bc);
   //fe looops
   TsCtx::loops_to_do_type& loops_to_do_Rhs = ts_ctx.get_loops_to_do_IFunction();
   loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("ELASTIC",&my_fe));
   loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("NEUAMNN_FE",&fe_spatial));
-  loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("MASS_ELEMENT",&inertia.getLoopFeMassRhs()));
   loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("VELOCITY_ELEMENT",&inertia.getLoopFeVelRhs()));
+  loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("MASS_ELEMENT",&inertia.getLoopFeMassRhs()));
   //postproc
   ts_ctx.get_postProcess_to_do_IFunction().push_back(&my_dirihlet_bc);
 
 
   //left hand side 
+  //preprocess
+  ts_ctx.get_preProcess_to_do_IJacobian().push_back(&my_dirihlet_bc);
+  //fe loops
+  TsCtx::loops_to_do_type& loops_to_do_Mat = ts_ctx.get_loops_to_do_IJacobian();
+  loops_to_do_Mat.push_back(TsCtx::loop_pair_type("ELASTIC",&my_fe));
+  loops_to_do_Mat.push_back(TsCtx::loop_pair_type("NEUAMNN_FE",&fe_spatial));
+  loops_to_do_Mat.push_back(TsCtx::loop_pair_type("VELOCITY_ELEMENT",&inertia.getLoopFeVelLhs()));
+  loops_to_do_Mat.push_back(TsCtx::loop_pair_type("MASS_ELEMENT",&inertia.getLoopFeMassLhs()));
+  //postrocess
+  ts_ctx.get_postProcess_to_do_IJacobian().push_back(&my_dirihlet_bc);
+  ts_ctx.get_postProcess_to_do_IJacobian().push_back(&update_and_control);
 
+  ierr = TSSetIFunction(ts,F,f_TSSetIFunction,&ts_ctx); CHKERRQ(ierr);
+  ierr = TSSetIJacobian(ts,Aij,Aij,f_TSSetIJacobian,&ts_ctx); CHKERRQ(ierr);
+  ierr = TSMonitorSet(ts,f_TSMonitorSet,&ts_ctx,PETSC_NULL); CHKERRQ(ierr);
 
-
-  ierr = VecDestroy(&F); CHKERRQ(ierr);
-  ierr = VecDestroy(&D); CHKERRQ(ierr);
-  ierr = MatDestroy(&Aij); CHKERRQ(ierr);
-  ierr = TSDestroy(&ts);CHKERRQ(ierr);
-
- 
-  /*SnesCtx snes_ctx(m_field,"ELASTIC_MECHANICS");
-  
-  SNES snes;
-  ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);
-  ierr = SNESSetApplicationContext(snes,&snes_ctx); CHKERRQ(ierr);
-  ierr = SNESSetFunction(snes,F,SnesRhs,&snes_ctx); CHKERRQ(ierr);
-  ierr = SNESSetJacobian(snes,Aij,Aij,SnesMat,&snes_ctx); CHKERRQ(ierr);
-  ierr = SNESSetFromOptions(snes); CHKERRQ(ierr);
-
-  SnesCtx::loops_to_do_type& loops_to_do_Rhs = snes_ctx.get_loops_to_do_Rhs();
-  snes_ctx.get_preProcess_to_do_Rhs().push_back(&my_dirihlet_bc);
-  loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ELASTIC",&my_fe));
-  loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("NEUAMNN_FE",&fe_spatial));
-  snes_ctx.get_postProcess_to_do_Rhs().push_back(&my_dirihlet_bc);
-
-  SnesCtx::loops_to_do_type& loops_to_do_Mat = snes_ctx.get_loops_to_do_Mat();
-  snes_ctx.get_preProcess_to_do_Mat().push_back(&my_dirihlet_bc);
-  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ELASTIC",&my_fe));
-  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("NEUAMNN_FE",&fe_spatial));
-  snes_ctx.get_postProcess_to_do_Mat().push_back(&my_dirihlet_bc);
+  double ftime = 1;
+  ierr = TSSetDuration(ts,PETSC_DEFAULT,ftime); CHKERRQ(ierr);
+  ierr = TSSetSolution(ts,D); CHKERRQ(ierr);
+  ierr = TSSetFromOptions(ts); CHKERRQ(ierr);
 
   ierr = m_field.set_local_VecCreateGhost("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
-  double step_size = -1.;
-  ierr = neumann_forces.setForceScale(step_size); CHKERRQ(ierr);
-  ierr = SNESSolve(snes,PETSC_NULL,D); CHKERRQ(ierr);
-  int its;
-  ierr = SNESGetIterationNumber(snes,&its); CHKERRQ(ierr);
-  ierr = PetscPrintf(PETSC_COMM_WORLD,"number of Newton iterations = %D\n",its); CHKERRQ(ierr);
-  ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);*/
+  ierr = TSSolve(ts,D); CHKERRQ(ierr);
+  ierr = TSGetTime(ts,&ftime); CHKERRQ(ierr);
+
+  PetscInt steps,snesfails,rejects,nonlinits,linits;
+  ierr = TSGetTimeStepNumber(ts,&steps); CHKERRQ(ierr);
+  ierr = TSGetSNESFailures(ts,&snesfails); CHKERRQ(ierr);
+  ierr = TSGetStepRejections(ts,&rejects); CHKERRQ(ierr);
+  ierr = TSGetSNESIterations(ts,&nonlinits); CHKERRQ(ierr);
+  ierr = TSGetKSPIterations(ts,&linits); CHKERRQ(ierr);
+  PetscPrintf(PETSC_COMM_WORLD,
+    "steps %D (%D rejected, %D SNES fails), ftime %g, nonlinits %D, linits %D\n",
+    steps,rejects,snesfails,ftime,nonlinits,linits);
+  ierr = TSDestroy(&ts);CHKERRQ(ierr);
+  */
 
 
-  /*//Save data on mesh
-  ierr = m_field.set_global_VecCreateGhost("ELASTIC_MECHANICS",Col,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-  //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-  PostProcVertexMethod ent_method(moab,"SPATIAL_POSITION");
-  ierr = m_field.loop_dofs("ELASTIC_MECHANICS","SPATIAL_POSITION",Col,ent_method); CHKERRQ(ierr);
-
-  if(pcomm->rank()==0) {
-    EntityHandle out_meshset;
-    rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
-    ierr = m_field.problem_get_FE("ELASTIC_MECHANICS","ELASTIC",out_meshset); CHKERRQ(ierr);
-    rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
-    rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
-  }
-
-  PostProcFieldsAndGradientOnRefMesh fe_post_proc_method(moab);
-  ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",fe_post_proc_method);  CHKERRQ(ierr);
-  PetscSynchronizedFlush(PETSC_COMM_WORLD);
-  if(pcomm->rank()==0) {
-    rval = fe_post_proc_method.moab_post_proc.write_file("out_post_proc.vtk","VTK",""); CHKERR_PETSC(rval);
-  }*/
-
-  //detroy matrices
-  /*ierr = VecDestroy(&F); CHKERRQ(ierr);
+  ierr = VecDestroy(&F); CHKERRQ(ierr);
   ierr = VecDestroy(&D); CHKERRQ(ierr);
   ierr = MatDestroy(&Aij); CHKERRQ(ierr);
-  ierr = SNESDestroy(&snes); CHKERRQ(ierr);*/
+ 
 
   PetscFinalize();
 

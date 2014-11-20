@@ -149,6 +149,7 @@ struct NeummanForcesSurfaceComplexForLazy {
     virtual PetscErrorCode rHs();
     virtual PetscErrorCode lHs();
 
+    PetscErrorCode preProcess();
     PetscErrorCode operator()();
 
     PetscErrorCode addForce(int ms_id);
