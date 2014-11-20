@@ -241,10 +241,10 @@ struct ConvectiveMassElement {
       ierr = dEterminatnt(F,detF); CHKERRQ(ierr);
   
       //calulate current density
-      TYPE rho = rho0;//detF*rho0;
+      TYPE rho = rho0*detF*rho0;
   
       //momentum rate
-      noalias(dp_dt) = rho*a;// + prod(grad_v,dot_W));
+      noalias(dp_dt) = rho*a + prod(grad_v,dot_W);
   
       PetscFunctionReturn(0);
     }
@@ -258,11 +258,13 @@ struct ConvectiveMassElement {
       PetscFunctionBegin;
   
       PetscErrorCode ierr;
+      ublas::vector<TYPE> dp_dt;
+      dp_dt.resize(3);
       ierr = calculateMomentumRate(
-        a,grad_v,dot_W,H,h,rho0,f); CHKERRQ(ierr);
-      //TYPE detH;
-      //ierr = dEterminatnt(H,detH); CHKERRQ(ierr);
-      //noalias(f) *= detH*dp_dt;
+        a,grad_v,dot_W,H,h,rho0,dp_dt); CHKERRQ(ierr);
+      TYPE detH;
+      ierr = dEterminatnt(H,detH); CHKERRQ(ierr);
+      noalias(f) = dp_dt*detH;
 
       PetscFunctionReturn(0);
     }
@@ -282,7 +284,7 @@ struct ConvectiveMassElement {
       ublas::matrix<TYPE> F;
       F = prod(h,invH);
 
-      dot_u = dot_w ;//+ prod(F,dot_W);
+      dot_u = dot_w + prod(F,dot_W);
 
       PetscFunctionReturn(0);
     }
@@ -720,11 +722,10 @@ struct ConvectiveMassElement {
 	  //cerr << "h: " << h << endl;
 	  //cerr << "dot_W: " << dot_W << endl;
 	  //cerr << "H: " << H << endl;
-	  //ierr = calulateVelocity(dot_w,dot_W,h,H,dot_u); CHKERRQ(ierr);
-
+	  ierr = calulateVelocity(dot_w,dot_W,h,H,dot_u); CHKERRQ(ierr);
 	  double detH;
 	  ierr = dEterminatnt(H,detH); CHKERRQ(ierr);
-	  ublas::vector<double> res = (v - dot_w)*detH;
+	  ublas::vector<double> res = (v - dot_u)*detH;
 	  double val = getVolume()*getGaussPts()(3,gg);
 	  res *= val;
 
@@ -858,11 +859,11 @@ struct ConvectiveMassElement {
 
 	  trace_on(tAg);
 	  ierr = setActive(col_data,gg); CHKERRQ(ierr);
-	  //ierr = calulateVelocity(dot_w,dot_W,h,H,dot_u); CHKERRQ(ierr);
+	  ierr = calulateVelocity(dot_w,dot_W,h,H,dot_u); CHKERRQ(ierr);
 	  //cerr << "dot_u " << dot_u << endl;
 	  adouble detH;
 	  ierr = dEterminatnt(H,detH); CHKERRQ(ierr);
-	  noalias(a_res) = (v - dot_w)*detH;
+	  noalias(a_res) = (v - dot_u)*detH;
 	  //cerr << "a_res " << a_res << endl;
 	  //dependant
 	  res.resize(3);
