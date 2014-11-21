@@ -88,6 +88,7 @@ struct ConvectiveMassElement {
     */
   struct BlockData {
     double rho0; ///< reference density
+    ublas::vector<double> a0; //< constant acceleration
     Range tEts; ///< constatins elements in block set
   }; 
   map<int,BlockData> setOfBlocks; ///< maps block set id with appropiate BlockData
@@ -224,9 +225,10 @@ struct ConvectiveMassElement {
   
     template<typename TYPE> 
     PetscErrorCode calculateMomentumRate(
+      double rho0,ublas::vector<double>& a0,
       ublas::vector<TYPE>& a,ublas::matrix<TYPE>& grad_v,
       ublas::vector<TYPE>& dot_W,ublas::matrix<TYPE>& H,
-      ublas::matrix<TYPE>& h,TYPE rho0,
+      ublas::matrix<TYPE>& h,
       ublas::vector<TYPE>& dp_dt) {
       PetscFunctionBegin;
   
@@ -244,16 +246,19 @@ struct ConvectiveMassElement {
       TYPE rho = rho0*detF*rho0;
   
       //momentum rate
-      noalias(dp_dt) = rho*a + prod(grad_v,dot_W);
+      noalias(dp_dt) = rho*(a0 + a + prod(grad_v,dot_W));
   
       PetscFunctionReturn(0);
     }
   
     template<typename TYPE> 
     PetscErrorCode calculateFuncUnderIntegral(
-      ublas::vector<TYPE>& a,ublas::matrix<TYPE>& grad_v,
-      ublas::vector<TYPE>& dot_W,ublas::matrix<TYPE>& H,
-      ublas::matrix<TYPE>& h,TYPE rho0,
+      double rho0,ublas::vector<double>& a0,
+      ublas::vector<TYPE>& a,
+      ublas::matrix<TYPE>& grad_v,
+      ublas::vector<TYPE>& dot_W,
+      ublas::matrix<TYPE>& H,
+      ublas::matrix<TYPE>& h,
       ublas::vector<TYPE>& f) {
       PetscFunctionBegin;
   
@@ -261,7 +266,7 @@ struct ConvectiveMassElement {
       ublas::vector<TYPE> dp_dt;
       dp_dt.resize(3);
       ierr = calculateMomentumRate(
-        a,grad_v,dot_W,H,h,rho0,dp_dt); CHKERRQ(ierr);
+        rho0,a0,a,grad_v,dot_W,H,h,dp_dt); CHKERRQ(ierr);
       TYPE detH;
       ierr = dEterminatnt(H,detH); CHKERRQ(ierr);
       noalias(f) = dp_dt*detH;
@@ -351,7 +356,9 @@ struct ConvectiveMassElement {
 	  } 
 
 	  double rho0 = dAta.rho0;
-	  ierr = calculateFuncUnderIntegral(a,g,dot_W,H,h,rho0,f); CHKERRQ(ierr);
+	  ublas::vector<double>& a0 = dAta.a0;
+	  ierr = calculateFuncUnderIntegral(
+	    rho0,a0,a,g,dot_W,H,h,f); CHKERRQ(ierr);
 	  double val = getVolume()*getGaussPts()(3,gg);
 	  f *= val;
 
@@ -497,10 +504,12 @@ struct ConvectiveMassElement {
 
 	  trace_on(tAg);
 
-	  adouble rho0 = dAta.rho0;
 	  //set active variables
 	  ierr = setActive(col_data,gg); CHKERRQ(ierr);
-	  ierr = calculateFuncUnderIntegral(a,g,dot_W,H,h,rho0,a_f); CHKERRQ(ierr);
+
+	  double rho0 = dAta.rho0;
+	  ublas::vector<double>& a0 = dAta.a0;
+	  ierr = calculateFuncUnderIntegral(rho0,a0,a,g,dot_W,H,h,a_f); CHKERRQ(ierr);
 
 	  //dependant
 	  f.resize(3);
@@ -1033,6 +1042,22 @@ struct ConvectiveMassElement {
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
       PetscErrorCode ierr;
+
+      switch (ts_ctx) {
+	case CTX_TSSETIFUNCTION: {
+	  snes_ctx = CTX_SNESSETFUNCTION;
+	  snes_f = ts_F;
+	  break;
+	}
+	case CTX_TSSETIJACOBIAN: {
+	  snes_ctx = CTX_SNESSETJACOBIAN;
+	  snes_B = ts_B;
+	  break;
+	}
+	default:
+	break;
+      }
+
       ierr = mField.set_other_local_VecCreateGhost(problemPtr,velocityField,"DOT_"+velocityField,COL,ts_u_t,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
       ierr = mField.set_other_local_VecCreateGhost(problemPtr,spatialPositionField,"DOT_"+spatialPositionField,COL,ts_u_t,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
       PetscFunctionReturn(0);
@@ -1055,23 +1080,38 @@ struct ConvectiveMassElement {
     ErrorCode rval;
     PetscErrorCode ierr;
   
-    /*for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|BODYFORCESSET,it)) {
+    Range added_tets;
+    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|BODYFORCESSET,it)) {
       int id = it->get_msId();
       EntityHandle meshset = it->get_meshset();
       rval = mField.get_moab().get_entities_by_type(meshset,MBTET,setOfBlocks[id].tEts,true); CHKERR_PETSC(rval);
+      added_tets.merge(setOfBlocks[id].tEts);
       Block_BodyForces mydata;
       ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
       setOfBlocks[id].rho0 = mydata.data.density;
+      setOfBlocks[id].a0.resize(3);
+      setOfBlocks[id].a0[0] = mydata.data.acceleration_x;
+      setOfBlocks[id].a0[1] = mydata.data.acceleration_y;
+      setOfBlocks[id].a0[2] = mydata.data.acceleration_z;
       //cerr << setOfBlocks[id].tEts << endl;
-    }*/
+    }
 
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_ELASTICSET,it)) {
-      int id = it->get_msId();
-      EntityHandle meshset = it->get_meshset();
-      rval = mField.get_moab().get_entities_by_type(meshset,MBTET,setOfBlocks[id].tEts,true); CHKERR_PETSC(rval);
       Mat_Elastic mydata;
       ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
-      setOfBlocks[id].rho0 = mydata.data.User1;
+      if(mydata.data.User1 == 0) continue;
+      Range tets;
+      EntityHandle meshset = it->get_meshset();
+      rval = mField.get_moab().get_entities_by_type(meshset,MBTET,tets,true); CHKERR_PETSC(rval);
+      tets = subtract(tets,added_tets);
+      if(tets.empty()) continue;
+      int id = it->get_msId();
+      setOfBlocks[-id].tEts = tets;
+      setOfBlocks[-id].rho0 = mydata.data.User1;
+      setOfBlocks[-id].a0.resize(3);
+      setOfBlocks[-id].a0[0] = mydata.data.User2;
+      setOfBlocks[-id].a0[1] = mydata.data.User3;
+      setOfBlocks[-id].a0[2] = mydata.data.User4;
       //cerr << setOfBlocks[id].tEts << endl;
     }
 
