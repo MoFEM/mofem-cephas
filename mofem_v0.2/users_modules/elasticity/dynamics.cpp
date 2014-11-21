@@ -142,15 +142,12 @@ int main(int argc, char *argv[]) {
 
   PetscInitialize(&argc,&argv,(char *)0,help);
 
-  //Cereat MOAB
   moab::Core mb_instance;
   Interface& moab = mb_instance;
-  //Create MoFEM (Joseph) database
-  MoFEM::Core core(moab);
-  FieldInterface& m_field = core;
-
   int rank;
   MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
+  ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
+  if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
   //Reade parameters from line command
   PetscBool flg = PETSC_TRUE;
@@ -159,14 +156,17 @@ int main(int argc, char *argv[]) {
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
-
+    
   //Read mesh to MOAB
   const char *option;
-  option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
+  //option = "PARALLEL=BCAST_DELETE;"
+      //"PARTITION=GEOM_DIMENSION,PARTITION_VAL=3,PARTITION_DISTRIBUTE";//;DEBUG_IO";
+  option = "";
   rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
-  ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
-  if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
+  //Create MoFEM (Joseph) database
+  MoFEM::Core core(moab);
+  FieldInterface& m_field = core;
 
   //ref meshset ref level 0
   ierr = m_field.seed_ref_level_3D(0,0); CHKERRQ(ierr);
