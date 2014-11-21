@@ -27,6 +27,7 @@
 #include <MoFEM.hpp>
 
 using namespace MoFEM;
+#include <SurfacePressure.hpp>
 #include <SurfacePressureComplexForLazy.hpp>
 
 extern "C" {
@@ -152,6 +153,26 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::
   }
 
   PetscFunctionReturn(0);
+}
+
+NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::MyTriangleSpatialFE
+  (FieldInterface &_mField,Mat _Aij,Vec &_F,double *scale_lhs,double *scale_rhs): 
+  TriElementForcesAndSurcesCore(_mField),sCaleLhs(scale_lhs),sCaleRhs(scale_rhs),
+  typeOfForces(CONSERVATIVE),eps(1e-8),uSeF(false) {
+
+  methodsOp.clear();
+
+  Aij = _Aij;
+  F = _F;
+
+  snes_B = _Aij;
+  snes_f = _F;
+
+  if(mField.check_field("MESH_NODE_POSITIONS")) {
+	get_op_to_do_Rhs().push_back(new AuxMethodMaterial("MESH_NODE_POSITIONS",this));
+  }
+  get_op_to_do_Rhs().push_back(new AuxMethodSpatial("SPATIAL_POSITION",this));
+
 }
 
 PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::rHs() {
@@ -502,6 +523,10 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::operator
 
   ierr = TriElementForcesAndSurcesCore::operator()(); CHKERRQ(ierr);
   ierr = calcTraction(); CHKERRQ(ierr);
+  ublas::vector<double> scale(1,1);
+  cerr << methodsOp.size() << endl;
+  ierr = MethodsForOp::applyScale(this,methodsOp,scale); CHKERRQ(ierr);
+  tLocNodal *= scale[0];
 
   switch(snes_ctx) {
     case CTX_SNESNONE:
@@ -547,6 +572,10 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::addPreas
   rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBTRI,mapPreassure[ms_id].tRis,true); CHKERR_PETSC(rval);
   PetscFunctionReturn(0);
 }
+
+NeummanForcesSurfaceComplexForLazy::MyTriangleMaterialFE::MyTriangleMaterialFE
+  (FieldInterface &_mField,Mat _Aij,Vec &_F,double *scale_lhs,double *scale_rhs): 
+  MyTriangleSpatialFE(_mField,_Aij,_F,scale_lhs,scale_rhs) {}
 
 PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleMaterialFE::rHs() {
   PetscFunctionBegin;
@@ -623,6 +652,37 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleMaterialFE::lHs() {
 
   PetscFunctionReturn(0);
 }
+
+NeummanForcesSurfaceComplexForLazy::NeummanForcesSurfaceComplexForLazy(FieldInterface &m_field,Mat _Aij,Vec _F): 
+  mField(m_field),feSpatial(m_field,_Aij,_F,NULL,NULL),feMaterial(m_field,_Aij,_F,NULL,NULL) {
+
+  ErrorCode rval;
+
+  double def_scale = 1.;
+  const EntityHandle root_meshset = mField.get_moab().get_root_set();
+  rval = mField.get_moab().tag_get_handle("_LoadFactor_Scale_",1,MB_TYPE_DOUBLE,thScale,MB_TAG_CREAT|MB_TAG_EXCL|MB_TAG_MESH,&def_scale); 
+  if(rval == MB_ALREADY_ALLOCATED) {
+    rval = mField.get_moab().tag_get_by_ptr(thScale,&root_meshset,1,(const void**)&sCale); CHKERR_THROW(rval);
+  } else {
+    CHKERR_THROW(rval);
+    rval = mField.get_moab().tag_set_data(thScale,&root_meshset,1,&def_scale); CHKERR_THROW(rval);
+    rval = mField.get_moab().tag_get_by_ptr(thScale,&root_meshset,1,(const void**)&sCale); CHKERR_THROW(rval);
+  }
+
+  feSpatial.sCaleLhs = sCale;
+  feSpatial.sCaleRhs = sCale;
+  feMaterial.sCaleLhs = sCale;
+  feMaterial.sCaleRhs = sCale;
+
+}
+
+NeummanForcesSurfaceComplexForLazy::NeummanForcesSurfaceComplexForLazy(FieldInterface &m_field,Mat _Aij,Vec _F,double *scale_lhs,double *scale_rhs): 
+  mField(m_field),
+  feSpatial(m_field,_Aij,_F,scale_lhs,scale_rhs),
+  feMaterial(m_field,_Aij,_F,scale_lhs,scale_rhs) {
+
+  }
+
 
 
 }
