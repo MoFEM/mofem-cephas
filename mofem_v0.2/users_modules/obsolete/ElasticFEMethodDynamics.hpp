@@ -261,7 +261,14 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
 		PetscPrintf(PETSC_COMM_WORLD,"-> time %6.4e\n",ftime);
 	      }
 	    }*/
-	    if(steps%10==0) { 
+	    //Hassan: specify how often (per step) to print output files
+	    PetscBool flg = PETSC_TRUE;
+	    PetscInt prt;
+	    ierr = PetscOptionsGetInt(PETSC_NULL,"-my_output_prt",&prt,&flg); CHKERRQ(ierr);
+	    if(flg!=PETSC_TRUE) {
+              prt = 10;
+	    }
+	    if(steps%prt==0) {
 	      rval = fe_post_proc_method.moab_post_proc.delete_mesh(); CHKERR_PETSC(rval);
 	      ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","STIFFNESS",fe_post_proc_method);  CHKERRQ(ierr);
 	      if(pcomm->rank()==0) {
