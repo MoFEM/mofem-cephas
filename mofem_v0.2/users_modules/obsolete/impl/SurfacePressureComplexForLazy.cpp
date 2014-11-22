@@ -40,6 +40,12 @@ extern "C" {
 
 namespace ObosleteUsersModules {
 
+NeummanForcesSurfaceComplexForLazy::AuxMethodSpatial::AuxMethodSpatial(const string &field_name,MyTriangleSpatialFE *_myPtr): 
+      TriElementForcesAndSurcesCore::UserDataOperator(field_name),myPtr(_myPtr) {}
+
+NeummanForcesSurfaceComplexForLazy::AuxMethodMaterial::AuxMethodMaterial(const string &field_name,MyTriangleSpatialFE *_myPtr): 
+      TriElementForcesAndSurcesCore::UserDataOperator(field_name),myPtr(_myPtr) {};
+
 PetscErrorCode NeummanForcesSurfaceComplexForLazy::
   AuxMethodSpatial::doWork(int side, EntityType type, DataForcesAndSurcesCore::EntData &data) {
   PetscFunctionBegin;
@@ -524,7 +530,7 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::operator
   ierr = TriElementForcesAndSurcesCore::operator()(); CHKERRQ(ierr);
   ierr = calcTraction(); CHKERRQ(ierr);
   ublas::vector<double> scale(1,1);
-  cerr << methodsOp.size() << endl;
+  //cerr << methodsOp.size() << endl;
   ierr = MethodsForOp::applyScale(this,methodsOp,scale); CHKERRQ(ierr);
   tLocNodal *= scale[0];
 
@@ -679,11 +685,7 @@ NeummanForcesSurfaceComplexForLazy::NeummanForcesSurfaceComplexForLazy(FieldInte
 NeummanForcesSurfaceComplexForLazy::NeummanForcesSurfaceComplexForLazy(FieldInterface &m_field,Mat _Aij,Vec _F,double *scale_lhs,double *scale_rhs): 
   mField(m_field),
   feSpatial(m_field,_Aij,_F,scale_lhs,scale_rhs),
-  feMaterial(m_field,_Aij,_F,scale_lhs,scale_rhs) {
-
-  }
-
-
+  feMaterial(m_field,_Aij,_F,scale_lhs,scale_rhs) {}
 
 }
 

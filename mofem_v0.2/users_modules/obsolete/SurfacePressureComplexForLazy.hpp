@@ -34,8 +34,7 @@ struct NeummanForcesSurfaceComplexForLazy {
   struct AuxMethodSpatial: public TriElementForcesAndSurcesCore::UserDataOperator {
 
     MyTriangleSpatialFE *myPtr;
-    AuxMethodSpatial(const string &field_name,MyTriangleSpatialFE *_myPtr): 
-      TriElementForcesAndSurcesCore::UserDataOperator(field_name),myPtr(_myPtr) {};
+    AuxMethodSpatial(const string &field_name,MyTriangleSpatialFE *_myPtr);
     PetscErrorCode doWork(int side, EntityType type, DataForcesAndSurcesCore::EntData &data);
 
   };
@@ -43,8 +42,7 @@ struct NeummanForcesSurfaceComplexForLazy {
   struct AuxMethodMaterial: public TriElementForcesAndSurcesCore::UserDataOperator {
 
     MyTriangleSpatialFE *myPtr;
-    AuxMethodMaterial(const string &field_name,MyTriangleSpatialFE *_myPtr): 
-      TriElementForcesAndSurcesCore::UserDataOperator(field_name),myPtr(_myPtr) {};
+    AuxMethodMaterial(const string &field_name,MyTriangleSpatialFE *_myPtr);
     PetscErrorCode doWork(int side, EntityType type, DataForcesAndSurcesCore::EntData &data);
 
   };
@@ -71,7 +69,6 @@ struct NeummanForcesSurfaceComplexForLazy {
     double *diffN;
     double *diffN_face;
     double *diffN_edge[3];
-
 
     int order_face;
     int order_edge[3];
