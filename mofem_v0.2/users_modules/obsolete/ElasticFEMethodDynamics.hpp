@@ -49,7 +49,7 @@ namespace ObosleteUsersModules {
  **/
 struct DynamicElasticFEMethod: public ElasticFEMethod {
 
-    PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh fe_post_proc_method;
+    PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh fePostProcMethod;
 
     double rho;
     const int debug;
@@ -59,7 +59,7 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
 
     DynamicElasticFEMethod(FieldInterface& _mField,Mat &_Aij,Vec _D,Vec& _F,double _lambda,double _mu,double _rho): 
       ElasticFEMethod(_mField,_Aij,_D,_F,_lambda,_mu),
-      fe_post_proc_method(_mField,"DISPLACEMENT",_lambda,_mu),rho(_rho),debug(1){
+      fePostProcMethod(_mField,"DISPLACEMENT",_lambda,_mu),rho(_rho),debug(1){
 
       PetscInt ghosts[1] = { 0 };
       if(pcomm->rank() == 0) {
@@ -261,14 +261,21 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
 		PetscPrintf(PETSC_COMM_WORLD,"-> time %6.4e\n",ftime);
 	      }
 	    }*/
-	    if(steps%10==0) { 
-	      rval = fe_post_proc_method.moab_post_proc.delete_mesh(); CHKERR_PETSC(rval);
-	      ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","STIFFNESS",fe_post_proc_method);  CHKERRQ(ierr);
+	    //Hassan: specify how often (per step) to print output files
+	    PetscBool flg = PETSC_TRUE;
+	    PetscInt prt;
+	    ierr = PetscOptionsGetInt(PETSC_NULL,"-my_output_prt",&prt,&flg); CHKERRQ(ierr);
+	    if(flg!=PETSC_TRUE) {
+              prt = 10;
+	    }
+	    if(steps%prt==0) {
+	      rval = fePostProcMethod.moab_post_proc.delete_mesh(); CHKERR_PETSC(rval);
+	      ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","STIFFNESS",fePostProcMethod);  CHKERRQ(ierr);
 	      if(pcomm->rank()==0) {
 		ostringstream sss;
 		//sss << (int)(ftime*1e3) << "_out.vtk";
 		sss << steps << "_out.vtk";
-		rval = fe_post_proc_method.moab_post_proc.write_file(sss.str().c_str(),"VTK",""); CHKERR_PETSC(rval);
+		rval = fePostProcMethod.moab_post_proc.write_file(sss.str().c_str(),"VTK",""); CHKERR_PETSC(rval);
 	      }
 	    }
 	    ierr = VecZeroEntries(GhostU); CHKERRQ(ierr);

@@ -20,7 +20,7 @@
 include_directories("${MoFEM_PROJECT_SOURCE_DIR}/users_modules/nonlinear_elasticity")
 
 add_executable(arc_length_nonlinear_elasticity 
-  ${MoFEM_PROJECT_SOURCE_DIR}/users_modules/nonlinear_elasticity/arc_length_nonlinear_elasticity.cpp)
+  ${UM_SOURCE_DIR}/nonlinear_elasticity/arc_length_nonlinear_elasticity.cpp)
 target_link_libraries(arc_length_nonlinear_elasticity 
   mofem_finite_element_library
   mofem_finite_elements
@@ -57,4 +57,24 @@ add_test(ArcLengthNonLinearElasticityTest
   -snes_max_it 16 -snes_atol 1e-8 -snes_rtol 1e-8 
   -my_sr 1e-6 -my_ms 3 -snes_converged_reason
   -log_summary)
+
+if(ADOL-C_LIBRARY)
+
+  add_executable(nonlinear_dynamics
+    ${UM_SOURCE_DIR}/nonlinear_elasticity/nonlinear_dynamics.cpp)
+  target_link_libraries(nonlinear_dynamics
+    mofem_finite_element_library
+    mofem_finite_elements
+    mofem_interfaces
+    mofem_multi_indices
+    mofem_petsc
+    users_modules_obsolete
+    complex_for_lazy_obsolete
+    mofem_approx
+    mofem_third_party
+    mofem_cblas
+    ${MoFEM_PROJECT_LIBS})
+
+endif(ADOL-C_LIBRARY)
+
 
