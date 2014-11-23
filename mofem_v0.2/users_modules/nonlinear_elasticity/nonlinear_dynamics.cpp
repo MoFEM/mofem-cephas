@@ -73,7 +73,8 @@ struct NL_ElasticFEMethod: public NonLinearSpatialElasticFEMthod {
   NL_ElasticFEMethod(FieldInterface& _mField,double _lambda,double _mu,int _verbose = 0): 
       FEMethod_ComplexForLazy_Data(_mField,_verbose), 
       NonLinearSpatialElasticFEMthod(_mField,_lambda,_mu,_verbose)  {
-    set_PhysicalEquationNumber(hooke);
+    set_PhysicalEquationNumber(neohookean);
+    //set_PhysicalEquationNumber(hooke);
   }
 
   PetscErrorCode preProcess() {
@@ -99,6 +100,60 @@ struct NL_ElasticFEMethod: public NonLinearSpatialElasticFEMthod {
   }
 
 };
+
+struct MonitorObsoleteComplexForLazyPostProc: public FEMethod {
+
+  FieldInterface &mField;
+  FEMethod_ComplexForLazy &fE;
+  PostProcStressNonLinearElasticity fePostProcMethod;
+  int pRT;
+
+  MonitorObsoleteComplexForLazyPostProc(FieldInterface &m_field,FEMethod_ComplexForLazy &fe): 
+    FEMethod(),mField(m_field),fE(fe),fePostProcMethod(m_field.get_moab(),fe) { 
+
+    PetscErrorCode ierr;
+    PetscBool flg = PETSC_TRUE;
+    ierr = PetscOptionsGetInt(PETSC_NULL,"-my_output_prt",&pRT,&flg); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+    if(flg!=PETSC_TRUE) {
+      pRT = 10;
+    }
+
+  }
+
+  PetscErrorCode preProcess() {
+    PetscFunctionBegin;
+    PetscErrorCode ierr;
+    ErrorCode rval;
+
+    PetscInt step;
+    ierr = TSGetTimeStepNumber(ts,&step); CHKERRQ(ierr);
+    if(step%pRT==0) {
+      rval = fePostProcMethod.moab_post_proc.delete_mesh(); CHKERR_PETSC(rval);
+      ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",fePostProcMethod);CHKERRQ(ierr);
+      ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
+      if(pcomm->rank()==0) {
+	ostringstream sss;
+	sss << "out_post_proc_" << step << ".vtk";
+	rval = fePostProcMethod.moab_post_proc.write_file(sss.str().c_str(),"VTK",""); CHKERR_PETSC(rval);
+      }
+    }
+
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode operator()() {
+    PetscFunctionBegin;
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode postProcess() {
+    PetscFunctionBegin;
+    PetscFunctionReturn(0);
+  }
+
+};
+
+
 
 //See file users_modules/elasticity/TimeForceScale.hpp
 #include <TimeForceScale.hpp>
@@ -198,7 +253,7 @@ int main(int argc, char *argv[]) {
   //Velocity
   ierr = m_field.add_field("SPATIAL_VELOCITY",H1,3); CHKERRQ(ierr);
   ierr = m_field.add_ents_to_field_by_TETs(0,"SPATIAL_VELOCITY"); CHKERRQ(ierr);
-  int order_velocity = 1;
+  int order_velocity = order;
   ierr = m_field.set_field_order(0,MBTET,"SPATIAL_VELOCITY",order_velocity); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0,MBTRI,"SPATIAL_VELOCITY",order_velocity); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0,MBEDGE,"SPATIAL_VELOCITY",order_velocity); CHKERRQ(ierr);
@@ -227,37 +282,15 @@ int main(int argc, char *argv[]) {
   //build field
   ierr = m_field.build_fields(); CHKERRQ(ierr);
 
-  {
-    EntityHandle node = 0;
-    double coords[3];
-    for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(m_field,"SPATIAL_POSITION",dof_ptr)) {
-      if(dof_ptr->get_ent_type()!=MBVERTEX) continue;
-      EntityHandle ent = dof_ptr->get_ent();
-      int dof_rank = dof_ptr->get_dof_rank();
-      double &fval = dof_ptr->get_FieldData();
-      if(node!=ent) {
-	rval = moab.get_coords(&ent,1,coords); CHKERR_PETSC(rval);
-	node = ent;
-      }
-      fval = coords[dof_rank];
-    }
-  }
+  //10 node tets
+  Projection10NodeCoordsOnField ent_method_material(m_field,"SPATIAL_POSITION");
+  ierr = m_field.loop_dofs("SPATIAL_POSITION",ent_method_material); CHKERRQ(ierr);
+  //ierr = m_field.set_field(0,MBVERTEX,"SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = m_field.set_field(0,MBEDGE,"SPATIAL_POSITION"); CHKERRQ(ierr);
+  //ierr = m_field.field_axpy(1.,"MESH_NODE_POSITIONS","SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = m_field.set_field(0,MBTRI,"SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = m_field.set_field(0,MBTET,"SPATIAL_POSITION"); CHKERRQ(ierr);
 
-  {
-    EntityHandle node = 0;
-    double coords[3];
-    for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(m_field,"DOT_SPATIAL_POSITION",dof_ptr)) {
-      if(dof_ptr->get_ent_type()!=MBVERTEX) continue;
-      EntityHandle ent = dof_ptr->get_ent();
-      int dof_rank = dof_ptr->get_dof_rank();
-      double &fval = dof_ptr->get_FieldData();
-      if(node!=ent) {
-	rval = moab.get_coords(&ent,1,coords); CHKERR_PETSC(rval);
-	node = ent;
-      }
-      fval = 0;
-    }
-  }
 
   //build finite elemnts
   ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
@@ -284,6 +317,7 @@ int main(int argc, char *argv[]) {
   const double young_modulus = 1.;
   const double poisson_ratio = 0.;
   NL_ElasticFEMethod my_fe(m_field,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
+  MonitorObsoleteComplexForLazyPostProc post_proc_stresses_and_elastic_energy(m_field,my_fe);
 
   //surface forces
   NeummanForcesSurfaceComplexForLazy neumann_forces(m_field,Aij,F);
@@ -305,6 +339,8 @@ int main(int argc, char *argv[]) {
   }
 
   SpatialPositionsBCFEMethodPreAndPostProc my_dirihlet_bc(m_field,"SPATIAL_POSITION",Aij,D,F);
+  //DisplacementBCFEMethodPreAndPostProc my_dirihlet_velocity_bc(m_field,"SPATIAL_VELOCITY",Aij,D,F);
+
   ierr = inertia.setConvectiveMassOperators("SPATIAL_VELOCITY","SPATIAL_POSITION"); CHKERRQ(ierr);
   ierr = inertia.setVelocityOperators("SPATIAL_VELOCITY","SPATIAL_POSITION"); CHKERRQ(ierr);
 
@@ -321,6 +357,7 @@ int main(int argc, char *argv[]) {
   //preprocess
   ts_ctx.get_preProcess_to_do_IFunction().push_back(&update_and_control);
   ts_ctx.get_preProcess_to_do_IFunction().push_back(&my_dirihlet_bc);
+  //ts_ctx.get_preProcess_to_do_IFunction().push_back(&my_dirihlet_velocity_bc);
   //fe looops
   TsCtx::loops_to_do_type& loops_to_do_Rhs = ts_ctx.get_loops_to_do_IFunction();
   loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("ELASTIC",&my_fe));
@@ -333,10 +370,13 @@ int main(int argc, char *argv[]) {
   loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("MASS_ELEMENT",&inertia.getLoopFeMassRhs()));
   //postproc
   ts_ctx.get_postProcess_to_do_IFunction().push_back(&my_dirihlet_bc);
+  //ts_ctx.get_postProcess_to_do_IFunction().push_back(&my_dirihlet_velocity_bc);
 
   //left hand side 
   //preprocess
+  ts_ctx.get_preProcess_to_do_IJacobian().push_back(&update_and_control);
   ts_ctx.get_preProcess_to_do_IJacobian().push_back(&my_dirihlet_bc);
+  //ts_ctx.get_preProcess_to_do_IJacobian().push_back(&my_dirihlet_velocity_bc);
   //fe loops
   TsCtx::loops_to_do_type& loops_to_do_Mat = ts_ctx.get_loops_to_do_IJacobian();
   loops_to_do_Mat.push_back(TsCtx::loop_pair_type("ELASTIC",&my_fe));
@@ -345,7 +385,12 @@ int main(int argc, char *argv[]) {
   loops_to_do_Mat.push_back(TsCtx::loop_pair_type("MASS_ELEMENT",&inertia.getLoopFeMassLhs()));
   //postrocess
   ts_ctx.get_postProcess_to_do_IJacobian().push_back(&my_dirihlet_bc);
+  //ts_ctx.get_postProcess_to_do_IJacobian().push_back(&my_dirihlet_velocity_bc);
   ts_ctx.get_postProcess_to_do_IJacobian().push_back(&update_and_control);
+
+  //monitor
+  TsCtx::loops_to_do_type& loops_to_do_Monitor = ts_ctx.get_loops_to_do_Monitor();
+  loops_to_do_Monitor.push_back(TsCtx::loop_pair_type("ELASTIC",&post_proc_stresses_and_elastic_energy));
 
   ierr = TSSetIFunction(ts,F,f_TSSetIFunction,&ts_ctx); CHKERRQ(ierr);
   ierr = TSSetIJacobian(ts,Aij,Aij,f_TSSetIJacobian,&ts_ctx); CHKERRQ(ierr);

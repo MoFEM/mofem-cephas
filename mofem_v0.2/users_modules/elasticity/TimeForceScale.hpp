@@ -29,7 +29,7 @@ struct TimeForceScale: public MethodsForOp {
     map<double,double> tSeries;
     int readFile,debug;
 
-    TimeForceScale(): readFile(0),debug(1) {};
+    TimeForceScale(): readFile(0),debug(0) {};
 
     ErrorCode rval;
     PetscErrorCode ierr;

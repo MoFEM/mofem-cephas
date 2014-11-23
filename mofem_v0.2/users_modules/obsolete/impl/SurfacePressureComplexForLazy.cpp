@@ -455,6 +455,11 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::calcTrac
     }
   }
 
+  ublas::vector<double> scale(1,1);
+  //cerr << methodsOp.size() << endl;
+  ierr = MethodsForOp::applyScale(this,methodsOp,scale); CHKERRQ(ierr);
+  tLocNodal *= scale[0];
+
   //cerr << tLocNodal << endl;
   t_loc = &*tLocNodal.data().begin();
   //cerr << "tLocNodal: " << tLocNodal << endl;
@@ -529,10 +534,6 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::operator
 
   ierr = TriElementForcesAndSurcesCore::operator()(); CHKERRQ(ierr);
   ierr = calcTraction(); CHKERRQ(ierr);
-  ublas::vector<double> scale(1,1);
-  //cerr << methodsOp.size() << endl;
-  ierr = MethodsForOp::applyScale(this,methodsOp,scale); CHKERRQ(ierr);
-  tLocNodal *= scale[0];
 
   switch(snes_ctx) {
     case CTX_SNESNONE:
