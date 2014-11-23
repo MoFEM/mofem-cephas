@@ -60,6 +60,9 @@ add_test(ArcLengthNonLinearElasticityTest
 
 if(ADOL-C_LIBRARY)
 
+  cm_export_file("LShape.cub" export_files_nonlinear_dynamics)
+  cm_export_file("data.txt" export_files_nonlinear_dynamics)
+
   add_executable(nonlinear_dynamics
     ${UM_SOURCE_DIR}/nonlinear_elasticity/nonlinear_dynamics.cpp)
   target_link_libraries(nonlinear_dynamics
