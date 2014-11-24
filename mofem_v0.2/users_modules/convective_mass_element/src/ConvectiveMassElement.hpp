@@ -673,13 +673,10 @@ struct ConvectiveMassElement {
       TetElementForcesAndSourcesCore::UserDataOperator(field_name),
       dAta(data),commonData(common_data) { }
 
-    ublas::vector<double> nf;
-    ublas::vector<double> v;
-    ublas::vector<double> dot_w;
     ublas::vector<double> dot_W;
-    ublas::matrix<double> h;
     ublas::matrix<double> H;
     ublas::vector<double> dot_u;
+    ublas::vector<double> nf;
  
     PetscErrorCode doWork(
       int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data) {
@@ -694,9 +691,6 @@ struct ConvectiveMassElement {
 
       try {
 
-	v.resize(3);
-	dot_w.resize(3);
-	h.resize(3,3);
 	dot_W.resize(3);
 	dot_W.clear();
 	H.resize(3,3);
@@ -711,18 +705,9 @@ struct ConvectiveMassElement {
   
 	for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
 
-	  /*for(map<string,vector<ublas::vector<double> > >::iterator mit = commonData.dataAtGaussPts.begin();
-	    mit!=commonData.dataAtGaussPts.end();mit++) {
-	    cerr << mit->first << " " << mit->second.size() << endl;
-	  }*/
-  
-	  /*cerr << commonData.dataAtGaussPts[commonData.spatialVelocities].size() << endl;
-	  cerr << commonData.dataAtGaussPts[commonData.spatialVelocities][gg].size() << endl;
-	  cerr << commonData.dataAtGaussPts[commonData.spatialVelocities][gg] << endl;
-	  cerr << v << endl;*/
-	  noalias(v) = commonData.dataAtGaussPts[commonData.spatialVelocities][gg];
-	  noalias(dot_w) = commonData.dataAtGaussPts["DOT_"+commonData.spatialPositions][gg];
-	  noalias(h) = commonData.gradAtGaussPts[commonData.spatialPositions][gg];
+	  ublas::vector<double>& v = commonData.dataAtGaussPts[commonData.spatialVelocities][gg];
+	  ublas::vector<double>& dot_w = commonData.dataAtGaussPts["DOT_"+commonData.spatialPositions][gg];
+	  ublas::matrix<double>& h = commonData.gradAtGaussPts[commonData.spatialPositions][gg];
 	  if(commonData.dataAtGaussPts["DOT_"+commonData.meshPositions].size()>0) {
 	   noalias(dot_W) = commonData.dataAtGaussPts["DOT_"+commonData.meshPositions][gg];
 	  }
@@ -730,21 +715,13 @@ struct ConvectiveMassElement {
 	    noalias(H) = commonData.gradAtGaussPts[commonData.meshPositions][gg];
 	  }
 
-	  //cerr << "v: " << v << endl;
-	  //cerr << "dot_w: " << dot_w << endl;
-	  //cerr << "h: " << h << endl;
-	  //cerr << "dot_W: " << dot_W << endl;
-	  //cerr << "H: " << H << endl;
 	  ierr = calulateVelocity(dot_w,dot_W,h,H,dot_u); CHKERRQ(ierr);
-	  double detH;
-	  ierr = dEterminatnt(H,detH); CHKERRQ(ierr);
+	  double detH = 1;
+	  if(commonData.gradAtGaussPts[commonData.meshPositions].size()>0) {
+	    ierr = dEterminatnt(H,detH); CHKERRQ(ierr);
+	  }
 	  ublas::vector<double> res = (v - dot_u)*detH;
 
-	  //cerr << res << endl;
-	  //cerr << v << endl;
-	  //cerr << dot_u << endl;
-	  //cerr << endl; 
-  
 	  double val = getVolume()*getGaussPts()(3,gg);
 	  res *= val;
 
@@ -772,6 +749,20 @@ struct ConvectiveMassElement {
     }
 
   };
+
+  struct OpVelocityLhs_Jacobian: public TetElementForcesAndSourcesCore::UserDataOperator,CommonFunctions {
+
+    BlockData &dAta;
+    CommonData &commonData;
+    int tAg;
+
+    OpVelocityLhs_Jacobian(const string vel_field,const string field_name,BlockData &data,CommonData &common_data,int tag):
+      TetElementForcesAndSourcesCore::UserDataOperator(vel_field,field_name),
+      dAta(data),commonData(common_data),tAg(tag) { symm = false;  }
+
+
+  };
+
 
   struct OpVelocityLhs_dV_dX: public TetElementForcesAndSourcesCore::UserDataOperator,CommonFunctions {
 
