@@ -346,7 +346,6 @@ int main(int argc, char *argv[]) {
   }
 
   SpatialPositionsBCFEMethodPreAndPostProc my_dirihlet_bc(m_field,"SPATIAL_POSITION",Aij,D,F);
-  //DisplacementBCFEMethodPreAndPostProc my_dirihlet_velocity_bc(m_field,"SPATIAL_VELOCITY",Aij,D,F);
 
   ierr = inertia.setConvectiveMassOperators("SPATIAL_VELOCITY","SPATIAL_POSITION"); CHKERRQ(ierr);
   ierr = inertia.setVelocityOperators("SPATIAL_VELOCITY","SPATIAL_POSITION"); CHKERRQ(ierr);
@@ -364,7 +363,6 @@ int main(int argc, char *argv[]) {
   //preprocess
   ts_ctx.get_preProcess_to_do_IFunction().push_back(&update_and_control);
   ts_ctx.get_preProcess_to_do_IFunction().push_back(&my_dirihlet_bc);
-  //ts_ctx.get_preProcess_to_do_IFunction().push_back(&my_dirihlet_velocity_bc);
   //fe looops
   TsCtx::loops_to_do_type& loops_to_do_Rhs = ts_ctx.get_loops_to_do_IFunction();
   loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("ELASTIC",&my_fe));
@@ -377,13 +375,11 @@ int main(int argc, char *argv[]) {
   loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("MASS_ELEMENT",&inertia.getLoopFeMassRhs()));
   //postproc
   ts_ctx.get_postProcess_to_do_IFunction().push_back(&my_dirihlet_bc);
-  //ts_ctx.get_postProcess_to_do_IFunction().push_back(&my_dirihlet_velocity_bc);
 
   //left hand side 
   //preprocess
   ts_ctx.get_preProcess_to_do_IJacobian().push_back(&update_and_control);
   ts_ctx.get_preProcess_to_do_IJacobian().push_back(&my_dirihlet_bc);
-  //ts_ctx.get_preProcess_to_do_IJacobian().push_back(&my_dirihlet_velocity_bc);
   //fe loops
   TsCtx::loops_to_do_type& loops_to_do_Mat = ts_ctx.get_loops_to_do_IJacobian();
   loops_to_do_Mat.push_back(TsCtx::loop_pair_type("ELASTIC",&my_fe));
@@ -392,7 +388,6 @@ int main(int argc, char *argv[]) {
   loops_to_do_Mat.push_back(TsCtx::loop_pair_type("MASS_ELEMENT",&inertia.getLoopFeMassLhs()));
   //postrocess
   ts_ctx.get_postProcess_to_do_IJacobian().push_back(&my_dirihlet_bc);
-  //ts_ctx.get_postProcess_to_do_IJacobian().push_back(&my_dirihlet_velocity_bc);
   ts_ctx.get_postProcess_to_do_IJacobian().push_back(&update_and_control);
 
   //monitor
