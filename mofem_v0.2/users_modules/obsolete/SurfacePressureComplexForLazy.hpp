@@ -34,8 +34,7 @@ struct NeummanForcesSurfaceComplexForLazy {
   struct AuxMethodSpatial: public TriElementForcesAndSurcesCore::UserDataOperator {
 
     MyTriangleSpatialFE *myPtr;
-    AuxMethodSpatial(const string &field_name,MyTriangleSpatialFE *_myPtr): 
-      TriElementForcesAndSurcesCore::UserDataOperator(field_name),myPtr(_myPtr) {};
+    AuxMethodSpatial(const string &field_name,MyTriangleSpatialFE *_myPtr);
     PetscErrorCode doWork(int side, EntityType type, DataForcesAndSurcesCore::EntData &data);
 
   };
@@ -43,8 +42,7 @@ struct NeummanForcesSurfaceComplexForLazy {
   struct AuxMethodMaterial: public TriElementForcesAndSurcesCore::UserDataOperator {
 
     MyTriangleSpatialFE *myPtr;
-    AuxMethodMaterial(const string &field_name,MyTriangleSpatialFE *_myPtr): 
-      TriElementForcesAndSurcesCore::UserDataOperator(field_name),myPtr(_myPtr) {};
+    AuxMethodMaterial(const string &field_name,MyTriangleSpatialFE *_myPtr);
     PetscErrorCode doWork(int side, EntityType type, DataForcesAndSurcesCore::EntData &data);
 
   };
@@ -61,23 +59,7 @@ struct NeummanForcesSurfaceComplexForLazy {
     Mat Aij;
     Vec F;
 
-    MyTriangleSpatialFE(FieldInterface &_mField,Mat _Aij,Vec &_F,double *scale_lhs,double *scale_rhs): 
-      TriElementForcesAndSurcesCore(_mField),sCaleLhs(scale_lhs),sCaleRhs(scale_rhs),
-      typeOfForces(CONSERVATIVE),eps(1e-8),uSeF(false) {
-
-      Aij = _Aij;
-      F = _F;
-
-      snes_B = _Aij;
-      snes_f = _F;
-    
-      if(mField.check_field("MESH_NODE_POSITIONS")) {
-	get_op_to_do_Rhs().push_back(new AuxMethodMaterial("MESH_NODE_POSITIONS",this));
-      }
-      get_op_to_do_Rhs().push_back(new AuxMethodSpatial("SPATIAL_POSITION",this));
-
-    }
-
+    MyTriangleSpatialFE(FieldInterface &_mField,Mat _Aij,Vec &_F,double *scale_lhs,double *scale_rhs);
 
     int getRule(int order) { return max(0,order-1); };
 
@@ -87,7 +69,6 @@ struct NeummanForcesSurfaceComplexForLazy {
     double *diffN;
     double *diffN_face;
     double *diffN_edge[3];
-
 
     int order_face;
     int order_edge[3];
@@ -155,7 +136,6 @@ struct NeummanForcesSurfaceComplexForLazy {
     PetscErrorCode addForce(int ms_id);
     PetscErrorCode addPreassure(int ms_id);
 
-    protected:
     struct bCForce {
       ForceCubitBcData data;
       Range tRis;
@@ -166,15 +146,15 @@ struct NeummanForcesSurfaceComplexForLazy {
       Range tRis;
     };
     map<int,bCPreassure> mapPreassure;
-
     PetscErrorCode reBaseToFaceLoocalCoordSystem(ublas::matrix<double> &t_glob_nodal);
+
+    boost::ptr_vector<MethodsForOp> methodsOp;
 
   };
 
   struct MyTriangleMaterialFE: public MyTriangleSpatialFE {
 
-    MyTriangleMaterialFE(FieldInterface &_mField,Mat _Aij,Vec &_F,double *scale_lhs,double *scale_rhs): 
-      MyTriangleSpatialFE(_mField,_Aij,_F,scale_lhs,scale_rhs) {}
+    MyTriangleMaterialFE(FieldInterface &_mField,Mat _Aij,Vec &_F,double *scale_lhs,double *scale_rhs); 
 
     PetscErrorCode rHs();
     PetscErrorCode lHs();
@@ -194,39 +174,11 @@ struct NeummanForcesSurfaceComplexForLazy {
       PetscFunctionReturn(0);
   }
 
-  NeummanForcesSurfaceComplexForLazy(FieldInterface &m_field,Mat _Aij,Vec _F): 
-    mField(m_field),feSpatial(m_field,_Aij,_F,NULL,NULL),feMaterial(m_field,_Aij,_F,NULL,NULL) {
-
-    ErrorCode rval;
-
-    double def_scale = 1.;
-    const EntityHandle root_meshset = mField.get_moab().get_root_set();
-    rval = mField.get_moab().tag_get_handle("_LoadFactor_Scale_",1,MB_TYPE_DOUBLE,thScale,MB_TAG_CREAT|MB_TAG_EXCL|MB_TAG_MESH,&def_scale); 
-    if(rval == MB_ALREADY_ALLOCATED) {
-      rval = mField.get_moab().tag_get_by_ptr(thScale,&root_meshset,1,(const void**)&sCale); CHKERR_THROW(rval);
-    } else {
-      CHKERR_THROW(rval);
-      rval = mField.get_moab().tag_set_data(thScale,&root_meshset,1,&def_scale); CHKERR_THROW(rval);
-      rval = mField.get_moab().tag_get_by_ptr(thScale,&root_meshset,1,(const void**)&sCale); CHKERR_THROW(rval);
-    }
-
-    feSpatial.sCaleLhs = sCale;
-    feSpatial.sCaleRhs = sCale;
-    feMaterial.sCaleLhs = sCale;
-    feMaterial.sCaleRhs = sCale;
-
-  }
-
-  static PetscErrorCode getLoadFactor() {
-    PetscFunctionBegin;
-    PetscFunctionReturn(0);
-  }
-
-  NeummanForcesSurfaceComplexForLazy(FieldInterface &m_field,Mat _Aij,Vec _F,double *scale_lhs,double *scale_rhs): 
-    mField(m_field),feSpatial(m_field,_Aij,_F,scale_lhs,scale_rhs),feMaterial(m_field,_Aij,_F,scale_lhs,scale_rhs) {}
-
   MyTriangleSpatialFE& getLoopSpatialFe() { return feSpatial; }
   MyTriangleMaterialFE& getLoopMaterialFe() { return feMaterial; }
+
+  NeummanForcesSurfaceComplexForLazy(FieldInterface &m_field,Mat _Aij,Vec _F,double *scale_lhs,double *scale_rhs);
+  NeummanForcesSurfaceComplexForLazy(FieldInterface &m_field,Mat _Aij,Vec _F);
 
 };
 
