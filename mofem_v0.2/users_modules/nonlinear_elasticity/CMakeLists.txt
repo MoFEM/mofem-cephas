@@ -60,6 +60,9 @@ add_test(ArcLengthNonLinearElasticityTest
 
 if(ADOL-C_LIBRARY)
 
+  cm_export_file("LShape.cub" export_files_nonlinear_dynamics)
+  cm_export_file("data.txt" export_files_nonlinear_dynamics)
+
   add_executable(nonlinear_dynamics
     ${UM_SOURCE_DIR}/nonlinear_elasticity/nonlinear_dynamics.cpp)
   target_link_libraries(nonlinear_dynamics
@@ -74,6 +77,17 @@ if(ADOL-C_LIBRARY)
     mofem_third_party
     mofem_cblas
     ${MoFEM_PROJECT_LIBS})
+
+  add_test(NonLinearDynamics
+    ${MoFEM_MPI_RUN} -np 4 ${CMAKE_CURRENT_BINARY_DIR}/nonlinear_dynamics -my_file LShape.cub 
+      -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist
+      -ksp_atol 1e-10 -ksp_rtol 1e-10 -snes_monitor 
+      -snes_type newtonls -snes_linesearch_type basic
+      -snes_max_it 100 -snes_atol 1e-7 -snes_rtol 1e-7
+      -ts_monitor -ts_type alpha -ts_dt 0.001 -ts_final_time 0.002
+      -my_time_data_file data.txt -my_output_prt 1
+      -my_max_post_proc_ref_level 1 -my_disp_order 2 -my_vel_order 1)
+
 
 endif(ADOL-C_LIBRARY)
 
