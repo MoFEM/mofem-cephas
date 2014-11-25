@@ -299,116 +299,20 @@ struct ConvectiveMassElement {
 
   };
 
-  struct OpMassRhs: public TetElementForcesAndSourcesCore::UserDataOperator,CommonFunctions {
-
-    BlockData &dAta;
-    CommonData &commonData;
-
-    OpMassRhs(const string field_name,BlockData &data,CommonData &common_data):
-      TetElementForcesAndSourcesCore::UserDataOperator(field_name),
-      dAta(data),commonData(common_data) { }
-
-    ublas::vector<double> dot_W;
-    ublas::matrix<double> H,invH;
-
-    ublas::matrix<double> F;
-    ublas::vector<double> dp_dt;
-    ublas::vector<double> f;
-    ublas::vector<double> nf;
-
-    PetscErrorCode doWork(
-      int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data) {
-      PetscFunctionBegin;
-
-      PetscErrorCode ierr;
-      if(dAta.tEts.find(getMoFEMFEPtr()->get_ent()) == dAta.tEts.end()) {
-	PetscFunctionReturn(0);
-      }
-      if(row_data.getIndices().size()==0) PetscFunctionReturn(0);
-      int nb_dofs = row_data.getIndices().size();
-
-      try {
-
-	dot_W.resize(3);
-	H.resize(3,3);
-	invH.resize(3,3);
-	f.resize(3);
-
-	dot_W.clear();
-	H.clear();
-	invH.clear();
-	for(int dd = 0;dd<3;dd++) {
-	  H(dd,dd) = 1;
-	  invH(dd,dd) = 1;
-	}
-
-	F.resize(3,3);
-	dp_dt.resize(3);
-
-	nf.resize(nb_dofs);
-	nf.clear();
-
-	for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
-
-	  ublas::vector<double> &a = commonData.dataAtGaussPts["DOT_"+commonData.spatialVelocities][gg];
-	  ublas::matrix<double> &g = commonData.gradAtGaussPts[commonData.spatialVelocities][gg];
-	  ublas::matrix<double> &h = commonData.gradAtGaussPts[commonData.spatialPositions][gg];
-	  if(commonData.dataAtGaussPts["DOT_"+commonData.meshPositions].size()>0) {
-	    noalias(dot_W) = commonData.dataAtGaussPts["DOT_"+commonData.meshPositions][gg];
-	  } 
-	  if(commonData.gradAtGaussPts[commonData.meshPositions].size()>0) {
-	    noalias(H) = commonData.gradAtGaussPts[commonData.meshPositions][gg];
-	    ierr = iNvert(H,invH); CHKERRQ(ierr);
-	  } 
-
-	  double rho0 = dAta.rho0;
-	  ublas::vector<double>& a0 = dAta.a0;
-	  ierr = calculateFuncUnderIntegral(
-	    rho0,a0,a,g,dot_W,H,invH,h,F,dp_dt,f); CHKERRQ(ierr);
-	  double val = getVolume()*getGaussPts()(3,gg);
-	  f *= val;
-
-	  //cerr << f << endl;
-
-	  for(unsigned int dd = 0;dd<nb_dofs/3;dd++) {
-	    for(int rr = 0;rr<3;rr++) {
-	      nf[3*dd+rr] += row_data.getN()(gg,dd)*f[rr];
-	    }
-	  }
-
-	}
-
-	if(nb_dofs > 3*row_data.getN().size2()) {
-	  SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-	}
-	ierr = VecSetValues(getFEMethod()->ts_F,nb_dofs,
-	  &row_data.getIndices()[0],&nf[0],ADD_VALUES); CHKERRQ(ierr);
-
-      } catch (const std::exception& ex) {
-	ostringstream ss;
-	ss << "throw in method: " << ex.what() << endl;
-	SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
-      }
-
-      PetscFunctionReturn(0);
-    }
-
-  };
-
   struct OpMassJacobian: public TetElementForcesAndSourcesCore::UserDataOperator,CommonFunctions {
 
     BlockData &dAta;
     CommonData &commonData;
     int tAg;
+    bool jAcobian;
 
-    OpMassJacobian(const string field_name,BlockData &data,CommonData &common_data,int tag):
+    OpMassJacobian(const string field_name,BlockData &data,CommonData &common_data,int tag,bool jacobian = true):
       TetElementForcesAndSourcesCore::UserDataOperator(field_name),
-      dAta(data),commonData(common_data),tAg(tag) { }
+      dAta(data),commonData(common_data),tAg(tag),jAcobian(jacobian) { }
 
     ublas::vector<adouble> a,dot_W,dp_dt,a_res;
     ublas::matrix<adouble> h,H,invH,F,g;
 
-    vector<double> res;
     vector<double> active;
  
     PetscErrorCode doWork(
@@ -448,8 +352,8 @@ struct ConvectiveMassElement {
 	}
 
 	a_res.resize(3);
-	res.resize(3);
 	int nb_gauss_pts = row_data.getN().size1();
+	commonData.valMass.resize(nb_gauss_pts);
 	commonData.jacMassRowPtr.resize(nb_gauss_pts);
 	commonData.jacMass.resize(nb_gauss_pts);
 
@@ -499,6 +403,7 @@ struct ConvectiveMassElement {
 	      rho0,a0,a,g,dot_W,H,invH,h,F,dp_dt,a_res); CHKERRQ(ierr);
 
 	    //dependant
+	    ublas::vector<double>& res = commonData.valMass[gg];
 	    res.resize(3);
 	    for(int rr = 0;rr<3;rr++) {
 	      a_res[rr] >>= res[rr];
@@ -534,19 +439,84 @@ struct ConvectiveMassElement {
 	    }
 	  }
 
-	  commonData.jacMassRowPtr[gg].resize(3);
-	  commonData.jacMass[gg].resize(3,nb_active_vars);
-	  for(int nn1 = 0;nn1<3;nn1++) {
-	    (commonData.jacMassRowPtr[gg])[nn1] = &(commonData.jacMass[gg](nn1,0));     
+	  if(!jAcobian) {
+	    ublas::vector<double>& res = commonData.valMass[gg];
+	    if(gg>0) {
+	      res.resize(3);
+	      int r;
+	      r = function(tAg,3,nb_active_vars,&active[0],&res[0]);
+	    } 
+	    double val = getVolume()*getGaussPts()(3,gg);
+	    res *= val;
+	  } else {
+	    commonData.jacMassRowPtr[gg].resize(3);
+	    commonData.jacMass[gg].resize(3,nb_active_vars);
+	    for(int nn1 = 0;nn1<3;nn1++) {
+	      (commonData.jacMassRowPtr[gg])[nn1] = &(commonData.jacMass[gg](nn1,0));     
+	    }
+	    int r;
+	    r = jacobian(
+	      tAg,3,nb_active_vars,
+	      &active[0],&(commonData.jacMassRowPtr[gg])[0]);
+	    double val = getVolume()*getGaussPts()(3,gg);
+	    commonData.jacMass[gg] *= val;
 	  }
-	  int r;
-	  r = jacobian(
-	    tAg,3,nb_active_vars,
-	    &active[0],&(commonData.jacMassRowPtr[gg])[0]);
-	  double val = getVolume()*getGaussPts()(3,gg);
-	  commonData.jacMass[gg] *= val;
 
 	}
+
+      } catch (const std::exception& ex) {
+	ostringstream ss;
+	ss << "throw in method: " << ex.what() << endl;
+	SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+      }
+
+      PetscFunctionReturn(0);
+    }
+
+  };
+
+  struct OpMassRhs: public TetElementForcesAndSourcesCore::UserDataOperator,CommonFunctions {
+
+    BlockData &dAta;
+    CommonData &commonData;
+
+    OpMassRhs(const string field_name,BlockData &data,CommonData &common_data):
+      TetElementForcesAndSourcesCore::UserDataOperator(field_name),
+      dAta(data),commonData(common_data) { }
+
+    ublas::vector<double> nf;
+
+    PetscErrorCode doWork(
+      int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data) {
+      PetscFunctionBegin;
+
+      PetscErrorCode ierr;
+      if(dAta.tEts.find(getMoFEMFEPtr()->get_ent()) == dAta.tEts.end()) {
+	PetscFunctionReturn(0);
+      }
+      if(row_data.getIndices().size()==0) PetscFunctionReturn(0);
+      int nb_dofs = row_data.getIndices().size();
+
+      try {
+
+	nf.resize(nb_dofs);
+	nf.clear();
+
+	for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
+	  ublas::vector<double>& res = commonData.valMass[gg];
+	  //cerr << res << endl;
+	  for(unsigned int dd = 0;dd<nb_dofs/3;dd++) {
+	    for(int rr = 0;rr<3;rr++) {
+	      nf[3*dd+rr] += row_data.getN()(gg,dd)*res[rr];
+	    }
+	  }
+	}
+
+	if(nb_dofs > 3*row_data.getN().size2()) {
+	  SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	}
+	ierr = VecSetValues(getFEMethod()->ts_F,nb_dofs,
+	  &row_data.getIndices()[0],&nf[0],ADD_VALUES); CHKERRQ(ierr);
 
       } catch (const std::exception& ex) {
 	ostringstream ss;
@@ -788,7 +758,6 @@ struct ConvectiveMassElement {
 	int nb_active_vars = 0;
 	for(unsigned int gg = 0;gg<nb_gauss_pts;gg++) {
 
-
 	  if(gg == 0) {
 
 	    trace_on(tAg);
@@ -931,7 +900,6 @@ struct ConvectiveMassElement {
 	      nf[3*dd+rr] += row_data.getN()(gg,dd)*res[rr];
 	    }
 	  }
-	
 	}
 
 	if(row_data.getIndices().size() > 3*row_data.getN().size2()) {
@@ -1304,6 +1272,7 @@ struct ConvectiveMassElement {
     }
     map<int,BlockData>::iterator sit = setOfBlocks.begin();
     for(;sit!=setOfBlocks.end();sit++) {
+      feMassRhs.get_op_to_do_Rhs().push_back(new OpMassJacobian(spatial_position_field_name,sit->second,commonData,tAg,false));
       feMassRhs.get_op_to_do_Rhs().push_back(new OpMassRhs(spatial_position_field_name,sit->second,commonData));
     }
 
