@@ -153,7 +153,7 @@ struct MonitorObsoleteComplexForLazyPostProc: public FEMethod {
 
 };
 
-struct MonitorRestart: public FEMethod {
+/*struct MonitorRestart: public FEMethod {
 
   FieldInterface &mField;
   MonitorObsoleteComplexForLazyPostProc(FieldInterface &m_field): mField(m_field) {}
@@ -165,7 +165,7 @@ struct MonitorRestart: public FEMethod {
 
   }
 
-};
+};*/
 
 //See file users_modules/elasticity/TimeForceScale.hpp
 #include <TimeForceScale.hpp>
