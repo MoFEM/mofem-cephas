@@ -358,7 +358,7 @@ struct ConvectiveMassElement {
 	commonData.jacMass.resize(nb_gauss_pts);
 
 	int nb_active_vars = 0;
-	for(unsigned int gg = 0;gg<nb_gauss_pts;gg++) {
+	for(int gg = 0;gg<nb_gauss_pts;gg++) {
 
 	  if(gg == 0) {
 
@@ -445,6 +445,9 @@ struct ConvectiveMassElement {
 	      res.resize(3);
 	      int r;
 	      r = function(tAg,3,nb_active_vars,&active[0],&res[0]);
+	      if(r!=3) { // function is locally analytic
+		SETERRQ1(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"ADOL-C function evaluation with error r = %d",r);
+	      }
 	    } 
 	    double val = getVolume()*getGaussPts()(3,gg);
 	    res *= val;
@@ -458,6 +461,9 @@ struct ConvectiveMassElement {
 	    r = jacobian(
 	      tAg,3,nb_active_vars,
 	      &active[0],&(commonData.jacMassRowPtr[gg])[0]);
+	    if(r!=3) {
+	      SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"ADOL-C function evaluation with error");
+	    }
 	    double val = getVolume()*getGaussPts()(3,gg);
 	    commonData.jacMass[gg] *= val;
 	  }
@@ -505,14 +511,14 @@ struct ConvectiveMassElement {
 	for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
 	  ublas::vector<double>& res = commonData.valMass[gg];
 	  //cerr << res << endl;
-	  for(unsigned int dd = 0;dd<nb_dofs/3;dd++) {
+	  for(int dd = 0;dd<nb_dofs/3;dd++) {
 	    for(int rr = 0;rr<3;rr++) {
 	      nf[3*dd+rr] += row_data.getN()(gg,dd)*res[rr];
 	    }
 	  }
 	}
 
-	if(nb_dofs > 3*row_data.getN().size2()) {
+	if((unsigned int)nb_dofs > 3*row_data.getN().size2()) {
 	  SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	}
 	ierr = VecSetValues(getFEMethod()->ts_F,nb_dofs,
@@ -604,9 +610,9 @@ struct ConvectiveMassElement {
 	  ierr = getJac(col_data,gg); CHKERRQ(ierr);
 
 	  { //integrate element stiffnes matrix
-	    for(unsigned int dd1 = 0;dd1<nb_row/3;dd1++) {
+	    for(int dd1 = 0;dd1<nb_row/3;dd1++) {
 	      for(int rr1 = 0;rr1<3;rr1++) {
-		for(unsigned int dd2 = 0;dd2<nb_col/3;dd2++) {
+		for(int dd2 = 0;dd2<nb_col/3;dd2++) {
 		  for(int rr2 = 0;rr2<3;rr2++) {
 		    k(3*dd1+rr1,3*dd2+rr2) += row_data.getN()(gg,dd1)*jac(rr1,3*dd2+rr2);
 		  }
@@ -760,7 +766,7 @@ struct ConvectiveMassElement {
 	commonData.jacVel.resize(nb_gauss_pts);
 
 	int nb_active_vars = 0;
-	for(unsigned int gg = 0;gg<nb_gauss_pts;gg++) {
+	for(int gg = 0;gg<nb_gauss_pts;gg++) {
 
 	  if(gg == 0) {
 
@@ -840,6 +846,9 @@ struct ConvectiveMassElement {
 	      res.resize(3);
 	      int r;
 	      r = function(tAg,3,nb_active_vars,&active[0],&res[0]);
+	      if(r!=3) {
+		SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"ADOL-C function evaluation with error");
+	      }
 	    } 
 	    double val = getVolume()*getGaussPts()(3,gg);
 	    res *= val;
@@ -853,6 +862,9 @@ struct ConvectiveMassElement {
 	    r = jacobian(
 	      tAg,3,nb_active_vars,
 	      &active[0],&(commonData.jacVelRowPtr[gg])[0]);
+	    if(r!=3) {
+	      SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"ADOL-C function evaluation with error");
+	    }
 	    double val = getVolume()*getGaussPts()(3,gg);
 	    commonData.jacVel[gg] *= val;
 	    //cerr << gg << " : " << commonData.jacVel[gg] << endl;
@@ -899,7 +911,7 @@ struct ConvectiveMassElement {
 
 	for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
 	  ublas::vector<double>& res = commonData.valVel[gg];
-	  for(unsigned int dd = 0;dd<nb_dofs/3;dd++) {
+	  for(int dd = 0;dd<nb_dofs/3;dd++) {
 	    for(int rr = 0;rr<3;rr++) {
 	      nf[3*dd+rr] += row_data.getN()(gg,dd)*res[rr];
 	    }
@@ -973,9 +985,9 @@ struct ConvectiveMassElement {
 	  ierr = getJac(col_data,gg); CHKERRQ(ierr);
 
 	  { //integrate element stiffnes matrix
-	    for(unsigned int dd1 = 0;dd1<nb_row/3;dd1++) {
+	    for(int dd1 = 0;dd1<nb_row/3;dd1++) {
 	      for(int rr1 = 0;rr1<3;rr1++) {
-		for(unsigned int dd2 = 0;dd2<nb_col/3;dd2++) {
+		for(int dd2 = 0;dd2<nb_col/3;dd2++) {
 		  for(int rr2 = 0;rr2<3;rr2++) {
 		    k(3*dd1+rr1,3*dd2+rr2) += row_data.getN()(gg,dd1)*jac(rr1,3*dd2+rr2);
 		  }
