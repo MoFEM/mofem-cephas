@@ -17,7 +17,10 @@
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
 #include subdirectory
-include_directories("${MoFEM_PROJECT_SOURCE_DIR}/users_modules/nonlinear_elasticity")
+include_directories("${UM_SOURCE_DIR}/nonlinear_elasticity")
+include_directories("${UM_SOURCE_DIR}/nonlinear_elasticity/src")
+include_directories("${UM_SOURCE_DIR}/elasticity/src")
+include_directories("${UM_SOURCE_DIR}/convective_mass_element/src")
 
 add_executable(arc_length_nonlinear_elasticity 
   ${UM_SOURCE_DIR}/nonlinear_elasticity/arc_length_nonlinear_elasticity.cpp)
