@@ -550,7 +550,9 @@ struct ConvectiveMassElement {
       ublas::vector<double> N = col_data.getN(gg,nb_col/3);
       for(int dd = 0;dd<nb_col/3;dd++) {
 	for(int nn = 0;nn<3;nn++) {
-	  jac(nn,3*dd+nn) = commonData.jacMass[gg](nn,nn)*N(dd)*getFEMethod()->ts_a; 
+	  jac(0,3*dd+nn) = commonData.jacMass[gg](0,nn)*N(dd)*getFEMethod()->ts_a; 
+	  jac(1,3*dd+nn) = commonData.jacMass[gg](1,nn)*N(dd)*getFEMethod()->ts_a; 
+	  jac(2,3*dd+nn) = commonData.jacMass[gg](2,nn)*N(dd)*getFEMethod()->ts_a; 
 	}
       }
       if(commonData.dataAtGaussPts["DOT_"+commonData.meshPositions].size()>0) {
@@ -674,7 +676,9 @@ struct ConvectiveMassElement {
       ublas::vector<double> N = col_data.getN(gg,nb_col/3);
       for(int dd = 0;dd<nb_col/3;dd++) {
 	for(int nn = 0;nn<3;nn++) {
-	  jac(nn,3*dd+nn) = commonData.jacVel[gg](nn,3+9+9+nn)*N(dd)*getFEMethod()->ts_a; 
+	  jac(0,3*dd+nn) = commonData.jacVel[gg](0,3+9+9+nn)*N(dd)*getFEMethod()->ts_a; 
+	  jac(1,3*dd+nn) = commonData.jacVel[gg](1,3+9+9+nn)*N(dd)*getFEMethod()->ts_a; 
+	  jac(2,3*dd+nn) = commonData.jacVel[gg](2,3+9+9+nn)*N(dd)*getFEMethod()->ts_a; 
 	}
       }
       ublas::matrix<double> diffN = col_data.getDiffN(gg,nb_col/3);
@@ -930,15 +934,11 @@ struct ConvectiveMassElement {
       jac.clear();
       ublas::vector<double> N = col_data.getN(gg,nb_col/3);
       //cerr << commonData.jacVel[gg] << endl;
-      ublas::matrix<double> jac_v(3,3);
-      for(int nn1 = 0;nn1<3;nn1++) {
-	for(int nn2 = 0;nn2<3;nn2++) {
-	  jac_v(nn1,nn2) = commonData.jacVel[gg](nn1,nn2);
-	}
-      }
       for(int dd = 0;dd<nb_col/3;dd++) {
 	for(int nn = 0;nn<3;nn++) {
-	  jac(nn,3*dd+nn) = commonData.jacVel[gg](nn,nn)*N(dd); 
+	  jac(0,3*dd+nn) = commonData.jacVel[gg](0,nn)*N(dd); 
+	  jac(1,3*dd+nn) = commonData.jacVel[gg](1,nn)*N(dd); 
+	  jac(2,3*dd+nn) = commonData.jacVel[gg](2,nn)*N(dd); 
 	}
       }
       PetscFunctionReturn(0);
@@ -1017,7 +1017,9 @@ struct ConvectiveMassElement {
       ublas::vector<double> N = col_data.getN(gg,nb_col/3);
       for(int dd = 0;dd<nb_col/3;dd++) {
 	for(int nn = 0;nn<3;nn++) {
-	  jac(nn,3*dd+nn) = commonData.jacVel[gg](nn,3+nn)*N(dd)*getFEMethod()->ts_a; 
+	  jac(0,3*dd+nn) = commonData.jacVel[gg](0,3+nn)*N(dd)*getFEMethod()->ts_a; 
+	  jac(1,3*dd+nn) = commonData.jacVel[gg](1,3+nn)*N(dd)*getFEMethod()->ts_a; 
+	  jac(2,3*dd+nn) = commonData.jacVel[gg](2,3+nn)*N(dd)*getFEMethod()->ts_a; 
 	}
       }
       ublas::matrix<double> diffN = col_data.getDiffN(gg,nb_col/3);
@@ -1056,7 +1058,9 @@ struct ConvectiveMassElement {
       ublas::vector<double> N = col_data.getN(gg,nb_col/3);
       for(int dd = 0;dd<nb_col/3;dd++) {
 	for(int nn = 0;nn<3;nn++) {
-	  jac(nn,3*dd+nn) = commonData.jacVel[gg](nn,3+3+9+nn)*N(dd)*getFEMethod()->ts_a; 
+	  jac(0,3*dd+nn) = commonData.jacVel[gg](0,3+3+9+nn)*N(dd)*getFEMethod()->ts_a; 
+	  jac(1,3*dd+nn) = commonData.jacVel[gg](1,3+3+9+nn)*N(dd)*getFEMethod()->ts_a; 
+	  jac(2,3*dd+nn) = commonData.jacVel[gg](2,3+3+9+nn)*N(dd)*getFEMethod()->ts_a; 
 	}
       }
       ublas::matrix<double> diffN = col_data.getDiffN(gg,nb_col/3);

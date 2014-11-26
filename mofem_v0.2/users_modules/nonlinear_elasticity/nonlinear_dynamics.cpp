@@ -153,7 +153,19 @@ struct MonitorObsoleteComplexForLazyPostProc: public FEMethod {
 
 };
 
+struct MonitorRestart: public FEMethod {
 
+  FieldInterface &mField;
+  MonitorObsoleteComplexForLazyPostProc(FieldInterface &m_field): mField(m_field) {}
+
+  PetscErrorCode preProcess() {
+    PetscFunctionBegin;
+    PetscErrorCode ierr;
+    ErrorCode rval;
+
+  }
+
+};
 
 //See file users_modules/elasticity/TimeForceScale.hpp
 #include <TimeForceScale.hpp>
