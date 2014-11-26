@@ -1463,6 +1463,7 @@ PetscErrorCode Core::add_ents_to_finite_element_EntType_by_bit_ref(const BitRefL
 }
 PetscErrorCode Core::add_ents_to_finite_element_EntType_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,const string &name,EntityType type,int verb) {
   PetscFunctionBegin;
+  try {
   if(verb==-1) verb = verbose;
   *build_MoFEM &= 1<<0;
   const BitFEId id = get_BitFEId(name);
@@ -1490,6 +1491,9 @@ PetscErrorCode Core::add_ents_to_finite_element_EntType_by_bit_ref(const BitRefL
     ostringstream ss;
     ss << "Add Nb. FEs " << nb_add_FEs << " form BitRef " << bit << endl;
     PetscPrintf(PETSC_COMM_WORLD,"%s",ss.str().c_str());
+  }
+  } catch (const char* msg) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_CHAR_THROW,msg);
   }
   PetscFunctionReturn(0);
 }
