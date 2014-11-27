@@ -71,11 +71,14 @@ struct DataForcesAndSurcesCore {
     /// \brief get dofs values 
     virtual const ublas::vector<FieldData>& getFieldData() const { return fieldData; }
 
-    /// \brief get shape functions
+    /** \brief get shape functions
+      * this return matrix (nb. of rows is equal to nb. of Gauss pts, nb. of
+      * columns is equalt to number of shape functions on this entity 
+      */
     virtual const ublas::matrix<FieldData>& getN() const { return N; }
 
     /** \brief get direvatives of shape fucntiosn
-      *
+     *
      * Matrix at rows has nb. of Gauss pts, at columns it has direvative of
      * shape functions. Colummns are orgasised as follows, [ dN1/dx, dN1/dy,
      * dN1/dz, dN2/dx, dN2/dy, dN2/dz, ... ]

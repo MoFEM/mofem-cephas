@@ -26,8 +26,6 @@
 #include <MoFEM.hpp>
 using namespace MoFEM;
 
-#include <DirichletBC.hpp>
-
 #include <Projection10NodeCoordsOnField.hpp>
 
 #include <boost/numeric/ublas/vector_proxy.hpp>
@@ -35,33 +33,12 @@ using namespace MoFEM;
 #include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <boost/numeric/ublas/vector.hpp>
 
-#include <SurfacePressure.hpp>
-#include <NodalForce.hpp>
-#include <FluidPressure.hpp>
-#include <BodyForce.hpp>
-#include <ThermalStressElement.hpp>
-
-#include <FEMethod_LowLevelStudent.hpp>
-#include <FEMethod_UpLevelStudent.hpp>
-
-#include <PostProcVertexMethod.hpp>
-#include <PostProcDisplacementAndStrainOnRefindedMesh.hpp>
-
 extern "C" {
   #include <complex_for_lazy.h>
 }
 
-#include <ArcLengthTools.hpp>
-#include <FEMethod_ComplexForLazy.hpp>
-#include <FEMethod_DriverComplexForLazy.hpp>
-
-#include <SurfacePressureComplexForLazy.hpp>
-#include <PostProcNonLinearElasticityStresseOnRefindedMesh.hpp>
-
 #include <adolc/adolc.h> 
 #include <NonLienarElasticElement.hpp>
-
-using namespace ObosleteUsersModules;
 
 ErrorCode rval;
 PetscErrorCode ierr;
@@ -123,7 +100,22 @@ int main(int argc, char *argv[]) {
   NonlinearElasticElement elastic(m_field,1);
   ierr = elastic.setBlocks(); CHKERRQ(ierr);
   ierr = elastic.addElement("ELASTIC","SPATIAL_POSITION"); CHKERRQ(ierr);
-  ierr = elastic.setOperators("SPATIAL_POSITION"); CHKERRQ(ierr);
+
+  /*struct MyMat: public FunctionsToCalulatePiolaKirchhoffI {
+    Interface& moAB;
+    MyMat(Interface& moab): moAB(moab) {};
+    PetscErrorCode CalualteP_PiolaKirchhoffI(
+     const BlockData block_data,
+     const NumeredMoFEMFiniteElement *fe_ptr) {
+     PetscFunctionBegin;
+     //my stuff
+     PetscFunctionReturn(0);
+    }
+  };
+  MyMat mymat(moab);
+  ierr = elastic.setOperators(mymat,"SPATIAL_POSITION"); CHKERRQ(ierr);*/
+  NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI st_venant_kirchhoff_material;
+  ierr = elastic.setOperators(st_venant_kirchhoff_material,"SPATIAL_POSITION"); CHKERRQ(ierr);
 
   //define problems
   ierr = m_field.add_problem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
@@ -135,6 +127,7 @@ int main(int argc, char *argv[]) {
   //build field
   ierr = m_field.build_fields(); CHKERRQ(ierr);
 
+  //use this to apply some strain field to the body (testing only)
   double scale_positions = 2; 
   {
     EntityHandle node = 0;
@@ -167,8 +160,8 @@ int main(int argc, char *argv[]) {
   //create matrices
   Vec F;
   ierr = m_field.VecCreateGhost("ELASTIC_MECHANICS",COL,&F); CHKERRQ(ierr);
-  Vec D;
-  ierr = VecDuplicate(F,&D); CHKERRQ(ierr);
+  //Vec D;
+  //ierr = VecDuplicate(F,&D); CHKERRQ(ierr);
   Mat Aij;
   ierr = m_field.MatCreateMPIAIJWithArrays("ELASTIC_MECHANICS",&Aij); CHKERRQ(ierr);
 
@@ -202,7 +195,7 @@ int main(int argc, char *argv[]) {
   ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
 
   ierr = VecDestroy(&F); CHKERRQ(ierr);
-  ierr = VecDestroy(&D); CHKERRQ(ierr);
+  //ierr = VecDestroy(&D); CHKERRQ(ierr);
   ierr = MatDestroy(&Aij); CHKERRQ(ierr);
  
   PetscFinalize();
