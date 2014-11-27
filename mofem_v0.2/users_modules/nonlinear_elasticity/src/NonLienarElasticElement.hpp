@@ -228,11 +228,17 @@ struct NonlinearElasticElement {
       PetscErrorCode ierr;
       lambda = LAMBDA(block_data.E,block_data.PoissonRatio);
       mu = MU(block_data.E,block_data.PoissonRatio);
+      //cerr << "lambda: " << lambda << endl;
+      //cerr << "mu: " << mu << endl;
       ierr = CalulateC_CauchyDefromationTensor(); CHKERRQ(ierr);
+      //cerr << "C: " << C << endl;
       ierr = CalulateE_GreenStrain(); CHKERRQ(ierr);
+      //cerr << "E: " << E << endl;
       ierr = CalculateS_PiolaKirchhoffII(); CHKERRQ(ierr);
+      //cerr << "S: " << S << endl;
       P.resize(3,3);
       noalias(P) = prod(F,S);
+      //cerr << "P: " << P << endl;
       PetscFunctionReturn(0);
     }
   };
@@ -276,6 +282,8 @@ struct NonlinearElasticElement {
 
 	int nb_gauss_pts = row_data.getN().size1();
 	commonData.P.resize(nb_gauss_pts);
+	commonData.jacStressRowPtr.resize(nb_gauss_pts);
+	commonData.jacStress.resize(nb_gauss_pts);
 	int nb_active_variables = 0;
 
 	for(int gg = 0;gg<nb_gauss_pts;gg++) {
@@ -325,8 +333,8 @@ struct NonlinearElasticElement {
 	  } else {
 	    commonData.jacStressRowPtr[gg].resize(9);
 	    commonData.jacStress[gg].resize(9,nb_active_variables);
-	    for(int nn1 = 0;nn1<3;nn1++) {
-	      (commonData.jacStressRowPtr[gg])[nn1] = &(commonData.jacStress[gg](nn1,0));     
+	    for(int dd = 0;dd<9;dd++) {
+	      (commonData.jacStressRowPtr[gg])[dd] = &(commonData.jacStress[gg](dd,0));     
 	    }
 	    int r;
 	    //play recorder for jacobians
@@ -379,12 +387,19 @@ struct NonlinearElasticElement {
 	nf.clear();
 
 	for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
-	  ublas::matrix<double>& P = commonData.P[gg];
-
-
+	  //diffN - on rows has degrees of freedom
+	  //diffN - on columns has rerevatives direvatives of shape functin
+	  const DataForcesAndSurcesCore::MatrixAdaptor &diffN = row_data.getDiffN(gg,nb_dofs/3);
+	  const ublas::matrix<double>& P = commonData.P[gg];
+	  //cerr << (commonData.gradAtGaussPts[commonData.spatialPositions][gg]) << endl;
+	  //cerr << diffN << endl;
+	  //cerr << P << endl;
+	  double val = getVolume()*getGaussPts()(3,gg);
 	  for(int dd = 0;dd<nb_dofs/3;dd++) {
 	    for(int rr = 0;rr<3;rr++) {
-	      //nf[3*dd+rr] += row_data.getN()(gg,dd)*res[rr];
+	      for(int nn = 0;nn<3;nn++) {
+		nf[3*dd+rr] += val*diffN(dd,nn)*P(rr,nn);
+	      }
 	    }
 	  }
 	}
@@ -414,41 +429,31 @@ struct NonlinearElasticElement {
 
     OpLhs_dx(const string vel_field,const string field_name,BlockData &data,CommonData &common_data):
       TetElementForcesAndSourcesCore::UserDataOperator(vel_field,field_name),
-      dAta(data),commonData(common_data) { symm = false;  }
+      dAta(data),commonData(common_data) { /*symm = false;*/  }
 
-    ublas::matrix<double> k,jac;
+    ublas::matrix<double> k,trans_k,jac,F;
 
     virtual PetscErrorCode getJac(DataForcesAndSurcesCore::EntData &col_data,int gg) {
       PetscFunctionBegin;
-      /*int nb_col = col_data.getIndices().size();
-      jac.clear();
-      //cerr << commonData.jacMass[gg] << endl;
-      //cerr << jac << endl;
-      ublas::vector<double> N = col_data.getN(gg,nb_col/3);
+      int nb_col = col_data.getFieldData().size();
+      const DataForcesAndSurcesCore::MatrixAdaptor diffN = col_data.getDiffN(gg,nb_col/3);
+      F.resize(3,3);
       for(int dd = 0;dd<nb_col/3;dd++) {
-	for(int nn = 0;nn<3;nn++) {
-	  jac(0,3*dd+nn) = commonData.jacMass[gg](0,nn)*N(dd)*getFEMethod()->ts_a; 
-	  jac(1,3*dd+nn) = commonData.jacMass[gg](1,nn)*N(dd)*getFEMethod()->ts_a; 
-	  jac(2,3*dd+nn) = commonData.jacMass[gg](2,nn)*N(dd)*getFEMethod()->ts_a; 
+	  F.clear();
+	  for(int rr = 0;rr<3;rr++) {
+	    F(rr,0) = diffN(dd,0);
+	    F(rr,1) = diffN(dd,1);
+	    F(rr,2) = diffN(dd,2);
+	    for(int ii = 0;ii<9;ii++) {
+	      for(int jj = 0;jj<9;jj++) {
+		//This project dirvative \frac{\partial P}{\partial F}, that is
+		//\frac{\partial P}{\partial x_DOF} =  \frac{\partial P}{\partial F}\frac{\partial F}{\partial x_DOF},
+		//where second therm \frac{\partial F}{\partial x_DOF} is derivative of shape function
+		jac(ii,3*dd+rr) += commonData.jacStress[gg](ii,jj)*F.data()[jj];
+	      }
+	    }	
+	  }
 	}
-      }
-      if(commonData.dataAtGaussPts["DOT_"+commonData.meshPositions].size()>0) {
-	ublas::matrix<double> diffN = col_data.getDiffN(gg,nb_col/3);
-	for(int dd = 0;dd<nb_col/3;dd++) {
-	  //h00 //h01 //h02
-	  jac(0,3*dd+0) += commonData.jacMass[gg](0,3+9+3*0+0)*diffN(dd,0);
-	  jac(0,3*dd+0) += commonData.jacMass[gg](0,3+9+3*0+1)*diffN(dd,1);
-	  jac(0,3*dd+0) += commonData.jacMass[gg](0,3+9+3*0+2)*diffN(dd,2);
-	  //h10 //h11 //h12
-	  jac(1,3*dd+1) += commonData.jacMass[gg](1,3+9+3*1+0)*diffN(dd,0);
-	  jac(1,3*dd+1) += commonData.jacMass[gg](1,3+9+3*1+1)*diffN(dd,1);
-	  jac(1,3*dd+1) += commonData.jacMass[gg](1,3+9+3*1+2)*diffN(dd,2);
-	  //h20 //h21 //h22
-	  jac(2,3*dd+2) += commonData.jacMass[gg](2,3+9+3*2+0)*diffN(dd,0);
-	  jac(2,3*dd+2) += commonData.jacMass[gg](2,3+9+3*2+1)*diffN(dd,1);
-	  jac(2,3*dd+2) += commonData.jacMass[gg](2,3+9+3*2+2)*diffN(dd,2);
-	}
-      }*/
       PetscFunctionReturn(0);
     }
 
@@ -467,25 +472,32 @@ struct NonlinearElasticElement {
       
       int nb_row = row_data.getIndices().size();
       int nb_col = col_data.getIndices().size();
-      if(nb_row==0) PetscFunctionReturn(0);
-      if(nb_col==0) PetscFunctionReturn(0);
+      if(nb_row == 0) PetscFunctionReturn(0);
+      if(nb_col == 0) PetscFunctionReturn(0);
 
       try {
 
 	k.resize(nb_row,nb_col);
 	k.clear();
-	jac.resize(3,nb_col);
+	jac.resize(9,nb_col);
 
 	for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
 
 	  ierr = getJac(col_data,gg); CHKERRQ(ierr);
+	  double val = getVolume()*getGaussPts()(3,gg);
+	  jac *= val;
+
+	  const DataForcesAndSurcesCore::MatrixAdaptor &diffN = row_data.getDiffN(gg,nb_row/3);
 
 	  { //integrate element stiffnes matrix
 	    for(int dd1 = 0;dd1<nb_row/3;dd1++) {
 	      for(int rr1 = 0;rr1<3;rr1++) {
 		for(int dd2 = 0;dd2<nb_col/3;dd2++) {
 		  for(int rr2 = 0;rr2<3;rr2++) {
-		    //k(3*dd1+rr1,3*dd2+rr2) += row_data.getN()(gg,dd1)*jac(rr1,3*dd2+rr2);
+		    k(3*dd1+rr1,3*dd2+rr2) += 
+		      diffN(dd1,0)*jac(3*rr1+0,3*dd2+rr2)+
+		      diffN(dd1,1)*jac(3*rr1+1,3*dd2+rr2)+
+   		      diffN(dd1,2)*jac(3*rr1+2,3*dd2+rr2);
 		  }
 		}
 	      }
@@ -498,6 +510,17 @@ struct NonlinearElasticElement {
 	  nb_row,&row_data.getIndices()[0],
 	  nb_col,&col_data.getIndices()[0],
 	  &k(0,0),ADD_VALUES); CHKERRQ(ierr);
+	//is symmetric
+        if(row_side != col_side || row_type != col_type) {
+          trans_k.resize(nb_col,nb_row);
+          noalias(trans_k) = trans( k );
+          ierr = MatSetValues(
+                 getFEMethod()->snes_B,
+                 nb_col,&col_data.getIndices()[0],
+                 nb_row,&row_data.getIndices()[0],
+                 &trans_k(0,0),ADD_VALUES); CHKERRQ(ierr);
+        }
+
 
       } catch (const std::exception& ex) {
 	ostringstream ss;
@@ -522,7 +545,7 @@ struct NonlinearElasticElement {
       EntityHandle meshset = it->get_meshset();
       rval = mField.get_moab().get_entities_by_type(meshset,MBTET,setOfBlocks[id].tEts,true); CHKERR_PETSC(rval);
       setOfBlocks[id].E = mydata.data.Young;
-      setOfBlocks[id].E = mydata.data.Poisson;
+      setOfBlocks[id].PoissonRatio = mydata.data.Poisson;
       //cerr << setOfBlocks[id].tEts << endl;
     }
 

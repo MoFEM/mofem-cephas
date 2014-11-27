@@ -181,13 +181,13 @@ int main(int argc, char *argv[]) {
   PetscViewer viewer;
   ierr = PetscViewerASCIIOpen(PETSC_COMM_WORLD,"nonlinear_elastic.txt",&viewer); CHKERRQ(ierr);
 
-  //ierr = VecChop(F,1e-4); CHKERRQ(ierr);
-  ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+  ierr = VecChop(F,1e-4); CHKERRQ(ierr);
+  //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
   ierr = VecView(F,viewer); CHKERRQ(ierr);
   
   MatView(Aij,PETSC_VIEWER_DRAW_WORLD);
   MatChop(Aij,1e-4);
-  MatView(Aij,PETSC_VIEWER_STDOUT_WORLD);
+  //MatView(Aij,PETSC_VIEWER_STDOUT_WORLD);
   MatView(Aij,viewer);
   std::string wait;
   std::cin >> wait;
