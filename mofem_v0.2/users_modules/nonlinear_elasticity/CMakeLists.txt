@@ -22,6 +22,8 @@ include_directories("${UM_SOURCE_DIR}/nonlinear_elasticity/src")
 include_directories("${UM_SOURCE_DIR}/elasticity/src")
 include_directories("${UM_SOURCE_DIR}/convective_mass_element/src")
 
+add_subdirectory(atom_tests)
+
 add_executable(arc_length_nonlinear_elasticity 
   ${UM_SOURCE_DIR}/nonlinear_elasticity/arc_length_nonlinear_elasticity.cpp)
 target_link_libraries(arc_length_nonlinear_elasticity 
@@ -90,7 +92,6 @@ if(ADOL-C_LIBRARY)
       -ts_monitor -ts_type alpha -ts_dt 0.001 -ts_final_time 0.002
       -my_time_data_file data.txt -my_output_prt 1
       -my_max_post_proc_ref_level 1 -my_disp_order 2 -my_vel_order 1)
-
 
 endif(ADOL-C_LIBRARY)
 
