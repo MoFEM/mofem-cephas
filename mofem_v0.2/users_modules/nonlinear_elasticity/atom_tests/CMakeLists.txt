@@ -31,6 +31,11 @@ if(ADOL-C_LIBRARY)
     mofem_cblas
     ${MoFEM_PROJECT_LIBS})
 
+  add_test(nonlinear_elastic ${MoFEM_MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/nonlinear_elastic -my_file ../LShape.cub)
+  add_test(nonlinear_elastic_compare ${CMAKE_COMMAND} -E compare_files 
+    ${UM_SOURCE_DIR}/nonlinear_elasticity/atom_tests/blessed_files/nonlinear_elastic.txt 
+    ${CMAKE_BINARY_DIR}/nonlinear_elasticity/atom_tests/nonlinear_elastic.txt)
+
 endif(ADOL-C_LIBRARY)
 
 

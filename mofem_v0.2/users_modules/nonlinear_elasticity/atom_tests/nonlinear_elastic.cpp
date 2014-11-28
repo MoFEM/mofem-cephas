@@ -189,8 +189,8 @@ int main(int argc, char *argv[]) {
   MatChop(Aij,1e-4);
   //MatView(Aij,PETSC_VIEWER_STDOUT_WORLD);
   MatView(Aij,viewer);
-  std::string wait;
-  std::cin >> wait;
+  //std::string wait;
+  //std::cin >> wait;
 
   ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
 
