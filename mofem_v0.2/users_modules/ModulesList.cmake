@@ -31,7 +31,7 @@ add_subdirectory(convective_mass_element)
 
 add_subdirectory(atom_tests)
 
-include_directories("${UM_SOURCE_DIR}/elasticity")
+include_directories("${UM_SOURCE_DIR}/elasticity/src")
 add_subdirectory(elasticity)
 add_subdirectory(nonlinear_elasticity)
 add_subdirectory(fracture_mechanics)
