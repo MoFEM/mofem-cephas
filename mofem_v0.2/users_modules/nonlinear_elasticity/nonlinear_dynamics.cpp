@@ -218,8 +218,8 @@ struct MonitorRestart: public FEMethod {
       ostringstream ss;
       ss << "restart_" << (*step) << ".h5m";
       rval = mField.get_moab().write_file(ss.str().c_str()); CHKERR_PETSC(rval);
-      (*step)++;
     }
+    (*step)++;
     PetscFunctionReturn(0);
   }
 
