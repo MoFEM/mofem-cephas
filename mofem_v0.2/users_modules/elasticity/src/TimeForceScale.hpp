@@ -29,7 +29,10 @@ struct TimeForceScale: public MethodsForOp {
     map<double,double> tSeries;
     int readFile,debug;
 
-    TimeForceScale(): readFile(0),debug(0) {};
+    TimeForceScale(): readFile(0),debug(1) {
+      PetscErrorCode ierr;
+      ierr = timeData(); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+    };
 
     ErrorCode rval;
     PetscErrorCode ierr;
@@ -42,8 +45,10 @@ struct TimeForceScale: public MethodsForOp {
       if(flg != PETSC_TRUE) {
 	SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_time_data_file (time_data FILE NEEDED)");
       }
-      FILE *time_data;
-      ierr = PetscFOpen(PETSC_COMM_SELF,time_file_name,"r",&time_data); CHKERRQ(ierr);
+      FILE *time_data = fopen(time_file_name,"r");
+      if(time_data == NULL) {
+	SETERRQ1(PETSC_COMM_SELF,1,"*** ERROR data file < %s > open unsucessfull",time_file_name);
+      }
       double no1 = 0.0, no2 = 0.0;
       tSeries[no1] = no2;
       while(! feof (time_data)){
@@ -53,14 +58,20 @@ struct TimeForceScale: public MethodsForOp {
 	  continue;
 	}
 	if(n != 2){
-	  SETERRQ(PETSC_COMM_SELF,1,"read data file error (check input time data file)");
-	  //cout << " ERROR INSUFFICIENT NUMBER OF ARGUMENTS IN TIME DATA FILE " << endl;
-	  //CHKERRABORT(PETSC_COMM_SELF,1);
+	  SETERRQ(PETSC_COMM_SELF,1,"*** ERROR read data file error (check input time data file)");
 	}
 	tSeries[no1] = no2;
-	PetscPrintf(PETSC_COMM_WORLD,"** read time series %3.2e time %3.2e\n",no1,no2);
       }
-      ierr =PetscFClose(PETSC_COMM_SELF, time_data);CHKERRQ(ierr);
+      int r = fclose(time_data);      
+      if(debug) {
+	map<double, double>::iterator tit = tSeries.begin();
+	for(;tit!=tSeries.end();tit++) {
+	  PetscPrintf(PETSC_COMM_WORLD,"** read time series %3.2e time %3.2e\n",tit->first,tit->second);
+	}
+      }
+      if(r!=0) {
+	SETERRQ(PETSC_COMM_SELF,1,"*** ERROR file cloase unsucessfull");
+      }
       readFile=1;
       PetscFunctionReturn(0);
     }
@@ -69,7 +80,7 @@ struct TimeForceScale: public MethodsForOp {
     PetscErrorCode scaleNf(const FEMethod *fe,ublas::vector<FieldData> &Nf) {
       PetscFunctionBegin;
       if(readFile==0) {
-	ierr = timeData(); CHKERRQ(ierr);
+	SETERRQ(PETSC_COMM_SELF,1,"data file not readed");
       }
       double ts_t = fe->ts_t;
       double scale = 0;
@@ -86,9 +97,6 @@ struct TimeForceScale: public MethodsForOp {
 	t0 = tit->first;
 	s0 = tit->second;
 	scale = s0;
-      }
-      if(debug) {
-	PetscPrintf(PETSC_COMM_WORLD,"\t ** force scale %3.2e time %3.2e\n",scale,ts_t);
       }
       //Hassan : Here you can define time function rather than read from a file
       //Triangular loading over 10s (maximum at 5)
