@@ -214,12 +214,14 @@ struct MonitorRestart: public FEMethod {
     //PetscErrorCode ierr;
     ErrorCode rval;
     (*time) = ts_t;
-    if((*step)%pRT==0) {
-      ostringstream ss;
-      ss << "restart_" << (*step) << ".h5m";
-      rval = mField.get_moab().write_file(ss.str().c_str()); CHKERR_PETSC(rval);
-      (*step)++;
+    if(pRT>0) {
+      if((*step)%pRT==0) {
+	ostringstream ss;
+	ss << "restart_" << (*step) << ".h5m";
+	rval = mField.get_moab().write_file(ss.str().c_str()); CHKERR_PETSC(rval);
+      }
     }
+    (*step)++;
     PetscFunctionReturn(0);
   }
 
