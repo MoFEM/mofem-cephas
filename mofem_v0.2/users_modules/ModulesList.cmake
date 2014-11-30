@@ -25,7 +25,6 @@ add_library(complex_for_lazy_obsolete
 
 add_subdirectory(analytical_dirihlet_boundary_conditions)
 add_subdirectory(convective_mass_element)
-add_subdirectory(atom_tests)
 add_subdirectory(elasticity)
 add_subdirectory(nonlinear_elasticity)
 add_subdirectory(fracture_mechanics)

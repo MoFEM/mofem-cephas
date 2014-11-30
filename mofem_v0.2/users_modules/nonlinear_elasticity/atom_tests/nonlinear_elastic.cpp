@@ -185,7 +185,7 @@ int main(int argc, char *argv[]) {
   //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
   ierr = VecView(F,viewer); CHKERRQ(ierr);
   
-  MatView(Aij,PETSC_VIEWER_DRAW_WORLD);
+  //MatView(Aij,PETSC_VIEWER_DRAW_WORLD);
   MatChop(Aij,1e-4);
   //MatView(Aij,PETSC_VIEWER_STDOUT_WORLD);
   MatView(Aij,viewer);

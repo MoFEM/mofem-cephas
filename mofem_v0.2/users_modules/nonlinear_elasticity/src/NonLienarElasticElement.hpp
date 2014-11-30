@@ -62,6 +62,31 @@ struct NonlinearElasticElement {
      * http://people.sc.fsu.edu/~jburkardt/cpp_src/gm_rule/gm_rule.html
     **/
     int getRule(int order) { return (order-1); };
+
+    PetscErrorCode preProcess() {
+      PetscFunctionBegin;
+      PetscErrorCode ierr;
+
+      ierr = TetElementForcesAndSourcesCore::preProcess(); CHKERRQ(ierr);
+
+      switch (ts_ctx) {
+	case CTX_TSSETIFUNCTION: {
+	  snes_ctx = CTX_SNESSETFUNCTION;
+	  snes_f = ts_F;
+	  break;
+	}
+	case CTX_TSSETIJACOBIAN: {
+	  snes_ctx = CTX_SNESSETJACOBIAN;
+	  snes_B = ts_B;
+	  break;
+	}
+	default:
+	break;
+      }
+
+      PetscFunctionReturn(0);
+    }
+
   };
   
   MyVolumeFE feRhs; ///< cauclate right hand side for tetrahedral elements
@@ -81,6 +106,7 @@ struct NonlinearElasticElement {
     * \infroup mofem_forces_and_sources 
     */
   struct BlockData {
+    int iD;
     double E;
     double PoissonRatio;
     Range tEts; ///< constatins elements in block set
@@ -185,8 +211,49 @@ struct NonlinearElasticElement {
   
   struct FunctionsToCalulatePiolaKirchhoffI {
 
+    template<typename TYPE> 
+    PetscErrorCode dEterminatnt(ublas::matrix<TYPE> a,TYPE &det) {
+      PetscFunctionBegin;
+      //a11a22a33
+      //+a21a32a13
+      //+a31a12a23
+      //-a11a32a23
+      //-a31a22a13
+      //-a21a12a33
+      //http://www.cg.info.hiroshima-cu.ac.jp/~miyazaki/knowledge/teche23.html
+      //http://mathworld.wolfram.com/MatrixInverse.html
+      det = a(0,0)*a(1,1)*a(2,2)
+        +a(1,0)*a(2,1)*a(0,2)
+        +a(2,0)*a(0,1)*a(1,2)
+        -a(0,0)*a(2,1)*a(1,2)
+        -a(2,0)*a(1,1)*a(0,2)
+        -a(1,0)*a(0,1)*a(2,2);
+      PetscFunctionReturn(0);
+    }
+  
+    template<typename TYPE> 
+    PetscErrorCode iNvert(TYPE det,ublas::matrix<TYPE> a,ublas::matrix<TYPE> &inv_a) {
+      PetscFunctionBegin;
+      //PetscErrorCode ierr;
+      inv_a.resize(3,3);
+      //http://www.cg.info.hiroshima-cu.ac.jp/~miyazaki/knowledge/teche23.html
+      //http://mathworld.wolfram.com/MatrixInverse.html
+      inv_a(0,0) = a(1,1)*a(2,2)-a(1,2)*a(2,1);
+      inv_a(0,1) = a(0,2)*a(2,1)-a(0,1)*a(2,2);
+      inv_a(0,2) = a(0,1)*a(1,2)-a(0,2)*a(1,1);
+      inv_a(1,0) = a(1,2)*a(2,0)-a(1,0)*a(2,2);
+      inv_a(1,1) = a(0,0)*a(2,2)-a(0,2)*a(2,0);
+      inv_a(1,2) = a(0,2)*a(1,0)-a(0,0)*a(1,2);
+      inv_a(2,0) = a(1,0)*a(2,1)-a(1,1)*a(2,0);
+      inv_a(2,1) = a(0,1)*a(2,0)-a(0,0)*a(2,1);
+      inv_a(2,2) = a(0,0)*a(1,1)-a(0,1)*a(1,0);
+      inv_a /= det;
+      PetscFunctionReturn(0);
+    }
+
     double lambda,mu;
-    ublas::matrix<adouble> F,C,E,S,P;
+    ublas::matrix<adouble> F,C,E,S,invF,P;
+    adouble J;
 
     PetscErrorCode CalulateC_CauchyDefromationTensor() {
       PetscFunctionBegin;
@@ -214,6 +281,7 @@ struct NonlinearElasticElement {
 	trE += E(dd,dd);
       }
       S.resize(3,3);
+      S.clear();
       for(int dd = 0;dd<3;dd++) {
 	S(dd,dd) = trE*lambda;
       }
@@ -228,14 +296,9 @@ struct NonlinearElasticElement {
       PetscErrorCode ierr;
       lambda = LAMBDA(block_data.E,block_data.PoissonRatio);
       mu = MU(block_data.E,block_data.PoissonRatio);
-      //cerr << "lambda: " << lambda << endl;
-      //cerr << "mu: " << mu << endl;
       ierr = CalulateC_CauchyDefromationTensor(); CHKERRQ(ierr);
-      //cerr << "C: " << C << endl;
       ierr = CalulateE_GreenStrain(); CHKERRQ(ierr);
-      //cerr << "E: " << E << endl;
       ierr = CalculateS_PiolaKirchhoffII(); CHKERRQ(ierr);
-      //cerr << "S: " << S << endl;
       P.resize(3,3);
       noalias(P) = prod(F,S);
       //cerr << "P: " << P << endl;
@@ -248,7 +311,7 @@ struct NonlinearElasticElement {
     BlockData &dAta;
     CommonData &commonData;
     FunctionsToCalulatePiolaKirchhoffI &fUn;
-    int tAg;
+    int tAg,lastId;
     bool jAcobian;
 
     OpJacobian(
@@ -259,9 +322,10 @@ struct NonlinearElasticElement {
       int tag,bool jacobian = true):
       TetElementForcesAndSourcesCore::UserDataOperator(field_name),
       dAta(data),commonData(common_data),fUn(fun),
-      tAg(tag),jAcobian(jacobian) { }
+      tAg(tag),lastId(-1),jAcobian(jacobian) { }
 
     ublas::vector<double> active_varibles;
+    int nb_active_variables;
 
     PetscErrorCode doWork(
       int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data) {
@@ -284,32 +348,35 @@ struct NonlinearElasticElement {
 	commonData.P.resize(nb_gauss_pts);
 	commonData.jacStressRowPtr.resize(nb_gauss_pts);
 	commonData.jacStress.resize(nb_gauss_pts);
-	int nb_active_variables = 0;
 
 	for(int gg = 0;gg<nb_gauss_pts;gg++) {
 
 	  if(gg == 0) {
-
-	    //recorder on
-	    trace_on(tAg);
 	    
-	    fUn.F.resize(3,3);
-	    for(int dd1 = 0;dd1<3;dd1++) {
-	      for(int dd2 = 0;dd2<3;dd2++) {
-		fUn.F(dd1,dd2) <<= (commonData.gradAtGaussPts[commonData.spatialPositions][gg])(dd1,dd2);
-		nb_active_variables++;
-	      }
-	    }
-	    ierr = fUn.CalualteP_PiolaKirchhoffI(dAta,getMoFEMFEPtr()); CHKERRQ(ierr);
-	    commonData.P[gg].resize(3,3);
-	    for(int dd1 = 0;dd1<3;dd1++) {
-	      for(int dd2 = 0;dd2<3;dd2++) {
-		fUn.P(dd1,dd2) >>= (commonData.P[gg])(dd1,dd2);
-	      }
-	    }
+	    if(lastId != dAta.iD) {
+	      lastId = dAta.iD;
+	      //recorder on
+	      trace_on(tAg);
 	    
-	    trace_off();
-	    //recorder off
+	      fUn.F.resize(3,3);
+	      nb_active_variables = 0;
+	      for(int dd1 = 0;dd1<3;dd1++) {
+		for(int dd2 = 0;dd2<3;dd2++) {
+		  fUn.F(dd1,dd2) <<= (commonData.gradAtGaussPts[commonData.spatialPositions][gg])(dd1,dd2);
+		  nb_active_variables++;
+		}
+	      }
+	      ierr = fUn.CalualteP_PiolaKirchhoffI(dAta,getMoFEMFEPtr()); CHKERRQ(ierr);
+	      commonData.P[gg].resize(3,3);
+	      for(int dd1 = 0;dd1<3;dd1++) {
+		for(int dd2 = 0;dd2<3;dd2++) {
+		  fUn.P(dd1,dd2) >>= (commonData.P[gg])(dd1,dd2);
+		}
+	      }
+	    
+	      trace_off();
+	      //recorder off
+	    }
 
 	  }
 
@@ -321,20 +388,20 @@ struct NonlinearElasticElement {
 	  }
 
 	  if(!jAcobian) {
-	    if(gg>0) {
-	      commonData.P[gg].resize(3,3);
-	      int r;
-	      //play recorder for values
-	      r = function(tAg,9,nb_active_variables,&active_varibles[0],&commonData.P[gg](0,0));
-	      if(r!=3) { // function is locally analytic
-		SETERRQ1(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"ADOL-C function evaluation with error r = %d",r);
-	      }
-	    } 
+	    commonData.P[gg].resize(3,3);
+	    int r;
+	    //play recorder for values
+	    r = function(tAg,9,nb_active_variables,&active_varibles[0],&commonData.P[gg](0,0));
+	    if(r!=3) { // function is locally analytic
+	      SETERRQ1(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"ADOL-C function evaluation with error r = %d",r);
+	    }
 	  } else {
-	    commonData.jacStressRowPtr[gg].resize(9);
-	    commonData.jacStress[gg].resize(9,nb_active_variables);
-	    for(int dd = 0;dd<9;dd++) {
-	      (commonData.jacStressRowPtr[gg])[dd] = &(commonData.jacStress[gg](dd,0));     
+	    if(commonData.jacStressRowPtr[gg].size()!=9) {
+	      commonData.jacStressRowPtr[gg].resize(9);
+	      commonData.jacStress[gg].resize(9,nb_active_variables);
+	      for(int dd = 0;dd<9;dd++) {
+		(commonData.jacStressRowPtr[gg])[dd] = &(commonData.jacStress[gg](dd,0));     
+	      }
 	    }
 	    int r;
 	    //play recorder for jacobians
@@ -429,27 +496,24 @@ struct NonlinearElasticElement {
 
     OpLhs_dx(const string vel_field,const string field_name,BlockData &data,CommonData &common_data):
       TetElementForcesAndSourcesCore::UserDataOperator(vel_field,field_name),
-      dAta(data),commonData(common_data) { /*symm = false;*/  }
+      dAta(data),commonData(common_data) { symm = false;  }
 
     ublas::matrix<double> k,trans_k,jac,F;
 
     virtual PetscErrorCode getJac(DataForcesAndSurcesCore::EntData &col_data,int gg) {
       PetscFunctionBegin;
+      jac.clear();
       int nb_col = col_data.getFieldData().size();
       const DataForcesAndSurcesCore::MatrixAdaptor diffN = col_data.getDiffN(gg,nb_col/3);
-      F.resize(3,3);
       for(int dd = 0;dd<nb_col/3;dd++) {
-	  F.clear();
 	  for(int rr = 0;rr<3;rr++) {
-	    F(rr,0) = diffN(dd,0);
-	    F(rr,1) = diffN(dd,1);
-	    F(rr,2) = diffN(dd,2);
 	    for(int ii = 0;ii<9;ii++) {
-	      for(int jj = 0;jj<9;jj++) {
+	      for(int jj = 0;jj<3;jj++) {
 		//This project dirvative \frac{\partial P}{\partial F}, that is
 		//\frac{\partial P}{\partial x_DOF} =  \frac{\partial P}{\partial F}\frac{\partial F}{\partial x_DOF},
 		//where second therm \frac{\partial F}{\partial x_DOF} is derivative of shape function
-		jac(ii,3*dd+rr) += commonData.jacStress[gg](ii,jj)*F.data()[jj];
+		//jac(ii,3*dd+rr) += commonData.jacStress[gg](ii,jj)*F.data()[jj];
+		jac(ii,3*dd+rr) += commonData.jacStress[gg](ii,3*rr+jj)*diffN(dd,jj);
 	      }
 	    }	
 	  }
@@ -510,7 +574,7 @@ struct NonlinearElasticElement {
 	  nb_row,&row_data.getIndices()[0],
 	  nb_col,&col_data.getIndices()[0],
 	  &k(0,0),ADD_VALUES); CHKERRQ(ierr);
-	//is symmetric
+	/*//is symmetric
         if(row_side != col_side || row_type != col_type) {
           trans_k.resize(nb_col,nb_row);
           noalias(trans_k) = trans( k );
@@ -519,7 +583,7 @@ struct NonlinearElasticElement {
                  nb_col,&col_data.getIndices()[0],
                  nb_row,&row_data.getIndices()[0],
                  &trans_k(0,0),ADD_VALUES); CHKERRQ(ierr);
-        }
+        }*/
 
 
       } catch (const std::exception& ex) {
@@ -544,6 +608,7 @@ struct NonlinearElasticElement {
       int id = it->get_msId();
       EntityHandle meshset = it->get_meshset();
       rval = mField.get_moab().get_entities_by_type(meshset,MBTET,setOfBlocks[id].tEts,true); CHKERR_PETSC(rval);
+      setOfBlocks[id].iD = id;
       setOfBlocks[id].E = mydata.data.Young;
       setOfBlocks[id].PoissonRatio = mydata.data.Poisson;
       //cerr << setOfBlocks[id].tEts << endl;

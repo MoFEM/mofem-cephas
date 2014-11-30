@@ -1108,15 +1108,15 @@ PetscErrorCode DataOperator::opRhs(DataForcesAndSurcesCore &data) {
     ierr = doWork(-1,MBVERTEX,data.dataOnEntities[MBVERTEX][nn]); CHKERRQ(ierr);
   }
   for(unsigned int ee = 0;ee<data.dataOnEntities[MBEDGE].size();ee++) {
-    if(data.dataOnEntities[MBEDGE][ee].getN().size1()==0) continue;
+    //if(data.dataOnEntities[MBEDGE][ee].getN().size1()==0) continue;
     ierr = doWork(ee,MBEDGE,data.dataOnEntities[MBEDGE][ee]); CHKERRQ(ierr);
   }
   for(unsigned int ff = 0;ff<data.dataOnEntities[MBTRI].size();ff++) {
-    if(data.dataOnEntities[MBTRI][ff].getN().size1()==0) continue;
+    //if(data.dataOnEntities[MBTRI][ff].getN().size1()==0) continue;
     ierr = doWork(ff,MBTRI,data.dataOnEntities[MBTRI][ff]); CHKERRQ(ierr);
   }
   for(unsigned int vv = 0;vv<data.dataOnEntities[MBTET].size();vv++) {
-    if(data.dataOnEntities[MBTET][vv].getN().size1()==0) continue;
+    //if(data.dataOnEntities[MBTET][vv].getN().size1()==0) continue;
     ierr = doWork(-1,MBTET,data.dataOnEntities[MBTET][vv]); CHKERRQ(ierr);
   }
 
@@ -1531,9 +1531,13 @@ PetscErrorCode TetElementForcesAndSourcesCore::operator()() {
 
   try {
     ierr = opSetInvJacH1.opRhs(dataH1); CHKERRQ(ierr);
-    ierr = opSetInvJacH1.opRhs(dataL2); CHKERRQ(ierr);
-    ierr = opPiolaTransform.opRhs(dataHdiv); CHKERRQ(ierr);
-    ierr = opSetInvJacHdiv.opRhs(dataHdiv); CHKERRQ(ierr);
+    if((dataH1.spacesOnEntities[MBTET]).test(L2)) {
+      ierr = opSetInvJacH1.opRhs(dataL2); CHKERRQ(ierr);
+    }
+    if((dataH1.spacesOnEntities[MBTRI]).test(HDIV)) {
+      ierr = opPiolaTransform.opRhs(dataHdiv); CHKERRQ(ierr);
+      ierr = opSetInvJacHdiv.opRhs(dataHdiv); CHKERRQ(ierr);
+    }
   } catch (exception& ex) {
     ostringstream ss;
     ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
@@ -1567,9 +1571,13 @@ PetscErrorCode TetElementForcesAndSourcesCore::operator()() {
 	ierr = Shape_invJac(&hoGaussPtsInvJac(gg,0)); CHKERRQ(ierr);
       }
       ierr = opSetHoInvJacH1.opRhs(dataH1); CHKERRQ(ierr);
-      ierr = opSetHoInvJacH1.opRhs(dataL2); CHKERRQ(ierr);
-      ierr = opSetHoPiolaTransform.opRhs(dataHdiv); CHKERRQ(ierr);
-      ierr = opSetHoInvJacHdiv.opRhs(dataHdiv); CHKERRQ(ierr);
+      if((dataH1.spacesOnEntities[MBTET]).test(L2)) {
+	ierr = opSetHoInvJacH1.opRhs(dataL2); CHKERRQ(ierr);
+      }
+      if((dataH1.spacesOnEntities[MBTRI]).test(HDIV)) {
+	ierr = opSetHoPiolaTransform.opRhs(dataHdiv); CHKERRQ(ierr);
+	ierr = opSetHoInvJacHdiv.opRhs(dataHdiv); CHKERRQ(ierr);
+      }
     } catch (exception& ex) {
       ostringstream ss;
       ss << "problem with indices in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
