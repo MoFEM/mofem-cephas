@@ -496,7 +496,7 @@ struct NonlinearElasticElement {
 
     OpLhs_dx(const string vel_field,const string field_name,BlockData &data,CommonData &common_data):
       TetElementForcesAndSourcesCore::UserDataOperator(vel_field,field_name),
-      dAta(data),commonData(common_data) { symm = false;  }
+      dAta(data),commonData(common_data) { /*symm = false;*/  }
 
     ublas::matrix<double> k,trans_k,jac,F;
 
@@ -574,7 +574,7 @@ struct NonlinearElasticElement {
 	  nb_row,&row_data.getIndices()[0],
 	  nb_col,&col_data.getIndices()[0],
 	  &k(0,0),ADD_VALUES); CHKERRQ(ierr);
-	/*//is symmetric
+	//is symmetric
         if(row_side != col_side || row_type != col_type) {
           trans_k.resize(nb_col,nb_row);
           noalias(trans_k) = trans( k );
@@ -583,7 +583,7 @@ struct NonlinearElasticElement {
                  nb_col,&col_data.getIndices()[0],
                  nb_row,&row_data.getIndices()[0],
                  &trans_k(0,0),ADD_VALUES); CHKERRQ(ierr);
-        }*/
+        }
 
 
       } catch (const std::exception& ex) {
