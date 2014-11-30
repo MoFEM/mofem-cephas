@@ -530,15 +530,15 @@ struct NonlinearElasticElement {
 
       PetscErrorCode ierr;
 
-      if(dAta.tEts.find(getMoFEMFEPtr()->get_ent()) == dAta.tEts.end()) {
-	PetscFunctionReturn(0);
-      }
-      
       int nb_row = row_data.getIndices().size();
       int nb_col = col_data.getIndices().size();
       if(nb_row == 0) PetscFunctionReturn(0);
       if(nb_col == 0) PetscFunctionReturn(0);
 
+      if(dAta.tEts.find(getMoFEMFEPtr()->get_ent()) == dAta.tEts.end()) {
+	PetscFunctionReturn(0);
+      }
+      
       try {
 
 	k.resize(nb_row,nb_col);
