@@ -60,6 +60,7 @@ extern "C" {
 
 #include <adolc/adolc.h> 
 #include <ConvectiveMassElement.hpp>
+#include <NonLienarElasticElement.hpp>
 
 using namespace ObosleteUsersModules;
 
@@ -73,8 +74,10 @@ struct NL_ElasticFEMethod: public NonLinearSpatialElasticFEMthod {
   NL_ElasticFEMethod(FieldInterface& _mField,double _lambda,double _mu,int _verbose = 0): 
       FEMethod_ComplexForLazy_Data(_mField,_verbose), 
       NonLinearSpatialElasticFEMthod(_mField,_lambda,_mu,_verbose)  {
-    set_PhysicalEquationNumber(neohookean);
+    //set_PhysicalEquationNumber(neohookean);
     //set_PhysicalEquationNumber(hooke);
+    set_PhysicalEquationNumber(stvenant_kirchhoff);
+
   }
 
   PetscErrorCode preProcess() {
@@ -283,15 +286,20 @@ int main(int argc, char *argv[]) {
   //add entitities (by tets) to the field
   ierr = m_field.add_ents_to_field_by_TETs(0,"SPATIAL_POSITION"); CHKERRQ(ierr);
 
-  //FE
+  /*//FE
   ierr = m_field.add_finite_element("ELASTIC",MF_ZERO); CHKERRQ(ierr);
   //add finite elements entities
   ierr = m_field.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"ELASTIC",MBTET); CHKERRQ(ierr);
-
   //Define rows/cols and element data
   ierr = m_field.modify_finite_element_add_field_row("ELASTIC","SPATIAL_POSITION"); CHKERRQ(ierr);
   ierr = m_field.modify_finite_element_add_field_col("ELASTIC","SPATIAL_POSITION"); CHKERRQ(ierr);
-  ierr = m_field.modify_finite_element_add_field_data("ELASTIC","SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_data("ELASTIC","SPATIAL_POSITION"); CHKERRQ(ierr);*/
+
+  NonlinearElasticElement elastic(m_field,2);
+  ierr = elastic.setBlocks(); CHKERRQ(ierr);
+  ierr = elastic.addElement("ELASTIC","SPATIAL_POSITION"); CHKERRQ(ierr);
+  NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI st_venant_kirchhoff_material;
+  ierr = elastic.setOperators(st_venant_kirchhoff_material,"SPATIAL_POSITION"); CHKERRQ(ierr);
 
   //define problems
 
@@ -445,7 +453,7 @@ int main(int argc, char *argv[]) {
   ts_ctx.get_preProcess_to_do_IFunction().push_back(&my_dirihlet_bc);
   //fe looops
   TsCtx::loops_to_do_type& loops_to_do_Rhs = ts_ctx.get_loops_to_do_IFunction();
-  loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("ELASTIC",&my_fe));
+  loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("ELASTIC",/*&my_fe));*/&elastic.getLoopFeRhs()));
   loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("NEUAMNN_FE",&fe_spatial));
   boost::ptr_map<string,NodalForce>::iterator fit = nodal_forces.begin();
   for(;fit!=nodal_forces.end();fit++) {
@@ -462,7 +470,7 @@ int main(int argc, char *argv[]) {
   ts_ctx.get_preProcess_to_do_IJacobian().push_back(&my_dirihlet_bc);
   //fe loops
   TsCtx::loops_to_do_type& loops_to_do_Mat = ts_ctx.get_loops_to_do_IJacobian();
-  loops_to_do_Mat.push_back(TsCtx::loop_pair_type("ELASTIC",&my_fe));
+  loops_to_do_Mat.push_back(TsCtx::loop_pair_type("ELASTIC",/*(&my_fe));*/&elastic.getLoopFeLhs()));
   loops_to_do_Mat.push_back(TsCtx::loop_pair_type("NEUAMNN_FE",&fe_spatial));
   loops_to_do_Mat.push_back(TsCtx::loop_pair_type("VELOCITY_ELEMENT",&inertia.getLoopFeVelLhs()));
   loops_to_do_Mat.push_back(TsCtx::loop_pair_type("MASS_ELEMENT",&inertia.getLoopFeMassLhs()));

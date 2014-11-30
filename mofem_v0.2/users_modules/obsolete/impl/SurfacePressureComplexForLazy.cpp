@@ -200,11 +200,14 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::rHs() {
       Fext_edge[ee] = NULL;
     }
   }
-    
-  //cerr << "dOfs_x: " << dOfs_x << endl;
-  //for(int ee = 0;ee<3;ee++) {
-    //cerr << dOfs_x_edge[ee] << endl;
-  //}
+
+  } catch (exception& ex) {
+    ostringstream ss;
+    ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+    SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+  }
+
+  try {
     
   switch(typeOfForces) {
     case CONSERVATIVE:
@@ -231,12 +234,19 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::rHs() {
       break;
   }
 
+  } catch (exception& ex) {
+    ostringstream ss;
+    ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+    SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+  }
+
   //cerr << "fExtNode: " << fExtNode << endl;
   //cerr << "fExtFace: " << fExtFace << endl;
   //for(int ee = 0;ee<3;ee++) {
     //cerr << "fExtEdge " << ee << " " << fExtEdge[ee] << endl;
   //}
 
+  try {
  
   Vec f = snes_f;
   if(uSeF) f = F; 

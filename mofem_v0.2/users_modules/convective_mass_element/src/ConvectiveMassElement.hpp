@@ -1,11 +1,11 @@
 /** \file ThermalElement.hpp 
  * \brief Operators and data structures for thermal analys
  *
- * Implementation of thermal element for unsteady and steady case.
+ * Implementation of convective mass element
  *
  */
 
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
+/* Copyright (C) 2014, Lukasz Kaczmarczyk (likask AT wp.pl)
  * --------------------------------------------------------------
  *
  * This file is part of MoFEM.

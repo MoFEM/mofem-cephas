@@ -16,6 +16,8 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
+include_directories("${UM_SOURCE_DIR}/elasticity/src")
+
 add_executable(elasticity ${UM_SOURCE_DIR}/elasticity/elasticity.cpp)
 target_link_libraries(elasticity 
   mofem_finite_element_library
