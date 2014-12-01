@@ -41,26 +41,24 @@ using namespace MoFEM;
 #include <BodyForce.hpp>
 #include <ThermalStressElement.hpp>
 
-#include <FEMethod_LowLevelStudent.hpp>
+/*#include <FEMethod_LowLevelStudent.hpp>
 #include <FEMethod_UpLevelStudent.hpp>
-
-#include <PostProcVertexMethod.hpp>
-#include <PostProcDisplacementAndStrainOnRefindedMesh.hpp>
 
 extern "C" {
   #include <complex_for_lazy.h>
 }
-
-#include <ArcLengthTools.hpp>
 #include <FEMethod_ComplexForLazy.hpp>
-#include <FEMethod_DriverComplexForLazy.hpp>
+#include <FEMethod_DriverComplexForLazy.hpp>*/
 
 #include <SurfacePressureComplexForLazy.hpp>
-#include <PostProcNonLinearElasticityStresseOnRefindedMesh.hpp>
-
 #include <adolc/adolc.h> 
 #include <ConvectiveMassElement.hpp>
 #include <NonLienarElasticElement.hpp>
+
+//#include <PostProcVertexMethod.hpp>
+//#include <PostProcDisplacementAndStrainOnRefindedMesh.hpp>
+//#include <PostProcNonLinearElasticityStresseOnRefindedMesh.hpp>
+#include <PotsProcOnRefMesh.hpp>
 
 using namespace ObosleteUsersModules;
 
@@ -69,7 +67,7 @@ PetscErrorCode ierr;
 
 static char help[] = "...\n\n";
 
-struct NL_ElasticFEMethod: public NonLinearSpatialElasticFEMthod {
+/*struct NL_ElasticFEMethod: public NonLinearSpatialElasticFEMthod {
 
   NL_ElasticFEMethod(FieldInterface& _mField,double _lambda,double _mu,int _verbose = 0): 
       FEMethod_ComplexForLazy_Data(_mField,_verbose), 
@@ -102,9 +100,9 @@ struct NL_ElasticFEMethod: public NonLinearSpatialElasticFEMthod {
     PetscFunctionReturn(0);
   }
 
-};
+};*/
 
-struct MonitorObsoleteComplexForLazyPostProc: public FEMethod {
+/*struct MonitorObsoleteComplexForLazyPostProc: public FEMethod {
 
   FieldInterface &mField;
   FEMethod_ComplexForLazy &fE;
@@ -152,6 +150,75 @@ struct MonitorObsoleteComplexForLazyPostProc: public FEMethod {
 	sss << "out_post_proc_" << (*step) << ".vtk";
 	rval = fePostProcMethod.moab_post_proc.write_file(sss.str().c_str(),"VTK",""); CHKERR_PETSC(rval);
       }
+    }
+
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode operator()() {
+    PetscFunctionBegin;
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode postProcess() {
+    PetscFunctionBegin;
+    PetscFunctionReturn(0);
+  }
+
+};*/
+
+struct MonitorPostProc: public FEMethod {
+
+  FieldInterface &mField;
+  PostPocOnRefinedMesh postProc;
+  bool iNit;
+
+  int pRT;
+  int *step;
+
+  MonitorPostProc(FieldInterface &m_field): 
+    FEMethod(),mField(m_field),postProc(m_field),iNit(false) { 
+    
+    ErrorCode rval;
+    PetscErrorCode ierr;
+    double def_t_val = 0;
+    const EntityHandle root_meshset = mField.get_moab().get_root_set();
+
+    Tag th_step;
+    rval = m_field.get_moab().tag_get_handle("_TsStep_",1,MB_TYPE_DOUBLE,th_step,MB_TAG_CREAT|MB_TAG_EXCL|MB_TAG_MESH,&def_t_val); 
+    if(rval == MB_ALREADY_ALLOCATED) {
+      rval = m_field.get_moab().tag_get_by_ptr(th_step,&root_meshset,1,(const void**)&step); CHKERR(rval);
+    } else {
+      rval = m_field.get_moab().tag_set_data(th_step,&root_meshset,1,&def_t_val); CHKERR(rval);
+      rval = m_field.get_moab().tag_get_by_ptr(th_step,&root_meshset,1,(const void**)&step); CHKERR(rval);
+    }
+
+
+    PetscBool flg = PETSC_TRUE;
+    ierr = PetscOptionsGetInt(PETSC_NULL,"-my_output_prt",&pRT,&flg); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+    if(flg!=PETSC_TRUE) {
+      pRT = 10;
+    }
+
+  }
+
+  PetscErrorCode preProcess() {
+    PetscFunctionBegin;
+    PetscErrorCode ierr;
+    ErrorCode rval;
+
+    if(!iNit) {
+      ierr = postProc.generateRefereneElemenMesh(); CHKERRQ(ierr);
+      ierr = postProc.addFieldValuesPostProc("SPATIAL_POSITION"); CHKERRQ(ierr);
+      ierr = postProc.addFieldValuesPostProc("SPATIAL_VELOCITY"); CHKERRQ(ierr);
+      iNit = true;
+    }
+
+    if((*step)%pRT==0) {
+      ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","MASS_ELEMENT",postProc); CHKERRQ(ierr);
+      ostringstream sss;
+      sss << "out_values_" << (*step) << ".h5m";
+      rval = postProc.postProcMesh.write_file(sss.str().c_str(),"MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
     }
 
     PetscFunctionReturn(0);
@@ -412,10 +479,11 @@ int main(int argc, char *argv[]) {
   Mat Aij;
   ierr = m_field.MatCreateMPIAIJWithArrays("ELASTIC_MECHANICS",&Aij); CHKERRQ(ierr);
 
-  const double young_modulus = 1.;
-  const double poisson_ratio = 0.;
-  NL_ElasticFEMethod my_fe(m_field,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
-  MonitorObsoleteComplexForLazyPostProc post_proc_stresses_and_elastic_energy(m_field,my_fe);
+  //const double young_modulus = 1.;
+  //const double poisson_ratio = 0.;
+  //NL_ElasticFEMethod my_fe(m_field,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
+  //MonitorObsoleteComplexForLazyPostProc post_proc_stresses_and_elastic_energy(m_field,my_fe);
+  MonitorPostProc post_proc(m_field);
 
   //surface forces
   NeummanForcesSurfaceComplexForLazy neumann_forces(m_field,Aij,F);
@@ -480,8 +548,9 @@ int main(int argc, char *argv[]) {
 
   //monitor
   TsCtx::loops_to_do_type& loops_to_do_Monitor = ts_ctx.get_loops_to_do_Monitor();
-  loops_to_do_Monitor.push_back(TsCtx::loop_pair_type("ELASTIC",&post_proc_stresses_and_elastic_energy));
-  loops_to_do_Monitor.push_back(TsCtx::loop_pair_type("ELASTIC",&monitor_restart));
+  loops_to_do_Monitor.push_back(TsCtx::loop_pair_type("MASS_ELEMENT",&post_proc));
+  //loops_to_do_Monitor.push_back(TsCtx::loop_pair_type("ELASTIC",&post_proc_stresses_and_elastic_energy));
+  loops_to_do_Monitor.push_back(TsCtx::loop_pair_type("MASS_ELEMENT",&monitor_restart));
 
   ierr = TSSetIFunction(ts,F,f_TSSetIFunction,&ts_ctx); CHKERRQ(ierr);
   ierr = TSSetIJacobian(ts,Aij,Aij,f_TSSetIJacobian,&ts_ctx); CHKERRQ(ierr);

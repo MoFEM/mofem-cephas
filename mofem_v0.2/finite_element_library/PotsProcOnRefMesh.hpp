@@ -353,6 +353,10 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
       // no need for L2
       const void* tags_ptr[mapGaussPts.size()];
       int nb_gauss_pts = data.getN().size1();
+      if(mapGaussPts.size()!=(unsigned int)nb_gauss_pts) {
+	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+      }
+
       switch(space) {
 	case H1:
 	  if(type == MBVERTEX) {
@@ -360,12 +364,20 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
 	      rval = postProcMesh.tag_set_data(th,&mapGaussPts[gg],1,def_VAL); CHKERR_PETSC(rval);
 	    }
 	  }
+	  rval = postProcMesh.tag_get_by_ptr(th,&mapGaussPts[0],mapGaussPts.size(),tags_ptr); CHKERR_PETSC(rval);
+	  for(int gg = 0;gg<nb_gauss_pts;gg++) {
+	    for(int rr = 0;rr<rank;rr++) {
+	      ((double*)tags_ptr[gg])[rr] += cblas_ddot(
+		(data.getFieldData().size()/rank),&(data.getN(gg)[0]),1,&(data.getFieldData()[rr]),rank);
+	    }
+	  }
+	  break;  
 	case L2:
 	  rval = postProcMesh.tag_get_by_ptr(th,&mapGaussPts[0],mapGaussPts.size(),tags_ptr); CHKERR_PETSC(rval);
 	  for(int gg = 0;gg<nb_gauss_pts;gg++) {
 	    for(int rr = 0;rr<rank;rr++) {
 	      ((double*)tags_ptr[gg])[rr] += cblas_ddot(
-		data.getFieldData().size(),&(data.getN(gg)[0]),1,&(data.getFieldData()[rr]),rank);
+		(data.getFieldData().size()/rank),&(data.getN(gg)[0]),1,&(data.getFieldData()[rr]),rank);
 	    }
 	  }
 	  break;
@@ -380,7 +392,7 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
 	    for(int rr = 0;rr<rank;rr++) {
 	      for(int dd = 0;dd<3;dd++) {
 		((double*)tags_ptr[gg])[3*rr+dd] += cblas_ddot(
-		  data.getFieldData().size(),&(data.getHdivN(gg)(0,dd)),3,&(data.getFieldData()[rr]),rank);
+		  (data.getFieldData().size()/rank),&(data.getHdivN(gg)(0,dd)),3,&(data.getFieldData()[rr]),rank);
 		
 	      }
 	    }
