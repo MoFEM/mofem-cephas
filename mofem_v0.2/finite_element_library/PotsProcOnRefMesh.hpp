@@ -61,6 +61,12 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
   // Gauss pts set on refined mesh
   int getRule(int order) { return -1; };
 
+  struct CommonData {
+    map<string,vector<ublas::vector<double> > > fieldMap;
+    map<string,vector<ublas::matrix<double> > > gradMap;
+  };
+  CommonData commonData;
+
   PetscErrorCode generateRefereneElemenMesh() {
     PetscFunctionBegin;
 
@@ -305,13 +311,15 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
 
     Interface &postProcMesh;
     vector<EntityHandle> &mapGaussPts;
+    CommonData &commonData;
 
     OpGetFieldValues(
       Interface &post_proc_mesh,
       vector<EntityHandle> &map_gauss_pts,
-      const string field_name): 
+      const string field_name,CommonData &common_data): 
       TetElementForcesAndSourcesCore::UserDataOperator(field_name),
-      postProcMesh(post_proc_mesh),mapGaussPts(map_gauss_pts) {}
+      postProcMesh(post_proc_mesh),mapGaussPts(map_gauss_pts),
+      commonData(common_data) {}
 
     PetscErrorCode doWork(
       int side,
@@ -359,9 +367,12 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
 
       switch(space) {
 	case H1:
+	  commonData.fieldMap[row_field_name].resize(nb_gauss_pts);
 	  if(type == MBVERTEX) {
 	    for(int gg = 0;gg<nb_gauss_pts;gg++) {
 	      rval = postProcMesh.tag_set_data(th,&mapGaussPts[gg],1,def_VAL); CHKERR_PETSC(rval);
+	      (commonData.fieldMap[row_field_name])[gg].resize(rank);
+	      (commonData.fieldMap[row_field_name])[gg].clear();
 	    }
 	  }
 	  rval = postProcMesh.tag_get_by_ptr(th,&mapGaussPts[0],mapGaussPts.size(),tags_ptr); CHKERR_PETSC(rval);
@@ -369,6 +380,7 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
 	    for(int rr = 0;rr<rank;rr++) {
 	      ((double*)tags_ptr[gg])[rr] += cblas_ddot(
 		(data.getFieldData().size()/rank),&(data.getN(gg)[0]),1,&(data.getFieldData()[rr]),rank);
+	      (commonData.fieldMap[row_field_name])[gg][rr] += data.getFieldData()[rr];
 	    }
 	  }
 	  break;  
@@ -376,7 +388,7 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
 	  rval = postProcMesh.tag_get_by_ptr(th,&mapGaussPts[0],mapGaussPts.size(),tags_ptr); CHKERR_PETSC(rval);
 	  for(int gg = 0;gg<nb_gauss_pts;gg++) {
 	    for(int rr = 0;rr<rank;rr++) {
-	      ((double*)tags_ptr[gg])[rr] += cblas_ddot(
+	      ((double*)tags_ptr[gg])[rr] = cblas_ddot(
 		(data.getFieldData().size()/rank),&(data.getN(gg)[0]),1,&(data.getFieldData()[rr]),rank);
 	    }
 	  }
@@ -412,13 +424,15 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
 
     Interface &postProcMesh;
     vector<EntityHandle> &mapGaussPts;
+    CommonData &commonData;
 
     OpGetFieldGradientValues(
       Interface &post_proc_mesh,
       vector<EntityHandle> &map_gauss_pts,
-      const string field_name): 
+      const string field_name,CommonData &common_data): 
       TetElementForcesAndSourcesCore::UserDataOperator(field_name),
-      postProcMesh(post_proc_mesh),mapGaussPts(map_gauss_pts) {}
+      postProcMesh(post_proc_mesh),mapGaussPts(map_gauss_pts),
+      commonData(common_data) {}
 
     PetscErrorCode doWork(
       int side,
@@ -464,14 +478,16 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
 	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
       }
 
-
       try {
 
       switch(space) {
 	case H1:
+	  commonData.gradMap[row_field_name].resize(nb_gauss_pts);
 	  if(type == MBVERTEX) {
 	    for(int gg = 0;gg<nb_gauss_pts;gg++) {
 	      rval = postProcMesh.tag_set_data(th,&mapGaussPts[gg],1,def_VAL); CHKERR_PETSC(rval);
+	      (commonData.gradMap[row_field_name])[gg].resize(rank,3);
+	      (commonData.gradMap[row_field_name])[gg].clear();
 	    }
 	  }
 	  rval = postProcMesh.tag_get_by_ptr(th,&mapGaussPts[0],mapGaussPts.size(),tags_ptr); CHKERR_PETSC(rval);
@@ -480,6 +496,7 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
 	      for(int dd = 0;dd<3;dd++) {
 		for(unsigned int dof = 0;dof<(data.getFieldData().size()/rank);dof++) {
 		  ((double*)tags_ptr[gg])[3*rr+dd] += data.getDiffN(gg)(dof,dd)*data.getFieldData()[3*dof+rr];
+		  (commonData.gradMap[row_field_name])[gg](rr,dd) += data.getDiffN(gg)(dof,dd)*data.getFieldData()[3*dof+rr];
 		}
 	      }
 	    }
@@ -510,13 +527,13 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
 
   PetscErrorCode addFieldValuesPostProc(const string field_name) {
     PetscFunctionBegin;
-    get_op_to_do_Rhs().push_back(new OpGetFieldValues(postProcMesh,mapGaussPts,field_name));
+    get_op_to_do_Rhs().push_back(new OpGetFieldValues(postProcMesh,mapGaussPts,field_name,commonData));
     PetscFunctionReturn(0);
   }
 
   PetscErrorCode addFieldValuesGradientPostProc(const string field_name) {
     PetscFunctionBegin;
-    get_op_to_do_Rhs().push_back(new OpGetFieldGradientValues(postProcMesh,mapGaussPts,field_name));
+    get_op_to_do_Rhs().push_back(new OpGetFieldGradientValues(postProcMesh,mapGaussPts,field_name,commonData));
     PetscFunctionReturn(0);
   }
 
