@@ -41,23 +41,11 @@ using namespace MoFEM;
 #include <BodyForce.hpp>
 #include <ThermalStressElement.hpp>
 
-/*#include <FEMethod_LowLevelStudent.hpp>
-#include <FEMethod_UpLevelStudent.hpp>
-
-extern "C" {
-  #include <complex_for_lazy.h>
-}
-#include <FEMethod_ComplexForLazy.hpp>
-#include <FEMethod_DriverComplexForLazy.hpp>*/
-
 #include <SurfacePressureComplexForLazy.hpp>
 #include <adolc/adolc.h> 
 #include <ConvectiveMassElement.hpp>
 #include <NonLienarElasticElement.hpp>
 
-//#include <PostProcVertexMethod.hpp>
-//#include <PostProcDisplacementAndStrainOnRefindedMesh.hpp>
-//#include <PostProcNonLinearElasticityStresseOnRefindedMesh.hpp>
 #include <PotsProcOnRefMesh.hpp>
 
 using namespace ObosleteUsersModules;
@@ -66,106 +54,6 @@ ErrorCode rval;
 PetscErrorCode ierr;
 
 static char help[] = "...\n\n";
-
-/*struct NL_ElasticFEMethod: public NonLinearSpatialElasticFEMthod {
-
-  NL_ElasticFEMethod(FieldInterface& _mField,double _lambda,double _mu,int _verbose = 0): 
-      FEMethod_ComplexForLazy_Data(_mField,_verbose), 
-      NonLinearSpatialElasticFEMthod(_mField,_lambda,_mu,_verbose)  {
-    //set_PhysicalEquationNumber(neohookean);
-    //set_PhysicalEquationNumber(hooke);
-    set_PhysicalEquationNumber(stvenant_kirchhoff);
-
-  }
-
-  PetscErrorCode preProcess() {
-    PetscFunctionBegin;
-
-    switch (ts_ctx) {
-      case CTX_TSSETIFUNCTION: {
-	snes_ctx = CTX_SNESSETFUNCTION;
-	snes_f = ts_F;
-	break;
-      }
-      case CTX_TSSETIJACOBIAN: {
-	snes_ctx = CTX_SNESSETJACOBIAN;
-	snes_B = ts_B;
-	break;
-      }
-      default:
-      break;
-    }
-
-    ierr = NonLinearSpatialElasticFEMthod::preProcess(); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
-
-};*/
-
-/*struct MonitorObsoleteComplexForLazyPostProc: public FEMethod {
-
-  FieldInterface &mField;
-  FEMethod_ComplexForLazy &fE;
-  PostProcStressNonLinearElasticity fePostProcMethod;
-  int pRT;
-  int *step;
-
-  MonitorObsoleteComplexForLazyPostProc(FieldInterface &m_field,FEMethod_ComplexForLazy &fe): 
-    FEMethod(),mField(m_field),fE(fe),fePostProcMethod(m_field.get_moab(),fe) { 
-    
-    ErrorCode rval;
-    PetscErrorCode ierr;
-    double def_t_val = 0;
-    const EntityHandle root_meshset = mField.get_moab().get_root_set();
-
-    Tag th_step;
-    rval = m_field.get_moab().tag_get_handle("_TsStep_",1,MB_TYPE_DOUBLE,th_step,MB_TAG_CREAT|MB_TAG_EXCL|MB_TAG_MESH,&def_t_val); 
-    if(rval == MB_ALREADY_ALLOCATED) {
-      rval = m_field.get_moab().tag_get_by_ptr(th_step,&root_meshset,1,(const void**)&step); CHKERR(rval);
-    } else {
-      rval = m_field.get_moab().tag_set_data(th_step,&root_meshset,1,&def_t_val); CHKERR(rval);
-      rval = m_field.get_moab().tag_get_by_ptr(th_step,&root_meshset,1,(const void**)&step); CHKERR(rval);
-    }
-
-
-    PetscBool flg = PETSC_TRUE;
-    ierr = PetscOptionsGetInt(PETSC_NULL,"-my_output_prt",&pRT,&flg); CHKERRABORT(PETSC_COMM_WORLD,ierr);
-    if(flg!=PETSC_TRUE) {
-      pRT = 10;
-    }
-
-  }
-
-  PetscErrorCode preProcess() {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
-    ErrorCode rval;
-
-    if((*step)%pRT==0) {
-      rval = fePostProcMethod.moab_post_proc.delete_mesh(); CHKERR_PETSC(rval);
-      ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",fePostProcMethod);CHKERRQ(ierr);
-      ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
-      if(pcomm->rank()==0) {
-	ostringstream sss;
-	sss << "out_post_proc_" << (*step) << ".vtk";
-	rval = fePostProcMethod.moab_post_proc.write_file(sss.str().c_str(),"VTK",""); CHKERR_PETSC(rval);
-      }
-    }
-
-    PetscFunctionReturn(0);
-  }
-
-  PetscErrorCode operator()() {
-    PetscFunctionBegin;
-    PetscFunctionReturn(0);
-  }
-
-  PetscErrorCode postProcess() {
-    PetscFunctionBegin;
-    PetscFunctionReturn(0);
-  }
-
-};*/
 
 struct MonitorPostProc: public FEMethod {
 
@@ -449,15 +337,6 @@ int main(int argc, char *argv[]) {
   ierr = m_field.add_field("SPATIAL_POSITION",H1,3,MF_ZERO); CHKERRQ(ierr);
   //add entitities (by tets) to the field
   ierr = m_field.add_ents_to_field_by_TETs(0,"SPATIAL_POSITION"); CHKERRQ(ierr);
-
-  /*//FE
-  ierr = m_field.add_finite_element("ELASTIC",MF_ZERO); CHKERRQ(ierr);
-  //add finite elements entities
-  ierr = m_field.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"ELASTIC",MBTET); CHKERRQ(ierr);
-  //Define rows/cols and element data
-  ierr = m_field.modify_finite_element_add_field_row("ELASTIC","SPATIAL_POSITION"); CHKERRQ(ierr);
-  ierr = m_field.modify_finite_element_add_field_col("ELASTIC","SPATIAL_POSITION"); CHKERRQ(ierr);
-  ierr = m_field.modify_finite_element_add_field_data("ELASTIC","SPATIAL_POSITION"); CHKERRQ(ierr);*/
 
   NonlinearElasticElement elastic(m_field,2);
   ierr = elastic.setBlocks(); CHKERRQ(ierr);
