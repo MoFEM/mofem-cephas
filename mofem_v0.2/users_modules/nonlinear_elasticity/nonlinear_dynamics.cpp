@@ -171,13 +171,19 @@ struct MonitorPostProc: public FEMethod {
 
   FieldInterface &mField;
   PostPocOnRefinedMesh postProc;
+  map<int,NonlinearElasticElement::BlockData> &setOfBlocks; 
+  NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<double> &fUn;
+
   bool iNit;
 
   int pRT;
   int *step;
 
-  MonitorPostProc(FieldInterface &m_field): 
-    FEMethod(),mField(m_field),postProc(m_field),iNit(false) { 
+  MonitorPostProc(FieldInterface &m_field,
+    map<int,NonlinearElasticElement::BlockData> &set_of_blocks,
+    NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<double> &fun): 
+    FEMethod(),mField(m_field),postProc(m_field),setOfBlocks(set_of_blocks),
+    fUn(fun),iNit(false) { 
     
     ErrorCode rval;
     PetscErrorCode ierr;
@@ -202,6 +208,83 @@ struct MonitorPostProc: public FEMethod {
 
   }
 
+  struct PostPorcStress: public TetElementForcesAndSourcesCore::UserDataOperator {
+
+    Interface &postProcMesh;
+    vector<EntityHandle> &mapGaussPts;
+
+    NonlinearElasticElement::BlockData &dAta;
+    PostPocOnRefinedMesh::CommonData &commonData;
+    NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<double> &fUn;
+
+    PostPorcStress(
+      Interface &post_proc_mesh,
+      vector<EntityHandle> &map_gauss_pts,
+      const string field_name,
+      NonlinearElasticElement::BlockData &data,
+      PostPocOnRefinedMesh::CommonData &common_data,
+      NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<double> &fun):
+      TetElementForcesAndSourcesCore::UserDataOperator(field_name),
+      postProcMesh(post_proc_mesh),mapGaussPts(map_gauss_pts),
+      dAta(data),commonData(common_data),fUn(fun) {}
+
+
+    PetscErrorCode doWork(
+      int side,
+      EntityType type,
+      DataForcesAndSurcesCore::EntData &data) {
+      PetscFunctionBegin;
+
+      if(type != MBVERTEX) PetscFunctionReturn(0);
+      if(data.getIndices().size()==0) PetscFunctionReturn(0);
+      if(dAta.tEts.find(getMoFEMFEPtr()->get_ent()) == dAta.tEts.end()) {
+	PetscFunctionReturn(0);
+      }
+
+      ErrorCode rval;
+      PetscErrorCode ierr;
+       
+      const FENumeredDofMoFEMEntity *dof_ptr;
+      ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
+
+      string tag_name_piola1 = dof_ptr->get_name()+"_PIOLA1_STRESS";
+      //int rank = dof_ptr->get_max_rank();    
+
+      int tag_length = 9;
+      double def_VAL[tag_length];
+      bzero(def_VAL,tag_length*sizeof(double));
+      Tag th_piola1;
+      rval = postProcMesh.tag_get_handle(
+	tag_name_piola1.c_str(),tag_length,MB_TYPE_DOUBLE,th_piola1,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_PETSC(rval);
+
+      int nb_gauss_pts = data.getN().size1();
+      if(mapGaussPts.size()!=(unsigned int)nb_gauss_pts) {
+	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+      }
+      if(commonData.gradMap[row_field_name].size()!=(unsigned int)nb_gauss_pts) {
+	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+      }
+
+      for(int gg = 0;gg<nb_gauss_pts;gg++) {
+
+	//NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<double> fUn;
+	fUn.F.resize(3,3);
+	for(int dd1 = 0;dd1<3;dd1++) {
+	  for(int dd2 = 0;dd2<3;dd2++) {
+	    fUn.F(dd1,dd2) = (commonData.gradMap[row_field_name][gg])(dd1,dd2);
+	  }
+	}
+	ierr = fUn.CalualteP_PiolaKirchhoffI(dAta,getMoFEMFEPtr()); CHKERRQ(ierr);
+	rval = postProcMesh.tag_set_data(th_piola1,&mapGaussPts[gg],1,&fUn.P(0,0)); CHKERR_PETSC(rval);
+
+      }
+
+      PetscFunctionReturn(0);
+
+    }
+
+  };
+
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
     PetscErrorCode ierr;
@@ -212,6 +295,19 @@ struct MonitorPostProc: public FEMethod {
       ierr = postProc.addFieldValuesPostProc("SPATIAL_POSITION"); CHKERRQ(ierr);
       ierr = postProc.addFieldValuesPostProc("SPATIAL_VELOCITY"); CHKERRQ(ierr);
       ierr = postProc.addFieldValuesGradientPostProc("SPATIAL_POSITION"); CHKERRQ(ierr);
+
+      map<int,NonlinearElasticElement::BlockData>::iterator sit = setOfBlocks.begin();
+      for(;sit!=setOfBlocks.end();sit++) {
+	postProc.get_op_to_do_Rhs().push_back(
+	  new PostPorcStress(
+	    postProc.postProcMesh,
+	    postProc.mapGaussPts,
+	    "SPATIAL_POSITION",
+	    sit->second,
+	    postProc.commonData,
+	    fUn));
+      }
+
       iNit = true;
     }
 
@@ -366,8 +462,10 @@ int main(int argc, char *argv[]) {
   NonlinearElasticElement elastic(m_field,2);
   ierr = elastic.setBlocks(); CHKERRQ(ierr);
   ierr = elastic.addElement("ELASTIC","SPATIAL_POSITION"); CHKERRQ(ierr);
-  NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI st_venant_kirchhoff_material;
-  ierr = elastic.setOperators(st_venant_kirchhoff_material,"SPATIAL_POSITION"); CHKERRQ(ierr);
+  NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<adouble> st_venant_kirchhoff_material_adouble;
+  ierr = elastic.setOperators(st_venant_kirchhoff_material_adouble,"SPATIAL_POSITION"); CHKERRQ(ierr);
+  NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<double> st_venant_kirchhoff_material_double;
+  MonitorPostProc post_proc(m_field,elastic.setOfBlocks,st_venant_kirchhoff_material_double);
 
   //define problems
 
@@ -484,7 +582,6 @@ int main(int argc, char *argv[]) {
   //const double poisson_ratio = 0.;
   //NL_ElasticFEMethod my_fe(m_field,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
   //MonitorObsoleteComplexForLazyPostProc post_proc_stresses_and_elastic_energy(m_field,my_fe);
-  MonitorPostProc post_proc(m_field);
 
   //surface forces
   NeummanForcesSurfaceComplexForLazy neumann_forces(m_field,Aij,F);
