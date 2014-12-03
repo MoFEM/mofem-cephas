@@ -4,6 +4,8 @@ using namespace MoFEM;
 #include <ConvectiveMassElement.hpp>
 #include <TimeForceScale.hpp>
 
+#include <PotsProcOnRefMesh.hpp>
+
 #include <ConfigurationalFractureForDynamics.hpp>
 
 struct MonitorRestart: public FEMethod {
@@ -62,6 +64,78 @@ struct MonitorRestart: public FEMethod {
       }
     }
     (*step)++;
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode operator()() {
+    PetscFunctionBegin;
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode postProcess() {
+    PetscFunctionBegin;
+    PetscFunctionReturn(0);
+  }
+
+};
+
+struct MonitorPostProc: public FEMethod {
+
+  FieldInterface &mField;
+  PostPocOnRefinedMesh postProc;
+
+  bool iNit;
+
+  int pRT;
+  int *step;
+
+  MonitorPostProc(FieldInterface &m_field): 
+    FEMethod(),mField(m_field),postProc(m_field),iNit(false) { 
+    
+    ErrorCode rval;
+    PetscErrorCode ierr;
+    double def_t_val = 0;
+    const EntityHandle root_meshset = mField.get_moab().get_root_set();
+
+    Tag th_step;
+    rval = m_field.get_moab().tag_get_handle("_TsStep_",1,MB_TYPE_DOUBLE,th_step,MB_TAG_CREAT|MB_TAG_EXCL|MB_TAG_MESH,&def_t_val); 
+    if(rval == MB_ALREADY_ALLOCATED) {
+      rval = m_field.get_moab().tag_get_by_ptr(th_step,&root_meshset,1,(const void**)&step); CHKERR(rval);
+    } else {
+      rval = m_field.get_moab().tag_set_data(th_step,&root_meshset,1,&def_t_val); CHKERR(rval);
+      rval = m_field.get_moab().tag_get_by_ptr(th_step,&root_meshset,1,(const void**)&step); CHKERR(rval);
+    }
+
+
+    PetscBool flg = PETSC_TRUE;
+    ierr = PetscOptionsGetInt(PETSC_NULL,"-my_output_prt",&pRT,&flg); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+    if(flg!=PETSC_TRUE) {
+      pRT = 10;
+    }
+
+  }
+
+  PetscErrorCode preProcess() {
+    PetscFunctionBegin;
+    PetscErrorCode ierr;
+    ErrorCode rval;
+
+    if(!iNit) {
+      ierr = postProc.generateRefereneElemenMesh(); CHKERRQ(ierr);
+      ierr = postProc.addFieldValuesPostProc("SPATIAL_POSITION"); CHKERRQ(ierr);
+      ierr = postProc.addFieldValuesPostProc("SPATIAL_VELOCITY"); CHKERRQ(ierr);
+      ierr = postProc.addFieldValuesGradientPostProc("SPATIAL_POSITION"); CHKERRQ(ierr);
+
+      iNit = true;
+    }
+
+    if((*step)%pRT==0) {
+      ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","MASS_ELEMENT",postProc); CHKERRQ(ierr);
+      ostringstream sss;
+      sss << "out_values_" << (*step) << ".h5m";
+      rval = postProc.postProcMesh.write_file(sss.str().c_str(),"MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
+    }
+
     PetscFunctionReturn(0);
   }
 
@@ -661,10 +735,12 @@ PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterf
   //monitor
   MonitorRestart monitor_restart(m_field,*ts);
   MonitorUpdateFrezedNodes monitor_fix_matrial_nodes(m_field,*this,fix_material_pts,corners_nodes);
+  MonitorPostProc post_proc(m_field);
+
   TsCtx::loops_to_do_type& loops_to_do_Monitor = ts_ctx.get_loops_to_do_Monitor();
   loops_to_do_Monitor.push_back(TsCtx::loop_pair_type("MASS_ELEMENT",&monitor_restart));
   loops_to_do_Monitor.push_back(TsCtx::loop_pair_type("MASS_ELEMENT",&monitor_fix_matrial_nodes));
-
+  loops_to_do_Monitor.push_back(TsCtx::loop_pair_type("MASS_ELEMENT",&post_proc));
 
 
   ierr = MatDestroy(&K); CHKERRQ(ierr);
