@@ -2,6 +2,7 @@ using namespace MoFEM;
 
 #include <adolc/adolc.h> 
 #include <ConvectiveMassElement.hpp>
+#include <TimeForceScale.hpp>
 
 #include <ConfigurationalFractureForDynamics.hpp>
 
@@ -468,6 +469,7 @@ PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterf
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,SIDESET|PRESSURESET,it)) {
     ierr = fe_forces.addPreassure(it->get_msId()); CHKERRQ(ierr);
   }
+  fe_forces.methodsOp.push_back(new TimeForceScale());
   //portsproc
   MyPrePostProcessFEMethod pre_post_method(m_field);
 
@@ -501,6 +503,7 @@ PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterf
   nodal_forces.insert(fe_name_str,new NodalForce(m_field));
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET,it)) {
     ierr = nodal_forces.at(fe_name_str).addForce("SPATIAL_POSITION",F,it->get_msId());  CHKERRQ(ierr);
+    nodal_forces.at(fe_name_str).methodsOp.push_back(new TimeForceScale());
   }
   boost::ptr_map<string,NodalForce>::iterator fit = nodal_forces.begin();
   for(;fit!=nodal_forces.end();fit++) {
