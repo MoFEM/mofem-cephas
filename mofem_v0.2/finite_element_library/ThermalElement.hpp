@@ -691,13 +691,13 @@ struct ThermalElement {
         OpRadiationLhs(const string field_name,
                        RadiationData &data,CommonData &common_data,bool _ho_geometry = false):
             TriElementForcesAndSurcesCore::UserDataOperator(field_name),
-            commonData(common_data),dAta(data),ho_geometry(_ho_geometry),useTsB(true) {}
+            commonData(common_data),dAta(data),ho_geometry(_ho_geometry),useTsB(true) { symm = false; }
   
         Mat A;
         OpRadiationLhs(const string field_name,Mat _A,
                        RadiationData &data,CommonData &common_data,bool _ho_geometry = false):
             TriElementForcesAndSurcesCore::UserDataOperator(field_name),
-            commonData(common_data),dAta(data),ho_geometry(_ho_geometry),useTsB(false),A(_A) {}
+            commonData(common_data),dAta(data),ho_geometry(_ho_geometry),useTsB(false),A(_A) { symm = false; }
   
         ublas::matrix<double> M,transM;
         /** \brief calculate thermal radiation term in the lhs of equations(Tangent Matrix) for transient Thermal Problem
@@ -748,7 +748,8 @@ struct ThermalElement {
                   nb_row,&row_data.getIndices()[0],
                   nb_col,&col_data.getIndices()[0],
                            &M(0,0),ADD_VALUES); CHKERRQ(ierr);
-		  if(row_side != col_side || row_type != col_type) {
+		  //this matrix is not symmetric
+		  /*if(row_side != col_side || row_type != col_type) {
 		      transM.resize(nb_col,nb_row);
 		      noalias(transM) = trans(M);
 		      ierr = MatSetValues(
@@ -756,7 +757,7 @@ struct ThermalElement {
                                nb_col,&col_data.getIndices()[0],
                                nb_row,&row_data.getIndices()[0],
                                &transM(0,0),ADD_VALUES); CHKERRQ(ierr);
-		  }
+		  }*/
   
             } catch (const std::exception& ex) {
                 ostringstream ss;
@@ -819,7 +820,7 @@ struct ThermalElement {
   
               double T4_at_Gauss_pt = pow(commonData.temperatureAtGaussPts[gg],4.0);
 	      double ambientTemp = pow(dAta.aMbienttEmp,4.0);
-	      double tEmp;
+	      double tEmp = 0;
         
 	      if(ambientTemp > 0) {
 		tEmp = -ambientTemp + T4_at_Gauss_pt;
@@ -1078,7 +1079,7 @@ struct ThermalElement {
 
       BitRefLevel proble_bit_level = problemPtr->get_BitRefLevel();
 
-      SeriesRecorder *recorder_ptr;
+      SeriesRecorder *recorder_ptr = NULL;
       ierr = mField.query_interface(recorder_ptr); CHKERRQ(ierr);
       ierr = recorder_ptr->record_begin(seriesName); CHKERRQ(ierr);
       ierr = recorder_ptr->record_field(seriesName,tempName,proble_bit_level,mask); CHKERRQ(ierr);

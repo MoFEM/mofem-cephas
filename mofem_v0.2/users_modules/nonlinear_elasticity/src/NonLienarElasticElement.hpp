@@ -208,10 +208,10 @@ struct NonlinearElasticElement {
       common_data.dataAtGaussPts[field_name], 
       common_data.gradAtGaussPts[field_name]) {}
   };
-  
+ 
+  template<typename TYPE> 
   struct FunctionsToCalulatePiolaKirchhoffI {
 
-    template<typename TYPE> 
     PetscErrorCode dEterminatnt(ublas::matrix<TYPE> a,TYPE &det) {
       PetscFunctionBegin;
       //a11a22a33
@@ -231,7 +231,6 @@ struct NonlinearElasticElement {
       PetscFunctionReturn(0);
     }
   
-    template<typename TYPE> 
     PetscErrorCode iNvert(TYPE det,ublas::matrix<TYPE> a,ublas::matrix<TYPE> &inv_a) {
       PetscFunctionBegin;
       //PetscErrorCode ierr;
@@ -252,8 +251,8 @@ struct NonlinearElasticElement {
     }
 
     double lambda,mu;
-    ublas::matrix<adouble> F,C,E,S,invF,P;
-    adouble J;
+    ublas::matrix<TYPE> F,C,E,S,invF,P;
+    TYPE J;
 
     PetscErrorCode CalulateC_CauchyDefromationTensor() {
       PetscFunctionBegin;
@@ -276,7 +275,7 @@ struct NonlinearElasticElement {
     //St. Venant–Kirchhoff Material
     PetscErrorCode CalculateS_PiolaKirchhoffII() {
       PetscFunctionBegin;
-      adouble trE = 0;
+      TYPE trE = 0;
       for(int dd = 0;dd<3;dd++) {
 	trE += E(dd,dd);
       }
@@ -304,13 +303,14 @@ struct NonlinearElasticElement {
       //cerr << "P: " << P << endl;
       PetscFunctionReturn(0);
     }
+
   };
 
   struct OpJacobian: public TetElementForcesAndSourcesCore::UserDataOperator {
 
     BlockData &dAta;
     CommonData &commonData;
-    FunctionsToCalulatePiolaKirchhoffI &fUn;
+    FunctionsToCalulatePiolaKirchhoffI<adouble> &fUn;
     int tAg,lastId;
     bool jAcobian;
 
@@ -318,7 +318,7 @@ struct NonlinearElasticElement {
       const string field_name,
       BlockData &data,
       CommonData &common_data,
-      FunctionsToCalulatePiolaKirchhoffI &fun,
+      FunctionsToCalulatePiolaKirchhoffI<adouble> &fun,
       int tag,bool jacobian = true):
       TetElementForcesAndSourcesCore::UserDataOperator(field_name),
       dAta(data),commonData(common_data),fUn(fun),
@@ -647,7 +647,7 @@ struct NonlinearElasticElement {
   }
 
   PetscErrorCode setOperators(
-    FunctionsToCalulatePiolaKirchhoffI &fun,
+    FunctionsToCalulatePiolaKirchhoffI<adouble> &fun,
     string spatial_position_field_name,
     string material_position_field_name = "MESH_NODE_POSITIONS",
     bool ale = false) {

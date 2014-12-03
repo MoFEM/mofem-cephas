@@ -114,7 +114,7 @@ int main(int argc, char *argv[]) {
   };
   MyMat mymat(moab);
   ierr = elastic.setOperators(mymat,"SPATIAL_POSITION"); CHKERRQ(ierr);*/
-  NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI st_venant_kirchhoff_material;
+  NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<adouble> st_venant_kirchhoff_material;
   ierr = elastic.setOperators(st_venant_kirchhoff_material,"SPATIAL_POSITION"); CHKERRQ(ierr);
 
   //define problems
