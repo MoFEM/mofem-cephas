@@ -52,6 +52,9 @@ extern "C" {
 
 #include <FaceSplittingTool.hpp>
 #include <ConfigurationalFractureMechanics.hpp>
+
+#include <adolc/adolc.h> 
+#include <ConvectiveMassElement.hpp>
 #include <ConfigurationalFractureForDynamics.hpp>
 
 ErrorCode rval;
@@ -95,11 +98,58 @@ int main(int argc, char *argv[]) {
   FieldInterface& m_field = core;
 
   ConfigurationalFracturDynamics conf_prob(m_field);
-  ierr = conf_prob.set_material_fire_wall(m_field); CHKERRQ(ierr);
+  
+  { //definitions
+    ierr = conf_prob.set_material_fire_wall(m_field); CHKERRQ(ierr);
+    ierr = conf_prob.constrains_problem_definition(m_field); CHKERRQ(ierr);
+    ierr = conf_prob.coupled_dynamic_problem_definition(m_field); CHKERRQ(ierr);
+    ierr = conf_prob.constrains_crack_front_problem_definition(m_field,"COUPLED_DYNAMIC"); CHKERRQ(ierr);
+  }
+  
+  { //build
+  
+    //ref meshset ref level 0
+    Tag th_my_ref_level;
+    rval = m_field.get_moab().tag_get_handle("_MY_REFINMENT_LEVEL",th_my_ref_level); CHKERR_PETSC(rval);
+    const EntityHandle root_meshset = m_field.get_moab().get_root_set();
+    BitRefLevel *ptr_bit_level0;
+    rval = m_field.get_moab().tag_get_by_ptr(th_my_ref_level,&root_meshset,1,(const void**)&ptr_bit_level0); CHKERR_PETSC(rval);
+    BitRefLevel& bit_level0 = *ptr_bit_level0;
 
-  //ierr = main_arc_length_setup(m_field,conf_prob); CHKERRQ(ierr);
-  //ierr = main_arc_length_solve(m_field,conf_prob); CHKERRQ(ierr);
+    ierr = m_field.modify_problem_ref_level_set_bit("C_ALL_MATRIX",bit_level0); CHKERRQ(ierr);
+    ierr = m_field.modify_problem_ref_level_set_bit("CCT_ALL_MATRIX",bit_level0); CHKERRQ(ierr);
+    ierr = m_field.modify_problem_ref_level_set_bit("C_CRACKFRONT_MATRIX",bit_level0); CHKERRQ(ierr);
+    ierr = m_field.modify_problem_ref_level_set_bit("CTC_CRACKFRONT_MATRIX",bit_level0); CHKERRQ(ierr);
+    ierr = m_field.modify_problem_ref_level_set_bit("COUPLED_DYNAMIC",bit_level0); CHKERRQ(ierr);
 
+    //add finite elements entities
+    ierr = m_field.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"ELASTIC_COUPLED",MBTET); CHKERRQ(ierr);
+    ierr = m_field.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"MATERIAL_COUPLED",MBTET); CHKERRQ(ierr);
+    ierr = m_field.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"MESH_SMOOTHER",MBTET); CHKERRQ(ierr);
+
+    //build field
+    ierr = m_field.build_fields(); CHKERRQ(ierr);
+    //build finite elemnts
+    ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
+    //build adjacencies
+    ierr = m_field.build_adjacencies(bit_level0); CHKERRQ(ierr);
+    //build problem
+    ierr = m_field.build_problems(); CHKERRQ(ierr);
+
+  }
+
+  { //partition
+    ierr = conf_prob.coupled_dynamic_partition_problems(m_field); CHKERRQ(ierr);
+    ierr = conf_prob.constrains_partition_problems(m_field,"COUPLED_DYNAMIC"); CHKERRQ(ierr);
+    ierr = conf_prob.crackfront_partition_problems(m_field,"COUPLED_DYNAMIC"); CHKERRQ(ierr);
+  }
+
+  //create tS
+  TS ts;
+  ierr = TSCreate(PETSC_COMM_WORLD,&ts); CHKERRQ(ierr);
+  ierr = TSSetType(ts,TSBEULER); CHKERRQ(ierr);
+  ierr = conf_prob.solve_dynmaic_problem(m_field,&ts); CHKERRQ(ierr);
+  ierr = TSDestroy(&ts);CHKERRQ(ierr);
 
   ierr = PetscTime(&v2);CHKERRQ(ierr);
   ierr = PetscGetCPUTime(&t2);CHKERRQ(ierr);

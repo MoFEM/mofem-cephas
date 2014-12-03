@@ -1,8 +1,49 @@
+using namespace MoFEM;
+
+#include <adolc/adolc.h> 
+#include <ConvectiveMassElement.hpp>
+
 #include <ConfigurationalFractureForDynamics.hpp>
 
 PetscErrorCode ConfigurationalFracturDynamics::coupled_dynamic_problem_definition(FieldInterface& m_field) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
+  ErrorCode rval;
+
+  //Fields
+  ierr = m_field.add_field("SPATIAL_POSITION",H1,3,MF_ZERO); CHKERRQ(ierr);
+  ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,3,MF_ZERO); CHKERRQ(ierr);
+  ierr = m_field.add_field("MATERIAL_FORCE",H1,3,MF_ZERO); CHKERRQ(ierr);
+  //FE
+  ierr = m_field.add_finite_element("ELASTIC_COUPLED",MF_ZERO); CHKERRQ(ierr);
+  ierr = m_field.add_finite_element("MATERIAL_COUPLED",MF_ZERO); CHKERRQ(ierr);
+  ierr = m_field.add_finite_element("MESH_SMOOTHER",MF_ZERO); CHKERRQ(ierr);
+
+  //fes definitions
+  ierr = m_field.modify_finite_element_add_field_row("ELASTIC_COUPLED","SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_col("ELASTIC_COUPLED","SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_row("ELASTIC_COUPLED","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_data("ELASTIC_COUPLED","SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_data("ELASTIC_COUPLED","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+  if(m_field.check_field("TEMPERATURE")) {
+    ierr = m_field.modify_finite_element_add_field_data("ELASTIC_COUPLED","TEMPERATURE"); CHKERRQ(ierr);
+  }
+
+  //
+  ierr = m_field.modify_finite_element_add_field_row("MATERIAL_COUPLED","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_col("MATERIAL_COUPLED","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_row("MATERIAL_COUPLED","SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_data("MATERIAL_COUPLED","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_data("MATERIAL_COUPLED","SPATIAL_POSITION"); CHKERRQ(ierr);
+  if(m_field.check_field("TEMPERATURE")) {
+    ierr = m_field.modify_finite_element_add_field_data("MATERIAL_COUPLED","TEMPERATURE"); CHKERRQ(ierr);
+  }
+
+  //
+  ierr = m_field.modify_finite_element_add_field_row("MESH_SMOOTHER","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_col("MESH_SMOOTHER","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_data("MESH_SMOOTHER","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+
   //define problems
   ierr = m_field.add_problem("COUPLED_DYNAMIC",MF_ZERO); CHKERRQ(ierr);
   //set finite elements for problems
@@ -24,6 +65,46 @@ PetscErrorCode ConfigurationalFracturDynamics::coupled_dynamic_problem_definitio
     ss2 << "CandCT_SURFACE_ELEM_msId_" << msId;
     ierr = m_field.modify_problem_add_finite_element("COUPLED_DYNAMIC",ss2.str()); CHKERRQ(ierr);
   }
+
+  ierr = m_field.add_field("SPATIAL_VELOCITY",H1,3,MF_ZERO); CHKERRQ(ierr);
+
+
+  PetscInt order;
+  PetscBool flg = PETSC_TRUE;
+  ierr = PetscOptionsGetInt(PETSC_NULL,"-my_order",&order,&flg); CHKERRQ(ierr);
+  if(flg != PETSC_TRUE) {
+    Tag th_set_order;
+    rval = m_field.get_moab().tag_get_handle("_SET_ORDER",th_set_order); CHKERR_PETSC(rval);
+    const EntityHandle root_meshset = m_field.get_moab().get_root_set();
+    rval = m_field.get_moab().tag_get_data(th_set_order,&root_meshset,1,&order); CHKERR_PETSC(rval);
+  }
+
+  Range level_tets;
+  ierr = m_field.get_entities_by_type_and_ref_level(*ptr_bit_level0,BitRefLevel().set(),MBTET,level_tets); CHKERRQ(ierr);
+
+  ierr = m_field.add_ents_to_field_by_TETs(level_tets,"SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_TETs(level_tets,"SPATIAL_VELOCITY"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_TETs(level_tets,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+
+  ierr = m_field.add_field("DOT_SPATIAL_POSITION",H1,3,MF_ZERO); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_TETs(level_tets,"DOT_SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBTET,"DOT_SPATIAL_POSITION",order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBTRI,"DOT_SPATIAL_POSITION",order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBEDGE,"DOT_SPATIAL_POSITION",order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBVERTEX,"DOT_SPATIAL_POSITION",1); CHKERRQ(ierr);
+  ierr = m_field.add_field("DOT_SPATIAL_VELOCITY",H1,3,MF_ZERO); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_TETs(level_tets,"DOT_SPATIAL_VELOCITY"); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBTET,"DOT_SPATIAL_VELOCITY",order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBTRI,"DOT_SPATIAL_VELOCITY",order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBEDGE,"DOT_SPATIAL_VELOCITY",order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBVERTEX,"DOT_SPATIAL_VELOCITY",1); CHKERRQ(ierr);
+
+  ierr = iNertia.setBlocks(); CHKERRQ(ierr);
+  ierr = iNertia.addConvectiveMassElement("MASS_ELEMENT","SPATIAL_VELOCITY","SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = iNertia.addVelocityElement("VELOCITY_ELEMENT","SPATIAL_VELOCITY","SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = m_field.modify_problem_add_finite_element("COUPLED_DYNAMIC","MASS_ELEMENT"); CHKERRQ(ierr);
+  ierr = m_field.modify_problem_add_finite_element("COUPLED_DYNAMIC","VELOCITY_ELEMENT"); CHKERRQ(ierr);
+
   PetscFunctionReturn(0);
 }
 
@@ -56,11 +137,6 @@ PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterf
   ierr = m_field.VecCreateGhost("COUPLED_DYNAMIC",ROW,&F); CHKERRQ(ierr);
   Vec D;
   ierr = m_field.VecCreateGhost("COUPLED_DYNAMIC",COL,&D); CHKERRQ(ierr);
-
-  if(material_FirelWall->operator[](FW_arc_lenhghat_definition)) {
-  } else {
-    SETERRQ(PETSC_COMM_SELF,1,"arc length not initialised)");
-  }
 
   Range corners_edges,corners_nodes;
   ierr = m_field.get_Cubit_msId_entities_by_dimension(100,SIDESET,1,corners_edges,true); CHKERRQ(ierr);
@@ -368,6 +444,16 @@ PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterf
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("NEUAMNN_FE",&fe_forces));
   ts_ctx.get_preProcess_to_do_IJacobian().push_back(&fix_material_pts);
   ts_ctx.get_preProcess_to_do_IJacobian().push_back(&my_dirichlet_bc);
+
+
+
+
+  ierr = delete_surface_projection_data(m_field); CHKERRQ(ierr);
+
+  ierr = MatDestroy(&K); CHKERRQ(ierr);
+  ierr = VecDestroy(&D); CHKERRQ(ierr);
+  ierr = VecDestroy(&F); CHKERRQ(ierr);
+
 
 
   PetscFunctionReturn(0);

@@ -3835,6 +3835,9 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
   PetscFunctionReturn(0);
 }
 
+#ifdef WITH_ADOL_C
+
 #include <ConfigurationalFractureForDynamics.cpp>
 
+#endif //WITH_ADOL_C
 

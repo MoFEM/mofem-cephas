@@ -18,6 +18,7 @@
  
 
 include_directories(${UM_SOURCE_DIR}/fracture_mechanics)
+include_directories(${UM_SOURCE_DIR}/convective_mass_element/src)
 
 add_library(fracture_mechanics
   ${UM_SOURCE_DIR}/fracture_mechanics/FaceSplittingTool.cpp 
@@ -108,3 +109,24 @@ add_test(ArcLength_sh ${CMAKE_CURRENT_BINARY_DIR}/arc_length.sh
   -f TEST_SIF/out_spatial_2_1.h5m -a 2e-3 -n 1 -g 1e-6 -d TEST_ARC 
   --snes_linesearch_type=basic --my_nb_sub_steps=1)
 
+
+if(ADOL-C_LIBRARY)
+
+  add_executable(dynamic_material_coupled 
+    ${UM_SOURCE_DIR}/fracture_mechanics/dynamic_material_coupled.cpp
+  )
+  target_link_libraries(dynamic_material_coupled
+    fracture_mechanics
+    mofem_finite_element_library
+    mofem_finite_elements
+    mofem_interfaces
+    mofem_multi_indices
+    mofem_petsc
+    users_modules_obsolete
+    complex_for_lazy_obsolete
+    mofem_approx
+    mofem_third_party
+    mofem_cblas
+    ${MoFEM_PROJECT_LIBS})
+
+endif(ADOL-C_LIBRARY)

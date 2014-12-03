@@ -24,8 +24,10 @@ using namespace ObosleteUsersModules;
 
 struct ConfigurationalFracturDynamics: public ConfigurationalFractureMechanics {
 
+  ConvectiveMassElement iNertia;
+
   ConfigurationalFracturDynamics(FieldInterface& m_field):
-    ConfigurationalFractureMechanics(m_field) {}
+    ConfigurationalFractureMechanics(m_field),iNertia(m_field,1) {}
 
   PetscErrorCode coupled_dynamic_problem_definition(FieldInterface& m_field);
   PetscErrorCode coupled_dynamic_partition_problems(FieldInterface& m_field);
