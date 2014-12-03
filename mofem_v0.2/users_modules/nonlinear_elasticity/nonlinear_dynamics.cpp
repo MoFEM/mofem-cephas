@@ -526,7 +526,6 @@ int main(int argc, char *argv[]) {
   //monitor
   TsCtx::loops_to_do_type& loops_to_do_Monitor = ts_ctx.get_loops_to_do_Monitor();
   loops_to_do_Monitor.push_back(TsCtx::loop_pair_type("MASS_ELEMENT",&post_proc));
-  //loops_to_do_Monitor.push_back(TsCtx::loop_pair_type("ELASTIC",&post_proc_stresses_and_elastic_energy));
   loops_to_do_Monitor.push_back(TsCtx::loop_pair_type("MASS_ELEMENT",&monitor_restart));
 
   ierr = TSSetIFunction(ts,F,f_TSSetIFunction,&ts_ctx); CHKERRQ(ierr);

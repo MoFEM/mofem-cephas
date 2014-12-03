@@ -6,6 +6,128 @@ using namespace MoFEM;
 
 #include <ConfigurationalFractureForDynamics.hpp>
 
+struct MonitorRestart: public FEMethod {
+
+  double *time;
+  int *step;
+  FieldInterface &mField;
+  int pRT;
+
+  MonitorRestart(FieldInterface &m_field,TS ts): mField(m_field) {
+
+    PetscErrorCode ierr;
+    ErrorCode rval;
+    double def_t_val = 0;
+
+    const EntityHandle root_meshset = mField.get_moab().get_root_set();
+
+    Tag th_time;
+    rval = m_field.get_moab().tag_get_handle("_TsTime_",1,MB_TYPE_DOUBLE,th_time,MB_TAG_CREAT|MB_TAG_EXCL|MB_TAG_MESH,&def_t_val); 
+    if(rval == MB_ALREADY_ALLOCATED) {
+      rval = m_field.get_moab().tag_get_by_ptr(th_time,&root_meshset,1,(const void**)&time); CHKERR(rval);
+      ierr = TSSetTime(ts,*time); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+    } else {
+      rval = m_field.get_moab().tag_set_data(th_time,&root_meshset,1,&def_t_val); CHKERR(rval);
+      rval = m_field.get_moab().tag_get_by_ptr(th_time,&root_meshset,1,(const void**)&time); CHKERR(rval);
+    }
+    Tag th_step;
+    rval = m_field.get_moab().tag_get_handle("_TsStep_",1,MB_TYPE_DOUBLE,th_step,MB_TAG_CREAT|MB_TAG_EXCL|MB_TAG_MESH,&def_t_val); 
+    if(rval == MB_ALREADY_ALLOCATED) {
+      rval = m_field.get_moab().tag_get_by_ptr(th_step,&root_meshset,1,(const void**)&step); CHKERR(rval);
+    } else {
+      rval = m_field.get_moab().tag_set_data(th_step,&root_meshset,1,&def_t_val); CHKERR(rval);
+      rval = m_field.get_moab().tag_get_by_ptr(th_step,&root_meshset,1,(const void**)&step); CHKERR(rval);
+    }
+
+    PetscBool flg = PETSC_TRUE;
+    ierr = PetscOptionsGetInt(PETSC_NULL,"-my_output_prt",&pRT,&flg); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+    if(flg!=PETSC_TRUE) {
+      pRT = 10;
+    }
+
+
+  }
+
+  PetscErrorCode preProcess() {
+    PetscFunctionBegin;
+
+    //PetscErrorCode ierr;
+    ErrorCode rval;
+    (*time) = ts_t;
+    if(pRT>0) {
+      if((*step)%pRT==0) {
+	ostringstream ss;
+	ss << "restart_" << (*step) << ".h5m";
+	rval = mField.get_moab().write_file(ss.str().c_str()); CHKERR_PETSC(rval);
+      }
+    }
+    (*step)++;
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode operator()() {
+    PetscFunctionBegin;
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode postProcess() {
+    PetscFunctionBegin;
+    PetscFunctionReturn(0);
+  }
+
+};
+
+struct MonitorUpdateFrezedNodes: public FEMethod {
+
+  FieldInterface &mField;
+  ConfigurationalFracturDynamics &confProb;
+  FixBcAtEntities &bC;
+  Range &cornersNodes;
+
+  MonitorUpdateFrezedNodes(FieldInterface &m_field,
+    ConfigurationalFracturDynamics &conf_prob,
+    FixBcAtEntities &bc,Range &corners_nodes): 
+    mField(m_field),confProb(conf_prob),
+    bC(bc),cornersNodes(corners_nodes) {}
+
+  PetscErrorCode preProcess() {
+    PetscFunctionBegin;
+    PetscErrorCode ierr;
+
+    ierr = confProb.front_projection_data(mField,"COUPLED_DYNAMIC"); CHKERRQ(ierr);
+    ierr = confProb.surface_projection_data(mField,"COUPLED_DYNAMIC"); CHKERRQ(ierr);
+
+    ierr = confProb.project_force_vector(mField,"COUPLED_DYNAMIC"); CHKERRQ(ierr);
+    ierr = confProb.griffith_g(mField,"COUPLED_DYNAMIC"); CHKERRQ(ierr);
+    Range fix_nodes;
+    ierr = confProb.fix_front_nodes(mField,fix_nodes); CHKERRQ(ierr);
+
+    bC.map_zero_rows.clear();
+    bC.dofsIndices.clear();
+    bC.dofsValues.clear();
+    bC.eNts = cornersNodes;
+    bC.eNts.merge(fix_nodes);
+
+    ierr = confProb.delete_surface_projection_data(mField); CHKERRQ(ierr);
+    ierr = confProb.delete_surface_projection_data(mField); CHKERRQ(ierr);
+
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode operator()() {
+    PetscFunctionBegin;
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode postProcess() {
+    PetscFunctionBegin;
+    PetscFunctionReturn(0);
+  }
+
+};
+
+
+
 PetscErrorCode ConfigurationalFracturDynamics::coupled_dynamic_problem_definition(FieldInterface& m_field) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
@@ -245,7 +367,6 @@ PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterf
   ierr = griffith_g(m_field,"COUPLED_DYNAMIC"); CHKERRQ(ierr);
   Range fix_nodes;
   ierr = fix_front_nodes(m_field,fix_nodes); CHKERRQ(ierr);
-  corners_nodes.merge(fix_nodes);
 
   ierr = delete_surface_projection_data(m_field); CHKERRQ(ierr);
   ierr = delete_surface_projection_data(m_field); CHKERRQ(ierr);
@@ -436,7 +557,8 @@ PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterf
   //bothsieds constrains
   BothSurfaceConstrains  both_sides_constrains(m_field);
   //dirichlet constrains
-  FixBcAtEntities fix_material_pts(m_field,"MESH_NODE_POSITIONS",corners_nodes);
+  FixBcAtEntities fix_material_pts(m_field,"MESH_NODE_POSITIONS",fix_nodes);
+  fix_material_pts.eNts.merge(fix_nodes);
   fix_material_pts.fieldNames.push_back("LAMBDA_SURFACE");
   fix_material_pts.fieldNames.push_back("LAMBDA_CRACK_SURFACE");
   fix_material_pts.fieldNames.push_back("LAMBDA_CRACK_SURFACE_WITH_CRACK_FRONT");
@@ -536,7 +658,12 @@ PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterf
   ts_ctx.get_preProcess_to_do_IJacobian().push_back(&fix_material_pts);
   ts_ctx.get_preProcess_to_do_IJacobian().push_back(&my_dirichlet_bc);
 
-
+  //monitor
+  MonitorRestart monitor_restart(m_field,*ts);
+  MonitorUpdateFrezedNodes monitor_fix_matrial_nodes(m_field,*this,fix_material_pts,corners_nodes);
+  TsCtx::loops_to_do_type& loops_to_do_Monitor = ts_ctx.get_loops_to_do_Monitor();
+  loops_to_do_Monitor.push_back(TsCtx::loop_pair_type("MASS_ELEMENT",&monitor_restart));
+  loops_to_do_Monitor.push_back(TsCtx::loop_pair_type("MASS_ELEMENT",&monitor_fix_matrial_nodes));
 
 
 
