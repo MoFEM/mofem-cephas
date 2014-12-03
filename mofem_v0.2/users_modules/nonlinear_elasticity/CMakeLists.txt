@@ -46,10 +46,24 @@ file(COPY
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
 
 configure_file(
-  "${CMAKE_CURRENT_SOURCE_DIR}/arc_length_nonlinear_elasticity.sh.in"
-  "${CMAKE_CURRENT_BINARY_DIR}/arc_length_nonlinear_elasticity.sh"
+  "${UM_SOURCE_DIR}/nonlinear_elasticity/arc_length_nonlinear_elasticity.sh.in"
+  "${CMAKE_CURRENT_SOURCE_DIR}/arc_length_nonlinear_elasticity.sh"
   @ONLY
   )
+
+configure_file(
+  "${UM_SOURCE_DIR}/nonlinear_elasticity/do_vtk.sh.in"
+  "${CMAKE_CURRENT_SOURCE_DIR}/do_vtk.sh"
+  @ONLY
+  )
+
+file(COPY arc_length_nonlinear_elasticity.sh
+  DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
+  FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE)
+
+file(COPY do_vtk.sh
+  DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
+  FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE)
 
 #testing
 add_test(ArcLengthNonLinearElasticityTest 
