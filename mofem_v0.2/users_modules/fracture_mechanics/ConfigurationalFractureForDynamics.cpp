@@ -14,6 +14,9 @@ PetscErrorCode ConfigurationalFracturDynamics::coupled_dynamic_problem_definitio
   ierr = m_field.add_field("SPATIAL_POSITION",H1,3,MF_ZERO); CHKERRQ(ierr);
   ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,3,MF_ZERO); CHKERRQ(ierr);
   ierr = m_field.add_field("MATERIAL_FORCE",H1,3,MF_ZERO); CHKERRQ(ierr);
+  ierr = m_field.add_field("GRIFFITH_FORCE",H1,3,MF_ZERO); CHKERRQ(ierr);
+  ierr = m_field.add_field("GRIFFITH_FORCE_TANGENT",H1,3,MF_ZERO); CHKERRQ(ierr);
+
   //FE
   ierr = m_field.add_finite_element("ELASTIC_COUPLED",MF_ZERO); CHKERRQ(ierr);
   ierr = m_field.add_finite_element("MATERIAL_COUPLED",MF_ZERO); CHKERRQ(ierr);
@@ -85,6 +88,45 @@ PetscErrorCode ConfigurationalFracturDynamics::coupled_dynamic_problem_definitio
   ierr = m_field.add_ents_to_field_by_TETs(level_tets,"SPATIAL_POSITION"); CHKERRQ(ierr);
   ierr = m_field.add_ents_to_field_by_TETs(level_tets,"SPATIAL_VELOCITY"); CHKERRQ(ierr);
   ierr = m_field.add_ents_to_field_by_TETs(level_tets,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_TETs(level_tets,"MATERIAL_FORCE"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_TETs(level_tets,"GRIFFITH_FORCE"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_TETs(level_tets,"GRIFFITH_FORCE_TANGENT"); CHKERRQ(ierr);
+
+  ierr = m_field.add_field("SPATIAL_POSITION",H1,3,MF_ZERO); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBTET,"SPATIAL_POSITION",order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBTRI,"SPATIAL_POSITION",order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBEDGE,"SPATIAL_POSITION",order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBVERTEX,"SPATIAL_POSITION",1); CHKERRQ(ierr);
+
+  ierr = m_field.add_field("SPATIAL_VELOCITY",H1,3,MF_ZERO); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBTET,"SPATIAL_VELOCITY",order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBTRI,"SPATIAL_VELOCITY",order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBEDGE,"SPATIAL_VELOCITY",order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBVERTEX,"SPATIAL_VELOCITY",1); CHKERRQ(ierr);
+
+  ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,3,MF_ZERO); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBTET,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBTRI,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBEDGE,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
+
+  ierr = m_field.add_field("MATERIAL_FORCE",H1,3,MF_ZERO); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBTET,"MATERIAL_FORCE",1); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBTRI,"MATERIAL_FORCE",1); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBEDGE,"MATERIAL_FORCE",1); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBVERTEX,"MATERIAL_FORCE",1); CHKERRQ(ierr);
+
+  ierr = m_field.add_field("GRIFFITH_FORCE",H1,3,MF_ZERO); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBTET,"GRIFFITH_FORCE",1); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBTRI,"GRIFFITH_FORCE",1); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBEDGE,"GRIFFITH_FORCE",1); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBVERTEX,"GRIFFITH_FORCE",1); CHKERRQ(ierr);
+
+  ierr = m_field.add_field("GRIFFITH_FORCE_TANGENT",H1,3,MF_ZERO); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBTET,"GRIFFITH_FORCE_TANGENT",1); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBTRI,"GRIFFITH_FORCE_TANGENT",1); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBEDGE,"GRIFFITH_FORCE_TANGENT",1); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBVERTEX,"GRIFFITH_FORCE_TANGENT",1); CHKERRQ(ierr);
 
   ierr = m_field.add_field("DOT_SPATIAL_POSITION",H1,3,MF_ZERO); CHKERRQ(ierr);
   ierr = m_field.add_ents_to_field_by_TETs(level_tets,"DOT_SPATIAL_POSITION"); CHKERRQ(ierr);
@@ -92,6 +134,7 @@ PetscErrorCode ConfigurationalFracturDynamics::coupled_dynamic_problem_definitio
   ierr = m_field.set_field_order(0,MBTRI,"DOT_SPATIAL_POSITION",order); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0,MBEDGE,"DOT_SPATIAL_POSITION",order); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0,MBVERTEX,"DOT_SPATIAL_POSITION",1); CHKERRQ(ierr);
+
   ierr = m_field.add_field("DOT_SPATIAL_VELOCITY",H1,3,MF_ZERO); CHKERRQ(ierr);
   ierr = m_field.add_ents_to_field_by_TETs(level_tets,"DOT_SPATIAL_VELOCITY"); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0,MBTET,"DOT_SPATIAL_VELOCITY",order); CHKERRQ(ierr);
@@ -118,6 +161,44 @@ PetscErrorCode ConfigurationalFracturDynamics::coupled_dynamic_partition_problem
   PetscFunctionReturn(0);
 }
 
+PetscErrorCode ConfigurationalFracturDynamics::fix_front_nodes(FieldInterface& m_field,Range &fix_nodes) {
+  PetscFunctionBegin;
+
+  PetscErrorCode ierr;
+  double gc;
+  PetscBool flg;
+  ierr = PetscOptionsGetReal(PETSC_NULL,"-my_gc",&gc,&flg); CHKERRQ(ierr);
+  if(flg != PETSC_TRUE) {
+      SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_gc (what is the fracture energy ?)");
+  }
+
+  ErrorCode rval;
+  Tag th_freez;
+  const int def_order = 0;
+  rval = m_field.get_moab().tag_get_handle("FROZEN_NODE",1,MB_TYPE_INTEGER,th_freez,MB_TAG_CREAT|MB_TAG_SPARSE,&def_order); CHKERR_PETSC(rval);
+
+  ierr = PetscPrintf(PETSC_COMM_WORLD,"freeze front nodes:\n");
+  int nb_fix_nodes = 0;
+  for(
+    map<EntityHandle,double>::iterator mit = map_ent_g.begin();
+    mit!=map_ent_g.end();mit++) {
+    double g = mit->second;
+    ierr = PetscPrintf(PETSC_COMM_WORLD,
+      "front node = %ld g/g_c = %4.3f\n",
+      mit->first,mit->second/gc); CHKERRQ(ierr);
+    if(g/gc < 1 || (g != g)) {
+      fix_nodes.insert(mit->first);
+      nb_fix_nodes++;
+    }
+  }
+
+  ierr = PetscPrintf(PETSC_COMM_WORLD,
+    "nb. of fixed nodes %d\n\n",nb_fix_nodes); CHKERRQ(ierr);
+
+  PetscFunctionReturn(0);
+}
+
+
 PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterface& m_field,TS *ts,double fraction_treshold) {
   PetscFunctionBegin;
 
@@ -127,7 +208,6 @@ PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterf
 
   set_PhysicalEquationNumber(hooke);
 
-  ierr = front_projection_data(m_field,"COUPLED_DYNAMIC"); CHKERRQ(ierr);
 
   //create matrices
   Mat K;
@@ -157,9 +237,17 @@ PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterf
   crack_front_nodes = intersect(crack_front_nodes,level_nodes);
   //corners_nodes.merge(subtract(level_nodes,crack_front_nodes));
 
+  ierr = front_projection_data(m_field,"COUPLED_DYNAMIC"); CHKERRQ(ierr);
+  ierr = surface_projection_data(m_field,"COUPLED_DYNAMIC"); CHKERRQ(ierr);
+
+  ierr = project_force_vector(m_field,"COUPLED_DYNAMIC"); CHKERRQ(ierr);
+  ierr = griffith_g(m_field,"COUPLED_DYNAMIC"); CHKERRQ(ierr);
   Range fix_nodes;
-  ierr = fix_all_but_one(m_field,fix_nodes,fraction_treshold); CHKERRQ(ierr);
+  ierr = fix_front_nodes(m_field,fix_nodes); CHKERRQ(ierr);
   corners_nodes.merge(fix_nodes);
+
+  ierr = delete_surface_projection_data(m_field); CHKERRQ(ierr);
+  ierr = delete_surface_projection_data(m_field); CHKERRQ(ierr);
 
   struct MyPrePostProcessFEMethod: public FEMethod {
     
@@ -448,7 +536,6 @@ PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterf
 
 
 
-  ierr = delete_surface_projection_data(m_field); CHKERRQ(ierr);
 
   ierr = MatDestroy(&K); CHKERRQ(ierr);
   ierr = VecDestroy(&D); CHKERRQ(ierr);
