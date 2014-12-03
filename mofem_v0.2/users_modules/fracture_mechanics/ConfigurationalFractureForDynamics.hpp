@@ -27,7 +27,9 @@ struct ConfigurationalFracturDynamics: public ConfigurationalFractureMechanics {
   ConfigurationalFracturDynamics(FieldInterface& m_field):
     ConfigurationalFractureMechanics(m_field) {}
 
-  PetscErrroCode solve_dynmaic_problem(FieldInterface& m_field,TS *ts);
+  PetscErrorCode coupled_dynamic_problem_definition(FieldInterface& m_field);
+  PetscErrorCode coupled_dynamic_partition_problems(FieldInterface& m_field);
+  PetscErrorCode solve_dynmaic_problem(FieldInterface& m_field,TS *ts,double fraction_treshold = 1e-1);
 
 }; 
 

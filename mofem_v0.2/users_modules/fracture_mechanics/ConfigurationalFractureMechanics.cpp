@@ -118,10 +118,6 @@ struct MyNonLinearSpatialElasticFEMthod: public NonLinearSpatialElasticFEMthod,C
     FEMethod_ComplexForLazy_Data(_m_field,_verbose),
     NonLinearSpatialElasticFEMthod(_m_field,_lambda,_mu,0,_verbose) {}
 
-  MyNonLinearSpatialElasticFEMthod(FieldInterface& _m_field,double _lambda,double _mu,ArcLengthCtx* arc_ptr,int _verbose = 0): 
-    FEMethod_ComplexForLazy_Data(_m_field,_verbose),
-    NonLinearSpatialElasticFEMthod(_m_field,_lambda,_mu,arc_ptr,_verbose = 0) {}
-
   PetscErrorCode AssembleSpatialCoupledTangent(Mat B) {
     PetscFunctionBegin;
     vector<DofIdx> frontRowGlobMaterial = RowGlobMaterial[0];
@@ -193,12 +189,6 @@ struct MyEshelbyFEMethod: public EshelbyFEMethod,CrackFrontData {
     EshelbyFEMethod(_m_field,_lambda,_mu,_verbose) {
     type_of_analysis = material_analysis;
   }
-
-  MyEshelbyFEMethod(FieldInterface& _m_field,double _lambda,double _mu,ArcLengthCtx* _arc_ptr,int _verbose = 0):
-    FEMethod_ComplexForLazy_Data(_m_field,_verbose), 
-    EshelbyFEMethod(_m_field,_lambda,_mu,_arc_ptr,_verbose) {
-    type_of_analysis = material_analysis;
-  } 
 
   PetscErrorCode AssembleMaterialTangent(Mat B) {
     PetscFunctionBegin;
@@ -2367,11 +2357,9 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
     FieldInterface& m_field;
     ArcLengthCtx *arc_ptr;
 
-    SpatialPositionsBCFEMethodPreAndPostProc *bC;
-
     MyPrePostProcessFEMethod(FieldInterface& _m_field,
-      ArcLengthCtx *_arc_ptr,SpatialPositionsBCFEMethodPreAndPostProc *bc): 
-      m_field(_m_field),arc_ptr(_arc_ptr),bC(bc) {}
+      ArcLengthCtx *_arc_ptr): 
+      m_field(_m_field),arc_ptr(_arc_ptr) {}
   
     PetscErrorCode ierr;
       
@@ -2577,10 +2565,10 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   //spatial and material forces
   const double young_modulus = 1;
   const double poisson_ratio = 0.;
-  MyNonLinearSpatialElasticFEMthod fe_spatial(m_field,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio),&arc_ctx);
+  MyNonLinearSpatialElasticFEMthod fe_spatial(m_field,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
   ierr = fe_spatial.initCrackFrontData(m_field); CHKERRQ(ierr);
   fe_spatial.isCoupledProblem = true;
-  MyEshelbyFEMethod fe_material(m_field,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio),&arc_ctx);
+  MyEshelbyFEMethod fe_material(m_field,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
   ierr = fe_material.initCrackFrontData(m_field); CHKERRQ(ierr);
   fe_material.isCoupledProblem = true;
   //meshs moothing
@@ -2646,7 +2634,7 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
     ierr = fe_forces.addPreassure(it->get_msId()); CHKERRQ(ierr);
   }
   //portsproc
-  MyPrePostProcessFEMethod pre_post_method(m_field,&arc_ctx,&my_dirichlet_bc);
+  MyPrePostProcessFEMethod pre_post_method(m_field,&arc_ctx);
   AssembleLambdaFEMethod assemble_F_lambda(m_field,&arc_ctx,&my_dirichlet_bc);
 
   //rhs
@@ -3846,4 +3834,7 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
 
   PetscFunctionReturn(0);
 }
+
+#include <ConfigurationalFractureForDynamics.cpp>
+
 
