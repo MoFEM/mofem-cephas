@@ -79,7 +79,7 @@ struct MonitorPostProc: public FEMethod {
     const EntityHandle root_meshset = mField.get_moab().get_root_set();
 
     Tag th_step;
-    rval = m_field.get_moab().tag_get_handle("_TsStep_",1,MB_TYPE_DOUBLE,th_step,MB_TAG_CREAT|MB_TAG_EXCL|MB_TAG_MESH,&def_t_val); 
+    rval = m_field.get_moab().tag_get_handle("_TsStep_",1,MB_TYPE_INTEGER,th_step,MB_TAG_CREAT|MB_TAG_EXCL|MB_TAG_MESH,&def_t_val); 
     if(rval == MB_ALREADY_ALLOCATED) {
       rval = m_field.get_moab().tag_get_by_ptr(th_step,&root_meshset,1,(const void**)&step); CHKERR(rval);
     } else {
@@ -246,7 +246,7 @@ struct MonitorRestart: public FEMethod {
       rval = m_field.get_moab().tag_get_by_ptr(th_time,&root_meshset,1,(const void**)&time); CHKERR(rval);
     }
     Tag th_step;
-    rval = m_field.get_moab().tag_get_handle("_TsStep_",1,MB_TYPE_DOUBLE,th_step,MB_TAG_CREAT|MB_TAG_EXCL|MB_TAG_MESH,&def_t_val); 
+    rval = m_field.get_moab().tag_get_handle("_TsStep_",1,MB_TYPE_INTEGER,th_step,MB_TAG_CREAT|MB_TAG_EXCL|MB_TAG_MESH,&def_t_val); 
     if(rval == MB_ALREADY_ALLOCATED) {
       rval = m_field.get_moab().tag_get_by_ptr(th_step,&root_meshset,1,(const void**)&step); CHKERR(rval);
     } else {

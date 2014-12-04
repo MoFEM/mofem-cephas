@@ -190,6 +190,27 @@ struct MyEshelbyFEMethod: public EshelbyFEMethod,CrackFrontData {
     type_of_analysis = material_analysis;
   }
 
+  PetscErrorCode preProcess() {
+    PetscFunctionBegin;
+    PetscErrorCode ierr;
+    switch (ts_ctx) {
+      case CTX_TSSETIFUNCTION: {
+	snes_ctx = CTX_SNESSETFUNCTION;
+	snes_f = ts_F;
+	break;
+      }
+      case CTX_TSSETIJACOBIAN: {
+	snes_ctx = CTX_SNESSETJACOBIAN;
+	snes_B = ts_B;
+	break;
+      }
+      default:
+      break;
+    }
+    ierr = EshelbyFEMethod::preProcess(); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
   PetscErrorCode AssembleMaterialTangent(Mat B) {
     PetscFunctionBegin;
 
@@ -262,6 +283,22 @@ struct MyMeshSmoothingFEMethod: public MeshSmoothingFEMethod,CrackFrontData {
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
     PetscErrorCode ierr;
+
+    switch (ts_ctx) {
+      case CTX_TSSETIFUNCTION: {
+	snes_ctx = CTX_SNESSETFUNCTION;
+	snes_f = ts_F;
+	break;
+      }
+      case CTX_TSSETIJACOBIAN: {
+	snes_ctx = CTX_SNESSETJACOBIAN;
+	snes_B = ts_B;
+	break;
+      }
+      default:
+      break;
+    }
+
     if(crackFrontEdgeNodes.size()>0) {
       if(frontF == PETSC_NULL) {
 	ierr = VecDuplicate(snes_f,&frontF); CHKERRQ(ierr);
@@ -393,6 +430,22 @@ struct TangentWithMeshSmoothingFrontConstrain_FEMethod: public C_CONSTANT_AREA_F
   Tag thFrontTangent;
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
+
+    switch (ts_ctx) {
+      case CTX_TSSETIFUNCTION: {
+	snes_ctx = CTX_SNESSETFUNCTION;
+	snes_f = ts_F;
+	break;
+      }
+      case CTX_TSSETIJACOBIAN: {
+	snes_ctx = CTX_SNESSETJACOBIAN;
+	snes_B = ts_B;
+	break;
+      }
+      default:
+      break;
+    }
+
     ierr = C_CONSTANT_AREA_FEMethod::preProcess(); CHKERRQ(ierr);
     /*//TAG  - only for one proc analysis
     double def[] = {0,0,0};
@@ -2363,26 +2416,41 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   
     PetscErrorCode ierr;
       
-      PetscErrorCode preProcess() {
-        PetscFunctionBegin;
-        
-	//PetscAttachDebugger();
-        switch(snes_ctx) {
-          case CTX_SNESSETFUNCTION: {
-            ierr = VecZeroEntries(snes_f); CHKERRQ(ierr);
-            ierr = VecGhostUpdateBegin(snes_f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-            ierr = VecGhostUpdateEnd(snes_f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-            ierr = VecZeroEntries(arc_ptr->F_lambda); CHKERRQ(ierr);
-            ierr = VecGhostUpdateBegin(arc_ptr->F_lambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-            ierr = VecGhostUpdateEnd(arc_ptr->F_lambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-          }
-          break;
-          default:
-            SETERRQ(PETSC_COMM_SELF,1,"not implemented");
-        }
-        
-        PetscFunctionReturn(0);
+    PetscErrorCode preProcess() {
+      PetscFunctionBegin;
+
+      switch (ts_ctx) {
+	case CTX_TSSETIFUNCTION: {
+	  snes_ctx = CTX_SNESSETFUNCTION;
+	  snes_f = ts_F;
+	  break;
+	}
+	case CTX_TSSETIJACOBIAN: {
+	  snes_ctx = CTX_SNESSETJACOBIAN;
+	  snes_B = ts_B;
+	  break;
+	}
+	default:
+	break;
       }
+        
+      //PetscAttachDebugger();
+      switch(snes_ctx) {
+        case CTX_SNESSETFUNCTION: {
+          ierr = VecZeroEntries(snes_f); CHKERRQ(ierr);
+          ierr = VecGhostUpdateBegin(snes_f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+          ierr = VecGhostUpdateEnd(snes_f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+          ierr = VecZeroEntries(arc_ptr->F_lambda); CHKERRQ(ierr);
+          ierr = VecGhostUpdateBegin(arc_ptr->F_lambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+          ierr = VecGhostUpdateEnd(arc_ptr->F_lambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+        }
+        break;
+        default:
+          SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+      }
+        
+      PetscFunctionReturn(0);
+    }
       
     PetscErrorCode postProcess() {
       PetscFunctionBegin;
@@ -2418,6 +2486,20 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
       
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
+      switch (ts_ctx) {
+	case CTX_TSSETIFUNCTION: {
+	  snes_ctx = CTX_SNESSETFUNCTION;
+	  snes_f = ts_F;
+	  break;
+	}
+	case CTX_TSSETIJACOBIAN: {
+	  snes_ctx = CTX_SNESSETJACOBIAN;
+	  snes_B = ts_B;
+	  break;
+	}
+	default:
+	break;
+      }
       PetscFunctionReturn(0);
     }
     PetscErrorCode operator()() {
@@ -2464,6 +2546,20 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
       PetscErrorCode ierr;
+      switch (ts_ctx) {
+	case CTX_TSSETIFUNCTION: {
+	  snes_ctx = CTX_SNESSETFUNCTION;
+	  snes_f = ts_F;
+	  break;
+	}
+	case CTX_TSSETIJACOBIAN: {
+	  snes_ctx = CTX_SNESSETJACOBIAN;
+	  snes_B = ts_B;
+	  break;
+	}
+	default:
+	break;
+      }
       switch(snes_ctx) {
 	case CTX_SNESSETFUNCTION: { 
 	  ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
@@ -2580,7 +2676,7 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   constrain_body_surface.nonlinear = true;
   SnesConstrainSurfacGeometry constrain_crack_surface(m_field,"LAMBDA_CRACK_SURFACE");
   constrain_crack_surface.nonlinear = true;
-  Snes_CTgc_CONSTANT_AREA_FEMethod ct_gc(m_field,*projFrontCtx,"COUPLED_PROBLEM","LAMBDA_CRACKFRONT_AREA");
+  Snes_CTgc_CONSTANT_AREA_FEMethod ct_gc(m_field,projFrontCtx,"COUPLED_PROBLEM","LAMBDA_CRACKFRONT_AREA");
   Snes_dCTgc_CONSTANT_AREA_FEMethod dct_gc(m_field,K,"LAMBDA_CRACKFRONT_AREA");
   TangentWithMeshSmoothingFrontConstrain_FEMethod tangent_constrain(m_field,&smoother,"LAMBDA_CRACK_TANGENT_CONSTRAIN");
   map<int,SnesConstrainSurfacGeometry*> other_body_surface_constrains;
@@ -3131,6 +3227,20 @@ PetscErrorCode ConfigurationalFractureMechanics::ArcLengthElemFEMethod::get_dlam
 PetscErrorCode ConfigurationalFractureMechanics::ArcLengthElemFEMethod::preProcess() {
   PetscFunctionBegin;
   PetscErrorCode ierr;
+  switch (ts_ctx) {
+    case CTX_TSSETIFUNCTION: {
+      snes_ctx = CTX_SNESSETFUNCTION;
+      snes_f = ts_F;
+      break;
+    }
+    case CTX_TSSETIJACOBIAN: {
+      snes_ctx = CTX_SNESSETJACOBIAN;
+      snes_B = ts_B;
+      break;
+    }
+    default:
+    break;
+  }
   switch(snes_ctx) {
     case CTX_SNESSETFUNCTION: { 
 	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);

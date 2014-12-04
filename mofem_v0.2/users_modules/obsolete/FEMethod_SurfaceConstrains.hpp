@@ -104,6 +104,20 @@ struct SnesConstrainSurfacGeometryTools: public FEMethod {
 
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
+    switch (ts_ctx) {
+      case CTX_TSSETIFUNCTION: {
+	snes_ctx = CTX_SNESSETFUNCTION;
+	snes_f = ts_F;
+	break;
+      }
+      case CTX_TSSETIJACOBIAN: {
+	snes_ctx = CTX_SNESSETJACOBIAN;
+	snes_B = ts_B;
+	break;
+      }
+      default:
+      break;
+    }
     PetscErrorCode ierr;
     switch(snes_ctx) {
       case CTX_SNESSETFUNCTION: { 

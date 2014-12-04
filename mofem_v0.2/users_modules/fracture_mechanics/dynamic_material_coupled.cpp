@@ -144,6 +144,17 @@ int main(int argc, char *argv[]) {
     ierr = conf_prob.crackfront_partition_problems(m_field,"COUPLED_DYNAMIC"); CHKERRQ(ierr);
   }
 
+  { 
+    int zero = 0;
+    Tag th_step;
+    rval = m_field.get_moab().tag_get_handle("_TsStep_",1,MB_TYPE_INTEGER,th_step,MB_TAG_CREAT|MB_TAG_EXCL|MB_TAG_MESH,&zero); 
+    if(rval == MB_ALREADY_ALLOCATED) {
+      //init data
+      ierr = conf_prob.set_spatial_positions(m_field); CHKERRQ(ierr);
+      ierr = conf_prob.set_material_positions(m_field);  CHKERRQ(ierr);
+    }
+  }
+
   //create tS
   TS ts;
   ierr = TSCreate(PETSC_COMM_WORLD,&ts); CHKERRQ(ierr);
