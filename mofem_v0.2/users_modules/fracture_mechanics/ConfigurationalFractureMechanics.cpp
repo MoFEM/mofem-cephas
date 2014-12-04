@@ -631,6 +631,120 @@ struct TangentWithMeshSmoothingFrontConstrain_FEMethod: public C_CONSTANT_AREA_F
   }
   
 };
+
+struct BothSurfaceConstrains: public FEMethod {
+
+  FieldInterface& mField;
+  BothSurfaceConstrains(FieldInterface& m_field): mField(m_field) {} 
+
+  PetscErrorCode preProcess() {
+    PetscFunctionBegin;
+    PetscErrorCode ierr;
+    switch (ts_ctx) {
+	case CTX_TSSETIFUNCTION: {
+	  snes_ctx = CTX_SNESSETFUNCTION;
+	  snes_f = ts_F;
+	  break;
+	}
+	case CTX_TSSETIJACOBIAN: {
+	  snes_ctx = CTX_SNESSETJACOBIAN;
+	  snes_B = ts_B;
+	  break;
+	}
+	default:
+	break;
+    }
+    switch(snes_ctx) {
+	case CTX_SNESSETFUNCTION: { 
+	  ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
+	  ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+	}
+	break;
+	case CTX_SNESSETJACOBIAN: 
+	  ierr = MatAssemblyBegin(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	  ierr = MatAssemblyEnd(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	break;
+	default:
+	break;
+    }
+    PetscFunctionReturn(0);
+  }
+  PetscErrorCode operator()() {
+    PetscFunctionBegin;
+    //cerr << "AAAAAAAA\n";
+    PetscErrorCode ierr;
+    vector<int> lambda_dofs(9,-1);
+    vector<double> lambda_vals(9,0);
+    for(_IT_GET_FEROW_BY_TYPE_DOFS_FOR_LOOP_(this,"LAMBDA_BOTH_SIDES",MBVERTEX,it)) {
+	lambda_dofs[3*it->side_number_ptr->side_number+it->get_EntDofIdx()] = it->get_petsc_gloabl_dof_idx();
+	lambda_vals[3*it->side_number_ptr->side_number+it->get_EntDofIdx()] = it->get_FieldData();
+	//cerr << "l " 
+	  //<< 3*it->side_number_ptr->side_number+it->get_EntDofIdx() << " " 
+	  //<< lambda_dofs[3*it->side_number_ptr->side_number+it->get_EntDofIdx()] << " " 
+	  //<< lambda_vals[3*it->side_number_ptr->side_number+it->get_EntDofIdx()] 
+	  //<< endl;
+    }
+    vector<int> positions_dofs(18,-1);
+    vector<double> positions_vals(18,0);
+    for(_IT_GET_FEROW_BY_TYPE_DOFS_FOR_LOOP_(this,"MESH_NODE_POSITIONS",MBVERTEX,it)) {
+	int dd = 3*it->side_number_ptr->side_number+it->get_EntDofIdx();
+	if(lambda_dofs[dd>8 ? dd -9 : dd] == -1) continue;
+	positions_dofs[dd] = it->get_petsc_gloabl_dof_idx();
+	positions_vals[dd] = it->get_FieldData();
+	//cerr << "p " << dd << " " << positions_dofs[dd] << " " << positions_vals[dd] << endl;
+    }
+    //cerr << endl;
+    const double alpha = 0;
+    const double betha = 1e2;
+    switch(snes_ctx) {
+	case CTX_SNESSETFUNCTION:  
+	  for(int ii = 0;ii<9;ii++) {
+	    if(lambda_dofs[ii] == -1) continue;
+	    double val1 = betha*(positions_vals[0+ii] - positions_vals[9+ii]) + alpha*lambda_vals[ii];
+	    ierr = VecSetValue(snes_f,lambda_dofs[ii],val1,INSERT_VALUES); CHKERRQ(ierr);
+	    double val2 = betha*lambda_vals[ii];
+	    ierr = VecSetValue(snes_f,positions_dofs[0+ii],+val2,INSERT_VALUES); CHKERRQ(ierr);
+	    ierr = VecSetValue(snes_f,positions_dofs[9+ii],-val2,INSERT_VALUES); CHKERRQ(ierr);
+	  }
+	break;
+	case CTX_SNESSETJACOBIAN: 
+	  for(int ii = 0;ii<9;ii++) {
+	    if(lambda_dofs[ii] == -1) continue;
+	    ierr = MatSetValue(snes_B,lambda_dofs[ii],positions_dofs[0+ii],+1*betha,INSERT_VALUES); CHKERRQ(ierr);
+	    ierr = MatSetValue(snes_B,lambda_dofs[ii],positions_dofs[9+ii],-1*betha,INSERT_VALUES); CHKERRQ(ierr);
+	    ierr = MatSetValue(snes_B,positions_dofs[0+ii],lambda_dofs[ii],+1*betha,INSERT_VALUES); CHKERRQ(ierr);
+	    ierr = MatSetValue(snes_B,positions_dofs[9+ii],lambda_dofs[ii],-1*betha,INSERT_VALUES); CHKERRQ(ierr);
+	    ierr = MatSetValue(snes_B,lambda_dofs[ii],lambda_dofs[ii],alpha,INSERT_VALUES); CHKERRQ(ierr);
+
+	  }
+	break;
+	default:
+	break;
+    }
+
+    PetscFunctionReturn(0);
+  }
+  PetscErrorCode postProcess() {
+    PetscFunctionBegin;
+    PetscErrorCode ierr;
+    switch(snes_ctx) {
+	case CTX_SNESSETFUNCTION: { 
+	  ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
+	  ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+	}
+	break;
+	case CTX_SNESSETJACOBIAN: 
+	  ierr = MatAssemblyBegin(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	  ierr = MatAssemblyEnd(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+	break;
+	default:
+	break;
+    }
+    PetscFunctionReturn(0);
+  }
+
+};
+
  
 PetscErrorCode ConfigurationalFractureMechanics::set_material_fire_wall(FieldInterface& m_field) {
   PetscFunctionBegin;
@@ -2535,120 +2649,6 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
       }  
       PetscFunctionReturn(0);
     }
-
-  };
-
-  struct BothSurfaceConstrains: public FEMethod {
-
-    FieldInterface& mField;
-    BothSurfaceConstrains(FieldInterface& m_field): mField(m_field) {} 
-
-    PetscErrorCode preProcess() {
-      PetscFunctionBegin;
-      PetscErrorCode ierr;
-      switch (ts_ctx) {
-	case CTX_TSSETIFUNCTION: {
-	  snes_ctx = CTX_SNESSETFUNCTION;
-	  snes_f = ts_F;
-	  break;
-	}
-	case CTX_TSSETIJACOBIAN: {
-	  snes_ctx = CTX_SNESSETJACOBIAN;
-	  snes_B = ts_B;
-	  break;
-	}
-	default:
-	break;
-      }
-      switch(snes_ctx) {
-	case CTX_SNESSETFUNCTION: { 
-	  ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
-	  ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
-	}
-	break;
-	case CTX_SNESSETJACOBIAN: 
-	  ierr = MatAssemblyBegin(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-	  ierr = MatAssemblyEnd(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-	break;
-	default:
-	break;
-      }
-      PetscFunctionReturn(0);
-    }
-    PetscErrorCode operator()() {
-      PetscFunctionBegin;
-      //cerr << "AAAAAAAA\n";
-      PetscErrorCode ierr;
-      vector<int> lambda_dofs(9,-1);
-      vector<double> lambda_vals(9,0);
-      for(_IT_GET_FEROW_BY_TYPE_DOFS_FOR_LOOP_(this,"LAMBDA_BOTH_SIDES",MBVERTEX,it)) {
-	lambda_dofs[3*it->side_number_ptr->side_number+it->get_EntDofIdx()] = it->get_petsc_gloabl_dof_idx();
-	lambda_vals[3*it->side_number_ptr->side_number+it->get_EntDofIdx()] = it->get_FieldData();
-	//cerr << "l " 
-	  //<< 3*it->side_number_ptr->side_number+it->get_EntDofIdx() << " " 
-	  //<< lambda_dofs[3*it->side_number_ptr->side_number+it->get_EntDofIdx()] << " " 
-	  //<< lambda_vals[3*it->side_number_ptr->side_number+it->get_EntDofIdx()] 
-	  //<< endl;
-      }
-      vector<int> positions_dofs(18,-1);
-      vector<double> positions_vals(18,0);
-      for(_IT_GET_FEROW_BY_TYPE_DOFS_FOR_LOOP_(this,"MESH_NODE_POSITIONS",MBVERTEX,it)) {
-	int dd = 3*it->side_number_ptr->side_number+it->get_EntDofIdx();
-	if(lambda_dofs[dd>8 ? dd -9 : dd] == -1) continue;
-	positions_dofs[dd] = it->get_petsc_gloabl_dof_idx();
-	positions_vals[dd] = it->get_FieldData();
-	//cerr << "p " << dd << " " << positions_dofs[dd] << " " << positions_vals[dd] << endl;
-      }
-      //cerr << endl;
-      const double alpha = 0;
-      const double betha = 1e2;
-      switch(snes_ctx) {
-	case CTX_SNESSETFUNCTION:  
-	  for(int ii = 0;ii<9;ii++) {
-	    if(lambda_dofs[ii] == -1) continue;
-	    double val1 = betha*(positions_vals[0+ii] - positions_vals[9+ii]) + alpha*lambda_vals[ii];
-	    ierr = VecSetValue(snes_f,lambda_dofs[ii],val1,INSERT_VALUES); CHKERRQ(ierr);
-	    double val2 = betha*lambda_vals[ii];
-	    ierr = VecSetValue(snes_f,positions_dofs[0+ii],+val2,INSERT_VALUES); CHKERRQ(ierr);
-	    ierr = VecSetValue(snes_f,positions_dofs[9+ii],-val2,INSERT_VALUES); CHKERRQ(ierr);
-	  }
-	break;
-	case CTX_SNESSETJACOBIAN: 
-	  for(int ii = 0;ii<9;ii++) {
-	    if(lambda_dofs[ii] == -1) continue;
-	    ierr = MatSetValue(snes_B,lambda_dofs[ii],positions_dofs[0+ii],+1*betha,INSERT_VALUES); CHKERRQ(ierr);
-	    ierr = MatSetValue(snes_B,lambda_dofs[ii],positions_dofs[9+ii],-1*betha,INSERT_VALUES); CHKERRQ(ierr);
-	    ierr = MatSetValue(snes_B,positions_dofs[0+ii],lambda_dofs[ii],+1*betha,INSERT_VALUES); CHKERRQ(ierr);
-	    ierr = MatSetValue(snes_B,positions_dofs[9+ii],lambda_dofs[ii],-1*betha,INSERT_VALUES); CHKERRQ(ierr);
-	    ierr = MatSetValue(snes_B,lambda_dofs[ii],lambda_dofs[ii],alpha,INSERT_VALUES); CHKERRQ(ierr);
-
-	  }
-	break;
-	default:
-	break;
-      }
-
-      PetscFunctionReturn(0);
-    }
-    PetscErrorCode postProcess() {
-      PetscFunctionBegin;
-      PetscErrorCode ierr;
-      switch(snes_ctx) {
-	case CTX_SNESSETFUNCTION: { 
-	  ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
-	  ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
-	}
-	break;
-	case CTX_SNESSETJACOBIAN: 
-	  ierr = MatAssemblyBegin(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-	  ierr = MatAssemblyEnd(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-	break;
-	default:
-	break;
-      }
-      PetscFunctionReturn(0);
-    }
-
 
   };
 

@@ -276,9 +276,6 @@ PetscErrorCode ConfigurationalFracturDynamics::coupled_dynamic_problem_definitio
   ierr = m_field.modify_finite_element_add_field_row("ELASTIC_COUPLED","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
   ierr = m_field.modify_finite_element_add_field_data("ELASTIC_COUPLED","SPATIAL_POSITION"); CHKERRQ(ierr);
   ierr = m_field.modify_finite_element_add_field_data("ELASTIC_COUPLED","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
-  if(m_field.check_field("TEMPERATURE")) {
-    ierr = m_field.modify_finite_element_add_field_data("ELASTIC_COUPLED","TEMPERATURE"); CHKERRQ(ierr);
-  }
 
   //
   ierr = m_field.modify_finite_element_add_field_row("MATERIAL_COUPLED","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
@@ -286,9 +283,6 @@ PetscErrorCode ConfigurationalFracturDynamics::coupled_dynamic_problem_definitio
   ierr = m_field.modify_finite_element_add_field_row("MATERIAL_COUPLED","SPATIAL_POSITION"); CHKERRQ(ierr);
   ierr = m_field.modify_finite_element_add_field_data("MATERIAL_COUPLED","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
   ierr = m_field.modify_finite_element_add_field_data("MATERIAL_COUPLED","SPATIAL_POSITION"); CHKERRQ(ierr);
-  if(m_field.check_field("TEMPERATURE")) {
-    ierr = m_field.modify_finite_element_add_field_data("MATERIAL_COUPLED","TEMPERATURE"); CHKERRQ(ierr);
-  }
 
   //
   ierr = m_field.modify_finite_element_add_field_row("MESH_SMOOTHER","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
@@ -538,104 +532,6 @@ PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterf
 
   };
 
-  struct BothSurfaceConstrains: public FEMethod {
-
-    FieldInterface& mField;
-    BothSurfaceConstrains(FieldInterface& m_field): mField(m_field) {} 
-
-    PetscErrorCode preProcess() {
-      PetscFunctionBegin;
-      PetscErrorCode ierr;
-      switch(snes_ctx) {
-	case CTX_SNESSETFUNCTION: { 
-	  ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
-	  ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
-	}
-	break;
-	case CTX_SNESSETJACOBIAN: 
-	  ierr = MatAssemblyBegin(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-	  ierr = MatAssemblyEnd(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-	break;
-	default:
-	break;
-      }
-      PetscFunctionReturn(0);
-    }
-    PetscErrorCode operator()() {
-      PetscFunctionBegin;
-      //cerr << "AAAAAAAA\n";
-      PetscErrorCode ierr;
-      vector<int> lambda_dofs(9,-1);
-      vector<double> lambda_vals(9,0);
-      for(_IT_GET_FEROW_BY_TYPE_DOFS_FOR_LOOP_(this,"LAMBDA_BOTH_SIDES",MBVERTEX,it)) {
-	lambda_dofs[3*it->side_number_ptr->side_number+it->get_EntDofIdx()] = it->get_petsc_gloabl_dof_idx();
-	lambda_vals[3*it->side_number_ptr->side_number+it->get_EntDofIdx()] = it->get_FieldData();
-	//cerr << "l " 
-	  //<< 3*it->side_number_ptr->side_number+it->get_EntDofIdx() << " " 
-	  //<< lambda_dofs[3*it->side_number_ptr->side_number+it->get_EntDofIdx()] << " " 
-	  //<< lambda_vals[3*it->side_number_ptr->side_number+it->get_EntDofIdx()] 
-	  //<< endl;
-      }
-      vector<int> positions_dofs(18,-1);
-      vector<double> positions_vals(18,0);
-      for(_IT_GET_FEROW_BY_TYPE_DOFS_FOR_LOOP_(this,"MESH_NODE_POSITIONS",MBVERTEX,it)) {
-	int dd = 3*it->side_number_ptr->side_number+it->get_EntDofIdx();
-	if(lambda_dofs[dd>8 ? dd -9 : dd] == -1) continue;
-	positions_dofs[dd] = it->get_petsc_gloabl_dof_idx();
-	positions_vals[dd] = it->get_FieldData();
-	//cerr << "p " << dd << " " << positions_dofs[dd] << " " << positions_vals[dd] << endl;
-      }
-      //cerr << endl;
-      const double alpha = 0;
-      const double betha = 1e2;
-      switch(snes_ctx) {
-	case CTX_SNESSETFUNCTION:  
-	  for(int ii = 0;ii<9;ii++) {
-	    if(lambda_dofs[ii] == -1) continue;
-	    double val1 = betha*(positions_vals[0+ii] - positions_vals[9+ii]) + alpha*lambda_vals[ii];
-	    ierr = VecSetValue(snes_f,lambda_dofs[ii],val1,INSERT_VALUES); CHKERRQ(ierr);
-	    double val2 = betha*lambda_vals[ii];
-	    ierr = VecSetValue(snes_f,positions_dofs[0+ii],+val2,INSERT_VALUES); CHKERRQ(ierr);
-	    ierr = VecSetValue(snes_f,positions_dofs[9+ii],-val2,INSERT_VALUES); CHKERRQ(ierr);
-	  }
-	break;
-	case CTX_SNESSETJACOBIAN: 
-	  for(int ii = 0;ii<9;ii++) {
-	    if(lambda_dofs[ii] == -1) continue;
-	    ierr = MatSetValue(snes_B,lambda_dofs[ii],positions_dofs[0+ii],+1*betha,INSERT_VALUES); CHKERRQ(ierr);
-	    ierr = MatSetValue(snes_B,lambda_dofs[ii],positions_dofs[9+ii],-1*betha,INSERT_VALUES); CHKERRQ(ierr);
-	    ierr = MatSetValue(snes_B,positions_dofs[0+ii],lambda_dofs[ii],+1*betha,INSERT_VALUES); CHKERRQ(ierr);
-	    ierr = MatSetValue(snes_B,positions_dofs[9+ii],lambda_dofs[ii],-1*betha,INSERT_VALUES); CHKERRQ(ierr);
-	    ierr = MatSetValue(snes_B,lambda_dofs[ii],lambda_dofs[ii],alpha,INSERT_VALUES); CHKERRQ(ierr);
-	  }
-	break;
-	default:
-	break;
-      }
-
-      PetscFunctionReturn(0);
-    }
-    PetscErrorCode postProcess() {
-      PetscFunctionBegin;
-      PetscErrorCode ierr;
-      switch(snes_ctx) {
-	case CTX_SNESSETFUNCTION: { 
-	  ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
-	  ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
-	}
-	break;
-	case CTX_SNESSETJACOBIAN: 
-	  ierr = MatAssemblyBegin(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-	  ierr = MatAssemblyEnd(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-	break;
-	default:
-	break;
-      }
-      PetscFunctionReturn(0);
-    }
-
-  };
-
   //create projection matrices
   ierr = front_projection_data(m_field,"COUPLED_DYNAMIC"); CHKERRQ(ierr);
   ierr = surface_projection_data(m_field,"COUPLED_DYNAMIC"); CHKERRQ(ierr);
@@ -710,6 +606,10 @@ PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterf
   //portsproc
   MyPrePostProcessFEMethod pre_post_method(m_field);
 
+  //iNertia
+  ierr = iNertia.setConvectiveMassOperators("SPATIAL_VELOCITY","SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = iNertia.setVelocityOperators("SPATIAL_VELOCITY","SPATIAL_POSITION"); CHKERRQ(ierr);
+
   //TS
   TsCtx ts_ctx(m_field,"COUPLED_DYNAMIC");
   //rhs preProcess
@@ -746,6 +646,8 @@ PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterf
   for(;fit!=nodal_forces.end();fit++) {
     loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type(fit->first,&fit->second->getLoopFe()));
   }
+  loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("VELOCITY_ELEMENT",&iNertia.getLoopFeVelRhs()));
+  loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("MASS_ELEMENT",&iNertia.getLoopFeMassRhs()));
 
   ts_ctx.get_preProcess_to_do_IFunction().push_back(&fix_material_pts);
   ts_ctx.get_preProcess_to_do_IFunction().push_back(&my_dirichlet_bc);
@@ -770,6 +672,9 @@ PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterf
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ELASTIC_COUPLED",&fe_spatial));
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("MATERIAL_COUPLED",&fe_material));
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("NEUAMNN_FE",&fe_forces));
+  loops_to_do_Mat.push_back(TsCtx::loop_pair_type("VELOCITY_ELEMENT",&iNertia.getLoopFeVelLhs()));
+  loops_to_do_Mat.push_back(TsCtx::loop_pair_type("MASS_ELEMENT",&iNertia.getLoopFeMassLhs()));
+  //lh postproc
   ts_ctx.get_preProcess_to_do_IJacobian().push_back(&fix_material_pts);
   ts_ctx.get_preProcess_to_do_IJacobian().push_back(&my_dirichlet_bc);
 
@@ -797,6 +702,12 @@ PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterf
   ierr = m_field.set_local_VecCreateGhost("COUPLED_DYNAMIC",COL,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+
+  const MoFEMProblem *problem_ptr;
+  ierr = m_field.get_problem("COUPLED_DYNAMIC",&problem_ptr); CHKERRQ(ierr);
+  const NumeredDofMoFEMEntity *dof_ptr;
+  ierr = problem_ptr->get_col_dofs_by_petsc_gloabl_dof_idx(1,&dof_ptr); CHKERRQ(ierr);
+  cerr << *dof_ptr << endl;
 
   ierr = TSSolve(ts,D); CHKERRQ(ierr);
   ierr = TSGetTime(ts,&ftime); CHKERRQ(ierr);
