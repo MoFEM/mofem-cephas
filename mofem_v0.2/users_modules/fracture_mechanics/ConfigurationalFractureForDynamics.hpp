@@ -33,7 +33,7 @@ struct ConfigurationalFracturDynamics: public ConfigurationalFractureMechanics {
   PetscErrorCode coupled_dynamic_partition_problems(FieldInterface& m_field);
 
   PetscErrorCode fix_front_nodes(FieldInterface& m_field,Range &fix_nodes);
-  PetscErrorCode solve_dynmaic_problem(FieldInterface& m_field,TS *ts,double fraction_treshold = 1e-1);
+  PetscErrorCode solve_dynmaic_problem(FieldInterface& m_field,TS ts,double fraction_treshold = 1e-1);
 
 }; 
 

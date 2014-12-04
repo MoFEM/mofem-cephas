@@ -3,9 +3,7 @@ using namespace MoFEM;
 #include <adolc/adolc.h> 
 #include <ConvectiveMassElement.hpp>
 #include <TimeForceScale.hpp>
-
 #include <PotsProcOnRefMesh.hpp>
-
 #include <ConfigurationalFractureForDynamics.hpp>
 
 struct MonitorRestart: public FEMethod {
@@ -200,7 +198,61 @@ struct MonitorUpdateFrezedNodes: public FEMethod {
 
 };
 
+struct MonitorLoadPath: public FEMethod {
 
+  FieldInterface &mField;
+  TS tS;
+
+  MonitorLoadPath(FieldInterface &m_field,TS ts): 
+    FEMethod(),mField(m_field),tS(ts) {}
+
+  PetscErrorCode preProcess() {
+    PetscFunctionBegin;
+    PetscErrorCode ierr;
+    ErrorCode rval;
+
+    double time;
+    ierr = TSGetTime(tS,&time); CHKERRQ(ierr);
+
+    const MoFEMProblem *problemPtr;
+    ierr = mField.get_problem("COUPLED_PROBLEM",&problemPtr); CHKERRQ(ierr);
+
+    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|UNKNOWNCUBITNAME,it)) {
+      if(it->get_Cubit_name() != "LoadPath") continue;
+
+      Range nodes;
+      rval = mField.get_moab().get_entities_by_type(it->meshset,MBVERTEX,nodes,true); CHKERR_PETSC(rval);
+      for(Range::iterator nit = nodes.begin();nit!=nodes.end();nit++) {
+	double coords[3];
+	rval = mField.get_moab().get_coords(&*nit,1,coords); CHKERR_PETSC(rval);
+	for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_ENT_FOR_LOOP_(problemPtr,*nit,dof)) {
+	  if(dof->get_name()!="SPATIAL_POSITION") continue;
+	    ierr = PetscPrintf(PETSC_COMM_WORLD,
+	      "load_path_disp ent %ld dim %d "
+	      "coords ( %8.6f %8.6f %8.6f ) "
+	      "val %6.4e Time %6.4e\n",
+	      dof->get_ent(),dof->get_dof_rank(),
+	      coords[0],coords[1],coords[2],
+	      dof->get_FieldData()-coords[dof->get_dof_rank()],time); CHKERRQ(ierr);
+	}
+      }
+
+    }
+
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode operator()() {
+    PetscFunctionBegin;
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode postProcess() {
+    PetscFunctionBegin;
+    PetscFunctionReturn(0);
+  }
+
+};
 
 PetscErrorCode ConfigurationalFracturDynamics::coupled_dynamic_problem_definition(FieldInterface& m_field) {
   PetscFunctionBegin;
@@ -396,7 +448,7 @@ PetscErrorCode ConfigurationalFracturDynamics::fix_front_nodes(FieldInterface& m
 }
 
 
-PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterface& m_field,TS *ts,double fraction_treshold) {
+PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterface& m_field,TS ts,double fraction_treshold) {
   PetscFunctionBegin;
 
   PetscErrorCode ierr;
@@ -733,21 +785,42 @@ PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterf
   ts_ctx.get_preProcess_to_do_IJacobian().push_back(&my_dirichlet_bc);
 
   //monitor
-  MonitorRestart monitor_restart(m_field,*ts);
+  MonitorRestart monitor_restart(m_field,ts);
   MonitorUpdateFrezedNodes monitor_fix_matrial_nodes(m_field,*this,fix_material_pts,corners_nodes);
   MonitorPostProc post_proc(m_field);
+  MonitorLoadPath monitor_load_path(m_field,ts);
 
   TsCtx::loops_to_do_type& loops_to_do_Monitor = ts_ctx.get_loops_to_do_Monitor();
   loops_to_do_Monitor.push_back(TsCtx::loop_pair_type("MASS_ELEMENT",&monitor_restart));
   loops_to_do_Monitor.push_back(TsCtx::loop_pair_type("MASS_ELEMENT",&monitor_fix_matrial_nodes));
   loops_to_do_Monitor.push_back(TsCtx::loop_pair_type("MASS_ELEMENT",&post_proc));
+  loops_to_do_Monitor.push_back(TsCtx::loop_pair_type("MASS_ELEMENT",&monitor_load_path));
 
+  ierr = TSSetIFunction(ts,F,f_TSSetIFunction,&ts_ctx); CHKERRQ(ierr);
+  ierr = TSSetIJacobian(ts,K,K,f_TSSetIJacobian,&ts_ctx); CHKERRQ(ierr);
+  ierr = TSMonitorSet(ts,f_TSMonitorSet,&ts_ctx,PETSC_NULL); CHKERRQ(ierr);
+
+  double ftime = 1;
+  ierr = TSSetDuration(ts,PETSC_DEFAULT,ftime); CHKERRQ(ierr);
+  ierr = TSSetSolution(ts,D); CHKERRQ(ierr);
+  ierr = TSSetFromOptions(ts); CHKERRQ(ierr);
+
+  ierr = TSSolve(ts,D); CHKERRQ(ierr);
+  ierr = TSGetTime(ts,&ftime); CHKERRQ(ierr);
+
+  PetscInt steps,snesfails,rejects,nonlinits,linits;
+  ierr = TSGetTimeStepNumber(ts,&steps); CHKERRQ(ierr);
+  ierr = TSGetSNESFailures(ts,&snesfails); CHKERRQ(ierr);
+  ierr = TSGetStepRejections(ts,&rejects); CHKERRQ(ierr);
+  ierr = TSGetSNESIterations(ts,&nonlinits); CHKERRQ(ierr);
+  ierr = TSGetKSPIterations(ts,&linits); CHKERRQ(ierr);
+  PetscPrintf(PETSC_COMM_WORLD,
+    "steps %D (%D rejected, %D SNES fails), ftime %g, nonlinits %D, linits %D\n",
+    steps,rejects,snesfails,ftime,nonlinits,linits);
 
   ierr = MatDestroy(&K); CHKERRQ(ierr);
   ierr = VecDestroy(&D); CHKERRQ(ierr);
   ierr = VecDestroy(&F); CHKERRQ(ierr);
-
-
 
   PetscFunctionReturn(0);
 }

@@ -148,7 +148,7 @@ int main(int argc, char *argv[]) {
   TS ts;
   ierr = TSCreate(PETSC_COMM_WORLD,&ts); CHKERRQ(ierr);
   ierr = TSSetType(ts,TSBEULER); CHKERRQ(ierr);
-  ierr = conf_prob.solve_dynmaic_problem(m_field,&ts); CHKERRQ(ierr);
+  ierr = conf_prob.solve_dynmaic_problem(m_field,ts); CHKERRQ(ierr);
   ierr = TSDestroy(&ts);CHKERRQ(ierr);
 
   ierr = PetscTime(&v2);CHKERRQ(ierr);
