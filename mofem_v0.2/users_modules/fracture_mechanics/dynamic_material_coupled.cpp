@@ -148,8 +148,10 @@ int main(int argc, char *argv[]) {
     int zero = 0;
     Tag th_step;
     rval = m_field.get_moab().tag_get_handle("_TsStep_",1,MB_TYPE_INTEGER,th_step,MB_TAG_CREAT|MB_TAG_EXCL|MB_TAG_MESH,&zero); 
-    if(rval == MB_ALREADY_ALLOCATED) {
+    if(rval != MB_ALREADY_ALLOCATED) {
       //init data
+      conf_prob.material_FirelWall->operator[](ConfigurationalFractureMechanics::FW_set_spatial_positions) = 0;
+      conf_prob.material_FirelWall->operator[](ConfigurationalFractureMechanics::FW_set_material_positions) = 0;
       ierr = conf_prob.set_spatial_positions(m_field); CHKERRQ(ierr);
       ierr = conf_prob.set_material_positions(m_field);  CHKERRQ(ierr);
     }
