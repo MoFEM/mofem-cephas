@@ -13,7 +13,8 @@ struct MonitorRestart: public FEMethod {
   FieldInterface &mField;
   int pRT;
 
-  MonitorRestart(FieldInterface &m_field,TS ts): mField(m_field) {
+  MonitorRestart(FieldInterface &m_field,TS ts): 
+    mField(m_field) {
 
     PetscErrorCode ierr;
     ErrorCode rval;
@@ -157,19 +158,39 @@ struct MonitorUpdateFrezedNodes: public FEMethod {
   ConfigurationalFracturDynamics *confProb;
   FixBcAtEntities &bC;
   Range &cornersNodes;
+  MyEshelbyFEMethod &feMaterial;
+
 
   MonitorUpdateFrezedNodes(FieldInterface &m_field,
     ConfigurationalFracturDynamics *conf_prob,
-    FixBcAtEntities &bc,Range &corners_nodes): 
+    FixBcAtEntities &bc,Range &corners_nodes,
+    MyEshelbyFEMethod &fe_material): 
     mField(m_field),confProb(conf_prob),
-    bC(bc),cornersNodes(corners_nodes) {}
+    bC(bc),cornersNodes(corners_nodes),
+    feMaterial(fe_material) {}
 
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
     PetscErrorCode ierr;
 
+    Vec F_Material;
+    ierr = mField.VecCreateGhost("COUPLED_DYNAMIC",ROW,&F_Material); CHKERRQ(ierr);
+    ierr = VecZeroEntries(F_Material); CHKERRQ(ierr);
+    ierr = VecGhostUpdateBegin(F_Material,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecGhostUpdateEnd(F_Material,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    feMaterial.snes_ctx = FEMethod::CTX_SNESSETFUNCTION;
+    feMaterial.snes_f = F_Material;
+    ierr = mField.loop_finite_elements("COUPLED_DYNAMIC","MATERIAL_COUPLED",feMaterial); CHKERRQ(ierr);
+    ierr = VecGhostUpdateBegin(F_Material,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = VecGhostUpdateEnd(F_Material,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = VecAssemblyBegin(F_Material); CHKERRQ(ierr);
+    ierr = VecAssemblyEnd(F_Material); CHKERRQ(ierr);
+    ierr = mField.set_other_global_VecCreateGhost("COUPLED_DYNAMIC","MESH_NODE_POSITIONS","MATERIAL_FORCE",ROW,F_Material,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = VecDestroy(&F_Material); CHKERRQ(ierr);
+
     //caculate griffith forces
     ierr = confProb->project_force_vector(mField,"COUPLED_DYNAMIC"); CHKERRQ(ierr);
+    ierr = confProb->griffith_force_vector(mField,"COUPLED_DYNAMIC"); CHKERRQ(ierr);
     ierr = confProb->griffith_g(mField,"COUPLED_DYNAMIC"); CHKERRQ(ierr);
 
     //fix nodes
@@ -682,7 +703,7 @@ PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterf
 
   //monitor
   MonitorRestart monitor_restart(m_field,ts);
-  MonitorUpdateFrezedNodes monitor_fix_matrial_nodes(m_field,this,fix_material_pts,corners_nodes);
+  MonitorUpdateFrezedNodes monitor_fix_matrial_nodes(m_field,this,fix_material_pts,corners_nodes,fe_material);
   MonitorPostProc post_proc(m_field);
   MonitorLoadPath monitor_load_path(m_field,ts);
 
