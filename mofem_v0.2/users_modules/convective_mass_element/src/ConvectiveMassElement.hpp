@@ -1197,7 +1197,8 @@ struct ConvectiveMassElement {
   PetscErrorCode addConvectiveMassElement(string element_name,
     string velocity_field_name,
     string spatial_position_field_name,
-    string material_position_field_name = "MESH_NODE_POSITIONS",bool ale = false) {
+    string material_position_field_name = "MESH_NODE_POSITIONS",
+    bool ale = false,BitRefLevel bit = BitRefLevel()) {
     PetscFunctionBegin;
 
     PetscErrorCode ierr;
@@ -1221,9 +1222,18 @@ struct ConvectiveMassElement {
     ierr = mField.modify_finite_element_add_field_data(element_name,"DOT_"+velocity_field_name); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_data(element_name,"DOT_"+spatial_position_field_name); CHKERRQ(ierr);
 
+    Range tets;
+    if(bit.any()) {
+      ierr = mField.get_entities_by_type_and_ref_level(bit,BitRefLevel().set(),MBTET,tets); CHKERRQ(ierr);
+    }
+
     map<int,BlockData>::iterator sit = setOfBlocks.begin();
     for(;sit!=setOfBlocks.end();sit++) {
-      ierr = mField.add_ents_to_finite_element_by_TETs(sit->second.tEts,element_name); CHKERRQ(ierr);
+      Range add_tets = sit->second.tEts;
+      if(!tets.empty()) {
+	add_tets = intersect(add_tets,tets);
+      }
+      ierr = mField.add_ents_to_finite_element_by_TETs(add_tets,element_name); CHKERRQ(ierr);
     }
 
     PetscFunctionReturn(0);
@@ -1232,7 +1242,8 @@ struct ConvectiveMassElement {
   PetscErrorCode addVelocityElement(string element_name,
     string velocity_field_name,
     string spatial_position_field_name,
-    string material_position_field_name = "MESH_NODE_POSITIONS",bool ale = false) {
+    string material_position_field_name = "MESH_NODE_POSITIONS",
+    bool ale = false,BitRefLevel bit = BitRefLevel()) {
     PetscFunctionBegin;
 
     PetscErrorCode ierr;
@@ -1256,9 +1267,18 @@ struct ConvectiveMassElement {
     ierr = mField.modify_finite_element_add_field_data(element_name,"DOT_"+velocity_field_name); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_data(element_name,"DOT_"+spatial_position_field_name); CHKERRQ(ierr);
 
+    Range tets;
+    if(bit.any()) {
+      ierr = mField.get_entities_by_type_and_ref_level(bit,BitRefLevel().set(),MBTET,tets); CHKERRQ(ierr);
+    }
+
     map<int,BlockData>::iterator sit = setOfBlocks.begin();
     for(;sit!=setOfBlocks.end();sit++) {
-      mField.add_ents_to_finite_element_by_TETs(sit->second.tEts,element_name);
+      Range add_tets = sit->second.tEts;
+      if(!tets.empty()) {
+	add_tets = intersect(add_tets,tets);
+      }
+      ierr = mField.add_ents_to_finite_element_by_TETs(add_tets,element_name); CHKERRQ(ierr);
     }
 
     PetscFunctionReturn(0);
