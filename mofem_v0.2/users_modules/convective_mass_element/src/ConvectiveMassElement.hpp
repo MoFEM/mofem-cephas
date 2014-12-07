@@ -604,10 +604,8 @@ struct ConvectiveMassElement {
 	  { //integrate element stiffnes matrix
 	    for(int dd1 = 0;dd1<nb_row/3;dd1++) {
 	      for(int rr1 = 0;rr1<3;rr1++) {
-		for(int dd2 = 0;dd2<nb_col/3;dd2++) {
-		  for(int rr2 = 0;rr2<3;rr2++) {
-		    k(3*dd1+rr1,3*dd2+rr2) += row_data.getN()(gg,dd1)*jac(rr1,3*dd2+rr2);
-		  }
+		for(int dd2 = 0;dd2<nb_col;dd2++) {
+		  k(3*dd1+rr1,dd2) += row_data.getN()(gg,dd1)*jac(rr1,dd2);
 		}
 	      }
 	    }
@@ -979,10 +977,8 @@ struct ConvectiveMassElement {
 	  { //integrate element stiffnes matrix
 	    for(int dd1 = 0;dd1<nb_row/3;dd1++) {
 	      for(int rr1 = 0;rr1<3;rr1++) {
-		for(int dd2 = 0;dd2<nb_col/3;dd2++) {
-		  for(int rr2 = 0;rr2<3;rr2++) {
-		    k(3*dd1+rr1,3*dd2+rr2) += row_data.getN()(gg,dd1)*jac(rr1,3*dd2+rr2);
-		  }
+		for(int dd2 = 0;dd2<nb_col;dd2++) {
+		  k(3*dd1+rr1,dd2) += row_data.getN()(gg,dd1)*jac(rr1,dd2);
 		}
 	      }
 	    }
@@ -1289,9 +1285,9 @@ struct ConvectiveMassElement {
 
   };
 
-  struct OpEshelbyDynamicMaterialMomentumRhs_dv: public OpMassLhs_dM_dv {
+  struct OpEshelbyDynamicMaterialMomentumLhs_dv: public OpMassLhs_dM_dv {
 
-    OpEshelbyDynamicMaterialMomentumRhs_dv(const string vel_field,const string field_name,BlockData &data,CommonData &common_data):
+    OpEshelbyDynamicMaterialMomentumLhs_dv(const string vel_field,const string field_name,BlockData &data,CommonData &common_data):
       OpMassLhs_dM_dv(vel_field,field_name,data,common_data) {};
 
     ublas::vector<double> jac;
@@ -1343,10 +1339,8 @@ struct ConvectiveMassElement {
 	  { //integrate element stiffnes matrix
 	    for(int dd1 = 0;dd1<nb_row/3;dd1++) {
 	      for(int rr1 = 0;rr1<3;rr1++) {
-		for(int dd2 = 0;dd2<nb_col/3;dd2++) {
-		  for(int rr2 = 0;rr2<3;rr2++) {
-		    k(3*dd1+rr1,3*dd2+rr2) += diffN(dd1,rr2)*jac(3*dd2+rr2);
-		  }
+		for(int dd2;dd2<nb_col;dd2++) {
+		  k(3*dd1+rr1,dd2) += -diffN(dd1,rr1)*jac(dd2);
 		}
 	      }
 	    }
@@ -1371,10 +1365,10 @@ struct ConvectiveMassElement {
 
   };
 
-  struct OpEshelbyDynamicMaterialMomentumRhs_dx: public OpEshelbyDynamicMaterialMomentumRhs_dv {
+  struct OpEshelbyDynamicMaterialMomentumLhs_dx: public OpEshelbyDynamicMaterialMomentumLhs_dv {
 
-    OpEshelbyDynamicMaterialMomentumRhs_dx(const string vel_field,const string field_name,BlockData &data,CommonData &common_data):
-      OpEshelbyDynamicMaterialMomentumRhs_dv(vel_field,field_name,data,common_data) {};
+    OpEshelbyDynamicMaterialMomentumLhs_dx(const string vel_field,const string field_name,BlockData &data,CommonData &common_data):
+      OpEshelbyDynamicMaterialMomentumLhs_dv(vel_field,field_name,data,common_data) {};
 
     ublas::vector<double> jac;
 
@@ -1395,10 +1389,10 @@ struct ConvectiveMassElement {
 
   };
 
-  struct OpEshelbyDynamicMaterialMomentumRhs_dX: public OpEshelbyDynamicMaterialMomentumRhs_dv {
+  struct OpEshelbyDynamicMaterialMomentumLhs_dX: public OpEshelbyDynamicMaterialMomentumLhs_dv {
 
-    OpEshelbyDynamicMaterialMomentumRhs_dX(const string vel_field,const string field_name,BlockData &data,CommonData &common_data):
-      OpEshelbyDynamicMaterialMomentumRhs_dv(vel_field,field_name,data,common_data) {};
+    OpEshelbyDynamicMaterialMomentumLhs_dX(const string vel_field,const string field_name,BlockData &data,CommonData &common_data):
+      OpEshelbyDynamicMaterialMomentumLhs_dv(vel_field,field_name,data,common_data) {};
 
     ublas::vector<double> jac;
 
@@ -1757,7 +1751,7 @@ struct ConvectiveMassElement {
   PetscErrorCode setKinematicEshelbyOperators(
     string velocity_field_name,
     string spatial_position_field_name,
-    string material_position_field_name = "MESH_NODE_POSITIONS",bool ale = false) {
+    string material_position_field_name = "MESH_NODE_POSITIONS") {
     PetscFunctionBegin;
 
     commonData.spatialPositions = spatial_position_field_name;
@@ -1767,9 +1761,7 @@ struct ConvectiveMassElement {
     //Rhs
     feTRhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(velocity_field_name,commonData));
     feTRhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(spatial_position_field_name,commonData));
-    if(mField.check_field(material_position_field_name)) {
-      feTRhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(material_position_field_name,commonData));
-    }
+    feTRhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(material_position_field_name,commonData));
     map<int,BlockData>::iterator sit = setOfBlocks.begin();
     for(;sit!=setOfBlocks.end();sit++) {
       feTRhs.get_op_to_do_Rhs().push_back(new OpEshelbyDynamicMaterialMomentumJacobian(material_position_field_name,sit->second,commonData,tAg,false));
@@ -1785,13 +1777,9 @@ struct ConvectiveMassElement {
     sit = setOfBlocks.begin();
     for(;sit!=setOfBlocks.end();sit++) {
       feTLhs.get_op_to_do_Rhs().push_back(new OpEshelbyDynamicMaterialMomentumJacobian(material_position_field_name,sit->second,commonData,tAg));
-      feTLhs.get_op_to_do_Lhs().push_back(new OpEshelbyDynamicMaterialMomentumRhs_dv(material_position_field_name,velocity_field_name,sit->second,commonData));
-      feTLhs.get_op_to_do_Lhs().push_back(new OpEshelbyDynamicMaterialMomentumRhs_dx(material_position_field_name,spatial_position_field_name,sit->second,commonData));
-      if(mField.check_field(material_position_field_name)) {
-	if(ale) {
-	  feTLhs.get_op_to_do_Lhs().push_back(new OpEshelbyDynamicMaterialMomentumRhs_dX(material_position_field_name,material_position_field_name,sit->second,commonData));
-	}
-      }
+      feTLhs.get_op_to_do_Lhs().push_back(new OpEshelbyDynamicMaterialMomentumLhs_dv(material_position_field_name,velocity_field_name,sit->second,commonData));
+      feTLhs.get_op_to_do_Lhs().push_back(new OpEshelbyDynamicMaterialMomentumLhs_dx(material_position_field_name,spatial_position_field_name,sit->second,commonData));
+      feTLhs.get_op_to_do_Lhs().push_back(new OpEshelbyDynamicMaterialMomentumLhs_dX(material_position_field_name,material_position_field_name,sit->second,commonData));
     }
 
     PetscFunctionReturn(0);
