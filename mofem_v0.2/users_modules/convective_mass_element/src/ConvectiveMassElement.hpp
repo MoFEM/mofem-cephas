@@ -746,6 +746,7 @@ struct ConvectiveMassElement {
 	v.resize(3);
 	dot_w.resize(3);
 	h.resize(3,3);
+	h.clear();
 	F.resize(3,3);
 	dot_W.resize(3);
 	dot_W.clear();
@@ -772,24 +773,24 @@ struct ConvectiveMassElement {
 
 	    trace_on(tAg);
 
-	    for(int nn1 = 0;nn1<3;nn1++) {
+	    for(int nn1 = 0;nn1<3;nn1++) { //0
 	      v[nn1] <<= commonData.dataAtGaussPts[commonData.spatialVelocities][gg][nn1]; nb_active_vars++;
 	    }
-	    for(int nn1 = 0;nn1<3;nn1++) {
+	    for(int nn1 = 0;nn1<3;nn1++) { //3
 	      dot_w[nn1] <<= commonData.dataAtGaussPts["DOT_"+commonData.spatialPositions][gg][nn1]; nb_active_vars++;
 	    }
-	    for(int nn1 = 0;nn1<3;nn1++) {
-	      for(int nn2 = 0;nn2<3;nn2++) {
-		h(nn1,nn2) <<= commonData.gradAtGaussPts[commonData.spatialPositions][gg](nn1,nn2); nb_active_vars++;
-	      }
-	    }
 	    if(commonData.dataAtGaussPts["DOT_"+commonData.meshPositions].size()>0) {
-	      for(int nn1 = 0;nn1<3;nn1++) {
+	      for(int nn1 = 0;nn1<3;nn1++) { //3+3 = 6
+		for(int nn2 = 0;nn2<3;nn2++) {
+		  h(nn1,nn2) <<= commonData.gradAtGaussPts[commonData.spatialPositions][gg](nn1,nn2); nb_active_vars++;
+		}
+	      }
+	      for(int nn1 = 0;nn1<3;nn1++) { //3+3+9
 		dot_W[nn1] <<= commonData.dataAtGaussPts["DOT_"+commonData.meshPositions][gg][nn1]; nb_active_vars++;
 	      }
 	    }
 	    if(commonData.gradAtGaussPts[commonData.meshPositions].size()>0) {
-	      for(int nn1 = 0;nn1<3;nn1++) {
+	      for(int nn1 = 0;nn1<3;nn1++) { //3+3+9+3
 		for(int nn2 = 0;nn2<3;nn2++) {
 		  H(nn1,nn2) <<= commonData.gradAtGaussPts[commonData.meshPositions][gg](nn1,nn2); nb_active_vars++;
 		}
@@ -822,12 +823,12 @@ struct ConvectiveMassElement {
 	  for(int nn1 = 0;nn1<3;nn1++) {
 	    active[aa++] = commonData.dataAtGaussPts["DOT_"+commonData.spatialPositions][gg][nn1]; 
 	  }
-	  for(int nn1 = 0;nn1<3;nn1++) {
-	    for(int nn2 = 0;nn2<3;nn2++) {
-	      active[aa++] = commonData.gradAtGaussPts[commonData.spatialPositions][gg](nn1,nn2);
-	    }	
-	  }
 	  if(commonData.dataAtGaussPts["DOT_"+commonData.meshPositions].size()>0) {
+	    for(int nn1 = 0;nn1<3;nn1++) {
+	      for(int nn2 = 0;nn2<3;nn2++) {
+		active[aa++] = commonData.gradAtGaussPts[commonData.spatialPositions][gg](nn1,nn2);
+	      }	
+	    }
 	    for(int nn1 = 0;nn1<3;nn1++) {
 	      active[aa++] = commonData.dataAtGaussPts["DOT_"+commonData.meshPositions][gg][nn1];
 	    }
@@ -1034,20 +1035,22 @@ struct ConvectiveMassElement {
 	  jac(2,3*dd+nn) = commonData.jacVel[gg](2,3+nn)*N(dd)*getFEMethod()->ts_a; 
 	}
       }
-      ublas::matrix<double> diffN = col_data.getDiffN(gg,nb_col/3);
-      for(int dd = 0;dd<nb_col/3;dd++) {
-	//h00 //h01 //h02
-	jac(0,3*dd+0) += commonData.jacVel[gg](0,3+3+3*0+0)*diffN(dd,0);
-	jac(0,3*dd+0) += commonData.jacVel[gg](0,3+3+3*0+1)*diffN(dd,1);
-	jac(0,3*dd+0) += commonData.jacVel[gg](0,3+3+3*0+2)*diffN(dd,2);
-	//h10 //h11 //h12
-	jac(1,3*dd+1) += commonData.jacVel[gg](1,3+3+3*1+0)*diffN(dd,0);
-	jac(1,3*dd+1) += commonData.jacVel[gg](1,3+3+3*1+1)*diffN(dd,1);
-	jac(1,3*dd+1) += commonData.jacVel[gg](1,3+3+3*1+2)*diffN(dd,2);
-	//h20 //h21 //h22
-	jac(2,3*dd+2) += commonData.jacVel[gg](2,3+3+3*2+0)*diffN(dd,0);
-	jac(2,3*dd+2) += commonData.jacVel[gg](2,3+3+3*2+1)*diffN(dd,1);
-	jac(2,3*dd+2) += commonData.jacVel[gg](2,3+3+3*2+2)*diffN(dd,2);
+      if(commonData.dataAtGaussPts["DOT_"+commonData.meshPositions].size()>0) {
+        ublas::matrix<double> diffN = col_data.getDiffN(gg,nb_col/3);
+        for(int dd = 0;dd<nb_col/3;dd++) {
+	  //h00 //h01 //h02
+	  jac(0,3*dd+0) += commonData.jacVel[gg](0,3+3+3*0+0)*diffN(dd,0);
+	  jac(0,3*dd+0) += commonData.jacVel[gg](0,3+3+3*0+1)*diffN(dd,1);
+	  jac(0,3*dd+0) += commonData.jacVel[gg](0,3+3+3*0+2)*diffN(dd,2);
+	  //h10 //h11 //h12
+	  jac(1,3*dd+1) += commonData.jacVel[gg](1,3+3+3*1+0)*diffN(dd,0);
+	  jac(1,3*dd+1) += commonData.jacVel[gg](1,3+3+3*1+1)*diffN(dd,1);
+	  jac(1,3*dd+1) += commonData.jacVel[gg](1,3+3+3*1+2)*diffN(dd,2);
+	  //h20 //h21 //h22
+	  jac(2,3*dd+2) += commonData.jacVel[gg](2,3+3+3*2+0)*diffN(dd,0);
+	  jac(2,3*dd+2) += commonData.jacVel[gg](2,3+3+3*2+1)*diffN(dd,1);
+	  jac(2,3*dd+2) += commonData.jacVel[gg](2,3+3+3*2+2)*diffN(dd,2);
+        }
       }
       //cerr << row_field_name << " " << col_field_name << endl;
       PetscFunctionReturn(0);
