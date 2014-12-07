@@ -47,7 +47,6 @@ struct MonitorRestart: public FEMethod {
       pRT = 10;
     }
 
-
   }
 
   PetscErrorCode preProcess() {
@@ -405,11 +404,18 @@ PetscErrorCode ConfigurationalFracturDynamics::coupled_dynamic_problem_definitio
   ierr = m_field.set_field_order(0,MBEDGE,"DOT_SPATIAL_VELOCITY",order); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0,MBVERTEX,"DOT_SPATIAL_VELOCITY",1); CHKERRQ(ierr);
 
+  ierr = m_field.add_field("DOT_MESH_NODE_POSITIONS",H1,3,MF_ZERO); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_TETs(level_tets,"DOT_MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBTET,"DOT_MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBTRI,"DOT_MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBEDGE,"DOT_MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBVERTEX,"DOT_MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
+
   ierr = iNertia.setBlocks(); CHKERRQ(ierr);
   ierr = iNertia.addConvectiveMassElement("MASS_ELEMENT","SPATIAL_VELOCITY","SPATIAL_POSITION",
-    "MESH_NODE_POSITIONS",false,*ptr_bit_level0); CHKERRQ(ierr);
+    "MESH_NODE_POSITIONS",true,*ptr_bit_level0); CHKERRQ(ierr);
   ierr = iNertia.addVelocityElement("VELOCITY_ELEMENT","SPATIAL_VELOCITY","SPATIAL_POSITION",
-    "MESH_NODE_POSITIONS",false,*ptr_bit_level0); CHKERRQ(ierr);
+    "MESH_NODE_POSITIONS",true,*ptr_bit_level0); CHKERRQ(ierr);
   ierr = m_field.modify_problem_add_finite_element("COUPLED_DYNAMIC","MASS_ELEMENT"); CHKERRQ(ierr);
   ierr = m_field.modify_problem_add_finite_element("COUPLED_DYNAMIC","VELOCITY_ELEMENT"); CHKERRQ(ierr);
 
@@ -426,7 +432,7 @@ PetscErrorCode ConfigurationalFracturDynamics::coupled_dynamic_partition_problem
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode ConfigurationalFracturDynamics::fix_front_nodes(FieldInterface& m_field,Range &fix_nodes) {
+PetscErrorCode ConfigurationalFracturDynamics::fix_front_nodes(FieldInterface& m_field,Range &fix_nodes,const double treshhold) {
   PetscFunctionBegin;
 
   PetscErrorCode ierr;
@@ -451,7 +457,7 @@ PetscErrorCode ConfigurationalFracturDynamics::fix_front_nodes(FieldInterface& m
     ierr = PetscPrintf(PETSC_COMM_WORLD,
       "front node = %ld g/g_c = %4.3f\n",
       mit->first,mit->second/gc); CHKERRQ(ierr);
-    if(g/gc < 1 || (g != g)) {
+    if( (g/gc + treshhold) < 1 || (g != g)) {
       fix_nodes.insert(mit->first);
       nb_fix_nodes++;
     }
@@ -503,12 +509,14 @@ PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterf
   struct MyPrePostProcessFEMethod: public FEMethod {
     
     FieldInterface& mField;
-    string velocityField,spatialPositionField;
+    string velocityField,spatialPositionField,meshPositionField;
+  
 
     MyPrePostProcessFEMethod(FieldInterface& _m_field): 
       mField(_m_field),
       velocityField("SPATIAL_VELOCITY"),
-      spatialPositionField("SPATIAL_POSITION") {}
+      spatialPositionField("SPATIAL_POSITION"),
+      meshPositionField("MESH_NODE_POSITIONS") {}
   
     PetscErrorCode ierr;
       
@@ -532,6 +540,7 @@ PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterf
 
       ierr = mField.set_other_local_VecCreateGhost(problemPtr,velocityField,"DOT_"+velocityField,COL,ts_u_t,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
       ierr = mField.set_other_local_VecCreateGhost(problemPtr,spatialPositionField,"DOT_"+spatialPositionField,COL,ts_u_t,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      ierr = mField.set_other_local_VecCreateGhost(problemPtr,meshPositionField,"DOT_"+meshPositionField,COL,ts_u_t,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
       PetscFunctionReturn(0);
     }
