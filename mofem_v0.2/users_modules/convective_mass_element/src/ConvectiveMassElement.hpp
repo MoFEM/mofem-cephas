@@ -74,6 +74,11 @@ struct ConvectiveMassElement {
   MyVolumeFE feVelLhs; //< calculate left hand side for tetrahedral elements
   MyVolumeFE& getLoopFeVelLhs() { return feVelLhs; } ///< get lhs volume element
 
+  MyVolumeFE feTRhs; ///< cauclate right hand side for tetrahedral elements
+  MyVolumeFE& getLoopFeTRhs() { return feTRhs; } ///< get rhs volume element 
+  MyVolumeFE feTLhs; //< calculate left hand side for tetrahedral elements
+  MyVolumeFE& getLoopFeTLhs() { return feTLhs; } ///< get lhs volume element
+
   FieldInterface &mField;
   short int tAg;
 
@@ -81,6 +86,7 @@ struct ConvectiveMassElement {
     FieldInterface &m_field,short int tag):
     feMassRhs(m_field),feMassLhs(m_field),
     feVelRhs(m_field),feVelLhs(m_field),
+    feTRhs(m_field),feTLhs(m_field),
     mField(m_field),tAg(tag) {}
 
   /** \brief data for calulation het conductivity and heat capacity elements
@@ -1520,7 +1526,6 @@ struct ConvectiveMassElement {
     //ErrorCode rval;
 
     ierr = mField.add_finite_element(element_name,MF_ZERO); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_row(element_name,velocity_field_name); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_col(element_name,velocity_field_name); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_data(element_name,velocity_field_name); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_row(element_name,spatial_position_field_name); CHKERRQ(ierr);
@@ -1528,7 +1533,6 @@ struct ConvectiveMassElement {
     ierr = mField.modify_finite_element_add_field_data(element_name,spatial_position_field_name); CHKERRQ(ierr);
     if(mField.check_field(material_position_field_name)) {
       if(ale) {
-	ierr = mField.modify_finite_element_add_field_row(element_name,material_position_field_name); CHKERRQ(ierr);
 	ierr = mField.modify_finite_element_add_field_col(element_name,material_position_field_name); CHKERRQ(ierr);
 	ierr = mField.modify_finite_element_add_field_data(element_name,"DOT_"+material_position_field_name); CHKERRQ(ierr);
       }
@@ -1562,11 +1566,37 @@ struct ConvectiveMassElement {
     PetscFunctionBegin;
 
     PetscErrorCode ierr;
-    ierr = addConvectiveMassElement(
-      element_name,
-      velocity_field_name,
-      spatial_position_field_name,
-      material_position_field_name,ale,bit); CHKERRQ(ierr);
+    //ErrorCode rval;
+
+    ierr = mField.add_finite_element(element_name,MF_ZERO); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_row(element_name,velocity_field_name); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_col(element_name,velocity_field_name); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_data(element_name,velocity_field_name); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_col(element_name,spatial_position_field_name); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_data(element_name,spatial_position_field_name); CHKERRQ(ierr);
+    if(mField.check_field(material_position_field_name)) {
+      if(ale) {
+	ierr = mField.modify_finite_element_add_field_col(element_name,material_position_field_name); CHKERRQ(ierr);
+	ierr = mField.modify_finite_element_add_field_data(element_name,"DOT_"+material_position_field_name); CHKERRQ(ierr);
+      }
+      ierr = mField.modify_finite_element_add_field_data(element_name,material_position_field_name); CHKERRQ(ierr);
+    }
+    ierr = mField.modify_finite_element_add_field_data(element_name,"DOT_"+velocity_field_name); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_data(element_name,"DOT_"+spatial_position_field_name); CHKERRQ(ierr);
+
+    Range tets;
+    if(bit.any()) {
+      ierr = mField.get_entities_by_type_and_ref_level(bit,BitRefLevel().set(),MBTET,tets); CHKERRQ(ierr);
+    }
+
+    map<int,BlockData>::iterator sit = setOfBlocks.begin();
+    for(;sit!=setOfBlocks.end();sit++) {
+      Range add_tets = sit->second.tEts;
+      if(!tets.empty()) {
+	add_tets = intersect(add_tets,tets);
+      }
+      ierr = mField.add_ents_to_finite_element_by_TETs(add_tets,element_name); CHKERRQ(ierr);
+    }
 
     PetscFunctionReturn(0);
   }
@@ -1580,11 +1610,37 @@ struct ConvectiveMassElement {
     PetscFunctionBegin;
 
     PetscErrorCode ierr;
-    ierr = addConvectiveMassElement(
-      element_name,
-      velocity_field_name,
-      spatial_position_field_name,
-      material_position_field_name,ale,bit); CHKERRQ(ierr);
+    //ErrorCode rval;
+
+    ierr = mField.add_finite_element(element_name,MF_ZERO); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_col(element_name,velocity_field_name); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_data(element_name,velocity_field_name); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_col(element_name,spatial_position_field_name); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_data(element_name,spatial_position_field_name); CHKERRQ(ierr);
+    if(mField.check_field(material_position_field_name)) {
+      if(ale) {
+	ierr = mField.modify_finite_element_add_field_row(element_name,material_position_field_name); CHKERRQ(ierr);
+	ierr = mField.modify_finite_element_add_field_col(element_name,material_position_field_name); CHKERRQ(ierr);
+	ierr = mField.modify_finite_element_add_field_data(element_name,"DOT_"+material_position_field_name); CHKERRQ(ierr);
+      }
+      ierr = mField.modify_finite_element_add_field_data(element_name,material_position_field_name); CHKERRQ(ierr);
+    }
+    ierr = mField.modify_finite_element_add_field_data(element_name,"DOT_"+velocity_field_name); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_data(element_name,"DOT_"+spatial_position_field_name); CHKERRQ(ierr);
+
+    Range tets;
+    if(bit.any()) {
+      ierr = mField.get_entities_by_type_and_ref_level(bit,BitRefLevel().set(),MBTET,tets); CHKERRQ(ierr);
+    }
+
+    map<int,BlockData>::iterator sit = setOfBlocks.begin();
+    for(;sit!=setOfBlocks.end();sit++) {
+      Range add_tets = sit->second.tEts;
+      if(!tets.empty()) {
+	add_tets = intersect(add_tets,tets);
+      }
+      ierr = mField.add_ents_to_finite_element_by_TETs(add_tets,element_name); CHKERRQ(ierr);
+    }
 
     PetscFunctionReturn(0);
   }
@@ -1690,6 +1746,50 @@ struct ConvectiveMassElement {
       if(mField.check_field(material_position_field_name)) {
 	if(ale) {
 	  feVelLhs.get_op_to_do_Lhs().push_back(new OpVelocityLhs_dV_dX(velocity_field_name,material_position_field_name,sit->second,commonData));
+	}
+      }
+    }
+
+    PetscFunctionReturn(0);
+  }
+
+
+  PetscErrorCode setKinematicEshelbyOperators(
+    string velocity_field_name,
+    string spatial_position_field_name,
+    string material_position_field_name = "MESH_NODE_POSITIONS",bool ale = false) {
+    PetscFunctionBegin;
+
+    commonData.spatialPositions = spatial_position_field_name;
+    commonData.meshPositions = material_position_field_name;
+    commonData.spatialVelocities = velocity_field_name;
+
+    //Rhs
+    feTRhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(velocity_field_name,commonData));
+    feTRhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(spatial_position_field_name,commonData));
+    if(mField.check_field(material_position_field_name)) {
+      feTRhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(material_position_field_name,commonData));
+    }
+    map<int,BlockData>::iterator sit = setOfBlocks.begin();
+    for(;sit!=setOfBlocks.end();sit++) {
+      feTRhs.get_op_to_do_Rhs().push_back(new OpEshelbyDynamicMaterialMomentumJacobian(material_position_field_name,sit->second,commonData,tAg,false));
+      feTRhs.get_op_to_do_Rhs().push_back(new OpEshelbyDynamicMaterialMomentumRhs(material_position_field_name,sit->second,commonData));
+    }
+
+    //Lhs
+    feTLhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(velocity_field_name,commonData));
+    feTLhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(spatial_position_field_name,commonData));
+    if(mField.check_field(material_position_field_name)) {
+      feTLhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(material_position_field_name,commonData));
+    }
+    sit = setOfBlocks.begin();
+    for(;sit!=setOfBlocks.end();sit++) {
+      feTLhs.get_op_to_do_Rhs().push_back(new OpEshelbyDynamicMaterialMomentumJacobian(material_position_field_name,sit->second,commonData,tAg));
+      feTLhs.get_op_to_do_Lhs().push_back(new OpEshelbyDynamicMaterialMomentumRhs_dv(material_position_field_name,velocity_field_name,sit->second,commonData));
+      feTLhs.get_op_to_do_Lhs().push_back(new OpEshelbyDynamicMaterialMomentumRhs_dx(material_position_field_name,spatial_position_field_name,sit->second,commonData));
+      if(mField.check_field(material_position_field_name)) {
+	if(ale) {
+	  feTLhs.get_op_to_do_Lhs().push_back(new OpEshelbyDynamicMaterialMomentumRhs_dX(material_position_field_name,material_position_field_name,sit->second,commonData));
 	}
       }
     }

@@ -158,15 +158,15 @@ struct MonitorUpdateFrezedNodes: public FEMethod {
   FixBcAtEntities &bC;
   Range &cornersNodes;
   MyEshelbyFEMethod &feMaterial;
-
+  ConvectiveMassElement &iNertia;
 
   MonitorUpdateFrezedNodes(FieldInterface &m_field,
     ConfigurationalFracturDynamics *conf_prob,
     FixBcAtEntities &bc,Range &corners_nodes,
-    MyEshelbyFEMethod &fe_material): 
+    MyEshelbyFEMethod &fe_material,ConvectiveMassElement &inertia): 
     mField(m_field),confProb(conf_prob),
     bC(bc),cornersNodes(corners_nodes),
-    feMaterial(fe_material) {}
+    feMaterial(fe_material),iNertia(inertia) {}
 
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
@@ -180,6 +180,8 @@ struct MonitorUpdateFrezedNodes: public FEMethod {
     feMaterial.snes_ctx = FEMethod::CTX_SNESSETFUNCTION;
     feMaterial.snes_f = F_Material;
     ierr = mField.loop_finite_elements("COUPLED_DYNAMIC","MATERIAL_COUPLED",feMaterial); CHKERRQ(ierr);
+    iNertia.getLoopFeTRhs().ts_F = F_Material;
+    ierr = mField.loop_finite_elements("COUPLED_DYNAMIC","DYNAMIC_ESHELBY_TERM",iNertia.getLoopFeTRhs()); CHKERRQ(ierr);
     ierr = VecGhostUpdateBegin(F_Material,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(F_Material,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = VecAssemblyBegin(F_Material); CHKERRQ(ierr);
@@ -416,6 +418,9 @@ PetscErrorCode ConfigurationalFracturDynamics::coupled_dynamic_problem_definitio
     "MESH_NODE_POSITIONS",true,*ptr_bit_level0); CHKERRQ(ierr);
   ierr = iNertia.addVelocityElement("VELOCITY_ELEMENT","SPATIAL_VELOCITY","SPATIAL_POSITION",
     "MESH_NODE_POSITIONS",true,*ptr_bit_level0); CHKERRQ(ierr);
+  ierr = iNertia.addEshelbyDynamicMaterialMomentum("DYNAMIC_ESHELBY_TERM","SPATIAL_VELOCITY","SPATIAL_POSITION",
+    "MESH_NODE_POSITIONS",true,*ptr_bit_level0); CHKERRQ(ierr);
+
   ierr = m_field.modify_problem_add_finite_element("COUPLED_DYNAMIC","MASS_ELEMENT"); CHKERRQ(ierr);
   ierr = m_field.modify_problem_add_finite_element("COUPLED_DYNAMIC","VELOCITY_ELEMENT"); CHKERRQ(ierr);
 
@@ -641,6 +646,7 @@ PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterf
   //iNertia
   ierr = iNertia.setConvectiveMassOperators("SPATIAL_VELOCITY","SPATIAL_POSITION"); CHKERRQ(ierr);
   ierr = iNertia.setVelocityOperators("SPATIAL_VELOCITY","SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = iNertia.setKinematicEshelbyOperators("SPATIAL_VELOCITY","SPATIAL_POSITION"); CHKERRQ(ierr);
 
   //TS
   TsCtx ts_ctx(m_field,"COUPLED_DYNAMIC");
@@ -680,6 +686,7 @@ PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterf
   }
   loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("VELOCITY_ELEMENT",&iNertia.getLoopFeVelRhs()));
   loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("MASS_ELEMENT",&iNertia.getLoopFeMassRhs()));
+  loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("DYNAMIC_ESHELBY_TERM",&iNertia.getLoopFeTRhs()));
 
   ts_ctx.get_postProcess_to_do_IFunction().push_back(&fix_material_pts);
   ts_ctx.get_postProcess_to_do_IFunction().push_back(&my_dirichlet_bc);
@@ -706,13 +713,15 @@ PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterf
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("NEUAMNN_FE",&fe_forces));
   loops_to_do_Mat.push_back(TsCtx::loop_pair_type("VELOCITY_ELEMENT",&iNertia.getLoopFeVelLhs()));
   loops_to_do_Mat.push_back(TsCtx::loop_pair_type("MASS_ELEMENT",&iNertia.getLoopFeMassLhs()));
+  loops_to_do_Mat.push_back(TsCtx::loop_pair_type("DYNAMIC_ESHELBY_TERM",&iNertia.getLoopFeTLhs()));
+
   //lh postproc
   ts_ctx.get_postProcess_to_do_IJacobian().push_back(&my_dirichlet_bc);
   ts_ctx.get_postProcess_to_do_IJacobian().push_back(&fix_material_pts);
 
   //monitor
   MonitorRestart monitor_restart(m_field,ts);
-  MonitorUpdateFrezedNodes monitor_fix_matrial_nodes(m_field,this,fix_material_pts,corners_nodes,fe_material);
+  MonitorUpdateFrezedNodes monitor_fix_matrial_nodes(m_field,this,fix_material_pts,corners_nodes,fe_material,iNertia);
   MonitorPostProc post_proc(m_field);
   MonitorLoadPath monitor_load_path(m_field,ts);
 
