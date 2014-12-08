@@ -646,7 +646,7 @@ PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterf
   //iNertia
   ierr = iNertia.setConvectiveMassOperators("SPATIAL_VELOCITY","SPATIAL_POSITION","MESH_NODE_POSITIONS",true); CHKERRQ(ierr);
   ierr = iNertia.setVelocityOperators("SPATIAL_VELOCITY","SPATIAL_POSITION","MESH_NODE_POSITIONS",true); CHKERRQ(ierr);
-  ierr = iNertia.setKinematicEshelbyOperators("SPATIAL_VELOCITY","SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = iNertia.setKinematicEshelbyOperators("SPATIAL_VELOCITY","SPATIAL_POSITION","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
 
   //TS
   TsCtx ts_ctx(m_field,"COUPLED_DYNAMIC");
