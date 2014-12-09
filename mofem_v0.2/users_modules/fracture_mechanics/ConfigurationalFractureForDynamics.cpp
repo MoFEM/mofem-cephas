@@ -421,8 +421,22 @@ PetscErrorCode ConfigurationalFracturDynamics::coupled_dynamic_problem_definitio
   ierr = iNertia.addEshelbyDynamicMaterialMomentum("DYNAMIC_ESHELBY_TERM","SPATIAL_VELOCITY","SPATIAL_POSITION",
     "MESH_NODE_POSITIONS",true,*ptr_bit_level0); CHKERRQ(ierr);
 
-  ierr = m_field.modify_problem_add_finite_element("COUPLED_DYNAMIC","MASS_ELEMENT"); CHKERRQ(ierr);
-  ierr = m_field.modify_problem_add_finite_element("COUPLED_DYNAMIC","VELOCITY_ELEMENT"); CHKERRQ(ierr);
+  //ierr = m_field.modify_problem_add_finite_element("COUPLED_DYNAMIC","MASS_ELEMENT"); CHKERRQ(ierr);
+  //ierr = m_field.modify_problem_add_finite_element("COUPLED_DYNAMIC","VELOCITY_ELEMENT"); CHKERRQ(ierr);
+  //ierr = m_field.modify_problem_add_finite_element("COUPLED_DYNAMIC","DYNAMIC_ESHELBY_TERM"); CHKERRQ(ierr);
+
+
+  //constrains
+  ierr = m_field.modify_problem_add_finite_element("COUPLED_DYNAMIC","CandCT_SURFACE_ELEM"); CHKERRQ(ierr);
+  ierr = m_field.modify_problem_add_finite_element("COUPLED_DYNAMIC","BOTH_SIDE_OF_CRACK"); CHKERRQ(ierr);
+  ierr = m_field.modify_problem_add_finite_element("COUPLED_DYNAMIC","CandCT_CRACK_SURFACE_ELEM"); CHKERRQ(ierr);
+  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,SIDESET,it)) {
+    int msId = it->get_msId();
+    if((msId < 10200)||(msId >= 10300)) continue;
+    ostringstream ss2;
+    ss2 << "CandCT_SURFACE_ELEM_msId_" << msId;
+    ierr = m_field.modify_problem_add_finite_element("COUPLED_DYNAMIC",ss2.str()); CHKERRQ(ierr);
+  }
 
   PetscFunctionReturn(0);
 }
@@ -585,7 +599,7 @@ PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterf
   //meshs moothing
   MyMeshSmoothingFEMethod smoother(m_field);
   ierr = smoother.initCrackFrontData(m_field); CHKERRQ(ierr);
-  set_qual_ver(3);
+  set_qual_ver(1);
   //constrains
   SnesConstrainSurfacGeometry constrain_body_surface(m_field,"LAMBDA_SURFACE");
   constrain_body_surface.nonlinear = true;
@@ -644,7 +658,7 @@ PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterf
   MyPrePostProcessFEMethod pre_post_method(m_field);
 
   //iNertia
-  ierr = iNertia.setConvectiveMassOperators("SPATIAL_VELOCITY","SPATIAL_POSITION","MESH_NODE_POSITIONS",true); CHKERRQ(ierr);
+  ierr = iNertia.setConvectiveMassOperators("SPATIAL_VELOCITY","SPATIAL_POSITION","MESH_NODE_POSITIONS",true,true); CHKERRQ(ierr);
   ierr = iNertia.setVelocityOperators("SPATIAL_VELOCITY","SPATIAL_POSITION","MESH_NODE_POSITIONS",true); CHKERRQ(ierr);
   ierr = iNertia.setKinematicEshelbyOperators("SPATIAL_VELOCITY","SPATIAL_POSITION","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
 
@@ -684,9 +698,9 @@ PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterf
   for(;fit!=nodal_forces.end();fit++) {
     loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type(fit->first,&fit->second->getLoopFe()));
   }
-  loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("VELOCITY_ELEMENT",&iNertia.getLoopFeVelRhs()));
-  loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("MASS_ELEMENT",&iNertia.getLoopFeMassRhs()));
-  loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("DYNAMIC_ESHELBY_TERM",&iNertia.getLoopFeTRhs()));
+  //loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("VELOCITY_ELEMENT",&iNertia.getLoopFeVelRhs()));
+  //loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("MASS_ELEMENT",&iNertia.getLoopFeMassRhs()));
+  //loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("DYNAMIC_ESHELBY_TERM",&iNertia.getLoopFeTRhs()));
 
   ts_ctx.get_postProcess_to_do_IFunction().push_back(&fix_material_pts);
   ts_ctx.get_postProcess_to_do_IFunction().push_back(&my_dirichlet_bc);
@@ -711,9 +725,9 @@ PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterf
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ELASTIC_COUPLED",&fe_spatial));
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("MATERIAL_COUPLED",&fe_material));
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("NEUAMNN_FE",&fe_forces));
-  loops_to_do_Mat.push_back(TsCtx::loop_pair_type("VELOCITY_ELEMENT",&iNertia.getLoopFeVelLhs()));
-  loops_to_do_Mat.push_back(TsCtx::loop_pair_type("MASS_ELEMENT",&iNertia.getLoopFeMassLhs()));
-  loops_to_do_Mat.push_back(TsCtx::loop_pair_type("DYNAMIC_ESHELBY_TERM",&iNertia.getLoopFeTLhs()));
+  //loops_to_do_Mat.push_back(TsCtx::loop_pair_type("VELOCITY_ELEMENT",&iNertia.getLoopFeVelLhs()));
+  //loops_to_do_Mat.push_back(TsCtx::loop_pair_type("MASS_ELEMENT",&iNertia.getLoopFeMassLhs()));
+  //loops_to_do_Mat.push_back(TsCtx::loop_pair_type("DYNAMIC_ESHELBY_TERM",&iNertia.getLoopFeTLhs()));
 
   //lh postproc
   ts_ctx.get_postProcess_to_do_IJacobian().push_back(&my_dirichlet_bc);

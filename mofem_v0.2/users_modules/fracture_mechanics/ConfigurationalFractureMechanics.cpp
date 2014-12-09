@@ -1432,7 +1432,7 @@ PetscErrorCode ConfigurationalFractureMechanics::constrains_crack_front_problem_
   //set finite elements for problems
   ierr = m_field.modify_problem_add_finite_element(problem,"dCT_CRACKFRONT_AREA_ELEM"); CHKERRQ(ierr);
 
-  if(problem == "COUPLED_PROBLEM") {
+  if(problem == "COUPLED_PROBLEM" || problem == "COUPLED_DYNAMIC") {
     ierr = m_field.modify_problem_add_finite_element(problem,"C_TANGENT_ELEM"); CHKERRQ(ierr);
     ierr = m_field.modify_finite_element_add_field_row("MESH_SMOOTHER","LAMBDA_CRACK_TANGENT_CONSTRAIN"); CHKERRQ(ierr);
     ierr = m_field.modify_finite_element_add_field_col("MESH_SMOOTHER","LAMBDA_CRACK_TANGENT_CONSTRAIN"); CHKERRQ(ierr);
