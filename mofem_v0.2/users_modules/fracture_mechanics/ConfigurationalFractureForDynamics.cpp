@@ -574,7 +574,7 @@ PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterf
   //meshs moothing
   MyMeshSmoothingFEMethod smoother(m_field);
   ierr = smoother.initCrackFrontData(m_field); CHKERRQ(ierr);
-  set_qual_ver(1);
+  set_qual_ver(3);
   //constrains
   SnesConstrainSurfacGeometry constrain_body_surface(m_field,"LAMBDA_SURFACE");
   constrain_body_surface.nonlinear = true;
@@ -683,7 +683,7 @@ PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterf
     loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type(fit->first,&fit->second->getLoopFe()));
   }
   loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("VELOCITY_ELEMENT",&iNertia.getLoopFeVelRhs()));
-  //loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("MASS_ELEMENT",&iNertia.getLoopFeMassRhs()));
+  loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("MASS_ELEMENT",&iNertia.getLoopFeMassRhs()));
   //loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("DYNAMIC_ESHELBY_TERM",&iNertia.getLoopFeTRhs()));
 
   ts_ctx.get_postProcess_to_do_IFunction().push_back(&fix_material_pts);
@@ -710,7 +710,7 @@ PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterf
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("MATERIAL_COUPLED",&fe_material));
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("NEUAMNN_FE",&fe_forces));
   loops_to_do_Mat.push_back(TsCtx::loop_pair_type("VELOCITY_ELEMENT",&iNertia.getLoopFeVelLhs()));
-  //loops_to_do_Mat.push_back(TsCtx::loop_pair_type("MASS_ELEMENT",&iNertia.getLoopFeMassLhs()));
+  loops_to_do_Mat.push_back(TsCtx::loop_pair_type("MASS_ELEMENT",&iNertia.getLoopFeMassLhs()));
   //loops_to_do_Mat.push_back(TsCtx::loop_pair_type("DYNAMIC_ESHELBY_TERM",&iNertia.getLoopFeTLhs()));
 
   //lh postproc
