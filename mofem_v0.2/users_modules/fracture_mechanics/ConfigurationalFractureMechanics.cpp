@@ -715,7 +715,6 @@ struct BothSurfaceConstrains: public FEMethod {
 	    ierr = MatSetValue(snes_B,positions_dofs[0+ii],lambda_dofs[ii],+1*betha,INSERT_VALUES); CHKERRQ(ierr);
 	    ierr = MatSetValue(snes_B,positions_dofs[9+ii],lambda_dofs[ii],-1*betha,INSERT_VALUES); CHKERRQ(ierr);
 	    ierr = MatSetValue(snes_B,lambda_dofs[ii],lambda_dofs[ii],alpha,INSERT_VALUES); CHKERRQ(ierr);
-
 	  }
 	break;
 	default:

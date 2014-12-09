@@ -125,6 +125,7 @@ struct MonitorPostProc: public FEMethod {
       ierr = postProc.addFieldValuesPostProc("SPATIAL_POSITION"); CHKERRQ(ierr);
       ierr = postProc.addFieldValuesPostProc("SPATIAL_VELOCITY"); CHKERRQ(ierr);
       ierr = postProc.addFieldValuesGradientPostProc("SPATIAL_POSITION"); CHKERRQ(ierr);
+      ierr = postProc.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
 
       iNit = true;
     }
@@ -156,17 +157,15 @@ struct MonitorUpdateFrezedNodes: public FEMethod {
   FieldInterface &mField;
   ConfigurationalFracturDynamics *confProb;
   FixBcAtEntities &bC;
-  Range &cornersNodes;
   MyEshelbyFEMethod &feMaterial;
   ConvectiveMassElement &iNertia;
 
   MonitorUpdateFrezedNodes(FieldInterface &m_field,
     ConfigurationalFracturDynamics *conf_prob,
-    FixBcAtEntities &bc,Range &corners_nodes,
+    FixBcAtEntities &bc,
     MyEshelbyFEMethod &fe_material,ConvectiveMassElement &inertia): 
     mField(m_field),confProb(conf_prob),
-    bC(bc),cornersNodes(corners_nodes),
-    feMaterial(fe_material),iNertia(inertia) {}
+    bC(bc),feMaterial(fe_material),iNertia(inertia) {}
 
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
@@ -198,11 +197,21 @@ struct MonitorUpdateFrezedNodes: public FEMethod {
     Range fix_nodes;
     ierr = confProb->fix_front_nodes(mField,fix_nodes); CHKERRQ(ierr);
 
+    Range corners_edges,corners_nodes;
+    ierr = mField.get_Cubit_msId_entities_by_dimension(100,SIDESET,1,corners_edges,true); CHKERRQ(ierr);
+    ierr = mField.get_Cubit_msId_entities_by_dimension(101,NODESET,0,corners_nodes,true); CHKERRQ(ierr);
+    Range corners_edgesNodes;
+    ErrorCode rval;
+    rval = mField.get_moab().get_connectivity(corners_edges,corners_edgesNodes,true); CHKERR_PETSC(rval);
+    corners_nodes.insert(corners_edgesNodes.begin(),corners_edgesNodes.end());
+    corners_nodes.insert(fix_nodes.begin(),fix_nodes.end());
+
     bC.map_zero_rows.clear();
     bC.dofsIndices.clear();
     bC.dofsValues.clear();
-    bC.eNts = cornersNodes;
-    bC.eNts.merge(fix_nodes);
+    bC.eNts = corners_nodes;
+    bC.problemPtr = problemPtr;
+    bC.iNitalize();
 
     PetscFunctionReturn(0);
   }
@@ -235,8 +244,8 @@ struct MonitorLoadPath: public FEMethod {
     double time;
     ierr = TSGetTime(tS,&time); CHKERRQ(ierr);
 
-    const MoFEMProblem *problemPtr;
-    ierr = mField.get_problem("COUPLED_DYNAMIC",&problemPtr); CHKERRQ(ierr);
+    //const MoFEMProblem *problemPtr;
+    //ierr = mField.get_problem("COUPLED_DYNAMIC",&problemPtr); CHKERRQ(ierr);
 
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|UNKNOWNCUBITNAME,it)) {
       if(it->get_Cubit_name() != "LoadPath") continue;
@@ -491,24 +500,6 @@ PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterf
   Vec D;
   ierr = m_field.VecCreateGhost("COUPLED_DYNAMIC",COL,&D); CHKERRQ(ierr);
 
-  Range corners_edges,corners_nodes;
-  ierr = m_field.get_Cubit_msId_entities_by_dimension(100,SIDESET,1,corners_edges,true); CHKERRQ(ierr);
-  ierr = m_field.get_Cubit_msId_entities_by_dimension(101,NODESET,0,corners_nodes,true); CHKERRQ(ierr);
-  Range corners_edgesNodes;
-  rval = m_field.get_moab().get_connectivity(corners_edges,corners_edgesNodes,true); CHKERR_PETSC(rval);
-  corners_nodes.insert(corners_edgesNodes.begin(),corners_edgesNodes.end());
-  Range nodes_to_block;
-  BitRefLevel bit_to_block = BitRefLevel().set(BITREFLEVEL_SIZE-2);
-  ierr = m_field.get_entities_by_type_and_ref_level(bit_to_block,BitRefLevel().set(),MBVERTEX,nodes_to_block); CHKERRQ(ierr);
-  corners_nodes.merge(nodes_to_block);
-
-  Range crack_front_edges,crack_front_nodes;
-  ierr = m_field.get_Cubit_msId_entities_by_dimension(201,SIDESET,1,crack_front_edges,true); CHKERRQ(ierr);
-  rval = m_field.get_moab().get_connectivity(crack_front_edges,crack_front_nodes,true); CHKERR_PETSC(rval);
-  Range level_nodes;
-  ierr = m_field.get_entities_by_type_and_ref_level(*ptr_bit_level0,BitRefLevel().set(),MBVERTEX,level_nodes); CHKERRQ(ierr);
-  crack_front_nodes = intersect(crack_front_nodes,level_nodes);
-
   struct MyPrePostProcessFEMethod: public FEMethod {
     
     FieldInterface& mField;
@@ -604,6 +595,15 @@ PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterf
   //bothsieds constrains
   BothSurfaceConstrains  both_sides_constrains(m_field);
   //dirichlet constrains
+  Range corners_nodes;
+  {
+    Range corners_edges;
+    ierr = m_field.get_Cubit_msId_entities_by_dimension(100,SIDESET,1,corners_edges,true); CHKERRQ(ierr);
+    ierr = m_field.get_Cubit_msId_entities_by_dimension(101,NODESET,0,corners_nodes,true); CHKERRQ(ierr);
+    Range corners_edgesNodes;
+    rval = m_field.get_moab().get_connectivity(corners_edges,corners_edgesNodes,true); CHKERR_PETSC(rval);
+    corners_nodes.insert(corners_edgesNodes.begin(),corners_edgesNodes.end());
+  }
   FixBcAtEntities fix_material_pts(m_field,"MESH_NODE_POSITIONS",corners_nodes);
   fix_material_pts.fieldNames.push_back("LAMBDA_SURFACE");
   fix_material_pts.fieldNames.push_back("LAMBDA_CRACK_SURFACE");
@@ -719,7 +719,7 @@ PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterf
 
   //monitor
   MonitorRestart monitor_restart(m_field,ts);
-  MonitorUpdateFrezedNodes monitor_fix_matrial_nodes(m_field,this,fix_material_pts,corners_nodes,fe_material,iNertia);
+  MonitorUpdateFrezedNodes monitor_fix_matrial_nodes(m_field,this,fix_material_pts,fe_material,iNertia);
   MonitorPostProc post_proc(m_field);
   MonitorLoadPath monitor_load_path(m_field,ts);
 

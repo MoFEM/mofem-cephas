@@ -794,8 +794,8 @@ struct ConvectiveMassElement {
 	    } else {
 	      noalias(F) = h;
 	    }
-	    noalias(dot_u) = dot_w ;//- prod(F,dot_W);
-	    noalias(a_res) = (v - dot_u);//*detH;
+	    noalias(dot_u) = dot_w-prod(F,dot_W);
+	    noalias(a_res) = (v - dot_u)*detH;
 	    //dependant
 	    ublas::vector<double>& res = commonData.valVel[gg];
 	    res.resize(3);
@@ -1473,6 +1473,7 @@ struct ConvectiveMassElement {
     //ErrorCode rval;
 
     ierr = mField.add_finite_element(element_name,MF_ZERO); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_row(element_name,velocity_field_name); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_col(element_name,velocity_field_name); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_data(element_name,velocity_field_name); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_row(element_name,spatial_position_field_name); CHKERRQ(ierr);
@@ -1480,6 +1481,7 @@ struct ConvectiveMassElement {
     ierr = mField.modify_finite_element_add_field_data(element_name,spatial_position_field_name); CHKERRQ(ierr);
     if(mField.check_field(material_position_field_name)) {
       if(ale) {
+	ierr = mField.modify_finite_element_add_field_row(element_name,material_position_field_name); CHKERRQ(ierr);
 	ierr = mField.modify_finite_element_add_field_col(element_name,material_position_field_name); CHKERRQ(ierr);
 	ierr = mField.modify_finite_element_add_field_data(element_name,"DOT_"+material_position_field_name); CHKERRQ(ierr);
       }
