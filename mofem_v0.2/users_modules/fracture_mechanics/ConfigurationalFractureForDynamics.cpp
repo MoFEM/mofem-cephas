@@ -171,6 +171,8 @@ struct MonitorUpdateFrezedNodes: public FEMethod {
     PetscFunctionBegin;
     PetscErrorCode ierr;
 
+    ierr = confProb->set_coordinates_from_material_solution(mField,false); CHKERRQ(ierr);
+
     Vec F_Material;
     ierr = mField.VecCreateGhost("COUPLED_DYNAMIC",ROW,&F_Material); CHKERRQ(ierr);
     ierr = VecZeroEntries(F_Material); CHKERRQ(ierr);
@@ -200,10 +202,10 @@ struct MonitorUpdateFrezedNodes: public FEMethod {
     Range corners_edges,corners_nodes;
     ierr = mField.get_Cubit_msId_entities_by_dimension(100,SIDESET,1,corners_edges,true); CHKERRQ(ierr);
     ierr = mField.get_Cubit_msId_entities_by_dimension(101,NODESET,0,corners_nodes,true); CHKERRQ(ierr);
-    Range corners_edgesNodes;
+    Range corners_edges_nodes;
     ErrorCode rval;
-    rval = mField.get_moab().get_connectivity(corners_edges,corners_edgesNodes,true); CHKERR_PETSC(rval);
-    corners_nodes.insert(corners_edgesNodes.begin(),corners_edgesNodes.end());
+    rval = mField.get_moab().get_connectivity(corners_edges,corners_edges_nodes,true); CHKERR_PETSC(rval);
+    corners_nodes.insert(corners_edges_nodes.begin(),corners_edges_nodes.end());
     corners_nodes.insert(fix_nodes.begin(),fix_nodes.end());
 
     bC.map_zero_rows.clear();
@@ -424,12 +426,17 @@ PetscErrorCode ConfigurationalFracturDynamics::coupled_dynamic_problem_definitio
     "MESH_NODE_POSITIONS",true,*ptr_bit_level0); CHKERRQ(ierr);
   ierr = iNertia.addVelocityElement("VELOCITY_ELEMENT","SPATIAL_VELOCITY","SPATIAL_POSITION",
     "MESH_NODE_POSITIONS",true,*ptr_bit_level0); CHKERRQ(ierr);
+
+  Range crack_front_edges,crack_front_nodes,crack_front_nodes_tets;
+  ierr = m_field.get_Cubit_msId_entities_by_dimension(201,SIDESET,1,crack_front_edges,true); CHKERRQ(ierr);
+  rval = m_field.get_moab().get_connectivity(crack_front_edges,crack_front_nodes,true); CHKERR_PETSC(rval);
+  rval = m_field.get_moab().get_adjacencies(crack_front_nodes,3,false,crack_front_nodes_tets,Interface::UNION); CHKERR_PETSC(rval);
   ierr = iNertia.addEshelbyDynamicMaterialMomentum("DYNAMIC_ESHELBY_TERM","SPATIAL_VELOCITY","SPATIAL_POSITION",
-    "MESH_NODE_POSITIONS",true,*ptr_bit_level0); CHKERRQ(ierr);
+    "MESH_NODE_POSITIONS",true,*ptr_bit_level0,&crack_front_nodes_tets); CHKERRQ(ierr);
 
   ierr = m_field.modify_problem_add_finite_element("COUPLED_DYNAMIC","MASS_ELEMENT"); CHKERRQ(ierr);
   ierr = m_field.modify_problem_add_finite_element("COUPLED_DYNAMIC","VELOCITY_ELEMENT"); CHKERRQ(ierr);
-  //ierr = m_field.modify_problem_add_finite_element("COUPLED_DYNAMIC","DYNAMIC_ESHELBY_TERM"); CHKERRQ(ierr);
+  ierr = m_field.modify_problem_add_finite_element("COUPLED_DYNAMIC","DYNAMIC_ESHELBY_TERM"); CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
@@ -600,9 +607,9 @@ PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterf
     Range corners_edges;
     ierr = m_field.get_Cubit_msId_entities_by_dimension(100,SIDESET,1,corners_edges,true); CHKERRQ(ierr);
     ierr = m_field.get_Cubit_msId_entities_by_dimension(101,NODESET,0,corners_nodes,true); CHKERRQ(ierr);
-    Range corners_edgesNodes;
-    rval = m_field.get_moab().get_connectivity(corners_edges,corners_edgesNodes,true); CHKERR_PETSC(rval);
-    corners_nodes.insert(corners_edgesNodes.begin(),corners_edgesNodes.end());
+    Range corners_edges_nodes;
+    rval = m_field.get_moab().get_connectivity(corners_edges,corners_edges_nodes,true); CHKERR_PETSC(rval);
+    corners_nodes.insert(corners_edges_nodes.begin(),corners_edges_nodes.end());
   }
   FixBcAtEntities fix_material_pts(m_field,"MESH_NODE_POSITIONS",corners_nodes);
   fix_material_pts.fieldNames.push_back("LAMBDA_SURFACE");
@@ -644,7 +651,13 @@ PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterf
   //iNertia
   ierr = iNertia.setConvectiveMassOperators("SPATIAL_VELOCITY","SPATIAL_POSITION","MESH_NODE_POSITIONS",true,true); CHKERRQ(ierr);
   ierr = iNertia.setVelocityOperators("SPATIAL_VELOCITY","SPATIAL_POSITION","MESH_NODE_POSITIONS",true); CHKERRQ(ierr);
-  ierr = iNertia.setKinematicEshelbyOperators("SPATIAL_VELOCITY","SPATIAL_POSITION","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+
+  Range crack_front_edges;
+  ierr = m_field.get_Cubit_msId_entities_by_dimension(201,SIDESET,1,crack_front_edges,true); CHKERRQ(ierr);
+  Range crack_front_edges_nodes;
+  rval = m_field.get_moab().get_connectivity(crack_front_edges,crack_front_edges_nodes,true); CHKERR_PETSC(rval);
+  crack_front_edges_nodes.merge(crack_front_edges);
+  ierr = iNertia.setKinematicEshelbyOperators("SPATIAL_VELOCITY","SPATIAL_POSITION","MESH_NODE_POSITIONS",&crack_front_edges_nodes); CHKERRQ(ierr);
 
   //TS
   TsCtx ts_ctx(m_field,"COUPLED_DYNAMIC");
@@ -684,7 +697,7 @@ PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterf
   }
   loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("VELOCITY_ELEMENT",&iNertia.getLoopFeVelRhs()));
   loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("MASS_ELEMENT",&iNertia.getLoopFeMassRhs()));
-  //loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("DYNAMIC_ESHELBY_TERM",&iNertia.getLoopFeTRhs()));
+  loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("DYNAMIC_ESHELBY_TERM",&iNertia.getLoopFeTRhs()));
 
   ts_ctx.get_postProcess_to_do_IFunction().push_back(&fix_material_pts);
   ts_ctx.get_postProcess_to_do_IFunction().push_back(&my_dirichlet_bc);
@@ -711,7 +724,7 @@ PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterf
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("NEUAMNN_FE",&fe_forces));
   loops_to_do_Mat.push_back(TsCtx::loop_pair_type("VELOCITY_ELEMENT",&iNertia.getLoopFeVelLhs()));
   loops_to_do_Mat.push_back(TsCtx::loop_pair_type("MASS_ELEMENT",&iNertia.getLoopFeMassLhs()));
-  //loops_to_do_Mat.push_back(TsCtx::loop_pair_type("DYNAMIC_ESHELBY_TERM",&iNertia.getLoopFeTLhs()));
+  loops_to_do_Mat.push_back(TsCtx::loop_pair_type("DYNAMIC_ESHELBY_TERM",&iNertia.getLoopFeTLhs()));
 
   //lh postproc
   ts_ctx.get_postProcess_to_do_IJacobian().push_back(&my_dirichlet_bc);
