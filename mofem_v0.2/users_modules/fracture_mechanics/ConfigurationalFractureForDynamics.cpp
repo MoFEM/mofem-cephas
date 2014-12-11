@@ -172,6 +172,9 @@ struct MonitorUpdateFrezedNodes: public FEMethod {
     PetscErrorCode ierr;
 
     ierr = confProb->set_coordinates_from_material_solution(mField,false); CHKERRQ(ierr);
+    for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"DOT_MESH_NODE_POSITIONS",dof_ptr)) {
+      dof_ptr->get_FieldData() = 0;
+    }
 
     Vec F_Material;
     ierr = mField.VecCreateGhost("COUPLED_DYNAMIC",ROW,&F_Material); CHKERRQ(ierr);
@@ -581,7 +584,7 @@ PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterf
   //meshs moothing
   MyMeshSmoothingFEMethod smoother(m_field);
   ierr = smoother.initCrackFrontData(m_field); CHKERRQ(ierr);
-  set_qual_ver(3);
+  set_qual_ver(0);
   //constrains
   SnesConstrainSurfacGeometry constrain_body_surface(m_field,"LAMBDA_SURFACE");
   constrain_body_surface.nonlinear = true;

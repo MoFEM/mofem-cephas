@@ -166,6 +166,7 @@ NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::MyTriangleSpatialFE
   TriElementForcesAndSurcesCore(_mField),sCaleLhs(scale_lhs),sCaleRhs(scale_rhs),
   typeOfForces(CONSERVATIVE),eps(1e-8),uSeF(false) {
 
+  meshPositionsFieldName = "NoNE";
   methodsOp.clear();
 
   Aij = _Aij;
@@ -175,7 +176,7 @@ NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::MyTriangleSpatialFE
   snes_f = _F;
 
   if(mField.check_field("MESH_NODE_POSITIONS")) {
-	get_op_to_do_Rhs().push_back(new AuxMethodMaterial("MESH_NODE_POSITIONS",this));
+    get_op_to_do_Rhs().push_back(new AuxMethodMaterial("MESH_NODE_POSITIONS",this));
   }
   get_op_to_do_Rhs().push_back(new AuxMethodSpatial("SPATIAL_POSITION",this));
 

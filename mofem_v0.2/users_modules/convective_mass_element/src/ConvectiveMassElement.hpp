@@ -44,7 +44,9 @@ struct ConvectiveMassElement {
 
   /// \brief  definition of volume element
   struct MyVolumeFE: public TetElementForcesAndSourcesCore {
-    MyVolumeFE(FieldInterface &_mField): TetElementForcesAndSourcesCore(_mField) {}
+    MyVolumeFE(FieldInterface &_mField): TetElementForcesAndSourcesCore(_mField) {
+    meshPositionsFieldName = "NoNE";
+  }
     
     /** \brief it is used to calculate nb. of Gauss integartion points
      *
@@ -347,11 +349,11 @@ struct ConvectiveMassElement {
 	    adouble detH;
 	    ierr = dEterminatnt(H,detH); CHKERRQ(ierr);
 	    ierr = iNvert(detH,H,invH); CHKERRQ(ierr);
-	    noalias(F) = prod(h,invH);
 	    noalias(G) = prod(g,invH);
 	    double rho0 = dAta.rho0;
 	    ublas::vector<double>& a0 = dAta.a0;
 	    if(!lInear) {
+	      noalias(F) = prod(h,invH);
 	      adouble detF;
 	      ierr = dEterminatnt(F,detF); CHKERRQ(ierr);
 	      //calulate current density
