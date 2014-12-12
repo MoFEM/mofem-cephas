@@ -1989,11 +1989,11 @@ PetscErrorCode TriElementForcesAndSurcesCore::operator()() {
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
     }
   } else {
-    ublas::matrix<double> diffN(nb_gauss_pts,9);
+    ublas::matrix<double> diffN(nb_gauss_pts,6);
     for(int gg = 0;gg<nb_gauss_pts;gg++) {
       for(int nn = 0;nn<3;nn++) {
-	for(int dd = 0;dd<3;dd++) {
-	  diffN(gg,nn*3+dd) = dataH1.dataOnEntities[MBVERTEX][0].getDiffN()(nn,dd);
+	for(int dd = 0;dd<2;dd++) {
+	  diffN(gg,nn*2+dd) = dataH1.dataOnEntities[MBVERTEX][0].getDiffN()(nn,dd);
 	}
       }
     }
