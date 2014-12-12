@@ -1988,6 +1988,17 @@ PetscErrorCode TriElementForcesAndSurcesCore::operator()() {
       ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
     }
+  } else {
+    ublas::matrix<double> diffN(nb_gauss_pts,6);
+    for(int gg = 0;gg<nb_gauss_pts;gg++) {
+      for(int nn = 0;nn<3;nn++) {
+	for(int dd = 0;dd<2;dd++) {
+	  diffN(gg,nn*2+dd) = dataH1.dataOnEntities[MBVERTEX][0].getDiffN()(nn,dd);
+	}
+      }
+    }
+    dataH1.dataOnEntities[MBVERTEX][0].getDiffN().resize(diffN.size1(),diffN.size2());
+    dataH1.dataOnEntities[MBVERTEX][0].getDiffN().data().swap(diffN.data());
   }
 
   if(dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
