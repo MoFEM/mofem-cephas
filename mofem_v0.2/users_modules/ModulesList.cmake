@@ -26,6 +26,7 @@ add_library(complex_for_lazy_obsolete
 add_subdirectory(analytical_dirihlet_boundary_conditions)
 add_subdirectory(convective_mass_element)
 add_subdirectory(elasticity)
+add_subdirectory(cohesive_interface)
 add_subdirectory(nonlinear_elasticity)
 add_subdirectory(fracture_mechanics)
 add_subdirectory(homogenisation)
