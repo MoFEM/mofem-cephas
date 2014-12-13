@@ -256,6 +256,20 @@ struct NonLinearSpatialElasticFEMthod: public FEMethod_ComplexForLazy {
 
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
+    switch (ts_ctx) {
+      case CTX_TSSETIFUNCTION: {
+	snes_ctx = CTX_SNESSETFUNCTION;
+	snes_f = ts_F;
+	break;
+      }
+      case CTX_TSSETIJACOBIAN: {
+	snes_ctx = CTX_SNESSETJACOBIAN;
+	snes_B = ts_B;
+	break;
+      }
+      default:
+      break;
+    }
     if(arcPtr!=NULL) {
       ierr = set_thermal_load_factor(arcPtr->get_FieldData()); CHKERRQ(ierr);
       thermal_load_factor = *thermalLoadFactor;
@@ -488,6 +502,20 @@ struct MeshSmoothingFEMethod: public EshelbyFEMethod {
 
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
+    switch (ts_ctx) {
+      case CTX_TSSETIFUNCTION: {
+	snes_ctx = CTX_SNESSETFUNCTION;
+	snes_f = ts_F;
+	break;
+      }
+      case CTX_TSSETIJACOBIAN: {
+	snes_ctx = CTX_SNESSETJACOBIAN;
+	snes_B = ts_B;
+	break;
+      }
+      default:
+      break;
+    }
     PetscFunctionReturn(0);
   }
 
@@ -570,6 +598,20 @@ struct ArcLengthElemFEMethod: public FEMethod {
 
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
+    switch (ts_ctx) {
+      case CTX_TSSETIFUNCTION: {
+	snes_ctx = CTX_SNESSETFUNCTION;
+	snes_f = ts_F;
+	break;
+      }
+      case CTX_TSSETIJACOBIAN: {
+	snes_ctx = CTX_SNESSETJACOBIAN;
+	snes_B = ts_B;
+	break;
+      }
+      default:
+      break;
+    }
     switch(snes_ctx) {
       case CTX_SNESSETFUNCTION: { 
 	ierr = calculate_dx_and_dlambda(snes_x); CHKERRQ(ierr);

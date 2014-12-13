@@ -106,6 +106,21 @@ PetscErrorCode DisplacementBCFEMethodPreAndPostProc::preProcess() {
   PetscFunctionBegin;
   ierr = iNitalize(); CHKERRQ(ierr);
 
+  switch (ts_ctx) {
+    case CTX_TSSETIFUNCTION: {
+      snes_ctx = CTX_SNESSETFUNCTION;
+      snes_f = ts_F;
+      break;
+    }
+    case CTX_TSSETIJACOBIAN: {
+      snes_ctx = CTX_SNESSETJACOBIAN;
+      snes_B = ts_B;
+      break;
+    }
+    default:
+    break;
+  }
+
   if(snes_ctx == CTX_SNESNONE && ts_ctx == CTX_TSNONE) {
     if(dofsIndices.size()>0) {
       ierr = VecSetValues(snes_x,dofsIndices.size(),&dofsIndices[0],&dofsValues[0],INSERT_VALUES); CHKERRQ(ierr);
@@ -131,25 +146,6 @@ PetscErrorCode DisplacementBCFEMethodPreAndPostProc::preProcess() {
     default:
 	SETERRQ(PETSC_COMM_SELF,1,"unknown snes stage");
   }
-
-  switch(ts_ctx) {
-    case CTX_TSNONE: {}
-    break;
-    case CTX_TSSETIFUNCTION: {
-      if(dofsIndices.size()>0) {
-	ierr = VecSetValues(ts_u,dofsIndices.size(),&dofsIndices[0],&dofsValues[0],INSERT_VALUES); CHKERRQ(ierr);
-      }
-      ierr = VecAssemblyBegin(ts_u); CHKERRQ(ierr);
-      ierr = VecAssemblyEnd(ts_u); CHKERRQ(ierr);
-    }
-    break;
-    case CTX_TSSETIJACOBIAN: {
-    }
-    break;
-    default:
-	SETERRQ(PETSC_COMM_SELF,1,"unknown snes stage");
-  }
-
 
   PetscFunctionReturn(0);
 }
@@ -186,29 +182,6 @@ PetscErrorCode DisplacementBCFEMethodPreAndPostProc::postProcess() {
       ierr = MatAssemblyBegin(snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
       ierr = MatAssemblyEnd(snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
       ierr = MatZeroRowsColumns(snes_B,dofsIndices.size(),&dofsIndices[0],1,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
-    }
-    break;
-    default:
-	SETERRQ(PETSC_COMM_SELF,1,"unknown snes stage");
-  }
-
-  switch(ts_ctx) {
-    case CTX_TSNONE: {}
-    break;
-    case CTX_TSSETIFUNCTION: {
-      ierr = VecAssemblyBegin(ts_F); CHKERRQ(ierr);
-      ierr = VecAssemblyEnd(ts_F); CHKERRQ(ierr);
-      for(vector<int>::iterator vit = dofsIndices.begin();vit!=dofsIndices.end();vit++) {
-	ierr = VecSetValue(ts_F,*vit,0,INSERT_VALUES); CHKERRQ(ierr);
-      }
-      ierr = VecAssemblyBegin(ts_F); CHKERRQ(ierr);
-      ierr = VecAssemblyEnd(ts_F); CHKERRQ(ierr);
-    }
-    break;
-    case CTX_TSSETIJACOBIAN: {
-      ierr = MatAssemblyBegin(ts_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-      ierr = MatAssemblyEnd(ts_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-      ierr = MatZeroRowsColumns(ts_B,dofsIndices.size(),&dofsIndices[0],1,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
     }
     break;
     default:
@@ -355,6 +328,22 @@ PetscErrorCode FixBcAtEntities::iNitalize() {
 
 PetscErrorCode FixBcAtEntities::preProcess() {
     PetscFunctionBegin;
+
+    switch (ts_ctx) {
+      case CTX_TSSETIFUNCTION: {
+	snes_ctx = CTX_SNESSETFUNCTION;
+	snes_f = ts_F;
+	break;
+      }
+      case CTX_TSSETIJACOBIAN: {
+	snes_ctx = CTX_SNESSETJACOBIAN;
+	snes_B = ts_B;
+	break;
+      }
+      default:
+      break;
+    }
+
     ierr = iNitalize(); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }

@@ -44,7 +44,9 @@ struct ConvectiveMassElement {
 
   /// \brief  definition of volume element
   struct MyVolumeFE: public TetElementForcesAndSourcesCore {
-    MyVolumeFE(FieldInterface &_mField): TetElementForcesAndSourcesCore(_mField) {}
+    MyVolumeFE(FieldInterface &_mField): TetElementForcesAndSourcesCore(_mField) {
+    meshPositionsFieldName = "NoNE";
+  }
     
     /** \brief it is used to calculate nb. of Gauss integartion points
      *
@@ -74,6 +76,11 @@ struct ConvectiveMassElement {
   MyVolumeFE feVelLhs; //< calculate left hand side for tetrahedral elements
   MyVolumeFE& getLoopFeVelLhs() { return feVelLhs; } ///< get lhs volume element
 
+  MyVolumeFE feTRhs; ///< cauclate right hand side for tetrahedral elements
+  MyVolumeFE& getLoopFeTRhs() { return feTRhs; } ///< get rhs volume element 
+  MyVolumeFE feTLhs; //< calculate left hand side for tetrahedral elements
+  MyVolumeFE& getLoopFeTLhs() { return feTLhs; } ///< get lhs volume element
+
   FieldInterface &mField;
   short int tAg;
 
@@ -81,6 +88,7 @@ struct ConvectiveMassElement {
     FieldInterface &m_field,short int tag):
     feMassRhs(m_field),feMassLhs(m_field),
     feVelRhs(m_field),feVelLhs(m_field),
+    feTRhs(m_field),feTLhs(m_field),
     mField(m_field),tAg(tag) {}
 
   /** \brief data for calulation het conductivity and heat capacity elements
@@ -108,6 +116,10 @@ struct ConvectiveMassElement {
     vector<ublas::vector<double> > valMass;
     vector<vector<double*> > jacMassRowPtr;
     vector<ublas::matrix<double> > jacMass;
+    vector<ublas::vector<double> > valT;
+    vector<vector<double*> > jacTRowPtr;
+    vector<ublas::matrix<double> > jacT;
+
   };
   CommonData commonData;
 
@@ -216,9 +228,9 @@ struct ConvectiveMassElement {
     }
   
     template<typename TYPE> 
-    PetscErrorCode iNvert(ublas::matrix<TYPE> a,ublas::matrix<TYPE> &inv_a) {
+    PetscErrorCode iNvert(TYPE det,ublas::matrix<TYPE> a,ublas::matrix<TYPE> &inv_a) {
       PetscFunctionBegin;
-      PetscErrorCode ierr;
+      //PetscErrorCode ierr;
       inv_a.resize(3,3);
       //http://www.cg.info.hiroshima-cu.ac.jp/~miyazaki/knowledge/teche23.html
       //http://mathworld.wolfram.com/MatrixInverse.html
@@ -231,72 +243,12 @@ struct ConvectiveMassElement {
       inv_a(2,0) = a(1,0)*a(2,1)-a(1,1)*a(2,0);
       inv_a(2,1) = a(0,1)*a(2,0)-a(0,0)*a(2,1);
       inv_a(2,2) = a(0,0)*a(1,1)-a(0,1)*a(1,0);
-      TYPE det;
-      ierr = dEterminatnt(a,det); CHKERRQ(ierr);
+      //TYPE det;
+      //ierr = dEterminatnt(a,det); CHKERRQ(ierr);
       inv_a /= det;
       PetscFunctionReturn(0);
     }
   
-    template<typename TYPE> 
-    PetscErrorCode calculateMomentumRate(
-      double rho0,ublas::vector<double>& a0,
-      ublas::vector<TYPE>& a,ublas::matrix<TYPE>& grad_v,
-      ublas::vector<TYPE>& dot_W,
-      ublas::matrix<TYPE>& H,ublas::matrix<TYPE>& invH,
-      ublas::matrix<TYPE>& h,
-      ublas::matrix<TYPE>& F,
-      ublas::vector<TYPE>& dp_dt) {
-      PetscFunctionBegin;
-      PetscErrorCode ierr;
-      //calulate gradient of deformation
-      noalias(F) = prod(h,invH);
-      TYPE detF;
-      ierr = dEterminatnt(F,detF); CHKERRQ(ierr);
-      //calulate current density
-      TYPE rho = rho0*detF*rho0;
-      //momentum rate
-      noalias(dp_dt) = rho*(a0 + a - prod(grad_v,dot_W));
-      PetscFunctionReturn(0);
-    }
-  
-    template<typename TYPE> 
-    PetscErrorCode calculateFuncUnderIntegral(
-      double rho0,ublas::vector<double>& a0,
-      ublas::vector<TYPE>& a,
-      ublas::matrix<TYPE>& grad_v,
-      ublas::vector<TYPE>& dot_W,
-      ublas::matrix<TYPE>& H,
-      ublas::matrix<TYPE>& invH,
-      ublas::matrix<TYPE>& h,
-      ublas::matrix<TYPE>& F,
-      ublas::vector<TYPE>& dp_dt,
-      ublas::vector<TYPE>& f) {
-      PetscFunctionBegin;
-      PetscErrorCode ierr;
-      ierr = calculateMomentumRate(
-        rho0,a0,a,grad_v,dot_W,H,invH,h,F,dp_dt); CHKERRQ(ierr);
-      TYPE detH;
-      ierr = dEterminatnt(H,detH); CHKERRQ(ierr);
-      noalias(f) = dp_dt*detH;
-      PetscFunctionReturn(0);
-    }
-
-    template<typename TYPE> 
-    PetscErrorCode calulateVelocity(
-      ublas::vector<TYPE>& dot_w,
-      ublas::vector<TYPE>& dot_W,
-      ublas::matrix<TYPE>& h,
-      ublas::matrix<TYPE>& H,
-      ublas::matrix<TYPE>& invH,
-      ublas::matrix<TYPE>& F,
-      ublas::vector<TYPE>& dot_u) {
-      PetscFunctionBegin;
-      PetscErrorCode ierr;
-      noalias(F) = prod(h,invH);
-      noalias(dot_u) = dot_w - prod(F,dot_W);
-      PetscFunctionReturn(0);
-    }
-
   };
 
   struct OpMassJacobian: public TetElementForcesAndSourcesCore::UserDataOperator,CommonFunctions {
@@ -305,13 +257,14 @@ struct ConvectiveMassElement {
     CommonData &commonData;
     int tAg;
     bool jAcobian;
+    bool lInear;
 
-    OpMassJacobian(const string field_name,BlockData &data,CommonData &common_data,int tag,bool jacobian = true):
+    OpMassJacobian(const string field_name,BlockData &data,CommonData &common_data,int tag,bool jacobian = true,bool linear = false):
       TetElementForcesAndSourcesCore::UserDataOperator(field_name),
-      dAta(data),commonData(common_data),tAg(tag),jAcobian(jacobian) { }
+      dAta(data),commonData(common_data),tAg(tag),jAcobian(jacobian),lInear(linear) { }
 
     ublas::vector<adouble> a,dot_W,dp_dt,a_res;
-    ublas::matrix<adouble> h,H,invH,F,g;
+    ublas::matrix<adouble> h,H,invH,F,g,G;
 
     vector<double> active;
  
@@ -338,6 +291,7 @@ struct ConvectiveMassElement {
 	a_res.resize(3);
 
 	g.resize(3,3);
+	G.resize(3,3);
 	h.resize(3,3);
 	H.resize(3,3);
 	invH.resize(3,3);
@@ -392,16 +346,24 @@ struct ConvectiveMassElement {
 		}
 	      }
 	    }
-
-	    if(commonData.gradAtGaussPts[commonData.meshPositions].size()>0) {
-	      ierr = iNvert(H,invH); CHKERRQ(ierr);
-	    } 
-
+	    adouble detH;
+	    ierr = dEterminatnt(H,detH); CHKERRQ(ierr);
+	    ierr = iNvert(detH,H,invH); CHKERRQ(ierr);
+	    noalias(G) = prod(g,invH);
 	    double rho0 = dAta.rho0;
 	    ublas::vector<double>& a0 = dAta.a0;
-	    ierr = calculateFuncUnderIntegral(
-	      rho0,a0,a,g,dot_W,H,invH,h,F,dp_dt,a_res); CHKERRQ(ierr);
-
+	    if(!lInear) {
+	      noalias(F) = prod(h,invH);
+	      adouble detF;
+	      ierr = dEterminatnt(F,detF); CHKERRQ(ierr);
+	      //calulate current density
+	      adouble rho = rho0*detF;
+	      //momentum rate
+	      noalias(dp_dt) = rho*(a0 + a + prod(G,dot_W));
+	    } else {
+	      noalias(dp_dt) = rho0*(a0 + a + prod(G,dot_W));
+	    }
+	    noalias(a_res) = dp_dt*detH;
 	    //dependant
 	    ublas::vector<double>& res = commonData.valMass[gg];
 	    res.resize(3);
@@ -415,26 +377,26 @@ struct ConvectiveMassElement {
 
 	  active.resize(nb_active_vars);
 	  int aa = 0;
-	  for(int nn1 = 0;nn1<3;nn1++) {
-	    active[aa++] = (commonData.dataAtGaussPts["DOT_"+commonData.spatialVelocities][gg])[nn1];
+	  for(int nn1 = 0;nn1<3;nn1++) { //0
+	    active[aa++] = (commonData.dataAtGaussPts["DOT_"+commonData.spatialVelocities][gg])[nn1]; 
 	  }
-	  for(int nn1 = 0;nn1<3;nn1++) {
+	  for(int nn1 = 0;nn1<3;nn1++) { //3
 	    for(int nn2 = 0;nn2<3;nn2++) {
 	      active[aa++] = (commonData.gradAtGaussPts[commonData.spatialPositions][gg])(nn1,nn2);
 	    }
 	  }
 	  if(commonData.dataAtGaussPts["DOT_"+commonData.meshPositions].size()>0) {
-	    for(int nn1 = 0;nn1<3;nn1++) {
+	    for(int nn1 = 0;nn1<3;nn1++) { //3+9=12
 	      for(int nn2 = 0;nn2<3;nn2++) {
-		active[aa++] = (commonData.gradAtGaussPts[commonData.spatialVelocities][gg])(nn1,nn2);
+	        active[aa++] = (commonData.gradAtGaussPts[commonData.spatialVelocities][gg])(nn1,nn2);
 	      }
 	    }  
-	    for(int nn1 = 0;nn1<3;nn1++) {
+	    for(int nn1 = 0;nn1<3;nn1++) { //3+9+9=21
 	      active[aa++] = (commonData.dataAtGaussPts["DOT_"+commonData.meshPositions][gg])[nn1];
 	    }
-	    for(int nn1 = 0;nn1<3;nn1++) {
+	    for(int nn1 = 0;nn1<3;nn1++) { //3+9+9+3=24
 	      for(int nn2 = 0;nn2<3;nn2++) {
-		active[aa] = (commonData.gradAtGaussPts[commonData.meshPositions][gg])(nn1,nn2);
+		active[aa++] = (commonData.gradAtGaussPts[commonData.meshPositions][gg])(nn1,nn2);
 	      }
 	    }
 	  }
@@ -539,16 +501,23 @@ struct ConvectiveMassElement {
 
     BlockData &dAta;
     CommonData &commonData;
-    int tAg;
+    Range forcesOnlyOnEntities;
 
-    OpMassLhs_dM_dv(const string vel_field,const string field_name,BlockData &data,CommonData &common_data):
+    OpMassLhs_dM_dv(
+      const string vel_field,const string field_name,BlockData &data,CommonData &common_data,Range *forcesonlyonentities_ptr = NULL):
       TetElementForcesAndSourcesCore::UserDataOperator(vel_field,field_name),
-      dAta(data),commonData(common_data) { symm = false;  }
+      dAta(data),commonData(common_data) { 
+	symm = false;  
+	if(forcesonlyonentities_ptr!=NULL) {
+	  forcesOnlyOnEntities = *forcesonlyonentities_ptr;
+	}
+      }
 
     ublas::matrix<double> k,jac;
 
     virtual PetscErrorCode getJac(DataForcesAndSurcesCore::EntData &col_data,int gg) {
       PetscFunctionBegin;
+      try {
       int nb_col = col_data.getIndices().size();
       jac.clear();
       //cerr << commonData.jacMass[gg] << endl;
@@ -577,6 +546,11 @@ struct ConvectiveMassElement {
 	  jac(2,3*dd+2) += commonData.jacMass[gg](2,3+9+3*2+1)*diffN(dd,1);
 	  jac(2,3*dd+2) += commonData.jacMass[gg](2,3+9+3*2+2)*diffN(dd,2);
 	}
+      }
+      } catch (const std::exception& ex) {
+	ostringstream ss;
+	ss << "throw in method: " << ex.what() << endl;
+	SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
       PetscFunctionReturn(0);
     }
@@ -607,15 +581,19 @@ struct ConvectiveMassElement {
 
 	for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
 
-	  ierr = getJac(col_data,gg); CHKERRQ(ierr);
+	  try {
+	    ierr = getJac(col_data,gg); CHKERRQ(ierr);
+	  } catch (const std::exception& ex) {
+	    ostringstream ss;
+	    ss << "throw in method: " << ex.what() << endl;
+	    SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+	  }
 
 	  { //integrate element stiffnes matrix
 	    for(int dd1 = 0;dd1<nb_row/3;dd1++) {
 	      for(int rr1 = 0;rr1<3;rr1++) {
-		for(int dd2 = 0;dd2<nb_col/3;dd2++) {
-		  for(int rr2 = 0;rr2<3;rr2++) {
-		    k(3*dd1+rr1,3*dd2+rr2) += row_data.getN()(gg,dd1)*jac(rr1,3*dd2+rr2);
-		  }
+		for(int dd2 = 0;dd2<nb_col;dd2++) {
+		  k(3*dd1+rr1,dd2) += row_data.getN()(gg,dd1)*jac(rr1,dd2);
 		}
 	      }
 	    }
@@ -623,10 +601,25 @@ struct ConvectiveMassElement {
 
 	}
 
-	ierr = MatSetValues(getFEMethod()->ts_B,
-	  nb_row,&row_data.getIndices()[0],
-	  nb_col,&col_data.getIndices()[0],
-	  &k(0,0),ADD_VALUES); CHKERRQ(ierr);
+	if(!forcesOnlyOnEntities.empty()) {
+	  ublas::vector<DofIdx> indices = row_data.getIndices();
+	  ublas::vector<const FEDofMoFEMEntity*>& dofs = row_data.getFieldDofs();
+	  ublas::vector<const FEDofMoFEMEntity*>::iterator dit = dofs.begin();
+	  for(int ii = 0;dit!=dofs.end();dit++,ii++) {
+	    if(forcesOnlyOnEntities.find((*dit)->get_ent())==forcesOnlyOnEntities.end()) {
+	      indices[ii] = -1;
+	    }
+	  }
+	  ierr = MatSetValues(getFEMethod()->ts_B,
+	    nb_row,&indices[0],
+	    nb_col,&col_data.getIndices()[0],
+	    &k(0,0),ADD_VALUES); CHKERRQ(ierr);
+	} else {
+	  ierr = MatSetValues(getFEMethod()->ts_B,
+	    nb_row,&row_data.getIndices()[0],
+	    nb_col,&col_data.getIndices()[0],
+	    &k(0,0),ADD_VALUES); CHKERRQ(ierr);
+	}
 
       } catch (const std::exception& ex) {
 	ostringstream ss;
@@ -646,6 +639,7 @@ struct ConvectiveMassElement {
 
     PetscErrorCode getJac(DataForcesAndSurcesCore::EntData &col_data,int gg) {
       PetscFunctionBegin;
+      try {
       int nb_col = col_data.getIndices().size();
       jac.clear();
       ublas::matrix<double> diffN = col_data.getDiffN(gg,nb_col/3);
@@ -663,6 +657,11 @@ struct ConvectiveMassElement {
 	jac(2,3*dd+2) += commonData.jacMass[gg](2,3+3*2+1)*diffN(dd,1);
 	jac(2,3*dd+2) += commonData.jacMass[gg](2,3+3*2+2)*diffN(dd,2);
       }
+      } catch (const std::exception& ex) {
+	ostringstream ss;
+	ss << "throw in method: " << ex.what() << endl;
+	SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+      }
       PetscFunctionReturn(0);
     }
 
@@ -675,6 +674,7 @@ struct ConvectiveMassElement {
 
     PetscErrorCode getJac(DataForcesAndSurcesCore::EntData &col_data,int gg) {
       PetscFunctionBegin;
+      try {
       int nb_col = col_data.getIndices().size();
       jac.clear();
       //cerr << commonData.jacVel[gg] << endl;
@@ -682,25 +682,30 @@ struct ConvectiveMassElement {
       ublas::vector<double> N = col_data.getN(gg,nb_col/3);
       for(int dd = 0;dd<nb_col/3;dd++) {
 	for(int nn = 0;nn<3;nn++) {
-	  jac(0,3*dd+nn) = commonData.jacVel[gg](0,3+9+9+nn)*N(dd)*getFEMethod()->ts_a; 
-	  jac(1,3*dd+nn) = commonData.jacVel[gg](1,3+9+9+nn)*N(dd)*getFEMethod()->ts_a; 
-	  jac(2,3*dd+nn) = commonData.jacVel[gg](2,3+9+9+nn)*N(dd)*getFEMethod()->ts_a; 
+	  jac(0,3*dd+nn) = commonData.jacMass[gg](0,3+9+9+nn)*N(dd)*getFEMethod()->ts_a; 
+	  jac(1,3*dd+nn) = commonData.jacMass[gg](1,3+9+9+nn)*N(dd)*getFEMethod()->ts_a; 
+	  jac(2,3*dd+nn) = commonData.jacMass[gg](2,3+9+9+nn)*N(dd)*getFEMethod()->ts_a; 
 	}
       }
       ublas::matrix<double> diffN = col_data.getDiffN(gg,nb_col/3);
       for(int dd = 0;dd<nb_col/3;dd++) {
 	//h00 //h01 //h02
-	jac(0,3*dd+0) += commonData.jacVel[gg](0,3+9+9+3+3*0+0)*diffN(dd,0);
-	jac(0,3*dd+0) += commonData.jacVel[gg](0,3+9+9+3+3*0+1)*diffN(dd,1);
-	jac(0,3*dd+0) += commonData.jacVel[gg](0,3+9+9+3+3*0+2)*diffN(dd,2);
+	jac(0,3*dd+0) += commonData.jacMass[gg](0,3+9+9+3+3*0+0)*diffN(dd,0);
+	jac(0,3*dd+0) += commonData.jacMass[gg](0,3+9+9+3+3*0+1)*diffN(dd,1);
+	jac(0,3*dd+0) += commonData.jacMass[gg](0,3+9+9+3+3*0+2)*diffN(dd,2);
 	//h10 //h11 //h12
-	jac(1,3*dd+1) += commonData.jacVel[gg](1,3+9+9+3+3*1+0)*diffN(dd,0);
-	jac(1,3*dd+1) += commonData.jacVel[gg](1,3+9+9+3+3*1+1)*diffN(dd,1);
-	jac(1,3*dd+1) += commonData.jacVel[gg](1,3+9+9+3+3*1+2)*diffN(dd,2);
+	jac(1,3*dd+1) += commonData.jacMass[gg](1,3+9+9+3+3*1+0)*diffN(dd,0);
+	jac(1,3*dd+1) += commonData.jacMass[gg](1,3+9+9+3+3*1+1)*diffN(dd,1);
+	jac(1,3*dd+1) += commonData.jacMass[gg](1,3+9+9+3+3*1+2)*diffN(dd,2);
 	//h20 //h21 //h22
-	jac(2,3*dd+2) += commonData.jacVel[gg](2,3+9+9+3+3*2+0)*diffN(dd,0);
-	jac(2,3*dd+2) += commonData.jacVel[gg](2,3+9+9+3+3*2+1)*diffN(dd,1);
-	jac(2,3*dd+2) += commonData.jacVel[gg](2,3+9+9+3+3*2+2)*diffN(dd,2);
+	jac(2,3*dd+2) += commonData.jacMass[gg](2,3+9+9+3+3*2+0)*diffN(dd,0);
+	jac(2,3*dd+2) += commonData.jacMass[gg](2,3+9+9+3+3*2+1)*diffN(dd,1);
+	jac(2,3*dd+2) += commonData.jacMass[gg](2,3+9+9+3+3*2+2)*diffN(dd,2);
+      }
+      } catch (const std::exception& ex) {
+	ostringstream ss;
+	ss << "throw in method: " << ex.what() << endl;
+	SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
       PetscFunctionReturn(0);
     }
@@ -746,6 +751,7 @@ struct ConvectiveMassElement {
 	v.resize(3);
 	dot_w.resize(3);
 	h.resize(3,3);
+	h.clear();
 	F.resize(3,3);
 	dot_W.resize(3);
 	dot_W.clear();
@@ -772,36 +778,43 @@ struct ConvectiveMassElement {
 
 	    trace_on(tAg);
 
-	    for(int nn1 = 0;nn1<3;nn1++) {
-	      v[nn1] <<= commonData.dataAtGaussPts[commonData.spatialVelocities][gg][nn1]; nb_active_vars++;
+	    for(int nn1 = 0;nn1<3;nn1++) { //0
+	      v[nn1] <<= commonData.dataAtGaussPts[commonData.spatialVelocities][gg][nn1];
+	      nb_active_vars++;
 	    }
-	    for(int nn1 = 0;nn1<3;nn1++) {
-	      dot_w[nn1] <<= commonData.dataAtGaussPts["DOT_"+commonData.spatialPositions][gg][nn1]; nb_active_vars++;
-	    }
-	    for(int nn1 = 0;nn1<3;nn1++) {
-	      for(int nn2 = 0;nn2<3;nn2++) {
-		h(nn1,nn2) <<= commonData.gradAtGaussPts[commonData.spatialPositions][gg](nn1,nn2); nb_active_vars++;
-	      }
+	    for(int nn1 = 0;nn1<3;nn1++) { //3
+	      dot_w[nn1] <<= commonData.dataAtGaussPts["DOT_"+commonData.spatialPositions][gg][nn1];
+	      nb_active_vars++;
 	    }
 	    if(commonData.dataAtGaussPts["DOT_"+commonData.meshPositions].size()>0) {
-	      for(int nn1 = 0;nn1<3;nn1++) {
-		dot_W[nn1] <<= commonData.dataAtGaussPts["DOT_"+commonData.meshPositions][gg][nn1]; nb_active_vars++;
+	      for(int nn1 = 0;nn1<3;nn1++) { //3+3 = 6
+		for(int nn2 = 0;nn2<3;nn2++) {
+		  h(nn1,nn2) <<= commonData.gradAtGaussPts[commonData.spatialPositions][gg](nn1,nn2);
+		  nb_active_vars++;
+		}
+	      }
+	      for(int nn1 = 0;nn1<3;nn1++) { //3+3+9
+		dot_W[nn1] <<= commonData.dataAtGaussPts["DOT_"+commonData.meshPositions][gg][nn1];
+		nb_active_vars++;
 	      }
 	    }
 	    if(commonData.gradAtGaussPts[commonData.meshPositions].size()>0) {
-	      for(int nn1 = 0;nn1<3;nn1++) {
+	      for(int nn1 = 0;nn1<3;nn1++) { //3+3+9+3
 		for(int nn2 = 0;nn2<3;nn2++) {
-		  H(nn1,nn2) <<= commonData.gradAtGaussPts[commonData.meshPositions][gg](nn1,nn2); nb_active_vars++;
+		  H(nn1,nn2) <<= commonData.gradAtGaussPts[commonData.meshPositions][gg](nn1,nn2);
+		  nb_active_vars++;
 		}
 	      }
 	    }
-	    ierr = iNvert(H,invH); CHKERRQ(ierr);
-	    noalias(F) = prod(h,invH);
-	    noalias(dot_u) = dot_w - prod(F,dot_W);
 	    detH = 1;
 	    if(commonData.gradAtGaussPts[commonData.meshPositions].size()>0) {
 	      ierr = dEterminatnt(H,detH); CHKERRQ(ierr);
+	      ierr = iNvert(detH,H,invH); CHKERRQ(ierr);
+	      noalias(F) = prod(h,invH);
+	    } else {
+	      noalias(F) = h;
 	    }
+	    noalias(dot_u) = dot_w-prod(F,dot_W);
 	    noalias(a_res) = (v - dot_u)*detH;
 	    //dependant
 	    ublas::vector<double>& res = commonData.valVel[gg];
@@ -809,7 +822,6 @@ struct ConvectiveMassElement {
 	    for(int rr = 0;rr<3;rr++) {
 	      a_res[rr] >>= res[rr];
 	    }
-
 	    trace_off();
 
 	  }
@@ -822,12 +834,12 @@ struct ConvectiveMassElement {
 	  for(int nn1 = 0;nn1<3;nn1++) {
 	    active[aa++] = commonData.dataAtGaussPts["DOT_"+commonData.spatialPositions][gg][nn1]; 
 	  }
-	  for(int nn1 = 0;nn1<3;nn1++) {
-	    for(int nn2 = 0;nn2<3;nn2++) {
-	      active[aa++] = commonData.gradAtGaussPts[commonData.spatialPositions][gg](nn1,nn2);
-	    }	
-	  }
 	  if(commonData.dataAtGaussPts["DOT_"+commonData.meshPositions].size()>0) {
+	    for(int nn1 = 0;nn1<3;nn1++) {
+	      for(int nn2 = 0;nn2<3;nn2++) {
+		active[aa++] = commonData.gradAtGaussPts[commonData.spatialPositions][gg](nn1,nn2);
+	      }	
+	    }
 	    for(int nn1 = 0;nn1<3;nn1++) {
 	      active[aa++] = commonData.dataAtGaussPts["DOT_"+commonData.meshPositions][gg][nn1];
 	    }
@@ -956,63 +968,6 @@ struct ConvectiveMassElement {
       PetscFunctionReturn(0);
     }
 
-    PetscErrorCode doWork(
-      int row_side,int col_side,
-      EntityType row_type,EntityType col_type,
-      DataForcesAndSurcesCore::EntData &row_data,
-      DataForcesAndSurcesCore::EntData &col_data) {      
-      PetscFunctionBegin;
-
-      PetscErrorCode ierr;
-
-      if(dAta.tEts.find(getMoFEMFEPtr()->get_ent()) == dAta.tEts.end()) {
-	PetscFunctionReturn(0);
-      }
-      
-      int nb_row = row_data.getIndices().size();
-      int nb_col = col_data.getIndices().size();
-      if(nb_row==0) PetscFunctionReturn(0);
-      if(nb_col==0) PetscFunctionReturn(0);
-
-      try {
-
-	k.resize(nb_row,nb_col);
-	k.clear();
-	jac.resize(3,nb_col);
-
-	for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
-
-	  ierr = getJac(col_data,gg); CHKERRQ(ierr);
-
-	  { //integrate element stiffnes matrix
-	    for(int dd1 = 0;dd1<nb_row/3;dd1++) {
-	      for(int rr1 = 0;rr1<3;rr1++) {
-		for(int dd2 = 0;dd2<nb_col/3;dd2++) {
-		  for(int rr2 = 0;rr2<3;rr2++) {
-		    k(3*dd1+rr1,3*dd2+rr2) += row_data.getN()(gg,dd1)*jac(rr1,3*dd2+rr2);
-		  }
-		}
-	      }
-	    }
-	  }
-
-	}
-
-	ierr = MatSetValues(getFEMethod()->ts_B,
-	  nb_row,&row_data.getIndices()[0],
-	  nb_col,&col_data.getIndices()[0],
-	  &k(0,0),ADD_VALUES); CHKERRQ(ierr);
-
-
-      } catch (const std::exception& ex) {
-	ostringstream ss;
-	ss << "throw in method: " << ex.what() << endl;
-	SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
-      }
-
-      PetscFunctionReturn(0);
-    }
-
   };
 
   struct OpVelocityLhs_dV_dx: public OpVelocityLhs_dV_dv {
@@ -1034,20 +989,22 @@ struct ConvectiveMassElement {
 	  jac(2,3*dd+nn) = commonData.jacVel[gg](2,3+nn)*N(dd)*getFEMethod()->ts_a; 
 	}
       }
-      ublas::matrix<double> diffN = col_data.getDiffN(gg,nb_col/3);
-      for(int dd = 0;dd<nb_col/3;dd++) {
-	//h00 //h01 //h02
-	jac(0,3*dd+0) += commonData.jacVel[gg](0,3+3+3*0+0)*diffN(dd,0);
-	jac(0,3*dd+0) += commonData.jacVel[gg](0,3+3+3*0+1)*diffN(dd,1);
-	jac(0,3*dd+0) += commonData.jacVel[gg](0,3+3+3*0+2)*diffN(dd,2);
-	//h10 //h11 //h12
-	jac(1,3*dd+1) += commonData.jacVel[gg](1,3+3+3*1+0)*diffN(dd,0);
-	jac(1,3*dd+1) += commonData.jacVel[gg](1,3+3+3*1+1)*diffN(dd,1);
-	jac(1,3*dd+1) += commonData.jacVel[gg](1,3+3+3*1+2)*diffN(dd,2);
-	//h20 //h21 //h22
-	jac(2,3*dd+2) += commonData.jacVel[gg](2,3+3+3*2+0)*diffN(dd,0);
-	jac(2,3*dd+2) += commonData.jacVel[gg](2,3+3+3*2+1)*diffN(dd,1);
-	jac(2,3*dd+2) += commonData.jacVel[gg](2,3+3+3*2+2)*diffN(dd,2);
+      if(commonData.dataAtGaussPts["DOT_"+commonData.meshPositions].size()>0) {
+        ublas::matrix<double> diffN = col_data.getDiffN(gg,nb_col/3);
+        for(int dd = 0;dd<nb_col/3;dd++) {
+	  //h00 //h01 //h02
+	  jac(0,3*dd+0) += commonData.jacVel[gg](0,3+3+3*0+0)*diffN(dd,0);
+	  jac(0,3*dd+0) += commonData.jacVel[gg](0,3+3+3*0+1)*diffN(dd,1);
+	  jac(0,3*dd+0) += commonData.jacVel[gg](0,3+3+3*0+2)*diffN(dd,2);
+	  //h10 //h11 //h12
+	  jac(1,3*dd+1) += commonData.jacVel[gg](1,3+3+3*1+0)*diffN(dd,0);
+	  jac(1,3*dd+1) += commonData.jacVel[gg](1,3+3+3*1+1)*diffN(dd,1);
+	  jac(1,3*dd+1) += commonData.jacVel[gg](1,3+3+3*1+2)*diffN(dd,2);
+	  //h20 //h21 //h22
+	  jac(2,3*dd+2) += commonData.jacVel[gg](2,3+3+3*2+0)*diffN(dd,0);
+	  jac(2,3*dd+2) += commonData.jacVel[gg](2,3+3+3*2+1)*diffN(dd,1);
+	  jac(2,3*dd+2) += commonData.jacVel[gg](2,3+3+3*2+2)*diffN(dd,2);
+        }
       }
       //cerr << row_field_name << " " << col_field_name << endl;
       PetscFunctionReturn(0);
@@ -1093,6 +1050,363 @@ struct ConvectiveMassElement {
 
       //cerr << row_field_name << " " << col_field_name << endl;
 
+      PetscFunctionReturn(0);
+    }
+
+  };
+
+  struct OpEshelbyDynamicMaterialMomentumJacobian: public TetElementForcesAndSourcesCore::UserDataOperator,CommonFunctions {
+
+    BlockData &dAta;
+    CommonData &commonData;
+    int tAg;
+    bool jAcobian;
+
+    OpEshelbyDynamicMaterialMomentumJacobian(const string field_name,BlockData &data,CommonData &common_data,int tag,bool jacobian = true):
+      TetElementForcesAndSourcesCore::UserDataOperator(field_name),
+      dAta(data),commonData(common_data),tAg(tag),jAcobian(jacobian) {}
+
+    ublas::vector<adouble> a,v,a_T;
+    ublas::matrix<adouble> g,H,invH,h,F,G;
+    ublas::vector<double> active;
+
+    PetscErrorCode doWork(
+      int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data) {
+      PetscFunctionBegin;
+
+      PetscErrorCode ierr;
+      if(dAta.tEts.find(getMoFEMFEPtr()->get_ent()) == dAta.tEts.end()) {
+	PetscFunctionReturn(0);
+      }
+
+      //do it only once, no need to repeat this for edges,faces or tets
+      if(row_type != MBVERTEX) PetscFunctionReturn(0);
+
+      int nb_dofs = row_data.getIndices().size();
+      if(nb_dofs==0) PetscFunctionReturn(0);
+
+      try {
+
+	a.resize(3);
+	v.resize(3);
+	g.resize(3,3);	
+	G.resize(3,3);
+	h.resize(3,3);	
+	F.resize(3,3);
+	H.resize(3,3);
+	H.clear();
+	invH.resize(3,3);
+	invH.clear();
+	for(int dd = 0;dd<3;dd++) {
+	  H(dd,dd) = 1;
+	  invH(dd,dd) = 1;     
+	}
+
+	int nb_gauss_pts = row_data.getN().size1();
+	commonData.valT.resize(nb_gauss_pts);
+	commonData.jacTRowPtr.resize(nb_gauss_pts);
+	commonData.jacT.resize(nb_gauss_pts);
+
+	int nb_active_vars = 0;
+	for(int gg = 0;gg<nb_gauss_pts;gg++) {
+
+	  if(gg == 0) {
+
+	    trace_on(tAg);
+
+	    for(int nn1 = 0;nn1<3;nn1++) { //0
+	      a[nn1] <<= commonData.dataAtGaussPts["DOT_"+commonData.spatialVelocities][gg][nn1]; nb_active_vars++;
+	    }
+
+	    for(int nn1 = 0;nn1<3;nn1++) { //3
+	      v[nn1] <<= commonData.dataAtGaussPts[commonData.spatialVelocities][gg][nn1]; nb_active_vars++;
+	    }
+	    for(int nn1 = 0;nn1<3;nn1++) { //3+3
+	      for(int nn2 = 0;nn2<3;nn2++) {
+		g(nn1,nn2) <<= commonData.gradAtGaussPts[commonData.spatialVelocities][gg](nn1,nn2); nb_active_vars++;
+	      }
+	    }
+	    for(int nn1 = 0;nn1<3;nn1++) { //3+3+9
+	      for(int nn2 = 0;nn2<3;nn2++) {
+		h(nn1,nn2) <<= commonData.gradAtGaussPts[commonData.spatialPositions][gg](nn1,nn2); nb_active_vars++;
+	      }
+	    }
+	    if(commonData.gradAtGaussPts[commonData.meshPositions].size()>0) {
+	      for(int nn1 = 0;nn1<3;nn1++) { //3+3+9+9
+		for(int nn2 = 0;nn2<3;nn2++) {
+		  H(nn1,nn2) <<= commonData.gradAtGaussPts[commonData.meshPositions][gg](nn1,nn2); nb_active_vars++;
+		}
+	      }
+	    }
+	    adouble detH;
+	    detH = 1;
+	    if(commonData.gradAtGaussPts[commonData.meshPositions].size()>0) {
+	      ierr = dEterminatnt(H,detH); CHKERRQ(ierr);
+	    }
+	    ierr = iNvert(detH,H,invH); CHKERRQ(ierr);
+	    noalias(F) = prod(h,invH);
+	    noalias(G) = prod(g,invH);
+	    double rho0 = dAta.rho0;
+	    a_T.resize(3);
+	    noalias(a_T) = -rho0*(prod(trans(F),a)+prod(trans(G),v))*detH;
+	    commonData.valT[gg].resize(3);
+	    for(int nn = 0;nn<3;nn++) {
+	      a_T[nn] >>= (commonData.valT[gg])[nn];
+	    }
+	    trace_off();
+
+	  }
+
+	  active.resize(nb_active_vars);
+	  int aa = 0;
+	    for(int nn1 = 0;nn1<3;nn1++) { //0
+	      active[aa++] = commonData.dataAtGaussPts["DOT_"+commonData.spatialVelocities][gg][nn1];
+	    }
+
+	    for(int nn1 = 0;nn1<3;nn1++) { //3
+	      active[aa++] = commonData.dataAtGaussPts[commonData.spatialVelocities][gg][nn1];
+	    }
+	    for(int nn1 = 0;nn1<3;nn1++) { //3+3
+	      for(int nn2 = 0;nn2<3;nn2++) {
+		active[aa++] = commonData.gradAtGaussPts[commonData.spatialVelocities][gg](nn1,nn2); 
+	      }
+	    }
+	    for(int nn1 = 0;nn1<3;nn1++) { //3+3+9
+	      for(int nn2 = 0;nn2<3;nn2++) {
+		active[aa++] = commonData.gradAtGaussPts[commonData.spatialPositions][gg](nn1,nn2); 
+	      }
+	    }
+	    if(commonData.gradAtGaussPts[commonData.meshPositions].size()>0) {
+	      for(int nn1 = 0;nn1<3;nn1++) { //3+3+9+9
+		for(int nn2 = 0;nn2<3;nn2++) {
+		  active[aa++] = commonData.gradAtGaussPts[commonData.meshPositions][gg](nn1,nn2); 
+		}
+	      }
+	    }
+
+	  if(!jAcobian) {
+	    ublas::vector<double>& res = commonData.valT[gg];
+	    if(gg>0) {
+	      res.resize(3);
+	      int r;
+	      r = function(tAg,3,nb_active_vars,&active[0],&res[0]);
+	      if(r!=3) { // function is locally analytic
+		SETERRQ1(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"ADOL-C function evaluation with error r = %d",r);
+	      }
+	    } 
+	    double val = getVolume()*getGaussPts()(3,gg);
+	    res *= val;
+	  } else {
+	    commonData.jacTRowPtr[gg].resize(3);
+	    commonData.jacT[gg].resize(3,nb_active_vars);
+	    for(int nn1 = 0;nn1<3;nn1++) {
+	      (commonData.jacTRowPtr[gg])[nn1] = &(commonData.jacT[gg](nn1,0));     
+	    }
+	    int r;
+	    r = jacobian(
+	      tAg,3,nb_active_vars,
+	      &active[0],&(commonData.jacTRowPtr[gg])[0]);
+	    if(r!=3) {
+	      SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"ADOL-C function evaluation with error");
+	    }
+	    double val = getVolume()*getGaussPts()(3,gg);
+	    commonData.jacT[gg] *= val;
+	  }
+
+	}
+
+      } catch (const std::exception& ex) {
+	ostringstream ss;
+	ss << "throw in method: " << ex.what() << endl;
+	SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+      }
+
+      PetscFunctionReturn(0);
+    }
+
+  };
+
+  struct OpEshelbyDynamicMaterialMomentumRhs: public TetElementForcesAndSourcesCore::UserDataOperator,CommonFunctions {
+
+    BlockData &dAta;
+    CommonData &commonData;
+    Range forcesOnlyOnEntities;
+
+    OpEshelbyDynamicMaterialMomentumRhs(const string field_name,BlockData &data,CommonData &common_data,
+      Range *forcesonlyonentities_ptr):
+      TetElementForcesAndSourcesCore::UserDataOperator(field_name),
+      dAta(data),commonData(common_data) { 
+	if(forcesonlyonentities_ptr!=NULL) {
+	  forcesOnlyOnEntities = *forcesonlyonentities_ptr;
+	}
+    }
+
+    ublas::vector<double> nf;
+
+    PetscErrorCode doWork(
+      int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data) {
+      PetscFunctionBegin;
+
+      PetscErrorCode ierr;
+      if(dAta.tEts.find(getMoFEMFEPtr()->get_ent()) == dAta.tEts.end()) {
+	PetscFunctionReturn(0);
+      }
+      int nb_dofs = row_data.getIndices().size();
+      if(nb_dofs==0) PetscFunctionReturn(0);
+
+      try {
+
+	nf.resize(nb_dofs);
+	nf.clear();
+
+	for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
+	  ublas::vector<double>& res = commonData.valT[gg];
+	  //cerr << res << endl;
+	  for(int dd = 0;dd<nb_dofs/3;dd++) {
+	    for(int rr = 0;rr<3;rr++) {
+	      nf[3*dd+rr] += row_data.getN()(gg,dd)*res[rr];
+	    }
+	  }
+	}
+
+	if(row_data.getIndices().size() > 3*row_data.getN().size2()) {
+	  SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	}
+	if(!forcesOnlyOnEntities.empty()) {
+	  ublas::vector<DofIdx> indices = row_data.getIndices();
+	  ublas::vector<const FEDofMoFEMEntity*>& dofs = row_data.getFieldDofs();
+	  ublas::vector<const FEDofMoFEMEntity*>::iterator dit = dofs.begin();
+	  for(int ii = 0;dit!=dofs.end();dit++,ii++) {
+	    if(forcesOnlyOnEntities.find((*dit)->get_ent())==forcesOnlyOnEntities.end()) {
+	      //cerr << **dit << endl;
+	      indices[ii] = -1;
+	    }
+	  }
+	  //cerr << indices << endl;
+	  ierr = VecSetValues(getFEMethod()->ts_F,indices.size(),&indices[0],&nf[0],ADD_VALUES); CHKERRQ(ierr);
+	} else {
+	  ierr = VecSetValues(getFEMethod()->ts_F,row_data.getIndices().size(),
+	    &row_data.getIndices()[0],&nf[0],ADD_VALUES); CHKERRQ(ierr);
+	}
+
+      } catch (const std::exception& ex) {
+	ostringstream ss;
+	ss << "throw in method: " << ex.what() << endl;
+	SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+      }
+
+      PetscFunctionReturn(0);
+    }
+
+  };
+
+  struct OpEshelbyDynamicMaterialMomentumLhs_dv: public OpMassLhs_dM_dv {
+
+    OpEshelbyDynamicMaterialMomentumLhs_dv(
+      const string vel_field,const string field_name,BlockData &data,CommonData &common_data,
+      Range *forcesonlyonentities_ptr):
+      OpMassLhs_dM_dv(vel_field,field_name,data,common_data,forcesonlyonentities_ptr) {};
+
+
+    virtual PetscErrorCode getJac(DataForcesAndSurcesCore::EntData &col_data,int gg) {
+      PetscFunctionBegin;
+      int nb_col = col_data.getIndices().size();
+      jac.clear();
+      //cerr << commonData.jacT[gg] << endl;
+      //cerr << jac << endl;
+      ublas::vector<double> N = col_data.getN(gg,nb_col/3);
+      for(int dd = 0;dd<nb_col/3;dd++) {
+	for(int nn = 0;nn<3;nn++) {
+	  jac(0,3*dd+nn) = commonData.jacT[gg](0,nn)*N(dd)*getFEMethod()->ts_a; 
+	  jac(1,3*dd+nn) = commonData.jacT[gg](1,nn)*N(dd)*getFEMethod()->ts_a; 
+	  jac(2,3*dd+nn) = commonData.jacT[gg](2,nn)*N(dd)*getFEMethod()->ts_a; 
+	}
+      }
+      for(int dd = 0;dd<nb_col/3;dd++) {
+	for(int nn = 0;nn<3;nn++) {
+	  jac(0,3*dd+nn) += commonData.jacT[gg](0,3+nn)*N(dd); 
+	  jac(1,3*dd+nn) += commonData.jacT[gg](1,3+nn)*N(dd); 
+	  jac(2,3*dd+nn) += commonData.jacT[gg](2,3+nn)*N(dd); 
+	}
+      }
+      ublas::matrix<double> diffN = col_data.getDiffN(gg,nb_col/3);
+      for(int dd = 0;dd<nb_col/3;dd++) {
+	//h00 //h01 //h02
+	jac(0,3*dd+0) += commonData.jacT[gg](0,3+3+3*0+0)*diffN(dd,0);
+	jac(0,3*dd+0) += commonData.jacT[gg](0,3+3+3*0+1)*diffN(dd,1);
+	jac(0,3*dd+0) += commonData.jacT[gg](0,3+3+3*0+2)*diffN(dd,2);
+	//h10 //h11 //h12
+	jac(1,3*dd+1) += commonData.jacT[gg](1,3+3+3*1+0)*diffN(dd,0);
+	jac(1,3*dd+1) += commonData.jacT[gg](1,3+3+3*1+1)*diffN(dd,1);
+	jac(1,3*dd+1) += commonData.jacT[gg](1,3+3+3*1+2)*diffN(dd,2);
+	//h20 //h21 //h22
+	jac(2,3*dd+2) += commonData.jacT[gg](2,3+3+3*2+0)*diffN(dd,0);
+	jac(2,3*dd+2) += commonData.jacT[gg](2,3+3+3*2+1)*diffN(dd,1);
+	jac(2,3*dd+2) += commonData.jacT[gg](2,3+3+3*2+2)*diffN(dd,2);
+      }
+      PetscFunctionReturn(0);
+    }
+  };
+
+  struct OpEshelbyDynamicMaterialMomentumLhs_dx: public OpEshelbyDynamicMaterialMomentumLhs_dv {
+
+    OpEshelbyDynamicMaterialMomentumLhs_dx(
+      const string vel_field,const string field_name,BlockData &data,CommonData &common_data,Range *forcesonlyonentities_ptr):
+      OpEshelbyDynamicMaterialMomentumLhs_dv(vel_field,field_name,data,common_data,forcesonlyonentities_ptr) {};
+
+    virtual PetscErrorCode getJac(DataForcesAndSurcesCore::EntData &col_data,int gg) {
+      PetscFunctionBegin;
+      int nb_col = col_data.getIndices().size();
+      jac.clear();
+      //cerr << commonData.jacT[gg] << endl;
+      //cerr << jac << endl;
+      ublas::matrix<double> diffN = col_data.getDiffN(gg,nb_col/3);
+      for(int dd = 0;dd<nb_col/3;dd++) {
+	//h00 //h01 //h02
+	jac(0,3*dd+0) += commonData.jacT[gg](0,3+3+9+3*0+0)*diffN(dd,0);
+	jac(0,3*dd+0) += commonData.jacT[gg](0,3+3+9+3*0+1)*diffN(dd,1);
+	jac(0,3*dd+0) += commonData.jacT[gg](0,3+3+9+3*0+2)*diffN(dd,2);
+	//h10 //h11 //h12
+	jac(1,3*dd+1) += commonData.jacT[gg](1,3+3+9+3*1+0)*diffN(dd,0);
+	jac(1,3*dd+1) += commonData.jacT[gg](1,3+3+9+3*1+1)*diffN(dd,1);
+	jac(1,3*dd+1) += commonData.jacT[gg](1,3+3+9+3*1+2)*diffN(dd,2);
+	//h20 //h21 //h22
+	jac(2,3*dd+2) += commonData.jacT[gg](2,3+3+9+3*2+0)*diffN(dd,0);
+	jac(2,3*dd+2) += commonData.jacT[gg](2,3+3+9+3*2+1)*diffN(dd,1);
+	jac(2,3*dd+2) += commonData.jacT[gg](2,3+3+9+3*2+2)*diffN(dd,2);
+      }
+      PetscFunctionReturn(0);
+    }
+
+  };
+
+  struct OpEshelbyDynamicMaterialMomentumLhs_dX: public OpEshelbyDynamicMaterialMomentumLhs_dv {
+
+    OpEshelbyDynamicMaterialMomentumLhs_dX(
+      const string vel_field,const string field_name,BlockData &data,CommonData &common_data,Range *forcesonlyonentities_ptr):
+      OpEshelbyDynamicMaterialMomentumLhs_dv(vel_field,field_name,data,common_data,forcesonlyonentities_ptr) {};
+
+    virtual PetscErrorCode getJac(DataForcesAndSurcesCore::EntData &col_data,int gg) {
+      PetscFunctionBegin;
+      int nb_col = col_data.getIndices().size();
+      jac.clear();
+      //cerr << commonData.jacT[gg] << endl;
+      //cerr << jac << endl;
+      ublas::matrix<double> diffN = col_data.getDiffN(gg,nb_col/3);
+      for(int dd = 0;dd<nb_col/3;dd++) {
+	//h00 //h01 //h02
+	jac(0,3*dd+0) += commonData.jacT[gg](0,3+3+9+9+3*0+0)*diffN(dd,0);
+	jac(0,3*dd+0) += commonData.jacT[gg](0,3+3+9+9+3*0+1)*diffN(dd,1);
+	jac(0,3*dd+0) += commonData.jacT[gg](0,3+3+9+9+3*0+2)*diffN(dd,2);
+	//h10 //h11 //h12
+	jac(1,3*dd+1) += commonData.jacT[gg](1,3+3+9+9+3*1+0)*diffN(dd,0);
+	jac(1,3*dd+1) += commonData.jacT[gg](1,3+3+9+9+3*1+1)*diffN(dd,1);
+	jac(1,3*dd+1) += commonData.jacT[gg](1,3+3+9+9+3*1+2)*diffN(dd,2);
+	//h20 //h21 //h22
+	jac(2,3*dd+2) += commonData.jacT[gg](2,3+3+9+9+3*2+0)*diffN(dd,0);
+	jac(2,3*dd+2) += commonData.jacT[gg](2,3+3+9+9+3*2+1)*diffN(dd,1);
+	jac(2,3*dd+2) += commonData.jacT[gg](2,3+3+9+9+3*2+2)*diffN(dd,2);
+      }
       PetscFunctionReturn(0);
     }
 
@@ -1197,7 +1511,8 @@ struct ConvectiveMassElement {
   PetscErrorCode addConvectiveMassElement(string element_name,
     string velocity_field_name,
     string spatial_position_field_name,
-    string material_position_field_name = "MESH_NODE_POSITIONS",bool ale = false) {
+    string material_position_field_name = "MESH_NODE_POSITIONS",
+    bool ale = false,BitRefLevel bit = BitRefLevel()) {
     PetscFunctionBegin;
 
     PetscErrorCode ierr;
@@ -1221,9 +1536,18 @@ struct ConvectiveMassElement {
     ierr = mField.modify_finite_element_add_field_data(element_name,"DOT_"+velocity_field_name); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_data(element_name,"DOT_"+spatial_position_field_name); CHKERRQ(ierr);
 
+    Range tets;
+    if(bit.any()) {
+      ierr = mField.get_entities_by_type_and_ref_level(bit,BitRefLevel().set(),MBTET,tets); CHKERRQ(ierr);
+    }
+
     map<int,BlockData>::iterator sit = setOfBlocks.begin();
     for(;sit!=setOfBlocks.end();sit++) {
-      ierr = mField.add_ents_to_finite_element_by_TETs(sit->second.tEts,element_name); CHKERRQ(ierr);
+      Range add_tets = sit->second.tEts;
+      if(!tets.empty()) {
+	add_tets = intersect(add_tets,tets);
+      }
+      ierr = mField.add_ents_to_finite_element_by_TETs(add_tets,element_name); CHKERRQ(ierr);
     }
 
     PetscFunctionReturn(0);
@@ -1232,7 +1556,8 @@ struct ConvectiveMassElement {
   PetscErrorCode addVelocityElement(string element_name,
     string velocity_field_name,
     string spatial_position_field_name,
-    string material_position_field_name = "MESH_NODE_POSITIONS",bool ale = false) {
+    string material_position_field_name = "MESH_NODE_POSITIONS",
+    bool ale = false,BitRefLevel bit = BitRefLevel()) {
     PetscFunctionBegin;
 
     PetscErrorCode ierr;
@@ -1242,7 +1567,50 @@ struct ConvectiveMassElement {
     ierr = mField.modify_finite_element_add_field_row(element_name,velocity_field_name); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_col(element_name,velocity_field_name); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_data(element_name,velocity_field_name); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_row(element_name,spatial_position_field_name); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_col(element_name,spatial_position_field_name); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_data(element_name,spatial_position_field_name); CHKERRQ(ierr);
+    if(mField.check_field(material_position_field_name)) {
+      if(ale) {
+	ierr = mField.modify_finite_element_add_field_col(element_name,material_position_field_name); CHKERRQ(ierr);
+	ierr = mField.modify_finite_element_add_field_data(element_name,"DOT_"+material_position_field_name); CHKERRQ(ierr);
+      }
+      ierr = mField.modify_finite_element_add_field_data(element_name,material_position_field_name); CHKERRQ(ierr);
+    }
+    ierr = mField.modify_finite_element_add_field_data(element_name,"DOT_"+velocity_field_name); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_data(element_name,"DOT_"+spatial_position_field_name); CHKERRQ(ierr);
+
+    Range tets;
+    if(bit.any()) {
+      ierr = mField.get_entities_by_type_and_ref_level(bit,BitRefLevel().set(),MBTET,tets); CHKERRQ(ierr);
+    }
+
+    map<int,BlockData>::iterator sit = setOfBlocks.begin();
+    for(;sit!=setOfBlocks.end();sit++) {
+      Range add_tets = sit->second.tEts;
+      if(!tets.empty()) {
+	add_tets = intersect(add_tets,tets);
+      }
+      ierr = mField.add_ents_to_finite_element_by_TETs(add_tets,element_name); CHKERRQ(ierr);
+    }
+
+    PetscFunctionReturn(0);
+  }
+
+
+  PetscErrorCode addEshelbyDynamicMaterialMomentum(string element_name,
+    string velocity_field_name,
+    string spatial_position_field_name,
+    string material_position_field_name = "MESH_NODE_POSITIONS",
+    bool ale = false,
+    BitRefLevel bit = BitRefLevel(),Range *intersected = NULL) {
+    PetscFunctionBegin;
+
+    PetscErrorCode ierr;
+    //ErrorCode rval;
+
+    ierr = mField.add_finite_element(element_name,MF_ZERO); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_col(element_name,velocity_field_name); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_data(element_name,velocity_field_name); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_col(element_name,spatial_position_field_name); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_data(element_name,spatial_position_field_name); CHKERRQ(ierr);
     if(mField.check_field(material_position_field_name)) {
@@ -1256,9 +1624,25 @@ struct ConvectiveMassElement {
     ierr = mField.modify_finite_element_add_field_data(element_name,"DOT_"+velocity_field_name); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_data(element_name,"DOT_"+spatial_position_field_name); CHKERRQ(ierr);
 
+    Range tets;
+    if(bit.any()) {
+      ierr = mField.get_entities_by_type_and_ref_level(bit,BitRefLevel().set(),MBTET,tets); CHKERRQ(ierr);
+    }
+    if(intersected!=NULL) {
+      if(tets.empty()) {
+	tets = *intersected;
+      } else {
+	tets = intersect(*intersected,tets);
+      }
+    }
+
     map<int,BlockData>::iterator sit = setOfBlocks.begin();
     for(;sit!=setOfBlocks.end();sit++) {
-      mField.add_ents_to_finite_element_by_TETs(sit->second.tEts,element_name);
+      Range add_tets = sit->second.tEts;
+      if(!tets.empty()) {
+	add_tets = intersect(add_tets,tets);
+      }
+      ierr = mField.add_ents_to_finite_element_by_TETs(add_tets,element_name); CHKERRQ(ierr);
     }
 
     PetscFunctionReturn(0);
@@ -1268,7 +1652,7 @@ struct ConvectiveMassElement {
     string velocity_field_name,
     string spatial_position_field_name,
     string material_position_field_name = "MESH_NODE_POSITIONS",
-    bool ale = false) {
+    bool ale = false,bool linear = false) {
     PetscFunctionBegin;
 
     commonData.spatialPositions = spatial_position_field_name;
@@ -1288,7 +1672,7 @@ struct ConvectiveMassElement {
     }
     map<int,BlockData>::iterator sit = setOfBlocks.begin();
     for(;sit!=setOfBlocks.end();sit++) {
-      feMassRhs.get_op_to_do_Rhs().push_back(new OpMassJacobian(spatial_position_field_name,sit->second,commonData,tAg,false));
+      feMassRhs.get_op_to_do_Rhs().push_back(new OpMassJacobian(spatial_position_field_name,sit->second,commonData,tAg,false,linear));
       feMassRhs.get_op_to_do_Rhs().push_back(new OpMassRhs(spatial_position_field_name,sit->second,commonData));
     }
 
@@ -1305,7 +1689,7 @@ struct ConvectiveMassElement {
     }
     sit = setOfBlocks.begin();
     for(;sit!=setOfBlocks.end();sit++) {
-      feMassLhs.get_op_to_do_Rhs().push_back(new OpMassJacobian(spatial_position_field_name,sit->second,commonData,tAg));
+      feMassLhs.get_op_to_do_Rhs().push_back(new OpMassJacobian(spatial_position_field_name,sit->second,commonData,tAg,true,linear));
       feMassLhs.get_op_to_do_Lhs().push_back(new OpMassLhs_dM_dv(spatial_position_field_name,velocity_field_name,sit->second,commonData));
       feMassLhs.get_op_to_do_Lhs().push_back(new OpMassLhs_dM_dx(spatial_position_field_name,spatial_position_field_name,sit->second,commonData));
       if(mField.check_field(material_position_field_name)) {
@@ -1372,6 +1756,52 @@ struct ConvectiveMassElement {
     PetscFunctionReturn(0);
   }
 
+
+  PetscErrorCode setKinematicEshelbyOperators(
+    string velocity_field_name,
+    string spatial_position_field_name,
+    string material_position_field_name = "MESH_NODE_POSITIONS",
+    Range *forces_on_entities_ptr = NULL) {
+    PetscFunctionBegin;
+
+    commonData.spatialPositions = spatial_position_field_name;
+    commonData.meshPositions = material_position_field_name;
+    commonData.spatialVelocities = velocity_field_name;
+
+    //Rhs
+    feTRhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(velocity_field_name,commonData));
+    feTRhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(spatial_position_field_name,commonData));
+    feTRhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(material_position_field_name,commonData));
+    feTRhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts("DOT_"+velocity_field_name,commonData));
+
+    map<int,BlockData>::iterator sit = setOfBlocks.begin();
+    for(;sit!=setOfBlocks.end();sit++) {
+      feTRhs.get_op_to_do_Rhs().push_back(new OpEshelbyDynamicMaterialMomentumJacobian(material_position_field_name,sit->second,commonData,tAg,false));
+      feTRhs.get_op_to_do_Rhs().push_back(
+	new OpEshelbyDynamicMaterialMomentumRhs(material_position_field_name,sit->second,commonData,forces_on_entities_ptr));
+    }
+
+    //Lhs
+    feTLhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(velocity_field_name,commonData));
+    feTLhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(spatial_position_field_name,commonData));
+    feTLhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts("DOT_"+velocity_field_name,commonData));
+    if(mField.check_field(material_position_field_name)) {
+      feTLhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(material_position_field_name,commonData));
+    }
+    sit = setOfBlocks.begin();
+    for(;sit!=setOfBlocks.end();sit++) {
+      feTLhs.get_op_to_do_Rhs().push_back(new OpEshelbyDynamicMaterialMomentumJacobian(material_position_field_name,sit->second,commonData,tAg));
+      feTLhs.get_op_to_do_Lhs().push_back(
+	new OpEshelbyDynamicMaterialMomentumLhs_dv(material_position_field_name,velocity_field_name,sit->second,commonData,forces_on_entities_ptr));
+      feTLhs.get_op_to_do_Lhs().push_back(
+	new OpEshelbyDynamicMaterialMomentumLhs_dx(material_position_field_name,spatial_position_field_name,sit->second,commonData,forces_on_entities_ptr));
+      feTLhs.get_op_to_do_Lhs().push_back(
+	new OpEshelbyDynamicMaterialMomentumLhs_dX(material_position_field_name,material_position_field_name,sit->second,commonData,forces_on_entities_ptr));
+    }
+
+    PetscFunctionReturn(0);
+  }
+
 };
 
 
@@ -1381,6 +1811,5 @@ struct ConvectiveMassElement {
  * \defgroup convective_mass_elem (Convective) Mass Element
  * \ingroup mofem_forces_and_sources 
  ******************************************************************************/
-
 
 
