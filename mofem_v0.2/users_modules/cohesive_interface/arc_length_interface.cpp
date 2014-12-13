@@ -41,6 +41,7 @@ using namespace MoFEM;
 
 #include <PostProcVertexMethod.hpp>
 #include <PostProcDisplacementAndStrainOnRefindedMesh.hpp>
+#include <PotsProcOnRefMesh.hpp>
 
 #include <ElasticFEMethod.hpp>
 #include <ElasticFEMethodInterface.hpp>
@@ -609,8 +610,12 @@ int main(int argc, char *argv[]) {
   }
   ierr = SnesRhs(snes,D,F,&snes_ctx); CHKERRQ(ierr);
 
+  PostPocOnRefinedMesh post_proc(m_field);
+  ierr = post_proc.generateRefereneElemenMesh(); CHKERRQ(ierr);
+  ierr = post_proc.addFieldValuesPostProc("DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = post_proc.addFieldValuesGradientPostProc("DISPLACEMENT"); CHKERRQ(ierr);
+
   bool converged_state  = false;
-  
   for(;step<max_steps;step++) {
 
     if(step == 1) {
@@ -694,9 +699,6 @@ int main(int argc, char *argv[]) {
       converged_state = true;
     }
     //
-    PostProcVertexMethod ent_method(moab);
-    ierr = m_field.loop_dofs("ELASTIC_MECHANICS","DISPLACEMENT",COL,ent_method); CHKERRQ(ierr);
-    //
     if (reason > 0) {
       FILE *datafile;
       PetscFOpen(PETSC_COMM_SELF,DATAFILENAME,"a+",&datafile);
@@ -705,19 +707,26 @@ int main(int argc, char *argv[]) {
       ierr = my_arc_method.postProcessLoadPath(); CHKERRQ(ierr);
     }
     //
+    //PostProcVertexMethod ent_method(moab);
+    //ierr = m_field.loop_dofs("ELASTIC_MECHANICS","DISPLACEMENT",COL,ent_method); CHKERRQ(ierr);
+    //
     if(step % 1 == 0) {
       if(pcomm->rank()==0) {
 	ostringstream sss;
 	sss << "restart_" << step << ".h5m";
 	rval = moab.write_file(sss.str().c_str()); CHKERR_PETSC(rval);
-	EntityHandle out_meshset;
+	/*EntityHandle out_meshset;
 	rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
 	ierr = m_field.problem_get_FE("ELASTIC_MECHANICS","ELASTIC",out_meshset); CHKERRQ(ierr);
 	ostringstream ss;
 	ss << "out_" << step << ".vtk";
 	rval = moab.write_file(ss.str().c_str(),"VTK","",&out_meshset,1); CHKERR_PETSC(rval);
-	rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
+	rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);*/
       }
+      ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",post_proc); CHKERRQ(ierr);
+      ostringstream ss;
+      ss << "out_values_" << step << ".h5m";
+      rval = post_proc.postProcMesh.write_file(ss.str().c_str(),"MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
     }
     
   }
