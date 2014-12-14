@@ -1,0 +1,43 @@
+FROM ubuntu
+
+MAINTAINER Lukasz.Kaczmarczyk@glasgow.ac.uk
+
+# Confif apt-get
+RUN echo 'APT::Install-Recommends "0";' > /etc/apt/apt.conf.d/99local
+
+# Install packages
+RUN apt-get update && apt-get install -y openssh-server
+
+RUN apt-get install -y wget valgrind git g++ m4 automake libsigsegv2 build-essential libibverbs-dev libblas-dev gfortran libatlas-dev libatlas-base-dev libhdf5-openmpi-dev libnetcdf-dev libjpeg-dev graphviz doxygen cmake gnuplot pstack ca-certificates python libadolc-dev bison flex libx11-dev libboost-all-dev
+
+# Set passord
+RUN mkdir /var/run/sshd
+RUN echo 'root:mofem' | chpasswd
+
+# SSH login fix. Otherwise user is kicked off after login
+RUN sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd
+
+ENV NOTVISIBLE "in users profile"
+RUN echo "export VISIBLE=now" >> /etc/profile
+
+# Install petsc opt
+RUN cd /opt && git clone https://bitbucket.org/petsc/petsc.git
+RUN cd /opt/petsc && ./configure --with-mpi=1 --with-debugging=0 --download-superlu_dist=1 --download-metis=1 --download-parmetis=1 --download-hypre=1 --download-mumps=1 --download-scalapack=1 --download-zoltan=1 --download-blacs = 1 --download-moab = 1 --download-ptscotch=1 --with-hdf5=1 --with-hdf5-dir=/usr/local --with-netcdf=1 --with-netcdf-dir=/usr/local --with-shared-libraries=1 && make PETSC_DIR=/opt/petsc PETSC_ARCH=arch-linux2-c-opt all
+
+# Compile moab with zoltan and optimisation
+RUN cd /opt/petsc/arch-linux2-c-opt/externalpackages/moab* && ./configure --prefix=/opt/petsc/arch-linux2-c-opt MAKE=/usr/bin/make --libdir=/opt/petsc/arch-linux2-c-opt/lib CC=mpicc CFLAGS="-fPIC -Wall -Wwrite-strings -Wno-strict-aliasing -Wno-unknown-pragmas -O3 -I/opt/petsc/arch-linux2-c-opt/include" CXX=mpicxx CXXFLAGS=" -Wall -Wwrite-strings -Wno-strict-aliasing -Wno-unknown-pragmas -O3 -I/opt/petsc/arch-linux2-c-opt/include  -fPIC" F90=mpif90 F90FLAGS=" -fPIC -Wall -Wno-unused-variable -ffree-line-length-0 -Wno-unused-dummy-argument -O3 -I/opt/petsc/arch-linux2-c-opt/include" F77=mpif90 FFLAGS=" -fPIC -Wall -Wno-unused-variable -ffree-line-length-0 -Wno-unused-dummy-argument -O3" FC=mpif90 FCFLAGS=" -fPIC -Wall -Wno-unused-variable -ffree-line-length-0 -Wno-unused-dummy-argument -O3 -I/opt/petsc/arch-linux2-c-opt/include" --enable-shared --with-mpi= --with-hdf5=/usr/local --enable-optimize --enable-mbzoltan=/opt/petsc/arch-linux2-c-opt/externalpackages/Zoltan_v3.8 LDFLAGS="-L/opt/petsc/arch-linux2-c-opt/lib -lzoltan -lptscotch -lscotch -lscotcherr -lptscotcherr -lmetis -lparmetis" --with-parmetis=/opt/petsc/arch-linux2-c-opt/externalpackages/parmetis-4.0.2-p5/ && make clean && make && make install
+
+# Install petsc with debuging
+RUN cd /opt && git clone https://bitbucket.org/petsc/petsc.git
+RUN cd /opt/petsc && ./configure --with-mpi=1 --with-debugging=1 --download-superlu_dist=1 --download-metis=1 --download-parmetis=1 --download-hypre=1 --download-mumps=1 --download-scalapack=1 --download-zoltan=1 --download-blacs = 1 --download-moab = 1 --download-ptscotch=1 --with-hdf5=1 --with-hdf5-dir=/usr/local --with-netcdf=1 --with-netcdf-dir=/usr/local --with-shared-libraries=1 && make PETSC_DIR=/opt/petsc PETSC_ARCH=arch-linux2-c-debug all
+
+# Compile moab with zoltan
+RUN cd /opt/petsc/arch-linux2-c-debug/externalpackages/moab* && ./configure --prefix=/opt/petsc/arch-linux2-c-debug MAKE=/usr/bin/make --libdir=/opt/petsc/arch-linux2-c-debug/lib CC=mpicc CFLAGS="-fPIC -Wall -Wwrite-strings -Wno-strict-aliasing -Wno-unknown-pragmas -O -I/opt/petsc/arch-linux2-c-debug/include" CXX=mpicxx CXXFLAGS=" -Wall -Wwrite-strings -Wno-strict-aliasing -Wno-unknown-pragmas -O -I/opt/petsc/arch-linux2-c-debug/include  -fPIC" F90=mpif90 F90FLAGS=" -fPIC -Wall -Wno-unused-variable -ffree-line-length-0 -Wno-unused-dummy-argument -O -I/opt/petsc/arch-linux2-c-debug/include" F77=mpif90 FFLAGS=" -fPIC -Wall -Wno-unused-variable -ffree-line-length-0 -Wno-unused-dummy-argument -O" FC=mpif90 FCFLAGS=" -fPIC -Wall -Wno-unused-variable -ffree-line-length-0 -Wno-unused-dummy-argument -O -I/opt/petsc/arch-linux2-c-debug/include" --enable-shared --with-mpi= --with-hdf5=/usr/local --enable-optimize --enable-mbzoltan=/opt/petsc/arch-linux2-c-debug/externalpackages/Zoltan_v3.8 LDFLAGS="-L/opt/petsc/arch-linux2-c-debug/lib -lzoltan -lptscotch -lscotch -lscotcherr -lptscotcherr -lmetis -lparmetis" --with-parmetis=/opt/petsc/arch-linux2-c-debug/externalpackages/parmetis-4.0.2-p5/ && make clean && make && make install
+
+# Install tetgen
+RUN cd /opt && wget https://bitbucket.org/likask/mofem-joseph/downloads/tetgen1.5.0.tgz && tar -xvvzf tetgen1.5.0.tgz && cd tetgen1.5.0 && cmake . && make && cp libtet.a lib/ && rm /opt/tetgen1.5.0.tgz
+
+EXPOSE 22
+CMD ["/usr/sbin/sshd", "-D"]
+
+
