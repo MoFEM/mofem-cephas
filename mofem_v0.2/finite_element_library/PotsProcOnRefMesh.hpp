@@ -213,6 +213,7 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
       const EntityHandle *conn;
       int num_nodes;
       mField.get_moab().get_connectivity(fe_ent,conn,num_nodes,false);
+      coords.resize(3*num_nodes);
       rval = mField.get_moab().get_coords(conn,num_nodes,&coords[0]); CHKERR_PETSC(rval);
       //cerr << coords << endl;
     }
@@ -327,15 +328,13 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
       DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
 
-      if(data.getIndices().size()==0) PetscFunctionReturn(0);
+      if(data.getFieldData().size()==0) PetscFunctionReturn(0);
 
       ErrorCode rval;
-      PetscErrorCode ierr;
-       
-      const FENumeredDofMoFEMEntity *dof_ptr;
-      ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
-
-      string tag_name = dof_ptr->get_name()+"VAL";
+      //PetscErrorCode ierr;
+      
+      const MoFEM::FEDofMoFEMEntity *dof_ptr = data.getFieldDofs()[0];
+      string tag_name = dof_ptr->get_name();
       int rank = dof_ptr->get_max_rank();    
 
       int tag_length = rank;
@@ -443,12 +442,10 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
       if(data.getIndices().size()==0) PetscFunctionReturn(0);
 
       ErrorCode rval;
-      PetscErrorCode ierr;
+      //PetscErrorCode ierr;
        
-      const FENumeredDofMoFEMEntity *dof_ptr;
-      ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
-
-      string tag_name = dof_ptr->get_name()+"GRADVAL";
+      const MoFEM::FEDofMoFEMEntity *dof_ptr = data.getFieldDofs()[0];
+      string tag_name = dof_ptr->get_name()+"_GRAD";
       int rank = dof_ptr->get_max_rank();    
 
       int tag_length = rank*3;

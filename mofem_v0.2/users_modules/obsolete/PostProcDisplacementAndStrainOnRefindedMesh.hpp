@@ -286,8 +286,7 @@ struct PostProcFieldsAndGradientOnRefMesh: public PostProcDisplacementsOnRefMesh
 
 struct PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh: public PostProcDisplacemenysAndStarinOnRefMesh {
 
-	FieldInterface& mField;
-
+  FieldInterface& mField;
   double lambda,mu;
 
   ublas::matrix<double> D,D_lambda,D_mu;

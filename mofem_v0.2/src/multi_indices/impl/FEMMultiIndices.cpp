@@ -672,7 +672,6 @@ void EntMoFEMFiniteElement_change_bit_off::operator()(MoFEMFiniteElement &MoFEMF
 EntMoFEMFiniteElement::EntMoFEMFiniteElement(Interface &moab,const RefMoFEMElement *_ref_MoFEMFiniteElement,const MoFEMFiniteElement *_MoFEMFiniteElement_ptr): 
   interface_MoFEMFiniteElement<MoFEMFiniteElement>(_MoFEMFiniteElement_ptr),interface_RefMoFEMElement<RefMoFEMElement>(_ref_MoFEMFiniteElement) {
   //get finite element entity
-  local_uid = get_local_unique_id_calculate();
   global_uid =  get_global_unique_id_calculate();
   //add ents to meshset
   //EntityHandle meshset = get_meshset();
@@ -681,7 +680,8 @@ EntMoFEMFiniteElement::EntMoFEMFiniteElement(Interface &moab,const RefMoFEMEleme
 }
 
 ostream& operator<<(ostream& os,const EntMoFEMFiniteElement& e) {
-  os << *e.fe_ptr << " ent " << e.get_ent() << endl; 
+  os << *e.fe_ptr << endl;
+  os << *e.ref_ptr << endl; 
   os << "row dof_uids ";
   DofMoFEMEntity_multiIndex_uid_view::iterator rit;
   rit = e.row_dof_view.begin();
@@ -690,14 +690,14 @@ ostream& operator<<(ostream& os,const EntMoFEMFiniteElement& e) {
   }
   os << "col dof_uids ";
   DofMoFEMEntity_multiIndex_uid_view::iterator cit;
-  rit = e.col_dof_view.begin();
-  for(;rit!=e.row_dof_view.end();rit++) {
+  cit = e.col_dof_view.begin();
+  for(;cit!=e.col_dof_view.end();cit++) {
     os << (*cit)->get_global_unique_id() << " ";
   }
   os << "data dof_uids ";
   DofMoFEMEntity_multiIndex_uid_view::iterator dit;
   dit = e.data_dof_view.begin();
-  for(;rit!=e.data_dof_view.end();rit++) {
+  for(;dit!=e.data_dof_view.end();dit++) {
     os << (*dit)->get_global_unique_id() << " ";
   }
   return os;
