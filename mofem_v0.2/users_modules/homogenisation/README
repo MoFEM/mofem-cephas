@@ -83,10 +83,32 @@ FE2 Elasticity
 make FE2_Elasticity && mpirun -np 1 ./FE2_Elasticity -my_file_macro ../users_modules/homogenisation/meshes/LShape.cub -my_file_RVE ../users_modules/homogenisation/meshes/Cube.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1
 
 
+PETSc timestepping testing
+=======================================================
+make PETScTesting     && mpirun -np 1 ./PETScTesting
+
+make PETScTesting_new && mpirun -np 1 ./PETScTesting_new -snes_monitor -ts_monitor -snes_rtol 1e-12 -snes_atol 1e-8 -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -snes_converged_reason -snes_stol 0 | tee log   
+
+//here tee log will save log file (output can be log.txt etc)
+grep Sol log //grep will search file log for lines with log
+grep Sol log | awk '{print $3," ",$6}' | tee gp  //save the 3rd and 6th field in file gp 
+
+
+Hygro-thermo-mechanical analysis with degradaiton model
+===========================================================================
+make HTM_with_degradation && mpirun -np 1 ./HTM_with_degradation -my_file ../users_modules/homogenisation/meshes/HTM_Cube.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0 -myapplied_Tgrad 1.0,0.0,0.0 -myapplied_congrad 1.0,0.0,0.0
+
+
+
+
+xue 2D potential flow
+=======================================================
+make xue_laplacian_problem && mpirun -np 1 ./xue_laplacian_problem -my_file ../users_modules/homogenisation/meshes/Xue_my_tet_model.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1
+
 
 copy out put files to symlink on Desktop
 -------------------------------------------------------------
-cp out.vtk ../../../mnt/home/Desktop/symlink
-cp *.vtk  ../../../mnt/home/Desktop/symlink
+cp out.vtk /mnt/home/Desktop/
+cp *.vtk  /mnt/home/Desktop/
 
 

@@ -177,13 +177,34 @@ target_link_libraries(FE2_Elasticity
   mofem_approx mofem_third_party mofem_cblas ${MoFEM_PROJECT_LIBS})
 
 
+# ===================== PETSc Testing routines  ============================================
+
+add_executable(PETScTesting ${UM_SOURCE_DIR}/homogenisation/PETScTesting.cpp)
+target_link_libraries(PETScTesting
+  mofem_finite_element_library mofem_finite_elements mofem_interfaces mofem_multi_indices mofem_petsc users_modules_obsolete user_modules_homogenisation
+  mofem_approx mofem_third_party mofem_cblas ${MoFEM_PROJECT_LIBS})
+
+add_executable(PETScTesting_new ${UM_SOURCE_DIR}/homogenisation/PETScTesting_new.cpp)
+target_link_libraries(PETScTesting_new
+  mofem_finite_element_library mofem_finite_elements mofem_interfaces mofem_multi_indices mofem_petsc users_modules_obsolete user_modules_homogenisation
+  mofem_approx mofem_third_party mofem_cblas ${MoFEM_PROJECT_LIBS})
+
+
+# ===================== Hygro-thermo-mechanical with degradaiton model ============================================
+add_executable(HTM_with_degradation ${UM_SOURCE_DIR}/homogenisation/HTM_with_degradation.cpp)
+target_link_libraries(HTM_with_degradation
+  mofem_finite_element_library mofem_finite_elements mofem_interfaces mofem_multi_indices mofem_petsc users_modules_obsolete user_modules_homogenisation
+  mofem_approx mofem_third_party mofem_cblas ${MoFEM_PROJECT_LIBS})
 
 
 
 
+# ===================== Xue 2D potential flow  ============================================
 
-
-
+add_executable(xue_laplacian_problem ${UM_SOURCE_DIR}/homogenisation/xue_laplacian_problem.cpp)
+target_link_libraries(xue_laplacian_problem
+  mofem_finite_element_library mofem_finite_elements mofem_interfaces mofem_multi_indices mofem_petsc users_modules_obsolete user_modules_homogenisation
+  mofem_approx mofem_third_party mofem_cblas ${MoFEM_PROJECT_LIBS})
 
 
 

@@ -408,7 +408,7 @@ namespace MoFEM {
         //moisture concentration at gasus point
         vector< ublas::vector< FieldData > > conc;
         ierr = GetGaussDataVector("CONC",conc); CHKERRQ(ierr);
-        double conc_gauss;
+//        double conc_gauss;
 //        cout<<"conc[0] "<<conc[0]<<endl;
 
         //Gradient at Gauss points;
