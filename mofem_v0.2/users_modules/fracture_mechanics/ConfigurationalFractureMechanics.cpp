@@ -1449,7 +1449,8 @@ PetscErrorCode ConfigurationalFractureMechanics::spatial_partition_problems(Fiel
 
   //partition
   ierr = m_field.partition_problem("ELASTIC_MECHANICS",1); CHKERRQ(ierr);
-  ierr = m_field.partition_finite_elements("ELASTIC_MECHANICS",1); CHKERRQ(ierr);
+  ParallelComm* pcomm = ParallelComm::get_pcomm(&m_field.get_moab(),MYPCOMM_INDEX);
+  ierr = m_field.partition_finite_elements("ELASTIC_MECHANICS",false,0,pcomm->size()); CHKERRQ(ierr);
   ierr = m_field.partition_ghost_dofs("ELASTIC_MECHANICS"); CHKERRQ(ierr);
 
   PetscFunctionReturn(0);

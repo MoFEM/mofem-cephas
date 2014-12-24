@@ -70,7 +70,7 @@ struct PostProcOnRefMesh_Base {
       MoFEM::Core core_ref(moab_ref,-1);
       FieldInterface& m_field_ref = core_ref;
       MeshRefinment& m_ref_ref = core_ref; 
-      ierr = m_field_ref.seed_ref_level_3D(0,BitRefLevel().set(0)); CHKERRQ(ierr);
+      ierr = m_field_ref.seed_ref_level_3D(0,BitRefLevel().set(0),0,PETSC_COMM_SELF); CHKERRQ(ierr);
 
       for(int ll = 0;ll<max_level;ll++) {
 	PetscPrintf(PETSC_COMM_WORLD,"Refine Level %d\n",ll);
