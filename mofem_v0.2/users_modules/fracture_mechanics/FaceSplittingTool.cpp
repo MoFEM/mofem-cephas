@@ -124,7 +124,7 @@ PetscErrorCode FaceSplittingTools::meshRefine(const int verb) {
     Range level_tets;
     BitRefLevel bit_mesh = BitRefLevel().set(meshRefineBitLevels.back());
     ierr = mField.get_entities_by_type_and_ref_level(bit_mesh,BitRefLevel().set(),MBTET,level_tets); CHKERRQ(ierr);
-    ierr = mField.seed_ref_level_3D(level_tets,BitRefLevel().set(BITREFLEVEL_SIZE-1)); CHKERRQ(ierr);
+    ierr = mField.seed_ref_level(level_tets,BitRefLevel().set(BITREFLEVEL_SIZE-1)); CHKERRQ(ierr);
   }
 
   if(verb>5) {
@@ -1109,7 +1109,7 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(vector<string> &switche
     } 
   }
 
-  ierr = mField.seed_ref_level_3D(
+  ierr = mField.seed_ref_level(
     subtract(mesh_level_tets,region_tets),last_ref); CHKERRQ(ierr);
   //add rest of elements to last bit level
   ierr = addCrackFront_to_Cubit201(verb); CHKERRQ(ierr);

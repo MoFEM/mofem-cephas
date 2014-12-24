@@ -78,6 +78,9 @@ namespace MoFEM {
   struct Problem_mi_tag {};
   struct ParentEntType_mi_tag {};
 
+  struct Ent_ParallelStatus {};
+  struct Proc_mi_tag {};
+
   struct Composite_EntType_and_ParentEntType_mi_tag {};
   struct Composite_EntityType_And_ParentEntityType_mi_tag {};
   struct Composite_EntityHandle_And_ParentEntityType_mi_tag {};

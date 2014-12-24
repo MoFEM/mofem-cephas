@@ -38,10 +38,9 @@ using namespace MoFEM;
 #include <FEMethod_LowLevelStudent.hpp>
 #include <FEMethod_UpLevelStudent.hpp>
 
-#include <PostProcVertexMethod.hpp>
-#include <PostProcDisplacementAndStrainOnRefindedMesh.hpp>
-
+#include <PotsProcOnRefMesh.hpp>
 #include <ElasticFEMethod.hpp>
+#include <PostProcHookStresses.hpp>
 
 using namespace boost::numeric;
 using namespace ObosleteUsersModules;
@@ -53,34 +52,6 @@ static char help[] = "...\n\n";
 
 const double young_modulus = 1;
 const double poisson_ratio = 0.0;
-
-PetscErrorCode write_soltion(FieldInterface &m_field,const string out_file, const string out_ref_file) {
-  PetscFunctionBegin;
-
-  PostProcVertexMethod ent_method(m_field.get_moab(),"DISPLACEMENT");
-  ierr = m_field.loop_dofs("ELASTIC_PROB","DISPLACEMENT",ROW,ent_method); CHKERRQ(ierr);
- 
-  ParallelComm* pcomm = ParallelComm::get_pcomm(&m_field.get_moab(),MYPCOMM_INDEX);
-
-  if(pcomm->rank()==0) {
-    EntityHandle out_meshset;
-    rval = m_field.get_moab().create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
-    ierr = m_field.problem_get_FE("ELASTIC_PROB","ELASTIC",out_meshset); CHKERRQ(ierr);
-    rval = m_field.get_moab().write_file(out_file.c_str(),"VTK","",&out_meshset,1); CHKERR_PETSC(rval);
-    rval = m_field.get_moab().delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
-  }
- 
-  if(pcomm->rank()==0) {
-
-    PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh fe_post_proc_method(
-      m_field,"DISPLACEMENT",LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
-    fe_post_proc_method.do_broadcast = false;
-    ierr = m_field.loop_finite_elements("ELASTIC_PROB","ELASTIC",fe_post_proc_method,0,pcomm->size());  CHKERRQ(ierr);
-    rval = fe_post_proc_method.moab_post_proc.write_file(out_ref_file.c_str(),"VTK",""); CHKERR_PETSC(rval);
-  }
-
-  PetscFunctionReturn(0);
-}
 
 int main(int argc, char *argv[]) {
 
@@ -105,28 +76,36 @@ int main(int argc, char *argv[]) {
   if(flg != PETSC_TRUE) {
     order = 5;
   }
+
+  PetscBool is_partitioned = PETSC_FALSE;
+  ierr = PetscOptionsGetBool(PETSC_NULL,"-my_is_partitioned",&is_partitioned,&flg); CHKERRQ(ierr);
     
-  //Read mesh to MOAB
-  const char *option;
-  //option = "PARALLEL=BCAST_DELETE;"
-      //"PARTITION=GEOM_DIMENSION,PARTITION_VAL=3,PARTITION_DISTRIBUTE";//;DEBUG_IO";
-  option = "";
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
+  if(is_partitioned == PETSC_TRUE) {
+    //Read mesh to MOAB
+    const char *option;
+    option = "PARALLEL=BCAST_DELETE;PARALLEL_RESOLVE_SHARED_ENTS;PARTITION=PARALLEL_PARTITION;";
+    rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
+    rval = pcomm->resolve_shared_ents(0,3,0); CHKERR_PETSC(rval);
+    rval = pcomm->resolve_shared_ents(0,3,1); CHKERR_PETSC(rval);
+    rval = pcomm->resolve_shared_ents(0,3,2); CHKERR_PETSC(rval);
+  } else {
+    const char *option;
+    option = "";
+    rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
+  }
 
   //Create MoFEM (Joseph) database
   MoFEM::Core core(moab);
   FieldInterface& m_field = core;
 
-  //ref meshset ref level 0
-  ierr = m_field.seed_ref_level_3D(0,0); CHKERRQ(ierr);
-
   // stl::bitset see for more details
   BitRefLevel bit_level0;
   bit_level0.set(0);
-  EntityHandle meshset_level0;
-  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
-  ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
+  ierr = m_field.seed_ref_level_3D(0,bit_level0,1,PETSC_COMM_WORLD); CHKERRQ(ierr);
+  Range meshset_level0;
   ierr = m_field.get_entities_by_ref_level(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
+  PetscSynchronizedPrintf(PETSC_COMM_WORLD,"meshset_level0 %d\n",meshset_level0.size());
+  PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT); 
 
   //Define problem
 
@@ -155,20 +134,18 @@ int main(int argc, char *argv[]) {
   //Declare problem
 
   //add entitities (by tets) to the field
-  ierr = m_field.add_ents_to_field_by_TETs(0,"DISPLACEMENT"); CHKERRQ(ierr);
-  ierr = m_field.add_ents_to_field_by_TETs(0,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_TETs(0,"DISPLACEMENT",PETSC_COMM_WORLD,2); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_TETs(0,"MESH_NODE_POSITIONS",PETSC_COMM_WORLD,2); CHKERRQ(ierr);
 
   //add finite elements entities
   ierr = m_field.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"ELASTIC",MBTET); CHKERRQ(ierr);
 
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
-  //int order = 5;
   ierr = m_field.set_field_order(0,MBTET,"DISPLACEMENT",order); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0,MBTRI,"DISPLACEMENT",order); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0,MBEDGE,"DISPLACEMENT",order); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0,MBVERTEX,"DISPLACEMENT",1); CHKERRQ(ierr);
-  //
   ierr = m_field.set_field_order(0,MBTET,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0,MBTRI,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0,MBEDGE,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
@@ -211,19 +188,20 @@ int main(int argc, char *argv[]) {
   ierr = m_field.build_adjacencies(bit_level0); CHKERRQ(ierr);
 
   //build problem
-  ierr = m_field.build_problems(); CHKERRQ(ierr);
+  //ierr = m_field.build_problems(); CHKERRQ(ierr);
+  if(is_partitioned) {
+    ierr = m_field.build_partitioned_problems(PETSC_COMM_WORLD,1); CHKERRQ(ierr);
+    ierr = m_field.partition_finite_elements("ELASTIC_PROB",true,0,pcomm->size(),1); CHKERRQ(ierr);
+  } else {
+    ierr = m_field.build_problems(); CHKERRQ(ierr);
+    ierr = m_field.partition_problem("ELASTIC_PROB"); CHKERRQ(ierr);
+    ierr = m_field.partition_finite_elements("ELASTIC_PROB"); CHKERRQ(ierr);
+  }
 
-  //mesh partitioning 
-
-  //partition
-  ierr = m_field.partition_problem("ELASTIC_PROB"); CHKERRQ(ierr);
-  //PetscBarrier(PETSC_NULL);
-  ierr = m_field.partition_finite_elements("ELASTIC_PROB"); CHKERRQ(ierr);
-  //what are ghost nodes, see Petsc Manual
   ierr = m_field.partition_ghost_dofs("ELASTIC_PROB"); CHKERRQ(ierr);
 
   //m_field.list_dofs_by_field_name("DISPLACEMENT",true);
-
+  
   //print bcs
   ierr = m_field.print_cubit_displacement_set(); CHKERRQ(ierr);
   ierr = m_field.print_cubit_force_set(); CHKERRQ(ierr);
@@ -242,8 +220,6 @@ int main(int argc, char *argv[]) {
   //MatView(Aij,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
   //std::string wait;
   //std::cin >> wait;
-
-
 
   struct MyElasticFEMethod: public ElasticFEMethod {
     MyElasticFEMethod(FieldInterface& _m_field,Mat _Aij,Vec _D,Vec& _F,double _lambda,double _mu): 
@@ -306,6 +282,12 @@ int main(int argc, char *argv[]) {
   //postproc
   ierr = m_field.problem_basic_method_postProcess("ELASTIC_PROB",my_dirichlet_bc); CHKERRQ(ierr);
 
+  //Matrix View
+  /*MatView(Aij,PETSC_VIEWER_STDOUT_WORLD);
+  MatView(Aij,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
+  std::string wait;
+  std::cin >> wait;*/
+
   //set matrix possitives define and symetric for cholesky and icc preceonditionser
   ierr = MatSetOption(Aij,MAT_SPD,PETSC_TRUE); CHKERRQ(ierr);
 
@@ -325,7 +307,6 @@ int main(int argc, char *argv[]) {
 
   SeriesRecorder& recorder = core;
   {
-
     Tag th;
     int def_marker = 0;
     rval = moab.tag_get_handle("BLOCKID",1,MB_TYPE_INTEGER,th,MB_TAG_CREAT|MB_TAG_SPARSE,&def_marker); CHKERR_THROW(rval); 
@@ -343,9 +324,22 @@ int main(int argc, char *argv[]) {
       }
 
     }
-
-
   }
+
+  PostPocOnRefinedMesh post_proc(m_field);
+  ierr = post_proc.generateRefereneElemenMesh(); CHKERRQ(ierr);
+  ierr = post_proc.addFieldValuesPostProc("DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = post_proc.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+  ierr = post_proc.addFieldValuesGradientPostProc("DISPLACEMENT"); CHKERRQ(ierr);
+  //add postpocessing for sresses
+  post_proc.get_op_to_do_Rhs().push_back(
+	  new PostPorcStress(
+	    m_field,
+	    post_proc.postProcMesh,
+	    post_proc.mapGaussPts,
+	    "DISPLACEMENT",
+	    post_proc.commonData));
+
 
   if(m_field.check_field("TEMP")) {
     
@@ -390,13 +384,11 @@ int main(int argc, char *argv[]) {
 	ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
 	//Save data on mesh
-	ierr = m_field.set_global_VecCreateGhost("ELASTIC_PROB",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-
+	ierr = m_field.set_local_VecCreateGhost("ELASTIC_PROB",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	ierr = m_field.loop_finite_elements("ELASTIC_PROB","ELASTIC",post_proc); CHKERRQ(ierr);
 	ostringstream o1;
-	o1 << "out_" << sit->step_number << ".vtk";
-	ostringstream o2;
-	o2 << "out_post_proc_" << sit->step_number << ".vtk";
-	ierr = write_soltion(m_field,o1.str(),o2.str());   CHKERRQ(ierr);
+	o1 << "out_" << sit->step_number << ".h5m";
+	rval = post_proc.postProcMesh.write_file(o1.str().c_str(),"MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
 
       }
 
@@ -432,8 +424,9 @@ int main(int argc, char *argv[]) {
       ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
       //Save data on mesh
-      ierr = m_field.set_global_VecCreateGhost("ELASTIC_PROB",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-      ierr = write_soltion(m_field,"out.vtk","out_post_proc.vtk");   CHKERRQ(ierr);
+      ierr = m_field.set_local_VecCreateGhost("ELASTIC_PROB",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      ierr = m_field.loop_finite_elements("ELASTIC_PROB","ELASTIC",post_proc); CHKERRQ(ierr);
+      rval = post_proc.postProcMesh.write_file("out.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
 
     }
 
@@ -448,8 +441,9 @@ int main(int argc, char *argv[]) {
     ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   
     //Save data on mesh
-    ierr = m_field.set_global_VecCreateGhost("ELASTIC_PROB",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = write_soltion(m_field,"out.vtk","out_post_proc.vtk");   CHKERRQ(ierr);
+    ierr = m_field.set_local_VecCreateGhost("ELASTIC_PROB",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = m_field.loop_finite_elements("ELASTIC_PROB","ELASTIC",post_proc); CHKERRQ(ierr);
+    rval = post_proc.postProcMesh.write_file("out.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
 
   }
       

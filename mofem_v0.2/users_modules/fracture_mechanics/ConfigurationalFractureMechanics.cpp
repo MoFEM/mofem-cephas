@@ -1302,7 +1302,7 @@ PetscErrorCode ConfigurationalFractureMechanics::constrains_problem_definition(F
 
     Range prisms;
     ierr = m_field.get_entities_by_type_and_ref_level(bit_level0,BitRefLevel().set(),MBPRISM,prisms); CHKERRQ(ierr);
-    ierr = m_field.seed_ref_level_3D(prisms,bit_level0); CHKERRQ(ierr);
+    ierr = m_field.seed_ref_level(prisms,bit_level0); CHKERRQ(ierr);
     ierr = m_field.add_ents_to_finite_element_by_PRISMs(prisms,"BOTH_SIDE_OF_CRACK"); CHKERRQ(ierr);
   }
 

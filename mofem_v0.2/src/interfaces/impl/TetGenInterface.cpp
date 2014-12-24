@@ -327,7 +327,7 @@ PetscErrorCode TetGenInterface::outData(
   ierr = outData(in,out,moab_tetgen_map,tetgen_moab_map,&ents,id_in_tags,error_if_created); CHKERRQ(ierr);
   //cerr << ents.size() << endl;
   FieldInterface& m_field = cOre;
-  ierr = m_field.seed_ref_level_3D(ents.subset_by_type(MBTET),bit); CHKERRQ(ierr);
+  ierr = m_field.seed_ref_level(ents.subset_by_type(MBTET),bit); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 PetscErrorCode TetGenInterface::setFaceData(

@@ -41,7 +41,9 @@ using namespace MoFEM;
 
 #include <PostProcVertexMethod.hpp>
 #include <PostProcDisplacementAndStrainOnRefindedMesh.hpp>
+
 #include <PotsProcOnRefMesh.hpp>
+#include <PostProcHookStresses.hpp>
 
 #include <ElasticFEMethod.hpp>
 #include <ElasticFEMethodInterface.hpp>
@@ -315,7 +317,7 @@ int main(int argc, char *argv[]) {
 
   //partition
   ierr = m_field.partition_problem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
-  ierr = m_field.partition_finite_elements("ELASTIC_MECHANICS",false); CHKERRQ(ierr);
+  ierr = m_field.partition_finite_elements("ELASTIC_MECHANICS",false,0,pcomm->size()); CHKERRQ(ierr);
   //what are ghost nodes, see Petsc Manual
   ierr = m_field.partition_ghost_dofs("ELASTIC_MECHANICS"); CHKERRQ(ierr);
 
@@ -614,6 +616,14 @@ int main(int argc, char *argv[]) {
   ierr = post_proc.generateRefereneElemenMesh(); CHKERRQ(ierr);
   ierr = post_proc.addFieldValuesPostProc("DISPLACEMENT"); CHKERRQ(ierr);
   ierr = post_proc.addFieldValuesGradientPostProc("DISPLACEMENT"); CHKERRQ(ierr);
+  //add postpocessing for sresses
+  post_proc.get_op_to_do_Rhs().push_back(
+	  new PostPorcStress(
+	    m_field,
+	    post_proc.postProcMesh,
+	    post_proc.mapGaussPts,
+	    "DISPLACEMENT",
+	    post_proc.commonData));
 
   bool converged_state  = false;
   for(;step<max_steps;step++) {
@@ -706,22 +716,12 @@ int main(int argc, char *argv[]) {
       fclose(datafile);
       ierr = my_arc_method.postProcessLoadPath(); CHKERRQ(ierr);
     }
-    //
-    //PostProcVertexMethod ent_method(moab);
-    //ierr = m_field.loop_dofs("ELASTIC_MECHANICS","DISPLACEMENT",COL,ent_method); CHKERRQ(ierr);
-    //
+
     if(step % 1 == 0) {
       if(pcomm->rank()==0) {
 	ostringstream sss;
 	sss << "restart_" << step << ".h5m";
 	rval = moab.write_file(sss.str().c_str()); CHKERR_PETSC(rval);
-	/*EntityHandle out_meshset;
-	rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
-	ierr = m_field.problem_get_FE("ELASTIC_MECHANICS","ELASTIC",out_meshset); CHKERRQ(ierr);
-	ostringstream ss;
-	ss << "out_" << step << ".vtk";
-	rval = moab.write_file(ss.str().c_str(),"VTK","",&out_meshset,1); CHKERR_PETSC(rval);
-	rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);*/
       }
       ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",post_proc); CHKERRQ(ierr);
       ostringstream ss;
@@ -741,28 +741,6 @@ int main(int argc, char *argv[]) {
   ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
   ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
-
-  PostProcVertexMethod ent_method(moab);
-  ierr = m_field.loop_dofs("ELASTIC_MECHANICS","DISPLACEMENT",COL,ent_method); CHKERRQ(ierr);
-
-  PostProcVertexMethod ent_method_res(moab,"DISPLACEMENT",F,"RESIDUAL");
-  ierr = m_field.loop_dofs("ELASTIC_MECHANICS","DISPLACEMENT",COL,ent_method_res); CHKERRQ(ierr);
-
-  if(pcomm->rank()==0) {
-    EntityHandle out_meshset;
-    rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
-    ierr = m_field.problem_get_FE("ELASTIC_MECHANICS","ELASTIC",out_meshset); CHKERRQ(ierr);
-    ierr = m_field.problem_get_FE("ELASTIC_MECHANICS","INTERFACE",out_meshset); CHKERRQ(ierr);
-    rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
-    rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
-  }
-
-  PostProcDisplacemenysAndStarinOnRefMesh fe_post_proc_method(moab,"DISPLACEMENT");
-  ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",fe_post_proc_method);  CHKERRQ(ierr);
-  PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT);
-  if(pcomm->rank()==0) {
-    rval = fe_post_proc_method.moab_post_proc.write_file("out_post_proc.vtk","VTK",""); CHKERR_PETSC(rval);
-  }
 
   //detroy matrices
   ierr = VecDestroy(&F); CHKERRQ(ierr);

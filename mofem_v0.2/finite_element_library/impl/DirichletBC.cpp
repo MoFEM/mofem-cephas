@@ -63,32 +63,34 @@ PetscErrorCode DisplacementBCFEMethodPreAndPostProc::iNitalize() {
           rval = mField.get_moab().get_connectivity(ents,_nodes,true); CHKERR_PETSC(rval);
           ents.insert(_nodes.begin(),_nodes.end());
         }
-	  for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
-	    for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,fieldName,*eit,pcomm->rank(),dof)) {
-	      if(dof->get_ent_type() == MBVERTEX) {
-		if(dof->get_dof_rank() == 0 && mydata.data.flag1) {
-		  map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = mydata.data.value1;
-		}
-		if(dof->get_dof_rank() == 1 && mydata.data.flag2) {
-		  map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = mydata.data.value2;
-		}
-		if(dof->get_dof_rank() == 2 && mydata.data.flag3) {
-		  map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = mydata.data.value3;
-		}
-	      } else {
-		if(dof->get_dof_rank() == 0 && mydata.data.flag1) {
-		  map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = 0;
-		}
-		if(dof->get_dof_rank() == 1 && mydata.data.flag2) {
-		  map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = 0;
-		}
-		if(dof->get_dof_rank() == 2 && mydata.data.flag3) {
-		  map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = 0;
-		}
+	for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
+	  for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,fieldName,*eit,pcomm->rank(),dof)) {
+	    bitset<8> pstatus(dof->get_pstatus());
+	    if(pstatus.test(0)) continue; //only local
+	    if(dof->get_ent_type() == MBVERTEX) {
+	      if(dof->get_dof_rank() == 0 && mydata.data.flag1) {
+		map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = mydata.data.value1;
+	      }
+	      if(dof->get_dof_rank() == 1 && mydata.data.flag2) {
+		map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = mydata.data.value2;
+	      }
+	      if(dof->get_dof_rank() == 2 && mydata.data.flag3) {
+		map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = mydata.data.value3;
+	      }
+	    } else {
+	      if(dof->get_dof_rank() == 0 && mydata.data.flag1) {
+		map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = 0;
+	      }
+	      if(dof->get_dof_rank() == 1 && mydata.data.flag2) {
+		map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = 0;
+	      }
+	      if(dof->get_dof_rank() == 2 && mydata.data.flag3) {
+		map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = 0;
 	      }
 	    }
 	  }
 	}
+      }
     }
     dofsIndices.resize(map_zero_rows.size());
     dofsValues.resize(map_zero_rows.size());
@@ -181,7 +183,7 @@ PetscErrorCode DisplacementBCFEMethodPreAndPostProc::postProcess() {
     case CTX_SNESSETJACOBIAN: {
       ierr = MatAssemblyBegin(snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
       ierr = MatAssemblyEnd(snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-      ierr = MatZeroRowsColumns(snes_B,dofsIndices.size(),&dofsIndices[0],1,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
+      ierr = MatZeroRowsColumns(snes_B,dofsIndices.size(),&*dofsIndices.begin(),1,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
     }
     break;
     default:
