@@ -63,32 +63,34 @@ PetscErrorCode DisplacementBCFEMethodPreAndPostProc::iNitalize() {
           rval = mField.get_moab().get_connectivity(ents,_nodes,true); CHKERR_PETSC(rval);
           ents.insert(_nodes.begin(),_nodes.end());
         }
-	  for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
-	    for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,fieldName,*eit,pcomm->rank(),dof)) {
-	      if(dof->get_ent_type() == MBVERTEX) {
-		if(dof->get_dof_rank() == 0 && mydata.data.flag1) {
-		  map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = mydata.data.value1;
-		}
-		if(dof->get_dof_rank() == 1 && mydata.data.flag2) {
-		  map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = mydata.data.value2;
-		}
-		if(dof->get_dof_rank() == 2 && mydata.data.flag3) {
-		  map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = mydata.data.value3;
-		}
-	      } else {
-		if(dof->get_dof_rank() == 0 && mydata.data.flag1) {
-		  map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = 0;
-		}
-		if(dof->get_dof_rank() == 1 && mydata.data.flag2) {
-		  map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = 0;
-		}
-		if(dof->get_dof_rank() == 2 && mydata.data.flag3) {
-		  map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = 0;
-		}
+	for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
+	  for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,fieldName,*eit,pcomm->rank(),dof)) {
+	    bitset<8> pstatus(dof->get_pstatus());
+	    if(pstatus.test(0)) continue; //only local
+	    if(dof->get_ent_type() == MBVERTEX) {
+	      if(dof->get_dof_rank() == 0 && mydata.data.flag1) {
+		map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = mydata.data.value1;
+	      }
+	      if(dof->get_dof_rank() == 1 && mydata.data.flag2) {
+		map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = mydata.data.value2;
+	      }
+	      if(dof->get_dof_rank() == 2 && mydata.data.flag3) {
+		map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = mydata.data.value3;
+	      }
+	    } else {
+	      if(dof->get_dof_rank() == 0 && mydata.data.flag1) {
+		map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = 0;
+	      }
+	      if(dof->get_dof_rank() == 1 && mydata.data.flag2) {
+		map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = 0;
+	      }
+	      if(dof->get_dof_rank() == 2 && mydata.data.flag3) {
+		map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = 0;
 	      }
 	    }
 	  }
 	}
+      }
     }
     dofsIndices.resize(map_zero_rows.size());
     dofsValues.resize(map_zero_rows.size());
@@ -105,6 +107,21 @@ PetscErrorCode DisplacementBCFEMethodPreAndPostProc::iNitalize() {
 PetscErrorCode DisplacementBCFEMethodPreAndPostProc::preProcess() {
   PetscFunctionBegin;
   ierr = iNitalize(); CHKERRQ(ierr);
+
+  switch (ts_ctx) {
+    case CTX_TSSETIFUNCTION: {
+      snes_ctx = CTX_SNESSETFUNCTION;
+      snes_f = ts_F;
+      break;
+    }
+    case CTX_TSSETIJACOBIAN: {
+      snes_ctx = CTX_SNESSETJACOBIAN;
+      snes_B = ts_B;
+      break;
+    }
+    default:
+    break;
+  }
 
   if(snes_ctx == CTX_SNESNONE && ts_ctx == CTX_TSNONE) {
     if(dofsIndices.size()>0) {
@@ -131,25 +148,6 @@ PetscErrorCode DisplacementBCFEMethodPreAndPostProc::preProcess() {
     default:
 	SETERRQ(PETSC_COMM_SELF,1,"unknown snes stage");
   }
-
-  switch(ts_ctx) {
-    case CTX_TSNONE: {}
-    break;
-    case CTX_TSSETIFUNCTION: {
-      if(dofsIndices.size()>0) {
-	ierr = VecSetValues(ts_u,dofsIndices.size(),&dofsIndices[0],&dofsValues[0],INSERT_VALUES); CHKERRQ(ierr);
-      }
-      ierr = VecAssemblyBegin(ts_u); CHKERRQ(ierr);
-      ierr = VecAssemblyEnd(ts_u); CHKERRQ(ierr);
-    }
-    break;
-    case CTX_TSSETIJACOBIAN: {
-    }
-    break;
-    default:
-	SETERRQ(PETSC_COMM_SELF,1,"unknown snes stage");
-  }
-
 
   PetscFunctionReturn(0);
 }
@@ -185,30 +183,7 @@ PetscErrorCode DisplacementBCFEMethodPreAndPostProc::postProcess() {
     case CTX_SNESSETJACOBIAN: {
       ierr = MatAssemblyBegin(snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
       ierr = MatAssemblyEnd(snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-      ierr = MatZeroRowsColumns(snes_B,dofsIndices.size(),&dofsIndices[0],1,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
-    }
-    break;
-    default:
-	SETERRQ(PETSC_COMM_SELF,1,"unknown snes stage");
-  }
-
-  switch(ts_ctx) {
-    case CTX_TSNONE: {}
-    break;
-    case CTX_TSSETIFUNCTION: {
-      ierr = VecAssemblyBegin(ts_F); CHKERRQ(ierr);
-      ierr = VecAssemblyEnd(ts_F); CHKERRQ(ierr);
-      for(vector<int>::iterator vit = dofsIndices.begin();vit!=dofsIndices.end();vit++) {
-	ierr = VecSetValue(ts_F,*vit,0,INSERT_VALUES); CHKERRQ(ierr);
-      }
-      ierr = VecAssemblyBegin(ts_F); CHKERRQ(ierr);
-      ierr = VecAssemblyEnd(ts_F); CHKERRQ(ierr);
-    }
-    break;
-    case CTX_TSSETIJACOBIAN: {
-      ierr = MatAssemblyBegin(ts_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-      ierr = MatAssemblyEnd(ts_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-      ierr = MatZeroRowsColumns(ts_B,dofsIndices.size(),&dofsIndices[0],1,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
+      ierr = MatZeroRowsColumns(snes_B,dofsIndices.size(),&*dofsIndices.begin(),1,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
     }
     break;
     default:
@@ -355,6 +330,22 @@ PetscErrorCode FixBcAtEntities::iNitalize() {
 
 PetscErrorCode FixBcAtEntities::preProcess() {
     PetscFunctionBegin;
+
+    switch (ts_ctx) {
+      case CTX_TSSETIFUNCTION: {
+	snes_ctx = CTX_SNESSETFUNCTION;
+	snes_f = ts_F;
+	break;
+      }
+      case CTX_TSSETIJACOBIAN: {
+	snes_ctx = CTX_SNESSETJACOBIAN;
+	snes_B = ts_B;
+	break;
+      }
+      default:
+      break;
+    }
+
     ierr = iNitalize(); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }

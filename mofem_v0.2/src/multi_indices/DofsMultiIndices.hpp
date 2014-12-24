@@ -521,7 +521,6 @@ struct NumeredDofMoFEMEntity_part_change {
   void operator()(NumeredDofMoFEMEntity &dof) { 
     dof.part = part;
     dof.petsc_gloabl_dof_idx = petsc_gloabl_dof_idx; 
-    dof.petsc_local_dof_idx = -1;
   }
 };
 

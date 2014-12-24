@@ -274,7 +274,6 @@ int main(int argc, char *argv[]) {
   PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Total Rank %d Time = %f CPU Time = %f\n",pcomm->rank(),v2-v1,t2-t1);
   PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT);
 
-
   PetscFinalize();
 
   } catch (const char* msg) {

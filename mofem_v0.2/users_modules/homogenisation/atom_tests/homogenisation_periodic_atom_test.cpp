@@ -269,7 +269,7 @@ int main(int argc, char *argv[]) {
   //Declare problem
   
   //add entitities (by tets) to the field
-  ierr = mField.add_ents_to_field_by_TETs(0,"DISPLACEMENT",2); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_field_by_TETs(0,"DISPLACEMENT"); CHKERRQ(ierr);
   
   
   //add finite elements entities

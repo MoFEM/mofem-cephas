@@ -76,8 +76,9 @@ typedef multi_index_container<
  */
 struct BasicMoFEMEntity {
   EntityHandle ent;
-  int moab_owner;
+  int owner_proc;
   EntityHandle moab_owner_handle;
+  unsigned char *pstatus_val_ptr;
 
   BasicMoFEMEntity(Interface &moab,const EntityHandle _ent);
 
@@ -87,16 +88,28 @@ struct BasicMoFEMEntity {
   /// get entity id
   inline EntityID get_ent_id() const { return (EntityID)(ent&MB_ID_MASK); };
 
-  inline int& get_owner() { return moab_owner; }
-  inline EntityHandle& get_owner_ent() { return moab_owner_handle; }
-
-  /** \brief maob partitioning owner
-    */
-  inline int get_owner() const { return moab_owner; }
-
   /** \brief maob partitioning owner handle
     */
   inline EntityHandle get_owner_ent() const { return moab_owner_handle; }
+
+  /** \brife moab get owner proc
+    */
+  inline EntityHandle get_owner_proc() const { return owner_proc; }
+
+  /** \brief get pstatus 
+    * This tag stores various aspects of parallel status in bits; see also 
+    * #define's following, to be used in bit mask operations.  If an entity is
+    * not shared with any other processors, the pstatus is 0, otherwise it's > 0
+    *
+    * bit 0: !owned (0=owned, 1=not owned)
+    * bit 1: shared (0=not shared, 1=shared)
+    * bit 2: multishared (shared by > 2 procs; 0=not shared, 1=shared)
+    * bit 3: interface (0=not interface, 1=interface)
+    * bit 4: ghost (0=not ghost, 1=ghost)
+    *
+    */
+  inline unsigned char get_pstatus() const { return *pstatus_val_ptr; };
+
 };
 
 /** 
@@ -142,8 +155,9 @@ struct interface_RefMoFEMEntity {
   inline EntityType get_parent_ent_type() const { return ref_ptr->get_parent_ent_type(); };
   inline EntityID get_ent_id() const { return ref_ptr->get_ent_id(); };
   inline const RefMoFEMEntity* get_RefMoFEMEntity_ptr() { return ref_ptr->get_RefMoFEMEntity_ptr(); }
-  inline int get_owner() const { return ref_ptr->get_owner(); }
+  inline unsigned char get_pstatus() const { return ref_ptr->get_pstatus(); }
   inline EntityHandle get_owner_ent() const { return ref_ptr->get_owner_ent(); }
+  inline EntityHandle get_owner_proc() const { return ref_ptr->get_owner_proc(); }
   virtual ~interface_RefMoFEMEntity() {}
 };
 
@@ -165,8 +179,12 @@ typedef multi_index_container<
   indexed_by<
     hashed_unique<
       tag<Ent_mi_tag>, member<RefMoFEMEntity::BasicMoFEMEntity,EntityHandle,&RefMoFEMEntity::ent> >,
-    hashed_unique<
+    hashed_non_unique<
       tag<Ent_Owner_mi_tag>, member<RefMoFEMEntity::BasicMoFEMEntity,EntityHandle,&RefMoFEMEntity::moab_owner_handle> >,
+    ordered_non_unique<
+      tag<Proc_mi_tag>, member<RefMoFEMEntity::BasicMoFEMEntity,int,&RefMoFEMEntity::owner_proc> >,
+    ordered_non_unique<
+      tag<Ent_ParallelStatus>, const_mem_fun<RefMoFEMEntity::BasicMoFEMEntity,unsigned char,&RefMoFEMEntity::get_pstatus> >,
     ordered_non_unique<
       tag<Ent_Ent_mi_tag>, const_mem_fun<RefMoFEMEntity,EntityHandle,&RefMoFEMEntity::get_parent_ent> >,
     ordered_non_unique<
@@ -293,6 +311,7 @@ struct RefMoFEMEntity_change_set_nth_bit {
   */
 struct MoFEMEntity: public interface_MoFEMField<MoFEMField>, interface_RefMoFEMEntity<RefMoFEMEntity> {
   typedef interface_MoFEMField<MoFEMField> interface_type_MoFEMField;
+  typedef interface_RefMoFEMEntity<RefMoFEMEntity> interface_type_RefMoFEMEntity;
   const RefMoFEMEntity *ref_mab_ent_ptr;
   const ApproximationOrder* tag_order_data;
   const FieldData* tag_FieldData;
@@ -313,15 +332,21 @@ struct MoFEMEntity: public interface_MoFEMField<MoFEMField>, interface_RefMoFEME
   const LocalUId& get_local_unique_id() const { return local_uid; }
   LocalUId get_local_unique_id_calculate() const {
     char bit_number = get_bit_number();
-    assert(bit_number<=32);
-    LocalUId _uid_ = (ref_ptr->ent)|(((UId)bit_number)<<(8*sizeof(EntityHandle)));
+    assert(bit_number<32);
+    LocalUId _uid_ = (UId)0;
+    _uid_ |= (UId)ref_ptr->ent;
+    _uid_ |= (UId)bit_number << 8*sizeof(EntityHandle);
     return _uid_;
   }
   const GlobalUId& get_global_unique_id() const { return global_uid; }
   GlobalUId get_global_unique_id_calculate() const {
     char bit_number = get_bit_number();
-    assert(bit_number<=32);
-    GlobalUId _uid_ = (ref_ptr->moab_owner_handle)|(((UId)bit_number)<<(8*sizeof(EntityHandle)));
+    assert(bit_number<32);
+    assert(ref_ptr->owner_proc<1024);
+    GlobalUId _uid_ = (UId)0;
+    _uid_ |= (UId)ref_ptr->moab_owner_handle;
+    _uid_ |= (UId)bit_number << 8*sizeof(EntityHandle);
+    _uid_ |= (UId)ref_ptr->owner_proc << 5+8*sizeof(EntityHandle);
     return _uid_;
   }
   const MoFEMEntity* get_MoFEMEntity_ptr() const { return this; };
@@ -389,6 +414,8 @@ typedef multi_index_container<
   indexed_by<
     ordered_unique<
       tag<Unique_mi_tag>, member<MoFEMEntity,GlobalUId,&MoFEMEntity::global_uid> >,
+    ordered_non_unique<
+      tag<Ent_ParallelStatus>, const_mem_fun<MoFEMEntity::interface_type_RefMoFEMEntity,unsigned char,&MoFEMEntity::get_pstatus> >,
     ordered_non_unique<
       tag<BitFieldId_mi_tag>, const_mem_fun<MoFEMEntity::interface_type_MoFEMField,const BitFieldId&,&MoFEMEntity::get_id>, LtBit<BitFieldId> >,
     ordered_non_unique<

@@ -16,18 +16,25 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
+project(MoFEM-UserModules C CXX)
+
 cmake_minimum_required(VERSION 2.8)
 
-find_package(MoFEM 0.2.0
+find_package(MoFEM 0.2.0 
   REQUIRED HINTS ${MOFEM_DIR} ../ ../../ $ENV{MOFEM_DIR}
 )
+
+find_package( PythonInterp )
+find_package( PythonLibs )
+if(PYTHON_INCLUDE_DIRS)
+  include_directories ( ${PYTHON_INCLUDE_DIRS} )
+endif(PYTHON_INCLUDE_DIRS)
 
 include(${MoFEM_PROJECT_SOURCE_DIR}/cmake/ExportFile.cmake)
 
 set(CMAKE_C_COMPILER ${MoFEM_CMAKE_C_COMPILER}) 
 set(CMAKE_CXX_COMPILER ${MoFEM_CMAKE_CXX_COMPILER})
 
-project(MoFEM_Examples C CXX)
 
 include_directories(
   ${MoFEM_PROJECT_INCLUDE_DIRECTORIES}

@@ -292,18 +292,10 @@ struct EntMoFEMFiniteElement: public interface_MoFEMFiniteElement<MoFEMFiniteEle
   DofMoFEMEntity_multiIndex_uid_view col_dof_view;
   DofMoFEMEntity_multiIndex_uid_view data_dof_view;
   FEDofMoFEMEntity_multiIndex data_dofs;
-  LocalUId local_uid;
   GlobalUId global_uid;
   EntMoFEMFiniteElement(Interface &moab,const RefMoFEMElement *_ref_MoFEMFiniteElement,const MoFEMFiniteElement *_MoFEMFiniteElement_ptr);
   inline const MoFEMFiniteElement* get_MoFEMFiniteElementPtr() { return interface_MoFEMFiniteElement<MoFEMFiniteElement>::fe_ptr; };
-  const LocalUId& get_local_unique_id() const { return local_uid; }
   const GlobalUId& get_global_unique_id() const { return global_uid; }
-  LocalUId get_local_unique_id_calculate() const {
-    char bit_number = get_bit_number();
-    assert(bit_number<=32);
-    LocalUId _uid_ = (ref_ptr->get_ref_ent())|(((LocalUId)bit_number)<<(8*sizeof(EntityHandle)));
-    return _uid_;
-  }
   GlobalUId get_global_unique_id_calculate() const {
     char bit_number = get_bit_number();
     assert(bit_number<=32);
@@ -373,7 +365,6 @@ struct interface_EntMoFEMFiniteElement:public interface_MoFEMFiniteElement<T>,in
   inline DofIdx get_nb_dofs_col() const { return interface_MoFEMFiniteElement<T>::fe_ptr->get_nb_dofs_col(); }
   inline DofIdx get_nb_dofs_data() const { return interface_MoFEMFiniteElement<T>::fe_ptr->get_nb_dofs_data(); }
   inline EntityHandle get_ent() const { return interface_MoFEMFiniteElement<T>::fe_ptr->get_ref_ent(); };
-  inline LocalUId get_local_unique_id() const { return interface_MoFEMFiniteElement<T>::fe_ptr->get_local_unique_id(); }
   inline GlobalUId get_global_unique_id() const { return interface_MoFEMFiniteElement<T>::fe_ptr->get_global_unique_id(); }
   //
   SideNumber_multiIndex &get_side_number_table() const { return interface_MoFEMFiniteElement<T>::fe_ptr->get_side_number_table(); }
@@ -538,6 +529,16 @@ typedef multi_index_container<
     ordered_unique<
       tag<FiniteElement_name_mi_tag>, const_mem_fun<MoFEMFiniteElement,boost::string_ref,&MoFEMFiniteElement::get_name_ref> >
   > > MoFEMFiniteElement_multiIndex;
+
+// modificators
+
+struct NumeredMoFEMFiniteElement_change_part {
+  unsigned int part;
+  NumeredMoFEMFiniteElement_change_part(unsigned int _part): part(_part) {};
+  void operator()(NumeredMoFEMFiniteElement &MoFEMFiniteElement) {
+    MoFEMFiniteElement.part = part;
+  }
+};
 
 }
 

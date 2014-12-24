@@ -17,7 +17,12 @@
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
 #include subdirectory
-include_directories("${MoFEM_PROJECT_SOURCE_DIR}/users_modules/nonlinear_elasticity")
+include_directories("${UM_SOURCE_DIR}/nonlinear_elasticity")
+include_directories("${UM_SOURCE_DIR}/nonlinear_elasticity/src")
+include_directories("${UM_SOURCE_DIR}/elasticity/src")
+include_directories("${UM_SOURCE_DIR}/convective_mass_element/src")
+
+add_subdirectory(atom_tests)
 
 add_executable(arc_length_nonlinear_elasticity 
   ${UM_SOURCE_DIR}/nonlinear_elasticity/arc_length_nonlinear_elasticity.cpp)
@@ -41,10 +46,24 @@ file(COPY
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
 
 configure_file(
-  "${CMAKE_CURRENT_SOURCE_DIR}/arc_length_nonlinear_elasticity.sh.in"
-  "${CMAKE_CURRENT_BINARY_DIR}/arc_length_nonlinear_elasticity.sh"
+  "${UM_SOURCE_DIR}/nonlinear_elasticity/arc_length_nonlinear_elasticity.sh.in"
+  "${CMAKE_CURRENT_SOURCE_DIR}/arc_length_nonlinear_elasticity.sh"
   @ONLY
   )
+
+configure_file(
+  "${UM_SOURCE_DIR}/nonlinear_elasticity/do_vtk.sh.in"
+  "${CMAKE_CURRENT_SOURCE_DIR}/do_vtk.sh"
+  @ONLY
+  )
+
+file(COPY arc_length_nonlinear_elasticity.sh
+  DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
+  FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE)
+
+file(COPY do_vtk.sh
+  DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
+  FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE)
 
 #testing
 add_test(ArcLengthNonLinearElasticityTest 
@@ -86,8 +105,7 @@ if(ADOL-C_LIBRARY)
       -snes_max_it 100 -snes_atol 1e-7 -snes_rtol 1e-7
       -ts_monitor -ts_type alpha -ts_dt 0.001 -ts_final_time 0.002
       -my_time_data_file data.txt -my_output_prt 1
-      -my_max_post_proc_ref_level 1 -my_disp_order 2 -my_vel_order 1)
-
+      -my_max_post_proc_ref_level 0 -my_disp_order 3 -my_vel_order 3)
 
 endif(ADOL-C_LIBRARY)
 

@@ -243,7 +243,7 @@ int main(int argc, char *argv[]) {
   if(step==1) {
     //10 node tets
     Projection10NodeCoordsOnField ent_method_material(m_field,"MESH_NODE_POSITIONS");
-    ierr = m_field.loop_dofs("MESH_NODE_POSITIONS",ent_method_material); CHKERRQ(ierr);
+    ierr = m_field.loop_dofs("MESH_NODE_POSITIONS",ent_method_material,0); CHKERRQ(ierr);
     ierr = m_field.set_field(0,MBVERTEX,"SPATIAL_POSITION"); CHKERRQ(ierr);
     ierr = m_field.set_field(0,MBEDGE,"SPATIAL_POSITION"); CHKERRQ(ierr);
     ierr = m_field.field_axpy(1.,"MESH_NODE_POSITIONS","SPATIAL_POSITION"); CHKERRQ(ierr);

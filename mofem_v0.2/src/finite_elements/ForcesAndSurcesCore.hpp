@@ -71,11 +71,17 @@ struct DataForcesAndSurcesCore {
     /// \brief get dofs values 
     virtual const ublas::vector<FieldData>& getFieldData() const { return fieldData; }
 
-    /// \brief get shape functions
+    /// \brief get dofs data strature FEDofMoFEMEntity
+    virtual const ublas::vector<const FEDofMoFEMEntity*>& getFieldDofs() const { return dOfs; }
+
+    /** \brief get shape functions
+      * this return matrix (nb. of rows is equal to nb. of Gauss pts, nb. of
+      * columns is equalt to number of shape functions on this entity 
+      */
     virtual const ublas::matrix<FieldData>& getN() const { return N; }
 
     /** \brief get direvatives of shape fucntiosn
-      *
+     *
      * Matrix at rows has nb. of Gauss pts, at columns it has direvative of
      * shape functions. Colummns are orgasised as follows, [ dN1/dx, dN1/dy,
      * dN1/dz, dN2/dx, dN2/dy, dN2/dz, ... ]
@@ -96,6 +102,7 @@ struct DataForcesAndSurcesCore {
     virtual ApproximationOrder& getOrder() { return oRder; }
     virtual ublas::vector<DofIdx>& getIndices() { return iNdices; }
     virtual ublas::vector<FieldData>& getFieldData() { return fieldData; }
+    virtual ublas::vector<const FEDofMoFEMEntity*>& getFieldDofs() { return dOfs; }
     virtual ublas::matrix<FieldData>& getN() { return N; }
 
     /** \brief get direvatives of shape functions
@@ -235,6 +242,7 @@ struct DataForcesAndSurcesCore {
     int sEnse;
     ApproximationOrder oRder;
     ublas::vector<DofIdx> iNdices;
+    ublas::vector<const FEDofMoFEMEntity*> dOfs;
     ublas::vector<FieldData> fieldData;
     ublas::matrix<FieldData> N;
     ublas::matrix<FieldData> diffN;
@@ -275,7 +283,9 @@ struct DerivedDataForcesAndSurcesCore: public DataForcesAndSurcesCore  {
     const ublas::vector<DofIdx>& getIndices() const { return iNdices; }
     ublas::vector<DofIdx>& getIndices() { return iNdices; }
     const ublas::vector<FieldData>& getFieldData() const { return fieldData; }
+    const ublas::vector<const FEDofMoFEMEntity*>& getFieldDofs() const { return dOfs; }
     ublas::vector<FieldData>& getFieldData() { return fieldData; }
+    ublas::vector<const FEDofMoFEMEntity*>& getFieldDofs() { return dOfs; }
     ApproximationOrder getOrder() const { return oRder; }
     ApproximationOrder& getOrder() { return oRder; }
 
@@ -291,6 +301,7 @@ struct DerivedDataForcesAndSurcesCore: public DataForcesAndSurcesCore  {
     ApproximationOrder oRder;
     ublas::vector<DofIdx> iNdices;
     ublas::vector<FieldData> fieldData;
+    ublas::vector<const FEDofMoFEMEntity*> dOfs;
 
   };
 
@@ -349,9 +360,10 @@ struct ForcesAndSurcesCore: public FEMethod {
   PetscErrorCode getTetsRowIndices(DataForcesAndSurcesCore &data,const string &field_name);
   PetscErrorCode getTetsColIndices(DataForcesAndSurcesCore &data,const string &field_name);
 
+  //data
   PetscErrorCode getNodesFieldData(
     const string &field_name,
-    FEDofMoFEMEntity_multiIndex &dofs,ublas::vector<FieldData> &nodes_indices);
+    FEDofMoFEMEntity_multiIndex &dofs,ublas::vector<FieldData> &nodes_data);
   PetscErrorCode getTypeFieldData(
     const string &field_name,
     FEDofMoFEMEntity_multiIndex &dofs,
@@ -364,6 +376,23 @@ struct ForcesAndSurcesCore: public FEMethod {
   PetscErrorCode getEdgesFieldData(DataForcesAndSurcesCore &data,const string &field_name);
   PetscErrorCode getTrisFieldData(DataForcesAndSurcesCore &data,const string &field_name);
   PetscErrorCode getTetsFieldData(DataForcesAndSurcesCore &data,const string &field_name);
+
+  //dofs
+  PetscErrorCode getNodesFieldDofs(
+    const string &field_name,
+    FEDofMoFEMEntity_multiIndex &dofs,ublas::vector<const FEDofMoFEMEntity*> &nodes_dofs);
+  PetscErrorCode getTypeFieldDofs(
+    const string &field_name,
+    FEDofMoFEMEntity_multiIndex &dofs,
+    EntityType type,int side_number,ublas::vector<const FEDofMoFEMEntity*> &ent_field_dofs);
+  PetscErrorCode getTypeFieldDofs(
+    const string &field_name,FEDofMoFEMEntity_multiIndex &dofs,
+    EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data);
+
+  PetscErrorCode getNodesFieldDofs(DataForcesAndSurcesCore &data,const string &field_name);
+  PetscErrorCode getEdgesFieldDofs(DataForcesAndSurcesCore &data,const string &field_name);
+  PetscErrorCode getTrisFieldDofs(DataForcesAndSurcesCore &data,const string &field_name);
+  PetscErrorCode getTetsFieldDofs(DataForcesAndSurcesCore &data,const string &field_name);
 
   PetscErrorCode getFaceNodes(DataForcesAndSurcesCore &data);
   PetscErrorCode getSpacesOnEntities(DataForcesAndSurcesCore &data);
