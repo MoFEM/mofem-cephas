@@ -148,14 +148,15 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
 	if(verb > 0) {
 	  ostringstream ss;
 	  ss << "read cubit" << base_meshset << endl;
-	  PetscSynchronizedPrintf(PETSC_COMM_WORLD,ss.str().c_str());
+	  //PetscSynchronizedPrintf(PETSC_COMM_WORLD,ss.str().c_str());
+	  PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
 	}
       }
     } catch (const char* msg) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,msg);
     }
   }
-  PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT); 
+  //PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT); 
   mit = meshsets.begin();
   for(;mit!=meshsets.end();mit++) {
     BitFieldId field_id;
