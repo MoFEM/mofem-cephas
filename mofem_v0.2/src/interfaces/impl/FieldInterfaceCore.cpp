@@ -2743,7 +2743,7 @@ PetscErrorCode Core::partition_finite_elements(
 	unsigned int max_part = distance(parts.begin(),pos);
 	NumeredMoFEMFiniteElement_change_part(max_part).operator()(numered_fe);
       }
-      if( (numered_fe.get_part()>=low_proc)&&(numered_fe.get_part()<=hi_proc) ) {
+      if( (numered_fe.get_part()>=(unsigned int)low_proc)&&(numered_fe.get_part()<=(unsigned int)hi_proc) ) {
 	//rows element dof multiindices
 	viit_rows = rows_view.begin();
 	for(;viit_rows!=rows_view.end();viit_rows++) {
@@ -3631,7 +3631,7 @@ PetscErrorCode Core::MatCreateSeqAIJWithArrays(const string &name,Mat *Aij,Petsc
 }
 PetscErrorCode Core::set_local_VecCreateGhost(const string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) {
   PetscFunctionBegin;
-  ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
+  //ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type moFEMProblems_by_name;
   typedef NumeredDofMoFEMEntity_multiIndex::index<PetscLocalIdx_mi_tag>::type dofs_by_local_idx;
   moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<Problem_mi_tag>();
