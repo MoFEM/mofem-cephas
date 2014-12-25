@@ -188,6 +188,7 @@ struct MonitorPostProc: public FEMethod {
       ierr = postProc.generateRefereneElemenMesh(); CHKERRQ(ierr);
       ierr = postProc.addFieldValuesPostProc("SPATIAL_POSITION"); CHKERRQ(ierr);
       ierr = postProc.addFieldValuesPostProc("SPATIAL_VELOCITY"); CHKERRQ(ierr);
+      ierr = postProc.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
       ierr = postProc.addFieldValuesGradientPostProc("SPATIAL_POSITION"); CHKERRQ(ierr);
 
       map<int,NonlinearElasticElement::BlockData>::iterator sit = setOfBlocks.begin();
