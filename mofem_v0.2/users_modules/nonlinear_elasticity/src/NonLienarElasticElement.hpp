@@ -343,12 +343,14 @@ struct NonlinearElasticElement {
       if(nb_dofs==0) PetscFunctionReturn(0);
 
       try {
-
+    
 	int nb_gauss_pts = row_data.getN().size1();
 	commonData.P.resize(nb_gauss_pts);
 	commonData.jacStressRowPtr.resize(nb_gauss_pts);
 	commonData.jacStress.resize(nb_gauss_pts);
 
+	FunctionsToCalulatePiolaKirchhoffI<double> fun_double;
+  
 	for(int gg = 0;gg<nb_gauss_pts;gg++) {
 
 	  if(gg == 0) {
@@ -357,7 +359,7 @@ struct NonlinearElasticElement {
 	      lastId = dAta.iD;
 	      //recorder on
 	      trace_on(tAg);
-	    
+
 	      fUn.F.resize(3,3);
 	      nb_active_variables = 0;
 	      for(int dd1 = 0;dd1<3;dd1++) {
@@ -383,7 +385,7 @@ struct NonlinearElasticElement {
 	  active_varibles.resize(nb_active_variables);
 	  for(int dd1 = 0;dd1<3;dd1++) {
 	    for(int dd2 = 0;dd2<3;dd2++) {
-	      active_varibles(dd1*3+dd2) = (commonData.gradAtGaussPts[commonData.spatialPositions][gg])(dd1,dd2);
+	      active_varibles(dd1*3+dd2) = commonData.gradAtGaussPts[commonData.spatialPositions][gg](dd1,dd2);
 	    }
 	  }
 
@@ -462,6 +464,9 @@ struct NonlinearElasticElement {
 	  //cerr << diffN << endl;
 	  //cerr << P << endl;
 	  double val = getVolume()*getGaussPts()(3,gg);
+          if(getHoGaussPtsDetJac().size()>0) {
+            val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
+          }
 	  for(int dd = 0;dd<nb_dofs/3;dd++) {
 	    for(int rr = 0;rr<3;rr++) {
 	      for(int nn = 0;nn<3;nn++) {
@@ -549,6 +554,9 @@ struct NonlinearElasticElement {
 
 	  ierr = getJac(col_data,gg); CHKERRQ(ierr);
 	  double val = getVolume()*getGaussPts()(3,gg);
+          if(getHoGaussPtsDetJac().size()>0) {
+            val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
+          }
 	  jac *= val;
 
 	  const DataForcesAndSurcesCore::MatrixAdaptor &diffN = row_data.getDiffN(gg,nb_row/3);

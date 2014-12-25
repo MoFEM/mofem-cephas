@@ -412,6 +412,9 @@ struct ConvectiveMassElement {
 	      }
 	    } 
 	    double val = getVolume()*getGaussPts()(3,gg);
+	    if(getHoGaussPtsDetJac().size()>0) {
+	      val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
+	    }
 	    res *= val;
 	  } else {
 	    commonData.jacMassRowPtr[gg].resize(3);
@@ -427,6 +430,9 @@ struct ConvectiveMassElement {
 	      SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"ADOL-C function evaluation with error");
 	    }
 	    double val = getVolume()*getGaussPts()(3,gg);
+	    if(getHoGaussPtsDetJac().size()>0) {
+	      val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
+	    }
 	    commonData.jacMass[gg] *= val;
 	  }
 
@@ -863,6 +869,9 @@ struct ConvectiveMassElement {
 	      }
 	    } 
 	    double val = getVolume()*getGaussPts()(3,gg);
+	    if(getHoGaussPtsDetJac().size()>0) {
+	      val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
+	    }
 	    res *= val;
 	  } else {
 	    commonData.jacVelRowPtr[gg].resize(3);
@@ -878,6 +887,9 @@ struct ConvectiveMassElement {
 	      SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"ADOL-C function evaluation with error");
 	    }
 	    double val = getVolume()*getGaussPts()(3,gg);
+	    if(getHoGaussPtsDetJac().size()>0) {
+	      val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
+	    }
 	    commonData.jacVel[gg] *= val;
 	    //cerr << gg << " : " << commonData.jacVel[gg] << endl;
 	  }
@@ -1195,6 +1207,9 @@ struct ConvectiveMassElement {
 	      }
 	    } 
 	    double val = getVolume()*getGaussPts()(3,gg);
+	    if(getHoGaussPtsDetJac().size()>0) {
+	      val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
+	    }
 	    res *= val;
 	  } else {
 	    commonData.jacTRowPtr[gg].resize(3);
@@ -1210,6 +1225,9 @@ struct ConvectiveMassElement {
 	      SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"ADOL-C function evaluation with error");
 	    }
 	    double val = getVolume()*getGaussPts()(3,gg);
+	    if(getHoGaussPtsDetJac().size()>0) {
+	      val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
+	    }
 	    commonData.jacT[gg] *= val;
 	  }
 
@@ -1668,6 +1686,8 @@ struct ConvectiveMassElement {
       feMassRhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(material_position_field_name,commonData));
       if(ale) {
 	feMassRhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts("DOT_"+material_position_field_name,commonData));
+      } else {
+	feMassRhs.meshPositionsFieldName = material_position_field_name;
       }
     }
     map<int,BlockData>::iterator sit = setOfBlocks.begin();
@@ -1685,6 +1705,8 @@ struct ConvectiveMassElement {
       feMassLhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(material_position_field_name,commonData));
       if(ale) {
 	feMassLhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts("DOT_"+material_position_field_name,commonData));
+      } else {
+	feMassLhs.meshPositionsFieldName = material_position_field_name;
       }
     }
     sit = setOfBlocks.begin();
@@ -1695,6 +1717,8 @@ struct ConvectiveMassElement {
       if(mField.check_field(material_position_field_name)) {
 	if(ale) {
 	  feMassLhs.get_op_to_do_Lhs().push_back(new OpMassLhs_dM_dX(spatial_position_field_name,material_position_field_name,sit->second,commonData));
+	} else {
+	  feMassRhs.meshPositionsFieldName = material_position_field_name;
 	}
       }
     }
@@ -1722,6 +1746,8 @@ struct ConvectiveMassElement {
       feVelRhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(material_position_field_name,commonData));
       if(ale) {
 	feVelRhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts("DOT_"+material_position_field_name,commonData));
+      } else {
+	feVelRhs.meshPositionsFieldName = material_position_field_name;
       }
     }
     map<int,BlockData>::iterator sit = setOfBlocks.begin();
@@ -1739,6 +1765,8 @@ struct ConvectiveMassElement {
       feVelLhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(material_position_field_name,commonData));
       if(ale) {
 	feVelLhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts("DOT_"+material_position_field_name,commonData));
+      } else {
+	feVelLhs.meshPositionsFieldName = material_position_field_name;
       }
     }
     sit = setOfBlocks.begin();
@@ -1749,6 +1777,8 @@ struct ConvectiveMassElement {
       if(mField.check_field(material_position_field_name)) {
 	if(ale) {
 	  feVelLhs.get_op_to_do_Lhs().push_back(new OpVelocityLhs_dV_dX(velocity_field_name,material_position_field_name,sit->second,commonData));
+	} else {
+	  feVelLhs.meshPositionsFieldName = material_position_field_name;
 	}
       }
     }
