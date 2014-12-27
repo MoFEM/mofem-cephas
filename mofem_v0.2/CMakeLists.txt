@@ -48,6 +48,7 @@ include(cmake/FindADOL-C.cmake)
 
 #PETSC tools
 include(cmake/FindTAO.cmake)
+include(cmake/FindSLEPC.cmake)
 
 #CGAL tools
 #find_package(CGAL HINTS ${CGAL_DIR}/lib/CGAL)

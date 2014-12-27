@@ -35,6 +35,13 @@ RUN cd /opt/petsc && ./configure --with-mpi=1 --with-debugging=1 --download-supe
 # Install tetgen
 RUN cd /opt && wget https://bitbucket.org/likask/mofem-joseph/downloads/tetgen1.5.0.tgz && tar -xvvzf tetgen1.5.0.tgz && cd tetgen1.5.0 && cmake . && make && cp libtet.a lib/ && rm /opt/tetgen1.5.0.tgz
 
+# SLEP opt //solve eigen value problem
+RUN cd /opt && git clone https://bitbucket.org/slepc/slepc 
+RUN cd /opt/slepc && PETSC_DIR=/opt/petsc PETSC_ARCH=arch-linux2-c-opt ./configure && make SLEPC_DIR=$PWD PETSC_DIR=/opt/petsc PETSC_ARCH=arch-linux2-c-opt
+
+# SLEP debuging //solve eigen value problem
+RUN cd /opt/slepc && PETSC_DIR=/opt/petsc PETSC_ARCH=arch-linux2-c-opt ./configure && make SLEPC_DIR=$PWD PETSC_DIR=/opt/petsc PETSC_ARCH=arch-linux2-c-debug 
+
 # Cleaning
 RUN cd /opt/tetgen1.5.0 && make clean
 
