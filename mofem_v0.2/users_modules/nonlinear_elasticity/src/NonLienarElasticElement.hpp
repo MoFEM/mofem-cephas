@@ -1,4 +1,4 @@
-/** \file ThermalElement.hpp 
+/** 
  * \brief Operators and data structures for thermal analys
  *
  * Implementation of nonliear eleastic element.
