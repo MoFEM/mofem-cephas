@@ -43,9 +43,6 @@ using namespace MoFEM;
 #include <FEMethod_LowLevelStudent.hpp>
 #include <FEMethod_UpLevelStudent.hpp>
 
-#include <PostProcVertexMethod.hpp>
-#include <PostProcDisplacementAndStrainOnRefindedMesh.hpp>
-
 extern "C" {
   #include <complex_for_lazy.h>
 }
@@ -53,14 +50,100 @@ extern "C" {
 #include <ArcLengthTools.hpp>
 #include <FEMethod_ComplexForLazy.hpp>
 #include <FEMethod_DriverComplexForLazy.hpp>
-
 #include <SurfacePressureComplexForLazy.hpp>
-#include <PostProcNonLinearElasticityStresseOnRefindedMesh.hpp>
+
+#include <adolc/adolc.h> 
+#include <NonLienarElasticElement.hpp>
+
+#include <PotsProcOnRefMesh.hpp>
 
 using namespace ObosleteUsersModules;
 
 ErrorCode rval;
 PetscErrorCode ierr;
+
+struct PostPorcStress: public TetElementForcesAndSourcesCore::UserDataOperator {
+
+  Interface &postProcMesh;
+  vector<EntityHandle> &mapGaussPts;
+
+  NonlinearElasticElement::BlockData &dAta;
+  PostPocOnRefinedMesh::CommonData &commonData;
+  NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<double> &fUn;
+
+  PostPorcStress(
+    Interface &post_proc_mesh,
+    vector<EntityHandle> &map_gauss_pts,
+    const string field_name,
+    NonlinearElasticElement::BlockData &data,
+    PostPocOnRefinedMesh::CommonData &common_data,
+    NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<double> &fun):
+    TetElementForcesAndSourcesCore::UserDataOperator(field_name),
+    postProcMesh(post_proc_mesh),mapGaussPts(map_gauss_pts),
+    dAta(data),commonData(common_data),fUn(fun) {}
+
+
+  PetscErrorCode doWork(
+    int side,
+    EntityType type,
+    DataForcesAndSurcesCore::EntData &data) {
+    PetscFunctionBegin;
+
+    if(type != MBVERTEX) PetscFunctionReturn(0);
+    if(data.getIndices().size()==0) PetscFunctionReturn(0);
+    if(dAta.tEts.find(getMoFEMFEPtr()->get_ent()) == dAta.tEts.end()) {
+	PetscFunctionReturn(0);
+    }
+
+    ErrorCode rval;
+    PetscErrorCode ierr;
+     
+    const FENumeredDofMoFEMEntity *dof_ptr;
+    ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
+
+    string tag_name_piola1 = dof_ptr->get_name()+"_PIOLA1_STRESS";
+
+    int tag_length = 9;
+    double def_VAL[tag_length];
+    bzero(def_VAL,tag_length*sizeof(double));
+    Tag th_piola1;
+    rval = postProcMesh.tag_get_handle(
+	tag_name_piola1.c_str(),tag_length,MB_TYPE_DOUBLE,th_piola1,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_PETSC(rval);
+
+    int nb_gauss_pts = data.getN().size1();
+    if(mapGaussPts.size()!=(unsigned int)nb_gauss_pts) {
+	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+    }
+    if(commonData.gradMap[row_field_name].size()!=(unsigned int)nb_gauss_pts) {
+	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+    }
+
+    ublas::matrix<double> H,invH;
+    double detH;
+
+    for(int gg = 0;gg<nb_gauss_pts;gg++) {
+
+	fUn.F.resize(3,3);
+	noalias(fUn.F) = (commonData.gradMap[row_field_name])[gg];
+	if(commonData.gradMap["MESH_NODE_POSITIONS"].size()==(unsigned int)nb_gauss_pts) {
+	  H.resize(3,3);
+	  invH.resize(3,3);
+	  noalias(H) = (commonData.gradMap["MESH_NODE_POSITIONS"])[gg];
+	  ierr = fUn.dEterminatnt(H,detH);  CHKERRQ(ierr);
+	  ierr = fUn.iNvert(detH,H,invH); CHKERRQ(ierr);
+	  noalias(fUn.F) = prod(fUn.F,invH);  
+	}
+
+	ierr = fUn.CalualteP_PiolaKirchhoffI(dAta,getMoFEMFEPtr()); CHKERRQ(ierr);
+	rval = postProcMesh.tag_set_data(th_piola1,&mapGaussPts[gg],1,&fUn.P(0,0)); CHKERR_PETSC(rval);
+
+    }
+
+    PetscFunctionReturn(0);
+
+  }
+
+};
 
 int main(int argc, char *argv[]) {
 
@@ -180,9 +263,6 @@ int main(int argc, char *argv[]) {
     ierr = m_field.add_ents_to_field_by_TETs(0,"SPATIAL_POSITION"); CHKERRQ(ierr);
     ierr = m_field.add_ents_to_field_by_TETs(0,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
 
-    //add finite elements entities
-    ierr = m_field.add_ents_to_finite_element_EntType_by_bit_ref(problem_bit_level,"ELASTIC",MBTET); CHKERRQ(ierr);
-    
     //this entity will carray data for this finite element
     EntityHandle meshset_FE_ARC_LENGTH;
     rval = moab.create_meshset(MESHSET_SET,meshset_FE_ARC_LENGTH); CHKERR_PETSC(rval);
@@ -226,6 +306,31 @@ int main(int argc, char *argv[]) {
     //add nodal force element
     ierr = MetaNodalForces::addNodalForceElement(m_field,"ELASTIC_MECHANICS","SPATIAL_POSITION"); CHKERRQ(ierr);
 
+  }
+
+  NonlinearElasticElement elastic(m_field,2);
+  ierr = elastic.setBlocks(); CHKERRQ(ierr);
+  ierr = elastic.addElement("ELASTIC","SPATIAL_POSITION"); CHKERRQ(ierr);
+  NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<adouble> st_venant_kirchhoff_material_adouble;
+  ierr = elastic.setOperators(st_venant_kirchhoff_material_adouble,"SPATIAL_POSITION"); CHKERRQ(ierr);
+
+  //post_processing
+  NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<double> st_venant_kirchhoff_material_double;
+  PostPocOnRefinedMesh post_proc(m_field);
+  ierr = post_proc.generateRefereneElemenMesh(); CHKERRQ(ierr);
+  ierr = post_proc.addFieldValuesPostProc("SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = post_proc.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+  ierr = post_proc.addFieldValuesGradientPostProc("SPATIAL_POSITION"); CHKERRQ(ierr);
+  map<int,NonlinearElasticElement::BlockData>::iterator sit = elastic.setOfBlocks.begin();
+  for(;sit!=elastic.setOfBlocks.end();sit++) {
+    post_proc.get_op_to_do_Rhs().push_back(
+	  new PostPorcStress(
+	    post_proc.postProcMesh,
+	    post_proc.mapGaussPts,
+	    "SPATIAL_POSITION",
+	    sit->second,
+	    post_proc.commonData,
+	    st_venant_kirchhoff_material_double));
   }
 
   //build field
@@ -285,20 +390,6 @@ int main(int argc, char *argv[]) {
 
   ArcLengthSnesCtx snes_ctx(m_field,"ELASTIC_MECHANICS",arc_ctx);
 
-  double young_modulus = 1;
-  double poisson_ratio = 0.25;
-	
-  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
-    //Get block name
-    string name = it->get_Cubit_name();
-    if (name.compare(0,11,"MAT_ELASTIC") == 0) {
-      Mat_Elastic mydata;
-      ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
-      young_modulus=mydata.data.Young;
-      poisson_ratio=mydata.data.Poisson;
-    }
-  }
-
   Range node_set;
   for(_IT_CUBITMESHSETS_BY_NAME_FOR_LOOP_(m_field,"LoadPath",cit)) {
     EntityHandle meshset = cit->get_meshset();
@@ -310,8 +401,6 @@ int main(int argc, char *argv[]) {
 
   ArcLengthElemFEMethod* arc_method_ptr = new ArcLengthElemFEMethod(moab,arc_ctx);
   ArcLengthElemFEMethod& arc_method = *arc_method_ptr;
-
-  NonLinearSpatialElasticFEMthod fe(m_field,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
 
   double scaled_reference_load = 1;
   double *scale_lhs = &(arc_ctx->get_FieldData());
@@ -502,7 +591,7 @@ int main(int argc, char *argv[]) {
   SnesCtx::loops_to_do_type& loops_to_do_Rhs = snes_ctx.get_loops_to_do_Rhs();
   snes_ctx.get_preProcess_to_do_Rhs().push_back(&my_dirichlet_bc);
   snes_ctx.get_preProcess_to_do_Rhs().push_back(&pre_post_method);
-  loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ELASTIC",&fe));
+  loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("ELASTIC",&elastic.getLoopFeRhs()));
   //surface focres and preassures
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("NEUAMNN_FE",&fe_neumann));
   //nodal forces
@@ -524,7 +613,7 @@ int main(int argc, char *argv[]) {
 
   SnesCtx::loops_to_do_type& loops_to_do_Mat = snes_ctx.get_loops_to_do_Mat();
   snes_ctx.get_preProcess_to_do_Mat().push_back(&my_dirichlet_bc);
-  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ELASTIC",&fe));
+  loops_to_do_Mat.push_back(TsCtx::loop_pair_type("ELASTIC",&elastic.getLoopFeLhs()));
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("NEUAMNN_FE",&fe_neumann));
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ARC_LENGTH",&arc_method));
   snes_ctx.get_postProcess_to_do_Mat().push_back(&my_dirichlet_bc);
@@ -647,33 +736,16 @@ int main(int argc, char *argv[]) {
       
     }
     
-    PostProcVertexMethod ent_method(moab,"SPATIAL_POSITION");
-    ierr = m_field.loop_dofs("ELASTIC_MECHANICS","SPATIAL_POSITION",COL,ent_method); CHKERRQ(ierr);
-
     if(step % 1 == 0) {
-      if(pcomm->rank()==0) {
-	ostringstream sss;
-	sss << "restart_" << step << ".h5m";
-	rval = moab.write_file(sss.str().c_str()); CHKERR_PETSC(rval);
-      }
-      /*PostProcVertexMethod ent_method(moab,"SPATIAL_POSITION");
-      ierr = m_field.loop_dofs("ELASTIC_MECHANICS","SPATIAL_POSITION",COL,ent_method); CHKERRQ(ierr);
-      if(pcomm->rank()==0) {
-	EntityHandle out_meshset;
-	rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
-	ierr = m_field.problem_get_FE("ELASTIC_MECHANICS","ELASTIC",out_meshset); CHKERRQ(ierr);
-	ostringstream sss;
-	sss << "out_" << step << ".vtk";
-	rval = moab.write_file(sss.str().c_str(),"VTK","",&out_meshset,1); CHKERR_PETSC(rval);
-	rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
-      }*/
-      PostProcStressNonLinearElasticity fe_post_proc_method(moab,fe);
-      ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",fe_post_proc_method);  CHKERRQ(ierr);
-      if(pcomm->rank()==0) {
-	ostringstream sss;
-	sss << "out_post_proc_" << step << ".vtk";
-	rval = fe_post_proc_method.moab_post_proc.write_file(sss.str().c_str(),"VTK",""); CHKERR_PETSC(rval);
-      }
+      //Save restart file
+      ostringstream sss;
+      sss << "restart_" << step << ".h5m";
+      rval = moab.write_file(sss.str().c_str(),"MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
+      //Save data on mesh
+      ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",post_proc); CHKERRQ(ierr);
+      ostringstream o1;
+      o1 << "out_" << step << ".h5m";
+      rval = post_proc.postProcMesh.write_file(o1.str().c_str(),"MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
     }
 
     ierr = pre_post_method.potsProcessLoadPath(); CHKERRQ(ierr);
