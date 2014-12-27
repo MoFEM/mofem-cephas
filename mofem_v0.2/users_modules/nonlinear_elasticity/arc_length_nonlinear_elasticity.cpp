@@ -151,8 +151,8 @@ int main(int argc, char *argv[]) {
 
   moab::Core mb_instance;
   Interface& moab = mb_instance;
-  int rank;
-  MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
+  ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
+  if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
   PetscBool flg = PETSC_TRUE;
   char mesh_file_name[255];
@@ -178,12 +178,25 @@ int main(int argc, char *argv[]) {
   if(flg != PETSC_TRUE) {
     max_steps = 5;
   }
+
+  // use this if your mesh is partotioned and you run code on parts, 
+  // you can solve very big problems 
+  PetscBool is_partitioned = PETSC_FALSE;
+  ierr = PetscOptionsGetBool(PETSC_NULL,"-my_is_partitioned",&is_partitioned,&flg); CHKERRQ(ierr);
  
-  const char *option;
-  option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
-  ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
-  if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
+  if(is_partitioned == PETSC_TRUE) {
+    //Read mesh to MOAB
+    const char *option;
+    option = "PARALLEL=BCAST_DELETE;PARALLEL_RESOLVE_SHARED_ENTS;PARTITION=PARALLEL_PARTITION;";
+    rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
+    rval = pcomm->resolve_shared_ents(0,3,0); CHKERR_PETSC(rval);
+    rval = pcomm->resolve_shared_ents(0,3,1); CHKERR_PETSC(rval);
+    rval = pcomm->resolve_shared_ents(0,3,2); CHKERR_PETSC(rval);
+  } else {
+    const char *option;
+    option = "";
+    rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
+  }
 
   //data stored on mesh for restart
   Tag th_step_size,th_step;
@@ -335,16 +348,6 @@ int main(int argc, char *argv[]) {
 
   //build field
   ierr = m_field.build_fields(); CHKERRQ(ierr);
-
-  //build finite elemnts
-  ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
-
-  //build adjacencies
-  ierr = m_field.build_adjacencies(problem_bit_level); CHKERRQ(ierr);
-
-  //build problem
-  ierr = m_field.build_problems(); CHKERRQ(ierr);
-
   if(step==1) {
     //10 node tets
     Projection10NodeCoordsOnField ent_method_material(m_field,"MESH_NODE_POSITIONS");
@@ -356,9 +359,22 @@ int main(int argc, char *argv[]) {
     ierr = m_field.set_field(0,MBTET,"SPATIAL_POSITION"); CHKERRQ(ierr);
   }
 
-  //partition
-  ierr = m_field.partition_problem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
-  ierr = m_field.partition_finite_elements("ELASTIC_MECHANICS"); CHKERRQ(ierr);
+  //build finite elemnts
+  ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
+
+  //build adjacencies
+  ierr = m_field.build_adjacencies(problem_bit_level); CHKERRQ(ierr);
+
+  //build database
+  if(is_partitioned) {
+    SETERRQ(PETSC_COMM_SELF,1,"Not implemented, problem with arc-length force multiplayer");
+    //ierr = m_field.build_partitioned_problems(PETSC_COMM_WORLD,1); CHKERRQ(ierr);
+    //ierr = m_field.partition_finite_elements("ELASTIC_MECHANICS",true,0,pcomm->size(),1); CHKERRQ(ierr);
+  } else {
+    ierr = m_field.build_problems(); CHKERRQ(ierr);
+    ierr = m_field.partition_problem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
+    ierr = m_field.partition_finite_elements("ELASTIC_MECHANICS"); CHKERRQ(ierr);
+  }
   ierr = m_field.partition_ghost_dofs("ELASTIC_MECHANICS"); CHKERRQ(ierr);
 
   //print bcs
