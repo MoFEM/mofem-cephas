@@ -338,7 +338,6 @@ int main(int argc, char *argv[]) {
 	    "DISPLACEMENT",
 	    post_proc.commonData));
 
-
   if(m_field.check_field("TEMP")) {
     
     //read time series and do thermo elastci analysis

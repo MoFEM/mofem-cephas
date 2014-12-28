@@ -36,9 +36,6 @@ using namespace MoFEM;
 
 #include <SurfacePressure.hpp>
 #include <NodalForce.hpp>
-#include <FluidPressure.hpp>
-#include <BodyForce.hpp>
-#include <ThermalStressElement.hpp>
 
 #include <FEMethod_LowLevelStudent.hpp>
 #include <FEMethod_UpLevelStudent.hpp>
@@ -62,7 +59,6 @@ using namespace ObosleteUsersModules;
 
 ErrorCode rval;
 PetscErrorCode ierr;
-
 
 int main(int argc, char *argv[]) {
 

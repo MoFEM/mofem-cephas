@@ -42,6 +42,8 @@ if(ADOL-C_LIBRARY)
     ${MoFEM_PROJECT_LIBS})
 
   cm_export_file("dome_thin_symm.cub" export_files_arc_length_nonlinearelasticity)
+  cm_export_file("dome_stability.cub" export_files_arc_length_nonlinearelasticity)
+
 
   file(COPY
     ${CMAKE_CURRENT_SOURCE_DIR}/README
@@ -106,6 +108,25 @@ if(ADOL-C_LIBRARY)
       -ts_monitor -ts_type alpha -ts_dt 0.001 -ts_final_time 0.002
       -my_time_data_file data.txt -my_output_prt 1
       -my_max_post_proc_ref_level 0 -my_disp_order 3 -my_vel_order 3)
+
+  if(SLEPC_LIBRARY) 
+
+    add_executable(stability
+      ${UM_SOURCE_DIR}/nonlinear_elasticity/stability.cpp)
+    target_link_libraries(stability 
+      mofem_finite_element_library
+      mofem_finite_elements
+      mofem_interfaces
+      mofem_multi_indices
+      mofem_petsc
+      users_modules_obsolete
+      complex_for_lazy_obsolete
+      mofem_approx
+      mofem_third_party
+      mofem_cblas
+      ${MoFEM_PROJECT_LIBS})
+    
+  endif(SLEPC_LIBRARY)
 
 endif(ADOL-C_LIBRARY)
 

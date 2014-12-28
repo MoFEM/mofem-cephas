@@ -37,10 +37,6 @@ using namespace MoFEM;
 
 #include <SurfacePressure.hpp>
 #include <NodalForce.hpp>
-#include <FluidPressure.hpp>
-#include <BodyForce.hpp>
-#include <ThermalStressElement.hpp>
-
 #include <SurfacePressureComplexForLazy.hpp>
 #include <adolc/adolc.h> 
 #include <ConvectiveMassElement.hpp>
@@ -198,7 +194,7 @@ struct MonitorRestart: public FEMethod {
       if((*step)%pRT==0) {
 	ostringstream ss;
 	ss << "restart_" << (*step) << ".h5m";
-	rval = mField.get_moab().write_file(ss.str().c_str()); CHKERR_PETSC(rval);
+	rval = mField.get_moab().write_file(ss.str().c_str()/*,"MOAB","PARALLEL=WRITE_PART"*/); CHKERR_PETSC(rval);
       }
     }
     (*step)++;
