@@ -37,16 +37,13 @@ using namespace MoFEM;
 
 #include <SurfacePressure.hpp>
 #include <NodalForce.hpp>
-#include <FluidPressure.hpp>
-#include <BodyForce.hpp>
-#include <ThermalStressElement.hpp>
-
 #include <SurfacePressureComplexForLazy.hpp>
 #include <adolc/adolc.h> 
 #include <ConvectiveMassElement.hpp>
 #include <NonLienarElasticElement.hpp>
 
 #include <PotsProcOnRefMesh.hpp>
+#include <PostProcStresses.hpp>
 
 using namespace ObosleteUsersModules;
 
@@ -95,89 +92,6 @@ struct MonitorPostProc: public FEMethod {
     }
 
   }
-
-  struct PostPorcStress: public TetElementForcesAndSourcesCore::UserDataOperator {
-
-    Interface &postProcMesh;
-    vector<EntityHandle> &mapGaussPts;
-
-    NonlinearElasticElement::BlockData &dAta;
-    PostPocOnRefinedMesh::CommonData &commonData;
-    NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<double> &fUn;
-
-    PostPorcStress(
-      Interface &post_proc_mesh,
-      vector<EntityHandle> &map_gauss_pts,
-      const string field_name,
-      NonlinearElasticElement::BlockData &data,
-      PostPocOnRefinedMesh::CommonData &common_data,
-      NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<double> &fun):
-      TetElementForcesAndSourcesCore::UserDataOperator(field_name),
-      postProcMesh(post_proc_mesh),mapGaussPts(map_gauss_pts),
-      dAta(data),commonData(common_data),fUn(fun) {}
-
-
-    PetscErrorCode doWork(
-      int side,
-      EntityType type,
-      DataForcesAndSurcesCore::EntData &data) {
-      PetscFunctionBegin;
-
-      if(type != MBVERTEX) PetscFunctionReturn(0);
-      if(data.getIndices().size()==0) PetscFunctionReturn(0);
-      if(dAta.tEts.find(getMoFEMFEPtr()->get_ent()) == dAta.tEts.end()) {
-	PetscFunctionReturn(0);
-      }
-
-      ErrorCode rval;
-      PetscErrorCode ierr;
-       
-      const FENumeredDofMoFEMEntity *dof_ptr;
-      ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
-
-      string tag_name_piola1 = dof_ptr->get_name()+"_PIOLA1_STRESS";
-
-      int tag_length = 9;
-      double def_VAL[tag_length];
-      bzero(def_VAL,tag_length*sizeof(double));
-      Tag th_piola1;
-      rval = postProcMesh.tag_get_handle(
-	tag_name_piola1.c_str(),tag_length,MB_TYPE_DOUBLE,th_piola1,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_PETSC(rval);
-
-      int nb_gauss_pts = data.getN().size1();
-      if(mapGaussPts.size()!=(unsigned int)nb_gauss_pts) {
-	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
-      }
-      if(commonData.gradMap[row_field_name].size()!=(unsigned int)nb_gauss_pts) {
-	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
-      }
-
-      ublas::matrix<double> H,invH;
-      double detH;
-
-      for(int gg = 0;gg<nb_gauss_pts;gg++) {
-
-	fUn.F.resize(3,3);
-	noalias(fUn.F) = (commonData.gradMap[row_field_name])[gg];
-	if(commonData.gradMap["MESH_NODE_POSITIONS"].size()==(unsigned int)nb_gauss_pts) {
-	  H.resize(3,3);
-	  invH.resize(3,3);
-	  noalias(H) = (commonData.gradMap["MESH_NODE_POSITIONS"])[gg];
-	  ierr = fUn.dEterminatnt(H,detH);  CHKERRQ(ierr);
-	  ierr = fUn.iNvert(detH,H,invH); CHKERRQ(ierr);
-	  noalias(fUn.F) = prod(fUn.F,invH);  
-	}
-
-	ierr = fUn.CalualteP_PiolaKirchhoffI(dAta,getMoFEMFEPtr()); CHKERRQ(ierr);
-	rval = postProcMesh.tag_set_data(th_piola1,&mapGaussPts[gg],1,&fUn.P(0,0)); CHKERR_PETSC(rval);
-
-      }
-
-      PetscFunctionReturn(0);
-
-    }
-
-  };
 
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
@@ -280,7 +194,7 @@ struct MonitorRestart: public FEMethod {
       if((*step)%pRT==0) {
 	ostringstream ss;
 	ss << "restart_" << (*step) << ".h5m";
-	rval = mField.get_moab().write_file(ss.str().c_str()); CHKERR_PETSC(rval);
+	rval = mField.get_moab().write_file(ss.str().c_str()/*,"MOAB","PARALLEL=WRITE_PART"*/); CHKERR_PETSC(rval);
       }
     }
     (*step)++;
