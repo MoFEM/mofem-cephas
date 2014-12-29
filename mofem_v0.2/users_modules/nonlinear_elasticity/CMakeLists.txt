@@ -42,8 +42,6 @@ if(ADOL-C_LIBRARY)
     ${MoFEM_PROJECT_LIBS})
 
   cm_export_file("dome_thin_symm.cub" export_files_arc_length_nonlinearelasticity)
-  cm_export_file("dome_stability.cub" export_files_arc_length_nonlinearelasticity)
-
 
   file(COPY
     ${CMAKE_CURRENT_SOURCE_DIR}/README
@@ -111,6 +109,8 @@ if(ADOL-C_LIBRARY)
 
   if(SLEPC_LIBRARY) 
 
+    cm_export_file("dome_stability.cub" export_files_arc_length_nonlinearelasticity)
+
     add_executable(stability
       ${UM_SOURCE_DIR}/nonlinear_elasticity/stability.cpp)
     target_link_libraries(stability 
@@ -125,6 +125,18 @@ if(ADOL-C_LIBRARY)
       mofem_third_party
       mofem_cblas
       ${MoFEM_PROJECT_LIBS})
+
+    add_test(EigenProblem
+      ${MoFEM_MPI_RUN} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/stability  
+      -my_file dome_stability.cub -ksp_type gmres 
+      -pc_type lu -pc_factor_mat_solver_package mumps 
+      -st_pc_type lu  -st_pc_factor_mat_solver_package mumps 
+      -my_order 2 -ksp_monitor -eps_monitor 
+      -ksp_atol 1e-12 -ksp_rtol 1e-12 
+      -eps_tol 1e-8 
+      -eps_nev 1 -eps_ncv 600 
+      -my_max_post_proc_ref_level 0 
+      -eps_smallest_magnitude -eps_gen_non_hermitian)
     
   endif(SLEPC_LIBRARY)
 

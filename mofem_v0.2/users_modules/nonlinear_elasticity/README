@@ -29,4 +29,4 @@ mpirun -np 4 ./nonlinear_dynamics -my_file LShape.cub \
 
 # stability
 
-
+mpirun -np 2 /mofem_build/um_opt/nonlinear_elasticity/stability -my_file dome_stability.cub -ksp_type gmres -pc_type lu -pc_factor_mat_solver_package mumps -st_pc_type lu -st_pc_factor_mat_solver_package mumps -my_order 2 -ksp_monitor -eps_monitor -ksp_atol 1e-12 -ksp_rtol 1e-12 -eps_tol 1e-8 -eps_nev 1 -eps_ncv 600 -my_max_post_proc_ref_level 0 -eps_smallest_magnitude -eps_gen_non_hermitian
