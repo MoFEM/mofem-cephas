@@ -327,7 +327,7 @@ struct NonlinearElasticElement {
     BlockData &dAta;
     CommonData &commonData;
     FunctionsToCalulatePiolaKirchhoffI<adouble> &fUn;
-    int tAg,lastId;
+    int tAg;//,lastId;
     bool jAcobian;
 
     OpJacobian(
@@ -338,7 +338,7 @@ struct NonlinearElasticElement {
       int tag,bool jacobian = true):
       TetElementForcesAndSourcesCore::UserDataOperator(field_name),
       dAta(data),commonData(common_data),fUn(fun),
-      tAg(tag),lastId(-1),jAcobian(jacobian) { }
+      tAg(tag),/*lastId(-1),*/jAcobian(jacobian) { }
 
     ublas::vector<double> active_varibles;
     int nb_active_variables;
@@ -375,8 +375,8 @@ struct NonlinearElasticElement {
 
 	  if(gg == 0) {
 	    
-	    if(lastId != dAta.iD) {
-	      lastId = dAta.iD;
+	    //if(lastId != dAta.iD) {
+	      //lastId = dAta.iD;
 	      //recorder on
 	      trace_on(tAg);
 
@@ -399,7 +399,7 @@ struct NonlinearElasticElement {
 	    
 	      trace_off();
 	      //recorder off
-	    }
+	    //}
 
 	  }
 

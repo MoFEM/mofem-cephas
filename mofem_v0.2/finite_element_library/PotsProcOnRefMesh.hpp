@@ -439,7 +439,7 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
       DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
 
-      if(data.getIndices().size()==0) PetscFunctionReturn(0);
+      if(data.getFieldData().size()==0) PetscFunctionReturn(0);
 
       ErrorCode rval;
       //PetscErrorCode ierr;

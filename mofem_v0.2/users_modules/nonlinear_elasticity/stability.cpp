@@ -65,16 +65,16 @@ struct MyMat_double: public NonlinearElasticElement::FunctionsToCalulatePiolaKir
   ublas::vector<TYPE> sTrain,sTrain0,sTress;
   ublas::matrix<adouble> invF,CauchyStress;
 
-  PetscErrorCode CalualteP_PiolaKirchhoffI(
+  virtual PetscErrorCode CalualteP_PiolaKirchhoffI(
     const NonlinearElasticElement::BlockData block_data,
     const NumeredMoFEMFiniteElement *fe_ptr) {
     PetscFunctionBegin;
 
     try {
 
-    double lambda = LAMBDA(block_data.E,block_data.PoissonRatio);
-    double mu = MU(block_data.E,block_data.PoissonRatio);
-    if(D_lambda.size1()==0) {
+      double lambda = LAMBDA(block_data.E,block_data.PoissonRatio);
+      double mu = MU(block_data.E,block_data.PoissonRatio);
+      if(D_lambda.size1()==0) {
 	D_lambda.resize(6,6);
 	D_lambda.clear();
 	for(int rr = 0;rr<3;rr++) {
@@ -82,50 +82,52 @@ struct MyMat_double: public NonlinearElasticElement::FunctionsToCalulatePiolaKir
 	    D_lambda(rr,cc) = 1;
 	  }
 	}
-    }
-    if(D_mu.size1()==0) {
+      }
+      if(D_mu.size1()==0) {
 	D_mu.resize(6,6);
 	D_mu.clear();
 	for(int rr = 0;rr<6;rr++) {
 	  D_mu(rr,rr) = rr<3 ? 2 : 1;
 	}
-    }
-    D.resize(6,6);
-    noalias(D) = lambda*D_lambda + mu*D_mu;
+      }
+      D.resize(6,6);
+      noalias(D) = lambda*D_lambda + mu*D_mu;
 
-    if(doAotherwiseB) {
-      sTrain.resize(6);
-      sTrain[0] = this->F(0,0)-1;
-      sTrain[1] = this->F(1,1)-1;
-      sTrain[2] = this->F(2,2)-1;
-      sTrain[3] = this->F(0,1)+this->F(1,0);
-      sTrain[4] = this->F(1,2)+this->F(2,1);
-      sTrain[5] = this->F(0,2)+this->F(2,0);
-      sTress.resize(6);
-      noalias(sTress) = prod(D,sTrain);
-      this->P.resize(3,3);
-      this->P(0,0) = sTress[0];
-      this->P(1,1) = sTress[1];
-      this->P(2,2) = sTress[2];
-      this->P(0,1) = this->P(1,0) = sTress[3];
-      this->P(1,2) = this->P(2,1) = sTress[4];
-      this->P(0,2) = this->P(2,0) = sTress[5];
-    } else {
-      adouble J;
-      ierr = this->dEterminatnt(this->F,J); CHKERRQ(ierr);
-      invF.resize(3,3);
-      ierr = this->iNvert(J,this->F,invF); CHKERRQ(ierr);
-      sTrain0.resize(6,0);
-      noalias(sTress) = prod(D,sTrain0);
-      CauchyStress.resize(3,3);
-      CauchyStress(0,0) = sTress[0];
-      CauchyStress(1,1) = sTress[1];
-      CauchyStress(2,2) = sTress[2];
-      CauchyStress(0,1) = CauchyStress(1,0) = sTress[3];
-      CauchyStress(1,2) = CauchyStress(2,1) = sTress[4];
-      CauchyStress(0,2) = CauchyStress(2,0) = sTress[5];   
-      noalias(this->P) = J*prod(CauchyStress,trans(invF));
-    }
+      if(doAotherwiseB) {
+	sTrain.resize(6);
+	sTrain[0] = this->F(0,0)-1;
+	sTrain[1] = this->F(1,1)-1;
+	sTrain[2] = this->F(2,2)-1;
+	sTrain[3] = this->F(0,1)+this->F(1,0);
+	sTrain[4] = this->F(1,2)+this->F(2,1);
+	sTrain[5] = this->F(0,2)+this->F(2,0);
+	sTress.resize(6);
+	noalias(sTress) = prod(D,sTrain);
+	this->P.resize(3,3);
+	this->P(0,0) = sTress[0];
+	this->P(1,1) = sTress[1];
+	this->P(2,2) = sTress[2];
+	this->P(0,1) = this->P(1,0) = sTress[3];
+	this->P(1,2) = this->P(2,1) = sTress[4];
+	this->P(0,2) = this->P(2,0) = sTress[5];
+	//cerr << this->P << endl;
+      } else {
+	adouble J;
+	ierr = this->dEterminatnt(this->F,J); CHKERRQ(ierr);
+	invF.resize(3,3);
+	ierr = this->iNvert(J,this->F,invF); CHKERRQ(ierr);
+	sTrain0.resize(6,0);
+	noalias(sTress) = prod(D,sTrain0);
+	CauchyStress.resize(3,3);
+	CauchyStress(0,0) = sTress[0];
+	CauchyStress(1,1) = sTress[1];
+	CauchyStress(2,2) = sTress[2];
+	CauchyStress(0,1) = CauchyStress(1,0) = sTress[3];
+	CauchyStress(1,2) = CauchyStress(2,1) = sTress[4];
+	CauchyStress(0,2) = CauchyStress(2,0) = sTress[5];   
+	cerr << CauchyStress << endl;
+	noalias(this->P) = J*prod(CauchyStress,trans(invF));
+      }
 
     } catch (const std::exception& ex) {
       ostringstream ss;
@@ -141,21 +143,21 @@ struct MyMat_double: public NonlinearElasticElement::FunctionsToCalulatePiolaKir
 template<typename TYPE> 
 struct MyMat: public MyMat_double<TYPE> {
 
-  PetscErrorCode SetUserActiveVariables(
+  virtual PetscErrorCode SetUserActiveVariables(
     int &nb_active_variables) {
     PetscFunctionBegin;
     
     try {
   
-    this->sTrain0.resize(6);
-    ublas::matrix<double> &F0 = (this->commonData_ptr->gradAtGaussPts["D0"][this->gG]);
-    this->sTrain0[0] <<= F0(0,0)-1;
-    this->sTrain0[1] <<= F0(1,1)-1;
-    this->sTrain0[2] <<= F0(2,2)-1;
-    this->sTrain0[3] <<= (F0(1,0) + F0(0,1));
-    this->sTrain0[4] <<= (F0(2,1) + F0(1,2));
-    this->sTrain0[5] <<= (F0(2,0) + F0(0,2));
-    nb_active_variables += 6;
+      this->sTrain0.resize(6);
+      ublas::matrix<double> &G0 = (this->commonData_ptr->gradAtGaussPts["D0"][this->gG]);
+      this->sTrain0[0] <<= G0(0,0);
+      this->sTrain0[1] <<= G0(1,1);
+      this->sTrain0[2] <<= G0(2,2);
+      this->sTrain0[3] <<= (G0(1,0) + G0(0,1));
+      this->sTrain0[4] <<= (G0(2,1) + G0(1,2));
+      this->sTrain0[5] <<= (G0(2,0) + G0(0,2));
+      nb_active_variables += 6;
 
     } catch (const std::exception& ex) {
       ostringstream ss;
@@ -166,20 +168,20 @@ struct MyMat: public MyMat_double<TYPE> {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode SetUserActiveVariables(
+  virtual PetscErrorCode SetUserActiveVariables(
     ublas::vector<double> &active_varibles) {
     PetscFunctionBegin;
     
     try {
 
-    int shift = 9; // is a number of elements in F
-    ublas::matrix<double> &F0 = (this->commonData_ptr->gradAtGaussPts["D0"][this->gG]);
-    active_varibles[shift+0] = F0(0,0)-1;
-    active_varibles[shift+1] = F0(1,1)-1;
-    active_varibles[shift+2] = F0(2,2)-1;
-    active_varibles[shift+3] = F0(0,1)+F0(1,0);
-    active_varibles[shift+4] = F0(1,2)+F0(2,1);
-    active_varibles[shift+5] = F0(0,2)+F0(2,0);
+      int shift = 9; // is a number of elements in F
+      ublas::matrix<double> &G0 = (this->commonData_ptr->gradAtGaussPts["D0"][this->gG]);
+      active_varibles[shift+0] = G0(0,0);
+      active_varibles[shift+1] = G0(1,1);
+      active_varibles[shift+2] = G0(2,2);
+      active_varibles[shift+3] = G0(0,1)+G0(1,0);
+      active_varibles[shift+4] = G0(1,2)+G0(2,1);
+      active_varibles[shift+5] = G0(0,2)+G0(2,0);
 
     } catch (const std::exception& ex) {
       ostringstream ss;
@@ -255,19 +257,23 @@ int main(int argc, char *argv[]) {
 
   bool check_if_spatial_field_exist = m_field.check_field("SPATIAL_POSITION");
   ierr = m_field.add_field("SPATIAL_POSITION",H1,3,MF_ZERO); CHKERRQ(ierr);
+  ierr = m_field.add_field("EIGEN_VECTOR",H1,3,MF_ZERO); CHKERRQ(ierr);
   ierr = m_field.add_field("D0",H1,3,MF_ZERO); CHKERRQ(ierr);
 
   //add entitities (by tets) to the field
   ierr = m_field.add_ents_to_field_by_TETs(0,"SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_TETs(0,"EIGEN_VECTOR"); CHKERRQ(ierr);
   ierr = m_field.add_ents_to_field_by_TETs(0,"D0"); CHKERRQ(ierr);
 
   NonlinearElasticElement elastic(m_field,2);
   ierr = elastic.setBlocks(); CHKERRQ(ierr);
   ierr = elastic.addElement("ELASTIC","SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_data("ELASTIC","EIGEN_VECTOR"); CHKERRQ(ierr);
   ierr = m_field.modify_finite_element_add_field_data("ELASTIC","D0"); CHKERRQ(ierr);
 
   MyMat<adouble> mat_adouble;
   //NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<adouble> mat_adouble;
+
   elastic.feRhs.get_op_to_do_Rhs().push_back(
     new NonlinearElasticElement::OpGetCommonDataAtGaussPts("D0",elastic.commonData));
   elastic.feLhs.get_op_to_do_Rhs().push_back(
@@ -294,6 +300,10 @@ int main(int argc, char *argv[]) {
   ierr = m_field.set_field_order(0,MBTRI,"SPATIAL_POSITION",disp_order); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0,MBEDGE,"SPATIAL_POSITION",disp_order); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0,MBVERTEX,"SPATIAL_POSITION",1); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBTET,"EIGEN_VECTOR",disp_order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBTRI,"EIGEN_VECTOR",disp_order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBEDGE,"EIGEN_VECTOR",disp_order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBVERTEX,"EIGEN_VECTOR",1); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0,MBTET,"D0",disp_order); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0,MBTRI,"D0",disp_order); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0,MBEDGE,"D0",disp_order); CHKERRQ(ierr);
@@ -326,8 +336,9 @@ int main(int argc, char *argv[]) {
     ierr = m_field.loop_dofs("MESH_NODE_POSITIONS",ent_method_material); CHKERRQ(ierr);
     Projection10NodeCoordsOnField ent_method_spatial(m_field,"SPATIAL_POSITION");
     ierr = m_field.loop_dofs("SPATIAL_POSITION",ent_method_spatial); CHKERRQ(ierr);
-    ierr = m_field.set_field(0,MBVERTEX,"D0"); CHKERRQ(ierr);
-    ierr = m_field.field_axpy(1,"SPATIAL_POSITION","D0",true); CHKERRQ(ierr);
+    //ierr = m_field.set_field(0,MBTRI,"SPATIAL_POSITION"); CHKERRQ(ierr);
+    //ierr = m_field.set_field(0,MBTET,"SPATIAL_POSITION"); CHKERRQ(ierr);
+    //ierr = m_field.field_axpy(1,"SPATIAL_POSITION","D0",true); CHKERRQ(ierr);
   }
 
   //build finite elemnts
@@ -348,7 +359,7 @@ int main(int argc, char *argv[]) {
 
   //create matrices
   Vec F;
-  ierr = m_field.VecCreateGhost("ELASTIC_MECHANICS",COL,&F); CHKERRQ(ierr);
+  ierr = m_field.VecCreateGhost("ELASTIC_MECHANICS",ROW,&F); CHKERRQ(ierr);
   Vec D;
   ierr = VecDuplicate(F,&D); CHKERRQ(ierr);
   Mat Aij;
@@ -370,11 +381,19 @@ int main(int argc, char *argv[]) {
   ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = MatZeroEntries(Aij); CHKERRQ(ierr);
 
+  ierr = m_field.set_local_VecCreateGhost("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+
   //F Vector
   //preproc
   my_dirihlet_bc.snes_ctx = SnesMethod::CTX_SNESSETFUNCTION;
+  my_dirihlet_bc.snes_x = D;
   my_dirihlet_bc.snes_f = F;
   ierr = m_field.problem_basic_method_preProcess("ELASTIC_MECHANICS",my_dirihlet_bc); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = m_field.set_local_VecCreateGhost("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   //elem loops
   //noadl forces
   boost::ptr_map<string,NodalForce> nodal_forces;
@@ -387,10 +406,12 @@ int main(int argc, char *argv[]) {
   }
   //surface forces
   neumann.snes_ctx = SnesMethod::CTX_SNESSETFUNCTION;
+  neumann.snes_x = D;
   neumann.snes_f = F;
   m_field.loop_finite_elements("ELASTIC_MECHANICS","NEUAMNN_FE",neumann);
   //stiffnes 
   elastic.getLoopFeRhs().snes_ctx = SnesMethod::CTX_SNESSETFUNCTION;
+  elastic.getLoopFeRhs().snes_x = D;
   elastic.getLoopFeRhs().snes_f = F;
   ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",elastic.getLoopFeRhs()); CHKERRQ(ierr);
   //postproc
@@ -402,9 +423,9 @@ int main(int argc, char *argv[]) {
   my_dirihlet_bc.snes_B = Aij;
   ierr = m_field.problem_basic_method_preProcess("ELASTIC_MECHANICS",my_dirihlet_bc); CHKERRQ(ierr);
   //surface forces
-  neumann.snes_ctx = SnesMethod::CTX_SNESSETJACOBIAN;
-  neumann.snes_B = Aij;
-  ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","NEUAMNN_FE",neumann); CHKERRQ(ierr);
+  //neumann.snes_ctx = SnesMethod::CTX_SNESSETJACOBIAN;
+  //neumann.snes_B = Aij;
+  //ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","NEUAMNN_FE",neumann); CHKERRQ(ierr);
   //stiffnes 
   elastic.getLoopFeLhs().snes_ctx = SnesMethod::CTX_SNESSETJACOBIAN;
   elastic.getLoopFeLhs().snes_B = Aij;
@@ -412,10 +433,10 @@ int main(int argc, char *argv[]) {
   //postproc
   ierr = m_field.problem_basic_method_postProcess("ELASTIC_MECHANICS",my_dirihlet_bc); CHKERRQ(ierr);
 
-  ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
   ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
   ierr = MatAssemblyBegin(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
   ierr = MatAssemblyEnd(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
@@ -431,14 +452,19 @@ int main(int argc, char *argv[]) {
   ierr = KSPCreate(PETSC_COMM_WORLD,&solver); CHKERRQ(ierr);
   ierr = KSPSetOperators(solver,Aij,Aij); CHKERRQ(ierr);
   ierr = KSPSetFromOptions(solver); CHKERRQ(ierr);
+
   ierr = KSPSetUp(solver); CHKERRQ(ierr);
+
+  ierr = VecZeroEntries(D); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
   ierr = KSPSolve(solver,F,D); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
   ierr = m_field.set_other_global_VecCreateGhost(
-      "ELASTIC_MECHANICS","SPATIAL_POSITION","D0",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    "ELASTIC_MECHANICS","SPATIAL_POSITION","D0",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
   Mat Bij;
   ierr = MatDuplicate(Aij,MAT_SHARE_NONZERO_PATTERN,&Bij); CHKERRQ(ierr);
@@ -458,7 +484,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.problem_basic_method_postProcess("ELASTIC_MECHANICS",my_dirihlet_bc); CHKERRQ(ierr);
 
   //Bij Matrix
-  mat_adouble.doAotherwiseB = false;
+  //mat_adouble.doAotherwiseB = false;
   //preproc
   my_dirihlet_bc.snes_ctx = SnesMethod::CTX_SNESSETJACOBIAN;
   my_dirihlet_bc.snes_B = Bij;
@@ -497,7 +523,7 @@ int main(int argc, char *argv[]) {
   /*
     Set operators. In this case, it is a generalized eigenvalue problem
   */
-  ierr = EPSSetOperators(eps,Aij,Bij); CHKERRQ(ierr);
+  ierr = EPSSetOperators(eps,Bij,Aij); CHKERRQ(ierr);
   /*
     Set solver parameters at runtime
   */
@@ -525,19 +551,25 @@ int main(int argc, char *argv[]) {
   //get solutions
   PostPocOnRefinedMesh post_proc(m_field);
   ierr = post_proc.generateRefereneElemenMesh(); CHKERRQ(ierr);
+  ierr = post_proc.addFieldValuesGradientPostProc("SPATIAL_POSITION"); CHKERRQ(ierr);
   ierr = post_proc.addFieldValuesPostProc("SPATIAL_POSITION"); CHKERRQ(ierr);
   ierr = post_proc.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
-  ierr = post_proc.addFieldValuesGradientPostProc("SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = post_proc.addFieldValuesPostProc("EIGEN_VECTOR"); CHKERRQ(ierr);
+  ierr = post_proc.addFieldValuesGradientPostProc("EIGEN_VECTOR"); CHKERRQ(ierr);
+  ierr = post_proc.addFieldValuesPostProc("D0"); CHKERRQ(ierr);
+  ierr = post_proc.addFieldValuesGradientPostProc("D0"); CHKERRQ(ierr);
+  ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",post_proc); CHKERRQ(ierr);
+  rval = post_proc.postProcMesh.write_file("out.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
 
-  PetscScalar eigr,eigi;
+  PetscScalar eigr,eigi,nrm2r;
   for(int nn = 0;nn<nev;nn++) {
     ierr = EPSGetEigenpair(eps,nn,&eigr,&eigi,D,PETSC_NULL); CHKERRQ(ierr);
-    PetscPrintf(PETSC_COMM_WORLD," ncov = %D eigr = %.4g eigi = %.4g\n",nn,eigr,eigi);
+    ierr = VecNorm(D,NORM_2,&nrm2r); CHKERRQ(ierr);
+    PetscPrintf(PETSC_COMM_WORLD," ncov = %D eigr = %.4g eigi = %.4g nrm2r = %.4g\n",nn,eigr,eigi,nrm2r);
     ostringstream o1;
     o1 << "eig_" << nn << ".h5m";
-    ierr = m_field.set_global_VecCreateGhost("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    //ierr = m_field.field_axpy(-1,"D0","SPATIAL_POSITION",true); CHKERRQ(ierr);
-
+    ierr = m_field.set_other_global_VecCreateGhost(
+      "ELASTIC_MECHANICS","SPATIAL_POSITION","EIGEN_VECTOR",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",post_proc); CHKERRQ(ierr);
     rval = post_proc.postProcMesh.write_file(o1.str().c_str(),"MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
   }
