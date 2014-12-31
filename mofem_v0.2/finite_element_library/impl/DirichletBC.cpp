@@ -230,13 +230,13 @@ PetscErrorCode SpatialPositionsBCFEMethodPreAndPostProc::iNitalize() {
 		}
 	      } else {
 		if(dof->get_dof_rank() == 0 && mydata.data.flag1) {
-		  map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = 0;
+		  map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = dof->get_FieldData();
 		}
 		if(dof->get_dof_rank() == 1 && mydata.data.flag2) {
-		  map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = 0;
+		  map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = dof->get_FieldData();
 		}
 		if(dof->get_dof_rank() == 2 && mydata.data.flag3) {
-		  map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = 0;
+		  map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = dof->get_FieldData();
 		}
 	      }
 	    }

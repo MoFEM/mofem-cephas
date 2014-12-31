@@ -110,6 +110,7 @@ if(ADOL-C_LIBRARY)
   if(SLEPC_LIBRARY) 
 
     cm_export_file("dome_stability.cub" export_files_arc_length_nonlinearelasticity)
+    cm_export_file("cylinder.cub" export_files_arc_length_nonlinearelasticity)
 
     add_executable(stability
       ${UM_SOURCE_DIR}/nonlinear_elasticity/stability.cpp)
@@ -128,15 +129,12 @@ if(ADOL-C_LIBRARY)
 
     add_test(EigenProblem
       ${MoFEM_MPI_RUN} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/stability  
-      -my_file dome_stability.cub -ksp_type gmres 
-      -pc_type lu -pc_factor_mat_solver_package mumps 
-      -st_pc_type lu  -st_pc_factor_mat_solver_package mumps 
-      -my_order 2 -ksp_monitor -eps_monitor 
-      -ksp_atol 1e-12 -ksp_rtol 1e-12 
-      -eps_tol 1e-8 
-      -eps_nev 1 -eps_ncv 600 
-      -my_max_post_proc_ref_level 0 
-      -eps_smallest_magnitude -eps_gen_non_hermitian)
+	-my_file cylinder.cub 
+	-ksp_type gmres -pc_type lu -pc_factor_mat_solver_package mumps -ksp_monitor -ksp_atol 1e-12 -ksp_rtol 1e-12 
+	-st_ksp_type preonly -st_pc_type cholesky -st_pc_factor_mat_solver_package mumps 
+	-eps_monitor -eps_tol 1e-12 
+	-eps_nev 1 -eps_ncv 10  -eps_smalest_real -eps_gen_no_hermitian 
+	-my_max_post_proc_ref_level 0 -st_ksp_atol 1e-12 -st_ksp_rtol 1e-12 -my_order 2)
     
   endif(SLEPC_LIBRARY)
 
