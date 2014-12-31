@@ -468,10 +468,10 @@ int main(int argc, char *argv[]) {
 
   Mat Bij;
   ierr = MatDuplicate(Aij,MAT_SHARE_NONZERO_PATTERN,&Bij); CHKERRQ(ierr);
-  ierr = MatZeroEntries(Aij); CHKERRQ(ierr);
+  //ierr = MatZeroEntries(Aij); CHKERRQ(ierr);
   ierr = MatZeroEntries(Bij); CHKERRQ(ierr);
 
-  //Aij Matrix
+  /*//Aij Matrix
   //preproc
   my_dirihlet_bc.snes_ctx = SnesMethod::CTX_SNESSETJACOBIAN;
   my_dirihlet_bc.snes_B = Aij;
@@ -481,7 +481,7 @@ int main(int argc, char *argv[]) {
   elastic.getLoopFeLhs().snes_B = Aij;
   ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",elastic.getLoopFeLhs()); CHKERRQ(ierr);
   //postproc
-  ierr = m_field.problem_basic_method_postProcess("ELASTIC_MECHANICS",my_dirihlet_bc); CHKERRQ(ierr);
+  ierr = m_field.problem_basic_method_postProcess("ELASTIC_MECHANICS",my_dirihlet_bc); CHKERRQ(ierr);*/
 
   //Bij Matrix
   //mat_adouble.doAotherwiseB = false;
@@ -542,7 +542,7 @@ int main(int argc, char *argv[]) {
   ierr = STGetOperationCounters(st,NULL,&lits); CHKERRQ(ierr);
   PetscPrintf(PETSC_COMM_WORLD," Number of linear iterations of the method: %D\n",lits);
   ierr = EPSGetType(eps,&type); CHKERRQ(ierr);
-  PetscPrintf(PETSC_COMM_WORLD," Solution method: %s\n\n",type);
+  PetscPrintf(PETSC_COMM_WORLD," Solution method: %s\n",type);
   ierr = EPSGetDimensions(eps,&nev,NULL,NULL); CHKERRQ(ierr);
   PetscPrintf(PETSC_COMM_WORLD," Number of requested eigenvalues: %D\n",nev);
   ierr = EPSGetTolerances(eps,&tol,&maxit); CHKERRQ(ierr);
