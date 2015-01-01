@@ -133,7 +133,7 @@ if(ADOL-C_LIBRARY)
 	-ksp_type gmres -pc_type lu -pc_factor_mat_solver_package mumps -ksp_monitor -ksp_atol 1e-12 -ksp_rtol 1e-12 
 	-st_ksp_type preonly -st_pc_type cholesky -st_pc_factor_mat_solver_package mumps 
 	-eps_monitor -eps_tol 1e-12 
-	-eps_nev 1 -eps_ncv 10  -eps_smalest_real -eps_gen_no_hermitian 
+	-eps_nev 1 -eps_ncv 10  -eps_smalest_real -eps_gen_hermitian 
 	-my_max_post_proc_ref_level 0 -st_ksp_atol 1e-12 -st_ksp_rtol 1e-12 -my_order 2)
     
   endif(SLEPC_LIBRARY)
