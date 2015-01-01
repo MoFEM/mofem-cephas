@@ -125,7 +125,8 @@ struct MyMat_double: public NonlinearElasticElement::FunctionsToCalulatePiolaKir
 	CauchyStress(0,1) = CauchyStress(1,0) = sTress[3];
 	CauchyStress(1,2) = CauchyStress(2,1) = sTress[4];
 	CauchyStress(0,2) = CauchyStress(2,0) = sTress[5];   
-	cerr << CauchyStress << endl;
+	//cerr << D << endl;
+	//cerr << CauchyStress << endl;
 	noalias(this->P) = J*prod(CauchyStress,trans(invF));
       }
 
@@ -484,7 +485,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.problem_basic_method_postProcess("ELASTIC_MECHANICS",my_dirihlet_bc); CHKERRQ(ierr);*/
 
   //Bij Matrix
-  //mat_adouble.doAotherwiseB = false;
+  mat_adouble.doAotherwiseB = false;
   //preproc
   my_dirihlet_bc.snes_ctx = SnesMethod::CTX_SNESSETJACOBIAN;
   my_dirihlet_bc.snes_B = Bij;
@@ -492,7 +493,11 @@ int main(int argc, char *argv[]) {
   //surface forces
   neumann.snes_ctx = SnesMethod::CTX_SNESSETJACOBIAN;
   neumann.snes_B = Bij;
-  ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","NEUAMNN_FE",neumann); CHKERRQ(ierr);
+  PetscBool is_conservative = PETSC_FALSE;
+  ierr = PetscOptionsGetBool(PETSC_NULL,"-my_is_conservative",&is_conservative,&flg); CHKERRQ(ierr);
+  if(is_conservative) {
+    ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","NEUAMNN_FE",neumann); CHKERRQ(ierr);
+  }
   //stiffnes 
   elastic.getLoopFeLhs().snes_ctx = SnesMethod::CTX_SNESSETJACOBIAN;
   elastic.getLoopFeLhs().snes_B = Bij;
@@ -565,7 +570,7 @@ int main(int argc, char *argv[]) {
   for(int nn = 0;nn<nev;nn++) {
     ierr = EPSGetEigenpair(eps,nn,&eigr,&eigi,D,PETSC_NULL); CHKERRQ(ierr);
     ierr = VecNorm(D,NORM_2,&nrm2r); CHKERRQ(ierr);
-    PetscPrintf(PETSC_COMM_WORLD," ncov = %D eigr = %.4g eigi = %.4g nrm2r = %.4g\n",nn,eigr,eigi,nrm2r);
+    PetscPrintf(PETSC_COMM_WORLD," ncov = %D eigr = %.4g eigi = %.4g (inv eigr = %.4g) nrm2r = %.4g\n",nn,eigr,eigi,1./eigr,nrm2r);
     ostringstream o1;
     o1 << "eig_" << nn << ".h5m";
     ierr = m_field.set_other_global_VecCreateGhost(
