@@ -24,60 +24,60 @@ include_directories("${UM_SOURCE_DIR}/convective_mass_element/src")
 
 add_subdirectory(atom_tests)
 
-add_executable(arc_length_nonlinear_elasticity 
-  ${UM_SOURCE_DIR}/nonlinear_elasticity/arc_length_nonlinear_elasticity.cpp)
-target_link_libraries(arc_length_nonlinear_elasticity 
-  mofem_finite_element_library
-  mofem_finite_elements
-  mofem_interfaces
-  mofem_multi_indices
-  mofem_petsc
-  users_modules_obsolete
-  complex_for_lazy_obsolete
-  mofem_approx
-  mofem_third_party
-  mofem_cblas
-  ${MoFEM_PROJECT_LIBS})
+if(ADOL-C_LIBRARY)
 
-cm_export_file("dome_thin_symm.cub" export_files_arc_length_nonlinearelasticity)
+  add_executable(arc_length_nonlinear_elasticity 
+    ${UM_SOURCE_DIR}/nonlinear_elasticity/arc_length_nonlinear_elasticity.cpp)
+  target_link_libraries(arc_length_nonlinear_elasticity 
+    mofem_finite_element_library
+    mofem_finite_elements
+    mofem_interfaces
+    mofem_multi_indices
+    mofem_petsc
+    users_modules_obsolete
+    complex_for_lazy_obsolete
+    mofem_approx
+    mofem_third_party
+    mofem_cblas
+    ${MoFEM_PROJECT_LIBS})
 
-file(COPY
+  cm_export_file("dome_thin_symm.cub" export_files_arc_length_nonlinearelasticity)
+
+  file(COPY
     ${CMAKE_CURRENT_SOURCE_DIR}/README
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
 
-configure_file(
-  "${UM_SOURCE_DIR}/nonlinear_elasticity/arc_length_nonlinear_elasticity.sh.in"
-  "${CMAKE_CURRENT_SOURCE_DIR}/arc_length_nonlinear_elasticity.sh"
-  @ONLY
+  configure_file(
+    "${UM_SOURCE_DIR}/nonlinear_elasticity/arc_length_nonlinear_elasticity.sh.in"
+    "${CMAKE_CURRENT_SOURCE_DIR}/arc_length_nonlinear_elasticity.sh"
+    @ONLY
   )
 
-configure_file(
-  "${UM_SOURCE_DIR}/nonlinear_elasticity/do_vtk.sh.in"
-  "${CMAKE_CURRENT_SOURCE_DIR}/do_vtk.sh"
-  @ONLY
+  configure_file(
+    "${UM_SOURCE_DIR}/nonlinear_elasticity/do_vtk.sh.in"
+    "${CMAKE_CURRENT_SOURCE_DIR}/do_vtk.sh"
+    @ONLY
   )
 
-file(COPY arc_length_nonlinear_elasticity.sh
-  DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
-  FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE)
+  file(COPY arc_length_nonlinear_elasticity.sh
+    DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
+    FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE)
 
-file(COPY do_vtk.sh
-  DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
-  FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE)
+  file(COPY do_vtk.sh
+    DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
+    FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE)
 
-#testing
-add_test(ArcLengthNonLinearElasticityTest 
-  ${MoFEM_MPI_RUN} -np 4 ${CMAKE_CURRENT_BINARY_DIR}/arc_length_nonlinear_elasticity
-  -my_file dome_thin_symm.cub -ksp_type fgmres 
-  -pc_type lu -pc_factor_mat_solver_package mumps
-  -ksp_atol 1e-10 -ksp_rtol 1e-10 
-  -snes_monitor 
-  -snes_type newtonls -snes_linesearch_type basic -snes_linesearch_monitor 
-  -snes_max_it 16 -snes_atol 1e-8 -snes_rtol 1e-8 
-  -my_sr 1e-6 -my_ms 3 -snes_converged_reason
-  -log_summary)
-
-if(ADOL-C_LIBRARY)
+  #testing
+  add_test(ArcLengthNonLinearElasticityTest 
+    ${MoFEM_MPI_RUN} -np 4 ${CMAKE_CURRENT_BINARY_DIR}/arc_length_nonlinear_elasticity
+    -my_file dome_thin_symm.cub -ksp_type fgmres 
+    -pc_type lu -pc_factor_mat_solver_package mumps
+    -ksp_atol 1e-10 -ksp_rtol 1e-10 
+    -snes_monitor 
+    -snes_type newtonls -snes_linesearch_type basic -snes_linesearch_monitor 
+    -snes_max_it 16 -snes_atol 1e-8 -snes_rtol 1e-8 
+    -my_sr 1e-6 -my_ms 3 -snes_converged_reason
+    -log_summary)
 
   cm_export_file("LShape.cub" export_files_nonlinear_dynamics)
   cm_export_file("data.txt" export_files_nonlinear_dynamics)
@@ -106,6 +106,38 @@ if(ADOL-C_LIBRARY)
       -ts_monitor -ts_type alpha -ts_dt 0.001 -ts_final_time 0.002
       -my_time_data_file data.txt -my_output_prt 1
       -my_max_post_proc_ref_level 0 -my_disp_order 3 -my_vel_order 3)
+
+  if(SLEPC_LIBRARY) 
+
+    cm_export_file("dome_stability.cub" export_files_arc_length_nonlinearelasticity)
+    cm_export_file("cylinder.cub" export_files_arc_length_nonlinearelasticity)
+    cm_export_file("rod.cub" export_files_arc_length_nonlinearelasticity)
+
+    add_executable(stability
+      ${UM_SOURCE_DIR}/nonlinear_elasticity/stability.cpp)
+    target_link_libraries(stability 
+      mofem_finite_element_library
+      mofem_finite_elements
+      mofem_interfaces
+      mofem_multi_indices
+      mofem_petsc
+      users_modules_obsolete
+      complex_for_lazy_obsolete
+      mofem_approx
+      mofem_third_party
+      mofem_cblas
+      ${MoFEM_PROJECT_LIBS})
+
+    add_test(EigenProblem
+      ${MoFEM_MPI_RUN} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/stability  
+	-my_file rod.cub 
+	-ksp_type gmres -pc_type lu -pc_factor_mat_solver_package mumps -ksp_monitor -ksp_atol 1e-12 -ksp_rtol 1e-12 
+	-st_ksp_type preonly -st_pc_type cholesky -st_pc_factor_mat_solver_package mumps 
+	-eps_monitor -eps_tol 1e-12 
+	-eps_nev 2 -eps_ncv 10  -eps_smalest_real -eps_gen_no_hermitian 
+	-my_max_post_proc_ref_level 0 -st_ksp_atol 1e-12 -st_ksp_rtol 1e-12 -my_order 2)
+    
+  endif(SLEPC_LIBRARY)
 
 endif(ADOL-C_LIBRARY)
 

@@ -113,6 +113,14 @@ if(ADOL-C_LIBRARY)
   message(STATUS "WITH ADLOC-C")
 endif(ADOL-C_LIBRARY)
 
+if(SLEPC_LIBRARY) 
+  include_directories("${SLEPC_DIR}/${PETSC_ARCH}/include")
+  include_directories("${SLEPC_DIR}/include")
+  add_definitions( -DWITH_SLEPC_DIR )
+  message(STATUS "WITH SLEPC")
+endif(SLEPC_LIBRARY)
+
+
 include(ModulesList.cmake)
 
 

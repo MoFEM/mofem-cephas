@@ -56,13 +56,13 @@ cm_export_absolut_path_file("${MoFEM_PROJECT_SOURCE_DIR}/meshes/elasticity_atom_
 
 add_executable(nonlinear_elasticity_atom ${UM_SOURCE_DIR}/atom_tests/nonlinear_elasticity_atom.cpp)
 target_link_libraries(nonlinear_elasticity_atom   
+  users_modules_obsolete
+  complex_for_lazy_obsolete
   mofem_finite_element_library
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
   mofem_petsc
-  users_modules_obsolete
-  complex_for_lazy_obsolete
   mofem_approx
   mofem_third_party
   mofem_cblas

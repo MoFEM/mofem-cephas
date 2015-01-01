@@ -1,4 +1,4 @@
-/** \file ThermalElement.hpp 
+/** 
  * \brief Operators and data structures for thermal analys
  *
  * Implementation of nonliear eleastic element.
@@ -254,6 +254,9 @@ struct NonlinearElasticElement {
     ublas::matrix<TYPE> F,C,E,S,invF,P;
     TYPE J;
 
+    int gG;
+    CommonData *commonData_ptr;
+
     PetscErrorCode CalulateC_CauchyDefromationTensor() {
       PetscFunctionBegin;
       C.resize(3,3);
@@ -304,6 +307,19 @@ struct NonlinearElasticElement {
       PetscFunctionReturn(0);
     }
 
+    virtual PetscErrorCode SetUserActiveVariables(
+      int &nb_active_variables) {
+      PetscFunctionBegin;
+      PetscFunctionReturn(0);
+    }
+
+    virtual PetscErrorCode SetUserActiveVariables(
+      ublas::vector<double> &active_varibles) {
+      PetscFunctionBegin;
+      PetscFunctionReturn(0);
+    }
+
+
   };
 
   struct OpJacobian: public TetElementForcesAndSourcesCore::UserDataOperator {
@@ -311,7 +327,7 @@ struct NonlinearElasticElement {
     BlockData &dAta;
     CommonData &commonData;
     FunctionsToCalulatePiolaKirchhoffI<adouble> &fUn;
-    int tAg,lastId;
+    int tAg;//,lastId;
     bool jAcobian;
 
     OpJacobian(
@@ -322,7 +338,7 @@ struct NonlinearElasticElement {
       int tag,bool jacobian = true):
       TetElementForcesAndSourcesCore::UserDataOperator(field_name),
       dAta(data),commonData(common_data),fUn(fun),
-      tAg(tag),lastId(-1),jAcobian(jacobian) { }
+      tAg(tag),/*lastId(-1),*/jAcobian(jacobian) { }
 
     ublas::vector<double> active_varibles;
     int nb_active_variables;
@@ -341,31 +357,38 @@ struct NonlinearElasticElement {
 
       int nb_dofs = row_data.getIndices().size();
       if(nb_dofs==0) PetscFunctionReturn(0);
+      fUn.commonData_ptr = &commonData;
 
       try {
-
+    
 	int nb_gauss_pts = row_data.getN().size1();
 	commonData.P.resize(nb_gauss_pts);
 	commonData.jacStressRowPtr.resize(nb_gauss_pts);
 	commonData.jacStress.resize(nb_gauss_pts);
 
+	FunctionsToCalulatePiolaKirchhoffI<double> fun_double;
+	vector<ublas::matrix<double> > &F = (commonData.gradAtGaussPts[commonData.spatialPositions]);
+  
 	for(int gg = 0;gg<nb_gauss_pts;gg++) {
+    
+	  fUn.gG = gg;
 
 	  if(gg == 0) {
 	    
-	    if(lastId != dAta.iD) {
-	      lastId = dAta.iD;
+	    //if(lastId != dAta.iD) {
+	      //lastId = dAta.iD;
 	      //recorder on
 	      trace_on(tAg);
-	    
+
 	      fUn.F.resize(3,3);
 	      nb_active_variables = 0;
 	      for(int dd1 = 0;dd1<3;dd1++) {
 		for(int dd2 = 0;dd2<3;dd2++) {
-		  fUn.F(dd1,dd2) <<= (commonData.gradAtGaussPts[commonData.spatialPositions][gg])(dd1,dd2);
+		  fUn.F(dd1,dd2) <<= F[gg](dd1,dd2);
 		  nb_active_variables++;
 		}
 	      }
+	      ierr = fUn.SetUserActiveVariables(nb_active_variables); CHKERRQ(ierr);
 	      ierr = fUn.CalualteP_PiolaKirchhoffI(dAta,getMoFEMFEPtr()); CHKERRQ(ierr);
 	      commonData.P[gg].resize(3,3);
 	      for(int dd1 = 0;dd1<3;dd1++) {
@@ -376,16 +399,17 @@ struct NonlinearElasticElement {
 	    
 	      trace_off();
 	      //recorder off
-	    }
+	    //}
 
 	  }
 
 	  active_varibles.resize(nb_active_variables);
 	  for(int dd1 = 0;dd1<3;dd1++) {
 	    for(int dd2 = 0;dd2<3;dd2++) {
-	      active_varibles(dd1*3+dd2) = (commonData.gradAtGaussPts[commonData.spatialPositions][gg])(dd1,dd2);
+	      active_varibles(dd1*3+dd2) = F[gg](dd1,dd2);
 	    }
 	  }
+	  ierr = fUn.SetUserActiveVariables(active_varibles); CHKERRQ(ierr);
 
 	  if(!jAcobian) {
 	    commonData.P[gg].resize(3,3);
@@ -462,6 +486,9 @@ struct NonlinearElasticElement {
 	  //cerr << diffN << endl;
 	  //cerr << P << endl;
 	  double val = getVolume()*getGaussPts()(3,gg);
+          if(getHoGaussPtsDetJac().size()>0) {
+            val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
+          }
 	  for(int dd = 0;dd<nb_dofs/3;dd++) {
 	    for(int rr = 0;rr<3;rr++) {
 	      for(int nn = 0;nn<3;nn++) {
@@ -549,6 +576,9 @@ struct NonlinearElasticElement {
 
 	  ierr = getJac(col_data,gg); CHKERRQ(ierr);
 	  double val = getVolume()*getGaussPts()(3,gg);
+          if(getHoGaussPtsDetJac().size()>0) {
+            val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
+          }
 	  jac *= val;
 
 	  const DataForcesAndSurcesCore::MatrixAdaptor &diffN = row_data.getDiffN(gg,nb_row/3);

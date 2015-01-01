@@ -37,16 +37,13 @@ using namespace MoFEM;
 
 #include <SurfacePressure.hpp>
 #include <NodalForce.hpp>
-#include <FluidPressure.hpp>
-#include <BodyForce.hpp>
-#include <ThermalStressElement.hpp>
-
 #include <SurfacePressureComplexForLazy.hpp>
 #include <adolc/adolc.h> 
 #include <ConvectiveMassElement.hpp>
 #include <NonLienarElasticElement.hpp>
 
 #include <PotsProcOnRefMesh.hpp>
+#include <PostProcStresses.hpp>
 
 using namespace ObosleteUsersModules;
 
@@ -96,83 +93,6 @@ struct MonitorPostProc: public FEMethod {
 
   }
 
-  struct PostPorcStress: public TetElementForcesAndSourcesCore::UserDataOperator {
-
-    Interface &postProcMesh;
-    vector<EntityHandle> &mapGaussPts;
-
-    NonlinearElasticElement::BlockData &dAta;
-    PostPocOnRefinedMesh::CommonData &commonData;
-    NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<double> &fUn;
-
-    PostPorcStress(
-      Interface &post_proc_mesh,
-      vector<EntityHandle> &map_gauss_pts,
-      const string field_name,
-      NonlinearElasticElement::BlockData &data,
-      PostPocOnRefinedMesh::CommonData &common_data,
-      NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<double> &fun):
-      TetElementForcesAndSourcesCore::UserDataOperator(field_name),
-      postProcMesh(post_proc_mesh),mapGaussPts(map_gauss_pts),
-      dAta(data),commonData(common_data),fUn(fun) {}
-
-
-    PetscErrorCode doWork(
-      int side,
-      EntityType type,
-      DataForcesAndSurcesCore::EntData &data) {
-      PetscFunctionBegin;
-
-      if(type != MBVERTEX) PetscFunctionReturn(0);
-      if(data.getIndices().size()==0) PetscFunctionReturn(0);
-      if(dAta.tEts.find(getMoFEMFEPtr()->get_ent()) == dAta.tEts.end()) {
-	PetscFunctionReturn(0);
-      }
-
-      ErrorCode rval;
-      PetscErrorCode ierr;
-       
-      const FENumeredDofMoFEMEntity *dof_ptr;
-      ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
-
-      string tag_name_piola1 = dof_ptr->get_name()+"_PIOLA1_STRESS";
-      //int rank = dof_ptr->get_max_rank();    
-
-      int tag_length = 9;
-      double def_VAL[tag_length];
-      bzero(def_VAL,tag_length*sizeof(double));
-      Tag th_piola1;
-      rval = postProcMesh.tag_get_handle(
-	tag_name_piola1.c_str(),tag_length,MB_TYPE_DOUBLE,th_piola1,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_PETSC(rval);
-
-      int nb_gauss_pts = data.getN().size1();
-      if(mapGaussPts.size()!=(unsigned int)nb_gauss_pts) {
-	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
-      }
-      if(commonData.gradMap[row_field_name].size()!=(unsigned int)nb_gauss_pts) {
-	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
-      }
-
-      for(int gg = 0;gg<nb_gauss_pts;gg++) {
-
-	//NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<double> fUn;
-	fUn.F.resize(3,3);
-	for(int dd1 = 0;dd1<3;dd1++) {
-	  for(int dd2 = 0;dd2<3;dd2++) {
-	    fUn.F(dd1,dd2) = (commonData.gradMap[row_field_name][gg])(dd1,dd2);
-	  }
-	}
-	ierr = fUn.CalualteP_PiolaKirchhoffI(dAta,getMoFEMFEPtr()); CHKERRQ(ierr);
-	rval = postProcMesh.tag_set_data(th_piola1,&mapGaussPts[gg],1,&fUn.P(0,0)); CHKERR_PETSC(rval);
-
-      }
-
-      PetscFunctionReturn(0);
-
-    }
-
-  };
-
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
     PetscErrorCode ierr;
@@ -182,6 +102,7 @@ struct MonitorPostProc: public FEMethod {
       ierr = postProc.generateRefereneElemenMesh(); CHKERRQ(ierr);
       ierr = postProc.addFieldValuesPostProc("SPATIAL_POSITION"); CHKERRQ(ierr);
       ierr = postProc.addFieldValuesPostProc("SPATIAL_VELOCITY"); CHKERRQ(ierr);
+      ierr = postProc.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
       ierr = postProc.addFieldValuesGradientPostProc("SPATIAL_POSITION"); CHKERRQ(ierr);
 
       map<int,NonlinearElasticElement::BlockData>::iterator sit = setOfBlocks.begin();
@@ -273,7 +194,7 @@ struct MonitorRestart: public FEMethod {
       if((*step)%pRT==0) {
 	ostringstream ss;
 	ss << "restart_" << (*step) << ".h5m";
-	rval = mField.get_moab().write_file(ss.str().c_str()); CHKERR_PETSC(rval);
+	rval = mField.get_moab().write_file(ss.str().c_str()/*,"MOAB","PARALLEL=WRITE_PART"*/); CHKERR_PETSC(rval);
       }
     }
     (*step)++;
@@ -301,8 +222,9 @@ int main(int argc, char *argv[]) {
 
   moab::Core mb_instance;
   Interface& moab = mb_instance;
-  int rank;
-  MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
+  ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
+  if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
+
 
   PetscBool flg = PETSC_TRUE;
   char mesh_file_name[255];
@@ -310,12 +232,25 @@ int main(int argc, char *argv[]) {
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
+
+  // use this if your mesh is partotioned and you run code on parts, 
+  // you can solve very big problems 
+  PetscBool is_partitioned = PETSC_FALSE;
+  ierr = PetscOptionsGetBool(PETSC_NULL,"-my_is_partitioned",&is_partitioned,&flg); CHKERRQ(ierr);
  
-  const char *option;
-  option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
-  ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
-  if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
+  if(is_partitioned == PETSC_TRUE) {
+    //Read mesh to MOAB
+    const char *option;
+    option = "PARALLEL=BCAST_DELETE;PARALLEL_RESOLVE_SHARED_ENTS;PARTITION=PARALLEL_PARTITION;";
+    rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
+    rval = pcomm->resolve_shared_ents(0,3,0); CHKERR_PETSC(rval);
+    rval = pcomm->resolve_shared_ents(0,3,1); CHKERR_PETSC(rval);
+    rval = pcomm->resolve_shared_ents(0,3,2); CHKERR_PETSC(rval);
+  } else {
+    const char *option;
+    option = "";
+    rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
+  }
 
   MoFEM::Core core(moab);
   FieldInterface& m_field = core;
@@ -333,6 +268,13 @@ int main(int argc, char *argv[]) {
   ierr = m_field.get_entities_by_ref_level(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
 
   //Fields
+  ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,3,MF_ZERO); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_TETs(0,"MESH_NODE_POSITIONS",PETSC_COMM_WORLD,2); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBTET,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBTRI,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBEDGE,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
+
   bool check_if_spatial_field_exist = m_field.check_field("SPATIAL_POSITION");
   ierr = m_field.add_field("SPATIAL_POSITION",H1,3,MF_ZERO); CHKERRQ(ierr);
   //add entitities (by tets) to the field
@@ -376,6 +318,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.modify_finite_element_add_field_row("NEUAMNN_FE","SPATIAL_POSITION"); CHKERRQ(ierr);
   ierr = m_field.modify_finite_element_add_field_col("NEUAMNN_FE","SPATIAL_POSITION"); CHKERRQ(ierr);
   ierr = m_field.modify_finite_element_add_field_data("NEUAMNN_FE","SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_data("NEUAMNN_FE","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
   ierr = m_field.modify_problem_add_finite_element("ELASTIC_MECHANICS","NEUAMNN_FE"); CHKERRQ(ierr);
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET,it)) {
     Range tris;
@@ -424,30 +367,32 @@ int main(int argc, char *argv[]) {
 
   //10 node tets
   if(!check_if_spatial_field_exist) {
-    Projection10NodeCoordsOnField ent_method_material(m_field,"SPATIAL_POSITION");
-    ierr = m_field.loop_dofs("SPATIAL_POSITION",ent_method_material); CHKERRQ(ierr);
-    ierr = m_field.set_field(0,MBEDGE,"SPATIAL_POSITION"); CHKERRQ(ierr);
-    ierr = m_field.set_field(0,MBTRI,"SPATIAL_POSITION"); CHKERRQ(ierr);
-    ierr = m_field.set_field(0,MBTET,"SPATIAL_POSITION"); CHKERRQ(ierr);
+    Projection10NodeCoordsOnField ent_method_material(m_field,"MESH_NODE_POSITIONS");
+    ierr = m_field.loop_dofs("MESH_NODE_POSITIONS",ent_method_material); CHKERRQ(ierr);
+    Projection10NodeCoordsOnField ent_method_spatial(m_field,"SPATIAL_POSITION");
+    ierr = m_field.loop_dofs("SPATIAL_POSITION",ent_method_spatial); CHKERRQ(ierr);
   }
 
   //build finite elemnts
   ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
   //build adjacencies
   ierr = m_field.build_adjacencies(bit_level0); CHKERRQ(ierr);
-  //build problem
-  ierr = m_field.build_problems(); CHKERRQ(ierr);
 
-  //partition
-  ierr = m_field.partition_problem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
-  ierr = m_field.partition_finite_elements("ELASTIC_MECHANICS"); CHKERRQ(ierr);
+  //build database
+  if(is_partitioned) {
+    ierr = m_field.build_partitioned_problems(PETSC_COMM_WORLD,1); CHKERRQ(ierr);
+    ierr = m_field.partition_finite_elements("ELASTIC_MECHANICS",true,0,pcomm->size(),1); CHKERRQ(ierr);
+  } else {
+    ierr = m_field.build_problems(); CHKERRQ(ierr);
+    ierr = m_field.partition_problem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
+    ierr = m_field.partition_finite_elements("ELASTIC_MECHANICS"); CHKERRQ(ierr);
+  }
   ierr = m_field.partition_ghost_dofs("ELASTIC_MECHANICS"); CHKERRQ(ierr);
 
   //create tS
   TS ts;
   ierr = TSCreate(PETSC_COMM_WORLD,&ts); CHKERRQ(ierr);
   ierr = TSSetType(ts,TSBEULER); CHKERRQ(ierr);
-
 
   //create matrices
   Vec F;
