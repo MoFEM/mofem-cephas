@@ -34,7 +34,7 @@ struct TsCtx {
   FieldInterface &mField;
   Interface &moab;
 
-  string problem_name;
+  string problemName;
 
   typedef pair<string,FEMethod*> loop_pair_type;
   typedef vector<loop_pair_type > loops_to_do_type;
@@ -58,7 +58,7 @@ struct TsCtx {
 
   bool zero_matrix;
   TsCtx(FieldInterface &_mField,const string &_problem_name): 
-    mField(_mField),moab(_mField.get_moab()),problem_name(_problem_name),zero_matrix(true) {
+    mField(_mField),moab(_mField.get_moab()),problemName(_problem_name),zero_matrix(true) {
     PetscLogEventRegister("LoopTsIFunction",0,&USER_EVENT_TsCtxIFunction);
     PetscLogEventRegister("LoopTsIJacobian",0,&USER_EVENT_TsCtxIJacobian);
     PetscLogEventRegister("LoopTsRHSFunction",0,&USER_EVENT_TsCtxRHSFunction);
