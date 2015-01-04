@@ -464,6 +464,7 @@ struct Core:
   PetscErrorCode problem_get_FE(const string &name,const string &fe_name,const EntityHandle meshset);
 
   //vector and matrices 
+  PetscErrorCode VecCreateSeq(const string &name,RowColData rc,Vec *V);
   PetscErrorCode VecCreateGhost(const string &name,RowColData rc,Vec *V);
   PetscErrorCode set_local_VecCreateGhost(const string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode);
   PetscErrorCode set_global_VecCreateGhost(const MoFEMProblem *problemPtr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode); 
@@ -484,7 +485,7 @@ struct Core:
 
   //get multi_index form database
   PetscErrorCode get_ref_ents(const RefMoFEMEntity_multiIndex **refinedEntitiesPtr_ptr);
-  PetscErrorCode get_problem(const string &problem_name,const MoFEMProblem **problemPtr);
+  PetscErrorCode get_problem(const string &problem_name,const MoFEMProblem **problem_ptr);
   PetscErrorCode get_dofs(const DofMoFEMEntity_multiIndex **dofsMoabField_ptr);
 
   PetscErrorCode get_finite_elements(const MoFEMFiniteElement_multiIndex **finiteElements_ptr);

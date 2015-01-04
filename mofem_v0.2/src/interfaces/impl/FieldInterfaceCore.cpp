@@ -3325,6 +3325,29 @@ PetscErrorCode Core::get_Cubit_meshsets(const unsigned int CubitBCType,Range &me
   }
   PetscFunctionReturn(0);
 }
+PetscErrorCode Core::VecCreateSeq(const string &name,RowColData rc,Vec *V) {
+  PetscFunctionBegin;
+  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type moFEMProblems_by_name;
+  typedef NumeredDofMoFEMEntity_multiIndex::index<PetscLocalIdx_mi_tag>::type dofs_by_local_idx;
+  moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<Problem_mi_tag>();
+  moFEMProblems_by_name::iterator p_miit = moFEMProblems_set.find(name);
+  if(p_miit==moFEMProblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"no such problem %s (top tip check spelling)",name.c_str());
+  DofIdx nb_local_dofs,nb_ghost_dofs;
+  switch (rc) {
+    case ROW:
+      nb_local_dofs = p_miit->get_nb_local_dofs_row();
+      nb_ghost_dofs = p_miit->get_nb_ghost_dofs_row();
+      break;
+    case COL:
+      nb_local_dofs = p_miit->get_nb_local_dofs_col();
+      nb_ghost_dofs = p_miit->get_nb_ghost_dofs_col();
+      break;
+    default:
+     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
+  }
+  ierr = ::VecCreateSeq(PETSC_COMM_SELF,nb_local_dofs+nb_ghost_dofs,V); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
 PetscErrorCode Core::VecCreateGhost(const string &name,RowColData rc,Vec *V) {
   PetscFunctionBegin;
   typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type moFEMProblems_by_name;
@@ -4017,13 +4040,13 @@ PetscErrorCode Core::get_ref_ents(const RefMoFEMEntity_multiIndex **refinedEntit
   *refinedEntities_ptr = &refinedEntities;
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::get_problem(const string &problem_name,const MoFEMProblem **problemPtr) {
+PetscErrorCode Core::get_problem(const string &problem_name,const MoFEMProblem **problem_ptr) {
   PetscFunctionBegin;
   typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type moFEMProblems_by_name;
   moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<Problem_mi_tag>();
   moFEMProblems_by_name::iterator p_miit = moFEMProblems_set.find(problem_name);
   if(p_miit == moFEMProblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem < %s > not found, (top tip: check spelling)",problem_name.c_str());
-  *problemPtr = &*p_miit;
+  *problem_ptr = &*p_miit;
   PetscFunctionReturn(0);
 }
 PetscErrorCode Core::get_dofs(const DofMoFEMEntity_multiIndex **dofsMoabField_ptr) {
