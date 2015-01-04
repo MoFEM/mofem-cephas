@@ -21,39 +21,6 @@
 #ifndef __DMMMOFEM_H
 #define __DMMMOFEM_H
 
-namespace MoFEM {
-
-struct DMCtx {
-
-  FieldInterface &mField; 	//< MoFEM interface
-  string problemName; 		//< problen name
-
-  /// constructor
-  DMCtx(FieldInterface &m_field,string problem_name); 
-
-  // destructor
-  ~DMCtx(); 
-
-  const FieldInterface& get_mField() const { return mField; }
-  const Interface& get_moab() const { return mField.get_moab(); }
-
-  PetscLogEvent USER_EVENT_CreateGlobalVector;
-  PetscLogEvent USER_EVENT_CreateMatrix;
-
-  friend PetscErrorCode DMCreate_MoFEM(DM dm);
-  friend PetscErrorCode DMDestroym_MoFEM(DM dm);
-  friend PetscErrorCode DMCreateGlobalVector_MoFEM(DM dm,Vec *globV);
-  friend PetscErrorCode DMCreateLocalVector_MoFEM(DM dm,Vec *locV);
-  friend PetscErrorCode DMCreateMatrix_MoFEM(DM dm,Mat *M);
-  friend PetscErrorCode DMSetUp_MoFEM(DM dm); 
-  friend PetscErrorCode DMSetFromOptions_MoFEM(DM dm);
-  friend PetscErrorCode DMGlobalToLocalBegin_MoFEM(DM dm,Vec,InsertMode,Vec);
-  friend PetscErrorCode DMGlobalToLocalEnd_MoFEM(DM dm,Vec,InsertMode,Vec);
-  friend PetscErrorCode DMLocalToGlobalBegin_MoFEM(DM,Vec,InsertMode,Vec);
-  friend PetscErrorCode DMLocalToGlobalEnd_MoFEM(DM,Vec,InsertMode,Vec);
-
-};
-
 PetscErrorCode DMCreate_MoFEM(DM dm);
 PetscErrorCode DMDestroym_MoFEM(DM dm);
 
@@ -129,8 +96,6 @@ PetscErrorCode DMLocalToGlobalBegin_MoFEM(DM,Vec,InsertMode,Vec);
   * the routine that ends the local to global scatter
   */
 PetscErrorCode DMLocalToGlobalEnd_MoFEM(DM,Vec,InsertMode,Vec);
-
-}
 
 #endif //__DMMMOFEM_H
 
