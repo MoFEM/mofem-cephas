@@ -548,6 +548,21 @@ add_test(forces_and_sources_ultra_weak_transport_atom_compare ${CMAKE_COMMAND} -
   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_ultra_weak_transport.txt
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_ultra_weak_transport.txt)
 
+#dm
+add_executable(dm_mofem dm_mofem.cpp)
+target_link_libraries(dm_mofem
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS})
+add_test(dm_mofem_atom ${MPI_RUN} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/dm_mofem -my_file disp01.cub)
+add_test(dm_mofem_atom_compare ${CMAKE_COMMAND} -E compare_files 
+  ${CMAKE_BINARY_DIR}/atom_tests/dm_mofem.txt
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/dm_mofem.txt)
 
 if(TETGEN_LIBRARY) 
 

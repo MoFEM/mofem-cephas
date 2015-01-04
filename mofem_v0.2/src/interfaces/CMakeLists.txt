@@ -21,6 +21,7 @@ set(MOFEM_INTERFACES_SRC
   impl/LoopMethods.cpp
   #Core
   impl/Core.cpp
+  impl/CreateMat.cpp
   impl/FieldInterfaceCore.cpp
   impl/MeshRefinmentCore.cpp
   impl/PrismInterfaceCore.cpp

@@ -53,7 +53,7 @@ int main(int argc, char *argv[]) {
 
   //Create MoFEM (Joseph) database
   MoFEM::Core core(moab);
-  FieldInterface& mField = core;
+  FieldInterface& m_field = core;
 
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
@@ -67,64 +67,61 @@ int main(int argc, char *argv[]) {
   //set entitities bit level
   BitRefLevel bit_level0;
   bit_level0.set(0);
-  EntityHandle meshset_level0;
-  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
-  ierr = mField.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
+  ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
 
   //Fields
-  ierr = mField.add_field("FIELD1",H1,1); CHKERRQ(ierr);
+  ierr = m_field.add_field("FIELD1",H1,1); CHKERRQ(ierr);
 
   //FE
-  ierr = mField.add_finite_element("TEST_FE"); CHKERRQ(ierr);
+  ierr = m_field.add_finite_element("TEST_FE"); CHKERRQ(ierr);
 
   //Define rows/cols and element data
-  ierr = mField.modify_finite_element_add_field_row("TEST_FE","FIELD1"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_col("TEST_FE","FIELD1"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_data("TEST_FE","FIELD1"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_row("TEST_FE","FIELD1"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_col("TEST_FE","FIELD1"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_data("TEST_FE","FIELD1"); CHKERRQ(ierr);
 
   //Problem
-  ierr = mField.add_problem("TEST_PROBLEM"); CHKERRQ(ierr);
+  ierr = m_field.add_problem("TEST_PROBLEM"); CHKERRQ(ierr);
 
   //set finite elements for problem
-  ierr = mField.modify_problem_add_finite_element("TEST_PROBLEM","TEST_FE"); CHKERRQ(ierr);
+  ierr = m_field.modify_problem_add_finite_element("TEST_PROBLEM","TEST_FE"); CHKERRQ(ierr);
   //set refinment level for problem
-  ierr = mField.modify_problem_ref_level_add_bit("TEST_PROBLEM",bit_level0); CHKERRQ(ierr);
+  ierr = m_field.modify_problem_ref_level_add_bit("TEST_PROBLEM",bit_level0); CHKERRQ(ierr);
 
 
   //meshset consisting all entities in mesh
   EntityHandle root_set = moab.get_root_set(); 
   //add entities to field
-  ierr = mField.add_ents_to_field_by_TETs(root_set,"FIELD1"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_TETs(root_set,"FIELD1"); CHKERRQ(ierr);
   //add entities to finite element
-  ierr = mField.add_ents_to_finite_element_by_TETs(root_set,"TEST_FE"); CHKERRQ(ierr);
-
+  ierr = m_field.add_ents_to_finite_element_by_TETs(root_set,"TEST_FE"); CHKERRQ(ierr);
 
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
   int order = 5;
-  ierr = mField.set_field_order(root_set,MBTET,"FIELD1",order); CHKERRQ(ierr);
-  ierr = mField.set_field_order(root_set,MBTRI,"FIELD1",order); CHKERRQ(ierr);
-  ierr = mField.set_field_order(root_set,MBEDGE,"FIELD1",order); CHKERRQ(ierr);
-  ierr = mField.set_field_order(root_set,MBVERTEX,"FIELD1",1); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(root_set,MBTET,"FIELD1",order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(root_set,MBTRI,"FIELD1",order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(root_set,MBEDGE,"FIELD1",order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(root_set,MBVERTEX,"FIELD1",1); CHKERRQ(ierr);
 
   /****/
   //build database
   //build field
-  ierr = mField.build_fields(); CHKERRQ(ierr);
+  ierr = m_field.build_fields(); CHKERRQ(ierr);
   //build finite elemnts
-  ierr = mField.build_finite_elements(); CHKERRQ(ierr);
+  ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
   //build adjacencies
-  ierr = mField.build_adjacencies(bit_level0); CHKERRQ(ierr);
+  ierr = m_field.build_adjacencies(bit_level0); CHKERRQ(ierr);
   //build problem
-  ierr = mField.build_problems(); CHKERRQ(ierr);
+  ierr = m_field.build_problems(); CHKERRQ(ierr);
 
   /****/
   //mesh partitioning 
   //partition
-  ierr = mField.simple_partition_problem("TEST_PROBLEM"); CHKERRQ(ierr);
-  ierr = mField.partition_finite_elements("TEST_PROBLEM"); CHKERRQ(ierr);
+  ierr = m_field.simple_partition_problem("TEST_PROBLEM"); CHKERRQ(ierr);
+  ierr = m_field.partition_finite_elements("TEST_PROBLEM"); CHKERRQ(ierr);
   //what are ghost nodes, see Petsc Manual
-  ierr = mField.partition_ghost_dofs("TEST_PROBLEM"); CHKERRQ(ierr);
+  ierr = m_field.partition_ghost_dofs("TEST_PROBLEM"); CHKERRQ(ierr);
 
   struct ForcesAndSurcesCore_TestFE: public ForcesAndSurcesCore {
 
@@ -164,8 +161,8 @@ int main(int argc, char *argv[]) {
     OpSetInvJacH1 opSetInvJac;
     OpGetData opGetData_FIELD1;
 
-    ForcesAndSurcesCore_TestFE(FieldInterface &_mField): 
-      ForcesAndSurcesCore(_mField),
+    ForcesAndSurcesCore_TestFE(FieldInterface &_m_field): 
+      ForcesAndSurcesCore(_m_field),
       ofs("forces_and_sources_calculate_jacobian.txt"),
       my_tee(cout, ofs),my_split(my_tee),
       opPrintJac(my_split),
@@ -239,8 +236,8 @@ int main(int argc, char *argv[]) {
 
   };
 
-  ForcesAndSurcesCore_TestFE fe1(mField);
-  ierr = mField.loop_finite_elements("TEST_PROBLEM","TEST_FE",fe1);  CHKERRQ(ierr);
+  ForcesAndSurcesCore_TestFE fe1(m_field);
+  ierr = m_field.loop_finite_elements("TEST_PROBLEM","TEST_FE",fe1);  CHKERRQ(ierr);
 
   ierr = PetscFinalize(); CHKERRQ(ierr);
 

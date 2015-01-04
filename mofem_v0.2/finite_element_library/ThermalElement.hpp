@@ -77,7 +77,7 @@ struct ThermalElement {
     */
   struct MyTriFE: public TriElementForcesAndSurcesCore {
     MyTriFE(FieldInterface &_mField): TriElementForcesAndSurcesCore(_mField) {}
-    int getRule(int order) { return ceil(order/2); };
+    int getRule(int order) { return order; };
   };
 
   MyTriFE feFlux; //< heat flux element
