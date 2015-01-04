@@ -57,10 +57,10 @@ struct DMCtx {
 
   DMCtx(); 
   // destructor
-  ~DMCtx(); 
+  virtual ~DMCtx() {}
 
   friend PetscErrorCode DMCreate_MoFEM(DM dm);
-  friend PetscErrorCode DMDestroym_MoFEM(DM dm);
+  friend PetscErrorCode DMDestroy_MoFEM(DM dm);
   friend PetscErrorCode DMCreateGlobalVector_MoFEM(DM dm,Vec *globV);
   friend PetscErrorCode DMCreateLocalVector_MoFEM(DM dm,Vec *locV);
   friend PetscErrorCode DMCreateMatrix_MoFEM(DM dm,Mat *M);
@@ -84,19 +84,38 @@ DMCtx::DMCtx():
 
 using namespace MoFEM;
 
-PetscErrorCode DMRegister_MoFEM(const char sname[],DM *dmb) {
+PetscErrorCode DMRegister_MoFEM(const char sname[]) {
   PetscErrorCode ierr;
   PetscFunctionBegin;
   ierr = DMRegister(sname,DMCreate_MoFEM); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode DMMoFEMCreateMoFEM(FieldInterface *m_field_ptr,const char problem_name[],DM dmb) {
+PetscErrorCode DMMoFEMCreateMoFEM(MoFEM::FieldInterface *m_field_ptr,const char problem_name[],const MoFEM::BitRefLevel &bit_level,DM dm) {
   PetscErrorCode ierr;
   PetscFunctionBegin;
-  DMCtx *dm_field = (DMCtx*)(dmb->data);
-  dm_field->mField_ptr = m_field_ptr;
+  DMCtx *dm_field = (DMCtx*)dm->data;
+  if(!dm->data) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"data strcuture for MoFEM not yet created");
+  }
+  if(!m_field_ptr) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"DM function not implenented into MoFEM");
+  } else {
+    dm_field->mField_ptr = m_field_ptr;
+  }
   dm_field->problemName = string(problem_name);
+  ierr = m_field_ptr->add_problem(problem_name,MF_ZERO); CHKERRQ(ierr);
+  ierr = m_field_ptr->modify_problem_ref_level_add_bit(problem_name,bit_level); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode DMMoFEMAddElement(const char fe_name[],DM dm) {
+  PetscErrorCode ierr;
+  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
+  PetscFunctionBegin;
+  DMCtx *dm_field = (DMCtx*)dm->data;
+  FieldInterface *m_field_ptr = dm_field->mField_ptr;
+  ierr = m_field_ptr->modify_problem_add_finite_element(dm_field->problemName,fe_name); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -105,7 +124,7 @@ PetscErrorCode DMCreate_MoFEM(DM dm) {
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
 
-  ierr = PetscNewLog(dm,(DMCtx**)&dm->data); CHKERRQ(ierr);
+  dm->data = new DMCtx();
 
   dm->ops->createglobalvector       = DMCreateGlobalVector_MoFEM;
   dm->ops->createlocalvector        = DMCreateLocalVector_MoFEM;
@@ -121,10 +140,11 @@ PetscErrorCode DMCreate_MoFEM(DM dm) {
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode DMDestroym_MoFEM(DM dm) {
+PetscErrorCode DMDestroy_MoFEM(DM dm) {
   PetscErrorCode ierr;
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
+  delete (DMCtx*)dm->data;
   PetscFunctionReturn(0);
 }
 
@@ -204,6 +224,19 @@ PetscErrorCode DMGlobalToLocalBegin_MoFEM(DM dm,Vec g,InsertMode mode,Vec l) {
   PetscErrorCode ierr;
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
+  
+  ierr = VecGhostUpdateBegin(g,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode DMGlobalToLocalEnd_MoFEM(DM dm,Vec g,InsertMode mode,Vec l) {
+  PetscFunctionBegin;
+  PetscErrorCode ierr;
+  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
+  PetscFunctionBegin;
+
+  ierr = VecGhostUpdateEnd(g,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
   DMCtx *dm_field = (DMCtx*)dm->data;
   FieldInterface *m_field_ptr = dm_field->mField_ptr;
@@ -226,14 +259,8 @@ PetscErrorCode DMGlobalToLocalBegin_MoFEM(DM dm,Vec g,InsertMode mode,Vec l) {
     default:
     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
   }
-  cblas_dcopy(nb_ghost,&array_glob[nb_dofs],1,&array_loc[nb_dofs],1);
   ierr = VecRestoreArray(l,&array_loc); CHKERRQ(ierr);
   ierr = VecRestoreArray(g,&array_glob); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
-}
-
-PetscErrorCode DMGlobalToLocalEnd_MoFEM(DM dm,Vec g,InsertMode mode,Vec l) {
-  PetscFunctionBegin;
   PetscFunctionReturn(0);
 }
 
@@ -249,7 +276,7 @@ PetscErrorCode DMLocalToGlobalBegin_MoFEM(DM dm,Vec l,InsertMode mode,Vec g) {
   const MoFEMProblem *problem_ptr;
   ierr = m_field_ptr->get_problem(problem_name,&problem_ptr); CHKERRQ(ierr);
   int nb_dofs = problem_ptr->get_nb_local_dofs_row();
-  int nb_ghost = problem_ptr->get_nb_local_dofs_row();
+  int nb_ghost = problem_ptr->get_nb_ghost_dofs_row();
 
   double *array_loc,*array_glob;
   ierr = VecGetArray(l,&array_loc); CHKERRQ(ierr);
@@ -267,17 +294,12 @@ PetscErrorCode DMLocalToGlobalBegin_MoFEM(DM dm,Vec l,InsertMode mode,Vec g) {
   ierr = VecRestoreArray(l,&array_loc); CHKERRQ(ierr);
   ierr = VecRestoreArray(g,&array_glob); CHKERRQ(ierr);
 
-  ierr = VecGhostUpdateBegin(g,mode,SCATTER_REVERSE); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(g,mode,SCATTER_REVERSE); CHKERRQ(ierr);
-
   PetscFunctionReturn(0);
 }
 
 PetscErrorCode DMLocalToGlobalEnd_MoFEM(DM,Vec l,InsertMode mode,Vec g) {
   PetscErrorCode ierr;
   PetscFunctionBegin;
-  ierr = VecGhostUpdateBegin(g,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(g,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 

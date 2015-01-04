@@ -21,6 +21,14 @@
 #ifndef __DMMMOFEM_H
 #define __DMMMOFEM_H
 
+PetscErrorCode DMRegister_MoFEM(const char sname[]);
+PetscErrorCode DMMoFEMCreateMoFEM(MoFEM::FieldInterface *m_field_ptr,const char problem_name[],const MoFEM::BitRefLevel &bit_level,DM dm);
+
+/** 
+  * \brief add element to dm
+  */
+PetscErrorCode DMMoFEMAddElement(const char fe_name[],DM dm);
+
 PetscErrorCode DMCreate_MoFEM(DM dm);
 PetscErrorCode DMDestroym_MoFEM(DM dm);
 
