@@ -57,6 +57,7 @@ struct DMCtx {
 
   //pouinter to data structures
   const MoFEMProblem *problemPtr;	//< pinter to problem data struture
+  ParallelComm* pComm;
 
   DMCtx(); 
   // destructor
@@ -131,12 +132,47 @@ PetscErrorCode DMoFEMMeshToLocalVector(Vec l,InsertMode mode,ScatterMode scatter
 }
 
 PetscErrorCode DMoFEMMeshToGlobalVector(Vec g,InsertMode mode,ScatterMode scatter_mode,DM dm) {
-  PetscFunctionBegin;
   PetscErrorCode ierr;
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;
   ierr = dm_field->mField_ptr->set_global_VecCreateGhost(dm_field->problemPtr,ROW,g,mode,scatter_mode); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode DMoFEMPreProcessFiniteElements(MoFEM::FEMethod *method,DM dm) {
+  PetscErrorCode ierr;
+  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
+  PetscFunctionBegin;
+  DMCtx *dm_field = (DMCtx*)dm->data;
+  ierr = dm_field->mField_ptr->problem_basic_method_preProcess(dm_field->problemPtr,*method); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode DMoFEMPostProcessFiniteElements(MoFEM::FEMethod *method,DM dm) {
+  PetscErrorCode ierr;
+  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
+  PetscFunctionBegin;
+  DMCtx *dm_field = (DMCtx*)dm->data;
+  ierr = dm_field->mField_ptr->problem_basic_method_postProcess(dm_field->problemPtr,*method); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode DMoFEMLoopFiniteElements(const char fe_name[],MoFEM::FEMethod *method,DM dm) {
+  PetscErrorCode ierr;
+  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
+  PetscFunctionBegin;
+  DMCtx *dm_field = (DMCtx*)dm->data;
+  ierr = dm_field->mField_ptr->loop_finite_elements(dm_field->problemPtr,fe_name,*method,dm_field->pComm->rank(),dm_field->pComm->rank()); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode DMoFEMLoopDofs(const char field_name[],MoFEM::EntMethod *method,DM dm) {
+  PetscErrorCode ierr;
+  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
+  PetscFunctionBegin;
+  DMCtx *dm_field = (DMCtx*)dm->data;
+  ierr = dm_field->mField_ptr->loop_dofs(dm_field->problemPtr,field_name,ROW,*method,dm_field->pComm->rank(),dm_field->pComm->rank()); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -211,14 +247,16 @@ PetscErrorCode DMSetUp_MoFEM(DM dm) {
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;
-  ParallelComm* pcomm = ParallelComm::get_pcomm(&dm_field->mField_ptr->get_moab(),MYPCOMM_INDEX);
-  if(pcomm == NULL) pcomm =  new ParallelComm(&dm_field->mField_ptr->get_moab(),PETSC_COMM_WORLD);
+  dm_field->pComm = ParallelComm::get_pcomm(&dm_field->mField_ptr->get_moab(),MYPCOMM_INDEX);
+  if(dm_field->pComm == NULL) {
+    dm_field->pComm =  new ParallelComm(&dm_field->mField_ptr->get_moab(),PETSC_COMM_WORLD);
+  }
   if(dm_field->isPartitioned) {
     if(!dm_field->isPartitioned) {
       ierr = dm_field->mField_ptr->build_partitioned_problems(PETSC_COMM_WORLD,1); CHKERRQ(ierr);
       dm_field->isProblemsBuild = PETSC_TRUE;
     }
-    ierr = dm_field->mField_ptr->partition_finite_elements(dm_field->problemName,true,0,pcomm->size(),1); CHKERRQ(ierr);
+    ierr = dm_field->mField_ptr->partition_finite_elements(dm_field->problemName,true,0,dm_field->pComm->size(),1); CHKERRQ(ierr);
   } else {
     if(!dm_field->isPartitioned) {
       ierr = dm_field->mField_ptr->build_problems(); CHKERRQ(ierr);

@@ -187,14 +187,6 @@ PetscErrorCode Core::set_local_VecCreateGhost(const MoFEMProblem *problem_ptr,Ro
   if(size!=nb_local_dofs+nb_ghost_dofs) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency: check ghost vector, problem with nb. of ghost nodes");
   dofs_by_local_idx::iterator miit = dofs->lower_bound(0);
   dofs_by_local_idx::iterator hi_miit = dofs->upper_bound(nb_local_dofs+nb_ghost_dofs);
-  /*cerr << "AAAAAAAAAAAAA " << distance(miit,hi_miit) << " " << problem_ptr->numered_dofs_rows.size() << " " << pcomm->rank() << endl;
-  {
-    NumeredDofMoFEMEntity_multiIndex::iterator it = problem_ptr->numered_dofs_rows.begin();
-    NumeredDofMoFEMEntity_multiIndex::iterator hi_it = problem_ptr->numered_dofs_rows.end();
-    for(;it!=problem_ptr->numered_dofs_rows.end();it++) {
-      cerr << "BBB " << *it << " " << problem_ptr->numered_dofs_rows.size() << " " << pcomm->rank() << endl;
-    }
-  }*/
   PetscScalar *array;
   VecGetArray(Vlocal,&array);
   DofIdx ii = 0;

@@ -51,6 +51,29 @@ PetscErrorCode DMoFEMMeshToLocalVector(Vec l,InsertMode mode,ScatterMode scatter
   */
 PetscErrorCode DMoFEMMeshToGlobalVector(Vec g,InsertMode mode,ScatterMode scatter_mode,DM dm);
 
+/** 
+  * \brief execute finite element method for each element in dm (problem)
+  * \ingroup dm
+  */
+PetscErrorCode DMoFEMPreProcessFiniteElements(MoFEM::FEMethod *method,DM dm);
+
+/** 
+  * \brief execute finite element method for each element in dm (problem)
+  * \ingroup dm
+  */
+PetscErrorCode DMoFEMPostProcessFiniteElements(MoFEM::FEMethod *method,DM dm);
+
+/** 
+  * \brief execute finite element method for each element in dm (problem)
+  * \ingroup dm
+  */
+PetscErrorCode DMoFEMLoopFiniteElements(const char fe_name[],MoFEM::FEMethod *method,DM dm);
+
+/** 
+  * \brief execute method for dofs on field in problem 
+  * \ingroup dm
+  */
+PetscErrorCode DMoFEMLoopDofs(const char field_name[],MoFEM::EntMethod *method,DM dm);
 
 /** 
   * \brief Create dm data structure with MoFEM data structure

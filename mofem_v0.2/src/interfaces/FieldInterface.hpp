@@ -1370,6 +1370,12 @@ struct FieldInterface: public FieldUnknownInterface {
   **/ 
   virtual PetscErrorCode loop_finite_elements(const string &problem_name,const string &fe_name,FEMethod &method,int lower_rank,int upper_rank,int verb = -1) = 0;
 
+
+  /** \brief Make a loop over entities
+    *
+    */
+  virtual PetscErrorCode loop_dofs(const MoFEMProblem *problem_ptr,const string &field_name,RowColData rc,EntMethod &method,int lower_rank,int upper_rank,int verb = -1) = 0;
+
   /** \brief Make a loop over entities
     *
     */
