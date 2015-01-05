@@ -135,7 +135,7 @@ PetscErrorCode Core::add_verices_in_the_middel_of_edges(const Range &_edges,cons
     } else {
       miit_view = ref_parent_ents_view.find(*eit);
     }
-    if(miit_view == ref_parent_ents_view.end()||ref_parent_ents_view.empty()) {
+    if(ref_parent_ents_view.empty()||miit_view == ref_parent_ents_view.end()) {
       const EntityHandle* conn; 
       int num_nodes; 
       rval = moab.get_connectivity(*eit,conn,num_nodes,true);  CHKERR_PETSC(rval);
