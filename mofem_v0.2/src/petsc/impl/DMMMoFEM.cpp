@@ -120,6 +120,26 @@ PetscErrorCode DMMoFEMAddElement(const char fe_name[],DM dm) {
   PetscFunctionReturn(0);
 }
 
+PetscErrorCode DMoFEMMeshToLocalVector(Vec l,InsertMode mode,ScatterMode scatter_mode,DM dm) {
+  PetscFunctionBegin;
+  PetscErrorCode ierr;
+  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
+  PetscFunctionBegin;
+  DMCtx *dm_field = (DMCtx*)dm->data;
+  ierr = dm_field->mField_ptr->set_local_VecCreateGhost(dm_field->problemPtr,ROW,l,mode,scatter_mode); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode DMoFEMMeshToGlobalVector(Vec g,InsertMode mode,ScatterMode scatter_mode,DM dm) {
+  PetscFunctionBegin;
+  PetscErrorCode ierr;
+  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
+  PetscFunctionBegin;
+  DMCtx *dm_field = (DMCtx*)dm->data;
+  ierr = dm_field->mField_ptr->set_global_VecCreateGhost(dm_field->problemPtr,ROW,g,mode,scatter_mode); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
 PetscErrorCode DMCreate_MoFEM(DM dm) {
   //PetscErrorCode ierr;
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);

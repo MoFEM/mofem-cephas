@@ -40,6 +40,19 @@ PetscErrorCode DMMoFEMCreateMoFEM(MoFEM::FieldInterface *m_field_ptr,const char 
 PetscErrorCode DMMoFEMAddElement(const char fe_name[],DM dm);
 
 /** 
+  * \brief set local (or ghosted) vector values on mesh for partition only
+  * \ingroup dm
+  */
+PetscErrorCode DMoFEMMeshToLocalVector(Vec l,InsertMode mode,ScatterMode scatter_mode,DM dm);
+
+/** 
+  * \brief set ghosted vector values on all existing mesh entities
+  * \ingroup dm
+  */
+PetscErrorCode DMoFEMMeshToGlobalVector(Vec g,InsertMode mode,ScatterMode scatter_mode,DM dm);
+
+
+/** 
   * \brief Create dm data structure with MoFEM data structure
   * \ingroup dm
   */

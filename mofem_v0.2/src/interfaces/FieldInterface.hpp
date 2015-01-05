@@ -440,7 +440,7 @@ struct FieldInterface: public FieldUnknownInterface {
     * bit ref level of adjacent entities is equal to bit ref level of adjacent entities
     */
   virtual PetscErrorCode get_adjacencies(
-    const MoFEMProblem *problemPtr,
+    const MoFEMProblem *problem_ptr,
     const EntityHandle *from_entities,const int num_netities,const int to_dimension,Range &adj_entities,const int operation_type = Interface::INTERSECT,const int verb = 0) = 0;
 
   /** \brief Get the adjacencies associated with a entity to entities of a specfied dimension.
@@ -1109,6 +1109,22 @@ struct FieldInterface: public FieldUnknownInterface {
   /** 
     * \brief set values of vector from/to meshdatabase
     *
+    * \param pointer to problem struture
+    * \param RowColData for row or column:e (i.e. Row,Col)
+    * \param V vector
+    * \param mode see petsc manual for VecSetValue (ADD_VALUES or INSERT_VALUES)
+    * \param scatter_mode see petsc manual for ScatterMode (The available modes are: SCATTER_FORWARD or SCATTER_REVERSE)
+    * 
+    * SCATTER_REVERSE set data to field entities from V vector.
+    *
+    * SCATTER_FORWARD set vector V from data field entities
+    *
+    */
+  virtual PetscErrorCode set_local_VecCreateGhost(const MoFEMProblem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) = 0;
+
+  /** 
+    * \brief set values of vector from/to meshdatabase
+    *
     * \param name of the problem
     * \param RowColData for row or column:e (i.e. Row,Col)
     * \param V vector
@@ -1135,7 +1151,7 @@ struct FieldInterface: public FieldUnknownInterface {
     * SCATTER_REVERSE set data to field entities form V vector.
     *
     */
-  virtual PetscErrorCode set_global_VecCreateGhost(const MoFEMProblem *problemPtr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) = 0;
+  virtual PetscErrorCode set_global_VecCreateGhost(const MoFEMProblem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) = 0;
 
   /** 
     * \brief set values of vector from/to meshdatabase
@@ -1165,7 +1181,7 @@ struct FieldInterface: public FieldUnknownInterface {
     *
     */
   virtual PetscErrorCode set_other_local_VecCreateGhost(
-    const MoFEMProblem *problemPtr,const string& fiel_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1) = 0;
+    const MoFEMProblem *problem_ptr,const string& fiel_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1) = 0;
 
   /** \brief Copy vector to field which is not part of the problem
     *
@@ -1234,6 +1250,23 @@ struct FieldInterface: public FieldUnknownInterface {
     */
   virtual PetscErrorCode set_field(const double val,const EntityType type,const string& field_name) = 0;
 
+
+  /** \brief Set data for BasicMethod 
+    *
+    * This function set data about problem, adjacencies and other MultIindices
+    * in database. This function can be used a special case when user need to
+    * do some pre- and post-processing before matrix or vector is initiated, or
+    * to assemble matrix for group of FEMethods. Is used by calsses classes
+    * SnesCtx and TsCtx. Look for more details there.
+    *
+    * FIXME: Here we need example
+    *
+    * \param pointer to problem data structure
+    * \param method user method derived from BasicMethod
+    *
+  **/
+  virtual PetscErrorCode problem_basic_method_preProcess(const MoFEMProblem *problem_ptr,BasicMethod &method,int verb = -1) = 0;
+
   /** \brief Set data for BasicMethod 
     *
     * This function set data about problem, adjacencies and other MultIindices
@@ -1249,6 +1282,22 @@ struct FieldInterface: public FieldUnknownInterface {
     *
   **/
   virtual PetscErrorCode problem_basic_method_preProcess(const string &problem_name,BasicMethod &method,int verb = -1) = 0;
+
+  /** \brief Set data for BasicMethod 
+    *
+    * This function set data about problem, adjacencies and other MultIindices
+    * in database. This function can be used a special case when user need to
+    * do some pre- and post-processing before matrix or vector is initiated, or
+    * to assemble matrix for group of FEMethods. Is used by calsses classes
+    * SnesCtx and TsCtx. Look for more details there.
+    *
+    * FIXME: Here we need example
+    *
+    * \param pointer to problem data structure
+    * \param method user method derived from BasicMethod
+    *
+  **/
+  virtual PetscErrorCode problem_basic_method_postProcess(const MoFEMProblem *problem_ptr,BasicMethod &method,int verb = -1) = 0;
 
   /** \brief Set data for BasicMethod 
     *
@@ -1297,12 +1346,29 @@ struct FieldInterface: public FieldUnknownInterface {
    *
    * For more details please look to examples.
    *
+   * \param pointer to problem data structure
+   * \param method is class derived form
+   *
+   * FieldInterface::FEMethod
+  **/ 
+  virtual PetscErrorCode loop_finite_elements(const MoFEMProblem *problem_ptr,const string &fe_name,FEMethod &method,int lower_rank,int upper_rank,int verb = -1) = 0;
+
+  /** \brief Make a loop over finite elements on partitions from upper to lower rank. 
+   *
+   * This function is like swiss knife, is can be used to post-processing or matrix
+   * and vectors assembly. It makes loop over given finite element for given
+   * problem. The particular methods exectuted on each element are given by
+   * class derived form FieldInterface::FEMethod. At beginig of each loop user definded
+   * function (method)  preProcess() is called, for each element operator() is
+   * executed, at the end loop finalizes with user defined function (method)
+   * postProcess().
+   *
+   * For more details please look to examples.
+   *
    * \param problem_name fe_name \param method is class derived form
    * FieldInterface::FEMethod
   **/ 
-  virtual PetscErrorCode loop_finite_elements(
-    const string &problem_name,const string &fe_name,FEMethod &method,
-    int lower_rank,int upper_rank,int verb = -1) = 0;
+  virtual PetscErrorCode loop_finite_elements(const string &problem_name,const string &fe_name,FEMethod &method,int lower_rank,int upper_rank,int verb = -1) = 0;
 
   /** \brief Make a loop over entities
     *
