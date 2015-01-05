@@ -120,7 +120,7 @@ PetscErrorCode DMMoFEMAddElement(const char fe_name[],DM dm) {
 }
 
 PetscErrorCode DMCreate_MoFEM(DM dm) {
-  PetscErrorCode ierr;
+  //PetscErrorCode ierr;
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
 
@@ -141,7 +141,7 @@ PetscErrorCode DMCreate_MoFEM(DM dm) {
 }
 
 PetscErrorCode DMDestroy_MoFEM(DM dm) {
-  PetscErrorCode ierr;
+  //PetscErrorCode ierr;
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   delete (DMCtx*)dm->data;
@@ -298,7 +298,7 @@ PetscErrorCode DMLocalToGlobalBegin_MoFEM(DM dm,Vec l,InsertMode mode,Vec g) {
 }
 
 PetscErrorCode DMLocalToGlobalEnd_MoFEM(DM,Vec l,InsertMode mode,Vec g) {
-  PetscErrorCode ierr;
+  //PetscErrorCode ierr;
   PetscFunctionBegin;
   PetscFunctionReturn(0);
 }
