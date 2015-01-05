@@ -91,6 +91,7 @@ int main(int argc, char *argv[]) {
 
   //set dm datastruture whict created mofem datastructures
   ierr = DMMoFEMCreateMoFEM(&m_field,dm_name,bit_level0,dm); CHKERRQ(ierr);
+  ierr = DMSetFromOptions(dm); CHKERRQ(ierr);
   ierr = DMMoFEMAddElement("FE",dm); CHKERRQ(ierr);
   ierr = DMSetUp(dm); CHKERRQ(ierr);
 
