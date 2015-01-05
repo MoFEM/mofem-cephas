@@ -1064,6 +1064,15 @@ struct FieldInterface: public FieldUnknownInterface {
     */
   virtual PetscErrorCode problem_get_FE(const string &name,const string &fe_name,const EntityHandle meshset) = 0;
 
+
+  /** \brief create local vector for problem
+   *
+   * \param name problem name
+   * \param RowColData specify what data is taken from Row, Col or Data
+   * \param Vec the vector where data is stored
+   */
+  virtual PetscErrorCode VecCreateSeq(const string &name,RowColData rc,Vec *V) = 0;
+
   /** \brief create ghost vector for problem
    *
    * \param name problem name
@@ -1315,7 +1324,7 @@ struct FieldInterface: public FieldUnknownInterface {
   /** \brief Get problem database (datastructure) 
     *
     */
-  virtual PetscErrorCode get_problem(const string &problem_name,const MoFEMProblem **problemPtr) = 0;
+  virtual PetscErrorCode get_problem(const string &problem_name,const MoFEMProblem **problem_ptr) = 0;
 
   /** \brief Get dofs multi index
     * \ingroup mofem_dofs

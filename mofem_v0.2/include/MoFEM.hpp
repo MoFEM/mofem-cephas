@@ -27,6 +27,7 @@
 #include <petscmat.h> 
 #include <petscsnes.h> 
 #include <petscts.h> 
+#include <petscdm.h>
 
 #include <definitions.h>
 #include <h1_hdiv_hcurl_l2.h>
@@ -47,6 +48,7 @@
 
 #include <SnesCtx.hpp>
 #include <TsCtx.hpp>
+#include <DMMoFEM.hpp>
 
 #define BOOST_UBLAS_SHALLOW_ARRAY_ADAPTOR
 
