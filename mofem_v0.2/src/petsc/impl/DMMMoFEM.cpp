@@ -209,7 +209,6 @@ PetscErrorCode DMSetUp_MoFEM(DM dm) {
   }
   ierr = dm_field->mField_ptr->partition_ghost_dofs(dm_field->problemName); CHKERRQ(ierr);
   // dmmofem struture
-  const MoFEMProblem *problem_ptr;
   ierr = dm_field->mField_ptr->get_problem(dm_field->problemName,&dm_field->problemPtr); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
