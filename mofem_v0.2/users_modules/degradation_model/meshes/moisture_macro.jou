@@ -1,0 +1,23 @@
+reset
+
+brick x 1 y 1 z 0.5
+
+create temperature  on surface 4  value 0     # use for both thermal and moisture transport problem
+#create temperature  on surface 6  value 1
+create heatflux  on surface 6  value -1        # use for both thermal and moisture transport problem
+
+block 1 volume 1 
+block 1 name 'MAT_MOISTURE'
+block 1 attribute count 1
+block 1 attribute index 1 1  # moisture diffusivity
+
+volume all scheme Tetmesh
+volume all size auto factor 8
+mesh volume all
+
+save as "/Users/zahur/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/macro.cub" overwrite
+
+
+
+
+

@@ -125,7 +125,7 @@ namespace MoFEM {
       PetscFunctionBegin;
       PetscErrorCode ierr;
       ErrorCode rval;
-      cout<<"insides the addDiffusionElements = "<<endl;
+//      cout<<"insides the addDiffusionElements = "<<endl;
       ierr = mField.add_finite_element("DIFFUSION_FE",MF_ZERO); CHKERRQ(ierr);
       ierr = mField.modify_finite_element_add_field_row("DIFFUSION_FE",field_name); CHKERRQ(ierr);
       ierr = mField.modify_finite_element_add_field_col("DIFFUSION_FE",field_name); CHKERRQ(ierr);
@@ -140,11 +140,11 @@ namespace MoFEM {
         if(it->get_Cubit_name().compare(0,19,"MAT_MOISTURE") == 0){
           Mat_Moisture diffusion_data;
           ierr = it->get_attribute_data_structure(diffusion_data); CHKERRQ(ierr);
-          cout<<"diffusion_data.data.Diffusivity = "<<diffusion_data.data.Diffusivity<<endl;
-          cout<<"it->get_msId() = "<<it->get_msId()<<endl;
+//          cout<<"diffusion_data.data.Diffusivity = "<<diffusion_data.data.Diffusivity<<endl;
+//          cout<<"it->get_msId() = "<<it->get_msId()<<endl;
           setOfBlocks[it->get_msId()].dIffusivity = diffusion_data.data.Diffusivity;
           rval = mField.get_moab().get_entities_by_type(it->meshset,MBTET,setOfBlocks[it->get_msId()].tEts,true); CHKERR_PETSC(rval);
-          cout<<"setOfBlocks[it->get_msId()].tEts.size() = "<<setOfBlocks[it->get_msId()].tEts.size()<<endl;
+//          cout<<"setOfBlocks[it->get_msIdx()].tEts.size() = "<<setOfBlocks[it->get_msId()].tEts.size()<<endl;
           ierr = mField.add_ents_to_finite_element_by_TETs(setOfBlocks[it->get_msId()].tEts,"DIFFUSION_FE"); CHKERRQ(ierr);
         }
       }

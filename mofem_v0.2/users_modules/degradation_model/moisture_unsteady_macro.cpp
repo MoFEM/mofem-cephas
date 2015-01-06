@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, Zahur Ullah (Zahur.Ullah@glasgow.ac.uk)
+/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
  * --------------------------------------------------------------
  * FIXME: DESCRIPTION
  */
@@ -145,14 +145,14 @@ int main(int argc, char *argv[]) {
 
   Vec F;
   ierr = m_field.VecCreateGhost("MOISTURE_PROBLEM",ROW,&F); CHKERRQ(ierr);
-  Vec C;
-  ierr = VecDuplicate(F,&C); CHKERRQ(ierr);
+  Vec T;
+  ierr = VecDuplicate(F,&T); CHKERRQ(ierr);
   Mat A;
   ierr = m_field.MatCreateMPIAIJWithArrays("MOISTURE_PROBLEM",&A); CHKERRQ(ierr);
 
-  ierr = VecZeroEntries(C); CHKERRQ(ierr);
-  ierr = VecGhostUpdateBegin(C,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(C,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecZeroEntries(T); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -164,7 +164,7 @@ int main(int argc, char *argv[]) {
   ierr = TSCreate(PETSC_COMM_WORLD,&ts); CHKERRQ(ierr);
   ierr = TSSetType(ts,TSBEULER); CHKERRQ(ierr);
 
-  TemperatureBCFEMethodPreAndPostProc my_dirichlet_bc(m_field,"CONC",A,C,F);
+  TemperatureBCFEMethodPreAndPostProc my_dirichlet_bc(m_field,"CONC",A,T,F);
   MoistureElement::UpdateAndControl update_velocities(m_field,ts,"CONC","CONC_RATE");
   MoistureElement::TimeSeriesMonitor monitor(m_field,"CONC_SERIES","CONC");
 
@@ -188,7 +188,7 @@ int main(int argc, char *argv[]) {
 
   double ftime = 1;
   ierr = TSSetDuration(ts,PETSC_DEFAULT,ftime); CHKERRQ(ierr);
-  ierr = TSSetSolution(ts,C); CHKERRQ(ierr);
+  ierr = TSSetSolution(ts,T); CHKERRQ(ierr);
   ierr = TSSetFromOptions(ts); CHKERRQ(ierr);
 
   {
@@ -198,7 +198,7 @@ int main(int argc, char *argv[]) {
     ierr = recorder_ptr->initialize_series_recorder("CONC_SERIES"); CHKERRQ(ierr);
   }
 
-  ierr = TSSolve(ts,C); CHKERRQ(ierr);
+  ierr = TSSolve(ts,T); CHKERRQ(ierr);
   ierr = TSGetTime(ts,&ftime); CHKERRQ(ierr);
 
   PetscInt steps,snesfails,rejects,nonlinits,linits;
@@ -217,11 +217,8 @@ int main(int argc, char *argv[]) {
     ierr = m_field.query_interface(recorder_ptr); CHKERRQ(ierr);
     ierr = recorder_ptr->finalize_series_recorder("CONC_SERIES"); CHKERRQ(ierr);
   }
-
   
-  ierr = VecView(C,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-
-  //m_field.list_dofs_by_field_name("CONC");
+  //m_field.list_dofs_by_field_name("TEMP");
   if(pcomm->rank()==0) {
     rval = moab.write_file("solution.h5m"); CHKERR_PETSC(rval);
   }
@@ -233,7 +230,7 @@ int main(int argc, char *argv[]) {
     PetscPrintf(PETSC_COMM_WORLD,"Process step %d\n",sit->get_step_number());
 
     ierr = recorder.load_series_data("CONC_SERIES",sit->get_step_number()); CHKERRQ(ierr);
-    ierr = m_field.set_local_VecCreateGhost("MOISTURE_PROBLEM",ROW,C,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = m_field.set_local_VecCreateGhost("MOISTURE_PROBLEM",ROW,T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
     ProjectionFieldOn10NodeTet ent_method_on_10nodeTet(m_field,"CONC",true,false,"CONC");
     ent_method_on_10nodeTet.set_nodes = true;
@@ -256,7 +253,7 @@ int main(int argc, char *argv[]) {
   ierr = TSDestroy(&ts);CHKERRQ(ierr);
   ierr = MatDestroy(&A); CHKERRQ(ierr);
   ierr = VecDestroy(&F); CHKERRQ(ierr);
-  ierr = VecDestroy(&C); CHKERRQ(ierr);
+  ierr = VecDestroy(&T); CHKERRQ(ierr);
 
   ierr = PetscFinalize(); CHKERRQ(ierr);
 

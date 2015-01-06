@@ -347,9 +347,9 @@ int main(int argc, char *argv[]) {
   ierr = mField.MatCreateMPIAIJWithArrays("PROB_MOIS",&Ac); CHKERRQ(ierr);
   ierr = mField.MatCreateMPIAIJWithArrays("PROB_MECH",&AM); CHKERRQ(ierr);
 
-//  //***************************************************************************************************
-//  //First solve moisture problem to calculate moisture concentration
-//  //***************************************************************************************************
+  //***************************************************************************************************
+  //Solve thermal problem to calculate temprature distribution
+  //***************************************************************************************************
 
   ierr = thermal_elements.setThermalFiniteElementLhsOperators("Field_Temp",AT); CHKERRQ(ierr);
   ElasticFE_RVELagrange_Disp MyFE_RVELagrange_thermal(mField,AT,DT,FT,applied_Tgrad,"Field_Temp","Field_LagMul_Temp",field_rank_TC);
@@ -372,41 +372,108 @@ int main(int argc, char *argv[]) {
   //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
   //ierr = MatView(A,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
   
-  //Matrix View
-  MatView(AT,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
-  std::string wait;
-  std::cin >> wait;
+//  //Matrix View
+//  ierr = VecView(FT,PETSC_VIEWER_DRAW_WORLD); CHKERRQ(ierr);
+//  ierr = MatView(AT,PETSC_VIEWER_DRAW_WORLD); CHKERRQ(ierr);
+//  std::string wait;
+//  std::cin >> wait;
   
-//  //Solver
-//  KSP solver;
-//  ierr = KSPCreate(PETSC_COMM_WORLD,&solver); CHKERRQ(ierr);
-//  ierr = KSPSetOperators(solver,A,A); CHKERRQ(ierr);
-//  ierr = KSPSetFromOptions(solver); CHKERRQ(ierr);
-//  ierr = KSPSetUp(solver); CHKERRQ(ierr);
-//  
-//  ierr = KSPSolve(solver,F,C); CHKERRQ(ierr);
-//  ierr = VecGhostUpdateBegin(C,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-//  ierr = VecGhostUpdateEnd(C,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-//  
-//  //  ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-//  //  ierr = VecView(C,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-//  
-//  
-//  //Save data on mesh
-//  ierr = mField.set_global_VecCreateGhost("MOISTURE_PROBLEM",ROW,C,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-//  //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+  //Solver
+  KSP solver_thermal;
+  ierr = KSPCreate(PETSC_COMM_WORLD,&solver_thermal); CHKERRQ(ierr);
+  ierr = KSPSetOperators(solver_thermal,AT,AT); CHKERRQ(ierr);
+  ierr = KSPSetFromOptions(solver_thermal); CHKERRQ(ierr);
+  ierr = KSPSetUp(solver_thermal); CHKERRQ(ierr);
+  
+  ierr = KSPSolve(solver_thermal,FT,DT); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(DT,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(DT,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  
+  //Save data on mesh
+  ierr = mField.set_global_VecCreateGhost("PROB_THERMAL",ROW,DT,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+//  ierr = VecView(DT,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+  
+  //***************************************************************************************************
+  //Solve moisture problem to calculate moisture concentration
+  //***************************************************************************************************
+
+  
+  ierr = moisture_elements.setMoistureFiniteElementLhsOperators("Field_Conc",Ac); CHKERRQ(ierr);
+  ElasticFE_RVELagrange_Disp MyFE_RVELagrange_moisture(mField,Ac,Dc,Fc,applied_cgrad,"Field_Conc","Field_LagMul_Conc",field_rank_TC);
+  
+  ierr = VecZeroEntries(Fc); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(Fc,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(Fc,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = MatZeroEntries(Ac); CHKERRQ(ierr);
+  
+  ierr = mField.loop_finite_elements("PROB_MOIS","MOISTURE_FE",moisture_elements.getLoopFeLhs()); CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("PROB_MOIS","MOISTURE_FE_LagMul",MyFE_RVELagrange_moisture);  CHKERRQ(ierr);
+  
+  ierr = VecGhostUpdateBegin(Fc,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(Fc,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = VecAssemblyBegin(Fc); CHKERRQ(ierr);
+  ierr = VecAssemblyEnd(Fc); CHKERRQ(ierr);
+  ierr = MatAssemblyBegin(Ac,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+  ierr = MatAssemblyEnd(Ac,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+  
+  //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+  //ierr = MatView(A,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+  
+//  //Matrix View
+//  ierr = VecView(Fc,PETSC_VIEWER_DRAW_WORLD); CHKERRQ(ierr);
+//  ierr = MatView(Ac,PETSC_VIEWER_DRAW_WORLD); CHKERRQ(ierr);
+//  std::string wait;
+//  std::cin >> wait;
+
+  //Solver
+  KSP solver_moisture;
+  ierr = KSPCreate(PETSC_COMM_WORLD,&solver_moisture); CHKERRQ(ierr);
+  ierr = KSPSetOperators(solver_moisture,Ac,Ac); CHKERRQ(ierr);
+  ierr = KSPSetFromOptions(solver_moisture); CHKERRQ(ierr);
+  ierr = KSPSetUp(solver_moisture); CHKERRQ(ierr);
+  
+  ierr = KSPSolve(solver_moisture,Fc,Dc); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(Dc,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(Dc,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  
+  //Save data on mesh
+  ierr = mField.set_global_VecCreateGhost("PROB_MOIS",ROW,Dc,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+//  ierr = VecView(Dc,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
   
   
+  //***************************************************************************************************
+  //Mechanical problem
+  //***************************************************************************************************
+  struct MyElasticFEMethod: public ElasticFEMethod {
+    MyElasticFEMethod(FieldInterface& _m_field,Mat _Aij,Vec _D,Vec& _F,double _lambda,double _mu):
+    ElasticFEMethod(_m_field,_Aij,_D,_F,_lambda,_mu) {};
+    
+    PetscErrorCode Fint(Vec F_int) {
+      PetscFunctionBegin;
+      ierr = ElasticFEMethod::Fint(); CHKERRQ(ierr);
+      for(int rr = 0;rr<row_mat;rr++) {
+        if(RowGlob[rr].size()!=f_int[rr].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+        if(RowGlob[rr].size()==0) continue;
+        f_int[rr] *= -1; //This is not SNES we solve K*D = -RES
+        ierr = VecSetValues(F_int,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f_int[rr].data()[0]),ADD_VALUES); CHKERRQ(ierr);
+      }
+      PetscFunctionReturn(0);
+    }
+    
+  };
+
   
-  
-  
-  
-  
-  
-  
-  
-  
+  MyElasticFEMethod my_fe_mech(mField,AM,DM,FM,0,0);
+//  ElasticFE_RVELagrange_Disp MyFE_RVELagrange_mech(mField,AM,DM,FM,applied_strain,"Field_Disp","Field_LagMul_Disp",field_rank);
+//  ierr = VecZeroEntries(FM); CHKERRQ(ierr);
+//  ierr = VecGhostUpdateBegin(FM,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+//  ierr = VecGhostUpdateEnd(FM,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+//  ierr = MatZeroEntries(AM); CHKERRQ(ierr);
+//  
+//  ierr = mField.loop_finite_elements("PROB_MECH","MECH_FE",my_fe_mech);  CHKERRQ(ierr);
+//  ierr = mField.loop_finite_elements("PROB_MECH","MECH_FE_LagMul",MyFE_RVELagrange_mech);  CHKERRQ(ierr);
+
 //  MoistureFEMethod my_fe_mois(mField,Ac,Dc,Fc);
 //  ElasticFE_RVELagrange_Disp MyFE_RVELagrange_mois(mField,Ac,Dc,Fc,applied_congrad,"CONC","Lagrange_mul_conc",field_rank_mois);
 //  ierr = VecZeroEntries(Fc); CHKERRQ(ierr);

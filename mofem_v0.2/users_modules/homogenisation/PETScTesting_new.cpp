@@ -245,11 +245,9 @@ PetscErrorCode FormJacobian(TS ts,PetscReal t,Vec X, Vec X_t, PetscReal a, Mat A
 //  cout<<" T = "<< T <<endl;
 //  cout<<" c = "<< c <<endl;
 
-  dF_du(0,0)=(c*beta*t*Tdot)/(Tg*(T/Tg-1)) + beta*t*log(1-T/Tg)*cdot +c*beta*log(1-T/Tg);
-  dF_du(0,1)=( (c*c*beta*t*t*Tdot)/(Tg*(T/Tg-1)) - beta*t*t*c*cdot*log(1-T/Tg)-c*c*beta*t*log(1-T/Tg)
-              -c*t*Tdot/(Tg*(T/Tg-1))+t*cdot+c) * beta*G/(Tg*(T/Tg-1));
-  dF_du(0,2)=( (-c*beta*t*t*Tdot)/(Tg*(T/Tg-1)) - beta*t*t*cdot*log(1-T/Tg)-c*beta*t*log(1-T/Tg)
-              +(t*Tdot)/(Tg*(T/Tg-1)*log(1-T/Tg))+1  )*beta*log(1-T/Tg)*G;
+  dF_du(0,0)= c*beta*log(1-T/Tg);  //dF1/dG
+  dF_du(0,1)=(-c*beta*t*log(1-T/Tg)+1) * c*beta*G/(Tg*(T/Tg-1));  //dF1/dT
+  dF_du(0,2)=(-c*beta*t*log(1-T/Tg)+1  )*beta*log(1-T/Tg)*G;  //dF1/dc
 
 //  cout<<" dF_du(0,0) = "<< dF_du(0,0) <<endl;
 //  cout<<" dF_du(0,1) = "<< dF_du(0,1) <<endl;
