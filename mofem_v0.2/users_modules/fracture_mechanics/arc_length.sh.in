@@ -270,7 +270,7 @@ if [ -z ${SHOWME+x} ]; then
 fi
 
 if [ -z ${SHOWME+x} ]; then
-  echo "Line command ..." | tee log
+  echo "Line command ..." | tee -a log
   echo $0 $ARGS | tee -a log
   echo | tee -a log
   echo "Satrt time: "`date` | tee -a log

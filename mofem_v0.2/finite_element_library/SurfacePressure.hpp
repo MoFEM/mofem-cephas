@@ -58,7 +58,7 @@ struct NeummanForcesSurface {
 
   struct MyTriangleFE: public TriElementForcesAndSurcesCore {
     MyTriangleFE(FieldInterface &_mField): TriElementForcesAndSurcesCore(_mField) {}
-    int getRule(int order) { return ceil(order/2); };
+    int getRule(int order) { return order; };
   };
 
   MyTriangleFE fe;
@@ -191,7 +191,7 @@ struct NeummanForcesSurface {
 	  } else {
 	    force = dAta.data.data.value1*getNormal()[rr];
 	  }
-	  cblas_daxpy(nb_row_dofs,val*force,&data.getN()(gg,0),1,&Nf[rr],rank);
+	  cblas_daxpy(nb_row_dofs,0.5*val*force,&data.getN()(gg,0),1,&Nf[rr],rank);
 
 	}
 
@@ -296,7 +296,7 @@ struct NeummanForcesSurface {
     PetscFunctionReturn(0);
   }
 
-   PetscErrorCode addFlux(const string field_name,Vec &F,int ms_id,bool ho_geometry = false) {
+  PetscErrorCode addFlux(const string field_name,Vec &F,int ms_id,bool ho_geometry = false) {
     PetscFunctionBegin;
     PetscErrorCode ierr;
     ErrorCode rval;
@@ -345,9 +345,9 @@ struct MetaNeummanForces {
     if(mField.check_field(mesh_nodals_positions)) {
       ierr = mField.modify_finite_element_add_field_data("PRESSURE_FE",mesh_nodals_positions); CHKERRQ(ierr);
     }
+    ierr = mField.modify_problem_add_finite_element(problem_name,"PRESSURE_FE"); CHKERRQ(ierr);
 
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SIDESET|PRESSURESET,it)) {
-      ierr = mField.modify_problem_add_finite_element(problem_name,"PRESSURE_FE"); CHKERRQ(ierr);
       Range tris;
       rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
       ierr = mField.add_ents_to_finite_element_by_TRIs(tris,"PRESSURE_FE"); CHKERRQ(ierr);

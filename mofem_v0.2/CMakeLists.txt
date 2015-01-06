@@ -48,6 +48,7 @@ include(cmake/FindADOL-C.cmake)
 
 #PETSC tools
 include(cmake/FindTAO.cmake)
+include(cmake/FindSLEPC.cmake)
 
 #CGAL tools
 #find_package(CGAL HINTS ${CGAL_DIR}/lib/CGAL)
@@ -108,10 +109,11 @@ if(TAO_LIBRARY)
 endif(TAO_LIBRARY)
 
 resolve_libraries(PROJECT_LIBS "
-  ${MOAB_LIBS_LINK}
+  ${SLEPC_LIBRARY}
+  ${ADOL-C_LIBRARY}
   ${TETGEN_LIBRARY}
   ${NETGEN_LIBRARY}
-  ${ADOL-C_LIBRARY}
+  ${MOAB_LIBS_LINK}
   -L${PETSC_DIR}/${PETSC_ARCH}/lib 
   ${PETSCVAR_PETSC_WITH_EXTERNAL_LIB}
   ${TAO_LIBRARY}

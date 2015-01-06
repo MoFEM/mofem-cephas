@@ -36,15 +36,9 @@ using namespace MoFEM;
 
 #include <SurfacePressure.hpp>
 #include <NodalForce.hpp>
-#include <FluidPressure.hpp>
-#include <BodyForce.hpp>
-#include <ThermalStressElement.hpp>
 
 #include <FEMethod_LowLevelStudent.hpp>
 #include <FEMethod_UpLevelStudent.hpp>
-
-#include <PostProcVertexMethod.hpp>
-#include <PostProcDisplacementAndStrainOnRefindedMesh.hpp>
 
 extern "C" {
   #include <complex_for_lazy.h>
@@ -53,9 +47,13 @@ extern "C" {
 #include <ArcLengthTools.hpp>
 #include <FEMethod_ComplexForLazy.hpp>
 #include <FEMethod_DriverComplexForLazy.hpp>
-
 #include <SurfacePressureComplexForLazy.hpp>
-#include <PostProcNonLinearElasticityStresseOnRefindedMesh.hpp>
+
+#include <adolc/adolc.h> 
+#include <NonLienarElasticElement.hpp>
+
+#include <PotsProcOnRefMesh.hpp>
+#include <PostProcStresses.hpp>
 
 using namespace ObosleteUsersModules;
 
@@ -68,8 +66,8 @@ int main(int argc, char *argv[]) {
 
   moab::Core mb_instance;
   Interface& moab = mb_instance;
-  int rank;
-  MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
+  ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
+  if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
   PetscBool flg = PETSC_TRUE;
   char mesh_file_name[255];
@@ -95,12 +93,25 @@ int main(int argc, char *argv[]) {
   if(flg != PETSC_TRUE) {
     max_steps = 5;
   }
+
+  // use this if your mesh is partotioned and you run code on parts, 
+  // you can solve very big problems 
+  PetscBool is_partitioned = PETSC_FALSE;
+  ierr = PetscOptionsGetBool(PETSC_NULL,"-my_is_partitioned",&is_partitioned,&flg); CHKERRQ(ierr);
  
-  const char *option;
-  option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
-  ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
-  if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
+  if(is_partitioned == PETSC_TRUE) {
+    //Read mesh to MOAB
+    const char *option;
+    option = "PARALLEL=BCAST_DELETE;PARALLEL_RESOLVE_SHARED_ENTS;PARTITION=PARALLEL_PARTITION;";
+    rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
+    rval = pcomm->resolve_shared_ents(0,3,0); CHKERR_PETSC(rval);
+    rval = pcomm->resolve_shared_ents(0,3,1); CHKERR_PETSC(rval);
+    rval = pcomm->resolve_shared_ents(0,3,2); CHKERR_PETSC(rval);
+  } else {
+    const char *option;
+    option = "";
+    rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
+  }
 
   //data stored on mesh for restart
   Tag th_step_size,th_step;
@@ -180,9 +191,6 @@ int main(int argc, char *argv[]) {
     ierr = m_field.add_ents_to_field_by_TETs(0,"SPATIAL_POSITION"); CHKERRQ(ierr);
     ierr = m_field.add_ents_to_field_by_TETs(0,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
 
-    //add finite elements entities
-    ierr = m_field.add_ents_to_finite_element_EntType_by_bit_ref(problem_bit_level,"ELASTIC",MBTET); CHKERRQ(ierr);
-    
     //this entity will carray data for this finite element
     EntityHandle meshset_FE_ARC_LENGTH;
     rval = moab.create_meshset(MESHSET_SET,meshset_FE_ARC_LENGTH); CHKERR_PETSC(rval);
@@ -228,22 +236,37 @@ int main(int argc, char *argv[]) {
 
   }
 
+  NonlinearElasticElement elastic(m_field,2);
+  ierr = elastic.setBlocks(); CHKERRQ(ierr);
+  ierr = elastic.addElement("ELASTIC","SPATIAL_POSITION"); CHKERRQ(ierr);
+  NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<adouble> st_venant_kirchhoff_material_adouble;
+  ierr = elastic.setOperators(st_venant_kirchhoff_material_adouble,"SPATIAL_POSITION"); CHKERRQ(ierr);
+
+  //post_processing
+  NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<double> st_venant_kirchhoff_material_double;
+  PostPocOnRefinedMesh post_proc(m_field);
+  ierr = post_proc.generateRefereneElemenMesh(); CHKERRQ(ierr);
+  ierr = post_proc.addFieldValuesPostProc("SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = post_proc.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+  ierr = post_proc.addFieldValuesGradientPostProc("SPATIAL_POSITION"); CHKERRQ(ierr);
+  map<int,NonlinearElasticElement::BlockData>::iterator sit = elastic.setOfBlocks.begin();
+  for(;sit!=elastic.setOfBlocks.end();sit++) {
+    post_proc.get_op_to_do_Rhs().push_back(
+	  new PostPorcStress(
+	    post_proc.postProcMesh,
+	    post_proc.mapGaussPts,
+	    "SPATIAL_POSITION",
+	    sit->second,
+	    post_proc.commonData,
+	    st_venant_kirchhoff_material_double));
+  }
+
   //build field
   ierr = m_field.build_fields(); CHKERRQ(ierr);
-
-  //build finite elemnts
-  ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
-
-  //build adjacencies
-  ierr = m_field.build_adjacencies(problem_bit_level); CHKERRQ(ierr);
-
-  //build problem
-  ierr = m_field.build_problems(); CHKERRQ(ierr);
-
   if(step==1) {
     //10 node tets
     Projection10NodeCoordsOnField ent_method_material(m_field,"MESH_NODE_POSITIONS");
-    ierr = m_field.loop_dofs("MESH_NODE_POSITIONS",ent_method_material); CHKERRQ(ierr);
+    ierr = m_field.loop_dofs("MESH_NODE_POSITIONS",ent_method_material,0); CHKERRQ(ierr);
     ierr = m_field.set_field(0,MBVERTEX,"SPATIAL_POSITION"); CHKERRQ(ierr);
     ierr = m_field.set_field(0,MBEDGE,"SPATIAL_POSITION"); CHKERRQ(ierr);
     ierr = m_field.field_axpy(1.,"MESH_NODE_POSITIONS","SPATIAL_POSITION"); CHKERRQ(ierr);
@@ -251,9 +274,22 @@ int main(int argc, char *argv[]) {
     ierr = m_field.set_field(0,MBTET,"SPATIAL_POSITION"); CHKERRQ(ierr);
   }
 
-  //partition
-  ierr = m_field.partition_problem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
-  ierr = m_field.partition_finite_elements("ELASTIC_MECHANICS"); CHKERRQ(ierr);
+  //build finite elemnts
+  ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
+
+  //build adjacencies
+  ierr = m_field.build_adjacencies(problem_bit_level); CHKERRQ(ierr);
+
+  //build database
+  if(is_partitioned) {
+    SETERRQ(PETSC_COMM_SELF,1,"Not implemented, problem with arc-length force multiplayer");
+    //ierr = m_field.build_partitioned_problems(PETSC_COMM_WORLD,1); CHKERRQ(ierr);
+    //ierr = m_field.partition_finite_elements("ELASTIC_MECHANICS",true,0,pcomm->size(),1); CHKERRQ(ierr);
+  } else {
+    ierr = m_field.build_problems(); CHKERRQ(ierr);
+    ierr = m_field.partition_problem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
+    ierr = m_field.partition_finite_elements("ELASTIC_MECHANICS"); CHKERRQ(ierr);
+  }
   ierr = m_field.partition_ghost_dofs("ELASTIC_MECHANICS"); CHKERRQ(ierr);
 
   //print bcs
@@ -285,20 +321,6 @@ int main(int argc, char *argv[]) {
 
   ArcLengthSnesCtx snes_ctx(m_field,"ELASTIC_MECHANICS",arc_ctx);
 
-  double young_modulus = 1;
-  double poisson_ratio = 0.25;
-	
-  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
-    //Get block name
-    string name = it->get_Cubit_name();
-    if (name.compare(0,11,"MAT_ELASTIC") == 0) {
-      Mat_Elastic mydata;
-      ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
-      young_modulus=mydata.data.Young;
-      poisson_ratio=mydata.data.Poisson;
-    }
-  }
-
   Range node_set;
   for(_IT_CUBITMESHSETS_BY_NAME_FOR_LOOP_(m_field,"LoadPath",cit)) {
     EntityHandle meshset = cit->get_meshset();
@@ -310,8 +332,6 @@ int main(int argc, char *argv[]) {
 
   ArcLengthElemFEMethod* arc_method_ptr = new ArcLengthElemFEMethod(moab,arc_ctx);
   ArcLengthElemFEMethod& arc_method = *arc_method_ptr;
-
-  NonLinearSpatialElasticFEMthod fe(m_field,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
 
   double scaled_reference_load = 1;
   double *scale_lhs = &(arc_ctx->get_FieldData());
@@ -502,7 +522,7 @@ int main(int argc, char *argv[]) {
   SnesCtx::loops_to_do_type& loops_to_do_Rhs = snes_ctx.get_loops_to_do_Rhs();
   snes_ctx.get_preProcess_to_do_Rhs().push_back(&my_dirichlet_bc);
   snes_ctx.get_preProcess_to_do_Rhs().push_back(&pre_post_method);
-  loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ELASTIC",&fe));
+  loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("ELASTIC",&elastic.getLoopFeRhs()));
   //surface focres and preassures
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("NEUAMNN_FE",&fe_neumann));
   //nodal forces
@@ -524,7 +544,7 @@ int main(int argc, char *argv[]) {
 
   SnesCtx::loops_to_do_type& loops_to_do_Mat = snes_ctx.get_loops_to_do_Mat();
   snes_ctx.get_preProcess_to_do_Mat().push_back(&my_dirichlet_bc);
-  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ELASTIC",&fe));
+  loops_to_do_Mat.push_back(TsCtx::loop_pair_type("ELASTIC",&elastic.getLoopFeLhs()));
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("NEUAMNN_FE",&fe_neumann));
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ARC_LENGTH",&arc_method));
   snes_ctx.get_postProcess_to_do_Mat().push_back(&my_dirichlet_bc);
@@ -647,33 +667,16 @@ int main(int argc, char *argv[]) {
       
     }
     
-    PostProcVertexMethod ent_method(moab,"SPATIAL_POSITION");
-    ierr = m_field.loop_dofs("ELASTIC_MECHANICS","SPATIAL_POSITION",COL,ent_method); CHKERRQ(ierr);
-
     if(step % 1 == 0) {
-      if(pcomm->rank()==0) {
-	ostringstream sss;
-	sss << "restart_" << step << ".h5m";
-	rval = moab.write_file(sss.str().c_str()); CHKERR_PETSC(rval);
-      }
-      /*PostProcVertexMethod ent_method(moab,"SPATIAL_POSITION");
-      ierr = m_field.loop_dofs("ELASTIC_MECHANICS","SPATIAL_POSITION",COL,ent_method); CHKERRQ(ierr);
-      if(pcomm->rank()==0) {
-	EntityHandle out_meshset;
-	rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
-	ierr = m_field.problem_get_FE("ELASTIC_MECHANICS","ELASTIC",out_meshset); CHKERRQ(ierr);
-	ostringstream sss;
-	sss << "out_" << step << ".vtk";
-	rval = moab.write_file(sss.str().c_str(),"VTK","",&out_meshset,1); CHKERR_PETSC(rval);
-	rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
-      }*/
-      PostProcStressNonLinearElasticity fe_post_proc_method(moab,fe);
-      ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",fe_post_proc_method);  CHKERRQ(ierr);
-      if(pcomm->rank()==0) {
-	ostringstream sss;
-	sss << "out_post_proc_" << step << ".vtk";
-	rval = fe_post_proc_method.moab_post_proc.write_file(sss.str().c_str(),"VTK",""); CHKERR_PETSC(rval);
-      }
+      //Save restart file
+      ostringstream sss;
+      sss << "restart_" << step << ".h5m";
+      rval = moab.write_file(sss.str().c_str(),"MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
+      //Save data on mesh
+      ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",post_proc); CHKERRQ(ierr);
+      ostringstream o1;
+      o1 << "out_" << step << ".h5m";
+      rval = post_proc.postProcMesh.write_file(o1.str().c_str(),"MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
     }
 
     ierr = pre_post_method.potsProcessLoadPath(); CHKERRQ(ierr);

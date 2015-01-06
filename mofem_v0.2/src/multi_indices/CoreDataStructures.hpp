@@ -123,14 +123,6 @@ struct EntMoFEMFiniteElement_change_bit_off {
   void operator()(MoFEMFiniteElement &MoFEMFiniteElement);
 };
 
-struct NumeredMoFEMFiniteElement_change_part {
-  unsigned int part;
-  NumeredMoFEMFiniteElement_change_part(unsigned int _part): part(_part) {};
-  void operator()(NumeredMoFEMFiniteElement &MoFEMFiniteElement) {
-    MoFEMFiniteElement.part = part;
-  }
-};
-
 struct MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_change_ByWhat {
   ByWhat by;
   MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_change_ByWhat(const ByWhat _by): by(_by) {}

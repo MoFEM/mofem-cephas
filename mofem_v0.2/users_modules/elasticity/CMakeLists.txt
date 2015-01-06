@@ -16,6 +16,8 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
+include_directories("${UM_SOURCE_DIR}/elasticity/src")
+
 add_executable(elasticity ${UM_SOURCE_DIR}/elasticity/elasticity.cpp)
 target_link_libraries(elasticity 
   mofem_finite_element_library
@@ -43,6 +45,7 @@ target_link_libraries(dynamics
   ${MoFEM_PROJECT_LIBS})
 
 cm_export_file("LShape.cub" export_files_elasticity)
+cm_export_file("data.txt" export_files_elasticity)
 
 file(COPY
     ${CMAKE_CURRENT_SOURCE_DIR}/README
@@ -60,6 +63,7 @@ add_test(ElasticityTest
 add_test(DynamicsTest
   ${MoFEM_MPI_RUN} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/dynamics
   -my_file LShape.cub
+  -my_time_data_file data.txt
   -ksp_type fgmres 
   -pc_type asm -sub_pc_type lu -ksp_atol 1e-10 -ksp_rtol 1e-10 
   -snes_monitor -snes_type newtonls -snes_linesearch_type basic 

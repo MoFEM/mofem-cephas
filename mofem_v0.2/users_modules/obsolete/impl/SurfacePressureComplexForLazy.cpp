@@ -27,6 +27,7 @@
 #include <MoFEM.hpp>
 
 using namespace MoFEM;
+#include <SurfacePressure.hpp>
 #include <SurfacePressureComplexForLazy.hpp>
 
 extern "C" {
@@ -38,6 +39,12 @@ extern "C" {
 }
 
 namespace ObosleteUsersModules {
+
+NeummanForcesSurfaceComplexForLazy::AuxMethodSpatial::AuxMethodSpatial(const string &field_name,MyTriangleSpatialFE *_myPtr): 
+      TriElementForcesAndSurcesCore::UserDataOperator(field_name),myPtr(_myPtr) {}
+
+NeummanForcesSurfaceComplexForLazy::AuxMethodMaterial::AuxMethodMaterial(const string &field_name,MyTriangleSpatialFE *_myPtr): 
+      TriElementForcesAndSurcesCore::UserDataOperator(field_name),myPtr(_myPtr) {};
 
 PetscErrorCode NeummanForcesSurfaceComplexForLazy::
   AuxMethodSpatial::doWork(int side, EntityType type, DataForcesAndSurcesCore::EntData &data) {
@@ -154,6 +161,27 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::
   PetscFunctionReturn(0);
 }
 
+NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::MyTriangleSpatialFE
+  (FieldInterface &_mField,Mat _Aij,Vec &_F,double *scale_lhs,double *scale_rhs): 
+  TriElementForcesAndSurcesCore(_mField),sCaleLhs(scale_lhs),sCaleRhs(scale_rhs),
+  typeOfForces(CONSERVATIVE),eps(1e-8),uSeF(false) {
+
+  meshPositionsFieldName = "NoNE";
+  methodsOp.clear();
+
+  Aij = _Aij;
+  F = _F;
+
+  snes_B = _Aij;
+  snes_f = _F;
+
+  if(mField.check_field("MESH_NODE_POSITIONS")) {
+    get_op_to_do_Rhs().push_back(new AuxMethodMaterial("MESH_NODE_POSITIONS",this));
+  }
+  get_op_to_do_Rhs().push_back(new AuxMethodSpatial("SPATIAL_POSITION",this));
+
+}
+
 PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::rHs() {
   PetscFunctionBegin;
 
@@ -173,11 +201,14 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::rHs() {
       Fext_edge[ee] = NULL;
     }
   }
-    
-  //cerr << "dOfs_x: " << dOfs_x << endl;
-  //for(int ee = 0;ee<3;ee++) {
-    //cerr << dOfs_x_edge[ee] << endl;
-  //}
+
+  } catch (exception& ex) {
+    ostringstream ss;
+    ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+    SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+  }
+
+  try {
     
   switch(typeOfForces) {
     case CONSERVATIVE:
@@ -204,12 +235,19 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::rHs() {
       break;
   }
 
+  } catch (exception& ex) {
+    ostringstream ss;
+    ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+    SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+  }
+
   //cerr << "fExtNode: " << fExtNode << endl;
   //cerr << "fExtFace: " << fExtFace << endl;
   //for(int ee = 0;ee<3;ee++) {
     //cerr << "fExtEdge " << ee << " " << fExtEdge[ee] << endl;
   //}
 
+  try {
  
   Vec f = snes_f;
   if(uSeF) f = F; 
@@ -241,6 +279,10 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::rHs() {
 
 PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::lHs() {
   PetscFunctionBegin;
+
+  if(typeOfForces == NONCONSERVATIVE) {
+    PetscFunctionReturn(0);
+  }
 
   try {
 
@@ -424,6 +466,11 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::calcTrac
     }
   }
 
+  ublas::vector<double> scale(1,1);
+  //cerr << methodsOp.size() << endl;
+  ierr = MethodsForOp::applyScale(this,methodsOp,scale); CHKERRQ(ierr);
+  tLocNodal *= scale[0];
+
   //cerr << tLocNodal << endl;
   t_loc = &*tLocNodal.data().begin();
   //cerr << "tLocNodal: " << tLocNodal << endl;
@@ -432,6 +479,27 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::calcTrac
     ostringstream ss;
     ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
     SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+  }
+
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::preProcess() {
+  PetscFunctionBegin;
+
+  switch(ts_ctx) {
+    case CTX_TSSETIFUNCTION: {
+      snes_ctx = CTX_SNESSETFUNCTION;
+      snes_f = ts_F;
+      break;
+    }
+    case CTX_TSSETIJACOBIAN: {
+      snes_ctx = CTX_SNESSETJACOBIAN;
+      snes_B = ts_B;
+      break;
+    }
+    default:
+    break;
   }
 
   PetscFunctionReturn(0);
@@ -523,6 +591,10 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::addPreas
   PetscFunctionReturn(0);
 }
 
+NeummanForcesSurfaceComplexForLazy::MyTriangleMaterialFE::MyTriangleMaterialFE
+  (FieldInterface &_mField,Mat _Aij,Vec &_F,double *scale_lhs,double *scale_rhs): 
+  MyTriangleSpatialFE(_mField,_Aij,_F,scale_lhs,scale_rhs) {}
+
 PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleMaterialFE::rHs() {
   PetscFunctionBegin;
 
@@ -599,6 +671,33 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleMaterialFE::lHs() {
   PetscFunctionReturn(0);
 }
 
+NeummanForcesSurfaceComplexForLazy::NeummanForcesSurfaceComplexForLazy(FieldInterface &m_field,Mat _Aij,Vec _F): 
+  mField(m_field),feSpatial(m_field,_Aij,_F,NULL,NULL),feMaterial(m_field,_Aij,_F,NULL,NULL) {
+
+  ErrorCode rval;
+
+  double def_scale = 1.;
+  const EntityHandle root_meshset = mField.get_moab().get_root_set();
+  rval = mField.get_moab().tag_get_handle("_LoadFactor_Scale_",1,MB_TYPE_DOUBLE,thScale,MB_TAG_CREAT|MB_TAG_EXCL|MB_TAG_MESH,&def_scale); 
+  if(rval == MB_ALREADY_ALLOCATED) {
+    rval = mField.get_moab().tag_get_by_ptr(thScale,&root_meshset,1,(const void**)&sCale); CHKERR_THROW(rval);
+  } else {
+    CHKERR_THROW(rval);
+    rval = mField.get_moab().tag_set_data(thScale,&root_meshset,1,&def_scale); CHKERR_THROW(rval);
+    rval = mField.get_moab().tag_get_by_ptr(thScale,&root_meshset,1,(const void**)&sCale); CHKERR_THROW(rval);
+  }
+
+  feSpatial.sCaleLhs = sCale;
+  feSpatial.sCaleRhs = sCale;
+  feMaterial.sCaleLhs = sCale;
+  feMaterial.sCaleRhs = sCale;
+
+}
+
+NeummanForcesSurfaceComplexForLazy::NeummanForcesSurfaceComplexForLazy(FieldInterface &m_field,Mat _Aij,Vec _F,double *scale_lhs,double *scale_rhs): 
+  mField(m_field),
+  feSpatial(m_field,_Aij,_F,scale_lhs,scale_rhs),
+  feMaterial(m_field,_Aij,_F,scale_lhs,scale_rhs) {}
 
 }
 

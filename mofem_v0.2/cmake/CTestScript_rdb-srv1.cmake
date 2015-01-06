@@ -1,4 +1,4 @@
-set(CTEST_BUILD_OPTIONS "-DPETSC_DIR=/opt/petsc-3.5.1 -DPETSC_ARCH=arch-linux2-c-debug -DMOAB_DIR=/opt/local_new_moab -DCMAKE_INSTALL_PREFIX=/home/lukasz/tmp/cephas_users_modules /home/lukasz/mofem-cephas/mofem_v0.2 -DCMAKE_CXX_FLAGS=-I/opt/local_boost_1_54_0/include")
+set(CTEST_BUILD_OPTIONS "-DPETSC_DIR=/opt/petsc-3.5.1 -DPETSC_ARCH=arch-linux2-c-debug -DMOAB_DIR=/opt/local_new_moab -DADOL-C_DIR=/opt/local_adol-c-2.5.2 -DTETGEN_DIR=/opt/tetgen1.5.0 -DSLEPC_DIR=/opt/slepc-3.5.3 -DCMAKE_INSTALL_PREFIX=/home/lukasz/tmp/cephas_users_modules /home/lukasz/mofem-cephas/mofem_v0.2 -DCMAKE_CXX_FLAGS=-I/opt/local_boost_1_54_0/include")
 
 set(CTEST_SITE "rdb-srv1")
 set(CTEST_BUILD_NAME "Linux-mpicxx")

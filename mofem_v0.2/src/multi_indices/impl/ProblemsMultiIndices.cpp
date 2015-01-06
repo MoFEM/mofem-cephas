@@ -68,7 +68,6 @@ MoFEMProblem::MoFEMProblem(Interface &moab,const EntityHandle _meshset): meshset
   Tag th_RefBitLevel_Mask;
   rval = moab.tag_get_handle("_RefBitLevelMask",th_RefBitLevel_Mask); CHKERR(rval);
   rval = moab.tag_get_by_ptr(th_RefBitLevel_Mask,&meshset,1,(const void **)&tag_BitRefLevel_DofMask); CHKERR(rval);
-
 }
 ostream& operator<<(ostream& os,const MoFEMProblem& e) {
   os << "problem id " << e.get_id()

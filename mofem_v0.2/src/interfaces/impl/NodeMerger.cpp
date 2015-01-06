@@ -189,7 +189,7 @@ PetscErrorCode NodeMergerInterface::mergeNodes(EntityHandle father,EntityHandle 
   seed_tets = subtract(seed_tets,edge_tets);
   seed_tets.merge(created_tets);
 
-  ierr = m_field.seed_ref_level_3D(seed_tets,bit); CHKERRQ(ierr);
+  ierr = m_field.seed_ref_level(seed_tets,bit); CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }

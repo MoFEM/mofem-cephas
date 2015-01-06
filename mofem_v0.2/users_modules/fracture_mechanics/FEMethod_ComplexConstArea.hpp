@@ -611,14 +611,14 @@ struct dCTgc_CONSTANT_AREA_FEMethod: public C_CONSTANT_AREA_FEMethod {
 struct Snes_CTgc_CONSTANT_AREA_FEMethod: public FEMethod {
 
   FieldInterface& mField;
-  matPROJ_ctx &proj_ctx;
+  matPROJ_ctx *proj_ctx;
   string problem;
   string lambda_field_name;
   double gc;
   int verbose;
 
   Snes_CTgc_CONSTANT_AREA_FEMethod(
-    FieldInterface& _mField,matPROJ_ctx &_proj_all_ctx,
+    FieldInterface& _mField,matPROJ_ctx *_proj_all_ctx,
     string _problem,string _lambda_field_name,int _verbose = 0):
     mField(_mField),proj_ctx(_proj_all_ctx),
     problem(_problem),lambda_field_name(_lambda_field_name),verbose(_verbose) {}
@@ -628,6 +628,21 @@ struct Snes_CTgc_CONSTANT_AREA_FEMethod: public FEMethod {
 
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
+
+    switch (ts_ctx) {
+      case CTX_TSSETIFUNCTION: {
+	snes_ctx = CTX_SNESSETFUNCTION;
+	snes_f = ts_F;
+	break;
+      }
+      case CTX_TSSETIJACOBIAN: {
+	snes_ctx = CTX_SNESSETJACOBIAN;
+	snes_B = ts_B;
+	break;
+      }
+      default:
+      break;
+    }
 
     PetscBool flg;
     ierr = PetscOptionsGetReal(PETSC_NULL,"-my_gc",&gc,&flg); CHKERRQ(ierr);
@@ -655,15 +670,15 @@ struct Snes_CTgc_CONSTANT_AREA_FEMethod: public FEMethod {
     ierr = VecDestroy(&D); CHKERRQ(ierr);
     ierr = VecScatterDestroy(&scatter); CHKERRQ(ierr);
 
-    C_CONSTANT_AREA_FEMethod C_AREA_ELEM(mField,proj_ctx.C,PETSC_NULL,lambda_field_name);
+    C_CONSTANT_AREA_FEMethod C_AREA_ELEM(mField,proj_ctx->C,PETSC_NULL,lambda_field_name);
 
-    ierr = MatSetOption(proj_ctx.C,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
-    ierr = MatSetOption(proj_ctx.C,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
+    ierr = MatSetOption(proj_ctx->C,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
+    ierr = MatSetOption(proj_ctx->C,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
 
-    ierr = MatZeroEntries(proj_ctx.C); CHKERRQ(ierr);
+    ierr = MatZeroEntries(proj_ctx->C); CHKERRQ(ierr);
     ierr = mField.loop_finite_elements("C_CRACKFRONT_MATRIX","C_CRACKFRONT_AREA_ELEM",C_AREA_ELEM);  CHKERRQ(ierr);
-    ierr = MatAssemblyBegin(proj_ctx.C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-    ierr = MatAssemblyEnd(proj_ctx.C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+    ierr = MatAssemblyBegin(proj_ctx->C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+    ierr = MatAssemblyEnd(proj_ctx->C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
     /*{
       //Matrix View
       MatView(C,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
@@ -686,7 +701,7 @@ struct Snes_CTgc_CONSTANT_AREA_FEMethod: public FEMethod {
 
     Vec _f_;
     ierr = mField.VecCreateGhost("C_CRACKFRONT_MATRIX",COL,&_f_); CHKERRQ(ierr);
-    ierr = MatMultTranspose(proj_ctx.C,LambdaVec,_f_); CHKERRQ(ierr);
+    ierr = MatMultTranspose(proj_ctx->C,LambdaVec,_f_); CHKERRQ(ierr);
     //PetscReal _f_nrm2;
     //ierr = VecNorm(_f_, NORM_2,&_f_nrm2); CHKERRQ(ierr);
     //PetscPrintf(PETSC_COMM_WORLD,"\tfront f_nrm2 = %6.4e\n",_f_nrm2);

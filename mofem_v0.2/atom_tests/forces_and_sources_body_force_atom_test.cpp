@@ -155,7 +155,7 @@ int main(int argc, char *argv[]) {
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
   BodyFroceConstantField body_forces_methods(mField);
 
-  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|BLOCK_BODYFORCESSET,it)) {
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|BODYFORCESSET,it)) {
     Block_BodyForces mydata;
     ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
     my_split << mydata << endl;

@@ -49,7 +49,9 @@ BasicMoFEMEntity::BasicMoFEMEntity(Interface &moab,const EntityHandle _ent): ent
   }
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   ErrorCode rval;
-  rval = pcomm->get_owner_handle(ent,moab_owner,moab_owner_handle); CHKERR_THROW(rval);
+  rval = pcomm->get_owner_handle(ent,owner_proc,moab_owner_handle); CHKERR_THROW(rval);
+  rval = moab.tag_get_by_ptr(pcomm->pstatus_tag(),&ent,1,(const void **)&pstatus_val_ptr); CHKERR(rval);
+
 }
 //ref moab ent
 BitRefEdges MoFEM::RefMoFEMElement::DummyBitRefEdges = BitRefEdges(0);
@@ -65,10 +67,11 @@ RefMoFEMEntity::RefMoFEMEntity(
 }
 ostream& operator<<(ostream& os,const RefMoFEMEntity& e) {
   os << "ent " << e.ent;
-  os << " owner " << e.get_owner(); 
+  os << " pstatus "<< bitset<8>(e.get_pstatus());
   os << " owner ent " << e.get_owner_ent();
+  os << " owner proc " << e.get_owner_proc();
   os << " parent ent " << e.get_parent_ent();
-  os << " BitRefLevel " << e.get_BitRefLevel();
+  //os << " BitRefLevel " << e.get_BitRefLevel();
   os << " ent type " << e.get_ent_type();
   os << " ent parent type " << e.get_parent_ent_type();
   return os;
@@ -99,7 +102,7 @@ ostream& operator<<(ostream& os,const MoFEMEntity& e) {
   os << "ent_global_uid " << (UId)e.get_global_unique_id()
     << " ent_local_uid " << (UId)e.get_local_unique_id() 
     << " entity "<< e.get_ent() << " type " << e.get_ent_type()
-    << " owner "<< e.get_owner() << " owner handle " << e.get_owner_ent()
+    << " pstatus "<< bitset<8>(e.get_pstatus()) << " owner handle " << e.get_owner_ent()
     << " order "<<e.get_max_order()<<" "<<*e.field_ptr;
   return os;
 }

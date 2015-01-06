@@ -475,13 +475,13 @@ typedef multi_index_container<
       tag<Part_mi_tag>, member<NumeredDofMoFEMEntity,unsigned int,&NumeredDofMoFEMEntity::part> >,
     ordered_non_unique<
       tag<Ent_mi_tag>, const_mem_fun<NumeredDofMoFEMEntity::interface_type_DofMoFEMEntity,EntityHandle,&NumeredDofMoFEMEntity::get_ent> >,
-    /*ordered_non_unique<
+    ordered_non_unique<
       tag<Composite_Name_And_Part_mi_tag>,
       composite_key<
 	NumeredDofMoFEMEntity,
 	  const_mem_fun<NumeredDofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&NumeredDofMoFEMEntity::get_name_ref>,
 	  member<NumeredDofMoFEMEntity,unsigned int,&NumeredDofMoFEMEntity::part> 
-	> >,*/
+	> >,
     ordered_non_unique<
       tag<Composite_Name_Ent_And_Part_mi_tag>, 
       composite_key<
@@ -521,7 +521,6 @@ struct NumeredDofMoFEMEntity_part_change {
   void operator()(NumeredDofMoFEMEntity &dof) { 
     dof.part = part;
     dof.petsc_gloabl_dof_idx = petsc_gloabl_dof_idx; 
-    dof.petsc_local_dof_idx = -1;
   }
 };
 

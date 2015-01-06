@@ -36,8 +36,8 @@ struct NodalForce {
   FieldInterface &mField;
   NodalForce(FieldInterface &m_field): mField(m_field),fe(m_field) {}
 
-  struct MyFE: public VertexElementForcesAndSurcesCore {
-    MyFE(FieldInterface &_m_field): VertexElementForcesAndSurcesCore(_m_field) {}
+  struct MyFE: public VertexElementForcesAndSourcesCore {
+    MyFE(FieldInterface &_m_field): VertexElementForcesAndSourcesCore(_m_field) {}
   };
 
   MyFE fe;
@@ -51,7 +51,7 @@ struct NodalForce {
 
   boost::ptr_vector<MethodsForOp> methodsOp;
 
-  struct OpNodalForce: public VertexElementForcesAndSurcesCore::UserDataOperator {
+  struct OpNodalForce: public VertexElementForcesAndSourcesCore::UserDataOperator {
 
     Vec &F;
     bool useSnesF;
@@ -60,7 +60,7 @@ struct NodalForce {
 
     OpNodalForce(const string field_name,Vec &_F,bCForce &data,
       boost::ptr_vector<MethodsForOp> &methods_op,bool use_snes_f = false):
-      VertexElementForcesAndSurcesCore::UserDataOperator(field_name),
+      VertexElementForcesAndSourcesCore::UserDataOperator(field_name),
       F(_F),useSnesF(use_snes_f),dAta(data),methodsOp(methods_op) {}
 
     ublas::vector<FieldData> Nf;
@@ -87,11 +87,11 @@ struct NodalForce {
       Nf.resize(3);
       for(int rr = 0;rr<rank;rr++) {
 	if(rr == 0) {
-	  Nf[0] = dAta.data.data.value3;
+	  Nf[0] = dAta.data.data.value3*dAta.data.data.value1;
 	} else if(rr == 1) {
-	  Nf[1] = dAta.data.data.value4;
+	  Nf[1] = dAta.data.data.value4*dAta.data.data.value1;
 	} else if(rr == 2) {
-	  Nf[2] = dAta.data.data.value5;
+	  Nf[2] = dAta.data.data.value5*dAta.data.data.value1;
 	} else {
 	  SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	}

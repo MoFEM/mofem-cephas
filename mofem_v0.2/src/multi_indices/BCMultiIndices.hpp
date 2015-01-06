@@ -58,7 +58,7 @@ enum CubitBC {
   MAT_ELASTICSET = 1<<13,	///< block name is "MAT_ELASTIC"
   MAT_INTERFSET = 1 <<14,
   MAT_THERMALSET = 1<<15,	///< block name is "MAT_THERMAL"
-  BLOCK_BODYFORCESSET = 1<<16,	///< block name is "BODY_FORCES"
+  BODYFORCESSET = 1<<16,	///< block name is "BODY_FORCES"
   MAT_MOISTURESET = 1<<17, ///< block name is "MAT_MOISTURE"
   LASTCUBITSET
 };
@@ -139,7 +139,7 @@ struct Mat_Elastic: public GenericAttributeData {
         double Young; 			// Young's modulus
         double Poisson; 		// Poisson's ratio
         double ThermalExpansion;	// Thermal expansion
-        double User1; // User attribute 2
+        double User1; // User attribute 2 // For some models is reserved for density
         double User2; // User attribute 3
         double User3; // User attribute 4
         double User4; // User attribute 5
@@ -297,7 +297,7 @@ struct Block_BodyForces: public GenericAttributeData {
         
   const CubitBC_BitSet type;
   const unsigned int min_number_of_atributes;
-  Block_BodyForces(): type(BLOCK_BODYFORCESSET),min_number_of_atributes(4) {};
+  Block_BodyForces(): type(BODYFORCESSET),min_number_of_atributes(4) {};
         
   virtual PetscErrorCode fill_data(const vector<double>& attributes) {
     PetscFunctionBegin;

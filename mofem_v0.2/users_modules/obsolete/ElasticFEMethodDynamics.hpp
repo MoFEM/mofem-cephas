@@ -49,7 +49,7 @@ namespace ObosleteUsersModules {
  **/
 struct DynamicElasticFEMethod: public ElasticFEMethod {
 
-    PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh fe_post_proc_method;
+    PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh fePostProcMethod;
 
     double rho;
     const int debug;
@@ -59,7 +59,7 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
 
     DynamicElasticFEMethod(FieldInterface& _mField,Mat &_Aij,Vec _D,Vec& _F,double _lambda,double _mu,double _rho): 
       ElasticFEMethod(_mField,_Aij,_D,_F,_lambda,_mu),
-      fe_post_proc_method(_mField,"DISPLACEMENT",_lambda,_mu),rho(_rho),debug(1){
+      fePostProcMethod(_mField,"DISPLACEMENT",_lambda,_mu),rho(_rho),debug(1){
 
       PetscInt ghosts[1] = { 0 };
       if(pcomm->rank() == 0) {
@@ -166,7 +166,7 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
     }
 
     ublas::vector<ublas::matrix<FieldData> > Mass;
-    PetscErrorCode MassLhs() {
+    PetscErrorCode MassLhs(double rho) {
       PetscFunctionBegin;
       Mass.resize(row_mat);
       int g_dim = g_NTET.size()/4;
@@ -187,7 +187,7 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
     }
 
     ublas::matrix<FieldData> VV;
-    PetscErrorCode VVLhs() {
+    PetscErrorCode VVLhs(double rho) {
       PetscFunctionBegin;
       int g_dim = g_NTET.size()/4;
       for(int gg = 0;gg<g_dim;gg++) {
@@ -204,7 +204,7 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
     }
 
     ublas::vector<ublas::matrix<FieldData> > VU;
-    PetscErrorCode VULhs() {
+    PetscErrorCode VULhs(double rho) {
       PetscFunctionBegin;
       VU.resize(col_mat);
       int g_dim = g_NTET.size()/4;
@@ -232,18 +232,6 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
       ierr = ElasticFEMethod::preProcess(); CHKERRQ(ierr);
 
       if(feName=="STIFFNESS") {
-	// See FEAP - - A Finite Element Analysis Program
-	D_lambda = ublas::zero_matrix<FieldData>(6,6);
-	for(int rr = 0;rr<3;rr++) {
-	  for(int cc = 0;cc<3;cc++) {
-	    D_lambda(rr,cc) = 1;
-	  }
-	}
-	D_mu = ublas::zero_matrix<FieldData>(6,6);
-	for(int rr = 0;rr<6;rr++) {
-	  D_mu(rr,rr) = rr<3 ? 2 : 1;
-	}
-	D = lambda*D_lambda + mu*D_mu;
 	
 	switch (ts_ctx) {
 	  case CTX_TSTSMONITORSET: {
@@ -273,13 +261,21 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
 		PetscPrintf(PETSC_COMM_WORLD,"-> time %6.4e\n",ftime);
 	      }
 	    }*/
-	    if(steps%10==0) { 
-	      rval = fe_post_proc_method.moab_post_proc.delete_mesh(); CHKERR_PETSC(rval);
-	      ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","STIFFNESS",fe_post_proc_method);  CHKERRQ(ierr);
+	    //Hassan: specify how often (per step) to print output files
+	    PetscBool flg = PETSC_TRUE;
+	    PetscInt prt;
+	    ierr = PetscOptionsGetInt(PETSC_NULL,"-my_output_prt",&prt,&flg); CHKERRQ(ierr);
+	    if(flg!=PETSC_TRUE) {
+              prt = 10;
+	    }
+	    if(steps%prt==0) {
+	      rval = fePostProcMethod.moab_post_proc.delete_mesh(); CHKERR_PETSC(rval);
+	      ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","STIFFNESS",fePostProcMethod);  CHKERRQ(ierr);
 	      if(pcomm->rank()==0) {
 		ostringstream sss;
-		sss << (int)(ftime*1e3) << "_out.vtk";
-		rval = fe_post_proc_method.moab_post_proc.write_file(sss.str().c_str(),"VTK",""); CHKERR_PETSC(rval);
+		//sss << (int)(ftime*1e3) << "_out.vtk";
+		sss << steps << "_out.vtk";
+		rval = fePostProcMethod.moab_post_proc.write_file(sss.str().c_str(),"VTK",""); CHKERR_PETSC(rval);
 	      }
 	    }
 	    ierr = VecZeroEntries(GhostU); CHKERRQ(ierr);
@@ -405,6 +401,25 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
 	VecSetOption(ts_F, VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); 
       }
 
+      double _lambda = lambda,_mu = mu,_rho = rho;
+      if((feName=="STIFFNESS")||(feName=="MASS")) {
+	ierr = GetMatParameters(&_lambda,&_mu,&_rho); CHKERRQ(ierr);
+	_rho = (_rho > 0) ? _rho : rho;
+	// See FEAP - - A Finite Element Analysis Program
+	D_lambda = ublas::zero_matrix<FieldData>(6,6);
+	for(int rr = 0;rr<3;rr++) {
+	  for(int cc = 0;cc<3;cc++) {
+	    D_lambda(rr,cc) = 1;
+	  }
+	}
+	D_mu = ublas::zero_matrix<FieldData>(6,6);
+	for(int rr = 0;rr<6;rr++) {
+	  D_mu(rr,rr) = rr<3 ? 2 : 1;
+	}
+	D = _lambda*D_lambda + _mu*D_mu;
+      }
+
+
       if(feName=="STIFFNESS") {
 	ierr = GetMatrices(); CHKERRQ(ierr);
 	switch (ts_ctx) {
@@ -465,7 +480,7 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
 	}
 	ierr = GetMatricesRows(); CHKERRQ(ierr);
 	ierr = GetMatricesVelocities(); CHKERRQ(ierr);
-	ierr = MassLhs(); CHKERRQ(ierr);
+	ierr = MassLhs(_rho); CHKERRQ(ierr);
 	switch (ts_ctx) {
 	  case CTX_TSSETRHSFUNCTION: {
 	    } break;
@@ -497,7 +512,7 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
       }
       if(feName=="COPUPLING_VV") {
 	ierr = GetMatricesVelocities(); CHKERRQ(ierr);
-	ierr = VVLhs(); CHKERRQ(ierr);
+	ierr = VVLhs(_rho); CHKERRQ(ierr);
 	switch (ts_ctx) {
 	  case CTX_TSTSMONITORSET: {
 	    Vec u_local;
@@ -549,7 +564,7 @@ struct DynamicElasticFEMethod: public ElasticFEMethod {
       if(feName=="COPUPLING_VU") {
 	ierr = GetMatricesCols(); CHKERRQ(ierr);
 	ierr = GetMatricesVelocities(); CHKERRQ(ierr);
-	ierr = VULhs(); CHKERRQ(ierr);
+	ierr = VULhs(_rho); CHKERRQ(ierr);
 	switch (ts_ctx) {
 	  case CTX_TSSETRHSFUNCTION: {
 	    } break;
