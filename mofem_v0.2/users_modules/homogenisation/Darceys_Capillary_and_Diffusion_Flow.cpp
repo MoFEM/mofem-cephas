@@ -184,8 +184,8 @@ int main(int argc, char *argv[]) {
   ierr = mField.get_Cubit_msId_entities_by_dimension(2,BLOCKSET,3,TetsFibre,true); CHKERRQ(ierr);
   ierr = PetscPrintf(PETSC_COMM_WORLD,"number of tets in MAT_MOISTURE_MATRIX = %d\n",TetsMatix.size()); CHKERRQ(ierr);
   ierr = PetscPrintf(PETSC_COMM_WORLD,"number of tets in MAT_MOISTURE_FIBRE = %d\n",TetsFibre.size()); CHKERRQ(ierr);
-  ierr = mField.add_ents_to_field_by_TETs(TetsMatix,"CONC",2); CHKERRQ(ierr);
-  ierr = mField.add_ents_to_field_by_TETs(TetsFibre,"PRESSURE",2); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_field_by_TETs(TetsMatix,"CONC"); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_field_by_TETs(TetsFibre,"PRESSURE"); CHKERRQ(ierr);
 
   Range BoundFibres, BoundMatrix;
   ierr = mField.get_Cubit_msId_entities_by_dimension(101,SIDESET,2,BoundFibres,true); CHKERRQ(ierr);

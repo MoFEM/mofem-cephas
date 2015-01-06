@@ -164,9 +164,9 @@ int main(int argc, char *argv[]) {
   //meshset consisting all entities in mesh
   EntityHandle root_set = moab.get_root_set();
   //add entities to field
-  ierr = mField.add_ents_to_field_by_TETs(root_set,"Field_Temp",2); CHKERRQ(ierr);
-  ierr = mField.add_ents_to_field_by_TETs(root_set,"Field_Conc",2); CHKERRQ(ierr);
-  ierr = mField.add_ents_to_field_by_TETs(root_set,"Field_Disp",2); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_field_by_TETs(root_set,"Field_Temp"); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_field_by_TETs(root_set,"Field_Conc"); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_field_by_TETs(root_set,"Field_Disp"); CHKERRQ(ierr);
 
 
   ThermalElement thermal_elements(mField);
