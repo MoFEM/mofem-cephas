@@ -21,12 +21,12 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef __MOABSNES_HPP__
-#define __MOABSNES_HPP__
+#ifndef __MOABKSP_HPP__
+#define __MOABKSP_HPP__
 
 namespace MoFEM {
 
-struct SnesCtx {
+struct KspCtx {
 
   ErrorCode rval;
   PetscErrorCode ierr;
@@ -47,13 +47,13 @@ struct SnesCtx {
   basic_method_to_do preProcess_Rhs;
   basic_method_to_do postProcess_Rhs;
 
-  PetscLogEvent USER_EVENT_SnesRhs;
-  PetscLogEvent USER_EVENT_SnesMat;
+  PetscLogEvent USER_EVENT_KspRhs;
+  PetscLogEvent USER_EVENT_KspMat;
 
-  SnesCtx(FieldInterface &_mField,const string &_problem_name): 
+  KspCtx(FieldInterface &_mField,const string &_problem_name): 
     mField(_mField),moab(_mField.get_moab()),problemName(_problem_name) {
-    PetscLogEventRegister("LoopSNESRhs",0,&USER_EVENT_SnesRhs);
-    PetscLogEventRegister("LoopSNESMat",0,&USER_EVENT_SnesMat);
+    PetscLogEventRegister("LoopKSPRhs",0,&USER_EVENT_KspRhs);
+    PetscLogEventRegister("LoopKSPMat",0,&USER_EVENT_KspMat);
   }
 
   const FieldInterface& get_mField() const { return mField; }
@@ -66,16 +66,14 @@ struct SnesCtx {
   basic_method_to_do& get_preProcess_to_do_Mat() { return preProcess_Mat; }
   basic_method_to_do& get_postProcess_to_do_Mat() { return postProcess_Mat; }
 
-  friend PetscErrorCode SnesRhs(SNES snes,Vec x,Vec f,void *ctx);
-  friend PetscErrorCode SnesFunc(SNES snes,Vec x,Vec f,SnesCtx *);
-  friend PetscErrorCode SnesMat(SNES snes,Vec x,Mat A,Mat B,void *ctx);
+  friend PetscErrorCode KspRhs(KSP ksp,Vec x,Vec f,void *ctx);
+  friend PetscErrorCode KspMat(KSP ksp,Vec x,Mat A,Mat B,void *ctx);
 
 };
 
-PetscErrorCode SnesRhs(SNES snes,Vec x,Vec f,void *ctx);
-PetscErrorCode SnesFunc(SNES snes,Vec x,Vec f,SnesCtx *);
-PetscErrorCode SnesMat(SNES snes,Vec x,Mat A,Mat B,void *ctx);
+PetscErrorCode KspRhs(KSP ksp,Vec f,void *ctx);
+PetscErrorCode KspMat(KSP ksp,Mat A,Mat B,void *ctx);
 
 }
 
-#endif // __MOABSNES_HPP__
+#endif // __MOABKSP_HPP__

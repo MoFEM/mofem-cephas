@@ -75,6 +75,21 @@ PetscErrorCode DMoFEMLoopFiniteElements(const char fe_name[],MoFEM::FEMethod *me
   */
 PetscErrorCode DMoFEMLoopDofs(const char field_name[],MoFEM::EntMethod *method,DM dm);
 
+/**
+  * \brief set KSP right hand side evaluation function
+  * \ingroup dm
+  */
+PetscErrorCode DMMoFEMKSPSetComputeRHS(const char fe_name[],MoFEM::FEMethod *method,MoFEM::FEMethod *pre_only,MoFEM::FEMethod *post_only);
+
+/**
+  * \brief set KSP matrix evaluation function
+  * \ingroup dm
+  */
+PetscErrorCode DMMoFEMKSPSetComputeOperators(const char fe_name[],MoFEM::FEMethod *method,MoFEM::FEMethod *pre_only,MoFEM::FEMethod *post_only);
+
+
+
+
 /** 
   * \brief Create dm data structure with MoFEM data structure
   * \ingroup dm

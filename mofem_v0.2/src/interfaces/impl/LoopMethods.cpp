@@ -35,6 +35,17 @@
 
 namespace MoFEM {
 
+//KSP
+PetscErrorCode KspMethod::set_ksp_ctx(const KSPContext ctx_) {
+  PetscFunctionBegin;
+  ksp_ctx = ctx_;
+  PetscFunctionReturn(0);
+}
+PetscErrorCode KspMethod::set_ksp(KSP ksp_) {
+  PetscFunctionBegin;
+  ksp = ksp_;
+  PetscFunctionReturn(0);
+}
 //SNES
 PetscErrorCode SnesMethod::set_snes_ctx(const SNESContext ctx_) {
   PetscFunctionBegin;
