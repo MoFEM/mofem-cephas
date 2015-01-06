@@ -38,10 +38,10 @@ static const MOFEMuuid IDD_MOFEMEntMethod = MOFEMuuid( BitIntefaceId(ENT_METHOD)
  */
 struct KspMethod {
   
-  enum KSPContext { CTX_SETFUNCTION, CTX_OPERATORS, CTX_SNESNONE };
+  enum KSPContext { CTX_SETFUNCTION, CTX_OPERATORS, CTX_KSPNONE };
   
   KSPContext ksp_ctx;
-  KspMethod(): ksp_ctx(CTX_SNESNONE) {}
+  KspMethod(): ksp_ctx(CTX_KSPNONE) {}
   virtual ~KspMethod() {};
 
   PetscErrorCode set_ksp_ctx(const KSPContext ctx_);

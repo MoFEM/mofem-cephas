@@ -44,7 +44,7 @@ PetscErrorCode KspRhs(KSP ksp,Vec f,void *ctx) {
     (*bit)->ksp_f = f;
     ierr = (*bit)->set_ksp_ctx(KspMethod::CTX_SETFUNCTION);  CHKERRQ(ierr);
     ierr = ksp_ctx->mField.problem_basic_method_preProcess(ksp_ctx->problemName,*(*(bit)));  CHKERRQ(ierr);
-    ierr = (*bit)->set_ksp_ctx(KspMethod::CTX_SNESNONE);  CHKERRQ(ierr);
+    ierr = (*bit)->set_ksp_ctx(KspMethod::CTX_KSPNONE);  CHKERRQ(ierr);
   }
   KspCtx::loops_to_do_type::iterator lit = ksp_ctx->loops_to_do_Rhs.begin();
   for(;lit!=ksp_ctx->loops_to_do_Rhs.end();lit++) {
@@ -52,7 +52,7 @@ PetscErrorCode KspRhs(KSP ksp,Vec f,void *ctx) {
     ierr = lit->second->set_ksp(ksp); CHKERRQ(ierr);
     lit->second->ksp_f = f;
     ierr = ksp_ctx->mField.loop_finite_elements(ksp_ctx->problemName,lit->first,*(lit->second));  CHKERRQ(ierr);
-    ierr = lit->second->set_ksp_ctx(KspMethod::CTX_SNESNONE);  CHKERRQ(ierr);
+    ierr = lit->second->set_ksp_ctx(KspMethod::CTX_KSPNONE);  CHKERRQ(ierr);
   }
   bit = ksp_ctx->postProcess_Rhs.begin();
   for(;bit!=ksp_ctx->postProcess_Rhs.end();bit++) {
@@ -60,7 +60,7 @@ PetscErrorCode KspRhs(KSP ksp,Vec f,void *ctx) {
     (*bit)->ksp_f = f;
     ierr = (*bit)->set_ksp_ctx(KspMethod::CTX_SETFUNCTION);  CHKERRQ(ierr);
     ierr = ksp_ctx->mField.problem_basic_method_postProcess(ksp_ctx->problemName,*(*(bit)));  CHKERRQ(ierr);
-    ierr = (*bit)->set_ksp_ctx(KspMethod::CTX_SNESNONE);  CHKERRQ(ierr);
+    ierr = (*bit)->set_ksp_ctx(KspMethod::CTX_KSPNONE);  CHKERRQ(ierr);
   }
   PetscLogEventEnd(ksp_ctx->USER_EVENT_KspRhs,0,0,0,0);
   PetscFunctionReturn(0);
@@ -77,7 +77,7 @@ PetscErrorCode KspMat(KSP ksp,Mat A,Mat B,void *ctx) {
     (*bit)->ksp_B = B;
     ierr = (*bit)->set_ksp_ctx(KspMethod::CTX_OPERATORS); CHKERRQ(ierr);
     ierr = ksp_ctx->mField.problem_basic_method_preProcess(ksp_ctx->problemName,*(*(bit)));  CHKERRQ(ierr);
-    ierr = (*bit)->set_ksp_ctx(KspMethod::CTX_SNESNONE);  CHKERRQ(ierr);
+    ierr = (*bit)->set_ksp_ctx(KspMethod::CTX_KSPNONE);  CHKERRQ(ierr);
   }
   KspCtx::loops_to_do_type::iterator lit = ksp_ctx->loops_to_do_Mat.begin();
   for(;lit!=ksp_ctx->loops_to_do_Mat.end();lit++) {
@@ -86,7 +86,7 @@ PetscErrorCode KspMat(KSP ksp,Mat A,Mat B,void *ctx) {
     lit->second->ksp_A = A;
     lit->second->ksp_B = B;
     ierr = ksp_ctx->mField.loop_finite_elements(ksp_ctx->problemName,lit->first,*(lit->second));  CHKERRQ(ierr);
-    ierr = lit->second->set_ksp_ctx(KspMethod::CTX_SNESNONE);
+    ierr = lit->second->set_ksp_ctx(KspMethod::CTX_KSPNONE);
   }
   bit = ksp_ctx->postProcess_Mat.begin();
   for(;bit!=ksp_ctx->postProcess_Mat.end();bit++) {
@@ -95,7 +95,7 @@ PetscErrorCode KspMat(KSP ksp,Mat A,Mat B,void *ctx) {
     (*bit)->ksp_B = B;
     ierr = (*bit)->set_ksp_ctx(KspMethod::CTX_OPERATORS); CHKERRQ(ierr);
     ierr = ksp_ctx->mField.problem_basic_method_postProcess(ksp_ctx->problemName,*(*(bit)));  CHKERRQ(ierr);
-    ierr = (*bit)->set_ksp_ctx(KspMethod::CTX_SNESNONE);  CHKERRQ(ierr);
+    ierr = (*bit)->set_ksp_ctx(KspMethod::CTX_KSPNONE);  CHKERRQ(ierr);
   }
   PetscLogEventEnd(ksp_ctx->USER_EVENT_KspMat,0,0,0,0);
   PetscFunctionReturn(0);

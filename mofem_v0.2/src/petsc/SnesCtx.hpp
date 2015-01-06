@@ -67,13 +67,11 @@ struct SnesCtx {
   basic_method_to_do& get_postProcess_to_do_Mat() { return postProcess_Mat; }
 
   friend PetscErrorCode SnesRhs(SNES snes,Vec x,Vec f,void *ctx);
-  friend PetscErrorCode SnesFunc(SNES snes,Vec x,Vec f,SnesCtx *);
   friend PetscErrorCode SnesMat(SNES snes,Vec x,Mat A,Mat B,void *ctx);
 
 };
 
 PetscErrorCode SnesRhs(SNES snes,Vec x,Vec f,void *ctx);
-PetscErrorCode SnesFunc(SNES snes,Vec x,Vec f,SnesCtx *);
 PetscErrorCode SnesMat(SNES snes,Vec x,Mat A,Mat B,void *ctx);
 
 }
