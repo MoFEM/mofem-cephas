@@ -24,8 +24,7 @@ using namespace boost::numeric;
 
 namespace MoFEM {
 
-PetscErrorCode ThermalElement::addThermalElements(
-  const string problem_name,const string field_name,const string mesh_nodals_positions) {
+PetscErrorCode ThermalElement::addThermalElements(const string field_name,const string mesh_nodals_positions) {
   PetscFunctionBegin;
 
   PetscErrorCode ierr;
@@ -38,7 +37,6 @@ PetscErrorCode ThermalElement::addThermalElements(
   if(mField.check_field(mesh_nodals_positions)) {
     ierr = mField.modify_finite_element_add_field_data("THERMAL_FE",mesh_nodals_positions); CHKERRQ(ierr);
   }
-  ierr = mField.modify_problem_add_finite_element(problem_name,"THERMAL_FE"); CHKERRQ(ierr);
 
   //takes skin of block of entities
   //Skinner skin(&mField.get_moab());
@@ -57,8 +55,7 @@ PetscErrorCode ThermalElement::addThermalElements(
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode ThermalElement::addThermalFluxElement(
-  const string problem_name,const string field_name,const string mesh_nodals_positions) {
+PetscErrorCode ThermalElement::addThermalFluxElement(const string field_name,const string mesh_nodals_positions) {
   PetscFunctionBegin;
 
   PetscErrorCode ierr;
@@ -71,7 +68,6 @@ PetscErrorCode ThermalElement::addThermalFluxElement(
   if(mField.check_field(mesh_nodals_positions)) {
     ierr = mField.modify_finite_element_add_field_data("THERMAL_FLUX_FE",mesh_nodals_positions); CHKERRQ(ierr);
   }
-  ierr = mField.modify_problem_add_finite_element(problem_name,"THERMAL_FLUX_FE"); CHKERRQ(ierr);
 
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SIDESET|HEATFLUXSET,it)) {
     ierr = it->get_cubit_bc_data_structure(setOfFluxes[it->get_msId()].dAta); CHKERRQ(ierr);
@@ -102,10 +98,7 @@ PetscErrorCode ThermalElement::addThermalFluxElement(
   PetscFunctionReturn(0);
 }
 
-
-
-PetscErrorCode ThermalElement::addThermalConvectionElement(
-  const string problem_name,const string field_name,const string mesh_nodals_positions) {
+PetscErrorCode ThermalElement::addThermalConvectionElement(const string field_name,const string mesh_nodals_positions) {
   PetscFunctionBegin;
 
   PetscErrorCode ierr;
@@ -118,7 +111,6 @@ PetscErrorCode ThermalElement::addThermalConvectionElement(
   if(mField.check_field(mesh_nodals_positions)) {
     ierr = mField.modify_finite_element_add_field_data("THERMAL_CONVECTION_FE",mesh_nodals_positions); CHKERRQ(ierr);
   }
-  ierr = mField.modify_problem_add_finite_element(problem_name,"THERMAL_CONVECTION_FE"); CHKERRQ(ierr);
 
   //this is alternative method for setting boundary conditions, to bypass bu in cubit file reader.
   //not elegant, but good enough
@@ -142,9 +134,7 @@ PetscErrorCode ThermalElement::addThermalConvectionElement(
   PetscFunctionReturn(0);
 }
 
-
-PetscErrorCode ThermalElement::addThermalRadiationElement(
-  const string problem_name,const string field_name,const string mesh_nodals_positions) {
+PetscErrorCode ThermalElement::addThermalRadiationElement(const string field_name,const string mesh_nodals_positions) {
   PetscFunctionBegin;
   
   PetscErrorCode ierr;
@@ -157,7 +147,6 @@ PetscErrorCode ThermalElement::addThermalRadiationElement(
   if(mField.check_field(mesh_nodals_positions)) {
     ierr = mField.modify_finite_element_add_field_data("THERMAL_RADIATION_FE",mesh_nodals_positions); CHKERRQ(ierr);
   }
-  ierr = mField.modify_problem_add_finite_element(problem_name,"THERMAL_RADIATION_FE"); CHKERRQ(ierr);
   
   //this is alternative method for setting boundary conditions, to bypass bu in cubit file reader.
   //not elegant, but good enough
@@ -179,10 +168,8 @@ PetscErrorCode ThermalElement::addThermalRadiationElement(
     }
   }
   
-  
   PetscFunctionReturn(0);
 }
-
 
 PetscErrorCode ThermalElement::setThermalFiniteElementRhsOperators(string field_name,Vec &F) {
   PetscFunctionBegin;

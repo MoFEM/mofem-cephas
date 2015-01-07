@@ -1090,18 +1090,15 @@ struct ThermalElement {
 
   };
 
-
   /** \brief add thermal element on tets
     * \infroup mofem_thermal_elem
     *
     * It get data from block set and define element in moab
     *w
-    * \param problem name
     * \param field name
     * \param name of mesh nodal positions (if not defined nodal coordinates are used)
     */
-  PetscErrorCode addThermalElements(
-    const string problem_name,const string field_name,const string mesh_nodals_positions = "MESH_NODE_POSITIONS");
+  PetscErrorCode addThermalElements(const string field_name,const string mesh_nodals_positions = "MESH_NODE_POSITIONS");
 
   /** \brief add heat flux element
     * \infroup mofem_thermal_elem
@@ -1109,12 +1106,11 @@ struct ThermalElement {
     * It get data from heat flux set and define elemenet in moab. Alternatively
     * uses block set with name HEAT_FLUX.
     *
-    * \param problem name
     * \param field name
     * \param name of mesh nodal positions (if not defined nodal coordinates are used)
     */
-  PetscErrorCode addThermalFluxElement(
-    const string problem_name,const string field_name,const string mesh_nodals_positions = "MESH_NODE_POSITIONS");
+  PetscErrorCode addThermalFluxElement(const string field_name,const string mesh_nodals_positions = "MESH_NODE_POSITIONS");
+
 
   /** \brief add convection element
   * \infroup mofem_thermal_elem
@@ -1122,12 +1118,10 @@ struct ThermalElement {
   * It get data from convection set and define elemenet in moab. Alternatively
   * uses block set with name CONVECTION.
   *
-  * \param problem name
   * \param field name
   * \param name of mesh nodal positions (if not defined nodal coordinates are used)
   */
-  PetscErrorCode addThermalConvectionElement(
-    const string problem_name,const string field_name,const string mesh_nodals_positions = "MESH_NODE_POSITIONS");
+  PetscErrorCode addThermalConvectionElement(const string field_name,const string mesh_nodals_positions = "MESH_NODE_POSITIONS");
 
   /** \brief add Non-linear Radiation element
   * \infroup mofem_thermal_elem
@@ -1135,12 +1129,10 @@ struct ThermalElement {
   * It get data from Radiation set and define elemenet in moab. Alternatively
   * uses block set with name RADIATION.
   *
-  * \param problem name
   * \param field name
   * \param name of mesh nodal positions (if not defined nodal coordinates are used)
   */
-  PetscErrorCode addThermalRadiationElement(
-    const string problem_name,const string field_name,const string mesh_nodals_positions = "MESH_NODE_POSITIONS");
+  PetscErrorCode addThermalRadiationElement(const string field_name,const string mesh_nodals_positions = "MESH_NODE_POSITIONS");
 
   /** \brief this function is used in case of stationary problem to set elements for rhs
     * \infroup mofem_thermal_elem
