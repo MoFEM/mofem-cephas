@@ -24,6 +24,7 @@
 #include <ThermalElement.hpp>
 
 #include <Projection10NodeCoordsOnField.hpp>
+#include <PotsProcOnRefMesh.hpp>
 
 using namespace MoFEM;
 
@@ -193,6 +194,7 @@ int main(int argc, char *argv[]) {
   SeriesRecorder *recorder_ptr;
   ierr = m_field.query_interface(recorder_ptr); CHKERRQ(ierr);
   ierr = recorder_ptr->add_series_recorder("THEMP_SERIES"); CHKERRQ(ierr);
+  //start to record 
   ierr = recorder_ptr->initialize_series_recorder("THEMP_SERIES"); CHKERRQ(ierr);
 
   double ftime = 1;
@@ -203,6 +205,7 @@ int main(int argc, char *argv[]) {
   ierr = TSSolve(ts,T); CHKERRQ(ierr);
   ierr = TSGetTime(ts,&ftime); CHKERRQ(ierr);
 
+  //end recoder
   ierr = recorder_ptr->finalize_series_recorder("THEMP_SERIES"); CHKERRQ(ierr);
 
   PetscInt steps,snesfails,rejects,nonlinits,linits;
@@ -216,33 +219,35 @@ int main(int argc, char *argv[]) {
     "steps %D (%D rejected, %D SNES fails), ftime %g, nonlinits %D, linits %D\n",
     steps,rejects,snesfails,ftime,nonlinits,linits);
   
-  //m_field.list_dofs_by_field_name("TEMP");
-  if(pcomm->rank()==0) {
+  // save solution, if boundary conditions are defined you can use that file in mechanical problem
+  // to calulate thermal stresses
+  PetscBool is_partitioned = PETSC_FALSE;
+  ierr = PetscOptionsGetBool(PETSC_NULL,"-dm_is_partitioned",&is_partitioned,PETSC_NULL); CHKERRQ(ierr);
+  if(is_partitioned) {
     rval = moab.write_file("solution.h5m"); CHKERR_PETSC(rval);
+  } else {
+    if(pcomm->rank()==0) {
+      rval = moab.write_file("solution.h5m"); CHKERR_PETSC(rval);
+    }
   }
+
+  //postproces results (use mbconvert to make VTK from output files)
+  PostPocOnRefinedMesh post_proc(m_field);
+  ierr = post_proc.generateRefereneElemenMesh(); CHKERRQ(ierr);
+  ierr = post_proc.addFieldValuesPostProc("TEMP"); CHKERRQ(ierr);
+  ierr = post_proc.addFieldValuesPostProc("TEMP_RATE"); CHKERRQ(ierr);
+  ierr = post_proc.addFieldValuesGradientPostProc("TEMP"); CHKERRQ(ierr);
+  ierr = post_proc.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
 
   for(_IT_SERIES_STEPS_BY_NAME_FOR_LOOP_(recorder_ptr,"THEMP_SERIES",sit)) {
 
     PetscPrintf(PETSC_COMM_WORLD,"Process step %d\n",sit->get_step_number());
-
     ierr = recorder_ptr->load_series_data("THEMP_SERIES",sit->get_step_number()); CHKERRQ(ierr);
     ierr = m_field.set_local_VecCreateGhost(dm_name,ROW,T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-
-    ProjectionFieldOn10NodeTet ent_method_on_10nodeTet(m_field,"TEMP",true,false,"TEMP");
-    ent_method_on_10nodeTet.set_nodes = true;
-    ierr = m_field.loop_dofs("TEMP",ent_method_on_10nodeTet); CHKERRQ(ierr);
-    ent_method_on_10nodeTet.set_nodes = false;
-    ierr = m_field.loop_dofs("TEMP",ent_method_on_10nodeTet); CHKERRQ(ierr);
-
-    if(pcomm->rank()==0) {
-      EntityHandle out_meshset;
-      rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
-      ierr = m_field.problem_get_FE(dm_name,"THERMAL_FE",out_meshset); CHKERRQ(ierr);
-      ostringstream ss;
-      ss << "out_" << sit->step_number << ".vtk";
-      rval = moab.write_file(ss.str().c_str(),"VTK","",&out_meshset,1); CHKERR_PETSC(rval);
-      rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
-    }
+    ierr = m_field.loop_finite_elements(dm_name,"THERMAL_FE",post_proc); CHKERRQ(ierr);
+    ostringstream o1;
+    o1 << "out_thermal_" << sit->step_number << ".h5m";
+    rval = post_proc.postProcMesh.write_file(o1.str().c_str(),"MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
 
   }
 

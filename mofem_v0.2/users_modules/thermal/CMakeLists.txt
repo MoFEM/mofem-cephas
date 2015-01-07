@@ -17,7 +17,7 @@
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
 file(COPY
-    ${CMAKE_CURRENT_SOURCE_DIR}/README
+    ${UM_SOURCE_DIR}/thermal/README
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
 
 # For convinience source files from MoFEM project are used. If user is
