@@ -24,7 +24,6 @@
 #include <ThermalElement.hpp>
 
 #include <Projection10NodeCoordsOnField.hpp>
-#include <PotsProcOnRefMesh.hpp>
 
 using namespace MoFEM;
 
@@ -255,7 +254,9 @@ int main(int argc, char *argv[]) {
   ierr = VecDestroy(&T); CHKERRQ(ierr);
   ierr = VecDestroy(&F); CHKERRQ(ierr);
 
-  ierr = TSDestroy(&ts);CHKERRQ(ierr);
+  ierr = TSDestroy(&ts); CHKERRQ(ierr);
+  ierr = DMDestroy(&dm); CHKERRQ(ierr);
+
   ierr = PetscFinalize(); CHKERRQ(ierr);
 
   return 0;
