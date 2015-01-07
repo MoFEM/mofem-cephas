@@ -1028,13 +1028,12 @@ struct ThermalElement {
   struct UpdateAndControl: public FEMethod {
 
     FieldInterface& mField;
-    TS tS;
     const string tempName;
     const string rateName;
-    int jacobianLag;
-    UpdateAndControl(FieldInterface& _mField,TS _ts,
-             const string temp_name,const string rate_name): mField(_mField),tS(_ts),
-      tempName(temp_name),rateName(rate_name),jacobianLag(-1) {}
+
+    UpdateAndControl(FieldInterface& _mField,
+      const string temp_name,const string rate_name):
+      mField(_mField),tempName(temp_name),rateName(rate_name) {}
 
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
@@ -1046,10 +1045,6 @@ struct ThermalElement {
 
     PetscErrorCode postProcess() {
       PetscFunctionBegin;
-      PetscErrorCode ierr;
-      SNES snes;
-      ierr = TSGetSNES(tS,&snes); CHKERRQ(ierr);
-      ierr = SNESSetLagJacobian(snes,jacobianLag); CHKERRQ(ierr);
       PetscFunctionReturn(0);
     }
 

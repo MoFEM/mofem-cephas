@@ -303,7 +303,6 @@ int main(int argc, char *argv[]) {
   ierr = KSPSetFromOptions(solver); CHKERRQ(ierr);
   ierr = KSPSetUp(solver); CHKERRQ(ierr);
 
-  SeriesRecorder& recorder = core;
   {
     Tag th;
     int def_marker = 0;
@@ -345,12 +344,14 @@ int main(int argc, char *argv[]) {
     ierr = VecDuplicate(F,&F_thermal); CHKERRQ(ierr);
     ierr = thermal_stress_elem.setThermalStressRhsOperators("DISPLACEMENT","TEMP",F_thermal); CHKERRQ(ierr);
 
-    if( recorder.check_series("THEMP_SERIES") ) {
+    SeriesRecorder *recorder_ptr;
+    ierr = m_field.query_interface(recorder_ptr); CHKERRQ(ierr);
+    if( recorder_ptr->check_series("THEMP_SERIES") ) {
 
-      for(_IT_SERIES_STEPS_BY_NAME_FOR_LOOP_(recorder,"THEMP_SERIES",sit)) {
+      for(_IT_SERIES_STEPS_BY_NAME_FOR_LOOP_(recorder_ptr,"THEMP_SERIES",sit)) {
 
 	PetscPrintf(PETSC_COMM_WORLD,"Process step %d\n",sit->get_step_number());
-	ierr = recorder.load_series_data("THEMP_SERIES",sit->get_step_number()); CHKERRQ(ierr);
+	ierr = recorder_ptr->load_series_data("THEMP_SERIES",sit->get_step_number()); CHKERRQ(ierr);
 	ierr = VecZeroEntries(F_thermal); CHKERRQ(ierr);
 	ierr = VecGhostUpdateBegin(F_thermal,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	ierr = VecGhostUpdateEnd(F_thermal,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);

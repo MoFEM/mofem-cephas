@@ -312,7 +312,7 @@ PetscErrorCode DMMoFEMTSSetIFunction(DM dm,const char fe_name[],MoFEM::FEMethod 
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode DMTSSetIJacobian(DM dm,const char fe_name[],MoFEM::FEMethod *method,MoFEM::FEMethod *pre_only,MoFEM::FEMethod *post_only) {
+PetscErrorCode DMMoFEMTSSetIJacobian(DM dm,const char fe_name[],MoFEM::FEMethod *method,MoFEM::FEMethod *pre_only,MoFEM::FEMethod *post_only) {
   PetscErrorCode ierr;
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
@@ -330,21 +330,45 @@ PetscErrorCode DMTSSetIJacobian(DM dm,const char fe_name[],MoFEM::FEMethod *meth
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode DMCreateGlobalVector_MoFEM(DM dm,Vec *globV) {
-  PetscErrorCode ierr;
+PetscErrorCode DMMoFEMGetKspCtx(DM dm,MoFEM::KspCtx **ksp_ctx) {
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;
-  ierr = dm_field->mField_ptr->VecCreateGhost(dm_field->problemName,ROW,globV); CHKERRQ(ierr);
+  *ksp_ctx = dm_field->kspCtx;
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode DMCreateLocalVector_MoFEM(DM dm,Vec *locV) {
+PetscErrorCode DMMoFEMGetSnesCtx(DM dm,MoFEM::SnesCtx **snes_ctx) {
+  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
+  PetscFunctionBegin;
+  DMCtx *dm_field = (DMCtx*)dm->data;
+  *snes_ctx = dm_field->snesCtx;
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode DMMoFEMGetTsCtx(DM dm,MoFEM::TsCtx **ts_ctx) {
+  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
+  PetscFunctionBegin;
+  DMCtx *dm_field = (DMCtx*)dm->data;
+  *ts_ctx = dm_field->tsCtx;
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode DMCreateGlobalVector_MoFEM(DM dm,Vec *g) {
   PetscErrorCode ierr;
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;
-  ierr = dm_field->mField_ptr->VecCreateSeq(dm_field->problemName,ROW,locV); CHKERRQ(ierr);
+  ierr = dm_field->mField_ptr->VecCreateGhost(dm_field->problemName,ROW,g); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode DMCreateLocalVector_MoFEM(DM dm,Vec *l) {
+  PetscErrorCode ierr;
+  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
+  PetscFunctionBegin;
+  DMCtx *dm_field = (DMCtx*)dm->data;
+  ierr = dm_field->mField_ptr->VecCreateSeq(dm_field->problemName,ROW,l); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 

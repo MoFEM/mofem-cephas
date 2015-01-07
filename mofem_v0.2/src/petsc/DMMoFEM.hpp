@@ -21,6 +21,8 @@
 #ifndef __DMMMOFEM_H
 #define __DMMMOFEM_H
 
+#define DM_NO_ELEMENT "DMNONEFE"
+
 /** 
   * \brief Register MoFEM problem
   * \ingroup dm
@@ -109,7 +111,37 @@ PetscErrorCode DMMoFEMTSSetIFunction(DM dm,const char fe_name[],MoFEM::FEMethod 
   * \brief set TS Jacobian evaluation function
   * \ingroup dm
   */
-PetscErrorCode DMTSSetIJacobian(DM dm,const char fe_name[],MoFEM::FEMethod *method,MoFEM::FEMethod *pre_only,MoFEM::FEMethod *post_only);
+PetscErrorCode DMMoFEMTSSetIJacobian(DM dm,const char fe_name[],MoFEM::FEMethod *method,MoFEM::FEMethod *pre_only,MoFEM::FEMethod *post_only);
+
+#ifdef __MOABKSP_HPP__
+
+/**
+  * \brief get MoFEM::KspCtx data structure
+  * \ingroup dm 
+  */
+PetscErrorCode DMMoFEMGetKspCtx(DM dm,MoFEM::KspCtx **ksp_ctx); 
+
+#endif
+
+#ifdef __MOABSNES_HPP__
+
+/**
+  * \brief get MoFEM::SnesCtx data structure
+  * \ingroup dm 
+  */
+PetscErrorCode DMMoFEMGetSnesCtx(DM dm,MoFEM::SnesCtx **snes_ctx); 
+
+#endif 
+
+#ifdef __MOABTS_HPP__
+
+/**
+  * \brief get MoFEM::TsCtx data structure
+  * \ingroup dm 
+  */
+PetscErrorCode DMMoFEMGetTsCtx(DM dm,MoFEM::TsCtx **ts_ctx); 
+
+#endif
 
 /** 
   * \brief Create dm data structure with MoFEM data structure
@@ -130,7 +162,7 @@ PetscErrorCode DMDestroym_MoFEM(DM dm);
  * sets the routine to create a global vector
  * associated with the shell DM
  */
-PetscErrorCode DMCreateGlobalVector_MoFEM(DM dm,Vec *globV);
+PetscErrorCode DMCreateGlobalVector_MoFEM(DM dm,Vec *g);
 
 /** 
  * \brief DMShellSetCreateLocalVector 
@@ -139,7 +171,7 @@ PetscErrorCode DMCreateGlobalVector_MoFEM(DM dm,Vec *globV);
  * sets the routine to create a local vector
  * associated with the shell DM
  */
-PetscErrorCode DMCreateLocalVector_MoFEM(DM dm,Vec *locV);
+PetscErrorCode DMCreateLocalVector_MoFEM(DM dm,Vec *l);
 
 /**
   * DMShellSetCreateMatrix
