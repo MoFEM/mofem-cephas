@@ -152,7 +152,7 @@ int main(int argc, char *argv[]) {
   ierr = recorder2.print_series_steps(); CHKERRQ(ierr);
 
   my_split << "TEST_SERIES1" << endl;
-  for(_IT_SERIES_STEPS_BY_NAME_FOR_LOOP_(recorder2,"TEST_SERIES1",sit)) {
+  for(_IT_SERIES_STEPS_BY_NAME_FOR_LOOP_((&recorder2),"TEST_SERIES1",sit)) {
 
     ierr = recorder2.load_series_data("TEST_SERIES1",sit->get_step_number()); CHKERRQ(ierr);
 
@@ -164,7 +164,7 @@ int main(int argc, char *argv[]) {
   }
 
   my_split << "TEST_SERIES2" << endl;
-  for(_IT_SERIES_STEPS_BY_NAME_FOR_LOOP_(recorder2,"TEST_SERIES2",sit)) {
+  for(_IT_SERIES_STEPS_BY_NAME_FOR_LOOP_((&recorder2),"TEST_SERIES2",sit)) {
 
     ierr = recorder2.load_series_data("TEST_SERIES2",sit->get_step_number()); CHKERRQ(ierr);
 

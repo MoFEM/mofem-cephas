@@ -107,10 +107,13 @@ int main(int argc, char *argv[]) {
   ierr = m_field.set_field_order(root_set,MBVERTEX,"TEMP_RATE",1); CHKERRQ(ierr);
 
   ThermalElement thermal_elements(m_field);
-  ierr = thermal_elements.addThermalElements("TEST_PROBLEM","TEMP"); CHKERRQ(ierr);
-  ierr = thermal_elements.addThermalFluxElement("TEST_PROBLEM","TEMP"); CHKERRQ(ierr);
+  ierr = thermal_elements.addThermalElements("TEMP"); CHKERRQ(ierr);
+  ierr = thermal_elements.addThermalFluxElement("TEMP"); CHKERRQ(ierr);
   //add rate of temerature to data field of finite element
   ierr = m_field.modify_finite_element_add_field_data("THERMAL_FE","TEMP_RATE"); CHKERRQ(ierr);
+
+  ierr = m_field.modify_problem_add_finite_element("TEST_PROBLEM","THERMAL_FE"); CHKERRQ(ierr);
+  ierr = m_field.modify_problem_add_finite_element("TEST_PROBLEM","THERMAL_FLUX_FE"); CHKERRQ(ierr);
 
   /****/
   //build database
@@ -145,7 +148,7 @@ int main(int argc, char *argv[]) {
   ierr = TSSetType(ts,TSBEULER); CHKERRQ(ierr);
 
   TemperatureBCFEMethodPreAndPostProc my_dirichlet_bc(m_field,"TEMP",A,T,F);
-  ThermalElement::UpdateAndControl update_velocities(m_field,ts,"TEMP","TEMP_RATE");
+  ThermalElement::UpdateAndControl update_velocities(m_field,"TEMP","TEMP_RATE");
   ThermalElement::TimeSeriesMonitor monitor(m_field,"THEMP_SERIES","TEMP");
 
   //preprocess
@@ -159,7 +162,6 @@ int main(int argc, char *argv[]) {
   //postprocess
   ts_ctx.get_postProcess_to_do_IFunction().push_back(&my_dirichlet_bc);
   ts_ctx.get_postProcess_to_do_IJacobian().push_back(&my_dirichlet_bc);
-  ts_ctx.get_postProcess_to_do_IJacobian().push_back(&update_velocities);
   ts_ctx.get_postProcess_to_do_Monitor().push_back(&monitor);
 
   ierr = TSSetIFunction(ts,F,f_TSSetIFunction,&ts_ctx); CHKERRQ(ierr);
@@ -171,21 +173,15 @@ int main(int argc, char *argv[]) {
   ierr = TSSetSolution(ts,T); CHKERRQ(ierr);
   ierr = TSSetFromOptions(ts); CHKERRQ(ierr);
 
-  {
-    SeriesRecorder *recorder_ptr;
-    ierr = m_field.query_interface(recorder_ptr); CHKERRQ(ierr);
-    ierr = recorder_ptr->add_series_recorder("THEMP_SERIES"); CHKERRQ(ierr);
-    ierr = recorder_ptr->initialize_series_recorder("THEMP_SERIES"); CHKERRQ(ierr);
-  }
+  SeriesRecorder *recorder_ptr;
+  ierr = m_field.query_interface(recorder_ptr); CHKERRQ(ierr);
+  ierr = recorder_ptr->add_series_recorder("THEMP_SERIES"); CHKERRQ(ierr);
+  ierr = recorder_ptr->initialize_series_recorder("THEMP_SERIES"); CHKERRQ(ierr);
 
   ierr = TSSolve(ts,T); CHKERRQ(ierr);
   ierr = TSGetTime(ts,&ftime); CHKERRQ(ierr);
 
-  {
-    SeriesRecorder *recorder_ptr;
-    ierr = m_field.query_interface(recorder_ptr); CHKERRQ(ierr);
-    ierr = recorder_ptr->finalize_series_recorder("THEMP_SERIES"); CHKERRQ(ierr);
-  }
+  ierr = recorder_ptr->finalize_series_recorder("THEMP_SERIES"); CHKERRQ(ierr);
 
   PetscInt steps,snesfails,rejects,nonlinits,linits;
   ierr = TSGetTimeStepNumber(ts,&steps); CHKERRQ(ierr);
@@ -200,11 +196,9 @@ int main(int argc, char *argv[]) {
   PetscViewer viewer;
   PetscViewerASCIIOpen(PETSC_COMM_WORLD,"forces_and_sources_thermal_elem_unsteady.txt",&viewer);
 
-  SeriesRecorder &recorder = core;
+  for(_IT_SERIES_STEPS_BY_NAME_FOR_LOOP_(recorder_ptr,"THEMP_SERIES",sit)) {
 
-  for(_IT_SERIES_STEPS_BY_NAME_FOR_LOOP_(recorder,"THEMP_SERIES",sit)) {
-
-    ierr = recorder.load_series_data("THEMP_SERIES",sit->get_step_number()); CHKERRQ(ierr);
+    ierr = recorder_ptr->load_series_data("THEMP_SERIES",sit->get_step_number()); CHKERRQ(ierr);
     ierr = m_field.set_local_VecCreateGhost("TEST_PROBLEM",ROW,T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
     ierr = VecChop(T,1e-4); CHKERRQ(ierr);

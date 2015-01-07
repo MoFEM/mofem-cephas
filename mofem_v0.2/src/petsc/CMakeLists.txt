@@ -18,6 +18,7 @@
 
 #multi_indices
 add_library(mofem_petsc
+  impl/KspCtx.cpp
   impl/SnesCtx.cpp
   impl/TsCtx.cpp
   impl/DMMMoFEM.cpp

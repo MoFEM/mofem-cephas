@@ -136,15 +136,15 @@ struct SeriesRecorder: public FieldUnknownInterface {
     * \parma IT iterator variable
     *
     * Example: \code
-      for(_IT_SERIES_STEPS_BY_NAME_FOR_LOOP_(mField,"TEST_SERIES1",sit)) {
+      for(_IT_SERIES_STEPS_BY_NAME_FOR_LOOP_(recorder_ptr,"TEST_SERIES1",sit)) {
 
 	ierr = mField.load_series_data("TEST_SERIES1",sit->get_step_number()); CHKERRQ(ierr);
     * } \endcode
     *
     */
-  #define _IT_SERIES_STEPS_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT) \
-    SeriesStep_multiIndex::index<SeriesName_mi_tag>::type::iterator IT = MFIELD.get_series_steps_byName_begin(NAME); \
-    IT!=MFIELD.get_series_steps_byName_end(NAME); IT++
+  #define _IT_SERIES_STEPS_BY_NAME_FOR_LOOP_(RECORDER,NAME,IT) \
+    SeriesStep_multiIndex::index<SeriesName_mi_tag>::type::iterator IT = (RECORDER)->get_series_steps_byName_begin(NAME); \
+    IT!=(RECORDER)->get_series_steps_byName_end(NAME); IT++
 
 };
 

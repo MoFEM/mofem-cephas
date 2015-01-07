@@ -1028,13 +1028,12 @@ struct ThermalElement {
   struct UpdateAndControl: public FEMethod {
 
     FieldInterface& mField;
-    TS tS;
     const string tempName;
     const string rateName;
-    int jacobianLag;
-    UpdateAndControl(FieldInterface& _mField,TS _ts,
-             const string temp_name,const string rate_name): mField(_mField),tS(_ts),
-      tempName(temp_name),rateName(rate_name),jacobianLag(-1) {}
+
+    UpdateAndControl(FieldInterface& _mField,
+      const string temp_name,const string rate_name):
+      mField(_mField),tempName(temp_name),rateName(rate_name) {}
 
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
@@ -1046,10 +1045,6 @@ struct ThermalElement {
 
     PetscErrorCode postProcess() {
       PetscFunctionBegin;
-      PetscErrorCode ierr;
-      SNES snes;
-      ierr = TSGetSNES(tS,&snes); CHKERRQ(ierr);
-      ierr = SNESSetLagJacobian(snes,jacobianLag); CHKERRQ(ierr);
       PetscFunctionReturn(0);
     }
 
@@ -1090,48 +1085,15 @@ struct ThermalElement {
 
   };
 
-
   /** \brief add thermal element on tets
     * \infroup mofem_thermal_elem
     *
     * It get data from block set and define element in moab
     *w
-    * \param problem name
     * \param field name
     * \param name of mesh nodal positions (if not defined nodal coordinates are used)
     */
-  PetscErrorCode addThermalElements(
-    const string problem_name,const string field_name,const string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
-    PetscFunctionBegin;
-
-    PetscErrorCode ierr;
-    ErrorCode rval;
-
-    ierr = mField.add_finite_element("THERMAL_FE",MF_ZERO); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_row("THERMAL_FE",field_name); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_col("THERMAL_FE",field_name); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_data("THERMAL_FE",field_name); CHKERRQ(ierr);
-    if(mField.check_field(mesh_nodals_positions)) {
-      ierr = mField.modify_finite_element_add_field_data("THERMAL_FE",mesh_nodals_positions); CHKERRQ(ierr);
-    }
-    ierr = mField.modify_problem_add_finite_element(problem_name,"THERMAL_FE"); CHKERRQ(ierr);
-
-    //takes skin of block of entities
-    //Skinner skin(&mField.get_moab());
-    // loop over all blocksets and get data which name is FluidPressure
-    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_THERMALSET,it)) {
-
-      Mat_Thermal temp_data;
-      ierr = it->get_attribute_data_structure(temp_data); CHKERRQ(ierr);
-      setOfBlocks[it->get_msId()].cOnductivity = temp_data.data.Conductivity;
-      setOfBlocks[it->get_msId()].cApacity = temp_data.data.HeatCapacity;
-      rval = mField.get_moab().get_entities_by_type(it->meshset,MBTET,setOfBlocks[it->get_msId()].tEts,true); CHKERR_PETSC(rval);
-      ierr = mField.add_ents_to_finite_element_by_TETs(setOfBlocks[it->get_msId()].tEts,"THERMAL_FE"); CHKERRQ(ierr);
-
-    }
-
-    PetscFunctionReturn(0);
-  }
+  PetscErrorCode addThermalElements(const string field_name,const string mesh_nodals_positions = "MESH_NODE_POSITIONS");
 
   /** \brief add heat flux element
     * \infroup mofem_thermal_elem
@@ -1139,54 +1101,11 @@ struct ThermalElement {
     * It get data from heat flux set and define elemenet in moab. Alternatively
     * uses block set with name HEAT_FLUX.
     *
-    * \param problem name
     * \param field name
     * \param name of mesh nodal positions (if not defined nodal coordinates are used)
     */
-  PetscErrorCode addThermalFluxElement(
-    const string problem_name,const string field_name,const string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
-    PetscFunctionBegin;
+  PetscErrorCode addThermalFluxElement(const string field_name,const string mesh_nodals_positions = "MESH_NODE_POSITIONS");
 
-    PetscErrorCode ierr;
-    ErrorCode rval;
-
-    ierr = mField.add_finite_element("THERMAL_FLUX_FE",MF_ZERO); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_row("THERMAL_FLUX_FE",field_name); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_col("THERMAL_FLUX_FE",field_name); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_data("THERMAL_FLUX_FE",field_name); CHKERRQ(ierr);
-    if(mField.check_field(mesh_nodals_positions)) {
-      ierr = mField.modify_finite_element_add_field_data("THERMAL_FLUX_FE",mesh_nodals_positions); CHKERRQ(ierr);
-    }
-    ierr = mField.modify_problem_add_finite_element(problem_name,"THERMAL_FLUX_FE"); CHKERRQ(ierr);
-
-    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SIDESET|HEATFLUXSET,it)) {
-      ierr = it->get_cubit_bc_data_structure(setOfFluxes[it->get_msId()].dAta); CHKERRQ(ierr);
-      rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,setOfFluxes[it->get_msId()].tRis,true); CHKERR_PETSC(rval);
-      ierr = mField.add_ents_to_finite_element_by_TRIs(setOfFluxes[it->get_msId()].tRis,"THERMAL_FLUX_FE"); CHKERRQ(ierr);
-    }
-
-    //this is alternative method for setting boundary conditions, to bypass bu in cubit file reader.
-    //not elegant, but good enough
-    for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
-      if(it->get_Cubit_name().compare(0,9,"HEAT_FLUX") == 0) {
-        vector<double> data;
-        ierr = it->get_Cubit_attributes(data); CHKERRQ(ierr);
-        if(data.size()!=1) {
-          SETERRQ(PETSC_COMM_SELF,1,"Data inconsistency");
-        }
-        strcpy(setOfFluxes[it->get_msId()].dAta.data.name,"HeatFlu");
-        setOfFluxes[it->get_msId()].dAta.data.flag1 = 1;
-        setOfFluxes[it->get_msId()].dAta.data.value1 = data[0];
-        //cerr << setOfFluxes[it->get_msId()].dAta << endl;
-        rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,setOfFluxes[it->get_msId()].tRis,true); CHKERR_PETSC(rval);
-        ierr = mField.add_ents_to_finite_element_by_TRIs(setOfFluxes[it->get_msId()].tRis,"THERMAL_FLUX_FE"); CHKERRQ(ierr);
-
-      }
-    }
-
-
-    PetscFunctionReturn(0);
-  }
 
   /** \brief add convection element
   * \infroup mofem_thermal_elem
@@ -1194,56 +1113,10 @@ struct ThermalElement {
   * It get data from convection set and define elemenet in moab. Alternatively
   * uses block set with name CONVECTION.
   *
-  * \param problem name
   * \param field name
   * \param name of mesh nodal positions (if not defined nodal coordinates are used)
   */
-  PetscErrorCode addThermalConvectionElement(
-    const string problem_name,const string field_name,const string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
-    PetscFunctionBegin;
-
-    PetscErrorCode ierr;
-    ErrorCode rval;
-
-    ierr = mField.add_finite_element("THERMAL_CONVECTION_FE",MF_ZERO); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_row("THERMAL_CONVECTION_FE",field_name); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_col("THERMAL_CONVECTION_FE",field_name); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_data("THERMAL_CONVECTION_FE",field_name); CHKERRQ(ierr);
-    if(mField.check_field(mesh_nodals_positions)) {
-      ierr = mField.modify_finite_element_add_field_data("THERMAL_CONVECTION_FE",mesh_nodals_positions); CHKERRQ(ierr);
-    }
-    ierr = mField.modify_problem_add_finite_element(problem_name,"THERMAL_CONVECTION_FE"); CHKERRQ(ierr);
-
-    /*
-    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SIDESET|CONVECTIONSET,it)) {
-     ierr = it->get_cubit_bc_data_structure(setOfFluxes[it->get_msId()].dAta); CHKERRQ(ierr);
-     rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,setOfFluxes[it->get_msId()].tRis,true); CHKERR_PETSC(rval);
-     ierr = mField.add_ents_to_finite_element_by_TRIs(setOfFluxes[it->get_msId()].tRis,"THERMAL_CONVECTION_FE"); CHKERRQ(ierr);
-    }
-    */
-
-    //this is alternative method for setting boundary conditions, to bypass bu in cubit file reader.
-    //not elegant, but good enough
-    for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
-      if(it->get_Cubit_name().compare(0,10,"CONVECTION") == 0) {
-        
-        vector<double> data;
-        ierr = it->get_Cubit_attributes(data); CHKERRQ(ierr);
-        if(data.size()!=2) {
-          SETERRQ(PETSC_COMM_SELF,1,"Data inconsistency");
-        }
-        setOfConvection[it->get_msId()].cOnvection = data[0];
-        setOfConvection[it->get_msId()].tEmperature = data[1];
-        //cerr << setOfFluxes[it->get_msId()].dAta << endl;
-        rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,setOfConvection[it->get_msId()].tRis,true); CHKERR_PETSC(rval);
-        ierr = mField.add_ents_to_finite_element_by_TRIs(setOfConvection[it->get_msId()].tRis,"THERMAL_CONVECTION_FE"); CHKERRQ(ierr);
-
-      }
-    }
-
-
-    PetscFunctionReturn(0);
-  }
+  PetscErrorCode addThermalConvectionElement(const string field_name,const string mesh_nodals_positions = "MESH_NODE_POSITIONS");
 
   /** \brief add Non-linear Radiation element
   * \infroup mofem_thermal_elem
@@ -1251,217 +1124,43 @@ struct ThermalElement {
   * It get data from Radiation set and define elemenet in moab. Alternatively
   * uses block set with name RADIATION.
   *
-  * \param problem name
   * \param field name
   * \param name of mesh nodal positions (if not defined nodal coordinates are used)
   */
-  
-  PetscErrorCode addThermalRadiationElement(
-    const string problem_name,const string field_name,const string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
-    PetscFunctionBegin;
-    
-    PetscErrorCode ierr;
-    ErrorCode rval;
-    
-    ierr = mField.add_finite_element("THERMAL_RADIATION_FE",MF_ZERO); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_row("THERMAL_RADIATION_FE",field_name); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_col("THERMAL_RADIATION_FE",field_name); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_data("THERMAL_RADIATION_FE",field_name); CHKERRQ(ierr);
-    if(mField.check_field(mesh_nodals_positions)) {
-      ierr = mField.modify_finite_element_add_field_data("THERMAL_RADIATION_FE",mesh_nodals_positions); CHKERRQ(ierr);
-    }
-    ierr = mField.modify_problem_add_finite_element(problem_name,"THERMAL_RADIATION_FE"); CHKERRQ(ierr);
-    
-    //this is alternative method for setting boundary conditions, to bypass bu in cubit file reader.
-    //not elegant, but good enough
-    for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
-      if(it->get_Cubit_name().compare(0,9,"RADIATION") == 0) {
-        vector<double> data;
-        ierr = it->get_Cubit_attributes(data); CHKERRQ(ierr);
-        if(data.size()!=3) {
-          SETERRQ(PETSC_COMM_SELF,1,"Data inconsistency");
-        }
-        setOfRadiation[it->get_msId()].sIgma = data[0];
-        setOfRadiation[it->get_msId()].eMissivity = data[1];
-        //setOfRadiation[it->get_msId()].aBsorption = data[2];
-        setOfRadiation[it->get_msId()].aMbienttEmp = data[2];
-        //cerr << setOfFluxes[it->get_msId()].dAta << endl;
-        rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,setOfRadiation[it->get_msId()].tRis,true); CHKERR_PETSC(rval);
-        ierr = mField.add_ents_to_finite_element_by_TRIs(setOfRadiation[it->get_msId()].tRis,"THERMAL_RADIATION_FE"); CHKERRQ(ierr);
-        
-      }
-    }
-    
-    
-    PetscFunctionReturn(0);
-  }
-  
+  PetscErrorCode addThermalRadiationElement(const string field_name,const string mesh_nodals_positions = "MESH_NODE_POSITIONS");
 
   /** \brief this function is used in case of stationary problem to set elements for rhs
     * \infroup mofem_thermal_elem
     */
-  PetscErrorCode setThermalFiniteElementRhsOperators(string field_name,Vec &F) {
-    PetscFunctionBegin;
-    map<int,BlockData>::iterator sit = setOfBlocks.begin();
-    feRhs.get_op_to_do_Rhs().push_back(new OpGetGradAtGaussPts(field_name,commonData));
-    for(;sit!=setOfBlocks.end();sit++) {
-      //add finite element
-      feRhs.get_op_to_do_Rhs().push_back(new OpThermalRhs(field_name,F,sit->second,commonData));
-    }
-    PetscFunctionReturn(0);
-  }
+  PetscErrorCode setThermalFiniteElementRhsOperators(string field_name,Vec &F);
 
   /** \brief this fucntion is used in case of stationary heat conductivity problem for lhs
     * \infroup mofem_thermal_elem
     */
-  PetscErrorCode setThermalFiniteElementLhsOperators(string field_name,Mat A) {
-    PetscFunctionBegin;
-    map<int,BlockData>::iterator sit = setOfBlocks.begin();
-    for(;sit!=setOfBlocks.end();sit++) {
-      //add finite elemen
-      feLhs.get_op_to_do_Lhs().push_back(new OpThermalLhs(field_name,A,sit->second,commonData));
-    }
-    PetscFunctionReturn(0);
-  }
+  PetscErrorCode setThermalFiniteElementLhsOperators(string field_name,Mat A);
 
   /** \brief this function is used in case of statonary problem for heat flux terms
     * \infroup mofem_thermal_elem
     */
-  PetscErrorCode setThermalFluxFiniteElementRhsOperators(string field_name,Vec &F,const string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
-    PetscFunctionBegin;
-    bool ho_geometry = false;
-    if(mField.check_field(mesh_nodals_positions)) {
-      ho_geometry = true;
-    }
-    map<int,FluxData>::iterator sit = setOfFluxes.begin();
-    for(;sit!=setOfFluxes.end();sit++) {
-      //add finite element
-      feFlux.get_op_to_do_Rhs().push_back(new OpHeatFlux(field_name,F,sit->second,ho_geometry));
-    }
-    PetscFunctionReturn(0);
-  }
+  PetscErrorCode setThermalFluxFiniteElementRhsOperators(string field_name,Vec &F,const string mesh_nodals_positions = "MESH_NODE_POSITIONS");
 
-
-  /* \brief linear Steady convection terms in rhs and lhs
+  /* \brief linear Steady convection terms in lhs
    */
-  PetscErrorCode setThermalConvectionFiniteElementRhsOperators(string field_name,Vec &F,const string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
-    PetscFunctionBegin;
-    bool ho_geometry = false;
-    if(mField.check_field(mesh_nodals_positions)) {
-      ho_geometry = true;
-    }
-    map<int,ConvectionData>::iterator sit = setOfConvection.begin();
-    for(;sit!=setOfConvection.end();sit++) {
-      //add finite element
-      feConvectionRhs.get_op_to_do_Rhs().push_back(new OpGetTriTemperatureAtGaussPts(field_name,commonData));
-      feConvectionRhs.get_op_to_do_Rhs().push_back(new OpConvectionRhs(field_name,F,sit->second,commonData,ho_geometry));
-    }
-    PetscFunctionReturn(0);
-  }
-  PetscErrorCode setThermalConvectionFiniteElementLhsOperators(string field_name,Mat A,const string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
-    PetscFunctionBegin;
-    bool ho_geometry = false;
-    if(mField.check_field(mesh_nodals_positions)) {
-      ho_geometry = true;
-    }
-    map<int,ConvectionData>::iterator sit = setOfConvection.begin();
-    for(;sit!=setOfConvection.end();sit++) {
-      //add finite element
-      feConvectionLhs.get_op_to_do_Lhs().push_back(new OpConvectionLhs(field_name,A,sit->second,ho_geometry));
-    }
-    PetscFunctionReturn(0);
-  }
+  PetscErrorCode setThermalConvectionFiniteElementRhsOperators(string field_name,Vec &F,const string mesh_nodals_positions = "MESH_NODE_POSITIONS");
+
+  /* \brief linear Steady convection terms in rhs
+   */
+  PetscErrorCode setThermalConvectionFiniteElementLhsOperators(string field_name,Mat A,const string mesh_nodals_positions = "MESH_NODE_POSITIONS");
 
   /** \brief set up operators for unsedy heat flux; convection; radiation problem
     * \infroup mofem_thermal_elem
     */
-  PetscErrorCode setTimeSteppingProblem(TsCtx &ts_ctx,string field_name,string rate_name,const string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
-    PetscFunctionBegin;
- 
-    bool ho_geometry = false;
-    if(mField.check_field(mesh_nodals_positions)) {
-      ho_geometry = true;
-    }
+  PetscErrorCode setTimeSteppingProblem(string field_name,string rate_name,const string mesh_nodals_positions = "MESH_NODE_POSITIONS");
 
-    {
-      map<int,BlockData>::iterator sit = setOfBlocks.begin();
-      for(;sit!=setOfBlocks.end();sit++) {
-        //add finite element
-        //those methods are to calulate matrices on Lhs
-        //  feLhs.get_op_to_do_Lhs().push_back(new OpGetTetTemperatureAtGaussPts(field_name,commonData));
-        feLhs.get_op_to_do_Lhs().push_back(new OpThermalLhs(field_name,sit->second,commonData));
-        feLhs.get_op_to_do_Lhs().push_back(new OpHeatCapacityLsh(field_name,sit->second,commonData));
-        //those methods are to calulate vectors on Rhs
-        feRhs.get_op_to_do_Rhs().push_back(new OpGetTetTemperatureAtGaussPts(field_name,commonData));
-        feRhs.get_op_to_do_Rhs().push_back(new OpGetTetRateAtGaussPts(rate_name,commonData));
-        feRhs.get_op_to_do_Rhs().push_back(new OpGetGradAtGaussPts(field_name,commonData));
-        feRhs.get_op_to_do_Rhs().push_back(new OpThermalRhs(field_name,sit->second,commonData));
-        feRhs.get_op_to_do_Rhs().push_back(new OpHeatCapacityRhs(field_name,sit->second,commonData));
-      }
-    }
-  
-    //Flux
-    {
-      map<int,FluxData>::iterator sit = setOfFluxes.begin();
-      for(;sit!=setOfFluxes.end();sit++) {
-        //add finite element
-        feFlux.get_op_to_do_Rhs().push_back(new OpHeatFlux(field_name,sit->second,ho_geometry));
-      }
-    }
-    
-    
-    // Convection
-    {
-      map<int,ConvectionData>::iterator sit = setOfConvection.begin();
-      for(;sit!=setOfConvection.end();sit++) {
-        //add finite element
-	feConvectionRhs.get_op_to_do_Rhs().push_back(new OpGetTriTemperatureAtGaussPts(field_name,commonData));
-        feConvectionRhs.get_op_to_do_Rhs().push_back(new OpConvectionRhs(field_name,sit->second,commonData,ho_geometry));
-      }
-    }
-    {
-      map<int,ConvectionData>::iterator sit = setOfConvection.begin();
-      for(;sit!=setOfConvection.end();sit++) {
-	//add finite element
-	feConvectionLhs.get_op_to_do_Lhs().push_back(new OpConvectionLhs(field_name,sit->second,ho_geometry));
-      }
-    }
-
-    //Radiation
-    {
-      map<int,RadiationData>::iterator sit = setOfRadiation.begin();
-      for(;sit!=setOfRadiation.end();sit++) {
-	//add finite element
-	feRadiationRhs.get_op_to_do_Rhs().push_back(new OpGetTriTemperatureAtGaussPts(field_name,commonData));
-        feRadiationRhs.get_op_to_do_Rhs().push_back(new OpRadiationRhs(field_name,sit->second,commonData,ho_geometry));
-      }
-    }
-    {
-      map<int,RadiationData>::iterator sit = setOfRadiation.begin();
-      for(;sit!=setOfRadiation.end();sit++) {
-        //add finite element
-	feRadiationLhs.get_op_to_do_Rhs().push_back(new OpGetTriTemperatureAtGaussPts(field_name,commonData));
-        feRadiationLhs.get_op_to_do_Lhs().push_back(new OpRadiationLhs(field_name,sit->second,commonData,ho_geometry));
-      }
-    }
-
-    //rhs
-    TsCtx::loops_to_do_type& loops_to_do_Rhs = ts_ctx.get_loops_to_do_IFunction();
-    loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("THERMAL_FE",&feRhs));
-    loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("THERMAL_FLUX_FE",&feFlux));
-    loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("THERMAL_CONVECTION_FE",&feConvectionRhs));
-    loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("THERMAL_RADIATION_FE",&feRadiationRhs));
-    
-    //lhs
-    TsCtx::loops_to_do_type& loops_to_do_Mat = ts_ctx.get_loops_to_do_IJacobian();
-    loops_to_do_Mat.push_back(TsCtx::loop_pair_type("THERMAL_FE",&feLhs));    
-    loops_to_do_Mat.push_back(TsCtx::loop_pair_type("THERMAL_CONVECTION_FE",&feConvectionLhs));
-    loops_to_do_Mat.push_back(TsCtx::loop_pair_type("THERMAL_RADIATION_FE",&feRadiationLhs));    
-    //monitor
-    //TsCtx::loops_to_do_type& loops_to_do_Monitor = ts_ctx.get_loops_to_do_Monitor();
-
-    PetscFunctionReturn(0);
-  }
+  /** \brief set up operators for unsedy heat flux; convection; radiation problem
+    * \infroup mofem_thermal_elem
+    */
+  PetscErrorCode setTimeSteppingProblem(TsCtx &ts_ctx,string field_name,string rate_name,const string mesh_nodals_positions = "MESH_NODE_POSITIONS");
 
 };
 

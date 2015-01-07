@@ -49,3 +49,16 @@ target_link_libraries(thermal_unseady
   ${MoFEM_PROJECT_LIBS})
 
 
+add_executable(dm_thermal_unseady ${UM_SOURCE_DIR}/thermal/dm_thermal_unsteady.cpp)
+target_link_libraries(dm_thermal_unseady 
+  mofem_finite_element_library
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_third_party
+  mofem_cblas
+  ${MoFEM_PROJECT_LIBS})
+
+
