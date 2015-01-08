@@ -119,13 +119,13 @@ PetscErrorCode Core::record_begin(const string& serie_name) {
   ierr = const_cast<MoFEMSeries*>(&*sit)->begin(); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::record_end(const string& serie_name) {
+PetscErrorCode Core::record_end(const string& serie_name,double time) {
   PetscFunctionBegin;
   Series_multiIndex::index<SeriesName_mi_tag>::type::iterator sit = series.get<SeriesName_mi_tag>().find(serie_name);
   if(sit==series.get<SeriesName_mi_tag>().end()) {
     SETERRQ1(PETSC_COMM_SELF,1,"serie recorder <%s> not exist",serie_name.c_str());
   }
-  ierr = const_cast<MoFEMSeries*>(&*sit)->end(); CHKERRQ(ierr);
+  ierr = const_cast<MoFEMSeries*>(&*sit)->end(time); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 PetscErrorCode Core::initialize_series_recorder(const string& serie_name) {
@@ -152,7 +152,7 @@ PetscErrorCode Core::finalize_series_recorder(const string& serie_name) {
   ierr = sit->get_nb_steps(moab,nb_steps); CHKERRQ(ierr);
   int ss = 0;
   for(;ss<nb_steps;ss++) {
-    /*pair<SeriesStep_multiIndex::iterator,bool> p =*/ series_steps.insert(MoFEMSeriesStep(&*sit,ss));
+    /*pair<SeriesStep_multiIndex::iterator,bool> p =*/ series_steps.insert(MoFEMSeriesStep(moab,&*sit,ss));
   }
   PetscFunctionReturn(0);
 }

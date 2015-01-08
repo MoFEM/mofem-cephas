@@ -100,7 +100,7 @@ struct SeriesRecorder: public FieldUnknownInterface {
     *
     * \param series name
     */
-  virtual PetscErrorCode record_end(const string& serie_name) = 0;
+  virtual PetscErrorCode record_end(const string& serie_name,double time = 0) = 0;
   
   /**
     * \ingroup mofem_series

@@ -43,8 +43,14 @@ MoFEMSeries::MoFEMSeries(Interface &moab,const EntityHandle _meshset):
  
   const int def_val_len = 0;
 
+  //time
+  string Tag_SeriesTime = "_SeriesTime_"+get_name();
+  double def_time = 0;
+  rval = moab.tag_get_handle(Tag_SeriesTime.c_str(),1,MB_TYPE_DOUBLE,
+    th_SeriesTime,MB_TAG_CREAT|MB_TAG_SPARSE,&def_time); CHKERR_THROW(rval);
+
   //handles
-   string Tag_DataHandles_SeriesName = "_SeriesDataHandles_"+get_name();
+  string Tag_DataHandles_SeriesName = "_SeriesDataHandles_"+get_name();
   rval = moab.tag_get_handle(Tag_DataHandles_SeriesName.c_str(),def_val_len,MB_TYPE_HANDLE,
     th_SeriesDataHandles,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_VARLEN,NULL); CHKERR_THROW(rval);
  
@@ -87,7 +93,7 @@ PetscErrorCode MoFEMSeries::begin() {
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode MoFEMSeries::end() { 
+PetscErrorCode MoFEMSeries::end(double t) { 
   PetscFunctionBegin;
   if(!record_begin) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"recording not begin it can not be ended");
@@ -95,6 +101,7 @@ PetscErrorCode MoFEMSeries::end() {
   record_begin = false;
   record_end = true;
   ia.push_back(uids.size());
+  time.push_back(t);
   PetscFunctionReturn(0);
 }
 
@@ -112,11 +119,19 @@ PetscErrorCode MoFEMSeries::read(Interface &moab) {
   vector<EntityHandle> contained;
   rval = moab.get_contained_meshsets(meshset,contained); CHKERR_PETSC(rval);
   ia.resize(0);
+  time.resize(0);
   handles.resize(0);
   uids.resize(0);
   data.resize(0);
   ia.push_back(0);
+
   for(unsigned int mm = 0;mm<contained.size();mm++) {
+    //time 
+    {
+      double t;
+      rval = moab.tag_set_data(th_SeriesTime,&meshset,1,&t);  CHKERR(rval);
+      time.push_back(t);
+    }
     //handles
     {
       const EntityHandle* tag_data;
@@ -184,6 +199,11 @@ PetscErrorCode MoFEMSeries::save(Interface &moab) const {
     SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency nb_contained != ia.size()-1 %d!=%d",contained.size(),ia.size()-1);
   }
 
+  //time
+  for(unsigned int ii = 1;ii<ia.size();ii++) {
+    rval = moab.tag_set_data(th_SeriesTime,&contained[ii-1],1,&time[ii-1]);  CHKERR(rval);
+  }
+
   //handles
   for(unsigned int ii = 1;ii<ia.size();ii++) {
     void const* tag_data[] = { &handles[ia[ii-1]] };
@@ -207,8 +227,11 @@ PetscErrorCode MoFEMSeries::save(Interface &moab) const {
   PetscFunctionReturn(0);
 }
 
-MoFEMSeriesStep::MoFEMSeriesStep(const MoFEMSeries *_MoFEMSeries_ptr,const int _step_number): 
-  interface_MoFEMSeries<MoFEMSeries>(_MoFEMSeries_ptr),step_number(_step_number) {}
+MoFEMSeriesStep::MoFEMSeriesStep(Interface &moab,const MoFEMSeries *_MoFEMSeries_ptr,const int _step_number): 
+  interface_MoFEMSeries<MoFEMSeries>(_MoFEMSeries_ptr),step_number(_step_number) {
+  PetscErrorCode ierr;
+  ierr = get_time_init(moab); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+}
 
 PetscErrorCode MoFEMSeriesStep::get(Interface &moab,DofMoFEMEntity_multiIndex &dofsMoabField) const {
   PetscFunctionBegin;
@@ -260,13 +283,28 @@ PetscErrorCode MoFEMSeriesStep::get(Interface &moab,DofMoFEMEntity_multiIndex &d
   PetscFunctionReturn(0);
 }
 
+PetscErrorCode MoFEMSeriesStep::get_time_init(Interface &moab) {
+  PetscFunctionBegin;
+  ErrorCode rval;
+  vector<EntityHandle> contained;
+  rval = moab.get_contained_meshsets(ptr->meshset,contained); CHKERR_PETSC(rval);
+  if(contained.size()<=(unsigned int)step_number) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+  }
+  double *time_ptr;
+  int size;
+  rval = moab.tag_get_by_ptr(ptr->th_SeriesTime,&contained[step_number],1,(const void **)&time_ptr,&size); CHKERR_PETSC(rval);
+  time = *time_ptr;
+  PetscFunctionReturn(0);
+}
+
 ostream& operator<<(ostream& os,const MoFEMSeries& e) {
   os << "name " << e.get_name() << " meshset " << e.get_meshset();
   return os;
 }
 
 ostream& operator<<(ostream& os,const MoFEMSeriesStep& e) {
-  os << *(e.get_MoFEMSeries_ptr()) << " step number " << e.step_number ;
+  os << *(e.get_MoFEMSeries_ptr()) << " step number " << e.step_number << " time " << e.get_time();
   return os;
 }
 

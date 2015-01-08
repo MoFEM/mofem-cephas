@@ -115,7 +115,7 @@ int main(int argc, char *argv[]) {
 
   ierr = recorder.record_begin("TEST_SERIES1"); CHKERRQ(ierr);
   ierr = recorder.record_field("TEST_SERIES1","FIELD_B",bit_level0,bit_level0); CHKERRQ(ierr);
-  ierr = recorder.record_end("TEST_SERIES1"); CHKERRQ(ierr);
+  ierr = recorder.record_end("TEST_SERIES1",1); CHKERRQ(ierr);
 
   ierr = m_field.field_axpy(1.,"FIELD_A","FIELD_B"); CHKERRQ(ierr);
   ierr = recorder.record_begin("TEST_SERIES1"); CHKERRQ(ierr);
@@ -125,10 +125,10 @@ int main(int argc, char *argv[]) {
   ierr = recorder.record_begin("TEST_SERIES2"); CHKERRQ(ierr);
   ierr = recorder.record_field("TEST_SERIES2","FIELD_A",bit_level0,bit_level0); CHKERRQ(ierr);
   ierr = recorder.record_field("TEST_SERIES2","FIELD_B",bit_level0,bit_level0); CHKERRQ(ierr);
-  ierr = recorder.record_end("TEST_SERIES2"); CHKERRQ(ierr);
+  ierr = recorder.record_end("TEST_SERIES2",1); CHKERRQ(ierr);
   ierr = recorder.finalize_series_recorder("TEST_SERIES2"); CHKERRQ(ierr);
 
-  ierr = recorder.record_end("TEST_SERIES1"); CHKERRQ(ierr);
+  ierr = recorder.record_end("TEST_SERIES1",2); CHKERRQ(ierr);
 
   //finalize
   ierr = recorder.finalize_series_recorder("TEST_SERIES1"); CHKERRQ(ierr);
@@ -157,6 +157,8 @@ int main(int argc, char *argv[]) {
     ierr = recorder2.load_series_data("TEST_SERIES1",sit->get_step_number()); CHKERRQ(ierr);
 
     my_split << "next step:\n";
+    my_split << *sit << endl;
+
     for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(m_field2,"FIELD_B",dof)) {
       my_split << *dof << "\n";
     }
