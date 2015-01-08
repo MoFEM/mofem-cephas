@@ -129,7 +129,7 @@ struct Core:
   PetscErrorCode record_problem(const string& serie_name,const string& problem_name,RowColData rc);
   PetscErrorCode record_field(const string& serie_name,const string& field_name,const BitRefLevel &bit,const BitRefLevel &mask);
   //end recording
-  PetscErrorCode record_end(const string& serie_name);
+  PetscErrorCode record_end(const string& serie_name,double time = 0);
   PetscErrorCode print_series_steps();
   bool check_series(const string& name) const;
   //get data back

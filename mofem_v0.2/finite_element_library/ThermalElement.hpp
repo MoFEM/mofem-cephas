@@ -679,184 +679,168 @@ struct ThermalElement {
   };
 
   
-  
-  /*\biref operator to calculate radiation therms on body surface and assemble to lhs of equations
-    for the jocabian Matrix of Picard Linearization */
-    struct OpRadiationLhs:public TriElementForcesAndSurcesCore::UserDataOperator {
-        CommonData &commonData; //get the temperature or temperature Rate from CommonData
-        RadiationData &dAta;
-        bool ho_geometry;
-        bool useTsB;
-  
-        OpRadiationLhs(const string field_name,
-                       RadiationData &data,CommonData &common_data,bool _ho_geometry = false):
-            TriElementForcesAndSurcesCore::UserDataOperator(field_name),
-            commonData(common_data),dAta(data),ho_geometry(_ho_geometry),useTsB(true) { symm = false; }
-  
-        Mat A;
-        OpRadiationLhs(const string field_name,Mat _A,
-                       RadiationData &data,CommonData &common_data,bool _ho_geometry = false):
-            TriElementForcesAndSurcesCore::UserDataOperator(field_name),
-            commonData(common_data),dAta(data),ho_geometry(_ho_geometry),useTsB(false),A(_A) { symm = false; }
-  
-        ublas::matrix<double> M,transM;
-        /** \brief calculate thermal radiation term in the lhs of equations(Tangent Matrix) for transient Thermal Problem
-         *
-         * K = intS 4* N^T* sIgma* eMissivity* N*  T^3 dS (Reference _ see Finite Element Simulation of Heat Transfer
-           by jean-Michel Bergheau)
-         */
-        PetscErrorCode doWork(
-            int row_side,int col_side,
-            EntityType row_type,EntityType col_type,
-            DataForcesAndSurcesCore::EntData &row_data,
-            DataForcesAndSurcesCore::EntData &col_data) {
-            PetscFunctionBegin;
-  
-            try {
-  
-                if(row_data.getIndices().size()==0) PetscFunctionReturn(0);
-                if(col_data.getIndices().size()==0) PetscFunctionReturn(0);
-  
-                int nb_row = row_data.getN().size2();
-                int nb_col = col_data.getN().size2();
-                M.resize(nb_row,nb_col);
-                bzero(&*M.data().begin(),nb_row*nb_col*sizeof(double));
-  
-                for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
-		  double T3_at_Gauss_pt = pow(commonData.temperatureAtGaussPts[gg],3.0);
-  
-		  double radiationConst;
-		  if(ho_geometry) {
-		    double area = norm_2(getNormals_at_GaussPt(gg));
-		    radiationConst = dAta.sIgma*dAta.eMissivity*area;
-		  } else {
-		    radiationConst = dAta.sIgma*dAta.eMissivity*getArea();
-
-		  }
-		  const double fOur = 4.0;
-		  double val = fOur*getGaussPts()(2,gg)*radiationConst*T3_at_Gauss_pt;
-		  noalias(M) += val*outer_prod( row_data.getN(gg,nb_row),col_data.getN(gg,nb_col) );
-  
-                }
-  
-		PetscErrorCode ierr;
-		if(!useTsB) {
-                  const_cast<FEMethod*>(getFEMethod())->ts_B = A;
-		}
-		ierr = MatSetValues(
-		  (getFEMethod()->ts_B),
-                  nb_row,&row_data.getIndices()[0],
-                  nb_col,&col_data.getIndices()[0],
-                           &M(0,0),ADD_VALUES); CHKERRQ(ierr);
-		  //this matrix is not symmetric
-		  /*if(row_side != col_side || row_type != col_type) {
-		      transM.resize(nb_col,nb_row);
-		      noalias(transM) = trans(M);
-		      ierr = MatSetValues(
-                               (getFEMethod()->ts_B),
-                               nb_col,&col_data.getIndices()[0],
-                               nb_row,&row_data.getIndices()[0],
-                               &transM(0,0),ADD_VALUES); CHKERRQ(ierr);
-		  }*/
-  
-            } catch (const std::exception& ex) {
-                ostringstream ss;
-                ss << "throw in method: " << ex.what() << endl;
-                SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
-            }
-  
-            PetscFunctionReturn(0);
-        }
-  
-    };
-
-  /* \brief operator to calculate radiation therms on body surface and assemble to rhs of transient equations(Residual Vector)
+  /** 
+    * operator to calculate radiation therms on body surface and assemble to lhs of equations
+    * for the jocabian Matrix of Picard Linearization 
     * \infroup mofem_thermal_elem
     */
-    struct OpRadiationRhs:public TriElementForcesAndSurcesCore::UserDataOperator {
-        
-	CommonData &commonData; //get the temperature or temperature Rate from CommonData
-        RadiationData &dAta;
-        bool ho_geometry;
-        bool useTsF;
-        OpRadiationRhs(const string field_name,RadiationData &data,CommonData &common_data,bool _ho_geometry = false):
-            TriElementForcesAndSurcesCore::UserDataOperator(field_name),
-            commonData(common_data),dAta(data),ho_geometry(_ho_geometry),useTsF(true) {}
-  
-  
-        Vec F;
-        OpRadiationRhs(const string field_name,Vec _F,RadiationData &data,CommonData &common_data,bool _ho_geometry = false):
-            TriElementForcesAndSurcesCore::UserDataOperator(field_name),
-            commonData(common_data),dAta(data),ho_geometry(_ho_geometry),useTsF(false),F(_F) {}
-  
-        ublas::vector<FieldData> Nf;
-  
-        /** brief calculate Transient Radiation condition on the right hand side residual
-      
-          *  R=int_S N^T * sIgma * eMissivity * (Ta^4 -Ts^4) dS **/
-  
-        PetscErrorCode doWork(
-            int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
-            PetscFunctionBegin;
-  
-            if(data.getIndices().size()==0) PetscFunctionReturn(0);
-            if(dAta.tRis.find(getMoFEMFEPtr()->get_ent())==dAta.tRis.end()) PetscFunctionReturn(0);
-  
-            PetscErrorCode ierr;
-  
-            const FENumeredDofMoFEMEntity *dof_ptr;
-            ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
-            int rank = dof_ptr->get_max_rank();
-  
-            int nb_row_dofs = data.getIndices().size()/rank;
-  
-            Nf.resize(data.getIndices().size());
-            bzero(&*Nf.data().begin(),nb_row_dofs*sizeof(FieldData));
-            //fill(Nf.begin(),Nf.end(),0);
-            //cerr << getNormal() << endl;
-            //cerr << getNormals_at_GaussPt() << endl;
-  
-            for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
-  
-              double T4_at_Gauss_pt = pow(commonData.temperatureAtGaussPts[gg],4.0);
-	      double ambientTemp = pow(dAta.aMbienttEmp,4.0);
-	      double tEmp = 0;
-        
-	      if(ambientTemp > 0) {
-		tEmp = -ambientTemp + T4_at_Gauss_pt;
-	      }
-  
-              double val = getGaussPts()(2,gg);
-	      double radiationConst;
+  struct OpRadiationLhs:public TriElementForcesAndSurcesCore::UserDataOperator {
+    CommonData &commonData; //get the temperature or temperature Rate from CommonData
+    RadiationData &dAta;
+    bool ho_geometry;
+    bool useTsB;
 
-              if(ho_geometry) {
-                double area = norm_2(getNormals_at_GaussPt(gg));
-                radiationConst = dAta.sIgma*dAta.eMissivity*tEmp*area;
-              } else {
-                radiationConst = dAta.sIgma*dAta.eMissivity*tEmp*getArea();
-              }
-              ublas::noalias(Nf) += val*radiationConst*data.getN(gg,nb_row_dofs);
-  
-            }
-  
-            //cerr << "VecSetValues\n";
-            //cerr << Nf << endl;
-            //cerr << data.getIndices() << endl;
-  
-            if(useTsF) {
-              ierr = VecSetValues(getFEMethod()->ts_F,data.getIndices().size(),
-                &data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
-            } else {
-              ierr = VecSetValues(F,data.getIndices().size(),
-                &data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
-            }
-  
-            PetscFunctionReturn(0);
+    OpRadiationLhs(const string field_name,RadiationData &data,CommonData &common_data,bool _ho_geometry = false):
+      TriElementForcesAndSurcesCore::UserDataOperator(field_name),
+      commonData(common_data),dAta(data),ho_geometry(_ho_geometry),useTsB(true) { symm = false; }
+
+    Mat A;
+    OpRadiationLhs(const string field_name,Mat _A,RadiationData &data,CommonData &common_data,bool _ho_geometry = false):
+      TriElementForcesAndSurcesCore::UserDataOperator(field_name),
+      commonData(common_data),dAta(data),ho_geometry(_ho_geometry),useTsB(false),A(_A) { symm = false; }
+
+    ublas::matrix<double> M,transM;
+
+    /** \brief calculate thermal radiation term in the lhs of equations(Tangent Matrix) for transient Thermal Problem
+      *
+      * K = intS 4* N^T* sIgma* eMissivity* N*  T^3 dS (Reference _ see Finite Element Simulation of Heat Transfer
+      * by jean-Michel Bergheau)
+    */
+    PetscErrorCode doWork(
+      int row_side,int col_side,
+      EntityType row_type,EntityType col_type,
+      DataForcesAndSurcesCore::EntData &row_data,
+      DataForcesAndSurcesCore::EntData &col_data) {
+      PetscFunctionBegin;
+
+      PetscErrorCode ierr;
+
+      try {
+
+	if(row_data.getIndices().size()==0) PetscFunctionReturn(0);
+        if(col_data.getIndices().size()==0) PetscFunctionReturn(0);
+
+        int nb_row = row_data.getN().size2();
+        int nb_col = col_data.getN().size2();
+
+        M.resize(nb_row,nb_col);
+	bzero(&*M.data().begin(),nb_row*nb_col*sizeof(double));
+
+        for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
+	  double T3_at_Gauss_pt = pow(commonData.temperatureAtGaussPts[gg],3.0);
+
+	  double radiationConst;
+	  if(ho_geometry) {
+	    double area = norm_2(getNormals_at_GaussPt(gg));
+	    radiationConst = dAta.sIgma*dAta.eMissivity*area;
+	  } else {
+	    radiationConst = dAta.sIgma*dAta.eMissivity*getArea();
+	  }
+	  const double fOur = 4.0;
+	  double val = fOur*getGaussPts()(2,gg)*radiationConst*T3_at_Gauss_pt;
+	  noalias(M) += val*outer_prod( row_data.getN(gg,nb_row),col_data.getN(gg,nb_col) );
         }
-  
-    };  
 
+	if(!useTsB) {
+          const_cast<FEMethod*>(getFEMethod())->ts_B = A;
+	}
+	ierr = MatSetValues(
+	  (getFEMethod()->ts_B),
+	  nb_row,&row_data.getIndices()[0],
+	  nb_col,&col_data.getIndices()[0],
+	  &M(0,0),ADD_VALUES); CHKERRQ(ierr);
+
+        } catch (const std::exception& ex) {
+          ostringstream ss;
+          ss << "throw in method: " << ex.what() << endl;
+          SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+        }
+
+        PetscFunctionReturn(0);
+      }
   
+  };
+
+  /** \brief operator to calculate radiation therms on body surface and assemble to rhs of transient equations(Residual Vector)
+    * \infroup mofem_thermal_elem
+    */
+  struct OpRadiationRhs:public TriElementForcesAndSurcesCore::UserDataOperator {
+        
+    CommonData &commonData; //get the temperature or temperature Rate from CommonData
+    RadiationData &dAta;
+    bool ho_geometry;
+    bool useTsF;
+    OpRadiationRhs(const string field_name,RadiationData &data,CommonData &common_data,bool _ho_geometry = false):
+      TriElementForcesAndSurcesCore::UserDataOperator(field_name),
+      commonData(common_data),dAta(data),ho_geometry(_ho_geometry),useTsF(true) {}
+
+    Vec F;
+    OpRadiationRhs(const string field_name,Vec _F,RadiationData &data,CommonData &common_data,bool _ho_geometry = false):
+      TriElementForcesAndSurcesCore::UserDataOperator(field_name),
+      commonData(common_data),dAta(data),ho_geometry(_ho_geometry),useTsF(false),F(_F) {}
+  
+    ublas::vector<FieldData> Nf;
+  
+    /** \brief calculate Transient Radiation condition on the right hand side residual
+      *
+      *  R=int_S N^T * sIgma * eMissivity * (Ta^4 -Ts^4) dS 
+     **/
+    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+      PetscFunctionBegin;
+  
+      if(data.getIndices().size()==0) PetscFunctionReturn(0);
+      if(dAta.tRis.find(getMoFEMFEPtr()->get_ent())==dAta.tRis.end()) PetscFunctionReturn(0);
+  
+      PetscErrorCode ierr;
+  
+      const FENumeredDofMoFEMEntity *dof_ptr;
+      ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
+      int rank = dof_ptr->get_max_rank();
+      int nb_row_dofs = data.getIndices().size()/rank;
+  
+      Nf.resize(data.getIndices().size());
+      bzero(&*Nf.data().begin(),nb_row_dofs*sizeof(FieldData));
+      //fill(Nf.begin(),Nf.end(),0);
+      //cerr << getNormal() << endl;
+      //cerr << getNormals_at_GaussPt() << endl;
+  
+      for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
+  
+	double T4_at_Gauss_pt = pow(commonData.temperatureAtGaussPts[gg],4.0);
+	double ambientTemp = pow(dAta.aMbienttEmp,4.0);
+	double tEmp = 0;
+        
+	if(ambientTemp > 0) {
+	  tEmp = -ambientTemp + T4_at_Gauss_pt;
+	}
+  
+	double val = getGaussPts()(2,gg);
+	double radiationConst;
+
+	if(ho_geometry) {
+	  double area = norm_2(getNormals_at_GaussPt(gg));
+          radiationConst = dAta.sIgma*dAta.eMissivity*tEmp*area;
+        } else {
+          radiationConst = dAta.sIgma*dAta.eMissivity*tEmp*getArea();
+        }
+        ublas::noalias(Nf) += val*radiationConst*data.getN(gg,nb_row_dofs);
+  
+      }
+  
+      //cerr << "VecSetValues\n";
+      //cerr << Nf << endl;
+      //cerr << data.getIndices() << endl;
+  
+      if(useTsF) {
+	ierr = VecSetValues(getFEMethod()->ts_F,data.getIndices().size(),&data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
+      } else {
+        ierr = VecSetValues(F,data.getIndices().size(),&data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
+      }
+  
+      PetscFunctionReturn(0);
+    }
+  
+  };  
 
   /** \brief operator to calculate convection therms on body surface and assemble to rhs of equations
     * \infroup mofem_thermal_elem
@@ -1078,7 +1062,7 @@ struct ThermalElement {
       ierr = mField.query_interface(recorder_ptr); CHKERRQ(ierr);
       ierr = recorder_ptr->record_begin(seriesName); CHKERRQ(ierr);
       ierr = recorder_ptr->record_field(seriesName,tempName,proble_bit_level,mask); CHKERRQ(ierr);
-      ierr = recorder_ptr->record_end(seriesName); CHKERRQ(ierr);
+      ierr = recorder_ptr->record_end(seriesName,ts_t); CHKERRQ(ierr);
 
       PetscFunctionReturn(0);
     }
