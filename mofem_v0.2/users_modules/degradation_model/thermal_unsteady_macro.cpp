@@ -220,7 +220,7 @@ int main(int argc, char *argv[]) {
   
   //m_field.list_dofs_by_field_name("TEMP");
   if(pcomm->rank()==0) {
-    rval = moab.write_file("solution.h5m"); CHKERR_PETSC(rval);
+    rval = moab.write_file("solution_temp.h5m"); CHKERR_PETSC(rval);
   }
 
   SeriesRecorder &recorder = core;

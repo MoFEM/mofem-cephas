@@ -108,12 +108,12 @@ int main(int argc, char *argv[]) {
   ierr = m_field.set_field_order(root_set,MBEDGE,"CONC_RATE",order); CHKERRQ(ierr);
   ierr = m_field.set_field_order(root_set,MBVERTEX,"CONC_RATE",1); CHKERRQ(ierr);
 
-  ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,3); CHKERRQ(ierr);
-  ierr = m_field.add_ents_to_field_by_TETs(root_set,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(0,MBTET,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(0,MBTRI,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(0,MBEDGE,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
+//  ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,3); CHKERRQ(ierr);
+//  ierr = m_field.add_ents_to_field_by_TETs(root_set,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+//  ierr = m_field.set_field_order(0,MBTET,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
+//  ierr = m_field.set_field_order(0,MBTRI,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
+//  ierr = m_field.set_field_order(0,MBEDGE,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
+//  ierr = m_field.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
 
   MoistureElement moisture_elements(m_field);
   ierr = moisture_elements.addDiffusionElements("MOISTURE_PROBLEM","CONC"); CHKERRQ(ierr);
@@ -132,8 +132,8 @@ int main(int argc, char *argv[]) {
   //build problem
   ierr = m_field.build_problems(); CHKERRQ(ierr);
 
-  Projection10NodeCoordsOnField ent_method_material(m_field,"MESH_NODE_POSITIONS");
-  ierr = m_field.loop_dofs("MESH_NODE_POSITIONS",ent_method_material); CHKERRQ(ierr);
+//  Projection10NodeCoordsOnField ent_method_material(m_field,"MESH_NODE_POSITIONS");
+//  ierr = m_field.loop_dofs("MESH_NODE_POSITIONS",ent_method_material); CHKERRQ(ierr);
 
   /****/
   //mesh partitioning 
@@ -220,7 +220,7 @@ int main(int argc, char *argv[]) {
   
   //m_field.list_dofs_by_field_name("TEMP");
   if(pcomm->rank()==0) {
-    rval = moab.write_file("solution.h5m"); CHKERR_PETSC(rval);
+    rval = moab.write_file("solution_mois.h5m"); CHKERR_PETSC(rval);
   }
 
   SeriesRecorder &recorder = core;
