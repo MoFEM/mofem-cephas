@@ -110,7 +110,8 @@ PetscErrorCode DisplacementBCFEMethodPreAndPostProc::preProcess() {
 
   switch (ts_ctx) {
     case CTX_TSSETIFUNCTION: {
-      snes_ctx = CTX_SNESSETFUNCTION;
+      snes_ctx = CTX_SNESSETFUNCTION;      
+      snes_x = ts_u;
       snes_f = ts_F;
       break;
     }
@@ -334,6 +335,7 @@ PetscErrorCode FixBcAtEntities::preProcess() {
     switch (ts_ctx) {
       case CTX_TSSETIFUNCTION: {
 	snes_ctx = CTX_SNESSETFUNCTION;
+	//snes_x = ts_u;
 	snes_f = ts_F;
 	break;
       }

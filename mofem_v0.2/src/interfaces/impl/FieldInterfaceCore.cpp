@@ -314,7 +314,7 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
     ierr = sit->get_nb_steps(moab,nb_steps); CHKERRQ(ierr);
     int ss = 0;
     for(;ss<nb_steps;ss++) {
-      pair<SeriesStep_multiIndex::iterator,bool> p = series_steps.insert(MoFEMSeriesStep(&*sit,ss));
+      pair<SeriesStep_multiIndex::iterator,bool> p = series_steps.insert(MoFEMSeriesStep(moab,&*sit,ss));
       if(verb > 0) {
 	ostringstream ss;
 	ss << "add series step " << *p.first << endl;

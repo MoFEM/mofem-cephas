@@ -50,14 +50,17 @@ struct MoFEMSeries {
   Tag th_SeriesData;
   Tag th_SeriesDataUIDs;
   Tag th_SeriesDataHandles;
+  Tag th_SeriesTime;
 
   PetscErrorCode get_nb_steps(Interface &moab,int &nb_setps) const;
 
   vector<int> ia;
+  vector<double> time;
   vector<EntityHandle> handles;
   vector<ShortId> uids;
   vector<FieldData> data;
 
+  PetscErrorCode set_time(double time);
   PetscErrorCode push_dofs(const EntityHandle ent,const ShortId uid,const FieldData val);
  
   template<typename IT>
@@ -71,7 +74,7 @@ struct MoFEMSeries {
   }
 
   PetscErrorCode begin();
-  PetscErrorCode end();
+  PetscErrorCode end(double time = 0);
   PetscErrorCode read(Interface &moab);
   PetscErrorCode save(Interface &moab) const;
 
@@ -104,10 +107,14 @@ struct MoFEMSeriesStep: public interface_MoFEMSeries<MoFEMSeries> {
   typedef interface_MoFEMSeries<MoFEMSeries> interface_type_MoFEMSeries;
 
   int step_number;
-  MoFEMSeriesStep(const MoFEMSeries *_MoFEMSeries_ptr,const int _step_number);
+  MoFEMSeriesStep(Interface &moab,const MoFEMSeries *_MoFEMSeries_ptr,const int _step_number);
 
   inline int get_step_number() const { return step_number; };
   PetscErrorCode get(Interface &moab,DofMoFEMEntity_multiIndex &dofsMoabField) const;
+ 
+  double time;
+  PetscErrorCode get_time_init(Interface &moab);
+  inline double get_time() const { return time; }
 
   friend ostream& operator<<(ostream& os,const MoFEMSeriesStep& e);
 
@@ -140,7 +147,14 @@ typedef multi_index_container<
 	member<MoFEMSeriesStep,int,&MoFEMSeriesStep::step_number>
       > >,
     ordered_non_unique<
-      tag<SeriesName_mi_tag>, const_mem_fun<MoFEMSeriesStep::interface_type_MoFEMSeries,boost::string_ref,&MoFEMSeriesStep::get_name_ref> >
+      tag<SeriesName_mi_tag>, const_mem_fun<MoFEMSeriesStep::interface_type_MoFEMSeries,boost::string_ref,&MoFEMSeriesStep::get_name_ref> >,
+   ordered_non_unique<
+      tag<Composite_SeriesName_And_Time_mi_tag>, 
+      composite_key<
+	MoFEMSeriesStep,
+	const_mem_fun<MoFEMSeriesStep::interface_type_MoFEMSeries,boost::string_ref,&MoFEMSeriesStep::get_name_ref>,
+	const_mem_fun<MoFEMSeriesStep,double,&MoFEMSeriesStep::get_time>
+      > >
   > > SeriesStep_multiIndex;
 
 }
