@@ -2,6 +2,8 @@
 
 add_subdirectory(thermal)
 add_subdirectory(ultraweak)
+add_subdirectory(convective_mass_element)
+#add_subdirectory(ground_surface_temperature)
 
 # Obsolete
 
@@ -24,7 +26,6 @@ add_library(complex_for_lazy_obsolete
 )
 
 add_subdirectory(analytical_dirihlet_boundary_conditions)
-add_subdirectory(convective_mass_element)
 add_subdirectory(elasticity)
 add_subdirectory(cohesive_interface)
 add_subdirectory(nonlinear_elasticity)
