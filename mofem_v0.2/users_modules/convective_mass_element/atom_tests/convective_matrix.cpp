@@ -26,8 +26,6 @@
 #include <MoFEM.hpp>
 using namespace MoFEM;
 
-#include <DirichletBC.hpp>
-
 #include <Projection10NodeCoordsOnField.hpp>
 
 #include <boost/numeric/ublas/vector_proxy.hpp>
@@ -35,71 +33,13 @@ using namespace MoFEM;
 #include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <boost/numeric/ublas/vector.hpp>
 
-#include <SurfacePressure.hpp>
-#include <NodalForce.hpp>
-#include <FluidPressure.hpp>
-#include <BodyForce.hpp>
-#include <ThermalStressElement.hpp>
-
-#include <FEMethod_LowLevelStudent.hpp>
-#include <FEMethod_UpLevelStudent.hpp>
-
-#include <PostProcVertexMethod.hpp>
-#include <PostProcDisplacementAndStrainOnRefindedMesh.hpp>
-
-extern "C" {
-  #include <complex_for_lazy.h>
-}
-
-#include <ArcLengthTools.hpp>
-#include <FEMethod_ComplexForLazy.hpp>
-#include <FEMethod_DriverComplexForLazy.hpp>
-
-#include <SurfacePressureComplexForLazy.hpp>
-#include <PostProcNonLinearElasticityStresseOnRefindedMesh.hpp>
-
 #include <adolc/adolc.h> 
 #include <ConvectiveMassElement.hpp>
-
-using namespace ObosleteUsersModules;
 
 ErrorCode rval;
 PetscErrorCode ierr;
 
 static char help[] = "...\n\n";
-
-struct NL_ElasticFEMethod: public NonLinearSpatialElasticFEMthod {
-
-  NL_ElasticFEMethod(FieldInterface& _mField,double _lambda,double _mu,int _verbose = 0): 
-      FEMethod_ComplexForLazy_Data(_mField,_verbose), 
-      NonLinearSpatialElasticFEMthod(_mField,_lambda,_mu,_verbose)  {
-    set_PhysicalEquationNumber(hooke);
-  }
-
-  PetscErrorCode preProcess() {
-    PetscFunctionBegin;
-
-    switch (ts_ctx) {
-      case CTX_TSSETIFUNCTION: {
-	snes_ctx = CTX_SNESSETFUNCTION;
-	snes_f = ts_F;
-	break;
-      }
-      case CTX_TSSETIJACOBIAN: {
-	snes_ctx = CTX_SNESSETJACOBIAN;
-	snes_B = ts_B;
-	break;
-      }
-      default:
-      break;
-    }
-
-    ierr = NonLinearSpatialElasticFEMthod::preProcess(); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
-
-
-};
 
 int main(int argc, char *argv[]) {
 
@@ -279,20 +219,6 @@ int main(int argc, char *argv[]) {
   Mat Aij;
   ierr = m_field.MatCreateMPIAIJWithArrays("ELASTIC_MECHANICS",&Aij); CHKERRQ(ierr);
 
-  const double young_modulus = 1.;
-  const double poisson_ratio = 0.;
-  NL_ElasticFEMethod my_fe(m_field,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
-
-  NeummanForcesSurfaceComplexForLazy neumann_forces(m_field,Aij,F);
-  NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE &fe_spatial = neumann_forces.getLoopSpatialFe();
-  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET,it)) {
-    ierr = fe_spatial.addForce(it->get_msId()); CHKERRQ(ierr);
-  }
-  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,SIDESET|PRESSURESET,it)) {
-    ierr = fe_spatial.addPreassure(it->get_msId()); CHKERRQ(ierr);
-  }
-
-  SpatialPositionsBCFEMethodPreAndPostProc my_dirihlet_bc(m_field,"SPATIAL_POSITION",Aij,D,F);
   ierr = inertia.setConvectiveMassOperators("SPATIAL_VELOCITY","SPATIAL_POSITION"); CHKERRQ(ierr);
   ierr = inertia.setVelocityOperators("SPATIAL_VELOCITY","SPATIAL_POSITION"); CHKERRQ(ierr);
 
@@ -333,70 +259,6 @@ int main(int argc, char *argv[]) {
   //std::cin >> wait;
 
   ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
-
-  /*TS ts;
-  ierr = TSCreate(PETSC_COMM_WORLD,&ts); CHKERRQ(ierr);
-  ierr = TSSetType(ts,TSBEULER); CHKERRQ(ierr);
-
-  ConvectiveMassElement::UpdateAndControl update_and_control(m_field,ts,"SPATIAL_VELOCITY","SPATIAL_POSITION");
-
-  //TS
-  TsCtx ts_ctx(m_field,"ELASTIC_MECHANICS");
-
-  //right hand side
-  //preprocess
-  ts_ctx.get_preProcess_to_do_IFunction().push_back(&update_and_control);
-  ts_ctx.get_preProcess_to_do_IFunction().push_back(&my_dirihlet_bc);
-  //fe looops
-  TsCtx::loops_to_do_type& loops_to_do_Rhs = ts_ctx.get_loops_to_do_IFunction();
-  loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("ELASTIC",&my_fe));
-  loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("NEUAMNN_FE",&fe_spatial));
-  loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("VELOCITY_ELEMENT",&inertia.getLoopFeVelRhs()));
-  loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("MASS_ELEMENT",&inertia.getLoopFeMassRhs()));
-  //postproc
-  ts_ctx.get_postProcess_to_do_IFunction().push_back(&my_dirihlet_bc);
-
-
-  //left hand side 
-  //preprocess
-  ts_ctx.get_preProcess_to_do_IJacobian().push_back(&my_dirihlet_bc);
-  //fe loops
-  TsCtx::loops_to_do_type& loops_to_do_Mat = ts_ctx.get_loops_to_do_IJacobian();
-  loops_to_do_Mat.push_back(TsCtx::loop_pair_type("ELASTIC",&my_fe));
-  loops_to_do_Mat.push_back(TsCtx::loop_pair_type("NEUAMNN_FE",&fe_spatial));
-  loops_to_do_Mat.push_back(TsCtx::loop_pair_type("VELOCITY_ELEMENT",&inertia.getLoopFeVelLhs()));
-  loops_to_do_Mat.push_back(TsCtx::loop_pair_type("MASS_ELEMENT",&inertia.getLoopFeMassLhs()));
-  //postrocess
-  ts_ctx.get_postProcess_to_do_IJacobian().push_back(&my_dirihlet_bc);
-  ts_ctx.get_postProcess_to_do_IJacobian().push_back(&update_and_control);
-
-  ierr = TSSetIFunction(ts,F,f_TSSetIFunction,&ts_ctx); CHKERRQ(ierr);
-  ierr = TSSetIJacobian(ts,Aij,Aij,f_TSSetIJacobian,&ts_ctx); CHKERRQ(ierr);
-  ierr = TSMonitorSet(ts,f_TSMonitorSet,&ts_ctx,PETSC_NULL); CHKERRQ(ierr);
-
-  double ftime = 1;
-  ierr = TSSetDuration(ts,PETSC_DEFAULT,ftime); CHKERRQ(ierr);
-  ierr = TSSetSolution(ts,D); CHKERRQ(ierr);
-  ierr = TSSetFromOptions(ts); CHKERRQ(ierr);
-
-  ierr = m_field.set_local_VecCreateGhost("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-
-  ierr = TSSolve(ts,D); CHKERRQ(ierr);
-  ierr = TSGetTime(ts,&ftime); CHKERRQ(ierr);
-
-  PetscInt steps,snesfails,rejects,nonlinits,linits;
-  ierr = TSGetTimeStepNumber(ts,&steps); CHKERRQ(ierr);
-  ierr = TSGetSNESFailures(ts,&snesfails); CHKERRQ(ierr);
-  ierr = TSGetStepRejections(ts,&rejects); CHKERRQ(ierr);
-  ierr = TSGetSNESIterations(ts,&nonlinits); CHKERRQ(ierr);
-  ierr = TSGetKSPIterations(ts,&linits); CHKERRQ(ierr);
-  PetscPrintf(PETSC_COMM_WORLD,
-    "steps %D (%D rejected, %D SNES fails), ftime %g, nonlinits %D, linits %D\n",
-    steps,rejects,snesfails,ftime,nonlinits,linits);
-  ierr = TSDestroy(&ts);CHKERRQ(ierr);
-  */
 
 
   ierr = VecDestroy(&F); CHKERRQ(ierr);

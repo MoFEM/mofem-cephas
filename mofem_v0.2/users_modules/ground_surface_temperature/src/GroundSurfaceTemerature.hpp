@@ -203,7 +203,7 @@ struct GroundSurfaceTemerature {
 	commonData(common_data),
 	timeData(time_data),
 	pArameters(parameters),
-	tAg(tag), ho_geometry(_ho_geometry) { symm = false; }
+	tAg(tag), ho_geometry(_ho_geometry) {}
 
     PetscErrorCode record(int gg,double &f) {
       PetscFunctionBegin;
@@ -337,6 +337,7 @@ struct GroundSurfaceTemerature {
 	  }
 
 	  noalias(M) += val*grad[0][0]*outer_prod( row_data.getN(gg,nb_row),col_data.getN(gg,nb_col) );
+
         }
 
 	ierr = MatSetValues(
@@ -344,6 +345,15 @@ struct GroundSurfaceTemerature {
 	  nb_row,&row_data.getIndices()[0],
 	  nb_col,&col_data.getIndices()[0],
 	  &M(0,0),ADD_VALUES); CHKERRQ(ierr);
+        if(row_side != col_side || row_type != col_type) {
+          transK.resize(nb_col,nb_row);
+          noalias(transK) = trans( K );
+          ierr = MatSetValues(
+	    (getFEMethod()->ts_B),
+            nb_col,&col_data.getIndices()[0],
+            nb_row,&row_data.getIndices()[0],
+            &transK(0,0),ADD_VALUES); CHKERRQ(ierr);
+        }
 
       } catch (const std::exception& ex) {
         ostringstream ss;
