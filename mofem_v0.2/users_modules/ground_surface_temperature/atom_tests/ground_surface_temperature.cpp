@@ -99,22 +99,21 @@ struct MyTimeData: public GroundSurfaceTemerature::TimeDependendData {
     spaData.atmos_refract = 0.5667; // Atmospheric refraction at sunrise and sunset (0.5667 deg is typical)
 				// valid range: -5   to   5 degrees, error code: 16
 
-
-    spaData.year = 2015;	// 4-digit year,      valid range: -2000 to 6000, error code: 1
-    spaData.month = 1;          // 2-digit month,         valid range: 1 to  12,  error code: 2
-    spaData.day = 12;           // 2-digit day,           valid range: 1 to  31,  error code: 3
+    //Longest day (Solstice)
+    spaData.year = 2014;	// 4-digit year,      valid range: -2000 to 6000, error code: 1
+    spaData.month = 6;          // 2-digit month,         valid range: 1 to  12,  error code: 2
+    spaData.day = 21;           // 2-digit day,           valid range: 1 to  31,  error code: 3
 
     spaData.hour = 0;        	// Observer local hour,   valid range: 0 to  24,  error code: 4
     spaData.minute = 0;         // Observer local minute, valid range: 0 to  59,  error code: 5
     spaData.second = 0;         // Observer local second, valid range: 0 to <60,  error code: 6	
 
+    //This is London
     spaData.longitude = 0.1275;   // Observer longitude (negative west of Greenwich)
 				  // valid range: -180  to  180 degrees, error code: 9
 
     spaData.latitude = 51.5072;    // Observer latitude (negative south of equator)
 				  // valid range: -90   to   90 degrees, error code: 10
-
-
   }
 
   spa_data spaData;
