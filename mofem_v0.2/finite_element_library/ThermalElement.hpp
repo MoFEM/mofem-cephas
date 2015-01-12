@@ -84,13 +84,13 @@ struct ThermalElement {
   MyTriFE& getLoopFeFlux() { return feFlux; } //< get heat flux element
 
   MyTriFE feConvectionRhs; //< convection element
-  MyTriFE& getLoopFeConvectionRhs() { return feConvectionRhs; } //< get convection element
   MyTriFE feConvectionLhs;
+  MyTriFE& getLoopFeConvectionRhs() { return feConvectionRhs; } //< get convection element
   MyTriFE& getLoopFeConvectionLhs() { return feConvectionLhs; }
 
   MyTriFE feRadiationRhs; //< radiation element
-  MyTriFE& getLoopFeRadiationRhs() { return feRadiationRhs; } //< get radiation element
   MyTriFE feRadiationLhs;
+  MyTriFE& getLoopFeRadiationRhs() { return feRadiationRhs; } //< get radiation element
   MyTriFE& getLoopFeRadiationLhs() { return feRadiationLhs; }
 
   FieldInterface &mField;

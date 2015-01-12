@@ -264,26 +264,22 @@ PetscErrorCode ThermalElement::setTimeSteppingProblem(string field_name,string r
   {
     map<int,FluxData>::iterator sit = setOfFluxes.begin();
     for(;sit!=setOfFluxes.end();sit++) {
-      //add finite element
       feFlux.get_op_to_do_Rhs().push_back(new OpHeatFlux(field_name,sit->second,ho_geometry));
     }
   }
-  
   
   // Convection
   {
     map<int,ConvectionData>::iterator sit = setOfConvection.begin();
     for(;sit!=setOfConvection.end();sit++) {
-      //add finite element
-	feConvectionRhs.get_op_to_do_Rhs().push_back(new OpGetTriTemperatureAtGaussPts(field_name,commonData));
+      feConvectionRhs.get_op_to_do_Rhs().push_back(new OpGetTriTemperatureAtGaussPts(field_name,commonData));
       feConvectionRhs.get_op_to_do_Rhs().push_back(new OpConvectionRhs(field_name,sit->second,commonData,ho_geometry));
     }
   }
   {
     map<int,ConvectionData>::iterator sit = setOfConvection.begin();
     for(;sit!=setOfConvection.end();sit++) {
-	//add finite element
-	feConvectionLhs.get_op_to_do_Lhs().push_back(new OpConvectionLhs(field_name,sit->second,ho_geometry));
+      feConvectionLhs.get_op_to_do_Lhs().push_back(new OpConvectionLhs(field_name,sit->second,ho_geometry));
     }
   }
 
@@ -291,16 +287,14 @@ PetscErrorCode ThermalElement::setTimeSteppingProblem(string field_name,string r
   {
     map<int,RadiationData>::iterator sit = setOfRadiation.begin();
     for(;sit!=setOfRadiation.end();sit++) {
-	//add finite element
-	feRadiationRhs.get_op_to_do_Rhs().push_back(new OpGetTriTemperatureAtGaussPts(field_name,commonData));
+      feRadiationRhs.get_op_to_do_Rhs().push_back(new OpGetTriTemperatureAtGaussPts(field_name,commonData));
       feRadiationRhs.get_op_to_do_Rhs().push_back(new OpRadiationRhs(field_name,sit->second,commonData,ho_geometry));
     }
   }
   {
     map<int,RadiationData>::iterator sit = setOfRadiation.begin();
     for(;sit!=setOfRadiation.end();sit++) {
-      //add finite element
-	feRadiationLhs.get_op_to_do_Rhs().push_back(new OpGetTriTemperatureAtGaussPts(field_name,commonData));
+      feRadiationLhs.get_op_to_do_Rhs().push_back(new OpGetTriTemperatureAtGaussPts(field_name,commonData));
       feRadiationLhs.get_op_to_do_Lhs().push_back(new OpRadiationLhs(field_name,sit->second,commonData,ho_geometry));
     }
   }
