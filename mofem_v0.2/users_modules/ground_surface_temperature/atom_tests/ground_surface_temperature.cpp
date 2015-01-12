@@ -78,12 +78,6 @@ struct MyTimeData: public GroundSurfaceTemerature::TimeDependendData {
     spaData.timezone = 0;     	// Observer time zone (negative west of Greenwich)
 				// valid range: -18   to   18 hours,   error code: 8
 
-    spaData.longitude = 4.25;   // Observer longitude (negative west of Greenwich)
-				// valid range: -180  to  180 degrees, error code: 9
-
-    spaData.latitude = 55.8;    // Observer latitude (negative south of equator)
-				// valid range: -90   to   90 degrees, error code: 10
-
     spaData.elevation = 10;    	// Observer elevation [meters]
 				// valid range: -6500000 or higher meters,    error code: 11
 
@@ -101,17 +95,24 @@ struct MyTimeData: public GroundSurfaceTemerature::TimeDependendData {
 				// surface normal on horizontal plane, negative east)
 				// valid range: -360 to 360 degrees, error code: 15
 
-    spaData.atmos_refract;	// Atmospheric refraction at sunrise and sunset (0.5667 deg is typical)
+    spaData.atmos_refract = 0.5667; // Atmospheric refraction at sunrise and sunset (0.5667 deg is typical)
 				// valid range: -5   to   5 degrees, error code: 16
 
 
     spaData.year = 2015;	// 4-digit year,      valid range: -2000 to 6000, error code: 1
-    spaData.month = 7;          // 2-digit month,         valid range: 1 to  12,  error code: 2
-    spaData.day = 10;           // 2-digit day,           valid range: 1 to  31,  error code: 3
+    spaData.month = 1;          // 2-digit month,         valid range: 1 to  12,  error code: 2
+    spaData.day = 12;           // 2-digit day,           valid range: 1 to  31,  error code: 3
 
     spaData.hour = 0;        	// Observer local hour,   valid range: 0 to  24,  error code: 4
     spaData.minute = 0;         // Observer local minute, valid range: 0 to  59,  error code: 5
     spaData.second = 0;         // Observer local second, valid range: 0 to <60,  error code: 6	
+
+    spaData.longitude = 0.1275;   // Observer longitude (negative west of Greenwich)
+				  // valid range: -180  to  180 degrees, error code: 9
+
+    spaData.latitude = 51.5072;    // Observer latitude (negative south of equator)
+				  // valid range: -90   to   90 degrees, error code: 10
+
 
   }
 
@@ -119,6 +120,8 @@ struct MyTimeData: public GroundSurfaceTemerature::TimeDependendData {
 
   PetscErrorCode set() {
     PetscFunctionBegin;
+
+    spaData.function = SPA_ZA_RTS;
 
     int r;
     r = spa_calculate(&spaData);
@@ -128,6 +131,10 @@ struct MyTimeData: public GroundSurfaceTemerature::TimeDependendData {
     
     zenith = spaData.zenith;
     azimuth = spaData.azimuth;
+
+    PetscPrintf(PETSC_COMM_WORLD,
+      "Suntransit %3.2f Sunrise %3.2f Sunset %3.2f\n" ,
+      spaData.suntransit,spaData.sunrise,spaData.sunset);
 
     PetscFunctionReturn(0);
   }
@@ -143,6 +150,12 @@ int main(int argc, char *argv[]) {
   ierr = PetscOptionsGetString(PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
+  }
+
+  PetscInt order;
+  ierr = PetscOptionsGetInt(PETSC_NULL,"-my_order",&order,&flg); CHKERRQ(ierr);
+  if(flg != PETSC_TRUE) {
+    order = 1;
   }
 
   moab::Core mb_instance;
@@ -162,8 +175,47 @@ int main(int argc, char *argv[]) {
   bit_level0.set(0);
   ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
 
-  ThermalElement thermal_elements(m_field);
-  GroundSurfaceTemerature ground_surface(thermal_elements);
+  //Fields H1 space rank 1
+  ierr = m_field.add_field("TEMP",H1,1); CHKERRQ(ierr);
+
+  //Add field H1 space rank 3 to approximate gemetry using heierachical basis
+  //For 10 node tets, before use, gemetry is projected on that field (see below)
+  ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,3); CHKERRQ(ierr);
+
+  //meshset consisting all entities in mesh
+  EntityHandle root_set = moab.get_root_set(); 
+  //add entities to field (root_mesh, i.e. on all mesh etities fields are approx.)
+  ierr = m_field.add_ents_to_field_by_TETs(root_set,"TEMP"); CHKERRQ(ierr);
+
+  //set app. order
+  //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
+  //for simplicity of example to all entities is applied the same order
+  ierr = m_field.set_field_order(root_set,MBTET,"TEMP",order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(root_set,MBTRI,"TEMP",order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(root_set,MBEDGE,"TEMP",order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(root_set,MBVERTEX,"TEMP",1); CHKERRQ(ierr);
+
+  //gemetry approximation is set to 2nd oreder
+  ierr = m_field.add_ents_to_field_by_TETs(root_set,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBTET,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBTRI,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBEDGE,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
+
+  GroundSurfaceTemerature ground_surface(m_field);
+  ground_surface.addSurfaces("TEMP"); 
+
+  //build database, i.e. declare dofs, elements and ajacencies
+
+  //build field
+  ierr = m_field.build_fields(); CHKERRQ(ierr);
+  //priject 10 node tet approximation of gemetry on hierarhical basis 
+  Projection10NodeCoordsOnField ent_method_material(m_field,"MESH_NODE_POSITIONS");
+  ierr = m_field.loop_dofs("MESH_NODE_POSITIONS",ent_method_material); CHKERRQ(ierr);
+  //build finite elemnts
+  ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
+  //build adjacencies
+  ierr = m_field.build_adjacencies(bit_level0); CHKERRQ(ierr);
 
   MyTimeData time_data;
 
@@ -177,7 +229,7 @@ int main(int argc, char *argv[]) {
   }
 
   GroundSurfaceTemerature::BareSoil bare_soil(bare_soil_tris);
-  GroundSurfaceTemerature::Shade shade(m_field,&time_data,bare_soil);
+  GroundSurfaceTemerature::Shade shade(m_field,&time_data,&bare_soil);
 
 
   Range tets;
@@ -198,7 +250,7 @@ int main(int argc, char *argv[]) {
 
   time_t t0 = mktime(&start_time);
   time_t t = t0;
-  for(;t<t0+60*60*24;t+=2*60) {
+  for(;t<t0+60*60*24;t+=60*60) {
 
     struct tm current_time;
     current_time = *gmtime(&t);//localtime(&t);
