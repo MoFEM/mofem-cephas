@@ -176,6 +176,54 @@ struct OpGetData: public DataOperator {
 
 };
 
+/** \brief calculate normals at Gauss points of triangle element
+  * \ingroup mofem_forces_and_sources
+  */
+struct OpGetNormals: public DataOperator {
+
+  ublas::matrix<FieldData> &nOrmals_at_GaussPt;
+  ublas::matrix<FieldData> &tAngent1_at_GaussPt;
+  ublas::matrix<FieldData> &tAngent2_at_GaussPt;
+
+  OpGetNormals(
+    ublas::matrix<FieldData> &_nOrmals_at_GaussPt,
+    ublas::matrix<FieldData> &_tAngent1_at_GaussPt,
+    ublas::matrix<FieldData> &_tAngent2_at_GaussPt): 
+    nOrmals_at_GaussPt(_nOrmals_at_GaussPt),
+    tAngent1_at_GaussPt(_tAngent1_at_GaussPt),
+    tAngent2_at_GaussPt(_tAngent2_at_GaussPt) {}
+
+  ublas::matrix<FieldData> sPin;
+  PetscErrorCode doWork(
+    int side,
+    EntityType type,
+    DataForcesAndSurcesCore::EntData &data);
+
+  PetscErrorCode calculateNormals();
+
+};
+
+/** \brief transfrom Hdiv space fluxes from reference elemento to physical triangle
+ */
+struct OpSetPiolaTransoformOnTriangle: public DataOperator {
+
+  const ublas::vector<double> &normal;
+  const ublas::matrix<FieldData> &nOrmals_at_GaussPt;
+
+  OpSetPiolaTransoformOnTriangle(
+    const ublas::vector<double> &_normal,
+    const ublas::matrix<FieldData> &_nOrmals_at_GaussPt):
+    normal(_normal),nOrmals_at_GaussPt(_nOrmals_at_GaussPt) {}
+
+  PetscErrorCode doWork(
+    int side,
+    EntityType type,
+    DataForcesAndSurcesCore::EntData &data);
+
+};
+
+
+
 }
 
 #endif //__DATAOPERATORS_HPP

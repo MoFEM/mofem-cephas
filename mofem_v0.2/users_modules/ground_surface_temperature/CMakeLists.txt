@@ -16,17 +16,8 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
-#finite elements
-add_library(mofem_finite_elements
-  impl/DataStructures.cpp
-  impl/DataOperators.cpp
-  impl/ElementsOnEntities.cpp
-)
+include_directories("${UM_SOURCE_DIR}/ground_surface_temperature/src")
+include_directories("${UM_SOURCE_DIR}/ground_surface_temperature/third_party")
 
-#install(FILES 
-#  ForcesAndSurcesCore.hpp 
-#  PotsProcOnRefMesh.hpp
-#  DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
-
-install(TARGETS mofem_finite_elements DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+add_subdirectory(atom_tests)
 
