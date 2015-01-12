@@ -3,7 +3,7 @@
 add_subdirectory(thermal)
 add_subdirectory(ultraweak)
 add_subdirectory(convective_mass_element)
-#add_subdirectory(ground_surface_temperature)
+add_subdirectory(ground_surface_temperature)
 
 # Obsolete
 
