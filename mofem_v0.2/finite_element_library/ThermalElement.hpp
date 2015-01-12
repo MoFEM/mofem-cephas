@@ -27,8 +27,6 @@
 #ifndef __THERMAL_ELEMENT_HPP
 #define __THERMAL_ELEMENT_HPP
 
-#include<moab/Skinner.hpp>
-
 namespace MoFEM {
 
 /** \brief struture grouping operators and data used for thermal problems

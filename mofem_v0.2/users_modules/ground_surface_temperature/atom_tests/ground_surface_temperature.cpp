@@ -50,7 +50,8 @@ void tricircumcenter3d_tp(double a[3],double b[3],double c[3],
 #include <time.h>
 
 #include <adolc/adolc.h> 
-#include <ThermalElement.hpp>
+//#include <ThermalElement.hpp>
+#include<moab/Skinner.hpp>
 #include <GroundSurfaceTemerature.hpp>
 
 ErrorCode rval;
@@ -218,27 +219,16 @@ int main(int argc, char *argv[]) {
   ierr = m_field.build_adjacencies(bit_level0); CHKERRQ(ierr);
 
   MyTimeData time_data;
-
-  Range bare_soil_tris;
-  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
-    if(it->get_Cubit_name().compare(0,8,"BARESOIL") == 0) {
-      Range tris;
-      rval = m_field.get_moab().get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
-      bare_soil_tris.merge(tris);
-    }
-  }
-
-  GroundSurfaceTemerature::BareSoil bare_soil(bare_soil_tris);
-  GroundSurfaceTemerature::Shade shade(m_field,&time_data,&bare_soil);
-
+  ierr = ground_surface.setOperators(1,&time_data,"TEMP"); CHKERRQ(ierr);
+  GroundSurfaceTemerature::Shade *shade_ptr = &*ground_surface.preProcessShade.begin();
 
   Range tets;
   ierr = m_field.get_entities_by_type_and_ref_level(bit_level0,BitRefLevel().set(),MBTET,tets);  CHKERRQ(ierr);
-  shade.getSkin(tets);
+  shade_ptr->getSkin(tets);
 
   EntityHandle meshset;
   rval = moab.create_meshset(MESHSET_SET,meshset); CHKERR_PETSC(rval);
-  rval = moab.add_entities(meshset,shade.sKin); CHKERR_PETSC(rval);
+  rval = moab.add_entities(meshset,shade_ptr->sKin); CHKERR_PETSC(rval);
 
   struct tm start_time;
   start_time.tm_sec = time_data.spaData.second;
@@ -264,7 +254,7 @@ int main(int argc, char *argv[]) {
     PetscPrintf(PETSC_COMM_WORLD,"%s",asctime(&current_time));
         
     ierr = time_data.set(); CHKERRQ(ierr);
-    ierr = shade.preProcess(); CHKERRQ(ierr);
+    ierr = shade_ptr->preProcess(); CHKERRQ(ierr);
 
     ostringstream ss;
     ss << "out_" << t << ".vtk";
@@ -274,7 +264,6 @@ int main(int argc, char *argv[]) {
   }
   
   PetscFinalize();
-
   return 0;
 }
 
