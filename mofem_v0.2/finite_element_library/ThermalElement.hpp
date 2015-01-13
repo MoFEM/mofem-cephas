@@ -27,8 +27,6 @@
 #ifndef __THERMAL_ELEMENT_HPP
 #define __THERMAL_ELEMENT_HPP
 
-#include<moab/Skinner.hpp>
-
 namespace MoFEM {
 
 /** \brief struture grouping operators and data used for thermal problems
@@ -84,13 +82,13 @@ struct ThermalElement {
   MyTriFE& getLoopFeFlux() { return feFlux; } //< get heat flux element
 
   MyTriFE feConvectionRhs; //< convection element
-  MyTriFE& getLoopFeConvectionRhs() { return feConvectionRhs; } //< get convection element
   MyTriFE feConvectionLhs;
+  MyTriFE& getLoopFeConvectionRhs() { return feConvectionRhs; } //< get convection element
   MyTriFE& getLoopFeConvectionLhs() { return feConvectionLhs; }
 
   MyTriFE feRadiationRhs; //< radiation element
-  MyTriFE& getLoopFeRadiationRhs() { return feRadiationRhs; } //< get radiation element
   MyTriFE feRadiationLhs;
+  MyTriFE& getLoopFeRadiationRhs() { return feRadiationRhs; } //< get radiation element
   MyTriFE& getLoopFeRadiationLhs() { return feRadiationLhs; }
 
   FieldInterface &mField;
@@ -692,14 +690,14 @@ struct ThermalElement {
 
     OpRadiationLhs(const string field_name,RadiationData &data,CommonData &common_data,bool _ho_geometry = false):
       TriElementForcesAndSurcesCore::UserDataOperator(field_name),
-      commonData(common_data),dAta(data),ho_geometry(_ho_geometry),useTsB(true) { symm = false; }
+      commonData(common_data),dAta(data),ho_geometry(_ho_geometry),useTsB(true) { }
 
     Mat A;
     OpRadiationLhs(const string field_name,Mat _A,RadiationData &data,CommonData &common_data,bool _ho_geometry = false):
       TriElementForcesAndSurcesCore::UserDataOperator(field_name),
-      commonData(common_data),dAta(data),ho_geometry(_ho_geometry),useTsB(false),A(_A) { symm = false; }
+      commonData(common_data),dAta(data),ho_geometry(_ho_geometry),useTsB(false),A(_A) { }
 
-    ublas::matrix<double> M,transM;
+    ublas::matrix<double> N,transN;
 
     /** \brief calculate thermal radiation term in the lhs of equations(Tangent Matrix) for transient Thermal Problem
       *
@@ -723,8 +721,8 @@ struct ThermalElement {
         int nb_row = row_data.getN().size2();
         int nb_col = col_data.getN().size2();
 
-        M.resize(nb_row,nb_col);
-	bzero(&*M.data().begin(),nb_row*nb_col*sizeof(double));
+        N.resize(nb_row,nb_col);
+	N.clear();
 
         for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
 	  double T3_at_Gauss_pt = pow(commonData.temperatureAtGaussPts[gg],3.0);
@@ -738,7 +736,7 @@ struct ThermalElement {
 	  }
 	  const double fOur = 4.0;
 	  double val = fOur*getGaussPts()(2,gg)*radiationConst*T3_at_Gauss_pt;
-	  noalias(M) += val*outer_prod( row_data.getN(gg,nb_row),col_data.getN(gg,nb_col) );
+	  noalias(N) += val*outer_prod( row_data.getN(gg,nb_row),col_data.getN(gg,nb_col) );
         }
 
 	if(!useTsB) {
@@ -748,7 +746,16 @@ struct ThermalElement {
 	  (getFEMethod()->ts_B),
 	  nb_row,&row_data.getIndices()[0],
 	  nb_col,&col_data.getIndices()[0],
-	  &M(0,0),ADD_VALUES); CHKERRQ(ierr);
+	  &N(0,0),ADD_VALUES); CHKERRQ(ierr);
+        if(row_side != col_side || row_type != col_type) {
+          transN.resize(nb_col,nb_row);
+          noalias(transN) = trans( N );
+          ierr = MatSetValues(
+                 (getFEMethod()->ts_B),
+                 nb_col,&col_data.getIndices()[0],
+                 nb_row,&row_data.getIndices()[0],
+                 &transN(0,0),ADD_VALUES); CHKERRQ(ierr);
+        }
 
         } catch (const std::exception& ex) {
           ostringstream ss;
