@@ -22,6 +22,9 @@ set(MOFEM_INTERFACES_SRC
   #Core
   impl/Core.cpp
   impl/CreateMat.cpp
+  impl/Vectors.cpp
+  impl/FieldBlas.cpp
+  impl/GetAdjacancies.cpp
   impl/FieldInterfaceCore.cpp
   impl/MeshRefinmentCore.cpp
   impl/PrismInterfaceCore.cpp

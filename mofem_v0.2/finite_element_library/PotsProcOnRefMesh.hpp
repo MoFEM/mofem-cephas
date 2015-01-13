@@ -492,8 +492,8 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
 	    for(int rr = 0;rr<rank;rr++) {
 	      for(int dd = 0;dd<3;dd++) {
 		for(unsigned int dof = 0;dof<(data.getFieldData().size()/rank);dof++) {
-		  ((double*)tags_ptr[gg])[3*rr+dd] += data.getDiffN(gg)(dof,dd)*data.getFieldData()[3*dof+rr];
-		  (commonData.gradMap[row_field_name])[gg](rr,dd) += data.getDiffN(gg)(dof,dd)*data.getFieldData()[3*dof+rr];
+		  ((double*)tags_ptr[gg])[rank*rr+dd] += data.getDiffN(gg)(dof,dd)*data.getFieldData()[rank*dof+rr];
+		  (commonData.gradMap[row_field_name])[gg](rr,dd) += data.getDiffN(gg)(dof,dd)*data.getFieldData()[rank*dof+rr];
 		}
 	      }
 	    }

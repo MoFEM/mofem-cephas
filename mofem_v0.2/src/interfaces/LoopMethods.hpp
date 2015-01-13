@@ -30,6 +30,30 @@ static const MOFEMuuid IDD_MOFEMFEMethod = MOFEMuuid( BitIntefaceId(FE_METHOD) )
 static const MOFEMuuid IDD_MOFEMEntMethod = MOFEMuuid( BitIntefaceId(ENT_METHOD) );
 
 /**
+ * \brief data structure for ksp (nlinear solver) context
+ * \ingroup mofem_loop_methods
+ *
+ * Struture stores context data which are set in finctions run by PETSc SNES functions.
+ *
+ */
+struct KspMethod {
+  
+  enum KSPContext { CTX_SETFUNCTION, CTX_OPERATORS, CTX_KSPNONE };
+  
+  KSPContext ksp_ctx;
+  KspMethod(): ksp_ctx(CTX_KSPNONE) {}
+  virtual ~KspMethod() {};
+
+  PetscErrorCode set_ksp_ctx(const KSPContext ctx_);
+
+  KSP ksp;
+  PetscErrorCode set_ksp(KSP _ksp);
+  Vec ksp_f;
+  Mat ksp_A,ksp_B;
+
+};
+
+/**
  * \brief data structure for snes (nonlinear solver) context
  * \ingroup mofem_loop_methods
  *
@@ -39,17 +63,17 @@ static const MOFEMuuid IDD_MOFEMEntMethod = MOFEMuuid( BitIntefaceId(ENT_METHOD)
 struct SnesMethod {
 
   enum SNESContext { CTX_SNESSETFUNCTION, CTX_SNESSETJACOBIAN, CTX_SNESNONE };
-  //
+
   SNESContext snes_ctx;
   SnesMethod(): snes_ctx(CTX_SNESNONE) {};
-  //
+  virtual ~SnesMethod() {};
+
   PetscErrorCode set_snes_ctx(const SNESContext ctx_);
-  //
+
   SNES snes;
   PetscErrorCode set_snes(SNES _snes);
   Vec snes_x,snes_f;
   Mat snes_A,snes_B;
-  virtual ~SnesMethod() {};
 };
 
 /**
@@ -60,20 +84,20 @@ struct SnesMethod {
  */
 struct TSMethod {
   enum TSContext { CTX_TSSETRHSFUNCTION, CTX_TSSETRHSJACOBIAN, CTX_TSSETIFUNCTION, CTX_TSSETIJACOBIAN, CTX_TSTSMONITORSET, CTX_TSNONE };
-  //
+
   TSContext ts_ctx;
   TSMethod(): ts_ctx(CTX_TSNONE),ts_a(0),ts_t(0) {};
-  //
+  virtual ~TSMethod() {};
+
   PetscErrorCode set_ts_ctx(const TSContext ctx_);
-  //
+
   TS ts;
   PetscErrorCode set_ts(TS _ts);
   Vec ts_u,ts_u_t,ts_F;
   Mat ts_A,ts_B;
-  //
+
   PetscInt ts_step;
   PetscReal ts_a,ts_t;
-  virtual ~TSMethod() {};
 };
 
 /**
@@ -82,7 +106,7 @@ struct TSMethod {
  *
  * It allows to exchange data between MoFEM and user functoions. It stores informaton about multi-indices.
  */
-struct BasicMethod: public FieldUnknownInterface,SnesMethod,TSMethod {
+struct BasicMethod: public FieldUnknownInterface,KspMethod,SnesMethod,TSMethod {
 
   PetscErrorCode queryInterface (const MOFEMuuid& uuid, FieldUnknownInterface** iface) {
     if(uuid == IDD_MOFEMBasicMethod) {

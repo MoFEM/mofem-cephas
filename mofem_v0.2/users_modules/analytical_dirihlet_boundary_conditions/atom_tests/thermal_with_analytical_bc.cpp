@@ -117,7 +117,8 @@ int main(int argc, char *argv[]) {
   ierr = m_field.set_field_order(root_set,MBVERTEX,"TEMP",1); CHKERRQ(ierr);
 
   ThermalElement thermal_elements(m_field);
-  ierr = thermal_elements.addThermalElements("TEST_PROBLEM","TEMP"); CHKERRQ(ierr);
+  ierr = thermal_elements.addThermalElements("TEMP"); CHKERRQ(ierr);
+  ierr = m_field.modify_problem_add_finite_element("TEST_PROBLEM","THERMAL_FE"); CHKERRQ(ierr);
 
   Range bc_tris;
   for(_IT_CUBITMESHSETS_BY_NAME_FOR_LOOP_(m_field,"ANALYTICAL_BC",it)) {

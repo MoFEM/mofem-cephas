@@ -112,9 +112,13 @@ int main(int argc, char *argv[]) {
   ierr = m_field.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
 
   ThermalElement thermal_elements(m_field);
-  ierr = thermal_elements.addThermalElements("THERMAL_PROBLEM","TEMP"); CHKERRQ(ierr);
-  ierr = thermal_elements.addThermalFluxElement("THERMAL_PROBLEM","TEMP"); CHKERRQ(ierr);
-  ierr = thermal_elements.addThermalConvectionElement("THERMAL_PROBLEM","TEMP"); CHKERRQ(ierr);
+  ierr = thermal_elements.addThermalElements("TEMP"); CHKERRQ(ierr);
+  ierr = thermal_elements.addThermalFluxElement("TEMP"); CHKERRQ(ierr);
+  ierr = thermal_elements.addThermalConvectionElement("TEMP"); CHKERRQ(ierr);
+
+  ierr = m_field.modify_problem_add_finite_element("THERMAL_PROBLEM","THERMAL_FE"); CHKERRQ(ierr);
+  ierr = m_field.modify_problem_add_finite_element("THERMAL_PROBLEM","THERMAL_FLUX_FE"); CHKERRQ(ierr);
+  ierr = m_field.modify_problem_add_finite_element("THERMAL_PROBLEM","THERMAL_CONVECTION_FE"); CHKERRQ(ierr);
 
   /****/
   //build database
