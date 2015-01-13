@@ -308,9 +308,9 @@ struct Core:
   //refine
   PetscErrorCode seed_finite_elements(const Range &entities,int verb = -1);
   PetscErrorCode seed_finite_elements(const EntityHandle meshset,int verb = -1);
-  PetscErrorCode seed_ref_level(const Range &ents,const BitRefLevel &bit,unsigned char pstat = 0,MPI_Comm comm = PETSC_COMM_WORLD,int verb = -1);
-  PetscErrorCode seed_ref_level_2D(const EntityHandle meshset,const BitRefLevel &bit,unsigned char pstat = 0,MPI_Comm comm = PETSC_COMM_WORLD,int verb = -1);
-  PetscErrorCode seed_ref_level_3D(const EntityHandle meshset,const BitRefLevel &bit,unsigned char pstat = 0,MPI_Comm comm = PETSC_COMM_WORLD,int verb = -1);
+  PetscErrorCode seed_ref_level(const Range &ents,const BitRefLevel &bit,MPI_Comm comm = PETSC_COMM_WORLD,int verb = -1);
+  PetscErrorCode seed_ref_level_2D(const EntityHandle meshset,const BitRefLevel &bit,MPI_Comm comm = PETSC_COMM_WORLD,int verb = -1);
+  PetscErrorCode seed_ref_level_3D(const EntityHandle meshset,const BitRefLevel &bit,MPI_Comm comm = PETSC_COMM_WORLD,int verb = -1);
   PetscErrorCode seed_ref_level_MESHSET(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1);
   PetscErrorCode get_entities_by_type_and_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,const EntityHandle meshset,int verb = -1);
   PetscErrorCode get_entities_by_type_and_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,Range &ents,int verb = -1);
@@ -489,6 +489,7 @@ struct Core:
   PetscErrorCode loop_finite_elements(const string &problem_name,const string &fe_name,FEMethod &method,int lower_rank,int upper_rank,int verb = -1);
   PetscErrorCode loop_finite_elements(const string &problem_name,const string &fe_name,FEMethod &method,int verb = -1);
   PetscErrorCode loop_dofs(const MoFEMProblem *problem_ptr,const string &field_name,RowColData rc,EntMethod &method,int lower_rank,int upper_rank,int verb = -1);
+  PetscErrorCode loop_dofs(const string &problem_name,const string &field_name,RowColData rc,EntMethod &method,int lower_rank,int upper_rank,int verb = -1);
   PetscErrorCode loop_dofs(const string &problem_name,const string &field_name,RowColData rc,EntMethod &method,int verb = -1);
   PetscErrorCode loop_dofs(const string &field_name,EntMethod &method,int verb = -1);
 

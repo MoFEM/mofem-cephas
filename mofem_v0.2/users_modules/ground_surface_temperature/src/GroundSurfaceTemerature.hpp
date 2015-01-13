@@ -60,7 +60,6 @@ struct GroundSurfaceTemerature {
   MyTriFE& getFeGroundSurfaceRhs() { return feGroundSurfaceRhs; }
   MyTriFE& getFeGroundSurfaceLhs() { return feGroundSurfaceLhs; }
 
-
   GroundSurfaceTemerature(FieldInterface &m_field):
     mField(m_field),
     feGroundSurfaceRhs(m_field),
@@ -246,7 +245,7 @@ struct GroundSurfaceTemerature {
   }
 
   static double incomingLongWaveRadiation(double eps,TimeDependendData *time_data_ptr) {
-    const double sigma = 0.081653;
+    const double sigma = 5.67037321e-8;
     double sigma_eps = eps*sigma;
     double ea = time_data_ptr->calulateVapourPressure(time_data_ptr->calulateVapourPressure(time_data_ptr->Td));
     // incoming longwave radiation (W/m2)
@@ -541,7 +540,7 @@ struct GroundSurfaceTemerature {
       // sigma = 8165.3×10−8 (J/day) m−2 K−4
       // sigma = 0.081653 (kJ/day) m−2 K−4
       // STephan-Boltzman
-      const double sigma = 0.081653;
+      const double sigma = 5.67037321e-8;
       
       trace_on(tAg);
       {
@@ -557,11 +556,13 @@ struct GroundSurfaceTemerature {
 	//convection
 	double us = pArametersPtr->CSh*timeDataPtr->u10; // win speed with sheltering coeeficient
 	aDeltaPhi = (aT-timeDataPtr->Ta); // this is with assumtion that near the near the surface is the same amout of moisture like in the air 
+	cerr <<  aDeltaPhi << " " << pow(aDeltaPhi,2) << endl;
+
 	aHconv = pArametersPtr->rhoCp*(pArametersPtr->Cfc*us+pArametersPtr->Cnc*pow(aDeltaPhi,0.33))*(aT-timeDataPtr->Ta);
-	aHevap = 0; // need to be implemented with moisture model
+	//aHevap = 0; // need to be implemented with moisture model
 
 	aHrad = -aHlo;
-	aHnet = aHrad-aHconv-aHevap;
+	aHnet = aHrad-aHconv;//-aHevap;
 
 	aHnet >>= f;
       }
@@ -601,7 +602,7 @@ struct GroundSurfaceTemerature {
 	} else {
 	  normal = getNormal();
 	}
-	val *= norm_2(normal);
+	val *= norm_2(normal)*0.5;
 	
 	T = commonData.temperatureAtGaussPts[gg];
 
