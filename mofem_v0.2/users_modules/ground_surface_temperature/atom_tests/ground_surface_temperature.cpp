@@ -261,7 +261,70 @@ int main(int argc, char *argv[]) {
     rval = moab.write_file(ss.str().c_str(),"VTK","",&meshset,1); CHKERR_PETSC(rval); CHKERR_PETSC(rval);
 
   }
+
+  //define problems
+  ierr = m_field.add_problem("GROUND_SURFACE"); CHKERRQ(ierr);
+  //set finite elements for problems
+  ierr = m_field.modify_problem_add_finite_element("GROUND_SURFACE","GROUND_SURFACE_FE"); CHKERRQ(ierr);
+  //set refinment level for problem
+  ierr = m_field.modify_problem_ref_level_add_bit("GROUND_SURFACE",bit_level0); CHKERRQ(ierr);
+
+  //build problem
+  ierr = m_field.build_problems(); CHKERRQ(ierr);
+  //partition
+  ierr = m_field.partition_problem("GROUND_SURFACE"); CHKERRQ(ierr);
+  ierr = m_field.partition_finite_elements("GROUND_SURFACE"); CHKERRQ(ierr);
+  ierr = m_field.partition_ghost_dofs("GROUND_SURFACE"); CHKERRQ(ierr);
+
+  //create matrices
+  Vec F;
+  ierr = m_field.VecCreateGhost("GROUND_SURFACE",COL,&F); CHKERRQ(ierr);
+  Vec D;
+  ierr = VecDuplicate(F,&D); CHKERRQ(ierr);
+  Mat Aij;
+  ierr = m_field.MatCreateMPIAIJWithArrays("GROUND_SURFACE",&Aij); CHKERRQ(ierr);
+
+  ground_surface.feGroundSurfaceRhs.ts_F = F;
+  ground_surface.feGroundSurfaceRhs.ts_a = 1;
+  ground_surface.feGroundSurfaceRhs.ts_B = Aij;
+  ground_surface.feGroundSurfaceRhs.ts_a = 1;
+
+  ground_surface.feGroundSurfaceLhs.ts_F = F;
+  ground_surface.feGroundSurfaceLhs.ts_a = 1;
+  ground_surface.feGroundSurfaceLhs.ts_B = Aij;
+  ground_surface.feGroundSurfaceLhs.ts_a = 1;
+
+  ierr = m_field.loop_finite_elements("GROUND_SURFACE","GROUND_SURFACE_FE",ground_surface.getFeGroundSurfaceRhs()); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
+  ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
+
+  //ierr = m_field.loop_finite_elements("GROUND_SURFACE","GROUND_SURFACE_FE",ground_surface.getFeGroundSurfaceLhs()); CHKERRQ(ierr);
+  //ierr = MatAssemblyBegin(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+  //ierr = MatAssemblyEnd(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+
+  PetscViewer viewer;
+  ierr = PetscViewerASCIIOpen(PETSC_COMM_WORLD,"ground_surface_temperature.txt",&viewer); CHKERRQ(ierr);
+
+  //ierr = VecChop(F,1e-4); CHKERRQ(ierr);
+  //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+  ierr = VecView(F,viewer); CHKERRQ(ierr);
   
+  //MatView(Aij,PETSC_VIEWER_DRAW_WORLD);
+  //MatChop(Aij,1e-4);
+  //MatView(Aij,PETSC_VIEWER_STDOUT_WORLD);
+  //MatView(Aij,viewer);
+  //std::string wait;
+  //std::cin >> wait;
+
+  ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
+
+
+  ierr = VecDestroy(&D); CHKERRQ(ierr);
+  ierr = VecDestroy(&F); CHKERRQ(ierr);
+  ierr = MatDestroy(&Aij); CHKERRQ(ierr);
+
   PetscFinalize();
   return 0;
 }

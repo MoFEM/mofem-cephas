@@ -327,7 +327,7 @@ struct FieldInterface: public FieldUnknownInterface {
   * \param BitRefLevel bitLevel
   * 
   */
-  virtual PetscErrorCode seed_ref_level_2D(const EntityHandle meshset,const BitRefLevel &bit,unsigned char pstat = 0,MPI_Comm comm = PETSC_COMM_WORLD,int verb = -1) = 0;
+  virtual PetscErrorCode seed_ref_level_2D(const EntityHandle meshset,const BitRefLevel &bit,MPI_Comm comm = PETSC_COMM_WORLD,int verb = -1) = 0;
 
   /**
   * \brief seed 3D entities (Volume entities only) in the meshset and their adjacencies (only TETs adjencies) in a particular BitRefLevel
@@ -352,12 +352,12 @@ struct FieldInterface: public FieldUnknownInterface {
   * ent4[0,1,0,0,0,0,0], ent5[0,1,0,0,0,0,0] <br>
   * 
   */
-  virtual PetscErrorCode seed_ref_level_3D(const EntityHandle meshset,const BitRefLevel &bit,unsigned char pstat = 0,MPI_Comm comm = PETSC_COMM_WORLD,int verb = -1) = 0;
+  virtual PetscErrorCode seed_ref_level_3D(const EntityHandle meshset,const BitRefLevel &bit,MPI_Comm comm = PETSC_COMM_WORLD,int verb = -1) = 0;
 
   /**
    * \brief seed 3D entities (Volume entities only) in the range and their adjacencies (only TETs adjencies) in a particular BitRefLevel
    */ 
-  virtual PetscErrorCode seed_ref_level(const Range &ents,const BitRefLevel &bit,unsigned char pstat = 0,MPI_Comm comm = PETSC_COMM_WORLD,int verb = -1) = 0;
+  virtual PetscErrorCode seed_ref_level(const Range &ents,const BitRefLevel &bit,MPI_Comm comm = PETSC_COMM_WORLD,int verb = -1) = 0;
 
   /** brief seed ref level by MESHSET that contains entities other than volumes
    * 
