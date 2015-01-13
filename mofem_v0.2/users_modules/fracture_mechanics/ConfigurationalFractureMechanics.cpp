@@ -3310,8 +3310,6 @@ PetscErrorCode ConfigurationalFractureMechanics::ArcLengthElemFEMethod::postProc
 	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
 	ierr = VecGetArray(snes_f,&array); CHKERRQ(ierr);
 	ierr = VecZeroEntries(res_nrm2_vec); CHKERRQ(ierr);
-	ierr = VecGhostUpdateBegin(res_nrm2_vec,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	ierr = VecGhostUpdateEnd(res_nrm2_vec,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_LOCIDX_FOR_LOOP_(problemPtr,dof)) {
 	  if(dof->get_part()!=pcomm->rank()) continue;
 	  double val = pow(array[dof->get_petsc_local_dof_idx()],2);
@@ -3337,19 +3335,19 @@ PetscErrorCode ConfigurationalFractureMechanics::ArcLengthElemFEMethod::postProc
 	}
 	ierr = VecAssemblyBegin(res_nrm2_vec); CHKERRQ(ierr);
 	ierr = VecAssemblyEnd(res_nrm2_vec); CHKERRQ(ierr);
-	resSpatialNrm2 = sqrt(res_nrm2[0]);
-	resCrackFrontNrm2 = sqrt(res_nrm2[1]);
-	//if(pcomm->rank()==0) {
-	  PetscPrintf(PETSC_COMM_WORLD,"\t** Equilibrium Residuals:\n");
-	  PetscPrintf(PETSC_COMM_WORLD,"\t  equilibrium of physical forces res_spatial_nrm2 = %6.4e\n",resSpatialNrm2);
-	  PetscPrintf(PETSC_COMM_WORLD,"\t  equilibrium of material forces res_crack_front_nrm2 = %6.4e\n",resCrackFrontNrm2);
-	  PetscPrintf(PETSC_COMM_WORLD,"\t** Mesh Quality Residuals:\n");
-	  PetscPrintf(PETSC_COMM_WORLD,"\t  residual of mesh smoother res_mesh_smoother_nrm2 = %6.4e\n",sqrt(res_nrm2[2]));
-	  PetscPrintf(PETSC_COMM_WORLD,"\t  residual of surface constraint res_surface_constrain_nrm2 = %6.4e\n",sqrt(res_nrm2[3]));
-	  PetscPrintf(PETSC_COMM_WORLD,"\t  residual of crack surface constraint res_crack_surface_constrain_nrm2 = %6.4e\n",sqrt(res_nrm2[4]));
-	  PetscPrintf(PETSC_COMM_WORLD,"\t  residual of crack front mesh smoother tangential constraint res_crack_front_tangent_constrain_nrm2 = %6.4e\n",sqrt(res_nrm2[5]));
-	  PetscPrintf(PETSC_COMM_WORLD,"\n");
-	//}
+	if(pcomm->rank()==0) {
+	  resSpatialNrm2 = sqrt(res_nrm2[0]);
+	  resCrackFrontNrm2 = sqrt(res_nrm2[1]);
+	  PetscPrintf(PETSC_COMM_SELF,"\t** Equilibrium Residuals:\n");
+	  PetscPrintf(PETSC_COMM_SELF,"\t  equilibrium of physical forces res_spatial_nrm2 = %6.4e\n",resSpatialNrm2);
+	  PetscPrintf(PETSC_COMM_SELF,"\t  equilibrium of material forces res_crack_front_nrm2 = %6.4e\n",resCrackFrontNrm2);
+	  PetscPrintf(PETSC_COMM_SELF,"\t** Mesh Quality Residuals:\n");
+	  PetscPrintf(PETSC_COMM_SELF,"\t  residual of mesh smoother res_mesh_smoother_nrm2 = %6.4e\n",sqrt(res_nrm2[2]));
+	  PetscPrintf(PETSC_COMM_SELF,"\t  residual of surface constraint res_surface_constrain_nrm2 = %6.4e\n",sqrt(res_nrm2[3]));
+	  PetscPrintf(PETSC_COMM_SELF,"\t  residual of crack surface constraint res_crack_surface_constrain_nrm2 = %6.4e\n",sqrt(res_nrm2[4]));
+	  PetscPrintf(PETSC_COMM_SELF,"\t  residual of crack front mesh smoother tangential constraint res_crack_front_tangent_constrain_nrm2 = %6.4e\n",sqrt(res_nrm2[5]));
+	  PetscPrintf(PETSC_COMM_SELF,"\n");
+	}
 	ierr = VecRestoreArray(snes_f,&array); CHKERRQ(ierr);
 	ierr = VecDestroy(&res_nrm2_vec); CHKERRQ(ierr);
     } break;
