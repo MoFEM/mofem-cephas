@@ -99,7 +99,7 @@ int main(int argc, char *argv[]) {
   // stl::bitset see for more details
   BitRefLevel bit_level0;
   bit_level0.set(0);
-  ierr = m_field.seed_ref_level_3D(0,bit_level0,1,PETSC_COMM_WORLD); CHKERRQ(ierr);
+  ierr = m_field.seed_ref_level_3D(0,bit_level0,PETSC_COMM_WORLD); CHKERRQ(ierr);
   Range meshset_level0;
   ierr = m_field.get_entities_by_ref_level(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
   PetscSynchronizedPrintf(PETSC_COMM_WORLD,"meshset_level0 %d\n",meshset_level0.size());

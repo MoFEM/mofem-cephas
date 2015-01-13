@@ -2887,20 +2887,16 @@ PetscErrorCode Core::seed_finite_elements(const Range &entities,int verb) {
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::seed_ref_level_2D(const EntityHandle meshset,const BitRefLevel &bit,unsigned char pstat,MPI_Comm comm,int verb) {
+PetscErrorCode Core::seed_ref_level_2D(const EntityHandle meshset,const BitRefLevel &bit,MPI_Comm comm,int verb) {
   PetscFunctionBegin;
   Range ents2d;
   rval = moab.get_entities_by_dimension(meshset,2,ents2d,false); CHKERR_PETSC(rval);
-  ierr = seed_ref_level(ents2d,bit,pstat,comm,verb); CHKERRQ(ierr);
+  ierr = seed_ref_level(ents2d,bit,comm,verb); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::seed_ref_level(const Range &ents,const BitRefLevel &bit,unsigned char pstat,MPI_Comm comm,int verb) {
+PetscErrorCode Core::seed_ref_level(const Range &ents,const BitRefLevel &bit,MPI_Comm comm,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-  bitset<8> bit_pstat(pstat);
-  if(pstat>0) {
-    bit_pstat.flip(0);
-  }
   Range seeded_ents;
   try {
     if(verb > 1) {
@@ -2911,18 +2907,12 @@ PetscErrorCode Core::seed_ref_level(const Range &ents,const BitRefLevel &bit,uns
       RefMoFEMEntity ref_ent(moab,*tit);
       bitset<8> ent_pstat(ref_ent.get_pstatus());
       ent_pstat.flip(0);
-      if(bit_pstat.any()) {
-	if((bit_pstat&ent_pstat).none()) {
-	  continue;
-	}
-      } 
       pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ent = refinedEntities.insert(ref_ent);
       if(debug > 0) {
 	ierr = test_moab(moab,*tit); CHKERRQ(ierr);
       }
       bool success = refinedEntities.modify(p_ent.first,RefMoFEMEntity_change_add_bit(bit));
       if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-      seeded_ents.insert(*tit);
       if(verb>2) {
 	ostringstream ss;
 	ss << *(p_ent.first);
@@ -2930,8 +2920,21 @@ PetscErrorCode Core::seed_ref_level(const Range &ents,const BitRefLevel &bit,uns
       }
       pair<RefMoFEMElement_multiIndex::iterator,bool> p_MoFEMFiniteElement;
       switch (p_ent.first->get_ent_type()) {
+	case MBVERTEX: 
+	  p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_VERTEX(moab,&*p_ent.first)));	
+	  seeded_ents.insert(*tit);
+	  break;
+	case MBEDGE: 
+	  p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_EDGE(moab,&*p_ent.first)));	
+	  seeded_ents.insert(*tit);
+	  break;
+	case MBTRI: 
+	  p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_TRI(moab,&*p_ent.first)));	
+	  seeded_ents.insert(*tit);
+	  break;
         case MBTET: 
 	 p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_TET(moab,&*p_ent.first)));	
+	  seeded_ents.insert(*tit);
 	 break;
 	case MBPRISM:
 	  p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_PRISM(moab,&*p_ent.first)));
@@ -2979,11 +2982,11 @@ PetscErrorCode Core::seed_ref_level(const Range &ents,const BitRefLevel &bit,uns
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::seed_ref_level_3D(const EntityHandle meshset,const BitRefLevel &bit,unsigned char pstat,MPI_Comm comm,int verb) {
+PetscErrorCode Core::seed_ref_level_3D(const EntityHandle meshset,const BitRefLevel &bit,MPI_Comm comm,int verb) {
   PetscFunctionBegin; 
   Range ents3d;
   rval = moab.get_entities_by_dimension(meshset,3,ents3d,false); CHKERR_PETSC(rval);
-  ierr = seed_ref_level(ents3d,bit,pstat,comm,verb); CHKERRQ(ierr);
+  ierr = seed_ref_level(ents3d,bit,comm,verb); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 PetscErrorCode Core::seed_ref_level_MESHSET(const EntityHandle meshset,const BitRefLevel &bit,int verb) {
@@ -3450,7 +3453,7 @@ PetscErrorCode Core::loop_dofs(const MoFEMProblem *problem_ptr,const string &fie
      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"not implemented");
   }
   numerd_dofs::iterator miit = dofs->lower_bound(boost::make_tuple(field_name,lower_rank));
-  numerd_dofs::iterator hi_miit = dofs->upper_bound(boost::make_tuple(field_name,lower_rank));
+  numerd_dofs::iterator hi_miit = dofs->upper_bound(boost::make_tuple(field_name,upper_rank));
   ierr = method.preProcess(); CHKERRQ(ierr);
   for(;miit!=hi_miit;miit++) {
     method.dofPtr = miit->get_DofMoFEMEntity_ptr();
@@ -3466,16 +3469,22 @@ PetscErrorCode Core::loop_dofs(const MoFEMProblem *problem_ptr,const string &fie
   ierr = method.postProcess(); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::loop_dofs(const string &problem_name,const string &field_name,RowColData rc,EntMethod &method,int verb) {
+PetscErrorCode Core::loop_dofs(const string &problem_name,const string &field_name,RowColData rc,EntMethod &method,int lower_rank,int upper_rank,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-  ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type moFEMProblems_by_name;
   // find p_miit
   moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<Problem_mi_tag>();
   moFEMProblems_by_name::iterator p_miit = moFEMProblems_set.find(problem_name);
   if(p_miit == moFEMProblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem not in database %s",problem_name.c_str());
-  ierr = loop_dofs(&*p_miit,field_name,rc,method,0,pcomm->size(),verb); CHKERRQ(ierr);
+  ierr = loop_dofs(&*p_miit,field_name,rc,method,lower_rank,upper_rank,verb); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+PetscErrorCode Core::loop_dofs(const string &problem_name,const string &field_name,RowColData rc,EntMethod &method,int verb) {
+  PetscFunctionBegin;
+  if(verb==-1) verb = verbose;
+  ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
+  ierr = loop_dofs(problem_name,field_name,rc,method,0,pcomm->size(),verb); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 PetscErrorCode Core::loop_dofs(const string &field_name,EntMethod &method,int verb) {
