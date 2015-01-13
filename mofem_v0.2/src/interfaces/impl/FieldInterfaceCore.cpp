@@ -3450,7 +3450,7 @@ PetscErrorCode Core::loop_dofs(const MoFEMProblem *problem_ptr,const string &fie
      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"not implemented");
   }
   numerd_dofs::iterator miit = dofs->lower_bound(boost::make_tuple(field_name,lower_rank));
-  numerd_dofs::iterator hi_miit = dofs->upper_bound(boost::make_tuple(field_name,lower_rank));
+  numerd_dofs::iterator hi_miit = dofs->upper_bound(boost::make_tuple(field_name,upper_rank));
   ierr = method.preProcess(); CHKERRQ(ierr);
   for(;miit!=hi_miit;miit++) {
     method.dofPtr = miit->get_DofMoFEMEntity_ptr();
@@ -3466,16 +3466,22 @@ PetscErrorCode Core::loop_dofs(const MoFEMProblem *problem_ptr,const string &fie
   ierr = method.postProcess(); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::loop_dofs(const string &problem_name,const string &field_name,RowColData rc,EntMethod &method,int verb) {
+PetscErrorCode Core::loop_dofs(const string &problem_name,const string &field_name,RowColData rc,EntMethod &method,int lower_rank,int upper_rank,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-  ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type moFEMProblems_by_name;
   // find p_miit
   moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<Problem_mi_tag>();
   moFEMProblems_by_name::iterator p_miit = moFEMProblems_set.find(problem_name);
   if(p_miit == moFEMProblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem not in database %s",problem_name.c_str());
-  ierr = loop_dofs(&*p_miit,field_name,rc,method,0,pcomm->size(),verb); CHKERRQ(ierr);
+  ierr = loop_dofs(&*p_miit,field_name,rc,method,lower_rank,upper_rank,verb); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+PetscErrorCode Core::loop_dofs(const string &problem_name,const string &field_name,RowColData rc,EntMethod &method,int verb) {
+  PetscFunctionBegin;
+  if(verb==-1) verb = verbose;
+  ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
+  ierr = loop_dofs(problem_name,field_name,rc,method,0,pcomm->size(),verb); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 PetscErrorCode Core::loop_dofs(const string &field_name,EntMethod &method,int verb) {
