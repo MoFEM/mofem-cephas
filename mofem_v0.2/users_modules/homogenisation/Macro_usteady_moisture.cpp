@@ -191,15 +191,15 @@ int main(int argc, char *argv[]) {
   ierr = TSSetSolution(ts,C); CHKERRQ(ierr);
   ierr = TSSetFromOptions(ts); CHKERRQ(ierr);
 
-  {
-    SeriesRecorder *recorder_ptr;
-    ierr = m_field.query_interface(recorder_ptr); CHKERRQ(ierr);
-    ierr = recorder_ptr->add_series_recorder("CONC_SERIES"); CHKERRQ(ierr);
-    ierr = recorder_ptr->initialize_series_recorder("CONC_SERIES"); CHKERRQ(ierr);
-  }
+  SeriesRecorder *recorder_ptr;
+  ierr = m_field.query_interface(recorder_ptr); CHKERRQ(ierr);
+  ierr = recorder_ptr->add_series_recorder("CONC_SERIES"); CHKERRQ(ierr);
+  ierr = recorder_ptr->initialize_series_recorder("CONC_SERIES"); CHKERRQ(ierr);
 
   ierr = TSSolve(ts,C); CHKERRQ(ierr);
   ierr = TSGetTime(ts,&ftime); CHKERRQ(ierr);
+
+  ierr = recorder_ptr->finalize_series_recorder("CONC_SERIES"); CHKERRQ(ierr);
 
   PetscInt steps,snesfails,rejects,nonlinits,linits;
   ierr = TSGetTimeStepNumber(ts,&steps); CHKERRQ(ierr);
@@ -212,13 +212,6 @@ int main(int argc, char *argv[]) {
     "steps %D (%D rejected, %D SNES fails), ftime %g, nonlinits %D, linits %D\n",
     steps,rejects,snesfails,ftime,nonlinits,linits);
 
-  {
-    SeriesRecorder *recorder_ptr;
-    ierr = m_field.query_interface(recorder_ptr); CHKERRQ(ierr);
-    ierr = recorder_ptr->finalize_series_recorder("CONC_SERIES"); CHKERRQ(ierr);
-  }
-
-  
   ierr = VecView(C,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
   //m_field.list_dofs_by_field_name("CONC");
@@ -226,13 +219,11 @@ int main(int argc, char *argv[]) {
     rval = moab.write_file("solution.h5m"); CHKERR_PETSC(rval);
   }
 
-  SeriesRecorder &recorder = core;
-
-  for(_IT_SERIES_STEPS_BY_NAME_FOR_LOOP_(recorder,"CONC_SERIES",sit)) {
+  for(_IT_SERIES_STEPS_BY_NAME_FOR_LOOP_(recorder_ptr,"CONC_SERIES",sit)) {
 
     PetscPrintf(PETSC_COMM_WORLD,"Process step %d\n",sit->get_step_number());
 
-    ierr = recorder.load_series_data("CONC_SERIES",sit->get_step_number()); CHKERRQ(ierr);
+    ierr = recorder_ptr->load_series_data("CONC_SERIES",sit->get_step_number()); CHKERRQ(ierr);
     ierr = m_field.set_local_VecCreateGhost("MOISTURE_PROBLEM",ROW,C,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
     ProjectionFieldOn10NodeTet ent_method_on_10nodeTet(m_field,"CONC",true,false,"CONC");

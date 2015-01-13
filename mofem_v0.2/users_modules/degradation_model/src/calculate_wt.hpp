@@ -37,11 +37,15 @@ namespace MoFEM {
     };
     
     
-    MyVolumeFE feDegradation;
-    MyVolumeFE& getLoopDegradation() { return feDegradation; }
+    MyVolumeFE feRhsDegradation; ///< cauclate right hand side for tetrahedral elements
+    MyVolumeFE& getLoopFeRhs() { return feRhsDegradation; } ///< get rhs volume element
+    
+    MyVolumeFE feLhsDegradation; //< calculate left hand side for tetrahedral elements
+    MyVolumeFE& getLoopFeLhs() { return feLhsDegradation; } ///< get lhs volume element
 
+    
     FieldInterface &mField;
-    Calculate_wt(FieldInterface &m_field): feDegradation(m_field), mField(m_field) {}
+    Calculate_wt(FieldInterface &m_field): feRhsDegradation(m_field), feLhsDegradation(m_field), mField(m_field) {}
     
     struct BlockData {
 //      double youngModulus;
@@ -56,6 +60,8 @@ namespace MoFEM {
     struct CommonData {
       ublas::vector<double> temperatureAtGaussPts;
       ublas::vector<double> concentrationAtGaussPts;
+      ublas::vector<double> fieldAtGaussPts;
+      ublas::vector<double> fieldRateAtGaussPts;
     };
     CommonData commonData;
     
@@ -63,9 +69,9 @@ namespace MoFEM {
     
   struct LoadTimeSeries: public FEMethod {
     FieldInterface& mField;
-    const string tempField;
-    const string moisField;
-    LoadTimeSeries(FieldInterface& _mField, const string temp_field, const string mois_field):mField(_mField), tempField(temp_field), moisField(mois_field) {}
+    const string tempSeries;
+    const string moisSeries;
+    LoadTimeSeries(FieldInterface& _mField, const string temp_series, const string mois_series):mField(_mField), tempSeries(temp_series), moisSeries(mois_series) {}
 
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
@@ -73,8 +79,10 @@ namespace MoFEM {
       SeriesRecorder *recorder_ptr;
       ierr = mField.query_interface(recorder_ptr); CHKERRQ(ierr);
 
-      ierr = recorder_ptr->load_series_data(tempField,ts_step); CHKERRQ(ierr);
-      ierr = recorder_ptr->load_series_data(moisField,ts_step); CHKERRQ(ierr);
+      cout << "ts_step "<<ts_step<< endl;
+
+      ierr = recorder_ptr->load_series_data(tempSeries,ts_step); CHKERRQ(ierr);
+      ierr = recorder_ptr->load_series_data(moisSeries,ts_step); CHKERRQ(ierr);
 
       PetscFunctionReturn(0);
     }
@@ -82,172 +90,117 @@ namespace MoFEM {
 
     
     
-    struct OpGetTempAtGaussPts: public TetElementForcesAndSourcesCore::UserDataOperator {
+    /** \brief this calas is to control time stepping
+     * \infroup mofem_thermal_elem
+     *
+     * It is used to save data for temerature rate vectot to MoFEM field.
+     */
+    struct UpdateAndControl: public FEMethod {
       
-      CommonData &commonData;
-      int verb;
-      OpGetTempAtGaussPts(const string thermal_field_name, CommonData &common_data,int _verb = 0):
-      TetElementForcesAndSourcesCore::UserDataOperator(thermal_field_name),
-      commonData(common_data),verb(_verb) {}
+      FieldInterface& mField;
+      TS tS;
+      const string tempName;
+      const string rateName;
+      int jacobianLag;
+      UpdateAndControl(FieldInterface& _mField,TS _ts,
+                       const string temp_name,const string rate_name): mField(_mField),tS(_ts),
+      tempName(temp_name),rateName(rate_name),jacobianLag(-1) {}
       
-      //loop over EntityType for nodes(1), edges(6), faces(4) and volume(1)
-      PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+      PetscErrorCode preProcess() {
         PetscFunctionBegin;
-        try {
-//          cout<<"from OpGetTempConcAtGaussPts ================================ "<<endl;
-//          cout<<" data.getFieldData() = " <<data.getFieldData()<<endl;
-//          std::string wait;
-//          std::cin >> wait;
-          if(data.getFieldData().size()==0) PetscFunctionReturn(0);
-          int nb_dofs = data.getFieldData().size();
-          int nb_gauss_pts = data.getN().size1();
-          //initialize
-          commonData.temperatureAtGaussPts.resize(nb_gauss_pts);
-          if(type == MBVERTEX) { //initialize data only once for nodes
-            fill(commonData.temperatureAtGaussPts.begin(),commonData.temperatureAtGaussPts.end(),0);
-          }
-          for(int gg = 0;gg<nb_gauss_pts;gg++) {
-            commonData.temperatureAtGaussPts[gg] += inner_prod(data.getN(gg,nb_dofs),data.getFieldData());
-          }
-        } catch (const std::exception& ex) {
-          ostringstream ss;
-          ss << "throw in method: " << ex.what() << endl;
-          SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
-        }
+        PetscErrorCode ierr;
+        ierr = mField.set_other_local_VecCreateGhost(
+                                                     problemPtr,tempName,rateName,ROW,ts_u_t,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
         PetscFunctionReturn(0);
       }
       
-    };
-    
-    
-    struct OpGetConcAtGaussPts: public TetElementForcesAndSourcesCore::UserDataOperator {
-      CommonData &commonData;
-      int verb;
-      OpGetConcAtGaussPts(const string conc_field_name, CommonData &common_data,int _verb = 0):
-      TetElementForcesAndSourcesCore::UserDataOperator(conc_field_name),
-      commonData(common_data),verb(_verb) {}
-      
-      //loop over EntityType for nodes(1), edges(6), faces(4) and volume(1)
-      PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+      PetscErrorCode postProcess() {
         PetscFunctionBegin;
-        try {
-//          cout<<"from OpGetConcAtGaussPts ================================ "<<endl;
-//          cout<<" data.getFieldData() = " <<data.getFieldData()<<endl;
-//          std::string wait;
-//          std::cin >> wait;
-          if(data.getFieldData().size()==0) PetscFunctionReturn(0);
-          int nb_dofs = data.getFieldData().size();
-          int nb_gauss_pts = data.getN().size1();
-          //initialize
-          commonData.concentrationAtGaussPts.resize(nb_gauss_pts);
-          if(type == MBVERTEX) { //initialize data only once for nodes
-            fill(commonData.concentrationAtGaussPts.begin(),commonData.concentrationAtGaussPts.end(),0);
-          }
-          for(int gg = 0;gg<nb_gauss_pts;gg++) {
-            commonData.concentrationAtGaussPts[gg] += inner_prod(data.getN(gg,nb_dofs),data.getFieldData());
-          }
-        } catch (const std::exception& ex) {
-          ostringstream ss;
-          ss << "throw in method: " << ex.what() << endl;
-          SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
-        }
+        PetscErrorCode ierr;
+        SNES snes;
+        ierr = TSGetSNES(tS,&snes); CHKERRQ(ierr);
+        ierr = SNESSetLagJacobian(snes,jacobianLag); CHKERRQ(ierr);
         PetscFunctionReturn(0);
       }
       
     };
 
     
-    
-    struct OpGetWtAtGaussPts: public TetElementForcesAndSourcesCore::UserDataOperator {
-      Vec F;
-      BlockData &dAta;
-      CommonData &commonData;
-      int verb;
-      OpGetWtAtGaussPts(const string field_name,BlockData &data,CommonData &common_data,int _verb = 0):
-      TetElementForcesAndSourcesCore::UserDataOperator(field_name)
-      ,dAta(data),commonData(common_data),verb(_verb) { }
+    /** \brief TS monitore it records temperature at time steps
+     * \infroup mofem_thermal_elem
+     */
+    struct TimeSeriesMonitor: public FEMethod {
       
-      PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+      FieldInterface &mField;
+      const string seriesName;
+      const string tempName;
+      BitRefLevel mask;
+      
+      TimeSeriesMonitor(FieldInterface &m_field,const string series_name,const string temp_name):
+      mField(m_field),seriesName(series_name),tempName(temp_name) {
+        mask.set();
+      }
+      
+      PetscErrorCode postProcess() {
         PetscFunctionBegin;
+        PetscErrorCode ierr;
         
+        ierr = mField.set_global_VecCreateGhost(
+                                                problemPtr,ROW,ts_u,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+        
+        BitRefLevel proble_bit_level = problemPtr->get_BitRefLevel();
+        
+        SeriesRecorder *recorder_ptr;
+        ierr = mField.query_interface(recorder_ptr); CHKERRQ(ierr);
+        ierr = recorder_ptr->record_begin(seriesName); CHKERRQ(ierr);
+        ierr = recorder_ptr->record_field(seriesName,tempName,proble_bit_level,mask); CHKERRQ(ierr);
+        ierr = recorder_ptr->record_end(seriesName); CHKERRQ(ierr);
+        
+        PetscFunctionReturn(0);
+      }
+      
+    };
+
+    
+    /** \brief opearator to caulate tempereature  and rate of temperature at Gauss points
+     * \infroup mofem_thermal_elem
+     */
+    template<typename OP>
+    struct OpGetFieldAtGaussPts: public OP::UserDataOperator {
+      
+      ublas::vector<double> &fieldAtGaussPts;
+      OpGetFieldAtGaussPts(const string field_name,ublas::vector<double> &field_at_gauss_pts):
+      OP::UserDataOperator(field_name),
+      fieldAtGaussPts(field_at_gauss_pts) {}
+      
+      /** \brief operator calculating temperature and rate of temperature
+       *
+       * temperature temperature or rate of temperature is calculated multiplyingshape functions by degrees of freedom
+       */
+      PetscErrorCode doWork(
+                            int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+        PetscFunctionBegin;
         try {
-//          cout<<"from OpGetWtAtGaussPts ================================ "<<endl;
-//          cout<<"data.getIndices().size() =  "<<data.getIndices().size()<<endl;
+          
+          if(data.getFieldData().size()==0) PetscFunctionReturn(0);
+          int nb_dofs = data.getFieldData().size();
+          int nb_gauss_pts = data.getN().size1();
+          
+          //initialize
+          fieldAtGaussPts.resize(nb_gauss_pts);
+          if(type == MBVERTEX) {
+            //loop over shape functions on entities allways start from
+            //vertices, so if nodal shape functions are processed, vector of
+            //field values is zeroad at initialization
+            fill(fieldAtGaussPts.begin(),fieldAtGaussPts.end(),0);
+          }
+          
+          for(int gg = 0;gg<nb_gauss_pts;gg++) {
+            fieldAtGaussPts[gg] += inner_prod(data.getN(gg,nb_dofs),data.getFieldData());
+          }
+          cout << "data.getFieldData() "<<data.getFieldData()<< endl;
+//          cout << "data.getN(gg,nb_dofs) "<<data.getN()<< endl;
 
-          if(data.getIndices().size()==0) PetscFunctionReturn(0);
-          if(dAta.tEts.find(getMoFEMFEPtr()->get_ent())==dAta.tEts.end()) PetscFunctionReturn(0);
-          
-          PetscErrorCode ierr;
-
-          const FENumeredDofMoFEMEntity *dof_ptr;
-          ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
-          int rank = dof_ptr->get_max_rank();
-          if(rank != 3) {
-            SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
-          }
-          
-          unsigned int nb_dofs = data.getIndices().size();
-          if(nb_dofs % rank != 0) {
-            SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
-          }
-          if(data.getN().size2() < nb_dofs/rank) {
-            SETERRQ3(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,
-                     "data inconsistency N.size2 %d nb_dof %d rank %d",data.getN().size2(),nb_dofs,rank);
-          }
-          
-          if(verb > 0) {
-            if(type == MBVERTEX) {
-              cout << commonData.temperatureAtGaussPts << endl;
-//              cout << "thermal expansion " << dAta.thermalExpansion << endl;
-            }
-          }
-          
-          
-
-          for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
-            
-            //eps_thermal = (phi-phi_ref)*alpha
-            //sig_thernal = - (E/1-2mu) * eps_thermal
-            //var_eps = [ diff_N[0], diffN[1], diffN[2] ]
-            
-//            if(dAta.refTemperature != dAta.refTemperature) {
-//              SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA ,"invalid data");
-//            }
-            
-            
-            double temp = commonData.temperatureAtGaussPts[gg];
-            double conc = commonData.concentrationAtGaussPts[gg];
-            cout<<"temp "<<temp<<endl;
-            cout<<"conc "<<conc<<endl;
-            cout<<"dAta.saturation_Conc "<<dAta.saturation_Conc<<endl;
-            conc=conc/dAta.saturation_Conc;
-            
-            
-            
-            std::string wait;
-            std::cin >> wait;
-
-//            double phi = (commonData.temperatureAtGaussPts[gg]-dAta.refTemperature);
-//            double eps_thermal = dAta.thermalExpansion*phi;
-//            double sig_thermal = -eps_thermal*(dAta.youngModulus/(1.-2*dAta.poissonRatio));
-//            
-//            double val = sig_thermal*getVolume()*getGaussPts()(3,gg);
-//            
-//            double *diff_N;
-//            diff_N = &data.getDiffN()(gg,0);
-//            cblas_daxpy(nb_dofs,val,diff_N,1,&Nf[0],1);
-//            
-          }
-//
-//          /*for(unsigned int ii = 0;ii<Nf.size();ii++) {
-//           if(Nf[ii] != Nf[ii]) {
-//           SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA ,"invalid data");
-//           }
-//           }*/
-//          
-//          ierr = VecSetValues(F,data.getIndices().size(),
-//                              &data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
-//          
         } catch (const std::exception& ex) {
           ostringstream ss;
           ss << "throw in method: " << ex.what() << endl;
@@ -259,9 +212,225 @@ namespace MoFEM {
       
     };
     
+    /** \brief operator to calculate tempereature at Gauss pts
+     * \infroup mofem_Calculate_wt
+     */
+    struct OpGetTempAtGaussPts: public OpGetFieldAtGaussPts<TetElementForcesAndSourcesCore> {
+      OpGetTempAtGaussPts(const string thermal_field_name,CommonData &common_data):
+      OpGetFieldAtGaussPts<TetElementForcesAndSourcesCore>(thermal_field_name,common_data.temperatureAtGaussPts) {}
+    };
+    
+    /** \brief operator to calculate moisture concentration at Gauss pts
+     * \infroup mofem_Calculate_wt
+     */
+    struct OpGetConcAtGaussPts: public OpGetFieldAtGaussPts<TetElementForcesAndSourcesCore> {
+      OpGetConcAtGaussPts(const string conc_field_name,CommonData &common_data):
+      OpGetFieldAtGaussPts<TetElementForcesAndSourcesCore>(conc_field_name,common_data.concentrationAtGaussPts) {}
+    };
+
+    
+    /** \brief operator to calculate Wt at Gauss pts
+     * \infroup mofem_Calculate_wt
+     */
+    struct OpGetTetWtAtGaussPts: public OpGetFieldAtGaussPts<TetElementForcesAndSourcesCore> {
+      OpGetTetWtAtGaussPts(const string field_name,CommonData &common_data):
+      OpGetFieldAtGaussPts<TetElementForcesAndSourcesCore>(field_name,common_data.fieldAtGaussPts) {}
+    };
+   
+    
+    /** \brief operator to calculate Wt rate at Gauss pts
+     * \infroup mofem_Calculate_wt
+     */
+    struct OpGetTetWtRateAtGaussPts: public OpGetFieldAtGaussPts<TetElementForcesAndSourcesCore> {
+      OpGetTetWtRateAtGaussPts(const string rate_name,CommonData &common_data):
+      OpGetFieldAtGaussPts<TetElementForcesAndSourcesCore>(rate_name,common_data.fieldRateAtGaussPts) {}
+    };
     
     
-    PetscErrorCode addWtElement(const string problem_name,const string fe_name,const string field_name,const string thermal_field_name,
+    
+    /** \biref operator to calculate right hand side of heat conductivity terms
+     * \infroup mofem_thermal_elem
+     */
+    struct OpGetDegradationRhs: public TetElementForcesAndSourcesCore::UserDataOperator {
+      
+      BlockData &dAta;
+      CommonData &commonData;
+      bool useTsF;
+      OpGetDegradationRhs(const string field_name,BlockData &data,CommonData &common_data):
+      TetElementForcesAndSourcesCore::UserDataOperator(field_name),
+      dAta(data),commonData(common_data),useTsF(true) {}
+      
+      ublas::vector<double> Nf;
+      
+      /** \brief calculate thermal conductivity matrix
+       *
+       * F = int diffN^T [qw_dot + C*beta*log(1-T/Tg)qw] dOmega^3
+       *
+       */
+      PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+        PetscFunctionBegin;
+        
+        if(dAta.tEts.find(getMoFEMFEPtr()->get_ent()) == dAta.tEts.end()) {
+          PetscFunctionReturn(0);
+        }
+        
+        try {
+
+          if(data.getIndices().size()==0) PetscFunctionReturn(0);
+          if(dAta.tEts.find(getMoFEMFEPtr()->get_ent())==dAta.tEts.end()) PetscFunctionReturn(0);
+
+          PetscErrorCode ierr;
+
+          int nb_row_dofs = data.getIndices().size();
+          Nf.resize(nb_row_dofs);
+          bzero(&*Nf.data().begin(),data.getIndices().size()*sizeof(FieldData));
+
+//          cout << "data.getIndices() "<<data.getIndices()<< endl;
+//          cout << "data.getN() "<<data.getN()<< endl;
+          
+          for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
+              double val = getVolume()*getGaussPts()(3,gg);
+            if(getHoGaussPtsDetJac().size()>0) {
+              val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
+            }
+            double T=commonData.temperatureAtGaussPts(gg);
+            double C=commonData.concentrationAtGaussPts(gg);
+//            cout << "T "<<T<< endl;
+//            cout << "C "<<C<< endl;
+            double qw=commonData.fieldAtGaussPts(gg);
+            double qw_dot=commonData.fieldRateAtGaussPts(gg);
+            double beta=-0.001682;
+            double Tg=126;
+
+//            cout << "dAta.refTemperature "<<dAta.saturation_Conc<< endl;
+            C=C/dAta.saturation_Conc;  //relative concentration
+
+            T=T+273.15; Tg=Tg+273.15;  //convert T to Kelvin as the degradation model works for kelvin
+            double Nf1=qw_dot+C*beta*log(1-T/Tg)*qw;
+            
+//            cout << "nb_row_dofs "<<nb_row_dofs<< endl;
+//            cout << "data.getN(gg,nb_row_dofs) "<<data.getN(gg,nb_row_dofs)<< endl;
+            Nf+=val*Nf1*data.getN(gg,nb_row_dofs);
+          }
+//          cout << "Nf "<<Nf<< endl;
+            ierr = VecSetValues(getFEMethod()->ts_F,data.getIndices().size(),
+                                &data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
+          } catch (const std::exception& ex) {
+          ostringstream ss;
+          ss << "throw in method: " << ex.what() << endl;
+          SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+        }
+        PetscFunctionReturn(0);
+      }
+      
+    };
+
+    
+
+    
+    
+    /** \biref operator to calculate left hand side of miisture capacity terms
+     * \infroup mofem_thermal_elem
+     */
+    struct OpGetDegradationLhs: public TetElementForcesAndSourcesCore::UserDataOperator {
+      
+      BlockData &dAta;
+      CommonData &commonData;
+      OpGetDegradationLhs(const string field_name,BlockData &data,CommonData &common_data):
+      TetElementForcesAndSourcesCore::UserDataOperator(field_name),
+      dAta(data),commonData(common_data) {}
+      
+      ublas::matrix<double> M,transM;
+      
+      /** \brief calculate heat capacity matrix
+       *
+       * M = int N^T  N dOmega
+       *
+       */
+      PetscErrorCode doWork(
+                            int row_side,int col_side,
+                            EntityType row_type,EntityType col_type,
+                            DataForcesAndSurcesCore::EntData &row_data,
+                            DataForcesAndSurcesCore::EntData &col_data) {
+        PetscFunctionBegin;
+        //        cout<<"OpMoistureCapacityLhs  start "<<endl;
+        
+        
+        try {
+          if(row_data.getIndices().size()==0) PetscFunctionReturn(0);
+          if(col_data.getIndices().size()==0) PetscFunctionReturn(0);
+          
+          int nb_row = row_data.getN().size2();
+          int nb_col = col_data.getN().size2();
+          
+          //          cout<<"nb_row  =  "<<nb_row<<endl;
+          //          cout<<"nb_col  =  "<<nb_col<<endl;
+          //          //  std::string wait;
+          //          //  std::cin >> wait;
+          
+          M.resize(nb_row,nb_col);
+          bzero(&*M.data().begin(),nb_row*nb_col*sizeof(double));
+          
+          for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
+            double val = getVolume()*getGaussPts()(3,gg);
+            if(getHoGaussPtsDetJac().size()>0) {
+              val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
+            }
+
+            double T=commonData.temperatureAtGaussPts(gg);
+            double C=commonData.concentrationAtGaussPts(gg);
+            double beta=-0.001682;
+            double Tg=126;
+            
+            C=C/dAta.saturation_Conc;  //relative concentration
+            T=T+273.15; Tg=Tg+273.15;  //convert T to Kelvin as the degradation model works for kelvin
+            
+            val *=C*beta*log(1-T/Tg)+getFEMethod()->ts_a;
+
+            //cblas
+            //double *N_row,*N_col;
+            //N_row = &row_data.getN()(gg,0);
+            //N_col = &col_data.getN()(gg,0);
+            //cblas_dger(CblasRowMajor,
+            //  nb_row,nb_col,val,N_row,1,N_col,1,&M(0,0),nb_col);
+            
+            //ublas
+            noalias(M) += val*outer_prod( row_data.getN(gg,nb_row),col_data.getN(gg,nb_col) );
+            
+          }
+          
+          PetscErrorCode ierr;
+          ierr = MatSetValues(
+                              (getFEMethod()->ts_B),
+                              nb_row,&row_data.getIndices()[0],
+                              nb_col,&col_data.getIndices()[0],
+                              &M(0,0),ADD_VALUES); CHKERRQ(ierr);
+          if(row_side != col_side || row_type != col_type) {
+            transM.resize(nb_col,nb_row);
+            noalias(transM) = trans(M);
+            ierr = MatSetValues(
+                                (getFEMethod()->ts_B),
+                                nb_col,&col_data.getIndices()[0],
+                                nb_row,&row_data.getIndices()[0],
+                                &transM(0,0),ADD_VALUES); CHKERRQ(ierr);
+          }
+        } catch (const std::exception& ex) {
+          ostringstream ss;
+          ss << "throw in method: " << ex.what() << endl;
+          SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+        }
+        
+        //        cout<<"OpMoistureCapacityLhs  end "<<endl;
+        
+        PetscFunctionReturn(0);
+      }
+      
+    };
+
+    
+    
+    
+    PetscErrorCode addWtElement(const string problem_name,const string fe_name,const string field_name,const string rate_name,const string thermal_field_name,
                                            const string conc_field_name, const string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
       PetscFunctionBegin;
       
@@ -274,6 +443,7 @@ namespace MoFEM {
         ierr = mField.modify_finite_element_add_field_row(fe_name,field_name); CHKERRQ(ierr);
         ierr = mField.modify_finite_element_add_field_col(fe_name,field_name); CHKERRQ(ierr);
         ierr = mField.modify_finite_element_add_field_data(fe_name,field_name); CHKERRQ(ierr);
+        ierr = mField.modify_finite_element_add_field_data(fe_name, rate_name); CHKERRQ(ierr);
         ierr = mField.modify_finite_element_add_field_data(fe_name,thermal_field_name); CHKERRQ(ierr);
         ierr = mField.modify_finite_element_add_field_data(fe_name,conc_field_name); CHKERRQ(ierr);
 
@@ -305,27 +475,51 @@ namespace MoFEM {
       PetscFunctionReturn(0);
     }
     
-    PetscErrorCode setCalculateWtOperators(string field_name, string thermal_field_name,string conc_field_name,Vec &F,int verb = 0) {
+    
+    /** \brief set up operators for unsedy heat flux problem
+     * \infroup mofem_thermal_elem
+     */
+    PetscErrorCode setTimeSteppingProblem(TsCtx &ts_ctx,string fe_name,string field_name,string rate_name,string thermal_field_name, string conc_field_name, const string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
       PetscFunctionBegin;
-      if(mField.check_field(thermal_field_name)) {
-        if(mField.check_field(conc_field_name)) {
-          map<int,BlockData>::iterator sit = setOfBlocks.begin();
-          for(;sit!=setOfBlocks.end();sit++) {
-            cout<<"HI before feDegradation.get_op_to_do_Rhs() "<<endl;
-            feDegradation.get_op_to_do_Rhs().push_back(new OpGetTempAtGaussPts(thermal_field_name, commonData,verb));
-            feDegradation.get_op_to_do_Rhs().push_back(new OpGetConcAtGaussPts(conc_field_name,    commonData,verb));
-            feDegradation.get_op_to_do_Rhs().push_back(new OpGetWtAtGaussPts(field_name,  sit->second,  commonData,verb));
-
-//            feThermalStressRhs.get_op_to_do_Rhs().push_back(new OpThermalStressRhs(field_name,F,sit->second,commonData,verb));
-
-            
-            cout<<"HI After feDegradation.get_op_to_do_Rhs() "<<endl;
-          }
+      
+      {
+        map<int,BlockData>::iterator sit = setOfBlocks.begin();
+        for(;sit!=setOfBlocks.end();sit++) {
+           cout<<"HI before setTimeSteppingProblem() "<<endl;
+          //add finite element
+//          feLhsDegradation.get_op_to_do_Lhs().push_back(new OpGetDegradationLhs(field_name,sit->second,commonData));
           
+          feRhsDegradation.get_op_to_do_Rhs().push_back(new OpGetTempAtGaussPts(thermal_field_name, commonData));
+//          feRhsDegradation.get_op_to_do_Rhs().push_back(new OpGetConcAtGaussPts(conc_field_name,    commonData));
+//          feRhsDegradation.get_op_to_do_Rhs().push_back(new OpGetTetWtAtGaussPts(field_name,commonData));
+//          feRhsDegradation.get_op_to_do_Rhs().push_back(new OpGetTetWtRateAtGaussPts(rate_name,commonData));
+//          feRhsDegradation.get_op_to_do_Rhs().push_back(new OpGetDegradationRhs(field_name, sit->second,  commonData));
+
+
+          cout<<"HI After setTimeSteppingProblem() "<<endl;
         }
       }
+      {
+        bool ho_geometry = false;
+        if(mField.check_field(mesh_nodals_positions)) {
+          ho_geometry = true;
+        }
+      }
+      
+      //rhs
+      TsCtx::loops_to_do_type& loops_to_do_Rhs = ts_ctx.get_loops_to_do_IFunction();
+      loops_to_do_Rhs.push_back(TsCtx::loop_pair_type(fe_name,&feRhsDegradation));
+
+      //lhs
+      TsCtx::loops_to_do_type& loops_to_do_Mat = ts_ctx.get_loops_to_do_IJacobian();
+      loops_to_do_Mat.push_back(TsCtx::loop_pair_type(fe_name,&feLhsDegradation));
+      
       PetscFunctionReturn(0);
     }
+
+    
+    
+    
     
     
   };

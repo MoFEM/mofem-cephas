@@ -120,15 +120,11 @@ int main(int argc, char *argv[]) {
     cout<<"Temprature field exists "<< endl;
     if(m_field.check_field("CONC")) {
       cout<<"Concentration field exists "<< endl;
-      ierr = wt_elements.addWtElement("Wt_PROBLEM","Wt_FE","Wt","TEMP", "CONC"); CHKERRQ(ierr);
+      ierr = wt_elements.addWtElement("Wt_PROBLEM","Wt_FE","Wt","Wt_RATE","TEMP", "CONC"); CHKERRQ(ierr);
     }
   }
   
   
-//  ierr = thermal_elements.addThermalFluxElement("Wt_PROBLEM","Wt"); CHKERRQ(ierr);
-//  //add rate of temerature to data field of finite element
-  ierr = m_field.modify_finite_element_add_field_data("Wt_FE","Wt_RATE"); CHKERRQ(ierr);
-
   /****/
   //build database
   //build field
@@ -173,66 +169,57 @@ int main(int argc, char *argv[]) {
   ierr = TSSetType(ts,TSBEULER); CHKERRQ(ierr);
   
   
-  Calculate_wt::LoadTimeSeries load_series_data(m_field,"TEMP","MOIS");
-//  TemperatureBCFEMethodPreAndPostProc my_dirichlet_bc(m_field,"Wt",A,T,F);
-//  ThermalElement::UpdateAndControl update_velocities(m_field,ts,"Wt","Wt_RATE");
-//  ThermalElement::TimeSeriesMonitor monitor(m_field,"Wt_SERIES","Wt");
-//
-//  //preprocess
-//  ts_ctx.get_preProcess_to_do_IFunction().push_back(&update_velocities);
-//  ts_ctx.get_preProcess_to_do_IFunction().push_back(&my_dirichlet_bc);
-//  ts_ctx.get_preProcess_to_do_IJacobian().push_back(&my_dirichlet_bc);
-//
-//  //and temperature element functions
-//  ierr = thermal_elements.setTimeSteppingProblem(ts_ctx,"Wt","Wt_RATE"); CHKERRQ(ierr);
-//
-//  //postprocess
-//  ts_ctx.get_postProcess_to_do_IFunction().push_back(&my_dirichlet_bc);
-//  ts_ctx.get_postProcess_to_do_IJacobian().push_back(&my_dirichlet_bc);
-//  ts_ctx.get_postProcess_to_do_IJacobian().push_back(&update_velocities);
-//  ts_ctx.get_postProcess_to_do_Monitor().push_back(&monitor);
-//
-//  ierr = TSSetIFunction(ts,F,f_TSSetIFunction,&ts_ctx); CHKERRQ(ierr);
-//  ierr = TSSetIJacobian(ts,A,A,f_TSSetIJacobian,&ts_ctx); CHKERRQ(ierr);
-//  ierr = TSMonitorSet(ts,f_TSMonitorSet,&ts_ctx,PETSC_NULL); CHKERRQ(ierr);
-//
-//  double ftime = 1;
-//  ierr = TSSetDuration(ts,PETSC_DEFAULT,ftime); CHKERRQ(ierr);
-//  ierr = TSSetSolution(ts,T); CHKERRQ(ierr);
-//  ierr = TSSetFromOptions(ts); CHKERRQ(ierr);
-//
-//  {
-//    SeriesRecorder *recorder_ptr;
-//    ierr = m_field.query_interface(recorder_ptr); CHKERRQ(ierr);
-//    ierr = recorder_ptr->add_series_recorder("Wt_SERIES"); CHKERRQ(ierr);
-//    ierr = recorder_ptr->initialize_series_recorder("Wt_SERIES"); CHKERRQ(ierr);
-//  }
-//
-//  ierr = TSSolve(ts,T); CHKERRQ(ierr);
-//  ierr = TSGetTime(ts,&ftime); CHKERRQ(ierr);
-//
-//  PetscInt steps,snesfails,rejects,nonlinits,linits;
-//  ierr = TSGetTimeStepNumber(ts,&steps); CHKERRQ(ierr);
-//  ierr = TSGetSNESFailures(ts,&snesfails); CHKERRQ(ierr);
-//  ierr = TSGetStepRejections(ts,&rejects); CHKERRQ(ierr);
-//  ierr = TSGetSNESIterations(ts,&nonlinits); CHKERRQ(ierr);
-//  ierr = TSGetKSPIterations(ts,&linits); CHKERRQ(ierr);
-//
-//  PetscPrintf(PETSC_COMM_WORLD,
-//    "steps %D (%D rejected, %D SNES fails), ftime %g, nonlinits %D, linits %D\n",
-//    steps,rejects,snesfails,ftime,nonlinits,linits);
-//
-//  {
-//    SeriesRecorder *recorder_ptr;
-//    ierr = m_field.query_interface(recorder_ptr); CHKERRQ(ierr);
-//    ierr = recorder_ptr->finalize_series_recorder("Wt_SERIES"); CHKERRQ(ierr);
-//  }
-//  
-//  //m_field.list_dofs_by_field_name("Wt");
-//  if(pcomm->rank()==0) {
-//    rval = moab.write_file("solution_temp.h5m"); CHKERR_PETSC(rval);
-//  }
-//
+  Calculate_wt::LoadTimeSeries load_series_data(m_field,"THEMP_SERIES","CONC_SERIES");
+  Calculate_wt::UpdateAndControl update_velocities(m_field,ts,"Wt","Wt_RATE");
+  Calculate_wt::TimeSeriesMonitor monitor(m_field,"Wt_SERIES","Wt");
+
+  //preprocess
+  ts_ctx.get_preProcess_to_do_IFunction().push_back(&load_series_data);
+  ts_ctx.get_preProcess_to_do_IFunction().push_back(&update_velocities);
+
+  //and temperature element functions
+  ierr = wt_elements.setTimeSteppingProblem(ts_ctx,"Wt_FE","Wt","Wt_RATE","TEMP","CONC"); CHKERRQ(ierr);
+
+  //postprocess
+  ts_ctx.get_postProcess_to_do_IJacobian().push_back(&update_velocities);
+  ts_ctx.get_postProcess_to_do_Monitor().push_back(&monitor);
+
+  ierr = TSSetIFunction(ts,F,f_TSSetIFunction,&ts_ctx); CHKERRQ(ierr);
+  ierr = TSSetIJacobian(ts,A,A,f_TSSetIJacobian,&ts_ctx); CHKERRQ(ierr);
+  ierr = TSMonitorSet(ts,f_TSMonitorSet,&ts_ctx,PETSC_NULL); CHKERRQ(ierr);
+
+  double ftime = 1;
+  ierr = TSSetDuration(ts,PETSC_DEFAULT,ftime); CHKERRQ(ierr);
+  ierr = TSSetSolution(ts,T); CHKERRQ(ierr);
+  ierr = TSSetFromOptions(ts); CHKERRQ(ierr);
+
+  SeriesRecorder *recorder_ptr;
+  ierr = m_field.query_interface(recorder_ptr); CHKERRQ(ierr);
+  ierr = recorder_ptr->add_series_recorder("Wt_SERIES"); CHKERRQ(ierr);
+  ierr = recorder_ptr->initialize_series_recorder("Wt_SERIES"); CHKERRQ(ierr);
+
+  ierr = TSSolve(ts,T); CHKERRQ(ierr);
+  ierr = TSGetTime(ts,&ftime); CHKERRQ(ierr);
+
+  ierr = recorder_ptr->finalize_series_recorder("Wt_SERIES"); CHKERRQ(ierr);
+  
+  PetscInt steps,snesfails,rejects,nonlinits,linits;
+  ierr = TSGetTimeStepNumber(ts,&steps); CHKERRQ(ierr);
+  ierr = TSGetSNESFailures(ts,&snesfails); CHKERRQ(ierr);
+  ierr = TSGetStepRejections(ts,&rejects); CHKERRQ(ierr);
+  ierr = TSGetSNESIterations(ts,&nonlinits); CHKERRQ(ierr);
+  ierr = TSGetKSPIterations(ts,&linits); CHKERRQ(ierr);
+
+  PetscPrintf(PETSC_COMM_WORLD,
+  "steps %D (%D rejected, %D SNES fails), ftime %g, nonlinits %D, linits %D\n",
+  steps,rejects,snesfails,ftime,nonlinits,linits);
+
+  
+  //m_field.list_dofs_by_field_name("Wt");
+  if(pcomm->rank()==0) {
+    rval = moab.write_file("solution_temp.h5m"); CHKERR_PETSC(rval);
+  }
+
 //  SeriesRecorder &recorder = core;
 //
 //  for(_IT_SERIES_STEPS_BY_NAME_FOR_LOOP_(recorder,"Wt_SERIES",sit)) {
