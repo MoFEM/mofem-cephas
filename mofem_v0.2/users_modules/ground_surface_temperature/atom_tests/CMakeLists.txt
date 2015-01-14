@@ -35,11 +35,11 @@ if(ADOL-C_LIBRARY)
     mofem_cblas
     ${MoFEM_PROJECT_LIBS})
 
-  #cm_export_file("LShape.cub" export_files_convective_matrix)
-  #add_test(convective_matrix ${MoFEM_MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/convective_matrix -my_file LShape.cub)
-  #add_test(convective_matrix_compare ${CMAKE_COMMAND} -E compare_files 
-  #  ${CMAKE_SOURCE_DIR}/convective_mass_element/atom_tests/blessed_files/convective_matrix.txt 
-  #  ${CMAKE_BINARY_DIR}/convective_mass_element/atom_tests/convective_matrix.txt)
+  cm_export_file("Valey2.cub" export_files_ground_surface_temperature)
+  add_test(ground_surface_temperature ${MoFEM_MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/ground_surface_temperature -my_file Valey2.cub)
+  add_test(ground_surface_temperature_compare ${CMAKE_COMMAND} -E compare_files 
+    ${CMAKE_SOURCE_DIR}/ground_surface_temperature/atom_tests/blessed_files/ground_surface_temperature.txt 
+    ${CMAKE_BINARY_DIR}/ground_surface_temperature/atom_tests/ground_surface_temperature.txt)
 
 endif(ADOL-C_LIBRARY)
 

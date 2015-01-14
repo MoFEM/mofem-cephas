@@ -1,0 +1,15 @@
+reset
+
+open "/Users/likask/tmp/Valey.cub"
+volume all size auto factor 10
+volume all scheme Tetmesh
+mesh volume all
+
+block 1 volume 1all
+block 1 name 'MAT_THERMAL'
+block 1 attribute count 2
+block 1 attribute index 1 1
+block 1 attribute index 2 1
+
+block 2 surface 573 502 501 500 499 497 496 489 490 493 492 491 488 487 567 486 494 
+block 2 name 'BARESOIL'

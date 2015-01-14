@@ -239,7 +239,7 @@ int main(int argc, char *argv[]) {
 
   time_t t0 = mktime(&start_time);
   time_t t = t0;
-  for(;t<t0+60*60*24;t+=60*60) {
+  for(;t<t0+60*60*24;t+=4*60*60) {
 
     struct tm current_time;
     current_time = *gmtime(&t);//localtime(&t);
@@ -276,6 +276,10 @@ int main(int argc, char *argv[]) {
   ierr = m_field.partition_finite_elements("GROUND_SURFACE"); CHKERRQ(ierr);
   ierr = m_field.partition_ghost_dofs("GROUND_SURFACE"); CHKERRQ(ierr);
 
+  for(_IT_GET_DOFS_FIELD_BY_NAME_AND_TYPE_FOR_LOOP_(m_field,"TEMP",MBVERTEX,dof)) {
+    dof->get_FieldData() = 20;
+  }
+
   //create matrices
   Vec F;
   ierr = m_field.VecCreateGhost("GROUND_SURFACE",COL,&F); CHKERRQ(ierr);
@@ -300,9 +304,9 @@ int main(int argc, char *argv[]) {
   ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
   ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
 
-  //ierr = m_field.loop_finite_elements("GROUND_SURFACE","GROUND_SURFACE_FE",ground_surface.getFeGroundSurfaceLhs()); CHKERRQ(ierr);
-  //ierr = MatAssemblyBegin(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-  //ierr = MatAssemblyEnd(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+  ierr = m_field.loop_finite_elements("GROUND_SURFACE","GROUND_SURFACE_FE",ground_surface.getFeGroundSurfaceLhs()); CHKERRQ(ierr);
+  ierr = MatAssemblyBegin(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+  ierr = MatAssemblyEnd(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 
   PetscViewer viewer;
   ierr = PetscViewerASCIIOpen(PETSC_COMM_WORLD,"ground_surface_temperature.txt",&viewer); CHKERRQ(ierr);
@@ -312,9 +316,9 @@ int main(int argc, char *argv[]) {
   ierr = VecView(F,viewer); CHKERRQ(ierr);
   
   //MatView(Aij,PETSC_VIEWER_DRAW_WORLD);
-  //MatChop(Aij,1e-4);
+  MatChop(Aij,1e-4);
   //MatView(Aij,PETSC_VIEWER_STDOUT_WORLD);
-  //MatView(Aij,viewer);
+  MatView(Aij,viewer);
   //std::string wait;
   //std::cin >> wait;
 
