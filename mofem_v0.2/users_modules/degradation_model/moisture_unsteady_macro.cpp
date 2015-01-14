@@ -164,7 +164,7 @@ int main(int argc, char *argv[]) {
   ierr = TSCreate(PETSC_COMM_WORLD,&ts); CHKERRQ(ierr);
   ierr = TSSetType(ts,TSBEULER); CHKERRQ(ierr);
 
-  TemperatureBCFEMethodPreAndPostProc my_dirichlet_bc(m_field,"CONC",A,T,F);
+  DirichletBCFromBlockSetFEMethodPreAndPostProc my_dirichlet_bc(m_field,"CONC","MASS_CONC",A,T,F);
   MoistureElement::UpdateAndControl update_velocities(m_field,ts,"CONC","CONC_RATE");
   MoistureElement::TimeSeriesMonitor monitor(m_field,"CONC_SERIES","CONC");
 
