@@ -331,92 +331,92 @@ PetscErrorCode FixBcAtEntities::iNitalize() {
 }
 
 PetscErrorCode FixBcAtEntities::preProcess() {
-    PetscFunctionBegin;
+  PetscFunctionBegin;
 
-    switch (ts_ctx) {
-      case CTX_TSSETIFUNCTION: {
+  switch (ts_ctx) {
+    case CTX_TSSETIFUNCTION: {
 	snes_ctx = CTX_SNESSETFUNCTION;
 	//snes_x = ts_u;
 	snes_f = ts_F;
 	break;
-      }
-      case CTX_TSSETIJACOBIAN: {
+    }
+    case CTX_TSSETIJACOBIAN: {
 	snes_ctx = CTX_SNESSETJACOBIAN;
 	snes_B = ts_B;
 	break;
-      }
-      default:
-      break;
     }
-
-    ierr = iNitalize(); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
+    default:
+    break;
   }
 
+  ierr = iNitalize(); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
   
-  PetscErrorCode DirichletBCFromBlockSetFEMethodPreAndPostProc::iNitalize() {
-    PetscFunctionBegin;
-    if(map_zero_rows.empty()) {
-      ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
-      
-      for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
-        if(it->get_Cubit_name().compare(0,9,blocksetName) == 0) {
-          vector<double> mydata;
-          ierr = it->get_Cubit_attributes(mydata); CHKERRQ(ierr);
-          for(int dim = 0;dim<3;dim++) {
-            Range ents;
-            ierr = it->get_Cubit_msId_entities_by_dimension(mField.get_moab(),dim,ents,true); CHKERRQ(ierr);
-            if(dim>1) {
-              Range _edges;
-              ierr = mField.get_moab().get_adjacencies(ents,1,false,_edges,Interface::UNION); CHKERRQ(ierr);
-              ents.insert(_edges.begin(),_edges.end());
-            }
-            if(dim>0) {
-              Range _nodes;
-              rval = mField.get_moab().get_connectivity(ents,_nodes,true); CHKERR_PETSC(rval);
-              ents.insert(_nodes.begin(),_nodes.end());
-            }
-            
-            for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
-              for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,fieldName,*eit,pcomm->rank(),dof)) {
-                if(dof->get_ent_type() == MBVERTEX) {
-                  if(dof->get_dof_rank() == 0) {
-                    map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = mydata[0];
-                  }
-                  if(dof->get_dof_rank() == 1) {
-                    map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = mydata[2];
-                  }
-                  if(dof->get_dof_rank() == 2) {
-                    map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = mydata[3];
-                  }
-                } else {
-                  if(dof->get_dof_rank() == 0) {
-                    map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = 0;
-                  }
-                  if(dof->get_dof_rank() == 1) {
-                    map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = 0;
-                  }
-                  if(dof->get_dof_rank() == 2) {
-                    map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = 0;
-                  }
+PetscErrorCode DirichletBCFromBlockSetFEMethodPreAndPostProc::iNitalize() {
+  PetscFunctionBegin;
+  if(map_zero_rows.empty()) {
+    ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
+    
+    for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
+      if(it->get_Cubit_name().compare(0,9,blocksetName) == 0) {
+        vector<double> mydata;
+        ierr = it->get_Cubit_attributes(mydata); CHKERRQ(ierr);
+        for(int dim = 0;dim<3;dim++) {
+          Range ents;
+          ierr = it->get_Cubit_msId_entities_by_dimension(mField.get_moab(),dim,ents,true); CHKERRQ(ierr);
+          if(dim>1) {
+            Range _edges;
+            ierr = mField.get_moab().get_adjacencies(ents,1,false,_edges,Interface::UNION); CHKERRQ(ierr);
+            ents.insert(_edges.begin(),_edges.end());
+          }
+          if(dim>0) {
+            Range _nodes;
+            rval = mField.get_moab().get_connectivity(ents,_nodes,true); CHKERR_PETSC(rval);
+            ents.insert(_nodes.begin(),_nodes.end());
+          }
+          
+          for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
+            for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,fieldName,*eit,pcomm->rank(),dof)) {
+              if(dof->get_ent_type() == MBVERTEX) {
+                if(dof->get_dof_rank() == 0) {
+                  map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = mydata[0];
+                }
+                if(dof->get_dof_rank() == 1) {
+                  map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = mydata[1];
+                }
+                if(dof->get_dof_rank() == 2) {
+                  map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = mydata[2];
+                }
+              } else {
+                if(dof->get_dof_rank() == 0) {
+                  map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = 0;
+                }
+                if(dof->get_dof_rank() == 1) {
+                  map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = 0;
+                }
+                if(dof->get_dof_rank() == 2) {
+                  map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = 0;
                 }
               }
             }
           }
         }
       }
-      dofsIndices.resize(map_zero_rows.size());
-      dofsValues.resize(map_zero_rows.size());
-      int ii = 0;
-      map<DofIdx,FieldData>::iterator mit = map_zero_rows.begin();
-      for(;mit!=map_zero_rows.end();mit++,ii++) {
-        dofsIndices[ii] = mit->first;
-        dofsValues[ii] = mit->second;
-      }
-      
     }
-    PetscFunctionReturn(0);
+    dofsIndices.resize(map_zero_rows.size());
+    dofsValues.resize(map_zero_rows.size());
+    int ii = 0;
+    map<DofIdx,FieldData>::iterator mit = map_zero_rows.begin();
+    for(;mit!=map_zero_rows.end();mit++,ii++) {
+      dofsIndices[ii] = mit->first;
+      dofsValues[ii] = mit->second;
+    }
+    
   }
+  PetscFunctionReturn(0);
+}
 
 }
 

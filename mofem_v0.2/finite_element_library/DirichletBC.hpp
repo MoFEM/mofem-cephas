@@ -114,25 +114,23 @@ struct FixBcAtEntities: public DisplacementBCFEMethodPreAndPostProc {
 };
   
   
-  /*
-   Implemntaiton of generalised Dirichlet Boundary Conditions from CUBIT Blockset
-   (or not using CUBIT buildin boundary conditons, e.g. Temprature or Displacements etc).
-   It can work for any Problem rank (1,2,3)
-   */
+/**
+  * Implemntaiton of generalised Dirichlet Boundary Conditions from CUBIT Blockset
+  * (or not using CUBIT buildin boundary conditons, e.g. Temprature or Displacements etc).
+  * It can work for any Problem rank (1,2,3)
+**/
+struct DirichletBCFromBlockSetFEMethodPreAndPostProc: public DisplacementBCFEMethodPreAndPostProc {
+  const string _blockset_name;
+  const string blocksetName;
+  DirichletBCFromBlockSetFEMethodPreAndPostProc(FieldInterface& _mField,const string &_field_name,const string &_blockset_name,Mat _Aij,Vec _X,Vec _F):
+  DisplacementBCFEMethodPreAndPostProc(_mField,_field_name,_Aij,_X,_F),blocksetName(_blockset_name) {}
   
+  DirichletBCFromBlockSetFEMethodPreAndPostProc(FieldInterface& _mField,const string &_field_name):
+  DisplacementBCFEMethodPreAndPostProc(_mField,_field_name),blocksetName(_blockset_name) {}
   
-  struct DirichletBCFromBlockSetFEMethodPreAndPostProc: public DisplacementBCFEMethodPreAndPostProc {
-    const string _blockset_name;
-    const string blocksetName;
-    DirichletBCFromBlockSetFEMethodPreAndPostProc(FieldInterface& _mField,const string &_field_name,const string &_blockset_name,Mat _Aij,Vec _X,Vec _F):
-    DisplacementBCFEMethodPreAndPostProc(_mField,_field_name,_Aij,_X,_F),blocksetName(_blockset_name) {}
-    
-    DirichletBCFromBlockSetFEMethodPreAndPostProc(FieldInterface& _mField,const string &_field_name):
-    DisplacementBCFEMethodPreAndPostProc(_mField,_field_name),blocksetName(_blockset_name) {}
-    
-    PetscErrorCode iNitalize();
-    
-  };
+  PetscErrorCode iNitalize();
+  
+};
 
     
 }
