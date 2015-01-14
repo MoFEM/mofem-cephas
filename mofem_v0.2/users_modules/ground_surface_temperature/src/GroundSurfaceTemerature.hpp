@@ -555,8 +555,8 @@ struct GroundSurfaceTemerature {
 
 	//convection
 	double us = pArametersPtr->CSh*timeDataPtr->u10; // win speed with sheltering coeeficient
-	aDeltaPhi = (aT-timeDataPtr->Ta); // this is with assumtion that near the near the surface is the same amout of moisture like in the air 
-	cerr <<  aDeltaPhi << " " << pow(aDeltaPhi,2) << endl;
+	aDeltaPhi = fmax(0,aT-timeDataPtr->Ta); // this is with assumtion that near the near the surface is the same amout of moisture like in the air 
+						// if ground temerature are lower than air there is no convection
 
 	aHconv = pArametersPtr->rhoCp*(pArametersPtr->Cfc*us+pArametersPtr->Cnc*pow(aDeltaPhi,0.33))*(aT-timeDataPtr->Ta);
 	//aHevap = 0; // need to be implemented with moisture model
