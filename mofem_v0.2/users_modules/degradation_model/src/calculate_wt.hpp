@@ -79,7 +79,7 @@ namespace MoFEM {
       SeriesRecorder *recorder_ptr;
       ierr = mField.query_interface(recorder_ptr); CHKERRQ(ierr);
 
-      cout << "ts_step "<<ts_step<< endl;
+//      cout << "ts_step "<<ts_step<< endl;
 
       ierr = recorder_ptr->load_series_data(tempSeries,ts_step); CHKERRQ(ierr);
       ierr = recorder_ptr->load_series_data(moisSeries,ts_step); CHKERRQ(ierr);
@@ -198,7 +198,7 @@ namespace MoFEM {
           for(int gg = 0;gg<nb_gauss_pts;gg++) {
             fieldAtGaussPts[gg] += inner_prod(data.getN(gg,nb_dofs),data.getFieldData());
           }
-          cout << "data.getFieldData() "<<data.getFieldData()<< endl;
+//          cout << "data.getFieldData() "<<data.getFieldData()<< endl;
 //          cout << "data.getN(gg,nb_dofs) "<<data.getN()<< endl;
 
         } catch (const std::exception& ex) {
@@ -295,10 +295,14 @@ namespace MoFEM {
             }
             double T=commonData.temperatureAtGaussPts(gg);
             double C=commonData.concentrationAtGaussPts(gg);
-//            cout << "T "<<T<< endl;
-//            cout << "C "<<C<< endl;
             double qw=commonData.fieldAtGaussPts(gg);
             double qw_dot=commonData.fieldRateAtGaussPts(gg);
+            
+//            cout << "T "<<T<< endl;
+//            cout << "C "<<C<< endl;
+//            cout << "qw "<<qw<< endl;
+//            cout << "qw_dot "<<qw_dot<< endl;
+            
             double beta=-0.001682;
             double Tg=126;
 
@@ -399,6 +403,8 @@ namespace MoFEM {
             
           }
           
+          cout<<"M  =  "<<M<<endl;
+
           PetscErrorCode ierr;
           ierr = MatSetValues(
                               (getFEMethod()->ts_B),
@@ -485,18 +491,17 @@ namespace MoFEM {
       {
         map<int,BlockData>::iterator sit = setOfBlocks.begin();
         for(;sit!=setOfBlocks.end();sit++) {
-           cout<<"HI before setTimeSteppingProblem() "<<endl;
+//           cout<<"HI before setTimeSteppingProblem() "<<endl;
           //add finite element
-//          feLhsDegradation.get_op_to_do_Lhs().push_back(new OpGetDegradationLhs(field_name,sit->second,commonData));
+          feLhsDegradation.get_op_to_do_Lhs().push_back(new OpGetDegradationLhs(field_name,sit->second,commonData));
           
           feRhsDegradation.get_op_to_do_Rhs().push_back(new OpGetTempAtGaussPts(thermal_field_name, commonData));
-//          feRhsDegradation.get_op_to_do_Rhs().push_back(new OpGetConcAtGaussPts(conc_field_name,    commonData));
-//          feRhsDegradation.get_op_to_do_Rhs().push_back(new OpGetTetWtAtGaussPts(field_name,commonData));
-//          feRhsDegradation.get_op_to_do_Rhs().push_back(new OpGetTetWtRateAtGaussPts(rate_name,commonData));
-//          feRhsDegradation.get_op_to_do_Rhs().push_back(new OpGetDegradationRhs(field_name, sit->second,  commonData));
+          feRhsDegradation.get_op_to_do_Rhs().push_back(new OpGetConcAtGaussPts(conc_field_name,    commonData));
+          feRhsDegradation.get_op_to_do_Rhs().push_back(new OpGetTetWtAtGaussPts(field_name,commonData));
+          feRhsDegradation.get_op_to_do_Rhs().push_back(new OpGetTetWtRateAtGaussPts(rate_name,commonData));
+          feRhsDegradation.get_op_to_do_Rhs().push_back(new OpGetDegradationRhs(field_name, sit->second,  commonData));
 
-
-          cout<<"HI After setTimeSteppingProblem() "<<endl;
+//          cout<<"HI After setTimeSteppingProblem() "<<endl;
         }
       }
       {

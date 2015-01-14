@@ -106,7 +106,7 @@ namespace MoFEM {
      * \infroup mofem_thermal_elem
      */
     struct FluxData {
-      HeatfluxCubitBcData dAta; ///< for more details look to BCMultiIndices.hpp to see details of HeatfluxCubitBcData
+      double dAta_mass_flux;
       Range tRis; ///< suraface triangles where hate flux is applied
     };
     map<int,FluxData> setOfFluxes; ///< maps side set id with appropiate FluxData
@@ -211,11 +211,26 @@ namespace MoFEM {
         ierr = mField.modify_finite_element_add_field_data("DIFFUSION_FLUX_FE",mesh_nodals_positions); CHKERRQ(ierr);
       }
       ierr = mField.modify_problem_add_finite_element(problem_name,"DIFFUSION_FLUX_FE"); CHKERRQ(ierr);
-
-      for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SIDESET|HEATFLUXSET,it)) {
-        ierr = it->get_cubit_bc_data_structure(setOfFluxes[it->get_msId()].dAta); CHKERRQ(ierr);
-        rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,setOfFluxes[it->get_msId()].tRis,true); CHKERR_PETSC(rval);
-        ierr = mField.add_ents_to_finite_element_by_TRIs(setOfFluxes[it->get_msId()].tRis,"DIFFUSION_FLUX_FE"); CHKERRQ(ierr);
+      
+      //this is alternative method for setting boundary conditions, to bypass bu in cubit file reader.
+      //not elegant, but good enough
+      for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
+        if(it->get_Cubit_name().compare(0,9,"MASS_FLUX") == 0) {
+          vector<double> data;
+          ierr = it->get_Cubit_attributes(data); CHKERRQ(ierr);
+          if(data.size()!=1) {
+            SETERRQ(PETSC_COMM_SELF,1,"Data inconsistency");
+          }
+//          cout<<"data[0]   "<<data[0]<<endl;
+//          std::string wait;
+//          std::cin >> wait;
+          
+          setOfFluxes[it->get_msId()].dAta_mass_flux = data[0];
+          //cerr << setOfFluxes[it->get_msId()].dAta << endl;
+          rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,setOfFluxes[it->get_msId()].tRis,true); CHKERR_PETSC(rval);
+          ierr = mField.add_ents_to_finite_element_by_TRIs(setOfFluxes[it->get_msId()].tRis,"DIFFUSION_FLUX_FE"); CHKERRQ(ierr);
+          
+        }
       }
 
       PetscFunctionReturn(0);
@@ -960,9 +975,9 @@ namespace MoFEM {
           double flux;
           if(ho_geometry) {
             double area = norm_2(getNormals_at_GaussPt(gg)); //cblas_dnrm2(3,&getNormals_at_GaussPt()(gg,0),1);
-            flux = dAta.dAta.data.value1*area;
+            flux = dAta.dAta_mass_flux*area;
           } else {
-            flux = dAta.dAta.data.value1*getArea();
+            flux = dAta.dAta_mass_flux*getArea();
           }
           //cblas_daxpy(nb_row_dofs,val*flux,&data.getN()(gg,0),1,&*Nf.data().begin(),1);
           ublas::noalias(Nf) += val*flux*data.getN(gg,nb_dofs);

@@ -134,7 +134,7 @@ int main(int argc, char *argv[]) {
   Mat A;
   ierr = mField.MatCreateMPIAIJWithArrays("MOISTURE_PROBLEM",&A); CHKERRQ(ierr);
 
-  TemperatureBCFEMethodPreAndPostProc my_dirichlet_bc(mField,"CONC",A,C,F);
+  ConcentrationBCFEMethodPreAndPostProc my_dirichlet_bc(mField,"CONC",A,C,F);
   ierr = moistture_elements.setMoistureFiniteElementRhsOperators("CONC",F); CHKERRQ(ierr);
   ierr = moistture_elements.setMoistureFiniteElementLhsOperators("CONC",A); CHKERRQ(ierr);
 

@@ -241,7 +241,7 @@ int main(int argc, char *argv[]) {
       rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
       ierr = m_field.problem_get_FE("THERMAL_PROBLEM","THERMAL_FE",out_meshset); CHKERRQ(ierr);
       ostringstream ss;
-      ss << "out_" << sit->step_number << ".vtk";
+      ss << "Temp_" << sit->step_number << ".vtk";
       rval = moab.write_file(ss.str().c_str(),"VTK","",&out_meshset,1); CHKERR_PETSC(rval);
       rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
     }

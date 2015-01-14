@@ -162,12 +162,29 @@ int main(int argc, char *argv[]) {
   ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = MatZeroEntries(A); CHKERRQ(ierr);
 
+  
+  
+  //Setting initial conditions for Wt (Degradaiton parameter) which is 1 at each node (for both field (Wt) and vector (T))
+  for(_IT_GET_DOFS_FIELD_BY_NAME_AND_TYPE_FOR_LOOP_(m_field,"Wt",MBVERTEX,dof)) {
+//    EntityHandle ent = dof->get_ent();
+//    ublas::vector<double> coords(3);
+//    rval = moab.get_coords(&ent,1,&coords[0]); CHKERR_PETSC(rval);
+//    cout<<"coords "<<coords<<endl;
+    dof->get_FieldData() = 1;
+  }
+  ierr = m_field.set_local_VecCreateGhost("Wt_PROBLEM",COL,T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+
+//  ierr = VecView(T,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+//  std::string wait;
+//  std::cin >> wait;
+
+  
+  
   //TS
   TsCtx ts_ctx(m_field,"Wt_PROBLEM");
   TS ts;
   ierr = TSCreate(PETSC_COMM_WORLD,&ts); CHKERRQ(ierr);
   ierr = TSSetType(ts,TSBEULER); CHKERRQ(ierr);
-  
   
   Calculate_wt::LoadTimeSeries load_series_data(m_field,"THEMP_SERIES","CONC_SERIES");
   Calculate_wt::UpdateAndControl update_velocities(m_field,ts,"Wt","Wt_RATE");
@@ -217,40 +234,39 @@ int main(int argc, char *argv[]) {
   
   //m_field.list_dofs_by_field_name("Wt");
   if(pcomm->rank()==0) {
-    rval = moab.write_file("solution_temp.h5m"); CHKERR_PETSC(rval);
+    rval = moab.write_file("solution_wt.h5m"); CHKERR_PETSC(rval);
   }
 
-//  SeriesRecorder &recorder = core;
-//
-//  for(_IT_SERIES_STEPS_BY_NAME_FOR_LOOP_(recorder,"Wt_SERIES",sit)) {
-//
-//    PetscPrintf(PETSC_COMM_WORLD,"Process step %d\n",sit->get_step_number());
-//
-//    ierr = recorder.load_series_data("Wt_SERIES",sit->get_step_number()); CHKERRQ(ierr);
-//    ierr = m_field.set_local_VecCreateGhost("Wt_PROBLEM",ROW,T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-//
-//    ProjectionFieldOn10NodeTet ent_method_on_10nodeTet(m_field,"Wt",true,false,"Wt");
-//    ent_method_on_10nodeTet.set_nodes = true;
-//    ierr = m_field.loop_dofs("Wt",ent_method_on_10nodeTet); CHKERRQ(ierr);
-//    ent_method_on_10nodeTet.set_nodes = false;
-//    ierr = m_field.loop_dofs("Wt",ent_method_on_10nodeTet); CHKERRQ(ierr);
-//
-//    if(pcomm->rank()==0) {
-//      EntityHandle out_meshset;
-//      rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
-//      ierr = m_field.problem_get_FE("Wt_PROBLEM","Wt_FE",out_meshset); CHKERRQ(ierr);
-//      ostringstream ss;
-//      ss << "out_" << sit->step_number << ".vtk";
-//      rval = moab.write_file(ss.str().c_str(),"VTK","",&out_meshset,1); CHKERR_PETSC(rval);
-//      rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
-//    }
-//
-//  }
-//
-//  ierr = TSDestroy(&ts);CHKERRQ(ierr);
-//  ierr = MatDestroy(&A); CHKERRQ(ierr);
-//  ierr = VecDestroy(&F); CHKERRQ(ierr);
-//  ierr = VecDestroy(&T); CHKERRQ(ierr);
+  
+  for(_IT_SERIES_STEPS_BY_NAME_FOR_LOOP_(recorder_ptr,"Wt_SERIES",sit)) {
+
+    PetscPrintf(PETSC_COMM_WORLD,"Process step %d\n",sit->get_step_number());
+
+    ierr = recorder_ptr->load_series_data("Wt_SERIES",sit->get_step_number()); CHKERRQ(ierr);
+    ierr = m_field.set_local_VecCreateGhost("Wt_PROBLEM",ROW,T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+
+    ProjectionFieldOn10NodeTet ent_method_on_10nodeTet(m_field,"Wt",true,false,"Wt");
+    ent_method_on_10nodeTet.set_nodes = true;
+    ierr = m_field.loop_dofs("Wt",ent_method_on_10nodeTet); CHKERRQ(ierr);
+    ent_method_on_10nodeTet.set_nodes = false;
+    ierr = m_field.loop_dofs("Wt",ent_method_on_10nodeTet); CHKERRQ(ierr);
+
+    if(pcomm->rank()==0) {
+      EntityHandle out_meshset;
+      rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
+      ierr = m_field.problem_get_FE("Wt_PROBLEM","Wt_FE",out_meshset); CHKERRQ(ierr);
+      ostringstream ss;
+      ss << "Wt_" << sit->step_number << ".vtk";
+      rval = moab.write_file(ss.str().c_str(),"VTK","",&out_meshset,1); CHKERR_PETSC(rval);
+      rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
+    }
+
+  }
+
+  ierr = TSDestroy(&ts);CHKERRQ(ierr);
+  ierr = MatDestroy(&A); CHKERRQ(ierr);
+  ierr = VecDestroy(&F); CHKERRQ(ierr);
+  ierr = VecDestroy(&T); CHKERRQ(ierr);
 
   ierr = PetscFinalize(); CHKERRQ(ierr);
 
