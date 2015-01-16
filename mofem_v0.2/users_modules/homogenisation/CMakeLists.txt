@@ -18,6 +18,7 @@
 
 
 include_directories("${MoFEM_PROJECT_SOURCE_DIR}/users_modules/homogenisation/src")
+include_directories("${MoFEM_PROJECT_SOURCE_DIR}/users_modules/moisture_transport/src")
 
 add_library(user_modules_homogenisation
   ${UM_SOURCE_DIR}/homogenisation/src/impl/ElasticFE_RVELagrange_Disp.cpp
@@ -115,11 +116,6 @@ target_link_libraries(TransIso_Trac
 
 
 # ===================== Simple cube or cube with reinformenct for moisture transport ============================================
-add_executable(MoistureTrans ${UM_SOURCE_DIR}/homogenisation/MoistureTrans.cpp)
-target_link_libraries(MoistureTrans
-  mofem_finite_element_library mofem_finite_elements mofem_interfaces mofem_multi_indices mofem_petsc
-  mofem_approx mofem_third_party mofem_cblas ${MoFEM_PROJECT_LIBS})
-
 add_executable(MoistureTrans_Disp ${UM_SOURCE_DIR}/homogenisation/MoistureTrans_Disp.cpp)
 target_link_libraries(MoistureTrans_Disp
   mofem_finite_element_library mofem_finite_elements mofem_interfaces mofem_multi_indices mofem_petsc users_modules_obsolete user_modules_homogenisation
@@ -135,78 +131,11 @@ target_link_libraries(MoistureTrans_Periodic
   mofem_finite_element_library mofem_finite_elements mofem_interfaces mofem_multi_indices mofem_petsc users_modules_obsolete user_modules_homogenisation
   mofem_approx mofem_third_party mofem_cblas ${MoFEM_PROJECT_LIBS})
 
-# ===================== Coupled Mechanical and moisture transport ============================================
-add_executable(Coupled_Mech_MoistureTrans_Staggered ${UM_SOURCE_DIR}/homogenisation/Coupled_Mech_MoistureTrans_Staggered.cpp)
-target_link_libraries(Coupled_Mech_MoistureTrans_Staggered
-  mofem_finite_element_library mofem_finite_elements mofem_interfaces mofem_multi_indices mofem_petsc users_modules_obsolete user_modules_homogenisation
-  mofem_approx mofem_third_party mofem_cblas ${MoFEM_PROJECT_LIBS})
-
-add_executable(Coupled_Mech_MoistureTrans ${UM_SOURCE_DIR}/homogenisation/Coupled_Mech_MoistureTrans.cpp)
-target_link_libraries(Coupled_Mech_MoistureTrans
-  mofem_finite_element_library mofem_finite_elements mofem_interfaces mofem_multi_indices mofem_petsc users_modules_obsolete user_modules_homogenisation
-  mofem_approx mofem_third_party mofem_cblas ${MoFEM_PROJECT_LIBS})
-
-# ===================== Darceys Flow ============================================
-add_executable(Darceys_Flow ${UM_SOURCE_DIR}/homogenisation/Darceys_Flow.cpp)
-target_link_libraries(Darceys_Flow
-  mofem_finite_element_library mofem_finite_elements mofem_interfaces mofem_multi_indices mofem_petsc users_modules_obsolete user_modules_homogenisation
-  mofem_approx mofem_third_party mofem_cblas ${MoFEM_PROJECT_LIBS})
-
-add_executable(Darceys_Capillary_and_Diffusion_Flow ${UM_SOURCE_DIR}/homogenisation/Darceys_Capillary_and_Diffusion_Flow.cpp)
-target_link_libraries(Darceys_Capillary_and_Diffusion_Flow
-  mofem_finite_element_library mofem_finite_elements mofem_interfaces mofem_multi_indices mofem_petsc users_modules_obsolete user_modules_homogenisation
-  mofem_approx mofem_third_party mofem_cblas ${MoFEM_PROJECT_LIBS})
-
-# ===================== Macro unsteady moisture transport  ============================================
-add_executable(Macro_usteady_moisture ${UM_SOURCE_DIR}/homogenisation/Macro_usteady_moisture.cpp)
-target_link_libraries(Macro_usteady_moisture
-  mofem_finite_element_library
-  mofem_finite_elements
-  mofem_interfaces
-  mofem_multi_indices
-  mofem_petsc
-  mofem_approx
-  mofem_third_party
-  mofem_cblas
-  ${MoFEM_PROJECT_LIBS})
-
 # ===================== FE2 elasticity  ============================================
 add_executable(FE2_Elasticity ${UM_SOURCE_DIR}/homogenisation/FE2_Elasticity.cpp)
 target_link_libraries(FE2_Elasticity
   mofem_finite_element_library mofem_finite_elements mofem_interfaces mofem_multi_indices mofem_petsc users_modules_obsolete user_modules_homogenisation
   mofem_approx mofem_third_party mofem_cblas ${MoFEM_PROJECT_LIBS})
-
-
-# ===================== PETSc Testing routines  ============================================
-
-add_executable(PETScTesting ${UM_SOURCE_DIR}/homogenisation/PETScTesting.cpp)
-target_link_libraries(PETScTesting
-  mofem_finite_element_library mofem_finite_elements mofem_interfaces mofem_multi_indices mofem_petsc users_modules_obsolete user_modules_homogenisation
-  mofem_approx mofem_third_party mofem_cblas ${MoFEM_PROJECT_LIBS})
-
-add_executable(PETScTesting_new ${UM_SOURCE_DIR}/homogenisation/PETScTesting_new.cpp)
-target_link_libraries(PETScTesting_new
-  mofem_finite_element_library mofem_finite_elements mofem_interfaces mofem_multi_indices mofem_petsc users_modules_obsolete user_modules_homogenisation
-  mofem_approx mofem_third_party mofem_cblas ${MoFEM_PROJECT_LIBS})
-
-
-# ===================== Hygro-thermo-mechanical with degradaiton model ============================================
-add_executable(HTM_with_degradation ${UM_SOURCE_DIR}/homogenisation/HTM_with_degradation.cpp)
-target_link_libraries(HTM_with_degradation
-  mofem_finite_element_library mofem_finite_elements mofem_interfaces mofem_multi_indices mofem_petsc users_modules_obsolete user_modules_homogenisation
-  mofem_approx mofem_third_party mofem_cblas ${MoFEM_PROJECT_LIBS})
-
-
-
-
-# ===================== Xue 2D potential flow  ============================================
-
-add_executable(xue_laplacian_problem ${UM_SOURCE_DIR}/homogenisation/xue_laplacian_problem.cpp)
-target_link_libraries(xue_laplacian_problem
-  mofem_finite_element_library mofem_finite_elements mofem_interfaces mofem_multi_indices mofem_petsc users_modules_obsolete user_modules_homogenisation
-  mofem_approx mofem_third_party mofem_cblas ${MoFEM_PROJECT_LIBS})
-
-
 
 
 

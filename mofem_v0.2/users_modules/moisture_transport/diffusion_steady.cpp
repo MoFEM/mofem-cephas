@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
+/* Copyright (C) 2015, Zahur Ullah (Zahur.Ullah AT glasgow.ac.uk)
  * --------------------------------------------------------------
  * FIXME: DESCRIPTION
  */
@@ -16,24 +16,18 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+
+
 #include <MoFEM.hpp>
 
 #include <DirichletBC.hpp>
 #include <PotsProcOnRefMesh.hpp>
-#include <DarcysElement.hpp>
-
+#include <ThermalElement.hpp>
 #include <Projection10NodeCoordsOnField.hpp>
 
-#include <boost/iostreams/tee.hpp>
-#include <boost/iostreams/stream.hpp>
-#include <fstream>
-#include <iostream>
-
-namespace bio = boost::iostreams;
-using bio::tee_device;
-using bio::stream;
-
 using namespace MoFEM;
+#include <MoistureTransportElement.hpp>
+
 
 static char help[] = "...\n\n";
 
@@ -77,41 +71,35 @@ int main(int argc, char *argv[]) {
   ierr = mField.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
 
   //Fields
-  ierr = mField.add_field("PRESSURE",H1,1); CHKERRQ(ierr);
+  ierr = mField.add_field("CONC",H1,1); CHKERRQ(ierr);
 
   //Problem
-  ierr = mField.add_problem("DARCEYS_PROBLEM"); CHKERRQ(ierr);
+  ierr = mField.add_problem("DIFFUSION_PROBLEM"); CHKERRQ(ierr);
 
   //set refinment level for problem
-  ierr = mField.modify_problem_ref_level_add_bit("DARCEYS_PROBLEM",bit_level0); CHKERRQ(ierr);
+  ierr = mField.modify_problem_ref_level_add_bit("DIFFUSION_PROBLEM",bit_level0); CHKERRQ(ierr);
 
   //meshset consisting all entities in mesh
   EntityHandle root_set = moab.get_root_set(); 
   //add entities to field
-  ierr = mField.add_ents_to_field_by_TETs(root_set,"PRESSURE"); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_field_by_TETs(root_set,"CONC"); CHKERRQ(ierr);
 
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
   PetscInt order;
   ierr = PetscOptionsGetInt(PETSC_NULL,"-my_order",&order,&flg); CHKERRQ(ierr);
   if(flg != PETSC_TRUE) {
-    order = 2;
+    order = 1;
   }
 
-  ierr = mField.set_field_order(root_set,MBTET,"PRESSURE",order); CHKERRQ(ierr);
-  ierr = mField.set_field_order(root_set,MBTRI,"PRESSURE",order); CHKERRQ(ierr);
-  ierr = mField.set_field_order(root_set,MBEDGE,"PRESSURE",order); CHKERRQ(ierr);
-  ierr = mField.set_field_order(root_set,MBVERTEX,"PRESSURE",1); CHKERRQ(ierr);
+  ierr = mField.set_field_order(root_set,MBTET,"CONC",order); CHKERRQ(ierr);
+  ierr = mField.set_field_order(root_set,MBTRI,"CONC",order); CHKERRQ(ierr);
+  ierr = mField.set_field_order(root_set,MBEDGE,"CONC",order); CHKERRQ(ierr);
+  ierr = mField.set_field_order(root_set,MBVERTEX,"CONC",1); CHKERRQ(ierr);
 
-  ierr = mField.add_field("MESH_NODE_POSITIONS",H1,3); CHKERRQ(ierr);
-  ierr = mField.add_ents_to_field_by_TETs(root_set,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBTET,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBTRI,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBEDGE,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
-
-  DarcysElement darceys_elements(mField);
-  ierr = darceys_elements.addDarceysElements("DARCEYS_PROBLEM","PRESSURE"); CHKERRQ(ierr);
+  MoistureTransportElement moisture_element(mField);
+  ierr = moisture_element.addDiffusionElement("DIFFUSION_PROBLEM","CONC"); CHKERRQ(ierr);
+  ierr = moisture_element.addDiffusionFluxElement("DIFFUSION_PROBLEM","CONC"); CHKERRQ(ierr);
 
   /****/
   //build database
@@ -124,45 +112,48 @@ int main(int argc, char *argv[]) {
   //build problem
   ierr = mField.build_problems(); CHKERRQ(ierr);
 
-  Projection10NodeCoordsOnField ent_method_material(mField,"MESH_NODE_POSITIONS");
-  ierr = mField.loop_dofs("MESH_NODE_POSITIONS",ent_method_material); CHKERRQ(ierr);
-
   /****/
   //mesh partitioning 
   //partition
-  ierr = mField.partition_problem("DARCEYS_PROBLEM"); CHKERRQ(ierr);
-  ierr = mField.partition_finite_elements("DARCEYS_PROBLEM"); CHKERRQ(ierr);
+  ierr = mField.partition_problem("DIFFUSION_PROBLEM"); CHKERRQ(ierr);
+  ierr = mField.partition_finite_elements("DIFFUSION_PROBLEM"); CHKERRQ(ierr);
   //what are ghost nodes, see Petsc Manual
-  ierr = mField.partition_ghost_dofs("DARCEYS_PROBLEM"); CHKERRQ(ierr);
+  ierr = mField.partition_ghost_dofs("DIFFUSION_PROBLEM"); CHKERRQ(ierr);
   
   Vec F;
-  ierr = mField.VecCreateGhost("DARCEYS_PROBLEM",ROW,&F); CHKERRQ(ierr);
-  Vec T;
-  ierr = VecDuplicate(F,&T); CHKERRQ(ierr);
+  ierr = mField.VecCreateGhost("DIFFUSION_PROBLEM",ROW,&F); CHKERRQ(ierr);
+  Vec C;
+  ierr = VecDuplicate(F,&C); CHKERRQ(ierr);
   Mat A;
-  ierr = mField.MatCreateMPIAIJWithArrays("DARCEYS_PROBLEM",&A); CHKERRQ(ierr);
+  ierr = mField.MatCreateMPIAIJWithArrays("DIFFUSION_PROBLEM",&A); CHKERRQ(ierr);
 
-  TemperatureBCFEMethodPreAndPostProc my_dirichlet_bc(mField,"PRESSURE",A,T,F);
-  ierr = darceys_elements.setDarceysFiniteElementRhsOperators("PRESSURE",F); CHKERRQ(ierr);
-  ierr = darceys_elements.setDarceysFiniteElementLhsOperators("PRESSURE",A); CHKERRQ(ierr);
+  //New way to implement the dirichlet BCs from CUBIT Blockset (MASS_CONC)
+  DirichletBCFromBlockSetFEMethodPreAndPostProc my_dirichlet_bc(mField,"CONC","MASS_CONC",A,C,F);
+  
+  //These operatore are the same for both thermal and diffusion problem and no need to replace for diffusion problem
+  ierr = moisture_element.setThermalFiniteElementRhsOperators("CONC",F); CHKERRQ(ierr);
+  ierr = moisture_element.setThermalFiniteElementLhsOperators("CONC",A); CHKERRQ(ierr);
+  ierr = moisture_element.setThermalFluxFiniteElementRhsOperators("CONC",F); CHKERRQ(ierr);
 
-  ierr = VecZeroEntries(T); CHKERRQ(ierr);
-  ierr = VecGhostUpdateBegin(T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecZeroEntries(C); CHKERRQ(ierr);
+  
+  ierr = VecGhostUpdateBegin(C,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(C,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = MatZeroEntries(A); CHKERRQ(ierr);
   
   //preproc
-  ierr = mField.problem_basic_method_preProcess("DARCEYS_PROBLEM",my_dirichlet_bc); CHKERRQ(ierr);
-  ierr = mField.set_global_VecCreateGhost("DARCEYS_PROBLEM",ROW,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = mField.problem_basic_method_preProcess("DIFFUSION_PROBLEM",my_dirichlet_bc); CHKERRQ(ierr);
+  ierr = mField.set_global_VecCreateGhost("DIFFUSION_PROBLEM",ROW,C,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
-  ierr = mField.loop_finite_elements("DARCEYS_PROBLEM","DARCEYS_FE",darceys_elements.getLoopFeRhs()); CHKERRQ(ierr);
-  ierr = mField.loop_finite_elements("DARCEYS_PROBLEM","DARCEYS_FE",darceys_elements.getLoopFeLhs()); CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("DIFFUSION_PROBLEM","DIFFUSION_FE",moisture_element.getLoopFeRhs()); CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("DIFFUSION_PROBLEM","DIFFUSION_FE",moisture_element.getLoopFeLhs()); CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("DIFFUSION_PROBLEM","DIFFUSION_FLUX_FE",moisture_element.getLoopFeFlux()); CHKERRQ(ierr);
 
   //postproc
-  ierr = mField.problem_basic_method_postProcess("DARCEYS_PROBLEM",my_dirichlet_bc); CHKERRQ(ierr);
+  ierr = mField.problem_basic_method_postProcess("DIFFUSION_PROBLEM",my_dirichlet_bc); CHKERRQ(ierr);
 
   ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
@@ -180,20 +171,20 @@ int main(int argc, char *argv[]) {
   ierr = KSPSetFromOptions(solver); CHKERRQ(ierr);
   ierr = KSPSetUp(solver); CHKERRQ(ierr);
 
-  ierr = KSPSolve(solver,F,T); CHKERRQ(ierr);
-  ierr = VecGhostUpdateBegin(T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = KSPSolve(solver,F,C); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(C,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(C,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
-  ierr = mField.problem_basic_method_preProcess("DARCEYS_PROBLEM",my_dirichlet_bc); CHKERRQ(ierr);
+  ierr = mField.problem_basic_method_preProcess("DIFFUSION_PROBLEM",my_dirichlet_bc); CHKERRQ(ierr);
 
   //Save data on mesh
-  ierr = mField.set_global_VecCreateGhost("DARCEYS_PROBLEM",ROW,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = mField.set_global_VecCreateGhost("DIFFUSION_PROBLEM",ROW,C,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
   //Range ref_edges;
   //ierr = mField.get_entities_by_type_and_ref_level(bit_level0,BitRefLevel().set(),MBEDGE,ref_edges); CHKERRQ(ierr);
   //rval = moab.list_entities(ref_edges); CHKERR_PETSC(rval);
-  //mField.list_dofs_by_field_name("PRESSURE");
+  //mField.list_dofs_by_field_name("TEMP");
 
   if(pcomm->rank()==0) {
     rval = moab.write_file("solution.h5m"); CHKERR_PETSC(rval);
@@ -210,22 +201,22 @@ int main(int argc, char *argv[]) {
   rval = moab.add_entities(edges_meshset,tets_edges); CHKERR_PETSC(rval);
   rval = moab.convert_entities(edges_meshset,true,false,false); CHKERR_PETSC(rval);*/
 
-  ProjectionFieldOn10NodeTet ent_method_on_10nodeTet(mField,"PRESSURE",true,false,"PRESSURE");
-  ierr = mField.loop_dofs("PRESSURE",ent_method_on_10nodeTet); CHKERRQ(ierr);
+  ProjectionFieldOn10NodeTet ent_method_on_10nodeTet(mField,"CONC",true,false,"CONC");
+  ierr = mField.loop_dofs("CONC",ent_method_on_10nodeTet); CHKERRQ(ierr);
   ent_method_on_10nodeTet.set_nodes = false;
-  ierr = mField.loop_dofs("PRESSURE",ent_method_on_10nodeTet); CHKERRQ(ierr);
+  ierr = mField.loop_dofs("CONC",ent_method_on_10nodeTet); CHKERRQ(ierr);
 
   if(pcomm->rank()==0) {
     EntityHandle out_meshset;
     rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
-    ierr = mField.problem_get_FE("DARCEYS_PROBLEM","DARCEYS_FE",out_meshset); CHKERRQ(ierr);
+    ierr = mField.problem_get_FE("DIFFUSION_PROBLEM","DIFFUSION_FE",out_meshset); CHKERRQ(ierr);
     rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
     rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
   }
 
   ierr = MatDestroy(&A); CHKERRQ(ierr);
   ierr = VecDestroy(&F); CHKERRQ(ierr);
-  ierr = VecDestroy(&T); CHKERRQ(ierr);
+  ierr = VecDestroy(&C); CHKERRQ(ierr);
   ierr = KSPDestroy(&solver); CHKERRQ(ierr);
 
   ierr = PetscFinalize(); CHKERRQ(ierr);

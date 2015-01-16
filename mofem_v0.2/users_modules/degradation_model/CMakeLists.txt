@@ -17,32 +17,6 @@
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
 include_directories("${MoFEM_PROJECT_SOURCE_DIR}/users_modules/degradation_model/src")
-include_directories("${MoFEM_PROJECT_SOURCE_DIR}/users_modules/homogenisation/src")
-
-add_executable(thermal_unsteady_macro ${UM_SOURCE_DIR}/degradation_model/thermal_unsteady_macro.cpp)
-target_link_libraries(thermal_unsteady_macro
-  mofem_finite_element_library
-  mofem_finite_elements
-  mofem_interfaces
-  mofem_multi_indices
-  mofem_petsc
-  mofem_approx
-  mofem_third_party
-  mofem_cblas
-  ${MoFEM_PROJECT_LIBS})
-
-add_executable(moisture_unsteady_macro ${UM_SOURCE_DIR}/degradation_model/moisture_unsteady_macro.cpp)
-target_link_libraries(moisture_unsteady_macro
-  mofem_finite_element_library
-  mofem_finite_elements
-  mofem_interfaces
-  mofem_multi_indices
-  mofem_petsc
-  mofem_approx
-  mofem_third_party
-  mofem_cblas
-  ${MoFEM_PROJECT_LIBS})
-
 
 add_executable(wt_unsteady_macro ${UM_SOURCE_DIR}/degradation_model/wt_unsteady_macro.cpp)
 target_link_libraries(wt_unsteady_macro

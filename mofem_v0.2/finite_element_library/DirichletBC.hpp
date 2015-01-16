@@ -96,8 +96,6 @@ struct TemperatureBCFEMethodPreAndPostProc: public DisplacementBCFEMethodPreAndP
  (or not using CUBIT buildin boundary conditons, e.g. Temprature or Displacements etc).
  It can work for any Problem rank (1,2,3)
  */
-  
-  
 struct DirichletBCFromBlockSetFEMethodPreAndPostProc: public DisplacementBCFEMethodPreAndPostProc {
   const string _blockset_name;
   const string blocksetName;

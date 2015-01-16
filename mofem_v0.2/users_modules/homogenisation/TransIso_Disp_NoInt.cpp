@@ -25,17 +25,6 @@ using namespace MoFEM;
 #include <Projection10NodeCoordsOnField.hpp>
 #include <petsctime.h>
 
-#include <boost/numeric/ublas/vector_proxy.hpp>
-#include <boost/numeric/ublas/matrix.hpp>
-#include <boost/numeric/ublas/matrix_proxy.hpp>
-#include <boost/numeric/ublas/vector.hpp>
-
-#include <SurfacePressure.hpp>
-#include <NodalForce.hpp>
-#include <FluidPressure.hpp>
-#include <BodyForce.hpp>
-#include <ThermalStressElement.hpp>
-
 #include <FEMethod_LowLevelStudent.hpp>
 #include <FEMethod_UpLevelStudent.hpp>
 
@@ -44,9 +33,6 @@ using namespace MoFEM;
 
 #include <ElasticFEMethod.hpp>
 #include "ElasticFEMethodTransIso.hpp"
-
-using namespace boost::numeric;
-using namespace ObosleteUsersModules;
 
 #include "ElasticFE_RVELagrange_Disp.hpp"
 #include "ElasticFE_RVELagrange_Homogenized_Stress_Disp.hpp"

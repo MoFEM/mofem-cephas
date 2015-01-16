@@ -1,14 +1,13 @@
 Steps
 ==================================================================
-1. Run thermal_unsteady_macro save output as solution_temp.h5m
-2. Run moisture_unsteady_macro save output as solution_mois.h5m
+1. Run thermal_unsteady save output as solution.h5m and out_.vtk
+2. Run moisture_unsteady save output as solution_mois.h5m and and Conc_.vtk
 3. Run calculate_wt
-
 
 
 Unsteady thermal macro problem
 ============================================================
-make thermal_unsteady_macro && mpirun -np 1 ./thermal_unsteady_macro \
+mpirun -np 1 ./../thermal/thermal_unseady \
 -my_file ../users_modules/degradation_model/meshes/macro.cub \
   -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor \
   -snes_type newtonls -snes_linesearch_type basic -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 -snes_monitor \
@@ -18,8 +17,8 @@ make thermal_unsteady_macro && mpirun -np 1 ./thermal_unsteady_macro \
 
 Unsteady moisture macro problem
 ============================================================
-make moisture_unsteady_macro && mpirun -np 1 ./moisture_unsteady_macro \
--my_file solution_temp.h5m \
+mpirun -np 1 ./../moisture_transport/diffusion_unsteady \
+-my_file solution.h5m \
   -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor \
   -snes_type newtonls -snes_linesearch_type basic -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 -snes_monitor \
   -ts_monitor -ts_type beuler -ts_dt 0.1 -ts_final_time 5 -snes_lag_jacobian -2 \
