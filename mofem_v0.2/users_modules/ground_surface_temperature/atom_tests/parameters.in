@@ -1,0 +1,29 @@
+# Starting day of analysis
+year = 2014
+month = 1
+day = 1
+hour = 0
+minute = 0
+second = 0
+
+# Temerature in hotest simmer day and night
+TdayAtSummer = 10
+TdayAtWinter = 2
+
+# Temperature in cooles winter day and night
+TnigthAtSummer = 8
+TnigthAtWinter = 0
+
+# Dew Point 
+Td = 10
+
+# Day in the year with lowes temerature
+DayOfLowTemperature = 0
+
+# Day in the year with highest temperature
+DayOfHighTemperature = 182
+
+# Localisation 
+longitude = 0.127
+latitude = 51.5072
+

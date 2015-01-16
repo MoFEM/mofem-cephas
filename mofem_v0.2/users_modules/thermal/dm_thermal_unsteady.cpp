@@ -27,6 +27,26 @@
 
 using namespace MoFEM;
 
+#ifdef WITH_ADOL_C
+
+#include <time.h>
+extern "C" {
+  #include <spa.h>
+}
+#include <moab/AdaptiveKDTree.hpp>
+#include <moab/Skinner.hpp>
+
+#include <adolc/adolc.h> 
+#include <GroundSurfaceTemerature.hpp>
+
+#endif //WITH_ADOL_C
+
+#ifdef __GROUNDSURFACETEMERATURE_HPP
+
+
+
+#endif // __GROUNDSURFACETEMERATURE_HPP
+
 static char help[] = "...\n\n";
 
 int main(int argc, char *argv[]) {
@@ -49,6 +69,19 @@ int main(int argc, char *argv[]) {
   ierr = PetscOptionsGetInt(PETSC_NULL,"-my_order",&order,&flg); CHKERRQ(ierr);
   if(flg != PETSC_TRUE) {
     order = 1;
+  }
+
+  size_t len;
+  char time_data_file_for_ground_surface[255];
+  PetscBool ground_temperature_analys;
+  ierr = PetscOptionsGetString(PETSC_NULL,"-my_ground_analysis_data",time_data_file_for_ground_surface,len,&ground_temperature_analys); CHKERRQ(ierr);
+  if(ground_temperature_analys) {
+    if(len>=255) {
+      SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_ground_analysis_data file, file name is too long");
+    }
+    #ifndef __GROUNDSURFACETEMERATURE_HPP
+    SETERRQ(PETSC_COMM_SELF,1,"*** ERROR to do ground thermal analys MoFEM need to be complilet wiith ADOL-C");
+    #endif // __GROUNDSURFACETEMERATURE_HPP
   }
 
   DMType dm_name = "DMTHERMAL";
@@ -118,6 +151,15 @@ int main(int argc, char *argv[]) {
   ierr = m_field.modify_finite_element_add_field_data("THERMAL_FE","TEMP_RATE"); CHKERRQ(ierr);
   //and temperature element default element operators at integration (gauss) points
   ierr = thermal_elements.setTimeSteppingProblem("TEMP","TEMP_RATE"); CHKERRQ(ierr);
+  
+  #ifdef __GROUNDSURFACETEMERATURE_HPP
+  GroundSurfaceTemerature ground_surface(m_field);
+  if(ground_temperature_analys) {
+    ground_surface.addSurfaces("TEMP"); 
+    MyTimeData time_data(time_data_file_for_ground_surface);
+    ierr = ground_surface.setOperators(1,&time_data,"TEMP"); CHKERRQ(ierr);
+  }
+  #endif 
 
   //build database, i.e. declare dofs, elements and ajacencies
 

@@ -37,18 +37,10 @@ using namespace MoFEM;
 
 #include <moab/AdaptiveKDTree.hpp>
 extern "C" {
-
-void tetcircumcenter_tp(double a[3],double b[3],double c[3], double d[3],
-  double circumcenter[3],double *xi,double *eta,double *zeta);
-void tricircumcenter3d_tp(double a[3],double b[3],double c[3],
-  double circumcenter[3],double *xi,double *eta);
-
-#include <spa.h>
-
+  #include <spa.h>
 }
 
 #include <time.h>
-
 #include <adolc/adolc.h> 
 //#include <ThermalElement.hpp>
 #include<moab/Skinner.hpp>
