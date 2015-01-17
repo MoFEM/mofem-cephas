@@ -19,9 +19,6 @@
 
 #include <MoFEM.hpp>
 using namespace MoFEM;
-
-#include <DirichletBC.hpp>
-
 #include <Projection10NodeCoordsOnField.hpp>
 #include <petsctime.h>
 

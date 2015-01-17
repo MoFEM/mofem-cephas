@@ -21,11 +21,6 @@
 using namespace MoFEM;
 
 #include <petsctime.h>
-#include <boost/numeric/ublas/vector_proxy.hpp>
-#include <boost/numeric/ublas/matrix.hpp>
-#include <boost/numeric/ublas/matrix_proxy.hpp>
-#include <boost/numeric/ublas/vector.hpp>
-
 #include <FEMethod_LowLevelStudent.hpp>
 #include <FEMethod_UpLevelStudent.hpp>
 #include <ElasticFEMethod.hpp>
