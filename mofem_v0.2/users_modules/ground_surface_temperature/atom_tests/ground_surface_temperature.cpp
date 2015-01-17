@@ -213,7 +213,7 @@ int main(int argc, char *argv[]) {
 
   MyTimeData time_data;
   ierr = ground_surface.setOperators(1,&time_data,"TEMP"); CHKERRQ(ierr);
-  GroundSurfaceTemerature::Shade *shade_ptr = &*ground_surface.preProcessShade.begin();
+  GroundSurfaceTemerature::SolarRadiationPreProcessor *shade_ptr = &*ground_surface.preProcessShade.begin();
 
   Range tets;
   ierr = m_field.get_entities_by_type_and_ref_level(bit_level0,BitRefLevel().set(),MBTET,tets);  CHKERRQ(ierr);

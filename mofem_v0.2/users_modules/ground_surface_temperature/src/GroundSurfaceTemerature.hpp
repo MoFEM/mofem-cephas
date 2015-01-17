@@ -178,7 +178,7 @@ struct GroundSurfaceTemerature {
     return sigma_eps*(time_data_ptr->CR+0.67*(1-time_data_ptr->CR)*pow(ea,0.08))*pow((time_data_ptr->Ta+273.15),4); 
   }
 
-  struct Shade: public MoFEM::FEMethod {
+  struct SolarRadiationPreProcessor: public MoFEM::FEMethod {
 
     FieldInterface &mField;
     GenricClimateModel *timeDataPtr;
@@ -187,7 +187,7 @@ struct GroundSurfaceTemerature {
     double ePs;
     bool iNit;
 
-    Shade(
+    SolarRadiationPreProcessor(
       FieldInterface &m_field,
       GenricClimateModel *time_data_ptr,
       Parameters *parameters_ptr,
@@ -199,7 +199,7 @@ struct GroundSurfaceTemerature {
       ePs(eps),iNit(false) {
       azimuth = zenith = 0;
     };
-    ~Shade() {
+    ~SolarRadiationPreProcessor() {
       if(kdTree_rootMeshset) {
 	mField.get_moab().delete_entities(&kdTree_rootMeshset,1);
       }
@@ -368,7 +368,7 @@ struct GroundSurfaceTemerature {
   };
 
   boost::ptr_vector<Parameters> blockData;
-  boost::ptr_vector<Shade> preProcessShade;
+  boost::ptr_vector<SolarRadiationPreProcessor> preProcessShade;
 
   /** \brief opearator to caulate tempereature at Gauss points
     * \infroup mofem_thermal_elem
@@ -667,7 +667,7 @@ struct GroundSurfaceTemerature {
 	// add finite element operator
 	feGroundSurfaceRhs.get_op_to_do_Rhs().push_back(new OpGetTriTemperatureAtGaussPts(field_name,commonData.temperatureAtGaussPts));
 	feGroundSurfaceRhs.get_op_to_do_Rhs().push_back(new Op(field_name,time_data_ptr,&*sit,commonData,tag,ho_geometry));
-	preProcessShade.push_back(new Shade(mField,time_data_ptr,&*sit));
+	preProcessShade.push_back(new SolarRadiationPreProcessor(mField,time_data_ptr,&*sit));
       }
     }
     {

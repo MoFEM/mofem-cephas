@@ -29,21 +29,23 @@ using namespace MoFEM;
 
 #ifdef WITH_ADOL_C
 
-#include <time.h>
-extern "C" {
-  #include <spa.h>
-}
 #include <moab/AdaptiveKDTree.hpp>
 #include <moab/Skinner.hpp>
 
 #include <adolc/adolc.h> 
+
+#include <GenricClimateModel.hpp>
 #include <GroundSurfaceTemerature.hpp>
 
 #endif //WITH_ADOL_C
 
 #ifdef __GROUNDSURFACETEMERATURE_HPP
 
-
+#include <time.h>
+extern "C" {
+  #include <spa.h>
+}
+#include <TimeVariationModel.hpp>
 
 #endif // __GROUNDSURFACETEMERATURE_HPP
 
@@ -154,9 +156,9 @@ int main(int argc, char *argv[]) {
   
   #ifdef __GROUNDSURFACETEMERATURE_HPP
   GroundSurfaceTemerature ground_surface(m_field);
+  GroundTimeData time_data(time_data_file_for_ground_surface);
   if(ground_temperature_analys) {
-    ground_surface.addSurfaces("TEMP"); 
-    MyTimeData time_data(time_data_file_for_ground_surface);
+    ground_surface.addSurfaces("TEMP");  
     ierr = ground_surface.setOperators(1,&time_data,"TEMP"); CHKERRQ(ierr);
   }
   #endif 
@@ -191,17 +193,34 @@ int main(int argc, char *argv[]) {
   ierr = DMMoFEMTSSetIFunction(dm,DM_NO_ELEMENT,NULL,&update_velocities,NULL); CHKERRQ(ierr);
   ierr = DMMoFEMTSSetIFunction(dm,DM_NO_ELEMENT,NULL,&dirichlet_bc,NULL); CHKERRQ(ierr);
   ierr = DMMoFEMTSSetIJacobian(dm,DM_NO_ELEMENT,NULL,&dirichlet_bc,NULL); CHKERRQ(ierr);
+  #ifdef __GROUNDSURFACETEMERATURE_HPP
+  { // add preporcessor, calulating angle on which sun ray on the surface
+    boost::ptr_vector<SolarRadiationPreProcessor>::iterator it,hi_it;
+    it = ground_surface.preProcessShade.begin();
+    hi_it = ground_surface.preProcessShade.end();
+    for(;it!=hi_it;it++) {
+      ierr = DMMoFEMTSSetIFunction(dm,DM_NO_ELEMENT,NULL,&*it,NULL); CHKERRQ(ierr);
+    }
+  }
+  #endif //__GROUNDSURFACETEMERATURE_HPP
 
   //loops rhs
   ierr = DMMoFEMTSSetIFunction(dm,"THERMAL_FE",&thermal_elements.feRhs,NULL,NULL); CHKERRQ(ierr);
   ierr = DMMoFEMTSSetIFunction(dm,"THERMAL_FLUX_FE",&thermal_elements.feFlux,NULL,NULL); CHKERRQ(ierr);
   ierr = DMMoFEMTSSetIFunction(dm,"THERMAL_CONVECTION_FE",&thermal_elements.feConvectionRhs,NULL,NULL); CHKERRQ(ierr);
   ierr = DMMoFEMTSSetIFunction(dm,"THERMAL_RADIATION_FE",&thermal_elements.feRadiationRhs,NULL,NULL); CHKERRQ(ierr);
+  #ifdef __GROUNDSURFACETEMERATURE_HPP
+  ierr = DMMoFEMTSSetIFunction(dm,"GROUND_SURFACE_FE",&ground_surface.getFeGroundSurfaceRhs(),NULL,NULL); CHKERRQ(ierr);
+  #endif //__GROUNDSURFACETEMERATURE_HPP
+
 
   //loops lhs
   ierr = DMMoFEMTSSetIJacobian(dm,"THERMAL_FE",&thermal_elements.feLhs,NULL,NULL); CHKERRQ(ierr);
   ierr = DMMoFEMTSSetIJacobian(dm,"THERMAL_CONVECTION_FE",&thermal_elements.feConvectionLhs,NULL,NULL); CHKERRQ(ierr);
   ierr = DMMoFEMTSSetIJacobian(dm,"THERMAL_RADIATION_FE",&thermal_elements.feRadiationLhs,NULL,NULL); CHKERRQ(ierr);
+  #ifdef __GROUNDSURFACETEMERATURE_HPP
+  ierr = DMMoFEMTSSetIFunction(dm,"GROUND_SURFACE_FE",&ground_surface.getFeGroundSurfaceLhs(),NULL,NULL); CHKERRQ(ierr);
+  #endif //__GROUNDSURFACETEMERATURE_HPP
 
   //postprocess
   ierr = DMMoFEMTSSetIFunction(dm,DM_NO_ELEMENT,NULL,NULL,&dirichlet_bc); CHKERRQ(ierr);
