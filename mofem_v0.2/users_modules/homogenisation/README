@@ -35,7 +35,7 @@ mpirun -np 1 ./TransIso_Periodic -my_file solution1.h5m -ksp_type fgmres -pc_typ
 mpirun -np 1 ./TransIso_Trac -my_file solution1.h5m -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0
 
 
-Example run moisture transport and its computational homogenisation
+Example computational homogenisation for moisture transport
 ============================================================
 mpirun -np 1 ./MoistureTrans -my_file ../users_modules/homogenisation/meshes/Simple_moisture.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1
 
@@ -46,38 +46,15 @@ mpirun -np 1 ./MoistureTrans_Trac -my_file ../users_modules/homogenisation/meshe
 make && mpirun -np 1 ./MoistureTrans_Periodic -my_file ../users_modules/homogenisation/meshes/Cube_moisture.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1 -myapplied_strain 1.0,0.0,0.0
 
 
-
-Example Coupled Mechanical and moisture transport
-==================================================================================================
-1.  Staggered Approach
-mpirun -np 1 ./Coupled_Mech_MoistureTrans_Staggered -my_file ../users_modules/homogenisation/meshes/Coupled_Cube_Mech_MoistureTrans.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0 -myapplied_congrad 1.0,0.0,0.0
-
-2. Coupled analysis
-
-mpirun -np 1 ./Coupled_Mech_MoistureTrans -my_file ../users_modules/homogenisation/meshes/Coupled_Cube_Mech_MoistureTrans.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0 -myapplied_congrad 1.0,0.0,0.0
-
-----cube mesh
-make && mpirun -np 1 ./Coupled_Mech_MoistureTrans -my_file ../users_modules/homogenisation/meshes/Coupled_Cube_Mech_MoistureTrans.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -ksp_atol 1e-10 -ksp_rtol 1e-6 -snes_monitor -snes_type newtonls -snes_linesearch_type basic -snes_max_it 4 -snes_atol 1e-8 -snes_rtol 1e-8 -my_order 1 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0 -myapplied_congrad 1.0,0.0,0.0
-
-----textile RVE mesh
-mpirun -np 1 ./Coupled_Mech_MoistureTrans -my_file ../users_modules/homogenisation/meshes/Textile_RVE.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -ksp_atol 1e-10 -ksp_rtol 1e-6 -snes_monitor -snes_type newtonls -snes_linesearch_type basic -snes_max_it 4 -snes_atol 1e-8 -snes_rtol 1e-8 -my_order 1 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0 -myapplied_congrad 0.0,1.0,0.0
-
-
-Simple Darceys Flow Problem
-===================================
-make && mpirun -np 1 ./Darceys_Flow -my_file ../users_modules/homogenisation/meshes/Darceys_simple.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor   -my_order 1
-
-
-RVE with both capillary and diffusion transport
+FE2 Elasticity
 =======================================================
-make && mpirun -np 1 ./RVE_diffusion_and_capillary -my_file ../users_modules/homogenisation/meshes/Darceys_and_Diffusion.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1 -myapplied_ConGrad 1.0,0.0,0.0 -myapplied_PressGrad 1.0,0.0,0.0
-
-
+make FE2_Elasticity && mpirun -np 1 ./FE2_Elasticity -my_file_macro ../users_modules/homogenisation/meshes/LShape.cub -my_file_RVE ../users_modules/homogenisation/meshes/Cube.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1
 
 
 
 copy out put files to symlink on Desktop
 -------------------------------------------------------------
-cp out.vtk ../../../mnt/home/Desktop/symlink
+cp out.vtk /mnt/home/Desktop/
+cp *.vtk  /mnt/home/Desktop/
 
 

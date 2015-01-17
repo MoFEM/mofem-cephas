@@ -90,7 +90,7 @@ struct TemperatureBCFEMethodPreAndPostProc: public DisplacementBCFEMethodPreAndP
 
 };
 
-
+  
 struct FixBcAtEntities: public DisplacementBCFEMethodPreAndPostProc {
 
   Range &eNts;

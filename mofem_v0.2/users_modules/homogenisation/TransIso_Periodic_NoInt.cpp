@@ -17,29 +17,11 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-
-extern "C" {
-#include <gm_rule.h>
-}
-
 #include <MoFEM.hpp>
 using namespace MoFEM;
 
-#include <DirichletBC.hpp>
-
 #include <Projection10NodeCoordsOnField.hpp>
 #include <petsctime.h>
-
-#include <boost/numeric/ublas/vector_proxy.hpp>
-#include <boost/numeric/ublas/matrix.hpp>
-#include <boost/numeric/ublas/matrix_proxy.hpp>
-#include <boost/numeric/ublas/vector.hpp>
-
-#include <SurfacePressure.hpp>
-#include <NodalForce.hpp>
-#include <FluidPressure.hpp>
-#include <BodyForce.hpp>
-#include <ThermalStressElement.hpp>
 
 #include <FEMethod_LowLevelStudent.hpp>
 #include <FEMethod_UpLevelStudent.hpp>
@@ -49,9 +31,6 @@ using namespace MoFEM;
 
 #include <ElasticFEMethod.hpp>
 #include "ElasticFEMethodTransIso.hpp"
-
-using namespace boost::numeric;
-using namespace ObosleteUsersModules;
 
 #include "ElasticFE_RVELagrange_Periodic.hpp"
 #include "ElasticFE_RVELagrange_RigidBodyTranslation.hpp"

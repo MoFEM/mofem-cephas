@@ -16,7 +16,9 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
+
 include_directories("${MoFEM_PROJECT_SOURCE_DIR}/users_modules/homogenisation/src")
+include_directories("${MoFEM_PROJECT_SOURCE_DIR}/users_modules/moisture_transport/src")
 
 add_library(user_modules_homogenisation
   ${UM_SOURCE_DIR}/homogenisation/src/impl/ElasticFE_RVELagrange_Disp.cpp
@@ -27,7 +29,11 @@ add_library(user_modules_homogenisation
   ${UM_SOURCE_DIR}/homogenisation/src/impl/ElasticFE_RVELagrange_Homogenized_Stress_Traction.cpp
   ${UM_SOURCE_DIR}/homogenisation/src/impl/ElasticFE_RVELagrange_Periodic.cpp
   ${UM_SOURCE_DIR}/homogenisation/src/impl/ElasticFE_RVELagrange_Homogenized_Stress_Periodic.cpp
+  ${UM_SOURCE_DIR}/homogenisation/src/impl/ElasticFE_RVELagrange_Disp_Multi_Rhs.cpp
+  ${UM_SOURCE_DIR}/homogenisation/src/impl/ElasticFE_RVELagrange_Homogenized_Stress_Disp_Multi_Rhs.cpp
 )
+
+add_subdirectory(atom_tests)
 
 # ===================== Simple cube ============================================
 
@@ -110,11 +116,6 @@ target_link_libraries(TransIso_Trac
 
 
 # ===================== Simple cube or cube with reinformenct for moisture transport ============================================
-add_executable(MoistureTrans ${UM_SOURCE_DIR}/homogenisation/MoistureTrans.cpp)
-target_link_libraries(MoistureTrans
-  mofem_finite_element_library mofem_finite_elements mofem_interfaces mofem_multi_indices mofem_petsc
-  mofem_approx mofem_third_party mofem_cblas ${MoFEM_PROJECT_LIBS})
-
 add_executable(MoistureTrans_Disp ${UM_SOURCE_DIR}/homogenisation/MoistureTrans_Disp.cpp)
 target_link_libraries(MoistureTrans_Disp
   mofem_finite_element_library mofem_finite_elements mofem_interfaces mofem_multi_indices mofem_petsc users_modules_obsolete user_modules_homogenisation
@@ -130,27 +131,18 @@ target_link_libraries(MoistureTrans_Periodic
   mofem_finite_element_library mofem_finite_elements mofem_interfaces mofem_multi_indices mofem_petsc users_modules_obsolete user_modules_homogenisation
   mofem_approx mofem_third_party mofem_cblas ${MoFEM_PROJECT_LIBS})
 
-# ===================== Coupled Mechanical and moisture transport ============================================
-add_executable(Coupled_Mech_MoistureTrans_Staggered ${UM_SOURCE_DIR}/homogenisation/Coupled_Mech_MoistureTrans_Staggered.cpp)
-target_link_libraries(Coupled_Mech_MoistureTrans_Staggered
+# ===================== FE2 elasticity  ============================================
+add_executable(FE2_Elasticity ${UM_SOURCE_DIR}/homogenisation/FE2_Elasticity.cpp)
+target_link_libraries(FE2_Elasticity
   mofem_finite_element_library mofem_finite_elements mofem_interfaces mofem_multi_indices mofem_petsc users_modules_obsolete user_modules_homogenisation
   mofem_approx mofem_third_party mofem_cblas ${MoFEM_PROJECT_LIBS})
 
-add_executable(Coupled_Mech_MoistureTrans ${UM_SOURCE_DIR}/homogenisation/Coupled_Mech_MoistureTrans.cpp)
-target_link_libraries(Coupled_Mech_MoistureTrans
-  mofem_finite_element_library mofem_finite_elements mofem_interfaces mofem_multi_indices mofem_petsc users_modules_obsolete user_modules_homogenisation
-  mofem_approx mofem_third_party mofem_cblas ${MoFEM_PROJECT_LIBS})
 
-# ===================== Darceys Flow ============================================
-add_executable(Darceys_Flow ${UM_SOURCE_DIR}/homogenisation/Darceys_Flow.cpp)
-target_link_libraries(Darceys_Flow
-  mofem_finite_element_library mofem_finite_elements mofem_interfaces mofem_multi_indices mofem_petsc users_modules_obsolete user_modules_homogenisation
-  mofem_approx mofem_third_party mofem_cblas ${MoFEM_PROJECT_LIBS})
 
-add_executable(Darceys_Capillary_and_Diffusion_Flow ${UM_SOURCE_DIR}/homogenisation/Darceys_Capillary_and_Diffusion_Flow.cpp)
-target_link_libraries(Darceys_Capillary_and_Diffusion_Flow
-  mofem_finite_element_library mofem_finite_elements mofem_interfaces mofem_multi_indices mofem_petsc users_modules_obsolete user_modules_homogenisation
-  mofem_approx mofem_third_party mofem_cblas ${MoFEM_PROJECT_LIBS})
 
-add_subdirectory(atom_tests)
+
+
+
+
+
 

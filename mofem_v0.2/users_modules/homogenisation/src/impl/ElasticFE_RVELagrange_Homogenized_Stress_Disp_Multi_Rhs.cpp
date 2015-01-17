@@ -16,7 +16,6 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
-
 #include <MoFEM.hpp>
 
 using namespace MoFEM;
@@ -26,12 +25,14 @@ using namespace MoFEM;
 #include <FEMethod_UpLevelStudent.hpp>
 #include <ElasticFEMethod.hpp>
 
-#include "ElasticFE_RVELagrange_Traction.hpp"
-#include "ElasticFE_RVELagrange_Homogenized_Stress_Traction.hpp"
+#include "ElasticFE_RVELagrange_Disp_Multi_Rhs.hpp"
+#include "ElasticFE_RVELagrange_Homogenized_Stress_Disp_Multi_Rhs.hpp"
 
+//using namespace ObosleteUsersModules;
 namespace MoFEM {
   
-  PetscErrorCode ElasticFE_RVELagrange_Homogenized_Stress_Traction::preProcess() {
+  
+  PetscErrorCode ElasticFE_RVELagrange_Homogenized_Stress_Disp_Multi_Rhs::preProcess() {
       PetscFunctionBegin;
       PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Start Assembly\n");
       ierr = PetscTime(&v1); CHKERRQ(ierr);
@@ -40,7 +41,7 @@ namespace MoFEM {
     }
     
     
-    PetscErrorCode ElasticFE_RVELagrange_Homogenized_Stress_Traction::postProcess() {
+    PetscErrorCode ElasticFE_RVELagrange_Homogenized_Stress_Disp_Multi_Rhs::postProcess() {
       PetscFunctionBegin;
       // Note MAT_FLUSH_ASSEMBLY
       ierr = VecAssemblyBegin(Stress_Homo); CHKERRQ(ierr);
@@ -50,18 +51,32 @@ namespace MoFEM {
       PetscSynchronizedPrintf(PETSC_COMM_WORLD,"End Assembly: Rank %d Time = %f CPU Time = %f\n",pcomm->rank(),v2-v1,t2-t1);
       
       ierr = VecScale(Stress_Homo, 1.0/(*RVE_volume)); CHKERRQ(ierr);
-      
+
       PetscFunctionReturn(0);
     }
     
     
     
+    ublas::matrix<FieldData> X_mat, nodes_coord, gauss_coord;
+    ublas::vector<ublas::matrix<FieldData> > D_mat;
+    ublas::vector<ublas::vector<FieldData> > Lamda;
     
-    PetscErrorCode ElasticFE_RVELagrange_Homogenized_Stress_Traction::Calculate_Homo_Stress() {
+    
+    PetscErrorCode ElasticFE_RVELagrange_Homogenized_Stress_Disp_Multi_Rhs::Calculate_Homo_Stress() {
       PetscFunctionBegin;
+      
       X_mat.resize(rank_field,1.5*rank_field+1.5);  X_mat.clear();  // for rank_field=3 X_mat.resize(3,6)  and for rank_field=1 X_mat.resize(1,3)
       nodes_coord.resize(3,3);
       gauss_coord.resize(3,g_TRI_dim);
+      
+//      cout<<"row_mat  =  "<<row_mat<<endl;
+//      cout<<"RowGlob[0].size()  =  "<<RowGlob[0].size()<<endl;
+//      cout<<"RowGlob[1].size()  =  "<<RowGlob[1].size()<<endl;
+//      cout<<"RowGlob[2].size()  =  "<<RowGlob[2].size()<<endl;
+//      cout<<"RowGlob[3].size()  =  "<<RowGlob[3].size()<<endl;
+//      cout<<"RowGlob[3].size()  =  "<<RowGlob[4].size()<<endl;
+
+      
       D_mat.resize(row_mat);
       Lamda.resize(row_mat);
       
@@ -76,13 +91,13 @@ namespace MoFEM {
       //coordinates for all gauss points
       gauss_coord=prod(nodes_coord, g_NTRI_mat);
       
-//            cout<<"g_NTRI_mat "<<g_NTRI_mat<<endl<<endl;
-//            cout<<"nodes_coord "<<nodes_coord<<endl<<endl;
-//            cout<<"gauss_coord "<<gauss_coord<<endl<<endl;
-//            std::string wait;
-//            std::cin >> wait;
+//        cout<<"g_NTRI_mat "<<g_NTRI_mat<<endl<<endl;
+//        cout<<"nodes_coord "<<nodes_coord<<endl<<endl;
+//        cout<<"gauss_coord "<<gauss_coord<<endl<<endl;
+//        std::string wait;
+//        std::cin >> wait;
       
-      for(int rr=0; rr<1; rr++){
+      for(int rr=0; rr<row_mat; rr++){
         for(int gg = 0;gg<g_TRI_dim;gg++) {
           double w = area*G_W_TRI[gg];
           
@@ -109,35 +124,67 @@ namespace MoFEM {
           //Integrate D_mat
           if(gg == 0) {
             D_mat[rr].resize(H_mat[rr].size1(),D_mat1.size2());
-            //calculate (D_mat1= w * NT * X_mat)
-            //                        cout<<"\n row_Mat "<<row_Mat<<endl;
-            //                        cout<<"\n col_Mat "<<rr<<col_Mat;
-            //                        cout<<"\n w "<<w<<col_Mat;
-            
+            //                    cout<<"\n row_Mat "<<row_Mat<<endl;
+            //                    cout<<"\n col_Mat "<<rr<<col_Mat;
+            //                    cout<<"\n w "<<w<<col_Mat;
             D_mat1=prod(w*trans(row_Mat), col_Mat);
-            //calculate (D_mat = H_mat * D_mat1)
-            //                        cout<<"\n rr "<<rr<<endl;
-            //                        cout<<"\n D_mat[rr] "<<D_mat[rr]<<endl;
             D_mat[rr]=prod(H_mat[rr], D_mat1);
           } else {
             //calculate (D_mat1= w * NT * X_mat)
             D_mat1=prod(w*trans(row_Mat), col_Mat);
-            
             //calculate (D_mat = H_mat * D_mat1)
             D_mat[rr]+=prod(H_mat[rr], D_mat1);
           }
         }
-        //                cout<<"row_mat  =  "<<row_mat<<endl;
-        //                cout<< " D_mat[rr] =  "<<D_mat[rr]<<endl;
-        Lamda[rr].resize(RowGlob[rr].size());
+//            cout<<"row_mat  =  "<<row_mat<<endl;
+//            cout<< " D_mat[rr] =  "<<D_mat[rr]<<endl;
         
-        for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,field_lagrange,iit)) {
-          //                        cout<<"iit->get_EntDofIdx() "<<iit->get_EntDofIdx()<<endl;
-          Lamda[rr][iit->get_EntDofIdx()]=iit->get_FieldData();
+         //To get Lambda for stress calculation
+        Lamda[rr].resize(RowGlob[rr].size());
+        switch(rr) {
+          case 0:  //for nodes
+            //                    cout<<"For nodes"<<endl;
+            const EntityHandle* conn;
+            int num_nodes;
+            rval = mField.get_moab().get_connectivity(fePtr->get_ent(),conn,num_nodes,true); CHKERR_PETSC(rval);
+            //                    cout<<"num_nodes  =  "<<num_nodes<<endl;
+            for(int nn = 0;nn<num_nodes; nn++) {
+              for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_(mField,field_lagrange,conn[nn],iit)) {
+                Lamda[rr][rank_field*nn+iit->get_dof_rank()]=iit->get_FieldData();
+              }
+            }
+            
+//            for(int ii=0; ii<Lamda[rr].size(); ii++) cout<<Lamda[rr][ii]<<" ";
+//            cout<<endl;
+            break;
+            
+          case 1:  case 2:  case 3: { //For edges
+            //                    cout<<"For Edges"<<endl;
+              EntityHandle edge;
+              
+              rval = moab.side_element(fePtr->get_ent(),1,rr-1,edge); CHKERR_PETSC(rval);
+              for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_(mField,field_lagrange,edge,iit)) {
+                Lamda[rr][iit->get_EntDofIdx()]=iit->get_FieldData();
+              }
+              //                        for(int ii=0; ii<Lamda[rr].size(); ii++) cout<<Lamda[rr][ii]<<" ";
+              //                        cout<<endl;
+            break;
+          }
+            
+          case 4: //for face
+            //                    cout<<"For Face"<<endl;
+            for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_(mField,field_lagrange,fePtr->get_ent(),iit)) {
+              Lamda[rr][iit->get_EntDofIdx()]=iit->get_FieldData();
+            }
+            //                    for(int ii=0; ii<Lamda[rr].size(); ii++) cout<<Lamda[rr][ii]<<" ";
+            //                    cout<<endl;
+            break;
         }
+        
         Stress_Homo_elem+=prod(trans(D_mat[rr]), -1*Lamda[rr]);   //Lamda is reaction force (so multiply for -1 to get the force)
       }
-//            cout<< "rank "<< pcomm->rank() << " Stress_Homo after  =   "<<Stress_Homo_elem<<endl;
+      
+//      cout<< "rank "<< pcomm->rank() << " Stress_Homo after  =   "<<Stress_Homo_elem<<endl;
       int Indices6[6]={0, 1, 2, 3, 4, 5};
       int Indices3[3]={0, 1, 2};
       switch(rank_field) {
@@ -150,19 +197,20 @@ namespace MoFEM {
         default:
           SETERRQ(PETSC_COMM_SELF,1,"not implemented");
       }
+
       PetscFunctionReturn(0);
     }
     
-  
-    PetscErrorCode ElasticFE_RVELagrange_Homogenized_Stress_Traction::operator()() {
+    
+    PetscErrorCode ElasticFE_RVELagrange_Homogenized_Stress_Disp_Multi_Rhs::operator()() {
       PetscFunctionBegin;
-//      cout<<"Hi from class ElasticFE_RVELagrange_Homogenized_Stress_Traction"<<endl;
-      ierr = GetN_and_Indices(); CHKERRQ(ierr); //It will be used from the Class ElasticFE_RVELagrange_Traction
-      ierr = Get_H_mat();   //It will be used from the Class ElasticFE_RVELagrange_Traction
+//        cout<<"Hi from class ElasticFE_RVELagrange_Homogenized_Stress"<<endl;
+      ierr = GetN_and_Indices(); CHKERRQ(ierr);
+      ierr = Get_H_mat();   //It will be used from the Class ElasticFE_RVELagrange_Disp
       ierr = Calculate_Homo_Stress(); CHKERRQ(ierr);
       PetscFunctionReturn(0);
     }
     
     
- }
+}
 

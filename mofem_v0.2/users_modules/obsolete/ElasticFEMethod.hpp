@@ -26,9 +26,10 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 
     FieldInterface& mField;
     bool propeties_from_BLOCKSET_MAT_ELASTICSET;
-	
-    ElasticFEMethod(FieldInterface& _mField,Mat _Aij,Vec _X,Vec _F,double _lambda,double _mu): 
-      FEMethod_UpLevelStudent(_mField.get_moab(),1),mField(_mField),lambda(_lambda),mu(_mu) {
+    string fieldName;
+  
+    ElasticFEMethod(FieldInterface& _mField,Mat _Aij,Vec _X,Vec _F,double _lambda,double _mu, string _field_name = "DISPLACEMENT"):
+      FEMethod_UpLevelStudent(_mField.get_moab(),1),mField(_mField),lambda(_lambda),mu(_mu),fieldName(_field_name) {
 
       snes_B = _Aij;
       snes_x = _X;
@@ -141,57 +142,57 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       PetscFunctionBegin;
       //indicies ROWS
       row_mat = 0;
-      ierr = GetRowGlobalIndices("DISPLACEMENT",RowGlob[row_mat]); CHKERRQ(ierr);
-      ierr = GetRowLocalIndices("DISPLACEMENT",RowLocal[row_mat]); CHKERRQ(ierr);
-      ierr = GetGaussRowNMatrix("DISPLACEMENT",rowNMatrices[row_mat]); CHKERRQ(ierr);
-      ierr = GetGaussRowDiffNMatrix("DISPLACEMENT",rowDiffNMatrices[row_mat]); CHKERRQ(ierr);
+      ierr = GetRowGlobalIndices(fieldName,RowGlob[row_mat]); CHKERRQ(ierr);
+      ierr = GetRowLocalIndices(fieldName,RowLocal[row_mat]); CHKERRQ(ierr);
+      ierr = GetGaussRowNMatrix(fieldName,rowNMatrices[row_mat]); CHKERRQ(ierr);
+      ierr = GetGaussRowDiffNMatrix(fieldName,rowDiffNMatrices[row_mat]); CHKERRQ(ierr);
       //HO gemometry
       ierr = GetHierarchicalGeometryApproximation_ApplyToDiffShapeFunction(3,invH,rowDiffNMatrices[row_mat]); CHKERRQ(ierr);
       //
-      ierr = MakeBMatrix3D("DISPLACEMENT",rowDiffNMatrices[row_mat],rowBMatrices[row_mat]);  CHKERRQ(ierr);
+      ierr = MakeBMatrix3D(fieldName,rowDiffNMatrices[row_mat],rowBMatrices[row_mat]);  CHKERRQ(ierr);
       row_mat++;
       for(int ee = 0;ee<6;ee++) { //edges matrices
 	RowGlob[row_mat].resize(0);
-	ierr = GetRowGlobalIndices("DISPLACEMENT",MBEDGE,RowGlob[row_mat],ee); CHKERRQ(ierr);
+	ierr = GetRowGlobalIndices(fieldName,MBEDGE,RowGlob[row_mat],ee); CHKERRQ(ierr);
         RowLocal[row_mat].resize(0);
-	ierr = GetRowLocalIndices("DISPLACEMENT",MBEDGE,RowLocal[row_mat],ee); CHKERRQ(ierr);
+	ierr = GetRowLocalIndices(fieldName,MBEDGE,RowLocal[row_mat],ee); CHKERRQ(ierr);
 	if(RowGlob[row_mat].size()!=0) {
-	  ierr = GetGaussRowNMatrix("DISPLACEMENT",MBEDGE,rowNMatrices[row_mat],ee); CHKERRQ(ierr);
-	  ierr = GetGaussRowDiffNMatrix("DISPLACEMENT",MBEDGE,rowDiffNMatrices[row_mat],ee); CHKERRQ(ierr);
+	  ierr = GetGaussRowNMatrix(fieldName,MBEDGE,rowNMatrices[row_mat],ee); CHKERRQ(ierr);
+	  ierr = GetGaussRowDiffNMatrix(fieldName,MBEDGE,rowDiffNMatrices[row_mat],ee); CHKERRQ(ierr);
 	  //HO gemometry
 	  ierr = GetHierarchicalGeometryApproximation_ApplyToDiffShapeFunction(3,invH,rowDiffNMatrices[row_mat]); CHKERRQ(ierr);
 	  //
-	  ierr = MakeBMatrix3D("DISPLACEMENT",rowDiffNMatrices[row_mat],rowBMatrices[row_mat]);  CHKERRQ(ierr);
+	  ierr = MakeBMatrix3D(fieldName,rowDiffNMatrices[row_mat],rowBMatrices[row_mat]);  CHKERRQ(ierr);
 	  //cerr << rowDiffNMatrices[row_mat][0] << endl;
 	}
 	row_mat++;
       }
       for(int ff = 0;ff<4;ff++) { //faces matrices
 	RowGlob[row_mat].resize(0);
-	ierr = GetRowGlobalIndices("DISPLACEMENT",MBTRI,RowGlob[row_mat],ff); CHKERRQ(ierr);
+	ierr = GetRowGlobalIndices(fieldName,MBTRI,RowGlob[row_mat],ff); CHKERRQ(ierr);
 	RowLocal[row_mat].resize(0);
-	ierr = GetRowLocalIndices("DISPLACEMENT",MBTRI,RowLocal[row_mat],ff); CHKERRQ(ierr);
+	ierr = GetRowLocalIndices(fieldName,MBTRI,RowLocal[row_mat],ff); CHKERRQ(ierr);
 	if(RowGlob[row_mat].size()!=0) {
-	  ierr = GetGaussRowNMatrix("DISPLACEMENT",MBTRI,rowNMatrices[row_mat],ff); CHKERRQ(ierr);
-	  ierr = GetGaussRowDiffNMatrix("DISPLACEMENT",MBTRI,rowDiffNMatrices[row_mat],ff); CHKERRQ(ierr);
+	  ierr = GetGaussRowNMatrix(fieldName,MBTRI,rowNMatrices[row_mat],ff); CHKERRQ(ierr);
+	  ierr = GetGaussRowDiffNMatrix(fieldName,MBTRI,rowDiffNMatrices[row_mat],ff); CHKERRQ(ierr);
 	  //HO gemometry
 	  ierr = GetHierarchicalGeometryApproximation_ApplyToDiffShapeFunction(3,invH,rowDiffNMatrices[row_mat]); CHKERRQ(ierr);
 	  //
-	  ierr = MakeBMatrix3D("DISPLACEMENT",rowDiffNMatrices[row_mat],rowBMatrices[row_mat]);  CHKERRQ(ierr);
+	  ierr = MakeBMatrix3D(fieldName,rowDiffNMatrices[row_mat],rowBMatrices[row_mat]);  CHKERRQ(ierr);
 	}
 	row_mat++;
       }
       RowGlob[row_mat].resize(0);
-      ierr = GetRowGlobalIndices("DISPLACEMENT",MBTET,RowGlob[row_mat]); CHKERRQ(ierr);
+      ierr = GetRowGlobalIndices(fieldName,MBTET,RowGlob[row_mat]); CHKERRQ(ierr);
       RowLocal[row_mat].resize(0);
-      ierr = GetRowLocalIndices("DISPLACEMENT",MBTET,RowLocal[row_mat]); CHKERRQ(ierr);
+      ierr = GetRowLocalIndices(fieldName,MBTET,RowLocal[row_mat]); CHKERRQ(ierr);
       if(RowGlob[row_mat].size() != 0) { //volume matrices
-	ierr = GetGaussRowNMatrix("DISPLACEMENT",MBTET,rowNMatrices[row_mat]); CHKERRQ(ierr);
-	ierr = GetGaussRowDiffNMatrix("DISPLACEMENT",MBTET,rowDiffNMatrices[row_mat]); CHKERRQ(ierr);
+	ierr = GetGaussRowNMatrix(fieldName,MBTET,rowNMatrices[row_mat]); CHKERRQ(ierr);
+	ierr = GetGaussRowDiffNMatrix(fieldName,MBTET,rowDiffNMatrices[row_mat]); CHKERRQ(ierr);
 	//HO gemometry
 	ierr = GetHierarchicalGeometryApproximation_ApplyToDiffShapeFunction(3,invH,rowDiffNMatrices[row_mat]); CHKERRQ(ierr);
 	//
-	ierr = MakeBMatrix3D("DISPLACEMENT",rowDiffNMatrices[row_mat],rowBMatrices[row_mat]);  CHKERRQ(ierr);
+	ierr = MakeBMatrix3D(fieldName,rowDiffNMatrices[row_mat],rowBMatrices[row_mat]);  CHKERRQ(ierr);
       }
       row_mat++;
       PetscFunctionReturn(0);
@@ -203,50 +204,50 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       //ierr = GetHierarchicalGeometryApproximation(invH,detH); CHKERRQ(ierr);
       //indicies COLS
       col_mat = 0;
-      ierr = GetColGlobalIndices("DISPLACEMENT",ColGlob[col_mat]); CHKERRQ(ierr);
-      ierr = GetColLocalIndices("DISPLACEMENT",ColLocal[col_mat]); CHKERRQ(ierr);
-      ierr = GetGaussColNMatrix("DISPLACEMENT",colNMatrices[col_mat]); CHKERRQ(ierr);
-      ierr = GetGaussColDiffNMatrix("DISPLACEMENT",colDiffNMatrices[col_mat]); CHKERRQ(ierr);
+      ierr = GetColGlobalIndices(fieldName,ColGlob[col_mat]); CHKERRQ(ierr);
+      ierr = GetColLocalIndices(fieldName,ColLocal[col_mat]); CHKERRQ(ierr);
+      ierr = GetGaussColNMatrix(fieldName,colNMatrices[col_mat]); CHKERRQ(ierr);
+      ierr = GetGaussColDiffNMatrix(fieldName,colDiffNMatrices[col_mat]); CHKERRQ(ierr);
       //HO gemometry
       ierr = GetHierarchicalGeometryApproximation_ApplyToDiffShapeFunction(3,invH,colDiffNMatrices[col_mat]); CHKERRQ(ierr);
       //
-      ierr = MakeBMatrix3D("DISPLACEMENT",colDiffNMatrices[col_mat],colBMatrices[col_mat]);  CHKERRQ(ierr);
+      ierr = MakeBMatrix3D(fieldName,colDiffNMatrices[col_mat],colBMatrices[col_mat]);  CHKERRQ(ierr);
       col_mat++;
       for(int ee = 0;ee<6;ee++) { //edges matrices
-	ierr = GetColGlobalIndices("DISPLACEMENT",MBEDGE,ColGlob[col_mat],ee); CHKERRQ(ierr);
-	ierr = GetColLocalIndices("DISPLACEMENT",MBEDGE,ColLocal[col_mat],ee); CHKERRQ(ierr);
+	ierr = GetColGlobalIndices(fieldName,MBEDGE,ColGlob[col_mat],ee); CHKERRQ(ierr);
+	ierr = GetColLocalIndices(fieldName,MBEDGE,ColLocal[col_mat],ee); CHKERRQ(ierr);
 	if(ColGlob[col_mat].size()!=0) {
-	  ierr = GetGaussColNMatrix("DISPLACEMENT",MBEDGE,colNMatrices[col_mat],ee); CHKERRQ(ierr);
-	  ierr = GetGaussColDiffNMatrix("DISPLACEMENT",MBEDGE,colDiffNMatrices[col_mat],ee); CHKERRQ(ierr);
+	  ierr = GetGaussColNMatrix(fieldName,MBEDGE,colNMatrices[col_mat],ee); CHKERRQ(ierr);
+	  ierr = GetGaussColDiffNMatrix(fieldName,MBEDGE,colDiffNMatrices[col_mat],ee); CHKERRQ(ierr);
 	  //HO gemometry
 	  ierr = GetHierarchicalGeometryApproximation_ApplyToDiffShapeFunction(3,invH,colDiffNMatrices[col_mat]); CHKERRQ(ierr);
 	  //
-	  ierr = MakeBMatrix3D("DISPLACEMENT",colDiffNMatrices[col_mat],colBMatrices[col_mat]);  CHKERRQ(ierr);
+	  ierr = MakeBMatrix3D(fieldName,colDiffNMatrices[col_mat],colBMatrices[col_mat]);  CHKERRQ(ierr);
 	}
 	col_mat++;
       }
       for(int ff = 0;ff<4;ff++) { //faces matrices
-	ierr = GetColGlobalIndices("DISPLACEMENT",MBTRI,ColGlob[col_mat],ff); CHKERRQ(ierr);
-	ierr = GetColLocalIndices("DISPLACEMENT",MBTRI,ColLocal[col_mat],ff); CHKERRQ(ierr);
+	ierr = GetColGlobalIndices(fieldName,MBTRI,ColGlob[col_mat],ff); CHKERRQ(ierr);
+	ierr = GetColLocalIndices(fieldName,MBTRI,ColLocal[col_mat],ff); CHKERRQ(ierr);
 	if(ColGlob[col_mat].size()!=0) {
-	  ierr = GetGaussColNMatrix("DISPLACEMENT",MBTRI,colNMatrices[col_mat],ff); CHKERRQ(ierr);
-	  ierr = GetGaussColDiffNMatrix("DISPLACEMENT",MBTRI,colDiffNMatrices[col_mat],ff); CHKERRQ(ierr);
+	  ierr = GetGaussColNMatrix(fieldName,MBTRI,colNMatrices[col_mat],ff); CHKERRQ(ierr);
+	  ierr = GetGaussColDiffNMatrix(fieldName,MBTRI,colDiffNMatrices[col_mat],ff); CHKERRQ(ierr);
 	  //HO gemometry
 	  ierr = GetHierarchicalGeometryApproximation_ApplyToDiffShapeFunction(3,invH,colDiffNMatrices[col_mat]); CHKERRQ(ierr);
 	  //
-	  ierr = MakeBMatrix3D("DISPLACEMENT",colDiffNMatrices[col_mat],colBMatrices[col_mat]);  CHKERRQ(ierr);
+	  ierr = MakeBMatrix3D(fieldName,colDiffNMatrices[col_mat],colBMatrices[col_mat]);  CHKERRQ(ierr);
 	}
 	col_mat++;
       }
-      ierr = GetColGlobalIndices("DISPLACEMENT",MBTET,ColGlob[col_mat]); CHKERRQ(ierr);
-      ierr = GetColLocalIndices("DISPLACEMENT",MBTET,ColLocal[col_mat]); CHKERRQ(ierr);
+      ierr = GetColGlobalIndices(fieldName,MBTET,ColGlob[col_mat]); CHKERRQ(ierr);
+      ierr = GetColLocalIndices(fieldName,MBTET,ColLocal[col_mat]); CHKERRQ(ierr);
       if(ColGlob[col_mat].size() != 0) { //volume matrices
-	ierr = GetGaussColNMatrix("DISPLACEMENT",MBTET,colNMatrices[col_mat]); CHKERRQ(ierr);
-	ierr = GetGaussColDiffNMatrix("DISPLACEMENT",MBTET,colDiffNMatrices[col_mat]); CHKERRQ(ierr);
+	ierr = GetGaussColNMatrix(fieldName,MBTET,colNMatrices[col_mat]); CHKERRQ(ierr);
+	ierr = GetGaussColDiffNMatrix(fieldName,MBTET,colDiffNMatrices[col_mat]); CHKERRQ(ierr);
 	//HO gemometry
 	ierr = GetHierarchicalGeometryApproximation_ApplyToDiffShapeFunction(3,invH,colDiffNMatrices[col_mat]); CHKERRQ(ierr);
 	//
-	ierr = MakeBMatrix3D("DISPLACEMENT",colDiffNMatrices[col_mat],colBMatrices[col_mat]);  CHKERRQ(ierr);
+	ierr = MakeBMatrix3D(fieldName,colDiffNMatrices[col_mat],colBMatrices[col_mat]);  CHKERRQ(ierr);
       }
       col_mat++;
 
@@ -355,7 +356,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 
       //Gradient at Gauss points; 
       vector< ublas::matrix< FieldData > > GradU_at_GaussPt;
-      ierr = GetGaussDiffDataVector("DISPLACEMENT",GradU_at_GaussPt); CHKERRQ(ierr);
+      ierr = GetGaussDiffDataVector(fieldName,GradU_at_GaussPt); CHKERRQ(ierr);
       unsigned int g_dim = g_NTET.size()/4;
       assert(GradU_at_GaussPt.size() == g_dim);
       NOT_USED(g_dim);
@@ -452,7 +453,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       PetscFunctionBegin;
 
       int order = 1;
-      for(_IT_GET_FEDATA_BY_NAME_DOFS_FOR_LOOP_(this,"DISPLACEMENT",dof)) {
+      for(_IT_GET_FEDATA_BY_NAME_DOFS_FOR_LOOP_(this,fieldName,dof)) {
 	order = max(order,dof->get_max_order());
       }
 
