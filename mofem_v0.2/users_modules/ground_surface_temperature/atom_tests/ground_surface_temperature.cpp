@@ -44,6 +44,8 @@ extern "C" {
 #include <adolc/adolc.h> 
 //#include <ThermalElement.hpp>
 #include<moab/Skinner.hpp>
+
+#include <GenricClimateModel.hpp>
 #include <GroundSurfaceTemerature.hpp>
 
 ErrorCode rval;
@@ -51,9 +53,9 @@ PetscErrorCode ierr;
 
 static char help[] = "...\n\n";
 
-struct MyTimeData: public GroundSurfaceTemerature::TimeDependendData {
+struct MyTimeData: public GenricClimateModel {
 
-  MyTimeData(): GroundSurfaceTemerature::TimeDependendData() {
+  MyTimeData(): GenricClimateModel() {
 
     spaData.delta_ut1 = 0;    	// Fractional second difference between UTC and UT which is used
 				// to adjust UTC for earth's irregular rotation rate and is derived

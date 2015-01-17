@@ -117,80 +117,6 @@ struct GroundSurfaceTemerature {
     }
   };
 
-  struct TimeDependendData {
-
-    double T0; // reference temperature (K)
-    double e0; // reference saturation vapor pressure (es at a certain temp, usually 0 deg C) (Pa)
-    double Rv; // gas constant for water vapor (J*K/Kg)
-    double Lv; // latent heat of vaporization of water (J)
-
-    double u10;		//< wind at high 10m (m/s)	
-    double CR; 		//< cloudness factor (0–1, dimensionless)
-    double Ta;		//< air temperature (C)
-    double Td;		//< dew point temperature (C)
-    double P;		//< pressure
-    double Rs; 		//< observed solar radiation (W/m2)
-
-    double zenith;       //topocentric zenith angle [degrees]
-    double azimuth;      //topocentric azimuth angle (eastward from north) [for navigators and solar radiation]
-
-    /** \brief Clausius-Clapeyron equation
-      */
-    template <typename TYPE> 
-    TYPE calulateVapourPressureClausiusClapeyron(TYPE T) { 
-      return e0*exp((Lv/Rv)*((1./T0)-(1./(T+T0))));
-    }
-
-    template <typename TYPE> 
-    TYPE calulateVapourPressureTetenFormula(TYPE T) {
-      const double b = 17.2694;
-      const double T1 = 273.15;
-      const double T2 = 35.86;
-      return e0*exp(b*(T+T0-T1)/(T+T0-T2));
-    }
-
-    template <typename TYPE> 
-    TYPE calulateVapourPressure(TYPE T) {
-      //This use Tetent's formula by default
-      return calulateVapourPressureTetenFormula(T);
-    }
-
-    template <typename TYPE>
-    TYPE calulateMixingRatio(TYPE T,double P) {
-      const double eps = 0.622;
-      TYPE e = calulateVapourPressure(T);
-      return eps*T/(P-T);
-    }
-
-    template <typename TYPE>   
-    double calculateAbsoluteVirtualTempertaure(TYPE T,double P) {
-      const double c = 0.379;
-      double e = calulateVapourPressure(T);
-      return (T+T0)/(1-c*e/P);
-    }
-
-    TimeDependendData() {
-
-      T0 = 273.15; // reference temperature (K)
-      e0 = 611; // reference saturation vapor pressure (es at a certain temp, usually 0 deg C) (Pa)
-      Rv = 461.5; // gas constant for water vapor (J*K/Kg)
-      Lv = 2.5e6; // latent heat of vaporization of water (J)
-
-      u10 = 0;			//< wind at high 10m (m/s)	
-      CR = 0; 			//< cloudness factor (0–1, dimensionless)
-      Ta = 10;			//< air temperature (C)
-      Td = 5;			//< dew point temperature (C)
-      P = 101325;		//< pressure
-      Rs = 1361; 		//< observed solar radiation (W/m2)
-
-      zenith = 0;       //topocentric zenith angle [degrees]
-      azimuth = 0;      //topocentric azimuth angle (eastward from north) [for navigators and solar radiation]
-
-    }
-
-    virtual PetscErrorCode set(double t = 0) = 0;
-  };
-
   PetscErrorCode addSurfaces(const string field_name,const string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
     PetscFunctionBegin;
 
@@ -235,7 +161,7 @@ struct GroundSurfaceTemerature {
     PetscFunctionReturn(0);
   }
 
-  static double netSolarRadiation(double alpha,double d,double cos_omega,TimeDependendData *time_data_ptr) {
+  static double netSolarRadiation(double alpha,double d,double cos_omega,GenricClimateModel *time_data_ptr) {
     // Parameterizing the Dependence of Surface Albedo on Solar Zenith Angle Using
     // Atmospheric Radiation Measurement Program Observations
     // F. Yang
@@ -244,7 +170,7 @@ struct GroundSurfaceTemerature {
     return (1-alpha)*time_data_ptr->Rs; // net solar radiation (W/m2)
   }
 
-  static double incomingLongWaveRadiation(double eps,TimeDependendData *time_data_ptr) {
+  static double incomingLongWaveRadiation(double eps,GenricClimateModel *time_data_ptr) {
     const double sigma = 5.67037321e-8;
     double sigma_eps = eps*sigma;
     double ea = time_data_ptr->calulateVapourPressure(time_data_ptr->calulateVapourPressure(time_data_ptr->Td));
@@ -255,7 +181,7 @@ struct GroundSurfaceTemerature {
   struct Shade: public MoFEM::FEMethod {
 
     FieldInterface &mField;
-    TimeDependendData *timeDataPtr;
+    GenricClimateModel *timeDataPtr;
     Parameters *pArametersPtr;
     AdaptiveKDTree kdTree;
     double ePs;
@@ -263,7 +189,7 @@ struct GroundSurfaceTemerature {
 
     Shade(
       FieldInterface &m_field,
-      TimeDependendData *time_data_ptr,
+      GenricClimateModel *time_data_ptr,
       Parameters *parameters_ptr,
       double eps = 1e-6):
       mField(m_field),
@@ -495,14 +421,14 @@ struct GroundSurfaceTemerature {
   struct Op:public TriElementForcesAndSurcesCore::UserDataOperator {
         
     CommonData &commonData; 
-    TimeDependendData* timeDataPtr;
+    GenricClimateModel* timeDataPtr;
     Parameters *pArametersPtr;
     int tAg;
     bool ho_geometry;
 
     Op(
       const string field_name,
-      TimeDependendData *time_data_ptr,
+      GenricClimateModel *time_data_ptr,
       Parameters *parameters_ptr,
       CommonData &common_data,
       int tag,bool _ho_geometry = false):
@@ -727,7 +653,7 @@ struct GroundSurfaceTemerature {
   };
 
   PetscErrorCode setOperators(int tag,
-    TimeDependendData *time_data_ptr,string field_name,const string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
+    GenricClimateModel *time_data_ptr,string field_name,const string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
     PetscFunctionBegin;
 
     bool ho_geometry = false;

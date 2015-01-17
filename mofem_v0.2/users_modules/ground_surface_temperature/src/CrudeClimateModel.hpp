@@ -31,10 +31,14 @@ namespace po = boost::program_options;
   * This is based on:
   * NEW MODELS FOR SIMULATING DAILY MINIMUM, DAILY MAXIMUM AND HOURLY OUTDOOR TEMPERATURES
   * H Bulut1, O. Buyukalaca2 and T. Yılmaz2
+  *
+  * However some modifications are introduced, that model can be set using data
+  * easly found on internet.
+  *
   */
-struct GroundTimeData: public GroundSurfaceTemerature::TimeDependendData {
+struct CrudeClimateModel: public GenricClimateModel {
 
-  GroundTimeData(const char file[]): GroundSurfaceTemerature::TimeDependendData() {
+  CrudeClimateModel(const char file[]): GenricClimateModel() {
     PetscErrorCode ierr;
     ierr = setDefault(); CHKERRABORT(PETSC_COMM_WORLD,ierr);
     ierr = readFile(file); CHKERRABORT(PETSC_COMM_WORLD,ierr);

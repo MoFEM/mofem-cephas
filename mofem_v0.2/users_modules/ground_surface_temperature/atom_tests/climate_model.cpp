@@ -44,6 +44,8 @@ extern "C" {
 #include <adolc/adolc.h> 
 //#include <ThermalElement.hpp>
 #include<moab/Skinner.hpp>
+
+#include <GenricClimateModel.hpp>
 #include <GroundSurfaceTemerature.hpp>
 
 #include <boost/program_options.hpp>
@@ -60,7 +62,7 @@ namespace bio = boost::iostreams;
 using bio::tee_device;
 using bio::stream;
 
-#include <TimeVariationModel.hpp>
+#include <CrudeClimateModel.hpp>
 
 ErrorCode rval;
 PetscErrorCode ierr;
@@ -85,7 +87,7 @@ int main(int argc, char *argv[]) {
     time_step = 0.2; // 5th part of day 
   }
 
-  GroundTimeData time_data("parameters.in");
+  CrudeClimateModel time_data("parameters.in");
   ierr = time_data.testCode(60*60*24*nb_days,60*60*24*time_step); CHKERRQ(ierr);
 
   PetscFinalize();
