@@ -188,7 +188,7 @@ struct GroundSurfaceTemerature {
 
     }
 
-    virtual PetscErrorCode set() = 0;
+    virtual PetscErrorCode set(double t = 0) = 0;
   };
 
   PetscErrorCode addSurfaces(const string field_name,const string mesh_nodals_positions = "MESH_NODE_POSITIONS") {

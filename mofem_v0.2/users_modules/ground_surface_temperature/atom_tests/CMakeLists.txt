@@ -41,16 +41,19 @@ if(ADOL-C_LIBRARY)
     ${CMAKE_SOURCE_DIR}/ground_surface_temperature/atom_tests/blessed_files/ground_surface_temperature.txt 
     ${CMAKE_BINARY_DIR}/ground_surface_temperature/atom_tests/ground_surface_temperature.txt)
 
-
   cm_export_file("parameters.in" export_files_ground_surface_temperature)
   add_executable(time_variation_model
     ${UM_SOURCE_DIR}/ground_surface_temperature/atom_tests/time_variation_model.cpp
     ${UM_SOURCE_DIR}/ground_surface_temperature/third_party/spa.c)
-
   target_link_libraries(time_variation_model
     boost_program_options
     ${MoFEM_PROJECT_LIBS})
 
+  add_test(time_variation_model ${MoFEM_MPI_RUN} -np 1 
+    ${CMAKE_CURRENT_BINARY_DIR}/time_variation_model -my_nb_days 2 -my_step_size 0.02)
+  add_test(time_variation_model_compare ${CMAKE_COMMAND} -E compare_files 
+    ${CMAKE_SOURCE_DIR}/ground_surface_temperature/atom_tests/blessed_files/time_variation_model.txt 
+    ${CMAKE_BINARY_DIR}/ground_surface_temperature/atom_tests/time_variation_model.txt)
 
 endif(ADOL-C_LIBRARY)
 

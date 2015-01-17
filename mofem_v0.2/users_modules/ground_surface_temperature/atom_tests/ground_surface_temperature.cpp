@@ -110,7 +110,7 @@ struct MyTimeData: public GroundSurfaceTemerature::TimeDependendData {
 
   spa_data spaData;
 
-  PetscErrorCode set() {
+  PetscErrorCode set(double t = 0) {
     PetscFunctionBegin;
 
     spaData.function = SPA_ZA_RTS;
@@ -228,7 +228,6 @@ int main(int argc, char *argv[]) {
   start_time.tm_mday = time_data.spaData.day;
   start_time.tm_mon = time_data.spaData.month-1;
   start_time.tm_year = time_data.spaData.year-1900;
-
   time_t t0 = mktime(&start_time);
   time_t t = t0;
   for(;t<t0+60*60*24;t+=4*60*60) {

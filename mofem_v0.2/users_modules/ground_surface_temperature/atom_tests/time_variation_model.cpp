@@ -50,19 +50,43 @@ extern "C" {
 #include <iostream>
 #include <fstream>
 #include <iterator>
+
+#include <boost/iostreams/tee.hpp>
+#include <boost/iostreams/stream.hpp>
+#include <fstream>
+#include <iostream>
+
+namespace bio = boost::iostreams;
+using bio::tee_device;
+using bio::stream;
+
 #include <TimeVariationModel.hpp>
 
 ErrorCode rval;
 PetscErrorCode ierr;
 
-static char help[] = "...\n\n";
+static char help[] = 
+  "-nb_days [days]\n"
+  "-my_step_size [days]\n\n";
 
 int main(int argc, char *argv[]) {
 
   PetscInitialize(&argc,&argv,(char *)0,help);
 
+  PetscBool flg;
+  PetscScalar nb_days;
+  ierr = PetscOptionsGetScalar(PETSC_NULL,"-my_nb_days",&nb_days,&flg); CHKERRQ(ierr);
+  if(flg != PETSC_TRUE) {
+    nb_days = 365;
+  }
+  PetscScalar time_step;
+  ierr = PetscOptionsGetScalar(PETSC_NULL,"-my_step_size",&time_step,&flg); CHKERRQ(ierr);
+  if(flg != PETSC_TRUE) {
+    time_step = 0.2; // 5th part of day 
+  }
+
   GroundTimeData time_data("parameters.in");
-  ierr = time_data.testCode(60*60*24*365,60*30); CHKERRQ(ierr);
+  ierr = time_data.testCode(60*60*24*nb_days,60*60*24*time_step); CHKERRQ(ierr);
 
   PetscFinalize();
   return 0;
