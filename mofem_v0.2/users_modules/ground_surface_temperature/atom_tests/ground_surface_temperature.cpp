@@ -99,22 +99,21 @@ struct MyTimeData: public GroundSurfaceTemerature::TimeDependendData {
     spaData.atmos_refract = 0.5667; // Atmospheric refraction at sunrise and sunset (0.5667 deg is typical)
 				// valid range: -5   to   5 degrees, error code: 16
 
-
-    spaData.year = 2015;	// 4-digit year,      valid range: -2000 to 6000, error code: 1
-    spaData.month = 1;          // 2-digit month,         valid range: 1 to  12,  error code: 2
-    spaData.day = 12;           // 2-digit day,           valid range: 1 to  31,  error code: 3
+    //Longest day (Solstice)
+    spaData.year = 2014;	// 4-digit year,      valid range: -2000 to 6000, error code: 1
+    spaData.month = 6;          // 2-digit month,         valid range: 1 to  12,  error code: 2
+    spaData.day = 21;           // 2-digit day,           valid range: 1 to  31,  error code: 3
 
     spaData.hour = 0;        	// Observer local hour,   valid range: 0 to  24,  error code: 4
     spaData.minute = 0;         // Observer local minute, valid range: 0 to  59,  error code: 5
     spaData.second = 0;         // Observer local second, valid range: 0 to <60,  error code: 6	
 
+    //This is London
     spaData.longitude = 0.1275;   // Observer longitude (negative west of Greenwich)
 				  // valid range: -180  to  180 degrees, error code: 9
 
     spaData.latitude = 51.5072;    // Observer latitude (negative south of equator)
 				  // valid range: -90   to   90 degrees, error code: 10
-
-
   }
 
   spa_data spaData;
@@ -262,7 +261,70 @@ int main(int argc, char *argv[]) {
     rval = moab.write_file(ss.str().c_str(),"VTK","",&meshset,1); CHKERR_PETSC(rval); CHKERR_PETSC(rval);
 
   }
+
+  //define problems
+  ierr = m_field.add_problem("GROUND_SURFACE"); CHKERRQ(ierr);
+  //set finite elements for problems
+  ierr = m_field.modify_problem_add_finite_element("GROUND_SURFACE","GROUND_SURFACE_FE"); CHKERRQ(ierr);
+  //set refinment level for problem
+  ierr = m_field.modify_problem_ref_level_add_bit("GROUND_SURFACE",bit_level0); CHKERRQ(ierr);
+
+  //build problem
+  ierr = m_field.build_problems(); CHKERRQ(ierr);
+  //partition
+  ierr = m_field.partition_problem("GROUND_SURFACE"); CHKERRQ(ierr);
+  ierr = m_field.partition_finite_elements("GROUND_SURFACE"); CHKERRQ(ierr);
+  ierr = m_field.partition_ghost_dofs("GROUND_SURFACE"); CHKERRQ(ierr);
+
+  //create matrices
+  Vec F;
+  ierr = m_field.VecCreateGhost("GROUND_SURFACE",COL,&F); CHKERRQ(ierr);
+  Vec D;
+  ierr = VecDuplicate(F,&D); CHKERRQ(ierr);
+  Mat Aij;
+  ierr = m_field.MatCreateMPIAIJWithArrays("GROUND_SURFACE",&Aij); CHKERRQ(ierr);
+
+  ground_surface.feGroundSurfaceRhs.ts_F = F;
+  ground_surface.feGroundSurfaceRhs.ts_a = 1;
+  ground_surface.feGroundSurfaceRhs.ts_B = Aij;
+  ground_surface.feGroundSurfaceRhs.ts_a = 1;
+
+  ground_surface.feGroundSurfaceLhs.ts_F = F;
+  ground_surface.feGroundSurfaceLhs.ts_a = 1;
+  ground_surface.feGroundSurfaceLhs.ts_B = Aij;
+  ground_surface.feGroundSurfaceLhs.ts_a = 1;
+
+  ierr = m_field.loop_finite_elements("GROUND_SURFACE","GROUND_SURFACE_FE",ground_surface.getFeGroundSurfaceRhs()); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
+  ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
+
+  //ierr = m_field.loop_finite_elements("GROUND_SURFACE","GROUND_SURFACE_FE",ground_surface.getFeGroundSurfaceLhs()); CHKERRQ(ierr);
+  //ierr = MatAssemblyBegin(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+  //ierr = MatAssemblyEnd(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+
+  PetscViewer viewer;
+  ierr = PetscViewerASCIIOpen(PETSC_COMM_WORLD,"ground_surface_temperature.txt",&viewer); CHKERRQ(ierr);
+
+  //ierr = VecChop(F,1e-4); CHKERRQ(ierr);
+  //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+  ierr = VecView(F,viewer); CHKERRQ(ierr);
   
+  //MatView(Aij,PETSC_VIEWER_DRAW_WORLD);
+  //MatChop(Aij,1e-4);
+  //MatView(Aij,PETSC_VIEWER_STDOUT_WORLD);
+  //MatView(Aij,viewer);
+  //std::string wait;
+  //std::cin >> wait;
+
+  ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
+
+
+  ierr = VecDestroy(&D); CHKERRQ(ierr);
+  ierr = VecDestroy(&F); CHKERRQ(ierr);
+  ierr = MatDestroy(&Aij); CHKERRQ(ierr);
+
   PetscFinalize();
   return 0;
 }
