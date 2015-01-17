@@ -17,101 +17,29 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef __COUPLED_MECHFEMETHOD_HPP__
-#define __COUPLED_MECHFEMETHOD_HPP__
+#ifndef __FE2_ELASTICFEMETHOD_HPP__
+#define __FE2_ELASTICFEMETHOD_HPP__
 
-#include "ElasticFEMethod.hpp"
-//#include <boost/numeric/ublas/symmetric.hpp>
-//extern "C" {
-//#include <gm_rule.h>
-//}
 using namespace ObosleteUsersModules;
 
 namespace MoFEM {
   
-  struct Coupled_MechFEMethod: public ElasticFEMethod {
-    double young;
-    double pois;
-
-    Coupled_MechFEMethod( FieldInterface& _mField,Mat &_Aij,Vec _X,Vec _F,double _lambda,double _mu):
-    ElasticFEMethod(_mField,_Aij,_X,_F,_lambda,_mu) {};
+  struct FE2_ElasticFEMethod: public ElasticFEMethod {
     
-
-    virtual PetscErrorCode calculateD_mech(double young, double nu, double conc_gauss) {
-      PetscFunctionBegin;
-      D.resize(6,6);
-      D.clear();
-      
-      //Assuming linear relation between moisture and E
-      young=young-3000*conc_gauss;
-//      cout<<"conc_gauss "<<conc_gauss<<endl;
-//      cout<<"young "<<young<<endl<<endl;
-
-      double D00,D01,D33,constt;
-      constt=young/((1+nu)*(1-2*nu));
-
-      D00=constt*(1-nu);
-      D01=constt*nu;
-      D33=constt*(1-2*nu)/2;
-      
-      D(0,0)=D00;  D(0,1)=D01;  D(0,2)=D01;
-      D(1,0)=D01;  D(1,1)=D00;  D(1,2)=D01;
-      D(2,0)=D01;  D(2,1)=D01;  D(2,2)=D00;
-      D(3,3)=D33;
-      D(4,4)=D33;
-      D(5,5)=D33;
-      //      cout<<"D = "<<D;
-      PetscFunctionReturn(0);
-    }
-
-    virtual PetscErrorCode GetMatParameters_mech(double *_young,double *_pois) {
-      PetscFunctionBegin;
-      *_young = young;
-      *_pois = pois;
-      EntityHandle ent = fePtr->get_ent();
-      for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_ELASTICSET,it)) {
-        Mat_Elastic mydata;
-        ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
-        Range meshsets;
-        rval = moab.get_entities_by_type(it->meshset,MBENTITYSET,meshsets,true); CHKERR_PETSC(rval);
-        meshsets.insert(it->meshset);
-        for(Range::iterator mit = meshsets.begin();mit != meshsets.end(); mit++) {
-          if( moab.contains_entities(*mit,&ent,1) ) {
-            *_young = mydata.data.Young;
-            *_pois  = mydata.data.Poisson;
-            PetscFunctionReturn(0);
-          }
-        }
-      }
-      PetscFunctionReturn(0);
-    }
-
+    ublas::matrix<FieldData> Dmat;
+    FE2_ElasticFEMethod( FieldInterface& _mField,Mat &_Aij,Vec _X,Vec _F,ublas::matrix<FieldData> _Dmat,string _field_name):
+    ElasticFEMethod(_mField,_Aij,_X,_F,0.0,0.0,_field_name),Dmat(_Dmat){};
+    
     
     virtual PetscErrorCode Stiffness() {
       PetscFunctionBegin;
-      double _young,_pois;
-      ierr = GetMatParameters_mech(&_young,&_pois); CHKERRQ(ierr);
-//      cout<<"_young "<<_young<<endl;
-//      cout<<"_pois "<<_pois<<endl;
-
-      //moisture concentration at gasus point
-      vector< ublas::vector< FieldData > > conc;
-      ierr = GetGaussDataVector("CONC",conc); CHKERRQ(ierr);
-//      cout<<"conc[0] "<<conc[0]<<endl;
-
-      double conc_gauss;
+//      cout<<"Hello from Stiffness "<<endl;
+      
       K.resize(row_mat,col_mat);
       int g_dim = g_NTET.size()/4;
-//      cout<<"g_dim  = " <<g_dim<<endl;
       for(int rr = 0;rr<row_mat;rr++) {
         if(RowGlob[rr].size()==0) continue;
         for(int gg = 0;gg<g_dim;gg++) {
-          conc_gauss=(conc[gg])[0];
-//          cout<<"conc_gauss "<<conc_gauss<<endl;
-
-          ierr = calculateD_mech(_young,_pois,conc_gauss); CHKERRQ(ierr);
-//          cout<<"D "<<D<<endl;
-
           ublas::matrix<FieldData> &row_Mat = (rowBMatrices[rr])[gg];
           double w = V*G_TET_W[gg];
           if(detH.size()>0) {
@@ -121,7 +49,7 @@ namespace MoFEM {
           //ublas::noalias(BD) = prod( w*D,row_Mat );
           cblas_dsymm(CblasRowMajor,CblasLeft,CblasUpper,
                       BD.size1(),BD.size2(),
-                      w,&*D.data().begin(),D.size2(),
+                      w,&*Dmat.data().begin(),Dmat.size2(),
                       &*row_Mat.data().begin(),row_Mat.size2(),
                       0.,&*BD.data().begin(),BD.size2());
           for(int cc = rr;cc<col_mat;cc++) {
@@ -146,30 +74,21 @@ namespace MoFEM {
           }
         }
       }
-//      cout<<"K(rr,cc) "<<K(0,0)<<endl;
-//      cout<<"end of kstiffness"<<endl;
       PetscFunctionReturn(0);
     }
     
     
     virtual PetscErrorCode Fint() {
       PetscFunctionBegin;
+//      cout<<"Fint "<<endl;
       try {
+        
         //Higher order approximation of geometry
         ierr = GetHierarchicalGeometryApproximation(invH,detH); CHKERRQ(ierr);
         
-        double _young,_pois;
-        ierr = GetMatParameters_mech(&_young,&_pois); CHKERRQ(ierr);
-        
-        //moisture concentration at gasus point
-        vector< ublas::vector< FieldData > > conc;
-        ierr = GetGaussDataVector("CONC",conc); CHKERRQ(ierr);
-        double conc_gauss;
-//      cout<<"conc[0] "<<conc[0]<<endl;
-        
         //Gradient at Gauss points;
         vector< ublas::matrix< FieldData > > GradU_at_GaussPt;
-        ierr = GetGaussDiffDataVector("DISPLACEMENT",GradU_at_GaussPt); CHKERRQ(ierr);
+        ierr = GetGaussDiffDataVector(fieldName,GradU_at_GaussPt); CHKERRQ(ierr);
         unsigned int g_dim = g_NTET.size()/4;
         assert(GradU_at_GaussPt.size() == g_dim);
         NOT_USED(g_dim);
@@ -178,7 +97,6 @@ namespace MoFEM {
         for(;viit!=GradU_at_GaussPt.end();viit++,gg++) {
           try {
             ublas::matrix< FieldData > GradU = *viit;
-//            cout<<"GradU "<<GradU<<endl;
             if(!invH.empty()) {
               //GradU =
               //[ dU/dChi1 dU/dChi2 dU/dChi3 ]
@@ -207,10 +125,7 @@ namespace MoFEM {
             VoightStrain[4] = 2*Strain(1,2);
             VoightStrain[5] = 2*Strain(2,0);
             double w = V*G_TET_W[gg];
-            conc_gauss=(conc[gg])[0];
-            ierr = calculateD_mech(_young,_pois,conc_gauss); CHKERRQ(ierr);
-            //          cout<<"D "<<D<<endl;
-            ublas::vector<FieldData> VoightStress = prod(w*D,VoightStrain);
+            ublas::vector<FieldData> VoightStress = prod(w*Dmat,VoightStrain);
             //BT * VoigtStress
             f_int.resize(row_mat);
             for(int rr = 0;rr<row_mat;rr++) {
@@ -226,9 +141,9 @@ namespace MoFEM {
             ostringstream ss;
             ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
             SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
-          }
+          } 
         }
-
+        
       } catch (const std::exception& ex) {
         ostringstream ss;
         ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
@@ -237,9 +152,10 @@ namespace MoFEM {
       
       PetscFunctionReturn(0);
     }
-
     
   };
+  
+  
 }
 
-#endif //__COUPLED_MECHFEMETHOD_HPP__
+#endif //__FE2_ELASTICFEMETHOD_HPP__

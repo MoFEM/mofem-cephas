@@ -23,22 +23,22 @@ using namespace MoFEM;
 #include <FEMethod_LowLevelStudent.hpp>
 #include <FEMethod_UpLevelStudent.hpp>
 #include <ElasticFEMethod.hpp>
-#include "ElasticFE_RVELagrange_Disp.hpp"
+#include "ElasticFE_RVELagrange_Disp_Multi_Rhs.hpp"
 
 using namespace ObosleteUsersModules;
 
 namespace MoFEM {
   
-  ElasticFE_RVELagrange_Disp::ElasticFE_RVELagrange_Disp(
-                                                         FieldInterface& _mField,Mat &_Aij,Vec &_D,Vec& _F,ublas::vector<FieldData> _applied_strain,
+  ElasticFE_RVELagrange_Disp_Multi_Rhs::ElasticFE_RVELagrange_Disp_Multi_Rhs(
+                                                         FieldInterface& _mField,Mat &_Aij,Vec &_D,Vec& _F1,Vec& _F2,Vec& _F3,Vec& _F4,Vec& _F5,Vec& _F6,
                                                          const string& _field_main, const string& _field_lagrange, int _rank_field):
   FEMethod_UpLevelStudent(_mField.get_moab(),1), mField(_mField),
-  Aij(_Aij),F(_F), applied_strain(_applied_strain),field_main(_field_main), field_lagrange(_field_lagrange), rank_field(_rank_field){
+  Aij(_Aij),F1(_F1),F2(_F2),F3(_F3),F4(_F4),F5(_F5),F6(_F6),field_main(_field_main), field_lagrange(_field_lagrange), rank_field(_rank_field){
     pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
     
     snes_B = Aij;
     snes_x = _D;
-    snes_f = F;
+//    snes_f = F;
     
     RowGlob.resize(1+3+1);    // 1-node, 3-edges 1-face
     rowNMatrices.resize(1+3+1);
@@ -92,7 +92,7 @@ namespace MoFEM {
   
   
   //********************************************************************************
-  PetscErrorCode ElasticFE_RVELagrange_Disp::preProcess() {
+  PetscErrorCode ElasticFE_RVELagrange_Disp_Multi_Rhs::preProcess() {
     PetscFunctionBegin;
 //    PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Start Assembly\n");
 //    ierr = PetscTime(&v1); CHKERRQ(ierr);
@@ -101,15 +101,31 @@ namespace MoFEM {
   }
   
   //********************************************************************************
-  PetscErrorCode ElasticFE_RVELagrange_Disp::postProcess() {
+  PetscErrorCode ElasticFE_RVELagrange_Disp_Multi_Rhs::postProcess() {
     PetscFunctionBegin;
     
     switch(snes_ctx) {
       case CTX_SNESNONE: {
         ierr = MatAssemblyBegin(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
         ierr = MatAssemblyEnd(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-        ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
-        ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+        ierr = VecAssemblyBegin(F1); CHKERRQ(ierr);
+        ierr = VecAssemblyEnd(F1); CHKERRQ(ierr);
+        
+        ierr = VecAssemblyBegin(F2); CHKERRQ(ierr);
+        ierr = VecAssemblyEnd(F2); CHKERRQ(ierr);
+        
+        ierr = VecAssemblyBegin(F3); CHKERRQ(ierr);
+        ierr = VecAssemblyEnd(F3); CHKERRQ(ierr);
+
+        ierr = VecAssemblyBegin(F4); CHKERRQ(ierr);
+        ierr = VecAssemblyEnd(F4); CHKERRQ(ierr);
+
+        ierr = VecAssemblyBegin(F5); CHKERRQ(ierr);
+        ierr = VecAssemblyEnd(F5); CHKERRQ(ierr);
+
+        ierr = VecAssemblyBegin(F6); CHKERRQ(ierr);
+        ierr = VecAssemblyEnd(F6); CHKERRQ(ierr);
+
       }
         break;
       case CTX_SNESSETFUNCTION: {
@@ -130,7 +146,7 @@ namespace MoFEM {
   }
   
   //********************************************************************************
-  PetscErrorCode ElasticFE_RVELagrange_Disp::GetN_and_Indices() {
+  PetscErrorCode ElasticFE_RVELagrange_Disp_Multi_Rhs::GetN_and_Indices() {
     PetscFunctionBegin;
     
     //Find out indices for row and column for nodes on the surface, i.e. triangles
@@ -361,7 +377,7 @@ namespace MoFEM {
   
   
   //********************************************************************************
-  PetscErrorCode ElasticFE_RVELagrange_Disp::Get_H_mat() {
+  PetscErrorCode ElasticFE_RVELagrange_Disp_Multi_Rhs::Get_H_mat() {
     PetscFunctionBegin;
     H_mat.resize(row_mat);
     for(int rr=0; rr<row_mat; rr++){
@@ -381,7 +397,7 @@ namespace MoFEM {
   
   
   //********************************************************************************
-  PetscErrorCode ElasticFE_RVELagrange_Disp::Stiffness() {
+  PetscErrorCode ElasticFE_RVELagrange_Disp_Multi_Rhs::Stiffness() {
     PetscFunctionBegin;
     //        cout<<" row_mat; "<<row_mat<<endl;
     NTN.resize(row_mat,row_mat);
@@ -447,7 +463,7 @@ namespace MoFEM {
   }
   
   //********************************************************************************
-  PetscErrorCode ElasticFE_RVELagrange_Disp::Lhs() {
+  PetscErrorCode ElasticFE_RVELagrange_Disp_Multi_Rhs::Lhs() {
     PetscFunctionBegin;
     ierr = Stiffness(); CHKERRQ(ierr);
     
@@ -474,7 +490,7 @@ namespace MoFEM {
   
   //********************************************************************************
   //Calculate the right hand side vector, i.e. f=D_max * applied_strain and assemble it into the global force vector F
-  PetscErrorCode ElasticFE_RVELagrange_Disp::Rhs() {
+  PetscErrorCode ElasticFE_RVELagrange_Disp_Multi_Rhs::Rhs() {
     PetscFunctionBegin;
     X_mat.resize(rank_field,1.5*rank_field+1.5);    X_mat.clear();
     nodes_coord.resize(3,3);
@@ -555,7 +571,7 @@ namespace MoFEM {
       }
       //cout<< " D_mat[rr] =  "<<D_mat[rr]<<endl<<endl;
       
-      f=prod(D_mat[rr], applied_strain);
+//      f=prod(D_mat[rr], applied_strain);
 //      cout<<"f "<<f<<endl;
       
 //      if(rank_field==1){  //RHS=D_mat*applied_strain + initial_macro_concentraion
@@ -568,10 +584,55 @@ namespace MoFEM {
 //      }
       
       
-      if (snes_ctx==CTX_SNESSETFUNCTION) {f*=-1;}
-      
+//      if (snes_ctx==CTX_SNESSETFUNCTION) {f*=-1;}
       //Assemble D_mat into global force vector F
-      ierr = VecSetValues(snes_f,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f.data())[0],ADD_VALUES); CHKERRQ(ierr);
+//      ierr = VecSetValues(snes_f,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f.data())[0],ADD_VALUES); CHKERRQ(ierr);
+      
+      applied_strain.resize(6);
+      applied_strain.clear();
+      applied_strain(0)=1.0;
+//      cout<<"applied_strain = "<<applied_strain<<endl;
+      f=prod(D_mat[rr], applied_strain);
+      ierr = VecSetValues(F1,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f.data())[0],ADD_VALUES); CHKERRQ(ierr);
+//      cout<<"Hello "<<endl;
+//      std::string wait;
+//      std::cin >> wait;
+
+      applied_strain.clear();
+      applied_strain(1)=1.0;
+//      cout<<"applied_strain = "<<applied_strain<<endl;
+      f=prod(D_mat[rr], applied_strain);
+//      cout<<"f = "<<f<<endl;
+      ierr = VecSetValues(F2,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f.data())[0],ADD_VALUES); CHKERRQ(ierr);
+
+      applied_strain.clear();
+      applied_strain(2)=1.0;
+//      cout<<"applied_strain = "<<applied_strain<<endl;
+      f=prod(D_mat[rr], applied_strain);
+//      cout<<"f = "<<f<<endl;
+      ierr = VecSetValues(F3,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f.data())[0],ADD_VALUES); CHKERRQ(ierr);
+
+      applied_strain.clear();
+      applied_strain(3)=1.0;
+//      cout<<"applied_strain = "<<applied_strain<<endl;
+      f=prod(D_mat[rr], applied_strain);
+//      cout<<"f = "<<f<<endl;
+      ierr = VecSetValues(F4,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f.data())[0],ADD_VALUES); CHKERRQ(ierr);
+
+      applied_strain.clear();
+      applied_strain(4)=1.0;
+//      cout<<"applied_strain = "<<applied_strain<<endl;
+      f=prod(D_mat[rr], applied_strain);
+//      cout<<"f = "<<f<<endl;
+      ierr = VecSetValues(F5,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f.data())[0],ADD_VALUES); CHKERRQ(ierr);
+
+      applied_strain.clear();
+      applied_strain(5)=1.0;
+//      cout<<"applied_strain = "<<applied_strain<<endl;
+      f=prod(D_mat[rr], applied_strain);
+//      cout<<"f = "<<f<<endl;
+      ierr = VecSetValues(F6,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f.data())[0],ADD_VALUES); CHKERRQ(ierr);
+
     }
     
     PetscFunctionReturn(0);
@@ -582,7 +643,7 @@ namespace MoFEM {
   vector<ublas::vector<FieldData> > f_ext;
   vector<ublas::vector<FieldData> > f_ext_trans;
   
-  PetscErrorCode ElasticFE_RVELagrange_Disp::Rhs_fext() {
+  PetscErrorCode ElasticFE_RVELagrange_Disp_Multi_Rhs::Rhs_fext() {
     PetscFunctionBegin;
     ierr = Stiffness(); CHKERRQ(ierr);
     
@@ -699,7 +760,7 @@ namespace MoFEM {
   }
 //********************************************************************************
   
-  PetscErrorCode ElasticFE_RVELagrange_Disp::operator()() {
+  PetscErrorCode ElasticFE_RVELagrange_Disp_Multi_Rhs::operator()() {
     PetscFunctionBegin;
     //        cout<<"Hi from class ElasticFE_RVELagrange_Disp"<<endl;
     ierr = GetN_and_Indices(); CHKERRQ(ierr);
@@ -707,9 +768,12 @@ namespace MoFEM {
     
     switch(snes_ctx) {
       case CTX_SNESNONE: {
+//        cout<<"Before Lhs"<<endl;
         ierr = Lhs(); CHKERRQ(ierr);
+//        cout<<"Before Rhs"<<endl;
         ierr = Rhs(); CHKERRQ(ierr);
-        ierr = Rhs_fext(); CHKERRQ(ierr);
+//        cout<<"After Rhs"<<endl;
+//        ierr = Rhs_fext(); CHKERRQ(ierr);
       }
         break;
       case CTX_SNESSETFUNCTION: {
