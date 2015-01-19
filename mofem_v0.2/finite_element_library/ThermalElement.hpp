@@ -145,6 +145,7 @@ struct ThermalElement {
     * \infroup mofem_thermal_elem
     */
   struct CommonData {
+    ublas::matrix<double> cOnductivity_mat;  //This is (3x3) conductivity matix
     ublas::vector<double> temperatureAtGaussPts;
     ublas::vector<double> temperatureRateAtGaussPts;
     ublas::matrix<double> gradAtGaussPts;
@@ -317,7 +318,7 @@ struct ThermalElement {
 
         for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
 
-          double val = dAta.cOnductivity*getVolume()*getGaussPts()(3,gg);
+          ublas::matrix<double>  val = commonData.cOnductivity_mat*getVolume()*getGaussPts()(3,gg);
 
           if(getHoGaussPtsDetJac().size()>0) {
             val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
@@ -333,7 +334,7 @@ struct ThermalElement {
           //1.,&Nf[0],1);
 
           //ublas
-          ublas::noalias(Nf) += val*prod(data.getDiffN(gg,nb_row_dofs),commonData.getGradAtGaussPts(gg));
+          ublas::noalias(Nf) += prod(prod(data.getDiffN(gg,nb_row_dofs),val), commonData.getGradAtGaussPts(gg));
           
         }
 
@@ -404,8 +405,9 @@ struct ThermalElement {
         bzero(&*K.data().begin(),nb_row*nb_col*sizeof(double));
 
         for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
-
-          double val = dAta.cOnductivity*getVolume()*getGaussPts()(3,gg);
+          
+          ublas::matrix<double>  val = commonData.cOnductivity_mat*getVolume()*getGaussPts()(3,gg);
+          
           if(getHoGaussPtsDetJac().size()>0) {
             val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
           }
@@ -419,7 +421,8 @@ struct ThermalElement {
           //val,diff_N_row,3,diff_N_col,3,1.,&K(0,0),nb_col);
 
           //ublas
-          noalias(K) += val*prod(row_data.getDiffN(gg,nb_row),trans(col_data.getDiffN(gg,nb_col)));
+          ublas::matrix<double> K1=prod(row_data.getDiffN(gg,nb_row),val);
+          noalias(K) += prod(K1,trans(col_data.getDiffN(gg,nb_col)));
 
         }
 

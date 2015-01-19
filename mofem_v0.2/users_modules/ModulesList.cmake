@@ -32,6 +32,8 @@ add_subdirectory(nonlinear_elasticity)
 add_subdirectory(fracture_mechanics)
 add_subdirectory(homogenisation)
 add_subdirectory(moisture_transport)
+add_subdirectory(degradation_model)
+
 
 add_subdirectory(atom_tests)
 

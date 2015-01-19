@@ -45,6 +45,13 @@ PetscErrorCode ThermalElement::addThermalElements(const string field_name,const 
 
     Mat_Thermal temp_data;
     ierr = it->get_attribute_data_structure(temp_data); CHKERRQ(ierr);
+    
+    commonData.cOnductivity_mat.resize(3,3); //(3X3) conductivity matrix
+    commonData.cOnductivity_mat.clear();
+    commonData.cOnductivity_mat(0,0)=temp_data.data.Conductivity;
+    commonData.cOnductivity_mat(1,1)=temp_data.data.Conductivity;
+    commonData.cOnductivity_mat(2,2)=temp_data.data.Conductivity;
+
     setOfBlocks[it->get_msId()].cOnductivity = temp_data.data.Conductivity;
     setOfBlocks[it->get_msId()].cApacity = temp_data.data.HeatCapacity;
     rval = mField.get_moab().get_entities_by_type(it->meshset,MBTET,setOfBlocks[it->get_msId()].tEts,true); CHKERR_PETSC(rval);
