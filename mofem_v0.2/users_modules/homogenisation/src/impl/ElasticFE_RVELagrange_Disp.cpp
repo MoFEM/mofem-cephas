@@ -709,7 +709,6 @@ namespace MoFEM {
       case CTX_SNESNONE: {
         ierr = Lhs(); CHKERRQ(ierr);
         ierr = Rhs(); CHKERRQ(ierr);
-        ierr = Rhs_fext(); CHKERRQ(ierr);
       }
         break;
       case CTX_SNESSETFUNCTION: {

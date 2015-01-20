@@ -21,67 +21,19 @@
 #define __ELASTICFE_RVELAGRANGE_DISP_MULTI_RHS_HPP__
 
 using namespace ObosleteUsersModules;
-
 namespace MoFEM {
-
-  struct ElasticFE_RVELagrange_Disp_Multi_Rhs: public FEMethod_UpLevelStudent {
+  struct ElasticFE_RVELagrange_Disp_Multi_Rhs: public ElasticFE_RVELagrange_Disp{
     
-    FieldInterface& mField;
-    Mat Aij;
+    ublas::vector<FieldData> _applied_strain;
     Vec F1,F2,F3,F4,F5,F6;
-    ublas::vector<FieldData> applied_strain;
-    const string field_main;
-    const string field_lagrange;
-    int rank_field;
     
     ElasticFE_RVELagrange_Disp_Multi_Rhs(FieldInterface& _mField,Mat &_Aij,Vec &_D,Vec& _F1,Vec& _F2,Vec& _F3,Vec& _F4,Vec& _F5,Vec& _F6,
-                               const string& _field_main, const string& _field_lagrange, int _rank_field);
+                                         const string& _field_main, const string& _field_lagrange, int _rank_field):
+    ElasticFE_RVELagrange_Disp(_mField,_Aij, _D, _F1, _applied_strain, _field_main, _field_lagrange, _rank_field),F1(_F1),F2(_F2),F3(_F3),F4(_F4),F5(_F5),F6(_F6){};
     
-    
-    ErrorCode rval;
-    ParallelComm* pcomm;
-    PetscLogDouble t1,t2;
-    PetscLogDouble v1,v2;
-    
-    vector<double> g_NTRI;
-    ublas::matrix<double> g_NTRI_mat;
-    const double* G_W_TRI;
-    
-    PetscErrorCode preProcess();
-    
-    int row_mat,col_mat,g_TRI_dim;
-    vector<vector<DofIdx> > RowGlob;
-    vector<vector<DofIdx> > ColGlob;
-    vector<vector<ublas::matrix<double> > > rowNMatrices;
-
     PetscErrorCode postProcess();
-    
-    //Find indices and calculate shape function  and arrange in required form
-    double coords_face[9];
-    double area;
-    virtual PetscErrorCode GetN_and_Indices();
-    
-    //Calculate H matrix
-    ublas::vector<ublas::matrix<FieldData> > H_mat;
-    virtual PetscErrorCode Get_H_mat();
-    
-    //Calculate and assemble NT x N matrix
-    ublas::matrix<ublas::matrix<FieldData> > NTN;
-    virtual PetscErrorCode Stiffness();
-    virtual PetscErrorCode Lhs();
-    
-    //Calculate the right hand side vector, i.e. f=D_max * applied_strain and assemble it into the global force vector F
-    ublas::matrix<FieldData> X_mat, nodes_coord, gauss_coord;
-    ublas::vector<ublas::matrix<FieldData> > D_mat;
-    ublas::vector<FieldData> f; //f.resize(9);
     virtual PetscErrorCode Rhs();
-    virtual PetscErrorCode Rhs_fext();
 
-    //Loop over all the elements
-    PetscErrorCode operator()();
-    
   };
-  
 }
-
 #endif
