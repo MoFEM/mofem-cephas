@@ -214,7 +214,7 @@ struct NonlinearElasticElement {
 
     PetscErrorCode dEterminatnt(ublas::matrix<TYPE> a,TYPE &det) {
       PetscFunctionBegin;
-      //a11a22a33
+      // a11a22a33
       //+a21a32a13
       //+a31a12a23
       //-a11a32a23
