@@ -26,8 +26,9 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 
     FieldInterface& mField;
     bool propeties_from_BLOCKSET_MAT_ELASTICSET;
+    double lambda,mu;
     string fieldName;
-  
+
     ElasticFEMethod(FieldInterface& _mField,Mat _Aij,Vec _X,Vec _F,double _lambda,double _mu, string _field_name = "DISPLACEMENT"):
       FEMethod_UpLevelStudent(_mField.get_moab(),1),mField(_mField),lambda(_lambda),mu(_mu),fieldName(_field_name) {
 
@@ -64,8 +65,6 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
     ErrorCode rval;
     
     ParallelComm* pcomm;
-
-    double lambda,mu;
     ublas::matrix<FieldData> D_lambda,D_mu,D;
 
     int row_mat,col_mat;

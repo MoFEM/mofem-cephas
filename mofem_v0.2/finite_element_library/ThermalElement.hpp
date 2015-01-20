@@ -103,7 +103,8 @@ struct ThermalElement {
     * \infroup mofem_thermal_elem
     */
   struct BlockData {
-    double cOnductivity;
+    //double cOnductivity;
+    ublas::matrix<double> cOnductivity_mat;  //This is (3x3) conductivity matix
     double cApacity;   // rou * c_p == material density multiple heat capacity
     Range tEts; ///< constatins elements in block set
   };
@@ -145,7 +146,6 @@ struct ThermalElement {
     * \infroup mofem_thermal_elem
     */
   struct CommonData {
-    ublas::matrix<double> cOnductivity_mat;  //This is (3x3) conductivity matix
     ublas::vector<double> temperatureAtGaussPts;
     ublas::vector<double> temperatureRateAtGaussPts;
     ublas::matrix<double> gradAtGaussPts;
@@ -318,7 +318,7 @@ struct ThermalElement {
 
         for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
 
-          ublas::matrix<double>  val = commonData.cOnductivity_mat*getVolume()*getGaussPts()(3,gg);
+          ublas::matrix<double>  val = dAta.cOnductivity_mat*getVolume()*getGaussPts()(3,gg);
 
           if(getHoGaussPtsDetJac().size()>0) {
             val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
@@ -406,7 +406,7 @@ struct ThermalElement {
 
         for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
 
-          ublas::matrix<double>  val = commonData.cOnductivity_mat*getVolume()*getGaussPts()(3,gg);
+          ublas::matrix<double>  val = dAta.cOnductivity_mat*getVolume()*getGaussPts()(3,gg);
           if(getHoGaussPtsDetJac().size()>0) {
             val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
           }

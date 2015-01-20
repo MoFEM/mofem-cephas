@@ -117,8 +117,9 @@ struct Core:
 
   //SeriesRecorder
 
-  //add series
-  PetscErrorCode add_series_recorder(const string& serie_name);
+  //add/delete series
+  PetscErrorCode add_series_recorder(const string& series_name);
+  PetscErrorCode delete_recorder_series(const string& series_name);
   //initialize/finalize recording
   PetscErrorCode initialize_series_recorder(const string& serie_name);
   PetscErrorCode finalize_series_recorder(const string& serie_name);

@@ -117,80 +117,6 @@ struct GroundSurfaceTemerature {
     }
   };
 
-  struct TimeDependendData {
-
-    double T0; // reference temperature (K)
-    double e0; // reference saturation vapor pressure (es at a certain temp, usually 0 deg C) (Pa)
-    double Rv; // gas constant for water vapor (J*K/Kg)
-    double Lv; // latent heat of vaporization of water (J)
-
-    double u10;		//< wind at high 10m (m/s)	
-    double CR; 		//< cloudness factor (0–1, dimensionless)
-    double Ta;		//< air temperature (C)
-    double Td;		//< dew point temperature (C)
-    double P;		//< pressure
-    double Rs; 		//< observed solar radiation (W/m2)
-
-    double zenith;       //topocentric zenith angle [degrees]
-    double azimuth;      //topocentric azimuth angle (eastward from north) [for navigators and solar radiation]
-
-    /** \brief Clausius-Clapeyron equation
-      */
-    template <typename TYPE> 
-    TYPE calulateVapourPressureClausiusClapeyron(TYPE T) { 
-      return e0*exp((Lv/Rv)*((1./T0)-(1./(T+T0))));
-    }
-
-    template <typename TYPE> 
-    TYPE calulateVapourPressureTetenFormula(TYPE T) {
-      const double b = 17.2694;
-      const double T1 = 273.15;
-      const double T2 = 35.86;
-      return e0*exp(b*(T+T0-T1)/(T+T0-T2));
-    }
-
-    template <typename TYPE> 
-    TYPE calulateVapourPressure(TYPE T) {
-      //This use Tetent's formula by default
-      return calulateVapourPressureTetenFormula(T);
-    }
-
-    template <typename TYPE>
-    TYPE calulateMixingRatio(TYPE T,double P) {
-      const double eps = 0.622;
-      TYPE e = calulateVapourPressure(T);
-      return eps*T/(P-T);
-    }
-
-    template <typename TYPE>   
-    double calculateAbsoluteVirtualTempertaure(TYPE T,double P) {
-      const double c = 0.379;
-      double e = calulateVapourPressure(T);
-      return (T+T0)/(1-c*e/P);
-    }
-
-    TimeDependendData() {
-
-      T0 = 273.15; // reference temperature (K)
-      e0 = 611; // reference saturation vapor pressure (es at a certain temp, usually 0 deg C) (Pa)
-      Rv = 461.5; // gas constant for water vapor (J*K/Kg)
-      Lv = 2.5e6; // latent heat of vaporization of water (J)
-
-      u10 = 0;			//< wind at high 10m (m/s)	
-      CR = 0; 			//< cloudness factor (0–1, dimensionless)
-      Ta = 10;			//< air temperature (C)
-      Td = 5;			//< dew point temperature (C)
-      P = 101325;		//< pressure
-      Rs = 1361; 		//< observed solar radiation (W/m2)
-
-      zenith = 0;       //topocentric zenith angle [degrees]
-      azimuth = 0;      //topocentric azimuth angle (eastward from north) [for navigators and solar radiation]
-
-    }
-
-    virtual PetscErrorCode set() = 0;
-  };
-
   PetscErrorCode addSurfaces(const string field_name,const string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
     PetscFunctionBegin;
 
@@ -210,7 +136,7 @@ struct GroundSurfaceTemerature {
 	Range tris;
         rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
 	blockData.push_back(new Asphalt(tris));
-	ierr = mField.add_ents_to_finite_element_by_TETs(tris,"GROUND_SURFACE_FE"); CHKERRQ(ierr);
+	ierr = mField.add_ents_to_finite_element_by_TRIs(tris,"GROUND_SURFACE_FE"); CHKERRQ(ierr);
       }
     }
 
@@ -219,7 +145,7 @@ struct GroundSurfaceTemerature {
 	Range tris;
         rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
 	blockData.push_back(new Concrete(tris));
-	ierr = mField.add_ents_to_finite_element_by_TETs(tris,"GROUND_SURFACE_FE"); CHKERRQ(ierr);
+	ierr = mField.add_ents_to_finite_element_by_TRIs(tris,"GROUND_SURFACE_FE"); CHKERRQ(ierr);
       }
     }
 
@@ -235,7 +161,7 @@ struct GroundSurfaceTemerature {
     PetscFunctionReturn(0);
   }
 
-  static double netSolarRadiation(double alpha,double d,double cos_omega,TimeDependendData *time_data_ptr) {
+  static double netSolarRadiation(double alpha,double d,double cos_omega,GenricClimateModel *time_data_ptr) {
     // Parameterizing the Dependence of Surface Albedo on Solar Zenith Angle Using
     // Atmospheric Radiation Measurement Program Observations
     // F. Yang
@@ -244,7 +170,7 @@ struct GroundSurfaceTemerature {
     return (1-alpha)*time_data_ptr->Rs; // net solar radiation (W/m2)
   }
 
-  static double incomingLongWaveRadiation(double eps,TimeDependendData *time_data_ptr) {
+  static double incomingLongWaveRadiation(double eps,GenricClimateModel *time_data_ptr) {
     const double sigma = 5.67037321e-8;
     double sigma_eps = eps*sigma;
     double ea = time_data_ptr->calulateVapourPressure(time_data_ptr->calulateVapourPressure(time_data_ptr->Td));
@@ -252,18 +178,34 @@ struct GroundSurfaceTemerature {
     return sigma_eps*(time_data_ptr->CR+0.67*(1-time_data_ptr->CR)*pow(ea,0.08))*pow((time_data_ptr->Ta+273.15),4); 
   }
 
-  struct Shade: public MoFEM::FEMethod {
+  struct PreProcess: public MoFEM::FEMethod {
+
+    GenricClimateModel *timeDataPtr;
+    PreProcess(GenricClimateModel *time_data_ptr):
+      timeDataPtr(time_data_ptr) {};
+      
+    PetscErrorCode preProcess() {
+      PetscFunctionBegin;
+      PetscErrorCode ierr;
+      ierr = timeDataPtr->set(ts_t); CHKERRQ(ierr);
+      PetscFunctionReturn(0);
+    }
+
+
+  };
+
+  struct SolarRadiationPreProcessor: public MoFEM::FEMethod {
 
     FieldInterface &mField;
-    TimeDependendData *timeDataPtr;
+    GenricClimateModel *timeDataPtr;
     Parameters *pArametersPtr;
     AdaptiveKDTree kdTree;
     double ePs;
     bool iNit;
 
-    Shade(
+    SolarRadiationPreProcessor(
       FieldInterface &m_field,
-      TimeDependendData *time_data_ptr,
+      GenricClimateModel *time_data_ptr,
       Parameters *parameters_ptr,
       double eps = 1e-6):
       mField(m_field),
@@ -273,7 +215,7 @@ struct GroundSurfaceTemerature {
       ePs(eps),iNit(false) {
       azimuth = zenith = 0;
     };
-    ~Shade() {
+    ~SolarRadiationPreProcessor() {
       if(kdTree_rootMeshset) {
 	mField.get_moab().delete_entities(&kdTree_rootMeshset,1);
       }
@@ -346,7 +288,6 @@ struct GroundSurfaceTemerature {
 	  rval = mField.get_moab().tag_set_data(th_solar_radiation,&*tit,1,zero); CHKERR_PETSC(rval);
 	  continue;
 	}
-
 
 	int num_nodes;
         const EntityHandle* conn;
@@ -442,7 +383,7 @@ struct GroundSurfaceTemerature {
   };
 
   boost::ptr_vector<Parameters> blockData;
-  boost::ptr_vector<Shade> preProcessShade;
+  boost::ptr_vector<SolarRadiationPreProcessor> preProcessShade;
 
   /** \brief opearator to caulate tempereature at Gauss points
     * \infroup mofem_thermal_elem
@@ -492,17 +433,17 @@ struct GroundSurfaceTemerature {
 
   };
 
-  struct Op:public TriElementForcesAndSurcesCore::UserDataOperator {
+  struct OpRhs:public TriElementForcesAndSurcesCore::UserDataOperator {
         
     CommonData &commonData; 
-    TimeDependendData* timeDataPtr;
+    GenricClimateModel* timeDataPtr;
     Parameters *pArametersPtr;
     int tAg;
     bool ho_geometry;
 
-    Op(
+    OpRhs(
       const string field_name,
-      TimeDependendData *time_data_ptr,
+      GenricClimateModel *time_data_ptr,
       Parameters *parameters_ptr,
       CommonData &common_data,
       int tag,bool _ho_geometry = false):
@@ -555,14 +496,14 @@ struct GroundSurfaceTemerature {
 
 	//convection
 	double us = pArametersPtr->CSh*timeDataPtr->u10; // win speed with sheltering coeeficient
-	aDeltaPhi = (aT-timeDataPtr->Ta); // this is with assumtion that near the near the surface is the same amout of moisture like in the air 
-	cerr <<  aDeltaPhi << " " << pow(aDeltaPhi,2) << endl;
+	aDeltaPhi = fmax(1e-12,aT-timeDataPtr->Ta); // this is with assumtion that near the near the surface is the same amout of moisture like in the air 
+						    // if ground temerature are lower than air there is no convection
 
 	aHconv = pArametersPtr->rhoCp*(pArametersPtr->Cfc*us+pArametersPtr->Cnc*pow(aDeltaPhi,0.33))*(aT-timeDataPtr->Ta);
 	//aHevap = 0; // need to be implemented with moisture model
 
 	aHrad = -aHlo;
-	aHnet = aHrad-aHconv;//-aHevap;
+	aHnet = 0;//aHrad;//-aHconv;//-aHevap;
 
 	aHnet >>= f;
       }
@@ -624,28 +565,48 @@ struct GroundSurfaceTemerature {
 	  eXposure += getTriElementForcesAndSurcesCore()->dataH1.dataOnEntities[MBVERTEX][0].getN()(gg,nn)*nodalExposure[nn];
 	}
 
-	double hnet;
-	if(gg == 0) {
+	double hnet  = 0;
+	/*if(gg == 0) {
 	  ierr = record(hnet); CHKERRQ(ierr);
 	} else {
 	  int r;
 	  r = function(tAg,1,1,&T,&hnet);
-	  if(r!=3) { // function is locally analytic
+	  if(r<2) { // function is locally analytic
 	    SETERRQ1(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"ADOL-C function evaluation with error r = %d",r);
 	  }
-	}
+	}*/
 	
 	if(eXposure>0) {
-	  hnet += netSolarRadiation(pArametersPtr->alpha,pArametersPtr->d,cos_phi,timeDataPtr);
+	  //hnet += netSolarRadiation(pArametersPtr->alpha,pArametersPtr->d,cos_phi,timeDataPtr);
 	}	
 	hnet += incomingLongWaveRadiation(pArametersPtr->eps,timeDataPtr);
+	hnet /= (double)86400; // number of second in the day
   
-        ublas::noalias(Nf) += val*hnet*data.getN(gg,nb_row_dofs);
+        //ublas::noalias(Nf) -= val*hnet*data.getN(gg,nb_row_dofs);
   
       }
   
       ierr = VecSetValues(getFEMethod()->ts_F,data.getIndices().size(),&data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
   
+      PetscFunctionReturn(0);
+    }
+
+
+  
+  };
+
+  struct OpLhs:public OpRhs {
+        
+    OpLhs(
+      const string field_name,
+      GenricClimateModel *time_data_ptr,
+      Parameters *parameters_ptr,
+      CommonData &common_data,
+      int tag,bool _ho_geometry = false):
+	OpRhs(field_name,time_data_ptr,parameters_ptr,common_data,tag,_ho_geometry) {}
+
+    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+      PetscFunctionBegin;
       PetscFunctionReturn(0);
     }
 
@@ -680,9 +641,9 @@ struct GroundSurfaceTemerature {
 	  } else {
 	    normal = getNormal();
 	  }
-	  val *= norm_2(normal);
+	  val *= norm_2(normal)*0.5;
 
-	  double hnet;
+	  /*double hnet;
 	  if(gg == 0) {
 	    ierr = record(hnet); CHKERRQ(ierr);
 	  }
@@ -692,11 +653,12 @@ struct GroundSurfaceTemerature {
 	  //play recorder for jacobians
 	  int r;
 	  r = jacobian(tAg,1,1,&T,grad_ptr);
-	  if(r!=3) {
+	  if(r<2) {
 	    SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"ADOL-C function evaluation with error");
 	  }
+	  hnet /= (double)86400; // number of second in the day
 
-	  noalias(NN) += val*(grad_ptr[0])[0]*outer_prod( row_data.getN(gg,nb_row),col_data.getN(gg,nb_col) );
+	  noalias(NN) -= val*(grad[0]*outer_prod( row_data.getN(gg,nb_row),col_data.getN(gg,nb_col)));*/
 
         }
 
@@ -723,11 +685,11 @@ struct GroundSurfaceTemerature {
 
       PetscFunctionReturn(0);
     }
-  
+
   };
 
   PetscErrorCode setOperators(int tag,
-    TimeDependendData *time_data_ptr,string field_name,const string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
+    GenricClimateModel *time_data_ptr,string field_name,const string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
     PetscFunctionBegin;
 
     bool ho_geometry = false;
@@ -740,8 +702,8 @@ struct GroundSurfaceTemerature {
       for(;sit!=blockData.end();sit++) {
 	// add finite element operator
 	feGroundSurfaceRhs.get_op_to_do_Rhs().push_back(new OpGetTriTemperatureAtGaussPts(field_name,commonData.temperatureAtGaussPts));
-	feGroundSurfaceRhs.get_op_to_do_Rhs().push_back(new Op(field_name,time_data_ptr,&*sit,commonData,tag,ho_geometry));
-	preProcessShade.push_back(new Shade(mField,time_data_ptr,&*sit));
+	feGroundSurfaceRhs.get_op_to_do_Rhs().push_back(new OpRhs(field_name,time_data_ptr,&*sit,commonData,tag,ho_geometry));
+	preProcessShade.push_back(new SolarRadiationPreProcessor(mField,time_data_ptr,&*sit));
       }
     }
     {
@@ -749,7 +711,7 @@ struct GroundSurfaceTemerature {
       for(;sit!=blockData.end();sit++) {
 	// add finite element operator
 	feGroundSurfaceRhs.get_op_to_do_Rhs().push_back(new OpGetTriTemperatureAtGaussPts(field_name,commonData.temperatureAtGaussPts));
-	feGroundSurfaceLhs.get_op_to_do_Lhs().push_back(new Op(field_name,time_data_ptr,&*sit,commonData,tag,ho_geometry));
+	feGroundSurfaceLhs.get_op_to_do_Lhs().push_back(new OpLhs(field_name,time_data_ptr,&*sit,commonData,tag,ho_geometry));
       }
     }
 

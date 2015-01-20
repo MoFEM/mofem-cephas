@@ -72,13 +72,13 @@ struct MoistureTransportElement: public ThermalElement {
         //          cout<<"it->get_msId() = "<<it->get_msId()<<endl;
         //It is moisture conductivity acting the same as heat conductivity in thermal problem
         
-        commonData.cOnductivity_mat.resize(3,3); //(3X3) conductivity matrix
-        commonData.cOnductivity_mat.clear();
-        commonData.cOnductivity_mat(0,0)=diffusion_data.data.Diffusivity;
-        commonData.cOnductivity_mat(1,1)=diffusion_data.data.Diffusivity;
-        commonData.cOnductivity_mat(2,2)=diffusion_data.data.Diffusivity;
+        setOfBlocks[it->get_msId()].cOnductivity_mat.resize(3,3); //(3X3) conductivity matrix
+        setOfBlocks[it->get_msId()].cOnductivity_mat.clear();
+        setOfBlocks[it->get_msId()].cOnductivity_mat(0,0)=diffusion_data.data.Diffusivity;
+        setOfBlocks[it->get_msId()].cOnductivity_mat(1,1)=diffusion_data.data.Diffusivity;
+        setOfBlocks[it->get_msId()].cOnductivity_mat(2,2)=diffusion_data.data.Diffusivity;
 
-        setOfBlocks[it->get_msId()].cOnductivity = diffusion_data.data.Diffusivity;
+        //setOfBlocks[it->get_msId()].cOnductivity = diffusion_data.data.Diffusivity;
         setOfBlocks[it->get_msId()].cApacity = 1.0; //moisture capicity is 1
 
         rval = mField.get_moab().get_entities_by_type(it->meshset,MBTET,setOfBlocks[it->get_msId()].tEts,true); CHKERR_PETSC(rval);
@@ -124,13 +124,13 @@ struct MoistureTransportElement: public ThermalElement {
 
 //        cout<<"it->get_msId() = "<<it->get_msId()<<endl;
         //It is moisture conductivity acting the same as heat conductivity in thermal problem
-        commonData.cOnductivity_mat.resize(3,3); //(3X3) conductivity matrix
-        commonData.cOnductivity_mat.clear();
-        commonData.cOnductivity_mat(0,0)=darceys_data.data.Permeability/darceys_data.data.Viscosity;
-        commonData.cOnductivity_mat(1,1)=darceys_data.data.Permeability/darceys_data.data.Viscosity;
-        commonData.cOnductivity_mat(2,2)=darceys_data.data.Permeability/darceys_data.data.Viscosity;
+        setOfBlocks[it->get_msId()].cOnductivity_mat.resize(3,3); //(3X3) conductivity matrix
+        setOfBlocks[it->get_msId()].cOnductivity_mat.clear();
+        setOfBlocks[it->get_msId()].cOnductivity_mat(0,0)=darceys_data.data.Permeability/darceys_data.data.Viscosity;
+        setOfBlocks[it->get_msId()].cOnductivity_mat(1,1)=darceys_data.data.Permeability/darceys_data.data.Viscosity;
+        setOfBlocks[it->get_msId()].cOnductivity_mat(2,2)=darceys_data.data.Permeability/darceys_data.data.Viscosity;
 
-        setOfBlocks[it->get_msId()].cOnductivity = darceys_data.data.Permeability/darceys_data.data.Viscosity;
+        //setOfBlocks[it->get_msId()].cOnductivity = darceys_data.data.Permeability/darceys_data.data.Viscosity;
         setOfBlocks[it->get_msId()].cApacity = 1.0; //moisture capicity is 1 (will see this for the Darceys unsteady flow ????)
         
         rval = mField.get_moab().get_entities_by_type(it->meshset,MBTET,setOfBlocks[it->get_msId()].tEts,true); CHKERR_PETSC(rval);
