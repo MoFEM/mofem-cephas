@@ -38,7 +38,15 @@ struct SeriesRecorder: public FieldUnknownInterface {
     *
     * \param name of series
     */
-  virtual PetscErrorCode add_series_recorder(const string& serie_name) = 0;
+  virtual PetscErrorCode add_series_recorder(const string& series_name) = 0;
+
+ /**
+    * \ingroup mofem_series
+    * delete recorded series
+    *
+    * \param name of series
+    */
+  virtual PetscErrorCode delete_recorder_series(const string& series_name) = 0;
 
   /**
     * \ingroup mofem_series

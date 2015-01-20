@@ -785,6 +785,7 @@ struct CubitMeshSets {
 
   PetscErrorCode get_Cubit_msId_entities_by_dimension(Interface &moab,const int dimension,Range &entities,const bool recursive = false) const;
   PetscErrorCode get_Cubit_msId_entities_by_dimension(Interface &moab,Range &entities,const bool recursive = false)  const;
+  PetscErrorCode get_Cubit_msId_entities_by_type(Interface &moab,const EntityType type,Range &entities,const bool recursive = false) const;
 
   /** 
    *  \brief Function that returns the CubitBC_BitSet type of the contents of bc_data
