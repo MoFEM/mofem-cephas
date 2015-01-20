@@ -136,7 +136,7 @@ struct GroundSurfaceTemerature {
 	Range tris;
         rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
 	blockData.push_back(new Asphalt(tris));
-	ierr = mField.add_ents_to_finite_element_by_TETs(tris,"GROUND_SURFACE_FE"); CHKERRQ(ierr);
+	ierr = mField.add_ents_to_finite_element_by_TRIs(tris,"GROUND_SURFACE_FE"); CHKERRQ(ierr);
       }
     }
 
@@ -145,7 +145,7 @@ struct GroundSurfaceTemerature {
 	Range tris;
         rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
 	blockData.push_back(new Concrete(tris));
-	ierr = mField.add_ents_to_finite_element_by_TETs(tris,"GROUND_SURFACE_FE"); CHKERRQ(ierr);
+	ierr = mField.add_ents_to_finite_element_by_TRIs(tris,"GROUND_SURFACE_FE"); CHKERRQ(ierr);
       }
     }
 
@@ -177,6 +177,22 @@ struct GroundSurfaceTemerature {
     // incoming longwave radiation (W/m2)
     return sigma_eps*(time_data_ptr->CR+0.67*(1-time_data_ptr->CR)*pow(ea,0.08))*pow((time_data_ptr->Ta+273.15),4); 
   }
+
+  struct PreProcess: public MoFEM::FEMethod {
+
+    GenricClimateModel *timeDataPtr;
+    PreProcess(GenricClimateModel *time_data_ptr):
+      timeDataPtr(time_data_ptr) {};
+      
+    PetscErrorCode preProcess() {
+      PetscFunctionBegin;
+      PetscErrorCode ierr;
+      ierr = timeDataPtr->set(ts_t); CHKERRQ(ierr);
+      PetscFunctionReturn(0);
+    }
+
+
+  };
 
   struct SolarRadiationPreProcessor: public MoFEM::FEMethod {
 
@@ -272,7 +288,6 @@ struct GroundSurfaceTemerature {
 	  rval = mField.get_moab().tag_set_data(th_solar_radiation,&*tit,1,zero); CHKERR_PETSC(rval);
 	  continue;
 	}
-
 
 	int num_nodes;
         const EntityHandle* conn;
@@ -418,7 +433,7 @@ struct GroundSurfaceTemerature {
 
   };
 
-  struct Op:public TriElementForcesAndSurcesCore::UserDataOperator {
+  struct OpRhs:public TriElementForcesAndSurcesCore::UserDataOperator {
         
     CommonData &commonData; 
     GenricClimateModel* timeDataPtr;
@@ -426,7 +441,7 @@ struct GroundSurfaceTemerature {
     int tAg;
     bool ho_geometry;
 
-    Op(
+    OpRhs(
       const string field_name,
       GenricClimateModel *time_data_ptr,
       Parameters *parameters_ptr,
@@ -488,7 +503,7 @@ struct GroundSurfaceTemerature {
 	//aHevap = 0; // need to be implemented with moisture model
 
 	aHrad = -aHlo;
-	aHnet = aHrad-aHconv;//-aHevap;
+	aHnet = 0;//aHrad;//-aHconv;//-aHevap;
 
 	aHnet >>= f;
       }
@@ -550,28 +565,48 @@ struct GroundSurfaceTemerature {
 	  eXposure += getTriElementForcesAndSurcesCore()->dataH1.dataOnEntities[MBVERTEX][0].getN()(gg,nn)*nodalExposure[nn];
 	}
 
-	double hnet;
-	if(gg == 0) {
+	double hnet  = 0;
+	/*if(gg == 0) {
 	  ierr = record(hnet); CHKERRQ(ierr);
 	} else {
 	  int r;
 	  r = function(tAg,1,1,&T,&hnet);
-	  if(r!=3) { // function is locally analytic
+	  if(r<2) { // function is locally analytic
 	    SETERRQ1(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"ADOL-C function evaluation with error r = %d",r);
 	  }
-	}
+	}*/
 	
 	if(eXposure>0) {
-	  hnet += netSolarRadiation(pArametersPtr->alpha,pArametersPtr->d,cos_phi,timeDataPtr);
+	  //hnet += netSolarRadiation(pArametersPtr->alpha,pArametersPtr->d,cos_phi,timeDataPtr);
 	}	
 	hnet += incomingLongWaveRadiation(pArametersPtr->eps,timeDataPtr);
+	hnet /= (double)86400; // number of second in the day
   
-        ublas::noalias(Nf) += val*hnet*data.getN(gg,nb_row_dofs);
+        //ublas::noalias(Nf) -= val*hnet*data.getN(gg,nb_row_dofs);
   
       }
   
       ierr = VecSetValues(getFEMethod()->ts_F,data.getIndices().size(),&data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
   
+      PetscFunctionReturn(0);
+    }
+
+
+  
+  };
+
+  struct OpLhs:public OpRhs {
+        
+    OpLhs(
+      const string field_name,
+      GenricClimateModel *time_data_ptr,
+      Parameters *parameters_ptr,
+      CommonData &common_data,
+      int tag,bool _ho_geometry = false):
+	OpRhs(field_name,time_data_ptr,parameters_ptr,common_data,tag,_ho_geometry) {}
+
+    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+      PetscFunctionBegin;
       PetscFunctionReturn(0);
     }
 
@@ -606,9 +641,9 @@ struct GroundSurfaceTemerature {
 	  } else {
 	    normal = getNormal();
 	  }
-	  val *= norm_2(normal);
+	  val *= norm_2(normal)*0.5;
 
-	  double hnet;
+	  /*double hnet;
 	  if(gg == 0) {
 	    ierr = record(hnet); CHKERRQ(ierr);
 	  }
@@ -618,11 +653,12 @@ struct GroundSurfaceTemerature {
 	  //play recorder for jacobians
 	  int r;
 	  r = jacobian(tAg,1,1,&T,grad_ptr);
-	  if(r!=3) {
+	  if(r<2) {
 	    SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"ADOL-C function evaluation with error");
 	  }
+	  hnet /= (double)86400; // number of second in the day
 
-	  noalias(NN) += val*(grad_ptr[0])[0]*outer_prod( row_data.getN(gg,nb_row),col_data.getN(gg,nb_col) );
+	  noalias(NN) -= val*(grad[0]*outer_prod( row_data.getN(gg,nb_row),col_data.getN(gg,nb_col)));*/
 
         }
 
@@ -649,7 +685,7 @@ struct GroundSurfaceTemerature {
 
       PetscFunctionReturn(0);
     }
-  
+
   };
 
   PetscErrorCode setOperators(int tag,
@@ -666,7 +702,7 @@ struct GroundSurfaceTemerature {
       for(;sit!=blockData.end();sit++) {
 	// add finite element operator
 	feGroundSurfaceRhs.get_op_to_do_Rhs().push_back(new OpGetTriTemperatureAtGaussPts(field_name,commonData.temperatureAtGaussPts));
-	feGroundSurfaceRhs.get_op_to_do_Rhs().push_back(new Op(field_name,time_data_ptr,&*sit,commonData,tag,ho_geometry));
+	feGroundSurfaceRhs.get_op_to_do_Rhs().push_back(new OpRhs(field_name,time_data_ptr,&*sit,commonData,tag,ho_geometry));
 	preProcessShade.push_back(new SolarRadiationPreProcessor(mField,time_data_ptr,&*sit));
       }
     }
@@ -675,7 +711,7 @@ struct GroundSurfaceTemerature {
       for(;sit!=blockData.end();sit++) {
 	// add finite element operator
 	feGroundSurfaceRhs.get_op_to_do_Rhs().push_back(new OpGetTriTemperatureAtGaussPts(field_name,commonData.temperatureAtGaussPts));
-	feGroundSurfaceLhs.get_op_to_do_Lhs().push_back(new Op(field_name,time_data_ptr,&*sit,commonData,tag,ho_geometry));
+	feGroundSurfaceLhs.get_op_to_do_Lhs().push_back(new OpLhs(field_name,time_data_ptr,&*sit,commonData,tag,ho_geometry));
       }
     }
 

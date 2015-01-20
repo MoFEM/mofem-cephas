@@ -270,9 +270,12 @@ struct CrudeClimateModel: public GenricClimateModel {
     
     Ta = funT(t,t0); // sets air temperature
 
-    //PetscPrintf(PETSC_COMM_WORLD,
-    //  "Suntransit %3.2f Sunrise %3.2f Sunset %3.2f\n" ,
-    //  spaData.suntransit,spaData.sunrise,spaData.sunset);
+    PetscPrintf(PETSC_COMM_WORLD,
+      "Suntransit %3.2f Sunrise %3.2f Sunset %3.2f Ta = %3.2f \n" ,
+      spaData.suntransit,spaData.sunrise,spaData.sunset,
+      Ta);
+    PetscPrintf(PETSC_COMM_WORLD,"Time %s",asctime(&current_time));
+
 
     PetscFunctionReturn(0);
   }

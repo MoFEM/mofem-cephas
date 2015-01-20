@@ -27,6 +27,13 @@
 
 using namespace MoFEM;
 
+#include <boost/shared_ptr.hpp>
+#include <boost/program_options.hpp>
+
+using namespace std;
+namespace po = boost::program_options;
+
+
 #ifdef WITH_ADOL_C
 
 #include <moab/AdaptiveKDTree.hpp>
@@ -45,7 +52,7 @@ using namespace MoFEM;
 extern "C" {
   #include <spa.h>
 }
-#include <TimeVariationModel.hpp>
+#include <CrudeClimateModel.hpp>
 
 #endif // __GROUNDSURFACETEMERATURE_HPP
 
@@ -73,14 +80,11 @@ int main(int argc, char *argv[]) {
     order = 1;
   }
 
-  size_t len;
   char time_data_file_for_ground_surface[255];
   PetscBool ground_temperature_analys;
-  ierr = PetscOptionsGetString(PETSC_NULL,"-my_ground_analysis_data",time_data_file_for_ground_surface,len,&ground_temperature_analys); CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(PETSC_NULL,"-my_ground_analysis_data",
+    time_data_file_for_ground_surface,255,&ground_temperature_analys); CHKERRQ(ierr);
   if(ground_temperature_analys) {
-    if(len>=255) {
-      SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_ground_analysis_data file, file name is too long");
-    }
     #ifndef __GROUNDSURFACETEMERATURE_HPP
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR to do ground thermal analys MoFEM need to be complilet wiith ADOL-C");
     #endif // __GROUNDSURFACETEMERATURE_HPP
@@ -110,12 +114,12 @@ int main(int argc, char *argv[]) {
   ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
 
   //Fields H1 space rank 1
-  ierr = m_field.add_field("TEMP",H1,1); CHKERRQ(ierr);
-  ierr = m_field.add_field("TEMP_RATE",H1,1); CHKERRQ(ierr);
+  ierr = m_field.add_field("TEMP",H1,1,MF_ZERO); CHKERRQ(ierr);
+  ierr = m_field.add_field("TEMP_RATE",H1,1,MF_ZERO); CHKERRQ(ierr);
 
   //Add field H1 space rank 3 to approximate gemetry using heierachical basis
   //For 10 node tets, before use, gemetry is projected on that field (see below)
-  ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,3); CHKERRQ(ierr);
+  ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,3,MF_ZERO); CHKERRQ(ierr);
 
   //meshset consisting all entities in mesh
   EntityHandle root_set = moab.get_root_set(); 
@@ -143,6 +147,47 @@ int main(int argc, char *argv[]) {
   ierr = m_field.set_field_order(0,MBEDGE,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
 
+  // configure blocks by parsing config file
+  // it allow to set approximation order for each block independettly
+  PetscBool block_config;
+  char block_config_file[255];
+  ierr = PetscOptionsGetString(PETSC_NULL,"-my_block_config",block_config_file,255,&block_config); CHKERRQ(ierr);
+  if(block_config) {
+    try {
+      ifstream ini_file(block_config_file);  
+      //cerr << block_config_file << endl;
+      po::variables_map vm;
+      po::options_description config_file_options;
+      vector<int> block_order;
+      block_order.resize(100,order);
+      for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
+        ostringstream block_str;
+        block_str << "block_" << it->get_msId() << ".temperature_order";
+        config_file_options.add_options()
+	 (block_str.str().c_str(),po::value<int>(&block_order[it->get_msId()])->default_value(order));
+      }
+      store(parse_config_file(ini_file,config_file_options,true), vm);
+      po::notify(vm); 
+      for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
+        if(block_order[it->get_msId()] == order) continue;
+	PetscPrintf(PETSC_COMM_WORLD,"Set block %d order to %d\n",it->get_msId(),block_order[it->get_msId()]);
+	Range block_ents;
+	rval = moab.get_entities_by_handle(it->meshset,block_ents,true); CHKERR(rval);
+	Range ents_to_set_order;
+	ierr = moab.get_adjacencies(block_ents,3,false,ents_to_set_order,Interface::UNION); CHKERRQ(ierr);
+	ents_to_set_order = ents_to_set_order.subset_by_type(MBTET);
+	ierr = moab.get_adjacencies(block_ents,2,false,ents_to_set_order,Interface::UNION); CHKERRQ(ierr);
+	ierr = moab.get_adjacencies(block_ents,1,false,ents_to_set_order,Interface::UNION); CHKERRQ(ierr);
+        ierr = m_field.set_field_order(ents_to_set_order,"TEMP",block_order[it->get_msId()]); CHKERRQ(ierr);
+        ierr = m_field.set_field_order(ents_to_set_order,"TEMP_RATE",block_order[it->get_msId()]); CHKERRQ(ierr);
+      }
+    } catch (const std::exception& ex) {
+      ostringstream ss;
+      ss << ex.what() << endl;
+      SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+    }
+  }
+
   //this defuault class to calulate thermal elements
   ThermalElement thermal_elements(m_field);
   ierr = thermal_elements.addThermalElements("TEMP"); CHKERRQ(ierr);
@@ -156,12 +201,13 @@ int main(int argc, char *argv[]) {
   
   #ifdef __GROUNDSURFACETEMERATURE_HPP
   GroundSurfaceTemerature ground_surface(m_field);
-  GroundTimeData time_data(time_data_file_for_ground_surface);
+  CrudeClimateModel time_data(time_data_file_for_ground_surface);
+  GroundSurfaceTemerature::PreProcess exectuteGenericClimateModel(&time_data);
   if(ground_temperature_analys) {
-    ground_surface.addSurfaces("TEMP");  
+    ierr = ground_surface.addSurfaces("TEMP");   CHKERRQ(ierr);
     ierr = ground_surface.setOperators(1,&time_data,"TEMP"); CHKERRQ(ierr);
   }
-  #endif 
+  #endif //__GROUNDSURFACETEMERATURE_HPP
 
   //build database, i.e. declare dofs, elements and ajacencies
 
@@ -175,6 +221,16 @@ int main(int argc, char *argv[]) {
   //build adjacencies
   ierr = m_field.build_adjacencies(bit_level0); CHKERRQ(ierr);
 
+  // delete old temerature recorded series
+  SeriesRecorder *recorder_ptr;
+  ierr = m_field.query_interface(recorder_ptr); CHKERRQ(ierr);
+  if(recorder_ptr->check_series("THEMP_SERIES")) {
+    //for(_IT_SERIES_STEPS_BY_NAME_FOR_LOOP_(recorder_ptr,"THEMP_SERIES",sit)) {
+      //ierr = recorder_ptr->load_series_data("THEMP_SERIES",sit->get_step_number()); CHKERRQ(ierr);
+    //}
+    ierr = recorder_ptr->delete_recorder_series("THEMP_SERIES"); CHKERRQ(ierr);
+  }
+
   //set dm datastruture whict created mofem datastructures
   ierr = DMMoFEMCreateMoFEM(dm,&m_field,dm_name,bit_level0); CHKERRQ(ierr);
   ierr = DMSetFromOptions(dm); CHKERRQ(ierr);
@@ -183,6 +239,12 @@ int main(int argc, char *argv[]) {
   ierr = DMMoFEMAddElement(dm,"THERMAL_FLUX_FE"); CHKERRQ(ierr);
   ierr = DMMoFEMAddElement(dm,"THERMAL_CONVECTION_FE"); CHKERRQ(ierr);
   ierr = DMMoFEMAddElement(dm,"THERMAL_RADIATION_FE"); CHKERRQ(ierr);
+  #ifdef __GROUNDSURFACETEMERATURE_HPP
+  if(ground_temperature_analys) {
+    ierr = DMMoFEMAddElement(dm,"GROUND_SURFACE_FE"); CHKERRQ(ierr);
+  }
+  #endif //__GROUNDSURFACETEMERATURE_HPP 
+
   ierr = DMSetUp(dm); CHKERRQ(ierr);
 
   TemperatureBCFEMethodPreAndPostProc dirichlet_bc(m_field,"TEMP",PETSC_NULL,PETSC_NULL,PETSC_NULL);
@@ -194,8 +256,10 @@ int main(int argc, char *argv[]) {
   ierr = DMMoFEMTSSetIFunction(dm,DM_NO_ELEMENT,NULL,&dirichlet_bc,NULL); CHKERRQ(ierr);
   ierr = DMMoFEMTSSetIJacobian(dm,DM_NO_ELEMENT,NULL,&dirichlet_bc,NULL); CHKERRQ(ierr);
   #ifdef __GROUNDSURFACETEMERATURE_HPP
+  ierr = DMMoFEMTSSetIFunction(dm,DM_NO_ELEMENT,NULL,&exectuteGenericClimateModel,NULL); CHKERRQ(ierr);
+  ierr = DMMoFEMTSSetIJacobian(dm,DM_NO_ELEMENT,NULL,&exectuteGenericClimateModel,NULL); CHKERRQ(ierr);
   { // add preporcessor, calulating angle on which sun ray on the surface
-    boost::ptr_vector<SolarRadiationPreProcessor>::iterator it,hi_it;
+    boost::ptr_vector<GroundSurfaceTemerature::SolarRadiationPreProcessor>::iterator it,hi_it;
     it = ground_surface.preProcessShade.begin();
     hi_it = ground_surface.preProcessShade.end();
     for(;it!=hi_it;it++) {
@@ -210,7 +274,9 @@ int main(int argc, char *argv[]) {
   ierr = DMMoFEMTSSetIFunction(dm,"THERMAL_CONVECTION_FE",&thermal_elements.feConvectionRhs,NULL,NULL); CHKERRQ(ierr);
   ierr = DMMoFEMTSSetIFunction(dm,"THERMAL_RADIATION_FE",&thermal_elements.feRadiationRhs,NULL,NULL); CHKERRQ(ierr);
   #ifdef __GROUNDSURFACETEMERATURE_HPP
-  ierr = DMMoFEMTSSetIFunction(dm,"GROUND_SURFACE_FE",&ground_surface.getFeGroundSurfaceRhs(),NULL,NULL); CHKERRQ(ierr);
+  if(ground_temperature_analys) {
+    ierr = DMMoFEMTSSetIFunction(dm,"GROUND_SURFACE_FE",&ground_surface.getFeGroundSurfaceRhs(),NULL,NULL); CHKERRQ(ierr);
+  }
   #endif //__GROUNDSURFACETEMERATURE_HPP
 
 
@@ -219,7 +285,9 @@ int main(int argc, char *argv[]) {
   ierr = DMMoFEMTSSetIJacobian(dm,"THERMAL_CONVECTION_FE",&thermal_elements.feConvectionLhs,NULL,NULL); CHKERRQ(ierr);
   ierr = DMMoFEMTSSetIJacobian(dm,"THERMAL_RADIATION_FE",&thermal_elements.feRadiationLhs,NULL,NULL); CHKERRQ(ierr);
   #ifdef __GROUNDSURFACETEMERATURE_HPP
-  ierr = DMMoFEMTSSetIFunction(dm,"GROUND_SURFACE_FE",&ground_surface.getFeGroundSurfaceLhs(),NULL,NULL); CHKERRQ(ierr);
+  if(ground_temperature_analys) {
+    ierr = DMMoFEMTSSetIJacobian(dm,"GROUND_SURFACE_FE",&ground_surface.getFeGroundSurfaceLhs(),NULL,NULL); CHKERRQ(ierr);
+  }
   #endif //__GROUNDSURFACETEMERATURE_HPP
 
   //postprocess
@@ -239,6 +307,11 @@ int main(int argc, char *argv[]) {
   Mat A;
   ierr = DMCreateMatrix_MoFEM(dm,&A); CHKERRQ(ierr);
 
+  //Initialize data with values save of on the field
+  ierr = m_field.set_local_VecCreateGhost(dm_name,ROW,T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+
   //create time solver
   TS ts;
   ierr = TSCreate(PETSC_COMM_WORLD,&ts); CHKERRQ(ierr);
@@ -249,8 +322,6 @@ int main(int argc, char *argv[]) {
   //add monitor to TS solver
   ierr = TSMonitorSet(ts,f_TSMonitorSet,ts_ctx,PETSC_NULL); CHKERRQ(ierr); // !!!
 
-  SeriesRecorder *recorder_ptr;
-  ierr = m_field.query_interface(recorder_ptr); CHKERRQ(ierr);
   ierr = recorder_ptr->add_series_recorder("THEMP_SERIES"); CHKERRQ(ierr);
   //start to record 
   ierr = recorder_ptr->initialize_series_recorder("THEMP_SERIES"); CHKERRQ(ierr);
@@ -277,17 +348,6 @@ int main(int argc, char *argv[]) {
     "steps %D (%D rejected, %D SNES fails), ftime %g, nonlinits %D, linits %D\n",
     steps,rejects,snesfails,ftime,nonlinits,linits);
   
-  // save solution, if boundary conditions are defined you can use that file in mechanical problem
-  // to calulate thermal stresses
-  PetscBool is_partitioned = PETSC_FALSE;
-  ierr = PetscOptionsGetBool(PETSC_NULL,"-dm_is_partitioned",&is_partitioned,PETSC_NULL); CHKERRQ(ierr);
-  if(is_partitioned) {
-    rval = moab.write_file("solution.h5m"); CHKERR_PETSC(rval);
-  } else {
-    if(pcomm->rank()==0) {
-      rval = moab.write_file("solution.h5m"); CHKERR_PETSC(rval);
-    }
-  }
 
   //postproces results (use mbconvert to make VTK from output files)
   PostPocOnRefinedMesh post_proc(m_field);
@@ -301,7 +361,8 @@ int main(int argc, char *argv[]) {
 
     PetscPrintf(PETSC_COMM_WORLD,"Process step %d\n",sit->get_step_number());
     ierr = recorder_ptr->load_series_data("THEMP_SERIES",sit->get_step_number()); CHKERRQ(ierr);
-    ierr = m_field.set_local_VecCreateGhost(dm_name,ROW,T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    //ierr = m_field.set_local_VecCreateGhost(dm_name,ROW,T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    //ierr = m_field.set_global_VecCreateGhost(dm_name,ROW,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = m_field.loop_finite_elements(dm_name,"THERMAL_FE",post_proc); CHKERRQ(ierr);
     ostringstream o1;
     o1 << "out_thermal_" << sit->step_number << ".h5m";
@@ -309,12 +370,24 @@ int main(int argc, char *argv[]) {
 
   }
 
+  // save solution, if boundary conditions are defined you can use that file in mechanical problem
+  // to calulate thermal stresses
+  PetscBool is_partitioned = PETSC_FALSE;
+  ierr = PetscOptionsGetBool(PETSC_NULL,"-dm_is_partitioned",&is_partitioned,PETSC_NULL); CHKERRQ(ierr);
+  if(is_partitioned) {
+    rval = moab.write_file("solution.h5m"); CHKERR_PETSC(rval);
+  } else {
+    if(pcomm->rank()==0) {
+      rval = moab.write_file("solution.h5m"); CHKERR_PETSC(rval);
+    }
+  }
+
+
   ierr = MatDestroy(&A); CHKERRQ(ierr);
   ierr = VecDestroy(&T); CHKERRQ(ierr);
   ierr = VecDestroy(&F); CHKERRQ(ierr);
 
   ierr = TSDestroy(&ts); CHKERRQ(ierr);
-  ierr = DMDestroy(&dm); CHKERRQ(ierr);
 
   ierr = PetscFinalize(); CHKERRQ(ierr);
 
