@@ -353,14 +353,15 @@ PetscErrorCode FixBcAtEntities::preProcess() {
   PetscFunctionReturn(0);
 }
 
-  
+
+
 PetscErrorCode DirichletBCFromBlockSetFEMethodPreAndPostProc::iNitalize() {
   PetscFunctionBegin;
   if(map_zero_rows.empty()) {
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
     
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
-      if(it->get_Cubit_name().compare(0,14,blocksetName) == 0) {
+      if(it->get_Cubit_name().compare(0,blocksetName.length(),blocksetName) == 0) {
         vector<double> mydata;
         ierr = it->get_Cubit_attributes(mydata); CHKERRQ(ierr);
         for(int dim = 0;dim<3;dim++) {

@@ -30,7 +30,8 @@ volume all scheme Tetmesh
 volume all size auto factor 10
 mesh volume all 
  
-save as "/Users/zahur/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/moisture_transport/meshes/darceys_flow.cub" overwrite
+save as "/Users/zahur/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/moisture_transport/meshes/diffusion.cub" overwrite
+
 
 
 
