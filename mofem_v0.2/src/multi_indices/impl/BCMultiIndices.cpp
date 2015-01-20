@@ -189,6 +189,19 @@ PetscErrorCode CubitMeshSets::get_Cubit_msId_entities_by_dimension(Interface &mo
   }
   PetscFunctionReturn(0);
 }
+PetscErrorCode CubitMeshSets::get_Cubit_msId_entities_by_type(Interface &moab,const EntityType type,Range &entities,const bool recursive)  const {
+  PetscFunctionBegin;
+  ErrorCode rval;
+  //rval = moab.list_entity(meshset); CHKERR_PETSC(rval);
+  rval = moab.get_entities_by_type(meshset,type,entities,recursive); 
+  if(rval !=  MB_SUCCESS) {
+    ostringstream ss;
+    ss << "bc set " << *this << endl;
+    PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
+  }
+  CHKERR_PETSC(rval);
+  PetscFunctionReturn(0);
+}
 
 PetscErrorCode CubitMeshSets::get_Cubit_bc_data(vector<char>& bc_data) const {
   PetscFunctionBegin;
