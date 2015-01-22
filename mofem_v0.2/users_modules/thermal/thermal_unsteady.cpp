@@ -175,6 +175,9 @@ int main(int argc, char *argv[]) {
   ThermalElement::UpdateAndControl update_velocities(m_field,"TEMP","TEMP_RATE");
   ThermalElement::TimeSeriesMonitor monitor(m_field,"THEMP_SERIES","TEMP");
 
+  ierr = m_field.problem_basic_method_preProcess("THERMAL_PROBLEM",my_dirichlet_bc); CHKERRQ(ierr);
+  ierr = m_field.set_global_VecCreateGhost("THERMAL_PROBLEM",ROW,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+
   //preprocess
   ts_ctx.get_preProcess_to_do_IFunction().push_back(&update_velocities);
   ts_ctx.get_preProcess_to_do_IFunction().push_back(&my_dirichlet_bc);
