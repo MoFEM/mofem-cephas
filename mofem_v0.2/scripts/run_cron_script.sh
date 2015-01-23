@@ -1,5 +1,7 @@
 #!/bin/sh
 
+export LIBRARY_PATH=/opt/local_boost_1_54_0/lib
+
 if [ -e $HOME/tests_cephas.lock ]
 then
   echo "lock"

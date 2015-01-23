@@ -42,7 +42,14 @@ struct DisplacementBCFEMethodPreAndPostProc: public FEMethod {
   };
 
   DisplacementBCFEMethodPreAndPostProc(FieldInterface& _mField,const string &_field_name): 
-    mField(_mField),fieldName(_field_name) {}; 
+    mField(_mField),fieldName(_field_name) {
+    snes_B = PETSC_NULL;
+    snes_x = PETSC_NULL;
+    snes_f = PETSC_NULL;
+    ts_B = PETSC_NULL;
+    ts_u = PETSC_NULL;
+    ts_F = PETSC_NULL;
+  }; 
 
   PetscErrorCode ierr;
   ErrorCode rval;
@@ -50,7 +57,7 @@ struct DisplacementBCFEMethodPreAndPostProc: public FEMethod {
   map<DofIdx,FieldData> map_zero_rows;
   vector<int> dofsIndices;
   vector<double> dofsValues;
-
+  vector<double> dofsXValues;
   virtual PetscErrorCode iNitalize();
 
   PetscErrorCode preProcess();
@@ -110,6 +117,7 @@ struct FixBcAtEntities: public DisplacementBCFEMethodPreAndPostProc {
 
   PetscErrorCode iNitalize();
   PetscErrorCode preProcess();
+  PetscErrorCode postProcess();
 
 };
   
