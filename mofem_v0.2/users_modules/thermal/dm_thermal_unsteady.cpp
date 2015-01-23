@@ -34,7 +34,7 @@ using namespace std;
 namespace po = boost::program_options;
 
 
-#ifdef WITH_ADOL_C
+/*#ifdef WITH_ADOL_C
 
 #include <moab/AdaptiveKDTree.hpp>
 #include <moab/Skinner.hpp>
@@ -44,9 +44,9 @@ namespace po = boost::program_options;
 #include <GenricClimateModel.hpp>
 #include <GroundSurfaceTemerature.hpp>
 
-#endif //WITH_ADOL_C
+#endif //WITH_ADOL_C*/
 
-#ifdef __GROUNDSURFACETEMERATURE_HPP
+/*#ifdef __GROUNDSURFACETEMERATURE_HPP
 
 #include <time.h>
 extern "C" {
@@ -54,7 +54,7 @@ extern "C" {
 }
 #include <CrudeClimateModel.hpp>
 
-#endif // __GROUNDSURFACETEMERATURE_HPP
+#endif // __GROUNDSURFACETEMERATURE_HPP*/
 
 static char help[] = "...\n\n";
 
@@ -81,14 +81,14 @@ int main(int argc, char *argv[]) {
   }
 
   char time_data_file_for_ground_surface[255];
-  PetscBool ground_temperature_analys;
-  ierr = PetscOptionsGetString(PETSC_NULL,"-my_ground_analysis_data",
+  PetscBool ground_temperature_analys = PETSC_FALSE;
+  /*ierr = PetscOptionsGetString(PETSC_NULL,"-my_ground_analysis_data",
     time_data_file_for_ground_surface,255,&ground_temperature_analys); CHKERRQ(ierr);
   if(ground_temperature_analys) {
     #ifndef __GROUNDSURFACETEMERATURE_HPP
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR to do ground thermal analys MoFEM need to be complilet wiith ADOL-C");
     #endif // __GROUNDSURFACETEMERATURE_HPP
-  }
+  }*/
 
   DMType dm_name = "DMTHERMAL";
   ierr = DMRegister_MoFEM(dm_name); CHKERRQ(ierr);
@@ -247,9 +247,21 @@ int main(int argc, char *argv[]) {
 
   ierr = DMSetUp(dm); CHKERRQ(ierr);
 
-  TemperatureBCFEMethodPreAndPostProc dirichlet_bc(m_field,"TEMP",PETSC_NULL,PETSC_NULL,PETSC_NULL);
+  //create matrices
+  Vec T,F;
+  ierr = DMCreateGlobalVector_MoFEM(dm,&T); CHKERRQ(ierr);
+  ierr = VecDuplicate(T,&F); CHKERRQ(ierr);
+  Mat A;
+  ierr = DMCreateMatrix_MoFEM(dm,&A); CHKERRQ(ierr);
+
+  TemperatureBCFEMethodPreAndPostProc dirichlet_bc(m_field,"TEMP",A,T,F);
   ThermalElement::UpdateAndControl update_velocities(m_field,"TEMP","TEMP_RATE");
   ThermalElement::TimeSeriesMonitor monitor(m_field,"THEMP_SERIES","TEMP");
+
+  //Initialize data with values save of on the field
+  ierr = VecZeroEntries(T); CHKERRQ(ierr);
+  ierr = DMoFEMPreProcessFiniteElements(dm,&dirichlet_bc); CHKERRQ(ierr);
+  ierr = DMoFEMMeshToGlobalVector(dm,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
   //preprocess
   ierr = DMMoFEMTSSetIFunction(dm,DM_NO_ELEMENT,NULL,&update_velocities,NULL); CHKERRQ(ierr);
@@ -257,7 +269,6 @@ int main(int argc, char *argv[]) {
   ierr = DMMoFEMTSSetIJacobian(dm,DM_NO_ELEMENT,NULL,&dirichlet_bc,NULL); CHKERRQ(ierr);
   #ifdef __GROUNDSURFACETEMERATURE_HPP
   ierr = DMMoFEMTSSetIFunction(dm,DM_NO_ELEMENT,NULL,&exectuteGenericClimateModel,NULL); CHKERRQ(ierr);
-  ierr = DMMoFEMTSSetIJacobian(dm,DM_NO_ELEMENT,NULL,&exectuteGenericClimateModel,NULL); CHKERRQ(ierr);
   { // add preporcessor, calulating angle on which sun ray on the surface
     boost::ptr_vector<GroundSurfaceTemerature::SolarRadiationPreProcessor>::iterator it,hi_it;
     it = ground_surface.preProcessShade.begin();
@@ -300,17 +311,6 @@ int main(int argc, char *argv[]) {
   //add monitor opetator
   ts_ctx->get_postProcess_to_do_Monitor().push_back(&monitor);
 
-  //create matrices
-  Vec T,F;
-  ierr = DMCreateGlobalVector_MoFEM(dm,&T); CHKERRQ(ierr);
-  ierr = VecDuplicate(T,&F); CHKERRQ(ierr);
-  Mat A;
-  ierr = DMCreateMatrix_MoFEM(dm,&A); CHKERRQ(ierr);
-
-  //Initialize data with values save of on the field
-  ierr = m_field.set_local_VecCreateGhost(dm_name,ROW,T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGhostUpdateBegin(T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
   //create time solver
   TS ts;
