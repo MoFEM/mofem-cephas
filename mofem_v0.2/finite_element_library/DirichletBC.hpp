@@ -117,6 +117,7 @@ struct FixBcAtEntities: public DisplacementBCFEMethodPreAndPostProc {
 
   PetscErrorCode iNitalize();
   PetscErrorCode preProcess();
+  PetscErrorCode postProcess();
 
 };
   
