@@ -175,8 +175,10 @@ PetscErrorCode DisplacementBCFEMethodPreAndPostProc::postProcess() {
     break;
     case CTX_SNESSETFUNCTION: {
       if(snes_x != PETSC_NULL) {
-	dofsXValues.resize(dofsIndices.size());
-	ierr = VecGetValues(snes_x,dofsIndices.size(),&dofsIndices[0],&dofsXValues[0]); CHKERRQ(ierr);
+	if(dofsIndices.size()>0) {
+	  dofsXValues.resize(dofsIndices.size());
+	  ierr = VecGetValues(snes_x,dofsIndices.size(),&dofsIndices[0],&dofsXValues[0]); CHKERRQ(ierr);
+	}
 	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
 	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
       }
