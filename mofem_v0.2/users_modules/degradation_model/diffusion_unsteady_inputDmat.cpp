@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
+/* Copyright (C) 2015, Zahur Ullah (Zahur.Ullah AT glasgow.ac.uk)
  * --------------------------------------------------------------
  * FIXME: DESCRIPTION
  */
@@ -21,20 +21,14 @@
 
 #include <DirichletBC.hpp>
 #include <PotsProcOnRefMesh.hpp>
-#include <calculate_wt.hpp>
+#include <ThermalElement.hpp>
 
 #include <Projection10NodeCoordsOnField.hpp>
 
-#include <boost/iostreams/tee.hpp>
-#include <boost/iostreams/stream.hpp>
-#include <fstream>
-#include <iostream>
-
-namespace bio = boost::iostreams;
-using bio::tee_device;
-using bio::stream;
-
 using namespace MoFEM;
+#include <RVE_Diffusion_BlockSets.hpp>
+#include <MoistureTransportElement.hpp>
+
 
 static char help[] = "...\n\n";
 
@@ -76,20 +70,20 @@ int main(int argc, char *argv[]) {
   ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
 
   //Fields
-  ierr = m_field.add_field("Wt",H1,1); CHKERRQ(ierr);
-  ierr = m_field.add_field("Wt_RATE",H1,1); CHKERRQ(ierr);
+  ierr = m_field.add_field("CONC",H1,1); CHKERRQ(ierr);
+  ierr = m_field.add_field("CONC_RATE",H1,1); CHKERRQ(ierr);
 
   //Problem
-  ierr = m_field.add_problem("Wt_PROBLEM"); CHKERRQ(ierr);
+  ierr = m_field.add_problem("MOISTURE_PROBLEM"); CHKERRQ(ierr);
 
   //set refinment level for problem
-  ierr = m_field.modify_problem_ref_level_add_bit("Wt_PROBLEM",bit_level0); CHKERRQ(ierr);
+  ierr = m_field.modify_problem_ref_level_add_bit("MOISTURE_PROBLEM",bit_level0); CHKERRQ(ierr);
 
   //meshset consisting all entities in mesh
   EntityHandle root_set = moab.get_root_set(); 
   //add entities to field
-  ierr = m_field.add_ents_to_field_by_TETs(root_set,"Wt"); CHKERRQ(ierr);
-  ierr = m_field.add_ents_to_field_by_TETs(root_set,"Wt_RATE"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_TETs(root_set,"CONC"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_TETs(root_set,"CONC_RATE"); CHKERRQ(ierr);
 
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
@@ -98,26 +92,34 @@ int main(int argc, char *argv[]) {
   if(flg != PETSC_TRUE) {
     order = 1;
   }
-  ierr = m_field.set_field_order(root_set,MBTET,"Wt",order); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(root_set,MBTRI,"Wt",order); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(root_set,MBEDGE,"Wt",order); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(root_set,MBVERTEX,"Wt",1); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(root_set,MBTET,"CONC",order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(root_set,MBTRI,"CONC",order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(root_set,MBEDGE,"CONC",order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(root_set,MBVERTEX,"CONC",1); CHKERRQ(ierr);
 
-  ierr = m_field.set_field_order(root_set,MBTET,"Wt_RATE",order); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(root_set,MBTRI,"Wt_RATE",order); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(root_set,MBEDGE,"Wt_RATE",order); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(root_set,MBVERTEX,"Wt_RATE",1); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(root_set,MBTET,"CONC_RATE",order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(root_set,MBTRI,"CONC_RATE",order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(root_set,MBEDGE,"CONC_RATE",order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(root_set,MBVERTEX,"CONC_RATE",1); CHKERRQ(ierr);
 
-  Calculate_wt wt_elements(m_field);
-  if(m_field.check_field("TEMP")) {
-    cout<<"Temprature field exists "<< endl;
-    if(m_field.check_field("CONC")) {
-      cout<<"Concentration field exists "<< endl;
-      ierr = wt_elements.addWtElement("Wt_PROBLEM","Wt_FE","Wt","Wt_RATE","TEMP", "CONC"); CHKERRQ(ierr);
-    }
+  
+  //if the MESH_NODE_POSITIONS not exisits (this check is neccesary because if input of diffusion is output of thermal)
+  if(!(m_field.check_field("MESH_NODE_POSITIONS"))){
+    ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,3); CHKERRQ(ierr);
+    ierr = m_field.add_ents_to_field_by_TETs(root_set,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+    ierr = m_field.set_field_order(0,MBTET,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
+    ierr = m_field.set_field_order(0,MBTRI,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
+    ierr = m_field.set_field_order(0,MBEDGE,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
+    ierr = m_field.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
   }
-  
-  
+
+  MoistureTransportElement moisture_elements(m_field);
+  RVE_Diffusion_BlockSets RVE_diffusion_blockset(m_field, moisture_elements.setOfBlocks);
+  ierr = RVE_diffusion_blockset.addDiffusionElement("MOISTURE_PROBLEM","CONC"); CHKERRQ(ierr);
+  ierr = moisture_elements.addDiffusionFluxElement("MOISTURE_PROBLEM","CONC"); CHKERRQ(ierr);
+  //add rate of temerature to data field of finite element
+  ierr = m_field.modify_finite_element_add_field_data("DIFFUSION_FE","CONC_RATE"); CHKERRQ(ierr);
+
   /****/
   //build database
   //build field
@@ -128,24 +130,24 @@ int main(int argc, char *argv[]) {
   ierr = m_field.build_adjacencies(bit_level0); CHKERRQ(ierr);
   //build problem
   ierr = m_field.build_problems(); CHKERRQ(ierr);
-//
-//  Projection10NodeCoordsOnField ent_method_material(m_field,"MESH_NODE_POSITIONS");
-//  ierr = m_field.loop_dofs("MESH_NODE_POSITIONS",ent_method_material); CHKERRQ(ierr);
+
+  Projection10NodeCoordsOnField ent_method_material(m_field,"MESH_NODE_POSITIONS");
+  ierr = m_field.loop_dofs("MESH_NODE_POSITIONS",ent_method_material); CHKERRQ(ierr);
 
   /****/
   //mesh partitioning 
   //partition
-  ierr = m_field.partition_problem("Wt_PROBLEM"); CHKERRQ(ierr);
-  ierr = m_field.partition_finite_elements("Wt_PROBLEM"); CHKERRQ(ierr);
+  ierr = m_field.partition_problem("MOISTURE_PROBLEM"); CHKERRQ(ierr);
+  ierr = m_field.partition_finite_elements("MOISTURE_PROBLEM"); CHKERRQ(ierr);
   //what are ghost nodes, see Petsc Manual
-  ierr = m_field.partition_ghost_dofs("Wt_PROBLEM"); CHKERRQ(ierr);
+  ierr = m_field.partition_ghost_dofs("MOISTURE_PROBLEM"); CHKERRQ(ierr);
 
   Vec F;
-  ierr = m_field.VecCreateGhost("Wt_PROBLEM",ROW,&F); CHKERRQ(ierr);
+  ierr = m_field.VecCreateGhost("MOISTURE_PROBLEM",ROW,&F); CHKERRQ(ierr);
   Vec T;
   ierr = VecDuplicate(F,&T); CHKERRQ(ierr);
   Mat A;
-  ierr = m_field.MatCreateMPIAIJWithArrays("Wt_PROBLEM",&A); CHKERRQ(ierr);
+  ierr = m_field.MatCreateMPIAIJWithArrays("MOISTURE_PROBLEM",&A); CHKERRQ(ierr);
 
   ierr = VecZeroEntries(T); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -155,43 +157,27 @@ int main(int argc, char *argv[]) {
   ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = MatZeroEntries(A); CHKERRQ(ierr);
 
-  
-  
-  //Setting initial conditions for Wt (Degradaiton parameter) which is 1 at each node (for both field (Wt) and vector (T))
-  for(_IT_GET_DOFS_FIELD_BY_NAME_AND_TYPE_FOR_LOOP_(m_field,"Wt",MBVERTEX,dof)) {
-//    EntityHandle ent = dof->get_ent();
-//    ublas::vector<double> coords(3);
-//    rval = moab.get_coords(&ent,1,&coords[0]); CHKERR_PETSC(rval);
-//    cout<<"coords "<<coords<<endl;
-    dof->get_FieldData() = 1;
-  }
-  ierr = m_field.set_local_VecCreateGhost("Wt_PROBLEM",COL,T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-
-//  ierr = VecView(T,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-//  std::string wait;
-//  std::cin >> wait;
-
-  
-  
   //TS
-  TsCtx ts_ctx(m_field,"Wt_PROBLEM");
+  TsCtx ts_ctx(m_field,"MOISTURE_PROBLEM");
   TS ts;
   ierr = TSCreate(PETSC_COMM_WORLD,&ts); CHKERRQ(ierr);
   ierr = TSSetType(ts,TSBEULER); CHKERRQ(ierr);
-  
-  Calculate_wt::LoadTimeSeries load_series_data(m_field,"THEMP_SERIES","CONC_SERIES");
-  Calculate_wt::UpdateAndControl update_velocities(m_field,ts,"Wt","Wt_RATE");
-  Calculate_wt::TimeSeriesMonitor monitor(m_field,"Wt_SERIES","Wt");
+
+  DirichletBCFromBlockSetFEMethodPreAndPostProc my_dirichlet_bc(m_field,"CONC","MASS_CONC",A,T,F);
+  MoistureTransportElement::UpdateAndControl update_velocities(m_field,"CONC","CONC_RATE");
+  MoistureTransportElement::TimeSeriesMonitor monitor(m_field,"CONC_SERIES","CONC");
 
   //preprocess
-  ts_ctx.get_preProcess_to_do_IFunction().push_back(&load_series_data);
   ts_ctx.get_preProcess_to_do_IFunction().push_back(&update_velocities);
+  ts_ctx.get_preProcess_to_do_IFunction().push_back(&my_dirichlet_bc);
+  ts_ctx.get_preProcess_to_do_IJacobian().push_back(&my_dirichlet_bc);
 
   //and temperature element functions
-  ierr = wt_elements.setTimeSteppingProblem(ts_ctx,"Wt_FE","Wt","Wt_RATE","TEMP","CONC"); CHKERRQ(ierr);
+  ierr = moisture_elements.setTimeSteppingProblem(ts_ctx,"CONC","CONC_RATE"); CHKERRQ(ierr);
 
   //postprocess
-  ts_ctx.get_postProcess_to_do_IJacobian().push_back(&update_velocities);
+  ts_ctx.get_postProcess_to_do_IFunction().push_back(&my_dirichlet_bc);
+  ts_ctx.get_postProcess_to_do_IJacobian().push_back(&my_dirichlet_bc);
   ts_ctx.get_postProcess_to_do_Monitor().push_back(&monitor);
 
   ierr = TSSetIFunction(ts,F,f_TSSetIFunction,&ts_ctx); CHKERRQ(ierr);
@@ -203,16 +189,16 @@ int main(int argc, char *argv[]) {
   ierr = TSSetSolution(ts,T); CHKERRQ(ierr);
   ierr = TSSetFromOptions(ts); CHKERRQ(ierr);
 
-  SeriesRecorder *recorder_ptr;
+   SeriesRecorder *recorder_ptr;
   ierr = m_field.query_interface(recorder_ptr); CHKERRQ(ierr);
-  ierr = recorder_ptr->add_series_recorder("Wt_SERIES"); CHKERRQ(ierr);
-  ierr = recorder_ptr->initialize_series_recorder("Wt_SERIES"); CHKERRQ(ierr);
+  ierr = recorder_ptr->add_series_recorder("CONC_SERIES"); CHKERRQ(ierr);
+  ierr = recorder_ptr->initialize_series_recorder("CONC_SERIES"); CHKERRQ(ierr);
 
   ierr = TSSolve(ts,T); CHKERRQ(ierr);
   ierr = TSGetTime(ts,&ftime); CHKERRQ(ierr);
 
-  ierr = recorder_ptr->finalize_series_recorder("Wt_SERIES"); CHKERRQ(ierr);
-  
+  ierr = recorder_ptr->finalize_series_recorder("CONC_SERIES"); CHKERRQ(ierr);
+
   PetscInt steps,snesfails,rejects,nonlinits,linits;
   ierr = TSGetTimeStepNumber(ts,&steps); CHKERRQ(ierr);
   ierr = TSGetSNESFailures(ts,&snesfails); CHKERRQ(ierr);
@@ -221,35 +207,34 @@ int main(int argc, char *argv[]) {
   ierr = TSGetKSPIterations(ts,&linits); CHKERRQ(ierr);
 
   PetscPrintf(PETSC_COMM_WORLD,
-  "steps %D (%D rejected, %D SNES fails), ftime %g, nonlinits %D, linits %D\n",
-  steps,rejects,snesfails,ftime,nonlinits,linits);
+    "steps %D (%D rejected, %D SNES fails), ftime %g, nonlinits %D, linits %D\n",
+    steps,rejects,snesfails,ftime,nonlinits,linits);
 
   
-  //m_field.list_dofs_by_field_name("Wt");
+  //m_field.list_dofs_by_field_name("TEMP");
   if(pcomm->rank()==0) {
-    rval = moab.write_file("solution_wt.h5m"); CHKERR_PETSC(rval);
+    rval = moab.write_file("solution_mois.h5m"); CHKERR_PETSC(rval);
   }
 
-  
-  for(_IT_SERIES_STEPS_BY_NAME_FOR_LOOP_(recorder_ptr,"Wt_SERIES",sit)) {
+  for(_IT_SERIES_STEPS_BY_NAME_FOR_LOOP_(recorder_ptr,"CONC_SERIES",sit)) {
 
     PetscPrintf(PETSC_COMM_WORLD,"Process step %d\n",sit->get_step_number());
 
-    ierr = recorder_ptr->load_series_data("Wt_SERIES",sit->get_step_number()); CHKERRQ(ierr);
-    ierr = m_field.set_local_VecCreateGhost("Wt_PROBLEM",ROW,T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = recorder_ptr->load_series_data("CONC_SERIES",sit->get_step_number()); CHKERRQ(ierr);
+    ierr = m_field.set_local_VecCreateGhost("MOISTURE_PROBLEM",ROW,T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
-    ProjectionFieldOn10NodeTet ent_method_on_10nodeTet(m_field,"Wt",true,false,"Wt");
+    ProjectionFieldOn10NodeTet ent_method_on_10nodeTet(m_field,"CONC",true,false,"CONC");
     ent_method_on_10nodeTet.set_nodes = true;
-    ierr = m_field.loop_dofs("Wt",ent_method_on_10nodeTet); CHKERRQ(ierr);
+    ierr = m_field.loop_dofs("CONC",ent_method_on_10nodeTet); CHKERRQ(ierr);
     ent_method_on_10nodeTet.set_nodes = false;
-    ierr = m_field.loop_dofs("Wt",ent_method_on_10nodeTet); CHKERRQ(ierr);
+    ierr = m_field.loop_dofs("CONC",ent_method_on_10nodeTet); CHKERRQ(ierr);
 
     if(pcomm->rank()==0) {
       EntityHandle out_meshset;
       rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
-      ierr = m_field.problem_get_FE("Wt_PROBLEM","Wt_FE",out_meshset); CHKERRQ(ierr);
+      ierr = m_field.problem_get_FE("MOISTURE_PROBLEM","DIFFUSION_FE",out_meshset); CHKERRQ(ierr);
       ostringstream ss;
-      ss << "Wt_" << sit->step_number << ".vtk";
+      ss << "Conc_" << sit->step_number << ".vtk";
       rval = moab.write_file(ss.str().c_str(),"VTK","",&out_meshset,1); CHKERR_PETSC(rval);
       rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
     }

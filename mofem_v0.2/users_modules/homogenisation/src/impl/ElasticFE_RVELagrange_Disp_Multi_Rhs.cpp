@@ -36,6 +36,7 @@ namespace MoFEM {
   PetscErrorCode ElasticFE_RVELagrange_Disp_Multi_Rhs::postProcess() {
     PetscFunctionBegin;
     
+//    cout<<"Hi from  ElasticFE_RVELagrange_Disp_Multi_Rhs::postProcess "<<endl;
     switch(snes_ctx) {
       case CTX_SNESNONE: {
         ierr = MatAssemblyBegin(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
@@ -49,14 +50,16 @@ namespace MoFEM {
         ierr = VecAssemblyBegin(F3); CHKERRQ(ierr);
         ierr = VecAssemblyEnd(F3); CHKERRQ(ierr);
 
-        ierr = VecAssemblyBegin(F4); CHKERRQ(ierr);
-        ierr = VecAssemblyEnd(F4); CHKERRQ(ierr);
-
-        ierr = VecAssemblyBegin(F5); CHKERRQ(ierr);
-        ierr = VecAssemblyEnd(F5); CHKERRQ(ierr);
-
-        ierr = VecAssemblyBegin(F6); CHKERRQ(ierr);
-        ierr = VecAssemblyEnd(F6); CHKERRQ(ierr);
+        if(rank_field==3){ //This poriton will execute for mechanical problem (rank=3) only
+          ierr = VecAssemblyBegin(F4); CHKERRQ(ierr);
+          ierr = VecAssemblyEnd(F4); CHKERRQ(ierr);
+          
+          ierr = VecAssemblyBegin(F5); CHKERRQ(ierr);
+          ierr = VecAssemblyEnd(F5); CHKERRQ(ierr);
+          
+          ierr = VecAssemblyBegin(F6); CHKERRQ(ierr);
+          ierr = VecAssemblyEnd(F6); CHKERRQ(ierr);
+        }
 
       }
         break;
@@ -74,12 +77,16 @@ namespace MoFEM {
       default:
         SETERRQ(PETSC_COMM_SELF,1,"not implemented");
     }
+//    cout<<"End of  ElasticFE_RVELagrange_Disp_Multi_Rhs::postProcess "<<endl;
+
     PetscFunctionReturn(0);
   }
   
   //********************************************************************************
   //Calculate the right hand side vector, i.e. f=D_max * applied_strain and assemble it into the global force vector F
   PetscErrorCode ElasticFE_RVELagrange_Disp_Multi_Rhs::Rhs() {
+//    cout<<"Hi from  ElasticFE_RVELagrange_Disp_Multi_Rhs::Rhs "<<endl;
+
     PetscFunctionBegin;
     X_mat.resize(rank_field,1.5*rank_field+1.5);    X_mat.clear();
     nodes_coord.resize(3,3);
@@ -160,7 +167,6 @@ namespace MoFEM {
       }
       //cout<< " D_mat[rr] =  "<<D_mat[rr]<<endl<<endl;
       
-      applied_strain.resize(6);
       applied_strain.clear();
       applied_strain(0)=1.0;
 //      cout<<"applied_strain = "<<applied_strain<<endl;
@@ -169,7 +175,6 @@ namespace MoFEM {
 //      cout<<"Hello "<<endl;
 //      std::string wait;
 //      std::cin >> wait;
-
       applied_strain.clear();
       applied_strain(1)=1.0;
 //      cout<<"applied_strain = "<<applied_strain<<endl;
@@ -184,29 +189,31 @@ namespace MoFEM {
 //      cout<<"f = "<<f<<endl;
       ierr = VecSetValues(F3,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f.data())[0],ADD_VALUES); CHKERRQ(ierr);
 
-      applied_strain.clear();
-      applied_strain(3)=1.0;
-//      cout<<"applied_strain = "<<applied_strain<<endl;
-      f=prod(D_mat[rr], applied_strain);
-//      cout<<"f = "<<f<<endl;
-      ierr = VecSetValues(F4,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f.data())[0],ADD_VALUES); CHKERRQ(ierr);
-
-      applied_strain.clear();
-      applied_strain(4)=1.0;
-//      cout<<"applied_strain = "<<applied_strain<<endl;
-      f=prod(D_mat[rr], applied_strain);
-//      cout<<"f = "<<f<<endl;
-      ierr = VecSetValues(F5,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f.data())[0],ADD_VALUES); CHKERRQ(ierr);
-
-      applied_strain.clear();
-      applied_strain(5)=1.0;
-//      cout<<"applied_strain = "<<applied_strain<<endl;
-      f=prod(D_mat[rr], applied_strain);
-//      cout<<"f = "<<f<<endl;
-      ierr = VecSetValues(F6,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f.data())[0],ADD_VALUES); CHKERRQ(ierr);
+      if(rank_field==3){ //This poriton will execute for mechanical problem (rank=3) only
+        applied_strain.clear();
+        applied_strain(3)=1.0;
+        //      cout<<"applied_strain = "<<applied_strain<<endl;
+        f=prod(D_mat[rr], applied_strain);
+        //      cout<<"f = "<<f<<endl;
+        ierr = VecSetValues(F4,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f.data())[0],ADD_VALUES); CHKERRQ(ierr);
+        
+        applied_strain.clear();
+        applied_strain(4)=1.0;
+        //      cout<<"applied_strain = "<<applied_strain<<endl;
+        f=prod(D_mat[rr], applied_strain);
+        //      cout<<"f = "<<f<<endl;
+        ierr = VecSetValues(F5,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f.data())[0],ADD_VALUES); CHKERRQ(ierr);
+        
+        applied_strain.clear();
+        applied_strain(5)=1.0;
+        //      cout<<"applied_strain = "<<applied_strain<<endl;
+        f=prod(D_mat[rr], applied_strain);
+        //      cout<<"f = "<<f<<endl;
+        ierr = VecSetValues(F6,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f.data())[0],ADD_VALUES); CHKERRQ(ierr);
+      }
 
     }
-    
+//    cout<<"end of  ElasticFE_RVELagrange_Disp_Multi_Rhs::Rhs "<<endl;
     PetscFunctionReturn(0);
   }
   

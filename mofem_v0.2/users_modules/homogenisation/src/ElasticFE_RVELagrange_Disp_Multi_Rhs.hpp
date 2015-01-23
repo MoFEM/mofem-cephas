@@ -25,13 +25,23 @@ namespace MoFEM {
   struct ElasticFE_RVELagrange_Disp_Multi_Rhs: public ElasticFE_RVELagrange_Disp{
     
     ublas::vector<FieldData> _applied_strain;
+    
     Vec F1,F2,F3,F4,F5,F6;
     
+    //constructor for mechanical problem (rank=3)
     ElasticFE_RVELagrange_Disp_Multi_Rhs(FieldInterface& _mField,Mat &_Aij,Vec &_D,Vec& _F1,Vec& _F2,Vec& _F3,Vec& _F4,Vec& _F5,Vec& _F6,
-                                         const string& _field_main, const string& _field_lagrange, int _rank_field):
+                                         ublas::vector<FieldData> _applied_strain, const string& _field_main, const string& _field_lagrange, int _rank_field):
     ElasticFE_RVELagrange_Disp(_mField,_Aij, _D, _F1, _applied_strain, _field_main, _field_lagrange, _rank_field),F1(_F1),F2(_F2),F3(_F3),F4(_F4),F5(_F5),F6(_F6){};
     
-    PetscErrorCode postProcess();
+    
+    //constructor for thermal or moisture problem (rank=1)
+    ElasticFE_RVELagrange_Disp_Multi_Rhs(FieldInterface& _mField,Mat &_Aij,Vec &_D,Vec& _F1,Vec& _F2,Vec& _F3,
+                                         ublas::vector<FieldData> _applied_strain, const string& _field_main, const string& _field_lagrange, int _rank_field):
+    ElasticFE_RVELagrange_Disp(_mField,_Aij, _D, _F1, _applied_strain, _field_main, _field_lagrange, _rank_field),F1(_F1),F2(_F2),F3(_F3){};
+
+    
+    
+    virtual PetscErrorCode postProcess();
     virtual PetscErrorCode Rhs();
 
   };

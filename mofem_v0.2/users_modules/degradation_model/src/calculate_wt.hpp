@@ -438,46 +438,45 @@ namespace MoFEM {
     
     PetscErrorCode addWtElement(const string problem_name,const string fe_name,const string field_name,const string rate_name,const string thermal_field_name,
                                            const string conc_field_name, const string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
+
       PetscFunctionBegin;
       
       if(mField.check_field(thermal_field_name)) {
-        
-        PetscErrorCode ierr;
-        ErrorCode rval;
-        
-        ierr = mField.add_finite_element(fe_name,MF_ZERO); CHKERRQ(ierr);
-        ierr = mField.modify_finite_element_add_field_row(fe_name,field_name); CHKERRQ(ierr);
-        ierr = mField.modify_finite_element_add_field_col(fe_name,field_name); CHKERRQ(ierr);
-        ierr = mField.modify_finite_element_add_field_data(fe_name,field_name); CHKERRQ(ierr);
-        ierr = mField.modify_finite_element_add_field_data(fe_name, rate_name); CHKERRQ(ierr);
-        ierr = mField.modify_finite_element_add_field_data(fe_name,thermal_field_name); CHKERRQ(ierr);
-        ierr = mField.modify_finite_element_add_field_data(fe_name,conc_field_name); CHKERRQ(ierr);
-
-        if(mField.check_field(mesh_nodals_positions)) {
-          ierr = mField.modify_finite_element_add_field_data(fe_name,mesh_nodals_positions); CHKERRQ(ierr);
-        }
-        ierr = mField.modify_problem_add_finite_element(problem_name,fe_name); CHKERRQ(ierr);
-        
-        for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_MOISTURESET,it)) {
-//          Mat_Elastic mydata;
-//          ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
-//          setOfBlocks[it->get_msId()].youngModulus = mydata.data.Young;
-//          setOfBlocks[it->get_msId()].poissonRatio = mydata.data.Poisson;
-//          setOfBlocks[it->get_msId()].thermalExpansion = mydata.data.ThermalExpansion;
-          rval = mField.get_moab().get_entities_by_type(it->meshset,MBTET,setOfBlocks[it->get_msId()].tEts,true); CHKERR_PETSC(rval);
-          ierr = mField.add_ents_to_finite_element_by_TETs(setOfBlocks[it->get_msId()].tEts,fe_name); CHKERRQ(ierr);
+        if(mField.check_field(conc_field_name)) {
           
-          double saturation_conc;
-          PetscBool flg;
-          ierr = PetscOptionsGetReal(PETSC_NULL,"-my_saturation_conc",&saturation_conc,&flg); CHKERRQ(ierr);
-          if(flg == PETSC_TRUE) {
-            PetscPrintf(PETSC_COMM_WORLD,"set saturation concentration %3.2f\n",saturation_conc);
-            setOfBlocks[it->get_msId()].saturation_Conc = saturation_conc;
+          PetscErrorCode ierr;
+          ErrorCode rval;
+          
+          ierr = mField.add_finite_element(fe_name,MF_ZERO); CHKERRQ(ierr);
+          ierr = mField.modify_finite_element_add_field_row(fe_name,field_name); CHKERRQ(ierr);
+          ierr = mField.modify_finite_element_add_field_col(fe_name,field_name); CHKERRQ(ierr);
+          ierr = mField.modify_finite_element_add_field_data(fe_name,field_name); CHKERRQ(ierr);
+          ierr = mField.modify_finite_element_add_field_data(fe_name, rate_name); CHKERRQ(ierr);
+          ierr = mField.modify_finite_element_add_field_data(fe_name,thermal_field_name); CHKERRQ(ierr);
+          ierr = mField.modify_finite_element_add_field_data(fe_name,conc_field_name); CHKERRQ(ierr);
+          
+          if(mField.check_field(mesh_nodals_positions)) {
+            ierr = mField.modify_finite_element_add_field_data(fe_name,mesh_nodals_positions); CHKERRQ(ierr);
+          }
+          ierr = mField.modify_problem_add_finite_element(problem_name,fe_name); CHKERRQ(ierr);
+          
+          for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
+            if(it->get_Cubit_name().compare(0,17,"MAT_RVE_DIFFUSION") == 0){
+              rval = mField.get_moab().get_entities_by_type(it->meshset,MBTET,setOfBlocks[it->get_msId()].tEts,true); CHKERR_PETSC(rval);
+              ierr = mField.add_ents_to_finite_element_by_TETs(setOfBlocks[it->get_msId()].tEts,fe_name); CHKERRQ(ierr);
+              //reading saturation concentraiton from the command line (can be input from the CUBIT BLOCKSETS)
+              double saturation_conc;
+              PetscBool flg;
+              ierr = PetscOptionsGetReal(PETSC_NULL,"-my_saturation_conc",&saturation_conc,&flg); CHKERRQ(ierr);
+              if(flg == PETSC_TRUE) {
+                PetscPrintf(PETSC_COMM_WORLD,"set saturation concentration %3.2f\n",saturation_conc);
+                setOfBlocks[it->get_msId()].saturation_Conc = saturation_conc;
+              }
+
+            }
           }
         }
-        
       }
-      
       PetscFunctionReturn(0);
     }
     

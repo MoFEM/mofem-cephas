@@ -16,8 +16,44 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
+include_directories("${MoFEM_PROJECT_SOURCE_DIR}/users_modules/homogenisation/src")
+include_directories("${MoFEM_PROJECT_SOURCE_DIR}/users_modules/moisture_transport/src")
 include_directories("${MoFEM_PROJECT_SOURCE_DIR}/users_modules/degradation_model/src")
 
+
+# ===================== moisture transport homogenisaiton ============================================
+add_executable(MoistureTrans_Disp_MRhs ${UM_SOURCE_DIR}/degradation_model/MoistureTrans_Disp_MRhs.cpp)
+target_link_libraries(MoistureTrans_Disp_MRhs
+  mofem_finite_element_library mofem_finite_elements mofem_interfaces mofem_multi_indices mofem_petsc users_modules_obsolete user_modules_homogenisation
+  mofem_approx mofem_third_party mofem_cblas ${MoFEM_PROJECT_LIBS})
+
+# ===================== Diffusion unsteady ============================================
+add_executable(thermal_unsteady_inputDmat ${UM_SOURCE_DIR}/degradation_model/thermal_unsteady_inputDmat.cpp)
+target_link_libraries(thermal_unsteady_inputDmat
+  mofem_finite_element_library
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_third_party
+  mofem_cblas
+  ${MoFEM_PROJECT_LIBS})
+
+# ===================== Diffusion unsteady ============================================
+add_executable(diffusion_unsteady_inputDmat ${UM_SOURCE_DIR}/degradation_model/diffusion_unsteady_inputDmat.cpp)
+target_link_libraries(diffusion_unsteady_inputDmat
+  mofem_finite_element_library
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_third_party
+  mofem_cblas
+  ${MoFEM_PROJECT_LIBS})
+
+# ===================== Degredation ============================================
 add_executable(wt_unsteady_macro ${UM_SOURCE_DIR}/degradation_model/wt_unsteady_macro.cpp)
 target_link_libraries(wt_unsteady_macro
   mofem_finite_element_library
@@ -29,3 +65,5 @@ target_link_libraries(wt_unsteady_macro
   mofem_third_party
   mofem_cblas
   ${MoFEM_PROJECT_LIBS})
+
+

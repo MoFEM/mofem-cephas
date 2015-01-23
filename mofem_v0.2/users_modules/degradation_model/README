@@ -1,13 +1,25 @@
 Steps
 ==================================================================
-1. Run thermal_unsteady save output as solution.h5m and out_.vtk
-2. Run moisture_unsteady save output as solution_mois.h5m and and Conc_.vtk
+1. homogenisation of thermal RVE            (save output to thermal_Dmat.out binary file)
+2. homogenisation of moisture diffusion RVE (save output to diffusion_Dmat.out binary file)
+
+1. Run thermal_unsteady save output as solution.h5m and out_.vtk (conductivity for this is read from thermal_Dmat.out)
+2. Run moisture_unsteady save output as solution_mois.h5m and and Conc_.vtk (diffusivity for this is read from diffusion_Dmat.out )
 3. Run calculate_wt
+
+
+
+Example computational homogenisation for moisture transport
+(Here both MoistureTrans_Disp_MRhs is used for both thermal and diffusion problem)
+============================================================
+make && mpirun -np 1 ./MoistureTrans_Disp_MRhs -my_file ../users_modules/degradation_model/meshes/RVE_Cube_moisture.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_output_file_Dmat diffusion_Dmat.out -my_order 1
+
+make && mpirun -np 1 ./MoistureTrans_Disp_MRhs -my_file ../users_modules/degradation_model/meshes/RVE_Cube_thermal.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_output_file_Dmat thermal_Dmat.out -my_order 1
 
 
 Unsteady thermal macro problem
 ============================================================
-mpirun -np 1 ./../thermal/thermal_unseady \
+make thermal_unsteady_inputDmat && mpirun -np 1 ./thermal_unsteady_inputDmat \
 -my_file ../users_modules/degradation_model/meshes/macro.cub \
   -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor \
   -snes_type newtonls -snes_linesearch_type basic -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 -snes_monitor \
@@ -17,7 +29,7 @@ mpirun -np 1 ./../thermal/thermal_unseady \
 
 Unsteady moisture macro problem
 ============================================================
-mpirun -np 1 ./../moisture_transport/diffusion_unsteady \
+make diffusion_unsteady_inputDmat && mpirun -np 1 ./diffusion_unsteady_inputDmat \
 -my_file solution.h5m \
   -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor \
   -snes_type newtonls -snes_linesearch_type basic -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 -snes_monitor \
@@ -27,7 +39,7 @@ mpirun -np 1 ./../moisture_transport/diffusion_unsteady \
 
 calculate_wt
 ============================================================
-make && mpirun -np 1 ./wt_unsteady_macro \
+make wt_unsteady_macro && mpirun -np 1 ./wt_unsteady_macro \
 -my_file solution_mois.h5m \
   -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor \
   -snes_type newtonls -snes_linesearch_type basic -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 -snes_monitor \
