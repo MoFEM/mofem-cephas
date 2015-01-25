@@ -216,7 +216,7 @@ struct GroundSurfaceTemerature {
       double h_conv2 = -rhoCp*Cnc*A*(T-time_data_ptr->Ta);
       return h_conv1+h_conv2;
     } else {
-      double A = pow(1,0.33);
+      double A = 0.835+0.165*pow(delta_phi,2);
       double h_conv2 = -rhoCp*Cnc*A*(T-time_data_ptr->Ta);
       return h_conv1+h_conv2;
     }
@@ -241,15 +241,17 @@ struct GroundSurfaceTemerature {
     double Tv = time_data_ptr->calculateAbsoluteVirtualTempertaure(T,time_data_ptr->Td,time_data_ptr->P);
     double Tv_a = time_data_ptr->calculateAbsoluteVirtualTempertaure(time_data_ptr->Ta,time_data_ptr->Td,time_data_ptr->P);
     double delta_phi = Tv - Tv_a;
-    if(delta_phi>1) {
+    if(fabs(delta_phi)>1) {
       double A = pow(fabs(delta_phi),0.33);
       double Tv_dT = time_data_ptr->calculateAbsoluteVirtualTempertaure_dT(T,time_data_ptr->Td,time_data_ptr->P);
-      double A_dT = 0.33*copysign(1,delta_phi)*Tv_dT/pow(fabs(delta_phi),0.67);
+      double A_dT = copysign(1,delta_phi)*Tv_dT*0.33/pow(fabs(delta_phi),0.67);
       double h_conv2_dT = -( rhoCp*Cnc*A_dT*(T-time_data_ptr->Ta)+rhoCp*Cnc*A );
       return h_conv1_dT+h_conv2_dT;
     } else {
-      double A = pow(1,0.33);
-      double h_conv2_dT = -( rhoCp*Cnc*A );
+      double A = 0.835+0.165*pow(delta_phi,2);
+      double Tv_dT = time_data_ptr->calculateAbsoluteVirtualTempertaure_dT(T,time_data_ptr->Td,time_data_ptr->P);
+      double A_dT = 2*0.165*delta_phi*Tv_dT;
+      double h_conv2_dT = -( rhoCp*Cnc*A_dT*(T-time_data_ptr->Ta)+rhoCp*Cnc*A );
       return h_conv1_dT+h_conv2_dT;
     }
     return h_conv1_dT;
@@ -558,7 +560,7 @@ struct GroundSurfaceTemerature {
       PetscErrorCode ierr;
 
       if(type == MBVERTEX) {
-	ierr = getExposure(); CHKERRQ(ierr);
+	//ierr = getExposure(); CHKERRQ(ierr);
       }
   
       const FENumeredDofMoFEMEntity *dof_ptr;
@@ -660,6 +662,10 @@ struct GroundSurfaceTemerature {
 
         int nb_row = row_data.getN().size2();
         int nb_col = col_data.getN().size2();
+
+	if(row_type == MBVERTEX) {
+	  //ierr = getExposure(); CHKERRQ(ierr);
+	}
 
         NN.resize(nb_row,nb_col);
 	NN.clear();

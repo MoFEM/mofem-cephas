@@ -222,14 +222,14 @@ int main(int argc, char *argv[]) {
     //cerr << mit->first << endl;
     //cerr << block_data[mit->first].cOnductivity  << " " << block_data[mit->first].cApacity << endl;
     if(block_data[mit->first].cOnductivity != -1) {
+      PetscPrintf(PETSC_COMM_WORLD,"Set block %d heat conductivity to %3.2e\n",
+	mit->first,block_data[mit->first].cOnductivity);
       for(int dd = 0;dd<3;dd++) {
-	PetscPrintf(PETSC_COMM_WORLD,"Set block %d heat conductivity to %3.2f\n",
-	  mit->first,block_data[mit->first].cOnductivity);
 	mit->second.cOnductivity_mat(dd,dd) = block_data[mit->first].cOnductivity;
       }
     }
     if(block_data[mit->first].cApacity != -1) {
-      PetscPrintf(PETSC_COMM_WORLD,"Set block %d heat capacity to %3.2f\n",
+      PetscPrintf(PETSC_COMM_WORLD,"Set block %d heat capacity to %3.2e\n",
 	mit->first,block_data[mit->first].cApacity);
       mit->second.cApacity = block_data[mit->first].cApacity;
     }
@@ -310,9 +310,9 @@ int main(int argc, char *argv[]) {
     boost::ptr_vector<GroundSurfaceTemerature::SolarRadiationPreProcessor>::iterator it,hi_it;
     it = ground_surface.preProcessShade.begin();
     hi_it = ground_surface.preProcessShade.end();
-    for(;it!=hi_it;it++) {
-      ierr = DMMoFEMTSSetIFunction(dm,DM_NO_ELEMENT,NULL,&*it,NULL); CHKERRQ(ierr);
-    }
+    //for(;it!=hi_it;it++) {
+      //ierr = DMMoFEMTSSetIFunction(dm,DM_NO_ELEMENT,NULL,&*it,NULL); CHKERRQ(ierr);
+    //}
   }
   #endif //__GROUNDSURFACETEMERATURE_HPP
 
