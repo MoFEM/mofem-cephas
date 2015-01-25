@@ -51,17 +51,9 @@ target_link_libraries(thermal_unseady
   mofem_cblas
   ${MoFEM_PROJECT_LIBS})
 
-if(ADOL-C_LIBRARY)
-
-  add_executable(dm_thermal_unseady 
-    ${UM_SOURCE_DIR}/thermal/dm_thermal_unsteady.cpp
-    ${UM_SOURCE_DIR}/ground_surface_temperature/third_party/spa.c)
-
-else(ADOL-C_LIBRARY) 
-
-  add_executable(dm_thermal_unseady ${UM_SOURCE_DIR}/thermal/dm_thermal_unsteady.cpp)
-
-endif(ADOL-C_LIBRARY)
+add_executable(dm_thermal_unseady 
+  ${UM_SOURCE_DIR}/thermal/dm_thermal_unsteady.cpp
+  ${UM_SOURCE_DIR}/ground_surface_temperature/third_party/spa.c)
 
 target_link_libraries(dm_thermal_unseady 
   mofem_finite_element_library
