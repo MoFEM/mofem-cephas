@@ -297,7 +297,15 @@ PetscErrorCode CoreTemplates::create_Mat(
     PetscInt nb_local_dofs_col = p_miit->get_nb_local_dofs_col();
     ierr = ::MatCreateMPIAIJWithArrays(PETSC_COMM_WORLD,nb_local_dofs_row,nb_local_dofs_col,nb_row_dofs,nb_col_dofs,*_i,*_j,PETSC_NULL,M); CHKERRQ(ierr);
   } else if(strcmp(type,MATAIJ)==0) {
-    SETERRQ(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,"not implemented");
+    if(i.size()-1 != (unsigned int)nb_loc_row_from_iterators) {
+	SETERRQ(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,"data inconsistency");
+    }
+    PetscInt nb_local_dofs_row = p_miit->get_nb_local_dofs_row();
+    if((unsigned int)nb_local_dofs_row!=i.size()-1) {
+	SETERRQ(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,"data inconsistency");
+    }
+    PetscInt nb_local_dofs_col = p_miit->get_nb_local_dofs_col();
+    ierr = ::MatCreateSeqAIJWithArrays(PETSC_COMM_SELF,nb_local_dofs_row,nb_local_dofs_col,*_i,*_j,PETSC_NULL,M); CHKERRQ(ierr);
   } else {
     SETERRQ(PETSC_COMM_SELF,PETSC_ERR_ARG_NULL,"not implemented");
   }
@@ -323,7 +331,7 @@ PetscErrorCode Core::MatCreateSeqAIJWithArrays(const string &name,Mat *Aij,Petsc
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   CoreTemplates *core_ptr = static_cast<CoreTemplates*>(const_cast<Core*>(this));
-  ierr = core_ptr->create_Mat<PetscGlobalIdx_mi_tag>(name,Aij,MATAIJ,i,j,v,false,verb); CHKERRQ(ierr);
+  ierr = core_ptr->create_Mat<PetscLocalIdx_mi_tag>(name,Aij,MATAIJ,i,j,v,false,verb); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -336,7 +344,7 @@ PetscErrorCode Core::partition_problem(const string &name,int verb) {
   if(!(*build_MoFEM&(1<<3))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"moFEMProblems not build");
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(verb>0) {
-    PetscPrintf(PETSC_COMM_WORLD,"Partition problem %s\n",name.c_str());
+    PetscPrintf(cOmm,"Partition problem %s\n",name.c_str());
   }
   typedef NumeredDofMoFEMEntity_multiIndex::index<Idx_mi_tag>::type NumeredDofMoFEMEntitys_by_idx;
   typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type moFEMProblems_by_name;
@@ -348,7 +356,7 @@ PetscErrorCode Core::partition_problem(const string &name,int verb) {
   int *i,*j;
   Mat Adj;
   if(verb>1) {
-    PetscPrintf(PETSC_COMM_WORLD,"\tcreate Adj matrix\n");
+    PetscPrintf(cOmm,"\tcreate Adj matrix\n");
   }
   try {
     CoreTemplates *core_ptr = static_cast<CoreTemplates*>(const_cast<Core*>(this));
@@ -361,7 +369,7 @@ PetscErrorCode Core::partition_problem(const string &name,int verb) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }
   if(verb>1) {
-    PetscPrintf(PETSC_COMM_WORLD,"\t<- done\n");
+    PetscPrintf(cOmm,"\t<- done\n");
   }
   int m,n;
   ierr = MatGetSize(Adj,&m,&n); CHKERRQ(ierr);
@@ -371,7 +379,7 @@ PetscErrorCode Core::partition_problem(const string &name,int verb) {
   //partitioning
   MatPartitioning part;
   IS is;
-  ierr = MatPartitioningCreate(PARTITIONING_MPIADJ_COMM,&part); CHKERRQ(ierr);
+  ierr = MatPartitioningCreate(cOmm,&part); CHKERRQ(ierr);
   ierr = MatPartitioningSetAdjacency(part,Adj); CHKERRQ(ierr);
   ierr = MatPartitioningSetFromOptions(part); CHKERRQ(ierr);
   ierr = MatPartitioningSetNParts(part,pcomm->size()); CHKERRQ(ierr);
@@ -410,7 +418,7 @@ PetscErrorCode Core::partition_problem(const string &name,int verb) {
   NumeredDofMoFEMEntitys_by_idx::iterator miit_dofs_row = dofs_row_by_idx_no_const.begin();
   NumeredDofMoFEMEntitys_by_idx::iterator miit_dofs_col = dofs_col_by_idx_no_const.begin();
   if(verb>1) {
-    PetscPrintf(PETSC_COMM_WORLD,"\tloop problem dofs");
+    PetscPrintf(cOmm,"\tloop problem dofs");
   }
   try {
   for(;miit_dofs_row!=dofs_row_by_idx_no_const.end();miit_dofs_row++,miit_dofs_col++) {
@@ -454,7 +462,7 @@ PetscErrorCode Core::partition_problem(const string &name,int verb) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }
   if(verb>1) {
-    PetscPrintf(PETSC_COMM_WORLD," <- done\n");
+    PetscPrintf(cOmm," <- done\n");
   }
   if(verbose>0) {
     ostringstream ss;
@@ -462,8 +470,8 @@ PetscErrorCode Core::partition_problem(const string &name,int verb) {
 	<< " Nb. local dof " << p_miit->get_nb_local_dofs_row() << " nb global row dofs " << p_miit->get_nb_dofs_row() << endl;
     ss << "partition_problem: rank = " << pcomm->rank() << " FEs col ghost dofs " << *p_miit 
 	<< " Nb. local dof " << p_miit->get_nb_local_dofs_col() << " nb global col dofs " << p_miit->get_nb_dofs_col() << endl;
-    PetscSynchronizedPrintf(PETSC_COMM_WORLD,ss.str().c_str());
-    PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT); 
+    PetscSynchronizedPrintf(cOmm,ss.str().c_str());
+    PetscSynchronizedFlush(cOmm,PETSC_STDOUT); 
   }
   if(verb>2) {
     ostringstream ss;
@@ -479,8 +487,8 @@ PetscErrorCode Core::partition_problem(const string &name,int verb) {
     for(;miit_dd_col!=p_miit->numered_dofs_cols.end();miit_dd_col++) {
 	ss<<*miit_dd_col<<endl;
     }
-    PetscSynchronizedPrintf(PETSC_COMM_WORLD,ss.str().c_str());
-    PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT); 
+    PetscSynchronizedPrintf(cOmm,ss.str().c_str());
+    PetscSynchronizedFlush(cOmm,PETSC_STDOUT); 
   }
   ierr = ISRestoreIndices(is_gather,&part_number);  CHKERRQ(ierr);
   ierr = ISRestoreIndices(is_gather_num,&petsc_idx);  CHKERRQ(ierr);
