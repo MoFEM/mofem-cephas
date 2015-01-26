@@ -104,7 +104,7 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
     ierr = m_field_ref.seed_ref_level_3D(0,BitRefLevel().set(0)); CHKERRQ(ierr);
 
     for(int ll = 0;ll<max_level;ll++) {
-      PetscPrintf(PETSC_COMM_WORLD,"Refine Level %d\n",ll);
+      PetscPrintf(mField.get_comm(),"Refine Level %d\n",ll);
       Range edges;
       ierr = m_field_ref.get_entities_by_type_and_ref_level(BitRefLevel().set(ll),BitRefLevel().set(),MBEDGE,edges); CHKERRQ(ierr);
       Range tets;
@@ -553,7 +553,7 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
     ParallelComm* pcomm_post_proc_mesh = ParallelComm::get_pcomm(&postProcMesh,MYPCOMM_INDEX);
     if(pcomm_post_proc_mesh == NULL) {
-      pcomm_post_proc_mesh = new ParallelComm(&postProcMesh,PETSC_COMM_WORLD);
+      pcomm_post_proc_mesh = new ParallelComm(&postProcMesh,mField.get_comm());
     }
 
     Range edges;

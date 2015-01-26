@@ -142,6 +142,8 @@ Core::Core(Interface& _moab,MPI_Comm _comm,int _verbose):
 
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,comm);
+  MPI_Comm_size(comm,&sIze);
+  MPI_Comm_rank(comm,&rAnk);
 
   const EntityHandle root_meshset = moab.get_root_set();
   if(verbose>0) {

@@ -539,6 +539,9 @@ struct Core:
   PetscLogEvent USER_EVENT_postProcess;
   PetscLogEvent USER_EVENT_createMat;
 
+  //
+  int sIze,rAnk;
+
 };
 
 }

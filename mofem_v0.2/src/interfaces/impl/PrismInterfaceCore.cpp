@@ -558,8 +558,7 @@ PetscErrorCode Core::get_msId_3dENTS_split_sides(
       case MBEDGE: {
 	  rval = moab.get_adjacencies(new_conn,2,1,false,new_ent); CHKERR_PETSC(rval);
 	  if(new_ent.size()!=1) {
-	    ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
-	    if(pcomm->rank()==0) {
+	    if(rAnk==0) {
 	      EntityHandle out_meshset;
 	      rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
 	      rval = moab.add_entities(out_meshset,&*eit,1); CHKERR_PETSC(rval);

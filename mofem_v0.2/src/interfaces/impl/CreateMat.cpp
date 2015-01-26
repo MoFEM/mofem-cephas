@@ -59,10 +59,6 @@ PetscErrorCode CoreTemplates::create_Mat(
   PetscFunctionBegin;
   PetscLogEventBegin(USER_EVENT_createMat,0,0,0,0);
   if(verb==-1) verb = verbose;
-  int size;
-  MPI_Comm_size(comm,&size);
-  int rank;
-  MPI_Comm_rank(comm,&rank);
   typedef typename boost::multi_index::index<NumeredDofMoFEMEntity_multiIndex,Tag>::type NumeredDofMoFEMEntitys_by_idx;
   typedef MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_multiIndex::index<Unique_mi_tag>::type adj_by_ent;
   //find p_miit
@@ -101,8 +97,8 @@ PetscErrorCode CoreTemplates::create_Mat(
 	  distance(miit_row,hi_miit_row),rend,rstart,rend-rstart);
     }
   } else {
-    miit_row = dofs_row_by_idx.lower_bound(rank);
-    hi_miit_row = dofs_row_by_idx.upper_bound(rank);
+    miit_row = dofs_row_by_idx.lower_bound(rAnk);
+    hi_miit_row = dofs_row_by_idx.upper_bound(rAnk);
     //get adjacent nodes on other partitions
     vector<int> dofs_vec;
     MoFEMEntity *mofem_ent_ptr = NULL;
@@ -333,10 +329,6 @@ PetscErrorCode Core::partition_problem(const string &name,int verb) {
   if(!(*build_MoFEM&(1<<1))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"FEs not build");
   if(!(*build_MoFEM&(1<<2))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"entFEAdjacencies not build");
   if(!(*build_MoFEM&(1<<3))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"moFEMProblems not build");
-  int size;
-  MPI_Comm_size(comm,&size);
-  int rank;
-  MPI_Comm_rank(comm,&rank);
   if(verb>0) {
     PetscPrintf(comm,"Partition problem %s\n",name.c_str());
   }
@@ -376,7 +368,7 @@ PetscErrorCode Core::partition_problem(const string &name,int verb) {
   ierr = MatPartitioningCreate(comm,&part); CHKERRQ(ierr);
   ierr = MatPartitioningSetAdjacency(part,Adj); CHKERRQ(ierr);
   ierr = MatPartitioningSetFromOptions(part); CHKERRQ(ierr);
-  ierr = MatPartitioningSetNParts(part,size); CHKERRQ(ierr);
+  ierr = MatPartitioningSetNParts(part,sIze); CHKERRQ(ierr);
   ierr = MatPartitioningApply(part,&is); CHKERRQ(ierr);
   if(verb>2) {
     ISView(is,PETSC_VIEWER_STDOUT_WORLD);
@@ -435,7 +427,7 @@ PetscErrorCode Core::partition_problem(const string &name,int verb) {
     if(!success) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
     }
-    if(miit_dofs_row->part == rank) {
+    if(miit_dofs_row->part == rAnk) {
       assert(miit_dofs_row->part==miit_dofs_col->part);
       assert(miit_dofs_row->petsc_gloabl_dof_idx==miit_dofs_col->petsc_gloabl_dof_idx);
       success = dofs_row_by_idx_no_const.modify(miit_dofs_row,NumeredDofMoFEMEntity_local_idx_change(nb_row_local_dofs++));
@@ -460,22 +452,22 @@ PetscErrorCode Core::partition_problem(const string &name,int verb) {
   }
   if(verbose>0) {
     ostringstream ss;
-    ss << "partition_problem: rank = " << rank << " FEs row ghost dofs "<< *p_miit 
+    ss << "partition_problem: rank = " << rAnk << " FEs row ghost dofs "<< *p_miit 
 	<< " Nb. local dof " << p_miit->get_nb_local_dofs_row() << " nb global row dofs " << p_miit->get_nb_dofs_row() << endl;
-    ss << "partition_problem: rank = " << rank << " FEs col ghost dofs " << *p_miit 
+    ss << "partition_problem: rank = " << rAnk << " FEs col ghost dofs " << *p_miit 
 	<< " Nb. local dof " << p_miit->get_nb_local_dofs_col() << " nb global col dofs " << p_miit->get_nb_dofs_col() << endl;
     PetscSynchronizedPrintf(comm,ss.str().c_str());
     PetscSynchronizedFlush(comm,PETSC_STDOUT); 
   }
   if(verb>2) {
     ostringstream ss;
-    ss << "rank = " << rank << " FEs row dofs "<< *p_miit << " Nb. row dof " << p_miit->get_nb_dofs_row() 
+    ss << "rank = " << rAnk << " FEs row dofs "<< *p_miit << " Nb. row dof " << p_miit->get_nb_dofs_row() 
 	<< " Nb. local dof " << p_miit->get_nb_local_dofs_row() << endl;
     NumeredDofMoFEMEntity_multiIndex::iterator miit_dd_row = p_miit->numered_dofs_rows.begin();
     for(;miit_dd_row!=p_miit->numered_dofs_rows.end();miit_dd_row++) {
 	ss<<*miit_dd_row<<endl;
     }
-    ss << "rank = " << rank << " FEs col dofs "<< *p_miit << " Nb. col dof " << p_miit->get_nb_dofs_col() 
+    ss << "rank = " << rAnk << " FEs col dofs "<< *p_miit << " Nb. col dof " << p_miit->get_nb_dofs_col() 
 	<< " Nb. local dof " << p_miit->get_nb_local_dofs_col() << endl;
     NumeredDofMoFEMEntity_multiIndex::iterator miit_dd_col = p_miit->numered_dofs_cols.begin();
     for(;miit_dd_col!=p_miit->numered_dofs_cols.end();miit_dd_col++) {
@@ -498,10 +490,10 @@ PetscErrorCode Core::partition_problem(const string &name,int verb) {
       dit = p_miit->numered_dofs_rows.get<Idx_mi_tag>().begin();
       hi_dit = p_miit->numered_dofs_rows.get<Idx_mi_tag>().end();
       for(;dit!=hi_dit;dit++) {
-	if(dit->get_part()==rank) {
+	if(dit->get_part()==rAnk) {
 	  if(dit->get_petsc_local_dof_idx()<0) {
 	    ostringstream ss;
-	    ss << "rank " << rank << " " << *dit;
+	    ss << "rank " << rAnk << " " << *dit;
 	    SETERRQ1(PETSC_COMM_SELF,1,"local dof index for row not set\n %s",ss.str().c_str());
 	  }
 	}
@@ -509,10 +501,10 @@ PetscErrorCode Core::partition_problem(const string &name,int verb) {
       dit = p_miit->numered_dofs_cols.get<Idx_mi_tag>().begin();
       hi_dit = p_miit->numered_dofs_cols.get<Idx_mi_tag>().end();
       for(;dit!=hi_dit;dit++) {
-	if(dit->get_part()==rank) {
+	if(dit->get_part()==rAnk) {
 	  if(dit->get_petsc_local_dof_idx()<0) {
 	    ostringstream ss;
-	    ss << "rank " << rank << " " << *dit;
+	    ss << "rank " << rAnk << " " << *dit;
 	    SETERRQ1(PETSC_COMM_SELF,1,"local dof index for col not set\n %s",ss.str().c_str());
 	  }
 	}
@@ -653,9 +645,6 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const string &problem_name,i
   ierr = MatSetOption(A,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_TRUE);  CHKERRQ(ierr);
   TestMatrixFillIn method(this,A);
 
-  int size;
-  MPI_Comm_size(comm,&size);
-
   typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type moFEMProblems_by_name;
   //find p_miit
   moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<Problem_mi_tag>();
@@ -674,7 +663,7 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const string &problem_name,i
       PetscPrintf(comm,"\tcheck element %s\n",fe->get_name().c_str());
     }
 
-    ierr = loop_finite_elements(problem_name,fe->get_name(),method,0,size,verb);  CHKERRQ(ierr);
+    ierr = loop_finite_elements(problem_name,fe->get_name(),method,0,sIze,verb);  CHKERRQ(ierr);
 
   }
 

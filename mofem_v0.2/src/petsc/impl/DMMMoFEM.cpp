@@ -396,10 +396,6 @@ PetscErrorCode DMSetUp_MoFEM(DM dm) {
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;
-  dm_field->pComm = ParallelComm::get_pcomm(&dm_field->mField_ptr->get_moab(),MYPCOMM_INDEX);
-  if(dm_field->pComm == NULL) {
-    dm_field->pComm =  new ParallelComm(&dm_field->mField_ptr->get_moab(),PETSC_COMM_WORLD);
-  }
   if(dm_field->isPartitioned) {
     if(!dm_field->isPartitioned) {
       ierr = dm_field->mField_ptr->build_partitioned_problems(); CHKERRQ(ierr);

@@ -138,9 +138,8 @@ PetscErrorCode Core::VecScatterCreate(Vec xin,string &x_problem,RowColData x_rc,
      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
   }
   vector<int> idx(0),idy(0);
-  ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   for(;y_dit!=hi_y_dit;y_dit++) {
-    if(y_dit->get_part()!=pcomm->rank()) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+    if(y_dit->get_part()!=rAnk) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
     dofs_by_uid::iterator x_dit;
     x_dit = x_numered_dofs_by_uid->find(y_dit->get_global_unique_id());
     if(x_dit==x_numered_dofs_by_uid->end()) continue;
@@ -228,7 +227,6 @@ PetscErrorCode Core::set_local_VecCreateGhost(const MoFEMProblem *problem_ptr,Ro
 }
 PetscErrorCode Core::set_local_VecCreateGhost(const string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) {
   PetscFunctionBegin;
-  //ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type moFEMProblems_by_name;
   moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<Problem_mi_tag>();
   moFEMProblems_by_name::iterator p_miit = moFEMProblems_set.find(name);
@@ -401,7 +399,6 @@ PetscErrorCode Core::set_other_global_VecCreateGhost(
   int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-  ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type moFEMProblems_by_name;
   typedef NumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type dofs_by_name;
   moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<Problem_mi_tag>();
@@ -512,7 +509,6 @@ PetscErrorCode Core::set_other_global_VecCreateGhost(
     break;
     case SCATTER_FORWARD: {
 	for(;miit!=hi_miit;miit++) {
-	  if(pcomm->rank()!=miit->get_part()) continue;
 	  DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>::type::iterator diiiit;
 	  diiiit = dofsMoabField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().find(boost::make_tuple(cpy_field_name,miit->get_ent(),miit->get_EntDofIdx()));
 	  if(diiiit==dofsMoabField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().end()) {

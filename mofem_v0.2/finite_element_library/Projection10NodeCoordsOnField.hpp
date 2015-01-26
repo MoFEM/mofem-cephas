@@ -60,7 +60,7 @@ struct Projection10NodeCoordsOnField: public EntMethod {
       rval = mField.get_moab().get_coords(&node,1,&*coords.data().begin());  CHKERR(rval);
       dofPtr->get_FieldData() = coords[dofPtr->get_dof_rank()];
       if(vErbose>0) {
-	PetscPrintf(PETSC_COMM_WORLD,"val = %6.7e\n",dofPtr->get_FieldData());
+	PetscPrintf(mField.get_comm(),"val = %6.7e\n",dofPtr->get_FieldData());
       }
       PetscFunctionReturn(0);
     }
