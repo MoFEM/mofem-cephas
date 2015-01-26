@@ -402,7 +402,7 @@ PetscErrorCode DMSetUp_MoFEM(DM dm) {
   }
   if(dm_field->isPartitioned) {
     if(!dm_field->isPartitioned) {
-      ierr = dm_field->mField_ptr->build_partitioned_problems(PETSC_COMM_WORLD,1); CHKERRQ(ierr);
+      ierr = dm_field->mField_ptr->build_partitioned_problems(); CHKERRQ(ierr);
       dm_field->isProblemsBuild = PETSC_TRUE;
     }
     ierr = dm_field->mField_ptr->partition_finite_elements(dm_field->problemName,true,0,dm_field->pComm->size(),1); CHKERRQ(ierr);
@@ -411,7 +411,7 @@ PetscErrorCode DMSetUp_MoFEM(DM dm) {
       ierr = dm_field->mField_ptr->build_problems(); CHKERRQ(ierr);
       dm_field->isProblemsBuild = PETSC_TRUE;
     }
-    ierr = dm_field->mField_ptr->partition_problem(dm_field->problemName); CHKERRQ(ierr);
+    ierr = dm_field->mField_ptr->partition_problem(dm_field->problemName,3); CHKERRQ(ierr);
     ierr = dm_field->mField_ptr->partition_finite_elements(dm_field->problemName); CHKERRQ(ierr);
   }
   ierr = dm_field->mField_ptr->partition_ghost_dofs(dm_field->problemName); CHKERRQ(ierr);

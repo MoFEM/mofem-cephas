@@ -99,7 +99,7 @@ PetscErrorCode Core::get_adjacencies(
   if(verb>0) {
     ostringstream ss;
     ss << "from: " << bit << endl << "to: " << endl;
-    PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
+    PetscPrintf(comm,ss.str().c_str());
   }
   rval = moab.get_adjacencies(from_entities,num_netities,to_dimension,false,adj_entities,operation_type); CHKERR_PETSC(rval);
   Range::iterator eit = adj_entities.begin();
@@ -109,7 +109,7 @@ PetscErrorCode Core::get_adjacencies(
     if(verb>0) {
       ostringstream ss;
       ss << "\t" << adj_entiti << endl;
-      PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
+      PetscPrintf(comm,ss.str().c_str());
     }
     if(!(adj_entiti.get_BitRefLevel()&bit).any() ) {
       eit = adj_entities.erase(eit);

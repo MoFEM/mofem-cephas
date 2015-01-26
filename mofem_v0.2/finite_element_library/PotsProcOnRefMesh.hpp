@@ -98,7 +98,7 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
     EntityHandle tet;
     rval = moab_ref.create_element(MBTET,nodes,4,tet); CHKERR_PETSC(rval);
 
-    Core m_core_ref(moab_ref,-1);
+    Core m_core_ref(moab_ref,PETSC_COMM_SELF,-2);
     FieldInterface& m_field_ref = m_core_ref;
 
     ierr = m_field_ref.seed_ref_level_3D(0,BitRefLevel().set(0)); CHKERRQ(ierr);
