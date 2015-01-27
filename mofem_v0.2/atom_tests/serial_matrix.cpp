@@ -67,6 +67,8 @@ int main(int argc, char *argv[]) {
   if(pcomm->rank()==do_for_rank) { // should work only with rank 0
 
   //Create MoFEM (Joseph) database
+  //second argument set communicator for sequential problem
+  //last argument make mofem quaiet
   MoFEM::Core core(moab,PETSC_COMM_SELF,-1);
   FieldInterface& m_field = core;
 
