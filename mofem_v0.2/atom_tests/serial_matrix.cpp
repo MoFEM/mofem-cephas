@@ -64,7 +64,7 @@ int main(int argc, char *argv[]) {
 
 
   int do_for_rank = 0;
-  if(pcomm->rank()==do_for_rank) { // should work only with rank 0
+  if(pcomm->rank()==(unsigned int)do_for_rank) { // should work only with rank 0
 
   //Create MoFEM (Joseph) database
   //second argument set communicator for sequential problem
@@ -163,7 +163,7 @@ int main(int argc, char *argv[]) {
 
   }
 
-  if(pcomm->rank()!=do_for_rank) {
+  if(pcomm->rank()!=(unsigned int)do_for_rank) {
     std::string wait;
     std::cin >> wait;
   }
