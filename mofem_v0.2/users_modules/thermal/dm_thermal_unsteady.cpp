@@ -401,7 +401,6 @@ int main(int argc, char *argv[]) {
   //postprocess
   ierr = DMMoFEMTSSetIFunction(dm,DM_NO_ELEMENT,NULL,NULL,&dirichlet_bc); CHKERRQ(ierr);
   ierr = DMMoFEMTSSetIJacobian(dm,DM_NO_ELEMENT,NULL,NULL,&dirichlet_bc); CHKERRQ(ierr);
-  ierr = DMMoFEMTSSetIJacobian(dm,DM_NO_ELEMENT,NULL,NULL,&update_velocities); CHKERRQ(ierr);
 
   TsCtx *ts_ctx;
   DMMoFEMGetTsCtx(dm,&ts_ctx);
