@@ -2199,11 +2199,7 @@ PetscErrorCode Core::simple_partition_problem(const string &name,int verb) {
   ierr = PetscLayoutSetUp(layout_col); CHKERRQ(ierr);
   const int *ranges_col;
   ierr = PetscLayoutGetRanges(layout_col,&ranges_col); CHKERRQ(ierr);
-  int size;
-  MPI_Comm_size(comm,&size);
-  int rank;
-  MPI_Comm_rank(comm,&rank);
-  for(unsigned int part = 0;part<size;part++) {
+  for(unsigned int part = 0;part<(unsigned int)sIze;part++) {
     miit_row = dofs_row_by_idx.lower_bound(ranges_row[part]);
     hi_miit_row = dofs_row_by_idx.lower_bound(ranges_row[part+1]);
     if(distance(miit_row,hi_miit_row) != ranges_row[part+1]-ranges_row[part]) {
@@ -2215,7 +2211,7 @@ PetscErrorCode Core::simple_partition_problem(const string &name,int verb) {
     for(;miit_row!=hi_miit_row;miit_row++) {
       bool success = dofs_row_by_idx.modify(miit_row,NumeredDofMoFEMEntity_part_change(part,miit_row->dof_idx));
       if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-      if(part == rank) {
+      if(part == (unsigned int)rAnk) {
 	success = dofs_row_by_idx.modify(miit_row,NumeredDofMoFEMEntity_local_idx_change(nb_row_local_dofs++));
 	if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
       }
@@ -2231,7 +2227,7 @@ PetscErrorCode Core::simple_partition_problem(const string &name,int verb) {
     for(;miit_col!=hi_miit_col;miit_col++) {
       bool success = dofs_col_by_idx.modify(miit_col,NumeredDofMoFEMEntity_part_change(part,miit_col->dof_idx));
       if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-      if(part == rank) {
+      if(part == (unsigned int)rAnk) {
 	success = dofs_col_by_idx.modify(miit_col,NumeredDofMoFEMEntity_local_idx_change(nb_col_local_dofs++));
 	if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
       }
@@ -2241,9 +2237,9 @@ PetscErrorCode Core::simple_partition_problem(const string &name,int verb) {
   ierr = PetscLayoutDestroy(&layout_col); CHKERRQ(ierr);
   if(verbose>0) {
     ostringstream ss;
-    ss << "simple_partition_problem: rank = " << rank << " FEs row ghost dofs "<< *p_miit 
+    ss << "simple_partition_problem: rank = " << rAnk << " FEs row ghost dofs "<< *p_miit 
       << " Nb. local dof " << p_miit->get_nb_local_dofs_row() << " nb global row dofs " << p_miit->get_nb_dofs_row() << endl;
-    ss << "simple_partition_problem: rank = " << rank << " FEs col ghost dofs " << *p_miit 
+    ss << "simple_partition_problem: rank = " << rAnk << " FEs col ghost dofs " << *p_miit 
       << " Nb. local dof " << p_miit->get_nb_local_dofs_col() << " nb global col dofs " << p_miit->get_nb_dofs_col() << endl;
     PetscSynchronizedPrintf(comm,ss.str().c_str());
     PetscSynchronizedFlush(comm,PETSC_STDOUT); 
@@ -2384,7 +2380,7 @@ PetscErrorCode Core::compose_problem(const string &name,const string &problem_fo
     }
     bool success = dofs_row_by_uid.modify(pr_dof,NumeredDofMoFEMEntity_part_change(part_number,petsc_global_dof));
     if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-    if(pr_dof->get_part() == rAnk) {
+    if(pr_dof->get_part() == (unsigned int)rAnk) {
       success = dofs_row_by_uid.modify(pr_dof,NumeredDofMoFEMEntity_local_idx_change(nb_row_local_dofs++));
       if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
     }
@@ -2399,7 +2395,7 @@ PetscErrorCode Core::compose_problem(const string &name,const string &problem_fo
       if(pr_dof == dofs_row_by_uid.end()) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
       success = dofs_row_by_uid.modify(pr_dof,NumeredDofMoFEMEntity_part_change(part_number,petsc_global_dof));
       if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-      if(pr_dof->get_part() == rAnk) {
+      if(pr_dof->get_part() == (unsigned int)rAnk) {
 	success = dofs_row_by_uid.modify(pr_dof,NumeredDofMoFEMEntity_local_idx_change(nb_row_local_dofs++));
 	if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
       }
@@ -2421,7 +2417,7 @@ PetscErrorCode Core::compose_problem(const string &name,const string &problem_fo
     }
     bool success = dofs_col_by_uid.modify(pr_dof,NumeredDofMoFEMEntity_part_change(part_number,petsc_global_dof));
     if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-    if(pr_dof->get_part() == rAnk) {
+    if(pr_dof->get_part() == (unsigned int)rAnk) {
       success = dofs_col_by_uid.modify(pr_dof,NumeredDofMoFEMEntity_local_idx_change(nb_col_local_dofs++));
       if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
     }
@@ -2435,7 +2431,7 @@ PetscErrorCode Core::compose_problem(const string &name,const string &problem_fo
       NumeredDofMoFEMEntitys_by_uid::iterator pr_dof = dofs_col_by_uid.find(diit->get_global_unique_id());
       success = dofs_col_by_uid.modify(pr_dof,NumeredDofMoFEMEntity_part_change(part_number,petsc_global_dof));
       if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-      if(pr_dof->get_part() == rAnk) {
+      if(pr_dof->get_part() == (unsigned int)rAnk) {
 	success = dofs_col_by_uid.modify(pr_dof,NumeredDofMoFEMEntity_local_idx_change(nb_col_local_dofs++));
 	if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
       }
@@ -2473,7 +2469,7 @@ PetscErrorCode Core::compose_problem(const string &name,const string &problem_fo
     dit = p_miit->numered_dofs_rows.get<Idx_mi_tag>().begin();
     hi_dit = p_miit->numered_dofs_rows.get<Idx_mi_tag>().end();
     for(;dit!=hi_dit;dit++) {
-      if(dit->get_part()==rAnk) {
+      if(dit->get_part()==(unsigned int)rAnk) {
 	if(dit->get_petsc_local_dof_idx()<0) {
 	  ostringstream ss;
 	  ss << "rank " << rAnk << " " << *dit;
@@ -2484,7 +2480,7 @@ PetscErrorCode Core::compose_problem(const string &name,const string &problem_fo
     dit = p_miit->numered_dofs_cols.get<Idx_mi_tag>().begin();
     hi_dit = p_miit->numered_dofs_cols.get<Idx_mi_tag>().end();
     for(;dit!=hi_dit;dit++) {
-      if(dit->get_part()==rAnk) {
+      if(dit->get_part()==(unsigned int)rAnk) {
 	if(dit->get_petsc_local_dof_idx()<0) {
 	  ostringstream ss;
 	  ss << "rank " << rAnk << " " << *dit;
@@ -2631,7 +2627,7 @@ PetscErrorCode Core::partition_ghost_dofs(const string &name,int verb) {
 	rowdofit = fe_it->rows_dofs.begin();
 	hi_rowdofit = fe_it->rows_dofs.end();
 	for(;rowdofit!=hi_rowdofit;rowdofit++) {
-	  if(rowdofit->get_part()==rAnk) continue; 
+	  if(rowdofit->get_part()==(unsigned int)rAnk) continue; 
 	  ghost_idx_row_view.insert(rowdofit->get_NumeredDofMoFEMEntity_ptr());
 	}
       }
@@ -2640,7 +2636,7 @@ PetscErrorCode Core::partition_ghost_dofs(const string &name,int verb) {
 	coldofit = fe_it->cols_dofs.begin();
 	hi_coldofit = fe_it->cols_dofs.end();
 	for(;coldofit!=hi_coldofit;coldofit++) {
-	  if(coldofit->get_part()==rAnk) continue;
+	  if(coldofit->get_part()==(unsigned int)rAnk) continue;
 	  ghost_idx_col_view.insert(coldofit->get_NumeredDofMoFEMEntity_ptr());
 	}
       }
@@ -2679,7 +2675,7 @@ PetscErrorCode Core::partition_ghost_dofs(const string &name,int verb) {
     if(verb>1) {
       NumeredDofMoFEMEntity_multiIndex::iterator miit_dd_col = p_miit->numered_dofs_cols.begin();
       for(;miit_dd_col!=p_miit->numered_dofs_cols.end();miit_dd_col++) {
-	if(miit_dd_col->part==rAnk) continue;
+	if(miit_dd_col->part==(unsigned int)rAnk) continue;
 	if(miit_dd_col->petsc_local_dof_idx==(DofIdx)-1) continue;
 	ss<<*miit_dd_col<<endl;
       }
