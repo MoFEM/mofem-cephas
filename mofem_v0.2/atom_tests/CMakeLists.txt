@@ -575,7 +575,7 @@ target_link_libraries(serial_matrix
   mofem_cblas
   mofem_third_party
   ${PROJECT_LIBS})
-add_test(serial_matrix ${MPI_RUN} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/dm_mofem -my_file disp01.cub)
+add_test(serial_matrix ${MPI_RUN} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/serial_matrix -my_file disp01.cub)
 add_test(serial_matrix_compare ${CMAKE_COMMAND} -E compare_files 
   ${CMAKE_BINARY_DIR}/atom_tests/serial_matrix.txt
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/serial_matrix.txt)
