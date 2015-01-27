@@ -66,6 +66,60 @@ struct BlockOptionData {
     oRder(-1),cOnductivity(-1),cApacity(-1) {}
 };
 
+struct MonitorPostProc: public FEMethod {
+
+  FieldInterface &mField;
+  PostPocOnRefinedMesh postProc;
+
+  bool iNit;
+  int pRT;
+
+  MonitorPostProc(FieldInterface &m_field): 
+    FEMethod(),mField(m_field),postProc(m_field),iNit(false) { 
+    PetscErrorCode ierr;
+    PetscBool flg = PETSC_TRUE;
+    ierr = PetscOptionsGetInt(PETSC_NULL,"-my_output_prt",&pRT,&flg); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+    if(flg!=PETSC_TRUE) {
+      pRT = 1;
+    }
+  }
+
+  PetscErrorCode preProcess() {
+    PetscFunctionBegin;
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode operator()() {
+    PetscFunctionBegin;
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode postProcess() {
+    PetscFunctionBegin;
+    PetscErrorCode ierr;
+    if(!iNit) {
+      ierr = postProc.generateRefereneElemenMesh(); CHKERRQ(ierr);
+      ierr = postProc.addFieldValuesPostProc("TEMP"); CHKERRQ(ierr);
+      ierr = postProc.addFieldValuesPostProc("TEMP_RATE"); CHKERRQ(ierr);
+      ierr = postProc.addFieldValuesGradientPostProc("TEMP"); CHKERRQ(ierr);
+      ierr = postProc.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+      iNit = true;
+    }
+    int step;
+    ierr = TSGetTimeStepNumber(ts,&step); CHKERRQ(ierr);
+    ErrorCode rval;
+    if((step)%pRT==0) {
+      ierr = mField.loop_finite_elements("DMTHERMAL","THERMAL_FE",postProc); CHKERRQ(ierr);
+      ostringstream sss;
+      sss << "out_thermal_" << step << ".h5m";
+      rval = postProc.postProcMesh.write_file(sss.str().c_str(),"MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
+    }
+    PetscFunctionReturn(0);
+  }
+
+};
+
+
 int main(int argc, char *argv[]) {
 
   ErrorCode rval;
@@ -161,6 +215,7 @@ int main(int argc, char *argv[]) {
   char block_config_file[255];
   ierr = PetscOptionsGetString(PETSC_NULL,"-my_block_config",block_config_file,255,&block_config); CHKERRQ(ierr);
   map<int,BlockOptionData> block_data;
+  bool solar_radiation = false;
   if(block_config) {
     try {
       ifstream ini_file(block_config_file);  
@@ -181,6 +236,8 @@ int main(int argc, char *argv[]) {
         config_file_options.add_options()
 	 (str_capa.str().c_str(),po::value<double>(&block_data[it->get_msId()].cApacity)->default_value(-1));
       }
+      config_file_options.add_options()
+	("climate_model.solar_radiation",po::value<bool>(&solar_radiation)->default_value(false));
       store(parse_config_file(ini_file,config_file_options,true), vm);
       po::notify(vm); 
       for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
@@ -293,6 +350,7 @@ int main(int argc, char *argv[]) {
   TemperatureBCFEMethodPreAndPostProc dirichlet_bc(m_field,"TEMP",A,T,F);
   ThermalElement::UpdateAndControl update_velocities(m_field,"TEMP","TEMP_RATE");
   ThermalElement::TimeSeriesMonitor monitor(m_field,"THEMP_SERIES","TEMP");
+  MonitorPostProc post_proc(m_field);
 
   //Initialize data with values save of on the field
   //ierr = VecZeroEntries(T); CHKERRQ(ierr);
@@ -307,12 +365,14 @@ int main(int argc, char *argv[]) {
   #ifdef __GROUNDSURFACETEMERATURE_HPP
   ierr = DMMoFEMTSSetIFunction(dm,DM_NO_ELEMENT,NULL,&exectuteGenericClimateModel,NULL); CHKERRQ(ierr);
   { // add preporcessor, calulating angle on which sun ray on the surface
-    boost::ptr_vector<GroundSurfaceTemerature::SolarRadiationPreProcessor>::iterator it,hi_it;
-    it = ground_surface.preProcessShade.begin();
-    hi_it = ground_surface.preProcessShade.end();
-    //for(;it!=hi_it;it++) {
-      //ierr = DMMoFEMTSSetIFunction(dm,DM_NO_ELEMENT,NULL,&*it,NULL); CHKERRQ(ierr);
-    //}
+    if(solar_radiation) {
+      boost::ptr_vector<GroundSurfaceTemerature::SolarRadiationPreProcessor>::iterator it,hi_it;
+      it = ground_surface.preProcessShade.begin();
+      hi_it = ground_surface.preProcessShade.end();
+      for(;it!=hi_it;it++) {
+	ierr = DMMoFEMTSSetIFunction(dm,DM_NO_ELEMENT,NULL,&*it,NULL); CHKERRQ(ierr);
+      }
+    }
   }
   #endif //__GROUNDSURFACETEMERATURE_HPP
 
@@ -347,7 +407,7 @@ int main(int argc, char *argv[]) {
   DMMoFEMGetTsCtx(dm,&ts_ctx);
   //add monitor opetator
   ts_ctx->get_postProcess_to_do_Monitor().push_back(&monitor);
-
+  ts_ctx->get_postProcess_to_do_Monitor().push_back(&post_proc);
 
   //create time solver
   TS ts;
@@ -385,28 +445,6 @@ int main(int argc, char *argv[]) {
     "steps %D (%D rejected, %D SNES fails), ftime %g, nonlinits %D, linits %D\n",
     steps,rejects,snesfails,ftime,nonlinits,linits);
   
-
-  //postproces results (use mbconvert to make VTK from output files)
-  PostPocOnRefinedMesh post_proc(m_field);
-  ierr = post_proc.generateRefereneElemenMesh(); CHKERRQ(ierr);
-  ierr = post_proc.addFieldValuesPostProc("TEMP"); CHKERRQ(ierr);
-  ierr = post_proc.addFieldValuesPostProc("TEMP_RATE"); CHKERRQ(ierr);
-  ierr = post_proc.addFieldValuesGradientPostProc("TEMP"); CHKERRQ(ierr);
-  ierr = post_proc.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
-
-  for(_IT_SERIES_STEPS_BY_NAME_FOR_LOOP_(recorder_ptr,"THEMP_SERIES",sit)) {
-
-    PetscPrintf(PETSC_COMM_WORLD,"Process step %d\n",sit->get_step_number());
-    ierr = recorder_ptr->load_series_data("THEMP_SERIES",sit->get_step_number()); CHKERRQ(ierr);
-    //ierr = m_field.set_local_VecCreateGhost(dm_name,ROW,T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    //ierr = m_field.set_global_VecCreateGhost(dm_name,ROW,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = m_field.loop_finite_elements(dm_name,"THERMAL_FE",post_proc); CHKERRQ(ierr);
-    ostringstream o1;
-    o1 << "out_thermal_" << sit->step_number << ".h5m";
-    rval = post_proc.postProcMesh.write_file(o1.str().c_str(),"MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
-
-  }
-
   // save solution, if boundary conditions are defined you can use that file in mechanical problem
   // to calulate thermal stresses
   PetscBool is_partitioned = PETSC_FALSE;

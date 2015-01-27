@@ -407,7 +407,7 @@ PetscErrorCode DMSetUp_MoFEM(DM dm) {
       ierr = dm_field->mField_ptr->build_problems(); CHKERRQ(ierr);
       dm_field->isProblemsBuild = PETSC_TRUE;
     }
-    ierr = dm_field->mField_ptr->partition_problem(dm_field->problemName,3); CHKERRQ(ierr);
+    ierr = dm_field->mField_ptr->partition_problem(dm_field->problemName); CHKERRQ(ierr);
     ierr = dm_field->mField_ptr->partition_finite_elements(dm_field->problemName); CHKERRQ(ierr);
   }
   ierr = dm_field->mField_ptr->partition_ghost_dofs(dm_field->problemName); CHKERRQ(ierr);
