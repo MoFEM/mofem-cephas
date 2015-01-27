@@ -59,7 +59,12 @@ namespace MoFEM {
     template<class IT>
     static DofIdx get_index(const IT &it) { return it->petsc_gloabl_dof_idx; }
   };
-  struct PetscLocalIdx_mi_tag {};
+  struct PetscLocalIdx_mi_tag {
+    static const bool IamNotPartitioned;
+    /// extract global dof index from iterator 
+    template<class IT>
+    static DofIdx get_index(const IT &it) { return it->petsc_local_dof_idx; }
+  };
   struct Part_mi_tag {
     static const bool IamNotPartitioned;
     /// extract global dof index from iterator 

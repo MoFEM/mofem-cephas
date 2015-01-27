@@ -98,9 +98,9 @@ struct CrudeClimateModel: public GenricClimateModel {
 	("DayOfLowTemperature",po::value<int>(&Low)->default_value(0))
 	("DayOfHighTemperature",po::value<int>(&High)->default_value(182))
 	("DewPoint",po::value<double>(&Td)->default_value(0),"Dew point in Celsius degrees")
-	("u10",po::value<double>(&u10)->default_value(0))
+	("u10",po::value<double>(&u10)->default_value(2.7))
 	("CR",po::value<double>(&CR)->default_value(0))
-	("Pressure",po::value<double>(&P)->default_value(0))
+	("Pressure",po::value<double>(&P)->default_value(101325))
 	("Rs",po::value<double>(&Rs)->default_value(0));
       store(parse_config_file(ini_file,config_file_options), vm);
       po::notify(vm); 

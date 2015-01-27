@@ -193,7 +193,7 @@ PetscErrorCode Core::print_series_steps() {
   for(;ssit!=series_steps.get<SeriesName_mi_tag>().end();ssit++) {
     ss << "serises steps " << *ssit << endl;
   }
-  PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
+  PetscPrintf(comm,ss.str().c_str());
   PetscFunctionReturn(0);
 }
 bool Core::check_series(const string& name) const {

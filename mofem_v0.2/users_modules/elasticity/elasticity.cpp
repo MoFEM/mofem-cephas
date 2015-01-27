@@ -99,7 +99,7 @@ int main(int argc, char *argv[]) {
   // stl::bitset see for more details
   BitRefLevel bit_level0;
   bit_level0.set(0);
-  ierr = m_field.seed_ref_level_3D(0,bit_level0,PETSC_COMM_WORLD); CHKERRQ(ierr);
+  ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
   Range meshset_level0;
   ierr = m_field.get_entities_by_ref_level(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
   PetscSynchronizedPrintf(PETSC_COMM_WORLD,"meshset_level0 %d\n",meshset_level0.size());
@@ -132,8 +132,8 @@ int main(int argc, char *argv[]) {
   //Declare problem
 
   //add entitities (by tets) to the field
-  ierr = m_field.add_ents_to_field_by_TETs(0,"DISPLACEMENT",PETSC_COMM_WORLD,2); CHKERRQ(ierr);
-  ierr = m_field.add_ents_to_field_by_TETs(0,"MESH_NODE_POSITIONS",PETSC_COMM_WORLD,2); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_TETs(0,"DISPLACEMENT",2); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_TETs(0,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
 
   //add finite elements entities
   ierr = m_field.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"ELASTIC",MBTET); CHKERRQ(ierr);
@@ -188,7 +188,7 @@ int main(int argc, char *argv[]) {
   //build problem
   //ierr = m_field.build_problems(); CHKERRQ(ierr);
   if(is_partitioned) {
-    ierr = m_field.build_partitioned_problems(PETSC_COMM_WORLD,1); CHKERRQ(ierr);
+    ierr = m_field.build_partitioned_problems(1); CHKERRQ(ierr);
     ierr = m_field.partition_finite_elements("ELASTIC_PROB",true,0,pcomm->size(),1); CHKERRQ(ierr);
   } else {
     ierr = m_field.build_problems(); CHKERRQ(ierr);

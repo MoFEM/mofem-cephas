@@ -37,47 +37,63 @@ struct GenricClimateModel {
 
   /** \brief Clausius-Clapeyron equation
     */
-  template <typename TYPE> 
-  TYPE calulateVapourPressureClausiusClapeyron(TYPE T) { 
+  double calulateVapourPressureClausiusClapeyron(double T) { 
     return e0*exp((Lv/Rv)*((1./T0)-(1./(T+T0))));
   }
 
-  template <typename TYPE> 
-  TYPE calulateVapourPressureTetenFormula(TYPE T) {
+  double calulateVapourPressureTetenFormula(double T) {
     const double b = 17.2694;
-    const double T1 = 273.15;
     const double T2 = 35.86;
-    return e0*exp(b*(T+T0-T1)/(T+T0-T2));
+    return e0*exp(b*T/(T+T0-T2));
   }
 
-  template <typename TYPE> 
-  TYPE calulateVapourPressure(TYPE T) {
+  double calulateVapourPressureTetenFormula_dT(double T) {
+    const double b = 17.2694;
+    const double T2 = 35.86;
+    return e0*exp(b*T/(T+T0-T2))*(b/(T+T0-T2) - b*T/pow(T+T0-T2,2));
+  }
+
+  double calulateVapourPressure(double T) {
     //This use Tetent's formula by default
     return calulateVapourPressureTetenFormula(T);
   }
 
-  template <typename TYPE>
-  TYPE calulateMixingRatio(TYPE T,double P) {
-    const double eps = 0.622;
-    TYPE e = calulateVapourPressure(T);
-    return eps*T/(P-T);
+  double calulateVapourPressure_dT(double T) {
+    //This use Tetent's formula by default
+    return calulateVapourPressureTetenFormula_dT(T);
   }
 
-  template <typename TYPE>   
-  double calculateAbsoluteVirtualTempertaure(TYPE T,double P) {
-    const double c = 0.379;
+  double calulateMixingRatio(double T,double P) {
+    const double eps = 0.622;
     double e = calulateVapourPressure(T);
-    return (T+T0)/(1-c*e/P);
+    return eps*e/(P-e);
+  }
+
+  double calulateMixingRatio_dT(double T,double P) {
+    const double eps = 0.622;
+    double e = calulateVapourPressure(T);
+    double e_dT = calulateVapourPressure_dT(T);
+    return eps*e_dT/(P-e) + eps*e*e_dT/pow(P-e,2);
+  }
+
+  double calculateAbsoluteVirtualTempertaure(double T,double Td,double P) {
+    double r = calulateMixingRatio(Td,P);
+    return T*(0.61+r);
+  }
+
+  double calculateAbsoluteVirtualTempertaure_dT(double T,double Td,double P) {
+    double r = calulateMixingRatio(Td,P);
+    return (0.61+r);
   }
 
   GenricClimateModel() {
 
     T0 = 273.15; // reference temperature (K)
-    e0 = 611; // reference saturation vapor pressure (es at a certain temp, usually 0 deg C) (Pa)
+    e0 = 611.3; // reference saturation vapor pressure (es at a certain temp, usually 0 deg C) (Pa)
     Rv = 461.5; // gas constant for water vapor (J*K/Kg)
     Lv = 2.5e6; // latent heat of vaporization of water (J)
 
-    u10 = 0;			//< wind at high 10m (m/s)	
+    u10 = 2.7;			//< wind at high 10m (m/s)	
     CR = 0; 			//< cloudness factor (0–1, dimensionless)
     Ta = 10;			//< air temperature (C)
     Td = 5;			//< dew point temperature (C)

@@ -41,7 +41,6 @@ extern "C" {
 }
 
 #include <time.h>
-#include <adolc/adolc.h> 
 //#include <ThermalElement.hpp>
 #include<moab/Skinner.hpp>
 
