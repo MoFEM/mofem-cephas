@@ -1080,9 +1080,9 @@ PetscErrorCode Core::build_fields(int verb) {
       PetscSynchronizedPrintf(comm,"nb added dofs %d\n",_dof_counter_);
     }
   }
-  PetscSynchronizedPrintf(comm,"Nb. dofs %u\n",dofsMoabField.size());
   *build_MoFEM = 1<<0;
   if(verbose>0) {
+    PetscSynchronizedPrintf(comm,"Nb. dofs %u\n",dofsMoabField.size());
     PetscSynchronizedFlush(comm,PETSC_STDOUT);
   }
   PetscFunctionReturn(0);
