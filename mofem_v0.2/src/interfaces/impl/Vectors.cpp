@@ -139,7 +139,7 @@ PetscErrorCode Core::VecScatterCreate(Vec xin,string &x_problem,RowColData x_rc,
   }
   vector<int> idx(0),idy(0);
   for(;y_dit!=hi_y_dit;y_dit++) {
-    if(y_dit->get_part()!=rAnk) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+    if(y_dit->get_part()!=(unsigned int)rAnk) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
     dofs_by_uid::iterator x_dit;
     x_dit = x_numered_dofs_by_uid->find(y_dit->get_global_unique_id());
     if(x_dit==x_numered_dofs_by_uid->end()) continue;

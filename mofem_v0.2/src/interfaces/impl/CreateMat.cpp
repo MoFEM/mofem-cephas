@@ -427,7 +427,7 @@ PetscErrorCode Core::partition_problem(const string &name,int verb) {
     if(!success) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
     }
-    if(miit_dofs_row->part == rAnk) {
+    if(miit_dofs_row->part == (unsigned int)rAnk) {
       assert(miit_dofs_row->part==miit_dofs_col->part);
       assert(miit_dofs_row->petsc_gloabl_dof_idx==miit_dofs_col->petsc_gloabl_dof_idx);
       success = dofs_row_by_idx_no_const.modify(miit_dofs_row,NumeredDofMoFEMEntity_local_idx_change(nb_row_local_dofs++));
@@ -490,7 +490,7 @@ PetscErrorCode Core::partition_problem(const string &name,int verb) {
       dit = p_miit->numered_dofs_rows.get<Idx_mi_tag>().begin();
       hi_dit = p_miit->numered_dofs_rows.get<Idx_mi_tag>().end();
       for(;dit!=hi_dit;dit++) {
-	if(dit->get_part()==rAnk) {
+	if(dit->get_part()==(unsigned int)rAnk) {
 	  if(dit->get_petsc_local_dof_idx()<0) {
 	    ostringstream ss;
 	    ss << "rank " << rAnk << " " << *dit;
@@ -501,7 +501,7 @@ PetscErrorCode Core::partition_problem(const string &name,int verb) {
       dit = p_miit->numered_dofs_cols.get<Idx_mi_tag>().begin();
       hi_dit = p_miit->numered_dofs_cols.get<Idx_mi_tag>().end();
       for(;dit!=hi_dit;dit++) {
-	if(dit->get_part()==rAnk) {
+	if(dit->get_part()==(unsigned int)rAnk) {
 	  if(dit->get_petsc_local_dof_idx()<0) {
 	    ostringstream ss;
 	    ss << "rank " << rAnk << " " << *dit;
