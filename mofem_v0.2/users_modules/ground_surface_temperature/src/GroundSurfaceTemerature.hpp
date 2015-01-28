@@ -606,7 +606,7 @@ struct GroundSurfaceTemerature {
 	double hnet  = 0;
 	
 	if(eXposure>0) {
-	  //hnet += netSolarRadiation(pArametersPtr->alpha,pArametersPtr->d,cos_phi,timeDataPtr);
+	  hnet += netSolarRadiation(pArametersPtr->alpha,pArametersPtr->d,cos_phi,timeDataPtr);
 	}	
 	hnet += incomingLongWaveRadiation(pArametersPtr->eps,timeDataPtr);
 	hnet += outgoingLongWaveRadiation(pArametersPtr->eps,T);

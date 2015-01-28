@@ -100,6 +100,11 @@ PetscErrorCode f_TSSetIJacobian(TS ts,PetscReal t,Vec u,Vec u_t,PetscReal a,Mat 
   PetscErrorCode ierr;
   TsCtx* ts_ctx = (TsCtx*)ctx;
   PetscLogEventBegin(ts_ctx->USER_EVENT_TsCtxIFunction,0,0,0,0);
+  ierr = VecGhostUpdateBegin(u,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(u,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(u_t,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(u_t,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = ts_ctx->mField.set_local_VecCreateGhost(ts_ctx->problemName,COL,u,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   if(ts_ctx->zero_matrix) {
     ierr = MatZeroEntries(B); CHKERRQ(ierr);
   }

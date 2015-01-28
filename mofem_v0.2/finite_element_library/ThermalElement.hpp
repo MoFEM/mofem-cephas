@@ -311,8 +311,7 @@ struct ThermalElement {
 
         int nb_row_dofs = data.getIndices().size();
         Nf.resize(nb_row_dofs);
-        bzero(&*Nf.data().begin(),data.getIndices().size()*sizeof(FieldData));
-
+	Nf.clear();
         //cerr << data.getIndices() << endl;
         //cerr << data.getDiffN() << endl;
 
@@ -402,8 +401,7 @@ struct ThermalElement {
         int nb_row = row_data.getN().size2();
         int nb_col = col_data.getN().size2();
         K.resize(nb_row,nb_col);
-        bzero(&*K.data().begin(),nb_row*nb_col*sizeof(double));
-
+	K.clear();
         for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
 
           ublas::matrix<double>  val = dAta.cOnductivity_mat*getVolume()*getGaussPts()(3,gg);
@@ -482,13 +480,12 @@ struct ThermalElement {
         if(data.getIndices().size()==0) PetscFunctionReturn(0);
         int nb_row = data.getN().size2();
         Nf.resize(nb_row);
-        bzero(&Nf[0],nb_row*sizeof(double));
+	Nf.clear();
         for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
-          double val = dAta.cApacity*getVolume()*getGaussPts()(3,gg);
+          double val = getGaussPts()(3,gg);
           if(getHoGaussPtsDetJac().size()>0) {
             val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
           }
-
           val *= commonData.temperatureRateAtGaussPts[gg];
           ////////////
           //cblas
@@ -496,6 +493,7 @@ struct ThermalElement {
           //ublas
           ublas::noalias(Nf) += val*data.getN(gg);
         }
+	Nf *= getVolume()*dAta.cApacity;
         PetscErrorCode ierr;
         ierr = VecSetValues(getFEMethod()->ts_F,data.getIndices().size(),
                   &data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
@@ -546,16 +544,15 @@ struct ThermalElement {
         int nb_row = row_data.getN().size2();
         int nb_col = col_data.getN().size2();
         M.resize(nb_row,nb_col);
-        bzero(&*M.data().begin(),nb_row*nb_col*sizeof(double));
+	M.clear();
 
         for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
 
-
-          double val = dAta.cApacity*getVolume()*getGaussPts()(3,gg);
+          double val = getGaussPts()(3,gg);
           if(getHoGaussPtsDetJac().size()>0) {
             val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
           }
-          val *= getFEMethod()->ts_a;
+
           //cblas
           //double *N_row,*N_col;
           //N_row = &row_data.getN()(gg,0);
@@ -566,6 +563,8 @@ struct ThermalElement {
           noalias(M) += val*outer_prod( row_data.getN(gg,nb_row),col_data.getN(gg,nb_col) );
           
         }
+
+	M *= getVolume()*dAta.cApacity*getFEMethod()->ts_a;
 
         PetscErrorCode ierr;
         ierr = MatSetValues(
@@ -639,9 +638,7 @@ struct ThermalElement {
       int nb_dofs = data.getIndices().size()/rank;
 
       Nf.resize(data.getIndices().size());
-      //bzero(&*Nf.data().begin(),data.getIndices().size()*sizeof(FieldData));
-      fill(Nf.begin(),Nf.end(),0);
-
+      Nf.clear();
       //cerr << getNormal() << endl;
       //cerr << getNormals_at_GaussPt() << endl;
 
@@ -807,8 +804,7 @@ struct ThermalElement {
       int nb_row_dofs = data.getIndices().size()/rank;
   
       Nf.resize(data.getIndices().size());
-      bzero(&*Nf.data().begin(),nb_row_dofs*sizeof(FieldData));
-      //fill(Nf.begin(),Nf.end(),0);
+      Nf.clear();
       //cerr << getNormal() << endl;
       //cerr << getNormals_at_GaussPt() << endl;
   
@@ -889,7 +885,7 @@ struct ThermalElement {
       int nb_row_dofs = data.getIndices().size()/rank;
 
       Nf.resize(data.getIndices().size());
-      bzero(&*Nf.data().begin(),nb_row_dofs*sizeof(FieldData));
+      Nf.clear();
       //fill(Nf.begin(),Nf.end(),0);
       //cerr << getNormal() << endl;
       //cerr << getNormals_at_GaussPt() << endl;
@@ -965,7 +961,7 @@ struct ThermalElement {
         int nb_row = row_data.getN().size2();
         int nb_col = col_data.getN().size2();
         K.resize(nb_row,nb_col);
-        bzero(&*K.data().begin(),nb_row*nb_col*sizeof(double));
+	K.clear();
 
         for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
 
