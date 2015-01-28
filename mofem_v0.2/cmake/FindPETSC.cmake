@@ -15,7 +15,10 @@ endif(NOT PETSC_ARCH)
 
 
 find_file (PETSC_VARIBLES_FILE petscvariables 
-  HINTS ${PETSC_DIR}/${PETSC_ARCH}/conf)
+  HINTS 
+  ${PETSC_DIR}/${PETSC_ARCH}/conf
+  ${PETSC_DIR}/${PETSC_ARCH}/lib/petsc-conf
+)
 if(NOT PETSC_VARIBLES_FILE)
   message(FATAL_ERROR ${PETSC_VARIBLES_FILE})
 endif(NOT PETSC_VARIBLES_FILE)
