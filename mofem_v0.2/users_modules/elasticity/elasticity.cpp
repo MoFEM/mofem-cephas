@@ -39,8 +39,11 @@ using namespace MoFEM;
 #include <FEMethod_UpLevelStudent.hpp>
 
 #include <PotsProcOnRefMesh.hpp>
-#include <ElasticFEMethod.hpp>
 #include <PostProcHookStresses.hpp>
+
+//#include <adolc/adolc.h> 
+//#include <NonLienarElasticElement.hpp>
+#include <ElasticFEMethod.hpp>
 
 using namespace boost::numeric;
 using namespace ObosleteUsersModules;
@@ -52,6 +55,32 @@ static char help[] = "...\n\n";
 
 const double young_modulus = 1;
 const double poisson_ratio = 0.0;
+
+template<typename TYPE>
+struct Hooke: public NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<TYPE> {
+
+    Hooke(): NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<TYPE>() {}
+
+    TYPE detC;
+    ublas::matrix<TYPE> invC;
+    
+    virtual PetscErrorCode CalualteP_PiolaKirchhoffI(
+      const NonlinearElasticElement::BlockData block_data,
+      const NumeredMoFEMFiniteElement *fe_ptr) {
+      PetscFunctionBegin;
+      PetscErrorCode ierr;
+      this->lambda = LAMBDA(block_data.E,block_data.PoissonRatio);
+      this->mu = MU(block_data.E,block_data.PoissonRatio);
+      ierr = this->CalulateC_CauchyDefromationTensor(); CHKERRQ(ierr);
+      //ierr = this->NeoHooke_PiolaKirchhoffII(); CHKERRQ(ierr);
+      //this->P.resize(3,3);
+      //noalias(this->P) = prod(this->F,this->S);
+      //cerr << "P: " << P << endl;
+      PetscFunctionReturn(0);
+    }
+
+};
+
 
 int main(int argc, char *argv[]) {
 
