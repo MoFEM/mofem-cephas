@@ -56,7 +56,7 @@ static char help[] = "...\n\n";
 const double young_modulus = 1;
 const double poisson_ratio = 0.0;
 
-template<typename TYPE>
+/*template<typename TYPE>
 struct Hooke: public NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<TYPE> {
 
     Hooke(): NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<TYPE>() {}
@@ -79,7 +79,7 @@ struct Hooke: public NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI
       PetscFunctionReturn(0);
     }
 
-};
+};*/
 
 
 int main(int argc, char *argv[]) {

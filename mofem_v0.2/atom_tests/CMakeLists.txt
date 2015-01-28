@@ -621,6 +621,25 @@ if(ADOL-C_LIBRARY)
   add_test(adol-c_atom_test ${MPI_RUN} -np 1
     ${CMAKE_CURRENT_BINARY_DIR}/adol-c_atom)
 
+  cm_export_file("../meshes/LShape.cub" export_atom_tests)
+
+  add_executable(nonlinear_elastic nonlinear_elastic.cpp)
+  target_link_libraries(nonlinear_elastic
+    mofem_finite_element_library
+    mofem_finite_elements
+    mofem_interfaces
+    mofem_multi_indices
+    mofem_petsc
+    mofem_approx
+    mofem_cblas
+    mofem_third_party
+    ${PROJECT_LIBS})
+
+  add_test(nonlinear_elastic ${MPI_RUN} -np 1 
+    ${CMAKE_CURRENT_BINARY_DIR}/nonlinear_elastic -my_file LShape.cub)
+  add_test(nonlinear_elastic_compare ${CMAKE_COMMAND} -E compare_files 
+    ${CMAKE_BINARY_DIR}/atom_tests/nonlinear_elastic.txt 
+    ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/nonlinear_elastic.txt)
 
 endif(ADOL-C_LIBRARY)
 
