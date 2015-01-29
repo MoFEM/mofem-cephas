@@ -113,7 +113,7 @@ PetscErrorCode Core::set_field(const double val,const EntityType type,const Rang
       if(ents.find(ent)==ents.end()) {
 	cont = true;
       } else {
-	cont = end;
+	cont = false;
       }
       last = ent;
     }
