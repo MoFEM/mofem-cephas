@@ -294,6 +294,7 @@ int main(int argc, char *argv[]) {
   ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
   ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
+  ierr = VecScale(F,-1); CHKERRQ(ierr);
 
   //PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT);
 
