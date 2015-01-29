@@ -183,8 +183,8 @@ namespace MoFEM {
     };
     
     PetscErrorCode addThermalSterssElement(
-                                           const string problem_name,const string fe_name,const string field_name,const string thermal_field_name,
-                                           const string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
+      const string fe_name,const string field_name,const string thermal_field_name,
+      const string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
       PetscFunctionBegin;
       
       if(mField.check_field(thermal_field_name)) {
@@ -200,7 +200,6 @@ namespace MoFEM {
         if(mField.check_field(mesh_nodals_positions)) {
           ierr = mField.modify_finite_element_add_field_data(fe_name,mesh_nodals_positions); CHKERRQ(ierr);
         }
-        ierr = mField.modify_problem_add_finite_element(problem_name,fe_name); CHKERRQ(ierr);
         
         for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_ELASTICSET,it)) {
           

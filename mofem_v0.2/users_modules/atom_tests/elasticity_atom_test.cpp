@@ -117,96 +117,98 @@ int main(int argc, char *argv[]) {
 
   //Create MoFEM (Joseph) database
   MoFEM::Core core(moab);
-  FieldInterface& mField = core;
+  FieldInterface& m_field = core;
 
   //ref meshset ref level 0
-  ierr = mField.seed_ref_level_3D(0,0); CHKERRQ(ierr);
+  ierr = m_field.seed_ref_level_3D(0,0); CHKERRQ(ierr);
 
   // stl::bitset see for more details
   BitRefLevel bit_level0;
   bit_level0.set(0);
   EntityHandle meshset_level0;
   rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
-  ierr = mField.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
-  ierr = mField.get_entities_by_ref_level(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
+  ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
+  ierr = m_field.get_entities_by_ref_level(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
 
   /***/
   //Define problem
 
   //Fields
-  ierr = mField.add_field("DISPLACEMENT",H1,3); CHKERRQ(ierr);
+  ierr = m_field.add_field("DISPLACEMENT",H1,3); CHKERRQ(ierr);
 
   //FE
-  ierr = mField.add_finite_element("ELASTIC"); CHKERRQ(ierr);
+  ierr = m_field.add_finite_element("ELASTIC"); CHKERRQ(ierr);
 
   //Define rows/cols and element data
-  ierr = mField.modify_finite_element_add_field_row("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_col("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_data("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_row("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_col("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_data("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
 
   //define problems
-  ierr = mField.add_problem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
+  ierr = m_field.add_problem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
 
   //set finite elements for problem
-  ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","ELASTIC"); CHKERRQ(ierr);
+  ierr = m_field.modify_problem_add_finite_element("ELASTIC_MECHANICS","ELASTIC"); CHKERRQ(ierr);
 
   //set refinment level for problem
-  ierr = mField.modify_problem_ref_level_add_bit("ELASTIC_MECHANICS",bit_level0); CHKERRQ(ierr);
+  ierr = m_field.modify_problem_ref_level_add_bit("ELASTIC_MECHANICS",bit_level0); CHKERRQ(ierr);
 
   /***/
   //Declare problem
 
   //add entitities (by tets) to the field
-  ierr = mField.add_ents_to_field_by_TETs(0,"DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_TETs(0,"DISPLACEMENT"); CHKERRQ(ierr);
 
   //add finite elements entities
-  ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"ELASTIC",MBTET); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"ELASTIC",MBTET); CHKERRQ(ierr);
 
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
   //int order = 5;
-  ierr = mField.set_field_order(0,MBTET,"DISPLACEMENT",order); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBTRI,"DISPLACEMENT",order); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBEDGE,"DISPLACEMENT",order); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBVERTEX,"DISPLACEMENT",1); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBTET,"DISPLACEMENT",order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBTRI,"DISPLACEMENT",order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBEDGE,"DISPLACEMENT",order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBVERTEX,"DISPLACEMENT",1); CHKERRQ(ierr);
 
-  ierr = MetaNeummanForces::addNeumannBCElements(mField,"ELASTIC_MECHANICS","DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = MetaNeummanForces::addNeumannBCElements(m_field,"DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = m_field.modify_problem_add_finite_element("ELASTIC_MECHANICS","FORCE_FE"); CHKERRQ(ierr);
+  ierr = m_field.modify_problem_add_finite_element("ELASTIC_MECHANICS","PRESSURE_FE"); CHKERRQ(ierr);
 
   /****/
   //build database
 
   //build field
-  ierr = mField.build_fields(); CHKERRQ(ierr);
+  ierr = m_field.build_fields(); CHKERRQ(ierr);
 
   //build finite elemnts
-  ierr = mField.build_finite_elements(); CHKERRQ(ierr);
+  ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
 
   //build adjacencies
-  ierr = mField.build_adjacencies(bit_level0); CHKERRQ(ierr);
+  ierr = m_field.build_adjacencies(bit_level0); CHKERRQ(ierr);
 
   //build problem
-  ierr = mField.build_problems(); CHKERRQ(ierr);
+  ierr = m_field.build_problems(); CHKERRQ(ierr);
 
   /****/
   //mesh partitioning 
 
   //partition
-  ierr = mField.partition_problem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
-  ierr = mField.partition_finite_elements("ELASTIC_MECHANICS"); CHKERRQ(ierr);
+  ierr = m_field.partition_problem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
+  ierr = m_field.partition_finite_elements("ELASTIC_MECHANICS"); CHKERRQ(ierr);
   //what are ghost nodes, see Petsc Manual
-  ierr = mField.partition_ghost_dofs("ELASTIC_MECHANICS"); CHKERRQ(ierr);
+  ierr = m_field.partition_ghost_dofs("ELASTIC_MECHANICS"); CHKERRQ(ierr);
 
   //create matrices
   Vec F,D;
-  ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",ROW,&F); CHKERRQ(ierr);
-  ierr = mField.VecCreateGhost("ELASTIC_MECHANICS",COL,&D); CHKERRQ(ierr);
+  ierr = m_field.VecCreateGhost("ELASTIC_MECHANICS",ROW,&F); CHKERRQ(ierr);
+  ierr = m_field.VecCreateGhost("ELASTIC_MECHANICS",COL,&D); CHKERRQ(ierr);
 
   Mat Aij;
-  ierr = mField.MatCreateMPIAIJWithArrays("ELASTIC_MECHANICS",&Aij); CHKERRQ(ierr);
+  ierr = m_field.MatCreateMPIAIJWithArrays("ELASTIC_MECHANICS",&Aij); CHKERRQ(ierr);
 
   struct MyElasticFEMethod: public ElasticFEMethod {
-    MyElasticFEMethod(FieldInterface& _mField,Mat &_Aij,Vec &_D,Vec& _F,double _lambda,double _mu): 
-      ElasticFEMethod(_mField,_Aij,_D,_F,_lambda,_mu) {};
+    MyElasticFEMethod(FieldInterface& _m_field,Mat &_Aij,Vec &_D,Vec& _F,double _lambda,double _mu): 
+      ElasticFEMethod(_m_field,_Aij,_D,_F,_lambda,_mu) {};
 
     PetscErrorCode Fint(Vec F_int) {
       PetscFunctionBegin;
@@ -225,8 +227,8 @@ int main(int argc, char *argv[]) {
   //Assemble F and Aij
   const double young_modulus = 1;
   const double poisson_ratio = 0.0;
-  DisplacementBCFEMethodPreAndPostProc my_dirichlet_bc(mField,"DISPLACEMENT",Aij,D,F);
-  MyElasticFEMethod fe(mField,Aij,D,F,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
+  DisplacementBCFEMethodPreAndPostProc my_dirichlet_bc(m_field,"DISPLACEMENT",Aij,D,F);
+  MyElasticFEMethod fe(m_field,Aij,D,F,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
 
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -234,17 +236,17 @@ int main(int argc, char *argv[]) {
   ierr = MatZeroEntries(Aij); CHKERRQ(ierr);
 
   //preproc
-  ierr = mField.problem_basic_method_preProcess("ELASTIC_MECHANICS",my_dirichlet_bc); CHKERRQ(ierr);
+  ierr = m_field.problem_basic_method_preProcess("ELASTIC_MECHANICS",my_dirichlet_bc); CHKERRQ(ierr);
   //loop elements
-  ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",fe);  CHKERRQ(ierr);
+  ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",fe);  CHKERRQ(ierr);
   boost::ptr_map<string,NeummanForcesSurface> neumann_forces;
-  ierr = MetaNeummanForces::setNeumannFiniteElementOperators(mField,neumann_forces,F,"DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = MetaNeummanForces::setNeumannFiniteElementOperators(m_field,neumann_forces,F,"DISPLACEMENT"); CHKERRQ(ierr);
   boost::ptr_map<string,NeummanForcesSurface>::iterator mit = neumann_forces.begin();
   for(;mit!=neumann_forces.end();mit++) {
-    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS",mit->first,mit->second->getLoopFe()); CHKERRQ(ierr);
+    ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS",mit->first,mit->second->getLoopFe()); CHKERRQ(ierr);
   }
   //postproc
-  ierr = mField.problem_basic_method_postProcess("ELASTIC_MECHANICS",my_dirichlet_bc); CHKERRQ(ierr);
+  ierr = m_field.problem_basic_method_postProcess("ELASTIC_MECHANICS",my_dirichlet_bc); CHKERRQ(ierr);
 
   ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
@@ -270,24 +272,24 @@ int main(int argc, char *argv[]) {
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
   //Save data on mesh
-  ierr = mField.set_global_VecCreateGhost("ELASTIC_MECHANICS",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = m_field.set_global_VecCreateGhost("ELASTIC_MECHANICS",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
 //  PostProcVertexMethod ent_method(moab);
-//  ierr = mField.loop_dofs("ELASTIC_MECHANICS","DISPLACEMENT",ROW,ent_method); CHKERRQ(ierr);
+//  ierr = m_field.loop_dofs("ELASTIC_MECHANICS","DISPLACEMENT",ROW,ent_method); CHKERRQ(ierr);
 
 //  if(pcomm->rank()==0) {
 //    EntityHandle out_meshset;
 //    rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
-//    ierr = mField.problem_get_FE("ELASTIC_MECHANICS","ELASTIC",out_meshset); CHKERRQ(ierr);
+//    ierr = m_field.problem_get_FE("ELASTIC_MECHANICS","ELASTIC",out_meshset); CHKERRQ(ierr);
 //    //rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
 //      rval = moab.write_file((string(mesh_file_name)+".vtk").c_str(),"VTK","",&out_meshset,1); CHKERR_PETSC(rval);
 //    rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
 //  }
 
   //PostProcDisplacemenysAndStarinOnRefMesh fe_post_proc_method(moab);
-//  PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh fe_post_proc_method(mField,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
-//  ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",fe_post_proc_method);  CHKERRQ(ierr);
+//  PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh fe_post_proc_method(m_field,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
+//  ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",fe_post_proc_method);  CHKERRQ(ierr);
 
 //  PetscSynchronizedFlush(PETSC_COMM_WORLD);
 //  if(pcomm->rank()==0) {
@@ -303,7 +305,7 @@ int main(int argc, char *argv[]) {
     cout << "<<<< Displacements (X-Translation, Y-Translation, Z-Translation) >>>>>" << endl;
     myfile << "<<<< Displacements (X-Translation, Y-Translation, Z-Translation) >>>>>" << endl;
     
-    for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"DISPLACEMENT",dof_ptr))
+    for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(m_field,"DISPLACEMENT",dof_ptr))
     {
         if(dof_ptr->get_ent_type()!=MBVERTEX) continue;
         

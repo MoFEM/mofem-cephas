@@ -277,8 +277,10 @@ int main(int argc, char *argv[]) {
     ierr = m_field.set_field_order(prims_faces_edges,"DISPLACEMENT",order>1 ? order-1 : 0); CHKERRQ(ierr);*/
 
     //Elements with boundary conditions
-    ierr = MetaNeummanForces::addNeumannBCElements(m_field,"ELASTIC_MECHANICS","DISPLACEMENT"); CHKERRQ(ierr);
-    ierr = MetaNodalForces::addNodalForceElement(m_field,"ELASTIC_MECHANICS","DISPLACEMENT");  CHKERRQ(ierr);
+    ierr = MetaNeummanForces::addNeumannBCElements(m_field,"DISPLACEMENT"); CHKERRQ(ierr);
+    ierr = MetaNodalForces::addNodalForceElement(m_field,"DISPLACEMENT");  CHKERRQ(ierr);
+    ierr = m_field.modify_problem_add_finite_element("ELASTIC_MECHANICS","FORCE_FE"); CHKERRQ(ierr);
+    ierr = m_field.modify_problem_add_finite_element("ELASTIC_MECHANICS","PRESSURE_FE"); CHKERRQ(ierr);
     ierr = m_field.modify_finite_element_add_field_row("FORCE_FE","LAMBDA"); CHKERRQ(ierr);
     ierr = m_field.modify_finite_element_add_field_col("FORCE_FE","LAMBDA"); CHKERRQ(ierr);
     ierr = m_field.modify_finite_element_add_field_data("FORCE_FE","LAMBDA"); CHKERRQ(ierr);

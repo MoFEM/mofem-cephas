@@ -35,18 +35,17 @@ using namespace MoFEM;
 #include <BodyForce.hpp>
 #include <ThermalStressElement.hpp>
 
-#include <FEMethod_LowLevelStudent.hpp>
-#include <FEMethod_UpLevelStudent.hpp>
-
 #include <PotsProcOnRefMesh.hpp>
 #include <PostProcHookStresses.hpp>
 
-//#include <adolc/adolc.h> 
-//#include <NonLienarElasticElement.hpp>
-#include <ElasticFEMethod.hpp>
+#include <adolc/adolc.h> 
+#include <NonLienarElasticElement.hpp>
+//#include <FEMethod_LowLevelStudent.hpp>
+//#include <FEMethod_UpLevelStudent.hpp>
+//#include <ElasticFEMethod.hpp>
 
 using namespace boost::numeric;
-using namespace ObosleteUsersModules;
+//using namespace ObosleteUsersModules;
 
 ErrorCode rval;
 PetscErrorCode ierr;
@@ -56,13 +55,12 @@ static char help[] = "...\n\n";
 const double young_modulus = 1;
 const double poisson_ratio = 0.0;
 
-/*template<typename TYPE>
+template<typename TYPE>
 struct Hooke: public NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<TYPE> {
 
     Hooke(): NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<TYPE>() {}
 
-    TYPE detC;
-    ublas::matrix<TYPE> invC;
+    ublas::matrix<TYPE> Eps;
     
     virtual PetscErrorCode CalualteP_PiolaKirchhoffI(
       const NonlinearElasticElement::BlockData block_data,
@@ -71,15 +69,18 @@ struct Hooke: public NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI
       PetscErrorCode ierr;
       this->lambda = LAMBDA(block_data.E,block_data.PoissonRatio);
       this->mu = MU(block_data.E,block_data.PoissonRatio);
-      ierr = this->CalulateC_CauchyDefromationTensor(); CHKERRQ(ierr);
-      //ierr = this->NeoHooke_PiolaKirchhoffII(); CHKERRQ(ierr);
-      //this->P.resize(3,3);
-      //noalias(this->P) = prod(this->F,this->S);
-      //cerr << "P: " << P << endl;
+      Eps.resize(3,3);
+      noalias(Eps) = 0.5*(this->F + trans(this->F));
+      this->P.resize(3,3);
+      for(int d1 = 0;d1<3;d1++) {
+	for(int d2 = 0;d2<3;d2++) {
+	  this->P(d1,d2) = ((d1 == d2) ? this->lambda+2*this->mu : 2*this->mu)*Eps(d1,d2);
+	}
+      }
       PetscFunctionReturn(0);
     }
 
-};*/
+};
 
 
 int main(int argc, char *argv[]) {
@@ -140,32 +141,12 @@ int main(int argc, char *argv[]) {
   ierr = m_field.add_field("DISPLACEMENT",H1,3,MF_ZERO); CHKERRQ(ierr);
   ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,3,MF_ZERO); CHKERRQ(ierr);
 
-  //FE
-  ierr = m_field.add_finite_element("ELASTIC",MF_ZERO); CHKERRQ(ierr);
-
-  //Define rows/cols and element data
-  ierr = m_field.modify_finite_element_add_field_row("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
-  ierr = m_field.modify_finite_element_add_field_col("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
-  ierr = m_field.modify_finite_element_add_field_data("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
-  ierr = m_field.modify_finite_element_add_field_data("ELASTIC","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
-
-  //define problems
-  ierr = m_field.add_problem("ELASTIC_PROB"); CHKERRQ(ierr);
-
-  //set finite elements for problem
-  ierr = m_field.modify_problem_add_finite_element("ELASTIC_PROB","ELASTIC"); CHKERRQ(ierr);
-
-  //set refinment level for problem
-  ierr = m_field.modify_problem_ref_level_add_bit("ELASTIC_PROB",bit_level0); CHKERRQ(ierr);
 
   //Declare problem
 
   //add entitities (by tets) to the field
   ierr = m_field.add_ents_to_field_by_TETs(0,"DISPLACEMENT",2); CHKERRQ(ierr);
   ierr = m_field.add_ents_to_field_by_TETs(0,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
-
-  //add finite elements entities
-  ierr = m_field.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"ELASTIC",MBTET); CHKERRQ(ierr);
 
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
@@ -178,44 +159,56 @@ int main(int argc, char *argv[]) {
   ierr = m_field.set_field_order(0,MBEDGE,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
 
-  ierr = MetaNeummanForces::addNeumannBCElements(m_field,"ELASTIC_PROB","DISPLACEMENT"); CHKERRQ(ierr);
-  ierr = MetaNodalForces::addNodalForceElement(m_field,"ELASTIC_PROB","DISPLACEMENT"); CHKERRQ(ierr);
+  //define eleatic element
+  NonlinearElasticElement elastic(m_field,2);
+  ierr = elastic.setBlocks(); CHKERRQ(ierr);
+  ierr = elastic.addElement("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
+  Hooke<adouble> hooke_adouble;
+  ierr = elastic.setOperators(hooke_adouble,"DISPLACEMENT","MESH_NODE_POSITIONS",false,true); CHKERRQ(ierr);
 
   ierr = m_field.add_finite_element("BODY_FORCE"); CHKERRQ(ierr);
   ierr = m_field.modify_finite_element_add_field_row("BODY_FORCE","DISPLACEMENT"); CHKERRQ(ierr);
   ierr = m_field.modify_finite_element_add_field_col("BODY_FORCE","DISPLACEMENT"); CHKERRQ(ierr);
   ierr = m_field.modify_finite_element_add_field_data("BODY_FORCE","DISPLACEMENT"); CHKERRQ(ierr);
   ierr = m_field.modify_finite_element_add_field_data("BODY_FORCE","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
-  ierr = m_field.modify_problem_add_finite_element("ELASTIC_PROB","BODY_FORCE"); CHKERRQ(ierr);
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,BLOCKSET|BODYFORCESSET,it)) {
     Range tets;
     rval = m_field.get_moab().get_entities_by_type(it->meshset,MBTET,tets,true); CHKERR_PETSC(rval);
     ierr = m_field.add_ents_to_finite_element_by_TETs(tets,"BODY_FORCE"); CHKERRQ(ierr);
   }
 
+  //neuman forces
+  ierr = MetaNeummanForces::addNeumannBCElements(m_field,"DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = MetaNodalForces::addNodalForceElement(m_field,"DISPLACEMENT"); CHKERRQ(ierr);
+
   //define fluid pressure finite elements
   FluidPressure fluid_pressure_fe(m_field);
-  fluid_pressure_fe.addNeumannFluidPressureBCElements("ELASTIC_PROB","DISPLACEMENT");
-
+  fluid_pressure_fe.addNeumannFluidPressureBCElements("DISPLACEMENT");
   //define elements for thermo elasticity if themperature field avelible
   ThermalStressElement thermal_stress_elem(m_field);
   if(m_field.check_field("TEMP")) {
-    ierr = thermal_stress_elem.addThermalSterssElement("ELASTIC_PROB","ELASTIC","DISPLACEMENT","TEMP"); CHKERRQ(ierr);
+    ierr = thermal_stress_elem.addThermalSterssElement("ELASTIC","DISPLACEMENT","TEMP"); CHKERRQ(ierr);
   }
 
-  //build database
+  //define problems
+  ierr = m_field.add_problem("ELASTIC_PROB"); CHKERRQ(ierr);
+  //set refinment level for problem
+  ierr = m_field.modify_problem_ref_level_add_bit("ELASTIC_PROB",bit_level0); CHKERRQ(ierr);
+  ierr = m_field.modify_problem_add_finite_element("ELASTIC_PROB","ELASTIC"); CHKERRQ(ierr);
+  ierr = m_field.modify_problem_add_finite_element("ELASTIC_PROB","BODY_FORCE"); CHKERRQ(ierr);
+  ierr = m_field.modify_problem_add_finite_element("ELASTIC_PROB","FLUID_PRESSURE_FE"); CHKERRQ(ierr);
+  ierr = m_field.modify_problem_add_finite_element("ELASTIC_PROB","FORCE_FE"); CHKERRQ(ierr);
+  ierr = m_field.modify_problem_add_finite_element("ELASTIC_PROB","PRESSURE_FE"); CHKERRQ(ierr);
 
+  //build database
   //build field
   ierr = m_field.build_fields(); CHKERRQ(ierr);
-
   //build finite elemnts
   ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
-
   //build adjacencies
   ierr = m_field.build_adjacencies(bit_level0); CHKERRQ(ierr);
 
   //build problem
-  //ierr = m_field.build_problems(); CHKERRQ(ierr);
   if(is_partitioned) {
     ierr = m_field.build_partitioned_problems(1); CHKERRQ(ierr);
     ierr = m_field.partition_finite_elements("ELASTIC_PROB",true,0,pcomm->size(),1); CHKERRQ(ierr);
@@ -243,35 +236,11 @@ int main(int argc, char *argv[]) {
   Mat Aij;
   ierr = m_field.MatCreateMPIAIJWithArrays("ELASTIC_PROB",&Aij); CHKERRQ(ierr);
 
-  //Matrix View
-  //MatView(Aij,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
-  //std::string wait;
-  //std::cin >> wait;
-
-  struct MyElasticFEMethod: public ElasticFEMethod {
-    MyElasticFEMethod(FieldInterface& _m_field,Mat _Aij,Vec _D,Vec& _F,double _lambda,double _mu): 
-      ElasticFEMethod(_m_field,_Aij,_D,_F,_lambda,_mu) {};
-
-    PetscErrorCode Fint(Vec F_int) {
-      PetscFunctionBegin;
-      ierr = ElasticFEMethod::Fint(); CHKERRQ(ierr);
-      for(int rr = 0;rr<row_mat;rr++) {
-	if(RowGlob[rr].size()!=f_int[rr].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-	if(RowGlob[rr].size()==0) continue;
-	f_int[rr] *= -1; //This is not SNES we solve K*D = -RES
-	ierr = VecSetValues(F_int,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f_int[rr].data()[0]),ADD_VALUES); CHKERRQ(ierr);
-      }
-      PetscFunctionReturn(0);
-    }
-
-  };
-
   Projection10NodeCoordsOnField ent_method_material(m_field,"MESH_NODE_POSITIONS");
   ierr = m_field.loop_dofs("MESH_NODE_POSITIONS",ent_method_material); CHKERRQ(ierr);
 
   //Assemble F and Aij
   DisplacementBCFEMethodPreAndPostProc my_dirichlet_bc(m_field,"DISPLACEMENT",Aij,D,F);
-  MyElasticFEMethod my_fe(m_field,Aij,D,F,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
 
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -282,7 +251,10 @@ int main(int argc, char *argv[]) {
   ierr = m_field.problem_basic_method_preProcess("ELASTIC_PROB",my_dirichlet_bc); CHKERRQ(ierr);
   //loop elems
   //PetscBarrier(PETSC_NULL);
-  ierr = m_field.loop_finite_elements("ELASTIC_PROB","ELASTIC",my_fe);  CHKERRQ(ierr);
+  elastic.getLoopFeRhs().snes_f = F;
+  elastic.getLoopFeLhs().snes_B = Aij;
+  ierr = m_field.loop_finite_elements("ELASTIC_PROB","ELASTIC",elastic.getLoopFeRhs());  CHKERRQ(ierr);
+  ierr = m_field.loop_finite_elements("ELASTIC_PROB","ELASTIC",elastic.getLoopFeLhs());  CHKERRQ(ierr);
   //forces and preassures on surface
   boost::ptr_map<string,NeummanForcesSurface> neumann_forces;
   ierr = MetaNeummanForces::setNeumannFiniteElementOperators(m_field,neumann_forces,F,"DISPLACEMENT"); CHKERRQ(ierr);
