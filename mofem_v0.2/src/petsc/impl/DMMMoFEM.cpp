@@ -60,12 +60,13 @@ struct DMCtx {
   PetscBool isPartitioned;		//< true if read mesh is on parts
   PetscInt verbosity;			//< verbosity
 
+  int rAnk,sIze;
+
   //global control
   static PetscBool isProblemsBuild;
 
   //pouinter to data structures
   const MoFEMProblem *problemPtr;	//< pinter to problem data struture
-  ParallelComm* pComm;
 
   DMCtx(); 
   virtual ~DMCtx();
@@ -156,6 +157,18 @@ PetscErrorCode DMMoFEMCreateMoFEM(DM dm,MoFEM::FieldInterface *m_field_ptr,const
   dm_field->kspCtx = new KspCtx(*m_field_ptr,problem_name);
   dm_field->snesCtx = new SnesCtx(*m_field_ptr,problem_name);
   dm_field->tsCtx = new TsCtx(*m_field_ptr,problem_name);
+
+  MPI_Comm comm;
+  ierr = PetscObjectGetComm((PetscObject)dm,&comm); CHKERRQ(ierr);
+  int result = 0;
+  MPI_Comm_compare(comm,m_field_ptr->get_comm(),&result);
+  //cerr << result << " " << MPI_IDENT << " " << MPI_CONGRUENT << " " << MPI_SIMILAR << " " << MPI_UNEQUAL << endl;
+  if(result > MPI_CONGRUENT) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"MoFEM and DM have to use the same communicator");
+  }
+  MPI_Comm_size(comm,&dm_field->sIze);
+  MPI_Comm_rank(comm,&dm_field->rAnk);
+
   PetscFunctionReturn(0);
 }
 
@@ -210,7 +223,7 @@ PetscErrorCode DMoFEMLoopFiniteElements(DM dm,const char fe_name[],MoFEM::FEMeth
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;
-  ierr = dm_field->mField_ptr->loop_finite_elements(dm_field->problemPtr,fe_name,*method,dm_field->pComm->rank(),dm_field->pComm->rank()); CHKERRQ(ierr);
+  ierr = dm_field->mField_ptr->loop_finite_elements(dm_field->problemPtr,fe_name,*method,dm_field->rAnk,dm_field->rAnk); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -219,7 +232,7 @@ PetscErrorCode DMoFEMLoopDofs(DM dm,const char field_name[],MoFEM::EntMethod *me
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;
-  ierr = dm_field->mField_ptr->loop_dofs(dm_field->problemPtr,field_name,ROW,*method,dm_field->pComm->rank(),dm_field->pComm->rank()); CHKERRQ(ierr);
+  ierr = dm_field->mField_ptr->loop_dofs(dm_field->problemPtr,field_name,ROW,*method,dm_field->rAnk,dm_field->rAnk); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -401,7 +414,7 @@ PetscErrorCode DMSetUp_MoFEM(DM dm) {
       ierr = dm_field->mField_ptr->build_partitioned_problems(); CHKERRQ(ierr);
       dm_field->isProblemsBuild = PETSC_TRUE;
     }
-    ierr = dm_field->mField_ptr->partition_finite_elements(dm_field->problemName,true,0,dm_field->pComm->size(),1); CHKERRQ(ierr);
+    ierr = dm_field->mField_ptr->partition_finite_elements(dm_field->problemName,true,0,dm_field->sIze,1); CHKERRQ(ierr);
   } else {
     if(!dm_field->isPartitioned) {
       ierr = dm_field->mField_ptr->build_problems(); CHKERRQ(ierr);

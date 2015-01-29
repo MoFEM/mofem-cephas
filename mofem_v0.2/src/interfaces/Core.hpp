@@ -521,6 +521,7 @@ struct Core:
   PetscErrorCode field_axpy(const double alpha,const string& fiel_name_x,const string& field_name_y,bool error_if_missing = false,bool creat_if_missing = false);
   PetscErrorCode field_scale(const double alpha,const string& fiel_name);
   PetscErrorCode set_field(const double val,const EntityType type,const string& fiel_name);
+  PetscErrorCode set_field(const double val,const EntityType type,const Range &ents,const string& field_name);
 
   //Get adjacencies
   PetscErrorCode get_adjacencies_equality(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities);

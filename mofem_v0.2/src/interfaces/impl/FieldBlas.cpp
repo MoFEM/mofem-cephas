@@ -100,6 +100,28 @@ PetscErrorCode Core::set_field(const double val,const EntityType type,const stri
   }
   PetscFunctionReturn(0);
 }
+PetscErrorCode Core::set_field(const double val,const EntityType type,const Range &ents,const string& field_name) {
+  PetscFunctionBegin;
+  DofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag >::type::iterator dit,hi_dit;
+  dit = dofsMoabField.get<Composite_Name_And_Type_mi_tag >().lower_bound(boost::make_tuple(field_name,type));
+  hi_dit = dofsMoabField.get<Composite_Name_And_Type_mi_tag >().upper_bound(boost::make_tuple(field_name,type));
+  EntityHandle ent,last = 0;
+  bool cont;
+  for(;dit!=hi_dit;dit++) {
+    ent = dit->get_ent();
+    if(ent != last) {
+      if(ents.find(ent)==ents.end()) {
+	cont = true;
+      } else {
+	cont = end;
+      }
+      last = ent;
+    }
+    if(cont) continue;
+    dit->get_FieldData() = val;
+  }
+  PetscFunctionReturn(0);
+}
 PetscErrorCode Core::field_scale(const double alpha,const string& field_name) {
   PetscFunctionBegin;
   DofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator dit,hi_dit;

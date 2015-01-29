@@ -1253,6 +1253,18 @@ struct FieldInterface: public FieldUnknownInterface {
     */
   virtual PetscErrorCode set_field(const double val,const EntityType type,const string& field_name) = 0;
 
+  /** \brief set field 
+    * \ingroup mofem_field_operators
+    *
+    * field_y = val
+    *
+    * \param val
+    * \param entity type
+    * \param on enties
+    * \param field_name
+    *
+    */
+  virtual PetscErrorCode set_field(const double val,const EntityType type,const Range &ents,const string& field_name) = 0;
 
   /** \brief Set data for BasicMethod 
     *

@@ -62,8 +62,12 @@ struct BlockOptionData {
   int oRder;
   double cOnductivity;
   double cApacity;
+  double initTemp;
   BlockOptionData():
-    oRder(-1),cOnductivity(-1),cApacity(-1) {}
+    oRder(-1),
+    cOnductivity(-1),
+    cApacity(-1),
+    initTemp(0) {}
 };
 
 struct MonitorPostProc: public FEMethod {
@@ -235,10 +239,15 @@ int main(int argc, char *argv[]) {
         str_capa << "block_" << it->get_msId() << ".heat_capacity";
         config_file_options.add_options()
 	 (str_capa.str().c_str(),po::value<double>(&block_data[it->get_msId()].cApacity)->default_value(-1));
+	ostringstream str_init_temp;
+        str_init_temp << "block_" << it->get_msId() << ".initail_temperature";
+        config_file_options.add_options()
+	 (str_init_temp.str().c_str(),po::value<double>(&block_data[it->get_msId()].initTemp)->default_value(0));
       }
       config_file_options.add_options()
 	("climate_model.solar_radiation",po::value<bool>(&solar_radiation)->default_value(false));
-      store(parse_config_file(ini_file,config_file_options,true), vm);
+      po::parsed_options parsed = parse_config_file(ini_file,config_file_options,true);
+      store(parsed,vm);
       po::notify(vm); 
       for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
 	if(block_data[it->get_msId()].oRder == -1) continue;
@@ -253,6 +262,12 @@ int main(int argc, char *argv[]) {
 	ierr = moab.get_adjacencies(block_ents,1,false,ents_to_set_order,Interface::UNION); CHKERRQ(ierr);
         ierr = m_field.set_field_order(ents_to_set_order,"TEMP",block_data[it->get_msId()].oRder); CHKERRQ(ierr);
         ierr = m_field.set_field_order(ents_to_set_order,"TEMP_RATE",block_data[it->get_msId()].oRder); CHKERRQ(ierr);
+      }
+      vector<string> additional_parameters;
+      additional_parameters = collect_unrecognized(parsed.options,po::include_positional);
+      for(vector<string>::iterator vit = additional_parameters.begin();
+	vit!=additional_parameters.end();vit++) {
+	ierr = PetscPrintf(PETSC_COMM_WORLD,"** WARRNING Unrecognised option %s\n",vit->c_str()); CHKERRQ(ierr);
       }
     } catch (const std::exception& ex) {
       ostringstream ss;
@@ -309,6 +324,16 @@ int main(int argc, char *argv[]) {
   //priject 10 node tet approximation of gemetry on hierarhical basis 
   Projection10NodeCoordsOnField ent_method_material(m_field,"MESH_NODE_POSITIONS");
   ierr = m_field.loop_dofs("MESH_NODE_POSITIONS",ent_method_material); CHKERRQ(ierr);
+  /*for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
+    if(block_data[it->get_msId()].initTemp!=0) {
+      Range block_ents;
+      rval = moab.get_entities_by_handle(it->meshset,block_ents,true); CHKERR(rval);
+      Range vertices;
+      rval = moab.get_connectivity(block_ents,vertices,true); CHKERR_PETSC(rval);
+      //ierr = m_field.set_field(block_data[it->get_msId()].initTemp,MBVERTEX,vertices,"TEMP"); CHKERRQ(ierr);
+    }
+  }*/
+
   //build finite elemnts
   ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
   //build adjacencies

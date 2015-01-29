@@ -35,8 +35,6 @@ void tricircumcenter3d_tp(double a[3],double b[3],double c[3],
 
 using namespace ObosleteUsersModules;
 
-namespace MoFEM {
-
 /** 
   * 
   * dN/dX = (1/A) * [ Spin[dX/dksi]*dN/deta - Spin[dX/deta]*dN/dksi ]
@@ -751,6 +749,5 @@ struct Snes_dCTgc_CONSTANT_AREA_FEMethod: public dCTgc_CONSTANT_AREA_FEMethod {
 
 };
 
-}
 
 #endif // __MOABFEMETHOD_CONSTAREA_HPP__
