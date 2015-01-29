@@ -167,6 +167,9 @@ int main(int argc, char *argv[]) {
   MoistureTransportElement::UpdateAndControl update_velocities(m_field,"CONC","CONC_RATE");
   MoistureTransportElement::TimeSeriesMonitor monitor(m_field,"CONC_SERIES","CONC");
 
+  ierr = m_field.problem_basic_method_preProcess("MOISTURE_PROBLEM",my_dirichlet_bc); CHKERRQ(ierr);
+  ierr = m_field.set_global_VecCreateGhost("MOISTURE_PROBLEM",ROW,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+
   //preprocess
   ts_ctx.get_preProcess_to_do_IFunction().push_back(&update_velocities);
   ts_ctx.get_preProcess_to_do_IFunction().push_back(&my_dirichlet_bc);

@@ -19,7 +19,7 @@
 include_directories("${MoFEM_PROJECT_SOURCE_DIR}/users_modules/homogenisation/src")
 include_directories("${MoFEM_PROJECT_SOURCE_DIR}/users_modules/moisture_transport/src")
 include_directories("${MoFEM_PROJECT_SOURCE_DIR}/users_modules/degradation_model/src")
-
+include_directories("${MoFEM_PROJECT_SOURCE_DIR}/users_modules/obsolete/src")
 
 # ===================== moisture transport homogenisaiton ============================================
 add_executable(MoistureTrans_Disp_MRhs ${UM_SOURCE_DIR}/degradation_model/MoistureTrans_Disp_MRhs.cpp)
@@ -65,5 +65,23 @@ target_link_libraries(wt_unsteady_macro
   mofem_third_party
   mofem_cblas
   ${MoFEM_PROJECT_LIBS})
+
+
+# ===================== Mechanical ============================================
+add_executable(mech_macro ${UM_SOURCE_DIR}/degradation_model/mech_macro.cpp)
+target_link_libraries(mech_macro
+  mofem_finite_element_library
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  users_modules_obsolete
+  user_modules_homogenisation
+  mofem_approx
+  mofem_third_party
+  mofem_cblas
+  ${MoFEM_PROJECT_LIBS})
+
+
 
 
