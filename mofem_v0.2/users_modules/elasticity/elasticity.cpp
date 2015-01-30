@@ -53,7 +53,9 @@ using namespace boost::numeric;
 ErrorCode rval;
 PetscErrorCode ierr;
 
-static char help[] = "...\n\n";
+static char help[] = 
+  "-my_block_config set block data\n"
+  "\n";
 
 const double young_modulus = 1;
 const double poisson_ratio = 0.0;
@@ -258,9 +260,25 @@ int main(int argc, char *argv[]) {
   fluid_pressure_fe.addNeumannFluidPressureBCElements("DISPLACEMENT");
   //define elements for thermo elasticity if themperature field avelible
   ThermalStressElement thermal_stress_elem(m_field);
+
+  if(!m_field.check_field("TEMP")) {
+    bool add_temp_field = false;
+    for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
+      if(block_data[it->get_msId()].initTemp!=0) {
+	add_temp_field = true;
+	break;
+      }
+    }
+    if(add_temp_field) {
+      ierr = m_field.add_field("TEMP",H1,1,MF_ZERO); CHKERRQ(ierr);
+      ierr = m_field.add_ents_to_field_by_TETs(0,"TEMP"); CHKERRQ(ierr);
+      ierr = m_field.set_field_order(0,MBVERTEX,"TEMP",1); CHKERRQ(ierr);
+    }
+  }
+
   if(m_field.check_field("TEMP")) {
     ierr = thermal_stress_elem.addThermalSterssElement("ELASTIC","DISPLACEMENT","TEMP"); CHKERRQ(ierr);
-  }
+  } 
 
   //build database
   //build field
@@ -268,7 +286,19 @@ int main(int argc, char *argv[]) {
   //get HO gemetry for 10 node tets
   Projection10NodeCoordsOnField ent_method_material(m_field,"MESH_NODE_POSITIONS");
   ierr = m_field.loop_dofs("MESH_NODE_POSITIONS",ent_method_material); CHKERRQ(ierr);
-
+  if(m_field.check_field("TEMP")) {
+    for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
+      if(block_data[it->get_msId()].initTemp!=0) {
+	PetscPrintf(PETSC_COMM_WORLD,"Set block %d temperature to %3.2g\n",
+	  it->get_msId(),block_data[it->get_msId()].initTemp);
+	Range block_ents;
+	rval = moab.get_entities_by_handle(it->meshset,block_ents,true); CHKERR(rval);
+	Range vertices;
+	rval = moab.get_connectivity(block_ents,vertices,true); CHKERR_PETSC(rval);
+	ierr = m_field.set_field(block_data[it->get_msId()].initTemp,MBVERTEX,vertices,"TEMP"); CHKERRQ(ierr);
+      }
+    }
+  }
 
   //build finite elemnts
   ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
