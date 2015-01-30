@@ -62,6 +62,7 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
   int getRule(int order) { return -1; };
 
   struct CommonData {
+    Range tEts;
     map<string,vector<ublas::vector<double> > > fieldMap;
     map<string,vector<ublas::matrix<double> > > gradMap;
   };
@@ -161,32 +162,32 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
     }
     gaussPts_FirstOrder = trans(gaussPts_FirstOrder);
 
-    Range tets;
+    commonData.tEts.clear();
     for(unsigned int tt = 0;tt<refTets.size1();tt++) {
       EntityHandle conn[] = { 
 	mapGaussPts[refTets(tt,0)], mapGaussPts[refTets(tt,1)],
 	mapGaussPts[refTets(tt,2)], mapGaussPts[refTets(tt,3)] };
       EntityHandle tet;
       rval = postProcMesh.create_element(MBTET,conn,4,tet); CHKERR_PETSC(rval);
-      tets.insert(tet);
+      commonData.tEts.insert(tet);
     }
  
-    //cerr << tets.size() << endl;
+    //cerr << commonData.tEts.size() << endl;
 
     EntityHandle meshset;
     rval = postProcMesh.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERR_PETSC(rval);
-    rval = postProcMesh.add_entities(meshset,tets); CHKERR_PETSC(rval);
+    rval = postProcMesh.add_entities(meshset,commonData.tEts); CHKERR_PETSC(rval);
     //create higher order entities 
     if(tenNodesPostProcTets) {
       rval = postProcMesh.convert_entities(meshset,true,false,false); CHKERR_PETSC(rval);
     }
 
-    tets.clear();
-    rval = postProcMesh.get_entities_by_type(meshset,MBTET,tets,true); CHKERR_PETSC(rval);
+    commonData.tEts.clear();
+    rval = postProcMesh.get_entities_by_type(meshset,MBTET,commonData.tEts,true); CHKERR_PETSC(rval);
 
-    //cerr << "<-- " << tets.size() << endl;
+    //cerr << "<-- " << commonData.tEts.size() << endl;
     Range nodes;
-    rval = postProcMesh.get_connectivity(tets,nodes,false); CHKERR_PETSC(rval);
+    rval = postProcMesh.get_connectivity(commonData.tEts,nodes,false); CHKERR_PETSC(rval);
 
     gaussPts.resize(nodes.size(),4);
     Range::iterator nit = nodes.begin();
@@ -233,11 +234,9 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
       mapGaussPts[gg] = *nit;
     }
 
-    tets.clear();
-    rval = postProcMesh.get_entities_by_type(0,MBTET,tets,true); CHKERR_PETSC(rval);
-    //cerr << "<--- <--- " << tets.size() << endl;
-
-
+    //tEts.clear();
+    //rval = postProcMesh.get_entities_by_type(0,MBTET,tEts,true); CHKERR_PETSC(rval);
+    //cerr << "<--- <--- " << tEts.size() << endl;
 
     } catch (exception& ex) {
       ostringstream ss;

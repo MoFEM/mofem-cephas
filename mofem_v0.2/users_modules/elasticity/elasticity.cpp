@@ -20,8 +20,11 @@
 #include <MoFEM.hpp>
 using namespace MoFEM;
 
-#include <DirichletBC.hpp>
+#include <boost/program_options.hpp>
+using namespace std;
+namespace po = boost::program_options;
 
+#include <DirichletBC.hpp>
 #include <Projection10NodeCoordsOnField.hpp>
 
 #include <boost/numeric/ublas/vector_proxy.hpp>
@@ -82,6 +85,17 @@ struct Hooke: public NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI
 
 };
 
+struct BlockOptionData {
+  int oRder;
+  double yOung;
+  double pOisson;
+  double initTemp;
+  BlockOptionData():
+    oRder(-1),
+    yOung(-1),
+    pOisson(-1),
+    initTemp(0) {}
+};
 
 int main(int argc, char *argv[]) {
 
@@ -141,7 +155,6 @@ int main(int argc, char *argv[]) {
   ierr = m_field.add_field("DISPLACEMENT",H1,3,MF_ZERO); CHKERRQ(ierr);
   ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,3,MF_ZERO); CHKERRQ(ierr);
 
-
   //Declare problem
 
   //add entitities (by tets) to the field
@@ -158,6 +171,65 @@ int main(int argc, char *argv[]) {
   ierr = m_field.set_field_order(0,MBTRI,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0,MBEDGE,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
+
+  // configure blocks by parsing config file
+  // it allow to set approximation order for each block independettly
+  PetscBool block_config;
+  char block_config_file[255];
+  ierr = PetscOptionsGetString(PETSC_NULL,"-my_block_config",block_config_file,255,&block_config); CHKERRQ(ierr);
+  map<int,BlockOptionData> block_data;
+  if(block_config) {
+    try {
+      ifstream ini_file(block_config_file);  
+      //cerr << block_config_file << endl;
+      po::variables_map vm;
+      po::options_description config_file_options;
+      for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
+        ostringstream str_order;
+        str_order << "block_" << it->get_msId() << ".displacemet_order";
+        config_file_options.add_options()
+	 (str_order.str().c_str(),po::value<int>(&block_data[it->get_msId()].oRder)->default_value(order));
+	ostringstream str_cond;
+        str_cond << "block_" << it->get_msId() << ".young_modulus";
+        config_file_options.add_options()
+	 (str_cond.str().c_str(),po::value<double>(&block_data[it->get_msId()].yOung)->default_value(-1));
+	ostringstream str_capa;
+        str_capa << "block_" << it->get_msId() << ".poisson_ratio";
+        config_file_options.add_options()
+	 (str_capa.str().c_str(),po::value<double>(&block_data[it->get_msId()].pOisson)->default_value(-1));
+	ostringstream str_init_temp;
+        str_init_temp << "block_" << it->get_msId() << ".initail_temperature";
+        config_file_options.add_options()
+	 (str_init_temp.str().c_str(),po::value<double>(&block_data[it->get_msId()].initTemp)->default_value(0));
+      }
+      po::parsed_options parsed = parse_config_file(ini_file,config_file_options,true);
+      store(parsed,vm);
+      po::notify(vm); 
+      for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
+	if(block_data[it->get_msId()].oRder == -1) continue;
+        if(block_data[it->get_msId()].oRder == order) continue;
+	PetscPrintf(PETSC_COMM_WORLD,"Set block %d oRder to %d\n",it->get_msId(),block_data[it->get_msId()].oRder);
+	Range block_ents;
+	rval = moab.get_entities_by_handle(it->meshset,block_ents,true); CHKERR(rval);
+	Range ents_to_set_order;
+	ierr = moab.get_adjacencies(block_ents,3,false,ents_to_set_order,Interface::UNION); CHKERRQ(ierr);
+	ents_to_set_order = ents_to_set_order.subset_by_type(MBTET);
+	ierr = moab.get_adjacencies(block_ents,2,false,ents_to_set_order,Interface::UNION); CHKERRQ(ierr);
+	ierr = moab.get_adjacencies(block_ents,1,false,ents_to_set_order,Interface::UNION); CHKERRQ(ierr);
+        ierr = m_field.set_field_order(ents_to_set_order,"DISPLACEMENT",block_data[it->get_msId()].oRder); CHKERRQ(ierr);
+      }
+      vector<string> additional_parameters;
+      additional_parameters = collect_unrecognized(parsed.options,po::include_positional);
+      for(vector<string>::iterator vit = additional_parameters.begin();
+	vit!=additional_parameters.end();vit++) {
+	ierr = PetscPrintf(PETSC_COMM_WORLD,"** WARRNING Unrecognised option %s\n",vit->c_str()); CHKERRQ(ierr);
+      }
+    } catch (const std::exception& ex) {
+      ostringstream ss;
+      ss << ex.what() << endl;
+      SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+    }
+  }
 
   //define eleatic element
   NonlinearElasticElement elastic(m_field,2);
@@ -196,6 +268,8 @@ int main(int argc, char *argv[]) {
   //get HO gemetry for 10 node tets
   Projection10NodeCoordsOnField ent_method_material(m_field,"MESH_NODE_POSITIONS");
   ierr = m_field.loop_dofs("MESH_NODE_POSITIONS",ent_method_material); CHKERRQ(ierr);
+
+
   //build finite elemnts
   ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
   //build adjacencies

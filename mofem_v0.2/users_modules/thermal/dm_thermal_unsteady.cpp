@@ -324,15 +324,15 @@ int main(int argc, char *argv[]) {
   //priject 10 node tet approximation of gemetry on hierarhical basis 
   Projection10NodeCoordsOnField ent_method_material(m_field,"MESH_NODE_POSITIONS");
   ierr = m_field.loop_dofs("MESH_NODE_POSITIONS",ent_method_material); CHKERRQ(ierr);
-  /*for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
+  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
     if(block_data[it->get_msId()].initTemp!=0) {
       Range block_ents;
       rval = moab.get_entities_by_handle(it->meshset,block_ents,true); CHKERR(rval);
       Range vertices;
       rval = moab.get_connectivity(block_ents,vertices,true); CHKERR_PETSC(rval);
-      //ierr = m_field.set_field(block_data[it->get_msId()].initTemp,MBVERTEX,vertices,"TEMP"); CHKERRQ(ierr);
+      ierr = m_field.set_field(block_data[it->get_msId()].initTemp,MBVERTEX,vertices,"TEMP"); CHKERRQ(ierr);
     }
-  }*/
+  }
 
   //build finite elemnts
   ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
