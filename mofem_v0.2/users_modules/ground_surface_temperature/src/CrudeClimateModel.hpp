@@ -174,7 +174,7 @@ struct CrudeClimateModel: public GenricClimateModel {
     for(;t<t0+duration;t+=step) {
 
       struct tm current_time;
-      current_time = *localtime(&t); /*gmtime(&t);*/
+      current_time = *gmtime(&t);
       spaData.second = current_time.tm_sec;
       spaData.minute = current_time.tm_min;
       spaData.hour = current_time.tm_hour;
@@ -251,7 +251,7 @@ struct CrudeClimateModel: public GenricClimateModel {
     t += time*60*60*24;
 
     struct tm current_time;
-    current_time = *localtime(&t);
+    current_time = *gmtime(&t);
     spaData.second = current_time.tm_sec;
     spaData.minute = current_time.tm_min;
     spaData.hour = current_time.tm_hour;
