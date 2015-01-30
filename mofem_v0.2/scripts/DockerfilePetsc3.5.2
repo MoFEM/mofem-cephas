@@ -6,7 +6,7 @@ MAINTAINER Lukasz.Kaczmarczyk@glasgow.ac.uk
 RUN echo 'APT::Install-Recommends "0";' > /etc/apt/apt.conf.d/99local
 
 # Install packages
-RUN apt-get update && apt-get install -y openssh-server wget valgrind git g++ gdb m4 automake libsigsegv2 build-essential libibverbs-dev libblas-dev gfortran libatlas-dev libatlas-base-dev libhdf5-openmpi-dev libnetcdf-dev libjpeg-dev graphviz doxygen cmake gnuplot pstack ca-certificates python libadolc-dev bison flex libx11-dev libboost-all-dev xauth xterm && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y openssh-server wget valgrind git g++ gdb m4 automake libtool libsigsegv2 build-essential libibverbs-dev libblas-dev gfortran libatlas-dev libatlas-base-dev libhdf5-openmpi-dev libnetcdf-dev libjpeg-dev graphviz doxygen cmake gnuplot pstack ca-certificates python libadolc-dev bison flex libx11-dev libboost-all-dev xauth xterm && rm -rf /var/lib/apt/lists/*
 
 # Set passord
 RUN mkdir /var/run/sshd
