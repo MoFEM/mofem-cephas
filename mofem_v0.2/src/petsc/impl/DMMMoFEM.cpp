@@ -77,7 +77,7 @@ struct DMCtx {
   friend PetscErrorCode DMCreateLocalVector_MoFEM(DM dm,Vec *locV);
   friend PetscErrorCode DMCreateMatrix_MoFEM(DM dm,Mat *M);
   friend PetscErrorCode DMSetUp_MoFEM(DM dm); 
-  #if (PETSC_VERSION_MAJOR >= 3 && PETSC_VERSION_MINOR >= 3) 
+  #if PETSC_VERSION_GE(3,5,3)
     friend PetscErrorCode DMSetFromOptions_MoFEM(PetscOptions *PetscOptionsObject,DM dm);
   #else 
     friend PetscErrorCode DMSetFromOptions_MoFEM(DM dm);
@@ -398,16 +398,16 @@ PetscErrorCode DMCreateMatrix_MoFEM(DM dm,Mat *M) {
   PetscFunctionReturn(0);
 }
 
-#if (PETSC_VERSION_MAJOR >= 3 && PETSC_VERSION_MINOR >= 3) 
+  #if PETSC_VERSION_GE(3,5,3)
     PetscErrorCode DMSetFromOptions_MoFEM(PetscOptions *PetscOptionsObject,DM dm) {
-#else 
+  #else 
     PetscErrorCode DMSetFromOptions_MoFEM(DM dm) {
-#endif 
+  #endif 
   PetscErrorCode ierr;
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;
-  #if (PETSC_VERSION_MAJOR >= 3 && PETSC_VERSION_MINOR >= 3) 
+  #if PETSC_VERSION_GE(3,5,3)
     ierr = PetscOptionsHead(PetscOptionsObject,"DMMoFEM Options");CHKERRQ(ierr);
   #else 
     ierr = PetscOptionsHead("DMMoFEM Options");CHKERRQ(ierr);

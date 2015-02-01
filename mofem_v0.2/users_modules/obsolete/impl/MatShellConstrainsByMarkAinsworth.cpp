@@ -39,7 +39,7 @@ PetscErrorCode matPROJ_ctx::InitQorP(Vec x) {
       ierr = KSPGetTolerances(ksp,&rtol,&abstol,&dtol,&maxits); CHKERRQ(ierr);
       ierr = KSPSetUp(ksp); CHKERRQ(ierr);
       ierr = KSPMonitorCancel(ksp); CHKERRQ(ierr);
-      #if (PETSC_VERSION_MAJOR >= 3 && PETSC_VERSION_MINOR >= 3) 
+      #if PETSC_VERSION_GE(3,5,3) 
 	ierr = MatCreateVecs(C,&_x_,PETSC_NULL); CHKERRQ(ierr);
 	ierr = MatCreateVecs(C,PETSC_NULL,&Cx); CHKERRQ(ierr);
 	ierr = MatCreateVecs(CCT,PETSC_NULL,&CCTm1_Cx); CHKERRQ(ierr);
@@ -95,7 +95,7 @@ PetscErrorCode matPROJ_ctx::InitQTKQ() {
 	//std::string wait;
 	//std::cin >> wait;
       }*/
-      #if (PETSC_VERSION_MAJOR >= 3 && PETSC_VERSION_MINOR >= 3) 
+      #if PETSC_VERSION_GE(3,5,3) 
 	ierr = MatCreateVecs(K,&Qx,PETSC_NULL); CHKERRQ(ierr);
 	ierr = MatCreateVecs(K,PETSC_NULL,&KQx); CHKERRQ(ierr);
 	ierr = MatCreateVecs(CTC,PETSC_NULL,&CTCx); CHKERRQ(ierr);
