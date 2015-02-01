@@ -77,7 +77,11 @@ struct DMCtx {
   friend PetscErrorCode DMCreateLocalVector_MoFEM(DM dm,Vec *locV);
   friend PetscErrorCode DMCreateMatrix_MoFEM(DM dm,Mat *M);
   friend PetscErrorCode DMSetUp_MoFEM(DM dm); 
-  friend PetscErrorCode DMSetFromOptions_MoFEM(DM dm);
+  #if (PETSC_VERSION_MAJOR >= 3 && PETSC_VERSION_MINOR >= 3) 
+    friend PetscErrorCode DMSetFromOptions_MoFEM(PetscOptions *PetscOptionsObject,DM dm);
+  #else 
+    friend PetscErrorCode DMSetFromOptions_MoFEM(DM dm);
+  #endif
   friend PetscErrorCode DMGlobalToLocalBegin_MoFEM(DM dm,Vec,InsertMode,Vec);
   friend PetscErrorCode DMGlobalToLocalEnd_MoFEM(DM dm,Vec,InsertMode,Vec);
   friend PetscErrorCode DMLocalToGlobalBegin_MoFEM(DM,Vec,InsertMode,Vec);
@@ -394,12 +398,20 @@ PetscErrorCode DMCreateMatrix_MoFEM(DM dm,Mat *M) {
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode DMSetFromOptions_MoFEM(DM dm) {
+#if (PETSC_VERSION_MAJOR >= 3 && PETSC_VERSION_MINOR >= 3) 
+    PetscErrorCode DMSetFromOptions_MoFEM(PetscOptions *PetscOptionsObject,DM dm) {
+#else 
+    PetscErrorCode DMSetFromOptions_MoFEM(DM dm) {
+#endif 
   PetscErrorCode ierr;
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;
-  ierr = PetscOptionsHead("DMMoFEM Options");CHKERRQ(ierr);
+  #if (PETSC_VERSION_MAJOR >= 3 && PETSC_VERSION_MINOR >= 3) 
+    ierr = PetscOptionsHead(PetscOptionsObject,"DMMoFEM Options");CHKERRQ(ierr);
+  #else 
+    ierr = PetscOptionsHead("DMMoFEM Options");CHKERRQ(ierr);
+  #endif
   ierr = PetscOptionsBool("-dm_is_partitioned","set if mesh is partitioned (works which native MOAB file formata, i.e. h5m","DMSetUp",dm_field->isPartitioned,&dm_field->isPartitioned,NULL);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
