@@ -39,9 +39,15 @@ PetscErrorCode matPROJ_ctx::InitQorP(Vec x) {
       ierr = KSPGetTolerances(ksp,&rtol,&abstol,&dtol,&maxits); CHKERRQ(ierr);
       ierr = KSPSetUp(ksp); CHKERRQ(ierr);
       ierr = KSPMonitorCancel(ksp); CHKERRQ(ierr);
-      ierr = MatGetVecs(C,&_x_,PETSC_NULL); CHKERRQ(ierr);
-      ierr = MatGetVecs(C,PETSC_NULL,&Cx); CHKERRQ(ierr);
-      ierr = MatGetVecs(CCT,PETSC_NULL,&CCTm1_Cx); CHKERRQ(ierr);
+      #if (PETSC_VERSION_MAJOR >= 3 && PETSC_VERSION_MINOR >= 3) 
+	ierr = MatCreateVecs(C,&_x_,PETSC_NULL); CHKERRQ(ierr);
+	ierr = MatCreateVecs(C,PETSC_NULL,&Cx); CHKERRQ(ierr);
+	ierr = MatCreateVecs(CCT,PETSC_NULL,&CCTm1_Cx); CHKERRQ(ierr);
+      #else 
+	ierr = MatGetVecs(C,&_x_,PETSC_NULL); CHKERRQ(ierr);
+	ierr = MatGetVecs(C,PETSC_NULL,&Cx); CHKERRQ(ierr);
+	ierr = MatGetVecs(CCT,PETSC_NULL,&CCTm1_Cx); CHKERRQ(ierr);
+      #endif
       ierr = VecDuplicate(_x_,&CT_CCTm1_Cx); CHKERRQ(ierr);
       ierr = mField.VecScatterCreate(x,x_problem,ROW,_x_,y_problem,COL,&scatter); CHKERRQ(ierr);
       PetscLogEventEnd(USER_EVENT_projInit,0,0,0,0);
@@ -89,9 +95,15 @@ PetscErrorCode matPROJ_ctx::InitQTKQ() {
 	//std::string wait;
 	//std::cin >> wait;
       }*/
-      ierr = MatGetVecs(K,&Qx,PETSC_NULL); CHKERRQ(ierr);
-      ierr = MatGetVecs(K,PETSC_NULL,&KQx); CHKERRQ(ierr);
-      ierr = MatGetVecs(CTC,PETSC_NULL,&CTCx); CHKERRQ(ierr);
+      #if (PETSC_VERSION_MAJOR >= 3 && PETSC_VERSION_MINOR >= 3) 
+	ierr = MatCreateVecs(K,&Qx,PETSC_NULL); CHKERRQ(ierr);
+	ierr = MatCreateVecs(K,PETSC_NULL,&KQx); CHKERRQ(ierr);
+	ierr = MatCreateVecs(CTC,PETSC_NULL,&CTCx); CHKERRQ(ierr);
+      #else 
+	ierr = MatGetVecs(K,&Qx,PETSC_NULL); CHKERRQ(ierr);
+	ierr = MatGetVecs(K,PETSC_NULL,&KQx); CHKERRQ(ierr);
+	ierr = MatGetVecs(CTC,PETSC_NULL,&CTCx); CHKERRQ(ierr);
+      #endif
       PetscLogEventEnd(USER_EVENT_projInit,0,0,0,0);
     }
     PetscFunctionReturn(0);

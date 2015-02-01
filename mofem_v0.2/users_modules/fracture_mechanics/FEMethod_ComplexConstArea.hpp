@@ -384,7 +384,11 @@ struct C_CONSTANT_AREA_FEMethod: public FEMethod {
     PetscFunctionBegin;
     if(Q != PETSC_NULL) {
       for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_FOR_LOOP_(problemPtr,lambda_field_name,dofs)) {
-	ierr = MatGetVecs(C,&mapV[dofs->get_petsc_gloabl_dof_idx()],PETSC_NULL); CHKERRQ(ierr);
+	#if (PETSC_VERSION_MAJOR >= 3 && PETSC_VERSION_MINOR >= 3) 
+	  ierr = MatCreateVecs(C,&mapV[dofs->get_petsc_gloabl_dof_idx()],PETSC_NULL); CHKERRQ(ierr);
+	#else
+	  ierr = MatGetVecs(C,&mapV[dofs->get_petsc_gloabl_dof_idx()],PETSC_NULL); CHKERRQ(ierr);
+	#endif
 	//ierr = mField.VecCreateGhost(problemPtr->get_name(),COL,&mapV[dofs->get_petsc_gloabl_dof_idx()]); CHKERRQ(ierr);
 	ierr = VecZeroEntries(mapV[dofs->get_petsc_gloabl_dof_idx()]); CHKERRQ(ierr);
       }
