@@ -1607,7 +1607,7 @@ PetscErrorCode FaceSplittingTools::propagateBySplit(Range &new_nodes,Range &edge
     Range node_edges;
     rval = mField.get_moab().get_adjacencies(
 	&node,1,1,false,node_edges,Interface::UNION); CHKERR_PETSC(rval);
-    double max_l;
+    double max_l = 0;
     for(Range::iterator eit = node_edges.begin();eit!=node_edges.end();eit++) {
 	int num_nodes; 
 	const EntityHandle* conn;

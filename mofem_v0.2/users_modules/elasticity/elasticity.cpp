@@ -71,7 +71,7 @@ struct Hooke: public NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI
       const NonlinearElasticElement::BlockData block_data,
       const NumeredMoFEMFiniteElement *fe_ptr) {
       PetscFunctionBegin;
-      PetscErrorCode ierr;
+      //PetscErrorCode ierr;
       this->lambda = LAMBDA(block_data.E,block_data.PoissonRatio);
       this->mu = MU(block_data.E,block_data.PoissonRatio);
       Eps.resize(3,3);
