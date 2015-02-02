@@ -440,6 +440,19 @@ struct ForcesAndSurcesCore: public FEMethod {
   PetscErrorCode shapeEDGEFunctions_H1(
     DataForcesAndSurcesCore &data,const double *G_X,const int G_DIM);
 
+  /** \brief computes approximation functions for prism and H1 space
+    */
+  //PetscErrorCode shapeFlatPRISMFunctions_H1(
+    //DataForcesAndSurcesCore &data,
+    //const double *G_X,const double *G_Y,const int G_DIM);
+
+
+  /** \brief computes approximation functions for prism and H1 space
+    */
+  //PetscErrorCode shapeFlatPRISMFunctions_Hdiv(
+    //DataForcesAndSurcesCore &data,
+    //const double *G_X,const double *G_Y,const int G_DIM);
+
   /** \brief it is used to calculate nb. of Gauss integartion points
    *
    * for more details pleas look 

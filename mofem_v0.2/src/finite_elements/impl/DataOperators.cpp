@@ -191,7 +191,7 @@ PetscErrorCode DataOperator::opRhs(DataForcesAndSurcesCore &data) {
   PetscErrorCode ierr;
 
   for(unsigned int nn = 0;nn<data.dataOnEntities[MBVERTEX].size();nn++) {
-    ierr = doWork(-1,MBVERTEX,data.dataOnEntities[MBVERTEX][nn]); CHKERRQ(ierr);
+    ierr = doWork(nn,MBVERTEX,data.dataOnEntities[MBVERTEX][nn]); CHKERRQ(ierr);
   }
   for(unsigned int ee = 0;ee<data.dataOnEntities[MBEDGE].size();ee++) {
     //if(data.dataOnEntities[MBEDGE][ee].getN().size1()==0) continue;
@@ -203,7 +203,7 @@ PetscErrorCode DataOperator::opRhs(DataForcesAndSurcesCore &data) {
   }
   for(unsigned int vv = 0;vv<data.dataOnEntities[MBTET].size();vv++) {
     //if(data.dataOnEntities[MBTET][vv].getN().size1()==0) continue;
-    ierr = doWork(-1,MBTET,data.dataOnEntities[MBTET][vv]); CHKERRQ(ierr);
+    ierr = doWork(vv,MBTET,data.dataOnEntities[MBTET][vv]); CHKERRQ(ierr);
   }
 
   PetscFunctionReturn(0);

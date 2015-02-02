@@ -905,58 +905,58 @@ PetscErrorCode ForcesAndSurcesCore::shapeTETFunctions_Hdiv(
   }
 
 PetscErrorCode ForcesAndSurcesCore::shapeTRIFunctions_H1(
-    DataForcesAndSurcesCore &data,
-    const double *G_X,const double *G_Y,const int G_DIM) {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
+  DataForcesAndSurcesCore &data,
+  const double *G_X,const double *G_Y,const int G_DIM) {
+  PetscFunctionBegin;
+  PetscErrorCode ierr;
 
-    data.dataOnEntities[MBVERTEX][0].getN().resize(G_DIM,3);
-    ierr = ShapeMBTRI(&*data.dataOnEntities[MBVERTEX][0].getN().data().begin(),G_X,G_Y,G_DIM); CHKERRQ(ierr);
-    data.dataOnEntities[MBVERTEX][0].getDiffN().resize(3,2);
-    ierr = ShapeDiffMBTRI(&*data.dataOnEntities[MBVERTEX][0].getDiffN().data().begin()); CHKERRQ(ierr);
+  data.dataOnEntities[MBVERTEX][0].getN().resize(G_DIM,3);
+  ierr = ShapeMBTRI(&*data.dataOnEntities[MBVERTEX][0].getN().data().begin(),G_X,G_Y,G_DIM); CHKERRQ(ierr);
+  data.dataOnEntities[MBVERTEX][0].getDiffN().resize(3,2);
+  ierr = ShapeDiffMBTRI(&*data.dataOnEntities[MBVERTEX][0].getDiffN().data().begin()); CHKERRQ(ierr);
 
-    if((data.spacesOnEntities[MBEDGE]).test(H1)) {
+  if((data.spacesOnEntities[MBEDGE]).test(H1)) {
 
-    //edges
-    if(data.dataOnEntities[MBEDGE].size()!=3) {
-      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
-    }
-    int _sense_[3],_order_[3];
-    double *_H1edgeN_[3],*_diffH1edgeN_[3];
-    for(int ee = 0;ee<3;ee++) {
-      if(data.dataOnEntities[MBEDGE][ee].getSense() == 0) {
-	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
-      }
-      _sense_[ee] = data.dataOnEntities[MBEDGE][ee].getSense();
-      _order_[ee] = data.dataOnEntities[MBEDGE][ee].getOrder();
-      int nb_dofs = NBEDGE_H1(data.dataOnEntities[MBEDGE][ee].getOrder());
-      data.dataOnEntities[MBEDGE][ee].getN().resize(G_DIM,nb_dofs);
-      data.dataOnEntities[MBEDGE][ee].getDiffN().resize(G_DIM,2*nb_dofs);
-      _H1edgeN_[ee] = &*data.dataOnEntities[MBEDGE][ee].getN().data().begin();
-      _diffH1edgeN_[ee] = &*data.dataOnEntities[MBEDGE][ee].getDiffN().data().begin();
-    }
-    ierr = H1_EdgeShapeFunctions_MBTRI(_sense_,_order_,
-      &*data.dataOnEntities[MBVERTEX][0].getN().data().begin(),&*data.dataOnEntities[MBVERTEX][0].getDiffN().data().begin(),
-      _H1edgeN_,_diffH1edgeN_,G_DIM); CHKERRQ(ierr);
-
-    //face
-    if(data.dataOnEntities[MBTRI].size()!=1) {
-      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
-    }
-    int nb_dofs = NBFACE_H1(data.dataOnEntities[MBTRI][0].getOrder());
-    data.dataOnEntities[MBTRI][0].getN().resize(G_DIM,nb_dofs);
-    data.dataOnEntities[MBTRI][0].getDiffN().resize(G_DIM,2*nb_dofs);
-    const int face_nodes[] = { 0,1,2 };
-    ierr = H1_FaceShapeFunctions_MBTRI(
-      face_nodes,data.dataOnEntities[MBTRI][0].getOrder(),
-      &*data.dataOnEntities[MBVERTEX][0].getN().data().begin(),&*data.dataOnEntities[MBVERTEX][0].getDiffN().data().begin(),
-      &*data.dataOnEntities[MBTRI][0].getN().data().begin(),&*data.dataOnEntities[MBTRI][0].getDiffN().data().begin(),
-      G_DIM); CHKERRQ(ierr);
-
-    }
-
-    PetscFunctionReturn(0);
+  //edges
+  if(data.dataOnEntities[MBEDGE].size()!=3) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
   }
+  int _sense_[3],_order_[3];
+  double *_H1edgeN_[3],*_diffH1edgeN_[3];
+  for(int ee = 0;ee<3;ee++) {
+    if(data.dataOnEntities[MBEDGE][ee].getSense() == 0) {
+	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+    }
+    _sense_[ee] = data.dataOnEntities[MBEDGE][ee].getSense();
+    _order_[ee] = data.dataOnEntities[MBEDGE][ee].getOrder();
+    int nb_dofs = NBEDGE_H1(data.dataOnEntities[MBEDGE][ee].getOrder());
+    data.dataOnEntities[MBEDGE][ee].getN().resize(G_DIM,nb_dofs);
+    data.dataOnEntities[MBEDGE][ee].getDiffN().resize(G_DIM,2*nb_dofs);
+    _H1edgeN_[ee] = &*data.dataOnEntities[MBEDGE][ee].getN().data().begin();
+    _diffH1edgeN_[ee] = &*data.dataOnEntities[MBEDGE][ee].getDiffN().data().begin();
+  }
+  ierr = H1_EdgeShapeFunctions_MBTRI(_sense_,_order_,
+    &*data.dataOnEntities[MBVERTEX][0].getN().data().begin(),&*data.dataOnEntities[MBVERTEX][0].getDiffN().data().begin(),
+    _H1edgeN_,_diffH1edgeN_,G_DIM); CHKERRQ(ierr);
+
+  //face
+  if(data.dataOnEntities[MBTRI].size()!=1) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+  }
+  int nb_dofs = NBFACE_H1(data.dataOnEntities[MBTRI][0].getOrder());
+  data.dataOnEntities[MBTRI][0].getN().resize(G_DIM,nb_dofs);
+  data.dataOnEntities[MBTRI][0].getDiffN().resize(G_DIM,2*nb_dofs);
+  const int face_nodes[] = { 0,1,2 };
+  ierr = H1_FaceShapeFunctions_MBTRI(
+    face_nodes,data.dataOnEntities[MBTRI][0].getOrder(),
+    &*data.dataOnEntities[MBVERTEX][0].getN().data().begin(),&*data.dataOnEntities[MBVERTEX][0].getDiffN().data().begin(),
+    &*data.dataOnEntities[MBTRI][0].getN().data().begin(),&*data.dataOnEntities[MBTRI][0].getDiffN().data().begin(),
+    G_DIM); CHKERRQ(ierr);
+
+  }
+
+  PetscFunctionReturn(0);
+}
 
 PetscErrorCode ForcesAndSurcesCore::shapeTRIFunctions_Hdiv(
     DataForcesAndSurcesCore &data,
@@ -1015,7 +1015,6 @@ PetscErrorCode ForcesAndSurcesCore::shapeTRIFunctions_Hdiv(
   PetscFunctionReturn(0);
 }
 
-
 PetscErrorCode ForcesAndSurcesCore::shapeEDGEFunctions_H1(DataForcesAndSurcesCore &data,const double *G_X,const int G_DIM) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
@@ -1052,5 +1051,67 @@ PetscErrorCode ForcesAndSurcesCore::shapeEDGEFunctions_H1(DataForcesAndSurcesCor
 
   PetscFunctionReturn(0);
 }
+
+/*PetscErrorCode ForcesAndSurcesCore::shapeFlatPRISMFunctions_H1(
+  DataForcesAndSurcesCore &data,
+  const double *G_X,const double *G_Y,const int G_DIM) {
+  PetscFunctionBegin;
+  PetscErrorCode ierr;
+
+  data.dataOnEntities[MBVERTEX][0].getN().resize(G_DIM,3);
+  ierr = ShapeMBTRI(&*data.dataOnEntities[MBVERTEX][0].getN().data().begin(),G_X,G_Y,G_DIM); CHKERRQ(ierr);
+  data.dataOnEntities[MBVERTEX][0].getDiffN().resize(3,2);
+  ierr = ShapeDiffMBTRI(&*data.dataOnEntities[MBVERTEX][0].getDiffN().data().begin()); CHKERRQ(ierr);
+
+  if((data.spacesOnEntities[MBEDGE]).test(H1)) {
+
+  //edges
+  if(data.dataOnEntities[MBEDGE].size()!=3) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+  }
+  int _sense_[3],_order_[3];
+  double *_H1edgeN_[3],*_diffH1edgeN_[3];
+  for(int ee = 0;ee<3;ee++) {
+    if(data.dataOnEntities[MBEDGE][ee].getSense() == 0) {
+	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+    }
+    _sense_[ee] = data.dataOnEntities[MBEDGE][ee].getSense();
+    _order_[ee] = data.dataOnEntities[MBEDGE][ee].getOrder();
+    int nb_dofs = NBEDGE_H1(data.dataOnEntities[MBEDGE][ee].getOrder());
+    data.dataOnEntities[MBEDGE][ee].getN().resize(G_DIM,nb_dofs);
+    data.dataOnEntities[MBEDGE][ee].getDiffN().resize(G_DIM,2*nb_dofs);
+    _H1edgeN_[ee] = &*data.dataOnEntities[MBEDGE][ee].getN().data().begin();
+    _diffH1edgeN_[ee] = &*data.dataOnEntities[MBEDGE][ee].getDiffN().data().begin();
+  }
+  ierr = H1_EdgeShapeFunctions_MBTRI(_sense_,_order_,
+    &*data.dataOnEntities[MBVERTEX][0].getN().data().begin(),&*data.dataOnEntities[MBVERTEX][0].getDiffN().data().begin(),
+    _H1edgeN_,_diffH1edgeN_,G_DIM); CHKERRQ(ierr);
+
+  //face
+  if(data.dataOnEntities[MBTRI].size()!=1) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+  }
+  int nb_dofs = NBFACE_H1(data.dataOnEntities[MBTRI][0].getOrder());
+  data.dataOnEntities[MBTRI][0].getN().resize(G_DIM,nb_dofs);
+  data.dataOnEntities[MBTRI][0].getDiffN().resize(G_DIM,2*nb_dofs);
+  const int face_nodes[] = { 0,1,2 };
+  ierr = H1_FaceShapeFunctions_MBTRI(
+    face_nodes,data.dataOnEntities[MBTRI][0].getOrder(),
+    &*data.dataOnEntities[MBVERTEX][0].getN().data().begin(),&*data.dataOnEntities[MBVERTEX][0].getDiffN().data().begin(),
+    &*data.dataOnEntities[MBTRI][0].getN().data().begin(),&*data.dataOnEntities[MBTRI][0].getDiffN().data().begin(),
+    G_DIM); CHKERRQ(ierr);
+
+  }
+
+  PetscFunctionReturn(0);
+}*/
+
+/*PetscErrorCode ForcesAndSurcesCore::shapeFlatPRISMFunctions_Hdiv(
+    DataForcesAndSurcesCore &data,
+    const double *G_X,const double *G_Y,const int G_DIM) {
+  PetscFunctionBegin;
+  SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not yet implemented, i.e. flat prism with Hdiv space");
+  PetscFunctionReturn(0);
+}*/
 
 }
