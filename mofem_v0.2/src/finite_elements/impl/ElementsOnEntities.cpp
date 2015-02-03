@@ -973,7 +973,6 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
     &*coords.data().begin(),&*normal.data().begin()); CHKERRQ(ierr);
   aRea = cblas_dnrm2(3,&*normal.data().begin(),1)*0.5;
 
-
   coordsAtGaussPts.resize(nb_gauss_pts,3);
   for(int gg = 0;gg<nb_gauss_pts;gg++) {
     for(int dd = 0;dd<3;dd++) {

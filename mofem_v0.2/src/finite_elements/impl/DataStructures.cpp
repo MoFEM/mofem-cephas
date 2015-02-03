@@ -1067,17 +1067,20 @@ PetscErrorCode ForcesAndSurcesCore::shapeFlatPRISMFunctions_H1(
   PetscFunctionBegin;
   PetscErrorCode ierr;
 
+  ublas::matrix<double> N(G_DIM,3),diffN(3,2);
+  ierr = ShapeMBTRI(&*N.data().begin(),G_X,G_Y,G_DIM); CHKERRQ(ierr);
+  ierr = ShapeDiffMBTRI(&*diffN.data().begin()); CHKERRQ(ierr);
   data.dataOnEntities[MBVERTEX][0].getN().resize(G_DIM,6);
-  ierr = ShapeMBTRI(&*data.dataOnEntities[MBVERTEX][0].getN().data().begin(),G_X,G_Y,G_DIM); CHKERRQ(ierr);
   data.dataOnEntities[MBVERTEX][0].getDiffN().resize(6,2);
-  ierr = ShapeDiffMBTRI(&*data.dataOnEntities[MBVERTEX][0].getDiffN().data().begin()); CHKERRQ(ierr);
   //shape functions on other side are like on the first one
   for(int nn = 0;nn<3;nn++) {
-    for(int gg = 0;gg<3;gg++) {
-      data.dataOnEntities[MBVERTEX][0].getN()(gg,nn+3) = data.dataOnEntities[MBVERTEX][0].getN()(gg,nn);
+    for(int gg = 0;gg<G_DIM;gg++) {
+      data.dataOnEntities[MBVERTEX][0].getN()(gg,nn) = N(gg,nn);
+      data.dataOnEntities[MBVERTEX][0].getN()(gg,nn+3) = N(gg,nn);
     }
     for(int dd = 0;dd<2;dd++) {
-      data.dataOnEntities[MBVERTEX][0].getDiffN()(nn+3,dd) = data.dataOnEntities[MBVERTEX][0].getDiffN()(nn,dd);
+      data.dataOnEntities[MBVERTEX][0].getDiffN()(nn,dd) = diffN(nn,dd);
+      data.dataOnEntities[MBVERTEX][0].getDiffN()(nn+3,dd) = diffN(nn,dd);
     }
   }
 
