@@ -199,6 +199,36 @@ int main(int argc, char *argv[]) {
 	it!=getNormal().data().end();it++) {
 	*it = fabs(*it)<eps ? 0.0 : *it;
       }
+      for(
+	ublas::unbounded_array<double>::iterator it = getNormals_at_GaussPtF3().data().begin();
+	it!=getNormals_at_GaussPtF3().data().end();it++) {
+	*it = fabs(*it)<eps ? 0.0 : *it;
+      }
+      for(
+	ublas::unbounded_array<double>::iterator it = getTangent1_at_GaussPtF3().data().begin();
+	it!=getTangent1_at_GaussPtF3().data().end();it++) {
+	*it = fabs(*it)<eps ? 0.0 : *it;
+      }
+      for(
+	ublas::unbounded_array<double>::iterator it = getTangent2_at_GaussPtF3().data().begin();
+	it!=getTangent2_at_GaussPtF3().data().end();it++) {
+	*it = fabs(*it)<eps ? 0.0 : *it;
+      }
+      for(
+	ublas::unbounded_array<double>::iterator it = getNormals_at_GaussPtF4().data().begin();
+	it!=getNormals_at_GaussPtF4().data().end();it++) {
+	*it = fabs(*it)<eps ? 0.0 : *it;
+      }
+      for(
+	ublas::unbounded_array<double>::iterator it = getTangent1_at_GaussPtF4().data().begin();
+	it!=getTangent1_at_GaussPtF4().data().end();it++) {
+	*it = fabs(*it)<eps ? 0.0 : *it;
+      }
+      for(
+	ublas::unbounded_array<double>::iterator it = getTangent2_at_GaussPtF4().data().begin();
+	it!=getTangent2_at_GaussPtF4().data().end();it++) {
+	*it = fabs(*it)<eps ? 0.0 : *it;
+      }
 
       my_split << "NH1" << endl;
       my_split << "side: " << side << " type: " << type << endl;
