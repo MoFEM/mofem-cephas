@@ -45,8 +45,8 @@ int main(int argc, char *argv[]) {
 
   moab::Core mb_instance;
   Interface& moab = mb_instance;
-  int rank;
-  MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
+  ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
+  if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
   PetscBool flg = PETSC_TRUE;
   char mesh_file_name[255];
@@ -55,28 +55,56 @@ int main(int argc, char *argv[]) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
 
+  const char *option;
+  option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
+
   //Create MoFEM (Joseph) database
   MoFEM::Core core(moab);
   FieldInterface& m_field = core;
-
-  ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
-  if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
-
-  const char *option;
-  option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-  BARRIER_RANK_START(pcomm) 
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
-  BARRIER_RANK_END(pcomm) 
+  PrismInterface& interface = core;
 
   //set entitities bit level
-  BitRefLevel bit_level0;
-  bit_level0.set(0);
-  EntityHandle meshset_level0;
-  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
-  ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
+  ierr = m_field.seed_ref_level_3D(0,BitRefLevel().set(0)); CHKERRQ(ierr);
+  vector<BitRefLevel> bit_levels;
+  bit_levels.push_back(BitRefLevel().set(0));
+
+  int ll = 1;
+  //for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,SIDESET|INTERFACESET,cit)) {
+  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,SIDESET,cit)) {
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"Insert Interface %d\n",cit->get_msId()); CHKERRQ(ierr);
+    EntityHandle cubit_meshset = cit->get_meshset();
+    {
+      //get tet enties form back bit_level
+      EntityHandle ref_level_meshset = 0;
+      rval = moab.create_meshset(MESHSET_SET,ref_level_meshset); CHKERR_PETSC(rval);
+      ierr = m_field.get_entities_by_type_and_ref_level(bit_levels.back(),BitRefLevel().set(),MBTET,ref_level_meshset); CHKERRQ(ierr);
+      ierr = m_field.get_entities_by_type_and_ref_level(bit_levels.back(),BitRefLevel().set(),MBPRISM,ref_level_meshset); CHKERRQ(ierr);
+      Range ref_level_tets;
+      rval = moab.get_entities_by_handle(ref_level_meshset,ref_level_tets,true); CHKERR_PETSC(rval);
+      //get faces and test to split
+      ierr = interface.get_msId_3dENTS_sides(cubit_meshset,bit_levels.back(),true,0); CHKERRQ(ierr);
+      //set new bit level
+      bit_levels.push_back(BitRefLevel().set(ll++));
+      //split faces and 
+      ierr = interface.get_msId_3dENTS_split_sides(ref_level_meshset,bit_levels.back(),cubit_meshset,true,true,0); CHKERRQ(ierr);
+      //clean meshsets
+      rval = moab.delete_entities(&ref_level_meshset,1); CHKERR_PETSC(rval);
+    }
+    //update cubit meshsets
+    for(_IT_CUBITMESHSETS_FOR_LOOP_(m_field,ciit)) {
+      EntityHandle cubit_meshset = ciit->meshset; 
+      ierr = m_field.update_meshset_by_entities_children(cubit_meshset,bit_levels.back(),cubit_meshset,MBVERTEX,true); CHKERRQ(ierr);
+      ierr = m_field.update_meshset_by_entities_children(cubit_meshset,bit_levels.back(),cubit_meshset,MBEDGE,true); CHKERRQ(ierr);
+      ierr = m_field.update_meshset_by_entities_children(cubit_meshset,bit_levels.back(),cubit_meshset,MBTRI,true); CHKERRQ(ierr);
+      ierr = m_field.update_meshset_by_entities_children(cubit_meshset,bit_levels.back(),cubit_meshset,MBTET,true); CHKERRQ(ierr);
+    }
+  }
+
 
   //Fields
   ierr = m_field.add_field("FIELD1",H1,3); CHKERRQ(ierr);
+  ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,3); CHKERRQ(ierr);
 
   //FE
   ierr = m_field.add_finite_element("TEST_FE"); CHKERRQ(ierr);
@@ -85,6 +113,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.modify_finite_element_add_field_row("TEST_FE","FIELD1"); CHKERRQ(ierr);
   ierr = m_field.modify_finite_element_add_field_col("TEST_FE","FIELD1"); CHKERRQ(ierr);
   ierr = m_field.modify_finite_element_add_field_data("TEST_FE","FIELD1"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_data("TEST_FE","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
 
   //Problem
   ierr = m_field.add_problem("TEST_PROBLEM"); CHKERRQ(ierr);
@@ -92,19 +121,15 @@ int main(int argc, char *argv[]) {
   //set finite elements for problem
   ierr = m_field.modify_problem_add_finite_element("TEST_PROBLEM","TEST_FE"); CHKERRQ(ierr);
   //set refinment level for problem
-  ierr = m_field.modify_problem_ref_level_add_bit("TEST_PROBLEM",bit_level0); CHKERRQ(ierr);
+  ierr = m_field.modify_problem_ref_level_add_bit("TEST_PROBLEM",bit_levels.back()); CHKERRQ(ierr);
 
   //meshset consisting all entities in mesh
   EntityHandle root_set = moab.get_root_set(); 
   //add entities to field
   ierr = m_field.add_ents_to_field_by_TETs(root_set,"FIELD1"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_TETs(root_set,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
   //add entities to finite element
-  Range tets;
-  rval = moab.get_entities_by_type(0,MBTET,tets,false); CHKERR_PETSC(rval);
-  Skinner skin(&m_field.get_moab());
-  Range tets_skin;
-  rval = skin.find_skin(0,tets,false,tets_skin); CHKERR(rval);
-  ierr = m_field.add_ents_to_finite_element_by_TRIs(tets_skin,"TEST_FE"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_finite_element_by_PRISMs(root_set,"TEST_FE",10); CHKERRQ(ierr);
 
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
@@ -114,17 +139,25 @@ int main(int argc, char *argv[]) {
   ierr = m_field.set_field_order(root_set,MBEDGE,"FIELD1",order); CHKERRQ(ierr);
   ierr = m_field.set_field_order(root_set,MBVERTEX,"FIELD1",1); CHKERRQ(ierr);
 
+  ierr = m_field.set_field_order(root_set,MBTET,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(root_set,MBTRI,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(root_set,MBEDGE,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(root_set,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
+
   /****/
   //build database
   //build field
   ierr = m_field.build_fields(); CHKERRQ(ierr);
   //set FIELD1 from positions of 10 node tets
-  Projection10NodeCoordsOnField ent_method(m_field,"FIELD1");
-  ierr = m_field.loop_dofs("FIELD1",ent_method); CHKERRQ(ierr);
+  Projection10NodeCoordsOnField ent_method_field1(m_field,"FIELD1");
+  ierr = m_field.loop_dofs("FIELD1",ent_method_field1); CHKERRQ(ierr);
+  Projection10NodeCoordsOnField ent_method_mesh_positions(m_field,"MESH_NODE_POSITIONS");
+  ierr = m_field.loop_dofs("MESH_NODE_POSITIONS",ent_method_mesh_positions); CHKERRQ(ierr);
+
   //build finite elemnts
   ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
   //build adjacencies
-  ierr = m_field.build_adjacencies(bit_level0); CHKERRQ(ierr);
+  ierr = m_field.build_adjacencies(bit_levels.back()); CHKERRQ(ierr);
   //build problem
   ierr = m_field.build_problems(); CHKERRQ(ierr);
 
@@ -136,20 +169,20 @@ int main(int argc, char *argv[]) {
   //what are ghost nodes, see Petsc Manual
   ierr = m_field.partition_ghost_dofs("TEST_PROBLEM"); CHKERRQ(ierr);
 
-  TriElementForcesAndSurcesCore fe1(m_field);
+  FlatPrismElementForcesAndSurcesCore fe1(m_field);
 
   typedef tee_device<ostream, ofstream> TeeDevice;
   typedef stream<TeeDevice> TeeStream;
 
-  ofstream ofs("forces_and_sources_testing_triangle_element.txt");
+  ofstream ofs("forces_and_sources_testing_flat_prism_element.txt");
   TeeDevice my_tee(cout, ofs); 
   TeeStream my_split(my_tee);
 
-  struct MyOp: public TriElementForcesAndSurcesCore::UserDataOperator {
+  struct MyOp: public FlatPrismElementForcesAndSurcesCore::UserDataOperator {
 
     TeeStream &my_split;
     MyOp(TeeStream &_my_split):
-      TriElementForcesAndSurcesCore::UserDataOperator("FIELD1","FIELD1"),
+      FlatPrismElementForcesAndSurcesCore::UserDataOperator("FIELD1","FIELD1"),
       my_split(_my_split) {}
 
     PetscErrorCode doWork(
@@ -157,6 +190,8 @@ int main(int argc, char *argv[]) {
       EntityType type,
       DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
+
+      if(data.getFieldData().empty()) PetscFunctionReturn(0);
 
       const double eps = 1e-4;
       for(
@@ -171,10 +206,13 @@ int main(int argc, char *argv[]) {
       my_split << setprecision(3) << getCoords() << endl;
       my_split << setprecision(3) << getCoordsAtGaussPts() << endl;
       my_split << setprecision(3) << getArea() << endl;
-      my_split << setprecision(3) << getNormal() << endl;
-      my_split << setprecision(3) << getNormals_at_GaussPt() << endl;
-      my_split << setprecision(3) << getTangent1_at_GaussPt() << endl;
-      my_split << setprecision(3) << getTangent2_at_GaussPt() << endl;
+      my_split << setprecision(3) << "nornal " << getNormal() << endl;
+      my_split << setprecision(3) << "normal at Gauss pt F3 " << getNormals_at_GaussPtF3() << endl;
+      my_split << setprecision(3) << getTangent1_at_GaussPtF3() << endl;
+      my_split << setprecision(3) << getTangent2_at_GaussPtF3() << endl;
+      my_split << setprecision(3) << "normal at Gauss pt F4 " << getNormals_at_GaussPtF4() << endl;
+      my_split << setprecision(3) << getTangent1_at_GaussPtF4() << endl;
+      my_split << setprecision(3) << getTangent2_at_GaussPtF4() << endl;
       PetscFunctionReturn(0);
     }
 
@@ -184,12 +222,16 @@ int main(int argc, char *argv[]) {
       DataForcesAndSurcesCore::EntData &row_data,
       DataForcesAndSurcesCore::EntData &col_data) {
       PetscFunctionBegin;
+
+      if(row_data.getFieldData().empty()) PetscFunctionReturn(0);
+
       my_split << "NH1NH1" << endl;
       my_split << "row side: " << row_side << " row_type: " << row_type << endl;
       my_split << row_data << endl;
       my_split << "NH1NH1" << endl;
       my_split << "col side: " << col_side << " col_type: " << col_type << endl;
       my_split << row_data << endl;
+
       PetscFunctionReturn(0);
     }
 

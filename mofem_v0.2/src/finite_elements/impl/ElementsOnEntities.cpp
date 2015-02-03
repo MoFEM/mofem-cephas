@@ -506,6 +506,20 @@ PetscErrorCode TriElementForcesAndSurcesCore::operator()() {
     }
   }
 
+  // In linear geomegtry direvatives are constant,
+  // this in expense of efficency makes implementation
+  // consitent between verices and other types of entities
+  ublas::matrix<double> diffN(nb_gauss_pts,6);
+  for(int gg = 0;gg<nb_gauss_pts;gg++) {
+    for(int nn = 0;nn<3;nn++) {
+      for(int dd = 0;dd<2;dd++) {
+	diffN(gg,nn*2+dd) = dataH1.dataOnEntities[MBVERTEX][0].getDiffN()(nn,dd);
+      }
+    }
+  }
+  dataH1.dataOnEntities[MBVERTEX][0].getDiffN().resize(diffN.size1(),diffN.size2());
+  dataH1.dataOnEntities[MBVERTEX][0].getDiffN().data().swap(diffN.data());
+
   if(mField.check_field(meshPositionsFieldName)) {
     nOrmals_at_GaussPt.resize(nb_gauss_pts,3);
     tAngent1_at_GaussPt.resize(nb_gauss_pts,3);
@@ -526,17 +540,6 @@ PetscErrorCode TriElementForcesAndSurcesCore::operator()() {
       ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
     }
-  } else {
-    ublas::matrix<double> diffN(nb_gauss_pts,6);
-    for(int gg = 0;gg<nb_gauss_pts;gg++) {
-      for(int nn = 0;nn<3;nn++) {
-	for(int dd = 0;dd<2;dd++) {
-	  diffN(gg,nn*2+dd) = dataH1.dataOnEntities[MBVERTEX][0].getDiffN()(nn,dd);
-	}
-      }
-    }
-    dataH1.dataOnEntities[MBVERTEX][0].getDiffN().resize(diffN.size1(),diffN.size2());
-    dataH1.dataOnEntities[MBVERTEX][0].getDiffN().data().swap(diffN.data());
   }
 
   if(dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
@@ -911,7 +914,7 @@ PetscErrorCode VertexElementForcesAndSourcesCore::operator()() {
   PetscFunctionReturn(0);
 }
 
-/*PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
+PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
   PetscFunctionBegin;
 
   if(fePtr->get_ent_type() != MBPRISM) PetscFunctionReturn(0);
@@ -952,10 +955,9 @@ PetscErrorCode VertexElementForcesAndSourcesCore::operator()() {
     nb_gauss_pts = gaussPts.size2();
   }
 
-  ierr = shapeTRIFunctions_H1(dataH1,&gaussPts(0,0),&gaussPts(1,0),nb_gauss_pts); CHKERRQ(ierr);
-
+  ierr = shapeFlatPRISMFunctions_H1(dataH1,&gaussPts(0,0),&gaussPts(1,0),nb_gauss_pts); CHKERRQ(ierr);
   if(dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
-    ierr = shapeTRIFunctions_Hdiv(dataHdiv,&gaussPts(0,0),&gaussPts(1,0),nb_gauss_pts); CHKERRQ(ierr); CHKERRQ(ierr);
+    ierr = shapeFlatPRISMFunctions_Hdiv(dataHdiv,&gaussPts(0,0),&gaussPts(1,0),nb_gauss_pts); CHKERRQ(ierr); CHKERRQ(ierr);
   }
 
   EntityHandle ent = fePtr->get_ent();
@@ -971,6 +973,7 @@ PetscErrorCode VertexElementForcesAndSourcesCore::operator()() {
     &*coords.data().begin(),&*normal.data().begin()); CHKERRQ(ierr);
   aRea = cblas_dnrm2(3,&*normal.data().begin(),1)*0.5;
 
+
   coordsAtGaussPts.resize(nb_gauss_pts,3);
   for(int gg = 0;gg<nb_gauss_pts;gg++) {
     for(int dd = 0;dd<3;dd++) {
@@ -978,10 +981,27 @@ PetscErrorCode VertexElementForcesAndSourcesCore::operator()() {
     }
   }
 
+  // In linear geomegtry direvatives are constant,
+  // this in expense of efficency makes implementation
+  // consitent between verices and other types of entities
+  ublas::matrix<double> diffN(nb_gauss_pts,6);
+  for(int gg = 0;gg<nb_gauss_pts;gg++) {
+    for(int nn = 0;nn<3;nn++) {
+      for(int dd = 0;dd<2;dd++) {
+	diffN(gg,nn*2+dd) = dataH1.dataOnEntities[MBVERTEX][0].getDiffN()(nn,dd);
+      }
+    }
+  }
+  dataH1.dataOnEntities[MBVERTEX][0].getDiffN().resize(diffN.size1(),diffN.size2());
+  dataH1.dataOnEntities[MBVERTEX][0].getDiffN().data().swap(diffN.data());
+
   if(mField.check_field(meshPositionsFieldName)) {
-    nOrmals_at_GaussPt.resize(nb_gauss_pts,3);
-    tAngent1_at_GaussPt.resize(nb_gauss_pts,3);
-    tAngent2_at_GaussPt.resize(nb_gauss_pts,3);
+    nOrmals_at_GaussPtF3.resize(nb_gauss_pts,3);
+    tAngent1_at_GaussPtF3.resize(nb_gauss_pts,3);
+    tAngent2_at_GaussPtF3.resize(nb_gauss_pts,3);
+    nOrmals_at_GaussPtF4.resize(nb_gauss_pts,3);
+    tAngent1_at_GaussPtF4.resize(nb_gauss_pts,3);
+    tAngent2_at_GaussPtF4.resize(nb_gauss_pts,3);
     ierr = getEdgesOrder(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
     ierr = getTrisOrder(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
     ierr = getNodesFieldData(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
@@ -998,21 +1018,10 @@ PetscErrorCode VertexElementForcesAndSourcesCore::operator()() {
       ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
     }
-  } else {
-    ublas::matrix<double> diffN(nb_gauss_pts,6);
-    for(int gg = 0;gg<nb_gauss_pts;gg++) {
-      for(int nn = 0;nn<3;nn++) {
-	for(int dd = 0;dd<2;dd++) {
-	  diffN(gg,nn*2+dd) = dataH1.dataOnEntities[MBVERTEX][0].getDiffN()(nn,dd);
-	}
-      }
-    }
-    dataH1.dataOnEntities[MBVERTEX][0].getDiffN().resize(diffN.size1(),diffN.size2());
-    dataH1.dataOnEntities[MBVERTEX][0].getDiffN().data().swap(diffN.data());
-  }
+  } 
 
   if(dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
-    ierr = opSetPiolaTransoformOnTriangle.opRhs(dataHdiv); CHKERRQ(ierr);
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented yet");
   }
 
   for(
@@ -1183,7 +1192,7 @@ PetscErrorCode VertexElementForcesAndSourcesCore::operator()() {
   }
 
   PetscFunctionReturn(0);
-}*/
+}
 
 
 

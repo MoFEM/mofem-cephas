@@ -203,6 +203,43 @@ struct OpGetNormals: public DataOperator {
 
 };
 
+/** \brief calculate normals at Gauss points of triangle element
+  * \ingroup mofem_forces_and_sources
+  */
+struct OpGetNormalsOnPrism: public DataOperator {
+
+  ublas::matrix<FieldData> &nOrmals_at_GaussPtF3;
+  ublas::matrix<FieldData> &tAngent1_at_GaussPtF3;
+  ublas::matrix<FieldData> &tAngent2_at_GaussPtF3;
+  ublas::matrix<FieldData> &nOrmals_at_GaussPtF4;
+  ublas::matrix<FieldData> &tAngent1_at_GaussPtF4;
+  ublas::matrix<FieldData> &tAngent2_at_GaussPtF4;
+
+  OpGetNormalsOnPrism(
+    ublas::matrix<FieldData> &_nOrmals_at_GaussPtF3,
+    ublas::matrix<FieldData> &_tAngent1_at_GaussPtF3,
+    ublas::matrix<FieldData> &_tAngent2_at_GaussPtF3,
+    ublas::matrix<FieldData> &_nOrmals_at_GaussPtF4,
+    ublas::matrix<FieldData> &_tAngent1_at_GaussPtF4,
+    ublas::matrix<FieldData> &_tAngent2_at_GaussPtF4): 
+    nOrmals_at_GaussPtF3(_nOrmals_at_GaussPtF3),
+    tAngent1_at_GaussPtF3(_tAngent1_at_GaussPtF3),
+    tAngent2_at_GaussPtF3(_tAngent2_at_GaussPtF3),
+    nOrmals_at_GaussPtF4(_nOrmals_at_GaussPtF4),
+    tAngent1_at_GaussPtF4(_tAngent1_at_GaussPtF4),
+    tAngent2_at_GaussPtF4(_tAngent2_at_GaussPtF4) {}
+
+  ublas::matrix<FieldData> sPin;
+  PetscErrorCode doWork(
+    int side,
+    EntityType type,
+    DataForcesAndSurcesCore::EntData &data);
+
+  PetscErrorCode calculateNormals();
+
+};
+
+
 /** \brief transfrom Hdiv space fluxes from reference elemento to physical triangle
  */
 struct OpSetPiolaTransoformOnTriangle: public DataOperator {

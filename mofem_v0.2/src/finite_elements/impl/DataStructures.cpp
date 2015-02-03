@@ -90,6 +90,15 @@ void cOnstructor(DataForcesAndSurcesCore *data,EntityType type,T) {
       case MBVERTEX:
 	data->dataOnEntities[MBVERTEX].push_back(new T());
 	break;
+      case MBPRISM:
+	data->dataOnEntities[MBVERTEX].push_back(new T());
+	for(int ee = 0;ee<9;ee++) {
+	  data->dataOnEntities[MBEDGE].push_back(new T());
+	}
+	for(int ff = 0;ff<5;ff++) {
+	  data->dataOnEntities[MBTRI].push_back(new T());
+	}
+	break;
       default:
 	throw("not implemenyed");
     }
@@ -153,8 +162,8 @@ ostream& operator<<(ostream& os,const DataForcesAndSurcesCore &e) {
 PetscErrorCode ForcesAndSurcesCore::getSense(EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data) {
     PetscFunctionBegin;
     SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fePtr->get_side_number_table());
-    if(data.size() != side_table.get<2>().count(type)) {
-      SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency %u != %u",data.size(),side_table.get<2>().count(type));
+    if(data.size() < side_table.get<2>().count(type)) { // prims has 9 edges, some of edges for "flat" prism are not active
+      SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency %u < %u",data.size(),side_table.get<2>().count(type));
     }
     SideNumber_multiIndex::nth_index<2>::type::iterator siit = side_table.get<2>().lower_bound(type);
     SideNumber_multiIndex::nth_index<2>::type::iterator hi_siit = side_table.get<2>().upper_bound(type);
@@ -181,9 +190,9 @@ PetscErrorCode ForcesAndSurcesCore::getTrisSense(DataForcesAndSurcesCore &data) 
 PetscErrorCode ForcesAndSurcesCore::getOrder(const EntityType type,const FieldSpace space,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data) {
     PetscFunctionBegin;
     SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fePtr->get_side_number_table());
-    if(data.size() != side_table.get<2>().count(type)) {
+    if(data.size() < side_table.get<2>().count(type)) { // prims has 9 edges, some of edges for "flat" prism are not active
       SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,
-	"data inconsistency %d != %d",
+	"data inconsistency %d < %d",
 	data.size(),side_table.get<2>().count(type));
     }
     for(unsigned int side = 0;side<data.size();side++) {
@@ -230,9 +239,9 @@ PetscErrorCode ForcesAndSurcesCore::getTetsOrder(DataForcesAndSurcesCore &data,c
 PetscErrorCode ForcesAndSurcesCore::getOrder(const string &field_name,const EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data) {
     PetscFunctionBegin;
     SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fePtr->get_side_number_table());
-    if(data.size() != side_table.get<2>().count(type)) {
+    if(data.size() < side_table.get<2>().count(type)) { // prims has 9 edges, some of edges for "flat" prism are not active
       SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,
-	"data inconsistency %d != %d",
+	"data inconsistency %d < %d",
 	data.size(),side_table.get<2>().count(type));
     }
     for(unsigned int side = 0;side<data.size();side++) {
@@ -429,7 +438,7 @@ PetscErrorCode ForcesAndSurcesCore::getTypeFieldData(
     PetscFunctionBegin;
     PetscErrorCode ierr;
     SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fePtr->get_side_number_table());
-    if(data.size() != side_table.get<2>().count(type)) {
+    if(data.size() < side_table.get<2>().count(type)) { 
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
     }
     SideNumber_multiIndex::nth_index<2>::type::iterator siit = side_table.get<2>().lower_bound(type);
@@ -508,7 +517,7 @@ PetscErrorCode ForcesAndSurcesCore::getTypeFieldDofs(
     PetscFunctionBegin;
     PetscErrorCode ierr;
     SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fePtr->get_side_number_table());
-    if(data.size() != side_table.get<2>().count(type)) {
+    if(data.size() < side_table.get<2>().count(type)) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
     }
     SideNumber_multiIndex::nth_index<2>::type::iterator siit = side_table.get<2>().lower_bound(type);
@@ -1052,66 +1061,81 @@ PetscErrorCode ForcesAndSurcesCore::shapeEDGEFunctions_H1(DataForcesAndSurcesCor
   PetscFunctionReturn(0);
 }
 
-/*PetscErrorCode ForcesAndSurcesCore::shapeFlatPRISMFunctions_H1(
+PetscErrorCode ForcesAndSurcesCore::shapeFlatPRISMFunctions_H1(
   DataForcesAndSurcesCore &data,
   const double *G_X,const double *G_Y,const int G_DIM) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
 
-  data.dataOnEntities[MBVERTEX][0].getN().resize(G_DIM,3);
+  data.dataOnEntities[MBVERTEX][0].getN().resize(G_DIM,6);
   ierr = ShapeMBTRI(&*data.dataOnEntities[MBVERTEX][0].getN().data().begin(),G_X,G_Y,G_DIM); CHKERRQ(ierr);
-  data.dataOnEntities[MBVERTEX][0].getDiffN().resize(3,2);
+  data.dataOnEntities[MBVERTEX][0].getDiffN().resize(6,2);
   ierr = ShapeDiffMBTRI(&*data.dataOnEntities[MBVERTEX][0].getDiffN().data().begin()); CHKERRQ(ierr);
-
-  if((data.spacesOnEntities[MBEDGE]).test(H1)) {
+  //shape functions on other side are like on the first one
+  for(int nn = 0;nn<3;nn++) {
+    for(int gg = 0;gg<3;gg++) {
+      data.dataOnEntities[MBVERTEX][0].getN()(gg,nn+3) = data.dataOnEntities[MBVERTEX][0].getN()(gg,nn);
+    }
+    for(int dd = 0;dd<2;dd++) {
+      data.dataOnEntities[MBVERTEX][0].getDiffN()(nn+3,dd) = data.dataOnEntities[MBVERTEX][0].getDiffN()(nn,dd);
+    }
+  }
 
   //edges
-  if(data.dataOnEntities[MBEDGE].size()!=3) {
+  if(data.dataOnEntities[MBEDGE].size()!=9) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
   }
-  int _sense_[3],_order_[3];
-  double *_H1edgeN_[3],*_diffH1edgeN_[3];
-  for(int ee = 0;ee<3;ee++) {
+  
+  int valid_edges[] = { 1,1,1, 0,0,0, 1,1,1 };
+  int sense[9],order[9];
+  double *H1edgeN[9],*diffH1edgeN[9];
+  for(int ee = 0;ee<9;ee++) {
+    if(!valid_edges[ee]) continue;
     if(data.dataOnEntities[MBEDGE][ee].getSense() == 0) {
 	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
     }
-    _sense_[ee] = data.dataOnEntities[MBEDGE][ee].getSense();
-    _order_[ee] = data.dataOnEntities[MBEDGE][ee].getOrder();
+    sense[ee] = data.dataOnEntities[MBEDGE][ee].getSense();
+    order[ee] = data.dataOnEntities[MBEDGE][ee].getOrder();
     int nb_dofs = NBEDGE_H1(data.dataOnEntities[MBEDGE][ee].getOrder());
     data.dataOnEntities[MBEDGE][ee].getN().resize(G_DIM,nb_dofs);
     data.dataOnEntities[MBEDGE][ee].getDiffN().resize(G_DIM,2*nb_dofs);
-    _H1edgeN_[ee] = &*data.dataOnEntities[MBEDGE][ee].getN().data().begin();
-    _diffH1edgeN_[ee] = &*data.dataOnEntities[MBEDGE][ee].getDiffN().data().begin();
+    H1edgeN[ee] = &*data.dataOnEntities[MBEDGE][ee].getN().data().begin();
+    diffH1edgeN[ee] = &*data.dataOnEntities[MBEDGE][ee].getDiffN().data().begin();
   }
-  ierr = H1_EdgeShapeFunctions_MBTRI(_sense_,_order_,
+  //shape functions on face 3
+  ierr = H1_EdgeShapeFunctions_MBTRI(&sense[0],&order[0],
     &*data.dataOnEntities[MBVERTEX][0].getN().data().begin(),&*data.dataOnEntities[MBVERTEX][0].getDiffN().data().begin(),
-    _H1edgeN_,_diffH1edgeN_,G_DIM); CHKERRQ(ierr);
+    &H1edgeN[0],&diffH1edgeN[0],G_DIM); CHKERRQ(ierr);
+  //shape functions on face 4
+  ierr = H1_EdgeShapeFunctions_MBTRI(&sense[6],&order[6],
+    &*data.dataOnEntities[MBVERTEX][0].getN().data().begin(),&*data.dataOnEntities[MBVERTEX][0].getDiffN().data().begin(),
+    &H1edgeN[6],&diffH1edgeN[6],G_DIM); CHKERRQ(ierr);
 
   //face
-  if(data.dataOnEntities[MBTRI].size()!=1) {
+  if(data.dataOnEntities[MBTRI].size()!=5) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
   }
-  int nb_dofs = NBFACE_H1(data.dataOnEntities[MBTRI][0].getOrder());
-  data.dataOnEntities[MBTRI][0].getN().resize(G_DIM,nb_dofs);
-  data.dataOnEntities[MBTRI][0].getDiffN().resize(G_DIM,2*nb_dofs);
-  const int face_nodes[] = { 0,1,2 };
-  ierr = H1_FaceShapeFunctions_MBTRI(
-    face_nodes,data.dataOnEntities[MBTRI][0].getOrder(),
-    &*data.dataOnEntities[MBVERTEX][0].getN().data().begin(),&*data.dataOnEntities[MBVERTEX][0].getDiffN().data().begin(),
-    &*data.dataOnEntities[MBTRI][0].getN().data().begin(),&*data.dataOnEntities[MBTRI][0].getDiffN().data().begin(),
-    G_DIM); CHKERRQ(ierr);
-
+  for(int ff = 3;ff<5;ff++) {
+    int nb_dofs = NBFACE_H1(data.dataOnEntities[MBTRI][ff].getOrder());
+    data.dataOnEntities[MBTRI][ff].getN().resize(G_DIM,nb_dofs);
+    data.dataOnEntities[MBTRI][ff].getDiffN().resize(G_DIM,2*nb_dofs);
+    const int face_nodes[] = { 0,1,2 };
+    ierr = H1_FaceShapeFunctions_MBTRI(
+      face_nodes,data.dataOnEntities[MBTRI][ff].getOrder(),
+      &*data.dataOnEntities[MBVERTEX][0].getN().data().begin(),&*data.dataOnEntities[MBVERTEX][0].getDiffN().data().begin(),
+      &*data.dataOnEntities[MBTRI][ff].getN().data().begin(),&*data.dataOnEntities[MBTRI][ff].getDiffN().data().begin(),
+      G_DIM); CHKERRQ(ierr);
   }
 
   PetscFunctionReturn(0);
-}*/
+}
 
-/*PetscErrorCode ForcesAndSurcesCore::shapeFlatPRISMFunctions_Hdiv(
+PetscErrorCode ForcesAndSurcesCore::shapeFlatPRISMFunctions_Hdiv(
     DataForcesAndSurcesCore &data,
     const double *G_X,const double *G_Y,const int G_DIM) {
   PetscFunctionBegin;
   SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not yet implemented, i.e. flat prism with Hdiv space");
   PetscFunctionReturn(0);
-}*/
+}
 
 }

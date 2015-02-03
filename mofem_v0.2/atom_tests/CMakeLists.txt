@@ -296,7 +296,6 @@ add_test(forces_and_sources_body_force_atom_test_compare ${CMAKE_COMMAND} -E com
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_body_force_atom_test.txt
   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_body_force_atom_test.txt)
 
-
 add_executable(forces_and_sources_getting_higher_order_skin_normals_atom forces_and_sources_getting_higher_order_skin_normals_atom_tets.cpp)
 target_link_libraries(forces_and_sources_getting_higher_order_skin_normals_atom 
   mofem_finite_elements
@@ -313,6 +312,7 @@ add_test(forces_and_sources_getting_higher_order_skin_normals_atom_test_compare 
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_getting_higher_order_skin_normals_atom.txt
   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_getting_higher_order_skin_normals_atom.txt)
 
+#triangle element
 add_executable(forces_and_sources_testing_triangle_element forces_and_sources_testing_triangle_element.cpp)
 target_link_libraries(forces_and_sources_testing_triangle_element  
   mofem_finite_elements
@@ -329,6 +329,7 @@ add_test(forces_and_sources_testing_triangle_element_test_compare ${CMAKE_COMMAN
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_testing_triangle_element.txt
   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_testing_triangle_element.txt)
 
+#edge element
 add_executable(forces_and_sources_testing_edge_element forces_and_sources_testing_edge_element.cpp)
 target_link_libraries(forces_and_sources_testing_edge_element 
   mofem_finite_elements
@@ -345,6 +346,7 @@ add_test(forces_and_sources_testing_edge_element_test_compare ${CMAKE_COMMAND} -
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_testing_edge_element.txt
   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_testing_edge_element.txt)
 
+#vertex element
 add_executable(forces_and_sources_testing_vertex_element forces_and_sources_testing_vertex_element.cpp)
 target_link_libraries(forces_and_sources_testing_vertex_element
   mofem_finite_elements
@@ -361,6 +363,24 @@ add_test(forces_and_sources_testing_vertex_element_test_compare ${CMAKE_COMMAND}
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_testing_vertex_element.txt
   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_testing_vertex_element.txt)
 
+#flat prism element
+add_executable(forces_and_sources_testing_flat_prism_element forces_and_sources_testing_flat_prism_element.cpp)
+target_link_libraries(forces_and_sources_testing_flat_prism_element  
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS})
+
+add_test(forces_and_sources_testing_flat_prism_element_test
+  ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_testing_flat_prism_element -my_file templar.cub)
+add_test(forces_and_sources_testing_flat_prism_element_test_compare ${CMAKE_COMMAND} -E compare_files 
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_testing_flat_prism_element.txt
+  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_testing_flat_prism_element.txt)
+
+# neumann forces
 add_executable(forces_and_sources_neumann_forces_atom forces_and_sources_neumann_forces_atom_test.cpp)
 target_link_libraries(forces_and_sources_neumann_forces_atom
   mofem_finite_elements
