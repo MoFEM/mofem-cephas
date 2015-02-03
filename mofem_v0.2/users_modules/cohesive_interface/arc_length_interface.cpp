@@ -36,14 +36,14 @@ using namespace MoFEM;
 #include <BodyForce.hpp>
 #include <ThermalStressElement.hpp>
 
+#include <PotsProcOnRefMesh.hpp>
+#include <PostProcHookStresses.hpp>
+
 #include <FEMethod_LowLevelStudent.hpp>
 #include <FEMethod_UpLevelStudent.hpp>
 
-#include <PostProcVertexMethod.hpp>
+//#include <PostProcVertexMethod.hpp>
 #include <PostProcDisplacementAndStrainOnRefindedMesh.hpp>
-
-#include <PotsProcOnRefMesh.hpp>
-#include <PostProcHookStresses.hpp>
 
 #include <ElasticFEMethod.hpp>
 #include <ElasticFEMethodInterface.hpp>
