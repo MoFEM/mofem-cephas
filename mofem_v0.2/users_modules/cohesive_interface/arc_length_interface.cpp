@@ -39,6 +39,9 @@ using namespace MoFEM;
 #include <PotsProcOnRefMesh.hpp>
 #include <PostProcHookStresses.hpp>
 
+#include <ArcLengthTools.hpp>
+#include <InterfaceGapArcLengthControl.hpp>
+
 #include <FEMethod_LowLevelStudent.hpp>
 #include <FEMethod_UpLevelStudent.hpp>
 
@@ -47,7 +50,6 @@ using namespace MoFEM;
 
 #include <ElasticFEMethod.hpp>
 #include <ElasticFEMethodInterface.hpp>
-#include <ArcLengthTools.hpp>
 #include <NonLinearFEMethodInterface.hpp>
 
 using namespace boost::numeric;
