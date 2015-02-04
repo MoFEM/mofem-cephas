@@ -19,21 +19,49 @@
 
 struct CohesiveInterfaceElement {
 
-  struct BlockData {
-    double h;
-    double E0;
-    double ft;
-    double Gf;
-    Range tRisms; 
-  }; 
-  map<int,BlockData> setOfBlocks; 
-
   struct CommonData {
-    ublas::matrix<double> gAp;
+    ublas::vector<double> g;
+    ublas::matrix<double> gapGlob;
+    ublas::matrix<double> gapLoc;
+    ublas::vcetor<ublas::matrix<double> > R;
   };
   CommonData commonData;
 
   CohesiveInterfaceElement()
+
+  /** \brief Set negative sign to shape functions on face 4
+    */
+  struct OpSetSignToShapeFunctions: public FlatPrismElementForcesAndSurcesCore::UserDataOperator {
+
+    OpSetSignToShapeFunctions(const string field_name,commonData &common_data):
+      FlatPrismElementForcesAndSurcesCore::UserDataOperator(field_name) {}
+
+    PetscErrorCode doWork(
+      int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+      PetscFunctionBegin;
+      if(data.getN().size1()==0)  PetscFunctionReturn(0);
+      switch(type) {
+	case MBVERTEX:
+	  for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
+	    for(int nn = 3;nn<3;nn++) {
+	      data.getN()(gg,nn) *= -1;
+	    }
+	  }
+	  break;
+	case MBEDGE:
+	  if(side < 5) PetscFunctionReturn(0);
+	  data.getN() *= -1;
+	  break;
+	case MBTRI:
+	  if(side != 4) PetscFunctionReturn(0);
+	  data.getN() *= -1;
+	default:
+	  SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
+      }
+      PetscFunctionReturn(0);
+    }
+
+  }
 
   struct OpCalculateGap: public FlatPrismElementForcesAndSurcesCore::UserDataOperator {
 
@@ -46,37 +74,335 @@ struct CohesiveInterfaceElement {
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
       try {
-
- 	int nb_dofs = data.getFieldData().size();
-	if(nb_dofs == 0) {
-	  PetscFunctionReturn(0);
-	}
+	if(data.getN().size1()==0)  PetscFunctionReturn(0);
 	int nb_gauss_pts = data.getN().size1();
-
+	commonData.g.resize(nb_gauss_pts);
+	commonData.gapGlob.resize(nb_gauss_pts,3);
+	commonData.gapLoc.resize(nb_gauss_pts,3);
+	commonData.R.resize(nb_gauss_pts);
 	if(type == MBVERTEX) {
-	  commonData.gAp.resize(nb_gauss_pts,3);
-	  commonData.gAp.clear();
-	}
-
-	for(int gg = 0;gg<nb_gauss_pts;gg++) {
-	  for(int dd = 0;dd<3;dd++) {
-	    commonData.gAp(gg,dd) += cblas_ddot(3,data.getFieldData()
-
+	  commonData.gapGlob.clear();
+	  for(int gg = 0;gg<nb_gauss_pts;gg++) {
+	    R[gg].resize(3,3);
+	    for(int gg = 0;gg<nb_gauss_pts;gg++) {
+	      for(int dd = 0;dd<3;dd++) {
+		commonData.R[gg](0,dd) = getNormals_at_GaussPtF3()(gg)[dd];
+		commonData.R[gg](1,dd) = getTangent1_at_GaussPtF3()(gg)[dd];
+		commonData.R[gg](2,dd) = getTangent2_at_GaussPtF3()(gg)[dd];
+	      }
+	    }
 	  }
 	}
-
+	gAp.resize(nb_gauss_pts);
+	gAp.clear();
+ 	int nb_dofs = data.getFieldData().size();
+	for(int gg = 0;gg<nb_gauss_pts;gg++) {
+	  for(int dd = 0;dd<3;dd++) {
+	    commonData.gapGlob(gg,dd) += cblas_ddot(
+	      nb_dofs/3,&data.getN(gg)[0],1,&data.getFieldData()[dd],3);
+	  }
+	}
+	if(type == MBTRI && side == 4) {
+	  for(int gg = 0;gg<nb_gauss_pts;gg++) {
+	    matrix_row<matrix<double> > gap_glob(commonData.gapGlob,gg);
+	    matrix_row<matrix<double> > gap_loc(commonData.gapLoc,gg);
+	    gap_loc = prod(commonData.R[gg],gap_glob);
+	    g[gg] = norm_2(gap_glob);
+	  }
+	}
       } catch (const std::exception& ex) {
 	ostringstream ss;
 	ss << "throw in method: " << ex.what() << endl;
 	SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
+      PetscFunctionReturn(0);
+    }
 
+  };
+
+  struct PhysicalEquation {
+
+    FieldInterface &mField;
+    PhysicalEquation(FieldInterface &m_field): mField(m_field) {};
+
+    double h,youngModulus,ft,Gf;
+    Tag thKappa,thDamagedPrism;
+
+
+    bool isInitialised;
+    double E0,g0,kappa1;
+    PetscErrorCode iNitailise(const FEMethod *fe_method) {
+      PetscFunctionBegin;
+      double def_damaged = 0;
+      rval = mField.get_moab().tag_get_handle(
+	"DAMAGED_PRISM",1,MB_TYPE_INTEGER,thDamagedPrism,MB_TAG_CREAT|MB_TAG_SPARSE,&def_damaged); CHKERR_THROW(rval);
+      const int def_len = 0;
+      rval = moab.tag_get_handle("_KAPPA",def_len,MB_TYPE_DOUBLE,
+	thKappa,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_VARLEN,NULL); CHKERR_PETSC(rval);
+      E0 = youngModulus/h;
+      g0 = ft/E0;
+      kappa1 = 2*Gf/ft;
+      PetscFunctionReturn(0);
+    }
+
+    double *kappaPtr;
+    int kappaSize;
+    PetscErrorCode getKappa(int nb_gauss_pts,const FEMethod *fe_method) {
+      PetscFunctionBegin;
+      EntityHandle ent = fe_metod->fePtr->get_ent();
+      ErrorCode rval;
+      rval = mField.get_moab().tag_get_by_ptr(th_kappa,&ent,1,(const void **)&kappaPtr,&kappaSize); 
+      if(rval == MB_SUCCESS || kappaSize != nb_gauss_pts) {
+	ublas::vector<double> kappa;
+	kappa.resize(nb_gauss_pts);
+	int tag_size[1]; 
+	tag_size[0] = nb_gauss_pts;
+	void const* tag_data[] = { &data[0] };
+	rval = mField.get_moab().tag_set_by_ptr(thKappa,&ent,1,tag_data,tag_size);  CHKERR_PETSC(rval);
+	rval = mField.get_moab().tag_get_by_ptr(th_kappa,&ent,1,(const void **)&kappaPtr,&kappaSize);  CHKERR_PETSC(rval);
+      }
+      PetscFunctionReturn(0);
+    }
+
+    ublas::matrix<double> Dglob,Dloc;
+    PetscErrorCode calcDglob(const double omega) {
+      PetscFunctionBegin;
+      Dglob.resize(3,3);
+      Dloc.resize(3,3);
+      double E = (1-omega)*E0;
+      Dloc(0,0) = E;
+      Dloc(1,1) = E;
+      Dloc(2,2) = E;
+      Dglob = prod( Dloc, R );
+      Dglob = prod( trans(R), Dglob );
+      PetscFunctionReturn(0);
+    }
+
+    PetscErrorCode calcOmega(const double kappa,double& omega) {
+      PetscFunctionBegin;
+      omega = 0;
+      if(kappa>=kappa1) {
+	omega = 1;
+	PetscFunctionReturn(0);
+      } else if(kappa>0) {
+	double a = (2.0*Gf*E0+ft*ft)*kappa;
+	double b = (ft+E0*kappa)*Gf;
+	omega = 0.5*a/b;
+      }
+      PetscFunctionReturn(0);
+    }
+
+    PetscErrorCode calcTangetDglob(const double omega,const double g,
+      const ublas::vector<double>& gap_loc,ublas::matrix<double> &R) {
+      PetscFunctionBegin;
+      Dglob.resize(3,3);
+      Dloc.resize(3,3);
+      double domega = 
+	0.5*(2*Gf*E0+ft*ft)/((ft+(g-ft/E0)*E0)*Gf) - 0.5*((g-ft/E0)*(2*Gf*E0+ft*ft)*E0)/(pow(ft+(g-ft/E0)*E0,2)*Gf);
+      Dloc.resize(3,3);
+      //r0
+      Dloc(0,0) = (1-omega)*E0 - domega*E0*gap_loc[0]*gap_loc[0]/g;
+      Dloc(0,1) = -domega*E0*gap_loc[0]*beta*gap_loc[1]/g;
+      Dloc(0,2) = -domega*E0*gap_loc[0]*beta*gap_loc[2]/g;
+      //r1
+      Dloc(1,0) = -domega*E0*gap_loc[1]*gap_loc[0]/g;
+      Dloc(1,1) = (1-omega)*E0 - domega*E0*gap_loc[1]*beta*gap_loc[1]/g;
+      Dloc(1,2) = -domega*E0*gap_loc[1]*beta*gap_loc[2]/g;
+      //r2
+      Dloc(2,0) = -domega*E0*gap_loc[2]*gap_loc[0]/g;
+      Dloc(2,1) = -domega*E0*gap_loc[2]*beta*gap_loc[1]/g;
+      Dloc(2,2) = (1-omega)*E0 - domega*E0*gap_loc[2]*beta*gap_loc[2]/g;
+      Dglob = prod( Dloc, R );
+      Dglob = prod( trans(R), Dglob );
+      PetscFunctionReturn(0);
+    }
+     
+    virtual PetscErrorCode calculateTraction(
+      ublas::vector<double> &traction,
+      int gg,CommonData &common_data,
+      const FEMethod *fe_method) {
+      PetscFunctionBegin;
+      if(!isInitialised) {
+	ierr = iNitailise(fe_method); CHKERRQ(ierr);
+	isInitialised = true;
+      }
+      if(gg==0) {
+	ierr = getKappa(common_data.g.size(),fe_method); CHKERRQ(ierr);
+      }
+      double kappa = fmax(common_data.g[gg]-g0,kappaPtr[gg]);
+      double omega;
+      ierr = calcOmega(kappa,omega); CHKERRQ(ierr);
+      ierr = calcDglob(omega); CHKERRQ(ierr);
+      traction.resize(3);
+      noalias(traction) = prod(Dglob,gap[gg]);
+      PetscFunctionReturn(0);
+    }
+
+    virtual PetscErrorCode calculateTangentStiffeness(
+      ublas::matrix<double> &tangent_matrix,
+      int gg,CommonData &common_data,
+      const FEMethod *fe_method) {
+      PetscFunctionBegin;
+      if(!isInitialised) {
+	ierr = iNitailise(fe_method); CHKERRQ(ierr);
+	isInitialised = true;
+      }
+      if(gg==0) {
+	ierr = getKappa(common_data.gap.size(),fe_method); CHKERRQ(ierr);
+      }
+      double kappa = fmax(common_data.g[gg]-g0,kappaPtr[gg]);
+      double omega;
+      ierr = calcOmega(kappa,omega); CHKERRQ(ierr);
+      ierr = SNESGetIterationNumber(fe_method->snes,&iter); CHKERRQ(ierr);
+      if((_kappa_ <= kappa[gg])||(_kappa_>=kappa1)||(iter <= 1)) {
+	ierr = calcDglob(_omega_); CHKERRQ(ierr);
+      } else {
+	ierr = calcTangetDglob(omega,g[gg],
+	  matrix_row<matrix<double> >(commonData.gapLoc,gg),
+	  commonData.R[gg]);
+      }
+      PetscFunctionReturn(0);
+    }
+
+    virtual PetscErrorCode updateHistory(
+      CommonData &common_data,const FEMethod *fe_method) {
+      PetscFunctionBegin;
+      if(!isInitialised) {
+	ierr = iNitailise(fe_method); CHKERRQ(ierr);
+	isInitialised = true;
+      }
+      ierr = getKappa(common_data.g.size(),fe_method); CHKERRQ(ierr);
+      bool all_gauss_pts_damaged = true;
+      for(int gg = 0;gg<common_data.g.size();gg++) {
+	double omega = 0;
+	double kappa = fmax(common_data.g[gg]-g0,kappaPtr[gg]);
+	ierr = calcOmega(kappa,omega); CHKERRQ(ierr);
+	if(omega < 1.) {
+	  all_gauss_pts_damaged = false;
+	}
+	kappaPtr[gg] = kappa;
+      }
+      if(all_gauss_pts_damaged) {
+	EntityHandle ent = fe_method->get_ent();
+	int set_prism_as_demaged = 1;
+	rval = mField.get_moab().tag_set_data(thDamagedPrism,&ent,1,&set_prism_as_demaged); CHKERR_PETSC(rval);
+      }
       PetscFunctionReturn(0);
     }
 
   };
 
 
+  struct OpRhs: public FlatPrismElementForcesAndSurcesCore::UserDataOperator {
+
+    CommonData &commonData;
+    OpRhs(const string field_name,commonData &common_data):
+      FlatPrismElementForcesAndSurcesCore::UserDataOperator(field_name),
+      commonData(common_data) {}
+
+    ublas::vector<double> t,Nf;
+    PetscErrorCode doWork(
+      int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+      PetscFunctionBegin;
+      try {
+	int nb_gauss_pts = data.getN().size1();
+	if(nb_gauss_pts==0)  PetscFunctionReturn(0);
+	int nb_dofs = data.getIndices.size();
+	Nf.resize(nb_dofs);
+	Nf.clear();
+	for(int gg = 0;gg<nb_gauss_pts;gg++) {
+	  ierr = calculateTraction(t,gg,commonData,getFEMethod()); CHKERRQ(ierr);
+	  for(int nn = 0;nn<nb_dofs/3;nn++) {
+	    for(int dd = 0;dd<3;dd++) {
+	      Nf[3*nn+dd] += data.getN(gg)[nn]*t[dd];
+	    }
+	  }
+	}
+	ierr = VecSetValues(getFEMethod()->snes_f,
+	  data.getIndices.size(),&data.getIndices[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
+      } catch (const std::exception& ex) {
+	ostringstream ss;
+	ss << "throw in method: " << ex.what() << endl;
+	SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+      }
+      PetscFunctionReturn(0);
+    }
+
+  };
+
+  struct OpLhs: public FlatPrismElementForcesAndSurcesCore::UserDataOperator {
+
+    CommonData &commonData;
+    OpLh(const string field_name,commonData &common_data):
+      FlatPrismElementForcesAndSurcesCore::UserDataOperator(field_name),
+      commonData(common_data) { symm = false; }
+
+    ublas::matrix<double> K,D,ND;
+    PetscErrorCode doWork(
+      int row_side,int col_side,
+      EntityType row_type,EntityType col_type,
+      DataForcesAndSurcesCore::EntData &row_data,
+      DataForcesAndSurcesCore::EntData &col_data) {
+      PetscFunctionBegin;
+      try {
+	int nb_gauss_pts = row_data.getN().size1();
+	if(nb_gauss_pts==0)  PetscFunctionReturn(0);
+	if(col_data.getN().size1()==0)  PetscFunctionReturn(0);
+	int nb_row = row_data.getIndices.size();
+	int nb_col = col_data.getIndices.size();
+	ND.resize(3,nb_col);
+	K.resize(nb_row,nb_col);
+	K.clear();
+	for(int gg = 0;gg<nb_gauss_pts;gg++) {
+	  ierr = calculateTangentStiffeness(D,gg,commonData,getFEMethod()); CHKERRQ(ierr);
+	  ND.clear();
+	  for(int nn = 0; nn<nb_row/3; nn++) {
+	    for(int dd = 0;dd<3;dd++) {
+	      for(int DD = 0;DD<3;DD++) {
+		ND(3*nn+dd,DD) += row_data.getN(gg)[nn]*D(dd,DD);
+	      }
+	    }
+	  }
+	  for(int nn = 0; nn<nb_row/3; nn++) {
+	    for(int dd = 0;dd<3;dd++) {  
+	      for(int NN = 0; NN<nb_col/3; NN++) {
+		for(int DD = 0; DD<3;DD++) {
+		  K(3*nn+dd,3*NN+DD) += ND(3*nn+dd,DD)*col_data.getN(gg)[NN];
+		}
+	      }
+	    }
+	  }
+	}
+	ierr = MatSetValues(getFEMethod()->ts_B,
+	  nb_row,&row_data.getIndices()[0],
+	  nb_col,&col_data.getIndices()[0],
+	  &K(0,0),ADD_VALUES); CHKERRQ(ierr);
+      } catch (const std::exception& ex) {
+	ostringstream ss;
+	ss << "throw in method: " << ex.what() << endl;
+	SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+      }
+      PetscFunctionReturn(0);
+    }
+
+  };
+
+  struct OpHistory: public FlatPrismElementForcesAndSurcesCore::UserDataOperator {
+
+    CommonData &commonData;
+    OpHistory(const string field_name,commonData &common_data):
+      FlatPrismElementForcesAndSurcesCore::UserDataOperator(field_name),
+      commonData(common_data) {}
+
+    ublas::vector<double> t,Nf;
+    PetscErrorCode doWork(
+      int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+      PetscFunctionBegin;
+      if(type != MBVERTEX) PetscFunctionReturn(0);
+      ierr = updateHistory(commonData,getFEMethod()); CHKERRQ(ierr);
+      PetscFunctionReturn(0);
+    }
+
+  };
+
 };
-
-
