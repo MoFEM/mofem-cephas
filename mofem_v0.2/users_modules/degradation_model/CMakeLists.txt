@@ -83,5 +83,14 @@ target_link_libraries(mech_macro
   ${MoFEM_PROJECT_LIBS})
 
 
+  configure_file(
+    "${UM_SOURCE_DIR}/degradation_model/do_vtk1.sh.in"
+    "${CMAKE_CURRENT_SOURCE_DIR}/do_vtk1.sh"
+    @ONLY
+  )
+
+  file(COPY do_vtk1.sh
+    DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
+    FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE)
 
 

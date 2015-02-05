@@ -25,29 +25,21 @@ using namespace MoFEM;
 #include <Projection10NodeCoordsOnField.hpp>
 
 #include <SurfacePressure.hpp>
-
 #include <FEMethod_LowLevelStudent.hpp>
 #include <FEMethod_UpLevelStudent.hpp>
 
+#include <PotsProcOnRefMesh.hpp>
 
-#include <ElasticFEMethod.hpp>  // Old implementaiton by Lukasz
+#include <ElasticFEMethod.hpp>  
+using namespace ObosleteUsersModules;
+#include <ElasticFEMethod_Matrix.hpp>
+#include <ElasticFEMethod_Dmat_input.hpp>
+
 #include "ElasticFE_RVELagrange_Disp.hpp"
 #include "ElasticFE_RVELagrange_Disp_Multi_Rhs.hpp"
 #include "RVEVolume.hpp"
 #include "ElasticFE_RVELagrange_Homogenized_Stress_Disp.hpp"
-
-
-
-
-
-#include <ElasticElement.hpp>  // New implementation (in progress)
-using namespace ObosleteUsersModules;
 #include <Calculate_RVE_Dmat.hpp>
-
-
-
-#include <PotsProcOnRefMesh.hpp>
-
 
 using namespace boost::numeric;
 
@@ -98,15 +90,28 @@ int main(int argc, char *argv[]) {
   ierr = m_field_RVE.add_field("DISP_RVE",H1,3); CHKERRQ(ierr);
   ierr = m_field_RVE.add_field("Lagrange_mul_disp",H1,field_rank); CHKERRQ(ierr);
   
+  
   //FE
-  ierr = m_field_RVE.add_finite_element("ELASTIC_FE_RVE"); CHKERRQ(ierr);
+  /*Here the Micro problem is divided in two parts (Matix and inclusion both isotropic)
+   Here we need to do [  Dmat_matrix=(1-w)*Dmat_matrix0  and Dmat_Inc=Dmat_matrix0]
+   So degradaiton is happening only in matrix material and as we don't know about the acutal degredation
+   in individual mechanical parameters [E, v] dut to limitted experimental data, so it is assumed that degradtion 
+   happens in Dmat_material
+  */
+  ierr = m_field_RVE.add_finite_element("ELASTIC_FE_RVE_MATRIX"); CHKERRQ(ierr); //Matrix
+  ierr = m_field_RVE.add_finite_element("ELASTIC_FE_RVE_INC"); CHKERRQ(ierr); //Inclusion
   ierr = m_field_RVE.add_finite_element("Lagrange_FE"); CHKERRQ(ierr);
   
-  //Define rows/cols and element data
-  ierr = m_field_RVE.modify_finite_element_add_field_row("ELASTIC_FE_RVE","DISP_RVE"); CHKERRQ(ierr);
-  ierr = m_field_RVE.modify_finite_element_add_field_col("ELASTIC_FE_RVE","DISP_RVE"); CHKERRQ(ierr);
-  ierr = m_field_RVE.modify_finite_element_add_field_data("ELASTIC_FE_RVE","DISP_RVE"); CHKERRQ(ierr);
+  //Define rows/cols and element data for ELASTIC_FE_RVE
+  ierr = m_field_RVE.modify_finite_element_add_field_row("ELASTIC_FE_RVE_MATRIX","DISP_RVE"); CHKERRQ(ierr);
+  ierr = m_field_RVE.modify_finite_element_add_field_col("ELASTIC_FE_RVE_MATRIX","DISP_RVE"); CHKERRQ(ierr);
+  ierr = m_field_RVE.modify_finite_element_add_field_data("ELASTIC_FE_RVE_MATRIX","DISP_RVE"); CHKERRQ(ierr);
   
+  //Define rows/cols and element data for ELASTIC_FE_INC_RVE
+  ierr = m_field_RVE.modify_finite_element_add_field_row("ELASTIC_FE_RVE_INC","DISP_RVE"); CHKERRQ(ierr);
+  ierr = m_field_RVE.modify_finite_element_add_field_col("ELASTIC_FE_RVE_INC","DISP_RVE"); CHKERRQ(ierr);
+  ierr = m_field_RVE.modify_finite_element_add_field_data("ELASTIC_FE_RVE_INC","DISP_RVE"); CHKERRQ(ierr);
+
   //C row as Lagrange_mul_disp and col as DISPLACEMENT
   ierr = m_field_RVE.modify_finite_element_add_field_row("Lagrange_FE","Lagrange_mul_disp"); CHKERRQ(ierr);
   ierr = m_field_RVE.modify_finite_element_add_field_col("Lagrange_FE","DISP_RVE"); CHKERRQ(ierr);
@@ -123,7 +128,8 @@ int main(int argc, char *argv[]) {
   ierr = m_field_RVE.add_problem("ELASTIC_PROBLEM_RVE"); CHKERRQ(ierr);
   
   //set finite elements for problem
-  ierr = m_field_RVE.modify_problem_add_finite_element("ELASTIC_PROBLEM_RVE","ELASTIC_FE_RVE"); CHKERRQ(ierr);
+  ierr = m_field_RVE.modify_problem_add_finite_element("ELASTIC_PROBLEM_RVE","ELASTIC_FE_RVE_MATRIX"); CHKERRQ(ierr);
+  ierr = m_field_RVE.modify_problem_add_finite_element("ELASTIC_PROBLEM_RVE","ELASTIC_FE_RVE_INC"); CHKERRQ(ierr);
   ierr = m_field_RVE.modify_problem_add_finite_element("ELASTIC_PROBLEM_RVE","Lagrange_FE"); CHKERRQ(ierr);
   
   
@@ -138,7 +144,32 @@ int main(int argc, char *argv[]) {
   
   
   //add finite elements entities
-  ierr = m_field_RVE.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0_RVE,"ELASTIC_FE_RVE",MBTET); CHKERRQ(ierr);
+  EntityHandle meshset_Elastic, meshset_Elastic_stiff_inclusion;
+  rval = moab_RVE.create_meshset(MESHSET_SET,meshset_Elastic); CHKERR_PETSC(rval);
+  rval = moab_RVE.create_meshset(MESHSET_SET,meshset_Elastic_stiff_inclusion); CHKERR_PETSC(rval);
+  
+  Range TetsInBlock, TetsInBlock_stiff_inc;
+  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field_RVE,BLOCKSET,it)){
+    
+		if(it->get_Cubit_name() == "MAT_ELASTIC") {
+			rval = moab_RVE.get_entities_by_type(it->meshset, MBTET,TetsInBlock,true); CHKERR_PETSC(rval);
+		}
+    
+    if(it->get_Cubit_name() == "MAT_ELASTIC_Stiff_Inclusion") {
+			rval = moab_RVE.get_entities_by_type(it->meshset, MBTET,TetsInBlock_stiff_inc,true); CHKERR_PETSC(rval);
+		}
+	}
+  rval = moab_RVE.add_entities(meshset_Elastic,TetsInBlock);CHKERR_PETSC(rval);
+  rval = moab_RVE.add_entities(meshset_Elastic_stiff_inclusion,TetsInBlock_stiff_inc);CHKERR_PETSC(rval);
+
+//  cout<<"TetsInBlock_stiff_inc "<<TetsInBlock_stiff_inc<<endl;
+//  cout<<"TetsInBlock "<<TetsInBlock<<endl;
+
+  
+  ierr = m_field_RVE.add_ents_to_finite_element_by_TETs(meshset_Elastic,"ELASTIC_FE_RVE_MATRIX",true); CHKERRQ(ierr);
+  ierr = m_field_RVE.add_ents_to_finite_element_by_TETs(meshset_Elastic_stiff_inclusion,"ELASTIC_FE_RVE_INC",true); CHKERRQ(ierr);
+
+  
   Range SurfacesFaces;
   ierr = m_field_RVE.get_Cubit_msId_entities_by_dimension(103,SIDESET,2,SurfacesFaces,true); CHKERRQ(ierr);
   ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SideSet 103 = %d\n",SurfacesFaces.size()); CHKERRQ(ierr);
@@ -259,11 +290,17 @@ int main(int argc, char *argv[]) {
     ierr = m_field_Macro.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
   }
 
-  ElasticElement elastic_elements(m_field_Macro);
-
-  ierr = elastic_elements.addElasticElements("DISP_MACRO"); CHKERRQ(ierr);
+  
+  
+  //Calculate Dmat for each Guass point here
+  Calculate_RVE_Dmat calculate_rve_dmat(m_field_Macro);
+  ierr = calculate_rve_dmat.addElasticElements("DISP_MACRO"); CHKERRQ(ierr);
   ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_FE_MACRO","Wt"); CHKERRQ(ierr);
   ierr = m_field_Macro.modify_problem_add_finite_element("ELASTIC_PROBLEM_MACRO","ELASTIC_FE_MACRO"); CHKERRQ(ierr);
+  
+  
+  ierr = MetaNeummanForces::addNeumannBCElements(m_field_Macro,"ELASTIC_PROBLEM_MACRO","DISP_MACRO"); CHKERRQ(ierr);
+
 
   /****/
   //build database
@@ -287,40 +324,42 @@ int main(int argc, char *argv[]) {
   //what are ghost nodes, see Petsc Manual
   ierr = m_field_Macro.partition_ghost_dofs("ELASTIC_PROBLEM_MACRO"); CHKERRQ(ierr);
 
-//  Vec F;
-//  ierr = m_field_Macro.VecCreateGhost("ELASTIC_PROBLEM_MACRO",ROW,&F); CHKERRQ(ierr);
-//  Vec D;
-//  ierr = VecDuplicate(F,&D); CHKERRQ(ierr);
-//  Mat A;
-//  ierr = m_field_Macro.MatCreateMPIAIJWithArrays("ELASTIC_PROBLEM_MACRO",&A); CHKERRQ(ierr);
-//
-//  DisplacementBCFEMethodPreAndPostProc my_dirichlet_bc(m_field_Macro,"ELASTIC_PROBLEM_MACRO",A,D,F);
-//
-//  ierr = VecZeroEntries(D); CHKERRQ(ierr);
-//  ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-//  ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-//  ierr = VecZeroEntries(F); CHKERRQ(ierr);
-//  ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-//  ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-//  
-//  //External forces, This vector is assemble only once (as this is not function of Dmat)
-//  boost::ptr_map<string,NeummanForcesSurface> neumann_forces;
-//  ierr = MetaNeummanForces::setNeumannFiniteElementOperators(m_field_Macro,neumann_forces,F,"ELASTIC_PROBLEM_MACRO"); CHKERRQ(ierr);
-//  boost::ptr_map<string,NeummanForcesSurface>::iterator mit = neumann_forces.begin();
-//  for(;mit!=neumann_forces.end();mit++) {
-//    ierr = m_field_Macro.loop_finite_elements("ELASTIC_PROBLEM_MACRO",mit->first,mit->second->getLoopFe()); CHKERRQ(ierr);
-//  }
-  
-  
-//  Vec Fint;
-//  ierr = VecDuplicate(F,&Fint); CHKERRQ(ierr);
-//  ierr = elastic_elements.setElasticFiniteElementLhsOperators("ELASTIC_PROBLEM_MACRO","Wt",A); CHKERRQ(ierr);
-//  ierr = elastic_elements.setElasticFiniteElementRhsOperators("ELASTIC_PROBLEM_MACRO","Wt",Fint); CHKERRQ(ierr);
+  Vec F;
+  ierr = m_field_Macro.VecCreateGhost("ELASTIC_PROBLEM_MACRO",ROW,&F); CHKERRQ(ierr);
+  Vec D;
+  ierr = VecDuplicate(F,&D); CHKERRQ(ierr);
+  Mat A;
+  ierr = m_field_Macro.MatCreateMPIAIJWithArrays("ELASTIC_PROBLEM_MACRO",&A); CHKERRQ(ierr);
 
-  Calculate_RVE_Dmat calculate_rve_dmat(m_field_Macro);
+
+  ierr = VecZeroEntries(D); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecZeroEntries(F); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  
+  //External forces, This vector is assemble only once (as this is not function of Dmat)
+  boost::ptr_map<string,NeummanForcesSurface> neumann_forces;
+  ierr = MetaNeummanForces::setNeumannFiniteElementOperators(m_field_Macro,neumann_forces,F,"DISP_MACRO"); CHKERRQ(ierr);
+  boost::ptr_map<string,NeummanForcesSurface>::iterator mit = neumann_forces.begin();
+  for(;mit!=neumann_forces.end();mit++) {
+    ierr = m_field_Macro.loop_finite_elements("ELASTIC_PROBLEM_MACRO",mit->first,mit->second->getLoopFe()); CHKERRQ(ierr);
+  }
+  
+//  ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+
+  
   ierr = calculate_rve_dmat.setRVE_DmatRhsOperators(m_field_RVE, "DISP_MACRO","Wt"); CHKERRQ(ierr);
-
+  Vec Fint;
+  ierr = VecDuplicate(F,&Fint); CHKERRQ(ierr);
   
+
+  PostPocOnRefinedMesh post_proc(m_field_Macro);
+  ierr = post_proc.generateRefereneElemenMesh(); CHKERRQ(ierr);
+  ierr = post_proc.addFieldValuesPostProc("DISP_MACRO"); CHKERRQ(ierr);
+
+  //read time series and do thermo elastci analysis
   SeriesRecorder *recorder_ptr;
   ierr = m_field_Macro.query_interface(recorder_ptr); CHKERRQ(ierr);
   if( recorder_ptr->check_series("Wt_SERIES") ) {
@@ -329,122 +368,94 @@ int main(int argc, char *argv[]) {
       PetscPrintf(PETSC_COMM_WORLD,"Process step %d\n",sit->get_step_number());
       ierr = recorder_ptr->load_series_data("Wt_SERIES",sit->get_step_number()); CHKERRQ(ierr);
 
-//      //We need to assemble A matrix and internal force vector at each time step as these depends on Dmat, which will change at each time step
-//      ierr = MatZeroEntries(A); CHKERRQ(ierr);
-//      ierr = VecZeroEntries(Fint); CHKERRQ(ierr);
-//      ierr = VecGhostUpdateBegin(Fint,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-//      ierr = VecGhostUpdateEnd(Fint,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-//
-//      //preproc
-//      ierr = m_field_Macro.problem_basic_method_preProcess("ELASTIC_PROBLEM_MACRO",my_dirichlet_bc); CHKERRQ(ierr);
-//      ierr = m_field_Macro.set_global_VecCreateGhost("ELASTIC_PROBLEM_MACRO",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-//      
+      //Here we use ElasticFEMethod_Dmat_input, so will multiply Fint with -1
+      DisplacementBCFEMethodPreAndPostProc my_dirichlet_bc(m_field_Macro,"DISP_MACRO",A,D,F);
+      ElasticFEMethod_Dmat_input my_fe(m_field_Macro,A,D,Fint,0.0,0.0,calculate_rve_dmat.commonData.Dmat_RVE,"DISP_MACRO");
+      //preproc
+      ierr = m_field_Macro.problem_basic_method_preProcess("ELASTIC_PROBLEM_MACRO",my_dirichlet_bc); CHKERRQ(ierr);
+
+      
+      //We need to assemble matrix A and internal force vector Fint at each time step as these depends on Dmat, which will change at each time step
+      ierr = MatZeroEntries(A); CHKERRQ(ierr);
+      ierr = VecZeroEntries(Fint); CHKERRQ(ierr);
+      ierr = VecGhostUpdateBegin(Fint,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      ierr = VecGhostUpdateEnd(Fint,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      
+      ierr = VecZeroEntries(D); CHKERRQ(ierr);
+      ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      ierr = m_field_Macro.set_global_VecCreateGhost("ELASTIC_PROBLEM_MACRO",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+
+//      ierr = VecView(D,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+
+
+      //calculate Dmat for all Gauss points in the macro-mesh
       ierr = m_field_Macro.loop_finite_elements("ELASTIC_PROBLEM_MACRO","ELASTIC_FE_MACRO",calculate_rve_dmat.getLoopFeRhs()); CHKERRQ(ierr);
-//
-//
-////      ierr = m_field_Macro.loop_finite_elements("ELASTIC_PROBLEM_MACRO","ELASTIC_FE",elastic_elements.getLoopFeRhs()); CHKERRQ(ierr);
-////      ierr = m_field_Macro.loop_finite_elements("ELASTIC_PROBLEM_MACRO","ELASTIC_FE",elastic_elements.getLoopFeLhs()); CHKERRQ(ierr);
-//
-//      //postproc
-//      ierr = m_field_Macro.problem_basic_method_postProcess("ELASTIC_PROBLEM_MACRO",my_dirichlet_bc); CHKERRQ(ierr);
+      ierr = VecScale(Fint,-1); CHKERRQ(ierr); //Multiply Fint with -1 (Fint=-Fint)
+      ierr = VecAXPY(Fint,1,F); CHKERRQ(ierr); //Fint=Fint+F
+
+//      cin>>wait;
+//      map<EntityHandle, ublas::vector<ublas::matrix<double> > >::iterator mit = calculate_rve_dmat.commonData.Dmat_RVE.begin();
+//      for(;mit!=calculate_rve_dmat.commonData.Dmat_RVE.end();mit++) {
+//        cerr << mit->first << " " << mit->second << endl;
+//      }
+      
+      //loop over macro elemnts to assemble A matrix and Fint vector
+      ierr = m_field_Macro.loop_finite_elements("ELASTIC_PROBLEM_MACRO","ELASTIC_FE_MACRO",my_fe);  CHKERRQ(ierr);
+      
+      my_dirichlet_bc.snes_B=A;
+      my_dirichlet_bc.snes_x = D;
+      my_dirichlet_bc.snes_f = Fint;
+      
+      //postproc
+      ierr = m_field_Macro.problem_basic_method_postProcess("ELASTIC_PROBLEM_MACRO",my_dirichlet_bc); CHKERRQ(ierr);
+      
+//      //Matrix View
+//      MatView(A,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
+//      std::string wait1;
+//      std::cin >> wait1;
+//      cout<< "Matrix A "<<endl;
+//      MatView(A,PETSC_VIEWER_STDOUT_WORLD);
+
+
+      //Solver
+      KSP solver;
+      ierr = KSPCreate(PETSC_COMM_WORLD,&solver); CHKERRQ(ierr);
+      ierr = KSPSetOperators(solver,A,A); CHKERRQ(ierr);
+      ierr = KSPSetFromOptions(solver); CHKERRQ(ierr);
+      ierr = KSPSetUp(solver); CHKERRQ(ierr);
+      
+      ierr = KSPSolve(solver,Fint,D); CHKERRQ(ierr);
+      ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+
+      
+      //Save data on mesh
+      ierr = m_field_Macro.set_local_VecCreateGhost("ELASTIC_PROBLEM_MACRO",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      ierr = m_field_Macro.loop_finite_elements("ELASTIC_PROBLEM_MACRO","ELASTIC_FE_MACRO",post_proc); CHKERRQ(ierr);
+      ostringstream o1;
+      o1 << "FE2_out_" << sit->step_number << ".h5m";
+      rval = post_proc.postProcMesh.write_file(o1.str().c_str(),"MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
+      
+      ierr = KSPDestroy(&solver); CHKERRQ(ierr);
+      PetscPrintf(PETSC_COMM_WORLD,"End of step %d\n",sit->get_step_number());
+
+//      string wait;
+//      cin>>wait;
 
     }
   }
-
-//  //TS
-//  TsCtx ts_ctx(m_field_Macro,"ELASTIC_PROBLEM_MACRO");
-//  TS ts;
-//  ierr = TSCreate(PETSC_COMM_WORLD,&ts); CHKERRQ(ierr);
-//  ierr = TSSetType(ts,TSBEULER); CHKERRQ(ierr);
-//
-//  TemperatureBCFEMethodPreAndPostProc my_dirichlet_bc(m_field_Macro,"TEMP",A,T,F);
-//  ThermalElement::UpdateAndControl update_velocities(m_field_Macro,"TEMP","TEMP_RATE");
-//  ThermalElement::TimeSeriesMonitor monitor(m_field_Macro,"THEMP_SERIES","TEMP");
-//
-//  ierr = m_field_Macro.problem_basic_method_preProcess("ELASTIC_PROBLEM_MACRO",my_dirichlet_bc); CHKERRQ(ierr);
-//  ierr = m_field_Macro.set_global_VecCreateGhost("ELASTIC_PROBLEM_MACRO",ROW,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-//
-//  //preprocess
-//  ts_ctx.get_preProcess_to_do_IFunction().push_back(&update_velocities);
-//  ts_ctx.get_preProcess_to_do_IFunction().push_back(&my_dirichlet_bc);
-//  ts_ctx.get_preProcess_to_do_IJacobian().push_back(&my_dirichlet_bc);
-//
-//  //and temperature element functions
-//  ierr = thermal_elements.setTimeSteppingProblem(ts_ctx,"TEMP","TEMP_RATE"); CHKERRQ(ierr);
-//
-//  //postprocess
-//  ts_ctx.get_postProcess_to_do_IFunction().push_back(&my_dirichlet_bc);
-//  ts_ctx.get_postProcess_to_do_IJacobian().push_back(&my_dirichlet_bc);
-//  ts_ctx.get_postProcess_to_do_Monitor().push_back(&monitor);
-//
-//  ierr = TSSetIFunction(ts,F,f_TSSetIFunction,&ts_ctx); CHKERRQ(ierr);
-//  ierr = TSSetIJacobian(ts,A,A,f_TSSetIJacobian,&ts_ctx); CHKERRQ(ierr);
-//  ierr = TSMonitorSet(ts,f_TSMonitorSet,&ts_ctx,PETSC_NULL); CHKERRQ(ierr);
-//
-//  double ftime = 1;
-//  ierr = TSSetDuration(ts,PETSC_DEFAULT,ftime); CHKERRQ(ierr);
-//  ierr = TSSetSolution(ts,T); CHKERRQ(ierr);
-//  ierr = TSSetFromOptions(ts); CHKERRQ(ierr);
-//
-//  SeriesRecorder *recorder_ptr;
-//  ierr = m_field_Macro.query_interface(recorder_ptr); CHKERRQ(ierr);
-//  ierr = recorder_ptr->add_series_recorder("THEMP_SERIES"); CHKERRQ(ierr);
-//  ierr = recorder_ptr->initialize_series_recorder("THEMP_SERIES"); CHKERRQ(ierr);
-//
-//  ierr = TSSolve(ts,T); CHKERRQ(ierr);
-//  ierr = TSGetTime(ts,&ftime); CHKERRQ(ierr);
-//
-//  ierr = recorder_ptr->finalize_series_recorder("THEMP_SERIES"); CHKERRQ(ierr);
-//
-//  PetscInt steps,snesfails,rejects,nonlinits,linits;
-//  ierr = TSGetTimeStepNumber(ts,&steps); CHKERRQ(ierr);
-//  ierr = TSGetSNESFailures(ts,&snesfails); CHKERRQ(ierr);
-//  ierr = TSGetStepRejections(ts,&rejects); CHKERRQ(ierr);
-//  ierr = TSGetSNESIterations(ts,&nonlinits); CHKERRQ(ierr);
-//  ierr = TSGetKSPIterations(ts,&linits); CHKERRQ(ierr);
-//
-//  PetscPrintf(PETSC_COMM_WORLD,
-//    "steps %D (%D rejected, %D SNES fails), ftime %g, nonlinits %D, linits %D\n",
-//    steps,rejects,snesfails,ftime,nonlinits,linits);
-//
-//  //m_field_Macro.list_dofs_by_field_name("TEMP");
-//  if(pcomm->rank()==0) {
-//    rval = moab_Macro.write_file("solution.h5m"); CHKERR_PETSC(rval);
-//  }
-//
-//  for(_IT_SERIES_STEPS_BY_NAME_FOR_LOOP_(recorder_ptr,"THEMP_SERIES",sit)) {
-//
-//    PetscPrintf(PETSC_COMM_WORLD,"Process step %d\n",sit->get_step_number());
-//
-//    ierr = recorder_ptr->load_series_data("THEMP_SERIES",sit->get_step_number()); CHKERRQ(ierr);
-//    ierr = m_field_Macro.set_local_VecCreateGhost("ELASTIC_PROBLEM_MACRO",ROW,T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-//
-//    ProjectionFieldOn10NodeTet ent_method_on_10nodeTet(m_field_Macro,"TEMP",true,false,"TEMP");
-//    ent_method_on_10nodeTet.set_nodes = true;
-//    ierr = m_field_Macro.loop_dofs("TEMP",ent_method_on_10nodeTet); CHKERRQ(ierr);
-//    ent_method_on_10nodeTet.set_nodes = false;
-//    ierr = m_field_Macro.loop_dofs("TEMP",ent_method_on_10nodeTet); CHKERRQ(ierr);
-//
-//    if(pcomm->rank()==0) {
-//      EntityHandle out_meshset;
-//      rval = moab_Macro.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
-//      ierr = m_field_Macro.problem_get_FE("ELASTIC_PROBLEM_MACRO","THERMAL_FE",out_meshset); CHKERRQ(ierr);
-//      ostringstream ss;
-//      ss << "out_" << sit->step_number << ".vtk";
-//      rval = moab_Macro.write_file(ss.str().c_str(),"VTK","",&out_meshset,1); CHKERR_PETSC(rval);
-//      rval = moab_Macro.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
-//    }
-//
-//  }
-//
-//  ierr = TSDestroy(&ts);CHKERRQ(ierr);
-//  ierr = MatDestroy(&A); CHKERRQ(ierr);
-//  ierr = VecDestroy(&F); CHKERRQ(ierr);
-//  ierr = VecDestroy(&T); CHKERRQ(ierr);
-
+  
+  cout<<"Before Destroying variables "<<endl;
+  ierr = VecDestroy(&F); CHKERRQ(ierr);
+  ierr = VecDestroy(&Fint); CHKERRQ(ierr);
+  ierr = VecDestroy(&D); CHKERRQ(ierr);
+  ierr = MatDestroy(&A); CHKERRQ(ierr);
+  cout<<"After Destroying variables "<<endl;
   ierr = PetscFinalize(); CHKERRQ(ierr);
 
-  return 0;
+
+//  PetscFinalize();
 
 }
 

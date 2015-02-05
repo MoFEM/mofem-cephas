@@ -30,6 +30,22 @@ target_link_libraries(elasticity
   mofem_third_party
   mofem_cblas
   ${MoFEM_PROJECT_LIBS})
+  
+  
+  
+add_executable(elasticity1 ${UM_SOURCE_DIR}/elasticity/elasticity1.cpp)
+target_link_libraries(elasticity1
+  mofem_finite_element_library
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  users_modules_obsolete
+  mofem_approx
+  mofem_third_party
+  mofem_cblas
+  ${MoFEM_PROJECT_LIBS})
+
 
 add_executable(dynamics ${UM_SOURCE_DIR}/elasticity/dynamics.cpp)
 target_link_libraries(dynamics

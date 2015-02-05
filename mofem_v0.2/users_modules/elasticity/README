@@ -9,6 +9,8 @@ Example Static (elastcity)
 
 mpirun -np 2 ./elasticity -my_file LShape.cub -ksp_type fgmres -pc_type asm -sub_pc_type lu -ksp_monitor -my_order 2
 
+make && mpirun -np 1 ./elasticity1 -my_file LShape.cub -ksp_type fgmres -pc_type asm -sub_pc_type lu -ksp_monitor -my_order 1
+
 Example dynamic (dynamic)
 ==========================
 

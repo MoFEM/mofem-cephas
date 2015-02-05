@@ -5,14 +5,15 @@ Steps
 
 1. Run thermal_unsteady save output as solution.h5m and out_.vtk (conductivity for this is read from thermal_Dmat.out)
 2. Run moisture_unsteady save output as solution_mois.h5m and and Conc_.vtk (diffusivity for this is read from diffusion_Dmat.out )
-3. Run calculate_wt
-
+3. Run calculate_wt (with input solution_mois.h5m)
+4. Run mech_marc which is FE2 problem with two input meshes (micro RVE and macro) here macro-mesh=solution_wt.h5m 
+                                                                                  and  RVE-mesh  = RVE_Cube_mech.cub
 
 
 Example computational homogenisation for moisture transport
 (Here both MoistureTrans_Disp_MRhs is used for both thermal and diffusion problem)
 ============================================================
-make && mpirun -np 1 ./MoistureTrans_Disp_MRhs -my_file ../users_modules/degradation_model/meshes/RVE_Cube_moisture.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_output_file_Dmat diffusion_Dmat.out -my_order 1
+make MoistureTrans_Disp_MRhs && mpirun -np 1 ./MoistureTrans_Disp_MRhs -my_file ../users_modules/degradation_model/meshes/RVE_Cube_moisture.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_output_file_Dmat diffusion_Dmat.out -my_order 1
 
 make && mpirun -np 1 ./MoistureTrans_Disp_MRhs -my_file ../users_modules/degradation_model/meshes/RVE_Cube_thermal.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_output_file_Dmat thermal_Dmat.out -my_order 1
 
@@ -23,7 +24,7 @@ make thermal_unsteady_inputDmat && mpirun -np 1 ./thermal_unsteady_inputDmat \
 -my_file ../users_modules/degradation_model/meshes/macro.cub \
   -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor \
   -snes_type newtonls -snes_linesearch_type basic -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 -snes_monitor \
-  -ts_monitor -ts_type beuler -ts_dt 0.1 -ts_final_time 5 -snes_lag_jacobian -2 \
+  -ts_monitor -ts_type beuler -ts_dt 0.1 -ts_final_time 0.2 -snes_lag_jacobian -2 \
   -my_order 1 -my_max_post_proc_ref_level 1
 
 
@@ -33,7 +34,7 @@ make diffusion_unsteady_inputDmat && mpirun -np 1 ./diffusion_unsteady_inputDmat
 -my_file solution.h5m \
   -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor \
   -snes_type newtonls -snes_linesearch_type basic -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 -snes_monitor \
-  -ts_monitor -ts_type beuler -ts_dt 0.1 -ts_final_time 5 -snes_lag_jacobian -2 \
+  -ts_monitor -ts_type beuler -ts_dt 0.1 -ts_final_time 0.2 -snes_lag_jacobian -2 \
   -my_order 1 -my_max_post_proc_ref_level 1
 
 
@@ -43,7 +44,7 @@ make wt_unsteady_macro && mpirun -np 1 ./wt_unsteady_macro \
 -my_file solution_mois.h5m \
   -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor \
   -snes_type newtonls -snes_linesearch_type basic -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 -snes_monitor \
-  -ts_monitor -ts_type beuler -ts_dt 0.1 -ts_final_time 5 -snes_lag_jacobian -2 \
+  -ts_monitor -ts_type beuler -ts_dt 0.1 -ts_final_time 0.2 -snes_lag_jacobian -2 \
   -my_order 1 -my_max_post_proc_ref_level 1 \
   -my_saturation_conc 5
 
@@ -51,13 +52,25 @@ make wt_unsteady_macro && mpirun -np 1 ./wt_unsteady_macro \
 Mechanical problem
 ============================================================
 make mech_macro && mpirun -np 1 ./mech_macro \
+-my_file_Macro solution_wt.h5m -my_file_RVE ../users_modules/degradation_model/meshes/Cube_RVE_with_reinforcement.cub\
+  -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist \
+  -my_order 1 -my_max_post_proc_ref_level 1 \
+
+make mech_macro && mpirun -np 1 ./mech_macro \
 -my_file_Macro solution_wt.h5m -my_file_RVE ../users_modules/degradation_model/meshes/RVE_Cube_mech.cub\
-  -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor \
+  -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist \
   -my_order 1 -my_max_post_proc_ref_level 1 \
 
 
+Conversion from .h5m to vtk
+============================================================
+One file conversion
+/opt/petsc/arch-linux2-c-opt/bin/mbconvert FE2_out_0.h5m FE2_out_0.vtk
 
+All files conversion using script
+./do_vtk1.sh FE2_out_*.h5m
 
+cp *.vtk /mnt/home/Desktop/aaaa/
 
 
 

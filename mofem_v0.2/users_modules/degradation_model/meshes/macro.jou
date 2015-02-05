@@ -22,8 +22,8 @@ block 2 attribute index 1 0
 
 # Bounary Conditions for Mechanical Macro problem
 create displacement on surface 4 dof 1 dof 2 dof 3 fix 0
-#create force on surface 6 vector 1 0 0 0 0 0
-create displacement on surface 6 dof 1 fix 0.01
+create force on surface 6 vector 1 0 0 0 0 0
+#create displacement on surface 6 dof 1 fix 0.01
 
 #Here thermal conductivity and moisture diffusivity homogenised matrices will be read directly from input RVE binary files so no need to defined material properties here
 block 3 volume 1  
@@ -64,6 +64,7 @@ save as "/Users/zahur/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degr
 #block 4 name 'MAT_MOISTURE'
 #block 4 attribute count 1
 #block 4 attribute index 1 1  # moisture diffusivity
+
 
 
 

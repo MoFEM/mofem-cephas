@@ -48,9 +48,6 @@ namespace MoFEM {
     Calculate_wt(FieldInterface &m_field): feRhsDegradation(m_field), feLhsDegradation(m_field), mField(m_field) {}
     
     struct BlockData {
-//      double youngModulus;
-//      double poissonRatio;
-//      double thermalExpansion;
       double saturation_Conc;
       BlockData(): saturation_Conc(100) {}
       Range tEts;
@@ -403,7 +400,7 @@ namespace MoFEM {
             
           }
           
-          cout<<"M  =  "<<M<<endl;
+//          cout<<"M  =  "<<M<<endl;
 
           PetscErrorCode ierr;
           ierr = MatSetValues(
@@ -520,13 +517,7 @@ namespace MoFEM {
       
       PetscFunctionReturn(0);
     }
-
-    
-    
-    
-    
-    
-  };
+};
   
 }
 

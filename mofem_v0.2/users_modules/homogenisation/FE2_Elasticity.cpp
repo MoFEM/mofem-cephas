@@ -276,7 +276,7 @@ int main(int argc, char *argv[]) {
   ierr = VecGhostUpdateBegin(F2,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(F2,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
-  ierr = VecZeroEntries(F1); CHKERRQ(ierr);
+  ierr = VecZeroEntries(F3); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(F3,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(F3,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
