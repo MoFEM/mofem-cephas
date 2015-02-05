@@ -250,7 +250,7 @@ int main(int argc, char *argv[]) {
 
   //Fields
   ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,3,MF_ZERO); CHKERRQ(ierr);
-  ierr = m_field.add_ents_to_field_by_TETs(0,"MESH_NODE_POSITIONS",PETSC_COMM_WORLD,2); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_TETs(0,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0,MBTET,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0,MBTRI,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0,MBEDGE,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
@@ -349,7 +349,7 @@ int main(int argc, char *argv[]) {
 
   //build database
   if(is_partitioned) {
-    ierr = m_field.build_partitioned_problems(PETSC_COMM_WORLD,1); CHKERRQ(ierr);
+    ierr = m_field.build_partitioned_problems(1); CHKERRQ(ierr);
     ierr = m_field.partition_finite_elements("ELASTIC_MECHANICS",true,0,pcomm->size(),1); CHKERRQ(ierr);
   } else {
     ierr = m_field.build_problems(); CHKERRQ(ierr);

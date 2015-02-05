@@ -60,7 +60,7 @@ PetscErrorCode Core::add_series_recorder(const string &series_name) {
 }
 PetscErrorCode Core::delete_recorder_series(const string& series_name) {
   PetscFunctionBegin;
-  PetscErrorCode ierr;
+  //PetscErrorCode ierr;
   ErrorCode rval;
   SeriesStep_multiIndex::index<SeriesName_mi_tag>::type::iterator ssit,hi_ssit;
   ssit = series_steps.get<SeriesName_mi_tag>().lower_bound(series_name);
@@ -193,7 +193,7 @@ PetscErrorCode Core::print_series_steps() {
   for(;ssit!=series_steps.get<SeriesName_mi_tag>().end();ssit++) {
     ss << "serises steps " << *ssit << endl;
   }
-  PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
+  PetscPrintf(comm,ss.str().c_str());
   PetscFunctionReturn(0);
 }
 bool Core::check_series(const string& name) const {

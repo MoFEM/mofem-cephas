@@ -216,7 +216,7 @@ namespace MoFEM {
           PetscBool flg;
           ierr = PetscOptionsGetReal(PETSC_NULL,"-my_ref_temp",&ref_temp,&flg); CHKERRQ(ierr);
           if(flg == PETSC_TRUE) {
-            PetscPrintf(PETSC_COMM_WORLD,"set refernce temperature %3.2f\n",ref_temp);
+            PetscPrintf(mField.get_comm(),"set refernce temperature %3.2f\n",ref_temp);
             setOfBlocks[it->get_msId()].refTemperature = ref_temp;
           }
           

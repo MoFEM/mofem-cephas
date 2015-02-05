@@ -41,7 +41,6 @@ extern "C" {
 }
 
 #include <time.h>
-#include <adolc/adolc.h> 
 //#include <ThermalElement.hpp>
 #include<moab/Skinner.hpp>
 
@@ -212,7 +211,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.build_adjacencies(bit_level0); CHKERRQ(ierr);
 
   MyTimeData time_data;
-  ierr = ground_surface.setOperators(1,&time_data,"TEMP"); CHKERRQ(ierr);
+  ierr = ground_surface.setOperators(&time_data,"TEMP"); CHKERRQ(ierr);
   GroundSurfaceTemerature::SolarRadiationPreProcessor *shade_ptr = &*ground_surface.preProcessShade.begin();
 
   Range tets;

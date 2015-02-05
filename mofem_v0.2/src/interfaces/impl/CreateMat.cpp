@@ -43,7 +43,8 @@ const static int debug = 1;
 
 struct CoreTemplates: public Core {
 
-  CoreTemplates(Interface& moab,int _verbose = 1): Core(moab) {};
+  CoreTemplates(Interface& moab,MPI_Comm _comm = PETSC_COMM_WORLD,int _verbose = 1): 
+    Core(moab,_comm,_verbose) {};
 
   template<typename Tag> 
   PetscErrorCode create_Mat(
@@ -51,22 +52,13 @@ struct CoreTemplates: public Core {
 
 };
 
-#define PARALLEL_PARTITIONING 1
-#if PARALLEL_PARTITIONING
-  #define PARTITIONING_MPIADJ_COMM PETSC_COMM_WORLD
-#else 
-  #define PARTITIONING_MPIADJ_COMM PETSC_COMM_SELF
-#endif
-
 template<typename Tag> 
 PetscErrorCode CoreTemplates::create_Mat(
   const string &name,Mat *M,const MatType type,PetscInt **_i,PetscInt **_j,PetscScalar **_v,
   const bool no_diagonals,int verb) {
   PetscFunctionBegin;
   PetscLogEventBegin(USER_EVENT_createMat,0,0,0,0);
-
   if(verb==-1) verb = verbose;
-  ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   typedef typename boost::multi_index::index<NumeredDofMoFEMEntity_multiIndex,Tag>::type NumeredDofMoFEMEntitys_by_idx;
   typedef MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_multiIndex::index<Unique_mi_tag>::type adj_by_ent;
   //find p_miit
@@ -85,9 +77,8 @@ PetscErrorCode CoreTemplates::create_Mat(
   typename boost::multi_index::index<NumeredDofMoFEMEntity_multiIndex,Tag>::type::iterator miit_row,hi_miit_row;
   if(Tag::IamNotPartitioned) {
     //get range of local indices
-    #if PARALLEL_PARTITIONING
     PetscLayout layout;
-    ierr = PetscLayoutCreate(PETSC_COMM_WORLD,&layout); CHKERRQ(ierr);
+    ierr = PetscLayoutCreate(comm,&layout); CHKERRQ(ierr);
     ierr = PetscLayoutSetBlockSize(layout,1); CHKERRQ(ierr);
     ierr = PetscLayoutSetSize(layout,nb_dofs_row); CHKERRQ(ierr);
     ierr = PetscLayoutSetUp(layout); CHKERRQ(ierr);
@@ -95,8 +86,8 @@ PetscErrorCode CoreTemplates::create_Mat(
     ierr = PetscLayoutGetRange(layout,&rstart,&rend); CHKERRQ(ierr);
     ierr = PetscLayoutDestroy(&layout); CHKERRQ(ierr);
     if(verb > 0) {
-	PetscSynchronizedPrintf(PETSC_COMM_WORLD,"\tcreate_Mat: row lower %d row upper %d\n",rstart,rend);
-	//PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT); 
+	PetscSynchronizedPrintf(comm,"\tcreate_Mat: row lower %d row upper %d\n",rstart,rend);
+	//PetscSynchronizedFlush(comm,PETSC_STDOUT); 
     }
     miit_row = dofs_row_by_idx.lower_bound(rstart);
     hi_miit_row = dofs_row_by_idx.lower_bound(rend);
@@ -105,13 +96,9 @@ PetscErrorCode CoreTemplates::create_Mat(
 	  "data inconsistency, distance(miit_row,hi_miit_row) != rend - rstart (%d != %d - %d = %d) ",
 	  distance(miit_row,hi_miit_row),rend,rstart,rend-rstart);
     }
-    #else
-    miit_row = dofs_row_by_idx.begin();
-    hi_miit_row = dofs_row_by_idx.end();
-    #endif
   } else {
-    miit_row = dofs_row_by_idx.lower_bound(pcomm->rank());
-    hi_miit_row = dofs_row_by_idx.upper_bound(pcomm->rank());
+    miit_row = dofs_row_by_idx.lower_bound(rAnk);
+    hi_miit_row = dofs_row_by_idx.upper_bound(rAnk);
     //get adjacent nodes on other partitions
     vector<int> dofs_vec;
     MoFEMEntity *mofem_ent_ptr = NULL;
@@ -162,7 +149,7 @@ PetscErrorCode CoreTemplates::create_Mat(
     }
     //gather information from other processors
     IS is,isout;
-    ierr = ISCreateGeneral(PETSC_COMM_WORLD,
+    ierr = ISCreateGeneral(comm,
 	dofs_vec.size(),&*dofs_vec.begin(),
 	PETSC_USE_POINTER,&is); CHKERRQ(ierr);
     ierr = ISAllGather(is,&isout); CHKERRQ(ierr);
@@ -284,7 +271,7 @@ PetscErrorCode CoreTemplates::create_Mat(
     if(i.size()-1 != (unsigned int)nb_loc_row_from_iterators) {
 	SETERRQ(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,"data inconsistency");
     }
-    ierr = MatCreateMPIAdj(PARTITIONING_MPIADJ_COMM,i.size()-1,nb_col_dofs,*_i,*_j,PETSC_NULL,M); CHKERRQ(ierr);
+    ierr = MatCreateMPIAdj(comm,i.size()-1,nb_col_dofs,*_i,*_j,PETSC_NULL,M); CHKERRQ(ierr);
     ierr = MatSetOption(*M,MAT_STRUCTURALLY_SYMMETRIC,PETSC_TRUE); CHKERRQ(ierr);
   } else if(strcmp(type,MATMPIAIJ)==0) {
     if(i.size()-1 != (unsigned int)nb_loc_row_from_iterators) {
@@ -295,9 +282,17 @@ PetscErrorCode CoreTemplates::create_Mat(
 	SETERRQ(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,"data inconsistency");
     }
     PetscInt nb_local_dofs_col = p_miit->get_nb_local_dofs_col();
-    ierr = ::MatCreateMPIAIJWithArrays(PETSC_COMM_WORLD,nb_local_dofs_row,nb_local_dofs_col,nb_row_dofs,nb_col_dofs,*_i,*_j,PETSC_NULL,M); CHKERRQ(ierr);
+    ierr = ::MatCreateMPIAIJWithArrays(comm,nb_local_dofs_row,nb_local_dofs_col,nb_row_dofs,nb_col_dofs,*_i,*_j,PETSC_NULL,M); CHKERRQ(ierr);
   } else if(strcmp(type,MATAIJ)==0) {
-    SETERRQ(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,"not implemented");
+    if(i.size()-1 != (unsigned int)nb_loc_row_from_iterators) {
+	SETERRQ(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,"data inconsistency");
+    }
+    PetscInt nb_local_dofs_row = p_miit->get_nb_local_dofs_row();
+    if((unsigned int)nb_local_dofs_row!=i.size()-1) {
+	SETERRQ(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,"data inconsistency");
+    }
+    PetscInt nb_local_dofs_col = p_miit->get_nb_local_dofs_col();
+    ierr = ::MatCreateSeqAIJWithArrays(PETSC_COMM_SELF,nb_local_dofs_row,nb_local_dofs_col,*_i,*_j,PETSC_NULL,M); CHKERRQ(ierr);
   } else {
     SETERRQ(PETSC_COMM_SELF,PETSC_ERR_ARG_NULL,"not implemented");
   }
@@ -323,7 +318,7 @@ PetscErrorCode Core::MatCreateSeqAIJWithArrays(const string &name,Mat *Aij,Petsc
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   CoreTemplates *core_ptr = static_cast<CoreTemplates*>(const_cast<Core*>(this));
-  ierr = core_ptr->create_Mat<PetscGlobalIdx_mi_tag>(name,Aij,MATAIJ,i,j,v,false,verb); CHKERRQ(ierr);
+  ierr = core_ptr->create_Mat<PetscLocalIdx_mi_tag>(name,Aij,MATAIJ,i,j,v,false,verb); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -334,9 +329,8 @@ PetscErrorCode Core::partition_problem(const string &name,int verb) {
   if(!(*build_MoFEM&(1<<1))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"FEs not build");
   if(!(*build_MoFEM&(1<<2))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"entFEAdjacencies not build");
   if(!(*build_MoFEM&(1<<3))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"moFEMProblems not build");
-  ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(verb>0) {
-    PetscPrintf(PETSC_COMM_WORLD,"Partition problem %s\n",name.c_str());
+    PetscPrintf(comm,"Partition problem %s\n",name.c_str());
   }
   typedef NumeredDofMoFEMEntity_multiIndex::index<Idx_mi_tag>::type NumeredDofMoFEMEntitys_by_idx;
   typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type moFEMProblems_by_name;
@@ -348,7 +342,7 @@ PetscErrorCode Core::partition_problem(const string &name,int verb) {
   int *i,*j;
   Mat Adj;
   if(verb>1) {
-    PetscPrintf(PETSC_COMM_WORLD,"\tcreate Adj matrix\n");
+    PetscPrintf(comm,"\tcreate Adj matrix\n");
   }
   try {
     CoreTemplates *core_ptr = static_cast<CoreTemplates*>(const_cast<Core*>(this));
@@ -361,7 +355,7 @@ PetscErrorCode Core::partition_problem(const string &name,int verb) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }
   if(verb>1) {
-    PetscPrintf(PETSC_COMM_WORLD,"\t<- done\n");
+    PetscPrintf(comm,"\t<- done\n");
   }
   int m,n;
   ierr = MatGetSize(Adj,&m,&n); CHKERRQ(ierr);
@@ -371,10 +365,10 @@ PetscErrorCode Core::partition_problem(const string &name,int verb) {
   //partitioning
   MatPartitioning part;
   IS is;
-  ierr = MatPartitioningCreate(PARTITIONING_MPIADJ_COMM,&part); CHKERRQ(ierr);
+  ierr = MatPartitioningCreate(comm,&part); CHKERRQ(ierr);
   ierr = MatPartitioningSetAdjacency(part,Adj); CHKERRQ(ierr);
   ierr = MatPartitioningSetFromOptions(part); CHKERRQ(ierr);
-  ierr = MatPartitioningSetNParts(part,pcomm->size()); CHKERRQ(ierr);
+  ierr = MatPartitioningSetNParts(part,sIze); CHKERRQ(ierr);
   ierr = MatPartitioningApply(part,&is); CHKERRQ(ierr);
   if(verb>2) {
     ISView(is,PETSC_VIEWER_STDOUT_WORLD);
@@ -410,7 +404,7 @@ PetscErrorCode Core::partition_problem(const string &name,int verb) {
   NumeredDofMoFEMEntitys_by_idx::iterator miit_dofs_row = dofs_row_by_idx_no_const.begin();
   NumeredDofMoFEMEntitys_by_idx::iterator miit_dofs_col = dofs_col_by_idx_no_const.begin();
   if(verb>1) {
-    PetscPrintf(PETSC_COMM_WORLD,"\tloop problem dofs");
+    PetscPrintf(comm,"\tloop problem dofs");
   }
   try {
   for(;miit_dofs_row!=dofs_row_by_idx_no_const.end();miit_dofs_row++,miit_dofs_col++) {
@@ -433,7 +427,7 @@ PetscErrorCode Core::partition_problem(const string &name,int verb) {
     if(!success) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
     }
-    if(miit_dofs_row->part == pcomm->rank()) {
+    if(miit_dofs_row->part == (unsigned int)rAnk) {
       assert(miit_dofs_row->part==miit_dofs_col->part);
       assert(miit_dofs_row->petsc_gloabl_dof_idx==miit_dofs_col->petsc_gloabl_dof_idx);
       success = dofs_row_by_idx_no_const.modify(miit_dofs_row,NumeredDofMoFEMEntity_local_idx_change(nb_row_local_dofs++));
@@ -454,33 +448,33 @@ PetscErrorCode Core::partition_problem(const string &name,int verb) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }
   if(verb>1) {
-    PetscPrintf(PETSC_COMM_WORLD," <- done\n");
+    PetscPrintf(comm," <- done\n");
   }
   if(verbose>0) {
     ostringstream ss;
-    ss << "partition_problem: rank = " << pcomm->rank() << " FEs row ghost dofs "<< *p_miit 
+    ss << "partition_problem: rank = " << rAnk << " FEs row ghost dofs "<< *p_miit 
 	<< " Nb. local dof " << p_miit->get_nb_local_dofs_row() << " nb global row dofs " << p_miit->get_nb_dofs_row() << endl;
-    ss << "partition_problem: rank = " << pcomm->rank() << " FEs col ghost dofs " << *p_miit 
+    ss << "partition_problem: rank = " << rAnk << " FEs col ghost dofs " << *p_miit 
 	<< " Nb. local dof " << p_miit->get_nb_local_dofs_col() << " nb global col dofs " << p_miit->get_nb_dofs_col() << endl;
-    PetscSynchronizedPrintf(PETSC_COMM_WORLD,ss.str().c_str());
-    PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT); 
+    PetscSynchronizedPrintf(comm,ss.str().c_str());
+    PetscSynchronizedFlush(comm,PETSC_STDOUT); 
   }
   if(verb>2) {
     ostringstream ss;
-    ss << "rank = " << pcomm->rank() << " FEs row dofs "<< *p_miit << " Nb. row dof " << p_miit->get_nb_dofs_row() 
+    ss << "rank = " << rAnk << " FEs row dofs "<< *p_miit << " Nb. row dof " << p_miit->get_nb_dofs_row() 
 	<< " Nb. local dof " << p_miit->get_nb_local_dofs_row() << endl;
     NumeredDofMoFEMEntity_multiIndex::iterator miit_dd_row = p_miit->numered_dofs_rows.begin();
     for(;miit_dd_row!=p_miit->numered_dofs_rows.end();miit_dd_row++) {
 	ss<<*miit_dd_row<<endl;
     }
-    ss << "rank = " << pcomm->rank() << " FEs col dofs "<< *p_miit << " Nb. col dof " << p_miit->get_nb_dofs_col() 
+    ss << "rank = " << rAnk << " FEs col dofs "<< *p_miit << " Nb. col dof " << p_miit->get_nb_dofs_col() 
 	<< " Nb. local dof " << p_miit->get_nb_local_dofs_col() << endl;
     NumeredDofMoFEMEntity_multiIndex::iterator miit_dd_col = p_miit->numered_dofs_cols.begin();
     for(;miit_dd_col!=p_miit->numered_dofs_cols.end();miit_dd_col++) {
 	ss<<*miit_dd_col<<endl;
     }
-    PetscSynchronizedPrintf(PETSC_COMM_WORLD,ss.str().c_str());
-    PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT); 
+    PetscSynchronizedPrintf(comm,ss.str().c_str());
+    PetscSynchronizedFlush(comm,PETSC_STDOUT); 
   }
   ierr = ISRestoreIndices(is_gather,&part_number);  CHKERRQ(ierr);
   ierr = ISRestoreIndices(is_gather_num,&petsc_idx);  CHKERRQ(ierr);
@@ -496,10 +490,10 @@ PetscErrorCode Core::partition_problem(const string &name,int verb) {
       dit = p_miit->numered_dofs_rows.get<Idx_mi_tag>().begin();
       hi_dit = p_miit->numered_dofs_rows.get<Idx_mi_tag>().end();
       for(;dit!=hi_dit;dit++) {
-	if(dit->get_part()==pcomm->rank()) {
+	if(dit->get_part()==(unsigned int)rAnk) {
 	  if(dit->get_petsc_local_dof_idx()<0) {
 	    ostringstream ss;
-	    ss << "rank " << pcomm->rank() << " " << *dit;
+	    ss << "rank " << rAnk << " " << *dit;
 	    SETERRQ1(PETSC_COMM_SELF,1,"local dof index for row not set\n %s",ss.str().c_str());
 	  }
 	}
@@ -507,10 +501,10 @@ PetscErrorCode Core::partition_problem(const string &name,int verb) {
       dit = p_miit->numered_dofs_cols.get<Idx_mi_tag>().begin();
       hi_dit = p_miit->numered_dofs_cols.get<Idx_mi_tag>().end();
       for(;dit!=hi_dit;dit++) {
-	if(dit->get_part()==pcomm->rank()) {
+	if(dit->get_part()==(unsigned int)rAnk) {
 	  if(dit->get_petsc_local_dof_idx()<0) {
 	    ostringstream ss;
-	    ss << "rank " << pcomm->rank() << " " << *dit;
+	    ss << "rank " << rAnk << " " << *dit;
 	    SETERRQ1(PETSC_COMM_SELF,1,"local dof index for col not set\n %s",ss.str().c_str());
 	  }
 	}
@@ -526,5 +520,160 @@ PetscErrorCode Core::partition_problem(const string &name,int verb) {
   *build_MoFEM |= 1<<4;
   PetscFunctionReturn(0);
 }
+
+PetscErrorCode Core::partition_check_matrix_fill_in(const string &problem_name,int verb) {
+  PetscFunctionBegin;
+  if(verb==-1) verb = verbose;
+
+  struct TestMatrixFillIn:public FEMethod {
+    FieldInterface *mFieldPtr;
+
+    Mat A;
+    PetscErrorCode ierr;
+    ErrorCode rval;
+
+    TestMatrixFillIn(FieldInterface *m_field_ptr,Mat _A): mFieldPtr(m_field_ptr),A(_A) {};
+    PetscErrorCode preProcess() {
+      PetscFunctionBegin;
+      PetscFunctionReturn(0);
+    }
+
+    PetscErrorCode operator()() {
+      PetscFunctionBegin;
+      if(refinedFiniteElementsPtr->find(fePtr->get_ent())==refinedFiniteElementsPtr->end()) {
+	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+      }
+      FENumeredDofMoFEMEntity_multiIndex::iterator rit = rowPtr->begin();
+      for(;rit!=rowPtr->end();rit++) {
+	if(refinedEntitiesPtr->find(rit->get_ent())==refinedEntitiesPtr->end()) {
+	  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+	}
+	if(!rit->get_active()) {
+	  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+	}
+	MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_multiIndex::index<Composite_unique_mi_tag>::type::iterator ait;
+	ait = adjacenciesPtr->get<Composite_unique_mi_tag>().find(boost::make_tuple(
+	      rit->get_MoFEMEntity_ptr()->get_global_unique_id(),fePtr->get_global_unique_id()));
+	if(ait==adjacenciesPtr->end()) {
+	    ostringstream ss;
+	    ss << *rit << endl;
+	    ss << *fePtr << endl;
+	    ss << "dof: " << rit->get_BitRefLevel() << endl;
+	    ss << "fe: " << fePtr->get_BitRefLevel() << endl;
+	    ss << "problem: " << problemPtr->get_BitRefLevel() << endl;
+	    PetscPrintf(mFieldPtr->get_comm(),"%s",ss.str().c_str());
+	    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"adjacencies data inconsistency");
+	} else {
+	  LocalUId uid = ait->get_ent_unique_id();
+	  if(entitiesPtr->find(uid) == entitiesPtr->end()) {
+	    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+	  } 
+	  if(dofsPtr->find(rit->get_global_unique_id())==dofsPtr->end()) {
+	    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+	  }
+	}
+	int row = rit->get_petsc_gloabl_dof_idx();
+	FENumeredDofMoFEMEntity_multiIndex::iterator cit = colPtr->begin();
+	for(;cit!=colPtr->end();cit++) {
+	  if(refinedEntitiesPtr->find(cit->get_ent())==refinedEntitiesPtr->end()) {
+	    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+	  }
+	  if(!cit->get_active()) {
+	    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+	  }
+	  int col = cit->get_petsc_gloabl_dof_idx();
+	  ait = adjacenciesPtr->get<Composite_unique_mi_tag>().find(boost::make_tuple(
+	      cit->get_MoFEMEntity_ptr()->get_global_unique_id(),fePtr->get_global_unique_id()));
+	  if(ait==adjacenciesPtr->end()) {
+	    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"adjacencies data inconsistency");
+	  } else {
+	    LocalUId uid = ait->get_ent_unique_id();
+	    if(entitiesPtr->find(uid) == entitiesPtr->end()) {
+	      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+	    } 
+	    if(dofsPtr->find(cit->get_global_unique_id())==dofsPtr->end()) {
+	      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+	    }
+	  }
+  	  ierr = MatSetValue(A,row,col,1,INSERT_VALUES);
+
+	  if(ierr!=0) {
+	  //if(row == 87 && col == 909) {
+	  
+	    EntityHandle ent = fePtr->get_ent();
+      
+	    ostringstream ss;
+	    ss << "fe:\n" << *fePtr << endl;
+	    ss << "row:\n" << *rit << endl;
+	    ss << "col:\n" << *cit << endl;
+
+	    ss << "fe:\n" << fePtr->get_BitRefLevel() << endl;
+	    ss << "row:\n" << rit->get_BitRefLevel() << endl;
+	    ss << "col:\n" << cit->get_BitRefLevel() << endl;
+
+	    ss << "edges:\n";
+	    for(int ee = 0;ee<6;ee++) {
+	      EntityHandle edge;
+	      rval = mFieldPtr->get_moab().side_element(ent,1,ee,edge); CHKERR_THROW(rval);
+	      ss << edge << " ";
+	    }
+	    ss << endl;
+
+	    PetscPrintf(mFieldPtr->get_comm(),"%s\n",ss.str().c_str());
+	  //}
+	  }
+	}
+      }
+      PetscFunctionReturn(0);
+    }
+
+    PetscErrorCode postProcess() {
+      PetscFunctionBegin;
+      PetscErrorCode ierr;
+
+      ierr = MatAssemblyBegin(A,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+      ierr = MatAssemblyEnd(A,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+
+      PetscFunctionReturn(0);
+    }
+
+
+  };
+
+  Mat A;
+  ierr = MatCreateMPIAIJWithArrays(problem_name,&A); CHKERRQ(ierr);
+  ierr = MatSetOption(A,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_TRUE);  CHKERRQ(ierr);
+  TestMatrixFillIn method(this,A);
+
+  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type moFEMProblems_by_name;
+  //find p_miit
+  moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<Problem_mi_tag>();
+  moFEMProblems_by_name::iterator p_miit = moFEMProblems_set.find(problem_name);
+  if(p_miit == moFEMProblems_set.end()) {
+    SETERRQ1(PETSC_COMM_SELF,1,"problem < %s > not found (top tip: check spelling)",problem_name.c_str());
+  }
+  if(verb>0) {
+    PetscPrintf(comm,"check problem < %s >\n",problem_name.c_str());
+  }
+  //MoFEMFiniteElement set
+  MoFEMFiniteElement_multiIndex::iterator fe = finiteElements.begin();
+  MoFEMFiniteElement_multiIndex::iterator hi_fe = finiteElements.end();
+  for(;fe!=hi_fe;fe++) {
+    if(verb>0) {
+      PetscPrintf(comm,"\tcheck element %s\n",fe->get_name().c_str());
+    }
+
+    ierr = loop_finite_elements(problem_name,fe->get_name(),method,0,sIze,verb);  CHKERRQ(ierr);
+
+  }
+
+  ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+  ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+
+  ierr = MatDestroy(&A); CHKERRQ(ierr);
+ 
+  PetscFunctionReturn(0);
+}
+
 
 }

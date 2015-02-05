@@ -160,7 +160,7 @@ struct FluidPressure {
         setOfFluids[bit->get_msId()].tRis.merge(tets_skin_tris);
         ostringstream ss;
         ss << setOfFluids[bit->get_msId()] << endl;
-        PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
+        PetscPrintf(mField.get_comm(),ss.str().c_str());
   
         ierr = mField.add_ents_to_finite_element_by_TRIs(setOfFluids[bit->get_msId()].tRis,"FLUID_PRESSURE_FE"); CHKERRQ(ierr);
 

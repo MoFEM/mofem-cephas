@@ -564,6 +564,22 @@ add_test(dm_mofem_atom_compare ${CMAKE_COMMAND} -E compare_files
   ${CMAKE_BINARY_DIR}/atom_tests/dm_mofem.txt
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/dm_mofem.txt)
 
+#single process
+add_executable(serial_matrix serial_matrix.cpp)
+target_link_libraries(serial_matrix
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS})
+add_test(serial_matrix ${MPI_RUN} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/serial_matrix -my_file disp01.cub)
+add_test(serial_matrix_compare ${CMAKE_COMMAND} -E compare_files 
+  ${CMAKE_BINARY_DIR}/atom_tests/serial_matrix.txt
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/serial_matrix.txt)
+
 if(TETGEN_LIBRARY) 
 
   cm_export_file("../meshes/Tinterface.cub" export_atom_tests)
