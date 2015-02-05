@@ -23,18 +23,20 @@ struct CohesiveInterfaceElement {
     ublas::vector<double> g;
     ublas::matrix<double> gapGlob;
     ublas::matrix<double> gapLoc;
-    ublas::vcetor<ublas::matrix<double> > R;
+    ublas::vector<ublas::matrix<double> > R;
   };
   CommonData commonData;
 
-  CohesiveInterfaceElement()
+  CohesiveInterfaceElement() {};
 
   /** \brief Set negative sign to shape functions on face 4
     */
   struct OpSetSignToShapeFunctions: public FlatPrismElementForcesAndSurcesCore::UserDataOperator {
 
-    OpSetSignToShapeFunctions(const string field_name,commonData &common_data):
-      FlatPrismElementForcesAndSurcesCore::UserDataOperator(field_name) {}
+    CommonData &commonData;
+    OpSetSignToShapeFunctions(const string field_name,CommonData &common_data):
+      FlatPrismElementForcesAndSurcesCore::UserDataOperator(field_name),
+      commonData(common_data) {}
 
     PetscErrorCode doWork(
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
@@ -61,12 +63,12 @@ struct CohesiveInterfaceElement {
       PetscFunctionReturn(0);
     }
 
-  }
+  };
 
   struct OpCalculateGap: public FlatPrismElementForcesAndSurcesCore::UserDataOperator {
 
     CommonData &commonData;
-    OpCalculateGap(const string field_name,commonData &common_data):
+    OpCalculateGap(const string field_name,CommonData &common_data):
       FlatPrismElementForcesAndSurcesCore::UserDataOperator(field_name),
       commonData(common_data) {}
 
@@ -83,18 +85,16 @@ struct CohesiveInterfaceElement {
 	if(type == MBVERTEX) {
 	  commonData.gapGlob.clear();
 	  for(int gg = 0;gg<nb_gauss_pts;gg++) {
-	    R[gg].resize(3,3);
+	    commonData.R[gg].resize(3,3);
 	    for(int gg = 0;gg<nb_gauss_pts;gg++) {
 	      for(int dd = 0;dd<3;dd++) {
-		commonData.R[gg](0,dd) = getNormals_at_GaussPtF3()(gg)[dd];
-		commonData.R[gg](1,dd) = getTangent1_at_GaussPtF3()(gg)[dd];
-		commonData.R[gg](2,dd) = getTangent2_at_GaussPtF3()(gg)[dd];
+		commonData.R[gg](0,dd) = getNormals_at_GaussPtF3()(gg,dd);
+		commonData.R[gg](1,dd) = getTangent1_at_GaussPtF3()(gg,dd);
+		commonData.R[gg](2,dd) = getTangent2_at_GaussPtF3()(gg,dd);
 	      }
 	    }
 	  }
 	}
-	gAp.resize(nb_gauss_pts);
-	gAp.clear();
  	int nb_dofs = data.getFieldData().size();
 	for(int gg = 0;gg<nb_gauss_pts;gg++) {
 	  for(int dd = 0;dd<3;dd++) {
@@ -104,10 +104,9 @@ struct CohesiveInterfaceElement {
 	}
 	if(type == MBTRI && side == 4) {
 	  for(int gg = 0;gg<nb_gauss_pts;gg++) {
-	    matrix_row<matrix<double> > gap_glob(commonData.gapGlob,gg);
-	    matrix_row<matrix<double> > gap_loc(commonData.gapLoc,gg);
+	    ublas::matrix_row<ublas::matrix<double> > gap_glob(commonData.gapGlob,gg);
+	    ublas::matrix_row<ublas::matrix<double> > gap_loc(commonData.gapLoc,gg);
 	    gap_loc = prod(commonData.R[gg],gap_glob);
-	    g[gg] = norm_2(gap_glob);
 	  }
 	}
       } catch (const std::exception& ex) {
@@ -125,19 +124,19 @@ struct CohesiveInterfaceElement {
     FieldInterface &mField;
     PhysicalEquation(FieldInterface &m_field): mField(m_field) {};
 
-    double h,youngModulus,ft,Gf;
+    double h,youngModulus,beta,ft,Gf;
     Tag thKappa,thDamagedPrism;
-
 
     bool isInitialised;
     double E0,g0,kappa1;
     PetscErrorCode iNitailise(const FEMethod *fe_method) {
       PetscFunctionBegin;
+      ErrorCode rval;
       double def_damaged = 0;
       rval = mField.get_moab().tag_get_handle(
 	"DAMAGED_PRISM",1,MB_TYPE_INTEGER,thDamagedPrism,MB_TAG_CREAT|MB_TAG_SPARSE,&def_damaged); CHKERR_THROW(rval);
       const int def_len = 0;
-      rval = moab.tag_get_handle("_KAPPA",def_len,MB_TYPE_DOUBLE,
+      rval = mField.get_moab().tag_get_handle("_KAPPA",def_len,MB_TYPE_DOUBLE,
 	thKappa,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_VARLEN,NULL); CHKERR_PETSC(rval);
       E0 = youngModulus/h;
       g0 = ft/E0;
@@ -145,27 +144,31 @@ struct CohesiveInterfaceElement {
       PetscFunctionReturn(0);
     }
 
+    double calcG(int gg,ublas::matrix<double> gap_loc) {
+      return sqrt(pow(gap_loc(gg,0),2)+beta*(pow(gap_loc(gg,1),2)+pow(gap_loc(gg,2),2)));
+    }
+
     double *kappaPtr;
     int kappaSize;
     PetscErrorCode getKappa(int nb_gauss_pts,const FEMethod *fe_method) {
       PetscFunctionBegin;
-      EntityHandle ent = fe_metod->fePtr->get_ent();
+      EntityHandle ent = fe_method->fePtr->get_ent();
       ErrorCode rval;
-      rval = mField.get_moab().tag_get_by_ptr(th_kappa,&ent,1,(const void **)&kappaPtr,&kappaSize); 
+      rval = mField.get_moab().tag_get_by_ptr(thKappa,&ent,1,(const void **)&kappaPtr,&kappaSize); 
       if(rval == MB_SUCCESS || kappaSize != nb_gauss_pts) {
 	ublas::vector<double> kappa;
 	kappa.resize(nb_gauss_pts);
 	int tag_size[1]; 
 	tag_size[0] = nb_gauss_pts;
-	void const* tag_data[] = { &data[0] };
+	void const* tag_data[] = { &kappa[0] };
 	rval = mField.get_moab().tag_set_by_ptr(thKappa,&ent,1,tag_data,tag_size);  CHKERR_PETSC(rval);
-	rval = mField.get_moab().tag_get_by_ptr(th_kappa,&ent,1,(const void **)&kappaPtr,&kappaSize);  CHKERR_PETSC(rval);
+	rval = mField.get_moab().tag_get_by_ptr(thKappa,&ent,1,(const void **)&kappaPtr,&kappaSize);  CHKERR_PETSC(rval);
       }
       PetscFunctionReturn(0);
     }
 
     ublas::matrix<double> Dglob,Dloc;
-    PetscErrorCode calcDglob(const double omega) {
+    PetscErrorCode calcDglob(const double omega,ublas::matrix<double> &R) {
       PetscFunctionBegin;
       Dglob.resize(3,3);
       Dloc.resize(3,3);
@@ -192,13 +195,11 @@ struct CohesiveInterfaceElement {
       PetscFunctionReturn(0);
     }
 
-    PetscErrorCode calcTangetDglob(const double omega,const double g,
-      const ublas::vector<double>& gap_loc,ublas::matrix<double> &R) {
+    PetscErrorCode calcTangetDglob(const double omega,double g,const ublas::vector<double>& gap_loc,ublas::matrix<double> &R) {
       PetscFunctionBegin;
       Dglob.resize(3,3);
       Dloc.resize(3,3);
-      double domega = 
-	0.5*(2*Gf*E0+ft*ft)/((ft+(g-ft/E0)*E0)*Gf) - 0.5*((g-ft/E0)*(2*Gf*E0+ft*ft)*E0)/(pow(ft+(g-ft/E0)*E0,2)*Gf);
+      double domega = 0.5*(2*Gf*E0+ft*ft)/((ft+(g-ft/E0)*E0)*Gf) - 0.5*((g-ft/E0)*(2*Gf*E0+ft*ft)*E0)/(pow(ft+(g-ft/E0)*E0,2)*Gf);
       Dloc.resize(3,3);
       //r0
       Dloc(0,0) = (1-omega)*E0 - domega*E0*gap_loc[0]*gap_loc[0]/g;
@@ -222,19 +223,22 @@ struct CohesiveInterfaceElement {
       int gg,CommonData &common_data,
       const FEMethod *fe_method) {
       PetscFunctionBegin;
+      PetscErrorCode ierr;
       if(!isInitialised) {
 	ierr = iNitailise(fe_method); CHKERRQ(ierr);
 	isInitialised = true;
       }
       if(gg==0) {
-	ierr = getKappa(common_data.g.size(),fe_method); CHKERRQ(ierr);
+	ierr = getKappa(common_data.gapGlob.size1(),fe_method); CHKERRQ(ierr);
       }
-      double kappa = fmax(common_data.g[gg]-g0,kappaPtr[gg]);
+      double g = calcG(gg,common_data.gapLoc);
+      double kappa = fmax(g-g0,kappaPtr[gg]);
       double omega;
       ierr = calcOmega(kappa,omega); CHKERRQ(ierr);
-      ierr = calcDglob(omega); CHKERRQ(ierr);
+      ierr = calcDglob(omega,common_data.R[gg]); CHKERRQ(ierr);
       traction.resize(3);
-      noalias(traction) = prod(Dglob,gap[gg]);
+      ublas::matrix_row<ublas::matrix<double> > gap_glob(common_data.gapGlob,gg);
+      noalias(traction) = prod(Dglob,gap_glob);
       PetscFunctionReturn(0);
     }
 
@@ -243,23 +247,25 @@ struct CohesiveInterfaceElement {
       int gg,CommonData &common_data,
       const FEMethod *fe_method) {
       PetscFunctionBegin;
+      PetscErrorCode ierr;
       if(!isInitialised) {
 	ierr = iNitailise(fe_method); CHKERRQ(ierr);
 	isInitialised = true;
       }
       if(gg==0) {
-	ierr = getKappa(common_data.gap.size(),fe_method); CHKERRQ(ierr);
+	ierr = getKappa(common_data.gapGlob.size1(),fe_method); CHKERRQ(ierr);
       }
-      double kappa = fmax(common_data.g[gg]-g0,kappaPtr[gg]);
+      double g = calcG(gg,common_data.gapLoc);
+      double kappa = fmax(g-g0,kappaPtr[gg]);
       double omega;
       ierr = calcOmega(kappa,omega); CHKERRQ(ierr);
+      int iter;
       ierr = SNESGetIterationNumber(fe_method->snes,&iter); CHKERRQ(ierr);
-      if((_kappa_ <= kappa[gg])||(_kappa_>=kappa1)||(iter <= 1)) {
-	ierr = calcDglob(_omega_); CHKERRQ(ierr);
+      if((kappa <= kappaPtr[gg])||(kappa>=kappa1)||(iter <= 1)) {
+	ierr = calcDglob(omega,common_data.R[gg]); CHKERRQ(ierr);
       } else {
-	ierr = calcTangetDglob(omega,g[gg],
-	  matrix_row<matrix<double> >(commonData.gapLoc,gg),
-	  commonData.R[gg]);
+	ublas::matrix_row<ublas::matrix<double> > g_loc(common_data.gapLoc,gg);
+	ierr = calcTangetDglob(omega,g,g_loc,common_data.R[gg]);
       }
       PetscFunctionReturn(0);
     }
@@ -267,23 +273,26 @@ struct CohesiveInterfaceElement {
     virtual PetscErrorCode updateHistory(
       CommonData &common_data,const FEMethod *fe_method) {
       PetscFunctionBegin;
+      ErrorCode rval;
+      PetscErrorCode ierr;
       if(!isInitialised) {
 	ierr = iNitailise(fe_method); CHKERRQ(ierr);
 	isInitialised = true;
       }
-      ierr = getKappa(common_data.g.size(),fe_method); CHKERRQ(ierr);
+      ierr = getKappa(common_data.gapGlob.size1(),fe_method); CHKERRQ(ierr);
       bool all_gauss_pts_damaged = true;
-      for(int gg = 0;gg<common_data.g.size();gg++) {
+      for(unsigned int gg = 0;gg<common_data.gapGlob.size1();gg++) {
 	double omega = 0;
-	double kappa = fmax(common_data.g[gg]-g0,kappaPtr[gg]);
+	double g = calcG(gg,common_data.gapLoc);
+	double kappa = fmax(g-g0,kappaPtr[gg]);
 	ierr = calcOmega(kappa,omega); CHKERRQ(ierr);
+	kappaPtr[gg] = kappa;
 	if(omega < 1.) {
 	  all_gauss_pts_damaged = false;
 	}
-	kappaPtr[gg] = kappa;
       }
       if(all_gauss_pts_damaged) {
-	EntityHandle ent = fe_method->get_ent();
+	EntityHandle ent = fe_method->fePtr->get_ent();
 	int set_prism_as_demaged = 1;
 	rval = mField.get_moab().tag_set_data(thDamagedPrism,&ent,1,&set_prism_as_demaged); CHKERR_PETSC(rval);
       }
@@ -292,26 +301,27 @@ struct CohesiveInterfaceElement {
 
   };
 
-
   struct OpRhs: public FlatPrismElementForcesAndSurcesCore::UserDataOperator {
 
     CommonData &commonData;
-    OpRhs(const string field_name,commonData &common_data):
+    PhysicalEquation &physicalEqations;
+    OpRhs(const string field_name,CommonData &common_data,PhysicalEquation &physical_eqations):
       FlatPrismElementForcesAndSurcesCore::UserDataOperator(field_name),
-      commonData(common_data) {}
+      commonData(common_data),physicalEqations(physical_eqations) {}
 
     ublas::vector<double> t,Nf;
     PetscErrorCode doWork(
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
+      PetscErrorCode ierr;
       try {
 	int nb_gauss_pts = data.getN().size1();
 	if(nb_gauss_pts==0)  PetscFunctionReturn(0);
-	int nb_dofs = data.getIndices.size();
+	int nb_dofs = data.getIndices().size();
 	Nf.resize(nb_dofs);
 	Nf.clear();
 	for(int gg = 0;gg<nb_gauss_pts;gg++) {
-	  ierr = calculateTraction(t,gg,commonData,getFEMethod()); CHKERRQ(ierr);
+	  ierr = physicalEqations.calculateTraction(t,gg,commonData,getFEMethod()); CHKERRQ(ierr);
 	  for(int nn = 0;nn<nb_dofs/3;nn++) {
 	    for(int dd = 0;dd<3;dd++) {
 	      Nf[3*nn+dd] += data.getN(gg)[nn]*t[dd];
@@ -319,7 +329,7 @@ struct CohesiveInterfaceElement {
 	  }
 	}
 	ierr = VecSetValues(getFEMethod()->snes_f,
-	  data.getIndices.size(),&data.getIndices[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
+	  data.getIndices().size(),&data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
       } catch (const std::exception& ex) {
 	ostringstream ss;
 	ss << "throw in method: " << ex.what() << endl;
@@ -333,9 +343,10 @@ struct CohesiveInterfaceElement {
   struct OpLhs: public FlatPrismElementForcesAndSurcesCore::UserDataOperator {
 
     CommonData &commonData;
-    OpLh(const string field_name,commonData &common_data):
+    PhysicalEquation &physicalEqations;
+    OpLhs(const string field_name,CommonData &common_data,PhysicalEquation &physical_eqations):
       FlatPrismElementForcesAndSurcesCore::UserDataOperator(field_name),
-      commonData(common_data) { symm = false; }
+      commonData(common_data),physicalEqations(physical_eqations) { symm = false; }
 
     ublas::matrix<double> K,D,ND;
     PetscErrorCode doWork(
@@ -344,17 +355,18 @@ struct CohesiveInterfaceElement {
       DataForcesAndSurcesCore::EntData &row_data,
       DataForcesAndSurcesCore::EntData &col_data) {
       PetscFunctionBegin;
+      PetscErrorCode ierr;
       try {
 	int nb_gauss_pts = row_data.getN().size1();
 	if(nb_gauss_pts==0)  PetscFunctionReturn(0);
 	if(col_data.getN().size1()==0)  PetscFunctionReturn(0);
-	int nb_row = row_data.getIndices.size();
-	int nb_col = col_data.getIndices.size();
+	int nb_row = row_data.getIndices().size();
+	int nb_col = col_data.getIndices().size();
 	ND.resize(3,nb_col);
 	K.resize(nb_row,nb_col);
 	K.clear();
 	for(int gg = 0;gg<nb_gauss_pts;gg++) {
-	  ierr = calculateTangentStiffeness(D,gg,commonData,getFEMethod()); CHKERRQ(ierr);
+	  ierr = physicalEqations.calculateTangentStiffeness(D,gg,commonData,getFEMethod()); CHKERRQ(ierr);
 	  ND.clear();
 	  for(int nn = 0; nn<nb_row/3; nn++) {
 	    for(int dd = 0;dd<3;dd++) {
@@ -390,16 +402,18 @@ struct CohesiveInterfaceElement {
   struct OpHistory: public FlatPrismElementForcesAndSurcesCore::UserDataOperator {
 
     CommonData &commonData;
-    OpHistory(const string field_name,commonData &common_data):
+    PhysicalEquation &physicalEqations;
+    OpHistory(const string field_name,CommonData &common_data,PhysicalEquation &physical_eqations):
       FlatPrismElementForcesAndSurcesCore::UserDataOperator(field_name),
-      commonData(common_data) {}
+      commonData(common_data),physicalEqations(physical_eqations) {}
 
     ublas::vector<double> t,Nf;
     PetscErrorCode doWork(
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
+      PetscErrorCode ierr;
       if(type != MBVERTEX) PetscFunctionReturn(0);
-      ierr = updateHistory(commonData,getFEMethod()); CHKERRQ(ierr);
+      ierr = physicalEqations.updateHistory(commonData,getFEMethod()); CHKERRQ(ierr);
       PetscFunctionReturn(0);
     }
 
