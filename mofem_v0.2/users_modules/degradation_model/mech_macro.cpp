@@ -372,10 +372,11 @@ int main(int argc, char *argv[]) {
       //Here we use ElasticFEMethod_Dmat_input, so will multiply Fint with -1
       DisplacementBCFEMethodPreAndPostProc my_dirichlet_bc(m_field_Macro,"DISP_MACRO",A,D,F);
       
-//      ElasticFEMethod_Dmat_input* my_fe_ptr = new MyArcLengthIntElemFEMethod(m_field_Macro,A,D,Fint,0.0,0.0,calculate_rve_dmat.commonData.Dmat_RVE,"DISP_MACRO");
-//      ElasticFEMethod_Dmat_input& my_fe = *my_fe_ptr;
-
-      ElasticFEMethod_Dmat_input my_fe(m_field_Macro,A,D,Fint,0.0,0.0,calculate_rve_dmat.commonData.Dmat_RVE,"DISP_MACRO");
+      
+      //here pointer to object is used instead of object, because the pointer will be destroyed at the end of code before PetscFinalize to make sure all
+      //its internal matrices and vectores are destroyed.
+//      ElasticFEMethod_Dmat_input my_fe(m_field_Macro,A,D,Fint,0.0,0.0,calculate_rve_dmat.commonData.Dmat_RVE,"DISP_MACRO");
+      ElasticFEMethod_Dmat_input* my_fe_ptr = new ElasticFEMethod_Dmat_input(m_field_Macro,A,D,Fint,0.0,0.0,calculate_rve_dmat.commonData.Dmat_RVE,"DISP_MACRO");
       //preproc
       ierr = m_field_Macro.problem_basic_method_preProcess("ELASTIC_PROBLEM_MACRO",my_dirichlet_bc); CHKERRQ(ierr);
 
@@ -406,7 +407,7 @@ int main(int argc, char *argv[]) {
 //      }
       
       //loop over macro elemnts to assemble A matrix and Fint vector
-      ierr = m_field_Macro.loop_finite_elements("ELASTIC_PROBLEM_MACRO","ELASTIC_FE_MACRO",my_fe);  CHKERRQ(ierr);
+      ierr = m_field_Macro.loop_finite_elements("ELASTIC_PROBLEM_MACRO","ELASTIC_FE_MACRO",*my_fe_ptr);  CHKERRQ(ierr);
       
       my_dirichlet_bc.snes_B=A;
       my_dirichlet_bc.snes_x = D;
@@ -443,18 +444,17 @@ int main(int argc, char *argv[]) {
       rval = post_proc.postProcMesh.write_file(o1.str().c_str(),"MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
       
       ierr = KSPDestroy(&solver); CHKERRQ(ierr);
+      delete my_fe_ptr;
       PetscPrintf(PETSC_COMM_WORLD,"End of step %d\n",sit->get_step_number());
 //      string wait;
 //      cin>>wait;
     }
   }
   
-  cout<<"Before Destroying variables "<<endl;
   ierr = VecDestroy(&F); CHKERRQ(ierr);
   ierr = VecDestroy(&Fint); CHKERRQ(ierr);
   ierr = VecDestroy(&D); CHKERRQ(ierr);
   ierr = MatDestroy(&A); CHKERRQ(ierr);
-  cout<<"After Destroying variables "<<endl;
   ierr = PetscFinalize(); CHKERRQ(ierr);
 
 
