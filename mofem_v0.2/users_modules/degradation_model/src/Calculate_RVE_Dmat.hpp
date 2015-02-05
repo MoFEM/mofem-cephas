@@ -171,16 +171,14 @@ namespace MoFEM {
       }
       
       ~OpCalculate_RVEDmat(){
-        ierr = VecDestroy(&F1); CHKERRABORT(PETSC_COMM_WORLD,ierr);
-        ierr = VecDestroy(&F2); CHKERRABORT(PETSC_COMM_WORLD,ierr);
-        ierr = VecDestroy(&F3); CHKERRABORT(PETSC_COMM_WORLD,ierr);
-        ierr = VecDestroy(&F4); CHKERRABORT(PETSC_COMM_WORLD,ierr);
-        ierr = VecDestroy(&F5); CHKERRABORT(PETSC_COMM_WORLD,ierr);
-        ierr = VecDestroy(&F6); CHKERRABORT(PETSC_COMM_WORLD,ierr);
-
-        ierr = VecDestroy(&D1); CHKERRABORT(PETSC_COMM_WORLD,ierr);
-        
-        ierr = MatDestroy(&A); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+//        ierr = VecDestroy(&F1); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+//        ierr = VecDestroy(&F2); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+//        ierr = VecDestroy(&F3); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+//        ierr = VecDestroy(&F4); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+//        ierr = VecDestroy(&F5); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+//        ierr = VecDestroy(&F6); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+//        ierr = VecDestroy(&D1); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+//        ierr = MatDestroy(&A); CHKERRABORT(PETSC_COMM_WORLD,ierr);
       }
       
       Vec F1,F2,F3,F4,F5,F6,D1;
@@ -209,15 +207,17 @@ namespace MoFEM {
             double RVE_volume;    RVE_volume=0.0;  //RVE volume for full RVE We need this for stress calculation
             Vec RVE_volume_Vec;
             ParallelComm* pcomm_RVE = ParallelComm::get_pcomm(&m_field_RVE.get_moab(),MYPCOMM_INDEX);
-            ierr = VecCreateMPI(PETSC_COMM_WORLD, 1, pcomm_RVE->size(), &RVE_volume_Vec);  CHKERRQ(ierr);
+//            cout<<" pcomm_RVE->size() = "<<pcomm_RVE->size()<<endl;
+            ierr = VecCreateMPI(PETSC_COMM_SELF, 1, pcomm_RVE->size(), &RVE_volume_Vec);  CHKERRQ(ierr);
             ierr = VecZeroEntries(RVE_volume_Vec); CHKERRQ(ierr);
             RVEVolume MyRVEVol(m_field_RVE,A,D1,F1,0.0,0.0, RVE_volume_Vec);
+            
             //=============================================================================================================
 
             for(int gg = 0;gg<nb_gauss_pts;gg++) {
 //              cout<<"gg Start =  "<<gg <<endl;
               //We don't need to calculate internal forces for RVE, as ElasticFEMethod is used to assemble A matirx only
-              //son noo need to create MyElasticFEMethod here
+              //so noo need to create MyElasticFEMethod here
               ElasticFEMethod_Matrix my_fe_marix(m_field_RVE,A,D1,F1,0.0,0.0,commonData.wtAtGaussPts(gg),"DISP_RVE");
               ElasticFEMethod my_fe_inclusions(m_field_RVE,A,D1,F1,0.0,0.0,"DISP_RVE");
               ElasticFE_RVELagrange_Disp_Multi_Rhs MyFE_RVELagrange(m_field_RVE,A,D1,F1,F2,F3,F4,F5,F6,applied_strain,"DISP_RVE","Lagrange_mul_disp",field_rank);
@@ -225,34 +225,13 @@ namespace MoFEM {
 //              cout<<"commonData.wtAtGaussPts(gg) =  "<<commonData.wtAtGaussPts(gg) <<endl;
 
               ierr = VecZeroEntries(F1); CHKERRQ(ierr);
-              ierr = VecGhostUpdateBegin(F1,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-              ierr = VecGhostUpdateEnd(F1,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-              
               ierr = VecZeroEntries(F2); CHKERRQ(ierr);
-              ierr = VecGhostUpdateBegin(F2,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-              ierr = VecGhostUpdateEnd(F2,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-              
               ierr = VecZeroEntries(F3); CHKERRQ(ierr);
-              ierr = VecGhostUpdateBegin(F3,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-              ierr = VecGhostUpdateEnd(F3,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-              
               ierr = VecZeroEntries(F4); CHKERRQ(ierr);
-              ierr = VecGhostUpdateBegin(F4,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-              ierr = VecGhostUpdateEnd(F4,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-              
               ierr = VecZeroEntries(F5); CHKERRQ(ierr);
-              ierr = VecGhostUpdateBegin(F5,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-              ierr = VecGhostUpdateEnd(F5,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-              
               ierr = VecZeroEntries(F6); CHKERRQ(ierr);
-              ierr = VecGhostUpdateBegin(F6,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-              ierr = VecGhostUpdateEnd(F6,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-              
               ierr = MatZeroEntries(A); CHKERRQ(ierr);
-              
               ierr = VecZeroEntries(D1); CHKERRQ(ierr);
-              ierr = VecGhostUpdateBegin(D1,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-              ierr = VecGhostUpdateEnd(D1,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
               ierr = m_field_RVE.set_global_VecCreateGhost("ELASTIC_PROBLEM_RVE",ROW,D1,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
               ierr = m_field_RVE.loop_finite_elements("ELASTIC_PROBLEM_RVE","ELASTIC_FE_RVE_MATRIX",my_fe_marix);  CHKERRQ(ierr);
@@ -262,33 +241,21 @@ namespace MoFEM {
               ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
               ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
               
-              ierr = VecGhostUpdateBegin(F1,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-              ierr = VecGhostUpdateEnd(F1,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
               ierr = VecAssemblyBegin(F1); CHKERRQ(ierr);
               ierr = VecAssemblyEnd(F1); CHKERRQ(ierr);
               
-              ierr = VecGhostUpdateBegin(F2,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-              ierr = VecGhostUpdateEnd(F2,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
               ierr = VecAssemblyBegin(F2); CHKERRQ(ierr);
               ierr = VecAssemblyEnd(F2); CHKERRQ(ierr);
               
-              ierr = VecGhostUpdateBegin(F3,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-              ierr = VecGhostUpdateEnd(F3,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
               ierr = VecAssemblyBegin(F3); CHKERRQ(ierr);
               ierr = VecAssemblyEnd(F3); CHKERRQ(ierr);
               
-              ierr = VecGhostUpdateBegin(F4,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-              ierr = VecGhostUpdateEnd(F4,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
               ierr = VecAssemblyBegin(F4); CHKERRQ(ierr);
               ierr = VecAssemblyEnd(F4); CHKERRQ(ierr);
               
-              ierr = VecGhostUpdateBegin(F5,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-              ierr = VecGhostUpdateEnd(F5,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
               ierr = VecAssemblyBegin(F5); CHKERRQ(ierr);
               ierr = VecAssemblyEnd(F5); CHKERRQ(ierr);
               
-              ierr = VecGhostUpdateBegin(F6,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-              ierr = VecGhostUpdateEnd(F6,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
               ierr = VecAssemblyBegin(F6); CHKERRQ(ierr);
               ierr = VecAssemblyEnd(F6); CHKERRQ(ierr);
 
@@ -300,25 +267,25 @@ namespace MoFEM {
                 //    ierr = VecView(RVE_volume_Vec,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
                 ierr = VecSum(RVE_volume_Vec, &RVE_volume);  CHKERRQ(ierr);
 //                cout<<"Final RVE_volume = "<< RVE_volume <<endl;
+//                cout<<"Element Number fe_ent"<<fe_ent<<endl;
+//                string wait;
+//                cin >>wait;
                 //=============================================================================================================
               }
-
-
+              
               //Solver
               KSP solver;
-              ierr = KSPCreate(PETSC_COMM_WORLD,&solver); CHKERRQ(ierr);
+              ierr = KSPCreate(PETSC_COMM_SELF,&solver); CHKERRQ(ierr);
               ierr = KSPSetOperators(solver,A,A); CHKERRQ(ierr);
               ierr = KSPSetFromOptions(solver); CHKERRQ(ierr);
               ierr = KSPSetUp(solver); CHKERRQ(ierr);
 //              ierr = VecView(D1,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-              
+
               //=============================================================================================================
               // homogenised stress for strian [1 0 0 0 0 0]^T
               //=============================================================================================================
               //solve for F1
               ierr = KSPSolve(solver,F1,D1); CHKERRQ(ierr);
-              ierr = VecGhostUpdateBegin(D1,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-              ierr = VecGhostUpdateEnd(D1,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
               ierr = m_field_RVE.set_global_VecCreateGhost("ELASTIC_PROBLEM_RVE",ROW,D1,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 //              ierr = VecView(D1,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
@@ -328,10 +295,10 @@ namespace MoFEM {
               //create a vector for 6 components of homogenized stress
               Vec Stress_Homo;
               if(pcomm_RVE->rank()==0) {
-                VecCreateGhost(PETSC_COMM_WORLD,6,6,0,PETSC_NULL,&Stress_Homo);
+                VecCreateGhost(PETSC_COMM_SELF,6,6,0,PETSC_NULL,&Stress_Homo);
               } else {
                 int ghost[] = {0,1,2,3,4,5};
-                VecCreateGhost(PETSC_COMM_WORLD,0,6,6,ghost,&Stress_Homo);
+                VecCreateGhost(PETSC_COMM_SELF,0,6,6,ghost,&Stress_Homo);
                 
               }
               
@@ -343,16 +310,12 @@ namespace MoFEM {
 
                 
                 ierr = m_field_RVE.loop_finite_elements("ELASTIC_PROBLEM_RVE","Lagrange_FE",MyFE_RVEHomoStressDisp);  CHKERRQ(ierr);
-                VecGhostUpdateBegin(Stress_Homo,INSERT_VALUES,SCATTER_FORWARD);
-                VecGhostUpdateEnd(Stress_Homo,INSERT_VALUES,SCATTER_FORWARD);
-                
                 PetscScalar *avec;
                 VecGetArray(Stress_Homo, &avec);
                 for(int ii=0; ii<6; ii++){
                   Dmat(ii,0)=*avec;
                   avec++;
                 }
-                
 //                if(pcomm_RVE->rank()==0){
 //                  cout<< "\nStress_Homo = \n\n";
 //                  for(int ii=0; ii<6; ii++){
@@ -361,13 +324,13 @@ namespace MoFEM {
 //                }
                 
               }
+              
+              
               //=============================================================================================================
               // homogenised stress for strian [0 1 0 0 0 0]^T
               //=============================================================================================================
               //solve for F2
               ierr = KSPSolve(solver,F2,D1); CHKERRQ(ierr);
-              ierr = VecGhostUpdateBegin(D1,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-              ierr = VecGhostUpdateEnd(D1,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
               ierr = m_field_RVE.set_global_VecCreateGhost("ELASTIC_PROBLEM_RVE",ROW,D1,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
               
               {
@@ -376,10 +339,6 @@ namespace MoFEM {
                 
                 ElasticFE_RVELagrange_Homogenized_Stress_Disp MyFE_RVEHomoStressDisp(m_field_RVE,A,D1,F1,&RVE_volume, applied_strain, Stress_Homo,"DISP_RVE","Lagrange_mul_disp",field_rank);
                 ierr = m_field_RVE.loop_finite_elements("ELASTIC_PROBLEM_RVE","Lagrange_FE",MyFE_RVEHomoStressDisp);  CHKERRQ(ierr);
-                
-                VecGhostUpdateBegin(Stress_Homo,INSERT_VALUES,SCATTER_FORWARD);
-                VecGhostUpdateEnd(Stress_Homo,INSERT_VALUES,SCATTER_FORWARD);
-                //    ierr = VecView(Stress_Homo,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
                 
                 //    if(pcomm->rank() == 0) cout<< " Stress_Homo =  "<<endl;
                 //    ierr = VecView(Stress_Homo,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
@@ -403,20 +362,13 @@ namespace MoFEM {
               //=============================================================================================================
               //solve for F3
               ierr = KSPSolve(solver,F3,D1); CHKERRQ(ierr);
-              ierr = VecGhostUpdateBegin(D1,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-              ierr = VecGhostUpdateEnd(D1,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
               ierr = m_field_RVE.set_global_VecCreateGhost("ELASTIC_PROBLEM_RVE",ROW,D1,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
               
               {
                 ierr = VecZeroEntries(Stress_Homo); CHKERRQ(ierr);
-                //    ierr = VecView(Stress_Homo,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
                 
                 ElasticFE_RVELagrange_Homogenized_Stress_Disp MyFE_RVEHomoStressDisp(m_field_RVE,A,D1,F1,&RVE_volume, applied_strain, Stress_Homo,"DISP_RVE","Lagrange_mul_disp",field_rank);
                 ierr = m_field_RVE.loop_finite_elements("ELASTIC_PROBLEM_RVE","Lagrange_FE",MyFE_RVEHomoStressDisp);  CHKERRQ(ierr);
-                
-                VecGhostUpdateBegin(Stress_Homo,INSERT_VALUES,SCATTER_FORWARD);
-                VecGhostUpdateEnd(Stress_Homo,INSERT_VALUES,SCATTER_FORWARD);
-                //    ierr = VecView(Stress_Homo,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
                 
                 //    if(pcomm->rank() == 0) cout<< " Stress_Homo =  "<<endl;
                 //    ierr = VecView(Stress_Homo,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
@@ -439,21 +391,13 @@ namespace MoFEM {
               //=============================================================================================================
               //solve for F4
               ierr = KSPSolve(solver,F4,D1); CHKERRQ(ierr);
-              ierr = VecGhostUpdateBegin(D1,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-              ierr = VecGhostUpdateEnd(D1,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
               ierr = m_field_RVE.set_global_VecCreateGhost("ELASTIC_PROBLEM_RVE",ROW,D1,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
               
               
               {
                 ierr = VecZeroEntries(Stress_Homo); CHKERRQ(ierr);
-                //    ierr = VecView(Stress_Homo,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-                
                 ElasticFE_RVELagrange_Homogenized_Stress_Disp MyFE_RVEHomoStressDisp(m_field_RVE,A,D1,F1,&RVE_volume, applied_strain, Stress_Homo,"DISP_RVE","Lagrange_mul_disp",field_rank);
                 ierr = m_field_RVE.loop_finite_elements("ELASTIC_PROBLEM_RVE","Lagrange_FE",MyFE_RVEHomoStressDisp);  CHKERRQ(ierr);
-                
-                VecGhostUpdateBegin(Stress_Homo,INSERT_VALUES,SCATTER_FORWARD);
-                VecGhostUpdateEnd(Stress_Homo,INSERT_VALUES,SCATTER_FORWARD);
-                //    ierr = VecView(Stress_Homo,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
                 
                 //    if(pcomm->rank() == 0) cout<< " Stress_Homo =  "<<endl;
                 //    ierr = VecView(Stress_Homo,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
@@ -476,20 +420,13 @@ namespace MoFEM {
               //=============================================================================================================
               //solve for F5
               ierr = KSPSolve(solver,F5,D1); CHKERRQ(ierr);
-              ierr = VecGhostUpdateBegin(D1,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-              ierr = VecGhostUpdateEnd(D1,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
               ierr = m_field_RVE.set_global_VecCreateGhost("ELASTIC_PROBLEM_RVE",ROW,D1,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
               
               {
                 ierr = VecZeroEntries(Stress_Homo); CHKERRQ(ierr);
-                //    ierr = VecView(Stress_Homo,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
                 
                 ElasticFE_RVELagrange_Homogenized_Stress_Disp MyFE_RVEHomoStressDisp(m_field_RVE,A,D1,F1,&RVE_volume, applied_strain, Stress_Homo,"DISP_RVE","Lagrange_mul_disp",field_rank);
                 ierr = m_field_RVE.loop_finite_elements("ELASTIC_PROBLEM_RVE","Lagrange_FE",MyFE_RVEHomoStressDisp);  CHKERRQ(ierr);
-                
-                VecGhostUpdateBegin(Stress_Homo,INSERT_VALUES,SCATTER_FORWARD);
-                VecGhostUpdateEnd(Stress_Homo,INSERT_VALUES,SCATTER_FORWARD);
-                //    ierr = VecView(Stress_Homo,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
                 
                 //    if(pcomm->rank() == 0) cout<< " Stress_Homo =  "<<endl;
                 //    ierr = VecView(Stress_Homo,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
@@ -512,20 +449,12 @@ namespace MoFEM {
               //=============================================================================================================
               //solve for F6
               ierr = KSPSolve(solver,F6,D1); CHKERRQ(ierr);
-              ierr = VecGhostUpdateBegin(D1,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-              ierr = VecGhostUpdateEnd(D1,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
               ierr = m_field_RVE.set_global_VecCreateGhost("ELASTIC_PROBLEM_RVE",ROW,D1,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
               
               {
                 ierr = VecZeroEntries(Stress_Homo); CHKERRQ(ierr);
-                //    ierr = VecView(Stress_Homo,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-                
                 ElasticFE_RVELagrange_Homogenized_Stress_Disp MyFE_RVEHomoStressDisp(m_field_RVE,A,D1,F1,&RVE_volume, applied_strain, Stress_Homo,"DISP_RVE","Lagrange_mul_disp",field_rank);
                 ierr = m_field_RVE.loop_finite_elements("ELASTIC_PROBLEM_RVE","Lagrange_FE",MyFE_RVEHomoStressDisp);  CHKERRQ(ierr);
-                
-                VecGhostUpdateBegin(Stress_Homo,INSERT_VALUES,SCATTER_FORWARD);
-                VecGhostUpdateEnd(Stress_Homo,INSERT_VALUES,SCATTER_FORWARD);
-                //    ierr = VecView(Stress_Homo,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
                 
                 //    if(pcomm->rank() == 0) cout<< " Stress_Homo =  "<<endl;
                 //    ierr = VecView(Stress_Homo,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);

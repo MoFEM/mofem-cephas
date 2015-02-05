@@ -50,8 +50,6 @@ int main(int argc, char *argv[]) {
   ErrorCode rval;
   PetscErrorCode ierr;
   PetscInitialize(&argc,&argv,(char *)0,help);
-  int rank;
-  MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
   PetscBool flg = PETSC_TRUE;
   const char *option;
   PetscInt order;
@@ -69,13 +67,13 @@ int main(int argc, char *argv[]) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file_RVE (MESH FILE NEEDED)");
   }
   ParallelComm* pcomm_RVE = ParallelComm::get_pcomm(&moab_RVE,MYPCOMM_INDEX);
-  if(pcomm_RVE == NULL) pcomm_RVE =  new ParallelComm(&moab_RVE,PETSC_COMM_WORLD);
+  if(pcomm_RVE == NULL) pcomm_RVE =  new ParallelComm(&moab_RVE,PETSC_COMM_SELF);
   
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
   rval = moab_RVE.load_file(mesh_file_name_RVE, 0, option); CHKERR_PETSC(rval);
   
   //Create MoFEM (Joseph) database
-  MoFEM::Core core_RVE(moab_RVE);
+  MoFEM::Core core_RVE(moab_RVE, PETSC_COMM_SELF);
   FieldInterface& m_field_RVE = core_RVE;
   
   //set entitities bit level
@@ -234,6 +232,9 @@ int main(int argc, char *argv[]) {
   moab::Core mb_instance_Macro;
   Interface& moab_Macro = mb_instance_Macro;
   
+  int rank;
+  MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
+
   char mesh_file_name_Macro[255];
   ierr = PetscOptionsGetString(PETSC_NULL,"-my_file_Macro",mesh_file_name_Macro,255,&flg); CHKERRQ(ierr);
   if(flg != PETSC_TRUE) {
@@ -370,6 +371,10 @@ int main(int argc, char *argv[]) {
 
       //Here we use ElasticFEMethod_Dmat_input, so will multiply Fint with -1
       DisplacementBCFEMethodPreAndPostProc my_dirichlet_bc(m_field_Macro,"DISP_MACRO",A,D,F);
+      
+//      ElasticFEMethod_Dmat_input* my_fe_ptr = new MyArcLengthIntElemFEMethod(m_field_Macro,A,D,Fint,0.0,0.0,calculate_rve_dmat.commonData.Dmat_RVE,"DISP_MACRO");
+//      ElasticFEMethod_Dmat_input& my_fe = *my_fe_ptr;
+
       ElasticFEMethod_Dmat_input my_fe(m_field_Macro,A,D,Fint,0.0,0.0,calculate_rve_dmat.commonData.Dmat_RVE,"DISP_MACRO");
       //preproc
       ierr = m_field_Macro.problem_basic_method_preProcess("ELASTIC_PROBLEM_MACRO",my_dirichlet_bc); CHKERRQ(ierr);
@@ -439,10 +444,8 @@ int main(int argc, char *argv[]) {
       
       ierr = KSPDestroy(&solver); CHKERRQ(ierr);
       PetscPrintf(PETSC_COMM_WORLD,"End of step %d\n",sit->get_step_number());
-
 //      string wait;
 //      cin>>wait;
-
     }
   }
   
@@ -455,7 +458,6 @@ int main(int argc, char *argv[]) {
   ierr = PetscFinalize(); CHKERRQ(ierr);
 
 
-//  PetscFinalize();
 
 }
 
