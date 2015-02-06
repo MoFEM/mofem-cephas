@@ -433,7 +433,7 @@ struct FieldInterface: public FieldUnknownInterface {
   /** \brief Get the adjacencies associated with a entity to entities of a specfied dimension.
     * \ingroup mofem_ref_ents
     *
-    * bit ref level of adjacent entities is equal to bit ref level of adjacent entities
+    * bit ref level of adjacent entities is any of bit ref level of adjacent entities
     */
   virtual PetscErrorCode get_adjacencies_any(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities) = 0;
 
@@ -1627,7 +1627,7 @@ struct FieldInterface: public FieldUnknownInterface {
 #endif // __MOABFIELD_HPP__
 
 /***************************************************************************//**
- * \defgroup mofem_bc Handling boundary conditions
+ * \defgroup mofem_bc Boundary conditions
  * \ingroup mofem
  ******************************************************************************/
 
@@ -1652,7 +1652,7 @@ struct FieldInterface: public FieldUnknownInterface {
  ******************************************************************************/
 
 /***************************************************************************//**
- * \defgroup mofem_ref_ents Getting entities and adjacencies
+ * \defgroup mofem_ref_ents Adjacencies
  * \ingroup mofem
  ******************************************************************************/
 

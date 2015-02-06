@@ -30,7 +30,8 @@
 namespace MoFEM {
 
 /*! \struct GenericCubitBcData
- *  \brief Generic bc data structure
+ * \brief Generic bc data structure
+ * \ingroup mofem_bc 
  */
 struct GenericCubitBcData {
     PetscErrorCode ierr;
@@ -45,6 +46,7 @@ struct GenericCubitBcData {
 
 /*! \struct DisplacementCubitBcData
  *  \brief Definition of the displacement bc data structure
+ * \ingroup mofem_bc 
  */
 struct DisplacementCubitBcData: public GenericCubitBcData {
     struct __attribute__ ((packed)) _data_{
@@ -86,6 +88,7 @@ struct DisplacementCubitBcData: public GenericCubitBcData {
 
 /*! \struct ForceCubitBcData
  *  \brief Definition of the force bc data structure
+ * \ingroup mofem_bc 
  */
 struct ForceCubitBcData: public GenericCubitBcData {
     struct __attribute__ ((packed)) _data_{
@@ -121,7 +124,8 @@ struct ForceCubitBcData: public GenericCubitBcData {
 };
 
 /*! \struct VelocityCubitBcData
- *  \brief Definition of the velocity bc data structure
+ * \brief Definition of the velocity bc data structure
+ * \ingroup mofem_bc 
  */
 struct VelocityCubitBcData: public GenericCubitBcData {
     struct __attribute__ ((packed)) _data_{
@@ -161,7 +165,8 @@ struct VelocityCubitBcData: public GenericCubitBcData {
 };  
 
 /*! \struct AccelerationCubitBcData
- *  \brief Definition of the acceleration bc data structure
+ * \brief Definition of the acceleration bc data structure
+ * \ingroup mofem_bc 
  */    
 struct AccelerationCubitBcData: public GenericCubitBcData {
     struct __attribute__ ((packed)) _data_{
@@ -202,6 +207,7 @@ struct AccelerationCubitBcData: public GenericCubitBcData {
 
 /*! \struct TemperatureCubitBcData
  *  \brief Definition of the temperature bc data structure
+ * \ingroup mofem_bc 
  */
 struct TemperatureCubitBcData: public GenericCubitBcData {
     struct __attribute__ ((packed)) _data_{
@@ -240,7 +246,8 @@ struct TemperatureCubitBcData: public GenericCubitBcData {
 };
 
 /*! \struct PressureCubitBcData
- *  \brief Definition of the pressure bc data structure
+ * \brief Definition of the pressure bc data structure
+ * \ingroup mofem_bc 
  */
 struct PressureCubitBcData: public GenericCubitBcData {
     struct __attribute__ ((packed)) _data_{
@@ -270,7 +277,8 @@ struct PressureCubitBcData: public GenericCubitBcData {
 };
 
 /*! \struct HeatfluxCubitBcData
- *  \brief Definition of the heat flux bc data structure
+ * \brief Definition of the heat flux bc data structure
+ * \ingroup mofem_bc 
  */
 struct HeatfluxCubitBcData: public GenericCubitBcData {
     struct __attribute__ ((packed)) _data_{
@@ -304,7 +312,8 @@ struct HeatfluxCubitBcData: public GenericCubitBcData {
 };
 
 /*! \struct CfgCubitBcData
- *  \brief Definition of the cfd_bc data structure
+ * \brief Definition of the cfd_bc data structure
+ * \ingroup mofem_bc 
  */
 struct CfgCubitBcData: public GenericCubitBcData {
     struct __attribute__ ((packed)) _data_{

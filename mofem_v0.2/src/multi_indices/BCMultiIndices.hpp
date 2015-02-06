@@ -32,6 +32,8 @@ namespace MoFEM {
 
 /** 
  * \brief this struct keeps basic methods for moab meshset about material and boundary conditions
+ * \ingroup mofem_bc 
+ *
  */
 struct CubitMeshSets {
   EntityHandle meshset;
@@ -257,3 +259,9 @@ typedef multi_index_container<
 }
 
 #endif // __BCMULTIINDICES_HPP__
+
+/***************************************************************************//**
+ * \defgroup mofem_bc Boundary conditions
+ * \ingroup mofem
+ ******************************************************************************/
+
