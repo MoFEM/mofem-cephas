@@ -49,8 +49,15 @@ using namespace MoFEM;
 #include <PostProcDisplacementAndStrainOnRefindedMesh.hpp>
 
 #include <ElasticFEMethod.hpp>
-#include <ElasticFEMethodInterface.hpp>
-//#include <NonLinearFEMethodInterface.hpp>
+
+//Use this below if you need to use old (obsolte) method you implement
+//interface element. New element can work with highet order geometry and is
+//much easier to extent to new material models
+//#define OLDINTERFACEMETHOD
+#ifdef OLDINTERFACEMETHOD
+  #include <ElasticFEMethodInterface.hpp>
+  #include <NonLinearFEMethodInterface.hpp>
+#endif 
 
 using namespace boost::numeric;
 using namespace ObosleteUsersModules;
@@ -462,10 +469,12 @@ int main(int argc, char *argv[]) {
   //Assemble F and Aij
   double young_modulus=1;
   double poisson_ratio=0.0;
-  //double h = 1;
-  //double beta = 0;
-  //double ft = 1;
-  //double Gf = 1;
+  #ifdef OLDINTERFACEMETHOD
+    double h = 1;
+    double beta = 0;
+    double ft = 1;
+    double Gf = 1;
+  #endif  
 
   boost::ptr_vector<CohesiveInterfaceElement::PhysicalEquation> interface_materials;
 
@@ -487,10 +496,13 @@ int main(int argc, char *argv[]) {
       Mat_Interf mydata;
       ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
       cout << mydata;
-      //h = mydata.data.alpha;
-      //beta = mydata.data.beta;
-      //ft = mydata.data.ft;
-      //Gf = mydata.data.Gf;
+
+      #ifdef OLDINTERFACEMETHOD
+	h = mydata.data.alpha;
+	beta = mydata.data.beta;
+	ft = mydata.data.ft;
+	Gf = mydata.data.Gf;
+      #endif
 
       interface_materials.push_back(new CohesiveInterfaceElement::PhysicalEquation(m_field)); 
       interface_materials.back().h = 1;
@@ -527,7 +539,9 @@ int main(int argc, char *argv[]) {
   ierr = m_field.get_problem("ELASTIC_MECHANICS",&my_dirichlet_bc.problemPtr); CHKERRQ(ierr);
   ierr = my_dirichlet_bc.iNitalize(); CHKERRQ(ierr);
   ElasticFEMethod my_fe(m_field,Aij,D,F,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
-  //NonLinearInterfaceFEMethod int_my_fe(m_field,Aij,D,F,young_modulus,h,beta,ft,Gf,"DISPLACEMENT",NonLinearInterfaceFEMethod::CTX_INTLINEARSOFTENING);
+  #ifdef OLDINTERFACEMETHOD
+    NonLinearInterfaceFEMethod int_my_fe(m_field,Aij,D,F,young_modulus,h,beta,ft,Gf,"DISPLACEMENT",NonLinearInterfaceFEMethod::CTX_INTLINEARSOFTENING);
+  #endif
 
   CohesiveInterfaceElement cohesive_elements(m_field);
   ierr = cohesive_elements.addOps("DISPLACEMENT",interface_materials); CHKERRQ(ierr);
@@ -596,8 +610,11 @@ int main(int argc, char *argv[]) {
   SnesCtx::loops_to_do_type& loops_to_do_Rhs = snes_ctx.get_loops_to_do_Rhs();
   snes_ctx.get_preProcess_to_do_Rhs().push_back(&my_dirichlet_bc);
   snes_ctx.get_preProcess_to_do_Rhs().push_back(&pre_post_proc_fe);
-  //loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("INTERFACE",&int_my_fe));
-  loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("INTERFACE",&cohesive_elements.getFeRhs()));
+  #ifdef OLDINTERFACEMETHOD
+    loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("INTERFACE",&int_my_fe));
+  #else
+    loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("INTERFACE",&cohesive_elements.getFeRhs()));
+  #endif
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ELASTIC",&my_fe));
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ARC_LENGTH",&my_arc_method));
   snes_ctx.get_postProcess_to_do_Rhs().push_back(&pre_post_proc_fe);
@@ -606,8 +623,11 @@ int main(int argc, char *argv[]) {
   //Mat
   SnesCtx::loops_to_do_type& loops_to_do_Mat = snes_ctx.get_loops_to_do_Mat();
   snes_ctx.get_preProcess_to_do_Mat().push_back(&my_dirichlet_bc);
-  //loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("INTERFACE",&int_my_fe));
-  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("INTERFACE",&cohesive_elements.getFeLhs()));
+  #ifdef OLDINTERFACEMETHOD
+    loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("INTERFACE",&int_my_fe));
+  #else 
+    loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("INTERFACE",&cohesive_elements.getFeLhs()));
+  #endif
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ELASTIC",&my_fe));
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ARC_LENGTH",&my_arc_method));
   snes_ctx.get_postProcess_to_do_Mat().push_back(&my_dirichlet_bc);
@@ -718,14 +738,17 @@ int main(int argc, char *argv[]) {
     ierr = m_field.set_global_VecCreateGhost("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
     //Update History and Calculate Residual
-    //Tell Interface method that kappa is upadated
-    //int_my_fe.snes_ctx = FEMethod::CTX_SNESNONE;
-    //ierr = int_my_fe.set_ctxInt(NonLinearInterfaceFEMethod::CTX_KAPPAUPDATE); CHKERRQ(ierr);
-    //run this on all processors, so we could save history tags on all parts and restart
-    //ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","INTERFACE",int_my_fe,0,pcomm->size());  CHKERRQ(ierr);
-    ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","INTERFACE",cohesive_elements.getFeHistory(),0,pcomm->size());  CHKERRQ(ierr);
-    //Standard procedure
-    //ierr = int_my_fe.set_ctxInt(NonLinearInterfaceFEMethod::CTX_INTERFACENONE); CHKERRQ(ierr);
+    #ifdef OLDINTERFACEMETHOD
+      //Tell Interface method that kappa is upadated
+      int_my_fe.snes_ctx = FEMethod::CTX_SNESNONE;
+      ierr = int_my_fe.set_ctxInt(NonLinearInterfaceFEMethod::CTX_KAPPAUPDATE); CHKERRQ(ierr);
+      //run this on all processors, so we could save history tags on all parts and restart
+      ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","INTERFACE",int_my_fe,0,pcomm->size());  CHKERRQ(ierr);
+      //standard procedure
+      ierr = int_my_fe.set_ctxInt(NonLinearInterfaceFEMethod::CTX_INTERFACENONE); CHKERRQ(ierr);
+    #else 
+      ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","INTERFACE",cohesive_elements.getFeHistory(),0,pcomm->size());  CHKERRQ(ierr);
+    #endif
     //Remove nodes of damaged prisms
     ierr = my_arc_method.remove_damaged_prisms_nodes(); CHKERRQ(ierr);
 

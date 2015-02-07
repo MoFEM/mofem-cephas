@@ -919,6 +919,8 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
 
   if(fePtr->get_ent_type() != MBPRISM) PetscFunctionReturn(0);
 
+  try {
+
   ierr = getSpacesOnEntities(dataH1); CHKERRQ(ierr);
 
   //H1
@@ -980,6 +982,7 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
     }
   }
 
+  try {
   if(mField.check_field(meshPositionsFieldName)) {
     nOrmals_at_GaussPtF3.resize(nb_gauss_pts,3);
     tAngent1_at_GaussPtF3.resize(nb_gauss_pts,3);
@@ -1004,6 +1007,11 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
     }
   } 
+  } catch (exception& ex) {
+    ostringstream ss;
+    ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+    SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+  }
 
   if(dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented yet");
@@ -1040,6 +1048,9 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
       break;
     }
 
+
+    try {
+
     switch(row_space) {
       case H1:
       ierr = getRowNodesIndices(*op_data,oit->row_field_name); CHKERRQ(ierr);
@@ -1059,6 +1070,13 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
       default:
       break;
     }
+
+    } catch (exception& ex) {
+      ostringstream ss;
+      ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+      SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+    }
+
 
     try {
       ierr = oit->opRhs(*op_data); CHKERRQ(ierr);
@@ -1174,6 +1192,12 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
       SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
     }
 
+  }
+
+  } catch (exception& ex) {
+    ostringstream ss;
+    ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+    SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }
 
   PetscFunctionReturn(0);
