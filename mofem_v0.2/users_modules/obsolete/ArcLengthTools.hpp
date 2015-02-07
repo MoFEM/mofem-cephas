@@ -104,10 +104,10 @@ struct ArcLengthCtx {
       PetscTraceBackErrorHandler(
 	PETSC_COMM_WORLD,
 	__LINE__,PETSC_FUNCTION_NAME,__FILE__,
-	MOFEM_DATA_INSONSISTENCY,PETSC_ERROR_INITIAL,"can not find unique LAMBDA (load factor)",PETSC_NULL);
+	MOFEM_DATA_INCONSISTENCT,PETSC_ERROR_INITIAL,"can not find unique LAMBDA (load factor)",PETSC_NULL);
       PetscMPIAbortErrorHandler(PETSC_COMM_WORLD,
 	__LINE__,PETSC_FUNCTION_NAME,__FILE__,
-	MOFEM_DATA_INSONSISTENCY,PETSC_ERROR_INITIAL,"can not find unique LAMBDA (load factor)",PETSC_NULL);
+	MOFEM_DATA_INCONSISTENCT,PETSC_ERROR_INITIAL,"can not find unique LAMBDA (load factor)",PETSC_NULL);
     }
 
   }

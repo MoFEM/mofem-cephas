@@ -118,15 +118,15 @@ namespace MoFEM {
           ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
           int rank = dof_ptr->get_max_rank();
           if(rank != 3) {
-            SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+            SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
           }
           
           unsigned int nb_dofs = data.getIndices().size();
           if(nb_dofs % rank != 0) {
-            SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+            SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
           }
           if(data.getN().size2() < nb_dofs/rank) {
-            SETERRQ3(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,
+            SETERRQ3(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,
                      "data inconsistency N.size2 %d nb_dof %d rank %d",data.getN().size2(),nb_dofs,rank);
           }
           

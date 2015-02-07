@@ -89,7 +89,7 @@ PetscErrorCode Core::queryInterface(const MOFEMuuid& uuid,FieldUnknownInterface*
     *iface = dynamic_cast<FieldInterface*>(this);
     PetscFunctionReturn(0);
   }
-  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"unknown inteface");
+  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"unknown inteface");
   PetscFunctionReturn(0);
 }
 
@@ -132,7 +132,7 @@ PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr)
   } else if(type == typeid(PrismInterface)) {
     ptr = static_cast<PrismInterface*>(this);
   } else {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"unknown inteface");
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"unknown inteface");
   }
   PetscFunctionReturn(0);
 }
@@ -347,10 +347,10 @@ BitFieldId Core::get_field_shift() {
     PetscTraceBackErrorHandler(
       comm,
       __LINE__,PETSC_FUNCTION_NAME,__FILE__,
-      MOFEM_DATA_INSONSISTENCY,PETSC_ERROR_INITIAL,msg,PETSC_NULL);
+      MOFEM_DATA_INCONSISTENCT,PETSC_ERROR_INITIAL,msg,PETSC_NULL);
     PetscMPIAbortErrorHandler(comm,
       __LINE__,PETSC_FUNCTION_NAME,__FILE__,
-      MOFEM_DATA_INSONSISTENCY,PETSC_ERROR_INITIAL,msg,PETSC_NULL);
+      MOFEM_DATA_INCONSISTENCT,PETSC_ERROR_INITIAL,msg,PETSC_NULL);
   }
   return BitFieldId().set(((*f_shift)++)-1);
 }

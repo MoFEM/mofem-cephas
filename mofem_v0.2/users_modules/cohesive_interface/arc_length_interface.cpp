@@ -493,9 +493,9 @@ int main(int argc, char *argv[]) {
       //Gf = mydata.data.Gf;
 
       interface_materials.push_back(new CohesiveInterfaceElement::PhysicalEquation(m_field)); 
-      interface_materials.back().h = mydata.data.alpha;
-      interface_materials.back().youngModulus = 1.;
-      interface_materials.back().beta = 0;//mydata.data.beta;
+      interface_materials.back().h = 1;
+      interface_materials.back().youngModulus = mydata.data.alpha;
+      interface_materials.back().beta = mydata.data.beta;
       interface_materials.back().ft = mydata.data.ft;
       interface_materials.back().Gf = mydata.data.Gf;
 

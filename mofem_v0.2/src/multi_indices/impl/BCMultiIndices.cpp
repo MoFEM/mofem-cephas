@@ -152,10 +152,10 @@ CubitMeshSets::CubitMeshSets(Interface &moab,const CubitBC_BitSet _CubitBCType,c
       PetscTraceBackErrorHandler(
 	PETSC_COMM_WORLD,
 	__LINE__,PETSC_FUNCTION_NAME,__FILE__,
-	MOFEM_DATA_INSONSISTENCY,PETSC_ERROR_INITIAL,"data inconstency",PETSC_NULL);
+	MOFEM_DATA_INCONSISTENCT,PETSC_ERROR_INITIAL,"data inconstency",PETSC_NULL);
       PetscMPIAbortErrorHandler(PETSC_COMM_WORLD,
 	__LINE__,PETSC_FUNCTION_NAME,__FILE__,
-	MOFEM_DATA_INSONSISTENCY,PETSC_ERROR_INITIAL,"data inconstency",PETSC_NULL);
+	MOFEM_DATA_INCONSISTENCT,PETSC_ERROR_INITIAL,"data inconstency",PETSC_NULL);
     }
   }
 
@@ -584,44 +584,40 @@ ostream& operator<<(ostream& os,const Mat_Thermal& e)
   
   
   
-  ostream& operator<<(ostream& os,const Mat_Moisture& e)
-  {
-    
-    os << endl << "Material Properties" << endl;
-    os << "-------------------" << endl;
-    os << "Diffusivity  = " << e.data.Diffusivity << endl;
-    os << "Viscosity = " << e.data.Viscosity << endl;
-    os << "Permeability = " << e.data.Permeability << endl;
-    os << "User attribute 3 = " << e.data.User3 << endl;
-    os << "User attribute 4 = " << e.data.User4 << endl;
-    os << "User attribute 5 = " << e.data.User5 << endl;
-    os << "User attribute 6 = " << e.data.User6 << endl;
-    os << "User attribute 7 = " << e.data.User7 << endl;
-    os << "User attribute 8 = " << e.data.User8 << endl << endl;
-    return os;
-  }
+ostream& operator<<(ostream& os,const Mat_Moisture& e) {
+  os << endl << "Material Properties" << endl;
+  os << "-------------------" << endl;
+  os << "Diffusivity  = " << e.data.Diffusivity << endl;
+  os << "Viscosity = " << e.data.Viscosity << endl;
+  os << "Permeability = " << e.data.Permeability << endl;
+  os << "User attribute 3 = " << e.data.User3 << endl;
+  os << "User attribute 4 = " << e.data.User4 << endl;
+  os << "User attribute 5 = " << e.data.User5 << endl;
+  os << "User attribute 6 = " << e.data.User6 << endl;
+  os << "User attribute 7 = " << e.data.User7 << endl;
+  os << "User attribute 8 = " << e.data.User8 << endl << endl;
+  return os;
+}
 
 
   
-ostream& operator<<(ostream& os,const Block_BodyForces& e)
-    {
-        os << endl << "Block Body Forces" << endl;
-        os << "-------------------" << endl;
-        os << "density  = " << e.data.density << endl;
-        os << "acceleration_x = " << e.data.acceleration_x << endl;
-        os << "acceleration_y = " << e.data.acceleration_y << endl;
-        os << "acceleration_z = " << e.data.acceleration_z << endl;
-        os << "User attribute 4 = " << e.data.User4 << endl;
-        os << "User attribute 5 = " << e.data.User5 << endl;
-        os << "User attribute 6 = " << e.data.User6 << endl;
-        os << "User attribute 7 = " << e.data.User7 << endl;
-        os << "User attribute 8 = " << e.data.User8 << endl << endl;
-        return os;
-    }
+ostream& operator<<(ostream& os,const Block_BodyForces& e) {
+  os << endl << "Block Body Forces" << endl;
+  os << "-------------------" << endl;
+  os << "density  = " << e.data.density << endl;
+  os << "acceleration_x = " << e.data.acceleration_x << endl;
+  os << "acceleration_y = " << e.data.acceleration_y << endl;
+  os << "acceleration_z = " << e.data.acceleration_z << endl;
+  os << "User attribute 4 = " << e.data.User4 << endl;
+  os << "User attribute 5 = " << e.data.User5 << endl;
+  os << "User attribute 6 = " << e.data.User6 << endl;
+  os << "User attribute 7 = " << e.data.User7 << endl;
+  os << "User attribute 8 = " << e.data.User8 << endl << endl;
+  return os;
+}
 
     
-ostream& operator<<(ostream& os,const Mat_Elastic_TransIso& e)
-{
+ostream& operator<<(ostream& os,const Mat_Elastic_TransIso& e) {
     os << endl << "Material Properties" << endl;
     os << "-------------------" << endl;
     os << "Young's modulus in xy plane (Ep)     = " << e.data.Youngp << endl;
@@ -632,14 +628,13 @@ ostream& operator<<(ostream& os,const Mat_Elastic_TransIso& e)
     return os;
 }
     
-ostream& operator<<(ostream& os,const Mat_Interf& e)
-{
+ostream& operator<<(ostream& os,const Mat_Interf& e) {
     os << endl << "Material Properties" << endl;
     os << "-------------------" << endl;
-    os << "Elastic modulus multiplier        = " << e.data.alpha << endl << endl;
-	  os << "Damage coupling multiplier        = " << e.data.beta << endl << endl;
-	  os << "Maximum resisting stress of crack = " << e.data.ft		<< endl << endl;
-	  os << "Fracture energy                   = " << e.data.Gf << endl << endl;
+    os << "Elastic module	= " << e.data.alpha << endl << endl;
+    os << "Damage coupling	= " << e.data.beta << endl << endl;
+    os << "Strengh		= " << e.data.ft << endl << endl;
+    os << "Fracture energy	= " << e.data.Gf << endl << endl;
 
     return os;
 }

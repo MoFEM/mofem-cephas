@@ -364,7 +364,7 @@ struct UltraWeakTransportElement {
 
 	div_vec.resize(data.getHdivN().size2()/3,0);
 	if(div_vec.size()!=data.getIndices().size()) {
-	  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+	  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
 	}
 
 	int nb_gauss_pts = data.getN().size1();
@@ -509,7 +509,7 @@ struct UltraWeakTransportElement {
 
 	if(data.getIndices().size()==0) PetscFunctionReturn(0);
 	if(data.getIndices().size()!=data.getN().size2()) {
-	  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+	  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
 	}
 
 	int nb_row = data.getIndices().size();

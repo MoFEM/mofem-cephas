@@ -3074,7 +3074,7 @@ ConfigurationalFractureMechanics::ArcLengthElemFEMethod::ArcLengthElemFEMethod(
 	PetscTraceBackErrorHandler(
 	  PETSC_COMM_WORLD,
 	  __LINE__,PETSC_FUNCTION_NAME,__FILE__,
-	  MOFEM_DATA_INSONSISTENCY,PETSC_ERROR_INITIAL,"can not get connectibility",PETSC_NULL);
+	  MOFEM_DATA_INCONSISTENCT,PETSC_ERROR_INITIAL,"can not get connectibility",PETSC_NULL);
 	CHKERRABORT(PETSC_COMM_SELF,rval);
       }
       for(int nn = 0;nn<num_nodes; nn++) {

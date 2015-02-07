@@ -227,7 +227,7 @@ PetscErrorCode TetElementForcesAndSourcesCore::operator()() {
     oit->setPtrFE(this);
     BitFieldId data_id = mField.get_field_structure(oit->row_field_name)->get_id();
     if((oit->getMoFEMFEPtr()->get_BitFieldId_data()&data_id).none()) {
-      SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"no data field < %s > on finite elemeny",oit->row_field_name.c_str());
+      SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"no data field < %s > on finite elemeny",oit->row_field_name.c_str());
     }
 
     FieldSpace row_space = mField.get_field_structure(oit->row_field_name)->get_space();
@@ -247,7 +247,7 @@ PetscErrorCode TetElementForcesAndSourcesCore::operator()() {
 	op_data = &dataL2;
 	break;
       default:
-	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
       break;
     }
 
@@ -317,7 +317,7 @@ PetscErrorCode TetElementForcesAndSourcesCore::operator()() {
 	row_op_data = &dataL2;
 	break;
       default:
-	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
       break;
     }
 
@@ -361,7 +361,7 @@ PetscErrorCode TetElementForcesAndSourcesCore::operator()() {
 	col_op_data = &derivedDataL2;
 	break;
       default:
-	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
       break;
     }
 
@@ -417,7 +417,7 @@ PetscErrorCode TetElementForcesAndSourcesCore::UserDataOperator::getDivergenceMa
 
   int nb_dofs = data.getFieldData().size();
   if((unsigned int)nb_dofs != data.getDiffHdivN().size2()/9) {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
   }
 
   if(nb_dofs == 0) PetscFunctionReturn(0);
@@ -553,7 +553,7 @@ PetscErrorCode TriElementForcesAndSurcesCore::operator()() {
     oit->setPtrFE(this);
     BitFieldId data_id = mField.get_field_structure(oit->row_field_name)->get_id();
     if((oit->getMoFEMFEPtr()->get_BitFieldId_data()&data_id).none()) {
-      SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"no data field < %s > on finite elemeny",oit->row_field_name.c_str());
+      SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"no data field < %s > on finite elemeny",oit->row_field_name.c_str());
     }
 
     FieldSpace row_space = mField.get_field_structure(oit->row_field_name)->get_space();
@@ -573,7 +573,7 @@ PetscErrorCode TriElementForcesAndSurcesCore::operator()() {
 	SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented yet");
 	break;
       default:
-	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
       break;
     }
 
@@ -639,7 +639,7 @@ PetscErrorCode TriElementForcesAndSurcesCore::operator()() {
 	SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented yet");
 	break;
       default:
-	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
       break;
     }
 
@@ -679,7 +679,7 @@ PetscErrorCode TriElementForcesAndSurcesCore::operator()() {
 	SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented yet");
 	break;
       default:
-	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
       break;
     }
 
@@ -980,20 +980,6 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
     }
   }
 
-  // In linear geomegtry direvatives are constant,
-  // this in expense of efficency makes implementation
-  // consitent between verices and other types of entities
-  ublas::matrix<double> diffN(nb_gauss_pts,6);
-  for(int gg = 0;gg<nb_gauss_pts;gg++) {
-    for(int nn = 0;nn<3;nn++) {
-      for(int dd = 0;dd<2;dd++) {
-	diffN(gg,nn*2+dd) = dataH1.dataOnEntities[MBVERTEX][0].getDiffN()(nn,dd);
-      }
-    }
-  }
-  dataH1.dataOnEntities[MBVERTEX][0].getDiffN().resize(diffN.size1(),diffN.size2());
-  dataH1.dataOnEntities[MBVERTEX][0].getDiffN().data().swap(diffN.data());
-
   if(mField.check_field(meshPositionsFieldName)) {
     nOrmals_at_GaussPtF3.resize(nb_gauss_pts,3);
     tAngent1_at_GaussPtF3.resize(nb_gauss_pts,3);
@@ -1030,7 +1016,7 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
     oit->setPtrFE(this);
     BitFieldId data_id = mField.get_field_structure(oit->row_field_name)->get_id();
     if((oit->getMoFEMFEPtr()->get_BitFieldId_data()&data_id).none()) {
-      SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"no data field < %s > on finite elemeny",oit->row_field_name.c_str());
+      SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"no data field < %s > on finite elemeny",oit->row_field_name.c_str());
     }
 
     FieldSpace row_space = mField.get_field_structure(oit->row_field_name)->get_space();
@@ -1050,7 +1036,7 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
 	SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented yet");
 	break;
       default:
-	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
       break;
     }
 
@@ -1116,7 +1102,7 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
 	SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented yet");
 	break;
       default:
-	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
       break;
     }
 
@@ -1156,7 +1142,7 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
 	SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented yet");
 	break;
       default:
-	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
       break;
     }
 

@@ -570,14 +570,14 @@ PetscErrorCode FaceSplittingTools::crackFrontEdgeLengths(
     rval = mField.get_moab().get_connectivity(adj_edges,adj_edges_nodes,true); CHKERR_PETSC(rval);
     adj_edges_nodes = subtract(adj_edges_nodes,crack_edges_nodes);
     if(intersect(crack_edges_nodes,adj_edges_nodes).size()>0) {
-      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
     }
     Range eit_to_remove;
     eiit = adj_edges_nodes.begin();
     for(;eiit != adj_edges_nodes.end();eiit++) {
       if(length_map2.find(*eiit)==length_map2.end()) {
 	continue;
-	//SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+	//SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
       }
       double l = length_map2[*eiit];
       if(l<(ave_l2-sdev_l2)) {
@@ -590,7 +590,7 @@ PetscErrorCode FaceSplittingTools::crackFrontEdgeLengths(
     eiit = adj_edges_on_crack_surface.begin();
     for(;eiit != adj_edges_on_crack_surface.end();eiit++) {
       if(length_map1.find(*eiit)==length_map1.end()) {
-	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
       }
       double l = length_map1[*eiit];
       if(l>(ave_l1+sdev_l1)) {
@@ -601,7 +601,7 @@ PetscErrorCode FaceSplittingTools::crackFrontEdgeLengths(
   }
 
   if(intersect(crack_edges_nodes,to_remove).size()>0) {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
   }
 
   /*Range quasi_flat_test;
@@ -635,7 +635,7 @@ PetscErrorCode FaceSplittingTools::moveFrontNodesByVec(double v[]) {
   ierr = mField.get_entities_by_type_and_ref_level(bit_mesh,BitRefLevel().set(),MBEDGE,mesh_level_edges); CHKERRQ(ierr);
   crack_edges = intersect(crack_edges,mesh_level_edges);
   if(crack_edges.empty()) {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"no crack front edges");
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"no crack front edges");
   }
 
 
@@ -867,7 +867,7 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(vector<string> &switche
     }
   }
   if(crack_msId == -1) {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"can not find elastic block with crack front");
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"can not find elastic block with crack front");
   }
 
   //get tets to remesh
@@ -1548,7 +1548,7 @@ PetscErrorCode FaceSplittingTools::propagateBySplit(Range &new_nodes,Range &edge
       &*fit,1,3,false,t3,Interface::UNION); CHKERR_PETSC(rval);
     t3 = intersect(t3,t1_side);
     if(t3.size()!=1) {
-	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
     }
     int side_number;
     int sense;
@@ -1585,7 +1585,7 @@ PetscErrorCode FaceSplittingTools::propagateBySplit(Range &new_nodes,Range &edge
     cblas_daxpy(3,-1,coords,1,delta,1);
     map<EntityHandle,vector<double> >::iterator mit = normal_map.find(triangle);
     if(mit == normal_map.end()) {
-	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
     }
     double *normal = &*mit->second.begin();
     double dot = cblas_ddot(3,normal,1,delta,1);
@@ -1715,7 +1715,7 @@ PetscErrorCode FaceSplittingTools::propagateBySplit(Range &new_nodes,Range &edge
     RefMoFEMEntity_multiIndex::index<Composite_EntityHandle_And_ParentEntityType_mi_tag>::type::iterator it;
     it = refinedEntitiesPtr_ptr->get<Composite_EntityHandle_And_ParentEntityType_mi_tag>().find(boost::make_tuple(*eit,MBVERTEX));
     if(it == refinedEntitiesPtr_ptr->get<Composite_EntityHandle_And_ParentEntityType_mi_tag>().end()) {
-      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
     }
     EntityHandle node = it->get_ref_ent();
     nodes_on_split_edges.insert(node);

@@ -237,7 +237,7 @@ PetscErrorCode OpSetInvJacH1::doWork(
     unsigned int nb_dofs = data.getN().size2();
     if(type!=MBVERTEX) {
       if(nb_dofs != data.getDiffN().size2()/3) {
-        SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,
+        SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,
   	"data inconsistency nb_dofs != data.diffN.size2()/3 ( %u != %u/3 )",
   	nb_dofs,data.getDiffN().size2());
       }
@@ -498,12 +498,12 @@ PetscErrorCode OpGetData::doWork(
 
   unsigned int nb_dofs = data.getFieldData().size();
   if(nb_dofs % rank != 0) {
-    SETERRQ4(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,
+    SETERRQ4(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,
       "data inconsistency, type %d, side %d, nb_dofs %d, rank %d",
       type,side,nb_dofs,rank);
   }
   if(nb_dofs/rank > data.getN().size2()) {
-    SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,
+    SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,
       "data inconsistency nb_dofs >= data.N.size2() %u >= %u",nb_dofs,data.getN().size2());
   }
   data_at_GaussPt.resize(data.getN().size1(),rank);
@@ -578,14 +578,14 @@ PetscErrorCode OpGetNormals::doWork(int side,EntityType type,DataForcesAndSurces
       cerr << "t1 " << tAngent1_at_GaussPt << endl;
       cerr << "t2 " << tAngent2_at_GaussPt << endl;*/
       if(2*data.getN().size2() != data.getDiffN().size2()) {
-	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
       }
       unsigned int nb_dofs = data.getFieldData().size();
       if(nb_dofs%3!=0) {
-	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
       }
       if(nb_dofs > 3*data.getN().size2()) {
-	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
       }
       for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
 	for(int dd = 0;dd<3;dd++) {
@@ -636,11 +636,11 @@ PetscErrorCode OpGetNormalsOnPrism::doWork(int side,EntityType type,DataForcesAn
   switch (type) {
     case MBVERTEX: {
       for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
-	for(int nn = 0;nn<3;nn++) {
-	  tAngent1_at_GaussPtF3(gg,nn) = cblas_ddot(3,&data.getDiffN()(0,0),2,&data.getFieldData()[nn],3);
-	  tAngent2_at_GaussPtF3(gg,nn) = cblas_ddot(3,&data.getDiffN()(0,1),2,&data.getFieldData()[nn],3);
-	  tAngent1_at_GaussPtF4(gg,nn) = cblas_ddot(3,&data.getDiffN()(3,0),2,&data.getFieldData()[3+nn],3);
-	  tAngent2_at_GaussPtF4(gg,nn) = cblas_ddot(3,&data.getDiffN()(3,1),2,&data.getFieldData()[3+nn],3);
+	for(int dd = 0;dd<3;dd++) {
+	  tAngent1_at_GaussPtF3(gg,dd) = cblas_ddot(3,&data.getDiffN()(gg,0),2,&data.getFieldData()[dd],3);
+	  tAngent2_at_GaussPtF3(gg,dd) = cblas_ddot(3,&data.getDiffN()(gg,1),2,&data.getFieldData()[dd],3);
+	  tAngent1_at_GaussPtF4(gg,dd) = cblas_ddot(3,&data.getDiffN()(gg,6+0),2,&data.getFieldData()[9+dd],3);
+	  tAngent2_at_GaussPtF4(gg,dd) = cblas_ddot(3,&data.getDiffN()(gg,6+1),2,&data.getFieldData()[9+dd],3);
 	}
       }
     } 
@@ -648,23 +648,23 @@ PetscErrorCode OpGetNormalsOnPrism::doWork(int side,EntityType type,DataForcesAn
     case MBEDGE:    
     case MBTRI: {
       if(2*data.getN().size2() != data.getDiffN().size2()) {
-	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
       }
       unsigned int nb_dofs = data.getFieldData().size();
       if(nb_dofs%3!=0) {
-	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
       }
       if(nb_dofs > 3*data.getN().size2()) {
-	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
       }
       for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
 	for(int dd = 0;dd<3;dd++) {
 	  if ((type == MBTRI && valid_faces3[side]) || (type == MBEDGE && valid_edges3[side]))  {  
-	    tAngent1_at_GaussPtF3(gg,dd) += cblas_ddot(nb_dofs/6,&data.getDiffN()(gg,0),2,&data.getFieldData()[dd],3);
-	    tAngent2_at_GaussPtF3(gg,dd) += cblas_ddot(nb_dofs/6,&data.getDiffN()(gg,1),2,&data.getFieldData()[dd],3);
+	    tAngent1_at_GaussPtF3(gg,dd) += cblas_ddot(nb_dofs/3,&data.getDiffN()(gg,0),2,&data.getFieldData()[dd],3);
+	    tAngent2_at_GaussPtF3(gg,dd) += cblas_ddot(nb_dofs/3,&data.getDiffN()(gg,1),2,&data.getFieldData()[dd],3);
 	  } else if((type == MBTRI && valid_faces4[side]) || (type == MBEDGE && valid_edges4[side])) {
-	    tAngent1_at_GaussPtF4(gg,dd) += cblas_ddot(nb_dofs/6,&data.getDiffN()(gg,0),2,&data.getFieldData()[dd],3);
-	    tAngent2_at_GaussPtF4(gg,dd) += cblas_ddot(nb_dofs/6,&data.getDiffN()(gg,1),2,&data.getFieldData()[dd],3);
+	    tAngent1_at_GaussPtF4(gg,dd) += cblas_ddot(nb_dofs/3,&data.getDiffN()(gg,0),2,&data.getFieldData()[dd],3);
+	    tAngent2_at_GaussPtF4(gg,dd) += cblas_ddot(nb_dofs/3,&data.getDiffN()(gg,1),2,&data.getFieldData()[dd],3);
 	  }
 	}
       }
@@ -688,11 +688,9 @@ PetscErrorCode OpGetNormalsOnPrism::calculateNormals() {
   PetscErrorCode ierr;
 
   try {
-
   sPin.resize(3,3);
   sPin.clear();
   nOrmals_at_GaussPtF3.resize(tAngent1_at_GaussPtF3.size1(),3);
-  nOrmals_at_GaussPtF4.resize(tAngent1_at_GaussPtF4.size1(),3);
   for(unsigned int gg = 0;gg<tAngent1_at_GaussPtF3.size1();gg++) {
     ierr = Spin(&*sPin.data().begin(),&tAngent1_at_GaussPtF3(gg,0)); CHKERRQ(ierr);
     cblas_dgemv(
@@ -700,6 +698,8 @@ PetscErrorCode OpGetNormalsOnPrism::calculateNormals() {
       &*sPin.data().begin(),3,&tAngent2_at_GaussPtF3(gg,0),1,0.,
       &nOrmals_at_GaussPtF3(gg,0),1);
   }
+  sPin.clear();
+  nOrmals_at_GaussPtF4.resize(tAngent1_at_GaussPtF4.size1(),3);
   for(unsigned int gg = 0;gg<tAngent1_at_GaussPtF4.size1();gg++) {
     ierr = Spin(&*sPin.data().begin(),&tAngent1_at_GaussPtF4(gg,0)); CHKERRQ(ierr);
     cblas_dgemv(
@@ -707,7 +707,6 @@ PetscErrorCode OpGetNormalsOnPrism::calculateNormals() {
       &*sPin.data().begin(),3,&tAngent2_at_GaussPtF4(gg,0),1,0.,
       &nOrmals_at_GaussPtF4(gg,0),1);
   }
-
   } catch (exception& ex) {
     ostringstream ss;
     ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;

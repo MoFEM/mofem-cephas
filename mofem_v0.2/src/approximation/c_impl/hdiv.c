@@ -78,7 +78,7 @@ PetscErrorCode Hdiv_EdgeBasedVolumeShapeFunctions_MBTET(
       double Psi_l[p+1],diff_Psi_l[3*(p+1)];
       if(diffPHI_v_e!=NULL) {
 	if(diffN == NULL) {
-	  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+	  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
 	}
 	int dd = 0;
 	for(;dd<3;dd++) {
@@ -105,7 +105,7 @@ PetscErrorCode Hdiv_EdgeBasedVolumeShapeFunctions_MBTET(
 	  }
 	}
       }
-      if(l!=NBVOLUME_EDGE_HDIV(p)) SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"wrong order %d != %d",l,NBVOLUME_FACE_HDIV(p));
+      if(l!=NBVOLUME_EDGE_HDIV(p)) SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"wrong order %d != %d",l,NBVOLUME_FACE_HDIV(p));
     }
   }
   PetscFunctionReturn(0);
@@ -141,7 +141,7 @@ PetscErrorCode Hdiv_FaceBasedVolumeShapeFunctions_MBTET(
       double diff_ksi_0i[3],diff_ksi_0j[3];
       if(diffPHI_v_f!=NULL) {
 	if(diffN == NULL) {
-	  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+	  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
 	}
 	int dd = 0;
 	for(;dd<3;dd++) {
@@ -207,7 +207,7 @@ PetscErrorCode Hdiv_FaceBasedVolumeShapeFunctions_MBTET(
 	  }
 	}
       }
-      if(jj!=NBVOLUME_FACE_HDIV(p)) SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"wrong order %d != %d",jj,NBVOLUME_FACE_HDIV(p));
+      if(jj!=NBVOLUME_FACE_HDIV(p)) SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"wrong order %d != %d",jj,NBVOLUME_FACE_HDIV(p));
     }
   }
   PetscFunctionReturn(0);
@@ -294,7 +294,7 @@ PetscErrorCode Hdiv_VolumeBubbleShapeFunctions_MBTET(
 	}
       }
     }
-    if(3*jj!=NBVOLUME_VOLUME_HDIV(p)) SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"wrong order %d != %d",jj,NBVOLUME_VOLUME_HDIV(p));
+    if(3*jj!=NBVOLUME_VOLUME_HDIV(p)) SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"wrong order %d != %d",jj,NBVOLUME_VOLUME_HDIV(p));
   }
   PetscFunctionReturn(0);
 }
@@ -338,7 +338,7 @@ PetscErrorCode Hdiv_EdgeFaceShapeFunctions_MBTET_ON_FACE(
       double diff_ksi_0i[3];
       if(diffPHI_f_e != 0) {
 	if(diffN == NULL) {
-	  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+	  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
 	}
 	int dd = 0;
 	for(;dd<3;dd++) {
@@ -373,7 +373,7 @@ PetscErrorCode Hdiv_EdgeFaceShapeFunctions_MBTET_ON_FACE(
 	  }
 	}
       }
-      if(l!=NBFACE_EDGE_HDIV(p)) SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"wrong order %d != %d",l,NBFACE_EDGE_HDIV(p));
+      if(l!=NBFACE_EDGE_HDIV(p)) SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"wrong order %d != %d",l,NBFACE_EDGE_HDIV(p));
     }
   }
   PetscFunctionReturn(0);
@@ -404,7 +404,7 @@ PetscErrorCode Hdiv_FaceBubbleShapeFunctions_MBTET_ON_FACE(
     double diff_Psi_l[3*(p+1)],diff_Psi_m[3*(p+1)];
     if(diffPHI_f!=NULL) {
       if(diffN == NULL) {
-	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
       }
       double diff_ksi_0i[3];
       double diff_ksi_0j[3];
@@ -459,7 +459,7 @@ PetscErrorCode Hdiv_FaceBubbleShapeFunctions_MBTET_ON_FACE(
 	} 
       }
     }
-    if(jj!=NBFACE_FACE_HDIV(p)) SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"wrong order %d != %d",jj,NBFACE_FACE_HDIV(p));
+    if(jj!=NBFACE_FACE_HDIV(p)) SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"wrong order %d != %d",jj,NBFACE_FACE_HDIV(p));
   }
   PetscFunctionReturn(0);
 }

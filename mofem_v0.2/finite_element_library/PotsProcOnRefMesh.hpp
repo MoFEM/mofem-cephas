@@ -293,7 +293,7 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
 	  }
 	  break;
 	default:
-	  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+	  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
       }
 
       for(unsigned int gg = 0;gg<data.getHdivN().size1();gg++) {
@@ -360,7 +360,7 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
       const void* tags_ptr[mapGaussPts.size()];
       int nb_gauss_pts = data.getN().size1();
       if(mapGaussPts.size()!=(unsigned int)nb_gauss_pts) {
-	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
       }
 
       switch(space) {
@@ -471,7 +471,7 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
       const void* tags_ptr[mapGaussPts.size()];
       int nb_gauss_pts = data.getN().size1();
       if(mapGaussPts.size()!=(unsigned int)nb_gauss_pts) {
-	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
       }
 
       try {

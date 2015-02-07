@@ -28,7 +28,7 @@ struct CohesiveInterfaceElement {
 
   struct MyPrism: public MoFEM::FlatPrismElementForcesAndSurcesCore {
     MyPrism(FieldInterface &m_field): MoFEM::FlatPrismElementForcesAndSurcesCore(m_field) {}
-    int getRule(int order) { return order; };
+    int getRule(int order) { return 10; };
   };
   MyPrism feRhs;
   MyPrism feLhs;
@@ -40,138 +40,20 @@ struct CohesiveInterfaceElement {
   MyPrism& getFeRhs() { return feRhs; }
   MyPrism& getFeLhs() { return feLhs; }
   MyPrism& getFeHistory() { return feHistory; }
-  
 
-  /** \brief Set negative sign to shape functions on face 4
+  /** \brief constritutive (physical) equation for interface
     */
-  struct OpSetSignToShapeFunctions: public FlatPrismElementForcesAndSurcesCore::UserDataOperator {
-
-    OpSetSignToShapeFunctions(const string field_name):
-      FlatPrismElementForcesAndSurcesCore::UserDataOperator(field_name) {}
-
-    PetscErrorCode doWork(
-      int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
-      PetscFunctionBegin;
-      if(data.getN().size1()==0)  PetscFunctionReturn(0);
-      if(data.getN().size2()==0)  PetscFunctionReturn(0);
-      switch(type) {
-	case MBVERTEX:
-	  for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
-	    for(int nn = 3;nn<6;nn++) {
-	      data.getN()(gg,nn) *= -1;
-	    }
-	  }
-	  break;
-	case MBEDGE:
-	  if(side < 5) PetscFunctionReturn(0);
-	  data.getN() *= -1;
-	  break;
-	case MBTRI:
-	  if(side < 4) PetscFunctionReturn(0);
-	  data.getN() *= -1;
-	  break;
-	default:
-	  SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
-      }
-      PetscFunctionReturn(0);
-    }
-
-  };
-
-  struct OpCalculateGapGlobal: public FlatPrismElementForcesAndSurcesCore::UserDataOperator {
-
-    CommonData &commonData;
-    OpCalculateGapGlobal(const string field_name,CommonData &common_data):
-      FlatPrismElementForcesAndSurcesCore::UserDataOperator(field_name),
-      commonData(common_data) {}
-
-    PetscErrorCode doWork(
-      int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
-      PetscFunctionBegin;
-      try {
-	int nb_dofs = data.getIndices().size();
-	if(nb_dofs == 0) PetscFunctionReturn(0); 
-	int nb_gauss_pts = data.getN().size1();
-	commonData.gapGlob.resize(nb_gauss_pts,3);
-	commonData.R.resize(nb_gauss_pts);
-	if(type == MBVERTEX) {
-	  commonData.gapGlob.clear();
-	  for(int gg = 0;gg<nb_gauss_pts;gg++) {
-	    commonData.R[gg].resize(3,3);
-	    double nrm2_normal = 0;
-	    double nrm2_tangent1 = 0;
-	    double nrm2_tangent2 = 0;
-	    for(int dd = 0;dd<3;dd++) {
-	      nrm2_normal += pow(getNormals_at_GaussPtF3()(gg,dd),2);	
-	      nrm2_tangent1 += pow(getTangent1_at_GaussPtF3()(gg,dd),2);
-	      nrm2_tangent2 += pow(getTangent2_at_GaussPtF3()(gg,dd),2);
-	    }
-	    nrm2_normal = sqrt(nrm2_normal);
-	    nrm2_tangent1 = sqrt(nrm2_tangent1);
-	    nrm2_tangent2 = sqrt(nrm2_tangent2);
-	    for(int dd = 0;dd<3;dd++) {
-	      commonData.R[gg](0,dd) = getNormals_at_GaussPtF3()(gg,dd)/nrm2_normal;
-	      commonData.R[gg](1,dd) = getTangent1_at_GaussPtF3()(gg,dd)/nrm2_tangent1;
-	      commonData.R[gg](2,dd) = getTangent2_at_GaussPtF3()(gg,dd)/nrm2_tangent2;
-	    }
-	  }
-	}
-	for(int gg = 0;gg<nb_gauss_pts;gg++) {
-	  for(int dd = 0;dd<3;dd++) {
-	    commonData.gapGlob(gg,dd) += cblas_ddot(
-	      nb_dofs/3,&data.getN(gg)[0],1,&data.getFieldData()[dd],3);
-	  }
-	}
-      } catch (const std::exception& ex) {
-	ostringstream ss;
-	ss << "throw in method: " << ex.what() << endl;
-	SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
-      }
-      PetscFunctionReturn(0);
-    }
-
-  };
-
-  struct OpCalculateGapLocal: public FlatPrismElementForcesAndSurcesCore::UserDataOperator {
-
-    CommonData &commonData;
-    OpCalculateGapLocal(const string field_name,CommonData &common_data):
-      FlatPrismElementForcesAndSurcesCore::UserDataOperator(field_name),
-      commonData(common_data) {}
-
-    PetscErrorCode doWork(
-      int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
-      PetscFunctionBegin;
-      try {
-	if(type == MBVERTEX) {
-	  int nb_gauss_pts = data.getN().size1();
-	  commonData.gapLoc.resize(nb_gauss_pts,3);
-	  for(int gg = 0;gg<nb_gauss_pts;gg++) {
-	    ublas::matrix_row<ublas::matrix<double> > gap_glob(commonData.gapGlob,gg);
-	    ublas::matrix_row<ublas::matrix<double> > gap_loc(commonData.gapLoc,gg);
-	    gap_loc = prod(commonData.R[gg],gap_glob);
-	  }
-	}
-      } catch (const std::exception& ex) {
-	ostringstream ss;
-	ss << "throw in method: " << ex.what() << endl;
-	SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
-      }
-      PetscFunctionReturn(0);
-    }
-
-  };
-
   struct PhysicalEquation {
 
     FieldInterface &mField;
-    PhysicalEquation(FieldInterface &m_field): mField(m_field) {};
+    bool isInitialised;
+    PhysicalEquation(FieldInterface &m_field): 
+      mField(m_field),isInitialised(false) {};
 
     double h,youngModulus,beta,ft,Gf;
     Range pRisms;
     Tag thKappa,thDamagedPrism;
 
-    bool isInitialised;
     double E0,g0,kappa1;
     PetscErrorCode iNitailise(const FEMethod *fe_method) {
       PetscFunctionBegin;
@@ -310,7 +192,7 @@ struct CohesiveInterfaceElement {
       //cerr << gg << " " << omega << endl;
       int iter;
       ierr = SNESGetIterationNumber(fe_method->snes,&iter); CHKERRQ(ierr);
-      if((kappa <= kappaPtr[gg])||(kappa>=kappa1)||(iter == 1)) {
+      if((kappa <= kappaPtr[gg])||(kappa>=kappa1)||(iter <= 1)) {
 	ierr = calcDglob(omega,common_data.R[gg]); CHKERRQ(ierr);
       } else {
 	ublas::matrix_row<ublas::matrix<double> > g_loc(common_data.gapLoc,gg);
@@ -318,6 +200,7 @@ struct CohesiveInterfaceElement {
       }
       tangent_matrix.resize(3,3);
       noalias(tangent_matrix) = Dglob;
+      //cerr << "t " << tangent_matrix << endl;
       } catch (const std::exception& ex) {
 	ostringstream ss;
 	ss << "throw in method: " << ex.what() << endl;
@@ -343,14 +226,137 @@ struct CohesiveInterfaceElement {
 	double kappa = fmax(g-g0,kappaPtr[gg]);
 	kappaPtr[gg] = kappa;
 	ierr = calcOmega(kappa,omega); CHKERRQ(ierr);
-	if(omega < 1.) {
+	//if(omega < 1.) {
 	  all_gauss_pts_damaged = false;
-	}
+	//}
       }
       if(all_gauss_pts_damaged) {
 	EntityHandle ent = fe_method->fePtr->get_ent();
 	int set_prism_as_demaged = 1;
 	rval = mField.get_moab().tag_set_data(thDamagedPrism,&ent,1,&set_prism_as_demaged); CHKERR_PETSC(rval);
+      }
+      PetscFunctionReturn(0);
+    }
+
+  };
+  
+
+  /** \brief Set negative sign to shape functions on face 4
+    */
+  struct OpSetSignToShapeFunctions: public FlatPrismElementForcesAndSurcesCore::UserDataOperator {
+
+    OpSetSignToShapeFunctions(const string field_name):
+      FlatPrismElementForcesAndSurcesCore::UserDataOperator(field_name) {}
+
+    PetscErrorCode doWork(
+      int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+      PetscFunctionBegin;
+      if(data.getN().size1()==0)  PetscFunctionReturn(0);
+      if(data.getN().size2()==0)  PetscFunctionReturn(0);
+      switch(type) {
+	case MBVERTEX:
+	  for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
+	    for(int nn = 3;nn<6;nn++) {
+	      data.getN()(gg,nn) *= -1;
+	    }
+	  }
+	  break;
+	case MBEDGE:
+	  if(side < 3) PetscFunctionReturn(0);
+	  data.getN() *= -1;
+	  break;
+	case MBTRI:
+	  if(side == 3) PetscFunctionReturn(0);
+	  data.getN() *= -1;
+	  break;
+	default:
+	  SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
+      }
+      PetscFunctionReturn(0);
+    }
+
+  };
+
+  struct OpCalculateGapGlobal: public FlatPrismElementForcesAndSurcesCore::UserDataOperator {
+
+    CommonData &commonData;
+    OpCalculateGapGlobal(const string field_name,CommonData &common_data):
+      FlatPrismElementForcesAndSurcesCore::UserDataOperator(field_name),
+      commonData(common_data) {}
+
+    PetscErrorCode doWork(
+      int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+      PetscFunctionBegin;
+      try {
+	int nb_dofs = data.getIndices().size();
+	if(nb_dofs == 0) PetscFunctionReturn(0); 
+	int nb_gauss_pts = data.getN().size1();
+	if(type == MBVERTEX) {
+	  commonData.R.resize(nb_gauss_pts);
+	  for(int gg = 0;gg<nb_gauss_pts;gg++) {
+	    commonData.R[gg].resize(3,3);
+	    double nrm2_normal = 0;
+	    double nrm2_tangent1 = 0;
+	    double nrm2_tangent2 = 0;
+	    for(int dd = 0;dd<3;dd++) {
+	      nrm2_normal += pow(getNormals_at_GaussPtF3()(gg,dd),2);	
+	      nrm2_tangent1 += pow(getTangent1_at_GaussPtF3()(gg,dd),2);
+	      nrm2_tangent2 += pow(getTangent2_at_GaussPtF3()(gg,dd),2);
+	    }
+	    nrm2_normal = sqrt(nrm2_normal);
+	    nrm2_tangent1 = sqrt(nrm2_tangent1);
+	    nrm2_tangent2 = sqrt(nrm2_tangent2);
+	    for(int dd = 0;dd<3;dd++) {
+	      commonData.R[gg](0,dd) = getNormals_at_GaussPtF3()(gg,dd)/nrm2_normal;
+	      commonData.R[gg](1,dd) = getTangent1_at_GaussPtF3()(gg,dd)/nrm2_tangent1;
+	      commonData.R[gg](2,dd) = getTangent2_at_GaussPtF3()(gg,dd)/nrm2_tangent2;
+	    }
+	  }
+	}
+	if(type == MBVERTEX) {
+	  commonData.gapGlob.resize(nb_gauss_pts,3);
+	  commonData.gapGlob.clear();
+	}
+	for(int gg = 0;gg<nb_gauss_pts;gg++) {
+	  for(int dd = 0;dd<3;dd++) {
+	    commonData.gapGlob(gg,dd) += cblas_ddot(
+	      nb_dofs/3,&data.getN(gg)[0],1,&data.getFieldData()[dd],3);
+	  }
+	}
+      } catch (const std::exception& ex) {
+	ostringstream ss;
+	ss << "throw in method: " << ex.what() << endl;
+	SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+      }
+      PetscFunctionReturn(0);
+    }
+
+  };
+
+  struct OpCalculateGapLocal: public FlatPrismElementForcesAndSurcesCore::UserDataOperator {
+
+    CommonData &commonData;
+    OpCalculateGapLocal(const string field_name,CommonData &common_data):
+      FlatPrismElementForcesAndSurcesCore::UserDataOperator(field_name),
+      commonData(common_data) {}
+
+    PetscErrorCode doWork(
+      int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+      PetscFunctionBegin;
+      try {
+	if(type == MBVERTEX) {
+	  int nb_gauss_pts = data.getN().size1();
+	  commonData.gapLoc.resize(nb_gauss_pts,3);
+	  for(int gg = 0;gg<nb_gauss_pts;gg++) {
+	    ublas::matrix_row<ublas::matrix<double> > gap_glob(commonData.gapGlob,gg);
+	    ublas::matrix_row<ublas::matrix<double> > gap_loc(commonData.gapLoc,gg);
+	    gap_loc = prod(commonData.R[gg],gap_glob);
+	  }
+	}
+      } catch (const std::exception& ex) {
+	ostringstream ss;
+	ss << "throw in method: " << ex.what() << endl;
+	SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
       PetscFunctionReturn(0);
     }
@@ -365,7 +371,7 @@ struct CohesiveInterfaceElement {
       FlatPrismElementForcesAndSurcesCore::UserDataOperator(field_name),
       commonData(common_data),physicalEqations(physical_eqations) {}
 
-    ublas::vector<double> t,Nf;
+    ublas::vector<double> traction,Nf;
     PetscErrorCode doWork(
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
@@ -380,13 +386,11 @@ struct CohesiveInterfaceElement {
 	Nf.clear();
 	int nb_gauss_pts = data.getN().size1();
 	for(int gg = 0;gg<nb_gauss_pts;gg++) {
-	  double val = getGaussPts()(2,gg);
-	  double area = cblas_dnrm2(3,&getNormals_at_GaussPtF3()(gg,0),1);
-	  ierr = physicalEqations.calculateTraction(t,gg,commonData,getFEMethod()); CHKERRQ(ierr);
-	  t *= val*area;
+	  ierr = physicalEqations.calculateTraction(traction,gg,commonData,getFEMethod()); CHKERRQ(ierr);
+	  double w = getGaussPts()(2,gg)*cblas_dnrm2(3,&getNormals_at_GaussPtF3()(gg,0),1)*0.5;
 	  for(int nn = 0;nn<nb_dofs/3;nn++) {
 	    for(int dd = 0;dd<3;dd++) {
-	      Nf[3*nn+dd] += data.getN(gg)[nn]*t[dd];
+	      Nf[3*nn+dd] += w*data.getN(gg)[nn]*traction[dd];
 	    }
 	  }
 	}
@@ -427,15 +431,15 @@ struct CohesiveInterfaceElement {
 	  == physicalEqations.pRisms.end()) {
 	  PetscFunctionReturn(0);
 	}
+	//cerr << row_side << " " << row_type << " " << row_data.getN() << endl;
+	//cerr << col_side << " " << col_type << " " << col_data.getN() << endl;
 	ND.resize(nb_row,3);
 	K.resize(nb_row,nb_col);
 	K.clear();
 	int nb_gauss_pts = row_data.getN().size1();
 	for(int gg = 0;gg<nb_gauss_pts;gg++) {
-	  double val = getGaussPts()(2,gg);
-	  double area = cblas_dnrm2(3,&getNormals_at_GaussPtF3()(gg,0),1);
 	  ierr = physicalEqations.calculateTangentStiffeness(D,gg,commonData,getFEMethod()); CHKERRQ(ierr);
-	  D *= val*area;
+	  double w = getGaussPts()(2,gg)*cblas_dnrm2(3,&getNormals_at_GaussPtF3()(gg,0),1)*0.5;
 	  ND.clear();
 	  for(int nn = 0; nn<nb_row/3;nn++) {
 	    for(int dd = 0;dd<3;dd++) {
@@ -448,7 +452,7 @@ struct CohesiveInterfaceElement {
 	    for(int dd = 0;dd<3;dd++) {  
 	      for(int NN = 0; NN<nb_col/3; NN++) {
 		for(int DD = 0; DD<3;DD++) {
-		  K(3*nn+dd,3*NN+DD) += ND(3*nn+dd,DD)*col_data.getN(gg)[NN];
+		  K(3*nn+dd,3*NN+DD) += w*ND(3*nn+dd,DD)*col_data.getN(gg)[NN];
 		}
 	      }
 	    }
