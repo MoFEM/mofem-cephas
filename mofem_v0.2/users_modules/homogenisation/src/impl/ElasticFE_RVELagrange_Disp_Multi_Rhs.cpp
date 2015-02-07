@@ -640,11 +640,10 @@ namespace MoFEM {
   
   
   //********************************************************************************
-  vector<ublas::vector<FieldData> > f_ext;
-  vector<ublas::vector<FieldData> > f_ext_trans;
   
   PetscErrorCode ElasticFE_RVELagrange_Disp_Multi_Rhs::Rhs_fext() {
     PetscFunctionBegin;
+
     ierr = Stiffness(); CHKERRQ(ierr);
     
     ublas::vector<ublas::vector<FieldData> > Data_elm_main;  //u for each element
@@ -716,6 +715,9 @@ namespace MoFEM {
             break;
         }
       }
+
+    vector<ublas::vector<FieldData> > f_ext;
+    vector<ublas::vector<FieldData> > f_ext_trans;
 
     f_ext.resize(row_mat);    //cu * u
     f_ext_trans.resize(row_mat);  //trans(c)*lamda

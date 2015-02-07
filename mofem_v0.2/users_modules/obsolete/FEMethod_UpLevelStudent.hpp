@@ -24,7 +24,7 @@ namespace ObosleteUsersModules {
 
 struct FEMethod_UpLevelStudent_ExceptionNegatvieTetVolume: public MofemException {
   FEMethod_UpLevelStudent_ExceptionNegatvieTetVolume(): 
-    MofemException(MOFEM_DATA_INSONSISTENCY,"Negative volume") {}
+    MofemException(MOFEM_DATA_INCONSISTENCT,"Negative volume") {}
 };
 
 /** 

@@ -306,7 +306,7 @@ struct GroundSurfaceTemerature {
     PetscErrorCode getSkin(Range &tets) {
       PetscFunctionBegin;
       ErrorCode rval;
-      PetscErrorCode ierr;
+      //PetscErrorCode ierr;
       Skinner skin(&mField.get_moab());
       rval = skin.find_skin(0,tets,false,sKin); CHKERR(rval);
       rval = mField.get_moab().create_meshset(MESHSET_SET,kdTree_rootMeshset); CHKERR_PETSC(rval);
@@ -396,7 +396,7 @@ struct GroundSurfaceTemerature {
 
 	double exposed = 0;
 	if(triangles_out.size()>0) {
-	  for(int nn = 0;nn<triangles_out.size();nn++) {
+	  for(unsigned int nn = 0;nn<triangles_out.size();nn++) {
 	    if(exposed<distance_out[nn]) exposed = distance_out[nn];
 	  }
 	}
@@ -442,7 +442,7 @@ struct GroundSurfaceTemerature {
 
 	double exposed = 0;
 	if(triangles_out.size()>0) {
-	  for(int nn = 0;nn<triangles_out.size();nn++) {
+	  for(unsigned int nn = 0;nn<triangles_out.size();nn++) {
 	    if(exposed<distance_out[nn]) exposed = distance_out[nn];
 	  }
 	}

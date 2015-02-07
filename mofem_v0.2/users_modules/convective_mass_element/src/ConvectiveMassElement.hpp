@@ -1838,7 +1838,7 @@ struct ConvectiveMassElement {
 #endif //__CONVECTIVE_MASS_ELEMENT_HPP
 
 /***************************************************************************//**
- * \defgroup convective_mass_elem (Convective) Mass Element
+ * \defgroup convective_mass_elem Mass Element
  * \ingroup mofem_forces_and_sources 
  ******************************************************************************/
 

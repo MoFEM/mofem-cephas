@@ -188,8 +188,10 @@ int main(int argc, char *argv[]) {
   ierr = m_field.set_field_order(0,MBEDGE,"VELOCITIES",vel_order); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0,MBVERTEX,"VELOCITIES",1); CHKERRQ(ierr);
 
-  ierr = MetaNeummanForces::addNeumannBCElements(m_field,"ELASTIC_MECHANICS","DISPLACEMENT"); CHKERRQ(ierr);
-  ierr = MetaNodalForces::addNodalForceElement(m_field,"ELASTIC_MECHANICS","DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = MetaNeummanForces::addNeumannBCElements(m_field,"DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = MetaNodalForces::addNodalForceElement(m_field,"DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = m_field.modify_problem_add_finite_element("ELASTIC_MECHANICS","FORCE_FE"); CHKERRQ(ierr);
+  ierr = m_field.modify_problem_add_finite_element("ELASTIC_MECHANICS","FORCE_FE"); CHKERRQ(ierr);
 
   //body forces
   ierr = m_field.add_finite_element("BODY_FORCE",MF_ZERO); CHKERRQ(ierr);

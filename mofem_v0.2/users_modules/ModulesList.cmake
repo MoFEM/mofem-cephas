@@ -13,16 +13,16 @@ include_directories(${UM_SOURCE_DIR}/obsolete/c_impl)
 
 add_library(users_modules_obsolete
   ${UM_SOURCE_DIR}/obsolete/impl/ArcLengthTools.cpp
-  ${UM_SOURCE_DIR}/obsolete/impl/FEMethod_ComplexForLazy.cpp
   ${UM_SOURCE_DIR}/obsolete/impl/FEMethod_SurfaceConstrains.cpp
   ${UM_SOURCE_DIR}/obsolete/impl/FEMethod_LowLevelStudent.cpp
   ${UM_SOURCE_DIR}/obsolete/impl/FEMethod_UpLevelStudent.cpp
-  ${UM_SOURCE_DIR}/obsolete/impl/SurfacePressureComplexForLazy.cpp
   ${UM_SOURCE_DIR}/obsolete/impl/MatShellConstrainsByMarkAinsworth.cpp
 )
 
 add_library(complex_for_lazy_obsolete
   ${UM_SOURCE_DIR}/obsolete/c_impl/complex_for_lazy.c
+  ${UM_SOURCE_DIR}/obsolete/impl/FEMethod_ComplexForLazy.cpp
+  ${UM_SOURCE_DIR}/obsolete/impl/SurfacePressureComplexForLazy.cpp
 )
 
 add_subdirectory(analytical_dirihlet_boundary_conditions)

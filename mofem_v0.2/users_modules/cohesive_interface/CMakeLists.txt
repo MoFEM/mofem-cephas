@@ -35,6 +35,9 @@ target_link_libraries(arc_length_interface
 
 cm_export_file("PeelTest.cub" export_files_cohesive_element)
 cm_export_file("PeelTest.jou" export_files_cohesive_element)
+cm_export_file("PeelTestHalfCrack.cub" export_files_cohesive_element)
+cm_export_file("PeelTestHalfCrack.jou" export_files_cohesive_element)
+
 
 file(COPY
     ${CMAKE_CURRENT_SOURCE_DIR}/README
@@ -42,7 +45,7 @@ file(COPY
 
 #testing
 add_test(ArcLengthInterfaceTest 
-  ${MoFEM_MPI_RUN} -np 4 ${CMAKE_CURRENT_BINARY_DIR}/arc_length_interface
+  ${MoFEM_MPI_RUN} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/arc_length_interface
   -my_file PeelTest.cub
   -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package mumps
   -ksp_monitor ksp_monitor -ksp_atol 1e-10 -ksp_rtol 1e-10

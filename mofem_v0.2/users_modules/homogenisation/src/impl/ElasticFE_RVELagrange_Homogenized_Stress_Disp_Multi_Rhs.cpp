@@ -55,15 +55,13 @@ namespace MoFEM {
       PetscFunctionReturn(0);
     }
     
-    
-    
-    ublas::matrix<FieldData> X_mat, nodes_coord, gauss_coord;
-    ublas::vector<ublas::matrix<FieldData> > D_mat;
-    ublas::vector<ublas::vector<FieldData> > Lamda;
-    
-    
     PetscErrorCode ElasticFE_RVELagrange_Homogenized_Stress_Disp_Multi_Rhs::Calculate_Homo_Stress() {
       PetscFunctionBegin;
+
+      ublas::matrix<FieldData> X_mat, nodes_coord, gauss_coord;
+      ublas::vector<ublas::matrix<FieldData> > D_mat;
+      ublas::vector<ublas::vector<FieldData> > Lamda;
+ 
       
       X_mat.resize(rank_field,1.5*rank_field+1.5);  X_mat.clear();  // for rank_field=3 X_mat.resize(3,6)  and for rank_field=1 X_mat.resize(1,3)
       nodes_coord.resize(3,3);

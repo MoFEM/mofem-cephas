@@ -79,10 +79,10 @@ struct PostPorcStress: public TetElementForcesAndSourcesCore::UserDataOperator {
 
     int nb_gauss_pts = data.getN().size1();
     if(mapGaussPts.size()!=(unsigned int)nb_gauss_pts) {
-	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
     }
     if(commonData.gradMap[row_field_name].size()!=(unsigned int)nb_gauss_pts) {
-	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
     }
 
     ublas::matrix<double> H,invH;

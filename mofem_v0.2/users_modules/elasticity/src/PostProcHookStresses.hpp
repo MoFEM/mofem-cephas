@@ -38,7 +38,7 @@ struct PostPorcStress: public TetElementForcesAndSourcesCore::UserDataOperator {
     mapGaussPts(map_gauss_pts),
     commonData(common_data) {}
 
-  PetscErrorCode getMatParameters(double *_lambda,double *_mu) {
+  PetscErrorCode getMatParameters(double *_lambda,double *_mu,int *_block_id) {
     PetscFunctionBegin;
 
     PetscErrorCode ierr;
@@ -49,8 +49,6 @@ struct PostPorcStress: public TetElementForcesAndSourcesCore::UserDataOperator {
 
     EntityHandle ent = getMoFEMFEPtr()->get_ent();
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_ELASTICSET,it)) {
-
-
       Mat_Elastic mydata;
       ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
 
@@ -61,6 +59,7 @@ struct PostPorcStress: public TetElementForcesAndSourcesCore::UserDataOperator {
         if( mField.get_moab().contains_entities(*mit,&ent,1) ) {
 	  *_lambda = LAMBDA(mydata.data.Young,mydata.data.Poisson);
 	  *_mu = MU(mydata.data.Young,mydata.data.Poisson);
+	  *_block_id = it->get_msId();
 	  PetscFunctionReturn(0);  
 	}
       }
@@ -88,8 +87,9 @@ struct PostPorcStress: public TetElementForcesAndSourcesCore::UserDataOperator {
      
     //const MoFEM::FEDofMoFEMEntity *dof_ptr = data.getFieldDofs()[0];
 
+    int id;
     double lambda,mu;
-    ierr = getMatParameters(&lambda,&mu); CHKERRQ(ierr);
+    ierr = getMatParameters(&lambda,&mu,&id); CHKERRQ(ierr);
 
     ublas::matrix<FieldData> D_lambda,D_mu,D;
     D_lambda.resize(6,6);
@@ -105,7 +105,6 @@ struct PostPorcStress: public TetElementForcesAndSourcesCore::UserDataOperator {
       D_mu(rr,rr) = rr<3 ? 2 : 1;
     }
     D = lambda*D_lambda + mu*D_mu;
-
 
     int tag_length = 9;
     double def_VAL[tag_length];
@@ -126,6 +125,15 @@ struct PostPorcStress: public TetElementForcesAndSourcesCore::UserDataOperator {
     rval = postProcMesh.tag_get_handle(
       "PRINCIPAL_STRESS",3,MB_TYPE_DOUBLE,th_prin_stress_vals,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_PETSC(rval);
 
+    Tag th_id;
+    int def_block_id = -1;
+    rval = postProcMesh.tag_get_handle(
+      "BLOCK_ID",1,MB_TYPE_INTEGER,th_id,MB_TAG_CREAT|MB_TAG_SPARSE,&def_block_id); CHKERR_PETSC(rval);
+    Range::iterator tit = commonData.tEts.begin();
+    for(;tit!=commonData.tEts.end();tit++) {
+      rval = postProcMesh.tag_set_data(th_id,&*tit,1,&id);  CHKERR_PETSC(rval);
+    }
+
     ublas::vector<double> strain;
     ublas::vector<double> stress;
     ublas::matrix<double> Stress;
@@ -138,7 +146,7 @@ struct PostPorcStress: public TetElementForcesAndSourcesCore::UserDataOperator {
 
     int nb_gauss_pts = data.getN().size1();
     if(mapGaussPts.size()!=(unsigned int)nb_gauss_pts) {
-      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
     }
     for(int gg = 0;gg<nb_gauss_pts;gg++) {
       

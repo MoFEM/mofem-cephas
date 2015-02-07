@@ -111,6 +111,7 @@ struct CrudeClimateModel: public GenricClimateModel {
       startTime.tm_mday = spaData.day;
       startTime.tm_mon = spaData.month-1;
       startTime.tm_year = spaData.year-1900;
+      startTime.tm_isdst = 0;
       t0 = mktime(&startTime);
 
     } catch (const std::exception& ex) {
@@ -174,13 +175,13 @@ struct CrudeClimateModel: public GenricClimateModel {
     for(;t<t0+duration;t+=step) {
 
       struct tm current_time;
-      current_time = *localtime(&t); /*gmtime(&t);*/
+      current_time = *gmtime(&t);
       spaData.second = current_time.tm_sec;
       spaData.minute = current_time.tm_min;
       spaData.hour = current_time.tm_hour;
       spaData.day = current_time.tm_mday;
       spaData.month = current_time.tm_mon+1;
-      spaData.year = current_time.tm_year+1970;
+      spaData.year = current_time.tm_year+1900;
               
       spaData.function = SPA_ZA_RTS;
       int r;
@@ -251,13 +252,13 @@ struct CrudeClimateModel: public GenricClimateModel {
     t += time*60*60*24;
 
     struct tm current_time;
-    current_time = *localtime(&t);
+    current_time = *gmtime(&t);
     spaData.second = current_time.tm_sec;
     spaData.minute = current_time.tm_min;
     spaData.hour = current_time.tm_hour;
     spaData.day = current_time.tm_mday;
     spaData.month = current_time.tm_mon+1;
-    spaData.year = current_time.tm_year+1970;
+    spaData.year = current_time.tm_year+1900;
 
     spaData.function = SPA_ZA_RTS;
     int r;

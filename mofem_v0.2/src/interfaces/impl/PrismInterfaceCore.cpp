@@ -173,7 +173,7 @@ PetscErrorCode Core::get_msId_3dENTS_sides(const EntityHandle SIDESET,const BitR
     side_ents3d.insert(adj_ents3d.begin(),adj_ents3d.end());
   } while (nb_side_ents3d != side_ents3d.size());
   if(ents3d_with_prisms.size() == side_ents3d.size()) {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"all tets on one side, no-interface");
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"all tets on one side, no-interface");
   }
   //other side ents
   Range other_side = subtract(ents3d_with_prisms,side_ents3d);
@@ -331,7 +331,7 @@ PetscErrorCode Core::get_msId_3dENTS_split_sides(
       child_it = refinedEntities.find((*child_iit)->get_ref_ent());
       BitRefLevel bit_child = child_it->get_BitRefLevel();
       if( (inheret_from_bit_level&bit_child).none() ) {
-	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
       }
       child_entity = child_it->get_ref_ent();
     }

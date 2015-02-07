@@ -51,7 +51,7 @@ struct Projection10NodeCoordsOnField: public EntMethod {
   PetscErrorCode operator()() {
     PetscFunctionBegin;
     if(dofPtr == NULL) {
-      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
     }
     if(dofPtr->get_name() != field_name) PetscFunctionReturn(0);
     if(dofPtr->get_ent_type() == MBVERTEX) {

@@ -36,7 +36,6 @@ void tricircumcenter3d_tp(double a[3],double b[3],double c[3],
 #include <FEMethod_UpLevelStudent.hpp>
 #include <FEMethod_ComplexForLazy.hpp>
 
-
 namespace ObosleteUsersModules {
 
 FEMethod_ComplexForLazy::FEMethod_ComplexForLazy(FieldInterface& _mField,analysis _type,double _lambda,double _mu,double _thermal_expansion,int _verbose):

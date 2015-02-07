@@ -87,7 +87,7 @@ PetscErrorCode NetGenInterface::queryInterface(const MOFEMuuid& uuid, FieldUnkno
     *iface = dynamic_cast<FieldUnknownInterface*>(this);
     PetscFunctionReturn(0);
   }
-  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"unknown inteface");
+  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"unknown inteface");
   PetscFunctionReturn(0);
 }
 
