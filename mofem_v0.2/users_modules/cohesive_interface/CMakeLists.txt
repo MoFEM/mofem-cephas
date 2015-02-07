@@ -35,6 +35,9 @@ target_link_libraries(arc_length_interface
 
 cm_export_file("PeelTest.cub" export_files_cohesive_element)
 cm_export_file("PeelTest.jou" export_files_cohesive_element)
+cm_export_file("PeelTestHalfCrack.cub" export_files_cohesive_element)
+cm_export_file("PeelTestHalfCrack.jou" export_files_cohesive_element)
+
 
 file(COPY
     ${CMAKE_CURRENT_SOURCE_DIR}/README
