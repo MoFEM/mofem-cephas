@@ -66,6 +66,7 @@ struct Hooke: public NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI
     Hooke(): NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<TYPE>() {}
 
     ublas::matrix<TYPE> Eps;
+    TYPE tr;
     
     virtual PetscErrorCode CalualteP_PiolaKirchhoffI(
       const NonlinearElasticElement::BlockData block_data,
@@ -77,11 +78,14 @@ struct Hooke: public NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI
       Eps.resize(3,3);
       noalias(Eps) = 0.5*(this->F + trans(this->F));
       this->P.resize(3,3);
-      for(int d1 = 0;d1<3;d1++) {
-	for(int d2 = 0;d2<3;d2++) {
-	  this->P(d1,d2) = ((d1 == d2) ? this->lambda+2*this->mu : 2*this->mu)*Eps(d1,d2);
-	}
+      noalias(this->P) = 2*this->mu*Eps;
+      tr = 0;
+      for(int dd = 0;dd<3;dd++) {
+	tr += this->lambda*Eps(dd,dd);
       }
+      for(int dd =0;dd<3;dd++) {
+	this->P(dd,dd) += tr;
+      } 
       PetscFunctionReturn(0);
     }
 
