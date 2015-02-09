@@ -89,7 +89,7 @@ struct FluidPressure {
 	dist -= dAta.zEroPressure;
 	double dot = cblas_ddot(3,&dist[0],1,&dAta.aCCeleration[0],1);
 	if(!allowNegativePressure) dot = fmax(0,dot);
-	double pressure = -dot*dAta.dEnsity;
+	double pressure = dot*dAta.dEnsity;
 
 	for(int rr = 0;rr<rank;rr++) {
 	  double force;
