@@ -110,7 +110,11 @@ int main(int argc, char *argv[]) {
  
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
-  int order = 2;
+  PetscInt order;
+  ierr = PetscOptionsGetInt(PETSC_NULL,"-my_order",&order,&flg); CHKERRQ(ierr);
+  if(flg != PETSC_TRUE) {
+    order = 2;
+  }
   ierr = m_field.set_field_order(root_set,MBTET,"TEMP",order); CHKERRQ(ierr);
   ierr = m_field.set_field_order(root_set,MBTRI,"TEMP",order); CHKERRQ(ierr);
   ierr = m_field.set_field_order(root_set,MBEDGE,"TEMP",order); CHKERRQ(ierr);
@@ -231,7 +235,7 @@ int main(int argc, char *argv[]) {
   ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
 
   if(debug) {
-    ProjectionFieldOn10NodeTet ent_method_on_10nodeTet(m_field,"TEMP",true,false,"TEMP");
+    /*ProjectionFieldOn10NodeTet ent_method_on_10nodeTet(m_field,"TEMP",true,false,"TEMP");
     ierr = m_field.loop_dofs("TEMP",ent_method_on_10nodeTet); CHKERRQ(ierr);
     ent_method_on_10nodeTet.set_nodes = false;
     ierr = m_field.loop_dofs("TEMP",ent_method_on_10nodeTet); CHKERRQ(ierr);
@@ -241,7 +245,14 @@ int main(int argc, char *argv[]) {
       ierr = m_field.problem_get_FE("TEST_PROBLEM","THERMAL_FE",out_meshset); CHKERRQ(ierr);
       rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
       rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
-    }
+    }*/
+    PostPocOnRefinedMesh post_proc(m_field);
+    ierr = post_proc.generateRefereneElemenMesh(); CHKERRQ(ierr);
+    ierr = post_proc.addFieldValuesPostProc("TEMP"); CHKERRQ(ierr);
+    ierr = post_proc.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+    ierr = post_proc.addFieldValuesGradientPostProc("TEMP"); CHKERRQ(ierr);
+    ierr = m_field.loop_finite_elements("TEST_PROBLEM","THERMAL_FE",post_proc); CHKERRQ(ierr);
+    rval = post_proc.postProcMesh.write_file("out.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
   }
   //Matrix View
   //MatView(A,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
