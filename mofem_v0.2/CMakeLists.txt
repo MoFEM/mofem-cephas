@@ -64,7 +64,7 @@ include(cmake/ExportFile.cmake)
 
 set(MoFEM_VERSION_MAJOR 0)
 set(MoFEM_VERSION_MINOR 2)
-set(MoFEM_VERSION_BUILD 0)
+set(MoFEM_VERSION_BUILD 1)
 
 #git revision
 include(cmake/GetGitRevisionDescription.cmake)

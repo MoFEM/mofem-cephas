@@ -113,7 +113,7 @@ struct BasicMethod: public FieldUnknownInterface,KspMethod,SnesMethod,TSMethod {
       *iface = dynamic_cast<BasicMethod*>(this);
       PetscFunctionReturn(0);
     }
-    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"unknown inteface");
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"unknown inteface");
   }
 
   BasicMethod();    

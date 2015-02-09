@@ -74,12 +74,12 @@ PetscErrorCode Core::field_axpy(const double alpha,const string& field_name_x,co
 	boost::make_tuple(field_name_y.c_str(),x_eit->get_ent(),dof_order,dof_rank));
       if(dit == dofsMoabField.get<Composite_Name_Ent_Order_And_Rank_mi_tag>().end()) {
 	if(creat_if_missing) {
-	  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"not yet implemented");
+	  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"not yet implemented");
 	} else {
 	  if(error_if_missing) {
 	    ostringstream ss;
 	    ss << "dof on ent " << x_eit->get_ent() << " order " << dof_order << " rank " << dof_rank << " does not exist";
-	    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,ss.str().c_str());
+	    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,ss.str().c_str());
 	  } else {
 	    continue;
 	  }
@@ -96,6 +96,28 @@ PetscErrorCode Core::set_field(const double val,const EntityType type,const stri
   dit = dofsMoabField.get<Composite_Name_And_Type_mi_tag >().lower_bound(boost::make_tuple(field_name,type));
   hi_dit = dofsMoabField.get<Composite_Name_And_Type_mi_tag >().upper_bound(boost::make_tuple(field_name,type));
   for(;dit!=hi_dit;dit++) {
+    dit->get_FieldData() = val;
+  }
+  PetscFunctionReturn(0);
+}
+PetscErrorCode Core::set_field(const double val,const EntityType type,const Range &ents,const string& field_name) {
+  PetscFunctionBegin;
+  DofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag >::type::iterator dit,hi_dit;
+  dit = dofsMoabField.get<Composite_Name_And_Type_mi_tag >().lower_bound(boost::make_tuple(field_name,type));
+  hi_dit = dofsMoabField.get<Composite_Name_And_Type_mi_tag >().upper_bound(boost::make_tuple(field_name,type));
+  EntityHandle ent,last = 0;
+  bool cont;
+  for(;dit!=hi_dit;dit++) {
+    ent = dit->get_ent();
+    if(ent != last) {
+      if(ents.find(ent)==ents.end()) {
+	cont = true;
+      } else {
+	cont = false;
+      }
+      last = ent;
+    }
+    if(cont) continue;
     dit->get_FieldData() = val;
   }
   PetscFunctionReturn(0);

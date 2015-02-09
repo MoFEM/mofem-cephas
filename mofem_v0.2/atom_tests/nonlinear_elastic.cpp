@@ -33,10 +33,6 @@ using namespace MoFEM;
 #include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <boost/numeric/ublas/vector.hpp>
 
-extern "C" {
-  #include <complex_for_lazy.h>
-}
-
 #include <adolc/adolc.h> 
 #include <NonLienarElasticElement.hpp>
 

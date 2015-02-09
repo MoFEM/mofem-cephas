@@ -831,7 +831,8 @@ PetscErrorCode ConfigurationalFractureMechanics::spatial_problem_definition(Fiel
   ierr = m_field.modify_problem_add_finite_element("ELASTIC_MECHANICS","NEUAMNN_FE"); CHKERRQ(ierr);
 
   //add nodal force element
-  ierr = MetaNodalForces::addNodalForceElement(m_field,"ELASTIC_MECHANICS","SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = MetaNodalForces::addNodalForceElement(m_field,"SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = m_field.modify_problem_add_finite_element("ELASTIC_MECHANICS","FORCE_FE"); CHKERRQ(ierr);
 
   Range level_tets;
   ierr = m_field.get_entities_by_type_and_ref_level(*ptr_bit_level0,BitRefLevel().set(),MBTET,level_tets); CHKERRQ(ierr);
@@ -2408,7 +2409,7 @@ PetscErrorCode ConfigurationalFractureMechanics::fix_all_but_one(FieldInterface&
   rval = m_field.get_moab().tag_get_handle("FROZEN_NODE",1,MB_TYPE_INTEGER,th_freez,MB_TAG_CREAT|MB_TAG_SPARSE,&def_order); CHKERR_PETSC(rval);
 
   ierr = PetscPrintf(PETSC_COMM_WORLD,"freeze front nodes:\n");
-  double max_g_j;
+  double max_g_j = 0;
   EntityHandle max_g_j_ent = 0;
   for(
     map<EntityHandle,double>::iterator mit = map_ent_j.begin();
@@ -3073,7 +3074,7 @@ ConfigurationalFractureMechanics::ArcLengthElemFEMethod::ArcLengthElemFEMethod(
 	PetscTraceBackErrorHandler(
 	  PETSC_COMM_WORLD,
 	  __LINE__,PETSC_FUNCTION_NAME,__FILE__,
-	  MOFEM_DATA_INSONSISTENCY,PETSC_ERROR_INITIAL,"can not get connectibility",PETSC_NULL);
+	  MOFEM_DATA_INCONSISTENCT,PETSC_ERROR_INITIAL,"can not get connectibility",PETSC_NULL);
 	CHKERRABORT(PETSC_COMM_SELF,rval);
       }
       for(int nn = 0;nn<num_nodes; nn++) {

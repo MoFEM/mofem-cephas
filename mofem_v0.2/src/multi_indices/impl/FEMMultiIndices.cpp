@@ -208,7 +208,7 @@ RefMoFEMElement_TET::RefMoFEMElement_TET(Interface &moab,const RefMoFEMEntity *_
       PetscTraceBackErrorHandler(
 	PETSC_COMM_WORLD,
 	__LINE__,PETSC_FUNCTION_NAME,__FILE__,
-	MOFEM_DATA_INSONSISTENCY,PETSC_ERROR_INITIAL,
+	MOFEM_DATA_INCONSISTENCT,PETSC_ERROR_INITIAL,
 	"this work only for TETs",PETSC_NULL);
       THROW_AT_LINE("this work only for TETs");
   }
@@ -238,10 +238,10 @@ SideNumber* RefMoFEMElement_TET::get_side_number_ptr(Interface &moab,EntityHandl
     PetscTraceBackErrorHandler(
       PETSC_COMM_WORLD,
       __LINE__,PETSC_FUNCTION_NAME,__FILE__,
-      MOFEM_DATA_INSONSISTENCY,PETSC_ERROR_INITIAL,"data inconstency",PETSC_NULL);
+      MOFEM_DATA_INCONSISTENCT,PETSC_ERROR_INITIAL,"data inconstency",PETSC_NULL);
     PetscMPIAbortErrorHandler(PETSC_COMM_WORLD,
       __LINE__,PETSC_FUNCTION_NAME,__FILE__,
-      MOFEM_DATA_INSONSISTENCY,PETSC_ERROR_INITIAL,"data inconstency",PETSC_NULL);
+      MOFEM_DATA_INCONSISTENCT,PETSC_ERROR_INITIAL,"data inconstency",PETSC_NULL);
   }
   //cerr << side_number << " " << sense << " " << offset << endl;
   return const_cast<SideNumber*>(&*miit);
@@ -276,10 +276,10 @@ RefMoFEMElement_TRI::RefMoFEMElement_TRI(Interface &moab,const RefMoFEMEntity *_
       PetscTraceBackErrorHandler(
 	PETSC_COMM_WORLD,
 	__LINE__,PETSC_FUNCTION_NAME,__FILE__,
-	MOFEM_DATA_INSONSISTENCY,PETSC_ERROR_INITIAL,"data inconstency",PETSC_NULL);
+	MOFEM_DATA_INCONSISTENCT,PETSC_ERROR_INITIAL,"data inconstency",PETSC_NULL);
       PetscMPIAbortErrorHandler(PETSC_COMM_WORLD,
 	__LINE__,PETSC_FUNCTION_NAME,__FILE__,
-	MOFEM_DATA_INSONSISTENCY,PETSC_ERROR_INITIAL,"data inconstency",PETSC_NULL);
+	MOFEM_DATA_INCONSISTENCT,PETSC_ERROR_INITIAL,"data inconstency",PETSC_NULL);
     }
     const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(edge,ee,sense,offset));
   }
@@ -472,7 +472,7 @@ PetscErrorCode DefaultElementAdjacency::defaultTet(Interface &moab,const MoFEMFi
 	nodes = subtract(nodes,mid_nodes);
       }
       if(nodes.size()<4) {
-	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"TET has at least 4 adjacent nodes; it can has more if user add more adjacencies");
+	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"TET has at least 4 adjacent nodes; it can has more if user add more adjacencies");
       }
       adjacency.insert(nodes.begin(),nodes.end());
       case HCURL: 

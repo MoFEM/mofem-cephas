@@ -65,74 +65,77 @@ int main(int argc, char *argv[]) {
 
   //Create MoFEM (Joseph) database
   MoFEM::Core core(moab);
-  FieldInterface& mField = core;
+  FieldInterface& m_field = core;
 
   //set entitities bit level
   BitRefLevel bit_level0;
   bit_level0.set(0);
   EntityHandle meshset_level0;
   rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
-  ierr = mField.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
+  ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
 
   //Definitions
 
   //add DISPLACEMENT field, Hilbert space H1, veror field rank 3 (displacemnt
   //has three components ux,uy,uz)
-  ierr = mField.add_field("DISPLACEMENT",H1,3); CHKERRQ(ierr);
+  ierr = m_field.add_field("DISPLACEMENT",H1,3); CHKERRQ(ierr);
 
-  ///add probelem which will be solved, could be more than one problem
-  //operating on some subset of defined approximatons spces
-  ierr = mField.add_problem("TEST_PROBLEM"); CHKERRQ(ierr);
-
-  //mesh could have several refinment levels which share some subset of entities between them. 
-  //below defines on which set of entities (on refinment level 0) build approximation spaces for TEST_PROBLEM
-  ierr = mField.modify_problem_ref_level_add_bit("TEST_PROBLEM",bit_level0); CHKERRQ(ierr);
 
   //add entities on wich DISPLACEMENT field is approximated, you can add
   //entities form several approximation levels at onec. You can as well
   //approximate field only on some mesh subdomain, in that case displacements
   //are approximated on roor moab mesh.
-  ierr = mField.add_ents_to_field_by_TETs(0,"DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_TETs(0,"DISPLACEMENT"); CHKERRQ(ierr);
 
   //set app. order for displacement fiedl. it is set uniform approximation
   //order. in genreal evry entity can have arbitraty approximation level,
   //ranging from 1 to 10 and more.
   int order = 1;
-  ierr = mField.set_field_order(0,MBTET,"DISPLACEMENT",order); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBTRI,"DISPLACEMENT",order); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBEDGE,"DISPLACEMENT",order); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBVERTEX,"DISPLACEMENT",1); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBTET,"DISPLACEMENT",order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBTRI,"DISPLACEMENT",order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBEDGE,"DISPLACEMENT",order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBVERTEX,"DISPLACEMENT",1); CHKERRQ(ierr);
 
   //define fluid pressure finite elements
-  FluidPressure fluid_pressure_fe(mField);
-  fluid_pressure_fe.addNeumannFluidPressureBCElements("TEST_PROBLEM","DISPLACEMENT");
+  FluidPressure fluid_pressure_fe(m_field);
+  fluid_pressure_fe.addNeumannFluidPressureBCElements("DISPLACEMENT");
+
+  ///add probelem which will be solved, could be more than one problem
+  //operating on some subset of defined approximatons spces
+  ierr = m_field.add_problem("TEST_PROBLEM"); CHKERRQ(ierr);
+  //mesh could have several refinment levels which share some subset of entities between them. 
+  //below defines on which set of entities (on refinment level 0) build approximation spaces for TEST_PROBLEM
+  ierr = m_field.modify_problem_ref_level_add_bit("TEST_PROBLEM",bit_level0); CHKERRQ(ierr);
+  
+  //add finite element to test problem
+  ierr = m_field.modify_problem_add_finite_element("TEST_PROBLEM","FLUID_PRESSURE_FE"); CHKERRQ(ierr);
 
   //construct data structrures for fields and finite elements. at that points
   //entities, finite elements or dofs have unque uid, but are not partitioned
   //or numbered. user can add entities to mesh, add dofs or elenents if
   //necessaery. in case of modifications data structures are updated.
-  ierr = mField.build_fields(); CHKERRQ(ierr);
-  ierr = mField.build_finite_elements(); CHKERRQ(ierr);
-  ierr = mField.build_adjacencies(bit_level0); CHKERRQ(ierr);
-  ierr = mField.build_problems(); CHKERRQ(ierr);
+  ierr = m_field.build_fields(); CHKERRQ(ierr);
+  ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
+  ierr = m_field.build_adjacencies(bit_level0); CHKERRQ(ierr);
+  ierr = m_field.build_problems(); CHKERRQ(ierr);
 
   //to solve problem it needt to be respresented in matrix vector form. this
   //demand numbertion of dofs and proble  partitioning.
-  ierr = mField.simple_partition_problem("TEST_PROBLEM"); CHKERRQ(ierr);
-  ierr = mField.partition_finite_elements("TEST_PROBLEM"); CHKERRQ(ierr);
+  ierr = m_field.simple_partition_problem("TEST_PROBLEM"); CHKERRQ(ierr);
+  ierr = m_field.partition_finite_elements("TEST_PROBLEM"); CHKERRQ(ierr);
   //what are ghost nodes, see Petsc Manual
-  ierr = mField.partition_ghost_dofs("TEST_PROBLEM"); CHKERRQ(ierr);
+  ierr = m_field.partition_ghost_dofs("TEST_PROBLEM"); CHKERRQ(ierr);
 
   //create vector for problem
   Vec F;
-  ierr = mField.VecCreateGhost("TEST_PROBLEM",ROW,&F); CHKERRQ(ierr);
+  ierr = m_field.VecCreateGhost("TEST_PROBLEM",ROW,&F); CHKERRQ(ierr);
   ierr = fluid_pressure_fe.setNeumannFluidPressureFiniteElementOperators("DISPLACEMENT",F,false,false); CHKERRQ(ierr);
 
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
-  ierr = mField.loop_finite_elements("TEST_PROBLEM","FLUID_PRESSURE_FE",fluid_pressure_fe.getLoopFe()); CHKERRQ(ierr);
+  ierr = m_field.loop_finite_elements("TEST_PROBLEM","FLUID_PRESSURE_FE",fluid_pressure_fe.getLoopFe()); CHKERRQ(ierr);
   ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
   ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
-  ierr = mField.set_global_VecCreateGhost("TEST_PROBLEM",ROW,F,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = m_field.set_global_VecCreateGhost("TEST_PROBLEM",ROW,F,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
   //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
@@ -147,7 +150,7 @@ int main(int argc, char *argv[]) {
   ierr = PetscPrintf(PETSC_COMM_WORLD,"sum  = %4.3f\n",sum); CHKERRQ(ierr);
 
   map<EntityHandle,ublas::vector<double> > tags_vals;
-  for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"DISPLACEMENT",dof)) {
+  for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(m_field,"DISPLACEMENT",dof)) {
     tags_vals[dof->get_ent()].resize(3);
     tags_vals[dof->get_ent()][dof->get_dof_rank()] = dof->get_FieldData();
   }
@@ -170,7 +173,7 @@ int main(int argc, char *argv[]) {
 
   EntityHandle out_meshset;
   rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
-  ierr = mField.problem_get_FE("TEST_PROBLEM","FLUID_PRESSURE_FE",out_meshset); CHKERRQ(ierr);
+  ierr = m_field.problem_get_FE("TEST_PROBLEM","FLUID_PRESSURE_FE",out_meshset); CHKERRQ(ierr);
   rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
   rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);*/
   

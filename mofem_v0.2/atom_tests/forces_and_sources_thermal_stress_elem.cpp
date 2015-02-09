@@ -65,69 +65,70 @@ int main(int argc, char *argv[]) {
 
   //Create MoFEM (Joseph) database
   MoFEM::Core core(moab);
-  FieldInterface& mField = core;
+  FieldInterface& m_field = core;
 
   //set entitities bit level
   BitRefLevel bit_level0;
   bit_level0.set(0);
   EntityHandle meshset_level0;
   rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
-  ierr = mField.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
+  ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
 
   //Fields
-  ierr = mField.add_field("DISP",H1,3); CHKERRQ(ierr);
-  ierr = mField.add_field("TEMP",H1,1); CHKERRQ(ierr);
+  ierr = m_field.add_field("DISP",H1,3); CHKERRQ(ierr);
+  ierr = m_field.add_field("TEMP",H1,1); CHKERRQ(ierr);
 
   //Problem
-  ierr = mField.add_problem("PROB"); CHKERRQ(ierr);
+  ierr = m_field.add_problem("PROB"); CHKERRQ(ierr);
 
   //set refinment level for problem
-  ierr = mField.modify_problem_ref_level_add_bit("PROB",bit_level0); CHKERRQ(ierr);
+  ierr = m_field.modify_problem_ref_level_add_bit("PROB",bit_level0); CHKERRQ(ierr);
 
   //meshset consisting all entities in mesh
   EntityHandle root_set = moab.get_root_set(); 
   //add entities to field
-  ierr = mField.add_ents_to_field_by_TETs(root_set,"TEMP"); CHKERRQ(ierr);
-  ierr = mField.add_ents_to_field_by_TETs(root_set,"DISP"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_TETs(root_set,"TEMP"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_TETs(root_set,"DISP"); CHKERRQ(ierr);
 
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
   int order_temp = 2;
-  ierr = mField.set_field_order(root_set,MBTET,"TEMP",order_temp); CHKERRQ(ierr);
-  ierr = mField.set_field_order(root_set,MBTRI,"TEMP",order_temp); CHKERRQ(ierr);
-  ierr = mField.set_field_order(root_set,MBEDGE,"TEMP",order_temp); CHKERRQ(ierr);
-  ierr = mField.set_field_order(root_set,MBVERTEX,"TEMP",1); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(root_set,MBTET,"TEMP",order_temp); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(root_set,MBTRI,"TEMP",order_temp); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(root_set,MBEDGE,"TEMP",order_temp); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(root_set,MBVERTEX,"TEMP",1); CHKERRQ(ierr);
 
   int order_disp = 3;
-  ierr = mField.set_field_order(root_set,MBTET,"DISP",order_disp); CHKERRQ(ierr);
-  ierr = mField.set_field_order(root_set,MBTRI,"DISP",order_disp); CHKERRQ(ierr);
-  ierr = mField.set_field_order(root_set,MBEDGE,"DISP",order_disp); CHKERRQ(ierr);
-  ierr = mField.set_field_order(root_set,MBVERTEX,"DISP",1); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(root_set,MBTET,"DISP",order_disp); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(root_set,MBTRI,"DISP",order_disp); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(root_set,MBEDGE,"DISP",order_disp); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(root_set,MBVERTEX,"DISP",1); CHKERRQ(ierr);
 
-  ThermalStressElement thermal_stress_elem(mField);
-  ierr = thermal_stress_elem.addThermalSterssElement("PROB","ELAS","DISP","TEMP"); CHKERRQ(ierr);
+  ThermalStressElement thermal_stress_elem(m_field);
+  ierr = thermal_stress_elem.addThermalSterssElement("ELAS","DISP","TEMP"); CHKERRQ(ierr);
+  ierr = m_field.modify_problem_add_finite_element("PROB","ELAS"); CHKERRQ(ierr);
 
   /****/
   //build database
   //build field
-  ierr = mField.build_fields(); CHKERRQ(ierr);
+  ierr = m_field.build_fields(); CHKERRQ(ierr);
   //build finite elemnts
-  ierr = mField.build_finite_elements(); CHKERRQ(ierr);
+  ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
   //build adjacencies
-  ierr = mField.build_adjacencies(bit_level0); CHKERRQ(ierr);
+  ierr = m_field.build_adjacencies(bit_level0); CHKERRQ(ierr);
   //build problem
-  ierr = mField.build_problems(); CHKERRQ(ierr);
+  ierr = m_field.build_problems(); CHKERRQ(ierr);
 
   /****/
   //mesh partitioning 
   //partition
-  ierr = mField.simple_partition_problem("PROB"); CHKERRQ(ierr);
-  ierr = mField.partition_finite_elements("PROB"); CHKERRQ(ierr);
+  ierr = m_field.simple_partition_problem("PROB"); CHKERRQ(ierr);
+  ierr = m_field.partition_finite_elements("PROB"); CHKERRQ(ierr);
   //what are ghost nodes, see Petsc Manual
-  ierr = mField.partition_ghost_dofs("PROB"); CHKERRQ(ierr);
+  ierr = m_field.partition_ghost_dofs("PROB"); CHKERRQ(ierr);
 
   //set temerature at nodes
-  for(_IT_GET_DOFS_FIELD_BY_NAME_AND_TYPE_FOR_LOOP_(mField,"TEMP",MBVERTEX,dof)) {
+  for(_IT_GET_DOFS_FIELD_BY_NAME_AND_TYPE_FOR_LOOP_(m_field,"TEMP",MBVERTEX,dof)) {
     EntityHandle ent = dof->get_ent();
     ublas::vector<double> coords(3);
     rval = moab.get_coords(&ent,1,&coords[0]); CHKERR_PETSC(rval);
@@ -135,10 +136,10 @@ int main(int argc, char *argv[]) {
   }
 
   Vec F;
-  ierr = mField.VecCreateGhost("PROB",ROW,&F); CHKERRQ(ierr);
+  ierr = m_field.VecCreateGhost("PROB",ROW,&F); CHKERRQ(ierr);
   ierr = thermal_stress_elem.setThermalStressRhsOperators("DISP","TEMP",F,1); CHKERRQ(ierr);
 
-  ierr = mField.loop_finite_elements("PROB","ELAS",thermal_stress_elem.getLoopThermalStressRhs()); CHKERRQ(ierr);
+  ierr = m_field.loop_finite_elements("PROB","ELAS",thermal_stress_elem.getLoopThermalStressRhs()); CHKERRQ(ierr);
   ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
   ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
 

@@ -185,7 +185,11 @@ PetscErrorCode DMCreateMatrix_MoFEM(DM dm,Mat *M);
   * Set options for MoFEM DM
   * \ingroup dm
   */
-PetscErrorCode DMSetFromOptions_MoFEM(DM dm);
+#if PETSC_VERSION_GE(3,5,3)
+    PetscErrorCode DMSetFromOptions_MoFEM(PetscOptions *PetscOptionsObject,DM dm);
+#else 
+    PetscErrorCode DMSetFromOptions_MoFEM(DM dm);
+#endif 
 
 /** 
   * sets up the MoFEM structures inside a DM object

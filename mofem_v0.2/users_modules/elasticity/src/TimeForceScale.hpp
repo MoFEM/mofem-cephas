@@ -84,7 +84,7 @@ struct TimeForceScale: public MethodsForOp {
       }
       double ts_t = fe->ts_t;
       double scale = 0;
-      double t0,t1,s0,s1,dt;
+      double t0 = 0,t1,s0 = 0,s1,dt;
       map<double, double>::iterator tit = tSeries.begin();
       for(;tit!=tSeries.end();tit++) {
 	if(tit->first > ts_t) {

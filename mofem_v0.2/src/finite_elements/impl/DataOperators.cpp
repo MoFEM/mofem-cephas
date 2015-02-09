@@ -68,36 +68,44 @@ PetscErrorCode DataOperator::opLhs(
   PetscErrorCode ierr;
 
   //nodes
-  ierr = doWork(
-    -1,-1,MBVERTEX,MBVERTEX,
-    row_data.dataOnEntities[MBVERTEX][0],col_data.dataOnEntities[MBVERTEX][0]); CHKERRQ(ierr);
-  for(unsigned int VV = 0;VV<col_data.dataOnEntities[MBTET].size();VV++) {
-    if(col_data.dataOnEntities[MBTET][VV].getN().size1()==0) continue;
-    ierr = doWork(
-      -1,VV,MBVERTEX,MBTET,
-      row_data.dataOnEntities[MBVERTEX][0],col_data.dataOnEntities[MBTET][VV]); CHKERRQ(ierr);
-  }
-  if(!symm) {
-    for(unsigned int EE = 0;EE<col_data.dataOnEntities[MBEDGE].size();EE++) {
-      if(col_data.dataOnEntities[MBEDGE][EE].getN().size1()==0) continue;
+  for(unsigned int nn = 0;nn!=row_data.dataOnEntities[MBVERTEX].size();nn++) {
+    unsigned int NN = 0;
+    if(symm) NN = nn;
+    for(;NN!=col_data.dataOnEntities[MBVERTEX].size();NN++) {
       ierr = doWork(
-	-1,EE,MBVERTEX,MBEDGE,
-	row_data.dataOnEntities[MBVERTEX][0],col_data.dataOnEntities[MBEDGE][EE]); CHKERRQ(ierr);
+	nn,NN,MBVERTEX,MBVERTEX,
+	row_data.dataOnEntities[MBVERTEX][0],col_data.dataOnEntities[MBVERTEX][0]); CHKERRQ(ierr);
     }
-    for(unsigned int FF = 0;FF<col_data.dataOnEntities[MBTRI].size();FF++) {
-      if(col_data.dataOnEntities[MBTRI][FF].getN().size1()==0) continue;
+    for(unsigned int VV = 0;VV<col_data.dataOnEntities[MBTET].size();VV++) {
+      if(col_data.dataOnEntities[MBTET][VV].getN().size1()==0) continue;
       ierr = doWork(
-	-1,FF,MBVERTEX,MBTRI,
-	row_data.dataOnEntities[MBVERTEX][0],col_data.dataOnEntities[MBTRI][FF]); CHKERRQ(ierr);
+	nn,VV,MBVERTEX,MBTET,
+	row_data.dataOnEntities[MBVERTEX][0],col_data.dataOnEntities[MBTET][VV]); CHKERRQ(ierr);
+    }
+    if(!symm) {
+      for(unsigned int EE = 0;EE<col_data.dataOnEntities[MBEDGE].size();EE++) {
+	if(col_data.dataOnEntities[MBEDGE][EE].getN().size1()==0) continue;
+	ierr = doWork(
+	  nn,EE,MBVERTEX,MBEDGE,
+	  row_data.dataOnEntities[MBVERTEX][0],col_data.dataOnEntities[MBEDGE][EE]); CHKERRQ(ierr);
+      }
+      for(unsigned int FF = 0;FF<col_data.dataOnEntities[MBTRI].size();FF++) {
+	if(col_data.dataOnEntities[MBTRI][FF].getN().size1()==0) continue;
+	ierr = doWork(
+	  nn,FF,MBVERTEX,MBTRI,
+	  row_data.dataOnEntities[MBVERTEX][0],col_data.dataOnEntities[MBTRI][FF]); CHKERRQ(ierr);
+      }
     }
   }
 
   //edges
   for(unsigned int ee = 0;ee<row_data.dataOnEntities[MBEDGE].size();ee++) {
     if(row_data.dataOnEntities[MBEDGE][ee].getN().size1()==0) continue;
-    ierr = doWork(
-	ee,-1,MBEDGE,MBVERTEX,
+    for(unsigned int NN = 0;NN!=col_data.dataOnEntities[MBVERTEX].size();NN++) {
+      ierr = doWork(
+	ee,NN,MBEDGE,MBVERTEX,
 	row_data.dataOnEntities[MBEDGE][ee],col_data.dataOnEntities[MBVERTEX][0]); CHKERRQ(ierr);
+    }
     for(unsigned int VV = 0;VV<col_data.dataOnEntities[MBTET].size();VV++) {
       if(col_data.dataOnEntities[MBTET][VV].getN().size1()==0) continue;
       ierr = doWork(
@@ -123,9 +131,11 @@ PetscErrorCode DataOperator::opLhs(
   //faces
   for(unsigned int ff = 0;ff<row_data.dataOnEntities[MBTRI].size();ff++) {
     if(row_data.dataOnEntities[MBTRI][ff].getN().size1()==0) continue;
-    ierr = doWork(
-	ff,-1,MBTRI,MBVERTEX,
+    for(unsigned int NN = 0;NN!=col_data.dataOnEntities[MBVERTEX].size();NN++) {
+      ierr = doWork(
+	ff,NN,MBTRI,MBVERTEX,
 	row_data.dataOnEntities[MBTRI][ff],col_data.dataOnEntities[MBVERTEX][0]); CHKERRQ(ierr);
+    }
     for(unsigned int VV = 0;VV<col_data.dataOnEntities[MBTET].size();VV++) {
       if(col_data.dataOnEntities[MBTET][VV].getN().size1()==0) continue;
       ierr = doWork(
@@ -163,21 +173,23 @@ PetscErrorCode DataOperator::opLhs(
     }
     if(!symm) {
       //vertex
-      ierr = doWork(
-	VV,-1,MBTET,MBVERTEX,
-	row_data.dataOnEntities[MBTET][vv],col_data.dataOnEntities[MBVERTEX][0]); CHKERRQ(ierr);
+      for(unsigned int NN = 0;NN!=col_data.dataOnEntities[MBVERTEX].size();NN++) {
+	ierr = doWork(
+	  vv,NN,MBTET,MBVERTEX,
+	  row_data.dataOnEntities[MBTET][vv],col_data.dataOnEntities[MBVERTEX][0]); CHKERRQ(ierr);
+      }
       //edges
       for(unsigned int EE = 0;EE<col_data.dataOnEntities[MBEDGE].size();EE++) {
 	if(col_data.dataOnEntities[MBEDGE][EE].getN().size1()==0) continue;
 	ierr = doWork(
-	  VV,EE,MBTET,MBEDGE,
+	  vv,EE,MBTET,MBEDGE,
 	  row_data.dataOnEntities[MBTET][vv],col_data.dataOnEntities[MBEDGE][EE]); CHKERRQ(ierr);
       }
       //faces
       for(unsigned int FF = 0;FF<col_data.dataOnEntities[MBTRI].size();FF++) {
 	if(col_data.dataOnEntities[MBTRI][FF].getN().size1()==0) continue;
 	ierr = doWork(
-	  VV,FF,MBTET,MBTRI,
+	  vv,FF,MBTET,MBTRI,
 	  row_data.dataOnEntities[MBTET][vv],col_data.dataOnEntities[MBTRI][FF]); CHKERRQ(ierr);
       }
     }
@@ -191,7 +203,7 @@ PetscErrorCode DataOperator::opRhs(DataForcesAndSurcesCore &data) {
   PetscErrorCode ierr;
 
   for(unsigned int nn = 0;nn<data.dataOnEntities[MBVERTEX].size();nn++) {
-    ierr = doWork(-1,MBVERTEX,data.dataOnEntities[MBVERTEX][nn]); CHKERRQ(ierr);
+    ierr = doWork(nn,MBVERTEX,data.dataOnEntities[MBVERTEX][nn]); CHKERRQ(ierr);
   }
   for(unsigned int ee = 0;ee<data.dataOnEntities[MBEDGE].size();ee++) {
     //if(data.dataOnEntities[MBEDGE][ee].getN().size1()==0) continue;
@@ -203,7 +215,7 @@ PetscErrorCode DataOperator::opRhs(DataForcesAndSurcesCore &data) {
   }
   for(unsigned int vv = 0;vv<data.dataOnEntities[MBTET].size();vv++) {
     //if(data.dataOnEntities[MBTET][vv].getN().size1()==0) continue;
-    ierr = doWork(-1,MBTET,data.dataOnEntities[MBTET][vv]); CHKERRQ(ierr);
+    ierr = doWork(vv,MBTET,data.dataOnEntities[MBTET][vv]); CHKERRQ(ierr);
   }
 
   PetscFunctionReturn(0);
@@ -225,7 +237,7 @@ PetscErrorCode OpSetInvJacH1::doWork(
     unsigned int nb_dofs = data.getN().size2();
     if(type!=MBVERTEX) {
       if(nb_dofs != data.getDiffN().size2()/3) {
-        SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,
+        SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,
   	"data inconsistency nb_dofs != data.diffN.size2()/3 ( %u != %u/3 )",
   	nb_dofs,data.getDiffN().size2());
       }
@@ -486,12 +498,12 @@ PetscErrorCode OpGetData::doWork(
 
   unsigned int nb_dofs = data.getFieldData().size();
   if(nb_dofs % rank != 0) {
-    SETERRQ4(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,
+    SETERRQ4(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,
       "data inconsistency, type %d, side %d, nb_dofs %d, rank %d",
       type,side,nb_dofs,rank);
   }
   if(nb_dofs/rank > data.getN().size2()) {
-    SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,
+    SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,
       "data inconsistency nb_dofs >= data.N.size2() %u >= %u",nb_dofs,data.getN().size2());
   }
   data_at_GaussPt.resize(data.getN().size1(),rank);
@@ -533,7 +545,20 @@ PetscErrorCode OpGetNormals::doWork(int side,EntityType type,DataForcesAndSurces
   PetscFunctionBegin;
   
   if(data.getFieldData().size()==0)  PetscFunctionReturn(0);
-  
+
+  /*{ // Flat Prism, caculate normals only on face 4, see cannonical orderinf for prism
+    if(ptrFE->get_ent() == MBPRISM) {
+      const int valid_edges[] = {1,1,1, 0,0,0, 0,0,0};
+      const int valid_faces[] = {0,0,0, 1,0};
+      switch (type) {
+	case MBEDGE: { if(!valid_edges[side]) PetscFunctionReturn(0); }
+	case MBTRI: { if(!valid_faces[side]) PetscFunctionReturn(0); }
+	default:
+	break;
+      }
+    }
+  }*/ 	 
+
   switch (type) {
     case MBVERTEX: {
       for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
@@ -544,7 +569,7 @@ PetscErrorCode OpGetNormals::doWork(int side,EntityType type,DataForcesAndSurces
       }
     } 
     break;
-    case MBEDGE:     
+    case MBEDGE:    
     case MBTRI: {
       /*cerr << side << " " << type << endl;
       cerr << data.getN() << endl;
@@ -553,14 +578,14 @@ PetscErrorCode OpGetNormals::doWork(int side,EntityType type,DataForcesAndSurces
       cerr << "t1 " << tAngent1_at_GaussPt << endl;
       cerr << "t2 " << tAngent2_at_GaussPt << endl;*/
       if(2*data.getN().size2() != data.getDiffN().size2()) {
-	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
       }
       unsigned int nb_dofs = data.getFieldData().size();
       if(nb_dofs%3!=0) {
-	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
       }
       if(nb_dofs > 3*data.getN().size2()) {
-	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
       }
       for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
 	for(int dd = 0;dd<3;dd++) {
@@ -578,6 +603,119 @@ PetscErrorCode OpGetNormals::doWork(int side,EntityType type,DataForcesAndSurces
 
   PetscFunctionReturn(0);
 }
+
+PetscErrorCode OpGetNormals::calculateNormals() {
+  PetscFunctionBegin;
+  PetscErrorCode ierr;
+
+  sPin.resize(3,3);
+  sPin.clear();
+  nOrmals_at_GaussPt.resize(tAngent1_at_GaussPt.size1(),3);
+  for(unsigned int gg = 0;gg<tAngent1_at_GaussPt.size1();gg++) {
+    ierr = Spin(&*sPin.data().begin(),&tAngent1_at_GaussPt(gg,0)); CHKERRQ(ierr);
+    cblas_dgemv(
+      CblasRowMajor,CblasNoTrans,3,3,1.,
+      &*sPin.data().begin(),3,&tAngent2_at_GaussPt(gg,0),1,0.,
+      &nOrmals_at_GaussPt(gg,0),1);
+  }
+
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode OpGetNormalsOnPrism::doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+  PetscFunctionBegin;
+  
+  if(data.getFieldData().size()==0)  PetscFunctionReturn(0);
+  const int valid_edges3[] = { 1,1,1,0,0,0,0,0,0 };
+  const int valid_faces3[] = { 0,0,0,1,0,0,0,0,0 };
+  const int valid_edges4[] = { 0,0,0,0,0,0,1,1,1 };
+  const int valid_faces4[] = { 0,0,0,0,1,0,0,0,0 };
+
+  try {
+
+  switch (type) {
+    case MBVERTEX: {
+      for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
+	for(int dd = 0;dd<3;dd++) {
+	  tAngent1_at_GaussPtF3(gg,dd) = cblas_ddot(3,&data.getDiffN()(gg,0),2,&data.getFieldData()[dd],3);
+	  tAngent2_at_GaussPtF3(gg,dd) = cblas_ddot(3,&data.getDiffN()(gg,1),2,&data.getFieldData()[dd],3);
+	  tAngent1_at_GaussPtF4(gg,dd) = cblas_ddot(3,&data.getDiffN()(gg,6+0),2,&data.getFieldData()[9+dd],3);
+	  tAngent2_at_GaussPtF4(gg,dd) = cblas_ddot(3,&data.getDiffN()(gg,6+1),2,&data.getFieldData()[9+dd],3);
+	}
+      }
+    } 
+    break;
+    case MBEDGE:    
+    case MBTRI: {
+      if(2*data.getN().size2() != data.getDiffN().size2()) {
+	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+      }
+      unsigned int nb_dofs = data.getFieldData().size();
+      if(nb_dofs%3!=0) {
+	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+      }
+      if(nb_dofs > 3*data.getN().size2()) {
+	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+      }
+      for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
+	for(int dd = 0;dd<3;dd++) {
+	  if ((type == MBTRI && valid_faces3[side]) || (type == MBEDGE && valid_edges3[side]))  {  
+	    tAngent1_at_GaussPtF3(gg,dd) += cblas_ddot(nb_dofs/3,&data.getDiffN()(gg,0),2,&data.getFieldData()[dd],3);
+	    tAngent2_at_GaussPtF3(gg,dd) += cblas_ddot(nb_dofs/3,&data.getDiffN()(gg,1),2,&data.getFieldData()[dd],3);
+	  } else if((type == MBTRI && valid_faces4[side]) || (type == MBEDGE && valid_edges4[side])) {
+	    tAngent1_at_GaussPtF4(gg,dd) += cblas_ddot(nb_dofs/3,&data.getDiffN()(gg,0),2,&data.getFieldData()[dd],3);
+	    tAngent2_at_GaussPtF4(gg,dd) += cblas_ddot(nb_dofs/3,&data.getDiffN()(gg,1),2,&data.getFieldData()[dd],3);
+	  }
+	}
+      }
+    }
+    break;
+    default:
+      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
+  }
+
+  } catch (exception& ex) {
+    ostringstream ss;
+    ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+    SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+  }
+
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode OpGetNormalsOnPrism::calculateNormals() {
+  PetscFunctionBegin;
+  PetscErrorCode ierr;
+
+  try {
+  sPin.resize(3,3);
+  sPin.clear();
+  nOrmals_at_GaussPtF3.resize(tAngent1_at_GaussPtF3.size1(),3);
+  for(unsigned int gg = 0;gg<tAngent1_at_GaussPtF3.size1();gg++) {
+    ierr = Spin(&*sPin.data().begin(),&tAngent1_at_GaussPtF3(gg,0)); CHKERRQ(ierr);
+    cblas_dgemv(
+      CblasRowMajor,CblasNoTrans,3,3,1.,
+      &*sPin.data().begin(),3,&tAngent2_at_GaussPtF3(gg,0),1,0.,
+      &nOrmals_at_GaussPtF3(gg,0),1);
+  }
+  sPin.clear();
+  nOrmals_at_GaussPtF4.resize(tAngent1_at_GaussPtF4.size1(),3);
+  for(unsigned int gg = 0;gg<tAngent1_at_GaussPtF4.size1();gg++) {
+    ierr = Spin(&*sPin.data().begin(),&tAngent1_at_GaussPtF4(gg,0)); CHKERRQ(ierr);
+    cblas_dgemv(
+      CblasRowMajor,CblasNoTrans,3,3,1.,
+      &*sPin.data().begin(),3,&tAngent2_at_GaussPtF4(gg,0),1,0.,
+      &nOrmals_at_GaussPtF4(gg,0),1);
+  }
+  } catch (exception& ex) {
+    ostringstream ss;
+    ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+    SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+  }
+
+  PetscFunctionReturn(0);
+}
+
 
 PetscErrorCode OpSetPiolaTransoformOnTriangle::doWork(
     int side,
@@ -606,24 +744,6 @@ PetscErrorCode OpSetPiolaTransoformOnTriangle::doWork(
       }
     }    
 
-  }
-
-  PetscFunctionReturn(0);
-}
-
-PetscErrorCode OpGetNormals::calculateNormals() {
-  PetscFunctionBegin;
-  PetscErrorCode ierr;
-
-  sPin.resize(3,3);
-  bzero(&*sPin.data().begin(),9*sizeof(FieldData));
-  nOrmals_at_GaussPt.resize(tAngent1_at_GaussPt.size1(),3);
-  for(unsigned int gg = 0;gg<tAngent1_at_GaussPt.size1();gg++) {
-    ierr = Spin(&*sPin.data().begin(),&tAngent1_at_GaussPt(gg,0)); CHKERRQ(ierr);
-    cblas_dgemv(
-      CblasRowMajor,CblasNoTrans,3,3,1.,
-      &*sPin.data().begin(),3,&tAngent2_at_GaussPt(gg,0),1,0.,
-      &nOrmals_at_GaussPt(gg,0),1);
   }
 
   PetscFunctionReturn(0);
