@@ -54,7 +54,7 @@ struct TetElementForcesAndSourcesCore: public ForcesAndSurcesCore {
   OpSetInvJacHdiv opSetInvJacHdiv;
 
   string meshPositionsFieldName;
-  ublas::matrix<FieldData> hoCoordsAtGaussPtsPts;
+  ublas::matrix<FieldData> hoCoordsAtGaussPts;
   ublas::matrix<FieldData> hoGaussPtsJac;
   ublas::matrix<FieldData> hoGaussPtsInvJac;
   ublas::vector<FieldData> hoGaussPtsDetJac;
@@ -72,7 +72,7 @@ struct TetElementForcesAndSourcesCore: public ForcesAndSurcesCore {
     opSetInvJacH1(invJac),
     opPiolaTransform(vOlume,Jac),opSetInvJacHdiv(invJac),
     meshPositionsFieldName("MESH_NODE_POSITIONS"),
-    opHOatGaussPoints(hoCoordsAtGaussPtsPts,hoGaussPtsJac,3,3),
+    opHOatGaussPoints(hoCoordsAtGaussPts,hoGaussPtsJac,3,3),
     opSetHoInvJacH1(hoGaussPtsInvJac),
     opSetHoPiolaTransform(hoGaussPtsDetJac,hoGaussPtsJac),
     opSetHoInvJacHdiv(hoGaussPtsInvJac) {};
@@ -108,7 +108,7 @@ struct TetElementForcesAndSourcesCore: public ForcesAndSurcesCore {
     inline ublas::vector<double>& getCoords() { return ptrFE->coords; }
     inline ublas::matrix<double>& getGaussPts() { return ptrFE->gaussPts; }
     inline ublas::matrix<double>& getCoordsAtGaussPts() { return ptrFE->coordsAtGaussPts; }
-    inline ublas::matrix<double>& getHoCoordsAtGaussPtsPts() { return ptrFE->hoCoordsAtGaussPtsPts; }
+    inline ublas::matrix<double>& getHoCoordsAtGaussPts() { return ptrFE->hoCoordsAtGaussPts; }
     inline ublas::matrix<double>& getHoGaussPtsInvJac() { return ptrFE->hoGaussPtsInvJac; }
     inline ublas::vector<double>& getHoGaussPtsDetJac() { return ptrFE->hoGaussPtsDetJac; }
     inline const FEMethod* getFEMethod() { return ptrFE; }

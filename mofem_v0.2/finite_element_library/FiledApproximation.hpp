@@ -78,11 +78,15 @@ struct FieldApproximationH1 {
       NN.resize(nb_row_dofs,nb_col_dofs);
       bzero(&*NN.data().begin(),nb_row_dofs*nb_col_dofs*sizeof(FieldData));
       
-      for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
-	double val = getVolume()*getGaussPts()(3,gg);
+      int nb_gauss_pts = row_data.getN().size1();
+      for(unsigned int gg = 0;gg<nb_gauss_pts;gg++) {
+	double w = getVolume()*getGaussPts()(3,gg);
+	if(getHoCoordsAtGaussPts().size1()==nb_gauss_pts) {
+	  w *= getHoGaussPtsDetJac()[gg];
+	}
 	cblas_dger(CblasRowMajor,
 	    nb_row_dofs,nb_col_dofs,
-	    val,&row_data.getN()(gg,0),1,&col_data.getN()(gg,0),1,
+	    w,&row_data.getN()(gg,0),1,&col_data.getN()(gg,0),1,
 	    &*NN.data().begin(),nb_col_dofs);
       }
       
@@ -183,19 +187,31 @@ struct FieldApproximationH1 {
 	SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
       }
 
-      for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
-      
-	double x = getCoordsAtGaussPts()(gg,0);
-	double y = getCoordsAtGaussPts()(gg,1);
-	double z = getCoordsAtGaussPts()(gg,2);
+      int nb_gauss_pts = data.getN().size1();
+      for(unsigned int gg = 0;gg<nb_gauss_pts;gg++) {
+
+	double x,y,z,w;
+	w = getVolume()*getGaussPts()(3,gg);
+	if(getHoCoordsAtGaussPts().size1()==nb_gauss_pts) {
+	  x = getHoCoordsAtGaussPts()(gg,0);
+	  y = getHoCoordsAtGaussPts()(gg,1);
+	  z = getHoCoordsAtGaussPts()(gg,2);
+	  w *= getHoGaussPtsDetJac()[gg];
+	} else {
+	  x = getCoordsAtGaussPts()(gg,0);
+	  y = getCoordsAtGaussPts()(gg,1);
+	  z = getCoordsAtGaussPts()(gg,2);
+	}
+
+	//cerr << x << " " << y << " " << z << " " << w << " " << getHoGaussPtsDetJac()[gg] << endl;
+
 	ublas::vector<FieldData> fun_val = functionEvaluator(x,y,z);
 	if(fun_val.size() != rank) {
 	  SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	}
 
-	double val = getVolume()*getGaussPts()(3,gg);
 	for(unsigned int rr = 0;rr<rank;rr++) {
-	  cblas_daxpy(nb_row_dofs,val*fun_val[rr],&data.getN()(gg,0),1,&Nf[rr],rank);
+	  cblas_daxpy(nb_row_dofs,w*fun_val[rr],&data.getN()(gg,0),1,&Nf[rr],rank);
 	}
 
       }
