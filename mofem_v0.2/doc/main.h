@@ -20,8 +20,7 @@
  * - MOAB <http://www.mcs.anl.gov/~fathom/moab-docs/html/userguide.html>.
  * - PETSc <http://www.mcs.anl.gov/petsc/documentation/index.html>
  * - BOOST <http://www.boost.org>
- * 	- <http://www.boost.org/doc/libs/release/libs/numeric/>
- *	- <http://www.boost.org/doc/libs/release/libs/numeric/>
+ * 	- uBlas <http://www.boost.org/doc/libs/release/libs/numeric/>
  *
 
  * \section Interface MoFEM interface
@@ -60,8 +59,6 @@
  * along with MoFEM. If not, see <http://www.gnu.org/licenses/>
  *
 
- * This is the introduction.
- *
 
  */
 

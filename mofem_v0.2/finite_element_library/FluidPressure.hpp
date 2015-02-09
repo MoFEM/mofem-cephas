@@ -88,8 +88,8 @@ struct FluidPressure {
 	dist = ublas::matrix_row<ublas::matrix<double> >(getCoordsAtGaussPts(),gg);
 	dist -= dAta.zEroPressure;
 	double dot = cblas_ddot(3,&dist[0],1,&dAta.aCCeleration[0],1);
-	if(!allowNegativePressure) dot = -fmax(0,-dot);
-	double pressure = dot*dAta.dEnsity;
+	if(!allowNegativePressure) dot = fmax(0,dot);
+	double pressure = -dot*dAta.dEnsity;
 
 	for(int rr = 0;rr<rank;rr++) {
 	  double force;
@@ -100,7 +100,6 @@ struct FluidPressure {
 	  }
 	  cblas_daxpy(nb_row_dofs,getGaussPts()(2,gg)*force,&data.getN()(gg,0),1,&Nf[rr],rank);
 	}
-
       
       }
 
