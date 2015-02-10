@@ -112,9 +112,9 @@ struct CrackFrontData {
 
 };
 
-struct MyNonLinearSpatialElasticFEMthod: public NonLinearSpatialElasticFEMthod,CrackFrontData {
+struct MyNonLinearSpatialElastic: public NonLinearSpatialElasticFEMthod,CrackFrontData {
 
-  MyNonLinearSpatialElasticFEMthod(FieldInterface& _m_field,double _lambda,double _mu,int _verbose = 0): 
+  MyNonLinearSpatialElastic(FieldInterface& _m_field,double _lambda,double _mu,int _verbose = 0): 
     FEMethod_ComplexForLazy_Data(_m_field,_verbose),
     NonLinearSpatialElasticFEMthod(_m_field,_lambda,_mu,0,_verbose) {}
 
@@ -182,9 +182,9 @@ struct MyNonLinearSpatialElasticFEMthod: public NonLinearSpatialElasticFEMthod,C
 };
 
 
-struct MyEshelbyFEMethod: public EshelbyFEMethod,CrackFrontData {
+struct MyEshelby: public EshelbyFEMethod,CrackFrontData {
 
-  MyEshelbyFEMethod(FieldInterface& _m_field,double _lambda,double _mu,int _verbose = 0):
+  MyEshelby(FieldInterface& _m_field,double _lambda,double _mu,int _verbose = 0):
     FEMethod_ComplexForLazy_Data(_m_field,_verbose), 
     EshelbyFEMethod(_m_field,_lambda,_mu,_verbose) {
     type_of_analysis = material_analysis;
@@ -251,12 +251,12 @@ struct MyEshelbyFEMethod: public EshelbyFEMethod,CrackFrontData {
 
 };
 
-struct MyMeshSmoothingFEMethod: public MeshSmoothingFEMethod,CrackFrontData {
+struct MyMeshSmoothing: public MeshSmoothingFEMethod,CrackFrontData {
 
   Vec frontF;
   Vec tangentFrontF;
 
-  MyMeshSmoothingFEMethod(FieldInterface& _m_field,int _verbose = 0):
+  MyMeshSmoothing(FieldInterface& _m_field,int _verbose = 0):
     FEMethod_ComplexForLazy_Data(_m_field,_verbose), 
     MeshSmoothingFEMethod(_m_field,_verbose),
       frontF(PETSC_NULL),tangentFrontF(PETSC_NULL),
@@ -269,7 +269,7 @@ struct MyMeshSmoothingFEMethod: public MeshSmoothingFEMethod,CrackFrontData {
 
     }
 
-  ~MyMeshSmoothingFEMethod() {
+  ~MyMeshSmoothing() {
     if(frontF!=PETSC_NULL) {
       ierr = VecDestroy(&frontF); CHKERRABORT(PETSC_COMM_WORLD,ierr);
       frontF = PETSC_NULL;
@@ -416,13 +416,13 @@ struct MyMeshSmoothingFEMethod: public MeshSmoothingFEMethod,CrackFrontData {
 
 };
 
-struct TangentWithMeshSmoothingFrontConstrain_FEMethod: public C_CONSTANT_AREA_FEMethod {
+struct TangentWithMeshSmoothingFrontConstrain: public C_CONSTANT_AREA_FEMethod {
 
-  MyMeshSmoothingFEMethod *meshFEPtr;
+  MyMeshSmoothing *meshFEPtr;
   const double eps;
 
-  TangentWithMeshSmoothingFrontConstrain_FEMethod(FieldInterface& _mField,
-    MyMeshSmoothingFEMethod *_mesh_fe_ptr,
+  TangentWithMeshSmoothingFrontConstrain(FieldInterface& _mField,
+    MyMeshSmoothing *_mesh_fe_ptr,
     string _lambda_field_name,int _verbose = 0):
     C_CONSTANT_AREA_FEMethod(_mField,PETSC_NULL,PETSC_NULL,_lambda_field_name,_verbose),
     meshFEPtr(_mesh_fe_ptr),eps(1e-10) {}
@@ -744,7 +744,139 @@ struct BothSurfaceConstrains: public FEMethod {
 
 };
 
- 
+struct MyPrePostProcess: public FEMethod {
+  
+  FieldInterface& m_field;
+  ArcLengthCtx *arc_ptr;
+
+  MyPrePostProcess(FieldInterface& _m_field,
+    ArcLengthCtx *_arc_ptr): 
+    m_field(_m_field),arc_ptr(_arc_ptr) {}
+
+  PetscErrorCode ierr;
+    
+  PetscErrorCode preProcess() {
+    PetscFunctionBegin;
+
+    switch (ts_ctx) {
+	case CTX_TSSETIFUNCTION: {
+	  snes_ctx = CTX_SNESSETFUNCTION;
+	  snes_f = ts_F;
+	  break;
+	}
+	case CTX_TSSETIJACOBIAN: {
+	  snes_ctx = CTX_SNESSETJACOBIAN;
+	  snes_B = ts_B;
+	  break;
+	}
+	default:
+	break;
+    }
+      
+    //PetscAttachDebugger();
+    switch(snes_ctx) {
+      case CTX_SNESSETFUNCTION: {
+        ierr = VecZeroEntries(snes_f); CHKERRQ(ierr);
+        ierr = VecGhostUpdateBegin(snes_f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+        ierr = VecGhostUpdateEnd(snes_f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+        ierr = VecZeroEntries(arc_ptr->F_lambda); CHKERRQ(ierr);
+        ierr = VecGhostUpdateBegin(arc_ptr->F_lambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+        ierr = VecGhostUpdateEnd(arc_ptr->F_lambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      }
+      break;
+      default:
+        SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    }
+      
+    PetscFunctionReturn(0);
+  }
+    
+  PetscErrorCode postProcess() {
+    PetscFunctionBegin;
+    switch(snes_ctx) {
+      case CTX_SNESSETFUNCTION: {
+	  //snes_f
+        ierr = VecGhostUpdateBegin(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+        ierr = VecGhostUpdateEnd(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+        ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
+        ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+      }
+      break;
+      default:
+        SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    }
+    PetscFunctionReturn(0);
+  }
+
+};
+
+struct AssembleLambda: public FEMethod {
+  
+  FieldInterface& m_field;
+  ArcLengthCtx *arc_ptr;
+
+  SpatialPositionsBCFEMethodPreAndPostProc *bC;
+
+  AssembleLambda(FieldInterface& _m_field,
+    ArcLengthCtx *_arc_ptr,SpatialPositionsBCFEMethodPreAndPostProc *bc): 
+    m_field(_m_field),arc_ptr(_arc_ptr),bC(bc) {}
+
+  PetscErrorCode ierr;
+    
+  PetscErrorCode preProcess() {
+    PetscFunctionBegin;
+    switch (ts_ctx) {
+	case CTX_TSSETIFUNCTION: {
+	  snes_ctx = CTX_SNESSETFUNCTION;
+	  snes_f = ts_F;
+	  break;
+	}
+	case CTX_TSSETIJACOBIAN: {
+	  snes_ctx = CTX_SNESSETJACOBIAN;
+	  snes_B = ts_B;
+	  break;
+	}
+	default:
+	break;
+    }
+    PetscFunctionReturn(0);
+  }
+  PetscErrorCode operator()() {
+    PetscFunctionBegin;
+    PetscFunctionReturn(0);
+  }
+  PetscErrorCode postProcess() {
+    PetscFunctionBegin;
+    switch(snes_ctx) {
+      case CTX_SNESSETFUNCTION: {
+	  //F_lambda
+        ierr = VecGhostUpdateBegin(arc_ptr->F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+        ierr = VecGhostUpdateEnd(arc_ptr->F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+        ierr = VecAssemblyBegin(arc_ptr->F_lambda); CHKERRQ(ierr);
+        ierr = VecAssemblyEnd(arc_ptr->F_lambda); CHKERRQ(ierr);
+	  for(vector<int>::iterator vit = bC->dofsIndices.begin();vit!=bC->dofsIndices.end();vit++) {
+	    ierr = VecSetValue(arc_ptr->F_lambda,*vit,0,INSERT_VALUES); CHKERRQ(ierr);
+	  }
+	  ierr = VecAssemblyBegin(arc_ptr->F_lambda); CHKERRQ(ierr);
+	  ierr = VecAssemblyEnd(arc_ptr->F_lambda); CHKERRQ(ierr);
+	  ierr = VecDot(arc_ptr->F_lambda,arc_ptr->F_lambda,&arc_ptr->F_lambda2); CHKERRQ(ierr);
+	  PetscPrintf(PETSC_COMM_WORLD,"\tFlambda2 = %6.4e\n",arc_ptr->F_lambda2);
+	  //add F_lambda
+	  ierr = VecAXPY(snes_f,arc_ptr->get_FieldData(),arc_ptr->F_lambda); CHKERRQ(ierr);
+	  PetscPrintf(PETSC_COMM_WORLD,"\tlambda = %6.4e\n",arc_ptr->get_FieldData());  
+	  double fnorm;
+	  ierr = VecNorm(snes_f,NORM_2,&fnorm); CHKERRQ(ierr);	
+	  PetscPrintf(PETSC_COMM_WORLD,"\tfnorm = %6.4e\n",fnorm);  
+	}
+      break;
+      default:
+        SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    }  
+    PetscFunctionReturn(0);
+  }
+
+};
+
 PetscErrorCode ConfigurationalFractureMechanics::set_material_fire_wall(FieldInterface& m_field) {
   PetscFunctionBegin;
   ErrorCode rval;
@@ -1656,7 +1788,7 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_spatial_problem(FieldInte
 
   const double young_modulus = 1;
   const double poisson_ratio = 0.25;
-  MyNonLinearSpatialElasticFEMthod my_fe(m_field,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
+  MyNonLinearSpatialElastic my_fe(m_field,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
   ierr = PetscOptionsGetReal(PETSC_NULL,"-my_thermal_expansion",&my_fe.thermal_expansion,&flg); CHKERRQ(ierr);
 
   NeummanForcesSurfaceComplexForLazy neumann_forces(m_field,Aij,F);
@@ -2521,139 +2653,6 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   da *= fabs(crack_front_nodes.size()-fix_nodes.size())/(double)crack_front_nodes.size();
   corners_nodes.merge(fix_nodes);
 
-  struct MyPrePostProcessFEMethod: public FEMethod {
-    
-    FieldInterface& m_field;
-    ArcLengthCtx *arc_ptr;
-
-    MyPrePostProcessFEMethod(FieldInterface& _m_field,
-      ArcLengthCtx *_arc_ptr): 
-      m_field(_m_field),arc_ptr(_arc_ptr) {}
-  
-    PetscErrorCode ierr;
-      
-    PetscErrorCode preProcess() {
-      PetscFunctionBegin;
-
-      switch (ts_ctx) {
-	case CTX_TSSETIFUNCTION: {
-	  snes_ctx = CTX_SNESSETFUNCTION;
-	  snes_f = ts_F;
-	  break;
-	}
-	case CTX_TSSETIJACOBIAN: {
-	  snes_ctx = CTX_SNESSETJACOBIAN;
-	  snes_B = ts_B;
-	  break;
-	}
-	default:
-	break;
-      }
-        
-      //PetscAttachDebugger();
-      switch(snes_ctx) {
-        case CTX_SNESSETFUNCTION: {
-          ierr = VecZeroEntries(snes_f); CHKERRQ(ierr);
-          ierr = VecGhostUpdateBegin(snes_f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-          ierr = VecGhostUpdateEnd(snes_f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-          ierr = VecZeroEntries(arc_ptr->F_lambda); CHKERRQ(ierr);
-          ierr = VecGhostUpdateBegin(arc_ptr->F_lambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-          ierr = VecGhostUpdateEnd(arc_ptr->F_lambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-        }
-        break;
-        default:
-          SETERRQ(PETSC_COMM_SELF,1,"not implemented");
-      }
-        
-      PetscFunctionReturn(0);
-    }
-      
-    PetscErrorCode postProcess() {
-      PetscFunctionBegin;
-      switch(snes_ctx) {
-        case CTX_SNESSETFUNCTION: {
-	  //snes_f
-          ierr = VecGhostUpdateBegin(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-          ierr = VecGhostUpdateEnd(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-          ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
-          ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
-        }
-        break;
-        default:
-          SETERRQ(PETSC_COMM_SELF,1,"not implemented");
-      }
-      PetscFunctionReturn(0);
-    }
-
-  };
-
-  struct AssembleLambdaFEMethod: public FEMethod {
-    
-    FieldInterface& m_field;
-    ArcLengthCtx *arc_ptr;
-
-    SpatialPositionsBCFEMethodPreAndPostProc *bC;
-
-    AssembleLambdaFEMethod(FieldInterface& _m_field,
-      ArcLengthCtx *_arc_ptr,SpatialPositionsBCFEMethodPreAndPostProc *bc): 
-      m_field(_m_field),arc_ptr(_arc_ptr),bC(bc) {}
-  
-    PetscErrorCode ierr;
-      
-    PetscErrorCode preProcess() {
-      PetscFunctionBegin;
-      switch (ts_ctx) {
-	case CTX_TSSETIFUNCTION: {
-	  snes_ctx = CTX_SNESSETFUNCTION;
-	  snes_f = ts_F;
-	  break;
-	}
-	case CTX_TSSETIJACOBIAN: {
-	  snes_ctx = CTX_SNESSETJACOBIAN;
-	  snes_B = ts_B;
-	  break;
-	}
-	default:
-	break;
-      }
-      PetscFunctionReturn(0);
-    }
-    PetscErrorCode operator()() {
-      PetscFunctionBegin;
-      PetscFunctionReturn(0);
-    }
-    PetscErrorCode postProcess() {
-      PetscFunctionBegin;
-      switch(snes_ctx) {
-        case CTX_SNESSETFUNCTION: {
-	  //F_lambda
-          ierr = VecGhostUpdateBegin(arc_ptr->F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-          ierr = VecGhostUpdateEnd(arc_ptr->F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-          ierr = VecAssemblyBegin(arc_ptr->F_lambda); CHKERRQ(ierr);
-          ierr = VecAssemblyEnd(arc_ptr->F_lambda); CHKERRQ(ierr);
-	  for(vector<int>::iterator vit = bC->dofsIndices.begin();vit!=bC->dofsIndices.end();vit++) {
-	    ierr = VecSetValue(arc_ptr->F_lambda,*vit,0,INSERT_VALUES); CHKERRQ(ierr);
-	  }
-	  ierr = VecAssemblyBegin(arc_ptr->F_lambda); CHKERRQ(ierr);
-	  ierr = VecAssemblyEnd(arc_ptr->F_lambda); CHKERRQ(ierr);
-	  ierr = VecDot(arc_ptr->F_lambda,arc_ptr->F_lambda,&arc_ptr->F_lambda2); CHKERRQ(ierr);
-	  PetscPrintf(PETSC_COMM_WORLD,"\tFlambda2 = %6.4e\n",arc_ptr->F_lambda2);
-	  //add F_lambda
-	  ierr = VecAXPY(snes_f,arc_ptr->get_FieldData(),arc_ptr->F_lambda); CHKERRQ(ierr);
-	  PetscPrintf(PETSC_COMM_WORLD,"\tlambda = %6.4e\n",arc_ptr->get_FieldData());  
-	  double fnorm;
-	  ierr = VecNorm(snes_f,NORM_2,&fnorm); CHKERRQ(ierr);	
-	  PetscPrintf(PETSC_COMM_WORLD,"\tfnorm = %6.4e\n",fnorm);  
-	}
-        break;
-        default:
-          SETERRQ(PETSC_COMM_SELF,1,"not implemented");
-      }  
-      PetscFunctionReturn(0);
-    }
-
-  };
-
   //arc elem
   ArcLengthCtx arc_ctx(m_field,"COUPLED_PROBLEM");
   ArcLengthSnesCtx arc_snes_ctx(m_field,"COUPLED_PROBLEM",&arc_ctx);
@@ -2663,14 +2662,14 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   //spatial and material forces
   const double young_modulus = 1;
   const double poisson_ratio = 0.;
-  MyNonLinearSpatialElasticFEMthod fe_spatial(m_field,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
+  MyNonLinearSpatialElastic fe_spatial(m_field,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
   ierr = fe_spatial.initCrackFrontData(m_field); CHKERRQ(ierr);
   fe_spatial.isCoupledProblem = true;
-  MyEshelbyFEMethod fe_material(m_field,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
+  MyEshelby fe_material(m_field,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
   ierr = fe_material.initCrackFrontData(m_field); CHKERRQ(ierr);
   fe_material.isCoupledProblem = true;
   //meshs moothing
-  MyMeshSmoothingFEMethod smoother(m_field);
+  MyMeshSmoothing smoother(m_field);
   ierr = smoother.initCrackFrontData(m_field); CHKERRQ(ierr);
   set_qual_ver(3);
   //constrains
@@ -2680,7 +2679,7 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   constrain_crack_surface.nonlinear = true;
   Snes_CTgc_CONSTANT_AREA_FEMethod ct_gc(m_field,projFrontCtx,"COUPLED_PROBLEM","LAMBDA_CRACKFRONT_AREA");
   Snes_dCTgc_CONSTANT_AREA_FEMethod dct_gc(m_field,K,"LAMBDA_CRACKFRONT_AREA");
-  TangentWithMeshSmoothingFrontConstrain_FEMethod tangent_constrain(m_field,&smoother,"LAMBDA_CRACK_TANGENT_CONSTRAIN");
+  TangentWithMeshSmoothingFrontConstrain tangent_constrain(m_field,&smoother,"LAMBDA_CRACK_TANGENT_CONSTRAIN");
   map<int,SnesConstrainSurfacGeometry*> other_body_surface_constrains;
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,SIDESET,it)) {
     int msId = it->get_msId();
@@ -2732,8 +2731,8 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
     ierr = fe_forces.addPreassure(it->get_msId()); CHKERRQ(ierr);
   }
   //portsproc
-  MyPrePostProcessFEMethod pre_post_method(m_field,&arc_ctx);
-  AssembleLambdaFEMethod assemble_F_lambda(m_field,&arc_ctx,&my_dirichlet_bc);
+  MyPrePostProcess pre_post_method(m_field,&arc_ctx);
+  AssembleLambda assemble_F_lambda(m_field,&arc_ctx,&my_dirichlet_bc);
 
   //rhs
   arc_snes_ctx.get_preProcess_to_do_Rhs().push_back(&pre_post_method);
@@ -2957,6 +2956,24 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
  
   }
 
+  ierr = VecZeroEntries(F); CHKERRQ(ierr);
+
+  //calulate work of fracture
+  /*map_ent_work.clear();
+  ublas::vector<double> mesh_node_disp(3),coords(3);
+  for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_FOR_LOOP_(problemPtr,"LAMBDA_CRACKFRONT_AREA",diit)) {
+    EntityHandle ent = diit->get_ent();
+    //for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_(m_field,"GRIFFITH_FORCE",diit->get_ent(),diiit)) {
+      //griffith_force[diiit->get_dof_rank()] = diiit->get_FieldData();
+    //}
+    for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_(m_field,"DOT_MESH_NODE_POSITIONS",diit->get_ent(),diiit)) {
+      mesh_node_disp[diiit->get_dof_rank()] = diiit->get_FieldData();
+    }
+    rval = m_field.get_moab().get_coords(&ent,1,coords); CHKERR_PETSC(rval);
+    mesh_node_disp -= coords;
+
+  }*/
+
   ierr = VecDestroy(&DISP); CHKERRQ(ierr);
   ierr = MatDestroy(&ShellK); CHKERRQ(ierr);
   ierr = MatDestroy(&K); CHKERRQ(ierr);
@@ -2969,6 +2986,9 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   }
 
   ierr = delete_front_projection_data(m_field); CHKERRQ(ierr);
+
+  
+
 
   PetscFunctionReturn(0);
 }
@@ -2997,7 +3017,7 @@ PetscErrorCode ConfigurationalFractureMechanics::calculate_material_forces(Field
 
   const double young_modulus = 1;
   const double poisson_ratio = 0;
-  MyEshelbyFEMethod material_fe(m_field,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
+  MyEshelby material_fe(m_field,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
   PetscBool flg = PETSC_TRUE;
   ierr = PetscOptionsGetReal(PETSC_NULL,"-my_thermal_expansion",&material_fe.thermal_expansion,&flg); CHKERRQ(ierr);
   material_fe.snes_f = F_Material;
