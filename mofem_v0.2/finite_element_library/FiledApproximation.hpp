@@ -199,7 +199,7 @@ struct FieldApproximationH1 {
       }
 
       // itegration 
-      int nb_gauss_pts = data.getN().size1();
+      unsigned int nb_gauss_pts = data.getN().size1();
       for(unsigned int gg = 0;gg<nb_gauss_pts;gg++) {
 
 	double x,y,z,w;
