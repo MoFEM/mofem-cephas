@@ -30,6 +30,9 @@ using namespace boost::numeric;
 
 namespace MoFEM {
 
+/** \brief Finite element for approximating analytical filed on the mesh
+  * \ingroup mofem_forces_and_sources
+  */
 template<typename FUNEVAL>
 struct FieldApproximationH1 {
 
@@ -41,6 +44,10 @@ struct FieldApproximationH1 {
     FieldInterface &m_field):
     mField(m_field),fe(m_field) {}
 
+  /** \brief Gauss point poperatiors to caculete matrices and vectors
+    *
+    * Function work on thetrahedrals
+    */
   struct OpApprox: public TetElementForcesAndSourcesCore::UserDataOperator {
 
     Mat A;
@@ -56,6 +63,8 @@ struct FieldApproximationH1 {
     ublas::matrix<FieldData> transNN;
     ublas::vector<FieldData> Nf;
 
+    /** \brief calulate matrix
+      */
     PetscErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
@@ -78,7 +87,7 @@ struct FieldApproximationH1 {
       NN.resize(nb_row_dofs,nb_col_dofs);
       bzero(&*NN.data().begin(),nb_row_dofs*nb_col_dofs*sizeof(FieldData));
       
-      int nb_gauss_pts = row_data.getN().size1();
+      unsigned int nb_gauss_pts = row_data.getN().size1();
       for(unsigned int gg = 0;gg<nb_gauss_pts;gg++) {
 	double w = getVolume()*getGaussPts()(3,gg);
 	if(getHoCoordsAtGaussPts().size1()==nb_gauss_pts) {
@@ -161,6 +170,8 @@ struct FieldApproximationH1 {
       PetscFunctionReturn(0);	
     }
 
+    /** \brief caclulate vector
+      */
     PetscErrorCode doWork(
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
@@ -187,17 +198,21 @@ struct FieldApproximationH1 {
 	SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
       }
 
+      // itegration 
       int nb_gauss_pts = data.getN().size1();
       for(unsigned int gg = 0;gg<nb_gauss_pts;gg++) {
 
 	double x,y,z,w;
 	w = getVolume()*getGaussPts()(3,gg);
 	if(getHoCoordsAtGaussPts().size1()==nb_gauss_pts) {
+	  //intergation poits global positions if higher order geometry is given
 	  x = getHoCoordsAtGaussPts()(gg,0);
 	  y = getHoCoordsAtGaussPts()(gg,1);
 	  z = getHoCoordsAtGaussPts()(gg,2);
+	  // correction of jacobian for higher order geometry
 	  w *= getHoGaussPtsDetJac()[gg];
 	} else {
+	  //intergartion point global positions for linear tetrahedral element
 	  x = getCoordsAtGaussPts()(gg,0);
 	  y = getCoordsAtGaussPts()(gg,1);
 	  z = getCoordsAtGaussPts()(gg,2);
@@ -225,17 +240,22 @@ struct FieldApproximationH1 {
 
   };
 
+  /** \brief assemble matrix and vector 
+    */
   PetscErrorCode loopMatrixAndVector(
     const string &problem_name,const string &fe_name,const string &field_name,Mat A,Vec F,
     FUNEVAL &function_evaluator) {
     PetscFunctionBegin;
     PetscErrorCode ierr;
+    //add operator to calulate F vector
     fe.get_op_to_do_Rhs().push_back(new OpApprox(field_name,A,F,function_evaluator));
+    //add operator to calulate A matrix
     fe.get_op_to_do_Lhs().push_back(new OpApprox(field_name,A,F,function_evaluator));
     MatZeroEntries(A);
     VecZeroEntries(F);
     ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    //calulate and assembe
     ierr = mField.loop_finite_elements(problem_name,"TEST_FE",fe);  CHKERRQ(ierr);
     ierr = MatAssemblyBegin(A,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
     ierr = MatAssemblyEnd(A,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
