@@ -59,10 +59,10 @@ namespace MoFEM {
 
 const static int debug = 1;
 
-PetscErrorCode print_MoFem_verison() {
+PetscErrorCode print_MoFem_verison(MPI_Comm comm) {
   PetscFunctionBegin;
-  PetscPrintf(PETSC_COMM_WORLD,"version %d.%d.%d\n",MoFEM_VERSION_MAJOR,MoFEM_VERSION_MINOR,MoFEM_VERSION_BUILD);
-  PetscPrintf(PETSC_COMM_WORLD,"git commit id %s\n",GIT_SHA1_NAME);
+  PetscPrintf(comm,"version %d.%d.%d\n",MoFEM_VERSION_MAJOR,MoFEM_VERSION_MINOR,MoFEM_VERSION_BUILD);
+  PetscPrintf(comm,"git commit id %s\n",GIT_SHA1_NAME);
   PetscFunctionReturn(0);
 }
 
@@ -89,7 +89,7 @@ PetscErrorCode Core::queryInterface(const MOFEMuuid& uuid,FieldUnknownInterface*
     *iface = dynamic_cast<FieldInterface*>(this);
     PetscFunctionReturn(0);
   }
-  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"unknown inteface");
+  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"unknown inteface");
   PetscFunctionReturn(0);
 }
 
@@ -132,20 +132,22 @@ PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr)
   } else if(type == typeid(PrismInterface)) {
     ptr = static_cast<PrismInterface*>(this);
   } else {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"unknown inteface");
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"unknown inteface");
   }
   PetscFunctionReturn(0);
 }
 
-Core::Core(Interface& _moab,int _verbose): 
-  moab(_moab),verbose(_verbose) {
+Core::Core(Interface& _moab,MPI_Comm _comm,int _verbose): 
+  moab(_moab),comm(_comm),verbose(_verbose) {
 
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
-  if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
+  if(pcomm == NULL) pcomm =  new ParallelComm(&moab,comm);
+  MPI_Comm_size(comm,&sIze);
+  MPI_Comm_rank(comm,&rAnk);
 
   const EntityHandle root_meshset = moab.get_root_set();
   if(verbose>0) {
-    print_MoFem_verison();
+    print_MoFem_verison(comm);
   }
 
   // Version
@@ -295,6 +297,9 @@ Core::~Core() {
 Interface& Core::get_moab() {
   return moab;
 }
+MPI_Comm Core::get_comm() {
+  return comm;
+}
 BitFieldId Core::get_BitFieldId(const string& name) const {
   typedef MoFEMField_multiIndex::index<FieldName_mi_tag>::type field_set_by_name;
   const field_set_by_name &set = moabFields.get<FieldName_mi_tag>();
@@ -340,12 +345,12 @@ BitFieldId Core::get_field_shift() {
   if(*f_shift >= BITFIELDID_SIZE) {
     char msg[] = "number of fields exceeded";
     PetscTraceBackErrorHandler(
-      PETSC_COMM_WORLD,
+      comm,
       __LINE__,PETSC_FUNCTION_NAME,__FILE__,
-      MOFEM_DATA_INSONSISTENCY,PETSC_ERROR_INITIAL,msg,PETSC_NULL);
-    PetscMPIAbortErrorHandler(PETSC_COMM_WORLD,
+      MOFEM_DATA_INCONSISTENCT,PETSC_ERROR_INITIAL,msg,PETSC_NULL);
+    PetscMPIAbortErrorHandler(comm,
       __LINE__,PETSC_FUNCTION_NAME,__FILE__,
-      MOFEM_DATA_INSONSISTENCY,PETSC_ERROR_INITIAL,msg,PETSC_NULL);
+      MOFEM_DATA_INCONSISTENCT,PETSC_ERROR_INITIAL,msg,PETSC_NULL);
   }
   return BitFieldId().set(((*f_shift)++)-1);
 }

@@ -88,7 +88,7 @@ struct FluidPressure {
 	dist = ublas::matrix_row<ublas::matrix<double> >(getCoordsAtGaussPts(),gg);
 	dist -= dAta.zEroPressure;
 	double dot = cblas_ddot(3,&dist[0],1,&dAta.aCCeleration[0],1);
-	if(!allowNegativePressure) dot = -fmax(0,-dot);
+	if(!allowNegativePressure) dot = fmax(0,dot);
 	double pressure = dot*dAta.dEnsity;
 
 	for(int rr = 0;rr<rank;rr++) {
@@ -100,7 +100,6 @@ struct FluidPressure {
 	  }
 	  cblas_daxpy(nb_row_dofs,getGaussPts()(2,gg)*force,&data.getN()(gg,0),1,&Nf[rr],rank);
 	}
-
       
       }
 
@@ -115,7 +114,7 @@ struct FluidPressure {
   };
 
   PetscErrorCode addNeumannFluidPressureBCElements(
-    const string problem_name,const string field_name,const string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
+    const string field_name,const string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
     PetscFunctionBegin;
 
     ierr = mField.add_finite_element("FLUID_PRESSURE_FE",MF_ZERO); CHKERRQ(ierr);
@@ -125,7 +124,6 @@ struct FluidPressure {
     if(mField.check_field(mesh_nodals_positions)) {
       ierr = mField.modify_finite_element_add_field_data("FLUID_PRESSURE_FE",mesh_nodals_positions); CHKERRQ(ierr);
     }
-    ierr = mField.modify_problem_add_finite_element(problem_name,"FLUID_PRESSURE_FE"); CHKERRQ(ierr);
 
     //takes skin of block of entities
     Skinner skin(&mField.get_moab());
@@ -160,7 +158,7 @@ struct FluidPressure {
         setOfFluids[bit->get_msId()].tRis.merge(tets_skin_tris);
         ostringstream ss;
         ss << setOfFluids[bit->get_msId()] << endl;
-        PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
+        PetscPrintf(mField.get_comm(),ss.str().c_str());
   
         ierr = mField.add_ents_to_finite_element_by_TRIs(setOfFluids[bit->get_msId()].tRis,"FLUID_PRESSURE_FE"); CHKERRQ(ierr);
 

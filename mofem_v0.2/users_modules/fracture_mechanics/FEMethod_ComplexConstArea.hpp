@@ -35,8 +35,6 @@ void tricircumcenter3d_tp(double a[3],double b[3],double c[3],
 
 using namespace ObosleteUsersModules;
 
-namespace MoFEM {
-
 /** 
   * 
   * dN/dX = (1/A) * [ Spin[dX/dksi]*dN/deta - Spin[dX/deta]*dN/dksi ]
@@ -386,7 +384,11 @@ struct C_CONSTANT_AREA_FEMethod: public FEMethod {
     PetscFunctionBegin;
     if(Q != PETSC_NULL) {
       for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_FOR_LOOP_(problemPtr,lambda_field_name,dofs)) {
-	ierr = MatGetVecs(C,&mapV[dofs->get_petsc_gloabl_dof_idx()],PETSC_NULL); CHKERRQ(ierr);
+	#if PETSC_VERSION_GE(3,5,3) 
+	  ierr = MatCreateVecs(C,&mapV[dofs->get_petsc_gloabl_dof_idx()],PETSC_NULL); CHKERRQ(ierr);
+	#else
+	  ierr = MatGetVecs(C,&mapV[dofs->get_petsc_gloabl_dof_idx()],PETSC_NULL); CHKERRQ(ierr);
+	#endif
 	//ierr = mField.VecCreateGhost(problemPtr->get_name(),COL,&mapV[dofs->get_petsc_gloabl_dof_idx()]); CHKERRQ(ierr);
 	ierr = VecZeroEntries(mapV[dofs->get_petsc_gloabl_dof_idx()]); CHKERRQ(ierr);
       }
@@ -751,6 +753,5 @@ struct Snes_dCTgc_CONSTANT_AREA_FEMethod: public dCTgc_CONSTANT_AREA_FEMethod {
 
 };
 
-}
 
 #endif // __MOABFEMETHOD_CONSTAREA_HPP__

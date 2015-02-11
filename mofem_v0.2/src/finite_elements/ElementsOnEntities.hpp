@@ -54,7 +54,7 @@ struct TetElementForcesAndSourcesCore: public ForcesAndSurcesCore {
   OpSetInvJacHdiv opSetInvJacHdiv;
 
   string meshPositionsFieldName;
-  ublas::matrix<FieldData> hoCoordsAtGaussPtsPts;
+  ublas::matrix<FieldData> hoCoordsAtGaussPts;
   ublas::matrix<FieldData> hoGaussPtsJac;
   ublas::matrix<FieldData> hoGaussPtsInvJac;
   ublas::vector<FieldData> hoGaussPtsDetJac;
@@ -72,7 +72,7 @@ struct TetElementForcesAndSourcesCore: public ForcesAndSurcesCore {
     opSetInvJacH1(invJac),
     opPiolaTransform(vOlume,Jac),opSetInvJacHdiv(invJac),
     meshPositionsFieldName("MESH_NODE_POSITIONS"),
-    opHOatGaussPoints(hoCoordsAtGaussPtsPts,hoGaussPtsJac,3,3),
+    opHOatGaussPoints(hoCoordsAtGaussPts,hoGaussPtsJac,3,3),
     opSetHoInvJacH1(hoGaussPtsInvJac),
     opSetHoPiolaTransform(hoGaussPtsDetJac,hoGaussPtsJac),
     opSetHoInvJacHdiv(hoGaussPtsInvJac) {};
@@ -108,7 +108,7 @@ struct TetElementForcesAndSourcesCore: public ForcesAndSurcesCore {
     inline ublas::vector<double>& getCoords() { return ptrFE->coords; }
     inline ublas::matrix<double>& getGaussPts() { return ptrFE->gaussPts; }
     inline ublas::matrix<double>& getCoordsAtGaussPts() { return ptrFE->coordsAtGaussPts; }
-    inline ublas::matrix<double>& getHoCoordsAtGaussPtsPts() { return ptrFE->hoCoordsAtGaussPtsPts; }
+    inline ublas::matrix<double>& getHoCoordsAtGaussPts() { return ptrFE->hoCoordsAtGaussPts; }
     inline ublas::matrix<double>& getHoGaussPtsInvJac() { return ptrFE->hoGaussPtsInvJac; }
     inline ublas::vector<double>& getHoGaussPtsDetJac() { return ptrFE->hoGaussPtsDetJac; }
     inline const FEMethod* getFEMethod() { return ptrFE; }
@@ -444,6 +444,180 @@ struct VertexElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 
 };
 
+
+/** \brief FlatPrism finite element  
+ * \ingroup mofem_forces_and_sources_prism_element
+ *
+ * User is implementing own operator at Guass piint level, by own object
+ * derived from FlatPrismElementForcesAndSurcesCoreL::UserDataOperator.  Arbitrary
+ * number of operator added pushing objects to vecUserOpN and
+ * vecUserOpSymmNN. 
+ *
+ */
+struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
+
+  ErrorCode rval;
+  PetscErrorCode ierr;
+  double aRea;;
+  ublas::vector<double> normal;
+  ublas::vector<double> coords;
+  ublas::matrix<double> gaussPts;
+  ublas::matrix<double> coordsAtGaussPts;
+
+  DataForcesAndSurcesCore dataH1;
+  DerivedDataForcesAndSurcesCore derivedDataH1;
+  DataForcesAndSurcesCore dataHdiv;
+  DerivedDataForcesAndSurcesCore derivedDataHdiv;
+
+  string meshPositionsFieldName;
+
+  ublas::matrix<FieldData> nOrmals_at_GaussPtF3;
+  ublas::matrix<FieldData> tAngent1_at_GaussPtF3;
+  ublas::matrix<FieldData> tAngent2_at_GaussPtF3;
+  ublas::matrix<FieldData> nOrmals_at_GaussPtF4;
+  ublas::matrix<FieldData> tAngent1_at_GaussPtF4;
+  ublas::matrix<FieldData> tAngent2_at_GaussPtF4;
+  OpGetNormalsOnPrism opHONormals;
+
+  FlatPrismElementForcesAndSurcesCore(FieldInterface &_mField):
+    ForcesAndSurcesCore(_mField),
+    dataH1(MBPRISM),derivedDataH1(dataH1),
+    dataHdiv(MBPRISM),derivedDataHdiv(dataHdiv),
+    meshPositionsFieldName("MESH_NODE_POSITIONS"),
+    opHONormals(
+    nOrmals_at_GaussPtF3,tAngent1_at_GaussPtF3,tAngent2_at_GaussPtF3,
+    nOrmals_at_GaussPtF4,tAngent1_at_GaussPtF4,tAngent2_at_GaussPtF4) {};
+
+  /** \brief default oparator for TRI element
+    * \ingroup mofem_forces_and_sources_prism_element
+    */
+  struct UserDataOperator: public DataOperator {
+    string row_field_name;
+    string col_field_name;
+    bool symm;
+    UserDataOperator(
+      const string &_field_name):
+	row_field_name(_field_name),col_field_name(_field_name),symm(true),ptrFE(NULL) {};
+    UserDataOperator(
+      const string &_row_field_name,const string &_col_field_name):
+	row_field_name(_row_field_name),col_field_name(_col_field_name),symm(true),ptrFE(NULL) {};
+    virtual ~UserDataOperator() {}
+    inline double getArea() { return ptrFE->aRea; }
+
+    /** \bried get triangle normal
+     */
+    inline ublas::vector<double>& getNormal() { return ptrFE->normal; }
+
+    /** \bried get triangle coords
+     */
+    inline ublas::vector<double>& getCoords() { return ptrFE->coords; }
+
+    /** \bried get triangle Gauss pts.
+     */
+    inline ublas::matrix<double>& getGaussPts() { return ptrFE->gaussPts; }
+
+    /** \bried get coordinates at Gauss pts.
+     */
+    inline ublas::matrix<double>& getCoordsAtGaussPts() { return ptrFE->coordsAtGaussPts; }
+
+    /** \bried if higher order geometry return normals at face F3 at Gauss pts.
+     * 
+     * Face 3 is top face in cannonical triangle numeraion, see 
+     * Canonical numbering systems for finite-element codes Timothy J. Tautges
+     */
+    inline ublas::matrix<FieldData>& getNormals_at_GaussPtF3() { return ptrFE->nOrmals_at_GaussPtF3; }
+
+    /** \bried if higher order geometry return normals at face F4 at Gauss pts.
+     * 
+     * Face 4 is top face in cannonical triangle numeraion, see 
+     * Canonical numbering systems for finite-element codes Timothy J. Tautges
+     */
+    inline ublas::matrix<FieldData>& getNormals_at_GaussPtF4() { return ptrFE->nOrmals_at_GaussPtF4; }
+
+    /** \bried if higher order geometry return normals at Gauss pts.
+      *
+      * Face 3 is top face in cannonical triangle numeraion, see 
+      * Canonical numbering systems for finite-element codes Timothy J. Tautges
+      *
+      * \param gg gauss point number
+      */
+    inline ublas::matrix_row<ublas::matrix<double> > getNormals_at_GaussPtF3(const int gg) { 
+      return ublas::matrix_row<ublas::matrix<double> >(ptrFE->nOrmals_at_GaussPtF3,gg); 
+    }
+
+    /** \bried if higher order geometry return normals at Gauss pts.
+      *
+      * Face 3 is top face in cannonical triangle numeraion, see 
+      * Canonical numbering systems for finite-element codes Timothy J. Tautges
+      *
+      * \param gg gauss point number
+      */
+    inline ublas::matrix_row<ublas::matrix<double> > getNormals_at_GaussPtF4(const int gg) { 
+      return ublas::matrix_row<ublas::matrix<double> >(ptrFE->nOrmals_at_GaussPtF4,gg); 
+    }
+
+    /** \bried if higher order geometry return tangent vetor to triangle at Gauss pts.
+     */
+    inline ublas::matrix<FieldData>& getTangent1_at_GaussPtF3() { return ptrFE->tAngent1_at_GaussPtF3; }
+
+    /** \bried if higher order geometry return tangent vetor to triangle at Gauss pts.
+     */
+    inline ublas::matrix<FieldData>& getTangent2_at_GaussPtF3() { return ptrFE->tAngent2_at_GaussPtF3; }
+
+    /** \bried if higher order geometry return tangent vetor to triangle at Gauss pts.
+     */
+    inline ublas::matrix<FieldData>& getTangent1_at_GaussPtF4() { return ptrFE->tAngent1_at_GaussPtF4; }
+
+    /** \bried if higher order geometry return tangent vetor to triangle at Gauss pts.
+     */
+    inline ublas::matrix<FieldData>& getTangent2_at_GaussPtF4() { return ptrFE->tAngent2_at_GaussPtF4; }
+
+    /** \bried return pointer to triangle finite element object 
+     */
+    inline const FlatPrismElementForcesAndSurcesCore* getFlatPrismElementForcesAndSurcesCore() { return ptrFE; }
+
+    /** \bried return pointer to FEMthod object
+     */
+    inline const FEMethod* getFEMethod() { return ptrFE; }
+
+    /** \bried return pointer to NumeredMoFEMFiniteElement 
+     */
+    inline const NumeredMoFEMFiniteElement* getMoFEMFEPtr() { return ptrFE->fePtr; };
+
+    PetscErrorCode setPtrFE(FlatPrismElementForcesAndSurcesCore *ptr) { 
+      PetscFunctionBegin;
+      ptrFE = ptr;
+      PetscFunctionReturn(0);
+    }
+    private:
+    FlatPrismElementForcesAndSurcesCore *ptrFE; 
+  };
+
+  boost::ptr_vector<UserDataOperator> vecUserOpN; 
+  boost::ptr_vector<UserDataOperator> vecUserOpSymmNN;
+
+  /** \brief Use to push back operator for right hand side
+   * It can be ussed to calculate nodal forces or other quantities on the mesh.
+   */
+  boost::ptr_vector<UserDataOperator>& get_op_to_do_Rhs() { return vecUserOpN; }
+
+  /** \brief Use to push back operator for left hand side
+   * It can be ussed to calculate matrices or other quantities on mesh.
+   */
+  boost::ptr_vector<UserDataOperator>& get_op_to_do_Lhs() { return vecUserOpSymmNN; }
+
+  PetscErrorCode preProcess() {
+    PetscFunctionBegin;
+    PetscFunctionReturn(0);
+  }
+  PetscErrorCode operator()();
+  PetscErrorCode postProcess() {
+    PetscFunctionBegin;
+    PetscFunctionReturn(0);
+  }
+
+};
+
 }
 
 #endif //__ELEMENTSONENTITIES_HPP
@@ -459,6 +633,12 @@ struct VertexElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 
 /***************************************************************************//**
  * \defgroup mofem_forces_and_sources_tri_element Triangular Element 
+ * \ingroup mofem_forces_and_sources
+ ******************************************************************************/
+
+
+/***************************************************************************//**
+ * \defgroup mofem_forces_and_sources_prism_element Prism Element 
  * \ingroup mofem_forces_and_sources
  ******************************************************************************/
 

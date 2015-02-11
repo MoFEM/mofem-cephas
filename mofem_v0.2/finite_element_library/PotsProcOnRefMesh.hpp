@@ -62,6 +62,7 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
   int getRule(int order) { return -1; };
 
   struct CommonData {
+    Range tEts;
     map<string,vector<ublas::vector<double> > > fieldMap;
     map<string,vector<ublas::matrix<double> > > gradMap;
   };
@@ -98,13 +99,13 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
     EntityHandle tet;
     rval = moab_ref.create_element(MBTET,nodes,4,tet); CHKERR_PETSC(rval);
 
-    Core m_core_ref(moab_ref,-1);
+    Core m_core_ref(moab_ref,PETSC_COMM_SELF,-2);
     FieldInterface& m_field_ref = m_core_ref;
 
     ierr = m_field_ref.seed_ref_level_3D(0,BitRefLevel().set(0)); CHKERRQ(ierr);
 
     for(int ll = 0;ll<max_level;ll++) {
-      PetscPrintf(PETSC_COMM_WORLD,"Refine Level %d\n",ll);
+      PetscPrintf(mField.get_comm(),"Refine Level %d\n",ll);
       Range edges;
       ierr = m_field_ref.get_entities_by_type_and_ref_level(BitRefLevel().set(ll),BitRefLevel().set(),MBEDGE,edges); CHKERRQ(ierr);
       Range tets;
@@ -161,32 +162,32 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
     }
     gaussPts_FirstOrder = trans(gaussPts_FirstOrder);
 
-    Range tets;
+    commonData.tEts.clear();
     for(unsigned int tt = 0;tt<refTets.size1();tt++) {
       EntityHandle conn[] = { 
 	mapGaussPts[refTets(tt,0)], mapGaussPts[refTets(tt,1)],
 	mapGaussPts[refTets(tt,2)], mapGaussPts[refTets(tt,3)] };
       EntityHandle tet;
       rval = postProcMesh.create_element(MBTET,conn,4,tet); CHKERR_PETSC(rval);
-      tets.insert(tet);
+      commonData.tEts.insert(tet);
     }
  
-    //cerr << tets.size() << endl;
+    //cerr << commonData.tEts.size() << endl;
 
     EntityHandle meshset;
     rval = postProcMesh.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERR_PETSC(rval);
-    rval = postProcMesh.add_entities(meshset,tets); CHKERR_PETSC(rval);
+    rval = postProcMesh.add_entities(meshset,commonData.tEts); CHKERR_PETSC(rval);
     //create higher order entities 
     if(tenNodesPostProcTets) {
       rval = postProcMesh.convert_entities(meshset,true,false,false); CHKERR_PETSC(rval);
     }
 
-    tets.clear();
-    rval = postProcMesh.get_entities_by_type(meshset,MBTET,tets,true); CHKERR_PETSC(rval);
+    commonData.tEts.clear();
+    rval = postProcMesh.get_entities_by_type(meshset,MBTET,commonData.tEts,true); CHKERR_PETSC(rval);
 
-    //cerr << "<-- " << tets.size() << endl;
+    //cerr << "<-- " << commonData.tEts.size() << endl;
     Range nodes;
-    rval = postProcMesh.get_connectivity(tets,nodes,false); CHKERR_PETSC(rval);
+    rval = postProcMesh.get_connectivity(commonData.tEts,nodes,false); CHKERR_PETSC(rval);
 
     gaussPts.resize(nodes.size(),4);
     Range::iterator nit = nodes.begin();
@@ -233,11 +234,9 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
       mapGaussPts[gg] = *nit;
     }
 
-    tets.clear();
-    rval = postProcMesh.get_entities_by_type(0,MBTET,tets,true); CHKERR_PETSC(rval);
-    //cerr << "<--- <--- " << tets.size() << endl;
-
-
+    //tEts.clear();
+    //rval = postProcMesh.get_entities_by_type(0,MBTET,tEts,true); CHKERR_PETSC(rval);
+    //cerr << "<--- <--- " << tEts.size() << endl;
 
     } catch (exception& ex) {
       ostringstream ss;
@@ -294,7 +293,7 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
 	  }
 	  break;
 	default:
-	  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+	  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
       }
 
       for(unsigned int gg = 0;gg<data.getHdivN().size1();gg++) {
@@ -361,7 +360,7 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
       const void* tags_ptr[mapGaussPts.size()];
       int nb_gauss_pts = data.getN().size1();
       if(mapGaussPts.size()!=(unsigned int)nb_gauss_pts) {
-	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
       }
 
       switch(space) {
@@ -472,7 +471,7 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
       const void* tags_ptr[mapGaussPts.size()];
       int nb_gauss_pts = data.getN().size1();
       if(mapGaussPts.size()!=(unsigned int)nb_gauss_pts) {
-	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
       }
 
       try {
@@ -553,7 +552,7 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
     ParallelComm* pcomm_post_proc_mesh = ParallelComm::get_pcomm(&postProcMesh,MYPCOMM_INDEX);
     if(pcomm_post_proc_mesh == NULL) {
-      pcomm_post_proc_mesh = new ParallelComm(&postProcMesh,PETSC_COMM_WORLD);
+      pcomm_post_proc_mesh = new ParallelComm(&postProcMesh,mField.get_comm());
     }
 
     Range edges;

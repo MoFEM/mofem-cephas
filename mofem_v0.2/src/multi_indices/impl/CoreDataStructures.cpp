@@ -35,6 +35,7 @@ namespace MoFEM {
 
 const bool Idx_mi_tag::IamNotPartitioned = true;
 const bool PetscGlobalIdx_mi_tag::IamNotPartitioned = false;
+const bool PetscLocalIdx_mi_tag::IamNotPartitioned = false;
 const bool Part_mi_tag::IamNotPartitioned = false;
 
 //fields 
@@ -129,10 +130,10 @@ PetscErrorCode test_moab(Interface &moab,const EntityHandle ent) {
   PetscFunctionBegin;
   //tets type
   EntityType type = (EntityType)((ent&MB_TYPE_MASK)>>MB_ID_WIDTH);
-  if(type != moab.type_from_handle(ent)) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"incosistencies with type_from_handle");
+  if(type != moab.type_from_handle(ent)) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"incosistencies with type_from_handle");
   //tets id
   EntityID id = (EntityType)(ent&MB_ID_MASK);
-  if(id != moab.id_from_handle(ent)) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"incosistencies with id_from_handle");
+  if(id != moab.id_from_handle(ent)) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"incosistencies with id_from_handle");
   PetscFunctionReturn(0);
 }
 

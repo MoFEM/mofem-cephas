@@ -45,17 +45,43 @@ namespace MoFEM {
 
 const static int debug = 1;
 
-PetscErrorCode Core::add_series_recorder(const string &serie_name) {
+PetscErrorCode Core::add_series_recorder(const string &series_name) {
   PetscFunctionBegin;
   EntityHandle meshset;
   rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERR_PETSC(rval);
-  void const* tag_data[] = { serie_name.c_str() };
-  int tag_sizes[1]; tag_sizes[0] = serie_name.size();
+  void const* tag_data[] = { series_name.c_str() };
+  int tag_sizes[1]; tag_sizes[0] = series_name.size();
   rval = moab.tag_set_by_ptr(th_SeriesName,&meshset,1,tag_data,tag_sizes); CHKERR_PETSC(rval);
   pair<Series_multiIndex::iterator,bool> p = series.insert(MoFEMSeries(moab,meshset));
   if(!p.second) {
-    SETERRQ1(PETSC_COMM_SELF,1,"serie recorder <%s> is already there",serie_name.c_str());
+    SETERRQ1(PETSC_COMM_SELF,1,"serie recorder <%s> is already there",series_name.c_str());
   }
+  PetscFunctionReturn(0);
+}
+PetscErrorCode Core::delete_recorder_series(const string& series_name) {
+  PetscFunctionBegin;
+  //PetscErrorCode ierr;
+  ErrorCode rval;
+  SeriesStep_multiIndex::index<SeriesName_mi_tag>::type::iterator ssit,hi_ssit;
+  ssit = series_steps.get<SeriesName_mi_tag>().lower_bound(series_name);
+  hi_ssit = series_steps.get<SeriesName_mi_tag>().upper_bound(series_name);
+  series_steps.get<SeriesName_mi_tag>().erase(ssit,hi_ssit);
+  Series_multiIndex::index<SeriesName_mi_tag>::type::iterator sit;
+  sit = series.get<SeriesName_mi_tag>().find(series_name);
+  if(sit == series.get<SeriesName_mi_tag>().end()) {
+    SETERRQ1(PETSC_COMM_SELF,1,"serie recorder <%s> not exist and can be deleted",series_name.c_str());
+  }
+  EntityHandle series_meshset = sit->get_meshset();
+  rval = moab.tag_delete(sit->th_SeriesTime); CHKERR_PETSC(rval);
+  rval = moab.tag_delete(sit->th_SeriesDataHandles); CHKERR_PETSC(rval);
+  rval = moab.tag_delete(sit->th_SeriesDataUIDs); CHKERR_PETSC(rval);
+  rval = moab.tag_delete(sit->th_SeriesData); CHKERR_PETSC(rval);
+  series.get<SeriesName_mi_tag>().erase(sit);
+  vector<EntityHandle> contained;
+  rval = moab.get_contained_meshsets(series_meshset,contained); CHKERR_PETSC(rval);
+  rval = moab.remove_entities(series_meshset,&contained[0],contained.size()); CHKERR_PETSC(rval);
+  rval = moab.delete_entities(&contained[0],contained.size()); CHKERR_PETSC(rval);
+  rval = moab.delete_entities(&series_meshset,1); CHKERR_PETSC(rval);
   PetscFunctionReturn(0);
 }
 PetscErrorCode Core::record_problem(const string& serie_name,const MoFEMProblem *problemPtr,RowColData rc) {
@@ -73,7 +99,7 @@ PetscErrorCode Core::record_problem(const string& serie_name,const MoFEMProblem 
       ierr = const_cast<MoFEMSeries*>(&*sit)->push_dofs(problemPtr->numered_dofs_cols.begin(),problemPtr->numered_dofs_cols.end()); CHKERRQ(ierr);
       break;
     default:
-      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INSONSISTENCY,"data inconsistency");
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
   }
   PetscFunctionReturn(0);
 }
@@ -167,7 +193,7 @@ PetscErrorCode Core::print_series_steps() {
   for(;ssit!=series_steps.get<SeriesName_mi_tag>().end();ssit++) {
     ss << "serises steps " << *ssit << endl;
   }
-  PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
+  PetscPrintf(comm,ss.str().c_str());
   PetscFunctionReturn(0);
 }
 bool Core::check_series(const string& name) const {

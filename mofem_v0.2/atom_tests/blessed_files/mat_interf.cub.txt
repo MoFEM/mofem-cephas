@@ -16,11 +16,11 @@ attr. no: 4   value: 0.222
 
 Material Properties
 -------------------
-Elastic modulus multiplier        = 0.555
+Elastic module	= 0.555
 
-Damage coupling multiplier        = 0.444
+Damage coupling	= 0.444
 
-Maximum resisting stress of crack = 0.333
+Strengh		= 0.333
 
-Fracture energy                   = 0.222
+Fracture energy	= 0.222
 

@@ -1,5 +1,7 @@
 #!/bin/sh
 
+export LIBRARY_PATH=/opt/local_boost_1_54_0/lib
+
 CTEST_SCRIPTS_FILE_PATH=/home/lukasz/tmp/cephas_users_modules/users_modules/cmake
 CTSET_SCRIPT=CTestScript_rdb-srv1.cmake
 CWD=`pwd`

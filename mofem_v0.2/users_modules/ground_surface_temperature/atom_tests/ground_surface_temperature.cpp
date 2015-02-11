@@ -37,21 +37,14 @@ using namespace MoFEM;
 
 #include <moab/AdaptiveKDTree.hpp>
 extern "C" {
-
-void tetcircumcenter_tp(double a[3],double b[3],double c[3], double d[3],
-  double circumcenter[3],double *xi,double *eta,double *zeta);
-void tricircumcenter3d_tp(double a[3],double b[3],double c[3],
-  double circumcenter[3],double *xi,double *eta);
-
-#include <spa.h>
-
+  #include <spa.h>
 }
 
 #include <time.h>
-
-#include <adolc/adolc.h> 
 //#include <ThermalElement.hpp>
 #include<moab/Skinner.hpp>
+
+#include <GenricClimateModel.hpp>
 #include <GroundSurfaceTemerature.hpp>
 
 ErrorCode rval;
@@ -59,9 +52,9 @@ PetscErrorCode ierr;
 
 static char help[] = "...\n\n";
 
-struct MyTimeData: public GroundSurfaceTemerature::TimeDependendData {
+struct MyTimeData: public GenricClimateModel {
 
-  MyTimeData(): GroundSurfaceTemerature::TimeDependendData() {
+  MyTimeData(): GenricClimateModel() {
 
     spaData.delta_ut1 = 0;    	// Fractional second difference between UTC and UT which is used
 				// to adjust UTC for earth's irregular rotation rate and is derived
@@ -118,7 +111,7 @@ struct MyTimeData: public GroundSurfaceTemerature::TimeDependendData {
 
   spa_data spaData;
 
-  PetscErrorCode set() {
+  PetscErrorCode set(double t = 0) {
     PetscFunctionBegin;
 
     spaData.function = SPA_ZA_RTS;
@@ -218,8 +211,8 @@ int main(int argc, char *argv[]) {
   ierr = m_field.build_adjacencies(bit_level0); CHKERRQ(ierr);
 
   MyTimeData time_data;
-  ierr = ground_surface.setOperators(1,&time_data,"TEMP"); CHKERRQ(ierr);
-  GroundSurfaceTemerature::Shade *shade_ptr = &*ground_surface.preProcessShade.begin();
+  ierr = ground_surface.setOperators(&time_data,"TEMP"); CHKERRQ(ierr);
+  GroundSurfaceTemerature::SolarRadiationPreProcessor *shade_ptr = &*ground_surface.preProcessShade.begin();
 
   Range tets;
   ierr = m_field.get_entities_by_type_and_ref_level(bit_level0,BitRefLevel().set(),MBTET,tets);  CHKERRQ(ierr);
@@ -236,10 +229,9 @@ int main(int argc, char *argv[]) {
   start_time.tm_mday = time_data.spaData.day;
   start_time.tm_mon = time_data.spaData.month-1;
   start_time.tm_year = time_data.spaData.year-1900;
-
   time_t t0 = mktime(&start_time);
   time_t t = t0;
-  for(;t<t0+60*60*24;t+=60*60) {
+  for(;t<t0+60*60*24;t+=4*60*60) {
 
     struct tm current_time;
     current_time = *gmtime(&t);//localtime(&t);
@@ -276,6 +268,10 @@ int main(int argc, char *argv[]) {
   ierr = m_field.partition_finite_elements("GROUND_SURFACE"); CHKERRQ(ierr);
   ierr = m_field.partition_ghost_dofs("GROUND_SURFACE"); CHKERRQ(ierr);
 
+  for(_IT_GET_DOFS_FIELD_BY_NAME_AND_TYPE_FOR_LOOP_(m_field,"TEMP",MBVERTEX,dof)) {
+    dof->get_FieldData() = 20;
+  }
+
   //create matrices
   Vec F;
   ierr = m_field.VecCreateGhost("GROUND_SURFACE",COL,&F); CHKERRQ(ierr);
@@ -300,9 +296,9 @@ int main(int argc, char *argv[]) {
   ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
   ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
 
-  //ierr = m_field.loop_finite_elements("GROUND_SURFACE","GROUND_SURFACE_FE",ground_surface.getFeGroundSurfaceLhs()); CHKERRQ(ierr);
-  //ierr = MatAssemblyBegin(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-  //ierr = MatAssemblyEnd(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+  ierr = m_field.loop_finite_elements("GROUND_SURFACE","GROUND_SURFACE_FE",ground_surface.getFeGroundSurfaceLhs()); CHKERRQ(ierr);
+  ierr = MatAssemblyBegin(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+  ierr = MatAssemblyEnd(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 
   PetscViewer viewer;
   ierr = PetscViewerASCIIOpen(PETSC_COMM_WORLD,"ground_surface_temperature.txt",&viewer); CHKERRQ(ierr);
@@ -312,9 +308,9 @@ int main(int argc, char *argv[]) {
   ierr = VecView(F,viewer); CHKERRQ(ierr);
   
   //MatView(Aij,PETSC_VIEWER_DRAW_WORLD);
-  //MatChop(Aij,1e-4);
+  MatChop(Aij,1e-4);
   //MatView(Aij,PETSC_VIEWER_STDOUT_WORLD);
-  //MatView(Aij,viewer);
+  MatView(Aij,viewer);
   //std::string wait;
   //std::cin >> wait;
 

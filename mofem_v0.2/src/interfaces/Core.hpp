@@ -38,7 +38,10 @@ struct Core:
   PetscErrorCode queryInterface(const MOFEMuuid& uuid, FieldUnknownInterface** iface);
   PetscErrorCode query_interface_type(const std::type_info& iface_type, void*& ptr);
 
-  Core(Interface& _moab,int _verbose = 1);
+  Interface& moab;
+  MPI_Comm comm;
+
+  Core(Interface& _moab,MPI_Comm _comm = PETSC_COMM_WORLD,int _verbose = 1);
   ~Core();
 
   Tag get_th_RefParentHandle() { return th_RefParentHandle; }
@@ -66,7 +69,6 @@ struct Core:
   Tag th_ElemType;
   Tag th_SeriesName;
 
-  Interface& moab;
   int *f_shift,*MoFEMFiniteElement_shift,*p_shift;
   int verbose;
 
@@ -101,6 +103,7 @@ struct Core:
   BitProblemId get_problem_shift();
   PetscErrorCode initialiseDatabseInformationFromMesh(int verb = -1);
   Interface& get_moab();
+  MPI_Comm get_comm();
 
   //add prims element
   PetscErrorCode add_prism_to_mofem_database(const EntityHandle prism,int verb = -1);
@@ -117,8 +120,9 @@ struct Core:
 
   //SeriesRecorder
 
-  //add series
-  PetscErrorCode add_series_recorder(const string& serie_name);
+  //add/delete series
+  PetscErrorCode add_series_recorder(const string& series_name);
+  PetscErrorCode delete_recorder_series(const string& series_name);
   //initialize/finalize recording
   PetscErrorCode initialize_series_recorder(const string& serie_name);
   PetscErrorCode finalize_series_recorder(const string& serie_name);
@@ -225,7 +229,7 @@ struct Core:
 	ss << "msId "<< it->get_msId() << " nb. edges " << edges.size() << endl;
 	ss << "msId "<< it->get_msId() << " nb. nodes " << nodes.size() << endl;
 	ss << endl;
-	PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
+	PetscPrintf(comm,ss.str().c_str());
       }
     } catch (const char* msg) {
       SETERRQ(PETSC_COMM_SELF,1,msg);
@@ -280,7 +284,7 @@ struct Core:
       rval = moab.get_entities_by_type(it->meshset,MBTET,tets,true); CHKERR_PETSC(rval);
       ss << "MAT_ELATIC msId "<< it->get_msId() << " nb. tets " << tets.size() << endl;
       ss << endl;
-      PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
+      PetscPrintf(comm,ss.str().c_str());
     }
       
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(this_mField,BLOCKSET|MAT_THERMALSET,it)) {
@@ -289,7 +293,7 @@ struct Core:
         ostringstream ss;
         ss << *it << endl;
         ss << data;
-        PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
+        PetscPrintf(comm,ss.str().c_str());
     }
     
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(this_mField,BLOCKSET|MAT_MOISTURESET,it)) {
@@ -298,7 +302,7 @@ struct Core:
       ostringstream ss;
       ss << *it << endl;
       ss << data;
-      PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
+      PetscPrintf(comm,ss.str().c_str());
     }
 
     
@@ -308,9 +312,9 @@ struct Core:
   //refine
   PetscErrorCode seed_finite_elements(const Range &entities,int verb = -1);
   PetscErrorCode seed_finite_elements(const EntityHandle meshset,int verb = -1);
-  PetscErrorCode seed_ref_level(const Range &ents,const BitRefLevel &bit,MPI_Comm comm = PETSC_COMM_WORLD,int verb = -1);
-  PetscErrorCode seed_ref_level_2D(const EntityHandle meshset,const BitRefLevel &bit,MPI_Comm comm = PETSC_COMM_WORLD,int verb = -1);
-  PetscErrorCode seed_ref_level_3D(const EntityHandle meshset,const BitRefLevel &bit,MPI_Comm comm = PETSC_COMM_WORLD,int verb = -1);
+  PetscErrorCode seed_ref_level(const Range &ents,const BitRefLevel &bit,int verb = -1);
+  PetscErrorCode seed_ref_level_2D(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1);
+  PetscErrorCode seed_ref_level_3D(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1);
   PetscErrorCode seed_ref_level_MESHSET(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1);
   PetscErrorCode get_entities_by_type_and_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,const EntityHandle meshset,int verb = -1);
   PetscErrorCode get_entities_by_type_and_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,Range &ents,int verb = -1);
@@ -345,34 +349,34 @@ struct Core:
   PetscErrorCode add_ents_to_field_by_TRIs(const EntityHandle meshset,const string& name,int verb = -1);
   PetscErrorCode add_ents_to_field_by_TRIs(const Range &tris,const BitFieldId id,int verb = -1);
   PetscErrorCode add_ents_to_field_by_TRIs(const Range &tris,const string& name,int verb = -1);
-  PetscErrorCode add_ents_to_field_by_TETs(const Range &tets,const BitFieldId id,MPI_Comm = PETSC_COMM_WORLD,int verb = -1);
-  PetscErrorCode add_ents_to_field_by_TETs(const EntityHandle meshset,const BitFieldId id,MPI_Comm = PETSC_COMM_WORLD,int verb = -1);
-  PetscErrorCode add_ents_to_field_by_TETs(const Range &tets,const string& name,MPI_Comm = PETSC_COMM_WORLD,int verb = -1);
-  PetscErrorCode add_ents_to_field_by_TETs(const EntityHandle meshset,const string& name,MPI_Comm = PETSC_COMM_WORLD,int verb = -1);
+  PetscErrorCode add_ents_to_field_by_TETs(const Range &tets,const BitFieldId id,int verb = -1);
+  PetscErrorCode add_ents_to_field_by_TETs(const EntityHandle meshset,const BitFieldId id,int verb = -1);
+  PetscErrorCode add_ents_to_field_by_TETs(const Range &tets,const string& name,int verb = -1);
+  PetscErrorCode add_ents_to_field_by_TETs(const EntityHandle meshset,const string& name,int verb = -1);
   PetscErrorCode remove_ents_from_field_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
   PetscErrorCode remove_ents_from_field(const string& name,const EntityHandle meshset,const EntityType type,int verb = -1);
   PetscErrorCode remove_ents_from_field(const string& name,const Range &ents,int verb = -1);
 
   //set apprix oorder
-  PetscErrorCode set_field_order(const Range &ents,const BitFieldId id,const ApproximationOrder order,MPI_Comm = PETSC_COMM_WORLD,int verb = -1);
-  PetscErrorCode set_field_order(const EntityHandle meshset,const EntityType type,const BitFieldId id,const ApproximationOrder order,MPI_Comm = PETSC_COMM_WORLD,int verb = -1);
-  PetscErrorCode set_field_order(const Range &ents,const string& name,const ApproximationOrder order,MPI_Comm = PETSC_COMM_WORLD,int verb = -1);
-  PetscErrorCode set_field_order(const EntityHandle meshset,const EntityType type,const string& name,const ApproximationOrder order,MPI_Comm = PETSC_COMM_WORLD,int verb = -1);
-  PetscErrorCode set_field_order_by_entity_type_and_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,const BitFieldId id,const ApproximationOrder order,MPI_Comm comm = PETSC_COMM_WORLD,int verb = -1);
-  PetscErrorCode set_field_order_by_entity_type_and_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,const string& name,const ApproximationOrder order,MPI_Comm comm = PETSC_COMM_WORLD,int verb = -1);
+  PetscErrorCode set_field_order(const Range &ents,const BitFieldId id,const ApproximationOrder order,int verb = -1);
+  PetscErrorCode set_field_order(const EntityHandle meshset,const EntityType type,const BitFieldId id,const ApproximationOrder order,int verb = -1);
+  PetscErrorCode set_field_order(const Range &ents,const string& name,const ApproximationOrder order,int verb = -1);
+  PetscErrorCode set_field_order(const EntityHandle meshset,const EntityType type,const string& name,const ApproximationOrder order,int verb = -1);
+  PetscErrorCode set_field_order_by_entity_type_and_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,const BitFieldId id,const ApproximationOrder order,int verb = -1);
+  PetscErrorCode set_field_order_by_entity_type_and_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,const string& name,const ApproximationOrder order,int verb = -1);
 
   //build fiels
-  PetscErrorCode dofs_NoField(const BitFieldId id,map<EntityType,int> &dof_counter,MPI_Comm comm = PETSC_COMM_WORLD,int verb = -1);
-  PetscErrorCode dofs_L2H1HcurlHdiv(const BitFieldId id,map<EntityType,int> &dof_counter,MPI_Comm comm = PETSC_COMM_WORLD,int verb = -1);
-  PetscErrorCode build_fields(MPI_Comm comm = PETSC_COMM_WORLD,int verb = -1);
+  PetscErrorCode dofs_NoField(const BitFieldId id,map<EntityType,int> &dof_counter,int verb = -1);
+  PetscErrorCode dofs_L2H1HcurlHdiv(const BitFieldId id,map<EntityType,int> &dof_counter,int verb = -1);
+  PetscErrorCode build_fields(int verb = -1);
   PetscErrorCode clear_dofs_fields(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
   PetscErrorCode clear_ents_fields(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
   PetscErrorCode clear_dofs_fields(const string &name,const Range ents,int verb = -1);
   PetscErrorCode clear_ents_fields(const string &name,const Range enst,int verb = -1);
 
   //other auxiliary functions for fields
-  PetscErrorCode list_dofs_by_field_name(const string &name,MPI_Comm comm = PETSC_COMM_WORLD) const;
-  PetscErrorCode list_fields(MPI_Comm comm = PETSC_COMM_WORLD) const;
+  PetscErrorCode list_dofs_by_field_name(const string &name) const;
+  PetscErrorCode list_fields() const;
 
   BitFieldId get_BitFieldId(const string& name) const;
   string get_BitFieldId_name(const BitFieldId id) const;
@@ -382,7 +386,7 @@ struct Core:
   const MoFEMField* get_field_structure(const string& name);
 
   //MoFEMFiniteElement
-  PetscErrorCode add_finite_element(const string &MoFEMFiniteElement_name,enum MoFEMTypes bh = MF_EXCL,MPI_Comm comm = PETSC_COMM_WORLD);
+  PetscErrorCode add_finite_element(const string &MoFEMFiniteElement_name,enum MoFEMTypes bh = MF_EXCL);
   PetscErrorCode modify_finite_element_adjacency_table(const string &MoFEMFiniteElement_name,const EntityType type,ElementAdjacencyFunct function);
   PetscErrorCode modify_finite_element_add_field_data(const string &MoFEMFiniteElement_name,const string &name_filed);
   PetscErrorCode modify_finite_element_add_field_row(const string &MoFEMFiniteElement_name,const string &name_row);
@@ -405,8 +409,8 @@ struct Core:
   PetscErrorCode add_ents_to_finite_element_by_PRISMs(const EntityHandle meshset,const BitFEId id,const bool recursive = false);
   PetscErrorCode add_ents_to_finite_element_by_PRISMs(const EntityHandle meshset,const string &name,const bool recursive = false);
   PetscErrorCode add_ents_to_finite_element_by_MESHSET(const EntityHandle meshset,const string& name,const bool recursive = false);
-  PetscErrorCode add_ents_to_finite_element_EntType_by_bit_ref(const BitRefLevel &bit,const string &name,EntityType type,MPI_Comm comm = PETSC_COMM_WORLD,int verb = -1);
-  PetscErrorCode add_ents_to_finite_element_EntType_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,const string &name,EntityType type,MPI_Comm comm = PETSC_COMM_WORLD,int verb = -1);
+  PetscErrorCode add_ents_to_finite_element_EntType_by_bit_ref(const BitRefLevel &bit,const string &name,EntityType type,int verb = -1);
+  PetscErrorCode add_ents_to_finite_element_EntType_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,const string &name,EntityType type,int verb = -1);
   PetscErrorCode remove_ents_from_finite_element_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
   PetscErrorCode remove_ents_from_finite_element(const string &name,const EntityHandle meshset,const EntityType type,int verb = -1);
   PetscErrorCode remove_ents_from_finite_element(const string &name,const Range &ents,int verb = -1);
@@ -416,7 +420,7 @@ struct Core:
   string get_BitFEId_name(const BitFEId id) const;
   EntityHandle get_finite_element_meshset(const BitFEId id) const;
   EntityHandle get_finite_element_meshset(const string& name) const;
-  PetscErrorCode list_finite_elements(MPI_Comm comm = PETSC_COMM_WORLD) const;
+  PetscErrorCode list_finite_elements() const;
 
   //problem
   PetscErrorCode add_problem(const BitProblemId id,const string& name);
@@ -432,14 +436,14 @@ struct Core:
   //loop over all finite elements, resolve its meshsets, and resolve dofs on that entitie
   PetscErrorCode build_finite_element_data_dofs(EntMoFEMFiniteElement &ent_fe,int verb = -1);
   PetscErrorCode build_finite_element_uids_view(EntMoFEMFiniteElement &ent_fe,int verb = -1);
-  PetscErrorCode build_finite_elements(MPI_Comm comm = PETSC_COMM_WORLD,int verb = -1);
+  PetscErrorCode build_finite_elements(int verb = -1);
   PetscErrorCode clear_finite_elements(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
   PetscErrorCode clear_finite_elements(const string &name,const Range &ents,int verb = -1);
 
   //entFEAdjacencies
-  PetscErrorCode build_adjacencies(const Range &ents,MPI_Comm comm = PETSC_COMM_WORLD,int verb = -1);
-  PetscErrorCode build_adjacencies(const BitRefLevel &bit,MPI_Comm comm = PETSC_COMM_WORLD,int verb = -1);
-  PetscErrorCode build_adjacencies(const BitRefLevel &bit,const BitRefLevel &mask,MPI_Comm comm = PETSC_COMM_WORLD,int verb = -1);
+  PetscErrorCode build_adjacencies(const Range &ents,int verb = -1);
+  PetscErrorCode build_adjacencies(const BitRefLevel &bit,int verb = -1);
+  PetscErrorCode build_adjacencies(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
   PetscErrorCode clear_adjacencies_finite_elements(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
   PetscErrorCode clear_adjacencies_entities(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
   PetscErrorCode clear_adjacencies_finite_elements(const string &name,const Range &ents,int verb = -1);
@@ -448,10 +452,10 @@ struct Core:
   PetscErrorCode list_adjacencies() const;
 
   //problem building
-  PetscErrorCode build_partitioned_problems(MPI_Comm comm = PETSC_COMM_WORLD,int verb = -1);
-  PetscErrorCode build_problems(MPI_Comm comm = PETSC_COMM_WORLD,int verb = -1);
+  PetscErrorCode build_partitioned_problems(int verb = -1);
+  PetscErrorCode build_problems(int verb = -1);
   PetscErrorCode clear_problems(int verb = -1);
-  PetscErrorCode simple_partition_problem(const string &name,const int all_on_part = -1,MPI_Comm comm = PETSC_COMM_WORLD,int verb = -1);
+  PetscErrorCode simple_partition_problem(const string &name,int verb = -1);
   PetscErrorCode partition_problem(const string &name,int verb = -1);
   PetscErrorCode compose_problem(const string &name,const string &problem_for_rows,const string &problem_for_cols,int var = -1);
   PetscErrorCode compose_problem(const string &name,const string &problem_for_rows,bool copy_rows,const string &problem_for_cols,bool copy_cols,int verb = -1);
@@ -517,6 +521,7 @@ struct Core:
   PetscErrorCode field_axpy(const double alpha,const string& fiel_name_x,const string& field_name_y,bool error_if_missing = false,bool creat_if_missing = false);
   PetscErrorCode field_scale(const double alpha,const string& fiel_name);
   PetscErrorCode set_field(const double val,const EntityType type,const string& fiel_name);
+  PetscErrorCode set_field(const double val,const EntityType type,const Range &ents,const string& field_name);
 
   //Get adjacencies
   PetscErrorCode get_adjacencies_equality(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities);
@@ -534,6 +539,9 @@ struct Core:
   PetscLogEvent USER_EVENT_operator;
   PetscLogEvent USER_EVENT_postProcess;
   PetscLogEvent USER_EVENT_createMat;
+
+  //
+  int sIze,rAnk;
 
 };
 

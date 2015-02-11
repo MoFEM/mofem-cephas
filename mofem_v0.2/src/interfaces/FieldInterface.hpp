@@ -54,6 +54,9 @@ struct FieldInterface: public FieldUnknownInterface {
 
   /// get moab interface
   virtual Interface& get_moab() = 0; 
+  
+  /// get communicator
+  virtual MPI_Comm get_comm() = 0;
 
   /** 
     * \brief check data consistency in entitiesPtr
@@ -327,7 +330,7 @@ struct FieldInterface: public FieldUnknownInterface {
   * \param BitRefLevel bitLevel
   * 
   */
-  virtual PetscErrorCode seed_ref_level_2D(const EntityHandle meshset,const BitRefLevel &bit,MPI_Comm comm = PETSC_COMM_WORLD,int verb = -1) = 0;
+  virtual PetscErrorCode seed_ref_level_2D(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1) = 0;
 
   /**
   * \brief seed 3D entities (Volume entities only) in the meshset and their adjacencies (only TETs adjencies) in a particular BitRefLevel
@@ -352,12 +355,12 @@ struct FieldInterface: public FieldUnknownInterface {
   * ent4[0,1,0,0,0,0,0], ent5[0,1,0,0,0,0,0] <br>
   * 
   */
-  virtual PetscErrorCode seed_ref_level_3D(const EntityHandle meshset,const BitRefLevel &bit,MPI_Comm comm = PETSC_COMM_WORLD,int verb = -1) = 0;
+  virtual PetscErrorCode seed_ref_level_3D(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1) = 0;
 
   /**
    * \brief seed 3D entities (Volume entities only) in the range and their adjacencies (only TETs adjencies) in a particular BitRefLevel
    */ 
-  virtual PetscErrorCode seed_ref_level(const Range &ents,const BitRefLevel &bit,MPI_Comm comm = PETSC_COMM_WORLD,int verb = -1) = 0;
+  virtual PetscErrorCode seed_ref_level(const Range &ents,const BitRefLevel &bit,int verb = -1) = 0;
 
   /** brief seed ref level by MESHSET that contains entities other than volumes
    * 
@@ -430,7 +433,7 @@ struct FieldInterface: public FieldUnknownInterface {
   /** \brief Get the adjacencies associated with a entity to entities of a specfied dimension.
     * \ingroup mofem_ref_ents
     *
-    * bit ref level of adjacent entities is equal to bit ref level of adjacent entities
+    * bit ref level of adjacent entities is any of bit ref level of adjacent entities
     */
   virtual PetscErrorCode get_adjacencies_any(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities) = 0;
 
@@ -575,7 +578,7 @@ struct FieldInterface: public FieldUnknownInterface {
     * \param meshset contains set tetrahedrals
     * \param name of the field
     */
-  virtual PetscErrorCode add_ents_to_field_by_TETs(const EntityHandle meshset,const string& name,MPI_Comm comm = PETSC_COMM_WORLD,int verb = -1) = 0;
+  virtual PetscErrorCode add_ents_to_field_by_TETs(const EntityHandle meshset,const string& name,int verb = -1) = 0;
 
   /** 
     * \brief set field entities from adjacencies of tetrahedrals
@@ -585,7 +588,7 @@ struct FieldInterface: public FieldUnknownInterface {
     * \param range contains set tetrahedrals
     * \param name of the field
     */
-  virtual PetscErrorCode add_ents_to_field_by_TETs(const Range &tets,const string& name,MPI_Comm comm = PETSC_COMM_WORLD,int verb = -1) = 0;
+  virtual PetscErrorCode add_ents_to_field_by_TETs(const Range &tets,const string& name,int verb = -1) = 0;
 
   /**
     * \brief remove entities from field
@@ -616,7 +619,7 @@ struct FieldInterface: public FieldUnknownInterface {
     * \param type selected type of the entities f.e. MBTET, MBTRI, MBEDGE, MBVERTEX, see moab documentation
     * \param order approximation order 
     */
-  virtual PetscErrorCode set_field_order(const EntityHandle meshset,const EntityType type,const string& name,const ApproximationOrder order,MPI_Comm comm = PETSC_COMM_WORLD,int verb = -1) = 0;
+  virtual PetscErrorCode set_field_order(const EntityHandle meshset,const EntityType type,const string& name,const ApproximationOrder order,int verb = -1) = 0;
 
   /**
     * \brief Set order approximation of the entities in the field
@@ -626,7 +629,7 @@ struct FieldInterface: public FieldUnknownInterface {
     * \param type selected type of the entities f.e. MBTET, MBTRI, MBEDGE, MBVERTEX, see moab documentation
     * \param order approximation order 
     */
-  virtual PetscErrorCode set_field_order(const Range &ents,const string& name,const ApproximationOrder order,MPI_Comm comm = PETSC_COMM_WORLD,int verb = -1) = 0;
+  virtual PetscErrorCode set_field_order(const Range &ents,const string& name,const ApproximationOrder order,int verb = -1) = 0;
 
   /**
     * \brief Set order approximation of the entities in the field
@@ -637,13 +640,13 @@ struct FieldInterface: public FieldUnknownInterface {
     * \param type selected type of the entities f.e. MBTET, MBTRI, MBEDGE, MBVERTEX, see moab documentation
     * \param order approximation order 
     */
-  virtual PetscErrorCode set_field_order_by_entity_type_and_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,const string& name,const ApproximationOrder order,MPI_Comm comm = PETSC_COMM_WORLD,int verb = -1) = 0;
+  virtual PetscErrorCode set_field_order_by_entity_type_and_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,const string& name,const ApproximationOrder order,int verb = -1) = 0;
 
 
   /** \brief list entities in the field
     * \ingroup mofem_field 
     */
-  virtual PetscErrorCode list_fields(MPI_Comm comm = PETSC_COMM_WORLD) const = 0;
+  virtual PetscErrorCode list_fields() const = 0;
 
   /** \brief get field meshsett
    * \ingroup mofem_field
@@ -682,7 +685,7 @@ struct FieldInterface: public FieldUnknownInterface {
       ierr = mField.add_finite_element("PLASTIC"); CHKERRQ(ierr);
    \endcode
     */
-  virtual PetscErrorCode add_finite_element(const string &MoFEMFiniteElement_name,enum MoFEMTypes bh = MF_EXCL,MPI_Comm comm = PETSC_COMM_WORLD) = 0;
+  virtual PetscErrorCode add_finite_element(const string &MoFEMFiniteElement_name,enum MoFEMTypes bh = MF_EXCL) = 0;
 
   /** 
     * \brief modify finite element table, only for advaenced user
@@ -808,7 +811,7 @@ struct FieldInterface: public FieldUnknownInterface {
    * \param Finite Elenent type
    * \param verrbose level
    */
-  virtual PetscErrorCode add_ents_to_finite_element_EntType_by_bit_ref(const BitRefLevel &bit,const string &name,EntityType type,MPI_Comm comm = PETSC_COMM_WORLD,int verb = -1) = 0;
+  virtual PetscErrorCode add_ents_to_finite_element_EntType_by_bit_ref(const BitRefLevel &bit,const string &name,EntityType type,int verb = -1) = 0;
 
   
   /** get finite element meshset
@@ -843,7 +846,7 @@ struct FieldInterface: public FieldUnknownInterface {
    * \param Finite Elenent type
    * \param verrbose level
    */
-  virtual PetscErrorCode add_ents_to_finite_element_EntType_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,const string &name,EntityType type,MPI_Comm comm = PETSC_COMM_WORLD,int verb = -1) = 0;
+  virtual PetscErrorCode add_ents_to_finite_element_EntType_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,const string &name,EntityType type,int verb = -1) = 0;
 
   /** \brief add MESHSET element to finite element database given by name 
    *
@@ -855,7 +858,7 @@ struct FieldInterface: public FieldUnknownInterface {
   /** \brief list finite elements in database
    * \ingroup mofem_fe
    */
-  virtual PetscErrorCode list_finite_elements(MPI_Comm comm = PETSC_COMM_WORLD) const = 0;
+  virtual PetscErrorCode list_finite_elements() const = 0;
 
   /// list adjacencies
   virtual PetscErrorCode list_adjacencies() const = 0;
@@ -917,12 +920,12 @@ struct FieldInterface: public FieldUnknownInterface {
   /** build fields
     * \ingroup mofem_field
    */
-  virtual PetscErrorCode build_fields(MPI_Comm comm = PETSC_COMM_WORLD,int verb = -1) = 0;
+  virtual PetscErrorCode build_fields(int verb = -1) = 0;
 
   /** list dofs
     * \ingroup mofem_dofs
    */
-  virtual PetscErrorCode list_dofs_by_field_name(const string &name,MPI_Comm comm = PETSC_COMM_WORLD) const = 0;
+  virtual PetscErrorCode list_dofs_by_field_name(const string &name) const = 0;
 
   /** clear fields
     * \ingroup mofem_dofs
@@ -946,7 +949,7 @@ struct FieldInterface: public FieldUnknownInterface {
 
   /** build finite elements
     */
-  virtual PetscErrorCode build_finite_elements(MPI_Comm comm = PETSC_COMM_WORLD,int verb = -1) = 0;
+  virtual PetscErrorCode build_finite_elements(int verb = -1) = 0;
 
   /** clear finite elements
     */
@@ -969,7 +972,7 @@ struct FieldInterface: public FieldUnknownInterface {
     * database, adjacency map has to be rebuild.
     *
     */
-  virtual PetscErrorCode build_adjacencies(const BitRefLevel &bit,MPI_Comm comm = PETSC_COMM_WORLD,int verb = -1) = 0;
+  virtual PetscErrorCode build_adjacencies(const BitRefLevel &bit,int verb = -1) = 0;
 
   /** \brief clear adjacency map for finite elements on given bit level
     *
@@ -987,11 +990,11 @@ struct FieldInterface: public FieldUnknownInterface {
 
   /** \brief build problem data structures, assuming that mesh is partitioned
    */
-  virtual PetscErrorCode build_partitioned_problems(MPI_Comm comm = PETSC_COMM_WORLD,int verb = -1) = 0;
+  virtual PetscErrorCode build_partitioned_problems(int verb = -1) = 0;
 
   /** \brief build problem data structures
    */
-  virtual PetscErrorCode build_problems(MPI_Comm comm = PETSC_COMM_WORLD,int verb = -1) = 0;
+  virtual PetscErrorCode build_problems(int verb = -1) = 0;
 
   /** \brief clear problems
    */
@@ -1002,7 +1005,7 @@ struct FieldInterface: public FieldUnknownInterface {
    *
    * \param name problem name
    */
-  virtual PetscErrorCode simple_partition_problem(const string &name,const int all_on_part = -1,MPI_Comm comm = PETSC_COMM_WORLD,int verb = -1) = 0;
+  virtual PetscErrorCode simple_partition_problem(const string &name,int verb = -1) = 0;
 
 
   /** \brief partition problem dofs
@@ -1250,6 +1253,18 @@ struct FieldInterface: public FieldUnknownInterface {
     */
   virtual PetscErrorCode set_field(const double val,const EntityType type,const string& field_name) = 0;
 
+  /** \brief set field 
+    * \ingroup mofem_field_operators
+    *
+    * field_y = val
+    *
+    * \param val
+    * \param entity type
+    * \param on enties
+    * \param field_name
+    *
+    */
+  virtual PetscErrorCode set_field(const double val,const EntityType type,const Range &ents,const string& field_name) = 0;
 
   /** \brief Set data for BasicMethod 
     *
@@ -1612,7 +1627,7 @@ struct FieldInterface: public FieldUnknownInterface {
 #endif // __MOABFIELD_HPP__
 
 /***************************************************************************//**
- * \defgroup mofem_bc Handling boundary conditions
+ * \defgroup mofem_bc Boundary conditions
  * \ingroup mofem
  ******************************************************************************/
 
@@ -1637,7 +1652,7 @@ struct FieldInterface: public FieldUnknownInterface {
  ******************************************************************************/
 
 /***************************************************************************//**
- * \defgroup mofem_ref_ents Getting entities and adjacencies
+ * \defgroup mofem_ref_ents Adjacencies
  * \ingroup mofem
  ******************************************************************************/
 

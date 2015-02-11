@@ -197,7 +197,45 @@ struct MofemException: public std::exception {
   }
 };
 
+/** 
+ * \typedef CubitBC_BitSet
+ * bc & material meshsets
+ *
+ */
+typedef bitset<32> CubitBC_BitSet;
+
+/**
+  * Tyeps of sets and boundary conditions
+  *
+  */
+enum CubitBC {
+  UNKNOWNSET = 0,
+  NODESET = 1<<0,
+  SIDESET = 1<<1,
+  BLOCKSET = 1<<2,
+  MATERIALSET = 1<<3,
+  DISPLACEMENTSET = 1<<4,
+  FORCESET = 1<<5,
+  PRESSURESET = 1<<6,
+  VELOCITYSET = 1<<7,
+  ACCELERATIONSET = 1<<8,
+  TEMPERATURESET = 1<<9,
+  HEATFLUXSET = 1<<10,
+  INTERFACESET = 1<<11,
+  UNKNOWNCUBITNAME = 1<< 12,
+  MAT_ELASTICSET = 1<<13,	///< block name is "MAT_ELASTIC"
+  MAT_INTERFSET = 1 <<14,
+  MAT_THERMALSET = 1<<15,	///< block name is "MAT_THERMAL"
+  BODYFORCESSET = 1<<16,	///< block name is "BODY_FORCES"
+  MAT_MOISTURESET = 1<<17, 	///< block name is "MAT_MOISTURE"
+  LASTCUBITSET
+};
+
 }
+
+//BLOCK/MESHET ATTRIBUTES
+#include "MaterialBlocks.hpp"
+#include "CubitBCData.hpp"
 
 //MULTIINDICES
 #include "TagMultiIndices.hpp"
@@ -209,6 +247,7 @@ struct MofemException: public std::exception {
 #include "AdjacencyMultiIndices.hpp"
 #include "BCMultiIndices.hpp"
 #include "SeriesMultiIndices.hpp"
+
 #endif //__COMMON_HPP__
 
 /***************************************************************************//**
