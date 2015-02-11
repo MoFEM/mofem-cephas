@@ -472,15 +472,18 @@ namespace MoFEM {
 //                }
               }
               //=============================================================================================================
-//              if(pcomm_RVE->rank()==0){
-//                cout<< "\nStress_Homo = \n\n";
-//                for(int ii=0; ii<6; ii++){
-//                  for(int jj=0; jj<6; jj++){
-//                    cout <<Dmat(ii,jj)<<"    ";
-//                  }
-//                  cout<<endl;
-//                }
-//              }
+             
+              if(pcomm_RVE->rank()==0){
+                cout<< "\nStress_Homo = \n\n";
+                for(int ii=0; ii<6; ii++){
+                  for(int jj=0; jj<6; jj++){
+                    cout <<Dmat(ii,jj)<<"    ";
+                  }
+                  cout<<endl;
+                }
+              }
+              
+              
               commonData.Dmat_RVE[fe_ent](gg).resize(6,6);
               commonData.Dmat_RVE[fe_ent](gg)=Dmat;
 //              cout<<"gg End =  "<<gg <<endl;
