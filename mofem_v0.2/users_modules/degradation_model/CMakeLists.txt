@@ -21,11 +21,26 @@ include_directories("${MoFEM_PROJECT_SOURCE_DIR}/users_modules/moisture_transpor
 include_directories("${MoFEM_PROJECT_SOURCE_DIR}/users_modules/degradation_model/src")
 include_directories("${MoFEM_PROJECT_SOURCE_DIR}/users_modules/obsolete/src")
 
+
+# ===================== Thermal homogenisaiton ============================================
+add_executable(Thermal_Disp_MRhs ${UM_SOURCE_DIR}/degradation_model/Thermal_Disp_MRhs.cpp)
+target_link_libraries(Thermal_Disp_MRhs
+  mofem_finite_element_library mofem_finite_elements mofem_interfaces mofem_multi_indices mofem_petsc users_modules_obsolete user_modules_homogenisation
+  mofem_approx mofem_third_party mofem_cblas ${MoFEM_PROJECT_LIBS})
+
 # ===================== moisture transport homogenisaiton ============================================
 add_executable(MoistureTrans_Disp_MRhs ${UM_SOURCE_DIR}/degradation_model/MoistureTrans_Disp_MRhs.cpp)
 target_link_libraries(MoistureTrans_Disp_MRhs
   mofem_finite_element_library mofem_finite_elements mofem_interfaces mofem_multi_indices mofem_petsc users_modules_obsolete user_modules_homogenisation
   mofem_approx mofem_third_party mofem_cblas ${MoFEM_PROJECT_LIBS})
+
+# ===================== moisture transport homogenisaiton ============================================
+add_executable(MoistureTrans_Disp_MRhs_with_incl ${UM_SOURCE_DIR}/degradation_model/MoistureTrans_Disp_MRhs_with_incl.cpp)
+target_link_libraries(MoistureTrans_Disp_MRhs_with_incl
+  mofem_finite_element_library mofem_finite_elements mofem_interfaces mofem_multi_indices mofem_petsc users_modules_obsolete user_modules_homogenisation
+  mofem_approx mofem_third_party mofem_cblas ${MoFEM_PROJECT_LIBS})
+
+
 
 # ===================== Diffusion unsteady ============================================
 add_executable(thermal_unsteady_inputDmat ${UM_SOURCE_DIR}/degradation_model/thermal_unsteady_inputDmat.cpp)

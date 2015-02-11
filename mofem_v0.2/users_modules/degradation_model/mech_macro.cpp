@@ -300,7 +300,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field_Macro.modify_problem_add_finite_element("ELASTIC_PROBLEM_MACRO","ELASTIC_FE_MACRO"); CHKERRQ(ierr);
   
   
-  ierr = MetaNeummanForces::addNeumannBCElements(m_field_Macro,"ELASTIC_PROBLEM_MACRO","DISP_MACRO"); CHKERRQ(ierr);
+  ierr = MetaNeummanForces::addNeumannBCElements(m_field_Macro,"DISP_MACRO"); CHKERRQ(ierr);
 
 
   /****/

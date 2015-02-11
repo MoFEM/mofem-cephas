@@ -171,6 +171,67 @@ int main(int argc, char *argv[]) {
   ierr = mField.set_field_order(0,MBEDGE,"LAGRANGE_MUL_FIELD",order); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBVERTEX,"LAGRANGE_MUL_FIELD",1); CHKERRQ(ierr);
   
+  
+  
+  //create these elements to calculate separte volumes for each fibres and matrix.
+  //======================================================================================
+  //FE
+  ierr = mField.add_finite_element("FE_MATRXIX"); CHKERRQ(ierr);
+  ierr = mField.add_finite_element("FE_FIBRES"); CHKERRQ(ierr);
+  
+  //Row and columns
+  ierr = mField.modify_finite_element_add_field_row("FE_MATRXIX","CONC"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_col("FE_MATRXIX","CONC"); CHKERRQ(ierr);
+  
+  ierr = mField.modify_finite_element_add_field_row("FE_FIBRES","CONC"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_col("FE_FIBRES","CONC"); CHKERRQ(ierr);
+  
+  ierr = mField.modify_finite_element_add_field_data("FE_MATRXIX","CONC"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("FE_FIBRES","CONC"); CHKERRQ(ierr);
+
+  //set finite elements for problem
+  ierr = mField.modify_problem_add_finite_element("MOISTURE_PROBLEM","FE_MATRXIX"); CHKERRQ(ierr);
+  ierr = mField.modify_problem_add_finite_element("MOISTURE_PROBLEM","FE_FIBRES"); CHKERRQ(ierr);
+  
+  //add finite elements entities
+  EntityHandle meshset_Elastic, meshset_Elastic_stiff_inclusion;
+  rval = moab.create_meshset(MESHSET_SET,meshset_Elastic); CHKERR_PETSC(rval);
+  rval = moab.create_meshset(MESHSET_SET,meshset_Elastic_stiff_inclusion); CHKERR_PETSC(rval);
+  
+  
+  double density_matrix, density_fibres;
+  Range TetsInBlock, TetsInBlock_stiff_inc;
+  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)){
+		if(it->get_Cubit_name() == "MAT_MOISTURE_MATRIX") {
+			rval = moab.get_entities_by_type(it->meshset, MBTET,TetsInBlock,true); CHKERR_PETSC(rval);
+      
+      Mat_Moisture mydata;
+      ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+      density_matrix=mydata.data.Density;
+
+		}
+    if(it->get_Cubit_name() == "MAT_MOISTURE_FIBRES") {
+			rval = moab.get_entities_by_type(it->meshset, MBTET,TetsInBlock_stiff_inc,true); CHKERR_PETSC(rval);
+      
+      Mat_Moisture mydata;
+      ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+      density_fibres=mydata.data.Density;
+
+		}
+	}
+  cout<<"TetsInBlock "<<TetsInBlock<<endl;
+  rval = moab.add_entities(meshset_Elastic,TetsInBlock);CHKERR_PETSC(rval);
+  
+  cout<<"TetsInBlock "<<TetsInBlock_stiff_inc<<endl;
+  rval = moab.add_entities(meshset_Elastic_stiff_inclusion,TetsInBlock_stiff_inc);CHKERR_PETSC(rval);
+  
+  ierr = mField.add_ents_to_finite_element_by_TETs(meshset_Elastic,"FE_MATRXIX",true); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_finite_element_by_TETs(meshset_Elastic_stiff_inclusion,"FE_FIBRES",true); CHKERRQ(ierr);
+  
+  
+  //======================================================================================
+
+  
   /****/
   //build database
   
@@ -274,10 +335,29 @@ int main(int argc, char *argv[]) {
   ierr = VecZeroEntries(RVE_volume_Vec); CHKERRQ(ierr);
   
   RVEVolume MyRVEVol(mField,A,C1,F1,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio), RVE_volume_Vec);
-  ierr = mField.loop_finite_elements("MOISTURE_PROBLEM","DIFFUSION_FE",MyRVEVol);  CHKERRQ(ierr);
+//  ierr = mField.loop_finite_elements("MOISTURE_PROBLEM","DIFFUSION_FE",MyRVEVol);  CHKERRQ(ierr);
+  
   //  ierr = VecView(RVE_volume_Vec,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+//  ierr = VecSum(RVE_volume_Vec, &RVE_volume);  CHKERRQ(ierr);
+//  cout<<"Final RVE_volume = "<< RVE_volume <<endl;
+  
+  double volume_matrix, volume_fibres;
+  ierr = mField.loop_finite_elements("MOISTURE_PROBLEM","FE_MATRXIX",MyRVEVol);  CHKERRQ(ierr);
+  ierr = VecSum(RVE_volume_Vec, &volume_matrix);  CHKERRQ(ierr);
+  cout<<"Matrix volume = "<< volume_matrix <<endl;
+
+  ierr = mField.loop_finite_elements("MOISTURE_PROBLEM","FE_FIBRES",MyRVEVol);  CHKERRQ(ierr);
   ierr = VecSum(RVE_volume_Vec, &RVE_volume);  CHKERRQ(ierr);
   cout<<"Final RVE_volume = "<< RVE_volume <<endl;
+  
+  volume_fibres=RVE_volume-volume_matrix;
+  cout<<"Fibres volume = "<< volume_fibres <<endl;
+  
+  cout<<"density_matrix = "<< density_matrix <<endl;
+  cout<<"density_fibres = "<< density_fibres <<endl;
+  double RVE_density;
+  RVE_density=(volume_matrix/RVE_volume)*density_matrix +  (volume_fibres/RVE_volume)*density_fibres;
+  
 //=========================================================================================================================
 
   //Solver
@@ -388,8 +468,15 @@ int main(int argc, char *argv[]) {
   }
   //====================================================================================================
   //Writing Dmat in to binary file for use in the unsteady diffusion problem
-  cout <<"Dmat ="<< Dmat<< endl;
-  Dmat=Dmat/RVE_volume; //This is OK for homogeniszed RVE
+  cout <<"Conductivity matrix="<< Dmat<< endl;
+  Dmat=Dmat/RVE_density; //Here we will save Dmat/RVE_density [mm2/s]
+  
+  cout <<"Effective desnsity RVE ="<< RVE_density<< endl;
+  cout <<"Diffusivity matix ="<< Dmat<< endl;
+  
+//  Dmat=1.0e-6*Dmat; //Here we will save Dmat/RVE_density [m2/s]
+  cout <<"Diffusivity After Unit conversoin ="<< Dmat<< endl;
+
   if(pcomm->rank()==0){
     int fd;
     PetscViewer view_out;

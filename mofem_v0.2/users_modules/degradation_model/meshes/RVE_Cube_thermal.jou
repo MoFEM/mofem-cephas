@@ -8,13 +8,12 @@ interval=1;
 str1='block 1 ' +' volume 1'; cubit.cmd(str1)
 
 
-# Here we use MAT_MOISTURE because we want to use same program for homogenisaiton of thermal and moisture RVEs 
-str1='block 1 ' +' name "MAT_MOISTURE"'; cubit.cmd(str1)   
-cubit.cmd('block 1 attribute count 1')
-Thermal=['1']
+str1='block 1 ' +' name "MAT_THERMAL"'; cubit.cmd(str1)   
+cubit.cmd('block 1 attribute count 2')
+Thermal=['1','1']
 for i in range(0, 1):
     str1='block 1 attribute index ' + str(i+1) +' '+Thermal[i]; cubit.cmd(str1)
-
+    str1='block 1 attribute index ' + str(i+2) +' '+Thermal[i+1]; cubit.cmd(str1)
 
 str1='surface 4 interval '+str(interval); cubit.cmd(str1)
 cubit.cmd('surface 4 scheme trimesh')
@@ -42,6 +41,7 @@ cubit.cmd('sideset 102 surface 1 5 6')  # all +ve boundary surfaces
 cubit.cmd('sideset 103 surface 1 2 3 4 5 6')  # all boundary surfaces
 
 cubit.cmd('save as "/Users/zahur/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/RVE_Cube_thermal.cub" overwrite')
+
 
 
 

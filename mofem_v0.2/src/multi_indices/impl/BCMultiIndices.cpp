@@ -590,7 +590,7 @@ ostream& operator<<(ostream& os,const Mat_Moisture& e) {
   os << "Diffusivity  = " << e.data.Diffusivity << endl;
   os << "Viscosity = " << e.data.Viscosity << endl;
   os << "Permeability = " << e.data.Permeability << endl;
-  os << "User attribute 3 = " << e.data.User3 << endl;
+  os << "Density = " << e.data.Density << endl;
   os << "User attribute 4 = " << e.data.User4 << endl;
   os << "User attribute 5 = " << e.data.User5 << endl;
   os << "User attribute 6 = " << e.data.User6 << endl;

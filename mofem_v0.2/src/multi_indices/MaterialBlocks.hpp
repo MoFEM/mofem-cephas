@@ -225,10 +225,10 @@ struct Mat_Moisture: public GenericAttributeData {
     *
     */
   struct __attribute__ ((packed)) _data_{
-    double Diffusivity; 	///< moisture diffusivity
+    double Diffusivity; 	///< moisture conductivity
     double Viscosity;  		///< Viscosity of water
     double Permeability; 	///< Permeability of material
-    double User3; // User attribute 3
+    double Density; // Density
     double User4; // User attribute 4
     double User5; // User attribute 5
     double User6; // User attribute 6

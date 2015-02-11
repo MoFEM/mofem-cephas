@@ -28,7 +28,6 @@ using namespace MoFEM;
 #include <PostProcDisplacementAndStrainOnRefindedMesh.hpp>
 
 #include <ThermalElement.hpp>
-#include <MoistureTransportElement.hpp>
 #include "ElasticFE_RVELagrange_Disp.hpp"
 #include "ElasticFE_RVELagrange_Disp_Multi_Rhs.hpp"
 #include "ElasticFE_RVELagrange_Homogenized_Stress_Disp.hpp"
@@ -102,48 +101,49 @@ int main(int argc, char *argv[]) {
   
   //Field
   int field_rank=1;
-  ierr = mField.add_field("CONC",H1,field_rank); CHKERRQ(ierr);
+  ierr = mField.add_field("TEMP",H1,field_rank); CHKERRQ(ierr);
   ierr = mField.add_field("LAGRANGE_MUL_FIELD",H1,field_rank); CHKERRQ(ierr);
   
   
   //Problem
-  ierr = mField.add_problem("MOISTURE_PROBLEM"); CHKERRQ(ierr);
+  ierr = mField.add_problem("THERMAL_PROBLEM"); CHKERRQ(ierr);
   
 
   //meshset consisting all entities in mesh
   EntityHandle root_set = moab.get_root_set();
   //add entities to field
-  ierr = mField.add_ents_to_field_by_TETs(root_set,"CONC"); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_field_by_TETs(root_set,"TEMP"); CHKERRQ(ierr);
 
   //FE
-  MoistureTransportElement moisture_elements(mField);
-  ierr = moisture_elements.addDiffusionElement("MOISTURE_PROBLEM","CONC"); CHKERRQ(ierr);
+  ThermalElement thermal_elements(mField);
+  ierr = thermal_elements.addThermalElements("TEMP"); CHKERRQ(ierr);
+  ierr = mField.modify_problem_add_finite_element("THERMAL_PROBLEM","THERMAL_FE"); CHKERRQ(ierr);
   ierr = mField.add_finite_element("LAGRANGE_FE"); CHKERRQ(ierr);
   
   //C row as Lagrange_mul_disp and col as DISPLACEMENT
   ierr = mField.modify_finite_element_add_field_row("LAGRANGE_FE","LAGRANGE_MUL_FIELD"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_col("LAGRANGE_FE","CONC"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_col("LAGRANGE_FE","TEMP"); CHKERRQ(ierr);
   
   //CT col as Lagrange_mul_disp and row as DISPLACEMENT
   ierr = mField.modify_finite_element_add_field_col("LAGRANGE_FE","LAGRANGE_MUL_FIELD"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_row("LAGRANGE_FE","CONC"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_row("LAGRANGE_FE","TEMP"); CHKERRQ(ierr);
   
   //As for stress we need both displacement and temprature (Lukasz)
   ierr = mField.modify_finite_element_add_field_data("LAGRANGE_FE","LAGRANGE_MUL_FIELD"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_data("LAGRANGE_FE","CONC"); CHKERRQ(ierr);
+  ierr = mField.modify_finite_element_add_field_data("LAGRANGE_FE","TEMP"); CHKERRQ(ierr);
   
   //set finite elements for problem
-  ierr = mField.modify_problem_add_finite_element("MOISTURE_PROBLEM","LAGRANGE_FE"); CHKERRQ(ierr);
+  ierr = mField.modify_problem_add_finite_element("THERMAL_PROBLEM","LAGRANGE_FE"); CHKERRQ(ierr);
   
   
   //set refinment level for problem
-  ierr = mField.modify_problem_ref_level_add_bit("MOISTURE_PROBLEM",bit_level0); CHKERRQ(ierr);
+  ierr = mField.modify_problem_ref_level_add_bit("THERMAL_PROBLEM",bit_level0); CHKERRQ(ierr);
   
   /***/
   //Declare problem
   
   //add entitities (by tets) to the field
-  ierr = mField.add_ents_to_field_by_TETs(0,"CONC"); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_field_by_TETs(0,"TEMP"); CHKERRQ(ierr);
   
   //add finite elements entities
   Range SurfacesFaces;
@@ -162,10 +162,10 @@ int main(int argc, char *argv[]) {
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
   //int order = 5;
-  ierr = mField.set_field_order(root_set,MBTET,"CONC",order); CHKERRQ(ierr);
-  ierr = mField.set_field_order(root_set,MBTRI,"CONC",order); CHKERRQ(ierr);
-  ierr = mField.set_field_order(root_set,MBEDGE,"CONC",order); CHKERRQ(ierr);
-  ierr = mField.set_field_order(root_set,MBVERTEX,"CONC",1); CHKERRQ(ierr);
+  ierr = mField.set_field_order(root_set,MBTET,"TEMP",order); CHKERRQ(ierr);
+  ierr = mField.set_field_order(root_set,MBTRI,"TEMP",order); CHKERRQ(ierr);
+  ierr = mField.set_field_order(root_set,MBEDGE,"TEMP",order); CHKERRQ(ierr);
+  ierr = mField.set_field_order(root_set,MBVERTEX,"TEMP",1); CHKERRQ(ierr);
 
   ierr = mField.set_field_order(0,MBTRI,"LAGRANGE_MUL_FIELD",order); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBEDGE,"LAGRANGE_MUL_FIELD",order); CHKERRQ(ierr);
@@ -191,33 +191,33 @@ int main(int argc, char *argv[]) {
   //mesh partitioning
   
   //partition
-  ierr = mField.partition_problem("MOISTURE_PROBLEM"); CHKERRQ(ierr);
-  ierr = mField.partition_finite_elements("MOISTURE_PROBLEM"); CHKERRQ(ierr);
+  ierr = mField.partition_problem("THERMAL_PROBLEM"); CHKERRQ(ierr);
+  ierr = mField.partition_finite_elements("THERMAL_PROBLEM"); CHKERRQ(ierr);
   //what are ghost nodes, see Petsc Manual
-  ierr = mField.partition_ghost_dofs("MOISTURE_PROBLEM"); CHKERRQ(ierr);
+  ierr = mField.partition_ghost_dofs("THERMAL_PROBLEM"); CHKERRQ(ierr);
   
   //print block sets with materials
   ierr = mField.print_cubit_materials_set(); CHKERRQ(ierr);
   
   //create matrices (here F, D and Aij are matrices for the full problem)
   Vec F1,F2,F3,C1,C2,C3;
-  ierr = mField.VecCreateGhost("MOISTURE_PROBLEM",ROW,&F1); CHKERRQ(ierr);
-  ierr = mField.VecCreateGhost("MOISTURE_PROBLEM",ROW,&F2); CHKERRQ(ierr);
-  ierr = mField.VecCreateGhost("MOISTURE_PROBLEM",ROW,&F3); CHKERRQ(ierr);
+  ierr = mField.VecCreateGhost("THERMAL_PROBLEM",ROW,&F1); CHKERRQ(ierr);
+  ierr = mField.VecCreateGhost("THERMAL_PROBLEM",ROW,&F2); CHKERRQ(ierr);
+  ierr = mField.VecCreateGhost("THERMAL_PROBLEM",ROW,&F3); CHKERRQ(ierr);
   
-  ierr = mField.VecCreateGhost("MOISTURE_PROBLEM",COL,&C1); CHKERRQ(ierr);
-  ierr = mField.VecCreateGhost("MOISTURE_PROBLEM",COL,&C2); CHKERRQ(ierr);
-  ierr = mField.VecCreateGhost("MOISTURE_PROBLEM",COL,&C3); CHKERRQ(ierr);
+  ierr = mField.VecCreateGhost("THERMAL_PROBLEM",COL,&C1); CHKERRQ(ierr);
+  ierr = mField.VecCreateGhost("THERMAL_PROBLEM",COL,&C2); CHKERRQ(ierr);
+  ierr = mField.VecCreateGhost("THERMAL_PROBLEM",COL,&C3); CHKERRQ(ierr);
  
   Mat A;
-  ierr = mField.MatCreateMPIAIJWithArrays("MOISTURE_PROBLEM",&A); CHKERRQ(ierr);
+  ierr = mField.MatCreateMPIAIJWithArrays("THERMAL_PROBLEM",&A); CHKERRQ(ierr);
 
   
   ublas::vector<FieldData> applied_strain;  //it is not used in the calculation, it is required by ElasticFE_RVELagrange_Disp as input
   applied_strain.resize(1.5*field_rank+1.5); applied_strain.clear();
   
-  ierr = moisture_elements.setThermalFiniteElementLhsOperators("CONC",A); CHKERRQ(ierr);
-  ElasticFE_RVELagrange_Disp_Multi_Rhs MyFE_RVELagrange(mField,A,C1,F1,F2,F3,applied_strain,"CONC","LAGRANGE_MUL_FIELD",field_rank);
+  ierr = thermal_elements.setThermalFiniteElementLhsOperators("TEMP",A); CHKERRQ(ierr);
+  ElasticFE_RVELagrange_Disp_Multi_Rhs MyFE_RVELagrange(mField,A,C1,F1,F2,F3,applied_strain,"TEMP","LAGRANGE_MUL_FIELD",field_rank);
 
   ierr = VecZeroEntries(F1); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(F1,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -233,8 +233,8 @@ int main(int argc, char *argv[]) {
 
   ierr = MatZeroEntries(A); CHKERRQ(ierr);
   
-  ierr = mField.loop_finite_elements("MOISTURE_PROBLEM","DIFFUSION_FE",moisture_elements.getLoopFeLhs()); CHKERRQ(ierr);
-  ierr = mField.loop_finite_elements("MOISTURE_PROBLEM","LAGRANGE_FE",MyFE_RVELagrange);  CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("THERMAL_PROBLEM","THERMAL_FE",thermal_elements.getLoopFeLhs()); CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("THERMAL_PROBLEM","LAGRANGE_FE",MyFE_RVELagrange);  CHKERRQ(ierr);
 
   ierr = VecGhostUpdateBegin(F1,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(F1,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
@@ -274,7 +274,7 @@ int main(int argc, char *argv[]) {
   ierr = VecZeroEntries(RVE_volume_Vec); CHKERRQ(ierr);
   
   RVEVolume MyRVEVol(mField,A,C1,F1,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio), RVE_volume_Vec);
-  ierr = mField.loop_finite_elements("MOISTURE_PROBLEM","DIFFUSION_FE",MyRVEVol);  CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("THERMAL_PROBLEM","THERMAL_FE",MyRVEVol);  CHKERRQ(ierr);
   //  ierr = VecView(RVE_volume_Vec,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
   ierr = VecSum(RVE_volume_Vec, &RVE_volume);  CHKERRQ(ierr);
   cout<<"Final RVE_volume = "<< RVE_volume <<endl;
@@ -290,7 +290,7 @@ int main(int argc, char *argv[]) {
   ierr = KSPSolve(solver,F1,C1); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(C1,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(C1,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = mField.set_global_VecCreateGhost("MOISTURE_PROBLEM",ROW,C1,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = mField.set_global_VecCreateGhost("THERMAL_PROBLEM",ROW,C1,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   
   ublas::matrix<FieldData> Dmat;
   Dmat.resize(3,3); Dmat.clear();
@@ -309,8 +309,8 @@ int main(int argc, char *argv[]) {
 
   {
     ierr = VecZeroEntries(Stress_Homo); CHKERRQ(ierr);
-    ElasticFE_RVELagrange_Homogenized_Stress_Disp MyFE_RVEHomoStressDisp(mField,A,C1,F1,&RVE_volume, applied_strain, Stress_Homo,"CONC","LAGRANGE_MUL_FIELD",field_rank);
-    ierr = mField.loop_finite_elements("MOISTURE_PROBLEM","LAGRANGE_FE",MyFE_RVEHomoStressDisp);  CHKERRQ(ierr);
+    ElasticFE_RVELagrange_Homogenized_Stress_Disp MyFE_RVEHomoStressDisp(mField,A,C1,F1,&RVE_volume, applied_strain, Stress_Homo,"TEMP","LAGRANGE_MUL_FIELD",field_rank);
+    ierr = mField.loop_finite_elements("THERMAL_PROBLEM","LAGRANGE_FE",MyFE_RVEHomoStressDisp);  CHKERRQ(ierr);
     VecGhostUpdateBegin(Stress_Homo,INSERT_VALUES,SCATTER_FORWARD);
     VecGhostUpdateEnd(Stress_Homo,INSERT_VALUES,SCATTER_FORWARD);
     PetscScalar *avec;
@@ -334,11 +334,11 @@ int main(int argc, char *argv[]) {
   ierr = KSPSolve(solver,F2,C2); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(C2,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(C2,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = mField.set_global_VecCreateGhost("MOISTURE_PROBLEM",ROW,C2,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = mField.set_global_VecCreateGhost("THERMAL_PROBLEM",ROW,C2,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   {
     ierr = VecZeroEntries(Stress_Homo); CHKERRQ(ierr);
-    ElasticFE_RVELagrange_Homogenized_Stress_Disp MyFE_RVEHomoStressDisp(mField,A,C2,F2,&RVE_volume, applied_strain, Stress_Homo,"CONC","LAGRANGE_MUL_FIELD",field_rank);
-    ierr = mField.loop_finite_elements("MOISTURE_PROBLEM","LAGRANGE_FE",MyFE_RVEHomoStressDisp);  CHKERRQ(ierr);
+    ElasticFE_RVELagrange_Homogenized_Stress_Disp MyFE_RVEHomoStressDisp(mField,A,C2,F2,&RVE_volume, applied_strain, Stress_Homo,"TEMP","LAGRANGE_MUL_FIELD",field_rank);
+    ierr = mField.loop_finite_elements("THERMAL_PROBLEM","LAGRANGE_FE",MyFE_RVEHomoStressDisp);  CHKERRQ(ierr);
     VecGhostUpdateBegin(Stress_Homo,INSERT_VALUES,SCATTER_FORWARD);
     VecGhostUpdateEnd(Stress_Homo,INSERT_VALUES,SCATTER_FORWARD);
     PetscScalar *avec;
@@ -363,12 +363,12 @@ int main(int argc, char *argv[]) {
   ierr = KSPSolve(solver,F3,C3); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(C3,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(C3,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = mField.set_global_VecCreateGhost("MOISTURE_PROBLEM",ROW,C3,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = mField.set_global_VecCreateGhost("THERMAL_PROBLEM",ROW,C3,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
   {
     ierr = VecZeroEntries(Stress_Homo); CHKERRQ(ierr);
-    ElasticFE_RVELagrange_Homogenized_Stress_Disp MyFE_RVEHomoStressDisp(mField,A,C3,F3,&RVE_volume, applied_strain, Stress_Homo,"CONC","LAGRANGE_MUL_FIELD",field_rank);
-    ierr = mField.loop_finite_elements("MOISTURE_PROBLEM","LAGRANGE_FE",MyFE_RVEHomoStressDisp);  CHKERRQ(ierr);
+    ElasticFE_RVELagrange_Homogenized_Stress_Disp MyFE_RVEHomoStressDisp(mField,A,C3,F3,&RVE_volume, applied_strain, Stress_Homo,"TEMP","LAGRANGE_MUL_FIELD",field_rank);
+    ierr = mField.loop_finite_elements("THERMAL_PROBLEM","LAGRANGE_FE",MyFE_RVEHomoStressDisp);  CHKERRQ(ierr);
     VecGhostUpdateBegin(Stress_Homo,INSERT_VALUES,SCATTER_FORWARD);
     VecGhostUpdateEnd(Stress_Homo,INSERT_VALUES,SCATTER_FORWARD);
     PetscScalar *avec;
@@ -388,8 +388,10 @@ int main(int argc, char *argv[]) {
   }
   //====================================================================================================
   //Writing Dmat in to binary file for use in the unsteady diffusion problem
-  cout <<"Dmat ="<< Dmat<< endl;
-  Dmat=Dmat/RVE_volume; //This is OK for homogeniszed RVE
+  cout <<"Dmat ="<< Dmat<< endl; //Dmat here in [W/mm C]
+  Dmat=1000.0*Dmat; // Dmat now in [W/(m C)]
+  cout <<"Dmat after conversion (Units) ="<< Dmat<< endl; //Dmat here in [W/mm C]
+
   if(pcomm->rank()==0){
     int fd;
     PetscViewer view_out;
@@ -401,15 +403,15 @@ int main(int argc, char *argv[]) {
   //====================================================================================================
 
 
-  ProjectionFieldOn10NodeTet ent_method_on_10nodeTet(mField,"CONC",true,false,"CONC");
-  ierr = mField.loop_dofs("CONC",ent_method_on_10nodeTet); CHKERRQ(ierr);
+  ProjectionFieldOn10NodeTet ent_method_on_10nodeTet(mField,"TEMP",true,false,"TEMP");
+  ierr = mField.loop_dofs("TEMP",ent_method_on_10nodeTet); CHKERRQ(ierr);
   ent_method_on_10nodeTet.set_nodes = false;
-  ierr = mField.loop_dofs("CONC",ent_method_on_10nodeTet); CHKERRQ(ierr);
+  ierr = mField.loop_dofs("TEMP",ent_method_on_10nodeTet); CHKERRQ(ierr);
   
   if(pcomm->rank()==0) {
     EntityHandle out_meshset;
     rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
-    ierr = mField.problem_get_FE("MOISTURE_PROBLEM","DIFFUSION_FE",out_meshset); CHKERRQ(ierr);
+    ierr = mField.problem_get_FE("THERMAL_PROBLEM","THERMAL_FE",out_meshset); CHKERRQ(ierr);
     rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
     rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
   }
