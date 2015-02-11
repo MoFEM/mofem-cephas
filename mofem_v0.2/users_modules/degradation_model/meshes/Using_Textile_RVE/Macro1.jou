@@ -1,6 +1,6 @@
 reset
 # Geometry (all dimension for macro is in meter [m])
-brick x 5 y 5 z 2
+brick x 5 y 5 z 1
 
 set duplicate block elements on
 # Bounary Conditions for Heat Transfer Macro problem
