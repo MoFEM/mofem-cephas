@@ -18,7 +18,7 @@ block 1 attribute index 1 1 # relative humidity
 block 2 surface 3
 block 2 name 'MASS_FLUX'
 block 2 attribute count 1
-block 2 attribute index 1 1e-7
+block 2 attribute index 1 0.5e-8
 
 # Bounary Conditions for Mechanical Macro problem
 create displacement on surface 3 dof 1 dof 2 dof 3 fix
@@ -48,10 +48,11 @@ block 5 attribute index 2 0   #Poisson's ratio (This will not be used in the cal
 volume all scheme Tetmesh
 
 
-volume all size auto factor 8
+volume all size auto factor 10
 mesh volume all
 
 save as "/Users/zahur/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/Using_Textile_RVE/Macro1.cub" overwrite
+
 
 
 
