@@ -2547,12 +2547,16 @@ PetscErrorCode ConfigurationalFractureMechanics::fix_all_but_one(FieldInterface&
     map<EntityHandle,double>::iterator mit = map_ent_j.begin();
     mit!=map_ent_j.end();mit++) {
     double fraction = (max_j-mit->second)/max_j;
+    double step_work_of_fracture = 0;
+    if(!map_ent_work.empty()) {
+      step_work_of_fracture = map_ent_work[mit->first];
+    }
     double g_j = map_ent_g[mit->first]/mit->second;
     ierr = PetscPrintf(PETSC_COMM_WORLD,
-      "front node = %ld max_j = %6.4e j = %6.4e (%6.4e) g/j = %4.3f",
-      mit->first,max_j,mit->second,fraction,g_j); CHKERRQ(ierr);
+      "front node = %ld max_j = %6.4e j = %6.4e (%6.4e) g/j = %4.3f step work of fracture = %4.3f",
+      mit->first,max_j,mit->second,fraction,g_j,step_work_of_fracture); CHKERRQ(ierr);
     bool freez_or_not_to_freez;
-    if(fraction > fraction_treshold) {
+    if(fraction > fraction_treshold || step_work_of_fracture<0) {
       freez_or_not_to_freez = true;
     } else {
       freez_or_not_to_freez = false;
@@ -2956,23 +2960,25 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
  
   }
 
-  ierr = VecZeroEntries(F); CHKERRQ(ierr);
-
+  ierr = griffith_force_vector(m_field,"COUPLED_PROBLEM"); CHKERRQ(ierr);
   //calulate work of fracture
-  /*map_ent_work.clear();
-  ublas::vector<double> mesh_node_disp(3),coords(3);
-  for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_FOR_LOOP_(problemPtr,"LAMBDA_CRACKFRONT_AREA",diit)) {
+  const MoFEMProblem *problem_ptr;
+  ierr = m_field.get_problem("COUPLED_DYNAMIC",&problem_ptr); CHKERRQ(ierr);
+  map_ent_work.clear();
+  ublas::vector<double> mesh_node_disp(3),coords(3),griffith_force(3);
+  for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_FOR_LOOP_(problem_ptr,"LAMBDA_CRACKFRONT_AREA",diit)) {
     EntityHandle ent = diit->get_ent();
-    //for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_(m_field,"GRIFFITH_FORCE",diit->get_ent(),diiit)) {
-      //griffith_force[diiit->get_dof_rank()] = diiit->get_FieldData();
-    //}
+    for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_(m_field,"GRIFFITH_FORCE",diit->get_ent(),diiit)) {
+      griffith_force[diiit->get_dof_rank()] = diiit->get_FieldData();
+    }
     for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_(m_field,"DOT_MESH_NODE_POSITIONS",diit->get_ent(),diiit)) {
       mesh_node_disp[diiit->get_dof_rank()] = diiit->get_FieldData();
     }
-    rval = m_field.get_moab().get_coords(&ent,1,coords); CHKERR_PETSC(rval);
+    rval = m_field.get_moab().get_coords(&ent,1,&coords[0]); CHKERR_PETSC(rval);
     mesh_node_disp -= coords;
-
-  }*/
+    double w = inner_prod(mesh_node_disp,griffith_force);
+    map_ent_work[ent] = w;
+  }
 
   ierr = VecDestroy(&DISP); CHKERRQ(ierr);
   ierr = MatDestroy(&ShellK); CHKERRQ(ierr);
