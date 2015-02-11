@@ -655,8 +655,8 @@ PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterf
   constrain_body_surface.nonlinear = true;
   SnesConstrainSurfacGeometry constrain_crack_surface(m_field,"LAMBDA_CRACK_SURFACE");
   constrain_crack_surface.nonlinear = true;
-  Snes_CTgc_CONSTANT_AREA_FEMethod ct_gc(m_field,projFrontCtx,"COUPLED_DYNAMIC","LAMBDA_CRACKFRONT_AREA");
-  Snes_dCTgc_CONSTANT_AREA_FEMethod dct_gc(m_field,K,"LAMBDA_CRACKFRONT_AREA");
+  Snes_CTgc_CONSTANT_AREA ct_gc(m_field,projFrontCtx,"COUPLED_DYNAMIC","LAMBDA_CRACKFRONT_AREA");
+  Snes_dCTgc_CONSTANT_AREA dct_gc(m_field,K,"LAMBDA_CRACKFRONT_AREA");
   TangentWithMeshSmoothingFrontConstrain tangent_constrain(m_field,&smoother,"LAMBDA_CRACK_TANGENT_CONSTRAIN");
   map<int,SnesConstrainSurfacGeometry*> other_body_surface_constrains;
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,SIDESET,it)) {

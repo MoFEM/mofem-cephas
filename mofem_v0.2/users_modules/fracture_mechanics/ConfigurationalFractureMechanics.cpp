@@ -416,7 +416,7 @@ struct MyMeshSmoothing: public MeshSmoothingFEMethod,CrackFrontData {
 
 };
 
-struct TangentWithMeshSmoothingFrontConstrain: public C_CONSTANT_AREA_FEMethod {
+struct TangentWithMeshSmoothingFrontConstrain: public C_CONSTANT_AREA {
 
   MyMeshSmoothing *meshFEPtr;
   const double eps;
@@ -424,7 +424,7 @@ struct TangentWithMeshSmoothingFrontConstrain: public C_CONSTANT_AREA_FEMethod {
   TangentWithMeshSmoothingFrontConstrain(FieldInterface& _mField,
     MyMeshSmoothing *_mesh_fe_ptr,
     string _lambda_field_name,int _verbose = 0):
-    C_CONSTANT_AREA_FEMethod(_mField,PETSC_NULL,PETSC_NULL,_lambda_field_name,_verbose),
+    C_CONSTANT_AREA(_mField,PETSC_NULL,PETSC_NULL,_lambda_field_name,_verbose),
     meshFEPtr(_mesh_fe_ptr),eps(1e-10) {}
 
   Tag thFrontTangent;
@@ -446,7 +446,7 @@ struct TangentWithMeshSmoothingFrontConstrain: public C_CONSTANT_AREA_FEMethod {
       break;
     }
 
-    ierr = C_CONSTANT_AREA_FEMethod::preProcess(); CHKERRQ(ierr);
+    ierr = C_CONSTANT_AREA::preProcess(); CHKERRQ(ierr);
     /*//TAG  - only for one proc analysis
     double def[] = {0,0,0};
     rval = mField.get_moab().tag_get_handle("FRONT_TANGENT",3,MB_TYPE_DOUBLE,
@@ -2165,7 +2165,7 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_force_vector(FieldInte
   ierr = m_field.get_entities_by_type_and_ref_level(bit_to_block,BitRefLevel().set(),MBVERTEX,blocked_nodes); CHKERRQ(ierr);
   corners_nodes.merge(blocked_nodes);
 
-  C_CONSTANT_AREA_FEMethod C_AREA_ELEM(m_field,projFrontCtx->C,Q,"LAMBDA_CRACKFRONT_AREA");
+  C_CONSTANT_AREA C_AREA_ELEM(m_field,projFrontCtx->C,Q,"LAMBDA_CRACKFRONT_AREA");
 
   ierr = MatSetOption(projFrontCtx->C,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
   ierr = MatSetOption(projFrontCtx->C,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
@@ -2196,7 +2196,7 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_force_vector(FieldInte
   //tangent front froce
   matPROJ_ctx projFrontCtx_tangent(m_field,problem,"C_CRACKFRONT_MATRIX");
   ierr = m_field.MatCreateMPIAIJWithArrays("C_CRACKFRONT_MATRIX",&projFrontCtx_tangent.C); CHKERRQ(ierr);
-  C_FRONT_TANGENT_FEMethod C_TANGENT_ELEM(m_field,projFrontCtx_tangent.C,PETSC_NULL,"LAMBDA_CRACKFRONT_AREA");
+  C_FRONT_TANGENT C_TANGENT_ELEM(m_field,projFrontCtx_tangent.C,PETSC_NULL,"LAMBDA_CRACKFRONT_AREA");
   ierr = MatZeroEntries(projFrontCtx_tangent.C); CHKERRQ(ierr);
   ierr = m_field.loop_finite_elements("C_CRACKFRONT_MATRIX","C_CRACKFRONT_AREA_ELEM",C_TANGENT_ELEM);  CHKERRQ(ierr);
   ierr = MatAssemblyBegin(projFrontCtx_tangent.C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
@@ -2265,7 +2265,7 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& m_fi
   ierr = m_field.get_entities_by_type_and_ref_level(bit_to_block,BitRefLevel().set(),MBVERTEX,blocked_nodes); CHKERRQ(ierr);
   corners_nodes.merge(blocked_nodes);
 
-  C_CONSTANT_AREA_FEMethod C_AREA_ELEM(m_field,projFrontCtx->C,Q,"LAMBDA_CRACKFRONT_AREA");
+  C_CONSTANT_AREA C_AREA_ELEM(m_field,projFrontCtx->C,Q,"LAMBDA_CRACKFRONT_AREA");
 
   ierr = MatSetOption(projFrontCtx->C,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
   ierr = MatSetOption(projFrontCtx->C,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
@@ -2299,7 +2299,7 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& m_fi
   //calculate tangent griffith force
   matPROJ_ctx projFrontCtx_tangent(m_field,problem,"C_CRACKFRONT_MATRIX");
   ierr = m_field.MatCreateMPIAIJWithArrays("C_CRACKFRONT_MATRIX",&projFrontCtx_tangent.C); CHKERRQ(ierr);
-  C_FRONT_TANGENT_FEMethod C_TANGENT_ELEM(m_field,projFrontCtx_tangent.C,Q,"LAMBDA_CRACKFRONT_AREA");
+  C_FRONT_TANGENT C_TANGENT_ELEM(m_field,projFrontCtx_tangent.C,Q,"LAMBDA_CRACKFRONT_AREA");
   ierr = MatZeroEntries(projFrontCtx_tangent.C); CHKERRQ(ierr);
   ierr = m_field.loop_finite_elements("C_CRACKFRONT_MATRIX","C_CRACKFRONT_AREA_ELEM",C_TANGENT_ELEM);  CHKERRQ(ierr);
   ierr = MatAssemblyBegin(projFrontCtx_tangent.C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
@@ -2677,8 +2677,8 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   constrain_body_surface.nonlinear = true;
   SnesConstrainSurfacGeometry constrain_crack_surface(m_field,"LAMBDA_CRACK_SURFACE");
   constrain_crack_surface.nonlinear = true;
-  Snes_CTgc_CONSTANT_AREA_FEMethod ct_gc(m_field,projFrontCtx,"COUPLED_PROBLEM","LAMBDA_CRACKFRONT_AREA");
-  Snes_dCTgc_CONSTANT_AREA_FEMethod dct_gc(m_field,K,"LAMBDA_CRACKFRONT_AREA");
+  Snes_CTgc_CONSTANT_AREA ct_gc(m_field,projFrontCtx,"COUPLED_PROBLEM","LAMBDA_CRACKFRONT_AREA");
+  Snes_dCTgc_CONSTANT_AREA dct_gc(m_field,K,"LAMBDA_CRACKFRONT_AREA");
   TangentWithMeshSmoothingFrontConstrain tangent_constrain(m_field,&smoother,"LAMBDA_CRACK_TANGENT_CONSTRAIN");
   map<int,SnesConstrainSurfacGeometry*> other_body_surface_constrains;
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,SIDESET,it)) {
