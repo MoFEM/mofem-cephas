@@ -47,7 +47,7 @@ namespace ObosleteUsersModules {
 //      cout << "Dmat_RVE[fe_ent](gg) =  "<< Dmat_RVE[fe_ent](gg)<<endl;
       //accessing values from STL map Dmat_RVE (given Element and Gauss point)
       D=Dmat_RVE[fe_ent](gg);
-//      D=1e6*D;
+      D=1e6*D;
 
 //      cout << "D =  "<< D<<endl;
       PetscFunctionReturn(0);

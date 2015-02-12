@@ -82,7 +82,7 @@ One file conversion
 All files conversion using script
 ./do_vtk1.sh FE2_out_*.h5m
 
-cp *.vtk /mnt/home/Desktop/aaaa/
+cp *.vtk /mnt/home/Desktop/bbb/
 
 
 

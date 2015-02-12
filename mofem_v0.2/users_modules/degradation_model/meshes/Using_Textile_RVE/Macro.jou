@@ -1,6 +1,6 @@
 reset
 # Geometry (all dimension for macro is in meter [m])
-brick x 5 y 5 z 0.5
+brick x 5 y 5 z 1
 create cylinder height 6 radius 1
 move volume 2 x -2.5 y -2.5 z 0 include_merged
 subtract volume 2 from volume 1
