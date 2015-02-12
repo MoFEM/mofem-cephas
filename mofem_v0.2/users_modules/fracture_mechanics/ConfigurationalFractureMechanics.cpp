@@ -65,8 +65,7 @@ extern "C" {
 
 #include <petsctime.h>
 
-#include <FEMethod_ComplexConstArea.hpp>
-
+#include <ComplexConstArea.hpp>
 #include <FaceSplittingTool.hpp>
 #include <ConfigurationalFractureMechanics.hpp>
 
@@ -2553,7 +2552,7 @@ PetscErrorCode ConfigurationalFractureMechanics::fix_all_but_one(FieldInterface&
     }
     double g_j = map_ent_g[mit->first]/mit->second;
     ierr = PetscPrintf(PETSC_COMM_WORLD,
-      "front node = %ld max_j = %6.4e j = %6.4e (%6.4e) g/j = %4.3f step work of fracture = %4.3f",
+      "front node = %ld max_j = %6.4e j = %6.4e (%6.4e) g/j = %4.3f step work of fracture = %2.1g",
       mit->first,max_j,mit->second,fraction,g_j,step_work_of_fracture); CHKERRQ(ierr);
     bool freez_or_not_to_freez;
     if(fraction > fraction_treshold || step_work_of_fracture<0) {
@@ -2960,10 +2959,22 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
  
   }
 
-  ierr = griffith_force_vector(m_field,"COUPLED_PROBLEM"); CHKERRQ(ierr);
+  ierr = VecZeroEntries(F);  CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ct_gc.snes_f = F;
+  ierr = ct_gc.preProcess(); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = m_field.set_other_global_VecCreateGhost(
+    "COUPLED_PROBLEM","MESH_NODE_POSITIONS","GRIFFITH_FORCE",
+    ROW,F,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+
   //calulate work of fracture
   const MoFEMProblem *problem_ptr;
-  ierr = m_field.get_problem("COUPLED_DYNAMIC",&problem_ptr); CHKERRQ(ierr);
+  ierr = m_field.get_problem("C_CRACKFRONT_MATRIX",&problem_ptr); CHKERRQ(ierr);
   map_ent_work.clear();
   ublas::vector<double> mesh_node_disp(3),coords(3),griffith_force(3);
   for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_FOR_LOOP_(problem_ptr,"LAMBDA_CRACKFRONT_AREA",diit)) {
@@ -2971,15 +2982,18 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
     for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_(m_field,"GRIFFITH_FORCE",diit->get_ent(),diiit)) {
       griffith_force[diiit->get_dof_rank()] = diiit->get_FieldData();
     }
-    for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_(m_field,"DOT_MESH_NODE_POSITIONS",diit->get_ent(),diiit)) {
+    for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_(m_field,"MESH_NODE_POSITIONS",diit->get_ent(),diiit)) {
       mesh_node_disp[diiit->get_dof_rank()] = diiit->get_FieldData();
     }
     rval = m_field.get_moab().get_coords(&ent,1,&coords[0]); CHKERR_PETSC(rval);
+    //cerr << "coords " << coords << endl;
+    //cerr << "mesh_node_disp " << mesh_node_disp << endl;
+    //cerr << "griffith_force " << griffith_force << endl;
     mesh_node_disp -= coords;
     double w = inner_prod(mesh_node_disp,griffith_force);
     map_ent_work[ent] = w;
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"at ent %ld load step work of fracture = %6.4e\n",ent,w); CHKERRQ(ierr);
   }
-
   ierr = VecDestroy(&DISP); CHKERRQ(ierr);
   ierr = MatDestroy(&ShellK); CHKERRQ(ierr);
   ierr = MatDestroy(&K); CHKERRQ(ierr);

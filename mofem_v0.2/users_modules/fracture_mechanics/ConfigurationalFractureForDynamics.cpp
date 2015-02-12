@@ -585,9 +585,9 @@ PetscErrorCode ConfigurationalFracturDynamics::rate_of_work_of_fracture(FieldInt
   ublas::vector<double> griffith_force(3);
   ublas::vector<double> material_veloc(3);
   ublas::vector<double> coords(3);
-  const MoFEMProblem *problemPtr;
-  ierr = m_field.get_problem("C_CRACKFRONT_MATRIX",&problemPtr); CHKERRQ(ierr);
-  for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_FOR_LOOP_(problemPtr,"LAMBDA_CRACKFRONT_AREA",diit)) {
+  const MoFEMProblem *problem_ptr;
+  ierr = m_field.get_problem("C_CRACKFRONT_MATRIX",&problem_ptr); CHKERRQ(ierr);
+  for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_FOR_LOOP_(problem_ptr,"LAMBDA_CRACKFRONT_AREA",diit)) {
     EntityHandle ent = diit->get_ent();
     for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_(m_field,"GRIFFITH_FORCE",diit->get_ent(),diiit)) {
       griffith_force[diiit->get_dof_rank()] = diiit->get_FieldData();
