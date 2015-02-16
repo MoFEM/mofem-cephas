@@ -33,7 +33,7 @@ block 2 attribute index 1 0.5e-9
 # Bounary Conditions for Mechanical Macro problem
 create displacement on surface 14 dof 1 fix 0
 create displacement on surface 12 dof 2 fix 0
-create force on surface 5 vector 0 1e6 0 0 0 0
+create force on surface 5 vector 0 1e3 0 0 0 0
 
 #Here thermal conductivity and moisture diffusivity homogenised matrices will be read directly from input RVE binary files so no need to defined material properties here
 block 3 volume 1  
@@ -86,6 +86,7 @@ volume 1 scheme Tetmesh
 mesh volume 1
 
 save as "/Users/zahur/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/Using_Textile_RVE/Macro_Plate_with_hole.cub" overwrite
+
 
 
 

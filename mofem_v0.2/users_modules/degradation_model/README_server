@@ -26,7 +26,7 @@ make thermal_unsteady_inputDmat && mpirun -np 1 ./thermal_unsteady_inputDmat \
 -my_file ../users_modules/degradation_model/meshes/Using_Textile_RVE/Macro1.cub \
   -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor \
   -snes_type newtonls -snes_linesearch_type basic -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 -snes_monitor \
-  -ts_monitor -ts_type beuler -ts_dt 864000 -ts_final_time 9504000 -snes_lag_jacobian -2 \
+  -ts_monitor -ts_type beuler -ts_dt 864000 -ts_final_time 86400000 -snes_lag_jacobian -2 \
   -my_order 1 -my_max_post_proc_ref_level 1
 
 
@@ -36,7 +36,7 @@ make diffusion_unsteady_inputDmat && mpirun -np 1 ./diffusion_unsteady_inputDmat
 -my_file solution.h5m \
   -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor \
   -snes_type newtonls -snes_linesearch_type basic -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 -snes_monitor \
-  -ts_monitor -ts_type beuler -ts_dt 864000 -ts_final_time 9504000 -snes_lag_jacobian -2 \
+  -ts_monitor -ts_type beuler -ts_dt 864000 -ts_final_time 86400000 -snes_lag_jacobian -2 \
   -my_order 1 -my_max_post_proc_ref_level 1
 
 
@@ -46,7 +46,7 @@ make wt_unsteady_macro && mpirun -np 1 ./wt_unsteady_macro \
 -my_file solution_mois.h5m \
   -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor \
   -snes_type newtonls -snes_linesearch_type basic -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 -snes_monitor \
-  -ts_monitor -ts_type beuler -ts_dt 10 -ts_final_time 110 -snes_lag_jacobian -2 \
+  -ts_monitor -ts_type beuler -ts_dt 10 -ts_final_time 1000 -snes_lag_jacobian -2 \
   -my_order 1 -my_max_post_proc_ref_level 1 \
   -my_saturation_conc 1
 
