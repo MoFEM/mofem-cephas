@@ -388,9 +388,7 @@ int main(int argc, char *argv[]) {
   }
   //====================================================================================================
   //Writing Dmat in to binary file for use in the unsteady diffusion problem
-  cout <<"Dmat ="<< Dmat<< endl; //Dmat here in [W/mm C]
-  Dmat=1000.0*Dmat; // Dmat now in [W/(m C)]
-  cout <<"Dmat after conversion (Units) ="<< Dmat<< endl; //Dmat here in [W/mm C]
+  cout <<"Dmat ="<< Dmat<< endl; //Dmat here in [kg mm/s^3 C]
 
   if(pcomm->rank()==0){
     int fd;

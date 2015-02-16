@@ -1,18 +1,24 @@
 reset
+
 # Geometry (all dimension for macro is in meter [m])
-brick x 5 y 5 z 1
-create cylinder height 6 radius 1
-move volume 2 x -2.5 y -2.5 z 0 include_merged
+#brick x 5 y 5 z 0.4
+#create cylinder height 6 radius 1
+#move volume 2 x -2.5 y -2.5 z 0 include_merged
+
+# Geometry (all dimension for macro is in meter [mm])
+brick x 20 y 20 z 1
+create cylinder height 60 radius 4
+move volume 2 x -10 y -10 z 0 include_merged
+
 subtract volume 2 from volume 1
 
 set duplicate block elements on
 # Bounary Conditions for Heat Transfer Macro problem
-create temperature on surface 5  value 80   #[deg C]
-#create heatflux on surface 6  value 3000           # +ve value means heat out (Watt/m2)
+create temperature on surface 5 value 80   #[deg C]
 create heatflux on surface 6  value 0.01           # +ve value means heat out (Watt/m2)
 
-
 # Bounary Conditions for Moisture Transport Macro problem
+# block 1 surface 5, 6, 13, 10
 block 1 surface 5
 block 1 name 'MASS_CONC'
 block 1 attribute count 1   
@@ -21,19 +27,20 @@ block 1 attribute index 1 1 # relative humidity
 block 2 surface 6
 block 2 name 'MASS_FLUX'
 block 2 attribute count 1
-block 2 attribute index 1 0.5e-8
+block 2 attribute index 1 0.5e-9
+
 
 # Bounary Conditions for Mechanical Macro problem
 create displacement on surface 14 dof 1 fix 0
 create displacement on surface 12 dof 2 fix 0
-create force on surface 5 vector 0 1000 0 0 0 0
+create force on surface 5 vector 0 1e6 0 0 0 0
 
 #Here thermal conductivity and moisture diffusivity homogenised matrices will be read directly from input RVE binary files so no need to defined material properties here
 block 3 volume 1  
 block 3 name 'MAT_RVE_THERMAL' 
 block 3 attribute count 2
 block 3 attribute index 1 1  #Conductivity (This will not used as this will read from homogenisation)
-block 3 attribute index 2 1.4634e6  #HeatCapacity (density*cp)
+block 3 attribute index 2 1.4634e3  #HeatCapacity (density*cp)
 
 block 4 volume 1  
 block 4 name 'MAT_RVE_DIFFUSION' 
@@ -49,13 +56,38 @@ block 5 attribute index 1 1   #Young's modulus  (This will not be used in the ca
 block 5 attribute index 2 0   #Poisson's ratio (This will not be used in the calculation)
 
 #Meshing
-volume all scheme Tetmesh
+curve 19 interval 9
+curve 19  scheme bias factor 1.12
+mesh curve 19
+
+curve 20  interval 9
+curve 20  scheme bias factor 0.88
+mesh curve 20
+
+curve 2 1 interval 6
+curve 2 1 scheme equal
+mesh curve 2 1
+
+curve 17  interval 5
+curve 17 scheme equal
+mesh curve 17
+
+curve 16 10 12 11 18 interval 1
+curve 16 10 12 11 18 scheme equal
+mesh curve 16 10 12 11 18 
+
+surface 11 scheme trimesh
+mesh surface 11
+
+surface 13  scheme copy source surface 11  nosmoothing
+mesh surface 13 
+
+volume 1 scheme Tetmesh
+mesh volume 1
+
+save as "/Users/zahur/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/Using_Textile_RVE/Macro_Plate_with_hole.cub" overwrite
 
 
-volume all size auto factor 10
-mesh volume all
-
-save as "/Users/zahur/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/Using_Textile_RVE/Macro.cub" overwrite
 
 
 

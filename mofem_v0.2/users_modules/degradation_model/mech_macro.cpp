@@ -367,91 +367,97 @@ int main(int argc, char *argv[]) {
   //read time series and do thermo elastci analysis
   SeriesRecorder *recorder_ptr;
   ierr = m_field_Macro.query_interface(recorder_ptr); CHKERRQ(ierr);
+  int count=0;
   if( recorder_ptr->check_series("Wt_SERIES") ) {
     cout<<"============== Wt_SERIES exists =============== "<<endl;
     for(_IT_SERIES_STEPS_BY_NAME_FOR_LOOP_(recorder_ptr,"Wt_SERIES",sit)) {
-      PetscPrintf(PETSC_COMM_WORLD,"Process step %d\n",sit->get_step_number());
-      ierr = recorder_ptr->load_series_data("Wt_SERIES",sit->get_step_number()); CHKERRQ(ierr);
-
-      //Here we use ElasticFEMethod_Dmat_input, so will multiply Fint with -1
-      DisplacementBCFEMethodPreAndPostProc my_dirichlet_bc(m_field_Macro,"DISP_MACRO",A,D,F);
+      if(count%10==0){
+        PetscPrintf(PETSC_COMM_WORLD,"Process step %d\n",sit->get_step_number());
+        ierr = recorder_ptr->load_series_data("Wt_SERIES",sit->get_step_number()); CHKERRQ(ierr);
+        
+        //Here we use ElasticFEMethod_Dmat_input, so will multiply Fint with -1
+        DisplacementBCFEMethodPreAndPostProc my_dirichlet_bc(m_field_Macro,"DISP_MACRO",A,D,F);
+        
+        
+        //here pointer to object is used instead of object, because the pointer will be destroyed at the end of code before PetscFinalize to make sure all
+        //its internal matrices and vectores are destroyed.
+        //      ElasticFEMethod_Dmat_input my_fe(m_field_Macro,A,D,Fint,0.0,0.0,calculate_rve_dmat.commonData.Dmat_RVE,"DISP_MACRO");
+        ElasticFEMethod_Dmat_input* my_fe_ptr = new ElasticFEMethod_Dmat_input(m_field_Macro,A,D,Fint,0.0,0.0,calculate_rve_dmat.commonData.Dmat_RVE,"DISP_MACRO");
+        //preproc
+        ierr = m_field_Macro.problem_basic_method_preProcess("ELASTIC_PROBLEM_MACRO",my_dirichlet_bc); CHKERRQ(ierr);
+        
+        
+        //We need to assemble matrix A and internal force vector Fint at each time step as these depends on Dmat, which will change at each time step
+        ierr = MatZeroEntries(A); CHKERRQ(ierr);
+        ierr = VecZeroEntries(Fint); CHKERRQ(ierr);
+        ierr = VecGhostUpdateBegin(Fint,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+        ierr = VecGhostUpdateEnd(Fint,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+        
+        ierr = VecZeroEntries(D); CHKERRQ(ierr);
+        ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+        ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+        ierr = m_field_Macro.set_global_VecCreateGhost("ELASTIC_PROBLEM_MACRO",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+        
+        //      ierr = VecView(D,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+        
+        
+        //calculate Dmat for all Gauss points in the macro-mesh
+        ierr = m_field_Macro.loop_finite_elements("ELASTIC_PROBLEM_MACRO","ELASTIC_FE_MACRO",calculate_rve_dmat.getLoopFeRhs()); CHKERRQ(ierr);
+        ierr = VecScale(Fint,-1); CHKERRQ(ierr); //Multiply Fint with -1 (Fint=-Fint)
+        ierr = VecAXPY(Fint,1,F); CHKERRQ(ierr); //Fint=Fint+F
+        
+        //      cin>>wait;
+        //      map<EntityHandle, ublas::vector<ublas::matrix<double> > >::iterator mit = calculate_rve_dmat.commonData.Dmat_RVE.begin();
+        //      for(;mit!=calculate_rve_dmat.commonData.Dmat_RVE.end();mit++) {
+        //        cerr << mit->first << " " << mit->second << endl;
+        //      }
+        
+        //loop over macro elemnts to assemble A matrix and Fint vector
+        ierr = m_field_Macro.loop_finite_elements("ELASTIC_PROBLEM_MACRO","ELASTIC_FE_MACRO",*my_fe_ptr);  CHKERRQ(ierr);
+        
+        my_dirichlet_bc.snes_B=A;
+        my_dirichlet_bc.snes_x = D;
+        my_dirichlet_bc.snes_f = Fint;
+        
+        //postproc
+        ierr = m_field_Macro.problem_basic_method_postProcess("ELASTIC_PROBLEM_MACRO",my_dirichlet_bc); CHKERRQ(ierr);
+        
+        //      //Matrix View
+        //      MatView(A,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
+        //      std::string wait1;
+        //      std::cin >> wait1;
+        //      cout<< "Matrix A "<<endl;
+        //      MatView(A,PETSC_VIEWER_STDOUT_WORLD);
+        
+        
+        //Solver
+        KSP solver;
+        ierr = KSPCreate(PETSC_COMM_WORLD,&solver); CHKERRQ(ierr);
+        ierr = KSPSetOperators(solver,A,A); CHKERRQ(ierr);
+        ierr = KSPSetFromOptions(solver); CHKERRQ(ierr);
+        ierr = KSPSetUp(solver); CHKERRQ(ierr);
+        
+        ierr = KSPSolve(solver,Fint,D); CHKERRQ(ierr);
+        ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+        ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+        
+        
+        //Save data on mesh
+        ierr = m_field_Macro.set_local_VecCreateGhost("ELASTIC_PROBLEM_MACRO",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+        ierr = m_field_Macro.loop_finite_elements("ELASTIC_PROBLEM_MACRO","ELASTIC_FE_MACRO",post_proc); CHKERRQ(ierr);
+        ostringstream o1;
+        o1 << "FE2_out_" << sit->step_number << ".h5m";
+        rval = post_proc.postProcMesh.write_file(o1.str().c_str(),"MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
+        
+        ierr = KSPDestroy(&solver); CHKERRQ(ierr);
+        delete my_fe_ptr;
+        PetscPrintf(PETSC_COMM_WORLD,"End of step %d\n",sit->get_step_number());
+        //      string wait;
+        //      cin>>wait;
+      }
+      count++;
       
       
-      //here pointer to object is used instead of object, because the pointer will be destroyed at the end of code before PetscFinalize to make sure all
-      //its internal matrices and vectores are destroyed.
-//      ElasticFEMethod_Dmat_input my_fe(m_field_Macro,A,D,Fint,0.0,0.0,calculate_rve_dmat.commonData.Dmat_RVE,"DISP_MACRO");
-      ElasticFEMethod_Dmat_input* my_fe_ptr = new ElasticFEMethod_Dmat_input(m_field_Macro,A,D,Fint,0.0,0.0,calculate_rve_dmat.commonData.Dmat_RVE,"DISP_MACRO");
-      //preproc
-      ierr = m_field_Macro.problem_basic_method_preProcess("ELASTIC_PROBLEM_MACRO",my_dirichlet_bc); CHKERRQ(ierr);
-
-      
-      //We need to assemble matrix A and internal force vector Fint at each time step as these depends on Dmat, which will change at each time step
-      ierr = MatZeroEntries(A); CHKERRQ(ierr);
-      ierr = VecZeroEntries(Fint); CHKERRQ(ierr);
-      ierr = VecGhostUpdateBegin(Fint,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-      ierr = VecGhostUpdateEnd(Fint,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-      
-      ierr = VecZeroEntries(D); CHKERRQ(ierr);
-      ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-      ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-      ierr = m_field_Macro.set_global_VecCreateGhost("ELASTIC_PROBLEM_MACRO",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-
-//      ierr = VecView(D,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-
-
-      //calculate Dmat for all Gauss points in the macro-mesh
-      ierr = m_field_Macro.loop_finite_elements("ELASTIC_PROBLEM_MACRO","ELASTIC_FE_MACRO",calculate_rve_dmat.getLoopFeRhs()); CHKERRQ(ierr);
-      ierr = VecScale(Fint,-1); CHKERRQ(ierr); //Multiply Fint with -1 (Fint=-Fint)
-      ierr = VecAXPY(Fint,1,F); CHKERRQ(ierr); //Fint=Fint+F
-
-//      cin>>wait;
-//      map<EntityHandle, ublas::vector<ublas::matrix<double> > >::iterator mit = calculate_rve_dmat.commonData.Dmat_RVE.begin();
-//      for(;mit!=calculate_rve_dmat.commonData.Dmat_RVE.end();mit++) {
-//        cerr << mit->first << " " << mit->second << endl;
-//      }
-      
-      //loop over macro elemnts to assemble A matrix and Fint vector
-      ierr = m_field_Macro.loop_finite_elements("ELASTIC_PROBLEM_MACRO","ELASTIC_FE_MACRO",*my_fe_ptr);  CHKERRQ(ierr);
-      
-      my_dirichlet_bc.snes_B=A;
-      my_dirichlet_bc.snes_x = D;
-      my_dirichlet_bc.snes_f = Fint;
-      
-      //postproc
-      ierr = m_field_Macro.problem_basic_method_postProcess("ELASTIC_PROBLEM_MACRO",my_dirichlet_bc); CHKERRQ(ierr);
-      
-//      //Matrix View
-//      MatView(A,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
-//      std::string wait1;
-//      std::cin >> wait1;
-//      cout<< "Matrix A "<<endl;
-//      MatView(A,PETSC_VIEWER_STDOUT_WORLD);
-
-
-      //Solver
-      KSP solver;
-      ierr = KSPCreate(PETSC_COMM_WORLD,&solver); CHKERRQ(ierr);
-      ierr = KSPSetOperators(solver,A,A); CHKERRQ(ierr);
-      ierr = KSPSetFromOptions(solver); CHKERRQ(ierr);
-      ierr = KSPSetUp(solver); CHKERRQ(ierr);
-      
-      ierr = KSPSolve(solver,Fint,D); CHKERRQ(ierr);
-      ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-      ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-
-      
-      //Save data on mesh
-      ierr = m_field_Macro.set_local_VecCreateGhost("ELASTIC_PROBLEM_MACRO",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-      ierr = m_field_Macro.loop_finite_elements("ELASTIC_PROBLEM_MACRO","ELASTIC_FE_MACRO",post_proc); CHKERRQ(ierr);
-      ostringstream o1;
-      o1 << "FE2_out_" << sit->step_number << ".h5m";
-      rval = post_proc.postProcMesh.write_file(o1.str().c_str(),"MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
-      
-      ierr = KSPDestroy(&solver); CHKERRQ(ierr);
-      delete my_fe_ptr;
-      PetscPrintf(PETSC_COMM_WORLD,"End of step %d\n",sit->get_step_number());
-//      string wait;
-//      cin>>wait;
     }
   }
   

@@ -474,9 +474,6 @@ int main(int argc, char *argv[]) {
   cout <<"Effective desnsity RVE ="<< RVE_density<< endl;
   cout <<"Diffusivity matix ="<< Dmat<< endl;
   
-//  Dmat=1.0e-6*Dmat; //Here we will save Dmat/RVE_density [m2/s]
-  cout <<"Diffusivity After Unit conversoin ="<< Dmat<< endl;
-
   if(pcomm->rank()==0){
     int fd;
     PetscViewer view_out;

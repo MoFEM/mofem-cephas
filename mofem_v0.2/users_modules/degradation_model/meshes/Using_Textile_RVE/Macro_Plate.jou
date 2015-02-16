@@ -47,10 +47,12 @@ block 5 attribute index 2 0   #Poisson's ratio (This will not be used in the cal
 volume all scheme Tetmesh
 
 
-volume all size auto factor 8
+volume all size auto factor 7
 mesh volume all
 
-save as "/Users/zahur/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/Using_Textile_RVE/Macro1.cub" overwrite
+save as "/Users/zahur/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/Using_Textile_RVE/Macro_Plate.cub" overwrite
+
+
 
 
 

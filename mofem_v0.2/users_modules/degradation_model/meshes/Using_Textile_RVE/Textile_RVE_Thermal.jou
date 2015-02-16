@@ -130,7 +130,7 @@ cubit.cmd('mesh volume all')
   
 vol=['14', '10,11,12,13']         
 mat=['MAT_THERMAL_MATRIX','MAT_THERMAL_FIBRES']     
-Conductivity=[0.19e-3, 1.03e-3]   #Thermal conductivities of Epoxy resin and E-glass fibres in [ W/(mm deg C) ]
+Conductivity=[0.19e3, 1.03e3]   #Thermal conductivities of Epoxy resin and E-glass fibres in [ W/(mm deg C) ]
 Capcity=[1, 1]
 cubit.cmd('set duplicate block elements on')         
 for i in range(0, 2):         
@@ -148,6 +148,7 @@ cubit.cmd('sideset 103 surface 41 31 34 40 42 27 24 43 30 33 39 25 44 28')  # al
 cubit.cmd('save as "/Users/zahur/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/Using_Textile_RVE/Textile_RVE_Thermal.cub" overwrite')
 
  
+
 
 
 
