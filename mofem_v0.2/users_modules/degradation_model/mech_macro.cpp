@@ -355,6 +355,7 @@ int main(int argc, char *argv[]) {
 //  ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
   
+  
   ierr = calculate_rve_dmat.setRVE_DmatRhsOperators(m_field_RVE, "DISP_MACRO","Wt"); CHKERRQ(ierr);
   Vec Fint;
   ierr = VecDuplicate(F,&Fint); CHKERRQ(ierr);
