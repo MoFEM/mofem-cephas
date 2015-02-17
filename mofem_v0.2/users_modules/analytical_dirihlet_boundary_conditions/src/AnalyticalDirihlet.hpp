@@ -56,7 +56,7 @@ struct AnalyticalDirihletBC {
 
 	try {
 
-	  if(data.getIndices().size()==0) PetscFunctionReturn(0);
+	  if(data.getFieldData().size()==0) PetscFunctionReturn(0);
 
 	  hoCoords.resize(data.getN().size1(),3);
 	  if(type == MBVERTEX) {
@@ -119,7 +119,9 @@ struct AnalyticalDirihletBC {
 	  for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
 	    double val = getGaussPts()(2,gg);
 	    if(hoCoords.size1() == row_data.getN().size1()) {
+        
 	      double area = norm_2(getNormals_at_GaussPt(gg))*0.5; 
+
 	      val *= area;
 	    } else {
 	      val *= getArea();

@@ -1,0 +1,15 @@
+brick x 10 y 10 z 0.1
+
+block 1 volume 1
+block 1 name "MAT_ELASTIC"
+block 1 attribute count 2
+block 1 attribute index 1 10
+
+volume 1 size auto factor 10
+volume 1 scheme tetmesh
+mesh volume 1
+
+create temperature 1 on surface 5 value 500
+create temperature 2 on surface 3 4 6 value 100
+
+

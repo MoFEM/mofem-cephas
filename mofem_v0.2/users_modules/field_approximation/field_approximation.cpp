@@ -165,6 +165,29 @@ int main(int argc, char *argv[]) {
   ierr = m_field.VecCreateGhost("TEST_PROBLEM",ROW,&F); CHKERRQ(ierr);
   ierr = m_field.VecCreateGhost("TEST_PROBLEM",COL,&D); CHKERRQ(ierr);
 
+  static double aNgularfreq;
+  static double sPeed; //Without static. I got error:use of local variable with automatic storage from containing function
+  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it))
+  {
+	  //Get block name
+	  string name = it->get_Cubit_name();
+	  if (name.compare(0,12,"MAT_HELMHOLTZ") == 0)
+	  {
+		  //get block attributes
+		  vector<double> attributes;
+		  ierr = it->get_Cubit_attributes(attributes); CHKERRQ(ierr);
+		  if(attributes.size()<2) {
+			  SETERRQ1(PETSC_COMM_SELF,1,"not enough block attributes to deffine fluid pressure element, attributes.size() = %d ",attributes.size());
+		  }
+		  aNgularfreq = attributes[0];
+		  sPeed = attributes[1];
+		  std::string wait;
+		  std::cout << "\n sPeed = \n" << sPeed << "\n aNgularfreq = " << aNgularfreq << std::endl;
+		  
+	  }
+  }
+  
+  
   {
     MyFunApprox function_evaluator;
     FieldApproximationH1<MyFunApprox> field_approximation(m_field);

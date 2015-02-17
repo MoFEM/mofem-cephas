@@ -1,0 +1,171 @@
+reset
+create vertex 4 0 0
+create vertex 7 0 0
+create vertex 9 2 0
+create vertex 11 4 0
+create vertex 11 7 0
+create vertex 9 9 0
+create vertex 7 11 0
+create vertex 4 11 0
+create vertex 2 9 0
+create vertex 0 7 0
+create vertex 0 4 0
+create vertex 2 2 0
+
+create vertex 4 2 0
+create vertex 7 2 0
+create vertex 9 4 0
+create vertex 9 7 0
+create vertex 7 9 0
+create vertex 4 9 0
+create vertex 2 7 0
+create vertex 2 4 0
+
+create vertex 5 3 0
+create vertex 6 3 0
+create vertex 8 5 0
+create vertex 8 6 0
+create vertex 6 8 0
+create vertex 5 8 0
+create vertex 3 6 0 
+create vertex 3 5 0
+
+create vertex 5 5 0
+create vertex 6 5 0
+create vertex 6 6 0
+create vertex 5 6 0
+
+create curve vertex 1 vertex 2
+create curve vertex 2 vertex 14
+create curve vertex 14 vertex 22
+create curve vertex 22 vertex 21
+create curve vertex 21 vertex 13
+create curve vertex 13 vertex 1
+create surface curve 1 2 3 4 5 6
+create curve vertex 14 vertex 3
+create curve vertex 3 vertex 15 
+create curve vertex 15 vertex 23
+create curve vertex 23 vertex 30 
+create curve vertex 30 vertex 22
+create surface curve 3 7 8 9 10 11
+create curve vertex 15 vertex 4 
+create curve vertex 4 vertex 5  
+create curve vertex 5 vertex 16 
+create curve vertex 16 vertex 24 
+create curve vertex 24 vertex 23
+create surface curve 13 14 15 16 17 9  
+create curve vertex 16  vertex 6  
+create curve vertex 17  vertex 6  
+create curve vertex 17  vertex 25  
+create curve vertex 31  vertex 25  
+create curve vertex 26  vertex 25  
+create curve vertex 26  vertex 18  
+create curve vertex 26  vertex 32  
+create curve vertex 31  vertex 24  
+create curve vertex 7  vertex 55  
+create curve vertex 7  vertex 8  
+create curve vertex 18  vertex 8  
+create curve vertex 18  vertex 9  
+create curve vertex 19  vertex 9  
+create curve vertex 19  vertex 10  
+create curve vertex 11  vertex 10  
+create curve vertex 11  vertex 20  
+create curve vertex 12  vertex 20  
+create curve vertex 12  vertex 13  
+create curve vertex 20  vertex 28  
+create curve vertex 27  vertex 28  
+create curve vertex 27  vertex 68  
+create curve vertex 32  vertex 27  
+create curve vertex 28  vertex 29  
+create curve vertex 21  vertex 29  
+create surface curve 36 5 42 41 37 35  
+create surface curve 34 37 38 39 32 33  
+create surface curve 40 25 24 30 31 39  
+create surface curve 23 21 27 28 29 24  
+create surface curve 26 16 19 20 22  
+create surface curve 21 20 19 16 26 22  
+move surface all x -5.5 y -5.5 z 0 include_merged
+compress all
+
+#sweep surface all vector 0 0 10 distance 30
+sweep surface all helix zaxis thread_distance 22.5 angle 22.5 right_handed
+
+imprint volume all
+merge volume all
+set overlap max gap 0.0005
+
+#block 1 volume 1 
+#block 2 volume 2
+#block 3 volume 3 
+#block 4 volume 4
+#block 5 volume 5
+#block 6 volume 6
+#block 7 volume 7
+#block 8 volume 8
+#block 1 name "PotentialFlow" 
+#block 2 name "PotentialFlow1" 
+#block 3 name "PotentialFlow2"
+#block 4 name "PotentialFlow3"
+#block 5 name "PotentialFlow4"
+#block 6 name "PotentialFlow5"
+#block 7 name "PotentialFlow6"
+#block 8 name "PotentialFlow7"
+#
+#create pressure on surface 1 magnitude 1
+#create pressure on surface 15 magnitude -1
+#nodeset 1 vertex 1
+#nodeset 1 name 'ZeroPressure'
+#
+#create pressure on surface 2 magnitude 1
+#create pressure on surface 22 magnitude -1
+#nodeset 2 vertex 3
+#nodeset 2 name 'ZeroPressure1'
+#
+#create pressure on surface 3 magnitude 1
+#create pressure on surface 29 magnitude -1
+#nodeset 3 vertex 4
+#nodeset 3 name 'ZeroPressure2'
+#
+#create pressure on surface 4 magnitude 1
+#create pressure on surface 36 magnitude -1
+#nodeset 4 vertex 12
+#nodeset 4 name 'ZeroPressure3'
+#
+#create pressure on surface 5 magnitude 1
+#create pressure on surface 43 magnitude -1
+#nodeset 5 vertex 11
+#nodeset 5 name 'ZeroPressure4'
+#
+#create pressure on surface 6 magnitude 1
+#create pressure on surface 50 magnitude -1
+#nodeset 6 vertex 9
+#nodeset 6 name 'ZeroPressure5'
+#
+#create pressure on surface 7 magnitude 1
+#create pressure on surface 57 magnitude -1
+#nodeset 7 vertex 8
+#nodeset 7 name 'ZeroPressure6'
+#
+#create pressure on surface 8 magnitude 1
+#create pressure on surface 64 magnitude -1
+#nodeset 8 vertex 6
+#nodeset 8 name 'ZeroPressure7'
+
+#Insert Interface using CFD interface
+create cfd_bc name "cfd_bc" interface on surface 9
+create cfd_bc name "cfd_b1" interface on surface 11 
+create cfd_bc name "cfd_b2" interface on surface 19 
+create cfd_bc name "cfd_b3" interface on surface 24
+create cfd_bc name "cfd_b4" interface on surface 30
+create cfd_bc name "cfd_b5" interface on surface 38
+create cfd_bc name "cfd_b6" interface on surface 48
+create cfd_bc name "cfd_b7" interface on surface 54
+
+volume all size auto factor 16
+volume all scheme Tetmesh
+mesh volume all 
+
+save as "/Users/likask/MyBuild/mofem-bitbucket/mofem_v0.2/meshes/templar.cub" overwrite
+
+
+

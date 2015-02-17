@@ -1,0 +1,26 @@
+
+Interface
+
+CFD BC 
+ 
+
+Block name:  MAT_INTERF_atom_test
+
+Block attributes
+----------------
+attr. no: 1   value: 0.555
+attr. no: 2   value: 0.444
+attr. no: 3   value: 0.333
+attr. no: 4   value: 0.222
+
+
+Material Properties
+-------------------
+Elastic module	= 0.555
+
+Damage coupling	= 0.444
+
+Strengh		= 0.333
+
+Fracture energy	= 0.222
+

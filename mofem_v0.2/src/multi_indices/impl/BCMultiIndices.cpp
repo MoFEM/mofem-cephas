@@ -1,11 +1,11 @@
 /** \file CoreDataStructures.cpp
- * \brief Myltindex containes, data structures and other low-level functions 
- * 
+ * \brief Myltindex containes, data structures and other low-level functions
+ *
  * Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl) <br>
  *
- * The MoFEM package is copyrighted by Lukasz Kaczmarczyk. 
- * It can be freely used for educational and research purposes 
- * by other institutions. If you use this softwre pleas cite my work. 
+ * The MoFEM package is copyrighted by Lukasz Kaczmarczyk.
+ * It can be freely used for educational and research purposes
+ * by other institutions. If you use this softwre pleas cite my work.
  *
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -46,7 +46,7 @@ PetscErrorCode CubitMeshSets::get_tags_hanlders(Interface &moab) {
   rval = moab.tag_get_handle(NAME_TAG_NAME,entityNameTag); CHKERR(rval);CHKERR_THROW(rval);
   PetscFunctionReturn(0);
 }
-CubitMeshSets::CubitMeshSets(Interface &moab,const EntityHandle _meshset): 
+CubitMeshSets::CubitMeshSets(Interface &moab,const EntityHandle _meshset):
   meshset(_meshset),CubitBCType(UNKNOWNSET),msId(NULL),tag_bc_data(NULL),tag_bc_size(0),
   tag_block_header_data(NULL),tag_block_attributes(NULL),tag_block_attributes_size(0),tag_name_data(NULL),
   meshsets_mask(NODESET|SIDESET|BLOCKSET) {
@@ -106,7 +106,7 @@ CubitMeshSets::CubitMeshSets(Interface &moab,const EntityHandle _meshset):
   }
 
   //If BC set has name, unset UNKNOWNCUBITNAME
-  if(CubitBCType.to_ulong() & (	  
+  if(CubitBCType.to_ulong() & (
       DISPLACEMENTSET|
       FORCESET|
       PRESSURESET|
@@ -115,14 +115,14 @@ CubitMeshSets::CubitMeshSets(Interface &moab,const EntityHandle _meshset):
       TEMPERATURESET|
       HEATFLUXSET|
       INTERFACESET) ) {
-     
+
       if( (CubitBCType & CubitBC_BitSet(UNKNOWNCUBITNAME)).any() ) {
-	CubitBCType = CubitBCType & (~CubitBC_BitSet(UNKNOWNCUBITNAME));  
+	CubitBCType = CubitBCType & (~CubitBC_BitSet(UNKNOWNCUBITNAME));
       }
   }
 
 }
-CubitMeshSets::CubitMeshSets(Interface &moab,const CubitBC_BitSet _CubitBCType,const int _msId): 
+CubitMeshSets::CubitMeshSets(Interface &moab,const CubitBC_BitSet _CubitBCType,const int _msId):
   CubitBCType(_CubitBCType),msId(NULL),
   tag_bc_data(NULL),tag_bc_size(0),
   tag_block_header_data(NULL),
@@ -165,7 +165,7 @@ PetscErrorCode CubitMeshSets::get_Cubit_msId_entities_by_dimension(Interface &mo
   PetscFunctionBegin;
   ErrorCode rval;
   //rval = moab.list_entity(meshset); CHKERR_PETSC(rval);
-  rval = moab.get_entities_by_dimension(meshset,dimension,entities,recursive); 
+  rval = moab.get_entities_by_dimension(meshset,dimension,entities,recursive);
   if(rval !=  MB_SUCCESS) {
     ostringstream ss;
     ss << "bc set " << *this << endl;
@@ -241,7 +241,7 @@ string CubitMeshSets::get_Cubit_name() const {
     return "NoNameSet";
   }
 }
-    
+
 PetscErrorCode CubitMeshSets::print_Cubit_name(ostream& os) const {
     PetscFunctionBegin;
     string name = get_Cubit_name();
@@ -249,15 +249,15 @@ PetscErrorCode CubitMeshSets::print_Cubit_name(ostream& os) const {
     os << "Block name:  " << name << endl;
     PetscFunctionReturn(0);
 }
-           
+
 PetscErrorCode CubitMeshSets::get_type_from_bc_data(const vector<char> &bc_data,CubitBC_BitSet &type) const {
     PetscFunctionBegin;
-    
+
     //See CubitBC_BitSet in common.hpp
     if(bc_data.size()==0) {
       PetscFunctionReturn(0);
     }
-    
+
     if (strcmp (&bc_data[0],"Displacement") == 0)
         type |= DISPLACEMENTSET;
     else if (strcmp (&bc_data[0],"Force") == 0)
@@ -275,7 +275,7 @@ PetscErrorCode CubitMeshSets::get_type_from_bc_data(const vector<char> &bc_data,
     else if (strcmp (&bc_data[0],"cfd_bc") == 0)
         type |= INTERFACESET;
     else SETERRQ(PETSC_COMM_SELF,1,"this bc_data is unknown");
-    
+
     PetscFunctionReturn(0);
 }
 PetscErrorCode CubitMeshSets::get_type_from_bc_data(CubitBC_BitSet &type) const {
@@ -311,7 +311,7 @@ PetscErrorCode CubitMeshSets::get_Cubit_attributes(vector<double>& attributes) c
   }
   PetscFunctionReturn(0);
 }
-    
+
 PetscErrorCode CubitMeshSets::print_Cubit_attributes(ostream& os) const {
     PetscFunctionBegin;
     vector<double> attributes;
@@ -335,6 +335,8 @@ PetscErrorCode CubitMeshSets::get_type_from_Cubit_name(const string &name,CubitB
         type |= MAT_ELASTICSET; }
     else if (name.compare(0,11,"MAT_THERMAL") == 0) {
         type |= MAT_THERMALSET; }
+    //else if (name.compare(0,13,"MAT_HELMHOLTZ") == 0) {
+    //    type |= MAT_HELMHOLTZSET; }
     else if (name.compare(0,12,"MAT_MOISTURE") == 0) {
       type |= MAT_MOISTURESET; }
     else if (name.compare(0,10,"MAT_INTERF") == 0) {
@@ -343,7 +345,7 @@ PetscErrorCode CubitMeshSets::get_type_from_Cubit_name(const string &name,CubitB
 	type |= BODYFORCESSET; }
     
         //To be extended as appropriate
-    
+
     else { type |= UNKNOWNCUBITNAME; }
 
     PetscFunctionReturn(0);
@@ -356,7 +358,7 @@ PetscErrorCode CubitMeshSets::get_type_from_Cubit_name(CubitBC_BitSet &type) con
     ierr = get_type_from_Cubit_name(name,type); CHKERRQ(ierr);
     PetscFunctionReturn(0);
 }
-    
+
 ostream& operator<<(ostream& os,const CubitMeshSets& e) {
   os << "meshset " << e.meshset << " type " << e.CubitBCType;
   if(e.msId != NULL) os << " msId " << *(e.msId);
@@ -381,7 +383,7 @@ ostream& operator<<(ostream& os,const DisplacementCubitBcData& e) {
     os << "Flag for X-Rotation (0/1): " << (int)e.data.flag4 << "\n";
     os << "Flag for Y-Rotation (0/1): " << (int)e.data.flag5 << "\n";
     os << "Flag for Z-Rotation (0/1): " << (int)e.data.flag6 << "\n \n";
-    
+
     if (e.data.flag1 == 1)
         os << "Displacement magnitude (X-Translation): " << e.data.value1 << "\n";
     else os << "Displacement magnitude (X-Translation): N/A" << "\n";
@@ -440,7 +442,7 @@ ostream& operator<<(ostream& os,const VelocityCubitBcData& e) {
     else os << "Velocity magnitude (Z-Rotation): N/A" << "\n \n";
     return os;
 }
- 
+
 ostream& operator<<(ostream& os,const AccelerationCubitBcData& e) {
     os << "\n";
     os << "A c c e l e r a t i o n \n \n";
@@ -505,15 +507,15 @@ ostream& operator<<(ostream& os,const HeatfluxCubitBcData& e) {
     if (e.data.flag3 == 1)
         os << "Heat flux value (thin shell bottom): " << e.data.value3 << "\n \n";
     else os << "Heat flux value (thin shell bottom): N/A" << "\n \n";
-    return os;   
+    return os;
 }
 
 ostream& operator<<(ostream& os,const CfgCubitBcData& e) {
     os << "\n";
     os << "CFD BC \n \n";
-    return os;   
+    return os;
 }
- 
+
 ostream& operator<<(ostream& os,const BlockSetAttributes& e)
   {
     os << endl << "Blcok attributes" << endl;
@@ -530,7 +532,7 @@ ostream& operator<<(ostream& os,const BlockSetAttributes& e)
     os << "User attribute 10 = " << e.data.User10 << endl << endl;
     return os;
   }
-       
+
 ostream& operator<<(ostream& os,const Mat_Elastic& e)
     {
         os << endl << "Material Properties" << endl;
@@ -565,7 +567,7 @@ ostream& operator<<(ostream& os,const Mat_Elastic_EberleinHolzapfel1& e)
         return os;
     }
 
-    
+
 ostream& operator<<(ostream& os,const Mat_Thermal& e)
     {
         os << endl << "Material Properties" << endl;
@@ -581,6 +583,63 @@ ostream& operator<<(ostream& os,const Mat_Thermal& e)
         os << "User attribute 8 = " << e.data.User8 << endl << endl;
         return os;
     }
+
+//ostream& operator<<(ostream& os,const Mat_Helmholtz& e)
+//    {
+//        os << endl << "Material Properties" << endl;
+//        os << "-------------------" << endl;
+//        os << "Angular Frequency  = " << e.data.AngularFreq << endl;
+//        os << "Helmholtz sound speed = " << e.data.Speed << endl;
+//        os << "User attribute 2 = " << e.data.User2 << endl;
+//        os << "User attribute 3 = " << e.data.User3 << endl;
+//        os << "User attribute 4 = " << e.data.User4 << endl;
+//        os << "User attribute 5 = " << e.data.User5 << endl;
+//        os << "User attribute 6 = " << e.data.User6 << endl;
+//        os << "User attribute 7 = " << e.data.User7 << endl;
+//        os << "User attribute 8 = " << e.data.User8 << endl << endl;
+//        return os;
+//    }
+
+	
+	
+//  ostream& operator<<(ostream& os,const Mat_Moisture& e)
+//  {
+
+//    os << endl << "Material Properties" << endl;
+//    os << "-------------------" << endl;
+//    os << "Diffusivity  = " << e.data.Diffusivity << endl;
+//    os << "Viscosity = " << e.data.Viscosity << endl;
+//    os << "Permeability = " << e.data.Permeability << endl;
+//    os << "User attribute 3 = " << e.data.User3 << endl;
+//    os << "User attribute 4 = " << e.data.User4 << endl;
+//    os << "User attribute 5 = " << e.data.User5 << endl;
+//    os << "User attribute 6 = " << e.data.User6 << endl;
+//    os << "User attribute 7 = " << e.data.User7 << endl;
+//    os << "User attribute 8 = " << e.data.User8 << endl << endl;
+//    return os;
+//  }
+
+
+
+//ostream& operator<<(ostream& os,const Block_BodyForces& e)
+//    {
+//        os << endl << "Block Body Forces" << endl;
+//        os << "-------------------" << endl;
+//        os << "density  = " << e.data.density << endl;
+//        os << "acceleration_x = " << e.data.acceleration_x << endl;
+//        os << "acceleration_y = " << e.data.acceleration_y << endl;
+//        os << "acceleration_z = " << e.data.acceleration_z << endl;
+//        os << "User attribute 4 = " << e.data.User4 << endl;
+//        os << "User attribute 5 = " << e.data.User5 << endl;
+//        os << "User attribute 6 = " << e.data.User6 << endl;
+//        os << "User attribute 7 = " << e.data.User7 << endl;
+//        os << "User attribute 8 = " << e.data.User8 << endl << endl;
+//        return os;
+//    }
+
+
+
+
   
   
   
@@ -618,6 +677,7 @@ ostream& operator<<(ostream& os,const Block_BodyForces& e) {
 
     
 ostream& operator<<(ostream& os,const Mat_Elastic_TransIso& e) {
+
     os << endl << "Material Properties" << endl;
     os << "-------------------" << endl;
     os << "Young's modulus in xy plane (Ep)     = " << e.data.Youngp << endl;
@@ -627,8 +687,13 @@ ostream& operator<<(ostream& os,const Mat_Elastic_TransIso& e) {
     os << "Shear modulus in z-direction (Gzp)   = " << e.data.Shearzp << endl << endl;
     return os;
 }
+
+
+
+
     
 ostream& operator<<(ostream& os,const Mat_Interf& e) {
+
     os << endl << "Material Properties" << endl;
     os << "-------------------" << endl;
     os << "Elastic module	= " << e.data.alpha << endl << endl;
@@ -638,5 +703,5 @@ ostream& operator<<(ostream& os,const Mat_Interf& e) {
 
     return os;
 }
-    
+
 }

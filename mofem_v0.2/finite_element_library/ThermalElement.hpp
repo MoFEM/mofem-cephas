@@ -1,5 +1,5 @@
 /** \file ThermalElement.hpp
- * \brief Operators and data structures for thermal analys
+ * \brief Operators and data structures for thermal analysis
  *
  * Implementation of thermal element for unsteady and steady case.
  * 
@@ -311,7 +311,7 @@ struct ThermalElement {
 
         int nb_row_dofs = data.getIndices().size();
         Nf.resize(nb_row_dofs);
-	Nf.clear();
+		Nf.clear();
         //cerr << data.getIndices() << endl;
         //cerr << data.getDiffN() << endl;
 
@@ -332,10 +332,32 @@ struct ThermalElement {
           //&data.getDiffN()(gg,0),3,&commonData.gradAtGaussPts(gg,0),1,
           //1.,&Nf[0],1);
 
+
+	//ublas
+	
+	std::string wait;
+	//std::cout << "n data.getN().size1() = \n" << data.getN().size1() << std::endl;
+	//std::cout << "\n commonData.temperatureAtGaussPts[gg] = \n" << commonData.temperatureAtGaussPts[gg] << std::endl;
+	//std::cout << "\n data.getN(gg) = \n" << data.getN(gg) <<  std::endl;
+	////std::cout << "\n commonData.getGradAtGaussPts = \n"  << commonData.getGradAtGaussPts(gg) <<  std::endl;
+	////std::cout << "n data.getDiffN(gg,nb_row_dofs) = \n" << data.getDiffN(gg,nb_row_dofs) << std::endl;
+	//std::cout << "\n prod = \n" << prod(data.getDiffN(gg,nb_row_dofs),commonData.getGradAtGaussPts(gg)) << std::endl;
+	//std::cout << "\n data.getN().size2() = \n" << data.getN().size2() << std::endl;
+	//double a = 2.0;
+	//ublas::vector<double> Y(data.getN().size1());
+	//ublas::vector<double> X(data.getN().size1());
+	//std::fill(X.begin(),X.end(),1.0);
+    //std::fill(Y.begin(),Y.end(),2.0);
+	//cblas_daxpy( data.getN().size1(), a, &X[0], 1, &Y[0], 1);
+	//std::cout << "\n Y = \n" << Y << std::endl;
+    //std::cout << "\n data.getIndices()[0]2 = \n" << data.getIndices()[0] << std::endl;
+
+
           //ublas
           ublas::noalias(Nf) += prod(prod(data.getDiffN(gg,nb_row_dofs),val), commonData.getGradAtGaussPts(gg));
           
         }
+
 
         //cerr << Nf << endl;
         if(useTsF) {
@@ -406,6 +428,8 @@ struct ThermalElement {
 
           ublas::matrix<double>  val = dAta.cOnductivity_mat*getVolume()*getGaussPts()(3,gg);
           if(getHoGaussPtsDetJac().size()>0) {
+			  std::string wait;
+			  std::cout << "\n Higher order element is occur \n" << std::endl;
             val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
           }
 
@@ -1120,7 +1144,11 @@ struct ThermalElement {
   /** \brief this function is used in case of stationary problem to set elements for rhs
     * \infroup mofem_thermal_elem
     */
+
+
+
   PetscErrorCode setThermalFiniteElementRhsOperators(string field_name,Vec &F);
+
 
   /** \brief this fucntion is used in case of stationary heat conductivity problem for lhs
     * \infroup mofem_thermal_elem
