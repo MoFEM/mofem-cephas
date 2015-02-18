@@ -53,9 +53,10 @@ block 6 element type tetra10
 
 
 
-save as "/Users/xuanmeng/Documents/build_mofem/examples/helmholtz/impinging_sphere.cub" overwrit
+save as "/Users/xuanmeng/Desktop/U pan/helmholtz results/impinging_sphere.cub" overwrit
 
-save as "/Users/xuanmeng/Documents/mofem-cephas/mofem_v0.2/users_modules/helmholtz/meshes/impinging_sphere.cub" overwrit
+#save as "/Users/xuanmeng/Documents/mofem-cephas/mofem_v0.2/users_modules/helmholtz/meshes/impinging_sphere.cub" overwrit
+
 
 
 
