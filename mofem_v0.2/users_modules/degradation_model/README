@@ -25,7 +25,7 @@ make thermal_unsteady_inputDmat && mpirun -np 1 ./thermal_unsteady_inputDmat \
   -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor \
   -snes_type newtonls -snes_linesearch_type basic -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 -snes_monitor \
   -ts_monitor -ts_type beuler -ts_dt 864000 -ts_final_time 86400000 -snes_lag_jacobian -2 \
-  -my_order 1 -my_max_post_proc_ref_level 1
+  -my_order 1 -my_max_post_proc_ref_level 0
 
 
 Unsteady moisture macro problem
@@ -35,7 +35,7 @@ make diffusion_unsteady_inputDmat && mpirun -np 1 ./diffusion_unsteady_inputDmat
   -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor \
   -snes_type newtonls -snes_linesearch_type basic -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 -snes_monitor \
   -ts_monitor -ts_type beuler -ts_dt 864000 -ts_final_time 86400000 -snes_lag_jacobian -2 \
-  -my_order 1 -my_max_post_proc_ref_level 1
+  -my_order 1 -my_max_post_proc_ref_level 0
 
 
 
@@ -47,7 +47,7 @@ make wt_unsteady_macro && mpirun -np 1 ./wt_unsteady_macro \
   -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor \
   -snes_type newtonls -snes_linesearch_type basic -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 -snes_monitor \
   -ts_monitor -ts_type beuler -ts_dt 10 -ts_final_time 1000 -snes_lag_jacobian -2 \
-  -my_order 1 -my_max_post_proc_ref_level 1 \
+  -my_order 1 -my_max_post_proc_ref_level 0 \
   -my_saturation_conc 1
 
 
@@ -56,7 +56,7 @@ Mechanical problem
 make mech_macro && mpirun -np 1 ./mech_macro \
 -my_file_Macro solution_wt.h5m -my_file_RVE /mnt/home/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/Using_Textile_RVE/Textile_RVE_Mechanical.cub\
   -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist \
-  -my_max_post_proc_ref_level 1 -my_order 1 \
+  -my_max_post_proc_ref_level 0 -my_order 1 \
 
 
 Conversion from .h5m to vtk

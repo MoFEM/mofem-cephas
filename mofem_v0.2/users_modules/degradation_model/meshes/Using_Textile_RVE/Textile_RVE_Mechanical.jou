@@ -128,6 +128,12 @@ cubit.cmd('mesh surface 41')
 cubit.cmd('volume all scheme Tetmesh')  
 cubit.cmd('mesh volume all')  
   
+##============================================================= 
+##Reoreienting RVE
+##============================================================= 
+cubit.cmd('rotate Volume all angle 90  about X include_merged') 
+
+
 #Outer part   
 str1='block 1 ' +' volume 14'; cubit.cmd(str1)    
 str1='block 1 ' +' name "MAT_ELASTIC"'; cubit.cmd(str1)    
@@ -150,6 +156,7 @@ cubit.cmd('sideset 102 surface 43 30 33 39 25 44 28')  # all +ve boundary surfac
 cubit.cmd('sideset 103 surface 41 31 34 40 42 27 24 43 30 33 39 25 44 28')  # all boundary surfaces         
 
 cubit.cmd('save as "/Users/zahur/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/Using_Textile_RVE/Textile_RVE_Mechanical.cub" overwrite')
+
 
 
 
