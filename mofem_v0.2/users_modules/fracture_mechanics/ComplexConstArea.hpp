@@ -48,7 +48,9 @@ struct C_CONSTANT_AREA: public FEMethod {
 
   Interface& moab;
 
-  Mat C,Q;
+  
+  Mat C;	//<< constrains matrix
+  Mat Q;	//<< projection matrix (usuall this is shell matrix)
   string lambda_field_name;
   int verbose;
 
@@ -108,12 +110,12 @@ struct C_CONSTANT_AREA: public FEMethod {
     } catch (const std::exception& ex) {
       ostringstream ss;
       ss << "thorw in method: " << ex.what() << endl;
-      SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+      SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
     }
     const EntityHandle* conn_face; 
     int num_nodes; 
     rval = moab.get_connectivity(face,conn_face,num_nodes,true); CHKERR_PETSC(rval);
-    if(num_nodes != 3) SETERRQ(PETSC_COMM_SELF,1,"face should have three nodes");
+    if(num_nodes != 3) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"face should have three nodes");
     ierr = moab.get_coords(conn_face,num_nodes,&*coords.data().begin()); CHKERRQ(ierr);
     for(int nn = 0;nn<num_nodes;nn++) {
       if(is_that_C_otherwise_dC) {
@@ -124,8 +126,12 @@ struct C_CONSTANT_AREA: public FEMethod {
 	  dit = rowPtr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(lambda_field_name,conn_face[nn]));
 	  hi_dit = rowPtr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(lambda_field_name,conn_face[nn]));
 	  if(distance(dit,hi_dit)>0) {
-	    if(distance(dit,hi_dit)!=1) SETERRQ1(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for < %s > should be 1",lambda_field_name.c_str());
-	    if(dit->get_petsc_local_dof_idx()<0) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, negative index of local dofs on element");
+	    if(distance(dit,hi_dit)!=1) {
+	      SETERRQ1(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for < %s > should be 1",lambda_field_name.c_str());
+	    }
+	    if(dit->get_petsc_local_dof_idx()<0) {
+	      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency, negative index of local dofs on element");
+	    }
 	    lambda[nn] = dit->get_FieldData();
 	    lambda_dofs_row_indx[nn] = dit->get_petsc_gloabl_dof_idx();
 	    //lambda_dofs_row_ents[nn] = dit->get_ent();
@@ -133,7 +139,7 @@ struct C_CONSTANT_AREA: public FEMethod {
 	} catch (const std::exception& ex) {
 	  ostringstream ss;
 	  ss << "thorw in method: " << ex.what() << endl;
-	  SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+	  SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
 	}
       }
       if((!is_that_C_otherwise_dC)||(trans)) {
@@ -171,7 +177,7 @@ struct C_CONSTANT_AREA: public FEMethod {
 	hi_dit = colPtr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",conn_face[nn]));
 	if(distance(dit,hi_dit)!=3) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for MESH_NODE_POSITIONS should be 3");
 	for(;dit!=hi_dit;dit++) {
-	  if(dit->get_petsc_local_dof_idx()<0) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, negative index of local dofs on element");
+	  if(dit->get_petsc_local_dof_idx()<0) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency, negative index of local dofs on element");
 	  dofs_X[nn*3+dit->get_dof_rank()] = dit->get_FieldData();
 	  assert(nn*3+dit->get_dof_rank()<9);
 	  disp_dofs_col_idx[nn*3+dit->get_dof_rank()] = dit->get_petsc_gloabl_dof_idx();
@@ -179,7 +185,7 @@ struct C_CONSTANT_AREA: public FEMethod {
       } catch (const std::exception& ex) {
 	ostringstream ss;
 	ss << "thorw in method: " << ex.what() << endl;
-	SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+	SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
       }
       if(trans) {
 	try {
@@ -187,21 +193,25 @@ struct C_CONSTANT_AREA: public FEMethod {
 	  dit = colPtr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(lambda_field_name,conn_face[nn]));
 	  hi_dit = colPtr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(lambda_field_name,conn_face[nn]));
 	  if(distance(dit,hi_dit)>0) {
-	    if(distance(dit,hi_dit)!=1) SETERRQ1(PETSC_COMM_SELF,1,"data inconsistency, number of dof on node for < %s > should be 1",lambda_field_name.c_str());
-	    if(dit->get_petsc_local_dof_idx()<0) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, negative index of local dofs on element");
+	    if(distance(dit,hi_dit)!=1) {
+	      SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency, number of dof on node for < %s > should be 1",lambda_field_name.c_str());
+	    }
+	    if(dit->get_petsc_local_dof_idx()<0) {
+	      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency, negative index of local dofs on element");
+	    }
 	    lambda_dofs_col_indx[nn] = dit->get_petsc_gloabl_dof_idx();
 	  }
 	} catch (const std::exception& ex) {
 	  ostringstream ss;
 	  ss << "thorw in method: " << ex.what() << endl;
-	  SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+	  SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
 	}
       }
     }
     } catch (const std::exception& ex) {
       ostringstream ss;
       ss << "thorw in method: " << ex.what() << endl;
-      SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+      SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
     }
     PetscFunctionReturn(0);
   }
@@ -431,7 +441,7 @@ struct C_CONSTANT_AREA: public FEMethod {
     } catch (const std::exception& ex) {
       ostringstream ss;
       ss << "thorw in method: " << ex.what() << endl;
-      SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+      SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
     } 
     PetscFunctionReturn(0);
   }
@@ -443,7 +453,9 @@ struct C_CONSTANT_AREA: public FEMethod {
       Vec Qv;
       ierr = mField.VecCreateGhost(problemPtr->get_name(),COL,&Qv); CHKERRQ(ierr);
       for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_FOR_LOOP_(problemPtr,lambda_field_name,dofs)) {
-	if(mapV.find(dofs->get_petsc_gloabl_dof_idx())==mapV.end()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	if(mapV.find(dofs->get_petsc_gloabl_dof_idx())==mapV.end()) {
+	  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+	}
 	ierr = VecAssemblyBegin(mapV[dofs->get_petsc_gloabl_dof_idx()]); CHKERRQ(ierr);
 	ierr = VecAssemblyEnd(mapV[dofs->get_petsc_gloabl_dof_idx()]); CHKERRQ(ierr);
 	ierr = MatMult(Q,mapV[dofs->get_petsc_gloabl_dof_idx()],Qv); CHKERRQ(ierr);
@@ -451,19 +463,21 @@ struct C_CONSTANT_AREA: public FEMethod {
 	ierr = VecGhostUpdateEnd(Qv,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	double *array;
 	ierr = VecGetArray(Qv,&array); CHKERRQ(ierr);
-	if(dofs->get_part()==pcomm->rank()) {
-	  vector<DofIdx> glob_idx;
-	  vector<double> vals;
-	  for(_IT_NUMEREDDOFMOFEMENTITY_COL_BY_ENT_FOR_LOOP_(problemPtr,dofs->get_ent(),diit)) {
-	    if(diit->get_name() != "MESH_NODE_POSITIONS") continue;
-	    glob_idx.push_back(diit->get_petsc_gloabl_dof_idx());
-	    vals.push_back(array[diit->get_petsc_local_dof_idx()]);
+	vector<DofIdx> glob_idx;
+	vector<double> vals;
+	for(_IT_NUMEREDDOFMOFEMENTITY_COL_BY_ENT_FOR_LOOP_(problemPtr,dofs->get_ent(),diit)) {
+	  if(diit->get_part()!=pcomm->rank()) continue;
+	  if(diit->get_name() != "MESH_NODE_POSITIONS") continue;
+	  glob_idx.push_back(diit->get_petsc_gloabl_dof_idx());
+	  if(diit->get_petsc_local_dof_idx()<0) {
+	    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
 	  }
-	  int row = dofs->get_petsc_gloabl_dof_idx();
-	  ierr = MatSetValues(C,
+	  vals.push_back(array[diit->get_petsc_local_dof_idx()]);
+	}
+	int row = dofs->get_petsc_gloabl_dof_idx();
+	ierr = MatSetValues(C,
 		1,&row,glob_idx.size(),&(glob_idx[0]),
 		&vals[0],INSERT_VALUES); CHKERRQ(ierr);
-	}
 	ierr = VecRestoreArray(Qv,&array); CHKERRQ(ierr);
 	ierr = VecDestroy(&mapV[dofs->get_petsc_gloabl_dof_idx()]); CHKERRQ(ierr);
       }
@@ -487,7 +501,7 @@ struct C_FRONT_TANGENT: public C_CONSTANT_AREA {
     } catch (const std::exception& ex) {
       ostringstream ss;
       ss << "thorw in method: " << ex.what() << endl;
-      SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+      SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
     }
     try {
       ublas::vector<double,ublas::bounded_array<double,9> > ELEM_CONSTRAIN(9);
@@ -513,7 +527,7 @@ struct C_FRONT_TANGENT: public C_CONSTANT_AREA {
 	    &ELEM_CONSTRAIN.data()[3*NN],ADD_VALUES); CHKERRQ(ierr);
 	  }
 	  if(Q != PETSC_NULL) {
-	    if(mapV.find(lambda_dofs_row_indx[nn])==mapV.end()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	    if(mapV.find(lambda_dofs_row_indx[nn])==mapV.end()) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
 	    ierr = VecSetValues(mapV[lambda_dofs_row_indx[nn]],
 	      3,&(disp_dofs_col_idx.data()[3*NN]),
 	      &ELEM_CONSTRAIN.data()[3*NN],ADD_VALUES); CHKERRQ(ierr);
@@ -523,7 +537,7 @@ struct C_FRONT_TANGENT: public C_CONSTANT_AREA {
     } catch (const std::exception& ex) {
       ostringstream ss;
       ss << "thorw in method: " << ex.what() << endl;
-      SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+      SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
     } 
     PetscFunctionReturn(0);
   }
@@ -550,7 +564,7 @@ struct dCTgc_CONSTANT_AREA: public C_CONSTANT_AREA {
     PetscBool flg;
     ierr = PetscOptionsGetReal(PETSC_NULL,"-my_gc",&gc,&flg); CHKERRQ(ierr);
     if(flg != PETSC_TRUE) {
-      SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_gc (what is fracture energy ?)");
+      SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"*** ERROR -my_gc (what is fracture energy ?)");
     }
     PetscFunctionReturn(0);
   }
@@ -563,7 +577,7 @@ struct dCTgc_CONSTANT_AREA: public C_CONSTANT_AREA {
     } catch (const std::exception& ex) {
 	  ostringstream ss;
 	  ss << "thorw in method: " << ex.what() << endl;
-	  SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+	  SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
     }
     try {
       double center[3]; 
@@ -598,7 +612,7 @@ struct dCTgc_CONSTANT_AREA: public C_CONSTANT_AREA {
     } catch (const std::exception& ex) {
 	ostringstream ss;
 	ss << "thorw in method: " << ex.what() << endl;
-	SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+	SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
     } 
     PetscFunctionReturn(0);
   }
@@ -649,7 +663,7 @@ struct Snes_CTgc_CONSTANT_AREA: public FEMethod {
     PetscBool flg;
     ierr = PetscOptionsGetReal(PETSC_NULL,"-my_gc",&gc,&flg); CHKERRQ(ierr);
     if(flg != PETSC_TRUE) {
-      SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_gc (what is fracture energy ?)");
+      SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"*** ERROR -my_gc (what is fracture energy ?)");
     }
     
     Vec D;

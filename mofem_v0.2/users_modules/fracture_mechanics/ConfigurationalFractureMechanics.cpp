@@ -2540,6 +2540,15 @@ PetscErrorCode ConfigurationalFractureMechanics::fix_all_but_one(FieldInterface&
   rval = m_field.get_moab().tag_get_handle("FROZEN_NODE",1,MB_TYPE_INTEGER,th_freez,MB_TAG_CREAT|MB_TAG_SPARSE,&def_order); CHKERR_PETSC(rval);
 
   ierr = PetscPrintf(PETSC_COMM_WORLD,"freeze front nodes:\n");
+  map<EntityHandle,double>::iterator max_mit = map_ent_j.begin();
+  for(
+    map<EntityHandle,double>::iterator mit = ++max_mit;
+    mit!=map_ent_j.end();mit++) {
+    if(max_mit->second!=max_mit->second) continue;
+    if(max_mit->second<mit->second) {
+      max_mit = mit;
+    }
+  }
   double max_g_j = 0;
   EntityHandle max_g_j_ent = 0;
   for(
@@ -2555,7 +2564,7 @@ PetscErrorCode ConfigurationalFractureMechanics::fix_all_but_one(FieldInterface&
       "front node = %ld max_j = %6.4e j = %6.4e (%6.4e) g/j = %4.3f step work of fracture = %2.1g",
       mit->first,max_j,mit->second,fraction,g_j,step_work_of_fracture); CHKERRQ(ierr);
     bool freez_or_not_to_freez;
-    if(fraction > fraction_treshold || step_work_of_fracture<0) {
+    if( (fraction > fraction_treshold || step_work_of_fracture<0 || max_mit->second!=max_mit->second)&&(mit!=max_mit)) {
       freez_or_not_to_freez = true;
     } else {
       freez_or_not_to_freez = false;
@@ -3765,6 +3774,10 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
 
     int its_d;
     ierr = PetscOptionsGetInt("","-my_its_d",&its_d,&flg); CHKERRQ(ierr);
+
+    double *load_factor_ptr;
+    rval = m_field.get_moab().tag_get_by_ptr(th_t_val,&root_meshset,1,(const void**)&load_factor_ptr); CHKERR_THROW(rval);
+    double& load_factor = *load_factor_ptr;
 
     bool at_least_one_step_converged = false;
     conf_prob.freeze_all_but_one = false;
