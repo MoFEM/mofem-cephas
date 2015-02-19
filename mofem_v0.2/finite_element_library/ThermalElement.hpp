@@ -647,7 +647,7 @@ struct ThermalElement {
         double val = getGaussPts()(2,gg);
         double flux;
         if(ho_geometry) {
-          double area = norm_2(getNormals_at_GaussPt(gg)); //cblas_dnrm2(3,&getNormals_at_GaussPt()(gg,0),1);
+          double area = norm_2(getNormals_at_GaussPt(gg))*0.5; //cblas_dnrm2(3,&getNormals_at_GaussPt()(gg,0),1);
           flux = dAta.dAta.data.value1*area;  //FluxData.HeatfluxCubitBcData.data.value1 * area
         } else {
           flux = dAta.dAta.data.value1*getArea();
@@ -727,7 +727,7 @@ struct ThermalElement {
 
 	  double radiationConst;
 	  if(ho_geometry) {
-	    double area = norm_2(getNormals_at_GaussPt(gg));
+	    double area = norm_2(getNormals_at_GaussPt(gg))*0.5;
 	    radiationConst = dAta.sIgma*dAta.eMissivity*area;
 	  } else {
 	    radiationConst = dAta.sIgma*dAta.eMissivity*getArea();
@@ -822,7 +822,7 @@ struct ThermalElement {
 	double radiationConst;
 
 	if(ho_geometry) {
-	  double area = norm_2(getNormals_at_GaussPt(gg));
+	  double area = norm_2(getNormals_at_GaussPt(gg))*0.5;
           radiationConst = dAta.sIgma*dAta.eMissivity*tEmp*area;
         } else {
           radiationConst = dAta.sIgma*dAta.eMissivity*tEmp*getArea();
@@ -895,7 +895,7 @@ struct ThermalElement {
 	double T_at_Gauss_pt = commonData.temperatureAtGaussPts[gg];
 	double convectionConst;
 	if(ho_geometry) {
-	  double area = norm_2(getNormals_at_GaussPt(gg));
+	  double area = norm_2(getNormals_at_GaussPt(gg))*0.5;
 	  convectionConst = dAta.cOnvection*area*(T_at_Gauss_pt-dAta.tEmperature);
 	} else {
 	  convectionConst = dAta.cOnvection*getArea()*(T_at_Gauss_pt-dAta.tEmperature);
@@ -967,7 +967,7 @@ struct ThermalElement {
 
           double convectionConst;
           if(ho_geometry) {
-            double area = norm_2(getNormals_at_GaussPt(gg));
+            double area = norm_2(getNormals_at_GaussPt(gg))*0.5;
             convectionConst = dAta.cOnvection*area;
           }   else {
             convectionConst = dAta.cOnvection*getArea();
