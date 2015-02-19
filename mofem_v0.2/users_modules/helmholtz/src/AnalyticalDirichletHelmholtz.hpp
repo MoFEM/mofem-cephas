@@ -89,7 +89,8 @@ struct AnalyticalDirihletBC {
 
 	try {
 
-	  if(data.getIndices().size()==0) PetscFunctionReturn(0);
+	  if(data.getFieldData().size()==0) PetscFunctionReturn(0);
+	  //if(data.getIndices().size()==0) PetscFunctionReturn(0); //this will return zero
 
 	  hoCoordsTri.resize(data.getN().size1(),3);
 	  if(type == MBVERTEX) {
@@ -209,9 +210,6 @@ struct AnalyticalDirihletBC {
 	    double val = getGaussPts()(2,gg);
 	    if(hoCoords.size1() == row_data.getN().size1()) {
 	      double area = norm_2(getNormals_at_GaussPt(gg)); 
-		  std::string wait;
-		  std::cout << "\n Higher order 1 \n "<< std::endl;
-		  std::cin >> wait;
 	      val *= area;
 	    } else {
 	      val *= getArea();
@@ -297,9 +295,7 @@ struct AnalyticalDirihletBC {
 	
 				for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
 					double val = getVolume()*getGaussPts()(3,gg);
-					//if(getHoGaussPtsDetJac().size()>0) {
-					//	val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
-					//}
+
 					if(hoCoords.size1() == row_data.getN().size1()) {
 						
 						val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
@@ -390,11 +386,6 @@ struct AnalyticalDirihletBC {
 	    double x,y,z;
 	    double val = getGaussPts()(2,gg);
 		
-		//std::string wait;	
-		//std::cout << "\n hoCoords.size1() =  \n" << hoCoords.size1() << std::endl;
-		//std::cout << "\n data.getN().size1() =  \n" << data.getN().size1() << std::endl;
-		
-		
 	    if(hoCoords.size1() == data.getN().size1()) {
 	      double area = norm_2(getNormals_at_GaussPt(gg)); 
 	      val *= area;
@@ -483,18 +474,6 @@ struct AnalyticalDirihletBC {
 
 					double x,y,z;
 					double val = getVolume()*getGaussPts()(3,gg);
-					
-					//if(getHoGaussPtsDetJac().size()>0) {
-					//	val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
-					//	x = hoCoords(gg,0);
-					//	y = hoCoords(gg,1);
-					//	z = hoCoords(gg,2);
-					//} else {
-					//	
-					//	x = getCoordsAtGaussPts()(gg,0);
-					//	y = getCoordsAtGaussPts()(gg,1);
-					//	z = getCoordsAtGaussPts()(gg,2);
-					//}
 					
 					if(hoCoords.size1() == data.getN().size1()) {
 						
@@ -782,17 +761,11 @@ struct AnalyticalDirihletBC {
     ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
     ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
     ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-    
-	std::string wait;
-	
 	
 	int ii1,jj1;
 	ierr=MatGetSize(A,&ii1,&jj1);
-	
-	std::cout << "\n I am Superman @ with size \n" << ii1 << " X " << jj1 <<  std::endl;
 	//ierr = MatView(A,PETSC_VIEWER_STDOUT_WORLD);
 	ierr = MatView(A,PETSC_VIEWER_DRAW_WORLD);
-	std::cin >> wait;
 	
     ierr = KSPSolve(solver,F,D); CHKERRQ(ierr);
     ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -824,7 +797,6 @@ struct AnalyticalDirihletBC {
 	  PetscFunctionBegin;
 	  PetscErrorCode ierr;
   
-	  
 	  ierr = VecZeroEntries(C); CHKERRQ(ierr);
 	  ierr = VecGhostUpdateBegin(C,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	  ierr = VecGhostUpdateEnd(C,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -847,12 +819,7 @@ struct AnalyticalDirihletBC {
 	  ierr = MatAssemblyBegin(B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 	  ierr = MatAssemblyEnd(B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 	  
-	  std::string wait;
-	  
-	  int ii2,jj2;
-	  ierr=MatGetSize(B,&ii2,&jj2);
-	  std::cout << "\n I am Batman @ with size \n" << ii2 << " X " << jj2 <<  std::endl;
-	  
+	  	  
 	  //ierr = MatView(B,PETSC_VIEWER_DRAW_WORLD);
 	  //std::cin >> wait;
 	  
@@ -861,26 +828,17 @@ struct AnalyticalDirihletBC {
 	  ierr = VecGhostUpdateEnd(G,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	  
 	  ierr = m_field.set_global_VecCreateGhost(problem,ROW,G,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-	  //ierr = m_field.set_other_global_VecCreateGhost(problem,re_field_name,re_field_name,ROW,G,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-	  //ierr = VecView(G,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-  
 	  
 	  
 	  
 	  PetscReal pointwisenorm;
 	  ierr = VecMax(G,NULL,&pointwisenorm);
-  
-      std::cout << "\n The Global Pointwise Norm of error for this problem is : --\n" << pointwisenorm << std::endl;
+      std::cout << "\n The Global Pointwise Norm for this problem is : --\n" << pointwisenorm << std::endl;
 	  
-	  PetscViewer viewer;
-	  ierr = PetscViewerASCIIOpen(PETSC_COMM_WORLD,"Vec G.txt",&viewer); CHKERRQ(ierr);
-	  VecView(G,viewer);
-	  ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
-	  
-	  //bc.tEts_ptr = &tEts;
-	  //bc.map_zero_rows.clear();
-	  //bc.dofsIndices.clear();
-	  //bc.dofsValues.clear();
+	  //PetscViewer viewer;
+	  //ierr = PetscViewerASCIIOpen(PETSC_COMM_WORLD,"Vec G.txt",&viewer); CHKERRQ(ierr);
+	  //VecView(G,viewer);
+	  //ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
 	  
 	  PetscFunctionReturn(0);
   }

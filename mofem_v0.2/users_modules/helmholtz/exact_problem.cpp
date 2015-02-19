@@ -45,7 +45,7 @@ using bio::stream;
 using namespace MoFEM;
 
 static char help[] = "...\n\n";
-
+//Calculate the analytical solution of impinging wave on sphere
 struct MyFunApprox_re {
 	
 	 ublas::vector<double> result1;
@@ -61,10 +61,7 @@ struct MyFunApprox_re {
 	 //MyFunApprox_re(double wavenumber):
 		 //wAvenumber(wavenumber) {}
 	 //~MyFunApprox_re() {}
-	 
-	
 	ublas::vector<double>& operator()(double x, double y, double z) {
-		////return pow(x,1);
 		const double pi = atan( 1.0 ) * 4.0;
 		double R = sqrt(pow(x,2.0)+pow(y,2.0)+pow(z,2.0)); //radius
 		//Incident wave in Z direction.
@@ -73,8 +70,6 @@ struct MyFunApprox_re {
 		//double theta = acos(z/R); 
 		//Incident wave in X direction.
 		double theta = atan2(y,x)+2*pi; //the arctan of radians (y/x)
-		
-		//if(theta < 0) {theta += 2 * pi;}  //if the return radians is in the lower half plane, add 2 pi to the results.
 		//const double wAvenumber = aNgularfreq/sPeed;
 		double wAvenumber = 2;
 		const double k = wAvenumber;  //Wave number
@@ -116,16 +111,8 @@ struct MyFunApprox_re {
 		//const complex< double > inc_field = exp( i * k * R * cos( theta ) );  //???? Incident wave
 		//const complex< double > total_field = inc_field + result;
 		//ofs << theta << "\t" << abs( result ) << "\t" << abs( inc_field ) << "\t" << abs( total_field ) <<  "\t" << R << endl; //write the file
-		
-		//if ( R == 5 ) {
-		//	std::string wait;
-		//std::cout << "\n wo lai le R= " << R << std::endl;
-		//}
-		
 		result1.resize(1);
-		result1[0] = std::real(result);
-		//result1[0] = x;
-		
+		result1[0] = std::real(result);	
 		return result1;
 		
 		
@@ -152,7 +139,6 @@ struct MyFunApprox_im {
 	
 	
 	ublas::vector<double>& operator()(double x, double y, double z) {
-		////return pow(x,1);
 		const double pi = atan( 1.0 ) * 4.0;
 		double R = sqrt(pow(x,2.0)+pow(y,2.0)+pow(z,2.0)); //radius
 		//Incident wave in Z direction.
@@ -161,8 +147,6 @@ struct MyFunApprox_im {
 		//double theta = acos(z/R); 
 		//Incident wave in X direction.
 		double theta = atan2(y,x)+2*pi; //the arctan of radians (y/x)
-		
-		//if(theta < 0) {theta += 2 * pi;}  //if the return radians is in the lower half plane, add 2 pi to the results.
 		//const double wAvenumber = aNgularfreq/sPeed;
 		double wAvenumber = 2;
 		const double k = wAvenumber;  //Wave number
@@ -204,16 +188,9 @@ struct MyFunApprox_im {
 		//const complex< double > inc_field = exp( i * k * R * cos( theta ) );  //???? Incident wave
 		//const complex< double > total_field = inc_field + result;
 		//ofs << theta << "\t" << abs( result ) << "\t" << abs( inc_field ) << "\t" << abs( total_field ) <<  "\t" << R << endl; //write the file
-		
-		//if ( R == 5 ) {
-		//	std::string wait;
-		//std::cout << "\n wo lai le R= " << R << std::endl;
-		//}
-		
+
 		result1.resize(1);
 		result1[0] = std::imag(result);
-		//result1[0] = x;
-		
 		return result1;
 		
 		
@@ -244,10 +221,6 @@ int main(int argc, char *argv[]) {
 		SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
 	}
 	
-	//Create MoFEM (Joseph) database
-	MoFEM::Core core(moab);
-	FieldInterface& m_field = core;
-	
 	ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
 	if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 	
@@ -256,6 +229,10 @@ int main(int argc, char *argv[]) {
 	BARRIER_RANK_START(pcomm) 
 	rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
 	BARRIER_RANK_END(pcomm) 
+	
+	//Create MoFEM (Joseph) database
+	MoFEM::Core core(moab);
+	FieldInterface& m_field = core;
 	
 	//set entitities bit level
 	BitRefLevel bit_level0;
@@ -279,6 +256,7 @@ int main(int argc, char *argv[]) {
 	ierr = m_field.modify_finite_element_add_field_row("FE1","reEX"); CHKERRQ(ierr);
 	ierr = m_field.modify_finite_element_add_field_col("FE1","reEX"); CHKERRQ(ierr);
 	ierr = m_field.modify_finite_element_add_field_data("FE1","reEX"); CHKERRQ(ierr);
+	ierr = m_field.modify_finite_element_add_field_data("FE1","imEX"); CHKERRQ(ierr);
 	#ifdef HOON
 	ierr = m_field.modify_finite_element_add_field_data("FE1","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
 	#endif
@@ -382,9 +360,11 @@ int main(int argc, char *argv[]) {
 	static double sPeed; //Without static. I got error:use of local variable with automatic storage from containing function
 	
 	
-	//for(_IT_CUBITMESHSETS_BY_NAME_FOR_LOOP_(m_field,"MAT_HELMHOLTZ",it)) {
-	for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it))
-	{
+	for(_IT_CUBITMESHSETS_BY_NAME_FOR_LOOP_(m_field,"MAT_HELMHOLTZ",it)) {
+	  //for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,"MAT_HELMHOLTZ",it) {
+	  //for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
+	
+		cerr << "AAA\n";
 		//Get block name
 		string name = it->get_Cubit_name();
 		if (name.compare(0,13,"MAT_HELMHOLTZ") == 0)
@@ -396,18 +376,12 @@ int main(int argc, char *argv[]) {
 				SETERRQ1(PETSC_COMM_SELF,1,"not enough block attributes to deffine fluid pressure element, attributes.size() = %d ",attributes.size());
 			}
 			aNgularfreq = attributes[0];
-			sPeed = attributes[1];
-			std::string wait;
-			std::cout << "\n sPeed = \n" << sPeed << "\n aNgularfreq = " << aNgularfreq << std::endl;
-			
+			sPeed = attributes[1];	
 		}
 	}
 	
 	
-	double wavenumber = aNgularfreq/sPeed;
-	
-	std::cout << "\n I am here !!!!!!! WAVE NUMBER = \n" << wavenumber << std::endl;
-	
+	double wavenumber = aNgularfreq/sPeed;	
 	{
 		
 		MyFunApprox_re function_evaluator_re;
@@ -457,13 +431,12 @@ int main(int argc, char *argv[]) {
 	ierr = KSPSetOperators(solver2,B,B); CHKERRQ(ierr);
 	ierr = KSPSetFromOptions(solver2); CHKERRQ(ierr);
 	ierr = KSPSetUp(solver2); CHKERRQ(ierr);
-	
 	ierr = KSPSolve(solver2,G,C); CHKERRQ(ierr);
 	ierr = VecGhostUpdateBegin(C,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	ierr = VecGhostUpdateEnd(C,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	
 	ierr = m_field.set_global_VecCreateGhost("EX1_PROBLEM",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 	ierr = m_field.set_global_VecCreateGhost("EX2_PROBLEM",COL,C,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	
 	//destroy the solvers
 	ierr = KSPDestroy(&solver1); CHKERRQ(ierr);
 	ierr = VecDestroy(&D); CHKERRQ(ierr);
@@ -474,55 +447,19 @@ int main(int argc, char *argv[]) {
 	ierr = VecDestroy(&G); CHKERRQ(ierr);
 	ierr = MatDestroy(&B); CHKERRQ(ierr);
 	
-	
-	////Define rows/cols and element data
-	//ierr = m_field.modify_finite_element_add_field_row("FE2","imEX"); CHKERRQ(ierr);
-	//ierr = m_field.modify_finite_element_add_field_col("FE2","imEX"); CHKERRQ(ierr);
-	//ierr = m_field.modify_finite_element_add_field_data("FE1","imEX"); CHKERRQ(ierr);
-	//#ifdef HOON
-	//ierr = m_field.modify_finite_element_add_field_data("FE2","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
-	//#endif
-	
-	
 	PostPocOnRefinedMesh post_proc1(m_field);
 	ierr = post_proc1.generateRefereneElemenMesh(); CHKERRQ(ierr);
 	ierr = post_proc1.addFieldValuesPostProc("reEX"); CHKERRQ(ierr);
 	ierr = post_proc1.addFieldValuesGradientPostProc("reEX"); CHKERRQ(ierr);
+	ierr = post_proc1.addFieldValuesPostProc("imEX"); CHKERRQ(ierr);
+	ierr = post_proc1.addFieldValuesGradientPostProc("imEX"); CHKERRQ(ierr);
 	ierr = post_proc1.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
 	ierr = m_field.loop_finite_elements("EX1_PROBLEM","FE1",post_proc1); CHKERRQ(ierr);
-	rval = post_proc1.postProcMesh.write_file("real_out.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
-	
-	PostPocOnRefinedMesh post_proc2(m_field);
-	ierr = post_proc2.generateRefereneElemenMesh(); CHKERRQ(ierr);
-	ierr = post_proc2.addFieldValuesPostProc("imEX"); CHKERRQ(ierr);
-	ierr = post_proc2.addFieldValuesGradientPostProc("imEX"); CHKERRQ(ierr);
-	ierr = post_proc2.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
-	ierr = m_field.loop_finite_elements("EX2_PROBLEM","FE2",post_proc2); CHKERRQ(ierr);
-	rval = post_proc2.postProcMesh.write_file("imag_out.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
-	//PostPocOnRefinedMesh post_proc2(m_field);
-	//ierr = post_proc2.generateRefereneElemenMesh(); CHKERRQ(ierr);
-	//ierr = post_proc2.addFieldValuesPostProc("imEX"); CHKERRQ(ierr);
-	//ierr = post_proc2.addFieldValuesGradientPostProc("imEX"); CHKERRQ(ierr);
-	//ierr = post_proc2.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
-	//ierr = m_field.loop_finite_elements("EX2_PROBLEM","FE2",post_proc2); CHKERRQ(ierr);
-	//rval = post_proc2.postProcMesh.write_file("out.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
-	
-	
-    
-	char command1[] = "mbconvert ./real_out.h5m ./real_new_out.vtk && cp ./real_new_out.vtk ../../../../../mnt/home/Documents/mofem-cephas/mofem_v0.2/users_modules/helmholtz/ && mbconvert ./imag_out.h5m ./imag_new_out.vtk && cp ./imag_new_out.vtk ../../../../../mnt/home/Documents/mofem-cephas/mofem_v0.2/users_modules/helmholtz/";
-	//char command2[] = "mbconvert ./imag_out.h5m ./imag_new_out.vtk && cp ./new_out.vtk ../../../../../mnt/home/Documents/mofem-cephas/mofem_v0.2/users_modules/helmholtz/";
+	rval = post_proc1.postProcMesh.write_file("exact_out.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
 
-
+	//output the results from Docker
+	char command1[] = "mbconvert ./exact_out.h5m ./exact_out.vtk && cp ./exact_out.vtk ../../../../../mnt/home/Desktop/U pan/helmholtz results";
 	int todo1 = system( command1 );
-	//int todo2 = system( command2 ); 
-
-
-	
-	
-	
-	
-	
-	
 	
 	//typedef tee_device<ostream, ofstream> TeeDevice;
 	//typedef stream<TeeDevice> TeeStream;
@@ -568,17 +505,3 @@ int main(int argc, char *argv[]) {
 
 }
 	
-	
-	
-
-
-
-
-
-
-
-
-
-
-
-

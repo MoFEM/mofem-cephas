@@ -229,10 +229,7 @@ struct FieldApproximationH1 {
 	//cerr << x << " " << y << " " << z << " " << w << " " << getHoGaussPtsDetJac()[gg] << endl;
 
 	ublas::vector<FieldData> fun_val = functionEvaluator(x,y,z);
-	
-	//std::string wait;
-	//std::cout << "\n I am here !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! fun_val = \n" << fun_val << std::endl;
-	
+		
 	if(fun_val.size() != rank) {
 	  SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	}
