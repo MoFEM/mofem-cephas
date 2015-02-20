@@ -331,15 +331,17 @@ struct ThermalElement {
           //cblas_dgemv(CblasRowMajor,CblasNoTrans,nb_row_dofs,3,val,
           //&data.getDiffN()(gg,0),3,&commonData.gradAtGaussPts(gg,0),1,
           //1.,&Nf[0],1);
-
+			
 
 	//ublas
 	
 	std::string wait;
+	//std::cout << "\n OpGetTetTemperatureAtGaussPts = " << OpGetTetTemperatureAtGaussPts << std::endl;
+	//std::cout << "\n 
 	//std::cout << "n data.getN().size1() = \n" << data.getN().size1() << std::endl;
-	//std::cout << "\n commonData.temperatureAtGaussPts[gg] = \n" << commonData.temperatureAtGaussPts[gg] << std::endl;
+	std::cout << "\n commonData.temperatureAtGaussPts[gg] = \n" << commonData.temperatureAtGaussPts << std::endl;
 	//std::cout << "\n data.getN(gg) = \n" << data.getN(gg) <<  std::endl;
-	////std::cout << "\n commonData.getGradAtGaussPts = \n"  << commonData.getGradAtGaussPts(gg) <<  std::endl;
+	std::cout << "\n commonData.getGradAtGaussPts = \n"  << commonData.getGradAtGaussPts(gg) <<  std::endl;
 	////std::cout << "n data.getDiffN(gg,nb_row_dofs) = \n" << data.getDiffN(gg,nb_row_dofs) << std::endl;
 	//std::cout << "\n prod = \n" << prod(data.getDiffN(gg,nb_row_dofs),commonData.getGradAtGaussPts(gg)) << std::endl;
 	//std::cout << "\n data.getN().size2() = \n" << data.getN().size2() << std::endl;
@@ -428,11 +430,9 @@ struct ThermalElement {
 
           ublas::matrix<double>  val = dAta.cOnductivity_mat*getVolume()*getGaussPts()(3,gg);
           if(getHoGaussPtsDetJac().size()>0) {
-			  std::string wait;
-			  std::cout << "\n Higher order element is occur \n" << std::endl;
             val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
           }
-
+		  cout << " \n wo zai zhe li \n" << std::endl;
           //cblas
           //double *diff_N_row,*diff_N_col;
           //diff_N_row = &row_data.getDiffN()(gg,0);

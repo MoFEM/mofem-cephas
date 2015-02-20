@@ -264,6 +264,53 @@ struct HelmholtzElement {
 			OpGetFieldAtGaussPts<TetElementForcesAndSourcesCore>(field_name,common_data.pressureRateAtGaussPts) {}
 	};
 	
+    ublas::matrix<double> hoCoordsTri;
+	
+	//get the higher order approximation coordinates.
+    struct OpHoCoordTri: public TriElementForcesAndSurcesCore::UserDataOperator {
+	
+		ublas::matrix<double> &hoCoordsTri;
+		OpHoCoordTri(const string field_name,ublas::matrix<double> &ho_coords): 
+			TriElementForcesAndSurcesCore::UserDataOperator(field_name),
+			hoCoordsTri(ho_coords) {}
+	
+		/*	
+		Cartesian coordinates for gaussian points inside elements
+		X^coordinates = DOF dot* N
+		*/
+		PetscErrorCode doWork(
+			int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+			PetscFunctionBegin;
+	
+			try {
+	
+				if(data.getFieldData().size()==0) PetscFunctionReturn(0);
+				//if(data.getIndices().size()==0) PetscFunctionReturn(0); //this will return zero
+	
+				hoCoordsTri.resize(data.getN().size1(),3);
+				if(type == MBVERTEX) {
+					hoCoordsTri.clear();
+				}
+	
+				int nb_dofs = data.getN().size2();
+				for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
+					for(int dd = 0;dd<3;dd++) {
+						hoCoordsTri(gg,dd) += cblas_ddot(nb_dofs,&data.getN(gg)[0],1,&data.getFieldData()[dd],3); //calculate x,y,z in each GaussPts
+					}
+				}
+	
+			} catch (const std::exception& ex) {
+				ostringstream ss;
+				ss << "throw in method: " << ex.what() << endl;
+				SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+			}
+	
+			PetscFunctionReturn(0);
+		}
+	
+    };
+	
+	
 	/** \biref operator to calculate right hand side of stiffness terms
 	* \infroup mofem_helmholtz_elem
 	*/
@@ -747,7 +794,7 @@ struct HelmholtzElement {
 				for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
 	                 
 					double wAvenumber = dAta.aNgularfreq/dAta.sPeed;  //wave number K is the propotional to the frequency of 
-					                                       //incident wave and represents number of waves per wave length 2Pi - 2Pi/K
+					                                       // wave and represents number of waves per wave length 2Pi - 2Pi/K
 					
 					
 					double wAvenUmber = pow(wAvenumber,2.0);
@@ -903,6 +950,7 @@ struct HelmholtzElement {
 	*/
 	struct OpHelmholtzIncidentWave:public TriElementForcesAndSurcesCore::UserDataOperator {
 		
+		ublas::matrix<double> &hoCoords;
 		BlockData &datA;
 		FluxData &dAta;
 		bool ho_geometry;
@@ -910,15 +958,15 @@ struct HelmholtzElement {
 		string re_field;
 		string im_field;
 		//double (*fUN)(double x,double y,double z);
-		OpHelmholtzIncidentWave(const string re_field_name,const string im_field_name,BlockData &DATA,FluxData &data,bool _ho_geometry = false):
+		OpHelmholtzIncidentWave(const string re_field_name,const string im_field_name,BlockData &DATA,FluxData &data,ublas::matrix<double> &ho_coords,bool _ho_geometry = false):
 			TriElementForcesAndSurcesCore::UserDataOperator(re_field_name,im_field_name),
-			datA(DATA),dAta(data),ho_geometry(_ho_geometry),useTsF(true),re_field(re_field_name),im_field(im_field_name) { }
+			datA(DATA),dAta(data),ho_geometry(_ho_geometry),useTsF(true),re_field(re_field_name),im_field(im_field_name),hoCoords(ho_coords) { }
 		
 		Vec F;
 		OpHelmholtzIncidentWave(const string re_field_name,const string im_field_name,Vec _F,
-						BlockData &DATA,FluxData &data,bool _ho_geometry = false):
+						BlockData &DATA,FluxData &data,ublas::matrix<double> &ho_coords,bool _ho_geometry = false):
 			TriElementForcesAndSurcesCore::UserDataOperator(re_field_name,im_field_name),
-			datA(DATA),dAta(data),ho_geometry(_ho_geometry),useTsF(false),F(_F),re_field(re_field_name),im_field(im_field_name) { }
+			datA(DATA),dAta(data),ho_geometry(_ho_geometry),useTsF(false),F(_F),re_field(re_field_name),im_field(im_field_name),hoCoords(ho_coords) { }
 		
 		ublas::vector<FieldData> Nf;
 		
@@ -985,17 +1033,22 @@ struct HelmholtzElement {
 				////////////////////********************************/////////////
 				unsigned int nb_gauss_pts = data.getN().size1();
 				double x,y,z;
-				if(getHoCoordsAtGaussPts().size1()==nb_gauss_pts) {
-					//intergation poits global positions if higher order geometry is given
-					x = getHoCoordsAtGaussPts()(gg,0);
-					y = getHoCoordsAtGaussPts()(gg,1);
-					z = getHoCoordsAtGaussPts()(gg,2);
-				} else {
-					//intergartion point global positions for linear tetrahedral element
-					x = getCoordsAtGaussPts()(gg,0);
-					y = getCoordsAtGaussPts()(gg,1);
-					z = getCoordsAtGaussPts()(gg,2);
-				}
+	
+					if(hoCoords.size1() == nb_gauss_pts) {
+						double area = norm_2(getNormals_at_GaussPt(gg))*0.5; 
+						val *= area;
+						x = hoCoords(gg,0);
+						y = hoCoords(gg,1);
+						z = hoCoords(gg,2);
+					} else {
+						val *= getArea();
+						x = getCoordsAtGaussPts()(gg,0);
+						y = getCoordsAtGaussPts()(gg,1);
+						z = getCoordsAtGaussPts()(gg,2);
+					}
+					
+					
+					
 
 				const double pi = atan( 1.0 ) * 4.0;
 				double R = sqrt(pow(x,2.0)+pow(y,2.0)+pow(z,2.0)); //radius
@@ -1040,12 +1093,10 @@ struct HelmholtzElement {
 				} else if(re_field.compare(0,6,"imPRES")==0)
 					{iNcidentwave = std::imag(result);}
 				
-				if(ho_geometry) {
-					double area = norm_2(getNormals_at_GaussPt(gg)); //cblas_dnrm2(3,&getNormals_at_GaussPt()(gg,0),1);
-					flux = dAta.dAta.data.value1*area*iNcidentwave;  //FluxData.HeatfluxCubitBcData.data.value1 * area
-				} else {
-					flux = dAta.dAta.data.value1*getArea()*iNcidentwave;
-				}
+
+				flux = dAta.dAta.data.value1*iNcidentwave;  //FluxData.HeatfluxCubitBcData.data.value1 * area
+			
+			
 				//cblas_daxpy(nb_row_dofs,val*flux,&data.getN()(gg,0),1,&*Nf.data().begin(),1);
 				ublas::noalias(Nf) += val*flux*data.getN(gg,nb_dofs);
 			}
@@ -1553,14 +1604,16 @@ struct HelmholtzElement {
 	PetscErrorCode setHelmholtzIncidentWaveFiniteElementRhsOperators(string re_field_name,string im_field_name,Vec &F,const string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
 		PetscFunctionBegin;
 		bool ho_geometry = false;
-		//if(mField.check_field(mesh_nodals_positions)) {
+		if(mField.check_field(mesh_nodals_positions)) {
 		//	ho_geometry = true;
-		//}
+		feIncidentWave.get_op_to_do_Rhs().push_back(new OpHoCoordTri(mesh_nodals_positions,hoCoordsTri));
+		}
+		
 		map<int,FluxData>::iterator sit = setOfFluxes.begin();
 		for(;sit!=setOfFluxes.end();sit++) {
 			//add finite element
-			feIncidentWave.get_op_to_do_Rhs().push_back(new OpHelmholtzIncidentWave(re_field_name,re_field_name,F,blockData,sit->second,ho_geometry));
-			feIncidentWave.get_op_to_do_Rhs().push_back(new OpHelmholtzIncidentWave(im_field_name,im_field_name,F,blockData,sit->second,ho_geometry));
+			feIncidentWave.get_op_to_do_Rhs().push_back(new OpHelmholtzIncidentWave(re_field_name,re_field_name,F,blockData,sit->second,hoCoordsTri,ho_geometry));
+			feIncidentWave.get_op_to_do_Rhs().push_back(new OpHelmholtzIncidentWave(im_field_name,im_field_name,F,blockData,sit->second,hoCoordsTri,ho_geometry));
 
 		}
 		PetscFunctionReturn(0);

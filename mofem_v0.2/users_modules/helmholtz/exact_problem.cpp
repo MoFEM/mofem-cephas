@@ -458,7 +458,7 @@ int main(int argc, char *argv[]) {
 	rval = post_proc1.postProcMesh.write_file("exact_out.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
 
 	//output the results from Docker
-	char command1[] = "mbconvert ./exact_out.h5m ./exact_out.vtk && cp ./exact_out.vtk ../../../../../mnt/home/Desktop/U pan/helmholtz results";
+	char command1[] = "mbconvert ./exact_out.h5m ./exact_out.vtk && cp ./exact_out.vtk ../../../../../mnt/home/Desktop/U_pan/helmholtz_results/";
 	int todo1 = system( command1 );
 	
 	//typedef tee_device<ostream, ofstream> TeeDevice;

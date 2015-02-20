@@ -147,7 +147,7 @@ int main(int argc, char *argv[]) {
   
   ierr = helmholtz_elements.addHelmholtzElements("ACOUSTIC_PROBLEM","rePRES","imPRES"); CHKERRQ(ierr);
   ierr = helmholtz_elements.addHelmholtzFluxElement("ACOUSTIC_PROBLEM","rePRES","imPRES"); CHKERRQ(ierr);
-  ierr = helmholtz_elements.addHelmholtzImpedanceElement("ACOUSTIC_PROBLEM","rePRES","imPRES"); CHKERRQ(ierr);
+  //ierr = helmholtz_elements.addHelmholtzImpedanceElement("ACOUSTIC_PROBLEM","rePRES","imPRES"); CHKERRQ(ierr);
   
   //ierr = l2norm_element.addL2NormElements("ACOUSTIC_PROBLEM","L2_NORM","rePRES","imPRES"); CHKERRQ(ierr); //l2norm
   
@@ -216,7 +216,7 @@ int main(int argc, char *argv[]) {
   //ierr = helmholtz_elements.setHelmholtzFluxFiniteElementRhsOperators("imPRES","imPRES",F); CHKERRQ(ierr);    //Imag Neumann BC
   ierr = helmholtz_elements.setHelmholtzIncidentWaveFiniteElementRhsOperators("rePRES","imPRES",F); CHKERRQ(ierr); // Incident wave flux.
   //The boundary Impedance BC.
-  ierr = helmholtz_elements.setHelmholtzImpedanceFiniteElementLhsOperators("rePRES","imPRES",(A)); CHKERRQ(ierr);
+  //ierr = helmholtz_elements.setHelmholtzImpedanceFiniteElementLhsOperators("rePRES","imPRES",(A)); CHKERRQ(ierr);
   
 
   
@@ -421,7 +421,7 @@ int main(int argc, char *argv[]) {
   
   /*Wait for confirmation */
   //ierr = mField.loop_finite_elements("ACOUSTIC_PROBLEM","HELMHOLTZ_IMPEDANCE_FE",helmholtz_elements.getLoopFeImpedanceRhs()); CHKERRQ(ierr);
-  ierr = mField.loop_finite_elements("ACOUSTIC_PROBLEM","HELMHOLTZ_IMPEDANCE_FE",helmholtz_elements.getLoopFeImpedanceLhs()); CHKERRQ(ierr);
+  //ierr = mField.loop_finite_elements("ACOUSTIC_PROBLEM","HELMHOLTZ_IMPEDANCE_FE",helmholtz_elements.getLoopFeImpedanceLhs()); CHKERRQ(ierr);
   /*above terms related to operators in HelmholtzElement.hpp */
   
   //ierr = mField.loop_finite_elements("ACOUSTIC_PROBLEM","L2_NORM",l2norm_element.getLoopFeRhs()); CHKERRQ(ierr);//l2norm
@@ -472,18 +472,18 @@ int main(int argc, char *argv[]) {
   ierr = KSPDestroy(&solver); CHKERRQ(ierr);
   
   
-  PostPocOnRefinedMesh post_proc1(m_field);
+  PostPocOnRefinedMesh post_proc1(mField);
   ierr = post_proc1.generateRefereneElemenMesh(); CHKERRQ(ierr);
   ierr = post_proc1.addFieldValuesPostProc("rePRES"); CHKERRQ(ierr);
   ierr = post_proc1.addFieldValuesGradientPostProc("rePRES"); CHKERRQ(ierr);
   ierr = post_proc1.addFieldValuesPostProc("imPRES"); CHKERRQ(ierr);
   ierr = post_proc1.addFieldValuesGradientPostProc("imPRES"); CHKERRQ(ierr);
   ierr = post_proc1.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
-  ierr = m_field.loop_finite_elements("ACOUSTIC_PROBLEM","HELMHOLTZ_FE",post_proc1); CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("ACOUSTIC_PROBLEM","HELMHOLTZ_FE",post_proc1); CHKERRQ(ierr);
   rval = post_proc1.postProcMesh.write_file("acoustic_impinging_out.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
   
   //output the results from Docker
-  char command1[] = "mbconvert ./acoustic_impinging_out.h5m ./acoustic_impinging_out.vtk && cp ./acoustic_impinging_out.vtk ../../../../../mnt/home/Desktop/U pan/helmholtz results";
+  char command1[] = "mbconvert ./acoustic_impinging_out.h5m ./acoustic_impinging_out.vtk && cp ./acoustic_impinging_out.vtk ../../../../../mnt/home/Desktop/U_pan/helmholtz_results/";
   int todo1 = system( command1 );
   
   

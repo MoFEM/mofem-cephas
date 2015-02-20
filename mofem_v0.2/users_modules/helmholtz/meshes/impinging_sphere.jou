@@ -33,13 +33,13 @@ set duplicate block elements on
 ###add the Impedance constant    
 #block 2 attribute index 2 1
 #
-block 4 surface 1
+block 4 surface 1 3
 block 4 name 'ANALYTICAL_BC'
 
 block 5 volume 4
 block 5 name 'EXACT_SOL'
 
-create heatflux on surface 3 value 0
+#create heatflux on surfac 3 value 1
 
 
 
@@ -55,7 +55,8 @@ block 6 element type tetra10
 
 save as "/Users/xuanmeng/Desktop/U pan/helmholtz results/impinging_sphere.cub" overwrit
 
-#save as "/Users/xuanmeng/Documents/mofem-cephas/mofem_v0.2/users_modules/helmholtz/meshes/impinging_sphere.cub" overwrit
+save as "/Users/xuanmeng/Documents/mofem-cephas/mofem_v0.2/users_modules/helmholtz/meshes/impinging_sphere.cub" overwrit
+
 
 
 
