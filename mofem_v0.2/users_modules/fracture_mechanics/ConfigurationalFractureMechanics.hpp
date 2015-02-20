@@ -43,7 +43,7 @@ struct ConfigurationalFractureMechanics {
     FW_thermal_field
   };
 
-  matPROJ_ctx *projSurfaceCtx,*projFrontCtx;
+  ProjectionMatrixCtx *projSurfaceCtx,*projFrontCtx;
 
   BitRefLevel *ptr_bit_level0;
   ConfigurationalFractureMechanics(FieldInterface& m_field): projSurfaceCtx(NULL),projFrontCtx(NULL) {

@@ -1880,7 +1880,7 @@ PetscErrorCode ConfigurationalFractureMechanics::surface_projection_data(FieldIn
 
   //C_ALL_MATRIX is problem used to constrain surface constrain matrices
   if(projSurfaceCtx==NULL) {
-    projSurfaceCtx = new matPROJ_ctx(m_field,problem,"C_ALL_MATRIX");
+    projSurfaceCtx = new ProjectionMatrixCtx(m_field,problem,"C_ALL_MATRIX");
     ierr = m_field.MatCreateMPIAIJWithArrays("C_ALL_MATRIX",&projSurfaceCtx->C); CHKERRQ(ierr);
   }
 
@@ -1945,8 +1945,8 @@ PetscErrorCode ConfigurationalFractureMechanics::delete_surface_projection_data(
   PetscErrorCode ierr;
 
   if(projSurfaceCtx!=NULL) {
-    ierr = projSurfaceCtx->DestroyQorP(); CHKERRQ(ierr);
-    ierr = projSurfaceCtx->DestroyQTKQ(); CHKERRQ(ierr);
+    ierr = projSurfaceCtx->destroyQorP(); CHKERRQ(ierr);
+    ierr = projSurfaceCtx->destroyQTKQ(); CHKERRQ(ierr);
     ierr = MatDestroy(&projSurfaceCtx->C); CHKERRQ(ierr);
     delete projSurfaceCtx;
     projSurfaceCtx = NULL;
@@ -2099,7 +2099,7 @@ PetscErrorCode ConfigurationalFractureMechanics::front_projection_data(FieldInte
   ierr = delete_front_projection_data(m_field); CHKERRQ(ierr);
 
   if(projFrontCtx==NULL) {
-    projFrontCtx = new matPROJ_ctx(m_field,problem,"C_CRACKFRONT_MATRIX");
+    projFrontCtx = new ProjectionMatrixCtx(m_field,problem,"C_CRACKFRONT_MATRIX");
     ierr = m_field.MatCreateMPIAIJWithArrays("C_CRACKFRONT_MATRIX",&projFrontCtx->C); CHKERRQ(ierr);
   }
 
@@ -2112,8 +2112,8 @@ PetscErrorCode ConfigurationalFractureMechanics::delete_front_projection_data(Fi
   PetscErrorCode ierr;
 
   if(projFrontCtx!=NULL) {
-    ierr = projFrontCtx->DestroyQorP(); CHKERRQ(ierr);
-    ierr = projFrontCtx->DestroyQTKQ(); CHKERRQ(ierr);
+    ierr = projFrontCtx->destroyQorP(); CHKERRQ(ierr);
+    ierr = projFrontCtx->destroyQTKQ(); CHKERRQ(ierr);
     ierr = MatDestroy(&projFrontCtx->C); CHKERRQ(ierr);
     delete projFrontCtx;
     projFrontCtx = NULL;
@@ -2193,7 +2193,7 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_force_vector(FieldInte
   ierr = PetscPrintf(PETSC_COMM_WORLD,"nrm2_QTGriffithForceVec = %6.4e\n",nrm2_griffith_force); CHKERRQ(ierr);
 
   //tangent front froce
-  matPROJ_ctx projFrontCtx_tangent(m_field,problem,"C_CRACKFRONT_MATRIX");
+  ProjectionMatrixCtx projFrontCtx_tangent(m_field,problem,"C_CRACKFRONT_MATRIX");
   ierr = m_field.MatCreateMPIAIJWithArrays("C_CRACKFRONT_MATRIX",&projFrontCtx_tangent.C); CHKERRQ(ierr);
   C_FRONT_TANGENT C_TANGENT_ELEM(m_field,projFrontCtx_tangent.C,PETSC_NULL,"LAMBDA_CRACKFRONT_AREA");
   ierr = MatZeroEntries(projFrontCtx_tangent.C); CHKERRQ(ierr);
@@ -2296,7 +2296,7 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& m_fi
   }
   
   //calculate tangent griffith force
-  matPROJ_ctx projFrontCtx_tangent(m_field,problem,"C_CRACKFRONT_MATRIX");
+  ProjectionMatrixCtx projFrontCtx_tangent(m_field,problem,"C_CRACKFRONT_MATRIX");
   ierr = m_field.MatCreateMPIAIJWithArrays("C_CRACKFRONT_MATRIX",&projFrontCtx_tangent.C); CHKERRQ(ierr);
   C_FRONT_TANGENT C_TANGENT_ELEM(m_field,projFrontCtx_tangent.C,Q,"LAMBDA_CRACKFRONT_AREA");
   ierr = MatZeroEntries(projFrontCtx_tangent.C); CHKERRQ(ierr);
@@ -2321,8 +2321,8 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& m_fi
   PetscBool flg_gc;
   ierr = PetscOptionsGetReal(PETSC_NULL,"-my_gc",&gc,&flg_gc); CHKERRQ(ierr);
 
-  ierr = projFrontCtx->InitQorP(F_Material); CHKERRQ(ierr);
-  ierr = projFrontCtx_tangent.InitQorP(F_Material); CHKERRQ(ierr);
+  ierr = projFrontCtx->initializeQorP(F_Material); CHKERRQ(ierr);
+  ierr = projFrontCtx_tangent.initializeQorP(F_Material); CHKERRQ(ierr);
 
   // unit of LambdaVec [ N * 1/m = N*m/m^2 = J/m^2 ]
   ierr = VecScale(F_Material,-1./gc); CHKERRQ(ierr);
@@ -2475,8 +2475,8 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& m_fi
   ierr = VecDestroy(&LambdaVec); CHKERRQ(ierr);
   ierr = VecDestroy(&LambdaVec_Tangent); CHKERRQ(ierr);
 
-  ierr = projFrontCtx_tangent.DestroyQorP(); CHKERRQ(ierr);
-  ierr = projFrontCtx_tangent.DestroyQTKQ(); CHKERRQ(ierr);
+  ierr = projFrontCtx_tangent.destroyQorP(); CHKERRQ(ierr);
+  ierr = projFrontCtx_tangent.destroyQTKQ(); CHKERRQ(ierr);
   ierr = MatDestroy(&projFrontCtx_tangent.C); CHKERRQ(ierr);
 
   PetscFunctionReturn(0);

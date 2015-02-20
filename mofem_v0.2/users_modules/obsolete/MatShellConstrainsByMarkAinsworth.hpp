@@ -17,39 +17,40 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef __MOABCONSTRAINSBYMARKAINSWORTH_HPP__
-#define __MOABCONSTRAINSBYMARKAINSWORTH_HPP__
+#ifndef __PROJECTIONMATRIXCTX_HPP__
+#define __PROJECTIONMATRIXCTX_HPP__
 
 namespace ObosleteUsersModules {
 
 /**
   * \brief structure for projection matries
+  * \ingroup projection_matrix
   *
   */
-struct matPROJ_ctx {
+struct ProjectionMatrixCtx {
   FieldInterface& mField;
-  KSP ksp,ksp_self;
-  Vec _x_;
-  VecScatter scatter;
+  KSP kSP;
+  Vec X;
+  VecScatter sCatter;
   Mat CT,CCT,CTC;
   Vec Cx,CCTm1_Cx,CT_CCTm1_Cx,CTCx;
   Vec Qx,KQx;
-  string x_problem,y_problem;
+  string xProblem,yProblem;
   bool initQorP,initQTKQ;
-  bool debug;
+
   PetscLogEvent USER_EVENT_projInit;
   PetscLogEvent USER_EVENT_projQ;
   PetscLogEvent USER_EVENT_projP;
   PetscLogEvent USER_EVENT_projR;
   PetscLogEvent USER_EVENT_projRT;
   PetscLogEvent USER_EVENT_projCTC_QTKQ;
-  matPROJ_ctx(FieldInterface& _mField,string _x_problem,string _y_problem): 
+  ProjectionMatrixCtx(FieldInterface& _mField,string x_problem,string y_problem): 
     mField(_mField),
     CT(PETSC_NULL),CCT(PETSC_NULL),CTC(PETSC_NULL),
     Cx(PETSC_NULL),CCTm1_Cx(PETSC_NULL),CT_CCTm1_Cx(PETSC_NULL),CTCx(PETSC_NULL),
     Qx(PETSC_NULL),KQx(PETSC_NULL),
-    x_problem(_x_problem),y_problem(_y_problem),
-    initQorP(true),initQTKQ(true),debug(true),
+    xProblem(x_problem),yProblem(y_problem),
+    initQorP(true),initQTKQ(true),
     C(PETSC_NULL),K(PETSC_NULL),g(PETSC_NULL) {
     PetscLogEventRegister("ProjectionInit",0,&USER_EVENT_projInit);
     PetscLogEventRegister("ProjectionQ",0,&USER_EVENT_projQ);
@@ -60,21 +61,22 @@ struct matPROJ_ctx {
   }
 
 
-  PetscReal rtol,abstol,dtol;
-  PetscInt maxits;
+  PetscReal rTol,absTol,dTol;
+  PetscInt maxIts;
   Mat C,K;
   Vec g;
 
   /**
     * \brief Init vectors and matrices for Q and P shell matrices, stacttering is set based on x_problem and y_problem
     */
-  PetscErrorCode InitQorP(Vec x);
+  PetscErrorCode initializeQorP(Vec x);
+  PetscErrorCode initializeQTKQ();
 
-  PetscErrorCode RecalculateCTandCCT();
-  PetscErrorCode DestroyQorP();
-  PetscErrorCode InitQTKQ();
-  PetscErrorCode RecalculateCTC();
-  PetscErrorCode DestroyQTKQ();
+
+  PetscErrorCode recalculateCTandCCT();
+  PetscErrorCode destroyQorP();
+  PetscErrorCode recalculateCTC();
+  PetscErrorCode destroyQTKQ();
 
   friend PetscErrorCode matQ_mult_shell(Mat Q,Vec x,Vec f);
   friend PetscErrorCode matP_mult_shell(Mat P,Vec x,Vec f);
@@ -92,5 +94,10 @@ PetscErrorCode matCTC_QTKQ_mult_shell(Mat CTC_QTKQ,Vec x,Vec f);
 
 }
 
-#endif //__MOABCONSTRAINSBYMARKAINSWORTH_HPP__
+#endif //__PROJECTIONMATRIXCTX_HPP__
+
+
+/***************************************************************************//**
+ * \defgroup projection_matrix Projection Matrix
+ ******************************************************************************/
 

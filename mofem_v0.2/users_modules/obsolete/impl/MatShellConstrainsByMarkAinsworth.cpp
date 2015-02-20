@@ -1,4 +1,7 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
+/** \file MatShellConstrainsByMarkAinsworth.cpp
+ * \brief Implementation of projection matrix 
+ *
+ * Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
  * --------------------------------------------------------------
  * FIXME: DESCRIPTION
  */
@@ -24,7 +27,9 @@ using namespace MoFEM;
 
 namespace ObosleteUsersModules {
 
-PetscErrorCode matPROJ_ctx::InitQorP(Vec x) {
+const static bool debug = false;
+
+PetscErrorCode ProjectionMatrixCtx::initializeQorP(Vec x) {
     PetscFunctionBegin;
     if(initQorP) {
       initQorP = false;
@@ -32,30 +37,30 @@ PetscErrorCode matPROJ_ctx::InitQorP(Vec x) {
       PetscLogEventBegin(USER_EVENT_projInit,0,0,0,0);
       ierr = MatTranspose(C,MAT_INITIAL_MATRIX,&CT); CHKERRQ(ierr);
       ierr = MatTransposeMatMult(CT,CT,MAT_INITIAL_MATRIX,PETSC_DEFAULT,&CCT); CHKERRQ(ierr); // need to be calculated when C is changed
-      ierr = KSPCreate(PETSC_COMM_WORLD,&(ksp)); CHKERRQ(ierr); // neet to be recalculated when C is changed
-      ierr = KSPSetOperators(ksp,CCT,CCT); CHKERRQ(ierr);
-      ierr = KSPSetFromOptions(ksp); CHKERRQ(ierr);
-      ierr = KSPSetInitialGuessKnoll(ksp,PETSC_TRUE); CHKERRQ(ierr);
-      ierr = KSPGetTolerances(ksp,&rtol,&abstol,&dtol,&maxits); CHKERRQ(ierr);
-      ierr = KSPSetUp(ksp); CHKERRQ(ierr);
-      ierr = KSPMonitorCancel(ksp); CHKERRQ(ierr);
+      ierr = KSPCreate(PETSC_COMM_WORLD,&kSP); CHKERRQ(ierr); // neet to be recalculated when C is changed
+      ierr = KSPSetOperators(kSP,CCT,CCT); CHKERRQ(ierr);
+      ierr = KSPSetFromOptions(kSP); CHKERRQ(ierr);
+      ierr = KSPSetInitialGuessKnoll(kSP,PETSC_TRUE); CHKERRQ(ierr);
+      ierr = KSPGetTolerances(kSP,&rTol,&absTol,&dTol,&maxIts); CHKERRQ(ierr);
+      ierr = KSPSetUp(kSP); CHKERRQ(ierr);
+      ierr = KSPMonitorCancel(kSP); CHKERRQ(ierr);
       #if PETSC_VERSION_GE(3,5,3) 
-	ierr = MatCreateVecs(C,&_x_,PETSC_NULL); CHKERRQ(ierr);
+	ierr = MatCreateVecs(C,&X,PETSC_NULL); CHKERRQ(ierr);
 	ierr = MatCreateVecs(C,PETSC_NULL,&Cx); CHKERRQ(ierr);
 	ierr = MatCreateVecs(CCT,PETSC_NULL,&CCTm1_Cx); CHKERRQ(ierr);
       #else 
-	ierr = MatGetVecs(C,&_x_,PETSC_NULL); CHKERRQ(ierr);
+	ierr = MatGetVecs(C,&X,PETSC_NULL); CHKERRQ(ierr);
 	ierr = MatGetVecs(C,PETSC_NULL,&Cx); CHKERRQ(ierr);
 	ierr = MatGetVecs(CCT,PETSC_NULL,&CCTm1_Cx); CHKERRQ(ierr);
       #endif
-      ierr = VecDuplicate(_x_,&CT_CCTm1_Cx); CHKERRQ(ierr);
-      ierr = mField.VecScatterCreate(x,x_problem,ROW,_x_,y_problem,COL,&scatter); CHKERRQ(ierr);
+      ierr = VecDuplicate(X,&CT_CCTm1_Cx); CHKERRQ(ierr);
+      ierr = mField.VecScatterCreate(x,xProblem,ROW,X,yProblem,COL,&sCatter); CHKERRQ(ierr);
       PetscLogEventEnd(USER_EVENT_projInit,0,0,0,0);
     }
     PetscFunctionReturn(0);
 }
 
-PetscErrorCode matPROJ_ctx::RecalculateCTandCCT() {
+PetscErrorCode ProjectionMatrixCtx::recalculateCTandCCT() {
     PetscFunctionBegin;
     if(initQorP) PetscFunctionReturn(0);
     PetscErrorCode ierr;
@@ -64,37 +69,37 @@ PetscErrorCode matPROJ_ctx::RecalculateCTandCCT() {
     PetscFunctionReturn(0);
 }
 
-PetscErrorCode matPROJ_ctx::DestroyQorP() {
+PetscErrorCode ProjectionMatrixCtx::destroyQorP() {
     PetscFunctionBegin;
     if(initQorP) PetscFunctionReturn(0);
     PetscErrorCode ierr;
     ierr = MatDestroy(&CT); CHKERRQ(ierr);
     ierr = MatDestroy(&CCT); CHKERRQ(ierr);
-    ierr = KSPDestroy(&ksp); CHKERRQ(ierr);
-    ierr = VecDestroy(&_x_); CHKERRQ(ierr);
+    ierr = KSPDestroy(&kSP); CHKERRQ(ierr);
+    ierr = VecDestroy(&X); CHKERRQ(ierr);
     ierr = VecDestroy(&Cx); CHKERRQ(ierr);
     ierr = VecDestroy(&CCTm1_Cx); CHKERRQ(ierr);
     ierr = VecDestroy(&CT_CCTm1_Cx); CHKERRQ(ierr);
-    ierr = VecScatterDestroy(&scatter); CHKERRQ(ierr);
+    ierr = VecScatterDestroy(&sCatter); CHKERRQ(ierr);
     initQorP = true;
     PetscFunctionReturn(0);
 }
 
-PetscErrorCode matPROJ_ctx::InitQTKQ() {
+PetscErrorCode ProjectionMatrixCtx::initializeQTKQ() {
     PetscFunctionBegin;
     if(initQTKQ) {
       initQTKQ = false;
       PetscErrorCode ierr;
       PetscLogEventBegin(USER_EVENT_projInit,0,0,0,0);
       ierr = MatTransposeMatMult(C,C,MAT_INITIAL_MATRIX,PETSC_DEFAULT,&CTC); CHKERRQ(ierr); // need to be recalculated when C is changed
-      /*if(debug) {
+      if(debug) {
 	//MatView(CCT,PETSC_VIEWER_DRAW_WORLD);
 	int m,n;
 	MatGetSize(CCT,&m,&n);
 	PetscPrintf(PETSC_COMM_WORLD,"CCT size (%d,%d)\n",m,n);
 	//std::string wait;
 	//std::cin >> wait;
-      }*/
+      }
       #if PETSC_VERSION_GE(3,5,3) 
 	ierr = MatCreateVecs(K,&Qx,PETSC_NULL); CHKERRQ(ierr);
 	ierr = MatCreateVecs(K,PETSC_NULL,&KQx); CHKERRQ(ierr);
@@ -109,7 +114,7 @@ PetscErrorCode matPROJ_ctx::InitQTKQ() {
     PetscFunctionReturn(0);
 }
 
-PetscErrorCode matPROJ_ctx::RecalculateCTC() {
+PetscErrorCode ProjectionMatrixCtx::recalculateCTC() {
     PetscFunctionBegin;
     if(initQTKQ) PetscFunctionReturn(0);
     PetscErrorCode ierr;
@@ -117,7 +122,7 @@ PetscErrorCode matPROJ_ctx::RecalculateCTC() {
     PetscFunctionReturn(0);
 }
 
-PetscErrorCode matPROJ_ctx::DestroyQTKQ() {
+PetscErrorCode ProjectionMatrixCtx::destroyQTKQ() {
     PetscFunctionBegin;
     if(initQTKQ) PetscFunctionReturn(0);
     PetscErrorCode ierr;
@@ -134,26 +139,26 @@ PetscErrorCode matQ_mult_shell(Mat Q,Vec x,Vec f) {
   PetscErrorCode ierr;
   void *void_ctx;
   ierr = MatShellGetContext(Q,&void_ctx); CHKERRQ(ierr);
-  matPROJ_ctx *ctx = (matPROJ_ctx*)void_ctx;
+  ProjectionMatrixCtx *ctx = (ProjectionMatrixCtx*)void_ctx;
   PetscLogEventBegin(ctx->USER_EVENT_projQ,0,0,0,0);
-  ierr = ctx->InitQorP(x); CHKERRQ(ierr);
+  ierr = ctx->initializeQorP(x); CHKERRQ(ierr);
   ierr = VecCopy(x,f); CHKERRQ(ierr);
-  ierr = VecScatterBegin(ctx->scatter,x,ctx->_x_,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecScatterEnd(ctx->scatter,x,ctx->_x_,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  //ierr = VecView(ctx->_x_,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-  if(ctx->debug) {
-    ierr = VecScatterBegin(ctx->scatter,ctx->_x_,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = VecScatterEnd(ctx->scatter,ctx->_x_,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = VecScatterBegin(ctx->sCatter,x,ctx->X,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecScatterEnd(ctx->sCatter,x,ctx->X,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  //ierr = VecView(ctx->X,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+  if(debug) {
+    ierr = VecScatterBegin(ctx->sCatter,ctx->X,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = VecScatterEnd(ctx->sCatter,ctx->X,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     PetscBool  flg;
     ierr = VecEqual(x,f,&flg); CHKERRQ(ierr);
     if(flg ==  PETSC_FALSE) SETERRQ(PETSC_COMM_SELF,1,"scatter is not working");
   }
-  ierr = MatMult(ctx->C,ctx->_x_,ctx->Cx);  CHKERRQ(ierr);
-  ierr = KSPSolve(ctx->ksp,ctx->Cx,ctx->CCTm1_Cx); CHKERRQ(ierr);
+  ierr = MatMult(ctx->C,ctx->X,ctx->Cx);  CHKERRQ(ierr);
+  ierr = KSPSolve(ctx->kSP,ctx->Cx,ctx->CCTm1_Cx); CHKERRQ(ierr);
   ierr = MatMult(ctx->CT,ctx->CCTm1_Cx,ctx->CT_CCTm1_Cx);  CHKERRQ(ierr);
   ierr = VecScale(ctx->CT_CCTm1_Cx,-1); CHKERRQ(ierr);
-  ierr = VecScatterBegin(ctx->scatter,ctx->CT_CCTm1_Cx,f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-  ierr = VecScatterEnd(ctx->scatter,ctx->CT_CCTm1_Cx,f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = VecScatterBegin(ctx->sCatter,ctx->CT_CCTm1_Cx,f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = VecScatterEnd(ctx->sCatter,ctx->CT_CCTm1_Cx,f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   PetscLogEventEnd(ctx->USER_EVENT_projQ,0,0,0,0);
   PetscFunctionReturn(0);
 }
@@ -163,19 +168,19 @@ PetscErrorCode matP_mult_shell(Mat P,Vec x,Vec f) {
   PetscErrorCode ierr;
   void *void_ctx;
   ierr = MatShellGetContext(P,&void_ctx); CHKERRQ(ierr);
-  matPROJ_ctx *ctx = (matPROJ_ctx*)void_ctx;
+  ProjectionMatrixCtx *ctx = (ProjectionMatrixCtx*)void_ctx;
   PetscLogEventBegin(ctx->USER_EVENT_projP,0,0,0,0);
-  ierr = ctx->InitQorP(x); CHKERRQ(ierr);
-  ierr = VecScatterBegin(ctx->scatter,x,ctx->_x_,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecScatterEnd(ctx->scatter,x,ctx->_x_,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = MatMult(ctx->C,ctx->_x_,ctx->Cx);  CHKERRQ(ierr);
-  ierr = KSPSolve(ctx->ksp,ctx->Cx,ctx->CCTm1_Cx); CHKERRQ(ierr);
+  ierr = ctx->initializeQorP(x); CHKERRQ(ierr);
+  ierr = VecScatterBegin(ctx->sCatter,x,ctx->X,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecScatterEnd(ctx->sCatter,x,ctx->X,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = MatMult(ctx->C,ctx->X,ctx->Cx);  CHKERRQ(ierr);
+  ierr = KSPSolve(ctx->kSP,ctx->Cx,ctx->CCTm1_Cx); CHKERRQ(ierr);
   ierr = MatMult(ctx->CT,ctx->CCTm1_Cx,ctx->CT_CCTm1_Cx);  CHKERRQ(ierr);
   ierr = VecZeroEntries(f); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecScatterBegin(ctx->scatter,ctx->CT_CCTm1_Cx,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-  ierr = VecScatterEnd(ctx->scatter,ctx->CT_CCTm1_Cx,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = VecScatterBegin(ctx->sCatter,ctx->CT_CCTm1_Cx,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = VecScatterEnd(ctx->sCatter,ctx->CT_CCTm1_Cx,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   PetscLogEventEnd(ctx->USER_EVENT_projP,0,0,0,0);
   PetscFunctionReturn(0);
 }
@@ -185,16 +190,16 @@ PetscErrorCode matR_mult_shell(Mat R,Vec x,Vec f) {
   PetscErrorCode ierr;
   void *void_ctx;
   ierr = MatShellGetContext(R,&void_ctx); CHKERRQ(ierr);
-  matPROJ_ctx *ctx = (matPROJ_ctx*)void_ctx;
+  ProjectionMatrixCtx *ctx = (ProjectionMatrixCtx*)void_ctx;
   PetscLogEventBegin(ctx->USER_EVENT_projR,0,0,0,0);
-  if(ctx->initQorP) SETERRQ(PETSC_COMM_SELF,1,"you have to call first InitQorP or use Q matrix");
-  ierr = KSPSolve(ctx->ksp,x,ctx->CCTm1_Cx); CHKERRQ(ierr);
+  if(ctx->initQorP) SETERRQ(PETSC_COMM_SELF,1,"you have to call first initQorP or use Q matrix");
+  ierr = KSPSolve(ctx->kSP,x,ctx->CCTm1_Cx); CHKERRQ(ierr);
   ierr = MatMult(ctx->CT,ctx->CCTm1_Cx,ctx->CT_CCTm1_Cx);  CHKERRQ(ierr);
   ierr = VecZeroEntries(f); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecScatterBegin(ctx->scatter,ctx->CT_CCTm1_Cx,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-  ierr = VecScatterEnd(ctx->scatter,ctx->CT_CCTm1_Cx,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = VecScatterBegin(ctx->sCatter,ctx->CT_CCTm1_Cx,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = VecScatterEnd(ctx->sCatter,ctx->CT_CCTm1_Cx,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   PetscLogEventEnd(ctx->USER_EVENT_projR,0,0,0,0);
   PetscFunctionReturn(0);
 }
@@ -204,13 +209,13 @@ PetscErrorCode matRT_mult_shell(Mat RT,Vec x,Vec f) {
   PetscErrorCode ierr;
   void *void_ctx;
   ierr = MatShellGetContext(RT,&void_ctx); CHKERRQ(ierr);
-  matPROJ_ctx *ctx = (matPROJ_ctx*)void_ctx;
+  ProjectionMatrixCtx *ctx = (ProjectionMatrixCtx*)void_ctx;
   PetscLogEventBegin(ctx->USER_EVENT_projRT,0,0,0,0);
-  if(ctx->initQorP) SETERRQ(PETSC_COMM_SELF,1,"you have to call first InitQorP or use Q matrix");
-  ierr = VecScatterBegin(ctx->scatter,x,ctx->_x_,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecScatterEnd(ctx->scatter,x,ctx->_x_,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = MatMult(ctx->C,ctx->_x_,ctx->Cx);  CHKERRQ(ierr);
-  ierr = KSPSolve(ctx->ksp,ctx->Cx,f); CHKERRQ(ierr);
+  if(ctx->initQorP) SETERRQ(PETSC_COMM_SELF,1,"you have to call first initQorP or use Q matrix");
+  ierr = VecScatterBegin(ctx->sCatter,x,ctx->X,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecScatterEnd(ctx->sCatter,x,ctx->X,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = MatMult(ctx->C,ctx->X,ctx->Cx);  CHKERRQ(ierr);
+  ierr = KSPSolve(ctx->kSP,ctx->Cx,f); CHKERRQ(ierr);
   PetscLogEventEnd(ctx->USER_EVENT_projRT,0,0,0,0);
   PetscFunctionReturn(0);
 }
@@ -220,7 +225,7 @@ PetscErrorCode matCTC_QTKQ_mult_shell(Mat CTC_QTKQ,Vec x,Vec f) {
   PetscErrorCode ierr;
   void *void_ctx;
   ierr = MatShellGetContext(CTC_QTKQ,&void_ctx); CHKERRQ(ierr);
-  matPROJ_ctx *ctx = (matPROJ_ctx*)void_ctx;
+  ProjectionMatrixCtx *ctx = (ProjectionMatrixCtx*)void_ctx;
   PetscLogEventBegin(ctx->USER_EVENT_projCTC_QTKQ,0,0,0,0);
   Mat Q;
   int M,N,m,n;
@@ -228,15 +233,15 @@ PetscErrorCode matCTC_QTKQ_mult_shell(Mat CTC_QTKQ,Vec x,Vec f) {
   ierr = MatGetLocalSize(ctx->K,&m,&n); CHKERRQ(ierr);
   ierr = MatCreateShell(PETSC_COMM_WORLD,m,n,M,N,ctx,&Q); CHKERRQ(ierr); 
   ierr = MatShellSetOperation(Q,MATOP_MULT,(void(*)(void))matQ_mult_shell); CHKERRQ(ierr);
-  ierr = ctx->InitQTKQ(); CHKERRQ(ierr);
+  ierr = ctx->initializeQTKQ(); CHKERRQ(ierr);
   ierr = MatMult(Q,x,ctx->Qx); CHKERRQ(ierr);
   ierr = MatMult(ctx->K,ctx->Qx,ctx->KQx); CHKERRQ(ierr);
   ierr = MatMult(Q,ctx->KQx,f); CHKERRQ(ierr);
-  ierr = VecScatterBegin(ctx->scatter,x,ctx->_x_,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecScatterEnd(ctx->scatter,x,ctx->_x_,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = MatMult(ctx->CTC,ctx->_x_,ctx->CTCx); CHKERRQ(ierr);
-  ierr = VecScatterBegin(ctx->scatter,ctx->CTCx,f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-  ierr = VecScatterEnd(ctx->scatter,ctx->CTCx,f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = VecScatterBegin(ctx->sCatter,x,ctx->X,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecScatterEnd(ctx->sCatter,x,ctx->X,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = MatMult(ctx->CTC,ctx->X,ctx->CTCx); CHKERRQ(ierr);
+  ierr = VecScatterBegin(ctx->sCatter,ctx->CTCx,f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = VecScatterEnd(ctx->sCatter,ctx->CTCx,f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = MatDestroy(&Q); CHKERRQ(ierr);
   PetscLogEventEnd(ctx->USER_EVENT_projCTC_QTKQ,0,0,0,0);
   PetscFunctionReturn(0);
