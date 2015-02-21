@@ -31,8 +31,7 @@ using namespace MoFEM;
 #include<moab/Skinner.hpp>
 namespace MoFEM {
 
-//ubals::vector<double> analyticalFunction(
-//double x,double y,double z) = 0;
+//calculate the norm of error for scalar field
 	
 /** \brief finite element to appeximate analytical solution on surface
   */
@@ -93,9 +92,7 @@ struct NormElement {
 	};
 	
 	inline ublas::matrix_row<ublas::matrix<double> > getGradField2AtGaussPts(const int gg) {
-		return ublas::matrix_row<ublas::matrix<double> >(gradFieldValue2AtGaussPts,gg);
-		
-		//Range tEts; ///< constatins elements in block set
+		return ublas::matrix_row<ublas::matrix<double> >(gradFieldValue2AtGaussPts,gg);		
 	};
 	
 	}
@@ -110,7 +107,7 @@ struct NormElement {
 	struct OpGetGradField1AtGaussPts: public TetElementForcesAndSourcesCore::UserDataOperator {
 	
 		CommonData &commonData;
-		OpGetGradAtGaussPts(const string field_name,CommonData &common_data):
+		OpGetGradField1AtGaussPts(const string field_name,CommonData &common_data):
 			TetElementForcesAndSourcesCore::UserDataOperator(field_name),
 			commonData(common_data) {}
 	
@@ -152,7 +149,7 @@ struct NormElement {
 	struct OpGetGradField2AtGaussPts: public TetElementForcesAndSourcesCore::UserDataOperator {
 		
 		CommonData &commonData;
-		OpGetGradAtGaussPts(const string field_name,CommonData &common_data):
+		OpGetGradField2AtGaussPts(const string field_name,CommonData &common_data):
 			TetElementForcesAndSourcesCore::UserDataOperator(field_name),
 			commonData(common_data) {}
 		
@@ -279,28 +276,24 @@ struct NormElement {
 		CommonData &commonData;
 		Vec F;
 		bool usel2;
-        ublas::vector<double> fieldValue1AtGaussPts;
-		ublas::vector<double> fieldValue2AtGaussPts;
+        //ublas::vector<double> fieldValue1AtGaussPts;
+		//ublas::vector<double> fieldValue2AtGaussPts;
 		//ublas::<double> gradFieldValue1AtGaussPts;
 		//ublas::matrix<double> gradFieldValue2AtGaussPts;
 		ublas::vector<double> Nf;
 		
 		bool useTsF;
 		OpRhsError(const string re_field_name,const string im_field_name,
-				   CommonData &common_data,bool useL2,ublas::vector<double> field_Value1AtGaussPts,
-				   ublas::vector<double> gradField_Value1AtGaussPts;
+				   CommonData &common_data,bool useL2
 				   ): 
 			OP::UserDataOperator(re_field_name,im_field_name),
-			commonData(common_data),usel2(useL2),fieldValue1AtGauss(field_Value1AtGaussPts),
-			gradFieldValue1AtGaussPts(gradField_Value1AtGaussPts),useTsF(true) {}
+			commonData(common_data),usel2(useL2),useTsF(true) {}
 		
 		OpRhsError(const string re_field_name,const string im_field_name,
-			  Vec _F,CommonData &common_data,bool useL2,ublas::vector<double> field_Value2AtGaussPts,
-			  ublas::vector<double> gradField_Value2AtGaussPts;
+			  Vec _F,CommonData &common_data,bool useL2
 			  ): 
 			OP::UserDataOperator(re_field_name,im_field_name),
-			commonData(common_data),usel2(useL2),fieldValue2AtGauss(field_Value2AtGaussPts),
-			radFieldValue2AtGaussPts(gradField_Value2AtGaussPts),useTsF(false),F(_F) {}
+			commonData(common_data),usel2(useL2),useTsF(false),F(_F) {}
 		
 		ublas::vector<double> eRror;
 
@@ -343,10 +336,10 @@ struct NormElement {
 					}
 						
 					
-					ublas::vector<double> uAnaly = fieldValue1AtGaussPts;
-					ublas::vector<double> uNumer = fieldValue2AtGaussPts;
+					ublas::vector<double> uAnaly = commonData.fieldValue1AtGaussPts;
+					ublas::vector<double> uNumer = commonData.fieldValue2AtGaussPts;
 					ublas::matrix_row<double> uAnalyGrad = commonData.getField1GradAtGaussPts(gg)
-					ublas::matrix<double> uNumerGrad = gradFieldValue2AtGaussPts;
+					ublas::matrix_row<double> uNumerGrad = commonData.getField2GradAtGaussPts(gg)
                     
 					double sqError;
 					if(usel2) {
@@ -502,9 +495,9 @@ struct NormElement {
 struct OpTetRhs: public OpRhsError<TetElementForcesAndSourcesCore> {
     OpTetRhs(const string re_field_name,const string im_field_name,
 		Vec _F,CommonData &common_data,   
-		bool useL2,ublas::vector<double> field_Value1AtGaussPts): 
+		bool useL2): 
 		OpRhsError<TetElementForcesAndSourcesCore>(re_field_name,im_field_name,
-				_F,common_data,useL2,field_Value1AtGaussPts) {}
+				_F,common_data,useL2) {}
 
 };
 
@@ -514,9 +507,9 @@ struct OpTetRhs: public OpRhsError<TetElementForcesAndSourcesCore> {
 struct OpTriRhs: public OpRhsError<TriElementForcesAndSurcesCore> {
     OpTriRhs(const string re_field_name,const string im_field_name,
 		Vec _F,CommonData &common_data,   
-		bool useL2,ublas::vector<double> field_Value1AtGaussPts): : 
+		bool useL2): 
 		OpRhsError<TriElementForcesAndSurcesCore>(re_field_name,im_field_name,
-				_F,common_data,useL2,field_Value1AtGaussPts) {}
+				_F,common_data,useL2) {}
 
 };
 
@@ -524,8 +517,8 @@ struct OpTriRhs: public OpRhsError<TriElementForcesAndSurcesCore> {
   Add the L2norm element with same problem and same field as the original problem
  
  */
-PetscErrorCode addL2NormElements(
-	const string problem_name,string fe,const string re_field_name,const string im_field_name,const string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
+PetscErrorCode addNormElements(
+	const string problem_name,string fe,const string re_field_name,const string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
 	PetscFunctionBegin;
 	PetscErrorCode ierr;
 	ErrorCode rval;
@@ -534,9 +527,6 @@ PetscErrorCode addL2NormElements(
     ierr = mfield.modify_finite_element_add_field_col(fe,re_field_name); CHKERRQ(ierr);
     ierr = mfield.modify_finite_element_add_field_data(fe,re_field_name); CHKERRQ(ierr);
 	
-	ierr = mfield.modify_finite_element_add_field_row(fe,im_field_name); CHKERRQ(ierr);
-    ierr = mfield.modify_finite_element_add_field_col(fe,im_field_name); CHKERRQ(ierr);
-    ierr = mfield.modify_finite_element_add_field_data(fe,im_field_name); CHKERRQ(ierr);
 	
 	if(m_field.check_field(nodals_positions)) {
 		ierr = m_field.modify_finite_element_add_field_data(fe,nodals_positions); CHKERRQ(ierr);
@@ -545,7 +535,7 @@ PetscErrorCode addL2NormElements(
 	
 	
 	Range tEts;
-	for(_IT_CUBITMESHSETS_BY_NAME_FOR_LOOP_(mField,"L2NROM_ERROR",it)) {
+	for(_IT_CUBITMESHSETS_BY_NAME_FOR_LOOP_(mField,"NROM_FE",it)) {
 		rval = moab.get_entities_by_type(it->get_meshset(),MBTET,tEts,true); CHKERR_PETSC(rval);
 		ierr = m_field.add_ents_to_finite_element_by_TETs(tEts,fe); CHKERRQ(ierr);
 	}
@@ -554,54 +544,28 @@ PetscErrorCode addL2NormElements(
     PetscFunctionReturn(0);
 	
 	}
-	
-	
-	//PetscErrorCode setHelmholtzFiniteElementRhsOperators_rere(string re_field_name,string im_field_name,Vec &F) {
-	//	PetscFunctionBegin;
-	//	map<int,BlockData>::iterator sit = setOfBlocks.begin();
-	//	feRhs.get_op_to_do_Rhs().push_back(new OpGetGradAtGaussPts(re_field_name,commonData));
-	//	feRhs.get_op_to_do_Rhs().push_back(new OpGetTetPressureAtGaussPts(re_field_name,commonData));
-	//	for(;sit!=setOfBlocks.end();sit++) {
-	//		//add finite element
-	//		feRhs.get_op_to_do_Rhs().push_back(new OpHelmholtzRhs(re_field_name,re_field_name,F,sit->second,commonData));
-	//	}
-	//	PetscFunctionReturn(0);
-	//}
-	
-   	//PetscErrorCode setHelmholtzFiniteElementRhsOperators_imim(string re_field_name,string im_field_name,Vec &F) {
-	//	PetscFunctionBegin;
-	//	map<int,BlockData>::iterator sit = setOfBlocks.begin();
-	//	feRhs.get_op_to_do_Rhs().push_back(new OpGetGradAtGaussPts(im_field_name,commonData));
-	//	feRhs.get_op_to_do_Rhs().push_back(new OpGetTetPressureAtGaussPts(im_field_name,commonData)); //get the pressure at gaussian points
-	//	for(;sit!=setOfBlocks.end();sit++) {
-	//		//add finite element
-	//		feRhs.get_op_to_do_Rhs().push_back(new OpHelmholtzRhs(im_field_name,im_field_name,F,sit->second,commonData));
-	//	}
-	//	PetscFunctionReturn(0);
-	//}
-	
-	
+
+Range tEts;
 
 
-Range tRis;
-
-
-PetscErrorCode setL2NormRelativeError(FieldInterface &m_field,string re_field_name,string im_field_name,Vec &F,
+PetscErrorCode setL2NormRelativeError(FieldInterface &m_field,string norm_field_name,string re_field_name,string im_field_name,Vec &F,bool usel2
     string nodals_positions = "MESH_NODE_POSITIONS") {
     PetscFunctionBegin;
 	ublas::vector<double> field_Value1AtGaussPts;
+	ublas::vector<double> field_Value2AtGaussPts;
+	bool usel2;
 	map<int,CommonData>::iterator sit = setOfCommons.begin();
     if(m_field.check_field(nodals_positions)) {
-		
-		feRhs.get_op_to_do_Rhs().push_back(new OpGetTetField1AtGaussPts(re_field_name,commonData));
-		
-		
-		feRhs.get_op_to_do_Rhs().push_back(new OpGetGradAtGaussPts(re_field_name,commonData));
-		feRhs.get_op_to_do_Rhs().push_back(new OpGetTetPressureAtGaussPts(re_field_name,commonData));
-		feRhs.get_op_to_do_Rhs().push_back(new OpHoCoord(nodals_positions,hoCoords));
+		//Calculate field values at gaussian points for field1 and field2; 
+		feRhs.get_op_to_do_Rhs().push_back(new OpGetTetField1AtGaussPts(field1_name,commonData));
+		feRhs.get_op_to_do_Rhs().push_back(new OpGetTetField2AtGaussPts(field2_name,commonData));
+
+		feRhs.get_op_to_do_Rhs().push_back(new OpGetField1GradAtGaussPts(field1_name,commonData));
+		feRhs.get_op_to_do_Rhs().push_back(new OpGetField2GradAtGaussPts(field2_name,commonData));
+		//feRhs.get_op_to_do_Rhs().push_back(new OpHoCoord(nodals_positions,hoCoords));
     }
-    feRhs.get_op_to_do_Rhs().push_back(new OpTetRhs(re_field_name,im_field_name,hoCoords,F,commonData,fun));
-    //approxField.getLoopFeApprox().get_op_to_do_Lhs().push_back(new ApproxField::OpLhs(re_field_name,approxField.hoCoords));
+	for(;sit!=setOfCommons.end();sit++) {
+    feRhs.get_op_to_do_Rhs().push_back(new OpTetRhs(norm_field_name,norm_field_name,F,sit->second,usel2));
 	PetscFunctionReturn(0);
 }
 
