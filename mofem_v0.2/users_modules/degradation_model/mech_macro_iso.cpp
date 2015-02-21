@@ -446,6 +446,14 @@ int main(int argc, char *argv[]) {
         
         //Save data on mesh
         ierr = m_field_Macro.set_local_VecCreateGhost("ELASTIC_PROBLEM_MACRO",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+        
+        //m_field.list_dofs_by_field_name("Wt");
+        
+        if(pcomm->rank()==0) {
+          rval = moab_Macro.write_file("FE2_solution_0.h5m"); CHKERR_PETSC(rval);
+        }
+
+        
         ierr = m_field_Macro.loop_finite_elements("ELASTIC_PROBLEM_MACRO","ELASTIC_FE_MACRO",post_proc); CHKERRQ(ierr);
         ostringstream o1;
         o1 << "FE2_out_" << sit->step_number << ".h5m";

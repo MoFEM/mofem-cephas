@@ -123,5 +123,23 @@ target_link_libraries(mech_macro_trans_iso
   mofem_third_party
   mofem_cblas
   ${MoFEM_PROJECT_LIBS})
+  
+  
+  
+add_executable(Strain_calculation ${UM_SOURCE_DIR}/degradation_model/Strain_calculation.cpp)
+target_link_libraries(Strain_calculation
+  mofem_finite_element_library
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  users_modules_obsolete
+  user_modules_homogenisation
+  mofem_approx
+  mofem_third_party
+  mofem_cblas
+  ${MoFEM_PROJECT_LIBS})
+
+
 
 
