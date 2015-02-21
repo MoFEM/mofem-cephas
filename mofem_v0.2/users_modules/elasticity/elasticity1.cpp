@@ -101,7 +101,7 @@ int main(int argc, char *argv[]) {
   // stl::bitset see for more details
   BitRefLevel bit_level0;
   bit_level0.set(0);
-  ierr = m_field.seed_ref_level_3D(0,bit_level0,PETSC_COMM_WORLD); CHKERRQ(ierr);
+  ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
   Range meshset_level0;
   ierr = m_field.get_entities_by_ref_level(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
   PetscSynchronizedPrintf(PETSC_COMM_WORLD,"meshset_level0 %d\n",meshset_level0.size());
@@ -134,8 +134,8 @@ int main(int argc, char *argv[]) {
   //Declare problem
   
   //add entitities (by tets) to the field
-  ierr = m_field.add_ents_to_field_by_TETs(0,"DISPLACEMENT",PETSC_COMM_WORLD,2); CHKERRQ(ierr);
-  ierr = m_field.add_ents_to_field_by_TETs(0,"MESH_NODE_POSITIONS",PETSC_COMM_WORLD,2); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_TETs(0,"DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_TETs(0,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
   
   //add finite elements entities
   ierr = m_field.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"ELASTIC",MBTET); CHKERRQ(ierr);
@@ -151,9 +151,9 @@ int main(int argc, char *argv[]) {
   ierr = m_field.set_field_order(0,MBEDGE,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
   
-  ierr = MetaNeummanForces::addNeumannBCElements(m_field,"ELASTIC_PROB","DISPLACEMENT"); CHKERRQ(ierr);
-  ierr = MetaNodalForces::addNodalForceElement(m_field,"ELASTIC_PROB","DISPLACEMENT"); CHKERRQ(ierr);
-  
+  ierr = MetaNeummanForces::addNeumannBCElements(m_field,"DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = MetaNodalForces::addNodalForceElement(m_field,"DISPLACEMENT"); CHKERRQ(ierr);
+
   ierr = m_field.add_finite_element("BODY_FORCE"); CHKERRQ(ierr);
   ierr = m_field.modify_finite_element_add_field_row("BODY_FORCE","DISPLACEMENT"); CHKERRQ(ierr);
   ierr = m_field.modify_finite_element_add_field_col("BODY_FORCE","DISPLACEMENT"); CHKERRQ(ierr);
@@ -190,7 +190,7 @@ int main(int argc, char *argv[]) {
   //build problem
   //ierr = m_field.build_problems(); CHKERRQ(ierr);
   if(is_partitioned) {
-    ierr = m_field.build_partitioned_problems(PETSC_COMM_WORLD,1); CHKERRQ(ierr);
+    ierr = m_field.build_partitioned_problems(1); CHKERRQ(ierr);
     ierr = m_field.partition_finite_elements("ELASTIC_PROB",true,0,pcomm->size(),1); CHKERRQ(ierr);
   } else {
     ierr = m_field.build_problems(); CHKERRQ(ierr);
@@ -332,31 +332,31 @@ int main(int argc, char *argv[]) {
   ierr = m_field.set_local_VecCreateGhost("ELASTIC_PROB",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
   
-  
-  
-  //ptQuery is local coordinates of each element
-  ublas::matrix<double> ptQuery;
-  ptQuery.resize(3,2);
-  
-  ptQuery(0,0)=0.5;
-  ptQuery(1,0)=0.5;
-  ptQuery(2,0)=0.5;
-  
-  ptQuery(0,1)=0.2;
-  ptQuery(1,1)=0.2;
-  ptQuery(2,1)=0.2;
-
-  ElasticFEMethod_Stress my_fe_stress(m_field,Aij,D,F,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio),ptQuery,"DISPLACEMENT");
-  ierr = m_field.loop_finite_elements("ELASTIC_PROB","ELASTIC",my_fe_stress);  CHKERRQ(ierr);
-
-  map<EntityHandle, ublas::vector<ublas::vector<double> > >::iterator mit_stress = my_fe_stress.commonData.StressMap.begin();
-  for(;mit_stress!=my_fe_stress.commonData.StressMap.end();mit_stress++) {
-    cerr << mit_stress->first << " " << mit_stress->second << endl;
-  }
-  
-
-  
-  
+//
+//  
+//  //ptQuery is local coordinates of each element
+//  ublas::matrix<double> ptQuery;
+//  ptQuery.resize(3,2);
+//  
+//  ptQuery(0,0)=0.5;
+//  ptQuery(1,0)=0.5;
+//  ptQuery(2,0)=0.5;
+//  
+//  ptQuery(0,1)=0.2;
+//  ptQuery(1,1)=0.2;
+//  ptQuery(2,1)=0.2;
+//
+//  ElasticFEMethod_Stress my_fe_stress(m_field,Aij,D,F,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio),ptQuery,"DISPLACEMENT");
+//  ierr = m_field.loop_finite_elements("ELASTIC_PROB","ELASTIC",my_fe_stress);  CHKERRQ(ierr);
+//
+//  map<EntityHandle, ublas::vector<ublas::vector<double> > >::iterator mit_stress = my_fe_stress.commonData.StressMap.begin();
+//  for(;mit_stress!=my_fe_stress.commonData.StressMap.end();mit_stress++) {
+//    cerr << mit_stress->first << " " << mit_stress->second << endl;
+//  }
+//  
+//
+//  
+//  
 ////  PostPocOnRefinedMesh1 post_proc(m_field, ptQuery);
 ////  ierr = post_proc.generateRefereneElemenMesh(); CHKERRQ(ierr);
 ////  ierr = post_proc.addFieldValuesPostProc("DISPLACEMENT"); CHKERRQ(ierr);
@@ -378,11 +378,11 @@ int main(int argc, char *argv[]) {
 //  ierr = m_field.loop_finite_elements("ELASTIC_PROB","ELASTIC",post_proc); CHKERRQ(ierr);
 //  rval = post_proc.postProcMesh.write_file("out.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
 //  
-  //Destroy matrices
-  ierr = VecDestroy(&F); CHKERRQ(ierr);
-  ierr = VecDestroy(&D); CHKERRQ(ierr);
-  ierr = MatDestroy(&Aij); CHKERRQ(ierr);
-  ierr = KSPDestroy(&solver); CHKERRQ(ierr);
+//  //Destroy matrices
+//  ierr = VecDestroy(&F); CHKERRQ(ierr);
+//  ierr = VecDestroy(&D); CHKERRQ(ierr);
+//  ierr = MatDestroy(&Aij); CHKERRQ(ierr);
+//  ierr = KSPDestroy(&solver); CHKERRQ(ierr);
   
   PetscFinalize();
   

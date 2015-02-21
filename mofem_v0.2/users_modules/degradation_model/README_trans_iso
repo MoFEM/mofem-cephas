@@ -10,51 +10,55 @@ Steps
                                                                                   and  RVE-mesh  = RVE_Cube_mech.cub
 
 
-Example computational homogenisation for Thermal and moisture transport
+Example computational homogenisation for Thermal and moisture transport (Textile RVE)
 ============================================================
-========== With textile RVE
-make Thermal_Disp_MRhs && mpirun -np 1 ./Thermal_Disp_MRhs -my_file ../users_modules/degradation_model/meshes/Using_Textile_RVE/Textile_RVE_Thermal.cub  -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_output_file_Dmat thermal_Dmat.out -my_order 1
+make Thermal_Disp_MRhs && mpirun -np 1 ./Thermal_Disp_MRhs -my_file /mnt/home/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/Using_Textile_RVE/Textile_RVE_Thermal.cub  -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_output_file_Dmat thermal_Dmat.out -my_order 1
 
 
-========== With textile RVE
-make MoistureTrans_Disp_MRhs_with_incl && mpirun -np 1 ./MoistureTrans_Disp_MRhs_with_incl -my_file ../users_modules/degradation_model/meshes/Using_Textile_RVE/Textile_RVE_moisture.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_output_file_Dmat diffusion_Dmat.out -my_order 1
+make MoistureTrans_Disp_MRhs_with_incl && mpirun -np 1 ./MoistureTrans_Disp_MRhs_with_incl -my_file /mnt/home/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/Using_Textile_RVE/Textile_RVE_moisture.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_output_file_Dmat diffusion_Dmat.out -my_order 1
 
 
-Unsteady thermal macro problem (run for 110 days with step of 1 day)
+Unsteady thermal macro problem (run for 2000 days) (time here in seconds)
 ============================================================
-make thermal_unsteady_inputDmat && mpirun -np 8 ./thermal_unsteady_inputDmat \
--my_file ../users_modules/degradation_model/meshes/Using_Textile_RVE/Macro_Plate_with_hole.cub \
+make thermal_unsteady_inputDmat && mpirun -np 1 ./thermal_unsteady_inputDmat \
+-my_file /mnt/home/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/Using_Textile_RVE/Macro_Plate_with_hole.cub \
   -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor \
   -snes_type newtonls -snes_linesearch_type basic -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 -snes_monitor \
   -ts_monitor -ts_type beuler -ts_dt 864000 -ts_final_time 86400000 -snes_lag_jacobian -2 \
-  -my_order 1 -my_max_post_proc_ref_level 1
+  -my_order 1 -my_max_post_proc_ref_level 0
 
 
 Unsteady moisture macro problem
 ============================================================
-make diffusion_unsteady_inputDmat && mpirun -np 8 ./diffusion_unsteady_inputDmat \
+make diffusion_unsteady_inputDmat && mpirun -np 1 ./diffusion_unsteady_inputDmat \
 -my_file solution.h5m \
   -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor \
   -snes_type newtonls -snes_linesearch_type basic -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 -snes_monitor \
   -ts_monitor -ts_type beuler -ts_dt 864000 -ts_final_time 86400000 -snes_lag_jacobian -2 \
-  -my_order 1 -my_max_post_proc_ref_level 1
+  -my_order 1 -my_max_post_proc_ref_level 0
 
 
-calculate_wt used to calculate degredaiton (1-wt)
+
+
+calculate_wt used to calculate degredaiton (1-wt) (time here in days)
 ============================================================
-make wt_unsteady_macro && mpirun -np 8 ./wt_unsteady_macro \
+make wt_unsteady_macro && mpirun -np 1 ./wt_unsteady_macro \
 -my_file solution_mois.h5m \
   -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor \
   -snes_type newtonls -snes_linesearch_type basic -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 -snes_monitor \
   -ts_monitor -ts_type beuler -ts_dt 10 -ts_final_time 1000 -snes_lag_jacobian -2 \
-  -my_order 1 -my_max_post_proc_ref_level 1 \
+  -my_order 1 -my_max_post_proc_ref_level 0 \
   -my_saturation_conc 1
 
 
 Mechanical problem
 ============================================================
-make mech_macro && mpirun -np 8 ./mech_macro \
--my_file_Macro solution_wt.h5m -my_file_RVE ../users_modules/degradation_model/meshes/Using_Textile_RVE/Textile_RVE_Mechanical.cub\
+==== Potential flow for fibre directions 
+mpirun -np 1 ../homogenisation/TransIso_Potential_Flow_NoInt -my_file /mnt/home/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/trans_iso/Cube_RVE_with_reinforcement.cub -ksp_type fgmres -ksp_gmres_restart 1000 -pc_type asm -sub_pc_type lu -ksp_monitor -my_order 1
+
+
+make mech_macro_trans_iso && mpirun -np 1 ./mech_macro_trans_iso \
+-my_file_Macro solution_wt.h5m -my_file_RVE solution_RVE.h5m\
   -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist \
   -my_max_post_proc_ref_level 0 -my_order 1 \
 
@@ -67,7 +71,7 @@ One file conversion
 All files conversion using script
 ./do_vtk1.sh FE2_out_*.h5m
 
-cp *.vtk /mnt/home/Desktop/aaaa/
+cp *.vtk /mnt/home/Desktop/results/
 
 
 
