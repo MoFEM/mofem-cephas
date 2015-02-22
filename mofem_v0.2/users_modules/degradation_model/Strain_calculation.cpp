@@ -138,8 +138,8 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
-//  ierr = m_field.add_ents_to_finite_element_by_TETs(TetsInBlock_Ele_Strain_RVE,"ELASTIC"); CHKERRQ(ierr);
-  ierr = m_field.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"ELASTIC",MBTET); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_finite_element_by_TETs(TetsInBlock_Ele_Strain_RVE,"ELASTIC"); CHKERRQ(ierr);
+//  ierr = m_field.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"ELASTIC",MBTET); CHKERRQ(ierr);
 
 //  //set app. order
 //  //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
