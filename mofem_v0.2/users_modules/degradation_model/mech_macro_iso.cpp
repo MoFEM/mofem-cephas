@@ -360,7 +360,7 @@ int main(int argc, char *argv[]) {
   Vec Fint;
   ierr = VecDuplicate(F,&Fint); CHKERRQ(ierr);
   
-
+  
   PostPocOnRefinedMesh post_proc(m_field_Macro);
   ierr = post_proc.generateRefereneElemenMesh(); CHKERRQ(ierr);
   ierr = post_proc.addFieldValuesPostProc("DISP_MACRO"); CHKERRQ(ierr);
@@ -444,17 +444,15 @@ int main(int argc, char *argv[]) {
         ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
         
         
-        ierr = VecView(D,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-
-        
         //Save data on mesh
         ierr = m_field_Macro.set_local_VecCreateGhost("ELASTIC_PROBLEM_MACRO",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+
         
         //m_field.list_dofs_by_field_name("Wt");
         
-        if(pcomm->rank()==0) {
-          rval = moab_Macro.write_file("FE2_solution_0.h5m"); CHKERR_PETSC(rval);
-        }
+        //save the solution file for subsequent strain calculation analysis
+        ierr = m_field_Macro.set_global_VecCreateGhost("ELASTIC_PROBLEM_MACRO",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+        rval = moab_Macro.write_file("FE2_solution_0.h5m"); CHKERR_PETSC(rval);
 
         
         ierr = m_field_Macro.loop_finite_elements("ELASTIC_PROBLEM_MACRO","ELASTIC_FE_MACRO",post_proc); CHKERRQ(ierr);

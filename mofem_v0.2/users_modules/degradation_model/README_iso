@@ -74,7 +74,7 @@ make Strain_calculation && mpirun -np 1 ./Strain_calculation -my_file FE2_soluti
 Conversion from .h5m to vtk
 ============================================================
 One file conversion
-/opt/petsc/arch-linux2-c-opt/bin/mbconvert FE2_out_0.h5m FE2_out_0.vtk
+/opt/petsc/arch-linux2-c-opt/bin/mbconvert out.h5m out.vtk
 
 All files conversion using script
 ./do_vtk1.sh FE2_out_*.h5m
