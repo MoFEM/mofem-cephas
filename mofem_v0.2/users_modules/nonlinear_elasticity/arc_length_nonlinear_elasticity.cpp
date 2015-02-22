@@ -361,7 +361,7 @@ int main(int argc, char *argv[]) {
   ArcLengthMatShell* mat_ctx = new ArcLengthMatShell(m_field,Aij,arc_ctx,"ELASTIC_MECHANICS");
   Mat ShellAij;
   ierr = MatCreateShell(PETSC_COMM_WORLD,m,n,M,N,(void*)mat_ctx,&ShellAij); CHKERRQ(ierr);
-  ierr = MatShellSetOperation(ShellAij,MATOP_MULT,(void(*)(void))arc_length_mult_shell); CHKERRQ(ierr);
+  ierr = MatShellSetOperation(ShellAij,MATOP_MULT,(void(*)(void))ArcLengthMatMultShellOp); CHKERRQ(ierr);
 
   ArcLengthSnesCtx snes_ctx(m_field,"ELASTIC_MECHANICS",arc_ctx);
 
@@ -550,8 +550,8 @@ int main(int argc, char *argv[]) {
   PCShellCtx* pc_ctx = new PCShellCtx(Aij,ShellAij,arc_ctx);
   ierr = PCSetType(pc,PCSHELL); CHKERRQ(ierr);
   ierr = PCShellSetContext(pc,pc_ctx); CHKERRQ(ierr);
-  ierr = PCShellSetApply(pc,pc_apply_arc_length); CHKERRQ(ierr);
-  ierr = PCShellSetSetUp(pc,pc_setup_arc_length); CHKERRQ(ierr);
+  ierr = PCShellSetApply(pc,PCApplyArcLength); CHKERRQ(ierr);
+  ierr = PCShellSetSetUp(pc,PCSetupArcLength); CHKERRQ(ierr);
 
   if(flg == PETSC_TRUE) {
     PetscReal rtol,atol,dtol;
@@ -620,10 +620,10 @@ int main(int argc, char *argv[]) {
     double x0_nrm;
     ierr = VecNorm(arc_ctx->x0,NORM_2,&x0_nrm);  CHKERRQ(ierr);
     ierr = PetscPrintf(PETSC_COMM_WORLD,"\tRead x0_nrm = %6.4e dlambda = %6.4e\n",x0_nrm,arc_ctx->dlambda);
-    ierr = arc_ctx->set_alpha_and_beta(1,0); CHKERRQ(ierr);
+    ierr = arc_ctx->setAlphaBeta(1,0); CHKERRQ(ierr);
   } else {
-    ierr = arc_ctx->set_s(step_size); CHKERRQ(ierr);
-    ierr = arc_ctx->set_alpha_and_beta(0,1); CHKERRQ(ierr);
+    ierr = arc_ctx->setS(step_size); CHKERRQ(ierr);
+    ierr = arc_ctx->setAlphaBeta(0,1); CHKERRQ(ierr);
   }
   ierr = SnesRhs(snes,D,F,&snes_ctx); CHKERRQ(ierr);
 
@@ -639,17 +639,17 @@ int main(int argc, char *argv[]) {
 
     if(step == 1) {
       ierr = PetscPrintf(PETSC_COMM_WORLD,"Load Step %D step_size = %6.4e\n",step,step_size); CHKERRQ(ierr);
-      ierr = arc_ctx->set_s(step_size); CHKERRQ(ierr);
-      ierr = arc_ctx->set_alpha_and_beta(0,1); CHKERRQ(ierr);
+      ierr = arc_ctx->setS(step_size); CHKERRQ(ierr);
+      ierr = arc_ctx->setAlphaBeta(0,1); CHKERRQ(ierr);
       ierr = VecCopy(D,arc_ctx->x0); CHKERRQ(ierr);
       double dlambda;
       ierr = arc_method.calculate_init_dlambda(&dlambda); CHKERRQ(ierr);
       ierr = arc_method.set_dlambda_to_x(D,dlambda); CHKERRQ(ierr);
     } else if(step == 2) {
-      ierr = arc_ctx->set_alpha_and_beta(1,0); CHKERRQ(ierr);
+      ierr = arc_ctx->setAlphaBeta(1,0); CHKERRQ(ierr);
       ierr = arc_method.calculate_dx_and_dlambda(D); CHKERRQ(ierr);
       step_size = sqrt(arc_method.calculate_lambda_int());
-      ierr = arc_ctx->set_s(step_size); CHKERRQ(ierr);
+      ierr = arc_ctx->setS(step_size); CHKERRQ(ierr);
       double dlambda = arc_ctx->dlambda;
       double dx_nrm;
       ierr = VecNorm(arc_ctx->dx,NORM_2,&dx_nrm);  CHKERRQ(ierr);
@@ -662,7 +662,7 @@ int main(int argc, char *argv[]) {
     } else {
       ierr = arc_method.calculate_dx_and_dlambda(D); CHKERRQ(ierr);
       step_size *= reduction;
-      ierr = arc_ctx->set_s(step_size); CHKERRQ(ierr);
+      ierr = arc_ctx->setS(step_size); CHKERRQ(ierr);
       double dlambda = reduction*arc_ctx->dlambda;
       double dx_nrm;
       ierr = VecScale(arc_ctx->dx,reduction); CHKERRQ(ierr);
@@ -690,7 +690,7 @@ int main(int argc, char *argv[]) {
       double x0_nrm;
       ierr = VecNorm(arc_ctx->x0,NORM_2,&x0_nrm);  CHKERRQ(ierr);
       ierr = PetscPrintf(PETSC_COMM_WORLD,"\tRead x0_nrm = %6.4e dlambda = %6.4e\n",x0_nrm,arc_ctx->dlambda);
-      ierr = arc_ctx->set_alpha_and_beta(1,0); CHKERRQ(ierr);
+      ierr = arc_ctx->setAlphaBeta(1,0); CHKERRQ(ierr);
 
       
       reduction = 0.1;

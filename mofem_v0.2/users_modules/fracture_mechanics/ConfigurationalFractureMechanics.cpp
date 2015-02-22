@@ -71,8 +71,6 @@ extern "C" {
 
 using namespace ObosleteUsersModules;
 
-using namespace MoFEM;
-
 //phisical_equation_volume eq_solid = hooke; /*stvenant_kirchhoff;*/
 
 struct CrackFrontData {
@@ -2564,7 +2562,7 @@ PetscErrorCode ConfigurationalFractureMechanics::fix_all_but_one(FieldInterface&
       "front node = %ld max_j = %6.4e j = %6.4e (%6.4e) g/j = %4.3f step work of fracture = %2.1g",
       mit->first,max_j,mit->second,fraction,g_j,step_work_of_fracture); CHKERRQ(ierr);
     bool freez_or_not_to_freez;
-    if( (fraction > fraction_treshold || step_work_of_fracture<0 || max_mit->second!=max_mit->second)&&(mit!=max_mit)) {
+    if( (fraction > fraction_treshold || step_work_of_fracture<0 )&&(mit!=max_mit)) {
       freez_or_not_to_freez = true;
     } else {
       freez_or_not_to_freez = false;
@@ -2814,7 +2812,7 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   MatGetLocalSize(K,&m,&n);
   Mat ShellK;
   ierr = MatCreateShell(PETSC_COMM_WORLD,m,n,M,N,(void*)&arc_mat_ctx,&ShellK); CHKERRQ(ierr);
-  ierr = MatShellSetOperation(ShellK,MATOP_MULT,(void(*)(void))arc_length_mult_shell); CHKERRQ(ierr);
+  ierr = MatShellSetOperation(ShellK,MATOP_MULT,(void(*)(void))ArcLengthMatMultShellOp); CHKERRQ(ierr);
 
   ierr = SNESSetApplicationContext(*snes,&arc_snes_ctx); CHKERRQ(ierr);
   ierr = SNESSetFunction(*snes,F,SnesRhs,&arc_snes_ctx); CHKERRQ(ierr);
@@ -2844,8 +2842,8 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   ierr = KSPGetPC(ksp,&pc); CHKERRQ(ierr);
   ierr = PCSetType(pc,PCSHELL); CHKERRQ(ierr);
   ierr = PCShellSetContext(pc,&pc_ctx); CHKERRQ(ierr);
-  ierr = PCShellSetApply(pc,pc_apply_arc_length); CHKERRQ(ierr);
-  ierr = PCShellSetSetUp(pc,pc_setup_arc_length); CHKERRQ(ierr);
+  ierr = PCShellSetApply(pc,PCApplyArcLength); CHKERRQ(ierr);
+  ierr = PCShellSetSetUp(pc,PCSetupArcLength); CHKERRQ(ierr);
 
   ierr = m_field.set_local_VecCreateGhost("COUPLED_PROBLEM",COL,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = m_field.get_problem("COUPLED_PROBLEM",&(arc_elem.problemPtr)); CHKERRQ(ierr);
@@ -2853,12 +2851,12 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   ierr = VecCopy(D,arc_ctx.x0); CHKERRQ(ierr);
   ierr = arc_elem.get_dlambda(D); CHKERRQ(ierr);
   //calculate rhs and F_lambda
-  ierr = arc_ctx.set_alpha_and_beta(0,1); CHKERRQ(ierr);
+  ierr = arc_ctx.setAlphaBeta(0,1); CHKERRQ(ierr);
   ierr = SnesRhs(*snes,D,F,&arc_snes_ctx); CHKERRQ(ierr);
   //set s
-  ierr = arc_ctx.set_alpha_and_beta(1,0); CHKERRQ(ierr);
+  ierr = arc_ctx.setAlphaBeta(1,0); CHKERRQ(ierr);
   ierr = arc_elem.calculate_lambda_int(); CHKERRQ(ierr);
-  ierr = arc_ctx.set_s(arc_elem.lambda_int+da/arc_elem.aRea0); CHKERRQ(ierr);
+  ierr = arc_ctx.setS(arc_elem.lambda_int+da/arc_elem.aRea0); CHKERRQ(ierr);
 
   SNESLineSearch linesearch;
   ierr = SNESGetLineSearch(*snes,&linesearch); CHKERRQ(ierr);
