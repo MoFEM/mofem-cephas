@@ -33,7 +33,7 @@ void tricircumcenter3d_tp(double a[3],double b[3],double c[3],
   double circumcenter[3],double *xi,double *eta);
 }
 
-using namespace ObosleteUsersModules;
+namespace ObosleteUsersModules {
 
 /** 
   * 
@@ -627,14 +627,14 @@ struct dCTgc_CONSTANT_AREA: public C_CONSTANT_AREA {
 struct Snes_CTgc_CONSTANT_AREA: public FEMethod {
 
   FieldInterface& mField;
-  ProjectionMatrixCtx *proj_ctx;
+  ConstrainMatrixCtx *proj_ctx;
   string problem;
   string lambda_field_name;
   double gc;
   int verbose;
 
   Snes_CTgc_CONSTANT_AREA(
-    FieldInterface& _mField,ProjectionMatrixCtx *_proj_all_ctx,
+    FieldInterface& _mField,ConstrainMatrixCtx *_proj_all_ctx,
     string _problem,string _lambda_field_name,int _verbose = 0):
     mField(_mField),proj_ctx(_proj_all_ctx),
     problem(_problem),lambda_field_name(_lambda_field_name),verbose(_verbose) {}
@@ -737,11 +737,11 @@ struct Snes_CTgc_CONSTANT_AREA: public FEMethod {
 
 struct Snes_dCTgc_CONSTANT_AREA: public dCTgc_CONSTANT_AREA {
 
-  ProjectionMatrixCtx *proj_ctx;
+  ConstrainMatrixCtx *proj_ctx;
   Mat K;
 
   Snes_dCTgc_CONSTANT_AREA(FieldInterface& _mField,
-    ProjectionMatrixCtx &_proj_all_ctx,string _lambda_field_name,int _verbose = 0):
+    ConstrainMatrixCtx &_proj_all_ctx,string _lambda_field_name,int _verbose = 0):
     dCTgc_CONSTANT_AREA(_mField,_proj_all_ctx.K,_lambda_field_name,_verbose),
     proj_ctx(&_proj_all_ctx),K(_proj_all_ctx.K) {}
 
@@ -767,5 +767,6 @@ struct Snes_dCTgc_CONSTANT_AREA: public dCTgc_CONSTANT_AREA {
 
 };
 
+}
 
 #endif // __MOABFEMETHOD_CONSTAREA_HPP__

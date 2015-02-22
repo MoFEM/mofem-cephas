@@ -1,5 +1,5 @@
-/** \file NetGebInterface.hpp
- * \brief TetGen interface 
+/** \file NetGenInterface.hpp
+ * \brief NetGen interface 
  * 
  * Low level data structures not used directly by user
  *

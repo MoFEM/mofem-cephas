@@ -1,4 +1,4 @@
-/** \file TetGebInterface.hpp
+/** \file TetGenInterface.hpp
  * \brief TetGen interface 
  * 
  * Low level data structures not used directly by user

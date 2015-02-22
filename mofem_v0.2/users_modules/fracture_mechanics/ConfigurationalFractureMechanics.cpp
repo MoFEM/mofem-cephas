@@ -53,7 +53,7 @@ extern "C" {
 }
 
 #include <ArcLengthTools.hpp>
-#include <MatShellConstrainsByMarkAinsworth.hpp>
+#include <ConstrainMatrixCtx.hpp>
 #include <FEMethod_ComplexForLazy.hpp>
 #include <FEMethod_DriverComplexForLazy.hpp>
 
@@ -1880,7 +1880,7 @@ PetscErrorCode ConfigurationalFractureMechanics::surface_projection_data(FieldIn
 
   //C_ALL_MATRIX is problem used to constrain surface constrain matrices
   if(projSurfaceCtx==NULL) {
-    projSurfaceCtx = new ProjectionMatrixCtx(m_field,problem,"C_ALL_MATRIX");
+    projSurfaceCtx = new ConstrainMatrixCtx(m_field,problem,"C_ALL_MATRIX");
     ierr = m_field.MatCreateMPIAIJWithArrays("C_ALL_MATRIX",&projSurfaceCtx->C); CHKERRQ(ierr);
   }
 
@@ -1971,7 +1971,7 @@ PetscErrorCode ConfigurationalFractureMechanics::project_force_vector(FieldInter
   ierr = VecGetLocalSize(F_Material,&m); CHKERRQ(ierr);
   Mat Q;
   ierr = MatCreateShell(PETSC_COMM_WORLD,m,m,M,M,projSurfaceCtx,&Q); CHKERRQ(ierr);
-  ierr = MatShellSetOperation(Q,MATOP_MULT,(void(*)(void))matQ_mult_shell); CHKERRQ(ierr);
+  ierr = MatShellSetOperation(Q,MATOP_MULT,(void(*)(void))PorjectionMatrixMultOpQ); CHKERRQ(ierr);
 
   Vec QTF_Material;
   ierr = VecDuplicate(F_Material,&QTF_Material); CHKERRQ(ierr);
@@ -2057,7 +2057,7 @@ PetscErrorCode ConfigurationalFractureMechanics::project_form_th_projection_tag(
   ierr = VecGetLocalSize(dD,&m); CHKERRQ(ierr);
   Mat Q;
   ierr = MatCreateShell(PETSC_COMM_WORLD,m,m,M,M,projSurfaceCtx,&Q); CHKERRQ(ierr);
-  ierr = MatShellSetOperation(Q,MATOP_MULT,(void(*)(void))matQ_mult_shell); CHKERRQ(ierr);
+  ierr = MatShellSetOperation(Q,MATOP_MULT,(void(*)(void))PorjectionMatrixMultOpQ); CHKERRQ(ierr);
 
   Vec QTdD;
   ierr = VecDuplicate(D,&QTdD); CHKERRQ(ierr);
@@ -2099,7 +2099,7 @@ PetscErrorCode ConfigurationalFractureMechanics::front_projection_data(FieldInte
   ierr = delete_front_projection_data(m_field); CHKERRQ(ierr);
 
   if(projFrontCtx==NULL) {
-    projFrontCtx = new ProjectionMatrixCtx(m_field,problem,"C_CRACKFRONT_MATRIX");
+    projFrontCtx = new ConstrainMatrixCtx(m_field,problem,"C_CRACKFRONT_MATRIX");
     ierr = m_field.MatCreateMPIAIJWithArrays("C_CRACKFRONT_MATRIX",&projFrontCtx->C); CHKERRQ(ierr);
   }
 
@@ -2149,7 +2149,7 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_force_vector(FieldInte
     ierr = VecGetSize(GriffithForceVec,&M); CHKERRQ(ierr);
     ierr = VecGetLocalSize(GriffithForceVec,&m); CHKERRQ(ierr);
     ierr = MatCreateShell(PETSC_COMM_WORLD,m,m,M,M,projSurfaceCtx,&Q); CHKERRQ(ierr);
-    ierr = MatShellSetOperation(Q,MATOP_MULT,(void(*)(void))matQ_mult_shell); CHKERRQ(ierr);
+    ierr = MatShellSetOperation(Q,MATOP_MULT,(void(*)(void))PorjectionMatrixMultOpQ); CHKERRQ(ierr);
   }
 
   Range corners_edges,corners_nodes;
@@ -2193,7 +2193,7 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_force_vector(FieldInte
   ierr = PetscPrintf(PETSC_COMM_WORLD,"nrm2_QTGriffithForceVec = %6.4e\n",nrm2_griffith_force); CHKERRQ(ierr);
 
   //tangent front froce
-  ProjectionMatrixCtx projFrontCtx_tangent(m_field,problem,"C_CRACKFRONT_MATRIX");
+  ConstrainMatrixCtx projFrontCtx_tangent(m_field,problem,"C_CRACKFRONT_MATRIX");
   ierr = m_field.MatCreateMPIAIJWithArrays("C_CRACKFRONT_MATRIX",&projFrontCtx_tangent.C); CHKERRQ(ierr);
   C_FRONT_TANGENT C_TANGENT_ELEM(m_field,projFrontCtx_tangent.C,PETSC_NULL,"LAMBDA_CRACKFRONT_AREA");
   ierr = MatZeroEntries(projFrontCtx_tangent.C); CHKERRQ(ierr);
@@ -2249,7 +2249,7 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& m_fi
     ierr = VecGetSize(F_Material,&M); CHKERRQ(ierr);
     ierr = VecGetLocalSize(F_Material,&m); CHKERRQ(ierr);
     ierr = MatCreateShell(PETSC_COMM_WORLD,m,m,M,M,projSurfaceCtx,&Q); CHKERRQ(ierr);
-    ierr = MatShellSetOperation(Q,MATOP_MULT,(void(*)(void))matQ_mult_shell); CHKERRQ(ierr);
+    ierr = MatShellSetOperation(Q,MATOP_MULT,(void(*)(void))PorjectionMatrixMultOpQ); CHKERRQ(ierr);
   }
 
   ErrorCode rval;
@@ -2292,11 +2292,11 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& m_fi
     ierr = VecGetSize(LambdaVec,&M); CHKERRQ(ierr);
     ierr = VecGetLocalSize(LambdaVec,&m); CHKERRQ(ierr);
     ierr = MatCreateShell(PETSC_COMM_WORLD,m,n,M,N,projFrontCtx,&RT); CHKERRQ(ierr);
-    ierr = MatShellSetOperation(RT,MATOP_MULT,(void(*)(void))matRT_mult_shell); CHKERRQ(ierr);
+    ierr = MatShellSetOperation(RT,MATOP_MULT,(void(*)(void))ConstrainMatrixMultOpRT); CHKERRQ(ierr);
   }
   
   //calculate tangent griffith force
-  ProjectionMatrixCtx projFrontCtx_tangent(m_field,problem,"C_CRACKFRONT_MATRIX");
+  ConstrainMatrixCtx projFrontCtx_tangent(m_field,problem,"C_CRACKFRONT_MATRIX");
   ierr = m_field.MatCreateMPIAIJWithArrays("C_CRACKFRONT_MATRIX",&projFrontCtx_tangent.C); CHKERRQ(ierr);
   C_FRONT_TANGENT C_TANGENT_ELEM(m_field,projFrontCtx_tangent.C,Q,"LAMBDA_CRACKFRONT_AREA");
   ierr = MatZeroEntries(projFrontCtx_tangent.C); CHKERRQ(ierr);
@@ -2313,7 +2313,7 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& m_fi
     ierr = VecGetSize(LambdaVec_Tangent,&M); CHKERRQ(ierr);
     ierr = VecGetLocalSize(LambdaVec_Tangent,&m); CHKERRQ(ierr);
     ierr = MatCreateShell(PETSC_COMM_WORLD,m,n,M,N,&projFrontCtx_tangent,&RT_Tangent); CHKERRQ(ierr);
-    ierr = MatShellSetOperation(RT_Tangent,MATOP_MULT,(void(*)(void))matRT_mult_shell); CHKERRQ(ierr);
+    ierr = MatShellSetOperation(RT_Tangent,MATOP_MULT,(void(*)(void))ConstrainMatrixMultOpRT); CHKERRQ(ierr);
   }
 
   //clualte griffith forces

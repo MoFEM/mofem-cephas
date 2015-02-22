@@ -1,3 +1,11 @@
+Notes:
+
+Users modules serrated form MoFEM library by independent configuration and
+build method. Some functions and classes proven to work will be moved to MoFEM
+finite library.
+
+Adding your module:
+
 Pleas add your config files to ModulesList.cmake fiele. 
 
 In each module you can have two type directory data, 

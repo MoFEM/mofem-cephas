@@ -1,4 +1,4 @@
-/** \file MatShellConstrainsByMarkAinsworth.cpp
+/** \file ConstrainMatrixCtx.cpp
  * \brief Implementation of projection matrix 
  *
  * Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
@@ -21,15 +21,35 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 #include <MoFEM.hpp>
-using namespace MoFEM;
+#include <ConstrainMatrixCtx.hpp>
 
-#include <MatShellConstrainsByMarkAinsworth.hpp>
-
-namespace ObosleteUsersModules {
+namespace MoFEM {
 
 const static bool debug = false;
 
-PetscErrorCode ProjectionMatrixCtx::initializeQorP(Vec x) {
+PetscErrorCode ConstrainMatrixCtx::getKsp(const KSP *ksp) {
+  PetscFunctionBegin;
+  ksp = &kSP;
+  PetscFunctionReturn(0);
+}
+
+ConstrainMatrixCtx::ConstrainMatrixCtx(FieldInterface& m_field,string x_problem,string y_problem,bool create_ksp):
+  mField(m_field),
+  CT(PETSC_NULL),CCT(PETSC_NULL),CTC(PETSC_NULL),
+  Cx(PETSC_NULL),CCTm1_Cx(PETSC_NULL),CT_CCTm1_Cx(PETSC_NULL),CTCx(PETSC_NULL),
+  Qx(PETSC_NULL),KQx(PETSC_NULL),
+  xProblem(x_problem),yProblem(y_problem),
+  initQorP(true),initQTKQ(true),createKSP(create_ksp),
+  C(PETSC_NULL),K(PETSC_NULL) {
+  PetscLogEventRegister("ProjectionInit",0,&USER_EVENT_projInit);
+  PetscLogEventRegister("ProjectionQ",0,&USER_EVENT_projQ);
+  PetscLogEventRegister("ProjectionP",0,&USER_EVENT_projP);
+  PetscLogEventRegister("ProjectionR",0,&USER_EVENT_projR);
+  PetscLogEventRegister("ProjectionRT",0,&USER_EVENT_projRT);
+  PetscLogEventRegister("ProjectionCTC_QTKQ",0,&USER_EVENT_projCTC_QTKQ);
+}
+
+PetscErrorCode ConstrainMatrixCtx::initializeQorP(Vec x) {
     PetscFunctionBegin;
     if(initQorP) {
       initQorP = false;
@@ -37,21 +57,23 @@ PetscErrorCode ProjectionMatrixCtx::initializeQorP(Vec x) {
       PetscLogEventBegin(USER_EVENT_projInit,0,0,0,0);
       ierr = MatTranspose(C,MAT_INITIAL_MATRIX,&CT); CHKERRQ(ierr);
       ierr = MatTransposeMatMult(CT,CT,MAT_INITIAL_MATRIX,PETSC_DEFAULT,&CCT); CHKERRQ(ierr); // need to be calculated when C is changed
-      ierr = KSPCreate(PETSC_COMM_WORLD,&kSP); CHKERRQ(ierr); // neet to be recalculated when C is changed
-      ierr = KSPSetOperators(kSP,CCT,CCT); CHKERRQ(ierr);
-      ierr = KSPSetFromOptions(kSP); CHKERRQ(ierr);
-      ierr = KSPSetInitialGuessKnoll(kSP,PETSC_TRUE); CHKERRQ(ierr);
-      ierr = KSPGetTolerances(kSP,&rTol,&absTol,&dTol,&maxIts); CHKERRQ(ierr);
-      ierr = KSPSetUp(kSP); CHKERRQ(ierr);
-      ierr = KSPMonitorCancel(kSP); CHKERRQ(ierr);
+      if(createKSP) {
+	ierr = KSPCreate(PETSC_COMM_WORLD,&kSP); CHKERRQ(ierr); // neet to be recalculated when C is changed
+	ierr = KSPSetOperators(kSP,CCT,CCT); CHKERRQ(ierr);
+	ierr = KSPSetFromOptions(kSP); CHKERRQ(ierr);
+	ierr = KSPSetInitialGuessKnoll(kSP,PETSC_TRUE); CHKERRQ(ierr);
+	ierr = KSPGetTolerances(kSP,&rTol,&absTol,&dTol,&maxIts); CHKERRQ(ierr);
+	ierr = KSPSetUp(kSP); CHKERRQ(ierr);
+	ierr = KSPMonitorCancel(kSP); CHKERRQ(ierr);
+      }
       #if PETSC_VERSION_GE(3,5,3) 
-	ierr = MatCreateVecs(C,&X,PETSC_NULL); CHKERRQ(ierr);
-	ierr = MatCreateVecs(C,PETSC_NULL,&Cx); CHKERRQ(ierr);
-	ierr = MatCreateVecs(CCT,PETSC_NULL,&CCTm1_Cx); CHKERRQ(ierr);
+      ierr = MatCreateVecs(C,&X,PETSC_NULL); CHKERRQ(ierr);
+      ierr = MatCreateVecs(C,PETSC_NULL,&Cx); CHKERRQ(ierr);
+      ierr = MatCreateVecs(CCT,PETSC_NULL,&CCTm1_Cx); CHKERRQ(ierr);
       #else 
-	ierr = MatGetVecs(C,&X,PETSC_NULL); CHKERRQ(ierr);
-	ierr = MatGetVecs(C,PETSC_NULL,&Cx); CHKERRQ(ierr);
-	ierr = MatGetVecs(CCT,PETSC_NULL,&CCTm1_Cx); CHKERRQ(ierr);
+      ierr = MatGetVecs(C,&X,PETSC_NULL); CHKERRQ(ierr);
+      ierr = MatGetVecs(C,PETSC_NULL,&Cx); CHKERRQ(ierr);
+      ierr = MatGetVecs(CCT,PETSC_NULL,&CCTm1_Cx); CHKERRQ(ierr);
       #endif
       ierr = VecDuplicate(X,&CT_CCTm1_Cx); CHKERRQ(ierr);
       ierr = mField.VecScatterCreate(x,xProblem,ROW,X,yProblem,COL,&sCatter); CHKERRQ(ierr);
@@ -60,7 +82,7 @@ PetscErrorCode ProjectionMatrixCtx::initializeQorP(Vec x) {
     PetscFunctionReturn(0);
 }
 
-PetscErrorCode ProjectionMatrixCtx::recalculateCTandCCT() {
+PetscErrorCode ConstrainMatrixCtx::recalculateCTandCCT() {
     PetscFunctionBegin;
     if(initQorP) PetscFunctionReturn(0);
     PetscErrorCode ierr;
@@ -69,13 +91,15 @@ PetscErrorCode ProjectionMatrixCtx::recalculateCTandCCT() {
     PetscFunctionReturn(0);
 }
 
-PetscErrorCode ProjectionMatrixCtx::destroyQorP() {
+PetscErrorCode ConstrainMatrixCtx::destroyQorP() {
     PetscFunctionBegin;
     if(initQorP) PetscFunctionReturn(0);
     PetscErrorCode ierr;
     ierr = MatDestroy(&CT); CHKERRQ(ierr);
     ierr = MatDestroy(&CCT); CHKERRQ(ierr);
-    ierr = KSPDestroy(&kSP); CHKERRQ(ierr);
+    if(createKSP) {
+      ierr = KSPDestroy(&kSP); CHKERRQ(ierr);
+    }
     ierr = VecDestroy(&X); CHKERRQ(ierr);
     ierr = VecDestroy(&Cx); CHKERRQ(ierr);
     ierr = VecDestroy(&CCTm1_Cx); CHKERRQ(ierr);
@@ -85,7 +109,7 @@ PetscErrorCode ProjectionMatrixCtx::destroyQorP() {
     PetscFunctionReturn(0);
 }
 
-PetscErrorCode ProjectionMatrixCtx::initializeQTKQ() {
+PetscErrorCode ConstrainMatrixCtx::initializeQTKQ() {
     PetscFunctionBegin;
     if(initQTKQ) {
       initQTKQ = false;
@@ -114,7 +138,7 @@ PetscErrorCode ProjectionMatrixCtx::initializeQTKQ() {
     PetscFunctionReturn(0);
 }
 
-PetscErrorCode ProjectionMatrixCtx::recalculateCTC() {
+PetscErrorCode ConstrainMatrixCtx::recalculateCTC() {
     PetscFunctionBegin;
     if(initQTKQ) PetscFunctionReturn(0);
     PetscErrorCode ierr;
@@ -122,7 +146,7 @@ PetscErrorCode ProjectionMatrixCtx::recalculateCTC() {
     PetscFunctionReturn(0);
 }
 
-PetscErrorCode ProjectionMatrixCtx::destroyQTKQ() {
+PetscErrorCode ConstrainMatrixCtx::destroyQTKQ() {
     PetscFunctionBegin;
     if(initQTKQ) PetscFunctionReturn(0);
     PetscErrorCode ierr;
@@ -134,19 +158,19 @@ PetscErrorCode ProjectionMatrixCtx::destroyQTKQ() {
     PetscFunctionReturn(0);
 }
 
-PetscErrorCode matQ_mult_shell(Mat Q,Vec x,Vec f) {
+PetscErrorCode PorjectionMatrixMultOpQ(Mat Q,Vec x,Vec f) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
   void *void_ctx;
   ierr = MatShellGetContext(Q,&void_ctx); CHKERRQ(ierr);
-  ProjectionMatrixCtx *ctx = (ProjectionMatrixCtx*)void_ctx;
+  ConstrainMatrixCtx *ctx = (ConstrainMatrixCtx*)void_ctx;
   PetscLogEventBegin(ctx->USER_EVENT_projQ,0,0,0,0);
   ierr = ctx->initializeQorP(x); CHKERRQ(ierr);
   ierr = VecCopy(x,f); CHKERRQ(ierr);
   ierr = VecScatterBegin(ctx->sCatter,x,ctx->X,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecScatterEnd(ctx->sCatter,x,ctx->X,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  //ierr = VecView(ctx->X,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
   if(debug) {
+    //ierr = VecView(ctx->X,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
     ierr = VecScatterBegin(ctx->sCatter,ctx->X,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = VecScatterEnd(ctx->sCatter,ctx->X,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     PetscBool  flg;
@@ -163,12 +187,12 @@ PetscErrorCode matQ_mult_shell(Mat Q,Vec x,Vec f) {
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode matP_mult_shell(Mat P,Vec x,Vec f) {
+PetscErrorCode ConstrainMatrixMultOpP(Mat P,Vec x,Vec f) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
   void *void_ctx;
   ierr = MatShellGetContext(P,&void_ctx); CHKERRQ(ierr);
-  ProjectionMatrixCtx *ctx = (ProjectionMatrixCtx*)void_ctx;
+  ConstrainMatrixCtx *ctx = (ConstrainMatrixCtx*)void_ctx;
   PetscLogEventBegin(ctx->USER_EVENT_projP,0,0,0,0);
   ierr = ctx->initializeQorP(x); CHKERRQ(ierr);
   ierr = VecScatterBegin(ctx->sCatter,x,ctx->X,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -185,12 +209,12 @@ PetscErrorCode matP_mult_shell(Mat P,Vec x,Vec f) {
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode matR_mult_shell(Mat R,Vec x,Vec f) {
+PetscErrorCode ConstrainMatrixMultOpR(Mat R,Vec x,Vec f) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
   void *void_ctx;
   ierr = MatShellGetContext(R,&void_ctx); CHKERRQ(ierr);
-  ProjectionMatrixCtx *ctx = (ProjectionMatrixCtx*)void_ctx;
+  ConstrainMatrixCtx *ctx = (ConstrainMatrixCtx*)void_ctx;
   PetscLogEventBegin(ctx->USER_EVENT_projR,0,0,0,0);
   if(ctx->initQorP) SETERRQ(PETSC_COMM_SELF,1,"you have to call first initQorP or use Q matrix");
   ierr = KSPSolve(ctx->kSP,x,ctx->CCTm1_Cx); CHKERRQ(ierr);
@@ -204,12 +228,12 @@ PetscErrorCode matR_mult_shell(Mat R,Vec x,Vec f) {
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode matRT_mult_shell(Mat RT,Vec x,Vec f) {
+PetscErrorCode ConstrainMatrixMultOpRT(Mat RT,Vec x,Vec f) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
   void *void_ctx;
   ierr = MatShellGetContext(RT,&void_ctx); CHKERRQ(ierr);
-  ProjectionMatrixCtx *ctx = (ProjectionMatrixCtx*)void_ctx;
+  ConstrainMatrixCtx *ctx = (ConstrainMatrixCtx*)void_ctx;
   PetscLogEventBegin(ctx->USER_EVENT_projRT,0,0,0,0);
   if(ctx->initQorP) SETERRQ(PETSC_COMM_SELF,1,"you have to call first initQorP or use Q matrix");
   ierr = VecScatterBegin(ctx->sCatter,x,ctx->X,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -220,19 +244,19 @@ PetscErrorCode matRT_mult_shell(Mat RT,Vec x,Vec f) {
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode matCTC_QTKQ_mult_shell(Mat CTC_QTKQ,Vec x,Vec f) {
+PetscErrorCode ConstrainMatrixMultOpCTC_QTKQ(Mat CTC_QTKQ,Vec x,Vec f) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
   void *void_ctx;
   ierr = MatShellGetContext(CTC_QTKQ,&void_ctx); CHKERRQ(ierr);
-  ProjectionMatrixCtx *ctx = (ProjectionMatrixCtx*)void_ctx;
+  ConstrainMatrixCtx *ctx = (ConstrainMatrixCtx*)void_ctx;
   PetscLogEventBegin(ctx->USER_EVENT_projCTC_QTKQ,0,0,0,0);
   Mat Q;
   int M,N,m,n;
   ierr = MatGetSize(ctx->K,&M,&N); CHKERRQ(ierr);
   ierr = MatGetLocalSize(ctx->K,&m,&n); CHKERRQ(ierr);
   ierr = MatCreateShell(PETSC_COMM_WORLD,m,n,M,N,ctx,&Q); CHKERRQ(ierr); 
-  ierr = MatShellSetOperation(Q,MATOP_MULT,(void(*)(void))matQ_mult_shell); CHKERRQ(ierr);
+  ierr = MatShellSetOperation(Q,MATOP_MULT,(void(*)(void))PorjectionMatrixMultOpQ); CHKERRQ(ierr);
   ierr = ctx->initializeQTKQ(); CHKERRQ(ierr);
   ierr = MatMult(Q,x,ctx->Qx); CHKERRQ(ierr);
   ierr = MatMult(ctx->K,ctx->Qx,ctx->KQx); CHKERRQ(ierr);
@@ -246,6 +270,26 @@ PetscErrorCode matCTC_QTKQ_mult_shell(Mat CTC_QTKQ,Vec x,Vec f) {
   PetscLogEventEnd(ctx->USER_EVENT_projCTC_QTKQ,0,0,0,0);
   PetscFunctionReturn(0);
 }
+
+PetscErrorCode ConstrainMatrixDestroyOpPorQ(Mat Q) {
+  PetscFunctionBegin;
+  PetscErrorCode ierr;
+  void *void_ctx;
+  ierr = MatShellGetContext(Q,&void_ctx); CHKERRQ(ierr);
+  ConstrainMatrixCtx *ctx = (ConstrainMatrixCtx*)void_ctx;
+  ierr = ctx->destroyQorP(); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+PetscErrorCode ConstrainMatrixDestroyOpQTKQ(Mat QTKQ) {
+  PetscFunctionBegin;
+  PetscErrorCode ierr;
+  void *void_ctx;
+  ierr = MatShellGetContext(QTKQ,&void_ctx); CHKERRQ(ierr);
+  ConstrainMatrixCtx *ctx = (ConstrainMatrixCtx*)void_ctx;
+  ierr = ctx->destroyQTKQ(); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
 
 }
 
