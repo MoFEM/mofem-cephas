@@ -391,6 +391,7 @@ namespace ObosleteUsersModules {
             VoightStrain[3] = 2*Strain(0,1);
             VoightStrain[4] = 2*Strain(1,2);
             VoightStrain[5] = 2*Strain(2,0);
+            
             double w = V*G_TET_W[gg];
             ublas::vector<FieldData> VoightStress = prod(w*D,VoightStrain);
             //BT * VoigtStress
@@ -531,7 +532,6 @@ namespace ObosleteUsersModules {
     
     PetscErrorCode operator()() {
       PetscFunctionBegin;
-      
       ierr = Get_g_NTET(); CHKERRQ(ierr);
       ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
       ierr = GetMatrices(); CHKERRQ(ierr);

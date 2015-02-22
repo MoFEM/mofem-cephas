@@ -124,8 +124,7 @@ target_link_libraries(mech_macro_trans_iso
   mofem_cblas
   ${MoFEM_PROJECT_LIBS})
   
-  
-  
+  # ===================== Strain Calculation  ============================================
 add_executable(Strain_calculation ${UM_SOURCE_DIR}/degradation_model/Strain_calculation.cpp)
 target_link_libraries(Strain_calculation
   mofem_finite_element_library

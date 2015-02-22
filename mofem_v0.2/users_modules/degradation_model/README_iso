@@ -58,10 +58,17 @@ make mech_macro && mpirun -np 4 ./mech_macro \
   -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist \
   -my_max_post_proc_ref_level 0 -my_order 1 \
 
+make mech_macro && mpirun -np 8 ./mech_macro \
+-my_file_Macro solution_wt.h5m -my_file_RVE /mnt/home/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/RVE_Cube_mech.cub\
+  -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist \
+  -my_max_post_proc_ref_level 0 -my_order 1 \
+
+
+
 
 Calculate strain at selected gauss points to see the deformed RVEs
 ===========================================================================
-make && mpirun -np 1 ./Strain_calculation -my_file FE2_out_0.h5m -ksp_type fgmres -pc_type asm -sub_pc_type lu -ksp_monitor -my_order 1
+make Strain_calculation && mpirun -np 1 ./Strain_calculation -my_file FE2_solution_0.h5m -ksp_type fgmres -pc_type asm -sub_pc_type lu -ksp_monitor -my_order 1
 
 
 Conversion from .h5m to vtk
