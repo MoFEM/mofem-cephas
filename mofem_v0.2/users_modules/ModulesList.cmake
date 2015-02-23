@@ -19,7 +19,6 @@ include_directories(${UM_SOURCE_DIR}/obsolete/c)
 include_directories(${UM_SOURCE_DIR}/obsolete/c_impl)
 
 add_library(users_modules_obsolete
-  ${UM_SOURCE_DIR}/obsolete/impl/ArcLengthTools.cpp
   ${UM_SOURCE_DIR}/obsolete/impl/FEMethod_SurfaceConstrains.cpp
   ${UM_SOURCE_DIR}/obsolete/impl/FEMethod_LowLevelStudent.cpp
   ${UM_SOURCE_DIR}/obsolete/impl/FEMethod_UpLevelStudent.cpp

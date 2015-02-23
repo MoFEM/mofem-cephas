@@ -1,5 +1,5 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
+/** \file ArcLengthTools.cpp
+ *
  * FIXME: DESCRIPTION
  */
 
@@ -20,7 +20,7 @@
 #ifndef __ARCLEGHTTOOLS_HPP__
 #define __ARCLEGHTTOOLS_HPP__
 
-namespace ObosleteUsersModules {
+namespace MoFEM {
 
 /**
  * \brief Store variables for ArcLength analaysis
@@ -57,6 +57,17 @@ struct ArcLengthCtx {
   double beta; 	///< force scaling factor 
   double alpha; ///< displacement scaling factor
 
+  double dlambda;	///< increment of load factor
+  double diag;		///< diagonal value
+  double dx2;		///< inner_prod(dX,dX)
+  double F_lambda2;	///< inner_prod(F_lambda,F_lambda);
+  double res_lambda;	///< f_lambda - s
+  Vec F_lambda;		///< F_lambda reference load vcetor
+  Vec db;		///< db direvative of f(dx*dx), i.e. db = d[ f(dx*dx) ]/dx
+  Vec x_lambda;		///< solution of eq. K*x_lambda = F_lambda
+  Vec x0;		///< displacement vetor at begining of step
+  Vec dx;		///< dx = x-x0
+
   /** 
     * \brief set arc radius
     */
@@ -68,17 +79,6 @@ struct ArcLengthCtx {
    * beta controls diagonal therm
    */
   PetscErrorCode setAlphaBeta(double alpha,double beta);
-
-  double dlambda;	///< increment of load factor
-  double diag;		///< diagonal value
-  double dx2;		///< inner_prod(dX,dX)
-  double F_lambda2;	///< inner_prod(F_lambda,F_lambda);
-  double res_lambda;	///< f_lambda - s
-  Vec F_lambda;		///< F_lambda reference load vcetor
-  Vec db;		///< db direvative of f(dx*dx), i.e. db = d[ f(dx*dx) ]/dx
-  Vec x_lambda;		///< solution of eq. K*x_lambda = F_lambda
-  Vec x0;		///< displacement vetor at begining of step
-  Vec dx;		///< dx = x-x0
 
   ArcLengthCtx(FieldInterface &mField,const string &problem_name);
   ~ArcLengthCtx();

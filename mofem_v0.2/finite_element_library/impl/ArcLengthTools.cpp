@@ -1,5 +1,5 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
+/** \file ArcLengthTools.hpp
+ *
  * FIXME: DESCRIPTION
  */
 
@@ -18,11 +18,11 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 #include <MoFEM.hpp>
-
 using namespace MoFEM;
+
 #include <ArcLengthTools.hpp>
 
-namespace ObosleteUsersModules {
+namespace MoFEM {
 
 PetscErrorCode ArcLengthCtx::setS(double s) { 
   PetscFunctionBegin;
