@@ -187,7 +187,7 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
       case CTX_SNESSETFUNCTION: {
 	//calculate residual for arc length row
 	arcPtr->res_lambda = lambda_int - arcPtr->s;
-	ierr = VecSetValue(snes_f,arcPtr->get_petsc_gloabl_dof_idx(),arcPtr->res_lambda,ADD_VALUES); CHKERRQ(ierr);
+	ierr = VecSetValue(snes_f,arcPtr->getPetscGloablDofIdx(),arcPtr->res_lambda,ADD_VALUES); CHKERRQ(ierr);
 	PetscPrintf(PETSC_COMM_SELF,"\tres_lambda = %6.4e lambda_int = %6.4e s = %6.4e\n",
 	  arcPtr->res_lambda,lambda_int,arcPtr->s);
       }
@@ -196,7 +196,7 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
 	//calculate diagonal therm
 	double diag = arcPtr->beta*sqrt(arcPtr->F_lambda2);
 	ierr = VecSetValue(GhostDiag,0,diag,INSERT_VALUES); CHKERRQ(ierr);
-	ierr = MatSetValue(snes_B,arcPtr->get_petsc_gloabl_dof_idx(),arcPtr->get_petsc_gloabl_dof_idx(),1,ADD_VALUES); CHKERRQ(ierr);
+	ierr = MatSetValue(snes_B,arcPtr->getPetscGloablDofIdx(),arcPtr->getPetscGloablDofIdx(),1,ADD_VALUES); CHKERRQ(ierr);
       }
       break;
       default:
@@ -235,15 +235,15 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
     ierr = VecCopy(x,arcPtr->dx); CHKERRQ(ierr);
     ierr = VecAXPY(arcPtr->dx,-1,arcPtr->x0); CHKERRQ(ierr);
     //if LAMBDA dof is on this partition
-    if(arcPtr->get_petsc_local_dof_idx()!=-1) {
+    if(arcPtr->getPetscLocalDofIdx()!=-1) {
       double *array;
       ierr = VecGetArray(arcPtr->dx,&array); CHKERRQ(ierr);
-      arcPtr->dlambda = array[arcPtr->get_petsc_local_dof_idx()];
-      array[arcPtr->get_petsc_local_dof_idx()] = 0;
+      arcPtr->dlambda = array[arcPtr->getPetscLocalDofIdx()];
+      array[arcPtr->getPetscLocalDofIdx()] = 0;
       ierr = VecRestoreArray(arcPtr->dx,&array); CHKERRQ(ierr);
     }
     //brodcast dlambda
-    int part = arcPtr->get_part();
+    int part = arcPtr->getPart();
     MPI_Bcast(&(arcPtr->dlambda),1,MPI_DOUBLE,part,PETSC_COMM_WORLD);
     //calculate dx2 (dot product)
     ierr = VecDot(arcPtr->dx,arcPtr->dx,&arcPtr->dx2); CHKERRQ(ierr);
@@ -270,18 +270,18 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
   PetscErrorCode set_dlambda_to_x(Vec &x,double dlambda) {
       PetscFunctionBegin;
 
-      if(arcPtr->get_petsc_local_dof_idx()!=-1) {
+      if(arcPtr->getPetscLocalDofIdx()!=-1) {
 	double *array;
 	ierr = VecGetArray(x,&array); CHKERRQ(ierr);
-	double lambda_old = array[arcPtr->get_petsc_local_dof_idx()];
+	double lambda_old = array[arcPtr->getPetscLocalDofIdx()];
 	if(!(dlambda == dlambda)) {
 	  ostringstream sss;
 	  sss << "s " << arcPtr->s << " " << arcPtr->beta << " " << arcPtr->F_lambda2;
 	  SETERRQ(PETSC_COMM_SELF,1,sss.str().c_str());
 	}
-	array[arcPtr->get_petsc_local_dof_idx()] = lambda_old + dlambda;
+	array[arcPtr->getPetscLocalDofIdx()] = lambda_old + dlambda;
 	PetscPrintf(PETSC_COMM_WORLD,"\tlambda = %6.4e, %6.4e (%6.4e)\n",
-	  lambda_old, array[arcPtr->get_petsc_local_dof_idx()], dlambda);
+	  lambda_old, array[arcPtr->getPetscLocalDofIdx()], dlambda);
 	ierr = VecRestoreArray(x,&array); CHKERRQ(ierr);
       }
 

@@ -378,7 +378,7 @@ int main(int argc, char *argv[]) {
   ArcLengthElemFEMethod& arc_method = *arc_method_ptr;
 
   double scaled_reference_load = 1;
-  double *scale_lhs = &(arc_ctx->get_FieldData());
+  double *scale_lhs = &(arc_ctx->getFieldData());
   double *scale_rhs = &(scaled_reference_load);
   NeummanForcesSurfaceComplexForLazy neumann_forces(m_field,Aij,arc_ctx->F_lambda,scale_lhs,scale_rhs);
   NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE &fe_neumann = neumann_forces.getLoopSpatialFe();
@@ -454,7 +454,7 @@ int main(int argc, char *argv[]) {
 	dit = numered_dofs_rows.get<Ent_mi_tag>().lower_bound(*nit);
 	hi_dit = numered_dofs_rows.get<Ent_mi_tag>().upper_bound(*nit);
 	for(;dit!=hi_dit;dit++) {
-	  PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e -> ","LAMBDA",0,arc_ptr->get_FieldData());
+	  PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e -> ","LAMBDA",0,arc_ptr->getFieldData());
 	  PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e\n",dit->get_name().c_str(),dit->get_dof_rank(),dit->get_FieldData());
 	}
       }
@@ -501,8 +501,8 @@ int main(int argc, char *argv[]) {
 	  ierr = VecDot(arc_ptr->F_lambda,arc_ptr->F_lambda,&arc_ptr->F_lambda2); CHKERRQ(ierr);
 	  PetscPrintf(PETSC_COMM_WORLD,"\tFlambda2 = %6.4e\n",arc_ptr->F_lambda2);
 	  //add F_lambda
-	  ierr = VecAXPY(snes_f,arc_ptr->get_FieldData(),arc_ptr->F_lambda); CHKERRQ(ierr);
-	  PetscPrintf(PETSC_COMM_WORLD,"\tlambda = %6.4e\n",arc_ptr->get_FieldData());  
+	  ierr = VecAXPY(snes_f,arc_ptr->getFieldData(),arc_ptr->F_lambda); CHKERRQ(ierr);
+	  PetscPrintf(PETSC_COMM_WORLD,"\tlambda = %6.4e\n",arc_ptr->getFieldData());  
 	  double fnorm;
 	  ierr = VecNorm(snes_f,NORM_2,&fnorm); CHKERRQ(ierr);	
 	  PetscPrintf(PETSC_COMM_WORLD,"\tfnorm = %6.4e\n",fnorm);  

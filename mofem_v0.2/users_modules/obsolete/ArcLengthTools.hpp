@@ -31,6 +31,9 @@ namespace ObosleteUsersModules {
  * dx = x-x0
  *
  * db*ddx + diag*ddlambda - r_lambda = 0
+ *
+ * User need to implement fuctions calulating f_lambda, i.e. f(dx*x) and
+ * direvative, db
  * 
  * alpha,beta parameters
  * dlambda is load factor
@@ -80,11 +83,11 @@ struct ArcLengthCtx {
   ArcLengthCtx(FieldInterface &mField,const string &problem_name);
   ~ArcLengthCtx();
 
-  NumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator dit;
-  DofIdx get_petsc_gloabl_dof_idx() { return dit->get_petsc_gloabl_dof_idx(); };
-  DofIdx get_petsc_local_dof_idx() { return dit->get_petsc_local_dof_idx(); };
-  FieldData& get_FieldData() { return dit->get_FieldData(); }
-  int get_part() { return dit->get_part(); };
+  NumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator dIt;
+  DofIdx getPetscGloablDofIdx() { return dIt->get_petsc_gloabl_dof_idx(); };
+  DofIdx getPetscLocalDofIdx() { return dIt->get_petsc_local_dof_idx(); };
+  FieldData& getFieldData() { return dIt->get_FieldData(); }
+  int getPart() { return dIt->get_part(); };
 
 };
 

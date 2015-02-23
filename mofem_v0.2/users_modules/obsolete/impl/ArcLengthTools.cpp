@@ -50,12 +50,12 @@ ArcLengthCtx::ArcLengthCtx(FieldInterface &mField,const string &problem_name):
   ierr = mField.VecCreateGhost(problem_name,ROW,&dx); CHKERRABORT(PETSC_COMM_WORLD,ierr);
   const MoFEMProblem *problem_ptr;
   ierr = mField.get_problem(problem_name,&problem_ptr); CHKERRABORT(PETSC_COMM_WORLD,ierr);
-  NumeredDofMoFEMEntity_multiIndex& dofsPtr_no_const 
+  NumeredDofMoFEMEntity_multiIndex& dofs_ptr_no_const 
 	    = const_cast<NumeredDofMoFEMEntity_multiIndex&>(problem_ptr->numered_dofs_rows);
   NumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator hi_dit;
-  dit = dofsPtr_no_const.get<FieldName_mi_tag>().lower_bound("LAMBDA");
-  hi_dit = dofsPtr_no_const.get<FieldName_mi_tag>().upper_bound("LAMBDA");
-  if(distance(dit,hi_dit)!=1) {
+  dIt = dofs_ptr_no_const.get<FieldName_mi_tag>().lower_bound("LAMBDA");
+  hi_dit = dofs_ptr_no_const.get<FieldName_mi_tag>().upper_bound("LAMBDA");
+  if(distance(dIt,hi_dit)!=1) {
     PetscTraceBackErrorHandler(
 	PETSC_COMM_WORLD,
 	__LINE__,PETSC_FUNCTION_NAME,__FILE__,
@@ -82,22 +82,22 @@ PetscErrorCode ArcLengthMatShell::set_lambda(Vec ksp_x,double *lambda,ScatterMod
   PetscFunctionBegin;
   const MoFEMProblem *problem_ptr;
   ierr = mField.get_problem(problemName,&problem_ptr); CHKERRQ(ierr);
-  if(arcPtr->get_petsc_local_dof_idx()!=-1) {
+  if(arcPtr->getPetscLocalDofIdx()!=-1) {
     PetscScalar *array;
     ierr = VecGetArray(ksp_x,&array); CHKERRQ(ierr);
     switch(scattermode) {
 	case SCATTER_FORWARD:
-	  *lambda = array[arcPtr->get_petsc_local_dof_idx()];
+	  *lambda = array[arcPtr->getPetscLocalDofIdx()];
 	  break;
 	case SCATTER_REVERSE:
-	  array[arcPtr->get_petsc_local_dof_idx()] = *lambda;
+	  array[arcPtr->getPetscLocalDofIdx()] = *lambda;
 	  break;
 	default:
 	  SETERRQ(PETSC_COMM_SELF,1,"not implemented");
     }
     ierr = VecRestoreArray(ksp_x,&array); CHKERRQ(ierr);
   } 
-  unsigned int part = arcPtr->get_part();
+  unsigned int part = arcPtr->getPart();
   //MPI_Bcast(lambda,1,MPI_DOUBLE,part,PETSC_COMM_WORLD);
   ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
   Vec lambda_ghost;

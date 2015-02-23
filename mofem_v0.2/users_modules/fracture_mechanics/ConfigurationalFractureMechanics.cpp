@@ -859,8 +859,8 @@ struct AssembleLambda: public FEMethod {
 	  ierr = VecDot(arc_ptr->F_lambda,arc_ptr->F_lambda,&arc_ptr->F_lambda2); CHKERRQ(ierr);
 	  PetscPrintf(PETSC_COMM_WORLD,"\tFlambda2 = %6.4e\n",arc_ptr->F_lambda2);
 	  //add F_lambda
-	  ierr = VecAXPY(snes_f,arc_ptr->get_FieldData(),arc_ptr->F_lambda); CHKERRQ(ierr);
-	  PetscPrintf(PETSC_COMM_WORLD,"\tlambda = %6.4e\n",arc_ptr->get_FieldData());  
+	  ierr = VecAXPY(snes_f,arc_ptr->getFieldData(),arc_ptr->F_lambda); CHKERRQ(ierr);
+	  PetscPrintf(PETSC_COMM_WORLD,"\tlambda = %6.4e\n",arc_ptr->getFieldData());  
 	  double fnorm;
 	  ierr = VecNorm(snes_f,NORM_2,&fnorm); CHKERRQ(ierr);	
 	  PetscPrintf(PETSC_COMM_WORLD,"\tfnorm = %6.4e\n",fnorm);  
@@ -2726,9 +2726,9 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   rval = m_field.get_moab().tag_get_handle("_LoadFactor_Scale_",th_scale); CHKERR_PETSC(rval);
   double *force_scale;
   rval = m_field.get_moab().tag_get_by_ptr(th_scale,&root_meshset,1,(const void**)&force_scale); CHKERR_PETSC(rval);
-  arc_ctx.get_FieldData() = (*force_scale);
+  arc_ctx.getFieldData() = (*force_scale);
   double scaled_reference_load = 1;
-  double *scale_lhs = &(arc_ctx.get_FieldData());
+  double *scale_lhs = &(arc_ctx.getFieldData());
   double *scale_rhs = &(scaled_reference_load);
   NeummanForcesSurfaceComplexForLazy neumann_forces(m_field,K,arc_ctx.F_lambda,scale_lhs,scale_rhs);
   NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE &fe_forces = neumann_forces.getLoopSpatialFe();
@@ -2914,7 +2914,7 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   }
   ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  *force_scale = (arc_ctx.get_FieldData());
+  *force_scale = (arc_ctx.getFieldData());
   ierr = VecDestroy(&D0); CHKERRQ(ierr);
 
   //Save data on mesh
@@ -2933,7 +2933,7 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   ierr = m_field.set_other_global_VecCreateGhost(
     "COUPLED_PROBLEM","SPATIAL_POSITION","SPATIAL_DISPLACEMENT",COL,DISP,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecDot(DISP,arc_ctx.F_lambda,&energy); CHKERRQ(ierr);
-  lambda = arc_ctx.get_FieldData();
+  lambda = arc_ctx.getFieldData();
   energy = 0.5*fabs(lambda)*fabs(energy);
 
   int verb = 1;
@@ -3226,17 +3226,17 @@ PetscErrorCode ConfigurationalFractureMechanics::ArcLengthElemFEMethod::set_dlam
   PetscFunctionBegin;
   PetscErrorCode ierr;
   //check if locl dof idx is non zero, i.e. that lambda is acessible from this processor
-  if(arc_ptr->get_petsc_local_dof_idx()!=-1) {
+  if(arc_ptr->getPetscLocalDofIdx()!=-1) {
     double *array;
     ierr = VecGetArray(x,&array); CHKERRQ(ierr);
-    double lambda_old = array[arc_ptr->get_petsc_local_dof_idx()];
+    double lambda_old = array[arc_ptr->getPetscLocalDofIdx()];
     if(!(dlambda == dlambda)) {
       ostringstream sss;
       sss << "s " << arc_ptr->s << " " << arc_ptr->beta << " " << arc_ptr->F_lambda2;
       SETERRQ(PETSC_COMM_SELF,1,sss.str().c_str());
     }
-    array[arc_ptr->get_petsc_local_dof_idx()] = lambda_old + dlambda;
-    PetscPrintf(PETSC_COMM_WORLD,"\tload factor lambda_old,lambda_new/dlambda = %6.4e, %6.4e (%6.4e)\n",lambda_old, array[arc_ptr->get_petsc_local_dof_idx()], dlambda);
+    array[arc_ptr->getPetscLocalDofIdx()] = lambda_old + dlambda;
+    PetscPrintf(PETSC_COMM_WORLD,"\tload factor lambda_old,lambda_new/dlambda = %6.4e, %6.4e (%6.4e)\n",lambda_old, array[arc_ptr->getPetscLocalDofIdx()], dlambda);
     ierr = VecRestoreArray(x,&array); CHKERRQ(ierr);
   }
   PetscFunctionReturn(0);
@@ -3248,15 +3248,15 @@ PetscErrorCode ConfigurationalFractureMechanics::ArcLengthElemFEMethod::get_dlam
   ierr = VecCopy(x,arc_ptr->dx); CHKERRQ(ierr);
   ierr = VecAXPY(arc_ptr->dx,-1,arc_ptr->x0); CHKERRQ(ierr);
   //if LAMBDA dof is on this partition
-  if(arc_ptr->get_petsc_local_dof_idx()!=-1) {
+  if(arc_ptr->getPetscLocalDofIdx()!=-1) {
     double *array;
     ierr = VecGetArray(arc_ptr->dx,&array); CHKERRQ(ierr);
-    arc_ptr->dlambda = array[arc_ptr->get_petsc_local_dof_idx()];
-    array[arc_ptr->get_petsc_local_dof_idx()] = 0;
+    arc_ptr->dlambda = array[arc_ptr->getPetscLocalDofIdx()];
+    array[arc_ptr->getPetscLocalDofIdx()] = 0;
     ierr = VecRestoreArray(arc_ptr->dx,&array); CHKERRQ(ierr);
   }
   //brodcast dlambda
-  unsigned int part = arc_ptr->get_part();
+  unsigned int part = arc_ptr->getPart();
   //MPI_Bcast(&(arc_ptr->dlambda),1,MPI_DOUBLE,part,PETSC_COMM_WORLD);
   ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
   Vec lambda_ghost;
@@ -3316,7 +3316,7 @@ PetscErrorCode ConfigurationalFractureMechanics::ArcLengthElemFEMethod::operator
     case CTX_SNESSETFUNCTION: {
       //calculate residual for arc length row
       arc_ptr->res_lambda = lambda_int - arc_ptr->s;
-      ierr = VecSetValue(snes_f,arc_ptr->get_petsc_gloabl_dof_idx(),arc_ptr->res_lambda,INSERT_VALUES); CHKERRQ(ierr);
+      ierr = VecSetValue(snes_f,arc_ptr->getPetscGloablDofIdx(),arc_ptr->res_lambda,INSERT_VALUES); CHKERRQ(ierr);
       PetscPrintf(PETSC_COMM_SELF,"\n");
       PetscPrintf(PETSC_COMM_SELF,"\t** Arc-Length residual:\n");
       PetscPrintf(PETSC_COMM_SELF,"\t  residual of arc-length control res_lambda = %6.4e crack area/f_lambda_int = %6.4e ( %6.4e )\n"
@@ -3326,7 +3326,7 @@ PetscErrorCode ConfigurationalFractureMechanics::ArcLengthElemFEMethod::operator
       //calculate diagonal therm
       double diag = arc_ptr->beta*sqrt(arc_ptr->F_lambda2);
       ierr = VecSetValue(ghostDiag,0,diag,INSERT_VALUES); CHKERRQ(ierr);
-      ierr = MatSetValue(snes_B,arc_ptr->get_petsc_gloabl_dof_idx(),arc_ptr->get_petsc_gloabl_dof_idx(),1,INSERT_VALUES); CHKERRQ(ierr);
+      ierr = MatSetValue(snes_B,arc_ptr->getPetscGloablDofIdx(),arc_ptr->getPetscGloablDofIdx(),1,INSERT_VALUES); CHKERRQ(ierr);
     } break;
     default:
     break;

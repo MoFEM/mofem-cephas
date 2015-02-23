@@ -271,7 +271,7 @@ struct NonLinearSpatialElasticFEMthod: public FEMethod_ComplexForLazy {
       break;
     }
     if(arcPtr!=NULL) {
-      ierr = set_thermal_load_factor(arcPtr->get_FieldData()); CHKERRQ(ierr);
+      ierr = set_thermal_load_factor(arcPtr->getFieldData()); CHKERRQ(ierr);
       thermal_load_factor = *thermalLoadFactor;
     }
     PetscFunctionReturn(0);
@@ -647,14 +647,14 @@ struct ArcLengthElemFEMethod: public FEMethod {
     switch(snes_ctx) {
       case CTX_SNESSETFUNCTION: {
 	arc_ptr->res_lambda = calculate_lambda_int() - pow(arc_ptr->s,2);
-	ierr = VecSetValue(snes_f,arc_ptr->get_petsc_gloabl_dof_idx(),arc_ptr->res_lambda,ADD_VALUES); CHKERRQ(ierr);
+	ierr = VecSetValue(snes_f,arc_ptr->getPetscGloablDofIdx(),arc_ptr->res_lambda,ADD_VALUES); CHKERRQ(ierr);
 	PetscPrintf(PETSC_COMM_SELF,"\tres_lambda = %6.4e\n",arc_ptr->res_lambda);
       }
       break; 
       case CTX_SNESSETJACOBIAN: {
 	double diag = 2*arc_ptr->dlambda*pow(arc_ptr->beta,2)*arc_ptr->F_lambda2;
 	ierr = VecSetValue(GhostDiag,0,diag,INSERT_VALUES); CHKERRQ(ierr);
-	ierr = MatSetValue(snes_B,arc_ptr->get_petsc_gloabl_dof_idx(),arc_ptr->get_petsc_gloabl_dof_idx(),1,ADD_VALUES); CHKERRQ(ierr);
+	ierr = MatSetValue(snes_B,arc_ptr->getPetscGloablDofIdx(),arc_ptr->getPetscGloablDofIdx(),1,ADD_VALUES); CHKERRQ(ierr);
       }
       break;
       default:
@@ -668,7 +668,7 @@ struct ArcLengthElemFEMethod: public FEMethod {
     PetscFunctionBegin;
     switch(snes_ctx) {
       case CTX_SNESSETFUNCTION: { 
-	PetscPrintf(PETSC_COMM_WORLD,"\tlambda = %6.4e\n",arc_ptr->get_FieldData());  
+	PetscPrintf(PETSC_COMM_WORLD,"\tlambda = %6.4e\n",arc_ptr->getFieldData());  
       }
       break;
       case CTX_SNESSETJACOBIAN: {
@@ -697,14 +697,14 @@ struct ArcLengthElemFEMethod: public FEMethod {
     ierr = VecCopy(x,arc_ptr->dx); CHKERRQ(ierr);
     ierr = VecAXPY(arc_ptr->dx,-1,arc_ptr->x0); CHKERRQ(ierr);
     //dlambda
-    if(arc_ptr->get_petsc_local_dof_idx()!=-1) {
+    if(arc_ptr->getPetscLocalDofIdx()!=-1) {
       double *array;
       ierr = VecGetArray(arc_ptr->dx,&array); CHKERRQ(ierr);
-      arc_ptr->dlambda = array[arc_ptr->get_petsc_local_dof_idx()];
-      array[arc_ptr->get_petsc_local_dof_idx()] = 0;
+      arc_ptr->dlambda = array[arc_ptr->getPetscLocalDofIdx()];
+      array[arc_ptr->getPetscLocalDofIdx()] = 0;
       ierr = VecRestoreArray(arc_ptr->dx,&array); CHKERRQ(ierr);
     }
-    int part = arc_ptr->get_part();
+    int part = arc_ptr->getPart();
     MPI_Bcast(&(arc_ptr->dlambda),1,MPI_DOUBLE,part,PETSC_COMM_WORLD);
     //dx2
     ierr = VecDot(arc_ptr->dx,arc_ptr->dx,&arc_ptr->dx2); CHKERRQ(ierr);
@@ -726,18 +726,18 @@ struct ArcLengthElemFEMethod: public FEMethod {
   PetscErrorCode set_dlambda_to_x(Vec x,double dlambda) {
     PetscFunctionBegin;
     //check if locl dof idx is non zero, i.e. that lambda is acessible from this processor
-    if(arc_ptr->get_petsc_local_dof_idx()!=-1) {
+    if(arc_ptr->getPetscLocalDofIdx()!=-1) {
       double *array;
       ierr = VecGetArray(x,&array); CHKERRQ(ierr);
-      double lambda_old = array[arc_ptr->get_petsc_local_dof_idx()];
+      double lambda_old = array[arc_ptr->getPetscLocalDofIdx()];
       if(!(dlambda == dlambda)) {
 	ostringstream sss;
 	sss << "s " << arc_ptr->s << " " << arc_ptr->beta << " " << arc_ptr->F_lambda2;
 	SETERRQ(PETSC_COMM_SELF,1,sss.str().c_str());
       }
-      array[arc_ptr->get_petsc_local_dof_idx()] = lambda_old + dlambda;
+      array[arc_ptr->getPetscLocalDofIdx()] = lambda_old + dlambda;
       PetscPrintf(PETSC_COMM_WORLD,"\tlambda = %6.4e, %6.4e (%6.4e)\n",
-	lambda_old, array[arc_ptr->get_petsc_local_dof_idx()], dlambda);
+	lambda_old, array[arc_ptr->getPetscLocalDofIdx()], dlambda);
       ierr = VecRestoreArray(x,&array); CHKERRQ(ierr);
     }
     PetscFunctionReturn(0);
