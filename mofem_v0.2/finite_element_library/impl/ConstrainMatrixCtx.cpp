@@ -56,7 +56,7 @@ PetscErrorCode ConstrainMatrixCtx::initializeQorP(Vec x) {
       ierr = MatTranspose(C,MAT_INITIAL_MATRIX,&CT); CHKERRQ(ierr);
       ierr = MatTransposeMatMult(CT,CT,MAT_INITIAL_MATRIX,PETSC_DEFAULT,&CCT); CHKERRQ(ierr); // need to be calculated when C is changed
       if(createKSP) {
-	ierr = KSPCreate(PETSC_COMM_WORLD,&kSP); CHKERRQ(ierr); // neet to be recalculated when C is changed
+	ierr = KSPCreate(mField.get_comm(),&kSP); CHKERRQ(ierr); // neet to be recalculated when C is changed
 	ierr = KSPSetOperators(kSP,CCT,CCT); CHKERRQ(ierr);
 	ierr = KSPSetFromOptions(kSP); CHKERRQ(ierr);
 	ierr = KSPSetInitialGuessKnoll(kSP,PETSC_TRUE); CHKERRQ(ierr);
@@ -118,7 +118,7 @@ PetscErrorCode ConstrainMatrixCtx::initializeQTKQ() {
 	//MatView(CCT,PETSC_VIEWER_DRAW_WORLD);
 	int m,n;
 	MatGetSize(CCT,&m,&n);
-	PetscPrintf(PETSC_COMM_WORLD,"CCT size (%d,%d)\n",m,n);
+	PetscPrintf(mField.get_comm(),"CCT size (%d,%d)\n",m,n);
 	//std::string wait;
 	//std::cin >> wait;
       }
@@ -253,7 +253,7 @@ PetscErrorCode ConstrainMatrixMultOpCTC_QTKQ(Mat CTC_QTKQ,Vec x,Vec f) {
   int M,N,m,n;
   ierr = MatGetSize(ctx->K,&M,&N); CHKERRQ(ierr);
   ierr = MatGetLocalSize(ctx->K,&m,&n); CHKERRQ(ierr);
-  ierr = MatCreateShell(PETSC_COMM_WORLD,m,n,M,N,ctx,&Q); CHKERRQ(ierr); 
+  ierr = MatCreateShell(ctx->mField.get_comm(),m,n,M,N,ctx,&Q); CHKERRQ(ierr); 
   ierr = MatShellSetOperation(Q,MATOP_MULT,(void(*)(void))PorjectionMatrixMultOpQ); CHKERRQ(ierr);
   ierr = ctx->initializeQTKQ(); CHKERRQ(ierr);
   ierr = MatMult(Q,x,ctx->Qx); CHKERRQ(ierr);
