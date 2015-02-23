@@ -33,12 +33,11 @@ PetscErrorCode ConstrainMatrixCtx::getKsp(const KSP *ksp) {
 
 ConstrainMatrixCtx::ConstrainMatrixCtx(FieldInterface& m_field,string x_problem,string y_problem,bool create_ksp):
   mField(m_field),
-  CT(PETSC_NULL),CCT(PETSC_NULL),CTC(PETSC_NULL),
+  C(PETSC_NULL),CT(PETSC_NULL),CCT(PETSC_NULL),CTC(PETSC_NULL),K(PETSC_NULL),
   Cx(PETSC_NULL),CCTm1_Cx(PETSC_NULL),CT_CCTm1_Cx(PETSC_NULL),CTCx(PETSC_NULL),
   Qx(PETSC_NULL),KQx(PETSC_NULL),
   xProblem(x_problem),yProblem(y_problem),
-  initQorP(true),initQTKQ(true),createKSP(create_ksp),
-  C(PETSC_NULL),K(PETSC_NULL) {
+  initQorP(true),initQTKQ(true),createKSP(create_ksp) {
   PetscLogEventRegister("ProjectionInit",0,&USER_EVENT_projInit);
   PetscLogEventRegister("ProjectionQ",0,&USER_EVENT_projQ);
   PetscLogEventRegister("ProjectionP",0,&USER_EVENT_projP);
