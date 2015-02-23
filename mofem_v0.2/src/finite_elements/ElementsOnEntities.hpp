@@ -54,10 +54,10 @@ struct TetElementForcesAndSourcesCore: public ForcesAndSurcesCore {
   OpSetInvJacHdiv opSetInvJacHdiv;
 
   string meshPositionsFieldName;
-  ublas::matrix<FieldData> hoCoordsAtGaussPtsPts;
-  ublas::matrix<FieldData> hoGaussPtsJac;
-  ublas::matrix<FieldData> hoGaussPtsInvJac;
-  ublas::vector<FieldData> hoGaussPtsDetJac;
+  ublas::matrix<double> hoCoordsAtGaussPts;
+  ublas::matrix<double> hoGaussPtsJac;
+  ublas::matrix<double> hoGaussPtsInvJac;
+  ublas::vector<double> hoGaussPtsDetJac;
 
   OpGetData opHOatGaussPoints; ///< higher order geometry data at Gauss pts
   OpSetHoInvJacH1 opSetHoInvJacH1;
@@ -72,7 +72,7 @@ struct TetElementForcesAndSourcesCore: public ForcesAndSurcesCore {
     opSetInvJacH1(invJac),
     opPiolaTransform(vOlume,Jac),opSetInvJacHdiv(invJac),
     meshPositionsFieldName("MESH_NODE_POSITIONS"),
-    opHOatGaussPoints(hoCoordsAtGaussPtsPts,hoGaussPtsJac,3,3),
+    opHOatGaussPoints(hoCoordsAtGaussPts,hoGaussPtsJac,3,3),
     opSetHoInvJacH1(hoGaussPtsInvJac),
     opSetHoPiolaTransform(hoGaussPtsDetJac,hoGaussPtsJac),
     opSetHoInvJacHdiv(hoGaussPtsInvJac) {};
@@ -108,7 +108,7 @@ struct TetElementForcesAndSourcesCore: public ForcesAndSurcesCore {
     inline ublas::vector<double>& getCoords() { return ptrFE->coords; }
     inline ublas::matrix<double>& getGaussPts() { return ptrFE->gaussPts; }
     inline ublas::matrix<double>& getCoordsAtGaussPts() { return ptrFE->coordsAtGaussPts; }
-    inline ublas::matrix<double>& getHoCoordsAtGaussPtsPts() { return ptrFE->hoCoordsAtGaussPtsPts; }
+    inline ublas::matrix<double>& getHoCoordsAtGaussPts() { return ptrFE->hoCoordsAtGaussPts; }
     inline ublas::matrix<double>& getHoGaussPtsInvJac() { return ptrFE->hoGaussPtsInvJac; }
     inline ublas::vector<double>& getHoGaussPtsDetJac() { return ptrFE->hoGaussPtsDetJac; }
     inline const FEMethod* getFEMethod() { return ptrFE; }
@@ -122,7 +122,7 @@ struct TetElementForcesAndSourcesCore: public ForcesAndSurcesCore {
     //differential operators
     PetscErrorCode getDivergenceMatrixOperato_Hdiv(
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data,
-      int gg,ublas::vector<FieldData> &div);
+      int gg,ublas::vector<double> &div);
 
     private:
     TetElementForcesAndSourcesCore *ptrFE; 
@@ -183,9 +183,9 @@ struct TriElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
   string meshPositionsFieldName;
 
-  ublas::matrix<FieldData> nOrmals_at_GaussPt;
-  ublas::matrix<FieldData> tAngent1_at_GaussPt;
-  ublas::matrix<FieldData> tAngent2_at_GaussPt;
+  ublas::matrix<double> nOrmals_at_GaussPt;
+  ublas::matrix<double> tAngent1_at_GaussPt;
+  ublas::matrix<double> tAngent2_at_GaussPt;
   OpGetNormals opHONormals;
   OpSetPiolaTransoformOnTriangle opSetPiolaTransoformOnTriangle;
 
@@ -231,7 +231,7 @@ struct TriElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
     /** \bried if higher order geometry return normals at Gauss pts.
      */
-    inline ublas::matrix<FieldData>& getNormals_at_GaussPt() { return ptrFE->nOrmals_at_GaussPt; }
+    inline ublas::matrix<double>& getNormals_at_GaussPt() { return ptrFE->nOrmals_at_GaussPt; }
 
     /** \bried if higher order geometry return normals at Gauss pts.
       *
@@ -243,11 +243,11 @@ struct TriElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
     /** \bried if higher order geometry return tangent vetor to triangle at Gauss pts.
      */
-    inline ublas::matrix<FieldData>& getTangent1_at_GaussPt() { return ptrFE->tAngent1_at_GaussPt; }
+    inline ublas::matrix<double>& getTangent1_at_GaussPt() { return ptrFE->tAngent1_at_GaussPt; }
 
     /** \bried if higher order geometry return tangent vetor to triangle at Gauss pts.
      */
-    inline ublas::matrix<FieldData>& getTangent2_at_GaussPt() { return ptrFE->tAngent2_at_GaussPt; }
+    inline ublas::matrix<double>& getTangent2_at_GaussPt() { return ptrFE->tAngent2_at_GaussPt; }
 
     /** \bried return pointer to triangle finite element object 
      */
@@ -471,12 +471,12 @@ struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
   string meshPositionsFieldName;
 
-  ublas::matrix<FieldData> nOrmals_at_GaussPtF3;
-  ublas::matrix<FieldData> tAngent1_at_GaussPtF3;
-  ublas::matrix<FieldData> tAngent2_at_GaussPtF3;
-  ublas::matrix<FieldData> nOrmals_at_GaussPtF4;
-  ublas::matrix<FieldData> tAngent1_at_GaussPtF4;
-  ublas::matrix<FieldData> tAngent2_at_GaussPtF4;
+  ublas::matrix<double> nOrmals_at_GaussPtF3;
+  ublas::matrix<double> tAngent1_at_GaussPtF3;
+  ublas::matrix<double> tAngent2_at_GaussPtF3;
+  ublas::matrix<double> nOrmals_at_GaussPtF4;
+  ublas::matrix<double> tAngent1_at_GaussPtF4;
+  ublas::matrix<double> tAngent2_at_GaussPtF4;
   OpGetNormalsOnPrism opHONormals;
 
   FlatPrismElementForcesAndSurcesCore(FieldInterface &_mField):
@@ -525,14 +525,14 @@ struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
      * Face 3 is top face in cannonical triangle numeraion, see 
      * Canonical numbering systems for finite-element codes Timothy J. Tautges
      */
-    inline ublas::matrix<FieldData>& getNormals_at_GaussPtF3() { return ptrFE->nOrmals_at_GaussPtF3; }
+    inline ublas::matrix<double>& getNormals_at_GaussPtF3() { return ptrFE->nOrmals_at_GaussPtF3; }
 
     /** \bried if higher order geometry return normals at face F4 at Gauss pts.
      * 
      * Face 4 is top face in cannonical triangle numeraion, see 
      * Canonical numbering systems for finite-element codes Timothy J. Tautges
      */
-    inline ublas::matrix<FieldData>& getNormals_at_GaussPtF4() { return ptrFE->nOrmals_at_GaussPtF4; }
+    inline ublas::matrix<double>& getNormals_at_GaussPtF4() { return ptrFE->nOrmals_at_GaussPtF4; }
 
     /** \bried if higher order geometry return normals at Gauss pts.
       *
@@ -558,19 +558,19 @@ struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
     /** \bried if higher order geometry return tangent vetor to triangle at Gauss pts.
      */
-    inline ublas::matrix<FieldData>& getTangent1_at_GaussPtF3() { return ptrFE->tAngent1_at_GaussPtF3; }
+    inline ublas::matrix<double>& getTangent1_at_GaussPtF3() { return ptrFE->tAngent1_at_GaussPtF3; }
 
     /** \bried if higher order geometry return tangent vetor to triangle at Gauss pts.
      */
-    inline ublas::matrix<FieldData>& getTangent2_at_GaussPtF3() { return ptrFE->tAngent2_at_GaussPtF3; }
+    inline ublas::matrix<double>& getTangent2_at_GaussPtF3() { return ptrFE->tAngent2_at_GaussPtF3; }
 
     /** \bried if higher order geometry return tangent vetor to triangle at Gauss pts.
      */
-    inline ublas::matrix<FieldData>& getTangent1_at_GaussPtF4() { return ptrFE->tAngent1_at_GaussPtF4; }
+    inline ublas::matrix<double>& getTangent1_at_GaussPtF4() { return ptrFE->tAngent1_at_GaussPtF4; }
 
     /** \bried if higher order geometry return tangent vetor to triangle at Gauss pts.
      */
-    inline ublas::matrix<FieldData>& getTangent2_at_GaussPtF4() { return ptrFE->tAngent2_at_GaussPtF4; }
+    inline ublas::matrix<double>& getTangent2_at_GaussPtF4() { return ptrFE->tAngent2_at_GaussPtF4; }
 
     /** \bried return pointer to triangle finite element object 
      */

@@ -519,7 +519,7 @@ PetscErrorCode OpGetData::doWork(
   }
   for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
     for(int rr = 0;rr<rank;rr++) {
-      data_at_GaussPt(gg,rr) = cblas_ddot(nb_dofs/rank,&data.getN()(gg,0),1,&data.getFieldData()[rr],rank);
+      data_at_GaussPt(gg,rr) += cblas_ddot(nb_dofs/rank,&data.getN()(gg,0),1,&data.getFieldData()[rr],rank);
       for(unsigned int dd = 0;dd<dim;dd++) {
 	if(type == MBVERTEX) {
 	  if(gg == 0) continue;

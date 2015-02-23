@@ -2368,23 +2368,23 @@ PetscErrorCode Core::compose_problem(const string &name,const string &problem_fo
   DofIdx &nb_row_local_dofs = *((DofIdx*)p_miit->tag_local_nbdof_data_row);
   nb_row_local_dofs = 0;
   if(!copy_rows) {
-  //rows
-  map<DofIdx,const NumeredDofMoFEMEntity*>::iterator miit_map_row = rows_problem_map.begin();
-  for(;miit_map_row!=rows_problem_map.end();miit_map_row++) {
-    NumeredDofMoFEMEntitys_by_uid::iterator pr_dof = dofs_row_by_uid.find(miit_map_row->second->get_global_unique_id());
-    if(pr_dof == dofs_row_by_uid.end()) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
-    int part_number = miit_map_row->second->get_part();
-    int petsc_global_dof = distance(rows_problem_map.begin(),miit_map_row);
-    if(verb>1) {
-      PetscPrintf(comm,"Row Problem Glob Idx %d Problem Glob Idx %d\n",miit_map_row->second->get_petsc_gloabl_dof_idx(),petsc_global_dof);
-    }
-    bool success = dofs_row_by_uid.modify(pr_dof,NumeredDofMoFEMEntity_part_change(part_number,petsc_global_dof));
-    if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-    if(pr_dof->get_part() == (unsigned int)rAnk) {
-      success = dofs_row_by_uid.modify(pr_dof,NumeredDofMoFEMEntity_local_idx_change(nb_row_local_dofs++));
+    //rows
+    map<DofIdx,const NumeredDofMoFEMEntity*>::iterator miit_map_row = rows_problem_map.begin();
+    for(;miit_map_row!=rows_problem_map.end();miit_map_row++) {
+      NumeredDofMoFEMEntitys_by_uid::iterator pr_dof = dofs_row_by_uid.find(miit_map_row->second->get_global_unique_id());
+      if(pr_dof == dofs_row_by_uid.end()) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+      int part_number = miit_map_row->second->get_part();
+      int petsc_global_dof = distance(rows_problem_map.begin(),miit_map_row);
+      if(verb>1) {
+	PetscPrintf(comm,"Row Problem Glob Idx %d Problem Glob Idx %d\n",miit_map_row->second->get_petsc_gloabl_dof_idx(),petsc_global_dof);
+      }
+      bool success = dofs_row_by_uid.modify(pr_dof,NumeredDofMoFEMEntity_part_change(part_number,petsc_global_dof));
       if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+      if(pr_dof->get_part() == (unsigned int)rAnk) {
+	success = dofs_row_by_uid.modify(pr_dof,NumeredDofMoFEMEntity_local_idx_change(nb_row_local_dofs++));
+	if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+      }
     }
-  }
   } else {
     for(_IT_NUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_(p_miit_row,diit)) {
       bool success = moFEMProblems.modify(moFEMProblems.project<0>(p_miit),problem_row_change(diit->get_DofMoFEMEntity_ptr()));
@@ -2406,22 +2406,22 @@ PetscErrorCode Core::compose_problem(const string &name,const string &problem_fo
   DofIdx &nb_col_local_dofs = *((DofIdx*)p_miit->tag_local_nbdof_data_col);
   nb_col_local_dofs = 0;
   if(!copy_cols) {
-  map<DofIdx,const NumeredDofMoFEMEntity*>::iterator miit_map_col = cols_problem_map.begin();
-  for(;miit_map_col!=cols_problem_map.end();miit_map_col++) {
-    NumeredDofMoFEMEntitys_by_uid::iterator pr_dof = dofs_col_by_uid.find(miit_map_col->second->get_global_unique_id());
-    if(pr_dof == dofs_col_by_uid.end()) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
-    int part_number = miit_map_col->second->get_part();
-    int petsc_global_dof = distance(cols_problem_map.begin(),miit_map_col);
-    if(verb>1) {
-      PetscPrintf(comm,"Col Problem Glob Idx %d Problem Glob Idx %d\n",miit_map_col->second->get_petsc_gloabl_dof_idx(),petsc_global_dof);
-    }
-    bool success = dofs_col_by_uid.modify(pr_dof,NumeredDofMoFEMEntity_part_change(part_number,petsc_global_dof));
-    if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-    if(pr_dof->get_part() == (unsigned int)rAnk) {
-      success = dofs_col_by_uid.modify(pr_dof,NumeredDofMoFEMEntity_local_idx_change(nb_col_local_dofs++));
+    map<DofIdx,const NumeredDofMoFEMEntity*>::iterator miit_map_col = cols_problem_map.begin();
+    for(;miit_map_col!=cols_problem_map.end();miit_map_col++) {
+      NumeredDofMoFEMEntitys_by_uid::iterator pr_dof = dofs_col_by_uid.find(miit_map_col->second->get_global_unique_id());
+      if(pr_dof == dofs_col_by_uid.end()) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+      int part_number = miit_map_col->second->get_part();
+      int petsc_global_dof = distance(cols_problem_map.begin(),miit_map_col);
+      if(verb>1) {
+	PetscPrintf(comm,"Col Problem Glob Idx %d Problem Glob Idx %d\n",miit_map_col->second->get_petsc_gloabl_dof_idx(),petsc_global_dof);
+      }
+      bool success = dofs_col_by_uid.modify(pr_dof,NumeredDofMoFEMEntity_part_change(part_number,petsc_global_dof));
       if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+      if(pr_dof->get_part() == (unsigned int)rAnk) {
+	success = dofs_col_by_uid.modify(pr_dof,NumeredDofMoFEMEntity_local_idx_change(nb_col_local_dofs++));
+	if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+      }
     }
-  }
   } else {
     for(_IT_NUMEREDDOFMOFEMENTITY_COL_FOR_LOOP_(p_miit_col,diit)) {
       bool success = moFEMProblems.modify(moFEMProblems.project<0>(p_miit),problem_col_change(diit->get_DofMoFEMEntity_ptr()));

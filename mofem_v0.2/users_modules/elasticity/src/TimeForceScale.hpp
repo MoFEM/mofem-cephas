@@ -58,7 +58,7 @@ struct TimeForceScale: public MethodsForOp {
 	  continue;
 	}
 	if(n != 2){
-	  SETERRQ(PETSC_COMM_SELF,1,"*** ERROR read data file error (check input time data file)");
+	  SETERRQ1(PETSC_COMM_SELF,1,"*** ERROR read data file error (check input time data file) { n = %d }",n);
 	}
 	tSeries[no1] = no2;
       }

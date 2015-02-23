@@ -1,5 +1,5 @@
 /**  
- * \brief Operators and data structures for thermal analys
+ * \brief Postprocessing stresses for nonolinear analyis
  *
  * Implementation of method for postprocessing stresses.
  *

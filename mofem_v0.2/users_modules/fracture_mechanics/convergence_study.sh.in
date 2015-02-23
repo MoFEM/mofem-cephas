@@ -19,6 +19,7 @@ while test $# -gt 0; do
 			echo "-o, --orders=1,2,3,4,5 (max is 5)\"" 
 			echo "-r, --ref=0,1,2,3,4 ... (memory and time is your limit)\""
 			echo "-d, --dir=DIR_NAME"
+      			echo "-t, --rol=TOLERANCE"
                         exit 0
                         ;;
 		--showme) 
@@ -129,6 +130,20 @@ while test $# -gt 0; do
                         export PCFACTOR=`echo $1 | sed -e 's/^[^=]*=//g'`
                         shift
                         ;;
+		-t)
+                        shift
+                        if test $# -gt 0; then
+                                export TOL=$1
+                        else
+                                echo "no tolerance specified"
+                                exit 1
+                        fi
+                        shift
+                        ;;
+                --tol*)
+                        export TOL=`echo $1 | sed -e 's/^[^=]*=//g'`
+                        shift
+                        ;;
                 *)
                         break
                         ;;
@@ -175,6 +190,10 @@ if [ ! -z ${GC+x} ]; then
   OPTIONS_MATERIAL_FORCE="$OPTIONS_MATERIAL_FORCE -my_gc $GC"
 fi
 
+if [ -z ${TOL+x} ]; then 
+  TOL=1e-9
+fi
+
 BIN_PATH="@CMAKE_CURRENT_BINARY_DIR@"
 MPIRUN="@MoFEM_MPI_RUN@ -np $NB_PROC" 
 MPIRUN_ONE_PROC="@MoFEM_MPI_RUN@ -np 1" 
@@ -206,9 +225,9 @@ do
     fi
 
     COMMAND1="$MPIRUN $BIN_PATH/spatial_problem \
-      -my_file $FILE -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package $PCFACTOR \
+      -my_file $FILE -ksp_type gmres -pc_type lu -pc_factor_mat_solver_package $PCFACTOR \
       -ksp_atol 1e-14 -ksp_rtol 1e-12 -ksp_monitor \
-      -snes_monitor -snes_type newtonls -snes_linesearch_type l2 -snes_max_it 10 -snes_atol 1e-9 -snes_rtol 1e-9 -snes_stol 0 \
+      -snes_monitor -snes_type newtonls -snes_linesearch_type l2 -snes_max_it 10 -snes_atol $TOL -snes_rtol 1e-9 -snes_stol 0 \
       -my_order $order -my_ref $ref_level -my_load $LOAD_FACTOR -my_max_post_proc_ref_level 0 -log_summary"
 
     echo "$COMMAND1 2>&1 | tee -a $DIR_NAME/log_solution"
@@ -218,7 +237,7 @@ do
 
     COMMAND2="$MPIRUN_ONE_PROC $BIN_PATH/material_force \
       -my_file out_spatial.h5m \
-	-ksp_type fgmres -pc_type lu -ksp_atol 1e-14 -ksp_rtol 1e-12 \
+	-ksp_type gmres -pc_type lu -ksp_atol 1e-14 -ksp_rtol 1e-12 \
 	-ksp_monitor -log_summary \
 	-my_gc $GC -pc_factor_mat_solver_package $PCFACTOR"
 
