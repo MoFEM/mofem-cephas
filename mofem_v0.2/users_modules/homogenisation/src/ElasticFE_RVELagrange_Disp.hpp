@@ -47,14 +47,14 @@ namespace MoFEM {
     ublas::matrix<double> g_NTRI_mat;
     const double* G_W_TRI;
     
-    PetscErrorCode preProcess();
+    virtual PetscErrorCode preProcess();
     
     int row_mat,col_mat,g_TRI_dim;
     vector<vector<DofIdx> > RowGlob;
     vector<vector<DofIdx> > ColGlob;
     vector<vector<ublas::matrix<double> > > rowNMatrices;
 
-    PetscErrorCode postProcess();
+    virtual PetscErrorCode postProcess();
     
     //Find indices and calculate shape function  and arrange in required form
     double coords_face[9];
