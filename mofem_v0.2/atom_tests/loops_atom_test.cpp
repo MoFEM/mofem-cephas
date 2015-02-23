@@ -47,41 +47,41 @@ int main(int argc, char *argv[]) {
 
   //Read mesh to MOAB
   const char *option;
-  option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
+  option = "";
   rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
   //Create MoFEM (Joseph) database
   MoFEM::Core core(moab);
-  FieldInterface& mField = core;
+  FieldInterface& m_field = core;
     
   //Open mesh_file_name.txt for writing
   ofstream myfile;
   myfile.open ((string(mesh_file_name)+".txt").c_str());
 
   cout << "<<<< All BLOCKSETs, SIDESETs and NODESETs >>>>>" << endl;
-  for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,it)) {
+  for(_IT_CUBITMESHSETS_FOR_LOOP_(m_field,it)) {
     cout<< it->get_Cubit_name() << endl;
     myfile << it->get_Cubit_name() << endl;
   }
   cout << "<<<< BLOCKSETs >>>>>" << endl;
-  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
+  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
     cout<< it->get_Cubit_name() << endl;
     myfile << it->get_Cubit_name() << endl;
   }
   cout << "<<<< NODESETs >>>>>" << endl;
-  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,NODESET,it)) {
+  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,NODESET,it)) {
     cout<< it->get_Cubit_name() << endl;
     myfile << it->get_Cubit_name() << endl;
   }
   cout << "<<<< SIDESETs >>>>>" << endl;
-  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SIDESET,it)) {
+  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,SIDESET,it)) {
     cout<< it->get_Cubit_name() << endl;
     myfile << it->get_Cubit_name() << endl;
   }
   cout <<"<<<< MeshSet of Name Moon >>>>" << endl;
-  for (_IT_CUBITMESHSETS_BY_NAME_FOR_LOOP_(mField,"Moon",it)){
+  for (_IT_CUBITMESHSETS_BY_NAME_FOR_LOOP_(m_field,"Moon",it)){
     cout << it->get_Cubit_name() << endl;
     myfile << it->get_Cubit_name() << endl;
     if(it->get_CubitBCType_ulong() & BLOCKSET) {

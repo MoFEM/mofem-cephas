@@ -157,40 +157,59 @@ struct MonitorUpdateFrezedNodes: public FEMethod {
   FieldInterface &mField;
   ConfigurationalFracturDynamics *confProb;
   FixBcAtEntities &bC;
-  MyEshelbyFEMethod &feMaterial;
+  MyEshelby &feMaterial;
   ConvectiveMassElement &iNertia;
+  TangentWithMeshSmoothingFrontConstrain &tangentConstrain;
+  SnesConstrainSurfacGeometry &surfaceConstrains;
+  SnesConstrainSurfacGeometry &crackSurfaceConstrains;
+
 
   MonitorUpdateFrezedNodes(FieldInterface &m_field,
     ConfigurationalFracturDynamics *conf_prob,
     FixBcAtEntities &bc,
-    MyEshelbyFEMethod &fe_material,ConvectiveMassElement &inertia): 
+    MyEshelby &fe_material,ConvectiveMassElement &inertia,
+    TangentWithMeshSmoothingFrontConstrain &tangent_constrain,
+    SnesConstrainSurfacGeometry &surface_constrains,
+    SnesConstrainSurfacGeometry &crack_surface_constrains): 
     mField(m_field),confProb(conf_prob),
-    bC(bc),feMaterial(fe_material),iNertia(inertia) {}
+    bC(bc),feMaterial(fe_material),iNertia(inertia),
+    tangentConstrain(tangent_constrain),
+    surfaceConstrains(surface_constrains),
+    crackSurfaceConstrains(crack_surface_constrains) {}
 
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
     PetscErrorCode ierr;
-
-    ierr = confProb->set_coordinates_from_material_solution(mField,false); CHKERRQ(ierr);
-    for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"DOT_MESH_NODE_POSITIONS",dof_ptr)) {
-      dof_ptr->get_FieldData() = 0;
-    }
 
     Vec F_Material;
     ierr = mField.VecCreateGhost("COUPLED_DYNAMIC",ROW,&F_Material); CHKERRQ(ierr);
     ierr = VecZeroEntries(F_Material); CHKERRQ(ierr);
     ierr = VecGhostUpdateBegin(F_Material,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(F_Material,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    surfaceConstrains.snes_ctx = FEMethod::CTX_SNESSETFUNCTION;
+    surfaceConstrains.snes_f = F_Material;
+    ierr = mField.loop_finite_elements("COUPLED_DYNAMIC","CandCT_SURFACE_ELEM",surfaceConstrains); CHKERRQ(ierr);
+    crackSurfaceConstrains.snes_ctx = FEMethod::CTX_SNESSETFUNCTION;
+    crackSurfaceConstrains.snes_f = F_Material;
+    ierr = mField.loop_finite_elements("COUPLED_DYNAMIC","CandCT_CRACK_SURFACE_ELEM",crackSurfaceConstrains); CHKERRQ(ierr);
     feMaterial.snes_ctx = FEMethod::CTX_SNESSETFUNCTION;
     feMaterial.snes_f = F_Material;
     ierr = mField.loop_finite_elements("COUPLED_DYNAMIC","MATERIAL_COUPLED",feMaterial); CHKERRQ(ierr);
+    tangentConstrain.meshFEPtr->snes_ctx = FEMethod::CTX_SNESSETFUNCTION;
+    tangentConstrain.meshFEPtr->snes_f = F_Material;
+    ierr = mField.loop_finite_elements("COUPLED_DYNAMIC","MESH_SMOOTHER",*tangentConstrain.meshFEPtr); CHKERRQ(ierr);
+    tangentConstrain.snes_ctx = FEMethod::CTX_SNESSETFUNCTION;
+    tangentConstrain.snes_f = F_Material;
+    ierr = mField.loop_finite_elements("COUPLED_DYNAMIC","C_TANGENT_ELEM",tangentConstrain); CHKERRQ(ierr);
+    iNertia.getLoopFeTRhs().ts_ctx = FEMethod::CTX_TSSETIFUNCTION;
     iNertia.getLoopFeTRhs().ts_F = F_Material;
     ierr = mField.loop_finite_elements("COUPLED_DYNAMIC","DYNAMIC_ESHELBY_TERM",iNertia.getLoopFeTRhs()); CHKERRQ(ierr);
     ierr = VecGhostUpdateBegin(F_Material,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(F_Material,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = VecAssemblyBegin(F_Material); CHKERRQ(ierr);
     ierr = VecAssemblyEnd(F_Material); CHKERRQ(ierr);
-    ierr = mField.set_other_global_VecCreateGhost("COUPLED_DYNAMIC","MESH_NODE_POSITIONS","MATERIAL_FORCE",ROW,F_Material,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = mField.set_other_global_VecCreateGhost("COUPLED_DYNAMIC","MESH_NODE_POSITIONS","MATERIAL_FORCE",
+      ROW,F_Material,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = VecDestroy(&F_Material); CHKERRQ(ierr);
 
     //caculate griffith forces
@@ -199,6 +218,7 @@ struct MonitorUpdateFrezedNodes: public FEMethod {
     ierr = confProb->griffith_g(mField,"COUPLED_DYNAMIC"); CHKERRQ(ierr);
 
     //fix nodes
+    ierr = confProb->rate_of_work_of_fracture(mField); CHKERRQ(ierr);
     Range fix_nodes;
     ierr = confProb->fix_front_nodes(mField,fix_nodes); CHKERRQ(ierr);
 
@@ -217,6 +237,13 @@ struct MonitorUpdateFrezedNodes: public FEMethod {
     bC.eNts = corners_nodes;
     bC.problemPtr = problemPtr;
     bC.iNitalize();
+
+    //update mesh
+    ierr = confProb->set_coordinates_from_material_solution(mField,false); CHKERRQ(ierr);
+    //reset material velocities, no inertaia component, thus not change RHS
+    for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"DOT_MESH_NODE_POSITIONS",dof_ptr)) {
+      dof_ptr->get_FieldData() = 0;
+    }
 
     PetscFunctionReturn(0);
   }
@@ -288,6 +315,65 @@ struct MonitorLoadPath: public FEMethod {
   }
 
 };
+
+struct MyPrePostProcessDynamics: public FEMethod {
+    
+  FieldInterface& mField;
+  string velocityField,spatialPositionField,meshPositionField;
+
+
+  MyPrePostProcessDynamics(FieldInterface& _m_field): 
+    mField(_m_field),
+    velocityField("SPATIAL_VELOCITY"),
+    spatialPositionField("SPATIAL_POSITION"),
+    meshPositionField("MESH_NODE_POSITIONS") {}
+
+  PetscErrorCode ierr;
+    
+  PetscErrorCode preProcess() {
+    PetscFunctionBegin;
+      
+    switch (ts_ctx) {
+	case CTX_TSSETIFUNCTION: {
+	  snes_ctx = CTX_SNESSETFUNCTION;
+	  snes_f = ts_F;
+	  break;
+	}
+	case CTX_TSSETIJACOBIAN: {
+	  snes_ctx = CTX_SNESSETJACOBIAN;
+	  snes_B = ts_B;
+	  break;
+	}
+	default:
+	break;
+    }
+
+    ierr = mField.set_other_local_VecCreateGhost(problemPtr,velocityField,"DOT_"+velocityField,COL,ts_u_t,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = mField.set_other_local_VecCreateGhost(problemPtr,spatialPositionField,"DOT_"+spatialPositionField,COL,ts_u_t,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = mField.set_other_local_VecCreateGhost(problemPtr,meshPositionField,"DOT_"+meshPositionField,COL,ts_u_t,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+
+    PetscFunctionReturn(0);
+  }
+    
+  PetscErrorCode postProcess() {
+    PetscFunctionBegin;
+    switch(snes_ctx) {
+      case CTX_SNESSETFUNCTION: {
+	  //snes_f
+        ierr = VecGhostUpdateBegin(ts_F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+        ierr = VecGhostUpdateEnd(ts_F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+        ierr = VecAssemblyBegin(ts_F); CHKERRQ(ierr);
+        ierr = VecAssemblyEnd(ts_F); CHKERRQ(ierr);
+      }
+      break;
+      default:
+        SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    }
+    PetscFunctionReturn(0);
+  }
+
+};
+
 
 PetscErrorCode ConfigurationalFracturDynamics::coupled_dynamic_problem_definition(FieldInterface& m_field) {
   PetscFunctionBegin;
@@ -476,10 +562,11 @@ PetscErrorCode ConfigurationalFracturDynamics::fix_front_nodes(FieldInterface& m
     map<EntityHandle,double>::iterator mit = map_ent_g.begin();
     mit!=map_ent_g.end();mit++) {
     double g = mit->second;
+    double rate = map_ent_rate_work[mit->first];
     ierr = PetscPrintf(PETSC_COMM_WORLD,
-      "front node = %ld g/g_c = %4.3f\n",
-      mit->first,mit->second/gc); CHKERRQ(ierr);
-    if( (g/gc + treshhold) < 1 || (g != g)) {
+      "front node = %ld g/g_c = %4.3f rate = %4.3g\n",
+      mit->first,mit->second/gc,rate); CHKERRQ(ierr);
+    if( ((g/gc + treshhold) < 1) || (rate<0) || (g != g)) {
       fix_nodes.insert(mit->first);
       nb_fix_nodes++;
     }
@@ -490,7 +577,43 @@ PetscErrorCode ConfigurationalFracturDynamics::fix_front_nodes(FieldInterface& m
 
   PetscFunctionReturn(0);
 }
-
+PetscErrorCode ConfigurationalFracturDynamics::rate_of_work_of_fracture(FieldInterface& m_field) {
+  PetscFunctionBegin;
+  PetscErrorCode ierr;
+  ErrorCode rval;
+  map_ent_rate_work.clear();
+  ublas::vector<double> griffith_force(3);
+  ublas::vector<double> material_veloc(3);
+  ublas::vector<double> coords(3);
+  const MoFEMProblem *problem_ptr;
+  ierr = m_field.get_problem("C_CRACKFRONT_MATRIX",&problem_ptr); CHKERRQ(ierr);
+  for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_FOR_LOOP_(problem_ptr,"LAMBDA_CRACKFRONT_AREA",diit)) {
+    EntityHandle ent = diit->get_ent();
+    for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_(m_field,"GRIFFITH_FORCE",diit->get_ent(),diiit)) {
+      griffith_force[diiit->get_dof_rank()] = diiit->get_FieldData();
+    }
+    for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_(m_field,"DOT_MESH_NODE_POSITIONS",diit->get_ent(),diiit)) {
+      material_veloc[diiit->get_dof_rank()] = diiit->get_FieldData();
+    }
+    rval = m_field.get_moab().get_coords(&ent,1,&coords[0]); CHKERR_PETSC(rval);
+    double rate = inner_prod(griffith_force,material_veloc);
+    map_ent_rate_work[ent] = rate;
+    ostringstream ss;
+    ss << "rate of fracture work at ent ";
+    ss << setw(5) << ent;
+    //coords
+    ss << "\tcoords";
+    ss << " " << setw(10) << setprecision(4) << coords[0];
+    ss << " " << setw(10) << setprecision(4) << coords[1];
+    ss << " " << setw(10) << setprecision(4) << coords[2];
+    ss << " " << " rate of work at time step " << setprecision(4)  << rate;
+    ss << " " << " griffith force " << setw(10) << setprecision(4) << griffith_force;
+    ss << " " << " material veloc. " << setw(10) << setprecision(4) << material_veloc;
+    ss << endl;
+    PetscPrintf(PETSC_COMM_WORLD,"%s",ss.str().c_str());
+  }
+  PetscFunctionReturn(0);
+}
 
 PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterface& m_field,TS ts,double fraction_treshold) {
   PetscFunctionBegin;
@@ -510,64 +633,6 @@ PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterf
   Vec D;
   ierr = m_field.VecCreateGhost("COUPLED_DYNAMIC",COL,&D); CHKERRQ(ierr);
 
-  struct MyPrePostProcessFEMethod: public FEMethod {
-    
-    FieldInterface& mField;
-    string velocityField,spatialPositionField,meshPositionField;
-  
-
-    MyPrePostProcessFEMethod(FieldInterface& _m_field): 
-      mField(_m_field),
-      velocityField("SPATIAL_VELOCITY"),
-      spatialPositionField("SPATIAL_POSITION"),
-      meshPositionField("MESH_NODE_POSITIONS") {}
-  
-    PetscErrorCode ierr;
-      
-    PetscErrorCode preProcess() {
-      PetscFunctionBegin;
-        
-      switch (ts_ctx) {
-	case CTX_TSSETIFUNCTION: {
-	  snes_ctx = CTX_SNESSETFUNCTION;
-	  snes_f = ts_F;
-	  break;
-	}
-	case CTX_TSSETIJACOBIAN: {
-	  snes_ctx = CTX_SNESSETJACOBIAN;
-	  snes_B = ts_B;
-	  break;
-	}
-	default:
-	break;
-      }
-
-      ierr = mField.set_other_local_VecCreateGhost(problemPtr,velocityField,"DOT_"+velocityField,COL,ts_u_t,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-      ierr = mField.set_other_local_VecCreateGhost(problemPtr,spatialPositionField,"DOT_"+spatialPositionField,COL,ts_u_t,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-      ierr = mField.set_other_local_VecCreateGhost(problemPtr,meshPositionField,"DOT_"+meshPositionField,COL,ts_u_t,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-
-      PetscFunctionReturn(0);
-    }
-      
-    PetscErrorCode postProcess() {
-      PetscFunctionBegin;
-      switch(snes_ctx) {
-        case CTX_SNESSETFUNCTION: {
-	  //snes_f
-          ierr = VecGhostUpdateBegin(ts_F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-          ierr = VecGhostUpdateEnd(ts_F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-          ierr = VecAssemblyBegin(ts_F); CHKERRQ(ierr);
-          ierr = VecAssemblyEnd(ts_F); CHKERRQ(ierr);
-        }
-        break;
-        default:
-          SETERRQ(PETSC_COMM_SELF,1,"not implemented");
-      }
-      PetscFunctionReturn(0);
-    }
-
-  };
-
   //create projection matrices
   ierr = front_projection_data(m_field,"COUPLED_DYNAMIC"); CHKERRQ(ierr);
   ierr = surface_projection_data(m_field,"COUPLED_DYNAMIC"); CHKERRQ(ierr);
@@ -575,14 +640,14 @@ PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterf
   //spatial and material forces
   const double young_modulus = 1;
   const double poisson_ratio = 0.;
-  MyNonLinearSpatialElasticFEMthod fe_spatial(m_field,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
+  MyNonLinearSpatialElastic fe_spatial(m_field,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
   ierr = fe_spatial.initCrackFrontData(m_field); CHKERRQ(ierr);
   fe_spatial.isCoupledProblem = true;
-  MyEshelbyFEMethod fe_material(m_field,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
+  MyEshelby fe_material(m_field,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
   ierr = fe_material.initCrackFrontData(m_field); CHKERRQ(ierr);
   fe_material.isCoupledProblem = true;
   //meshs moothing
-  MyMeshSmoothingFEMethod smoother(m_field);
+  MyMeshSmoothing smoother(m_field);
   ierr = smoother.initCrackFrontData(m_field); CHKERRQ(ierr);
   set_qual_ver(0);
   //constrains
@@ -590,9 +655,9 @@ PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterf
   constrain_body_surface.nonlinear = true;
   SnesConstrainSurfacGeometry constrain_crack_surface(m_field,"LAMBDA_CRACK_SURFACE");
   constrain_crack_surface.nonlinear = true;
-  Snes_CTgc_CONSTANT_AREA_FEMethod ct_gc(m_field,projFrontCtx,"COUPLED_DYNAMIC","LAMBDA_CRACKFRONT_AREA");
-  Snes_dCTgc_CONSTANT_AREA_FEMethod dct_gc(m_field,K,"LAMBDA_CRACKFRONT_AREA");
-  TangentWithMeshSmoothingFrontConstrain_FEMethod tangent_constrain(m_field,&smoother,"LAMBDA_CRACK_TANGENT_CONSTRAIN");
+  Snes_CTgc_CONSTANT_AREA ct_gc(m_field,projFrontCtx,"COUPLED_DYNAMIC","LAMBDA_CRACKFRONT_AREA");
+  Snes_dCTgc_CONSTANT_AREA dct_gc(m_field,K,"LAMBDA_CRACKFRONT_AREA");
+  TangentWithMeshSmoothingFrontConstrain tangent_constrain(m_field,&smoother,"LAMBDA_CRACK_TANGENT_CONSTRAIN");
   map<int,SnesConstrainSurfacGeometry*> other_body_surface_constrains;
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,SIDESET,it)) {
     int msId = it->get_msId();
@@ -627,6 +692,7 @@ PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterf
     ss << "LAMBDA_SURFACE_msId_" << msId;
   }
   SpatialPositionsBCFEMethodPreAndPostProc my_dirichlet_bc(m_field,"SPATIAL_POSITION",K,D,F);
+  my_dirichlet_bc.fixFields.push_back("SPATIAL_VELOCITY");
   my_dirichlet_bc.fixFields.push_back("MESH_NODE_POSITIONS");
   my_dirichlet_bc.fixFields.push_back("LAMBDA_SURFACE");
   my_dirichlet_bc.fixFields.push_back("LAMBDA_CRACK_SURFACE_WITH_CRACK_FRONT");
@@ -649,7 +715,7 @@ PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterf
   }
   fe_forces.methodsOp.push_back(new TimeForceScale());
   //portsproc
-  MyPrePostProcessFEMethod pre_post_method(m_field);
+  MyPrePostProcessDynamics pre_post_method(m_field);
 
   //iNertia
   ierr = iNertia.setConvectiveMassOperators("SPATIAL_VELOCITY","SPATIAL_POSITION","MESH_NODE_POSITIONS",true,true); CHKERRQ(ierr);
@@ -662,6 +728,31 @@ PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterf
   crack_front_edges_nodes.merge(crack_front_edges);
   ierr = iNertia.setKinematicEshelbyOperators("SPATIAL_VELOCITY","SPATIAL_POSITION","MESH_NODE_POSITIONS",&crack_front_edges_nodes); CHKERRQ(ierr);
 
+  /*//this is for debugging only
+  struct StopAndViewMatrix: public FEMethod {
+    PetscErrorCode postProcess() {
+      PetscFunctionBegin;
+      PetscErrorCode ierr;
+      switch (ts_ctx) {
+	case CTX_TSSETIFUNCTION: {
+	  break;
+	}
+	case CTX_TSSETIJACOBIAN: {
+	  ierr = MatAssemblyBegin(ts_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+	  ierr = MatAssemblyEnd(ts_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+	  MatView(ts_B,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
+	  std::string wait;
+	  std::cin >> wait;
+	  break;
+	}
+	default:
+	break;
+      }
+      PetscFunctionReturn(0);
+    }
+  };
+  StopAndViewMatrix stop_and_view;*/
+
   //TS
   TsCtx ts_ctx(m_field,"COUPLED_DYNAMIC");
   //rhs preProcess
@@ -672,20 +763,20 @@ PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterf
 
   //rhs loops
   TsCtx::loops_to_do_type& loops_to_do_Rhs = ts_ctx.get_loops_to_do_IFunction();
-  loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("BOTH_SIDE_OF_CRACK",&both_sides_constrains));
-  loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("CandCT_SURFACE_ELEM",&constrain_body_surface));
-  loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("CandCT_CRACK_SURFACE_ELEM",&constrain_crack_surface));
+  loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("BOTH_SIDE_OF_CRACK",&both_sides_constrains));
+  loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("CandCT_SURFACE_ELEM",&constrain_body_surface));
+  loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("CandCT_CRACK_SURFACE_ELEM",&constrain_crack_surface));
   for(map<int,SnesConstrainSurfacGeometry*>::iterator mit = other_body_surface_constrains.begin();
     mit!=other_body_surface_constrains.end();mit++) {
     ostringstream ss2;
     ss2 << "CandCT_SURFACE_ELEM_msId_" << mit->first;
-    loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type(ss2.str(),mit->second));
+    loops_to_do_Rhs.push_back(TsCtx::loop_pair_type(ss2.str(),mit->second));
   }
-  loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("MESH_SMOOTHER",&smoother));
-  loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("C_TANGENT_ELEM",&tangent_constrain));
-  loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ELASTIC_COUPLED",&fe_spatial));
-  loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("MATERIAL_COUPLED",&fe_material));
-  loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("NEUAMNN_FE",&fe_forces));
+  loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("MESH_SMOOTHER",&smoother));
+  loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("C_TANGENT_ELEM",&tangent_constrain));
+  loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("ELASTIC_COUPLED",&fe_spatial));
+  loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("MATERIAL_COUPLED",&fe_material));
+  loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("NEUAMNN_FE",&fe_forces));
   //nodal forces
   boost::ptr_map<string,NodalForce> nodal_forces;
   string fe_name_str ="FORCE_FE";
@@ -696,7 +787,7 @@ PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterf
   }
   boost::ptr_map<string,NodalForce>::iterator fit = nodal_forces.begin();
   for(;fit!=nodal_forces.end();fit++) {
-    loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type(fit->first,&fit->second->getLoopFe()));
+    loops_to_do_Rhs.push_back(TsCtx::loop_pair_type(fit->first,&fit->second->getLoopFe()));
   }
   loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("VELOCITY_ELEMENT",&iNertia.getLoopFeVelRhs()));
   loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("MASS_ELEMENT",&iNertia.getLoopFeMassRhs()));
@@ -710,21 +801,21 @@ PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterf
   ts_ctx.get_preProcess_to_do_IJacobian().push_back(&my_dirichlet_bc);
   ts_ctx.get_preProcess_to_do_IJacobian().push_back(&fix_material_pts);
   TsCtx::loops_to_do_type& loops_to_do_Mat = ts_ctx.get_loops_to_do_IJacobian();
-  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("BOTH_SIDE_OF_CRACK",&both_sides_constrains));
-  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("dCT_CRACKFRONT_AREA_ELEM",&dct_gc));
-  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("CandCT_SURFACE_ELEM",&constrain_body_surface));
-  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("CandCT_CRACK_SURFACE_ELEM",&constrain_crack_surface));
+  loops_to_do_Mat.push_back(TsCtx::loop_pair_type("BOTH_SIDE_OF_CRACK",&both_sides_constrains));
+  loops_to_do_Mat.push_back(TsCtx::loop_pair_type("dCT_CRACKFRONT_AREA_ELEM",&dct_gc));
+  loops_to_do_Mat.push_back(TsCtx::loop_pair_type("CandCT_SURFACE_ELEM",&constrain_body_surface));
+  loops_to_do_Mat.push_back(TsCtx::loop_pair_type("CandCT_CRACK_SURFACE_ELEM",&constrain_crack_surface));
   for(map<int,SnesConstrainSurfacGeometry*>::iterator mit = other_body_surface_constrains.begin();
     mit!=other_body_surface_constrains.end();mit++) {
     ostringstream ss2;
     ss2 << "CandCT_SURFACE_ELEM_msId_" << mit->first;
-    loops_to_do_Mat.push_back(SnesCtx::loop_pair_type(ss2.str(),mit->second));
+    loops_to_do_Mat.push_back(TsCtx::loop_pair_type(ss2.str(),mit->second));
   }
-  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("MESH_SMOOTHER",&smoother));
-  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("C_TANGENT_ELEM",&tangent_constrain));
-  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ELASTIC_COUPLED",&fe_spatial));
-  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("MATERIAL_COUPLED",&fe_material));
-  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("NEUAMNN_FE",&fe_forces));
+  loops_to_do_Mat.push_back(TsCtx::loop_pair_type("MESH_SMOOTHER",&smoother));
+  loops_to_do_Mat.push_back(TsCtx::loop_pair_type("C_TANGENT_ELEM",&tangent_constrain));
+  loops_to_do_Mat.push_back(TsCtx::loop_pair_type("ELASTIC_COUPLED",&fe_spatial));
+  loops_to_do_Mat.push_back(TsCtx::loop_pair_type("MATERIAL_COUPLED",&fe_material));
+  loops_to_do_Mat.push_back(TsCtx::loop_pair_type("NEUAMNN_FE",&fe_forces));
   loops_to_do_Mat.push_back(TsCtx::loop_pair_type("VELOCITY_ELEMENT",&iNertia.getLoopFeVelLhs()));
   loops_to_do_Mat.push_back(TsCtx::loop_pair_type("MASS_ELEMENT",&iNertia.getLoopFeMassLhs()));
   loops_to_do_Mat.push_back(TsCtx::loop_pair_type("DYNAMIC_ESHELBY_TERM",&iNertia.getLoopFeTLhs()));
@@ -732,10 +823,13 @@ PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterf
   //lh postproc
   ts_ctx.get_postProcess_to_do_IJacobian().push_back(&my_dirichlet_bc);
   ts_ctx.get_postProcess_to_do_IJacobian().push_back(&fix_material_pts);
+  //ts_ctx.get_postProcess_to_do_IJacobian().push_back(&stop_and_view);
 
   //monitor
   MonitorRestart monitor_restart(m_field,ts);
-  MonitorUpdateFrezedNodes monitor_fix_matrial_nodes(m_field,this,fix_material_pts,fe_material,iNertia);
+  MonitorUpdateFrezedNodes monitor_fix_matrial_nodes(
+    m_field,this,fix_material_pts,fe_material,iNertia,tangent_constrain,
+    constrain_body_surface,constrain_crack_surface);
   MonitorPostProc post_proc(m_field);
   MonitorLoadPath monitor_load_path(m_field,ts);
 
@@ -758,17 +852,17 @@ PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterf
   //fe_spatial.snes_B = K;
   //ierr = m_field.loop_finite_elements("COUPLED_DYNAMIC","ELASTIC_COUPLED",fe_spatial); CHKERRQ(ierr);
 
+  /*const MoFEMProblem *problem_ptr;
+  ierr = m_field.get_problem("COUPLED_DYNAMIC",&problem_ptr); CHKERRQ(ierr);
+  const NumeredDofMoFEMEntity *dof_ptr;
+  ierr = problem_ptr->get_col_dofs_by_petsc_gloabl_dof_idx(2947,&dof_ptr); CHKERRQ(ierr);
+  cerr << *dof_ptr << endl;*/
+
   double ftime = 1;
   ierr = TSSetDuration(ts,PETSC_DEFAULT,ftime); CHKERRQ(ierr);
   ierr = TSSetSolution(ts,D); CHKERRQ(ierr);
   ierr = TSSetFromOptions(ts); CHKERRQ(ierr);
-
-  //const MoFEMProblem *problem_ptr;
-  //ierr = m_field.get_problem("COUPLED_DYNAMIC",&problem_ptr); CHKERRQ(ierr);
-  //const NumeredDofMoFEMEntity *dof_ptr;
-  //ierr = problem_ptr->get_col_dofs_by_petsc_gloabl_dof_idx(1,&dof_ptr); CHKERRQ(ierr);
-  //cerr << *dof_ptr << endl;
-
+  
   ierr = TSSolve(ts,D); CHKERRQ(ierr);
   ierr = TSGetTime(ts,&ftime); CHKERRQ(ierr);
 
@@ -784,6 +878,8 @@ PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterf
   PetscPrintf(PETSC_COMM_WORLD,
     "steps %D (%D rejected, %D SNES fails), ftime %g, nonlinits %D, linits %D\n",
     steps,rejects,snesfails,ftime,nonlinits,linits);
+
+
 
   ierr = MatDestroy(&K); CHKERRQ(ierr);
   ierr = VecDestroy(&D); CHKERRQ(ierr);

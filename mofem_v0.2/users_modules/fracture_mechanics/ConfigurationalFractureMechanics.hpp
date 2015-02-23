@@ -43,7 +43,7 @@ struct ConfigurationalFractureMechanics {
     FW_thermal_field
   };
 
-  matPROJ_ctx *projSurfaceCtx,*projFrontCtx;
+  ConstrainMatrixCtx *projSurfaceCtx,*projFrontCtx;
 
   BitRefLevel *ptr_bit_level0;
   ConfigurationalFractureMechanics(FieldInterface& m_field): projSurfaceCtx(NULL),projFrontCtx(NULL) {
@@ -103,12 +103,12 @@ struct ConfigurationalFractureMechanics {
 
   PetscErrorCode project_form_th_projection_tag(FieldInterface& m_field,string problem,bool do_not_project = false);
 
-  map<EntityHandle,double> map_ent_g,map_ent_j;
+  map<EntityHandle,double> map_ent_g,map_ent_j,map_ent_work;
   PetscScalar ave_g,min_g,max_g;
   PetscScalar ave_j,min_j,max_j;
   PetscErrorCode griffith_g(FieldInterface& m_field,string problem);
 
- struct ArcLengthElemFEMethod: public FEMethod {
+ struct FrontAreaArcLengthControl: public FEMethod {
 
     FieldInterface& mField;
     ConfigurationalFractureMechanics *conf_prob;
@@ -123,8 +123,8 @@ struct ConfigurationalFractureMechanics {
     VecScatter surfaceScatter;
     Vec lambdaVec;
 
-    ArcLengthElemFEMethod(FieldInterface& _mField,ConfigurationalFractureMechanics *_conf_prob,ArcLengthCtx *_arc_ptr);
-    ~ArcLengthElemFEMethod();
+    FrontAreaArcLengthControl(FieldInterface& _mField,ConfigurationalFractureMechanics *_conf_prob,ArcLengthCtx *_arc_ptr);
+    ~FrontAreaArcLengthControl();
 
     double aRea,aRea0,lambda_int;
     double resSpatialNrm2,resCrackFrontNrm2;

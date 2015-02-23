@@ -358,10 +358,10 @@ int main(int argc, char *argv[]) {
   ierr = MatGetSize(Aij,&M,&N); CHKERRQ(ierr);
   PetscInt m,n;
   MatGetLocalSize(Aij,&m,&n);
-  ArcLengthMatShell* mat_ctx = new ArcLengthMatShell(m_field,Aij,arc_ctx,"ELASTIC_MECHANICS");
+  ArcLengthMatShell* mat_ctx = new ArcLengthMatShell(Aij,arc_ctx,"ELASTIC_MECHANICS");
   Mat ShellAij;
   ierr = MatCreateShell(PETSC_COMM_WORLD,m,n,M,N,(void*)mat_ctx,&ShellAij); CHKERRQ(ierr);
-  ierr = MatShellSetOperation(ShellAij,MATOP_MULT,(void(*)(void))arc_length_mult_shell); CHKERRQ(ierr);
+  ierr = MatShellSetOperation(ShellAij,MATOP_MULT,(void(*)(void))ArcLengthMatMultShellOp); CHKERRQ(ierr);
 
   ArcLengthSnesCtx snes_ctx(m_field,"ELASTIC_MECHANICS",arc_ctx);
 
@@ -374,11 +374,11 @@ int main(int argc, char *argv[]) {
   }
   PetscPrintf(PETSC_COMM_WORLD,"Nb. nodes in load path: %u\n",node_set.size());
 
-  ArcLengthElemFEMethod* arc_method_ptr = new ArcLengthElemFEMethod(moab,arc_ctx);
-  ArcLengthElemFEMethod& arc_method = *arc_method_ptr;
+  SphericalArcLengthControl* arc_method_ptr = new SphericalArcLengthControl(arc_ctx);
+  SphericalArcLengthControl& arc_method = *arc_method_ptr;
 
   double scaled_reference_load = 1;
-  double *scale_lhs = &(arc_ctx->get_FieldData());
+  double *scale_lhs = &(arc_ctx->getFieldData());
   double *scale_rhs = &(scaled_reference_load);
   NeummanForcesSurfaceComplexForLazy neumann_forces(m_field,Aij,arc_ctx->F_lambda,scale_lhs,scale_rhs);
   NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE &fe_neumann = neumann_forces.getLoopSpatialFe();
@@ -454,7 +454,7 @@ int main(int argc, char *argv[]) {
 	dit = numered_dofs_rows.get<Ent_mi_tag>().lower_bound(*nit);
 	hi_dit = numered_dofs_rows.get<Ent_mi_tag>().upper_bound(*nit);
 	for(;dit!=hi_dit;dit++) {
-	  PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e -> ","LAMBDA",0,arc_ptr->get_FieldData());
+	  PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e -> ","LAMBDA",0,arc_ptr->getFieldData());
 	  PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e\n",dit->get_name().c_str(),dit->get_dof_rank(),dit->get_FieldData());
 	}
       }
@@ -501,8 +501,8 @@ int main(int argc, char *argv[]) {
 	  ierr = VecDot(arc_ptr->F_lambda,arc_ptr->F_lambda,&arc_ptr->F_lambda2); CHKERRQ(ierr);
 	  PetscPrintf(PETSC_COMM_WORLD,"\tFlambda2 = %6.4e\n",arc_ptr->F_lambda2);
 	  //add F_lambda
-	  ierr = VecAXPY(snes_f,arc_ptr->get_FieldData(),arc_ptr->F_lambda); CHKERRQ(ierr);
-	  PetscPrintf(PETSC_COMM_WORLD,"\tlambda = %6.4e\n",arc_ptr->get_FieldData());  
+	  ierr = VecAXPY(snes_f,arc_ptr->getFieldData(),arc_ptr->F_lambda); CHKERRQ(ierr);
+	  PetscPrintf(PETSC_COMM_WORLD,"\tlambda = %6.4e\n",arc_ptr->getFieldData());  
 	  double fnorm;
 	  ierr = VecNorm(snes_f,NORM_2,&fnorm); CHKERRQ(ierr);	
 	  PetscPrintf(PETSC_COMM_WORLD,"\tfnorm = %6.4e\n",fnorm);  
@@ -547,11 +547,11 @@ int main(int argc, char *argv[]) {
   ierr = SNESGetKSP(snes,&ksp); CHKERRQ(ierr);
   PC pc;
   ierr = KSPGetPC(ksp,&pc); CHKERRQ(ierr);
-  PCShellCtx* pc_ctx = new PCShellCtx(Aij,ShellAij,arc_ctx);
+  PCArcLengthCtx* pc_ctx = new PCArcLengthCtx(Aij,ShellAij,arc_ctx);
   ierr = PCSetType(pc,PCSHELL); CHKERRQ(ierr);
   ierr = PCShellSetContext(pc,pc_ctx); CHKERRQ(ierr);
-  ierr = PCShellSetApply(pc,pc_apply_arc_length); CHKERRQ(ierr);
-  ierr = PCShellSetSetUp(pc,pc_setup_arc_length); CHKERRQ(ierr);
+  ierr = PCShellSetApply(pc,PCApplyArcLength); CHKERRQ(ierr);
+  ierr = PCShellSetSetUp(pc,PCSetupArcLength); CHKERRQ(ierr);
 
   if(flg == PETSC_TRUE) {
     PetscReal rtol,atol,dtol;
@@ -620,10 +620,10 @@ int main(int argc, char *argv[]) {
     double x0_nrm;
     ierr = VecNorm(arc_ctx->x0,NORM_2,&x0_nrm);  CHKERRQ(ierr);
     ierr = PetscPrintf(PETSC_COMM_WORLD,"\tRead x0_nrm = %6.4e dlambda = %6.4e\n",x0_nrm,arc_ctx->dlambda);
-    ierr = arc_ctx->set_alpha_and_beta(1,0); CHKERRQ(ierr);
+    ierr = arc_ctx->setAlphaBeta(1,0); CHKERRQ(ierr);
   } else {
-    ierr = arc_ctx->set_s(step_size); CHKERRQ(ierr);
-    ierr = arc_ctx->set_alpha_and_beta(0,1); CHKERRQ(ierr);
+    ierr = arc_ctx->setS(step_size); CHKERRQ(ierr);
+    ierr = arc_ctx->setAlphaBeta(0,1); CHKERRQ(ierr);
   }
   ierr = SnesRhs(snes,D,F,&snes_ctx); CHKERRQ(ierr);
 
@@ -639,17 +639,17 @@ int main(int argc, char *argv[]) {
 
     if(step == 1) {
       ierr = PetscPrintf(PETSC_COMM_WORLD,"Load Step %D step_size = %6.4e\n",step,step_size); CHKERRQ(ierr);
-      ierr = arc_ctx->set_s(step_size); CHKERRQ(ierr);
-      ierr = arc_ctx->set_alpha_and_beta(0,1); CHKERRQ(ierr);
+      ierr = arc_ctx->setS(step_size); CHKERRQ(ierr);
+      ierr = arc_ctx->setAlphaBeta(0,1); CHKERRQ(ierr);
       ierr = VecCopy(D,arc_ctx->x0); CHKERRQ(ierr);
       double dlambda;
-      ierr = arc_method.calculate_init_dlambda(&dlambda); CHKERRQ(ierr);
-      ierr = arc_method.set_dlambda_to_x(D,dlambda); CHKERRQ(ierr);
+      ierr = arc_method.calculateInitDlambda(&dlambda); CHKERRQ(ierr);
+      ierr = arc_method.setDlambdaToX(D,dlambda); CHKERRQ(ierr);
     } else if(step == 2) {
-      ierr = arc_ctx->set_alpha_and_beta(1,0); CHKERRQ(ierr);
-      ierr = arc_method.calculate_dx_and_dlambda(D); CHKERRQ(ierr);
-      step_size = sqrt(arc_method.calculate_lambda_int());
-      ierr = arc_ctx->set_s(step_size); CHKERRQ(ierr);
+      ierr = arc_ctx->setAlphaBeta(1,0); CHKERRQ(ierr);
+      ierr = arc_method.calculateDxAndDlambda(D); CHKERRQ(ierr);
+      step_size = sqrt(arc_method.calculateLambdaInt());
+      ierr = arc_ctx->setS(step_size); CHKERRQ(ierr);
       double dlambda = arc_ctx->dlambda;
       double dx_nrm;
       ierr = VecNorm(arc_ctx->dx,NORM_2,&dx_nrm);  CHKERRQ(ierr);
@@ -658,11 +658,11 @@ int main(int argc, char *argv[]) {
 	step,step_size,dlambda,dx_nrm,arc_ctx->dx2); CHKERRQ(ierr);
       ierr = VecCopy(D,arc_ctx->x0); CHKERRQ(ierr);
       ierr = VecAXPY(D,1.,arc_ctx->dx); CHKERRQ(ierr);
-      ierr = arc_method.set_dlambda_to_x(D,dlambda); CHKERRQ(ierr);
+      ierr = arc_method.setDlambdaToX(D,dlambda); CHKERRQ(ierr);
     } else {
-      ierr = arc_method.calculate_dx_and_dlambda(D); CHKERRQ(ierr);
+      ierr = arc_method.calculateDxAndDlambda(D); CHKERRQ(ierr);
       step_size *= reduction;
-      ierr = arc_ctx->set_s(step_size); CHKERRQ(ierr);
+      ierr = arc_ctx->setS(step_size); CHKERRQ(ierr);
       double dlambda = reduction*arc_ctx->dlambda;
       double dx_nrm;
       ierr = VecScale(arc_ctx->dx,reduction); CHKERRQ(ierr);
@@ -672,7 +672,7 @@ int main(int argc, char *argv[]) {
 	step,step_size,dlambda,dx_nrm,arc_ctx->dx2); CHKERRQ(ierr);
       ierr = VecCopy(D,arc_ctx->x0); CHKERRQ(ierr);
       ierr = VecAXPY(D,1.,arc_ctx->dx); CHKERRQ(ierr);
-      ierr = arc_method.set_dlambda_to_x(D,dlambda); CHKERRQ(ierr);
+      ierr = arc_method.setDlambdaToX(D,dlambda); CHKERRQ(ierr);
     }
 
     ierr = SNESSolve(snes,PETSC_NULL,D); CHKERRQ(ierr);
@@ -690,7 +690,7 @@ int main(int argc, char *argv[]) {
       double x0_nrm;
       ierr = VecNorm(arc_ctx->x0,NORM_2,&x0_nrm);  CHKERRQ(ierr);
       ierr = PetscPrintf(PETSC_COMM_WORLD,"\tRead x0_nrm = %6.4e dlambda = %6.4e\n",x0_nrm,arc_ctx->dlambda);
-      ierr = arc_ctx->set_alpha_and_beta(1,0); CHKERRQ(ierr);
+      ierr = arc_ctx->setAlphaBeta(1,0); CHKERRQ(ierr);
 
       
       reduction = 0.1;
