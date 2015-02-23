@@ -22,7 +22,7 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
   ErrorCode rval;
   PetscErrorCode ierr;
 
-  ObosleteUsersModules::ArcLengthCtx* arcPtr;
+  ArcLengthCtx* arcPtr;
   Vec GhostDiag,GhostLambdaInt;
   Range Faces3,Faces4;
   Range Edges3,Edges4;
@@ -31,7 +31,7 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
   Tag thDamagedPrism;
 
   ArcLengthIntElemFEMethod(Interface& moab,
-    ObosleteUsersModules::ArcLengthCtx *arcptr): 
+    ArcLengthCtx *arcptr): 
     FEMethod(),mOab(moab),arcPtr(arcptr) {
     PetscInt ghosts[1] = { 0 };
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mOab,MYPCOMM_INDEX);
