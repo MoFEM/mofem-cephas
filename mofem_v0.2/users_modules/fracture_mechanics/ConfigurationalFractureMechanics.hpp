@@ -108,7 +108,7 @@ struct ConfigurationalFractureMechanics {
   PetscScalar ave_j,min_j,max_j;
   PetscErrorCode griffith_g(FieldInterface& m_field,string problem);
 
- struct ArcLengthElemFEMethod: public FEMethod {
+ struct FrontAreaArcLengthControl: public FEMethod {
 
     FieldInterface& mField;
     ConfigurationalFractureMechanics *conf_prob;
@@ -123,8 +123,8 @@ struct ConfigurationalFractureMechanics {
     VecScatter surfaceScatter;
     Vec lambdaVec;
 
-    ArcLengthElemFEMethod(FieldInterface& _mField,ConfigurationalFractureMechanics *_conf_prob,ArcLengthCtx *_arc_ptr);
-    ~ArcLengthElemFEMethod();
+    FrontAreaArcLengthControl(FieldInterface& _mField,ConfigurationalFractureMechanics *_conf_prob,ArcLengthCtx *_arc_ptr);
+    ~FrontAreaArcLengthControl();
 
     double aRea,aRea0,lambda_int;
     double resSpatialNrm2,resCrackFrontNrm2;

@@ -1,8 +1,6 @@
 /** \file ConstrainMatrixCtx.cpp
  * \brief Implementation of projection matrix 
  *
- * Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
  * FIXME: DESCRIPTION
  */
 

@@ -1,6 +1,6 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
- * FIXME: DESCRIPTION
+/** \file ConstrainMatrixCtx.hpp
+ *
+ * Can be used if constains are linear, i.e. are not function of time.
  */
 
 /* This file is part of MoFEM.
@@ -193,6 +193,6 @@ PetscErrorCode ConstrainMatrixDestroyOpQTKQ(Mat QTKQ);
 
 
 /***************************************************************************//**
- * \defgroup projection_matrix Projection Matrix
+ * \defgroup projection_matrix Constrain Projection Matrix
  ******************************************************************************/
 

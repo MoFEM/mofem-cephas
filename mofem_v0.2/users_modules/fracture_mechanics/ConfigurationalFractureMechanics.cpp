@@ -2666,9 +2666,9 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   //arc elem
   ArcLengthCtx arc_ctx(m_field,"COUPLED_PROBLEM");
   ArcLengthSnesCtx arc_snes_ctx(m_field,"COUPLED_PROBLEM",&arc_ctx);
-  ArcLengthMatShell arc_mat_ctx(m_field,K,&arc_ctx,"COUPLED_PROBLEM");
-  PCShellCtx pc_ctx(K,K,&arc_ctx);
-  ArcLengthElemFEMethod arc_elem(m_field,this,&arc_ctx);
+  ArcLengthMatShell arc_mat_ctx(K,&arc_ctx,"COUPLED_PROBLEM");
+  PCArcLengthCtx pc_ctx(K,K,&arc_ctx);
+  FrontAreaArcLengthControl arc_elem(m_field,this,&arc_ctx);
   //spatial and material forces
   const double young_modulus = 1;
   const double poisson_ratio = 0.;
@@ -3084,7 +3084,7 @@ PetscErrorCode ConfigurationalFractureMechanics::calculate_material_forces(Field
 
   PetscFunctionReturn(0);
 }
-ConfigurationalFractureMechanics::ArcLengthElemFEMethod::ArcLengthElemFEMethod(
+ConfigurationalFractureMechanics::FrontAreaArcLengthControl::FrontAreaArcLengthControl(
   FieldInterface& _mField,ConfigurationalFractureMechanics *_conf_prob,ArcLengthCtx *_arc_ptr): 
     mField(_mField),conf_prob(_conf_prob),arc_ptr(_arc_ptr) {
     PetscErrorCode ierr;
@@ -3142,7 +3142,7 @@ ConfigurationalFractureMechanics::ArcLengthElemFEMethod::ArcLengthElemFEMethod(
     ierr = VecSet(lambdaVec,1); CHKERRABORT(PETSC_COMM_WORLD,ierr);
 
 }
-ConfigurationalFractureMechanics::ArcLengthElemFEMethod::~ArcLengthElemFEMethod() {
+ConfigurationalFractureMechanics::FrontAreaArcLengthControl::~FrontAreaArcLengthControl() {
   PetscErrorCode ierr;
   ierr = VecScatterDestroy(&surfaceScatter); CHKERRABORT(PETSC_COMM_WORLD,ierr);
   ierr = VecDestroy(&ghostDiag); CHKERRABORT(PETSC_COMM_WORLD,ierr);
@@ -3151,7 +3151,7 @@ ConfigurationalFractureMechanics::ArcLengthElemFEMethod::~ArcLengthElemFEMethod(
   ierr = PetscFree(isIdx); CHKERRABORT(PETSC_COMM_WORLD,ierr);
   ierr = VecDestroy(&lambdaVec); CHKERRABORT(PETSC_COMM_WORLD,ierr);
 }
-PetscErrorCode ConfigurationalFractureMechanics::ArcLengthElemFEMethod::calculate_area() {
+PetscErrorCode ConfigurationalFractureMechanics::FrontAreaArcLengthControl::calculate_area() {
   PetscFunctionBegin;
 
   ErrorCode rval;
@@ -3200,7 +3200,7 @@ PetscErrorCode ConfigurationalFractureMechanics::ArcLengthElemFEMethod::calculat
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode ConfigurationalFractureMechanics::ArcLengthElemFEMethod::calculate_lambda_int() {
+PetscErrorCode ConfigurationalFractureMechanics::FrontAreaArcLengthControl::calculate_lambda_int() {
   PetscFunctionBegin;
   PetscErrorCode ierr;
   ierr = calculate_area(); CHKERRQ(ierr);
@@ -3208,7 +3208,7 @@ PetscErrorCode ConfigurationalFractureMechanics::ArcLengthElemFEMethod::calculat
   //PetscPrintf(PETSC_COMM_WORLD,"\tsurface crack area = %6.4e lambda_int = %6.4e\n",aRea,lambda_int);
   PetscFunctionReturn(0);
 }
-PetscErrorCode ConfigurationalFractureMechanics::ArcLengthElemFEMethod::calculate_db() {
+PetscErrorCode ConfigurationalFractureMechanics::FrontAreaArcLengthControl::calculate_db() {
   PetscFunctionBegin;
   PetscErrorCode ierr;
   if(arc_ptr->alpha!=0) {
@@ -3222,7 +3222,7 @@ PetscErrorCode ConfigurationalFractureMechanics::ArcLengthElemFEMethod::calculat
   }   
   PetscFunctionReturn(0);
 }
-PetscErrorCode ConfigurationalFractureMechanics::ArcLengthElemFEMethod::set_dlambda_to_x(Vec x,double dlambda) {
+PetscErrorCode ConfigurationalFractureMechanics::FrontAreaArcLengthControl::set_dlambda_to_x(Vec x,double dlambda) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
   //check if locl dof idx is non zero, i.e. that lambda is acessible from this processor
@@ -3241,7 +3241,7 @@ PetscErrorCode ConfigurationalFractureMechanics::ArcLengthElemFEMethod::set_dlam
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode ConfigurationalFractureMechanics::ArcLengthElemFEMethod::get_dlambda(Vec x) {
+PetscErrorCode ConfigurationalFractureMechanics::FrontAreaArcLengthControl::get_dlambda(Vec x) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
   //set dx
@@ -3273,7 +3273,7 @@ PetscErrorCode ConfigurationalFractureMechanics::ArcLengthElemFEMethod::get_dlam
   PetscPrintf(PETSC_COMM_WORLD,"\tload factor increment dlambda = %6.4e\n",arc_ptr->dlambda);
   PetscFunctionReturn(0);
 }
-PetscErrorCode ConfigurationalFractureMechanics::ArcLengthElemFEMethod::preProcess() {
+PetscErrorCode ConfigurationalFractureMechanics::FrontAreaArcLengthControl::preProcess() {
   PetscFunctionBegin;
   PetscErrorCode ierr;
   switch (ts_ctx) {
@@ -3308,7 +3308,7 @@ PetscErrorCode ConfigurationalFractureMechanics::ArcLengthElemFEMethod::preProce
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode ConfigurationalFractureMechanics::ArcLengthElemFEMethod::operator()() {
+PetscErrorCode ConfigurationalFractureMechanics::FrontAreaArcLengthControl::operator()() {
   PetscFunctionBegin;
   PetscErrorCode ierr;
   //get dlambda dof 
@@ -3333,7 +3333,7 @@ PetscErrorCode ConfigurationalFractureMechanics::ArcLengthElemFEMethod::operator
   }	
   PetscFunctionReturn(0);
 }
-PetscErrorCode ConfigurationalFractureMechanics::ArcLengthElemFEMethod::postProcess() {
+PetscErrorCode ConfigurationalFractureMechanics::FrontAreaArcLengthControl::postProcess() {
   PetscFunctionBegin;
   PetscErrorCode ierr;
   switch(snes_ctx) {

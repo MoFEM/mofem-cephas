@@ -1,6 +1,9 @@
 /** \file ArcLengthTools.cpp
  *
- * FIXME: DESCRIPTION
+ * Implementation of arc-length control method
+ *
+ * FIXME: Some variables not comply with naming convention, need to be fixed.
+ *
  */
 
 /* This file is part of MoFEM.
@@ -24,15 +27,16 @@ namespace MoFEM {
 
 /**
  * \brief Store variables for ArcLength analaysis
+ * \ingroup arc_length_control
  *
  * r_lambda = f_lambda - s
- * f_lambda = alpha*f(dx*dx) + beta*(dlambda*sqrt(F_lambda*F_lambda) 
+ * f_lambda = alpha*f(dx*dx) + beta^2*(dlambda*sqrt(F_lambda*F_lambda) 
  *
  * dx = x-x0
  *
  * db*ddx + diag*ddlambda - r_lambda = 0
  *
- * User need to implement fuctions calulating f_lambda, i.e. f(dx*x) and
+ * User need to implement fuctions calulating f_lambda, i.e. f(dx*dx) and
  * direvative, db
  * 
  * alpha,beta parameters
@@ -50,8 +54,7 @@ namespace MoFEM {
  */
 struct ArcLengthCtx {
 
-  ErrorCode rval;
-  PetscErrorCode ierr;
+  FieldInterface &mField;
 
   double s;	///< arc length radius
   double beta; 	///< force scaling factor 
@@ -80,7 +83,7 @@ struct ArcLengthCtx {
    */
   PetscErrorCode setAlphaBeta(double alpha,double beta);
 
-  ArcLengthCtx(FieldInterface &mField,const string &problem_name);
+  ArcLengthCtx(FieldInterface &m_field,const string &problem_name);
   ~ArcLengthCtx();
 
   NumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator dIt;
@@ -93,16 +96,16 @@ struct ArcLengthCtx {
 
 /**
  * \brief It is ctx structure passed to SNES solver
+ * \ingroup arc_length_control
  */
 struct ArcLengthSnesCtx: public SnesCtx {
-  ErrorCode rval;
-  PetscErrorCode ierr;
   ArcLengthCtx* arcPtr;
   ArcLengthSnesCtx(FieldInterface &m_field,const string &problem_name,ArcLengthCtx* arc_ptr):
     SnesCtx(m_field,problem_name),arcPtr(arc_ptr) {}
 };
 
 /** \brief shell matrix for arc-length method
+ * \ingroup arc_length_control
  *
  * Shell matrix which has tructure
  * [ K 		-dF_lambda]
@@ -110,14 +113,11 @@ struct ArcLengthSnesCtx: public SnesCtx {
  */
 struct ArcLengthMatShell {
 
-  ErrorCode rval;
-  PetscErrorCode ierr;
-  FieldInterface& mField;
   Mat Aij;
   ArcLengthCtx* arcPtr;
   string problemName;
 
-  ArcLengthMatShell(FieldInterface& _mField,Mat _Aij,ArcLengthCtx *arc_ptr,string _problem_name);
+  ArcLengthMatShell(Mat aij,ArcLengthCtx *arc_ptr,string problem_name);
   virtual ~ArcLengthMatShell();
 
   PetscErrorCode set_lambda(Vec ksp_x,double *lambda,ScatterMode scattermode); 
@@ -131,14 +131,15 @@ struct ArcLengthMatShell {
 PetscErrorCode ArcLengthMatMultShellOp(Mat A,Vec x,Vec f);
 
 /**
- * strutture for Arc Length precodnditioner
+ * \brief structure for Arc Length precodnditioner
+ * \ingroup arc_length_control
  */
-struct PCShellCtx {
+struct PCArcLengthCtx {
   PC pC;
   Mat shellAij,Aij;
   ArcLengthCtx* arcPtr;
-  PCShellCtx(Mat shell_Aij,Mat _Aij,ArcLengthCtx* arc_ptr); 
-  ~PCShellCtx();
+  PCArcLengthCtx(Mat shell_Aij,Mat _Aij,ArcLengthCtx* arc_ptr); 
+  ~PCArcLengthCtx();
 
   friend PetscErrorCode PCApplyArcLength(PC pC,Vec pc_f,Vec pc_x);
   friend PetscErrorCode PCSetupArcLength(PC pC);
@@ -175,13 +176,48 @@ PetscErrorCode PCSetupArcLength(PC pc);
  */
 struct PrePostProcessForArcLength: public FEMethod {
   
-  FieldInterface& mField;
   ArcLengthCtx *arcPtr;
-  
-  PrePostProcessForArcLength(FieldInterface& _mField, ArcLengthCtx *arc_ptr);
+  PrePostProcessForArcLength(ArcLengthCtx *arc_ptr);
 
   PetscErrorCode preProcess();    
   PetscErrorCode postProcess();
+
+};
+
+/** \brief Implementation of cylindrical arc-length method, i.e. alpha*dx*x + dlmabda^2*beta^2*F_lamda*F_lambda = s^2
+  * \ingroup arc_length_control
+  * 
+  * This is particular impmentation of ArcLength control, i.e. sperical arc
+  * length control. If beta is set to 0 and alpha is non-zero it is culindrical
+  * arc-length control. Works well with general problem with non-linear
+  * geometry. It not guarantee disipative loading path in case of physical
+  * nonlinearities.
+  *
+  */
+struct SphericalArcLengthControl: public FEMethod {
+
+  ArcLengthCtx* arcPtr;
+  Vec ghostDiag;
+
+  SphericalArcLengthControl(ArcLengthCtx *arc_ptr); 
+  ~SphericalArcLengthControl();
+
+  PetscErrorCode preProcess();
+  PetscErrorCode operator()();
+  PetscErrorCode postProcess();
+
+  /** 
+    * alpha*dx*x + dlmabda^2*beta^2*F_lamda*F_lambda
+    */
+  double calculateLambdaInt();
+
+  /** 
+    * db(x)/dx  = 2*dx
+    */
+  PetscErrorCode calculateDb();
+  PetscErrorCode calculateDxAndDlambda(Vec x);
+  PetscErrorCode calculateInitDlambda(double *dlambda);
+  PetscErrorCode setDlambdaToX(Vec x,double dlambda);
 
 };
 
@@ -189,4 +225,7 @@ struct PrePostProcessForArcLength: public FEMethod {
 
 #endif // __ARCLEGHTTOOLS_HPP__
 
+/***************************************************************************//**
+ * \defgroup arc_length_control Arc-Length control
+ ******************************************************************************/
 
