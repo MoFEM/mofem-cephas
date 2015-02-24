@@ -3,7 +3,7 @@
 *
 * DESCRIPTION: FIXME
 *
-* This is not exactly procedure for linear elatic dynamics, since jacobian is
+* This is not exactly procedure for linear elastic dynamics, since Jacobian is
 * evaluated at every time step and snes procedure is involved. However it is
 * implemented like that, to test methodology for general nonlinear problem.
 *
@@ -51,19 +51,19 @@ struct DataForcesAndSurcesCore {
     EntData(): sEnse(0),oRder(0) {};
     virtual ~EntData() {}
 
-    /// \brief get enetity sense, need to calculate shape functions with conforming approximation fields
+    /// \brief get entity sense, need to calculate shape functions with conforming approximation fields
     virtual int getSense() const { return sEnse; }
 
     /// \brief get approximation order
     virtual ApproximationOrder getOrder() const { return oRder; }
 
-    /// \brief get gloabl inidces of dofs on entity
+    /// \brief get global indices of dofs on entity
     virtual const ublas::vector<DofIdx>& getIndices() const { return iNdices; }
 
     /// \brief get dofs values 
     virtual const ublas::vector<double>& getFieldData() const { return fieldData; }
 
-    /// \brief get dofs data strature FEDofMoFEMEntity
+    /// \brief get dofs data stature FEDofMoFEMEntity
     virtual const ublas::vector<const FEDofMoFEMEntity*>& getFieldDofs() const { return dOfs; }
 
     /** \brief get shape functions
@@ -72,17 +72,17 @@ struct DataForcesAndSurcesCore {
       */
     virtual const ublas::matrix<double>& getN() const { return N; }
 
-    /** \brief get direvatives of shape fucntiosn
+    /** \brief get derivatives of shape functions
      *
-     * Matrix at rows has nb. of Gauss pts, at columns it has direvative of
-     * shape functions. Colummns are orgasised as follows, [ dN1/dx, dN1/dy,
+     * Matrix at rows has nb. of Gauss pts, at columns it has derivative of
+     * shape functions. Columns are structured as follows, [ dN1/dx, dN1/dy,
      * dN1/dz, dN2/dx, dN2/dy, dN2/dz, ... ]
      *
      * Note that shape functions are calculated in file H1.c
-     * Above description not apply for direvatives of nodal functions, since
-     * direvative of nodal functions in case of simplexes, EDGES, TRIANGLES and
+     * Above description not apply for derivatives of nodal functions, since
+     * derivative of nodal functions in case of simplexes, EDGES, TRIANGLES and
      * TETS are constant. So that matrix rows represents nb. of shape
-     * functions, columns are direvatives. Nb. of columns depend on element
+     * functions, columns are derivatives. Nb. of columns depend on element
      * dimension, for EDGES is one, for TRIS is 2 and TETS is 3. 
      *
      * Note that for node element this function make no sense.
@@ -97,7 +97,7 @@ struct DataForcesAndSurcesCore {
     virtual ublas::vector<const FEDofMoFEMEntity*>& getFieldDofs() { return dOfs; }
     virtual ublas::matrix<double>& getN() { return N; }
 
-    /** \brief get direvatives of shape functions
+    /** \brief get derivatives of shape functions
      *
      */
     virtual ublas::matrix<double>& getDiffN() { return diffN; }
@@ -109,9 +109,9 @@ struct DataForcesAndSurcesCore {
       return VectorAdaptor(size,ublas::shallow_array_adaptor<double>(size,data));
     }
 
-    /** \brief get direvative of shape functions at Gauss pts
+    /** \brief get derivative of shape functions at Gauss pts
       *
-      * retruned matrx on rows has shape functions, in columen its direvatives.
+      * returned matrix on rows has shape functions, in column its derivatives.
       *
       * \param gg nb. of Gauss pts.
       *
@@ -123,7 +123,7 @@ struct DataForcesAndSurcesCore {
 	double *data = &getDiffN()(gg,0);
 	return MatrixAdaptor(getN().size2(),dim,ublas::shallow_array_adaptor<double>(getDiffN().size2(),data));
       } else {
-	// in some cases, f.e. for direvatives of nodal shape functions ony one
+	// in some cases, f.e. for derivatives of nodal shape functions at only one
 	// gauss point is needed
 	return MatrixAdaptor(getN().size1(),getN().size2(),ublas::shallow_array_adaptor<double>(getDiffN().data().size(),&getDiffN().data()[0]));
       }
@@ -131,12 +131,12 @@ struct DataForcesAndSurcesCore {
 
     /** \brief get shape functions at Gauss pts
       *
-      * Note that multi field element, two diffren field can have different
-      * approximation orders. Since we use hierarhical approximation basis,
-      * shape functions are calulared once for element, using maximal
-      * apprimation order on given entity.
+      * Note that multi field element, two different field can have different
+      * approximation orders. Since we use hierarchical approximation basis,
+      * shape functions are calculated once for element, using maximal
+      * approximation order on given entity.
       *
-      * Specifing addional parameters, only firsty nb_dofs are indicated as a
+      * Specifying add ional parameters, only first nb_dofs are indicated as a
       * row of shape function matrix.
       *
       * \param gg nb. of Gauss point
@@ -151,12 +151,12 @@ struct DataForcesAndSurcesCore {
 
     /** \brief get derivatives of shape functions at Gauss pts
       *
-      * Note that multi field element, two diffren field can have different
-      * approximation orders. Since we use hierarhical approximation basis,
-      * shape functions are calulared once for element, using maximal
-      * apprimation order on given entity.
+      * Note that multi field element, two different field can have different
+      * approximation orders. Since we use hierarchical approximation basis,
+      * shape functions are calculated once for element, using maximal
+      * approximation order on given entity.
       *
-      * Specifing addional parameters, only firsty nb_dofs are indicated as a
+      * Specifying add ional parameters, only first nb_dofs are indicated as a
       * row of shape function derivative matrix.
       *
       * \param gg nb. of Gauss point
@@ -170,7 +170,7 @@ struct DataForcesAndSurcesCore {
 	double *data = &getDiffN()(gg,0);
 	return MatrixAdaptor(nb_dofs,dim,ublas::shallow_array_adaptor<double>(dim*nb_dofs,data));
       } else {
-	// in some cases, f.e. for direvatives of nodal shape functions ony one
+	// in some cases, f.e. for derivatives of nodal shape functions ony one
 	// gauss point is needed
 	return MatrixAdaptor(getN().size1(),getN().size2(),ublas::shallow_array_adaptor<double>(getDiffN().data().size(),&getDiffN().data()[0]));
       }
@@ -180,7 +180,7 @@ struct DataForcesAndSurcesCore {
       */
     inline const ublas::matrix<double>&  getHdivN() const { return getN(); };
 
-    /** \brief get direvatives of shape functions for Hdiv space 
+    /** \brief get derivatives of shape functions for Hdiv space 
       */
     inline const ublas::matrix<double>&  getDiffHdivN() const { return getDiffN(); };
 
@@ -188,7 +188,7 @@ struct DataForcesAndSurcesCore {
       */
     inline ublas::matrix<double>&  getHdivN() { return getN(); };
 
-    /** \brief get direvatives of shape functions for Hdiv space 
+    /** \brief get derivatives of shape functions for Hdiv space 
       */
     inline ublas::matrix<double>&  getDiffHdivN() { return getDiffN(); };
 
@@ -255,13 +255,13 @@ struct DataForcesAndSurcesCore {
 
 };
 
-/** \brief this class derive data form other dats strucrure
+/** \brief this class derive data form other data structure
   * \ingroup mofem_forces_and_sources
   *
   *
-  * It behavies like normal data struture it is used to share infromation with
-  * other data strutures abot shape functons. Dofs values, approx. order and
-  * incices are not shared.
+  * It behaves like normal data structure it is used to share information with
+  * other data structures about shape functions. Dofs values, approx. order and
+  * indices are not shared.
   *
   * shape functions, senses are shared with other data structure.
   *
@@ -301,7 +301,7 @@ struct DerivedDataForcesAndSurcesCore: public DataForcesAndSurcesCore  {
 
 };
 
-/** \brief struture to get information form mofem into DataForcesAndSurcesCore
+/** \brief structure to get information form mofem into DataForcesAndSurcesCore
   * \ingroup mofem_forces_and_sources
   * 
   */
@@ -454,9 +454,9 @@ struct ForcesAndSurcesCore: public FEMethod {
     DataForcesAndSurcesCore &data,
     const double *G_X,const double *G_Y,const int G_DIM);
 
-  /** \brief it is used to calculate nb. of Gauss integartion points
+  /** \brief it is used to calculate nb. of Gauss integration points
    *
-   * This function in general should be overload, returning intehration rank
+   * This function in general should be overload, returning integration rank
    * depending on operator type. Integration rule should be set to
    * integrate matrix and vector exactly.
    *
@@ -486,7 +486,7 @@ struct ForcesAndSurcesCore: public FEMethod {
     * \code
     * gaussPts.resize(dim+1,nb_gauss_pts);
     * \endcode
-    * number rows represents local coordinetes of integration points
+    * number rows represents local coordinates of integration points
     * in reference element, where last index in row is for integration weight.
     */
   virtual PetscErrorCode setGaussPts(int order) {
