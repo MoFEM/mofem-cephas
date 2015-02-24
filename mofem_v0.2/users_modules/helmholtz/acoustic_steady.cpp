@@ -8,7 +8,7 @@
  * the terms of the GNU Lesser General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or (at your
  * option) any later version.
- *PhD student Thomas Xuan Meng
+ *PhD student Thomas Xuan Meng/Users/xuanmeng/Documents/mofem-cephas/mofem_v0.2/users_modules/helmholtz/README
  * MoFEM is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
@@ -129,14 +129,15 @@ int main(int argc, char *argv[]) {
   ierr = mField.set_field_order(root_set,MBTRI,"rePRES",order); CHKERRQ(ierr);
   ierr = mField.set_field_order(root_set,MBEDGE,"rePRES",order); CHKERRQ(ierr);
   ierr = mField.set_field_order(root_set,MBVERTEX,"rePRES",1); CHKERRQ(ierr);
-
+  
+  if(!mField.check_field("MESH_NODE_POSITIONS")) {
   ierr = mField.add_field("MESH_NODE_POSITIONS",H1,3); CHKERRQ(ierr);
   ierr = mField.add_ents_to_field_by_TETs(root_set,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBTET,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBTRI,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBEDGE,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
   ierr = mField.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
-  
+  }
   ierr = mField.set_field_order(root_set,MBTET,"imPRES",order); CHKERRQ(ierr);
   ierr = mField.set_field_order(root_set,MBTRI,"imPRES",order); CHKERRQ(ierr);
   ierr = mField.set_field_order(root_set,MBEDGE,"imPRES",order); CHKERRQ(ierr);
@@ -465,6 +466,11 @@ int main(int argc, char *argv[]) {
   VecView(T,viewer);
   ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
   
+  
+  
+  //if(pcomm->rank()==0) {
+  rval = moab.write_file("impinging_numerical.h5m"); CHKERR_PETSC(rval);
+  //}
   //destroy the KSP solvers
   ierr = MatDestroy(&A); CHKERRQ(ierr);
   ierr = VecDestroy(&F); CHKERRQ(ierr);

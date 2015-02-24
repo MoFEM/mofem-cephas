@@ -310,10 +310,12 @@ int main(int argc, char *argv[]) {
 	ierr = m_field.set_field_order(root_set,MBEDGE,"imEX",order); CHKERRQ(ierr);
 	ierr = m_field.set_field_order(root_set,MBVERTEX,"imEX",1); CHKERRQ(ierr);
 	#ifdef HOON
+	//if(!m_field.check_field("MESH_NODE_POSITIONS")) {
 	ierr = m_field.set_field_order(root_set,MBTET,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
 	ierr = m_field.set_field_order(root_set,MBTRI,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
 	ierr = m_field.set_field_order(root_set,MBEDGE,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
 	ierr = m_field.set_field_order(root_set,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
+	//}
 	#endif
 	
 	/****/
@@ -437,6 +439,10 @@ int main(int argc, char *argv[]) {
 	ierr = m_field.set_global_VecCreateGhost("EX1_PROBLEM",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 	ierr = m_field.set_global_VecCreateGhost("EX2_PROBLEM",COL,C,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 	
+	
+	//if(pcomm->rank()==0) {
+	rval = moab.write_file("impinging_analytical.h5m"); CHKERR_PETSC(rval);
+	//}
 	//destroy the solvers
 	ierr = KSPDestroy(&solver1); CHKERRQ(ierr);
 	ierr = VecDestroy(&D); CHKERRQ(ierr);
@@ -446,6 +452,7 @@ int main(int argc, char *argv[]) {
 	ierr = VecDestroy(&C); CHKERRQ(ierr);
 	ierr = VecDestroy(&G); CHKERRQ(ierr);
 	ierr = MatDestroy(&B); CHKERRQ(ierr);
+	
 	
 	PostPocOnRefinedMesh post_proc1(m_field);
 	ierr = post_proc1.generateRefereneElemenMesh(); CHKERRQ(ierr);
