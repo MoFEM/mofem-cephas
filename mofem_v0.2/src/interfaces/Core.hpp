@@ -453,7 +453,8 @@ struct Core:
 
   //problem building
   PetscErrorCode build_partitioned_problems(int verb = -1);
-  PetscErrorCode build_problems(MoFEMProblem_multiIndex::iterator p_miit,int verb);
+  PetscErrorCode build_problem(const string &name,int verb);
+  PetscErrorCode build_problem(MoFEMProblem *problem_ptr,int verb);
   PetscErrorCode build_problems(int verb = -1);
   PetscErrorCode clear_problems(int verb = -1);
   PetscErrorCode simple_partition_problem(const string &name,int verb = -1);
