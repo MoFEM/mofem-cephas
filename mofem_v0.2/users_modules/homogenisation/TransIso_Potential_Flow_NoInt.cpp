@@ -475,7 +475,7 @@ int main(int argc, char *argv[]) {
     ierr = mField.loop_dofs("POTENTIAL_FIELD",ent_method_phi_on_10nodeTet); CHKERRQ(ierr);
     
     if(pcomm->rank()==0) {
-      rval = moab.write_file("solution1.h5m"); CHKERR_PETSC(rval);
+      rval = moab.write_file("solution_RVE.h5m"); CHKERR_PETSC(rval);
     }
     
 		EntityHandle out_meshset1;

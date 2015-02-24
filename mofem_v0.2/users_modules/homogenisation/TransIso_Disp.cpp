@@ -116,10 +116,10 @@ int main(int argc, char *argv[]) {
   bit_levels.push_back(BitRefLevel().set(meshset_data[0]-1));
   
   //    const clock_t begin_time = clock();
-  ierr = mField.build_fields(); CHKERRQ(ierr);
-  ierr = mField.build_finite_elements(); CHKERRQ(ierr);
-  ierr = mField.build_adjacencies(bit_levels.back()); CHKERRQ(ierr);
-  ierr = mField.build_problems(); CHKERRQ(ierr);
+  //ierr = mField.build_fields(); CHKERRQ(ierr);
+  //ierr = mField.build_finite_elements(); CHKERRQ(ierr);
+  //ierr = mField.build_adjacencies(bit_levels.back()); CHKERRQ(ierr);
+  //ierr = mField.build_problems(); CHKERRQ(ierr);
   
   //    std::cout << float( clock () - begin_time ) /  CLOCKS_PER_SEC<<endl;
 	
@@ -136,7 +136,7 @@ int main(int argc, char *argv[]) {
   rval = moab.get_entities_by_type(out_meshset, MBPRISM,LatestRefinedPrisms,true); CHKERR_PETSC(rval);
 	
   cout<<"No of Prisms/Interfaces = "<<LatestRefinedPrisms.size()<<endl;
-	
+
   BitRefLevel problem_bit_level = bit_levels.back();
   
   EntityHandle meshset_Elastic, meshset_Trans_ISO;
@@ -183,6 +183,8 @@ int main(int argc, char *argv[]) {
 			rval = moab.add_entities(meshset_Elastic,block_rope_bit_level);CHKERR_PETSC(rval);
 		}
 	}
+  
+  ierr = mField.seed_finite_elements(meshset_Elastic); CHKERRQ(ierr);
   
 	Range prims_on_problem_bit_level;
 	ierr = mField.get_entities_by_type_and_ref_level(problem_bit_level,BitRefLevel().set(),MBPRISM,prims_on_problem_bit_level); CHKERRQ(ierr);

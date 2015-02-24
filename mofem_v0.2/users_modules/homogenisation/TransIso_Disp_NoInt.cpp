@@ -184,7 +184,8 @@ int main(int argc, char *argv[]) {
       
 		}
 	}
-  
+  ierr = mField.seed_finite_elements(meshset_Elastic); CHKERRQ(ierr);
+
   
   
 	Range prims_on_problem_bit_level;
