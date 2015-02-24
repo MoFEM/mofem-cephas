@@ -233,7 +233,9 @@ int main(int argc, char *argv[]) {
 			rval = moab.add_entities(meshset_Elastic,block_rope_bit_level);CHKERR_PETSC(rval);
 		}
 	}
-    
+  ierr = mField.seed_finite_elements(meshset_Elastic); CHKERRQ(ierr);
+
+  
 	Range prims_on_problem_bit_level;
 	ierr = mField.get_entities_by_type_and_ref_level(problem_bit_level,BitRefLevel().set(),MBPRISM,prims_on_problem_bit_level); CHKERRQ(ierr);
   //to create meshset from range
