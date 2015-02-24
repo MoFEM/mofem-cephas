@@ -2276,11 +2276,6 @@ PetscErrorCode Core::simple_partition_problem(const string &name,int verb) {
   *build_MoFEM |= 1<<4;
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::compose_problem(const string &name,const string &problem_for_rows,const string &problem_for_cols,int verb) {
-  PetscFunctionBegin;
-  ierr = compose_problem(name,problem_for_rows,false,problem_for_cols,false,verb); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
-}
 PetscErrorCode Core::compose_problem(const string &name,const string &problem_for_rows,bool copy_rows,const string &problem_for_cols,bool copy_cols,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
@@ -2402,7 +2397,7 @@ PetscErrorCode Core::compose_problem(const string &name,const string &problem_fo
     for(;miit_map_row!=rows_problem_map.end();miit_map_row++) {
       NumeredDofMoFEMEntitys_by_uid::iterator pr_dof = dofs_row_by_uid.find(miit_map_row->second->get_global_unique_id());
       if(pr_dof == dofs_row_by_uid.end()) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
-      int part_number = miit_map_row->second->get_part();
+      int part_number = miit_map_row->second->get_part(); // get part number
       int petsc_global_dof = distance(rows_problem_map.begin(),miit_map_row);
       if(verb>1) {
 	PetscPrintf(comm,"Row Problem Glob Idx %d Problem Glob Idx %d\n",miit_map_row->second->get_petsc_gloabl_dof_idx(),petsc_global_dof);
@@ -2418,7 +2413,7 @@ PetscErrorCode Core::compose_problem(const string &name,const string &problem_fo
     for(_IT_NUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_(p_miit_row,diit)) {
       bool success = moFEMProblems.modify(moFEMProblems.project<0>(p_miit),problem_row_change(diit->get_DofMoFEMEntity_ptr()));
       if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-      int part_number = diit->get_part();
+      int part_number = diit->get_part(); // get part number
       int petsc_global_dof = diit->get_petsc_gloabl_dof_idx();
       NumeredDofMoFEMEntitys_by_uid::iterator pr_dof = dofs_row_by_uid.find(diit->get_global_unique_id());
       if(pr_dof == dofs_row_by_uid.end()) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
