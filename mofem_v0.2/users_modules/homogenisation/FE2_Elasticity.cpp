@@ -816,7 +816,7 @@ int main(int argc, char *argv[]) {
   if(pcomm->rank()==0) {
     EntityHandle out_meshset;
     rval = moab_Macro.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
-    ierr = mField_Macro.problem_get_FE("ELASTIC_PROB","ELASTIC_MACRO",out_meshset); CHKERRQ(ierr);
+    ierr = mField_Macro.get_problem_finite_elements_entities("ELASTIC_PROB","ELASTIC_MACRO",out_meshset); CHKERRQ(ierr);
     rval = moab_Macro.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
     rval = moab_Macro.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
   }

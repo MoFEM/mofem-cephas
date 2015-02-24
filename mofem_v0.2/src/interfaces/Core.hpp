@@ -453,6 +453,7 @@ struct Core:
 
   //problem building
   PetscErrorCode build_partitioned_problems(int verb = -1);
+  PetscErrorCode build_problems(MoFEMProblem_multiIndex::iterator p_miit,int verb);
   PetscErrorCode build_problems(int verb = -1);
   PetscErrorCode clear_problems(int verb = -1);
   PetscErrorCode simple_partition_problem(const string &name,int verb = -1);
@@ -465,7 +466,7 @@ struct Core:
   PetscErrorCode partition_check_matrix_fill_in(const string &problem_neme,int verb);
 
   //save meshsets
-  PetscErrorCode problem_get_FE(const string &name,const string &fe_name,const EntityHandle meshset);
+  PetscErrorCode get_problem_finite_elements_entities(const string &name,const string &fe_name,const EntityHandle meshset);
 
   //vector and matrices 
   PetscErrorCode VecCreateSeq(const string &name,RowColData rc,Vec *V);

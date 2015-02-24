@@ -25,14 +25,18 @@ static char help[] = "\
 #include <MoFEM.hpp>
 using namespace MoFEM;
 
-#include <DirichletBC.hpp>
-
-#include <Projection10NodeCoordsOnField.hpp>
-
 #include <boost/numeric/ublas/vector_proxy.hpp>
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <boost/numeric/ublas/vector.hpp>
+
+#include <DirichletBC.hpp>
+#include <ArcLengthTools.hpp>
+#include <adolc/adolc.h> 
+#include <NonLienarElasticElement.hpp>
+#include <PotsProcOnRefMesh.hpp>
+#include <PostProcStresses.hpp>
+#include <Projection10NodeCoordsOnField.hpp>
 
 #include <SurfacePressure.hpp>
 #include <NodalForce.hpp>
@@ -44,16 +48,10 @@ extern "C" {
   #include <complex_for_lazy.h>
 }
 
-#include <ArcLengthTools.hpp>
 #include <FEMethod_ComplexForLazy.hpp>
 #include <FEMethod_DriverComplexForLazy.hpp>
 #include <SurfacePressureComplexForLazy.hpp>
 
-#include <adolc/adolc.h> 
-#include <NonLienarElasticElement.hpp>
-
-#include <PotsProcOnRefMesh.hpp>
-#include <PostProcStresses.hpp>
 
 using namespace ObosleteUsersModules;
 

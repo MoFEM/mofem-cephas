@@ -2029,6 +2029,103 @@ PetscErrorCode Core::build_partitioned_problems(int verb) {
   *build_MoFEM |= 1<<4;
   PetscFunctionReturn(0);
 }
+PetscErrorCode Core::build_problems(MoFEMProblem_multiIndex::iterator p_miit,int verb) {
+  PetscFunctionBegin;
+  if(verb==-1) verb = verbose;
+  if(p_miit->get_BitRefLevel().none()) {
+    SETERRQ1(PETSC_COMM_SELF,1,"problem <%s> refinement level not set",p_miit->get_name().c_str());
+  }
+  if(p_miit->get_BitRefLevel().none()) {
+    SETERRQ1(PETSC_COMM_SELF,1,"problem <%s> refinement level not set",p_miit->get_name().c_str());
+  }
+  //zero finite elements
+  bool success = moFEMProblems.modify(p_miit,problem_clear_numered_finiteElementsPtr_change());
+  if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+  //miit2 iterator for finite elements
+  EntMoFEMFiniteElement_multiIndex::iterator miit2 = finiteElementsMoFEMEnts.begin();
+  EntMoFEMFiniteElement_multiIndex::iterator hi_miit2 = finiteElementsMoFEMEnts.end();
+  //DofMoFEMEntity_multiIndex_active_view dofs_rows,dofs_cols;
+  dofs_rows.clear();
+  dofs_cols.clear();
+  EntMoFEMFiniteElement_multiIndex::iterator miit3 = miit2;
+  //iterate all finite elemen entities in database
+  for(;miit3!=hi_miit2;miit3++) {
+    //if element is in problem
+    if((miit3->get_id()&p_miit->get_BitFEId()).any()) {
+	//if finite element bit level has all refined bits sets
+	if((miit3->get_BitRefLevel()&p_miit->get_BitRefLevel())==p_miit->get_BitRefLevel()) {
+	  //get dof uids for rows and columns
+	  ierr = miit3->get_MoFEMFiniteElement_row_dof_view(dofsMoabField,dofs_rows); CHKERRQ(ierr);
+	  ierr = miit3->get_MoFEMFiniteElement_col_dof_view(dofsMoabField,dofs_cols); CHKERRQ(ierr);
+	}
+    }
+  }
+  //zero rows
+  success = moFEMProblems.modify(p_miit,problem_zero_nb_rows_change());
+  if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+  //zero cols
+  success = moFEMProblems.modify(p_miit,problem_zero_nb_cols_change());
+  if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+  //add dofs for rows
+  DofMoFEMEntity_multiIndex_active_view::nth_index<1>::type::iterator miit4,hi_miit4;
+  miit4 = dofs_rows.get<1>().lower_bound(1);
+  hi_miit4 = dofs_rows.get<1>().upper_bound(1);
+  for(;miit4!=hi_miit4;miit4++) {
+    if(((*miit4)->get_BitRefLevel()&p_miit->get_DofMask_BitRefLevel())!=(*miit4)->get_BitRefLevel()) {
+	continue;
+    }
+    success = moFEMProblems.modify(p_miit,problem_row_change(&**miit4));
+    if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+  }
+  //add dofs for cols
+  DofMoFEMEntity_multiIndex_active_view::nth_index<1>::type::iterator miit5,hi_miit5;
+  miit5 = dofs_cols.get<1>().lower_bound(1);
+  hi_miit5 = dofs_cols.get<1>().upper_bound(1);
+  for(;miit5!=hi_miit5;miit5++) {
+    if(((*miit5)->get_BitRefLevel()&p_miit->get_DofMask_BitRefLevel())!=(*miit5)->get_BitRefLevel()) {
+	continue;
+    }
+    success = moFEMProblems.modify(p_miit,problem_col_change(&**miit5));
+    if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+  }
+  //number dofs on rows and collumns
+  success = moFEMProblems.modify(p_miit,problem_row_number_change());
+  if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+  success = moFEMProblems.modify(p_miit,problem_col_number_change());
+  if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+  //job done, some debugging and postprocessing
+  if(verbose>0) {
+    PetscSynchronizedPrintf(comm,"Problem %s Nb. rows %u Nb. cols %u\n",
+	p_miit->get_name().c_str(),
+	p_miit->numered_dofs_rows.size(),p_miit->numered_dofs_cols.size());
+  }
+  if(verb>2) {
+    EntMoFEMFiniteElement_multiIndex::iterator miit_ss = miit2;
+    ostringstream ss;
+    ss << "rank " << rAnk << " ";
+    ss << "FEs data for problem " << *p_miit << endl;
+    for(;miit_ss!=hi_miit2;miit_ss++) {
+	ss << "rank " << rAnk << " ";
+	ss << *miit_ss << endl;
+    }
+    ss << "rank " << rAnk << " ";
+    ss << "FEs row dofs "<< *p_miit << " Nb. row dof " << p_miit->get_nb_dofs_row() << endl;
+    NumeredDofMoFEMEntity_multiIndex::iterator miit_dd_row = p_miit->numered_dofs_rows.begin();
+    for(;miit_dd_row!=p_miit->numered_dofs_rows.end();miit_dd_row++) {
+	ss << "rank " << rAnk << " ";
+	ss<<*miit_dd_row<<endl;
+    }
+    ss << "rank " << rAnk << " ";
+    ss << "FEs col dofs "<< *p_miit << " Nb. col dof " << p_miit->get_nb_dofs_col() << endl;
+    NumeredDofMoFEMEntity_multiIndex::iterator miit_dd_col = p_miit->numered_dofs_cols.begin();
+    for(;miit_dd_col!=p_miit->numered_dofs_cols.end();miit_dd_col++) {
+	ss << "rank " << rAnk << " ";
+	ss<<*miit_dd_col<<endl;
+    }
+    PetscSynchronizedPrintf(comm,ss.str().c_str());
+  }
+  PetscFunctionReturn(0);
+}
 PetscErrorCode Core::build_problems(int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
@@ -2039,95 +2136,7 @@ PetscErrorCode Core::build_problems(int verb) {
   DofMoFEMEntity_multiIndex_active_view dofs_rows,dofs_cols;
   MoFEMProblem_multiIndex::iterator p_miit = moFEMProblems.begin();
   for(;p_miit!=moFEMProblems.end();p_miit++) {
-    if(p_miit->get_BitRefLevel().none()) {
-      SETERRQ1(PETSC_COMM_SELF,1,"problem <%s> refinement level not set",p_miit->get_name().c_str());
-    }
-    //zero finite elements
-    bool success = moFEMProblems.modify(p_miit,problem_clear_numered_finiteElementsPtr_change());
-    if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-    //miit2 iterator for finite elements
-    EntMoFEMFiniteElement_multiIndex::iterator miit2 = finiteElementsMoFEMEnts.begin();
-    EntMoFEMFiniteElement_multiIndex::iterator hi_miit2 = finiteElementsMoFEMEnts.end();
-    //DofMoFEMEntity_multiIndex_active_view dofs_rows,dofs_cols;
-    dofs_rows.clear();
-    dofs_cols.clear();
-    EntMoFEMFiniteElement_multiIndex::iterator miit3 = miit2;
-    //iterate all finite elemen entities in database
-    for(;miit3!=hi_miit2;miit3++) {
-      //if element is in problem
-      if((miit3->get_id()&p_miit->get_BitFEId()).any()) {
-	//if finite element bit level has all refined bits sets
-	if((miit3->get_BitRefLevel()&p_miit->get_BitRefLevel())==p_miit->get_BitRefLevel()) {
-	  //get dof uids for rows and columns
-	  ierr = miit3->get_MoFEMFiniteElement_row_dof_view(dofsMoabField,dofs_rows); CHKERRQ(ierr);
-	  ierr = miit3->get_MoFEMFiniteElement_col_dof_view(dofsMoabField,dofs_cols); CHKERRQ(ierr);
-	}
-      }
-    }
-    //zero rows
-    success = moFEMProblems.modify(p_miit,problem_zero_nb_rows_change());
-    if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-    //zero cols
-    success = moFEMProblems.modify(p_miit,problem_zero_nb_cols_change());
-    if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-    //add dofs for rows
-    DofMoFEMEntity_multiIndex_active_view::nth_index<1>::type::iterator miit4,hi_miit4;
-    miit4 = dofs_rows.get<1>().lower_bound(1);
-    hi_miit4 = dofs_rows.get<1>().upper_bound(1);
-    for(;miit4!=hi_miit4;miit4++) {
-      if(((*miit4)->get_BitRefLevel()&p_miit->get_DofMask_BitRefLevel())!=(*miit4)->get_BitRefLevel()) {
-	continue;
-      }
-      success = moFEMProblems.modify(p_miit,problem_row_change(&**miit4));
-      if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-    }
-    //add dofs for cols
-    DofMoFEMEntity_multiIndex_active_view::nth_index<1>::type::iterator miit5,hi_miit5;
-    miit5 = dofs_cols.get<1>().lower_bound(1);
-    hi_miit5 = dofs_cols.get<1>().upper_bound(1);
-    for(;miit5!=hi_miit5;miit5++) {
-      if(((*miit5)->get_BitRefLevel()&p_miit->get_DofMask_BitRefLevel())!=(*miit5)->get_BitRefLevel()) {
-	continue;
-      }
-      success = moFEMProblems.modify(p_miit,problem_col_change(&**miit5));
-      if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-    }
-    //number dofs on rows and collumns
-    success = moFEMProblems.modify(p_miit,problem_row_number_change());
-    if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-    success = moFEMProblems.modify(p_miit,problem_col_number_change());
-    if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-    //job done, some debugging and postprocessing
-    if(verbose>0) {
-      PetscSynchronizedPrintf(comm,"Problem %s Nb. rows %u Nb. cols %u\n",
-	p_miit->get_name().c_str(),
-	p_miit->numered_dofs_rows.size(),p_miit->numered_dofs_cols.size());
-    }
-    if(verb>2) {
-      EntMoFEMFiniteElement_multiIndex::iterator miit_ss = miit2;
-      ostringstream ss;
-      ss << "rank " << rAnk << " ";
-      ss << "FEs data for problem " << *p_miit << endl;
-      for(;miit_ss!=hi_miit2;miit_ss++) {
-	ss << "rank " << rAnk << " ";
-	ss << *miit_ss << endl;
-      }
-      ss << "rank " << rAnk << " ";
-      ss << "FEs row dofs "<< *p_miit << " Nb. row dof " << p_miit->get_nb_dofs_row() << endl;
-      NumeredDofMoFEMEntity_multiIndex::iterator miit_dd_row = p_miit->numered_dofs_rows.begin();
-      for(;miit_dd_row!=p_miit->numered_dofs_rows.end();miit_dd_row++) {
-	ss << "rank " << rAnk << " ";
-	ss<<*miit_dd_row<<endl;
-      }
-      ss << "rank " << rAnk << " ";
-      ss << "FEs col dofs "<< *p_miit << " Nb. col dof " << p_miit->get_nb_dofs_col() << endl;
-      NumeredDofMoFEMEntity_multiIndex::iterator miit_dd_col = p_miit->numered_dofs_cols.begin();
-      for(;miit_dd_col!=p_miit->numered_dofs_cols.end();miit_dd_col++) {
-	ss << "rank " << rAnk << " ";
-	ss<<*miit_dd_col<<endl;
-      }
-      PetscSynchronizedPrintf(comm,ss.str().c_str());
-    }
+    ierr = build_problems(p_miit,verb); CHKERRQ(ierr);
   }
   if(verb>0) {
     PetscSynchronizedFlush(comm,PETSC_STDOUT); 
@@ -3046,7 +3055,7 @@ PetscErrorCode Core::update_finite_element_meshset_by_entities_children(const st
   ierr = update_meshset_by_entities_children(meshset,child_bit,meshset,fe_ent_type,false,verb);  CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::problem_get_FE(const string &problem_name,const string &fe_name,const EntityHandle meshset) {
+PetscErrorCode Core::get_problem_finite_elements_entities(const string &problem_name,const string &fe_name,const EntityHandle meshset) {
   PetscFunctionBegin;
   typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type moFEMProblems_by_name;
   moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<Problem_mi_tag>();

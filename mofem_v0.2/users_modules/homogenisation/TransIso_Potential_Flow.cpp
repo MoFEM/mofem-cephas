@@ -553,8 +553,8 @@ int main(int argc, char *argv[]) {
         sss << "POTENTIAL_PROBLEM" << fibreList[cc];
         rrr << "POTENTIAL_ELEM" << fibreList[cc];
         ttt << "out_potential_flow" << fibreList[cc] <<".vtk";
-        ierr = mField.problem_get_FE( sss.str().c_str() , rrr.str().c_str() ,out_meshset); CHKERRQ(ierr);
-        ierr = mField.problem_get_FE( sss.str().c_str() , rrr.str().c_str() ,out_meshset1); CHKERRQ(ierr);
+        ierr = mField.get_problem_finite_elements_entities( sss.str().c_str() , rrr.str().c_str() ,out_meshset); CHKERRQ(ierr);
+        ierr = mField.get_problem_finite_elements_entities( sss.str().c_str() , rrr.str().c_str() ,out_meshset1); CHKERRQ(ierr);
         
         rval = moab.write_file( ttt.str().c_str() ,"VTK","",&out_meshset1,1); CHKERR_PETSC(rval);
         rval = moab.delete_entities(&out_meshset1,1); CHKERR_PETSC(rval);

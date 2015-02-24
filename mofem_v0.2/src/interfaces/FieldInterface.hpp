@@ -863,7 +863,9 @@ struct FieldInterface: public FieldUnknownInterface {
   /// list adjacencies
   virtual PetscErrorCode list_adjacencies() const = 0;
 
-  /// add Finite Element Problem
+  /** \brief add Finite Element Problem
+   * \ingroup mofem_problems
+   */
   virtual PetscErrorCode add_problem(const string& name,enum MoFEMTypes bh = MF_EXCL,int verb = -1) = 0;
   
   /* \brief add finite element to problem, this add entities assigned to finite element to a particular problem
@@ -875,7 +877,8 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode modify_problem_add_finite_element(const string &name_problem,const string &MoFEMFiniteElement_name) = 0;
 
   /** \brief add ref level to problem
-    *
+   * \ingroup mofem_problems
+   *
    * if same finite element is solved using different level of refinements, than the level of refinement has to be specificied to problem in query
    *
    * \param name Problem name
@@ -893,6 +896,7 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode modify_problem_ref_level_add_bit(const string &name_problem,const BitRefLevel &bit) = 0;
 
   /** \brief set ref level for problem
+   * \ingroup mofem_problems
    *
    * if same finite element is solved using different level of refinements, than the level of refinement has to be specificied to problem in query
    *
@@ -910,6 +914,7 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode modify_problem_ref_level_set_bit(const string &name_problem,const BitRefLevel &bit) = 0;
 
   /** \brief set dof mask ref level for problem
+   * \ingroup mofem_problems
    *
    */
   virtual PetscErrorCode modify_problem_dof_mask_ref_level_set_bit(const string &name_problem,const BitRefLevel &bit) = 0;
@@ -989,19 +994,23 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode clear_adjacencies_entities(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1) = 0;
 
   /** \brief build problem data structures, assuming that mesh is partitioned
+   * \ingroup mofem_problems
    */
   virtual PetscErrorCode build_partitioned_problems(int verb = -1) = 0;
 
   /** \brief build problem data structures
+   * \ingroup mofem_problems
    */
   virtual PetscErrorCode build_problems(int verb = -1) = 0;
 
   /** \brief clear problems
+   * \ingroup mofem_problems
    */
   virtual PetscErrorCode clear_problems(int verb = -1) = 0;
 
 
   /** \brief partition problem dofs
+   * \ingroup mofem_problems
    *
    * \param name problem name
    */
@@ -1009,6 +1018,7 @@ struct FieldInterface: public FieldUnknownInterface {
 
 
   /** \brief partition problem dofs
+   * \ingroup mofem_problems
    *
    * \param name problem name
    */
@@ -1016,6 +1026,7 @@ struct FieldInterface: public FieldUnknownInterface {
 
   /**
     * \brief build indexing and partition problem inhereting indexing and partitioning from other problem
+    * \ingroup mofem_problems
     *
     * \param name problem name
     * \param problem_for_rows problem used to index rows
@@ -1024,7 +1035,8 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode compose_problem(const string &name,const string &problem_for_rows,const string &problem_for_cols,int var = -1) = 0;
 
   /**
-    * \brief build indexing and partition problem inhereting indexing and partitioning from other problem
+    * \brief build indexing and partition problem inhereting indexing and partitioning from other problema
+    * \ingroup mofem_problems
     *
     * \param name problem name
     * \param problem_for_rows problem used to index rows
@@ -1036,10 +1048,10 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode compose_problem(const string &name,const string &problem_for_rows,bool copy_rows,const string &problem_for_cols,bool copy_cols,int verb = -1) = 0;
 
   /** \brief determine ghost nodes
+   * \ingroup mofem_dofs
    *
    * \param name problem name 
    */
-   
   virtual PetscErrorCode partition_ghost_dofs(const string &name,int verb = -1) = 0;
 
   /** \brief partition finite elements
@@ -1065,8 +1077,7 @@ struct FieldInterface: public FieldUnknownInterface {
     * \param fe_name
     * \param meshset
     */
-  virtual PetscErrorCode problem_get_FE(const string &name,const string &fe_name,const EntityHandle meshset) = 0;
-
+  virtual PetscErrorCode get_problem_finite_elements_entities(const string &name,const string &fe_name,const EntityHandle meshset) = 0;
 
   /** \brief create local vector for problem
    *
@@ -1660,6 +1671,13 @@ struct FieldInterface: public FieldUnknownInterface {
  * \defgroup mofem_fe Finite elements
  * \ingroup mofem
  ******************************************************************************/
+
+/***************************************************************************//**
+ * \defgroup mofem_problems Problems
+ * \ingroup mofem
+ ******************************************************************************/
+
+
 
 
 
