@@ -3,11 +3,6 @@
  *
  * Implementation of convective mass element
  *
- */
-
-/* Copyright (C) 2014, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
- *
  * This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -65,6 +60,14 @@ struct ConvectiveMassElement {
     **/
     int getRule(int order) { return order; };
   };
+
+  struct DynamicProblemShellMatrixCtx {
+  
+    Mat Kxx,Mxv,Vvv,Vvy;
+    Vec Fu,Fv; 
+
+  };
+
   
   MyVolumeFE feMassRhs; ///< cauclate right hand side for tetrahedral elements
   MyVolumeFE& getLoopFeMassRhs() { return feMassRhs; } ///< get rhs volume element 
@@ -258,6 +261,7 @@ struct ConvectiveMassElement {
     int tAg;
     bool jAcobian;
     bool lInear;
+    bool fieldDisp;
 
     OpMassJacobian(const string field_name,BlockData &data,CommonData &common_data,int tag,bool jacobian = true,bool linear = false):
       TetElementForcesAndSourcesCore::UserDataOperator(field_name),
@@ -325,6 +329,11 @@ struct ConvectiveMassElement {
 	    for(int nn1 = 0;nn1<3;nn1++) { //3
 	      for(int nn2 = 0;nn2<3;nn2++) {
 		h(nn1,nn2) <<= (commonData.gradAtGaussPts[commonData.spatialPositions][gg])(nn1,nn2);
+		if(fieldDisp) {
+		  if(nn1==nn2) {
+		    h(nn1,nn2) += 1;
+		  }
+		}
 		nb_active_vars++;
 	      }
 	    }
@@ -382,7 +391,11 @@ struct ConvectiveMassElement {
 	  }
 	  for(int nn1 = 0;nn1<3;nn1++) { //3
 	    for(int nn2 = 0;nn2<3;nn2++) {
-	      active[aa++] = (commonData.gradAtGaussPts[commonData.spatialPositions][gg])(nn1,nn2);
+	      if(fieldDisp&&nn1 == nn2) {
+		active[aa++] = (commonData.gradAtGaussPts[commonData.spatialPositions][gg])(nn1,nn2)+1;
+	      } else {
+		active[aa++] = (commonData.gradAtGaussPts[commonData.spatialPositions][gg])(nn1,nn2);
+	      }
 	    }
 	  }
 	  if(commonData.dataAtGaussPts["DOT_"+commonData.meshPositions].size()>0) {
@@ -723,11 +736,11 @@ struct ConvectiveMassElement {
     BlockData &dAta;
     CommonData &commonData;
     int tAg;
-    bool jAcobian;
+    bool jAcobian,fieldDisp;
 
     OpVelocityJacobian(const string field_name,BlockData &data,CommonData &common_data,int tag,bool jacobian = true):
       TetElementForcesAndSourcesCore::UserDataOperator(field_name),
-      dAta(data),commonData(common_data),tAg(tag),jAcobian(jacobian) { }
+      dAta(data),commonData(common_data),tAg(tag),jAcobian(jacobian),fieldDisp(false) { }
 
     ublas::vector<adouble> a_res;
     ublas::vector<adouble> v,dot_w,dot_W;
@@ -796,6 +809,11 @@ struct ConvectiveMassElement {
 	      for(int nn1 = 0;nn1<3;nn1++) { //3+3 = 6
 		for(int nn2 = 0;nn2<3;nn2++) {
 		  h(nn1,nn2) <<= commonData.gradAtGaussPts[commonData.spatialPositions][gg](nn1,nn2);
+		  if(fieldDisp) {
+		    if(nn1==nn2) {
+		      h(nn1,nn2) += 1;
+		    }
+		  }
 		  nb_active_vars++;
 		}
 	      }
@@ -843,7 +861,11 @@ struct ConvectiveMassElement {
 	  if(commonData.dataAtGaussPts["DOT_"+commonData.meshPositions].size()>0) {
 	    for(int nn1 = 0;nn1<3;nn1++) {
 	      for(int nn2 = 0;nn2<3;nn2++) {
-		active[aa++] = commonData.gradAtGaussPts[commonData.spatialPositions][gg](nn1,nn2);
+		if(fieldDisp&&nn1 == nn2) {
+		  active[aa++] = commonData.gradAtGaussPts[commonData.spatialPositions][gg](nn1,nn2)+1;
+		} else {
+		  active[aa++] = commonData.gradAtGaussPts[commonData.spatialPositions][gg](nn1,nn2);
+		}
 	      }	
 	    }
 	    for(int nn1 = 0;nn1<3;nn1++) {
@@ -1073,10 +1095,11 @@ struct ConvectiveMassElement {
     CommonData &commonData;
     int tAg;
     bool jAcobian;
+    bool fieldDisp;
 
     OpEshelbyDynamicMaterialMomentumJacobian(const string field_name,BlockData &data,CommonData &common_data,int tag,bool jacobian = true):
       TetElementForcesAndSourcesCore::UserDataOperator(field_name),
-      dAta(data),commonData(common_data),tAg(tag),jAcobian(jacobian) {}
+      dAta(data),commonData(common_data),tAg(tag),jAcobian(jacobian),fieldDisp(false) {}
 
     ublas::vector<adouble> a,v,a_T;
     ublas::matrix<adouble> g,H,invH,h,F,G;
@@ -1141,6 +1164,11 @@ struct ConvectiveMassElement {
 	    for(int nn1 = 0;nn1<3;nn1++) { //3+3+9
 	      for(int nn2 = 0;nn2<3;nn2++) {
 		h(nn1,nn2) <<= commonData.gradAtGaussPts[commonData.spatialPositions][gg](nn1,nn2); nb_active_vars++;
+		if(fieldDisp) {
+		  if(nn1==nn2) {
+		    h(nn1,nn2) += 1;
+		  }
+		}
 	      }
 	    }
 	    if(commonData.gradAtGaussPts[commonData.meshPositions].size()>0) {
@@ -1185,7 +1213,11 @@ struct ConvectiveMassElement {
 	    }
 	    for(int nn1 = 0;nn1<3;nn1++) { //3+3+9
 	      for(int nn2 = 0;nn2<3;nn2++) {
-		active[aa++] = commonData.gradAtGaussPts[commonData.spatialPositions][gg](nn1,nn2); 
+		if(fieldDisp&&nn1 == nn2) {
+		  active[aa++] = commonData.gradAtGaussPts[commonData.spatialPositions][gg](nn1,nn2)+1; 
+		} else {
+		  active[aa++] = commonData.gradAtGaussPts[commonData.spatialPositions][gg](nn1,nn2); 
+		}
 	      }
 	    }
 	    if(commonData.gradAtGaussPts[commonData.meshPositions].size()>0) {
