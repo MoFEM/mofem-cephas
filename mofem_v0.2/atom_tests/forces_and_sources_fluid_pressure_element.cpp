@@ -173,7 +173,7 @@ int main(int argc, char *argv[]) {
 
   EntityHandle out_meshset;
   rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
-  ierr = m_field.problem_get_FE("TEST_PROBLEM","FLUID_PRESSURE_FE",out_meshset); CHKERRQ(ierr);
+  ierr = m_field.get_problem_finite_elements_entities("TEST_PROBLEM","FLUID_PRESSURE_FE",out_meshset); CHKERRQ(ierr);
   rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
   rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);*/
   

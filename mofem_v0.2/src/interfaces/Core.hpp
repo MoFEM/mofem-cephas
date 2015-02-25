@@ -452,12 +452,13 @@ struct Core:
   PetscErrorCode list_adjacencies() const;
 
   //problem building
-  PetscErrorCode build_partitioned_problems(int verb = -1);
+  PetscErrorCode build_problem(const string &name,int verb);
+  PetscErrorCode build_problem(MoFEMProblem *problem_ptr,int verb);
   PetscErrorCode build_problems(int verb = -1);
   PetscErrorCode clear_problems(int verb = -1);
+  PetscErrorCode build_partitioned_problems(int verb = -1);
   PetscErrorCode simple_partition_problem(const string &name,int verb = -1);
   PetscErrorCode partition_problem(const string &name,int verb = -1);
-  PetscErrorCode compose_problem(const string &name,const string &problem_for_rows,const string &problem_for_cols,int var = -1);
   PetscErrorCode compose_problem(const string &name,const string &problem_for_rows,bool copy_rows,const string &problem_for_cols,bool copy_cols,int verb = -1);
   PetscErrorCode partition_ghost_dofs(const string &name,int verb = -1);
   PetscErrorCode partition_finite_elements(
@@ -465,7 +466,7 @@ struct Core:
   PetscErrorCode partition_check_matrix_fill_in(const string &problem_neme,int verb);
 
   //save meshsets
-  PetscErrorCode problem_get_FE(const string &name,const string &fe_name,const EntityHandle meshset);
+  PetscErrorCode get_problem_finite_elements_entities(const string &name,const string &fe_name,const EntityHandle meshset);
 
   //vector and matrices 
   PetscErrorCode VecCreateSeq(const string &name,RowColData rc,Vec *V);

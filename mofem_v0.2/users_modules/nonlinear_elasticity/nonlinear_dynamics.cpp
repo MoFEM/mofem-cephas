@@ -296,6 +296,12 @@ int main(int argc, char *argv[]) {
   //set refinment level for problem
   ierr = m_field.modify_problem_ref_level_add_bit("ELASTIC_MECHANICS",bit_level0); CHKERRQ(ierr);
 
+  //shell matrix problems
+  //ierr = m_field.add_problem("Kuu",MF_ZERO); CHKERRQ(ierr);
+  //ierr = m_field.add_problem("Kvv",MF_ZERO); CHKERRQ(ierr);
+  //ierr = m_field.add_problem("Kuv",MF_ZERO); CHKERRQ(ierr);
+  //ierr = m_field.add_problem("Kvu",MF_ZERO); CHKERRQ(ierr);
+
   //set app. order
 
   PetscInt disp_order;
