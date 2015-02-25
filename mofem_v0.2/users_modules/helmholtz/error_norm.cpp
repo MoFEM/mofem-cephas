@@ -72,8 +72,9 @@ int main(int argc, char *argv[]) {
 	if(flg != PETSC_TRUE) {
 		SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -type_error_norm (L2 or H1 type needed)");
 	}
-	if(type_error_norm == "l2") {usel2 = true;}
-	else if(type_error_norm == "h1") {usel2 = false;}
+
+	if (strcmp ("l2",type_error_norm ) == 0) {usel2 = true;}
+	else if(strcmp ("h1",type_error_norm ) == 0) {usel2 = false;}
 	
 	ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
 	if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
@@ -140,7 +141,8 @@ int main(int argc, char *argv[]) {
 	}
 	
 	NormElement norm_elements(m_field);
-	norm_elements.addNormElements("NORM_PROBLEM","NORM_FE","NORM","rePRES","reEX");
+	if(m_field.check_field("reEX") && m_field.check_field("rePRES") ) {
+	norm_elements.addNormElements("NORM_PROBLEM","NORM_FE","NORM","rePRES","reEX");}
 	
 	/****/
 	//build database
@@ -214,6 +216,7 @@ int main(int argc, char *argv[]) {
 	ierr = VecNorm(F,NORM_FROBENIUS,&l2norm);;
 	ierr = VecNorm(F,NORM_MAX,&pointwisenorm);
     //ierr = VecMax(F,NULL,&pointwisenorm);
+	std::cout << "\n usel2 = \n" << usel2 << std::endl;
 	if(usel2) {
 	std::cout << "\n The Global least square of l2 Norm of error is : --\n" << l2norm << std::endl;
 	std::cout << "\n The Global Pointwise of l2 Norm of error for is : --\n" << pointwisenorm << std::endl;}

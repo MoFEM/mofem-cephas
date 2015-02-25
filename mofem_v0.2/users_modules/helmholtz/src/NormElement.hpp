@@ -121,11 +121,11 @@ struct NormElement {
 			int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
 			PetscFunctionBegin;
 			try {
-	
-				if(data.getIndices().size()==0) PetscFunctionReturn(0);
+				//if(data.getIndices().size()==0) PetscFunctionReturn(0);
+				if(data.getFieldData().size()==0) PetscFunctionReturn(0);
 				int nb_dofs = data.getFieldData().size();
 				int nb_gauss_pts = data.getN().size1();
-	
+				
 				//initialize
 				commonData.gradField1AtGaussPts.resize(nb_gauss_pts,3);
 				if(type == MBVERTEX) {
@@ -164,7 +164,7 @@ struct NormElement {
 			PetscFunctionBegin;
 			try {
 				
-				if(data.getIndices().size()==0) PetscFunctionReturn(0);
+				if(data.getFieldData().size()==0) PetscFunctionReturn(0);
 				int nb_dofs = data.getFieldData().size();
 				int nb_gauss_pts = data.getN().size1();
 				
@@ -208,7 +208,7 @@ struct NormElement {
 			int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
 			PetscFunctionBegin;
 			try {
-	
+
 				if(data.getFieldData().size()==0) PetscFunctionReturn(0);
 				int nb_dofs = data.getFieldData().size();
 				int nb_gauss_pts = data.getN().size1();
@@ -276,33 +276,32 @@ struct NormElement {
 	
 	/** \brief Rhs operaetar used loop differences between two fields
 	*/
-	template<typename OP>  //Calculate L^2 norm error in Tets or surface triangles
-	struct OpRhsError:public OP::UserDataOperator {
+	struct OpRhs:public TetElementForcesAndSourcesCore::UserDataOperator {
 		
 		CommonData &commonData;
 		Vec F;
 		bool usel2;
+		bool useTsF;
         //ublas::vector<double> fieldValue1AtGaussPts;
 		//ublas::vector<double> fieldValue2AtGaussPts;
 		//ublas::<double> gradFieldValue1AtGaussPts;
 		//ublas::matrix<double> gradFieldValue2AtGaussPts;
 		ublas::vector<double> Nf;
-		
-		bool useTsF;
-		OpRhsError(const string re_field_name,const string im_field_name,
-				   CommonData &common_data,bool useL2
-				   ): 
-			OP::UserDataOperator(re_field_name,im_field_name),
-			commonData(common_data),usel2(useL2),useTsF(true) {}
-		
-		OpRhsError(const string re_field_name,const string im_field_name,
-			  Vec _F,CommonData &common_data,bool useL2
-			  ): 
-			OP::UserDataOperator(re_field_name,im_field_name),
-			commonData(common_data),usel2(useL2),useTsF(false),F(_F) {}
-		
 		ublas::vector<double> eRror;
 
+		
+		OpRhs(const string re_field_name,const string im_field_name,
+				   CommonData &common_data,bool useL2
+				   ): 
+			TetElementForcesAndSourcesCore::UserDataOperator(re_field_name,im_field_name),
+			commonData(common_data),usel2(useL2),useTsF(true) {}
+		
+		OpRhs(const string re_field_name,const string im_field_name,
+			  Vec _F,CommonData &common_data,bool useL2
+			  ): 
+			TetElementForcesAndSourcesCore::UserDataOperator(re_field_name,im_field_name),
+			commonData(common_data),usel2(useL2),useTsF(false),F(_F) {}
+		
 		
 		/*	
 		Rhs force vector merely with Dirichlet values
@@ -311,13 +310,11 @@ struct NormElement {
 		
 		PetscErrorCode doWork(
 			int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
-			if (TypeIsTet<OP>::useTet) {
+			//if (TypeIsTet<OP>::useTet) {
 			PetscFunctionBegin;
 			PetscErrorCode ierr;
 			
 			try {
-				std::cout << "\n commonData.fieldValue1AtGaussPts =\n " << commonData.fieldValue1AtGaussPts << std::endl;
-
 				if(data.getIndices().size()==0) PetscFunctionReturn(0);
 				//if(dAta.tEts.find(getMoFEMFEPtr()->get_ent())==dAta.tEts.end()) PetscFunctionReturn(0);
 				
@@ -329,7 +326,6 @@ struct NormElement {
 				//resize error in specific elements on each vertex equal to dofs
 				eRror.resize(nb_row);
 				Nf.resize(nb_row);
-				cout << "\n nb_row = \n " << nb_row << std::endl;
 				Nf.clear();
 				for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
 					
@@ -341,39 +337,31 @@ struct NormElement {
 
 					} else{
 					}
-						
+					
 					ublas::vector<double> uAnaly = commonData.fieldValue1AtGaussPts;
 					ublas::vector<double> uNumer = commonData.fieldValue2AtGaussPts;
 					ublas::matrix_row< ublas::matrix<double> > uAnalyGrad = commonData.getGradField1AtGaussPts(gg);
 					ublas::matrix_row< ublas::matrix<double> > uNumerGrad = commonData.getGradField2AtGaussPts(gg);
-					
+					//std::cout << "\n uAnalyGrad = \n" << uAnalyGrad << std::endl;
                    //std::cout << "\n commonData.fieldValue1AtGaussPts =\n " << commonData.fieldValue1AtGaussPts << std::endl;
+				   //std::cout << "\n nb_gauss_Pts = \n" << data.getN().size1() << std::endl;
 				   //std::cout << "\n commonData.getGradField2AtGaussPts(gg) = \n" << commonData.getGradField2AtGaussPts(gg) << std::endl;
 					ublas::vector<double> sqError;
-					sqError.resize(1); //resize vector to scalar.
+					sqError.resize(data.getN().size1()); //resize vector to nb.of GaussPts
 					if(usel2) {
-					eRror = uAnaly - uNumer;
-					sqError[0] = pow(eRror(gg),2.0);
-					//for (i=0; i<=arrayset; i++){
-					//	a[i]= pi*(pow(static_cast<float>(g[i]),2));
-					//}
+						
+					eRror = uAnaly - uNumer;  
+					sqError[gg] = pow(eRror(gg),2.0);
 					
-                   //#include <algorithm>
-                   //		using namespace std;
-                   //		
-					//static inline double computeSquare (double x) { return x*x; }
-					
-					//std::transform(Array1.begin(), Array1.end(), Array1.begin(), (double(*)(double)) sqrt);
-					//std::transform(Array2.begin(), Array2.end(), Array2.begin(), computeSquare);
 					} else{
+						
 					eRror = uAnaly - uNumer;
-					//double sqGradError
 					double sqGradError = ublas::inner_prod((commonData.getGradField1AtGaussPts(gg)-commonData.getGradField2AtGaussPts(gg)),(commonData.getGradField1AtGaussPts(gg)-commonData.getGradField2AtGaussPts(gg)));
-					sqError[0] = sqGradError + pow(eRror(gg),2.0);
+					
+					sqError[gg] = sqGradError + pow(eRror(gg),2.0);
 					}
 					
-					ublas::noalias(Nf) += val*sqError;
-					
+					ublas::noalias(Nf) += val*sqError[gg]*data.getN(gg);
 					
 				//	bool relativeError = false;
 				//	if (relativeError){
@@ -383,15 +371,12 @@ struct NormElement {
 				//	ublas::noalias(UmUh) += sqrt((uExact-uAnalyt)*val); }
 			    }
 				 
-				if(useTsF) {
-					//ierr = VecSetValues(getFEMethod()->ts_F,data.getIndices().size(),
-					//					&data.getIndices()[0],&*Nf.data().begin(),ADD_VALUES); CHKERRQ(ierr);	
-					return 0;
-				} else {
+
+					
 					ierr = VecSetValues(F,data.getIndices().size(),
 										&data.getIndices()[0],&*Nf.data().begin(),ADD_VALUES); CHKERRQ(ierr);	
-				}
-	
+				
+	            
 				}
 
 
@@ -402,115 +387,36 @@ struct NormElement {
 			 } 
 			 PetscFunctionReturn(0);
 			 
-			} else if (!TypeIsTet<OP>::useTet) {
-			
-				//PetscFunctionBegin;
-				
-				//if(data.getIndices().size()==0) PetscFunctionReturn(0);
-				////if(dAta.tRis.find(getMoFEMFEPtr()->get_ent())==dAta.tRis.end()) PetscFunctionReturn(0);
-				
-				//PetscErrorCode ierr;
-				
-				//const FENumeredDofMoFEMEntity *dof_ptr;
-				//ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
-				//int rank = dof_ptr->get_max_rank();
-				
-				//int nb_dofs = data.getIndices().size()/rank;
-				////UmUh.resize(data.getIndices().size();
-				
-				////bzero(&*Nf.data().begin(),data.getIndices().size()*sizeof(FieldData));
-				//fill(Nf.begin(),Nf.end(),0);
-				
-				////cerr << getNormal() << endl;
-				////cerr << getNormals_at_GaussPt() << endl;
-				
-				//for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
-				//	
-				//	//////NEED TO BE FIXED!!!!
-				//	double x,y,z;
-				//	//Integrate over surface
-				//	double val = getGaussPts()(2,gg);
-				//	if(hoCoords.size1() == data.getN().size1()) {
-				//		double area = norm_2(this->getNormals_at_GaussPt(gg)); 
-				//		val *= area;
-				//		x = hoCoords(gg,0);
-				//		y = hoCoords(gg,1);
-				//		z = hoCoords(gg,2);
-				//	} else {
-				//		val *= this->getArea();
-				//		x = this->getCoordsAtGaussPts()(gg,0);  //Coordinates of Gaussian points for higher order geometry
-				//		y = this->getCoordsAtGaussPts()(gg,1);
-				//		z = this->getCoordsAtGaussPts()(gg,2);
-				//	}
-			
-				//	
-				//	double a = fUN(x,y,z);
-				//	double uExact = pow(a,2.0);
-				//	double uAnalyt = pow(commonData.numValueAtGaussPts[gg],2.0);
-				//	
-				//	
-				//	//cblas_daxpy(nb_row_dofs,val*flux,&data.getN()(gg,0),1,&*Nf.data().begin(),1);
-				//	bool relativeError = false;
-				//	if (relativeError){
-				//		
-				//		ublas::noalias(UmUh) += sqrt((uExact-uAnalyt)*val)/sqrt(uExact*val);
-				//	} else {
-				//	ublas::noalias(UmUh) += sqrt((uExact-uAnalyt)*val) }
-				//	//ublas::noalias(Nf) += val*flux*data.getN(gg,nb_dofs);
-				//	
-				//}
-										
-				//if(useTsF) {
-				//ierr = VecSetValues(getFEMethod()->ts_F,data.getIndices().size(),
-				//					&data.getIndices()[0],&*UmUh.data().begin(),ADD_VALUES); CHKERRQ(ierr);	
-				//} else {
-				//	ierr = VecSetValues(F,data.getIndices().size(),
-				//						&data.getIndices()[0],&*UmUh.data().begin(),ADD_VALUES); CHKERRQ(ierr);	
-				//}
-				
-				//ierr = VecSetValues(getFEMethod()->snes_f,data.getIndices().size(),
-				//					&data.getIndices()[0],&*NTf.data().begin(),ADD_VALUES); CHKERRQ(ierr);
-
-
-			
-				//catch (const std::exception& ex) {
-				//ostringstream ss;
-				//ss << "throw in method: " << ex.what() << endl;
-				//	SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
-				//}
-				
-				//PetscFunctionReturn(0);
-			return 0;
-		
-    };
+			//} else if (!TypeIsTet<OP>::useTet) {
+    //};
 	
 }
 	};
 	
 	
-	template<typename OP,typename OS = void>
-	struct TypeIsTet
-	{
-		static const bool useTet = false;
-	};
+	//template<typename OP,typename OS = void>
+	//struct TypeIsTet
+	//{
+	//	static const bool useTet = false;
+	//};
 	
-	template<typename OS>
-	struct TypeIsTet<TetElementForcesAndSourcesCore,OS>
-	{
-		static const bool useTet = true;
-	};
+	//template<typename OS>
+	//struct TypeIsTet<TetElementForcesAndSourcesCore,OS>
+	//{
+	//	static const bool useTet = true;
+	//};
 
 /** \brief operator to calculate error at Gauss pts
   * \infroup mofem_thermal_elem
   */
-struct OpTetRhs: public OpRhsError<TetElementForcesAndSourcesCore> {
-    OpTetRhs(const string re_field_name,const string im_field_name,
-		Vec _F,CommonData &common_data,   
-		bool useL2): 
-		OpRhsError<TetElementForcesAndSourcesCore>(re_field_name,im_field_name,
-				_F,common_data,useL2) {}
+//struct OpTetRhs: public OpRhs<TetElementForcesAndSourcesCore> {
+//    OpTetRhs(const string re_field_name,const string im_field_name,
+//		Vec _F,CommonData &common_data,   
+//		bool useL2): 
+//		OpRhs<TetElementForcesAndSourcesCore>(re_field_name,im_field_name,
+//				_F,common_data,useL2) {}
 
-};
+//};
 
 
 
@@ -569,12 +475,13 @@ PetscErrorCode setNormFiniteElementRhsOperator(string norm_field_name,string fie
 		
 		//Calculate field values at gaussian points for field1 and field2; 
 		feRhs.get_op_to_do_Rhs().push_back(new OpGetTetField1AtGaussPts(field1_name,commonData));
-		std::cout << "\n commonData.fieldValue1AtGaussPts =\n " << commonData.fieldValue1AtGaussPts << std::endl;
+		//std::cout << "\n commonData.fieldValue1AtGaussPts =\n " << commonData.fieldValue1AtGaussPts << std::endl;
 		feRhs.get_op_to_do_Rhs().push_back(new OpGetTetField2AtGaussPts(field2_name,commonData));
 		feRhs.get_op_to_do_Rhs().push_back(new OpGetGradField1AtGaussPts(field1_name,commonData));
+		//std::cout << "\n commonData.getGradField2AtGaussPts(gg) = \n" << commonData.getGradField1AtGaussPts(1) << std::endl;
 		feRhs.get_op_to_do_Rhs().push_back(new OpGetGradField2AtGaussPts(field2_name,commonData));
 		
-    feRhs.get_op_to_do_Rhs().push_back(new OpTetRhs(norm_field_name,norm_field_name,F,commonData,usel2));
+    feRhs.get_op_to_do_Rhs().push_back(new OpRhs(norm_field_name,norm_field_name,F,commonData,usel2));
 }
 
 	PetscFunctionReturn(0);
