@@ -52,7 +52,8 @@ int main(int argc, char *argv[]) {
 	MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
 	
 	//read h5m solution file into moab
-	bool usel2;
+	bool usel2; //norm type
+	bool userela; //relative error or pure error
 	PetscBool flg = PETSC_TRUE;
 	
 	char mesh_file_name[255];
@@ -75,6 +76,15 @@ int main(int argc, char *argv[]) {
 
 	if (strcmp ("l2",type_error_norm ) == 0) {usel2 = true;}
 	else if(strcmp ("h1",type_error_norm ) == 0) {usel2 = false;}
+	
+	char relative_error[255];
+	ierr = PetscOptionsGetString(PETSC_NULL,"-relative_error",relative_error,255,&flg); CHKERRQ(ierr);
+	if(flg != PETSC_TRUE) {
+		SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -type_error_norm (L2 or H1 type needed)");
+	}
+	
+	if (strcmp ("true",relative_error ) == 0) {userela = true;}
+	else if(strcmp ("false",relative_error ) == 0) {userela = false;}
 	
 	ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
 	if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
@@ -106,7 +116,7 @@ int main(int argc, char *argv[]) {
 
 	//Fields
 	ierr = m_field.add_field("erorNORM",H1,1); CHKERRQ(ierr);
-	ierr = m_field.add_field("relaNORM",H1,1); CHKERRQ(ierr);
+	//ierr = m_field.add_field("relaNORM",H1,1); CHKERRQ(ierr);
 
 	
 	//Problem
@@ -119,7 +129,8 @@ int main(int argc, char *argv[]) {
 	EntityHandle root_set = moab.get_root_set(); 
 	//add entities to field
 	ierr = m_field.add_ents_to_field_by_TETs(root_set,"erorNORM"); CHKERRQ(ierr);
-	ierr = m_field.add_ents_to_field_by_TETs(root_set,"relaNORM"); CHKERRQ(ierr);
+	//ierr = m_field.add_ents_to_field_by_TETs(root_set,"relaNORM"); CHKERRQ(ierr);
+	
 	//set app. order , approximation error of norm should be as least 1 order higher than numerical spaces.
 	//see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
 	PetscInt order;
@@ -132,10 +143,10 @@ int main(int argc, char *argv[]) {
 	ierr = m_field.set_field_order(root_set,MBTRI,"erorNORM",order); CHKERRQ(ierr);
 	ierr = m_field.set_field_order(root_set,MBEDGE,"erorNORM",order); CHKERRQ(ierr);
 	ierr = m_field.set_field_order(root_set,MBVERTEX,"erorNORM",1); CHKERRQ(ierr);
-	ierr = m_field.set_field_order(root_set,MBTET,"relaNORM",order); CHKERRQ(ierr);
-	ierr = m_field.set_field_order(root_set,MBTRI,"relaNORM",order); CHKERRQ(ierr);
-	ierr = m_field.set_field_order(root_set,MBEDGE,"relaNORM",order); CHKERRQ(ierr);
-	ierr = m_field.set_field_order(root_set,MBVERTEX,"relaNORM",1); CHKERRQ(ierr);
+	//ierr = m_field.set_field_order(root_set,MBTET,"relaNORM",order); CHKERRQ(ierr);
+	//ierr = m_field.set_field_order(root_set,MBTRI,"relaNORM",order); CHKERRQ(ierr);
+	//ierr = m_field.set_field_order(root_set,MBEDGE,"relaNORM",order); CHKERRQ(ierr);
+	//ierr = m_field.set_field_order(root_set,MBVERTEX,"relaNORM",1); CHKERRQ(ierr);
 	
 	if(!m_field.check_field("MESH_NODE_POSITIONS")) {
 	ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,3); CHKERRQ(ierr);
@@ -148,7 +159,7 @@ int main(int argc, char *argv[]) {
 	
 	NormElement norm_elements(m_field);
 	if(m_field.check_field("reEX") && m_field.check_field("rePRES") && m_field.check_field("imPRES") && m_field.check_field("imEX") ) {
-	norm_elements.addNormElements("NORM_PROBLEM","NORM_FE","erorNORM","relaNORM","reEX","rePRES","imEX","imPRES");}
+	norm_elements.addNormElements("NORM_PROBLEM","NORM_FE","erorNORM","reEX","rePRES");}
 	
 	/****/
 	//build database
@@ -179,18 +190,18 @@ int main(int argc, char *argv[]) {
 	Vec F,D;
 	ierr = m_field.VecCreateGhost("NORM_PROBLEM",ROW,&F); CHKERRQ(ierr);
 	ierr = VecDuplicate(F,&D); CHKERRQ(ierr);
-	ierr = norm_elements.setNormFiniteElementRhsOperator("erorNORM","reEX","rePRES",F,D,usel2); CHKERRQ(ierr);
-	ierr = norm_elements.setRelativeNormFiniteElementRhsOperator("relaNORM","reEX","rePRES",F,D,usel2); CHKERRQ(ierr);
+	ierr = norm_elements.setNormFiniteElementRhsOperator("erorNORM","reEX","rePRES",F,usel2,userela); CHKERRQ(ierr);
+	//ierr = norm_elements.setRelativeNormFiniteElementRhsOperator("relaNORM","reEX","rePRES",F,D,usel2); CHKERRQ(ierr);
     //Could we use 2 problem 1 element, two fields to calculate two result vectors ? 
 	
 	ierr = VecZeroEntries(F); CHKERRQ(ierr);
-	ierr = VecZeroEntries(D); CHKERRQ(ierr);
+	//ierr = VecZeroEntries(D); CHKERRQ(ierr);
 	ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	//ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	//ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	ierr = m_field.set_global_VecCreateGhost("NORM_PROBLEM",ROW,F,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-	ierr = m_field.set_global_VecCreateGhost("NORM_PROBLEM",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	//ierr = m_field.set_global_VecCreateGhost("NORM_PROBLEM",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
 	
 	ierr = m_field.loop_finite_elements("NORM_PROBLEM","NORM_FE",norm_elements.getLoopFeRhs()); CHKERRQ(ierr);
@@ -200,13 +211,13 @@ int main(int argc, char *argv[]) {
 	ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
 	ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
 	
-	ierr = VecGhostUpdateBegin(D,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-	ierr = VecGhostUpdateEnd(D,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-	ierr = VecAssemblyBegin(D); CHKERRQ(ierr);
-	ierr = VecAssemblyEnd(D); CHKERRQ(ierr);
+	//ierr = VecGhostUpdateBegin(D,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	//ierr = VecGhostUpdateEnd(D,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	//ierr = VecAssemblyBegin(D); CHKERRQ(ierr);
+	//ierr = VecAssemblyEnd(D); CHKERRQ(ierr);
 
 	ierr = m_field.set_global_VecCreateGhost("NORM_PROBLEM",ROW,F,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-	ierr = m_field.set_global_VecCreateGhost("NORM_PROBLEM",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	//ierr = m_field.set_global_VecCreateGhost("NORM_PROBLEM",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
 	
 	/* Global error calculation */
@@ -224,13 +235,13 @@ int main(int argc, char *argv[]) {
 	std::cout << "\n The Global Pointwise of H1 Norm of error for is : --\n" << pointwisenorm << std::endl;}
 	/*    */
     ierr = VecDestroy(&F); CHKERRQ(ierr);
-    ierr = VecDestroy(&D); CHKERRQ(ierr);
+    //ierr = VecDestroy(&D); CHKERRQ(ierr);
 	PostPocOnRefinedMesh post_proc1(m_field);
 	ierr = post_proc1.generateRefereneElemenMesh(); CHKERRQ(ierr);
 	ierr = post_proc1.addFieldValuesPostProc("erorNORM"); CHKERRQ(ierr);
 	ierr = post_proc1.addFieldValuesGradientPostProc("erorNORM"); CHKERRQ(ierr);
-	ierr = post_proc1.addFieldValuesPostProc("relaNORM"); CHKERRQ(ierr);
-	ierr = post_proc1.addFieldValuesGradientPostProc("relaNORM"); CHKERRQ(ierr);
+	//ierr = post_proc1.addFieldValuesPostProc("relaNORM"); CHKERRQ(ierr);
+	//ierr = post_proc1.addFieldValuesGradientPostProc("relaNORM"); CHKERRQ(ierr);
 	ierr = post_proc1.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
 	ierr = m_field.loop_finite_elements("NORM_PROBLEM","NORM_FE",post_proc1); CHKERRQ(ierr);
 	rval = post_proc1.postProcMesh.write_file("norm_error.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
@@ -238,6 +249,11 @@ int main(int argc, char *argv[]) {
 	ierr = PetscTime(&v2);CHKERRQ(ierr);
 	ierr = PetscGetCPUTime(&t2);CHKERRQ(ierr);
 	PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Total Rank %d Time = %f CPU Time = %f\n",pcomm->rank(),v2-v1,t2-t1);
+	
+	
+	//output the results from Docker
+	char command1[] = "mbconvert norm_error.h5m ./norm_error.vtk && cp ./norm_error.vtk ../../../../mnt/home/Desktop/U_pan/helmholtz_results/";
+	int todo1 = system( command1 );
 	
 	
 	

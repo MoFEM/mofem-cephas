@@ -262,6 +262,95 @@ struct NormElement {
 	};
 	
 	
+	/** \brief Lhs operaetar for tetrahedral used to build matrix
+	*/
+    struct OpLhs:public TetElementForcesAndSourcesCore::UserDataOperator {
+		
+		Mat A;
+		bool solveBc;
+		ublas::matrix<double> &hoCoords;
+		OpLhsTet(const string re_field_name,ublas::matrix<double> &ho_coords,Mat _A): 
+			TetElementForcesAndSourcesCore::UserDataOperator(re_field_name),
+			hoCoords(ho_coords),A(_A) { }
+		
+		OpLhsTet(const string re_field_name,ublas::matrix<double> &ho_coords): 
+			TetElementForcesAndSourcesCore::UserDataOperator(re_field_name),
+			hoCoords(ho_coords) { }
+		
+		ublas::matrix<FieldData> NTN;
+		
+		/*	
+		Lhs mass matrix
+		A = N^T N
+		*/
+		
+		PetscErrorCode doWork(
+			int row_side,int col_side,
+			EntityType row_type,EntityType col_type,
+			DataForcesAndSurcesCore::EntData &row_data,
+			DataForcesAndSurcesCore::EntData &col_data) {
+			PetscFunctionBegin;
+			
+			PetscErrorCode ierr;
+			
+			try {
+				
+				if(row_data.getIndices().size()==0) PetscFunctionReturn(0);
+				if(col_data.getIndices().size()==0) PetscFunctionReturn(0);
+				
+				unsigned int nb_row = row_data.getN().size2();
+				unsigned int nb_col = col_data.getN().size2();
+				
+				if(nb_row != row_data.getIndices().size()) {
+					SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,
+							"currently works only for scalar fields, extension to fields with higher rank need to be implemented");
+				}
+				
+				NTN.resize(nb_row,nb_col);
+				
+				for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
+					double val = getVolume()*getGaussPts()(3,gg);
+	
+					if(hoCoords.size1() == row_data.getN().size1()) {
+						
+						val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
+					} 
+					
+					NTN.clear();
+					
+					noalias(NTN) += val*outer_prod( row_data.getN(gg,nb_row),col_data.getN(gg,nb_col) );
+					//cblas_dger(CblasRowMajor,nb_row,nb_col,val,
+					//		   &row_data.getN(gg)[0],1,&col_data.getN(gg)[0],1,
+					//		   &NTN(0,0),nb_col);
+					
+					//(order,no.row in mat,no.col in mat,
+					
+					if(solveBc){
+						ierr = MatSetValues(
+								   (getFEMethod()->snes_B),
+								   nb_row,&row_data.getIndices()[0],
+								   nb_col,&col_data.getIndices()[0],
+								   &NTN(0,0),ADD_VALUES); CHKERRQ(ierr);
+						
+					} else if(!solveBc){
+						ierr = MatSetValues(
+								   B,
+								   nb_row,&row_data.getIndices()[0],
+								   nb_col,&col_data.getIndices()[0],
+								   &NTN(0,0),ADD_VALUES); CHKERRQ(ierr);
+					}
+				}
+				
+			} catch (const std::exception& ex) {
+				ostringstream ss;
+				ss << "throw in method: " << ex.what() << endl;
+				SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+			}
+			
+			PetscFunctionReturn(0);
+		}
+    };
+	
 	
 	/** \brief Rhs operaetar used loop differences between two fields
 	*/
@@ -269,24 +358,23 @@ struct NormElement {
 		
 		CommonData &commonData;
 		Vec F;//norm error
-		Vec D;//relative error
-		bool usel2;
+		//Vec D;//relative error
+		bool useL2;
 		bool useTsF;
+		bool useRela;//use relative error
 		ublas::vector<double> Nf;
-		ublas::vector<double> eRror;
 		ublas::vector<double> rElative_error;
-		string re_fieldname;
 		OpRhs(const string re_field_name,const string im_field_name,
-				   CommonData &common_data,bool useL2
+				   CommonData &common_data,bool usel2,bool userela
 				   ): 
 			TetElementForcesAndSourcesCore::UserDataOperator(re_field_name,im_field_name),
-			commonData(common_data),usel2(useL2),useTsF(true),re_fieldname(re_field_name) {}
+			commonData(common_data),useL2(usel2),useTsF(true),useRela(userela) {}
 		
 		OpRhs(const string re_field_name,const string im_field_name,
-			  Vec _F,Vec _D,CommonData &common_data,bool useL2
+			  Vec _F,CommonData &common_data,bool usel2,bool userela
 			  ): 
 			TetElementForcesAndSourcesCore::UserDataOperator(re_field_name,im_field_name),
-			commonData(common_data),usel2(useL2),useTsF(false),F(_F),D(_D),re_fieldname(re_field_name) {}
+			commonData(common_data),useL2(usel2),useTsF(false),useRela(userela),F(_F) {}
 		
 		
 		/*	
@@ -304,77 +392,82 @@ struct NormElement {
 				if(data.getIndices().size()==0) PetscFunctionReturn(0);
 				//if(dAta.tEts.find(getMoFEMFEPtr()->get_ent())==dAta.tEts.end()) PetscFunctionReturn(0);
 				
-				unsigned int nb_row = data.getN().size2();
+				//unsigned int nb_row = data.getN().size2();
+				unsigned int nb_row = data.getIndices().size();
 				if(nb_row != data.getIndices().size()) {
 					SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,
 							"currently works only for scalar fields, extension to fields with higher rank need to be implemented");
 				}
 				//resize error in specific elements on each vertex equal to dofs
-				eRror.resize(nb_row);
 				Nf.resize(nb_row);
 				rElative_error.resize(nb_row);
 				Nf.clear();
 				rElative_error.clear();
+				ublas::vector<double> uAnaly = commonData.fieldValue1AtGaussPts;
+				ublas::vector<double> uNumer = commonData.fieldValue2AtGaussPts;
+				
 				for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
 					
 					//Integrate over volume
-					double val = this->getVolume()*this->getGaussPts()(3,gg); 
+					double val = getVolume()*getGaussPts()(3,gg);//this->getGaussPts()(3,gg); 
 					
 					if(this->getHoGaussPtsDetJac().size()>0) {
-						val *= this->getHoGaussPtsDetJac()[gg]; ///< higher order geometry
+						val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
 
 					} else{
 					}
-					
-					ublas::vector<double> uAnaly = commonData.fieldValue1AtGaussPts;
-					ublas::vector<double> uNumer = commonData.fieldValue2AtGaussPts;
 					ublas::matrix_row< ublas::matrix<double> > uAnalyGrad = commonData.getGradField1AtGaussPts(gg);
 					ublas::matrix_row< ublas::matrix<double> > uNumerGrad = commonData.getGradField2AtGaussPts(gg);
+					double eRror;
+					double sqError;
 
-					ublas::vector<double> sqError;
-					sqError.resize(data.getN().size1()); //resize vector to nb.of GaussPts
-					if(usel2) {
-						
-					eRror = uAnaly - uNumer;  
-					sqError[gg] = pow(eRror(gg),2.0);
+					if(useL2) { //case L2 norm
+					double aa = uAnaly(gg);
+					double bb = uNumer(gg);
+					eRror = aa - bb;
+					//eRror = uAnaly(gg) - uNumer(gg);
+					sqError = pow(eRror,2.0);
+
+					} else if(!useL2) { //case H1 norm
 					
-					} else{
-					
-					eRror = uAnaly - uNumer;
+					double aa = uAnaly(gg);
+					double bb = uNumer(gg);
+					eRror = aa - bb;
 					double sqGradError = ublas::inner_prod((commonData.getGradField1AtGaussPts(gg)-commonData.getGradField2AtGaussPts(gg)),(commonData.getGradField1AtGaussPts(gg)-commonData.getGradField2AtGaussPts(gg)));
 					
-					sqError[gg] = sqGradError + pow(eRror(gg),2.0);
+					sqError = sqGradError + pow(eRror,2.0);
 					}
-					//need to calculate sqrt of norm^2e
-					//if (strcmp ("erorNORM{",re_fieldname ) == 0) {
-					if(re_fieldname == "erorNORM") {
-					ublas::noalias(Nf) += val*sqError[gg]*data.getN(gg);
-					} else {
-					ublas::vector<double> sqUanaly,nUmerator,dEnominator;
-					sqUanaly.resize(data.getN().size1());
-					nUmerator.resize(nb_row);
-					dEnominator.resize(nb_row);
-					sqUanaly[gg] = pow(uAnaly[gg],2.0);
-					nUmerator = val*sqError[gg]*data.getN(gg);
-					dEnominator = val*sqUanaly(gg)*data.getN(gg);
-					//ublas::noalias(rElative_error) += (val*sqError[gg]*data.getN(gg))/(val*sqUanaly(gg)*data.getN(gg));
-					std::transform(nUmerator.begin(),nUmerator.end(),dEnominator.begin(),nUmerator.begin(),std::divides<double>());
-					ublas::noalias(rElative_error) += nUmerator;
+					//need to calculate sqrt of norm^2
+					if(!useRela) { //case Norm error
+						
+					ublas::noalias(Nf) += val*sqError*data.getN(gg);
+					
+					} else if(useRela) { //case relative error
+					//ublas::vector<double> dEnominator;
+					//dEnominator.resize(nb_row);
+					//dEnominator.clear();
+					
+					double sqUanaly = pow(uAnaly[gg],2.0);
+
+					//dEnominator = val*(sqError/sqUanaly)*data.getN(gg);
+				
+					ublas::noalias(rElative_error) += val*pow(eRror/uAnaly[gg],2.0)*data.getN(gg);
+					//std::cout << "\n rElative_error = \n" << rElative_error << std::endl;
 					}
 
 			    }
-				std::cout << "\n Nf before transform = \n" << Nf << std::endl;
 				//take sqrt of ||error||
-				if(re_fieldname == "erorNORM") {
-				std::transform(Nf.begin(), Nf.end(), Nf.begin(), (double(*)(double)) sqrt);} else {
-				std::transform(rElative_error.begin(), rElative_error.end(), rElative_error.begin(), (double(*)(double)) sqrt);
+				if(!useRela) {
+				//std::transform(Nf.begin(), Nf.end(), Nf.begin(), (double(*)(double)) sqrt);
+				} else {
+				//std::transform(rElative_error.begin(), rElative_error.end(), rElative_error.begin(), (double(*)(double)) sqrt);
+				
 				}
-				std::cout << "\n Nf after transform = \n" << Nf << std::endl;
 
-				if(re_fieldname == "erorNORM") {
+				if(!useRela) {
 				ierr = VecSetValues(F,data.getIndices().size(),
 				&data.getIndices()[0],&*Nf.data().begin(),ADD_VALUES); CHKERRQ(ierr);} else {
-				ierr = VecSetValues(D,data.getIndices().size(),
+				ierr = VecSetValues(F,data.getIndices().size(),
 									&data.getIndices()[0],&*rElative_error.data().begin(),ADD_VALUES); CHKERRQ(ierr);	
 				}
 	            
@@ -425,9 +518,9 @@ struct NormElement {
  
  */
 PetscErrorCode addNormElements(
-	const string problem,string fe,const string norm_field_name,const string relative_field_name,
+	const string problem,string fe,const string norm_field_name,
 	const string field1_name,const string field2_name,
-	const string field3_name,const string field4_name,
+	//const string field3_name,const string field4_name,
 	const string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
 	PetscFunctionBegin;
 	PetscErrorCode ierr;
@@ -439,12 +532,12 @@ PetscErrorCode addNormElements(
 	
 	//ierr = m_field.modify_finite_element_add_field_row(fe,relative_field_name); CHKERRQ(ierr);
     //ierr = m_field.modify_finite_element_add_field_col(fe,relative_field_name); CHKERRQ(ierr);
-    ierr = m_field.modify_finite_element_add_field_data(fe,relative_field_name); CHKERRQ(ierr);
+    //ierr = m_field.modify_finite_element_add_field_data(fe,relative_field_name); CHKERRQ(ierr);
 	
     ierr = m_field.modify_finite_element_add_field_data(fe,field1_name); CHKERRQ(ierr);
     ierr = m_field.modify_finite_element_add_field_data(fe,field2_name); CHKERRQ(ierr);
-	ierr = m_field.modify_finite_element_add_field_data(fe,field3_name); CHKERRQ(ierr);
-    ierr = m_field.modify_finite_element_add_field_data(fe,field4_name); CHKERRQ(ierr);
+	//ierr = m_field.modify_finite_element_add_field_data(fe,field3_name); CHKERRQ(ierr);
+    //ierr = m_field.modify_finite_element_add_field_data(fe,field4_name); CHKERRQ(ierr);
 	
 	
 	if(m_field.check_field(mesh_nodals_positions)) {
@@ -470,7 +563,7 @@ PetscErrorCode addNormElements(
 
 
 PetscErrorCode setNormFiniteElementRhsOperator(string norm_field_name,string field1_name,
-	string field2_name,Vec &F,Vec &D,bool usel2,
+	string field2_name,Vec &F,bool usel2,bool userela,
     string nodals_positions = "MESH_NODE_POSITIONS") {
     PetscFunctionBegin;
 	//ublas::vector<double> field_Value1AtGaussPts;
@@ -485,35 +578,11 @@ PetscErrorCode setNormFiniteElementRhsOperator(string norm_field_name,string fie
 		feRhs.get_op_to_do_Rhs().push_back(new OpGetGradField1AtGaussPts(field1_name,commonData));
 		feRhs.get_op_to_do_Rhs().push_back(new OpGetGradField2AtGaussPts(field2_name,commonData));
 		
-		feRhs.get_op_to_do_Rhs().push_back(new OpRhs(norm_field_name,norm_field_name,F,D,commonData,usel2));
+		feRhs.get_op_to_do_Rhs().push_back(new OpRhs(norm_field_name,norm_field_name,F,commonData,usel2,userela));
 	}
 
 	PetscFunctionReturn(0);
 }
-
-PetscErrorCode setRelativeNormFiniteElementRhsOperator(string relative_field_name,string field1_name,
-		string field2_name,Vec &F,Vec &D,bool usel2,
-		string nodals_positions = "MESH_NODE_POSITIONS") {
-    PetscFunctionBegin;
-	//ublas::vector<double> field_Value1AtGaussPts;
-	//ublas::vector<double> field_Value2AtGaussPts;
-	map<int,BlockData>::iterator sit = setOfBlocks.begin();
-	
-	for(;sit!=setOfBlocks.end();sit++) {
-		
-		//Calculate field values at gaussian points for field1 and field2; 
-		feRhs.get_op_to_do_Rhs().push_back(new OpGetTetField1AtGaussPts(field1_name,commonData));
-		feRhs.get_op_to_do_Rhs().push_back(new OpGetTetField2AtGaussPts(field2_name,commonData));
-		feRhs.get_op_to_do_Rhs().push_back(new OpGetGradField1AtGaussPts(field1_name,commonData));
-		feRhs.get_op_to_do_Rhs().push_back(new OpGetGradField2AtGaussPts(field2_name,commonData));
-		
-		feRhs.get_op_to_do_Rhs().push_back(new OpRhs(relative_field_name,relative_field_name,F,D,commonData,usel2));
-	}
-
-	PetscFunctionReturn(0);
-}
-
-
 
 
 };
