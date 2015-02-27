@@ -75,9 +75,7 @@ struct NormElement {
 	
 	//Field data
 	struct CommonData {
-		//double fIeld1; // value of scalar in field 1
-		//double fIeld2;  // etc.
-		
+		//two different fields as inputs		
 		ublas::vector<double> fieldValue1AtGaussPts;
 		ublas::vector<double> fieldValue1RateAtGaussPts;
 		ublas::matrix<double> gradField1AtGaussPts;
@@ -99,13 +97,9 @@ struct NormElement {
 	struct BlockData {
 		Range tEts; ///< constatins elements in block set
 	};
-	map<int,BlockData> setOfBlocks; ///< maps block set id with appropiate BlockData
-	//BlockData blockData;
+	map<int,BlockData> setOfBlocks; ///< maps block set id with appropiate BlockData	
 	
-	//map<int,CommonData> setOfCommons; ///< maps block set id with appropiate BlockData
-	
-	
-	/// \brief operator to calculate temperature gradient at Gauss points
+	// \brief operator to calculate field gradient at Gauss points
 	struct OpGetGradField1AtGaussPts: public TetElementForcesAndSourcesCore::UserDataOperator {
 	
 		CommonData &commonData;
@@ -121,7 +115,6 @@ struct NormElement {
 			int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
 			PetscFunctionBegin;
 			try {
-				//if(data.getIndices().size()==0) PetscFunctionReturn(0);
 				if(data.getFieldData().size()==0) PetscFunctionReturn(0);
 				int nb_dofs = data.getFieldData().size();
 				int nb_gauss_pts = data.getN().size1();
@@ -147,7 +140,7 @@ struct NormElement {
 	
 	};
 	
-	/// \brief operator to calculate temperature gradient at Gauss points
+	/// \brief operator to calculate field gradient at Gauss points
 	struct OpGetGradField2AtGaussPts: public TetElementForcesAndSourcesCore::UserDataOperator {
 		
 		CommonData &commonData;
@@ -155,9 +148,9 @@ struct NormElement {
 			TetElementForcesAndSourcesCore::UserDataOperator(field_name),
 			commonData(common_data) {}
 		
-		/** \brief operator calculating temperature gradients
+		/** \brief operator calculating field gradients
 		  *
-		  * temerature gradient is calculated multiplying derivatives of shape functions by degrees of freedom.
+		  * field gradient is calculated multiplying derivatives of shape functions by degrees of freedom.
 		  */
 		PetscErrorCode doWork(
 			int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
@@ -189,7 +182,7 @@ struct NormElement {
 		
 	};
 	
-	/** \brief opearator to caulate tempereature  and rate of temperature at Gauss points
+	/** \brief opearator to caulate field value and rate of field value at Gauss points
     * \infroup mofem_thermal_elem
     */
 	template<typename OP>
@@ -200,9 +193,9 @@ struct NormElement {
 			OP::UserDataOperator(field_name),
 			fieldAtGaussPts(field_at_gauss_pts) {}
 	
-		/** \brief operator calculating temperature and rate of temperature
+		/** \brief operator calculating field and rate of field
 		  *
-		  * temperature temperature or rate of temperature is calculated multiplyingshape functions by degrees of freedom
+		  * field value or rate of field value is calculated multiplyingshape functions by degrees of freedom
 		  */
 		PetscErrorCode doWork(
 			int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
@@ -221,13 +214,9 @@ struct NormElement {
 					//field values is zeroad at initialization
 					fill(fieldAtGaussPts.begin(),fieldAtGaussPts.end(),0);
 				}
-				//std::cout << "\n data.getFieldData() = \n" << data.getFieldData() << std::endl;
-				//std::cout << "\n nb_dofs = \n" << nb_dofs << std::endl;
-				//std::cout << "\n nb_gauss_pts = \n" << nb_gauss_pts << std::endl;
+				
 				for(int gg = 0;gg<nb_gauss_pts;gg++) {
-					fieldAtGaussPts[gg] += inner_prod(data.getN(gg,nb_dofs),data.getFieldData());
-					//std::cout << "\n fieldAtGaussPts[gg] \n" << fieldAtGaussPts[gg] << std::endl;
-					
+					fieldAtGaussPts[gg] += inner_prod(data.getN(gg,nb_dofs),data.getFieldData());					
 				}
 	
 			} catch (const std::exception& ex) {
@@ -242,7 +231,7 @@ struct NormElement {
 	};
 	
 	
-	/** \brief operator to calculate tempereature at Gauss pts
+	/** \brief operator to calculate field at Gauss pts
     * \infroup mofem_thermal_elem
     */
 	struct OpGetTetField1AtGaussPts: public OpGetFieldAtGaussPts<TetElementForcesAndSourcesCore> {
@@ -256,7 +245,7 @@ struct NormElement {
 	};
 	
 	
-	/** \brief operator to calculate tempereature at Gauss ptss
+	/** \brief operator to calculate field at Gauss ptss
 	  * \infroup mofem_thermal_elem
 	  */
 	struct OpGetTriFieldAtGaussPts: public OpGetFieldAtGaussPts<TriElementForcesAndSurcesCore> {
@@ -264,7 +253,7 @@ struct NormElement {
 			OpGetFieldAtGaussPts<TriElementForcesAndSurcesCore>(field_name,common_data.fieldValue1AtGaussPts) {}
 	};
 	
-	/** \brief operator to calculate temperature rate at Gauss pts
+	/** \brief operator to calculate field rate at Gauss pts
 	  * \infroup mofem_thermal_elem
 	  */
 	struct OpGetTetFieldRateAtGaussPts: public OpGetFieldAtGaussPts<TetElementForcesAndSourcesCore> {
@@ -279,38 +268,35 @@ struct NormElement {
 	struct OpRhs:public TetElementForcesAndSourcesCore::UserDataOperator {
 		
 		CommonData &commonData;
-		Vec F;
+		Vec F;//norm error
+		Vec D;//relative error
 		bool usel2;
 		bool useTsF;
-        //ublas::vector<double> fieldValue1AtGaussPts;
-		//ublas::vector<double> fieldValue2AtGaussPts;
-		//ublas::<double> gradFieldValue1AtGaussPts;
-		//ublas::matrix<double> gradFieldValue2AtGaussPts;
 		ublas::vector<double> Nf;
 		ublas::vector<double> eRror;
-
-		
+		ublas::vector<double> rElative_error;
+		string re_fieldname;
 		OpRhs(const string re_field_name,const string im_field_name,
 				   CommonData &common_data,bool useL2
 				   ): 
 			TetElementForcesAndSourcesCore::UserDataOperator(re_field_name,im_field_name),
-			commonData(common_data),usel2(useL2),useTsF(true) {}
+			commonData(common_data),usel2(useL2),useTsF(true),re_fieldname(re_field_name) {}
 		
 		OpRhs(const string re_field_name,const string im_field_name,
-			  Vec _F,CommonData &common_data,bool useL2
+			  Vec _F,Vec _D,CommonData &common_data,bool useL2
 			  ): 
 			TetElementForcesAndSourcesCore::UserDataOperator(re_field_name,im_field_name),
-			commonData(common_data),usel2(useL2),useTsF(false),F(_F) {}
+			commonData(common_data),usel2(useL2),useTsF(false),F(_F),D(_D),re_fieldname(re_field_name) {}
 		
 		
 		/*	
-		Rhs force vector merely with Dirichlet values
+		Rhs force vector merely with field values
 		F = sqrt[ int_S (F1 - F2)^2 dS ]
 		*/
 		
 		PetscErrorCode doWork(
 			int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
-			//if (TypeIsTet<OP>::useTet) {
+			//if (TypeIsTet<OP>::useTet) { //currently disabled the script for calculate error on surface
 			PetscFunctionBegin;
 			PetscErrorCode ierr;
 			
@@ -326,11 +312,13 @@ struct NormElement {
 				//resize error in specific elements on each vertex equal to dofs
 				eRror.resize(nb_row);
 				Nf.resize(nb_row);
+				rElative_error.resize(nb_row);
 				Nf.clear();
+				rElative_error.clear();
 				for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
 					
 					//Integrate over volume
-					double val = this->getVolume()*this->getGaussPts()(3,gg); //or OP::UserDataOperator::getVolume()
+					double val = this->getVolume()*this->getGaussPts()(3,gg); 
 					
 					if(this->getHoGaussPtsDetJac().size()>0) {
 						val *= this->getHoGaussPtsDetJac()[gg]; ///< higher order geometry
@@ -342,10 +330,7 @@ struct NormElement {
 					ublas::vector<double> uNumer = commonData.fieldValue2AtGaussPts;
 					ublas::matrix_row< ublas::matrix<double> > uAnalyGrad = commonData.getGradField1AtGaussPts(gg);
 					ublas::matrix_row< ublas::matrix<double> > uNumerGrad = commonData.getGradField2AtGaussPts(gg);
-					//std::cout << "\n uAnalyGrad = \n" << uAnalyGrad << std::endl;
-                   //std::cout << "\n commonData.fieldValue1AtGaussPts =\n " << commonData.fieldValue1AtGaussPts << std::endl;
-				   //std::cout << "\n nb_gauss_Pts = \n" << data.getN().size1() << std::endl;
-				   //std::cout << "\n commonData.getGradField2AtGaussPts(gg) = \n" << commonData.getGradField2AtGaussPts(gg) << std::endl;
+
 					ublas::vector<double> sqError;
 					sqError.resize(data.getN().size1()); //resize vector to nb.of GaussPts
 					if(usel2) {
@@ -354,32 +339,47 @@ struct NormElement {
 					sqError[gg] = pow(eRror(gg),2.0);
 					
 					} else{
-						
+					
 					eRror = uAnaly - uNumer;
 					double sqGradError = ublas::inner_prod((commonData.getGradField1AtGaussPts(gg)-commonData.getGradField2AtGaussPts(gg)),(commonData.getGradField1AtGaussPts(gg)-commonData.getGradField2AtGaussPts(gg)));
 					
 					sqError[gg] = sqGradError + pow(eRror(gg),2.0);
 					}
-					
+					//need to calculate sqrt of norm^2e
+					//if (strcmp ("erorNORM{",re_fieldname ) == 0) {
+					if(re_fieldname == "erorNORM") {
 					ublas::noalias(Nf) += val*sqError[gg]*data.getN(gg);
-					
-				//	bool relativeError = false;
-				//	if (relativeError){
-				//		
-				//	ublas::noalias(UmUh) += sqrt((uExact-uAnalyt)*val)/sqrt(uExact*val);
-				//	} else {
-				//	ublas::noalias(UmUh) += sqrt((uExact-uAnalyt)*val); }
+					} else {
+					ublas::vector<double> sqUanaly,nUmerator,dEnominator;
+					sqUanaly.resize(data.getN().size1());
+					nUmerator.resize(nb_row);
+					dEnominator.resize(nb_row);
+					sqUanaly[gg] = pow(uAnaly[gg],2.0);
+					nUmerator = val*sqError[gg]*data.getN(gg);
+					dEnominator = val*sqUanaly(gg)*data.getN(gg);
+					//ublas::noalias(rElative_error) += (val*sqError[gg]*data.getN(gg))/(val*sqUanaly(gg)*data.getN(gg));
+					std::transform(nUmerator.begin(),nUmerator.end(),dEnominator.begin(),nUmerator.begin(),std::divides<double>());
+					ublas::noalias(rElative_error) += nUmerator;
+					}
+
 			    }
-				 
-
-					
-					ierr = VecSetValues(F,data.getIndices().size(),
-										&data.getIndices()[0],&*Nf.data().begin(),ADD_VALUES); CHKERRQ(ierr);	
-				
-	            
+				std::cout << "\n Nf before transform = \n" << Nf << std::endl;
+				//take sqrt of ||error||
+				if(re_fieldname == "erorNORM") {
+				std::transform(Nf.begin(), Nf.end(), Nf.begin(), (double(*)(double)) sqrt);} else {
+				std::transform(rElative_error.begin(), rElative_error.end(), rElative_error.begin(), (double(*)(double)) sqrt);
 				}
+				std::cout << "\n Nf after transform = \n" << Nf << std::endl;
 
-
+				if(re_fieldname == "erorNORM") {
+				ierr = VecSetValues(F,data.getIndices().size(),
+				&data.getIndices()[0],&*Nf.data().begin(),ADD_VALUES); CHKERRQ(ierr);} else {
+				ierr = VecSetValues(D,data.getIndices().size(),
+									&data.getIndices()[0],&*rElative_error.data().begin(),ADD_VALUES); CHKERRQ(ierr);	
+				}
+	            
+			}
+			
 			 catch (const std::exception& ex) {
 				ostringstream ss;
 				ss << "throw in method: " << ex.what() << endl;
@@ -425,8 +425,9 @@ struct NormElement {
  
  */
 PetscErrorCode addNormElements(
-	const string problem,string fe,const string norm_field_name,const string field1_name,
-	const string field2_name,
+	const string problem,string fe,const string norm_field_name,const string relative_field_name,
+	const string field1_name,const string field2_name,
+	const string field3_name,const string field4_name,
 	const string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
 	PetscFunctionBegin;
 	PetscErrorCode ierr;
@@ -436,9 +437,14 @@ PetscErrorCode addNormElements(
     ierr = m_field.modify_finite_element_add_field_col(fe,norm_field_name); CHKERRQ(ierr);
     ierr = m_field.modify_finite_element_add_field_data(fe,norm_field_name); CHKERRQ(ierr);
 	
-    ierr = m_field.modify_finite_element_add_field_data(fe,field1_name); CHKERRQ(ierr);
+	//ierr = m_field.modify_finite_element_add_field_row(fe,relative_field_name); CHKERRQ(ierr);
+    //ierr = m_field.modify_finite_element_add_field_col(fe,relative_field_name); CHKERRQ(ierr);
+    ierr = m_field.modify_finite_element_add_field_data(fe,relative_field_name); CHKERRQ(ierr);
 	
+    ierr = m_field.modify_finite_element_add_field_data(fe,field1_name); CHKERRQ(ierr);
     ierr = m_field.modify_finite_element_add_field_data(fe,field2_name); CHKERRQ(ierr);
+	ierr = m_field.modify_finite_element_add_field_data(fe,field3_name); CHKERRQ(ierr);
+    ierr = m_field.modify_finite_element_add_field_data(fe,field4_name); CHKERRQ(ierr);
 	
 	
 	if(m_field.check_field(mesh_nodals_positions)) {
@@ -464,7 +470,7 @@ PetscErrorCode addNormElements(
 
 
 PetscErrorCode setNormFiniteElementRhsOperator(string norm_field_name,string field1_name,
-	string field2_name,Vec &F,bool usel2,
+	string field2_name,Vec &F,Vec &D,bool usel2,
     string nodals_positions = "MESH_NODE_POSITIONS") {
     PetscFunctionBegin;
 	//ublas::vector<double> field_Value1AtGaussPts;
@@ -475,19 +481,36 @@ PetscErrorCode setNormFiniteElementRhsOperator(string norm_field_name,string fie
 		
 		//Calculate field values at gaussian points for field1 and field2; 
 		feRhs.get_op_to_do_Rhs().push_back(new OpGetTetField1AtGaussPts(field1_name,commonData));
-		//std::cout << "\n commonData.fieldValue1AtGaussPts =\n " << commonData.fieldValue1AtGaussPts << std::endl;
 		feRhs.get_op_to_do_Rhs().push_back(new OpGetTetField2AtGaussPts(field2_name,commonData));
 		feRhs.get_op_to_do_Rhs().push_back(new OpGetGradField1AtGaussPts(field1_name,commonData));
-		//std::cout << "\n commonData.getGradField2AtGaussPts(gg) = \n" << commonData.getGradField1AtGaussPts(1) << std::endl;
 		feRhs.get_op_to_do_Rhs().push_back(new OpGetGradField2AtGaussPts(field2_name,commonData));
 		
-    feRhs.get_op_to_do_Rhs().push_back(new OpRhs(norm_field_name,norm_field_name,F,commonData,usel2));
-}
+		feRhs.get_op_to_do_Rhs().push_back(new OpRhs(norm_field_name,norm_field_name,F,D,commonData,usel2));
+	}
 
 	PetscFunctionReturn(0);
+}
 
+PetscErrorCode setRelativeNormFiniteElementRhsOperator(string relative_field_name,string field1_name,
+		string field2_name,Vec &F,Vec &D,bool usel2,
+		string nodals_positions = "MESH_NODE_POSITIONS") {
+    PetscFunctionBegin;
+	//ublas::vector<double> field_Value1AtGaussPts;
+	//ublas::vector<double> field_Value2AtGaussPts;
+	map<int,BlockData>::iterator sit = setOfBlocks.begin();
+	
+	for(;sit!=setOfBlocks.end();sit++) {
+		
+		//Calculate field values at gaussian points for field1 and field2; 
+		feRhs.get_op_to_do_Rhs().push_back(new OpGetTetField1AtGaussPts(field1_name,commonData));
+		feRhs.get_op_to_do_Rhs().push_back(new OpGetTetField2AtGaussPts(field2_name,commonData));
+		feRhs.get_op_to_do_Rhs().push_back(new OpGetGradField1AtGaussPts(field1_name,commonData));
+		feRhs.get_op_to_do_Rhs().push_back(new OpGetGradField2AtGaussPts(field2_name,commonData));
+		
+		feRhs.get_op_to_do_Rhs().push_back(new OpRhs(relative_field_name,relative_field_name,F,D,commonData,usel2));
+	}
 
-
+	PetscFunctionReturn(0);
 }
 
 
