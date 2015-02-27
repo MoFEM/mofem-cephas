@@ -460,10 +460,13 @@ struct Core:
   PetscErrorCode simple_partition_problem(const string &name,int verb = -1);
   PetscErrorCode partition_problem(const string &name,int verb = -1);
   PetscErrorCode compose_problem(const string &name,const string &problem_for_rows,bool copy_rows,const string &problem_for_cols,bool copy_cols,int verb = -1);
+  PetscErrorCode block_problem(const string &name,const vector<string> block_problems,int verb = -1);
   PetscErrorCode partition_ghost_dofs(const string &name,int verb = -1);
   PetscErrorCode partition_finite_elements(
     const string &name,bool part_from_moab = false,int low_proc = -1,int hi_proc = -1,int verb = -1);
   PetscErrorCode partition_check_matrix_fill_in(const string &problem_neme,int verb);
+  PetscErrorCode print_partitioned_problem(const MoFEMProblem *problem_ptr,int verb = -1);
+  PetscErrorCode debug_partitioned_problem(const MoFEMProblem *problem_ptr,int verb = -1);
 
   //save meshsets
   PetscErrorCode get_problem_finite_elements_entities(const string &name,const string &fe_name,const EntityHandle meshset);

@@ -36,7 +36,9 @@
 
 namespace MoFEM {
 
-NonlinearElasticElement::MyVolumeFE::MyVolumeFE(FieldInterface &_mField): TetElementForcesAndSourcesCore(_mField) {}
+NonlinearElasticElement::MyVolumeFE::MyVolumeFE(FieldInterface &_mField): 
+  TetElementForcesAndSourcesCore(_mField),A(PETSC_NULL),F(PETSC_NULL) {}
+
 int NonlinearElasticElement::MyVolumeFE::getRule(int order) { return (order-1); };
 
 PetscErrorCode NonlinearElasticElement::MyVolumeFE::preProcess() {
@@ -45,15 +47,27 @@ PetscErrorCode NonlinearElasticElement::MyVolumeFE::preProcess() {
 
   ierr = TetElementForcesAndSourcesCore::preProcess(); CHKERRQ(ierr);
 
+  if(A != PETSC_NULL) {
+    snes_B = A;
+  }
+
+  if(F != PETSC_NULL) {
+    snes_f = F;
+  }
+
   switch (ts_ctx) {
     case CTX_TSSETIFUNCTION: {
-      snes_ctx = CTX_SNESSETFUNCTION;
-      snes_f = ts_F;
+      if(!F) {
+	snes_ctx = CTX_SNESSETFUNCTION;
+	snes_f = ts_F;
+      }
       break;
     }
     case CTX_TSSETIJACOBIAN: {
-      snes_ctx = CTX_SNESSETJACOBIAN;
-      snes_B = ts_B;
+      if(!A) {
+	snes_ctx = CTX_SNESSETJACOBIAN;
+	snes_B = ts_B;
+      }
       break;
     }
     default:

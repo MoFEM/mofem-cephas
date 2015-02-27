@@ -41,6 +41,10 @@ struct NonlinearElasticElement {
 
   /// \brief  definition of volume element
   struct MyVolumeFE: public TetElementForcesAndSourcesCore {
+
+    Mat A;
+    Vec F;
+
     MyVolumeFE(FieldInterface &_mField);
     
     /** \brief it is used to calculate nb. of Gauss integration points

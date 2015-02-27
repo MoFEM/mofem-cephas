@@ -1,8 +1,6 @@
 /** \file FieldInterface.hpp
  * \brief MoFEM interface 
  * 
- * Low level data structures not used directly by user
- *
  * Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl) <br>
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -23,6 +21,8 @@
 
 #include "FieldUnknownInterface.hpp"
 
+/** \brief name space of MoFEM library functions and classes
+  */
 namespace MoFEM {
 
 static const MOFEMuuid IDD_MOFEMFieldInterface = MOFEMuuid( BitIntefaceId(FIELD_INTERFACE) );
@@ -31,7 +31,7 @@ static const MOFEMuuid IDD_MOFEMFieldInterface = MOFEMuuid( BitIntefaceId(FIELD_
  * \brief FieldInterface
  * 
  * This interface is used by user to: <br>
- *  (*) creat approximation fields,  <br>
+ *  (*) create approximation fields,  <br>
  *  (*) define elements, <br>
  *  (*) define problems, <br>
  */
@@ -1051,6 +1051,23 @@ struct FieldInterface: public FieldUnknownInterface {
     *
     */
   virtual PetscErrorCode compose_problem(const string &name,const string &problem_for_rows,bool copy_rows,const string &problem_for_cols,bool copy_cols,int verb = -1) = 0;
+
+  /** \brief build indexing and partition problem by blocking problems
+    *
+    * \param name problem name
+    * \param block_problems problems consisting blocks
+    * 
+    * The global, petsc_global and local indexing is build such that, indexes are
+    * grouped by block, wheres indexes of block 0 straiting form 0, indexes of
+    * block 1 starting form nb_dofs_of_block_0, indexes of block 2 stating form
+    * nb_dofs_of_block_0+nb_dofs_of_block_1 and pattern recursively repeats for
+    * following blocks.
+    *
+    * This usually is used to calculate problems with shell matrices where
+    * different problems are grouped in blocks.
+    * 
+    */
+  virtual PetscErrorCode block_problem(const string &name,const vector<string> block_problems,int verb = -1) = 0;
 
   /** \brief determine ghost nodes
    * \ingroup mofem_dofs
