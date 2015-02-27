@@ -457,6 +457,8 @@ struct Core:
   PetscErrorCode build_problems(int verb = -1);
   PetscErrorCode clear_problems(int verb = -1);
   PetscErrorCode build_partitioned_problems(int verb = -1);
+  PetscErrorCode build_partitioned_problem(const string &name,int verb = -1);
+  PetscErrorCode build_partitioned_problem(MoFEMProblem *problem_ptr,int verb = -1);
   PetscErrorCode simple_partition_problem(const string &name,int verb = -1);
   PetscErrorCode partition_problem(const string &name,int verb = -1);
   PetscErrorCode compose_problem(const string &name,const string &problem_for_rows,bool copy_rows,const string &problem_for_cols,bool copy_cols,int verb = -1);

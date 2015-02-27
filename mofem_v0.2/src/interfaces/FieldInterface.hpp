@@ -1004,7 +1004,6 @@ struct FieldInterface: public FieldUnknownInterface {
    */
   PetscErrorCode build_problem(MoFEMProblem *problem_ptr,int verb);
 
-
   /** \brief build problem data structures
    * \ingroup mofem_problems
    */
@@ -1015,6 +1014,15 @@ struct FieldInterface: public FieldUnknownInterface {
    */
   virtual PetscErrorCode clear_problems(int verb = -1) = 0;
 
+  /** \brief build problem data structures, assuming that mesh is partitioned
+   * \ingroup mofem_problems
+   */
+  virtual PetscErrorCode build_partitioned_problem(const string &name,int verb = -1) = 0;
+
+  /** \brief build problem data structures, assuming that mesh is partitioned
+   * \ingroup mofem_problems
+   */
+  virtual PetscErrorCode build_partitioned_problem(MoFEMProblem *problem_ptr,int verb = -1) = 0;
 
   /** \brief build problem data structures, assuming that mesh is partitioned
    * \ingroup mofem_problems
@@ -1027,7 +1035,6 @@ struct FieldInterface: public FieldUnknownInterface {
    * \param name problem name
    */
   virtual PetscErrorCode simple_partition_problem(const string &name,int verb = -1) = 0;
-
 
   /** \brief partition problem dofs
    * \ingroup mofem_problems
