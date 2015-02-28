@@ -409,18 +409,20 @@ struct problem_MoFEMFiniteElement_change_bit_add {
 /** \brief increase nb. dof in row
   * \ingroup problems_multi_indices
   */
-struct problem_row_change {
+struct problem_add_row_dof {
   const DofMoFEMEntity *dof_ptr;
-  problem_row_change(const DofMoFEMEntity *_dof_ptr);
+  problem_add_row_dof(const DofMoFEMEntity *_dof_ptr);
+  pair<NumeredDofMoFEMEntity_multiIndex::iterator,bool> p;
   void operator()(MoFEMProblem &e);
 };
 
 /** \brief increase nb. dof in col
   * \ingroup problems_multi_indices
   */
-struct problem_col_change {
+struct problem_add_col_dof {
   const DofMoFEMEntity *dof_ptr;
-  problem_col_change(const DofMoFEMEntity *_dof_ptr);
+  problem_add_col_dof(const DofMoFEMEntity *_dof_ptr);
+  pair<NumeredDofMoFEMEntity_multiIndex::iterator,bool> p;
   void operator()(MoFEMProblem &e);
 };
 

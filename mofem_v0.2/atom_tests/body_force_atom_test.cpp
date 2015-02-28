@@ -148,7 +148,7 @@ int main(int argc, char *argv[]) {
 
   typedef tee_device<ostream, ofstream> TeeDevice;
   typedef stream<TeeDevice> TeeStream;
-  ofstream ofs("forces_and_sources_body_force_atom_test.txt");
+  ofstream ofs("body_force_atom_test.txt");
   TeeDevice my_tee(cout, ofs); 
   TeeStream my_split(my_tee);
 

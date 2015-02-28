@@ -1,8 +1,3 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
- * FIXME: DESCRIPTION
- */
-
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -20,6 +15,13 @@
 #ifndef __ELASTICFEMETHOD_HPP__
 #define __ELASTICFEMETHOD_HPP__
 
+/** \brief Name space of classes and methods which are obsolete
+  *
+  * Methods and classes in obsolete name space should be modified or replaced by
+  * better implementation. Use of those classes should be avoided in new
+  * development. Some classes in obsolete name space could be removed from
+  * future MoFEM version.
+  */
 namespace ObosleteUsersModules {
 
 struct ElasticFEMethod: public FEMethod_UpLevelStudent {

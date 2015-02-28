@@ -1,8 +1,6 @@
 /** \file FieldInterface.hpp
  * \brief MoFEM interface 
  * 
- * Low level data structures not used directly by user
- *
  * Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl) <br>
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -23,6 +21,8 @@
 
 #include "FieldUnknownInterface.hpp"
 
+/** \brief name space of MoFEM library functions and classes
+  */
 namespace MoFEM {
 
 static const MOFEMuuid IDD_MOFEMFieldInterface = MOFEMuuid( BitIntefaceId(FIELD_INTERFACE) );
@@ -31,7 +31,7 @@ static const MOFEMuuid IDD_MOFEMFieldInterface = MOFEMuuid( BitIntefaceId(FIELD_
  * \brief FieldInterface
  * 
  * This interface is used by user to: <br>
- *  (*) creat approximation fields,  <br>
+ *  (*) create approximation fields,  <br>
  *  (*) define elements, <br>
  *  (*) define problems, <br>
  */
@@ -750,6 +750,7 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode modify_finite_element_off_field_col(const string &MoFEMFiniteElement_name,const string &name_row) = 0;
 
   /** \brief add EDGES entities from meshset to finite element database given by name
+   * \ingroup mofem_fe
    *
    * \param range contains tetrahedrons
    * \param name Finite Element name
@@ -758,6 +759,7 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode add_ents_to_finite_element_by_EDGEs(const Range& edge,const string &name) = 0;
 
   /** \brief add VERTICES entities from meshset to finite element database given by name
+   * \ingroup mofem_fe
    *
    * \param range contains tetrahedrons
    * \param name Finite Element name
@@ -766,6 +768,7 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode add_ents_to_finite_element_by_VERTICEs(const Range& vert,const string &name) = 0;
 
   /** \brief add TRI entities from meshset to finite element database given by name
+   * \ingroup mofem_fe
    *
    * \param range contains tetrahedrons
    * \param name Finite Element name
@@ -773,8 +776,8 @@ struct FieldInterface: public FieldUnknownInterface {
    */
   virtual PetscErrorCode add_ents_to_finite_element_by_TRIs(const Range& tris,const string &name) = 0;
 
-
   /** \brief add TET entities from meshset to finite element database given by name
+   * \ingroup mofem_fe
    *
    * \param range contains tetrahedrons
    * \param name Finite Element name
@@ -782,6 +785,7 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode add_ents_to_finite_element_by_TETs(const Range& tets,const string &name) = 0;
 
   /** \brief add TET entities from meshset to finite element database given by name
+   * \ingroup mofem_fe
    *
    * \param meshset contains tetrahedrons
    * \param name Finite Element name
@@ -790,6 +794,7 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode add_ents_to_finite_element_by_TETs(const EntityHandle meshset,const string &name,const bool recursive = false) = 0;
 
   /** \brief add PRISM entities from meshset to finite element database given by name
+   * \ingroup mofem_fe
    *
    * \param range contains tetrahedrons
    * \param name Finite Element name
@@ -797,6 +802,7 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode add_ents_to_finite_element_by_PRISMs(const Range& prims,const string &name) = 0;
 
   /** \brief add TET entities from meshset to finite element database given by name
+   * \ingroup mofem_fe
    *
    * \param meshset contains tetrahedrons
    * \param name Finite Element name
@@ -805,6 +811,7 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode add_ents_to_finite_element_by_PRISMs(const EntityHandle meshset,const string &name,const bool recursive = false) = 0;
 
   /** \brief add TET elements from given refinement level to finite element database given by name 
+   * \ingroup mofem_fe
    *
    * \param BitRefLevel bit
    * \param Finite Element name
@@ -815,12 +822,13 @@ struct FieldInterface: public FieldUnknownInterface {
 
   
   /** get finite element meshset
+   * \ingroup mofem_fe
    *
    */
   virtual EntityHandle get_finite_element_meshset(const string& name) const = 0;
 
-
   /** \brief remove elements from given refinement level to finite element database
+   * \ingroup mofem_fe
    *
    * \param BitRefLevel bit
    * \param BitRefLevel mask
@@ -834,11 +842,13 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode remove_ents_from_finite_element(const string &name,const EntityHandle meshset,const EntityType type,int verb = -1) = 0;
 
   /** \brief remove elements from given refinement level to finite element database
+   * \ingroup mofem_fe
    *
    */
   virtual PetscErrorCode remove_ents_from_finite_element(const string &name,const Range &ents,int verb = -1) = 0;
 
   /** \brief add TET elements from given refinement level to finite element database given by name 
+   * \ingroup mofem_fe
    *
    * \param BitRefLevel bit
    * \param BitRefLevel mask
@@ -849,6 +859,7 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode add_ents_to_finite_element_EntType_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,const string &name,EntityType type,int verb = -1) = 0;
 
   /** \brief add MESHSET element to finite element database given by name 
+   * \ingroup mofem_fe
    *
    * \param meshset contains all entities that could be used for finite element
    * \param name Finite Element name
@@ -868,12 +879,12 @@ struct FieldInterface: public FieldUnknownInterface {
    */
   virtual PetscErrorCode add_problem(const string& name,enum MoFEMTypes bh = MF_EXCL,int verb = -1) = 0;
   
-  /* \brief add finite element to problem, this add entities assigned to finite element to a particular problem
+  /** \brief add finite element to problem, this add entities assigned to finite element to a particular problem
+   * \ingroup mofem_problems
    *
    * \param name Problem name
    * \param name Finite Element name
    */
-    
   virtual PetscErrorCode modify_problem_add_finite_element(const string &name_problem,const string &MoFEMFiniteElement_name) = 0;
 
   /** \brief add ref level to problem
@@ -919,7 +930,9 @@ struct FieldInterface: public FieldUnknownInterface {
    */
   virtual PetscErrorCode modify_problem_dof_mask_ref_level_set_bit(const string &name_problem,const BitRefLevel &bit) = 0;
 
-  /// list problems
+  /** \brief list problems
+   * \ingroup mofem_problems
+   */
   virtual PetscErrorCode list_problem() const = 0;
 
   /** build fields
@@ -996,14 +1009,12 @@ struct FieldInterface: public FieldUnknownInterface {
   /** \brief build problem data structures
    * \ingroup mofem_problems
    */
-  PetscErrorCode build_problem(const string &name,int verb);
-
+  virtual PetscErrorCode build_problem(const string &name,int verb = -1) = 0;
 
   /** \brief build problem data structures
    * \ingroup mofem_problems
    */
-  PetscErrorCode build_problem(MoFEMProblem *problem_ptr,int verb);
-
+  virtual PetscErrorCode build_problem(MoFEMProblem *problem_ptr,int verb = -1) = 0;
 
   /** \brief build problem data structures
    * \ingroup mofem_problems
@@ -1015,6 +1026,15 @@ struct FieldInterface: public FieldUnknownInterface {
    */
   virtual PetscErrorCode clear_problems(int verb = -1) = 0;
 
+  /** \brief build problem data structures, assuming that mesh is partitioned
+   * \ingroup mofem_problems
+   */
+  virtual PetscErrorCode build_partitioned_problem(const string &name,int verb = -1) = 0;
+
+  /** \brief build problem data structures, assuming that mesh is partitioned
+   * \ingroup mofem_problems
+   */
+  virtual PetscErrorCode build_partitioned_problem(MoFEMProblem *problem_ptr,int verb = -1) = 0;
 
   /** \brief build problem data structures, assuming that mesh is partitioned
    * \ingroup mofem_problems
@@ -1027,7 +1047,6 @@ struct FieldInterface: public FieldUnknownInterface {
    * \param name problem name
    */
   virtual PetscErrorCode simple_partition_problem(const string &name,int verb = -1) = 0;
-
 
   /** \brief partition problem dofs
    * \ingroup mofem_problems
@@ -1051,6 +1070,23 @@ struct FieldInterface: public FieldUnknownInterface {
     *
     */
   virtual PetscErrorCode compose_problem(const string &name,const string &problem_for_rows,bool copy_rows,const string &problem_for_cols,bool copy_cols,int verb = -1) = 0;
+
+  /** \brief build indexing and partition problem by blocking problems
+    *
+    * \param name problem name
+    * \param block_problems problems consisting blocks
+    * 
+    * The global, petsc_global and local indexing is build such that, indexes are
+    * grouped by block, wheres indexes of block 0 straiting form 0, indexes of
+    * block 1 starting form nb_dofs_of_block_0, indexes of block 2 stating form
+    * nb_dofs_of_block_0+nb_dofs_of_block_1 and pattern recursively repeats for
+    * following blocks.
+    *
+    * This usually is used to calculate problems with shell matrices where
+    * different problems are grouped in blocks.
+    * 
+    */
+  virtual PetscErrorCode block_problem(const string &name,const vector<string> block_problems,int verb = -1) = 0;
 
   /** \brief determine ghost nodes
    * \ingroup mofem_dofs

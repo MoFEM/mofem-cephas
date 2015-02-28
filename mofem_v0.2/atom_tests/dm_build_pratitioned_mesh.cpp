@@ -96,33 +96,14 @@ int main(int argc, char *argv[]) {
   ierr = DMSetUp(dm); CHKERRQ(ierr);
 
   Mat m;
-  Vec l,g;
 
-  ierr = DMCreateGlobalVector(dm,&g); CHKERRQ(ierr);
-  ierr = DMCreateLocalVector(dm,&l); CHKERRQ(ierr);
   ierr = DMCreateMatrix(dm,&m); CHKERRQ(ierr);
 
-  //glob loc 
-  ierr = VecSet(g,1); CHKERRQ(ierr);
-  ierr = VecGhostUpdateBegin(g,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(g,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-
-  ierr = DMGlobalToLocalBegin(dm,g,ADD_VALUES,l); CHKERRQ(ierr);
-  ierr = DMGlobalToLocalEnd(dm,g,ADD_VALUES,l); CHKERRQ(ierr);
-
-  //loc glob
-  ierr = DMLocalToGlobalBegin(dm,l,ADD_VALUES,g); CHKERRQ(ierr);
-  ierr = DMLocalToGlobalEnd(dm,l,ADD_VALUES,g); CHKERRQ(ierr);
-
   PetscViewer viewer;
-  ierr = PetscViewerASCIIOpen(PETSC_COMM_WORLD,"dm_mofem.txt",&viewer); CHKERRQ(ierr);
-  const double chop = 1e-4;
-  ierr = VecChop(g,chop); CHKERRQ(ierr);
-  VecView(g,viewer);
+  ierr = PetscViewerASCIIOpen(PETSC_COMM_WORLD,"dm_build_partitioned_mesh.txt",&viewer); CHKERRQ(ierr);
+  MatView(m,viewer);
   ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
 
-  ierr = VecDestroy(&g); CHKERRQ(ierr);
-  ierr = VecDestroy(&l); CHKERRQ(ierr);
   ierr = MatDestroy(&m); CHKERRQ(ierr);
   //destry dm
   ierr = DMDestroy(&dm); CHKERRQ(ierr);

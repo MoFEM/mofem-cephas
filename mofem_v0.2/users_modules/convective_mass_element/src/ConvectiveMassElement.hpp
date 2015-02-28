@@ -24,14 +24,14 @@
   #error "MoFEM need to be compiled with ADOL-C"
 #endif 
 
-/** \brief struture grouping operators and data used for calulation of mass (convective) element
+/** \brief structure grouping operators and data used for calculation of mass (convective) element
   * \ingroup convective_mass_elem
   *
   * In order to assemble matrices and right hand vectors, the loops over
-  * elements, enetities over that elememnts and finally loop over intergration
+  * elements, entities over that elements and finally loop over integration
   * points are executed.
   *
-  * Following implementation separte those three cegories of loops and to eeach
+  * Following implementation separate those three celeries of loops and to each
   * loop attach operator.
   *
   */
@@ -39,11 +39,16 @@ struct ConvectiveMassElement {
 
   /// \brief  definition of volume element
   struct MyVolumeFE: public TetElementForcesAndSourcesCore {
-    MyVolumeFE(FieldInterface &_mField): TetElementForcesAndSourcesCore(_mField) {
-    meshPositionsFieldName = "NoNE";
-  }
+
+    Mat A;
+    Vec F;
+
+    MyVolumeFE(FieldInterface &_mField): 
+      TetElementForcesAndSourcesCore(_mField),A(PETSC_NULL),F(PETSC_NULL) {
+      meshPositionsFieldName = "NoNE";
+    }
     
-    /** \brief it is used to calculate nb. of Gauss integartion points
+    /** \brief it is used to calculate nb. of Gauss integration points
      *
      * for more details pleas look 
      *   Reference:
@@ -59,16 +64,25 @@ struct ConvectiveMassElement {
      * http://people.sc.fsu.edu/~jburkardt/cpp_src/gm_rule/gm_rule.html
     **/
     int getRule(int order) { return order; };
+
+    PetscErrorCode preProcess() {
+      PetscFunctionBegin;
+      PetscErrorCode ierr;
+
+      ierr = TetElementForcesAndSourcesCore::preProcess(); CHKERRQ(ierr);
+
+      if(A != PETSC_NULL) {
+	ts_B = A;
+      }
+
+      if(F != PETSC_NULL) {
+	ts_F = F;
+      }
+
+      PetscFunctionReturn(0);
+    }
   };
 
-  struct DynamicProblemShellMatrixCtx {
-  
-    Mat Kxx,Mxv,Vvv,Vvy;
-    Vec Fu,Fv; 
-
-  };
-
-  
   MyVolumeFE feMassRhs; ///< cauclate right hand side for tetrahedral elements
   MyVolumeFE& getLoopFeMassRhs() { return feMassRhs; } ///< get rhs volume element 
   MyVolumeFE feMassLhs; //< calculate left hand side for tetrahedral elements
@@ -139,9 +153,8 @@ struct ConvectiveMassElement {
       valuesAtGaussPts(values_at_gauss_pts),gradientAtGaussPts(gardient_at_gauss_pts),
       zeroAtType(MBVERTEX) {}
 
-    /** \brief operator calulating deformation gradient
+    /** \brief operator calculating deformation gradient
       *
-      * temerature gradient is calculated multiplying direvatives of shape functions by degrees of freedom
       */
     PetscErrorCode doWork(
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
@@ -520,12 +533,13 @@ struct ConvectiveMassElement {
 
     BlockData &dAta;
     CommonData &commonData;
+    int powTs_a;	///< n-th time derivative
     Range forcesOnlyOnEntities;
 
     OpMassLhs_dM_dv(
       const string vel_field,const string field_name,BlockData &data,CommonData &common_data,Range *forcesonlyonentities_ptr = NULL):
       TetElementForcesAndSourcesCore::UserDataOperator(vel_field,field_name),
-      dAta(data),commonData(common_data) { 
+      dAta(data),commonData(common_data),powTs_a(1) { 
 	symm = false;  
 	if(forcesonlyonentities_ptr!=NULL) {
 	  forcesOnlyOnEntities = *forcesonlyonentities_ptr;
@@ -544,9 +558,9 @@ struct ConvectiveMassElement {
       ublas::vector<double> N = col_data.getN(gg,nb_col/3);
       for(int dd = 0;dd<nb_col/3;dd++) {
 	for(int nn = 0;nn<3;nn++) {
-	  jac(0,3*dd+nn) = commonData.jacMass[gg](0,nn)*N(dd)*getFEMethod()->ts_a; 
-	  jac(1,3*dd+nn) = commonData.jacMass[gg](1,nn)*N(dd)*getFEMethod()->ts_a; 
-	  jac(2,3*dd+nn) = commonData.jacMass[gg](2,nn)*N(dd)*getFEMethod()->ts_a; 
+	  jac(0,3*dd+nn) = commonData.jacMass[gg](0,nn)*N(dd)*pow(getFEMethod()->ts_a,powTs_a); 
+	  jac(1,3*dd+nn) = commonData.jacMass[gg](1,nn)*N(dd)*pow(getFEMethod()->ts_a,powTs_a); 
+	  jac(2,3*dd+nn) = commonData.jacMass[gg](2,nn)*N(dd)*pow(getFEMethod()->ts_a,powTs_a); 
 	}
       }
       if(commonData.dataAtGaussPts["DOT_"+commonData.meshPositions].size()>0) {
@@ -1863,6 +1877,22 @@ struct ConvectiveMassElement {
 
     PetscFunctionReturn(0);
   }
+
+
+  struct MatShellCtx {
+
+    Mat K,M;
+    Mat Vu,Vv;
+    
+  };
+
+  struct PCShellCtx {
+
+    VecScatter displacementScatter;
+    VecScatter velocityScatter;
+
+
+  };
 
 };
 
