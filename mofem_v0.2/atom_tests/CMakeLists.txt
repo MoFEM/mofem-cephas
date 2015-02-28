@@ -633,6 +633,22 @@ add_test(build_composite_problem_atom_compare ${CMAKE_COMMAND} -E compare_files
   ${CMAKE_BINARY_DIR}/atom_tests/build_composite_problem.txt 
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/build_composite_problem.txt)
 
+#build block problem
+add_executable(build_block_problem build_block_problem.cpp)
+target_link_libraries(build_block_problem
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS})
+add_test(build_block_problem_atom ${MPI_RUN} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/build_block_problem -my_file disp01.cub)
+add_test(build_block_problem_atom_compare ${CMAKE_COMMAND} -E compare_files 
+  ${CMAKE_BINARY_DIR}/atom_tests/build_block_problem.txt 
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/build_block_problem.txt)
+
 if(TETGEN_LIBRARY) 
 
   cm_export_file("../meshes/Tinterface.cub" export_atom_tests)

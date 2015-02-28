@@ -557,64 +557,74 @@ PetscErrorCode Core::block_problem(const string &name,const vector<string> block
   Vec shift_rows_and_cols_global;
   int ghost[] = {0,1};
   if(rAnk == 0) {
-    ierr = ::VecCreateGhost(comm,2,2,1,&ghost[0],&shift_rows_and_cols_global); CHKERRQ(ierr);
+    ierr = ::VecCreateGhost(comm,2,2,2,&ghost[0],&shift_rows_and_cols_global); CHKERRQ(ierr);
   } else {
-    ierr = ::VecCreateGhost(comm,0,2,1,&ghost[0],&shift_rows_and_cols_global); CHKERRQ(ierr);
+    ierr = ::VecCreateGhost(comm,0,2,2,&ghost[0],&shift_rows_and_cols_global); CHKERRQ(ierr);
   }
-  ierr = VecZeroEntries(shift_rows_and_cols_global); CHKERRQ(ierr);
-  ierr = VecGhostUpdateBegin(shift_rows_and_cols_global,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(shift_rows_and_cols_global,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   NumeredDofMoFEMEntity_multiIndex *pit_rows_and_cols[] = {
     const_cast<NumeredDofMoFEMEntity_multiIndex*>(&pit->numered_dofs_rows), 
     const_cast<NumeredDofMoFEMEntity_multiIndex*>(&pit->numered_dofs_cols) };
-  int local_dof_idx[] = { 0,0 };
+  int* pit_nb_dofs[] = { pit->tag_nbdof_data_row, pit->tag_nbdof_data_col };
+  int* pit_nb_local_dofs[] = { pit->tag_local_nbdof_data_row, pit->tag_local_nbdof_data_col };
+  for(int ss = 0;ss<2;ss++) {
+    (*pit_nb_dofs[ss]) = 0;
+    (*pit_nb_local_dofs[ss]) = 0;
+  }
   for(vector<string>::const_iterator vit = block_problems.begin();vit!=block_problems.end();vit++) {
     moFEMProblems_by_name::iterator piit = moFEMProblems_set.find(*vit);
     if(piit==moFEMProblems_set.end()) {
       SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"blocked problem with name %s not defined (top tip check spelling)",vit->c_str());
     }
     const NumeredDofMoFEMEntity_multiIndex *piit_rows_and_cols[] = {
-      &piit->numered_dofs_rows,&piit->numered_dofs_cols };
-    double *array;
-    ierr = VecGetArray(shift_rows_and_cols_global,&array); CHKERRQ(ierr);
+      &piit->numered_dofs_rows, &piit->numered_dofs_cols };
+    ierr = VecZeroEntries(shift_rows_and_cols_global); CHKERRQ(ierr);
+    ierr = VecAssemblyBegin(shift_rows_and_cols_global); CHKERRQ(ierr);
+    ierr = VecAssemblyEnd(shift_rows_and_cols_global); CHKERRQ(ierr);
+    ierr = VecGhostUpdateBegin(shift_rows_and_cols_global,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecGhostUpdateEnd(shift_rows_and_cols_global,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    //cerr << piit->get_nb_dofs_row() << " WW " << piit->get_nb_dofs_col() << endl;
+    //double *array;
+    //ierr = VecGetArray(shift_rows_and_cols_global,&array); CHKERRQ(ierr);
     for(int ss = 0;ss<2;ss++) {
       NumeredDofMoFEMEntity_multiIndex::iterator dit,hi_dit;
       dit = piit_rows_and_cols[ss]->begin();
       hi_dit = piit_rows_and_cols[ss]->end();
-      int shift = array[ss];
-      for(;dit!=hi_dit++;dit++) {
+      int shift = (*pit_nb_dofs[ss]);
+      for(;dit!=hi_dit;dit++) {
 	int part_number = dit->get_part();
-	if(part_number==rAnk) {
-	  array[ss]++;
+	if(part_number == rAnk) {
+	  ierr = VecSetValue(shift_rows_and_cols_global,ss,1,ADD_VALUES); CHKERRQ(ierr);
 	}
+	pair<NumeredDofMoFEMEntity_multiIndex::iterator,bool> p;
+	p = pit_rows_and_cols[ss]->insert(NumeredDofMoFEMEntity(dit->get_DofMoFEMEntity_ptr())); 
 	bool success;
-	NumeredDofMoFEMEntity_multiIndex::iterator pr_dof;
-	if(ss == 0) {
-	  problem_add_row_dof modifier(dit->get_DofMoFEMEntity_ptr());
-	  success = moFEMProblems.modify(moFEMProblems.project<0>(pit),modifier);
-	  pr_dof = modifier.p.first;
-	} else {
-	  problem_add_col_dof modifier(dit->get_DofMoFEMEntity_ptr());
-	  success = moFEMProblems.modify(moFEMProblems.project<0>(pit),modifier);
-	  pr_dof = modifier.p.first;  
-	}
-	if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
 	int dof_idx = shift+dit->get_dof_idx();
 	int petsc_global_dof = shift+dit->get_petsc_gloabl_dof_idx();
-	success = pit_rows_and_cols[ss]->modify(pr_dof,NumeredDofMoFEMEntity_part_change(part_number,petsc_global_dof));
+	success = pit_rows_and_cols[ss]->modify(p.first,NumeredDofMoFEMEntity_mofem_index_change(dof_idx));
 	if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-	success = pit_rows_and_cols[ss]->modify(pr_dof,NumeredDofMoFEMEntity_local_idx_change(local_dof_idx[ss]++));
+	success = pit_rows_and_cols[ss]->modify(p.first,NumeredDofMoFEMEntity_part_change(part_number,petsc_global_dof));
 	if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-	success = pit_rows_and_cols[ss]->modify(pr_dof,NumeredDofMoFEMEntity_mofem_index_change(dof_idx));
-	if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+    	if(part_number == rAnk) {
+	  success = pit_rows_and_cols[ss]->modify(p.first,NumeredDofMoFEMEntity_local_idx_change((*pit_nb_local_dofs[ss])++));
+	  if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+	}
       }
     }
-    ierr = VecRestoreArray(shift_rows_and_cols_global,&array); CHKERRQ(ierr);
+    //ierr = VecRestoreArray(shift_rows_and_cols_global,&array); CHKERRQ(ierr);
+    ierr = VecAssemblyBegin(shift_rows_and_cols_global); CHKERRQ(ierr);
+    ierr = VecAssemblyEnd(shift_rows_and_cols_global); CHKERRQ(ierr);
     ierr = VecGhostUpdateBegin(shift_rows_and_cols_global,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(shift_rows_and_cols_global,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = VecGhostUpdateBegin(shift_rows_and_cols_global,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(shift_rows_and_cols_global,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    double *array;
+    ierr = VecGetArray(shift_rows_and_cols_global,&array); CHKERRQ(ierr);
+    for(int ss = 0;ss<2;ss++) {
+      (*pit_nb_dofs[ss]) += array[ss];
+    }
+    ierr = VecRestoreArray(shift_rows_and_cols_global,&array); CHKERRQ(ierr);
   }
+  ierr = VecDestroy(&shift_rows_and_cols_global); CHKERRQ(ierr);
   ierr = print_partitioned_problem(&*pit,verb); CHKERRQ(ierr);
   ierr = debug_partitioned_problem(&*pit,verb); CHKERRQ(ierr);
   PetscFunctionReturn(0);
