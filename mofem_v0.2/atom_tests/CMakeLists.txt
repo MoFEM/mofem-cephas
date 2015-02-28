@@ -617,6 +617,22 @@ add_test(serial_matrix_compare ${CMAKE_COMMAND} -E compare_files
   ${CMAKE_BINARY_DIR}/atom_tests/serial_matrix.txt
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/serial_matrix.txt)
 
+#build composite problem
+add_executable(build_composite_problem build_composite_problem.cpp)
+target_link_libraries(build_composite_problem
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS})
+add_test(build_composite_problem_atom ${MPI_RUN} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/build_composite_problem -my_file disp01.cub)
+add_test(build_composite_problem_atom_compare ${CMAKE_COMMAND} -E compare_files 
+  ${CMAKE_BINARY_DIR}/atom_tests/build_composite_problem.txt 
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/build_composite_problem.txt)
+
 if(TETGEN_LIBRARY) 
 
   cm_export_file("../meshes/Tinterface.cub" export_atom_tests)

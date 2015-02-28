@@ -452,8 +452,8 @@ struct Core:
   PetscErrorCode list_adjacencies() const;
 
   //problem building
-  PetscErrorCode build_problem(const string &name,int verb);
-  PetscErrorCode build_problem(MoFEMProblem *problem_ptr,int verb);
+  PetscErrorCode build_problem(const string &name,int verb = -1);
+  PetscErrorCode build_problem(MoFEMProblem *problem_ptr,int verb = -1);
   PetscErrorCode build_problems(int verb = -1);
   PetscErrorCode clear_problems(int verb = -1);
   PetscErrorCode build_partitioned_problems(int verb = -1);
