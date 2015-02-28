@@ -294,7 +294,7 @@ add_test(body_force_atom_test
   ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/body_force_atom -my_file elasticity_atom_test_body_force.cub)
 add_test(forces_and_sources_body_force_atom_test_compare ${CMAKE_COMMAND} -E compare_files 
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/body_force_atom_test.txt
-  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_body_force_atom_test.txt)
+  ${CMAKE_BINARY_DIR}/atom_tests/body_force_atom_test.txt)
 
 add_executable(forces_and_sources_getting_higher_order_skin_normals_atom forces_and_sources_getting_higher_order_skin_normals_atom_tets.cpp)
 target_link_libraries(forces_and_sources_getting_higher_order_skin_normals_atom 
@@ -444,7 +444,7 @@ add_test(thermal_elem_atom_test ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/the
   -my_file simple_thermal_problem.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor)
 add_test(forces_and_sources_thermal_elem_atom_test_compare ${CMAKE_COMMAND} -E compare_files 
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/thermal_elem.txt
-  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_thermal_elem.txt)
+  ${CMAKE_BINARY_DIR}/atom_tests/thermal_elem.txt)
 
 # add test test for temerature unsteady element
 add_executable(thermal_elem_unsteady_atom thermal_elem_unsteady.cpp)
@@ -466,7 +466,7 @@ add_test(thermal_elem_unsteady_atom_test ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY
   -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 
   -ts_monitor -ts_type beuler -ts_dt 1 -ts_final_time 2  -ksp_monitor -snes_max_it 3 -snes_monitor)
 add_test(thermal_elem_unsteady_atom_test_compare ${CMAKE_COMMAND} -E compare_files 
-  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_thermal_elem_unsteady.txt
+  ${CMAKE_BINARY_DIR}/atom_tests/thermal_elem_unsteady.txt
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/thermal_elem_unsteady.txt)
 
 # add theraml stress eleme
@@ -583,6 +583,23 @@ add_test(dm_mofem_atom ${MPI_RUN} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/dm_mofem -my
 add_test(dm_mofem_atom_compare ${CMAKE_COMMAND} -E compare_files 
   ${CMAKE_BINARY_DIR}/atom_tests/dm_mofem.txt
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/dm_mofem.txt)
+
+cm_export_file("disp01_2parts.h5m" export_atom_tests)
+add_executable(dm_build_pratitioned_mesh dm_build_pratitioned_mesh.cpp)
+target_link_libraries(dm_build_pratitioned_mesh
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS})
+add_test(dm_build_pratitioned_mesh_atom 
+  ${MPI_RUN} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/dm_build_pratitioned_mesh -my_file disp01_2parts.h5m -dm_is_partitioned)
+add_test(dm_build_pratitioned_mesh_atom_compare ${CMAKE_COMMAND} -E compare_files 
+  ${CMAKE_BINARY_DIR}/atom_tests/dm_build_partitioned_mesh.txt
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/dm_build_partitioned_mesh.txt)
 
 #single process
 add_executable(serial_matrix serial_matrix.cpp)

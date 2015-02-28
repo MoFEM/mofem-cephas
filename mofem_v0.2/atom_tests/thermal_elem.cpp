@@ -184,7 +184,7 @@ int main(int argc, char *argv[]) {
   //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
   PetscViewer viewer;
-  PetscViewerASCIIOpen(PETSC_COMM_WORLD,"forces_and_sources_thermal_elem.txt",&viewer);
+  PetscViewerASCIIOpen(PETSC_COMM_WORLD,"thermal_elem.txt",&viewer);
   ierr = VecChop(T,1e-4); CHKERRQ(ierr);
   ierr = VecView(T,viewer); CHKERRQ(ierr);
   ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);

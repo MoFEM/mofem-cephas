@@ -194,7 +194,7 @@ int main(int argc, char *argv[]) {
     steps,rejects,snesfails,ftime,nonlinits,linits);
 
   PetscViewer viewer;
-  PetscViewerASCIIOpen(PETSC_COMM_WORLD,"forces_and_sources_thermal_elem_unsteady.txt",&viewer);
+  PetscViewerASCIIOpen(PETSC_COMM_WORLD,"thermal_elem_unsteady.txt",&viewer);
 
   for(_IT_SERIES_STEPS_BY_NAME_FOR_LOOP_(recorder_ptr,"THEMP_SERIES",sit)) {
 
