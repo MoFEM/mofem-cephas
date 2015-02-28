@@ -293,7 +293,7 @@ cm_export_file("../meshes/elasticity_atom_test_body_force.cub" export_atom_tests
 add_test(body_force_atom_test
   ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/body_force_atom -my_file elasticity_atom_test_body_force.cub)
 add_test(forces_and_sources_body_force_atom_test_compare ${CMAKE_COMMAND} -E compare_files 
-  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_body_force_atom_test.txt
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/body_force_atom_test.txt
   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_body_force_atom_test.txt)
 
 add_executable(forces_and_sources_getting_higher_order_skin_normals_atom forces_and_sources_getting_higher_order_skin_normals_atom_tets.cpp)
@@ -424,8 +424,8 @@ target_link_libraries(fluid_pressure_element_atom
 add_test(fluid_pressure_element_atom_test
   ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/fluid_pressure_element_atom -my_file fluid_presssure_cub_test.cub)
 add_test(fluid_pressure_element_atom_test_compare ${CMAKE_COMMAND} -E compare_files 
-  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_fluid_pressure_element.txt
-  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_fluid_pressure_element.txt)
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/fluid_pressure_element.txt
+  ${CMAKE_BINARY_DIR}/atom_tests/fluid_pressure_element.txt)
 
 # add example test for temperature element
 cm_export_file("../meshes/simple_thermal_problem.cub" export_atom_tests)
@@ -443,7 +443,7 @@ target_link_libraries(thermal_elem_atom
 add_test(thermal_elem_atom_test ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/thermal_elem_atom 
   -my_file simple_thermal_problem.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor)
 add_test(forces_and_sources_thermal_elem_atom_test_compare ${CMAKE_COMMAND} -E compare_files 
-  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_thermal_elem.txt
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/thermal_elem.txt
   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_thermal_elem.txt)
 
 # add test test for temerature unsteady element
@@ -467,7 +467,7 @@ add_test(thermal_elem_unsteady_atom_test ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY
   -ts_monitor -ts_type beuler -ts_dt 1 -ts_final_time 2  -ksp_monitor -snes_max_it 3 -snes_monitor)
 add_test(thermal_elem_unsteady_atom_test_compare ${CMAKE_COMMAND} -E compare_files 
   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_thermal_elem_unsteady.txt
-  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_thermal_elem_unsteady.txt)
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/thermal_elem_unsteady.txt)
 
 # add theraml stress eleme
 cm_export_file("../meshes/elasticity_atom_test_thermal_expansion.cub" export_atom_tests)
@@ -485,7 +485,7 @@ add_test(thermal_stress_elem_atom_test ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_D
   -my_file elasticity_atom_test_thermal_expansion.cub)
 add_test(thermal_stress_elem_atom_test_compare ${CMAKE_COMMAND} -E compare_files 
   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_thermal_stress_elem.txt
-  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_thermal_stress_elem.txt)
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/thermal_stress_elem.txt)
 
 # add test for recording series
 add_executable(record_series_atom record_series_atom.cpp)
@@ -566,7 +566,7 @@ add_test(ultra_weak_transport_atom ${MPI_RUN} -np 2
   -my_max_post_proc_ref_level 1 -my_order 0)
 add_test(ultra_weak_transport_atom_compare ${CMAKE_COMMAND} -E compare_files 
   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_ultra_weak_transport.txt
-  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_ultra_weak_transport.txt)
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/ultra_weak_transport.txt)
 
 #dm
 add_executable(dm_mofem dm_mofem.cpp)
