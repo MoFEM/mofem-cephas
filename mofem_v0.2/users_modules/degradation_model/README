@@ -71,7 +71,7 @@ Cube_With_Inclusion_Periodic
 Mechanical problem with RVE (isotropic matrix and tansverse-isotropic fibres)
 ==========================================================================================
 ==== Potential flow for fibre directions 
-mpirun -np 1 ../homogenisation/TransIso_Potential_Flow_NoInt -my_file /mnt/home/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/trans_iso/Textile_RVE.cub -ksp_type fgmres -ksp_gmres_restart 1000 -pc_type asm -sub_pc_type lu -ksp_monitor -my_order 1
+mpirun -np 1 ../homogenisation/TransIso_Potential_Flow_NoInt -my_file /mnt/home/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/trans_iso/Textile_RVE_Mechanical.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1
 
 ======= Displacement BCs
 make mech_macro_transIso_Disp && mpirun -np 1 ./mech_macro_transIso_Disp \

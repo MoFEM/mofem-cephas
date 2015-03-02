@@ -816,8 +816,8 @@ int main(int argc, char *argv[]) {
         ierr = KSPDestroy(&solver); CHKERRQ(ierr);
         delete my_fe_ptr;
         PetscPrintf(PETSC_COMM_WORLD,"End of step %d\n",sit->get_step_number());
-        string wait;
-        cin>>wait;
+//        string wait;
+//        cin>>wait;
       }
       count++;
       

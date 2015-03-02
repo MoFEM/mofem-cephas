@@ -63,8 +63,13 @@ make mech_macro && mpirun -np 8 ./mech_macro \
 Mechanical problem with RVE (isotropic matrix and tansverse-isotropic fibres)
 ==========================================================================================
 ==== Potential flow for fibre directions 
-mpirun -np 1 ../homogenisation/TransIso_Potential_Flow_NoInt -my_file ../users_modules/degradation_model/meshes/trans_iso/Textile_RVE_Mechanical.cub -ksp_type fgmres -ksp_gmres_restart 1000 -pc_type asm -sub_pc_type lu -ksp_monitor -my_order 1
+mpirun -np 1 ../homogenisation/TransIso_Potential_Flow_NoInt -my_file ../users_modules/degradation_model/meshes/trans_iso/Textile_RVE_Mechanical.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1
 
+======= Periodic BCs
+make mech_macro_transIso_Periodic && mpirun -np 8 ./mech_macro_transIso_Periodic \
+-my_file_Macro solution_wt.h5m -my_file_RVE solution_RVE.h5m\
+  -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist \
+  -my_max_post_proc_ref_level 0 -my_order 1 \
 
 
 
