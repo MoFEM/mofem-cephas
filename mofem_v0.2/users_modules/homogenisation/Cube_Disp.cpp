@@ -26,8 +26,11 @@ using namespace MoFEM;
 #include <FEMethod_LowLevelStudent.hpp>
 #include <FEMethod_UpLevelStudent.hpp>
 
-#include <PostProcVertexMethod.hpp>
-#include <PostProcDisplacementAndStrainOnRefindedMesh.hpp>
+//#include <PostProcVertexMethod.hpp>
+//#include <PostProcDisplacementAndStrainOnRefindedMesh.hpp>
+
+#include <PotsProcOnRefMesh.hpp>
+#include <PostProcHookStresses.hpp>
 
 #include <ElasticFEMethod.hpp>
 
@@ -348,6 +351,31 @@ int main(int argc, char *argv[]) {
   if(pcomm->rank()==0) {
     rval = fe_post_proc_method.moab_post_proc.write_file("out_post_proc.vtk","VTK",""); CHKERR_PETSC(rval);
   }
+  
+  
+  
+  
+//  PostPocOnRefinedMesh post_proc(m_field);
+//  ierr = post_proc.generateRefereneElemenMesh(); CHKERRQ(ierr);
+//  ierr = post_proc.addFieldValuesPostProc("DISPLACEMENT"); CHKERRQ(ierr);
+////  ierr = post_proc.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+//  ierr = post_proc.addFieldValuesGradientPostProc("DISPLACEMENT"); CHKERRQ(ierr);
+//  //add postpocessing for sresses
+//  post_proc.get_op_to_do_Rhs().push_back(
+//                                         new PostPorcStress(
+//                                                            m_field,
+//                                                            post_proc.postProcMesh,
+//                                                            post_proc.mapGaussPts,
+//                                                            "DISPLACEMENT",
+//                                                            post_proc.commonData));
+//
+//  
+//  
+//  ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",post_proc); CHKERRQ(ierr);
+//  rval = post_proc.postProcMesh.write_file("out_RVE.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
+
+  
+  
   
   //End Disp
   /*Range ents;*/

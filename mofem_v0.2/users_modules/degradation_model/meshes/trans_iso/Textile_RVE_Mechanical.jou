@@ -158,8 +158,7 @@ cubit.cmd('mesh volume all')
 ###Reoreienting RVE
 ###============================================================= 
 cubit.cmd('rotate Volume all angle 90  about X include_merged') 
-
-
+cubit.cmd('rotate volume all angle 90 about z include_merged')
 
 #============================================================= 
 #Defining blocks for elastic, transversely-isotropic and potential flow problems  
