@@ -268,7 +268,8 @@ for i in range(0, 4):
 #Saving input RVE file  
 #============================================================= 
 
-cubit.cmd('save as "/Users/zahur/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/trans_iso/Textile_RVE.cub" overwrite') 
+cubit.cmd('save as "/Users/zahur/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/trans_iso/Textile_RVE_Mechanical.cub" overwrite') 
+
 
 
 
