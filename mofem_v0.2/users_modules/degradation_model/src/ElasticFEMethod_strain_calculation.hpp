@@ -56,25 +56,6 @@ namespace ObosleteUsersModules {
         for(int ii=0; ii<12; ii++) cout<<"coord "<<coords_tet[ii]<<endl;
         cout<<endl<<endl;
 
-        
-        
-//        ublas::vector<FieldData> DISP;
-//        DISP.resize(4);
-//        const EntityHandle* conn;
-//        int num_nodes;
-//        rval = mField.get_moab().get_connectivity(fePtr->get_ent(),conn,num_nodes,true); CHKERR_PETSC(rval);
-//        cout<<"num_nodes  =  "<<num_nodes<<endl;
-//        for(int nn = 0;nn<num_nodes; nn++) {
-//          for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_(mField,fieldName,conn[nn],iit)) {
-//            cout<<"iit->get_FieldData()  "<<iit->get_FieldData()<<endl;
-//          }
-//        }
-        
-        
-
-//        string wait;
-//        cin>>wait;
-
         assert(GradU_at_GaussPt.size() == g_dim);
         NOT_USED(g_dim);
         vector< ublas::matrix< FieldData > >::iterator viit = GradU_at_GaussPt.begin();

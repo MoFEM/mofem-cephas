@@ -23,12 +23,12 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef __CALCULATE_RVE_DMAT_HPP
-#define __CALCULATE_RVE_DMAT_HPP
+#ifndef __CALCULATE_RVE_DMAT_TRANSISO_DISP_HPP
+#define __CALCULATE_RVE_DMAT_TRANSISO_DISP_HPP
 
 namespace MoFEM {
 
-  struct Calculate_RVE_Dmat {
+  struct Calculate_RVE_Dmat_TransIso_Disp {
     
     struct MyVolumeFE: public TetElementForcesAndSourcesCore {
       MyVolumeFE(FieldInterface &_mField): TetElementForcesAndSourcesCore(_mField) {}
@@ -63,7 +63,7 @@ namespace MoFEM {
     MyVolumeFE& getLoopFeRhs() { return feRhs; } ///< get rhs volume element
 
     FieldInterface &mField;
-    Calculate_RVE_Dmat(FieldInterface &m_field):
+    Calculate_RVE_Dmat_TransIso_Disp(FieldInterface &m_field):
     feRhs(m_field),
     mField(m_field) {}
 
@@ -171,16 +171,8 @@ namespace MoFEM {
       }
       
       ~OpCalculate_RVEDmat(){
-//        ierr = VecDestroy(&F1); CHKERRABORT(PETSC_COMM_WORLD,ierr);
-//        ierr = VecDestroy(&F2); CHKERRABORT(PETSC_COMM_WORLD,ierr);
-//        ierr = VecDestroy(&F3); CHKERRABORT(PETSC_COMM_WORLD,ierr);
-//        ierr = VecDestroy(&F4); CHKERRABORT(PETSC_COMM_WORLD,ierr);
-//        ierr = VecDestroy(&F5); CHKERRABORT(PETSC_COMM_WORLD,ierr);
-//        ierr = VecDestroy(&F6); CHKERRABORT(PETSC_COMM_WORLD,ierr);
-//        ierr = VecDestroy(&D1); CHKERRABORT(PETSC_COMM_WORLD,ierr);
-//        ierr = MatDestroy(&A); CHKERRABORT(PETSC_COMM_WORLD,ierr);
       }
-      
+
       Vec F1,F2,F3,F4,F5,F6,D1;
       Mat A;
 
@@ -190,7 +182,7 @@ namespace MoFEM {
         try {
           if(data.getFieldData().size()==0) PetscFunctionReturn(0);
           int nb_gauss_pts = data.getN().size1();
-          
+//
           EntityHandle fe_ent = getMoFEMFEPtr()->get_ent(); //handle of finite element
 //          cout<<"fe_ent "<<fe_ent <<endl;
           commonData.Dmat_RVE[fe_ent].resize(nb_gauss_pts);
@@ -219,7 +211,7 @@ namespace MoFEM {
               //We don't need to calculate internal forces for RVE, as ElasticFEMethod is used to assemble A matirx only
               //so noo need to create MyElasticFEMethod here
               ElasticFEMethod_Matrix my_fe_marix(m_field_RVE,A,D1,F1,0.0,0.0,commonData.wtAtGaussPts(gg),"DISP_RVE");
-              ElasticFEMethod my_fe_inclusions(m_field_RVE,A,D1,F1,0.0,0.0,"DISP_RVE");
+              TranIsotropicFibreDirRotElasticFEMethod my_fe_transiso(m_field_RVE,A,D1,F1,"DISP_RVE");
               ElasticFE_RVELagrange_Disp_Multi_Rhs MyFE_RVELagrange(m_field_RVE,A,D1,F1,F2,F3,F4,F5,F6,applied_strain,"DISP_RVE","Lagrange_mul_disp",field_rank);
 
 //              cout<<"commonData.wtAtGaussPts(gg) =  "<<commonData.wtAtGaussPts(gg) <<endl;
@@ -234,8 +226,8 @@ namespace MoFEM {
               ierr = VecZeroEntries(D1); CHKERRQ(ierr);
               ierr = m_field_RVE.set_global_VecCreateGhost("ELASTIC_PROBLEM_RVE",ROW,D1,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
-              ierr = m_field_RVE.loop_finite_elements("ELASTIC_PROBLEM_RVE","ELASTIC_FE_RVE_MATRIX",my_fe_marix);  CHKERRQ(ierr);
-              ierr = m_field_RVE.loop_finite_elements("ELASTIC_PROBLEM_RVE","ELASTIC_FE_RVE_INC",my_fe_inclusions);  CHKERRQ(ierr);
+              ierr = m_field_RVE.loop_finite_elements("ELASTIC_PROBLEM_RVE","ELASTIC_FE_RVE",my_fe_marix);  CHKERRQ(ierr);
+              ierr = m_field_RVE.loop_finite_elements("ELASTIC_PROBLEM_RVE","TRAN_ISO_FE_RVE",my_fe_transiso);  CHKERRQ(ierr);
               ierr = m_field_RVE.loop_finite_elements("ELASTIC_PROBLEM_RVE","Lagrange_FE",MyFE_RVELagrange);  CHKERRQ(ierr);
 
               ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
@@ -261,8 +253,8 @@ namespace MoFEM {
 
               if(gg==0){//do it for only one Gauss point as it is same for all others
                 //=============================================================================================================
-                ierr = m_field_RVE.loop_finite_elements("ELASTIC_PROBLEM_RVE","ELASTIC_FE_RVE_MATRIX",MyRVEVol);  CHKERRQ(ierr);
-                ierr = m_field_RVE.loop_finite_elements("ELASTIC_PROBLEM_RVE","ELASTIC_FE_RVE_INC",MyRVEVol);  CHKERRQ(ierr);
+                ierr = m_field_RVE.loop_finite_elements("ELASTIC_PROBLEM_RVE","ELASTIC_FE_RVE",MyRVEVol);  CHKERRQ(ierr);
+                ierr = m_field_RVE.loop_finite_elements("ELASTIC_PROBLEM_RVE","TRAN_ISO_FE_RVE",MyRVEVol);  CHKERRQ(ierr);
 
                 //    ierr = VecView(RVE_volume_Vec,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
                 ierr = VecSum(RVE_volume_Vec, &RVE_volume);  CHKERRQ(ierr);
@@ -302,7 +294,7 @@ namespace MoFEM {
                 
               }
               
-              
+
               {
                 ierr = VecZeroEntries(Stress_Homo); CHKERRQ(ierr);
                 
@@ -483,13 +475,14 @@ namespace MoFEM {
 //                }
 //              }
 //              
-//              cout<<"fe_ent "<<fe_ent <<endl;
-//              cout<<"gg = "<<gg<<endl;
-//              cout<<"Dmat = "<<Dmat<<endl;
+              cout<<"fe_ent "<<fe_ent <<endl;
+              cout<<"Dmat = "<<Dmat<<endl;
 
               commonData.Dmat_RVE[fe_ent](gg).resize(6,6);
               commonData.Dmat_RVE[fe_ent](gg)=Dmat;
 //              cout<<"gg End =  "<<gg <<endl;
+//              string wait;
+//              cin>>wait;
             }
           }
           
@@ -526,7 +519,7 @@ namespace MoFEM {
   
 }
 
-#endif //__CALCULATE_RVE_DMAT_HPP
+#endif //__CALCULATE_RVE_DMAT_TRANSISO_DISP_HPP
 
 
 

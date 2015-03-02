@@ -378,7 +378,7 @@ int main(int argc, char *argv[]) {
     
 //    typedef Face_CenPos_Handle_multiIndex::index<Tri_Hand_tag>::type::iterator Tri_Hand_iterator;
 //    Tri_Hand_iterator Tri_Neg;
-//    count1=1;
+////    count1=1;
 //    for(Range::iterator it = SurTrisNeg.begin(); it!=SurTrisNeg.end();  it++) {
 //        Tri_Neg=Face_CenPos_Handle_varNeg.get<Tri_Hand_tag>().find(*it);
 //        cout<<"it= "<<*it <<"     Tri_Neg->xcoord= "<<Tri_Neg->xcoord << "   Tri_Neg->ycoord "<< Tri_Neg->ycoord << "   Tri_Neg->zcoord= "<< Tri_Neg->zcoord <<endl;
@@ -417,7 +417,7 @@ int main(int argc, char *argv[]) {
 
 //    typedef Face_CenPos_Handle_multiIndex::index<Tri_Hand_tag>::type::iterator Tri_Hand_iterator;
 //    Tri_Hand_iterator Tri_Pos;
-//    count1=1;
+////    count1=1;
 //    for(Range::iterator it = SurTrisPos.begin(); it!=SurTrisPos.end();  it++) {
 //        Tri_Pos=Face_CenPos_Handle_varPos.get<Tri_Hand_tag>().find(*it);
 //        cout<<"it= "<<*it <<"     Tri_Pos->xcoord= "<<Tri_Pos->xcoord << "   Tri_Pos->ycoord "<< Tri_Pos->ycoord << "   Tri_Pos->zcoord= "<< Tri_Pos->zcoord <<endl;
@@ -629,11 +629,11 @@ int main(int argc, char *argv[]) {
     }
     
     //Assemble F and Aij
-//    double YoungModulusP;
-//    double PoissonRatioP;
-//    double YoungModulusZ;
-//    double PoissonRatioPZ;
-//    double ShearModulusZP;
+    double YoungModulusP;
+    double PoissonRatioP;
+    double YoungModulusZ;
+    double PoissonRatioPZ;
+    double ShearModulusZP;
     double YoungModulus;
     double PoissonRatio;
     double alpha;
@@ -645,21 +645,21 @@ int main(int argc, char *argv[]) {
         //Get block name
         string name = it->get_Cubit_name();
         
-//        if (name.compare(0,20,"MAT_ELASTIC_TRANSISO") == 0)
-//        {
-//            Mat_Elastic_TransIso mydata;
-//            ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
-//            cout << mydata;
-//            YoungModulusP=mydata.data.Youngp;
-//            YoungModulusZ=mydata.data.Youngz;
-//            PoissonRatioP=mydata.data.Poissonp;
-//            PoissonRatioPZ=mydata.data.Poissonpz;
-//            if (mydata.data.Shearzp!=0) {
-//                ShearModulusZP=mydata.data.Shearzp;
-//            }else{
-//                ShearModulusZP=YoungModulusZ/(2*(1+PoissonRatioPZ));}
-//        }
-        if (name.compare(0,11,"MAT_ELASTIC") == 0)
+        if (name.compare(0,20,"MAT_ELASTIC_TRANSISO") == 0)
+        {
+            Mat_Elastic_TransIso mydata;
+            ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+            cout << mydata;
+            YoungModulusP=mydata.data.Youngp;
+            YoungModulusZ=mydata.data.Youngz;
+            PoissonRatioP=mydata.data.Poissonp;
+            PoissonRatioPZ=mydata.data.Poissonpz;
+            if (mydata.data.Shearzp!=0) {
+                ShearModulusZP=mydata.data.Shearzp;
+            }else{
+                ShearModulusZP=YoungModulusZ/(2*(1+PoissonRatioPZ));}
+        }
+        if (name.compare(0,13,"MAT_ELASTIC_1") == 0)
         {
             Mat_Elastic mydata;
             ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
@@ -691,7 +691,7 @@ int main(int argc, char *argv[]) {
     ierr = MatZeroEntries(Aij); CHKERRQ(ierr);
     
     ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyFE);  CHKERRQ(ierr);
-	ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","TRAN_ISOTROPIC_ELASTIC",MyTIsotFE);  CHKERRQ(ierr);
+    ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","TRAN_ISOTROPIC_ELASTIC",MyTIsotFE);  CHKERRQ(ierr);
     ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","Lagrange_elem",MyFE_RVELagrangePeriodic);  CHKERRQ(ierr);
     ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","Lagrange_elem_rigid_trans",MyFE_RVELagrangeRigidBodyTrans);  CHKERRQ(ierr);
 
@@ -794,11 +794,11 @@ int main(int argc, char *argv[]) {
     ierr = KSPDestroy(&solver); CHKERRQ(ierr);
     ierr = VecDestroy(&RVE_volume_Vec); CHKERRQ(ierr);
     ierr = VecDestroy(&Stress_Homo); CHKERRQ(ierr);
-
+//
   
     ierr = PetscTime(&v2);CHKERRQ(ierr);
     ierr = PetscGetCPUTime(&t2);CHKERRQ(ierr);
-    
+  
     PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Total Rank %d Time = %f CPU Time = %f\n",pcomm->rank(),v2-v1,t2-t1);
   
     PetscFinalize();

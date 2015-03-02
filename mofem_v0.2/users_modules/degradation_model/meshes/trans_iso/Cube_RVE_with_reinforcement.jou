@@ -83,9 +83,9 @@ for i in range(0, 2):
 #Ep=Em; Ez=Em; nup=Enu; nupz=Enu;  Gzp=Em/(2*(1+Enu));  
 
 cubit.cmd('block 2 attribute count 5')   
-#Ep=40e3; Ez=230e3; nup=0.26; nupz=0.26; Gzp=24e3;    
+Ep=40e3; Ez=230e3; nup=0.26; nupz=0.26; Gzp=24e3;    
 #Ep=10*Em; Ez=20*Em; nup=0.26; nupz=0.26; Gzp=5*Em;    
-Ep=2*Em; Ez=5*Em; nup=0.26; nupz=0.26; Gzp=2*Em;    
+#Ep=2*Em; Ez=5*Em; nup=0.26; nupz=0.26; Gzp=2*Em;    
    
 TransIso=[str(Ep), str(Ez), str(nup), str(nupz), str(Gzp)]   
 for i in range(0, 5):   
@@ -145,6 +145,7 @@ cubit.cmd('sideset 102 surface 21 17 22 12')  # all +ve boundary surfaces
 cubit.cmd('sideset 103 surface 20 10 19 18 21 17 22 12')  # all boundary surfaces  
 
 cubit.cmd('save as "/Users/zahur/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/trans_iso/Cube_RVE_with_reinforcement.cub" overwrite')
+
 
 
 

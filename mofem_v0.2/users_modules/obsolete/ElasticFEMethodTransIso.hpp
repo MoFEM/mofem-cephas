@@ -560,8 +560,8 @@ namespace ObosleteUsersModules {
     Tag th_fibre_dir;
     bool propeties_from_BLOCKSET_MAT_ELASTICSET;
     
-    TranIsotropicFibreDirRotElasticFEMethod(FieldInterface& _mField,Mat &_Aij,Vec _D,Vec _F):
-      ElasticFEMethod(_mField,_Aij,_D,_F,0,0) {
+    TranIsotropicFibreDirRotElasticFEMethod(FieldInterface& _mField,Mat &_Aij,Vec _D,Vec _F, string _field_name = "DISPLACEMENT"):
+      ElasticFEMethod(_mField,_Aij,_D,_F,0,0,_field_name) {
 
       propeties_from_BLOCKSET_MAT_ELASTICSET = false;
       for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_ELASTICSET,it)) {
@@ -688,7 +688,7 @@ namespace ObosleteUsersModules {
         
         //Gradient at Gauss points;
         vector< ublas::matrix< FieldData > > GradU_at_GaussPt;
-        ierr = GetGaussDiffDataVector("DISPLACEMENT",GradU_at_GaussPt); CHKERRQ(ierr);
+        ierr = GetGaussDiffDataVector(fieldName,GradU_at_GaussPt); CHKERRQ(ierr);
         unsigned int g_dim = g_NTET.size()/4;
         assert(GradU_at_GaussPt.size() == g_dim);
         NOT_USED(g_dim);

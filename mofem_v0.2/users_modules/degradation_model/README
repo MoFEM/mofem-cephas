@@ -6,8 +6,8 @@ Steps
 1. Run thermal_unsteady save output as solution.h5m and out_.vtk (conductivity for this is read from thermal_Dmat.out)
 2. Run moisture_unsteady save output as solution_mois.h5m and and Conc_.vtk (conductivity/density for this is read from diffusion_Dmat.out )
 3. Run calculate_wt (with input solution_mois.h5m)
-4. Run mech_marc which is FE2 problem with two input meshes (micro RVE and macro) here macro-mesh=solution_wt.h5m 
-                                                                                  and  RVE-mesh  = RVE_Cube_mech.cub
+4. Run mech_macro_iso_Disp which is FE2 problem with two input meshes (micro RVE and macro) here macro-mesh = solution_wt.h5m
+                                                                                   and  RVE-mesh = RVE_Cube_mech.cub
 
 
 Example computational homogenisation for Thermal and moisture transport (Textile RVE)
@@ -21,7 +21,7 @@ make MoistureTrans_Disp_MRhs_with_incl && mpirun -np 1 ./MoistureTrans_Disp_MRhs
 Unsteady thermal macro problem (run for 2000 days) (time here in seconds)
 ============================================================
 make thermal_unsteady_inputDmat && mpirun -np 1 ./thermal_unsteady_inputDmat \
--my_file /mnt/home/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/Using_Textile_RVE/Macro_Plate_with_hole.cub \
+-my_file /mnt/home/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/trans_iso/Macro_Plate_with_hole.cub \
   -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor \
   -snes_type newtonls -snes_linesearch_type basic -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 -snes_monitor \
   -ts_monitor -ts_type beuler -ts_dt 864000 -ts_final_time 86400000 -snes_lag_jacobian -2 \
@@ -38,8 +38,6 @@ make diffusion_unsteady_inputDmat && mpirun -np 1 ./diffusion_unsteady_inputDmat
   -my_order 1 -my_max_post_proc_ref_level 0
 
 
-
-
 calculate_wt used to calculate degredaiton (1-wt) (time here in days)
 ============================================================
 make wt_unsteady_macro && mpirun -np 1 ./wt_unsteady_macro \
@@ -51,9 +49,9 @@ make wt_unsteady_macro && mpirun -np 1 ./wt_unsteady_macro \
   -my_saturation_conc 1
 
 
-Mechanical problem
+Mechanical problem with RVE (both matrix and fibres are isotropic materials)
 ============================================================
-make mech_macro && mpirun -np 4 ./mech_macro \
+make mech_macro_iso_Disp && mpirun -np 4 ./mech_macro_iso_Disp \
 -my_file_Macro solution_wt.h5m -my_file_RVE /mnt/home/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/Using_Textile_RVE/Textile_RVE_Mechanical.cub\
   -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist \
   -my_max_post_proc_ref_level 0 -my_order 1 \
@@ -68,6 +66,25 @@ mpirun -np 4 ../homogenisation/Cube_With_Inclusion_Disp -my_file /mnt/home/Docum
 Cube_With_Inclusion_Traction
 Cube_With_Inclusion_Disp
 Cube_With_Inclusion_Periodic
+
+
+Mechanical problem with RVE (isotropic matrix and tansverse-isotropic fibres)
+==========================================================================================
+==== Potential flow for fibre directions 
+mpirun -np 1 ../homogenisation/TransIso_Potential_Flow_NoInt -my_file /mnt/home/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/trans_iso/Textile_RVE.cub -ksp_type fgmres -ksp_gmres_restart 1000 -pc_type asm -sub_pc_type lu -ksp_monitor -my_order 1
+
+======= Displacement BCs
+make mech_macro_transIso_Disp && mpirun -np 1 ./mech_macro_transIso_Disp \
+-my_file_Macro solution_wt.h5m -my_file_RVE solution_RVE.h5m\
+  -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist\
+  -my_max_post_proc_ref_level 0 -my_order 1 \
+
+======= Periodic BCs
+make mech_macro_transIso_Periodic && mpirun -np 1 ./mech_macro_transIso_Periodic \
+-my_file_Macro solution_wt.h5m -my_file_RVE solution_RVE.h5m\
+  -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist \
+  -my_max_post_proc_ref_level 0 -my_order 1 \
+
 
 Conversion from .h5m to vtk
 ============================================================

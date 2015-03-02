@@ -82,9 +82,9 @@ target_link_libraries(wt_unsteady_macro
   ${MoFEM_PROJECT_LIBS})
 
 
-# ===================== Mechanical with isomatric materials ============================================
-add_executable(mech_macro ${UM_SOURCE_DIR}/degradation_model/mech_macro_iso.cpp)
-target_link_libraries(mech_macro
+# ======== Mechanical with isomatric materials for RVE (both fibres and matrix) with displacement RVE BCs ======================
+add_executable(mech_macro_iso_Disp ${UM_SOURCE_DIR}/degradation_model/mech_macro_iso_Disp.cpp)
+target_link_libraries(mech_macro_iso_Disp
   mofem_finite_element_library
   mofem_finite_elements
   mofem_interfaces
@@ -98,20 +98,9 @@ target_link_libraries(mech_macro
   ${MoFEM_PROJECT_LIBS})
 
 
-  configure_file(
-    "${UM_SOURCE_DIR}/degradation_model/do_vtk1.sh.in"
-    "${CMAKE_CURRENT_SOURCE_DIR}/do_vtk1.sh"
-    @ONLY
-  )
-
-  file(COPY do_vtk1.sh
-    DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
-    FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE)
-
-
-# ===================== Mechanical with trans-iso fibres ============================================
-add_executable(mech_macro_trans_iso ${UM_SOURCE_DIR}/degradation_model/mech_macro_trans_iso.cpp)
-target_link_libraries(mech_macro_trans_iso
+# ===================== Mechanical with RVE including trans-iso fibres (matrix isotropic) with displacement RVE BCs =================
+add_executable(mech_macro_transIso_Disp ${UM_SOURCE_DIR}/degradation_model/mech_macro_transIso_Disp.cpp)
+target_link_libraries(mech_macro_transIso_Disp
   mofem_finite_element_library
   mofem_finite_elements
   mofem_interfaces
@@ -123,6 +112,23 @@ target_link_libraries(mech_macro_trans_iso
   mofem_third_party
   mofem_cblas
   ${MoFEM_PROJECT_LIBS})
+  
+# ===================== Mechanical with RVE including trans-iso fibres (matrix isotropic) with displacement RVE BCs =================
+add_executable(mech_macro_transIso_Periodic ${UM_SOURCE_DIR}/degradation_model/mech_macro_transIso_Periodic.cpp)
+target_link_libraries(mech_macro_transIso_Periodic
+  mofem_finite_element_library
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  users_modules_obsolete
+  user_modules_homogenisation
+  mofem_approx
+  mofem_third_party
+  mofem_cblas
+  ${MoFEM_PROJECT_LIBS})
+
+
   
   # ===================== Strain Calculation  ============================================
 add_executable(Strain_calculation ${UM_SOURCE_DIR}/degradation_model/Strain_calculation.cpp)
@@ -138,6 +144,18 @@ target_link_libraries(Strain_calculation
   mofem_third_party
   mofem_cblas
   ${MoFEM_PROJECT_LIBS})
+
+
+  # ===================== Conversion from h5m to vtk  ============================================
+  configure_file(
+    "${UM_SOURCE_DIR}/degradation_model/do_vtk1.sh.in"
+    "${CMAKE_CURRENT_SOURCE_DIR}/do_vtk1.sh"
+    @ONLY
+  )
+
+  file(COPY do_vtk1.sh
+    DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
+    FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE)
 
 
 

@@ -1,0 +1,70 @@
+#!python
+#To create RVE for all the three type of boundary conditions, i.e. (Linear dispacemet, traction and periodic)
+
+cubit.cmd('new')
+autofactor=10; 
+
+#============================================================= 
+#Geometry
+#============================================================= 
+cubit.cmd('brick x 19 y 3.2 z 25')
+cubit.cmd('brick x 2 y 3.2 z 25')
+cubit.cmd('move surface 10 location 9.5 0 0 include_merged')
+cubit.cmd('brick x 28 y 3.2 z 25')
+cubit.cmd('move surface 16 location 11.5 0 0 include_merged')
+cubit.cmd('brick x 2 y 3.2 z 25')
+cubit.cmd('move surface 22 location 39.5 0 0 include_merged')
+cubit.cmd('imprint volume 1 2 3 4')
+cubit.cmd('merge volume 1 2 3 4')
+
+cubit.cmd('brick x 19 y 3.2 z 25')
+cubit.cmd('brick x 2 y 3.2 z 25')
+cubit.cmd('move surface 34 location 10 0 0 include_merged')
+cubit.cmd('brick x 28.5 y 3.2 z 25')
+cubit.cmd('move surface 40 location 11 0 0 include_merged')
+cubit.cmd('imprint volume 5 6 7')
+cubit.cmd('merge volume 5 6 7')
+cubit.cmd('move surface 28 location 40.5 0 0 include_merged')
+cubit.cmd('imprint volume 1 2 3 4 5 6 7')
+cubit.cmd('merge volume 1 2 3 4 5 6 7')
+
+cubit.cmd('create displacement on surface 9 dof 2 fix 0')
+cubit.cmd('create displacement on surface 33 dof 2 fix 0')
+cubit.cmd('create force on surface 23 vector 0 -1200 0 0 0 0')
+
+#=============================================================  
+#Defining blocks for elastic, transversely-isotropic and potential flow problems   
+#=============================================================  
+vol=['1 2 3 4 5 6 7']   
+mat=['MAT_ELASTIC_1']   
+for i in range(0, 3):   
+    cubit.cmd('set duplicate block elements on')   
+    str1='block  ' + str(i+1) +' volume '+vol[i]; cubit.cmd(str1)   
+    str1='block  ' + str(i+1) +' name "'+mat[i] + '"'; cubit.cmd(str1)   
+#=============================================================  
+#Material properties for matrix part   
+#=============================================================  
+cubit.cmd('block 1 volume all')  
+cubit.cmd('block 1 name "MAT_ELASTIC_1"')
+cubit.cmd('block 1 attribute count 2')
+cubit.cmd('block 1 attribute index 1 3.5e3')   #Young's modulus 
+cubit.cmd('block 1 attribute index 2 0.3')   #Poisson's ratio 
+
+#=============================================================  
+#Meshing  
+#=============================================================  
+cubit.cmd('volume all size auto factor 5')   
+cubit.cmd('volume all scheme Tetmesh')   
+cubit.cmd('mesh volume all')   
+
+cubit.cmd('save as "/Users/zahur/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/trans_iso/Three_Point_Bending.cub" overwrite')
+
+
+
+
+
+
+
+
+
+

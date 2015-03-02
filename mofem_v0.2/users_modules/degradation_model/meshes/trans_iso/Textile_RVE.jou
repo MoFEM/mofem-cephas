@@ -1,0 +1,282 @@
+#!python
+#This scrip will create RVE including fibres and matrix, which can be used for all 
+#three type of boundary conditions including dispalcement, traction and periodic. 
+
+cubit.cmd('new')
+#=============================================================
+#Geometry Input parametrs
+#=============================================================
+W_wrap=0.3; H_wrap=0.1514; hgap_wrap=0.09 
+W_weft=0.3; H_weft=0.0757; hgap_weft=1.2 
+L_RVE=3.0;    W_RVE=0.8;        H_RVE=0.3;  
+Vgap=0.012 
+
+s_weft=hgap_weft+W_weft;    s_wraf=hgap_wrap+W_wrap
+T=(H_weft/2+H_wrap/2)/2+Vgap
+
+L_RVE=2*s_weft;    W_RVE=2*s_wraf;     H_RVE=0.3;    
+ 
+#=============================================================
+#Create vartices for splines to create splines
+#=============================================================
+
+coordx=-22.5*s_weft;  coordy=T; coordz=0;
+for i in range(0, 48):
+    if i % 2 == 0:
+        str1='create vertex ' + str(coordx) +' '+str(coordy)+' '+str(coordz)+' color' ; coordx=coordx+s_weft; 
+        cubit.cmd(str1)
+    if i % 2 == 1:
+        str1='create vertex ' + str(coordx) +' '+str(-coordy)+' '+str(coordz)+' color' ; coordx=coordx+s_weft; 
+        cubit.cmd(str1)
+
+coordx=-22.5*s_weft;  coordy=-T; coordz=s_wraf; 
+for i in range(0, 48): 
+    if i % 2 == 0: 
+        str1='create vertex ' + str(coordx) +' '+str(coordy)+' '+str(coordz)+' color' ; coordx=coordx+s_weft;  
+        cubit.cmd(str1) 
+    if i % 2 == 1: 
+        str1='create vertex ' + str(coordx) +' '+str(-coordy)+' '+str(coordz)+' color' ; coordx=coordx+s_weft;  
+        cubit.cmd(str1) 
+ 
+coordx=-0.5*s_weft;  coordy=-T; coordz=-22*s_wraf; 
+for i in range(0, 48): 
+    if i % 2 == 0: 
+        str1='create vertex ' + str(coordx) +' '+str(coordy)+' '+str(coordz)+' color' ; coordz=coordz+s_wraf;  
+        cubit.cmd(str1) 
+    if i % 2 == 1: 
+        str1='create vertex ' + str(coordx) +' '+str(-coordy)+' '+str(coordz)+' color' ; coordz=coordz+s_wraf;  
+        cubit.cmd(str1) 
+ 
+coordx=0.5*s_weft;  coordy=T; coordz=-22*s_wraf; 
+for i in range(0, 48): 
+    if i % 2 == 0: 
+        str1='create vertex ' + str(coordx) +' '+str(coordy)+' '+str(coordz)+' color' ; coordz=coordz+s_wraf;  
+        cubit.cmd(str1) 
+    if i % 2 == 1: 
+        str1='create vertex ' + str(coordx) +' '+str(-coordy)+' '+str(coordz)+' color' ; coordz=coordz+s_wraf;  
+        cubit.cmd(str1) 
+
+#=============================================================
+#Joint vertices to create splines 
+#=============================================================
+
+Tvertices=48;  
+vertices=range(1,Tvertices+1); count1=0;   
+for i in range(0, 4): 
+    str1='create curve spline vertex '
+    for j in range(0, 48):
+        str1=str1+' '+ str(count1+vertices[j])
+    cubit.cmd(str1);  count1=count1+48;
+
+#=============================================================
+#Creating fibers with elliptical cross sections  
+#=============================================================
+     
+cubit.cmd('create planar surface with plane normal to curve 1 distance 0 from vertex 1') 
+str1='create curve location vertex 1 direction curve 8 length '+ str(W_wrap/2); cubit.cmd(str1) 
+str1='create curve location vertex 1 direction curve 7 length  '+str(H_wrap/2); cubit.cmd(str1) 
+cubit.cmd('create surface ellipse vertex 198 200 1')
+cubit.cmd('sweep surface 2 along curve 1')
+
+cubit.cmd('create planar surface with plane normal to curve 2 distance 0 from vertex 49') 
+str1='create curve location vertex 49 direction curve 17 length '+ str(W_wrap/2); cubit.cmd(str1) 
+str1='create curve location vertex 49 direction curve 16 length  '+str(H_wrap/2); cubit.cmd(str1) 
+cubit.cmd('create surface ellipse vertex 208 210 49')
+cubit.cmd('sweep surface 6 along curve 2')
+
+cubit.cmd('create planar surface with plane normal to curve 3 distance 0 from vertex 97')
+str1='create curve location vertex 97 direction curve 24 length '+ str(W_weft/2); cubit.cmd(str1)
+str1='create curve location vertex 97 direction curve 23 length  '+str(H_weft/2); cubit.cmd(str1)
+cubit.cmd('create surface ellipse vertex 218 220 97')
+cubit.cmd('sweep surface 10 along curve 3')
+
+cubit.cmd('create planar surface with plane normal to curve 4 distance 0 from vertex 145')
+str1='create curve location vertex 145 direction curve 33 length '+ str(W_weft/2); cubit.cmd(str1)
+str1='create curve location vertex 145 direction curve 32 length  '+str(H_weft/2); cubit.cmd(str1)
+cubit.cmd('create surface ellipse vertex 228 230 145')
+cubit.cmd('sweep surface 14 along curve 4')
+
+#=============================================================
+#Deletion of remaining free vertices, curves and bodies 
+#=============================================================
+
+cubit.cmd('delete vertex all')
+cubit.cmd('delete curve all')
+cubit.cmd('delete body 7 3 5 1')
+
+#=============================================================
+#Create matrix and imprint and merge fibres and matrix to create common surfaces
+#=============================================================
+
+str1='brick x '+str(L_RVE)+' y '+str(H_RVE)+' z '+str(W_RVE); cubit.cmd(str1) 
+str1='move Volume '+str(9)+' x '+str(0)+' y '+str(0)+' z '+str(s_wraf/2); cubit.cmd(str1) 
+
+cubit.cmd('intersect volume all keep') 
+cubit.cmd('delete volume 6 2 8 4') 
+cubit.cmd('subtract volume 10 11 12 13 from volume 9 keep') 
+cubit.cmd('delete volume 9') 
+cubit.cmd('imprint volume 10 11 12 13 14')   
+cubit.cmd('merge volume 10 11 12 13 14') 
+ 
+#=============================================================
+#Meshing negative x, y and z face of the RVE and coping the same to its positive faces
+#=============================================================
+
+cubit.cmd('group 1 add surface 42 27 24') 
+cubit.cmd('group "g2" add surface 44 25 28') 
+cubit.cmd('group "g3" add surface 39 30 33') 
+cubit.cmd('group "g4" add surface 31 40 34') 
+cubit.cmd('group "g5" add surface 43') 
+cubit.cmd('group "g6" add surface 41') 
+
+cubit.cmd('surface 42 27 24 size auto factor 6')       
+cubit.cmd('surface 42 27 24 scheme trimesh')      
+cubit.cmd('mesh surface 42 27 24')      
+cubit.cmd('surface 28 25 44 scheme mirror source surface 27 24 42 source vertex 263 target vertex 262 nosmoothing')  
+cubit.cmd('mesh surface 28 25 44')  
+ 
+cubit.cmd('surface 39 30 33 size auto factor 5')     
+cubit.cmd('surface 39 30 33 scheme trimesh')     
+cubit.cmd('mesh surface 39 30 33')     
+cubit.cmd('surface 31 34 40 scheme mirror source surface 30 33 39 source vertex 257 target vertex 262 nosmoothing') 
+cubit.cmd('mesh surface 31 34 40') 
+  
+cubit.cmd('surface 43 scheme trimesh')    
+cubit.cmd('mesh surface 43')    
+cubit.cmd('surface 41 scheme mirror source surface 43 source vertex 259 target vertex 260 nosmoothing')
+cubit.cmd('mesh surface 41')
+ 
+#============================================================= 
+#Mesh volume 
+#============================================================= 
+ 
+cubit.cmd('volume all scheme Tetmesh') 
+cubit.cmd('mesh volume all') 
+ 
+
+###============================================================= 
+###Reoreienting RVE
+###============================================================= 
+cubit.cmd('rotate Volume all angle 90  about X include_merged') 
+
+
+
+#============================================================= 
+#Defining blocks for elastic, transversely-isotropic and potential flow problems  
+#============================================================= 
+ 
+vol=['14', '10,11,12,13','10', '11', '12', '13']  
+mat=['MAT_ELASTIC_1','MAT_ELASTIC_TRANSISO_1','PotentialFlow_1','PotentialFlow_2','PotentialFlow_3','PotentialFlow_4']  
+for i in range(0, 6):  
+    cubit.cmd('set duplicate block elements on')  
+    str1='block  ' + str(i+1) +' volume '+vol[i]; cubit.cmd(str1)  
+    str1='block  ' + str(i+1) +' name "'+mat[i] + '"'; cubit.cmd(str1)  
+ 
+#============================================================= 
+#Material properties for matrix part  
+#============================================================= 
+  
+cubit.cmd('block 1 attribute count 2')  
+Em=3.5e3; Enu=0.3;  #gig to mega as we used dimension in mm  
+
+Elastic=[str(Em), str(Enu)]  
+for i in range(0, 2):  
+    str1='block 1 attribute index ' + str(i+1) +' '+Elastic[i]; cubit.cmd(str1)  
+  
+#============================================================= 
+#Material properties for fibres  
+#============================================================= 
+ 
+#to use as isotropic 
+#cubit.cmd('block 2 attribute count 5')    
+#Ep=Em; Ez=Em; nup=Enu; nupz=Enu;  Gzp=Em/(2*(1+Enu));  
+
+cubit.cmd('block 2 attribute count 5')   
+Ep=40e3; Ez=230e3; nup=0.26; nupz=0.26; Gzp=24e3;    
+#Ep=10*Em; Ez=20*Em; nup=0.26; nupz=0.26; Gzp=5*Em;    
+#Ep=2*Em; Ez=5*Em; nup=0.26; nupz=0.26; Gzp=2*Em;    
+   
+TransIso=[str(Ep), str(Ez), str(nup), str(nupz), str(Gzp)]   
+for i in range(0, 5):   
+    str1='block 2 attribute index ' + str(i+1) +' '+TransIso[i]; cubit.cmd(str1)   
+  
+#============================================================= 
+#Material properties for interface between fibres and matrix  
+#============================================================= 
+ 
+alpha_interf=500 
+cubit.cmd('set duplicate block elements on')  
+str1='block 7 surface 23 26 29 32'; cubit.cmd(str1)  
+str1='block 7 name "MAT_INTERF_1"'; cubit.cmd(str1)  
+cubit.cmd('block 7 attribute count 4')  
+str1='block 7 attribute index 1 '+str(alpha_interf); cubit.cmd(str1)    #now we use 4 parameters for interface  
+str1='block 7 attribute index 2 '+str(0.0); cubit.cmd(str1)  
+str1='block 7 attribute index 3 '+str(0.0); cubit.cmd(str1)  
+str1='block 7 attribute index 4 '+str(0.0); cubit.cmd(str1)  
+  
+
+#============================================================= 
+#Defining interfaces 
+#============================================================= 
+ 
+Interface=['23', '26','29','32']   
+for i in range(0, 4):   
+    str1='sideset ' + str(i+1) +' surface '+Interface[i]; cubit.cmd(str1)   
+    str1='sideset ' + str(i+1) +' name "interface'+str(i+1); cubit.cmd(str1)   
+  
+#============================================================= 
+#Defining pressures for potential flow problem  
+#============================================================= 
+ 
+Pres=['24', '25','27','28','30','31','33','34']; count=0;  count1=len(Interface);
+for i in range(0, 4):  
+    str1='create pressure '+str(count+1)+' on surface '+str(Pres[count])+' magnitude 1';  cubit.cmd(str1)  
+    str1='create pressure '+str(count+2)+' on surface '+str(Pres[count+1])+' magnitude -1';  cubit.cmd(str1) 
+    str1='sideset '+str(count1+1)+' name "PressureIO_' + str(i+1) + '_1"'; cubit.cmd(str1) 
+    str1='sideset '+str(count1+2)+' name "PressureIO_' + str(i+1) + '_2"'; cubit.cmd(str1) 
+    count=count+2;   count1=count1+2; 
+  
+#============================================================= 
+#Defining surfaces for dispacement, traction and periodic boundary conditions  
+#============================================================= 
+  
+cubit.cmd('sideset 101 surface 24 27 42 30 33 39 41')  # all -ve boundary surfaces for periodic boundary conditions  
+cubit.cmd('sideset 102 surface 25 28 44 31 34 40 43')  # all +ve boundary surfaces  for periodic boundary conditions  
+cubit.cmd('sideset 103 surface 41 31 34 40 42 27 24 43 30 33 39 25 44 28')  # all boundary surfaces  
+ 
+ 
+#To check for indiviual side for inserstion of prisms of any problem 
+#cubit.cmd('sideset 101 surface 42 27 24') 
+#cubit.cmd('sideset 102 surface 25 44 28')  
+#cubit.cmd('sideset 101 surface 41') 
+#cubit.cmd('sideset 102 surface 43')  
+#cubit.cmd('sideset 101 surface 31 34 40')  
+#cubit.cmd('sideset 102 surface 30 33 39')   
+#cubit.cmd('sideset 101 surface 40')  
+#cubit.cmd('sideset 102 surface 39')   
+ 
+#============================================================= 
+#Definign zero proessrues for potential flow problem (This should be of the same order as PotentialFlow blocks )
+#============================================================= 
+ 
+zeroPressureNode=[140, 106, 279, 272]
+for i in range(0, 4):  
+    str1='nodeset ' + str(i+1) + ' node ' + str(zeroPressureNode[i]); cubit.cmd(str1) 
+    str1='nodeset ' + str(i+1)+' name "ZeroPressure_' + str(i+1)+ '"'; cubit.cmd(str1) 
+ 
+#============================================================= 
+#Saving input RVE file  
+#============================================================= 
+
+cubit.cmd('save as "/Users/zahur/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/trans_iso/Textile_RVE.cub" overwrite') 
+
+
+
+
+
+
+
+
+
+
+

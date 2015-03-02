@@ -30,6 +30,8 @@ add_library(user_modules_homogenisation
   ${UM_SOURCE_DIR}/homogenisation/src/impl/ElasticFE_RVELagrange_Periodic.cpp
   ${UM_SOURCE_DIR}/homogenisation/src/impl/ElasticFE_RVELagrange_Homogenized_Stress_Periodic.cpp
   ${UM_SOURCE_DIR}/homogenisation/src/impl/ElasticFE_RVELagrange_Disp_Multi_Rhs.cpp
+  ${UM_SOURCE_DIR}/homogenisation/src/impl/ElasticFE_RVELagrange_Traction_Multi_Rhs.cpp
+  ${UM_SOURCE_DIR}/homogenisation/src/impl/ElasticFE_RVELagrange_Periodic_Multi_Rhs.cpp
 )
 
 add_subdirectory(atom_tests)
@@ -131,12 +133,20 @@ target_link_libraries(MoistureTrans_Periodic
   mofem_approx mofem_third_party mofem_cblas ${MoFEM_PROJECT_LIBS})
 
 # ===================== FE2 elasticity  ============================================
-add_executable(FE2_Elasticity ${UM_SOURCE_DIR}/homogenisation/FE2_Elasticity.cpp)
-target_link_libraries(FE2_Elasticity
+add_executable(FE2_Elasticity_Disp ${UM_SOURCE_DIR}/homogenisation/FE2_Elasticity_Disp.cpp)
+target_link_libraries(FE2_Elasticity_Disp
   mofem_finite_element_library mofem_finite_elements mofem_interfaces mofem_multi_indices mofem_petsc users_modules_obsolete user_modules_homogenisation
   mofem_approx mofem_third_party mofem_cblas ${MoFEM_PROJECT_LIBS})
 
+add_executable(FE2_Elasticity_Trac ${UM_SOURCE_DIR}/homogenisation/FE2_Elasticity_Trac.cpp)
+target_link_libraries(FE2_Elasticity_Trac
+  mofem_finite_element_library mofem_finite_elements mofem_interfaces mofem_multi_indices mofem_petsc users_modules_obsolete user_modules_homogenisation
+  mofem_approx mofem_third_party mofem_cblas ${MoFEM_PROJECT_LIBS})
 
+add_executable(FE2_Elasticity_Periodic ${UM_SOURCE_DIR}/homogenisation/FE2_Elasticity_Periodic.cpp)
+target_link_libraries(FE2_Elasticity_Periodic
+  mofem_finite_element_library mofem_finite_elements mofem_interfaces mofem_multi_indices mofem_petsc users_modules_obsolete user_modules_homogenisation
+  mofem_approx mofem_third_party mofem_cblas ${MoFEM_PROJECT_LIBS})
 
 
 
