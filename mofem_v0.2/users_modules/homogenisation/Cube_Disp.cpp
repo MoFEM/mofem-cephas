@@ -29,8 +29,8 @@ using namespace MoFEM;
 //#include <PostProcVertexMethod.hpp>
 //#include <PostProcDisplacementAndStrainOnRefindedMesh.hpp>
 
-#include <PotsProcOnRefMesh.hpp>
-#include <PostProcHookStresses.hpp>
+//#include <PotsProcOnRefMesh.hpp>
+//#include <PostProcHookStresses.hpp>
 
 #include <ElasticFEMethod.hpp>
 
@@ -333,28 +333,28 @@ int main(int argc, char *argv[]) {
   //=======================================================================================================================================================
   
   
-  PostProcVertexMethod ent_method(moab);
-  ierr = mField.loop_dofs("ELASTIC_MECHANICS","DISPLACEMENT",ROW,ent_method); CHKERRQ(ierr);
-  
-  if(pcomm->rank()==0) {
-    EntityHandle out_meshset;
-    rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
-    ierr = mField.problem_get_FE("ELASTIC_MECHANICS","ELASTIC",out_meshset); CHKERRQ(ierr);
-    rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
-    rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
-  }
-  
-  //PostProcDisplacemenysAndStarinOnRefMesh fe_post_proc_method(moab);
-  PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh fe_post_proc_method(mField,"DISPLACEMENT",LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
-  ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",fe_post_proc_method);  CHKERRQ(ierr);
-  
-  if(pcomm->rank()==0) {
-    rval = fe_post_proc_method.moab_post_proc.write_file("out_post_proc.vtk","VTK",""); CHKERR_PETSC(rval);
-  }
-  
-  
-  
-  
+//  PostProcVertexMethod ent_method(moab);
+//  ierr = mField.loop_dofs("ELASTIC_MECHANICS","DISPLACEMENT",ROW,ent_method); CHKERRQ(ierr);
+//  
+//  if(pcomm->rank()==0) {
+//    EntityHandle out_meshset;
+//    rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
+//    ierr = mField.problem_get_FE("ELASTIC_MECHANICS","ELASTIC",out_meshset); CHKERRQ(ierr);
+//    rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
+//    rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
+//  }
+//  
+//  //PostProcDisplacemenysAndStarinOnRefMesh fe_post_proc_method(moab);
+//  PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh fe_post_proc_method(mField,"DISPLACEMENT",LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
+//  ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",fe_post_proc_method);  CHKERRQ(ierr);
+//  
+//  if(pcomm->rank()==0) {
+//    rval = fe_post_proc_method.moab_post_proc.write_file("out_post_proc.vtk","VTK",""); CHKERR_PETSC(rval);
+//  }
+//  
+//  
+//  
+//  
 //  PostPocOnRefinedMesh post_proc(m_field);
 //  ierr = post_proc.generateRefereneElemenMesh(); CHKERRQ(ierr);
 //  ierr = post_proc.addFieldValuesPostProc("DISPLACEMENT"); CHKERRQ(ierr);

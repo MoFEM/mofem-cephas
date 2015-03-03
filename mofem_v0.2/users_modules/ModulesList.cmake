@@ -37,6 +37,7 @@ add_subdirectory(fracture_mechanics)
 add_subdirectory(homogenisation)
 add_subdirectory(moisture_transport)
 add_subdirectory(degradation_model)
+add_subdirectory(stochastic)
 
 
 # Atom tests for users modules
