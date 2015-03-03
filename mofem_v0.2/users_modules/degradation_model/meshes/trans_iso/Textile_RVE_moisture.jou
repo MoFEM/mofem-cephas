@@ -135,26 +135,29 @@ cubit.cmd('mesh volume all')
 cubit.cmd('rotate Volume all angle 90  about X include_merged') 
 cubit.cmd('rotate volume all angle 90 about z include_merged')
 
-vol=['14', '10,11,12,13']         
-mat=['MAT_THERMAL_MATRIX','MAT_THERMAL_FIBRES']     
-Conductivity=[0.19e3, 1.03e3]   #Thermal conductivities of Epoxy resin and E-glass fibres in [ W/(mm deg C) ]
-Capcity=[1, 1]
+vol=['14', '10,11,12,13']        
+mat=['MAT_MOISTURE_MATRIX','MAT_MOISTURE_FIBRES']     
+Density=[1.2e-6, 2.53e-6]        #Density [kg/mm^3]
+Conductivity=[3.36e-12, 3.6938e-13]      #Moisture diffusion conductivity
 cubit.cmd('set duplicate block elements on')         
 for i in range(0, 2):         
     str1='block ' + str(i+1) +' volume '+vol[i]; cubit.cmd(str1)         
     str1='block ' + str(i+1) +' name "'+mat[i] + '"'; cubit.cmd(str1)      
-    str1='block ' + str(i+1) +' attribute count 2'; cubit.cmd(str1)      
+    str1='block ' + str(i+1) +' attribute count 4'; cubit.cmd(str1)      
     str1='block ' + str(i+1) +' attribute index 1 '+str(Conductivity[i]); cubit.cmd(str1)     
-    str1='block ' + str(i+1) +' attribute index 2 '+str(Capcity[i]); cubit.cmd(str1)      
+    str1='block ' + str(i+1) +' attribute index 4 '+str(Density[i]); cubit.cmd(str1)      
 
 #Surfaces         
-cubit.cmd('sideset 101 surface 24 27 42 30 34 40 41')  # all -ve boundary surfaces for periodic boundary conditions  
-cubit.cmd('sideset 102 surface 25 28 44 31 33 39 43')  # all +ve boundary surfaces  for periodic boundary conditions  
+cubit.cmd('sideset 101 surface 41 31 34 40 42 27 24')  # all -ve boundary surfaces for periodic boundary conditions  
+cubit.cmd('sideset 102 surface 43 30 33 39 25 44 28')  # all +ve boundary surfaces  for periodic boundary conditions  
 cubit.cmd('sideset 103 surface 41 31 34 40 42 27 24 43 30 33 39 25 44 28')  # all boundary surfaces  
+  
    
-cubit.cmd('save as "/Users/zahur/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/trans_iso/Textile_RVE_Thermal.cub" overwrite')
+cubit.cmd('save as "/Users/zahur/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/trans_iso/Textile_RVE_moisture.cub" overwrite')
 
  
+
+
 
 
 

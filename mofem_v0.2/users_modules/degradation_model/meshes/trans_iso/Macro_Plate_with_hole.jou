@@ -55,32 +55,32 @@ block 5 attribute count 2
 block 5 attribute index 1 1   #Young's modulus  (This will not be used in the calculation)
 block 5 attribute index 2 0   #Poisson's ratio (This will not be used in the calculation)
 
-#Meshing
-curve 19 interval 9
-curve 19  scheme bias factor 1.12
-mesh curve 19
-
-curve 20  interval 9
-curve 20  scheme bias factor 0.88
-mesh curve 20
-
-curve 2 1 interval 6
-curve 2 1 scheme equal
-mesh curve 2 1
-
+#Meshing 
+curve 19 interval 5
+curve 19  scheme bias factor 1.6
+mesh curve 19 
+ 
+curve 20  interval 5
+curve 20  scheme bias factor 0.61
+mesh curve 20 
+ 
+curve 2 1 interval 3
+curve 2 1 scheme equal 
+mesh curve 2 1 
+ 
 curve 17  interval 5
-curve 17 scheme equal
-mesh curve 17
+curve 17 scheme equal 
+mesh curve 17 
+ 
+curve 16 10 12 11 18 interval 1 
+curve 16 10 12 11 18 scheme equal 
+mesh curve 16 10 12 11 18  
+ 
+surface 11 scheme trimesh 
+mesh surface 11 
 
-curve 16 10 12 11 18 interval 1
-curve 16 10 12 11 18 scheme equal
-mesh curve 16 10 12 11 18 
-
-surface 11 scheme trimesh
-mesh surface 11
-
-surface 13  scheme copy source surface 11  nosmoothing
-mesh surface 13 
+surface 13  scheme copy source surface 11  nosmoothing 
+mesh surface 13  
 
 volume 1 scheme Tetmesh
 mesh volume 1
@@ -93,6 +93,8 @@ block 6 name "Ele_Strain_RVE"
 
 
 save as "/Users/zahur/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/trans_iso/Macro_Plate_with_hole.cub" overwrite
+
+
 
 
 

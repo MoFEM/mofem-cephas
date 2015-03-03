@@ -23,7 +23,7 @@ Example run textile RVE with trans-isotropic fibres (with no interface elements)
 ============================================================
 make TransIso_Potential_Flow_NoInt && mpirun -np 1 ./TransIso_Potential_Flow_NoInt -my_file /mnt/home/Documents/Post-Doc\ Data/Analysis/Meshes/Trans_RVE/RVE.cub  -ksp_type fgmres -ksp_gmres_restart 1000 -pc_type asm -sub_pc_type lu -ksp_monitor -my_order 1
 
-make TransIso_Potential_Flow_NoInt && mpirun -np 1 ./TransIso_Potential_Flow_NoInt -my_file /mnt/home/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/trans_iso/Textile_RVE.cub  -ksp_type fgmres -ksp_gmres_restart 1000 -pc_type asm -sub_pc_type lu -ksp_monitor -my_order 1
+make TransIso_Potential_Flow_NoInt && mpirun -np 1 ./TransIso_Potential_Flow_NoInt -my_file /mnt/home/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/trans_iso/Textile_RVE_Mechanical.cub  -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1
 
 make TransIso_Disp_NoInt && mpirun -np 1 ./TransIso_Disp_NoInt -my_file solution_RVE.h5m -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0
 make TransIso_Periodic_NoInt && mpirun -np 1 ./TransIso_Periodic_NoInt -my_file solution_RVE.h5m -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0
@@ -62,6 +62,6 @@ make FE2_Elasticity_Periodic && mpirun -np 1 ./FE2_Elasticity_Periodic -my_file_
 copy out put files to symlink on Desktop
 -------------------------------------------------------------
 cp out.vtk /mnt/home/Desktop/
-cp *.vtk  /mnt/home/Desktop/
+cp *.vtk  /mnt/home/Desktop/results/
 
 
