@@ -163,9 +163,9 @@ struct MyPrePostProcessFEMethodRhs: public FEMethod {
           ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
           ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
 	    //add F_lambda
-	    ierr = VecAXPY(snes_f,arc_ptr->get_FieldData(),arc_ptr->F_lambda); CHKERRQ(ierr);
+	    ierr = VecAXPY(snes_f,arc_ptr->getFieldData(),arc_ptr->F_lambda); CHKERRQ(ierr);
 	    ierr = VecAXPY(snes_f,-1.,F_body_force); CHKERRQ(ierr);
-	    PetscPrintf(PETSC_COMM_WORLD,"\tlambda = %6.4e\n",arc_ptr->get_FieldData());  
+	    PetscPrintf(PETSC_COMM_WORLD,"\tlambda = %6.4e\n",arc_ptr->getFieldData());  
 	    //snes_f norm
 	    double fnorm;
 	    ierr = VecNorm(snes_f,NORM_2,&fnorm); CHKERRQ(ierr);	
@@ -550,10 +550,10 @@ int main(int argc, char *argv[]) {
   ierr = MatGetSize(Aij,&M,&N); CHKERRQ(ierr);
   PetscInt m,n;
   MatGetLocalSize(Aij,&m,&n);
-  ArcLengthMatShell* mat_ctx = new ArcLengthMatShell(m_field,Aij,arc_ctx,"ELASTIC_MECHANICS");
+  ArcLengthMatShell* mat_ctx = new ArcLengthMatShell(Aij,arc_ctx,"ELASTIC_MECHANICS");
   Mat ShellAij;
   ierr = MatCreateShell(PETSC_COMM_WORLD,m,n,M,N,(void*)mat_ctx,&ShellAij); CHKERRQ(ierr);
-  ierr = MatShellSetOperation(ShellAij,MATOP_MULT,(void(*)(void))arc_length_mult_shell); CHKERRQ(ierr);
+  ierr = MatShellSetOperation(ShellAij,MATOP_MULT,(void(*)(void))ArcLengthMatMultShellOp); CHKERRQ(ierr);
 
   //body forces
   BodyFroceConstantField body_forces_methods(m_field);
@@ -600,11 +600,11 @@ int main(int argc, char *argv[]) {
   ierr = SNESGetKSP(snes,&ksp); CHKERRQ(ierr);
   PC pc;
   ierr = KSPGetPC(ksp,&pc); CHKERRQ(ierr);
-  PCShellCtx* pc_ctx = new PCShellCtx(Aij,ShellAij,arc_ctx);
+  PCArcLengthCtx* pc_ctx = new PCArcLengthCtx(Aij,ShellAij,arc_ctx);
   ierr = PCSetType(pc,PCSHELL); CHKERRQ(ierr);
   ierr = PCShellSetContext(pc,pc_ctx); CHKERRQ(ierr);
-  ierr = PCShellSetApply(pc,pc_apply_arc_length); CHKERRQ(ierr);
-  ierr = PCShellSetSetUp(pc,pc_setup_arc_length); CHKERRQ(ierr);
+  ierr = PCShellSetApply(pc,PCApplyArcLength); CHKERRQ(ierr);
+  ierr = PCShellSetSetUp(pc,PCSetupArcLength); CHKERRQ(ierr);
 
   //Rhs
   SnesCtx::loops_to_do_type& loops_to_do_Rhs = snes_ctx.get_loops_to_do_Rhs();
@@ -669,10 +669,10 @@ int main(int argc, char *argv[]) {
     double x0_nrm;
     ierr = VecNorm(arc_ctx->x0,NORM_2,&x0_nrm);  CHKERRQ(ierr);
     ierr = PetscPrintf(PETSC_COMM_WORLD,"\tRead x0_nrm = %6.4e dlambda = %6.4e\n",x0_nrm,arc_ctx->dlambda);
-    ierr = arc_ctx->set_alpha_and_beta(1,0); CHKERRQ(ierr);
+    ierr = arc_ctx->setAlphaBeta(1,0); CHKERRQ(ierr);
   } else {
-    ierr = arc_ctx->set_s(0); CHKERRQ(ierr);
-    ierr = arc_ctx->set_alpha_and_beta(0,1); CHKERRQ(ierr);
+    ierr = arc_ctx->setS(0); CHKERRQ(ierr);
+    ierr = arc_ctx->setAlphaBeta(0,1); CHKERRQ(ierr);
   }
   ierr = SnesRhs(snes,D,F,&snes_ctx); CHKERRQ(ierr);
 
@@ -694,17 +694,17 @@ int main(int argc, char *argv[]) {
 
     if(step == 1) {
       ierr = PetscPrintf(PETSC_COMM_WORLD,"Load Step %D step_size = %6.4e\n",step,step_size); CHKERRQ(ierr);
-      ierr = arc_ctx->set_s(step_size); CHKERRQ(ierr);
-      ierr = arc_ctx->set_alpha_and_beta(0,1); CHKERRQ(ierr);
+      ierr = arc_ctx->setS(step_size); CHKERRQ(ierr);
+      ierr = arc_ctx->setAlphaBeta(0,1); CHKERRQ(ierr);
       ierr = VecCopy(D,arc_ctx->x0); CHKERRQ(ierr);
       double dlambda;
       ierr = my_arc_method.calculate_init_dlambda(&dlambda); CHKERRQ(ierr);
       ierr = my_arc_method.set_dlambda_to_x(D,dlambda); CHKERRQ(ierr);
     } else if(step == 2) {
-      ierr = arc_ctx->set_alpha_and_beta(1,0); CHKERRQ(ierr);
+      ierr = arc_ctx->setAlphaBeta(1,0); CHKERRQ(ierr);
       ierr = my_arc_method.calculate_dx_and_dlambda(D); CHKERRQ(ierr);
       ierr = my_arc_method.calculate_lambda_int(step_size); CHKERRQ(ierr);
-      ierr = arc_ctx->set_s(step_size); CHKERRQ(ierr);
+      ierr = arc_ctx->setS(step_size); CHKERRQ(ierr);
       double dlambda = arc_ctx->dlambda;
       double dx_nrm;
       ierr = VecNorm(arc_ctx->dx,NORM_2,&dx_nrm);  CHKERRQ(ierr);
@@ -720,7 +720,7 @@ int main(int argc, char *argv[]) {
       //step_size0_1/step_size0 = step_stize1/step_size
       //step_size0_1 = step_size0*(step_stize1/step_size)
       step_size *= reduction;
-      ierr = arc_ctx->set_s(step_size); CHKERRQ(ierr);
+      ierr = arc_ctx->setS(step_size); CHKERRQ(ierr);
       double dlambda = reduction*arc_ctx->dlambda; double dx_nrm;
       ierr = VecScale(arc_ctx->dx,reduction); CHKERRQ(ierr);
       ierr = VecNorm(arc_ctx->dx,NORM_2,&dx_nrm);  CHKERRQ(ierr);
@@ -760,7 +760,7 @@ int main(int argc, char *argv[]) {
     ierr = SNESGetConvergedReason(snes,&reason); CHKERRQ(ierr);
     
     if (reason < 0) {
-      ierr = arc_ctx->set_alpha_and_beta(1,0); CHKERRQ(ierr);
+      ierr = arc_ctx->setAlphaBeta(1,0); CHKERRQ(ierr);
       reduction =0.1;
       converged_state = false;
       continue;

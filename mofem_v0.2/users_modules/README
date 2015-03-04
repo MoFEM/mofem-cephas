@@ -1,11 +1,19 @@
-Pleas add your config files to ModulesList.cmake fiele. 
+Notes:
+
+Users modules isolated form MoFEM library by independent configuration and
+build method. Some functions and classes proven to work will be moved to MoFEM
+finite element library.
+
+Adding your module:
+
+Pleas add your configure files to ModulesList.cmake file. 
 
 In each module you can have two type directory data, 
   1) Simple
   2) Extended
 
-1) Simple ditectory structure consist no subdrectories. e.g. elasticity
-2) Extended data struture consist subdirectories, e.g. homogenisation
+1) Simple directory structure consist no subdirectories. e.g. elasticity
+2) Extended data structure consist subdirectories, e.g. homogenisation
 
   / <-- programs from which you build executable
   -> /atom_tests
@@ -14,6 +22,6 @@ In each module you can have two type directory data,
   -> /meshes
   -> /data
   
-Each module should have README fiele.
+Each module should have README file.
 
 

@@ -221,7 +221,10 @@ namespace MoFEM {
       if(eiit!=hi_eiit) {
         FaceEdgeOrder[ee] = eiit->get_max_order();
         if(NBEDGE_H1(FaceEdgeOrder[ee])>0) {
-          assert(3*NBEDGE_H1(FaceEdgeOrder[ee]) == distance(eiit,hi_eiit));
+//          cout<<"FaceEdgeOrder[ee] "<<FaceEdgeOrder[ee]<<endl;
+//          cout<<"NBEDGE_H1(FaceEdgeOrder[ee]) "<<NBEDGE_H1(FaceEdgeOrder[ee])<<endl;
+//          cout<<"distance(eiit,hi_eiit) "<<distance(eiit,hi_eiit)<<endl;
+//          assert(rank_field*NBEDGE_H1(FaceEdgeOrder[ee]) == distance(eiit,hi_eiit));
           RowGlob[row_mat].resize(distance(eiit,hi_eiit));
           ColGlob[row_mat].resize(distance(col_eiit,col_hi_eiit));
           //                    cout<<"RowGlob[row_mat].size() "<<RowGlob[row_mat].size()<<endl;
@@ -308,7 +311,7 @@ namespace MoFEM {
       //            cout<<"RowGlob[row_mat].size() "<<RowGlob[row_mat].size()<<endl;
       //            cout<<"ColGlob[row_mat].size() "<<ColGlob[row_mat].size()<<endl;
       int face_order = fiit->get_max_order();
-      assert((unsigned int)3*NBFACE_H1(face_order)==distance(fiit,hi_fiit));
+//      assert((unsigned int)3*NBFACE_H1(face_order)==distance(fiit,hi_fiit));
       if(NBFACE_H1(face_order)>0) {
         for(;fiit!=hi_fiit;fiit++) {
           RowGlob[row_mat][fiit->get_EntDofIdx()]=fiit->get_petsc_gloabl_dof_idx();
@@ -709,7 +712,6 @@ namespace MoFEM {
       case CTX_SNESNONE: {
         ierr = Lhs(); CHKERRQ(ierr);
         ierr = Rhs(); CHKERRQ(ierr);
-        ierr = Rhs_fext(); CHKERRQ(ierr);
       }
         break;
       case CTX_SNESSETFUNCTION: {

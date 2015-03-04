@@ -246,7 +246,7 @@ PetscErrorCode DMLocalToGlobalEnd_MoFEM(DM,Vec,InsertMode,Vec);
 #endif //__DMMMOFEM_H
 
 /***************************************************************************//**
- * \defgroup dm MoFem discreat manager
+ * \defgroup dm MoFEM discreat manager
  ******************************************************************************/
 
 

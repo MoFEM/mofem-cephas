@@ -1,12 +1,7 @@
 /** 
  * \brief Operators and data structures for thermal analys
  *
- * Implementation of nonliear eleastic element.
- *
- */
-
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
+ * Implementation of nonlinear elastic element.
  *
  * This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
@@ -31,14 +26,14 @@
 
 namespace MoFEM {
 
-/** \brief struture grouping operators and data used for calulation of mass (convective) element
-  * \ingroup nonlinear_eleastic_elem
+/** \brief structure grouping operators and data used for calculation of mass (convective) element
+  * \ingroup nonlinear_elastic_elem
   *
   * In order to assemble matrices and right hand vectors, the loops over
-  * elements, enetities over that elememnts and finally loop over intergration
+  * elements, entities over that elements and finally loop over integration
   * points are executed.
   *
-  * Following implementation separte those three cegories of loops and to eeach
+  * Following implementation separate those three categories of loops and to each
   * loop attach operator.
   *
   */
@@ -46,9 +41,13 @@ struct NonlinearElasticElement {
 
   /// \brief  definition of volume element
   struct MyVolumeFE: public TetElementForcesAndSourcesCore {
+
+    Mat A;
+    Vec F;
+
     MyVolumeFE(FieldInterface &_mField);
     
-    /** \brief it is used to calculate nb. of Gauss integartion points
+    /** \brief it is used to calculate nb. of Gauss integration points
      *
      * for more details pleas look 
      *   Reference:
@@ -89,7 +88,7 @@ struct NonlinearElasticElement {
     double PoissonRatio;
     Range tEts; ///< constatins elements in block set
   }; 
-  map<int,BlockData> setOfBlocks; ///< maps block set id with appropiate BlockData
+  map<int,BlockData> setOfBlocks; ///< maps block set id with appropriate BlockData
 
   /** \brief common data used by volume elements
     * \infroup mofem_forces_and_sources 
@@ -115,9 +114,9 @@ struct NonlinearElasticElement {
       vector<ublas::vector<double> > &values_at_gauss_pts,
       vector<ublas::matrix<double> > &gardient_at_gauss_pts);
 
-    /** \brief operator calulating deformation gradient
+    /** \brief operator calculating deformation gradient
       *
-      * temerature gradient is calculated multiplying direvatives of shape functions by degrees of freedom
+      * temperature gradient is calculated multiplying derivatives of shape functions by degrees of freedom
       */
     PetscErrorCode doWork(
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data); 
@@ -303,12 +302,12 @@ struct NonlinearElasticElement {
     string spatial_position_field_name,
     string material_position_field_name = "MESH_NODE_POSITIONS",bool ale = false);
 
-  /** \brief Set opperators to calculate left hand tangent matrix and right hand residual
+  /** \brief Set operators to calculate left hand tangent matrix and right hand residual
     *
-    * \param fun class needed to calulate Piola Kirchoff I Sterss tensor
-    * \param spatial_position_field_name name of appraximation field
+    * \param fun class needed to calculate Piola Kirchoff I Stress tensor
+    * \param spatial_position_field_name name of approximation field
     * \param material_position_field_name name of field to define geometry
-    * \param ale true if arbitray lagrangian eulerian formulation
+    * \param ale true if arbitrary Lagrangian Eulerian formulation
     * \param field_disp true if approximation field represents displacements otherwise it is field of spatial positions
     */
   PetscErrorCode setOperators(

@@ -140,7 +140,7 @@ int main(int argc, char *argv[]) {
   //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
   PetscViewer viewer;
-  ierr = PetscViewerASCIIOpen(PETSC_COMM_WORLD,"forces_and_sources_fluid_pressure_element.txt",&viewer); CHKERRQ(ierr);
+  ierr = PetscViewerASCIIOpen(PETSC_COMM_WORLD,"fluid_pressure_element.txt",&viewer); CHKERRQ(ierr);
   ierr = VecChop(F,1e-4); CHKERRQ(ierr);
   ierr = VecView(F,viewer); CHKERRQ(ierr);
   ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
@@ -173,7 +173,7 @@ int main(int argc, char *argv[]) {
 
   EntityHandle out_meshset;
   rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
-  ierr = m_field.problem_get_FE("TEST_PROBLEM","FLUID_PRESSURE_FE",out_meshset); CHKERRQ(ierr);
+  ierr = m_field.get_problem_finite_elements_entities("TEST_PROBLEM","FLUID_PRESSURE_FE",out_meshset); CHKERRQ(ierr);
   rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
   rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);*/
   

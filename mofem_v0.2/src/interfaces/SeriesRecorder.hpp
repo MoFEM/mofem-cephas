@@ -1,4 +1,4 @@
-/** \file FieldInterface.hpp
+/** \file SeriesRecorder.hpp
  * \brief MoFEM interface 
  * 
  * Low level data structures not used directly by user

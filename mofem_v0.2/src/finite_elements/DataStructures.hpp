@@ -3,7 +3,7 @@
 *
 * DESCRIPTION: FIXME
 *
-* This is not exactly procedure for linear elatic dynamics, since jacobian is
+* This is not exactly procedure for linear elastic dynamics, since Jacobian is
 * evaluated at every time step and snes procedure is involved. However it is
 * implemented like that, to test methodology for general nonlinear problem.
 *
@@ -41,8 +41,8 @@ namespace MoFEM {
 struct DataForcesAndSurcesCore {
 
   // shallow adaptor classes
-  typedef ublas::vector<FieldData,ublas::shallow_array_adaptor<FieldData> > VectorAdaptor;
-  typedef ublas::matrix<FieldData,ublas::row_major,ublas::shallow_array_adaptor<FieldData> > MatrixAdaptor;
+  typedef ublas::vector<double,ublas::shallow_array_adaptor<double> > VectorAdaptor;
+  typedef ublas::matrix<double,ublas::row_major,ublas::shallow_array_adaptor<double> > MatrixAdaptor;
 
   /** \brief data on single entity
     */
@@ -51,67 +51,67 @@ struct DataForcesAndSurcesCore {
     EntData(): sEnse(0),oRder(0) {};
     virtual ~EntData() {}
 
-    /// \brief get enetity sense, need to calculate shape functions with conforming approximation fields
+    /// \brief get entity sense, need to calculate shape functions with conforming approximation fields
     virtual int getSense() const { return sEnse; }
 
     /// \brief get approximation order
     virtual ApproximationOrder getOrder() const { return oRder; }
 
-    /// \brief get gloabl inidces of dofs on entity
+    /// \brief get global indices of dofs on entity
     virtual const ublas::vector<DofIdx>& getIndices() const { return iNdices; }
 
     /// \brief get dofs values 
-    virtual const ublas::vector<FieldData>& getFieldData() const { return fieldData; }
+    virtual const ublas::vector<double>& getFieldData() const { return fieldData; }
 
-    /// \brief get dofs data strature FEDofMoFEMEntity
+    /// \brief get dofs data stature FEDofMoFEMEntity
     virtual const ublas::vector<const FEDofMoFEMEntity*>& getFieldDofs() const { return dOfs; }
 
     /** \brief get shape functions
       * this return matrix (nb. of rows is equal to nb. of Gauss pts, nb. of
       * columns is equalt to number of shape functions on this entity 
       */
-    virtual const ublas::matrix<FieldData>& getN() const { return N; }
+    virtual const ublas::matrix<double>& getN() const { return N; }
 
-    /** \brief get direvatives of shape fucntiosn
+    /** \brief get derivatives of shape functions
      *
-     * Matrix at rows has nb. of Gauss pts, at columns it has direvative of
-     * shape functions. Colummns are orgasised as follows, [ dN1/dx, dN1/dy,
+     * Matrix at rows has nb. of Gauss pts, at columns it has derivative of
+     * shape functions. Columns are structured as follows, [ dN1/dx, dN1/dy,
      * dN1/dz, dN2/dx, dN2/dy, dN2/dz, ... ]
      *
      * Note that shape functions are calculated in file H1.c
-     * Above description not apply for direvatives of nodal functions, since
-     * direvative of nodal functions in case of simplexes, EDGES, TRIANGLES and
+     * Above description not apply for derivatives of nodal functions, since
+     * derivative of nodal functions in case of simplexes, EDGES, TRIANGLES and
      * TETS are constant. So that matrix rows represents nb. of shape
-     * functions, columns are direvatives. Nb. of columns depend on element
+     * functions, columns are derivatives. Nb. of columns depend on element
      * dimension, for EDGES is one, for TRIS is 2 and TETS is 3. 
      *
      * Note that for node element this function make no sense.
      *
      */   
-    virtual const ublas::matrix<FieldData>& getDiffN() const { return diffN; }
+    virtual const ublas::matrix<double>& getDiffN() const { return diffN; }
 
     virtual int& getSense() { return sEnse; }
     virtual ApproximationOrder& getOrder() { return oRder; }
     virtual ublas::vector<DofIdx>& getIndices() { return iNdices; }
-    virtual ublas::vector<FieldData>& getFieldData() { return fieldData; }
+    virtual ublas::vector<double>& getFieldData() { return fieldData; }
     virtual ublas::vector<const FEDofMoFEMEntity*>& getFieldDofs() { return dOfs; }
-    virtual ublas::matrix<FieldData>& getN() { return N; }
+    virtual ublas::matrix<double>& getN() { return N; }
 
-    /** \brief get direvatives of shape functions
+    /** \brief get derivatives of shape functions
      *
      */
-    virtual ublas::matrix<FieldData>& getDiffN() { return diffN; }
+    virtual ublas::matrix<double>& getDiffN() { return diffN; }
 
     /// \brief get shape functions at Gauss pts
     inline const VectorAdaptor getN(int gg) {
       int size = getN().size2();
-      FieldData *data = &getN()(gg,0);
-      return VectorAdaptor(size,ublas::shallow_array_adaptor<FieldData>(size,data));
+      double *data = &getN()(gg,0);
+      return VectorAdaptor(size,ublas::shallow_array_adaptor<double>(size,data));
     }
 
-    /** \brief get direvative of shape functions at Gauss pts
+    /** \brief get derivative of shape functions at Gauss pts
       *
-      * retruned matrx on rows has shape functions, in columen its direvatives.
+      * returned matrix on rows has shape functions, in column its derivatives.
       *
       * \param gg nb. of Gauss pts.
       *
@@ -120,23 +120,23 @@ struct DataForcesAndSurcesCore {
       if(getN().size1() == getDiffN().size1()) {
 	int size = getN().size2();	
 	int dim = getDiffN().size2()/size;
-	FieldData *data = &getDiffN()(gg,0);
-	return MatrixAdaptor(getN().size2(),dim,ublas::shallow_array_adaptor<FieldData>(getDiffN().size2(),data));
+	double *data = &getDiffN()(gg,0);
+	return MatrixAdaptor(getN().size2(),dim,ublas::shallow_array_adaptor<double>(getDiffN().size2(),data));
       } else {
-	// in some cases, f.e. for direvatives of nodal shape functions ony one
+	// in some cases, f.e. for derivatives of nodal shape functions at only one
 	// gauss point is needed
-	return MatrixAdaptor(getN().size1(),getN().size2(),ublas::shallow_array_adaptor<FieldData>(getDiffN().data().size(),&getDiffN().data()[0]));
+	return MatrixAdaptor(getN().size1(),getN().size2(),ublas::shallow_array_adaptor<double>(getDiffN().data().size(),&getDiffN().data()[0]));
       }
     }
 
     /** \brief get shape functions at Gauss pts
       *
-      * Note that multi field element, two diffren field can have different
-      * approximation orders. Since we use hierarhical approximation basis,
-      * shape functions are calulared once for element, using maximal
-      * apprimation order on given entity.
+      * Note that multi field element, two different field can have different
+      * approximation orders. Since we use hierarchical approximation basis,
+      * shape functions are calculated once for element, using maximal
+      * approximation order on given entity.
       *
-      * Specifing addional parameters, only firsty nb_dofs are indicated as a
+      * Specifying add ional parameters, only first nb_dofs are indicated as a
       * row of shape function matrix.
       *
       * \param gg nb. of Gauss point
@@ -145,18 +145,18 @@ struct DataForcesAndSurcesCore {
       */
     inline const VectorAdaptor getN(int gg,const int nb_dofs) {
       (void)getN()(gg,nb_dofs-1); // throw error if nb_dofs is to big
-      FieldData *data = &getN()(gg,0);
-      return VectorAdaptor(nb_dofs,ublas::shallow_array_adaptor<FieldData>(nb_dofs,data));
+      double *data = &getN()(gg,0);
+      return VectorAdaptor(nb_dofs,ublas::shallow_array_adaptor<double>(nb_dofs,data));
     }
 
     /** \brief get derivatives of shape functions at Gauss pts
       *
-      * Note that multi field element, two diffren field can have different
-      * approximation orders. Since we use hierarhical approximation basis,
-      * shape functions are calulared once for element, using maximal
-      * apprimation order on given entity.
+      * Note that multi field element, two different field can have different
+      * approximation orders. Since we use hierarchical approximation basis,
+      * shape functions are calculated once for element, using maximal
+      * approximation order on given entity.
       *
-      * Specifing addional parameters, only firsty nb_dofs are indicated as a
+      * Specifying add ional parameters, only first nb_dofs are indicated as a
       * row of shape function derivative matrix.
       *
       * \param gg nb. of Gauss point
@@ -167,30 +167,30 @@ struct DataForcesAndSurcesCore {
       if(getN().size1() == getDiffN().size1()) {
 	(void)getN()(gg,nb_dofs-1); // throw error if nb_dofs is to big
 	int dim = getDiffN().size2()/getN().size2();
-	FieldData *data = &getDiffN()(gg,0);
-	return MatrixAdaptor(nb_dofs,dim,ublas::shallow_array_adaptor<FieldData>(dim*nb_dofs,data));
+	double *data = &getDiffN()(gg,0);
+	return MatrixAdaptor(nb_dofs,dim,ublas::shallow_array_adaptor<double>(dim*nb_dofs,data));
       } else {
-	// in some cases, f.e. for direvatives of nodal shape functions ony one
+	// in some cases, f.e. for derivatives of nodal shape functions ony one
 	// gauss point is needed
-	return MatrixAdaptor(getN().size1(),getN().size2(),ublas::shallow_array_adaptor<FieldData>(getDiffN().data().size(),&getDiffN().data()[0]));
+	return MatrixAdaptor(getN().size1(),getN().size2(),ublas::shallow_array_adaptor<double>(getDiffN().data().size(),&getDiffN().data()[0]));
       }
     }
 
     /** \brief get shape functions for Hdiv space 
       */
-    inline const ublas::matrix<FieldData>&  getHdivN() const { return getN(); };
+    inline const ublas::matrix<double>&  getHdivN() const { return getN(); };
 
-    /** \brief get direvatives of shape functions for Hdiv space 
+    /** \brief get derivatives of shape functions for Hdiv space 
       */
-    inline const ublas::matrix<FieldData>&  getDiffHdivN() const { return getDiffN(); };
+    inline const ublas::matrix<double>&  getDiffHdivN() const { return getDiffN(); };
 
     /** \brief get shape functions for Hdiv space 
       */
-    inline ublas::matrix<FieldData>&  getHdivN() { return getN(); };
+    inline ublas::matrix<double>&  getHdivN() { return getN(); };
 
-    /** \brief get direvatives of shape functions for Hdiv space 
+    /** \brief get derivatives of shape functions for Hdiv space 
       */
-    inline ublas::matrix<FieldData>&  getDiffHdivN() { return getDiffN(); };
+    inline ublas::matrix<double>&  getDiffHdivN() { return getDiffN(); };
 
     /** \brief get Hdiv of shape functions at Gauss pts
       *
@@ -201,8 +201,8 @@ struct DataForcesAndSurcesCore {
     inline const MatrixAdaptor getHdivN(int gg) {
       int dim = 3;
       int nb_dofs = getHdivN().size2()/dim;
-      FieldData *data = &getHdivN()(gg,0);
-      return MatrixAdaptor(nb_dofs,dim,ublas::shallow_array_adaptor<FieldData>(dim*nb_dofs,data));
+      double *data = &getHdivN()(gg,0);
+      return MatrixAdaptor(nb_dofs,dim,ublas::shallow_array_adaptor<double>(dim*nb_dofs,data));
     }
 
     /** \brief get DiffHdiv of shape functions at Gauss pts
@@ -213,8 +213,8 @@ struct DataForcesAndSurcesCore {
       */
     inline const MatrixAdaptor getDiffHdivN(int gg) {
       int nb_dofs = getDiffHdivN().size2()/9;
-      FieldData *data = &getDiffHdivN()(gg,0);
-      return MatrixAdaptor(nb_dofs,9,ublas::shallow_array_adaptor<FieldData>(9*nb_dofs,data));
+      double *data = &getDiffHdivN()(gg,0);
+      return MatrixAdaptor(nb_dofs,9,ublas::shallow_array_adaptor<double>(9*nb_dofs,data));
     }
 
     /** \brief get DiffHdiv of shape functions at Gauss pts
@@ -224,8 +224,8 @@ struct DataForcesAndSurcesCore {
       *
       */
     inline const MatrixAdaptor getDiffHdivN(int dof,int gg) {
-      FieldData *data = &getDiffHdivN()(gg,9*dof);
-      return MatrixAdaptor(3,3,ublas::shallow_array_adaptor<FieldData>(9,data));
+      double *data = &getDiffHdivN()(gg,9*dof);
+      return MatrixAdaptor(3,3,ublas::shallow_array_adaptor<double>(9,data));
     }
 
     friend ostream& operator<<(ostream& os,const DataForcesAndSurcesCore::EntData &e);
@@ -235,9 +235,9 @@ struct DataForcesAndSurcesCore {
     ApproximationOrder oRder;
     ublas::vector<DofIdx> iNdices;
     ublas::vector<const FEDofMoFEMEntity*> dOfs;
-    ublas::vector<FieldData> fieldData;
-    ublas::matrix<FieldData> N;
-    ublas::matrix<FieldData> diffN;
+    ublas::vector<double> fieldData;
+    ublas::matrix<double> N;
+    ublas::matrix<double> diffN;
 
   };
 
@@ -255,13 +255,13 @@ struct DataForcesAndSurcesCore {
 
 };
 
-/** \brief this class derive data form other dats strucrure
+/** \brief this class derive data form other data structure
   * \ingroup mofem_forces_and_sources
   *
   *
-  * It behavies like normal data struture it is used to share infromation with
-  * other data strutures abot shape functons. Dofs values, approx. order and
-  * incices are not shared.
+  * It behaves like normal data structure it is used to share information with
+  * other data structures about shape functions. Dofs values, approx. order and
+  * indices are not shared.
   *
   * shape functions, senses are shared with other data structure.
   *
@@ -274,25 +274,25 @@ struct DerivedDataForcesAndSurcesCore: public DataForcesAndSurcesCore  {
       entData(ent_data),oRder(0) {}
     const ublas::vector<DofIdx>& getIndices() const { return iNdices; }
     ublas::vector<DofIdx>& getIndices() { return iNdices; }
-    const ublas::vector<FieldData>& getFieldData() const { return fieldData; }
+    const ublas::vector<double>& getFieldData() const { return fieldData; }
     const ublas::vector<const FEDofMoFEMEntity*>& getFieldDofs() const { return dOfs; }
-    ublas::vector<FieldData>& getFieldData() { return fieldData; }
+    ublas::vector<double>& getFieldData() { return fieldData; }
     ublas::vector<const FEDofMoFEMEntity*>& getFieldDofs() { return dOfs; }
     ApproximationOrder getOrder() const { return oRder; }
     ApproximationOrder& getOrder() { return oRder; }
 
     inline int getSense() const { return entData.getSense(); }
-    inline const ublas::matrix<FieldData>& getN() const { return entData.getN(); }
-    inline const ublas::matrix<FieldData>& getDiffN() const { return entData.getDiffN(); }
-    inline ublas::matrix<FieldData>& getN() { return entData.getN(); }
-    inline ublas::matrix<FieldData>& getDiffN() { return entData.getDiffN(); }
-    inline const ublas::matrix<FieldData>&  getHdivN() const { return entData.getHdivN(); };
-    inline ublas::matrix<FieldData>&  getHdivN() { return entData.getHdivN(); };
+    inline const ublas::matrix<double>& getN() const { return entData.getN(); }
+    inline const ublas::matrix<double>& getDiffN() const { return entData.getDiffN(); }
+    inline ublas::matrix<double>& getN() { return entData.getN(); }
+    inline ublas::matrix<double>& getDiffN() { return entData.getDiffN(); }
+    inline const ublas::matrix<double>&  getHdivN() const { return entData.getHdivN(); };
+    inline ublas::matrix<double>&  getHdivN() { return entData.getHdivN(); };
 
     private:
     ApproximationOrder oRder;
     ublas::vector<DofIdx> iNdices;
-    ublas::vector<FieldData> fieldData;
+    ublas::vector<double> fieldData;
     ublas::vector<const FEDofMoFEMEntity*> dOfs;
 
   };
@@ -301,8 +301,9 @@ struct DerivedDataForcesAndSurcesCore: public DataForcesAndSurcesCore  {
 
 };
 
-/** \brief base clas to get information form mofem and but them into DataForcesAndSurcesCore
+/** \brief structure to get information form mofem into DataForcesAndSurcesCore
   * \ingroup mofem_forces_and_sources
+  * 
   */
 struct ForcesAndSurcesCore: public FEMethod {
 
@@ -355,11 +356,11 @@ struct ForcesAndSurcesCore: public FEMethod {
   //data
   PetscErrorCode getNodesFieldData(
     const string &field_name,
-    FEDofMoFEMEntity_multiIndex &dofs,ublas::vector<FieldData> &nodes_data);
+    FEDofMoFEMEntity_multiIndex &dofs,ublas::vector<double> &nodes_data);
   PetscErrorCode getTypeFieldData(
     const string &field_name,
     FEDofMoFEMEntity_multiIndex &dofs,
-    EntityType type,int side_number,ublas::vector<FieldData> &ent_field_data);
+    EntityType type,int side_number,ublas::vector<double> &ent_field_data);
   PetscErrorCode getTypeFieldData(
     const string &field_name,FEDofMoFEMEntity_multiIndex &dofs,
     EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data);
@@ -402,17 +403,17 @@ struct ForcesAndSurcesCore: public FEMethod {
     const double *G_X,const double *G_Y,const double *G_Z,const int G_DIM);
 
 
-  ublas::matrix<ublas::matrix<FieldData> > N_face_edge;
-  ublas::vector<ublas::matrix<FieldData> > N_face_bubble;
-  ublas::vector<ublas::matrix<FieldData> > N_volume_edge;
-  ublas::vector<ublas::matrix<FieldData> > N_volume_face;
-  ublas::matrix<FieldData> N_volume_bubble;
+  ublas::matrix<ublas::matrix<double> > N_face_edge;
+  ublas::vector<ublas::matrix<double> > N_face_bubble;
+  ublas::vector<ublas::matrix<double> > N_volume_edge;
+  ublas::vector<ublas::matrix<double> > N_volume_face;
+  ublas::matrix<double> N_volume_bubble;
 
-  ublas::matrix<ublas::matrix<FieldData> > diffN_face_edge;
-  ublas::vector<ublas::matrix<FieldData> > diffN_face_bubble;
-  ublas::vector<ublas::matrix<FieldData> > diffN_volume_edge;
-  ublas::vector<ublas::matrix<FieldData> > diffN_volume_face;
-  ublas::matrix<FieldData> diffN_volume_bubble;
+  ublas::matrix<ublas::matrix<double> > diffN_face_edge;
+  ublas::vector<ublas::matrix<double> > diffN_face_bubble;
+  ublas::vector<ublas::matrix<double> > diffN_volume_edge;
+  ublas::vector<ublas::matrix<double> > diffN_volume_face;
+  ublas::matrix<double> diffN_volume_bubble;
 
 
   /** \brief computes approximation functions for tetrahedral and H1 space
@@ -453,23 +454,41 @@ struct ForcesAndSurcesCore: public FEMethod {
     DataForcesAndSurcesCore &data,
     const double *G_X,const double *G_Y,const int G_DIM);
 
-  /** \brief it is used to calculate nb. of Gauss integartion points
+  /** \brief it is used to calculate nb. of Gauss integration points
    *
-   * for more details pleas look 
-   *   Reference:
+   * This function in general should be overload, returning integration rank
+   * depending on operator type. Integration rule should be set to
+   * integrate matrix and vector exactly.
    *
-   * Albert Nijenhuis, Herbert Wilf,
-   * Combinatorial Algorithms for Computers and Calculators,
-   * Second Edition,
-   * Academic Press, 1978,
-   * ISBN: 0-12-519260-6,
+   * If function return -1
+   * \code
+   * int getRule(int order) { return -1; };
+   * \endcode
+   * then, fuction \codes setGaussPts(order) \endcode is called.   
+   *
+   * for more details pleas look Reference:
+   *
+   * Albert Nijenhuis, Herbert Wilf, Combinatorial Algorithms for Computers and
+   * Calculators, Second Edition, Academic Press, 1978, ISBN: 0-12-519260-6,
    * LC: QA164.N54.
    *
-   * More details about algorithm 
+   * More details about algorithm
    * http://people.sc.fsu.edu/~jburkardt/cpp_src/gm_rule/gm_rule.html
-  **/
-  virtual int getRule(int order) { return order; };
+  **/ virtual int getRule(int order) { return order; };
 
+  /** \brief set user specific integration rule
+    *
+    * User sets 
+    * \code 
+    * ublas::matrix<double> gaussPts;
+    * \endcode
+    * where 
+    * \code
+    * gaussPts.resize(dim+1,nb_gauss_pts);
+    * \endcode
+    * number rows represents local coordinates of integration points
+    * in reference element, where last index in row is for integration weight.
+    */
   virtual PetscErrorCode setGaussPts(int order) {
     PetscFunctionBegin;
     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"sorry, not implemented");
