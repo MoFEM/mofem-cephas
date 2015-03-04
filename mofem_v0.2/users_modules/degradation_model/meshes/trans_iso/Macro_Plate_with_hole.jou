@@ -69,7 +69,7 @@ block 2 attribute index 1 0.5e-9
 # Bounary Conditions for Mechanical Macro problem
 create displacement on surface 14 18 dof 1 fix 0
 create displacement on surface 12 dof 2 fix 0
-#create displacement on surface 13 16 dof 3 fix 0
+create displacement on surface 13 16 dof 3 fix 0
 create force on surface 19 16 vector 0 1e3 0 0 0 0
 
 #Here thermal conductivity and moisture diffusivity homogenised matrices will be read directly from input RVE binary files so no need to defined material properties here
