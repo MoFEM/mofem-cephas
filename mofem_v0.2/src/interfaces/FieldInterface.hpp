@@ -941,12 +941,12 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode build_fields(int verb = -1) = 0;
 
   /** list dofs
-    * \ingroup mofem_dofs
+    * \ingroup mofem_field
    */
   virtual PetscErrorCode list_dofs_by_field_name(const string &name) const = 0;
 
   /** clear fields
-    * \ingroup mofem_dofs
+    * \ingroup mofem_field
    */
   virtual PetscErrorCode clear_dofs_fields(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1) = 0;
 
@@ -956,7 +956,7 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode clear_ents_fields(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1) = 0;
 
   /** clear fields
-    * \ingroup mofem_dofs
+    * \ingroup mofem_field
    */
   virtual PetscErrorCode clear_dofs_fields(const string &name,const Range ents,int verb = -1) = 0;
 
@@ -1089,7 +1089,7 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode block_problem(const string &name,const vector<string> block_problems,int verb = -1) = 0;
 
   /** \brief determine ghost nodes
-   * \ingroup mofem_dofs
+   * \ingroup mofem_field
    *
    * \param name problem name 
    */
@@ -1153,16 +1153,37 @@ struct FieldInterface: public FieldUnknownInterface {
   /**
     * \brief create scatter for vectors form one to another problem
     *
+    * User specify what name of field on one problem is scattered to another.
+    *
+    * \ingroup mofem_vectors
+    *
+    * \param xin vector
+    * \param x_proble problem name
+    * \param x_field name
+    * \param yin vector
+    * \param y_problem problem name
+    * \param y_field_name
+    * \param newctx scatter
+    */
+  virtual PetscErrorCode VecScatterCreate(
+    Vec xin,const string &x_problem,const string &x_field_name,RowColData x_rc,
+    Vec yin,const string &y_problem,const string &y_field_name,RowColData y_rc,VecScatter *newctx,int verb = -1) = 0;
+
+  /**
+    * \brief create scatter for vectors form one to another problem
+    * \ingroup mofem_vectors
+    *
     * \param xin vector
     * \param x_proble problem name
     * \param yin vector
     * \param y_problem problem name
     * \param newctx scatter
     */
-  virtual PetscErrorCode VecScatterCreate(Vec xin,string &x_problem,RowColData x_rc,Vec yin,string &y_problem,RowColData y_rc,VecScatter *newctx,int verb = -1) = 0;
+  virtual PetscErrorCode VecScatterCreate(Vec xin,const string &x_problem,RowColData x_rc,Vec yin,const string &y_problem,RowColData y_rc,VecScatter *newctx,int verb = -1) = 0;
 
   /** 
     * \brief set values of vector from/to meshdatabase
+    * \ingroup mofem_vectors
     *
     * \param pointer to problem struture
     * \param RowColData for row or column:e (i.e. Row,Col)
@@ -1179,6 +1200,7 @@ struct FieldInterface: public FieldUnknownInterface {
 
   /** 
     * \brief set values of vector from/to meshdatabase
+    * \ingroup mofem_vectors
     *
     * \param name of the problem
     * \param RowColData for row or column:e (i.e. Row,Col)
@@ -1193,9 +1215,9 @@ struct FieldInterface: public FieldUnknownInterface {
     */
   virtual PetscErrorCode set_local_VecCreateGhost(const string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) = 0;
 
- 
   /** 
     * \brief set values of vector from/to meshdatabase
+    * \ingroup mofem_vectors
     *
     * \param pointer to porblem struture
     * \param RowColData for row or column (i.e. Row,Col)
@@ -1210,6 +1232,7 @@ struct FieldInterface: public FieldUnknownInterface {
 
   /** 
     * \brief set values of vector from/to meshdatabase
+    * \ingroup mofem_vectors
     *
     * \param name of the problem
     * \param RowColData for row or column (i.e. Row,Col)
@@ -1223,6 +1246,7 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode set_global_VecCreateGhost(const string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) = 0;
 
   /** \brief Copy vector to field which is not part of the problem
+    * \ingroup mofem_vectors
     *
     * \param pointer to poroblem multi_index 
     * \param field_name field name used for indexing petsc vectors used in the problem
@@ -1239,6 +1263,7 @@ struct FieldInterface: public FieldUnknownInterface {
     const MoFEMProblem *problem_ptr,const string& fiel_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1) = 0;
 
   /** \brief Copy vector to field which is not part of the problem
+    * \ingroup mofem_vectors
     *
     * \param name problem name
     * \param field_name field name used for indexing petsc vectors used in the problem
@@ -1255,6 +1280,7 @@ struct FieldInterface: public FieldUnknownInterface {
     const string &name,const string& field_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1) = 0;
 
   /** \brief Copy vector to field which is not part of the problem
+    * \ingroup mofem_vectors
     *
     * \param name problem name
     * \param field_name field name used for indexing petsc vectors used in the problem
@@ -1271,7 +1297,7 @@ struct FieldInterface: public FieldUnknownInterface {
     const string &name,const string& field_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1) = 0;
 
   /** \brief axpy fields 
-    * \ingroup mofem_field_operators
+    * \ingroup mofem_field_algebra
     *
     * field_y = field_y + alpha*field_x
     *
@@ -1285,7 +1311,7 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode field_axpy(const double alpha,const string& fiel_name_x,const string& field_name_y,bool error_if_missing = false,bool creat_if_missing = false) = 0;
 
   /** \brief scale field
-    * \ingroup mofem_field_operators
+    * \ingroup mofem_field_algebra
     * 
     * \param alpha is a scaling factor
     * \field_name  is a field name
@@ -1294,7 +1320,7 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode field_scale(const double alpha,const string& field_name) = 0;
 
   /** \brief set field 
-    * \ingroup mofem_field_operators
+    * \ingroup mofem_field_algebra
     *
     * field_y = val
     *
@@ -1306,7 +1332,7 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode set_field(const double val,const EntityType type,const string& field_name) = 0;
 
   /** \brief set field 
-    * \ingroup mofem_field_operators
+    * \ingroup mofem_field_algebra
     *
     * field_y = val
     *
@@ -1383,6 +1409,7 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode problem_basic_method_postProcess(const string &problem_name,BasicMethod &method,int verb = -1) = 0;
 
   /** \brief Make a loop over finite elements. 
+   * \ingroup mofem_loops
    *
    * This function is like swiss knife, is can be used to post-processing or matrix
    * and vectors assembly. It makes loop over given finite element for given
@@ -1402,6 +1429,7 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode loop_finite_elements(const string &problem_name,const string &fe_name,FEMethod &method,int verb = -1) = 0;
 
   /** \brief Make a loop over finite elements on partitions from upper to lower rank. 
+   * \ingroup mofem_loops
    *
    * This function is like swiss knife, is can be used to post-processing or matrix
    * and vectors assembly. It makes loop over given finite element for given
@@ -1421,6 +1449,7 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode loop_finite_elements(const MoFEMProblem *problem_ptr,const string &fe_name,FEMethod &method,int lower_rank,int upper_rank,int verb = -1) = 0;
 
   /** \brief Make a loop over finite elements on partitions from upper to lower rank. 
+   * \ingroup mofem_loops
    *
    * This function is like swiss knife, is can be used to post-processing or matrix
    * and vectors assembly. It makes loop over given finite element for given
@@ -1437,29 +1466,30 @@ struct FieldInterface: public FieldUnknownInterface {
   **/ 
   virtual PetscErrorCode loop_finite_elements(const string &problem_name,const string &fe_name,FEMethod &method,int lower_rank,int upper_rank,int verb = -1) = 0;
 
-
   /** \brief Make a loop over entities
+    * \ingroup mofem_loops
     *
     */
   virtual PetscErrorCode loop_dofs(const MoFEMProblem *problem_ptr,const string &field_name,RowColData rc,EntMethod &method,int lower_rank,int upper_rank,int verb = -1) = 0;
 
   /** \brief Make a loop over entities
+    * \ingroup mofem_loops
     *
     */
   virtual PetscErrorCode loop_dofs(const string &problem_name,const string &field_name,RowColData rc,EntMethod &method,int lower_rank,int upper_rank,int verb = -1) = 0;
 
 
   /** \brief Make a loop over entities
+    * \ingroup mofem_loops
     *
     */
   virtual PetscErrorCode loop_dofs(const string &problem_name,const string &field_name,RowColData rc,EntMethod &method,int verb = -1) = 0;
 
   /** \brief Make a loop over entities
-    * \ingroup mofem_dofs
+    * \ingroup mofem_field
     *
     */
   virtual PetscErrorCode loop_dofs(const string &field_name,EntMethod &method,int verb = -1) = 0;
-
 
   /** \brief Get ref entities from database (data structure) 
     *
@@ -1467,19 +1497,20 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode get_ref_ents(const RefMoFEMEntity_multiIndex **refinedEntitiesPtr_ptr) = 0;
 
   /** \brief Get problem database (data structure) 
+    * \ingroup mofem_problems
     *
     */
   virtual PetscErrorCode get_problem(const string &problem_name,const MoFEMProblem **problem_ptr) = 0;
 
   /** \brief Get dofs multi index
-    * \ingroup mofem_dofs
+    * \ingroup mofem_field
     *
     */
   virtual PetscErrorCode get_dofs(const DofMoFEMEntity_multiIndex **dofsPtr_ptr) = 0;
 
   /** 
     * \brief get begin iterator of filed ents of given name (instead you can use _IT_GET_ENT_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)
-    * \ingroup mofem_dofs
+    * \ingroup mofem_field
     *
     * for(_IT_GET_ENT_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)) {
     * 	...
@@ -1491,7 +1522,7 @@ struct FieldInterface: public FieldUnknownInterface {
 
   /** 
     * \brief get begin iterator of filed dofs of given name (instead you can use _IT_GET_ENT_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)
-    * \ingroup mofem_dofs
+    * \ingroup mofem_field
     *
     * for(_IT_GET_ENT_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)) {
     * 	...
@@ -1502,7 +1533,7 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual MoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_ent_moabfield_by_name_end(const string &field_name) = 0;
 
   /** \brief loop over all dofs from a moFEM field and particular field
-    * \ingroup mofem_dofs
+    * \ingroup mofem_field
     */
   #define _IT_GET_ENT_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT) \
     MoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator IT = MFIELD.get_ent_moabfield_by_name_begin(NAME); \
@@ -1510,7 +1541,7 @@ struct FieldInterface: public FieldUnknownInterface {
 
   /** 
     * \brief get begin iterator of filed dofs of given name (instead you can use _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)
-    * \ingroup mofem_dofs
+    * \ingroup mofem_field
     *
     * for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)) {
     * 	...
@@ -1522,7 +1553,7 @@ struct FieldInterface: public FieldUnknownInterface {
 
   /** 
     * \brief get begin iterator of filed dofs of given name (instead you can use _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)
-    * \ingroup mofem_dofs
+    * \ingroup mofem_field
     *
     * for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)) {
     * 	...
@@ -1533,7 +1564,7 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual DofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_dofs_by_name_end(const string &field_name) const = 0;
 
   /** loop over all dofs from a moFEM field and particular field
-    * \ingroup mofem_dofs
+    * \ingroup mofem_field
     */
   #define _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT) \
     DofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator IT = MFIELD.get_dofs_by_name_begin(NAME); \
@@ -1541,7 +1572,7 @@ struct FieldInterface: public FieldUnknownInterface {
 
   /** 
     * \brief get begin iterator of filed dofs of given name and ent(instead you can use _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,ENT,IT)
-    * \ingroup mofem_dofs
+    * \ingroup mofem_field
     *
     * for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_(MFIELD,NAME,ENT,IT)) {
     * 	...
@@ -1553,7 +1584,7 @@ struct FieldInterface: public FieldUnknownInterface {
 
   /** 
     * \brief get begin iterator of filed dofs of given name and ent (instead you can use _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,ENT,IT)
-    * \ingroup mofem_dofs
+    * \ingroup mofem_field
     *
     * for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_(MFIELD,NAME,ENT,IT)) {
     * 	...
@@ -1570,7 +1601,7 @@ struct FieldInterface: public FieldUnknownInterface {
 
   /** 
     * \brief get field data from entity and field
-    * \ingroup mofem_dofs
+    * \ingroup mofem_field
     * 
     * this funciont is not recommended to be used in finite elemeny implementation
     *
@@ -1590,7 +1621,7 @@ struct FieldInterface: public FieldUnknownInterface {
 
   /** 
     * \brief get field data from entity and field
-    * \ingroup mofem_dofs
+    * \ingroup mofem_field
     * 
     * this funciont is not recommended to be used in finite elemeny implementation
     *
@@ -1610,7 +1641,7 @@ struct FieldInterface: public FieldUnknownInterface {
 
   /** 
     * \brief get begin iterator of filed dofs of given name and ent type (instead you can use _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,TYPE,IT)
-    * \ingroup mofem_dofs
+    * \ingroup mofem_field
     *
     * for(_IT_GET_DOFS_FIELD_BY_NAME_AND_TYPE_FOR_LOOP_(MFIELD,NAME,TYPE,IT)) {
     * 	...
@@ -1622,7 +1653,7 @@ struct FieldInterface: public FieldUnknownInterface {
 
   /** 
     * \brief get begin iterator of filed dofs of given name end ent type(instead you can use _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,TYPE,IT)
-    * \ingroup mofem_dofs
+    * \ingroup mofem_field
     *
     * for(_IT_GET_DOFS_FIELD_BY_NAME_AND_TYPE_FOR_LOOP_(MFIELD,NAME,TYPE,IT)) {
     * 	...
@@ -1633,7 +1664,7 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual DofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator get_dofs_by_name_and_type_end(const string &field_name,const EntityType type) = 0;
 
   /** \brief loop over all dofs from a moFEM field and particular field
-    * \ingroup mofem_dofs
+    * \ingroup mofem_field
     */
   #define _IT_GET_DOFS_FIELD_BY_NAME_AND_TYPE_FOR_LOOP_(MFIELD,NAME,TYPE,IT) \
     DofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator IT = MFIELD.get_dofs_by_name_and_type_begin(NAME,TYPE); \
@@ -1694,13 +1725,8 @@ struct FieldInterface: public FieldUnknownInterface {
  ******************************************************************************/
 
 /***************************************************************************//**
- * \defgroup mofem_dofs Dofs
- * \ingroup mofem_field
- ******************************************************************************/
-
-/***************************************************************************//**
- * \defgroup mofem_field_operators Operators
- * \ingroup mofem_field
+ * \defgroup mofem_field_algebra Field Basic Algebra
+ * \ingroup mofem
  ******************************************************************************/
 
 /***************************************************************************//**
@@ -1715,6 +1741,16 @@ struct FieldInterface: public FieldUnknownInterface {
 
 /***************************************************************************//**
  * \defgroup mofem_problems Problems
+ * \ingroup mofem
+ ******************************************************************************/
+
+/***************************************************************************//**
+ * \defgroup mofem_vectors Vectors
+ * \ingroup mofem
+ ******************************************************************************/
+
+/***************************************************************************//**
+ * \defgroup mofem_loops Loops
  * \ingroup mofem
  ******************************************************************************/
 

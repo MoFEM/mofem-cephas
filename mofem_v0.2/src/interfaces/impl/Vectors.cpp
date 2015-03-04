@@ -102,7 +102,66 @@ PetscErrorCode Core::VecCreateGhost(const string &name,RowColData rc,Vec *V) {
   ierr = ::VecCreateGhost(comm,nb_local_dofs,nb_dofs,nb_ghost_dofs,&ghost_idx[0],V); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::VecScatterCreate(Vec xin,string &x_problem,RowColData x_rc,Vec yin,string &y_problem,RowColData y_rc,VecScatter *newctx,int verb) {
+PetscErrorCode Core::VecScatterCreate(Vec xin,const string &x_problem,const string &x_field_name,RowColData x_rc,
+  Vec yin,const string &y_problem,const string &y_field_name,RowColData y_rc,VecScatter *newctx,int verb) {
+  PetscFunctionBegin;
+  if(verb==-1) verb = verbose;
+  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type moFEMProblems_by_name;
+  moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<Problem_mi_tag>();
+  moFEMProblems_by_name::iterator p_x = moFEMProblems_set.find(x_problem);
+  if(p_x==moFEMProblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"no such problem %s (top tip check spelling)",x_problem.c_str());
+  moFEMProblems_by_name::iterator p_y = moFEMProblems_set.find(y_problem);
+  if(p_y==moFEMProblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"no such problem %s (top tip check spelling)",y_problem.c_str());
+  typedef NumeredDofMoFEMEntity_multiIndex::index<PetscLocalIdx_mi_tag>::type dofs_by_glob_idx;
+  dofs_by_glob_idx::iterator y_dit,hi_y_dit;
+  switch (y_rc) {
+    case ROW:
+      y_dit = p_y->numered_dofs_rows.get<PetscLocalIdx_mi_tag>().lower_bound(0);
+      hi_y_dit = p_y->numered_dofs_rows.get<PetscLocalIdx_mi_tag>().lower_bound(p_y->get_nb_local_dofs_row()); // should be lower
+      break;
+    case COL:
+      y_dit = p_y->numered_dofs_cols.get<PetscLocalIdx_mi_tag>().lower_bound(0);
+      hi_y_dit = p_y->numered_dofs_cols.get<PetscLocalIdx_mi_tag>().lower_bound(p_y->get_nb_local_dofs_col()); // should be lower
+      break;
+    default:
+     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
+  }
+  typedef NumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>::type dofs_by_name_ent_dof;
+  const dofs_by_name_ent_dof* x_numered_dofs_by_ent_name_dof;
+  switch (x_rc) {
+    case ROW:
+      x_numered_dofs_by_ent_name_dof = &(p_x->numered_dofs_rows.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>());
+      break;
+    case COL:
+      x_numered_dofs_by_ent_name_dof = &(p_x->numered_dofs_cols.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>());
+      break;
+    default:
+     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
+  }
+  vector<int> idx(0),idy(0);
+  for(;y_dit!=hi_y_dit;y_dit++) {
+    if(y_dit->get_part()!=(unsigned int)rAnk) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+    if(y_dit->get_name()!=y_field_name) continue;
+    dofs_by_name_ent_dof::iterator x_dit;
+    x_dit = x_numered_dofs_by_ent_name_dof->find(boost::make_tuple(x_field_name,y_dit->get_ent(),y_dit->get_EntDofIdx()));
+    if(x_dit==x_numered_dofs_by_ent_name_dof->end()) continue;
+    idx.push_back(x_dit->get_petsc_gloabl_dof_idx());
+    idy.push_back(y_dit->get_petsc_gloabl_dof_idx());
+  }
+  IS ix,iy;
+  ierr = ISCreateGeneral(comm,idx.size(),&idx[0],PETSC_USE_POINTER,&ix); CHKERRQ(ierr);
+  ierr = ISCreateGeneral(comm,idy.size(),&idy[0],PETSC_USE_POINTER,&iy); CHKERRQ(ierr);
+  if(verb>2) {
+    ISView(ix,PETSC_VIEWER_STDOUT_WORLD);
+    ISView(iy,PETSC_VIEWER_STDOUT_WORLD);
+  }
+  ierr = ::VecScatterCreate(xin,ix,yin,iy,newctx); CHKERRQ(ierr);
+  ierr = ISDestroy(&ix); CHKERRQ(ierr);
+  ierr = ISDestroy(&iy); CHKERRQ(ierr);
+
+  PetscFunctionReturn(0);
+}
+PetscErrorCode Core::VecScatterCreate(Vec xin,const string &x_problem,RowColData x_rc,Vec yin,const string &y_problem,RowColData y_rc,VecScatter *newctx,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type moFEMProblems_by_name;
@@ -149,7 +208,7 @@ PetscErrorCode Core::VecScatterCreate(Vec xin,string &x_problem,RowColData x_rc,
   IS ix,iy;
   ierr = ISCreateGeneral(comm,idx.size(),&idx[0],PETSC_USE_POINTER,&ix); CHKERRQ(ierr);
   ierr = ISCreateGeneral(comm,idy.size(),&idy[0],PETSC_USE_POINTER,&iy); CHKERRQ(ierr);
-  if(verb>3) {
+  if(verb>2) {
     ISView(ix,PETSC_VIEWER_STDOUT_WORLD);
     ISView(iy,PETSC_VIEWER_STDOUT_WORLD);
   }
