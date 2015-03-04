@@ -567,8 +567,8 @@ int main(int argc, char *argv[]) {
     ierr = PCSetType(pc,PCSHELL); CHKERRQ(ierr);
     ConvectiveMassElement::PCShellCtx pc_shell_ctx(shell_Aij);
     ierr = PCShellSetContext(pc,(void*)&pc_shell_ctx); CHKERRQ(ierr);
-    ierr = PCShellSetApply(pc,ConvectiveMassElement::PCApplyOp); CHKERRQ(ierr);
-    ierr = PCShellSetSetUp(pc,ConvectiveMassElement::PCSetUpOp); CHKERRQ(ierr);
+    ierr = PCShellSetApply(pc,ConvectiveMassElement::PCShellApplyOp); CHKERRQ(ierr);
+    ierr = PCShellSetSetUp(pc,ConvectiveMassElement::PCShellSetUpOp); CHKERRQ(ierr);
     ierr = PCShellSetDestroy(pc,ConvectiveMassElement::PCShellDestroy);  CHKERRQ(ierr);
   #endif
 

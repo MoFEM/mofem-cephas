@@ -1978,6 +1978,30 @@ struct ConvectiveMassElement {
   
   };
 
+  /** \brief Mult operator for shell matrix
+    *
+    * \f[
+    \left[
+    \begin{array}{cc}
+    \mathbf{M} & \mathbf{K} \\
+    \mathbf{I} & -\mathbf{I}a 
+    \end{array}
+    \right]
+    \left[
+    \begin{array}{c}
+    \mathbf{v} \\
+    \mathbf{u}
+    \end{array}
+    \right] =
+    \left[
+    \begin{array}{c}
+    \mathbf{r} \\
+    \mathbf{0}
+    \end{array}
+    \right]
+    * \f]
+    * 
+    */
   static PetscErrorCode MultOpA(Mat A,Vec x,Vec f) {
     PetscFunctionBegin;
     PetscErrorCode ierr;
@@ -1987,22 +2011,28 @@ struct ConvectiveMassElement {
     if(!ctx->iNitialized) {
       ierr = ctx->iNit(); CHKERRQ(ierr);
     }
+    ierr = VecZeroEntries(f); CHKERRQ(ierr);
     //Mult Ku
     ierr = VecScatterBegin(ctx->scatterU,x,ctx->u,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecScatterEnd(ctx->scatterU,x,ctx->u,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = MatMult(ctx->K,ctx->u,ctx->Ku); CHKERRQ(ierr);
-    ierr = VecScatterBegin(ctx->scatterU,ctx->u,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = VecScatterEnd(ctx->scatterU,ctx->u,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = VecScatterBegin(ctx->scatterU,ctx->Ku,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = VecScatterEnd(ctx->scatterU,ctx->Ku,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     //Mult Mv
     ierr = VecScatterBegin(ctx->scatterV,x,ctx->v,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecScatterEnd(ctx->scatterV,x,ctx->v,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = MatMult(ctx->M,ctx->v,ctx->Mv); CHKERRQ(ierr);
-    ierr = VecScatterBegin(ctx->scatterU,ctx->v,f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = VecScatterEnd(ctx->scatterU,ctx->v,f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ////Velocity
-    //ierr = VecAXPY(ctx->v,-ctx->ts_a,ctx->u); CHKERRQ(ierr);
-    //ierr = VecScatterBegin(ctx->scatterV,ctx->v,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    //ierr = VecScatterEnd(ctx->scatterV,ctx->v,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = VecScatterBegin(ctx->scatterU,ctx->Mv,f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = VecScatterEnd(ctx->scatterU,ctx->Mv,f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    //Velocities
+    ierr = VecScatterBegin(ctx->scatterV,ctx->v,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = VecScatterEnd(ctx->scatterV,ctx->v,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = VecScale(ctx->u,-ctx->ts_a); CHKERRQ(ierr);
+    ierr = VecScatterBegin(ctx->scatterV,ctx->u,f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = VecScatterEnd(ctx->scatterV,ctx->u,f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    //Assemble
+    ierr = VecAssemblyBegin(f); CHKERRQ(ierr);
+    ierr = VecAssemblyEnd(f); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
@@ -2042,13 +2072,13 @@ struct ConvectiveMassElement {
       PetscFunctionReturn(0);
     }
 
-    friend PetscErrorCode PCSetUpOp(PC pc);
+    friend PetscErrorCode PCShellSetUpOp(PC pc);
     friend PetscErrorCode PCShellDestroy(PC pc);
-    friend PetscErrorCode PCApplyOp(PC pc,Vec f,Vec x);
+    friend PetscErrorCode PCShellApplyOp(PC pc,Vec f,Vec x);
 
   };
   
-  static PetscErrorCode PCSetUpOp(PC pc) {
+  static PetscErrorCode PCShellSetUpOp(PC pc) {
     PetscFunctionBegin;
     PetscErrorCode ierr;
     void *void_ctx;
@@ -2073,7 +2103,33 @@ struct ConvectiveMassElement {
     PetscFunctionReturn(0);
   }
 
-  static PetscErrorCode PCApplyOp(PC pc,Vec f,Vec x) {
+  /** \brief apply pre-conditioner for shell matrix 
+    *
+    * \f[
+    \left[
+    \begin{array}{cc}
+    \mathbf{M} & \mathbf{K} \\
+    \mathbf{I} & -\mathbf{I}a 
+    \end{array}
+    \right]
+    \left[
+    \begin{array}{c}
+    \mathbf{v} \\
+    \mathbf{u}
+    \end{array}
+    \right] =
+    \left[
+    \begin{array}{c}
+    \mathbf{r} \\
+    \mathbf{0}
+    \end{array}
+    \right]
+    * \f]
+    *
+    * where \f$\mathbf{v} = a\mathbf{u}\f$ and \f$\mathbf{u}=(a\mathbf{M}+\mathbf{K})^{-1}\mathbf{r}\f$.
+    *
+    */
+  static PetscErrorCode PCShellApplyOp(PC pc,Vec f,Vec x) {
     PetscFunctionBegin;
     PetscErrorCode ierr;
     void *void_ctx;
@@ -2086,15 +2142,17 @@ struct ConvectiveMassElement {
     ierr = VecScatterEnd(shell_mat_ctx->scatterU,f,shell_mat_ctx->Ku,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = PCApply(ctx->pC,shell_mat_ctx->Ku,shell_mat_ctx->u); CHKERRQ(ierr);
     //calculate velocities
-    ierr = VecScatterBegin(shell_mat_ctx->scatterV,f,shell_mat_ctx->v,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = VecScatterEnd(shell_mat_ctx->scatterV,f,shell_mat_ctx->v,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = VecAXPY(shell_mat_ctx->v,-shell_mat_ctx->ts_a,shell_mat_ctx->u); CHKERRQ(ierr);
+    ierr = VecCopy(shell_mat_ctx->u,shell_mat_ctx->v); CHKERRQ(ierr);
+    ierr = VecScale(shell_mat_ctx->v,shell_mat_ctx->ts_a); CHKERRQ(ierr);
     //reverse
     //VecView(shell_mat_ctx->u,PETSC_VIEWER_STDOUT_WORLD);
+    ierr = VecZeroEntries(x); CHKERRQ(ierr);
     ierr = VecScatterBegin(shell_mat_ctx->scatterU,shell_mat_ctx->u,x,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = VecScatterEnd(shell_mat_ctx->scatterU,shell_mat_ctx->u,x,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = VecScatterBegin(shell_mat_ctx->scatterV,shell_mat_ctx->v,x,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = VecScatterEnd(shell_mat_ctx->scatterV,shell_mat_ctx->v,x,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = VecAssemblyBegin(f); CHKERRQ(ierr);
+    ierr = VecAssemblyEnd(f); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
@@ -2125,6 +2183,9 @@ struct ConvectiveMassElement {
 
       shellMatCtx->ts_a = ts_a;
 
+      dirihletBcPtr->ts_ctx = CTX_TSSETIJACOBIAN;
+      dirihletBcPtr->ts_B = shellMatCtx->K;
+      ierr = mField.problem_basic_method_preProcess(problemName,*dirihletBcPtr); CHKERRQ(ierr);
       ierr = MatZeroEntries(shellMatCtx->K); CHKERRQ(ierr);
       LoopsToDoType::iterator itk = loopK.begin();
       for(;itk!=loopK.end();itk++) {
@@ -2132,9 +2193,13 @@ struct ConvectiveMassElement {
 	itk->second->ts_B = shellMatCtx->K;
 	ierr = mField.loop_finite_elements(problemName,itk->first,*itk->second); CHKERRQ(ierr);
       }
+      ierr = mField.problem_basic_method_postProcess(problemName,*dirihletBcPtr); CHKERRQ(ierr);
       ierr = MatAssemblyBegin(shellMatCtx->K,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
       ierr = MatAssemblyEnd(shellMatCtx->K,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 
+
+      dirihletBcPtr->ts_B = shellMatCtx->K;
+      ierr = mField.problem_basic_method_preProcess(problemName,*dirihletBcPtr); CHKERRQ(ierr);
       ierr = MatZeroEntries(shellMatCtx->M); CHKERRQ(ierr);
       LoopsToDoType::iterator itm = loopM.begin();
       for(;itm!=loopM.end();itm++) {
@@ -2142,16 +2207,14 @@ struct ConvectiveMassElement {
 	itm->second->ts_B = shellMatCtx->M;
 	ierr = mField.loop_finite_elements(problemName,itm->first,*itm->second); CHKERRQ(ierr);
       }
+      ierr = mField.problem_basic_method_postProcess(problemName,*dirihletBcPtr); CHKERRQ(ierr);
       ierr = MatAssemblyBegin(shellMatCtx->M,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
       ierr = MatAssemblyEnd(shellMatCtx->M,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 
-      dirihletBcPtr->ts_ctx = CTX_TSSETIJACOBIAN;
-      dirihletBcPtr->ts_B = shellMatCtx->barK;
-      ierr = mField.problem_basic_method_preProcess(problemName,*dirihletBcPtr); CHKERRQ(ierr);
+      //barK
       ierr = MatCopy(shellMatCtx->K,shellMatCtx->barK,SAME_NONZERO_PATTERN); CHKERRQ(ierr);
       ierr = MatAXPY(shellMatCtx->barK,ts_a,shellMatCtx->M,SAME_NONZERO_PATTERN); CHKERRQ(ierr);
-      ierr = mField.problem_basic_method_postProcess(problemName,*dirihletBcPtr); CHKERRQ(ierr);
-      ierr = MatAssemblyBegin(shellMatCtx->barK,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+            ierr = MatAssemblyBegin(shellMatCtx->barK,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
       ierr = MatAssemblyEnd(shellMatCtx->barK,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 
       //Matrix View
