@@ -114,10 +114,5 @@ struct PostPorcStress: public TetElementForcesAndSourcesCore::UserDataOperator {
 
 #endif //__POSTPROCSTRESSES_HPP
 
-/***************************************************************************//**
- * \defgroup nonlinear_eleastic_elem Non-Linear Elastic Element 
- * \ingroup mofem_forces_and_sources 
- ******************************************************************************/
-
 
 

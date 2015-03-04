@@ -141,8 +141,8 @@ struct PCArcLengthCtx {
   PCArcLengthCtx(Mat shell_Aij,Mat _Aij,ArcLengthCtx* arc_ptr); 
   ~PCArcLengthCtx();
 
-  friend PetscErrorCode PCApplyArcLength(PC pC,Vec pc_f,Vec pc_x);
-  friend PetscErrorCode PCSetupArcLength(PC pC);
+  friend PetscErrorCode PCApplyArcLength(PC pc,Vec pc_f,Vec pc_x);
+  friend PetscErrorCode PCSetupArcLength(PC pc);
 };
 
 /**
