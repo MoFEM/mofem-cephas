@@ -11,11 +11,15 @@ imprint volume all
 merge volume all 
 
 #Meshing  
-curve 20 2 1 19 interval 2 
-curve 20 2 1 19 scheme equal
-mesh curve20 2 1 19  
+curve 20 19 interval 4 
+curve 20 19 scheme equal
+mesh curve 20 19  
 
-curve 17 interval 3 
+curve 2 1  interval 5 
+curve 2 1  scheme equal
+mesh curve 2 1  
+
+curve 17 interval 7
 curve 17 scheme equal
 mesh curve 17  
 
@@ -25,7 +29,7 @@ mesh surface 11
 surface 13 scheme mirror source surface 11 source vertex 14 target vertex 12 nosmoothing
 mesh surface 13 
 
-curve 25 23 24 interval 2 
+curve 25 23 24 interval  5
 curve 25 23 24 scheme equal
 mesh curve 25 23 24 
 surface 15  scheme TriMesh
@@ -34,7 +38,7 @@ mesh surface 15
 surface 16 scheme mirror source surface 15 source vertex 17 target vertex 22 nosmoothing
 mesh surface 16 
 
-curve 18 11 33 16 10 12 34 interval 1
+curve 18 11 33 16 10 12 34 interval 3
 curve 18 11 33 16 10 12 34 scheme equal
 mesh curve 18 11 33 16 10 12 34
 
@@ -65,8 +69,8 @@ block 2 attribute index 1 0.5e-9
 # Bounary Conditions for Mechanical Macro problem
 create displacement on surface 14 18 dof 1 fix 0
 create displacement on surface 12 dof 2 fix 0
-create displacement on surface 13 16 dof 3 fix 0
-create force on surface 19 16 vector 0 100e3 0 0 0 0
+#create displacement on surface 13 16 dof 3 fix 0
+create force on surface 19 16 vector 0 1e3 0 0 0 0
 
 #Here thermal conductivity and moisture diffusivity homogenised matrices will be read directly from input RVE binary files so no need to defined material properties here
 block 3 volume all
