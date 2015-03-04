@@ -98,6 +98,6 @@ cp *.vtk /mnt/home/Desktop/results/
 
 cp out.vtk /mnt/home/Desktop/RVE_out/
 
-
+rm *.vtk *.info *.h5m *.out
 
 

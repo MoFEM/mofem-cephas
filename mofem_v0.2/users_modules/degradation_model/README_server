@@ -84,7 +84,7 @@ All files conversion using script
 
 cp *.vtk /mnt/home/Desktop/aaaa/
 
-
+rm *.vtk *.info *.h5m *.out
 
 
 
