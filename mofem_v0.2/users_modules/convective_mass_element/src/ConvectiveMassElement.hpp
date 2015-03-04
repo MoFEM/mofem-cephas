@@ -1999,10 +1999,10 @@ struct ConvectiveMassElement {
     ierr = MatMult(ctx->M,ctx->v,ctx->Mv); CHKERRQ(ierr);
     ierr = VecScatterBegin(ctx->scatterU,ctx->v,f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = VecScatterEnd(ctx->scatterU,ctx->v,f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    //Velocity
-    ierr = VecAXPY(ctx->v,-ctx->ts_a,ctx->u); CHKERRQ(ierr);
-    ierr = VecScatterBegin(ctx->scatterV,ctx->v,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = VecScatterEnd(ctx->scatterV,ctx->v,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ////Velocity
+    //ierr = VecAXPY(ctx->v,-ctx->ts_a,ctx->u); CHKERRQ(ierr);
+    //ierr = VecScatterBegin(ctx->scatterV,ctx->v,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    //ierr = VecScatterEnd(ctx->scatterV,ctx->v,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
