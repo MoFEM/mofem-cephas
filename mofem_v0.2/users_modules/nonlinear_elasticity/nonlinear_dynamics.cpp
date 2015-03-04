@@ -430,7 +430,7 @@ int main(int argc, char *argv[]) {
     ierr = m_field.VecScatterCreate(D,"DYNAMICS","SPATIAL_VELOCITY",COL,shellAij_ctx->v,"Kuu","SPATIAL_POSITION",COL,&shellAij_ctx->scatterV); CHKERRQ(ierr);
     Mat shell_Aij;
     const MoFEMProblem *problem_ptr;
-    ierr = m_field.get_problem("Kuu",&problem_ptr); CHKERRQ(ierr);
+    ierr = m_field.get_problem("DYNAMICS",&problem_ptr); CHKERRQ(ierr);
     ierr = MatCreateShell(PETSC_COMM_WORLD,
       problem_ptr->get_nb_local_dofs_row(),problem_ptr->get_nb_local_dofs_col(),
       problem_ptr->get_nb_dofs_row(),problem_ptr->get_nb_dofs_row(),
@@ -460,9 +460,9 @@ int main(int argc, char *argv[]) {
     fe_spatial.methodsOp.push_back(new TimeForceScale());
     blocked_problem.loopK.push_back(ConvectiveMassElement::BlockePakedProblem::LoopPairType("ELASTIC",&elastic.getLoopFeLhs()));
     blocked_problem.loopK.push_back(ConvectiveMassElement::BlockePakedProblem::LoopPairType("NEUAMNN_FE",&fe_spatial));
-  
-    blocked_problem.loopM.push_back(ConvectiveMassElement::BlockePakedProblem::LoopPairType("MASS_ELEMENT",&inertia.getLoopFeMassLhs()));
+
     ierr = inertia.setBlockedMassOperators("SPATIAL_VELOCITY","SPATIAL_POSITION"); CHKERRQ(ierr);
+    blocked_problem.loopM.push_back(ConvectiveMassElement::BlockePakedProblem::LoopPairType("MASS_ELEMENT",&inertia.getLoopFeMassLhs()));
   #else
     Mat Aij;
     ierr = m_field.MatCreateMPIAIJWithArrays("DYNAMICS",&Aij); CHKERRQ(ierr);
