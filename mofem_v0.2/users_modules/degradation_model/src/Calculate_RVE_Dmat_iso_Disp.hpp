@@ -483,9 +483,9 @@ namespace MoFEM {
 //                }
 //              }
 //              
-//              cout<<"fe_ent "<<fe_ent <<endl;
+              cout<<"fe_ent "<<fe_ent <<endl;
 //              cout<<"gg = "<<gg<<endl;
-//              cout<<"Dmat = "<<Dmat<<endl;
+              cout<<"Dmat = "<<Dmat<<endl;
 
               commonData.Dmat_RVE[fe_ent](gg).resize(6,6);
               commonData.Dmat_RVE[fe_ent](gg)=Dmat;
