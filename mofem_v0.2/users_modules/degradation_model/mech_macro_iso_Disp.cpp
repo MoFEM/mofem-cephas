@@ -372,8 +372,8 @@ int main(int argc, char *argv[]) {
   if( recorder_ptr->check_series("Wt_SERIES") ) {
     cout<<"============== Wt_SERIES exists =============== "<<endl;
     for(_IT_SERIES_STEPS_BY_NAME_FOR_LOOP_(recorder_ptr,"Wt_SERIES",sit)) {
-      if(count%10==0){
-//      if(count==100){
+//      if(count%10==0){
+      if(count==100){
         PetscPrintf(PETSC_COMM_WORLD,"Process step %d\n",sit->get_step_number());
         ierr = recorder_ptr->load_series_data("Wt_SERIES",sit->get_step_number()); CHKERRQ(ierr);
         
@@ -445,9 +445,9 @@ int main(int argc, char *argv[]) {
         //Save data on mesh
         ierr = m_field_Macro.set_local_VecCreateGhost("ELASTIC_PROBLEM_MACRO",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
-//        //save the solution file for subsequent strain calculation analysis
-//        ierr = m_field_Macro.set_global_VecCreateGhost("ELASTIC_PROBLEM_MACRO",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-//        rval = moab_Macro.write_file("FE2_solution_100.h5m"); CHKERR_PETSC(rval);
+        //save the solution file for subsequent strain calculation analysis
+        ierr = m_field_Macro.set_global_VecCreateGhost("ELASTIC_PROBLEM_MACRO",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+        rval = moab_Macro.write_file("FE2_solution_100.h5m"); CHKERR_PETSC(rval);
         
         ierr = m_field_Macro.loop_finite_elements("ELASTIC_PROBLEM_MACRO","ELASTIC_FE_MACRO",post_proc); CHKERRQ(ierr);
         ostringstream o1;
