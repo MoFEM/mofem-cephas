@@ -174,7 +174,8 @@ PetscErrorCode NonlinearElasticElement::OpJacobian::doWork(
 
   int nb_dofs = row_data.getIndices().size();
   if(nb_dofs==0) PetscFunctionReturn(0);
-  fUn.commonData_ptr = &commonData;
+  fUn.commonDataPtr = &commonData;
+  fUn.opPtr = this;
 
   try {
     
@@ -191,6 +192,7 @@ PetscErrorCode NonlinearElasticElement::OpJacobian::doWork(
       fUn.gG = gg;
 
       if(gg == 0) {
+
 	    
 	//if(lastId != dAta.iD) {
 	//lastId = dAta.iD;

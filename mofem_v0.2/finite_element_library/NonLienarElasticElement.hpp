@@ -128,9 +128,15 @@ struct NonlinearElasticElement {
 
   };
  
+  /** \brief Implementation of elastic (non-linear) element
+    * \ingroup nonlinear_elastic_elem
+    */
   template<typename TYPE> 
   struct FunctionsToCalulatePiolaKirchhoffI {
 
+
+    /** \brief Calulate determinant of 3x3 matrix
+      */
     PetscErrorCode dEterminatnt(ublas::matrix<TYPE> a,TYPE &det) {
       PetscFunctionBegin;
       // a11a22a33
@@ -150,6 +156,9 @@ struct NonlinearElasticElement {
       PetscFunctionReturn(0);
     }
   
+
+    /** \brief Calusta invers of 3x3 matrix
+      */
     PetscErrorCode iNvert(TYPE det,ublas::matrix<TYPE> a,ublas::matrix<TYPE> &inv_a) {
       PetscFunctionBegin;
       //PetscErrorCode ierr;
@@ -173,8 +182,9 @@ struct NonlinearElasticElement {
     ublas::matrix<TYPE> F,C,E,S,invF,P;
     TYPE J;
 
-    int gG;
-    CommonData *commonData_ptr;
+    int gG;	///< Gauss point number
+    CommonData *commonDataPtr; ///< common data shared between entities (f.e. field values at Gauss pts.)
+    TetElementForcesAndSourcesCore::UserDataOperator *opPtr; ///< pointer to finite element tetrahedral operatol
 
     PetscErrorCode CalulateC_CauchyDefromationTensor() {
       PetscFunctionBegin;
@@ -210,6 +220,22 @@ struct NonlinearElasticElement {
       PetscFunctionReturn(0);
     }
 
+    /** \brief Function overload to implement user material
+      *
+
+      * Calculation of Piola Kirchoff I is implemented by user. Tangent matrix
+      * user implemented physical equation is calculated using automatic
+      * differentiation.
+
+      * Notes: <br>
+      * Number of actual Gauss point is accessed from variable gG. <br>
+      * Access to operator data structures is available by variable opPtr. <br>
+      * Access to common data is by commonDataPtr. <br>
+      
+      * \param block_data used to give access to material parameters
+      * \param fe_ptr pointer to element data structures
+
+      */
     virtual PetscErrorCode CalualteP_PiolaKirchhoffI(
       const BlockData block_data,
       const NumeredMoFEMFiniteElement *fe_ptr) {
