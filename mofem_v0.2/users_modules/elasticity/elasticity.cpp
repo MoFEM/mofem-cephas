@@ -43,12 +43,9 @@ namespace po = boost::program_options;
 
 #include <adolc/adolc.h> 
 #include <NonLienarElasticElement.hpp>
-//#include <FEMethod_LowLevelStudent.hpp>
-//#include <FEMethod_UpLevelStudent.hpp>
-//#include <ElasticFEMethod.hpp>
+#include <Hooke.hpp>
 
 using namespace boost::numeric;
-//using namespace ObosleteUsersModules;
 
 ErrorCode rval;
 PetscErrorCode ierr;
@@ -59,37 +56,6 @@ static char help[] =
 
 const double young_modulus = 1;
 const double poisson_ratio = 0.0;
-
-template<typename TYPE>
-struct Hooke: public NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<TYPE> {
-
-    Hooke(): NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<TYPE>() {}
-
-    ublas::matrix<TYPE> Eps;
-    TYPE tr;
-    
-    virtual PetscErrorCode CalualteP_PiolaKirchhoffI(
-      const NonlinearElasticElement::BlockData block_data,
-      const NumeredMoFEMFiniteElement *fe_ptr) {
-      PetscFunctionBegin;
-      //PetscErrorCode ierr;
-      this->lambda = LAMBDA(block_data.E,block_data.PoissonRatio);
-      this->mu = MU(block_data.E,block_data.PoissonRatio);
-      Eps.resize(3,3);
-      noalias(Eps) = 0.5*(this->F + trans(this->F));
-      this->P.resize(3,3);
-      noalias(this->P) = 2*this->mu*Eps;
-      tr = 0;
-      for(int dd = 0;dd<3;dd++) {
-	tr += this->lambda*Eps(dd,dd);
-      }
-      for(int dd =0;dd<3;dd++) {
-	this->P(dd,dd) += tr;
-      } 
-      PetscFunctionReturn(0);
-    }
-
-};
 
 struct BlockOptionData {
   int oRder;

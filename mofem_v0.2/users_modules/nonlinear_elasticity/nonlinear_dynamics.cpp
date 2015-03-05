@@ -1,9 +1,9 @@
 /* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
  * --------------------------------------------------------------
  *
- * Test for linar elastic dynamics.
+ * Test for non-linear elastic dynamics.
  *
- * This is not exactly procedure for linear elatic dynamics, since jacobian is
+ * This is not exactly procedure for linear elastic dynamics, since Jacobian is
  * evaluated at every time step and snes procedure is involved. However it is
  * implemented like that, to test methodology for general nonlinear problem.
  *
