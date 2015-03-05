@@ -99,6 +99,7 @@ PetscErrorCode TSMethod::copy_ts(const TSMethod &ts) {
   this->ts_A = ts.ts_A;
   this->ts_B = ts.ts_B;
   this->ts_step = ts.ts_step;
+  this->ts_a = ts.ts_a;
   this->ts_t = ts.ts_t;
   PetscFunctionReturn(0);
 }
