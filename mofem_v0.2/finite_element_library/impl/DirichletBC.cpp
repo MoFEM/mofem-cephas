@@ -44,6 +44,27 @@ using namespace boost::numeric;
 
 namespace MoFEM {
 
+DisplacementBCFEMethodPreAndPostProc::DisplacementBCFEMethodPreAndPostProc(
+  FieldInterface& _mField,const string &_field_name,
+  Mat _Aij,Vec _X,Vec _F): mField(_mField),fieldName(_field_name),dIag(1) {
+  snes_B = _Aij;
+  snes_x = _X;
+  snes_f = _F;
+  ts_B = _Aij;
+  ts_u = _X;
+  ts_F = _F;
+};
+
+DisplacementBCFEMethodPreAndPostProc::DisplacementBCFEMethodPreAndPostProc(FieldInterface& _mField,const string &_field_name): 
+  mField(_mField),fieldName(_field_name),dIag(1) {
+  snes_B = PETSC_NULL;
+  snes_x = PETSC_NULL;
+  snes_f = PETSC_NULL;
+  ts_B = PETSC_NULL;
+  ts_u = PETSC_NULL;
+  ts_F = PETSC_NULL;
+};
+
 PetscErrorCode DisplacementBCFEMethodPreAndPostProc::iNitalize() {
   PetscFunctionBegin;
   if(map_zero_rows.empty()) {
@@ -160,7 +181,7 @@ PetscErrorCode DisplacementBCFEMethodPreAndPostProc::postProcess() {
   if(snes_ctx == CTX_SNESNONE && ts_ctx == CTX_TSNONE) {
     ierr = MatAssemblyBegin(snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
     ierr = MatAssemblyEnd(snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-    ierr = MatZeroRowsColumns(snes_B,dofsIndices.size(),&dofsIndices[0],1,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
+    ierr = MatZeroRowsColumns(snes_B,dofsIndices.size(),&dofsIndices[0],dIag,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
     ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
     ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
     for(vector<int>::iterator vit = dofsIndices.begin();vit!=dofsIndices.end();vit++) {
@@ -198,7 +219,7 @@ PetscErrorCode DisplacementBCFEMethodPreAndPostProc::postProcess() {
     case CTX_SNESSETJACOBIAN: {
       ierr = MatAssemblyBegin(snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
       ierr = MatAssemblyEnd(snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-      ierr = MatZeroRowsColumns(snes_B,dofsIndices.size(),&*dofsIndices.begin(),1,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
+      ierr = MatZeroRowsColumns(snes_B,dofsIndices.size(),&*dofsIndices.begin(),dIag,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
     }
     break;
     default:
@@ -371,7 +392,7 @@ PetscErrorCode FixBcAtEntities::postProcess() {
   if(snes_ctx == CTX_SNESNONE && ts_ctx == CTX_TSNONE) {
     ierr = MatAssemblyBegin(snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
     ierr = MatAssemblyEnd(snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-    ierr = MatZeroRowsColumns(snes_B,dofsIndices.size(),&dofsIndices[0],1,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
+    ierr = MatZeroRowsColumns(snes_B,dofsIndices.size(),&dofsIndices[0],dIag,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
     ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
     ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
     for(vector<int>::iterator vit = dofsIndices.begin();vit!=dofsIndices.end();vit++) {
@@ -397,7 +418,7 @@ PetscErrorCode FixBcAtEntities::postProcess() {
     case CTX_SNESSETJACOBIAN: {
       ierr = MatAssemblyBegin(snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
       ierr = MatAssemblyEnd(snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-      ierr = MatZeroRowsColumns(snes_B,dofsIndices.size(),&*dofsIndices.begin(),1,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
+      ierr = MatZeroRowsColumns(snes_B,dofsIndices.size(),&*dofsIndices.begin(),dIag,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
     }
     break;
     default:

@@ -42,28 +42,14 @@ namespace MoFEM {
 struct DisplacementBCFEMethodPreAndPostProc: public FEMethod {
 
   FieldInterface& mField;
-  const string fieldName;
+  const string fieldName;			///< field name to set Dirichlet BC
+  double dIag;					///< diagonal value set on zeroed column and rows
 
   DisplacementBCFEMethodPreAndPostProc(
     FieldInterface& _mField,const string &_field_name,
-    Mat _Aij,Vec _X,Vec _F): mField(_mField),fieldName(_field_name) {
-    snes_B = _Aij;
-    snes_x = _X;
-    snes_f = _F;
-    ts_B = _Aij;
-    ts_u = _X;
-    ts_F = _F;
-  };
-
-  DisplacementBCFEMethodPreAndPostProc(FieldInterface& _mField,const string &_field_name): 
-    mField(_mField),fieldName(_field_name) {
-    snes_B = PETSC_NULL;
-    snes_x = PETSC_NULL;
-    snes_f = PETSC_NULL;
-    ts_B = PETSC_NULL;
-    ts_u = PETSC_NULL;
-    ts_F = PETSC_NULL;
-  }; 
+    Mat _Aij,Vec _X,Vec _F);
+  DisplacementBCFEMethodPreAndPostProc(
+    FieldInterface& _mField,const string &_field_name); 
 
   PetscErrorCode ierr;
   ErrorCode rval;
