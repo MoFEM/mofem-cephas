@@ -1,5 +1,5 @@
-/** \file ThermalElement.hpp 
- * \brief Operators and data structures for thermal analys
+/** \file ConvectiveMassElement.hpp 
+ * \brief Operators and data structures for mass and convective mass element
  *
  * Implementation of convective mass element
  *
@@ -85,17 +85,17 @@ struct ConvectiveMassElement {
 
   MyVolumeFE feMassRhs; ///< cauclate right hand side for tetrahedral elements
   MyVolumeFE& getLoopFeMassRhs() { return feMassRhs; } ///< get rhs volume element 
-  MyVolumeFE feMassLhs; //< calculate left hand side for tetrahedral elements
+  MyVolumeFE feMassLhs; ///< calculate left hand side for tetrahedral elements
   MyVolumeFE& getLoopFeMassLhs() { return feMassLhs; } ///< get lhs volume element
 
   MyVolumeFE feVelRhs; ///< cauclate right hand side for tetrahedral elements
   MyVolumeFE& getLoopFeVelRhs() { return feVelRhs; } ///< get rhs volume element 
-  MyVolumeFE feVelLhs; //< calculate left hand side for tetrahedral elements
+  MyVolumeFE feVelLhs; ///< calculate left hand side for tetrahedral elements
   MyVolumeFE& getLoopFeVelLhs() { return feVelLhs; } ///< get lhs volume element
 
   MyVolumeFE feTRhs; ///< cauclate right hand side for tetrahedral elements
   MyVolumeFE& getLoopFeTRhs() { return feTRhs; } ///< get rhs volume element 
-  MyVolumeFE feTLhs; //< calculate left hand side for tetrahedral elements
+  MyVolumeFE feTLhs; ///< calculate left hand side for tetrahedral elements
   MyVolumeFE& getLoopFeTLhs() { return feTLhs; } ///< get lhs volume element
 
   FieldInterface &mField;
@@ -109,17 +109,17 @@ struct ConvectiveMassElement {
     mField(m_field),tAg(tag) {}
 
   /** \brief data for calulation het conductivity and heat capacity elements
-    * \infroup mofem_forces_and_sources 
+    * \ingroup mofem_forces_and_sources 
     */
   struct BlockData {
     double rho0; ///< reference density
-    ublas::vector<double> a0; //< constant acceleration
+    ublas::vector<double> a0; ///< constant acceleration
     Range tEts; ///< constatins elements in block set
   }; 
   map<int,BlockData> setOfBlocks; ///< maps block set id with appropiate BlockData
 
   /** \brief common data used by volume elements
-    * \infroup mofem_forces_and_sources 
+    * \ingroup mofem_forces_and_sources 
     */
   struct CommonData {
     map<string,vector<ublas::vector<double> > > dataAtGaussPts;
@@ -1786,8 +1786,8 @@ struct ConvectiveMassElement {
     feVelRhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(velocity_field_name,commonData));
     feVelRhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(spatial_position_field_name,commonData));
     feVelRhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts("DOT_"+velocity_field_name,commonData));
-    feVelRhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts("DOT_"+spatial_position_field_name,commonData));
     if(mField.check_field(material_position_field_name)) {
+      feVelRhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts("DOT_"+spatial_position_field_name,commonData));
       feVelRhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(material_position_field_name,commonData));
       if(ale) {
 	feVelRhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts("DOT_"+material_position_field_name,commonData));
@@ -1805,8 +1805,8 @@ struct ConvectiveMassElement {
     feVelLhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(velocity_field_name,commonData));
     feVelLhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(spatial_position_field_name,commonData));
     feVelLhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts("DOT_"+velocity_field_name,commonData));
-    feVelLhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts("DOT_"+spatial_position_field_name,commonData));
     if(mField.check_field(material_position_field_name)) {
+      feVelLhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts("DOT_"+spatial_position_field_name,commonData));
       feVelLhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(material_position_field_name,commonData));
       if(ale) {
 	feVelLhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts("DOT_"+material_position_field_name,commonData));
@@ -1892,7 +1892,6 @@ struct ConvectiveMassElement {
     feMassRhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(velocity_field_name,commonData));
     feMassRhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(spatial_position_field_name,commonData));
     feMassRhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts("DOT_"+velocity_field_name,commonData));
-    feMassRhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts("DOT_"+spatial_position_field_name,commonData));
     if(mField.check_field(material_position_field_name)) {
       feMassRhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(material_position_field_name,commonData));
       feMassRhs.meshPositionsFieldName = material_position_field_name;
@@ -1907,7 +1906,6 @@ struct ConvectiveMassElement {
     feMassLhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(velocity_field_name,commonData));
     feMassLhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(spatial_position_field_name,commonData));
     feMassLhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts("DOT_"+velocity_field_name,commonData));
-    feMassLhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts("DOT_"+spatial_position_field_name,commonData));
     if(mField.check_field(material_position_field_name)) {
       feMassLhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(material_position_field_name,commonData));
       feMassLhs.meshPositionsFieldName = material_position_field_name;
@@ -1995,8 +1993,8 @@ struct ConvectiveMassElement {
     \right] =
     \left[
     \begin{array}{c}
-    \mathbf{r} \\
-    \mathbf{0}
+    \mathbf{r}_u \\
+    \mathbf{r}_v
     \end{array}
     \right]
     * \f]
@@ -2120,13 +2118,13 @@ struct ConvectiveMassElement {
     \right] =
     \left[
     \begin{array}{c}
-    \mathbf{r} \\
-    \mathbf{0}
+    \mathbf{r}_u \\
+    \mathbf{r}_v
     \end{array}
     \right]
     * \f]
     *
-    * where \f$\mathbf{v} = a\mathbf{u}\f$ and \f$\mathbf{u}=(a\mathbf{M}+\mathbf{K})^{-1}\mathbf{r}\f$.
+    * where \f$\mathbf{v} = \mathbf{r}_v + a\mathbf{u}\f$ and \f$\mathbf{u}=(a\mathbf{M}+\mathbf{K})^{-1}\mathbf{r}\f$.
     *
     */
   static PetscErrorCode PCShellApplyOp(PC pc,Vec f,Vec x) {
@@ -2144,6 +2142,8 @@ struct ConvectiveMassElement {
     //calculate velocities
     ierr = VecCopy(shell_mat_ctx->u,shell_mat_ctx->v); CHKERRQ(ierr);
     ierr = VecScale(shell_mat_ctx->v,shell_mat_ctx->ts_a); CHKERRQ(ierr);
+    ierr = VecScatterBegin(shell_mat_ctx->scatterV,f,shell_mat_ctx->v,ADD_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecScatterEnd(shell_mat_ctx->scatterV,f,shell_mat_ctx->v,ADD_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     //reverse
     //VecView(shell_mat_ctx->u,PETSC_VIEWER_STDOUT_WORLD);
     ierr = VecZeroEntries(x); CHKERRQ(ierr);
@@ -2173,23 +2173,28 @@ struct ConvectiveMassElement {
     LoopsToDoType loopM; 	///< methods to calculate M shell matrix 
 
     //variables bellow need to be set by user
-    string problemName; 	///< name of shell problem
-    MatShellCtx *shellMatCtx; 	///< pointer to shell matrix
-    FEMethod *dirihletBcPtr; 	///< boundary conditions
+    string problemName; 					///< name of shell problem
+    MatShellCtx *shellMatCtx; 					///< pointer to shell matrix
+    SpatialPositionsBCFEMethodPreAndPostProc *dirihletBcPtr; 	///< boundary conditions
 
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
       PetscErrorCode ierr;
 
-      shellMatCtx->ts_a = ts_a;
+      if(ts_ctx != CTX_TSSETIJACOBIAN) {
+	SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"It is used to calculate shell matrix only");
+      }
 
-      dirihletBcPtr->ts_ctx = CTX_TSSETIJACOBIAN;
+      shellMatCtx->ts_a = ts_a;
+      dirihletBcPtr->copy_ts(*((TSMethod*)this)); //copy context for TSMethod
+
+      dirihletBcPtr->dIag = 1;
       dirihletBcPtr->ts_B = shellMatCtx->K;
-      ierr = mField.problem_basic_method_preProcess(problemName,*dirihletBcPtr); CHKERRQ(ierr);
       ierr = MatZeroEntries(shellMatCtx->K); CHKERRQ(ierr);
+      ierr = mField.problem_basic_method_preProcess(problemName,*dirihletBcPtr); CHKERRQ(ierr);
       LoopsToDoType::iterator itk = loopK.begin();
       for(;itk!=loopK.end();itk++) {
-	itk->second->ts_ctx = CTX_TSSETIJACOBIAN;
+	itk->second->copy_ts(*((TSMethod*)this));
 	itk->second->ts_B = shellMatCtx->K;
 	ierr = mField.loop_finite_elements(problemName,itk->first,*itk->second); CHKERRQ(ierr);
       }
@@ -2197,13 +2202,13 @@ struct ConvectiveMassElement {
       ierr = MatAssemblyBegin(shellMatCtx->K,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
       ierr = MatAssemblyEnd(shellMatCtx->K,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 
-
-      dirihletBcPtr->ts_B = shellMatCtx->K;
-      ierr = mField.problem_basic_method_preProcess(problemName,*dirihletBcPtr); CHKERRQ(ierr);
+      dirihletBcPtr->dIag = 0;
+      dirihletBcPtr->ts_B = shellMatCtx->M;
       ierr = MatZeroEntries(shellMatCtx->M); CHKERRQ(ierr);
+      ierr = mField.problem_basic_method_preProcess(problemName,*dirihletBcPtr); CHKERRQ(ierr);
       LoopsToDoType::iterator itm = loopM.begin();
       for(;itm!=loopM.end();itm++) {
-	itm->second->ts_ctx = CTX_TSSETIJACOBIAN;
+	itm->second->copy_ts(*((TSMethod*)this));
 	itm->second->ts_B = shellMatCtx->M;
 	ierr = mField.loop_finite_elements(problemName,itm->first,*itm->second); CHKERRQ(ierr);
       }
@@ -2214,7 +2219,7 @@ struct ConvectiveMassElement {
       //barK
       ierr = MatCopy(shellMatCtx->K,shellMatCtx->barK,SAME_NONZERO_PATTERN); CHKERRQ(ierr);
       ierr = MatAXPY(shellMatCtx->barK,ts_a,shellMatCtx->M,SAME_NONZERO_PATTERN); CHKERRQ(ierr);
-            ierr = MatAssemblyBegin(shellMatCtx->barK,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+      ierr = MatAssemblyBegin(shellMatCtx->barK,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
       ierr = MatAssemblyEnd(shellMatCtx->barK,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 
       //Matrix View
