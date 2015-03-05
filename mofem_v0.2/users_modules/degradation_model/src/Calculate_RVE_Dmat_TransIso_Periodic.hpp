@@ -206,6 +206,7 @@ namespace MoFEM {
             
             //=============================================================================================================
 
+            cout<<"nb_gauss_pts for calculateion D =  "<<nb_gauss_pts <<endl;
             for(int gg = 0;gg<nb_gauss_pts;gg++) {
 //              cout<<"gg Start =  "<<gg <<endl;
               //We don't need to calculate internal forces for RVE, as ElasticFEMethod is used to assemble A matirx only
@@ -480,7 +481,7 @@ namespace MoFEM {
 //                  cout<<endl;
 //                }
 //              }
-//              
+//
               cout<<"fe_ent "<<fe_ent <<endl;
               cout<<"Dmat = "<<Dmat<<endl;
 

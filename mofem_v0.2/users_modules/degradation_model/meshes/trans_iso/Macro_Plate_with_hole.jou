@@ -10,41 +10,42 @@ move volume 3 x 0 y 10 z 0 include_merged
 imprint volume all 
 merge volume all 
 
-#Meshing  
-curve 20 19 interval 2
-curve 20 19 scheme equal
-mesh curve 20 19  
+#Meshing   
+curve 20 19 interval 2 
+curve 20 19 scheme equal 
+mesh curve 20 19   
+ 
+curve 2 1  interval 3  
+curve 2 1  scheme equal 
+mesh curve 2 1   
+ 
+curve 17 interval 5 
+curve 17 scheme equal 
+mesh curve 17   
+ 
+surface 11  scheme TriMesh 
+mesh surface 11  
+ 
+surface 13 scheme mirror source surface 11 source vertex 14 target vertex 12 nosmoothing 
+mesh surface 13  
+ 
+curve 25 23 24 interval  3 
+curve 25 23 24 scheme equal 
+mesh curve 25 23 24  
+surface 15  scheme TriMesh 
+mesh surface 15  
+ 
+surface 16 scheme mirror source surface 15 source vertex 17 target vertex 22 nosmoothing 
+mesh surface 16  
+ 
+curve 18 11 33 16 10 12 34 interval 1 
+curve 18 11 33 16 10 12 34 scheme equal 
+mesh curve 18 11 33 16 10 12 34 
+ 
+#volume all size auto factor 10 
+volume all scheme Tetmesh 
+mesh volume all 
 
-curve 2 1  interval 3 
-curve 2 1  scheme equal
-mesh curve 2 1  
-
-curve 17 interval 5
-curve 17 scheme equal
-mesh curve 17  
-
-surface 11  scheme TriMesh
-mesh surface 11 
-
-surface 13 scheme mirror source surface 11 source vertex 14 target vertex 12 nosmoothing
-mesh surface 13 
-
-curve 25 23 24 interval  3
-curve 25 23 24 scheme equal
-mesh curve 25 23 24 
-surface 15  scheme TriMesh
-mesh surface 15 
-
-surface 16 scheme mirror source surface 15 source vertex 17 target vertex 22 nosmoothing
-mesh surface 16 
-
-curve 18 11 33 16 10 12 34 interval 1
-curve 18 11 33 16 10 12 34 scheme equal
-mesh curve 18 11 33 16 10 12 34
-
-#volume all size auto factor 10
-volume all scheme Tetmesh
-mesh volume all
 
 
 set duplicate block elements on
@@ -98,6 +99,7 @@ block 6 tet 82 28 117 105
 block 6 name "Ele_Strain_RVE"
 
 save as "/Users/zahur/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/trans_iso/Macro_Plate_with_hole.cub" overwrite
+
 
 
 
