@@ -473,6 +473,7 @@ struct ForcesAndSurcesCore: public FEMethod {
    * LC: QA164.N54.
    *
    * More details about algorithm
+   * https://github.com/johannesgerer/jburkardt-m/tree/master/gm_rule
    * http://people.sc.fsu.edu/~jburkardt/cpp_src/gm_rule/gm_rule.html
   **/ virtual int getRule(int order) { return order; };
 

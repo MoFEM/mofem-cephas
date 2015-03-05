@@ -1,5 +1,5 @@
-/** 
- * \brief Operators and data structures for thermal analys
+/** \file NonLienarElasticElement.hpp
+ * \brief Operators and data structures for non-linear elastic analysis
  *
  * Implementation of nonlinear elastic element.
  *
@@ -26,7 +26,7 @@
 
 namespace MoFEM {
 
-/** \brief structure grouping operators and data used for calculation of mass (convective) element
+/** \brief structure grouping operators and data used for calculation of nonlinear elastic element 
   * \ingroup nonlinear_elastic_elem
   *
   * In order to assemble matrices and right hand vectors, the loops over
@@ -68,7 +68,7 @@ struct NonlinearElasticElement {
 
   };
   
-  MyVolumeFE feRhs; ///< cauclate right hand side for tetrahedral elements
+  MyVolumeFE feRhs; ///< calculate right hand side for tetrahedral elements
   MyVolumeFE& getLoopFeRhs() { return feRhs; } ///< get rhs volume element 
   MyVolumeFE feLhs; //< calculate left hand side for tetrahedral elements
   MyVolumeFE& getLoopFeLhs() { return feLhs; } ///< get lhs volume element
@@ -79,8 +79,8 @@ struct NonlinearElasticElement {
   NonlinearElasticElement(
     FieldInterface &m_field,short int tag);
 
-  /** \brief data for calulation het conductivity and heat capacity elements
-    * \infroup mofem_forces_and_sources 
+  /** \brief data for calculation het conductivity and heat capacity elements
+    * \ingroup nonlinear_elastic_elem
     */
   struct BlockData {
     int iD;
@@ -91,7 +91,7 @@ struct NonlinearElasticElement {
   map<int,BlockData> setOfBlocks; ///< maps block set id with appropriate BlockData
 
   /** \brief common data used by volume elements
-    * \infroup mofem_forces_and_sources 
+    * \ingroup nonlinear_elastic_elem
     */
   struct CommonData {
     map<string,vector<ublas::vector<double> > > dataAtGaussPts;
@@ -128,9 +128,15 @@ struct NonlinearElasticElement {
 
   };
  
+  /** \brief Implementation of elastic (non-linear) element
+    * \ingroup nonlinear_elastic_elem
+    */
   template<typename TYPE> 
   struct FunctionsToCalulatePiolaKirchhoffI {
 
+
+    /** \brief Calulate determinant of 3x3 matrix
+      */
     PetscErrorCode dEterminatnt(ublas::matrix<TYPE> a,TYPE &det) {
       PetscFunctionBegin;
       // a11a22a33
@@ -150,6 +156,9 @@ struct NonlinearElasticElement {
       PetscFunctionReturn(0);
     }
   
+
+    /** \brief Calusta invers of 3x3 matrix
+      */
     PetscErrorCode iNvert(TYPE det,ublas::matrix<TYPE> a,ublas::matrix<TYPE> &inv_a) {
       PetscFunctionBegin;
       //PetscErrorCode ierr;
@@ -173,8 +182,9 @@ struct NonlinearElasticElement {
     ublas::matrix<TYPE> F,C,E,S,invF,P;
     TYPE J;
 
-    int gG;
-    CommonData *commonData_ptr;
+    int gG;	///< Gauss point number
+    CommonData *commonDataPtr; ///< common data shared between entities (f.e. field values at Gauss pts.)
+    TetElementForcesAndSourcesCore::UserDataOperator *opPtr; ///< pointer to finite element tetrahedral operatol
 
     PetscErrorCode CalulateC_CauchyDefromationTensor() {
       PetscFunctionBegin;
@@ -210,6 +220,22 @@ struct NonlinearElasticElement {
       PetscFunctionReturn(0);
     }
 
+    /** \brief Function overload to implement user material
+      *
+
+      * Calculation of Piola Kirchoff I is implemented by user. Tangent matrix
+      * user implemented physical equation is calculated using automatic
+      * differentiation.
+
+      * Notes: <br>
+      * Number of actual Gauss point is accessed from variable gG. <br>
+      * Access to operator data structures is available by variable opPtr. <br>
+      * Access to common data is by commonDataPtr. <br>
+      
+      * \param block_data used to give access to material parameters
+      * \param fe_ptr pointer to element data structures
+
+      */
     virtual PetscErrorCode CalualteP_PiolaKirchhoffI(
       const BlockData block_data,
       const NumeredMoFEMFiniteElement *fe_ptr) {
@@ -323,8 +349,8 @@ struct NonlinearElasticElement {
 #endif //__NONLINEAR_ELASTIC_HPP
 
 /***************************************************************************//**
- * \defgroup nonlinear_eleastic_elem Non-Linear Elastic Element 
- * \ingroup mofem_forces_and_sources 
+ * \defgroup nonlinear_elastic_elem NonLinear Elastic Element 
+ * \ingroup mofem_forces_and_sources
  ******************************************************************************/
 
 

@@ -325,7 +325,7 @@ PetscErrorCode Core::build_problem(MoFEMProblem *problem_ptr,int verb) {
   if(verb>0) {
     PetscSynchronizedFlush(comm,PETSC_STDOUT); 
   }
-  *build_MoFEM |= 1<<4; // It is assumed that user who uses this function knows what he is doing
+  *build_MoFEM |= 1<<3; // It is assumed that user who uses this function knows what he is doing
   PetscFunctionReturn(0);
 }
 PetscErrorCode Core::build_problem(const string &problem_name,int verb) {
@@ -337,7 +337,7 @@ PetscErrorCode Core::build_problem(const string &problem_name,int verb) {
   const MoFEMProblem *problem_ptr;
   ierr = get_problem(problem_name,&problem_ptr); CHKERRQ(ierr);
   ierr = build_problem(const_cast<MoFEMProblem*>(problem_ptr),verb); CHKERRQ(ierr);
-  *build_MoFEM |= 1<<4; // It is assumed that user who uses this function knows what he is doing
+  *build_MoFEM |= 1<<3; // It is assumed that user who uses this function knows what he is doing
   PetscFunctionReturn(0);
 }
 PetscErrorCode Core::build_problems(int verb) {
