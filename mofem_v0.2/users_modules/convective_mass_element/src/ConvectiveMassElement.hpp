@@ -2156,6 +2156,8 @@ struct ConvectiveMassElement {
     PetscFunctionReturn(0);
   }
 
+  #ifdef __DIRICHLETBC_HPP__
+
   /** \brief blocked element/problem
     *
     * Blocked element run loops for different problem than TS problem. It is
@@ -2231,6 +2233,8 @@ struct ConvectiveMassElement {
     } 
 
   };
+
+  #endif //__DIRICHLETBC_HPP__
 
 };
 

@@ -34,6 +34,7 @@ using namespace MoFEM;
 #include <boost/numeric/ublas/vector.hpp>
 
 #include <adolc/adolc.h> 
+#include <DirichletBC.hpp>
 #include <ConvectiveMassElement.hpp>
 
 ErrorCode rval;

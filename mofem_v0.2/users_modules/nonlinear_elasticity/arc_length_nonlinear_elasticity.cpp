@@ -34,6 +34,8 @@ using namespace MoFEM;
 #include <ArcLengthTools.hpp>
 #include <adolc/adolc.h> 
 #include <NonLienarElasticElement.hpp>
+#include <NeoHookean.hpp>
+
 #include <PotsProcOnRefMesh.hpp>
 #include <PostProcStresses.hpp>
 #include <Projection10NodeCoordsOnField.hpp>
@@ -41,62 +43,18 @@ using namespace MoFEM;
 #include <SurfacePressure.hpp>
 #include <NodalForce.hpp>
 
-#include <FEMethod_LowLevelStudent.hpp>
-#include <FEMethod_UpLevelStudent.hpp>
-
-extern "C" {
-  #include <complex_for_lazy.h>
-}
-
-#include <FEMethod_ComplexForLazy.hpp>
-#include <FEMethod_DriverComplexForLazy.hpp>
+//#include <FEMethod_LowLevelStudent.hpp>
+//#include <FEMethod_UpLevelStudent.hpp>
+//extern "C" {
+//  #include <complex_for_lazy.h>
+//}
+//#include <FEMethod_ComplexForLazy.hpp>
+//#include <FEMethod_DriverComplexForLazy.hpp>
 #include <SurfacePressureComplexForLazy.hpp>
-
-
 using namespace ObosleteUsersModules;
 
 ErrorCode rval;
 PetscErrorCode ierr;
-
-template<typename TYPE>
-struct NeoHooke: public NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<TYPE> {
-
-    NeoHooke(): NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<TYPE>() {}
-
-    TYPE detC;
-    ublas::matrix<TYPE> invC;
-    
-    PetscErrorCode NeoHooke_PiolaKirchhoffII() {
-      PetscFunctionBegin;
-      invC.resize(3,3);
-      this->S.resize(3,3);
-      ierr = this->dEterminatnt(this->C,detC); CHKERRQ(ierr);
-      ierr = this->iNvert(detC,this->C,invC); CHKERRQ(ierr);
-      ierr = this->dEterminatnt(this->F,this->J); CHKERRQ(ierr);
-      for(int i = 0;i<3;i++) {
-	for(int j = 0;j<3;j++) {
-	  this->S(i,j) = this->mu*( ((i==j) ? 1 : 0) - invC(i,j) ) + this->lambda*log(this->J)*invC(i,j);
-	}
-      }
-      PetscFunctionReturn(0);
-    }
-
-    virtual PetscErrorCode CalualteP_PiolaKirchhoffI(
-      const NonlinearElasticElement::BlockData block_data,
-      const NumeredMoFEMFiniteElement *fe_ptr) {
-      PetscFunctionBegin;
-      PetscErrorCode ierr;
-      this->lambda = LAMBDA(block_data.E,block_data.PoissonRatio);
-      this->mu = MU(block_data.E,block_data.PoissonRatio);
-      ierr = this->CalulateC_CauchyDefromationTensor(); CHKERRQ(ierr);
-      ierr = this->NeoHooke_PiolaKirchhoffII(); CHKERRQ(ierr);
-      this->P.resize(3,3);
-      noalias(this->P) = prod(this->F,this->S);
-      //cerr << "P: " << P << endl;
-      PetscFunctionReturn(0);
-    }
-
-};
 
 int main(int argc, char *argv[]) {
 
@@ -279,11 +237,11 @@ int main(int argc, char *argv[]) {
   ierr = elastic.addElement("ELASTIC","SPATIAL_POSITION"); CHKERRQ(ierr);
   //NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<adouble> st_venant_kirchhoff_material_adouble;
   //ierr = elastic.setOperators(st_venant_kirchhoff_material_adouble,"SPATIAL_POSITION"); CHKERRQ(ierr);
-  NeoHooke<adouble> neo_hooke_adouble;
+  NeoHookean<adouble> neo_hooke_adouble;
   ierr = elastic.setOperators(neo_hooke_adouble,"SPATIAL_POSITION"); CHKERRQ(ierr);
 
   //post_processing
-  NeoHooke<double> neo_hooke_double;
+  NeoHookean<double> neo_hooke_double;
   //NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<double> st_venant_kirchhoff_material_double;
   PostPocOnRefinedMesh post_proc(m_field);
   ierr = post_proc.generateRefereneElemenMesh(); CHKERRQ(ierr);
