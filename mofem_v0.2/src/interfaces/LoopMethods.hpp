@@ -51,6 +51,8 @@ struct KspMethod {
   Vec ksp_f;
   Mat ksp_A,ksp_B;
 
+  PetscErrorCode copy_ksp(const KspMethod &ksp);
+
 };
 
 /**
@@ -74,6 +76,9 @@ struct SnesMethod {
   PetscErrorCode set_snes(SNES _snes);
   Vec snes_x,snes_f;
   Mat snes_A,snes_B;
+
+  PetscErrorCode copy_snes(const SnesMethod &snes);
+
 };
 
 /**
@@ -98,6 +103,9 @@ struct TSMethod {
 
   PetscInt ts_step;
   PetscReal ts_a,ts_t;
+
+  PetscErrorCode copy_ts(const TSMethod &ts);
+
 };
 
 /**
@@ -116,12 +124,12 @@ struct BasicMethod: public FieldUnknownInterface,KspMethod,SnesMethod,TSMethod {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"unknown inteface");
   }
 
-  BasicMethod();    
-  //
+  BasicMethod();
+
   virtual PetscErrorCode preProcess() = 0;
   virtual PetscErrorCode operator()() = 0;
   virtual PetscErrorCode postProcess() = 0;
-  //
+
   const RefMoFEMEntity_multiIndex *refinedEntitiesPtr;
   const RefMoFEMElement_multiIndex *refinedFiniteElementsPtr;
   const MoFEMProblem *problemPtr;
@@ -132,6 +140,10 @@ struct BasicMethod: public FieldUnknownInterface,KspMethod,SnesMethod,TSMethod {
   const EntMoFEMFiniteElement_multiIndex *finiteElementsEntitiesPtr;
   const MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_multiIndex *adjacenciesPtr;
   virtual ~BasicMethod() {};
+
+  private:
+  void iNit();
+
 };
 
 /**

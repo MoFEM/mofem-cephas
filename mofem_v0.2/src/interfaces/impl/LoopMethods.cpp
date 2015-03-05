@@ -46,6 +46,16 @@ PetscErrorCode KspMethod::set_ksp(KSP ksp_) {
   ksp = ksp_;
   PetscFunctionReturn(0);
 }
+PetscErrorCode KspMethod::copy_ksp(const KspMethod &ksp) {
+  PetscFunctionBegin;
+  this->ksp_ctx = ksp.ksp_ctx;
+  this->ksp = ksp.ksp;
+  this->ksp_f = ksp.ksp_f;
+  this->ksp_A = ksp.ksp_A;
+  this->ksp_B = ksp.ksp_B;
+  PetscFunctionReturn(0);
+}
+
 //SNES
 PetscErrorCode SnesMethod::set_snes_ctx(const SNESContext ctx_) {
   PetscFunctionBegin;
@@ -57,6 +67,17 @@ PetscErrorCode SnesMethod::set_snes(SNES _snes) {
   snes = _snes;
   PetscFunctionReturn(0);
 }
+PetscErrorCode SnesMethod::copy_snes(const SnesMethod &snes) {
+  PetscFunctionBegin;
+  this->snes_ctx = snes.snes_ctx;
+  this->snes = snes.snes;
+  this->snes_x = snes.snes_x;
+  this->snes_f = snes.snes_f;
+  this->snes_A = snes.snes_A;
+  this->snes_B = snes.snes_B;
+  PetscFunctionReturn(0);
+}
+
 //TS
 PetscErrorCode TSMethod::set_ts_ctx(const TSContext ctx_) {
   PetscFunctionBegin;
@@ -68,11 +89,27 @@ PetscErrorCode TSMethod::set_ts(TS _ts) {
   ts = _ts;
   PetscFunctionReturn(0);
 }
+PetscErrorCode TSMethod::copy_ts(const TSMethod &ts) {
+  PetscFunctionBegin;
+  this->ts_ctx = ts.ts_ctx;
+  this->ts = ts.ts;
+  this->ts_u = ts.ts_u;
+  this->ts_u_t = ts.ts_u_t;
+  this->ts_F = ts.ts_F;
+  this->ts_A = ts.ts_A;
+  this->ts_B = ts.ts_B;
+  this->ts_step = ts.ts_step;
+  this->ts_t = ts.ts_t;
+  PetscFunctionReturn(0);
+}
+
 //BasicMethod
 BasicMethod::BasicMethod():
   refinedEntitiesPtr(NULL),refinedFiniteElementsPtr(NULL),
   problemPtr(NULL),fieldsPtr(NULL),entitiesPtr(NULL),dofsPtr(NULL),
-  finiteElementsPtr(NULL),finiteElementsEntitiesPtr(NULL),adjacenciesPtr(NULL) {};
+  finiteElementsPtr(NULL),finiteElementsEntitiesPtr(NULL),adjacenciesPtr(NULL) {}
+
+//FEMethod
 FEMethod::FEMethod(): BasicMethod(),
   fePtr(NULL),dataPtr(NULL),
   rowPtr(NULL),colPtr(NULL) {}
@@ -92,7 +129,10 @@ PetscErrorCode FEMethod::operator()() {
   SETERRQ(PETSC_COMM_SELF,1,"should be implemented by user in derived class (operator)");
   PetscFunctionReturn(0);
 }
+
+//EntMethod
 EntMethod::EntMethod(): BasicMethod(),dofPtr(NULL),dofNumeredPtr(NULL) {}
+
 PetscErrorCode EntMethod::preProcess() {
   PetscFunctionBegin;
   SETERRQ(PETSC_COMM_SELF,1,"should be implemented by user in derived class");
