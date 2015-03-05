@@ -466,6 +466,7 @@ int main(int argc, char *argv[]) {
     }
   }
   
+  
   ierr = VecDestroy(&F); CHKERRQ(ierr);
   ierr = VecDestroy(&Fint); CHKERRQ(ierr);
   ierr = VecDestroy(&D); CHKERRQ(ierr);
