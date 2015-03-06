@@ -268,14 +268,12 @@ struct NormElement {
 		
 		Mat A;
 		bool solveBc;
-		ublas::matrix<double> &hoCoords;
-		OpLhsTet(const string re_field_name,ublas::matrix<double> &ho_coords,Mat _A): 
+		OpLhs(const string re_field_name,Mat _A): 
 			TetElementForcesAndSourcesCore::UserDataOperator(re_field_name),
-			hoCoords(ho_coords),A(_A) { }
+			A(_A) { }
 		
-		OpLhsTet(const string re_field_name,ublas::matrix<double> &ho_coords): 
-			TetElementForcesAndSourcesCore::UserDataOperator(re_field_name),
-			hoCoords(ho_coords) { }
+		OpLhs(const string re_field_name): 
+			TetElementForcesAndSourcesCore::UserDataOperator(re_field_name) { }
 		
 		ublas::matrix<FieldData> NTN;
 		
@@ -311,8 +309,8 @@ struct NormElement {
 				for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
 					double val = getVolume()*getGaussPts()(3,gg);
 	
-					if(hoCoords.size1() == row_data.getN().size1()) {
-						
+					//if(hoCoords.size1() == row_data.getN().size1()) {
+					if(this->getHoGaussPtsDetJac().size()>0) {
 						val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
 					} 
 					
@@ -322,23 +320,16 @@ struct NormElement {
 					//cblas_dger(CblasRowMajor,nb_row,nb_col,val,
 					//		   &row_data.getN(gg)[0],1,&col_data.getN(gg)[0],1,
 					//		   &NTN(0,0),nb_col);
-					
 					//(order,no.row in mat,no.col in mat,
 					
-					if(solveBc){
-						ierr = MatSetValues(
-								   (getFEMethod()->snes_B),
-								   nb_row,&row_data.getIndices()[0],
-								   nb_col,&col_data.getIndices()[0],
-								   &NTN(0,0),ADD_VALUES); CHKERRQ(ierr);
 						
-					} else if(!solveBc){
-						ierr = MatSetValues(
-								   B,
+					
+					ierr = MatSetValues(
+								   A,
 								   nb_row,&row_data.getIndices()[0],
 								   nb_col,&col_data.getIndices()[0],
 								   &NTN(0,0),ADD_VALUES); CHKERRQ(ierr);
-					}
+					
 				}
 				
 			} catch (const std::exception& ex) {
@@ -422,53 +413,62 @@ struct NormElement {
 					double sqError;
 
 					if(useL2) { //case L2 norm
-					double aa = uAnaly(gg);
-					double bb = uNumer(gg);
-					eRror = aa - bb;
+						double aa = uAnaly(gg);
+						double bb = uNumer(gg);
+						eRror = aa - bb;
 					//eRror = uAnaly(gg) - uNumer(gg);
-					sqError = pow(eRror,2.0);
+					
+					//****see how the bug is!
+					//if(abs((aa-bb)/aa) > 1) {
+					//std::cout << "\n exact = \n"<< aa << "\n FEM solution = \n" << bb << 
+							  //"\n error/exact = \n" << (aa-bb)/aa << std::endl;
+					//}
+					
+						sqError = pow(eRror,2.0);
 
 					} else if(!useL2) { //case H1 norm
 					
-					double aa = uAnaly(gg);
-					double bb = uNumer(gg);
-					eRror = aa - bb;
-					double sqGradError = ublas::inner_prod((commonData.getGradField1AtGaussPts(gg)-commonData.getGradField2AtGaussPts(gg)),(commonData.getGradField1AtGaussPts(gg)-commonData.getGradField2AtGaussPts(gg)));
+						double aa = uAnaly(gg);
+						double bb = uNumer(gg);
+						eRror = aa - bb;
 					
-					sqError = sqGradError + pow(eRror,2.0);
+						double sqGradError = ublas::inner_prod((commonData.getGradField1AtGaussPts(gg)-commonData.getGradField2AtGaussPts(gg)),(commonData.getGradField1AtGaussPts(gg)-commonData.getGradField2AtGaussPts(gg)));
+					
+						sqError = sqGradError + pow(eRror,2.0);
 					}
 					//need to calculate sqrt of norm^2
 					if(!useRela) { //case Norm error
 						
-					ublas::noalias(Nf) += val*sqError*data.getN(gg);
+						ublas::noalias(Nf) += val*sqError*data.getN(gg);
 					
 					} else if(useRela) { //case relative error
 					//ublas::vector<double> dEnominator;
 					//dEnominator.resize(nb_row);
 					//dEnominator.clear();
 					
-					double sqUanaly = pow(uAnaly[gg],2.0);
+						double sqUanaly = pow(uAnaly[gg],2.0);
 
 					//dEnominator = val*(sqError/sqUanaly)*data.getN(gg);
 				
-					ublas::noalias(rElative_error) += val*pow(eRror/uAnaly[gg],2.0)*data.getN(gg);
+						ublas::noalias(rElative_error) += val*pow(eRror/norm_inf(uAnaly),2.0)*data.getN(gg);
 					//std::cout << "\n rElative_error = \n" << rElative_error << std::endl;
 					}
 
 			    }
+				
 				//take sqrt of ||error||
 				if(!useRela) {
-				//std::transform(Nf.begin(), Nf.end(), Nf.begin(), (double(*)(double)) sqrt);
+					//std::transform(Nf.begin(), Nf.end(), Nf.begin(), (double(*)(double)) sqrt);
 				} else {
-				//std::transform(rElative_error.begin(), rElative_error.end(), rElative_error.begin(), (double(*)(double)) sqrt);
+					//std::transform(rElative_error.begin(), rElative_error.end(), rElative_error.begin(), (double(*)(double)) sqrt);
 				
 				}
 
 				if(!useRela) {
-				ierr = VecSetValues(F,data.getIndices().size(),
-				&data.getIndices()[0],&*Nf.data().begin(),ADD_VALUES); CHKERRQ(ierr);} else {
-				ierr = VecSetValues(F,data.getIndices().size(),
-									&data.getIndices()[0],&*rElative_error.data().begin(),ADD_VALUES); CHKERRQ(ierr);	
+					ierr = VecSetValues(F,data.getIndices().size(),
+					&data.getIndices()[0],&*Nf.data().begin(),ADD_VALUES); CHKERRQ(ierr);} else {
+					ierr = VecSetValues(F,data.getIndices().size(),
+										&data.getIndices()[0],&*rElative_error.data().begin(),ADD_VALUES); CHKERRQ(ierr);	
 				}
 	            
 			}
@@ -563,7 +563,7 @@ PetscErrorCode addNormElements(
 
 
 PetscErrorCode setNormFiniteElementRhsOperator(string norm_field_name,string field1_name,
-	string field2_name,Vec &F,bool usel2,bool userela,
+	string field2_name,Mat A,Vec &F,bool usel2,bool userela,
     string nodals_positions = "MESH_NODE_POSITIONS") {
     PetscFunctionBegin;
 	//ublas::vector<double> field_Value1AtGaussPts;
@@ -578,6 +578,8 @@ PetscErrorCode setNormFiniteElementRhsOperator(string norm_field_name,string fie
 		feRhs.get_op_to_do_Rhs().push_back(new OpGetGradField1AtGaussPts(field1_name,commonData));
 		feRhs.get_op_to_do_Rhs().push_back(new OpGetGradField2AtGaussPts(field2_name,commonData));
 		
+		feLhs.get_op_to_do_Lhs().push_back(new OpLhs(norm_field_name,A));
+
 		feRhs.get_op_to_do_Rhs().push_back(new OpRhs(norm_field_name,norm_field_name,F,commonData,usel2,userela));
 	}
 

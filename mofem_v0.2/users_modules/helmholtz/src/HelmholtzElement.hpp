@@ -71,7 +71,7 @@ struct HelmholtzElement {
 		 * More details about algorithm
 		 * http://people.sc.fsu.edu/~jburkardt/cpp_src/gm_rule/gm_rule.html
 		**/
-		int getRule(int order) { return order-1; };
+		int getRule(int order) { return order; };
 	};
 	MyVolumeFE feRhs; ///< cauclate right hand side for tetrahedral elements
 	MyVolumeFE& getLoopFeRhs() { return feRhs; } ///< get rhs volume element
@@ -92,8 +92,6 @@ struct HelmholtzElement {
 	MyTriFE feIncidentWave; //< Incident wave flux element
     MyTriFE& getLoopfeIncidentWave() { return feIncidentWave; } //< get Incident Waveflux element
 	
-	//MyTriFE feImpedanceRhs; //< Robin Boundary element
-    //MyTriFE& getLoopFeImpedanceRhs() { return feImpedanceRhs; } //< get Robin element
     MyTriFE feImpedanceLhs;
     MyTriFE& getLoopFeImpedanceLhs() { return feImpedanceLhs; }
 
@@ -141,20 +139,25 @@ struct HelmholtzElement {
 	* \infroup mofem_helmholtz_elem
 	*/
 	struct CommonData {
-		ublas::vector<double> pressureAtGaussPts;   //Helmholtz Pressure
+		ublas::vector<double> pressureReAtGaussPts;   //Helmholtz Pressure
+		ublas::vector<double> pressureImAtGaussPts;   //Helmholtz Pressure
 		ublas::vector<double> pressureRateAtGaussPts;
-		ublas::matrix<double> gradAtGaussPts;
-		inline ublas::matrix_row<ublas::matrix<double> > getGradAtGaussPts(const int gg) {
-			return ublas::matrix_row<ublas::matrix<double> >(gradAtGaussPts,gg);
+		ublas::matrix<double> gradReAtGaussPts;
+		ublas::matrix<double> gradImAtGaussPts;
+		inline ublas::matrix_row<ublas::matrix<double> > getGradReAtGaussPts(const int gg) {
+			return ublas::matrix_row<ublas::matrix<double> >(gradReAtGaussPts,gg);
+		}
+		inline ublas::matrix_row<ublas::matrix<double> > getGradImAtGaussPts(const int gg) {
+			return ublas::matrix_row<ublas::matrix<double> >(gradImAtGaussPts,gg);
 		}
 	};
 	CommonData commonData;
 	
 	/// \brief operator to calculate pressure gradient at Gauss points
-	struct OpGetGradAtGaussPts: public TetElementForcesAndSourcesCore::UserDataOperator {
+	struct OpGetGradReAtGaussPts: public TetElementForcesAndSourcesCore::UserDataOperator {
 	
 		CommonData &commonData;
-		OpGetGradAtGaussPts(const string field_name,CommonData &common_data):
+		OpGetGradReAtGaussPts(const string field_name,CommonData &common_data):
 			TetElementForcesAndSourcesCore::UserDataOperator(field_name),
 			commonData(common_data) {}
 	
@@ -166,19 +169,20 @@ struct HelmholtzElement {
 			int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
 			PetscFunctionBegin;
 			try {
-	
+				
 				if(data.getIndices().size()==0) PetscFunctionReturn(0);
+				//if(data.getFieldData().size()==0) PetscFunctionReturn(0);
 				int nb_dofs = data.getFieldData().size();
 				int nb_gauss_pts = data.getN().size1();
 	
 				//initialize
-				commonData.gradAtGaussPts.resize(nb_gauss_pts,3);
+				commonData.gradReAtGaussPts.resize(nb_gauss_pts,3);
 				if(type == MBVERTEX) {
-					fill(commonData.gradAtGaussPts.data().begin(),commonData.gradAtGaussPts.data().end(),0);
+					fill(commonData.gradReAtGaussPts.data().begin(),commonData.gradReAtGaussPts.data().end(),0);
 				}
 	
 				for(int gg = 0;gg<nb_gauss_pts;gg++) {
-					ublas::noalias(commonData.getGradAtGaussPts(gg)) += prod( trans(data.getDiffN(gg,nb_dofs)), data.getFieldData() );
+					ublas::noalias(commonData.getGradReAtGaussPts(gg)) += prod( trans(data.getDiffN(gg,nb_dofs)), data.getFieldData() );
 				}
 	
 			} catch (const std::exception& ex) {
@@ -190,6 +194,48 @@ struct HelmholtzElement {
 			PetscFunctionReturn(0);
 		}
 	
+	};
+	
+	/// \brief operator to calculate pressure gradient at Gauss points
+	struct OpGetGradImAtGaussPts: public TetElementForcesAndSourcesCore::UserDataOperator {
+		
+		CommonData &commonData;
+		OpGetGradImAtGaussPts(const string field_name,CommonData &common_data):
+			TetElementForcesAndSourcesCore::UserDataOperator(field_name),
+			commonData(common_data) {}
+		
+		/** \brief operator calculating pressure gradients
+		  *
+		  * pressure gradient is calculated multiplying derivatives of shape functions by degrees of freedom.
+		  */
+		PetscErrorCode doWork(
+			int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+			PetscFunctionBegin;
+			try {
+				
+				if(data.getIndices().size()==0) PetscFunctionReturn(0);
+				int nb_dofs = data.getFieldData().size();
+				int nb_gauss_pts = data.getN().size1();
+				
+				//initialize
+				commonData.gradImAtGaussPts.resize(nb_gauss_pts,3);
+				if(type == MBVERTEX) {
+					fill(commonData.gradImAtGaussPts.data().begin(),commonData.gradImAtGaussPts.data().end(),0);
+				}
+				
+				for(int gg = 0;gg<nb_gauss_pts;gg++) {
+					ublas::noalias(commonData.getGradImAtGaussPts(gg)) += prod( trans(data.getDiffN(gg,nb_dofs)), data.getFieldData() );
+				}
+				
+			} catch (const std::exception& ex) {
+				ostringstream ss;
+				ss << "throw in method: " << ex.what() << endl;
+				SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+			}
+			
+			PetscFunctionReturn(0);
+		}
+		
 	};
 	
 	/** \brief opearator to caulate pressure  and rate of pressure at Gauss points
@@ -243,17 +289,26 @@ struct HelmholtzElement {
 	/** \brief operator to calculate pressure at Gauss pts
 	* \infroup mofem_helmholtz_elem
 	*/
-	struct OpGetTetPressureAtGaussPts: public OpGetFieldAtGaussPts<TetElementForcesAndSourcesCore> {
-		OpGetTetPressureAtGaussPts(const string field_name,CommonData &common_data):
-			OpGetFieldAtGaussPts<TetElementForcesAndSourcesCore>(field_name,common_data.pressureAtGaussPts) {}
+	struct OpGetTetPressureReAtGaussPts: public OpGetFieldAtGaussPts<TetElementForcesAndSourcesCore> {
+		OpGetTetPressureReAtGaussPts(const string field_name,CommonData &common_data):
+			OpGetFieldAtGaussPts<TetElementForcesAndSourcesCore>(field_name,common_data.pressureReAtGaussPts) {}
+	};
+	struct OpGetTetPressureImAtGaussPts: public OpGetFieldAtGaussPts<TetElementForcesAndSourcesCore> {
+		OpGetTetPressureImAtGaussPts(const string field_name,CommonData &common_data):
+			OpGetFieldAtGaussPts<TetElementForcesAndSourcesCore>(field_name,common_data.pressureImAtGaussPts) {}
 	};
 	
 	/** \brief operator to calculate pressure at Gauss pts
 	* \infroup mofem_helmholtz_elem
 	*/
-	struct OpGetTriPressureAtGaussPts: public OpGetFieldAtGaussPts<TriElementForcesAndSurcesCore> {
-		OpGetTriPressureAtGaussPts(const string field_name,CommonData &common_data):
-			OpGetFieldAtGaussPts<TriElementForcesAndSurcesCore>(field_name,common_data.pressureAtGaussPts) {}
+	struct OpGetTriPressureReAtGaussPts: public OpGetFieldAtGaussPts<TriElementForcesAndSurcesCore> {
+		OpGetTriPressureReAtGaussPts(const string field_name,CommonData &common_data):
+			OpGetFieldAtGaussPts<TriElementForcesAndSurcesCore>(field_name,common_data.pressureReAtGaussPts) {}
+	};
+	
+	struct OpGetTriPressureImAtGaussPts: public OpGetFieldAtGaussPts<TriElementForcesAndSurcesCore> {
+		OpGetTriPressureImAtGaussPts(const string field_name,CommonData &common_data):
+			OpGetFieldAtGaussPts<TriElementForcesAndSurcesCore>(field_name,common_data.pressureImAtGaussPts) {}
 	};
 	
 	/** \brief operator to calculate Pressure rate at Gauss pts
@@ -319,15 +374,16 @@ struct HelmholtzElement {
 		BlockData &dAta;
 		CommonData &commonData;
 		bool useTsF;
-		bool useImim;
-		OpHelmholtzRhs(const string re_field_name,const string im_field_name,BlockData &data,CommonData &common_data,bool imim):
+		bool use_impedance;
+		string field_name;
+		OpHelmholtzRhs(const string re_field_name,const string im_field_name,BlockData &data,CommonData &common_data,bool useImpedance):
 			TetElementForcesAndSourcesCore::UserDataOperator(re_field_name,im_field_name),
-			dAta(data),commonData(common_data),useImim(imim),useTsF(true) {}
+			dAta(data),commonData(common_data),use_impedance(useImpedance),field_name(re_field_name),useTsF(true) {}
 	
 		Vec F;
-		OpHelmholtzRhs(const string re_field_name,const string im_field_name,Vec _F,BlockData &data,CommonData &common_data,bool imim):
+		OpHelmholtzRhs(const string re_field_name,const string im_field_name,Vec _F,BlockData &data,CommonData &common_data,bool useImpedance):
 			TetElementForcesAndSourcesCore::UserDataOperator(re_field_name,im_field_name),
-			dAta(data),commonData(common_data),useImim(imim),useTsF(false),F(_F) { }
+			dAta(data),commonData(common_data),use_impedance(useImpedance),field_name(re_field_name),useTsF(false),F(_F) { }
 	
 		ublas::vector<double> Nf;
 	
@@ -368,43 +424,39 @@ struct HelmholtzElement {
 						val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
 					}
 					
-					//cerr << val << endl;
-					//cerr << data.getDiffN() << endl;
-					//cerr << data.getIndices() << endl;
-					//cerr << commonData.gradAtGaussPts << endl;
-					//cblas
+
 					//cblas_dgemv(CblasRowMajor,CblasNoTrans,nb_row_dofs,3,val,
 					//&data.getDiffN()(gg,0),3,&commonData.gradAtGaussPts(gg,0),1,
 					//1.,&Nf[0],1);
-	                double const_kT = wAvenUmber*commonData.pressureAtGaussPts[gg];
+					double const_kT_Re = wAvenUmber*commonData.pressureReAtGaussPts[gg];
+					double const_kT_Im = wAvenUmber*commonData.pressureImAtGaussPts[gg];
+		
+					ublas::vector<double> dNdT_Re(data.getN().size2());
+				
+					ublas::noalias(dNdT_Re) = prod(data.getDiffN(gg,nb_row_dofs),commonData.getGradReAtGaussPts(gg));
+					ublas::vector<double> dNdT_Im(data.getN().size2());
+			
+					ublas::noalias(dNdT_Im) = prod(data.getDiffN(gg,nb_row_dofs),commonData.getGradImAtGaussPts(gg));
 					
-					//std::string wait;
-					//std::cout <<"\n is imim true ???? "<< useImim << std::endl;
-					//std::cout << "\n commonData.pressureAtGaussPts[gg] = \n" << commonData.pressureAtGaussPts[gg] << std::endl;
+					cblas_daxpy(data.getN().size2(), -const_kT_Re, &data.getN(gg)[0], 1, &dNdT_Re[0], 1);
+					cblas_daxpy(data.getN().size2(), -const_kT_Im, &data.getN(gg)[0], 1, &dNdT_Im[0], 1);
 					
-					//ublas
-					//wait to be fixed and improved here.
+				
+						if(use_impedance) {
+							if(field_name.compare(0,6,"rePRES") == 0) {
+								ublas::noalias(Nf) += val*(dNdT_Re + wAvenumber*commonData.pressureImAtGaussPts[gg]*data.getN(gg)); 
+							} else if(field_name.compare(0,6,"imPRES") == 0) {
+								ublas::noalias(Nf) += val*(dNdT_Im - wAvenumber*commonData.pressureReAtGaussPts[gg]*data.getN(gg));
+							}
+						} else{
+							if(field_name.compare(0,6,"rePRES") == 0) {
+								ublas::noalias(Nf) += val*(dNdT_Re); 
+							} else if(field_name.compare(0,6,"imPRES") == 0) {
+								ublas::noalias(Nf) += val*(dNdT_Im);
+							}
+						}
 					
-					//if(!useImim) {
-					//	std::string wait;
-					//	std::cout << "\n commonData.pressureAtGaussPts_re = \n" << commonData.pressureAtGaussPts << std::endl;
-					//}
-					//else {
-					//	std::string wait;
-					//	std::cout << "\n commonData.pressureAtGaussPts_im = \n" << commonData.pressureAtGaussPts << std::endl;
-					//}
-						
-					
-					
-					
-					ublas::vector<double> dNdT(data.getN().size2());
-					ublas::noalias(dNdT) = prod(data.getDiffN(gg,nb_row_dofs),commonData.getGradAtGaussPts(gg));
-					cblas_daxpy(data.getN().size2(), -const_kT, &data.getN(gg)[0], 1, &dNdT[0], 1);
-					if(useImim) {
-					ublas::noalias(Nf) += -val*(dNdT); }
-					else{
-					ublas::noalias(Nf) += val*(dNdT); }
-					
+				
 				}
 	
 				//cerr << Nf << endl;
@@ -567,17 +619,17 @@ struct HelmholtzElement {
 	/** \biref operator to calculate left hand side of stiffness terms
 	  * \infroup mofem_helmholtz_elem
 	  */
-	struct OpHelmholtzLhs_rereA: public TetElementForcesAndSourcesCore::UserDataOperator {
+	struct OpHelmholtzLhs_A: public TetElementForcesAndSourcesCore::UserDataOperator {
 	
 		BlockData &dAta;
 		CommonData &commonData;
         bool useTsB;
-		OpHelmholtzLhs_rereA(const string re_field_name,const string im_field_name,BlockData &data,CommonData &common_data):
+		OpHelmholtzLhs_A(const string re_field_name,const string im_field_name,BlockData &data,CommonData &common_data):
 			TetElementForcesAndSourcesCore::UserDataOperator(re_field_name,im_field_name),
 			dAta(data),commonData(common_data),useTsB(true) { }
 		
 		Mat A;
-		OpHelmholtzLhs_rereA(const string re_field_name,const string im_field_name,Mat _A,BlockData &data,CommonData &common_data):
+		OpHelmholtzLhs_A(const string re_field_name,const string im_field_name,Mat _A,BlockData &data,CommonData &common_data):
 			TetElementForcesAndSourcesCore::UserDataOperator(re_field_name,im_field_name),
 			dAta(data),commonData(common_data),useTsB(false),A(_A) {}
 	
@@ -660,100 +712,6 @@ struct HelmholtzElement {
 	
 	};
 
-	struct OpHelmholtzLhs_imimA: public TetElementForcesAndSourcesCore::UserDataOperator {
-		
-		BlockData &dAta;
-		CommonData &commonData;
-	
-        bool useTsB;
-		OpHelmholtzLhs_imimA(const string re_field_name,const string im_field_name,BlockData &data,CommonData &common_data):
-			TetElementForcesAndSourcesCore::UserDataOperator(re_field_name,im_field_name),
-			dAta(data),commonData(common_data),useTsB(true) { }
-		
-		Mat A;
-		OpHelmholtzLhs_imimA(const string re_field_name,const string im_field_name,Mat _A,BlockData &data,CommonData &common_data):
-			TetElementForcesAndSourcesCore::UserDataOperator(re_field_name,im_field_name),
-			dAta(data),commonData(common_data),useTsB(false),A(_A) {}
-		
-		ublas::matrix<double> K,transK;
-		
-		/** \brief calculate helmholtz stiffness matrix
-		  *
-		  * K = int diffN^T  diffN^T dOmega^2
-		  *
-		  */
-		PetscErrorCode doWork(
-			int row_side,int col_side,
-			EntityType row_type,EntityType col_type,
-			DataForcesAndSurcesCore::EntData &row_data,
-			DataForcesAndSurcesCore::EntData &col_data) {
-			PetscFunctionBegin;
-			
-			if(dAta.tEts.find(getMoFEMFEPtr()->get_ent()) == dAta.tEts.end()) {
-				PetscFunctionReturn(0);
-			}
-			
-			try {
-				
-				if(row_data.getIndices().size()==0) PetscFunctionReturn(0);
-				if(col_data.getIndices().size()==0) PetscFunctionReturn(0);
-				
-				int nb_row = row_data.getN().size2();
-				int nb_col = col_data.getN().size2();
-				K.resize(nb_row,nb_col);
-				bzero(&*K.data().begin(),nb_row*nb_col*sizeof(double));
-				
-				for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
-					
-					double val = getVolume()*getGaussPts()(3,gg);
-					if(getHoGaussPtsDetJac().size()>0) {
-						val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
-					}
-					
-					//cblas
-					//double *diff_N_row,*diff_N_col;
-					//diff_N_row = &row_data.getDiffN()(gg,0);
-					//diff_N_col = &col_data.getDiffN()(gg,0);
-					//cblas_dgemm(CblasRowMajor,CblasNoTrans,CblasTrans,
-					//nb_row,nb_col,3,
-					//val,diff_N_row,3,diff_N_col,3,1.,&K(0,0),nb_col);
-					
-					//ublas
-					noalias(K) += val*prod(row_data.getDiffN(gg,nb_row),trans(col_data.getDiffN(gg,nb_col)));
-					
-				}
-				
-				PetscErrorCode ierr;
-				if(!useTsB) {
-					const_cast<FEMethod*>(getFEMethod())->ts_B = A;
-				}
-				ierr = MatSetValues(
-						   A,
-						   nb_row,&row_data.getIndices()[0],
-						   nb_col,&col_data.getIndices()[0],
-						   &K(0,0),ADD_VALUES); CHKERRQ(ierr);
-				if(row_side != col_side || row_type != col_type) {
-					transK.resize(nb_col,nb_row);
-					noalias(transK) = trans( K );
-					ierr = MatSetValues(
-							   A,
-							   nb_col,&col_data.getIndices()[0],
-							   nb_row,&row_data.getIndices()[0],
-							   &transK(0,0),ADD_VALUES); CHKERRQ(ierr);
-				}
-				
-				
-			} catch (const std::exception& ex) {
-				ostringstream ss;
-				ss << "throw in method: " << ex.what() << endl;
-				SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
-			}
-			
-			PetscFunctionReturn(0);
-		}
-		
-	};
-
 	/** \brief operator to calculate left hand side of element mass matrix terms
 	  * \infroup mofem_helmholtz_elem * Lumped mass matrix does not applied to Hierarchical shape functions.
 	  */
@@ -803,7 +761,7 @@ struct HelmholtzElement {
 					if(getHoGaussPtsDetJac().size()>0) {
 						val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
 					}
-					val *= getFEMethod()->ts_a;
+					//val *= getFEMethod()->ts_a;
 					//cblas
 					//double *N_row,*N_col;
 					//N_row = &row_data.getN()(gg,0);
@@ -914,8 +872,6 @@ struct HelmholtzElement {
                 //double const2 = inner_prod(const1,-getNormal());
 				//nEumanntOrus = (k/sqrt(3))*const2;
 				
-
-				
 				if(ho_geometry) {
 					double area = norm_2(getNormals_at_GaussPt(gg)); //cblas_dnrm2(3,&getNormals_at_GaussPt()(gg,0),1);
 					flux = dAta.dAta.data.value1*area;  //FluxData.HeatfluxCubitBcData.data.value1 * area
@@ -926,10 +882,6 @@ struct HelmholtzElement {
 				ublas::noalias(Nf) += val*flux*data.getN(gg,nb_dofs);
 	
 			}
-	
-			//cerr << "VecSetValues\n";
-			//cerr << Nf << endl;
-			//cerr << data.getIndices() << endl;
 	
 			if(useTsF) {
 				ierr = VecSetValues(getFEMethod()->ts_F,data.getIndices().size(),
@@ -957,7 +909,7 @@ struct HelmholtzElement {
 		bool useTsF;
 		string re_field;
 		string im_field;
-		//double (*fUN)(double x,double y,double z);
+		
 		OpHelmholtzIncidentWave(const string re_field_name,const string im_field_name,BlockData &DATA,FluxData &data,ublas::matrix<double> &ho_coords,bool _ho_geometry = false):
 			TriElementForcesAndSurcesCore::UserDataOperator(re_field_name,im_field_name),
 			datA(DATA),dAta(data),ho_geometry(_ho_geometry),useTsF(true),re_field(re_field_name),im_field(im_field_name),hoCoords(ho_coords) { }
@@ -1004,36 +956,10 @@ struct HelmholtzElement {
 				double flux;
 				double wAvenumber = datA.aNgularfreq/datA.sPeed;  //wave number K is the propotional to the frequency of 
 				double iNcidentwave;
-				
-				//complex< double > result;
-				//ublas::vector< complex< double > > const2 (3);
-				//const complex< double > i( 0.0, 1.0 );
-				//ublas::vector<double> d (3); //incident wave direction. Unit vector.wait to move to .cpp executable file.
-				//d (0) = 1;  // x direction
-				//d (1) = 0;
-				//d (2) = 0;
-				//ublas::vector<double> sPatialpsn (3); //spatial position of the nodes.
-				//sPatialpsn (0) = getCoordsAtGaussPts()(gg,0);
-				//sPatialpsn (1) = getCoordsAtGaussPts()(gg,1);
-				//sPatialpsn (2) = getCoordsAtGaussPts()(gg,2);
-				//double const1 = inner_prod(sPatialpsn,d);
-				
-				//if(d (0) != 0 && d (1) != 0 && d (2) != 0){
-				//	//ublas::vector<double> const2 (3);
-				//	const2 (0) = i*sPatialpsn (0)*exp(i*wAvenumber*const1);
-				//	const2 (1) = i*sPatialpsn (1)*exp(i*wAvenumber*const1);
-				//	const2 (2) = i*sPatialpsn (2)*exp(i*wAvenumber*const1);
-				//    result = inner_prod(const2,getNormal());}
-				//else if(d (0) != 0){
-				//	//ublas::vector<double> const2 (3);
-				//	const2 (0) = i*sPatialpsn (0)*exp(i*wAvenumber*const1);
-				//	const2 (1) = 0;
-				//	const2 (2) = 0;
-				//    result = inner_prod(const2,getNormal());}
 				////////////////////********************************/////////////
 				unsigned int nb_gauss_pts = data.getN().size1();
 				double x,y,z;
-	
+					
 					if(hoCoords.size1() == nb_gauss_pts) {
 						double area = norm_2(getNormals_at_GaussPt(gg))*0.5; 
 						val *= area;
@@ -1047,46 +973,72 @@ struct HelmholtzElement {
 						z = getCoordsAtGaussPts()(gg,2);
 					}
 					
+					//Incident wave in x direction.
+					complex< double > result;
+					ublas::vector< complex< double > > const2 (3);
+					const complex< double > i( 0.0, 1.0 );
+					ublas::vector<double> d (3); //incident wave direction. Unit vector.wait to move to .cpp executable file.
+					d (0) = 1;  // x direction
+					d (1) = 0;
+					d (2) = 0;
+					ublas::vector<double> sPatialpsn (3); //spatial position of the nodes.
+					sPatialpsn (0) = x;
+					sPatialpsn (1) = y;
+					sPatialpsn (2) = z;
+					double const1 = inner_prod(sPatialpsn,d);
 					
-					
-
-				const double pi = atan( 1.0 ) * 4.0;
-				double R = sqrt(pow(x,2.0)+pow(y,2.0)+pow(z,2.0)); //radius
-				double theta = atan2(y,x)+2*pi; //the arctan of radians (y/x)
-				const double k = wAvenumber;  //Wave number
-				const double a = 0.5;         //radius of the sphere,wait to modify by user
-				const double const1 = k * a;
-				//double const2 = k * R;
+					if(d (0) != 0 && d (1) != 0 && d (2) != 0){
+						//ublas::vector<double> const2 (3);
+						const2 (0) = i*sPatialpsn (0)*exp(i*wAvenumber*const1);
+						const2 (1) = i*sPatialpsn (1)*exp(i*wAvenumber*const1);
+						const2 (2) = i*sPatialpsn (2)*exp(i*wAvenumber*const1);
+				    result = inner_prod(const2,getNormal());}
+					else if(d (0) != 0){
+						//ublas::vector<double> const2 (3);
+						const2 (0) = i*sPatialpsn (0)*exp(i*wAvenumber*const1);
+						const2 (1) = 0;
+						const2 (2) = 0;
+				    result = inner_prod(const2,getNormal());}
+				/***** incident wave in x direction *****/
+				/*** incident wave from Finite Element Analysis of Acoustic Scattering by Frank Ihlenburg **/
+				//const double pi = atan( 1.0 ) * 4.0;
+				//double R = sqrt(pow(x,2.0)+pow(y,2.0)+pow(z,2.0)); //radius
+				////double theta = atan2(y,x)+2*pi; //the arctan of radians (y/x)
+				//double theta = 3.0;
+				//const double k = wAvenumber;  //Wave number
+				//const double a = 0.5;         //radius of the sphere,wait to modify by user
+				//const double const1 = k * a;
+				////double const2 = k * R;
 				
-				const complex< double > i( 0.0, 1.0 );
+				//const complex< double > i( 0.0, 1.0 );
 				
-				// magnitude of incident wave
-				//const double phi_incident_mag = 1.0;
+				//// magnitude of incident wave
+				////const double phi_incident_mag = 1.0;
 				
-				const double tol = 1.0e-10;
-				double max = 0.0;
-				double min = 999999.0;
+				//const double tol = 1.0e-10;
+				//double max = 0.0;
+				//double min = 999999.0;
 				
-				complex< double > result = 0.0;
-				complex< double > prev_result;
+				//complex< double > result = 0.0;
+				//complex< double > prev_result;
 				
-				double error = 100.0;
-				unsigned int n = 0; //initialized the infinite series loop
+				//double error = 100.0;
+				//unsigned int n = 0; //initialized the infinite series loop
 				
-				while( error > tol )  //finding the acoustic potential in one single point.
-				{
-					double jn_der = n / const1 * sph_bessel( n, const1 ) - sph_bessel( n + 1, const1 );  //The derivative of bessel function
-					//complex< double > hn_der = n / const1 * sph_hankel_1( n, const1 ) - sph_hankel_1( n + 1, const1 );
-					//complex< double > hn_der = 0.5 * ( sph_hankel_1( n - 1, const1 ) -
-					//( sph_hankel_1( n, const1 ) + const1 * sph_hankel_1( n + 1, const1 ) ) / const1 );
-					double Pn = legendre_p( n, cos( theta ) );  //Legendre
-					//complex< double >hn = sph_hankel_1( n, const2 );  //S Hankel first kind function
-					prev_result = result;
-					result -= k * pow( i, n ) * ( 2.0 * n + 1.0 ) * jn_der * Pn;
-					error = abs( abs( result ) - abs( prev_result ) );
-					++n;
-				}
-				
+				//while( error > tol )  //finding the acoustic potential in one single point.
+				//{
+				//	double jn_der = n / const1 * sph_bessel( n, const1 ) - sph_bessel( n + 1, const1 );  //The derivative of bessel function
+				//	//complex< double > hn_der = n / const1 * sph_hankel_1( n, const1 ) - sph_hankel_1( n + 1, const1 );
+				//	//complex< double > hn_der = 0.5 * ( sph_hankel_1( n - 1, const1 ) -
+				//	//( sph_hankel_1( n, const1 ) + const1 * sph_hankel_1( n + 1, const1 ) ) / const1 );
+				//	double Pn = legendre_p( n, cos( theta ) );  //Legendre
+				//	//complex< double >hn = sph_hankel_1( n, const2 );  //S Hankel first kind function
+				//	prev_result = result;
+				//	result += -k * pow( i, n ) * ( 2.0 * n + 1.0 ) * jn_der * Pn;
+				//	error = abs( abs( result ) - abs( prev_result ) );
+				//	++n;
+				//}
+				/**         **/
 				if(re_field.compare(0,6,"rePRES")==0){
 					
 				iNcidentwave = std::real(result);
@@ -1101,6 +1053,7 @@ struct HelmholtzElement {
 				ublas::noalias(Nf) += val*flux*data.getN(gg,nb_dofs);
 			}
 			
+			//std::cout << "\n Nf = \n" << Nf << std::endl;
 			//cerr << "VecSetValues\n";
 			//cerr << Nf << endl;
 			//cerr << data.getIndices() << endl;
@@ -1124,19 +1077,20 @@ struct HelmholtzElement {
 	
 		ImpedanceData &dAta;
 		BlockData &blockData;
+		ublas::matrix<double> &hoCoords;
 		bool ho_geometry;
 		bool useTsB;
 	
 		OpImpedanceLhs_reimC(const string re_field_name,const string im_field_name,
-						ImpedanceData &data,BlockData &block_data,bool _ho_geometry = false):
+						ImpedanceData &data,BlockData &block_data,ublas::matrix<double> &ho_coords,bool _ho_geometry = false):
 			TriElementForcesAndSurcesCore::UserDataOperator(re_field_name,im_field_name),
-			dAta(data),ho_geometry(_ho_geometry),useTsB(true),blockData(block_data) {}
+			dAta(data),ho_geometry(_ho_geometry),useTsB(true),blockData(block_data),hoCoords(ho_coords) {}
 	
 		Mat A;
 		OpImpedanceLhs_reimC(const string re_field_name,const string im_field_name,Mat _A,
-						ImpedanceData &data,BlockData &block_data,bool _ho_geometry = false):
+						ImpedanceData &data,BlockData &block_data,ublas::matrix<double> &ho_coords,bool _ho_geometry = false):
 			TriElementForcesAndSurcesCore::UserDataOperator(re_field_name,im_field_name),
-			dAta(data),ho_geometry(_ho_geometry),useTsB(false),A(_A),blockData(block_data) {}
+			dAta(data),ho_geometry(_ho_geometry),useTsB(false),A(_A),blockData(block_data),hoCoords(ho_coords) {}
 	
 		ublas::matrix<double> K,transK;
 		/** \brief calculate helmholtz Impedance term in the imaginary lhs of equations
@@ -1162,19 +1116,17 @@ struct HelmholtzElement {
 	
 				for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {  /* Integrate the shape functions in one element */
 					double waveNumber = blockData.aNgularfreq/blockData.sPeed;
-                    
-				    //std::string wait;
-					//std::cout << "\n waveNumber = \n" << waveNumber << std::endl;
-        					
-					double impedanceConst;
-					if(ho_geometry) {
-						double area = norm_2(getNormals_at_GaussPt(gg));
-						impedanceConst = -dAta.sIgma*waveNumber*area;
+              		double val = getGaussPts()(2,gg);		
+					
+					unsigned int nb_gauss_pts = row_data.getN().size1();
+					double impedanceConst = -dAta.sIgma*waveNumber;
+					if(hoCoords.size1() == nb_gauss_pts) {
+						double area = norm_2(getNormals_at_GaussPt(gg))*0.5;
+						val *= area;
 					}   else {
-						impedanceConst = -dAta.sIgma*waveNumber*getArea();
+						val *= getArea();
 					}
-					double val = getGaussPts()(2,gg)*impedanceConst;
-					noalias(K) += val*outer_prod( row_data.getN(gg,nb_row),col_data.getN(gg,nb_col) );
+					noalias(K) += val*impedanceConst*outer_prod( row_data.getN(gg,nb_row),col_data.getN(gg,nb_col) );
 	
 				}
 	
@@ -1215,19 +1167,20 @@ struct HelmholtzElement {
 		
 		ImpedanceData &dAta;
 		BlockData &blockData;
+		ublas::matrix<double> &hoCoords;
 		bool ho_geometry;
 		bool useTsB;
 		
 		OpImpedanceLhs_imreC(const string re_field_name,const string im_field_name,
-					   ImpedanceData &data,BlockData &block_data,bool _ho_geometry = false):
+					   ImpedanceData &data,BlockData &block_data,ublas::matrix<double> &ho_coords,bool _ho_geometry = false):
 			TriElementForcesAndSurcesCore::UserDataOperator(re_field_name,im_field_name),
-			dAta(data),ho_geometry(_ho_geometry),useTsB(true),blockData(block_data) {}
+			dAta(data),ho_geometry(_ho_geometry),useTsB(true),blockData(block_data),hoCoords(ho_coords) {}
 		
 		Mat A;
 		OpImpedanceLhs_imreC(const string re_field_name,const string im_field_name,Mat _A,
-					   ImpedanceData &data,BlockData &block_data,bool _ho_geometry = false):
+					   ImpedanceData &data,BlockData &block_data,ublas::matrix<double> &ho_coords,bool _ho_geometry = false):
 			TriElementForcesAndSurcesCore::UserDataOperator(re_field_name,im_field_name),
-			dAta(data),ho_geometry(_ho_geometry),useTsB(false),A(_A),blockData(block_data) {}
+			dAta(data),ho_geometry(_ho_geometry),useTsB(false),A(_A),blockData(block_data),hoCoords(ho_coords) {}
 		
 		ublas::matrix<double> K,transK;
 		/** \brief calculate helmholtz Impedance term in the imaginary lhs of equations
@@ -1253,18 +1206,113 @@ struct HelmholtzElement {
 				
 				for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {  /* Integrate the shape functions in one element */
 					
-					double waveNumber = blockData.aNgularfreq/blockData.sPeed; //for impedance BC
-					//double waveNumber = 1.0;                                   //for neumann BC
-
-					double impedanceConst;
-					if(ho_geometry) {
-						double area = norm_2(getNormals_at_GaussPt(gg));
-						impedanceConst = dAta.sIgma*waveNumber*area;
+					double waveNumber = blockData.aNgularfreq/blockData.sPeed;
+              		double val = getGaussPts()(2,gg);		
+					
+					unsigned int nb_gauss_pts = row_data.getN().size1();
+					double impedanceConst = dAta.sIgma*waveNumber;
+					if(hoCoords.size1() == nb_gauss_pts) {
+						double area = norm_2(getNormals_at_GaussPt(gg))*0.5;
+						val *= area;
 					}   else {
-						impedanceConst = dAta.sIgma*waveNumber*getArea();
+						val *= getArea();
 					}
-					double val = getGaussPts()(2,gg)*impedanceConst;
-					noalias(K) += val*outer_prod( row_data.getN(gg,nb_row),col_data.getN(gg,nb_col) );
+					noalias(K) += val*impedanceConst*outer_prod( row_data.getN(gg,nb_row),col_data.getN(gg,nb_col) );
+					
+				}
+				
+				
+				PetscErrorCode ierr;
+				if(!useTsB) {
+					const_cast<FEMethod*>(getFEMethod())->ts_B = A;  //to change the pointer getFEMethod()'s private member ts_B value with A.
+				}                                                                    //getFEMethod() belong to class FieldInterface::FEMethod
+				ierr = MatSetValues(
+						   (getFEMethod()->ts_B),
+						   nb_row,&row_data.getIndices()[0],              //MatSetValues(A,i,m,j,n,value,INSERT_VALUES,ierr), i*j the size of input matrix,
+						   nb_col,&col_data.getIndices()[0],              // m and n - the position of parent matrix to allowed the input matrix.
+						   &K(0,0),ADD_VALUES); CHKERRQ(ierr);
+				if(row_side != col_side || row_type != col_type) {
+					transK.resize(nb_col,nb_row);
+					noalias(transK) = trans( K );
+					ierr = MatSetValues(
+							   (getFEMethod()->ts_B),
+							   nb_col,&col_data.getIndices()[0],
+							   nb_row,&row_data.getIndices()[0],
+							   &transK(0,0),ADD_VALUES); CHKERRQ(ierr);
+				}
+				
+				
+			} catch (const std::exception& ex) {
+				ostringstream ss;
+				ss << "throw in method: " << ex.what() << endl;
+				SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+			}
+			
+			PetscFunctionReturn(0);
+		}
+		
+	};
+	
+	struct OpImpedanceLhs_D:public TriElementForcesAndSurcesCore::UserDataOperator {
+		
+		ImpedanceData &dAta;
+		BlockData &blockData;
+		ublas::matrix<double> &hoCoords;
+		bool ho_geometry;
+		bool useTsB;
+		
+		OpImpedanceLhs_D(const string re_field_name,const string im_field_name,
+							 ImpedanceData &data,BlockData &block_data,ublas::matrix<double> &ho_coords,bool _ho_geometry = false):
+			TriElementForcesAndSurcesCore::UserDataOperator(re_field_name,im_field_name),
+			dAta(data),ho_geometry(_ho_geometry),useTsB(true),blockData(block_data),hoCoords(ho_coords) {}
+		
+		Mat A;
+		OpImpedanceLhs_D(const string re_field_name,const string im_field_name,Mat _A,
+							 ImpedanceData &data,BlockData &block_data,ublas::matrix<double> &ho_coords,bool _ho_geometry = false):
+			TriElementForcesAndSurcesCore::UserDataOperator(re_field_name,im_field_name),
+			dAta(data),ho_geometry(_ho_geometry),useTsB(false),A(_A),blockData(block_data),hoCoords(ho_coords) {}
+		
+		ublas::matrix<double> K,transK;
+		/** \brief calculate helmholtz Impedance term in the real part of lhs equations
+		 *
+		 * K = intS 1/R N^T N dS
+		 */
+		PetscErrorCode doWork(
+			int row_side,int col_side,
+			EntityType row_type,EntityType col_type,
+			DataForcesAndSurcesCore::EntData &row_data,
+			DataForcesAndSurcesCore::EntData &col_data) {
+			PetscFunctionBegin;
+			
+			try {
+				
+				if(row_data.getIndices().size()==0) PetscFunctionReturn(0);
+				if(col_data.getIndices().size()==0) PetscFunctionReturn(0);
+				
+				int nb_row = row_data.getN().size2();
+				int nb_col = col_data.getN().size2();
+				K.resize(nb_row,nb_col);
+				bzero(&*K.data().begin(),nb_row*nb_col*sizeof(double));
+				
+				for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {  /* Integrate the shape functions in one element */
+              		double val = getGaussPts()(2,gg);		
+					
+					unsigned int nb_gauss_pts = row_data.getN().size1();
+					double x,y,z;
+					if(hoCoords.size1() == nb_gauss_pts) {
+						double area = norm_2(getNormals_at_GaussPt(gg))*0.5;
+						val *= area;
+						x = hoCoords(gg,0);
+						y = hoCoords(gg,1);
+						z = hoCoords(gg,2);
+					}   else {
+						val *= getArea();
+						x = getCoordsAtGaussPts()(gg,0);
+						y = getCoordsAtGaussPts()(gg,1);
+						z = getCoordsAtGaussPts()(gg,2);
+					}
+					double r_inv = 1/(sqrt(pow(x,2.0)+pow(y,2.0)+pow(z,2.0))); //radius
+					noalias(K) += val*r_inv*outer_prod( row_data.getN(gg,nb_row),col_data.getN(gg,nb_col) );
 					
 				}
 				
@@ -1403,6 +1451,10 @@ struct HelmholtzElement {
 		ierr = mField.modify_finite_element_add_field_col("HELMHOLTZ_FLUX_FE",im_field_name); CHKERRQ(ierr);
 		ierr = mField.modify_finite_element_add_field_data("HELMHOLTZ_FLUX_FE",im_field_name); CHKERRQ(ierr);
 		
+		if(mField.check_field("MESH_NODE_POSITIONS")) {
+			ierr = mField.modify_finite_element_add_field_data("HELMHOLTZ_FLUX_FE","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+		}
+		
 		ierr = mField.modify_problem_add_finite_element(problem_name,"HELMHOLTZ_FLUX_FE"); CHKERRQ(ierr);
 	
 		for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SIDESET|HEATFLUXSET,it)) {
@@ -1492,7 +1544,7 @@ struct HelmholtzElement {
 	PetscErrorCode setHelmholtzFiniteElementRhs_FOperators(string re_field_name,string im_field_name,Vec &F,bool useScalar) {
 		PetscFunctionBegin;
 		map<int,BlockData>::iterator sit = setOfBlocks.begin();
-		feRhs.get_op_to_do_Rhs().push_back(new OpGetGradAtGaussPts(re_field_name,commonData));
+		feRhs.get_op_to_do_Rhs().push_back(new OpGetGradReAtGaussPts(re_field_name,commonData));
 		for(;sit!=setOfBlocks.end();sit++) {
 			//add finite element
 			feRhs.get_op_to_do_Rhs().push_back(new OpHelmholtzRhs_F(re_field_name,im_field_name,F,sit->second,commonData,useScalar));
@@ -1500,56 +1552,27 @@ struct HelmholtzElement {
 		PetscFunctionReturn(0);
 	}
 	
-	PetscErrorCode setHelmholtzFiniteElementRhsOperators_rere(string re_field_name,string im_field_name,Vec &F) {
+	PetscErrorCode setHelmholtzFiniteElementRhsOperators(string re_field_name,string im_field_name,Vec &F,bool useImpedance) {
 		PetscFunctionBegin;
-		bool imim = false;
-		map<int,BlockData>::iterator sit = setOfBlocks.begin();
-		feRhs.get_op_to_do_Rhs().push_back(new OpGetGradAtGaussPts(re_field_name,commonData));
-		feRhs.get_op_to_do_Rhs().push_back(new OpGetTetPressureAtGaussPts(re_field_name,commonData));
 
+		map<int,BlockData>::iterator sit = setOfBlocks.begin();
 		
 		for(;sit!=setOfBlocks.end();sit++) {
+			
+			feRhs.get_op_to_do_Rhs().push_back(new OpGetGradReAtGaussPts(re_field_name,commonData));
+			feRhs.get_op_to_do_Rhs().push_back(new OpGetTetPressureReAtGaussPts(re_field_name,commonData));
+			feRhs.get_op_to_do_Rhs().push_back(new OpGetGradImAtGaussPts(im_field_name,commonData));
+			feRhs.get_op_to_do_Rhs().push_back(new OpGetTetPressureImAtGaussPts(im_field_name,commonData));
+			
 			//add finite element
-			feRhs.get_op_to_do_Rhs().push_back(new OpHelmholtzRhs(re_field_name,re_field_name,F,sit->second,commonData,imim));
+			feRhs.get_op_to_do_Rhs().push_back(new OpHelmholtzRhs(re_field_name,re_field_name,F,sit->second,commonData,useImpedance));
+			feRhs.get_op_to_do_Rhs().push_back(new OpHelmholtzRhs(im_field_name,im_field_name,F,sit->second,commonData,useImpedance));
+
 		}
-		
-		//imim = true;
-		//sit = setOfBlocks.begin();
-		//feRhs.get_op_to_do_Rhs().push_back(new OpGetGradAtGaussPts(im_field_name,commonData));
-		//feRhs.get_op_to_do_Rhs().push_back(new OpGetTetPressureAtGaussPts(im_field_name,commonData));
-
-
-		//for(;sit!=setOfBlocks.end();sit++) {
-		//	//add finite element
-		//	feRhs.get_op_to_do_Rhs().push_back(new OpHelmholtzRhs(re_field_name,re_field_name,F,sit->second,commonData,imim));
-		//}
 		
 		PetscFunctionReturn(0);
 	}
-	
-   	PetscErrorCode setHelmholtzFiniteElementRhsOperators_imim(string re_field_name,string im_field_name,Vec &F) {
-		bool imim = false;
-		PetscFunctionBegin;
-		map<int,BlockData>::iterator sit = setOfBlocks.begin();
-		feRhs.get_op_to_do_Rhs().push_back(new OpGetGradAtGaussPts(im_field_name,commonData));
-		feRhs.get_op_to_do_Rhs().push_back(new OpGetTetPressureAtGaussPts(im_field_name,commonData)); //get the pressure at gaussian points
-		for(;sit!=setOfBlocks.end();sit++) {
-			//add finite element
-			feRhs.get_op_to_do_Rhs().push_back(new OpHelmholtzRhs(im_field_name,im_field_name,F,sit->second,commonData,imim));
-		}
 		
-		//sit = setOfBlocks.begin();
-		//feRhs.get_op_to_do_Rhs().push_back(new OpGetGradAtGaussPts(re_field_name,commonData));
-		//feRhs.get_op_to_do_Rhs().push_back(new OpGetTetPressureAtGaussPts(re_field_name,commonData)); //get the pressure at gaussian points
-		//for(;sit!=setOfBlocks.end();sit++) {
-		//	//add finite element
-		//	feRhs.get_op_to_do_Rhs().push_back(new OpHelmholtzRhs(im_field_name,im_field_name,F,sit->second,commonData,imim));
-		//}
-		
-		PetscFunctionReturn(0);
-	}
-	
-	
 	
 	
 	/** \brief this fucntion is used in case of stationary Helmholtz problem for lhs stiffness term
@@ -1560,9 +1583,8 @@ struct HelmholtzElement {
 		map<int,BlockData>::iterator sit = setOfBlocks.begin();
 		for(;sit!=setOfBlocks.end();sit++) {
 			//add finite elemen
-			feLhs.get_op_to_do_Lhs().push_back(new OpHelmholtzLhs_rereA(re_field_name,re_field_name,A,sit->second,commonData));	
-			feLhs.get_op_to_do_Lhs().push_back(new OpHelmholtzLhs_imimA(im_field_name,im_field_name,A,sit->second,commonData));
-
+			feLhs.get_op_to_do_Lhs().push_back(new OpHelmholtzLhs_A(re_field_name,re_field_name,A,sit->second,commonData));
+			feLhs.get_op_to_do_Lhs().push_back(new OpHelmholtzLhs_A(im_field_name,im_field_name,A,sit->second,commonData));	
 		}
 		PetscFunctionReturn(0);
 	}
@@ -1604,12 +1626,13 @@ struct HelmholtzElement {
 	PetscErrorCode setHelmholtzIncidentWaveFiniteElementRhsOperators(string re_field_name,string im_field_name,Vec &F,const string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
 		PetscFunctionBegin;
 		bool ho_geometry = false;
+		map<int,FluxData>::iterator sit = setOfFluxes.begin();
+		
 		if(mField.check_field(mesh_nodals_positions)) {
-		//	ho_geometry = true;
-		feIncidentWave.get_op_to_do_Rhs().push_back(new OpHoCoordTri(mesh_nodals_positions,hoCoordsTri));
+			//	ho_geometry = true;
+			feIncidentWave.get_op_to_do_Rhs().push_back(new OpHoCoordTri(mesh_nodals_positions,hoCoordsTri));
 		}
 		
-		map<int,FluxData>::iterator sit = setOfFluxes.begin();
 		for(;sit!=setOfFluxes.end();sit++) {
 			//add finite element
 			feIncidentWave.get_op_to_do_Rhs().push_back(new OpHelmholtzIncidentWave(re_field_name,re_field_name,F,blockData,sit->second,hoCoordsTri,ho_geometry));
@@ -1642,10 +1665,18 @@ struct HelmholtzElement {
 		//	ho_geometry = true;
 		//}
 		map<int,ImpedanceData>::iterator sit = setOfImpedance.begin();
+		
+		if(mField.check_field(mesh_nodals_positions)) {
+			//	ho_geometry = true;
+			feIncidentWave.get_op_to_do_Rhs().push_back(new OpHoCoordTri(mesh_nodals_positions,hoCoordsTri));
+		}
+		
 		for(;sit!=setOfImpedance.end();sit++) {
 			//add finite element
-			feImpedanceLhs.get_op_to_do_Lhs().push_back(new OpImpedanceLhs_reimC(re_field_name,im_field_name,A,sit->second,blockData,ho_geometry));
-			feImpedanceLhs.get_op_to_do_Lhs().push_back(new OpImpedanceLhs_imreC(im_field_name,re_field_name,A,sit->second,blockData,ho_geometry));
+			//feImpedanceLhs.get_op_to_do_Lhs().push_back(new OpImpedanceLhs_D(re_field_name,re_field_name,A,sit->second,blockData,hoCoordsTri,ho_geometry));
+			//feImpedanceLhs.get_op_to_do_Lhs().push_back(new OpImpedanceLhs_D(im_field_name,im_field_name,A,sit->second,blockData,hoCoordsTri,ho_geometry));
+			feImpedanceLhs.get_op_to_do_Lhs().push_back(new OpImpedanceLhs_reimC(re_field_name,im_field_name,A,sit->second,blockData,hoCoordsTri,ho_geometry));
+			feImpedanceLhs.get_op_to_do_Lhs().push_back(new OpImpedanceLhs_imreC(im_field_name,re_field_name,A,sit->second,blockData,hoCoordsTri,ho_geometry));
 		}
 		PetscFunctionReturn(0);
 	}
