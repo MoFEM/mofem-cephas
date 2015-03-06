@@ -59,7 +59,6 @@ struct MonitorPostProc: public FEMethod {
   FieldInterface &mField;
   PostPocOnRefinedMesh postProc;
   map<int,NonlinearElasticElement::BlockData> &setOfBlocks; 
-  NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<double> &fUn;
 
   bool iNit;
 
@@ -67,10 +66,8 @@ struct MonitorPostProc: public FEMethod {
   int *step;
 
   MonitorPostProc(FieldInterface &m_field,
-    map<int,NonlinearElasticElement::BlockData> &set_of_blocks,
-    NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<double> &fun): 
-    FEMethod(),mField(m_field),postProc(m_field),setOfBlocks(set_of_blocks),
-    fUn(fun),iNit(false) { 
+    map<int,NonlinearElasticElement::BlockData> &set_of_blocks): 
+    FEMethod(),mField(m_field),postProc(m_field),setOfBlocks(set_of_blocks),iNit(false) { 
     
     ErrorCode rval;
     PetscErrorCode ierr;
@@ -115,8 +112,7 @@ struct MonitorPostProc: public FEMethod {
 	    postProc.mapGaussPts,
 	    "SPATIAL_POSITION",
 	    sit->second,
-	    postProc.commonData,
-	    fUn));
+	    postProc.commonData));
       }
 
       iNit = true;
@@ -289,7 +285,7 @@ int main(int argc, char *argv[]) {
   ierr = elastic.setBlocks(&st_venant_kirchhoff_material_double,&st_venant_kirchhoff_material_adouble); CHKERRQ(ierr);
   ierr = elastic.addElement("ELASTIC","SPATIAL_POSITION"); CHKERRQ(ierr);
   ierr = elastic.setOperators("SPATIAL_POSITION"); CHKERRQ(ierr);
-  MonitorPostProc post_proc(m_field,elastic.setOfBlocks,st_venant_kirchhoff_material_double);
+  MonitorPostProc post_proc(m_field,elastic.setOfBlocks);
 
   //set app. order
   PetscInt disp_order;

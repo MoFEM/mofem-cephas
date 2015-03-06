@@ -253,9 +253,7 @@ int main(int argc, char *argv[]) {
 	    post_proc.mapGaussPts,
 	    "SPATIAL_POSITION",
 	    sit->second,
-	    post_proc.commonData,
-	    //st_venant_kirchhoff_material_double));
-	    neo_hooke_double));
+	    post_proc.commonData));
   }
 
   //build field
