@@ -659,6 +659,7 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual EntityHandle get_field_meshset(const string& name) const = 0;
 
   /** \brief check if field is in database
+   * \ingroup mofem_field
    *
    * \param name field name
    * \return true if field exist

@@ -232,17 +232,14 @@ int main(int argc, char *argv[]) {
     ierr = m_field.modify_problem_add_finite_element("ELASTIC_MECHANICS","FORCE_FE"); CHKERRQ(ierr);
   }
 
-  NonlinearElasticElement elastic(m_field,2);
-  ierr = elastic.setBlocks(); CHKERRQ(ierr);
-  ierr = elastic.addElement("ELASTIC","SPATIAL_POSITION"); CHKERRQ(ierr);
-  //NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<adouble> st_venant_kirchhoff_material_adouble;
-  //ierr = elastic.setOperators(st_venant_kirchhoff_material_adouble,"SPATIAL_POSITION"); CHKERRQ(ierr);
   NeoHookean<adouble> neo_hooke_adouble;
-  ierr = elastic.setOperators(neo_hooke_adouble,"SPATIAL_POSITION"); CHKERRQ(ierr);
+  NeoHookean<double> neo_hooke_double;
+  NonlinearElasticElement elastic(m_field,2);
+  ierr = elastic.setBlocks(&neo_hooke_double,&neo_hooke_adouble); CHKERRQ(ierr);
+  ierr = elastic.addElement("ELASTIC","SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = elastic.setOperators("SPATIAL_POSITION"); CHKERRQ(ierr);
 
   //post_processing
-  NeoHookean<double> neo_hooke_double;
-  //NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<double> st_venant_kirchhoff_material_double;
   PostPocOnRefinedMesh post_proc(m_field);
   ierr = post_proc.generateRefereneElemenMesh(); CHKERRQ(ierr);
   ierr = post_proc.addFieldValuesPostProc("SPATIAL_POSITION"); CHKERRQ(ierr);

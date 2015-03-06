@@ -79,6 +79,9 @@ struct NonlinearElasticElement {
   NonlinearElasticElement(
     FieldInterface &m_field,short int tag);
 
+  template<typename TYPE> 
+  struct FunctionsToCalulatePiolaKirchhoffI;
+
   /** \brief data for calculation het conductivity and heat capacity elements
     * \ingroup nonlinear_elastic_elem
     */
@@ -87,6 +90,8 @@ struct NonlinearElasticElement {
     double E;
     double PoissonRatio;
     Range tEts; ///< constatins elements in block set
+    FunctionsToCalulatePiolaKirchhoffI<adouble> *materialAdoublePtr;
+    FunctionsToCalulatePiolaKirchhoffI<double> *materialDoublePtr;
   }; 
   map<int,BlockData> setOfBlocks; ///< maps block set id with appropriate BlockData
 
@@ -104,36 +109,11 @@ struct NonlinearElasticElement {
   };
   CommonData commonData;
 
-  struct OpGetDataAtGaussPts: public TetElementForcesAndSourcesCore::UserDataOperator {
-
-    vector<ublas::vector<double> > &valuesAtGaussPts;
-    vector<ublas::matrix<double> > &gradientAtGaussPts;
-    const EntityType zeroAtType;
-
-    OpGetDataAtGaussPts(const string field_name,
-      vector<ublas::vector<double> > &values_at_gauss_pts,
-      vector<ublas::matrix<double> > &gardient_at_gauss_pts);
-
-    /** \brief operator calculating deformation gradient
-      *
-      * temperature gradient is calculated multiplying derivatives of shape functions by degrees of freedom
-      */
-    PetscErrorCode doWork(
-      int side,EntityType type,DataForcesAndSurcesCore::EntData &data); 
-
-  };
-
-  struct OpGetCommonDataAtGaussPts: public OpGetDataAtGaussPts {
-    OpGetCommonDataAtGaussPts(const string field_name,CommonData &common_data);
-
-  };
- 
   /** \brief Implementation of elastic (non-linear) element
     * \ingroup nonlinear_elastic_elem
     */
   template<typename TYPE> 
   struct FunctionsToCalulatePiolaKirchhoffI {
-
 
     /** \brief Calulate determinant of 3x3 matrix
       */
@@ -267,11 +247,33 @@ struct NonlinearElasticElement {
 
   };
 
+  struct OpGetDataAtGaussPts: public TetElementForcesAndSourcesCore::UserDataOperator {
+
+    vector<ublas::vector<double> > &valuesAtGaussPts;
+    vector<ublas::matrix<double> > &gradientAtGaussPts;
+    const EntityType zeroAtType;
+
+    OpGetDataAtGaussPts(const string field_name,
+      vector<ublas::vector<double> > &values_at_gauss_pts,
+      vector<ublas::matrix<double> > &gardient_at_gauss_pts);
+
+    /** \brief operator calculating deformation gradient
+      *
+      * temperature gradient is calculated multiplying derivatives of shape functions by degrees of freedom
+      */
+    PetscErrorCode doWork(
+      int side,EntityType type,DataForcesAndSurcesCore::EntData &data); 
+
+  };
+
+  struct OpGetCommonDataAtGaussPts: public OpGetDataAtGaussPts {
+    OpGetCommonDataAtGaussPts(const string field_name,CommonData &common_data);
+  };
+ 
   struct OpJacobian: public TetElementForcesAndSourcesCore::UserDataOperator {
 
     BlockData &dAta;
     CommonData &commonData;
-    FunctionsToCalulatePiolaKirchhoffI<adouble> &fUn;
     int tAg;//,lastId;
     bool jAcobian;
     bool fieldDisp;
@@ -280,7 +282,6 @@ struct NonlinearElasticElement {
       const string field_name,
       BlockData &data,
       CommonData &common_data,
-      FunctionsToCalulatePiolaKirchhoffI<adouble> &fun,
       int tag,bool jacobian,bool field_disp);
 
     ublas::vector<double> active_varibles;
@@ -322,7 +323,9 @@ struct NonlinearElasticElement {
 
   };
 
-  PetscErrorCode setBlocks();
+  PetscErrorCode setBlocks(
+    FunctionsToCalulatePiolaKirchhoffI<double> *materialDoublePtr,
+    FunctionsToCalulatePiolaKirchhoffI<adouble> *materialAdoublePtr);
 
   PetscErrorCode addElement(string element_name,
     string spatial_position_field_name,
@@ -337,7 +340,6 @@ struct NonlinearElasticElement {
     * \param field_disp true if approximation field represents displacements otherwise it is field of spatial positions
     */
   PetscErrorCode setOperators(
-    FunctionsToCalulatePiolaKirchhoffI<adouble> &fun,
     string spatial_position_field_name,
     string material_position_field_name = "MESH_NODE_POSITIONS",
     bool ale = false,bool field_disp = false);

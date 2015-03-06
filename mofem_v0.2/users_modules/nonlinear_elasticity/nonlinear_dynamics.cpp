@@ -282,16 +282,16 @@ int main(int argc, char *argv[]) {
   //add entitities (by tets) to the field
   ierr = m_field.add_ents_to_field_by_TETs(0,"SPATIAL_POSITION"); CHKERRQ(ierr);
 
-  NonlinearElasticElement elastic(m_field,2);
-  ierr = elastic.setBlocks(); CHKERRQ(ierr);
-  ierr = elastic.addElement("ELASTIC","SPATIAL_POSITION"); CHKERRQ(ierr);
   NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<adouble> st_venant_kirchhoff_material_adouble;
-  ierr = elastic.setOperators(st_venant_kirchhoff_material_adouble,"SPATIAL_POSITION"); CHKERRQ(ierr);
   NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<double> st_venant_kirchhoff_material_double;
+
+  NonlinearElasticElement elastic(m_field,2);
+  ierr = elastic.setBlocks(&st_venant_kirchhoff_material_double,&st_venant_kirchhoff_material_adouble); CHKERRQ(ierr);
+  ierr = elastic.addElement("ELASTIC","SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = elastic.setOperators("SPATIAL_POSITION"); CHKERRQ(ierr);
   MonitorPostProc post_proc(m_field,elastic.setOfBlocks,st_venant_kirchhoff_material_double);
 
   //set app. order
-
   PetscInt disp_order;
   ierr = PetscOptionsGetInt(PETSC_NULL,"-my_disp_order",&disp_order,&flg); CHKERRQ(ierr);
   if(flg!=PETSC_TRUE) {
