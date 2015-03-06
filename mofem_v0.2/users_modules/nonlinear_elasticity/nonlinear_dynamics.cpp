@@ -45,6 +45,11 @@ using namespace MoFEM;
 #include <PotsProcOnRefMesh.hpp>
 #include <PostProcStresses.hpp>
 
+#include <boost/program_options.hpp>
+using namespace std;
+namespace po = boost::program_options;
+#include <ElasticMaterials.hpp>
+
 #define BLOCKED_PROBLEM
 
 using namespace ObosleteUsersModules;
@@ -278,15 +283,6 @@ int main(int argc, char *argv[]) {
   //add entitities (by tets) to the field
   ierr = m_field.add_ents_to_field_by_TETs(0,"SPATIAL_POSITION"); CHKERRQ(ierr);
 
-  NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<adouble> st_venant_kirchhoff_material_adouble;
-  NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<double> st_venant_kirchhoff_material_double;
-
-  NonlinearElasticElement elastic(m_field,2);
-  ierr = elastic.setBlocks(&st_venant_kirchhoff_material_double,&st_venant_kirchhoff_material_adouble); CHKERRQ(ierr);
-  ierr = elastic.addElement("ELASTIC","SPATIAL_POSITION"); CHKERRQ(ierr);
-  ierr = elastic.setOperators("SPATIAL_POSITION"); CHKERRQ(ierr);
-  MonitorPostProc post_proc(m_field,elastic.setOfBlocks);
-
   //set app. order
   PetscInt disp_order;
   ierr = PetscOptionsGetInt(PETSC_NULL,"-my_disp_order",&disp_order,&flg); CHKERRQ(ierr);
@@ -345,6 +341,18 @@ int main(int argc, char *argv[]) {
   ierr = m_field.set_field_order(0,MBEDGE,"DOT_SPATIAL_VELOCITY",vel_order); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0,MBVERTEX,"DOT_SPATIAL_VELOCITY",1); CHKERRQ(ierr);
 
+  //set material model and mass element
+  NonlinearElasticElement elastic(m_field,2);
+  ElasticMaterials elastic_materials(m_field);
+  ierr = elastic_materials.setBlocks(elastic.setOfBlocks); CHKERRQ(ierr);
+  //NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<adouble> st_venant_kirchhoff_material_adouble;
+  //NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<double> st_venant_kirchhoff_material_double;
+  //ierr = elastic.setBlocks(&st_venant_kirchhoff_material_double,&st_venant_kirchhoff_material_adouble); CHKERRQ(ierr);
+  ierr = elastic.addElement("ELASTIC","SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = elastic.setOperators("SPATIAL_POSITION"); CHKERRQ(ierr);
+  MonitorPostProc post_proc(m_field,elastic.setOfBlocks);
+
+  //set mass element
   ConvectiveMassElement inertia(m_field,1);
   ierr = inertia.setBlocks(); CHKERRQ(ierr);
   ierr = inertia.addConvectiveMassElement("MASS_ELEMENT","SPATIAL_VELOCITY","SPATIAL_POSITION"); CHKERRQ(ierr);
@@ -423,6 +431,9 @@ int main(int argc, char *argv[]) {
   Vec D;
   ierr = VecDuplicate(F,&D); CHKERRQ(ierr);
 
+  PetscBool linear;
+  ierr = PetscOptionsGetBool(PETSC_NULL,"-is_linear",&linear,PETSC_NULL); CHKERRQ(ierr);
+
   #ifdef BLOCKED_PROBLEM
     //shell matrix
     ConvectiveMassElement::MatShellCtx *shellAij_ctx = new ConvectiveMassElement::MatShellCtx();
@@ -463,7 +474,7 @@ int main(int argc, char *argv[]) {
     fe_spatial.methodsOp.push_back(new TimeForceScale());
     blocked_problem.loopK.push_back(ConvectiveMassElement::BlockePakedProblem::LoopPairType("NEUMANN_FE",&fe_spatial));
 
-    ierr = inertia.setBlockedMassOperators("SPATIAL_VELOCITY","SPATIAL_POSITION"); CHKERRQ(ierr);
+    ierr = inertia.setBlockedMassOperators("SPATIAL_VELOCITY","SPATIAL_POSITION","MESH_NODE_POSITIONS",linear); CHKERRQ(ierr);
     //element name "ELASTIC" is used, therefore M matrix is assembled as K matrix.
     blocked_problem.loopM.push_back(ConvectiveMassElement::BlockePakedProblem::LoopPairType("ELASTIC",&inertia.getLoopFeMassLhs()));
   #else
@@ -482,7 +493,7 @@ int main(int argc, char *argv[]) {
     }
     fe_spatial.methodsOp.push_back(new TimeForceScale());
   
-    ierr = inertia.setConvectiveMassOperators("SPATIAL_VELOCITY","SPATIAL_POSITION"); CHKERRQ(ierr);
+    ierr = inertia.setConvectiveMassOperators("SPATIAL_VELOCITY","SPATIAL_POSITION","MESH_NODE_POSITIONS",false,linear); CHKERRQ(ierr);
     ierr = inertia.setVelocityOperators("SPATIAL_VELOCITY","SPATIAL_POSITION"); CHKERRQ(ierr);
   #endif
 

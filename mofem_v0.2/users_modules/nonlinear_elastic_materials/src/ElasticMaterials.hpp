@@ -25,17 +25,21 @@
 #define MAT_HOOKE "HOOKE"
 #define MAT_NEOHOOKEAN "NEOHOOKEAN"
 
+/** \brief Manage setting parameters and constitutive equations for nonlinear/linear elastic materials
+  */
 struct ElasticMaterials {
 
   FieldInterface &mField;
-  boost::ptr_map<string,NonlinearElasticElement> elasticElements;
-  boost::ptr_map<string,FunctionsToCalulatePiolaKirchhoffI<adouble> > adoubleMaterialModel;
-  boost::ptr_map<string,PostPocOnRefinedMesh> postProcesElements;
-  boost::ptr_map<string,PostPorcStress> postProcesStress;
-  boost::ptr_map<string,FunctionsToCalulatePiolaKirchhoffI<double> > doubleMaterialModel;
+  string defMaterial;
+  bool iNitialized;
 
   ElasticMaterials(FieldInterface &m_field):
-    mField(m_field) {}
+    mField(m_field),defMaterial(MAT_KIRCHOFF),
+    iNitialized(false) {}
+
+
+  boost::ptr_map<string,NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<adouble> > aDoubleMaterialModel;
+  boost::ptr_map<string,NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<double> > doubleMaterialModel;
 
   struct BlockOptionData {
     string mAterial;
@@ -52,7 +56,22 @@ struct ElasticMaterials {
   };
   map<int,BlockOptionData> blockData;
 
-  /** \brief init Elastic materials declaration for blocks and meshsets
+  PetscErrorCode iNit() {
+    PetscFunctionBegin;
+    string mat_name;
+    mat_name = MAT_KIRCHOFF;
+    aDoubleMaterialModel.insert(mat_name,new NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<adouble>());
+    doubleMaterialModel.insert(mat_name,new NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<double>());
+    mat_name = MAT_HOOKE;
+    aDoubleMaterialModel.insert(mat_name,new Hooke<adouble>());
+    doubleMaterialModel.insert(mat_name,new Hooke<double>());
+    mat_name = MAT_NEOHOOKEAN;
+    aDoubleMaterialModel.insert(mat_name,new NeoHookean<adouble>());
+    doubleMaterialModel.insert(mat_name,new NeoHookean<double>());
+    PetscFunctionReturn(0);
+  }
+
+  /** \brief read Elastic materials declaration for blocks and meshsets
 
     User has to include in file header:
     \code 
@@ -63,16 +82,24 @@ struct ElasticMaterials {
 
     */
   PetscErrorCode readConfigFile() {
-    char config_file[255];
-    PetscBool is_config_set;
-    ierr = PetscOptionsGetString(PETSC_NULL,"-elastic_material_config",config_file,255,&is_config_set); CHKERRQ(ierr);
+    PetscFunctionBegin;
+    PetscErrorCode ierr;
+    char default_material[255];
+    PetscBool def_mat_set;
+    ierr = PetscOptionsGetString(PETSC_NULL,"-default_material",default_material,255,&def_mat_set); CHKERRQ(ierr);
+    if(def_mat_set) {
+      defMaterial = default_material;
+      if(aDoubleMaterialModel.find(defMaterial)==aDoubleMaterialModel.end()) {
+	SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"material <%s> not implemented",default_material);
+      }
+    }
     po::variables_map vm;
     po::options_description config_file_options;
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_ELASTICSET,it)) {
       ostringstream str_material;
       str_material << "block_" << it->get_msId() << ".material";
       config_file_options.add_options()
-	(str_cond.str().c_str(),po::value<string>(&blockData[it->get_msId()].material)->default_value(MAT_KIRCHOFF));
+	(str_material.str().c_str(),po::value<string>(&blockData[it->get_msId()].mAterial)->default_value(defMaterial));
       ostringstream str_cond;
       str_cond << "block_" << it->get_msId() << ".young_modulus";
       config_file_options.add_options()
@@ -86,6 +113,10 @@ struct ElasticMaterials {
       //config_file_options.add_options()
 	//(str_init_temp.str().c_str(),po::value<double>(&blockData[it->get_msId()].initTemp)->default_value(0));
     }
+    char config_file[255];
+    PetscBool is_config_set;
+    ierr = PetscOptionsGetString(PETSC_NULL,"-elastic_material_config",config_file,255,&is_config_set); CHKERRQ(ierr);
+    ifstream ini_file(config_file);  
     po::parsed_options parsed = parse_config_file(ini_file,config_file_options,true);
     store(parsed,vm);
     po::notify(vm); 
@@ -95,14 +126,25 @@ struct ElasticMaterials {
       vit!=additional_parameters.end();vit++) {
       ierr = PetscPrintf(PETSC_COMM_WORLD,"** WARRNING Unrecognised option %s\n",vit->c_str()); CHKERRQ(ierr);
     }
+    PetscFunctionReturn(0);
+
   }
 
-  PetscErrorCode setBlockOrder() {
+  PetscErrorCode setBlocksOrder() {
     PetscFunctionBegin;
+    ErrorCode rval;
+    PetscErrorCode ierr;
+    //set app. order
+    PetscBool flg = PETSC_TRUE;
+    PetscInt disp_order;
+    ierr = PetscOptionsGetInt(PETSC_NULL,"-my_disp_order",&disp_order,&flg); CHKERRQ(ierr);
+    if(flg!=PETSC_TRUE) {
+      disp_order = 1;	
+    }
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_ELASTICSET,it)) {
-      if(block_data[it->get_msId()].oRder == -1) continue;
-      if(block_data[it->get_msId()].oRder == order) continue;
-      PetscPrintf(mField.get_comm(),"Set block %d oRder to %d\n",it->get_msId(),block_data[it->get_msId()].oRder);
+      if(blockData[it->get_msId()].oRder == -1) continue;
+      if(blockData[it->get_msId()].oRder == disp_order) continue;
+      PetscPrintf(mField.get_comm(),"Set block %d oRder to %d\n",it->get_msId(),blockData[it->get_msId()].oRder);
       Range block_ents;
       rval = mField.get_moab().get_entities_by_handle(it->meshset,block_ents,true); CHKERR(rval);
       Range ents_to_set_order;
@@ -111,52 +153,49 @@ struct ElasticMaterials {
       ierr = mField.get_moab().get_adjacencies(block_ents,2,false,ents_to_set_order,Interface::UNION); CHKERRQ(ierr);
       ierr = mField.get_moab().get_adjacencies(block_ents,1,false,ents_to_set_order,Interface::UNION); CHKERRQ(ierr);
       if(mField.check_field("DISPLACEMENT")) {
-	ierr = mField.set_field_order(ents_to_set_order,"DISPLACEMENT",block_data[it->get_msId()].oRder); CHKERRQ(ierr);
+	ierr = mField.set_field_order(ents_to_set_order,"DISPLACEMENT",blockData[it->get_msId()].oRder); CHKERRQ(ierr);
       }
       if(mField.check_field("SPATIAL_POSITION")) {
-	ierr = mField.set_field_order(ents_to_set_order,"DISPLACEMENT",block_data[it->get_msId()].oRder); CHKERRQ(ierr);
+	ierr = mField.set_field_order(ents_to_set_order,"DISPLACEMENT",blockData[it->get_msId()].oRder); CHKERRQ(ierr);
       }
       if(mField.check_field("DOT_SPATIAL_POSITION")) {
-	ierr = mField.set_field_order(ents_to_set_order,"DISPLACEMENT",block_data[it->get_msId()].oRder); CHKERRQ(ierr);
+	ierr = mField.set_field_order(ents_to_set_order,"DISPLACEMENT",blockData[it->get_msId()].oRder); CHKERRQ(ierr);
       }
     }
     PetscFunctionReturn(0);
   }
 
-  PetscErroCode setElasticElements(int tag_start = 1000) {
+  PetscErrorCode setBlocks(map<int,NonlinearElasticElement::BlockData> &set_of_blocks) {
     PetscFunctionBegin;
+    ErrorCode rval;
+    PetscErrorCode ierr;
+    if(!iNitialized) {
+      ierr = iNit(); CHKERRQ(ierr);
+      ierr = readConfigFile(); CHKERRQ(ierr);
+      ierr = setBlocksOrder(); CHKERRQ(ierr);
+      iNitialized = true;
+    }
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_ELASTICSET,it)) {
       int id = it->get_msId();
       Mat_Elastic mydata;
       ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
       EntityHandle meshset = it->get_meshset();
-      if(elasticElements.find(blockData.mAterial)==elasticElements.end()) {
-	elasticElements.insert(blockData.mAterial,new NonlinearElasticElement(mField,tag_start+id));
-	postProcesElasticElements.insert(blockData.mAterial,new 
-      }
-      rval = mField.get_moab().get_entities_by_type(meshset,MBTET,
-	elasticElements[blockData[id].mAterial]->setOfBlocks[id].tEts,true); CHKERR_PETSC(rval);
-      elasticElements[blockData[id].mAterial]->setOfBlocks[id].iD = id;
-      elasticElements[blockData[id].mAterial]->setOfBlocks[id].E = blockData[id].yOung == -1 ? mydata.data.Young : blockData[id].yOung;
-      elasticElements[blockData[id].mAterial]->setOfBlocks[id].E = blockData[id].PoissonRatio == -1 ? mydata.data.Poisson : blockData[id].pOisson;
-    }
-    boost::ptr_map<string,NonlinearElasticElement>::iterator mit = elasticElements.begin();
-    for(;mit!=elasticElements.end();mit++) {
-      ierr = mit->addElement(string("ELASTIC_")+mit->first,"SPATIAL_POSITION"); CHKERRQ(ierr);
-      if(mit->first.compare(MAT_KIRCHOFF)==0) {
-	adoubleMaterialModel.insert(MAT_KIRCHOFF,new NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<adouble>());
-	doubleMaterialModel.insert(MAT_KIRCHOFF,new NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<double>());
-	ierr = setOperators(adoubleMaterialModel[MAT_KIRCHOFF],"SPATIAL_POSITION"); CHKERRQ(ierr);
+      rval = mField.get_moab().get_entities_by_type(meshset,MBTET,set_of_blocks[id].tEts,true); CHKERR_PETSC(rval);
+      set_of_blocks[id].iD = id;
+      set_of_blocks[id].E = mydata.data.Young;
+      if(blockData[id].yOung != -1) set_of_blocks[id].E = blockData[id].yOung;
+      if(blockData[id].pOisson != -1) set_of_blocks[id].PoissonRatio = blockData[id].pOisson;
+      if(blockData[id].mAterial.compare(MAT_KIRCHOFF)==0) {
+	set_of_blocks[id].materialDoublePtr = &doubleMaterialModel.at(MAT_KIRCHOFF);
+	set_of_blocks[id].materialAdoublePtr = &aDoubleMaterialModel.at(MAT_KIRCHOFF);
       } else
-      if(mit->first.compare(MAT_HOOKE)==0) {
-	adoubleMaterialModel.insert(MAT_HOOKE,new Hooke<adouble>());
-	doubleMaterialModel.insert(MAT_HOOKE,new Hooke<double>());
-	ierr = setOperators(adoubleMaterialModel[MAT_HOOKE],"SPATIAL_POSITION"); CHKERRQ(ierr);
+      if(blockData[id].mAterial.compare(MAT_HOOKE)==0) { 
+	set_of_blocks[id].materialDoublePtr = &doubleMaterialModel.at(MAT_HOOKE);
+	set_of_blocks[id].materialAdoublePtr = &aDoubleMaterialModel.at(MAT_HOOKE);
       } else 
-      if(mit->first.compare(MAT_NEOHOOKEAN)==0) {
-	adoubleMaterialModel.insert(MAT_NEOHOOKEAN,new Hooke<adouble>());
-	doubleMaterialModel.insert(MAT_NEOHOOKEAN,new Hooke<double>());
-	ierr = setOperators(adoubleMaterialModel[MAT_NEOHOOKEAN],"SPATIAL_POSITION"); CHKERRQ(ierr);
+      if(blockData[id].mAterial.compare(MAT_NEOHOOKEAN)==0) {
+	set_of_blocks[id].materialDoublePtr = &doubleMaterialModel.at(MAT_NEOHOOKEAN);
+	set_of_blocks[id].materialAdoublePtr = &aDoubleMaterialModel.at(MAT_NEOHOOKEAN);
       } else {
 	SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"field with that space is not implemented");
       }
