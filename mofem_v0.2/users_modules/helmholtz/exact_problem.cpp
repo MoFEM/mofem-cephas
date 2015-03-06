@@ -69,7 +69,7 @@ struct MyFunApprox_re {
 		////double theta = atan2(sqrtx2y2,z)+pi;
 		////double theta = acos(z/R); 
 		////Incident wave in X direction.
-		double theta = atan2(y,x)+2*pi; //the arctan of radians (y/x)
+		//double theta = atan2(y,x)+2*pi; //the arctan of radians (y/x)
 		////const double wAvenumber = aNgularfreq/sPeed;
 		double wAvenumber = 2;
 		const double k = wAvenumber;  //Wave number
@@ -112,6 +112,7 @@ struct MyFunApprox_re {
 		//const complex< double > total_field = inc_field + result;
 		//ofs << theta << "\t" << abs( result ) << "\t" << abs( inc_field ) << "\t" << abs( total_field ) <<  "\t" << R << endl; //write the file
 		/* cube */
+		double theta = pi/4;
 		result = exp(i*(k*cos(theta)*x+k*sin(theta)*y));
 		
 		
@@ -140,7 +141,7 @@ struct MyFunApprox_im {
 		////double theta = atan2(sqrtx2y2,z)+pi;
 		////double theta = acos(z/R); 
 		////Incident wave in X direction.
-		double theta = atan2(y,x)+2*pi; //the arctan of radians (y/x)
+		//double theta = atan2(y,x)+2*pi; //the arctan of radians (y/x)
 		////const double wAvenumber = aNgularfreq/sPeed;
 		double wAvenumber = 2;
 		const double k = wAvenumber;  //Wave number
@@ -183,6 +184,8 @@ struct MyFunApprox_im {
 		//const complex< double > total_field = inc_field + result;
 		//ofs << theta << "\t" << abs( result ) << "\t" << abs( inc_field ) << "\t" << abs( total_field ) <<  "\t" << R << endl; //write the file
 		/* cube 2D */
+		
+		double theta = pi/4;
 		result = exp(i*(k*cos(theta)*x+k*sin(theta)*y));
 		
 		result1.resize(1);

@@ -248,7 +248,7 @@ int main(int argc, char *argv[]) {
   ierr = analytical_bc2.setBcProblem(mField,"BC2_PROBLEM"); CHKERRQ(ierr);
   
   static double aNgularfreq;
-  static double sPeed; //Without static. I got error:use of local variable with automatic storage from containing function
+  static double sPeed; //Without static. got error:use of local variable with automatic storage from containing function
 
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it))
   {
@@ -284,7 +284,7 @@ int main(int argc, char *argv[]) {
 		  
 		  const double pi = atan( 1.0 ) * 4.0;
 		  //double R = sqrt(pow(x,2.0)+pow(y,2.0)+pow(z,2.0)); //radius
-		  double theta = atan2(y,x)+2*pi; //the arctan of radians (y/x)		  
+		  //double theta = atan2(y,x)+2*pi; //the arctan of radians (y/x)		  
 		  const double wAvenumber = aNgularfreq/sPeed;
 		  
 		  const double k = wAvenumber;  //Wave number
@@ -327,7 +327,7 @@ int main(int argc, char *argv[]) {
 		  
 		  //double val = std::real(result);
 		  //ofs << theta << "\t" << abs( result ) << "\t" << abs( inc_field ) << "\t" << abs( total_field ) << "\t" << R << endl; //write the file
-		  
+		  double theta = pi/4;
 		  result = exp(i*(k*cos(theta)*x+k*sin(theta)*y));
 		  
           return std::real(result);
@@ -337,7 +337,7 @@ int main(int argc, char *argv[]) {
 	  static double fUN_imag(double x,double y,double z) {
 		  const double pi = atan( 1.0 ) * 4.0;
 		  //double R = sqrt(pow(x,2.0)+pow(y,2.0)+pow(z,2.0)); //radius
-		  double theta = atan2(y,x) + 2*pi; //the arctan of radians (y/x)
+		  //double theta = atan2(y,x) + 2*pi; //the arctan of radians (y/x)
 		  const double wAvenumber = aNgularfreq/sPeed;
 		  
 		  const double k = wAvenumber;  //Wave number
@@ -374,7 +374,7 @@ int main(int argc, char *argv[]) {
 		//  }
 		  
 		//const complex< double > inc_field = exp( i * k * R * cos( theta ) );  //incident wave
-		  
+		  double theta = pi/4;
 		  result = exp(i*(k*cos(theta)*x+k*sin(theta)*y));
           return std::imag(result);	  
 		  //return std::imag((exp(i*k*x)-1-i*exp(i*k)*sin(k*x))/(pow(k,2.0))); //exact solution of 1D problem

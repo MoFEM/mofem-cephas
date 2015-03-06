@@ -291,31 +291,42 @@ int main(int argc, char *argv[]) {
 	
 	
 	/* Global error calculation */
-	PetscReal l2norm,pointwisenorm;
-	ierr = VecNorm(T,NORM_FROBENIUS,&l2norm);;
-	ierr = VecNorm(T,NORM_MAX,&pointwisenorm);
-	
-	double nrm2_D;
+	PetscReal nrm2_D,nrm2_T,pointwisenormP,pointwisenormM;
+	ierr = VecNorm(T,NORM_FROBENIUS,&nrm2_T);;
 	ierr = VecNorm(D,NORM_2,&nrm2_D); CHKERRQ(ierr);
+	//ierr = VecNorm(T,NORM_MAX,&pointwisenorm);
 	
-    //ierr = VecMax(T,NULL,&pointwisenorm);
+	Vec P;
+	Vec M;
+	ierr = m_field.set_local_VecCreateGhost("EX1_PROBLEM",ROW,M,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	ierr = m_field.set_local_VecCreateGhost("EX2_PROBLEM",ROW,P,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	ierr = VecView(M,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+
+	//ierr = VecNorm(M,NORM_INFINITY,&pointwisenormM);
+	//ierr = VecNorm(P,NORM_INFINITY,&pointwisenormP);
+	//ierr = VecMax(P,NULL,&pointwisenormP);
 	
 	//out stream the global error
 	if(usel2 && !userela) {
-	std::cout << "\n The Global least square of l2 Norm of error in real field is : --\n" << l2norm << std::endl;
-	std::cout << "\n The Global least square of l2 Norm of error in imag field is : --\n" << nrm2_D << std::endl;
+		std::cout << "\n The Global least square of l2 Norm of error in real field is : --\n" << nrm2_T << std::endl;
+		std::cout << "\n The Global least square of l2 Norm of error in imag field is : --\n" << nrm2_D << std::endl;
+		//std::cout << "\n The Global L2 relative error of real field is : --\n" << nrm2_T/pointwisenormM  << std::endl;
+		//std::cout << "\n The Global L2 relative error of imag field is  : --\n" << nrm2_D/pointwisenormP << std::endl;
 	//std::cout << "\n The Global Pointwise of l2 Norm of error for real field is : --\n" << pointwisenorm << std::endl;
 	}
 	else if(!usel2 && !userela) {
-	std::cout << "\n The Global least square of H1 Norm of error real field is  : --\n" << l2norm << std::endl;
-	//std::cout << "\n The Global Pointwise of H1 Norm of error for real field is : --\n" << pointwisenorm << std::endl;
+		std::cout << "\n The Global least square of H1 Norm of error real field is  : --\n" << nrm2_T << std::endl;
+		std::cout << "\n The Global least square of H1 Norm of error in imag field is : --\n" << nrm2_D << std::endl;
+		//std::cout << "\n The Global H1 relative error of real field is : --\n" << nrm2_T/pointwisenormM  << std::endl;
+		//std::cout << "\n The Global H1 relative error of imag field is  : --\n" << nrm2_D/pointwisenormP << std::endl;
+		//std::cout << "\n The Global Pointwise of H1 Norm of error for real field is : --\n" << pointwisenorm << std::endl;
 	}
 	else if(userela) {
 		//NEED TO BE FIXED
 		//we need two vector, one is exact solution, one is error in the norm, then find the maximum of 
 		//two vectors, and devide second one by first one. it is the global pointwise relative error.
-	std::cout << "\n The Global least square of H1 Norm of error real field is : --\n" << l2norm << std::endl;
-	//std::cout << "\n The Global Pointwise of H1 Norm of error for real field is : --\n" << pointwisenorm << std::endl;
+		std::cout << "\n The Global least square of H1 Norm of error real field is : --\n" << nrm2_T << std::endl;
+		//std::cout << "\n The Global Pointwise of H1 Norm of error for real field is : --\n" << pointwisenorm << std::endl;
 	}
 
 
@@ -329,6 +340,9 @@ int main(int argc, char *argv[]) {
 	ierr = VecDestroy(&G); CHKERRQ(ierr);
 	ierr = VecDestroy(&D); CHKERRQ(ierr);
 	ierr = KSPDestroy(&solver2); CHKERRQ(ierr);
+
+	ierr = VecDestroy(&M); CHKERRQ(ierr);
+	ierr = VecDestroy(&P); CHKERRQ(ierr);
 	
 	PostPocOnRefinedMesh post_proc1(m_field);
 	ierr = post_proc1.generateRefereneElemenMesh(); CHKERRQ(ierr);
