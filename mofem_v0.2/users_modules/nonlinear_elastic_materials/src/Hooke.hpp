@@ -22,6 +22,9 @@
   #error "MoFEM need to be compiled with ADOL-C"
 #endif 
 
+/** \brief Hook equation
+  * \ingroup nonlinear_elastic_elem
+  */
 template<typename TYPE>
 struct Hooke: public NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<TYPE> {
 
@@ -30,6 +33,11 @@ struct Hooke: public NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI
     ublas::matrix<TYPE> Eps;
     TYPE tr;
     
+    /** \brief Hooke equation
+      *
+      * \f$\sigma = \lambda\textrm{tr}[\varepsilon]+2\mu\varepsilon\f$ 
+      *
+      */
     virtual PetscErrorCode CalualteP_PiolaKirchhoffI(
       const NonlinearElasticElement::BlockData block_data,
       const NumeredMoFEMFiniteElement *fe_ptr) {
@@ -39,6 +47,9 @@ struct Hooke: public NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI
       this->mu = MU(block_data.E,block_data.PoissonRatio);
       Eps.resize(3,3);
       noalias(Eps) = 0.5*(this->F + trans(this->F));
+      for(int dd = 0;dd<3;dd++) {
+	Eps(dd,dd) -= 1;
+      }
       this->P.resize(3,3);
       noalias(this->P) = 2*this->mu*Eps;
       tr = 0;
@@ -48,6 +59,31 @@ struct Hooke: public NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI
       for(int dd =0;dd<3;dd++) {
 	this->P(dd,dd) += tr;
       } 
+      PetscFunctionReturn(0);
+    }
+
+    /** \brief calculate density of strain energy
+      *
+      * \f$\Psi = \frac{1}{2}\lambda(\textrm{tr}[\varepsilon])^2+\mu\varepsilon:\varepsilon\f$
+      *
+      */
+    virtual PetscErrorCode CalulateElasticEnergy(
+      const NonlinearElasticElement::BlockData block_data,
+      const NumeredMoFEMFiniteElement *fe_ptr) {
+      PetscFunctionBegin;
+      this->lambda = LAMBDA(block_data.E,block_data.PoissonRatio);
+      this->mu = MU(block_data.E,block_data.PoissonRatio);
+      Eps.resize(3,3);
+      noalias(Eps) = 0.5*(this->F + trans(this->F));
+      TYPE trace = 0;
+      this->eNergy = 0;
+      for(int dd = 0;dd<3;dd++) {
+	trace += Eps(dd,dd);
+	for(int jj = 0;jj<3;jj++) {
+	  this->eNergy += this->mu*Eps(dd,jj)*Eps(dd,jj);
+	}
+      }
+      this->eNergy += 0.5*this->lambda*trace*trace;
       PetscFunctionReturn(0);
     }
 
