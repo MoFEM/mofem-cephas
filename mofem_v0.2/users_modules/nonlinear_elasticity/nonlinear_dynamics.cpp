@@ -48,6 +48,17 @@ using namespace MoFEM;
 #include <boost/program_options.hpp>
 using namespace std;
 namespace po = boost::program_options;
+
+#include <petscsys.h>
+#include <petscvec.h> 
+#include <petscmat.h> 
+#include <petscsnes.h> 
+#include <petscts.h> 
+
+#include <petsc-private/dmimpl.h> /*I  "petscdm.h"   I*/
+#include <petsc-private/vecimpl.h> /*I  "petscdm.h"   I*/
+#include <petscoptions.h>
+
 #include <ElasticMaterials.hpp>
 
 #define BLOCKED_PROBLEM
@@ -295,7 +306,6 @@ int main(int argc, char *argv[]) {
     vel_order = disp_order;	
   }
   
-
   ierr = m_field.set_field_order(0,MBTET,"SPATIAL_POSITION",disp_order); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0,MBTRI,"SPATIAL_POSITION",disp_order); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0,MBEDGE,"SPATIAL_POSITION",disp_order); CHKERRQ(ierr);

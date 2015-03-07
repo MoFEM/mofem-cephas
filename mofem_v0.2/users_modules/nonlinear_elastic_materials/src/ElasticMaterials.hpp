@@ -31,10 +31,13 @@ struct ElasticMaterials {
 
   FieldInterface &mField;
   string defMaterial;
+  string configFile;
+
   bool iNitialized;
 
   ElasticMaterials(FieldInterface &m_field):
     mField(m_field),defMaterial(MAT_KIRCHOFF),
+    configFile("elastic_material.in"),
     iNitialized(false) {}
 
 
@@ -56,8 +59,11 @@ struct ElasticMaterials {
   };
   map<int,BlockOptionData> blockData;
 
+  PetscBool isConfigFileSet;
+
   PetscErrorCode iNit() {
     PetscFunctionBegin;
+    //add new material below
     string mat_name;
     mat_name = MAT_KIRCHOFF;
     aDoubleMaterialModel.insert(mat_name,new NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<adouble>());
@@ -68,6 +74,32 @@ struct ElasticMaterials {
     mat_name = MAT_NEOHOOKEAN;
     aDoubleMaterialModel.insert(mat_name,new NeoHookean<adouble>());
     doubleMaterialModel.insert(mat_name,new NeoHookean<double>());
+    ostringstream avilable_materials;
+    avilable_materials << "set elastic material < ";
+    boost::ptr_map<string,NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<double> >::iterator mit;
+    mit = doubleMaterialModel.begin();
+    for(;mit!=doubleMaterialModel.end();mit++) {
+      avilable_materials << mit->first << " ";
+    }
+    avilable_materials << ">";
+    PetscErrorCode ierr;
+    ierr = PetscOptionsBegin(mField.get_comm(),"","Elastic Materials Configuration","none"); CHKERRQ(ierr);
+    char default_material[255];
+    PetscBool def_mat_set;
+    ierr = PetscOptionsString("-default_material",avilable_materials.str().c_str(),"",MAT_KIRCHOFF,default_material,255,&def_mat_set); CHKERRQ(ierr);
+    if(def_mat_set) {
+      defMaterial = default_material;
+      if(aDoubleMaterialModel.find(defMaterial)==aDoubleMaterialModel.end()) {
+	SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"material <%s> not implemented",default_material);
+      }
+    }
+    char config_file[255];
+    ierr = PetscOptionsString("-elastic_material_configuration","elastic materials configure file name","",configFile.c_str(),config_file,255,&isConfigFileSet); CHKERRQ(ierr);
+    if(isConfigFileSet) {
+      configFile = config_file;
+      
+    }
+    ierr = PetscOptionsEnd(); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
@@ -84,47 +116,44 @@ struct ElasticMaterials {
   PetscErrorCode readConfigFile() {
     PetscFunctionBegin;
     PetscErrorCode ierr;
-    char default_material[255];
-    PetscBool def_mat_set;
-    ierr = PetscOptionsGetString(PETSC_NULL,"-default_material",default_material,255,&def_mat_set); CHKERRQ(ierr);
-    if(def_mat_set) {
-      defMaterial = default_material;
-      if(aDoubleMaterialModel.find(defMaterial)==aDoubleMaterialModel.end()) {
-	SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"material <%s> not implemented",default_material);
+    try {
+      po::variables_map vm;
+      po::options_description config_file_options;
+      for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_ELASTICSET,it)) {
+        ostringstream str_material;
+        str_material << "block_" << it->get_msId() << ".material";
+        config_file_options.add_options()
+  	(str_material.str().c_str(),po::value<string>(&blockData[it->get_msId()].mAterial)->default_value(defMaterial));
+        ostringstream str_cond;
+        str_cond << "block_" << it->get_msId() << ".young_modulus";
+        config_file_options.add_options()
+  	(str_cond.str().c_str(),po::value<double>(&blockData[it->get_msId()].yOung)->default_value(-1));
+        ostringstream str_capa;
+        str_capa << "block_" << it->get_msId() << ".poisson_ratio";
+        config_file_options.add_options()
+  	(str_capa.str().c_str(),po::value<double>(&blockData[it->get_msId()].pOisson)->default_value(-1));
+        //ostringstream str_init_temp;
+        //str_init_temp << "block_" << it->get_msId() << ".initail_temperature";
+        //config_file_options.add_options()
+  	//(str_init_temp.str().c_str(),po::value<double>(&blockData[it->get_msId()].initTemp)->default_value(0));
       }
-    }
-    po::variables_map vm;
-    po::options_description config_file_options;
-    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_ELASTICSET,it)) {
-      ostringstream str_material;
-      str_material << "block_" << it->get_msId() << ".material";
-      config_file_options.add_options()
-	(str_material.str().c_str(),po::value<string>(&blockData[it->get_msId()].mAterial)->default_value(defMaterial));
-      ostringstream str_cond;
-      str_cond << "block_" << it->get_msId() << ".young_modulus";
-      config_file_options.add_options()
-	(str_cond.str().c_str(),po::value<double>(&blockData[it->get_msId()].yOung)->default_value(-1));
-      ostringstream str_capa;
-      str_capa << "block_" << it->get_msId() << ".poisson_ratio";
-      config_file_options.add_options()
-	(str_capa.str().c_str(),po::value<double>(&blockData[it->get_msId()].pOisson)->default_value(-1));
-      //ostringstream str_init_temp;
-      //str_init_temp << "block_" << it->get_msId() << ".initail_temperature";
-      //config_file_options.add_options()
-	//(str_init_temp.str().c_str(),po::value<double>(&blockData[it->get_msId()].initTemp)->default_value(0));
-    }
-    char config_file[255];
-    PetscBool is_config_set;
-    ierr = PetscOptionsGetString(PETSC_NULL,"-elastic_material_config",config_file,255,&is_config_set); CHKERRQ(ierr);
-    ifstream ini_file(config_file);  
-    po::parsed_options parsed = parse_config_file(ini_file,config_file_options,true);
-    store(parsed,vm);
-    po::notify(vm); 
-    vector<string> additional_parameters;
-    additional_parameters = collect_unrecognized(parsed.options,po::include_positional);
-    for(vector<string>::iterator vit = additional_parameters.begin();
-      vit!=additional_parameters.end();vit++) {
-      ierr = PetscPrintf(PETSC_COMM_WORLD,"** WARRNING Unrecognised option %s\n",vit->c_str()); CHKERRQ(ierr);
+      ifstream file(configFile.c_str());  
+      if(isConfigFileSet) {
+        if(!file.good()) {
+	  SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"file < %s > not found",configFile.c_str());
+        }
+      }
+      po::parsed_options parsed = parse_config_file(file,config_file_options,true);
+      store(parsed,vm);
+      po::notify(vm); 
+      vector<string> additional_parameters;
+      additional_parameters = collect_unrecognized(parsed.options,po::include_positional);
+      for(vector<string>::iterator vit = additional_parameters.begin();
+        vit!=additional_parameters.end();vit++) {
+        ierr = PetscPrintf(PETSC_COMM_WORLD,"** WARRNING Unrecognised option %s\n",vit->c_str()); CHKERRQ(ierr);
+      }
+    } catch (exception& ex) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,"error parsing material elastic configuration file");
     }
     PetscFunctionReturn(0);
 
@@ -137,7 +166,7 @@ struct ElasticMaterials {
     //set app. order
     PetscBool flg = PETSC_TRUE;
     PetscInt disp_order;
-    ierr = PetscOptionsGetInt(PETSC_NULL,"-my_disp_order",&disp_order,&flg); CHKERRQ(ierr);
+    ierr = PetscOptionsGetInt(PETSC_NULL,"-order",&disp_order,&flg); CHKERRQ(ierr);
     if(flg!=PETSC_TRUE) {
       disp_order = 1;	
     }
