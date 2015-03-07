@@ -294,7 +294,6 @@ struct ElasticMaterials {
       set_of_blocks[id].a0[1] = mydata.data.acceleration_y;
       set_of_blocks[id].a0[2] = mydata.data.acceleration_z;
       if(blockData[id].dEnsity>=0) {
-	cerr << "AAAAAAAAAAA\n";
 	set_of_blocks[id].rho0 = blockData[id].dEnsity;
 	ostringstream str_ax;
         str_ax << "block_" << it->get_msId() << ".a_x";

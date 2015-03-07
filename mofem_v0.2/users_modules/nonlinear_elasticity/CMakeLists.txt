@@ -40,6 +40,7 @@ if(ADOL-C_LIBRARY)
     mofem_approx
     mofem_third_party
     mofem_cblas
+    boost_program_options
     ${MoFEM_PROJECT_LIBS})
 
   cm_export_file("dome_thin_symm.cub" export_files_arc_length_nonlinearelasticity)
@@ -128,6 +129,7 @@ if(ADOL-C_LIBRARY)
       mofem_approx
       mofem_third_party
       mofem_cblas
+      boost_program_options
       ${MoFEM_PROJECT_LIBS})
 
     add_test(EigenProblem

@@ -1122,6 +1122,7 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode get_problem_finite_elements_entities(const string &name,const string &fe_name,const EntityHandle meshset) = 0;
 
   /** \brief create local vector for problem
+   * \ingroup mofem_vectors
    *
    * \param name problem name
    * \param RowColData specify what data is taken from Row, Col or Data
@@ -1130,6 +1131,7 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode VecCreateSeq(const string &name,RowColData rc,Vec *V) = 0;
 
   /** \brief create ghost vector for problem
+   * \ingroup mofem_vectors
    *
    * \param name problem name
    * \param RowColData specify what data is taken from Row, Col or Data

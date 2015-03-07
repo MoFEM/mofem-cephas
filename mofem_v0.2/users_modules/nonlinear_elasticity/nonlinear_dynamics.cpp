@@ -1,15 +1,8 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
+/* \file nonlinear_dynamics.cpp
  *
- * Test for non-linear elastic dynamics.
+ * \brief Non-linear elastic dynamics.
  *
- * This is not exactly procedure for linear elastic dynamics, since Jacobian is
- * evaluated at every time step and snes procedure is involved. However it is
- * implemented like that, to test methodology for general nonlinear problem.
- *
- */
-
-/* This file is part of MoFEM.
+ * This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or (at your
@@ -48,17 +41,6 @@ using namespace MoFEM;
 #include <boost/program_options.hpp>
 using namespace std;
 namespace po = boost::program_options;
-
-#include <petscsys.h>
-#include <petscvec.h> 
-#include <petscmat.h> 
-#include <petscsnes.h> 
-#include <petscts.h> 
-
-#include <petsc-private/dmimpl.h> /*I  "petscdm.h"   I*/
-#include <petsc-private/vecimpl.h> /*I  "petscdm.h"   I*/
-#include <petscoptions.h>
-
 #include <ElasticMaterials.hpp>
 
 #define BLOCKED_PROBLEM

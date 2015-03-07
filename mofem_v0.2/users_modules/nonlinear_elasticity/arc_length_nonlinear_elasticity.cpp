@@ -1,9 +1,9 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
- * FIXME: DESCRIPTION
- */
-
-/* This file is part of MoFEM.
+/* \file arc_length_nonlinear_elasticity.cpp
+ * \brief nonlinear elasticity (arc-length control)
+ *
+ * Solves nonlinear elastic problem. Using arc lebgth constrol.
+ *
+ * This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or (at your
@@ -43,13 +43,11 @@ using namespace MoFEM;
 #include <SurfacePressure.hpp>
 #include <NodalForce.hpp>
 
-//#include <FEMethod_LowLevelStudent.hpp>
-//#include <FEMethod_UpLevelStudent.hpp>
-//extern "C" {
-//  #include <complex_for_lazy.h>
-//}
-//#include <FEMethod_ComplexForLazy.hpp>
-//#include <FEMethod_DriverComplexForLazy.hpp>
+#include <boost/program_options.hpp>
+using namespace std;
+namespace po = boost::program_options;
+#include <ElasticMaterials.hpp>
+
 #include <SurfacePressureComplexForLazy.hpp>
 using namespace ObosleteUsersModules;
 
@@ -232,10 +230,13 @@ int main(int argc, char *argv[]) {
     ierr = m_field.modify_problem_add_finite_element("ELASTIC_MECHANICS","FORCE_FE"); CHKERRQ(ierr);
   }
 
-  NeoHookean<adouble> neo_hooke_adouble;
-  NeoHookean<double> neo_hooke_double;
+  //NeoHookean<adouble> neo_hooke_adouble;
+  //NeoHookean<double> neo_hooke_double;
+  //NonlinearElasticElement elastic(m_field,2);
+  //ierr = elastic.setBlocks(&neo_hooke_double,&neo_hooke_adouble); CHKERRQ(ierr);
   NonlinearElasticElement elastic(m_field,2);
-  ierr = elastic.setBlocks(&neo_hooke_double,&neo_hooke_adouble); CHKERRQ(ierr);
+  ElasticMaterials elastic_materials(m_field);
+  ierr = elastic_materials.setBlocks(elastic.setOfBlocks); CHKERRQ(ierr);
   ierr = elastic.addElement("ELASTIC","SPATIAL_POSITION"); CHKERRQ(ierr);
   ierr = elastic.setOperators("SPATIAL_POSITION"); CHKERRQ(ierr);
 
