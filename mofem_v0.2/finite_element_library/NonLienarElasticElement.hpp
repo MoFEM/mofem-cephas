@@ -109,7 +109,7 @@ struct NonlinearElasticElement {
   };
   CommonData commonData;
 
-  /** \brief Implementation of elastic (non-linear) element
+  /** \brief Implementation of elastic (non-linear) St. Kirchoff equation
     * \ingroup nonlinear_elastic_elem
     */
   template<typename TYPE> 
@@ -160,11 +160,11 @@ struct NonlinearElasticElement {
 
     double lambda,mu;
     ublas::matrix<TYPE> F,C,E,S,invF,P;
-    TYPE J;
+    TYPE J,eNergy;
 
     int gG;	///< Gauss point number
     CommonData *commonDataPtr; ///< common data shared between entities (f.e. field values at Gauss pts.)
-    TetElementForcesAndSourcesCore::UserDataOperator *opPtr; ///< pointer to finite element tetrahedral operatol
+    TetElementForcesAndSourcesCore::UserDataOperator *opPtr; ///< pointer to finite element tetrahedral operator
 
     PetscErrorCode CalulateC_CauchyDefromationTensor() {
       PetscFunctionBegin;
@@ -207,6 +207,8 @@ struct NonlinearElasticElement {
       * user implemented physical equation is calculated using automatic
       * differentiation.
 
+      * \f$\mathbf{S} = \lambda\textrm{tr}[\mathbf{E}]\mathbf{I}+2\mu\mathbf{E}\f$ 
+
       * Notes: <br>
       * Number of actual Gauss point is accessed from variable gG. <br>
       * Access to operator data structures is available by variable opPtr. <br>
@@ -214,6 +216,10 @@ struct NonlinearElasticElement {
       
       * \param block_data used to give access to material parameters
       * \param fe_ptr pointer to element data structures
+
+      For details look to: <br>
+      NONLINEAR CONTINUUM MECHANICS FOR FINITE ELEMENT ANALYSIS, Javier Bonet,
+      Richard D. Wood
 
       */
     virtual PetscErrorCode CalualteP_PiolaKirchhoffI(
@@ -244,6 +250,31 @@ struct NonlinearElasticElement {
       PetscFunctionReturn(0);
     }
 
+
+    /** \brief calculate elastic energy density
+      *
+      * \f$\Psi = \frac{1}{2}\lambda(\textrm{tr}[\mathbf{E}])^2+\mu\mathbf{E}:\mathbf{E}\f$
+      */
+    virtual PetscErrorCode CalulateElasticEnergy(const BlockData block_data,
+      const NumeredMoFEMFiniteElement *fe_ptr) {
+      PetscFunctionBegin;
+      PetscErrorCode ierr;
+      lambda = LAMBDA(block_data.E,block_data.PoissonRatio);
+      mu = MU(block_data.E,block_data.PoissonRatio);
+      ierr = CalulateC_CauchyDefromationTensor(); CHKERRQ(ierr);
+      ierr = CalulateE_GreenStrain(); CHKERRQ(ierr);
+      TYPE trace = 0;
+      eNergy = 0;
+      for(int ii = 0;ii<3;ii++) {
+	trace += E(ii,ii);
+	for(int jj = 0;jj<3;jj++) {
+	  TYPE e = E(ii,jj);
+	  eNergy += mu*e*e;
+	}
+      }
+      eNergy += 0.5*lambda*trace*trace;
+      PetscFunctionReturn(0);
+    }
 
   };
 

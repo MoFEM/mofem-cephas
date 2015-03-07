@@ -425,7 +425,7 @@ int main(int argc, char *argv[]) {
   ierr = VecDuplicate(F,&D); CHKERRQ(ierr);
 
   PetscBool linear;
-  ierr = PetscOptionsGetBool(PETSC_NULL,"-is_linear",&linear,PETSC_NULL); CHKERRQ(ierr);
+  ierr = PetscOptionsGetBool(PETSC_NULL,"-is_linear",&linear,&linear); CHKERRQ(ierr);
 
   #ifdef BLOCKED_PROBLEM
     //shell matrix
@@ -458,6 +458,9 @@ int main(int argc, char *argv[]) {
     //surface forces
     NeummanForcesSurfaceComplexForLazy neumann_forces(m_field,shellAij_ctx->barK,F);
     NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE &fe_spatial = neumann_forces.getLoopSpatialFe();
+    if(linear) {
+      fe_spatial.typeOfForces = NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::NONCONSERVATIVE;
+    }
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET,it)) {
       ierr = fe_spatial.addForce(it->get_msId()); CHKERRQ(ierr);
     }

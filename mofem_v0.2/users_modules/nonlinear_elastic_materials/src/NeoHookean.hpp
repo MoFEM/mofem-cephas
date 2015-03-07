@@ -18,6 +18,9 @@
 #ifndef __NEOHOOKEAN_HPP__
 #define __NEOHOOKEAN_HPP__
 
+/** \brief NeoHookan equation
+  * \ingroup nonlinear_elastic_elem
+  */
 template<typename TYPE>
 struct NeoHookean: public NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<TYPE> {
 
@@ -26,6 +29,15 @@ struct NeoHookean: public NonlinearElasticElement::FunctionsToCalulatePiolaKirch
     TYPE detC;
     ublas::matrix<TYPE> invC;
     
+    /** \brief calculate second Piola Kirchoff 
+      *
+      * \f$\mathbf{S} = \mu(\mathbf{I}-\mathbf{C}^{-1})+\lambda(\ln{J})\mathbf{C}^{-1}\f$
+
+      For details look to: <br>
+      NONLINEAR CONTINUUM MECHANICS FOR FINITE ELEMENT ANALYSIS, Javier Bonet,
+      Richard D. Wood
+
+      */
     PetscErrorCode NeoHooke_PiolaKirchhoffII() {
       PetscFunctionBegin;
       PetscErrorCode ierr;
@@ -54,6 +66,34 @@ struct NeoHookean: public NonlinearElasticElement::FunctionsToCalulatePiolaKirch
       this->P.resize(3,3);
       noalias(this->P) = prod(this->F,this->S);
       //cerr << "P: " << P << endl;
+      PetscFunctionReturn(0);
+    }
+
+    TYPE logJ;
+
+   /** \brief calculate elastic energy density
+    *
+
+    For details look to: <br>
+    NONLINEAR CONTINUUM MECHANICS FOR FINITE ELEMENT ANALYSIS, Javier Bonet,
+    Richard D. Wood
+
+    */
+    virtual PetscErrorCode CalulateElasticEnergy(const NonlinearElasticElement::BlockData block_data,
+      const NumeredMoFEMFiniteElement *fe_ptr) {
+      PetscFunctionBegin;
+      PetscErrorCode ierr;
+      this->lambda = LAMBDA(block_data.E,block_data.PoissonRatio);
+      this->mu = MU(block_data.E,block_data.PoissonRatio);
+      ierr = this->CalulateC_CauchyDefromationTensor(); CHKERRQ(ierr);
+      ierr = this->dEterminatnt(this->F,this->J); CHKERRQ(ierr);
+      this->eNergy = 0;
+      for(int ii = 0;ii<3;ii++) {
+	this->eNergy += this->C(ii,ii);
+      }
+      this->eNergy = 0.5*this->mu*(this->eNergy-3);
+      logJ = log(this->J);
+      this->eNergy += -this->mu*logJ + 0.5*this->lambda*pow(logJ,2);
       PetscFunctionReturn(0);
     }
 

@@ -230,6 +230,9 @@ int main(int argc, char *argv[]) {
     ierr = m_field.modify_problem_add_finite_element("ELASTIC_MECHANICS","FORCE_FE"); CHKERRQ(ierr);
   }
 
+  PetscBool linear;
+  ierr = PetscOptionsGetBool(PETSC_NULL,"-is_linear",&linear,&linear); CHKERRQ(ierr);
+
   //NeoHookean<adouble> neo_hooke_adouble;
   //NeoHookean<double> neo_hooke_double;
   //NonlinearElasticElement elastic(m_field,2);
@@ -334,6 +337,9 @@ int main(int argc, char *argv[]) {
   double *scale_rhs = &(scaled_reference_load);
   NeummanForcesSurfaceComplexForLazy neumann_forces(m_field,Aij,arc_ctx->F_lambda,scale_lhs,scale_rhs);
   NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE &fe_neumann = neumann_forces.getLoopSpatialFe();
+  if(linear) {
+    fe_neumann.typeOfForces = NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::NONCONSERVATIVE;
+  }
   fe_neumann.uSeF = true;
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET,it)) {
     ierr = fe_neumann.addForce(it->get_msId()); CHKERRQ(ierr);
