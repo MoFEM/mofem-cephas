@@ -204,11 +204,13 @@ int main(int argc, char *argv[]) {
   }
 
   //define eleatic element
-  NonlinearElasticElement elastic(m_field,2);
-  ierr = elastic.setBlocks(); CHKERRQ(ierr);
-  ierr = elastic.addElement("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
   Hooke<adouble> hooke_adouble;
-  ierr = elastic.setOperators(hooke_adouble,"DISPLACEMENT","MESH_NODE_POSITIONS",false,true); CHKERRQ(ierr);
+  Hooke<double> hooke_double;
+  NonlinearElasticElement elastic(m_field,2);
+  ierr = elastic.setBlocks(&hooke_double,&hooke_adouble); CHKERRQ(ierr);
+  ierr = elastic.addElement("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = elastic.setOperators("DISPLACEMENT","MESH_NODE_POSITIONS",false,true); CHKERRQ(ierr);
+
 
   ierr = m_field.add_finite_element("BODY_FORCE"); CHKERRQ(ierr);
   ierr = m_field.modify_finite_element_add_field_row("BODY_FORCE","DISPLACEMENT"); CHKERRQ(ierr);

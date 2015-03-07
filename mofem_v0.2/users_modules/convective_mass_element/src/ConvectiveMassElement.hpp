@@ -1568,7 +1568,6 @@ struct ConvectiveMassElement {
       //cerr << setOfBlocks[id].tEts << endl;
     }
 
-
     PetscFunctionReturn(0);
   }
 
