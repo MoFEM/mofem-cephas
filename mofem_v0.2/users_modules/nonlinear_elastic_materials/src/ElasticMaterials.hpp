@@ -49,17 +49,21 @@ struct ElasticMaterials {
     int oRder;
     double yOung;
     double pOisson;
-    double initTemp;
+    double dEnsity;
+    double aX,aY,aZ;
     BlockOptionData():
       mAterial(MAT_KIRCHOFF),
       oRder(-1),
       yOung(-1),
-      pOisson(-1),
-      initTemp(0) {}
+      pOisson(-2),
+      dEnsity(-1),
+      aX(0),aY(0),aZ(0) {}
   };
   map<int,BlockOptionData> blockData;
 
   PetscBool isConfigFileSet;
+  po::variables_map vM;
+
 
   PetscErrorCode iNit() {
     PetscFunctionBegin;
@@ -112,30 +116,60 @@ struct ElasticMaterials {
     namespace po = boost::program_options;
     \endcode
 
+    File parameters:
+    \code 
+    [block_1]
+    material = KIRCHOFF/HOOKE/NEOHOOKEAN
+    young_modulus = 1
+    poisson_ratio = 0.25
+    density = 1
+    a_x = 0
+    a_y = 0
+    a_z = 10
+    \endcode
+
     */
   PetscErrorCode readConfigFile() {
     PetscFunctionBegin;
     PetscErrorCode ierr;
     try {
-      po::variables_map vm;
       po::options_description config_file_options;
-      for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_ELASTICSET,it)) {
+      for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
+
         ostringstream str_material;
         str_material << "block_" << it->get_msId() << ".material";
         config_file_options.add_options()
-  	(str_material.str().c_str(),po::value<string>(&blockData[it->get_msId()].mAterial)->default_value(defMaterial));
-        ostringstream str_cond;
-        str_cond << "block_" << it->get_msId() << ".young_modulus";
+	  (str_material.str().c_str(),po::value<string>(&blockData[it->get_msId()].mAterial)->default_value(defMaterial));
+
+        ostringstream str_ym;
+        str_ym << "block_" << it->get_msId() << ".young_modulus";
         config_file_options.add_options()
-  	(str_cond.str().c_str(),po::value<double>(&blockData[it->get_msId()].yOung)->default_value(-1));
-        ostringstream str_capa;
-        str_capa << "block_" << it->get_msId() << ".poisson_ratio";
+	  (str_ym.str().c_str(),po::value<double>(&blockData[it->get_msId()].yOung)->default_value(-1));
+
+        ostringstream str_pr;
+        str_pr << "block_" << it->get_msId() << ".poisson_ratio";
         config_file_options.add_options()
-  	(str_capa.str().c_str(),po::value<double>(&blockData[it->get_msId()].pOisson)->default_value(-1));
-        //ostringstream str_init_temp;
-        //str_init_temp << "block_" << it->get_msId() << ".initail_temperature";
-        //config_file_options.add_options()
-  	//(str_init_temp.str().c_str(),po::value<double>(&blockData[it->get_msId()].initTemp)->default_value(0));
+	  (str_pr.str().c_str(),po::value<double>(&blockData[it->get_msId()].pOisson)->default_value(-2));
+
+	ostringstream str_density;
+        str_density << "block_" << it->get_msId() << ".density";
+        config_file_options.add_options()
+	  (str_density.str().c_str(),po::value<double>(&blockData[it->get_msId()].dEnsity)->default_value(-1));
+
+	ostringstream str_ax;
+        str_ax << "block_" << it->get_msId() << ".a_x";
+        config_file_options.add_options()
+	  (str_ax.str().c_str(),po::value<double>(&blockData[it->get_msId()].aX)->default_value(0));
+
+	ostringstream str_ay;
+        str_ay << "block_" << it->get_msId() << ".a_y";
+        config_file_options.add_options()
+	  (str_ay.str().c_str(),po::value<double>(&blockData[it->get_msId()].aY)->default_value(0));
+
+	ostringstream str_az;
+        str_az << "block_" << it->get_msId() << ".a_z";
+        config_file_options.add_options()
+	  (str_az.str().c_str(),po::value<double>(&blockData[it->get_msId()].aZ)->default_value(0));
       }
       ifstream file(configFile.c_str());  
       if(isConfigFileSet) {
@@ -144,8 +178,8 @@ struct ElasticMaterials {
         }
       }
       po::parsed_options parsed = parse_config_file(file,config_file_options,true);
-      store(parsed,vm);
-      po::notify(vm); 
+      store(parsed,vM);
+      po::notify(vM); 
       vector<string> additional_parameters;
       additional_parameters = collect_unrecognized(parsed.options,po::include_positional);
       for(vector<string>::iterator vit = additional_parameters.begin();
@@ -194,6 +228,8 @@ struct ElasticMaterials {
     PetscFunctionReturn(0);
   }
 
+  #ifdef __NONLINEAR_ELASTIC_HPP 
+
   PetscErrorCode setBlocks(map<int,NonlinearElasticElement::BlockData> &set_of_blocks) {
     PetscFunctionBegin;
     ErrorCode rval;
@@ -212,8 +248,8 @@ struct ElasticMaterials {
       rval = mField.get_moab().get_entities_by_type(meshset,MBTET,set_of_blocks[id].tEts,true); CHKERR_PETSC(rval);
       set_of_blocks[id].iD = id;
       set_of_blocks[id].E = mydata.data.Young;
-      if(blockData[id].yOung != -1) set_of_blocks[id].E = blockData[id].yOung;
-      if(blockData[id].pOisson != -1) set_of_blocks[id].PoissonRatio = blockData[id].pOisson;
+      if(blockData[id].yOung >= 0) set_of_blocks[id].E = blockData[id].yOung;
+      if(blockData[id].pOisson >= -1) set_of_blocks[id].PoissonRatio = blockData[id].pOisson;
       if(blockData[id].mAterial.compare(MAT_KIRCHOFF)==0) {
 	set_of_blocks[id].materialDoublePtr = &doubleMaterialModel.at(MAT_KIRCHOFF);
 	set_of_blocks[id].materialAdoublePtr = &aDoubleMaterialModel.at(MAT_KIRCHOFF);
@@ -231,6 +267,58 @@ struct ElasticMaterials {
     }
     PetscFunctionReturn(0);
   }
+
+  #endif //__NONLINEAR_ELASTIC_HPP
+
+  #ifdef __CONVECTIVE_MASS_ELEMENT_HPP
+
+  PetscErrorCode setBlocks(map<int,ConvectiveMassElement::BlockData> &set_of_blocks) {
+    PetscFunctionBegin;
+    ErrorCode rval;
+    PetscErrorCode ierr;
+    if(!iNitialized) {
+      ierr = iNit(); CHKERRQ(ierr);
+      ierr = readConfigFile(); CHKERRQ(ierr);
+      ierr = setBlocksOrder(); CHKERRQ(ierr);
+      iNitialized = true;
+    }
+    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|BODYFORCESSET,it)) {
+      int id = it->get_msId();
+      EntityHandle meshset = it->get_meshset();
+      rval = mField.get_moab().get_entities_by_type(meshset,MBTET,set_of_blocks[id].tEts,true); CHKERR_PETSC(rval);
+      Block_BodyForces mydata;
+      ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+      set_of_blocks[id].rho0 = mydata.data.density;
+      set_of_blocks[id].a0.resize(3);
+      set_of_blocks[id].a0[0] = mydata.data.acceleration_x;
+      set_of_blocks[id].a0[1] = mydata.data.acceleration_y;
+      set_of_blocks[id].a0[2] = mydata.data.acceleration_z;
+      if(blockData[id].dEnsity>=0) {
+	cerr << "AAAAAAAAAAA\n";
+	set_of_blocks[id].rho0 = blockData[id].dEnsity;
+	ostringstream str_ax;
+        str_ax << "block_" << it->get_msId() << ".a_x";
+	ostringstream str_ay;
+        str_ay << "block_" << it->get_msId() << ".a_y";
+	ostringstream str_az;
+        str_az << "block_" << it->get_msId() << ".a_z";
+	if(vM.count(str_ax.str().c_str())) {
+	  set_of_blocks[id].a0[0] = blockData[id].aX;
+	}
+	if(vM.count(str_ay.str().c_str())) {
+	  set_of_blocks[id].a0[1] = blockData[id].aY;
+	}
+	if(vM.count(str_az.str().c_str())) {
+	  set_of_blocks[id].a0[2] = blockData[id].aZ;
+	}
+      }
+    }
+
+    PetscFunctionReturn(0);
+  }
+
+  #endif //__CONVECTIVE_MASS_ELEMENT_HPP
+
 
 };
 

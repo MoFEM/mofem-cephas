@@ -364,7 +364,8 @@ int main(int argc, char *argv[]) {
 
   //set mass element
   ConvectiveMassElement inertia(m_field,1);
-  ierr = inertia.setBlocks(); CHKERRQ(ierr);
+  //ierr = inertia.setBlocks(); CHKERRQ(ierr);
+  ierr = elastic_materials.setBlocks(inertia.setOfBlocks); CHKERRQ(ierr);
   ierr = inertia.addConvectiveMassElement("MASS_ELEMENT","SPATIAL_VELOCITY","SPATIAL_POSITION"); CHKERRQ(ierr);
   ierr = inertia.addVelocityElement("VELOCITY_ELEMENT","SPATIAL_VELOCITY","SPATIAL_POSITION"); CHKERRQ(ierr);
 
