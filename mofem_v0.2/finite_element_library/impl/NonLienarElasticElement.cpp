@@ -114,11 +114,13 @@ PetscErrorCode NonlinearElasticElement::MyVolumeFE::postProcess() {
       eNergy = array[0];
       ierr = VecRestoreArray(V,&array); CHKERRQ(ierr);
       ierr = VecDestroy(&V); CHKERRQ(ierr);
-      ierr = TetElementForcesAndSourcesCore::postProcess(); CHKERRQ(ierr);
       break;
     default:
       break;
   }
+
+  ierr = TetElementForcesAndSourcesCore::postProcess(); CHKERRQ(ierr);
+
 
   PetscFunctionReturn(0);
 }

@@ -26,6 +26,7 @@
 #define MAT_NEOHOOKEAN "NEOHOOKEAN"
 
 /** \brief Manage setting parameters and constitutive equations for nonlinear/linear elastic materials
+  * \ingroup nonlinear_elastic_elem
   */
 struct ElasticMaterials {
 
