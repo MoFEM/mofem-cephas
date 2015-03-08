@@ -45,7 +45,7 @@ struct NonlinearElasticElement {
     Mat A;
     Vec F;
 
-    MyVolumeFE(FieldInterface &_mField);
+    MyVolumeFE(FieldInterface &m_field);
     
     /** \brief it is used to calculate nb. of Gauss integration points
      *
@@ -64,14 +64,21 @@ struct NonlinearElasticElement {
     **/
     int getRule(int order);
 
+    Vec V;
+    double eNergy;    
+
     PetscErrorCode preProcess(); 
+    PetscErrorCode postProcess(); 
 
   };
-  
+
   MyVolumeFE feRhs; ///< calculate right hand side for tetrahedral elements
   MyVolumeFE& getLoopFeRhs() { return feRhs; } ///< get rhs volume element 
   MyVolumeFE feLhs; //< calculate left hand side for tetrahedral elements
   MyVolumeFE& getLoopFeLhs() { return feLhs; } ///< get lhs volume element
+
+  MyVolumeFE feEnergy; ///< calculate elastic energy 
+  MyVolumeFE& getLoopFeEnergy() { return feEnergy; } ///< get energy fe 
 
   FieldInterface &mField;
   short int tAg;
@@ -326,6 +333,7 @@ struct NonlinearElasticElement {
 
     BlockData &dAta;
     CommonData &commonData;
+    bool fieldDisp;
 
     OpRhs(const string field_name,BlockData &data,CommonData &common_data);
 
@@ -334,6 +342,21 @@ struct NonlinearElasticElement {
       int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data);
 
   };
+
+  struct OpEnergy: public TetElementForcesAndSourcesCore::UserDataOperator {
+
+    BlockData &dAta;
+    CommonData &commonData;
+    Vec *Vptr;
+    bool fieldDisp;
+
+    OpEnergy(const string field_name,BlockData &data,CommonData &common_data,Vec *v_ptr,bool field_disp);
+
+    PetscErrorCode doWork(
+      int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data);
+
+  };
+
 
   struct OpLhs_dx: public TetElementForcesAndSourcesCore::UserDataOperator {
 

@@ -75,6 +75,9 @@ struct Hooke: public NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI
       this->mu = MU(block_data.E,block_data.PoissonRatio);
       Eps.resize(3,3);
       noalias(Eps) = 0.5*(this->F + trans(this->F));
+      for(int dd = 0;dd<3;dd++) {
+	Eps(dd,dd) -= 1;
+      }
       TYPE trace = 0;
       this->eNergy = 0;
       for(int dd = 0;dd<3;dd++) {

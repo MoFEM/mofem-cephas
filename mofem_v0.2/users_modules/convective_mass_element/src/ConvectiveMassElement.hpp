@@ -65,6 +65,9 @@ struct ConvectiveMassElement {
     **/
     int getRule(int order) { return order; };
 
+    Vec V;
+    double eNergy;
+
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
       PetscErrorCode ierr;
@@ -79,24 +82,76 @@ struct ConvectiveMassElement {
 	ts_F = F;
       }
 
+      int ghosts[] = { 0 };
+      int rank;
+      MPI_Comm_rank(mField.get_comm(),&rank);
+
+      switch (ts_ctx) {
+	case CTX_TSNONE:
+	  if(rank == 0) {
+	    ierr = VecCreateGhost(mField.get_comm(),1,1,1,ghosts,&V); CHKERRQ(ierr);
+	  } else {
+	    ierr = VecCreateGhost(mField.get_comm(),0,1,1,ghosts,&V); CHKERRQ(ierr);
+	  }
+	  ierr = VecZeroEntries(V); CHKERRQ(ierr);
+	  ierr = VecGhostUpdateBegin(V,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	  ierr = VecGhostUpdateEnd(V,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	  break;
+	default:
+	  break;
+      }
+
       PetscFunctionReturn(0);
     }
+
+
+    PetscErrorCode postProcess() {
+      PetscFunctionBegin;
+      PetscErrorCode ierr;
+
+      ierr = TetElementForcesAndSourcesCore::postProcess(); CHKERRQ(ierr);
+
+      double *array;
+      switch (ts_ctx) {
+	case CTX_TSNONE:
+	  ierr = VecAssemblyBegin(V); CHKERRQ(ierr);
+	  ierr = VecAssemblyEnd(V); CHKERRQ(ierr);
+	  ierr = VecGhostUpdateBegin(V,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	  ierr = VecGhostUpdateEnd(V,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	  ierr = VecGhostUpdateBegin(V,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	  ierr = VecGhostUpdateEnd(V,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	  ierr = VecGetArray(V,&array); CHKERRQ(ierr);
+	  eNergy = array[0];
+	  ierr = VecRestoreArray(V,&array); CHKERRQ(ierr);
+	  ierr = VecDestroy(&V); CHKERRQ(ierr);
+	  break;
+	default:
+	  break;
+      }
+
+      PetscFunctionReturn(0);
+    }
+
+
   };
 
-  MyVolumeFE feMassRhs; ///< cauclate right hand side for tetrahedral elements
+  MyVolumeFE feMassRhs; ///< calculate right hand side for tetrahedral elements
   MyVolumeFE& getLoopFeMassRhs() { return feMassRhs; } ///< get rhs volume element 
   MyVolumeFE feMassLhs; ///< calculate left hand side for tetrahedral elements
   MyVolumeFE& getLoopFeMassLhs() { return feMassLhs; } ///< get lhs volume element
 
-  MyVolumeFE feVelRhs; ///< cauclate right hand side for tetrahedral elements
+  MyVolumeFE feVelRhs; ///< calculate right hand side for tetrahedral elements
   MyVolumeFE& getLoopFeVelRhs() { return feVelRhs; } ///< get rhs volume element 
   MyVolumeFE feVelLhs; ///< calculate left hand side for tetrahedral elements
   MyVolumeFE& getLoopFeVelLhs() { return feVelLhs; } ///< get lhs volume element
 
-  MyVolumeFE feTRhs; ///< cauclate right hand side for tetrahedral elements
+  MyVolumeFE feTRhs; ///< calculate right hand side for tetrahedral elements
   MyVolumeFE& getLoopFeTRhs() { return feTRhs; } ///< get rhs volume element 
   MyVolumeFE feTLhs; ///< calculate left hand side for tetrahedral elements
   MyVolumeFE& getLoopFeTLhs() { return feTLhs; } ///< get lhs volume element
+
+  MyVolumeFE feEnergy; ///< calculate kinetic energy
+  MyVolumeFE& getLoopFeEnergy() { return feEnergy; } ///< get kinetic energy element
 
   FieldInterface &mField;
   short int tAg;
@@ -106,6 +161,7 @@ struct ConvectiveMassElement {
     feMassRhs(m_field),feMassLhs(m_field),
     feVelRhs(m_field),feVelLhs(m_field),
     feTRhs(m_field),feTLhs(m_field),
+    feEnergy(m_field),
     mField(m_field),tAg(tag) {}
 
   /** \brief data for calulation het conductivity and heat capacity elements
@@ -740,6 +796,80 @@ struct ConvectiveMassElement {
 	ss << "throw in method: " << ex.what() << endl;
 	SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
+      PetscFunctionReturn(0);
+    }
+
+  };
+
+  struct OpEnergy: public TetElementForcesAndSourcesCore::UserDataOperator,CommonFunctions {
+
+    BlockData &dAta;
+    CommonData &commonData;
+    Vec *Vptr;
+    bool lInear;
+
+    OpEnergy(const string field_name,BlockData &data,CommonData &common_data,Vec *v_ptr,bool linear = false):
+      TetElementForcesAndSourcesCore::UserDataOperator(field_name),
+      dAta(data),commonData(common_data),Vptr(v_ptr),lInear(linear) { }
+
+    ublas::matrix<double> h,H,invH,F;
+    ublas::vector<double> v;
+
+    PetscErrorCode doWork(
+      int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data) {
+      PetscFunctionBegin;
+
+      PetscErrorCode ierr;
+      if(row_type != MBVERTEX) {
+	PetscFunctionReturn(0);
+      }
+      if(dAta.tEts.find(getMoFEMFEPtr()->get_ent()) == dAta.tEts.end()) {
+	PetscFunctionReturn(0);
+      }
+      
+      try {
+
+	for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
+	  double val = getVolume()*getGaussPts()(3,gg);
+	  if(getHoGaussPtsDetJac().size()>0) {
+	    val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
+	  }
+	  double rho0 = dAta.rho0;
+	  double rho;
+	  if(lInear) {
+	    rho = rho0;
+	  } else {
+	    h.resize(3,3);
+	    noalias(h) = (commonData.gradAtGaussPts[commonData.spatialPositions][gg]);
+	    if(commonData.dataAtGaussPts["DOT_"+commonData.meshPositions].size()>0) {
+	      H.resize(3,3);
+	      noalias(H) = (commonData.gradAtGaussPts[commonData.meshPositions][gg]);
+	      double detH;
+	      ierr = dEterminatnt(H,detH); CHKERRQ(ierr);
+	      invH.resize(3,3);
+	      ierr = iNvert(detH,H,invH); CHKERRQ(ierr);
+	      F.resize(3,3);
+	      noalias(F) = prod(h,invH);
+	    } else {
+	      F.resize(3,3);
+	      noalias(F) = h;
+	    }
+	    double detF;
+	    ierr = dEterminatnt(F,detF); CHKERRQ(ierr);
+	    rho = detF*rho0;
+	  }
+	  v.resize(3);
+	  noalias(v) = commonData.dataAtGaussPts[commonData.spatialVelocities][gg];
+	  double energy = 0.5*rho*inner_prod(v,v);
+	  ierr = VecSetValue(*Vptr,0,val*energy,ADD_VALUES); CHKERRQ(ierr);
+	}
+
+      } catch (const std::exception& ex) {
+	ostringstream ss;
+	ss << "throw in method: " << ex.what() << endl;
+	SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+      }
+
       PetscFunctionReturn(0);
     }
 
@@ -1767,6 +1897,18 @@ struct ConvectiveMassElement {
       }
     }
 
+    //Energy
+    feEnergy.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(velocity_field_name,commonData));
+    feEnergy.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(spatial_position_field_name,commonData));
+    if(mField.check_field(material_position_field_name)) {
+      feEnergy.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(material_position_field_name,commonData));
+      feEnergy.meshPositionsFieldName = material_position_field_name;
+    }
+    sit = setOfBlocks.begin();
+    for(;sit!=setOfBlocks.end();sit++) {
+      feEnergy.get_op_to_do_Rhs().push_back(new OpEnergy(spatial_position_field_name,sit->second,commonData,&feEnergy.V,linear));
+    }
+
     PetscFunctionReturn(0);
   }
 
@@ -1919,6 +2061,18 @@ struct ConvectiveMassElement {
       }
     }
 
+    //Energy
+    feEnergy.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(velocity_field_name,commonData));
+    feEnergy.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(spatial_position_field_name,commonData));
+    if(mField.check_field(material_position_field_name)) {
+      feEnergy.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(material_position_field_name,commonData));
+      feEnergy.meshPositionsFieldName = material_position_field_name;
+    }
+    sit = setOfBlocks.begin();
+    for(;sit!=setOfBlocks.end();sit++) {
+      feEnergy.get_op_to_do_Rhs().push_back(new OpEnergy(spatial_position_field_name,sit->second,commonData,&feEnergy.V,linear));
+    }
+
     PetscFunctionReturn(0);
   }
 
@@ -2013,8 +2167,8 @@ struct ConvectiveMassElement {
     ierr = VecScatterBegin(ctx->scatterU,x,ctx->u,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecScatterEnd(ctx->scatterU,x,ctx->u,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = MatMult(ctx->K,ctx->u,ctx->Ku); CHKERRQ(ierr);
-    ierr = VecScatterBegin(ctx->scatterU,ctx->Ku,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = VecScatterEnd(ctx->scatterU,ctx->Ku,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = VecScatterBegin(ctx->scatterU,ctx->Ku,f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = VecScatterEnd(ctx->scatterU,ctx->Ku,f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     //Mult Mv
     ierr = VecScatterBegin(ctx->scatterV,x,ctx->v,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecScatterEnd(ctx->scatterV,x,ctx->v,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -2022,11 +2176,9 @@ struct ConvectiveMassElement {
     ierr = VecScatterBegin(ctx->scatterU,ctx->Mv,f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = VecScatterEnd(ctx->scatterU,ctx->Mv,f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     //Velocities
-    ierr = VecScatterBegin(ctx->scatterV,ctx->v,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = VecScatterEnd(ctx->scatterV,ctx->v,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = VecScale(ctx->u,-ctx->ts_a); CHKERRQ(ierr);
-    ierr = VecScatterBegin(ctx->scatterV,ctx->u,f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = VecScatterEnd(ctx->scatterV,ctx->u,f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = VecAXPY(ctx->v,-ctx->ts_a,ctx->u); CHKERRQ(ierr);
+    ierr = VecScatterBegin(ctx->scatterV,ctx->v,f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = VecScatterEnd(ctx->scatterV,ctx->v,f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     //Assemble
     ierr = VecAssemblyBegin(f); CHKERRQ(ierr);
     ierr = VecAssemblyEnd(f); CHKERRQ(ierr);
@@ -2134,26 +2286,60 @@ struct ConvectiveMassElement {
     PCShellCtx *ctx = (PCShellCtx*)void_ctx;
     MatShellCtx *shell_mat_ctx;
     ierr = MatShellGetContext(ctx->shellMat,&shell_mat_ctx); CHKERRQ(ierr);
-    //apply pre-conditioner
+    //forward
     ierr = VecScatterBegin(shell_mat_ctx->scatterU,f,shell_mat_ctx->Ku,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecScatterEnd(shell_mat_ctx->scatterU,f,shell_mat_ctx->Ku,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = PCApply(ctx->pC,shell_mat_ctx->Ku,shell_mat_ctx->u); CHKERRQ(ierr);
-    //calculate velocities
-    ierr = VecCopy(shell_mat_ctx->u,shell_mat_ctx->v); CHKERRQ(ierr);
-    ierr = VecScale(shell_mat_ctx->v,shell_mat_ctx->ts_a); CHKERRQ(ierr);
-    ierr = VecScatterBegin(shell_mat_ctx->scatterV,f,shell_mat_ctx->v,ADD_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = VecScatterEnd(shell_mat_ctx->scatterV,f,shell_mat_ctx->v,ADD_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    //reverse
+    ierr = VecScatterBegin(shell_mat_ctx->scatterV,f,shell_mat_ctx->v,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecScatterEnd(shell_mat_ctx->scatterV,f,shell_mat_ctx->v,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    //apply pre-conditioner and calculate u
+    ierr = MatMult(shell_mat_ctx->M,shell_mat_ctx->v,shell_mat_ctx->Mv); CHKERRQ(ierr); // Mrv
+    ierr = VecAXPY(shell_mat_ctx->Ku,-1,shell_mat_ctx->Mv); CHKERRQ(ierr); // f-Mrv
+    ierr = PCApply(ctx->pC,shell_mat_ctx->Ku,shell_mat_ctx->u); CHKERRQ(ierr); //u = (aM+K)^(-1)(ru-Mrv)
     //VecView(shell_mat_ctx->u,PETSC_VIEWER_STDOUT_WORLD);
+    //calculate velocities
+    ierr = VecAXPY(shell_mat_ctx->v,shell_mat_ctx->ts_a,shell_mat_ctx->u); CHKERRQ(ierr); // v = v + a*u
+    //VecView(shell_mat_ctx->v,PETSC_VIEWER_STDOUT_WORLD);
+    //reverse
     ierr = VecZeroEntries(x); CHKERRQ(ierr);
     ierr = VecScatterBegin(shell_mat_ctx->scatterU,shell_mat_ctx->u,x,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = VecScatterEnd(shell_mat_ctx->scatterU,shell_mat_ctx->u,x,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = VecScatterBegin(shell_mat_ctx->scatterV,shell_mat_ctx->v,x,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = VecScatterEnd(shell_mat_ctx->scatterV,shell_mat_ctx->v,x,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = VecAssemblyBegin(f); CHKERRQ(ierr);
-    ierr = VecAssemblyEnd(f); CHKERRQ(ierr);
+    ierr = VecAssemblyBegin(x); CHKERRQ(ierr);
+    ierr = VecAssemblyEnd(x); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
+
+  struct ShellResidualElement: public FEMethod {
+    FieldInterface &mField;
+    ShellResidualElement(FieldInterface &m_field): mField(m_field) {}
+
+    //variables bellow need to be set by user
+    MatShellCtx *shellMatCtx; 					///< pointer to shell matrix
+
+    PetscErrorCode preProcess() {
+      PetscFunctionBegin;
+
+      PetscErrorCode ierr;
+      if(ts_ctx != CTX_TSSETIFUNCTION) {
+	SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"It is used to residual of velocities");
+      }
+      if(!shellMatCtx->iNitialized) {
+	ierr = shellMatCtx->iNit(); CHKERRQ(ierr);
+      }
+      ierr = VecScatterBegin(shellMatCtx->scatterU,ts_u_t,shellMatCtx->u,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);      
+      ierr = VecScatterEnd(shellMatCtx->scatterU,ts_u_t,shellMatCtx->u,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);      
+      ierr = VecScatterBegin(shellMatCtx->scatterV,ts_u,shellMatCtx->v,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      ierr = VecScatterEnd(shellMatCtx->scatterV,ts_u,shellMatCtx->v,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      ierr = VecAXPY(shellMatCtx->v,-1,shellMatCtx->u); CHKERRQ(ierr);
+      ierr = VecScatterBegin(shellMatCtx->scatterV,shellMatCtx->v,ts_F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      ierr = VecScatterEnd(shellMatCtx->scatterV,shellMatCtx->v,ts_F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      //VecView(shellMatCtx->v,PETSC_VIEWER_STDOUT_WORLD);
+
+      PetscFunctionReturn(0);
+    }
+
+  };
 
   #ifdef __DIRICHLETBC_HPP__
 
@@ -2163,10 +2349,9 @@ struct ConvectiveMassElement {
     * used to calculate matrices of shell matrix.
     *
     */
-  struct BlockePakedProblem: public FEMethod {
+  struct ShellMatrixElement: public FEMethod {
     FieldInterface &mField;
-
-    BlockePakedProblem(FieldInterface &m_field): mField(m_field) {}
+    ShellMatrixElement(FieldInterface &m_field): mField(m_field) {}
 
     typedef pair<string,FEMethod*> LoopPairType;
     typedef vector<LoopPairType > LoopsToDoType;

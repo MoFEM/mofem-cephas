@@ -482,6 +482,10 @@ int main(int argc, char *argv[]) {
     ierr = DMoFEMLoopFiniteElements(dm,"ELASTIC",&post_proc); CHKERRQ(ierr);
     rval = post_proc.postProcMesh.write_file("out.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
   }
+
+  elastic.getLoopFeEnergy().snes_ctx = SnesMethod::CTX_SNESNONE;
+  ierr = DMoFEMLoopFiniteElements(dm,"ELASTIC",&elastic.getLoopFeEnergy()); CHKERRQ(ierr);
+  PetscPrintf(PETSC_COMM_WORLD,"Elastic energy %6.4e\n",elastic.getLoopFeEnergy().eNergy);
       
   //Destroy matrices
   ierr = VecDestroy(&F); CHKERRQ(ierr);

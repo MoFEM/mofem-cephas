@@ -57,6 +57,8 @@ struct MonitorPostProc: public FEMethod {
   FieldInterface &mField;
   PostPocOnRefinedMesh postProc;
   map<int,NonlinearElasticElement::BlockData> &setOfBlocks; 
+  NonlinearElasticElement::MyVolumeFE &feElasticEnergy; ///< calculate elastic energy 
+  ConvectiveMassElement::MyVolumeFE &feKineticEnergy; ///< calculate elastic energy 
 
   bool iNit;
 
@@ -64,8 +66,14 @@ struct MonitorPostProc: public FEMethod {
   int *step;
 
   MonitorPostProc(FieldInterface &m_field,
-    map<int,NonlinearElasticElement::BlockData> &set_of_blocks): 
-    FEMethod(),mField(m_field),postProc(m_field),setOfBlocks(set_of_blocks),iNit(false) { 
+    map<int,NonlinearElasticElement::BlockData> &set_of_blocks,
+    NonlinearElasticElement::MyVolumeFE &fe_elastic_energy,
+    ConvectiveMassElement::MyVolumeFE &fe_kinetic_energy): 
+    FEMethod(),mField(m_field),postProc(m_field),
+    setOfBlocks(set_of_blocks),
+    feElasticEnergy(fe_elastic_energy),
+    feKineticEnergy(fe_kinetic_energy),
+    iNit(false) { 
     
     ErrorCode rval;
     PetscErrorCode ierr;
@@ -80,7 +88,6 @@ struct MonitorPostProc: public FEMethod {
       rval = m_field.get_moab().tag_set_data(th_step,&root_meshset,1,&def_t_val); CHKERR(rval);
       rval = m_field.get_moab().tag_get_by_ptr(th_step,&root_meshset,1,(const void**)&step); CHKERR(rval);
     }
-
 
     PetscBool flg = PETSC_TRUE;
     ierr = PetscOptionsGetInt(PETSC_NULL,"-my_output_prt",&pRT,&flg); CHKERRABORT(PETSC_COMM_WORLD,ierr);
@@ -122,6 +129,16 @@ struct MonitorPostProc: public FEMethod {
       sss << "out_values_" << (*step) << ".h5m";
       rval = postProc.postProcMesh.write_file(sss.str().c_str(),"MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
     }
+
+    feElasticEnergy.snes_ctx = SnesMethod::CTX_SNESNONE;
+    ierr = mField.loop_finite_elements("DYNAMICS","ELASTIC",feElasticEnergy); CHKERRQ(ierr);
+    feKineticEnergy.ts_ctx = TSMethod::CTX_TSNONE;
+    ierr = mField.loop_finite_elements("DYNAMICS","MASS_ELEMENT",feKineticEnergy); CHKERRQ(ierr);
+    double E = feElasticEnergy.eNergy;
+    double T = feKineticEnergy.eNergy;
+    PetscPrintf(PETSC_COMM_WORLD,
+      "%D Time %3.2e Elastic energy %3.2e Kinetic Energy %3.2e Total %3.2e\n",
+      ts_step,ts_t,E,T,E+T);
 
     PetscFunctionReturn(0);
   }
@@ -342,7 +359,6 @@ int main(int argc, char *argv[]) {
   //ierr = elastic.setBlocks(&st_venant_kirchhoff_material_double,&st_venant_kirchhoff_material_adouble); CHKERRQ(ierr);
   ierr = elastic.addElement("ELASTIC","SPATIAL_POSITION"); CHKERRQ(ierr);
   ierr = elastic.setOperators("SPATIAL_POSITION"); CHKERRQ(ierr);
-  MonitorPostProc post_proc(m_field,elastic.setOfBlocks);
 
   //set mass element
   ConvectiveMassElement inertia(m_field,1);
@@ -350,6 +366,8 @@ int main(int argc, char *argv[]) {
   ierr = elastic_materials.setBlocks(inertia.setOfBlocks); CHKERRQ(ierr);
   ierr = inertia.addConvectiveMassElement("MASS_ELEMENT","SPATIAL_VELOCITY","SPATIAL_POSITION"); CHKERRQ(ierr);
   ierr = inertia.addVelocityElement("VELOCITY_ELEMENT","SPATIAL_VELOCITY","SPATIAL_POSITION"); CHKERRQ(ierr);
+
+  MonitorPostProc post_proc(m_field,elastic.setOfBlocks,elastic.getLoopFeEnergy(),inertia.getLoopFeEnergy());
 
   #ifdef BLOCKED_PROBLEM
     // elastic and mass element calculated in Kuu shell matrix problem. To
@@ -445,16 +463,17 @@ int main(int argc, char *argv[]) {
     ierr = MatShellSetOperation(shell_Aij,MATOP_MULT,(void(*)(void))ConvectiveMassElement::MultOpA); CHKERRQ(ierr);
     ierr = MatShellSetOperation(shell_Aij,MATOP_ZERO_ENTRIES,(void(*)(void))ConvectiveMassElement::ZeroEntriesOp); CHKERRQ(ierr);
     //blocked problem
-    ConvectiveMassElement::BlockePakedProblem blocked_problem(m_field);
+    ConvectiveMassElement::ShellMatrixElement shell_matrix_element(m_field);
     SpatialPositionsBCFEMethodPreAndPostProc shell_dirihlet_bc(
       m_field,"SPATIAL_POSITION",shellAij_ctx->barK,PETSC_NULL,PETSC_NULL);
     SpatialPositionsBCFEMethodPreAndPostProc my_dirihlet_bc(
       m_field,"SPATIAL_POSITION",PETSC_NULL,D,F);
-    blocked_problem.problemName = "Kuu";
-    blocked_problem.shellMatCtx = shellAij_ctx;
-    blocked_problem.dirihletBcPtr = &shell_dirihlet_bc;
-  
-    blocked_problem.loopK.push_back(ConvectiveMassElement::BlockePakedProblem::LoopPairType("ELASTIC",&elastic.getLoopFeLhs()));
+    shell_matrix_element.problemName = "Kuu";
+    shell_matrix_element.shellMatCtx = shellAij_ctx;
+    shell_matrix_element.dirihletBcPtr = &shell_dirihlet_bc;
+    shell_matrix_element.loopK.push_back(ConvectiveMassElement::ShellMatrixElement::LoopPairType("ELASTIC",&elastic.getLoopFeLhs()));
+    ConvectiveMassElement::ShellResidualElement shell_matrix_residual(m_field);
+    shell_matrix_residual.shellMatCtx = shellAij_ctx;
     //surface forces
     NeummanForcesSurfaceComplexForLazy neumann_forces(m_field,shellAij_ctx->barK,F);
     NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE &fe_spatial = neumann_forces.getLoopSpatialFe();
@@ -468,11 +487,11 @@ int main(int argc, char *argv[]) {
       ierr = fe_spatial.addPreassure(it->get_msId()); CHKERRQ(ierr);
     }
     fe_spatial.methodsOp.push_back(new TimeForceScale());
-    blocked_problem.loopK.push_back(ConvectiveMassElement::BlockePakedProblem::LoopPairType("NEUMANN_FE",&fe_spatial));
+    shell_matrix_element.loopK.push_back(ConvectiveMassElement::ShellMatrixElement::LoopPairType("NEUMANN_FE",&fe_spatial));
 
     ierr = inertia.setBlockedMassOperators("SPATIAL_VELOCITY","SPATIAL_POSITION","MESH_NODE_POSITIONS",linear); CHKERRQ(ierr);
     //element name "ELASTIC" is used, therefore M matrix is assembled as K matrix.
-    blocked_problem.loopM.push_back(ConvectiveMassElement::BlockePakedProblem::LoopPairType("ELASTIC",&inertia.getLoopFeMassLhs()));
+    shell_matrix_element.loopM.push_back(ConvectiveMassElement::ShellMatrixElement::LoopPairType("ELASTIC",&inertia.getLoopFeMassLhs()));
   #else
     Mat Aij;
     ierr = m_field.MatCreateMPIAIJWithArrays("DYNAMICS",&Aij); CHKERRQ(ierr);
@@ -522,7 +541,7 @@ int main(int argc, char *argv[]) {
   }
   loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("MASS_ELEMENT",&inertia.getLoopFeMassRhs()));
   #ifdef BLOCKED_PROBLEM
-  //Velocities calculated directly in pre-conditioner
+  ts_ctx.get_preProcess_to_do_IFunction().push_back(&shell_matrix_residual);
   #else
   loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("VELOCITY_ELEMENT",&inertia.getLoopFeVelRhs()));
   #endif
@@ -534,7 +553,7 @@ int main(int argc, char *argv[]) {
   ts_ctx.get_preProcess_to_do_IJacobian().push_back(&update_and_control);
   ts_ctx.get_preProcess_to_do_IJacobian().push_back(&my_dirihlet_bc);
   #ifdef BLOCKED_PROBLEM
-    ts_ctx.get_preProcess_to_do_IJacobian().push_back(&blocked_problem);
+    ts_ctx.get_preProcess_to_do_IJacobian().push_back(&shell_matrix_element);
   #else 
     //fe loops
     TsCtx::loops_to_do_type& loops_to_do_Mat = ts_ctx.get_loops_to_do_IJacobian();
