@@ -120,6 +120,7 @@ struct ElasticMaterials {
     File parameters:
     \code 
     [block_1]
+    displacemet_order = 1/2 .. N 
     material = KIRCHOFF/HOOKE/NEOHOOKEAN
     young_modulus = 1
     poisson_ratio = 0.25
@@ -136,6 +137,11 @@ struct ElasticMaterials {
     try {
       po::options_description config_file_options;
       for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
+
+        ostringstream str_order;
+        str_order << "block_" << it->get_msId() << ".displacemet_order";
+        config_file_options.add_options()
+	  (str_order.str().c_str(),po::value<int>(&blockData[it->get_msId()].oRder)->default_value(-1));
 
         ostringstream str_material;
         str_material << "block_" << it->get_msId() << ".material";
@@ -205,7 +211,7 @@ struct ElasticMaterials {
     if(flg!=PETSC_TRUE) {
       disp_order = 1;	
     }
-    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_ELASTICSET,it)) {
+    for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
       if(blockData[it->get_msId()].oRder == -1) continue;
       if(blockData[it->get_msId()].oRder == disp_order) continue;
       PetscPrintf(mField.get_comm(),"Set block %d oRder to %d\n",it->get_msId(),blockData[it->get_msId()].oRder);
@@ -220,10 +226,10 @@ struct ElasticMaterials {
 	ierr = mField.set_field_order(ents_to_set_order,"DISPLACEMENT",blockData[it->get_msId()].oRder); CHKERRQ(ierr);
       }
       if(mField.check_field("SPATIAL_POSITION")) {
-	ierr = mField.set_field_order(ents_to_set_order,"DISPLACEMENT",blockData[it->get_msId()].oRder); CHKERRQ(ierr);
+	ierr = mField.set_field_order(ents_to_set_order,"SPATIAL_POSITION",blockData[it->get_msId()].oRder); CHKERRQ(ierr);
       }
       if(mField.check_field("DOT_SPATIAL_POSITION")) {
-	ierr = mField.set_field_order(ents_to_set_order,"DISPLACEMENT",blockData[it->get_msId()].oRder); CHKERRQ(ierr);
+	ierr = mField.set_field_order(ents_to_set_order,"DOT_SPATIAL_POSITION",blockData[it->get_msId()].oRder); CHKERRQ(ierr);
       }
     }
     PetscFunctionReturn(0);
