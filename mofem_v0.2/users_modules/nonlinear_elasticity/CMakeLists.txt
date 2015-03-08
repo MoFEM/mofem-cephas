@@ -19,8 +19,9 @@
 #include subdirectory
 include_directories("${UM_SOURCE_DIR}/nonlinear_elasticity")
 include_directories("${UM_SOURCE_DIR}/nonlinear_elasticity/src")
-include_directories("${UM_SOURCE_DIR}/elasticity/src")
+include_directories("${UM_SOURCE_DIR}/nonlinear_elastic_materials/src")
 include_directories("${UM_SOURCE_DIR}/convective_mass_element/src")
+include_directories("${UM_SOURCE_DIR}/elasticity/src")
 
 add_subdirectory(atom_tests)
 
@@ -39,6 +40,7 @@ if(ADOL-C_LIBRARY)
     mofem_approx
     mofem_third_party
     mofem_cblas
+    boost_program_options
     ${MoFEM_PROJECT_LIBS})
 
   cm_export_file("dome_thin_symm.cub" export_files_arc_length_nonlinearelasticity)
@@ -95,6 +97,7 @@ if(ADOL-C_LIBRARY)
     mofem_approx
     mofem_third_party
     mofem_cblas
+    boost_program_options
     ${MoFEM_PROJECT_LIBS})
 
   add_test(NonLinearDynamics
@@ -126,6 +129,7 @@ if(ADOL-C_LIBRARY)
       mofem_approx
       mofem_third_party
       mofem_cblas
+      boost_program_options
       ${MoFEM_PROJECT_LIBS})
 
     add_test(EigenProblem

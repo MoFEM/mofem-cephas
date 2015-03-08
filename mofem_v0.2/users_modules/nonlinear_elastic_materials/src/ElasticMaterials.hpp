@@ -1,0 +1,327 @@
+/** \file ElasticMaterials.hpp 
+ * \brief Elastic materials
+ *
+ * This file is part of MoFEM.
+ * MoFEM is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
+ *
+ * MoFEM is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+ * License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+
+#ifndef __ELASTICMATERIALS_HPP__
+#define __ELASTICMATERIALS_HPP__
+
+#include <Hooke.hpp>
+#include <NeoHookean.hpp>
+
+#define MAT_KIRCHOFF "KIRCHOFF"
+#define MAT_HOOKE "HOOKE"
+#define MAT_NEOHOOKEAN "NEOHOOKEAN"
+
+/** \brief Manage setting parameters and constitutive equations for nonlinear/linear elastic materials
+  * \ingroup nonlinear_elastic_elem
+  */
+struct ElasticMaterials {
+
+  FieldInterface &mField;
+  string defMaterial;
+  string configFile;
+
+  bool iNitialized;
+
+  ElasticMaterials(FieldInterface &m_field):
+    mField(m_field),defMaterial(MAT_KIRCHOFF),
+    configFile("elastic_material.in"),
+    iNitialized(false) {}
+
+
+  boost::ptr_map<string,NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<adouble> > aDoubleMaterialModel;
+  boost::ptr_map<string,NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<double> > doubleMaterialModel;
+
+  struct BlockOptionData {
+    string mAterial;
+    int oRder;
+    double yOung;
+    double pOisson;
+    double dEnsity;
+    double aX,aY,aZ;
+    BlockOptionData():
+      mAterial(MAT_KIRCHOFF),
+      oRder(-1),
+      yOung(-1),
+      pOisson(-2),
+      dEnsity(-1),
+      aX(0),aY(0),aZ(0) {}
+  };
+  map<int,BlockOptionData> blockData;
+
+  PetscBool isConfigFileSet;
+  po::variables_map vM;
+
+
+  PetscErrorCode iNit() {
+    PetscFunctionBegin;
+    //add new material below
+    string mat_name;
+    mat_name = MAT_KIRCHOFF;
+    aDoubleMaterialModel.insert(mat_name,new NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<adouble>());
+    doubleMaterialModel.insert(mat_name,new NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<double>());
+    mat_name = MAT_HOOKE;
+    aDoubleMaterialModel.insert(mat_name,new Hooke<adouble>());
+    doubleMaterialModel.insert(mat_name,new Hooke<double>());
+    mat_name = MAT_NEOHOOKEAN;
+    aDoubleMaterialModel.insert(mat_name,new NeoHookean<adouble>());
+    doubleMaterialModel.insert(mat_name,new NeoHookean<double>());
+    ostringstream avilable_materials;
+    avilable_materials << "set elastic material < ";
+    boost::ptr_map<string,NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<double> >::iterator mit;
+    mit = doubleMaterialModel.begin();
+    for(;mit!=doubleMaterialModel.end();mit++) {
+      avilable_materials << mit->first << " ";
+    }
+    avilable_materials << ">";
+    PetscErrorCode ierr;
+    ierr = PetscOptionsBegin(mField.get_comm(),"","Elastic Materials Configuration","none"); CHKERRQ(ierr);
+    char default_material[255];
+    PetscBool def_mat_set;
+    ierr = PetscOptionsString("-default_material",avilable_materials.str().c_str(),"",MAT_KIRCHOFF,default_material,255,&def_mat_set); CHKERRQ(ierr);
+    if(def_mat_set) {
+      defMaterial = default_material;
+      if(aDoubleMaterialModel.find(defMaterial)==aDoubleMaterialModel.end()) {
+	SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"material <%s> not implemented",default_material);
+      }
+    }
+    char config_file[255];
+    ierr = PetscOptionsString("-elastic_material_configuration","elastic materials configure file name","",configFile.c_str(),config_file,255,&isConfigFileSet); CHKERRQ(ierr);
+    if(isConfigFileSet) {
+      configFile = config_file;
+      
+    }
+    ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
+  /** \brief read Elastic materials declaration for blocks and meshsets
+
+    User has to include in file header:
+    \code 
+    #include <boost/program_options.hpp>
+    using namespace std;
+    namespace po = boost::program_options;
+    \endcode
+
+    File parameters:
+    \code 
+    [block_1]
+    material = KIRCHOFF/HOOKE/NEOHOOKEAN
+    young_modulus = 1
+    poisson_ratio = 0.25
+    density = 1
+    a_x = 0
+    a_y = 0
+    a_z = 10
+    \endcode
+
+    */
+  PetscErrorCode readConfigFile() {
+    PetscFunctionBegin;
+    PetscErrorCode ierr;
+    try {
+      po::options_description config_file_options;
+      for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
+
+        ostringstream str_material;
+        str_material << "block_" << it->get_msId() << ".material";
+        config_file_options.add_options()
+	  (str_material.str().c_str(),po::value<string>(&blockData[it->get_msId()].mAterial)->default_value(defMaterial));
+
+        ostringstream str_ym;
+        str_ym << "block_" << it->get_msId() << ".young_modulus";
+        config_file_options.add_options()
+	  (str_ym.str().c_str(),po::value<double>(&blockData[it->get_msId()].yOung)->default_value(-1));
+
+        ostringstream str_pr;
+        str_pr << "block_" << it->get_msId() << ".poisson_ratio";
+        config_file_options.add_options()
+	  (str_pr.str().c_str(),po::value<double>(&blockData[it->get_msId()].pOisson)->default_value(-2));
+
+	ostringstream str_density;
+        str_density << "block_" << it->get_msId() << ".density";
+        config_file_options.add_options()
+	  (str_density.str().c_str(),po::value<double>(&blockData[it->get_msId()].dEnsity)->default_value(-1));
+
+	ostringstream str_ax;
+        str_ax << "block_" << it->get_msId() << ".a_x";
+        config_file_options.add_options()
+	  (str_ax.str().c_str(),po::value<double>(&blockData[it->get_msId()].aX)->default_value(0));
+
+	ostringstream str_ay;
+        str_ay << "block_" << it->get_msId() << ".a_y";
+        config_file_options.add_options()
+	  (str_ay.str().c_str(),po::value<double>(&blockData[it->get_msId()].aY)->default_value(0));
+
+	ostringstream str_az;
+        str_az << "block_" << it->get_msId() << ".a_z";
+        config_file_options.add_options()
+	  (str_az.str().c_str(),po::value<double>(&blockData[it->get_msId()].aZ)->default_value(0));
+      }
+      ifstream file(configFile.c_str());  
+      if(isConfigFileSet) {
+        if(!file.good()) {
+	  SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"file < %s > not found",configFile.c_str());
+        }
+      }
+      po::parsed_options parsed = parse_config_file(file,config_file_options,true);
+      store(parsed,vM);
+      po::notify(vM); 
+      vector<string> additional_parameters;
+      additional_parameters = collect_unrecognized(parsed.options,po::include_positional);
+      for(vector<string>::iterator vit = additional_parameters.begin();
+        vit!=additional_parameters.end();vit++) {
+        ierr = PetscPrintf(PETSC_COMM_WORLD,"** WARRNING Unrecognised option %s\n",vit->c_str()); CHKERRQ(ierr);
+      }
+    } catch (exception& ex) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,"error parsing material elastic configuration file");
+    }
+    PetscFunctionReturn(0);
+
+  }
+
+  PetscErrorCode setBlocksOrder() {
+    PetscFunctionBegin;
+    ErrorCode rval;
+    PetscErrorCode ierr;
+    //set app. order
+    PetscBool flg = PETSC_TRUE;
+    PetscInt disp_order;
+    ierr = PetscOptionsGetInt(PETSC_NULL,"-order",&disp_order,&flg); CHKERRQ(ierr);
+    if(flg!=PETSC_TRUE) {
+      disp_order = 1;	
+    }
+    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_ELASTICSET,it)) {
+      if(blockData[it->get_msId()].oRder == -1) continue;
+      if(blockData[it->get_msId()].oRder == disp_order) continue;
+      PetscPrintf(mField.get_comm(),"Set block %d oRder to %d\n",it->get_msId(),blockData[it->get_msId()].oRder);
+      Range block_ents;
+      rval = mField.get_moab().get_entities_by_handle(it->meshset,block_ents,true); CHKERR(rval);
+      Range ents_to_set_order;
+      ierr = mField.get_moab().get_adjacencies(block_ents,3,false,ents_to_set_order,Interface::UNION); CHKERRQ(ierr);
+      ents_to_set_order = ents_to_set_order.subset_by_type(MBTET);
+      ierr = mField.get_moab().get_adjacencies(block_ents,2,false,ents_to_set_order,Interface::UNION); CHKERRQ(ierr);
+      ierr = mField.get_moab().get_adjacencies(block_ents,1,false,ents_to_set_order,Interface::UNION); CHKERRQ(ierr);
+      if(mField.check_field("DISPLACEMENT")) {
+	ierr = mField.set_field_order(ents_to_set_order,"DISPLACEMENT",blockData[it->get_msId()].oRder); CHKERRQ(ierr);
+      }
+      if(mField.check_field("SPATIAL_POSITION")) {
+	ierr = mField.set_field_order(ents_to_set_order,"DISPLACEMENT",blockData[it->get_msId()].oRder); CHKERRQ(ierr);
+      }
+      if(mField.check_field("DOT_SPATIAL_POSITION")) {
+	ierr = mField.set_field_order(ents_to_set_order,"DISPLACEMENT",blockData[it->get_msId()].oRder); CHKERRQ(ierr);
+      }
+    }
+    PetscFunctionReturn(0);
+  }
+
+  #ifdef __NONLINEAR_ELASTIC_HPP 
+
+  PetscErrorCode setBlocks(map<int,NonlinearElasticElement::BlockData> &set_of_blocks) {
+    PetscFunctionBegin;
+    ErrorCode rval;
+    PetscErrorCode ierr;
+    if(!iNitialized) {
+      ierr = iNit(); CHKERRQ(ierr);
+      ierr = readConfigFile(); CHKERRQ(ierr);
+      ierr = setBlocksOrder(); CHKERRQ(ierr);
+      iNitialized = true;
+    }
+    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_ELASTICSET,it)) {
+      int id = it->get_msId();
+      Mat_Elastic mydata;
+      ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+      EntityHandle meshset = it->get_meshset();
+      rval = mField.get_moab().get_entities_by_type(meshset,MBTET,set_of_blocks[id].tEts,true); CHKERR_PETSC(rval);
+      set_of_blocks[id].iD = id;
+      set_of_blocks[id].E = mydata.data.Young;
+      if(blockData[id].yOung >= 0) set_of_blocks[id].E = blockData[id].yOung;
+      if(blockData[id].pOisson >= -1) set_of_blocks[id].PoissonRatio = blockData[id].pOisson;
+      if(blockData[id].mAterial.compare(MAT_KIRCHOFF)==0) {
+	set_of_blocks[id].materialDoublePtr = &doubleMaterialModel.at(MAT_KIRCHOFF);
+	set_of_blocks[id].materialAdoublePtr = &aDoubleMaterialModel.at(MAT_KIRCHOFF);
+      } else
+      if(blockData[id].mAterial.compare(MAT_HOOKE)==0) { 
+	set_of_blocks[id].materialDoublePtr = &doubleMaterialModel.at(MAT_HOOKE);
+	set_of_blocks[id].materialAdoublePtr = &aDoubleMaterialModel.at(MAT_HOOKE);
+      } else 
+      if(blockData[id].mAterial.compare(MAT_NEOHOOKEAN)==0) {
+	set_of_blocks[id].materialDoublePtr = &doubleMaterialModel.at(MAT_NEOHOOKEAN);
+	set_of_blocks[id].materialAdoublePtr = &aDoubleMaterialModel.at(MAT_NEOHOOKEAN);
+      } else {
+	SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"field with that space is not implemented");
+      }
+    }
+    PetscFunctionReturn(0);
+  }
+
+  #endif //__NONLINEAR_ELASTIC_HPP
+
+  #ifdef __CONVECTIVE_MASS_ELEMENT_HPP
+
+  PetscErrorCode setBlocks(map<int,ConvectiveMassElement::BlockData> &set_of_blocks) {
+    PetscFunctionBegin;
+    ErrorCode rval;
+    PetscErrorCode ierr;
+    if(!iNitialized) {
+      ierr = iNit(); CHKERRQ(ierr);
+      ierr = readConfigFile(); CHKERRQ(ierr);
+      ierr = setBlocksOrder(); CHKERRQ(ierr);
+      iNitialized = true;
+    }
+    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|BODYFORCESSET,it)) {
+      int id = it->get_msId();
+      EntityHandle meshset = it->get_meshset();
+      rval = mField.get_moab().get_entities_by_type(meshset,MBTET,set_of_blocks[id].tEts,true); CHKERR_PETSC(rval);
+      Block_BodyForces mydata;
+      ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+      set_of_blocks[id].rho0 = mydata.data.density;
+      set_of_blocks[id].a0.resize(3);
+      set_of_blocks[id].a0[0] = mydata.data.acceleration_x;
+      set_of_blocks[id].a0[1] = mydata.data.acceleration_y;
+      set_of_blocks[id].a0[2] = mydata.data.acceleration_z;
+      if(blockData[id].dEnsity>=0) {
+	set_of_blocks[id].rho0 = blockData[id].dEnsity;
+	ostringstream str_ax;
+        str_ax << "block_" << it->get_msId() << ".a_x";
+	ostringstream str_ay;
+        str_ay << "block_" << it->get_msId() << ".a_y";
+	ostringstream str_az;
+        str_az << "block_" << it->get_msId() << ".a_z";
+	if(vM.count(str_ax.str().c_str())) {
+	  set_of_blocks[id].a0[0] = blockData[id].aX;
+	}
+	if(vM.count(str_ay.str().c_str())) {
+	  set_of_blocks[id].a0[1] = blockData[id].aY;
+	}
+	if(vM.count(str_az.str().c_str())) {
+	  set_of_blocks[id].a0[2] = blockData[id].aZ;
+	}
+      }
+    }
+
+    PetscFunctionReturn(0);
+  }
+
+  #endif //__CONVECTIVE_MASS_ELEMENT_HPP
+
+
+};
+
+#endif //__ELASTICMATERIALS_HPP__
+
+

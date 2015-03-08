@@ -1,12 +1,7 @@
 /**  
- * \brief Postprocessing stresses for nonolinear analyis
+ * \brief Post-processing stresses for non-linear analysis
  *
- * Implementation of method for postprocessing stresses.
- *
- */
-
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
+ * Implementation of method for post-processing stresses.
  *
  * This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
@@ -36,19 +31,16 @@ struct PostPorcStress: public TetElementForcesAndSourcesCore::UserDataOperator {
 
   NonlinearElasticElement::BlockData &dAta;
   PostPocOnRefinedMesh::CommonData &commonData;
-  NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<double> &fUn;
 
   PostPorcStress(
     Interface &post_proc_mesh,
     vector<EntityHandle> &map_gauss_pts,
     const string field_name,
     NonlinearElasticElement::BlockData &data,
-    PostPocOnRefinedMesh::CommonData &common_data,
-    NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<double> &fun):
+    PostPocOnRefinedMesh::CommonData &common_data):
     TetElementForcesAndSourcesCore::UserDataOperator(field_name),
     postProcMesh(post_proc_mesh),mapGaussPts(map_gauss_pts),
-    dAta(data),commonData(common_data),fUn(fun) {}
-
+    dAta(data),commonData(common_data) {}
 
   PetscErrorCode doWork(
     int side,
@@ -69,20 +61,24 @@ struct PostPorcStress: public TetElementForcesAndSourcesCore::UserDataOperator {
     ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
 
     string tag_name_piola1 = dof_ptr->get_name()+"_PIOLA1_STRESS";
+    string tag_name_energy = dof_ptr->get_name()+"_ENERGY_DENSITY";
+
 
     int tag_length = 9;
     double def_VAL[tag_length];
     bzero(def_VAL,tag_length*sizeof(double));
-    Tag th_piola1;
+    Tag th_piola1,th_energy;
     rval = postProcMesh.tag_get_handle(
-	tag_name_piola1.c_str(),tag_length,MB_TYPE_DOUBLE,th_piola1,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_PETSC(rval);
+      tag_name_piola1.c_str(),tag_length,MB_TYPE_DOUBLE,th_piola1,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_PETSC(rval);
+    rval = postProcMesh.tag_get_handle(
+      tag_name_energy.c_str(),1,MB_TYPE_DOUBLE,th_energy,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_PETSC(rval);
 
     int nb_gauss_pts = data.getN().size1();
     if(mapGaussPts.size()!=(unsigned int)nb_gauss_pts) {
-	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
     }
     if(commonData.gradMap[row_field_name].size()!=(unsigned int)nb_gauss_pts) {
-	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
     }
 
     ublas::matrix<double> H,invH;
@@ -90,19 +86,21 @@ struct PostPorcStress: public TetElementForcesAndSourcesCore::UserDataOperator {
 
     for(int gg = 0;gg<nb_gauss_pts;gg++) {
 
-	fUn.F.resize(3,3);
-	noalias(fUn.F) = (commonData.gradMap[row_field_name])[gg];
-	if(commonData.gradMap["MESH_NODE_POSITIONS"].size()==(unsigned int)nb_gauss_pts) {
-	  H.resize(3,3);
-	  invH.resize(3,3);
-	  noalias(H) = (commonData.gradMap["MESH_NODE_POSITIONS"])[gg];
-	  ierr = fUn.dEterminatnt(H,detH);  CHKERRQ(ierr);
-	  ierr = fUn.iNvert(detH,H,invH); CHKERRQ(ierr);
-	  noalias(fUn.F) = prod(fUn.F,invH);  
-	}
+      dAta.materialDoublePtr->F.resize(3,3);
+      noalias(dAta.materialDoublePtr->F) = (commonData.gradMap[row_field_name])[gg];
+      if(commonData.gradMap["MESH_NODE_POSITIONS"].size()==(unsigned int)nb_gauss_pts) {
+	H.resize(3,3);
+	invH.resize(3,3);
+	noalias(H) = (commonData.gradMap["MESH_NODE_POSITIONS"])[gg];
+	ierr = dAta.materialDoublePtr->dEterminatnt(H,detH);  CHKERRQ(ierr);
+	ierr = dAta.materialDoublePtr->iNvert(detH,H,invH); CHKERRQ(ierr);
+	noalias(dAta.materialDoublePtr->F) = prod(dAta.materialDoublePtr->F,invH);  
+      }
 
-	ierr = fUn.CalualteP_PiolaKirchhoffI(dAta,getMoFEMFEPtr()); CHKERRQ(ierr);
-	rval = postProcMesh.tag_set_data(th_piola1,&mapGaussPts[gg],1,&fUn.P(0,0)); CHKERR_PETSC(rval);
+      ierr = dAta.materialDoublePtr->CalualteP_PiolaKirchhoffI(dAta,getMoFEMFEPtr()); CHKERRQ(ierr);
+      rval = postProcMesh.tag_set_data(th_piola1,&mapGaussPts[gg],1,&dAta.materialDoublePtr->P(0,0)); CHKERR_PETSC(rval);
+      dAta.materialDoublePtr->CalulateElasticEnergy(dAta,getMoFEMFEPtr()); CHKERRQ(ierr);
+      rval = postProcMesh.tag_set_data(th_energy,&mapGaussPts[gg],1,&dAta.materialDoublePtr->eNergy); CHKERR_PETSC(rval);
 
     }
 
@@ -113,11 +111,6 @@ struct PostPorcStress: public TetElementForcesAndSourcesCore::UserDataOperator {
 };
 
 #endif //__POSTPROCSTRESSES_HPP
-
-/***************************************************************************//**
- * \defgroup nonlinear_eleastic_elem Non-Linear Elastic Element 
- * \ingroup mofem_forces_and_sources 
- ******************************************************************************/
 
 
 

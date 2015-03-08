@@ -130,7 +130,7 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::
       myPtr->dofs_X_indices = &*myPtr->dOfs_X_indices.data().begin();
       myPtr->dOfs_X.resize(data.getFieldData().size());
       ublas::noalias(myPtr->dOfs_X) = data.getFieldData();
-      myPtr->dofs_X = &*myPtr->dOfs_x.data().begin();
+      myPtr->dofs_X = &*myPtr->dOfs_X.data().begin();
     }
     break;
     case MBEDGE: {	

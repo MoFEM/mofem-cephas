@@ -43,12 +43,9 @@ namespace po = boost::program_options;
 
 #include <adolc/adolc.h> 
 #include <NonLienarElasticElement.hpp>
-//#include <FEMethod_LowLevelStudent.hpp>
-//#include <FEMethod_UpLevelStudent.hpp>
-//#include <ElasticFEMethod.hpp>
+#include <Hooke.hpp>
 
 using namespace boost::numeric;
-//using namespace ObosleteUsersModules;
 
 ErrorCode rval;
 PetscErrorCode ierr;
@@ -59,37 +56,6 @@ static char help[] =
 
 const double young_modulus = 1;
 const double poisson_ratio = 0.0;
-
-template<typename TYPE>
-struct Hooke: public NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<TYPE> {
-
-    Hooke(): NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<TYPE>() {}
-
-    ublas::matrix<TYPE> Eps;
-    TYPE tr;
-    
-    virtual PetscErrorCode CalualteP_PiolaKirchhoffI(
-      const NonlinearElasticElement::BlockData block_data,
-      const NumeredMoFEMFiniteElement *fe_ptr) {
-      PetscFunctionBegin;
-      //PetscErrorCode ierr;
-      this->lambda = LAMBDA(block_data.E,block_data.PoissonRatio);
-      this->mu = MU(block_data.E,block_data.PoissonRatio);
-      Eps.resize(3,3);
-      noalias(Eps) = 0.5*(this->F + trans(this->F));
-      this->P.resize(3,3);
-      noalias(this->P) = 2*this->mu*Eps;
-      tr = 0;
-      for(int dd = 0;dd<3;dd++) {
-	tr += this->lambda*Eps(dd,dd);
-      }
-      for(int dd =0;dd<3;dd++) {
-	this->P(dd,dd) += tr;
-      } 
-      PetscFunctionReturn(0);
-    }
-
-};
 
 struct BlockOptionData {
   int oRder;
@@ -238,11 +204,12 @@ int main(int argc, char *argv[]) {
   }
 
   //define eleatic element
-  NonlinearElasticElement elastic(m_field,2);
-  ierr = elastic.setBlocks(); CHKERRQ(ierr);
-  ierr = elastic.addElement("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
   Hooke<adouble> hooke_adouble;
-  ierr = elastic.setOperators(hooke_adouble,"DISPLACEMENT","MESH_NODE_POSITIONS",false,true); CHKERRQ(ierr);
+  Hooke<double> hooke_double;
+  NonlinearElasticElement elastic(m_field,2);
+  ierr = elastic.setBlocks(&hooke_double,&hooke_adouble); CHKERRQ(ierr);
+  ierr = elastic.addElement("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = elastic.setOperators("DISPLACEMENT","MESH_NODE_POSITIONS",false,true); CHKERRQ(ierr);
 
   ierr = m_field.add_finite_element("BODY_FORCE"); CHKERRQ(ierr);
   ierr = m_field.modify_finite_element_add_field_row("BODY_FORCE","DISPLACEMENT"); CHKERRQ(ierr);
@@ -515,6 +482,10 @@ int main(int argc, char *argv[]) {
     ierr = DMoFEMLoopFiniteElements(dm,"ELASTIC",&post_proc); CHKERRQ(ierr);
     rval = post_proc.postProcMesh.write_file("out.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
   }
+
+  elastic.getLoopFeEnergy().snes_ctx = SnesMethod::CTX_SNESNONE;
+  ierr = DMoFEMLoopFiniteElements(dm,"ELASTIC",&elastic.getLoopFeEnergy()); CHKERRQ(ierr);
+  PetscPrintf(PETSC_COMM_WORLD,"Elastic energy %6.4e\n",elastic.getLoopFeEnergy().eNergy);
       
   //Destroy matrices
   ierr = VecDestroy(&F); CHKERRQ(ierr);
