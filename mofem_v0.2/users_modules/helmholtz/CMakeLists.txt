@@ -69,8 +69,20 @@ target_link_libraries(error_norm
   ${MoFEM_PROJECT_LIBS})
 
 
-add_executable(exact_problem ${UM_SOURCE_DIR}/helmholtz/exact_problem.cpp)
-target_link_libraries(exact_problem
+add_executable(best_approximation ${UM_SOURCE_DIR}/helmholtz/best_approximation.cpp)
+target_link_libraries(best_approximation
+  mofem_finite_element_library
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_third_party
+  mofem_cblas
+  ${MoFEM_PROJECT_LIBS})
+
+add_executable(exact_solution ${UM_SOURCE_DIR}/helmholtz/exact_solution.cpp)
+target_link_libraries(exact_solution
   mofem_finite_element_library
   mofem_finite_elements
   mofem_interfaces

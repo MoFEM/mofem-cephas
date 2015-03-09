@@ -450,8 +450,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.problem_basic_method_preProcess("ACOUSTIC_PROBLEM",analytical_ditihlet_bc1); CHKERRQ(ierr);
   ierr = mField.problem_basic_method_preProcess("ACOUSTIC_PROBLEM",analytical_ditihlet_bc2); CHKERRQ(ierr);
   //Save data on mesh
-  ierr = mField.set_global_VecCreateGhost("ACOUSTIC_PROBLEM",ROW,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-
+  ierr = mField.set_global_VecCreateGhost("ACOUSTIC_PROBLEM",ROW,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);  
   
   //Wait to putput the data in format
   PetscViewer viewer;

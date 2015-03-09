@@ -296,16 +296,27 @@ int main(int argc, char *argv[]) {
 	ierr = VecNorm(D,NORM_2,&nrm2_D); CHKERRQ(ierr);
 	//ierr = VecNorm(T,NORM_MAX,&pointwisenorm);
 	
+	int i1;
 	Vec P;
 	Vec M;
-	ierr = m_field.set_local_VecCreateGhost("EX1_PROBLEM",ROW,M,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-	ierr = m_field.set_local_VecCreateGhost("EX2_PROBLEM",ROW,P,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	ierr = m_field.VecCreateGhost("EX1_PROBLEM",ROW,&M); CHKERRQ(ierr);
+	ierr = m_field.VecCreateGhost("EX2_PROBLEM",ROW,&P); CHKERRQ(ierr);
+
+	ierr = m_field.set_local_VecCreateGhost("EX1_PROBLEM",ROW,M,ADD_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	//ierr = VecGhostUpdateBegin(M,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	//ierr = VecGhostUpdateEnd(M,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	//ierr = m_field.set_global_VecCreateGhost("EX2_PROBLEM",ROW,P,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	ierr = VecAssemblyBegin(M); CHKERRQ(ierr);
+	ierr = VecAssemblyEnd(M); CHKERRQ(ierr);
+	
+	ierr=VecGetSize(M,&i1);
+	
 	ierr = VecView(M,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
 	//ierr = VecNorm(M,NORM_INFINITY,&pointwisenormM);
 	//ierr = VecNorm(P,NORM_INFINITY,&pointwisenormP);
 	//ierr = VecMax(P,NULL,&pointwisenormP);
-	
+		//std::cout << "\n M = \n" << i1 << pointwisenormM << pointwisenormP << std::endl;
 	//out stream the global error
 	if(usel2 && !userela) {
 		std::cout << "\n The Global least square of l2 Norm of error in real field is : --\n" << nrm2_T << std::endl;
