@@ -209,7 +209,7 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::rHs() {
   }
 
   try {
-    
+
   switch(typeOfForces) {
     case CONSERVATIVE:
       ierr = Fext_h_hierarchical(
@@ -224,7 +224,7 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::rHs() {
       break;
     case NONCONSERVATIVE:
       ierr = Fext_h_hierarchical(
-	order_face,order_edge,//2
+	order_face_material,order_edge_material,//2
 	N,N_face,N_edge,diffN,diffN_face,diffN_edge,//8
 	t_loc,NULL,NULL,//11
 	dofs_X,dofs_X_edge,dofs_X_face,//14

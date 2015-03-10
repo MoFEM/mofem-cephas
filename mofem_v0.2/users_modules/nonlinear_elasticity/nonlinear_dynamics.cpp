@@ -43,7 +43,7 @@ using namespace std;
 namespace po = boost::program_options;
 #include <ElasticMaterials.hpp>
 
-//#define BLOCKED_PROBLEM
+#define BLOCKED_PROBLEM
 
 using namespace ObosleteUsersModules;
 
