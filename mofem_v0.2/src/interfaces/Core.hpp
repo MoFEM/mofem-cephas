@@ -491,6 +491,8 @@ struct Core:
   PetscErrorCode set_other_local_VecCreateGhost(
     const string &name,const string& fiel_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1);
   PetscErrorCode set_other_global_VecCreateGhost(
+    const MoFEMProblem *problem_ptr,const string& fiel_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1);
+  PetscErrorCode set_other_global_VecCreateGhost(
     const string &name,const string& fiel_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1);
 
   //loops
