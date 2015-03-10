@@ -137,8 +137,10 @@ struct ConvectiveMassElement {
 
   MyVolumeFE feMassRhs; ///< calculate right hand side for tetrahedral elements
   MyVolumeFE& getLoopFeMassRhs() { return feMassRhs; } ///< get rhs volume element 
-  MyVolumeFE feMassLhs; ///< calculate left hand side for tetrahedral elements
+  MyVolumeFE feMassLhs; ///< calculate left hand side for tetrahedral elements,i.e. mass element
   MyVolumeFE& getLoopFeMassLhs() { return feMassLhs; } ///< get lhs volume element
+  MyVolumeFE feMassAuxLhs; ///< calculate left hand side for tetrahedral elements for Kuu shell matrix
+  MyVolumeFE& getLoopFeMassAuxLhs() { return feMassAuxLhs; } ///< get lhs volume element for Kuu shell matrix
 
   MyVolumeFE feVelRhs; ///< calculate right hand side for tetrahedral elements
   MyVolumeFE& getLoopFeVelRhs() { return feVelRhs; } ///< get rhs volume element 
@@ -158,21 +160,21 @@ struct ConvectiveMassElement {
 
   ConvectiveMassElement(
     FieldInterface &m_field,short int tag):
-    feMassRhs(m_field),feMassLhs(m_field),
+    feMassRhs(m_field),feMassLhs(m_field),feMassAuxLhs(m_field),
     feVelRhs(m_field),feVelLhs(m_field),
     feTRhs(m_field),feTLhs(m_field),
     feEnergy(m_field),
     mField(m_field),tAg(tag) {}
 
-  /** \brief data for calulation het conductivity and heat capacity elements
+  /** \brief data for calculation inertia forces
     * \ingroup mofem_forces_and_sources 
     */
   struct BlockData {
     double rho0; ///< reference density
     ublas::vector<double> a0; ///< constant acceleration
-    Range tEts; ///< constatins elements in block set
+    Range tEts; ///< elements in block set
   }; 
-  map<int,BlockData> setOfBlocks; ///< maps block set id with appropiate BlockData
+  map<int,BlockData> setOfBlocks; ///< maps block set id with appropriate BlockData
 
   /** \brief common data used by volume elements
     * \ingroup mofem_forces_and_sources 
@@ -315,8 +317,6 @@ struct ConvectiveMassElement {
       inv_a(2,0) = a(1,0)*a(2,1)-a(1,1)*a(2,0);
       inv_a(2,1) = a(0,1)*a(2,0)-a(0,0)*a(2,1);
       inv_a(2,2) = a(0,0)*a(1,1)-a(0,1)*a(1,0);
-      //TYPE det;
-      //ierr = dEterminatnt(a,det); CHKERRQ(ierr);
       inv_a /= det;
       PetscFunctionReturn(0);
     }
@@ -589,13 +589,12 @@ struct ConvectiveMassElement {
 
     BlockData &dAta;
     CommonData &commonData;
-    int powTs_a;	///< n-th time derivative
     Range forcesOnlyOnEntities;
 
     OpMassLhs_dM_dv(
       const string vel_field,const string field_name,BlockData &data,CommonData &common_data,Range *forcesonlyonentities_ptr = NULL):
       TetElementForcesAndSourcesCore::UserDataOperator(vel_field,field_name),
-      dAta(data),commonData(common_data),powTs_a(1) { 
+      dAta(data),commonData(common_data) { 
 	symm = false;  
 	if(forcesonlyonentities_ptr!=NULL) {
 	  forcesOnlyOnEntities = *forcesonlyonentities_ptr;
@@ -614,9 +613,9 @@ struct ConvectiveMassElement {
       ublas::vector<double> N = col_data.getN(gg,nb_col/3);
       for(int dd = 0;dd<nb_col/3;dd++) {
 	for(int nn = 0;nn<3;nn++) {
-	  jac(0,3*dd+nn) = commonData.jacMass[gg](0,nn)*N(dd)*pow(getFEMethod()->ts_a,powTs_a); 
-	  jac(1,3*dd+nn) = commonData.jacMass[gg](1,nn)*N(dd)*pow(getFEMethod()->ts_a,powTs_a); 
-	  jac(2,3*dd+nn) = commonData.jacMass[gg](2,nn)*N(dd)*pow(getFEMethod()->ts_a,powTs_a); 
+	  jac(0,3*dd+nn) = commonData.jacMass[gg](0,nn)*N(dd)*getFEMethod()->ts_a; 
+	  jac(1,3*dd+nn) = commonData.jacMass[gg](1,nn)*N(dd)*getFEMethod()->ts_a; 
+	  jac(2,3*dd+nn) = commonData.jacMass[gg](2,nn)*N(dd)*getFEMethod()->ts_a; 
 	}
       }
       if(commonData.dataAtGaussPts["DOT_"+commonData.meshPositions].size()>0) {
@@ -1641,8 +1640,16 @@ struct ConvectiveMassElement {
 	break;
       }
 
-      ierr = mField.set_other_local_VecCreateGhost(problemPtr,velocityField,"DOT_"+velocityField,COL,ts_u_t,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-      ierr = mField.set_other_local_VecCreateGhost(problemPtr,spatialPositionField,"DOT_"+spatialPositionField,COL,ts_u_t,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      //ierr = mField.set_other_local_VecCreateGhost(problemPtr,velocityField,"DOT_"+velocityField,COL,ts_u_t,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      //ierr = mField.set_other_local_VecCreateGhost(problemPtr,spatialPositionField,"DOT_"+spatialPositionField,COL,ts_u_t,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+
+      //FIXME: This global scattering because Kuu problem and Dynamic problem
+      //not share partitions. Both problem should use the same partitioning to
+      //resolve this problem.
+      ierr = mField.set_global_VecCreateGhost(problemPtr,COL,ts_u,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      ierr = mField.set_other_global_VecCreateGhost(problemPtr,velocityField,"DOT_"+velocityField,COL,ts_u_t,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      ierr = mField.set_other_global_VecCreateGhost(problemPtr,spatialPositionField,"DOT_"+spatialPositionField,COL,ts_u_t,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+
       PetscFunctionReturn(0);
     }
 
@@ -1892,7 +1899,7 @@ struct ConvectiveMassElement {
 	if(ale) {
 	  feMassLhs.get_op_to_do_Lhs().push_back(new OpMassLhs_dM_dX(spatial_position_field_name,material_position_field_name,sit->second,commonData));
 	} else {
-	  feMassRhs.meshPositionsFieldName = material_position_field_name;
+	  feMassLhs.meshPositionsFieldName = material_position_field_name;
 	}
       }
     }
@@ -2018,7 +2025,7 @@ struct ConvectiveMassElement {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode setBlockedMassOperators(
+  PetscErrorCode setShellMatrixMassOperators(
     string velocity_field_name,
     string spatial_position_field_name,
     string material_position_field_name = "MESH_NODE_POSITIONS",
@@ -2055,13 +2062,29 @@ struct ConvectiveMassElement {
     for(;sit!=setOfBlocks.end();sit++) {
       feMassLhs.get_op_to_do_Rhs().push_back(new OpMassJacobian(spatial_position_field_name,sit->second,commonData,tAg,true,linear));
       feMassLhs.get_op_to_do_Lhs().push_back(new OpMassLhs_dM_dv(spatial_position_field_name,spatial_position_field_name,sit->second,commonData));
-      feMassLhs.get_op_to_do_Lhs().push_back(new OpMassLhs_dM_dx(spatial_position_field_name,spatial_position_field_name,sit->second,commonData));
       if(mField.check_field(material_position_field_name)) {
-	feMassRhs.meshPositionsFieldName = material_position_field_name;
+	feMassLhs.meshPositionsFieldName = material_position_field_name;
       }
     }
 
-    //Energy
+    //Aux Lhs
+    feMassAuxLhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(velocity_field_name,commonData));
+    feMassAuxLhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(spatial_position_field_name,commonData));
+    feMassAuxLhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts("DOT_"+velocity_field_name,commonData));
+    if(mField.check_field(material_position_field_name)) {
+      feMassAuxLhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(material_position_field_name,commonData));
+      feMassAuxLhs.meshPositionsFieldName = material_position_field_name;
+    }
+    sit = setOfBlocks.begin();
+    for(;sit!=setOfBlocks.end();sit++) {
+      feMassAuxLhs.get_op_to_do_Rhs().push_back(new OpMassJacobian(spatial_position_field_name,sit->second,commonData,tAg,true,linear));
+      feMassAuxLhs.get_op_to_do_Lhs().push_back(new OpMassLhs_dM_dx(spatial_position_field_name,spatial_position_field_name,sit->second,commonData));
+      if(mField.check_field(material_position_field_name)) {
+	feMassAuxLhs.meshPositionsFieldName = material_position_field_name;
+      }
+    }
+
+    //Energy E=0.5*rho*v*v
     feEnergy.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(velocity_field_name,commonData));
     feEnergy.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(spatial_position_field_name,commonData));
     if(mField.check_field(material_position_field_name)) {
@@ -2105,7 +2128,7 @@ struct ConvectiveMassElement {
 	ierr = MatGetVecs(K,&u,&Ku); CHKERRQ(ierr);
 	ierr = MatGetVecs(M,&v,&Mv); CHKERRQ(ierr);
 	#endif
-	ierr = MatDuplicate(K,MAT_DO_NOT_COPY_VALUES,&barK); CHKERRQ(ierr);
+	ierr = MatDuplicate(K,MAT_SHARE_NONZERO_PATTERN,&barK); CHKERRQ(ierr);
 	iNitialized = true;
       }
       PetscFunctionReturn(0);
@@ -2275,7 +2298,7 @@ struct ConvectiveMassElement {
     \right]
     * \f]
     *
-    * where \f$\mathbf{v} = \mathbf{r}_v + a\mathbf{u}\f$ and \f$\mathbf{u}=(a\mathbf{M}+\mathbf{K})^{-1}\mathbf{r}\f$.
+    * where \f$\mathbf{v} = \mathbf{r}_v + a\mathbf{u}\f$ and \f$\mathbf{u}=(a\mathbf{M}+\mathbf{K})^{-1}(\mathbf{r}_u - \mathbf{M}\mathbf{r}_v\f$.
     *
     */
   static PetscErrorCode PCShellApplyOp(PC pc,Vec f,Vec x) {
@@ -2332,8 +2355,8 @@ struct ConvectiveMassElement {
       ierr = VecScatterBegin(shellMatCtx->scatterV,ts_u,shellMatCtx->v,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
       ierr = VecScatterEnd(shellMatCtx->scatterV,ts_u,shellMatCtx->v,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
       ierr = VecAXPY(shellMatCtx->v,-1,shellMatCtx->u); CHKERRQ(ierr);
-      ierr = VecScatterBegin(shellMatCtx->scatterV,shellMatCtx->v,ts_F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-      ierr = VecScatterEnd(shellMatCtx->scatterV,shellMatCtx->v,ts_F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      ierr = VecScatterBegin(shellMatCtx->scatterV,shellMatCtx->v,ts_F,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      ierr = VecScatterEnd(shellMatCtx->scatterV,shellMatCtx->v,ts_F,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
       //VecView(shellMatCtx->v,PETSC_VIEWER_STDOUT_WORLD);
 
       PetscFunctionReturn(0);
@@ -2357,6 +2380,7 @@ struct ConvectiveMassElement {
     typedef vector<LoopPairType > LoopsToDoType;
     LoopsToDoType loopK; 	///< methods to calculate K shell matrix
     LoopsToDoType loopM; 	///< methods to calculate M shell matrix 
+    LoopsToDoType loopAuxM; 	///< methods to calculate derivatives of inertia forces over displacements shell matrix 
 
     //variables bellow need to be set by user
     string problemName; 					///< name of shell problem
@@ -2372,7 +2396,7 @@ struct ConvectiveMassElement {
       }
 
       shellMatCtx->ts_a = ts_a;
-      dirihletBcPtr->copy_ts(*((TSMethod*)this)); //copy context for TSMethod
+      dirihletBcPtr->copy_ts(*((TSMethod*)this)); //copy context for TSMethod   
 
       dirihletBcPtr->dIag = 1;
       dirihletBcPtr->ts_B = shellMatCtx->K;
@@ -2383,6 +2407,12 @@ struct ConvectiveMassElement {
 	itk->second->copy_ts(*((TSMethod*)this));
 	itk->second->ts_B = shellMatCtx->K;
 	ierr = mField.loop_finite_elements(problemName,itk->first,*itk->second); CHKERRQ(ierr);
+      }
+      LoopsToDoType::iterator itam = loopAuxM.begin();
+      for(;itam!=loopAuxM.end();itam++) {
+	itam->second->copy_ts(*((TSMethod*)this));
+	itam->second->ts_B = shellMatCtx->K;
+	ierr = mField.loop_finite_elements(problemName,itam->first,*itam->second); CHKERRQ(ierr);
       }
       ierr = mField.problem_basic_method_postProcess(problemName,*dirihletBcPtr); CHKERRQ(ierr);
       ierr = MatAssemblyBegin(shellMatCtx->K,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
@@ -2403,6 +2433,7 @@ struct ConvectiveMassElement {
       ierr = MatAssemblyEnd(shellMatCtx->M,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 
       //barK
+      ierr = MatZeroEntries(shellMatCtx->barK); CHKERRQ(ierr);
       ierr = MatCopy(shellMatCtx->K,shellMatCtx->barK,SAME_NONZERO_PATTERN); CHKERRQ(ierr);
       ierr = MatAXPY(shellMatCtx->barK,ts_a,shellMatCtx->M,SAME_NONZERO_PATTERN); CHKERRQ(ierr);
       ierr = MatAssemblyBegin(shellMatCtx->barK,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
@@ -2429,5 +2460,6 @@ struct ConvectiveMassElement {
  * \defgroup convective_mass_elem Mass Element
  * \ingroup mofem_forces_and_sources 
  ******************************************************************************/
+
 
 

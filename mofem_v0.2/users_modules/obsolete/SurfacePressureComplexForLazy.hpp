@@ -61,7 +61,7 @@ struct NeummanForcesSurfaceComplexForLazy {
 
     MyTriangleSpatialFE(FieldInterface &_mField,Mat _Aij,Vec &_F,double *scale_lhs,double *scale_rhs);
 
-    int getRule(int order) { return max(0,order); };
+    int getRule(int order) { return max(1,order); };
 
     double *N;
     double *N_face;
