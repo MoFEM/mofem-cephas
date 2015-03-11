@@ -1,12 +1,7 @@
 /** 
- * \brief Operators and data structures for thermal analys
+ * \brief Operators and data structures for thermal analyse
  *
- * Implementation of nonliear eleastic element.
- *
- */
-
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
+ * Implementation of nonlinear elastic element.
  *
  * This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
