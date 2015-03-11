@@ -49,6 +49,10 @@ if(ADOL-C_LIBRARY)
     ${CMAKE_CURRENT_SOURCE_DIR}/README
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
 
+  file(COPY
+    ${CMAKE_CURRENT_SOURCE_DIR}/examples
+    DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
+
   configure_file(
     "${UM_SOURCE_DIR}/nonlinear_elasticity/arc_length_nonlinear_elasticity.sh.in"
     "${CMAKE_CURRENT_SOURCE_DIR}/arc_length_nonlinear_elasticity.sh"

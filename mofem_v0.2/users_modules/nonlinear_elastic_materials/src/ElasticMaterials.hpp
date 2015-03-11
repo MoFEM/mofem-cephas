@@ -120,6 +120,7 @@ struct ElasticMaterials {
     File parameters:
     \code 
     [block_1]
+    displacemet_order = 1/2 .. N 
     material = KIRCHOFF/HOOKE/NEOHOOKEAN
     young_modulus = 1
     poisson_ratio = 0.25
@@ -134,8 +135,14 @@ struct ElasticMaterials {
     PetscFunctionBegin;
     PetscErrorCode ierr;
     try {
+
       po::options_description config_file_options;
       for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
+
+        ostringstream str_order;
+        str_order << "block_" << it->get_msId() << ".displacemet_order";
+        config_file_options.add_options()
+	  (str_order.str().c_str(),po::value<int>(&blockData[it->get_msId()].oRder)->default_value(-1));
 
         ostringstream str_material;
         str_material << "block_" << it->get_msId() << ".material";
@@ -205,7 +212,7 @@ struct ElasticMaterials {
     if(flg!=PETSC_TRUE) {
       disp_order = 1;	
     }
-    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_ELASTICSET,it)) {
+    for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
       if(blockData[it->get_msId()].oRder == -1) continue;
       if(blockData[it->get_msId()].oRder == disp_order) continue;
       PetscPrintf(mField.get_comm(),"Set block %d oRder to %d\n",it->get_msId(),blockData[it->get_msId()].oRder);
@@ -220,10 +227,13 @@ struct ElasticMaterials {
 	ierr = mField.set_field_order(ents_to_set_order,"DISPLACEMENT",blockData[it->get_msId()].oRder); CHKERRQ(ierr);
       }
       if(mField.check_field("SPATIAL_POSITION")) {
-	ierr = mField.set_field_order(ents_to_set_order,"DISPLACEMENT",blockData[it->get_msId()].oRder); CHKERRQ(ierr);
+	ierr = mField.set_field_order(ents_to_set_order,"SPATIAL_POSITION",blockData[it->get_msId()].oRder); CHKERRQ(ierr);
       }
       if(mField.check_field("DOT_SPATIAL_POSITION")) {
-	ierr = mField.set_field_order(ents_to_set_order,"DISPLACEMENT",blockData[it->get_msId()].oRder); CHKERRQ(ierr);
+	ierr = mField.set_field_order(ents_to_set_order,"DOT_SPATIAL_POSITION",blockData[it->get_msId()].oRder); CHKERRQ(ierr);
+      }
+      if(mField.check_field("SPATIAL_VELOCITY")) {
+	ierr = mField.set_field_order(ents_to_set_order,"SPATIAL_VELOCITY",blockData[it->get_msId()].oRder); CHKERRQ(ierr);
       }
     }
     PetscFunctionReturn(0);
@@ -251,6 +261,8 @@ struct ElasticMaterials {
       set_of_blocks[id].E = mydata.data.Young;
       if(blockData[id].yOung >= 0) set_of_blocks[id].E = blockData[id].yOung;
       if(blockData[id].pOisson >= -1) set_of_blocks[id].PoissonRatio = blockData[id].pOisson;
+      PetscPrintf(mField.get_comm(),"Block Id %d Young Modulus %3.2g Poisson Ration %3.2f Material model %s\n",
+	id,set_of_blocks[id].E,set_of_blocks[id].PoissonRatio,blockData[id].mAterial.c_str());
       if(blockData[id].mAterial.compare(MAT_KIRCHOFF)==0) {
 	set_of_blocks[id].materialDoublePtr = &doubleMaterialModel.at(MAT_KIRCHOFF);
 	set_of_blocks[id].materialAdoublePtr = &aDoubleMaterialModel.at(MAT_KIRCHOFF);
@@ -312,6 +324,8 @@ struct ElasticMaterials {
 	  set_of_blocks[id].a0[2] = blockData[id].aZ;
 	}
       }
+      PetscPrintf(mField.get_comm(),"Block Id %d Density %3.2g a_x = %3.2g a_y = %3.2g a_z = %3.2g\n",
+	id,set_of_blocks[id].rho0,set_of_blocks[id].a0[0],set_of_blocks[id].a0[1],set_of_blocks[id].a0[2]); 
     }
 
     PetscFunctionReturn(0);

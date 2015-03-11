@@ -1,15 +1,8 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
+/* \file SurfacePressureComplexForLazy.hpp
  * --------------------------------------------------------------
  *
- * Test for linar elastic dynamics.
  *
- * This is not exactly procedure for linear elatic dynamics, since jacobian is
- * evaluated at every time step and snes procedure is involved. However it is
- * implemented like that, to test methodology for general nonlinear problem.
- *
- */
-
-/* This file is part of MoFEM.
+ * This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or (at your
@@ -121,7 +114,7 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::
 	SETERRQ(PETSC_COMM_SELF,1,"it should be 9 dofs on vertices");
       }
       if(data.getN().size2()!=3) {
-	SETERRQ(PETSC_COMM_SELF,1,"it shoule 3 shape functiond for 3 nodes");
+	SETERRQ(PETSC_COMM_SELF,1,"it should 3 shape functions for 3 nodes");
       }
       myPtr->N = &*data.getN().data().begin();
       myPtr->diffN = &*data.getDiffN().data().begin();
@@ -202,16 +195,9 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::rHs() {
     }
   }
 
-  } catch (exception& ex) {
-    ostringstream ss;
-    ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
-    SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
-  }
-
-  try {
-    
   switch(typeOfForces) {
     case CONSERVATIVE:
+
       ierr = Fext_h_hierarchical(
 	order_face,order_edge,//2
 	N,N_face,N_edge,diffN,diffN_face,diffN_edge,//8
@@ -223,6 +209,23 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::rHs() {
 	gaussPts.size2(),&gaussPts(2,0)); CHKERRQ(ierr);
       break;
     case NONCONSERVATIVE:
+
+      for(int ee = 0;ee<3;ee++) {
+	dOfs_X_edge.resize(3);
+	unsigned int s = dOfs_X_edge[ee].size();
+	dOfs_X_edge[ee].resize(dOfs_x_edge[ee].size(),true);
+	for(;s<dOfs_X_edge[ee].size();s++) {
+	  dOfs_X_edge[ee][s] = 0;
+	}
+	dofs_X_edge[ee] = &*dOfs_X_edge[ee].data().begin();	
+      }
+      unsigned int s = dOfs_X_face.size();
+      dOfs_X_face.resize(dOfs_x_face.size(),true);
+      for(;s<dOfs_X_face.size();s++) {
+	dOfs_X_face[s] = 0;
+      }
+      dofs_X_face = &*dOfs_X_face.data().begin();
+
       ierr = Fext_h_hierarchical(
 	order_face,order_edge,//2
 	N,N_face,N_edge,diffN,diffN_face,diffN_edge,//8
@@ -487,6 +490,15 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::calcTrac
 PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::preProcess() {
   PetscFunctionBegin;
 
+  PetscErrorCode ierr;
+  ierr = PetscOptionsBegin(mField.get_comm(),"","Surface Pressure (complex for lazy)","none"); CHKERRQ(ierr);
+  PetscBool flg,is_conservative;
+  ierr = PetscOptionsBool("-is_conservatibe_force","is conservative force","",PETSC_TRUE,&flg,&is_conservative); CHKERRQ(ierr);
+  if(flg && !is_conservative) {
+    typeOfForces = NONCONSERVATIVE;
+  }
+  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+
   switch(ts_ctx) {
     case CTX_TSSETIFUNCTION: {
       snes_ctx = CTX_SNESSETFUNCTION;
@@ -518,9 +530,11 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::operator
   for(int ee = 0;ee<3;ee++) {
     dofs_X_edge[ee] = NULL;
     idofs_X_edge[ee] = NULL;
+    order_edge_material[ee] = 0;
   }
   dofs_X_face = NULL;
   idofs_X_face = NULL;
+  order_face_material = 0;
 
   dofs_x =  &*coords.data().begin();
   idofs_x = NULL;
