@@ -490,6 +490,15 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::calcTrac
 PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::preProcess() {
   PetscFunctionBegin;
 
+  PetscErrorCode ierr;
+  ierr = PetscOptionsBegin(mField.get_comm(),"","Surface Pressure (complex for lazy)","none"); CHKERRQ(ierr);
+  PetscBool flg,is_conservative;
+  ierr = PetscOptionsBool("-is_conservatibe_force","is conservative force","",PETSC_TRUE,&flg,&is_conservative); CHKERRQ(ierr);
+  if(flg && !is_conservative) {
+    typeOfForces = NONCONSERVATIVE;
+  }
+  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+
   switch(ts_ctx) {
     case CTX_TSSETIFUNCTION: {
       snes_ctx = CTX_SNESSETFUNCTION;
