@@ -211,13 +211,19 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::rHs() {
     case NONCONSERVATIVE:
 
       for(int ee = 0;ee<3;ee++) {
-	order_edge_material[ee] = order_edge[ee];
 	dOfs_X_edge.resize(3);
-	dOfs_X_edge[ee].resize(dOfs_X_edge[ee].size(),0);
-	dofs_X_edge[ee] = &*dOfs_X_edge[ee].data().begin();
+	unsigned int s = dOfs_X_edge[ee].size();
+	dOfs_X_edge[ee].resize(dOfs_x_edge[ee].size(),true);
+	for(;s<dOfs_X_edge[ee].size();s++) {
+	  dOfs_X_edge[ee][s] = 0;
+	}
+	dofs_X_edge[ee] = &*dOfs_X_edge[ee].data().begin();	
       }
-      order_face_material = order_face;
-      dOfs_X_face.resize(dOfs_X_face.size(),0);
+      unsigned int s = dOfs_X_face.size();
+      dOfs_X_face.resize(dOfs_x_face.size(),true);
+      for(;s<dOfs_X_face.size();s++) {
+	dOfs_X_face[s] = 0;
+      }
       dofs_X_face = &*dOfs_X_face.data().begin();
 
       ierr = Fext_h_hierarchical(

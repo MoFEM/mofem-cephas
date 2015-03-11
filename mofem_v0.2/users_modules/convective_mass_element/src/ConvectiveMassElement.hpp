@@ -2104,7 +2104,7 @@ struct ConvectiveMassElement {
 
     Mat K,M;
     VecScatter scatterU,scatterV;
-    double ts_a,scale;
+    double ts_a;//,scale;
 
     bool iNitialized;
     MatShellCtx(): iNitialized(false) {}
@@ -2190,8 +2190,8 @@ struct ConvectiveMassElement {
     ierr = VecScatterBegin(ctx->scatterU,x,ctx->u,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecScatterEnd(ctx->scatterU,x,ctx->u,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = MatMult(ctx->K,ctx->u,ctx->Ku); CHKERRQ(ierr);
-    ierr = VecScatterBegin(ctx->scatterU,ctx->Ku,f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = VecScatterEnd(ctx->scatterU,ctx->Ku,f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = VecScatterBegin(ctx->scatterU,ctx->Ku,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = VecScatterEnd(ctx->scatterU,ctx->Ku,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     //Mult Mv
     ierr = VecScatterBegin(ctx->scatterV,x,ctx->v,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecScatterEnd(ctx->scatterV,x,ctx->v,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -2200,7 +2200,7 @@ struct ConvectiveMassElement {
     ierr = VecScatterEnd(ctx->scatterU,ctx->Mv,f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     //Velocities
     ierr = VecAXPY(ctx->v,-ctx->ts_a,ctx->u); CHKERRQ(ierr);
-    ierr = VecScale(ctx->v,ctx->scale); CHKERRQ(ierr);
+    //ierr = VecScale(ctx->v,ctx->scale); CHKERRQ(ierr);
     ierr = VecScatterBegin(ctx->scatterV,ctx->v,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = VecScatterEnd(ctx->scatterV,ctx->v,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     //Assemble
@@ -2315,7 +2315,7 @@ struct ConvectiveMassElement {
     ierr = VecScatterEnd(shell_mat_ctx->scatterU,f,shell_mat_ctx->Ku,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecScatterBegin(shell_mat_ctx->scatterV,f,shell_mat_ctx->v,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecScatterEnd(shell_mat_ctx->scatterV,f,shell_mat_ctx->v,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = VecScale(shell_mat_ctx->v,1/shell_mat_ctx->scale); CHKERRQ(ierr);
+    //ierr = VecScale(shell_mat_ctx->v,1/shell_mat_ctx->scale); CHKERRQ(ierr);
     //apply pre-conditioner and calculate u
     ierr = MatMult(shell_mat_ctx->M,shell_mat_ctx->v,shell_mat_ctx->Mv); CHKERRQ(ierr); // Mrv
     ierr = VecAXPY(shell_mat_ctx->Ku,-1,shell_mat_ctx->Mv); CHKERRQ(ierr); // f-Mrv
@@ -2357,8 +2357,8 @@ struct ConvectiveMassElement {
       ierr = VecScatterBegin(shellMatCtx->scatterV,ts_u,shellMatCtx->v,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
       ierr = VecScatterEnd(shellMatCtx->scatterV,ts_u,shellMatCtx->v,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
       ierr = VecAXPY(shellMatCtx->v,-1,shellMatCtx->u); CHKERRQ(ierr);
-      ierr = VecScatterBegin(shellMatCtx->scatterV,shellMatCtx->v,ts_F,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-      ierr = VecScatterEnd(shellMatCtx->scatterV,shellMatCtx->v,ts_F,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      ierr = VecScatterBegin(shellMatCtx->scatterV,shellMatCtx->v,ts_F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      ierr = VecScatterEnd(shellMatCtx->scatterV,shellMatCtx->v,ts_F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
       //VecView(shellMatCtx->v,PETSC_VIEWER_STDOUT_WORLD);
 
       PetscFunctionReturn(0);
@@ -2367,7 +2367,7 @@ struct ConvectiveMassElement {
     PetscErrorCode postProcess() {
       PetscFunctionBegin;
 
-      PetscErrorCode ierr;
+      /*PetscErrorCode ierr;
       if(ts_ctx != CTX_TSSETIFUNCTION) {
 	SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"It is used to residual of velocities");
       }
@@ -2380,13 +2380,13 @@ struct ConvectiveMassElement {
       ierr = VecScatterEnd(shellMatCtx->scatterV,ts_F,shellMatCtx->Mv,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);      
 
       double nrm2_ku,nrm2_mv;
-      ierr = VecNorm(shellMatCtx->Ku,NORM_2,&nrm2_ku); CHKERRQ(ierr);
-      ierr = VecNorm(shellMatCtx->Mv,NORM_2,&nrm2_mv); CHKERRQ(ierr);
-      //PetscPrintf(mField.get_comm(),"nrm2 U = %6.4e nrm2 V = %6.4e\n",nrm2_ku,nrm2_mv);
-      shellMatCtx->scale = nrm2_ku/fmax(nrm2_mv,nrm2_ku);
-      ierr = VecScale(shellMatCtx->Mv,shellMatCtx->scale); CHKERRQ(ierr);
+      ierr = VecNorm(shellMatCtx->Ku,NORM_INFINITY,&nrm2_ku); CHKERRQ(ierr);
+      ierr = VecNorm(shellMatCtx->Mv,NORM_INFINITY,&nrm2_mv); CHKERRQ(ierr);
+      PetscPrintf(mField.get_comm(),"nrm2 U = %6.4e nrm2 V = %6.4e scale = %6.4e\n",nrm2_ku,nrm2_mv,nrm2_ku/fmax(nrm2_mv,nrm2_ku));
+      //shellMatCtx->scale = nrm2_ku/fmax(nrm2_mv,nrm2_ku);
+      //ierr = VecScale(shellMatCtx->Mv,shellMatCtx->scale); CHKERRQ(ierr);
       ierr = VecScatterBegin(shellMatCtx->scatterV,shellMatCtx->Mv,ts_F,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);      
-      ierr = VecScatterEnd(shellMatCtx->scatterV,shellMatCtx->Mv,ts_F,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);      
+      ierr = VecScatterEnd(shellMatCtx->scatterV,shellMatCtx->Mv,ts_F,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr); */
 
       PetscFunctionReturn(0);
 
@@ -2451,7 +2451,7 @@ struct ConvectiveMassElement {
       dirihletBcPtr->dIag = 0;
       dirihletBcPtr->ts_B = shellMatCtx->M;
       ierr = MatZeroEntries(shellMatCtx->M); CHKERRQ(ierr);
-      ierr = mField.problem_basic_method_preProcess(problemName,*dirihletBcPtr); CHKERRQ(ierr);
+      //ierr = mField.problem_basic_method_preProcess(problemName,*dirihletBcPtr); CHKERRQ(ierr);
       LoopsToDoType::iterator itm = loopM.begin();
       for(;itm!=loopM.end();itm++) {
 	itm->second->copy_ts(*((TSMethod*)this));

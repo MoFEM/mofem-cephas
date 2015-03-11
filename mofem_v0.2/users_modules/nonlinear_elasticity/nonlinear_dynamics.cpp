@@ -466,10 +466,10 @@ int main(int argc, char *argv[]) {
     ConvectiveMassElement::ShellMatrixElement shell_matrix_element(m_field);
     SpatialPositionsBCFEMethodPreAndPostProc shell_dirihlet_bc(
       m_field,"SPATIAL_POSITION",shellAij_ctx->barK,PETSC_NULL,PETSC_NULL);
-    shell_dirihlet_bc.fixFields.push_back("SPATIAL_VELOCITY");
+    //shell_dirihlet_bc.fixFields.push_back("SPATIAL_VELOCITY");
     SpatialPositionsBCFEMethodPreAndPostProc my_dirihlet_bc(
       m_field,"SPATIAL_POSITION",PETSC_NULL,D,F);
-    my_dirihlet_bc.fixFields.push_back("SPATIAL_VELOCITY");
+    //my_dirihlet_bc.fixFields.push_back("SPATIAL_VELOCITY");
     shell_matrix_element.problemName = "Kuu";
     shell_matrix_element.shellMatCtx = shellAij_ctx;
     shell_matrix_element.dirihletBcPtr = &shell_dirihlet_bc;
@@ -502,7 +502,7 @@ int main(int argc, char *argv[]) {
     Mat Aij;
     ierr = m_field.MatCreateMPIAIJWithArrays("DYNAMICS",&Aij); CHKERRQ(ierr);
     SpatialPositionsBCFEMethodPreAndPostProc my_dirihlet_bc(m_field,"SPATIAL_POSITION",Aij,D,F);
-    my_dirihlet_bc.fixFields.push_back("SPATIAL_VELOCITY");
+    //my_dirihlet_bc.fixFields.push_back("SPATIAL_VELOCITY");
   
     //surface forces
     NeummanForcesSurfaceComplexForLazy neumann_forces(m_field,Aij,F);
@@ -564,11 +564,12 @@ int main(int argc, char *argv[]) {
   //left hand side 
   //preprocess
   ts_ctx.get_preProcess_to_do_IJacobian().push_back(&update_and_control);
-  ts_ctx.get_preProcess_to_do_IJacobian().push_back(&my_dirihlet_bc);
   #ifdef BLOCKED_PROBLEM
     ts_ctx.get_preProcess_to_do_IJacobian().push_back(&shell_matrix_element);
   #else 
-     //fe loops
+    //preprocess
+    ts_ctx.get_preProcess_to_do_IJacobian().push_back(&my_dirihlet_bc);
+    //fe loops
     TsCtx::loops_to_do_type& loops_to_do_Mat = ts_ctx.get_loops_to_do_IJacobian();
     loops_to_do_Mat.push_back(TsCtx::loop_pair_type("ELASTIC",&elastic.getLoopFeLhs()));
     loops_to_do_Mat.push_back(TsCtx::loop_pair_type("NEUMANN_FE",&fe_spatial));
