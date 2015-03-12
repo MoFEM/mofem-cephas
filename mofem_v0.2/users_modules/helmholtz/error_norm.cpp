@@ -136,7 +136,6 @@ int main(int argc, char *argv[]) {
 	ierr = m_field.add_ents_to_field_by_TETs(root_set,"erorNORM_re"); CHKERRQ(ierr);
 	ierr = m_field.add_ents_to_field_by_TETs(root_set,"erorNORM_im"); CHKERRQ(ierr);
 
-	//ierr = m_field.add_ents_to_field_by_TETs(root_set,"relaNORM"); CHKERRQ(ierr);
 	
 	//set app. order , approximation error of norm should be as least 1 order higher than numerical spaces.
 	//see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
@@ -167,10 +166,11 @@ int main(int argc, char *argv[]) {
 	NormElement norm_elements_re(m_field);
 	NormElement norm_elements_im(m_field);
 
-	if(m_field.check_field("reEX") && m_field.check_field("rePRES") && m_field.check_field("imPRES") && m_field.check_field("imEX") ) {
-	norm_elements_re.addNormElements("NORM_PROBLEM1","NORM_FE1","erorNORM_re","reEX","rePRES");
-	norm_elements_im.addNormElements("NORM_PROBLEM2","NORM_FE2","erorNORM_im","imEX","imPRES");
-	ierr = m_field.modify_finite_element_add_field_data("NORM_FE1","erorNORM_im"); CHKERRQ(ierr);
+	if(m_field.check_field("reEX") && m_field.check_field("rePRES")) {
+	//&& m_field.check_field("imPRES") && m_field.check_field("imEX") ) {
+		norm_elements_re.addNormElements("NORM_PROBLEM1","NORM_FE1","erorNORM_re","reEX","rePRES");
+		norm_elements_im.addNormElements("NORM_PROBLEM2","NORM_FE2","erorNORM_im","imEX","imPRES");
+		ierr = m_field.modify_finite_element_add_field_data("NORM_FE1","erorNORM_im"); CHKERRQ(ierr);
 	}
 	
 
@@ -204,8 +204,19 @@ int main(int argc, char *argv[]) {
 	//what are ghost nodes, see Petsc Manual
 	ierr = m_field.partition_ghost_dofs("NORM_PROBLEM2"); CHKERRQ(ierr);
 	
+	if(m_field.check_field("reEX") && m_field.check_field("imEX")) {
+		//partition
+		ierr = m_field.simple_partition_problem("EX1_PROBLEM"); CHKERRQ(ierr);
+		ierr = m_field.partition_finite_elements("EX1_PROBLEM"); CHKERRQ(ierr);
+		ierr = m_field.simple_partition_problem("EX2_PROBLEM"); CHKERRQ(ierr);
+		ierr = m_field.partition_finite_elements("EX2_PROBLEM"); CHKERRQ(ierr);
+		//what are ghost nodes, see Petsc Manual
+		ierr = m_field.partition_ghost_dofs("EX1_PROBLEM"); CHKERRQ(ierr);
+		ierr = m_field.partition_ghost_dofs("EX2_PROBLEM"); CHKERRQ(ierr);
+	}
+	
 	//print block sets with materials
-	//ierr = mField.print_cubit_materials_set(); CHKERRQ(ierr);
+	//ierr = m_field.print_cubit_materials_set(); CHKERRQ(ierr);
 	
 	Vec F;
 	ierr = m_field.VecCreateGhost("NORM_PROBLEM1",ROW,&F); CHKERRQ(ierr);
@@ -296,40 +307,32 @@ int main(int argc, char *argv[]) {
 	ierr = VecNorm(D,NORM_2,&nrm2_D); CHKERRQ(ierr);
 	//ierr = VecNorm(T,NORM_MAX,&pointwisenorm);
 	
-	int i1;
-	Vec P;
-	Vec M;
+	Vec P,M;
 	ierr = m_field.VecCreateGhost("EX1_PROBLEM",ROW,&M); CHKERRQ(ierr);
 	ierr = m_field.VecCreateGhost("EX2_PROBLEM",ROW,&P); CHKERRQ(ierr);
 
-	ierr = m_field.set_local_VecCreateGhost("EX1_PROBLEM",ROW,M,ADD_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	//ierr = VecGhostUpdateBegin(M,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	//ierr = VecGhostUpdateEnd(M,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	//ierr = m_field.set_global_VecCreateGhost("EX2_PROBLEM",ROW,P,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-	ierr = VecAssemblyBegin(M); CHKERRQ(ierr);
-	ierr = VecAssemblyEnd(M); CHKERRQ(ierr);
-	
-	ierr=VecGetSize(M,&i1);
-	
-	ierr = VecView(M,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+	ierr = m_field.set_local_VecCreateGhost("EX1_PROBLEM",ROW,M,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	ierr = m_field.set_local_VecCreateGhost("EX2_PROBLEM",ROW,P,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
-	//ierr = VecNorm(M,NORM_INFINITY,&pointwisenormM);
-	//ierr = VecNorm(P,NORM_INFINITY,&pointwisenormP);
+	ierr = VecNorm(M,NORM_INFINITY,&pointwisenormM);
+	ierr = VecNorm(P,NORM_INFINITY,&pointwisenormP);
 	//ierr = VecMax(P,NULL,&pointwisenormP);
-		//std::cout << "\n M = \n" << i1 << pointwisenormM << pointwisenormP << std::endl;
+	
+	//std::cout << "\n ||U_real||_inf = \n" << pointwisenormM << "\n ||U_imag||_inf = \n" << pointwisenormP << std::endl;
+	
 	//out stream the global error
 	if(usel2 && !userela) {
 		std::cout << "\n The Global least square of l2 Norm of error in real field is : --\n" << nrm2_T << std::endl;
 		std::cout << "\n The Global least square of l2 Norm of error in imag field is : --\n" << nrm2_D << std::endl;
-		//std::cout << "\n The Global L2 relative error of real field is : --\n" << nrm2_T/pointwisenormM  << std::endl;
-		//std::cout << "\n The Global L2 relative error of imag field is  : --\n" << nrm2_D/pointwisenormP << std::endl;
-	//std::cout << "\n The Global Pointwise of l2 Norm of error for real field is : --\n" << pointwisenorm << std::endl;
+		std::cout << "\n The Global L2 relative error of real field is : --\n" << nrm2_T/pointwisenormM  << std::endl;
+		std::cout << "\n The Global L2 relative error of imag field is  : --\n" << nrm2_D/pointwisenormP << std::endl;
+		//std::cout << "\n The Global Pointwise of l2 Norm of error for real field is : --\n" << pointwisenorm << std::endl;
 	}
 	else if(!usel2 && !userela) {
 		std::cout << "\n The Global least square of H1 Norm of error real field is  : --\n" << nrm2_T << std::endl;
 		std::cout << "\n The Global least square of H1 Norm of error in imag field is : --\n" << nrm2_D << std::endl;
-		//std::cout << "\n The Global H1 relative error of real field is : --\n" << nrm2_T/pointwisenormM  << std::endl;
-		//std::cout << "\n The Global H1 relative error of imag field is  : --\n" << nrm2_D/pointwisenormP << std::endl;
+		std::cout << "\n The Global H1 relative error of real field is : --\n" << nrm2_T/pointwisenormM  << std::endl;
+		std::cout << "\n The Global H1 relative error of imag field is  : --\n" << nrm2_D/pointwisenormP << std::endl;
 		//std::cout << "\n The Global Pointwise of H1 Norm of error for real field is : --\n" << pointwisenorm << std::endl;
 	}
 	else if(userela) {
@@ -341,7 +344,7 @@ int main(int argc, char *argv[]) {
 	}
 
 
-	/*    */
+	/*  destroy objects  */
 	ierr = MatDestroy(&A); CHKERRQ(ierr);
 	ierr = VecDestroy(&F); CHKERRQ(ierr);
 	ierr = VecDestroy(&T); CHKERRQ(ierr);

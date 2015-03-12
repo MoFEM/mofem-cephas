@@ -413,17 +413,11 @@ struct NormElement {
 					double sqError;
 
 					if(useL2) { //case L2 norm
+						
 						double aa = uAnaly(gg);
 						double bb = uNumer(gg);
 						eRror = aa - bb;
-					//eRror = uAnaly(gg) - uNumer(gg);
-					
-					//****see how the bug is!
-					//if(abs((aa-bb)/aa) > 1) {
-					//std::cout << "\n exact = \n"<< aa << "\n FEM solution = \n" << bb << 
-							  //"\n error/exact = \n" << (aa-bb)/aa << std::endl;
-					//}
-					
+						//eRror = uAnaly(gg) - uNumer(gg);
 						sqError = pow(eRror,2.0);
 
 					} else if(!useL2) { //case H1 norm
@@ -431,10 +425,10 @@ struct NormElement {
 						double aa = uAnaly(gg);
 						double bb = uNumer(gg);
 						eRror = aa - bb;
-					
 						double sqGradError = ublas::inner_prod((commonData.getGradField1AtGaussPts(gg)-commonData.getGradField2AtGaussPts(gg)),(commonData.getGradField1AtGaussPts(gg)-commonData.getGradField2AtGaussPts(gg)));
 					
 						sqError = sqGradError + pow(eRror,2.0);
+						
 					}
 					//need to calculate sqrt of norm^2
 					if(!useRela) { //case Norm error
@@ -446,23 +440,23 @@ struct NormElement {
 					//dEnominator.resize(nb_row);
 					//dEnominator.clear();
 					
-						double sqUanaly = pow(uAnaly[gg],2.0);
+						double sqUanaly = pow(norm_inf(uAnaly),2.0);
 
 					//dEnominator = val*(sqError/sqUanaly)*data.getN(gg);
 				
-						ublas::noalias(rElative_error) += val*pow(eRror/norm_inf(uAnaly),2.0)*data.getN(gg);
+						ublas::noalias(rElative_error) += val*(pow(eRror,2.0)/sqUanaly)*data.getN(gg);
 					//std::cout << "\n rElative_error = \n" << rElative_error << std::endl;
 					}
 
 			    }
 				
-				//take sqrt of ||error||
-				if(!useRela) {
-					//std::transform(Nf.begin(), Nf.end(), Nf.begin(), (double(*)(double)) sqrt);
-				} else {
-					//std::transform(rElative_error.begin(), rElative_error.end(), rElative_error.begin(), (double(*)(double)) sqrt);
+				/*  take sqrt of ||error|| */
+				//if(!useRela) {
+				//	//std::transform(Nf.begin(), Nf.end(), Nf.begin(), (double(*)(double)) sqrt);
+				//} else {
+				//	//std::transform(rElative_error.begin(), rElative_error.end(), rElative_error.begin(), (double(*)(double)) sqrt);
 				
-				}
+				//}
 
 				if(!useRela) {
 					ierr = VecSetValues(F,data.getIndices().size(),
@@ -530,14 +524,9 @@ PetscErrorCode addNormElements(
     ierr = m_field.modify_finite_element_add_field_col(fe,norm_field_name); CHKERRQ(ierr);
     ierr = m_field.modify_finite_element_add_field_data(fe,norm_field_name); CHKERRQ(ierr);
 	
-	//ierr = m_field.modify_finite_element_add_field_row(fe,relative_field_name); CHKERRQ(ierr);
-    //ierr = m_field.modify_finite_element_add_field_col(fe,relative_field_name); CHKERRQ(ierr);
-    //ierr = m_field.modify_finite_element_add_field_data(fe,relative_field_name); CHKERRQ(ierr);
-	
     ierr = m_field.modify_finite_element_add_field_data(fe,field1_name); CHKERRQ(ierr);
     ierr = m_field.modify_finite_element_add_field_data(fe,field2_name); CHKERRQ(ierr);
-	//ierr = m_field.modify_finite_element_add_field_data(fe,field3_name); CHKERRQ(ierr);
-    //ierr = m_field.modify_finite_element_add_field_data(fe,field4_name); CHKERRQ(ierr);
+
 	
 	
 	if(m_field.check_field(mesh_nodals_positions)) {
@@ -566,8 +555,7 @@ PetscErrorCode setNormFiniteElementRhsOperator(string norm_field_name,string fie
 	string field2_name,Mat A,Vec &F,bool usel2,bool userela,
     string nodals_positions = "MESH_NODE_POSITIONS") {
     PetscFunctionBegin;
-	//ublas::vector<double> field_Value1AtGaussPts;
-	//ublas::vector<double> field_Value2AtGaussPts;
+
 	map<int,BlockData>::iterator sit = setOfBlocks.begin();
 	
 	for(;sit!=setOfBlocks.end();sit++) {

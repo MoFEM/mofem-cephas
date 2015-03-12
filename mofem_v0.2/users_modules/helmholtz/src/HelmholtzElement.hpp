@@ -923,7 +923,8 @@ struct HelmholtzElement {
 					double Pn = legendre_p( n, cos( theta ) );  //Legendre
 					//complex< double >hn = sph_hankel_1( n, const2 );  //S Hankel first kind function
 					prev_result = result;
-					result += -k * pow( i, n ) * ( 2.0 * n + 1.0 ) * jn_der * Pn;
+					//result += -k * pow( i, n ) * ( 2.0 * n + 1.0 ) * jn_der * Pn; //edition from acoustic book
+					result += -pow( i, n ) * ( 2.0 * n + 1.0 ) * jn_der * Pn;  //edition from Papers
 					error = abs( abs( result ) - abs( prev_result ) );
 					++n;
 				}

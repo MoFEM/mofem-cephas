@@ -81,17 +81,17 @@ target_link_libraries(best_approximation
   mofem_cblas
   ${MoFEM_PROJECT_LIBS})
 
-add_executable(exact_solution ${UM_SOURCE_DIR}/helmholtz/exact_solution.cpp)
-target_link_libraries(exact_solution
-  mofem_finite_element_library
-  mofem_finite_elements
-  mofem_interfaces
-  mofem_multi_indices
-  mofem_petsc
-  mofem_approx
-  mofem_third_party
-  mofem_cblas
-  ${MoFEM_PROJECT_LIBS})
+#add_executable(exact_solution ${UM_SOURCE_DIR}/helmholtz/exact_solution.cpp)
+#target_link_libraries(exact_solution
+#  mofem_finite_element_library
+#  mofem_finite_elements
+#  mofem_interfaces
+#  mofem_multi_indices
+#  mofem_petsc
+#  mofem_approx
+#  mofem_third_party
+#  mofem_cblas
+#  ${MoFEM_PROJECT_LIBS})
 
 
 #add_executable(thermal_unseady ${UM_SOURCE_DIR}/thermal/thermal_unsteady.cpp)

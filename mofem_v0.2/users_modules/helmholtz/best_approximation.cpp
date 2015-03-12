@@ -50,7 +50,7 @@ static char help[] = "...\n\n";
 struct MyFunApprox_re {
 	
 	 ublas::vector<double> result1;
-	 //double wAvenumber;
+	 double wAvenumber;
 	 //ublas::vector<double>& operator()(double x, double y, double z) {
 	//	result.resize(3);
 	//	result[0] = x;
@@ -59,63 +59,85 @@ struct MyFunApprox_re {
 	//	return result;
 	//}     
 	 
-	 //MyFunApprox_re(double wavenumber):
-		 //wAvenumber(wavenumber) {}
-	 //~MyFunApprox_re() {}
+	 MyFunApprox_re(double wavenumber):
+		 wAvenumber(wavenumber) {}
+	 ~MyFunApprox_re() {}
+	 
 	ublas::vector<double>& operator()(double x, double y, double z) {
 		const double pi = atan( 1.0 ) * 4.0;
-		//double R = sqrt(pow(x,2.0)+pow(y,2.0)+pow(z,2.0)); //radius
-		////Incident wave in Z direction.
-		////double sqrtx2y2 = sqrt(pow(x,2.0)+pow(y,2.0));
-		////double theta = atan2(sqrtx2y2,z)+pi;
-		////double theta = acos(z/R); 
-		////Incident wave in X direction.
-		//double theta = atan2(y,x)+2*pi; //the arctan of radians (y/x)
-		////const double wAvenumber = aNgularfreq/sPeed;
-		double wAvenumber = 10;
+		double R = sqrt(pow(x,2.0)+pow(y,2.0)+pow(z,2.0)); //radius
+		//Incident wave in Z direction.
+		//double sqrtx2y2 = sqrt(pow(x,2.0)+pow(y,2.0));
+		//double theta = atan2(sqrtx2y2,z)+pi;
+		//double theta = acos(z/R); 
+		//Incident wave in X direction.
+		double theta = atan2(y,x)+2*pi; //the arctan of radians (y/x)
+		//const double wAvenumber = aNgularfreq/sPeed;
+		//double wAvenumber = 2;
 		const double k = wAvenumber;  //Wave number
-		//const double a = 0.5;         //radius of the sphere,wait to modify by user
-		//const double const1 = k * a;
-		//double const2 = k * R;
-		
+		const double a = 0.5;         //radius of the sphere,wait to modify by user
+		const double const1 = k * a;
+		double const2 = k * R;
 		
 		const complex< double > i( 0.0, 1.0 );
 		
-		//// magnitude of incident wave
-		//const double phi_incident_mag = 1.0;
+		// magnitude of incident wave
+		const double phi_incident_mag = 1.0;
 		
-		//const double tol = 1.0e-10;
-		//double max = 0.0;
-		//double min = 999999.0;
+		const double tol = 1.0e-10;
+		double max = 0.0;
+		double min = 999999.0;
 		
 		complex< double > result = 0.0;
-		//complex< double > prev_result;
+		complex< double > prev_result;
 		
-		//double error = 100.0;
-		//unsigned int n = 0; //initialized the infinite series loop
+		double error = 100.0;
+		unsigned int n = 0; //initialized the infinite series loop
 		
-		//while( error > tol )  //finding the acoustic potential in one single point.
-		//{
-		//	double jn_der = n / const1 * sph_bessel( n, const1 ) - sph_bessel( n + 1, const1 );  //The derivative of bessel function
-		//	complex< double > hn_der = n / const1 * sph_hankel_1( n, const1 ) - sph_hankel_1( n + 1, const1 );
-		//	//complex< double > hn_der = 0.5 * ( sph_hankel_1( n - 1, const1 ) -
-		//	//( sph_hankel_1( n, const1 ) + const1 * sph_hankel_1( n + 1, const1 ) ) / const1 );
-		//	double Pn = legendre_p( n, cos( theta ) );
-		//	complex< double >hn = sph_hankel_1( n, const2 );  //S Hankel first kind function
-		//	prev_result = result;
-		//	result -= pow( i, n ) * ( 2.0 * n + 1.0 ) * jn_der / hn_der * Pn * hn;
-		//	error = abs( abs( result ) - abs( prev_result ) );
-		//	++n;
-		//}
+		while( error > tol )  //finding the acoustic potential in one single point.
+		{
+		//The derivative of bessel function
+			double jn_der = n / const1 * sph_bessel( n, const1 ) - sph_bessel( n + 1, const1 );  
+		//The derivative of Hankel function
+			complex< double > hn_der = n / const1 * sph_hankel_1( n, const1 ) - sph_hankel_1( n + 1, const1 );
+			
+			complex< double > hn_der_C;
+			for( unsigned int m = 0; m < n; m++) {
+				double eta = 1.0;
+				if(m == 0) {
+					
+				} else {
+					for(unsigned int j = 1; j < m; j++) {
+						
+						eta *= (n + j)*((n - m + j)/j);
+					
+					}
+				}
+				
+				hn_der_C += ( i*k*(exp(i*const2)/pow(R,m+1)) - (m+1)*(exp(i*const2)/pow(R,m+2)) ) * ((pow(i,m)*eta)/(k*pow(2*k,m))) * exp(-i*(pi/2)*(n+1));
+			}
+			
+			std::cout << "\n hn_der_C= \n" << hn_der_C << "\n hn_der = \n" << hn_der << std::endl;
+			
+			//complex< double > hn_der = 0.5 * ( sph_hankel_1( n - 1, const1 ) -
+			//( sph_hankel_1( n, const1 ) + const1 * sph_hankel_1( n + 1, const1 ) ) / const1 );
+			double Pn = legendre_p( n, cos( theta ) );
+			complex< double >hn = sph_hankel_1( n, const2 );  //S Hankel first kind function
+			prev_result = result;
+			result -= pow( i, n ) * ( 2.0 * n + 1.0 ) * jn_der / hn_der * Pn * hn;
+			error = abs( abs( result ) - abs( prev_result ) );
+			++n;
+		}
 		
 		
 		//const complex< double > inc_field = exp( i * k * R * cos( theta ) );  //???? Incident wave
 		//const complex< double > total_field = inc_field + result;
 		//ofs << theta << "\t" << abs( result ) << "\t" << abs( inc_field ) << "\t" << abs( total_field ) <<  "\t" << R << endl; //write the file
-		/* cube */
-		double theta = pi/4;
-		result = exp(i*(k*cos(theta)*x+k*sin(theta)*y));
 		
+		///* cube */
+		//double theta = pi;
+		//result = exp(i*(k*cos(theta)*x+k*sin(theta)*y));
+		///* cube */
 		
 		result1.resize(1);
 		result1[0] = std::real(result);	
@@ -133,62 +155,65 @@ struct MyFunApprox_re {
 struct MyFunApprox_im {
 	
 	ublas::vector<double> result1;
+	double wAvenumber;
+	MyFunApprox_im(double wavenumber):
+		wAvenumber(wavenumber) {}
+	~MyFunApprox_im() {}
 	
 	ublas::vector<double>& operator()(double x, double y, double z) {
 		const double pi = atan( 1.0 ) * 4.0;
-		//double R = sqrt(pow(x,2.0)+pow(y,2.0)+pow(z,2.0)); //radius
-		////Incident wave in Z direction.
-		////double sqrtx2y2 = sqrt(pow(x,2.0)+pow(y,2.0));
-		////double theta = atan2(sqrtx2y2,z)+pi;
-		////double theta = acos(z/R); 
-		////Incident wave in X direction.
-		//double theta = atan2(y,x)+2*pi; //the arctan of radians (y/x)
-		////const double wAvenumber = aNgularfreq/sPeed;
-		double wAvenumber = 10;
+		double R = sqrt(pow(x,2.0)+pow(y,2.0)+pow(z,2.0)); //radius
+		//Incident wave in Z direction.
+		//double sqrtx2y2 = sqrt(pow(x,2.0)+pow(y,2.0));
+		//double theta = atan2(sqrtx2y2,z)+pi;
+		//double theta = acos(z/R); 
+		//Incident wave in X direction.
+		double theta = atan2(y,x)+2*pi; //the arctan of radians (y/x)
+		//const double wAvenumber = aNgularfreq/sPeed;
+		//double wAvenumber = 2;
 		const double k = wAvenumber;  //Wave number
-		//const double a = 0.5;         //radius of the sphere,wait to modify by user
-		//const double const1 = k * a;
-		//double const2 = k * R;
-		
-		
+		const double a = 0.5;         //radius of the sphere,wait to modify by user
+		const double const1 = k * a;
+		double const2 = k * R;
+
 		const complex< double > i( 0.0, 1.0 );
 		
-		//// magnitude of incident wave
-		//const double phi_incident_mag = 1.0;
+		// magnitude of incident wave
+		const double phi_incident_mag = 1.0;
 		
-		//const double tol = 1.0e-10;
-		//double max = 0.0;
-		//double min = 999999.0;
+		const double tol = 1.0e-10;
+		double max = 0.0;
+		double min = 999999.0;
 		
 		complex< double > result = 0.0;
-		//complex< double > prev_result;
+		complex< double > prev_result;
 		
-		//double error = 100.0;
-		//unsigned int n = 0; //initialized the infinite series loop
+		double error = 100.0;
+		unsigned int n = 0; //initialized the infinite series loop
 		
-		//while( error > tol )  //finding the acoustic potential in one single point.
-		//{
-		//	double jn_der = n / const1 * sph_bessel( n, const1 ) - sph_bessel( n + 1, const1 );  //The derivative of bessel function
-		//	complex< double > hn_der = n / const1 * sph_hankel_1( n, const1 ) - sph_hankel_1( n + 1, const1 );
-		//	//complex< double > hn_der = 0.5 * ( sph_hankel_1( n - 1, const1 ) -
-		//	//( sph_hankel_1( n, const1 ) + const1 * sph_hankel_1( n + 1, const1 ) ) / const1 );
-		//	double Pn = legendre_p( n, cos( theta ) );
-		//	complex< double >hn = sph_hankel_1( n, const2 );  //S Hankel first kind function
-		//	prev_result = result;
-		//	result -= pow( i, n ) * ( 2.0 * n + 1.0 ) * jn_der / hn_der * Pn * hn;
-		//	error = abs( abs( result ) - abs( prev_result ) );
-		//	++n;
-		//}
+		while( error > tol )  //finding the acoustic potential in one single point.
+		{
+			double jn_der = n / const1 * sph_bessel( n, const1 ) - sph_bessel( n + 1, const1 );  //The derivative of bessel function
+			complex< double > hn_der = n / const1 * sph_hankel_1( n, const1 ) - sph_hankel_1( n + 1, const1 );
+			//complex< double > hn_der = 0.5 * ( sph_hankel_1( n - 1, const1 ) -
+			//( sph_hankel_1( n, const1 ) + const1 * sph_hankel_1( n + 1, const1 ) ) / const1 );
+			double Pn = legendre_p( n, cos( theta ) );
+			complex< double >hn = sph_hankel_1( n, const2 );  //S Hankel first kind function
+			prev_result = result;
+			result -= pow( i, n ) * ( 2.0 * n + 1.0 ) * jn_der / hn_der * Pn * hn;
+			error = abs( abs( result ) - abs( prev_result ) );
+			++n;
+		}
 		
 		
 		//const complex< double > inc_field = exp( i * k * R * cos( theta ) );  //???? Incident wave
 		//const complex< double > total_field = inc_field + result;
 		//ofs << theta << "\t" << abs( result ) << "\t" << abs( inc_field ) << "\t" << abs( total_field ) <<  "\t" << R << endl; //write the file
-		/* cube 2D */
 		
-		double theta = pi/4;
-		result = exp(i*(k*cos(theta)*x+k*sin(theta)*y));
-		
+		///* cube 2D */
+		//double theta = pi;
+		//result = exp(i*(k*cos(theta)*x+k*sin(theta)*y));
+		///* cube */
 		result1.resize(1);
 		result1[0] = std::imag(result);
 		return result1;
@@ -368,27 +393,27 @@ int main(int argc, char *argv[]) {
 	  //for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,"MAT_HELMHOLTZ",it) {
 	  //for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
 	
-		cerr << "AAA\n";
+		//cerr << "AAA\n";
 		//Get block name
-		string name = it->get_Cubit_name();
-		if (name.compare(0,13,"MAT_HELMHOLTZ") == 0)
-		{
+		//string name = it->get_Cubit_name();
+		//if (name.compare(0,13,"MAT_HELMHOLTZ") == 0)
+		//{
 			//get block attributes
-			vector<double> attributes;
-			ierr = it->get_Cubit_attributes(attributes); CHKERRQ(ierr);
-			if(attributes.size()<2) {
-				SETERRQ1(PETSC_COMM_SELF,1,"not enough block attributes to deffine fluid pressure element, attributes.size() = %d ",attributes.size());
-			}
-			aNgularfreq = attributes[0];
-			sPeed = attributes[1];	
+		vector<double> attributes;
+		ierr = it->get_Cubit_attributes(attributes); CHKERRQ(ierr);
+		if(attributes.size()<2) {
+			SETERRQ1(PETSC_COMM_SELF,1,"not enough block attributes to deffine fluid pressure element, attributes.size() = %d ",attributes.size());
 		}
+		aNgularfreq = attributes[0];
+		sPeed = attributes[1];	
+		//}
 	}
 	
 	
-	//double wavenumber = aNgularfreq/sPeed;	
+	double wavenumber = aNgularfreq/sPeed;	
 	{
 		
-		MyFunApprox_re function_evaluator_re;
+		MyFunApprox_re function_evaluator_re(wavenumber);
 		FieldApproximationH1<MyFunApprox_re> field_approximation_re(m_field);
 		
 		field_approximation_re.loopMatrixAndVector(
@@ -397,7 +422,7 @@ int main(int argc, char *argv[]) {
 	
 	{
 		
-		MyFunApprox_im function_evaluator_im;
+		MyFunApprox_im function_evaluator_im(wavenumber);
 		FieldApproximationH1<MyFunApprox_im> field_approximation_im(m_field);
 		
 		field_approximation_im.loopMatrixAndVector(
@@ -440,16 +465,6 @@ int main(int argc, char *argv[]) {
 	ierr = VecGhostUpdateEnd(C,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	ierr = m_field.set_global_VecCreateGhost("EX1_PROBLEM",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 	ierr = m_field.set_global_VecCreateGhost("EX2_PROBLEM",COL,C,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-	
-	double nrminf_D;
-	ierr = VecNorm(D,NORM_INFINITY,&nrminf_D); CHKERRQ(ierr);
-	
-	double nrminf_C;
-	ierr = VecNorm(C,NORM_INFINITY,&nrminf_C); CHKERRQ(ierr);
-
-	std::cout << "\n the max of real analytical field is : \n" << nrminf_D << std::endl;
-	std::cout << "\n the max of imag analytical field is : \n" << nrminf_C << std::endl;
-
 	
 	
 	//if(pcomm->rank()==0) {

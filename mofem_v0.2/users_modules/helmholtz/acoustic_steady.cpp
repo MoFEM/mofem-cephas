@@ -30,6 +30,7 @@
 #include <AnalyticalDirichletHelmholtz.hpp>
 #include <boost/iostreams/tee.hpp>
 #include <boost/iostreams/stream.hpp>
+#include <petsctime.h>
 #include <fstream>
 #include <iostream>
 
@@ -98,6 +99,12 @@ int main(int argc, char *argv[]) {
   MoFEM::Core core(moab);
   FieldInterface& mField = core;
 
+  //count the comsumption of time by single run
+  PetscLogDouble t1,t2;
+  PetscLogDouble v1,v2;
+  ierr = PetscTime(&v1); CHKERRQ(ierr);
+  ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
+  
   //set entitities bit level
   BitRefLevel bit_level0;
   bit_level0.set(0);
@@ -226,8 +233,8 @@ int main(int argc, char *argv[]) {
   //ierr = helmholtz_elements.setHelmholtzFluxFiniteElementRhsOperators("imPRES","imPRES",F); CHKERRQ(ierr);    //Imag Neumann BC
   ierr = helmholtz_elements.setHelmholtzIncidentWaveFiniteElementRhsOperators("rePRES","imPRES",F); CHKERRQ(ierr); // Incident wave flux.
   if(useImpedance) {
-  //The boundary Impedance BC.
-  ierr = helmholtz_elements.setHelmholtzImpedanceFiniteElementLhsOperators("rePRES","imPRES",(A)); CHKERRQ(ierr);
+	//The boundary Impedance BC.
+	ierr = helmholtz_elements.setHelmholtzImpedanceFiniteElementLhsOperators("rePRES","imPRES",(A)); CHKERRQ(ierr);
   }
 
   
@@ -283,52 +290,56 @@ int main(int argc, char *argv[]) {
 	  static double fUN_real(double x,double y,double z) {
 		  
 		  const double pi = atan( 1.0 ) * 4.0;
-		  //double R = sqrt(pow(x,2.0)+pow(y,2.0)+pow(z,2.0)); //radius
-		  //double theta = atan2(y,x)+2*pi; //the arctan of radians (y/x)		  
+		  double R = sqrt(pow(x,2.0)+pow(y,2.0)+pow(z,2.0)); //radius
+		  //double theta = atan2(y,x)+2*pi; //the arctan of radians (y/x)
+		  		  double theta = pi/3;
 		  const double wAvenumber = aNgularfreq/sPeed;
 		  
 		  const double k = wAvenumber;  //Wave number
-		  //const double a = 0.5;         //radius of the sphere,wait to modify by user
-		  //const double const1 = k * a;
-		  //double const2 = k * R;
+		  const double a = 0.5;         //radius of the sphere,wait to modify by user
+		  const double const1 = k * a;
+		  double const2 = k * R;
 		  
 		  
 		  const complex< double > i( 0.0, 1.0 );
 		  
-		  //// magnitude of incident wave
-		  //const double phi_incident_mag = 1.0;
+		  // magnitude of incident wave
+		  const double phi_incident_mag = 1.0;
 		  
-		  //const double tol = 1.0e-10;
-		  //double max = 0.0;
-		  //double min = 999999.0;
+		  const double tol = 1.0e-10;
+		  double max = 0.0;
+		  double min = 999999.0;
 		  
 		  complex< double > result = 0.0;
-		  //complex< double > prev_result;
+		  complex< double > prev_result;
 		  
-		  //double error = 100.0;
-		  //unsigned int n = 0; //initialized the infinite series loop
+		  double error = 100.0;
+		  unsigned int n = 0; //initialized the infinite series loop
 		  
-		  //while( error > tol )  //finding the acoustic potential in one single point.
-		  //{
-		//	  double jn_der = n / const1 * sph_bessel( n, const1 ) - sph_bessel( n + 1, const1 );  //The derivative of bessel function
-		//	  complex< double > hn_der = n / const1 * sph_hankel_1( n, const1 ) - sph_hankel_1( n + 1, const1 );
-		//	  //complex< double > hn_der = 0.5 * ( sph_hankel_1( n - 1, const1 ) -
-		//	  //( sph_hankel_1( n, const1 ) + const1 * sph_hankel_1( n + 1, const1 ) ) / const1 );
-		//	  double Pn = legendre_p( n, cos( theta ) );
-		//	  complex< double >hn = sph_hankel_1( n, const2 );  //S Hankel first kind function
-		//	  prev_result = result;
-		//	  result -= pow( i, n ) * ( 2.0 * n + 1.0 ) * jn_der / hn_der * Pn * hn;
-		//	  error = abs( abs( result ) - abs( prev_result ) );
-		//	  ++n;
-		  //}
+		  while( error > tol )  //finding the acoustic potential in one single point.
+		  {
+			  double jn_der = n / const1 * sph_bessel( n, const1 ) - sph_bessel( n + 1, const1 );  //The derivative of bessel function
+			  complex< double > hn_der = n / const1 * sph_hankel_1( n, const1 ) - sph_hankel_1( n + 1, const1 );
+			  //complex< double > hn_der = 0.5 * ( sph_hankel_1( n - 1, const1 ) -
+			  //( sph_hankel_1( n, const1 ) + const1 * sph_hankel_1( n + 1, const1 ) ) / const1 );
+			  double Pn = legendre_p( n, cos( theta ) );
+			  complex< double >hn = sph_hankel_1( n, const2 );  //S Hankel first kind function
+			  prev_result = result;
+			  result -= pow( i, n ) * ( 2.0 * n + 1.0 ) * jn_der / hn_der * Pn * hn;
+			  error = abs( abs( result ) - abs( prev_result ) );
+			  ++n;
+		  }
           
 		  //const complex< double > inc_field = exp( i * k * R * cos( theta ) );  //incident wave
 		  //const complex< double > total_field = inc_field + result;
 		  
 		  //double val = std::real(result);
 		  //ofs << theta << "\t" << abs( result ) << "\t" << abs( inc_field ) << "\t" << abs( total_field ) << "\t" << R << endl; //write the file
-		  double theta = pi/4;
-		  result = exp(i*(k*cos(theta)*x+k*sin(theta)*y));
+		  
+		  ///* cube 2D */
+		  //double theta = pi/4;
+		  //result = exp(i*(k*cos(theta)*x+k*sin(theta)*y));
+		  ///* cube 2D */
 		  
           return std::real(result);
 		  //return std::real((exp(i*k*x)-1-i*exp(i*k)*sin(k*x))/(pow(k,2.0))); //exact solution of 1D problem
@@ -336,46 +347,50 @@ int main(int argc, char *argv[]) {
 	  }
 	  static double fUN_imag(double x,double y,double z) {
 		  const double pi = atan( 1.0 ) * 4.0;
-		  //double R = sqrt(pow(x,2.0)+pow(y,2.0)+pow(z,2.0)); //radius
+		  double R = sqrt(pow(x,2.0)+pow(y,2.0)+pow(z,2.0)); //radius
 		  //double theta = atan2(y,x) + 2*pi; //the arctan of radians (y/x)
+		  		  double theta = pi/3;
 		  const double wAvenumber = aNgularfreq/sPeed;
 		  
 		  const double k = wAvenumber;  //Wave number
-		//  const double a = 0.5;         //radius of the sphere,wait to modify by user
-		//  const double const1 = k * a;
-		//  double const2 = k * R;
-		//  
-		//  
+		  const double a = 0.5;         //radius of the sphere,wait to modify by user
+		  const double const1 = k * a;
+		  double const2 = k * R;
+		  
+		  
 		  const complex< double > i( 0.0, 1.0 );
-		// 
-		//  // magnitude of incident wave
-		//  const double phi_incident_mag = 1.0;
-		//  
-		//  const double tol = 1.0e-10;
-		//  double max = 0.0;
-		//  double min = 999999.0;
-		//  
+		 
+		  // magnitude of incident wave
+		  const double phi_incident_mag = 1.0;
+		  
+		  const double tol = 1.0e-10;
+		  double max = 0.0;
+		  double min = 999999.0;
+		  
 		  complex< double > result = 0.0;
-		//  complex< double > prev_result;
-		//  
-		//  double error = 100.0;
-		//  unsigned int n = 0; //initialized the infinite series loop
-		//  
-		//  while( error > tol )  //finding the acoustic potential in one single point.
-		//  {
-		//	  double jn_der = n / const1 * sph_bessel( n, const1 ) - sph_bessel( n + 1, const1 );  //The derivative of bessel function
-		//	  complex< double > hn_der = n / const1 * sph_hankel_1( n, const1 ) - sph_hankel_1( n + 1, const1 );
-		//	  double Pn = legendre_p( n, cos( theta ) );
-		//	  complex< double >hn = sph_hankel_1( n, const2 );  //S Hankel first kind function
-		//	  prev_result = result;
-		//	  result -= pow( i, n ) * ( 2.0 * n + 1.0 ) * jn_der / hn_der * Pn * hn;
-		//	  error = abs( abs( result ) - abs( prev_result ) );
-		//	  ++n;
-		//  }
+		  complex< double > prev_result;
+		  
+		  double error = 100.0;
+		  unsigned int n = 0; //initialized the infinite series loop
+		  
+		  while( error > tol )  //finding the acoustic potential in one single point.
+		  {
+			  double jn_der = n / const1 * sph_bessel( n, const1 ) - sph_bessel( n + 1, const1 );  //The derivative of bessel function
+			  complex< double > hn_der = n / const1 * sph_hankel_1( n, const1 ) - sph_hankel_1( n + 1, const1 );
+			  double Pn = legendre_p( n, cos( theta ) );
+			  complex< double >hn = sph_hankel_1( n, const2 );  //S Hankel first kind function
+			  prev_result = result;
+			  result -= pow( i, n ) * ( 2.0 * n + 1.0 ) * jn_der / hn_der * Pn * hn;
+			  error = abs( abs( result ) - abs( prev_result ) );
+			  ++n;
+		  }
 		  
 		//const complex< double > inc_field = exp( i * k * R * cos( theta ) );  //incident wave
-		  double theta = pi/4;
-		  result = exp(i*(k*cos(theta)*x+k*sin(theta)*y));
+		  ///* cube 2D */
+		  //double theta = pi;
+		  //result = exp(i*(k*cos(theta)*x+k*sin(theta)*y));
+		  ///* cube 2D */
+		  
           return std::imag(result);	  
 		  //return std::imag((exp(i*k*x)-1-i*exp(i*k)*sin(k*x))/(pow(k,2.0))); //exact solution of 1D problem
 		  //return 0;
@@ -501,7 +516,12 @@ int main(int argc, char *argv[]) {
   int todo1 = system( command1 );
   }
   
+  /** get the time interval **/
+  ierr = PetscTime(&v2);CHKERRQ(ierr);
+  ierr = PetscGetCPUTime(&t2);CHKERRQ(ierr);
+  PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Total Rank %d Time = %f S CPU Time = %f S \n",pcomm->rank(),v2-v1,t2-t1);
   
+  Vec M;
   
   
   

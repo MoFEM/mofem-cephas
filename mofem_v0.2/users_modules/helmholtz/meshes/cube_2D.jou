@@ -14,7 +14,7 @@ block 1 name 'MAT_HELMHOLTZ'
 block 1 attribute count 2   
 
 #heat Angular Frequency
-block 1 attribute index 1 10
+block 1 attribute index 1 2
 #Sound of speed
 block 1 attribute index 2 1
 
@@ -46,7 +46,7 @@ block 5 name 'EXACT_SOL'
 
 
 volume all scheme Tetmesh
-volume all size auto factor 5
+volume all size auto factor 6
 mesh volume 1
 
 set duplicate block elements on
@@ -58,6 +58,8 @@ block 6 element type tetra10
 save as "/Users/xuanmeng/Desktop/U_pan/helmholtz_results/cube_2D.cub" overwrit
 
 save as "/Users/xuanmeng/Documents/mofem-cephas/mofem_v0.2/users_modules/helmholtz/meshes/cube_2D.cub" overwrit
+
+
 
 
 
