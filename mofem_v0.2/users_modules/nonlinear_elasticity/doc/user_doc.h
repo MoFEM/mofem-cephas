@@ -4,8 +4,10 @@
 
 \subsection dynamic_elastic_bar_input_file Input files
 
-All files for this example can be found in directory
-\em users_modules/nonlinear_elasticity/examples/prismatic_bar
+Following description and line commands are in presumption that user parent
+working directory is \em
+users_modules/nonlinear_elasticity/examples/prismatic_bar in build directory.
+Mesh and other data files stored in example directory.
 
 \subsubsection journal Journal file
 
@@ -27,8 +29,8 @@ create pressure  on surface 2 magnitude 2
 block 1 volume all 
 block 1 name 'MAT_ELASTIC'
 block 1 attribute count 2
-block 1 attribute index 1 1e2 	#young modulus
-block 1 attribute index 2 0.25 #poisson ratio
+block 1 attribute index 1 1e1 	#young modulus
+block 1 attribute index 2 0.25  #poisson ratio
 
 block 2 volume 1
 block 2 name "BODY_FORCES")
@@ -57,7 +59,7 @@ where first column represents time and second column represent force multiplier.
 
 \subsection execution Executing code
 
-If bar material model is NEOHOOKEAN (note that using key word KIRCHOFF a St Venant Kirchoff material is used)
+If bar material model is NeoHookean (note that using key word KIRCHOFF a St Venant Kirchoff material is used)
 \code
 mpirun -np 4  ../../nonlinear_dynamics \
   -my_file rod.cub \
@@ -82,8 +84,9 @@ mpirun -np 4  ../../nonlinear_dynamics \
 Notes:
   - Approximation order can be set using \em -my_disp_order. 
   - Time integration scheme is controlled by \em -ts_type, look to PETSc manual for more details. 
-  - If linear analysis i.e. \em -is_linear then Jacobian is calculated only once for 1st step by setting \em -snes_lag_jacobian -2
-  - Resolution of post-processing mesh is set by \em -my_max_post_proc_ref_level 
+  - If linear analysis i.e. \em -is_linear, then Jacobian is can be calculated only once at 1st time step. To speed up calculations set \em -snes_lag_jacobian -2
+  - Resolution of post-processing mesh is set by \em -my_max_post_proc_ref_level 0. If more than 0, i.e. 1,2,... a denser post-processing mesh is generated. This results in biger size of post processing files and compromise overall efficiency. 
+  - Using -my_output_prt -1, each time step is post-processed. In some cases every n-th step can be save on hard-drive, then set -my_output_prt -2, if every \em even you like to save. If option number is positive in addition restart file is saved, this allow to kick-start calculations from last converged step.
 
 \subsection gnuplot Generating data for plots
 
@@ -96,8 +99,8 @@ awk '/Energy/ { print $3,$6,$9,$11 }' log | tee plot_data
 
 \subsection paraview VTK files for paraview
 
-Running dynamic analysis out_values_1.h5m, out_values_2.h5m, ... are generated
-for each time step, Post-processing mesh is stored in native MoAB data format
+Running dynamic analysis out_values_1.h5m, out_values_2.h5m, ... are created 
+for each time step. Post-processing mesh in output fails is stored in native MoAB data format
 using standard h5m.
 
 VTK files can be generated using script located in \em users_modules/nonlinear_elasticity/do_vtk.sh. For example
