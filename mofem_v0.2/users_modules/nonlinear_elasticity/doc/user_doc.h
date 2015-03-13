@@ -7,7 +7,7 @@
 Following description and line commands are in presumption that user parent
 working directory is \em
 users_modules/nonlinear_elasticity/examples/prismatic_bar in build directory.
-Mesh and other data files stored in example directory.
+All input files used in this example can be found in the example directory.
 
 \subsubsection journal Journal file
 
@@ -84,7 +84,7 @@ mpirun -np 4  ../../nonlinear_dynamics \
 Notes:
   - Approximation order can be set using \em -my_disp_order. 
   - Time integration scheme is controlled by \em -ts_type, look to PETSc manual for more details. 
-  - If linear analysis i.e. \em -is_linear, then Jacobian is can be calculated only once at 1st time step. To speed up calculations set \em -snes_lag_jacobian -2
+  - If linear analysis i.e. \em -is_linear, then Jacobian can be calculated only once at 1st time step. To speed up calculations set \em -snes_lag_jacobian -2
   - Resolution of post-processing mesh is set by \em -my_max_post_proc_ref_level 0. If more than 0, i.e. 1,2,... a denser post-processing mesh is generated. This results in biger size of post processing files and compromise overall efficiency. 
   - Using -my_output_prt -1, each time step is post-processed. In some cases every n-th step can be save on hard-drive, then set -my_output_prt -2, if every \em even you like to save. If option number is positive in addition restart file is saved, this allow to kick-start calculations from last converged step.
 

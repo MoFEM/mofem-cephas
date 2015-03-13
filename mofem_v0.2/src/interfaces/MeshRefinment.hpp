@@ -3,12 +3,6 @@
  * 
  * Low level data structures not used directly by user
  *
- * Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl) <br>
- * MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
  * MoFEM is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
@@ -33,7 +27,7 @@ struct MeshRefinment: public FieldUnknownInterface {
   virtual ~MeshRefinment() {}
 
   /**
-   * \brief make vertices in the middle of edges in meshset and add them to refinment levels defined by bit
+   * \brief make vertices in the middle of edges in meshset and add them to refinement levels defined by bit
    *
    * Takes entities fromm meshsets and queried recursively (get entities from meshsets in meshsets, usually have to be used for CUBIT meshset).
    * If meshset does not contain any edges, get entities in dimension 3 and get edge adjacencies.
@@ -48,7 +42,7 @@ struct MeshRefinment: public FieldUnknownInterface {
   /**
    * \brief make vertices in the middle of edges in meshset and add them to refinment levels defined by bit
    *
-   * Takes entities fromm meshsets and queried recursively (get entities from meshsets in meshsets, usually have to be used for CUBIT meshset).
+   * Takes entities from meshsets and queried recursively (get entities from meshsets in meshsets, usually have to be used for CUBIT meshset).
    * If meshset does not contain any edges, get entities in dimension 3 and get edge adjacencies.
    *
    * \param Range consisting edges for refine 

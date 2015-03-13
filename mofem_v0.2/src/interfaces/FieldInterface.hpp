@@ -408,8 +408,6 @@ struct FieldInterface: public FieldUnknownInterface {
    * \param BitRefLevel bitLevel
    * \param BitRefLevel mask
    * \param Range   
-   *
-   *
    */
   virtual PetscErrorCode get_entities_by_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,Range &ents) = 0;
 

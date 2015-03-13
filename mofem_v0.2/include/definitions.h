@@ -26,11 +26,10 @@
 
 /** \brief Interfaces IDs
   * 
-  *
-  * To manage differnt complexities realated to field, finite elements mesh
-  * refinmets, etc. a appropiate interfaces realted to each complexities are
-  * created. Intefaces by itself could vary by funcionality or the sema funcion
-  * can me manged with two intefaces with varing level of abstraction.
+  * To manage different complexities related to field, finite elements mesh
+  * refinements, etc. a appropriate interfaces related to each complexities are
+  * created. Interfaces by itself could vary by functionality or the same function
+  * can me manged with two interfaces with waring level of abstraction.
   *
   */
 enum MoFEMInterfaces {
@@ -45,10 +44,11 @@ enum MoFEMInterfaces {
   FE_METHOD = 1<<2|1<<3|1<<4|1<<5,
   ENT_METHOD = 1<<2|1<<3|1<<4|1<<6,
   //Independet Interfaces
-  TETGEN_INTERFACE = 1<<3|1<<4,
-  NETGEN_INTERFACE = 1<<3|1<<5,
-  NODEMERGER_INTERFACE = 1<<3|1<<6
-};
+  TETGEN_INTERFACE = 1<<3|1<<4,		///< used to generate mesh using TetGen
+  NETGEN_INTERFACE = 1<<3|1<<5,		///< used to generate mesh using NetGen
+  NODEMERGER_INTERFACE = 1<<3|1<<6,	///< used to merge nodes
+  BITLEVELCOUPLER_INTERFACE = 1<<3|1<<7 ///< used to couple bit levels by finding parent children relation
+}
 
 /** \brief Error handling
   * 

@@ -92,7 +92,7 @@ struct Core:
   Series_multiIndex series;
   SeriesStep_multiIndex series_steps;
 
-  //safty nets
+  //safety nets
   Tag th_MoFEMBuild;
   int *build_MoFEM;
 
@@ -109,7 +109,6 @@ struct Core:
   PetscErrorCode add_prism_to_mofem_database(const EntityHandle prism,int verb = -1);
 
   //MeshRefinemnt
-
   PetscErrorCode add_verices_in_the_middel_of_edges(
     const EntityHandle meshset,const BitRefLevel &bit,const bool recursive = false,int verb = -1);
   PetscErrorCode add_verices_in_the_middel_of_edges(const Range &edges,const BitRefLevel &bit,int verb = -1);
@@ -119,7 +118,6 @@ struct Core:
   PetscErrorCode refine_MESHSET(const EntityHandle meshset,const BitRefLevel &bit,const bool recursive = false,int verb = -1);
 
   //SeriesRecorder
-
   //add/delete series
   PetscErrorCode add_series_recorder(const string& series_name);
   PetscErrorCode delete_recorder_series(const string& series_name);
@@ -257,19 +255,20 @@ struct Core:
     ierr = printCubitSet(mydata,NODESET|mydata.type.to_ulong()); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
+
   PetscErrorCode printCubitTEMPERATURESET() {
-        PetscFunctionBegin;
-        TemperatureCubitBcData mydata;
-        ierr = printCubitSet(mydata,NODESET|mydata.type.to_ulong()); CHKERRQ(ierr);
-        PetscFunctionReturn(0);
-    }
+    PetscFunctionBegin;
+    TemperatureCubitBcData mydata;
+    ierr = printCubitSet(mydata,NODESET|mydata.type.to_ulong()); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
     
   PetscErrorCode printCubitHeatFluxSet() {
-        PetscFunctionBegin;
-        HeatfluxCubitBcData mydata;
-        ierr = printCubitSet(mydata,SIDESET|mydata.type.to_ulong()); CHKERRQ(ierr);
-        PetscFunctionReturn(0);
-    }
+    PetscFunctionBegin;
+    HeatfluxCubitBcData mydata;
+    ierr = printCubitSet(mydata,SIDESET|mydata.type.to_ulong()); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
 
   PetscErrorCode print_cubit_materials_set() {
     PetscFunctionBegin;
@@ -528,7 +527,7 @@ struct Core:
   EntMoFEMFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator get_fes_moabfield_by_name_begin(const string &fe_name);
   EntMoFEMFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator get_fes_moabfield_by_name_end(const string &fe_name);
 
-  //Copy Vector of Field to Another
+  //Copy field values to another field
   PetscErrorCode field_axpy(const double alpha,const string& fiel_name_x,const string& field_name_y,bool error_if_missing = false,bool creat_if_missing = false);
   PetscErrorCode field_scale(const double alpha,const string& fiel_name);
   PetscErrorCode set_field(const double val,const EntityType type,const string& fiel_name);
