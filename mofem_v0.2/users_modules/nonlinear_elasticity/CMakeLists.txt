@@ -116,8 +116,8 @@ if(ADOL-C_LIBRARY)
 
   if(SLEPC_LIBRARY) 
 
-    cm_export_file("dome_stability.cub" export_files_arc_length_nonlinearelasticity)
-    cm_export_file("cylinder.cub" export_files_arc_length_nonlinearelasticity)
+    #cm_export_file("dome_stability.cub" export_files_arc_length_nonlinearelasticity)
+    #cm_export_file("cylinder.cub" export_files_arc_length_nonlinearelasticity)
     cm_export_file("rod.cub" export_files_arc_length_nonlinearelasticity)
 
     add_executable(stability
