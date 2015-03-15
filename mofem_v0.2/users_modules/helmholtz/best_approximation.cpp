@@ -68,8 +68,8 @@ struct MyFunApprox_re {
 		double R = sqrt(pow(x,2.0)+pow(y,2.0)+pow(z,2.0)); //radius
 		//Incident wave in Z direction.
 		//double sqrtx2y2 = sqrt(pow(x,2.0)+pow(y,2.0));
-		//double theta = atan2(sqrtx2y2,z)+pi;
-		//double theta = acos(z/R); 
+		//double phi= atan2(sqrtx2y2,z)+2*pi;
+		//double phi= acos(z/R); 
 		//Incident wave in X direction.
 		double theta = atan2(y,x)+2*pi; //the arctan of radians (y/x)
 		//const double wAvenumber = aNgularfreq/sPeed;
@@ -101,24 +101,28 @@ struct MyFunApprox_re {
 		//The derivative of Hankel function
 			complex< double > hn_der = n / const1 * sph_hankel_1( n, const1 ) - sph_hankel_1( n + 1, const1 );
 			
-			complex< double > hn_der_C;
-			for( unsigned int m = 0; m < n; m++) {
-				double eta = 1.0;
-				if(m == 0) {
-					
-				} else {
-					for(unsigned int j = 1; j < m; j++) {
-						
-						eta *= (n + j)*((n - m + j)/j);
-					
-					}
-				}
-				
-				hn_der_C += ( i*k*(exp(i*const2)/pow(R,m+1)) - (m+1)*(exp(i*const2)/pow(R,m+2)) ) * ((pow(i,m)*eta)/(k*pow(2*k,m))) * exp(-i*(pi/2)*(n+1));
-			}
 			
-			std::cout << "\n hn_der_C= \n" << hn_der_C << "\n hn_der = \n" << hn_der << std::endl;
+			//complex< double > hn_der_C = 0;
+			//for( unsigned int m = 0; m < n; m++) {
+			//	/* eta = (n + 1/2,m) */
+			//	double eta = 1.0;
+			//	if(m == 0) {
+			//		
+			//	} else {
+			//		for(unsigned int j = 1; j < m; j++) {
+			//			
+			//			eta *= (n + j)*((n - m + j)/j);
+			//		
+			//		}
+			//	}
+			//	
+			//	hn_der_C += ( i*k*(exp(i*const2)/pow(R,m+1.0)) - (m+1.0)*(exp(i*const2)/pow(R,m+2.0)) ) * ((pow(i,m)*eta)/(k*pow(2.0*k,m))) * exp(-i*(pi/2.0)*(n+1.0));
+			//}
 			
+			//std::cout << "\n hn_der_C= \n" << hn_der_C << "\n hn_der = \n" << hn_der << std::endl;
+			
+			
+			//double jn = sph_bessel( n, const2 );
 			//complex< double > hn_der = 0.5 * ( sph_hankel_1( n - 1, const1 ) -
 			//( sph_hankel_1( n, const1 ) + const1 * sph_hankel_1( n + 1, const1 ) ) / const1 );
 			double Pn = legendre_p( n, cos( theta ) );
@@ -165,8 +169,8 @@ struct MyFunApprox_im {
 		double R = sqrt(pow(x,2.0)+pow(y,2.0)+pow(z,2.0)); //radius
 		//Incident wave in Z direction.
 		//double sqrtx2y2 = sqrt(pow(x,2.0)+pow(y,2.0));
-		//double theta = atan2(sqrtx2y2,z)+pi;
-		//double theta = acos(z/R); 
+		//double phi= atan2(sqrtx2y2,z)+2*pi;
+		//double phi= acos(z/R); 
 		//Incident wave in X direction.
 		double theta = atan2(y,x)+2*pi; //the arctan of radians (y/x)
 		//const double wAvenumber = aNgularfreq/sPeed;

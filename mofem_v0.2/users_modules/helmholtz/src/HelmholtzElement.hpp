@@ -935,6 +935,7 @@ struct HelmholtzElement {
 				{
 					iNcidentwave = std::imag(result);
 				}
+				
 				flux = dAta.dAta.data.value1*iNcidentwave; 
 
 				ublas::noalias(Nf) += val*flux*data.getN(gg,nb_dofs);

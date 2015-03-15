@@ -291,8 +291,8 @@ int main(int argc, char *argv[]) {
 		  
 		  const double pi = atan( 1.0 ) * 4.0;
 		  double R = sqrt(pow(x,2.0)+pow(y,2.0)+pow(z,2.0)); //radius
-		  //double theta = atan2(y,x)+2*pi; //the arctan of radians (y/x)
-		  		  double theta = pi/3;
+		  double theta = atan2(y,x)+2*pi; //the arctan of radians (y/x)
+		  		 
 		  const double wAvenumber = aNgularfreq/sPeed;
 		  
 		  const double k = wAvenumber;  //Wave number
@@ -348,16 +348,15 @@ int main(int argc, char *argv[]) {
 	  static double fUN_imag(double x,double y,double z) {
 		  const double pi = atan( 1.0 ) * 4.0;
 		  double R = sqrt(pow(x,2.0)+pow(y,2.0)+pow(z,2.0)); //radius
-		  //double theta = atan2(y,x) + 2*pi; //the arctan of radians (y/x)
-		  		  double theta = pi/3;
+		  double theta = atan2(y,x) + 2*pi; //the arctan of radians (y/x)
+		  
 		  const double wAvenumber = aNgularfreq/sPeed;
 		  
 		  const double k = wAvenumber;  //Wave number
 		  const double a = 0.5;         //radius of the sphere,wait to modify by user
 		  const double const1 = k * a;
 		  double const2 = k * R;
-		  
-		  
+		  		  
 		  const complex< double > i( 0.0, 1.0 );
 		 
 		  // magnitude of incident wave
@@ -433,10 +432,10 @@ int main(int argc, char *argv[]) {
   
   //ierr = MatView(A,PETSC_VIEWER_DRAW_WORLD); CHKERRQ(ierr);
   //std::cin >> wait;
-  int ii1,jj1,N3;
-  ierr=MatGetSize(A,&ii1,&jj1);
-  ierr=VecGetSize(F,&N3);
-  std::cout << "\n size of stiffness matrix = \n" << ii1 << " X " << jj1 << "\n size of load vector = \n" << N3 << std::endl;
+  //int ii1,jj1,N3;
+  //ierr=MatGetSize(A,&ii1,&jj1);
+  //ierr=VecGetSize(F,&N3);
+  //std::cout << "\n size of stiffness matrix = \n" << ii1 << " X " << jj1 << "\n size of load vector = \n" << N3 << std::endl;
   //postproc
   //Postprocess the Analytical Dirichlet BC
   ierr = mField.problem_basic_method_postProcess("ACOUSTIC_PROBLEM",analytical_ditihlet_bc1); CHKERRQ(ierr);
