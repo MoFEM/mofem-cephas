@@ -1,12 +1,7 @@
-/** 
- * \brief Operators and data structures for thermal analys
+/** \file NonLienarElasticElement.hpp
+ * \brief Operators and data structures for non-linear elastic analysis
  *
- * Implementation of nonliear eleastic element.
- *
- */
-
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
+ * Implementation of nonlinear elastic element.
  *
  * This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
@@ -31,14 +26,14 @@
 
 namespace MoFEM {
 
-/** \brief struture grouping operators and data used for calulation of mass (convective) element
-  * \ingroup nonlinear_eleastic_elem
+/** \brief structure grouping operators and data used for calculation of nonlinear elastic element 
+  * \ingroup nonlinear_elastic_elem
   *
   * In order to assemble matrices and right hand vectors, the loops over
-  * elements, enetities over that elememnts and finally loop over intergration
+  * elements, entities over that elements and finally loop over integration
   * points are executed.
   *
-  * Following implementation separte those three cegories of loops and to eeach
+  * Following implementation separate those three categories of loops and to each
   * loop attach operator.
   *
   */
@@ -46,9 +41,13 @@ struct NonlinearElasticElement {
 
   /// \brief  definition of volume element
   struct MyVolumeFE: public TetElementForcesAndSourcesCore {
-    MyVolumeFE(FieldInterface &_mField);
+
+    Mat A;
+    Vec F;
+
+    MyVolumeFE(FieldInterface &m_field);
     
-    /** \brief it is used to calculate nb. of Gauss integartion points
+    /** \brief it is used to calculate nb. of Gauss integration points
      *
      * for more details pleas look 
      *   Reference:
@@ -65,14 +64,21 @@ struct NonlinearElasticElement {
     **/
     int getRule(int order);
 
+    Vec V;
+    double eNergy;    
+
     PetscErrorCode preProcess(); 
+    PetscErrorCode postProcess(); 
 
   };
-  
-  MyVolumeFE feRhs; ///< cauclate right hand side for tetrahedral elements
+
+  MyVolumeFE feRhs; ///< calculate right hand side for tetrahedral elements
   MyVolumeFE& getLoopFeRhs() { return feRhs; } ///< get rhs volume element 
   MyVolumeFE feLhs; //< calculate left hand side for tetrahedral elements
   MyVolumeFE& getLoopFeLhs() { return feLhs; } ///< get lhs volume element
+
+  MyVolumeFE feEnergy; ///< calculate elastic energy 
+  MyVolumeFE& getLoopFeEnergy() { return feEnergy; } ///< get energy fe 
 
   FieldInterface &mField;
   short int tAg;
@@ -80,19 +86,24 @@ struct NonlinearElasticElement {
   NonlinearElasticElement(
     FieldInterface &m_field,short int tag);
 
-  /** \brief data for calulation het conductivity and heat capacity elements
-    * \infroup mofem_forces_and_sources 
+  template<typename TYPE> 
+  struct FunctionsToCalulatePiolaKirchhoffI;
+
+  /** \brief data for calculation het conductivity and heat capacity elements
+    * \ingroup nonlinear_elastic_elem
     */
   struct BlockData {
     int iD;
     double E;
     double PoissonRatio;
     Range tEts; ///< constatins elements in block set
+    FunctionsToCalulatePiolaKirchhoffI<adouble> *materialAdoublePtr;
+    FunctionsToCalulatePiolaKirchhoffI<double> *materialDoublePtr;
   }; 
-  map<int,BlockData> setOfBlocks; ///< maps block set id with appropiate BlockData
+  map<int,BlockData> setOfBlocks; ///< maps block set id with appropriate BlockData
 
   /** \brief common data used by volume elements
-    * \infroup mofem_forces_and_sources 
+    * \ingroup nonlinear_elastic_elem
     */
   struct CommonData {
     map<string,vector<ublas::vector<double> > > dataAtGaussPts;
@@ -105,33 +116,14 @@ struct NonlinearElasticElement {
   };
   CommonData commonData;
 
-  struct OpGetDataAtGaussPts: public TetElementForcesAndSourcesCore::UserDataOperator {
-
-    vector<ublas::vector<double> > &valuesAtGaussPts;
-    vector<ublas::matrix<double> > &gradientAtGaussPts;
-    const EntityType zeroAtType;
-
-    OpGetDataAtGaussPts(const string field_name,
-      vector<ublas::vector<double> > &values_at_gauss_pts,
-      vector<ublas::matrix<double> > &gardient_at_gauss_pts);
-
-    /** \brief operator calulating deformation gradient
-      *
-      * temerature gradient is calculated multiplying direvatives of shape functions by degrees of freedom
-      */
-    PetscErrorCode doWork(
-      int side,EntityType type,DataForcesAndSurcesCore::EntData &data); 
-
-  };
-
-  struct OpGetCommonDataAtGaussPts: public OpGetDataAtGaussPts {
-    OpGetCommonDataAtGaussPts(const string field_name,CommonData &common_data);
-
-  };
- 
+  /** \brief Implementation of elastic (non-linear) St. Kirchoff equation
+    * \ingroup nonlinear_elastic_elem
+    */
   template<typename TYPE> 
   struct FunctionsToCalulatePiolaKirchhoffI {
 
+    /** \brief Calulate determinant of 3x3 matrix
+      */
     PetscErrorCode dEterminatnt(ublas::matrix<TYPE> a,TYPE &det) {
       PetscFunctionBegin;
       // a11a22a33
@@ -151,6 +143,9 @@ struct NonlinearElasticElement {
       PetscFunctionReturn(0);
     }
   
+
+    /** \brief Calusta invers of 3x3 matrix
+      */
     PetscErrorCode iNvert(TYPE det,ublas::matrix<TYPE> a,ublas::matrix<TYPE> &inv_a) {
       PetscFunctionBegin;
       //PetscErrorCode ierr;
@@ -172,10 +167,11 @@ struct NonlinearElasticElement {
 
     double lambda,mu;
     ublas::matrix<TYPE> F,C,E,S,invF,P;
-    TYPE J;
+    TYPE J,eNergy;
 
-    int gG;
-    CommonData *commonData_ptr;
+    int gG;	///< Gauss point number
+    CommonData *commonDataPtr; ///< common data shared between entities (f.e. field values at Gauss pts.)
+    TetElementForcesAndSourcesCore::UserDataOperator *opPtr; ///< pointer to finite element tetrahedral operator
 
     PetscErrorCode CalulateC_CauchyDefromationTensor() {
       PetscFunctionBegin;
@@ -211,6 +207,28 @@ struct NonlinearElasticElement {
       PetscFunctionReturn(0);
     }
 
+    /** \brief Function overload to implement user material
+      *
+
+      * Calculation of Piola Kirchoff I is implemented by user. Tangent matrix
+      * user implemented physical equation is calculated using automatic
+      * differentiation.
+
+      * \f$\mathbf{S} = \lambda\textrm{tr}[\mathbf{E}]\mathbf{I}+2\mu\mathbf{E}\f$ 
+
+      * Notes: <br>
+      * Number of actual Gauss point is accessed from variable gG. <br>
+      * Access to operator data structures is available by variable opPtr. <br>
+      * Access to common data is by commonDataPtr. <br>
+      
+      * \param block_data used to give access to material parameters
+      * \param fe_ptr pointer to element data structures
+
+      For details look to: <br>
+      NONLINEAR CONTINUUM MECHANICS FOR FINITE ELEMENT ANALYSIS, Javier Bonet,
+      Richard D. Wood
+
+      */
     virtual PetscErrorCode CalualteP_PiolaKirchhoffI(
       const BlockData block_data,
       const NumeredMoFEMFiniteElement *fe_ptr) {
@@ -240,13 +258,60 @@ struct NonlinearElasticElement {
     }
 
 
+    /** \brief calculate elastic energy density
+      *
+      * \f$\Psi = \frac{1}{2}\lambda(\textrm{tr}[\mathbf{E}])^2+\mu\mathbf{E}:\mathbf{E}\f$
+      */
+    virtual PetscErrorCode CalulateElasticEnergy(const BlockData block_data,
+      const NumeredMoFEMFiniteElement *fe_ptr) {
+      PetscFunctionBegin;
+      PetscErrorCode ierr;
+      lambda = LAMBDA(block_data.E,block_data.PoissonRatio);
+      mu = MU(block_data.E,block_data.PoissonRatio);
+      ierr = CalulateC_CauchyDefromationTensor(); CHKERRQ(ierr);
+      ierr = CalulateE_GreenStrain(); CHKERRQ(ierr);
+      TYPE trace = 0;
+      eNergy = 0;
+      for(int ii = 0;ii<3;ii++) {
+	trace += E(ii,ii);
+	for(int jj = 0;jj<3;jj++) {
+	  TYPE e = E(ii,jj);
+	  eNergy += mu*e*e;
+	}
+      }
+      eNergy += 0.5*lambda*trace*trace;
+      PetscFunctionReturn(0);
+    }
+
   };
 
+  struct OpGetDataAtGaussPts: public TetElementForcesAndSourcesCore::UserDataOperator {
+
+    vector<ublas::vector<double> > &valuesAtGaussPts;
+    vector<ublas::matrix<double> > &gradientAtGaussPts;
+    const EntityType zeroAtType;
+
+    OpGetDataAtGaussPts(const string field_name,
+      vector<ublas::vector<double> > &values_at_gauss_pts,
+      vector<ublas::matrix<double> > &gardient_at_gauss_pts);
+
+    /** \brief operator calculating deformation gradient
+      *
+      * temperature gradient is calculated multiplying derivatives of shape functions by degrees of freedom
+      */
+    PetscErrorCode doWork(
+      int side,EntityType type,DataForcesAndSurcesCore::EntData &data); 
+
+  };
+
+  struct OpGetCommonDataAtGaussPts: public OpGetDataAtGaussPts {
+    OpGetCommonDataAtGaussPts(const string field_name,CommonData &common_data);
+  };
+ 
   struct OpJacobian: public TetElementForcesAndSourcesCore::UserDataOperator {
 
     BlockData &dAta;
     CommonData &commonData;
-    FunctionsToCalulatePiolaKirchhoffI<adouble> &fUn;
     int tAg;//,lastId;
     bool jAcobian;
     bool fieldDisp;
@@ -255,7 +320,6 @@ struct NonlinearElasticElement {
       const string field_name,
       BlockData &data,
       CommonData &common_data,
-      FunctionsToCalulatePiolaKirchhoffI<adouble> &fun,
       int tag,bool jacobian,bool field_disp);
 
     ublas::vector<double> active_varibles;
@@ -269,6 +333,7 @@ struct NonlinearElasticElement {
 
     BlockData &dAta;
     CommonData &commonData;
+    bool fieldDisp;
 
     OpRhs(const string field_name,BlockData &data,CommonData &common_data);
 
@@ -277,6 +342,21 @@ struct NonlinearElasticElement {
       int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data);
 
   };
+
+  struct OpEnergy: public TetElementForcesAndSourcesCore::UserDataOperator {
+
+    BlockData &dAta;
+    CommonData &commonData;
+    Vec *Vptr;
+    bool fieldDisp;
+
+    OpEnergy(const string field_name,BlockData &data,CommonData &common_data,Vec *v_ptr,bool field_disp);
+
+    PetscErrorCode doWork(
+      int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data);
+
+  };
+
 
   struct OpLhs_dx: public TetElementForcesAndSourcesCore::UserDataOperator {
 
@@ -297,22 +377,23 @@ struct NonlinearElasticElement {
 
   };
 
-  PetscErrorCode setBlocks();
+  PetscErrorCode setBlocks(
+    FunctionsToCalulatePiolaKirchhoffI<double> *materialDoublePtr,
+    FunctionsToCalulatePiolaKirchhoffI<adouble> *materialAdoublePtr);
 
   PetscErrorCode addElement(string element_name,
     string spatial_position_field_name,
     string material_position_field_name = "MESH_NODE_POSITIONS",bool ale = false);
 
-  /** \brief Set opperators to calculate left hand tangent matrix and right hand residual
+  /** \brief Set operators to calculate left hand tangent matrix and right hand residual
     *
-    * \param fun class needed to calulate Piola Kirchoff I Sterss tensor
-    * \param spatial_position_field_name name of appraximation field
+    * \param fun class needed to calculate Piola Kirchoff I Stress tensor
+    * \param spatial_position_field_name name of approximation field
     * \param material_position_field_name name of field to define geometry
-    * \param ale true if arbitray lagrangian eulerian formulation
+    * \param ale true if arbitrary Lagrangian Eulerian formulation
     * \param field_disp true if approximation field represents displacements otherwise it is field of spatial positions
     */
   PetscErrorCode setOperators(
-    FunctionsToCalulatePiolaKirchhoffI<adouble> &fun,
     string spatial_position_field_name,
     string material_position_field_name = "MESH_NODE_POSITIONS",
     bool ale = false,bool field_disp = false);
@@ -324,8 +405,8 @@ struct NonlinearElasticElement {
 #endif //__NONLINEAR_ELASTIC_HPP
 
 /***************************************************************************//**
- * \defgroup nonlinear_eleastic_elem Non-Linear Elastic Element 
- * \ingroup mofem_forces_and_sources 
+ * \defgroup nonlinear_elastic_elem NonLinear Elastic Element 
+ * \ingroup mofem_forces_and_sources
  ******************************************************************************/
 
 

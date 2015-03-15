@@ -278,8 +278,8 @@ add_test(forces_and_sources_testing_field_approximation_test_compare ${CMAKE_COM
   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_testing_field_approximation.txt)
 
 # body forces test
-add_executable(forces_and_sources_body_force_atom forces_and_sources_body_force_atom_test.cpp)
-target_link_libraries(forces_and_sources_body_force_atom 
+add_executable(body_force_atom body_force_atom_test.cpp)
+target_link_libraries(body_force_atom 
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
@@ -290,11 +290,11 @@ target_link_libraries(forces_and_sources_body_force_atom
   ${PROJECT_LIBS})
 
 cm_export_file("../meshes/elasticity_atom_test_body_force.cub" export_atom_tests)
-add_test(forces_and_sources_body_force_atom_test
-  ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_body_force_atom -my_file elasticity_atom_test_body_force.cub)
+add_test(body_force_atom_test
+  ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/body_force_atom -my_file elasticity_atom_test_body_force.cub)
 add_test(forces_and_sources_body_force_atom_test_compare ${CMAKE_COMMAND} -E compare_files 
-  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_body_force_atom_test.txt
-  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_body_force_atom_test.txt)
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/body_force_atom_test.txt
+  ${CMAKE_BINARY_DIR}/atom_tests/body_force_atom_test.txt)
 
 add_executable(forces_and_sources_getting_higher_order_skin_normals_atom forces_and_sources_getting_higher_order_skin_normals_atom_tets.cpp)
 target_link_libraries(forces_and_sources_getting_higher_order_skin_normals_atom 
@@ -381,8 +381,8 @@ add_test(forces_and_sources_testing_flat_prism_element_test_compare ${CMAKE_COMM
   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_testing_flat_prism_element.txt)
 
 # neumann forces
-add_executable(forces_and_sources_neumann_forces_atom forces_and_sources_neumann_forces_atom_test.cpp)
-target_link_libraries(forces_and_sources_neumann_forces_atom
+add_executable(neumann_forces_atom neumann_forces_atom_test.cpp)
+target_link_libraries(neumann_forces_atom
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
@@ -393,26 +393,26 @@ target_link_libraries(forces_and_sources_neumann_forces_atom
 
 cm_export_file("../meshes/elasticity_atom_test_01X.cub" export_atom_tests)
 
-add_test(forces_and_sources_neumann_elasticity_atom_test_01X_pressure
-  ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_neumann_forces_atom -my_file elasticity_atom_test_01X_pressure.cub)
-add_test(forces_and_sources_neumann_elasticity_atom_test_01X_pressure_compare ${CMAKE_COMMAND} -E compare_files 
+add_test(neumann_elasticity_atom_test_01X_pressure
+  ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/neumann_forces_atom -my_file elasticity_atom_test_01X_pressure.cub)
+add_test(neumann_elasticity_atom_test_01X_pressure_compare ${CMAKE_COMMAND} -E compare_files 
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_elasticity_atom_test_01X_pressure.cub.txt
   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_elasticity_atom_test_01X_pressure.cub.txt)
-add_test(forces_and_sources_neumann_elasticity_atom_test_01X
-  ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_neumann_forces_atom -my_file elasticity_atom_test_01X.cub)
-add_test(forces_and_sources_neumann_elasticity_atom_test_01X_compare ${CMAKE_COMMAND} -E compare_files 
+add_test(neumann_elasticity_atom_test_01X
+  ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/neumann_forces_atom -my_file elasticity_atom_test_01X.cub)
+add_test(neumann_elasticity_atom_test_01X_compare ${CMAKE_COMMAND} -E compare_files 
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_elasticity_atom_test_01X.cub.txt
   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_elasticity_atom_test_01X.cub.txt)
-add_test(forces_and_sources_neumann_sphre_pressure_test
-  ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_neumann_forces_atom -my_file sphere.cub)
-add_test(forces_and_sources_neumann_sphre_pressure_test_compare ${CMAKE_COMMAND} -E compare_files 
+add_test(neumann_sphre_pressure_test
+  ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/neumann_forces_atom -my_file sphere.cub)
+add_test(neumann_sphre_pressure_test_compare ${CMAKE_COMMAND} -E compare_files 
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_sphere.cub.txt
   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_sphere.cub.txt)
 
 # add example test for forces_and_sources_fluid_pressure_element_atom
 cm_export_file("../meshes/fluid_presssure_cub_test.cub" export_atom_tests)
-add_executable(forces_and_sources_fluid_pressure_element_atom forces_and_sources_fluid_pressure_element.cpp)
-target_link_libraries(forces_and_sources_fluid_pressure_element_atom
+add_executable(fluid_pressure_element_atom fluid_pressure_element.cpp)
+target_link_libraries(fluid_pressure_element_atom
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
@@ -421,16 +421,16 @@ target_link_libraries(forces_and_sources_fluid_pressure_element_atom
   mofem_third_party
   ${PROJECT_LIBS})
 
-add_test(forces_and_sources_fluid_pressure_element_atom_test
-  ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_fluid_pressure_element_atom -my_file fluid_presssure_cub_test.cub)
-add_test(forces_and_sources_fluid_pressure_element_atom_test_compare ${CMAKE_COMMAND} -E compare_files 
-  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_fluid_pressure_element.txt
-  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_fluid_pressure_element.txt)
+add_test(fluid_pressure_element_atom_test
+  ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/fluid_pressure_element_atom -my_file fluid_presssure_cub_test.cub)
+add_test(fluid_pressure_element_atom_test_compare ${CMAKE_COMMAND} -E compare_files 
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/fluid_pressure_element.txt
+  ${CMAKE_BINARY_DIR}/atom_tests/fluid_pressure_element.txt)
 
 # add example test for temperature element
 cm_export_file("../meshes/simple_thermal_problem.cub" export_atom_tests)
-add_executable(forces_and_sources_thermal_elem_atom forces_and_sources_thermal_elem.cpp)
-target_link_libraries(forces_and_sources_thermal_elem_atom
+add_executable(thermal_elem_atom thermal_elem.cpp)
+target_link_libraries(thermal_elem_atom
   mofem_finite_element_library
   mofem_finite_elements
   mofem_interfaces
@@ -440,15 +440,15 @@ target_link_libraries(forces_and_sources_thermal_elem_atom
   mofem_third_party
   ${PROJECT_LIBS})
 
-add_test(forces_and_sources_thermal_elem_atom_test ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_thermal_elem_atom 
+add_test(thermal_elem_atom_test ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/thermal_elem_atom 
   -my_file simple_thermal_problem.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor)
 add_test(forces_and_sources_thermal_elem_atom_test_compare ${CMAKE_COMMAND} -E compare_files 
-  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_thermal_elem.txt
-  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_thermal_elem.txt)
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/thermal_elem.txt
+  ${CMAKE_BINARY_DIR}/atom_tests/thermal_elem.txt)
 
 # add test test for temerature unsteady element
-add_executable(forces_and_sources_thermal_elem_unsteady_atom forces_and_sources_thermal_elem_unsteady.cpp)
-target_link_libraries(forces_and_sources_thermal_elem_unsteady_atom 
+add_executable(thermal_elem_unsteady_atom thermal_elem_unsteady.cpp)
+target_link_libraries(thermal_elem_unsteady_atom 
   mofem_finite_element_library
   mofem_finite_elements
   mofem_interfaces
@@ -459,20 +459,20 @@ target_link_libraries(forces_and_sources_thermal_elem_unsteady_atom
   mofem_third_party
   ${PROJECT_LIBS})
 
-add_test(forces_and_sources_thermal_elem_unsteady_atom_test ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_thermal_elem_unsteady_atom 
+add_test(thermal_elem_unsteady_atom_test ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/thermal_elem_unsteady_atom 
   -my_file simple_thermal_problem.cub 
   -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist 
   -snes_type newtonls -snes_linesearch_type basic 
   -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 
   -ts_monitor -ts_type beuler -ts_dt 1 -ts_final_time 2  -ksp_monitor -snes_max_it 3 -snes_monitor)
-add_test(forces_and_sources_thermal_elem_unsteady_atom_test_compare ${CMAKE_COMMAND} -E compare_files 
-  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_thermal_elem_unsteady.txt
-  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_thermal_elem_unsteady.txt)
+add_test(thermal_elem_unsteady_atom_test_compare ${CMAKE_COMMAND} -E compare_files 
+  ${CMAKE_BINARY_DIR}/atom_tests/thermal_elem_unsteady.txt
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/thermal_elem_unsteady.txt)
 
 # add theraml stress eleme
 cm_export_file("../meshes/elasticity_atom_test_thermal_expansion.cub" export_atom_tests)
-add_executable(forces_and_sources_thermal_stress_elem forces_and_sources_thermal_stress_elem.cpp)
-target_link_libraries(forces_and_sources_thermal_stress_elem
+add_executable(thermal_stress_elem thermal_stress_elem.cpp)
+target_link_libraries(thermal_stress_elem
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
@@ -481,11 +481,11 @@ target_link_libraries(forces_and_sources_thermal_stress_elem
   mofem_third_party
   ${PROJECT_LIBS})
 
-add_test(forces_and_sources_thermal_stress_elem_atom_test ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_thermal_stress_elem
+add_test(thermal_stress_elem_atom_test ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/thermal_stress_elem
   -my_file elasticity_atom_test_thermal_expansion.cub)
-add_test(forces_and_sources_thermal_stress_elem_atom_test_compare ${CMAKE_COMMAND} -E compare_files 
+add_test(thermal_stress_elem_atom_test_compare ${CMAKE_COMMAND} -E compare_files 
   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_thermal_stress_elem.txt
-  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_thermal_stress_elem.txt)
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/thermal_stress_elem.txt)
 
 # add test for recording series
 add_executable(record_series_atom record_series_atom.cpp)
@@ -549,8 +549,8 @@ target_link_libraries(forces_and_sources_hdiv_divergence_operator
 add_test(forces_and_sources_hdiv_divergence_operator_atom ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_hdiv_divergence_operator)
 
 # add test for ultra weak finite element
-add_executable(forces_and_sources_ultra_weak_transport forces_and_sources_ultra_weak_transport.cpp)
-target_link_libraries(forces_and_sources_ultra_weak_transport
+add_executable(ultra_weak_transport ultra_weak_transport.cpp)
+target_link_libraries(ultra_weak_transport
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
@@ -560,13 +560,13 @@ target_link_libraries(forces_and_sources_ultra_weak_transport
   mofem_third_party
   ${PROJECT_LIBS})
 
-add_test(forces_and_sources_ultra_weak_transport_atom ${MPI_RUN} -np 2
-  ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_ultra_weak_transport -my_file simple_thermal_problem.cub 
+add_test(ultra_weak_transport_atom ${MPI_RUN} -np 2
+  ${CMAKE_CURRENT_BINARY_DIR}/ultra_weak_transport -my_file simple_thermal_problem.cub 
   -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor 
   -my_max_post_proc_ref_level 1 -my_order 0)
-add_test(forces_and_sources_ultra_weak_transport_atom_compare ${CMAKE_COMMAND} -E compare_files 
+add_test(ultra_weak_transport_atom_compare ${CMAKE_COMMAND} -E compare_files 
   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_ultra_weak_transport.txt
-  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_ultra_weak_transport.txt)
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/ultra_weak_transport.txt)
 
 #dm
 add_executable(dm_mofem dm_mofem.cpp)
@@ -584,6 +584,23 @@ add_test(dm_mofem_atom_compare ${CMAKE_COMMAND} -E compare_files
   ${CMAKE_BINARY_DIR}/atom_tests/dm_mofem.txt
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/dm_mofem.txt)
 
+cm_export_file("disp01_2parts.h5m" export_atom_tests)
+add_executable(dm_build_pratitioned_mesh dm_build_pratitioned_mesh.cpp)
+target_link_libraries(dm_build_pratitioned_mesh
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS})
+add_test(dm_build_pratitioned_mesh_atom 
+  ${MPI_RUN} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/dm_build_pratitioned_mesh -my_file disp01_2parts.h5m -dm_is_partitioned)
+add_test(dm_build_pratitioned_mesh_atom_compare ${CMAKE_COMMAND} -E compare_files 
+  ${CMAKE_BINARY_DIR}/atom_tests/dm_build_partitioned_mesh.txt
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/dm_build_partitioned_mesh.txt)
+
 #single process
 add_executable(serial_matrix serial_matrix.cpp)
 target_link_libraries(serial_matrix
@@ -599,6 +616,38 @@ add_test(serial_matrix ${MPI_RUN} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/serial_matri
 add_test(serial_matrix_compare ${CMAKE_COMMAND} -E compare_files 
   ${CMAKE_BINARY_DIR}/atom_tests/serial_matrix.txt
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/serial_matrix.txt)
+
+#build composite problem
+add_executable(build_composite_problem build_composite_problem.cpp)
+target_link_libraries(build_composite_problem
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS})
+add_test(build_composite_problem_atom ${MPI_RUN} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/build_composite_problem -my_file disp01.cub)
+add_test(build_composite_problem_atom_compare ${CMAKE_COMMAND} -E compare_files 
+  ${CMAKE_BINARY_DIR}/atom_tests/build_composite_problem.txt 
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/build_composite_problem.txt)
+
+#build block problem
+add_executable(build_block_problem build_block_problem.cpp)
+target_link_libraries(build_block_problem
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS})
+add_test(build_block_problem_atom ${MPI_RUN} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/build_block_problem -my_file disp01.cub)
+add_test(build_block_problem_atom_compare ${CMAKE_COMMAND} -E compare_files 
+  ${CMAKE_BINARY_DIR}/atom_tests/build_block_problem.txt 
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/build_block_problem.txt)
 
 if(TETGEN_LIBRARY) 
 

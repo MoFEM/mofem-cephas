@@ -1,8 +1,6 @@
 /** \file FieldInterface.hpp
  * \brief MoFEM interface 
  * 
- * Low level data structures not used directly by user
- *
  * Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl) <br>
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -23,6 +21,8 @@
 
 #include "FieldUnknownInterface.hpp"
 
+/** \brief name space of MoFEM library functions and classes
+  */
 namespace MoFEM {
 
 static const MOFEMuuid IDD_MOFEMFieldInterface = MOFEMuuid( BitIntefaceId(FIELD_INTERFACE) );
@@ -31,7 +31,7 @@ static const MOFEMuuid IDD_MOFEMFieldInterface = MOFEMuuid( BitIntefaceId(FIELD_
  * \brief FieldInterface
  * 
  * This interface is used by user to: <br>
- *  (*) creat approximation fields,  <br>
+ *  (*) create approximation fields,  <br>
  *  (*) define elements, <br>
  *  (*) define problems, <br>
  */
@@ -123,7 +123,7 @@ struct FieldInterface: public FieldUnknownInterface {
 	  * Nodeset can contain nodes, edges, triangles and tets. This applies to other CubitBCType meshsets too. \n
 	  * The nodeset's meshset contain the nodes in the MIDDLE of the surface or volume which is done by default in Cubit,\n
 		* Hence if all nodes on a particular nodeset are required,\n
-	  * one should get all triangles or tetrahedrals for which the nodeset was create in Cubit,\n
+	  * one should get all triangles or tetrahedrons for which the nodeset was create in Cubit,\n
 	  * and get all the connectivities of tris/tets.
 		*
     * \param msId id of the BLOCKSET/SIDESET/BLOCKSET: from CUBIT
@@ -137,7 +137,7 @@ struct FieldInterface: public FieldUnknownInterface {
   /** 
     * \ingroup mofem_bc 
     * \brief get entities related to CUBIT/meshset, \n
-	  * NODESET will get Vertices only, even if the NODESET contains egdes, tris and tets\n
+	  * NODESET will get Vertices only, even if the NODESET contains edges, tris and tets\n
     * SIDESET will get Tris, BLOCKSET will get Tets, DISPLACEMENTSET and FORCESET are stored in NODESET, PRESSURESET is stored in Sideset.
 	  *
     * \param msId id of the BLOCKSET/SIDESET/BLOCKSET: from CUBIT
@@ -153,7 +153,7 @@ struct FieldInterface: public FieldUnknownInterface {
     *
     * \param msId id of the BLOCKSET/SIDESET/BLOCKSET: from CUBIT
     * \param CubitBCType see CubitBC (NODESET, SIDESET or BLOCKSET and more) 
-    * \param meshset where to store the retreived entities
+    * \param meshset where to store the retrieved entities
     */
   virtual PetscErrorCode get_Cubit_msId_meshset(const int msId,const unsigned int CubitBCType,EntityHandle &meshset) = 0;
 
@@ -308,7 +308,7 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode rebuild_database(int verb = -1) = 0;
 
   /**
-  * Create finite elements based from eneties in meshses. Throw error if entity is not in database
+  * Create finite elements based from entities in meshses. Throw error if entity is not in database
   * 
   * \param EntityHandle meshset
   *
@@ -316,7 +316,7 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode seed_finite_elements(const EntityHandle meshset,int verb = -1) = 0;
 
   /**
-  * Create finite elements based from eneties in meshses. Throw error if entity is not in database
+  * Create finite elements based from entities in meshses. Throw error if entity is not in database
   * 
   * \param Range entities
   *
@@ -324,7 +324,7 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode seed_finite_elements(const Range &entities,int verb = -1) = 0;
 
   /**
-  * \brief seed 2D entities (Triangles entities only) in the meshset and their adjacencies (only TRIs adjencies) in a particular BitRefLevel
+  * \brief seed 2D entities (Triangles entities only) in the meshset and their adjacencies (only TRIs adjacencies) in a particular BitRefLevel
   * 
   * \param EntityHandle MeshSet
   * \param BitRefLevel bitLevel
@@ -333,7 +333,7 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode seed_ref_level_2D(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1) = 0;
 
   /**
-  * \brief seed 3D entities (Volume entities only) in the meshset and their adjacencies (only TETs adjencies) in a particular BitRefLevel
+  * \brief seed 3D entities (Volume entities only) in the meshset and their adjacencies (only TETs adjacencies) in a particular BitRefLevel
   * 
   * \param EntityHandle MeshSet
   * \param BitRefLevel bitLevel
@@ -358,7 +358,7 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode seed_ref_level_3D(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1) = 0;
 
   /**
-   * \brief seed 3D entities (Volume entities only) in the range and their adjacencies (only TETs adjencies) in a particular BitRefLevel
+   * \brief seed 3D entities (Volume entities only) in the range and their adjacencies (only TETs adjacencies) in a particular BitRefLevel
    */ 
   virtual PetscErrorCode seed_ref_level(const Range &ents,const BitRefLevel &bit,int verb = -1) = 0;
 
@@ -423,21 +423,21 @@ struct FieldInterface: public FieldUnknownInterface {
    */
   virtual PetscErrorCode set_ref_level_to_entities(const BitRefLevel &bit,Range &ents) = 0;
 
-  /** \brief Get the adjacencies associated with a entity to entities of a specfied dimension.
+  /** \brief Get the adjacencies associated with a entity to entities of a specified dimension.
     * \ingroup mofem_ref_ents
     *
     * bit ref level of adjacent entities is equal to bit ref level of adjacent entities
     */
   virtual PetscErrorCode get_adjacencies_equality(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities) = 0;
 
-  /** \brief Get the adjacencies associated with a entity to entities of a specfied dimension.
+  /** \brief Get the adjacencies associated with a entity to entities of a specified dimension.
     * \ingroup mofem_ref_ents
     *
     * bit ref level of adjacent entities is any of bit ref level of adjacent entities
     */
   virtual PetscErrorCode get_adjacencies_any(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities) = 0;
 
-  /** \brief Get the adjacencies associated with a entity to entities of a specfied dimension.
+  /** \brief Get the adjacencies associated with a entity to entities of a specified dimension.
     * \ingroup mofem_ref_ents
     *
     * bit ref level of adjacent entities is equal to bit ref level of adjacent entities
@@ -446,7 +446,7 @@ struct FieldInterface: public FieldUnknownInterface {
     const MoFEMProblem *problem_ptr,
     const EntityHandle *from_entities,const int num_netities,const int to_dimension,Range &adj_entities,const int operation_type = Interface::INTERSECT,const int verb = 0) = 0;
 
-  /** \brief Get the adjacencies associated with a entity to entities of a specfied dimension.
+  /** \brief Get the adjacencies associated with a entity to entities of a specified dimension.
     * \ingroup mofem_ref_ents
     *
     * bit ref level of adjacent entities is equal to bit ref level of adjacent entities
@@ -460,14 +460,14 @@ struct FieldInterface: public FieldUnknownInterface {
     * 
     * Search for refined entities of given type whose parent are entities in the
     * parent meshset. It can be used for example to transfer information about
-    * boundary conditions to refined mesh or splited mesh by interface
+    * boundary conditions to refined mesh or split mesh by interface
     * elements. It is used by function refine_MESHSET, to update MESHSET finite elements.
     * 
     * \param parent meshset
-    * \param child_bit refinment level
+    * \param child_bit refinement level
     * \param type of refined entity
     * \param child_type meshset where child entities are stored (if the child meshset is set to be the parent meshset, the parent would be updated with the refined entities)
-    * \param recursive if true parent meshset is searched recurively
+    * \param recursive if true parent meshset is searched recursively
     *
    **/
   virtual PetscErrorCode update_meshset_by_entities_children(
@@ -501,7 +501,7 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode delete_finite_elements_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1) = 0;
 
   /** \brief left shift bit ref level
-    * this results of deletion of enetities on far left side
+    * this results of deletion of entities on far left side
     */
   virtual PetscErrorCode shift_left_bit_ref(const int shif,int verb = -1) = 0;
 
@@ -571,21 +571,21 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode add_ents_to_field_by_TRIs(const Range &tris,const string& name,int verb = -1) = 0;
 
   /** 
-    * \brief set field entities from adjacencies of tetrahedrals
+    * \brief set field entities from adjacencies of tetrahedrons
     * \ingroup mofem_field
     *
     * The lower dimension entities are added depending on the space type
-    * \param meshset contains set tetrahedrals
+    * \param meshset contains set tetrahedrons
     * \param name of the field
     */
   virtual PetscErrorCode add_ents_to_field_by_TETs(const EntityHandle meshset,const string& name,int verb = -1) = 0;
 
   /** 
-    * \brief set field entities from adjacencies of tetrahedrals
+    * \brief set field entities from adjacencies of tetrahedrons
     * \ingroup mofem_field
     *
     * The lower dimension entities are added depending on the space type
-    * \param range contains set tetrahedrals
+    * \param range contains set tetrahedrons
     * \param name of the field
     */
   virtual PetscErrorCode add_ents_to_field_by_TETs(const Range &tets,const string& name,int verb = -1) = 0;
@@ -648,7 +648,7 @@ struct FieldInterface: public FieldUnknownInterface {
     */
   virtual PetscErrorCode list_fields() const = 0;
 
-  /** \brief get field meshsett
+  /** \brief get field meshset
    * \ingroup mofem_field
    *
    * \param name of Field
@@ -659,6 +659,7 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual EntityHandle get_field_meshset(const string& name) const = 0;
 
   /** \brief check if field is in database
+   * \ingroup mofem_field
    *
    * \param name field name
    * \return true if field exist
@@ -688,7 +689,7 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode add_finite_element(const string &MoFEMFiniteElement_name,enum MoFEMTypes bh = MF_EXCL) = 0;
 
   /** 
-    * \brief modify finite element table, only for advaenced user
+    * \brief modify finite element table, only for advanced user
     * \ingroup mofem_fe
     *
     * Using that functions means that you like to do something not usual.
@@ -697,7 +698,7 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode modify_finite_element_adjacency_table(const string &MoFEMFiniteElement_name,const EntityType type,ElementAdjacencyFunct function) = 0;
 
 
-  /** \brief set field data which finite element usea
+  /** \brief set finite element field data
    * \ingroup mofem_fe
    *
    * \param name finite element name
@@ -707,7 +708,7 @@ struct FieldInterface: public FieldUnknownInterface {
    */
   virtual PetscErrorCode modify_finite_element_add_field_data(const string &MoFEMFiniteElement_name,const string &name_filed) = 0;
 
-  /** \brief set of field data which finite element usea
+  /** \brief unset finite element field data 
    * \ingroup mofem_fe
    *
    * \param name finite element name
@@ -725,7 +726,7 @@ struct FieldInterface: public FieldUnknownInterface {
      */
   virtual PetscErrorCode modify_finite_element_add_field_row(const string &MoFEMFiniteElement_name,const string &name_row) = 0;
 
-    /** \brief set off field row which finite element use
+    /** \brief unset field row which finite element use
      * \ingroup mofem_fe
      *
      * \param name finite element name
@@ -741,7 +742,7 @@ struct FieldInterface: public FieldUnknownInterface {
      */  
   virtual PetscErrorCode modify_finite_element_add_field_col(const string &MoFEMFiniteElement_name,const string &name_row) = 0;
 
-    /** \brief set field col which finite element use
+    /** \brief unset field col which finite element use
      * \ingroup mofem_fe
      *
      * \param name finite element name
@@ -749,62 +750,69 @@ struct FieldInterface: public FieldUnknownInterface {
      */  
   virtual PetscErrorCode modify_finite_element_off_field_col(const string &MoFEMFiniteElement_name,const string &name_row) = 0;
 
-  /** \brief add EDGES entities fromm meshset to finite element database given by name
+  /** \brief add EDGES entities from meshset to finite element database given by name
+   * \ingroup mofem_fe
    *
-   * \param range contains tetrahedrals
+   * \param range contains tetrahedrons
    * \param name Finite Element name
    * \param recursive if true parent meshset is searched recursively
    */
   virtual PetscErrorCode add_ents_to_finite_element_by_EDGEs(const Range& edge,const string &name) = 0;
 
-  /** \brief add VERTICES entities fromm meshset to finite element database given by name
+  /** \brief add VERTICES entities from meshset to finite element database given by name
+   * \ingroup mofem_fe
    *
-   * \param range contains tetrahedrals
+   * \param range contains tetrahedrons
    * \param name Finite Element name
    * \param recursive if true parent meshset is searched recursively
    */
   virtual PetscErrorCode add_ents_to_finite_element_by_VERTICEs(const Range& vert,const string &name) = 0;
 
-  /** \brief add TRI entities fromm meshset to finite element database given by name
+  /** \brief add TRI entities from meshset to finite element database given by name
+   * \ingroup mofem_fe
    *
-   * \param range contains tetrahedrals
+   * \param range contains tetrahedrons
    * \param name Finite Element name
    * \param recursive if true parent meshset is searched recursively
    */
   virtual PetscErrorCode add_ents_to_finite_element_by_TRIs(const Range& tris,const string &name) = 0;
 
-
-  /** \brief add TET entities fromm meshset to finite element database given by name
+  /** \brief add TET entities from meshset to finite element database given by name
+   * \ingroup mofem_fe
    *
-   * \param range contains tetrahedrals
+   * \param range contains tetrahedrons
    * \param name Finite Element name
    */
   virtual PetscErrorCode add_ents_to_finite_element_by_TETs(const Range& tets,const string &name) = 0;
 
-  /** \brief add TET entities fromm meshset to finite element database given by name
+  /** \brief add TET entities from meshset to finite element database given by name
+   * \ingroup mofem_fe
    *
-   * \param meshset contains tetrahedrals
+   * \param meshset contains tetrahedrons
    * \param name Finite Element name
    * \param recursive if true parent meshset is searched recursively
    */
   virtual PetscErrorCode add_ents_to_finite_element_by_TETs(const EntityHandle meshset,const string &name,const bool recursive = false) = 0;
 
-  /** \brief add PRISM entities fromm meshset to finite element database given by name
+  /** \brief add PRISM entities from meshset to finite element database given by name
+   * \ingroup mofem_fe
    *
-   * \param range contains tetrahedrals
+   * \param range contains tetrahedrons
    * \param name Finite Element name
    */
   virtual PetscErrorCode add_ents_to_finite_element_by_PRISMs(const Range& prims,const string &name) = 0;
 
-  /** \brief add TET entities fromm meshset to finite element database given by name
+  /** \brief add TET entities from meshset to finite element database given by name
+   * \ingroup mofem_fe
    *
-   * \param meshset contains tetrahedrals
+   * \param meshset contains tetrahedrons
    * \param name Finite Element name
    * \param recursive if true parent meshset is searched recursively
    */
   virtual PetscErrorCode add_ents_to_finite_element_by_PRISMs(const EntityHandle meshset,const string &name,const bool recursive = false) = 0;
 
-  /** \brief add TET elements from given refinment level to finite element database given by name 
+  /** \brief add TET elements from given refinement level to finite element database given by name 
+   * \ingroup mofem_fe
    *
    * \param BitRefLevel bit
    * \param Finite Element name
@@ -815,40 +823,44 @@ struct FieldInterface: public FieldUnknownInterface {
 
   
   /** get finite element meshset
+   * \ingroup mofem_fe
    *
    */
   virtual EntityHandle get_finite_element_meshset(const string& name) const = 0;
 
-
-  /** \brief remove elements from given refinment level to finite element database
+  /** \brief remove elements from given refinement level to finite element database
+   * \ingroup mofem_fe
    *
    * \param BitRefLevel bit
    * \param BitRefLevel mask
-   * \param verrbose level
+   * \param verbose level
    */
   virtual PetscErrorCode remove_ents_from_finite_element_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1) = 0;
 
-  /** \brief remove elements from given refinment level to finite element database
+  /** \brief remove elements from given refinement level to finite element database
    *
    */
   virtual PetscErrorCode remove_ents_from_finite_element(const string &name,const EntityHandle meshset,const EntityType type,int verb = -1) = 0;
 
-  /** \brief remove elements from given refinment level to finite element database
+  /** \brief remove elements from given refinement level to finite element database
+   * \ingroup mofem_fe
    *
    */
   virtual PetscErrorCode remove_ents_from_finite_element(const string &name,const Range &ents,int verb = -1) = 0;
 
-  /** \brief add TET elements from given refinment level to finite element database given by name 
+  /** \brief add TET elements from given refinement level to finite element database given by name 
+   * \ingroup mofem_fe
    *
    * \param BitRefLevel bit
    * \param BitRefLevel mask
    * \param Finite Element name
-   * \param Finite Elenent type
+   * \param Finite Element type
    * \param verrbose level
    */
   virtual PetscErrorCode add_ents_to_finite_element_EntType_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,const string &name,EntityType type,int verb = -1) = 0;
 
   /** \brief add MESHSET element to finite element database given by name 
+   * \ingroup mofem_fe
    *
    * \param meshset contains all entities that could be used for finite element
    * \param name Finite Element name
@@ -863,19 +875,22 @@ struct FieldInterface: public FieldUnknownInterface {
   /// list adjacencies
   virtual PetscErrorCode list_adjacencies() const = 0;
 
-  /// add Finite Element Problem
+  /** \brief add Finite Element Problem
+   * \ingroup mofem_problems
+   */
   virtual PetscErrorCode add_problem(const string& name,enum MoFEMTypes bh = MF_EXCL,int verb = -1) = 0;
   
-  /* \brief add finite element to problem, this add entities assigned to finite element to a particular problem
+  /** \brief add finite element to problem, this add entities assigned to finite element to a particular problem
+   * \ingroup mofem_problems
    *
    * \param name Problem name
    * \param name Finite Element name
    */
-    
   virtual PetscErrorCode modify_problem_add_finite_element(const string &name_problem,const string &MoFEMFiniteElement_name) = 0;
 
   /** \brief add ref level to problem
-    *
+   * \ingroup mofem_problems
+   *
    * if same finite element is solved using different level of refinements, than the level of refinement has to be specificied to problem in query
    *
    * \param name Problem name
@@ -893,6 +908,7 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode modify_problem_ref_level_add_bit(const string &name_problem,const BitRefLevel &bit) = 0;
 
   /** \brief set ref level for problem
+   * \ingroup mofem_problems
    *
    * if same finite element is solved using different level of refinements, than the level of refinement has to be specificied to problem in query
    *
@@ -910,11 +926,14 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode modify_problem_ref_level_set_bit(const string &name_problem,const BitRefLevel &bit) = 0;
 
   /** \brief set dof mask ref level for problem
+   * \ingroup mofem_problems
    *
    */
   virtual PetscErrorCode modify_problem_dof_mask_ref_level_set_bit(const string &name_problem,const BitRefLevel &bit) = 0;
 
-  /// list problems
+  /** \brief list problems
+   * \ingroup mofem_problems
+   */
   virtual PetscErrorCode list_problem() const = 0;
 
   /** build fields
@@ -923,12 +942,12 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode build_fields(int verb = -1) = 0;
 
   /** list dofs
-    * \ingroup mofem_dofs
+    * \ingroup mofem_field
    */
   virtual PetscErrorCode list_dofs_by_field_name(const string &name) const = 0;
 
   /** clear fields
-    * \ingroup mofem_dofs
+    * \ingroup mofem_field
    */
   virtual PetscErrorCode clear_dofs_fields(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1) = 0;
 
@@ -938,7 +957,7 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode clear_ents_fields(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1) = 0;
 
   /** clear fields
-    * \ingroup mofem_dofs
+    * \ingroup mofem_field
    */
   virtual PetscErrorCode clear_dofs_fields(const string &name,const Range ents,int verb = -1) = 0;
 
@@ -959,14 +978,14 @@ struct FieldInterface: public FieldUnknownInterface {
     */
   virtual PetscErrorCode clear_finite_elements(const string &name,const Range &ents,int verb = -1) = 0;
 
-  /** \brief build ajacencies 
+  /** \brief build adjacencies 
     *
     * \param bit adjacencies for refine level
     *
     * This function will get information of adjacent finite elements and fields
-    * of all entities If this is not perfomed, partitioning the problem is not
+    * of all entities. If this is not executed, partitioning the problem is not
     * possible. Adjacency map is based on degrees of freedom adjacent to
-    * elements. This linked to gemetric element connectivity. 
+    * elements. This linked to geometric element connectivity. 
     *
     * If new degrees of freedom or new finite elements are added to the
     * database, adjacency map has to be rebuild.
@@ -988,58 +1007,93 @@ struct FieldInterface: public FieldUnknownInterface {
     */
   virtual PetscErrorCode clear_adjacencies_entities(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1) = 0;
 
-  /** \brief build problem data structures, assuming that mesh is partitioned
+  /** \brief build problem data structures
+   * \ingroup mofem_problems
    */
-  virtual PetscErrorCode build_partitioned_problems(int verb = -1) = 0;
+  virtual PetscErrorCode build_problem(const string &name,int verb = -1) = 0;
 
   /** \brief build problem data structures
+   * \ingroup mofem_problems
+   */
+  virtual PetscErrorCode build_problem(MoFEMProblem *problem_ptr,int verb = -1) = 0;
+
+  /** \brief build problem data structures
+   * \ingroup mofem_problems
    */
   virtual PetscErrorCode build_problems(int verb = -1) = 0;
 
   /** \brief clear problems
+   * \ingroup mofem_problems
    */
   virtual PetscErrorCode clear_problems(int verb = -1) = 0;
 
+  /** \brief build problem data structures, assuming that mesh is partitioned
+   * \ingroup mofem_problems
+   */
+  virtual PetscErrorCode build_partitioned_problem(const string &name,int verb = -1) = 0;
+
+  /** \brief build problem data structures, assuming that mesh is partitioned
+   * \ingroup mofem_problems
+   */
+  virtual PetscErrorCode build_partitioned_problem(MoFEMProblem *problem_ptr,int verb = -1) = 0;
+
+  /** \brief build problem data structures, assuming that mesh is partitioned
+   * \ingroup mofem_problems
+   */
+  virtual PetscErrorCode build_partitioned_problems(int verb = -1) = 0;
 
   /** \brief partition problem dofs
+   * \ingroup mofem_problems
    *
    * \param name problem name
    */
   virtual PetscErrorCode simple_partition_problem(const string &name,int verb = -1) = 0;
 
-
   /** \brief partition problem dofs
+   * \ingroup mofem_problems
    *
    * \param name problem name
    */
   virtual PetscErrorCode partition_problem(const string &name,int verb = -1) = 0;
 
   /**
-    * \brief build indexing and partition problem inhereting indexing and partitioning from other problem
-    *
-    * \param name problem name
-    * \param problem_for_rows problem used to index rows
-    * \param problem_for_cols problem used to index cols
-    */
-  virtual PetscErrorCode compose_problem(const string &name,const string &problem_for_rows,const string &problem_for_cols,int var = -1) = 0;
-
-  /**
-    * \brief build indexing and partition problem inhereting indexing and partitioning from other problem
+    * \brief build indexing and partition problem inheriting indexing and partitioning from other problema
+    * \ingroup mofem_problems
     *
     * \param name problem name
     * \param problem_for_rows problem used to index rows
     * \param copy_rows just copy rows dofs
     * \param problem_for_cols problem used to index cols
     * \param copy_cols just copy cols dofs
+    * 
+    * If copy_rows/copy_cols is set to false only partition is copied between problems. This method is used to 
+    * build problem of partition numeration between to problems is used to reduce need for interprocess communication.
     *
     */
   virtual PetscErrorCode compose_problem(const string &name,const string &problem_for_rows,bool copy_rows,const string &problem_for_cols,bool copy_cols,int verb = -1) = 0;
 
+  /** \brief build indexing and partition problem by blocking problems
+    *
+    * \param name problem name
+    * \param block_problems problems consisting blocks
+    * 
+    * The global, petsc_global and local indexing is build such that, indexes are
+    * grouped by block, wheres indexes of block 0 straiting form 0, indexes of
+    * block 1 starting form nb_dofs_of_block_0, indexes of block 2 stating form
+    * nb_dofs_of_block_0+nb_dofs_of_block_1 and pattern recursively repeats for
+    * following blocks.
+    *
+    * This usually is used to calculate problems with shell matrices where
+    * different problems are grouped in blocks.
+    * 
+    */
+  virtual PetscErrorCode block_problem(const string &name,const vector<string> block_problems,int verb = -1) = 0;
+
   /** \brief determine ghost nodes
+   * \ingroup mofem_field
    *
    * \param name problem name 
    */
-   
   virtual PetscErrorCode partition_ghost_dofs(const string &name,int verb = -1) = 0;
 
   /** \brief partition finite elements
@@ -1065,10 +1119,10 @@ struct FieldInterface: public FieldUnknownInterface {
     * \param fe_name
     * \param meshset
     */
-  virtual PetscErrorCode problem_get_FE(const string &name,const string &fe_name,const EntityHandle meshset) = 0;
-
+  virtual PetscErrorCode get_problem_finite_elements_entities(const string &name,const string &fe_name,const EntityHandle meshset) = 0;
 
   /** \brief create local vector for problem
+   * \ingroup mofem_vectors
    *
    * \param name problem name
    * \param RowColData specify what data is taken from Row, Col or Data
@@ -1077,6 +1131,7 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode VecCreateSeq(const string &name,RowColData rc,Vec *V) = 0;
 
   /** \brief create ghost vector for problem
+   * \ingroup mofem_vectors
    *
    * \param name problem name
    * \param RowColData specify what data is taken from Row, Col or Data
@@ -1101,16 +1156,37 @@ struct FieldInterface: public FieldUnknownInterface {
   /**
     * \brief create scatter for vectors form one to another problem
     *
+    * User specify what name of field on one problem is scattered to another.
+    *
+    * \ingroup mofem_vectors
+    *
+    * \param xin vector
+    * \param x_proble problem name
+    * \param x_field name
+    * \param yin vector
+    * \param y_problem problem name
+    * \param y_field_name
+    * \param newctx scatter
+    */
+  virtual PetscErrorCode VecScatterCreate(
+    Vec xin,const string &x_problem,const string &x_field_name,RowColData x_rc,
+    Vec yin,const string &y_problem,const string &y_field_name,RowColData y_rc,VecScatter *newctx,int verb = -1) = 0;
+
+  /**
+    * \brief create scatter for vectors form one to another problem
+    * \ingroup mofem_vectors
+    *
     * \param xin vector
     * \param x_proble problem name
     * \param yin vector
     * \param y_problem problem name
     * \param newctx scatter
     */
-  virtual PetscErrorCode VecScatterCreate(Vec xin,string &x_problem,RowColData x_rc,Vec yin,string &y_problem,RowColData y_rc,VecScatter *newctx,int verb = -1) = 0;
+  virtual PetscErrorCode VecScatterCreate(Vec xin,const string &x_problem,RowColData x_rc,Vec yin,const string &y_problem,RowColData y_rc,VecScatter *newctx,int verb = -1) = 0;
 
   /** 
     * \brief set values of vector from/to meshdatabase
+    * \ingroup mofem_vectors
     *
     * \param pointer to problem struture
     * \param RowColData for row or column:e (i.e. Row,Col)
@@ -1127,6 +1203,7 @@ struct FieldInterface: public FieldUnknownInterface {
 
   /** 
     * \brief set values of vector from/to meshdatabase
+    * \ingroup mofem_vectors
     *
     * \param name of the problem
     * \param RowColData for row or column:e (i.e. Row,Col)
@@ -1141,9 +1218,9 @@ struct FieldInterface: public FieldUnknownInterface {
     */
   virtual PetscErrorCode set_local_VecCreateGhost(const string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) = 0;
 
- 
   /** 
     * \brief set values of vector from/to meshdatabase
+    * \ingroup mofem_vectors
     *
     * \param pointer to porblem struture
     * \param RowColData for row or column (i.e. Row,Col)
@@ -1158,6 +1235,7 @@ struct FieldInterface: public FieldUnknownInterface {
 
   /** 
     * \brief set values of vector from/to meshdatabase
+    * \ingroup mofem_vectors
     *
     * \param name of the problem
     * \param RowColData for row or column (i.e. Row,Col)
@@ -1171,6 +1249,7 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode set_global_VecCreateGhost(const string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) = 0;
 
   /** \brief Copy vector to field which is not part of the problem
+    * \ingroup mofem_vectors
     *
     * \param pointer to poroblem multi_index 
     * \param field_name field name used for indexing petsc vectors used in the problem
@@ -1187,6 +1266,7 @@ struct FieldInterface: public FieldUnknownInterface {
     const MoFEMProblem *problem_ptr,const string& fiel_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1) = 0;
 
   /** \brief Copy vector to field which is not part of the problem
+    * \ingroup mofem_vectors
     *
     * \param name problem name
     * \param field_name field name used for indexing petsc vectors used in the problem
@@ -1203,6 +1283,24 @@ struct FieldInterface: public FieldUnknownInterface {
     const string &name,const string& field_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1) = 0;
 
   /** \brief Copy vector to field which is not part of the problem
+    * \ingroup mofem_vectors
+    *
+    * \param problem_ptr pointer to problem
+    * \param field_name field name used for indexing petsc vectors used in the problem
+    * \param cpy_field field name where data from vector are stored
+    * \param RowColData for row or column
+    * \param V vector
+    * \param mode see petsc manual for VecSetValue (ADD_VALUES or INSERT_VALUES)
+    * \param scatter_mode see petsc manual for ScatterMode (The available modes are: SCATTER_FORWARD or SCATTER_REVERSE)
+    *
+    * SCATTER_REVERSE set data to field entities form V vector.
+    *
+    */
+  virtual PetscErrorCode set_other_global_VecCreateGhost(
+    const MoFEMProblem *problem_ptr,const string& field_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1) = 0;
+
+  /** \brief Copy vector to field which is not part of the problem
+    * \ingroup mofem_vectors
     *
     * \param name problem name
     * \param field_name field name used for indexing petsc vectors used in the problem
@@ -1219,7 +1317,7 @@ struct FieldInterface: public FieldUnknownInterface {
     const string &name,const string& field_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1) = 0;
 
   /** \brief axpy fields 
-    * \ingroup mofem_field_operators
+    * \ingroup mofem_field_algebra
     *
     * field_y = field_y + alpha*field_x
     *
@@ -1233,7 +1331,7 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode field_axpy(const double alpha,const string& fiel_name_x,const string& field_name_y,bool error_if_missing = false,bool creat_if_missing = false) = 0;
 
   /** \brief scale field
-    * \ingroup mofem_field_operators
+    * \ingroup mofem_field_algebra
     * 
     * \param alpha is a scaling factor
     * \field_name  is a field name
@@ -1242,7 +1340,7 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode field_scale(const double alpha,const string& field_name) = 0;
 
   /** \brief set field 
-    * \ingroup mofem_field_operators
+    * \ingroup mofem_field_algebra
     *
     * field_y = val
     *
@@ -1254,7 +1352,7 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode set_field(const double val,const EntityType type,const string& field_name) = 0;
 
   /** \brief set field 
-    * \ingroup mofem_field_operators
+    * \ingroup mofem_field_algebra
     *
     * field_y = val
     *
@@ -1287,7 +1385,7 @@ struct FieldInterface: public FieldUnknownInterface {
     * This function set data about problem, adjacencies and other MultIindices
     * in database. This function can be used a special case when user need to
     * do some pre- and post-processing before matrix or vector is initiated, or
-    * to assemble matrix for group of FEMethods. Is used by calsses classes
+    * to assemble matrix for group of FEMethods. Is used by classes
     * SnesCtx and TsCtx. Look for more details there.
     *
     * FIXME: Here we need example
@@ -1303,7 +1401,7 @@ struct FieldInterface: public FieldUnknownInterface {
     * This function set data about problem, adjacencies and other MultIindices
     * in database. This function can be used a special case when user need to
     * do some pre- and post-processing before matrix or vector is initiated, or
-    * to assemble matrix for group of FEMethods. Is used by calsses classes
+    * to assemble matrix for group of FEMethods. Is used by classes
     * SnesCtx and TsCtx. Look for more details there.
     *
     * FIXME: Here we need example
@@ -1319,7 +1417,7 @@ struct FieldInterface: public FieldUnknownInterface {
     * This function set data about problem, adjacencies and other MultIindices
     * in database. This function can be used a special case when user need to
     * do some pre- and post-processing before matrix or vector is initiated, or
-    * to assemble matrix for group of FEMethods. Is used by calsses classes
+    * to assemble matrix for group of FEMethods. Is used by classes
     * SnesCtx and TsCtx. Look for more details there.
     *
     * FIXME: Here we need example
@@ -1331,11 +1429,12 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode problem_basic_method_postProcess(const string &problem_name,BasicMethod &method,int verb = -1) = 0;
 
   /** \brief Make a loop over finite elements. 
+   * \ingroup mofem_loops
    *
    * This function is like swiss knife, is can be used to post-processing or matrix
    * and vectors assembly. It makes loop over given finite element for given
-   * problem. The particular methods exectuted on each element are given by
-   * class derived form FieldInterface::FEMethod. At beginig of each loop user definded
+   * problem. The particular methods executed on each element are given by
+   * class derived form FieldInterface::FEMethod. At beginning of each loop user defined
    * function (method)  preProcess() is called, for each element operator() is
    * executed, at the end loop finalizes with user defined function (method)
    * postProcess().
@@ -1350,11 +1449,12 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode loop_finite_elements(const string &problem_name,const string &fe_name,FEMethod &method,int verb = -1) = 0;
 
   /** \brief Make a loop over finite elements on partitions from upper to lower rank. 
+   * \ingroup mofem_loops
    *
    * This function is like swiss knife, is can be used to post-processing or matrix
    * and vectors assembly. It makes loop over given finite element for given
-   * problem. The particular methods exectuted on each element are given by
-   * class derived form FieldInterface::FEMethod. At beginig of each loop user definded
+   * problem. The particular methods executed on each element are given by
+   * class derived form FieldInterface::FEMethod. At beginning of each loop user defined
    * function (method)  preProcess() is called, for each element operator() is
    * executed, at the end loop finalizes with user defined function (method)
    * postProcess().
@@ -1369,11 +1469,12 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode loop_finite_elements(const MoFEMProblem *problem_ptr,const string &fe_name,FEMethod &method,int lower_rank,int upper_rank,int verb = -1) = 0;
 
   /** \brief Make a loop over finite elements on partitions from upper to lower rank. 
+   * \ingroup mofem_loops
    *
    * This function is like swiss knife, is can be used to post-processing or matrix
    * and vectors assembly. It makes loop over given finite element for given
-   * problem. The particular methods exectuted on each element are given by
-   * class derived form FieldInterface::FEMethod. At beginig of each loop user definded
+   * problem. The particular methods executed on each element are given by
+   * class derived form FieldInterface::FEMethod. At beginning of each loop user defined
    * function (method)  preProcess() is called, for each element operator() is
    * executed, at the end loop finalizes with user defined function (method)
    * postProcess().
@@ -1385,49 +1486,51 @@ struct FieldInterface: public FieldUnknownInterface {
   **/ 
   virtual PetscErrorCode loop_finite_elements(const string &problem_name,const string &fe_name,FEMethod &method,int lower_rank,int upper_rank,int verb = -1) = 0;
 
-
   /** \brief Make a loop over entities
+    * \ingroup mofem_loops
     *
     */
   virtual PetscErrorCode loop_dofs(const MoFEMProblem *problem_ptr,const string &field_name,RowColData rc,EntMethod &method,int lower_rank,int upper_rank,int verb = -1) = 0;
 
   /** \brief Make a loop over entities
+    * \ingroup mofem_loops
     *
     */
   virtual PetscErrorCode loop_dofs(const string &problem_name,const string &field_name,RowColData rc,EntMethod &method,int lower_rank,int upper_rank,int verb = -1) = 0;
 
 
   /** \brief Make a loop over entities
+    * \ingroup mofem_loops
     *
     */
   virtual PetscErrorCode loop_dofs(const string &problem_name,const string &field_name,RowColData rc,EntMethod &method,int verb = -1) = 0;
 
   /** \brief Make a loop over entities
-    * \ingroup mofem_dofs
+    * \ingroup mofem_field
     *
     */
   virtual PetscErrorCode loop_dofs(const string &field_name,EntMethod &method,int verb = -1) = 0;
 
-
-  /** \brief Get ref entities from database (datastructure) 
+  /** \brief Get ref entities from database (data structure) 
     *
     */
   virtual PetscErrorCode get_ref_ents(const RefMoFEMEntity_multiIndex **refinedEntitiesPtr_ptr) = 0;
 
-  /** \brief Get problem database (datastructure) 
+  /** \brief Get problem database (data structure) 
+    * \ingroup mofem_problems
     *
     */
   virtual PetscErrorCode get_problem(const string &problem_name,const MoFEMProblem **problem_ptr) = 0;
 
   /** \brief Get dofs multi index
-    * \ingroup mofem_dofs
+    * \ingroup mofem_field
     *
     */
   virtual PetscErrorCode get_dofs(const DofMoFEMEntity_multiIndex **dofsPtr_ptr) = 0;
 
   /** 
     * \brief get begin iterator of filed ents of given name (instead you can use _IT_GET_ENT_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)
-    * \ingroup mofem_dofs
+    * \ingroup mofem_field
     *
     * for(_IT_GET_ENT_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)) {
     * 	...
@@ -1439,7 +1542,7 @@ struct FieldInterface: public FieldUnknownInterface {
 
   /** 
     * \brief get begin iterator of filed dofs of given name (instead you can use _IT_GET_ENT_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)
-    * \ingroup mofem_dofs
+    * \ingroup mofem_field
     *
     * for(_IT_GET_ENT_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)) {
     * 	...
@@ -1450,7 +1553,7 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual MoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_ent_moabfield_by_name_end(const string &field_name) = 0;
 
   /** \brief loop over all dofs from a moFEM field and particular field
-    * \ingroup mofem_dofs
+    * \ingroup mofem_field
     */
   #define _IT_GET_ENT_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT) \
     MoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator IT = MFIELD.get_ent_moabfield_by_name_begin(NAME); \
@@ -1458,7 +1561,7 @@ struct FieldInterface: public FieldUnknownInterface {
 
   /** 
     * \brief get begin iterator of filed dofs of given name (instead you can use _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)
-    * \ingroup mofem_dofs
+    * \ingroup mofem_field
     *
     * for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)) {
     * 	...
@@ -1470,7 +1573,7 @@ struct FieldInterface: public FieldUnknownInterface {
 
   /** 
     * \brief get begin iterator of filed dofs of given name (instead you can use _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)
-    * \ingroup mofem_dofs
+    * \ingroup mofem_field
     *
     * for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)) {
     * 	...
@@ -1481,7 +1584,7 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual DofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_dofs_by_name_end(const string &field_name) const = 0;
 
   /** loop over all dofs from a moFEM field and particular field
-    * \ingroup mofem_dofs
+    * \ingroup mofem_field
     */
   #define _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT) \
     DofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator IT = MFIELD.get_dofs_by_name_begin(NAME); \
@@ -1489,7 +1592,7 @@ struct FieldInterface: public FieldUnknownInterface {
 
   /** 
     * \brief get begin iterator of filed dofs of given name and ent(instead you can use _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,ENT,IT)
-    * \ingroup mofem_dofs
+    * \ingroup mofem_field
     *
     * for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_(MFIELD,NAME,ENT,IT)) {
     * 	...
@@ -1501,7 +1604,7 @@ struct FieldInterface: public FieldUnknownInterface {
 
   /** 
     * \brief get begin iterator of filed dofs of given name and ent (instead you can use _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,ENT,IT)
-    * \ingroup mofem_dofs
+    * \ingroup mofem_field
     *
     * for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_(MFIELD,NAME,ENT,IT)) {
     * 	...
@@ -1518,7 +1621,7 @@ struct FieldInterface: public FieldUnknownInterface {
 
   /** 
     * \brief get field data from entity and field
-    * \ingroup mofem_dofs
+    * \ingroup mofem_field
     * 
     * this funciont is not recommended to be used in finite elemeny implementation
     *
@@ -1538,7 +1641,7 @@ struct FieldInterface: public FieldUnknownInterface {
 
   /** 
     * \brief get field data from entity and field
-    * \ingroup mofem_dofs
+    * \ingroup mofem_field
     * 
     * this funciont is not recommended to be used in finite elemeny implementation
     *
@@ -1558,7 +1661,7 @@ struct FieldInterface: public FieldUnknownInterface {
 
   /** 
     * \brief get begin iterator of filed dofs of given name and ent type (instead you can use _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,TYPE,IT)
-    * \ingroup mofem_dofs
+    * \ingroup mofem_field
     *
     * for(_IT_GET_DOFS_FIELD_BY_NAME_AND_TYPE_FOR_LOOP_(MFIELD,NAME,TYPE,IT)) {
     * 	...
@@ -1570,7 +1673,7 @@ struct FieldInterface: public FieldUnknownInterface {
 
   /** 
     * \brief get begin iterator of filed dofs of given name end ent type(instead you can use _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,TYPE,IT)
-    * \ingroup mofem_dofs
+    * \ingroup mofem_field
     *
     * for(_IT_GET_DOFS_FIELD_BY_NAME_AND_TYPE_FOR_LOOP_(MFIELD,NAME,TYPE,IT)) {
     * 	...
@@ -1581,7 +1684,7 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual DofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator get_dofs_by_name_and_type_end(const string &field_name,const EntityType type) = 0;
 
   /** \brief loop over all dofs from a moFEM field and particular field
-    * \ingroup mofem_dofs
+    * \ingroup mofem_field
     */
   #define _IT_GET_DOFS_FIELD_BY_NAME_AND_TYPE_FOR_LOOP_(MFIELD,NAME,TYPE,IT) \
     DofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator IT = MFIELD.get_dofs_by_name_and_type_begin(NAME,TYPE); \
@@ -1642,13 +1745,8 @@ struct FieldInterface: public FieldUnknownInterface {
  ******************************************************************************/
 
 /***************************************************************************//**
- * \defgroup mofem_dofs Dofs
- * \ingroup mofem_field
- ******************************************************************************/
-
-/***************************************************************************//**
- * \defgroup mofem_field_operators Oprators
- * \ingroup mofem_field
+ * \defgroup mofem_field_algebra Field Basic Algebra
+ * \ingroup mofem
  ******************************************************************************/
 
 /***************************************************************************//**
@@ -1660,6 +1758,23 @@ struct FieldInterface: public FieldUnknownInterface {
  * \defgroup mofem_fe Finite elements
  * \ingroup mofem
  ******************************************************************************/
+
+/***************************************************************************//**
+ * \defgroup mofem_problems Problems
+ * \ingroup mofem
+ ******************************************************************************/
+
+/***************************************************************************//**
+ * \defgroup mofem_vectors Vectors
+ * \ingroup mofem
+ ******************************************************************************/
+
+/***************************************************************************//**
+ * \defgroup mofem_loops Loops
+ * \ingroup mofem
+ ******************************************************************************/
+
+
 
 
 

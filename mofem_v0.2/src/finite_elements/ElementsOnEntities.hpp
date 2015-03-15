@@ -34,7 +34,7 @@ namespace MoFEM {
 /** \brief Tet finite element  
  * \ingroup mofem_forces_and_sources_tet_element 
  *
- * User is implementing own operator at Guass piint level, by own object
+ * User is implementing own operator at Gauss point level, by own object
  * derived from TetElementForcesAndSourcesCoreL::UserDataOperator.  Arbitrary
  * number of operator added pushing objects to vecUserOpN and
  * vecUserOpSymmNN. 
@@ -54,10 +54,10 @@ struct TetElementForcesAndSourcesCore: public ForcesAndSurcesCore {
   OpSetInvJacHdiv opSetInvJacHdiv;
 
   string meshPositionsFieldName;
-  ublas::matrix<FieldData> hoCoordsAtGaussPts;
-  ublas::matrix<FieldData> hoGaussPtsJac;
-  ublas::matrix<FieldData> hoGaussPtsInvJac;
-  ublas::vector<FieldData> hoGaussPtsDetJac;
+  ublas::matrix<double> hoCoordsAtGaussPts;
+  ublas::matrix<double> hoGaussPtsJac;
+  ublas::matrix<double> hoGaussPtsInvJac;
+  ublas::vector<double> hoGaussPtsDetJac;
 
   OpGetData opHOatGaussPoints; ///< higher order geometry data at Gauss pts
   OpSetHoInvJacH1 opSetHoInvJacH1;
@@ -90,7 +90,7 @@ struct TetElementForcesAndSourcesCore: public ForcesAndSurcesCore {
   ublas::matrix<double> gaussPts;
   ublas::matrix<double> coordsAtGaussPts;
 
-  /** \brief default oparator for TET element
+  /** \brief default operator for TET element
     * \ingroup mofem_forces_and_sources_tet_element
     */
   struct UserDataOperator: public DataOperator {
@@ -122,7 +122,7 @@ struct TetElementForcesAndSourcesCore: public ForcesAndSurcesCore {
     //differential operators
     PetscErrorCode getDivergenceMatrixOperato_Hdiv(
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data,
-      int gg,ublas::vector<FieldData> &div);
+      int gg,ublas::vector<double> &div);
 
     private:
     TetElementForcesAndSourcesCore *ptrFE; 
@@ -133,12 +133,12 @@ struct TetElementForcesAndSourcesCore: public ForcesAndSurcesCore {
   boost::ptr_vector<UserDataOperator> vecUserOpNN;
 
   /** \brief Use to push back operator for right hand side
-   * It can be ussed to calculate nodal forces or other quantities on the mesh.
+   * It can be used to calculate nodal forces or other quantities on the mesh.
    */
   boost::ptr_vector<UserDataOperator>& get_op_to_do_Rhs() { return vecUserOpN; }
 
   /** \brief Use to push back operator for left hand side
-   * It can be ussed to calculate matrices or other quantities on mesh.
+   * It can be used to calculate matrices or other quantities on mesh.
    */
   boost::ptr_vector<UserDataOperator>& get_op_to_do_Lhs() { return vecUserOpNN; }
 
@@ -160,7 +160,7 @@ struct TetElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 /** \brief Tri finite element  
  * \ingroup mofem_forces_and_sources_tri_element
  *
- * User is implementing own operator at Guass piint level, by own object
+ * User is implementing own operator at Gauss point level, by own object
  * derived from TriElementForcesAndSurcesCoreL::UserDataOperator.  Arbitrary
  * number of operator added pushing objects to vecUserOpN and
  * vecUserOpSymmNN. 
@@ -183,9 +183,9 @@ struct TriElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
   string meshPositionsFieldName;
 
-  ublas::matrix<FieldData> nOrmals_at_GaussPt;
-  ublas::matrix<FieldData> tAngent1_at_GaussPt;
-  ublas::matrix<FieldData> tAngent2_at_GaussPt;
+  ublas::matrix<double> nOrmals_at_GaussPt;
+  ublas::matrix<double> tAngent1_at_GaussPt;
+  ublas::matrix<double> tAngent2_at_GaussPt;
   OpGetNormals opHONormals;
   OpSetPiolaTransoformOnTriangle opSetPiolaTransoformOnTriangle;
 
@@ -197,7 +197,7 @@ struct TriElementForcesAndSurcesCore: public ForcesAndSurcesCore {
     opHONormals(nOrmals_at_GaussPt,tAngent1_at_GaussPt,tAngent2_at_GaussPt),
     opSetPiolaTransoformOnTriangle(normal,nOrmals_at_GaussPt) {};
 
-  /** \brief default oparator for TRI element
+  /** \brief default operator for TRI element
     * \ingroup mofem_forces_and_sources_tri_element
     */
   struct UserDataOperator: public DataOperator {
@@ -217,7 +217,7 @@ struct TriElementForcesAndSurcesCore: public ForcesAndSurcesCore {
      */
     inline ublas::vector<double>& getNormal() { return ptrFE->normal; }
 
-    /** \bried get triangle coords
+    /** \bried get triangle coordinates
      */
     inline ublas::vector<double>& getCoords() { return ptrFE->coords; }
 
@@ -231,7 +231,7 @@ struct TriElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
     /** \bried if higher order geometry return normals at Gauss pts.
      */
-    inline ublas::matrix<FieldData>& getNormals_at_GaussPt() { return ptrFE->nOrmals_at_GaussPt; }
+    inline ublas::matrix<double>& getNormals_at_GaussPt() { return ptrFE->nOrmals_at_GaussPt; }
 
     /** \bried if higher order geometry return normals at Gauss pts.
       *
@@ -241,13 +241,13 @@ struct TriElementForcesAndSurcesCore: public ForcesAndSurcesCore {
       return ublas::matrix_row<ublas::matrix<double> >(ptrFE->nOrmals_at_GaussPt,gg); 
     }
 
-    /** \bried if higher order geometry return tangent vetor to triangle at Gauss pts.
+    /** \bried if higher order geometry return tangent vector to triangle at Gauss pts.
      */
-    inline ublas::matrix<FieldData>& getTangent1_at_GaussPt() { return ptrFE->tAngent1_at_GaussPt; }
+    inline ublas::matrix<double>& getTangent1_at_GaussPt() { return ptrFE->tAngent1_at_GaussPt; }
 
-    /** \bried if higher order geometry return tangent vetor to triangle at Gauss pts.
+    /** \bried if higher order geometry return tangent vector to triangle at Gauss pts.
      */
-    inline ublas::matrix<FieldData>& getTangent2_at_GaussPt() { return ptrFE->tAngent2_at_GaussPt; }
+    inline ublas::matrix<double>& getTangent2_at_GaussPt() { return ptrFE->tAngent2_at_GaussPt; }
 
     /** \bried return pointer to triangle finite element object 
      */
@@ -274,12 +274,12 @@ struct TriElementForcesAndSurcesCore: public ForcesAndSurcesCore {
   boost::ptr_vector<UserDataOperator> vecUserOpSymmNN;
 
   /** \brief Use to push back operator for right hand side
-   * It can be ussed to calculate nodal forces or other quantities on the mesh.
+   * It can be used to calculate nodal forces or other quantities on the mesh.
    */
   boost::ptr_vector<UserDataOperator>& get_op_to_do_Rhs() { return vecUserOpN; }
 
   /** \brief Use to push back operator for left hand side
-   * It can be ussed to calculate matrices or other quantities on mesh.
+   * It can be used to calculate matrices or other quantities on mesh.
    */
   boost::ptr_vector<UserDataOperator>& get_op_to_do_Lhs() { return vecUserOpSymmNN; }
 
@@ -298,7 +298,7 @@ struct TriElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 /** \brief Edge finite element  
  * \ingroup mofem_forces_and_sources
  *
- * User is implementing own operator at Guass piint level, by own object
+ * User is implementing own operator at Gauss points level, by own object
  * derived from EdgeElementForcesAndSurcesCoreL::UserDataOperator.  Arbitrary
  * number of operator added pushing objects to vecUserOpN and
  * vecUserOpSymmNN. 
@@ -320,7 +320,7 @@ struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
   ublas::matrix<double> gaussPts;
   ublas::matrix<double> coordsAtGaussPts;
 
-  /** \brief default oparator for EDGE element
+  /** \brief default operator for EDGE element
     */
   struct UserDataOperator: public DataOperator {
     string row_field_name;
@@ -352,12 +352,12 @@ struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
   boost::ptr_vector<UserDataOperator> vecUserOpSymmNN;
 
   /** \brief Use to push back operator for right hand side
-   * It can be ussed to calculate nodal forces or other quantities on the mesh.
+   * It can be used to calculate nodal forces or other quantities on the mesh.
    */
   boost::ptr_vector<UserDataOperator>& get_op_to_do_Rhs() { return vecUserOpN; }
 
   /** \brief Use to push back operator for left hand side
-   * It can be ussed to calculate matrices or other quantities on mesh.
+   * It can be used to calculate matrices or other quantities on mesh.
    */
   boost::ptr_vector<UserDataOperator>& get_op_to_do_Lhs() { return vecUserOpSymmNN; }
 
@@ -376,7 +376,7 @@ struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 /** \brief Vertex finite element  
  * \ingroup mofem_forces_and_sources
  *
- * User is implementing own operator at Guass piint level, by own object
+ * User is implementing own operator at Gauss points level, by own object
  * derived from VertexElementForcesAndSourcesCoreL::UserDataOperator.  Arbitrary
  * number of operator added pushing objects to vecUserOpN and
  * vecUserOpSymmNN. 
@@ -395,7 +395,7 @@ struct VertexElementForcesAndSourcesCore: public ForcesAndSurcesCore {
   PetscErrorCode ierr;
   ublas::vector<double> coords;
 
-  /** \brief default oparator for VERTEX element
+  /** \brief default operator for VERTEX element
     */
   struct UserDataOperator: public DataOperator {
     string row_field_name;
@@ -423,12 +423,12 @@ struct VertexElementForcesAndSourcesCore: public ForcesAndSurcesCore {
   boost::ptr_vector<UserDataOperator> vecUserOpSymmNN;
 
   /** \brief Use to push back operator for right hand side
-   * It can be ussed to calculate nodal forces or other quantities on the mesh.
+   * It can be used to calculate nodal forces or other quantities on the mesh.
    */
   boost::ptr_vector<UserDataOperator>& get_op_to_do_Rhs() { return vecUserOpN; }
 
   /** \brief Use to push back operator for left hand side
-   * It can be ussed to calculate matrices or other quantities on mesh.
+   * It can be used to calculate matrices or other quantities on mesh.
    */
   boost::ptr_vector<UserDataOperator>& get_op_to_do_Lhs() { return vecUserOpSymmNN; }
 
@@ -448,7 +448,7 @@ struct VertexElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 /** \brief FlatPrism finite element  
  * \ingroup mofem_forces_and_sources_prism_element
  *
- * User is implementing own operator at Guass piint level, by own object
+ * User is implementing own operator at Gauss points level, by own object
  * derived from FlatPrismElementForcesAndSurcesCoreL::UserDataOperator.  Arbitrary
  * number of operator added pushing objects to vecUserOpN and
  * vecUserOpSymmNN. 
@@ -471,12 +471,12 @@ struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
   string meshPositionsFieldName;
 
-  ublas::matrix<FieldData> nOrmals_at_GaussPtF3;
-  ublas::matrix<FieldData> tAngent1_at_GaussPtF3;
-  ublas::matrix<FieldData> tAngent2_at_GaussPtF3;
-  ublas::matrix<FieldData> nOrmals_at_GaussPtF4;
-  ublas::matrix<FieldData> tAngent1_at_GaussPtF4;
-  ublas::matrix<FieldData> tAngent2_at_GaussPtF4;
+  ublas::matrix<double> nOrmals_at_GaussPtF3;
+  ublas::matrix<double> tAngent1_at_GaussPtF3;
+  ublas::matrix<double> tAngent2_at_GaussPtF3;
+  ublas::matrix<double> nOrmals_at_GaussPtF4;
+  ublas::matrix<double> tAngent1_at_GaussPtF4;
+  ublas::matrix<double> tAngent2_at_GaussPtF4;
   OpGetNormalsOnPrism opHONormals;
 
   FlatPrismElementForcesAndSurcesCore(FieldInterface &_mField):
@@ -488,7 +488,7 @@ struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
     nOrmals_at_GaussPtF3,tAngent1_at_GaussPtF3,tAngent2_at_GaussPtF3,
     nOrmals_at_GaussPtF4,tAngent1_at_GaussPtF4,tAngent2_at_GaussPtF4) {};
 
-  /** \brief default oparator for TRI element
+  /** \brief default operator for TRI element
     * \ingroup mofem_forces_and_sources_prism_element
     */
   struct UserDataOperator: public DataOperator {
@@ -508,7 +508,7 @@ struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
      */
     inline ublas::vector<double>& getNormal() { return ptrFE->normal; }
 
-    /** \bried get triangle coords
+    /** \bried get triangle coordinates
      */
     inline ublas::vector<double>& getCoords() { return ptrFE->coords; }
 
@@ -522,21 +522,21 @@ struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
     /** \bried if higher order geometry return normals at face F3 at Gauss pts.
      * 
-     * Face 3 is top face in cannonical triangle numeraion, see 
+     * Face 3 is top face in canonical triangle numeration, see 
      * Canonical numbering systems for finite-element codes Timothy J. Tautges
      */
-    inline ublas::matrix<FieldData>& getNormals_at_GaussPtF3() { return ptrFE->nOrmals_at_GaussPtF3; }
+    inline ublas::matrix<double>& getNormals_at_GaussPtF3() { return ptrFE->nOrmals_at_GaussPtF3; }
 
     /** \bried if higher order geometry return normals at face F4 at Gauss pts.
      * 
-     * Face 4 is top face in cannonical triangle numeraion, see 
+     * Face 4 is top face in canonical triangle numeration, see 
      * Canonical numbering systems for finite-element codes Timothy J. Tautges
      */
-    inline ublas::matrix<FieldData>& getNormals_at_GaussPtF4() { return ptrFE->nOrmals_at_GaussPtF4; }
+    inline ublas::matrix<double>& getNormals_at_GaussPtF4() { return ptrFE->nOrmals_at_GaussPtF4; }
 
     /** \bried if higher order geometry return normals at Gauss pts.
       *
-      * Face 3 is top face in cannonical triangle numeraion, see 
+      * Face 3 is top face in canonical triangle numeration, see 
       * Canonical numbering systems for finite-element codes Timothy J. Tautges
       *
       * \param gg gauss point number
@@ -547,7 +547,7 @@ struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
     /** \bried if higher order geometry return normals at Gauss pts.
       *
-      * Face 3 is top face in cannonical triangle numeraion, see 
+      * Face 3 is top face in canonical triangle numeration, see 
       * Canonical numbering systems for finite-element codes Timothy J. Tautges
       *
       * \param gg gauss point number
@@ -556,21 +556,21 @@ struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
       return ublas::matrix_row<ublas::matrix<double> >(ptrFE->nOrmals_at_GaussPtF4,gg); 
     }
 
-    /** \bried if higher order geometry return tangent vetor to triangle at Gauss pts.
+    /** \bried if higher order geometry return tangent vector to triangle at Gauss pts.
      */
-    inline ublas::matrix<FieldData>& getTangent1_at_GaussPtF3() { return ptrFE->tAngent1_at_GaussPtF3; }
+    inline ublas::matrix<double>& getTangent1_at_GaussPtF3() { return ptrFE->tAngent1_at_GaussPtF3; }
 
-    /** \bried if higher order geometry return tangent vetor to triangle at Gauss pts.
+    /** \bried if higher order geometry return tangent vector to triangle at Gauss pts.
      */
-    inline ublas::matrix<FieldData>& getTangent2_at_GaussPtF3() { return ptrFE->tAngent2_at_GaussPtF3; }
+    inline ublas::matrix<double>& getTangent2_at_GaussPtF3() { return ptrFE->tAngent2_at_GaussPtF3; }
 
-    /** \bried if higher order geometry return tangent vetor to triangle at Gauss pts.
+    /** \bried if higher order geometry return tangent vector to triangle at Gauss pts.
      */
-    inline ublas::matrix<FieldData>& getTangent1_at_GaussPtF4() { return ptrFE->tAngent1_at_GaussPtF4; }
+    inline ublas::matrix<double>& getTangent1_at_GaussPtF4() { return ptrFE->tAngent1_at_GaussPtF4; }
 
-    /** \bried if higher order geometry return tangent vetor to triangle at Gauss pts.
+    /** \bried if higher order geometry return tangent vector to triangle at Gauss pts.
      */
-    inline ublas::matrix<FieldData>& getTangent2_at_GaussPtF4() { return ptrFE->tAngent2_at_GaussPtF4; }
+    inline ublas::matrix<double>& getTangent2_at_GaussPtF4() { return ptrFE->tAngent2_at_GaussPtF4; }
 
     /** \bried return pointer to triangle finite element object 
      */
@@ -597,12 +597,12 @@ struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
   boost::ptr_vector<UserDataOperator> vecUserOpSymmNN;
 
   /** \brief Use to push back operator for right hand side
-   * It can be ussed to calculate nodal forces or other quantities on the mesh.
+   * It can be used to calculate nodal forces or other quantities on the mesh.
    */
   boost::ptr_vector<UserDataOperator>& get_op_to_do_Rhs() { return vecUserOpN; }
 
   /** \brief Use to push back operator for left hand side
-   * It can be ussed to calculate matrices or other quantities on mesh.
+   * It can be used to calculate matrices or other quantities on mesh.
    */
   boost::ptr_vector<UserDataOperator>& get_op_to_do_Lhs() { return vecUserOpSymmNN; }
 
@@ -635,7 +635,6 @@ struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
  * \defgroup mofem_forces_and_sources_tri_element Triangular Element 
  * \ingroup mofem_forces_and_sources
  ******************************************************************************/
-
 
 /***************************************************************************//**
  * \defgroup mofem_forces_and_sources_prism_element Prism Element 

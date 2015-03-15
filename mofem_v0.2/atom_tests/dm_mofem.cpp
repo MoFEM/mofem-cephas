@@ -89,7 +89,7 @@ int main(int argc, char *argv[]) {
   //build adjacencies
   ierr = m_field.build_adjacencies(bit_level0); CHKERRQ(ierr);
 
-  //set dm datastruture whict created mofem datastructures
+  //set dm data structure which created mofem data structures
   ierr = DMMoFEMCreateMoFEM(dm,&m_field,dm_name,bit_level0); CHKERRQ(ierr);
   ierr = DMSetFromOptions(dm); CHKERRQ(ierr);
   ierr = DMMoFEMAddElement(dm,"FE"); CHKERRQ(ierr);
@@ -127,7 +127,7 @@ int main(int argc, char *argv[]) {
   //destry dm
   ierr = DMDestroy(&dm); CHKERRQ(ierr);
 
-  //finish work cleaning memory, getting statics, ect.
+  //finish work cleaning memory, getting statistics, ect.
   ierr = PetscFinalize(); CHKERRQ(ierr);
 
   return 0;

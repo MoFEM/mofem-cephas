@@ -94,8 +94,11 @@ int main(int argc, char *argv[]) {
   ierr = m_field.set_field_order(0,MBVERTEX,"SPATIAL_POSITION",1); CHKERRQ(ierr);
 
   NonlinearElasticElement elastic(m_field,1);
-  ierr = elastic.setBlocks(); CHKERRQ(ierr);
+  NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<double> double_kirchhoff_material;
+  NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<adouble> adouble_kirchhoff_material;
+  ierr = elastic.setBlocks(&double_kirchhoff_material,&adouble_kirchhoff_material); CHKERRQ(ierr);
   ierr = elastic.addElement("ELASTIC","SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = elastic.setOperators("SPATIAL_POSITION"); CHKERRQ(ierr);
 
   /*struct MyMat: public FunctionsToCalulatePiolaKirchhoffI {
     Interface& moAB;
@@ -110,8 +113,6 @@ int main(int argc, char *argv[]) {
   };
   MyMat mymat(moab);
   ierr = elastic.setOperators(mymat,"SPATIAL_POSITION"); CHKERRQ(ierr);*/
-  NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<adouble> st_venant_kirchhoff_material;
-  ierr = elastic.setOperators(st_venant_kirchhoff_material,"SPATIAL_POSITION"); CHKERRQ(ierr);
 
   //define problems
   ierr = m_field.add_problem("ELASTIC_MECHANICS"); CHKERRQ(ierr);

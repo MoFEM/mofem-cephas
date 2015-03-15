@@ -36,7 +36,7 @@ namespace MoFEM {
   */
 struct DataOperator {
 
-  /** \brief operator for linear form, usaully to calculate values on right hand side
+  /** \brief operator for linear form, usually to calculate values on right hand side
     */
   virtual PetscErrorCode doWork(
     int row_side,int col_side,
@@ -51,7 +51,7 @@ struct DataOperator {
   PetscErrorCode opLhs(DataForcesAndSurcesCore &row_data,DataForcesAndSurcesCore &col_data,bool symm = true);
 
 
-  /** \brief operator for linear form, usaully to calculate values on left hand side
+  /** \brief operator for linear form, usually to calculate values on left hand side
     */
   virtual PetscErrorCode doWork(
     int side,
@@ -66,7 +66,7 @@ struct DataOperator {
 
 };
 
-/// \brief transform local reference direvatives of shape funcion to global diervatives 
+/// \brief transform local reference derivatives of shape function to global derivatives 
 struct OpSetInvJacH1: public DataOperator {
 
   ublas::matrix<double> &invJac;
@@ -78,7 +78,7 @@ struct OpSetInvJacH1: public DataOperator {
 
 };
 
-/// \brief transform local reference direvatives of shape funcion to global diervatives 
+/// \brief transform local reference derivatives of shape function to global derivatives 
 struct OpSetInvJacHdiv: public DataOperator {
 
   ublas::matrix<double> &invJac;
@@ -90,7 +90,7 @@ struct OpSetInvJacHdiv: public DataOperator {
 
 };
 
-/** \brief transform local reference direvatives of shape funcion to global diervatives if higer order geometry is given 
+/** \brief transform local reference derivatives of shape function to global derivatives if higher order geometry is given 
   */
 struct OpSetHoInvJacH1: public DataOperator {
 
@@ -104,7 +104,7 @@ struct OpSetHoInvJacH1: public DataOperator {
 };
 
 
-/** \brief transform local reference direvatives of shape funcion to global diervatives if higer order geometry is given 
+/** \brief transform local reference derivatives of shape function to global derivatives if higher order geometry is given 
   */
 struct OpSetHoInvJacHdiv: public DataOperator {
 
@@ -117,7 +117,7 @@ struct OpSetHoInvJacHdiv: public DataOperator {
  
 };
 
-/** \brief apply covariant (Piola) transfor for Hdiv space
+/** \brief apply covariant (Piola) transfer for Hdiv space
   */
 struct OpSetPiolaTransform: public DataOperator {
 
@@ -133,7 +133,7 @@ struct OpSetPiolaTransform: public DataOperator {
 
 };
 
-/** \brief apply covariant (Piola) transfor for Hdiv space for HO geometry
+/** \brief apply covariant (Piola) transfer for Hdiv space for HO geometry
   */
 struct OpSetHoPiolaTransform: public DataOperator {
 
@@ -240,7 +240,7 @@ struct OpGetNormalsOnPrism: public DataOperator {
 };
 
 
-/** \brief transfrom Hdiv space fluxes from reference elemento to physical triangle
+/** \brief transform Hdiv space fluxes from reference element to physical triangle
  */
 struct OpSetPiolaTransoformOnTriangle: public DataOperator {
 

@@ -461,20 +461,26 @@ struct Core:
   PetscErrorCode list_adjacencies() const;
 
   //problem building
-  PetscErrorCode build_partitioned_problems(int verb = -1);
+  PetscErrorCode build_problem(const string &name,int verb = -1);
+  PetscErrorCode build_problem(MoFEMProblem *problem_ptr,int verb = -1);
   PetscErrorCode build_problems(int verb = -1);
   PetscErrorCode clear_problems(int verb = -1);
+  PetscErrorCode build_partitioned_problems(int verb = -1);
+  PetscErrorCode build_partitioned_problem(const string &name,int verb = -1);
+  PetscErrorCode build_partitioned_problem(MoFEMProblem *problem_ptr,int verb = -1);
   PetscErrorCode simple_partition_problem(const string &name,int verb = -1);
   PetscErrorCode partition_problem(const string &name,int verb = -1);
-  PetscErrorCode compose_problem(const string &name,const string &problem_for_rows,const string &problem_for_cols,int var = -1);
   PetscErrorCode compose_problem(const string &name,const string &problem_for_rows,bool copy_rows,const string &problem_for_cols,bool copy_cols,int verb = -1);
+  PetscErrorCode block_problem(const string &name,const vector<string> block_problems,int verb = -1);
   PetscErrorCode partition_ghost_dofs(const string &name,int verb = -1);
   PetscErrorCode partition_finite_elements(
     const string &name,bool part_from_moab = false,int low_proc = -1,int hi_proc = -1,int verb = -1);
   PetscErrorCode partition_check_matrix_fill_in(const string &problem_neme,int verb);
+  PetscErrorCode print_partitioned_problem(const MoFEMProblem *problem_ptr,int verb = -1);
+  PetscErrorCode debug_partitioned_problem(const MoFEMProblem *problem_ptr,int verb = -1);
 
   //save meshsets
-  PetscErrorCode problem_get_FE(const string &name,const string &fe_name,const EntityHandle meshset);
+  PetscErrorCode get_problem_finite_elements_entities(const string &name,const string &fe_name,const EntityHandle meshset);
 
   //vector and matrices 
   PetscErrorCode VecCreateSeq(const string &name,RowColData rc,Vec *V);
@@ -485,11 +491,16 @@ struct Core:
   PetscErrorCode set_global_VecCreateGhost(const string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode);
   PetscErrorCode MatCreateMPIAIJWithArrays(const string &name,Mat *Aij,int verb = -1);
   PetscErrorCode MatCreateSeqAIJWithArrays(const string &name,Mat *Aij,PetscInt **i,PetscInt **j,PetscScalar **v,int verb = -1);
-  PetscErrorCode VecScatterCreate(Vec xin,string &x_problem,RowColData x_rc,Vec yin,string &y_problem,RowColData y_rc,VecScatter *newctx,int verb = -1);
+  PetscErrorCode VecScatterCreate(
+    Vec xin,const string &x_problem,const string &x_field_name,RowColData x_rc,
+    Vec yin,const string &y_problem,const string &y_field_name,RowColData y_rc,VecScatter *newctx,int verb = -1);
+  PetscErrorCode VecScatterCreate(Vec xin,const string &x_problem,RowColData x_rc,Vec yin,const string &y_problem,RowColData y_rc,VecScatter *newctx,int verb = -1);
   PetscErrorCode set_other_local_VecCreateGhost(
     const MoFEMProblem *problem_ptr,const string& fiel_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1);
   PetscErrorCode set_other_local_VecCreateGhost(
     const string &name,const string& fiel_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1);
+  PetscErrorCode set_other_global_VecCreateGhost(
+    const MoFEMProblem *problem_ptr,const string& fiel_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1);
   PetscErrorCode set_other_global_VecCreateGhost(
     const string &name,const string& fiel_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1);
 

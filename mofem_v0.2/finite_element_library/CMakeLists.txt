@@ -37,7 +37,10 @@ link_directories("${PROJECT_BINARY_DIR}/src/finite_elements")
 link_directories("${PROJECT_BINARY_DIR}/finite_element_library")
 
 add_library(mofem_finite_element_library
+  ${PROJECT_SOURCE_DIR}/finite_element_library/impl/ConstrainMatrixCtx.cpp
+  ${PROJECT_SOURCE_DIR}/finite_element_library/impl/ArcLengthTools.cpp
   ${PROJECT_SOURCE_DIR}/finite_element_library/impl/DirichletBC.cpp
   ${PROJECT_SOURCE_DIR}/finite_element_library/impl/ThermalElement.cpp
-  ${PROJECT_SOURCE_DIR}/finite_element_library/impl/NonLienarElasticElement.cpp)
+  ${PROJECT_SOURCE_DIR}/finite_element_library/impl/NonLienarElasticElement.cpp
+)
 

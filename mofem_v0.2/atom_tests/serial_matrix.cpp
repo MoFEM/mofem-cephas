@@ -161,6 +161,9 @@ int main(int argc, char *argv[]) {
   //std::string wait;
   //std::cin >> wait;
 
+  ierr = MatDestroy(&A); CHKERRQ(ierr);
+  ierr = VecDestroy(&F); CHKERRQ(ierr);
+
   }
 
   if(pcomm->rank()!=(unsigned int)do_for_rank) {

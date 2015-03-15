@@ -213,10 +213,14 @@ PetscErrorCode CoreTemplates::create_Mat(
 	  int idx = Tag::get_index(*cvit);
 	  dofs_vec.push_back(idx);
 	  if(idx<0) {
-	    SETERRQ(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,"data inconsistency");
+	    SETERRQ1(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,"data inconsistency, dof index is smaller than 0, problem name < %s >",name.c_str());
 	  }
 	  if(idx>=p_miit->get_nb_dofs_col()) {
-	    SETERRQ(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,"data inconsistency");
+	    ostringstream ss;
+	    ss << "Notes: " << endl;
+	    ss << *(*cvit) << endl;
+	    PetscPrintf(comm,"%s\n",ss.str().c_str());
+	    SETERRQ1(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,"data inconsistency, dof index is bigger than size of problem, problem name < %s >",name.c_str());
 	  }
 	}
 	bitset<8> pstatus(miit_row->get_pstatus());
@@ -407,39 +411,39 @@ PetscErrorCode Core::partition_problem(const string &name,int verb) {
     PetscPrintf(comm,"\tloop problem dofs");
   }
   try {
-  for(;miit_dofs_row!=dofs_row_by_idx_no_const.end();miit_dofs_row++,miit_dofs_col++) {
-    if(miit_dofs_col==dofs_col_by_idx_no_const.end()) {
-      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"check finite element definition, nb. of rows is not equal to number for columns");
-    }
-    if(miit_dofs_row->get_global_unique_id()!=miit_dofs_col->get_global_unique_id()) {
-      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"check finite element definition, nb. of rows is not equal to columns");
-    }
-    if(miit_dofs_row->dof_idx!=miit_dofs_col->dof_idx) {
-      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"check finite element definition, nb. of rows is not equal to columns");
-    }
-    assert(petsc_idx[miit_dofs_row->dof_idx]>=0);
-    assert(petsc_idx[miit_dofs_row->dof_idx]<(int)p_miit->get_nb_dofs_row());
-    bool success = dofs_row_by_idx_no_const.modify(miit_dofs_row,NumeredDofMoFEMEntity_part_change(part_number[miit_dofs_row->dof_idx],petsc_idx[miit_dofs_row->dof_idx]));
-    if(!success) {
-      SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-    }
-    success = dofs_col_by_idx_no_const.modify(miit_dofs_col,NumeredDofMoFEMEntity_part_change(part_number[miit_dofs_col->dof_idx],petsc_idx[miit_dofs_col->dof_idx]));
-    if(!success) {
-      SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-    }
-    if(miit_dofs_row->part == (unsigned int)rAnk) {
-      assert(miit_dofs_row->part==miit_dofs_col->part);
-      assert(miit_dofs_row->petsc_gloabl_dof_idx==miit_dofs_col->petsc_gloabl_dof_idx);
-      success = dofs_row_by_idx_no_const.modify(miit_dofs_row,NumeredDofMoFEMEntity_local_idx_change(nb_row_local_dofs++));
-      if(!success) {
-	SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+    for(;miit_dofs_row!=dofs_row_by_idx_no_const.end();miit_dofs_row++,miit_dofs_col++) {
+      if(miit_dofs_col==dofs_col_by_idx_no_const.end()) {
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"check finite element definition, nb. of rows is not equal to number for columns");
       }
-      success = dofs_col_by_idx_no_const.modify(miit_dofs_col,NumeredDofMoFEMEntity_local_idx_change(nb_col_local_dofs++));
+      if(miit_dofs_row->get_global_unique_id()!=miit_dofs_col->get_global_unique_id()) {
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"check finite element definition, nb. of rows is not equal to columns");
+      }
+      if(miit_dofs_row->dof_idx!=miit_dofs_col->dof_idx) {
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"check finite element definition, nb. of rows is not equal to columns");
+      }
+      assert(petsc_idx[miit_dofs_row->dof_idx]>=0);
+      assert(petsc_idx[miit_dofs_row->dof_idx]<(int)p_miit->get_nb_dofs_row());
+      bool success = dofs_row_by_idx_no_const.modify(miit_dofs_row,NumeredDofMoFEMEntity_part_change(part_number[miit_dofs_row->dof_idx],petsc_idx[miit_dofs_row->dof_idx]));
       if(!success) {
-	SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+        SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+      }
+      success = dofs_col_by_idx_no_const.modify(miit_dofs_col,NumeredDofMoFEMEntity_part_change(part_number[miit_dofs_col->dof_idx],petsc_idx[miit_dofs_col->dof_idx]));
+      if(!success) {
+        SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+      }
+      if(miit_dofs_row->part == (unsigned int)rAnk) {
+        assert(miit_dofs_row->part==miit_dofs_col->part);
+        assert(miit_dofs_row->petsc_gloabl_dof_idx==miit_dofs_col->petsc_gloabl_dof_idx);
+        success = dofs_row_by_idx_no_const.modify(miit_dofs_row,NumeredDofMoFEMEntity_local_idx_change(nb_row_local_dofs++));
+        if(!success) {
+  	SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+        }
+        success = dofs_col_by_idx_no_const.modify(miit_dofs_col,NumeredDofMoFEMEntity_local_idx_change(nb_col_local_dofs++));
+        if(!success) {
+  	SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+        }
       }
     }
-  }
   } catch (const char* msg) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_CHAR_THROW,msg);
   } catch (const std::exception& ex) {
@@ -450,32 +454,6 @@ PetscErrorCode Core::partition_problem(const string &name,int verb) {
   if(verb>1) {
     PetscPrintf(comm," <- done\n");
   }
-  if(verbose>0) {
-    ostringstream ss;
-    ss << "partition_problem: rank = " << rAnk << " FEs row ghost dofs "<< *p_miit 
-	<< " Nb. local dof " << p_miit->get_nb_local_dofs_row() << " nb global row dofs " << p_miit->get_nb_dofs_row() << endl;
-    ss << "partition_problem: rank = " << rAnk << " FEs col ghost dofs " << *p_miit 
-	<< " Nb. local dof " << p_miit->get_nb_local_dofs_col() << " nb global col dofs " << p_miit->get_nb_dofs_col() << endl;
-    PetscSynchronizedPrintf(comm,ss.str().c_str());
-    PetscSynchronizedFlush(comm,PETSC_STDOUT); 
-  }
-  if(verb>2) {
-    ostringstream ss;
-    ss << "rank = " << rAnk << " FEs row dofs "<< *p_miit << " Nb. row dof " << p_miit->get_nb_dofs_row() 
-	<< " Nb. local dof " << p_miit->get_nb_local_dofs_row() << endl;
-    NumeredDofMoFEMEntity_multiIndex::iterator miit_dd_row = p_miit->numered_dofs_rows.begin();
-    for(;miit_dd_row!=p_miit->numered_dofs_rows.end();miit_dd_row++) {
-	ss<<*miit_dd_row<<endl;
-    }
-    ss << "rank = " << rAnk << " FEs col dofs "<< *p_miit << " Nb. col dof " << p_miit->get_nb_dofs_col() 
-	<< " Nb. local dof " << p_miit->get_nb_local_dofs_col() << endl;
-    NumeredDofMoFEMEntity_multiIndex::iterator miit_dd_col = p_miit->numered_dofs_cols.begin();
-    for(;miit_dd_col!=p_miit->numered_dofs_cols.end();miit_dd_col++) {
-	ss<<*miit_dd_col<<endl;
-    }
-    PetscSynchronizedPrintf(comm,ss.str().c_str());
-    PetscSynchronizedFlush(comm,PETSC_STDOUT); 
-  }
   ierr = ISRestoreIndices(is_gather,&part_number);  CHKERRQ(ierr);
   ierr = ISRestoreIndices(is_gather_num,&petsc_idx);  CHKERRQ(ierr);
   ierr = ISDestroy(&is_num); CHKERRQ(ierr);
@@ -484,43 +462,10 @@ PetscErrorCode Core::partition_problem(const string &name,int verb) {
   ierr = ISDestroy(&is); CHKERRQ(ierr);
   ierr = MatPartitioningDestroy(&part); CHKERRQ(ierr);
   ierr = MatDestroy(&Adj); CHKERRQ(ierr);
-  if(debug>0) {
-    try {
-      NumeredDofMoFEMEntitys_by_idx::iterator dit,hi_dit;
-      dit = p_miit->numered_dofs_rows.get<Idx_mi_tag>().begin();
-      hi_dit = p_miit->numered_dofs_rows.get<Idx_mi_tag>().end();
-      for(;dit!=hi_dit;dit++) {
-	if(dit->get_part()==(unsigned int)rAnk) {
-	  if(dit->get_petsc_local_dof_idx()<0) {
-	    ostringstream ss;
-	    ss << "rank " << rAnk << " " << *dit;
-	    SETERRQ1(PETSC_COMM_SELF,1,"local dof index for row not set\n %s",ss.str().c_str());
-	  }
-	}
-      }
-      dit = p_miit->numered_dofs_cols.get<Idx_mi_tag>().begin();
-      hi_dit = p_miit->numered_dofs_cols.get<Idx_mi_tag>().end();
-      for(;dit!=hi_dit;dit++) {
-	if(dit->get_part()==(unsigned int)rAnk) {
-	  if(dit->get_petsc_local_dof_idx()<0) {
-	    ostringstream ss;
-	    ss << "rank " << rAnk << " " << *dit;
-	    SETERRQ1(PETSC_COMM_SELF,1,"local dof index for col not set\n %s",ss.str().c_str());
-	  }
-	}
-      }
-    } catch (const char* msg) {
-      SETERRQ(PETSC_COMM_SELF,MOFEM_CHAR_THROW,msg);
-    } catch (const std::exception& ex) {
-      ostringstream ss;
-      ss << "throw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
-      SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
-    }
-  }
+  ierr = print_partitioned_problem(&*p_miit,verb); CHKERRQ(ierr);
   *build_MoFEM |= 1<<4;
   PetscFunctionReturn(0);
 }
-
 PetscErrorCode Core::partition_check_matrix_fill_in(const string &problem_name,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
