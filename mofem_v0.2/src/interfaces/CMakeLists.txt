@@ -31,6 +31,7 @@ set(MOFEM_INTERFACES_SRC
   impl/PrismInterfaceCore.cpp
   impl/SeriesRecorderCore.cpp
   impl/NodeMerger.cpp
+  impl/BitLevelCoupler.cpp
 )
 
 if(TETGEN_LIBRARY) 

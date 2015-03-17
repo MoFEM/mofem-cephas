@@ -212,12 +212,12 @@ typedef multi_index_container<
   */
 struct RefMoFEMElement_change_parent {
   Interface &mOab;
-  RefMoFEMEntity_multiIndex *refEntPtr;
+  const RefMoFEMEntity_multiIndex *refEntPtr;
   RefMoFEMEntity_multiIndex::iterator refEntIt;
   EntityHandle pArent;
   ErrorCode rval;
   RefMoFEMElement_change_parent(Interface &moab,
-    RefMoFEMEntity_multiIndex *ref_ent_ptr,
+    const RefMoFEMEntity_multiIndex *ref_ent_ptr,
     RefMoFEMEntity_multiIndex::iterator ref_ent_it,
     EntityHandle parent): 
     mOab(moab),
@@ -225,7 +225,7 @@ struct RefMoFEMElement_change_parent {
     refEntIt(ref_ent_it),
     pArent(parent) {}
   void operator()(RefMoFEMEntity &e) { 
-    refEntPtr->modify(refEntIt,RefMoFEMEntity_change_parent(mOab,pArent));
+    const_cast<RefMoFEMEntity_multiIndex*>(refEntPtr)->modify(refEntIt,RefMoFEMEntity_change_parent(mOab,pArent));
   }
 };
 

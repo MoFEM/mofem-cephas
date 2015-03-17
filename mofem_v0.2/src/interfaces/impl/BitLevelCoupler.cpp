@@ -11,13 +11,31 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 */
 
+#include <petscsys.h>
+#include <petscvec.h> 
+#include <petscmat.h> 
+#include <petscsnes.h> 
+#include <petscts.h> 
+
+#include <moab/ParallelComm.hpp>
+
+#include <definitions.h>
+#include <h1_hdiv_hcurl_l2.h>
+#include <fem_tools.h>
+
 #include <Common.hpp>
+
 #include <LoopMethods.hpp>
-#include <Core.hpp>
 #include <FieldInterface.hpp>
 
+#include <boost/ptr_container/ptr_vector.hpp>
+#include <boost/ptr_container/ptr_map.hpp>
+#include <Core.hpp>
+
+#include <BitLevelCoupler.hpp>
+
 //Boundary Volume Tree
-#include <BVHTree.hpp>
+#include <moab/BVHTree.hpp>
 
 #include <fem_tools.h>
 
@@ -53,12 +71,11 @@ PetscErrorCode BitLevelCouplerInterface::buidlAdjacenciesVerticesOnTets(const Bi
   //find parents of all nodes, if node has no parent then tetrahedral containing that node is searched
   //node on tetrahedra my by part of face or edge on that tetrahedral, this need to be verified
 
-  FieldInterface& m_field = cOre;
   const RefMoFEMEntity_multiIndex *refined_ptr;
   ierr = m_field.get_ref_ents(&refined_ptr); CHKERRQ(ierr);
-  RefMoFEMEntity_multiIndex::index<EntType_mi_tag>::type::iterator it = refined_ptr->get()<EntType_mi_tag>.lower_bound(MBVERTEX);
-  RefMoFEMEntity_multiIndex::index<EntType_mi_tag>::type::iterator hi_it = refined_ptr->get()<EntType_mi_tag>.upper_bound(MBVERTEX);
-  for(;it!=get_refined_ptr.end();it++) {
+  RefMoFEMEntity_multiIndex::index<EntType_mi_tag>::type::iterator it = refined_ptr->get<EntType_mi_tag>().lower_bound(MBVERTEX);
+  RefMoFEMEntity_multiIndex::index<EntType_mi_tag>::type::iterator hi_it = refined_ptr->get<EntType_mi_tag>().upper_bound(MBVERTEX);
+  for(;it!=hi_it;it++) {
 
     //that vertex is on parent bit level, no need to process
     if((it->get_BitRefLevel()&parent_level).any()) continue;
@@ -66,23 +83,24 @@ PetscErrorCode BitLevelCouplerInterface::buidlAdjacenciesVerticesOnTets(const Bi
     //check if vertex has a parent and parent is on parent bit level
     EntityHandle parent_ent;
     parent_ent = it->get_parent_ent();
-    RefMoFEMEntity_multiIndex *pit = refined_ptr.get()<Ent_mi_tag>().find(parent_ent);
+    RefMoFEMEntity_multiIndex::index<Ent_mi_tag>::type::iterator pit;
+    pit = refined_ptr->get<Ent_mi_tag>().find(parent_ent);
     if((pit->get_BitRefLevel()&parent_level).any()) {
       continue;
     }
 
     //check if vertex is on child entities set
-    EntityHandle node = it->get_ent();
-    if(children.find(node)==refined_ptr.end()) {
+    EntityHandle node = it->get_ref_ent();
+    if(children.find(node)==children.end()) {
       continue;
     }
 
     //build a boundary volume Tree
     if(!init_tree) {
-      tree_ptr = new BVHTree(m_field.get_moab());
+      tree_ptr = new BVHTree(&m_field.get_moab());
       Range tets;
-      rval = m_field.get_moab().get_entities_by_type_and_ref_level(
-	parent_level,BitRefLevel().set(),MBTET,tets); CHKERR(rval);
+      ierr = m_field.get_entities_by_type_and_ref_level(
+	parent_level,BitRefLevel().set(),MBTET,tets); CHKERRQ(ierr);
       rval = tree_ptr->build_tree(tets); CHKERR(rval);
       if(verb > 0) {
 	rval = tree_ptr->print(); CHKERR(rval);
@@ -98,13 +116,13 @@ PetscErrorCode BitLevelCouplerInterface::buidlAdjacenciesVerticesOnTets(const Bi
       cout << "leaf_out " << leaf_out << endl;
     }
     if(vertex_elements) {
-      RefMoFEMElement_multiIndex *refined_finite_elements_ptr;
+      const RefMoFEMElement_multiIndex *refined_finite_elements_ptr;
       ierr = m_field.get_ref_finite_elements(&refined_finite_elements_ptr); CHKERRQ(ierr);
-      RefMoFEMElement_multiIndex::index<Ent_mi_tag>::type::ietrator eit;
-      eit = refined_finite_elements_ptr.get<Ent_mi_tag>().find(node);
-      if(eit!=refined_finite_elements_ptr.get<Ent_mi_tag>().end()) {
-	bool success = refined_finite_elements_ptr->modify(refined_finite_elements_ptr->project<0>(it),
-	  RefMoFEMElement_change_parent(m_field.get_moab(),refined_ptr,refined_ptr->project<0>(eit),leaf_out);
+      RefMoFEMElement_multiIndex::index<Ent_mi_tag>::type::iterator eit;
+      eit = refined_finite_elements_ptr->get<Ent_mi_tag>().find(node);
+      if(eit!=refined_finite_elements_ptr->get<Ent_mi_tag>().end()) {
+	bool success = refined_finite_elements_ptr->modify(refined_finite_elements_ptr->project<0>(eit),
+	  RefMoFEMElement_change_parent(m_field.get_moab(),refined_ptr,refined_ptr->project<0>(it),leaf_out);
 	if(!success) {
 	  SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"unsuccessful operation");
 	}
