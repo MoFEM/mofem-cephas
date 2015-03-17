@@ -79,7 +79,7 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
       PetscBool flg = PETSC_TRUE;
       PetscOptionsGetInt(PETSC_NULL,"-my_max_post_proc_ref_level",&max_level,&flg);
     } else {
-     max_level = nbOfRefLevels;
+      max_level = nbOfRefLevels;
     }
 
     double base_coords[] = {
