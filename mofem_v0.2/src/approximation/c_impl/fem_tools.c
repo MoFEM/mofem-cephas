@@ -29,7 +29,7 @@
 
 #include <h1_hdiv_hcurl_l2.h>
 
-double Shape_detJac(double *Jac) {
+double ShapeDetJacMBTET(double *Jac) {
   double detJac;
   __CLPK_integer IPIV[4];
   __CLPK_integer info = lapack_dgetrf(3,3,Jac,3,IPIV);
@@ -44,7 +44,7 @@ double Shape_detJac(double *Jac) {
     detJac = - detJac;
   return detJac;
 }
-PetscErrorCode Shape_invJac(double *Jac) {
+PetscErrorCode ShapeInvJacMBTET(double *Jac) {
   PetscFunctionBegin;
   __CLPK_integer IPIV[4];
   __CLPK_doublereal WORK[3];
@@ -221,7 +221,7 @@ PetscErrorCode ShapeFaceNormalMBTRI(
   ierr = ShapeFaceBaseMBTRI(diffN,coords,normal,NULL,NULL);  CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-PetscErrorCode ShapeFaceDiffNormal_MBTRI(double *diffN,const double *coords,double *diff_normal) {
+PetscErrorCode ShapeFaceDiffNormalMBTRI(double *diffN,const double *coords,double *diff_normal) {
   PetscFunctionBegin;
   // N = Spin(dX/dksi)*dX/deta = -Spin(dX/deta)*dX/dksi
   PetscErrorCode ierr;
@@ -276,10 +276,10 @@ PetscErrorCode ShapeJacMBTET(double *diffN,const double *coords,double *Jac) {
 	diffN[ ii*3+kk ]*coords[ ii*3+jj ];
   PetscFunctionReturn(0);
 }
-double Shape_intVolumeMBTET(double *diffN,const double *coords) {
+double ShapeVolumeMBTET(double *diffN,const double *coords) {
   double Jac[9];
   ShapeJacMBTET(diffN,coords,Jac);
-  double detJac = Shape_detJac(Jac);
+  double detJac = ShapeDetJacMBTET(Jac);
   //printf("detJac = +%6.4e\n",detJac);
   //print_mat(Jac,3,3);
   return detJac*G_TET_W1[0]/6.;
@@ -911,11 +911,11 @@ PetscErrorCode ShapeMBTETQ_detJac_at_Gauss_Points(double *detJac_at_Gauss_Points
   int ii = 0;
   for(; ii<G_DIM; ii++) {
     ierr = ShapeJacMBTETQ(&diffN[30*ii],coords,Jac); CHKERRQ(ierr);
-    detJac_at_Gauss_Points[ii] = Shape_detJac(Jac);
+    detJac_at_Gauss_Points[ii] = ShapeDetJacMBTET(Jac);
   }
   PetscFunctionReturn(0);
 }
-double Shape_intVolumeMBTETQ(const double *diffN,const double *coords,int G_DIM,double *G_TET_W) {
+double ShapeVolumeMBTETQ(const double *diffN,const double *coords,int G_DIM,double *G_TET_W) {
   PetscErrorCode ierr;
   int ii = 0;
   double vol = 0;

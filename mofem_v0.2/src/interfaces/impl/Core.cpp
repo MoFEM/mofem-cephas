@@ -54,7 +54,7 @@
 #endif
 
 #include <NodeMerger.hpp>
-#include <BitLevelCoupler.hpp>
+//#include <BitLevelCoupler.hpp>
 
 namespace MoFEM {
 

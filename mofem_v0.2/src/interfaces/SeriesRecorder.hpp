@@ -27,6 +27,9 @@ namespace MoFEM {
 
 static const MOFEMuuid IDD_MOFEMSeriesRecorder = MOFEMuuid( BitIntefaceId(SERIES_RECORDER) );
 
+/** Record (time) data series
+ * \ingroup mofem
+ */
 struct SeriesRecorder: public FieldUnknownInterface {
 
   ///destructor
@@ -58,7 +61,7 @@ struct SeriesRecorder: public FieldUnknownInterface {
 
   /**
     * \ingroup mofem_series
-    * finalize series for recording, recorded data are not accessible until finializd
+    * finalize series for recording, recorded data are not accessible until finalize
     *
     * \param series name
     */
@@ -98,7 +101,7 @@ struct SeriesRecorder: public FieldUnknownInterface {
     * 
     * \param field name
     * \param bit ref level
-    * \param mask for bir ref level
+    * \param mask for bit ref level
     */
   virtual PetscErrorCode record_field(const string& serie_name,const string& field_name,const BitRefLevel &bit,const BitRefLevel &mask) = 0;
 

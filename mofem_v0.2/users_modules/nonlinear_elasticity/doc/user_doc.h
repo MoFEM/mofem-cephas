@@ -65,7 +65,7 @@ mpirun -np 4  ../../nonlinear_dynamics \
   -my_file rod.cub \
   -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_atol 1e-12 -ksp_rtol 1e-12 \
   -snes_monitor -snes_type newtonls -snes_linesearch_type basic -snes_max_it 10 -snes_atol 1e-8 -snes_rtol 1e-8 \
-  -ts_monitor -ts_type alpha -ts_dt 0.01 -ts_final_time 10 -ts_max_snes_failures -1  \
+  -ts_monitor -ts_type alpha -ts_dt 0.01 -ts_final_time 4 -ts_max_snes_failures -1  \
   -my_output_prt -1 -my_max_post_proc_ref_level 0  \
   -my_disp_order 2 -my_time_data_file rod_history.in -default_material NEOHOOKEAN 2>&1 | tee log
 \endcode
@@ -76,7 +76,7 @@ mpirun -np 4  ../../nonlinear_dynamics \
   -my_file rod.cub \
   -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_atol 1e-12 -ksp_rtol 1e-12 \
   -snes_monitor -snes_type newtonls -snes_linesearch_type basic -snes_max_it 10 -snes_atol 1e-8 -snes_rtol 1e-8 \
-  -ts_monitor -ts_type alpha -ts_dt 0.01 -ts_final_time 10 -ts_max_snes_failures -1  \
+  -ts_monitor -ts_type alpha -ts_dt 0.01 -ts_final_time 4 -ts_max_snes_failures -1  \
   -my_output_prt -1 -my_max_post_proc_ref_level 0  \
   -my_disp_order 2 -my_time_data_file rod_history.in -default_material HOOKE -is_linear -snes_lag_jacobian -2 2>&1 | tee log
 \endcode

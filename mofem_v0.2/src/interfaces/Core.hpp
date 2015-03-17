@@ -29,6 +29,7 @@
 namespace MoFEM {
 
 /** \brief Core FieldInterface class
+ *  \ingroup mofem
  *
  * This class is not used directly by the user
  */
@@ -508,10 +509,10 @@ struct Core:
   PetscErrorCode loop_dofs(const string &field_name,EntMethod &method,int verb = -1);
 
   //get multi_index form database
-  PetscErrorCode get_ref_ents(const RefMoFEMEntity_multiIndex **refinedEntitiesPtr_ptr);
+  PetscErrorCode get_ref_ents(const RefMoFEMEntity_multiIndex **refined_entities_ptr);
+  PetscErrorCode get_ref_finite_elements(const RefMoFEMElement_multiIndex **refined_finite_elements_ptr);
   PetscErrorCode get_problem(const string &problem_name,const MoFEMProblem **problem_ptr);
-  PetscErrorCode get_dofs(const DofMoFEMEntity_multiIndex **dofsMoabField_ptr);
-
+  PetscErrorCode get_dofs(const DofMoFEMEntity_multiIndex **dofs_ptr);
   PetscErrorCode get_finite_elements(const MoFEMFiniteElement_multiIndex **finiteElements_ptr);
 
   MoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_ent_moabfield_by_name_begin(const string &field_name);

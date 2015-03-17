@@ -209,10 +209,10 @@ PetscErrorCode TetGenInterface::setGeomData(
     Range::iterator it = mit->second.begin();
     for(;it!=mit->second.end();it++) {
       moabTetGen_Map::iterator miit = moab_tetgen_map.find(*it);
-      //if(miit == moab_tetgen_map.end()) {
+      if(miit == moab_tetgen_map.end()) {
 	//SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency between TetGen and MoAB");
-      //}
-      continue;
+	continue;
+      }
       int id = miit->second>>MB_TYPE_WIDTH;
       in.pointparamlist[id].type = mit->first;
       in.pointparamlist[id].tag = m_field.get_moab().id_from_handle(*it)+1;

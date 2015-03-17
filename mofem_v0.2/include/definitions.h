@@ -1,12 +1,6 @@
 /** \file definitions.h
  * \brief useful compiler directives and definitions
  * 
- * Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl) <br>
- *
- * The MoFEM package is copyrighted by Lukasz Kaczmarczyk. 
- * It can be freely used for educational and research purposes 
- * by other institutions. If you use this softwre pleas cite my work. 
- *
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or (at your
@@ -48,7 +42,7 @@ enum MoFEMInterfaces {
   NETGEN_INTERFACE = 1<<3|1<<5,		///< used to generate mesh using NetGen
   NODEMERGER_INTERFACE = 1<<3|1<<6,	///< used to merge nodes
   BITLEVELCOUPLER_INTERFACE = 1<<3|1<<7 ///< used to couple bit levels by finding parent children relation
-}
+};
 
 /** \brief Error handling
   * 
@@ -73,7 +67,7 @@ enum MoFEMErrorCode {
 
 /// \brief approximation spaces
 enum FieldSpace { 
-  NOFIELD = 1, 	///< signel scalar or vector of scalars describe state
+  NOFIELD = 1, 	///< scalar or vector of scalars describe (no true field)
   H1, 		///< continuous field
   HDIV,		///< field with continuous normal traction
   HCURL,	///< field with continuous tangents
@@ -99,8 +93,8 @@ enum ByWhat {
   BYALL = 1<<0|1<<1|1<<2 
 };
 
-#define BITREFEDGES_SIZE 6 /*number of edges on tets*/
-#define BITREFLEVEL_SIZE 128 /*max number of refinments*/
+#define BITREFEDGES_SIZE 6 /*number of edges on tetrahedral*/
+#define BITREFLEVEL_SIZE 128 /*max number of refinements*/
 #define BITFIELDID_SIZE 32 /*max number of fields*/
 #define BITFEID_SIZE 32 /*max number of finite elements*/
 #define BITPROBLEMID_SIZE 32 /*max number of problems*/

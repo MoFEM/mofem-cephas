@@ -547,7 +547,7 @@ PetscErrorCode FaceSplittingTools::crackFrontEdgeLengths(
       rval = mField.get_moab().get_coords(conn,num_nodes,coords); CHKERR_PETSC(rval);
       double coords_edges[2*3*6]; 
       ierr = get_edges_from_elem_coords(coords,coords_edges); CHKERRQ(ierr);
-      double V =  Shape_intVolumeMBTET(diffNTET,&*coords); 
+      double V =  ShapeVolumeMBTET(diffNTET,&*coords); 
       double alpha[4] = {1,1,1,1};
       double quality0,quality,b;
       ierr = quality_volume_length_F(
@@ -1712,9 +1712,9 @@ PetscErrorCode FaceSplittingTools::propagateBySplit(Range &new_nodes,Range &edge
   for(Range::iterator eit = edges_to_split.begin();eit!=edges_to_split.end();eit++) {
     const RefMoFEMEntity_multiIndex *refinedEntitiesPtr_ptr;
     ierr = mField.get_ref_ents(&refinedEntitiesPtr_ptr); CHKERRQ(ierr);
-    RefMoFEMEntity_multiIndex::index<Composite_EntityHandle_And_ParentEntityType_mi_tag>::type::iterator it;
-    it = refinedEntitiesPtr_ptr->get<Composite_EntityHandle_And_ParentEntityType_mi_tag>().find(boost::make_tuple(*eit,MBVERTEX));
-    if(it == refinedEntitiesPtr_ptr->get<Composite_EntityHandle_And_ParentEntityType_mi_tag>().end()) {
+    RefMoFEMEntity_multiIndex::index<Composite_EntityHandle_And_ParentEntType_mi_tag>::type::iterator it;
+    it = refinedEntitiesPtr_ptr->get<Composite_EntityHandle_And_ParentEntType_mi_tag>().find(boost::make_tuple(*eit,MBVERTEX));
+    if(it == refinedEntitiesPtr_ptr->get<Composite_EntityHandle_And_ParentEntType_mi_tag>().end()) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
     }
     EntityHandle node = it->get_ref_ent();
