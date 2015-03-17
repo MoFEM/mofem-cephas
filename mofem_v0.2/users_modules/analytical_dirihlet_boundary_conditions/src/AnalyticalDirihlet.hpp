@@ -56,7 +56,7 @@ struct AnalyticalDirihletBC {
 
 	try {
 
-	  if(data.getIndices().size()==0) PetscFunctionReturn(0);
+	  if(data.getFieldData().size()==0) PetscFunctionReturn(0);
 
 	  hoCoords.resize(data.getN().size1(),3);
 	  if(type == MBVERTEX) {
