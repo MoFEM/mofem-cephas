@@ -73,7 +73,8 @@ struct AnalyticalDirihletBC {
 	    hoCoordsTri.clear();
 	  }
 
-	  int nb_dofs = data.getN().size2();
+	  int nb_dofs = data.getFieldData().size();
+	  //int nb_dofs = data.getN().size2();
 	  for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
 	    for(int dd = 0;dd<3;dd++) {
 	      hoCoordsTri(gg,dd) += cblas_ddot(nb_dofs,&data.getN(gg)[0],1,&data.getFieldData()[dd],3); //calculate x,y,z in each GaussPts
@@ -126,8 +127,10 @@ struct AnalyticalDirihletBC {
 	  if(row_data.getIndices().size()==0) PetscFunctionReturn(0);
 	  if(col_data.getIndices().size()==0) PetscFunctionReturn(0);
   
-	  unsigned int nb_row = row_data.getN().size2();
-	  unsigned int nb_col = col_data.getN().size2();
+	  unsigned int nb_row = row_data.getFieldData().size();
+	  unsigned int nb_col = col_data.getFieldData().size();
+	  //unsigned int nb_row = row_data.getN().size2();
+	  //unsigned int nb_col = col_data.getN().size2();
 
 	  if(nb_row != row_data.getIndices().size()) {
 	    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,
@@ -216,7 +219,8 @@ struct AnalyticalDirihletBC {
 
 	  if(data.getIndices().size()==0) PetscFunctionReturn(0);
   
-	  unsigned int nb_row = data.getN().size2();
+	  unsigned int nb_row = data.getFieldData().size();
+	  //unsigned int nb_row = data.getN().size2();
 	  if(nb_row != data.getIndices().size()) {
 	    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,
 	      "currently works only for scalar fields, extension to fields with higher rank need to be implemented");
@@ -248,6 +252,7 @@ struct AnalyticalDirihletBC {
 			use_real = false;
 		}
 				
+		if(x != x) {cerr << "x  = \n"; std::cout << x << std::endl;}
 	    double a = fUN(x,y,z,use_real);
 		
 		

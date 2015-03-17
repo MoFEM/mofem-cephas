@@ -295,6 +295,9 @@ int main(int argc, char *argv[]) {
 		  double R = sqrt(pow(x,2.0)+pow(y,2.0)+pow(z,2.0)); //radius
 		  double theta = atan2(y,x)+2*pi; //the arctan of radians (y/x)
 		  		 
+		  if(x != x) {cerr << "x  \n";}
+		  if(y != y) {cerr << "y  \n";}
+		  if(z != z) {cerr << "z  \n";}
 		  if(theta != theta) {cerr << "theta = \n"; cout << theta << endl; cout << "\n x = " << x << "\n y = " << y << endl;}
 		  
 		  const double wAvenumber = aNgularfreq/sPeed;
@@ -333,7 +336,8 @@ int main(int argc, char *argv[]) {
 			  if(Pn != Pn) cerr << "Pn \n";
 			  complex< double >hn = sph_hankel_1( n, const2 );  //S Hankel first kind function
 			  //if(n == 0) { complex< double > hn_c = -i*exp(i*const2)*(1/const2); cout << "\n hn_c = \n" << hn_c << endl;}
-			  if(hn != hn) {cerr << "hn \n"; cout << hn << "\n n = \n" << n << endl; cout << "\n k * r = \n" << const2 << endl;}
+			  if(hn != hn) {cerr << "hn \n"; cout << hn << "\n n = \n" << n << endl; cout << "\n k * r = \n" << const2 << endl; 
+			  cout << "\n k = " << k << "\n r = " << R << endl;}
 			  
 			  prev_result = result;
 			  result -= pow( i, n ) * ( 2.0 * n + 1.0 ) * jn_der / hn_der * Pn * hn;

@@ -60,8 +60,8 @@ volume all size auto factor 8
 mesh volume all
 
 set duplicate block elements on
-#block 6 tet all    
-#block 6 element type tetra10 
+block 6 tet all     
+block 6 element type tetra10  
 
 
 
