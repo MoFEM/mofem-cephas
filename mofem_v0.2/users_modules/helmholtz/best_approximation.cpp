@@ -28,6 +28,7 @@
 #include <PotsProcOnRefMesh.hpp>
 #include <boost/iostreams/tee.hpp>
 #include <boost/iostreams/stream.hpp>
+#include <petsctime.h>
 #include <fstream>
 #include <iostream>
 
@@ -51,6 +52,7 @@ struct MyFunApprox_re {
 	
 	 ublas::vector<double> result1;
 	 double wAvenumber;
+	 bool useReal;
 	 //ublas::vector<double>& operator()(double x, double y, double z) {
 	//	result.resize(3);
 	//	result[0] = x;
@@ -59,8 +61,8 @@ struct MyFunApprox_re {
 	//	return result;
 	//}     
 	 
-	 MyFunApprox_re(double wavenumber):
-		 wAvenumber(wavenumber) {}
+	 MyFunApprox_re(double wavenumber,bool use_real):
+		 wAvenumber(wavenumber),useReal(use_real) {}
 	 ~MyFunApprox_re() {}
 	 
 	ublas::vector<double>& operator()(double x, double y, double z) {
@@ -84,7 +86,7 @@ struct MyFunApprox_re {
 		// magnitude of incident wave
 		const double phi_incident_mag = 1.0;
 		
-		const double tol = 1.0e-10;
+		const double tol = 1.0e-6;
 		double max = 0.0;
 		double min = 999999.0;
 		
@@ -97,9 +99,9 @@ struct MyFunApprox_re {
 		while( error > tol )  //finding the acoustic potential in one single point.
 		{
 		//The derivative of bessel function
-			double jn_der = n / const1 * sph_bessel( n, const1 ) - sph_bessel( n + 1, const1 );  
+			double jn_der = (n / const1 * sph_bessel( n, const1 ) - sph_bessel( n + 1, const1 )) * k;  
 		//The derivative of Hankel function
-			complex< double > hn_der = n / const1 * sph_hankel_1( n, const1 ) - sph_hankel_1( n + 1, const1 );
+			complex< double > hn_der = (n / const1 * sph_hankel_1( n, const1 ) - sph_hankel_1( n + 1, const1 )) * k;
 			
 			
 			//complex< double > hn_der_C = 0;
@@ -143,9 +145,16 @@ struct MyFunApprox_re {
 		//result = exp(i*(k*cos(theta)*x+k*sin(theta)*y));
 		///* cube */
 		
-		result1.resize(1);
-		result1[0] = std::real(result);	
-		return result1;
+		if(useReal) {
+			result1.resize(1);
+			result1[0] = std::real(result);	
+			return result1;
+		} else {
+			result1.resize(1);
+			result1[0] = std::imag(result);	
+			return result1;
+		}
+		
 		//double X = x + 0.5; /* coordinate transformation from [-0.5,0.5] to [0,1] */
 		//result1.resize(1);
 		//result1[0] = std::real((exp(i*k*X)-1.0-i*exp(i*k)*sin(k*X))/(pow(k,2.0))); //exact solution of 1D problem
@@ -156,79 +165,7 @@ struct MyFunApprox_re {
 	
 };
 
-struct MyFunApprox_im {
-	
-	ublas::vector<double> result1;
-	double wAvenumber;
-	MyFunApprox_im(double wavenumber):
-		wAvenumber(wavenumber) {}
-	~MyFunApprox_im() {}
-	
-	ublas::vector<double>& operator()(double x, double y, double z) {
-		const double pi = atan( 1.0 ) * 4.0;
-		double R = sqrt(pow(x,2.0)+pow(y,2.0)+pow(z,2.0)); //radius
-		//Incident wave in Z direction.
-		//double sqrtx2y2 = sqrt(pow(x,2.0)+pow(y,2.0));
-		//double phi= atan2(sqrtx2y2,z)+2*pi;
-		//double phi= acos(z/R); 
-		//Incident wave in X direction.
-		double theta = atan2(y,x)+2*pi; //the arctan of radians (y/x)
-		//const double wAvenumber = aNgularfreq/sPeed;
-		//double wAvenumber = 2;
-		const double k = wAvenumber;  //Wave number
-		const double a = 0.5;         //radius of the sphere,wait to modify by user
-		const double const1 = k * a;
-		double const2 = k * R;
 
-		const complex< double > i( 0.0, 1.0 );
-		
-		// magnitude of incident wave
-		const double phi_incident_mag = 1.0;
-		
-		const double tol = 1.0e-10;
-		double max = 0.0;
-		double min = 999999.0;
-		
-		complex< double > result = 0.0;
-		complex< double > prev_result;
-		
-		double error = 100.0;
-		unsigned int n = 0; //initialized the infinite series loop
-		
-		while( error > tol )  //finding the acoustic potential in one single point.
-		{
-			double jn_der = n / const1 * sph_bessel( n, const1 ) - sph_bessel( n + 1, const1 );  //The derivative of bessel function
-			complex< double > hn_der = n / const1 * sph_hankel_1( n, const1 ) - sph_hankel_1( n + 1, const1 );
-			//complex< double > hn_der = 0.5 * ( sph_hankel_1( n - 1, const1 ) -
-			//( sph_hankel_1( n, const1 ) + const1 * sph_hankel_1( n + 1, const1 ) ) / const1 );
-			double Pn = legendre_p( n, cos( theta ) );
-			complex< double >hn = sph_hankel_1( n, const2 );  //S Hankel first kind function
-			prev_result = result;
-			result -= pow( i, n ) * ( 2.0 * n + 1.0 ) * jn_der / hn_der * Pn * hn;
-			error = abs( abs( result ) - abs( prev_result ) );
-			++n;
-		}
-		
-		
-		//const complex< double > inc_field = exp( i * k * R * cos( theta ) );  //???? Incident wave
-		//const complex< double > total_field = inc_field + result;
-		//ofs << theta << "\t" << abs( result ) << "\t" << abs( inc_field ) << "\t" << abs( total_field ) <<  "\t" << R << endl; //write the file
-		
-		///* cube 2D */
-		//double theta = pi;
-		//result = exp(i*(k*cos(theta)*x+k*sin(theta)*y));
-		///* cube */
-		result1.resize(1);
-		result1[0] = std::imag(result);
-		return result1;
-		//double X = x + 0.5; /* coordinate transformation from [-0.5,0.5] to [0,1] */
-		//result1.resize(1);
-		//result1[0] = std::imag((exp(i*k*X)-1.0-i*exp(i*k)*sin(k*X))/(pow(k,2.0))); //exact solution of 1D problem
-		//return result1;
-	}
-	
-	
-};
 
 
 
@@ -264,6 +201,12 @@ int main(int argc, char *argv[]) {
 	//Create MoFEM (Joseph) database
 	MoFEM::Core core(moab);
 	FieldInterface& m_field = core;
+	
+	//count the comsumption of time by single run
+	PetscLogDouble t1,t2;
+	PetscLogDouble v1,v2;
+	ierr = PetscTime(&v1); CHKERRQ(ierr);
+	ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
 	
 	//set entitities bit level
 	BitRefLevel bit_level0;
@@ -415,9 +358,10 @@ int main(int argc, char *argv[]) {
 	
 	
 	double wavenumber = aNgularfreq/sPeed;	
+	bool use_real;
 	{
-		
-		MyFunApprox_re function_evaluator_re(wavenumber);
+		use_real = true;
+		MyFunApprox_re function_evaluator_re(wavenumber,use_real);
 		FieldApproximationH1<MyFunApprox_re> field_approximation_re(m_field);
 		
 		field_approximation_re.loopMatrixAndVector(
@@ -425,9 +369,9 @@ int main(int argc, char *argv[]) {
 	}
 	
 	{
-		
-		MyFunApprox_im function_evaluator_im(wavenumber);
-		FieldApproximationH1<MyFunApprox_im> field_approximation_im(m_field);
+		use_real = false;
+		MyFunApprox_re function_evaluator_im(wavenumber,use_real);
+		FieldApproximationH1<MyFunApprox_re> field_approximation_im(m_field);
 		
 		field_approximation_im.loopMatrixAndVector(
 			"EX2_PROBLEM","FE2","imEX",B,G,function_evaluator_im);
@@ -498,6 +442,12 @@ int main(int argc, char *argv[]) {
 	//output the results from Docker
 	char command1[] = "mbconvert ./best_approximation_out.h5m ./best_approximation_out.vtk && cp ./best_approximation_out.vtk ../../../../../mnt/home/Desktop/U_pan/helmholtz_results/";
 	int todo1 = system( command1 );
+	
+	/** get the time interval **/
+	ierr = PetscTime(&v2);CHKERRQ(ierr);
+	ierr = PetscGetCPUTime(&t2);CHKERRQ(ierr);
+	PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Total Rank %d Time = %f S CPU Time = %f S \n",pcomm->rank(),v2-v1,t2-t1);
+	
 	
 	//typedef tee_device<ostream, ofstream> TeeDevice;
 	//typedef stream<TeeDevice> TeeStream;

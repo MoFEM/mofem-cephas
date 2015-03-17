@@ -184,18 +184,21 @@ struct AnalyticalDirihletBC {
 	struct OpRhsTri:public TriElementForcesAndSurcesCore::UserDataOperator {
 		
 		ublas::matrix<double> &hoCoords;
-		double (*fUN)(double x,double y,double z);
+		double (*fUN)(double x,double y,double z,bool use_real);
 		Vec C;
 		bool solveBc;
+		bool use_real;
+		string fieldType;
+		
 		
 		OpRhsTri(const string field_name,ublas::matrix<double> &ho_coords,
-			  double (*fun)(double x,double y,double z),Vec _C): 
+			  double (*fun)(double x,double y,double z,bool use_real),Vec _C): 
 			TriElementForcesAndSurcesCore::UserDataOperator(field_name),
-			hoCoords(ho_coords),fUN(fun),C(_C),solveBc(false)  {}
+			hoCoords(ho_coords),fUN(fun),C(_C),fieldType(field_name),solveBc(false)  {}
 		OpRhsTri(const string field_name,ublas::matrix<double> &ho_coords,
-				 double (*fun)(double x,double y,double z)): 
+				 double (*fun)(double x,double y,double z,bool use_real)): 
 			TriElementForcesAndSurcesCore::UserDataOperator(field_name),
-			hoCoords(ho_coords),fUN(fun),solveBc(true)  {}
+			hoCoords(ho_coords),fUN(fun),fieldType(field_name),solveBc(true)  {}
 		
 		ublas::vector<FieldData> NTf;
 	  
@@ -238,7 +241,14 @@ struct AnalyticalDirihletBC {
 	      z = getCoordsAtGaussPts()(gg,2);
 	    }
 	    
-	    double a = fUN(x,y,z);
+		if(fieldType.compare(0,6,"rePRES")==0){
+			use_real = true;
+		} else if(fieldType.compare(0,6,"imPRES")==0)
+		{
+			use_real = false;
+		}
+				
+	    double a = fUN(x,y,z,use_real);
 		
 		
 		
@@ -327,7 +337,7 @@ struct AnalyticalDirihletBC {
   PetscErrorCode setApproxOps(
 	  FieldInterface &m_field,
 	  string re_field_name,
-	  double (*fun)(double x,double y,double z),
+	  double (*fun)(double x,double y,double z,bool use_real),
 	  string nodals_positions = "MESH_NODE_POSITIONS") {
 	  PetscFunctionBegin;
 	  if(m_field.check_field(nodals_positions)) {

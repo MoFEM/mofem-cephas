@@ -287,12 +287,16 @@ int main(int argc, char *argv[]) {
 
   /* this function compute the scattered field of helmholtz operator */
   struct AnaliticalFunction {
-	  static double fUN_real(double x,double y,double z) {
+	  static double fUN(double x,double y,double z,bool use_real) {
+		  
+		  bool useReal;
 		  
 		  const double pi = atan( 1.0 ) * 4.0;
 		  double R = sqrt(pow(x,2.0)+pow(y,2.0)+pow(z,2.0)); //radius
 		  double theta = atan2(y,x)+2*pi; //the arctan of radians (y/x)
 		  		 
+		  	  if(theta != theta) cerr << "theta\n";
+		  
 		  const double wAvenumber = aNgularfreq/sPeed;
 		  
 		  const double k = wAvenumber;  //Wave number
@@ -306,7 +310,7 @@ int main(int argc, char *argv[]) {
 		  // magnitude of incident wave
 		  const double phi_incident_mag = 1.0;
 		  
-		  const double tol = 1.0e-10;
+		  const double tol = 1.0e-6;
 		  double max = 0.0;
 		  double min = 999999.0;
 		  
@@ -319,11 +323,19 @@ int main(int argc, char *argv[]) {
 		  while( error > tol )  //finding the acoustic potential in one single point.
 		  {
 			  double jn_der = n / const1 * sph_bessel( n, const1 ) - sph_bessel( n + 1, const1 );  //The derivative of bessel function
+			  if(jn_der != jn_der) cerr << "error jn_der\n";
+			  
 			  complex< double > hn_der = n / const1 * sph_hankel_1( n, const1 ) - sph_hankel_1( n + 1, const1 );
+			  //if(hn_der != hn_der) cerr << "error hn_der\n";
 			  //complex< double > hn_der = 0.5 * ( sph_hankel_1( n - 1, const1 ) -
 			  //( sph_hankel_1( n, const1 ) + const1 * sph_hankel_1( n + 1, const1 ) ) / const1 );
 			  double Pn = legendre_p( n, cos( theta ) );
+			  if(Pn != Pn) cerr << "Pn \n";
 			  complex< double >hn = sph_hankel_1( n, const2 );  //S Hankel first kind function
+			  if(const2 != const2) cerr << "const2 \n";
+			  
+			  if(n == 0) { complex< double > hn_c = -i*exp(i*const2)*(1/const2); cout << "\n hn_c = \n" << hn_c << endl;}
+			  if(hn != hn) {cerr << "hn \n"; cout << hn << "\n n = \n" << n << endl; cout << "\n k * r = \n" << const2 << endl;}
 			  prev_result = result;
 			  result -= pow( i, n ) * ( 2.0 * n + 1.0 ) * jn_der / hn_der * Pn * hn;
 			  error = abs( abs( result ) - abs( prev_result ) );
@@ -341,65 +353,26 @@ int main(int argc, char *argv[]) {
 		  //result = exp(i*(k*cos(theta)*x+k*sin(theta)*y));
 		  ///* cube 2D */
 		  
-          return std::real(result);
+		  //if(std::real(result)!=std::real(result)) {
+			//cerr << "error real\n";  
+		  //}
+		  
+		  if(useReal) {
+			  return std::real(result);
+		  } else {
+			  return std::imag(result);
+		  }
+		  
 		  //return std::real((exp(i*k*x)-1-i*exp(i*k)*sin(k*x))/(pow(k,2.0))); //exact solution of 1D problem
 		  //return 0;
 	  }
-	  static double fUN_imag(double x,double y,double z) {
-		  const double pi = atan( 1.0 ) * 4.0;
-		  double R = sqrt(pow(x,2.0)+pow(y,2.0)+pow(z,2.0)); //radius
-		  double theta = atan2(y,x) + 2*pi; //the arctan of radians (y/x)
-		  
-		  const double wAvenumber = aNgularfreq/sPeed;
-		  
-		  const double k = wAvenumber;  //Wave number
-		  const double a = 0.5;         //radius of the sphere,wait to modify by user
-		  const double const1 = k * a;
-		  double const2 = k * R;
-		  		  
-		  const complex< double > i( 0.0, 1.0 );
-		 
-		  // magnitude of incident wave
-		  const double phi_incident_mag = 1.0;
-		  
-		  const double tol = 1.0e-10;
-		  double max = 0.0;
-		  double min = 999999.0;
-		  
-		  complex< double > result = 0.0;
-		  complex< double > prev_result;
-		  
-		  double error = 100.0;
-		  unsigned int n = 0; //initialized the infinite series loop
-		  
-		  while( error > tol )  //finding the acoustic potential in one single point.
-		  {
-			  double jn_der = n / const1 * sph_bessel( n, const1 ) - sph_bessel( n + 1, const1 );  //The derivative of bessel function
-			  complex< double > hn_der = n / const1 * sph_hankel_1( n, const1 ) - sph_hankel_1( n + 1, const1 );
-			  double Pn = legendre_p( n, cos( theta ) );
-			  complex< double >hn = sph_hankel_1( n, const2 );  //S Hankel first kind function
-			  prev_result = result;
-			  result -= pow( i, n ) * ( 2.0 * n + 1.0 ) * jn_der / hn_der * Pn * hn;
-			  error = abs( abs( result ) - abs( prev_result ) );
-			  ++n;
-		  }
-		  
-		//const complex< double > inc_field = exp( i * k * R * cos( theta ) );  //incident wave
-		  ///* cube 2D */
-		  //double theta = pi;
-		  //result = exp(i*(k*cos(theta)*x+k*sin(theta)*y));
-		  ///* cube 2D */
-		  
-          return std::imag(result);	  
-		  //return std::imag((exp(i*k*x)-1-i*exp(i*k)*sin(k*x))/(pow(k,2.0))); //exact solution of 1D problem
-		  //return 0;
-	  }
+
   };
   
 
   
-  ierr = analytical_bc1.setApproxOps(mField,"rePRES",AnaliticalFunction::fUN_real); CHKERRQ(ierr); //Triangles
-  ierr = analytical_bc2.setApproxOps(mField,"imPRES",AnaliticalFunction::fUN_imag); CHKERRQ(ierr);
+  ierr = analytical_bc1.setApproxOps(mField,"rePRES",AnaliticalFunction::fUN); CHKERRQ(ierr); //Triangles
+  ierr = analytical_bc2.setApproxOps(mField,"imPRES",AnaliticalFunction::fUN); CHKERRQ(ierr);
   
   ierr = analytical_bc1.solveBcProblem(mField,"BC1_PROBLEM","BC1_FE",analytical_ditihlet_bc1); CHKERRQ(ierr);
   ierr = analytical_bc2.solveBcProblem(mField,"BC2_PROBLEM","BC2_FE",analytical_ditihlet_bc2); CHKERRQ(ierr);  

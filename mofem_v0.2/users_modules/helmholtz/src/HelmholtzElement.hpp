@@ -916,7 +916,7 @@ struct HelmholtzElement {
 				
 				while( error > tol )  //finding the acoustic potential in one single point.
 				{
-					double jn_der = n / const1 * sph_bessel( n, const1 ) - sph_bessel( n + 1, const1 );  //The derivative of bessel function
+					double jn_der = ( n / const1 * sph_bessel( n, const1 ) - sph_bessel( n + 1, const1 ) ) * k;  //The derivative of bessel function
 					//complex< double > hn_der = n / const1 * sph_hankel_1( n, const1 ) - sph_hankel_1( n + 1, const1 );
 					//complex< double > hn_der = 0.5 * ( sph_hankel_1( n - 1, const1 ) -
 					//( sph_hankel_1( n, const1 ) + const1 * sph_hankel_1( n + 1, const1 ) ) / const1 );
@@ -924,7 +924,7 @@ struct HelmholtzElement {
 					//complex< double >hn = sph_hankel_1( n, const2 );  //S Hankel first kind function
 					prev_result = result;
 					//result += -k * pow( i, n ) * ( 2.0 * n + 1.0 ) * jn_der * Pn; //edition from acoustic book
-					result += -pow( i, n ) * ( 2.0 * n + 1.0 ) * jn_der * Pn;  //edition from Papers
+					result += -pow( i, n ) * ( 2.0 * n + 1.0 ) * Pn * jn_der;  //edition from Papers
 					error = abs( abs( result ) - abs( prev_result ) );
 					++n;
 				}

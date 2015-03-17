@@ -44,17 +44,17 @@ target_link_libraries(acoustic_steady
   mofem_third_party
   mofem_cblas
   ${MoFEM_PROJECT_LIBS})
-#add_executable(incident_wave_acoustic ${UM_SOURCE_DIR}/helmholtz/incident_wave_acoustic.cpp)
-#target_link_libraries(incident_wave_acoustic
-#  mofem_finite_element_library
-#  mofem_finite_elements
-#  mofem_interfaces
-#  mofem_multi_indices
-#  mofem_petsc
-#  mofem_approx
-#  mofem_third_party
-#  mofem_cblas
-#  ${MoFEM_PROJECT_LIBS})
+add_executable(incident_wave ${UM_SOURCE_DIR}/helmholtz/incident_wave.cpp)
+target_link_libraries(incident_wave
+  mofem_finite_element_library
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_third_party
+  mofem_cblas
+  ${MoFEM_PROJECT_LIBS})
 
 add_executable(error_norm ${UM_SOURCE_DIR}/helmholtz/error_norm.cpp)
 target_link_libraries(error_norm
