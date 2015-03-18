@@ -47,7 +47,8 @@ struct BitLevelCouplerInterface: public FieldUnknownInterface {
     * Assumes that adjacencies between vertices and tetrahedrons are known 
     */
   PetscErrorCode buidlAdjacenciesVerticesOnFacesEdgesVolumes(
-    const BitRefLevel &parent_level,Range &children,bool vertex_elements = true,const double inside_tol = 1e-6,int verb = 0);
+    const BitRefLevel &parent_level,Range &children,bool vertex_elements = true,const double inside_tol = 1e-6,
+    bool throw_error = true,int verb = 0);
 
   /** \brief build adjacencies for edges, faces and volumes
     *
