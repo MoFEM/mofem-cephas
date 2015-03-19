@@ -153,6 +153,10 @@ struct HelmholtzElement {
 			return ublas::matrix_row<ublas::matrix<double> >(gradImAtGaussPts,gg);
 		}
 		
+		ublas::matrix<double> Ann,Anv,Avv;
+		ublas::vector<ublas::matrix<double> > Ane,Anf,Aev,Afv;
+		ublas::matrix<ublas::matrix<double> > Aee,Aef,Aff;
+		
 	};
 	CommonData commonData;
 	
@@ -571,17 +575,19 @@ struct HelmholtzElement {
 	
 		BlockData &dAta;
 		CommonData &commonData;
+		bool cAlculate;
+		
         bool useTsB;
-		OpHelmholtzLhs_A(const string re_field_name,const string im_field_name,BlockData &data,CommonData &common_data):
+		OpHelmholtzLhs_A(const string re_field_name,const string im_field_name,BlockData &data,CommonData &common_data,bool calculate):
 			TetElementForcesAndSourcesCore::UserDataOperator(re_field_name,im_field_name),
-			dAta(data),commonData(common_data),useTsB(true) { }
+			dAta(data),commonData(common_data),useTsB(true),cAlculate(calculate) { }
 		
 		Mat A;
-		OpHelmholtzLhs_A(const string re_field_name,const string im_field_name,Mat _A,BlockData &data,CommonData &common_data):
+		OpHelmholtzLhs_A(const string re_field_name,const string im_field_name,Mat _A,BlockData &data,CommonData &common_data,bool calculate):
 			TetElementForcesAndSourcesCore::UserDataOperator(re_field_name,im_field_name),
-			dAta(data),commonData(common_data),useTsB(false),A(_A) {}
+			dAta(data),commonData(common_data),useTsB(false),A(_A),cAlculate(calculate) {}
 	
-		ublas::matrix<double> K,transK;
+		ublas::matrix<double> /*K,*/transK;
 	
 		/** \brief calculate helmholtz stiffness matrix
 		  *
@@ -599,15 +605,120 @@ struct HelmholtzElement {
 				PetscFunctionReturn(0);
 			}
 	
+			ublas::matrix<double> *K_ptr;
+			
 			try {
 	
 				if(row_data.getIndices().size()==0) PetscFunctionReturn(0);
 				if(col_data.getIndices().size()==0) PetscFunctionReturn(0);
 	
-				int nb_row = row_data.getN().size2();
-				int nb_col = col_data.getN().size2();
+				cout << "\n row_type this turn = \n" << row_type << endl;
+				cout << "\n col_type this turn = \n" << col_type <<  endl;
+				
+				switch(row_type) {
+						
+					case MBVERTEX:
+						cerr << "\n row_type case MBVERTEX \n";
+						switch(col_type) {
+							case MBVERTEX:
+								K_ptr = &commonData.Ann;
+								break;
+							case MBEDGE:
+								commonData.Ane.resize(6);
+								K_ptr = &commonData.Ane[col_side];
+								break;
+							case MBTRI:
+								commonData.Anf.resize(4);
+								K_ptr = &commonData.Anf[col_side];
+								break;
+							case MBTET:
+								K_ptr = &commonData.Anv;
+								break;
+							default:
+								cout << "\n row_type = MBVERTEX, error col_type not match \n" << endl;
+								break;
+						}
+						break;
+						
+					case MBEDGE:
+						cerr << "\n row_type case MBEDGE \n";
+						switch(col_type) {
+							//case MBVERTEX:
+							//	commonData.Ane.resize(6);
+							//	K_ptr = &commonData.Ane[row_side];
+							//	break;
+							case MBEDGE:
+								commonData.Aee.resize(6,6);
+								K_ptr = &commonData.Aee(row_side,col_side);
+								break;
+							case MBTRI:
+								commonData.Aef.resize(6,4);
+								K_ptr = &commonData.Aef(row_side,col_side);
+								break;
+							case MBTET:
+								commonData.Aev.resize(6);
+								//K_ptr = &commonData.Aev[row_side];
+								K_ptr = &commonData.Aev[col_side];
+								break;
+							default:
+								cout << "row_type = MBEDGE, \n error col_type not match, col_type = \n" << col_type <<  endl;
+								break;
+						}
+						break;
+						
+					case MBTRI:
+						cerr << "\n row_type case MBTRI \n";
+						switch(col_type) {
+							//case MBVERTEX:
+							//	commonData.Anf.resize(4);
+							//	K_ptr = &commonData.Anf[row_side];
+							//	break;
+							//case MBEDGE:
+							//	commonData.Aef.resize(6,4);
+							//	K_ptr = &commonData.Aef(col_side,row_side);
+							//	break;
+							case MBTRI:
+								commonData.Aff.resize(4,4);
+								K_ptr = &commonData.Aff(row_side,col_side);
+								break;
+							case MBTET:
+								commonData.Afv.resize(4);
+								//K_ptr = &commonData.Afv[row_side];
+								K_ptr = &commonData.Afv[col_side];
+								break;
+							default:
+								cout << "row_type = MBTRI, \n error col_type not match \n" << endl;
+								break;	
+						}
+						break;
+						
+					case MBTET:
+						cerr << "\n row_type case MBTET \n";
+						K_ptr = &commonData.Avv;	
+						break;
+					default:
+						cout << "\n error row_type not match, error col_type not match \n" << endl;
+						break;
+						//never should happen 
+				}
+				
+				ublas::matrix<double> &K = *K_ptr;
+				
+				cout << "\n K = " << K << endl;
+				cout << "\n *K_ptr = " << *K_ptr << endl;
+				
+				int nb_row;
+				int nb_col;
+				if(cAlculate) {
+				cerr << "\n first run in matrix A \n";
+				
+				nb_row = row_data.getN().size2();
+				nb_col = col_data.getN().size2();
+				
 				K.resize(nb_row,nb_col);
 				bzero(&*K.data().begin(),nb_row*nb_col*sizeof(double));
+				
+				
 	
 				for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
 	
@@ -620,16 +731,25 @@ struct HelmholtzElement {
 					noalias(K) += val*prod(row_data.getDiffN(gg,nb_row),trans(col_data.getDiffN(gg,nb_col)));
 	
 				}
+				
+				}
 	
 				PetscErrorCode ierr;
 				if(!useTsB) {
 					const_cast<FEMethod*>(getFEMethod())->ts_B = A;    //FEMethod does not belong to fieldinterface anymore.
 				}
+				
+				//cerr << "\n up to here I am fine 4\n";
+
 				ierr = MatSetValues(
 						   A,  //(getFEMethod()->ts_B), instead in New thermal element. wait
 						   nb_row,&row_data.getIndices()[0],
 						   nb_col,&col_data.getIndices()[0],
 						   &K(0,0),ADD_VALUES); CHKERRQ(ierr);
+				
+				//cerr << "\n up to here I am fine 5\n";
+
+				
 				if(row_side != col_side || row_type != col_type) {
 					transK.resize(nb_col,nb_row);
 					noalias(transK) = trans( K );
@@ -639,6 +759,8 @@ struct HelmholtzElement {
 							   nb_row,&row_data.getIndices()[0],
 							   &transK(0,0),ADD_VALUES); CHKERRQ(ierr);
 				}
+				
+				//cerr << "\n up to here I am fine 6\n";
 	
 	
 			} catch (const std::exception& ex) {
@@ -660,12 +782,13 @@ struct HelmholtzElement {
 		BlockData &dAta;
 		CommonData &commonData;
 		bool useTsB;
+		bool cAlculate;
 		Mat A;
-		OpMassLsh(const string re_field_name,const string im_field_name,Mat _A,BlockData &data,CommonData &common_data):
+		OpMassLsh(const string re_field_name,const string im_field_name,Mat _A,BlockData &data,CommonData &common_data,bool calculate):
 			TetElementForcesAndSourcesCore::UserDataOperator(re_field_name,im_field_name),
-			dAta(data),commonData(common_data),useTsB(false),A(_A) {}
+			dAta(data),commonData(common_data),useTsB(false),A(_A),cAlculate(calculate) {}
 	
-		ublas::matrix<double> M,transM;
+		ublas::matrix<double> /*M,*/transM;
 	
 		/** \brief calculate Helmholtz Mass matrix
 		  *
@@ -679,32 +802,115 @@ struct HelmholtzElement {
 			DataForcesAndSurcesCore::EntData &col_data) {
 			PetscFunctionBegin;
 	
+			ublas::matrix<double> *M_ptr;
+			
 			try {
 	
 				if(row_data.getIndices().size()==0) PetscFunctionReturn(0);
 				if(col_data.getIndices().size()==0) PetscFunctionReturn(0);
 	
-				int nb_row = row_data.getN().size2();
-				int nb_col = col_data.getN().size2();
-				M.resize(nb_row,nb_col);
-				bzero(&*M.data().begin(),nb_row*nb_col*sizeof(double));
-	
-				for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
-	                 
-					double wAvenumber = dAta.aNgularfreq/dAta.sPeed;
-					
-					
-					double wAvenUmber = pow(wAvenumber,2.0);
-					
-					double val = -wAvenUmber*getVolume()*getGaussPts()(3,gg);
-					if(getHoGaussPtsDetJac().size()>0) {
-						val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
-					}
+				switch(row_type) {
+						
+					case MBVERTEX:
+						switch(col_type) {
+							case MBVERTEX:
+								M_ptr = &commonData.Ann;
+								break;
+							case MBEDGE:
+								commonData.Ane.resize(6);
+								M_ptr = &commonData.Ane[col_side];
+								break;
+							case MBTRI:
+								commonData.Anf.resize(4);
+								M_ptr = &commonData.Anf[col_side];
+								break;
+							case MBTET:
+								M_ptr = &commonData.Anv;
+								break;
+							default:
+								cout << "\n row_type = MBVERTEX, error col_type not match \n" << endl;
+								break;
+						}
+						break;
+						
+					case MBEDGE:
+						switch(col_type) {
+							case MBEDGE:
+								commonData.Aee.resize(6,6);
+								M_ptr = &commonData.Aee(row_side,col_side);
+								break;
+							case MBTRI:
+								commonData.Aef.resize(6,4);
+								M_ptr = &commonData.Aef(row_side,col_side);
+								break;
+							case MBTET:
+								commonData.Aev.resize(6);
+								//M_ptr = &commonData.Aev[row_side];
+								M_ptr = &commonData.Aev[col_side];
 
-					noalias(M) += val*outer_prod( row_data.getN(gg,nb_row),col_data.getN(gg,nb_col) );
-					
+								break;
+							default:
+								cout << "row_type = MBEDGE, \n error col_type not match, col_type = \n" << col_type <<  endl;
+								break;
+						}
+						break;
+						
+					case MBTRI:
+						switch(col_type) {
+							case MBTRI:
+								commonData.Aff.resize(4,4);
+								M_ptr = &commonData.Aff(row_side,col_side);
+								break;
+							case MBTET:
+								commonData.Afv.resize(4);
+								//M_ptr = &commonData.Afv[row_side];
+								M_ptr = &commonData.Afv[col_side];
+
+								break;
+							default:
+								cout << "row_type = MBTRI, \n error col_type not match \n" << endl;
+								break;	
+						}
+						break;
+						
+					case MBTET:
+						M_ptr = &commonData.Avv;	
+						break;
+					default:
+						cout << "\n error row_type not match, error col_type not match \n" << endl;
+						break;
+						//never should happen 
 				}
+				
+				ublas::matrix<double> &M = *M_ptr;
+				
+				int nb_row;
+				int nb_col;
+				if(cAlculate) {
+				
+					nb_row = row_data.getN().size2();
+					nb_col = col_data.getN().size2();
+					M.resize(nb_row,nb_col);
+					bzero(&*M.data().begin(),nb_row*nb_col*sizeof(double));
+		
+					for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
+						
+						double wAvenumber = dAta.aNgularfreq/dAta.sPeed;
+						
+							
+						double wAvenUmber = pow(wAvenumber,2.0);
+						
+						double val = -wAvenUmber*getVolume()*getGaussPts()(3,gg);
+						if(getHoGaussPtsDetJac().size()>0) {
+							val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
+						}
 	
+						noalias(M) += val*outer_prod( row_data.getN(gg,nb_row),col_data.getN(gg,nb_col) );
+						
+					}
+		
+				}
+				
 				PetscErrorCode ierr;
 				if(!useTsB) {
 					const_cast<FEMethod*>(getFEMethod())->ts_B = A;
@@ -714,6 +920,7 @@ struct HelmholtzElement {
 						   nb_row,&row_data.getIndices()[0],
 						   nb_col,&col_data.getIndices()[0],
 						   &M(0,0),ADD_VALUES); CHKERRQ(ierr);
+				
 				if(row_side != col_side || row_type != col_type) {
 					transM.resize(nb_col,nb_row);
 					noalias(transM) = trans(M);
@@ -893,8 +1100,8 @@ struct HelmholtzElement {
 				/*** incident wave from Finite Element Analysis of Acoustic Scattering by Frank Ihlenburg **/
 				const double pi = atan( 1.0 ) * 4.0;
 				double R = sqrt(pow(x,2.0)+pow(y,2.0)+pow(z,2.0)); //radius
-				//double theta = atan2(y,x)+2*pi; //the arctan of radians (y/x)
-				double theta = pi/2; //45 degree
+				double theta = atan2(y,x)+2*pi; //the arctan of radians (y/x)
+				//double theta = pi/2; //45 degree
 				const double k = wAvenumber;  //Wave number
 				const double a = 0.5;         //radius of the sphere,wait to modify by user
 				const double const1 = k * a;
@@ -902,7 +1109,7 @@ struct HelmholtzElement {
 				const complex< double > i( 0.0, 1.0 );
 				
 				// magnitude of incident wave
-				//const double phi_incident_mag = 1.0;
+				const double phi_incident_mag = 2.0;
 				
 				const double tol = 1.0e-10;
 				double max = 0.0;
@@ -924,7 +1131,7 @@ struct HelmholtzElement {
 					//complex< double >hn = sph_hankel_1( n, const2 );  //S Hankel first kind function
 					prev_result = result;
 					//result += -k * pow( i, n ) * ( 2.0 * n + 1.0 ) * jn_der * Pn; //edition from acoustic book
-					result += -pow( i, n ) * ( 2.0 * n + 1.0 ) * Pn * jn_der;  //edition from Papers
+					result -= pow( i, n ) * ( 2.0 * n + 1.0 ) * Pn * jn_der * phi_incident_mag;  //edition from Papers
 					error = abs( abs( result ) - abs( prev_result ) );
 					++n;
 				}
@@ -1444,8 +1651,8 @@ struct HelmholtzElement {
 		map<int,BlockData>::iterator sit = setOfBlocks.begin();
 		for(;sit!=setOfBlocks.end();sit++) {
 			//add finite elemen
-			feLhs.get_op_to_do_Lhs().push_back(new OpHelmholtzLhs_A(re_field_name,re_field_name,A,sit->second,commonData));
-			feLhs.get_op_to_do_Lhs().push_back(new OpHelmholtzLhs_A(im_field_name,im_field_name,A,sit->second,commonData));	
+			feLhs.get_op_to_do_Lhs().push_back(new OpHelmholtzLhs_A(re_field_name,re_field_name,A,sit->second,commonData,true));
+			feLhs.get_op_to_do_Lhs().push_back(new OpHelmholtzLhs_A(im_field_name,im_field_name,A,sit->second,commonData,false));	
 		}
 		PetscFunctionReturn(0);
 	}
@@ -1458,8 +1665,8 @@ struct HelmholtzElement {
 		map<int,BlockData>::iterator sit = setOfBlocks.begin();
 		for(;sit!=setOfBlocks.end();sit++) {
 			//add finite elemen
-			feLhs.get_op_to_do_Lhs().push_back(new OpMassLsh(re_field_name,re_field_name,A,sit->second,commonData));
-			feLhs.get_op_to_do_Lhs().push_back(new OpMassLsh(im_field_name,im_field_name,A,sit->second,commonData));
+			feLhs.get_op_to_do_Lhs().push_back(new OpMassLsh(re_field_name,re_field_name,A,sit->second,commonData,true));
+			feLhs.get_op_to_do_Lhs().push_back(new OpMassLsh(im_field_name,im_field_name,A,sit->second,commonData,false));
 		}
 		PetscFunctionReturn(0);
 	}

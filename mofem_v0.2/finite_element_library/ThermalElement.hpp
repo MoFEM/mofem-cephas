@@ -332,13 +332,13 @@ struct ThermalElement {
 
 	//ublas
 	
-	std::string wait;
+	//std::string wait;
 	//std::cout << "\n OpGetTetTemperatureAtGaussPts = " << OpGetTetTemperatureAtGaussPts << std::endl;
 	//std::cout << "\n 
 	//std::cout << "n data.getN().size1() = \n" << data.getN().size1() << std::endl;
-	std::cout << "\n commonData.temperatureAtGaussPts[gg] = \n" << commonData.temperatureAtGaussPts << std::endl;
+	//std::cout << "\n commonData.temperatureAtGaussPts[gg] = \n" << commonData.temperatureAtGaussPts << std::endl;
 	//std::cout << "\n data.getN(gg) = \n" << data.getN(gg) <<  std::endl;
-	std::cout << "\n commonData.getGradAtGaussPts = \n"  << commonData.getGradAtGaussPts(gg) <<  std::endl;
+	//std::cout << "\n commonData.getGradAtGaussPts = \n"  << commonData.getGradAtGaussPts(gg) <<  std::endl;
 	////std::cout << "n data.getDiffN(gg,nb_row_dofs) = \n" << data.getDiffN(gg,nb_row_dofs) << std::endl;
 	//std::cout << "\n prod = \n" << prod(data.getDiffN(gg,nb_row_dofs),commonData.getGradAtGaussPts(gg)) << std::endl;
 	//std::cout << "\n data.getN().size2() = \n" << data.getN().size2() << std::endl;
@@ -422,14 +422,18 @@ struct ThermalElement {
         int nb_row = row_data.getN().size2();
         int nb_col = col_data.getN().size2();
         K.resize(nb_row,nb_col);
-	K.clear();
+		K.clear();
+		
+		cout << "\n row_type this turn = \n" << row_type << endl;
+		cout << "\n col_type this turn = \n" << col_type <<  endl;
+		
         for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
 
           ublas::matrix<double>  val = dAta.cOnductivity_mat*getVolume()*getGaussPts()(3,gg);
           if(getHoGaussPtsDetJac().size()>0) {
             val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
           }
-		  cout << " \n wo zai zhe li \n" << std::endl;
+
           //cblas
           //double *diff_N_row,*diff_N_col;
           //diff_N_row = &row_data.getDiffN()(gg,0);
@@ -443,6 +447,14 @@ struct ThermalElement {
           noalias(K) += prod(K1,trans(col_data.getDiffN(gg,nb_col)));
         }
 
+		
+		cout << "\n nb_row = " << nb_row << endl;
+		cout << "\n row_data.getIndices() = " << row_data.getIndices() << endl;
+		cout << "\n nb_col = " << nb_col << endl;
+		cout << "\n col_data.getIndices() = " << col_data.getIndices() << endl;
+
+		cout << "\n K = " << K << endl;
+		
         PetscErrorCode ierr;
         if(!useTsB) {
           const_cast<FEMethod*>(getFEMethod())->ts_B = A;

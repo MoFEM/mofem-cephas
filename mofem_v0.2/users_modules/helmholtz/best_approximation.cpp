@@ -86,7 +86,7 @@ struct MyFunApprox_re {
 		// magnitude of incident wave
 		const double phi_incident_mag = 1.0;
 		
-		const double tol = 1.0e-6;
+		const double tol = 1.0e-10;
 		double max = 0.0;
 		double min = 999999.0;
 		
@@ -130,7 +130,7 @@ struct MyFunApprox_re {
 			double Pn = legendre_p( n, cos( theta ) );
 			complex< double >hn = sph_hankel_1( n, const2 );  //S Hankel first kind function
 			prev_result = result;
-			result -= pow( i, n ) * ( 2.0 * n + 1.0 ) * jn_der / hn_der * Pn * hn;
+			result -= pow( i, n ) * ( 2.0 * n + 1.0 ) * jn_der / hn_der * Pn * hn * phi_incident_mag;
 			error = abs( abs( result ) - abs( prev_result ) );
 			++n;
 		}

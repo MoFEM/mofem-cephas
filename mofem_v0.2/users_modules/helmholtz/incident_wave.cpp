@@ -295,10 +295,10 @@ int main(int argc, char *argv[]) {
 		  double R = sqrt(pow(x,2.0)+pow(y,2.0)+pow(z,2.0)); //radius
 		  double theta = atan2(y,x)+2*pi; //the arctan of radians (y/x)
 		  		 
-		  if(x != x) {cerr << "x  \n";}
-		  if(y != y) {cerr << "y  \n";}
-		  if(z != z) {cerr << "z  \n";}
-		  if(theta != theta) {cerr << "theta = \n"; cout << theta << endl; cout << "\n x = " << x << "\n y = " << y << endl;}
+		  //if(x != x) {cerr << "x  \n";}
+		  //if(y != y) {cerr << "y  \n";}
+		  //if(z != z) {cerr << "z  \n";}
+		  //if(theta != theta) {cerr << "theta = \n"; cout << theta << endl; cout << "\n x = " << x << "\n y = " << y << endl;}
 		  
 		  const double wAvenumber = aNgularfreq/sPeed;
 		  
@@ -313,7 +313,7 @@ int main(int argc, char *argv[]) {
 		  // magnitude of incident wave
 		  const double phi_incident_mag = 1.0;
 		  
-		  const double tol = 1.0e-4;
+		  const double tol = 1.0e-10;
 		  double max = 0.0;
 		  double min = 999999.0;
 		  
@@ -326,21 +326,21 @@ int main(int argc, char *argv[]) {
 		  while( error > tol )  //finding the acoustic potential in one single point.
 		  {
 			  double jn_der = (n / const1 * sph_bessel( n, const1 ) - sph_bessel( n + 1, const1 )) * k;  //The derivative of bessel function
-			  if(jn_der != jn_der) cerr << "error jn_der\n";
+			  //if(jn_der != jn_der) cerr << "error jn_der\n";
 			  
 			  complex< double > hn_der = (n / const1 * sph_hankel_1( n, const1 ) - sph_hankel_1( n + 1, const1 )) * k;
-			  if(hn_der != hn_der) cerr << "error hn_der\n";
+			  //if(hn_der != hn_der) cerr << "error hn_der\n";
 			  //complex< double > hn_der = 0.5 * ( sph_hankel_1( n - 1, const1 ) -
 			  //( sph_hankel_1( n, const1 ) + const1 * sph_hankel_1( n + 1, const1 ) ) / const1 );
 			  double Pn = legendre_p( n, cos( theta ) );
-			  if(Pn != Pn) cerr << "Pn \n";
+			  //if(Pn != Pn) cerr << "Pn \n";
 			  complex< double >hn = sph_hankel_1( n, const2 );  //S Hankel first kind function
 			  //if(n == 0) { complex< double > hn_c = -i*exp(i*const2)*(1/const2); cout << "\n hn_c = \n" << hn_c << endl;}
-			  if(hn != hn) {cerr << "hn \n"; cout << hn << "\n n = \n" << n << endl; cout << "\n k * r = \n" << const2 << endl; 
-			  cout << "\n k = " << k << "\n r = " << R << endl;}
+			  //if(hn != hn) {cerr << "hn \n"; cout << hn << "\n n = \n" << n << endl; cout << "\n k * r = \n" << const2 << endl; 
+			  //cout << "\n k = " << k << "\n r = " << R << endl;}
 			  
 			  prev_result = result;
-			  result -= pow( i, n ) * ( 2.0 * n + 1.0 ) * jn_der / hn_der * Pn * hn;
+			  result -= pow( i, n ) * ( 2.0 * n + 1.0 ) * jn_der / hn_der * Pn * hn * phi_incident_mag;
 			  error = abs( abs( result ) - abs( prev_result ) );
 			  ++n;
 		  }
@@ -391,14 +391,16 @@ int main(int argc, char *argv[]) {
   //std::string wait;
   //ierr = MatView(A,PETSC_VIEWER_DRAW_WORLD); CHKERRQ(ierr);
   //std::cin >> wait;
- 
+
+  
   ierr = mField.set_global_VecCreateGhost("ACOUSTIC_PROBLEM",ROW,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-	
+
+  
+  
   ierr = mField.loop_finite_elements("ACOUSTIC_PROBLEM","HELMHOLTZ_FE",helmholtz_elements.getLoopFeRhs()); CHKERRQ(ierr);
   ierr = mField.loop_finite_elements("ACOUSTIC_PROBLEM","HELMHOLTZ_FE",helmholtz_elements.getLoopFeLhs()); CHKERRQ(ierr);
   //ierr = mField.loop_finite_elements("ACOUSTIC_PROBLEM","HELMHOLTZ_FLUX_FE",helmholtz_elements.getLoopFeFlux()); CHKERRQ(ierr); //scalar flux
   ierr = mField.loop_finite_elements("ACOUSTIC_PROBLEM","HELMHOLTZ_FLUX_FE",helmholtz_elements.getLoopfeIncidentWave()); CHKERRQ(ierr); //Incident wave flux
-  
 
   if(useImpedance) {
   ierr = mField.loop_finite_elements("ACOUSTIC_PROBLEM","HELMHOLTZ_IMPEDANCE_FE",helmholtz_elements.getLoopFeImpedanceLhs()); CHKERRQ(ierr);
@@ -435,10 +437,13 @@ int main(int argc, char *argv[]) {
   ierr = VecGhostUpdateBegin(T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
+  
+  
   //ierr = VecView(T,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
   ierr = mField.problem_basic_method_preProcess("ACOUSTIC_PROBLEM",analytical_ditihlet_bc1); CHKERRQ(ierr);
   ierr = mField.problem_basic_method_preProcess("ACOUSTIC_PROBLEM",analytical_ditihlet_bc2); CHKERRQ(ierr);
   //Save data on mesh
+
   ierr = mField.set_global_VecCreateGhost("ACOUSTIC_PROBLEM",ROW,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);  
   
   //Wait to putput the data in format
@@ -448,7 +453,7 @@ int main(int argc, char *argv[]) {
   ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
   
   
-  
+
   //if(pcomm->rank()==0) {
   rval = moab.write_file("impinging_numerical.h5m"); CHKERR_PETSC(rval);
   //}
@@ -462,18 +467,18 @@ int main(int argc, char *argv[]) {
   PostPocOnRefinedMesh post_proc1(mField);
   ierr = post_proc1.generateRefereneElemenMesh(); CHKERRQ(ierr);
   ierr = post_proc1.addFieldValuesPostProc("rePRES"); CHKERRQ(ierr);
-  ierr = post_proc1.addFieldValuesGradientPostProc("rePRES"); CHKERRQ(ierr);
+  //ierr = post_proc1.addFieldValuesGradientPostProc("rePRES"); CHKERRQ(ierr);
   ierr = post_proc1.addFieldValuesPostProc("imPRES"); CHKERRQ(ierr);
-  ierr = post_proc1.addFieldValuesGradientPostProc("imPRES"); CHKERRQ(ierr);
+  //ierr = post_proc1.addFieldValuesGradientPostProc("imPRES"); CHKERRQ(ierr);
   if(mField.check_field("reEX") && mField.check_field("imEX")) {
-	  ierr = post_proc1.addFieldValuesPostProc("reEX"); CHKERRQ(ierr);
-	  ierr = post_proc1.addFieldValuesGradientPostProc("reEX"); CHKERRQ(ierr);
-	  ierr = post_proc1.addFieldValuesPostProc("imEX"); CHKERRQ(ierr);
-	  ierr = post_proc1.addFieldValuesGradientPostProc("imEX"); CHKERRQ(ierr);
-	  
-	  ierr = post_proc1.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
-	  ierr = mField.loop_finite_elements("ACOUSTIC_PROBLEM","HELMHOLTZ_FE",post_proc1); CHKERRQ(ierr);
-	  rval = post_proc1.postProcMesh.write_file("four_fields.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
+	ierr = post_proc1.addFieldValuesPostProc("reEX"); CHKERRQ(ierr);
+	//ierr = post_proc1.addFieldValuesGradientPostProc("reEX"); CHKERRQ(ierr);
+	ierr = post_proc1.addFieldValuesPostProc("imEX"); CHKERRQ(ierr);
+	//ierr = post_proc1.addFieldValuesGradientPostProc("imEX"); CHKERRQ(ierr);
+	
+	ierr = post_proc1.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+	ierr = mField.loop_finite_elements("ACOUSTIC_PROBLEM","HELMHOLTZ_FE",post_proc1); CHKERRQ(ierr);
+	rval = post_proc1.postProcMesh.write_file("four_fields.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
 	  
 	  //output the results from Docker
 	  char command1[] = "mbconvert ./four_fields.h5m ./four_fields.vtk && cp ./four_fields.vtk ../../../../../mnt/home/Desktop/U_pan/helmholtz_results/";
@@ -481,21 +486,19 @@ int main(int argc, char *argv[]) {
 	  
   } else {
 
-  ierr = post_proc1.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
-  ierr = mField.loop_finite_elements("ACOUSTIC_PROBLEM","HELMHOLTZ_FE",post_proc1); CHKERRQ(ierr);
-  rval = post_proc1.postProcMesh.write_file("acoustic_impinging_out.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
+	ierr = post_proc1.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+	ierr = mField.loop_finite_elements("ACOUSTIC_PROBLEM","HELMHOLTZ_FE",post_proc1); CHKERRQ(ierr);
+	rval = post_proc1.postProcMesh.write_file("acoustic_impinging_out.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
   
-  //output the results from Docker
-  char command1[] = "mbconvert ./acoustic_impinging_out.h5m ./acoustic_impinging_out.vtk && cp ./acoustic_impinging_out.vtk ../../../../../mnt/home/Desktop/U_pan/helmholtz_results/";
-  int todo1 = system( command1 );
+	//output the results from Docker
+	char command1[] = "mbconvert ./acoustic_impinging_out.h5m ./acoustic_impinging_out.vtk && cp ./acoustic_impinging_out.vtk ../../../../../mnt/home/Desktop/U_pan/helmholtz_results/";
+	int todo1 = system( command1 );
   }
   
   /** get the time interval **/
   ierr = PetscTime(&v2);CHKERRQ(ierr);
   ierr = PetscGetCPUTime(&t2);CHKERRQ(ierr);
   PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Total Rank %d Time = %f S CPU Time = %f S \n",pcomm->rank(),v2-v1,t2-t1);
-  
-  Vec M;
   
   
   
