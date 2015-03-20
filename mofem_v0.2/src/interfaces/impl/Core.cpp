@@ -172,8 +172,16 @@ PetscErrorCode mofem_error_handler(MPI_Comm comm,int line,const char *fun,const 
 
     if(ismain || isunknown) { 
 
+      stringstream strs_version;
+      strs_version << "MoFEM_version_" << MoFEM_VERSION_MAJOR << "." << MoFEM_VERSION_MINOR << "." << MoFEM_VERSION_BUILD;
+
+
       error_printf_hilight();
       (*PetscErrorPrintf)("--------------------- MoFEM Error Message---------------------------------------------------------------------------\n"); 
+      (*PetscErrorPrintf)("MoFEM version %d.%d.%d\n",MoFEM_VERSION_MAJOR,MoFEM_VERSION_MINOR,MoFEM_VERSION_BUILD); 
+      (*PetscErrorPrintf)("MoFEM git commit id %s\n",GIT_SHA1_NAME); 
+      (*PetscErrorPrintf)("See http://userweb.eng.gla.ac.uk/lukasz.kaczmarczyk/MoFem/html/guidelines_bug_reporting.html for bug reporting.\n");
+      (*PetscErrorPrintf)("See http://userweb.eng.gla.ac.uk/lukasz.kaczmarczyk/MoFem/html/faq_and_bugs.html for trouble shooting.\n");
       error_printf_normal(); 
 
       PetscTraceBackErrorHandler(PETSC_COMM_SELF,line,fun,file,n,p,mess,ctx);
