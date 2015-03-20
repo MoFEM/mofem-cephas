@@ -62,7 +62,8 @@ enum MoFEMErrorCode {
   MOFEM_CHAR_THROW = 105,
   MOFEM_STD_EXCEPTION_THROW = 106,
   MOFEM_INVALID_DATA = 107,
-  MOFEM_ATOM_TEST_INVALID = 108
+  MOFEM_ATOM_TEST_INVALID = 108,
+  MOFEM_MOAB_ERROR = 109
 };
 
 /// \brief approximation spaces
@@ -145,7 +146,7 @@ enum ByWhat {
     std::ostringstream ss; \
     ss << "Error code  " << val << " at " << __FILE__ << ":" << __LINE__ << std::endl; \
     std::string str(ss.str()); \
-    SETERRQ(PETSC_COMM_SELF,1,str.c_str()); \
+    SETERRQ(PETSC_COMM_SELF,MOFEM_MOAB_ERROR,str.c_str()); \
   } \
 } while (false)
 

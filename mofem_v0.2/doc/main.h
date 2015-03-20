@@ -28,11 +28,6 @@
  * MoFem interface is accessed by abstract class FieldInterface.hpp
  *
 
- * \section Examples Example problems
- *
- * If you like to see example problems, follow the link <https://bitbucket.org/likask/mofem-joseph/wiki/Home#markdown-header-examples-and-benchmark-tests>
- *
-
  * \section License
  *
  * Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl) <br>

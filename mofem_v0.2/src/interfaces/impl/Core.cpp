@@ -30,7 +30,8 @@
 #include <petscvec.h> 
 #include <petscmat.h> 
 #include <petscsnes.h> 
-#include <petscts.h> 
+#include <petscts.h>
+#include <petscconfiginfo.h> 
 
 #include <version.h>
 #include <definitions.h>
@@ -138,8 +139,69 @@ PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr)
   PetscFunctionReturn(0);
 }
 
+bool Core::isGloballyInitialised = false;
+
+static void error_printf_hilight(void) {
+#if defined(PETSC_HAVE_UNISTD_H) && defined(PETSC_USE_ISATTY)
+  if (PetscErrorPrintf == PetscErrorPrintfDefault) {
+    if (isatty(fileno(PETSC_STDERR))) fprintf(PETSC_STDERR,"\033[1;32m");
+  }
+#endif
+}
+
+static void error_printf_normal(void) {
+#if defined(PETSC_HAVE_UNISTD_H) && defined(PETSC_USE_ISATTY)
+  if (PetscErrorPrintf == PetscErrorPrintfDefault) {
+    if (isatty(fileno(PETSC_STDERR))) fprintf(PETSC_STDERR,"\033[0;39m\033[0;49m");
+  }
+#endif
+}
+
+PetscErrorCode mofem_error_handler(MPI_Comm comm,int line,const char *fun,const char *file,PetscErrorCode n,PetscErrorType p,const char *mess,void *ctx) {
+  PetscFunctionBegin; 
+
+  int rank = 0;
+  if (comm != PETSC_COMM_SELF) MPI_Comm_rank(comm,&rank);
+
+  if(!rank) {
+
+    PetscBool ismain,isunknown;
+  
+    PetscStrncmp(fun,"main",4,&ismain); 
+    PetscStrncmp(fun,"unknown",7,&isunknown); 
+
+    if(ismain || isunknown) { 
+
+      error_printf_hilight();
+      (*PetscErrorPrintf)("--------------------- MoFEM Error Message---------------------------------------------------------------------------\n"); 
+      error_printf_normal(); 
+
+      PetscTraceBackErrorHandler(PETSC_COMM_SELF,line,fun,file,n,p,mess,ctx);
+
+      error_printf_hilight();
+      (*PetscErrorPrintf)("----------MoFEM End of Error Message -------send entire error message to CMatGU <cmatgu@googlegroups.com> ----------\n"); 
+      error_printf_normal(); 
+
+    }
+
+  } else {
+
+    /* do not print error messages since process 0 will print them, sleep before aborting so will not accidently kill process 0*/
+    PetscSleep(10.0);
+    abort();
+
+  }
+
+  PetscFunctionReturn(0);
+}
+
 Core::Core(Interface& _moab,MPI_Comm _comm,int _verbose): 
   moab(_moab),comm(_comm),verbose(_verbose) {
+
+  if(!isGloballyInitialised) {
+    PetscPushErrorHandler(mofem_error_handler,PETSC_NULL);
+    isGloballyInitialised = true;
+  }
 
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,comm);
