@@ -154,7 +154,7 @@ struct HelmholtzElement {
 		}
 		
 		ublas::matrix<double> Ann,Anv,Avv;
-		ublas::vector<ublas::matrix<double> > Ane,Anf,Aev,Afv;
+		ublas::vector<ublas::matrix<double> > Aen,Afn,Aev,Afv;
 		ublas::matrix<ublas::matrix<double> > Aee,Aef,Aff;
 		
 	};
@@ -612,41 +612,33 @@ struct HelmholtzElement {
 				if(row_data.getIndices().size()==0) PetscFunctionReturn(0);
 				if(col_data.getIndices().size()==0) PetscFunctionReturn(0);
 	
-				cout << "\n row_type this turn = \n" << row_type << endl;
-				cout << "\n col_type this turn = \n" << col_type <<  endl;
 				
 				switch(row_type) {
 						
 					case MBVERTEX:
-						cerr << "\n row_type case MBVERTEX \n";
 						switch(col_type) {
 							case MBVERTEX:
 								K_ptr = &commonData.Ann;
-								break;
-							case MBEDGE:
-								commonData.Ane.resize(6);
-								K_ptr = &commonData.Ane[col_side];
-								break;
-							case MBTRI:
-								commonData.Anf.resize(4);
-								K_ptr = &commonData.Anf[col_side];
 								break;
 							case MBTET:
 								K_ptr = &commonData.Anv;
 								break;
 							default:
-								cout << "\n row_type = MBVERTEX, error col_type not match \n" << endl;
+								SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"row_type = MBVERTEX, error col_type not match");
 								break;
 						}
 						break;
 						
 					case MBEDGE:
-						cerr << "\n row_type case MBEDGE \n";
 						switch(col_type) {
-							//case MBVERTEX:
-							//	commonData.Ane.resize(6);
-							//	K_ptr = &commonData.Ane[row_side];
-							//	break;
+							case MBVERTEX:
+								commonData.Aen.resize(6);
+								K_ptr = &commonData.Aen[row_side];
+								break;
+							case MBTET:
+								commonData.Aev.resize(6);
+								K_ptr = &commonData.Aev[row_side];
+								break;
 							case MBEDGE:
 								commonData.Aee.resize(6,6);
 								K_ptr = &commonData.Aee(row_side,col_side);
@@ -655,100 +647,72 @@ struct HelmholtzElement {
 								commonData.Aef.resize(6,4);
 								K_ptr = &commonData.Aef(row_side,col_side);
 								break;
-							case MBTET:
-								commonData.Aev.resize(6);
-								//K_ptr = &commonData.Aev[row_side];
-								K_ptr = &commonData.Aev[col_side];
-								break;
+
 							default:
-								cout << "row_type = MBEDGE, \n error col_type not match, col_type = \n" << col_type <<  endl;
+								SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"row_type = MBEDGE, error col_type not match");
 								break;
 						}
 						break;
 						
 					case MBTRI:
-						cerr << "\n row_type case MBTRI \n";
 						switch(col_type) {
-							//case MBVERTEX:
-							//	commonData.Anf.resize(4);
-							//	K_ptr = &commonData.Anf[row_side];
-							//	break;
-							//case MBEDGE:
-							//	commonData.Aef.resize(6,4);
-							//	K_ptr = &commonData.Aef(col_side,row_side);
-							//	break;
+							case MBVERTEX:
+								commonData.Afn.resize(4);
+								K_ptr = &commonData.Afn[row_side];
+								break;
+							case MBTET:
+								commonData.Afv.resize(4);
+								K_ptr = &commonData.Afv[row_side];
+								break;
 							case MBTRI:
 								commonData.Aff.resize(4,4);
 								K_ptr = &commonData.Aff(row_side,col_side);
 								break;
-							case MBTET:
-								commonData.Afv.resize(4);
-								//K_ptr = &commonData.Afv[row_side];
-								K_ptr = &commonData.Afv[col_side];
-								break;
 							default:
-								cout << "row_type = MBTRI, \n error col_type not match \n" << endl;
+								SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"row_type = MBTRI, error col_type not match");
 								break;	
 						}
 						break;
 						
 					case MBTET:
-						cerr << "\n row_type case MBTET \n";
 						K_ptr = &commonData.Avv;	
 						break;
 					default:
-						cout << "\n error row_type not match, error col_type not match \n" << endl;
+						SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"row_type not match");
 						break;
 						//never should happen 
 				}
 				
 				ublas::matrix<double> &K = *K_ptr;
 				
-				cout << "\n K = " << K << endl;
-				cout << "\n *K_ptr = " << *K_ptr << endl;
+				int nb_row = row_data.getN().size2();
+				int nb_col = col_data.getN().size2();
 				
-				int nb_row;
-				int nb_col;
 				if(cAlculate) {
-				cerr << "\n first run in matrix A \n";
 				
-				nb_row = row_data.getN().size2();
-				nb_col = col_data.getN().size2();
-				
-				K.resize(nb_row,nb_col);
-				bzero(&*K.data().begin(),nb_row*nb_col*sizeof(double));
-				
-				
+					K.resize(nb_row,nb_col);
+					bzero(&*K.data().begin(),nb_row*nb_col*sizeof(double));
 	
-				for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
+					for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
 	
-					double val = getVolume()*getGaussPts()(3,gg);
-					if(getHoGaussPtsDetJac().size()>0) {
-						val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
+						double val = getVolume()*getGaussPts()(3,gg);
+						if(getHoGaussPtsDetJac().size()>0) {
+							val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
+						}
+						noalias(K) += val*prod(row_data.getDiffN(gg,nb_row),trans(col_data.getDiffN(gg,nb_col)));
 					}
 	
-
-					noalias(K) += val*prod(row_data.getDiffN(gg,nb_row),trans(col_data.getDiffN(gg,nb_col)));
-	
 				}
-				
-				}
-	
 				PetscErrorCode ierr;
 				if(!useTsB) {
 					const_cast<FEMethod*>(getFEMethod())->ts_B = A;    //FEMethod does not belong to fieldinterface anymore.
 				}
 				
-				//cerr << "\n up to here I am fine 4\n";
-
 				ierr = MatSetValues(
 						   A,  //(getFEMethod()->ts_B), instead in New thermal element. wait
 						   nb_row,&row_data.getIndices()[0],
 						   nb_col,&col_data.getIndices()[0],
 						   &K(0,0),ADD_VALUES); CHKERRQ(ierr);
-				
-				//cerr << "\n up to here I am fine 5\n";
-
 				
 				if(row_side != col_side || row_type != col_type) {
 					transK.resize(nb_col,nb_row);
@@ -758,10 +722,7 @@ struct HelmholtzElement {
 							   nb_col,&col_data.getIndices()[0],
 							   nb_row,&row_data.getIndices()[0],
 							   &transK(0,0),ADD_VALUES); CHKERRQ(ierr);
-				}
-				
-				//cerr << "\n up to here I am fine 6\n";
-	
+				}	
 	
 			} catch (const std::exception& ex) {
 				ostringstream ss;
@@ -816,25 +777,25 @@ struct HelmholtzElement {
 							case MBVERTEX:
 								M_ptr = &commonData.Ann;
 								break;
-							case MBEDGE:
-								commonData.Ane.resize(6);
-								M_ptr = &commonData.Ane[col_side];
-								break;
-							case MBTRI:
-								commonData.Anf.resize(4);
-								M_ptr = &commonData.Anf[col_side];
-								break;
 							case MBTET:
 								M_ptr = &commonData.Anv;
 								break;
 							default:
-								cout << "\n row_type = MBVERTEX, error col_type not match \n" << endl;
+								SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"row_type = MBVERTEX, error col_type not match");
 								break;
 						}
 						break;
 						
 					case MBEDGE:
 						switch(col_type) {
+							case MBVERTEX:
+								commonData.Aen.resize(6);
+								M_ptr = &commonData.Aen[row_side];
+								break;
+							case MBTET:
+								commonData.Aev.resize(6);
+								M_ptr = &commonData.Aev[row_side];
+								break;
 							case MBEDGE:
 								commonData.Aee.resize(6,6);
 								M_ptr = &commonData.Aee(row_side,col_side);
@@ -843,32 +804,29 @@ struct HelmholtzElement {
 								commonData.Aef.resize(6,4);
 								M_ptr = &commonData.Aef(row_side,col_side);
 								break;
-							case MBTET:
-								commonData.Aev.resize(6);
-								//M_ptr = &commonData.Aev[row_side];
-								M_ptr = &commonData.Aev[col_side];
-
-								break;
+				
 							default:
-								cout << "row_type = MBEDGE, \n error col_type not match, col_type = \n" << col_type <<  endl;
+								SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"row_type = MBEDGE, error col_type not match");
 								break;
 						}
 						break;
 						
 					case MBTRI:
 						switch(col_type) {
+							case MBVERTEX:
+								commonData.Afn.resize(4);
+								M_ptr = &commonData.Afn[row_side];
+								break;
+							case MBTET:
+								commonData.Afv.resize(4);
+								M_ptr = &commonData.Afv[row_side];
+								break;
 							case MBTRI:
 								commonData.Aff.resize(4,4);
 								M_ptr = &commonData.Aff(row_side,col_side);
 								break;
-							case MBTET:
-								commonData.Afv.resize(4);
-								//M_ptr = &commonData.Afv[row_side];
-								M_ptr = &commonData.Afv[col_side];
-
-								break;
 							default:
-								cout << "row_type = MBTRI, \n error col_type not match \n" << endl;
+								SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"row_type = MBTRI, error col_type not match");
 								break;	
 						}
 						break;
@@ -877,26 +835,23 @@ struct HelmholtzElement {
 						M_ptr = &commonData.Avv;	
 						break;
 					default:
-						cout << "\n error row_type not match, error col_type not match \n" << endl;
+						SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"row_type not match");
 						break;
 						//never should happen 
 				}
 				
 				ublas::matrix<double> &M = *M_ptr;
 				
-				int nb_row;
-				int nb_col;
+				int nb_row = row_data.getN().size2();
+				int nb_col = col_data.getN().size2();
 				if(cAlculate) {
 				
-					nb_row = row_data.getN().size2();
-					nb_col = col_data.getN().size2();
 					M.resize(nb_row,nb_col);
 					bzero(&*M.data().begin(),nb_row*nb_col*sizeof(double));
 		
 					for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
 						
 						double wAvenumber = dAta.aNgularfreq/dAta.sPeed;
-						
 							
 						double wAvenUmber = pow(wAvenumber,2.0);
 						
