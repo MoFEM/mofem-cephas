@@ -58,6 +58,13 @@ struct BitLevelCouplerInterface: public FieldUnknownInterface {
     const BitRefLevel &parent_level,Range &children,bool elements = true,int verb = 0);
 
 
+  private:
+
+  PetscErrorCode chanegParent(RefMoFEMEntity_multiIndex::iterator it,EntityHandle parent,bool element);
+  PetscErrorCode verifyParent(RefMoFEMEntity_multiIndex::iterator it,EntityHandle parent);
+
+
+
 };
 
 }

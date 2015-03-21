@@ -554,6 +554,10 @@ struct Core:
   //
   int sIze,rAnk;
 
+  private:
+
+  static bool isGloballyInitialised;
+
 };
 
 }

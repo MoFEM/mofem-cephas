@@ -39,7 +39,7 @@
 
 #include <fem_tools.h>
 
-//static bool debug = true;
+static bool debug = true;
 
 PetscErrorCode ierr;
 ErrorCode rval;
@@ -63,7 +63,6 @@ PetscErrorCode BitLevelCouplerInterface::queryInterface(const MOFEMuuid& uuid, F
 
 PetscErrorCode BitLevelCouplerInterface::buidlAdjacenciesVerticesOnTets(const BitRefLevel &parent_level,Range &children,
     const double iter_tol,const double inside_tol,bool vertex_elements,int verb) {
-
   PetscFunctionBegin;
   FieldInterface& m_field = cOre;
   //build BVHTree
@@ -117,25 +116,8 @@ PetscErrorCode BitLevelCouplerInterface::buidlAdjacenciesVerticesOnTets(const Bi
     if(verb>0) {
       cout << "leaf_out " << leaf_out << endl;
     }
-    if(vertex_elements) {
-      const RefMoFEMElement_multiIndex *refined_finite_elements_ptr;
-      ierr = m_field.get_ref_finite_elements(&refined_finite_elements_ptr); CHKERRQ(ierr);
-      RefMoFEMElement_multiIndex::index<Ent_mi_tag>::type::iterator eit;
-      eit = refined_finite_elements_ptr->get<Ent_mi_tag>().find(node);
-      if(eit!=refined_finite_elements_ptr->get<Ent_mi_tag>().end()) {
-	RefMoFEMElement_change_parent modifier(m_field.get_moab(),refined_ptr,refined_ptr->project<0>(it),leaf_out);
-	bool success = const_cast<RefMoFEMElement_multiIndex*>(refined_finite_elements_ptr)->modify(refined_finite_elements_ptr->project<0>(eit),modifier);
-	if(!success) {
-	  SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"unsuccessful operation");
-	}
-      }
-    } else {
-      RefMoFEMEntity_change_parent modifier(m_field.get_moab(),leaf_out);
-      bool success = const_cast<RefMoFEMEntity_multiIndex*>(refined_ptr)->modify(refined_ptr->project<0>(it),modifier);
-      if(!success) {
-	SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"unsuccessful operation");
-      }
-    }
+    ierr = chanegParent(refined_ptr->project<0>(it),leaf_out,vertex_elements); CHKERRQ(ierr);
+
   }
   if(init_tree) {
     delete tree_ptr;
@@ -195,6 +177,7 @@ PetscErrorCode BitLevelCouplerInterface::buidlAdjacenciesVerticesOnFacesEdgesVol
     }
 
     double loc[3];
+    ierr = ShapeMBTET(N,&coords[0],&coords[1],&coords[2],1);; CHKERRQ(ierr);
     ierr = ShapeMBTET_inverse(N,diffN,coords,&coords[12],loc); CHKERRQ(ierr);
     ierr = ShapeMBTET(N,&loc[0],&loc[1],&loc[2],1);; CHKERRQ(ierr);
 
@@ -268,25 +251,7 @@ PetscErrorCode BitLevelCouplerInterface::buidlAdjacenciesVerticesOnFacesEdgesVol
 
     if(!parent) continue;
 
-    if(vertex_elements) {
-      const RefMoFEMElement_multiIndex *refined_finite_elements_ptr;
-      ierr = m_field.get_ref_finite_elements(&refined_finite_elements_ptr); CHKERRQ(ierr);
-      RefMoFEMElement_multiIndex::index<Ent_mi_tag>::type::iterator eit;
-      eit = refined_finite_elements_ptr->get<Ent_mi_tag>().find(node);
-      if(eit!=refined_finite_elements_ptr->get<Ent_mi_tag>().end()) {
-	RefMoFEMElement_change_parent modifier(m_field.get_moab(),refined_ptr,refined_ptr->project<0>(it),parent);
-	bool success = const_cast<RefMoFEMElement_multiIndex*>(refined_finite_elements_ptr)->modify(refined_finite_elements_ptr->project<0>(eit),modifier);
-	if(!success) {
-	  SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"unsuccessful operation");
-	}
-      }
-    } else {
-      RefMoFEMEntity_change_parent modifier(m_field.get_moab(),parent);
-      bool success = const_cast<RefMoFEMEntity_multiIndex*>(refined_ptr)->modify(refined_ptr->project<0>(it),modifier);
-      if(!success) {
-	SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"unsuccessful operation");
-      }
-    }
+    ierr = chanegParent(refined_ptr->project<0>(it),parent,vertex_elements); CHKERRQ(ierr);
 
   }
   PetscFunctionReturn(0);
@@ -353,26 +318,72 @@ PetscErrorCode BitLevelCouplerInterface::buidlAdjacenciesEdgesFacesVolumes(
       max_dim = ent_dim > max_dim ? ent_dim : max_dim;
     }
 
-    if(max_dim > 1) {
+    if(max_dim > 0) {
+
       for(;max_dim<=3;max_dim++) {
-      
 	Range parent_ents;
 	rval = m_field.get_moab().get_adjacencies(&*conn_parents.begin(),num_nodes,max_dim,false,parent_ents); CHKERR_PETSC(rval);
 	if(!parent_ents.empty()) {
-	  if(elements) {
-
-	  } else {
-
-	  }
-	  break;
+	  ierr = chanegParent(refined_ptr->project<0>(it),*parent_ents.begin(),elements); CHKERRQ(ierr);
 	}
-
+	break;
       }
+
     }
 
   }
 
   PetscFunctionReturn(0);
 }
+
+PetscErrorCode BitLevelCouplerInterface::chanegParent(RefMoFEMEntity_multiIndex::iterator it,EntityHandle parent,bool element) {
+  PetscFunctionBegin;
+
+  FieldInterface& m_field = cOre;
+  const RefMoFEMEntity_multiIndex *refined_ptr;
+  ierr = m_field.get_ref_ents(&refined_ptr); CHKERRQ(ierr);
+
+  if(debug) {
+    ierr = verifyParent(it,parent); CHKERRQ(ierr);
+  }
+
+  if(element) {
+    EntityHandle ent;
+    ent = it->get_ref_ent();
+    const RefMoFEMElement_multiIndex *refined_finite_elements_ptr;
+    ierr = m_field.get_ref_finite_elements(&refined_finite_elements_ptr); CHKERRQ(ierr);
+    RefMoFEMElement_multiIndex::index<Ent_mi_tag>::type::iterator eit;
+    eit = refined_finite_elements_ptr->get<Ent_mi_tag>().find(ent);
+    if(eit!=refined_finite_elements_ptr->get<Ent_mi_tag>().end()) {
+      RefMoFEMElement_change_parent modifier(m_field.get_moab(),refined_ptr,it,parent);
+      bool success;
+      success = const_cast<RefMoFEMElement_multiIndex*>(refined_finite_elements_ptr)->modify(refined_finite_elements_ptr->project<0>(eit),modifier);
+      if(!success) {
+	SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"unsuccessful operation");
+      }
+    }
+  } else {
+    RefMoFEMEntity_change_parent modifier(m_field.get_moab(),parent);
+    bool success = const_cast<RefMoFEMEntity_multiIndex*>(refined_ptr)->modify(it,modifier);
+    if(!success) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"unsuccessful operation");
+    }
+  }
+
+
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode BitLevelCouplerInterface::verifyParent(RefMoFEMEntity_multiIndex::iterator it,EntityHandle parent) {
+  PetscFunctionBegin;
+
+  if(parent != it->get_parent_ent()) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+  }
+
+
+  PetscFunctionReturn(0);
+}
+
 
 }

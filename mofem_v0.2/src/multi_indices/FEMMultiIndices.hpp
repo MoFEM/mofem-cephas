@@ -224,7 +224,7 @@ struct RefMoFEMElement_change_parent {
     refEntPtr(ref_ent_ptr),
     refEntIt(ref_ent_it),
     pArent(parent) {}
-  void operator()(RefMoFEMEntity &e) { 
+  void operator()(ptrWrapperRefMoFEMElement &e) { 
     const_cast<RefMoFEMEntity_multiIndex*>(refEntPtr)->modify(refEntIt,RefMoFEMEntity_change_parent(mOab,pArent));
   }
 };
