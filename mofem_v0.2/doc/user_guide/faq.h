@@ -2,9 +2,13 @@
 
 \section bugs Bugs
 
+- BasicMoFEMEntity in should be linked to directly to MoAB data structures such
+  that connectivity and nodal coordinates could be quickly accessed, without
+  need of using native MoAB functions.
+
 \section faq Frequently Asked Questions
 
-\subsection update_on_memory_stick MoFEM update on Live USB Stick
+\subsection update_on_memory_stick Ho to update MoFEM on Live USB Stick?
 
 MoFEM update on Live USB stick:
 \code
@@ -24,7 +28,7 @@ $ export http_proxy=http://wwwcache.gla.ac.uk:8080
 $ export https_proxy=http://wwwcache.gla.ac.uk:8080
 \endcode
 
-\subsection ctest How to run ctest
+\subsection ctest How to run ctest?
 
 You can run tests and report results to MoFEM CDash web page. Form mofem user
 modules build directory executing  run script
@@ -42,6 +46,13 @@ $ export http_proxy=http://wwwcache.gla.ac.uk:8080
 $ export https_proxy=http://wwwcache.gla.ac.uk:8080
 \endcode
 
+You can as well run ctest directly by simply executing command line:
+\code 
+ctest -V -D Experimental
+\endcode
+where option -V sets verbose version and all test output is printed on screen
+and -D Experimental tels ctest to submit results to Experimental build on CDash
+MoFEM server.
 
 */
 
