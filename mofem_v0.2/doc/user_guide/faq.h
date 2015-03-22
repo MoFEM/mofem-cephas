@@ -1,10 +1,4 @@
-/*! \page faq_and_bugs FAQ and Bugs
-
-\section bugs Bugs
-
-- BasicMoFEMEntity in should be linked to directly to MoAB data structures such
-  that connectivity and nodal coordinates could be quickly accessed, without
-  need of using native MoAB functions.
+/*! \page faqs Frequently Asked Questions
 
 \section faq Frequently Asked Questions
 

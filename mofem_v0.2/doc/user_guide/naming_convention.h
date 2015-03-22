@@ -9,7 +9,7 @@ moved to MoFEM finite element library. Implementation to MoFEM library (not UM)
 need to be always discussed, agreed and planed on CMatGU
 <cmatgu@googlegroups.com>.  Work on UM is less controlled and contained to user
 directory. It is planed that it will be single version of MoFEM library but
-many UM forks. Some UM can be in in depended from MoFEM library repository.
+many UM forks. Some UM can be in developed independently from MoFEM library repository.
 
  In default UM are build as a part of MoFEM
 library, i.e. source files from MoFEM source directory are used in compilation
@@ -52,6 +52,7 @@ MoFEM code should follow MoAB code style and best pratices listed here
 <http://www.mcs.anl.gov/~fathom/moab-docs/html/styleguide.html>.
 
 - Names:
+
   - Class names should be in the CamelBack style, e.g. EdgeMesh or VertexMesher.
 
   - Class member variables should be camelBack, e.g. EdgeMesh::schemeType; each
@@ -62,7 +63,7 @@ MoFEM code should follow MoAB code style and best pratices listed here
     possible (the enumeration name indicates the general purpose of the
     enumeration, so e.g. we use EQUAL, not EQUAL_MESH)
 
-  - Each class header should be fully commented; that includes:
+  - Each class header should be fully commented.
   
   - A \\file comment block at the top of the file; DO NOT include things like
     Author and Date blocks; this stuff is available from subversion if we
@@ -77,6 +78,93 @@ MoFEM code should follow MoAB code style and best pratices listed here
 
   - Local variables and function argument have names with small letters, i.e.
     temperature_val, nodal_position. 
+
+  - If variable is a pointer it shoul have name as follows \code
+
+class A {
+  double *valPtr; ///< class member variable
+};
+
+double *val_ptr; ///< local variable
+
+\endcode
+
+  - Constants and Macros
+    - Don't use a pre-processor macro where a const variable or an inline or
+      template function will suffice. There is absolutely benefit to the former
+      over the later with modern compilers. Further, using macros bypasses
+      typechecking that the compiler would otherwise do for you and if used in
+      headers, introduce names into the global rather than MoFEM namespace.
+
+    - Don't define constants that are already provided by standard libraries.
+      For example, use M_PI as defined in math.h rather than defining your own
+      constant.
+
+- Each header file should have define macro, following example \code
+#ifndef __CLASS_NAME_HPP__
+#define __CLASS_NAME_HPP__
+
+class ClassName {
+
+};
+
+#endif //__CLASS_NAME_HPP__
+\endcode
+
+- Each function should have build in error cheching, following example \code{.cpp}
+PetscErrorCode fun() {
+  PetscFunctionBegin;
+  PetscFunctionReturn(0);
+}
+
+ierr = fun(); CHKERRQ(ierr);
+\endcode
+
+- Memory allocation
+
+  - USE VALGRIND. Valging is powerful tool to find execution errors, use it if your
+    code behave differently on two different computers or if you compile code
+    with or without debugging. It can help with segmentation fault, \code
+    valgrind --track-origins=yes ./program_name -my_file mesh.cub
+    \endcode
+    Use small mesh, i.e. small problem, when you run valgrind, it take some
+    time. YOU NEED TO COMPILE CODE WITH -DCMAKE_BUILD_TYPE=Debug.
+
+  - Keep array of objects in STL vectors, multi-indexes or any other Boost or
+    STL data structures. AVOID ALLOCATING ARRAY OF OBJECTS ON HEAP.
+
+  - Use smart pointers
+    <http://www.boost.org/doc/libs/1_57_0/libs/smart_ptr/smart_ptr.htm>. If
+    exsisting code uses regular pointer, take opportunity and change it to smart
+    pointer.
+
+  - Check program with line command argument -log_summary, verifing if number of created PTESc
+    objects is equal to number of destroyed objects \code
+Memory usage is given in bytes:
+
+Object Type          Creations   Destructions     Memory  Descendants' Mem.
+Reports information only for process 0.
+
+--- Event Stage 0: Main Stage
+
+              Matrix     8              8      1526844     0
+ Matrix Partitioning     1              1          660     0
+           Index Set    40             40        42992     0
+   IS L to G Mapping    11             11        32016     0
+              Vector    68             68       361384     0
+      Vector Scatter    16             16         9792     0
+                SNES     1              1         1340     0
+      SNESLineSearch     1              1          880     0
+              DMSNES     1              1          680     0
+       Krylov Solver     1              1        18960     0
+     DMKSP interface     1              1          664     0
+      Preconditioner     2              2         2104     0
+    Distributed Mesh     2              2         9008     0
+Star Forest Bipartite Graph     5              5         4136     0
+     Discrete System     2              2         1632     0
+              Viewer     1              0            0     0
+\endcode
+
 
 
 \section Making Repository Commits
