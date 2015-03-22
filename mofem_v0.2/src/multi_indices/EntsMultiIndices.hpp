@@ -73,6 +73,11 @@ typedef multi_index_container<
 /** 
  * \brief this struct keeps basic methods for moab entity
  * \ingroup ent_multi_indices 
+
+  \bug BasicMoFEMEntity in should be linked to directly to MoAB data structures such
+  that connectivity and nodal coordinates could be quickly accessed, without
+  need of using native MoAB functions.
+
  */
 struct BasicMoFEMEntity {
   EntityHandle ent;
@@ -115,9 +120,13 @@ struct BasicMoFEMEntity {
 /** 
  * \brief struct keeps handle to refined handle.
  * \ingroup ent_multi_indices 
+
+  \bug th_RefType "_RefType" is set as two integers, need to be fixed, it is waset of space.
+
  */
 struct RefMoFEMEntity: public BasicMoFEMEntity {
   EntityHandle *tag_parent_ent;
+  int tag_parent_ent_size;
   BitRefLevel *tag_BitRefLevel;
   RefMoFEMEntity(Interface &moab,const EntityHandle _ent);
   /// get entity
