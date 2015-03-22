@@ -1,12 +1,6 @@
 /** \file MeshRefinment.cpp
  * \brief FIXME this is not so good implementation
  * 
- * Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl) <br>
- *
- * The MoFEM package is copyrighted by Lukasz Kaczmarczyk. 
- * It can be freely used for educational and research purposes 
- * by other institutions. If you use this softwre pleas cite my work. 
- *
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or (at your
@@ -109,8 +103,8 @@ PetscErrorCode Core::add_verices_in_the_middel_of_edges(const EntityHandle meshs
 PetscErrorCode Core::add_verices_in_the_middel_of_edges(const Range &_edges,const BitRefLevel &bit,int verb) {
   PetscFunctionBegin;
   Range edges = _edges.subset_by_type(MBEDGE);
-  typedef RefMoFEMEntity_multiIndex::index<Composite_EntityType_And_ParentEntityType_mi_tag>::type ref_ents_by_composite;
-  ref_ents_by_composite &ref_ents = refinedEntities.get<Composite_EntityType_And_ParentEntityType_mi_tag>();
+  typedef RefMoFEMEntity_multiIndex::index<Composite_EntType_and_ParentEntType_mi_tag>::type ref_ents_by_composite;
+  ref_ents_by_composite &ref_ents = refinedEntities.get<Composite_EntType_and_ParentEntType_mi_tag>();
   ref_ents_by_composite::iterator miit = ref_ents.lower_bound(boost::make_tuple(MBVERTEX,MBEDGE));
   ref_ents_by_composite::iterator hi_miit = ref_ents.upper_bound(boost::make_tuple(MBVERTEX,MBEDGE));
   RefMoFEMEntity_multiIndex_view_by_parent_entity ref_parent_ents_view;
@@ -182,8 +176,8 @@ PetscErrorCode Core::refine_TET(const Range &_tets,const BitRefLevel &bit,const 
   typedef RefMoFEMEntity_multiIndex::index<Ent_mi_tag>::type ref_ents_by_ent;
   ref_ents_by_ent &ref_ents_ent = refinedEntities.get<Ent_mi_tag>();
   // find all verices which parent is edge
-  typedef RefMoFEMEntity_multiIndex::index<Composite_EntityType_And_ParentEntityType_mi_tag>::type ref_ents_by_composite;
-  ref_ents_by_composite &ref_ents = refinedEntities.get<Composite_EntityType_And_ParentEntityType_mi_tag>();
+  typedef RefMoFEMEntity_multiIndex::index<Composite_EntType_and_ParentEntType_mi_tag>::type ref_ents_by_composite;
+  ref_ents_by_composite &ref_ents = refinedEntities.get<Composite_EntType_and_ParentEntType_mi_tag>();
   ref_ents_by_composite::iterator miit = ref_ents.lower_bound(boost::make_tuple(MBVERTEX,MBEDGE));
   ref_ents_by_composite::iterator hi_miit = ref_ents.upper_bound(boost::make_tuple(MBVERTEX,MBEDGE));
   RefMoFEMEntity_multiIndex_view_by_parent_entity ref_parent_ents_view;
@@ -409,7 +403,7 @@ PetscErrorCode Core::refine_TET(const Range &_tets,const BitRefLevel &bit,const 
 	}
       }
     } else {
-      //if this element was not refined or was refined with diffrent patterns of splitted edges create new elements
+      //if this element was not refined or was refined with different patterns of split edges create new elements
       for(int tt = 0;tt<nb_new_tets;tt++) {
 	if(!ref_tets_bit.test(tt)) {
 	  if(miit_composite!=hi_miit_composite) {
@@ -497,7 +491,7 @@ PetscErrorCode Core::refine_TET(const Range &_tets,const BitRefLevel &bit,const 
     rval = moab.get_adjacencies(&*tit,1,2,false,tit_faces); CHKERR_PETSC(rval);
     Range edges_nodes[6],faces_nodes[4];
     //for edges - add ref nodes
-    //edges_nodes[ee] - contains all nodes on edge ee inluding mid nodes if exist
+    //edges_nodes[ee] - contains all nodes on edge ee including mid nodes if exist
     Range::iterator eit = tit_edges.begin();
     for(int ee = 0;eit!=tit_edges.end();eit++,ee++) {
       rval = moab.get_connectivity(&*eit,1,edges_nodes[ee],true); CHKERR_PETSC(rval);
@@ -507,7 +501,7 @@ PetscErrorCode Core::refine_TET(const Range &_tets,const BitRefLevel &bit,const 
       }
     }
     //for faces - add ref nodes
-    //faces_nodes[ff] - contains all nodes on face ff inluding mid nodes if exist
+    //faces_nodes[ff] - contains all nodes on face ff including mid nodes if exist
     Range::iterator fit=tit_faces.begin();
     for(int ff = 0;fit!=tit_faces.end();fit++,ff++) {
       rval = moab.get_connectivity(&*fit,1,faces_nodes[ff],true); CHKERR_PETSC(rval);
@@ -559,7 +553,7 @@ PetscErrorCode Core::refine_TET(const Range &_tets,const BitRefLevel &bit,const 
 	  break;
 	}  
       }
-      if(ee<6) continue; //this refined edge is contined by edge of tetrahedral
+      if(ee<6) continue; //this refined edge is contained by edge of tetrahedral
       //check if ref edge is in coarse face
       int ff = 0;
       for(;ff<4;ff++) {
@@ -581,7 +575,7 @@ PetscErrorCode Core::refine_TET(const Range &_tets,const BitRefLevel &bit,const 
 	    break;
 	  }
       }
-      if(ff<4) continue; //this refined egde is contained by face of tetrahedral
+      if(ff<4) continue; //this refined edge is contained by face of tetrahedral
 	// check if ref edge is in coarse tetrahedral (i.e. that is internal edge of refined tetrahedral)
       if(intersect(tet_nodes,ref_edges_nodes).size()==2) {
 	rval = moab.tag_set_data(th_RefParentHandle,&*reit,1,&*tit); CHKERR_PETSC(rval);
@@ -632,7 +626,7 @@ PetscErrorCode Core::refine_TET(const Range &_tets,const BitRefLevel &bit,const 
 	  EntityHandle face = tit_faces[ff];
 	  rval = moab.tag_set_data(th_RefParentHandle,&*rfit,1,&face); CHKERR_PETSC(rval);
 	  int side = 0;
-	  //set face side if it is on inteface
+	  //set face side if it is on interface
 	  rval = moab.tag_get_data(th_interface_side,&face,1,&side); CHKERR_PETSC(rval);
 	  rval = moab.tag_set_data(th_interface_side,&*rfit,1,&side); CHKERR_PETSC(rval);
 	  //add face to refinedEntities
@@ -649,7 +643,7 @@ PetscErrorCode Core::refine_TET(const Range &_tets,const BitRefLevel &bit,const 
 	  break;
 	}
       }
-      if(ff<4) continue; //this face is contained by one of tetrahedrals 
+      if(ff<4) continue; //this face is contained by one of tetrahedrons
       //check if ref face is in coarse tetrahedral
       //this is ref face which is contained by tetrahedral volume
       if(intersect(tet_nodes,ref_faces_nodes).size()==3) {
@@ -672,15 +666,15 @@ PetscErrorCode Core::refine_TET(const Range &_tets,const BitRefLevel &bit,const 
   PetscFunctionReturn(0);
 }
 PetscErrorCode Core::refine_PRISM(const EntityHandle meshset,const BitRefLevel &bit,int verb) {
-  //FIXME: refinment is based on entity handlers, should work on global ids of nodes, this will allow parallelize agortihm in the future
+  //FIXME: refinement is based on entity handlers, should work on global ids of nodes, this will allow parallelize algorithm in the future
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   typedef RefMoFEMEntity_multiIndex::index<Ent_mi_tag>::type ref_ENTs_by_ent;
   typedef RefMoFEMElement_multiIndex::index<Composite_of_ParentEnt_And_BitsOfRefinedEdges_mi_tag>::type ref_fe_by_composite;
   ref_fe_by_composite &ref_fe_by_comp = refinedFiniteElements.get<Composite_of_ParentEnt_And_BitsOfRefinedEdges_mi_tag>();
-  //find all verices which parent is edge
-  typedef RefMoFEMEntity_multiIndex::index<Composite_EntityType_And_ParentEntityType_mi_tag>::type ref_ents_by_composite;
-  ref_ents_by_composite &ref_ents_by_comp = refinedEntities.get<Composite_EntityType_And_ParentEntityType_mi_tag>();
+  //find all vertices which parent is edge
+  typedef RefMoFEMEntity_multiIndex::index<Composite_EntType_and_ParentEntType_mi_tag>::type ref_ents_by_composite;
+  ref_ents_by_composite &ref_ents_by_comp = refinedEntities.get<Composite_EntType_and_ParentEntType_mi_tag>();
   ref_ents_by_composite::iterator miit = ref_ents_by_comp.lower_bound(boost::make_tuple(MBVERTEX,MBEDGE));
   ref_ents_by_composite::iterator hi_miit = ref_ents_by_comp.upper_bound(boost::make_tuple(MBVERTEX,MBEDGE));
   RefMoFEMEntity_multiIndex_view_by_parent_entity ref_parent_ents_view;
@@ -715,7 +709,7 @@ PetscErrorCode Core::refine_PRISM(const EntityHandle meshset,const BitRefLevel &
     for(int ee = 6;ee<9; ee++) {
       rval = moab.side_element(*pit,1,ee,edges[ee-3]); CHKERR_PETSC(rval);
     }
-    // detetct split edges
+    // detect split edges
     BitRefEdges split_edges(0);
     EntityHandle edge_nodes[6];
     fill(&edge_nodes[0],&edge_nodes[6],no_handle);
@@ -733,7 +727,7 @@ PetscErrorCode Core::refine_PRISM(const EntityHandle meshset,const BitRefLevel &
       if(verb>6) PetscPrintf(comm,"no refinement");
       continue;
     } 
-    //check consitency
+    //check consistency
     if(verb>3) {
       ostringstream ss;
       ss << "prism split edges " << split_edges << " count " << split_edges.count() << endl;

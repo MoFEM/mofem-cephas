@@ -2345,8 +2345,8 @@ PetscErrorCode Core::update_meshset_by_entities_children(
     cerr << moab.type_from_handle(parent) <<  " " << MBENTITYSET << endl;
   } CHKERR_PETSC(rval);
 
-  typedef RefMoFEMEntity_multiIndex::index<Composite_EntityHandle_And_ParentEntityType_mi_tag>::type ref_ents_by_composite;
-  ref_ents_by_composite &ref_ents = refinedEntities.get<Composite_EntityHandle_And_ParentEntityType_mi_tag>();
+  typedef RefMoFEMEntity_multiIndex::index<Composite_EntityHandle_And_ParentEntType_mi_tag>::type ref_ents_by_composite;
+  ref_ents_by_composite &ref_ents = refinedEntities.get<Composite_EntityHandle_And_ParentEntType_mi_tag>();
   Range::iterator eit = ents.begin();
   for(;eit!=ents.end();eit++) {
     if(verb>2) {
@@ -2714,11 +2714,17 @@ PetscErrorCode Core::loop_dofs(const string &field_name,EntMethod &method,int ve
   ierr = method.postProcess(); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::get_ref_ents(const RefMoFEMEntity_multiIndex **refinedEntities_ptr) {
+PetscErrorCode Core::get_ref_ents(const RefMoFEMEntity_multiIndex **refined_entities_ptr) {
   PetscFunctionBegin;
-  *refinedEntities_ptr = &refinedEntities;
+  *refined_entities_ptr = &refinedEntities;
   PetscFunctionReturn(0);
 }
+PetscErrorCode Core::get_ref_finite_elements(const RefMoFEMElement_multiIndex **refined_finite_elements_ptr) {
+  PetscFunctionBegin;
+  *refined_finite_elements_ptr = &refinedFiniteElements;
+  PetscFunctionReturn(0);
+}
+
 PetscErrorCode Core::get_problem(const string &problem_name,const MoFEMProblem **problem_ptr) {
   PetscFunctionBegin;
   typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type moFEMProblems_by_name;
@@ -2728,9 +2734,9 @@ PetscErrorCode Core::get_problem(const string &problem_name,const MoFEMProblem *
   *problem_ptr = &*p_miit;
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::get_dofs(const DofMoFEMEntity_multiIndex **dofsMoabField_ptr) {
+PetscErrorCode Core::get_dofs(const DofMoFEMEntity_multiIndex **dofs_ptr) {
   PetscFunctionBegin;
-  *dofsMoabField_ptr = &dofsMoabField;
+  *dofs_ptr = &dofsMoabField;
   PetscFunctionReturn(0);
 }
 MoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator Core::get_ent_moabfield_by_name_begin(const string &field_name) {

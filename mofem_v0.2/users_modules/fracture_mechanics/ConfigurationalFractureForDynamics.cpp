@@ -564,7 +564,7 @@ PetscErrorCode ConfigurationalFracturDynamics::fix_front_nodes(FieldInterface& m
     double g = mit->second;
     double rate = map_ent_rate_work[mit->first];
     ierr = PetscPrintf(PETSC_COMM_WORLD,
-      "front node = %ld g/g_c = %4.3f rate = %4.3g\n",
+      "front node = %ld g/g_c = %4.3g rate = %4.3g\n",
       mit->first,mit->second/gc,rate); CHKERRQ(ierr);
     if( ((g/gc + treshhold) < 1) || (rate<0) || (g != g)) {
       fix_nodes.insert(mit->first);

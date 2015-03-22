@@ -313,6 +313,7 @@ struct NonlinearElasticElement {
     BlockData &dAta;
     CommonData &commonData;
     int tAg;//,lastId;
+    int adlocReturnValue;
     bool jAcobian;
     bool fieldDisp;
 

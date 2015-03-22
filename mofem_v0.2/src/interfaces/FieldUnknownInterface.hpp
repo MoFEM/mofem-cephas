@@ -43,7 +43,9 @@ struct MOFEMuuid {
 //! or a NULL interface
 static const MOFEMuuid IDD_MOFEMUnknown = MOFEMuuid( BitIntefaceId(FIELD_UNKNOWNINTERFACE) );
 
-//! base class for all interface classes
+/** \brief base class for all interface classes
+  * \ingroup mofem
+  */
 struct FieldUnknownInterface {
   virtual PetscErrorCode queryInterface (const MOFEMuuid& uuid, FieldUnknownInterface** iface) = 0;
   virtual ~FieldUnknownInterface() {}

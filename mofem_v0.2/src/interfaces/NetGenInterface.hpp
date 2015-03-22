@@ -27,6 +27,9 @@ namespace MoFEM {
 
 static const MOFEMuuid IDD_MOFEMNetGegInterface = MOFEMuuid( BitIntefaceId(NETGEN_INTERFACE) );
 
+/** \brief Use NetGen to generate mesh
+  * \ingroup mofem
+  */
 struct NetGenInterface: public FieldUnknownInterface {
 
   PetscErrorCode queryInterface(const MOFEMuuid& uuid, FieldUnknownInterface** iface);

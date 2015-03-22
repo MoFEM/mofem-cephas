@@ -29,6 +29,9 @@ namespace MoFEM {
 
 static const MOFEMuuid IDD_MOFEMTetGegInterface = MOFEMuuid( BitIntefaceId(TETGEN_INTERFACE) );
 
+/** \brief use TetGen to generate mesh
+  * \ingroup mofem
+  */
 struct TetGenInterface: public FieldUnknownInterface {
 
   PetscErrorCode queryInterface(const MOFEMuuid& uuid, FieldUnknownInterface** iface);
@@ -40,6 +43,15 @@ struct TetGenInterface: public FieldUnknownInterface {
   typedef map<unsigned long,EntityHandle> tetGenMoab_Map;
   typedef map<int,Range> idxRange_Map;
 
+  
+  /** \brief create tetgen data structure form range of moab entities
+    
+    \param ents range of entitities (tetrahedrons or nodes)
+    \param in tegen data structure (look to TetGen user manual)
+    \param moab_tetgen_map maping moab to tegen enties
+    \param tetgen_moab_map maping tegen to moab entities
+
+    */
   PetscErrorCode inData(
     Range& ents,tetgenio& in,
     moabTetGen_Map& moab_tetgen_map,
@@ -47,12 +59,26 @@ struct TetGenInterface: public FieldUnknownInterface {
 
   enum tetGenNodesTypes { RIDGEVERTEX = 0, FREESEGVERTEX = 1, FREEFACETVERTEX = 2, FREEVOLVERTEX = 3 };
 
+  
+  /** \brief set point tags and type
+    */
   PetscErrorCode setGeomData(
     tetgenio& in,
     moabTetGen_Map& moab_tetgen_map,
     tetGenMoab_Map& tetgen_moab_map,
     map<int,Range> &type_ents);
 
+  /** \brief get entities for TetGen data structure
+
+    \param ents range of entitities (tetrahedrons or nodes)
+    \param in tegen data structure (look to TetGen user manual)
+    \param moab_tetgen_map maping moab to tegen enties
+    \param tetgen_moab_map maping tegen to moab entities
+    \param ents rerun entities which are in TetGen dara strucure
+    \param id_in_tags use tags as entity handles, if that is a case use tag to find moab vertex id
+    \param error_if_created throw error if node need to be created
+
+    */
   PetscErrorCode outData(
     tetgenio& in,tetgenio& out,
     moabTetGen_Map& moab_tetgen_map,
@@ -61,6 +87,17 @@ struct TetGenInterface: public FieldUnknownInterface {
     bool id_in_tags = false,
     bool error_if_created = false);
 
+  /** \brief get entities for TetGen data structure
+
+    \param ents range of entitities (tetrahedrons or nodes)
+    \param in tegen data structure (look to TetGen user manual)
+    \param moab_tetgen_map maping moab to tegen enties
+    \param tetgen_moab_map maping tegen to moab entities
+    \param ents rerun entities which are in TetGen dara strucure
+    \param bit set level to created entities 
+    \param error_if_created throw error if node need to be created
+
+    */
   PetscErrorCode outData(
     tetgenio& in,tetgenio& out,
     moabTetGen_Map& moab_tetgen_map,
@@ -68,23 +105,51 @@ struct TetGenInterface: public FieldUnknownInterface {
     BitRefLevel bit,
     bool id_in_tags = false,
     bool error_if_created = false);
+  
+  /** \brief set markers to faces
 
+    \param markers data structure with markers
+    \param in tegen data structure (look to TetGen user manual)
+    \param moab_tetgen_map maping moab to tegen enties
+    \param tetgen_moab_map maping tegen to moab entities
+
+    */
   PetscErrorCode setFaceData(
     vector<pair<Range,int> >& markers,
     tetgenio& in,
     moabTetGen_Map& moab_tetgen_map,
     tetGenMoab_Map& tetgen_moab_map);
 
+  /** \brief get markers to faces
+
+    \param markers data structure with markers
+    \param in tegen data structure (look to TetGen user manual)
+    \param moab_tetgen_map maping moab to tegen enties
+    \param tetgen_moab_map maping tegen to moab entities
+
+    */
   PetscErrorCode getTriangleMarkers(
     tetGenMoab_Map& tetgen_moab_map,tetgenio& out,
     Range *ents = NULL,idxRange_Map *ents_map = NULL,bool only_non_zero = true);
 
+
+  /** \brief set region data to tetrahedral
+    */
   PetscErrorCode setReginData(vector<pair<EntityHandle,int> >& regions,tetgenio& in);
+
+
+  /** \brief get region data to tetrahedral
+    */
   PetscErrorCode getReginData(
     tetGenMoab_Map& tetgen_moab_map,tetgenio& out,
     Range *ents = NULL,idxRange_Map *ents_map = NULL);
 
+  /** \brief run tetgen
+    */
   PetscErrorCode tetRahedralize(char switches[],tetgenio& in,tetgenio& out);
+
+  /** \brief load poly file
+    */
   PetscErrorCode loadPoly(char file_name[],tetgenio& in);
 
   //Tools for TetGen, i.e. geometry reconstruction from mesh
