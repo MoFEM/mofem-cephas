@@ -26,9 +26,13 @@ List of thrird party libraries and packages used by MoFEM:
 - BOOST <http://www.boost.org>
 	- uBlas <http://www.boost.org/doc/libs/release/libs/numeric/>
 
-\section cdash Testing MoFEM CDash webpage
+\section related_pages Related pages
 
-See: <http://cdash.eng.gla.ac.uk/cdash/>
+- \ref coding_practice
+
+- \ref faqs
+
+- CDashTesting <http://cdash.eng.gla.ac.uk/cdash/>
 
 \section License
 

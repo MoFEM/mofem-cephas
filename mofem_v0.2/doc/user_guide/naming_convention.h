@@ -1,5 +1,17 @@
 /*! \page coding_practice Coding practice
 
+\section citizen Be a good MoFEM citizen
+
+- MoFEM is a team work. Don't be focussed only on your project, try improve MOFEM. Y
+  our modifications can help others, others modification will help
+  you.
+- Project is not own by anyone, you are become owner proportionally to your
+  contribution. 
+- If you find bugs, you know how to improve documentation, pleas actively make
+  changes and improvements. 
+- If you have idea how to improve MoFEM, some functions
+  names are not clear and could be improved, propose that on MoFEM CMatGU
+  <cmatgu@googlegroups.com>.
 
 \section mofam_and_user_modules MoFEM and User Modules
 
@@ -185,5 +197,13 @@ pull request is accepted it is user responsibility to verify results on
 CDash server <http://cdash.eng.gla.ac.uk/cdash/>. The first priority will be to
 eliminate compilation errors, completion warnings, failed tests and memory
 leaks.
+
+Some guidance about branches:
+- Do not commits to other branch. You can commit only to branches created by yourself.
+- If you like to commit to other (not own created) branch, do pull request.
+- Before marking pull request, pull from branch to which you like to commit.
+- Pull regularly form CDasgTesting branch.
+- Make separate branch to each branch. If you working on two different tasks
+  make two different branches. This simplifies code revision. 
 
 */
