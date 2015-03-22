@@ -127,6 +127,15 @@ PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr)
     PetscFunctionReturn(0);
   } 
 
+  //BitLevelCoupler
+  if(type == typeid(BitLevelCouplerInterface)) {
+    if(iFaces.find(IDD_MOFENBitLevelCoupler.uUId.to_ulong()) == iFaces.end()) {
+      iFaces[IDD_MOFENNodeMerger.uUId.to_ulong()] = new BitLevelCouplerInterface(*this);
+    }
+    ptr = iFaces.at(IDD_MOFENNodeMerger.uUId.to_ulong());
+    PetscFunctionReturn(0);
+  } 
+
   if(type == typeid(MeshRefinment)) {
     ptr = static_cast<MeshRefinment*>(this);
   } else if(type == typeid(SeriesRecorder)) {

@@ -22,7 +22,7 @@ namespace MoFEM {
 
 static const MOFEMuuid IDD_MOFENBitLevelCoupler = MOFEMuuid( BitIntefaceId(BITLEVELCOUPLER_INTERFACE) );
 
-/** \brief manage adjacencies between mesh bit levels
+/** \brief Interface set parent for verrtices, edges, triangles and tetrahedrons. 
   * \ingroup mofem
   *
   */
@@ -31,38 +31,81 @@ struct BitLevelCouplerInterface: public FieldUnknownInterface {
   PetscErrorCode queryInterface(const MOFEMuuid& uuid, FieldUnknownInterface** iface);
 
   MoFEM::Core& cOre;
-  BitLevelCouplerInterface(MoFEM::Core& core): cOre(core) {};
+  bool vErify;	///< by defualt is switched off, swith it on to verify if existing parent is equal to parent set by interface
 
-  /** \brief finding adjacencies between vertices and tetrahedrons. 
+  BitLevelCouplerInterface(MoFEM::Core& core): cOre(core),vErify(false) {};
+
+  /** \brief finding parents for vertices 
     *
-    * Use boundary volume tree to find tetrahedral or other volume element. 
+    * Use kd-tree to find tetrahedral or other volume element. 
+  
+    \param parent_level bit level of parents
+
+    \param children list of vertices for which parents are being set
+
+    \param vertex_elements if true algorithm assumes that vertices elements are
+    used. IF NOT SET AND SUCH ELEMENTS EXIST IT WILL RESULT IN UNPREDICTABLE
+    BEHAVIOUR.
+
+    \param iter_tol tolerance for convergence of point search
+    
+    \param inside_tol tolerance for inside element calculation
+
+    \param throw_error if parent can not be found
+  
+    \param verbose level 
+   
     */
   PetscErrorCode buidlAdjacenciesVerticesOnTets(const BitRefLevel &parent_level,Range &children,
+    bool vertex_elements = false,
     const double iter_tol = 1.0e-10,
     const double inside_tol = 1.0e-6,
-    bool vertex_elements = false,int verb = 0);
+    bool throw_error = true,
+    int verb = 0);
 
-  /** \brief finding adjacencies between vertices and faces, edges or other vertices
-    *
-    * Assumes that adjacencies between vertices and tetrahedrons are known 
-    */
-  PetscErrorCode buidlAdjacenciesVerticesOnFacesEdgesVolumes(
-    const BitRefLevel &parent_level,Range &children,bool vertex_elements = true,const double inside_tol = 1e-6,
-    bool throw_error = true,int verb = 0);
+  /** \brief finding parents for edegs, faces and tets
 
-  /** \brief build adjacencies for edges, faces and volumes
-    *
-    * Assumes that adjacencies for vertices has been build
+    It assumes that parents for vertices are known. Run
+    buidlAdjacenciesVerticesOnTets if parents for vertices are not set.
+
+    \param parent_level bit level of parents
+
+    \param children list of entities for which parents are being set
+
+    \param vertex_elements if true algorithm assumes that vertices elements are
+    used. IF NOT SET AND SUCH ELEMENTS EXIST IT WILL RESULT IN UNPREDICTABLE
+    BEHAVIOUR.
+
+    \param iter_tol tolerance for convergence of point search
+    
+    \param inside_tol tolerance for inside element calculation
+
+    \param throw_error if parent can not be found
+  
+    \param verbose level 
+
     */
   PetscErrorCode buidlAdjacenciesEdgesFacesVolumes(
     const BitRefLevel &parent_level,Range &children,bool elements = true,int verb = 0);
 
+  /** \brief reset parent entities
+
+    This is needed for testing.
+  
+    */
+  PetscErrorCode resetParents(Range &children,bool elements = true,int verb = 0);
 
   private:
 
   PetscErrorCode chanegParent(RefMoFEMEntity_multiIndex::iterator it,EntityHandle parent,bool element);
   PetscErrorCode verifyParent(RefMoFEMEntity_multiIndex::iterator it,EntityHandle parent);
 
+  double cOords[12+3];
+  double diffN[12],N[4];
+  double locCoords[3];
+  const EntityHandle *cOnn;
+
+  PetscErrorCode getLocCoordsOnTet(EntityHandle tet,double *glob_coords,int verb = 0);
 
 
 };
