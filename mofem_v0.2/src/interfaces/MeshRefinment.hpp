@@ -21,6 +21,19 @@ namespace MoFEM {
 
 static const MOFEMuuid IDD_MOFEMMeshRefine = MOFEMuuid( BitIntefaceId(MESH_REFINE) );
 
+/** \brief Mesh refinement interface
+
+  Currently this class is abstraction to Core interface. In future should be
+  outsourced as independent interface.
+  
+  \bug not working on partitioned mesha
+
+  \bug need to be implemented as a stand alone interface not as a part of core
+  structure which should be only basic database
+
+  \bug if outsourced, class member functions should follow name convention
+
+  */
 struct MeshRefinment: public FieldUnknownInterface {
 
   ///destructor
@@ -80,7 +93,6 @@ struct MeshRefinment: public FieldUnknownInterface {
    * \param BitRefLevel bitLevel
    * \param recursive If true, meshsets containing meshsets are queried recursively.  Returns the contents of meshsets, but not the meshsets themselves if true.
    */
-    
   virtual PetscErrorCode refine_MESHSET(const EntityHandle meshset,const BitRefLevel &bit,
     const bool recursive = false,int verb = -1) = 0;
 

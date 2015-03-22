@@ -29,6 +29,9 @@ static const MOFEMuuid IDD_MOFEMSeriesRecorder = MOFEMuuid( BitIntefaceId(SERIES
 
 /** Record (time) data series
  * \ingroup mofem
+
+  Is abstraction of Core interface.  
+ 
  */
 struct SeriesRecorder: public FieldUnknownInterface {
 

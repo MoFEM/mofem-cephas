@@ -24,8 +24,13 @@ namespace MoFEM {
 
 /** \brief Core FieldInterface class
  *  \ingroup mofem
- *
- * This class is not used directly by the user
+ 
+  This class is not used directly by the user. It is database with basic
+  functions to access data. Abstraction of this is MoFEM Interface structure.
+
+  It is deign to hide come complexities for users and allow low development
+  without interfering with users modules programmer work.
+
  */
 struct Core: 
   public FieldInterface, MeshRefinment, PrismInterface, SeriesRecorder {
