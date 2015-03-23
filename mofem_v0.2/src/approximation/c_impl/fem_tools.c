@@ -29,7 +29,7 @@
 
 #include <h1_hdiv_hcurl_l2.h>
 
-double Shape_detJac(double *Jac) {
+double ShapeDetJacMBTET(double *Jac) {
   double detJac;
   __CLPK_integer IPIV[4];
   __CLPK_integer info = lapack_dgetrf(3,3,Jac,3,IPIV);
@@ -44,7 +44,7 @@ double Shape_detJac(double *Jac) {
     detJac = - detJac;
   return detJac;
 }
-PetscErrorCode Shape_invJac(double *Jac) {
+PetscErrorCode ShapeInvJacMBTET(double *Jac) {
   PetscFunctionBegin;
   __CLPK_integer IPIV[4];
   __CLPK_doublereal WORK[3];
@@ -221,7 +221,7 @@ PetscErrorCode ShapeFaceNormalMBTRI(
   ierr = ShapeFaceBaseMBTRI(diffN,coords,normal,NULL,NULL);  CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-PetscErrorCode ShapeFaceDiffNormal_MBTRI(double *diffN,const double *coords,double *diff_normal) {
+PetscErrorCode ShapeFaceDiffNormalMBTRI(double *diffN,const double *coords,double *diff_normal) {
   PetscFunctionBegin;
   // N = Spin(dX/dksi)*dX/deta = -Spin(dX/deta)*dX/dksi
   PetscErrorCode ierr;
@@ -276,10 +276,10 @@ PetscErrorCode ShapeJacMBTET(double *diffN,const double *coords,double *Jac) {
 	diffN[ ii*3+kk ]*coords[ ii*3+jj ];
   PetscFunctionReturn(0);
 }
-double Shape_intVolumeMBTET(double *diffN,const double *coords) {
+double ShapeVolumeMBTET(double *diffN,const double *coords) {
   double Jac[9];
   ShapeJacMBTET(diffN,coords,Jac);
-  double detJac = Shape_detJac(Jac);
+  double detJac = ShapeDetJacMBTET(Jac);
   //printf("detJac = +%6.4e\n",detJac);
   //print_mat(Jac,3,3);
   return detJac*G_TET_W1[0]/6.;
@@ -307,31 +307,28 @@ PetscErrorCode ShapeDiffMBTET(double *diffN) {
 PetscErrorCode ShapeMBTET_inverse(double *N,double *diffN,const double *elem_coords,const double *glob_coords,double *loc_coords) {
   PetscFunctionBegin;
   double A[3*3];  
-  double R[3];  
   int IPIV[3];
   //COL MAJOR
   //X
   A[0+3*0] = cblas_ddot(4,&diffN[0*3+0],3,&elem_coords[0*3+0],3);
   A[0+3*1] = cblas_ddot(4,&diffN[0*3+1],3,&elem_coords[0*3+0],3);
   A[0+3*2] = cblas_ddot(4,&diffN[0*3+2],3,&elem_coords[0*3+0],3);
-  R[0] = glob_coords[0] - cblas_ddot(4,&N[0],1,&elem_coords[0*3+0],3);
+  loc_coords[0] = glob_coords[0] - cblas_ddot(4,&N[0],1,&elem_coords[0*3+0],3);
   //printf("A\n[ %3.2f %3.2f %3.2f ] %3.2f \n",A[0*3],A[1*3],A[2*3],R[0]);
   //Y 
   A[1+3*0] = cblas_ddot(4,&diffN[0*3+0],3,&elem_coords[0*3+1],3);
   A[1+3*1] = cblas_ddot(4,&diffN[0*3+1],3,&elem_coords[0*3+1],3);
   A[1+3*2] = cblas_ddot(4,&diffN[0*3+2],3,&elem_coords[0*3+1],3);
-  R[1] = glob_coords[1] - cblas_ddot(4,&N[0],1,&elem_coords[0*3+1],3);
+  loc_coords[1] = glob_coords[1] - cblas_ddot(4,&N[0],1,&elem_coords[0*3+1],3);
   //printf("[ %3.2f %3.2f %3.2f ] %3.2f \n",A[1+3*0],A[1+3*1],A[1+3*2],R[1]);
   //Z
   A[2+3*0] = cblas_ddot(4,&diffN[0*3+0],3,&elem_coords[0*3+2],3);
   A[2+3*1] = cblas_ddot(4,&diffN[0*3+1],3,&elem_coords[0*3+2],3);
   A[2+3*2] = cblas_ddot(4,&diffN[0*3+2],3,&elem_coords[0*3+2],3);
-  R[2] = glob_coords[2] - cblas_ddot(4,&N[0],1,&elem_coords[0*3+2],3);
+  loc_coords[2] = glob_coords[2] - cblas_ddot(4,&N[0],1,&elem_coords[0*3+2],3);
   //printf("[ %3.2f %3.2f %3.2f ] %3.2f \n",A[2+3*0],A[2+3*1],A[2+3*2],R[1]);
-  int info = lapack_dgesv(3,1,&A[0],3,(__CLPK_integer*)IPIV,R,3);
+  int info = lapack_dgesv(3,1,&A[0],3,(__CLPK_integer*)IPIV,loc_coords,3);
   if(info != 0) SETERRQ1(PETSC_COMM_SELF,1,"info == %d",info);
-  //assert( info == 0 );
-  cblas_dcopy(3,R,1,loc_coords,1);
   PetscFunctionReturn(0);
 }
 PetscErrorCode ShapeDiffMBTETinvJ(double *diffN,double *invJac,double *diffNinvJac) {
@@ -911,11 +908,11 @@ PetscErrorCode ShapeMBTETQ_detJac_at_Gauss_Points(double *detJac_at_Gauss_Points
   int ii = 0;
   for(; ii<G_DIM; ii++) {
     ierr = ShapeJacMBTETQ(&diffN[30*ii],coords,Jac); CHKERRQ(ierr);
-    detJac_at_Gauss_Points[ii] = Shape_detJac(Jac);
+    detJac_at_Gauss_Points[ii] = ShapeDetJacMBTET(Jac);
   }
   PetscFunctionReturn(0);
 }
-double Shape_intVolumeMBTETQ(const double *diffN,const double *coords,int G_DIM,double *G_TET_W) {
+double ShapeVolumeMBTETQ(const double *diffN,const double *coords,int G_DIM,double *G_TET_W) {
   PetscErrorCode ierr;
   int ii = 0;
   double vol = 0;

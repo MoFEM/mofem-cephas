@@ -34,40 +34,39 @@ extern "C" {
 #define MU(E,NU) (0.5*E/(1.+NU))
 #define DELTA(NU_P,NU_PZ,E_P,E_Z) (((1+NU_P)*(1-NU_P-2*NU_PZ*(NU_PZ*E_Z/E_P)))/(E_P*E_P*E_Z))
 
-//MBTET
-#define N_MBTET0(x, y, z) ( 1.-x-y-z )
-#define N_MBTET1(x, y, z) ( x )
-#define N_MBTET2(x, y, z) ( y )
-#define N_MBTET3(x, y, z) ( z )
-#define diffN_MBTET0x ( -1. )
-#define diffN_MBTET0y ( -1. )
-#define diffN_MBTET0z ( -1. )
-#define diffN_MBTET1x ( 1 )
-#define diffN_MBTET1y ( 0 )
-#define diffN_MBTET1z ( 0 )
-#define diffN_MBTET2x ( 0 )
-#define diffN_MBTET2y ( 1 )
-#define diffN_MBTET2z ( 0 )
-#define diffN_MBTET3x ( 0 )
-#define diffN_MBTET3y ( 0 )
-#define diffN_MBTET3z ( 1 )
+#define N_MBTET0(x, y, z) ( 1.-x-y-z ) 	///< tetrahedral shape function
+#define N_MBTET1(x, y, z) ( x )		///< tetrahedral shape function
+#define N_MBTET2(x, y, z) ( y )		///< tetrahedral shape function
+#define N_MBTET3(x, y, z) ( z )		///< tetrahedral shape function
+#define diffN_MBTET0x ( -1. ) 		///< derivative of tetrahedral shape function
+#define diffN_MBTET0y ( -1. )		///< derivative of tetrahedral shape function
+#define diffN_MBTET0z ( -1. )		///< derivative of tetrahedral shape function
+#define diffN_MBTET1x ( 1. )		///< derivative of tetrahedral shape function
+#define diffN_MBTET1y ( 0. )		///< derivative of tetrahedral shape function
+#define diffN_MBTET1z ( 0. )		///< derivative of tetrahedral shape function
+#define diffN_MBTET2x ( 0. )		///< derivative of tetrahedral shape function
+#define diffN_MBTET2y ( 1. )		///< derivative of tetrahedral shape function
+#define diffN_MBTET2z ( 0. )		///< derivative of tetrahedral shape function
+#define diffN_MBTET3x ( 0. )		///< derivative of tetrahedral shape function
+#define diffN_MBTET3y ( 0. )		///< derivative of tetrahedral shape function
+#define diffN_MBTET3z ( 1. )		///< derivative of tetrahedral shape function
 
 //MBTRI
-#define N_MBTRI0(x, y) ( 1.-x-y )
-#define N_MBTRI1(x, y) ( x )
-#define N_MBTRI2(x, y) ( y )
-#define diffN_MBTRI0x ( -1. )
-#define diffN_MBTRI0y ( -1. )
-#define diffN_MBTRI1x ( 1 )
-#define diffN_MBTRI1y ( 0 )
-#define diffN_MBTRI2x ( 0 )
-#define diffN_MBTRI2y ( 1 )
+#define N_MBTRI0(x, y) ( 1.-x-y )	///< triangle shape function
+#define N_MBTRI1(x, y) ( x )		///< triangle shape function
+#define N_MBTRI2(x, y) ( y )		///< triangle shape function
+#define diffN_MBTRI0x ( -1. )		///< derivative of triangle shape function
+#define diffN_MBTRI0y ( -1. )		///< derivative of triangle shape function
+#define diffN_MBTRI1x ( 1. )		///< derivative of triangle shape function
+#define diffN_MBTRI1y ( 0. )		///< derivative of triangle shape function
+#define diffN_MBTRI2x ( 0. )		///< derivative of triangle shape function
+#define diffN_MBTRI2y ( 1. )		///< derivative of triangle shape function
 
 //MBEDGE
-#define N_MBEDGE0(x) ( 1.-(x) )
-#define N_MBEDGE1(x) (x) 
-#define diffN_MBEDGE0 (-1.)
-#define diffN_MBEDGE1 (1.) 
+#define N_MBEDGE0(x) ( 1.-(x) )		///< edge shape function
+#define N_MBEDGE1(x) ( x ) 		///< edge shape function
+#define diffN_MBEDGE0 ( -1. )		///< derivative of edge shape function
+#define diffN_MBEDGE1 ( 1. ) 		///< derivative of edge shape function
 
 #ifdef __cplusplus
 extern "C" {
@@ -98,7 +97,7 @@ PetscErrorCode ShapeFaceBaseMBTRI(
   double *diffN,const double *coords,
   double *normal,double *s1,double *s2);
 /// calculate direvative of normal in respect to nodal positions
-PetscErrorCode ShapeFaceDiffNormal_MBTRI(double *diffN,const double *coords,double *diff_normal);
+PetscErrorCode ShapeFaceDiffNormalMBTRI(double *diffN,const double *coords,double *diff_normal);
 /// calculate jacobioan 
 void ShapeJacMBTRI(double *diffN,const double *coords,double *Jac);
 /// calculate direvatives of shape functions in space
@@ -108,13 +107,13 @@ PetscErrorCode ShapeMBTET(double *N,const double *G_X,const double *G_Y,const do
 /// calulare direvatives of shape functions
 PetscErrorCode ShapeDiffMBTET(double *diffN);
 /// determinad of jacobian
-double Shape_detJac(double *Jac);
+double ShapeDetJacMBTET(double *Jac);
 /// calculate jacobian
 PetscErrorCode ShapeJacMBTET(double *diffN,const double *coords,double *Jac);
 // calculate inverse of jacobian
-PetscErrorCode Shape_invJac(double *Jac);
+PetscErrorCode ShapeInvJacMBTET(double *Jac);
 /// calculate TET volume
-double Shape_intVolumeMBTET(double *diffN,const double *coords);
+double ShapeVolumeMBTET(double *diffN,const double *coords);
 /// calculate shape functions direvatives in space
 PetscErrorCode ShapeDiffMBTETinvJ(double *diffN,double *invJac,double *diffNinvJac);
 
@@ -145,6 +144,7 @@ PetscErrorCode Base_scale(
  * new verison for multiple points need to be implemented
  */
 PetscErrorCode ShapeMBTET_inverse(double *N,double *diffN,const double *elem_coords,const double *glob_coords,double *loc_coords);
+
 /// calculate gradient of deformation
 PetscErrorCode GradientOfDeformation(double *diffN,double *dofs,double *F);
 
@@ -186,7 +186,7 @@ PetscErrorCode ShapeMBTETQ_GAUSS(double *N,const double *X,const double *Y,const
 PetscErrorCode ShapeDiffMBTETQ_GAUSS(double *diffN,const double *X,const double *Y,const double *Z,const int G_DIM);
 PetscErrorCode ShapeJacMBTETQ(const double *diffN,const double *coords,double *Jac);
 PetscErrorCode ShapeMBTETQ_detJac_at_Gauss_Points(double *detJac_at_Gauss_Points,const double *diffN,const double *coords,int G_DIM);
-double Shape_intVolumeMBTETQ(const double *diffN,const double *coords,int G_DIM,double *G_TET_W);
+double ShapeVolumeMBTETQ(const double *diffN,const double *coords,int G_DIM,double *G_TET_W);
 
 //complex part
 void ShapeDiffMBTETinvJ_complex(double *diffN,__CLPK_doublecomplex *invJac,__CLPK_doublecomplex *diffNinvJac,const enum CBLAS_TRANSPOSE Trans);

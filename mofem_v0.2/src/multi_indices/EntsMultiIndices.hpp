@@ -73,6 +73,11 @@ typedef multi_index_container<
 /** 
  * \brief this struct keeps basic methods for moab entity
  * \ingroup ent_multi_indices 
+
+  \bug BasicMoFEMEntity in should be linked to directly to MoAB data structures such
+  that connectivity and nodal coordinates could be quickly accessed, without
+  need of using native MoAB functions.
+
  */
 struct BasicMoFEMEntity {
   EntityHandle ent;
@@ -115,9 +120,13 @@ struct BasicMoFEMEntity {
 /** 
  * \brief struct keeps handle to refined handle.
  * \ingroup ent_multi_indices 
+
+  \bug th_RefType "_RefType" is set as two integers, need to be fixed, it is waset of space.
+
  */
 struct RefMoFEMEntity: public BasicMoFEMEntity {
   EntityHandle *tag_parent_ent;
+  int tag_parent_ent_size;
   BitRefLevel *tag_BitRefLevel;
   RefMoFEMEntity(Interface &moab,const EntityHandle _ent);
   /// get entity
@@ -171,8 +180,8 @@ struct interface_RefMoFEMEntity {
  * \param ordered_non_unique Ent_Ent_mi_tag
  * \param ordered_non_unique EntType_mi_tag
  * \param ordered_non_unique ParentEntType_mi_tag
- * \param ordered_non_unique Composite_EntityType_And_ParentEntityType_mi_tag
- * \param ordered_non_unique Composite_EntityHandle_And_ParentEntityType_mi_tag
+ * \param ordered_non_unique Composite_EntType_And_ParentEntType_mi_tag
+ * \param ordered_non_unique Composite_EntityHandle_And_ParentEntType_mi_tag
  */
 typedef multi_index_container<
   RefMoFEMEntity,
@@ -198,13 +207,7 @@ typedef multi_index_container<
 	const_mem_fun<RefMoFEMEntity::BasicMoFEMEntity,EntityType,&RefMoFEMEntity::get_ent_type>,
 	const_mem_fun<RefMoFEMEntity,EntityType,&RefMoFEMEntity::get_parent_ent_type> > >,
     ordered_non_unique<
-      tag<Composite_EntityType_And_ParentEntityType_mi_tag>, 
-      composite_key<
-	RefMoFEMEntity,
-	const_mem_fun<RefMoFEMEntity::BasicMoFEMEntity,EntityType,&RefMoFEMEntity::get_ent_type>,
-	const_mem_fun<RefMoFEMEntity,EntityType,&RefMoFEMEntity::get_parent_ent_type> > >,
-    ordered_non_unique<
-      tag<Composite_EntityHandle_And_ParentEntityType_mi_tag>, 
+      tag<Composite_EntityHandle_And_ParentEntType_mi_tag>, 
       composite_key<
 	RefMoFEMEntity,
 	const_mem_fun<RefMoFEMEntity,EntityHandle,&RefMoFEMEntity::get_parent_ent>,
@@ -216,16 +219,40 @@ typedef multi_index_container<
  * \ingroup ent_multi_indices 
  */
 struct RefMoFEMEntity_change_remove_parent {
-  Interface &moab;
+  Interface &mOab;
   Tag th_RefParentHandle;
   ErrorCode rval;
-  RefMoFEMEntity_change_remove_parent(Interface &_moab):moab(_moab) {
-    rval = moab.tag_get_handle("_RefParentHandle",th_RefParentHandle); CHKERR_THROW(rval);
-  };
+  RefMoFEMEntity_change_remove_parent(Interface &moab): mOab(moab) {
+    rval = mOab.tag_get_handle("_RefParentHandle",th_RefParentHandle); CHKERR_THROW(rval);
+  }
   void operator()(RefMoFEMEntity &e) { 
-    rval = moab.tag_delete_data(th_RefParentHandle,&e.ent,1); CHKERR_THROW(rval);
-    rval = moab.tag_get_by_ptr(th_RefParentHandle,&e.ent,1,(const void **)&(e.tag_parent_ent)); CHKERR_THROW(rval);
-  };
+    rval = mOab.tag_delete_data(th_RefParentHandle,&e.ent,1); CHKERR_THROW(rval);
+    rval = mOab.tag_get_by_ptr(th_RefParentHandle,&e.ent,1,(const void **)&(e.tag_parent_ent)); CHKERR_THROW(rval);
+  }
+};
+
+/** \brief change parent
+  * \ingroup ent_multi_indices 
+  *
+  * Use this function with care. Some other multi-indices can deponent on this.
+
+  Known dependent multi-indices (verify if that list is full): 
+  - RefMoFEMEntity_multiIndex
+  - RefMoFEMElement_multiIndex
+
+  */
+struct RefMoFEMEntity_change_parent {
+  Interface &mOab;
+  EntityHandle pArent;
+  Tag th_RefParentHandle;
+  ErrorCode rval;
+  RefMoFEMEntity_change_parent(Interface &moab,EntityHandle parent): mOab(moab),pArent(parent) {
+    rval = mOab.tag_get_handle("_RefParentHandle",th_RefParentHandle); CHKERR_THROW(rval);
+  }
+  void operator()(RefMoFEMEntity &e) { 
+    rval = mOab.tag_get_by_ptr(th_RefParentHandle,&e.ent,1,(const void **)&(e.tag_parent_ent)); CHKERR_THROW(rval);
+    *(e.tag_parent_ent) = pArent;
+  }
 };
 
 /** \brief ref mofem entity, left shift

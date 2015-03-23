@@ -21,7 +21,7 @@ namespace ObosleteUsersModules {
 
 /** \brief NonLinear surface pressure element (obsolete implementation)
   * \ingroup nonlinear_elastic_elem
-  *
+  * \ingroup mofem_static_boundary_conditions
   *
   */
 struct NeummanForcesSurfaceComplexForLazy {

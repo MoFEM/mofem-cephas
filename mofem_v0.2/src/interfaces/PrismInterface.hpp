@@ -32,12 +32,11 @@ struct PrismInterface: public FieldUnknownInterface {
   ///destructor
   virtual ~PrismInterface() {}
 
-  //topologity
-  /** \brief create two children meshsets in the meshset containing terahedrals on two sides of faces
+  /** \brief create two children meshsets in the meshset containing tetrahedral on two sides of faces
     *
     * \param msId Id of meshset 
     * \param CubitBCType type of meshset (NODESET, SIDESET or BLOCKSET and more)
-    * \param mesh_bit_level add interface on bit level is bit_level = BitRefLevel.set() then add interfece on all bit levels
+    * \param mesh_bit_level add interface on bit level is bit_level = BitRefLevel.set() then add interface on all bit levels
     * \param recursive if true parent meshset is searched recursively
     */
   virtual PetscErrorCode get_msId_3dENTS_sides(
@@ -46,12 +45,12 @@ struct PrismInterface: public FieldUnknownInterface {
     const BitRefLevel mesh_bit_level,
     const bool recursive,int verb = -1) = 0;
 
-  /** \brief create two children meshsets in the meshset contaning terahedrals on two sides of faces
+  /** \brief create two children meshsets in the meshset containing tetrahedral on two sides of faces
    *
    * Get tets adj to faces. Take skin form tets and get edges from that skin. Take skin form triangles (the face).
    * Subtrac skin faces edges form skin edges in order to get eges on the boundary of the face which is in the
    * voulume of the body, but is not on the boundary.
-   * Each child set has a child contaning nodes which can be split and skin edges.
+   * Each child set has a child containing nodes which can be split and skin edges.
    * After that simply iterate under all tets on one side which are adjacent to the face are found.
    * Side tets are stored in to children meshsets of the SIDESET meshset.
    */
@@ -61,9 +60,9 @@ struct PrismInterface: public FieldUnknownInterface {
     const bool recursive,int verb = -1) = 0;
 
   /**
-   * \brief split nodes and other entities of tetrahedrals in children sets and add prism elements
+   * \brief split nodes and other entities of tetrahedral in children sets and add prism elements
    * 
-   * The all new entities (prisms, tets) are added to refinment level given by bit
+   * The all new entities (prisms, tets) are added to refinement level given by bit
    * \param meshset meshset to get entities from
    * \param BitRefLevel new level where refinement would be stored
    * \param msId meshset ID imported from cubit 
@@ -90,18 +89,18 @@ struct PrismInterface: public FieldUnknownInterface {
     const bool add_iterfece_entities,const bool recursive = false,int verb = -1) = 0;
 
   /**
-   * \brief split nodes and other entities of tetrahedrals in children sets and add prism elements
+   * \brief split nodes and other entities of tetrahedral in children sets and add prism elements
    * 
-   * The all new entities (prisms, tets) are added to refinment level given by bit
+   * The all new entities (prisms, tets) are added to refinement level given by bit
    */
   virtual PetscErrorCode get_msId_3dENTS_split_sides(
     const EntityHandle meshset,const BitRefLevel &bit,
     const EntityHandle SIDESET,const bool add_iterfece_entities,const bool recursive = false,int verb = -1) = 0;
 
   /**
-   * \brief split nodes and other entities of tetrahedrals in children sets and add prism elements
+   * \brief split nodes and other entities of tetrahedrons in children sets and add prism elements
    * 
-   * The all new entities (prisms, tets) are added to refinment level given by bit
+   * The all new entities (prisms, tets) are added to refinement level given by bit
    *
    * \param meshset 
    * \param refinment bit level of new mesh
@@ -110,8 +109,8 @@ struct PrismInterface: public FieldUnknownInterface {
    * \param recuslsive do meshesets in the meshset
    * 
    * note inheret_from_bit_level is need to be specified to some meshsets
-   * with interfaces. Some nodes on some refinment levels dividing edges but
-   * not splitting faces. Inhereteing those nodes will not split faces.
+   * with interfaces. Some nodes on some refinement levels dividing edges but
+   * not splitting faces. Inheriting those nodes will not split faces.
    *
    */
   virtual PetscErrorCode get_msId_3dENTS_split_sides(

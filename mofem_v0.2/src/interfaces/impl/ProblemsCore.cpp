@@ -384,9 +384,9 @@ PetscErrorCode Core::simple_partition_problem(const string &name,int verb) {
     PetscPrintf(comm,"Simple partition problem %s\n",name.c_str());
   }
   // find p_miit
-  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type moFEMProblems_by_name;
-  moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<Problem_mi_tag>();
-  moFEMProblems_by_name::iterator p_miit = moFEMProblems_set.find(name);
+  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type MoFEMProblem_multiIndex_by_name;
+  MoFEMProblem_multiIndex_by_name &moFEMProblems_set = moFEMProblems.get<Problem_mi_tag>();
+  MoFEMProblem_multiIndex_by_name::iterator p_miit = moFEMProblems_set.find(name);
   if(p_miit==moFEMProblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem < %s > is not found (top tip: check spelling)",name.c_str());
   typedef boost::multi_index::index<NumeredDofMoFEMEntity_multiIndex,Idx_mi_tag>::type NumeredDofMoFEMEntitys_by_idx;
   NumeredDofMoFEMEntitys_by_idx &dofs_row_by_idx = const_cast<NumeredDofMoFEMEntitys_by_idx&>(p_miit->numered_dofs_rows.get<Idx_mi_tag>());
@@ -466,23 +466,23 @@ PetscErrorCode Core::compose_problem(const string &name,const string &problem_fo
   if(!(*build_MoFEM&(1<<1))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"FEs not build");
   if(!(*build_MoFEM&(1<<2))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"entFEAdjacencies not build");
   if(!(*build_MoFEM&(1<<3))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"moFEMProblems not build");
-  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type moFEMProblems_by_name;
+  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type MoFEMProblem_multiIndex_by_name;
   typedef NumeredDofMoFEMEntity_multiIndex::index<Unique_mi_tag>::type NumeredDofMoFEMEntitys_by_uid;
   //find p_miit
-  moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<Problem_mi_tag>();
-  moFEMProblems_by_name::iterator p_miit = moFEMProblems_set.find(name);
-  if(p_miit==moFEMProblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem with name %s not defined (top tip check spelling)",name.c_str());
+  MoFEMProblem_multiIndex_by_name &moFEMProblems_set = moFEMProblems.get<Problem_mi_tag>();
+  MoFEMProblem_multiIndex_by_name::iterator p_miit = moFEMProblems_set.find(name);
+  if(p_miit==moFEMProblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem with name < %s > not defined (top tip check spelling)",name.c_str());
   if(verb>0) {
     PetscPrintf(comm,"Compose problem %s from rows of %s and columns of %s\n",
       p_miit->get_name().c_str(),problem_for_rows.c_str(),problem_for_cols.c_str());
   }
   //find p_miit_row
-  moFEMProblems_by_name::iterator p_miit_row = moFEMProblems_set.find(problem_for_rows);
-  if(p_miit_row==moFEMProblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem with name %s not defined (top tip check spelling)",problem_for_rows.c_str());
+  MoFEMProblem_multiIndex_by_name::iterator p_miit_row = moFEMProblems_set.find(problem_for_rows);
+  if(p_miit_row==moFEMProblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem with name < %s > not defined (top tip check spelling)",problem_for_rows.c_str());
   const NumeredDofMoFEMEntity_multiIndex &dofs_row = p_miit_row->numered_dofs_rows;
   //find p_mit_col
-  moFEMProblems_by_name::iterator p_miit_col = moFEMProblems_set.find(problem_for_cols);
-  if(p_miit_col==moFEMProblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem with name %s not defined (top tip check spelling)",problem_for_cols.c_str());
+  MoFEMProblem_multiIndex_by_name::iterator p_miit_col = moFEMProblems_set.find(problem_for_cols);
+  if(p_miit_col==moFEMProblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem with name < %s > not defined (top tip check spelling)",problem_for_cols.c_str());
   const NumeredDofMoFEMEntity_multiIndex &dofs_col = p_miit_col->numered_dofs_cols;
   bool copy[] = { copy_rows, copy_cols };
   NumeredDofMoFEMEntity_multiIndex* composed_dofs[] = {
@@ -547,12 +547,12 @@ PetscErrorCode Core::block_problem(const string &name,const vector<string> block
   if(!(*build_MoFEM&(1<<1))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"FEs not build");
   if(!(*build_MoFEM&(1<<2))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"entFEAdjacencies not build");
   if(!(*build_MoFEM&(1<<3))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"moFEMProblems not build");
-  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type moFEMProblems_by_name;
+  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type MoFEMProblem_multiIndex_by_name;
   //find pit 
-  moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<Problem_mi_tag>();
-  moFEMProblems_by_name::iterator pit = moFEMProblems_set.find(name);
+  MoFEMProblem_multiIndex_by_name &moFEMProblems_set = moFEMProblems.get<Problem_mi_tag>();
+  MoFEMProblem_multiIndex_by_name::iterator pit = moFEMProblems_set.find(name);
   if(pit==moFEMProblems_set.end()) {
-    SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"problem with name %s not defined (top tip check spelling)",name.c_str());
+    SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"problem with name < %s > not defined (top tip check spelling)",name.c_str());
   }
   Vec shift_rows_and_cols_global;
   int ghost[] = {0,1};
@@ -571,9 +571,9 @@ PetscErrorCode Core::block_problem(const string &name,const vector<string> block
     (*pit_nb_local_dofs[ss]) = 0;
   }
   for(vector<string>::const_iterator vit = block_problems.begin();vit!=block_problems.end();vit++) {
-    moFEMProblems_by_name::iterator piit = moFEMProblems_set.find(*vit);
+    MoFEMProblem_multiIndex_by_name::iterator piit = moFEMProblems_set.find(*vit);
     if(piit==moFEMProblems_set.end()) {
-      SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"blocked problem with name %s not defined (top tip check spelling)",vit->c_str());
+      SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"blocked problem with name < %s > not defined (top tip check spelling)",vit->c_str());
     }
     const NumeredDofMoFEMEntity_multiIndex *piit_rows_and_cols[] = {
       &piit->numered_dofs_rows, &piit->numered_dofs_cols };
