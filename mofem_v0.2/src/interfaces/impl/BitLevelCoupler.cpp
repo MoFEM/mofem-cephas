@@ -320,7 +320,9 @@ PetscErrorCode BitLevelCouplerInterface::buidlAdjacenciesEdgesFacesVolumes(
 	}
       }
 
-      ierr = chanegParent(refined_ptr->project<0>(it),0,elements); CHKERRQ(ierr);
+      if(!vErify && max_dim>3) {
+	ierr = chanegParent(refined_ptr->project<0>(it),0,elements); CHKERRQ(ierr);
+      }
       if(verb > 1) {
 	cout << "parent not found\n";
       }	
@@ -405,7 +407,8 @@ PetscErrorCode BitLevelCouplerInterface::verifyParent(RefMoFEMEntity_multiIndex:
   PetscFunctionBegin;
 
   if(parent != it->get_parent_ent()) {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+    SETERRQ3(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency %lu != %lu for ent %lu",
+      parent,it->get_parent_ent(),it->get_ref_ent());
   }
 
   PetscFunctionReturn(0);
