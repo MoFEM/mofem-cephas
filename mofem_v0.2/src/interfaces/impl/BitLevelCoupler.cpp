@@ -308,15 +308,22 @@ PetscErrorCode BitLevelCouplerInterface::buidlAdjacenciesEdgesFacesVolumes(
 
       for(;max_dim<=3;max_dim++) {
 	Range parent_ents;
-	rval = m_field.get_moab().get_adjacencies(&*conn_parents.begin(),num_nodes,max_dim,false,parent_ents); CHKERR_PETSC(rval);
+	rval = m_field.get_moab().get_adjacencies(
+	  &*conn_parents.begin(),num_nodes,max_dim,false,parent_ents); CHKERR_PETSC(rval);
+	parent_ents.erase(it->get_ref_ent());
 	if(!parent_ents.empty()) {
 	  ierr = chanegParent(refined_ptr->project<0>(it),*parent_ents.begin(),elements); CHKERRQ(ierr);
 	  if(verb > 1) {
-	    cout << "after " << *it << endl;
+	    cout << "after " << *it << endl << endl;
 	  }
 	  break;
 	}
       }
+
+      ierr = chanegParent(refined_ptr->project<0>(it),0,elements); CHKERRQ(ierr);
+      if(verb > 1) {
+	cout << "parent not found\n";
+      }	
 
     }
 

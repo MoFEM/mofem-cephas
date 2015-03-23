@@ -2,16 +2,16 @@
 
 \section citizen Be a good MoFEM citizen
 
-- MoFEM is a team work. Don't be focussed only on your project, try improve MOFEM. Y
-  our modifications can help others, others modification will help
+- MoFEM is a team work. Don't be focussed only on your project, try improve
+  MOFEM. Y our modifications can help others, others modification will help
   you.
-- Project is not own by anyone, you are become owner proportionally to your
+- MoFEM is not own by anyone, you are become owner proportionally to your
   contribution. 
-- If you find bugs, you know how to improve documentation, pleas actively make
-  changes and improvements. 
-- If you have idea how to improve MoFEM, some functions
-  names are not clear and could be improved, propose that on MoFEM CMatGU
-  <cmatgu@googlegroups.com>.
+- If you find bugs,or you think that documentation can be improved, you are
+  strongly encourage to contribute. 
+- If you have idea how to improve MoFEM library, f.e. some functions
+  names are not clear or new functionality is can be added, 
+  propose that on our discussion group CMatGU <cmatgu@googlegroups.com>.
 
 \section mofam_and_user_modules MoFEM and User Modules
 
@@ -91,7 +91,7 @@ MoFEM code should follow MoAB code style and best pratices listed here
   - Local variables and function argument have names with small letters, i.e.
     temperature_val, nodal_position. 
 
-  - If variable is a pointer it shoul have name as follows \code
+  - If variable is a pointer, it should have name as follows \code
 
 class A {
   double *valPtr; ///< class member variable
@@ -123,7 +123,7 @@ class ClassName {
 #endif //__CLASS_NAME_HPP__
 \endcode
 
-- Each function should have build in error cheching, following example \code{.cpp}
+- Each function should have build in error checking, following example \code{.cpp}
 PetscErrorCode fun() {
   PetscFunctionBegin;
   PetscFunctionReturn(0);
@@ -135,15 +135,14 @@ ierr = fun(); CHKERRQ(ierr);
 - Memory allocation
 
   - USE VALGRIND. Valging is powerful tool to find execution errors, use it if your
-    code behave differently on two different computers or if you compile code
-    with or without debugging. It can help with segmentation fault, \code
+    code behave differently on two different computers, or you get segmentation fault, ect. Valgrin can be used as follows \code
     valgrind --track-origins=yes ./program_name -my_file mesh.cub
     \endcode
     Use small mesh, i.e. small problem, when you run valgrind, it take some
     time. YOU NEED TO COMPILE CODE WITH -DCMAKE_BUILD_TYPE=Debug.
 
   - Keep array of objects in STL vectors, multi-indexes or any other Boost or
-    STL data structures. AVOID ALLOCATING ARRAY OF OBJECTS ON HEAP.
+    STL data structures. AVOID ALLOCATING ARRAY OF OBJECTS ON HEAP USING REGULAR POINTERS.
 
   - Use smart pointers
     <http://www.boost.org/doc/libs/1_57_0/libs/smart_ptr/smart_ptr.htm>. If
