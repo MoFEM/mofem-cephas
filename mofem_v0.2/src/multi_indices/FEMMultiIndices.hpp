@@ -200,6 +200,34 @@ typedef multi_index_container<
 	const_mem_fun<ptrWrapperRefMoFEMElement::interface_type_RefMoFEMEntity,EntityHandle,&ptrWrapperRefMoFEMElement::get_parent_ent> > >
   > > RefMoFEMElement_multiIndex;
 
+/** \brief change parent
+  * \ingroup  fe_multi_indices
+  *
+  * Using this function with care. Some other multi-indices can deponent on this.
+
+  Known dependent multi-indices (verify if that list is full): 
+  - RefMoFEMEntity_multiIndex
+  - RefMoFEMElement_multiIndex
+
+  */
+struct RefMoFEMElement_change_parent {
+  Interface &mOab;
+  const RefMoFEMEntity_multiIndex *refEntPtr;
+  RefMoFEMEntity_multiIndex::iterator refEntIt;
+  EntityHandle pArent;
+  ErrorCode rval;
+  RefMoFEMElement_change_parent(Interface &moab,
+    const RefMoFEMEntity_multiIndex *ref_ent_ptr,
+    RefMoFEMEntity_multiIndex::iterator ref_ent_it,
+    EntityHandle parent): 
+    mOab(moab),
+    refEntPtr(ref_ent_ptr),
+    refEntIt(ref_ent_it),
+    pArent(parent) {}
+  void operator()(ptrWrapperRefMoFEMElement &e) { 
+    const_cast<RefMoFEMEntity_multiIndex*>(refEntPtr)->modify(refEntIt,RefMoFEMEntity_change_parent(mOab,pArent));
+  }
+};
 
 struct EntMoFEMFiniteElement;
 
@@ -279,6 +307,7 @@ struct interface_MoFEMFiniteElement {
   inline BitFieldId get_BitFieldId_data() const { return fe_ptr->get_BitFieldId_data(); }
   inline unsigned int get_bit_number() const { return fe_ptr->get_bit_number(); }
 };
+
 
 /**
  * \brief Finite element data for entitiy

@@ -1,4 +1,4 @@
-/* \file SurfacePressureComplexForLazy.hpp
+/* \file SurfacePressureComplexForLazy.cpp
  * --------------------------------------------------------------
  *
  *

@@ -200,7 +200,8 @@ NonlinearElasticElement::OpJacobian::OpJacobian(
   int tag,bool jacobian,bool field_disp):
   TetElementForcesAndSourcesCore::UserDataOperator(field_name),
   dAta(data),commonData(common_data),
-  tAg(tag),jAcobian(jacobian),fieldDisp(field_disp) {}
+  tAg(tag),adlocReturnValue(0),
+  jAcobian(jacobian),fieldDisp(field_disp) {}
 
 PetscErrorCode NonlinearElasticElement::OpJacobian::doWork(
   int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data) {
@@ -233,7 +234,6 @@ PetscErrorCode NonlinearElasticElement::OpJacobian::doWork(
       dAta.materialAdoublePtr->gG = gg;
 
       if(gg == 0) {
-
 	    
 	//if(lastId != dAta.iD) {
 	//lastId = dAta.iD;
@@ -286,7 +286,7 @@ PetscErrorCode NonlinearElasticElement::OpJacobian::doWork(
 	int r;
 	//play recorder for values
 	r = function(tAg,9,nb_active_variables,&active_varibles[0],&commonData.P[gg](0,0));
-	if(r!=3) { // function is locally analytic
+	if(r<adlocReturnValue) { // function is locally analytic
 	  SETERRQ1(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"ADOL-C function evaluation with error r = %d",r);
 	}
       } else {
@@ -302,7 +302,7 @@ PetscErrorCode NonlinearElasticElement::OpJacobian::doWork(
 	r = jacobian(
 	  tAg,9,nb_active_variables,
 	  &active_varibles[0],&(commonData.jacStressRowPtr[gg])[0]);
-	if(r!=3) {
+	if(r<adlocReturnValue) {
 	  SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"ADOL-C function evaluation with error");
 	}
       }

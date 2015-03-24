@@ -3,12 +3,6 @@
  * 
  * Low level data structures not used directly by user
  *
- * Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl) <br>
- * MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
  * MoFEM is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
@@ -26,6 +20,9 @@ namespace MoFEM {
 
 static const MOFEMuuid IDD_MOFENNodeMerger = MOFEMuuid( BitIntefaceId(NODEMERGER_INTERFACE) );
 
+/** \brief merge node from two bit levels
+  * \ingroup mofem
+  */
 struct NodeMergerInterface: public FieldUnknownInterface {
 
   PetscErrorCode queryInterface(const MOFEMuuid& uuid, FieldUnknownInterface** iface);
@@ -33,7 +30,26 @@ struct NodeMergerInterface: public FieldUnknownInterface {
   MoFEM::Core& cOre;
   NodeMergerInterface(MoFEM::Core& core): cOre(core) {};
 
-  PetscErrorCode mergeNodes(EntityHandle father,EntityHandle mother,BitRefLevel bit,Range *tets = NULL);
+  /** \brief merge nodes which sharing edge
+
+    I apologise that it could be traditional her. Father is sties, mother is merged.
+
+    \param father node to which mother is merged to.
+    \param mother merged node
+    \param test only tets_ptr from range are changed
+
+    */
+  PetscErrorCode mergeNodes(EntityHandle father,EntityHandle mother,BitRefLevel bit,Range *tets_ptr = NULL);
+
+  /** \brief merge nodes which sharing edge
+
+    I apologise that it could be traditional her. Father is sties, mother is merged.
+
+    \param father node to which mother is merged to.
+    \param mother merged node
+    \param tets_from_bit_ref_level only tets from bit level are changed
+
+    */
   PetscErrorCode mergeNodes(EntityHandle father,EntityHandle mother,BitRefLevel bit,BitRefLevel tets_from_bit_ref_level);
 
 };

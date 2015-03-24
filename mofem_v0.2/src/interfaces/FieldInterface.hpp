@@ -16,8 +16,8 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 */
 
-#ifndef __MOABFIELD_HPP__
-#define __MOABFIELD_HPP__
+#ifndef __FIELDINTERFACE_HPP__
+#define __FIELDINTERFACE_HPP__
 
 #include "FieldUnknownInterface.hpp"
 
@@ -29,6 +29,7 @@ static const MOFEMuuid IDD_MOFEMFieldInterface = MOFEMuuid( BitIntefaceId(FIELD_
 
 /**
  * \brief FieldInterface
+ * \ingroup mofem
  * 
  * This interface is used by user to: <br>
  *  (*) create approximation fields,  <br>
@@ -48,9 +49,6 @@ struct FieldInterface: public FieldUnknownInterface {
     ptr = reinterpret_cast<IFace*>(tmp_ptr);
     PetscFunctionReturn(0);
   }
-
-  ///destructor
-  virtual ~FieldInterface() {}
 
   /// get moab interface
   virtual Interface& get_moab() = 0; 
@@ -190,12 +188,12 @@ struct FieldInterface: public FieldUnknownInterface {
     
     /**
      * \ingroup mofem_bc 
+     * \ingroup mofem_access
      * \brief Iterator that loops over all the Cubit MeshSets in a moFEM field
      *
      * \param mField moFEM Field
      * \param iterator 
      */
-
   #define _IT_CUBITMESHSETS_FOR_LOOP_(MFIELD,IT) \
     CubitMeshSet_multiIndex::iterator IT = MFIELD.get_CubitMeshSets_begin(); IT!=MFIELD.get_CubitMeshSets_end(); IT++
 
@@ -225,13 +223,13 @@ struct FieldInterface: public FieldUnknownInterface {
     
     /**
       * \ingroup mofem_bc 
+      * \ingroup mofem_access
       * \brief Iterator that loops over a specific Cubit MeshSet in a moFEM field
       *
       * \param mField moFEM Field
       * \param CubitBCType see CubitBC (NODESET, SIDESET or BLOCKSET and more) 
       * \param iterator 
       */
-
   #define _IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT) \
     CubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator IT = MFIELD.get_CubitMeshSets_begin(CUBITBCTYPE); \
     IT!=MFIELD.get_CubitMeshSets_end(CUBITBCTYPE); IT++
@@ -262,6 +260,7 @@ struct FieldInterface: public FieldUnknownInterface {
     
   /**
    * \ingroup mofem_bc 
+   * \ingroup mofem_access
    * \brief Iterator that loops over a specific Cubit MeshSet having a particular BC meshset in a moFEM field
    *
    * \param mField moFEM Field
@@ -283,6 +282,7 @@ struct FieldInterface: public FieldUnknownInterface {
 
   /**
     * \ingroup mofem_bc 
+    * \ingroup mofem_access
     * \brief Iterator that loops over Cubit BlockSet having a particular name
     *
     * \param MFIELD mField
@@ -408,8 +408,6 @@ struct FieldInterface: public FieldUnknownInterface {
    * \param BitRefLevel bitLevel
    * \param BitRefLevel mask
    * \param Range   
-   *
-   *
    */
   virtual PetscErrorCode get_entities_by_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,Range &ents) = 0;
 
@@ -1511,22 +1509,28 @@ struct FieldInterface: public FieldUnknownInterface {
     */
   virtual PetscErrorCode loop_dofs(const string &field_name,EntMethod &method,int verb = -1) = 0;
 
-  /** \brief Get ref entities from database (data structure) 
-    *
+  /** \brief Get ref entities multi-index from database
+    * \ingroup mofem_access
     */
   virtual PetscErrorCode get_ref_ents(const RefMoFEMEntity_multiIndex **refinedEntitiesPtr_ptr) = 0;
+  
+  /** \brief Get ref finite elements multi-index form database
+    * \ingroup mofem_access
+    */
+  virtual PetscErrorCode get_ref_finite_elements(const RefMoFEMElement_multiIndex **refined_finite_elements_ptr) = 0;
 
   /** \brief Get problem database (data structure) 
     * \ingroup mofem_problems
-    *
+    * \ingroup mofem_access
     */
   virtual PetscErrorCode get_problem(const string &problem_name,const MoFEMProblem **problem_ptr) = 0;
 
   /** \brief Get dofs multi index
     * \ingroup mofem_field
+    * \ingroup mofem_access
     *
     */
-  virtual PetscErrorCode get_dofs(const DofMoFEMEntity_multiIndex **dofsPtr_ptr) = 0;
+  virtual PetscErrorCode get_dofs(const DofMoFEMEntity_multiIndex **dofs_ptr) = 0;
 
   /** 
     * \brief get begin iterator of filed ents of given name (instead you can use _IT_GET_ENT_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)
@@ -1554,6 +1558,7 @@ struct FieldInterface: public FieldUnknownInterface {
 
   /** \brief loop over all dofs from a moFEM field and particular field
     * \ingroup mofem_field
+    * \ingroup mofem_access
     */
   #define _IT_GET_ENT_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT) \
     MoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator IT = MFIELD.get_ent_moabfield_by_name_begin(NAME); \
@@ -1585,6 +1590,7 @@ struct FieldInterface: public FieldUnknownInterface {
 
   /** loop over all dofs from a moFEM field and particular field
     * \ingroup mofem_field
+    * \ingroup mofem_access
     */
   #define _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT) \
     DofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator IT = MFIELD.get_dofs_by_name_begin(NAME); \
@@ -1614,7 +1620,9 @@ struct FieldInterface: public FieldUnknownInterface {
     */
   virtual DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator get_dofs_by_name_and_ent_end(const string &field_name,const EntityHandle ent) = 0;
 
-  ///loop over all dofs from a moFEM field and particular field
+  /** \brief loop over all dofs from a moFEM field and particular field
+    * \ingroup mofem_access
+    */
   #define _IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_(MFIELD,NAME,ENT,IT) \
     DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator IT = MFIELD.get_dofs_by_name_and_ent_begin(NAME,ENT); \
       IT != MFIELD.get_dofs_by_name_and_ent_end(NAME,ENT); IT++
@@ -1685,18 +1693,21 @@ struct FieldInterface: public FieldUnknownInterface {
 
   /** \brief loop over all dofs from a moFEM field and particular field
     * \ingroup mofem_field
+    * \ingroup mofem_access
     */
   #define _IT_GET_DOFS_FIELD_BY_NAME_AND_TYPE_FOR_LOOP_(MFIELD,NAME,TYPE,IT) \
     DofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator IT = MFIELD.get_dofs_by_name_and_type_begin(NAME,TYPE); \
       IT != MFIELD.get_dofs_by_name_and_type_end(NAME,TYPE); IT++
 
   /** \brief Get finite elements multi index
+    * \ingroup mofem_access
     *
     */
   virtual PetscErrorCode get_finite_elements(const MoFEMFiniteElement_multiIndex **finiteElementsPtr_ptr) = 0;
 
   /** 
     * \brief get begin iterator of finite elements of given name (instead you can use _IT_GET_FES_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)
+    * \ingroup mofem_access
     *
     * for(_IT_GET_FES_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)) {
     * 	...
@@ -1708,6 +1719,7 @@ struct FieldInterface: public FieldUnknownInterface {
 
   /** 
     * \brief get end iterator of finite elements of given name (instead you can use _IT_GET_FES_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)
+    * \ingroup mofem_access
     *
     * for(_IT_GET_FES_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)) {
     * 	...
@@ -1717,7 +1729,9 @@ struct FieldInterface: public FieldUnknownInterface {
     */
   virtual EntMoFEMFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator get_fes_moabfield_by_name_end(const string &fe_name) = 0;
 
-  ///loop over all finite elements from a moFEM field and FE
+  /** \brief loop over all finite elements from a moFEM field and FE
+    * \ingroup mofem_access
+    */
   #define _IT_GET_FES_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT) \
     EntMoFEMFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator IT = MFIELD.get_fes_moabfield_by_name_begin(NAME); \
       IT != MFIELD.get_fes_moabfield_by_name_end(NAME); IT++
@@ -1727,7 +1741,7 @@ struct FieldInterface: public FieldUnknownInterface {
 
 }
 
-#endif // __MOABFIELD_HPP__
+#endif // __FIELDINTERFACE_HPP__
 
 /***************************************************************************//**
  * \defgroup mofem_bc Boundary conditions
@@ -1774,6 +1788,10 @@ struct FieldInterface: public FieldUnknownInterface {
  * \ingroup mofem
  ******************************************************************************/
 
+/***************************************************************************//**
+ * \defgroup mofem_access Pointers to multi-indices
+ * \ingroup mofem
+ ******************************************************************************/
 
 
 

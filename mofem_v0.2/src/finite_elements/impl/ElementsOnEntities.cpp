@@ -135,12 +135,12 @@ PetscErrorCode TetElementForcesAndSourcesCore::operator()() {
   rval = mField.get_moab().get_connectivity(ent,conn,num_nodes,true); CHKERR_PETSC(rval);
   coords.resize(num_nodes*3);
   rval = mField.get_moab().get_coords(conn,num_nodes,&*coords.data().begin()); CHKERR_PETSC(rval);
-  vOlume = Shape_intVolumeMBTET(&*dataH1.dataOnEntities[MBVERTEX][0].getDiffN().data().begin(),&*coords.data().begin()); 
+  vOlume = ShapeVolumeMBTET(&*dataH1.dataOnEntities[MBVERTEX][0].getDiffN().data().begin(),&*coords.data().begin()); 
   Jac.resize(3,3);
   invJac.resize(3,3);
   ierr = ShapeJacMBTET(&*dataH1.dataOnEntities[MBVERTEX][0].getDiffN().data().begin(),&*coords.begin(),&*Jac.data().begin()); CHKERRQ(ierr);
   noalias(invJac) = Jac;
-  ierr = Shape_invJac(&*invJac.data().begin()); CHKERRQ(ierr);
+  ierr = ShapeInvJacMBTET(&*invJac.data().begin()); CHKERRQ(ierr);
 
   coordsAtGaussPts.resize(nb_gauss_pts,3);
   for(int gg = 0;gg<nb_gauss_pts;gg++) {
@@ -191,8 +191,8 @@ PetscErrorCode TetElementForcesAndSourcesCore::operator()() {
       hoGaussPtsDetJac.resize(nb_gauss_pts);
       for(int gg = 0;gg<nb_gauss_pts;gg++) {
 	cblas_dcopy(9,&hoGaussPtsJac(gg,0),1,&jac(0,0),1);
-	hoGaussPtsDetJac[gg] = Shape_detJac(&jac(0,0));
-	ierr = Shape_invJac(&hoGaussPtsInvJac(gg,0)); CHKERRQ(ierr);
+	hoGaussPtsDetJac[gg] = ShapeDetJacMBTET(&jac(0,0));
+	ierr = ShapeInvJacMBTET(&hoGaussPtsInvJac(gg,0)); CHKERRQ(ierr);
       }
       ierr = opSetHoInvJacH1.opRhs(dataH1); CHKERRQ(ierr);
       if((dataH1.spacesOnEntities[MBTET]).test(L2)) {
