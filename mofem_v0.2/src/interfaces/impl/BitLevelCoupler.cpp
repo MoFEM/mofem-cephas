@@ -84,7 +84,7 @@ PetscErrorCode BitLevelCouplerInterface::resetTree(const BitRefLevel &parent_lev
 }
 
 PetscErrorCode BitLevelCouplerInterface::getParent(const double *coords,EntityHandle &parent,
-  const double iter_tol,const double inside_tol,int verb) {
+  bool tet_only,const double iter_tol,const double inside_tol,int verb) {
   PetscFunctionBegin;
   FieldInterface& m_field = cOre;
   EntityHandle leaf_out;
@@ -105,6 +105,7 @@ PetscErrorCode BitLevelCouplerInterface::getParent(const double *coords,EntityHa
     }
     parent = 0;
     if(is_in) {
+      if(!tet_only) {
 	//vertices
 	if(fabs(N[0]-1) < inside_tol && fabs(N[1])<inside_tol && fabs(N[2])<inside_tol && fabs(N[3])<inside_tol) {
 	  if(verb>1) cout << "node 0 found " << endl;
@@ -182,9 +183,10 @@ PetscErrorCode BitLevelCouplerInterface::getParent(const double *coords,EntityHa
 	if(parent!=0) {
 	  break;
 	}
-	if(verb>1) cout << "tet found " << endl;
-	parent = *tit;
-	break;
+      }
+      if(verb>1) cout << "tet found " << endl;
+      parent = *tit;
+      break;
     }
   }
   PetscFunctionReturn(0);
@@ -238,7 +240,7 @@ PetscErrorCode BitLevelCouplerInterface::buidlAdjacenciesVerticesOnTets(const Bi
     double coords[3];
     rval = m_field.get_moab().get_coords(&node,1,coords); CHKERR_PETSC(rval);
     EntityHandle parent = 0;
-    ierr = getParent(coords,parent,iter_tol,inside_tol,verb); CHKERRQ(ierr);
+    ierr = getParent(coords,parent,false,iter_tol,inside_tol,verb); CHKERRQ(ierr);
     ierr = chanegParent(refined_ptr->project<0>(it),parent,vertex_elements); CHKERRQ(ierr);
     if(throw_error && parent == 0) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,
