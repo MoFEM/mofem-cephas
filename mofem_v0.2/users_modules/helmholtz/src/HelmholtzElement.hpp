@@ -344,11 +344,12 @@ struct HelmholtzElement {
 				if(type == MBVERTEX) {
 					hoCoordsTri.clear();
 				}
-	
-				int nb_dofs = data.getN().size2();
+				
+				int nb_dofs = data.getFieldData().size();
+				//int nb_dofs = data.getN().size2();
 				for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
 					for(int dd = 0;dd<3;dd++) {
-						hoCoordsTri(gg,dd) += cblas_ddot(nb_dofs,&data.getN(gg)[0],1,&data.getFieldData()[dd],3); //calculate x,y,z at each GaussPts
+						hoCoordsTri(gg,dd) += cblas_ddot(nb_dofs/3,&data.getN(gg)[0],1,&data.getFieldData()[dd],3); //calculate x,y,z at each GaussPts
 					}
 				}
 	

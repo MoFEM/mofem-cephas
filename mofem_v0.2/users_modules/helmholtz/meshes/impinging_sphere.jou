@@ -4,9 +4,9 @@ Set Maximum Arc_Span 30
 
 #The exterior domain can be sphere or cube or any arbitrary shape
 #create sphere radius 4
-brick x 2 y 2 z 2
+brick x 3 y 3 z 3
 #create sphere radius 0.5
-create sphere radius 0.5
+create sphere radius 0.55
 chop volume 1  with volume 2 
 delete volume 3 
 
@@ -52,11 +52,11 @@ block 5 name 'EXACT_SOL'
 
 #surface 3 size auto factor 5
 #mesh surface 3
-surface 8 size auto factor 5 
+surface 8 size auto factor 4
 mesh surface 8 
 
 volume all scheme Tetmesh
-volume all size auto factor 8.5
+volume all size auto factor 7
 mesh volume all
 
 set duplicate block elements on
@@ -68,6 +68,13 @@ block 6 element type tetra10
 save as "/Users/xuanmeng/Desktop/U_pan/helmholtz_results/impinging_sphere.cub" overwrit
 
 save as "/Users/xuanmeng/Documents/mofem-cephas/mofem_v0.2/users_modules/helmholtz/meshes/impinging_sphere.cub" overwrit
+
+
+
+
+
+
+
 
 
 

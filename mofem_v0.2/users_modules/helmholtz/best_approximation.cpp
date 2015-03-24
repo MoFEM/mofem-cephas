@@ -84,7 +84,7 @@ struct MyFunApprox_re {
 		const complex< double > i( 0.0, 1.0 );
 		
 		// magnitude of incident wave
-		const double phi_incident_mag = 1.0;
+		const double phi_incident_mag = 3.0;
 		
 		const double tol = 1.0e-10;
 		double max = 0.0;
@@ -418,6 +418,7 @@ int main(int argc, char *argv[]) {
 	//if(pcomm->rank()==0) {
 	rval = moab.write_file("analytical_solution_mesh.h5m"); CHKERR_PETSC(rval);
 	//}
+	
 	//destroy the solvers
 	ierr = KSPDestroy(&solver1); CHKERRQ(ierr);
 	ierr = VecDestroy(&D); CHKERRQ(ierr);
@@ -440,8 +441,8 @@ int main(int argc, char *argv[]) {
 	rval = post_proc1.postProcMesh.write_file("best_approximation_out.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
 
 	//output the results from Docker
-	char command1[] = "mbconvert ./best_approximation_out.h5m ./best_approximation_out.vtk && cp ./best_approximation_out.vtk ../../../../../mnt/home/Desktop/U_pan/helmholtz_results/";
-	int todo1 = system( command1 );
+	//char command1[] = "mbconvert ./best_approximation_out.h5m ./best_approximation_out.vtk && cp ./best_approximation_out.vtk ../../../../../mnt/home/Desktop/U_pan/helmholtz_results/";
+	//int todo1 = system( command1 );
 	
 	/** get the time interval **/
 	ierr = PetscTime(&v2);CHKERRQ(ierr);

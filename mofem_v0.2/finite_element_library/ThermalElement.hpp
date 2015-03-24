@@ -350,8 +350,7 @@ struct ThermalElement {
 	//cblas_daxpy( data.getN().size1(), a, &X[0], 1, &Y[0], 1);
 	//std::cout << "\n Y = \n" << Y << std::endl;
     //std::cout << "\n data.getIndices()[0]2 = \n" << data.getIndices()[0] << std::endl;
-
-
+		  
           //ublas
           ublas::noalias(Nf) += prod(prod(data.getDiffN(gg,nb_row_dofs),val), commonData.getGradAtGaussPts(gg));
           
@@ -424,8 +423,8 @@ struct ThermalElement {
         K.resize(nb_row,nb_col);
 		K.clear();
 		
-		cout << "\n row_type this turn = \n" << row_type << endl;
-		cout << "\n col_type this turn = \n" << col_type <<  endl;
+		//cout << "\n row_type this turn = \n" << row_type << endl;
+		//cout << "\n col_type this turn = \n" << col_type <<  endl;
 		
         for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
 
@@ -442,18 +441,26 @@ struct ThermalElement {
           //nb_row,nb_col,3,
           //val,diff_N_row,3,diff_N_col,3,1.,&K(0,0),nb_col);
 
+		  cout << "\n nb_row = " << nb_row << endl;
+		  cout << "\n row_data.getIndices() = " << row_data.getIndices() << endl;
+		  cout << "\n nb_col = " << nb_col << endl;
+		  cout << "\n col_data.getIndices() = " << col_data.getIndices() << endl;
+		  
+		  cout<< "\n col_data.getDiffN(gg,nb_row) = " << row_data.getDiffN(gg,nb_row) << std::endl;
+		  cout<< "\n row_data.getDiffN(gg,nb_row) = " << col_data.getDiffN(gg,nb_col) << std::endl;
+
+		  
           //ublas
           ublas::matrix<double> K1=prod(row_data.getDiffN(gg,nb_row),val);
           noalias(K) += prod(K1,trans(col_data.getDiffN(gg,nb_col)));
         }
 
 		
-		cout << "\n nb_row = " << nb_row << endl;
-		cout << "\n row_data.getIndices() = " << row_data.getIndices() << endl;
-		cout << "\n nb_col = " << nb_col << endl;
-		cout << "\n col_data.getIndices() = " << col_data.getIndices() << endl;
+		
+		
 
-		cout << "\n K = " << K << endl;
+
+		//cout << "\n K = " << K << endl;
 		
         PetscErrorCode ierr;
         if(!useTsB) {
