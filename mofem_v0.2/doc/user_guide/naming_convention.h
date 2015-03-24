@@ -198,11 +198,10 @@ eliminate compilation errors, completion warnings, failed tests and memory
 leaks.
 
 Some guidance about branches:
-- Do not commits to other branch. You can commit only to branches created by yourself.
-- If you like to commit to other (not own created) branch, do pull request.
+- Do not commits to other people branch. You can commit only to branches created by yourself.
+- If you like to commit to other (not own created) branch, do pull request. 
 - Before marking pull request, pull from branch to which you like to commit.
 - Pull regularly form CDasgTesting branch.
-- Make separate branch to each branch. If you working on two different tasks
-  make two different branches. This simplifies code revision. 
+- If you working on two different tasks make two different branches. This simplifies code revision. 
 
 */
