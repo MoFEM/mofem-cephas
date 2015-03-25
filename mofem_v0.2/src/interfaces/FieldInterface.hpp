@@ -1151,6 +1151,31 @@ struct FieldInterface: public FieldUnknownInterface {
     */
   virtual PetscErrorCode MatCreateSeqAIJWithArrays(const string &name,Mat *Aij,PetscInt **i,PetscInt **j,PetscScalar **v,int verb = -1) = 0;
 
+  /** 
+    * \brief create IS for given order range 
+
+    * \param problem name
+    * \param rc ROW or COL 
+    * \param min_order
+    * \param max_order
+    * \param is out value
+    
+    */
+  virtual PetscErrorCode ISCreate(const string &problem,RowColData rc,int min_order,int max_order,IS *is,int verb = -1) = 0
+
+  /** 
+    * \brief create IS for given problem, field and rank range
+    
+    * \param problem name
+    * \param rc ROW or COL
+    * \param field name
+    * \param min_rank
+    * \param max_rank
+    * \param is out value
+    
+    */
+  virtual PestcErrorCode ISCreate(const string &problem,RowColData rc,const string &field,int min_rank,int max_rank,IS *is,int verb = -1) = 0;
+
   /**
     * \brief create scatter for vectors form one to another problem
     *
