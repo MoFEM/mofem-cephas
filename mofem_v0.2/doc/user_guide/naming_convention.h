@@ -63,6 +63,12 @@ in doc using Doxygen.
 MoFEM code should follow MoAB code style and best pratices listed here
 <http://www.mcs.anl.gov/~fathom/moab-docs/html/styleguide.html>.
 
+- Style:
+
+  - Make indentations.
+
+  - Indentation should have TWO spaces.
+
 - Names:
 
   - Class names should be in the CamelBack style, e.g. EdgeMesh or VertexMesher.
