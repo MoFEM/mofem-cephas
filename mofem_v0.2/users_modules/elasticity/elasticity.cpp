@@ -78,22 +78,32 @@ int main(int argc, char *argv[]) {
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
-  //Reade parameters from line command
-  PetscBool flg = PETSC_TRUE;
+  PetscBool flg_block_config,flg_file;
   char mesh_file_name[255];
-  ierr = PetscOptionsGetString(PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
-  if(flg != PETSC_TRUE) {
+  char block_config_file[255];
+  PetscInt order;
+  PetscBool is_partitioned = PETSC_FALSE;
+
+  ierr = PetscOptionsBegin(PETSC_COMM_WORLD,"","Elastic Config","none"); CHKERRQ(ierr);
+  ierr = PetscOptionsString("-my_file",
+    "mesh file name","",
+    "mesh.h5m",mesh_file_name,255,&flg_file); CHKERRQ(ierr);
+  ierr = PetscOptionsInt("-my_order",
+    "default approximation order","",
+      2,&order,PETSC_NULL); CHKERRQ(ierr);
+  ierr = PetscOptionsBool("-my_is_partitioned", 
+    "set if mesh is partitioned (this result that each process keeps only part of the mes","",
+    PETSC_FALSE,&is_partitioned,PETSC_NULL); CHKERRQ(ierr);
+  ierr = PetscOptionsString("-my_block_config",
+    "elastic configure file name","",
+    "block_conf.in",block_config_file,255,&flg_block_config); CHKERRQ(ierr);
+  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+
+  //Reade parameters from line command
+  if(flg_file != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
-  PetscInt order;
-  ierr = PetscOptionsGetInt(PETSC_NULL,"-my_order",&order,&flg); CHKERRQ(ierr);
-  if(flg != PETSC_TRUE) {
-    order = 5;
-  }
 
-  PetscBool is_partitioned = PETSC_FALSE;
-  ierr = PetscOptionsGetBool(PETSC_NULL,"-my_is_partitioned",&is_partitioned,&flg); CHKERRQ(ierr);
-    
   if(is_partitioned == PETSC_TRUE) {
     //Read mesh to MOAB
     const char *option;
@@ -146,11 +156,8 @@ int main(int argc, char *argv[]) {
 
   // configure blocks by parsing config file
   // it allow to set approximation order for each block independettly
-  PetscBool block_config;
-  char block_config_file[255];
-  ierr = PetscOptionsGetString(PETSC_NULL,"-my_block_config",block_config_file,255,&block_config); CHKERRQ(ierr);
   map<int,BlockOptionData> block_data;
-  if(block_config) {
+  if(flg_block_config) {
     try {
       ifstream ini_file(block_config_file);  
       //cerr << block_config_file << endl;
@@ -316,6 +323,7 @@ int main(int argc, char *argv[]) {
   ierr = VecDuplicate(F,&D); CHKERRQ(ierr);
   Mat Aij;
   ierr = DMCreateMatrix_MoFEM(dm,&Aij); CHKERRQ(ierr);
+  ierr = MatSetOption(Aij,MAT_SPD,PETSC_TRUE); CHKERRQ(ierr);
 
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
