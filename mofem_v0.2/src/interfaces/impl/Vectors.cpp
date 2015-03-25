@@ -102,7 +102,7 @@ PetscErrorCode Core::VecCreateGhost(const string &name,RowColData rc,Vec *V) {
   ierr = ::VecCreateGhost(comm,nb_local_dofs,nb_dofs,nb_ghost_dofs,&ghost_idx[0],V); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::ISCreate(const string &problem,RowColData rc,int min_order,int max_order,IS *is,int verb) {
+PetscErrorCode Core::ISCreateProblemOrder(const string &problem,RowColData rc,int min_order,int max_order,IS *is,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type moFEMProblems_by_name;
@@ -125,14 +125,14 @@ PetscErrorCode Core::ISCreate(const string &problem,RowColData rc,int min_order,
   }
   int size = distance(it,hi_it);
   int *id;
-  ierr = PetscMalloc(size*sizeof(PetscInt),id); CHKERRQ(ierr);
+  ierr = PetscMalloc(size*sizeof(int),&id); CHKERRQ(ierr);
   for(int ii = 0;it!=hi_it;it++,ii++) {
     id[ii] = it->get_petsc_gloabl_dof_idx();
   }
   ierr = ISCreateGeneral(comm,size,id,PETSC_OWN_POINTER,is); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-PestcErrorCode ISCreate(const string &problem,RowColData rc,const string &field,int min_rank,int max_rank,int verb) {
+PetscErrorCode Core::ISCreateProblemFieldAndRank(const string &problem,RowColData rc,const string &field,int min_rank,int max_rank,IS *is,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type moFEMProblems_by_name;
@@ -143,19 +143,19 @@ PestcErrorCode ISCreate(const string &problem,RowColData rc,const string &field,
   dofs_by_name_and_rank::iterator it,hi_it;
   switch(rc) {
     case ROW:
-    it = p->numered_dofs_rows.get<Composite_Name_And_Rank_mi_tag>().lower_bound(boost::make_type(field,min_rank));
-    hi_it = p->numered_dofs_rows.get<Composite_Name_And_Rank_mi_tag>().lower_bound(boost::make_type(field,min_rank));
+    it = p->numered_dofs_rows.get<Composite_Name_And_Rank_mi_tag>().lower_bound(boost::make_tuple(field,min_rank));
+    hi_it = p->numered_dofs_rows.get<Composite_Name_And_Rank_mi_tag>().lower_bound(boost::make_tuple(field,min_rank));
     break;
     case COL:
-    it = p->numered_dofs_cols.get<Composite_Name_And_Rank_mi_tag>().lower_bound(boost::make_type(field,min_rank));
-    hi_it = p->numered_dofs_cols.get<Composite_Name_And_Rank_mi_tag>().lower_bound(boost::make_type(field,min_rank));
+    it = p->numered_dofs_cols.get<Composite_Name_And_Rank_mi_tag>().lower_bound(boost::make_tuple(field,min_rank));
+    hi_it = p->numered_dofs_cols.get<Composite_Name_And_Rank_mi_tag>().lower_bound(boost::make_tuple(field,min_rank));
     break;
     default:
      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
   }
   int size = distance(it,hi_it);
   int *id;
-  ierr = PetscMalloc(size*sizeof(PetscInt),id); CHKERRQ(ierr);
+  ierr = PetscMalloc(size*sizeof(int),&id); CHKERRQ(ierr);
   for(int ii = 0;it!=hi_it;it++,ii++) {
     id[ii] = it->get_petsc_gloabl_dof_idx();
   }
@@ -211,7 +211,7 @@ PetscErrorCode Core::ISCreateFromProblemFieldToOtherProblemField(
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCdoe Core::ISCreateFromProblemFieldToOtherProblemField(
+PetscErrorCode Core::ISCreateFromProblemFieldToOtherProblemField(
   const string &x_problem,const string &x_field_name,RowColData x_rc,
   const string &y_problem,const string &y_field_name,RowColData y_rc,
   IS *ix,IS *iy,int verb) {
@@ -219,12 +219,12 @@ PetscErrorCdoe Core::ISCreateFromProblemFieldToOtherProblemField(
   vector<int> idx(0),idy(0);
   ierr = ISCreateFromProblemFieldToOtherProblemField( 
     x_problem,x_field_name,x_rc,y_problem,y_field_name,y_rc,
-    &idx,&idy,verb); CHKERRQ(ierr);
+    idx,idy,verb); CHKERRQ(ierr);
   ierr = ISCreateGeneral(comm,idx.size(),&idx[0],PETSC_COPY_VALUES,ix); CHKERRQ(ierr);
   ierr = ISCreateGeneral(comm,idy.size(),&idy[0],PETSC_COPY_VALUES,iy); CHKERRQ(ierr);
   if(verb>2) {
-    ISView(ix,PETSC_VIEWER_STDOUT_WORLD);
-    ISView(iy,PETSC_VIEWER_STDOUT_WORLD);
+    ISView(*ix,PETSC_VIEWER_STDOUT_WORLD);
+    ISView(*iy,PETSC_VIEWER_STDOUT_WORLD);
   }
   PetscFunctionReturn(0);
 }
@@ -235,19 +235,17 @@ PetscErrorCode Core::VecScatterCreate(Vec xin,const string &x_problem,const stri
   vector<int> idx(0),idy(0);
   ierr = ISCreateFromProblemFieldToOtherProblemField( 
     x_problem,x_field_name,x_rc,y_problem,y_field_name,y_rc,
-    &idx,&idy,verb); CHKERRQ(ierr);
+    idx,idy,verb); CHKERRQ(ierr);
   IS ix,iy;
-  ierr = ISCreateGeneral(comm,idx.size(),&idx[0],PETSC_USE_POINTER,ix); CHKERRQ(ierr);
-  ierr = ISCreateGeneral(comm,idy.size(),&idy[0],PETSC_USE_POINTER,iy); CHKERRQ(ierr);
+  ierr = ISCreateGeneral(comm,idx.size(),&idx[0],PETSC_USE_POINTER,&ix); CHKERRQ(ierr);
+  ierr = ISCreateGeneral(comm,idy.size(),&idy[0],PETSC_USE_POINTER,&iy); CHKERRQ(ierr);
   ierr = ::VecScatterCreate(xin,ix,yin,iy,newctx); CHKERRQ(ierr);
   ierr = ISDestroy(&ix); CHKERRQ(ierr);
   ierr = ISDestroy(&iy); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::ISCreateFromProblemFieldToOtherProblemField(
-    const string &x_problem,const string &x_field_name,RowColData x_rc,
-    const string &y_problem,const string &y_field_name,RowColData y_rc,
-    vector<int> &idx,vector<int> &idy,int verb) {
+PetscErrorCode Core::ISCreateFromProblemToOtherProblem(
+  const string &x_problem,RowColData x_rc,const string &y_problem,RowColData y_rc,vector<int> &idx,vector<int> &idy,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type moFEMProblems_by_name;
@@ -293,16 +291,15 @@ PetscErrorCode Core::ISCreateFromProblemFieldToOtherProblemField(
   PetscFunctionReturn(0);
 }
 PetscErrorCode Core::ISCreateFromProblemToOtherProblem(
-  const string &x_problem,RowColData x_rc,const string &y_problem,RowColData y_rc,IS *ix,IS *iy,
-  vector<int> *idx_ptr,vector<int> *idy_ptr,int verb) {
+  const string &x_problem,RowColData x_rc,const string &y_problem,RowColData y_rc,IS *ix,IS *iy,int verb) {
   PetscFunctionBegin;
   vector<int> idx(0),idy(0);
   ierr = ISCreateFromProblemToOtherProblem(x_problem,x_rc,y_problem,y_rc,idx,idy,verb); CHKERRQ(ierr);
   ierr = ISCreateGeneral(comm,idx.size(),&idx[0],PETSC_COPY_VALUES,ix); CHKERRQ(ierr);
   ierr = ISCreateGeneral(comm,idy.size(),&idy[0],PETSC_COPY_VALUES,iy); CHKERRQ(ierr);
   if(verb>2) {
-    ISView(ix,PETSC_VIEWER_STDOUT_WORLD);
-    ISView(iy,PETSC_VIEWER_STDOUT_WORLD);
+    ISView(*ix,PETSC_VIEWER_STDOUT_WORLD);
+    ISView(*iy,PETSC_VIEWER_STDOUT_WORLD);
   }
   PetscFunctionReturn(0);
 }
@@ -312,8 +309,8 @@ PetscErrorCode Core::VecScatterCreate(Vec xin,const string &x_problem,RowColData
   vector<int> idx(0),idy(0);
   ierr = ISCreateFromProblemToOtherProblem(x_problem,x_rc,y_problem,y_rc,idx,idy,verb); CHKERRQ(ierr);
   IS ix,iy;
-  ierr = ISCreateGeneral(comm,idx.size(),&idx[0],PETSC_USE_POINTER,ix); CHKERRQ(ierr);
-  ierr = ISCreateGeneral(comm,idy.size(),&idy[0],PETSC_USE_POINTER,iy); CHKERRQ(ierr);
+  ierr = ISCreateGeneral(comm,idx.size(),&idx[0],PETSC_USE_POINTER,&ix); CHKERRQ(ierr);
+  ierr = ISCreateGeneral(comm,idy.size(),&idy[0],PETSC_USE_POINTER,&iy); CHKERRQ(ierr);
   if(verb>2) {
     ISView(ix,PETSC_VIEWER_STDOUT_WORLD);
     ISView(iy,PETSC_VIEWER_STDOUT_WORLD);

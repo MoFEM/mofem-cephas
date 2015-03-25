@@ -1161,7 +1161,7 @@ struct FieldInterface: public FieldUnknownInterface {
     * \param is out value
     
     */
-  virtual PetscErrorCode ISCreate(const string &problem,RowColData rc,int min_order,int max_order,IS *is,int verb = -1) = 0
+  virtual PetscErrorCode ISCreateProblemOrder(const string &problem,RowColData rc,int min_order,int max_order,IS *is,int verb = -1) = 0;
 
   /** 
     * \brief create IS for given problem, field and rank range
@@ -1174,7 +1174,7 @@ struct FieldInterface: public FieldUnknownInterface {
     * \param is out value
     
     */
-  virtual PestcErrorCode ISCreate(const string &problem,RowColData rc,const string &field,int min_rank,int max_rank,IS *is,int verb = -1) = 0;
+  virtual PetscErrorCode ISCreateProblemFieldAndRank(const string &problem,RowColData rc,const string &field,int min_rank,int max_rank,IS *is,int verb = -1) = 0;
 
   /**
     * \brief create scatter for vectors form one to another problem

@@ -483,9 +483,9 @@ struct Core:
   PetscErrorCode MatCreateSeqAIJWithArrays(const string &name,Mat *Aij,PetscInt **i,PetscInt **j,PetscScalar **v,int verb = -1);
 
   /// get IS for order
-  PetscErrorCode ISCreate(const string &problem,RowColData rc,int min_order,int max_order,IS *is,int verb = -1);
+  PetscErrorCode ISCreateProblemOrder(const string &problem,RowColData rc,int min_order,int max_order,IS *is,int verb = -1);
   /// get IS for field and rank
-  PestcErrorCode ISCreate(const string &problem,RowColData rc,const string &field,int min_rank,int max_rank,IS *is,int verb = -1);
+  PetscErrorCode ISCreateProblemFieldAndRank(const string &problem,RowColData rc,const string &field,int min_rank,int max_rank,IS *is,int verb = -1);
 
   //scatter from problem filed to other problem field
   PetscErrorCode ISCreateFromProblemFieldToOtherProblemField(
