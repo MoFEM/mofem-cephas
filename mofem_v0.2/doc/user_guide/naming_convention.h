@@ -3,7 +3,7 @@
 \section citizen Be a good MoFEM citizen
 
 - MoFEM is a team work. Don't be focussed only on your project, try improve
-  MOFEM. Y our modifications can help others, others modification will help
+  MOFEM. Your modifications can help others, others modification will help
   you.
 - MoFEM is not own by anyone, you are become owner proportionally to your
   contribution. 
@@ -65,21 +65,70 @@ MoFEM code should follow MoAB code style and best pratices listed here
 
 - Style:
 
-  - Make indentations.
+  - Make indentations. Indent code to better convey the logical structure of
+    your code. Without indenting, code becomes difficult to follow. \code
+if (...) { 
+if (...) { 
+...
+} else {
+...
+}} else if {
+... 
+} else { 
+... 
+}
+\endcode
+Can you follow this ? This is much better \code
+if (...) { 
+  if (...) { 
+    ...
+  } else {
+    ...
+  }
+} else if {
+  ... 
+} else { 
+  ... 
+}
+\endcode
 
-  - Indentation should have TWO spaces.
+  - Enable syntax highlighting in your text editor.
+
+  - Break large, complex sections of code into smaller, comprehensible modules
+    (subroutine/functions/methods). A good rule is that modules do not exceed
+    the size of the text editor window.
+
+  - Indentation should have TWO spaces. You have to set up your favorite editor to
+    make to spaces for tab.
+
+  - Use empty lines to provide organisational clues to source code, blocks
+    (\em paragraphs -like structure) help the reader in comprehending the logical
+    segmenting.
 
 - Names:
 
   - Class names should be in the CamelBack style, e.g. EdgeMesh or VertexMesher.
 
   - Class member variables should be camelBack, e.g. EdgeMesh::schemeType; each
-    member variable, e.g. int memberVariable, should have set/get functions
+    member variable, e.g. int memberVariable, should have set/get functions 
     void member_variable(int newval) and int member_variable(), respectively
 
-  - Enumeration values should be all captitalized, with underscores avoided if
+  - Enumeration values should be all capitalized, with underscores avoided if
     possible (the enumeration name indicates the general purpose of the
     enumeration, so e.g. we use EQUAL, not EQUAL_MESH)
+
+  - Use a verb-noun method to name routines that perform some
+    operation-on-a-given-object. Most names are constructed by concatenating
+    several words, use mixed-case formatting or underscore to ease reading. \code
+calculateKineticEnergy ( . . . )
+calculate_kinetic_energy ( . . . )
+\endcode
+or any other derivatives.
+
+  - Avoid elusive names, open to subjective interpretation like \code
+Analyse ( . . . ) / / subroutine or function or method
+nnsmcomp1 / / variable
+\endcode
 
   - Each class header should be fully commented.
   
@@ -104,6 +153,9 @@ class A {
 };
 
 double *val_ptr; ///< local variable
+
+  - Append/Prepend computation qualifiers like Av, Sum, Min, Max and Index to
+    the end of a variable when appropriate.
 
 \endcode
 
