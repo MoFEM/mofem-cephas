@@ -98,8 +98,8 @@ if (...) {
     (subroutine/functions/methods). A good rule is that modules do not exceed
     the size of the text editor window.
 
-  - Indentation should have TWO spaces. You have to set up your favorite editor to
-    make to spaces for tab.
+  - Indentation should have TWO SPACES. You have to set up your favorite editor to
+    make TWO SPACES for TAB.
 
   - Use empty lines to provide organisational clues to source code, blocks
     (\em paragraphs -like structure) help the reader in comprehending the logical
