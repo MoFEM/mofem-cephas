@@ -91,7 +91,7 @@ struct AnalyticalDirihletBC {
 	TriElementForcesAndSurcesCore::UserDataOperator(field_name),
 	hoCoords(ho_coords) { }
 
-      ublas::matrix<FieldData> NTN;
+      ublas::matrix<FieldData> NTN,transNTN;
       PetscErrorCode doWork(
 	int row_side,int col_side,
 	EntityType row_type,EntityType col_type,
@@ -115,6 +115,7 @@ struct AnalyticalDirihletBC {
 	  }
 
 	  NTN.resize(nb_row,nb_col);
+	  NTN.clear();
 
 	  for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
 	    double val = getGaussPts()(2,gg);
@@ -125,17 +126,27 @@ struct AnalyticalDirihletBC {
 	      val *= getArea();
 	    }
 
-	    NTN.clear();
+
 	    cblas_dger(CblasRowMajor,nb_row,nb_col,val,
 	      &row_data.getN(gg)[0],1,&col_data.getN(gg)[0],1,
 	      &NTN(0,0),nb_col);
 
+
+	  }
+
+	  ierr = MatSetValues(
+	    (getFEMethod()->snes_B),
+	    nb_row,&row_data.getIndices()[0],
+	    nb_col,&col_data.getIndices()[0],
+	    &NTN(0,0),ADD_VALUES); CHKERRQ(ierr);
+	  if(row_side != col_side || row_type != col_type) {
+	    transNTN.resize(nb_col,nb_row);
+	    noalias(transNTN) = trans(NTN);
 	    ierr = MatSetValues(
 	      (getFEMethod()->snes_B),
-	      nb_row,&row_data.getIndices()[0],
 	      nb_col,&col_data.getIndices()[0],
-	      &NTN(0,0),ADD_VALUES); CHKERRQ(ierr);
-
+	      nb_row,&row_data.getIndices()[0],
+	      &transNTN(0,0),ADD_VALUES); CHKERRQ(ierr);
 	  }
 
 	} catch (const std::exception& ex) {
