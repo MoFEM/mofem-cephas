@@ -109,16 +109,16 @@ PetscErrorCode Core::ISCreateProblemOrder(const string &problem,RowColData rc,in
   moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<Problem_mi_tag>();
   moFEMProblems_by_name::iterator p = moFEMProblems_set.find(problem);
   if(p==moFEMProblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"no such problem %s (top tip check spelling)",problem.c_str());
-  typedef NumeredDofMoFEMEntity_multiIndex::index<Order_mi_tag>::type dofs_order;
+  typedef NumeredDofMoFEMEntity_multiIndex::index<Composite_Order_And_Part_mi_tag>::type dofs_order;
   dofs_order::iterator it,hi_it;
   switch(rc) {
     case ROW:
-    it = p->numered_dofs_rows.get<Order_mi_tag>().lower_bound(min_order);
-    hi_it = p->numered_dofs_rows.get<Order_mi_tag>().lower_bound(max_order);
+    it = p->numered_dofs_rows.get<Composite_Order_And_Part_mi_tag>().lower_bound(boost::make_tuple(min_order,rAnk));
+    hi_it = p->numered_dofs_rows.get<Composite_Order_And_Part_mi_tag>().upper_bound(boost::make_tuple(min_order,rAnk));
     break;
     case COL:
-    it = p->numered_dofs_cols.get<Order_mi_tag>().lower_bound(min_order);
-    hi_it = p->numered_dofs_cols.get<Order_mi_tag>().lower_bound(max_order);
+    it = p->numered_dofs_cols.get<Composite_Order_And_Part_mi_tag>().lower_bound(boost::make_tuple(min_order,rAnk));
+    hi_it = p->numered_dofs_cols.get<Composite_Order_And_Part_mi_tag>().upper_bound(boost::make_tuple(min_order,rAnk));
     break;
     default:
      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
@@ -139,16 +139,16 @@ PetscErrorCode Core::ISCreateProblemFieldAndRank(const string &problem,RowColDat
   moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<Problem_mi_tag>();
   moFEMProblems_by_name::iterator p = moFEMProblems_set.find(problem);
   if(p==moFEMProblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"no such problem %s (top tip check spelling)",problem.c_str());
-  typedef NumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Rank_mi_tag>::type dofs_by_name_and_rank;
+  typedef NumeredDofMoFEMEntity_multiIndex::index<Composite_Name_Rank_And_Part_mi_tag>::type dofs_by_name_and_rank;
   dofs_by_name_and_rank::iterator it,hi_it;
   switch(rc) {
     case ROW:
-    it = p->numered_dofs_rows.get<Composite_Name_And_Rank_mi_tag>().lower_bound(boost::make_tuple(field,min_rank));
-    hi_it = p->numered_dofs_rows.get<Composite_Name_And_Rank_mi_tag>().lower_bound(boost::make_tuple(field,min_rank));
+    it = p->numered_dofs_rows.get<Composite_Name_Rank_And_Part_mi_tag>().lower_bound(boost::make_tuple(field,min_rank,rAnk));
+    hi_it = p->numered_dofs_rows.get<Composite_Name_Rank_And_Part_mi_tag>().upper_bound(boost::make_tuple(field,min_rank));
     break;
     case COL:
-    it = p->numered_dofs_cols.get<Composite_Name_And_Rank_mi_tag>().lower_bound(boost::make_tuple(field,min_rank));
-    hi_it = p->numered_dofs_cols.get<Composite_Name_And_Rank_mi_tag>().lower_bound(boost::make_tuple(field,min_rank));
+    it = p->numered_dofs_cols.get<Composite_Name_Rank_And_Part_mi_tag>().lower_bound(boost::make_tuple(field,min_rank));
+    hi_it = p->numered_dofs_cols.get<Composite_Name_Rank_And_Part_mi_tag>().upper_bound(boost::make_tuple(field,min_rank,rAnk));
     break;
     default:
      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
