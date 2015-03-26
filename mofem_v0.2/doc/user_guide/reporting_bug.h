@@ -20,7 +20,7 @@ In some specific cases, additionally you can
 
 \section example_bug_repoty Example bug report
 
-In this particular case a wrong name of mesh files was used to trigger error. Bug report for that case should look be as follows:
+In this particular case a wrong name of mesh files was used to trigger error. Bug report for that case should be as follows:
 
 Line command:
 \code
@@ -36,7 +36,6 @@ Error Trace:
 [0]PETSC ERROR: See http://userweb.eng.gla.ac.uk/lukasz.kaczmarczyk/MoFem/html/faq_and_bugs.html for trouble shooting.
 [0]PETSC ERROR: --------------------- Error Message --------------------------------------------------------------
 [0]PETSC ERROR: Error code  7 at /mnt/home/MyBuild/mofem-cephas/mofem_v0.2/users_modules/elasticity/elasticity.cpp:112
-
 [0]PETSC ERROR: See http://www.mcs.anl.gov/petsc/documentation/faq.html for trouble shooting.
 [0]PETSC ERROR: Petsc Development GIT revision: v3.5.3-1524-gee900cc  GIT Date: 2015-01-31 17:44:15 -0600
 [0]PETSC ERROR: /mofem_build/um_debug/elasticity/elasticity on a arch-linux2-c-debug named likask by root Fri Mar 20 14:59:28 2015
