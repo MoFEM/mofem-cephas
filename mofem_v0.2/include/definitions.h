@@ -94,6 +94,16 @@ enum ByWhat {
   BYALL = 1<<0|1<<1|1<<2 
 };
 
+//taken from http://stackoverflow.com/questions/295120/c-mark-as-deprecated
+#ifdef __GNUC__
+#define DEPRECATED __attribute__((deprecated))
+#elif defined(_MSC_VER)
+#define DEPRECATED __declspec(deprecated)
+#else
+#pragma message("WARNING: You need to implement DEPRECATED for this compiler")
+#define DEPRECATED
+#endif
+
 #define BITREFEDGES_SIZE 6 /*number of edges on tetrahedral*/
 #define BITREFLEVEL_SIZE 128 /*max number of refinements*/
 #define BITFIELDID_SIZE 32 /*max number of fields*/
