@@ -149,16 +149,23 @@ nnsmcomp1 / / variable
     temperature_val, nodal_position. 
 
   - If variable is a pointer, it should have name as follows \code
-
 class A {
   double *valPtr; ///< class member variable
 };
 
 double *val_ptr; ///< local variable
+\endcode
+
 
   - Append/Prepend computation qualifiers like Av, Sum, Min, Max and Index to
     the end of a variable when appropriate.
 
+  - If you commit your code remove are depreciated functions names. Use of OLD function name (or old functions
+    arguments) generate compilation warring, f.e. \code
+In file included from mofem_v0.2/finite_element_library/impl/DirichletBC.cpp:39:0:
+mofem_v0.2/src/interfaces/FieldInterface.hpp: In member function 'PetscErrorCode MoFEM::FieldInterface::set_other_local_VecCreateGhost(const MoFEM::MoFEMProblem*, const string&, const string&, RowColData, Vec, InsertMode, ScatterMode, int)':
+mofem_v0.2/src/interfaces/FieldInterface.hpp:1300:107: warning: 'PetscErrorCode MoFEM::FieldInterface::set_other_local_VecCreateGhost(const MoFEM::MoFEMProblem*, const string&, const string&, RowColData, Vec, InsertMode, ScatterMode, int)' is deprecated (declared at mofem_v0.2/src/interfaces/FieldInterface.hpp:1296) [-Wdeprecated-declarations]
+     ierr = set_other_local_VecCreateGhost(problem_ptr,fiel_name,cpy_field_name,rc,V,mode,scatter_mode,verb); CHKERRQ(ierr);
 \endcode
 
   - Constants and Macros
@@ -172,7 +179,7 @@ double *val_ptr; ///< local variable
       For example, use M_PI as defined in math.h rather than defining your own
       constant.
 
-- Each header file should have define macro, following example \code
+- Each header file should have defined macro, following example \code
 #ifndef __CLASS_NAME_HPP__
 #define __CLASS_NAME_HPP__
 
