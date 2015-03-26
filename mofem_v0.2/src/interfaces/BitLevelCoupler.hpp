@@ -35,6 +35,29 @@ struct BitLevelCouplerInterface: public FieldUnknownInterface {
 
   BitLevelCouplerInterface(MoFEM::Core& core): cOre(core),vErify(false) {};
 
+  /** \brief build adaptive kd-tree
+    */
+  PetscErrorCode buildTree(const BitRefLevel &parent_level,int verb = 0);
+
+  /** \brief reset adaptive kd-tree
+    */
+  PetscErrorCode resetTree(const BitRefLevel &parent_level,int verb = 0);
+
+  /** \brief get parent entity
+
+    * Use kd-tree to find tetrahedral or other volume element. 
+  
+    \param coordinate
+    \param parent returned parent entity    
+    \param iter_tol tolerance for convergence of point search
+    \param inside_tol tolerance for inside element calculation
+    \param throw_error if parent can not be found
+    \param verbose level 
+
+    */
+  PetscErrorCode getParent(const double *coords,EntityHandle &parent,
+    bool tet_only = false,const double iter_tol = 1.0e-10,const double inside_tol = 1.0e-6,int verb = 0);
+
   /** \brief finding parents for vertices 
     *
     * Use kd-tree to find tetrahedral or other volume element. 
@@ -105,8 +128,9 @@ struct BitLevelCouplerInterface: public FieldUnknownInterface {
   double locCoords[3];
   const EntityHandle *cOnn;
 
-  PetscErrorCode getLocCoordsOnTet(EntityHandle tet,double *glob_coords,int verb = 0);
+  PetscErrorCode getLocCoordsOnTet(EntityHandle tet,const double *glob_coords,int verb = 0);
 
+  boost::scoped_ptr<AdaptiveKDTree> treePtr;
 
 };
 

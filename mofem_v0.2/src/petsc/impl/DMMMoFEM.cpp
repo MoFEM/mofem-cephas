@@ -191,7 +191,7 @@ PetscErrorCode DMoFEMMeshToLocalVector(DM dm,Vec l,InsertMode mode,ScatterMode s
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;
-  ierr = dm_field->mField_ptr->set_local_VecCreateGhost(dm_field->problemPtr,ROW,l,mode,scatter_mode); CHKERRQ(ierr);
+  ierr = dm_field->mField_ptr->set_local_ghost_vector(dm_field->problemPtr,ROW,l,mode,scatter_mode); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -200,7 +200,7 @@ PetscErrorCode DMoFEMMeshToGlobalVector(DM dm,Vec g,InsertMode mode,ScatterMode 
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;
-  ierr = dm_field->mField_ptr->set_global_VecCreateGhost(dm_field->problemPtr,ROW,g,mode,scatter_mode); CHKERRQ(ierr);
+  ierr = dm_field->mField_ptr->set_global_ghost_vector(dm_field->problemPtr,ROW,g,mode,scatter_mode); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 

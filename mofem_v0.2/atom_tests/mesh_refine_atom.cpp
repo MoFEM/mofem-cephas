@@ -13,6 +13,9 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 #include <MoFEM.hpp>
+
+#include <boost/scoped_ptr.hpp>
+#include <moab/AdaptiveKDTree.hpp>
 #include <BitLevelCoupler.hpp>
 
 using namespace MoFEM;

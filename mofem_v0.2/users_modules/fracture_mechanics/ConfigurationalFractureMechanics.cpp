@@ -1824,7 +1824,7 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_spatial_problem(FieldInte
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("NEUAMNN_FE",&fe_forces));
   snes_ctx.get_postProcess_to_do_Mat().push_back(&my_dirichlet_bc);
 
-  ierr = m_field.set_local_VecCreateGhost("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = m_field.set_local_ghost_vector("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
@@ -1837,7 +1837,7 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_spatial_problem(FieldInte
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
   //Save data on mesh
-  ierr = m_field.set_global_VecCreateGhost("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = m_field.set_global_ghost_vector("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
   if(postproc) {
@@ -1962,7 +1962,7 @@ PetscErrorCode ConfigurationalFractureMechanics::project_force_vector(FieldInter
 
   Vec F_Material;
   ierr = m_field.VecCreateGhost(problem,ROW,&F_Material); CHKERRQ(ierr);
-  ierr = m_field.set_other_global_VecCreateGhost(problem,"MESH_NODE_POSITIONS","MATERIAL_FORCE",ROW,F_Material,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = m_field.set_other_global_ghost_vector(problem,"MESH_NODE_POSITIONS","MATERIAL_FORCE",ROW,F_Material,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
   int M,m;
   ierr = VecGetSize(F_Material,&M); CHKERRQ(ierr);
@@ -1977,7 +1977,7 @@ PetscErrorCode ConfigurationalFractureMechanics::project_force_vector(FieldInter
 
   PostProcVertexMethod ent_method_material(m_field.get_moab(),"MESH_NODE_POSITIONS",QTF_Material,"MATERIAL_FORCE_PROJECTED");
   ierr = m_field.loop_dofs(problem,"MESH_NODE_POSITIONS",ROW,ent_method_material); CHKERRQ(ierr);
-  ierr = m_field.set_other_global_VecCreateGhost(problem,"MESH_NODE_POSITIONS","MATERIAL_FORCE",ROW,QTF_Material,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = m_field.set_other_global_ghost_vector(problem,"MESH_NODE_POSITIONS","MATERIAL_FORCE",ROW,QTF_Material,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
   double nrm2_material;
   ierr = VecNorm(QTF_Material,NORM_2,&nrm2_material);   CHKERRQ(ierr);
@@ -2003,10 +2003,10 @@ PetscErrorCode ConfigurationalFractureMechanics::project_form_th_projection_tag(
   ierr = VecZeroEntries(dD); CHKERRQ(ierr);
   ierr = VecSetOption(dD,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE);  CHKERRQ(ierr);
 
-  ierr = m_field.set_local_VecCreateGhost(problem,COL,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = m_field.set_local_ghost_vector(problem,COL,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = m_field.set_global_VecCreateGhost(problem,COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = m_field.set_global_ghost_vector(problem,COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
   Tag th_projection;
   rval = m_field.get_moab().tag_get_handle("PROJECTION_CRACK_SURFACE",th_projection); CHKERR_PETSC(rval);
@@ -2069,15 +2069,15 @@ PetscErrorCode ConfigurationalFractureMechanics::project_form_th_projection_tag(
  
   //not project nodes on crack surface 
   if(do_not_project) {
-    ierr = m_field.set_local_VecCreateGhost(problem,COL,QTdD,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = m_field.set_local_ghost_vector(problem,COL,QTdD,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   }
-  ierr = m_field.set_global_VecCreateGhost(problem,COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = m_field.set_global_ghost_vector(problem,COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
   PostProcVertexMethod ent_method(m_field.get_moab(),"MESH_NODE_POSITIONS",D,"PROJECTION_CRACK_SURFACE");
   ierr = m_field.loop_dofs(problem,"MESH_NODE_POSITIONS",COL,ent_method); CHKERRQ(ierr);
 
   if(do_not_project) {
-    ierr = m_field.set_global_VecCreateGhost(problem,COL,QTdD,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = m_field.set_global_ghost_vector(problem,COL,QTdD,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   }
 
   VecDestroy(&D);
@@ -2181,7 +2181,7 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_force_vector(FieldInte
   ierr = VecGhostUpdateBegin(QTGriffithForceVec,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(QTGriffithForceVec,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
-  ierr = m_field.set_other_global_VecCreateGhost(
+  ierr = m_field.set_other_global_ghost_vector(
     problem,"MESH_NODE_POSITIONS","GRIFFITH_FORCE",ROW,QTGriffithForceVec,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   PostProcVertexMethod ent_method_area(m_field.get_moab(),"MESH_NODE_POSITIONS",QTGriffithForceVec,"GRIFFITH_FORCE");
   ierr = m_field.loop_dofs(problem,"MESH_NODE_POSITIONS",COL,ent_method_area); CHKERRQ(ierr);
@@ -2204,7 +2204,7 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_force_vector(FieldInte
   //ierr = VecGhostUpdateEnd(QTGriffithForceVec,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(GriffithForceVec,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(GriffithForceVec,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = m_field.set_other_global_VecCreateGhost(
+  ierr = m_field.set_other_global_ghost_vector(
     problem,"MESH_NODE_POSITIONS","GRIFFITH_FORCE_TANGENT",ROW,GriffithForceVec,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   PostProcVertexMethod ent_method_tangent(
     m_field.get_moab(),"MESH_NODE_POSITIONS",GriffithForceVec,"GRIFFITH_TANGENT_FORCE");
@@ -2228,13 +2228,13 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& m_fi
 
   Vec F_Material;
   ierr = m_field.VecCreateGhost(problem,ROW,&F_Material); CHKERRQ(ierr);
-  ierr = m_field.set_other_global_VecCreateGhost(problem,"MESH_NODE_POSITIONS","MATERIAL_FORCE",ROW,F_Material,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = m_field.set_other_global_ghost_vector(problem,"MESH_NODE_POSITIONS","MATERIAL_FORCE",ROW,F_Material,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   Vec F_Griffith;
   ierr = m_field.VecCreateGhost(problem,ROW,&F_Griffith); CHKERRQ(ierr);
-  ierr = m_field.set_other_global_VecCreateGhost(problem,"MESH_NODE_POSITIONS","GRIFFITH_FORCE",ROW,F_Griffith,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = m_field.set_other_global_ghost_vector(problem,"MESH_NODE_POSITIONS","GRIFFITH_FORCE",ROW,F_Griffith,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   Vec F_Griffith_Tangent;
   ierr = m_field.VecCreateGhost(problem,ROW,&F_Griffith_Tangent); CHKERRQ(ierr);
-  ierr = m_field.set_other_global_VecCreateGhost(
+  ierr = m_field.set_other_global_ghost_vector(
     problem,"MESH_NODE_POSITIONS","GRIFFITH_FORCE_TANGENT",ROW,F_Griffith_Tangent,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
   Vec LambdaVec,LambdaVec_Tangent;
@@ -2338,12 +2338,12 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& m_fi
   const MoFEMProblem *problemPtr;
   ierr = m_field.get_problem("C_CRACKFRONT_MATRIX",&problemPtr); CHKERRQ(ierr);
   //make maps to save griffith forces
-  ierr = m_field.set_global_VecCreateGhost("C_CRACKFRONT_MATRIX",ROW,LambdaVec,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = m_field.set_global_ghost_vector("C_CRACKFRONT_MATRIX",ROW,LambdaVec,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   map_ent_g.clear();
   for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_FOR_LOOP_(problemPtr,"LAMBDA_CRACKFRONT_AREA",diit)) {
     map_ent_g[diit->get_ent()] = diit->get_FieldData();
   }
-  ierr = m_field.set_global_VecCreateGhost("C_CRACKFRONT_MATRIX",ROW,LambdaVec_Tangent,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = m_field.set_global_ghost_vector("C_CRACKFRONT_MATRIX",ROW,LambdaVec_Tangent,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   map<EntityHandle,double> g_tangent_map;
   for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_FOR_LOOP_(problemPtr,"LAMBDA_CRACKFRONT_AREA",diit)) {
     g_tangent_map[diit->get_ent()] = diit->get_FieldData();
@@ -2845,7 +2845,7 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   ierr = PCShellSetApply(pc,PCApplyArcLength); CHKERRQ(ierr);
   ierr = PCShellSetSetUp(pc,PCSetupArcLength); CHKERRQ(ierr);
 
-  ierr = m_field.set_local_VecCreateGhost("COUPLED_PROBLEM",COL,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = m_field.set_local_ghost_vector("COUPLED_PROBLEM",COL,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = m_field.get_problem("COUPLED_PROBLEM",&(arc_elem.problemPtr)); CHKERRQ(ierr);
   ierr = arc_elem.set_dlambda_to_x(D,0); CHKERRQ(ierr);
   ierr = VecCopy(D,arc_ctx.x0); CHKERRQ(ierr);
@@ -2866,7 +2866,7 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
 
   Vec D0;
   ierr = m_field.VecCreateGhost("COUPLED_PROBLEM",COL,&D0); CHKERRQ(ierr);
-  ierr = m_field.set_local_VecCreateGhost("COUPLED_PROBLEM",COL,D0,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = m_field.set_local_ghost_vector("COUPLED_PROBLEM",COL,D0,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
   SNESConvergedReason reason;
 
@@ -2888,7 +2888,7 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
     ierr = SNESGetIterationNumber(*snes,&its); CHKERRQ(ierr);
     ierr = PetscPrintf(PETSC_COMM_WORLD,"number of Newton iterations = %D\n",its); CHKERRQ(ierr);
     if(reason < 0) {
-      ierr = m_field.set_global_VecCreateGhost("COUPLED_PROBLEM",COL,D0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      ierr = m_field.set_global_ghost_vector("COUPLED_PROBLEM",COL,D0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
       ierr = VecCopy(D0,D); CHKERRQ(ierr);
       smoother.stabilise = true;
       for(int ii = 1;ii<=3;ii++) {
@@ -2901,11 +2901,11 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
 	total_its += its;
 	ierr = SNESGetConvergedReason(*snes,&reason); CHKERRQ(ierr);
 	if(reason < 0) {
-	  ierr = m_field.set_global_VecCreateGhost("COUPLED_PROBLEM",COL,D0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	  ierr = m_field.set_global_ghost_vector("COUPLED_PROBLEM",COL,D0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 	  ierr = VecCopy(D0,D); CHKERRQ(ierr);
 	  break;
 	} else {
-	  ierr = m_field.set_global_VecCreateGhost("COUPLED_PROBLEM",COL,D0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	  ierr = m_field.set_global_ghost_vector("COUPLED_PROBLEM",COL,D0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 	  ierr = set_coordinates_from_material_solution(m_field,false); CHKERRQ(ierr);
 	}
       }
@@ -2918,7 +2918,7 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   ierr = VecDestroy(&D0); CHKERRQ(ierr);
 
   //Save data on mesh
-  ierr = m_field.set_global_VecCreateGhost("COUPLED_PROBLEM",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = m_field.set_global_ghost_vector("COUPLED_PROBLEM",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   aRea = arc_elem.aRea;
 
   ierr = m_field.set_field(0,MBVERTEX,"SPATIAL_DISPLACEMENT"); CHKERRQ(ierr);
@@ -2930,7 +2930,7 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
 
   Vec DISP;
   ierr = VecDuplicate(D,&DISP); CHKERRQ(ierr);
-  ierr = m_field.set_other_global_VecCreateGhost(
+  ierr = m_field.set_other_global_ghost_vector(
     "COUPLED_PROBLEM","SPATIAL_POSITION","SPATIAL_DISPLACEMENT",COL,DISP,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecDot(DISP,arc_ctx.F_lambda,&energy); CHKERRQ(ierr);
   lambda = arc_ctx.getFieldData();
@@ -2975,7 +2975,7 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = m_field.set_other_global_VecCreateGhost(
+  ierr = m_field.set_other_global_ghost_vector(
     "COUPLED_PROBLEM","MESH_NODE_POSITIONS","GRIFFITH_FORCE",
     ROW,F,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
@@ -3075,7 +3075,7 @@ PetscErrorCode ConfigurationalFractureMechanics::calculate_material_forces(Field
   ierr = PetscPrintf(PETSC_COMM_WORLD,"nrm2_F_Material = %6.4e\n",nrm2_material); CHKERRQ(ierr);
 
   //Fields
-  ierr = m_field.set_other_global_VecCreateGhost(
+  ierr = m_field.set_other_global_ghost_vector(
     problem,"MESH_NODE_POSITIONS","MATERIAL_FORCE",
     ROW,F_Material,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   
@@ -3761,7 +3761,7 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
     
     Vec D0;
     ierr = m_field.VecCreateGhost("COUPLED_PROBLEM",COL,&D0); CHKERRQ(ierr);
-    ierr = m_field.set_local_VecCreateGhost("COUPLED_PROBLEM",COL,D0,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = m_field.set_local_ghost_vector("COUPLED_PROBLEM",COL,D0,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     double load_factor0 = load_factor;
     
     int nb_sub_steps;
@@ -3804,7 +3804,7 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
 	}
 	at_least_one_step_converged = true;
 	conf_prob.freeze_all_but_one = false;
-	ierr = m_field.set_local_VecCreateGhost("COUPLED_PROBLEM",COL,D0,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	ierr = m_field.set_local_ghost_vector("COUPLED_PROBLEM",COL,D0,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	load_factor0 = load_factor;
 	ierr = conf_prob.calculate_material_forces(m_field,"COUPLED_PROBLEM","MATERIAL_COUPLED"); CHKERRQ(ierr);
 	ierr = conf_prob.front_projection_data(m_field,"COUPLED_PROBLEM"); CHKERRQ(ierr);
@@ -3817,7 +3817,7 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
 	_da_ = 0;
       } else {
 	ierr = PetscPrintf(PETSC_COMM_WORLD,"* reset unknowns vector\n"); CHKERRQ(ierr);
-	ierr = m_field.set_global_VecCreateGhost("COUPLED_PROBLEM",COL,D0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	ierr = m_field.set_global_ghost_vector("COUPLED_PROBLEM",COL,D0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 	load_factor = load_factor0;
 	ierr = PetscPrintf(PETSC_COMM_WORLD,"* failed to converge, recalculate spatial positions\n"); CHKERRQ(ierr);
 	{

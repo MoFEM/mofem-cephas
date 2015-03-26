@@ -166,7 +166,7 @@ int main(int argc, char *argv[]) {
   MoistureTransportElement::TimeSeriesMonitor monitor(m_field,"CONC_SERIES","CONC");
 
   ierr = m_field.problem_basic_method_preProcess("MOISTURE_PROBLEM",my_dirichlet_bc); CHKERRQ(ierr);
-  ierr = m_field.set_global_VecCreateGhost("MOISTURE_PROBLEM",ROW,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = m_field.set_global_ghost_vector("MOISTURE_PROBLEM",ROW,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
   //preprocess
   ts_ctx.get_preProcess_to_do_IFunction().push_back(&update_velocities);
@@ -222,7 +222,7 @@ int main(int argc, char *argv[]) {
     PetscPrintf(PETSC_COMM_WORLD,"Process step %d\n",sit->get_step_number());
 
     ierr = recorder_ptr->load_series_data("CONC_SERIES",sit->get_step_number()); CHKERRQ(ierr);
-    ierr = m_field.set_local_VecCreateGhost("MOISTURE_PROBLEM",ROW,T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = m_field.set_local_ghost_vector("MOISTURE_PROBLEM",ROW,T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
     ProjectionFieldOn10NodeTet ent_method_on_10nodeTet(m_field,"CONC",true,false,"CONC");
     ent_method_on_10nodeTet.set_nodes = true;

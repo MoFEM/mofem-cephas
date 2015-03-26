@@ -646,6 +646,7 @@ PetscErrorCode TetGenInterface::groupPlanar_Triangle(Range &tris,vector<Range> &
 
   PetscFunctionReturn(0);
 }
+
 PetscErrorCode TetGenInterface::groupRegion_Triangle(Range &tris,vector<vector<Range> > &sorted,const double eps) {
   PetscFunctionBegin;
 

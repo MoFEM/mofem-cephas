@@ -6,7 +6,7 @@ MoFEM (Mesh Oriented Finite Element Method) is a new finite element analysis
 code tailored for the solution of multi-physics problems with arbitrary levels
 of approximation, different levels of mesh refinement and optimised for
 high-performance computing. It is design to be able manage complexities related
-to heterogenous order of approximations for L2,H1,H-div and H-curl spaces.
+to heterogeneous order of approximations for L2,H1,H-div and H-curl spaces.
 
 MoFEM is the blend of the Boost MultiIndex containers, MOAB (Mesh Oriented
 Database) and PETSc (Portable, Extensible Toolkit for Scientific Computation).
@@ -18,7 +18,7 @@ currently in the process of full integration with MeshKit.
 
 \section ThridParty Third party libraries
 
-List of thrird party libraries and packages used by MoFEM:
+List of third party libraries and packages used by MoFEM:
 
 
 - MOAB <http://www.mcs.anl.gov/~fathom/moab-docs/html/userguide.html>.
@@ -26,9 +26,13 @@ List of thrird party libraries and packages used by MoFEM:
 - BOOST <http://www.boost.org>
 	- uBlas <http://www.boost.org/doc/libs/release/libs/numeric/>
 
-\section cdash Testing MoFEM CDash webpage
+\section related_pages Related pages
 
-See: <http://cdash.eng.gla.ac.uk/cdash/>
+- \ref coding_practice
+
+- \ref faqs
+
+- CDashTesting <http://cdash.eng.gla.ac.uk/cdash/>
 
 \section License
 

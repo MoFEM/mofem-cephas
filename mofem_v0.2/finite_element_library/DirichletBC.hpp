@@ -44,6 +44,7 @@ struct DisplacementBCFEMethodPreAndPostProc: public FEMethod {
   FieldInterface& mField;
   const string fieldName;			///< field name to set Dirichlet BC
   double dIag;					///< diagonal value set on zeroed column and rows
+  bool calulateMatrixNormToSetDiag;		///< calculate matrix norm and set diagonal
 
   DisplacementBCFEMethodPreAndPostProc(
     FieldInterface& _mField,const string &_field_name,

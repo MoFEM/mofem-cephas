@@ -1,22 +1,17 @@
 /** \file DofsMultiIndices.hpp
- * \brief Myltindex containes, data structures for mofem dofs and other low-level functions 
+ * \brief Multi-Index contains, data structures for mofem dofs and other low-level functions 
  * 
- * Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl) <br>
- *
- * The MoFEM package is copyrighted by Lukasz Kaczmarczyk. 
- * It can be freely used for educational and research purposes 
- * by other institutions. If you use this softwre pleas cite my work. 
- *
+
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or (at your
  * option) any later version.
- *
+ 
  * MoFEM is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
  * License for more details.
- *
+ 
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 */
@@ -29,6 +24,9 @@ namespace MoFEM {
 /**
  * \brief keeps information about indexed dofs
  * \ingroup dof_multi_indices
+
+ \bug active is obsolete and should be removed
+
  */
 struct DofMoFEMEntity: public interface_MoFEMEntity<MoFEMEntity> {
   typedef interface_MoFEMField<MoFEMEntity> interface_type_MoFEMField;
@@ -71,17 +69,17 @@ struct DofMoFEMEntity: public interface_MoFEMEntity<MoFEMEntity> {
 
   /** \brief get short uid it is unique in combination with entity handle
     *
-    * EntityHandle are controled by MOAB, which guarntity uniquness whichin
-    * MOAB instance. Howvere two instances, can have attached diffrent
+    * EntityHandle are controlled by MOAB, which quantity uniqueness which in
+    * MOAB instance. However two instances, can have attached different
     * EntityHandles to the same entity. 
     *
-    * Relation between moab EntityHandle can be handled by saving entity handle
+    * Relation between MoAB EntityHandle can be handled by saving entity handle
     * data into tag, see MB_TYPE_HANDLE. MOAB at time of reading file or
-    * creating new moab instance, subistitute tag value by approiate entity
+    * creating new moab instance, substitute tag value by approbate entity
     * handle.
     *
-    * ShortId is created to handle problems realted to saving data series, and
-    * reding those data using diffrent moab instances.
+    * ShortId is created to handle problems related to saving data series, and
+    * reading those data using different MoAB instances.
     *
     */
   inline ShortId get_non_nonunique_short_id() const  { return short_uid; }
@@ -440,30 +438,6 @@ typedef multi_index_container<
  * @relates multi_index_container
  * \brief MultiIndex container keeps NumeredDofMoFEMEntity
  * \ingroup dof_multi_indices
- *
- * \param    ordered_unique< 
-      tag<Unique_mi_tag>, const_mem_fun<NumeredDofMoFEMEntity::interface_type_DofMoFEMEntity,GlobalUId,&NumeredDofMoFEMEntity::get_global_unique_id> >,
- * \param ordered_unique<
-      tag<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>, 
-      composite_key<
-	NumeredDofMoFEMEntity,
-	const_mem_fun<NumeredDofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&NumeredDofMoFEMEntity::get_name_ref>,
-	const_mem_fun<NumeredDofMoFEMEntity::interface_type_DofMoFEMEntity,EntityHandle,&NumeredDofMoFEMEntity::get_ent> >,
-	const_mem_fun<NumeredDofMoFEMEntity,DofIdx,&NumeredDofMoFEMEntity::get_EntDofIdx> 
-      > >,
- * \param    ordered_unique< 
-      tag<Idx_mi_tag>, member<NumeredDofMoFEMEntity,DofIdx,&NumeredDofMoFEMEntity::dof_idx> >,
- * \param    ordered_non_unique<
-      tag<FieldName_mi_tag>, const_mem_fun<NumeredDofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&NumeredDofMoFEMEntity::get_name> >,
- * \param    ordered_non_unique< 
-      tag<PetscGlobalIdx_mi_tag>, member<NumeredDofMoFEMEntity,DofIdx,&NumeredDofMoFEMEntity::petsc_gloabl_dof_idx> >,
- * \param    ordered_non_unique< 
-      tag<PetscLocalIdx_mi_tag>, member<NumeredDofMoFEMEntity,DofIdx,&NumeredDofMoFEMEntity::petsc_local_dof_idx> >,
- * \param    ordered_non_unique< 
-      tag<Part_mi_tag>, member<NumeredDofMoFEMEntity,unsigned int,&NumeredDofMoFEMEntity::part> >,
- * \param    ordered_non_unique<
-      tag<Ent_mi_tag>, const_mem_fun<NumeredDofMoFEMEntity::interface_type_DofMoFEMEntity,EntityHandle,&NumeredDofMoFEMEntity::get_ent> >
- *
  */
 typedef multi_index_container<
   NumeredDofMoFEMEntity,
@@ -492,6 +466,15 @@ typedef multi_index_container<
       tag<Part_mi_tag>, member<NumeredDofMoFEMEntity,unsigned int,&NumeredDofMoFEMEntity::part> >,
     ordered_non_unique<
       tag<Ent_mi_tag>, const_mem_fun<NumeredDofMoFEMEntity::interface_type_DofMoFEMEntity,EntityHandle,&NumeredDofMoFEMEntity::get_ent> >,
+    ordered_non_unique<
+      tag<Order_mi_tag>, const_mem_fun<NumeredDofMoFEMEntity::interface_type_DofMoFEMEntity,ApproximationOrder,&NumeredDofMoFEMEntity::get_dof_order> >,
+    ordered_non_unique<
+      tag<Composite_Name_And_Rank_mi_tag>,
+      composite_key<
+	NumeredDofMoFEMEntity,
+	  const_mem_fun<NumeredDofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&NumeredDofMoFEMEntity::get_name_ref>,
+	  const_mem_fun<NumeredDofMoFEMEntity::interface_type_DofMoFEMEntity,ApproximationRank,&NumeredDofMoFEMEntity::get_dof_rank> 
+	> >,
     ordered_non_unique<
       tag<Composite_Name_And_Part_mi_tag>,
       composite_key<

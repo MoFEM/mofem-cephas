@@ -238,7 +238,7 @@ int main(int argc, char *argv[]) {
   ierr = VecAssemblyBegin(D0); CHKERRQ(ierr);
   ierr = VecAssemblyEnd(D0); CHKERRQ(ierr);
 
-  ierr = m_field.set_global_VecCreateGhost("ULTRAWEAK",COL,D0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = m_field.set_global_ghost_vector("ULTRAWEAK",COL,D0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
   IS dirchlet_ids;
   ierr = ufe.getDirihletBCIndices(&dirchlet_ids); CHKERRQ(ierr);
@@ -289,7 +289,7 @@ int main(int argc, char *argv[]) {
   ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
-  ierr = m_field.set_global_VecCreateGhost("ULTRAWEAK",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = m_field.set_global_ghost_vector("ULTRAWEAK",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
   PetscViewer viewer;
   ierr = PetscViewerASCIIOpen(PETSC_COMM_WORLD,"forces_and_sources_ultra_weak_transport.txt",&viewer); CHKERRQ(ierr);
@@ -312,8 +312,8 @@ int main(int argc, char *argv[]) {
 
   Vec E;
   ierr = m_field.VecCreateGhost("ULTRAWEAK_CALCULATE_ERROR",ROW,&E); CHKERRQ(ierr);
-  ierr = m_field.set_local_VecCreateGhost("ULTRAWEAK_CALCULATE_ERROR",ROW,E,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = m_field.set_global_VecCreateGhost("ULTRAWEAK_CALCULATE_ERROR",ROW,E,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = m_field.set_local_ghost_vector("ULTRAWEAK_CALCULATE_ERROR",ROW,E,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = m_field.set_global_ghost_vector("ULTRAWEAK_CALCULATE_ERROR",ROW,E,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecDestroy(&E); CHKERRQ(ierr);
 
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
