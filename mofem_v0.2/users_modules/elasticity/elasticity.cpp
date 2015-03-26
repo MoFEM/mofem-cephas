@@ -81,7 +81,7 @@ int main(int argc, char *argv[]) {
   PetscBool flg_block_config,flg_file;
   char mesh_file_name[255];
   char block_config_file[255];
-  PetscInt order;
+  PetscInt order = 2;
   PetscBool is_partitioned = PETSC_FALSE;
 
   ierr = PetscOptionsBegin(PETSC_COMM_WORLD,"","Elastic Config","none"); CHKERRQ(ierr);
