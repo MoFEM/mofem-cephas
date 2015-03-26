@@ -42,9 +42,10 @@ struct ConvectiveMassElement {
 
     Mat A;
     Vec F;
+    bool initV; ///< check if ghost vector used to accumalte Kinetin energy is created
 
     MyVolumeFE(FieldInterface &_mField): 
-      TetElementForcesAndSourcesCore(_mField),A(PETSC_NULL),F(PETSC_NULL) {
+      TetElementForcesAndSourcesCore(_mField),A(PETSC_NULL),F(PETSC_NULL),initV(false) {
       meshPositionsFieldName = "NoNE";
     }
     
@@ -88,10 +89,13 @@ struct ConvectiveMassElement {
 
       switch (ts_ctx) {
 	case CTX_TSNONE:
-	  if(rank == 0) {
-	    ierr = VecCreateGhost(mField.get_comm(),1,1,1,ghosts,&V); CHKERRQ(ierr);
-	  } else {
-	    ierr = VecCreateGhost(mField.get_comm(),0,1,1,ghosts,&V); CHKERRQ(ierr);
+	  if(!initV) {
+	    if(rank == 0) {
+	      ierr = VecCreateGhost(mField.get_comm(),1,1,1,ghosts,&V); CHKERRQ(ierr);
+	    } else {
+	      ierr = VecCreateGhost(mField.get_comm(),0,1,1,ghosts,&V); CHKERRQ(ierr);
+	    }
+	    initV = true;
 	  }
 	  ierr = VecZeroEntries(V); CHKERRQ(ierr);
 	  ierr = VecGhostUpdateBegin(V,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -123,7 +127,10 @@ struct ConvectiveMassElement {
 	  ierr = VecGetArray(V,&array); CHKERRQ(ierr);
 	  eNergy = array[0];
 	  ierr = VecRestoreArray(V,&array); CHKERRQ(ierr);
-	  ierr = VecDestroy(&V); CHKERRQ(ierr);
+	  if(initV) {
+	    ierr = VecDestroy(&V); CHKERRQ(ierr);
+	    initV = false;
+	  }
 	  break;
 	default:
 	  break;
@@ -1640,15 +1647,15 @@ struct ConvectiveMassElement {
 	break;
       }
 
-      //ierr = mField.set_other_local_VecCreateGhost(problemPtr,velocityField,"DOT_"+velocityField,COL,ts_u_t,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-      //ierr = mField.set_other_local_VecCreateGhost(problemPtr,spatialPositionField,"DOT_"+spatialPositionField,COL,ts_u_t,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      //ierr = mField.set_other_local_ghost_vector(problemPtr,velocityField,"DOT_"+velocityField,COL,ts_u_t,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      //ierr = mField.set_other_local_ghost_vector(problemPtr,spatialPositionField,"DOT_"+spatialPositionField,COL,ts_u_t,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
       //FIXME: This global scattering because Kuu problem and Dynamic problem
       //not share partitions. Both problem should use the same partitioning to
       //resolve this problem.
-      ierr = mField.set_global_VecCreateGhost(problemPtr,COL,ts_u,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-      ierr = mField.set_other_global_VecCreateGhost(problemPtr,velocityField,"DOT_"+velocityField,COL,ts_u_t,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-      ierr = mField.set_other_global_VecCreateGhost(problemPtr,spatialPositionField,"DOT_"+spatialPositionField,COL,ts_u_t,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      ierr = mField.set_global_ghost_vector(problemPtr,COL,ts_u,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      ierr = mField.set_other_global_ghost_vector(problemPtr,velocityField,"DOT_"+velocityField,COL,ts_u_t,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      ierr = mField.set_other_global_ghost_vector(problemPtr,spatialPositionField,"DOT_"+spatialPositionField,COL,ts_u_t,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
       PetscFunctionReturn(0);
     }
@@ -2143,6 +2150,7 @@ struct ConvectiveMassElement {
 	ierr = VecDestroy(&v); CHKERRQ(ierr);
 	ierr = VecDestroy(&Mv); CHKERRQ(ierr);
 	ierr = MatDestroy(&barK); CHKERRQ(ierr);
+	iNitialized = false;
       }
       PetscFunctionReturn(0);
     }
@@ -2223,8 +2231,10 @@ struct ConvectiveMassElement {
   struct PCShellCtx {
 
     Mat shellMat;
+    bool initPC; ///< check if PC is initialized
+
     PCShellCtx(Mat shell_mat):
-      shellMat(shell_mat) {
+      shellMat(shell_mat),initPC(false) {
     }
  
     PC pC;
@@ -2232,16 +2242,22 @@ struct ConvectiveMassElement {
     PetscErrorCode iNit() {
       PetscFunctionBegin;
       PetscErrorCode ierr;
-      MPI_Comm comm;
-      ierr = PetscObjectGetComm((PetscObject)shellMat,&comm); CHKERRQ(ierr);
-      ierr = PCCreate(comm,&pC); CHKERRQ(ierr);
+      if(!initPC) {
+	MPI_Comm comm;
+	ierr = PetscObjectGetComm((PetscObject)shellMat,&comm); CHKERRQ(ierr);
+	ierr = PCCreate(comm,&pC); CHKERRQ(ierr);
+	initPC = true;
+      }
       PetscFunctionReturn(0);
     }
 
     PetscErrorCode dEstroy() {
       PetscFunctionBegin;
       PetscErrorCode ierr;
-      ierr = PCDestroy(&pC); CHKERRQ(ierr);
+      if(initPC) {
+	ierr = PCDestroy(&pC); CHKERRQ(ierr);
+	initPC = false;
+      }
       PetscFunctionReturn(0);
     }
 

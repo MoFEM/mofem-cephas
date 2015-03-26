@@ -1,12 +1,6 @@
 /** \file NodeMerger.cpp
  * \brief Interface for merging nodes 
  * 
- * Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl) <br>
- *
- * The MoFEM package is copyrighted by Lukasz Kaczmarczyk. 
- * It can be freely used for educational and research purposes 
- * by other institutions. If you use this softwre pleas cite my work. 
- *
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or (at your
@@ -57,7 +51,7 @@ PetscErrorCode NodeMergerInterface::queryInterface(const MOFEMuuid& uuid, FieldU
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode NodeMergerInterface::mergeNodes(EntityHandle father,EntityHandle mother,BitRefLevel bit,Range *tets) {
+PetscErrorCode NodeMergerInterface::mergeNodes(EntityHandle father,EntityHandle mother,BitRefLevel bit,Range *tets_ptr) {
   PetscFunctionBegin;
 
   FieldInterface& m_field = cOre;
@@ -70,9 +64,9 @@ PetscErrorCode NodeMergerInterface::mergeNodes(EntityHandle father,EntityHandle 
   rval = m_field.get_moab().get_adjacencies(&mother,1,1,false,mother_edges); CHKERR_PETSC(rval);
   Range common_edge;
   common_edge = intersect(father_edges,mother_edges);
-  if(tets != NULL) {
+  if(tets_ptr != NULL) {
     Range tets_edges;
-    rval = m_field.get_moab().get_adjacencies(*tets,1,false,tets_edges,Interface::UNION); CHKERR_PETSC(rval);
+    rval = m_field.get_moab().get_adjacencies(*tets_ptr,1,false,tets_edges,Interface::UNION); CHKERR_PETSC(rval);
     common_edge = intersect(common_edge,tets_edges);
     father_edges = intersect(father_edges,tets_edges);
     mother_edges = intersect(mother_edges,tets_edges);
@@ -88,10 +82,10 @@ PetscErrorCode NodeMergerInterface::mergeNodes(EntityHandle father,EntityHandle 
   Range edge_tets;
   rval = m_field.get_moab().get_adjacencies(common_edge,3,true,edge_tets); CHKERR_PETSC(rval);
   mother_tets = subtract(mother_tets,edge_tets);
-  if(tets!=NULL) {
-    father_tets = intersect(father_tets,*tets);
-    mother_tets = intersect(mother_tets,*tets);
-    edge_tets = intersect(edge_tets,*tets);
+  if(tets_ptr!=NULL) {
+    father_tets = intersect(father_tets,*tets_ptr);
+    mother_tets = intersect(mother_tets,*tets_ptr);
+    edge_tets = intersect(edge_tets,*tets_ptr);
   }
 
   Range created_tets;
@@ -182,8 +176,8 @@ PetscErrorCode NodeMergerInterface::mergeNodes(EntityHandle father,EntityHandle 
   }
 
   Range seed_tets;
-  if(tets!=NULL) {
-    seed_tets.merge(*tets);
+  if(tets_ptr!=NULL) {
+    seed_tets.merge(*tets_ptr);
   }
   seed_tets = subtract(seed_tets,mother_tets);
   seed_tets = subtract(seed_tets,edge_tets);

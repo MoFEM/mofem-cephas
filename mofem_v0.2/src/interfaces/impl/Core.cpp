@@ -55,6 +55,9 @@
 #endif
 
 #include <NodeMerger.hpp>
+
+#include <boost/scoped_ptr.hpp>
+#include <moab/AdaptiveKDTree.hpp>
 #include <BitLevelCoupler.hpp>
 
 namespace MoFEM {

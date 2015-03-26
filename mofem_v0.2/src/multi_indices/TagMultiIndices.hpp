@@ -74,6 +74,9 @@ namespace MoFEM {
   struct Ent_FiniteElement_mi_tag {};
   struct Meshset_mi_tag {};
 
+  /// MultiIndex Tag for field order
+  struct Order_mi_tag {};
+
   /// MultiIndex Tag for field name
   struct FieldName_mi_tag {};
   struct BitFieldId_space_mi_tag {};
@@ -92,6 +95,9 @@ namespace MoFEM {
   struct Composite_of_ParentEnt_And_BitsOfRefinedEdges_mi_tag {};
   struct Composite_Name_And_Ent_And_EndDofIdx_mi_tag {};
   struct Composite_Name_And_Ent_mi_tag {};
+
+  /// MultiIndex Tag for field rank
+  struct Composite_Name_And_Rank_mi_tag {};
   struct Composite_Name_Ent_And_Rank_mi_tag {};
   struct Composite_Name_Ent_Order_And_Rank_mi_tag {};
   struct Composite_Name_And_Type_mi_tag {};

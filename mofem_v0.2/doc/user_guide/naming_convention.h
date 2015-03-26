@@ -1,5 +1,17 @@
 /*! \page coding_practice Coding practice
 
+\section citizen Be a good MoFEM citizen
+
+- MoFEM is a team work. Don't be focussed only on your project, try improve
+  MOFEM. Your modifications can help others, others modification will help
+  you.
+- MoFEM is not own by anyone, you are become owner proportionally to your
+  contribution. 
+- If you find bugs,or you think that documentation can be improved, you are
+  strongly encourage to contribute. 
+- If you have idea how to improve MoFEM library, f.e. some functions
+  names are not clear or new functionality is can be added, 
+  propose that on our discussion group CMatGU <cmatgu@googlegroups.com>.
 
 \section mofam_and_user_modules MoFEM and User Modules
 
@@ -51,17 +63,74 @@ in doc using Doxygen.
 MoFEM code should follow MoAB code style and best pratices listed here
 <http://www.mcs.anl.gov/~fathom/moab-docs/html/styleguide.html>.
 
+- Style:
+
+  - Make indentations. Indent code to better convey the logical structure of
+    your code. Without indenting, code becomes difficult to follow. \code
+if (...) { 
+if (...) { 
+...
+} else {
+...
+}} else if {
+... 
+} else { 
+... 
+}
+\endcode
+Can you follow this ? This is much better \code
+if (...) { 
+  if (...) { 
+    ...
+  } else {
+    ...
+  }
+} else if {
+  ... 
+} else { 
+  ... 
+}
+\endcode
+
+  - Enable syntax highlighting in your text editor.
+
+  - Break large, complex sections of code into smaller, comprehensible modules
+    (subroutine/functions/methods). A good rule is that modules do not exceed
+    the size of the text editor window.
+
+  - Indentation should have TWO SPACES. You have to set up your favorite editor to
+    make TWO SPACES for TAB.
+
+  - Use empty lines to provide organisational clues to source code, blocks
+    (\em paragraphs -like structure) help the reader in comprehending the logical
+    segmenting.
+
 - Names:
+
+  - A name should tell what rather than how, avoid names that expose underlying implementation.
 
   - Class names should be in the CamelBack style, e.g. EdgeMesh or VertexMesher.
 
   - Class member variables should be camelBack, e.g. EdgeMesh::schemeType; each
-    member variable, e.g. int memberVariable, should have set/get functions
+    member variable, e.g. int memberVariable, should have set/get functions 
     void member_variable(int newval) and int member_variable(), respectively
 
-  - Enumeration values should be all captitalized, with underscores avoided if
+  - Enumeration values should be all capitalized, with underscores avoided if
     possible (the enumeration name indicates the general purpose of the
     enumeration, so e.g. we use EQUAL, not EQUAL_MESH)
+
+  - Use a verb-noun method to name routines that perform some
+    operation-on-a-given-object. Most names are constructed by concatenating
+    several words, use mixed-case formatting or underscore to ease reading. \code
+calculateKineticEnergy ( . . . )
+calculate_kinetic_energy ( . . . )
+\endcode
+or any other derivatives.
+
+  - Avoid elusive names, open to subjective interpretation like \code
+Analyse ( . . . ) / / subroutine or function or method
+nnsmcomp1 / / variable
+\endcode
 
   - Each class header should be fully commented.
   
@@ -79,14 +148,24 @@ MoFEM code should follow MoAB code style and best pratices listed here
   - Local variables and function argument have names with small letters, i.e.
     temperature_val, nodal_position. 
 
-  - If variable is a pointer it shoul have name as follows \code
-
+  - If variable is a pointer, it should have name as follows \code
 class A {
   double *valPtr; ///< class member variable
 };
 
 double *val_ptr; ///< local variable
+\endcode
 
+
+  - Append/Prepend computation qualifiers like Av, Sum, Min, Max and Index to
+    the end of a variable when appropriate.
+
+  - If you commit your code remove are depreciated functions names. Use of OLD function name (or old functions
+    arguments) generate compilation warring, f.e. \code
+In file included from mofem_v0.2/finite_element_library/impl/DirichletBC.cpp:39:0:
+mofem_v0.2/src/interfaces/FieldInterface.hpp: In member function 'PetscErrorCode MoFEM::FieldInterface::set_other_local_VecCreateGhost(const MoFEM::MoFEMProblem*, const string&, const string&, RowColData, Vec, InsertMode, ScatterMode, int)':
+mofem_v0.2/src/interfaces/FieldInterface.hpp:1300:107: warning: 'PetscErrorCode MoFEM::FieldInterface::set_other_local_VecCreateGhost(const MoFEM::MoFEMProblem*, const string&, const string&, RowColData, Vec, InsertMode, ScatterMode, int)' is deprecated (declared at mofem_v0.2/src/interfaces/FieldInterface.hpp:1296) [-Wdeprecated-declarations]
+     ierr = set_other_local_VecCreateGhost(problem_ptr,fiel_name,cpy_field_name,rc,V,mode,scatter_mode,verb); CHKERRQ(ierr);
 \endcode
 
   - Constants and Macros
@@ -100,7 +179,7 @@ double *val_ptr; ///< local variable
       For example, use M_PI as defined in math.h rather than defining your own
       constant.
 
-- Each header file should have define macro, following example \code
+- Each header file should have defined macro, following example \code
 #ifndef __CLASS_NAME_HPP__
 #define __CLASS_NAME_HPP__
 
@@ -111,7 +190,7 @@ class ClassName {
 #endif //__CLASS_NAME_HPP__
 \endcode
 
-- Each function should have build in error cheching, following example \code{.cpp}
+- Each function should have build in error checking, following example \code{.cpp}
 PetscErrorCode fun() {
   PetscFunctionBegin;
   PetscFunctionReturn(0);
@@ -123,15 +202,14 @@ ierr = fun(); CHKERRQ(ierr);
 - Memory allocation
 
   - USE VALGRIND. Valging is powerful tool to find execution errors, use it if your
-    code behave differently on two different computers or if you compile code
-    with or without debugging. It can help with segmentation fault, \code
+    code behave differently on two different computers, or you get segmentation fault, ect. Valgrin can be used as follows \code
     valgrind --track-origins=yes ./program_name -my_file mesh.cub
     \endcode
     Use small mesh, i.e. small problem, when you run valgrind, it take some
     time. YOU NEED TO COMPILE CODE WITH -DCMAKE_BUILD_TYPE=Debug.
 
   - Keep array of objects in STL vectors, multi-indexes or any other Boost or
-    STL data structures. AVOID ALLOCATING ARRAY OF OBJECTS ON HEAP.
+    STL data structures. AVOID ALLOCATING ARRAY OF OBJECTS ON HEAP USING REGULAR POINTERS.
 
   - Use smart pointers
     <http://www.boost.org/doc/libs/1_57_0/libs/smart_ptr/smart_ptr.htm>. If
@@ -185,5 +263,12 @@ pull request is accepted it is user responsibility to verify results on
 CDash server <http://cdash.eng.gla.ac.uk/cdash/>. The first priority will be to
 eliminate compilation errors, completion warnings, failed tests and memory
 leaks.
+
+Some guidance about branches:
+- Do not commits to other people branch. You can commit only to branches created by yourself.
+- If you like to commit to other (not own created) branch, do pull request. 
+- Before marking pull request, pull from branch to which you like to commit.
+- Pull regularly form CDasgTesting branch.
+- If you working on two different tasks make two different branches. This simplifies code revision. 
 
 */

@@ -362,7 +362,7 @@ int main(int argc, char *argv[]) {
   ierr = KSPSolve(solver,F1,D1); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(D1,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D1,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = mField_RVE.set_global_VecCreateGhost("ELASTIC_MECHANICS",ROW,D1,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = mField_RVE.set_global_ghost_vector("ELASTIC_MECHANICS",ROW,D1,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
   //=============================================================================================================
   // homogenised stress for strian [1 0 0 0 0 0]^T
@@ -417,7 +417,7 @@ int main(int argc, char *argv[]) {
   ierr = KSPSolve(solver,F2,D2); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(D2,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D2,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = mField_RVE.set_global_VecCreateGhost("ELASTIC_MECHANICS",ROW,D2,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = mField_RVE.set_global_ghost_vector("ELASTIC_MECHANICS",ROW,D2,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
   //=============================================================================================================
   // homogenised stress for strian [0 1 0 0 0 0]^T
@@ -455,7 +455,7 @@ int main(int argc, char *argv[]) {
   ierr = KSPSolve(solver,F3,D3); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(D3,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D3,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = mField_RVE.set_global_VecCreateGhost("ELASTIC_MECHANICS",ROW,D3,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = mField_RVE.set_global_ghost_vector("ELASTIC_MECHANICS",ROW,D3,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   //=============================================================================================================
   // homogenised stress for strian [0 0 1 0 0 0]^T
   //=============================================================================================================
@@ -485,7 +485,7 @@ int main(int argc, char *argv[]) {
   ierr = KSPSolve(solver,F4,D4); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(D4,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D4,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = mField_RVE.set_global_VecCreateGhost("ELASTIC_MECHANICS",ROW,D4,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = mField_RVE.set_global_ghost_vector("ELASTIC_MECHANICS",ROW,D4,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   //=============================================================================================================
   // homogenised stress for strian [0 0 0 1 0 0]^T
   //=============================================================================================================
@@ -515,7 +515,7 @@ int main(int argc, char *argv[]) {
   ierr = KSPSolve(solver,F5,D5); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(D5,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D5,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = mField_RVE.set_global_VecCreateGhost("ELASTIC_MECHANICS",ROW,D5,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = mField_RVE.set_global_ghost_vector("ELASTIC_MECHANICS",ROW,D5,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
 //  //=============================================================================================================
 //  // homogenised stress for strian [0 0 0 0 1 0]^T
@@ -547,7 +547,7 @@ int main(int argc, char *argv[]) {
   ierr = KSPSolve(solver,F6,D6); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(D6,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D6,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = mField_RVE.set_global_VecCreateGhost("ELASTIC_MECHANICS",ROW,D6,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = mField_RVE.set_global_ghost_vector("ELASTIC_MECHANICS",ROW,D6,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
   //=============================================================================================================
   // homogenised stress for strian [0 0 0 0 0 1]^T
@@ -825,7 +825,7 @@ int main(int argc, char *argv[]) {
 //  ierr = VecView(D,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
   //Save data on mesh
-  ierr = mField_Macro.set_global_VecCreateGhost("ELASTIC_PROB",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = mField_Macro.set_global_ghost_vector("ELASTIC_PROB",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   
   ProjectionFieldOn10NodeTet ent_method_on_10nodeTet(mField_Macro,"DISP_MACORO",true,false,"DISP_MACORO");
   ierr = mField_Macro.loop_dofs("DISP_MACORO",ent_method_on_10nodeTet); CHKERRQ(ierr);

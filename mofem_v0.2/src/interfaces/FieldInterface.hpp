@@ -920,6 +920,9 @@ struct FieldInterface: public FieldUnknownInterface {
    ierr = mField.modify_problem_ref_level_set_bit("BEAM_BENDING_ON_MESH_REF2",bit_level2); CHKERRQ(ierr);
    *\endcode
    * Two Problems exist and solved independently, both are elastic, but solved using different mesh refinement <br>
+
+   \bug Problem bit level should be defined by bit and mask for better flexibility
+
    */
   virtual PetscErrorCode modify_problem_ref_level_set_bit(const string &name_problem,const BitRefLevel &bit) = 0;
 
@@ -1151,8 +1154,35 @@ struct FieldInterface: public FieldUnknownInterface {
     */
   virtual PetscErrorCode MatCreateSeqAIJWithArrays(const string &name,Mat *Aij,PetscInt **i,PetscInt **j,PetscScalar **v,int verb = -1) = 0;
 
+  /** 
+    * \brief create IS for given order range 
+
+    * \param problem name
+    * \param rc ROW or COL 
+    * \param min_order
+    * \param max_order
+    * \param is out value
+    
+    */
+  virtual PetscErrorCode ISCreateProblemOrder(const string &problem,RowColData rc,int min_order,int max_order,IS *is,int verb = -1) = 0;
+
+  /** 
+    * \brief create IS for given problem, field and rank range
+    * \ingroup mofem_vectors
+    
+    * \param problem name
+    * \param rc ROW or COL
+    * \param field name
+    * \param min_rank
+    * \param max_rank
+    * \param is out value
+    
+    */
+  virtual PetscErrorCode ISCreateProblemFieldAndRank(const string &problem,RowColData rc,const string &field,int min_rank,int max_rank,IS *is,int verb = -1) = 0;
+
   /**
     * \brief create scatter for vectors form one to another problem
+    * \ingroup mofem_vectors
     *
     * User specify what name of field on one problem is scattered to another.
     *
@@ -1197,7 +1227,15 @@ struct FieldInterface: public FieldUnknownInterface {
     * SCATTER_FORWARD set vector V from data field entities
     *
     */
-  virtual PetscErrorCode set_local_VecCreateGhost(const MoFEMProblem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) = 0;
+  virtual PetscErrorCode set_local_ghost_vector(const MoFEMProblem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) = 0;
+
+  /// DEPRECATED use set_local_ghost_vector instead
+  DEPRECATED PetscErrorCode set_local_VecCreateGhost(const MoFEMProblem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) {
+    PetscFunctionBegin;
+    PetscErrorCode ierr;
+    ierr = set_local_ghost_vector(problem_ptr,rc,V,mode,scatter_mode); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
 
   /** 
     * \brief set values of vector from/to meshdatabase
@@ -1214,7 +1252,15 @@ struct FieldInterface: public FieldUnknownInterface {
     * SCATTER_FORWARD set vector V from data field entities
     *
     */
-  virtual PetscErrorCode set_local_VecCreateGhost(const string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) = 0;
+  virtual PetscErrorCode set_local_ghost_vector(const string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) = 0;
+
+  /// DEPRECATED use set_local_ghost_vector instead
+  DEPRECATED PetscErrorCode set_local_VecCreateGhost(const string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) {
+    PetscFunctionBegin;
+    PetscErrorCode ierr;
+    ierr = set_local_ghost_vector(name,rc,V,mode,scatter_mode); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
 
   /** 
     * \brief set values of vector from/to meshdatabase
@@ -1229,7 +1275,15 @@ struct FieldInterface: public FieldUnknownInterface {
     * SCATTER_REVERSE set data to field entities form V vector.
     *
     */
-  virtual PetscErrorCode set_global_VecCreateGhost(const MoFEMProblem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) = 0;
+  virtual PetscErrorCode set_global_ghost_vector(const MoFEMProblem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) = 0;
+
+  /// DEPRECATED use set_global_ghost_vector instead
+  DEPRECATED PetscErrorCode set_global_VecCreateGhost(const MoFEMProblem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) {
+    PetscFunctionBegin;
+    PetscErrorCode ierr;
+    ierr = set_global_ghost_vector(problem_ptr,rc,V,mode,scatter_mode); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
 
   /** 
     * \brief set values of vector from/to meshdatabase
@@ -1244,7 +1298,15 @@ struct FieldInterface: public FieldUnknownInterface {
     * SCATTER_REVERSE set data to field entities form V vector.
     *
     */
-  virtual PetscErrorCode set_global_VecCreateGhost(const string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) = 0;
+  virtual PetscErrorCode set_global_ghost_vector(const string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) = 0;
+
+  /// DEPRECATED use set_global_ghost_vector instead
+  PetscErrorCode set_global_VecCreateGhost(const string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) {
+    PetscFunctionBegin;
+    PetscErrorCode ierr;
+    ierr = set_global_ghost_vector(name,rc,V,mode,scatter_mode); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
 
   /** \brief Copy vector to field which is not part of the problem
     * \ingroup mofem_vectors
@@ -1260,8 +1322,17 @@ struct FieldInterface: public FieldUnknownInterface {
     * SCATTER_REVERSE set data to field entities form V vector.
     *
     */
-  virtual PetscErrorCode set_other_local_VecCreateGhost(
+  virtual PetscErrorCode set_other_local_ghost_vector(
     const MoFEMProblem *problem_ptr,const string& fiel_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1) = 0;
+
+  /// DEPRECATED use set_other_local_ghost_vector instead
+  DEPRECATED PetscErrorCode set_other_local_VecCreateGhost(
+    const MoFEMProblem *problem_ptr,const string& fiel_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1) {
+    PetscFunctionBegin;
+    PetscErrorCode ierr;
+    ierr = set_other_local_ghost_vector(problem_ptr,fiel_name,cpy_field_name,rc,V,mode,scatter_mode,verb); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
 
   /** \brief Copy vector to field which is not part of the problem
     * \ingroup mofem_vectors
@@ -1277,8 +1348,17 @@ struct FieldInterface: public FieldUnknownInterface {
     * SCATTER_REVERSE set data to field entities form V vector.
     *
     */
-  virtual PetscErrorCode set_other_local_VecCreateGhost(
+  virtual PetscErrorCode set_other_local_ghost_vector(
     const string &name,const string& field_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1) = 0;
+
+  /// DEPRECATED use set_other_local_ghost_vector instead
+  DEPRECATED PetscErrorCode set_other_local_VecCreateGhost(
+    const string &name,const string& field_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1) {
+    PetscFunctionBegin;
+    PetscErrorCode ierr;
+    ierr = set_other_local_ghost_vector(name,field_name,cpy_field_name,rc,V,mode,scatter_mode,verb); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
 
   /** \brief Copy vector to field which is not part of the problem
     * \ingroup mofem_vectors
@@ -1294,8 +1374,17 @@ struct FieldInterface: public FieldUnknownInterface {
     * SCATTER_REVERSE set data to field entities form V vector.
     *
     */
-  virtual PetscErrorCode set_other_global_VecCreateGhost(
+  virtual PetscErrorCode set_other_global_ghost_vector(
     const MoFEMProblem *problem_ptr,const string& field_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1) = 0;
+
+  /// DEPRECATED use set_other_global_ghost_vector instead
+  DEPRECATED PetscErrorCode set_other_global_VecCreateGhost(
+    const MoFEMProblem *problem_ptr,const string& field_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1) {
+    PetscFunctionBegin;
+    PetscErrorCode ierr;
+    ierr = set_other_global_ghost_vector(problem_ptr,field_name,cpy_field_name,rc,V,mode,scatter_mode,verb); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
 
   /** \brief Copy vector to field which is not part of the problem
     * \ingroup mofem_vectors
@@ -1311,8 +1400,17 @@ struct FieldInterface: public FieldUnknownInterface {
     * SCATTER_REVERSE set data to field entities form V vector.
     *
     */
-  virtual PetscErrorCode set_other_global_VecCreateGhost(
+  virtual PetscErrorCode set_other_global_ghost_vector(
     const string &name,const string& field_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1) = 0;
+
+  /// DEPRECATED use set_other_global_ghost_vector instead
+  DEPRECATED PetscErrorCode set_other_global_VecCreateGhost(
+    const string &name,const string& field_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1) {
+    PetscFunctionBegin;
+    PetscErrorCode ierr;
+    ierr = set_other_global_ghost_vector(name,field_name,cpy_field_name,rc,V,mode,scatter_mode,verb); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
 
   /** \brief axpy fields 
     * \ingroup mofem_field_algebra

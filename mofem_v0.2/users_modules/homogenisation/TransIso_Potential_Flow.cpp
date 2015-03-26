@@ -511,7 +511,7 @@ int main(int argc, char *argv[]) {
       ierr = KSPSolve(solver,F[cc],D[cc]); CHKERRQ(ierr);
       ierr = VecGhostUpdateBegin(D[cc],INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
       ierr = VecGhostUpdateEnd(D[cc],INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-      ierr = mField.set_global_VecCreateGhost( sss.str().c_str() ,ROW,D[cc],INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      ierr = mField.set_global_ghost_vector( sss.str().c_str() ,ROW,D[cc],INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
       
       ierr = KSPDestroy(&solver); CHKERRQ(ierr);
       ierr = VecDestroy(&F[cc]); CHKERRQ(ierr);

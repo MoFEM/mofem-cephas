@@ -614,7 +614,7 @@ int main(int argc, char *argv[]) {
     ierr = PCShellSetDestroy(pc,ConvectiveMassElement::PCShellDestroy);  CHKERRQ(ierr);
   #endif
 
-  ierr = m_field.set_local_VecCreateGhost("DYNAMICS",COL,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = m_field.set_local_ghost_vector("DYNAMICS",COL,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
