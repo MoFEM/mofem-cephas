@@ -107,6 +107,8 @@ if (...) {
 
 - Names:
 
+  - A name should tell what rather than how, avoid names that expose underlying implementation.
+
   - Class names should be in the CamelBack style, e.g. EdgeMesh or VertexMesher.
 
   - Class member variables should be camelBack, e.g. EdgeMesh::schemeType; each
