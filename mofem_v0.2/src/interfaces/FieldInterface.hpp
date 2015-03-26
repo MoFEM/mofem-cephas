@@ -920,6 +920,9 @@ struct FieldInterface: public FieldUnknownInterface {
    ierr = mField.modify_problem_ref_level_set_bit("BEAM_BENDING_ON_MESH_REF2",bit_level2); CHKERRQ(ierr);
    *\endcode
    * Two Problems exist and solved independently, both are elastic, but solved using different mesh refinement <br>
+
+   \bug Problem bit level should be defined by bit and mask for better flexibility
+
    */
   virtual PetscErrorCode modify_problem_ref_level_set_bit(const string &name_problem,const BitRefLevel &bit) = 0;
 
@@ -1165,6 +1168,7 @@ struct FieldInterface: public FieldUnknownInterface {
 
   /** 
     * \brief create IS for given problem, field and rank range
+    * \ingroup mofem_vectors
     
     * \param problem name
     * \param rc ROW or COL
@@ -1178,6 +1182,7 @@ struct FieldInterface: public FieldUnknownInterface {
 
   /**
     * \brief create scatter for vectors form one to another problem
+    * \ingroup mofem_vectors
     *
     * User specify what name of field on one problem is scattered to another.
     *

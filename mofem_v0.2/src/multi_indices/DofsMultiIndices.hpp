@@ -24,6 +24,9 @@ namespace MoFEM {
 /**
  * \brief keeps information about indexed dofs
  * \ingroup dof_multi_indices
+
+ \bug active is obsolete and should be removed
+
  */
 struct DofMoFEMEntity: public interface_MoFEMEntity<MoFEMEntity> {
   typedef interface_MoFEMField<MoFEMEntity> interface_type_MoFEMField;
@@ -66,17 +69,17 @@ struct DofMoFEMEntity: public interface_MoFEMEntity<MoFEMEntity> {
 
   /** \brief get short uid it is unique in combination with entity handle
     *
-    * EntityHandle are controled by MOAB, which guarntity uniquness whichin
-    * MOAB instance. Howvere two instances, can have attached diffrent
+    * EntityHandle are controlled by MOAB, which quantity uniqueness which in
+    * MOAB instance. However two instances, can have attached different
     * EntityHandles to the same entity. 
     *
-    * Relation between moab EntityHandle can be handled by saving entity handle
+    * Relation between MoAB EntityHandle can be handled by saving entity handle
     * data into tag, see MB_TYPE_HANDLE. MOAB at time of reading file or
-    * creating new moab instance, subistitute tag value by approiate entity
+    * creating new moab instance, substitute tag value by approbate entity
     * handle.
     *
-    * ShortId is created to handle problems realted to saving data series, and
-    * reding those data using diffrent moab instances.
+    * ShortId is created to handle problems related to saving data series, and
+    * reading those data using different MoAB instances.
     *
     */
   inline ShortId get_non_nonunique_short_id() const  { return short_uid; }
