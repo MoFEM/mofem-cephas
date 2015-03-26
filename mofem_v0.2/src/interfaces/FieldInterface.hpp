@@ -1156,6 +1156,7 @@ struct FieldInterface: public FieldUnknownInterface {
 
   /** 
     * \brief create IS for given order range 
+    * \ingroup mofem_vectors
 
     * \param problem name
     * \param rc ROW or COL 

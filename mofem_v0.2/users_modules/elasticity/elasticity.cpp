@@ -388,6 +388,17 @@ int main(int argc, char *argv[]) {
   ierr = KSPCreate(PETSC_COMM_WORLD,&solver); CHKERRQ(ierr);
   ierr = KSPSetOperators(solver,Aij,Aij); CHKERRQ(ierr);
   ierr = KSPSetFromOptions(solver); CHKERRQ(ierr);
+
+  /*{
+    PetscBool same = PETSC_FALSE;
+    PC pc;
+    ierr = KSPGetPC(solver,&pc); CHKERRQ(ierr);
+    PetscObjectTypeCompare((PetscObject)pc,PCMG,&same);
+    if (same) {
+      ierr = PCMGSetUpViaApproxOrders(pc,m_filed); CHKERRQ(ierr);
+    }
+  }*/
+
   ierr = KSPSetUp(solver); CHKERRQ(ierr);
 
   PostPocOnRefinedMesh post_proc(m_field);
