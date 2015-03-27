@@ -19,7 +19,10 @@
 include_directories("${UM_SOURCE_DIR}/elasticity/src")
 include_directories("${UM_SOURCE_DIR}/nonlinear_elastic_materials/src")
 
-add_executable(elasticity ${UM_SOURCE_DIR}/elasticity/elasticity.cpp)
+add_executable(elasticity 
+  ${UM_SOURCE_DIR}/elasticity/elasticity.cpp
+  ${UM_SOURCE_DIR}/elasticity/src/impl/PCMGSetUpViaApproxOrders.cpp
+)
 target_link_libraries(elasticity 
   mofem_finite_element_library
   mofem_finite_elements
