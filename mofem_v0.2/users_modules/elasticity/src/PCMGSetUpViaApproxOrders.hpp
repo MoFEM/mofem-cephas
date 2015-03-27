@@ -1,5 +1,5 @@
 /** \file PCMGSetUpViaApproxOrders.hpp
- * \brief useful compiler directives and definitions
+ * \brief header of multi-grid solver for p- adaptivity 
  * 
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
