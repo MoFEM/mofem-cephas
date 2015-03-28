@@ -18,7 +18,7 @@
 #ifndef __PCMGSETUP_VIA_APPROX_ORDERS_HPP__
 #define __PCMGSETUP_VIA_APPROX_ORDERS_HPP__
 
-PetscErrorCode PCMGSetUpViaApproxOrders(PC pc,FieldInterface *mfield_ptr,const char problem_name[]);
+PetscErrorCode PCMGSetUpViaApproxOrders(PC pc,FieldInterface *mfield_ptr,const char problem_name[],int verb = 0);
 
 #endif //__PCMGSETUP_VIA_APPROX_ORDERS_HPP__
 

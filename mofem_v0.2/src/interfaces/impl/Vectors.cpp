@@ -114,11 +114,11 @@ PetscErrorCode Core::ISCreateProblemOrder(const string &problem,RowColData rc,in
   switch(rc) {
     case ROW:
     it = p->numered_dofs_rows.get<Composite_Order_And_Part_mi_tag>().lower_bound(boost::make_tuple(min_order,rAnk));
-    hi_it = p->numered_dofs_rows.get<Composite_Order_And_Part_mi_tag>().upper_bound(boost::make_tuple(min_order,rAnk));
+    hi_it = p->numered_dofs_rows.get<Composite_Order_And_Part_mi_tag>().upper_bound(boost::make_tuple(max_order,rAnk));
     break;
     case COL:
     it = p->numered_dofs_cols.get<Composite_Order_And_Part_mi_tag>().lower_bound(boost::make_tuple(min_order,rAnk));
-    hi_it = p->numered_dofs_cols.get<Composite_Order_And_Part_mi_tag>().upper_bound(boost::make_tuple(min_order,rAnk));
+    hi_it = p->numered_dofs_cols.get<Composite_Order_And_Part_mi_tag>().upper_bound(boost::make_tuple(max_order,rAnk));
     break;
     default:
      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
@@ -144,11 +144,11 @@ PetscErrorCode Core::ISCreateProblemFieldAndRank(const string &problem,RowColDat
   switch(rc) {
     case ROW:
     it = p->numered_dofs_rows.get<Composite_Name_Rank_And_Part_mi_tag>().lower_bound(boost::make_tuple(field,min_rank,rAnk));
-    hi_it = p->numered_dofs_rows.get<Composite_Name_Rank_And_Part_mi_tag>().upper_bound(boost::make_tuple(field,min_rank));
+    hi_it = p->numered_dofs_rows.get<Composite_Name_Rank_And_Part_mi_tag>().upper_bound(boost::make_tuple(field,max_rank));
     break;
     case COL:
     it = p->numered_dofs_cols.get<Composite_Name_Rank_And_Part_mi_tag>().lower_bound(boost::make_tuple(field,min_rank));
-    hi_it = p->numered_dofs_cols.get<Composite_Name_Rank_And_Part_mi_tag>().upper_bound(boost::make_tuple(field,min_rank,rAnk));
+    hi_it = p->numered_dofs_cols.get<Composite_Name_Rank_And_Part_mi_tag>().upper_bound(boost::make_tuple(field,max_rank,rAnk));
     break;
     default:
      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");

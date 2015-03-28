@@ -28,18 +28,17 @@ struct PCMGSetUpViaApproxOrdersCtx {
 
   FieldInterface *mFieldPtr;		///< MoFEM interface
   string problemName;			///< Problem name
+  int nbLevels;				///< number of multi-grid levels
 
   PCMGSetUpViaApproxOrdersCtx(FieldInterface *mfield_ptr,string problem_name): 
-    mFieldPtr(mfield_ptr),problemName(problem_name) {
+    mFieldPtr(mfield_ptr),problemName(problem_name),nbLevels(2) {
   }
 
-  int nbLevels;				///< number of multi-grid levels
 
   PetscErrorCode getOptions() {
     PetscFunctionBegin;
     ierr = PetscOptionsBegin(PETSC_COMM_WORLD,"","MOFEM Multi-Grid (Orders) pre-conditioner","none"); CHKERRQ(ierr);
 
-    nbLevels = 2;
     ierr = PetscOptionsInt("-mg_levels",
       "nb levels of multi-grid solver","",
       2,&nbLevels,PETSC_NULL); CHKERRQ(ierr);
@@ -58,7 +57,7 @@ struct PCMGSetUpViaApproxOrdersCtx {
     VecScatter scatterLevel; 			///< vector scatter at level
 
     PetscErrorCode setUp(IS is) {
-      PetscValidHeaderSpecific(is,VEC_CLASSID,1);
+      PetscValidHeaderSpecific(is,IS_CLASSID,1);
       PetscFunctionBegin;
 
       ierr = PetscObjectReference((PetscObject)is); CHKERRQ(ierr);		
@@ -79,6 +78,7 @@ struct PCMGSetUpViaApproxOrdersCtx {
       }
       ierr = VecScatterBegin(ctx->scatterLevel,x,f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
       ierr = VecScatterEnd(ctx->scatterLevel,x,f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      cerr << "prolongation\n";
       PetscFunctionReturn(0);
     }
 
@@ -94,6 +94,7 @@ struct PCMGSetUpViaApproxOrdersCtx {
       }
       ierr = VecScatterBegin(ctx->scatterLevel,x,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
       ierr = VecScatterEnd(ctx->scatterLevel,x,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      cerr << "restricion\n";
       PetscFunctionReturn(0);
     }
 
@@ -113,7 +114,7 @@ struct PCMGSetUpViaApproxOrdersCtx {
 
   vector<ShellMatCtx> shellMatCtxVec;
 
-  PetscErrorCode buildProlongationOperator(PC pc) {
+  PetscErrorCode buildProlongationOperator(PC pc,int verb = 0) {
     PetscFunctionBegin;
 
     vector<IS> is_vec(nbLevels);
@@ -122,15 +123,19 @@ struct PCMGSetUpViaApproxOrdersCtx {
     for(int kk = 0;kk<nbLevels; kk++) {
 
       //if is last level, take all remaining orders dofs, if any left
-      int next_level = kk;
-      if(kk == nbLevels) {
-	next_level = 100;
+      int order_at_next_level = kk+1;
+      if(kk == nbLevels-1) {
+	order_at_next_level = 100;
       }
 
       //get indices up to up to give approximation order
-      ierr = mFieldPtr->ISCreateProblemOrder(problemName,ROW,0,next_level,&is_vec[kk]); CHKERRQ(ierr);
+      ierr = mFieldPtr->ISCreateProblemOrder(problemName,ROW,0,order_at_next_level,&is_vec[kk]); CHKERRQ(ierr);
       ierr = ISGetSize(is_vec[kk],&is_glob_size[kk]); CHKERRQ(ierr);
       ierr = ISGetLocalSize(is_vec[kk],&is_loc_size[kk]); CHKERRQ(ierr);
+
+      if(verb>0) {
+	PetscPrintf(mFieldPtr->get_comm(),"Nb. dofs at level [ %d ] %u\n",kk,is_glob_size[kk]);
+      }
 
       //if no dofs on level kk finish here
       if(is_glob_size[kk]==0) {
@@ -141,7 +146,14 @@ struct PCMGSetUpViaApproxOrdersCtx {
 
     }
 
-    
+    if(verb>0) {
+      PetscPrintf(mFieldPtr->get_comm(),"set MG levels %u\n",is_vec.size());
+    }
+
+    ierr = PCMGSetLevels(pc,is_vec.size(),NULL);  CHKERRQ(ierr);
+    //ierr = PCMGSetType(pc,PC_MG_MULTIPLICATIVE); CHKERRQ(ierr);
+    // prolongation and restriction uses the same matrices
+    ierr = PCMGSetGalerkin(pc,PETSC_TRUE); CHKERRQ(ierr); 
 
     // prolongation matrices 
     shellMatCtxVec.resize(is_vec.size());
@@ -180,8 +192,8 @@ struct PCMGSetUpViaApproxOrdersCtx {
 
       }
 	  
-      ierr = ISRestoreIndices(is_vec[kk],&indices_ptr); CHKERRQ(ierr);
-      ierr = ISRestoreIndices(is_vec[kk],&indices_ptr); CHKERRQ(ierr);
+      ierr = ISRestoreIndices(is_vec[kk-1],&indices_ptr); CHKERRQ(ierr);
+      ierr = ISRestoreIndices(is_vec[kk],&next_indices_ptr); CHKERRQ(ierr);
 
       IS is;
       ISCreateGeneral(mFieldPtr->get_comm(),loc_size,&indices_from_level_to_next_levevl[0],PETSC_USE_POINTER,&is);
@@ -198,10 +210,14 @@ struct PCMGSetUpViaApproxOrdersCtx {
 
 };
 
-PetscErrorCode PCMGSetUpViaApproxOrders(PC pc,FieldInterface *mfield_ptr,const char problem_name[]) {
+PetscErrorCode PCMGSetUpViaApproxOrders(PC pc,FieldInterface *mfield_ptr,const char problem_name[],int verb) {
   PetscErrorCode ierr;
   PetscValidHeaderSpecific(pc,PC_CLASSID,1);
   PetscFunctionBegin;
+
+  if(verb>0) {
+    PetscPrintf(mfield_ptr->get_comm(),"Start PCMGSetUpViaApproxOrders\n");
+  }
 
   MPI_Comm comm;
   ierr = PetscObjectGetComm((PetscObject)pc,&comm); CHKERRQ(ierr);
@@ -211,9 +227,14 @@ PetscErrorCode PCMGSetUpViaApproxOrders(PC pc,FieldInterface *mfield_ptr,const c
     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"MoFEM and PC have to use the same communicator");
   }
   
+
   PCMGSetUpViaApproxOrdersCtx ctx(mfield_ptr,problem_name); 
   ierr = ctx.getOptions(); CHKERRQ(ierr);
-  ierr = ctx.buildProlongationOperator(pc); CHKERRQ(ierr);
+  ierr = ctx.buildProlongationOperator(pc,verb); CHKERRQ(ierr);
+
+  if(verb>0) {
+    PetscPrintf(mfield_ptr->get_comm(),"End PCMGSetUpViaApproxOrders\n");
+  }
 
   PetscFunctionReturn(0);
 }
