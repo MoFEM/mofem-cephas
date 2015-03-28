@@ -44,7 +44,6 @@ struct PCMGSetUpViaApproxOrdersCtx {
     ierr = PetscOptionsInt("-mofem_mg_levels",
       "nb levels of multi-grid solver","",
       2,&nbLevels,PETSC_NULL); CHKERRQ(ierr);
-
     ierr = PetscOptionsInt("-mofem_mg_verbose",
       "nb levels of multi-grid solver","",
       0,&verboseLevel,PETSC_NULL); CHKERRQ(ierr);
@@ -57,8 +56,12 @@ struct PCMGSetUpViaApproxOrdersCtx {
     PetscFunctionBegin;
     verb = verb > verboseLevel ? verb : verboseLevel;
 
+    int sIze,rAnk;
+    MPI_Comm_size(mFieldPtr->get_comm(),&sIze);
+    MPI_Comm_rank(mFieldPtr->get_comm(),&rAnk);
+
     vector<IS> is_vec(nbLevels);
-    vector<int> is_glob_size(nbLevels),is_loc_size(nbLevels);
+    vector<int> is_glob_size(nbLevels),is_loc_size(nbLevels),is_loc_shift(nbLevels);
 
     for(int kk = 0;kk<nbLevels; kk++) {
 
@@ -74,7 +77,7 @@ struct PCMGSetUpViaApproxOrdersCtx {
       ierr = ISGetLocalSize(is_vec[kk],&is_loc_size[kk]); CHKERRQ(ierr);
 
       if(verb>0) {
-	PetscPrintf(mFieldPtr->get_comm(),"Nb. dofs at level [ %d ] %u\n",kk,is_glob_size[kk]);
+	PetscSynchronizedPrintf(mFieldPtr->get_comm(),"Nb. dofs at level [ %d ] global %u local %d\n",kk,is_glob_size[kk],is_loc_size[kk]);
       }
 
       //if no dofs on level kk finish here
@@ -91,38 +94,44 @@ struct PCMGSetUpViaApproxOrdersCtx {
     }
 
     ierr = PCMGSetLevels(pc,is_vec.size(),NULL);  CHKERRQ(ierr);
-    //ierr = PCMGSetType(pc,PC_MG_MULTIPLICATIVE); CHKERRQ(ierr);
     // prolongation and restriction uses the same matrices
     ierr = PCMGSetGalerkin(pc,PETSC_TRUE); CHKERRQ(ierr); 
 
     for(unsigned int kk = 1;kk<is_vec.size();kk++) {
 
-      int loc_size = is_loc_size[kk-1];
+      int row_loc_size = is_loc_size[kk];
+      int col_loc_size = is_loc_size[kk-1];
+      int row_glob_size = is_glob_size[kk];
+      int col_glob_size = is_glob_size[kk-1];
 
       Mat R;
       ierr = MatCreate(mFieldPtr->get_comm(),&R); CHKERRQ(ierr);
-      ierr = MatSetSizes(R,is_loc_size[kk],loc_size,PETSC_DETERMINE,PETSC_DETERMINE); CHKERRQ(ierr);
+      ierr = MatSetSizes(R,row_loc_size,col_loc_size,row_glob_size,col_glob_size); CHKERRQ(ierr);
       ierr = MatSetType(R,MATMPIAIJ); CHKERRQ(ierr);
       ierr = MatMPIAIJSetPreallocation(R,1,PETSC_NULL,1,PETSC_NULL); CHKERRQ(ierr);
+    
+      //get matrix layout
+      PetscLayout rmap,cmap;
+      ierr = MatGetLayouts(R,&rmap,&cmap); CHKERRQ(ierr);
+      int rstart,rend,cstart,cend;
+      ierr = PetscLayoutGetRange(rmap,&rstart,&rend); CHKERRQ(ierr);
+      ierr = PetscLayoutGetRange(cmap,&cstart,&cend); CHKERRQ(ierr);
+
+      if(verb>0) {
+	PetscSynchronizedPrintf(mFieldPtr->get_comm(),"level %d row start %d row end %d\n",kk,rstart,rend);
+	PetscSynchronizedPrintf(mFieldPtr->get_comm(),"level %d col start %d col end %d\n",kk,cstart,cend);
+      }
 
       const int *next_indices_ptr,*indices_ptr;
       ierr = ISGetIndices(is_vec[kk-1],&indices_ptr); CHKERRQ(ierr);
       ierr = ISGetIndices(is_vec[kk],&next_indices_ptr); CHKERRQ(ierr);
 
-      int ii = 0,jj = 0;
-      for(;ii<loc_size;ii++) {
-
-	// it can be done like that since indices are sorted
-	int idx = indices_ptr[ii];
-	if(idx == next_indices_ptr[jj]) {
-	  ierr = MatSetValue(R,idx,ii,1,INSERT_VALUES); CHKERRQ(ierr);
-	  jj++;
-	} else {
-	  jj++;
-	}
-
+      int ii = 0;
+      for(;ii<col_loc_size;ii++) {
+	int row = rstart+ii;
+	int col = cstart+ii;
+	ierr = MatSetValue(R,row,col,1,INSERT_VALUES); CHKERRQ(ierr);
       }
-
       ierr = ISRestoreIndices(is_vec[kk-1],&indices_ptr); CHKERRQ(ierr);
       ierr = ISRestoreIndices(is_vec[kk],&next_indices_ptr); CHKERRQ(ierr);
 
@@ -139,9 +148,7 @@ struct PCMGSetUpViaApproxOrdersCtx {
       ierr = PCMGSetInterpolation(pc,kk,R); CHKERRQ(ierr);
 
       { 
-	// FIXME: If restriction is not set, MatPtAP generate error, 
-	 
-	
+	// FIXME: If restriction is not set, MatPtAP generate error. This is rather PETSc than MoFEM problem.
 	// Petsc Development GIT revision: v3.5.3-1524-gee900cc  GIT Date: 2015-01-31 17:44:15 -0600
 
 	// [0]PETSC ERROR: [0] MatPtAPSymbolic_MPIAIJ_MPIAIJ line 124 /opt/petsc/src/mat/impls/aij/mpi/mpiptap.c
@@ -172,11 +179,18 @@ struct PCMGSetUpViaApproxOrdersCtx {
 	}
 
 	ierr = MatDestroy(&RT); CHKERRQ(ierr);
-
       }
 
       ierr = MatDestroy(&R); CHKERRQ(ierr);
 
+    }
+
+    for(unsigned int kk = 0;kk<is_vec.size();kk++) {
+      ierr = ISDestroy(&is_vec[kk]); CHKERRQ(ierr);
+    }
+
+    if(verb>0) {
+      PetscSynchronizedFlush(mFieldPtr->get_comm(),PETSC_STDOUT); 
     }
 
     PetscFunctionReturn(0);
