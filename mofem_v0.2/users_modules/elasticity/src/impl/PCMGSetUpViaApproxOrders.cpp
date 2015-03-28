@@ -108,7 +108,7 @@ struct PCMGSetUpViaApproxOrdersCtx {
       ierr = MatCreate(mFieldPtr->get_comm(),&R); CHKERRQ(ierr);
       ierr = MatSetSizes(R,row_loc_size,col_loc_size,row_glob_size,col_glob_size); CHKERRQ(ierr);
       ierr = MatSetType(R,MATMPIAIJ); CHKERRQ(ierr);
-      ierr = MatMPIAIJSetPreallocation(R,1,PETSC_NULL,1,PETSC_NULL); CHKERRQ(ierr);
+      ierr = MatMPIAIJSetPreallocation(R,1,PETSC_NULL,0,PETSC_NULL); CHKERRQ(ierr);
     
       //get matrix layout
       PetscLayout rmap,cmap;
