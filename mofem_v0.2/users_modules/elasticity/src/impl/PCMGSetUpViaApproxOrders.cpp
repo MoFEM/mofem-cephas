@@ -29,93 +29,33 @@ struct PCMGSetUpViaApproxOrdersCtx {
   FieldInterface *mFieldPtr;		///< MoFEM interface
   string problemName;			///< Problem name
   int nbLevels;				///< number of multi-grid levels
+  int verboseLevel;			
 
   PCMGSetUpViaApproxOrdersCtx(FieldInterface *mfield_ptr,string problem_name): 
-    mFieldPtr(mfield_ptr),problemName(problem_name),nbLevels(2) {
+    mFieldPtr(mfield_ptr),problemName(problem_name),nbLevels(2),verboseLevel(0) {
   }
 
 
   PetscErrorCode getOptions() {
     PetscFunctionBegin;
-    ierr = PetscOptionsBegin(PETSC_COMM_WORLD,"","MOFEM Multi-Grid (Orders) pre-conditioner","none"); CHKERRQ(ierr);
+    ierr = PetscOptionsBegin(PETSC_COMM_WORLD,"",
+      "MOFEM Multi-Grid (Orders) pre-conditioner","none"); CHKERRQ(ierr);
 
-    ierr = PetscOptionsInt("-mg_levels",
+    ierr = PetscOptionsInt("-mofem_mg_levels",
       "nb levels of multi-grid solver","",
       2,&nbLevels,PETSC_NULL); CHKERRQ(ierr);
+
+    ierr = PetscOptionsInt("-mofem_mg_verbose",
+      "nb levels of multi-grid solver","",
+      0,&verboseLevel,PETSC_NULL); CHKERRQ(ierr);
 
     ierr = PetscOptionsEnd(); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
-  struct ShellMatCtx {
-
-    bool iNitialized;
-    ShellMatCtx(): 
-      iNitialized(false)  {};
-
-    IS isLevel;
-    VecScatter scatterLevel; 			///< vector scatter at level
-
-    PetscErrorCode setUp(IS is) {
-      PetscValidHeaderSpecific(is,IS_CLASSID,1);
-      PetscFunctionBegin;
-
-      ierr = PetscObjectReference((PetscObject)is); CHKERRQ(ierr);		
-      isLevel = is;
-
-      PetscFunctionReturn(0);
-    }
-
-    static PetscErrorCode opMultR(Mat R,Vec x,Vec f) {
-      PetscFunctionBegin;
-      void *void_ctx;
-      ierr = MatShellGetContext(R,&void_ctx); CHKERRQ(ierr);
-      ShellMatCtx *ctx = (ShellMatCtx*)void_ctx;
-      if(!ctx->iNitialized) {
-	ierr = VecScatterCreate(x,PETSC_NULL,f,ctx->isLevel,&ctx->scatterLevel); CHKERRQ(ierr);
-	ierr = ISDestroy(&ctx->isLevel); CHKERRQ(ierr);
-	ctx->iNitialized = true;
-      }
-      ierr = VecScatterBegin(ctx->scatterLevel,x,f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-      ierr = VecScatterEnd(ctx->scatterLevel,x,f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-      cerr << "prolongation\n";
-      PetscFunctionReturn(0);
-    }
-
-    static PetscErrorCode opMultTransR(Mat R,Vec x,Vec f) {
-      PetscFunctionBegin;
-      void *void_ctx;
-      ierr = MatShellGetContext(R,&void_ctx); CHKERRQ(ierr);
-      ShellMatCtx *ctx = (ShellMatCtx*)void_ctx;
-      if(!ctx->iNitialized) {
-	ierr = VecScatterCreate(f,PETSC_NULL,x,ctx->isLevel,&ctx->scatterLevel); CHKERRQ(ierr);
-	ierr = ISDestroy(&ctx->isLevel); CHKERRQ(ierr);
-	ctx->iNitialized = true;
-      }
-      ierr = VecScatterBegin(ctx->scatterLevel,x,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-      ierr = VecScatterEnd(ctx->scatterLevel,x,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-      cerr << "restricion\n";
-      PetscFunctionReturn(0);
-    }
-
-    ///< destroy shell matrix context data
-    static PetscErrorCode opDestroyR(Mat R) {
-      PetscFunctionBegin;
-      void *void_ctx;
-      ierr = MatShellGetContext(R,&void_ctx); CHKERRQ(ierr);
-      ShellMatCtx *ctx = (ShellMatCtx*)void_ctx;
-      if(ctx->iNitialized) {
-	ierr = VecScatterDestroy(&ctx->scatterLevel); CHKERRQ(ierr);
-      }
-      PetscFunctionReturn(0);
-    }
-
-  };
-
-  vector<ShellMatCtx> shellMatCtxVec;
-
   PetscErrorCode buildProlongationOperator(PC pc,int verb = 0) {
     PetscFunctionBegin;
+    verb = verb > verboseLevel ? verb : verboseLevel;
 
     vector<IS> is_vec(nbLevels);
     vector<int> is_glob_size(nbLevels),is_loc_size(nbLevels);
@@ -155,55 +95,102 @@ struct PCMGSetUpViaApproxOrdersCtx {
     // prolongation and restriction uses the same matrices
     ierr = PCMGSetGalerkin(pc,PETSC_TRUE); CHKERRQ(ierr); 
 
-    // prolongation matrices 
-    shellMatCtxVec.resize(is_vec.size());
-    vector<int> indices_from_level_to_next_levevl;
-
     for(unsigned int kk = 1;kk<is_vec.size();kk++) {
 
-      Mat R; ///< prolongation matrix, transpose is used as restriction
-      // I know, this makes first index not used, small loss, code simplicity more important
-      ierr = MatCreateShell(mFieldPtr->get_comm(),
-	is_loc_size[kk],is_loc_size[kk],
-	is_glob_size[kk],is_glob_size[kk],
-	(void*)&shellMatCtxVec[kk],&R); CHKERRQ(ierr);
+      int loc_size = is_loc_size[kk-1];
 
-      // set operators
-      ierr = MatShellSetOperation(R,MATOP_DESTROY,(void(*)(void))ShellMatCtx::opDestroyR); CHKERRQ(ierr);
-      ierr = MatShellSetOperation(R,MATOP_MULT,(void(*)(void))ShellMatCtx::opMultR); CHKERRQ(ierr);
-      ierr = MatShellSetOperation(R,MATOP_MULT_TRANSPOSE,(void(*)(void))ShellMatCtx::opMultTransR); CHKERRQ(ierr);
+      Mat R;
+      ierr = MatCreate(mFieldPtr->get_comm(),&R); CHKERRQ(ierr);
+      ierr = MatSetSizes(R,is_loc_size[kk],loc_size,PETSC_DETERMINE,PETSC_DETERMINE); CHKERRQ(ierr);
+      ierr = MatSetType(R,MATMPIAIJ); CHKERRQ(ierr);
+      ierr = MatMPIAIJSetPreallocation(R,1,PETSC_NULL,1,PETSC_NULL); CHKERRQ(ierr);
 
       const int *next_indices_ptr,*indices_ptr;
       ierr = ISGetIndices(is_vec[kk-1],&indices_ptr); CHKERRQ(ierr);
       ierr = ISGetIndices(is_vec[kk],&next_indices_ptr); CHKERRQ(ierr);
 
-      int loc_size = is_loc_size[kk-1];
-      indices_from_level_to_next_levevl.resize(loc_size);
-
       int ii = 0,jj = 0;
       for(;ii<loc_size;ii++) {
 
 	// it can be done like that since indices are sorted
-	if(indices_ptr[ii] == next_indices_ptr[jj]) {
-	  indices_from_level_to_next_levevl[ii] = jj;
+	int idx = indices_ptr[ii];
+	if(idx == next_indices_ptr[jj]) {
+	  ierr = MatSetValue(R,idx,ii,1,INSERT_VALUES); CHKERRQ(ierr);
+	  jj++;
 	} else {
 	  jj++;
 	}
 
       }
-	  
+
       ierr = ISRestoreIndices(is_vec[kk-1],&indices_ptr); CHKERRQ(ierr);
       ierr = ISRestoreIndices(is_vec[kk],&next_indices_ptr); CHKERRQ(ierr);
 
-      IS is;
-      ISCreateGeneral(mFieldPtr->get_comm(),loc_size,&indices_from_level_to_next_levevl[0],PETSC_USE_POINTER,&is);
-      ierr = shellMatCtxVec[kk].setUp(is); CHKERRQ(ierr);
-      ierr = ISDestroy(&is); CHKERRQ(ierr);
+      ierr = MatAssemblyBegin(R,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+      ierr = MatAssemblyEnd(R,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+
+      if(verb>1) {
+	//MatView(R,PETSC_VIEWER_STDOUT_WORLD);
+	MatView(R,PETSC_VIEWER_DRAW_WORLD);
+	std::string wait;
+	std::cin >> wait;
+      }
 
       ierr = PCMGSetInterpolation(pc,kk,R); CHKERRQ(ierr);
+
+      { 
+	// FIXME: If restriction is not set, MatPtAP generate error, 
+	 
+	
+	// Petsc Development GIT revision: v3.5.3-1524-gee900cc  GIT Date: 2015-01-31 17:44:15 -0600
+
+	// [0]PETSC ERROR: [0] MatPtAPSymbolic_MPIAIJ_MPIAIJ line 124 /opt/petsc/src/mat/impls/aij/mpi/mpiptap.c
+	// [0]PETSC ERROR: [0] MatPtAP_MPIAIJ_MPIAIJ line 80 /opt/petsc/src/mat/impls/aij/mpi/mpiptap.c
+	// [0]PETSC ERROR: [0] MatPtAP line 8458 /opt/petsc/src/mat/interface/matrix.c
+	// [0]PETSC ERROR: [0] PCSetUp_MG line 552 /opt/petsc/src/ksp/pc/impls/mg/mg.c
+	// [0]PETSC ERROR: [0] KSPSetUp line 220 /opt/petsc/src/ksp/ksp/interface/itfunc.c
+
+	// ==4284== Invalid read of size 8
+	// ==4284==    at 0x5CAC873: MatPtAPSymbolic_MPIAIJ_MPIAIJ (mpiptap.c:154)
+	// ==4284==    by 0x5CABA74: MatPtAP_MPIAIJ_MPIAIJ (mpiptap.c:83)
+	// ==4284==    by 0x5D566D1: MatPtAP (matrix.c:8537)
+	// ==4284==    by 0x61F27D6: PCSetUp_MG (mg.c:642)
+	// ==4284==    by 0x612BD9C: PCSetUp (precon.c:909)
+	// ==4284==    by 0x62C1A51: KSPSetUp (itfunc.c:306)
+	// ==4284==    by 0xB98326: main (elasticity.cpp:403)
+	// ==4284==  Address 0x208 is not stack'd, malloc'd or (recently) free'd
+
+	Mat RT;
+	ierr = MatTranspose(R,MAT_INITIAL_MATRIX,&RT); CHKERRQ(ierr);
+	ierr = PCMGSetRestriction(pc,kk,RT); CHKERRQ(ierr);
+
+	if(verb>1) {
+	  //MatView(R,PETSC_VIEWER_STDOUT_WORLD);
+	  MatView(RT,PETSC_VIEWER_DRAW_WORLD);
+	  std::string wait;
+	  std::cin >> wait;
+	}
+
+	ierr = MatDestroy(&RT); CHKERRQ(ierr);
+
+      }
+
       ierr = MatDestroy(&R); CHKERRQ(ierr);
 
     }
+
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode setCoarseKsp(PC pc,int verb = 0) {
+    PetscFunctionBegin;
+    verb = verb > verboseLevel ? verb : verboseLevel;
+  
+    KSP coarse_ksp;
+    ierr = PCMGGetCoarseSolve(pc,&coarse_ksp); CHKERRQ(ierr);
+    PC coarse_pc;
+    ierr = KSPGetPC(coarse_ksp,&coarse_pc); CHKERRQ(ierr);
+    ierr = PCFactorSetMatSolverPackage(coarse_pc,MATSOLVERMUMPS); CHKERRQ(ierr);
 
     PetscFunctionReturn(0);
   }
@@ -231,6 +218,7 @@ PetscErrorCode PCMGSetUpViaApproxOrders(PC pc,FieldInterface *mfield_ptr,const c
   PCMGSetUpViaApproxOrdersCtx ctx(mfield_ptr,problem_name); 
   ierr = ctx.getOptions(); CHKERRQ(ierr);
   ierr = ctx.buildProlongationOperator(pc,verb); CHKERRQ(ierr);
+  ierr = ctx.setCoarseKsp(pc,verb); CHKERRQ(ierr);
 
   if(verb>0) {
     PetscPrintf(mfield_ptr->get_comm(),"End PCMGSetUpViaApproxOrders\n");

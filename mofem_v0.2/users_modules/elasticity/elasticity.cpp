@@ -397,7 +397,7 @@ int main(int argc, char *argv[]) {
     ierr = KSPGetPC(solver,&pc); CHKERRQ(ierr);
     PetscObjectTypeCompare((PetscObject)pc,PCMG,&same);
     if (same) {
-      ierr = PCMGSetUpViaApproxOrders(pc,&m_field,"ELASTIC_PROB",2); CHKERRQ(ierr);
+      ierr = PCMGSetUpViaApproxOrders(pc,&m_field,"ELASTIC_PROB"); CHKERRQ(ierr);
     }
   }
   ierr = KSPSetUp(solver); CHKERRQ(ierr);
