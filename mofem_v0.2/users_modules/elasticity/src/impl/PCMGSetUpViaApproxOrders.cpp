@@ -202,10 +202,10 @@ struct PCMGSetUpViaApproxOrdersCtx {
 	  std::cin >> wait;
 	}
 
-	//ierr = MatDestroy(&RT); CHKERRQ(ierr);
+	ierr = MatDestroy(&RT); CHKERRQ(ierr);
       }
 
-      //ierr = MatDestroy(&R); CHKERRQ(ierr);
+      ierr = MatDestroy(&R); CHKERRQ(ierr);
 
       kk++;
 
