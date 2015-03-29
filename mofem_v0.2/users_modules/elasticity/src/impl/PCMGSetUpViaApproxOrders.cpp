@@ -29,10 +29,13 @@ struct PCMGSetUpViaApproxOrdersCtx {
   FieldInterface *mFieldPtr;		///< MoFEM interface
   string problemName;			///< Problem name
   int nbLevels;				///< number of multi-grid levels
+  int coarseOrder;			///< approximation order of coarse level
   int verboseLevel;			
 
   PCMGSetUpViaApproxOrdersCtx(FieldInterface *mfield_ptr,string problem_name): 
-    mFieldPtr(mfield_ptr),problemName(problem_name),nbLevels(2),verboseLevel(0) {
+    mFieldPtr(mfield_ptr),problemName(problem_name),
+    nbLevels(2),coarseOrder(2),
+    verboseLevel(0) {
   }
 
 
@@ -44,6 +47,10 @@ struct PCMGSetUpViaApproxOrdersCtx {
     ierr = PetscOptionsInt("-mofem_mg_levels",
       "nb levels of multi-grid solver","",
       2,&nbLevels,PETSC_NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsInt("-mofem_mg_coarse_order",
+      "approximation order of coarse level","",
+      2,&coarseOrder,PETSC_NULL); CHKERRQ(ierr);
+
     ierr = PetscOptionsInt("-mofem_mg_verbose",
       "nb levels of multi-grid solver","",
       0,&verboseLevel,PETSC_NULL); CHKERRQ(ierr);
@@ -56,17 +63,21 @@ struct PCMGSetUpViaApproxOrdersCtx {
     PetscFunctionBegin;
     verb = verb > verboseLevel ? verb : verboseLevel;
 
+    if(verb>0) {
+      PetscPrintf(mFieldPtr->get_comm(),"set MG levels %u\n",nbLevels);
+    }
+
     int sIze,rAnk;
     MPI_Comm_size(mFieldPtr->get_comm(),&sIze);
     MPI_Comm_rank(mFieldPtr->get_comm(),&rAnk);
 
-    vector<IS> is_vec(nbLevels);
-    vector<int> is_glob_size(nbLevels),is_loc_size(nbLevels),is_loc_shift(nbLevels);
+    vector<IS> is_vec(nbLevels+1);
+    vector<int> is_glob_size(nbLevels+1),is_loc_size(nbLevels+1);
 
-    for(int kk = 0;kk<nbLevels; kk++) {
+    for(int kk = 0;kk<nbLevels;kk++) {
 
       //if is last level, take all remaining orders dofs, if any left
-      int order_at_next_level = kk+1;
+      int order_at_next_level = kk+coarseOrder;
       if(kk == nbLevels-1) {
 	order_at_next_level = 100;
       }
@@ -77,39 +88,45 @@ struct PCMGSetUpViaApproxOrdersCtx {
       ierr = ISGetLocalSize(is_vec[kk],&is_loc_size[kk]); CHKERRQ(ierr);
 
       if(verb>0) {
-	PetscSynchronizedPrintf(mFieldPtr->get_comm(),"Nb. dofs at level [ %d ] global %u local %d\n",kk,is_glob_size[kk],is_loc_size[kk]);
+	PetscSynchronizedPrintf(mFieldPtr->get_comm(),
+	  "Nb. dofs at level [ %d ] global %u local %d\n",
+	  kk,is_glob_size[kk],is_loc_size[kk]);
       }
 
       //if no dofs on level kk finish here
       if(is_glob_size[kk]==0) {
-	ierr = ISDestroy(&is_vec[kk]); CHKERRQ(ierr);
-	is_vec.resize(kk);
-	break;
+	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"no dofs at level");
       }
 
     }
 
-    if(verb>0) {
-      PetscPrintf(mFieldPtr->get_comm(),"set MG levels %u\n",is_vec.size());
-    }
-
-    ierr = PCMGSetLevels(pc,is_vec.size(),NULL);  CHKERRQ(ierr);
+    ierr = PCMGSetLevels(pc,nbLevels,NULL);  CHKERRQ(ierr);
     // prolongation and restriction uses the same matrices
     ierr = PCMGSetGalerkin(pc,PETSC_TRUE); CHKERRQ(ierr); 
 
-    for(unsigned int kk = 1;kk<is_vec.size();kk++) {
+    map<int,int> idx_map;
+    int kk = 1;
+    while(kk<nbLevels) {
 
-      int row_loc_size = is_loc_size[kk];
-      int col_loc_size = is_loc_size[kk-1];
-      int row_glob_size = is_glob_size[kk];
-      int col_glob_size = is_glob_size[kk-1];
+      if(verb>0) {
+	PetscPrintf(mFieldPtr->get_comm(),"level %d\n",kk);
+      }
 
-      Mat R;
+      int row_loc_size,row_glob_size,col_loc_size,col_glob_size;
+
+      row_loc_size = is_loc_size[kk];		//bigger
+      row_glob_size = is_glob_size[kk];		
+      col_loc_size = is_loc_size[kk-1];		//smaller
+      col_glob_size = is_glob_size[kk-1];
+
+
+      // FIXME: Use MatCreateMPIAIJWithArrays
+      Mat R;  //small to big
       ierr = MatCreate(mFieldPtr->get_comm(),&R); CHKERRQ(ierr);
       ierr = MatSetSizes(R,row_loc_size,col_loc_size,row_glob_size,col_glob_size); CHKERRQ(ierr);
       ierr = MatSetType(R,MATMPIAIJ); CHKERRQ(ierr);
       ierr = MatMPIAIJSetPreallocation(R,1,PETSC_NULL,0,PETSC_NULL); CHKERRQ(ierr);
-    
+
       //get matrix layout
       PetscLayout rmap,cmap;
       ierr = MatGetLayouts(R,&rmap,&cmap); CHKERRQ(ierr);
@@ -122,18 +139,25 @@ struct PCMGSetUpViaApproxOrdersCtx {
 	PetscSynchronizedPrintf(mFieldPtr->get_comm(),"level %d col start %d col end %d\n",kk,cstart,cend);
       }
 
-      const int *next_indices_ptr,*indices_ptr;
-      ierr = ISGetIndices(is_vec[kk-1],&indices_ptr); CHKERRQ(ierr);
-      ierr = ISGetIndices(is_vec[kk],&next_indices_ptr); CHKERRQ(ierr);
-
-      int ii = 0;
-      for(;ii<col_loc_size;ii++) {
-	int row = rstart+ii;
-	int col = cstart+ii;
-	ierr = MatSetValue(R,row,col,1,INSERT_VALUES); CHKERRQ(ierr);
+      const int *row_indices_ptr,*col_indices_ptr;
+      ierr = ISGetIndices(is_vec[kk],&row_indices_ptr); CHKERRQ(ierr);
+      ierr = ISGetIndices(is_vec[kk-1],&col_indices_ptr); CHKERRQ(ierr);
+      
+      idx_map.clear();
+      for(int ii = 0;ii<row_loc_size;ii++) {
+	idx_map[row_indices_ptr[ii]] = rstart+ii;
       }
-      ierr = ISRestoreIndices(is_vec[kk-1],&indices_ptr); CHKERRQ(ierr);
-      ierr = ISRestoreIndices(is_vec[kk],&next_indices_ptr); CHKERRQ(ierr);
+
+      // FIXME: Use MatCreateMPIAIJWithArrays and set array directly
+      for(int jj = 0;jj<col_loc_size;jj++) {
+	map<int,int>::iterator mit = idx_map.find(col_indices_ptr[jj]);
+	if(mit != idx_map.end()) {
+	  ierr = MatSetValue(R,mit->second,cstart+jj,1,INSERT_VALUES); CHKERRQ(ierr);
+	} 
+      }
+
+      ierr = ISRestoreIndices(is_vec[kk],&row_indices_ptr); CHKERRQ(ierr);
+      ierr = ISRestoreIndices(is_vec[kk-1],&col_indices_ptr); CHKERRQ(ierr);
 
       ierr = MatAssemblyBegin(R,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
       ierr = MatAssemblyEnd(R,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
@@ -144,7 +168,7 @@ struct PCMGSetUpViaApproxOrdersCtx {
 	std::string wait;
 	std::cin >> wait;
       }
-
+  
       ierr = PCMGSetInterpolation(pc,kk,R); CHKERRQ(ierr);
 
       { 
@@ -178,12 +202,15 @@ struct PCMGSetUpViaApproxOrdersCtx {
 	  std::cin >> wait;
 	}
 
-	ierr = MatDestroy(&RT); CHKERRQ(ierr);
+	//ierr = MatDestroy(&RT); CHKERRQ(ierr);
       }
 
-      ierr = MatDestroy(&R); CHKERRQ(ierr);
+      //ierr = MatDestroy(&R); CHKERRQ(ierr);
+
+      kk++;
 
     }
+
 
     for(unsigned int kk = 0;kk<is_vec.size();kk++) {
       ierr = ISDestroy(&is_vec[kk]); CHKERRQ(ierr);
@@ -192,19 +219,6 @@ struct PCMGSetUpViaApproxOrdersCtx {
     if(verb>0) {
       PetscSynchronizedFlush(mFieldPtr->get_comm(),PETSC_STDOUT); 
     }
-
-    PetscFunctionReturn(0);
-  }
-
-  PetscErrorCode setCoarseKsp(PC pc,int verb = 0) {
-    PetscFunctionBegin;
-    verb = verb > verboseLevel ? verb : verboseLevel;
-  
-    KSP coarse_ksp;
-    ierr = PCMGGetCoarseSolve(pc,&coarse_ksp); CHKERRQ(ierr);
-    PC coarse_pc;
-    ierr = KSPGetPC(coarse_ksp,&coarse_pc); CHKERRQ(ierr);
-    ierr = PCFactorSetMatSolverPackage(coarse_pc,MATSOLVERMUMPS); CHKERRQ(ierr);
 
     PetscFunctionReturn(0);
   }
@@ -232,7 +246,6 @@ PetscErrorCode PCMGSetUpViaApproxOrders(PC pc,FieldInterface *mfield_ptr,const c
   PCMGSetUpViaApproxOrdersCtx ctx(mfield_ptr,problem_name); 
   ierr = ctx.getOptions(); CHKERRQ(ierr);
   ierr = ctx.buildProlongationOperator(pc,verb); CHKERRQ(ierr);
-  ierr = ctx.setCoarseKsp(pc,verb); CHKERRQ(ierr);
 
   if(verb>0) {
     PetscPrintf(mfield_ptr->get_comm(),"End PCMGSetUpViaApproxOrders\n");

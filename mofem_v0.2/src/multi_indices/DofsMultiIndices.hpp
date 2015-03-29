@@ -514,6 +514,13 @@ typedef multi_index_container<
       const_mem_fun<NumeredDofMoFEMEntity,DofIdx,&NumeredDofMoFEMEntity::get_dof_idx> >
   > > NumeredDofMoFEMEntity_multiIndex_uid_view_hashed;
 
+typedef multi_index_container<
+  const NumeredDofMoFEMEntity*,
+  indexed_by<
+    ordered_non_unique< 
+      const_mem_fun<NumeredDofMoFEMEntity,DofIdx,&NumeredDofMoFEMEntity::get_petsc_local_dof_idx> >
+  > > NumeredDofMoFEMEntity_multiIndex_petsc_local_dof_view_ordered_non_unique;
+
 struct DofMoFEMEntity_active_change {
   bool active;
   DofMoFEMEntity_active_change(bool _active);
