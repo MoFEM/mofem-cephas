@@ -109,27 +109,39 @@ PetscErrorCode Core::ISCreateProblemOrder(const string &problem,RowColData rc,in
   moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<Problem_mi_tag>();
   moFEMProblems_by_name::iterator p = moFEMProblems_set.find(problem);
   if(p==moFEMProblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"no such problem %s (top tip check spelling)",problem.c_str());
-  typedef NumeredDofMoFEMEntity_multiIndex::index<Composite_Order_And_Part_mi_tag>::type dofs_order;
+  typedef NumeredDofMoFEMEntity_multiIndex::index<Composite_Part_And_Oder_mi_tag>::type dofs_order;
   dofs_order::iterator it,hi_it;
   switch(rc) {
     case ROW:
-    it = p->numered_dofs_rows.get<Composite_Order_And_Part_mi_tag>().lower_bound(boost::make_tuple(min_order,rAnk));
-    hi_it = p->numered_dofs_rows.get<Composite_Order_And_Part_mi_tag>().upper_bound(boost::make_tuple(min_order,rAnk));
+    it = p->numered_dofs_rows.get<Composite_Part_And_Oder_mi_tag>().lower_bound(boost::make_tuple(rAnk,min_order));
+    hi_it = p->numered_dofs_rows.get<Composite_Part_And_Oder_mi_tag>().lower_bound(boost::make_tuple(rAnk,max_order+1));
     break;
     case COL:
-    it = p->numered_dofs_cols.get<Composite_Order_And_Part_mi_tag>().lower_bound(boost::make_tuple(min_order,rAnk));
-    hi_it = p->numered_dofs_cols.get<Composite_Order_And_Part_mi_tag>().upper_bound(boost::make_tuple(min_order,rAnk));
+    it = p->numered_dofs_cols.get<Composite_Part_And_Oder_mi_tag>().lower_bound(boost::make_tuple(rAnk,min_order));
+    hi_it = p->numered_dofs_cols.get<Composite_Part_And_Oder_mi_tag>().lower_bound(boost::make_tuple(rAnk,max_order+1));
     break;
     default:
      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
   }
-  int size = distance(it,hi_it);
+
+  NumeredDofMoFEMEntity_multiIndex_petsc_local_dof_view_ordered_non_unique dof_loc_idx_view;
+  for(;it!=hi_it;it++) {
+    pair<NumeredDofMoFEMEntity_multiIndex_petsc_local_dof_view_ordered_non_unique::iterator,bool> p;
+    p = dof_loc_idx_view.insert(&*it);
+  }
+  NumeredDofMoFEMEntity_multiIndex_petsc_local_dof_view_ordered_non_unique::iterator vit,hi_vit;
+  vit = dof_loc_idx_view.begin();
+  hi_vit = dof_loc_idx_view.end();
+
+  int size = distance(vit,hi_vit);
   int *id;
   ierr = PetscMalloc(size*sizeof(int),&id); CHKERRQ(ierr);
-  for(int ii = 0;it!=hi_it;it++,ii++) {
-    id[ii] = it->get_petsc_gloabl_dof_idx();
+  for(int ii = 0;vit!=hi_vit;vit++) {
+    id[ii++] = (*vit)->get_petsc_gloabl_dof_idx();
   }
+
   ierr = ISCreateGeneral(comm,size,id,PETSC_OWN_POINTER,is); CHKERRQ(ierr);
+
   PetscFunctionReturn(0);
 }
 PetscErrorCode Core::ISCreateProblemFieldAndRank(const string &problem,RowColData rc,const string &field,int min_rank,int max_rank,IS *is,int verb) {
@@ -139,27 +151,40 @@ PetscErrorCode Core::ISCreateProblemFieldAndRank(const string &problem,RowColDat
   moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<Problem_mi_tag>();
   moFEMProblems_by_name::iterator p = moFEMProblems_set.find(problem);
   if(p==moFEMProblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"no such problem %s (top tip check spelling)",problem.c_str());
-  typedef NumeredDofMoFEMEntity_multiIndex::index<Composite_Name_Rank_And_Part_mi_tag>::type dofs_by_name_and_rank;
+  typedef NumeredDofMoFEMEntity_multiIndex::index<Composite_Part_Name_And_Rank_mi_tag>::type dofs_by_name_and_rank;
   dofs_by_name_and_rank::iterator it,hi_it;
   switch(rc) {
     case ROW:
-    it = p->numered_dofs_rows.get<Composite_Name_Rank_And_Part_mi_tag>().lower_bound(boost::make_tuple(field,min_rank,rAnk));
-    hi_it = p->numered_dofs_rows.get<Composite_Name_Rank_And_Part_mi_tag>().upper_bound(boost::make_tuple(field,min_rank));
+    it = p->numered_dofs_rows.get<Composite_Part_Name_And_Rank_mi_tag>().lower_bound(boost::make_tuple(rAnk,field,min_rank));
+    hi_it = p->numered_dofs_rows.get<Composite_Part_Name_And_Rank_mi_tag>().lower_bound(boost::make_tuple(rAnk,field,max_rank+1));
     break;
     case COL:
-    it = p->numered_dofs_cols.get<Composite_Name_Rank_And_Part_mi_tag>().lower_bound(boost::make_tuple(field,min_rank));
-    hi_it = p->numered_dofs_cols.get<Composite_Name_Rank_And_Part_mi_tag>().upper_bound(boost::make_tuple(field,min_rank,rAnk));
+    it = p->numered_dofs_cols.get<Composite_Part_Name_And_Rank_mi_tag>().lower_bound(boost::make_tuple(rAnk,field,min_rank));
+    hi_it = p->numered_dofs_cols.get<Composite_Part_Name_And_Rank_mi_tag>().lower_bound(boost::make_tuple(rAnk,field,max_rank+1));
     break;
     default:
      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
   }
-  int size = distance(it,hi_it);
+
+
+  NumeredDofMoFEMEntity_multiIndex_petsc_local_dof_view_ordered_non_unique dof_loc_idx_view;
+  for(;it!=hi_it;it++) {
+    pair<NumeredDofMoFEMEntity_multiIndex_petsc_local_dof_view_ordered_non_unique::iterator,bool> p;
+    p = dof_loc_idx_view.insert(&*it);
+  }
+  NumeredDofMoFEMEntity_multiIndex_petsc_local_dof_view_ordered_non_unique::iterator vit,hi_vit;
+  vit = dof_loc_idx_view.begin();
+  hi_vit = dof_loc_idx_view.end();
+
+  int size = distance(vit,hi_vit);
   int *id;
   ierr = PetscMalloc(size*sizeof(int),&id); CHKERRQ(ierr);
-  for(int ii = 0;it!=hi_it;it++,ii++) {
-    id[ii] = it->get_petsc_gloabl_dof_idx();
+  for(int ii = 0;vit!=hi_vit;vit++) {
+    id[ii++] = (*vit)->get_petsc_gloabl_dof_idx();
   }
+
   ierr = ISCreateGeneral(comm,size,id,PETSC_OWN_POINTER,is); CHKERRQ(ierr);
+
   PetscFunctionReturn(0);
 }
 PetscErrorCode Core::ISCreateFromProblemFieldToOtherProblemField(
