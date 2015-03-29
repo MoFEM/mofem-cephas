@@ -72,6 +72,10 @@ struct FieldApproximationH1 {
       DataForcesAndSurcesCore::EntData &col_data) {
       PetscFunctionBegin;
 
+	  
+	  //std::string wait;
+	  //std::cout << "\n I am here !!!!!!! rank = \n" << std::endl;
+	  
       if(row_data.getIndices().size()==0) PetscFunctionReturn(0);
       if(col_data.getIndices().size()==0) PetscFunctionReturn(0);
 
@@ -87,6 +91,10 @@ struct FieldApproximationH1 {
       NN.resize(nb_row_dofs,nb_col_dofs);
       bzero(&*NN.data().begin(),nb_row_dofs*nb_col_dofs*sizeof(FieldData));
       
+	  
+
+	  
+	  
       unsigned int nb_gauss_pts = row_data.getN().size1();
       for(unsigned int gg = 0;gg<nb_gauss_pts;gg++) {
 	double w = getVolume()*getGaussPts()(3,gg);
@@ -221,6 +229,7 @@ struct FieldApproximationH1 {
 	//cerr << x << " " << y << " " << z << " " << w << " " << getHoGaussPtsDetJac()[gg] << endl;
 
 	ublas::vector<FieldData> fun_val = functionEvaluator(x,y,z);
+		
 	if(fun_val.size() != rank) {
 	  SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	}
@@ -247,16 +256,18 @@ struct FieldApproximationH1 {
     FUNEVAL &function_evaluator) {
     PetscFunctionBegin;
     PetscErrorCode ierr;
+	
     //add operator to calulate F vector
     fe.get_op_to_do_Rhs().push_back(new OpApprox(field_name,A,F,function_evaluator));
     //add operator to calulate A matrix
     fe.get_op_to_do_Lhs().push_back(new OpApprox(field_name,A,F,function_evaluator));
+	
     MatZeroEntries(A);
     VecZeroEntries(F);
     ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     //calulate and assembe
-    ierr = mField.loop_finite_elements(problem_name,"TEST_FE",fe);  CHKERRQ(ierr);
+    ierr = mField.loop_finite_elements(problem_name,fe_name,fe);  CHKERRQ(ierr);
     ierr = MatAssemblyBegin(A,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
     ierr = MatAssemblyEnd(A,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
     ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
