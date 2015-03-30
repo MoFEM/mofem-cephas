@@ -150,7 +150,7 @@ PetscErrorCode Core::build_partitioned_problem(MoFEMProblem *problem_ptr,int ver
       if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
       uids[ii] = diit->get_global_unique_id();
     }
-    //FIXME: this should be done with smaller communication,
+    /// FIXME: this should be done with collective communication,
     {
       IS is,isout;
       int *petscint_ptr = (int*)&*uids.begin();
