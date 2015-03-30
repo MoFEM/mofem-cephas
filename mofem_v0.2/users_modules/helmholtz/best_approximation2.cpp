@@ -269,7 +269,7 @@ int main(int argc, char *argv[]) {
 	ierr = m_field.add_ents_to_finite_element_by_TETs(root_set,"FE3"); CHKERRQ(ierr);
 	
 	/*** add exact solution data in finite element */
-	if(mField.check_field("reEX") && mField.check_field("imEX")) {
+	if(m_field.check_field("reEX") && m_field.check_field("imEX")) {
 		ierr = mField.modify_finite_element_add_field_data("FE2","reEX"); CHKERRQ(ierr);
 		ierr = mField.modify_finite_element_add_field_data("FE2","imEX"); CHKERRQ(ierr);
 	}
@@ -439,7 +439,7 @@ int main(int argc, char *argv[]) {
 	
 	
 	
-	if(mField.check_field("reEX") && mField.check_field("imEX")) {
+	if(m_field.check_field("reEX") && m_field.check_field("imEX")) {
 		PostPocOnRefinedMesh post_proc1(m_field);
 		ierr = post_proc1.generateRefereneElemenMesh(); CHKERRQ(ierr);	
 		ierr = post_proc1.addFieldValuesPostProc("reEX"); CHKERRQ(ierr);
