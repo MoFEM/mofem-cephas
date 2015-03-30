@@ -225,36 +225,36 @@ int main(int argc, char *argv[]) {
 	#endif
 	
 	//FE
-	ierr = m_field.add_finite_element("FE2"); CHKERRQ(ierr);
 	ierr = m_field.add_finite_element("FE3"); CHKERRQ(ierr);
+	ierr = m_field.add_finite_element("FE4"); CHKERRQ(ierr);
 	
 	//Define rows/cols and element data
-	ierr = m_field.modify_finite_element_add_field_row("FE2","reEX2"); CHKERRQ(ierr);
-	ierr = m_field.modify_finite_element_add_field_col("FE2","reEX2"); CHKERRQ(ierr);
-	ierr = m_field.modify_finite_element_add_field_data("FE2","reEX2"); CHKERRQ(ierr);
-	ierr = m_field.modify_finite_element_add_field_data("FE2","imEX2"); CHKERRQ(ierr);
-	#ifdef HOON
-	ierr = m_field.modify_finite_element_add_field_data("FE2","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
-	#endif
-	
-	//Define rows/cols and element data
-	ierr = m_field.modify_finite_element_add_field_row("FE3","imEX2"); CHKERRQ(ierr);
-	ierr = m_field.modify_finite_element_add_field_col("FE3","imEX2"); CHKERRQ(ierr);
+	ierr = m_field.modify_finite_element_add_field_row("FE3","reEX2"); CHKERRQ(ierr);
+	ierr = m_field.modify_finite_element_add_field_col("FE3","reEX2"); CHKERRQ(ierr);
+	ierr = m_field.modify_finite_element_add_field_data("FE3","reEX2"); CHKERRQ(ierr);
 	ierr = m_field.modify_finite_element_add_field_data("FE3","imEX2"); CHKERRQ(ierr);
 	#ifdef HOON
 	ierr = m_field.modify_finite_element_add_field_data("FE3","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
 	#endif
 	
+	//Define rows/cols and element data
+	ierr = m_field.modify_finite_element_add_field_row("FE4","imEX2"); CHKERRQ(ierr);
+	ierr = m_field.modify_finite_element_add_field_col("FE4","imEX2"); CHKERRQ(ierr);
+	ierr = m_field.modify_finite_element_add_field_data("FE4","imEX2"); CHKERRQ(ierr);
+	#ifdef HOON
+	ierr = m_field.modify_finite_element_add_field_data("FE4","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+	#endif
+	
 	//Problem
-	ierr = m_field.add_problem("EX2_PROBLEM"); CHKERRQ(ierr);
 	ierr = m_field.add_problem("EX3_PROBLEM"); CHKERRQ(ierr);
+	ierr = m_field.add_problem("EX4_PROBLEM"); CHKERRQ(ierr);
 	
 	//set finite elements for problem
-	ierr = m_field.modify_problem_add_finite_element("EX2_PROBLEM","FE2"); CHKERRQ(ierr);
 	ierr = m_field.modify_problem_add_finite_element("EX3_PROBLEM","FE3"); CHKERRQ(ierr);
+	ierr = m_field.modify_problem_add_finite_element("EX4_PROBLEM","FE4"); CHKERRQ(ierr);
 	//set refinment level for problem
-	ierr = m_field.modify_problem_ref_level_add_bit("EX2_PROBLEM",bit_level0); CHKERRQ(ierr);
 	ierr = m_field.modify_problem_ref_level_add_bit("EX3_PROBLEM",bit_level0); CHKERRQ(ierr);
+	ierr = m_field.modify_problem_ref_level_add_bit("EX4_PROBLEM",bit_level0); CHKERRQ(ierr);
 	
 	//meshset consisting all entities in mesh
 	EntityHandle root_set = moab.get_root_set(); 
@@ -265,13 +265,13 @@ int main(int argc, char *argv[]) {
     ierr = m_field.add_ents_to_field_by_TETs(root_set,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
 	#endif
 	//add entities to finite element
-	ierr = m_field.add_ents_to_finite_element_by_TETs(root_set,"FE2"); CHKERRQ(ierr);
 	ierr = m_field.add_ents_to_finite_element_by_TETs(root_set,"FE3"); CHKERRQ(ierr);
+	ierr = m_field.add_ents_to_finite_element_by_TETs(root_set,"FE4"); CHKERRQ(ierr);
 	
 	/*** add exact solution data in finite element */
 	if(m_field.check_field("reEX") && m_field.check_field("imEX")) {
-		ierr = m_field.modify_finite_element_add_field_data("FE2","reEX"); CHKERRQ(ierr);
-		ierr = m_field.modify_finite_element_add_field_data("FE2","imEX"); CHKERRQ(ierr);
+		ierr = m_field.modify_finite_element_add_field_data("FE3","reEX"); CHKERRQ(ierr);
+		ierr = m_field.modify_finite_element_add_field_data("FE3","imEX"); CHKERRQ(ierr);
 	}
 	//End of Dirichlet set up
 	
@@ -318,25 +318,25 @@ int main(int argc, char *argv[]) {
 	/****/
 	//mesh partitioning 
 	//partition
-	ierr = m_field.simple_partition_problem("EX2_PROBLEM"); CHKERRQ(ierr);
-	ierr = m_field.partition_finite_elements("EX2_PROBLEM"); CHKERRQ(ierr);
 	ierr = m_field.simple_partition_problem("EX3_PROBLEM"); CHKERRQ(ierr);
 	ierr = m_field.partition_finite_elements("EX3_PROBLEM"); CHKERRQ(ierr);
+	ierr = m_field.simple_partition_problem("EX4_PROBLEM"); CHKERRQ(ierr);
+	ierr = m_field.partition_finite_elements("EX4_PROBLEM"); CHKERRQ(ierr);
 	//what are ghost nodes, see Petsc Manual
-	ierr = m_field.partition_ghost_dofs("EX2_PROBLEM"); CHKERRQ(ierr);
 	ierr = m_field.partition_ghost_dofs("EX3_PROBLEM"); CHKERRQ(ierr);
+	ierr = m_field.partition_ghost_dofs("EX4_PROBLEM"); CHKERRQ(ierr);
 	
 	Mat A;
-	ierr = m_field.MatCreateMPIAIJWithArrays("EX2_PROBLEM",&A); CHKERRQ(ierr);
+	ierr = m_field.MatCreateMPIAIJWithArrays("EX3_PROBLEM",&A); CHKERRQ(ierr);
 	Vec D,F;
-	ierr = m_field.VecCreateGhost("EX2_PROBLEM",ROW,&F); CHKERRQ(ierr);
-	ierr = m_field.VecCreateGhost("EX2_PROBLEM",COL,&D); CHKERRQ(ierr);
+	ierr = m_field.VecCreateGhost("EX3_PROBLEM",ROW,&F); CHKERRQ(ierr);
+	ierr = m_field.VecCreateGhost("EX3_PROBLEM",COL,&D); CHKERRQ(ierr);
 	
 	Mat B;
-	ierr = m_field.MatCreateMPIAIJWithArrays("EX3_PROBLEM",&B); CHKERRQ(ierr);
+	ierr = m_field.MatCreateMPIAIJWithArrays("EX4_PROBLEM",&B); CHKERRQ(ierr);
 	Vec C,G;
-	ierr = m_field.VecCreateGhost("EX3_PROBLEM",ROW,&G); CHKERRQ(ierr);
-	ierr = m_field.VecCreateGhost("EX3_PROBLEM",COL,&C); CHKERRQ(ierr);
+	ierr = m_field.VecCreateGhost("EX4_PROBLEM",ROW,&G); CHKERRQ(ierr);
+	ierr = m_field.VecCreateGhost("EX4_PROBLEM",COL,&C); CHKERRQ(ierr);
 	
 	//Extract data from MAT_HELMHOLTZ block
 	//Exact solution of Impinging sphere from Acoustic isogeometric boundary element analysis by R.N. Simpson etc.
@@ -373,7 +373,7 @@ int main(int argc, char *argv[]) {
 		FieldApproximationH1<MyFunApprox_re> field_approximation_re(m_field);
 		
 		field_approximation_re.loopMatrixAndVector(
-			"EX2_PROBLEM","FE2","reEX2",A,F,function_evaluator_re);
+			"EX3_PROBLEM","FE3","reEX2",A,F,function_evaluator_re);
 	}
 	
 	{
@@ -382,7 +382,7 @@ int main(int argc, char *argv[]) {
 		FieldApproximationH1<MyFunApprox_re> field_approximation_im(m_field);
 		
 		field_approximation_im.loopMatrixAndVector(
-			"EX3_PROBLEM","FE3","imEX2",B,G,function_evaluator_im);
+			"EX4_PROBLEM","FE4","imEX2",B,G,function_evaluator_im);
 	}
 	
 	//solve real part of the acoustic problem
@@ -419,8 +419,8 @@ int main(int argc, char *argv[]) {
 	ierr = KSPSolve(solver2,G,C); CHKERRQ(ierr);
 	ierr = VecGhostUpdateBegin(C,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	ierr = VecGhostUpdateEnd(C,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	ierr = m_field.set_global_ghost_vector("EX2_PROBLEM",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-	ierr = m_field.set_global_ghost_vector("EX3_PROBLEM",COL,C,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	ierr = m_field.set_global_ghost_vector("EX3_PROBLEM",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	ierr = m_field.set_global_ghost_vector("EX4_PROBLEM",COL,C,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 	
 	
 	//if(pcomm->rank()==0) {
@@ -449,7 +449,7 @@ int main(int argc, char *argv[]) {
 		ierr = post_proc1.addFieldValuesPostProc("imEX2"); CHKERRQ(ierr);
 		ierr = post_proc1.addFieldValuesGradientPostProc("imEX2"); CHKERRQ(ierr);
 		ierr = post_proc1.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
-		ierr = m_field.loop_finite_elements("EX2_PROBLEM","FE2",post_proc1); CHKERRQ(ierr);
+		ierr = m_field.loop_finite_elements("EX4_PROBLEM","FE3",post_proc1); CHKERRQ(ierr);
 		rval = post_proc1.postProcMesh.write_file("best_approximation_out.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
 	}
 	//output the results from Docker
