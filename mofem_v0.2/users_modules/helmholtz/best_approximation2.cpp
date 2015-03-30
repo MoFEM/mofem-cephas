@@ -270,8 +270,8 @@ int main(int argc, char *argv[]) {
 	
 	/*** add exact solution data in finite element */
 	if(m_field.check_field("reEX") && m_field.check_field("imEX")) {
-		ierr = mField.modify_finite_element_add_field_data("FE2","reEX"); CHKERRQ(ierr);
-		ierr = mField.modify_finite_element_add_field_data("FE2","imEX"); CHKERRQ(ierr);
+		ierr = m_field.modify_finite_element_add_field_data("FE2","reEX"); CHKERRQ(ierr);
+		ierr = m_field.modify_finite_element_add_field_data("FE2","imEX"); CHKERRQ(ierr);
 	}
 	//End of Dirichlet set up
 	
