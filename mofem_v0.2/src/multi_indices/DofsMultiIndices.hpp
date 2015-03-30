@@ -469,19 +469,19 @@ typedef multi_index_container<
     ordered_non_unique<
       tag<Order_mi_tag>, const_mem_fun<NumeredDofMoFEMEntity::interface_type_DofMoFEMEntity,ApproximationOrder,&NumeredDofMoFEMEntity::get_dof_order> >,
     ordered_non_unique<
-      tag<Composite_Order_And_Part_mi_tag>,
+      tag<Composite_Part_And_Oder_mi_tag>,
       composite_key<
 	NumeredDofMoFEMEntity,
-	  const_mem_fun<NumeredDofMoFEMEntity::interface_type_DofMoFEMEntity,ApproximationOrder,&NumeredDofMoFEMEntity::get_dof_order>,
-	  member<NumeredDofMoFEMEntity,unsigned int,&NumeredDofMoFEMEntity::part> 
+	  member<NumeredDofMoFEMEntity,unsigned int,&NumeredDofMoFEMEntity::part>,
+	  const_mem_fun<NumeredDofMoFEMEntity::interface_type_DofMoFEMEntity,ApproximationOrder,&NumeredDofMoFEMEntity::get_dof_order>
 	> >,
     ordered_non_unique<
-      tag<Composite_Name_Rank_And_Part_mi_tag>,
+      tag<Composite_Part_Name_And_Rank_mi_tag>,
       composite_key<
 	NumeredDofMoFEMEntity,
+	  member<NumeredDofMoFEMEntity,unsigned int,&NumeredDofMoFEMEntity::part>,
 	  const_mem_fun<NumeredDofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&NumeredDofMoFEMEntity::get_name_ref>,
-	  const_mem_fun<NumeredDofMoFEMEntity::interface_type_DofMoFEMEntity,ApproximationRank,&NumeredDofMoFEMEntity::get_dof_rank>,
-	  member<NumeredDofMoFEMEntity,unsigned int,&NumeredDofMoFEMEntity::part> 
+	  const_mem_fun<NumeredDofMoFEMEntity::interface_type_DofMoFEMEntity,ApproximationRank,&NumeredDofMoFEMEntity::get_dof_rank>
 	> >,
     ordered_non_unique<
       tag<Composite_Name_And_Part_mi_tag>,
@@ -513,6 +513,13 @@ typedef multi_index_container<
     hashed_unique< 
       const_mem_fun<NumeredDofMoFEMEntity,DofIdx,&NumeredDofMoFEMEntity::get_dof_idx> >
   > > NumeredDofMoFEMEntity_multiIndex_uid_view_hashed;
+
+typedef multi_index_container<
+  const NumeredDofMoFEMEntity*,
+  indexed_by<
+    ordered_non_unique< 
+      const_mem_fun<NumeredDofMoFEMEntity,DofIdx,&NumeredDofMoFEMEntity::get_petsc_local_dof_idx> >
+  > > NumeredDofMoFEMEntity_multiIndex_petsc_local_dof_view_ordered_non_unique;
 
 struct DofMoFEMEntity_active_change {
   bool active;

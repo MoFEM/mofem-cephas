@@ -45,6 +45,8 @@ namespace po = boost::program_options;
 #include <NonLienarElasticElement.hpp>
 #include <Hooke.hpp>
 
+#include <PCMGSetUpViaApproxOrders.hpp>
+
 using namespace boost::numeric;
 
 ErrorCode rval;
@@ -388,18 +390,18 @@ int main(int argc, char *argv[]) {
   ierr = KSPCreate(PETSC_COMM_WORLD,&solver); CHKERRQ(ierr);
   ierr = KSPSetOperators(solver,Aij,Aij); CHKERRQ(ierr);
   ierr = KSPSetFromOptions(solver); CHKERRQ(ierr);
-
   /*{
+    //from PETSc example ex42.c
     PetscBool same = PETSC_FALSE;
     PC pc;
     ierr = KSPGetPC(solver,&pc); CHKERRQ(ierr);
     PetscObjectTypeCompare((PetscObject)pc,PCMG,&same);
     if (same) {
-      ierr = PCMGSetUpViaApproxOrders(pc,m_filed); CHKERRQ(ierr);
+      ierr = PCMGSetUpViaApproxOrders(pc,&m_field,"ELASTIC_PROB"); CHKERRQ(ierr);
     }
   }*/
-
   ierr = KSPSetUp(solver); CHKERRQ(ierr);
+
 
   PostPocOnRefinedMesh post_proc(m_field);
   ierr = post_proc.generateRefereneElemenMesh(); CHKERRQ(ierr);

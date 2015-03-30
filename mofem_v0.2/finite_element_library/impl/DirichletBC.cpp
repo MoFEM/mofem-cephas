@@ -47,7 +47,7 @@ namespace MoFEM {
 DisplacementBCFEMethodPreAndPostProc::DisplacementBCFEMethodPreAndPostProc(
   FieldInterface& _mField,const string &_field_name,
   Mat _Aij,Vec _X,Vec _F): mField(_mField),fieldName(_field_name),
-  dIag(1),calulateMatrixNormToSetDiag(true) {
+  dIag(1) {
   snes_B = _Aij;
   snes_x = _X;
   snes_f = _F;
@@ -182,9 +182,6 @@ PetscErrorCode DisplacementBCFEMethodPreAndPostProc::postProcess() {
   if(snes_ctx == CTX_SNESNONE && ts_ctx == CTX_TSNONE) {
     ierr = MatAssemblyBegin(snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
     ierr = MatAssemblyEnd(snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-    if(!dIag && calulateMatrixNormToSetDiag) {
-      ierr = MatNorm(snes_B,NORM_INFINITY,&dIag); CHKERRQ(ierr);
-    }
     ierr = MatZeroRowsColumns(snes_B,dofsIndices.size(),&dofsIndices[0],dIag,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
     ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
     ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
@@ -223,9 +220,6 @@ PetscErrorCode DisplacementBCFEMethodPreAndPostProc::postProcess() {
     case CTX_SNESSETJACOBIAN: {
       ierr = MatAssemblyBegin(snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
       ierr = MatAssemblyEnd(snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-      if(!dIag && calulateMatrixNormToSetDiag) {
-	ierr = MatNorm(snes_B,NORM_INFINITY,&dIag); CHKERRQ(ierr);
-      }
       ierr = MatZeroRowsColumns(snes_B,dofsIndices.size(),&*dofsIndices.begin(),dIag,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
     }
     break;
@@ -399,9 +393,6 @@ PetscErrorCode FixBcAtEntities::postProcess() {
   if(snes_ctx == CTX_SNESNONE && ts_ctx == CTX_TSNONE) {
     ierr = MatAssemblyBegin(snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
     ierr = MatAssemblyEnd(snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-    if(!dIag && calulateMatrixNormToSetDiag) {
-      ierr = MatNorm(snes_B,NORM_INFINITY,&dIag); CHKERRQ(ierr);
-    }
     ierr = MatZeroRowsColumns(snes_B,dofsIndices.size(),&dofsIndices[0],dIag,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
     ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
     ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
@@ -428,9 +419,6 @@ PetscErrorCode FixBcAtEntities::postProcess() {
     case CTX_SNESSETJACOBIAN: {
       ierr = MatAssemblyBegin(snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
       ierr = MatAssemblyEnd(snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-      if(!dIag && calulateMatrixNormToSetDiag) {
-	ierr = MatNorm(snes_B,NORM_INFINITY,&dIag); CHKERRQ(ierr);
-      }
       ierr = MatZeroRowsColumns(snes_B,dofsIndices.size(),&*dofsIndices.begin(),dIag,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
     }
     break;
