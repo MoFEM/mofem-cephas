@@ -65,72 +65,141 @@ PetscErrorCode Core::build_partitioned_problem(MoFEMProblem *problem_ptr,int ver
   problem_clear_numered_finiteElementsPtr_change().operator()(*problem_ptr);
   //bool success = moFEMProblems.modify(p_miit,problem_clear_numered_finiteElementsPtr_change());
   //if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-  //miit2 iterator for finite elements
-  EntMoFEMFiniteElement_multiIndex::iterator miit2 = finiteElementsMoFEMEnts.begin();
-  EntMoFEMFiniteElement_multiIndex::iterator hi_miit2 = finiteElementsMoFEMEnts.end();
-  DofMoFEMEntity_multiIndex_active_view dofs_rows,dofs_cols;
-  dofs_rows.clear();
-  dofs_cols.clear();
-  EntMoFEMFiniteElement_multiIndex::iterator miit3 = miit2;
-  //iterate all finite elemen entities in database
-  for(;miit3!=hi_miit2;miit3++) {
-    //if element is in problem
-    if((miit3->get_id()&problem_ptr->get_BitFEId()).any()) {
-      //if finite element bit level has all refined bits sets
-      if((miit3->get_BitRefLevel()&problem_ptr->get_BitRefLevel())==problem_ptr->get_BitRefLevel()) {
-	//get dof uids for rows and columns
-	ierr = miit3->get_MoFEMFiniteElement_row_dof_view(dofsMoabField,dofs_rows); CHKERRQ(ierr);
-	ierr = miit3->get_MoFEMFiniteElement_col_dof_view(dofsMoabField,dofs_cols); CHKERRQ(ierr);
+
+  //get rows and cols dofs view
+  DofMoFEMEntity_multiIndex_active_view dofs_rows,dofs_cols; 
+  {
+    //fe_miit iterator for finite elements
+    EntMoFEMFiniteElement_multiIndex::iterator fe_miit = finiteElementsMoFEMEnts.begin();
+    EntMoFEMFiniteElement_multiIndex::iterator hi_fe_miit = finiteElementsMoFEMEnts.end();
+    dofs_rows.clear();
+    dofs_cols.clear();
+    //iterate all finite elemen entities in database
+    for(;fe_miit!=hi_fe_miit;fe_miit++) {
+      //if element is in problem
+      if((fe_miit->get_id()&problem_ptr->get_BitFEId()).any()) {
+	//if finite element bit level has all refined bits sets
+	if((fe_miit->get_BitRefLevel()&problem_ptr->get_BitRefLevel())==problem_ptr->get_BitRefLevel()) {
+	  //get dof uids for rows and columns
+	  ierr = fe_miit->get_MoFEMFiniteElement_row_dof_view(dofsMoabField,dofs_rows); CHKERRQ(ierr);
+	  ierr = fe_miit->get_MoFEMFiniteElement_col_dof_view(dofsMoabField,dofs_cols); CHKERRQ(ierr);
+	}
       }
     }
   }
-  //zero rows
-  *(problem_ptr->tag_nbdof_data_row) = 0;
-  *(problem_ptr->tag_local_nbdof_data_row) = 0;
-  *(problem_ptr->tag_ghost_nbdof_data_row) = 0;
-  problem_ptr->numered_dofs_rows.clear();
-  //zero cols
-  (*problem_ptr->tag_nbdof_data_col) = 0;
-  (*problem_ptr->tag_local_nbdof_data_col) = 0;
-  (*problem_ptr->tag_ghost_nbdof_data_col) = 0;
-  problem_ptr->numered_dofs_cols.clear();
-  //add dofs for rows
-  DofMoFEMEntity_multiIndex_active_view::nth_index<1>::type::iterator miit4,hi_miit4;
-  miit4 = dofs_rows.get<1>().lower_bound(1);
-  hi_miit4 = dofs_rows.get<1>().upper_bound(1);
-  for(;miit4!=hi_miit4;miit4++) {
-    if(((*miit4)->get_BitRefLevel()&problem_ptr->get_DofMask_BitRefLevel())!=(*miit4)->get_BitRefLevel()) {
-      continue;
-    }
-    NumeredDofMoFEMEntity dof(&**miit4);
-    pair<NumeredDofMoFEMEntity_multiIndex::iterator,bool> p = problem_ptr->numered_dofs_rows.insert(dof); 
-    int owner_proc = p.first->get_owner_proc();
-    if(owner_proc<0) {
-      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
-    }
-    bool success = problem_ptr->numered_dofs_rows.modify(p.first,NumeredDofMoFEMEntity_part_change(owner_proc,-1));
-     if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-  }
-  //add dofs for cols
-  DofMoFEMEntity_multiIndex_active_view::nth_index<1>::type::iterator miit5,hi_miit5;
-  miit5 = dofs_cols.get<1>().lower_bound(1);
-  hi_miit5 = dofs_cols.get<1>().upper_bound(1);
-  for(;miit5!=hi_miit5;miit5++) {
-    if(((*miit5)->get_BitRefLevel()&problem_ptr->get_DofMask_BitRefLevel())!=(*miit5)->get_BitRefLevel()) {
-      continue;
-    }
-    NumeredDofMoFEMEntity dof(&**miit5);
-    pair<NumeredDofMoFEMEntity_multiIndex::iterator,bool> p = problem_ptr->numered_dofs_cols.insert(dof); 
-    int owner_proc = p.first->get_owner_proc();
-    if(owner_proc<0) {
-      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
-    }
-    bool success = problem_ptr->numered_dofs_cols.modify(p.first,NumeredDofMoFEMEntity_part_change(owner_proc,-1));
-    if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-  }
-  //number dofs
-  NumeredDofMoFEMEntity_multiIndex *numered_dofs[] = { 
+
+  //add dofs for rows and cols and set ownership
+  DofMoFEMEntity_multiIndex_active_view dofs_ptr[] = { &dofs_rows, &dofs_cols };
+  NumeredDofMoFEMEntity_multiIndex *numered_dofs_ptr[] = { 
     &(problem_ptr->numered_dofs_rows), &(problem_ptr->numered_dofs_cols) };
+  int nbdof_ptr[] = {
+    problem_ptr->tag_nbdof_data_row, problem_ptr->tag_nbdof_data_col };
+  int local_nbdof_ptr[] = {
+    problem_ptr->tag_local_nbdof_data_row, problem_ptr->tag_local_nbdof_data_col };
+  int ghost_nbdof_ptr[] = {
+    problem_ptr->tag_ghost_nbdof_data_row, problem_ptr->tag_ghost_nbdof_data_col };
+  int nb_local_dofs[ss] = { 0,0 };
+  for(int ss = 0;ss<2;ss++) {
+    *(nbdof_ptr[ss]) = 0;
+    *(local_nbdof_ptr[ss]) = 0;
+    *(tag_ghost_nbdof_data_col) = 0;
+    DofMoFEMEntity_multiIndex_active_view::nth_index<1>::type::iterator miit,hi_miit;
+    miit = dofs_ptr[ss]->get<1>().lower_bound(1);
+    hi_miit = dofs_ptr[ss]->get<1>().upper_bound(1);
+    for(;miit!=hi_miit;miit++) {
+      if(((*miit)->get_BitRefLevel()&problem_ptr->get_DofMask_BitRefLevel())!=(*miit)->get_BitRefLevel()) {
+	continue;
+      }
+      NumeredDofMoFEMEntity dof(&**miit);
+      pair<NumeredDofMoFEMEntity_multiIndex::iterator,bool> p = numered_dofs_ptr[ss]->insert(dof); 
+      int owner_proc = p.first->get_owner_proc();
+      if(owner_proc<0) {
+	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+      }
+      if(owner_proc == rAnk) {
+	nb_local_dofs[ss]++;
+      }
+      bool success;
+      success = numered_dofs_ptr[ss]->modify(p.first,NumeredDofMoFEMEntity_part_change(owner_proc,-1));
+      if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+      success = numered_dofs_ptr[ss]->modify(p.first,NumeredDofMoFEMEntity_mofem_index_change(-1));
+      if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+      success = numered_dofs_ptr[ss]->modify(
+	numered_dofs_ptr[ss]->project<0>(mit),NumeredDofMoFEMEntity_local_idx_change(-1));
+      if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+    }
+  }
+
+  //get layout 
+  int start_ranges[2],end_ranges[2];
+  for(int ss = 0;ss<2;ss++) {
+    PetscLayout layout;
+    ierr = PetscLayoutCreate(comm,&layout); CHKERRQ(ierr);
+    ierr = PetscLayoutSetBlockSize(layout,1); CHKERRQ(ierr);
+    ierr = PetscLayoutSetLocalSize(layout,nb_local_dofs[ss]) CHKERRQ(ierr);
+    ierr = PetscLayoutSetUp(layout); CHKERRQ(ierr);
+    ierr = PetscLayoutGetSize(layout,nb_dof_ptr[ss]); CHKERRQ(ierr); // get global size
+    ierr = PetscLayoutGetRange(layout,&start_ranges[ss],&end_ranges[ss]); CHKERRQ(ierr); //get ranges
+    ierr = PetscLayoutDestroy(&layout); CHKERRQ(ierr);
+  }
+
+  //set local and global indices on own dofs
+  vector<int> short_ids[ss];
+  vector<int> global_idx[ss];
+  for(int ss = 0;ss<2;ss++) {
+    NumeredDofMoFEMEntity::index<Part_mi_tag>::type::iterator mit,hi_mit;
+    mit = numered_dofs_ptr[ss]->get<Part_mi_tag>().lower_bound(rAnk);
+    hi_mit = numered_dofs_ptr[ss]->get<Part_mi_tag>().upper_bound(rAnk);
+    int local_idx = 0;
+    for(;mit!=hi_mit;mit++) {
+      bool success;
+      success = numered_dofs_ptr[ss]->modify(
+	numered_dofs_ptr[ss]->project<0>(mit),NumeredDofMoFEMEntity_local_idx_change(local_idx));
+      if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+      int glob_idx = start_ranges[ss]+local_idx;
+      success = numered_dofs_ptr[ss]->modify(
+	numered_dofs_ptr[ss]->project<0>(mit),NumeredDofMoFEMEntity_mofem_index_change(glob_idx));
+      if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+      local_idx++;
+      unsigned char pstatus = mit->get_pstatus(); 
+      //check id dof is shared
+      if( (pstatus & 1<<1) || (pstatus & 1<<2) ) {
+	short_ids[ss].push_back(mit->get_non_nonunique_short_id());
+	global_idx[ss].push_back(glob_idx);
+      }
+    }
+  }
+
+  //gather short ids and petsc global dofs
+  for(int ss = 0;ss<2;ss++) {
+    IS is_distributed_shot_id,is_distributed_global_idx;
+    ierr = ISCreateGeneral(comm,short_id[ss].size(),&short_ids[ss],PETSC_USE_POINTER,&is_distributed_short_id); CHKERRQ(ierr);
+    ierr = ISCreateGeneral(comm,short_id[ss].size(),&global_idx[ss],PETSC_USE_POINTER,&is_distributed_global_idx); CHKERRQ(ierr);
+    IS is_gather_shot_id,is_gather_global_idx;
+    ierr = ISAllGather(is_distributed_shot_id,&is_gather_shot_id); CHKERRQ(ierr);
+    ierr = ISAllGather(is_distributed_global_idx,&is_gather_global_idx); CHKERRQ(ierr);
+    int *short_id_ptr,global_idx_ptr;
+    ierr = ISGetIndices(is_gather_shot_id,&short_id_ptr); CHKERRQ(ierr);
+    ierr = ISGetIndices(is_gather_global_idx,&global_idx_ptr); CHKERRQ(ierr);
+    NumeredDofMoFEMEntity::index<PetscLocalIdx_mi_tag>::type::iterator mit,hi_mit;
+    mit = numered_dofs_ptr[ss]->get<PetscLocalIdx_mi_tag>().lower_bound(-1);
+    hi_mit = numered_dofs_ptr[ss]->get<PetscLocalIdx_mi_tag>().upper_bound(-1);
+    for(;mit!=hi_mit;mit++) {
+      int short_id = mit->get_non_nonunique_short_id();
+
+
+    }
+    ierr = ISRestoreIndices(is_gather_global_idx,&global_idx_ptr); CHKERRQ(ierr);
+    ierr = ISRestoreIndices(is_gather_shot_id,&short_id_ptr); CHKERRQ(ierr);
+    ierr = ISDestroy(&is_gather_shot_id); CHKERRQ(ierr);
+    ierr = ISDestroy(&is_gather_global_idx); CHKERRQ(ierr);
+    ierr = ISDestroy(&is_distributed_shot_id); CHKERRQ(ierr);
+    ierr = ISDestroy(&is_distributed_global_idx); CHKERRQ(ierr);
+  }
+
+
+
+  //number dofs
   DofIdx *nb_global_dofs[] = {
     problem_ptr->tag_nbdof_data_row, problem_ptr->tag_nbdof_data_col };
   DofIdx *nb_local_dofs[] = {
@@ -174,7 +243,7 @@ PetscErrorCode Core::build_partitioned_problem(MoFEMProblem *problem_ptr,int ver
 	  GlobalUId *ptr;
 	  ptr = find(uid_ptr,uid_ptr+isout_size,uid);
 	  if(ptr == uid_ptr+isout_size) {
-	    SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"could not find uid");
+	    SETERRQ1(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"ss(%d) could not find uid",ss);
 	  }
 	  DofIdx idx = distance(uid_ptr,ptr);
 	  int part = diit->get_part();

@@ -27,7 +27,7 @@
 namespace MoFEM {
 
 /** \brief user adjacency function table
-  * \ingroup fe_multi_indices
+  * \ingroup dof_multi_indices
   */
 typedef int (*FieldOrderTable[MBMAXTYPE])(const int order);
 
@@ -38,6 +38,7 @@ typedef int (*FieldOrderFunct)(const int order);
 
 /** 
   * \brief keeps data about field
+  * \ingroup dof_multi_indices
   *
   */
 struct MoFEMField {
@@ -64,6 +65,11 @@ struct MoFEMField {
   inline string get_name() const { return string((char *)tag_name_data,tag_name_size); };	
   inline FieldSpace get_space() const { return *tag_space_data; };
   inline ApproximationRank get_max_rank() const { return *tag_rank_data; };
+
+  /** 
+    * \brief get number of set bit in Field ID.
+    * Each field has uid, get get_bit_number get number of bit set for given field. Field ID has only one bit set for each field.
+    */
   inline unsigned int get_bit_number() const {
     int b = ffsl(((BitFieldId*)tag_id_data)->to_ulong()); 
     if(b != 0) return b;
@@ -81,6 +87,7 @@ struct MoFEMField {
 
 /**
  * \brief interface for MoFEMField
+ * \ingroup dof_multi_indices
  */
 template <typename T> 
 struct interface_MoFEMField {

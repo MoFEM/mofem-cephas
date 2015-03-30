@@ -1,4 +1,4 @@
-/** \file FieldInterface.hpp
+ /** \file FieldInterface.hpp
  * \brief MoFEM interface 
  * 
  * Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl) <br>
@@ -1030,7 +1030,6 @@ struct FieldInterface: public FieldUnknownInterface {
 
   /** \brief build problem data structures, assuming that mesh is partitioned
    * \ingroup mofem_problems
-   * \bug non collective communication
    */
   virtual PetscErrorCode build_partitioned_problem(const string &name,int verb = -1) = 0;
 

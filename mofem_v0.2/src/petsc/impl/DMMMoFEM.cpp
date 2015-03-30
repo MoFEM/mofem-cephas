@@ -363,6 +363,28 @@ PetscErrorCode DMMoFEMGetSnesCtx(DM dm,MoFEM::SnesCtx **snes_ctx) {
   PetscFunctionReturn(0);
 }
 
+/** get if read mesh is partitioned
+  * \ingroup dm
+  */
+PetscErrorCode DMMoFEMSetIsPartitioned(DM dm,PetscBool is_partitioned) {
+  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
+  PetscFunctionBegin;
+  DMCtx *dm_field = (DMCtx*)dm->data;
+  dm_field->isPartitioned = is_partitioned;
+  PetscFunctionReturn(0);
+}
+
+/** get if read mesh is partitioned
+  * \ingroup dm
+  */
+PetscErrorCode DMMoFEMGetIsPartitioned(DM dm,PetscBool *is_partitioned) {
+  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
+  PetscFunctionBegin;
+  DMCtx *dm_field = (DMCtx*)dm->data;
+  *is_partitioned = dm_field->isPartitioned;
+  PetscFunctionReturn(0);
+}
+
 PetscErrorCode DMMoFEMGetTsCtx(DM dm,MoFEM::TsCtx **ts_ctx) {
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
@@ -412,7 +434,10 @@ PetscErrorCode DMCreateMatrix_MoFEM(DM dm,Mat *M) {
   #else 
     ierr = PetscOptionsHead("DMMoFEM Options");CHKERRQ(ierr);
   #endif
-  ierr = PetscOptionsBool("-dm_is_partitioned","set if mesh is partitioned (works which native MOAB file formata, i.e. h5m","DMSetUp",dm_field->isPartitioned,&dm_field->isPartitioned,NULL);CHKERRQ(ierr);
+  ierr = PetscOptionsBool(
+    "-dm_is_partitioned",
+    "set if mesh is partitioned (works which native MOAB file formata, i.e. h5m","DMSetUp",
+    dm_field->isPartitioned,&dm_field->isPartitioned,NULL);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 

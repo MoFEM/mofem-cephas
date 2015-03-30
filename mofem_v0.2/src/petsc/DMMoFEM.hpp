@@ -143,6 +143,16 @@ PetscErrorCode DMMoFEMGetTsCtx(DM dm,MoFEM::TsCtx **ts_ctx);
 
 #endif
 
+/** sets if read mesh is partitioned
+  * \ingroup dm
+  */
+PetscErrorCode DMMoFEMSetIsPartitioned(DM dm,PetscBool is_partitioned);
+
+/** get if read mesh is partitioned
+  * \ingroup dm
+  */
+PetscErrorCode DMMoFEMGetIsPartitioned(DM dm,PetscBool *is_partitioned);
+
 /** 
   * \brief Create dm data structure with MoFEM data structure
   * \ingroup dm

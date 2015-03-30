@@ -69,13 +69,13 @@ struct DofMoFEMEntity: public interface_MoFEMEntity<MoFEMEntity> {
 
   /** \brief get short uid it is unique in combination with entity handle
     *
-    * EntityHandle are controlled by MOAB, which quantity uniqueness which in
-    * MOAB instance. However two instances, can have attached different
+    * EntityHandle are controlled by MOAB, which is unique in  
+    * MOAB instance. However two MOAB instances, can have attached different
     * EntityHandles to the same entity. 
     *
     * Relation between MoAB EntityHandle can be handled by saving entity handle
     * data into tag, see MB_TYPE_HANDLE. MOAB at time of reading file or
-    * creating new moab instance, substitute tag value by approbate entity
+    * creating new MOAB instance, substitute tag value by approbate entity
     * handle.
     *
     * ShortId is created to handle problems related to saving data series, and

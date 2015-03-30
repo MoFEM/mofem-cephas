@@ -310,6 +310,7 @@ int main(int argc, char *argv[]) {
   //set dm datastruture whict created mofem datastructures
   ierr = DMMoFEMCreateMoFEM(dm,&m_field,dm_name,bit_level0); CHKERRQ(ierr);
   ierr = DMSetFromOptions(dm); CHKERRQ(ierr);
+  ierr = DMMoFEMSetIsPartitioned(dm,is_partitioned); CHKERRQ(ierr);
   //add elements to dm
   ierr = DMMoFEMAddElement(dm,"ELASTIC"); CHKERRQ(ierr);
   ierr = DMMoFEMAddElement(dm,"BODY_FORCE"); CHKERRQ(ierr);
