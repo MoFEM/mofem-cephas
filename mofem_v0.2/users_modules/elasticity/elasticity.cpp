@@ -391,7 +391,7 @@ int main(int argc, char *argv[]) {
   ierr = KSPCreate(PETSC_COMM_WORLD,&solver); CHKERRQ(ierr);
   ierr = KSPSetOperators(solver,Aij,Aij); CHKERRQ(ierr);
   ierr = KSPSetFromOptions(solver); CHKERRQ(ierr);
-  {
+  /*{
     //from PETSc example ex42.c
     PetscBool same = PETSC_FALSE;
     PC pc;
@@ -400,7 +400,7 @@ int main(int argc, char *argv[]) {
     if (same) {
       ierr = PCMGSetUpViaApproxOrders(pc,&m_field,"ELASTIC_PROB"); CHKERRQ(ierr);
     }
-  }
+  }*/
   ierr = KSPSetUp(solver); CHKERRQ(ierr);
 
 
