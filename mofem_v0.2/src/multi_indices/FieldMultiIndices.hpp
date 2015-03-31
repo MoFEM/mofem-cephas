@@ -1,12 +1,6 @@
 /** \file FieldMultiIndices.hpp 
  * \brief Myltindex containes, for mofem fields data structures and other low-level functions 
  * 
- * Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl) <br>
- *
- * The MoFEM package is copyrighted by Lukasz Kaczmarczyk. 
- * It can be freely used for educational and research purposes 
- * by other institutions. If you use this softwre pleas cite my work. 
- *
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or (at your
@@ -47,16 +41,16 @@ struct MoFEMField {
   Tag th_AppDofOrder,th_DofRank;
   BitFieldId* tag_id_data; 		///< tag keeps field id
   FieldSpace* tag_space_data;		///< tag keeps field space
-  ApproximationRank* tag_rank_data; 	///< tag keeps field rank (dimension, f.e. temerature field has rank 1, displacemenst field in 3d has rank 3)
+  ApproximationRank* tag_rank_data; 	///< tag keeps field rank (dimension, f.e. Temperature field has rank 1, displacements field in 3d has rank 3)
   const void* tag_name_data; 		///< tag keeps name of the field
-  int tag_name_size; 			///< number of bits necessery to keep field name
+  int tag_name_size; 			///< number of bits necessary to keep field name
   const void* tag_name_prefix_data; 	///< tag keeps name prefix of the field
-  int tag_name_prefix_size; 		///< number of bits necessery to keep field name prefix
+  int tag_name_prefix_size; 		///< number of bits necessary to keep field name prefix
   FieldOrderTable forder_table;		///< nb. dofs table for entities
   /**
     * \brief constructor for moab field
     *
-    * \param _meshset meshset which keeps entities for this field
+    * \param meshset which keeps entities for this field
     */
   MoFEMField(Interface &moab,const EntityHandle _meshset);					
   inline EntityHandle get_meshset() const { return meshset; };

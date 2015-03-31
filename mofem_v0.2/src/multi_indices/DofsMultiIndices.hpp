@@ -44,7 +44,7 @@ struct DofMoFEMEntity: public interface_MoFEMEntity<MoFEMEntity> {
   }
   static ShortId get_non_nonunique_short_id(const DofIdx _dof_,const MoFEMEntity *_ent_ptr_) {
     if(_dof_>=512) THROW_AT_LINE("_dof>=512")
-    if(sizeof(ShortId) < sizeof(char)+2) THROW_AT_LINE("sizeof(ShortId)< sizeof(char)+9")
+    if(sizeof(ShortId) < sizeof(char)+2) THROW_AT_LINE("sizeof(ShortId)< sizeof(char)+2")
     char bit_number = _ent_ptr_->get_bit_number();
     ShortId _uid_ = ((ShortId)_dof_)|(((ShortId)bit_number)<<9);
     return _uid_;

@@ -1031,12 +1031,12 @@ struct FieldInterface: public FieldUnknownInterface {
   /** \brief build problem data structures, assuming that mesh is partitioned
    * \ingroup mofem_problems
    */
-  virtual PetscErrorCode build_partitioned_problem(const string &name,int verb = -1) = 0;
+  virtual PetscErrorCode build_partitioned_problem(const string &name,bool square_matrix = true,int verb = -1) = 0;
 
   /** \brief build problem data structures, assuming that mesh is partitioned
    * \ingroup mofem_problems
    */
-  virtual PetscErrorCode build_partitioned_problem(MoFEMProblem *problem_ptr,int verb = -1) = 0;
+  virtual PetscErrorCode build_partitioned_problem(MoFEMProblem *problem_ptr,bool square_matrix = true,int verb = -1) = 0;
 
   /** \brief build problem data structures, assuming that mesh is partitioned
    * \ingroup mofem_problems

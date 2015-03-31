@@ -40,9 +40,20 @@
 
 namespace MoFEM {
 
+struct __attribute__ ((__packed__)) IdxDataType {
+  int globalDof;
+  char uId[128];
+  IdxDataType() {}
+  IdxDataType(const GlobalUId &uid,int global_dof):
+    globalDof(global_dof) {
+    bcopy(&uid,uId,128);
+  }
+};
+
+
 const static int debug = 1;
 
-PetscErrorCode Core::build_partitioned_problem(const string &name,int verb) {
+PetscErrorCode Core::build_partitioned_problem(const string &name,bool square_matrix,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   if(!(*build_MoFEM&(1<<0))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"fields not build");
@@ -50,12 +61,12 @@ PetscErrorCode Core::build_partitioned_problem(const string &name,int verb) {
   if(!(*build_MoFEM&(1<<2))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"entFEAdjacencies not build");
   const MoFEMProblem *problem_ptr;
   ierr = get_problem(name,&problem_ptr); CHKERRQ(ierr);
-  ierr = build_partitioned_problem(const_cast<MoFEMProblem*>(problem_ptr),verb); CHKERRQ(ierr);
+  ierr = build_partitioned_problem(const_cast<MoFEMProblem*>(problem_ptr),square_matrix,verb); CHKERRQ(ierr);
   *build_MoFEM |= 1<<3;
   *build_MoFEM |= 1<<4; // It is assumed that user who uses this function knows what he is doing
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::build_partitioned_problem(MoFEMProblem *problem_ptr,int verb) {
+PetscErrorCode Core::build_partitioned_problem(MoFEMProblem *problem_ptr,bool square_matrix,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   if(problem_ptr->get_BitRefLevel().none()) {
@@ -89,20 +100,20 @@ PetscErrorCode Core::build_partitioned_problem(MoFEMProblem *problem_ptr,int ver
   }
 
   //add dofs for rows and cols and set ownership
-  DofMoFEMEntity_multiIndex_active_view dofs_ptr[] = { &dofs_rows, &dofs_cols };
+  DofMoFEMEntity_multiIndex_active_view* dofs_ptr[] = { &dofs_rows, &dofs_cols };
   NumeredDofMoFEMEntity_multiIndex *numered_dofs_ptr[] = { 
     &(problem_ptr->numered_dofs_rows), &(problem_ptr->numered_dofs_cols) };
-  int nbdof_ptr[] = {
+  int* nbdof_ptr[] = {
     problem_ptr->tag_nbdof_data_row, problem_ptr->tag_nbdof_data_col };
-  int local_nbdof_ptr[] = {
+  int* local_nbdof_ptr[] = {
     problem_ptr->tag_local_nbdof_data_row, problem_ptr->tag_local_nbdof_data_col };
-  int ghost_nbdof_ptr[] = {
+  int* ghost_nbdof_ptr[] = {
     problem_ptr->tag_ghost_nbdof_data_row, problem_ptr->tag_ghost_nbdof_data_col };
-  int nb_local_dofs[ss] = { 0,0 };
+  int nb_local_dofs[] = { 0,0 };
   for(int ss = 0;ss<2;ss++) {
     *(nbdof_ptr[ss]) = 0;
     *(local_nbdof_ptr[ss]) = 0;
-    *(tag_ghost_nbdof_data_col) = 0;
+    *(ghost_nbdof_ptr[ss]) = 0;
     DofMoFEMEntity_multiIndex_active_view::nth_index<1>::type::iterator miit,hi_miit;
     miit = dofs_ptr[ss]->get<1>().lower_bound(1);
     hi_miit = dofs_ptr[ss]->get<1>().upper_bound(1);
@@ -124,8 +135,7 @@ PetscErrorCode Core::build_partitioned_problem(MoFEMProblem *problem_ptr,int ver
       if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
       success = numered_dofs_ptr[ss]->modify(p.first,NumeredDofMoFEMEntity_mofem_index_change(-1));
       if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-      success = numered_dofs_ptr[ss]->modify(
-	numered_dofs_ptr[ss]->project<0>(mit),NumeredDofMoFEMEntity_local_idx_change(-1));
+      success = numered_dofs_ptr[ss]->modify(p.first,NumeredDofMoFEMEntity_local_idx_change(-1));
       if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
     }
   }
@@ -136,21 +146,30 @@ PetscErrorCode Core::build_partitioned_problem(MoFEMProblem *problem_ptr,int ver
     PetscLayout layout;
     ierr = PetscLayoutCreate(comm,&layout); CHKERRQ(ierr);
     ierr = PetscLayoutSetBlockSize(layout,1); CHKERRQ(ierr);
-    ierr = PetscLayoutSetLocalSize(layout,nb_local_dofs[ss]) CHKERRQ(ierr);
-    ierr = PetscLayoutSetUp(layout); CHKERRQ(ierr);
-    ierr = PetscLayoutGetSize(layout,nb_dof_ptr[ss]); CHKERRQ(ierr); // get global size
+    ierr = PetscLayoutSetLocalSize(layout,nb_local_dofs[ss]); CHKERRQ(ierr);
+    ierr = PetscLayoutSetUp(layout); CHKERRQ(ierr);	
+    ierr = PetscLayoutGetSize(layout,&*nbdof_ptr[ss]); CHKERRQ(ierr); // get global size
     ierr = PetscLayoutGetRange(layout,&start_ranges[ss],&end_ranges[ss]); CHKERRQ(ierr); //get ranges
     ierr = PetscLayoutDestroy(&layout); CHKERRQ(ierr);
   }
 
   //set local and global indices on own dofs
-  vector<int> short_ids[ss];
-  vector<int> global_idx[ss];
+  const size_t idx_data_type_size = sizeof(IdxDataType);
+  const size_t data_block_size = idx_data_type_size/sizeof(int);
+  if(sizeof(IdxDataType) % sizeof(int)) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+  }
+  vector<vector<IdxDataType> > ids_data_packed_rows(sIze),ids_data_packed_cols(sIze);
+  
+  // number of messages that are to be sent.
+  int nsends_rows = 0,nsends_cols = 0;
+  ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
+
   for(int ss = 0;ss<2;ss++) {
-    NumeredDofMoFEMEntity::index<Part_mi_tag>::type::iterator mit,hi_mit;
+    NumeredDofMoFEMEntity_multiIndex::index<Part_mi_tag>::type::iterator mit,hi_mit;
     mit = numered_dofs_ptr[ss]->get<Part_mi_tag>().lower_bound(rAnk);
     hi_mit = numered_dofs_ptr[ss]->get<Part_mi_tag>().upper_bound(rAnk);
-    int local_idx = 0;
+    int &local_idx = *local_nbdof_ptr[ss];
     for(;mit!=hi_mit;mit++) {
       bool success;
       success = numered_dofs_ptr[ss]->modify(
@@ -160,113 +179,163 @@ PetscErrorCode Core::build_partitioned_problem(MoFEMProblem *problem_ptr,int ver
       success = numered_dofs_ptr[ss]->modify(
 	numered_dofs_ptr[ss]->project<0>(mit),NumeredDofMoFEMEntity_mofem_index_change(glob_idx));
       if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+      success = numered_dofs_ptr[ss]->modify(
+	numered_dofs_ptr[ss]->project<0>(mit),NumeredDofMoFEMEntity_part_change(mit->get_part(),glob_idx));
+      if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+
       local_idx++;
       unsigned char pstatus = mit->get_pstatus(); 
       //check id dof is shared
       if( (pstatus & 1<<1) || (pstatus & 1<<2) ) {
-	short_ids[ss].push_back(mit->get_non_nonunique_short_id());
-	global_idx[ss].push_back(glob_idx);
-      }
-    }
-  }
-
-  //gather short ids and petsc global dofs
-  for(int ss = 0;ss<2;ss++) {
-    IS is_distributed_shot_id,is_distributed_global_idx;
-    ierr = ISCreateGeneral(comm,short_id[ss].size(),&short_ids[ss],PETSC_USE_POINTER,&is_distributed_short_id); CHKERRQ(ierr);
-    ierr = ISCreateGeneral(comm,short_id[ss].size(),&global_idx[ss],PETSC_USE_POINTER,&is_distributed_global_idx); CHKERRQ(ierr);
-    IS is_gather_shot_id,is_gather_global_idx;
-    ierr = ISAllGather(is_distributed_shot_id,&is_gather_shot_id); CHKERRQ(ierr);
-    ierr = ISAllGather(is_distributed_global_idx,&is_gather_global_idx); CHKERRQ(ierr);
-    int *short_id_ptr,global_idx_ptr;
-    ierr = ISGetIndices(is_gather_shot_id,&short_id_ptr); CHKERRQ(ierr);
-    ierr = ISGetIndices(is_gather_global_idx,&global_idx_ptr); CHKERRQ(ierr);
-    NumeredDofMoFEMEntity::index<PetscLocalIdx_mi_tag>::type::iterator mit,hi_mit;
-    mit = numered_dofs_ptr[ss]->get<PetscLocalIdx_mi_tag>().lower_bound(-1);
-    hi_mit = numered_dofs_ptr[ss]->get<PetscLocalIdx_mi_tag>().upper_bound(-1);
-    for(;mit!=hi_mit;mit++) {
-      int short_id = mit->get_non_nonunique_short_id();
-
-
-    }
-    ierr = ISRestoreIndices(is_gather_global_idx,&global_idx_ptr); CHKERRQ(ierr);
-    ierr = ISRestoreIndices(is_gather_shot_id,&short_id_ptr); CHKERRQ(ierr);
-    ierr = ISDestroy(&is_gather_shot_id); CHKERRQ(ierr);
-    ierr = ISDestroy(&is_gather_global_idx); CHKERRQ(ierr);
-    ierr = ISDestroy(&is_distributed_shot_id); CHKERRQ(ierr);
-    ierr = ISDestroy(&is_distributed_global_idx); CHKERRQ(ierr);
-  }
-
-
-
-  //number dofs
-  DofIdx *nb_global_dofs[] = {
-    problem_ptr->tag_nbdof_data_row, problem_ptr->tag_nbdof_data_col };
-  DofIdx *nb_local_dofs[] = {
-    problem_ptr->tag_local_nbdof_data_row, problem_ptr->tag_local_nbdof_data_col };
-  vector<GlobalUId> uids;
-  for(int ss = 0;ss<2;ss++) {
-    NumeredDofMoFEMEntity_multiIndex::index<Part_mi_tag>::type::iterator diit,hi_diit;
-    diit = numered_dofs[ss]->get<Part_mi_tag>().lower_bound(rAnk);
-    hi_diit = numered_dofs[ss]->get<Part_mi_tag>().upper_bound(rAnk);
-    uids.resize(distance(diit,hi_diit));
-    int &local_idx = *(nb_local_dofs[ss]);
-    local_idx = 0;
-    for(int ii = 0;diit!=hi_diit;diit++,ii++) {
-      bool success;
-      success = numered_dofs[ss]->modify(
-	numered_dofs[ss]->project<0>(diit),NumeredDofMoFEMEntity_local_idx_change(local_idx++));
-      if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-      uids[ii] = diit->get_global_unique_id();
-    }
-    /// FIXME: this should be done with collective communication,
-    {
-      IS is,isout;
-      int *petscint_ptr = (int*)&*uids.begin();
-      ierr = ISCreateGeneral(comm,
-	uids.size()*sizeof(GlobalUId)/sizeof(int),
-	petscint_ptr,PETSC_USE_POINTER,&is); CHKERRQ(ierr);
-      ierr = ISAllGather(is,&isout); CHKERRQ(ierr);
-      int isout_size;
-      ierr = ISGetSize(isout,&isout_size); CHKERRQ(ierr);
-      isout_size = isout_size*sizeof(int)/sizeof(GlobalUId);
-      *(nb_global_dofs[ss]) = isout_size;
-      {	
-	const int *ptr;
-	ierr = ISGetIndices(isout,&ptr); CHKERRQ(ierr);
-	GlobalUId *uid_ptr = const_cast<GlobalUId*>((const GlobalUId*)ptr);
-	NumeredDofMoFEMEntity_multiIndex::iterator diit,hi_diit;
-	diit = numered_dofs[ss]->begin();
-	hi_diit = numered_dofs[ss]->end();
-	for(;diit!=hi_diit;diit++) {
-	  GlobalUId uid = diit->get_global_unique_id();
-	  GlobalUId *ptr;
-	  ptr = find(uid_ptr,uid_ptr+isout_size,uid);
-	  if(ptr == uid_ptr+isout_size) {
-	    SETERRQ1(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"ss(%d) could not find uid",ss);
+	set<unsigned int> procs;
+	rval = pcomm->get_comm_procs(procs); CHKERR_PETSC(rval);
+	set<unsigned int>::iterator pit = procs.begin();
+	for(;pit!=procs.end();pit++) {
+	  if(*pit == (unsigned int)rAnk) continue;
+	  if(ss == 0) {
+	    ids_data_packed_rows[*pit].push_back(IdxDataType(mit->get_global_unique_id(),glob_idx));
+	    nsends_rows++;
+	  } else {
+	    ids_data_packed_cols[*pit].push_back(IdxDataType(mit->get_global_unique_id(),glob_idx));
+	    nsends_cols++;
 	  }
-	  DofIdx idx = distance(uid_ptr,ptr);
-	  int part = diit->get_part();
-	  bool success;
-	  success = numered_dofs[ss]->modify(
-	    diit,NumeredDofMoFEMEntity_mofem_index_change(idx));
-	  if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-	  success = numered_dofs[ss]->modify(
-	    diit,NumeredDofMoFEMEntity_part_change(part,idx));
-	  if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
 	}
-	ierr = ISRestoreIndices(isout,&ptr); CHKERRQ(ierr);
       }
-      ierr = ISDestroy(&is); CHKERRQ(ierr);
-      ierr = ISDestroy(&isout); CHKERRQ(ierr);
     }
   }
+
+  // Non zero ilengths[i] represent a message to i of length ilengths[i].
+  vector<int> ilengths_rows(sIze),ilengths_cols(sIze);
+  ilengths_rows.clear(); 
+  ilengths_cols.clear();
+  for(int rr = 0;rr<sIze;rr++) {
+    ilengths_rows[rr] = ids_data_packed_rows[rr].size()*data_block_size;
+    ilengths_cols[rr] = ids_data_packed_cols[rr].size()*data_block_size;
+  }
+
+  MPI_Status *status;
+  ierr = PetscMalloc1(sIze,&status);CHKERRQ(ierr);
+
+  // make sure it is a PETSc comm 
+  ierr = PetscCommDuplicate(comm,&comm,NULL); CHKERRQ(ierr);
+
+  //rows
+
+  // Computes the number of messages a node expects to receive
+  int nrecvs_rows;	// number of messages received
+  ierr = PetscGatherNumberOfMessages(comm,NULL,&ilengths_rows[0],&nrecvs_rows); CHKERRQ(ierr);
+  if(nrecvs_rows % data_block_size) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+  }
+
+  // Computes info about messages that a MPI-node will receive, including (from-id,length) pairs for each message.
+  int *onodes_rows;	// list of node-ids from which messages are expected
+  int *olengths_rows;	// corresponding message lengths	
+  ierr = PetscGatherMessageLengths(comm,
+    nsends_rows,nrecvs_rows,
+    &ilengths_rows[0],&onodes_rows,&olengths_rows);  CHKERRQ(ierr);
+  
+  // Gets a unique new tag from a PETSc communicator. All processors that share
+  // the communicator MUST call this routine EXACTLY the same number of times.
+  // This tag should only be used with the current objects communicator; do NOT
+  // use it with any other MPI communicator.
+  int tag_row;
+  ierr = PetscCommGetNewTag(comm,&tag_row); CHKERRQ(ierr);
+
+  // Allocate a buffer sufficient to hold messages of size specified in
+  // olengths. And post Irecvs on these buffers using node info from onodes
+  int **rbuf_row;	// must bee freed by user
+  MPI_Request *r_waits_row; // must bee freed by user
+  // rbuf has a pointers to messeges. It has size of of nrecvs (number of
+  // messages) +1. In the first index a block is allocated, 
+  // such that rbuf[i] = rbuf[i-1]+olengths[i-1]. 
+  ierr = PetscPostIrecvInt(comm,tag_row,nrecvs_rows,onodes_rows,olengths_rows,&rbuf_row,&r_waits_row); CHKERRQ(ierr);
+
+  MPI_Request *s_waits_row; // status of sens messages
+  ierr = PetscMalloc1(nsends_rows,&s_waits_row);CHKERRQ(ierr);
+
+  // Send messeges
+  for(int proc=0,kk=0; proc<sIze; proc++) {
+    if(!ilengths_rows[proc]) continue; // no message to send to this proc
+    ierr = MPI_Isend(
+      &(ids_data_packed_cols[proc])[0], // buffer to send
+      ilengths_rows[proc], // message length
+      MPIU_INT,proc, // tip proc
+      tag_row,comm,s_waits_row+kk); CHKERRQ(ierr);
+    kk++;
+  }
+
+  if(nrecvs_rows) {
+    ierr = MPI_Waitall(nrecvs_rows,r_waits_row,status);CHKERRQ(ierr);
+  }
+  if(nsends_rows) {
+    ierr = MPI_Waitall(nsends_rows,s_waits_row,status);CHKERRQ(ierr);
+  }
+
+  ierr = PetscFree(r_waits_row); CHKERRQ(ierr);
+  ierr = PetscFree(s_waits_row); CHKERRQ(ierr);
+
+  //cols
+  int nrecvs_cols = nrecvs_rows;
+  int *onodes_cols = onodes_rows;
+  int *olengths_cols = olengths_rows;
+  PetscInt **rbuf_col = rbuf_row;
+  if(!square_matrix) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
+  }
+
+  // set values
+  for(int ss = 0;ss<2;ss++) {
+
+    int nrecvs;
+    int *olengths;
+    int **data_procs;
+    if(ss == 0) {
+      nrecvs = nrecvs_rows;
+      olengths = olengths_rows;
+      data_procs = rbuf_row;
+    } else {
+      nrecvs = nrecvs_cols;
+      olengths = &olengths_cols[0];
+      data_procs = rbuf_col;
+    }
+    for(int kk=0; kk<nrecvs; kk++) {
+
+      int len = olengths[kk];
+      int *data_from_proc = data_procs[kk];
+      for(int dd = 0;dd<len;dd+=data_block_size) {
+	IdxDataType *idx_data = (IdxDataType*)(&data_from_proc[dd]);
+	GlobalUId uid;
+	bcopy(idx_data->uId,&uid,128);
+	int global_idx = idx_data->globalDof;
+	NumeredDofMoFEMEntity_multiIndex::iterator dit;
+	dit = numered_dofs_ptr[ss]->find(uid);
+	bool success;
+	success = numered_dofs_ptr[ss]->modify(dit,NumeredDofMoFEMEntity_mofem_index_change(global_idx));
+	if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+	success = numered_dofs_ptr[ss]->modify(dit,NumeredDofMoFEMEntity_part_change(dit->get_part(),global_idx));
+	if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+      }
+
+    }
+
+  }
+  
+  ierr = PetscFree(rbuf_row[0]); CHKERRQ(ierr);
+  ierr = PetscFree(rbuf_row); CHKERRQ(ierr);
+  if(!square_matrix) {
+    ierr = PetscFree(rbuf_col[0]); CHKERRQ(ierr);
+    ierr = PetscFree(rbuf_col); CHKERRQ(ierr);
+  }
+
+  ierr = PetscFree(status); CHKERRQ(ierr);
+
   ierr = print_partitioned_problem(problem_ptr,verb); CHKERRQ(ierr);
   if(verb>2) {
     NumeredDofMoFEMEntity_multiIndex::iterator it,hi_it;
     for(int ss = 0;ss<2;ss++) {
-      it = numered_dofs[ss]->begin();
-      hi_it = numered_dofs[ss]->end();
+      it = numered_dofs_ptr[ss]->begin();
+      hi_it = numered_dofs_ptr[ss]->end();
       for(;it!=hi_it;it++) {
 	ostringstream zz;
 	zz << ss << " " << "rank " << rAnk << " ";
@@ -275,6 +344,7 @@ PetscErrorCode Core::build_partitioned_problem(MoFEMProblem *problem_ptr,int ver
       }
     }
   }
+
   *build_MoFEM |= 1<<3;
   *build_MoFEM |= 1<<4; // It is assumed that user who uses this function knows what he is doing
   PetscFunctionReturn(0);
