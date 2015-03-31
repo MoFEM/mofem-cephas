@@ -844,171 +844,6 @@ struct HelmholtzElement {
 		}
 	
 	};
-
-	///** \brief operator to calculate left hand side of element mass matrix terms
-	//  * \infroup mofem_helmholtz_elem * Lumped mass matrix does not applied to Hierarchical shape functions.
-	//  */
-	//struct OpMassLsh: public TetElementForcesAndSourcesCore::UserDataOperator {
-	
-	//	BlockData &dAta;
-	//	CommonData &commonData;
-	//	bool useTsB;
-	//	bool cAlculate;
-	//	Mat A;
-	//	OpMassLsh(const string re_field_name,const string im_field_name,Mat _A,BlockData &data,CommonData &common_data,bool calculate):
-	//		TetElementForcesAndSourcesCore::UserDataOperator(re_field_name,im_field_name),
-	//		dAta(data),commonData(common_data),useTsB(false),A(_A),cAlculate(calculate) {}
-	
-	//	ublas::matrix<double> /*M,*/transM;
-	
-	//	/** \brief calculate Helmholtz Mass matrix
-	//	  *
-	//	  * M = int minus N^T K^2 N dOmega^2
-	//	  *
-	//	  */
-	//	PetscErrorCode doWork(
-	//		int row_side,int col_side,
-	//		EntityType row_type,EntityType col_type,
-	//		DataForcesAndSurcesCore::EntData &row_data,
-	//		DataForcesAndSurcesCore::EntData &col_data) {
-	//		PetscFunctionBegin;
-	
-	//		ublas::matrix<double> *M_ptr;
-	//		
-	//		try {
-	
-	//			if(row_data.getIndices().size()==0) PetscFunctionReturn(0);
-	//			if(col_data.getIndices().size()==0) PetscFunctionReturn(0);
-	
-	//			switch(row_type) {
-	//					
-	//				case MBVERTEX:
-	//					switch(col_type) {
-	//						case MBVERTEX:
-	//							M_ptr = &commonData.Ann;
-	//							break;
-	//						case MBTET:
-	//							M_ptr = &commonData.Anv;
-	//							break;
-	//						default:
-	//							SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"row_type = MBVERTEX, error col_type not match");
-	//							break;
-	//					}
-	//					break;
-	//					
-	//				case MBEDGE:
-	//					switch(col_type) {
-	//						case MBVERTEX:
-	//							commonData.Aen.resize(6);
-	//							M_ptr = &commonData.Aen[row_side];
-	//							break;
-	//						case MBTET:
-	//							commonData.Aev.resize(6);
-	//							M_ptr = &commonData.Aev[row_side];
-	//							break;
-	//						case MBEDGE:
-	//							commonData.Aee.resize(6,6);
-	//							M_ptr = &commonData.Aee(row_side,col_side);
-	//							break;
-	//						case MBTRI:
-	//							commonData.Aef.resize(6,4);
-	//							M_ptr = &commonData.Aef(row_side,col_side);
-	//							break;
-	//			
-	//						default:
-	//							SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"row_type = MBEDGE, error col_type not match");
-	//							break;
-	//					}
-	//					break;
-	//					
-	//				case MBTRI:
-	//					switch(col_type) {
-	//						case MBVERTEX:
-	//							commonData.Afn.resize(4);
-	//							M_ptr = &commonData.Afn[row_side];
-	//							break;
-	//						case MBTET:
-	//							commonData.Afv.resize(4);
-	//							M_ptr = &commonData.Afv[row_side];
-	//							break;
-	//						case MBTRI:
-	//							commonData.Aff.resize(4,4);
-	//							M_ptr = &commonData.Aff(row_side,col_side);
-	//							break;
-	//						default:
-	//							SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"row_type = MBTRI, error col_type not match");
-	//							break;	
-	//					}
-	//					break;
-	//					
-	//				case MBTET:
-	//					M_ptr = &commonData.Avv;	
-	//					break;
-	//				default:
-	//					SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"row_type not match");
-	//					break;
-	//					//never should happen 
-	//			}
-	//			
-	//			ublas::matrix<double> &M = *M_ptr;
-	//			
-	//			int nb_row = row_data.getIndices().size();
-	//			int nb_col = col_data.getIndices().size();		
-	//			if(cAlculate) {
-	//			
-	//				M.resize(nb_row,nb_col);
-	//				bzero(&*M.data().begin(),nb_row*nb_col*sizeof(double));
-	//	
-	//				for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
-	//					
-	//					double wAvenumber = dAta.aNgularfreq/dAta.sPeed;
-	//						
-	//					double wAvenUmber = pow(wAvenumber,2.0);
-	//					/* check whether if double wAvenUmber = pow(dAta.aNgularfreq/dAta.sPeed,2.0); takes
-	//					less time the the calculation above */
-	//					double val = -wAvenUmber*getVolume()*getGaussPts()(3,gg);
-	//					if(getHoGaussPtsDetJac().size()>0) {
-	//						val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
-	//					}
-	
-	//					noalias(M) += val*outer_prod( row_data.getN(gg,nb_row),col_data.getN(gg,nb_col) );
-	//					
-	//				}
-	//	
-	//			}
-	//			
-	//			PetscErrorCode ierr;
-	//			if(!useTsB) {
-	//				const_cast<FEMethod*>(getFEMethod())->ts_B = A;
-	//			}
-	//			ierr = MatSetValues(
-	//					   (getFEMethod()->ts_B),
-	//					   nb_row,&row_data.getIndices()[0],
-	//					   nb_col,&col_data.getIndices()[0],
-	//					   &M(0,0),ADD_VALUES); CHKERRQ(ierr);
-	//			
-	//			if(row_side != col_side || row_type != col_type) {
-	//				transM.resize(nb_col,nb_row);
-	//				noalias(transM) = trans(M);
-	//				ierr = MatSetValues(
-	//						   (getFEMethod()->ts_B),
-	//						   nb_col,&col_data.getIndices()[0],
-	//						   nb_row,&row_data.getIndices()[0],
-	//						   &transM(0,0),ADD_VALUES); CHKERRQ(ierr);
-	//			}
-	
-	
-	//		} catch (const std::exception& ex) {
-	//			ostringstream ss;
-	//			ss << "throw in method: " << ex.what() << endl;
-	//			SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
-	//		}
-	
-	
-	//		PetscFunctionReturn(0);
-	//	}
-	
-	//};
 	
 	
 	/** \brief operator for calculate Impedance flux and assemble to right hand side
@@ -1098,18 +933,17 @@ struct HelmholtzElement {
 		FluxData &dAta;
 		bool ho_geometry;
 		bool useTsF;
-		string re_field;
-		string im_field;
+		bool useReal;
 		
-		OpHelmholtzIncidentWave(const string re_field_name,const string im_field_name,BlockData &DATA,FluxData &data,ublas::matrix<double> &ho_coords,bool _ho_geometry = false):
+		OpHelmholtzIncidentWave(const string re_field_name,const string im_field_name,BlockData &DATA,FluxData &data,ublas::matrix<double> &ho_coords,bool use_real,bool _ho_geometry = false):
 			TriElementForcesAndSurcesCore::UserDataOperator(re_field_name,im_field_name),
-			datA(DATA),dAta(data),ho_geometry(_ho_geometry),useTsF(true),re_field(re_field_name),im_field(im_field_name),hoCoords(ho_coords) { }
+			datA(DATA),dAta(data),ho_geometry(_ho_geometry),useTsF(true),hoCoords(ho_coords),useReal(use_real) { }
 		
 		Vec F;
 		OpHelmholtzIncidentWave(const string re_field_name,const string im_field_name,Vec _F,
-						BlockData &DATA,FluxData &data,ublas::matrix<double> &ho_coords,bool _ho_geometry = false):
+						BlockData &DATA,FluxData &data,ublas::matrix<double> &ho_coords,bool use_real,bool _ho_geometry = false):
 			TriElementForcesAndSurcesCore::UserDataOperator(re_field_name,im_field_name),
-			datA(DATA),dAta(data),ho_geometry(_ho_geometry),useTsF(false),F(_F),re_field(re_field_name),im_field(im_field_name),hoCoords(ho_coords) { }
+			datA(DATA),dAta(data),ho_geometry(_ho_geometry),useTsF(false),F(_F),hoCoords(ho_coords),useReal(use_real) { }
 		
 		ublas::vector<FieldData> Nf;
 		
@@ -1138,19 +972,22 @@ struct HelmholtzElement {
 			
 			//cerr << getNormal() << endl;
 			//cerr << getNormals_at_GaussPt() << endl;
+			double wAvenumber = datA.aNgularfreq/datA.sPeed; 
+			unsigned int nb_gauss_pts = data.getN().size1();
 			
 			for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
 				
 				double val = getGaussPts()(2,gg);
 				
 				double flux;
-				double wAvenumber = datA.aNgularfreq/datA.sPeed;  
+				 
 				double iNcidentwave;
 				////////////////////********************************/////////////
-				unsigned int nb_gauss_pts = data.getN().size1();
+				
 				double x,y,z;
 					
 				if(hoCoords.size1() == nb_gauss_pts) {
+
 					double area = norm_2(getNormals_at_GaussPt(gg))*0.5; 
 					val *= area;
 					x = hoCoords(gg,0);
@@ -1167,45 +1004,48 @@ struct HelmholtzElement {
 				const double pi = atan( 1.0 ) * 4.0;
 				double R = sqrt(pow(x,2.0)+pow(y,2.0)+pow(z,2.0)); //radius
 				double theta = atan2(y,x)+2*pi; //the arctan of radians (y/x)
-				//double theta = pi/2; //45 degree
+
 				const double k = wAvenumber;  //Wave number
 				const double a = 0.5;         //radius of the sphere,wait to modify by user
 				const double const1 = k * a;
 				
 				const complex< double > i( 0.0, 1.0 );
 				
-				// magnitude of incident wave
-				const double phi_incident_mag = 2.0;
+				//// magnitude of incident wave
+				const double phi_incident_mag = 1.0;
 				
-				const double tol = 1.0e-10;
-				double max = 0.0;
-				double min = 999999.0;
+				//const double tol = 1.0e-10;
+				//double max = 0.0;
+				//double min = 999999.0;
 				
 				complex< double > result = 0.0;
-				complex< double > prev_result;
+				//complex< double > prev_result;
 				
-				double error = 100.0;
-				unsigned int n = 0; //initialized the infinite series loop
+				//double error = 100.0;
+				//unsigned int n = 0; //initialized the infinite series loop
 				
-				while( error > tol )  //finding the acoustic potential in one single point.
-				{
-					double jn_der = ( n / const1 * sph_bessel( n, const1 ) - sph_bessel( n + 1, const1 ) ) * k;  //The derivative of bessel function
-					//complex< double > hn_der = n / const1 * sph_hankel_1( n, const1 ) - sph_hankel_1( n + 1, const1 );
-					//complex< double > hn_der = 0.5 * ( sph_hankel_1( n - 1, const1 ) -
-					//( sph_hankel_1( n, const1 ) + const1 * sph_hankel_1( n + 1, const1 ) ) / const1 );
-					double Pn = legendre_p( n, cos( theta ) );  //Legendre
-					//complex< double >hn = sph_hankel_1( n, const2 );  //S Hankel first kind function
-					prev_result = result;
-					//result += -k * pow( i, n ) * ( 2.0 * n + 1.0 ) * jn_der * Pn; //edition from acoustic book
-					result -= pow( i, n ) * ( 2.0 * n + 1.0 ) * Pn * jn_der * phi_incident_mag;  //edition from Papers
-					error = abs( abs( result ) - abs( prev_result ) );
-					++n;
-				}
+				//while( error > tol )  //finding the acoustic potential in one single point.
+				//{
+				//	double jn_der = ( n / const1 * sph_bessel( n, const1 ) - sph_bessel( n + 1, const1 ) );  //The derivative of bessel function
+				//	//complex< double > hn_der = n / const1 * sph_hankel_1( n, const1 ) - sph_hankel_1( n + 1, const1 );
+				//	//complex< double > hn_der = 0.5 * ( sph_hankel_1( n - 1, const1 ) -
+				//	//( sph_hankel_1( n, const1 ) + const1 * sph_hankel_1( n + 1, const1 ) ) / const1 );
+				//	double Pn = legendre_p( n, cos( theta ) );  //Legendre
+				//	//complex< double >hn = sph_hankel_1( n, const2 );  //S Hankel first kind function
+				//	prev_result = result;
+				//	//result += -k * pow( i, n ) * ( 2.0 * n + 1.0 ) * jn_der * Pn; //edition from acoustic book
+				//	result -= pow( i, n ) * ( 2.0 * n + 1.0 ) * Pn * jn_der;  //edition from Papers
+				//	error = abs( abs( result ) - abs( prev_result ) );
+				//	++n;
+				//}
 				/**         **/
-				if(re_field.compare(0,6,"rePRES")==0){
+				
+				result = i * k * cos( theta ) * exp( i * k * R * cos( theta ) ); //derivative of incident wave
+				
+				
+				if(useReal){
 					iNcidentwave = std::real(result);
-				} else if(re_field.compare(0,6,"imPRES")==0)
-				{
+				} else if(!useReal) {
 					iNcidentwave = std::imag(result);
 				}
 				
@@ -1770,8 +1610,8 @@ struct HelmholtzElement {
 		
 		for(;sit!=setOfFluxes.end();sit++) {
 			//add finite element
-			feIncidentWave.get_op_to_do_Rhs().push_back(new OpHelmholtzIncidentWave(re_field_name,re_field_name,F,blockData,sit->second,hoCoordsTri,ho_geometry));
-			feIncidentWave.get_op_to_do_Rhs().push_back(new OpHelmholtzIncidentWave(im_field_name,im_field_name,F,blockData,sit->second,hoCoordsTri,ho_geometry));
+			feIncidentWave.get_op_to_do_Rhs().push_back(new OpHelmholtzIncidentWave(re_field_name,re_field_name,F,blockData,sit->second,hoCoordsTri,true,ho_geometry));
+			feIncidentWave.get_op_to_do_Rhs().push_back(new OpHelmholtzIncidentWave(im_field_name,im_field_name,F,blockData,sit->second,hoCoordsTri,false,ho_geometry));
 
 		}
 		PetscFunctionReturn(0);

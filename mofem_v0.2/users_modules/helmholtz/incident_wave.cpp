@@ -45,10 +45,10 @@
 
 using namespace std;
 using namespace boost::math;
-void error1( const string& msg )
-{
-	throw( runtime_error( msg ) );
-}
+//void error1( const string& msg )
+//{
+//	throw( runtime_error( msg ) );
+//}
 
 
 namespace bio = boost::iostreams;
@@ -279,13 +279,13 @@ int main(int argc, char *argv[]) {
 	  }
   }
   
-  //Extract the data output to .txt file.
-  std::string filename("scattered_sphere_outputs.txt" );
-  static ofstream ofs( filename.c_str() ); //put the data from cpu into file
-  if( !ofs ){
-  error1( "Error opening file" );}
-  ofs.precision( 18 );
-  cout.precision( 18 );
+  ////Extract the data output to .txt file.
+  //std::string filename("scattered_sphere_outputs.txt" );
+  //static ofstream ofs( filename.c_str() ); //put the data from cpu into file
+  //if( !ofs ){
+  //error1( "Error opening file" );}
+  //ofs.precision( 18 );
+  //cout.precision( 18 );
 
   /* this function compute the scattered field of helmholtz operator */
   struct AnaliticalFunction {
@@ -459,9 +459,9 @@ int main(int argc, char *argv[]) {
   
   
 
-  //if(pcomm->rank()==0) {
-  rval = moab.write_file("impinging_numerical.h5m"); CHKERR_PETSC(rval);
-  //}
+  ////if(pcomm->rank()==0) {
+  //rval = moab.write_file("impinging_numerical.h5m"); CHKERR_PETSC(rval);
+  ////}
   //destroy the KSP solvers
   ierr = MatDestroy(&A); CHKERRQ(ierr);
   ierr = VecDestroy(&F); CHKERRQ(ierr);
@@ -474,13 +474,10 @@ int main(int argc, char *argv[]) {
   ierr = post_proc1.addFieldValuesPostProc("rePRES"); CHKERRQ(ierr);
   //ierr = post_proc1.addFieldValuesGradientPostProc("rePRES"); CHKERRQ(ierr);
   ierr = post_proc1.addFieldValuesPostProc("imPRES"); CHKERRQ(ierr);
-  //ierr = post_proc1.addFieldValuesGradientPostProc("imPRES"); CHKERRQ(ierr);
   
   if(mField.check_field("reEX") && mField.check_field("imEX")) {
 	ierr = post_proc1.addFieldValuesPostProc("reEX"); CHKERRQ(ierr);
-	//ierr = post_proc1.addFieldValuesGradientPostProc("reEX"); CHKERRQ(ierr);
 	ierr = post_proc1.addFieldValuesPostProc("imEX"); CHKERRQ(ierr);
-	//ierr = post_proc1.addFieldValuesGradientPostProc("imEX"); CHKERRQ(ierr);
 	
 	ierr = post_proc1.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
 	ierr = mField.loop_finite_elements("ACOUSTIC_PROBLEM","HELMHOLTZ_FE",post_proc1); CHKERRQ(ierr);

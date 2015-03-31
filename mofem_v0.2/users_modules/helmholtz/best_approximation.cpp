@@ -342,7 +342,6 @@ int main(int argc, char *argv[]) {
 	  //for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,"MAT_HELMHOLTZ",it) {
 	  //for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
 	
-		//cerr << "AAA\n";
 		//Get block name
 		//string name = it->get_Cubit_name();
 		//if (name.compare(0,13,"MAT_HELMHOLTZ") == 0)
