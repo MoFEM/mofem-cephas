@@ -312,7 +312,6 @@ int main(int argc, char *argv[]) {
 		  const complex< double > i( 0.0, 1.0 );
 		  complex< double > result = 0.0;
 		  
-		  cout << "\n theta = \n" << theta << endl;
 		  // magnitude of incident wave
 		  //const double phi_incident_mag = 3.0;
 		  	  
