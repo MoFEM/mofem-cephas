@@ -88,9 +88,8 @@ int main(int argc, char *argv[]) {
   if (strcmp ("true",impedance ) == 0) {useImpedance = true;}
   else if(strcmp ("false",impedance ) == 0) {useImpedance = false;}
   
-  double theta;
-  int nmax = 1;
-  ierr = ierr = PetscOptionsGetRealArray(PETSC_NULL,"-wave_direction",theta,&nmax,&flg); CHKERRQ(ierr);
+  static double theta;
+  ierr = ierr = PetscOptionsGetReal(PETSC_NULL,"-wave_direction",&theta,&flg); CHKERRQ(ierr);
   if(flg != PETSC_TRUE) {
 	  SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -wave_direction (between [0 ~ 2pi])");
   }
@@ -311,7 +310,9 @@ int main(int argc, char *argv[]) {
 		  const double k = wAvenumber;  //Wave number
 		  
 		  const complex< double > i( 0.0, 1.0 );
+		  complex< double > result = 0.0;
 		  
+		  cout << "\n theta = \n" << theta << endl;
 		  // magnitude of incident wave
 		  //const double phi_incident_mag = 3.0;
 		  	  

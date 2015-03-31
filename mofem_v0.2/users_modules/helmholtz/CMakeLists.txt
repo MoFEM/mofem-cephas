@@ -81,6 +81,30 @@ target_link_libraries(best_approximation
   mofem_cblas
   ${MoFEM_PROJECT_LIBS})
 
+add_executable(wave_guide_analytical ${UM_SOURCE_DIR}/helmholtz/wave_guide_analytical.cpp)
+target_link_libraries(wave_guide_analytical
+  mofem_finite_element_library
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_third_party                                                                                                                    
+  mofem_cblas
+  ${MoFEM_PROJECT_LIBS})
+
+add_executable(wave_guide_numerical ${UM_SOURCE_DIR}/helmholtz/wave_guide_numerical.cpp)
+target_link_libraries(wave_guide_numerical
+  mofem_finite_element_library
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_third_party
+  mofem_cblas
+  ${MoFEM_PROJECT_LIBS})
+
 add_executable(best_approximation2 ${UM_SOURCE_DIR}/helmholtz/best_approximation2.cpp)
 target_link_libraries(best_approximation2
   mofem_finite_element_library

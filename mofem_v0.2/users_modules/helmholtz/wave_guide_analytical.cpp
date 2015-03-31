@@ -56,7 +56,7 @@ struct MyFunApprox_re {
 	 bool useReal;
 	 
 	 MyFunApprox_re(double wavenumber,double theta,bool use_real):
-		 wAvenumber(wavenumber),tHheta(theta)useReal(use_real) {}
+		 wAvenumber(wavenumber),tHeta(theta),useReal(use_real) {}
 	 ~MyFunApprox_re() {}
 	 
 	ublas::vector<double>& operator()(double x, double y, double z) {
@@ -66,7 +66,7 @@ struct MyFunApprox_re {
 		const double k = wAvenumber;  //Wave number
 
 		const complex< double > i( 0.0, 1.0 );
-		
+		complex< double > result = 0.0;
 		// magnitude of incident wave
 		//const double phi_incident_mag = 3.0;
 		
@@ -120,9 +120,8 @@ int main(int argc, char *argv[]) {
 		SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
 	}
 	
-	double theta;
-	int nmax = 1;
-	ierr = ierr = PetscOptionsGetRealArray(PETSC_NULL,"-wave_direction",theta,&nmax,&flg); CHKERRQ(ierr);
+	static double theta;
+	ierr = ierr = PetscOptionsGetReal(PETSC_NULL,"-wave_direction",&theta,&flg); CHKERRQ(ierr);
 	if(flg != PETSC_TRUE) {
 		SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -wave_direction (between [0 ~ 2pi])");
 	}
