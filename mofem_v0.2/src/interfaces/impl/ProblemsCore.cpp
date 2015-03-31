@@ -185,19 +185,40 @@ PetscErrorCode Core::build_partitioned_problem(MoFEMProblem *problem_ptr,bool sq
       local_idx++;
       unsigned char pstatus = mit->get_pstatus(); 
       //check id dof is shared
-      if( (pstatus & (1<<1))||(pstatus & (1<<2)) ) {
-	set<unsigned int> procs;
-	rval = pcomm->get_comm_procs(procs); CHKERR_PETSC(rval);
-	set<unsigned int>::iterator pit = procs.begin();
-	for(;pit!=procs.end();pit++) {
-	  //if(rAnk == 1) cerr << (int)*pit << endl;
-	  if(*pit == (unsigned int)rAnk) continue;
-	  if(ss == 0) {
-	    ids_data_packed_rows[*pit].push_back(IdxDataType(mit->get_global_unique_id(),glob_idx));
-	  } else {
-	    ids_data_packed_cols[*pit].push_back(IdxDataType(mit->get_global_unique_id(),glob_idx));
+      if(pstatus>0) {
+
+	EntityHandle entity = mit->get_ent();
+	int sharing_procs[MAX_SHARING_PROCS];
+	if(pstatus & PSTATUS_MULTISHARED) {
+
+	  rval = moab.tag_get_data(pcomm->sharedps_tag(),&entity,1,sharing_procs); CHKERR_PETSC(rval);
+	  if(sharing_procs[0] == -1) {
+	    SETERRQ(PETSC_COMM_SELF,MOFEM_IMPOSIBLE_CASE,"impossible case");
 	  }
+	  for(int proc = 0; proc<MAX_SHARING_PROCS && -1 != sharing_procs[proc]; proc++) {
+	    if(ss == 0) {
+	      ids_data_packed_rows[sharing_procs[proc]].push_back(IdxDataType(mit->get_global_unique_id(),glob_idx));
+	    } else {
+	      ids_data_packed_cols[sharing_procs[proc]].push_back(IdxDataType(mit->get_global_unique_id(),glob_idx));
+	    }
+	  }
+
+	} else if(pstatus & PSTATUS_SHARED) {
+
+	  rval = moab.tag_get_data(pcomm->sharedp_tag(),&entity,1,sharing_procs); CHKERR_PETSC(rval);
+	  if(sharing_procs[0] == -1) {
+	    SETERRQ(PETSC_COMM_SELF,MOFEM_IMPOSIBLE_CASE,"impossible case");
+	  }
+	  if(ss == 0) {
+	    ids_data_packed_rows[sharing_procs[0]].push_back(IdxDataType(mit->get_global_unique_id(),glob_idx));
+	  } else {
+	    ids_data_packed_cols[sharing_procs[0]].push_back(IdxDataType(mit->get_global_unique_id(),glob_idx));
+	  }
+
+	} else {
+	  SETERRQ(PETSC_COMM_SELF,MOFEM_IMPOSIBLE_CASE,"impossible case");
 	}
+
       }
     }
   }
@@ -207,11 +228,11 @@ PetscErrorCode Core::build_partitioned_problem(MoFEMProblem *problem_ptr,bool sq
   vector<int> ilengths_rows(sIze),ilengths_cols(sIze);
   ilengths_rows.clear(); 
   ilengths_cols.clear();
-  for(int rr = 0;rr<sIze;rr++) {
-    ilengths_rows[rr] = ids_data_packed_rows[rr].size()*data_block_size;
-    ilengths_cols[rr] = ids_data_packed_cols[rr].size()*data_block_size;
-    if(ilengths_rows[rr]>0) nsends_rows++;
-    if(ilengths_cols[rr]>0) nsends_cols++;
+  for(int proc = 0;proc<sIze;proc++) {
+    ilengths_rows[proc] = ids_data_packed_rows[proc].size()*data_block_size;
+    ilengths_cols[proc] = ids_data_packed_cols[proc].size()*data_block_size;
+    if(ilengths_rows[proc]) nsends_rows++;
+    if(ilengths_cols[proc]) nsends_cols++;
   }
 
   MPI_Status *status;
@@ -257,7 +278,7 @@ PetscErrorCode Core::build_partitioned_problem(MoFEMProblem *problem_ptr,bool sq
   for(int proc=0,kk=0; proc<sIze; proc++) {
     if(!ilengths_rows[proc]) continue; // no message to send to this proc
     ierr = MPI_Isend(
-      &(ids_data_packed_cols[proc])[0], // buffer to send
+      &(ids_data_packed_rows[proc])[0], // buffer to send
       ilengths_rows[proc], // message length
       MPIU_INT,proc, // tip proc
       tag_row,comm,s_waits_row+kk); CHKERRQ(ierr);
@@ -295,20 +316,25 @@ PetscErrorCode Core::build_partitioned_problem(MoFEMProblem *problem_ptr,bool sq
       data_procs = rbuf_row;
     } else {
       nrecvs = nrecvs_cols;
-      olengths = &olengths_cols[0];
+      olengths = olengths_cols;
       data_procs = rbuf_col;
     }
+
+    IdxDataType *idx_data;
+    GlobalUId uid;
+    NumeredDofMoFEMEntity_multiIndex::iterator dit;
     for(int kk=0; kk<nrecvs; kk++) {
 
       int len = olengths[kk];
       int *data_from_proc = data_procs[kk];
       for(int dd = 0;dd<len;dd+=data_block_size) {
-	IdxDataType *idx_data = (IdxDataType*)(&data_from_proc[dd]);
-	GlobalUId uid;
+	idx_data = (IdxDataType*)(&data_from_proc[dd]);
 	bcopy(idx_data->uId,&uid,128);
-	int global_idx = idx_data->globalDof;
-	NumeredDofMoFEMEntity_multiIndex::iterator dit;
 	dit = numered_dofs_ptr[ss]->find(uid);
+	if(dit == numered_dofs_ptr[ss]->end()) {
+	  SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"dof not found");
+	}
+	int global_idx = idx_data->globalDof;
 	bool success;
 	success = numered_dofs_ptr[ss]->modify(dit,NumeredDofMoFEMEntity_mofem_index_change(global_idx));
 	if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
@@ -330,7 +356,10 @@ PetscErrorCode Core::build_partitioned_problem(MoFEMProblem *problem_ptr,bool sq
   ierr = PetscFree(status); CHKERRQ(ierr);
 
   ierr = print_partitioned_problem(problem_ptr,verb); CHKERRQ(ierr);
+  ierr = debug_partitioned_problem(problem_ptr,verb); CHKERRQ(ierr);
+
   if(verb>2) {
+
     NumeredDofMoFEMEntity_multiIndex::iterator it,hi_it;
     for(int ss = 0;ss<2;ss++) {
       it = numered_dofs_ptr[ss]->begin();
@@ -341,7 +370,9 @@ PetscErrorCode Core::build_partitioned_problem(MoFEMProblem *problem_ptr,bool sq
 	zz << *it << endl;
 	PetscSynchronizedPrintf(comm,zz.str().c_str());
       }
+      PetscSynchronizedFlush(comm,PETSC_STDOUT); 
     }
+
   }
 
   *build_MoFEM |= 1<<3;

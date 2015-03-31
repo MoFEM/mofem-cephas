@@ -95,7 +95,7 @@ int main(int argc, char *argv[]) {
       2,&order,PETSC_NULL); CHKERRQ(ierr);
   ierr = PetscOptionsBool("-my_is_partitioned", 
     "set if mesh is partitioned (this result that each process keeps only part of the mes","",
-    PETSC_FALSE,&is_partitioned,PETSC_NULL); CHKERRQ(ierr);
+    PETSC_TRUE,&is_partitioned,PETSC_NULL); CHKERRQ(ierr);
   ierr = PetscOptionsString("-my_block_config",
     "elastic configure file name","",
     "block_conf.in",block_config_file,255,&flg_block_config); CHKERRQ(ierr);
@@ -391,7 +391,7 @@ int main(int argc, char *argv[]) {
   ierr = KSPCreate(PETSC_COMM_WORLD,&solver); CHKERRQ(ierr);
   ierr = KSPSetOperators(solver,Aij,Aij); CHKERRQ(ierr);
   ierr = KSPSetFromOptions(solver); CHKERRQ(ierr);
-  /*{
+  {
     //from PETSc example ex42.c
     PetscBool same = PETSC_FALSE;
     PC pc;
@@ -400,7 +400,7 @@ int main(int argc, char *argv[]) {
     if (same) {
       ierr = PCMGSetUpViaApproxOrders(pc,&m_field,"ELASTIC_PROB"); CHKERRQ(ierr);
     }
-  }*/
+  }
   ierr = KSPSetUp(solver); CHKERRQ(ierr);
 
 

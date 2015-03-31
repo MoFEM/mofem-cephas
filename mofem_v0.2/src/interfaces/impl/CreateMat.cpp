@@ -134,14 +134,20 @@ PetscErrorCode CoreTemplates::create_Mat(
 	      NumeredDofMoFEMEntity_multiIndex_uid_view_hashed::iterator cvit;
 	      cvit = dofs_col_view.begin();
 	      for(;cvit!=dofs_col_view.end();cvit++) {
-		int idx = Tag::get_index(*cvit);
-		dofs_vec.push_back(idx);
-		if(idx<0) {
-		  SETERRQ(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,"data inconsistency");
+		int col_idx = Tag::get_index(*cvit);
+		if(col_idx<0) {
+		  ostringstream zz;
+		  zz << "rank " << rAnk << " ";
+		  zz << *(*cvit) << endl;
+		  SETERRQ(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,zz.str().c_str());
 		}
-		if(idx>=p_miit->get_nb_dofs_col()) {
-		  SETERRQ(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,"data inconsistency");
+		if(col_idx>=p_miit->get_nb_dofs_col()) {
+		  ostringstream zz;
+		  zz << "rank " << rAnk << " "; 
+		  zz << *(*cvit) << endl;
+		  SETERRQ(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,zz.str().c_str());
 		}
+		dofs_vec.push_back(col_idx);
 	      }
 	    }
 	  }
