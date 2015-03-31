@@ -38,8 +38,6 @@ int main(int argc, char *argv[]) {
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
-  const char *option;
-  option = "";
 
   //register new dm type, i.e. mofem
   DMType dm_name = "DMMOFEM";
@@ -53,7 +51,16 @@ int main(int argc, char *argv[]) {
   //read mesh and create moab and mofem datastrutures
   moab::Core mb_instance;
   Interface& moab = mb_instance;
+
+  ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
+  if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
+  const char *option;
+  option = "PARALLEL=BCAST_DELETE;PARALLEL_RESOLVE_SHARED_ENTS;PARTITION=PARALLEL_PARTITION;";
   rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
+  rval = pcomm->resolve_shared_ents(0,3,0); CHKERR_PETSC(rval);
+  rval = pcomm->resolve_shared_ents(0,3,1); CHKERR_PETSC(rval);
+  rval = pcomm->resolve_shared_ents(0,3,2); CHKERR_PETSC(rval);
+
   MoFEM::Core core(moab);
   FieldInterface& m_field = core;
 

@@ -162,7 +162,7 @@ PetscErrorCode Core::build_partitioned_problem(MoFEMProblem *problem_ptr,bool sq
   vector<vector<IdxDataType> > ids_data_packed_rows(sIze),ids_data_packed_cols(sIze);
   
   // number of messages that are to be sent.
-  int nsends_rows = 0,nsends_cols = 0;
+
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
 
   for(int ss = 0;ss<2;ss++) {
@@ -182,28 +182,27 @@ PetscErrorCode Core::build_partitioned_problem(MoFEMProblem *problem_ptr,bool sq
       success = numered_dofs_ptr[ss]->modify(
 	numered_dofs_ptr[ss]->project<0>(mit),NumeredDofMoFEMEntity_part_change(mit->get_part(),glob_idx));
       if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-
       local_idx++;
       unsigned char pstatus = mit->get_pstatus(); 
       //check id dof is shared
-      if( (pstatus & 1<<1) || (pstatus & 1<<2) ) {
+      if( (pstatus & (1<<1))||(pstatus & (1<<2)) ) {
 	set<unsigned int> procs;
 	rval = pcomm->get_comm_procs(procs); CHKERR_PETSC(rval);
 	set<unsigned int>::iterator pit = procs.begin();
 	for(;pit!=procs.end();pit++) {
+	  //if(rAnk == 1) cerr << (int)*pit << endl;
 	  if(*pit == (unsigned int)rAnk) continue;
 	  if(ss == 0) {
 	    ids_data_packed_rows[*pit].push_back(IdxDataType(mit->get_global_unique_id(),glob_idx));
-	    nsends_rows++;
 	  } else {
 	    ids_data_packed_cols[*pit].push_back(IdxDataType(mit->get_global_unique_id(),glob_idx));
-	    nsends_cols++;
 	  }
 	}
       }
     }
   }
 
+  int nsends_rows = 0,nsends_cols = 0;
   // Non zero ilengths[i] represent a message to i of length ilengths[i].
   vector<int> ilengths_rows(sIze),ilengths_cols(sIze);
   ilengths_rows.clear(); 
@@ -211,6 +210,8 @@ PetscErrorCode Core::build_partitioned_problem(MoFEMProblem *problem_ptr,bool sq
   for(int rr = 0;rr<sIze;rr++) {
     ilengths_rows[rr] = ids_data_packed_rows[rr].size()*data_block_size;
     ilengths_cols[rr] = ids_data_packed_cols[rr].size()*data_block_size;
+    if(ilengths_rows[rr]>0) nsends_rows++;
+    if(ilengths_cols[rr]>0) nsends_cols++;
   }
 
   MPI_Status *status;
@@ -224,9 +225,7 @@ PetscErrorCode Core::build_partitioned_problem(MoFEMProblem *problem_ptr,bool sq
   // Computes the number of messages a node expects to receive
   int nrecvs_rows;	// number of messages received
   ierr = PetscGatherNumberOfMessages(comm,NULL,&ilengths_rows[0],&nrecvs_rows); CHKERRQ(ierr);
-  if(nrecvs_rows % data_block_size) {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
-  }
+  //cerr << nrecvs_rows << endl;
 
   // Computes info about messages that a MPI-node will receive, including (from-id,length) pairs for each message.
   int *onodes_rows;	// list of node-ids from which messages are expected
