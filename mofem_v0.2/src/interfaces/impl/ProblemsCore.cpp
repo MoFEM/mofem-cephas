@@ -833,30 +833,47 @@ PetscErrorCode Core::debug_partitioned_problem(const MoFEMProblem *problem_ptr,i
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   if(debug>0) {
+
     typedef NumeredDofMoFEMEntity_multiIndex::index<Idx_mi_tag>::type NumeredDofMoFEMEntitys_by_idx;
     NumeredDofMoFEMEntitys_by_idx::iterator dit,hi_dit;
-    dit = problem_ptr->numered_dofs_rows.get<Idx_mi_tag>().begin();
-    hi_dit = problem_ptr->numered_dofs_rows.get<Idx_mi_tag>().end();
-    for(;dit!=hi_dit;dit++) {
-      if(dit->get_part()==(unsigned int)rAnk) {
-	if(dit->get_petsc_local_dof_idx()<0) {
-	  ostringstream ss;
-	  ss << "rank " << rAnk << " " << *dit;
-	  SETERRQ1(PETSC_COMM_SELF,1,"local dof index for row not set\n %s",ss.str().c_str());
+    const NumeredDofMoFEMEntitys_by_idx* numered_dofs_ptr[] = {
+        &(problem_ptr->numered_dofs_rows.get<Idx_mi_tag>()),
+	&(problem_ptr->numered_dofs_rows.get<Idx_mi_tag>()) };
+    int* nbdof_ptr[] = {
+      problem_ptr->tag_nbdof_data_row, problem_ptr->tag_nbdof_data_col };
+    int* local_nbdof_ptr[] = {
+      problem_ptr->tag_local_nbdof_data_row, problem_ptr->tag_local_nbdof_data_col };
+
+    for(int ss = 0;ss<2;ss++) {
+      dit = numered_dofs_ptr[ss]->begin();
+      hi_dit = problem_ptr->numered_dofs_rows.get<Idx_mi_tag>().end();
+      for(;dit!=hi_dit;dit++) {
+	if(dit->get_part()==(unsigned int)rAnk) {
+	  if(dit->get_petsc_local_dof_idx()<0) {
+	    ostringstream ss;
+	    ss << "rank " << rAnk << " " << *dit;
+	    SETERRQ1(PETSC_COMM_SELF,MOFEM_IMPOSIBLE_CASE,"local dof index for row not set, i.e. has negative value\n %s",ss.str().c_str());
+	  }
+	  if(dit->get_petsc_local_dof_idx()>=*local_nbdof_ptr[ss]) {
+	    ostringstream ss;
+	    ss << "rank " << rAnk << " " << *dit;
+	    SETERRQ1(PETSC_COMM_SELF,MOFEM_IMPOSIBLE_CASE,"local dofs out of range\n %s",ss.str().c_str());
+	  }
+	} else {
+	  if(dit->get_petsc_gloabl_dof_idx()<0) {
+	    ostringstream ss;
+	    ss << "rank " << rAnk << " " << *dit;
+	    SETERRQ1(PETSC_COMM_SELF,MOFEM_IMPOSIBLE_CASE,"global dof index for row not set, i.e. has negative value\n %s",ss.str().c_str());
+	  }
+	  if(dit->get_petsc_gloabl_dof_idx()>=*nbdof_ptr[ss]) {
+	    ostringstream ss;
+	    ss << "rank " << rAnk << " " << *dit;
+	    SETERRQ1(PETSC_COMM_SELF,MOFEM_IMPOSIBLE_CASE,"global dofs out of range\n %s",ss.str().c_str());
+	  }
 	}
       }
     }
-    dit = problem_ptr->numered_dofs_cols.get<Idx_mi_tag>().begin();
-    hi_dit = problem_ptr->numered_dofs_cols.get<Idx_mi_tag>().end();
-    for(;dit!=hi_dit;dit++) {
-      if(dit->get_part()==(unsigned int)rAnk) {
-	if(dit->get_petsc_local_dof_idx()<0) {
-	  ostringstream ss;
-	  ss << "rank " << rAnk << " " << *dit;
-	  SETERRQ1(PETSC_COMM_SELF,1,"local dof index for col not set\n %s",ss.str().c_str());
-	}
-      }
-    }
+
   }
   PetscFunctionReturn(0);
 }
