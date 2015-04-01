@@ -307,6 +307,13 @@ struct FieldInterface: public FieldUnknownInterface {
 
   virtual PetscErrorCode rebuild_database(int verb = -1) = 0;
 
+  /** synchronise entity range on processors (collective)
+
+    collective - need tu be run on all processors in communicator
+
+    */
+  PetscErrorCode synchronise_entities(Range &ent);
+
   /**
   * Create finite elements based from entities in meshses. Throw error if entity is not in database
   * 
@@ -1028,18 +1035,27 @@ struct FieldInterface: public FieldUnknownInterface {
    */
   virtual PetscErrorCode clear_problems(int verb = -1) = 0;
 
-  /** \brief build problem data structures, assuming that mesh is partitioned
+  /** \brief build problem data structures, assuming that mesh is partitioned (collective)
    * \ingroup mofem_problems
+
+   collective - need tu be run on all processors in communicator
+
    */
   virtual PetscErrorCode build_partitioned_problem(const string &name,bool square_matrix = true,int verb = -1) = 0;
 
-  /** \brief build problem data structures, assuming that mesh is partitioned
+  /** \brief build problem data structures, assuming that mesh is partitioned (collective)
    * \ingroup mofem_problems
+
+   collective - need tu be run on all processors in communicator
+
    */
   virtual PetscErrorCode build_partitioned_problem(MoFEMProblem *problem_ptr,bool square_matrix = true,int verb = -1) = 0;
 
-  /** \brief build problem data structures, assuming that mesh is partitioned
+  /** \brief build problem data structures, assuming that mesh is partitioned (collective)
    * \ingroup mofem_problems
+
+   collective - need tu be run on all processors in communicator
+
    */
   virtual PetscErrorCode build_partitioned_problems(int verb = -1) = 0;
 
@@ -1050,7 +1066,7 @@ struct FieldInterface: public FieldUnknownInterface {
    */
   virtual PetscErrorCode simple_partition_problem(const string &name,int verb = -1) = 0;
 
-  /** \brief partition problem dofs
+  /** \brief partition problem dofs (collective)
    * \ingroup mofem_problems
    *
    * \param name problem name
@@ -1131,9 +1147,11 @@ struct FieldInterface: public FieldUnknownInterface {
    */
   virtual PetscErrorCode VecCreateSeq(const string &name,RowColData rc,Vec *V) = 0;
 
-  /** \brief create ghost vector for problem
+  /** \brief create ghost vector for problem (collective)
    * \ingroup mofem_vectors
-   *
+
+  collective - need tu be run on all processors in communicator
+
    * \param name problem name
    * \param RowColData specify what data is taken from Row, Col or Data
    * \param Vec the vector where data is stored
@@ -1141,7 +1159,7 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode VecCreateGhost(const string &name,RowColData rc,Vec *V) = 0;
 
   /**
-    * \brief create Mat (MPIAIJ) for problem
+    * \brief create Mat (MPIAIJ) for problem (collective)
     *
     * \param name of the problem
     */
@@ -1155,7 +1173,7 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode MatCreateSeqAIJWithArrays(const string &name,Mat *Aij,PetscInt **i,PetscInt **j,PetscScalar **v,int verb = -1) = 0;
 
   /** 
-    * \brief create IS for given order range 
+    * \brief create IS for given order range (collective)
     * \ingroup mofem_vectors
 
     * \param problem name
@@ -1168,7 +1186,7 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode ISCreateProblemOrder(const string &problem,RowColData rc,int min_order,int max_order,IS *is,int verb = -1) = 0;
 
   /** 
-    * \brief create IS for given problem, field and rank range
+    * \brief create IS for given problem, field and rank range (collective)
     * \ingroup mofem_vectors
     
     * \param problem name
@@ -1182,7 +1200,7 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode ISCreateProblemFieldAndRank(const string &problem,RowColData rc,const string &field,int min_rank,int max_rank,IS *is,int verb = -1) = 0;
 
   /**
-    * \brief create scatter for vectors form one to another problem
+    * \brief create scatter for vectors form one to another problem (collective)
     * \ingroup mofem_vectors
     *
     * User specify what name of field on one problem is scattered to another.
@@ -1202,7 +1220,7 @@ struct FieldInterface: public FieldUnknownInterface {
     Vec yin,const string &y_problem,const string &y_field_name,RowColData y_rc,VecScatter *newctx,int verb = -1) = 0;
 
   /**
-    * \brief create scatter for vectors form one to another problem
+    * \brief create scatter for vectors form one to another problem (collective)
     * \ingroup mofem_vectors
     *
     * \param xin vector
@@ -1264,9 +1282,11 @@ struct FieldInterface: public FieldUnknownInterface {
   }
 
   /** 
-    * \brief set values of vector from/to meshdatabase
+    * \brief set values of vector from/to mesh database (collective)
     * \ingroup mofem_vectors
-    *
+
+    collective - need tu be run on all processors in communicator
+
     * \param pointer to porblem struture
     * \param RowColData for row or column (i.e. Row,Col)
     * \param V vector
@@ -1287,9 +1307,11 @@ struct FieldInterface: public FieldUnknownInterface {
   }
 
   /** 
-    * \brief set values of vector from/to meshdatabase
+    * \brief set values of vector from/to mesh database (collective)
     * \ingroup mofem_vectors
-    *
+
+    collective - need tu be run on all processors in communicator
+
     * \param name of the problem
     * \param RowColData for row or column (i.e. Row,Col)
     * \param V vector
@@ -1361,9 +1383,11 @@ struct FieldInterface: public FieldUnknownInterface {
     PetscFunctionReturn(0);
   }
 
-  /** \brief Copy vector to field which is not part of the problem
+  /** \brief Copy vector to field which is not part of the problem (collective)
     * \ingroup mofem_vectors
-    *
+    
+    collective - need tu be run on all processors in communicator
+
     * \param problem_ptr pointer to problem
     * \param field_name field name used for indexing petsc vectors used in the problem
     * \param cpy_field field name where data from vector are stored
@@ -1387,9 +1411,11 @@ struct FieldInterface: public FieldUnknownInterface {
     PetscFunctionReturn(0);
   }
 
-  /** \brief Copy vector to field which is not part of the problem
+  /** \brief Copy vector to field which is not part of the problem (collective)
     * \ingroup mofem_vectors
-    *
+    
+    collective - need tu be run on all processors in communicator
+
     * \param name problem name
     * \param field_name field name used for indexing petsc vectors used in the problem
     * \param cpy_field field name where data from vector are stored
@@ -1750,7 +1776,7 @@ struct FieldInterface: public FieldUnknownInterface {
     * \brief get field data from entity and field
     * \ingroup mofem_field
     * 
-    * this funciont is not recommended to be used in finite elemeny implementation
+    * this function is not recommended to be used in finite element implementation
     *
     */
   template <typename DIT>
