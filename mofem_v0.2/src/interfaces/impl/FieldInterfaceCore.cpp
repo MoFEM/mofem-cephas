@@ -673,52 +673,55 @@ PetscErrorCode Core::set_field_order(const Range &ents,const BitFieldId id,const
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   *build_MoFEM = 0;
+
   //check field & meshset
   typedef MoFEMField_multiIndex::index<BitFieldId_mi_tag>::type field_set_by_id;
   const field_set_by_id &set_id = moabFields.get<BitFieldId_mi_tag>();
   field_set_by_id::iterator miit = set_id.find(id);
-  if(miit==set_id.end()) SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"no id found"); 
-  EntityHandle idm = no_handle;
+  if(miit==set_id.end()) SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"no filed found"); 
+  EntityHandle idm;
   try {
    idm = get_field_meshset(id);
   } catch (const char* msg) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_CHAR_THROW,msg);
   }
-  //itersection with field meshset
+
+  //intersection with field meshset
   Range ents_of_id_meshset;
   rval = moab.get_entities_by_handle(idm,ents_of_id_meshset,false); CHKERR_PETSC(rval);
   Range ents_ = intersect(ents,ents_of_id_meshset);
   if(verb>1) {
     PetscSynchronizedPrintf(comm,"nb. of ents for order change in the field %d\n",ents_.size());
   }
-  vector<const void*> tag_data_order(ents.size());
-  rval = moab.tag_get_by_ptr(miit->th_AppOrder,ents,&tag_data_order[0]); CHKERR_PETSC(rval);
+
   //ent view by field id (in set all MoabEnts has the same FieldId)
   typedef MoFEMEntity_multiIndex::index<BitFieldId_mi_tag>::type ent_set_by_id;
   ent_set_by_id& set = entsMoabField.get<BitFieldId_mi_tag>();
-  ent_set_by_id::iterator miit2 = set.lower_bound(id);
+  ent_set_by_id::iterator eiit = set.lower_bound(id);
   MoFEMEntity_multiIndex_ent_view ents_id_view;
-  if(miit2 != set.end()) {
-    ent_set_by_id::iterator hi_miit2 = set.upper_bound(id);
-    for(;miit2!=hi_miit2;miit2++) {
-      ents_id_view.insert(&*miit2);
+  if(eiit != set.end()) {
+    ent_set_by_id::iterator hi_eiit = set.upper_bound(id);
+    for(;eiit!=hi_eiit;eiit++) {
+      ents_id_view.insert(&*eiit);
     }
   }
   if(verb>1) {
     PetscSynchronizedPrintf(comm,"nb. of ents in the multi index field %d\n",ents_id_view.size());
   }
+
   //loop over ents
   int nb_ents_set_order_up = 0;
   int nb_ents_set_order_down = 0;
   int nb_ents_set_order_new = 0;
   Range::iterator eit = ents_.begin();
   for(unsigned int ee = 0;ee<ents_.size();ee++,eit++) {
+
     //sanity check
     switch(miit->get_space()) {
       case H1:
 	if(moab.type_from_handle(*eit)==MBVERTEX) {
 	  if(order!=1) {
-	    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"approximation order for H1 sapce and vertex diffrent than 1 makes not sense"); 
+	    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"approximation order for H1 space and vertex different than 1 makes not sense"); 
 	  }
 	}
 	break;
@@ -733,43 +736,65 @@ PetscErrorCode Core::set_field_order(const Range &ents,const BitFieldId id,const
       default:
 	break;
     }
-    //
-    MoFEMEntity_multiIndex_ent_view::iterator miit3 = ents_id_view.find(*eit);
-    if(miit3!=ents_id_view.end()) {
-      const ApproximationOrder old_ApproximationOrder = (*miit3)->get_max_order();
-      if(old_ApproximationOrder==order) continue;
-      MoFEMEntity_multiIndex::iterator miit4 = entsMoabField.get<Unique_mi_tag>().find((*miit3)->get_global_unique_id());
-      assert(miit4!=entsMoabField.end());
-      if(miit4->get_max_order()<order) nb_ents_set_order_up++;
-      if(miit4->get_max_order()>order) nb_ents_set_order_down++;
-      typedef DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type dof_set_type;
-      dof_set_type& set_set = dofsMoabField.get<Composite_Name_And_Ent_mi_tag>();
-      dof_set_type::iterator miit5 = set_set.lower_bound(boost::make_tuple(miit4->get_name_ref(),miit4->get_ent()));
-      dof_set_type::iterator hi_miit6 = set_set.upper_bound(boost::make_tuple(miit4->get_name_ref(),miit4->get_ent()));
-      for(;miit5!=hi_miit6;miit5++) {
-	if(miit5->get_dof_order()<=order) continue;
-	bool success = dofsMoabField.modify(dofsMoabField.project<0>(miit5),DofMoFEMEntity_active_change(false));
+
+    // get tags on entities
+    vector<ApproximationOrder*> tag_data_order(ents.size());
+    rval = moab.tag_get_by_ptr(miit->th_AppOrder,ents,(const void **)&tag_data_order[0]); CHKERR_PETSC(rval);
+    
+    MoFEMEntity_multiIndex_ent_view::iterator vit = ents_id_view.find(*eit);
+    if(vit!=ents_id_view.end()) {
+  
+      //entity is in database and order is changed or reset
+      const ApproximationOrder old_approximation_order = (*vit)->get_max_order();
+      if(old_approximation_order==order) continue;
+      MoFEMEntity_multiIndex::iterator miit = entsMoabField.get<Unique_mi_tag>().find((*vit)->get_global_unique_id());
+      if(miit->get_max_order()<order) nb_ents_set_order_up++;
+      if(miit->get_max_order()>order) nb_ents_set_order_down++;
+      {
+
+	//set dofs inactive if order is reduced, and set new order to entity if
+	//order is increased (note that dofs are not build if order is
+	//increased) 
+
+	typedef DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type dof_set_type;
+	dof_set_type& set_set = dofsMoabField.get<Composite_Name_And_Ent_mi_tag>();
+	dof_set_type::iterator dit = set_set.lower_bound(boost::make_tuple(miit->get_name_ref(),miit->get_ent()));
+	dof_set_type::iterator hi_dit = set_set.upper_bound(boost::make_tuple(miit->get_name_ref(),miit->get_ent()));
+
+	for(;dit!=hi_dit;dit++) {
+	  if(dit->get_dof_order()<=order) continue;
+	  bool success = dofsMoabField.modify(dofsMoabField.project<0>(dit),DofMoFEMEntity_active_change(false));
+	  if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+	}
+
+	bool success = entsMoabField.modify(entsMoabField.project<0>(miit),MoFEMEntity_change_order(moab,order));
 	if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+
       }
-      bool success = entsMoabField.modify(entsMoabField.project<0>(miit4),MoFEMEntity_change_order(moab,order));
-      if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+
     } else {
-      *(ApproximationOrder*)tag_data_order[ee] = order;
+
+      //entity is not in database and order is changed or reset
+      *tag_data_order[ee] = order;
       RefMoFEMEntity_multiIndex::index<Ent_mi_tag>::type::iterator miit_ref_ent = refinedEntities.get<Ent_mi_tag>().find(*eit);
       if(miit_ref_ent==refinedEntities.get<Ent_mi_tag>().end()) {
 	RefMoFEMEntity ref_ent(moab,*eit);
+	// FIXME: need some consistent policy in that case
 	if(ref_ent.get_BitRefLevel().none()) continue; // not on any mesh and not in database 
 	cerr << ref_ent << endl;
 	cerr << "bit level " << ref_ent.get_BitRefLevel() << endl;
 	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"database inconsistency");
       }
+
       try { 
+
+	// increase order
 	MoFEMEntity moabent(moab,&*miit,&*miit_ref_ent);
-	//if(moabent.get_order_nb_dofs(moabent.get_max_order())==0) continue; 
 	pair<MoFEMEntity_multiIndex::iterator,bool> e_miit = entsMoabField.insert(moabent);
 	bool success = entsMoabField.modify(e_miit.first,MoFEMEntity_change_order(moab,order));
 	if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
 	nb_ents_set_order_new++;
+
       } catch (const char* msg) {
 	SETERRQ(PETSC_COMM_SELF,MOFEM_CHAR_THROW ,msg);
       } catch (const std::exception& ex) {
@@ -777,12 +802,13 @@ PetscErrorCode Core::set_field_order(const Range &ents,const BitFieldId id,const
 	ss << ex.what() << endl;
 	SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
       }
+
     }
   }
   if(verb>1) {
-    PetscSynchronizedPrintf(comm,"nb. of ents for which order was increased %d (order %d)\n",nb_ents_set_order_up,order);
-    PetscSynchronizedPrintf(comm,"nb. of ents for which order was reduced %d (order %d)\n",nb_ents_set_order_down,order);
-    PetscSynchronizedPrintf(comm,"nb. of ents for which order set %d (order %d)\n",nb_ents_set_order_new,order);
+    PetscSynchronizedPrintf(comm,"nb. of entities for which order was increased %d (order %d)\n",nb_ents_set_order_up,order);
+    PetscSynchronizedPrintf(comm,"nb. of entities for which order was reduced %d (order %d)\n",nb_ents_set_order_down,order);
+    PetscSynchronizedPrintf(comm,"nb. of entities for which order set %d (order %d)\n",nb_ents_set_order_new,order);
     PetscSynchronizedFlush(comm,PETSC_STDOUT);
   }
   PetscFunctionReturn(0);
@@ -925,7 +951,6 @@ PetscErrorCode Core::dofs_L2H1HcurlHdiv(const BitFieldId id,map<EntityType,int> 
   if(verb==-1) verb = verbose;
   //field it
   typedef MoFEMField_multiIndex::index<BitFieldId_mi_tag>::type field_set_by_id;
-  //typedef RefMoFEMEntity_multiIndex::index<Ent_mi_tag>::type ref_ents_by_ents;
   //find field
   const field_set_by_id &set_id = moabFields.get<BitFieldId_mi_tag>();
   field_set_by_id::iterator miit = set_id.find(id);

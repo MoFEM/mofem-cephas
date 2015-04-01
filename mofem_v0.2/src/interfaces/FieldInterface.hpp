@@ -312,7 +312,7 @@ struct FieldInterface: public FieldUnknownInterface {
     collective - need tu be run on all processors in communicator
 
     */
-  PetscErrorCode synchronise_entities(Range &ent);
+  virtual PetscErrorCode synchronise_entities(Range &ent,int verb = -1) = 0;
 
   /**
   * Create finite elements based from entities in meshses. Throw error if entity is not in database

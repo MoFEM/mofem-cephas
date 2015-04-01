@@ -335,6 +335,9 @@ struct Core:
   PetscErrorCode shift_left_bit_ref(const int shif,int verb = -1);
   PetscErrorCode shift_right_bit_ref(const int shift,int verb = -1);
 
+  //synchronize entities
+  PetscErrorCode synchronise_entities(Range &ent,int verb = -1);
+
   //field
   PetscErrorCode add_field(
     const string& name,const FieldSpace space,const ApproximationRank rank,enum MoFEMTypes bh = MF_EXCL,int verb = -1);
