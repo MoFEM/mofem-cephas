@@ -488,4 +488,110 @@ PetscErrorCode Core::add_prism_to_mofem_database(const EntityHandle prism,int ve
   PetscFunctionReturn(0);
 }
 
+PetscErrorCode Core::synchronise_entities(Range &ents) {
+  PetscFunctionBegin;
+
+  ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
+
+  //make a buffer
+  vector<vector<EntityHandle> > sbuffer(sIze);
+
+  for(int proc = 0;proc!=sIze;proc++) {
+
+    Range filtered_proc_ents;
+    rval = pcomm->filter_pstatus(ents,PSTATUS_SHARED|PSTATUS_MULTISHARED,PSTATUS_OR,proc,&filtered_proc_ents); CHKERR_PETSC(rval);
+    sbuffer[proc].insert(sbuffer[proc].begin(),filtered_proc_ents.begin(),filtered_proc_ents.end());
+
+  }
+
+  int nsends = 0; // number of messages to send
+  vector<int> ilengths(sIze,0); // length of the message to proc 
+  for(int proc  = 0;proc!=sIze;proc++) {
+      
+    ilengths[proc] = sbuffer[proc].size()*sizeof(EntityHandle);
+
+    if(!sbuffer[proc].empty()) {
+      nsends++;
+    }
+
+  }
+
+  // Make sure it is a PETSc comm 
+  ierr = PetscCommDuplicate(comm,&comm,NULL); CHKERRQ(ierr);
+  // Gets a unique new tag from a PETSc communicator. All processors that share
+  // the communicator MUST call this routine EXACTLY the same number of times.
+  // This tag should only be used with the current objects communicator; do NOT
+  // use it with any other MPI communicator.
+  int tag;
+  ierr = PetscCommGetNewTag(comm,&tag); CHKERRQ(ierr);
+
+  // nothing to send ( non of entities is shared)
+  if(!nsends) PetscFunctionReturn(0);
+
+  vector<MPI_Status> status(sIze);
+
+  // Computes the number of messages a node expects to receive
+  int nrecvs;	// number of messages received
+  ierr = PetscGatherNumberOfMessages(comm,NULL,&ilengths[0],&nrecvs); CHKERRQ(ierr);
+
+  // Computes info about messages that a MPI-node will receive, including (from-id,length) pairs for each message.
+  int *onodes;		// list of node-ids from which messages are expected
+  int *olengths;	// corresponding message lengths	
+  ierr = PetscGatherMessageLengths(comm,nsends,nrecvs,&ilengths[0],&onodes,&olengths);  CHKERRQ(ierr);
+
+  // Allocate a buffer sufficient to hold messages of size specified in
+  // olengths. And post Irecvs on these buffers using node info from onodes
+  int **rbuf;		// must bee freed by user
+  MPI_Request *r_waits; // must bee freed by user
+  // rbuf has a pointers to messages. It has size of of nrecvs (number of
+  // messages) +1. In the first index a block is allocated, 
+  // such that rbuf[i] = rbuf[i-1]+olengths[i-1]. 
+  ierr = PetscPostIrecvInt(comm,tag,nrecvs,onodes,olengths,&rbuf,&r_waits); CHKERRQ(ierr);
+  
+  MPI_Request *s_waits; // status of sens messages
+  ierr = PetscMalloc1(nsends,&s_waits);CHKERRQ(ierr);
+
+  // Send messeges
+  for(int proc=0,kk=0; proc<sIze; proc++) {
+    if(!ilengths[proc]) continue; // no message to send to this proc
+    ierr = MPI_Isend(
+      &(sbuffer[proc])[0], // buffer to send
+      ilengths[proc], 	   // message length
+      MPIU_INT,proc,       // tip proc
+      tag,comm,s_waits+kk); CHKERRQ(ierr);
+    kk++;
+  }
+
+  if(nrecvs) {
+    ierr = MPI_Waitall(nrecvs,r_waits,&status[0]);CHKERRQ(ierr);
+  }
+  if(nsends) {
+    ierr = MPI_Waitall(nsends,s_waits,&status[0]);CHKERRQ(ierr);
+  }
+
+  EntityHandle ent;
+  RefMoFEMEntity_multiIndex::index<Ent_Owner_mi_tag>::type::iterator eit;
+  for(int kk = 0;kk<nrecvs;kk++) {
+    int len = olengths[kk];
+    int *data_from_proc = rbuf[kk];
+    for(int ee = 0;ee<len;ee+=sizeof(EntityHandle)) {
+      bcopy(&data_from_proc[len],&ent,sizeof(EntityHandle));
+      eit = refinedEntities.get<Ent_Owner_mi_tag>().find(ent);
+      if(eit == refinedEntities.get<Ent_Owner_mi_tag>().end()) {
+	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,
+	"entity not exits on database, local entity can not be found for this owner"); 	
+      }
+      ents.insert(ent);
+    }
+  }
+
+  // Cleaning 
+  ierr = PetscFree(s_waits); CHKERRQ(ierr);   
+  ierr = PetscFree(rbuf); CHKERRQ(ierr);   
+  ierr = PetscFree(r_waits); CHKERRQ(ierr);   
+  ierr = PetscFree(olengths); CHKERRQ(ierr);
+
+  PetscFunctionReturn(0);
+}
+
 }
