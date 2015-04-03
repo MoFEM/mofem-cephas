@@ -341,6 +341,8 @@ struct Core:
 
   //synchronize entities
   PetscErrorCode synchronise_entities(Range &ent,int verb = -1);
+  PetscErrorCode synchronise_field_entities(const BitFieldId id,int verb = -1);
+  PetscErrorCode synchronise_field_entities(const string& name,int verb = -1);
 
   //field
   PetscErrorCode add_field(
@@ -472,9 +474,9 @@ struct Core:
   PetscErrorCode partition_ghost_dofs(const string &name,int verb = -1);
   PetscErrorCode partition_finite_elements(
     const string &name,bool part_from_moab = false,int low_proc = -1,int hi_proc = -1,int verb = -1);
-  PetscErrorCode partition_check_matrix_fill_in(const string &problem_neme,int verb);
-  PetscErrorCode print_partitioned_problem(const MoFEMProblem *problem_ptr,int verb = -1);
-  PetscErrorCode debug_partitioned_problem(const MoFEMProblem *problem_ptr,int verb = -1);
+  PetscErrorCode partition_check_matrix_fill_in(const string &problem_neme,int row,int col,int verb);
+  PetscErrorCode printPartitionedProblem(const MoFEMProblem *problem_ptr,int verb = -1);
+  PetscErrorCode debugPartitionedProblem(const MoFEMProblem *problem_ptr,int verb = -1);
 
   ///save meshsets
   PetscErrorCode get_problem_finite_elements_entities(const string &name,const string &fe_name,const EntityHandle meshset);

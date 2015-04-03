@@ -491,22 +491,14 @@ PetscErrorCode Core::synchronise_entities(Range &ents,int verb) {
   //make a buffer
   vector<vector<EntityHandle> > sbuffer(sIze);
 
-  // get shared entities
-  Range filtered_proc_ents(ents);
-  rval = pcomm->filter_pstatus(filtered_proc_ents,PSTATUS_SHARED|PSTATUS_MULTISHARED,PSTATUS_OR); CHKERR_PETSC(rval);
-  if(verb>1) {
-    ostringstream zz;
-    zz << "rank " << rAnk << endl << filtered_proc_ents << endl;
-    PetscSynchronizedPrintf(comm,"%s",zz.str().c_str());
-  }
-
   vector<int> sharing_procs(MAX_SHARING_PROCS,-1);
-  Range::iterator eit = filtered_proc_ents.begin();
-  for(;eit!=filtered_proc_ents.end();eit++) {
+  Range::iterator eit = ents.begin();
+  for(;eit!=ents.end();eit++) {
     
     RefMoFEMEntity_multiIndex::iterator meit;
     meit = refinedEntities.get<Ent_mi_tag>().find(*eit);
     if(meit == refinedEntities.get<Ent_mi_tag>().end()) {
+      continue;
       SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,
 	"rank %d entity %lu not exist on database, local entity can not be found for this owner",
 	rAnk,*eit); 	
@@ -516,42 +508,53 @@ PetscErrorCode Core::synchronise_entities(Range &ents,int verb) {
     owning_ent = meit->get_owner_ent();
     unsigned char pstatus = meit->get_pstatus(); 
 
+    if(pstatus == 0) continue;
+
+    if(verb>1) {
+      ostringstream zz;
+      zz << "pstatus " <<  bitset<8>(pstatus) << " ";
+      PetscSynchronizedPrintf(comm,"%s",zz.str().c_str());
+    }
+
+    fill(sharing_procs.begin(),sharing_procs.end(),-1);
     if(pstatus & PSTATUS_MULTISHARED) {
       // entity is multi shared
-
       rval = moab.tag_get_data(pcomm->sharedps_tag(),&*eit,1,&sharing_procs[0]); CHKERR_PETSC(rval);
-      if(sharing_procs[0] == -1) {
-	SETERRQ(PETSC_COMM_SELF,MOFEM_IMPOSIBLE_CASE,"impossible case");
-      }
-      for(int proc = 0; proc<MAX_SHARING_PROCS && -1 != sharing_procs[proc]; proc++) {
-	if(sharing_procs[proc] == rAnk) continue;
-	sbuffer[sharing_procs[proc]].push_back(owning_ent);
-      }  
-
     } else if(pstatus & PSTATUS_SHARED) {
-      // shared by two
-
+      // shared 
       rval = moab.tag_get_data(pcomm->sharedp_tag(),&*eit,1,&sharing_procs[0]); CHKERR_PETSC(rval);
-      if(sharing_procs[0] == -1) {
+    }
+
+    for(int proc = 0; proc<MAX_SHARING_PROCS && -1 != sharing_procs[proc]; proc++) {
+      if(sharing_procs[proc] == -1) {
 	SETERRQ(PETSC_COMM_SELF,MOFEM_IMPOSIBLE_CASE,"sharing processor not set");
       }
-      if(sharing_procs[0] == rAnk) {
-	SETERRQ(PETSC_COMM_SELF,MOFEM_IMPOSIBLE_CASE,"wrong sharing processor");
+      if(sharing_procs[proc] == rAnk) {
+	continue;
       }
-      sbuffer[sharing_procs[0]].push_back(owning_ent);
-
+      sbuffer[sharing_procs[proc]].push_back(owning_ent);
+      if(verb>1) {
+	PetscSynchronizedPrintf(comm,"send %lu (%lu) to %d at %d\n",meit->get_ref_ent(),owning_ent,sharing_procs[proc],rAnk);
+      }
     }
+
   
   }
 
-  int nsends = 0; // number of messages to send
-  vector<int> ilengths(sIze,0); // length of the message to proc 
-  for(int proc  = 0;proc!=sIze;proc++) {
-      
-    ilengths[proc] = sbuffer[proc].size()*sizeof(EntityHandle)/sizeof(int);
-
+  int nsends = 0; 			// number of messages to send
+  vector<int> sbuffer_lengths(sIze); 	// length of the message to proc 
+  const size_t block_size = sizeof(EntityHandle)/sizeof(int);
+  for(int proc  = 0;proc<sIze;proc++) {
+ 
     if(!sbuffer[proc].empty()) {
+    
+      sbuffer_lengths[proc] = sbuffer[proc].size()*block_size;
       nsends++;
+
+    } else {
+
+      sbuffer_lengths[proc] = 0;
+
     }
 
   }
@@ -559,19 +562,16 @@ PetscErrorCode Core::synchronise_entities(Range &ents,int verb) {
   // Make sure it is a PETSc comm 
   ierr = PetscCommDuplicate(comm,&comm,NULL); CHKERRQ(ierr);
 
-  // nothing to send ( non of entities is shared)
-  //if(!nsends) PetscFunctionReturn(0);
-
   vector<MPI_Status> status(sIze);
 
   // Computes the number of messages a node expects to receive
   int nrecvs;	// number of messages received
-  ierr = PetscGatherNumberOfMessages(comm,NULL,&ilengths[0],&nrecvs); CHKERRQ(ierr);
+  ierr = PetscGatherNumberOfMessages(comm,NULL,&sbuffer_lengths[0],&nrecvs); CHKERRQ(ierr);
 
   // Computes info about messages that a MPI-node will receive, including (from-id,length) pairs for each message.
   int *onodes;		// list of node-ids from which messages are expected
   int *olengths;	// corresponding message lengths	
-  ierr = PetscGatherMessageLengths(comm,nsends,nrecvs,&ilengths[0],&onodes,&olengths);  CHKERRQ(ierr);
+  ierr = PetscGatherMessageLengths(comm,nsends,nrecvs,&sbuffer_lengths[0],&onodes,&olengths);  CHKERRQ(ierr);
 
   // Gets a unique new tag from a PETSc communicator. All processors that share
   // the communicator MUST call this routine EXACTLY the same number of times.
@@ -590,14 +590,14 @@ PetscErrorCode Core::synchronise_entities(Range &ents,int verb) {
   ierr = PetscPostIrecvInt(comm,tag,nrecvs,onodes,olengths,&rbuf,&r_waits); CHKERRQ(ierr);
   
   MPI_Request *s_waits; // status of sens messages
-  ierr = PetscMalloc1(nsends,&s_waits);CHKERRQ(ierr);
+  ierr = PetscMalloc1(nsends,&s_waits); CHKERRQ(ierr);
 
   // Send messeges
   for(int proc=0,kk=0; proc<sIze; proc++) {
-    if(!ilengths[proc]) continue; // no message to send to this proc
+    if(!sbuffer_lengths[proc]) continue; // no message to send to this proc
     ierr = MPI_Isend(
       &(sbuffer[proc])[0], // buffer to send
-      ilengths[proc], 	   // message length
+      sbuffer_lengths[proc], 	   // message length
       MPIU_INT,proc,       // tip proc
       tag,comm,s_waits+kk); CHKERRQ(ierr);
     kk++;
@@ -607,12 +607,20 @@ PetscErrorCode Core::synchronise_entities(Range &ents,int verb) {
   if(nrecvs) {
     ierr = MPI_Waitall(nrecvs,r_waits,&status[0]);CHKERRQ(ierr);
   }
+  // Wait for send messages
+  if(nsends) {
+    ierr = MPI_Waitall(nsends,s_waits,&status[0]);CHKERRQ(ierr);
+  }
+
+  if(verb>0) {
+    PetscSynchronizedPrintf(comm,"nb. before ents %u\n",ents.size());
+  }
 
   // synchronise range
   for(int kk = 0;kk<nrecvs;kk++) {
     int len = olengths[kk];
     int *data_from_proc = rbuf[kk];
-    for(int ee = 0;ee<len;ee+=sizeof(EntityHandle)) {
+    for(int ee = 0;ee<len;ee+=block_size) {
       EntityHandle ent;
       bcopy(&data_from_proc[ee],&ent,sizeof(EntityHandle));
       RefMoFEMEntity_multiIndex::index<Ent_Owner_mi_tag>::type::iterator meit;
@@ -621,14 +629,17 @@ PetscErrorCode Core::synchronise_entities(Range &ents,int verb) {
 	SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,
 	  "rank %d entity %lu not exist on database, local entity can not be found for this owner",rAnk,ent); 	
       }
+      if(verb>2) {
+	PetscSynchronizedPrintf(comm,"received %ul (%ul) from %d at %d\n",meit->get_ref_ent(),ent,onodes[kk],rAnk);
+      }
       ents.insert(meit->get_ref_ent());
     }
   }
 
-  // Wait for send messages
-  if(nsends) {
-    ierr = MPI_Waitall(nsends,s_waits,&status[0]);CHKERRQ(ierr);
+  if(verb>0) {
+    PetscSynchronizedPrintf(comm,"nb. after ents %u\n",ents.size());
   }
+
 
   // Cleaning 
   ierr = PetscFree(s_waits); CHKERRQ(ierr);   

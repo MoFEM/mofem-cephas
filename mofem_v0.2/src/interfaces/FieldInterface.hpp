@@ -1221,9 +1221,17 @@ struct FieldInterface: public FieldUnknownInterface {
     bool part_from_moab = false,int low_proc = -1,int hi_proc = -1,int verb = -1) = 0;
 
   /** \brief check if matrix fill in correspond to finite element indices
-    *
+
+    This is used to check consistency of code. If problem is notices with
+    additional non-zero elements in matrix, this function can help detect problem.
+    Should be used as a part of atom tests
+
+    \param problem_nanme
+    \param row print info at particular row 
+    \param col print info at particular col
+  
     */
-  virtual PetscErrorCode partition_check_matrix_fill_in(const string &problem_name,int verb) = 0;
+  virtual PetscErrorCode partition_check_matrix_fill_in(const string &problem_name,int row,int col,int verb) = 0;
 
   /**
     * \brief add finite elements to the meshset

@@ -102,7 +102,7 @@ ostream& operator<<(ostream& os,const MoFEMEntity& e) {
   os << "ent_global_uid " << (UId)e.get_global_unique_id()
     << " ent_local_uid " << (UId)e.get_local_unique_id() 
     << " entity "<< e.get_ent() << " type " << e.get_ent_type()
-    << " pstatus "<< bitset<8>(e.get_pstatus()) << " owner handle " << e.get_owner_ent()
+    << " pstatus "<< bitset<8>(e.get_pstatus()) << " owner handle " << e.get_owner_ent() << " owner proc " << e.get_owner_proc()
     << " order "<<e.get_max_order()<<" "<<*e.field_ptr;
   return os;
 }

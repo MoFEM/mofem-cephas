@@ -197,8 +197,8 @@ int main(int argc, char *argv[]) {
 	ierr = moab.get_adjacencies(block_ents,2,false,ents_to_set_order,Interface::UNION); CHKERRQ(ierr);
 	ierr = moab.get_adjacencies(block_ents,1,false,ents_to_set_order,Interface::UNION); CHKERRQ(ierr);
 	ierr = m_field.synchronise_entities(ents_to_set_order,2); CHKERRQ(ierr);
-	ierr = m_field.synchronise_entities(ents_to_set_order,2); CHKERRQ(ierr);
-	ierr = m_field.synchronise_entities(ents_to_set_order,2); CHKERRQ(ierr);
+	//ierr = m_field.synchronise_entities(ents_to_set_order,2); CHKERRQ(ierr);
+	//ierr = m_field.synchronise_entities(ents_to_set_order,2); CHKERRQ(ierr);
 
         ierr = m_field.set_field_order(ents_to_set_order,"DISPLACEMENT",block_data[it->get_msId()].oRder); CHKERRQ(ierr);
       }
@@ -322,6 +322,8 @@ int main(int argc, char *argv[]) {
   ierr = DMMoFEMAddElement(dm,"PRESSURE_FE"); CHKERRQ(ierr);
 
   ierr = DMSetUp(dm); CHKERRQ(ierr);
+
+  //ierr = m_field.partition_check_matrix_fill_in("ELASTIC_PROB",825,5949,1); CHKERRQ(ierr);
 
   //create matrices
   Vec F,D;

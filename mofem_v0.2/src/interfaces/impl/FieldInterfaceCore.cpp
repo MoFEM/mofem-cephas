@@ -543,6 +543,32 @@ PetscErrorCode Core::add_ents_to_field_by_VERTICEs(const EntityHandle meshset,co
   }
   PetscFunctionReturn(0);
 }
+PetscErrorCode Core::synchronise_field_entities(const BitFieldId id,int verb) {
+  PetscFunctionBegin;
+  if(verb==-1) verb = verbose;
+  EntityHandle idm;
+  try {
+    idm = get_field_meshset(id);
+  } catch (const char* msg) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_CHAR_THROW,msg);
+  }
+  Range ents;
+  ierr = moab.get_entities_by_handle(idm,ents,false); CHKERRQ(ierr);
+  ierr = synchronise_entities(ents,verb); CHKERRQ(ierr);
+  rval = moab.add_entities(idm,ents); CHKERR_PETSC(rval);
+  PetscFunctionReturn(0);
+}
+PetscErrorCode Core::synchronise_field_entities(const string& name,int verb) {
+  PetscFunctionBegin;
+  if(verb==-1) verb = verbose;
+  *build_MoFEM = 0;
+  try {
+    ierr = synchronise_field_entities(get_BitFieldId(name),verb);  CHKERRQ(ierr);
+  } catch  (const char* msg) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_CHAR_THROW,msg);
+  }
+  PetscFunctionReturn(0);
+}
 PetscErrorCode Core::add_ents_to_field_by_TETs(const Range &tets,const BitFieldId id,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
