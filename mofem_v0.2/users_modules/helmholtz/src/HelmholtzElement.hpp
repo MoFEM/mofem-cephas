@@ -71,7 +71,7 @@ struct HelmholtzElement {
 		 * More details about algorithm
 		 * http://people.sc.fsu.edu/~jburkardt/cpp_src/gm_rule/gm_rule.html
 		**/
-		int getRule(int order) { return order; };
+		int getRule(int order) { return order+1; };
 	};
 	MyVolumeFE feRhs; ///< cauclate right hand side for tetrahedral elements
 	MyVolumeFE& getLoopFeRhs() { return feRhs; } ///< get rhs volume element
@@ -1014,14 +1014,14 @@ struct HelmholtzElement {
 				//// magnitude of incident wave
 				const double phi_incident_mag = 1.0;
 				
-				//const double tol = 1.0e-10;
-				//double max = 0.0;
-				//double min = 999999.0;
-				
+				const double tol = 1.0e-10;
+				double max = 0.0;
+				double min = 999999.0;
 				complex< double > result = 0.0;
-				//complex< double > prev_result;
+				complex< double > prev_result;
+				double error = 100.0;
 				
-				//double error = 100.0;
+				/**** Spherical incident wave ***/
 				//unsigned int n = 0; //initialized the infinite series loop
 				
 				//while( error > tol )  //finding the acoustic potential in one single point.
@@ -1034,19 +1034,42 @@ struct HelmholtzElement {
 				//	//complex< double >hn = sph_hankel_1( n, const2 );  //S Hankel first kind function
 				//	prev_result = result;
 				//	//result += -k * pow( i, n ) * ( 2.0 * n + 1.0 ) * jn_der * Pn; //edition from acoustic book
-				//	result -= pow( i, n ) * ( 2.0 * n + 1.0 ) * Pn * jn_der;  //edition from Papers
+				//	result += pow( i, n ) * ( 2.0 * n + 1.0 ) * Pn * jn_der;  //edition from Papers
 				//	error = abs( abs( result ) - abs( prev_result ) );
 				//	++n;
 				//}
-				/**         **/
+				/**    End     **/
 				
-				result = i * k * cos( theta ) * exp( i * k * R * cos( theta ) ); //derivative of incident wave
+				/*** Cyclindrical incident wave ***/
+				unsigned int n = 1; //initialized the infinite series loop
+				
+				double Jn_der_zero = ( - cyl_bessel_j( 1, const1 ));  
+				complex< double > Hn_der_zero = ( - cyl_hankel_1( 1, const1 ));
+				complex< double >Hn_zero = cyl_hankel_1( 0, const2 );  //S Hankel first kind function
+				
+				//n=0;
+				result -= Jn_der_zero
+						  
+				while( error > tol )  //finding the acoustic potential in one single point.
+				{
+					prev_result = result;
+					//The derivative of bessel function
+					double Jn_der = (n / const1 * cyl_bessel_j( n, const1 ) - cyl_bessel_j( n + 1, const1 ));  
+					
+					result -= 2.0 * pow( i, n ) * Jn_der * cos(n*theta);
+					error = abs( abs( result ) - abs( prev_result ) );
+					++n;
+				}
+				
+				/** 	End     **/
+				//result = i * k * cos( theta ) * exp( i * k * R * cos( theta ) ); //derivative of incident wave
 				
 				
 				if(useReal){
-					iNcidentwave = std::real(result);
+					iNcidentwave = std::real(-result);
+					//cerr << "real occurs" <<endl;
 				} else if(!useReal) {
-					iNcidentwave = std::imag(result);
+					iNcidentwave = std::imag(-result);
 				}
 				
 				flux = dAta.dAta.data.value1*iNcidentwave; 

@@ -81,6 +81,42 @@ target_link_libraries(best_approximation
   mofem_cblas
   ${MoFEM_PROJECT_LIBS})
 
+add_executable(simple_best_approximation ${UM_SOURCE_DIR}/helmholtz/simple_best_approximation.cpp)
+target_link_libraries(simple_best_approximation
+  mofem_finite_element_library
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_third_party
+  mofem_cblas
+  ${MoFEM_PROJECT_LIBS})
+
+add_executable(cylindrical_best_approximation ${UM_SOURCE_DIR}/helmholtz/cylindrical_best_approximation.cpp)
+target_link_libraries(cylindrical_best_approximation
+  mofem_finite_element_library
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_third_party
+  mofem_cblas
+  ${MoFEM_PROJECT_LIBS})
+
+add_executable(cyclindrical_acoustic ${UM_SOURCE_DIR}/helmholtz/cyclindrical_acoustic.cpp)
+target_link_libraries(cyclindrical_acoustic
+  mofem_finite_element_library
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_third_party
+  mofem_cblas
+  ${MoFEM_PROJECT_LIBS})
+
 add_executable(wave_guide_analytical ${UM_SOURCE_DIR}/helmholtz/wave_guide_analytical.cpp)
 target_link_libraries(wave_guide_analytical
   mofem_finite_element_library
