@@ -1002,7 +1002,7 @@ struct HelmholtzElement {
 				/***** incident wave in x direction *****/
 				/*** incident wave from Finite Element Analysis of Acoustic Scattering by Frank Ihlenburg **/
 				const double pi = atan( 1.0 ) * 4.0;
-				double R = sqrt(pow(x,2.0)+pow(y,2.0)+pow(z,2.0)); //radius
+				
 				double theta = atan2(y,x)+2*pi; //the arctan of radians (y/x)
 
 				const double k = wAvenumber;  //Wave number
@@ -1022,6 +1022,7 @@ struct HelmholtzElement {
 				double error = 100.0;
 				
 				/**** Spherical incident wave ***/
+				//double R = sqrt(pow(x,2.0)+pow(y,2.0)+pow(z,2.0)); //radius
 				//unsigned int n = 0; //initialized the infinite series loop
 				
 				//while( error > tol )  //finding the acoustic potential in one single point.
@@ -1041,14 +1042,14 @@ struct HelmholtzElement {
 				/**    End     **/
 				
 				/*** Cyclindrical incident wave ***/
+				double R = sqrt(pow(x,2.0)+pow(y,2.0)); //radius
+
 				unsigned int n = 1; //initialized the infinite series loop
 				
 				double Jn_der_zero = ( - cyl_bessel_j( 1, const1 ));  
-				complex< double > Hn_der_zero = ( - cyl_hankel_1( 1, const1 ));
-				complex< double >Hn_zero = cyl_hankel_1( 0, const2 );  //S Hankel first kind function
 				
 				//n=0;
-				result -= Jn_der_zero
+				result -= Jn_der_zero;
 						  
 				while( error > tol )  //finding the acoustic potential in one single point.
 				{
