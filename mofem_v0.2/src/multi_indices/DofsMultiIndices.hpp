@@ -281,38 +281,7 @@ typedef multi_index_container<
  * @relates multi_index_container
  * \brief MultiIndex container keeps FEDofMoFEMEntity
  * \ingroup dof_multi_indices
- *
- * \param ordered_unique< 
- *     tag<Unique_mi_tag>, const_mem_fun<FEDofMoFEMEntity::interface_type_DofMoFEMEntity,GlobalUId,&FEDofMoFEMEntity::get_global_unique_id> >,
- * \param ordered_non_unique<
- *    tag<Ent_mi_tag>, const_mem_fun<FEDofMoFEMEntity::interface_type_DofMoFEMEntity,EntityHandle,&FEDofMoFEMEntity::get_ent> >,
- * \param ordered_non_unique<
- *    tag<FieldName_mi_tag>, const_mem_fun<FEDofMoFEMEntity::interface_type_MoFEMField,string,&FEDofMoFEMEntity::get_name> >,
- * \param ordered_non_unique<
- *    tag<Composite_Name_Type_And_Side_Number_mi_tag>, <br>
- *     composite_key<  
- *	FEDofMoFEMEntity,  <br>
- *	  const_mem_fun<FEDofMoFEMEntity::interface_type_MoFEMField,string,&FEDofMoFEMEntity::get_name>,  <br>
- *	  const_mem_fun<FEDofMoFEMEntity::interface_type_RefMoFEMEntity,EntityType,&FEDofMoFEMEntity::get_ent_type>,  <br>
- *	  KeyFromKey< <br>
- *	    member<SideNumber,int,&SideNumber::side_number>,  <br>
- *	    member<FEDofMoFEMEntity::BaseFEDofMoFEMEntity,SideNumber *,&FEDofMoFEMEntity::side_number_ptr>
- *	  >
- *     > >,
- * \param ordered_non_unique<
- *     tag<Composite_mi_tag2>,  <br>
- *     composite_key<
- *	FEDofMoFEMEntity, <br> 
- *	  const_mem_fun<FEDofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&FEDofMoFEMEntity::get_name>,  <br>
- *	  const_mem_fun<FEDofMoFEMEntity::interface_type_RefMoFEMEntity,EntityType,&FEDofMoFEMEntity::get_ent_type>  <br>
- *	> >,
- * \param ordered_non_unique<
- *     tag<Composite_Name_And_Ent>,  <br>
- *     composite_key<
- *	FEDofMoFEMEntity,  <br>
- *	  const_mem_fun<FEDofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&FEDofMoFEMEntity::get_name>,  <br>
- *	  const_mem_fun<FEDofMoFEMEntity::interface_type_DofMoFEMEntity,EntityHandle,&FEDofMoFEMEntity::get_ent>
- *	> >
+
  */
 typedef multi_index_container<
   FEDofMoFEMEntity,
@@ -364,37 +333,6 @@ typedef multi_index_container<
  * \brief MultiIndex container keeps FENumeredDofMoFEMEntity
  * \ingroup dof_multi_indices
  *
- * \param ordered_unique< 
- *     tag<Unique_mi_tag>, const_mem_fun<FEDofMoFEMEntity::interface_type_DofMoFEMEntity,GlobalUId,&FEDofMoFEMEntity::get_global_unique_id> >,
- * \param ordered_non_unique<
- *    tag<Ent_mi_tag>, const_mem_fun<FEDofMoFEMEntity::interface_type_DofMoFEMEntity,EntityHandle,&FEDofMoFEMEntity::get_ent> >,
- * \param ordered_non_unique<
- *    tag<FieldName_mi_tag>, const_mem_fun<FEDofMoFEMEntity::interface_type_MoFEMField,string,&FEDofMoFEMEntity::get_name> >,
- * \param ordered_non_unique<
- *    tag<Composite_Name_Type_And_Side_Number_mi_tag>, <br>
- *     composite_key<  
- *	FEDofMoFEMEntity,  <br>
- *	  const_mem_fun<FEDofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&FEDofMoFEMEntity::get_name>,  <br>
- *	  const_mem_fun<FEDofMoFEMEntity::interface_type_RefMoFEMEntity,EntityType,&FEDofMoFEMEntity::get_ent_type>,  <br>
- *	  KeyFromKey< <br>
- *	    member<SideNumber,int,&SideNumber::side_number>,  <br>
- *	    member<FEDofMoFEMEntity::BaseFEDofMoFEMEntity,SideNumber *,&FEDofMoFEMEntity::side_number_ptr>
- *	  >
- *     > >,
- * \param ordered_non_unique<
- *     tag<Composite_mi_tag2>,  <br>
- *     composite_key<
- *	FEDofMoFEMEntity, <br> 
- *	  const_mem_fun<FEDofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&FEDofMoFEMEntity::get_name>,  <br>
- *	  const_mem_fun<FEDofMoFEMEntity::interface_type_RefMoFEMEntity,EntityType,&FEDofMoFEMEntity::get_ent_type>  <br>
- *	> >,
- * \param ordered_non_unique<
- *     tag<Composite_Name_And_Ent>,  <br>
- *     composite_key<
- *	FEDofMoFEMEntity,  <br>
- *	  const_mem_fun<FEDofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&FEDofMoFEMEntity::get_name>,  <br>
- *	  const_mem_fun<FEDofMoFEMEntity::interface_type_DofMoFEMEntity,EntityHandle,&FEDofMoFEMEntity::get_ent>
- *	> >
  */
 typedef multi_index_container<
   FENumeredDofMoFEMEntity,

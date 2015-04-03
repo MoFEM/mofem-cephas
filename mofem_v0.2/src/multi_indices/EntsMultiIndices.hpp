@@ -1,12 +1,6 @@
 /** \file EntsMultiIndices.hpp
  * \brief Myltindex containes, for mofem enitities data structures and other low-level functions 
  * 
- * Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl) <br>
- *
- * The MoFEM package is copyrighted by Lukasz Kaczmarczyk. 
- * It can be freely used for educational and research purposes 
- * by other institutions. If you use this softwre pleas cite my work. 
- *
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or (at your
@@ -46,15 +40,6 @@ struct SideNumber {
  * \brief SideNumber_multiIndex for SideNumber
  * \ingroup ent_multi_indices 
  * 
- *  \param hashed_unique<
- *     member<SideNumber,EntityHandle,&SideNumber::ent> >,
- *  \param ordered_non_unique<
- *     composite_key<
- *	SideNumber,
- *	const_mem_fun<SideNumber,EntityType,&SideNumber::get_ent_type>,
- *	member<SideNumber,int,&SideNumber::side_number> > >,
- *  \param ordered_non_unique<
- *     const_mem_fun<SideNumber,EntityType,&SideNumber::get_ent_type> >
  */
 typedef multi_index_container<
   SideNumber,
@@ -420,21 +405,6 @@ struct MoFEMEntity_change_order {
  * \brief MultiIndex container keeps MoFEMEntity
  * \ingroup ent_multi_indices 
  *
- * \param ordered_unique<
- *    tag<Unique_mi_tag>, member<MoFEMEntity,GlobalUId,&MoFEMEntity::local_uid> >,
- * \param ordered_non_unique<
- *    tag<BitFieldId_mi_tag>, const_mem_fun<MoFEMEntity::interface_type_MoFEMField,const BitFieldId&,&MoFEMEntity::get_id>, LtBit<BitFieldId> >,
- * \param ordered_non_unique<
- *    tag<FieldName_mi_tag>, const_mem_fun<MoFEMEntity::interface_type_MoFEMField,boost::string_ref,&MoFEMEntity::get_name_ref> >,
- * \param hashed_non_unique<
- *    tag<Ent_mi_tag>, const_mem_fun<MoFEMEntity,EntityHandle,&MoFEMEntity::get_ent> >,
- * \param ordered_non_unique<
- *   tag<Composite_Name_And_Ent_mi_tag>, 
- *     composite_key<
- *	MoFEMEntity,
- *	const_mem_fun<MoFEMEntity::interface_type_MoFEMField,boost::string_ref,&MoFEMEntity::get_name_ref>,
- *	const_mem_fun<MoFEMEntity,EntityHandle,&MoFEMEntity::get_ent>
- *     > >
  */
 typedef multi_index_container<
   MoFEMEntity,

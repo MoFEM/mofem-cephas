@@ -101,14 +101,6 @@ struct interface_MoFEMField {
  * @relates multi_index_container
  * \brief MoFEMField_multiIndex for MoFEMField
  *
- * \param hashed_unique<
- *     tag<BitFieldId_mi_tag>, const_mem_fun<MoFEMField,const BitFieldId&,&MoFEMField::get_id>, HashBit<BitFieldId>, EqBit<BitFieldId> >,
- * \param   ordered_unique<
- *     tag<Meshset_mi_tag>, member<MoFEMField,EntityHandle,&MoFEMField::meshset> >,
- * \param hashed_unique<
- *     tag<FieldName_mi_tag>, const_mem_fun<MoFEMField,boost::string_ref,&MoFEMField::get_name_ref> >,
- * \param ordered_non_unique<
- *     tag<BitFieldId_space_mi_tag>, const_mem_fun<MoFEMField,FieldSpace,&MoFEMField::get_space> >
  */
 typedef multi_index_container<
   MoFEMField,
