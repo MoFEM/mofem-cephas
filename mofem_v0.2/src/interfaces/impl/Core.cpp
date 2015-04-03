@@ -1,12 +1,6 @@
 /** \file Core.cpp
  * \brief Myltindex containes, data structures and other low-level functions 
  * 
- * Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl) <br>
- *
- * The MoFEM package is copyrighted by Lukasz Kaczmarczyk. 
- * It can be freely used for educational and research purposes 
- * by other institutions. If you use this softwre pleas cite my work. 
- *
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or (at your
@@ -318,19 +312,19 @@ Core::Core(Interface& _moab,MPI_Comm _comm,int _verbose):
   CHKERR_THROW(rval);
   const void* tag_data[1];
   rval = moab.tag_get_by_ptr(th_FieldShift,&root_meshset,1,tag_data); CHKERR_THROW(rval);
-  f_shift = (int*)tag_data[0];
+  fShift = (int*)tag_data[0];
   //FE
   rval = moab.tag_get_handle("_FEShift",1,MB_TYPE_INTEGER,th_FEShift,MB_TAG_CREAT|MB_TAG_MESH,&def_shift); 
   if(rval==MB_ALREADY_ALLOCATED) rval = MB_SUCCESS;
   CHKERR_THROW(rval);
   rval = moab.tag_get_by_ptr(th_FEShift,&root_meshset,1,tag_data); CHKERR_THROW(rval);
-  MoFEMFiniteElement_shift = (int*)tag_data[0];
+  feShift = (int*)tag_data[0];
   //Problem
   rval = moab.tag_get_handle("_ProblemShift",1,MB_TYPE_INTEGER,th_ProblemShift,MB_TAG_CREAT|MB_TAG_MESH,&def_shift); 
   if(rval==MB_ALREADY_ALLOCATED) rval = MB_SUCCESS;
   CHKERR_THROW(rval);
   rval = moab.tag_get_by_ptr(th_ProblemShift,&root_meshset,1,tag_data); CHKERR_THROW(rval);
-  p_shift = (int*)tag_data[0];
+  pShift = (int*)tag_data[0];
   //SaftyNets
   int def_bool = 0;
   rval = moab.tag_get_handle("_MoFEMBuild",1,MB_TYPE_INTEGER,th_MoFEMBuild,MB_TAG_CREAT|MB_TAG_MESH,&def_bool); 
@@ -368,7 +362,7 @@ Core::Core(Interface& _moab,MPI_Comm _comm,int _verbose):
   int def_elem_type = MBMAXTYPE;
   rval = moab.tag_get_handle("ElemType",1,MB_TYPE_INTEGER,th_ElemType,MB_TAG_CREAT|MB_TAG_SPARSE,&def_elem_type); CHKERR_THROW(rval); 
   //
-  clear_map();
+  clearMap();
   initialiseDatabseInformationFromMesh(verbose); 
   // Petsc Logs
   PetscLogEventRegister("FE_preProcess",0,&USER_EVENT_preProcess);
@@ -426,8 +420,8 @@ const MoFEMField* Core::get_field_structure(const string& name) {
   }
   return &*miit;
 }
-BitFieldId Core::get_field_shift() {
-  if(*f_shift >= BITFIELDID_SIZE) {
+BitFieldId Core::getFieldShift() {
+  if(*fShift >= BITFIELDID_SIZE) {
     char msg[] = "number of fields exceeded";
     PetscTraceBackErrorHandler(
       comm,
@@ -437,17 +431,17 @@ BitFieldId Core::get_field_shift() {
       __LINE__,PETSC_FUNCTION_NAME,__FILE__,
       MOFEM_DATA_INCONSISTENCT,PETSC_ERROR_INITIAL,msg,PETSC_NULL);
   }
-  return BitFieldId().set(((*f_shift)++)-1);
+  return BitFieldId().set(((*fShift)++)-1);
 }
-BitFEId Core::get_BitFEId() {
-  assert((unsigned int)*MoFEMFiniteElement_shift<BitFEId().set().to_ulong());
-  return BitFEId(1<<(((*MoFEMFiniteElement_shift)++)-1)); 
+BitFEId Core::getFEShift() {
+  assert((unsigned int)*feShift<BitFEId().set().to_ulong());
+  return BitFEId(1<<(((*feShift)++)-1)); 
 }
-BitProblemId Core::get_problem_shift() {
-  assert((unsigned int)*p_shift<BitProblemId().set().to_ulong());
-  return BitProblemId(1<<(((*p_shift)++)-1)); 
+BitProblemId Core::getProblemShift() {
+  assert((unsigned int)*pShift<BitProblemId().set().to_ulong());
+  return BitProblemId(1<<(((*pShift)++)-1)); 
 }
-PetscErrorCode Core::clear_map() {
+PetscErrorCode Core::clearMap() {
   PetscFunctionBegin;
   refinedEntities.clear();
   refinedFiniteElements.clear();
@@ -458,11 +452,11 @@ PetscErrorCode Core::clear_map() {
   finiteElementsMoFEMEnts.clear();
   entFEAdjacencies.clear();
   moFEMProblems.clear();
-  cubit_meshsets.clear();
+  cubitMeshsets.clear();
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode Core::add_prism_to_mofem_database(const EntityHandle prism,int verb) {
+PetscErrorCode Core::addPrismToDatabase(const EntityHandle prism,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   try {

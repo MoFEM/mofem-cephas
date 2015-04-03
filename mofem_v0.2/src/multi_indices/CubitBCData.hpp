@@ -69,7 +69,7 @@ struct DisplacementCubitBcData: public GenericCubitBcData {
     
     _data_ data;
 
-    const CubitBC_BitSet type;
+    const CubitBCType type;
     DisplacementCubitBcData(): type(DISPLACEMENTSET) {};
     
     virtual PetscErrorCode fill_data(const vector<char>& bc_data) {
@@ -106,7 +106,7 @@ struct ForceCubitBcData: public GenericCubitBcData {
     };
     
     _data_ data;
-    const CubitBC_BitSet type;
+    const CubitBCType type;
     ForceCubitBcData(): type(FORCESET) {};
 
     virtual PetscErrorCode fill_data(const vector<char>& bc_data) {
@@ -147,7 +147,7 @@ struct VelocityCubitBcData: public GenericCubitBcData {
     };
     
     _data_ data;
-    const CubitBC_BitSet type;
+    const CubitBCType type;
     VelocityCubitBcData(): type(VELOCITYSET) {};
    
     virtual PetscErrorCode fill_data(const vector<char>& bc_data) {
@@ -188,7 +188,7 @@ struct AccelerationCubitBcData: public GenericCubitBcData {
     };
     
     _data_ data;
-    const CubitBC_BitSet type;
+    const CubitBCType type;
     AccelerationCubitBcData(): type(ACCELERATIONSET) {};
 
     virtual PetscErrorCode fill_data(const vector<char>& bc_data) {
@@ -229,7 +229,7 @@ struct TemperatureCubitBcData: public GenericCubitBcData {
     };
     
     _data_ data;
-    const CubitBC_BitSet type;
+    const CubitBCType type;
     TemperatureCubitBcData(): type(TEMPERATURESET) {};
 
     virtual PetscErrorCode fill_data(const vector<char>& bc_data) {
@@ -259,7 +259,7 @@ struct PressureCubitBcData: public GenericCubitBcData {
     };
     
     _data_ data;
-    const CubitBC_BitSet type;
+    const CubitBCType type;
     PressureCubitBcData(): type(PRESSURESET) {};
    
     virtual PetscErrorCode fill_data(const vector<char>& bc_data) {
@@ -294,7 +294,7 @@ struct HeatfluxCubitBcData: public GenericCubitBcData {
     };
     
     _data_ data;
-    const CubitBC_BitSet type;
+    const CubitBCType type;
     HeatfluxCubitBcData(): type(HEATFLUXSET) {};
 
     virtual PetscErrorCode fill_data(const vector<char>& bc_data) {
@@ -323,7 +323,7 @@ struct CfgCubitBcData: public GenericCubitBcData {
     };
     
     _data_ data;
-    const CubitBC_BitSet type;
+    const CubitBCType type;
     CfgCubitBcData(): type(INTERFACESET) {};
     
     virtual PetscErrorCode fill_data(const vector<char>& bc_data) {

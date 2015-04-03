@@ -75,7 +75,7 @@ PetscErrorCode DisplacementBCFEMethodPreAndPostProc::iNitalize() {
 	ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
 	for(int dim = 0;dim<3;dim++) {
 	  Range ents;
-	  ierr = it->get_Cubit_msId_entities_by_dimension(mField.get_moab(),dim,ents,true); CHKERRQ(ierr);
+	  ierr = it->get_cubit_msId_entities_by_dimension(mField.get_moab(),dim,ents,true); CHKERRQ(ierr);
 	  if(dim>1) {
           Range _edges;
           ierr = mField.get_moab().get_adjacencies(ents,1,false,_edges,Interface::UNION); CHKERRQ(ierr);
@@ -239,7 +239,7 @@ PetscErrorCode SpatialPositionsBCFEMethodPreAndPostProc::iNitalize() {
 	ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
 	for(int dim = 0;dim<3;dim++) {
 	  Range ents;
-	  ierr = it->get_Cubit_msId_entities_by_dimension(mField.get_moab(),dim,ents,true); CHKERRQ(ierr);
+	  ierr = it->get_cubit_msId_entities_by_dimension(mField.get_moab(),dim,ents,true); CHKERRQ(ierr);
 	  if(dim>1) {
           Range _edges;
           ierr = mField.get_moab().get_adjacencies(ents,1,false,_edges,Interface::UNION); CHKERRQ(ierr);
@@ -307,7 +307,7 @@ PetscErrorCode TemperatureBCFEMethodPreAndPostProc::iNitalize() {
       ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
       for(int dim = 0;dim<3;dim++) {
         Range ents;
-        ierr = it->get_Cubit_msId_entities_by_dimension(mField.get_moab(),dim,ents,true); CHKERRQ(ierr);
+        ierr = it->get_cubit_msId_entities_by_dimension(mField.get_moab(),dim,ents,true); CHKERRQ(ierr);
         if(dim>1) {
 	  Range _edges;
 	  ierr = mField.get_moab().get_adjacencies(ents,1,false,_edges,Interface::UNION); CHKERRQ(ierr);
@@ -441,7 +441,7 @@ PetscErrorCode DirichletBCFromBlockSetFEMethodPreAndPostProc::iNitalize() {
         ierr = it->get_Cubit_attributes(mydata); CHKERRQ(ierr);
         for(int dim = 0;dim<3;dim++) {
           Range ents;
-          ierr = it->get_Cubit_msId_entities_by_dimension(mField.get_moab(),dim,ents,true); CHKERRQ(ierr);
+          ierr = it->get_cubit_msId_entities_by_dimension(mField.get_moab(),dim,ents,true); CHKERRQ(ierr);
           if(dim>1) {
             Range _edges;
             ierr = mField.get_moab().get_adjacencies(ents,1,false,_edges,Interface::UNION); CHKERRQ(ierr);

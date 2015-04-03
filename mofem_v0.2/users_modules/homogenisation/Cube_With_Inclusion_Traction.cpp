@@ -98,9 +98,9 @@ int main(int argc, char *argv[]) {
   //=======================================================================================================
   
   Range SurTrisNeg, SurTrisPos;
-  ierr = mField.get_Cubit_msId_entities_by_dimension(101,SIDESET,2,SurTrisNeg,true); CHKERRQ(ierr);
+  ierr = mField.get_cubit_msId_entities_by_dimension(101,SIDESET,2,SurTrisNeg,true); CHKERRQ(ierr);
   ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SideSet 101 = %d\n",SurTrisNeg.size()); CHKERRQ(ierr);
-  ierr = mField.get_Cubit_msId_entities_by_dimension(102,SIDESET,2,SurTrisPos,true); CHKERRQ(ierr);
+  ierr = mField.get_cubit_msId_entities_by_dimension(102,SIDESET,2,SurTrisPos,true); CHKERRQ(ierr);
   ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SideSet 102 = %d\n",SurTrisPos.size()); CHKERRQ(ierr);
   
   Range SurNodesNeg,SurNodesPos;
@@ -278,7 +278,7 @@ int main(int argc, char *argv[]) {
     
     //add finite elements entities
     Range SurfacesFaces;
-    ierr = mField.get_Cubit_msId_entities_by_dimension(103,SIDESET,2,SurfacesFaces,true); CHKERRQ(ierr);
+    ierr = mField.get_cubit_msId_entities_by_dimension(103,SIDESET,2,SurfacesFaces,true); CHKERRQ(ierr);
     ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SideSet 103 = %d\n",SurfacesFaces.size()); CHKERRQ(ierr);
   
     //to create meshset from range
@@ -479,7 +479,7 @@ int main(int argc, char *argv[]) {
     
     //End Disp
     /*Range ents;*/
-    //ierr = mField.get_Cubit_msId_entities_by_dimension(1,NodeSet,0,ents,true); CHKERRQ(ierr);
+    //ierr = mField.get_cubit_msId_entities_by_dimension(1,NodeSet,0,ents,true); CHKERRQ(ierr);
     //for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"DISPLACEMENT",dit)) {
     //if(find(ents.begin(),ents.end(),dit->get_ent())!=ents.end()) {
     //PetscSynchronizedPrintf(PETSC_COMM_WORLD, "val = %6.7e\n",dit->get_FieldData());
@@ -488,7 +488,7 @@ int main(int argc, char *argv[]) {
     
     //Support stresses
     //Range ents;
-    //ierr = mField.get_Cubit_msId_entities_by_dimension(4,NodeSet,0,ents,true); CHKERRQ(ierr);
+    //ierr = mField.get_cubit_msId_entities_by_dimension(4,NodeSet,0,ents,true); CHKERRQ(ierr);
     
     //Destroy matrices
     ierr = VecDestroy(&F); CHKERRQ(ierr);

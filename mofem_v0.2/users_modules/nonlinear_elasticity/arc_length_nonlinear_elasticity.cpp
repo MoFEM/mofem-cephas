@@ -129,7 +129,7 @@ int main(int argc, char *argv[]) {
     problem_bit_level = bit_levels.back();
     
     Range CubitSideSets_meshsets;
-    ierr = m_field.get_Cubit_meshsets(SIDESET,CubitSideSets_meshsets); CHKERRQ(ierr);
+    ierr = m_field.get_cubit_meshsets(SIDESET,CubitSideSets_meshsets); CHKERRQ(ierr);
 
     //Fields
     ierr = m_field.add_field("SPATIAL_POSITION",H1,3); CHKERRQ(ierr);

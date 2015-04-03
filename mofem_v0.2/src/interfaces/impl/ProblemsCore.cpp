@@ -362,8 +362,8 @@ PetscErrorCode Core::build_partitioned_problem(MoFEMProblem *problem_ptr,bool sq
 
   ierr = PetscFree(status); CHKERRQ(ierr);
 
-  ierr = print_partitioned_problem(problem_ptr,verb); CHKERRQ(ierr);
-  ierr = debug_partitioned_problem(problem_ptr,verb); CHKERRQ(ierr);
+  ierr = printPartitionedProblem(problem_ptr,verb); CHKERRQ(ierr);
+  ierr = debugPartitionedProblem(problem_ptr,verb); CHKERRQ(ierr);
 
   *build_MoFEM |= 1<<3;
   *build_MoFEM |= 1<<4; // It is assumed that user who uses this function knows what he is doing
@@ -614,7 +614,7 @@ PetscErrorCode Core::simple_partition_problem(const string &name,int verb) {
   }
   ierr = PetscLayoutDestroy(&layout_row); CHKERRQ(ierr);
   ierr = PetscLayoutDestroy(&layout_col); CHKERRQ(ierr);
-  ierr = print_partitioned_problem(&*p_miit,verb); CHKERRQ(ierr);
+  ierr = printPartitionedProblem(&*p_miit,verb); CHKERRQ(ierr);
   *build_MoFEM |= 1<<4;
   PetscFunctionReturn(0);
 }
@@ -695,8 +695,8 @@ PetscErrorCode Core::compose_problem(const string &name,const string &problem_fo
       }
     }
   }
-  ierr = print_partitioned_problem(&*p_miit,verb); CHKERRQ(ierr);
-  ierr = debug_partitioned_problem(&*p_miit,verb); CHKERRQ(ierr);
+  ierr = printPartitionedProblem(&*p_miit,verb); CHKERRQ(ierr);
+  ierr = debugPartitionedProblem(&*p_miit,verb); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 PetscErrorCode Core::block_problem(const string &name,const vector<string> block_problems,int verb) {
@@ -784,11 +784,11 @@ PetscErrorCode Core::block_problem(const string &name,const vector<string> block
     ierr = VecRestoreArray(shift_rows_and_cols_global,&array); CHKERRQ(ierr);
   }
   ierr = VecDestroy(&shift_rows_and_cols_global); CHKERRQ(ierr);
-  ierr = print_partitioned_problem(&*pit,verb); CHKERRQ(ierr);
-  ierr = debug_partitioned_problem(&*pit,verb); CHKERRQ(ierr);
+  ierr = printPartitionedProblem(&*pit,verb); CHKERRQ(ierr);
+  ierr = debugPartitionedProblem(&*pit,verb); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::print_partitioned_problem(const MoFEMProblem *problem_ptr,int verb) {
+PetscErrorCode Core::printPartitionedProblem(const MoFEMProblem *problem_ptr,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   if(verbose>0) {
@@ -819,7 +819,7 @@ PetscErrorCode Core::print_partitioned_problem(const MoFEMProblem *problem_ptr,i
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::debug_partitioned_problem(const MoFEMProblem *problem_ptr,int verb) {
+PetscErrorCode Core::debugPartitionedProblem(const MoFEMProblem *problem_ptr,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   if(debug>0) {

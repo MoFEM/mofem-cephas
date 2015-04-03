@@ -802,7 +802,7 @@ PetscErrorCode Core::refine_PRISM(const EntityHandle meshset,const BitRefLevel &
 	    SETERRQ(PETSC_COMM_SELF,1,msg);
 	  }
 	  ref_prism_bit.set(pp);
-	  ierr = add_prism_to_mofem_database(ref_prisms[pp]); CHKERRQ(ierr);
+	  ierr = addPrismToDatabase(ref_prisms[pp]); CHKERRQ(ierr);
 	  if(verb>2) {
 	    ostringstream ss;
 	    ss << "add prism: " << *(p_MoFEMFiniteElement.first->get_RefMoFEMElement()) << endl;
