@@ -175,6 +175,7 @@ PetscErrorCode Core::build_partitioned_problem(MoFEMProblem *problem_ptr,bool sq
     hi_mit = numered_dofs_ptr[ss]->get<Part_mi_tag>().upper_bound(rAnk);
     int &local_idx = *local_nbdof_ptr[ss];
     for(;mit!=hi_mit;mit++) {
+
       bool success;
       success = numered_dofs_ptr[ss]->modify(
 	numered_dofs_ptr[ss]->project<0>(mit),NumeredDofMoFEMEntity_local_idx_change(local_idx));
@@ -194,6 +195,7 @@ PetscErrorCode Core::build_partitioned_problem(MoFEMProblem *problem_ptr,bool sq
 
 	EntityHandle entity = mit->get_ent();
 	vector<int> sharing_procs(MAX_SHARING_PROCS,-1);
+
 	if(pstatus & PSTATUS_MULTISHARED) {
 	  rval = moab.tag_get_data(pcomm->sharedps_tag(),&entity,1,&sharing_procs[0]); CHKERR_PETSC(rval);
 	} else if(pstatus & PSTATUS_SHARED) {

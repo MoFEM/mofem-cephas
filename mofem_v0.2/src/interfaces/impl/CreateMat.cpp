@@ -177,7 +177,6 @@ PetscErrorCode CreateRowComressedADJMatrix::createMat(
     MoFEMEntity *mofem_ent_ptr = NULL;
     NumeredDofMoFEMEntity_multiIndex_uid_view_hashed dofs_col_view;
 
-    //FIXME: use pstatus multi-index iterator
     typename boost::multi_index::index<NumeredDofMoFEMEntity_multiIndex,TAG>::type::iterator mit_row,hi_mit_row;
     mit_row = dofs_row_by_idx.begin();
     hi_mit_row = dofs_row_by_idx.end();
@@ -737,8 +736,6 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const string &problem_name,i
 
 	  if(row == rowPrint && col == colPrint) {
 	  
-	    EntityHandle ent = fePtr->get_ent();
-      
 	    ostringstream ss;
 	    ss << "fe:\n" << *fePtr << endl;
 	    ss << "row:\n" << *rit << endl;

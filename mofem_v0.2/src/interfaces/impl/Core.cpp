@@ -486,12 +486,11 @@ PetscErrorCode Core::synchronise_entities(Range &ents,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
 
-  ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
+  //ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
 
   //make a buffer
   vector<vector<EntityHandle> > sbuffer(sIze);
 
-  vector<int> sharing_procs(MAX_SHARING_PROCS,-1);
   Range::iterator eit = ents.begin();
   for(;eit!=ents.end();eit++) {
     
@@ -504,8 +503,6 @@ PetscErrorCode Core::synchronise_entities(Range &ents,int verb) {
 	rAnk,*eit); 	
     }
 
-    EntityHandle owning_ent;
-    owning_ent = meit->get_owner_ent();
     unsigned char pstatus = meit->get_pstatus(); 
 
     if(pstatus == 0) continue;
@@ -516,25 +513,21 @@ PetscErrorCode Core::synchronise_entities(Range &ents,int verb) {
       PetscSynchronizedPrintf(comm,"%s",zz.str().c_str());
     }
 
-    fill(sharing_procs.begin(),sharing_procs.end(),-1);
-    if(pstatus & PSTATUS_MULTISHARED) {
-      // entity is multi shared
-      rval = moab.tag_get_data(pcomm->sharedps_tag(),&*eit,1,&sharing_procs[0]); CHKERR_PETSC(rval);
-    } else if(pstatus & PSTATUS_SHARED) {
-      // shared 
-      rval = moab.tag_get_data(pcomm->sharedp_tag(),&*eit,1,&sharing_procs[0]); CHKERR_PETSC(rval);
-    }
-
-    for(int proc = 0; proc<MAX_SHARING_PROCS && -1 != sharing_procs[proc]; proc++) {
-      if(sharing_procs[proc] == -1) {
+    for(int proc = 0; proc<MAX_SHARING_PROCS && -1 != meit->get_sharing_procs_ptr()[proc]; proc++) {
+      if(meit->get_sharing_procs_ptr()[proc] == -1) {
 	SETERRQ(PETSC_COMM_SELF,MOFEM_IMPOSIBLE_CASE,"sharing processor not set");
       }
-      if(sharing_procs[proc] == rAnk) {
+      if(meit->get_sharing_procs_ptr()[proc] == rAnk) {
 	continue;
       }
-      sbuffer[sharing_procs[proc]].push_back(owning_ent);
+      EntityHandle handle_on_sharing_proc = meit->get_sharing_handlers_ptr()[proc];
+      sbuffer[meit->get_sharing_procs_ptr()[proc]].push_back(handle_on_sharing_proc);
       if(verb>1) {
-	PetscSynchronizedPrintf(comm,"send %lu (%lu) to %d at %d\n",meit->get_ref_ent(),owning_ent,sharing_procs[proc],rAnk);
+	PetscSynchronizedPrintf(comm,"send %lu (%lu) to %d at %d\n",
+	  meit->get_ref_ent(),handle_on_sharing_proc,meit->get_sharing_procs_ptr()[proc],rAnk);
+      }
+      if(!(pstatus&PSTATUS_MULTISHARED)) {
+	break;
       }
     }
 
@@ -596,9 +589,9 @@ PetscErrorCode Core::synchronise_entities(Range &ents,int verb) {
   for(int proc=0,kk=0; proc<sIze; proc++) {
     if(!sbuffer_lengths[proc]) continue; // no message to send to this proc
     ierr = MPI_Isend(
-      &(sbuffer[proc])[0], // buffer to send
-      sbuffer_lengths[proc], 	   // message length
-      MPIU_INT,proc,       // tip proc
+      &(sbuffer[proc])[0], 	// buffer to send
+      sbuffer_lengths[proc], 	// message length
+      MPIU_INT,proc,       	// to proc
       tag,comm,s_waits+kk); CHKERRQ(ierr);
     kk++;
   }
@@ -618,14 +611,17 @@ PetscErrorCode Core::synchronise_entities(Range &ents,int verb) {
 
   // synchronise range
   for(int kk = 0;kk<nrecvs;kk++) {
+
     int len = olengths[kk];
     int *data_from_proc = rbuf[kk];
+
     for(int ee = 0;ee<len;ee+=block_size) {
+
       EntityHandle ent;
       bcopy(&data_from_proc[ee],&ent,sizeof(EntityHandle));
-      RefMoFEMEntity_multiIndex::index<Ent_Owner_mi_tag>::type::iterator meit;
-      meit = refinedEntities.get<Ent_Owner_mi_tag>().find(ent);
-      if(meit == refinedEntities.get<Ent_Owner_mi_tag>().end()) {
+      RefMoFEMEntity_multiIndex::index<Ent_mi_tag>::type::iterator meit;
+      meit = refinedEntities.get<Ent_mi_tag>().find(ent);
+      if(meit == refinedEntities.get<Ent_mi_tag>().end()) {
 	SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,
 	  "rank %d entity %lu not exist on database, local entity can not be found for this owner",rAnk,ent); 	
       }
@@ -633,7 +629,9 @@ PetscErrorCode Core::synchronise_entities(Range &ents,int verb) {
 	PetscSynchronizedPrintf(comm,"received %ul (%ul) from %d at %d\n",meit->get_ref_ent(),ent,onodes[kk],rAnk);
       }
       ents.insert(meit->get_ref_ent());
+
     }
+
   }
 
   if(verb>0) {
