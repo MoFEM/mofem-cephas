@@ -91,7 +91,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.modify_finite_element_add_field_data("FE","FIELD"); CHKERRQ(ierr);
   //add entities to finite element
   ierr = m_field.add_ents_to_finite_element_by_TETs(root_set,"FE"); CHKERRQ(ierr);
-  //build finite elements
+  //build finite elemnts
   ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
   //build adjacencies
   ierr = m_field.build_adjacencies(bit_level0); CHKERRQ(ierr);
@@ -102,10 +102,11 @@ int main(int argc, char *argv[]) {
   ierr = DMMoFEMAddElement(dm,"FE"); CHKERRQ(ierr);
   ierr = DMSetUp(dm); CHKERRQ(ierr);
 
+  ierr = m_field.partition_check_matrix_fill_in("DMMOFEM",-1,-1,1); CHKERRQ(ierr);
+
+  // dump data to file, just to check if something was changed
   Mat m;
-
   ierr = DMCreateMatrix(dm,&m); CHKERRQ(ierr);
-
   PetscViewer viewer;
   ierr = PetscViewerASCIIOpen(PETSC_COMM_WORLD,"dm_build_partitioned_mesh.txt",&viewer); CHKERRQ(ierr);
   MatView(m,viewer);

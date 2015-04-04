@@ -1,15 +1,6 @@
 /** \file BCMultiIndices.hpp
  * \brief Multi-index containers, data boundary data structures and other low-level functions
  *
- */ 
-
-/*
- * Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl) <br>
- *
- * The MoFEM package is copyrighted by Lukasz Kaczmarczyk. 
- * It can be freely used for educational and research purposes 
- * by other institutions. If you use this softwre pleas cite my work. 
- *
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or (at your
@@ -37,39 +28,39 @@ namespace MoFEM {
  */
 struct CubitMeshSets {
   EntityHandle meshset;
-  CubitBC_BitSet CubitBCType;
-  vector<Tag> tag_handles;
-  int *msId;
-  char* tag_bc_data;
+  CubitBCType cubit_bc_type; 	///< type of meshset from cubit NodeSet, BlockSet, SideSet and more
+  vector<Tag> tag_handles;	///< vector of tag handles to types of data passed from cubit
+  int *msId;			///< cubit meshset ID
+  char* tag_bc_data;		
   int tag_bc_size;
   unsigned int *tag_block_header_data;
   double* tag_block_attributes;
   int tag_block_attributes_size;
   char* tag_name_data;
-  const CubitBC_BitSet meshsets_mask;
+  const CubitBCType meshsets_mask;
   CubitMeshSets(Interface &moab,const EntityHandle _meshset);
-  CubitMeshSets(Interface &moab,const CubitBC_BitSet _CubitBCType,const int _msId);
+  CubitMeshSets(Interface &moab,const CubitBCType _cubit_bc_type,const int _msId);
+
   inline int get_msId() const { return *msId; }
-  inline CubitBC_BitSet get_CubitBCType() const { return CubitBCType; }
-
+  inline CubitBCType get_cubit_bc_type() const { return cubit_bc_type; }
   inline EntityHandle get_meshset() const { return meshset; }
-  inline unsigned long int get_CubitBCType_ulong() const { return CubitBCType.to_ulong(); }
-  inline unsigned long int get_CubitBCType_mask_meshset_types_ulong() const { return (CubitBCType&meshsets_mask).to_ulong(); }
-  inline unsigned long int get_CubitBCType_bc_data_types_ulong() const { return (CubitBCType&(~meshsets_mask)).to_ulong(); }
+  inline unsigned long int get_cubit_bc_type_ulong() const { return cubit_bc_type.to_ulong(); }
+  inline unsigned long int get_cubit_bc_type_mask_meshset_types_ulong() const { return (cubit_bc_type&meshsets_mask).to_ulong(); }
+  inline unsigned long int get_cubit_bc_type_bc_data_types_ulong() const { return (cubit_bc_type&(~meshsets_mask)).to_ulong(); }
 
-  PetscErrorCode get_Cubit_msId_entities_by_dimension(Interface &moab,const int dimension,Range &entities,const bool recursive = false) const;
-  PetscErrorCode get_Cubit_msId_entities_by_dimension(Interface &moab,Range &entities,const bool recursive = false)  const;
-  PetscErrorCode get_Cubit_msId_entities_by_type(Interface &moab,const EntityType type,Range &entities,const bool recursive = false) const;
+  PetscErrorCode get_cubit_msId_entities_by_dimension(Interface &moab,const int dimension,Range &entities,const bool recursive = false) const;
+  PetscErrorCode get_cubit_msId_entities_by_dimension(Interface &moab,Range &entities,const bool recursive = false)  const;
+  PetscErrorCode get_cubit_msId_entities_by_type(Interface &moab,const EntityType type,Range &entities,const bool recursive = false) const;
 
   /** 
-   *  \brief Function that returns the CubitBC_BitSet type of the contents of bc_data
+   *  \brief Function that returns the CubitBCType type of the contents of bc_data
    */
-  PetscErrorCode get_type_from_bc_data(const vector<char> &bc_data,CubitBC_BitSet &type) const;
+  PetscErrorCode get_type_from_bc_data(const vector<char> &bc_data,CubitBCType &type) const;
 
   /** 
-   *  \brief Function that returns the CubitBC_BitSet type of the contents of bc_data
+   *  \brief Function that returns the CubitBCType type of the contents of bc_data
   */
-  PetscErrorCode get_type_from_bc_data(CubitBC_BitSet &type) const;
+  PetscErrorCode get_type_from_bc_data(CubitBCType &type) const;
     
   /**
    * \brief get bc_data vector from MoFEM database
@@ -105,7 +96,7 @@ struct CubitMeshSets {
   PetscErrorCode get_cubit_bc_data_structure(_CUBIT_BC_DATA_TYPE_& data) const {
     PetscFunctionBegin;
     PetscErrorCode ierr;
-    if((CubitBCType&data.type).none()) {
+    if((cubit_bc_type&data.type).none()) {
       SETERRQ(PETSC_COMM_SELF,1,"bc_data are not for _CUBIT_BC_DATA_TYPE_ structure");  
     }
     vector<char> bc_data;
@@ -115,14 +106,14 @@ struct CubitMeshSets {
   }
 
   /**
-   *  \brief Function that returns the CubitBC_BitSet type of the block name, sideset name etc.
+   *  \brief Function that returns the CubitBCType type of the block name, sideset name etc.
    */
-  PetscErrorCode get_type_from_Cubit_name(const string &name,CubitBC_BitSet &type) const;
+  PetscErrorCode get_type_from_Cubit_name(const string &name,CubitBCType &type) const;
 
   /**
-   *  \brief Function that returns the CubitBC_BitSet type of the block name, sideset name etc.
+   *  \brief Function that returns the CubitBCType type of the block name, sideset name etc.
    */
-  PetscErrorCode get_type_from_Cubit_name(CubitBC_BitSet &type) const;
+  PetscErrorCode get_type_from_Cubit_name(CubitBCType &type) const;
     
   /**
    * \brief get Cubit block attributes
@@ -184,7 +175,7 @@ struct CubitMeshSets {
   PetscErrorCode get_attribute_data_structure(_ATTRIBUTE_TYPE_ &data) const {
     PetscFunctionBegin;
     PetscErrorCode ierr;
-    if((CubitBCType&data.type).none()) {
+    if((cubit_bc_type&data.type).none()) {
         SETERRQ(PETSC_COMM_SELF,1,"attributes are not for _ATTRIBUTE_TYPE_ structure");
     }
     vector<double> attributes;
@@ -196,7 +187,7 @@ struct CubitMeshSets {
   PetscErrorCode set_attribute_data_structure(_ATTRIBUTE_TYPE_ &data) const {
     PetscFunctionBegin;
     PetscErrorCode ierr;
-    if((CubitBCType&data.type).none()) {
+    if((cubit_bc_type&data.type).none()) {
         SETERRQ(PETSC_COMM_SELF,1,"attributes are not for _ATTRIBUTE_TYPE_ structure");
     }
     double *ptr = const_cast<double*>(tag_block_attributes);
@@ -219,11 +210,11 @@ struct CubitMeshSets {
  * \param hashed_unique<
       tag<Meshset_mi_tag>, member<CubitMeshSets,EntityHandle,&CubitMeshSets::meshset> >,
  * \param ordered_non_unique<
-      tag<CubitMeshSets_mi_tag>, const_mem_fun<CubitMeshSets,unsigned long int,&CubitMeshSets::get_CubitBCType_ulong> >,
+      tag<CubitMeshSets_mi_tag>, const_mem_fun<CubitMeshSets,unsigned long int,&CubitMeshSets::get_cubit_bc_type_ulong> >,
  * \param ordered_non_unique<
-      tag<CubitMeshSets_mask_meshset_mi_tag>, const_mem_fun<CubitMeshSets,unsigned long int,&CubitMeshSets::get_CubitBCType_mask_meshset_types_ulong> >,
+      tag<CubitMeshSets_mask_meshset_mi_tag>, const_mem_fun<CubitMeshSets,unsigned long int,&CubitMeshSets::get_cubit_bc_type_mask_meshset_types_ulong> >,
  * \param ordered_non_unique<
-      tag<CubitMeshSets_bc_data_mi_tag>, const_mem_fun<CubitMeshSets,unsigned long int,&CubitMeshSets::get_CubitBCType_bc_data_types_ulong> >,
+      tag<CubitMeshSets_bc_data_mi_tag>, const_mem_fun<CubitMeshSets,unsigned long int,&CubitMeshSets::get_cubit_bc_type_bc_data_types_ulong> >,
  * \param ordered_non_unique<
       tag<CubitMeshSets_name>, const_mem_fun<CubitMeshSets,string,&CubitMeshSets::get_Cubit_name> >,
  *
@@ -232,7 +223,7 @@ struct CubitMeshSets {
       composite_key<
 	CubitMeshSets, <br>
 	  const_mem_fun<CubitMeshSets,int,&CubitMeshSets::get_msId>,
-	  const_mem_fun<CubitMeshSets,unsigned long int,&CubitMeshSets::get_CubitBCType_ulong> > >
+	  const_mem_fun<CubitMeshSets,unsigned long int,&CubitMeshSets::get_cubit_bc_type_ulong> > >
  *
  */
 typedef multi_index_container<
@@ -241,11 +232,11 @@ typedef multi_index_container<
     hashed_unique<
       tag<Meshset_mi_tag>, member<CubitMeshSets,EntityHandle,&CubitMeshSets::meshset> >,
     ordered_non_unique<
-      tag<CubitMeshSets_mi_tag>, const_mem_fun<CubitMeshSets,unsigned long int,&CubitMeshSets::get_CubitBCType_ulong> >,
+      tag<CubitMeshSets_mi_tag>, const_mem_fun<CubitMeshSets,unsigned long int,&CubitMeshSets::get_cubit_bc_type_ulong> >,
     ordered_non_unique<
-      tag<CubitMeshSets_mask_meshset_mi_tag>, const_mem_fun<CubitMeshSets,unsigned long int,&CubitMeshSets::get_CubitBCType_mask_meshset_types_ulong> >,
+      tag<CubitMeshSets_mask_meshset_mi_tag>, const_mem_fun<CubitMeshSets,unsigned long int,&CubitMeshSets::get_cubit_bc_type_mask_meshset_types_ulong> >,
     ordered_non_unique<
-      tag<CubitMeshSets_bc_data_mi_tag>, const_mem_fun<CubitMeshSets,unsigned long int,&CubitMeshSets::get_CubitBCType_bc_data_types_ulong> >,
+      tag<CubitMeshSets_bc_data_mi_tag>, const_mem_fun<CubitMeshSets,unsigned long int,&CubitMeshSets::get_cubit_bc_type_bc_data_types_ulong> >,
     ordered_non_unique<
       tag<CubitMeshSets_name>, const_mem_fun<CubitMeshSets,string,&CubitMeshSets::get_Cubit_name> >,
     hashed_unique<
@@ -253,7 +244,7 @@ typedef multi_index_container<
       composite_key<
 	CubitMeshSets,
 	  const_mem_fun<CubitMeshSets,int,&CubitMeshSets::get_msId>,
-	  const_mem_fun<CubitMeshSets,unsigned long int,&CubitMeshSets::get_CubitBCType_mask_meshset_types_ulong> > >
+	  const_mem_fun<CubitMeshSets,unsigned long int,&CubitMeshSets::get_cubit_bc_type_mask_meshset_types_ulong> > >
   > > CubitMeshSet_multiIndex;
 
 }

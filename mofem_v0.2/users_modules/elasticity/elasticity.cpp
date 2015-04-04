@@ -1,8 +1,3 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
- * FIXME: DESCRIPTION
- */
-
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -77,8 +72,6 @@ int main(int argc, char *argv[]) {
 
   moab::Core mb_instance;
   Interface& moab = mb_instance;
-  ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
-  if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
   PetscBool flg_block_config,flg_file;
   char mesh_file_name[255];
@@ -106,14 +99,16 @@ int main(int argc, char *argv[]) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
 
+  ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
+  if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
+
   if(is_partitioned == PETSC_TRUE) {
     //Read mesh to MOAB
     const char *option;
-    option = "PARALLEL=BCAST_DELETE;PARALLEL_RESOLVE_SHARED_ENTS;PARTITION=PARALLEL_PARTITION;";
+    option = "PARALLEL=BCAST_DELETE;"
+      "PARALLEL_RESOLVE_SHARED_ENTS;"
+      "PARTITION=PARALLEL_PARTITION;";
     rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
-    rval = pcomm->resolve_shared_ents(0,3,0); CHKERR_PETSC(rval);
-    rval = pcomm->resolve_shared_ents(0,3,1); CHKERR_PETSC(rval);
-    rval = pcomm->resolve_shared_ents(0,3,2); CHKERR_PETSC(rval);
   } else {
     const char *option;
     option = "";
@@ -128,6 +123,7 @@ int main(int argc, char *argv[]) {
   BitRefLevel bit_level0;
   bit_level0.set(0);
   ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
+
   Range meshset_level0;
   ierr = m_field.get_entities_by_ref_level(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
   PetscSynchronizedPrintf(PETSC_COMM_WORLD,"meshset_level0 %d\n",meshset_level0.size());
@@ -145,6 +141,9 @@ int main(int argc, char *argv[]) {
   ierr = m_field.add_ents_to_field_by_TETs(0,"DISPLACEMENT",2); CHKERRQ(ierr);
   ierr = m_field.add_ents_to_field_by_TETs(0,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
 
+  //ierr = m_field.synchronise_field_entities("DISPLACEMENT"); CHKERRQ(ierr);
+  //ierr = m_field.synchronise_field_entities("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
   ierr = m_field.set_field_order(0,MBTET,"DISPLACEMENT",order); CHKERRQ(ierr);
@@ -157,7 +156,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
 
   // configure blocks by parsing config file
-  // it allow to set approximation order for each block independettly
+  // it allow to set approximation order for each block independently
   map<int,BlockOptionData> block_data;
   if(flg_block_config) {
     try {
@@ -179,7 +178,7 @@ int main(int argc, char *argv[]) {
         config_file_options.add_options()
 	 (str_capa.str().c_str(),po::value<double>(&block_data[it->get_msId()].pOisson)->default_value(-1));
 	ostringstream str_init_temp;
-        str_init_temp << "block_" << it->get_msId() << ".initail_temperature";
+        str_init_temp << "block_" << it->get_msId() << ".initial_temperature";
         config_file_options.add_options()
 	 (str_init_temp.str().c_str(),po::value<double>(&block_data[it->get_msId()].initTemp)->default_value(0));
       }
@@ -189,21 +188,22 @@ int main(int argc, char *argv[]) {
       for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
 	if(block_data[it->get_msId()].oRder == -1) continue;
         if(block_data[it->get_msId()].oRder == order) continue;
-	PetscPrintf(PETSC_COMM_WORLD,"Set block %d oRder to %d\n",it->get_msId(),block_data[it->get_msId()].oRder);
+	PetscPrintf(PETSC_COMM_WORLD,"Set block %d order to %d\n",it->get_msId(),block_data[it->get_msId()].oRder);
 	Range block_ents;
-	rval = moab.get_entities_by_handle(it->meshset,block_ents,true); CHKERR(rval);
+	rval = moab.get_entities_by_handle(it->get_meshset(),block_ents,true); CHKERR(rval);
 	Range ents_to_set_order;
 	ierr = moab.get_adjacencies(block_ents,3,false,ents_to_set_order,Interface::UNION); CHKERRQ(ierr);
 	ents_to_set_order = ents_to_set_order.subset_by_type(MBTET);
 	ierr = moab.get_adjacencies(block_ents,2,false,ents_to_set_order,Interface::UNION); CHKERRQ(ierr);
 	ierr = moab.get_adjacencies(block_ents,1,false,ents_to_set_order,Interface::UNION); CHKERRQ(ierr);
+	ierr = m_field.synchronise_entities(ents_to_set_order); CHKERRQ(ierr);
         ierr = m_field.set_field_order(ents_to_set_order,"DISPLACEMENT",block_data[it->get_msId()].oRder); CHKERRQ(ierr);
       }
       vector<string> additional_parameters;
       additional_parameters = collect_unrecognized(parsed.options,po::include_positional);
       for(vector<string>::iterator vit = additional_parameters.begin();
 	vit!=additional_parameters.end();vit++) {
-	ierr = PetscPrintf(PETSC_COMM_WORLD,"** WARRNING Unrecognised option %s\n",vit->c_str()); CHKERRQ(ierr);
+	ierr = PetscPrintf(PETSC_COMM_WORLD,"** WARNING Unrecognised option %s\n",vit->c_str()); CHKERRQ(ierr);
       }
     } catch (const std::exception& ex) {
       ostringstream ss;
@@ -310,6 +310,7 @@ int main(int argc, char *argv[]) {
   //set dm datastruture whict created mofem datastructures
   ierr = DMMoFEMCreateMoFEM(dm,&m_field,dm_name,bit_level0); CHKERRQ(ierr);
   ierr = DMSetFromOptions(dm); CHKERRQ(ierr);
+  ierr = DMMoFEMSetIsPartitioned(dm,is_partitioned); CHKERRQ(ierr);
   //add elements to dm
   ierr = DMMoFEMAddElement(dm,"ELASTIC"); CHKERRQ(ierr);
   ierr = DMMoFEMAddElement(dm,"BODY_FORCE"); CHKERRQ(ierr);
@@ -318,6 +319,8 @@ int main(int argc, char *argv[]) {
   ierr = DMMoFEMAddElement(dm,"PRESSURE_FE"); CHKERRQ(ierr);
 
   ierr = DMSetUp(dm); CHKERRQ(ierr);
+
+  //ierr = m_field.partition_check_matrix_fill_in("ELASTIC_PROB",825,5949,1); CHKERRQ(ierr);
 
   //create matrices
   Vec F,D;
@@ -390,7 +393,7 @@ int main(int argc, char *argv[]) {
   ierr = KSPCreate(PETSC_COMM_WORLD,&solver); CHKERRQ(ierr);
   ierr = KSPSetOperators(solver,Aij,Aij); CHKERRQ(ierr);
   ierr = KSPSetFromOptions(solver); CHKERRQ(ierr);
-  /*{
+  {
     //from PETSc example ex42.c
     PetscBool same = PETSC_FALSE;
     PC pc;
@@ -399,7 +402,7 @@ int main(int argc, char *argv[]) {
     if (same) {
       ierr = PCMGSetUpViaApproxOrders(pc,&m_field,"ELASTIC_PROB"); CHKERRQ(ierr);
     }
-  }*/
+  }
   ierr = KSPSetUp(solver); CHKERRQ(ierr);
 
 

@@ -197,7 +197,7 @@ int main(int argc, char *argv[]) {
   //add finite elements entities
   ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"ELASTIC",MBTET); CHKERRQ(ierr);
   Range SurfacesFaces;
-  ierr = mField.get_Cubit_msId_entities_by_dimension(103,SIDESET,2,SurfacesFaces,true); CHKERRQ(ierr);
+  ierr = mField.get_cubit_msId_entities_by_dimension(103,SIDESET,2,SurfacesFaces,true); CHKERRQ(ierr);
   ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SideSet 103 = %d\n",SurfacesFaces.size()); CHKERRQ(ierr);
   
   //to create meshset from range
@@ -394,7 +394,7 @@ int main(int argc, char *argv[]) {
   
   //End Disp
   /*Range ents;*/
-  //ierr = mField.get_Cubit_msId_entities_by_dimension(1,NodeSet,0,ents,true); CHKERRQ(ierr);
+  //ierr = mField.get_cubit_msId_entities_by_dimension(1,NodeSet,0,ents,true); CHKERRQ(ierr);
   //for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"DISPLACEMENT",dit)) {
   //if(find(ents.begin(),ents.end(),dit->get_ent())!=ents.end()) {
   //PetscSynchronizedPrintf(PETSC_COMM_WORLD, "val = %6.7e\n",dit->get_FieldData());
@@ -403,7 +403,7 @@ int main(int argc, char *argv[]) {
   
   //Support stresses
   //Range ents;
-  //ierr = mField.get_Cubit_msId_entities_by_dimension(4,NodeSet,0,ents,true); CHKERRQ(ierr);
+  //ierr = mField.get_cubit_msId_entities_by_dimension(4,NodeSet,0,ents,true); CHKERRQ(ierr);
   
   //Destroy matrices
   ierr = VecDestroy(&F); CHKERRQ(ierr);

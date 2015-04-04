@@ -67,7 +67,7 @@ int main(int argc, char *argv[]) {
   FieldInterface& m_field = core;
 
   Range CubitSIDESETs_meshsets;
-  ierr = m_field.get_Cubit_meshsets(SIDESET,CubitSIDESETs_meshsets); CHKERRQ(ierr);
+  ierr = m_field.get_cubit_meshsets(SIDESET,CubitSIDESETs_meshsets); CHKERRQ(ierr);
 
   //ref meshset ref level 0
   ierr = m_field.seed_ref_level_3D(0,0); CHKERRQ(ierr);

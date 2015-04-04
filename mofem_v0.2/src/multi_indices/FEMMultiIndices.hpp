@@ -1,12 +1,6 @@
 /** \file FEMMultiIndices.hpp
  * \brief Myltindex containes, data structures for mofem finite elements and other low-level functions 
  * 
- * Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl) <br>
- *
- * The MoFEM package is copyrighted by Lukasz Kaczmarczyk. 
- * It can be freely used for educational and research purposes 
- * by other institutions. If you use this softwre pleas cite my work. 
- *
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or (at your
@@ -462,22 +456,6 @@ struct interface_NumeredMoFEMFiniteElement: public interface_EntMoFEMFiniteEleme
  * \brief MultiIndex container for EntMoFEMFiniteElement
  * \ingroup fe_multi_indices
  *
- * \param ordered_unique<
-      tag<Unique_mi_tag>, member<EntMoFEMFiniteElement,GlobalUId,&EntMoFEMFiniteElement::global_uid> >,
- * \param    ordered_non_unique<
-      tag<Ent_mi_tag>, <br> const_mem_fun<EntMoFEMFiniteElement,EntityHandle,&EntMoFEMFiniteElement::get_ent> >,
- * \param    ordered_non_unique<
-      tag<FiniteElement_name_mi_tag>, <br> const_mem_fun<EntMoFEMFiniteElement::interface_type_MoFEMFiniteElement,boost::string_ref,&EntMoFEMFiniteElement::get_name_ref> >,
- * \param    ordered_non_unique<
-      tag<BitFEId_mi_tag>, <br> const_mem_fun<EntMoFEMFiniteElement::interface_type_MoFEMFiniteElement,BitFEId,&EntMoFEMFiniteElement::get_id>, LtBit<BitFEId> >,
- * \param    ordered_non_unique<
-      tag<EntType_mi_tag>, <br> const_mem_fun<EntMoFEMFiniteElement::interface_type_RefMoFEMEntity,EntityType,&EntMoFEMFiniteElement::get_ent_type> >,
- * \param    ordered_non_unique<
-      tag<Composite_mi_tag>, 
-      composite_key<
-	EntMoFEMFiniteElement, <br>
-	const_mem_fun<EntMoFEMFiniteElement,EntityHandle,&EntMoFEMFiniteElement::get_ent>,
-	const_mem_fun<EntMoFEMFiniteElement::interface_type_MoFEMFiniteElement,boost::string_ref,&EntMoFEMFiniteElement::get_name_ref> > >
  */
 typedef multi_index_container<
   EntMoFEMFiniteElement,
@@ -505,18 +483,6 @@ typedef multi_index_container<
  * \brief MultiIndex for entities for NumeredMoFEMFiniteElement
  * \ingroup fe_multi_indices
  *
- * \param  ordered_unique<
-      tag<Unique_mi_tag>, const_mem_fun<NumeredMoFEMFiniteElement::interface_type_EntMoFEMFiniteElement,GlobalUId,&NumeredMoFEMFiniteElement::get_global_unique_id> >,
- * \param    ordered_non_unique<
-      tag<FiniteElement_name_mi_tag>, <br> const_mem_fun<NumeredMoFEMFiniteElement::interface_type_MoFEMFiniteElement,string,&NumeredMoFEMFiniteElement::get_name> >,
- * \param    ordered_non_unique<
-      tag<FiniteElement_Part_mi_tag>, <br> member<NumeredMoFEMFiniteElement,unsigned int,&NumeredMoFEMFiniteElement::part> >,
- * \param    ordered_non_unique<
-      tag<Composite_mi_tag>,       
-      composite_key< <br>
-	NumeredMoFEMFiniteElement,
-	const_mem_fun<NumeredMoFEMFiniteElement::interface_type_MoFEMFiniteElement,boost::string_ref,&NumeredMoFEMFiniteElement::get_name_ref>,
-	member<NumeredMoFEMFiniteElement,unsigned int,&NumeredMoFEMFiniteElement::part> > >
  */
 typedef multi_index_container<
   NumeredMoFEMFiniteElement,
