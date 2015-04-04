@@ -32,7 +32,7 @@ target_link_libraries(elasticity
   ${MoFEM_PROJECT_LIBS})
 
 cm_export_file("LShape.cub" export_files_elasticity)
-cm_export_file("data.txt" export_files_elasticity)
+cm_export_file("LShape2Parts.h5m" export_files_elasticity)
 
 file(COPY
     ${CMAKE_CURRENT_SOURCE_DIR}/README
@@ -49,7 +49,7 @@ add_test(ElasticityTest
 
 add_test(MultiGridViaOrderSolver
   ${MoFEM_MPI_RUN} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/elasticity 
-  -my_file LShape.cub 
+  -my_file LShape2Parts.h5m -my_is_partitioned
   -ksp_type fgmres -ksp_monitor 
   -my_order 4
   -pc_type mg 
