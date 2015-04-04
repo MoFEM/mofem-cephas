@@ -88,7 +88,7 @@ int main(int argc, char *argv[]) {
       2,&order,PETSC_NULL); CHKERRQ(ierr);
   ierr = PetscOptionsBool("-my_is_partitioned", 
     "set if mesh is partitioned (this result that each process keeps only part of the mes","",
-    PETSC_TRUE,&is_partitioned,PETSC_NULL); CHKERRQ(ierr);
+    PETSC_FALSE,&is_partitioned,PETSC_NULL); CHKERRQ(ierr);
   ierr = PetscOptionsString("-my_block_config",
     "elastic configure file name","",
     "block_conf.in",block_config_file,255,&flg_block_config); CHKERRQ(ierr);

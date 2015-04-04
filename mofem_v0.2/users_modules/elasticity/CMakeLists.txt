@@ -47,4 +47,15 @@ add_test(ElasticityTest
   -pc_factor_mat_solver_package mumps
   -ksp_monitor -log_summary)
 
+add_test(MultiGridViaOrderSolver
+  ${MoFEM_MPI_RUN} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/elasticity 
+  -my_file LShape.cub 
+  -ksp_type fgmres -ksp_monitor 
+  -my_order 4
+  -pc_type mg 
+  -mofem_mg_verbose 1 -mofem_mg_coarse_order 2 -mofem_mg_levels 3
+  -mg_coarse_ksp_type preonly -mg_coarse_pc_type lu -mg_coarse_pc_factor_mat_solver_package mumps
+  -mg_levels_1_ksp_type gmres -mg_levels_1_ksp_max_it 30
+  -mg_levels_2_ksp_type gmres -mg_levels_2_ksp_max_it 30
+  -log_summary)
 

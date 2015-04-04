@@ -304,13 +304,13 @@ PetscErrorCode CreateRowComressedADJMatrix::createMat(
 	int row_idx = data_from_proc[ii++];	// get row number
 	int nb_adj_dofs = data_from_proc[ii++];	// get nb. of adjacent dofs
 
-	if(debug) {
+	/*if(debug) {
 	  DofByGlobalPetscIndex::iterator dit;
 	  dit = p_miit->numered_dofs_rows.get<PetscGlobalIdx_mi_tag>().find(row_idx);
 	  if(dit==p_miit->numered_dofs_rows.get<PetscGlobalIdx_mi_tag>().end()) {
 	    SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"dof %d can not be found in problem",row_idx);
 	  }
-	}
+	}*/
 
 	for(int jj = 0;jj<nb_adj_dofs;jj++) {
 	  adjacent_dofs_on_other_parts[row_idx].push_back(data_from_proc[ii++]);
@@ -326,10 +326,11 @@ PetscErrorCode CreateRowComressedADJMatrix::createMat(
     ierr = PetscFree(r_waits); CHKERRQ(ierr);   
     ierr = PetscFree(olengths); CHKERRQ(ierr);
 
+    miit_row = dofs_row_by_idx.lower_bound(rAnk);
+    hi_miit_row = dofs_row_by_idx.upper_bound(rAnk);
+
   }
 
-  miit_row = dofs_row_by_idx.lower_bound(rAnk);
-  hi_miit_row = dofs_row_by_idx.upper_bound(rAnk);
   int nb_loc_row_from_iterators = distance(miit_row,hi_miit_row);
   MoFEMEntity *mofem_ent_ptr = NULL;
   int row_last_evaluated_idx = -1;
