@@ -203,7 +203,7 @@ struct interface_RefMoFEMEntity {
   inline unsigned char get_pstatus() const { return ref_ptr->get_pstatus(); }
   inline EntityHandle get_owner_ent() const { return ref_ptr->get_owner_ent(); }
   inline EntityHandle get_owner_proc() const { return ref_ptr->get_owner_proc(); }
-  inline EntityHandle* get_sharing_procs_ptr() const { return ref_ptr->get_sharing_procs_ptr(); }
+  inline int* get_sharing_procs_ptr() const { return ref_ptr->get_sharing_procs_ptr(); }
   inline EntityHandle* get_sharing_handlers_ptr() const { return ref_ptr->get_sharing_handlers_ptr(); }
   virtual ~interface_RefMoFEMEntity() {}
 };

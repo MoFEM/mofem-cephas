@@ -196,11 +196,7 @@ int main(int argc, char *argv[]) {
 	ents_to_set_order = ents_to_set_order.subset_by_type(MBTET);
 	ierr = moab.get_adjacencies(block_ents,2,false,ents_to_set_order,Interface::UNION); CHKERRQ(ierr);
 	ierr = moab.get_adjacencies(block_ents,1,false,ents_to_set_order,Interface::UNION); CHKERRQ(ierr);
-
-	ierr = m_field.synchronise_entities(ents_to_set_order,2); CHKERRQ(ierr);
-	//ierr = m_field.synchronise_entities(ents_to_set_order,2); CHKERRQ(ierr);
-	//ierr = m_field.synchronise_entities(ents_to_set_order,2); CHKERRQ(ierr);
-
+	ierr = m_field.synchronise_entities(ents_to_set_order); CHKERRQ(ierr);
         ierr = m_field.set_field_order(ents_to_set_order,"DISPLACEMENT",block_data[it->get_msId()].oRder); CHKERRQ(ierr);
       }
       vector<string> additional_parameters;
