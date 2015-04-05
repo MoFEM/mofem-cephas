@@ -641,8 +641,10 @@ PetscErrorCode Core::synchronise_entities(Range &ents,int verb) {
 
   // Cleaning 
   ierr = PetscFree(s_waits); CHKERRQ(ierr);   
+  ierr = PetscFree(rbuf[0]); CHKERRQ(ierr);   
   ierr = PetscFree(rbuf); CHKERRQ(ierr);   
   ierr = PetscFree(r_waits); CHKERRQ(ierr);   
+  ierr = PetscFree(onodes); CHKERRQ(ierr);
   ierr = PetscFree(olengths); CHKERRQ(ierr);
 
   if(verb>0) {
