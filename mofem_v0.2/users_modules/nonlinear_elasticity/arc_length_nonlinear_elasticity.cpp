@@ -564,7 +564,7 @@ int main(int argc, char *argv[]) {
   ierr = PetscOptionsGetReal(PETSC_NULL,"-my_max_step_reduction",&max_reudction,&flg); CHKERRQ(ierr);
   ierr = PetscOptionsGetReal(PETSC_NULL,"-my_min_step_reduction",&min_reduction,&flg); CHKERRQ(ierr);
 
-  double step_size0,gamma = 0.5,reduction = 1;
+  double gamma = 0.5,reduction = 1;
   //step = 1;
   if(step == 1) {
     step_size = step_size_reduction;
@@ -572,7 +572,7 @@ int main(int argc, char *argv[]) {
     reduction = step_size_reduction;
     step++;
   }
-
+  double step_size0 = step_size;
 
   if(step>1) {
     ierr = m_field.set_other_global_ghost_vector(
@@ -598,6 +598,7 @@ int main(int argc, char *argv[]) {
     ierr = VecCopy(arc_ctx->x0,x00); CHKERRQ(ierr);
 
     if(step == 1) {
+
       ierr = PetscPrintf(PETSC_COMM_WORLD,"Load Step %D step_size = %6.4e\n",step,step_size); CHKERRQ(ierr);
       ierr = arc_ctx->setS(step_size); CHKERRQ(ierr);
       ierr = arc_ctx->setAlphaBeta(0,1); CHKERRQ(ierr);
@@ -605,7 +606,9 @@ int main(int argc, char *argv[]) {
       double dlambda;
       ierr = arc_method.calculateInitDlambda(&dlambda); CHKERRQ(ierr);
       ierr = arc_method.setDlambdaToX(D,dlambda); CHKERRQ(ierr);
+
     } else if(step == 2) {
+
       ierr = arc_ctx->setAlphaBeta(1,0); CHKERRQ(ierr);
       ierr = arc_method.calculateDxAndDlambda(D); CHKERRQ(ierr);
       step_size = sqrt(arc_method.calculateLambdaInt());
@@ -620,8 +623,13 @@ int main(int argc, char *argv[]) {
       ierr = VecCopy(D,arc_ctx->x0); CHKERRQ(ierr);
       ierr = VecAXPY(D,1.,arc_ctx->dx); CHKERRQ(ierr);
       ierr = arc_method.setDlambdaToX(D,dlambda); CHKERRQ(ierr);
+
     } else {
-      if(jj == 0) step_size0 = step_size;
+
+      if(jj == 0) {
+	step_size0 = step_size;
+      }
+
       ierr = arc_method.calculateDxAndDlambda(D); CHKERRQ(ierr);
       step_size *= reduction;
       if(step_size > max_reudction*step_size0) {
@@ -640,6 +648,7 @@ int main(int argc, char *argv[]) {
       ierr = VecCopy(D,arc_ctx->x0); CHKERRQ(ierr);
       ierr = VecAXPY(D,1.,arc_ctx->dx); CHKERRQ(ierr);
       ierr = arc_method.setDlambdaToX(D,dlambda); CHKERRQ(ierr);
+
     }
 
     ierr = SNESSolve(snes,PETSC_NULL,D); CHKERRQ(ierr);
