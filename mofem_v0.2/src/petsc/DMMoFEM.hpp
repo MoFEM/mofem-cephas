@@ -36,6 +36,26 @@ PetscErrorCode DMRegister_MoFEM(const char sname[]);
 PetscErrorCode DMMoFEMCreateMoFEM(DM dm,MoFEM::FieldInterface *m_field_ptr,const char problem_name[],const MoFEM::BitRefLevel &bit_level);
 
 /** 
+  * \brief set squared problem
+  * \ingroup dm
+
+  It if trure is assumed that matrix has the same indexing on rows and
+  collumns. This reduces interprocessor communication.
+
+  */
+PetscErrorCode DMMoFEMSetSquareProblem(DM dm,PetscBool square_problem);
+
+/** 
+  * \brief get squared problem
+  * \ingroup dm
+
+  It if trure is assumed that matrix has the same indexing on rows and
+  collumns. This reduces interprocessor communication.
+
+  */
+PetscErrorCode DMMoFEMGetSquareProblem(DM dm,PetscBool *square_problem);
+
+/** 
   * \brief add element to dm
   * \ingroup dm
   */

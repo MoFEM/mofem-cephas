@@ -301,7 +301,48 @@ PetscErrorCode Core::build_partitioned_problem(MoFEMProblem *problem_ptr,bool sq
   int *olengths_cols = olengths_rows;
   PetscInt **rbuf_col = rbuf_row;
   if(!square_matrix) {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
+
+    // Computes the number of messages a node expects to receive
+    ierr = PetscGatherNumberOfMessages(comm,NULL,&lengths_cols[0],&nrecvs_cols); CHKERRQ(ierr);
+
+    // Computes info about messages that a MPI-node will receive, including (from-id,length) pairs for each message.
+    ierr = PetscGatherMessageLengths(comm,
+      nsends_cols,nrecvs_cols,
+      &lengths_cols[0],&onodes_cols,&olengths_cols);  CHKERRQ(ierr);
+
+    // Gets a unique new tag from a PETSc communicator.  
+    int tag_col;
+    ierr = PetscCommGetNewTag(comm,&tag_col); CHKERRQ(ierr);
+  
+    // Allocate a buffer sufficient to hold messages of size specified in
+    // olengths. And post Irecvs on these buffers using node info from onodes
+    MPI_Request *r_waits_col; // must bee freed by user
+    ierr = PetscPostIrecvInt(comm,tag_col,nrecvs_cols,onodes_cols,olengths_cols,&rbuf_row,&r_waits_col); CHKERRQ(ierr);
+
+    MPI_Request *s_waits_col; // status of sens messages
+    ierr = PetscMalloc1(nsends_cols,&s_waits_col);CHKERRQ(ierr);
+
+    // Send messeges
+    for(int proc=0,kk=0; proc<sIze; proc++) {
+      if(!lengths_cols[proc]) continue; 	// no message to send to this proc
+      ierr = MPI_Isend(
+	&(ids_data_packed_cols[proc])[0],	// buffer to send
+	lengths_cols[proc], 			// message length
+	MPIU_INT,proc, 				// to proc
+	tag_col,comm,s_waits_col+kk); CHKERRQ(ierr);
+      kk++;
+    }
+
+    if(nrecvs_cols) {
+      ierr = MPI_Waitall(nrecvs_cols,r_waits_col,status);CHKERRQ(ierr);
+    }
+    if(nsends_cols) {
+      ierr = MPI_Waitall(nsends_cols,s_waits_col,status);CHKERRQ(ierr);
+    }
+
+    ierr = PetscFree(r_waits_col); CHKERRQ(ierr);
+    ierr = PetscFree(s_waits_col); CHKERRQ(ierr);
+
   }
 
   // set values
@@ -398,6 +439,7 @@ PetscErrorCode Core::build_problem(MoFEMProblem *problem_ptr,int verb) {
   if(problem_ptr->get_BitRefLevel().none()) {
     SETERRQ1(PETSC_COMM_SELF,1,"problem <%s> refinement level not set",problem_ptr->get_name().c_str());
   }
+
   //zero finite elements
   problem_ptr->numeredFiniteElements.clear();
   //miit2 iterator for finite elements
@@ -417,6 +459,7 @@ PetscErrorCode Core::build_problem(MoFEMProblem *problem_ptr,int verb) {
 	}
     }
   }
+
   //zero rows
   *problem_ptr->tag_nbdof_data_row = 0;
   *problem_ptr->tag_local_nbdof_data_row = 0;
@@ -427,6 +470,7 @@ PetscErrorCode Core::build_problem(MoFEMProblem *problem_ptr,int verb) {
   *problem_ptr->tag_local_nbdof_data_col = 0;
   *problem_ptr->tag_ghost_nbdof_data_col = 0;
   problem_ptr->numered_dofs_cols.clear();
+
   //add dofs for rows
   DofMoFEMEntity_multiIndex_active_view::nth_index<1>::type::iterator miit4,hi_miit4;
   miit4 = dofs_rows.get<1>().lower_bound(1);
@@ -436,9 +480,8 @@ PetscErrorCode Core::build_problem(MoFEMProblem *problem_ptr,int verb) {
       continue;
     }
     problem_add_row_dof(&**miit4).operator()(*problem_ptr);
-    //bool success = moFEMProblems.modify(problem_ptr,problem_add_row_dof(&**miit4));
-    //if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
   }
+
   //add dofs for cols
   DofMoFEMEntity_multiIndex_active_view::nth_index<1>::type::iterator miit5,hi_miit5;
   miit5 = dofs_cols.get<1>().lower_bound(1);
@@ -448,16 +491,12 @@ PetscErrorCode Core::build_problem(MoFEMProblem *problem_ptr,int verb) {
       continue;
     }
     problem_add_col_dof(&**miit5).operator()(*problem_ptr);
-    //success = moFEMProblems.modify(problem_ptr,problem_add_col_dof(&**miit5));
-    //if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
   }
+
   //number dofs on rows and columns
   problem_row_number_change().operator()(*problem_ptr);
   problem_col_number_change().operator()(*problem_ptr);
-  //success = moFEMProblems.modify(problem_ptr,problem_row_number_change());
-  //if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-  //success = moFEMProblems.modify(problem_ptr,problem_col_number_change());
-  //if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+
   //job done, some debugging and postprocessing
   if(verbose>0) {
     PetscSynchronizedPrintf(comm,"Problem %s Nb. rows %u Nb. cols %u\n",
@@ -489,6 +528,7 @@ PetscErrorCode Core::build_problem(MoFEMProblem *problem_ptr,int verb) {
     }
     PetscSynchronizedPrintf(comm,ss.str().c_str());
   }
+
   if(verb>0) {
     PetscSynchronizedFlush(comm,PETSC_STDOUT); 
   }

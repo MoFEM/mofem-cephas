@@ -98,6 +98,7 @@ int main(int argc, char *argv[]) {
 
   //set dm data structure which created mofem data structures
   ierr = DMMoFEMCreateMoFEM(dm,&m_field,dm_name,bit_level0); CHKERRQ(ierr);
+  ierr = DMMoFEMSetSquareProblem(dm,PETSC_FALSE); CHKERRQ(ierr); // this is for testing (this problem has the same rows and cols)
   ierr = DMSetFromOptions(dm); CHKERRQ(ierr);
   ierr = DMMoFEMAddElement(dm,"FE"); CHKERRQ(ierr);
   ierr = DMSetUp(dm); CHKERRQ(ierr);
