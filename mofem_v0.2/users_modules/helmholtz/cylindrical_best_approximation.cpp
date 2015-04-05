@@ -334,10 +334,10 @@ int main(int argc, char *argv[]) {
 	
 	
 	double wavenumber = aNgularfreq/sPeed;	
-	bool use_real;
+
 	{
-		use_real = true;
-		MyFunApprox_re function_evaluator_re(wavenumber,use_real);
+
+		MyFunApprox_re function_evaluator_re(wavenumber,true);
 		FieldApproximationH1<MyFunApprox_re> field_approximation_re(m_field);
 		
 		field_approximation_re.loopMatrixAndVector(
@@ -345,8 +345,8 @@ int main(int argc, char *argv[]) {
 	}
 	
 	{
-		use_real = false;
-		MyFunApprox_re function_evaluator_im(wavenumber,use_real);
+
+		MyFunApprox_re function_evaluator_im(wavenumber,false);
 		FieldApproximationH1<MyFunApprox_re> field_approximation_im(m_field);
 		
 		field_approximation_im.loopMatrixAndVector(

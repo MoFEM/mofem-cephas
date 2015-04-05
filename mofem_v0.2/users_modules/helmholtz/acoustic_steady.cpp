@@ -288,7 +288,6 @@ int main(int argc, char *argv[]) {
   struct AnaliticalFunction {
 	  static double fUN(double x,double y,double z,bool use_real) {
 		  
-		  bool useReal;
 		  
 		  const double pi = atan( 1.0 ) * 4.0;
 		  double R = sqrt(pow(x,2.0)+pow(y,2.0)+pow(z,2.0)); //radius
@@ -338,7 +337,7 @@ int main(int argc, char *argv[]) {
 		  
 		  //ofs << theta << "\t" << abs( result ) << "\t" << abs( inc_field ) << "\t" << abs( total_field ) << "\t" << R << endl; //write the file
 		  
-		  if(useReal) {
+		  if(use_real) {
 			  return std::real(result);
 		  } else {
 			  return std::imag(result);

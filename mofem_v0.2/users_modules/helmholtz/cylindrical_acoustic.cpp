@@ -275,8 +275,6 @@ int main(int argc, char *argv[]) {
   struct AnaliticalFunction {
 	  static double fUN(double x,double y,double z,bool use_real) {
 		  
-		  bool useReal;
-		  
 		  const double pi = atan( 1.0 ) * 4.0;
 		  double R = sqrt(pow(x,2.0)+pow(y,2.0)+pow(z,2.0)); //radius
 		  double theta = atan2(y,x)+2*pi; //the arctan of radians (y/x)
@@ -329,7 +327,7 @@ int main(int argc, char *argv[]) {
 		  //const complex< double > total_field = inc_field + result;
 		  //ofs << theta << "\t" << abs( result ) << "\t" << abs( inc_field ) << "\t" << abs( total_field ) << "\t" << R << endl; //write the file
 		  
-		  if(useReal) {
+		  if(use_real) {
 			  return std::real(result);
 		  } else {
 			  return std::imag(result);
@@ -439,7 +437,7 @@ int main(int argc, char *argv[]) {
 	  ierr = post_proc1.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
 	  ierr = mField.loop_finite_elements("ACOUSTIC_PROBLEM","HELMHOLTZ_FE",post_proc1); CHKERRQ(ierr);
 	  
-	  rval = post_proc1.postProcMesh.write_file("four_fields_finite_element.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
+	  rval = post_proc1.postProcMesh.write_file("four_fields_finite_cylindrical.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
 	  
 	  ////output the results from Docker
 	  //char command1[] = "mbconvert ./four_fields_finite_element.h5m ./four_fields_finite_element.vtk && cp ./four_fields_finite_element.vtk ../../../../../mnt/home/Desktop/U_pan/helmholtz_results/";
@@ -449,7 +447,7 @@ int main(int argc, char *argv[]) {
 
 	  ierr = post_proc1.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
 	  ierr = mField.loop_finite_elements("ACOUSTIC_PROBLEM","HELMHOLTZ_FE",post_proc1); CHKERRQ(ierr);
-	  rval = post_proc1.postProcMesh.write_file("acoustic_finite_element_out.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
+	  rval = post_proc1.postProcMesh.write_file("cylindrical_acoustic_finite_element_out.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
   
   }
   

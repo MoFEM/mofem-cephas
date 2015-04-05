@@ -142,10 +142,6 @@ struct MyFunApprox_re {
 		//const complex< double > total_field = inc_field + result;
 		//ofs << theta << "\t" << abs( result ) << "\t" << abs( inc_field ) << "\t" << abs( total_field ) <<  "\t" << R << endl; //write the file
 		
-		///* cube */
-		//double theta = pi;
-		//result = exp(i*(k*cos(theta)*x+k*sin(theta)*y));
-		///* cube */
 		
 		if(useReal) {
 			result1.resize(1);
@@ -157,10 +153,6 @@ struct MyFunApprox_re {
 			return result1;
 		}
 		
-		//double X = x + 0.5; /* coordinate transformation from [-0.5,0.5] to [0,1] */
-		//result1.resize(1);
-		//result1[0] = std::real((exp(i*k*X)-1.0-i*exp(i*k)*sin(k*X))/(pow(k,2.0))); //exact solution of 1D problem
-		//return result1;
 		
 	}
 	
@@ -359,10 +351,10 @@ int main(int argc, char *argv[]) {
 	
 	
 	double wavenumber = aNgularfreq/sPeed;	
-	bool use_real;
+
 	{
-		use_real = true;
-		MyFunApprox_re function_evaluator_re(wavenumber,use_real);
+
+		MyFunApprox_re function_evaluator_re(wavenumber,true);
 		FieldApproximationH1<MyFunApprox_re> field_approximation_re(m_field);
 		
 		field_approximation_re.loopMatrixAndVector(
@@ -370,8 +362,8 @@ int main(int argc, char *argv[]) {
 	}
 	
 	{
-		use_real = false;
-		MyFunApprox_re function_evaluator_im(wavenumber,use_real);
+
+		MyFunApprox_re function_evaluator_im(wavenumber,false);
 		FieldApproximationH1<MyFunApprox_re> field_approximation_im(m_field);
 		
 		field_approximation_im.loopMatrixAndVector(

@@ -291,16 +291,9 @@ int main(int argc, char *argv[]) {
   struct AnaliticalFunction {
 	  static double fUN(double x,double y,double z,bool use_real) {
 		  
-		  
-		  //bool useReal;
 		  const double pi = atan( 1.0 ) * 4.0;
 		  double R = sqrt(pow(x,2.0)+pow(y,2.0)+pow(z,2.0)); //radius
 		  double theta = atan2(y,x)+2*pi; //the arctan of radians (y/x)
-		  		 
-		  //if(x != x) {cerr << "x  \n";}
-		  //if(y != y) {cerr << "y  \n";}
-		  //if(z != z) {cerr << "z  \n";}
-		  //if(theta != theta) {cerr << "theta = \n"; cout << theta << endl; cout << "\n x = " << x << "\n y = " << y << endl;}
 		  
 		  const double wAvenumber = aNgularfreq/sPeed;
 		  

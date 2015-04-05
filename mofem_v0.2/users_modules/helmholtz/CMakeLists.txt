@@ -105,8 +105,8 @@ target_link_libraries(cylindrical_best_approximation
   mofem_cblas
   ${MoFEM_PROJECT_LIBS})
 
-add_executable(cyclindrical_acoustic ${UM_SOURCE_DIR}/helmholtz/cyclindrical_acoustic.cpp)
-target_link_libraries(cyclindrical_acoustic
+add_executable(cylindrical_acoustic ${UM_SOURCE_DIR}/helmholtz/cylindrical_acoustic.cpp)
+target_link_libraries(cylindrical_acoustic
   mofem_finite_element_library
   mofem_finite_elements
   mofem_interfaces
