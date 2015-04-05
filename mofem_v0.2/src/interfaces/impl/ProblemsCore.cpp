@@ -270,6 +270,8 @@ PetscErrorCode Core::build_partitioned_problem(MoFEMProblem *problem_ptr,bool sq
   // messages) +1. In the first index a block is allocated, 
   // such that rbuf[i] = rbuf[i-1]+olengths[i-1]. 
   ierr = PetscPostIrecvInt(comm,tag_row,nrecvs_rows,onodes_rows,olengths_rows,&rbuf_row,&r_waits_row); CHKERRQ(ierr);
+  ierr = PetscFree(onodes_rows); CHKERRQ(ierr);
+
 
   MPI_Request *s_waits_row; // status of sens messages
   ierr = PetscMalloc1(nsends_rows,&s_waits_row);CHKERRQ(ierr);
@@ -297,7 +299,6 @@ PetscErrorCode Core::build_partitioned_problem(MoFEMProblem *problem_ptr,bool sq
 
   //cols
   int nrecvs_cols = nrecvs_rows;
-  int *onodes_cols = onodes_rows;
   int *olengths_cols = olengths_rows;
   PetscInt **rbuf_col = rbuf_row;
   if(!square_matrix) {
@@ -306,6 +307,7 @@ PetscErrorCode Core::build_partitioned_problem(MoFEMProblem *problem_ptr,bool sq
     ierr = PetscGatherNumberOfMessages(comm,NULL,&lengths_cols[0],&nrecvs_cols); CHKERRQ(ierr);
 
     // Computes info about messages that a MPI-node will receive, including (from-id,length) pairs for each message.
+    int *onodes_cols;
     ierr = PetscGatherMessageLengths(comm,
       nsends_cols,nrecvs_cols,
       &lengths_cols[0],&onodes_cols,&olengths_cols);  CHKERRQ(ierr);
@@ -317,7 +319,8 @@ PetscErrorCode Core::build_partitioned_problem(MoFEMProblem *problem_ptr,bool sq
     // Allocate a buffer sufficient to hold messages of size specified in
     // olengths. And post Irecvs on these buffers using node info from onodes
     MPI_Request *r_waits_col; // must bee freed by user
-    ierr = PetscPostIrecvInt(comm,tag_col,nrecvs_cols,onodes_cols,olengths_cols,&rbuf_row,&r_waits_col); CHKERRQ(ierr);
+    ierr = PetscPostIrecvInt(comm,tag_col,nrecvs_cols,onodes_cols,olengths_cols,&rbuf_col,&r_waits_col); CHKERRQ(ierr);
+    ierr = PetscFree(onodes_cols); CHKERRQ(ierr);
 
     MPI_Request *s_waits_col; // status of sens messages
     ierr = PetscMalloc1(nsends_cols,&s_waits_col);CHKERRQ(ierr);
