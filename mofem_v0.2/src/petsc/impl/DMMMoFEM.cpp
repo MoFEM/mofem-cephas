@@ -173,6 +173,25 @@ PetscErrorCode DMMoFEMCreateMoFEM(DM dm,MoFEM::FieldInterface *m_field_ptr,const
   PetscFunctionReturn(0);
 }
 
+PetscErrorCode DMMoFEMSetSquareProblem(DM dm,PetscBool square_problem) {
+  PetscFunctionBegin;
+  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
+  PetscFunctionBegin;
+  DMCtx *dm_field = (DMCtx*)dm->data;
+  dm_field->isSquareMatrix = square_problem;
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode DMMoFEMGetSquareProblem(DM dm,PetscBool *square_problem) {
+  PetscFunctionBegin;
+  PetscFunctionBegin;
+  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
+  PetscFunctionBegin;
+  DMCtx *dm_field = (DMCtx*)dm->data;
+  *square_problem = dm_field->isSquareMatrix;
+  PetscFunctionReturn(0);
+}
+
 PetscErrorCode DMMoFEMAddElement(DM dm,const char fe_name[]) {
   PetscErrorCode ierr;
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
