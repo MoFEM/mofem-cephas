@@ -2589,6 +2589,8 @@ PetscErrorCode Core::get_cubit_meshsets(const unsigned int cubit_bc_type,Range &
 
 #define SET_BASIC_METHOD(PROBLEM_PTR) \
   { \
+    method.rAnk = rAnk; \
+    method.sIze = sIze; \
     method.problemPtr = PROBLEM_PTR; \
     method.fieldsPtr = &moabFields; \
     method.refinedEntitiesPtr = &refinedEntities; \

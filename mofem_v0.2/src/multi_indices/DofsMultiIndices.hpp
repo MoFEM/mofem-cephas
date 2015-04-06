@@ -414,11 +414,11 @@ typedef multi_index_container<
 	  const_mem_fun<NumeredDofMoFEMEntity::interface_type_DofMoFEMEntity,ApproximationOrder,&NumeredDofMoFEMEntity::get_dof_order>
 	> >,
     ordered_non_unique<
-      tag<Composite_Part_Name_And_Rank_mi_tag>,
+      tag<Composite_Name_Part_And_Rank_mi_tag>,
       composite_key<
 	NumeredDofMoFEMEntity,
-	  member<NumeredDofMoFEMEntity,unsigned int,&NumeredDofMoFEMEntity::part>,
 	  const_mem_fun<NumeredDofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&NumeredDofMoFEMEntity::get_name_ref>,
+	  member<NumeredDofMoFEMEntity,unsigned int,&NumeredDofMoFEMEntity::part>,
 	  const_mem_fun<NumeredDofMoFEMEntity::interface_type_DofMoFEMEntity,ApproximationRank,&NumeredDofMoFEMEntity::get_dof_rank>
 	> >,
     ordered_non_unique<

@@ -130,6 +130,7 @@ struct BasicMethod: public FieldUnknownInterface,KspMethod,SnesMethod,TSMethod {
   virtual PetscErrorCode operator()() = 0;
   virtual PetscErrorCode postProcess() = 0;
 
+  int rAnk,sIze;
   const RefMoFEMEntity_multiIndex *refinedEntitiesPtr;
   const RefMoFEMElement_multiIndex *refinedFiniteElementsPtr;
   const MoFEMProblem *problemPtr;

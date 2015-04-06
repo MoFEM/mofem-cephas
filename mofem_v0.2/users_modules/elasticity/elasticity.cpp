@@ -295,11 +295,6 @@ int main(int argc, char *argv[]) {
   ierr = m_field.add_problem("ELASTIC_PROB"); CHKERRQ(ierr);
   //set refinment level for problem
   ierr = m_field.modify_problem_ref_level_add_bit("ELASTIC_PROB",bit_level0); CHKERRQ(ierr);
-  ierr = m_field.modify_problem_add_finite_element("ELASTIC_PROB","ELASTIC"); CHKERRQ(ierr);
-  ierr = m_field.modify_problem_add_finite_element("ELASTIC_PROB","BODY_FORCE"); CHKERRQ(ierr);
-  ierr = m_field.modify_problem_add_finite_element("ELASTIC_PROB","FLUID_PRESSURE_FE"); CHKERRQ(ierr);
-  ierr = m_field.modify_problem_add_finite_element("ELASTIC_PROB","FORCE_FE"); CHKERRQ(ierr);
-  ierr = m_field.modify_problem_add_finite_element("ELASTIC_PROB","PRESSURE_FE"); CHKERRQ(ierr);
 
   DMType dm_name = "ELASTIC_PROB";
   ierr = DMRegister_MoFEM(dm_name); CHKERRQ(ierr);
@@ -320,7 +315,7 @@ int main(int argc, char *argv[]) {
 
   ierr = DMSetUp(dm); CHKERRQ(ierr);
 
-  //ierr = m_field.partition_check_matrix_fill_in("ELASTIC_PROB",825,5949,1); CHKERRQ(ierr);
+  //ierr = m_field.partition_check_matrix_fill_in("ELASTIC_PROB",-1,-1,1); CHKERRQ(ierr);
 
   //create matrices
   Vec F,D;

@@ -193,20 +193,6 @@ PetscErrorCode Core::build_partitioned_problem(MoFEMProblem *problem_ptr,bool sq
       //check id dof is shared
       if(pstatus>0) {
 
-	//EntityHandle entity = mit->get_ent();
-	//vector<int> sharing_procs(MAX_SHARING_PROCS,-1);
-	/*if(pstatus & PSTATUS_MULTISHARED) {
-	  rval = moab.tag_get_data(pcomm->sharedps_tag(),&entity,1,&sharing_procs[0]); CHKERR_PETSC(rval);
-	} else if(pstatus & PSTATUS_SHARED) {
-	  rval = moab.tag_get_data(pcomm->sharedp_tag(),&entity,1,&sharing_procs[0]); CHKERR_PETSC(rval);
-	} else {
-	  SETERRQ(PETSC_COMM_SELF,MOFEM_IMPOSIBLE_CASE,"impossible case");
-	}
-
-	if(sharing_procs[0] == -1) {
-	  SETERRQ(PETSC_COMM_SELF,MOFEM_IMPOSIBLE_CASE,"impossible case");
-	}*/
-
 	for(int proc = 0; proc<MAX_SHARING_PROCS && -1 != mit->get_sharing_procs_ptr()[proc]; proc++) {
 	  if(ss == 0) {
 	    ids_data_packed_rows[mit->get_sharing_procs_ptr()[proc]].push_back(IdxDataType(mit->get_global_unique_id(),glob_idx));
