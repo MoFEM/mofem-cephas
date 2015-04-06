@@ -453,7 +453,7 @@ int main(int argc, char *argv[]) {
   
 
   ////if(pcomm->rank()==0) {
-  //rval = moab.write_file("impinging_numerical.h5m"); CHKERR_PETSC(rval);
+  rval = moab.write_file("impinging_numerical.h5m"); CHKERR_PETSC(rval);
   ////}
   //destroy the KSP solvers
   ierr = MatDestroy(&A); CHKERRQ(ierr);

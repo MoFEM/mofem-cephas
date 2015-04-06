@@ -62,10 +62,17 @@ int main(int argc, char *argv[]) {
 		SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
 	}
 	
-	//char mesh_file_name2[255];
-	//ierr = PetscOptionsGetString(PETSC_NULL,"-my_file2",mesh_file_name2,255,&flg); CHKERRQ(ierr);
+	/* cannot convert 'bool*' to 'PetscBool*' for argument '3' to '
+	 * PetscErrorCode PetscOptionsGetBool(const char*, const char*, PetscBool*, PetscBool*)' */
+	
+	//ierr = PetscOptionsGetBool(PETSC_NULL,"-norm_type",&usel2,&flg); CHKERRQ(ierr);
 	//if(flg != PETSC_TRUE) {
-	//	SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file2 (MESH FILE NEEDED)");
+	//	SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -l2_type_norm (true for l2norm, false for H1 norm)");
+	//}
+	
+	//ierr = PetscOptionsGetBool(PETSC_NULL,"-relative_error",&userela,&flg); CHKERRQ(ierr);
+	//if(flg != PETSC_TRUE) {
+	//	SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -relative_error (true or false needed))");
 	//}
 	
 	char type_error_norm[255];
@@ -302,10 +309,11 @@ int main(int argc, char *argv[]) {
 	
 	
 	/* Global error calculation */
-	PetscReal nrm2_D,nrm2_T,pointwisenormP,pointwisenormM;
-	ierr = VecNorm(T,NORM_FROBENIUS,&nrm2_T);;
-	ierr = VecNorm(D,NORM_2,&nrm2_D); CHKERRQ(ierr);
-	//ierr = VecNorm(T,NORM_MAX,&pointwisenorm);
+	PetscReal nrm2_D,nrm2_T,pointwisenormT,pointwisenormD,pointwisenormP,pointwisenormM;
+	//ierr = VecNorm(T,NORM_FROBENIUS,&nrm2_T);;
+	//ierr = VecNorm(D,NORM_2,&nrm2_D); CHKERRQ(ierr);
+	ierr = VecNorm(T,NORM_MAX,&pointwisenormT);
+	ierr = VecNorm(D,NORM_MAX,&pointwisenormD);
 	
 	Vec P,M;
 	ierr = m_field.VecCreateGhost("EX1_PROBLEM",ROW,&M); CHKERRQ(ierr);
@@ -324,15 +332,15 @@ int main(int argc, char *argv[]) {
 	if(usel2 && !userela) {
 		std::cout << "\n The Global least square of l2 Norm of error in real field is : --\n" << nrm2_T << std::endl;
 		std::cout << "\n The Global least square of l2 Norm of error in imag field is : --\n" << nrm2_D << std::endl;
-		std::cout << "\n The Global L2 relative error of real field is : --\n" << nrm2_T/pointwisenormM  << std::endl;
-		std::cout << "\n The Global L2 relative error of imag field is  : --\n" << nrm2_D/pointwisenormP << std::endl;
+		std::cout << "\n The Global L2 relative error of real field is : --\n" << pointwisenormT/pointwisenormM  << std::endl;
+		std::cout << "\n The Global L2 relative error of imag field is  : --\n" << pointwisenormD/pointwisenormP << std::endl;
 		//std::cout << "\n The Global Pointwise of l2 Norm of error for real field is : --\n" << pointwisenorm << std::endl;
 	}
 	else if(!usel2 && !userela) {
 		std::cout << "\n The Global least square of H1 Norm of error real field is  : --\n" << nrm2_T << std::endl;
 		std::cout << "\n The Global least square of H1 Norm of error in imag field is : --\n" << nrm2_D << std::endl;
-		std::cout << "\n The Global H1 relative error of real field is : --\n" << nrm2_T/pointwisenormM  << std::endl;
-		std::cout << "\n The Global H1 relative error of imag field is  : --\n" << nrm2_D/pointwisenormP << std::endl;
+		std::cout << "\n The Global H1 relative error of real field is : --\n" << pointwisenormT/pointwisenormM  << std::endl;
+		std::cout << "\n The Global H1 relative error of imag field is  : --\n" << pointwisenormD/pointwisenormP << std::endl;
 		//std::cout << "\n The Global Pointwise of H1 Norm of error for real field is : --\n" << pointwisenorm << std::endl;
 	}
 	else if(userela) {
@@ -361,9 +369,7 @@ int main(int argc, char *argv[]) {
 	PostPocOnRefinedMesh post_proc1(m_field);
 	ierr = post_proc1.generateRefereneElemenMesh(); CHKERRQ(ierr);
 	ierr = post_proc1.addFieldValuesPostProc("erorNORM_re"); CHKERRQ(ierr);
-	//ierr = post_proc1.addFieldValuesGradientPostProc("erorNORM_re"); CHKERRQ(ierr);
 	ierr = post_proc1.addFieldValuesPostProc("erorNORM_im"); CHKERRQ(ierr);
-	//ierr = post_proc1.addFieldValuesGradientPostProc("erorNORM_im"); CHKERRQ(ierr);
 	ierr = post_proc1.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
 	ierr = m_field.loop_finite_elements("NORM_PROBLEM1","NORM_FE1",post_proc1); CHKERRQ(ierr);
 	rval = post_proc1.postProcMesh.write_file("norm_error.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
@@ -374,8 +380,8 @@ int main(int argc, char *argv[]) {
 	
 	
 	//output the results from Docker
-	char command1[] = "mbconvert norm_error.h5m ./norm_error.vtk && cp ./norm_error.vtk ../../../../mnt/home/Desktop/U_pan/helmholtz_results/";
-	int todo1 = system( command1 );
+	//char command1[] = "mbconvert norm_error.h5m ./norm_error.vtk && cp ./norm_error.vtk ../../../../mnt/home/Desktop/U_pan/helmholtz_results/";
+	//int todo1 = system( command1 );
 	
 	
 	
