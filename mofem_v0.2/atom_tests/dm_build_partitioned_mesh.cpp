@@ -57,9 +57,9 @@ int main(int argc, char *argv[]) {
   const char *option;
   option = "PARALLEL=BCAST_DELETE;PARALLEL_RESOLVE_SHARED_ENTS;PARTITION=PARALLEL_PARTITION;";
   rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
-  rval = pcomm->resolve_shared_ents(0,3,0); CHKERR_PETSC(rval);
-  rval = pcomm->resolve_shared_ents(0,3,1); CHKERR_PETSC(rval);
-  rval = pcomm->resolve_shared_ents(0,3,2); CHKERR_PETSC(rval);
+  //rval = pcomm->resolve_shared_ents(0,3,0); CHKERR_PETSC(rval);
+  //rval = pcomm->resolve_shared_ents(0,3,1); CHKERR_PETSC(rval);
+  //rval = pcomm->resolve_shared_ents(0,3,2); CHKERR_PETSC(rval);
 
   MoFEM::Core core(moab);
   FieldInterface& m_field = core;
@@ -70,7 +70,8 @@ int main(int argc, char *argv[]) {
   bit_level0.set(0);
   ierr = m_field.seed_ref_level_3D(root_set,bit_level0); CHKERRQ(ierr);
   //define & build field
-  const int field_rank = 1;
+  int field_rank = 1;
+  ierr = PetscOptionsGetInt(PETSC_NULL,"-my_field_rank",&field_rank,&flg); CHKERRQ(ierr);
   ierr = m_field.add_field("FIELD",H1,field_rank); CHKERRQ(ierr);
   //add entities to field
   ierr = m_field.add_ents_to_field_by_TETs(root_set,"FIELD"); CHKERRQ(ierr);
@@ -108,10 +109,17 @@ int main(int argc, char *argv[]) {
   // dump data to file, just to check if something was changed
   Mat m;
   ierr = DMCreateMatrix(dm,&m); CHKERRQ(ierr);
-  PetscViewer viewer;
-  ierr = PetscViewerASCIIOpen(PETSC_COMM_WORLD,"dm_build_partitioned_mesh.txt",&viewer); CHKERRQ(ierr);
-  MatView(m,viewer);
-  ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
+
+  PetscBool save_file = PETSC_TRUE;
+  ierr = PetscOptionsGetBool(PETSC_NULL,"-my_save_fiele",&save_file,&flg); CHKERRQ(ierr);
+  if(save_file) {
+ 
+    PetscViewer viewer;
+    ierr = PetscViewerASCIIOpen(PETSC_COMM_WORLD,"dm_build_partitioned_mesh.txt",&viewer); CHKERRQ(ierr);
+    MatView(m,viewer);
+    ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
+  
+  }
 
   ierr = MatDestroy(&m); CHKERRQ(ierr);
   //destry dm

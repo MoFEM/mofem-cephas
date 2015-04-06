@@ -36,7 +36,7 @@ struct FluidPressure {
   FieldInterface &mField;
   struct MyTriangleFE: public TriElementForcesAndSurcesCore {
     MyTriangleFE(FieldInterface &_mField): TriElementForcesAndSurcesCore(_mField) {}
-    int getRule(int order) { return ceil(order/2); };
+    int getRule(int order) { return order; };
   };
   MyTriangleFE fe;
   MyTriangleFE& getLoopFe() { return fe; }

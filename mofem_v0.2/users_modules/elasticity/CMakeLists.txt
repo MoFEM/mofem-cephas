@@ -55,7 +55,7 @@ add_test(MultiGridViaOrderSolver
   -pc_type mg 
   -mofem_mg_verbose 1 -mofem_mg_coarse_order 2 -mofem_mg_levels 3
   -mg_coarse_ksp_type preonly -mg_coarse_pc_type lu -mg_coarse_pc_factor_mat_solver_package mumps
-  -mg_levels_1_ksp_type gmres -mg_levels_1_ksp_max_it 30
-  -mg_levels_2_ksp_type gmres -mg_levels_2_ksp_max_it 30
+  -pc_mg_smoothup 10 -pc_mg_smoothdown 10 
+  -pc_mg_galerkin true -pc_mg_type multiplicative
   -log_summary)
 

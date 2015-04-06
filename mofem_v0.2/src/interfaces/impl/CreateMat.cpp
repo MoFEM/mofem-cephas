@@ -206,6 +206,7 @@ PetscErrorCode CreateRowComressedADJMatrix::createMat(
 	  NumeredDofMoFEMEntity_multiIndex_uid_view_hashed::iterator cvit;
 	  cvit = dofs_col_view.begin();
 	  for(;cvit!=dofs_col_view.end();cvit++) {
+
 	    int col_idx = TAG::get_index(*cvit);
 	    if(col_idx<0) {
 	      ostringstream zz;
@@ -384,10 +385,10 @@ PetscErrorCode CreateRowComressedADJMatrix::createMat(
 	  SETERRQ1(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,"data inconsistency, dof index is bigger than size of problem, problem name < %s >",name.c_str());
 	}
 
-      }
+      } 
 
       unsigned char pstatus = miit_row->get_pstatus();
-      if( (!(pstatus & PSTATUS_NOT_OWNED)) && (pstatus&(PSTATUS_SHARED|PSTATUS_MULTISHARED))) {
+      if( pstatus>0 ) {
 
 	map<int,vector<int> >::iterator mit;
 	mit = adjacent_dofs_on_other_parts.find(row_last_evaluated_idx);
@@ -400,8 +401,9 @@ PetscErrorCode CreateRowComressedADJMatrix::createMat(
 
       }
       sort(dofs_vec.begin(),dofs_vec.end());
-      unique(dofs_vec.begin(),dofs_vec.end());
-
+      vector<DofIdx>::iterator new_end = unique(dofs_vec.begin(),dofs_vec.end());
+      int new_size = distance(dofs_vec.begin(),new_end);
+      dofs_vec.resize(new_size);
 
     }
 
@@ -670,8 +672,8 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const string &problem_name,i
 
     int rowPrint,colPrint;
 
-    TestMatrixFillIn(FieldInterface *m_field_ptr,Mat _A,int row_print,int col_print): 
-      mFieldPtr(m_field_ptr),A(_A),
+    TestMatrixFillIn(FieldInterface *m_field_ptr,Mat a,int row_print,int col_print): 
+      mFieldPtr(m_field_ptr),A(a),
       rowPrint(row_print),colPrint(col_print) {};
 
     PetscErrorCode preProcess() {
@@ -681,17 +683,21 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const string &problem_name,i
 
     PetscErrorCode operator()() {
       PetscFunctionBegin;
+
       if(refinedFiniteElementsPtr->find(fePtr->get_ent())==refinedFiniteElementsPtr->end()) {
 	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
       }
+
       FENumeredDofMoFEMEntity_multiIndex::iterator rit = rowPtr->begin();
       for(;rit!=rowPtr->end();rit++) {
+
 	if(refinedEntitiesPtr->find(rit->get_ent())==refinedEntitiesPtr->end()) {
 	  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
 	}
 	if(!rit->get_active()) {
 	  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
 	}
+
 	MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_multiIndex::index<Composite_unique_mi_tag>::type::iterator ait;
 	ait = adjacenciesPtr->get<Composite_unique_mi_tag>().find(boost::make_tuple(
 	      rit->get_MoFEMEntity_ptr()->get_global_unique_id(),fePtr->get_global_unique_id()));
@@ -714,6 +720,7 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const string &problem_name,i
 	  }
 	}
 	int row = rit->get_petsc_gloabl_dof_idx();
+
 	FENumeredDofMoFEMEntity_multiIndex::iterator cit = colPtr->begin();
 	for(;cit!=colPtr->end();cit++) {
 	  if(refinedEntitiesPtr->find(cit->get_ent())==refinedEntitiesPtr->end()) {
@@ -756,8 +763,53 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const string &problem_name,i
 
   	  ierr = MatSetValue(A,row,col,1,INSERT_VALUES);
 
+	  if(cit->get_ent_type()!=MBVERTEX) {
+
+
+	    FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_Type_And_Side_Number_mi_tag>::type::iterator dit,hi_dit;
+	    dit = colPtr->get<Composite_Name_Type_And_Side_Number_mi_tag>().lower_bound(boost::make_tuple(cit->get_name(),cit->get_ent_type(),cit->side_number_ptr->side_number));
+	    hi_dit = colPtr->get<Composite_Name_Type_And_Side_Number_mi_tag>().upper_bound(boost::make_tuple(cit->get_name(),cit->get_ent_type(),cit->side_number_ptr->side_number));
+	    int nb_dofs_on_ent = distance(dit,hi_dit);
+
+	    int max_order = cit->get_max_order();
+	    if(cit->get_max_rank()*cit->get_order_nb_dofs(max_order)!=nb_dofs_on_ent) {
+	      cerr << "Warning: Number of Dofs in Col diffrent than number of dofs for given entity order " 
+		<< cit->get_max_rank()*cit->get_order_nb_dofs(max_order) << " " << nb_dofs_on_ent  << endl;
+	    }	
+
+	  }
+
+
+
 	}
+
+	if(rit->get_ent_type()!=MBVERTEX) {
+
+	  FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_Type_And_Side_Number_mi_tag>::type::iterator dit,hi_dit;
+	  dit = rowPtr->get<Composite_Name_Type_And_Side_Number_mi_tag>().lower_bound(boost::make_tuple(rit->get_name(),rit->get_ent_type(),rit->side_number_ptr->side_number));
+	  hi_dit = rowPtr->get<Composite_Name_Type_And_Side_Number_mi_tag>().upper_bound(boost::make_tuple(rit->get_name(),rit->get_ent_type(),rit->side_number_ptr->side_number));
+	  int nb_dofs_on_ent = distance(dit,hi_dit);
+
+	  int max_order = rit->get_max_order();
+	  if(rit->get_max_rank()*rit->get_order_nb_dofs(max_order) != nb_dofs_on_ent) {
+	    cerr << "Warning: Number of Dofs in Row diffrent than number of dofs for given entity order "  
+	      << rit->get_max_rank()*rit->get_order_nb_dofs(max_order) << " " << nb_dofs_on_ent << endl;
+	  }
+
+	}
+
       }
+
+      if(fePtr->fe_ptr->row_dof_view.size()!=fePtr->rows_dofs.size()) {
+	cerr << "Warning: FEDof Row size != NumeredFEDof RowSize" << endl;
+      }
+
+      if(fePtr->fe_ptr->col_dof_view.size()!=fePtr->cols_dofs.size()) {
+	cerr << "Warning: FEDof Row size != NumeredFEDof RowSize" << endl;
+      }
+
+
+
       PetscFunctionReturn(0);
     }
 
@@ -777,6 +829,7 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const string &problem_name,i
   Mat A;
   ierr = MatCreateMPIAIJWithArrays(problem_name,&A); CHKERRQ(ierr);
   ierr = MatSetOption(A,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_TRUE);  CHKERRQ(ierr);
+
   TestMatrixFillIn method(this,A,row_print,col_print);
 
   typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
@@ -798,7 +851,7 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const string &problem_name,i
       PetscPrintf(comm,"\tcheck element %s\n",fe->get_name().c_str());
     }
 
-    ierr = loop_finite_elements(problem_name,fe->get_name(),method,0,sIze,verb);  CHKERRQ(ierr);
+    ierr = loop_finite_elements(problem_name,fe->get_name(),method,verb);  CHKERRQ(ierr);
 
   }
 
