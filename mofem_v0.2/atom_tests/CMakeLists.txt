@@ -1,7 +1,3 @@
-# Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
-# The MoFEM package is copyrighted by Lukasz Kaczmarczyk. 
-# It can be freely used for educational and research purposes 
-# by other institutions. If you use this softwre pleas cite my work. 
 #
 # MoFEM is free software: you can redistribute it and/or modify it under
 # the terms of the GNU Lesser General Public License as published by the
@@ -585,8 +581,8 @@ add_test(dm_mofem_atom_compare ${CMAKE_COMMAND} -E compare_files
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/dm_mofem.txt)
 
 cm_export_file("disp01_2parts.h5m" export_atom_tests)
-add_executable(dm_build_pratitioned_mesh dm_build_pratitioned_mesh.cpp)
-target_link_libraries(dm_build_pratitioned_mesh
+add_executable(dm_build_partitioned_mesh dm_build_partitioned_mesh.cpp)
+target_link_libraries(dm_build_partitioned_mesh
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
@@ -596,7 +592,7 @@ target_link_libraries(dm_build_pratitioned_mesh
   mofem_third_party
   ${PROJECT_LIBS})
 add_test(dm_build_pratitioned_mesh_atom 
-  ${MPI_RUN} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/dm_build_pratitioned_mesh -my_file disp01_2parts.h5m -dm_is_partitioned)
+  ${MPI_RUN} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/dm_build_partitioned_mesh -my_file disp01_2parts.h5m -dm_is_partitioned)
 add_test(dm_build_pratitioned_mesh_atom_compare ${CMAKE_COMMAND} -E compare_files 
   ${CMAKE_BINARY_DIR}/atom_tests/dm_build_partitioned_mesh.txt
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/dm_build_partitioned_mesh.txt)

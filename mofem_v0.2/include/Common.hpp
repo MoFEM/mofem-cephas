@@ -198,11 +198,11 @@ struct MofemException: public std::exception {
 };
 
 /** 
- * \typedef CubitBC_BitSet
+ * \typedef CubitBCType
  * bc & material meshsets
  *
  */
-typedef bitset<32> CubitBC_BitSet;
+typedef bitset<32> CubitBCType;
 
 /**
   * Tyeps of sets and boundary conditions

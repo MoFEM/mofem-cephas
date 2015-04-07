@@ -69,11 +69,11 @@ struct ltstr
 { inline bool operator()(const string &s1, const string& s2) const
   { return strcmp(s1.c_str(), s2.c_str()) < 0; } };
 
-struct CubitMeshSets_change_add_bit_to_CubitBCType {
-  CubitBC_BitSet bit;
-  CubitMeshSets_change_add_bit_to_CubitBCType(const CubitBC_BitSet &_bit): bit(_bit) {};
+struct CubitMeshSets_change_add_bit_to_cubit_bc_type {
+  CubitBCType bit;
+  CubitMeshSets_change_add_bit_to_cubit_bc_type(const CubitBCType &_bit): bit(_bit) {};
   void operator()(CubitMeshSets &e) { 
-    e.CubitBCType |= bit;
+    e.cubit_bc_type |= bit;
   }
 };
 

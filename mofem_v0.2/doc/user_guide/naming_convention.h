@@ -114,6 +114,8 @@ if (...) {
   - Class member variables should be camelBack, e.g. EdgeMesh::schemeType; each
     member variable, e.g. int memberVariable, should have set/get functions 
     void member_variable(int newval) and int member_variable(), respectively
+  
+  - Abstract class members should be abstract_class_member, e.g. set_field_orer()
 
   - Enumeration values should be all capitalized, with underscores avoided if
     possible (the enumeration name indicates the general purpose of the

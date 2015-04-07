@@ -34,7 +34,7 @@ namespace MoFEM {
 NonlinearElasticElement::MyVolumeFE::MyVolumeFE(FieldInterface &m_field): 
   TetElementForcesAndSourcesCore(m_field),A(PETSC_NULL),F(PETSC_NULL) {}
 
-int NonlinearElasticElement::MyVolumeFE::getRule(int order) { return (order-1); };
+int NonlinearElasticElement::MyVolumeFE::getRule(int order) { return (order-1+1); };
 
 PetscErrorCode NonlinearElasticElement::MyVolumeFE::preProcess() {
   PetscFunctionBegin;

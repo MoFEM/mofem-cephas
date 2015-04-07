@@ -69,7 +69,7 @@ struct Core:
   Tag th_ElemType;
   Tag th_SeriesName;
 
-  int *f_shift,*MoFEMFiniteElement_shift,*p_shift;
+  int *fShift,*feShift,*pShift;
   int verbose;
 
   //ref
@@ -87,26 +87,30 @@ struct Core:
   //moFEMProblems
   MoFEMProblem_multiIndex moFEMProblems;					///< problems	
   //cubit
-  CubitMeshSet_multiIndex cubit_meshsets;					///< cubit meshsets
+  CubitMeshSet_multiIndex cubitMeshsets;					///< cubit meshsets
   //series
-  Series_multiIndex series;							///< recorded series
-  SeriesStep_multiIndex series_steps;						///< recorded series steps
+  Series_multiIndex sEries;							///< recorded series
+  SeriesStep_multiIndex seriesSteps;						///< recorded series steps
 
   //safety nets
   Tag th_MoFEMBuild;
   int *build_MoFEM;
 
   //core methods
-  PetscErrorCode clear_map();
-  BitFieldId get_field_shift();
-  BitFEId get_BitFEId();
-  BitProblemId get_problem_shift();
+  PetscErrorCode clearMap();
+  BitFieldId getFieldShift();
+  BitFEId getFEShift();
+  BitProblemId getProblemShift();
   PetscErrorCode initialiseDatabseInformationFromMesh(int verb = -1);
+
+  //moab interface
   Interface& get_moab();
+
+  //communicator MoFEM
   MPI_Comm get_comm();
 
   //add prims element
-  PetscErrorCode add_prism_to_mofem_database(const EntityHandle prism,int verb = -1);
+  PetscErrorCode addPrismToDatabase(const EntityHandle prism,int verb = -1);
 
   //MeshRefinemnt
   PetscErrorCode add_verices_in_the_middel_of_edges(
@@ -144,7 +148,7 @@ struct Core:
 
   PetscErrorCode get_msId_3dENTS_sides(
     const int msId,
-    const CubitBC_BitSet CubitBCType,
+    const CubitBCType cubit_bc_type,
     const BitRefLevel mesh_bit_level,
     const bool recursive,int verb = -1);
   PetscErrorCode get_msId_3dENTS_sides(
@@ -153,7 +157,7 @@ struct Core:
     const bool recursive,int verb = -1);
   PetscErrorCode get_msId_3dENTS_split_sides(
     const EntityHandle meshset,const BitRefLevel &bit,
-    const int msId,const CubitBC_BitSet CubitBCType,
+    const int msId,const CubitBCType cubit_bc_type,
     const bool add_iterfece_entities,const bool recursive = false,int verb = -1);
   PetscErrorCode get_msId_3dENTS_split_sides(
     const EntityHandle meshset,const BitRefLevel &bit,
@@ -175,35 +179,35 @@ struct Core:
 
 
   //cubit meshsets
-  bool check_msId_meshset(const int msId,const CubitBC_BitSet CubitBCType);
-  PetscErrorCode add_Cubit_msId(const CubitBC_BitSet CubitBCType,const int msId);
-  PetscErrorCode delete_Cubit_msId(const CubitBC_BitSet CubitBCType,const int msId);
-  PetscErrorCode get_Cubit_msId(const int msId,const CubitBC_BitSet CubitBCType,const CubitMeshSets **cubit_meshset_ptr);
-  PetscErrorCode get_Cubit_msId_entities_by_dimension(const int msId,const CubitBC_BitSet CubitBCType, const int dimension,Range &entities,const bool recursive = false);
-  PetscErrorCode get_Cubit_msId_entities_by_dimension(const int msId,const CubitBC_BitSet CubitBCType, Range &entities,const bool recursive = false);
-  PetscErrorCode get_Cubit_msId_entities_by_dimension(const int msId,const unsigned int CubitBCType, const int dimension,Range &entities,const bool recursive = false);
-  PetscErrorCode get_Cubit_msId_entities_by_dimension(const int msId,const unsigned int CubitBCType, Range &entities,const bool recursive = false);
-  PetscErrorCode get_Cubit_msId_meshset(const int msId,const unsigned int CubitBCType,EntityHandle &meshset);
-  PetscErrorCode get_Cubit_meshsets(const unsigned int CubitBCType,Range &meshsets);
-  CubitMeshSet_multiIndex::iterator get_CubitMeshSets_begin() { return cubit_meshsets.begin(); }
-  CubitMeshSet_multiIndex::iterator get_CubitMeshSets_end() { return cubit_meshsets.end(); }
-  CubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator get_CubitMeshSets_begin(const unsigned int CubitBCType) { 
-    return cubit_meshsets.get<CubitMeshSets_mi_tag>().lower_bound(CubitBCType); 
+  bool check_msId_meshset(const int msId,const CubitBCType cubit_bc_type);
+  PetscErrorCode add_cubit_msId(const CubitBCType cubit_bc_type,const int msId);
+  PetscErrorCode delete_cubit_msId(const CubitBCType cubit_bc_type,const int msId);
+  PetscErrorCode get_cubit_msId(const int msId,const CubitBCType cubit_bc_type,const CubitMeshSets **cubit_meshset_ptr);
+  PetscErrorCode get_cubit_msId_entities_by_dimension(const int msId,const CubitBCType cubit_bc_type, const int dimension,Range &entities,const bool recursive = false);
+  PetscErrorCode get_cubit_msId_entities_by_dimension(const int msId,const CubitBCType cubit_bc_type, Range &entities,const bool recursive = false);
+  PetscErrorCode get_cubit_msId_entities_by_dimension(const int msId,const unsigned int cubit_bc_type, const int dimension,Range &entities,const bool recursive = false);
+  PetscErrorCode get_cubit_msId_entities_by_dimension(const int msId,const unsigned int cubit_bc_type, Range &entities,const bool recursive = false);
+  PetscErrorCode get_cubit_msId_meshset(const int msId,const unsigned int cubit_bc_type,EntityHandle &meshset);
+  PetscErrorCode get_cubit_meshsets(const unsigned int cubit_bc_type,Range &meshsets);
+  CubitMeshSet_multiIndex::iterator get_cubit_meshsets_begin() { return cubitMeshsets.begin(); }
+  CubitMeshSet_multiIndex::iterator get_cubit_mesh_sets_end() { return cubitMeshsets.end(); }
+  CubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator get_cubit_meshsets_begin(const unsigned int cubit_bc_type) { 
+    return cubitMeshsets.get<CubitMeshSets_mi_tag>().lower_bound(cubit_bc_type); 
   }
-  CubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator get_CubitMeshSets_end(const unsigned int CubitBCType) { 
-    return cubit_meshsets.get<CubitMeshSets_mi_tag>().upper_bound(CubitBCType); 
+  CubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator get_cubit_mesh_sets_end(const unsigned int cubit_bc_type) { 
+    return cubitMeshsets.get<CubitMeshSets_mi_tag>().upper_bound(cubit_bc_type); 
   }
-  CubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type::iterator get_CubitMeshSets_bySetType_begin(const unsigned int CubitBCType) { 
-    return cubit_meshsets.get<CubitMeshSets_mask_meshset_mi_tag>().lower_bound(CubitBCType); 
+  CubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type::iterator get_CubitMeshSets_bySetType_begin(const unsigned int cubit_bc_type) { 
+    return cubitMeshsets.get<CubitMeshSets_mask_meshset_mi_tag>().lower_bound(cubit_bc_type); 
   }
-  CubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type::iterator get_CubitMeshSets_bySetType_end(const unsigned int CubitBCType) { 
-    return cubit_meshsets.get<CubitMeshSets_mask_meshset_mi_tag>().upper_bound(CubitBCType); 
+  CubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type::iterator get_CubitMeshSets_bySetType_end(const unsigned int cubit_bc_type) { 
+    return cubitMeshsets.get<CubitMeshSets_mask_meshset_mi_tag>().upper_bound(cubit_bc_type); 
   }
   CubitMeshSet_multiIndex::index<CubitMeshSets_name>::type::iterator get_CubitMeshSets_byName_begin(const string& name) { 
-    return cubit_meshsets.get<CubitMeshSets_name>().lower_bound(name); 
+    return cubitMeshsets.get<CubitMeshSets_name>().lower_bound(name); 
   }
   CubitMeshSet_multiIndex::index<CubitMeshSets_name>::type::iterator get_CubitMeshSets_byName_end(const string& name) { 
-    return cubit_meshsets.get<CubitMeshSets_name>().upper_bound(name); 
+    return cubitMeshsets.get<CubitMeshSets_name>().upper_bound(name); 
   }
 
   template<class _CUBIT_BC_DATA_TYPE_>
@@ -256,14 +260,14 @@ struct Core:
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode printCubitTEMPERATURESET() {
+  PetscErrorCode print_cubit_temperature() {
     PetscFunctionBegin;
     TemperatureCubitBcData mydata;
     ierr = printCubitSet(mydata,NODESET|mydata.type.to_ulong()); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
     
-  PetscErrorCode printCubitHeatFluxSet() {
+  PetscErrorCode print_cubit_heat_flux_set() {
     PetscFunctionBegin;
     HeatfluxCubitBcData mydata;
     ierr = printCubitSet(mydata,SIDESET|mydata.type.to_ulong()); CHKERRQ(ierr);
@@ -343,6 +347,11 @@ struct Core:
   PetscErrorCode delete_finite_elements_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
   PetscErrorCode shift_left_bit_ref(const int shif,int verb = -1);
   PetscErrorCode shift_right_bit_ref(const int shift,int verb = -1);
+
+  //synchronize entities
+  PetscErrorCode synchronise_entities(Range &ent,int verb = -1);
+  PetscErrorCode synchronise_field_entities(const BitFieldId id,int verb = -1);
+  PetscErrorCode synchronise_field_entities(const string& name,int verb = -1);
 
   //field
   PetscErrorCode add_field(
@@ -465,8 +474,8 @@ struct Core:
   PetscErrorCode build_problems(int verb = -1);
   PetscErrorCode clear_problems(int verb = -1);
   PetscErrorCode build_partitioned_problems(int verb = -1);
-  PetscErrorCode build_partitioned_problem(const string &name,int verb = -1);
-  PetscErrorCode build_partitioned_problem(MoFEMProblem *problem_ptr,int verb = -1);
+  PetscErrorCode build_partitioned_problem(const string &name,bool square_matrix = true,int verb = -1);
+  PetscErrorCode build_partitioned_problem(MoFEMProblem *problem_ptr,bool square_matrix = true,int verb = -1);
   PetscErrorCode simple_partition_problem(const string &name,int verb = -1);
   PetscErrorCode partition_problem(const string &name,int verb = -1);
   PetscErrorCode compose_problem(const string &name,const string &problem_for_rows,bool copy_rows,const string &problem_for_cols,bool copy_cols,int verb = -1);
@@ -474,9 +483,9 @@ struct Core:
   PetscErrorCode partition_ghost_dofs(const string &name,int verb = -1);
   PetscErrorCode partition_finite_elements(
     const string &name,bool part_from_moab = false,int low_proc = -1,int hi_proc = -1,int verb = -1);
-  PetscErrorCode partition_check_matrix_fill_in(const string &problem_neme,int verb);
-  PetscErrorCode print_partitioned_problem(const MoFEMProblem *problem_ptr,int verb = -1);
-  PetscErrorCode debug_partitioned_problem(const MoFEMProblem *problem_ptr,int verb = -1);
+  PetscErrorCode partition_check_matrix_fill_in(const string &problem_neme,int row,int col,int verb);
+  PetscErrorCode printPartitionedProblem(const MoFEMProblem *problem_ptr,int verb = -1);
+  PetscErrorCode debugPartitionedProblem(const MoFEMProblem *problem_ptr,int verb = -1);
 
   ///save meshsets
   PetscErrorCode get_problem_finite_elements_entities(const string &name,const string &fe_name,const EntityHandle meshset);
