@@ -47,101 +47,37 @@ using bio::stream;
 using namespace MoFEM;
 
 static char help[] = "...\n\n";
-//Calculate the analytical solution of impinging wave on sphere
+//Calculate the analytical solution of plane wave guid propagating in direction theta
 struct MyFunApprox_re {
 	
 	 ublas::vector<double> result1;
 	 double wAvenumber;
+	 double tHeta;
 	 bool useReal;
-	 //ublas::vector<double>& operator()(double x, double y, double z) {
-	//	result.resize(3);
-	//	result[0] = x;
-	//	result[1] = y;
-	//	result[2] = z*z;
-	//	return result;
-	//}     
 	 
-	 MyFunApprox_re(double wavenumber,bool use_real):
-		 wAvenumber(wavenumber),useReal(use_real) {}
+	 MyFunApprox_re(double wavenumber,double theta,bool use_real):
+		 wAvenumber(wavenumber),tHeta(theta),useReal(use_real) {}
 	 ~MyFunApprox_re() {}
 	 
 	ublas::vector<double>& operator()(double x, double y, double z) {
+		
 		const double pi = atan( 1.0 ) * 4.0;
-		double R = sqrt(pow(x,2.0)+pow(y,2.0)+pow(z,2.0)); //radius
-		//Incident wave in Z direction.
-		//double sqrtx2y2 = sqrt(pow(x,2.0)+pow(y,2.0));
-		//double phi= atan2(sqrtx2y2,z)+2*pi;
-		//double phi= acos(z/R); 
-		//Incident wave in X direction.
-		double theta = atan2(y,x)+2*pi; //the arctan of radians (y/x)
-		//const double wAvenumber = aNgularfreq/sPeed;
-		//double wAvenumber = 2;
+		
 		const double k = wAvenumber;  //Wave number
-		const double a = 0.5;         //radius of the sphere,wait to modify by user
-		//const double a = 1.0;
-		const double const1 = k * a;
-		double const2 = k * R;
-		
+
 		const complex< double > i( 0.0, 1.0 );
-		
-		// magnitude of incident wave
-		//const double phi_incident_mag = 1.0;
-		
-		const double tol = 1.0e-10;
-		double max = 0.0;
-		double min = 999999.0;
-		
 		complex< double > result = 0.0;
-		complex< double > prev_result;
-		
-		double error = 100.0;
-		unsigned int n = 0; //initialized the infinite series loop
-		
-		while( error > tol )  //finding the acoustic potential in one single point.
-		{
-		//The derivative of bessel function
-			double jn_der = (n / const1 * sph_bessel( n, const1 ) - sph_bessel( n + 1, const1 ));  
-		//The derivative of Hankel function
-			complex< double > hn_der = (n / const1 * sph_hankel_1( n, const1 ) - sph_hankel_1( n + 1, const1 ));
-			
-			
-			//complex< double > hn_der_C = 0;
-			//for( unsigned int m = 0; m < n; m++) {
-			//	/* eta = (n + 1/2,m) */
-			//	double eta = 1.0;
-			//	if(m == 0) {
-			//		
-			//	} else {
-			//		for(unsigned int j = 1; j < m; j++) {
-			//			
-			//			eta *= (n + j)*((n - m + j)/j);
-			//		
-			//		}
-			//	}
-			//	
-			//	hn_der_C += ( i*k*(exp(i*const2)/pow(R,m+1.0)) - (m+1.0)*(exp(i*const2)/pow(R,m+2.0)) ) * ((pow(i,m)*eta)/(k*pow(2.0*k,m))) * exp(-i*(pi/2.0)*(n+1.0));
-			//}
-			
-			//std::cout << "\n hn_der_C= \n" << hn_der_C << "\n hn_der = \n" << hn_der << std::endl;
-			
-			
-			//double jn = sph_bessel( n, const2 );
-			//complex< double > hn_der = 0.5 * ( sph_hankel_1( n - 1, const1 ) -
-			//( sph_hankel_1( n, const1 ) + const1 * sph_hankel_1( n + 1, const1 ) ) / const1 );
-			double Pn = legendre_p( n, cos( theta ) );
-			complex< double >hn = sph_hankel_1( n, const2 );  //S Hankel first kind function
-			prev_result = result;
-			result -= pow( i, n ) * ( 2.0 * n + 1.0 ) * jn_der / hn_der * Pn * hn;
-			error = abs( abs( result ) - abs( prev_result ) );
-			++n;
-		}
-		
-		//result *= phi_incident_mag;
+		// magnitude of incident wave
+		//const double phi_incident_mag = 3.0;
 		
 		//const complex< double > inc_field = exp( i * k * R * cos( theta ) );  //???? Incident wave
 		//const complex< double > total_field = inc_field + result;
 		//ofs << theta << "\t" << abs( result ) << "\t" << abs( inc_field ) << "\t" << abs( total_field ) <<  "\t" << R << endl; //write the file
 		
+		/* cube */
+		double theta = pi;
+		result = exp(i*(k*cos(tHeta)*x+k*sin(tHeta)*y));
+		/* cube */
 		
 		if(useReal) {
 			result1.resize(1);
@@ -153,6 +89,7 @@ struct MyFunApprox_re {
 			return result1;
 		}
 		
+
 		
 	}
 	
@@ -181,6 +118,12 @@ int main(int argc, char *argv[]) {
 	ierr = PetscOptionsGetString(PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
 	if(flg != PETSC_TRUE) {
 		SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
+	}
+	
+	static double theta;
+	ierr = ierr = PetscOptionsGetReal(PETSC_NULL,"-wave_direction",&theta,&flg); CHKERRQ(ierr);
+	if(flg != PETSC_TRUE) {
+		SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -wave_direction (between [0 ~ 2pi])");
 	}
 	
 	ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
@@ -334,11 +277,8 @@ int main(int argc, char *argv[]) {
 	  //for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,"MAT_HELMHOLTZ",it) {
 	  //for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
 	
-		//Get block name
-		//string name = it->get_Cubit_name();
-		//if (name.compare(0,13,"MAT_HELMHOLTZ") == 0)
-		//{
-			//get block attributes
+
+		//get block attributes
 		vector<double> attributes;
 		ierr = it->get_Cubit_attributes(attributes); CHKERRQ(ierr);
 		if(attributes.size()<2) {
@@ -346,7 +286,7 @@ int main(int argc, char *argv[]) {
 		}
 		aNgularfreq = attributes[0];
 		sPeed = attributes[1];	
-		//}
+	
 	}
 	
 	
@@ -354,7 +294,7 @@ int main(int argc, char *argv[]) {
 
 	{
 
-		MyFunApprox_re function_evaluator_re(wavenumber,true);
+		MyFunApprox_re function_evaluator_re(wavenumber,theta,true);
 		FieldApproximationH1<MyFunApprox_re> field_approximation_re(m_field);
 		
 		field_approximation_re.loopMatrixAndVector(
@@ -363,7 +303,7 @@ int main(int argc, char *argv[]) {
 	
 	{
 
-		MyFunApprox_re function_evaluator_im(wavenumber,false);
+		MyFunApprox_re function_evaluator_im(wavenumber,theta,false);
 		FieldApproximationH1<MyFunApprox_re> field_approximation_im(m_field);
 		
 		field_approximation_im.loopMatrixAndVector(

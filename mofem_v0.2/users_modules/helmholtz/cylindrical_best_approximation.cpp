@@ -67,15 +67,14 @@ struct MyFunApprox_re {
 	 
 	ublas::vector<double>& operator()(double x, double y, double z) {
 		const double pi = atan( 1.0 ) * 4.0;
-		double R = sqrt(pow(x,2.0)+pow(y,2.0)+pow(z,2.0)); //radius
+		double R = sqrt(pow(x,2.0)+pow(y,2.0)); //radius
 		//Incident wave in Z direction.
 		//double sqrtx2y2 = sqrt(pow(x,2.0)+pow(y,2.0));
 		//double phi= atan2(sqrtx2y2,z)+2*pi;
 		//double phi= acos(z/R); 
 		//Incident wave in X direction.
 		double theta = atan2(y,x)+2*pi; //the arctan of radians (y/x)
-		//const double wAvenumber = aNgularfreq/sPeed;
-		//double wAvenumber = 2;
+
 		const double k = wAvenumber;  //Wave number
 		const double a = 0.5;         //radius of the sphere,wait to modify by user
 		//const double a = 1.0;
@@ -95,43 +94,27 @@ struct MyFunApprox_re {
 		complex< double > prev_result;
 		
 		double error = 100.0;
-		unsigned int n = 0; //initialized the infinite series loop
+		unsigned int n = 1; //initialized the infinite series loop
+		
+		double Jn_der_zero = ( - cyl_bessel_j( 1, const1 ));  
+		complex< double > Hn_der_zero = ( - cyl_hankel_1( 1, const1 ));
+		complex< double >Hn_zero = cyl_hankel_1( 0, const2 );  //S Hankel first kind function
+
+		//n=0;
+		result -= (Jn_der_zero * Hn_zero)/Hn_der_zero;
+		
 		
 		while( error > tol )  //finding the acoustic potential in one single point.
 		{
-		//The derivative of bessel function
-			double jn_der = (n / const1 * sph_bessel( n, const1 ) - sph_bessel( n + 1, const1 ));  
-		//The derivative of Hankel function
-			complex< double > hn_der = (n / const1 * sph_hankel_1( n, const1 ) - sph_hankel_1( n + 1, const1 ));
-			
-			
-			//complex< double > hn_der_C = 0;
-			//for( unsigned int m = 0; m < n; m++) {
-			//	/* eta = (n + 1/2,m) */
-			//	double eta = 1.0;
-			//	if(m == 0) {
-			//		
-			//	} else {
-			//		for(unsigned int j = 1; j < m; j++) {
-			//			
-			//			eta *= (n + j)*((n - m + j)/j);
-			//		
-			//		}
-			//	}
-			//	
-			//	hn_der_C += ( i*k*(exp(i*const2)/pow(R,m+1.0)) - (m+1.0)*(exp(i*const2)/pow(R,m+2.0)) ) * ((pow(i,m)*eta)/(k*pow(2.0*k,m))) * exp(-i*(pi/2.0)*(n+1.0));
-			//}
-			
-			//std::cout << "\n hn_der_C= \n" << hn_der_C << "\n hn_der = \n" << hn_der << std::endl;
-			
-			
-			//double jn = sph_bessel( n, const2 );
-			//complex< double > hn_der = 0.5 * ( sph_hankel_1( n - 1, const1 ) -
-			//( sph_hankel_1( n, const1 ) + const1 * sph_hankel_1( n + 1, const1 ) ) / const1 );
-			double Pn = legendre_p( n, cos( theta ) );
-			complex< double >hn = sph_hankel_1( n, const2 );  //S Hankel first kind function
 			prev_result = result;
-			result -= pow( i, n ) * ( 2.0 * n + 1.0 ) * jn_der / hn_der * Pn * hn;
+		//The derivative of bessel function
+			double Jn_der = (n / const1 * cyl_bessel_j( n, const1 ) - cyl_bessel_j( n + 1, const1 ));  
+		//The derivative of Hankel function
+			complex< double > Hn_der = (n / const1 * cyl_hankel_1( n, const1 ) - cyl_hankel_1( n + 1, const1 ));
+			
+			complex< double >Hn = cyl_hankel_1( n, const2 );  //S Hankel first kind function
+			
+			result -= 2.0 * pow( i, n ) * ( (Jn_der*Hn) / Hn_der ) * cos(n*theta);
 			error = abs( abs( result ) - abs( prev_result ) );
 			++n;
 		}
@@ -423,15 +406,13 @@ int main(int argc, char *argv[]) {
 	ierr = MatDestroy(&B); CHKERRQ(ierr);
 	
 	
-	//PostPocOnRefinedMesh post_proc1(m_field);
-	//ierr = post_proc1.generateRefereneElemenMesh(); CHKERRQ(ierr);
-	//ierr = post_proc1.addFieldValuesPostProc("reEX"); CHKERRQ(ierr);
-	//ierr = post_proc1.addFieldValuesGradientPostProc("reEX"); CHKERRQ(ierr);
-	//ierr = post_proc1.addFieldValuesPostProc("imEX"); CHKERRQ(ierr);
-	//ierr = post_proc1.addFieldValuesGradientPostProc("imEX"); CHKERRQ(ierr);
-	//ierr = post_proc1.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
-	//ierr = m_field.loop_finite_elements("EX1_PROBLEM","FE1",post_proc1); CHKERRQ(ierr);
-	//rval = post_proc1.postProcMesh.write_file("best_approximation_out.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
+	PostPocOnRefinedMesh post_proc1(m_field);
+	ierr = post_proc1.generateRefereneElemenMesh(); CHKERRQ(ierr);
+	ierr = post_proc1.addFieldValuesPostProc("reEX"); CHKERRQ(ierr);
+	ierr = post_proc1.addFieldValuesPostProc("imEX"); CHKERRQ(ierr);
+	ierr = post_proc1.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+	ierr = m_field.loop_finite_elements("EX1_PROBLEM","FE1",post_proc1); CHKERRQ(ierr);
+	rval = post_proc1.postProcMesh.write_file("best_approximation_out.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
 
 	//output the results from Docker
 	//char command1[] = "mbconvert ./best_approximation_out.h5m ./best_approximation_out.vtk && cp ./best_approximation_out.vtk ../../../../../mnt/home/Desktop/U_pan/helmholtz_results/";

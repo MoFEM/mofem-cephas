@@ -110,7 +110,7 @@ struct AnalyticalDirihletBC {
 			TriElementForcesAndSurcesCore::UserDataOperator(field_name),
 			hoCoords(ho_coords),solveBc(true) { }
 		
-		ublas::matrix<FieldData> NTN;
+		ublas::matrix<FieldData> NTN,transNTN;
 	  
 	  /*	
 	  Lhs mass matrix
@@ -142,7 +142,8 @@ struct AnalyticalDirihletBC {
 	  }
 
 	  NTN.resize(nb_row,nb_col);
-
+	  NTN.clear();
+	  
 	  for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
 	    double val = getGaussPts()(2,gg);
 	    if(hoCoords.size1() == row_data.getN().size1()) {
@@ -152,27 +153,54 @@ struct AnalyticalDirihletBC {
 	      val *= getArea();
 	    }
          
-	    NTN.clear();
+	    
 	    cblas_dger(CblasRowMajor,nb_row,nb_col,val,
 	      &row_data.getN(gg)[0],1,&col_data.getN(gg)[0],1,
 	      &NTN(0,0),nb_col);
 		
+	  }
+		
         if(solveBc) {
-	    ierr = MatSetValues(
-	      (getFEMethod()->snes_B),
-	      nb_row,&row_data.getIndices()[0],
-	      nb_col,&col_data.getIndices()[0],
-	      &NTN(0,0),ADD_VALUES); CHKERRQ(ierr);
+			
+			ierr = MatSetValues(
+					   (getFEMethod()->snes_B),
+					   nb_row,&row_data.getIndices()[0],
+					   nb_col,&col_data.getIndices()[0],
+					   &NTN(0,0),ADD_VALUES); CHKERRQ(ierr);
+			if(row_side != col_side || row_type != col_type) {
+				transNTN.resize(nb_col,nb_row);
+				noalias(transNTN) = trans(NTN);
+				ierr = MatSetValues(
+						   (getFEMethod()->snes_B),
+						   nb_col,&col_data.getIndices()[0],
+						   nb_row,&row_data.getIndices()[0],
+						   &transNTN(0,0),ADD_VALUES); CHKERRQ(ierr);
+			}
+			
+	    //ierr = MatSetValues(
+	    //  (getFEMethod()->snes_B),
+	    //  nb_row,&row_data.getIndices()[0],
+	    //  nb_col,&col_data.getIndices()[0],
+	    //  &NTN(0,0),ADD_VALUES); CHKERRQ(ierr);
 		
 		} else if(!solveBc){
-		ierr = MatSetValues(
-				   B,
-				   nb_row,&row_data.getIndices()[0],
-				   nb_col,&col_data.getIndices()[0],
-				   &NTN(0,0),ADD_VALUES); CHKERRQ(ierr);
+			ierr = MatSetValues(
+					   B,
+					   nb_row,&row_data.getIndices()[0],
+					   nb_col,&col_data.getIndices()[0],
+					   &NTN(0,0),ADD_VALUES); CHKERRQ(ierr);
+			if(row_side != col_side || row_type != col_type) {
+				transNTN.resize(nb_col,nb_row);
+				noalias(transNTN) = trans(NTN);
+				ierr = MatSetValues(
+						   B,
+						   nb_col,&col_data.getIndices()[0],
+						   nb_row,&row_data.getIndices()[0],
+						   &transNTN(0,0),ADD_VALUES); CHKERRQ(ierr);
+			}
 		}
 
-	  }
+	  
 
 	} catch (const std::exception& ex) {
 	  ostringstream ss;
@@ -194,18 +222,16 @@ struct AnalyticalDirihletBC {
 		double (*fUN)(double x,double y,double z,bool use_real);
 		Vec C;
 		bool solveBc;
-		bool use_real;
-		string fieldType;
-		
+		bool use_real;		
 		
 		OpRhsTri(const string field_name,ublas::matrix<double> &ho_coords,
-			  double (*fun)(double x,double y,double z,bool use_real),Vec _C): 
+			  double (*fun)(double x,double y,double z,bool use_real),bool useReal,Vec _C): 
 			TriElementForcesAndSurcesCore::UserDataOperator(field_name),
-			hoCoords(ho_coords),fUN(fun),C(_C),fieldType(field_name),solveBc(false)  {}
+			hoCoords(ho_coords),fUN(fun),C(_C),use_real(useReal),solveBc(false)  {}
 		OpRhsTri(const string field_name,ublas::matrix<double> &ho_coords,
-				 double (*fun)(double x,double y,double z,bool use_real)): 
+				 double (*fun)(double x,double y,double z,bool use_real),bool useReal): 
 			TriElementForcesAndSurcesCore::UserDataOperator(field_name),
-			hoCoords(ho_coords),fUN(fun),fieldType(field_name),solveBc(true)  {}
+			hoCoords(ho_coords),fUN(fun),use_real(useReal),solveBc(true)  {}
 		
 		ublas::vector<FieldData> NTf;
 	  
@@ -250,11 +276,11 @@ struct AnalyticalDirihletBC {
 	      z = getCoordsAtGaussPts()(gg,2);
 	    }
 	    
-		if(fieldType.compare(0,6,"rePRES")==0) {
-			use_real = true;
-		} else if(fieldType.compare(0,6,"imPRES")==0) {
-			use_real = false;
-		}
+		//if(fieldType.compare(0,6,"rePRES")==0) {
+		//	use_real = true;
+		//} else if(fieldType.compare(0,6,"imPRES")==0) {
+		//	use_real = false;
+		//}
 				
 	    double a = fUN(x,y,z,use_real);
 		
@@ -346,20 +372,21 @@ struct AnalyticalDirihletBC {
 	  FieldInterface &m_field,
 	  string re_field_name,
 	  double (*fun)(double x,double y,double z,bool use_real),
+	  bool useReal,
 	  string nodals_positions = "MESH_NODE_POSITIONS") {
 	  PetscFunctionBegin;
 	  if(m_field.check_field(nodals_positions)) {
 		  approxField.getLoopFeApproxTri().get_op_to_do_Rhs().push_back(new ApproxField::OpHoCoordTri(nodals_positions,approxField.hoCoordsTri));
 	  }
 	  //loop over triangles
-	  approxField.getLoopFeApproxTri().get_op_to_do_Rhs().push_back(new ApproxField::OpRhsTri(re_field_name,approxField.hoCoordsTri,fun));
+	  approxField.getLoopFeApproxTri().get_op_to_do_Rhs().push_back(new ApproxField::OpRhsTri(re_field_name,approxField.hoCoordsTri,fun,useReal));
 	  approxField.getLoopFeApproxTri().get_op_to_do_Lhs().push_back(new ApproxField::OpLhsTri(re_field_name,approxField.hoCoordsTri));
 	  //loop over tets
 	  PetscFunctionReturn(0);
   }
   
 
-  PetscErrorCode initializeBcProblem(
+  PetscErrorCode initializeProblem(
     FieldInterface &m_field,
     string problem,string fe,string re_field_name,
     string nodals_positions = "MESH_NODE_POSITIONS") {
@@ -386,7 +413,7 @@ struct AnalyticalDirihletBC {
   Vec D,F;
   KSP solver;
   
-  PetscErrorCode setBcProblem(
+  PetscErrorCode setProblem(
     FieldInterface &m_field,string problem) {
     PetscFunctionBegin;
     PetscErrorCode ierr;
@@ -402,7 +429,7 @@ struct AnalyticalDirihletBC {
     PetscFunctionReturn(0);
   }
   
-  PetscErrorCode solveBcProblem(
+  PetscErrorCode solveProblem(
     FieldInterface &m_field,string problem,string fe,DirichletBC &bc) {
     PetscFunctionBegin;
     PetscErrorCode ierr;
@@ -421,8 +448,8 @@ struct AnalyticalDirihletBC {
     ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
     ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 	
-	int ii1,jj1;
-	ierr=MatGetSize(A,&ii1,&jj1);
+	//int ii1,jj1;
+	//ierr=MatGetSize(A,&ii1,&jj1);
 	
 	//std::string wait;
 	//ierr = MatView(A,PETSC_VIEWER_STDOUT_WORLD);
@@ -433,7 +460,7 @@ struct AnalyticalDirihletBC {
     ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	
-    ierr = m_field.set_global_VecCreateGhost(problem,ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = m_field.set_global_ghost_vector(problem,ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
     bc.tRis_ptr = &tRis; 
     bc.map_zero_rows.clear();
@@ -443,7 +470,7 @@ struct AnalyticalDirihletBC {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode destroyBcProblem() {
+  PetscErrorCode destroyProblem() {
     PetscFunctionBegin;
     PetscErrorCode ierr;
     ierr = KSPDestroy(&solver); CHKERRQ(ierr);

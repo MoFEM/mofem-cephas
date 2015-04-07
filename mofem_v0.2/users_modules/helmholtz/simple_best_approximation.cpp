@@ -68,16 +68,16 @@ struct MyFunApprox_re {
 	ublas::vector<double>& operator()(double x, double y, double z) {
 		const double pi = atan( 1.0 ) * 4.0;
 		double R = sqrt(pow(x,2.0)+pow(y,2.0)+pow(z,2.0)); //radius
-		//Incident wave in Z direction.
+		////Incident wave in Z direction.
 		//double sqrtx2y2 = sqrt(pow(x,2.0)+pow(y,2.0));
 		//double phi= atan2(sqrtx2y2,z)+2*pi;
-		//double phi= acos(z/R); 
-		//Incident wave in X direction.
+		double phi= acos(z/R); 
+		////Incident wave in X direction.
 		double theta = atan2(y,x)+2*pi; //the arctan of radians (y/x)
 		//const double wAvenumber = aNgularfreq/sPeed;
 		//double wAvenumber = 2;
 		const double k = wAvenumber;  //Wave number
-		const double a = 0.5;         //radius of the sphere,wait to modify by user
+		const double a = 1;         //radius of the sphere,wait to modify by user
 		//const double a = 1.0;
 		const double const1 = k * a;
 		double const2 = k * R;
@@ -87,21 +87,20 @@ struct MyFunApprox_re {
 		// magnitude of incident wave
 		//const double phi_incident_mag = 1.0;
 		
-		const double tol = 1.0e-10;
-		double max = 0.0;
-		double min = 999999.0;
+
 		
 		complex< double > result = 0.0;
-		complex< double > prev_result;
 		
-		double error = 100.0;
-		unsigned int n = 0; //initialized the infinite series loop
 		
-		while( error > tol )  //finding the acoustic potential in one single point.
+		unsigned int m = 4;
+		unsigned int n = 4; //initialized the infinite series loop
+		
+		
+		for(int j = 0; j < m; j++)
 		{
-		//The derivative of bessel function
-			double jn_der = (n / const1 * sph_bessel( n, const1 ) - sph_bessel( n + 1, const1 ));  
-		//The derivative of Hankel function
+			//The derivative of bessel function
+			//double jn_der = (n / const1 * sph_bessel( n, const1 ) - sph_bessel( n + 1, const1 ));  
+			//The derivative of Hankel function
 			complex< double > hn_der = (n / const1 * sph_hankel_1( n, const1 ) - sph_hankel_1( n + 1, const1 ));
 			
 			
@@ -128,12 +127,11 @@ struct MyFunApprox_re {
 			//double jn = sph_bessel( n, const2 );
 			//complex< double > hn_der = 0.5 * ( sph_hankel_1( n - 1, const1 ) -
 			//( sph_hankel_1( n, const1 ) + const1 * sph_hankel_1( n + 1, const1 ) ) / const1 );
-			double Pn = legendre_p( n, cos( theta ) );
+			double Pn = legendre_p(n,j,cos(theta));
 			complex< double >hn = sph_hankel_1( n, const2 );  //S Hankel first kind function
-			prev_result = result;
-			result -= pow( i, n ) * ( 2.0 * n + 1.0 ) * jn_der / hn_der * Pn * hn;
-			error = abs( abs( result ) - abs( prev_result ) );
-			++n;
+			
+			result += hn * Pn * ( ( -1.00 / hn_der )*cos(j*phi) + ( -1.00 / hn_der )*sin(j*phi) );
+
 		}
 		
 		//result *= phi_incident_mag;
@@ -142,6 +140,10 @@ struct MyFunApprox_re {
 		//const complex< double > total_field = inc_field + result;
 		//ofs << theta << "\t" << abs( result ) << "\t" << abs( inc_field ) << "\t" << abs( total_field ) <<  "\t" << R << endl; //write the file
 		
+		///* cube */
+		//double theta = pi;
+		//result = exp(i*(k*cos(theta)*x+k*sin(theta)*y));
+		///* cube */
 		
 		if(useReal) {
 			result1.resize(1);
@@ -153,6 +155,10 @@ struct MyFunApprox_re {
 			return result1;
 		}
 		
+		//double X = x + 0.5; /* coordinate transformation from [-0.5,0.5] to [0,1] */
+		//result1.resize(1);
+		//result1[0] = std::real((exp(i*k*X)-1.0-i*exp(i*k)*sin(k*X))/(pow(k,2.0))); //exact solution of 1D problem
+		//return result1;
 		
 	}
 	
@@ -351,10 +357,10 @@ int main(int argc, char *argv[]) {
 	
 	
 	double wavenumber = aNgularfreq/sPeed;	
-
+	bool use_real;
 	{
-
-		MyFunApprox_re function_evaluator_re(wavenumber,true);
+		use_real = true;
+		MyFunApprox_re function_evaluator_re(wavenumber,use_real);
 		FieldApproximationH1<MyFunApprox_re> field_approximation_re(m_field);
 		
 		field_approximation_re.loopMatrixAndVector(
@@ -362,8 +368,8 @@ int main(int argc, char *argv[]) {
 	}
 	
 	{
-
-		MyFunApprox_re function_evaluator_im(wavenumber,false);
+		use_real = false;
+		MyFunApprox_re function_evaluator_im(wavenumber,use_real);
 		FieldApproximationH1<MyFunApprox_re> field_approximation_im(m_field);
 		
 		field_approximation_im.loopMatrixAndVector(
@@ -423,15 +429,15 @@ int main(int argc, char *argv[]) {
 	ierr = MatDestroy(&B); CHKERRQ(ierr);
 	
 	
-	//PostPocOnRefinedMesh post_proc1(m_field);
-	//ierr = post_proc1.generateRefereneElemenMesh(); CHKERRQ(ierr);
-	//ierr = post_proc1.addFieldValuesPostProc("reEX"); CHKERRQ(ierr);
+	PostPocOnRefinedMesh post_proc1(m_field);
+	ierr = post_proc1.generateRefereneElemenMesh(); CHKERRQ(ierr);
+	ierr = post_proc1.addFieldValuesPostProc("reEX"); CHKERRQ(ierr);
 	//ierr = post_proc1.addFieldValuesGradientPostProc("reEX"); CHKERRQ(ierr);
-	//ierr = post_proc1.addFieldValuesPostProc("imEX"); CHKERRQ(ierr);
+	ierr = post_proc1.addFieldValuesPostProc("imEX"); CHKERRQ(ierr);
 	//ierr = post_proc1.addFieldValuesGradientPostProc("imEX"); CHKERRQ(ierr);
-	//ierr = post_proc1.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
-	//ierr = m_field.loop_finite_elements("EX1_PROBLEM","FE1",post_proc1); CHKERRQ(ierr);
-	//rval = post_proc1.postProcMesh.write_file("best_approximation_out.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
+	ierr = post_proc1.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+	ierr = m_field.loop_finite_elements("EX1_PROBLEM","FE1",post_proc1); CHKERRQ(ierr);
+	rval = post_proc1.postProcMesh.write_file("best_approximation_out.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
 
 	//output the results from Docker
 	//char command1[] = "mbconvert ./best_approximation_out.h5m ./best_approximation_out.vtk && cp ./best_approximation_out.vtk ../../../../../mnt/home/Desktop/U_pan/helmholtz_results/";

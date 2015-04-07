@@ -73,24 +73,24 @@ struct Core:
   int verbose;
 
   //ref
-  RefMoFEMEntity_multiIndex refinedEntities;
-  RefMoFEMElement_multiIndex refinedFiniteElements;
+  RefMoFEMEntity_multiIndex refinedEntities;		///< refined entities
+  RefMoFEMElement_multiIndex refinedFiniteElements;	///< refined elements
   //field
-  MoFEMField_multiIndex moabFields;
-  MoFEMEntity_multiIndex entsMoabField;
-  DofMoFEMEntity_multiIndex dofsMoabField;
+  MoFEMField_multiIndex moabFields;			///< field
+  MoFEMEntity_multiIndex entsMoabField;			///< entities on field
+  DofMoFEMEntity_multiIndex dofsMoabField;		///< dofs on fiels
   //finite element
-  MoFEMFiniteElement_multiIndex finiteElements;
-  EntMoFEMFiniteElement_multiIndex finiteElementsMoFEMEnts;
+  MoFEMFiniteElement_multiIndex finiteElements;		///< finite elements
+  EntMoFEMFiniteElement_multiIndex finiteElementsMoFEMEnts;			///< finite element entities
   //entFEAdjacencies
-  MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_multiIndex entFEAdjacencies;
+  MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_multiIndex entFEAdjacencies;	///< adjacencies of elements to dofs
   //moFEMProblems
-  MoFEMProblem_multiIndex moFEMProblems;
+  MoFEMProblem_multiIndex moFEMProblems;					///< problems	
   //cubit
-  CubitMeshSet_multiIndex cubit_meshsets;
+  CubitMeshSet_multiIndex cubit_meshsets;					///< cubit meshsets
   //series
-  Series_multiIndex series;
-  SeriesStep_multiIndex series_steps;
+  Series_multiIndex series;							///< recorded series
+  SeriesStep_multiIndex series_steps;						///< recorded series steps
 
   //safety nets
   Tag th_MoFEMBuild;
@@ -478,29 +478,53 @@ struct Core:
   PetscErrorCode print_partitioned_problem(const MoFEMProblem *problem_ptr,int verb = -1);
   PetscErrorCode debug_partitioned_problem(const MoFEMProblem *problem_ptr,int verb = -1);
 
-  //save meshsets
+  ///save meshsets
   PetscErrorCode get_problem_finite_elements_entities(const string &name,const string &fe_name,const EntityHandle meshset);
 
   //vector and matrices 
-  PetscErrorCode VecCreateSeq(const string &name,RowColData rc,Vec *V);
-  PetscErrorCode VecCreateGhost(const string &name,RowColData rc,Vec *V);
-  PetscErrorCode set_local_VecCreateGhost(const MoFEMProblem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode);
-  PetscErrorCode set_local_VecCreateGhost(const string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode);
-  PetscErrorCode set_global_VecCreateGhost(const MoFEMProblem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode); 
-  PetscErrorCode set_global_VecCreateGhost(const string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode);
   PetscErrorCode MatCreateMPIAIJWithArrays(const string &name,Mat *Aij,int verb = -1);
   PetscErrorCode MatCreateSeqAIJWithArrays(const string &name,Mat *Aij,PetscInt **i,PetscInt **j,PetscScalar **v,int verb = -1);
+
+  PetscErrorCode VecCreateSeq(const string &name,RowColData rc,Vec *V);
+  PetscErrorCode VecCreateGhost(const string &name,RowColData rc,Vec *V);
+  PetscErrorCode set_local_ghost_vector(const MoFEMProblem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode);
+  PetscErrorCode set_local_ghost_vector(const string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode);
+  PetscErrorCode set_global_ghost_vector(const MoFEMProblem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode); 
+  PetscErrorCode set_global_ghost_vector(const string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode);
+
+  /// get IS for order
+  PetscErrorCode ISCreateProblemOrder(const string &problem,RowColData rc,int min_order,int max_order,IS *is,int verb = -1);
+  /// get IS for field and rank
+  PetscErrorCode ISCreateProblemFieldAndRank(const string &problem,RowColData rc,const string &field,int min_rank,int max_rank,IS *is,int verb = -1);
+
+  //scatter from problem filed to other problem field
+  PetscErrorCode ISCreateFromProblemFieldToOtherProblemField(
+    const string &x_problem,const string &x_field_name,RowColData x_rc,
+    const string &y_problem,const string &y_field_name,RowColData y_rc,
+    vector<int> &idx,vector<int> &idy,int verb = -1);
+  PetscErrorCode ISCreateFromProblemFieldToOtherProblemField(
+    const string &x_problem,const string &x_field_name,RowColData x_rc,
+    const string &y_problem,const string &y_field_name,RowColData y_rc,
+    IS *ix,IS *iy,int verb = -1);
   PetscErrorCode VecScatterCreate(
     Vec xin,const string &x_problem,const string &x_field_name,RowColData x_rc,
     Vec yin,const string &y_problem,const string &y_field_name,RowColData y_rc,VecScatter *newctx,int verb = -1);
-  PetscErrorCode VecScatterCreate(Vec xin,const string &x_problem,RowColData x_rc,Vec yin,const string &y_problem,RowColData y_rc,VecScatter *newctx,int verb = -1);
-  PetscErrorCode set_other_local_VecCreateGhost(
+
+  //scatter from problem to other problem
+  PetscErrorCode ISCreateFromProblemToOtherProblem(
+    const string &x_problem,RowColData x_rc,const string &y_problem,RowColData y_rc,vector<int> &idx,vector<int> &idy,int verb = -1);
+  PetscErrorCode ISCreateFromProblemToOtherProblem(
+    const string &x_problem,RowColData x_rc,const string &y_problem,RowColData y_rc,IS *ix,IS *iy,int verb = -1);
+    PetscErrorCode VecScatterCreate(Vec xin,const string &x_problem,RowColData x_rc,Vec yin,const string &y_problem,RowColData y_rc,VecScatter *newctx,int verb = -1);
+  //local
+  PetscErrorCode set_other_local_ghost_vector(
     const MoFEMProblem *problem_ptr,const string& fiel_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1);
-  PetscErrorCode set_other_local_VecCreateGhost(
+  PetscErrorCode set_other_local_ghost_vector(
     const string &name,const string& fiel_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1);
-  PetscErrorCode set_other_global_VecCreateGhost(
+  //global
+  PetscErrorCode set_other_global_ghost_vector(
     const MoFEMProblem *problem_ptr,const string& fiel_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1);
-  PetscErrorCode set_other_global_VecCreateGhost(
+  PetscErrorCode set_other_global_ghost_vector(
     const string &name,const string& fiel_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1);
 
   //loops

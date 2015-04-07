@@ -45,10 +45,10 @@
 
 using namespace std;
 using namespace boost::math;
-//void error1( const string& msg )
-//{
-//	throw( runtime_error( msg ) );
-//}
+void error1( const string& msg )
+{
+	throw( runtime_error( msg ) );
+}
 
 
 namespace bio = boost::iostreams;
@@ -87,6 +87,12 @@ int main(int argc, char *argv[]) {
   }
   if (strcmp ("true",impedance ) == 0) {useImpedance = true;}
   else if(strcmp ("false",impedance ) == 0) {useImpedance = false;}
+  
+  static double theta;
+  ierr = ierr = PetscOptionsGetReal(PETSC_NULL,"-wave_direction",&theta,&flg); CHKERRQ(ierr);
+  if(flg != PETSC_TRUE) {
+	  SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -wave_direction (between [0 ~ 2pi])");
+  }
   
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
@@ -279,91 +285,55 @@ int main(int argc, char *argv[]) {
 	  }
   }
   
-  ////Extract the data output to .txt file.
-  //std::string filename("scattered_sphere_outputs.txt" );
-  //static ofstream ofs( filename.c_str() ); //put the data from cpu into file
-  //if( !ofs ){
-  //error1( "Error opening file" );}
-  //ofs.precision( 18 );
-  //cout.precision( 18 );
+  //Extract the data output to .txt file.
+  std::string filename("scattered_sphere_outputs.txt" );
+  static ofstream ofs( filename.c_str() ); //put the data from cpu into file
+  if( !ofs ){
+  error1( "Error opening file" );}
+  ofs.precision( 18 );
+  cout.precision( 18 );
 
   /* this function compute the scattered field of helmholtz operator */
+  /* Calculate the analytical solution of plane wave guid propagating in direction theta */
   struct AnaliticalFunction {
 	  static double fUN(double x,double y,double z,bool use_real) {
 		  
-		  const double pi = atan( 1.0 ) * 4.0;
-		  double R = sqrt(pow(x,2.0)+pow(y,2.0)+pow(z,2.0)); //radius
-		  double theta = atan2(y,x)+2*pi; //the arctan of radians (y/x)
+
+		  const double pi = atan( 1.0 ) * 4.0;	  		 
+		  //if(x != x) {cerr << "x  \n";}
+		  //if(y != y) {cerr << "y  \n";}
+		  //if(z != z) {cerr << "z  \n";}
+		  //if(theta != theta) {cerr << "theta = \n"; cout << theta << endl; cout << "\n x = " << x << "\n y = " << y << endl;}
 		  
 		  const double wAvenumber = aNgularfreq/sPeed;
 		  
 		  const double k = wAvenumber;  //Wave number
-		  const double a = 0.5;         //radius of the sphere,wait to modify by user
-		  //const double a = 1.0;
-		  const double const1 = k * a;
-		  double const2 = k * R;
-		  
 		  
 		  const complex< double > i( 0.0, 1.0 );
+		  complex< double > result = 0.0;
 		  
 		  // magnitude of incident wave
-		  //const double phi_incident_mag = 1.0;
-		  
-		  const double tol = 1.0e-10;
-		  double max = 0.0;
-		  double min = 999999.0;
-		  
-		  complex< double > result = 0.0;
-		  complex< double > prev_result;
-		  
-		  double error = 100.0;
-		  unsigned int n = 0; //initialized the infinite series loop
-		  
-		  while( error > tol )  //finding the acoustic potential in one single point.
-		  {
-			  double jn_der = (n / const1 * sph_bessel( n, const1 ) - sph_bessel( n + 1, const1 ));  //The derivative of bessel function
-			  //if(jn_der != jn_der) cerr << "error jn_der\n";
-			  
-			  complex< double > hn_der = (n / const1 * sph_hankel_1( n, const1 ) - sph_hankel_1( n + 1, const1 ));
-			  //if(hn_der != hn_der) cerr << "error hn_der\n";
-			  //complex< double > hn_der = 0.5 * ( sph_hankel_1( n - 1, const1 ) -
-			  //( sph_hankel_1( n, const1 ) + const1 * sph_hankel_1( n + 1, const1 ) ) / const1 );
-			  double Pn = legendre_p( n, cos( theta ) );
-			  //if(Pn != Pn) cerr << "Pn \n";
-			  complex< double >hn = sph_hankel_1( n, const2 );  //S Hankel first kind function
-			  //if(n == 0) { complex< double > hn_c = -i*exp(i*const2)*(1/const2); cout << "\n hn_c = \n" << hn_c << endl;}
-			  //if(hn != hn) {cerr << "hn \n"; cout << hn << "\n n = \n" << n << endl; cout << "\n k * r = \n" << const2 << endl; 
-			  //cout << "\n k = " << k << "\n r = " << R << endl;}
-			  
-			  prev_result = result;
-			  result -= pow( i, n ) * ( 2.0 * n + 1.0 ) * jn_der / hn_der * Pn * hn;
-			  error = abs( abs( result ) - abs( prev_result ) );
-			  ++n;
-		  }
-          
-		  //result *= phi_incident_mag;
-		  
+		  //const double phi_incident_mag = 3.0;
+		  	  
 		  //const complex< double > inc_field = exp( i * k * R * cos( theta ) );  //incident wave
 		  //const complex< double > total_field = inc_field + result;
 		  
 		  //double val = std::real(result);
 		  //ofs << theta << "\t" << abs( result ) << "\t" << abs( inc_field ) << "\t" << abs( total_field ) << "\t" << R << endl; //write the file
 		  
-		  ///* cube 2D */
+		  /* cube 2D */
+		  /* U_ex = exp(ik [cos(theta),sin(theta)] * [x,y]) 
+		   * theta = [0,2pi]                 */
 		  //double theta = pi/4;
-		  //result = exp(i*(k*cos(theta)*x+k*sin(theta)*y));
-		  ///* cube 2D */
+		  result = exp(i*(k*cos(theta)*x+k*sin(theta)*y));
+		  /* cube 2D */
 		  
-		  //if(std::real(result)!=std::real(result)) {
-			//cerr << "error real\n";  
-		  //}
 		  if(use_real) {
 			return std::real(result);
 		  } else {
 			return std::imag(result);
 		  }
-			//return std::real((exp(i*k*x)-1-i*exp(i*k)*sin(k*x))/(pow(k,2.0))); //exact solution of 1D problem
-		  //return 0;
+
 	  }
 
   };
@@ -452,9 +422,9 @@ int main(int argc, char *argv[]) {
   
   
 
-  ////if(pcomm->rank()==0) {
+  //if(pcomm->rank()==0) {
   rval = moab.write_file("impinging_numerical.h5m"); CHKERR_PETSC(rval);
-  ////}
+  //}
   //destroy the KSP solvers
   ierr = MatDestroy(&A); CHKERRQ(ierr);
   ierr = VecDestroy(&F); CHKERRQ(ierr);
@@ -467,10 +437,13 @@ int main(int argc, char *argv[]) {
   ierr = post_proc1.addFieldValuesPostProc("rePRES"); CHKERRQ(ierr);
   //ierr = post_proc1.addFieldValuesGradientPostProc("rePRES"); CHKERRQ(ierr);
   ierr = post_proc1.addFieldValuesPostProc("imPRES"); CHKERRQ(ierr);
+  //ierr = post_proc1.addFieldValuesGradientPostProc("imPRES"); CHKERRQ(ierr);
   
   if(mField.check_field("reEX") && mField.check_field("imEX")) {
 	ierr = post_proc1.addFieldValuesPostProc("reEX"); CHKERRQ(ierr);
+	//ierr = post_proc1.addFieldValuesGradientPostProc("reEX"); CHKERRQ(ierr);
 	ierr = post_proc1.addFieldValuesPostProc("imEX"); CHKERRQ(ierr);
+	//ierr = post_proc1.addFieldValuesGradientPostProc("imEX"); CHKERRQ(ierr);
 	
 	ierr = post_proc1.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
 	ierr = mField.loop_finite_elements("ACOUSTIC_PROBLEM","HELMHOLTZ_FE",post_proc1); CHKERRQ(ierr);

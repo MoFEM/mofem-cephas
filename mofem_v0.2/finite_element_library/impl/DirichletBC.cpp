@@ -46,7 +46,8 @@ namespace MoFEM {
 
 DisplacementBCFEMethodPreAndPostProc::DisplacementBCFEMethodPreAndPostProc(
   FieldInterface& _mField,const string &_field_name,
-  Mat _Aij,Vec _X,Vec _F): mField(_mField),fieldName(_field_name),dIag(1) {
+  Mat _Aij,Vec _X,Vec _F): mField(_mField),fieldName(_field_name),
+  dIag(1) {
   snes_B = _Aij;
   snes_x = _X;
   snes_f = _F;

@@ -16,7 +16,7 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. 
- * abs(result) = sqrt(reEX^2+imEX^2) */
+ * abs(result) = sqrt(reEX2^2+imEX2^2) */
 
 
 #include <MoFEM.hpp>
@@ -142,6 +142,10 @@ struct MyFunApprox_re {
 		//const complex< double > total_field = inc_field + result;
 		//ofs << theta << "\t" << abs( result ) << "\t" << abs( inc_field ) << "\t" << abs( total_field ) <<  "\t" << R << endl; //write the file
 		
+		///* cube */
+		//double theta = pi;
+		//result = exp(i*(k*cos(theta)*x+k*sin(theta)*y));
+		///* cube */
 		
 		if(useReal) {
 			result1.resize(1);
@@ -153,6 +157,10 @@ struct MyFunApprox_re {
 			return result1;
 		}
 		
+		//double X = x + 0.5; /* coordinate transformation from [-0.5,0.5] to [0,1] */
+		//result1.resize(1);
+		//result1[0] = std::real((exp(i*k*X)-1.0-i*exp(i*k)*sin(k*X))/(pow(k,2.0))); //exact solution of 1D problem
+		//return result1;
 		
 	}
 	
@@ -210,56 +218,62 @@ int main(int argc, char *argv[]) {
 	ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
 	
 	//Fields
-	ierr = m_field.add_field("reEX",H1,1); CHKERRQ(ierr);
-	ierr = m_field.add_field("imEX",H1,1); CHKERRQ(ierr);
+	ierr = m_field.add_field("reEX2",H1,1); CHKERRQ(ierr);
+	ierr = m_field.add_field("imEX2",H1,1); CHKERRQ(ierr);
 	#ifdef HOON
 	ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,3,MF_ZERO); CHKERRQ(ierr);
 	#endif
 	
 	//FE
-	ierr = m_field.add_finite_element("FE1"); CHKERRQ(ierr);
-	ierr = m_field.add_finite_element("FE2"); CHKERRQ(ierr);
+	ierr = m_field.add_finite_element("FE3"); CHKERRQ(ierr);
+	ierr = m_field.add_finite_element("FE4"); CHKERRQ(ierr);
 	
 	//Define rows/cols and element data
-	ierr = m_field.modify_finite_element_add_field_row("FE1","reEX"); CHKERRQ(ierr);
-	ierr = m_field.modify_finite_element_add_field_col("FE1","reEX"); CHKERRQ(ierr);
-	ierr = m_field.modify_finite_element_add_field_data("FE1","reEX"); CHKERRQ(ierr);
-	ierr = m_field.modify_finite_element_add_field_data("FE1","imEX"); CHKERRQ(ierr);
+	ierr = m_field.modify_finite_element_add_field_row("FE3","reEX2"); CHKERRQ(ierr);
+	ierr = m_field.modify_finite_element_add_field_col("FE3","reEX2"); CHKERRQ(ierr);
+	ierr = m_field.modify_finite_element_add_field_data("FE3","reEX2"); CHKERRQ(ierr);
+	ierr = m_field.modify_finite_element_add_field_data("FE3","imEX2"); CHKERRQ(ierr);
 	#ifdef HOON
-	ierr = m_field.modify_finite_element_add_field_data("FE1","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+	ierr = m_field.modify_finite_element_add_field_data("FE3","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
 	#endif
 	
 	//Define rows/cols and element data
-	ierr = m_field.modify_finite_element_add_field_row("FE2","imEX"); CHKERRQ(ierr);
-	ierr = m_field.modify_finite_element_add_field_col("FE2","imEX"); CHKERRQ(ierr);
-	ierr = m_field.modify_finite_element_add_field_data("FE2","imEX"); CHKERRQ(ierr);
+	ierr = m_field.modify_finite_element_add_field_row("FE4","imEX2"); CHKERRQ(ierr);
+	ierr = m_field.modify_finite_element_add_field_col("FE4","imEX2"); CHKERRQ(ierr);
+	ierr = m_field.modify_finite_element_add_field_data("FE4","imEX2"); CHKERRQ(ierr);
 	#ifdef HOON
-	ierr = m_field.modify_finite_element_add_field_data("FE2","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+	ierr = m_field.modify_finite_element_add_field_data("FE4","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
 	#endif
 	
 	//Problem
-	ierr = m_field.add_problem("EX1_PROBLEM"); CHKERRQ(ierr);
-	ierr = m_field.add_problem("EX2_PROBLEM"); CHKERRQ(ierr);
+	ierr = m_field.add_problem("EX3_PROBLEM"); CHKERRQ(ierr);
+	ierr = m_field.add_problem("EX4_PROBLEM"); CHKERRQ(ierr);
 	
 	//set finite elements for problem
-	ierr = m_field.modify_problem_add_finite_element("EX1_PROBLEM","FE1"); CHKERRQ(ierr);
-	ierr = m_field.modify_problem_add_finite_element("EX2_PROBLEM","FE2"); CHKERRQ(ierr);
+	ierr = m_field.modify_problem_add_finite_element("EX3_PROBLEM","FE3"); CHKERRQ(ierr);
+	ierr = m_field.modify_problem_add_finite_element("EX4_PROBLEM","FE4"); CHKERRQ(ierr);
 	//set refinment level for problem
-	ierr = m_field.modify_problem_ref_level_add_bit("EX1_PROBLEM",bit_level0); CHKERRQ(ierr);
-	ierr = m_field.modify_problem_ref_level_add_bit("EX2_PROBLEM",bit_level0); CHKERRQ(ierr);
+	ierr = m_field.modify_problem_ref_level_add_bit("EX3_PROBLEM",bit_level0); CHKERRQ(ierr);
+	ierr = m_field.modify_problem_ref_level_add_bit("EX4_PROBLEM",bit_level0); CHKERRQ(ierr);
 	
 	//meshset consisting all entities in mesh
 	EntityHandle root_set = moab.get_root_set(); 
 	//add entities to field
-	ierr = m_field.add_ents_to_field_by_TETs(root_set,"reEX"); CHKERRQ(ierr);
-	ierr = m_field.add_ents_to_field_by_TETs(root_set,"imEX"); CHKERRQ(ierr);
+	ierr = m_field.add_ents_to_field_by_TETs(root_set,"reEX2"); CHKERRQ(ierr);
+	ierr = m_field.add_ents_to_field_by_TETs(root_set,"imEX2"); CHKERRQ(ierr);
 	#ifdef HOON
     ierr = m_field.add_ents_to_field_by_TETs(root_set,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
 	#endif
 	//add entities to finite element
-	ierr = m_field.add_ents_to_finite_element_by_TETs(root_set,"FE1"); CHKERRQ(ierr);
-	ierr = m_field.add_ents_to_finite_element_by_TETs(root_set,"FE2"); CHKERRQ(ierr);
+	ierr = m_field.add_ents_to_finite_element_by_TETs(root_set,"FE3"); CHKERRQ(ierr);
+	ierr = m_field.add_ents_to_finite_element_by_TETs(root_set,"FE4"); CHKERRQ(ierr);
 	
+	/*** add exact solution data in finite element */
+	if(m_field.check_field("reEX") && m_field.check_field("imEX")) {
+		ierr = m_field.modify_finite_element_add_field_data("FE3","reEX"); CHKERRQ(ierr);
+		ierr = m_field.modify_finite_element_add_field_data("FE3","imEX"); CHKERRQ(ierr);
+	}
+	//End of Dirichlet set up
 	
 	//set app. order
 	//see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
@@ -268,15 +282,15 @@ int main(int argc, char *argv[]) {
 	if(flg != PETSC_TRUE) {
 		order = 3;
 	}
-	ierr = m_field.set_field_order(root_set,MBTET,"reEX",order); CHKERRQ(ierr);
-	ierr = m_field.set_field_order(root_set,MBTRI,"reEX",order); CHKERRQ(ierr);
-	ierr = m_field.set_field_order(root_set,MBEDGE,"reEX",order); CHKERRQ(ierr);
-	ierr = m_field.set_field_order(root_set,MBVERTEX,"reEX",1); CHKERRQ(ierr);
+	ierr = m_field.set_field_order(root_set,MBTET,"reEX2",order); CHKERRQ(ierr);
+	ierr = m_field.set_field_order(root_set,MBTRI,"reEX2",order); CHKERRQ(ierr);
+	ierr = m_field.set_field_order(root_set,MBEDGE,"reEX2",order); CHKERRQ(ierr);
+	ierr = m_field.set_field_order(root_set,MBVERTEX,"reEX2",1); CHKERRQ(ierr);
 	
-	ierr = m_field.set_field_order(root_set,MBTET,"imEX",order); CHKERRQ(ierr);
-	ierr = m_field.set_field_order(root_set,MBTRI,"imEX",order); CHKERRQ(ierr);
-	ierr = m_field.set_field_order(root_set,MBEDGE,"imEX",order); CHKERRQ(ierr);
-	ierr = m_field.set_field_order(root_set,MBVERTEX,"imEX",1); CHKERRQ(ierr);
+	ierr = m_field.set_field_order(root_set,MBTET,"imEX2",order); CHKERRQ(ierr);
+	ierr = m_field.set_field_order(root_set,MBTRI,"imEX2",order); CHKERRQ(ierr);
+	ierr = m_field.set_field_order(root_set,MBEDGE,"imEX2",order); CHKERRQ(ierr);
+	ierr = m_field.set_field_order(root_set,MBVERTEX,"imEX2",1); CHKERRQ(ierr);
 	#ifdef HOON
 	//if(!m_field.check_field("MESH_NODE_POSITIONS")) {
 	ierr = m_field.set_field_order(root_set,MBTET,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
@@ -304,25 +318,25 @@ int main(int argc, char *argv[]) {
 	/****/
 	//mesh partitioning 
 	//partition
-	ierr = m_field.simple_partition_problem("EX1_PROBLEM"); CHKERRQ(ierr);
-	ierr = m_field.partition_finite_elements("EX1_PROBLEM"); CHKERRQ(ierr);
-	ierr = m_field.simple_partition_problem("EX2_PROBLEM"); CHKERRQ(ierr);
-	ierr = m_field.partition_finite_elements("EX2_PROBLEM"); CHKERRQ(ierr);
+	ierr = m_field.simple_partition_problem("EX3_PROBLEM"); CHKERRQ(ierr);
+	ierr = m_field.partition_finite_elements("EX3_PROBLEM"); CHKERRQ(ierr);
+	ierr = m_field.simple_partition_problem("EX4_PROBLEM"); CHKERRQ(ierr);
+	ierr = m_field.partition_finite_elements("EX4_PROBLEM"); CHKERRQ(ierr);
 	//what are ghost nodes, see Petsc Manual
-	ierr = m_field.partition_ghost_dofs("EX1_PROBLEM"); CHKERRQ(ierr);
-	ierr = m_field.partition_ghost_dofs("EX2_PROBLEM"); CHKERRQ(ierr);
+	ierr = m_field.partition_ghost_dofs("EX3_PROBLEM"); CHKERRQ(ierr);
+	ierr = m_field.partition_ghost_dofs("EX4_PROBLEM"); CHKERRQ(ierr);
 	
 	Mat A;
-	ierr = m_field.MatCreateMPIAIJWithArrays("EX1_PROBLEM",&A); CHKERRQ(ierr);
+	ierr = m_field.MatCreateMPIAIJWithArrays("EX3_PROBLEM",&A); CHKERRQ(ierr);
 	Vec D,F;
-	ierr = m_field.VecCreateGhost("EX1_PROBLEM",ROW,&F); CHKERRQ(ierr);
-	ierr = m_field.VecCreateGhost("EX1_PROBLEM",COL,&D); CHKERRQ(ierr);
+	ierr = m_field.VecCreateGhost("EX3_PROBLEM",ROW,&F); CHKERRQ(ierr);
+	ierr = m_field.VecCreateGhost("EX3_PROBLEM",COL,&D); CHKERRQ(ierr);
 	
 	Mat B;
-	ierr = m_field.MatCreateMPIAIJWithArrays("EX2_PROBLEM",&B); CHKERRQ(ierr);
+	ierr = m_field.MatCreateMPIAIJWithArrays("EX4_PROBLEM",&B); CHKERRQ(ierr);
 	Vec C,G;
-	ierr = m_field.VecCreateGhost("EX2_PROBLEM",ROW,&G); CHKERRQ(ierr);
-	ierr = m_field.VecCreateGhost("EX2_PROBLEM",COL,&C); CHKERRQ(ierr);
+	ierr = m_field.VecCreateGhost("EX4_PROBLEM",ROW,&G); CHKERRQ(ierr);
+	ierr = m_field.VecCreateGhost("EX4_PROBLEM",COL,&C); CHKERRQ(ierr);
 	
 	//Extract data from MAT_HELMHOLTZ block
 	//Exact solution of Impinging sphere from Acoustic isogeometric boundary element analysis by R.N. Simpson etc.
@@ -334,6 +348,7 @@ int main(int argc, char *argv[]) {
 	  //for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,"MAT_HELMHOLTZ",it) {
 	  //for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
 	
+		//cerr << "AAA\n";
 		//Get block name
 		//string name = it->get_Cubit_name();
 		//if (name.compare(0,13,"MAT_HELMHOLTZ") == 0)
@@ -351,23 +366,23 @@ int main(int argc, char *argv[]) {
 	
 	
 	double wavenumber = aNgularfreq/sPeed;	
-
+	bool use_real;
 	{
-
-		MyFunApprox_re function_evaluator_re(wavenumber,true);
+		use_real = true;
+		MyFunApprox_re function_evaluator_re(wavenumber,use_real);
 		FieldApproximationH1<MyFunApprox_re> field_approximation_re(m_field);
 		
 		field_approximation_re.loopMatrixAndVector(
-			"EX1_PROBLEM","FE1","reEX",A,F,function_evaluator_re);
+			"EX3_PROBLEM","FE3","reEX2",A,F,function_evaluator_re);
 	}
 	
 	{
-
-		MyFunApprox_re function_evaluator_im(wavenumber,false);
+		use_real = false;
+		MyFunApprox_re function_evaluator_im(wavenumber,use_real);
 		FieldApproximationH1<MyFunApprox_re> field_approximation_im(m_field);
 		
 		field_approximation_im.loopMatrixAndVector(
-			"EX2_PROBLEM","FE2","imEX",B,G,function_evaluator_im);
+			"EX4_PROBLEM","FE4","imEX2",B,G,function_evaluator_im);
 	}
 	
 	//solve real part of the acoustic problem
@@ -404,8 +419,8 @@ int main(int argc, char *argv[]) {
 	ierr = KSPSolve(solver2,G,C); CHKERRQ(ierr);
 	ierr = VecGhostUpdateBegin(C,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	ierr = VecGhostUpdateEnd(C,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	ierr = m_field.set_global_ghost_vector("EX1_PROBLEM",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-	ierr = m_field.set_global_ghost_vector("EX2_PROBLEM",COL,C,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	ierr = m_field.set_global_ghost_vector("EX3_PROBLEM",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	ierr = m_field.set_global_ghost_vector("EX4_PROBLEM",COL,C,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 	
 	
 	//if(pcomm->rank()==0) {
@@ -423,16 +438,20 @@ int main(int argc, char *argv[]) {
 	ierr = MatDestroy(&B); CHKERRQ(ierr);
 	
 	
-	//PostPocOnRefinedMesh post_proc1(m_field);
-	//ierr = post_proc1.generateRefereneElemenMesh(); CHKERRQ(ierr);
-	//ierr = post_proc1.addFieldValuesPostProc("reEX"); CHKERRQ(ierr);
-	//ierr = post_proc1.addFieldValuesGradientPostProc("reEX"); CHKERRQ(ierr);
-	//ierr = post_proc1.addFieldValuesPostProc("imEX"); CHKERRQ(ierr);
-	//ierr = post_proc1.addFieldValuesGradientPostProc("imEX"); CHKERRQ(ierr);
-	//ierr = post_proc1.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
-	//ierr = m_field.loop_finite_elements("EX1_PROBLEM","FE1",post_proc1); CHKERRQ(ierr);
-	//rval = post_proc1.postProcMesh.write_file("best_approximation_out.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
-
+	
+	if(m_field.check_field("reEX") && m_field.check_field("imEX")) {
+		PostPocOnRefinedMesh post_proc1(m_field);
+		ierr = post_proc1.generateRefereneElemenMesh(); CHKERRQ(ierr);	
+		ierr = post_proc1.addFieldValuesPostProc("reEX"); CHKERRQ(ierr);
+		ierr = post_proc1.addFieldValuesPostProc("imEX"); CHKERRQ(ierr);
+		ierr = post_proc1.addFieldValuesPostProc("reEX2"); CHKERRQ(ierr);
+		ierr = post_proc1.addFieldValuesGradientPostProc("reEX2"); CHKERRQ(ierr);
+		ierr = post_proc1.addFieldValuesPostProc("imEX2"); CHKERRQ(ierr);
+		ierr = post_proc1.addFieldValuesGradientPostProc("imEX2"); CHKERRQ(ierr);
+		ierr = post_proc1.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+		ierr = m_field.loop_finite_elements("EX4_PROBLEM","FE3",post_proc1); CHKERRQ(ierr);
+		rval = post_proc1.postProcMesh.write_file("best_approximation_out.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
+	}
 	//output the results from Docker
 	//char command1[] = "mbconvert ./best_approximation_out.h5m ./best_approximation_out.vtk && cp ./best_approximation_out.vtk ../../../../../mnt/home/Desktop/U_pan/helmholtz_results/";
 	//int todo1 = system( command1 );
@@ -442,44 +461,6 @@ int main(int argc, char *argv[]) {
 	ierr = PetscGetCPUTime(&t2);CHKERRQ(ierr);
 	PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Total Rank %d Time = %f S CPU Time = %f S \n",pcomm->rank(),v2-v1,t2-t1);
 	
-	
-	//typedef tee_device<ostream, ofstream> TeeDevice;
-	//typedef stream<TeeDevice> TeeStream;
-
-	//ofstream ofs("acoustic_re_field_testing_field_approximation.txt");
-	//TeeDevice tee(cout, ofs); 
-	//TeeStream my_split(tee);
-
-	//Range nodes;
-	//rval = moab.get_entities_by_type(0,MBVERTEX,nodes,true); CHKERR(rval);
-	//ublas::matrix<double> nodes_vals;
-	//nodes_vals.resize(nodes.size(),3);  //change the parameter from 3 to 1 ?
-	//rval = moab.tag_get_data(
-	//		   ent_method_field1_on_10nodeTet.th,nodes,&*nodes_vals.data().begin()); CHKERR(rval);
-	
-
-	//const double eps = 1e-4;
-
-	//my_split.precision(3);
-	//my_split.setf(std::ios::fixed);
-	//for(
-	//	ublas::unbounded_array<double>::iterator it = nodes_vals.data().begin();
-	//	it!=nodes_vals.data().end();it++) {
-	//	*it = fabs(*it)<eps ? 0.0 : *it; //if a < b ?then c, :else d
-	//}
-	//my_split << nodes_vals << endl;
-
-	//const MoFEMProblem *problemPtr;
-	//ierr = m_field.get_problem("PROBLEM1",&problemPtr); CHKERRQ(ierr);
-	//map<EntityHandle,double> m0,m1,m2;
-	//for(_IT_NUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_(problemPtr,dit)) {
-
-	//	my_split.precision(3);
-	//	my_split.setf(std::ios::fixed);
-	//	double val = fabs(dit->get_FieldData())<eps ? 0.0 : dit->get_FieldData();
-	//	my_split << dit->get_petsc_gloabl_dof_idx() << " " << val << endl;
-
-	//}
 
 	ierr = PetscFinalize(); CHKERRQ(ierr);
 	

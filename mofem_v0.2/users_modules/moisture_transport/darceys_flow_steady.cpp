@@ -151,7 +151,7 @@ int main(int argc, char *argv[]) {
   
   //preproc
   ierr = mField.problem_basic_method_preProcess("DARCEYS_PROBLEM",my_dirichlet_bc); CHKERRQ(ierr);
-  ierr = mField.set_global_VecCreateGhost("DARCEYS_PROBLEM",ROW,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = mField.set_global_ghost_vector("DARCEYS_PROBLEM",ROW,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
   ierr = mField.loop_finite_elements("DARCEYS_PROBLEM","DARCEYS_FE",darceys_elements.getLoopFeRhs()); CHKERRQ(ierr);
   ierr = mField.loop_finite_elements("DARCEYS_PROBLEM","DARCEYS_FE",darceys_elements.getLoopFeLhs()); CHKERRQ(ierr);
@@ -185,7 +185,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.problem_basic_method_preProcess("DARCEYS_PROBLEM",my_dirichlet_bc); CHKERRQ(ierr);
 
   //Save data on mesh
-  ierr = mField.set_global_VecCreateGhost("DARCEYS_PROBLEM",ROW,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = mField.set_global_ghost_vector("DARCEYS_PROBLEM",ROW,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
   //Range ref_edges;

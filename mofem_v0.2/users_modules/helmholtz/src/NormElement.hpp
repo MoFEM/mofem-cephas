@@ -275,7 +275,7 @@ struct NormElement {
 		OpLhs(const string re_field_name): 
 			TetElementForcesAndSourcesCore::UserDataOperator(re_field_name) { }
 		
-		ublas::matrix<FieldData> NTN;
+		ublas::matrix<FieldData> NTN,transNTN;
 		
 		/*	
 		Lhs mass matrix
@@ -296,8 +296,8 @@ struct NormElement {
 				if(row_data.getIndices().size()==0) PetscFunctionReturn(0);
 				if(col_data.getIndices().size()==0) PetscFunctionReturn(0);
 				
-				unsigned int nb_row = row_data.getN().size2();
-				unsigned int nb_col = col_data.getN().size2();
+				int nb_row = row_data.getIndices().size();
+				int nb_col = col_data.getIndices().size();
 				
 				if(nb_row != row_data.getIndices().size()) {
 					SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,
@@ -305,6 +305,7 @@ struct NormElement {
 				}
 				
 				NTN.resize(nb_row,nb_col);
+				NTN.clear();
 				
 				for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
 					double val = getVolume()*getGaussPts()(3,gg);
@@ -314,23 +315,31 @@ struct NormElement {
 						val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
 					} 
 					
-					NTN.clear();
-					
-					noalias(NTN) += val*outer_prod( row_data.getN(gg,nb_row),col_data.getN(gg,nb_col) );
-					//cblas_dger(CblasRowMajor,nb_row,nb_col,val,
-					//		   &row_data.getN(gg)[0],1,&col_data.getN(gg)[0],1,
-					//		   &NTN(0,0),nb_col);
-					//(order,no.row in mat,no.col in mat,
+					//noalias(NTN) += val*outer_prod( row_data.getN(gg,nb_row),col_data.getN(gg,nb_col) );
+					cblas_dger(CblasRowMajor,nb_row,nb_col,val,
+							   &row_data.getN(gg)[0],1,&col_data.getN(gg)[0],1,
+							   &NTN(0,0),nb_col);
 					
 						
+				}
 					
 					ierr = MatSetValues(
+							   A,
+							   nb_row,&row_data.getIndices()[0],
+							   nb_col,&col_data.getIndices()[0],
+							   &NTN(0,0),ADD_VALUES); CHKERRQ(ierr);
+					if(row_side != col_side || row_type != col_type) {
+						transNTN.resize(nb_col,nb_row);
+						noalias(transNTN) = trans(NTN);
+						ierr = MatSetValues(
 								   A,
-								   nb_row,&row_data.getIndices()[0],
 								   nb_col,&col_data.getIndices()[0],
-								   &NTN(0,0),ADD_VALUES); CHKERRQ(ierr);
+								   nb_row,&row_data.getIndices()[0],
+								   &transNTN(0,0),ADD_VALUES); CHKERRQ(ierr);
+					}
 					
-				}
+					
+					
 				
 			} catch (const std::exception& ex) {
 				ostringstream ss;

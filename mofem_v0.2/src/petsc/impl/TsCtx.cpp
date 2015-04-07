@@ -43,7 +43,7 @@ PetscErrorCode f_TSSetIFunction(TS ts,PetscReal t,Vec u,Vec u_t,Vec F,void *ctx)
   ierr = VecGhostUpdateEnd(u,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(u_t,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(u_t,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = ts_ctx->mField.set_local_VecCreateGhost(ts_ctx->problemName,COL,u,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = ts_ctx->mField.set_local_ghost_vector(ts_ctx->problemName,COL,u,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -104,7 +104,7 @@ PetscErrorCode f_TSSetIJacobian(TS ts,PetscReal t,Vec u,Vec u_t,PetscReal a,Mat 
   ierr = VecGhostUpdateEnd(u,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(u_t,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(u_t,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = ts_ctx->mField.set_local_VecCreateGhost(ts_ctx->problemName,COL,u,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = ts_ctx->mField.set_local_ghost_vector(ts_ctx->problemName,COL,u,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   if(ts_ctx->zero_matrix) {
     ierr = MatZeroEntries(B); CHKERRQ(ierr);
   }
@@ -168,7 +168,7 @@ PetscErrorCode f_TSMonitorSet(TS ts,PetscInt step,PetscReal t,Vec u,void *ctx) {
   PetscLogEventBegin(ts_ctx->USER_EVENT_TsCtxRHSFunction,0,0,0,0);
   ierr = VecGhostUpdateBegin(u,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(u,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = ts_ctx->mField.set_local_VecCreateGhost(ts_ctx->problemName,COL,u,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = ts_ctx->mField.set_local_ghost_vector(ts_ctx->problemName,COL,u,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   //preproces
   TsCtx::basic_method_to_do::iterator bit = ts_ctx->preProcess_Monitor.begin();
   for(;bit!=ts_ctx->preProcess_Monitor.end();bit++) {

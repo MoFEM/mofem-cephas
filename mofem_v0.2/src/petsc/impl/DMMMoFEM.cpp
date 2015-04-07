@@ -149,10 +149,10 @@ PetscErrorCode DMMoFEMCreateMoFEM(DM dm,MoFEM::FieldInterface *m_field_ptr,const
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;
   if(!dm->data) {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"data strcuture for MoFEM not yet created");
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"data structure for MoFEM not yet created");
   }
   if(!m_field_ptr) {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"DM function not implenented into MoFEM");
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"DM function not implemented into MoFEM");
   } 
   dm_field->mField_ptr = m_field_ptr;
   dm_field->problemName = problem_name;
@@ -168,7 +168,7 @@ PetscErrorCode DMMoFEMCreateMoFEM(DM dm,MoFEM::FieldInterface *m_field_ptr,const
   MPI_Comm_compare(comm,m_field_ptr->get_comm(),&result);
   //cerr << result << " " << MPI_IDENT << " " << MPI_CONGRUENT << " " << MPI_SIMILAR << " " << MPI_UNEQUAL << endl;
   if(result > MPI_CONGRUENT) {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"MoFEM and DM have to use the same communicator");
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"MoFEM and DM using different communicators");
   }
   MPI_Comm_size(comm,&dm_field->sIze);
   MPI_Comm_rank(comm,&dm_field->rAnk);
@@ -191,7 +191,7 @@ PetscErrorCode DMoFEMMeshToLocalVector(DM dm,Vec l,InsertMode mode,ScatterMode s
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;
-  ierr = dm_field->mField_ptr->set_local_VecCreateGhost(dm_field->problemPtr,ROW,l,mode,scatter_mode); CHKERRQ(ierr);
+  ierr = dm_field->mField_ptr->set_local_ghost_vector(dm_field->problemPtr,ROW,l,mode,scatter_mode); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -200,7 +200,7 @@ PetscErrorCode DMoFEMMeshToGlobalVector(DM dm,Vec g,InsertMode mode,ScatterMode 
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;
-  ierr = dm_field->mField_ptr->set_global_VecCreateGhost(dm_field->problemPtr,ROW,g,mode,scatter_mode); CHKERRQ(ierr);
+  ierr = dm_field->mField_ptr->set_global_ghost_vector(dm_field->problemPtr,ROW,g,mode,scatter_mode); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 

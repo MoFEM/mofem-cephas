@@ -62,10 +62,17 @@ int main(int argc, char *argv[]) {
 		SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
 	}
 	
-	//char mesh_file_name2[255];
-	//ierr = PetscOptionsGetString(PETSC_NULL,"-my_file2",mesh_file_name2,255,&flg); CHKERRQ(ierr);
+	/* cannot convert 'bool*' to 'PetscBool*' for argument '3' to '
+	 * PetscErrorCode PetscOptionsGetBool(const char*, const char*, PetscBool*, PetscBool*)' */
+	
+	//ierr = PetscOptionsGetBool(PETSC_NULL,"-norm_type",&usel2,&flg); CHKERRQ(ierr);
 	//if(flg != PETSC_TRUE) {
-	//	SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file2 (MESH FILE NEEDED)");
+	//	SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -l2_type_norm (true for l2norm, false for H1 norm)");
+	//}
+	
+	//ierr = PetscOptionsGetBool(PETSC_NULL,"-relative_error",&userela,&flg); CHKERRQ(ierr);
+	//if(flg != PETSC_TRUE) {
+	//	SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -relative_error (true or false needed))");
 	//}
 	
 	char type_error_norm[255];
@@ -244,7 +251,7 @@ int main(int argc, char *argv[]) {
 	ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	ierr = MatZeroEntries(A); CHKERRQ(ierr);
-	ierr = m_field.set_global_VecCreateGhost("NORM_PROBLEM1",ROW,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	ierr = m_field.set_global_ghost_vector("NORM_PROBLEM1",ROW,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 	
 	ierr = VecZeroEntries(D); CHKERRQ(ierr);
 	ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -253,7 +260,7 @@ int main(int argc, char *argv[]) {
 	ierr = VecGhostUpdateBegin(G,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	ierr = VecGhostUpdateEnd(G,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	ierr = MatZeroEntries(B); CHKERRQ(ierr);
-	ierr = m_field.set_global_VecCreateGhost("NORM_PROBLEM2",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	ierr = m_field.set_global_ghost_vector("NORM_PROBLEM2",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 	
 	ierr = m_field.loop_finite_elements("NORM_PROBLEM1","NORM_FE1",norm_elements_re.getLoopFeRhs()); CHKERRQ(ierr);
 	ierr = m_field.loop_finite_elements("NORM_PROBLEM1","NORM_FE1",norm_elements_re.getLoopFeLhs()); CHKERRQ(ierr);
@@ -285,7 +292,7 @@ int main(int argc, char *argv[]) {
 	ierr = KSPSolve(solver1,F,T); CHKERRQ(ierr);
 	ierr = VecGhostUpdateBegin(T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	ierr = VecGhostUpdateEnd(T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	ierr = m_field.set_global_VecCreateGhost("NORM_PROBLEM1",ROW,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	ierr = m_field.set_global_ghost_vector("NORM_PROBLEM1",ROW,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
 	//Solver
 	KSP solver2;
@@ -297,42 +304,44 @@ int main(int argc, char *argv[]) {
 	ierr = KSPSolve(solver2,G,D); CHKERRQ(ierr);
 	ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	ierr = m_field.set_global_VecCreateGhost("NORM_PROBLEM2",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	ierr = m_field.set_global_ghost_vector("NORM_PROBLEM2",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 	
 	
 	
 	/* Global error calculation */
-	PetscReal nrm2_D,nrm2_T,pointwisenormP,pointwisenormM;
+	PetscReal nrm2_T,nrm2_D,nrm2_P,nrm2_M,pointwisenormT,pointwisenormD,pointwisenormP,pointwisenormM;
 	ierr = VecNorm(T,NORM_FROBENIUS,&nrm2_T);;
 	ierr = VecNorm(D,NORM_2,&nrm2_D); CHKERRQ(ierr);
-	//ierr = VecNorm(T,NORM_MAX,&pointwisenorm);
+	//ierr = VecNorm(T,NORM_MAX,&pointwisenormT);
+	//ierr = VecNorm(D,NORM_MAX,&pointwisenormD);
 	
 	Vec P,M;
 	ierr = m_field.VecCreateGhost("EX1_PROBLEM",ROW,&M); CHKERRQ(ierr);
 	ierr = m_field.VecCreateGhost("EX2_PROBLEM",ROW,&P); CHKERRQ(ierr);
 
-	ierr = m_field.set_local_VecCreateGhost("EX1_PROBLEM",ROW,M,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	ierr = m_field.set_local_VecCreateGhost("EX2_PROBLEM",ROW,P,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	ierr = m_field.set_local_ghost_vector("EX1_PROBLEM",ROW,M,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	ierr = m_field.set_local_ghost_vector("EX2_PROBLEM",ROW,P,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
-	ierr = VecNorm(M,NORM_INFINITY,&pointwisenormM);
-	ierr = VecNorm(P,NORM_INFINITY,&pointwisenormP);
-	//ierr = VecMax(P,NULL,&pointwisenormP);
-	
+	ierr = VecNorm(M,NORM_FROBENIUS,&nrm2_M);;
+	ierr = VecNorm(P,NORM_2,&nrm2_P); CHKERRQ(ierr);
+	//ierr = VecNorm(M,NORM_INFINITY,&pointwisenormM);
+	//ierr = VecNorm(P,NORM_INFINITY,&pointwisenormP);
+
 	//std::cout << "\n ||U_real||_inf = \n" << pointwisenormM << "\n ||U_imag||_inf = \n" << pointwisenormP << std::endl;
 	
 	//out stream the global error
 	if(usel2 && !userela) {
 		std::cout << "\n The Global least square of l2 Norm of error in real field is : --\n" << nrm2_T << std::endl;
 		std::cout << "\n The Global least square of l2 Norm of error in imag field is : --\n" << nrm2_D << std::endl;
-		std::cout << "\n The Global L2 relative error of real field is : --\n" << nrm2_T/pointwisenormM  << std::endl;
-		std::cout << "\n The Global L2 relative error of imag field is  : --\n" << nrm2_D/pointwisenormP << std::endl;
+		std::cout << "\n The Global L2 relative error of real field is : --\n" << nrm2_T/nrm2_M  << std::endl;
+		std::cout << "\n The Global L2 relative error of imag field is  : --\n" << nrm2_D/nrm2_P << std::endl;
 		//std::cout << "\n The Global Pointwise of l2 Norm of error for real field is : --\n" << pointwisenorm << std::endl;
 	}
 	else if(!usel2 && !userela) {
 		std::cout << "\n The Global least square of H1 Norm of error real field is  : --\n" << nrm2_T << std::endl;
 		std::cout << "\n The Global least square of H1 Norm of error in imag field is : --\n" << nrm2_D << std::endl;
-		std::cout << "\n The Global H1 relative error of real field is : --\n" << nrm2_T/pointwisenormM  << std::endl;
-		std::cout << "\n The Global H1 relative error of imag field is  : --\n" << nrm2_D/pointwisenormP << std::endl;
+		std::cout << "\n The Global H1 relative error of real field is : --\n" << pointwisenormT/pointwisenormM  << std::endl;
+		std::cout << "\n The Global H1 relative error of imag field is  : --\n" << pointwisenormD/pointwisenormP << std::endl;
 		//std::cout << "\n The Global Pointwise of H1 Norm of error for real field is : --\n" << pointwisenorm << std::endl;
 	}
 	else if(userela) {
@@ -361,9 +370,7 @@ int main(int argc, char *argv[]) {
 	PostPocOnRefinedMesh post_proc1(m_field);
 	ierr = post_proc1.generateRefereneElemenMesh(); CHKERRQ(ierr);
 	ierr = post_proc1.addFieldValuesPostProc("erorNORM_re"); CHKERRQ(ierr);
-	//ierr = post_proc1.addFieldValuesGradientPostProc("erorNORM_re"); CHKERRQ(ierr);
 	ierr = post_proc1.addFieldValuesPostProc("erorNORM_im"); CHKERRQ(ierr);
-	//ierr = post_proc1.addFieldValuesGradientPostProc("erorNORM_im"); CHKERRQ(ierr);
 	ierr = post_proc1.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
 	ierr = m_field.loop_finite_elements("NORM_PROBLEM1","NORM_FE1",post_proc1); CHKERRQ(ierr);
 	rval = post_proc1.postProcMesh.write_file("norm_error.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
@@ -374,8 +381,8 @@ int main(int argc, char *argv[]) {
 	
 	
 	//output the results from Docker
-	char command1[] = "mbconvert norm_error.h5m ./norm_error.vtk && cp ./norm_error.vtk ../../../../mnt/home/Desktop/U_pan/helmholtz_results/";
-	int todo1 = system( command1 );
+	//char command1[] = "mbconvert norm_error.h5m ./norm_error.vtk && cp ./norm_error.vtk ../../../../mnt/home/Desktop/U_pan/helmholtz_results/";
+	//int todo1 = system( command1 );
 	
 	
 	
