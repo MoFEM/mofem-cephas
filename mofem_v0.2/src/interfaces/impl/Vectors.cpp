@@ -121,7 +121,7 @@ PetscErrorCode Core::ISCreateProblemOrder(const string &problem,RowColData rc,in
   NumeredDofMoFEMEntity_multiIndex_petsc_local_dof_view_ordered_non_unique dof_loc_idx_view;
   for(;it!=hi_it;it++) {
     pair<NumeredDofMoFEMEntity_multiIndex_petsc_local_dof_view_ordered_non_unique::iterator,bool> p;
-    if(it->get_part()!=rAnk) continue;
+    if(it->get_part()!=(unsigned int)rAnk) continue;
     p = dof_loc_idx_view.insert(&*it);
   }
   NumeredDofMoFEMEntity_multiIndex_petsc_local_dof_view_ordered_non_unique::iterator vit,hi_vit;
@@ -165,7 +165,7 @@ PetscErrorCode Core::ISCreateProblemFieldAndRank(const string &problem,RowColDat
   NumeredDofMoFEMEntity_multiIndex_petsc_local_dof_view_ordered_non_unique dof_loc_idx_view;
   for(;it!=hi_it;it++) {
     pair<NumeredDofMoFEMEntity_multiIndex_petsc_local_dof_view_ordered_non_unique::iterator,bool> p;
-    if(it->get_part() != rAnk) continue;
+    if(it->get_part()!=(unsigned int)rAnk) continue;
     if(it->get_name_ref() != field) continue;
     p = dof_loc_idx_view.insert(&*it);
   }
