@@ -107,6 +107,9 @@ PetscErrorCode TetElementForcesAndSourcesCore::operator()() {
   int nb_gauss_pts;
   int rule = getRule(order);
   if(rule >= 0) {
+    //if(mField.check_field(meshPositionsFieldName)) {
+      //rule += 1;
+    //}
     nb_gauss_pts = gm_rule_size(rule,3);
     gaussPts.resize(4,nb_gauss_pts);
     ierr = Grundmann_Moeller_integration_points_3D_TET(
@@ -471,6 +474,9 @@ PetscErrorCode TriElementForcesAndSurcesCore::operator()() {
   int nb_gauss_pts;
   int rule = getRule(order);
   if(rule >= 0) {
+    //if(mField.check_field(meshPositionsFieldName)) {
+      //rule += 1;
+    //}
     nb_gauss_pts = gm_rule_size(rule,2);
     gaussPts.resize(3,nb_gauss_pts);
     ierr = Grundmann_Moeller_integration_points_2D_TRI(

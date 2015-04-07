@@ -104,15 +104,43 @@ struct TetElementForcesAndSourcesCore: public ForcesAndSurcesCore {
       const string &_row_field_name,const string &_col_field_name):
 	row_field_name(_row_field_name),col_field_name(_col_field_name),symm(true),ptrFE(NULL) {};
     virtual ~UserDataOperator() {}
+    
+    /** \brief element volume (linear geometry)
+      */
     inline double getVolume() { return ptrFE->vOlume; }
+
+    /** \brief nodal coordinates 
+      */ 
     inline ublas::vector<double>& getCoords() { return ptrFE->coords; }
+
+    /** \brief matrix of Gauss pts
+      */
     inline ublas::matrix<double>& getGaussPts() { return ptrFE->gaussPts; }
+
+    /** \brief Gauss points and weight, matrix (nb. of points x 4)
+
+      Column 0-3 and 4 represents Gauss pts coordinate and weight, respectively.
+
+      */
     inline ublas::matrix<double>& getCoordsAtGaussPts() { return ptrFE->coordsAtGaussPts; }
+
+    /** \brief coordinate at Gauss points (if hierarchical approximation of element geometry)
+      */
     inline ublas::matrix<double>& getHoCoordsAtGaussPts() { return ptrFE->hoCoordsAtGaussPts; }
+
     inline ublas::matrix<double>& getHoGaussPtsInvJac() { return ptrFE->hoGaussPtsInvJac; }
     inline ublas::vector<double>& getHoGaussPtsDetJac() { return ptrFE->hoGaussPtsDetJac; }
+
+    /** \bried return pointer to Generic Finite Element object
+     */ 
     inline const FEMethod* getFEMethod() { return ptrFE; }
+
     inline const NumeredMoFEMFiniteElement* getMoFEMFEPtr() { return ptrFE->fePtr; };
+
+    /** \bried return pointer to Generic Tetrahedral Finite Element object
+     */ 
+    inline const TetElementForcesAndSourcesCore* getTetFE() { return ptrFE; }
+
     PetscErrorCode setPtrFE(TetElementForcesAndSourcesCore *ptr) { 
       PetscFunctionBegin;
       ptrFE = ptr;
@@ -257,6 +285,10 @@ struct TriElementForcesAndSurcesCore: public ForcesAndSurcesCore {
      */
     inline const FEMethod* getFEMethod() { return ptrFE; }
 
+     /** \bried return pointer to Generic Triangle Finite Element object
+     */ 
+    inline const TriElementForcesAndSurcesCore* getTriFE() { return ptrFE; }
+
     /** \bried return pointer to NumeredMoFEMFiniteElement 
      */
     inline const NumeredMoFEMFiniteElement* getMoFEMFEPtr() { return ptrFE->fePtr; };
@@ -338,6 +370,7 @@ struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
     inline ublas::matrix<double>& getGaussPts() { return ptrFE->gaussPts; }
     inline ublas::matrix<double>& getCoordsAtGaussPts() { return ptrFE->coordsAtGaussPts; }
     inline const FEMethod* getFEMethod() { return ptrFE; }
+    inline const EdgeElementForcesAndSurcesCore* getEdgeFE() { return ptrFE; }
     inline const NumeredMoFEMFiniteElement* getMoFEMFEPtr() { return ptrFE->fePtr; };
     PetscErrorCode setPtrFE(EdgeElementForcesAndSurcesCore *ptr) { 
       PetscFunctionBegin;

@@ -35,7 +35,8 @@
 namespace MoFEM {
 
 //basic moab ent
-BasicMoFEMEntity::BasicMoFEMEntity(Interface &moab,const EntityHandle _ent): ent(_ent) {
+BasicMoFEMEntity::BasicMoFEMEntity(Interface &moab,const EntityHandle _ent): 
+  ent(_ent),sharing_procs_ptr(NULL),sharing_handlers_ptr(NULL) {
   switch (get_ent_type()) {
     case MBVERTEX:
     case MBEDGE:
@@ -51,6 +52,16 @@ BasicMoFEMEntity::BasicMoFEMEntity(Interface &moab,const EntityHandle _ent): ent
   ErrorCode rval;
   rval = pcomm->get_owner_handle(ent,owner_proc,moab_owner_handle); CHKERR_THROW(rval);
   rval = moab.tag_get_by_ptr(pcomm->pstatus_tag(),&ent,1,(const void **)&pstatus_val_ptr); CHKERR(rval);
+
+  if(*pstatus_val_ptr & PSTATUS_MULTISHARED) {
+    // entity is multi shared
+    rval = moab.tag_get_by_ptr(pcomm->sharedps_tag(),&ent,1,(const void **)&sharing_procs_ptr); CHKERR(rval);
+    rval = moab.tag_get_by_ptr(pcomm->sharedhs_tag(),&ent,1,(const void **)&sharing_handlers_ptr); CHKERR(rval);
+  } else if(*pstatus_val_ptr & PSTATUS_SHARED) {
+    // shared 
+    rval = moab.tag_get_by_ptr(pcomm->sharedp_tag(),&ent,1,(const void **)&sharing_procs_ptr); CHKERR(rval);
+    rval = moab.tag_get_by_ptr(pcomm->sharedh_tag(),&ent,1,(const void **)&sharing_handlers_ptr); CHKERR(rval);
+  }
 
 }
 //ref moab ent
@@ -102,7 +113,7 @@ ostream& operator<<(ostream& os,const MoFEMEntity& e) {
   os << "ent_global_uid " << (UId)e.get_global_unique_id()
     << " ent_local_uid " << (UId)e.get_local_unique_id() 
     << " entity "<< e.get_ent() << " type " << e.get_ent_type()
-    << " pstatus "<< bitset<8>(e.get_pstatus()) << " owner handle " << e.get_owner_ent()
+    << " pstatus "<< bitset<8>(e.get_pstatus()) << " owner handle " << e.get_owner_ent() << " owner proc " << e.get_owner_proc()
     << " order "<<e.get_max_order()<<" "<<*e.field_ptr;
   return os;
 }

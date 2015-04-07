@@ -97,8 +97,8 @@ namespace MoFEM {
   struct Composite_Name_And_Ent_mi_tag {};
 
   /// MultiIndex Tag for field rank
-  struct Composite_Order_And_Part_mi_tag {};
-  struct Composite_Name_Rank_And_Part_mi_tag {};
+  struct Composite_Part_And_Oder_mi_tag {};
+  struct Composite_Name_Part_And_Rank_mi_tag {};
   struct Composite_Name_Ent_And_Rank_mi_tag {};
   struct Composite_Name_Ent_Order_And_Rank_mi_tag {};
   struct Composite_Name_And_Type_mi_tag {};

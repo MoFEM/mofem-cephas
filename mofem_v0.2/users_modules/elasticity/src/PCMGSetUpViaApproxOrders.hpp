@@ -1,5 +1,5 @@
 /** \file PCMGSetUpViaApproxOrders.hpp
- * \brief useful compiler directives and definitions
+ * \brief header of multi-grid solver for p- adaptivity 
  * 
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -18,7 +18,7 @@
 #ifndef __PCMGSETUP_VIA_APPROX_ORDERS_HPP__
 #define __PCMGSETUP_VIA_APPROX_ORDERS_HPP__
 
-PetcErrorCode PCMGSetUpViaApproxOrders(PC pc,FieldInterface *m_fild_ptr,const char problem_name[]);
+PetscErrorCode PCMGSetUpViaApproxOrders(PC pc,FieldInterface *mfield_ptr,const char problem_name[],int verb = 0);
 
 #endif //__PCMGSETUP_VIA_APPROX_ORDERS_HPP__
 

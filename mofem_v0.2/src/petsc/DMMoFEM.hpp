@@ -36,6 +36,26 @@ PetscErrorCode DMRegister_MoFEM(const char sname[]);
 PetscErrorCode DMMoFEMCreateMoFEM(DM dm,MoFEM::FieldInterface *m_field_ptr,const char problem_name[],const MoFEM::BitRefLevel &bit_level);
 
 /** 
+  * \brief set squared problem
+  * \ingroup dm
+
+  It if trure is assumed that matrix has the same indexing on rows and
+  collumns. This reduces interprocessor communication.
+
+  */
+PetscErrorCode DMMoFEMSetSquareProblem(DM dm,PetscBool square_problem);
+
+/** 
+  * \brief get squared problem
+  * \ingroup dm
+
+  It if trure is assumed that matrix has the same indexing on rows and
+  collumns. This reduces interprocessor communication.
+
+  */
+PetscErrorCode DMMoFEMGetSquareProblem(DM dm,PetscBool *square_problem);
+
+/** 
   * \brief add element to dm
   * \ingroup dm
   */
@@ -142,6 +162,16 @@ PetscErrorCode DMMoFEMGetSnesCtx(DM dm,MoFEM::SnesCtx **snes_ctx);
 PetscErrorCode DMMoFEMGetTsCtx(DM dm,MoFEM::TsCtx **ts_ctx); 
 
 #endif
+
+/** sets if read mesh is partitioned
+  * \ingroup dm
+  */
+PetscErrorCode DMMoFEMSetIsPartitioned(DM dm,PetscBool is_partitioned);
+
+/** get if read mesh is partitioned
+  * \ingroup dm
+  */
+PetscErrorCode DMMoFEMGetIsPartitioned(DM dm,PetscBool *is_partitioned);
 
 /** 
   * \brief Create dm data structure with MoFEM data structure

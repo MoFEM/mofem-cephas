@@ -35,13 +35,13 @@ struct PrismInterface: public FieldUnknownInterface {
   /** \brief create two children meshsets in the meshset containing tetrahedral on two sides of faces
     *
     * \param msId Id of meshset 
-    * \param CubitBCType type of meshset (NODESET, SIDESET or BLOCKSET and more)
+    * \param cubit_bc_type type of meshset (NODESET, SIDESET or BLOCKSET and more)
     * \param mesh_bit_level add interface on bit level is bit_level = BitRefLevel.set() then add interface on all bit levels
     * \param recursive if true parent meshset is searched recursively
     */
   virtual PetscErrorCode get_msId_3dENTS_sides(
     const int msId,
-    const CubitBC_BitSet CubitBCType,
+    const CubitBCType cubit_bc_type,
     const BitRefLevel mesh_bit_level,
     const bool recursive,int verb = -1) = 0;
 
@@ -66,7 +66,7 @@ struct PrismInterface: public FieldUnknownInterface {
    * \param meshset meshset to get entities from
    * \param BitRefLevel new level where refinement would be stored
    * \param msId meshset ID imported from cubit 
-   * \param CubitBCType type of meshset (NODESET, SIDESET or BLOCKSET and more)
+   * \param cubit_bc_type type of meshset (NODESET, SIDESET or BLOCKSET and more)
    * \param add_intefece_entities meshset which contain the interface
    * \param recursive if true parent meshset is searched recursively
    *
@@ -85,7 +85,7 @@ struct PrismInterface: public FieldUnknownInterface {
    */
   virtual PetscErrorCode get_msId_3dENTS_split_sides(
     const EntityHandle meshset,const BitRefLevel &bit,
-    const int msId,const CubitBC_BitSet CubitBCType,
+    const int msId,const CubitBCType cubit_bc_type,
     const bool add_iterfece_entities,const bool recursive = false,int verb = -1) = 0;
 
   /**
