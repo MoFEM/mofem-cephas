@@ -44,6 +44,8 @@ struct FieldApproximationH1 {
     FieldInterface &m_field):
     mField(m_field),fe(m_field) {}
 
+  int getRule(int order) { return order+1; };
+
   /** \brief Gauss point poperatiors to caculete matrices and vectors
     *
     * Function work on thetrahedrals
@@ -72,10 +74,7 @@ struct FieldApproximationH1 {
       DataForcesAndSurcesCore::EntData &col_data) {
       PetscFunctionBegin;
 
-	  
-	  //std::string wait;
-	  //std::cout << "\n I am here !!!!!!! rank = \n" << std::endl;
-	  
+      if(A == PETSC_NULL) PetscFunctionReturn(0);
       if(row_data.getIndices().size()==0) PetscFunctionReturn(0);
       if(col_data.getIndices().size()==0) PetscFunctionReturn(0);
 
@@ -90,10 +89,6 @@ struct FieldApproximationH1 {
 
       NN.resize(nb_row_dofs,nb_col_dofs);
       bzero(&*NN.data().begin(),nb_row_dofs*nb_col_dofs*sizeof(FieldData));
-      
-	  
-
-	  
 	  
       unsigned int nb_gauss_pts = row_data.getN().size1();
       for(unsigned int gg = 0;gg<nb_gauss_pts;gg++) {
@@ -184,6 +179,7 @@ struct FieldApproximationH1 {
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
 
+      if(F == PETSC_NULL) PetscFunctionReturn(0);
       if(data.getIndices().size()==0) PetscFunctionReturn(0);
 
       PetscErrorCode ierr;
@@ -258,22 +254,56 @@ struct FieldApproximationH1 {
     PetscErrorCode ierr;
 	
     //add operator to calulate F vector
-    fe.get_op_to_do_Rhs().push_back(new OpApprox(field_name,A,F,function_evaluator));
+    if(F) {
+      fe.get_op_to_do_Rhs().push_back(new OpApprox(field_name,A,F,function_evaluator));
+    }
     //add operator to calulate A matrix
-    fe.get_op_to_do_Lhs().push_back(new OpApprox(field_name,A,F,function_evaluator));
+    if(A) {
+      fe.get_op_to_do_Lhs().push_back(new OpApprox(field_name,A,F,function_evaluator));
+    }
 	
-    MatZeroEntries(A);
-    VecZeroEntries(F);
-    ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    if(A) {
+      ierr = MatZeroEntries(A); CHKERRQ(ierr);
+    }
+    if(F) {
+      ierr = VecZeroEntries(F); CHKERRQ(ierr);
+      ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    }
     //calulate and assembe
     ierr = mField.loop_finite_elements(problem_name,fe_name,fe);  CHKERRQ(ierr);
-    ierr = MatAssemblyBegin(A,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-    ierr = MatAssemblyEnd(A,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-    ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
-    ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
+    if(A) {
+      ierr = MatAssemblyBegin(A,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+      ierr = MatAssemblyEnd(A,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+    }
+    if(F) {
+      ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
+      ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
+    }
     PetscFunctionReturn(0);
   }
+
+  PetscErrorCode loopVector(
+    const string &problem_name,const string &fe_name,const string &field_name,Vec F,
+    FUNEVAL &function_evaluator) {
+    PetscFunctionBegin;
+    PetscErrorCode ierr;
+	
+    //add operator to calulate F vector
+    fe.get_op_to_do_Rhs().push_back(new OpApprox(field_name,PETSC_NULL,F,function_evaluator));
+	
+    ierr = VecZeroEntries(F); CHKERRQ(ierr);
+    ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+
+    //calulate and assembe
+    ierr = mField.loop_finite_elements(problem_name,fe_name,fe);  CHKERRQ(ierr);
+    ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
+    ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
+
+    PetscFunctionReturn(0);
+  }
+
 
 };
 

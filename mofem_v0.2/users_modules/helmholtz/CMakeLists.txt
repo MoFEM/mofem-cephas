@@ -19,57 +19,15 @@
 file(COPY
     ${CMAKE_CURRENT_SOURCE_DIR}/README
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
-file(COPY
-    ${CMAKE_CURRENT_SOURCE_DIR}/meshes/cube_No_reflecting_BC_Problem.cub
-    DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
- file(COPY
-      ${CMAKE_CURRENT_SOURCE_DIR}/meshes/impinging_sphere.cub
-      DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
-# For convinience source files from MoFEM project are used. If user is
-# implementing independent application it will be using instead project
-# directories.
 
 include_directories("${MoFEM_PROJECT_SOURCE_DIR}/users_modules/helmholtz/src")
-#add_subdirectory(atom_tests)
-#add_subdirectory(meshes)
+# get access to multi-grid preconditioner (currently with elastic porblem)
+include_directories("${UM_SOURCE_DIR}/elasticity/src")
 
-add_executable(acoustic_steady ${UM_SOURCE_DIR}/helmholtz/acoustic_steady.cpp)
-target_link_libraries(acoustic_steady
-  mofem_finite_element_library
-  mofem_finite_elements
-  mofem_interfaces
-  mofem_multi_indices
-  mofem_petsc
-  mofem_approx
-  mofem_third_party
-  mofem_cblas
-  ${MoFEM_PROJECT_LIBS})
-add_executable(incident_wave ${UM_SOURCE_DIR}/helmholtz/incident_wave.cpp)
-target_link_libraries(incident_wave
-  mofem_finite_element_library
-  mofem_finite_elements
-  mofem_interfaces
-  mofem_multi_indices
-  mofem_petsc
-  mofem_approx
-  mofem_third_party
-  mofem_cblas
-  ${MoFEM_PROJECT_LIBS})
-
-add_executable(error_norm ${UM_SOURCE_DIR}/helmholtz/error_norm.cpp)
-target_link_libraries(error_norm
-  mofem_finite_element_library
-  mofem_finite_elements
-  mofem_interfaces
-  mofem_multi_indices
-  mofem_petsc
-  mofem_approx
-  mofem_third_party
-  mofem_cblas
-  ${MoFEM_PROJECT_LIBS})
-
-
-add_executable(best_approximation ${UM_SOURCE_DIR}/helmholtz/best_approximation.cpp)
+add_executable(best_approximation 
+  ${UM_SOURCE_DIR}/helmholtz/best_approximation.cpp
+  ${UM_SOURCE_DIR}/elasticity/src/impl/PCMGSetUpViaApproxOrders.cpp 
+)
 target_link_libraries(best_approximation
   mofem_finite_element_library
   mofem_finite_elements
@@ -81,65 +39,116 @@ target_link_libraries(best_approximation
   mofem_cblas
   ${MoFEM_PROJECT_LIBS})
 
-add_executable(simple_best_approximation ${UM_SOURCE_DIR}/helmholtz/simple_best_approximation.cpp)
-target_link_libraries(simple_best_approximation
-  mofem_finite_element_library
-  mofem_finite_elements
-  mofem_interfaces
-  mofem_multi_indices
-  mofem_petsc
-  mofem_approx
-  mofem_third_party
-  mofem_cblas
-  ${MoFEM_PROJECT_LIBS})
 
-add_executable(cylindrical_best_approximation ${UM_SOURCE_DIR}/helmholtz/cylindrical_best_approximation.cpp)
-target_link_libraries(cylindrical_best_approximation
-  mofem_finite_element_library
-  mofem_finite_elements
-  mofem_interfaces
-  mofem_multi_indices
-  mofem_petsc
-  mofem_approx
-  mofem_third_party
-  mofem_cblas
-  ${MoFEM_PROJECT_LIBS})
+#file(COPY
+#    ${CMAKE_CURRENT_SOURCE_DIR}/meshes/cube_No_reflecting_BC_Problem.cub
+#    DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
+# file(COPY
+#      ${CMAKE_CURRENT_SOURCE_DIR}/meshes/impinging_sphere.cub
+#      DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
+# For convinience source files from MoFEM project are used. If user is
+# implementing independent application it will be using instead project
+# directories.
 
-add_executable(cylindrical_acoustic ${UM_SOURCE_DIR}/helmholtz/cylindrical_acoustic.cpp)
-target_link_libraries(cylindrical_acoustic
-  mofem_finite_element_library
-  mofem_finite_elements
-  mofem_interfaces
-  mofem_multi_indices
-  mofem_petsc
-  mofem_approx
-  mofem_third_party
-  mofem_cblas
-  ${MoFEM_PROJECT_LIBS})
+#add_subdirectory(atom_tests)
+#add_subdirectory(meshes)
 
-add_executable(wave_guide_analytical ${UM_SOURCE_DIR}/helmholtz/wave_guide_analytical.cpp)
-target_link_libraries(wave_guide_analytical
-  mofem_finite_element_library
-  mofem_finite_elements
-  mofem_interfaces
-  mofem_multi_indices
-  mofem_petsc
-  mofem_approx
-  mofem_third_party                                                                                                                    
-  mofem_cblas
-  ${MoFEM_PROJECT_LIBS})
+#add_executable(acoustic_steady ${UM_SOURCE_DIR}/helmholtz/acoustic_steady.cpp)
+#target_link_libraries(acoustic_steady
+#  mofem_finite_element_library
+#  mofem_finite_elements
+#  mofem_interfaces
+#  mofem_multi_indices
+#  mofem_petsc
+#  mofem_approx
+#  mofem_third_party
+#  mofem_cblas
+#  ${MoFEM_PROJECT_LIBS})
+#add_executable(incident_wave ${UM_SOURCE_DIR}/helmholtz/incident_wave.cpp)
+#target_link_libraries(incident_wave
+#  mofem_finite_element_library
+#  mofem_finite_elements
+#  mofem_interfaces
+#  mofem_multi_indices
+#  mofem_petsc
+#  mofem_approx
+#  mofem_third_party
+#  mofem_cblas
+#  ${MoFEM_PROJECT_LIBS})
+#
+#add_executable(error_norm ${UM_SOURCE_DIR}/helmholtz/error_norm.cpp)
+#target_link_libraries(error_norm
+#  mofem_finite_element_library
+#  mofem_finite_elements
+#  mofem_interfaces
+#  mofem_multi_indices
+#  mofem_petsc
+#  mofem_approx
+#  mofem_third_party
+#  mofem_cblas
+#  ${MoFEM_PROJECT_LIBS})
+#
 
-add_executable(wave_guide_numerical ${UM_SOURCE_DIR}/helmholtz/wave_guide_numerical.cpp)
-target_link_libraries(wave_guide_numerical
-  mofem_finite_element_library
-  mofem_finite_elements
-  mofem_interfaces
-  mofem_multi_indices
-  mofem_petsc
-  mofem_approx
-  mofem_third_party
-  mofem_cblas
-  ${MoFEM_PROJECT_LIBS})
+
+#add_executable(simple_best_approximation ${UM_SOURCE_DIR}/helmholtz/simple_best_approximation.cpp)
+#target_link_libraries(simple_best_approximation
+#  mofem_finite_element_library
+#  mofem_finite_elements
+#  mofem_interfaces
+#  mofem_multi_indices
+#  mofem_petsc
+#  mofem_approx
+#  mofem_third_party
+#  mofem_cblas
+#  ${MoFEM_PROJECT_LIBS})
+#
+#add_executable(cylindrical_best_approximation ${UM_SOURCE_DIR}/helmholtz/cylindrical_best_approximation.cpp)
+#target_link_libraries(cylindrical_best_approximation
+#  mofem_finite_element_library
+#  mofem_finite_elements
+#  mofem_interfaces
+#  mofem_multi_indices
+#  mofem_petsc
+#  mofem_approx
+#  mofem_third_party
+#  mofem_cblas
+#  ${MoFEM_PROJECT_LIBS})
+#
+#add_executable(cylindrical_acoustic ${UM_SOURCE_DIR}/helmholtz/cylindrical_acoustic.cpp)
+#target_link_libraries(cylindrical_acoustic
+#  mofem_finite_element_library
+#  mofem_finite_elements
+#  mofem_interfaces
+#  mofem_multi_indices
+#  mofem_petsc
+#  mofem_approx
+#  mofem_third_party
+#  mofem_cblas
+#  ${MoFEM_PROJECT_LIBS})
+#
+#add_executable(wave_guide_analytical ${UM_SOURCE_DIR}/helmholtz/wave_guide_analytical.cpp)
+#target_link_libraries(wave_guide_analytical
+#  mofem_finite_element_library
+#  mofem_finite_elements
+#  mofem_interfaces
+#  mofem_multi_indices
+#  mofem_petsc
+#  mofem_approx
+#  mofem_third_party                                                                                                                    
+#  mofem_cblas
+#  ${MoFEM_PROJECT_LIBS})
+#
+#add_executable(wave_guide_numerical ${UM_SOURCE_DIR}/helmholtz/wave_guide_numerical.cpp)
+#target_link_libraries(wave_guide_numerical
+#  mofem_finite_element_library
+#  mofem_finite_elements
+#  mofem_interfaces
+#  mofem_multi_indices
+#  mofem_petsc
+#  mofem_approx
+#  mofem_third_party
+#  mofem_cblas
+#  ${MoFEM_PROJECT_LIBS})
 
 #add_executable(best_approximation2 ${UM_SOURCE_DIR}/helmholtz/best_approximation2.cpp)
 #target_link_libraries(best_approximation2
