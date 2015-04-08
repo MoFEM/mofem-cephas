@@ -1,4 +1,4 @@
-/* \file best_approximation_incident_wave.cpp
+/* \file AnalyticalSolutions.hpp
  
   Analytical solutions
   
