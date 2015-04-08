@@ -19,15 +19,27 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. 
 */
 
+/// Generic structure for analytical function
+struct GenericAnalyticalSolution {
+
+  enum VALUE_TYPE { REAL = 0, IMAG, LAST_VAL_TYPE };
+
+  virtual vector<ublas::vector<double> >& operator()(double x, double y, double z) = 0;
+
+};
+
 /// List of analytical solution
 enum AnalyticalSolutionTypes {
-  INCIDENT_WAVE, PLANE_WAVE
+  SPHERE_INCIDENT_WAVE, 
+  PLANE_WAVE,
+  CYLINDER_INCIDENT_WAVE
 };
 
 /// Line command list of analytical solutions
-const char *analytical_solution_types[2] = { 
-  "incident_wave", 
-  "plane_wave" 
+const char *analytical_solution_types[] = { 
+  "sphere_incident_wave", 
+  "plane_wave",
+  "cylinder_incident_wave"
 };
 
 /** Calculate the analytical solution of impinging wave on sphere
@@ -36,21 +48,21 @@ const char *analytical_solution_types[2] = {
   Exact solution of Impinging sphere from Acoustic isogeometric boundary element analysis by R.N. Simpson etc.
 
   */
-struct IncidentWaveAnalyticalSolution {
+struct SphereIncidentWave: public GenericAnalyticalSolution {
   
-   ublas::vector<double> result1;
+   vector<ublas::vector<double> > rEsult;
    double wAvenumber;
-   bool useReal;
    
-   IncidentWaveAnalyticalSolution(double wavenumber,bool use_real):
-     wAvenumber(wavenumber),useReal(use_real) {}
-   ~IncidentWaveAnalyticalSolution() {}
+   SphereIncidentWave(double wavenumber): wAvenumber(wavenumber) {}
+   virtual ~SphereIncidentWave() {}
    
-  ublas::vector<double>& operator()(double x, double y, double z) {
+  virtual vector<ublas::vector<double> >& operator()(double x, double y, double z) {
 
-    double R = sqrt(pow(x,2.0)+pow(y,2.0)+pow(z,2.0)); //radius
-    //Incident wave in X direction.
-    double cos_theta = y/R;
+    const double tol = 1.0e-10;
+
+    double x2 = pow(x,2.0),y2 = pow(y,2.0);
+    double R = sqrt(x2+y2+pow(z,2.0)); 
+    double cos_theta = sqrt(x2+y2)/R;
 
     const double k = wAvenumber;  //Wave number
     const double a = 0.5;         //radius of the sphere,wait to modify by user
@@ -63,7 +75,6 @@ struct IncidentWaveAnalyticalSolution {
     // magnitude of incident wave
     //const double phi_incident_mag = 1.0;
     
-    const double tol = 1.0e-10;
     //double max = 0.0;
     //double min = 999999.0;
     
@@ -88,16 +99,14 @@ struct IncidentWaveAnalyticalSolution {
       ++n;
 
     }
-    
-    if(useReal) {
-      result1.resize(1);
-      result1[0] = std::real(result);  
-      return result1;
-    } else {
-      result1.resize(1);
-      result1[0] = std::imag(result);  
-      return result1;
-    }
+
+    rEsult.resize(2);
+    rEsult[REAL].resize(1);
+    (rEsult[REAL])[0] = std::real(result);
+    rEsult[IMAG].resize(1);
+    (rEsult[IMAG])[0] = std::imag(result);
+
+    return rEsult;
     
   }
   
@@ -105,21 +114,20 @@ struct IncidentWaveAnalyticalSolution {
 
 /** \brief Calculate the analytical solution of plane wave guide propagating in direction theta
   
-  Paper: ????
+  FIXME: Paper: ????
 
 */
-struct PlaneWave {
+struct PlaneWave: public GenericAnalyticalSolution {
   
-   ublas::vector<double> result1;
-   double wAvenumber;
-   double tHeta;
-   bool useReal;
+  vector<ublas::vector<double> > rEsult;
+  double wAvenumber;
+  double tHeta;
    
-   PlaneWave(double wavenumber,double theta,bool use_real):
-     wAvenumber(wavenumber),tHeta(theta),useReal(use_real) {}
-   ~PlaneWave() {}
+  PlaneWave(double wavenumber,double theta):
+    wAvenumber(wavenumber),tHeta(theta) {}
+  virtual ~PlaneWave() {}
    
-  ublas::vector<double>& operator()(double x, double y, double z) {
+  virtual vector<ublas::vector<double> >& operator()(double x, double y, double z) {
     
     const double k = wAvenumber;  //Wave number
 
@@ -132,19 +140,96 @@ struct PlaneWave {
     //const complex< double > total_field = inc_field + result;
     //ofs << theta << "\t" << abs( result ) << "\t" << abs( inc_field ) << "\t" << abs( total_field ) <<  "\t" << R << endl; //write the file
     
-    /* cube */
     result = exp(i*(k*cos(tHeta)*x+k*sin(tHeta)*y));
-    /* cube */
     
-    if(useReal) {
-      result1.resize(1);
-      result1[0] = std::real(result);  
-      return result1;
-    } else {
-      result1.resize(1);
-      result1[0] = std::imag(result);  
-      return result1;
+    rEsult.resize(2);
+    rEsult[REAL].resize(1);
+    (rEsult[REAL])[0] = std::real(result);
+    rEsult[IMAG].resize(1);
+    (rEsult[IMAG])[0] = std::imag(result);
+
+    return rEsult;
+
+  }
+  
+};
+
+/** \brief Calculate the analytical solution of impinging wave on sphere
+
+  Paper: 
+    The generalized finite element method for Helmholtz equation: Theory, computation, and open problems
+    Theofanis Strouboulis, Ivo Babuska, Realino Hidaja
+
+*/
+struct CylinderIncidentWave: public GenericAnalyticalSolution {
+  
+  vector<ublas::vector<double> > rEsult;
+  double wAvenumber;
+   
+  CylinderIncidentWave(double wavenumber): wAvenumber(wavenumber) {}
+  virtual ~CylinderIncidentWave() {}
+   
+  virtual vector<ublas::vector<double> >& operator()(double x, double y, double z) {
+
+    const double tol = 1.0e-10;
+    double x2 = pow(x,2.0),y2 = pow(y,2.0);
+    double R = sqrt(x2+y2+pow(z,2.0));
+    double theta = atan2(y,x);
+
+    const double k = wAvenumber;  //Wave number
+    const double a = 0.5;         //radius of the sphere,wait to modify by user
+    //const double a = 1.0;
+    const double const1 = k * a;
+    double const2 = k * R;
+    
+    const complex< double > i( 0.0, 1.0 );
+    
+    // magnitude of incident wave
+    //const double phi_incident_mag = 1.0;
+    
+    complex< double > result = 0.0;
+    complex< double > prev_result;
+    
+    double error = 100.0;
+    unsigned int n = 1; //initialized the infinite series loop
+    
+    double Jn_der_zero = ( - cyl_bessel_j( 1, const1 ));  
+    complex< double > Hn_der_zero = ( - cyl_hankel_1( 1, const1 ));
+    complex< double >Hn_zero = cyl_hankel_1( 0, const2 );  //S Hankel first kind function
+
+    //n=0;
+    result -= (Jn_der_zero * Hn_zero)/Hn_der_zero;
+    
+    
+    while( error > tol )  //finding the acoustic potential in one single point.
+    {
+
+      prev_result = result;
+      //The derivative of bessel function
+      double Jn_der = (n / const1 * cyl_bessel_j( n, const1 ) - cyl_bessel_j( n + 1, const1 ));  
+      //The derivative of Hankel function
+      complex< double > Hn_der = (n / const1 * cyl_hankel_1( n, const1 ) - cyl_hankel_1( n + 1, const1 ));
+      
+      complex< double >Hn = cyl_hankel_1( n, const2 );  //S Hankel first kind function
+      
+      result -= 2.0 * pow( i, n ) * ( (Jn_der*Hn) / Hn_der ) * cos(n*theta);
+      error = abs( abs( result ) - abs( prev_result ) );
+      ++n;
     }
+    
+    //result *= phi_incident_mag;
+    
+    //const complex< double > inc_field = exp( i * k * R * cos( theta ) );  //???? Incident wave
+    //const complex< double > total_field = inc_field + result;
+    //ofs << theta << "\t" << abs( result ) << "\t" << abs( inc_field ) << "\t" << abs( total_field ) <<  "\t" << R << endl; //write the file
+    
+    rEsult.resize(2);
+    rEsult[REAL].resize(1);
+    (rEsult[REAL])[0] = std::real(result);
+    rEsult[IMAG].resize(1);
+    (rEsult[IMAG])[0] = std::imag(result);
+  
+    return rEsult;
     
   }
   

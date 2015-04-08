@@ -1,8 +1,3 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
- * FIXME: DESCRIPTION
- */
-
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -37,15 +32,17 @@ using namespace MoFEM;
 
 static char help[] = "...\n\n";
 
-
+/// Example approx. function
 struct MyFunApprox {
 
-  ublas::vector<double> result;
-  ublas::vector<double>& operator()(double x, double y, double z) {
-    result.resize(3);
-    result[0] = x;
-    result[1] = y;
-    result[2] = z*z;
+  vector<ublas::vector<double> > result;
+
+  vector<ublas::vector<double> >& operator()(double x, double y, double z) {
+    result.resize(1);
+    result[0].resize(3);
+    (result[0])[0] = x;
+    (result[0])[1] = y;
+    (result[0])[2] = z*z;
     return result;
   }     
 
@@ -173,11 +170,14 @@ int main(int argc, char *argv[]) {
   ierr = m_field.VecCreateGhost("TEST_PROBLEM",ROW,&F); CHKERRQ(ierr);
   ierr = m_field.VecCreateGhost("TEST_PROBLEM",COL,&D); CHKERRQ(ierr);
 
+  vector<Vec> vec_F;
+  vec_F.push_back(F);
+
   {
     MyFunApprox function_evaluator;
     FieldApproximationH1<MyFunApprox> field_approximation(m_field);
     field_approximation.loopMatrixAndVector(
-      "TEST_PROBLEM","TEST_FE","FIELD1",A,F,function_evaluator);
+      "TEST_PROBLEM","TEST_FE","FIELD1",A,vec_F,function_evaluator);
   }
 
   ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);

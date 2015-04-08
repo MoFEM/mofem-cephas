@@ -51,24 +51,37 @@ using namespace MoFEM;
 
 static char help[] = "...\n\n";
 
-
-template<typename FUNVAL>
-PetscErrorCode solve_problem(FieldInterface& m_field,double wavenumber) {
+template <typename FUNEVAL>
+PetscErrorCode solve_problem(FieldInterface& m_field,FUNEVAL &fun_evaluator) {
   PetscFunctionBegin;
 
   PetscErrorCode ierr;
-
-  FUNVAL function_evaluator_re(wavenumber,true);
-  FieldApproximationH1<FUNVAL> field_approximation_re(m_field);
   
+
   Mat A;
   ierr = m_field.MatCreateMPIAIJWithArrays("EX1_PROBLEM",&A); CHKERRQ(ierr);
-  Vec D,F;
-  ierr = m_field.VecCreateGhost("EX1_PROBLEM",ROW,&F); CHKERRQ(ierr);
+  Vec D;
+
+  vector<Vec> vec_F;
+  vec_F.resize(2);
+
+  ierr = m_field.VecCreateGhost("EX1_PROBLEM",ROW,&vec_F[0]); CHKERRQ(ierr);
+  ierr = m_field.VecCreateGhost("EX1_PROBLEM",ROW,&vec_F[1]); CHKERRQ(ierr);
   ierr = m_field.VecCreateGhost("EX1_PROBLEM",COL,&D); CHKERRQ(ierr);
 
-  ierr = field_approximation_re.loopMatrixAndVector(
-    "EX1_PROBLEM","FE1","reEX",A,F,function_evaluator_re); CHKERRQ(ierr);
+  FieldApproximationH1<FUNEVAL> field_approximation(m_field);
+
+  #ifdef HOON
+
+  // This increase rule for numerical intergaration. In case of 10 node
+  // elements jacobian is varing lineary across element, that way to element
+  // rule is added 1.
+  field_approximation.addToRule = 1; 
+
+  #endif
+
+  ierr = field_approximation.loopMatrixAndVector(
+    "EX1_PROBLEM","FE1","reEX",A,vec_F,fun_evaluator); CHKERRQ(ierr);
   ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
   ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 
@@ -88,29 +101,34 @@ PetscErrorCode solve_problem(FieldInterface& m_field,double wavenumber) {
   }
   ierr = KSPSetUp(solver); CHKERRQ(ierr);
 
-  ierr = KSPSolve(solver,F,D); CHKERRQ(ierr);
-  ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  for(int ss = 0;ss<GenericAnalyticalSolution::LAST_VAL_TYPE;ss++) {
 
-  // save data on mesh
-  ierr = m_field.set_global_ghost_vector("EX1_PROBLEM",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    // solve problem
+    ierr = KSPSolve(solver,vec_F[ss],D); CHKERRQ(ierr);
+    ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
-  FUNVAL function_evaluator_im(wavenumber,false);
-  FieldApproximationH1<FUNVAL> field_approximation_im(m_field);
-  ierr = field_approximation_im.loopVector(
-      "EX1_PROBLEM","FE1","reEX",F,function_evaluator_im); CHKERRQ(ierr);
-  
-  VecZeroEntries(D);
-  ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = KSPSolve(solver,F,D); CHKERRQ(ierr);
+    // save data on mesh
+    if(ss == GenericAnalyticalSolution::REAL) {
 
-  ierr = m_field.set_other_global_ghost_vector("EX1_PROBLEM","reEX","imEX",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      ierr = m_field.set_global_ghost_vector("EX1_PROBLEM",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+
+      VecZeroEntries(D);
+      ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+
+    } else {
+      ierr = m_field.set_other_global_ghost_vector("EX1_PROBLEM","reEX","imEX",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    }
+
+  }
 
   // clean 
   ierr = KSPDestroy(&solver); CHKERRQ(ierr);
+  ierr = VecDestroy(&vec_F[GenericAnalyticalSolution::REAL]); CHKERRQ(ierr);
+  ierr = VecDestroy(&vec_F[GenericAnalyticalSolution::IMAG]); CHKERRQ(ierr);
+
   ierr = VecDestroy(&D); CHKERRQ(ierr);
-  ierr = VecDestroy(&F); CHKERRQ(ierr);
   ierr = MatDestroy(&A); CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
@@ -287,15 +305,37 @@ int main(int argc, char *argv[]) {
 
   PetscInt choise_value = 0;
   // set tyoe of analytical solution  
-  PetscOptionsGetEList(NULL,"-analytical_solution_type",analytical_solution_types,2,&choise_value,NULL);
+  ierr = PetscOptionsGetEList(NULL,"-analytical_solution_type",analytical_solution_types,2,&choise_value,NULL); CHKERRQ(ierr);
 
   switch((AnalyticalSolutionTypes)choise_value) {
-    case INCIDENT_WAVE:
-      ierr = solve_problem<IncidentWaveAnalyticalSolution>(m_field,wavenumber); CHKERRQ(ierr);
+
+    case SPHERE_INCIDENT_WAVE:
+
+      {
+	SphereIncidentWave function_evaluator(wavenumber);
+	ierr = solve_problem(m_field,function_evaluator); CHKERRQ(ierr);
+      }
+
       break;
+
     case PLANE_WAVE:
-      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"sorry, not implemented");
+
+      {
+	PlaneWave function_evaluator(wavenumber,0.25*M_PI);
+	ierr = solve_problem(m_field,function_evaluator); CHKERRQ(ierr);
+      }
+
       break;
+
+    case CYLINDER_INCIDENT_WAVE:
+
+      {	
+	CylinderIncidentWave function_evaluator(wavenumber);
+	ierr = solve_problem(m_field,function_evaluator); CHKERRQ(ierr);
+      }
+
+      break;
+
   }
   
   rval = moab.write_file("analytical_solution_mesh.h5m"); CHKERR_PETSC(rval);
