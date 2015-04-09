@@ -201,7 +201,7 @@ typedef multi_index_container<
     ordered_unique< 
       tag<Unique_mi_tag>, member<DofMoFEMEntity,GlobalUId,&DofMoFEMEntity::global_uid> >,
     ordered_unique<
-      tag<Composite_Entity_and_ShortId_mi_tag>, 
+      tag<Composite_Ent_and_ShortId_mi_tag>, 
       composite_key<
 	DofMoFEMEntity,
 	const_mem_fun<DofMoFEMEntity,EntityHandle,&DofMoFEMEntity::get_ent>,

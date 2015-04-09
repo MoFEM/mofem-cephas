@@ -1,7 +1,8 @@
 /** \file TagMultiIndices.hpp
  * \brief Tags for Myltindex containers
- * 
- * The MoFEM package is copyrighted by Lukasz Kaczmarczyk. 
+ */
+ 
+/* The MoFEM package is copyrighted by Lukasz Kaczmarczyk. 
  * It can be freely used for educational and research purposes 
  * by other institutions. If you use this softwre pleas cite my work. 
  *
@@ -29,6 +30,7 @@ namespace MoFEM {
   struct CubitMeshSets_mask_meshset_mi_tag {};
   struct CubitMeshSets_bc_data_mi_tag {};
   struct CubitMeshSets_name {};
+  struct Composite_Cubit_msId_And_MeshSetType_mi_tag {};
 
   struct BitFieldId_mi_tag {};
   struct Unique_mi_tag {};
@@ -88,26 +90,24 @@ namespace MoFEM {
   struct Ent_ParallelStatus {};
   struct Proc_mi_tag {};
 
-  struct Composite_unique_mi_tag {};
   struct Composite_mi_tag {};
+  struct Composite_Unique_mi_tag {};
   struct Composite_EntType_and_ParentEntType_mi_tag {};
-  struct Composite_EntityHandle_And_ParentEntType_mi_tag {};
-  struct Composite_of_ParentEnt_And_BitsOfRefinedEdges_mi_tag {};
+  struct Composite_Ent_And_ParentEntType_mi_tag {};
+  struct Composite_ParentEnt_And_BitsOfRefinedEdges_mi_tag {};
   struct Composite_Name_And_Ent_And_EndDofIdx_mi_tag {};
   struct Composite_Name_And_Ent_mi_tag {};
-
-  /// MultiIndex Tag for field rank
   struct Composite_Part_And_Oder_mi_tag {};
-  struct Composite_Name_Part_And_Rank_mi_tag {};
   struct Composite_Name_Ent_And_Rank_mi_tag {};
   struct Composite_Name_Ent_Order_And_Rank_mi_tag {};
   struct Composite_Name_And_Type_mi_tag {};
   struct Composite_Name_Type_And_Side_Number_mi_tag {};
   struct Composite_Name_Ent_And_Part_mi_tag {};
-  struct Composite_Cubit_msId_and_MeshSetType_mi_tag {};
   struct Composite_Name_And_Part_mi_tag {};
-  struct Composite_Entity_and_ShortId_mi_tag {};
+  struct Composite_Ent_and_ShortId_mi_tag {};
   struct Composite_EntType_and_Space_mi_tag {};
+  struct Composite_Part_And_Ent_mi_tag {};
+  struct Composite_Name_Part_And_Rank_mi_tag {};
 
   struct SeriesID_mi_tag {};
   struct SeriesName_mi_tag {};

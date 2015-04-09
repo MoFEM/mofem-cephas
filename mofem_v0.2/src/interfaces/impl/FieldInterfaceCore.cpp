@@ -1,7 +1,8 @@
 /** \file FieldInterfaceCore.cpp
  * \brief Myltindex containes, data structures and other low-level functions 
- * 
- * The MoFEM package is copyrighted by Lukasz Kaczmarczyk. 
+ */
+ 
+/* The MoFEM package is copyrighted by Lukasz Kaczmarczyk. 
  * It can be freely used for educational and research purposes 
  * by other institutions. If you use this softwre pleas cite my work. 
  *
@@ -2396,8 +2397,8 @@ PetscErrorCode Core::update_meshset_by_entities_children(
     cerr << moab.type_from_handle(parent) <<  " " << MBENTITYSET << endl;
   } CHKERR_PETSC(rval);
 
-  typedef RefMoFEMEntity_multiIndex::index<Composite_EntityHandle_And_ParentEntType_mi_tag>::type ref_ents_by_composite;
-  ref_ents_by_composite &ref_ents = refinedEntities.get<Composite_EntityHandle_And_ParentEntType_mi_tag>();
+  typedef RefMoFEMEntity_multiIndex::index<Composite_Ent_And_ParentEntType_mi_tag>::type ref_ents_by_composite;
+  ref_ents_by_composite &ref_ents = refinedEntities.get<Composite_Ent_And_ParentEntType_mi_tag>();
   Range::iterator eit = ents.begin();
   for(;eit!=ents.end();eit++) {
     if(verb>2) {
@@ -2483,9 +2484,9 @@ PetscErrorCode Core::get_problem_finite_elements_entities(const string &problem_
   PetscFunctionReturn(0);
 }
 bool Core::check_msId_meshset(const int msId,const CubitBCType cubit_bc_type) {
-  CubitMeshSet_multiIndex::index<Composite_Cubit_msId_and_MeshSetType_mi_tag>::type::iterator 
-    miit = cubitMeshsets.get<Composite_Cubit_msId_and_MeshSetType_mi_tag>().find(boost::make_tuple(msId,cubit_bc_type.to_ulong()));
-  if(miit!=cubitMeshsets.get<Composite_Cubit_msId_and_MeshSetType_mi_tag>().end()) {
+  CubitMeshSet_multiIndex::index<Composite_Cubit_msId_And_MeshSetType_mi_tag>::type::iterator 
+    miit = cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().find(boost::make_tuple(msId,cubit_bc_type.to_ulong()));
+  if(miit!=cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().end()) {
     return true;
   } 
   return false;
@@ -2508,21 +2509,21 @@ PetscErrorCode Core::add_cubit_msId(const CubitBCType cubit_bc_type,const int ms
 }
 PetscErrorCode Core::delete_cubit_msId(const CubitBCType cubit_bc_type,const int msId) {
   PetscFunctionBegin;
-  CubitMeshSet_multiIndex::index<Composite_Cubit_msId_and_MeshSetType_mi_tag>::type::iterator 
-    miit = cubitMeshsets.get<Composite_Cubit_msId_and_MeshSetType_mi_tag>().find(boost::make_tuple(msId,cubit_bc_type.to_ulong()));
-  if(miit==cubitMeshsets.get<Composite_Cubit_msId_and_MeshSetType_mi_tag>().end()) {
+  CubitMeshSet_multiIndex::index<Composite_Cubit_msId_And_MeshSetType_mi_tag>::type::iterator 
+    miit = cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().find(boost::make_tuple(msId,cubit_bc_type.to_ulong()));
+  if(miit==cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().end()) {
     SETERRQ1(PETSC_COMM_SELF,1,"such cubit meshset is already there",msId);
   }
   EntityHandle meshset = miit->get_meshset();
-  cubitMeshsets.get<Composite_Cubit_msId_and_MeshSetType_mi_tag>().erase(miit);
+  cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().erase(miit);
   rval = moab.delete_entities(&meshset,1); CHKERR_PETSC(rval);
   PetscFunctionReturn(0);
 }
 PetscErrorCode Core::get_cubit_msId(const int msId,const CubitBCType cubit_bc_type,const CubitMeshSets **cubit_meshset_ptr) {
   PetscFunctionBegin;
-  CubitMeshSet_multiIndex::index<Composite_Cubit_msId_and_MeshSetType_mi_tag>::type::iterator 
-    miit = cubitMeshsets.get<Composite_Cubit_msId_and_MeshSetType_mi_tag>().find(boost::make_tuple(msId,cubit_bc_type.to_ulong()));
-  if(miit!=cubitMeshsets.get<Composite_Cubit_msId_and_MeshSetType_mi_tag>().end()) {
+  CubitMeshSet_multiIndex::index<Composite_Cubit_msId_And_MeshSetType_mi_tag>::type::iterator 
+    miit = cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().find(boost::make_tuple(msId,cubit_bc_type.to_ulong()));
+  if(miit!=cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().end()) {
     *cubit_meshset_ptr = &*miit;
   } else {
     SETERRQ1(PETSC_COMM_SELF,1,"msId = %d is not there",msId);
@@ -2532,9 +2533,9 @@ PetscErrorCode Core::get_cubit_msId(const int msId,const CubitBCType cubit_bc_ty
 PetscErrorCode Core::get_cubit_msId_entities_by_dimension(const int msId,const CubitBCType cubit_bc_type,
   const int dimension,Range &entities,const bool recursive) {
   PetscFunctionBegin;
-  CubitMeshSet_multiIndex::index<Composite_Cubit_msId_and_MeshSetType_mi_tag>::type::iterator 
-    miit = cubitMeshsets.get<Composite_Cubit_msId_and_MeshSetType_mi_tag>().find(boost::make_tuple(msId,cubit_bc_type.to_ulong()));
-  if(miit!=cubitMeshsets.get<Composite_Cubit_msId_and_MeshSetType_mi_tag>().end()) {
+  CubitMeshSet_multiIndex::index<Composite_Cubit_msId_And_MeshSetType_mi_tag>::type::iterator 
+    miit = cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().find(boost::make_tuple(msId,cubit_bc_type.to_ulong()));
+  if(miit!=cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().end()) {
     ierr = miit->get_cubit_msId_entities_by_dimension(moab,dimension,entities,recursive); CHKERRQ(ierr);
   } else {
     SETERRQ1(PETSC_COMM_SELF,1,"msId = %d is not there",msId);
@@ -2543,9 +2544,9 @@ PetscErrorCode Core::get_cubit_msId_entities_by_dimension(const int msId,const C
 }
 PetscErrorCode Core::get_cubit_msId_entities_by_dimension(const int msId,const CubitBCType cubit_bc_type,Range &entities,const bool recursive) {
   PetscFunctionBegin;
-  CubitMeshSet_multiIndex::index<Composite_Cubit_msId_and_MeshSetType_mi_tag>::type::iterator 
-    miit = cubitMeshsets.get<Composite_Cubit_msId_and_MeshSetType_mi_tag>().find(boost::make_tuple(msId,cubit_bc_type.to_ulong()));
-  if(miit!=cubitMeshsets.get<Composite_Cubit_msId_and_MeshSetType_mi_tag>().end()) {
+  CubitMeshSet_multiIndex::index<Composite_Cubit_msId_And_MeshSetType_mi_tag>::type::iterator 
+    miit = cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().find(boost::make_tuple(msId,cubit_bc_type.to_ulong()));
+  if(miit!=cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().end()) {
     ierr = miit->get_cubit_msId_entities_by_dimension(moab,entities,recursive); CHKERRQ(ierr);
   } else {
     SETERRQ1(PETSC_COMM_SELF,1,"msId = %d is not there",msId);
@@ -2566,9 +2567,9 @@ PetscErrorCode Core::get_cubit_msId_entities_by_dimension(const int msId,const u
 }
 PetscErrorCode Core::get_cubit_msId_meshset(const int msId,const unsigned int cubit_bc_type,EntityHandle &meshset) {
   PetscFunctionBegin;
-  CubitMeshSet_multiIndex::index<Composite_Cubit_msId_and_MeshSetType_mi_tag>::type::iterator 
-    miit = cubitMeshsets.get<Composite_Cubit_msId_and_MeshSetType_mi_tag>().find(boost::make_tuple(msId,cubit_bc_type));
-  if(miit!=cubitMeshsets.get<Composite_Cubit_msId_and_MeshSetType_mi_tag>().end()) {
+  CubitMeshSet_multiIndex::index<Composite_Cubit_msId_And_MeshSetType_mi_tag>::type::iterator 
+    miit = cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().find(boost::make_tuple(msId,cubit_bc_type));
+  if(miit!=cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().end()) {
     meshset = miit->meshset;
   } else {
     SETERRQ1(PETSC_COMM_SELF,1,"msId = %d is not there",msId);
@@ -2654,14 +2655,14 @@ PetscErrorCode Core::loop_finite_elements(
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   // finite element
-  typedef NumeredMoFEMFiniteElement_multiIndex::index<Composite_mi_tag>::type FEs_by_composite;
+  typedef NumeredMoFEMFiniteElement_multiIndex::index<Composite_Name_And_Part_mi_tag>::type FEs_by_composite;
   method.feName = fe_name;
   SET_BASIC_METHOD(&*problem_ptr)
   PetscLogEventBegin(USER_EVENT_preProcess,0,0,0,0);
   ierr = method.preProcess(); CHKERRQ(ierr);
   PetscLogEventEnd(USER_EVENT_preProcess,0,0,0,0);
   FEs_by_composite &numeredFiniteElements = 
-    (const_cast<NumeredMoFEMFiniteElement_multiIndex&>(problem_ptr->numeredFiniteElements)).get<Composite_mi_tag>();
+    (const_cast<NumeredMoFEMFiniteElement_multiIndex&>(problem_ptr->numeredFiniteElements)).get<Composite_Name_And_Part_mi_tag>();
   FEs_by_composite::iterator miit = numeredFiniteElements.lower_bound(boost::make_tuple(fe_name,lower_rank));
   FEs_by_composite::iterator hi_miit = numeredFiniteElements.upper_bound(boost::make_tuple(fe_name,upper_rank));
   for(;miit!=hi_miit;miit++) {
