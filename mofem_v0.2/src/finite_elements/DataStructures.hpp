@@ -1,12 +1,8 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
-* --------------------------------------------------------------
-*
-* DESCRIPTION: FIXME
-*
-* This is not exactly procedure for linear elastic dynamics, since Jacobian is
-* evaluated at every time step and snes procedure is involved. However it is
-* implemented like that, to test methodology for general nonlinear problem.
-*
+/** \file DataStructures.hpp
+
+  \brief Data structures for accessing information about finite element and its
+  degrees of freedom.
+
 */
 
 /* This file is part of MoFEM.
