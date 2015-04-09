@@ -35,6 +35,8 @@ namespace MoFEM {
   */
 struct ForcesAndSurcesCore: public FEMethod {
 
+  PetscErrorCode ierr;
+
   FieldInterface& mField;
   ForcesAndSurcesCore(FieldInterface& _mField): 
     mField(_mField) {};
@@ -52,63 +54,69 @@ struct ForcesAndSurcesCore: public FEMethod {
   PetscErrorCode getTetsOrder(DataForcesAndSurcesCore &data,const FieldSpace space);
   PetscErrorCode getEdgesOrder(DataForcesAndSurcesCore &data,const string &field_name);
   PetscErrorCode getTrisOrder(DataForcesAndSurcesCore &data,const string &field_name);
-  PetscErrorCode getTetsOrder(DataForcesAndSurcesCore &data,const string &field_name);
+  PetscErrorCode getTetsOrder(DataForcesAndSurcesCore &data,const string &field_name);	
 
-  PetscErrorCode getNodesIndices(
-    const string &field_name,
+  // ** Indices **
+
+  /// \brief get node indices
+  PetscErrorCode getNodesIndices(const string &field_name,
     FENumeredDofMoFEMEntity_multiIndex &dofs,ublas::vector<int> &nodes_indices);
 
-  PetscErrorCode getRowNodesIndices(
-    DataForcesAndSurcesCore &data,
-    const string &field_name);
+  /// \brief get indices by type (generic function)
+  PetscErrorCode getTypeIndices(const string &field_name,
+    FENumeredDofMoFEMEntity_multiIndex &dofs,EntityType type,int side_number,ublas::vector<int> &indices);
 
-  PetscErrorCode getColNodesIndices(
-    DataForcesAndSurcesCore &data,
-    const string &field_name);
-
-  PetscErrorCode getTypeIndices(
-    const string &field_name,
-    FENumeredDofMoFEMEntity_multiIndex &dofs,
-    EntityType type,int side_number,ublas::vector<int> &indices);
+  /// \brief get indices by type (generic function)
   PetscErrorCode getTypeIndices(
     const string &field_name,FENumeredDofMoFEMEntity_multiIndex &dofs,
     EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data);
 
+  /// \brief get row node indices from FENumeredDofMoFEMEntity_multiIndex
+  PetscErrorCode getRowNodesIndices(DataForcesAndSurcesCore &data,const string &field_name); 
+
+  /// \brief get col node indices from FENumeredDofMoFEMEntity_multiIndex
+  PetscErrorCode getColNodesIndices(DataForcesAndSurcesCore &data,const string &field_name);
+
+  /// \brief get Edges row indices from FENumeredDofMoFEMEntity_multiIndex
   PetscErrorCode getEdgesRowIndices(DataForcesAndSurcesCore &data,const string &field_name);
+
+  /// \brief get Edges col indices from FENumeredDofMoFEMEntity_multiIndex
   PetscErrorCode getEdgesColIndices(DataForcesAndSurcesCore &data,const string &field_name);
+
+  /// \brief get Tris row indices from FENumeredDofMoFEMEntity_multiIndex
   PetscErrorCode getTrisRowIndices(DataForcesAndSurcesCore &data,const string &field_name);
+
+  /// \brief get Tris col indices from FENumeredDofMoFEMEntity_multiIndex
   PetscErrorCode getTrisColIndices(DataForcesAndSurcesCore &data,const string &field_name);
+
+  /// \brief get Tets row indices from FENumeredDofMoFEMEntity_multiIndex
   PetscErrorCode getTetsRowIndices(DataForcesAndSurcesCore &data,const string &field_name);
+
+  /// \brief get Tets col indices from FENumeredDofMoFEMEntity_multiIndex
   PetscErrorCode getTetsColIndices(DataForcesAndSurcesCore &data,const string &field_name);
 
-  //data
-  PetscErrorCode getNodesFieldData(
-    const string &field_name,
+  // ** Data **
+
+  PetscErrorCode getNodesFieldData(const string &field_name,
     FEDofMoFEMEntity_multiIndex &dofs,ublas::vector<double> &nodes_data);
-  PetscErrorCode getTypeFieldData(
-    const string &field_name,
+  PetscErrorCode getTypeFieldData(const string &field_name,
     FEDofMoFEMEntity_multiIndex &dofs,
     EntityType type,int side_number,ublas::vector<double> &ent_field_data);
-  PetscErrorCode getTypeFieldData(
-    const string &field_name,FEDofMoFEMEntity_multiIndex &dofs,
+  PetscErrorCode getTypeFieldData(const string &field_name,FEDofMoFEMEntity_multiIndex &dofs,
     EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data);
+
+  // ** DoFS **
 
   PetscErrorCode getNodesFieldData(DataForcesAndSurcesCore &data,const string &field_name);
   PetscErrorCode getEdgesFieldData(DataForcesAndSurcesCore &data,const string &field_name);
   PetscErrorCode getTrisFieldData(DataForcesAndSurcesCore &data,const string &field_name);
   PetscErrorCode getTetsFieldData(DataForcesAndSurcesCore &data,const string &field_name);
 
-  //dofs
-  PetscErrorCode getNodesFieldDofs(
-    const string &field_name,
-    FEDofMoFEMEntity_multiIndex &dofs,ublas::vector<const FEDofMoFEMEntity*> &nodes_dofs);
-  PetscErrorCode getTypeFieldDofs(
-    const string &field_name,
-    FEDofMoFEMEntity_multiIndex &dofs,
-    EntityType type,int side_number,ublas::vector<const FEDofMoFEMEntity*> &ent_field_dofs);
-  PetscErrorCode getTypeFieldDofs(
-    const string &field_name,FEDofMoFEMEntity_multiIndex &dofs,
-    EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data);
+  PetscErrorCode getNodesFieldDofs(const string &field_name,FEDofMoFEMEntity_multiIndex &dofs,ublas::vector<const FEDofMoFEMEntity*> &nodes_dofs);
+  PetscErrorCode getTypeFieldDofs(const string &field_name,
+    FEDofMoFEMEntity_multiIndex &dofs,EntityType type,int side_number,ublas::vector<const FEDofMoFEMEntity*> &ent_field_dofs);
+  PetscErrorCode getTypeFieldDofs(const string &field_name,
+    FEDofMoFEMEntity_multiIndex &dofs,EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data);
 
   PetscErrorCode getNodesFieldDofs(DataForcesAndSurcesCore &data,const string &field_name);
   PetscErrorCode getEdgesFieldDofs(DataForcesAndSurcesCore &data,const string &field_name);
@@ -117,6 +125,21 @@ struct ForcesAndSurcesCore: public FEMethod {
 
   PetscErrorCode getFaceNodes(DataForcesAndSurcesCore &data);
   PetscErrorCode getSpacesOnEntities(DataForcesAndSurcesCore &data);
+
+  // ** Data form NumeredDofMoFEMEntity_multiIndex **
+
+  /// \brief get indices of nodal indices which are declared for problem but not this particular element
+  PetscErrorCode getProblemNodesIndices(const string &field_name,const NumeredDofMoFEMEntity_multiIndex &dofs,ublas::vector<int> &nodes_indices) const;
+
+  /// \brief get indices by type (generic function) which are declared for problem but not this particular element
+  PetscErrorCode getProblemTypeIndices(
+    const string &field_name,const NumeredDofMoFEMEntity_multiIndex &dofs,
+    EntityType type,int side_number,ublas::vector<int> &indices) const;
+
+  PetscErrorCode getProblemNodesRowIndices(const string &field_name,ublas::vector<int> &nodes_indices) const;
+  PetscErrorCode getProblemTypeRowIndices(const string &field_name,EntityType type,int side_number,ublas::vector<int> &indices) const;
+  PetscErrorCode getProblemNodesColIndices(const string &field_name,ublas::vector<int> &nodes_indices) const;
+  PetscErrorCode getProblemTypeColIndices(const string &field_name,EntityType type,int side_number,ublas::vector<int> &indices) const;
 
   /** \brief computes approximation functions for tetrahedral and H1 space
     */
@@ -275,7 +298,6 @@ struct TetElementForcesAndSourcesCore: public ForcesAndSurcesCore {
   virtual ~TetElementForcesAndSourcesCore() {}
 
   ErrorCode rval;
-  PetscErrorCode ierr;
   double vOlume;
   ublas::vector<double> coords;
 
@@ -299,6 +321,34 @@ struct TetElementForcesAndSourcesCore: public ForcesAndSurcesCore {
       const string &_row_field_name,const string &_col_field_name):
 	row_field_name(_row_field_name),col_field_name(_col_field_name),symm(true),ptrFE(NULL) {};
     virtual ~UserDataOperator() {}
+
+    /** \brief Get row indices 
+    
+    Field could be or not declared for this element but is declared for porblem
+
+    \param field_name 
+    \param type entity type
+    \param side side number, any number if type is MBVERTEX
+    \return indices
+
+    NOTE: Using those indices to assemble matrix will result in error if new non-zero values need to be created.
+
+    */
+    PetscErrorCode getPorblemRowIndices(const string filed_name,const EntityType type,const int side,ublas::vector<int>& indices);
+
+    /** \brief Get col indices 
+    
+    Field could be or not declared for this element but is declared for porblem
+
+    \param field_name 
+    \param type entity type
+    \param side side number, any number if type is MBVERTEX
+    \return indices
+
+    NOTE: Using those indices to assemble matrix will result in error if new non-zero values need to be created.
+
+    */
+    PetscErrorCode getPorblemColIndices(const string filed_name,const EntityType type,const int side,ublas::vector<int>& indices);
     
     /** \brief element volume (linear geometry)
       */
@@ -392,7 +442,6 @@ struct TetElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 struct TriElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
   ErrorCode rval;
-  PetscErrorCode ierr;
   double aRea;;
   ublas::vector<double> normal;
   ublas::vector<double> coords;
@@ -434,6 +483,35 @@ struct TriElementForcesAndSurcesCore: public ForcesAndSurcesCore {
       const string &_row_field_name,const string &_col_field_name):
 	row_field_name(_row_field_name),col_field_name(_col_field_name),symm(true),ptrFE(NULL) {};
     virtual ~UserDataOperator() {}
+
+    /** \brief Get row indices 
+    
+    Field could be or not declared for this element but is declared for porblem
+
+    \param field_name 
+    \param type entity type
+    \param side side number, any number if type is MBVERTEX
+    \return indices
+
+    NOTE: Using those indices to assemble matrix will result in error if new non-zero values need to be created.
+
+    */
+    PetscErrorCode getPorblemRowIndices(const string filed_name,const EntityType type,const int side,ublas::vector<int>& indices);
+
+    /** \brief Get col indices 
+    
+    Field could be or not declared for this element but is declared for porblem
+
+    \param field_name 
+    \param type entity type
+    \param side side number, any number if type is MBVERTEX
+    \return indices
+
+    NOTE: Using those indices to assemble matrix will result in error if new non-zero values need to be created.
+
+    */
+    PetscErrorCode getPorblemColIndices(const string filed_name,const EntityType type,const int side,ublas::vector<int>& indices);
+
     inline double getArea() { return ptrFE->aRea; }
 
     /** \bried get triangle normal
@@ -540,7 +618,6 @@ struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
     ForcesAndSurcesCore(_mField),data(MBEDGE),derivedData(data) {};
 
   ErrorCode rval;
-  PetscErrorCode ierr;
   double lEngth;;
   ublas::vector<double> dIrection;
   ublas::vector<double> coords;
@@ -620,7 +697,6 @@ struct VertexElementForcesAndSourcesCore: public ForcesAndSurcesCore {
     ForcesAndSurcesCore(_mField),data(MBVERTEX),derivedData(data) {};
 
   ErrorCode rval;
-  PetscErrorCode ierr;
   ublas::vector<double> coords;
 
   /** \brief default operator for VERTEX element
@@ -685,7 +761,6 @@ struct VertexElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
   ErrorCode rval;
-  PetscErrorCode ierr;
   double aRea;;
   ublas::vector<double> normal;
   ublas::vector<double> coords;
