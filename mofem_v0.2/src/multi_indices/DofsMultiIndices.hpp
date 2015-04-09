@@ -1,8 +1,8 @@
 /** \file DofsMultiIndices.hpp
  * \brief Multi-Index contains, data structures for mofem dofs and other low-level functions 
- * 
+ */ 
 
- * MoFEM is free software: you can redistribute it and/or modify it under
+/* MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or (at your
  * option) any later version.
@@ -247,6 +247,9 @@ typedef multi_index_container<
       > >
   > > DofMoFEMEntity_multiIndex;
 
+/** \brief multi-index view on DofMoFEMEntity by uid
+  \ingroup dof_multi_indices
+*/
 typedef multi_index_container<
   const DofMoFEMEntity*,
   indexed_by<
@@ -254,6 +257,9 @@ typedef multi_index_container<
       member<DofMoFEMEntity,const GlobalUId,&DofMoFEMEntity::global_uid> >
   > > DofMoFEMEntity_multiIndex_uid_view;
 
+/** \brief multi-index view on DofMoFEMEntity activity
+  \ingroup dof_multi_indices
+*/
 typedef multi_index_container<
   const DofMoFEMEntity*,
   indexed_by<
@@ -263,6 +269,9 @@ typedef multi_index_container<
       const_mem_fun<DofMoFEMEntity,int,&DofMoFEMEntity::get_active> >
   > > DofMoFEMEntity_multiIndex_active_view;
 
+/** \brief multi-index view on DofMoFEMEntity order
+  \ingroup dof_multi_indices
+*/
 typedef multi_index_container<
   const DofMoFEMEntity*,
   indexed_by<
@@ -270,6 +279,9 @@ typedef multi_index_container<
       const_mem_fun<DofMoFEMEntity,ApproximationOrder,&DofMoFEMEntity::get_dof_order> >
   > > DofMoFEMEntity_multiIndex_order_view;
 
+/** \brief multi-index view on DofMoFEMEntity type
+  \ingroup dof_multi_indices
+*/
 typedef multi_index_container<
   const DofMoFEMEntity*,
   indexed_by<
