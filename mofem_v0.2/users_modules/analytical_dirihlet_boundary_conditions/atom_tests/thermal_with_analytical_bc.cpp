@@ -1,8 +1,3 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
- * FIXME: DESCRIPTION
- */
-
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -130,7 +125,8 @@ int main(int argc, char *argv[]) {
   }
 
   AnalyticalDirihletBC analytical_bc(m_field,bc_tris);
-  ierr = analytical_bc.initializeProblem(m_field,"BC_PROBLEM","BC_FE","TEMP"); CHKERRQ(ierr);
+  ierr = analytical_bc.initializeProblem(m_field,"BC_FE","TEMP"); CHKERRQ(ierr);
+  ierr = m_field.modify_problem_add_finite_element("BC_PROBLEM","BC_FE"); CHKERRQ(ierr);
 
   /****/
   //build database

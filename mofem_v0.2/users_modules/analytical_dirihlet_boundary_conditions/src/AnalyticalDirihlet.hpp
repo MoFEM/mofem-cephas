@@ -1,7 +1,8 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
- * FIXME: DESCRIPTION
- */
+/** \file AnalyticalDirihlet.hpp
+
+  Enforce Dirichlet boundary condition for given analytical function,
+
+*/
 
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
@@ -23,6 +24,9 @@
 using namespace boost::numeric;
 using namespace MoFEM;
 
+/** \brief Analytical Dirichlet boundary conditions
+  \ingroup mofem_forces_and_sources
+  */
 struct AnalyticalDirihletBC {
 
   //ubals::vector<double> analyticalFunction(
@@ -294,8 +298,7 @@ struct AnalyticalDirihletBC {
   }
 
   PetscErrorCode initializeProblem(
-    FieldInterface &m_field,
-    string problem,string fe,string field,
+    FieldInterface &m_field,string fe,string field,
     string nodals_positions = "MESH_NODE_POSITIONS") {
     PetscFunctionBegin;
     PetscErrorCode ierr;
@@ -307,7 +310,6 @@ struct AnalyticalDirihletBC {
     if(m_field.check_field(nodals_positions)) {
       ierr = m_field.modify_finite_element_add_field_data(fe,nodals_positions); CHKERRQ(ierr);
     }
-    ierr = m_field.modify_problem_add_finite_element(problem,fe); CHKERRQ(ierr);
     ierr = m_field.add_ents_to_finite_element_by_TRIs(tRis,fe); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }

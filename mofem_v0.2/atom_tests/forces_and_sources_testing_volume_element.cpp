@@ -49,7 +49,7 @@ int main(int argc, char *argv[]) {
   char mesh_file_name[255];
   ierr = PetscOptionsGetString(PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
   if(flg != PETSC_TRUE) {
-    SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
 
   //Create MoFEM (Joseph) database
@@ -189,6 +189,28 @@ int main(int argc, char *argv[]) {
       my_split << "NH1NH1" << endl;
       my_split << "col side: " << col_side << " col_type: " << col_type << endl;
       my_split << col_data << endl;
+      
+      PetscErrorCode ierr;
+      ublas::vector<int> row_indices,col_indices;
+      ierr = getPorblemRowIndices("FIELD1",row_type,row_side,row_indices); CHKERRQ(ierr);
+      ierr = getPorblemColIndices("FIELD2",col_type,col_side,col_indices); CHKERRQ(ierr);
+
+      for(unsigned int rr = 0;rr<row_indices.size();rr++) {
+	if(row_indices[rr] != row_data.getIndices()[rr]) {
+	  cerr << row_indices << endl;
+	  cerr << row_data.getIndices() << endl;
+	  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"row inconsistency");
+	}
+      }
+
+      for(unsigned int cc = 0;cc<col_indices.size();cc++) {
+	if(col_indices[cc] != col_data.getIndices()[cc]) {
+	  cerr << col_indices << endl;
+	  cerr << col_data.getIndices() << endl;
+	  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"row inconsistency");
+	}
+      }
+
       PetscFunctionReturn(0);
     }
 
