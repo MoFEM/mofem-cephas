@@ -1712,9 +1712,9 @@ PetscErrorCode FaceSplittingTools::propagateBySplit(Range &new_nodes,Range &edge
   for(Range::iterator eit = edges_to_split.begin();eit!=edges_to_split.end();eit++) {
     const RefMoFEMEntity_multiIndex *refinedEntitiesPtr_ptr;
     ierr = mField.get_ref_ents(&refinedEntitiesPtr_ptr); CHKERRQ(ierr);
-    RefMoFEMEntity_multiIndex::index<Composite_EntityHandle_And_ParentEntType_mi_tag>::type::iterator it;
-    it = refinedEntitiesPtr_ptr->get<Composite_EntityHandle_And_ParentEntType_mi_tag>().find(boost::make_tuple(*eit,MBVERTEX));
-    if(it == refinedEntitiesPtr_ptr->get<Composite_EntityHandle_And_ParentEntType_mi_tag>().end()) {
+    RefMoFEMEntity_multiIndex::index<Composite_Ent_And_ParentEntType_mi_tag>::type::iterator it;
+    it = refinedEntitiesPtr_ptr->get<Composite_Ent_And_ParentEntType_mi_tag>().find(boost::make_tuple(*eit,MBVERTEX));
+    if(it == refinedEntitiesPtr_ptr->get<Composite_Ent_And_ParentEntType_mi_tag>().end()) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
     }
     EntityHandle node = it->get_ref_ent();
