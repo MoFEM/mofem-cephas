@@ -132,19 +132,6 @@ struct interface_RefMoFEMElement: interface_RefMoFEMEntity<T> {
   virtual ~interface_RefMoFEMElement() {}
 };
 
-typedef multi_index_container<
-  const RefMoFEMEntity*,
-  indexed_by<
-    hashed_unique<
-      const_mem_fun<RefMoFEMEntity,EntityHandle,&RefMoFEMEntity::get_parent_ent> >,
-    hashed_unique<
-      tag<Composite_EntType_and_ParentEntType_mi_tag>,
-      composite_key<
-	const RefMoFEMEntity*,
-	const_mem_fun<RefMoFEMEntity,EntityHandle,&RefMoFEMEntity::get_ref_ent>,
-	const_mem_fun<RefMoFEMEntity,EntityHandle,&RefMoFEMEntity::get_parent_ent> > >
-  > > RefMoFEMEntity_multiIndex_view_by_parent_entity;
-
 struct ptrWrapperRefMoFEMElement: public interface_RefMoFEMElement<RefMoFEMElement> {
   typedef interface_RefMoFEMEntity<RefMoFEMElement> interface_type_RefMoFEMEntity;
   typedef interface_RefMoFEMElement<RefMoFEMElement> interface_type_RefMoFEMElement;
@@ -302,7 +289,6 @@ struct interface_MoFEMFiniteElement {
   inline BitFieldId get_BitFieldId_data() const { return fe_ptr->get_BitFieldId_data(); }
   inline unsigned int get_bit_number() const { return fe_ptr->get_bit_number(); }
 };
-
 
 /**
  * \brief Finite element data for entitiy
@@ -480,10 +466,9 @@ typedef multi_index_container<
   > > EntMoFEMFiniteElement_multiIndex;
 
 /** 
- * @relates multi_index_container
- * \brief MultiIndex for entities for NumeredMoFEMFiniteElement
- * \ingroup fe_multi_indices
- *
+  @relates multi_index_container
+  \brief MultiIndex for entities for NumeredMoFEMFiniteElement
+  \ingroup fe_multi_indices
  */
 typedef multi_index_container<
   NumeredMoFEMFiniteElement,
@@ -507,19 +492,13 @@ typedef multi_index_container<
       composite_key<
 	NumeredMoFEMFiniteElement,
 	const_mem_fun<NumeredMoFEMFiniteElement::interface_type_MoFEMFiniteElement,boost::string_ref,&NumeredMoFEMFiniteElement::get_name_ref>,
-	member<NumeredMoFEMFiniteElement,unsigned int,&NumeredMoFEMFiniteElement::part> > >,
-    ordered_non_unique<
-      tag<Composite_Part_And_Ent_mi_tag>,
-      composite_key<
-	NumeredMoFEMFiniteElement,
-	member<NumeredMoFEMFiniteElement,unsigned int,&NumeredMoFEMFiniteElement::part>,
-	const_mem_fun<NumeredMoFEMFiniteElement::interface_type_EntMoFEMFiniteElement,EntityHandle,&NumeredMoFEMFiniteElement::get_ent> > >
+	member<NumeredMoFEMFiniteElement,unsigned int,&NumeredMoFEMFiniteElement::part> > >
   > > NumeredMoFEMFiniteElement_multiIndex;
 
 /**  
- * @relates multi_index_container
- * \brief MultiIndex for entities for MoFEMFiniteElement
- * \ingroup fe_multi_indices
+  @relates multi_index_container
+  \brief MultiIndex for entities for MoFEMFiniteElement
+  \ingroup fe_multi_indices
  */
 typedef multi_index_container<
   MoFEMFiniteElement,
