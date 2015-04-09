@@ -2588,26 +2588,26 @@ PetscErrorCode Core::get_cubit_meshsets(const unsigned int cubit_bc_type,Range &
   PetscFunctionReturn(0);
 }
 
-#define SET_BASIC_METHOD(PROBLEM_PTR) \
+#define SET_BASIC_METHOD(METHOD,PROBLEM_PTR) \
   { \
-    method.rAnk = rAnk; \
-    method.sIze = sIze; \
-    method.problemPtr = PROBLEM_PTR; \
-    method.fieldsPtr = &moabFields; \
-    method.refinedEntitiesPtr = &refinedEntities; \
-    method.entitiesPtr = &entsMoabField; \
-    method.dofsPtr = &dofsMoabField; \
-    method.refinedFiniteElementsPtr = &refinedFiniteElements; \
-    method.finiteElementsPtr = &finiteElements; \
-    method.finiteElementsEntitiesPtr = &finiteElementsMoFEMEnts; \
-    method.adjacenciesPtr = &entFEAdjacencies; \
+    METHOD.rAnk = rAnk; \
+    METHOD.sIze = sIze; \
+    METHOD.problemPtr = PROBLEM_PTR; \
+    METHOD.fieldsPtr = &moabFields; \
+    METHOD.refinedEntitiesPtr = &refinedEntities; \
+    METHOD.entitiesPtr = &entsMoabField; \
+    METHOD.dofsPtr = &dofsMoabField; \
+    METHOD.refinedFiniteElementsPtr = &refinedFiniteElements; \
+    METHOD.finiteElementsPtr = &finiteElements; \
+    METHOD.finiteElementsEntitiesPtr = &finiteElementsMoFEMEnts; \
+    METHOD.adjacenciesPtr = &entFEAdjacencies; \
   }
 
 PetscErrorCode Core::problem_basic_method_preProcess(const MoFEMProblem *problem_ptr,BasicMethod &method,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   // finite element
-  SET_BASIC_METHOD(problem_ptr)
+  SET_BASIC_METHOD(method,problem_ptr)
   PetscLogEventBegin(USER_EVENT_preProcess,0,0,0,0);
   ierr = method.preProcess(); CHKERRQ(ierr);
   PetscLogEventEnd(USER_EVENT_preProcess,0,0,0,0);
@@ -2627,27 +2627,34 @@ PetscErrorCode Core::problem_basic_method_preProcess(const string &problem_name,
 }
 PetscErrorCode Core::problem_basic_method_postProcess(const MoFEMProblem *problem_ptr,BasicMethod &method,int verb) {
   PetscFunctionBegin;
-  SET_BASIC_METHOD(problem_ptr)
+  SET_BASIC_METHOD(method,problem_ptr)
+
   PetscLogEventBegin(USER_EVENT_postProcess,0,0,0,0);
   ierr = method.postProcess(); CHKERRQ(ierr);
   PetscLogEventEnd(USER_EVENT_postProcess,0,0,0,0);
+
   PetscFunctionReturn(0);
 }
 PetscErrorCode Core::problem_basic_method_postProcess(const string &problem_name,BasicMethod &method,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type moFEMProblems_by_name;
+
   // find p_miit
   moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<Problem_mi_tag>();
   moFEMProblems_by_name::iterator p_miit = moFEMProblems_set.find(problem_name);
   if(p_miit == moFEMProblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem is not in database %s",problem_name.c_str());
+
   ierr = problem_basic_method_postProcess(&*p_miit,method,verb); CHKERRQ(ierr);
+
   PetscFunctionReturn(0);
 }
 PetscErrorCode Core::loop_finite_elements(const string &problem_name,const string &fe_name,FEMethod &method,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
+
   ierr = loop_finite_elements(problem_name,fe_name,method,rAnk,rAnk,verb); CHKERRQ(ierr);
+
   PetscFunctionReturn(0);
 }
 PetscErrorCode Core::loop_finite_elements(
@@ -2656,16 +2663,20 @@ PetscErrorCode Core::loop_finite_elements(
   if(verb==-1) verb = verbose;
   // finite element
   typedef NumeredMoFEMFiniteElement_multiIndex::index<Composite_Name_And_Part_mi_tag>::type FEs_by_composite;
+
   method.feName = fe_name;
-  SET_BASIC_METHOD(&*problem_ptr)
+  SET_BASIC_METHOD(method,&*problem_ptr)
   PetscLogEventBegin(USER_EVENT_preProcess,0,0,0,0);
   ierr = method.preProcess(); CHKERRQ(ierr);
   PetscLogEventEnd(USER_EVENT_preProcess,0,0,0,0);
+
   FEs_by_composite &numeredFiniteElements = 
     (const_cast<NumeredMoFEMFiniteElement_multiIndex&>(problem_ptr->numeredFiniteElements)).get<Composite_Name_And_Part_mi_tag>();
   FEs_by_composite::iterator miit = numeredFiniteElements.lower_bound(boost::make_tuple(fe_name,lower_rank));
   FEs_by_composite::iterator hi_miit = numeredFiniteElements.upper_bound(boost::make_tuple(fe_name,upper_rank));
+
   for(;miit!=hi_miit;miit++) {
+
     method.fePtr = &*miit;
     method.dataPtr = const_cast<FEDofMoFEMEntity_multiIndex*>(&(miit->fe_ptr->data_dofs));
     method.rowPtr = const_cast<FENumeredDofMoFEMEntity_multiIndex*>(&(miit->rows_dofs));
@@ -2679,10 +2690,13 @@ PetscErrorCode Core::loop_finite_elements(
       ss << "throw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,ss.str().c_str());
     }
+
   }
+
   PetscLogEventBegin(USER_EVENT_postProcess,0,0,0,0);
   ierr = method.postProcess(); CHKERRQ(ierr);
   PetscLogEventEnd(USER_EVENT_postProcess,0,0,0,0);
+
   PetscFunctionReturn(0);
 }
 PetscErrorCode Core::loop_finite_elements(
@@ -2694,12 +2708,14 @@ PetscErrorCode Core::loop_finite_elements(
   moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<Problem_mi_tag>();
   moFEMProblems_by_name::iterator p_miit = moFEMProblems_set.find(problem_name);
   if(p_miit == moFEMProblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem is not in database %s",problem_name.c_str());
+
   ierr = loop_finite_elements(&*p_miit,fe_name,method,lower_rank,upper_rank,verb); CHKERRQ(ierr);
+
   PetscFunctionReturn(0);
 }
 PetscErrorCode Core::loop_dofs(const MoFEMProblem *problem_ptr,const string &field_name,RowColData rc,EntMethod &method,int lower_rank,int upper_rank,int verb) {
   PetscFunctionBegin;
-  SET_BASIC_METHOD(&*problem_ptr);
+  SET_BASIC_METHOD(method,&*problem_ptr);
   typedef NumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Part_mi_tag>::type numerd_dofs;
   numerd_dofs *dofs;
   switch (rc) {
@@ -2749,7 +2765,7 @@ PetscErrorCode Core::loop_dofs(const string &problem_name,const string &field_na
 PetscErrorCode Core::loop_dofs(const string &field_name,EntMethod &method,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-  SET_BASIC_METHOD(NULL);
+  SET_BASIC_METHOD(method,NULL);
   DofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator miit,hi_miit;
   miit = dofsMoabField.get<FieldName_mi_tag>().lower_bound(field_name);
   hi_miit = dofsMoabField.get<FieldName_mi_tag>().upper_bound(field_name);
