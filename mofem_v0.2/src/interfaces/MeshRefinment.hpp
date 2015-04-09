@@ -2,7 +2,9 @@
  * \brief MoFEM interface 
  * 
  * Low level data structures not used directly by user
- *
+ */
+
+/*
  * MoFEM is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
@@ -26,12 +28,10 @@ static const MOFEMuuid IDD_MOFEMMeshRefine = MOFEMuuid( BitIntefaceId(MESH_REFIN
   Currently this class is abstraction to Core interface. In future should be
   outsourced as independent interface.
   
-  \bug not working on partitioned mesha
-
-  \bug need to be implemented as a stand alone interface not as a part of core
+  \bug Not working on partitioned meshes
+  \bug Need to be implemented as a stand alone interface not as a part of core
   structure which should be only basic database
-
-  \bug if outsourced, class member functions should follow name convention
+  \bug If outsourced, class member functions should follow name convention
 
   */
 struct MeshRefinment: public FieldUnknownInterface {

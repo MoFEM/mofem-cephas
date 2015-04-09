@@ -1,12 +1,10 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
-* --------------------------------------------------------------
-*
-* DESCRIPTION: FIXME
-*
-* This is not exactly procedure for linear elatic dynamics, since jacobian is
-* evaluated at every time step and snes procedure is involved. However it is
-* implemented like that, to test methodology for general nonlinear problem.
-*
+/** \file ElementsOnEntities.hpp
+
+  \brief Implementation of elements on entities.
+
+  Those element are inherited by user to implement specific implementation of
+  particular problem.
+  
 */
 
 /* This file is part of MoFEM.
