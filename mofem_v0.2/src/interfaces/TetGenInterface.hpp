@@ -1,8 +1,11 @@
 /** \file TetGenInterface.hpp
  * \brief TetGen interface 
  * 
- * Low level data structures not used directly by user
+ * MoFEM TetGen interface
+ *
+ */
 
+/*
  * MoFEM is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
@@ -10,7 +13,6 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
-
 */
 
 #ifndef __TETGENINTERFACE_HPP__
