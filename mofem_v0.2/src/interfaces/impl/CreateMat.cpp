@@ -698,8 +698,8 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const string &problem_name,i
 	  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
 	}
 
-	MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_multiIndex::index<Composite_unique_mi_tag>::type::iterator ait;
-	ait = adjacenciesPtr->get<Composite_unique_mi_tag>().find(boost::make_tuple(
+	MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_multiIndex::index<Composite_Unique_mi_tag>::type::iterator ait;
+	ait = adjacenciesPtr->get<Composite_Unique_mi_tag>().find(boost::make_tuple(
 	      rit->get_MoFEMEntity_ptr()->get_global_unique_id(),fePtr->get_global_unique_id()));
 	if(ait==adjacenciesPtr->end()) {
 	    ostringstream ss;
@@ -730,7 +730,7 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const string &problem_name,i
 	    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
 	  }
 	  int col = cit->get_petsc_gloabl_dof_idx();
-	  ait = adjacenciesPtr->get<Composite_unique_mi_tag>().find(boost::make_tuple(
+	  ait = adjacenciesPtr->get<Composite_Unique_mi_tag>().find(boost::make_tuple(
 	      cit->get_MoFEMEntity_ptr()->get_global_unique_id(),fePtr->get_global_unique_id()));
 	  if(ait==adjacenciesPtr->end()) {
 	    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"adjacencies data inconsistency");

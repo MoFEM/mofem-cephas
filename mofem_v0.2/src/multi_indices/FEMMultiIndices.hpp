@@ -1,7 +1,8 @@
 /** \file FEMMultiIndices.hpp
  * \brief Myltindex containes, data structures for mofem finite elements and other low-level functions 
- * 
- * MoFEM is free software: you can redistribute it and/or modify it under
+ */ 
+
+/* MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or (at your
  * option) any later version.
@@ -169,7 +170,7 @@ struct ptrWrapperRefMoFEMElement: public interface_RefMoFEMElement<RefMoFEMEleme
  * \param hashed_unique Ent_mi_tag 
  * \param ordered_non_unique Meshset_mi_tag 
  * \param ordered_non_unique Ent_Ent_mi_tag
- * \param ordered_non_unique Composite_of_ParentEnt_And_BitsOfRefinedEdges_mi_tag
+ * \param ordered_non_unique Composite_ParentEnt_And_BitsOfRefinedEdges_mi_tag
  */
 typedef multi_index_container<
   ptrWrapperRefMoFEMElement,
@@ -181,7 +182,7 @@ typedef multi_index_container<
     ordered_non_unique<
       tag<EntType_mi_tag>, const_mem_fun<ptrWrapperRefMoFEMElement::interface_type_RefMoFEMEntity,EntityType,&ptrWrapperRefMoFEMElement::get_ent_type> >,
     ordered_non_unique<
-      tag<Composite_of_ParentEnt_And_BitsOfRefinedEdges_mi_tag>,
+      tag<Composite_ParentEnt_And_BitsOfRefinedEdges_mi_tag>,
       composite_key<
 	ptrWrapperRefMoFEMElement,
 	const_mem_fun<ptrWrapperRefMoFEMElement::interface_type_RefMoFEMEntity,EntityHandle,&ptrWrapperRefMoFEMElement::get_parent_ent>,
@@ -502,11 +503,17 @@ typedef multi_index_container<
 	const_mem_fun<NumeredMoFEMFiniteElement::interface_type_MoFEMFiniteElement,boost::string_ref,&NumeredMoFEMFiniteElement::get_name_ref>,
 	const_mem_fun<NumeredMoFEMFiniteElement::interface_type_EntMoFEMFiniteElement,EntityHandle,&NumeredMoFEMFiniteElement::get_ent> > >,
     ordered_non_unique<
-      tag<Composite_mi_tag>,       
+      tag<Composite_Name_And_Part_mi_tag>,       
       composite_key<
 	NumeredMoFEMFiniteElement,
 	const_mem_fun<NumeredMoFEMFiniteElement::interface_type_MoFEMFiniteElement,boost::string_ref,&NumeredMoFEMFiniteElement::get_name_ref>,
-	member<NumeredMoFEMFiniteElement,unsigned int,&NumeredMoFEMFiniteElement::part> > >
+	member<NumeredMoFEMFiniteElement,unsigned int,&NumeredMoFEMFiniteElement::part> > >,
+    ordered_non_unique<
+      tag<Composite_Part_And_Ent_mi_tag>,
+      composite_key<
+	NumeredMoFEMFiniteElement,
+	member<NumeredMoFEMFiniteElement,unsigned int,&NumeredMoFEMFiniteElement::part>,
+	const_mem_fun<NumeredMoFEMFiniteElement::interface_type_EntMoFEMFiniteElement,EntityHandle,&NumeredMoFEMFiniteElement::get_ent> > >
   > > NumeredMoFEMFiniteElement_multiIndex;
 
 /**  

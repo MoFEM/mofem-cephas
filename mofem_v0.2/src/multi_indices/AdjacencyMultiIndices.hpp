@@ -50,7 +50,7 @@ typedef multi_index_container<
   MoFEMEntityEntMoFEMFiniteElementAdjacencyMap,
   indexed_by<
     ordered_unique<
-      tag<Composite_unique_mi_tag>,       
+      tag<Composite_Unique_mi_tag>,       
       composite_key<
 	MoFEMEntityEntMoFEMFiniteElementAdjacencyMap,
 	const_mem_fun<MoFEMEntityEntMoFEMFiniteElementAdjacencyMap,GlobalUId,&MoFEMEntityEntMoFEMFiniteElementAdjacencyMap::get_ent_unique_id>,
