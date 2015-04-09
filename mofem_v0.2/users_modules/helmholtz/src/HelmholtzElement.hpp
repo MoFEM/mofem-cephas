@@ -42,10 +42,10 @@ struct HelmholtzElement {
     int getRule(int order) { return order+1; };
   };
 
-  MyVolumeFE feVolRhs; ///< volume element for Rhs
-  MyVolumeFE& geVolRhs() { return feVolRhs; } 
-  MyVolumeFE feVolLhs; //<  volume element for Lhs
-  MyVolumeFE& getVolLhs() { return feVolLhs; } 
+  ptr_map<string,MyVolumeFE> feVolRhs; ///< volume element for Rhs
+  MyVolumeFE& geVolRhs(const string fe_name) { return feVolRhs[fe_name]; } 
+  ptr_map<string,MyVolumeFE> feVolLhs; //<  volume element for Lhs
+  MyVolumeFE& getVolLhs(const string fe_nane) { return feVolLhs[fe_name]; } 
   
   /// \brief Surface element
   struct MyTriFE: public TriElementForcesAndSurcesCore {
@@ -56,10 +56,10 @@ struct HelmholtzElement {
     int getRule(int order) { return order+1; };
   };
 
-  MyTriFE feSurfRhs; // surface element for LHS 
-  MyTriFE& getSurfRhs() { return feSurfRhs; } 
-  MyTriFE feSurfLhs; // surface element for RHS
-  MyTriFE& getSurfLhs() { return feSurfRhs; } 
+  ptr_map<string,MyTriFE> feSurfRhs; // surface element for LHS 
+  MyTriFE& getSurfRhs(const string fe_name) { return feSurfRhs[fe_name]; } 
+  ptr_map<strin,MyTriFE> feSurfLhs; // surface element for RHS
+  MyTriFE& getSurfLhs(const string fe_name) { return feSurfRhs[fe_name]; } 
 
   /** \brief Volume element data
   * \ingroup mofem_helmholtz_elem
@@ -106,8 +106,6 @@ struct HelmholtzElement {
   FieldInterface &mField;
     HelmholtzElement(
     FieldInterface &m_field):
-    feVolRhs(m_field),feVolLhs(m_field),
-    feSurfRhs(m_field),feSurfLhs(m_field),
     mField(m_field) {}
   
   /** \brief Calculate pressure and gradient of pressure in volume
@@ -657,7 +655,7 @@ struct HelmholtzElement {
     * \param name of mesh nodal positions (if not defined nodal coordinates are used)
     */
   PetscErrorCode addHelmholtzElements(
-    const string problem_name,const string re_field_name,const string im_field_name,
+    const string re_field_name,const string im_field_name,
     const string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
     PetscFunctionBegin;
   
@@ -672,6 +670,7 @@ struct HelmholtzElement {
     ierr = mField.add_finite_element("HELMHOLTZ_IMIM_FE",MF_ZERO); CHKERRQ(ierr ); 
     ierr = mField.modify_finite_element_add_field_row("HELMHOLTZ_IMIM_FE",im_field_name); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_col("HELMHOLTZ_IMIM_FE",im_field_name); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_data("HELMHOLTZ_RERE_FE",im_field_name); CHKERRQ(ierr);
 
     ierr = mField.add_finite_element("HELMHOLTZ_REIM_FE",MF_ZERO); CHKERRQ(ierr ); 
     ierr = mField.modify_finite_element_add_field_row("HELMHOLTZ_REIM_FE",re_field_name); CHKERRQ(ierr);
@@ -690,12 +689,7 @@ struct HelmholtzElement {
       ierr = mField.modify_finite_element_add_field_data("HELMHOLTZ_REIM_FE",mesh_nodals_positions); CHKERRQ(ierr);
       ierr = mField.modify_finite_element_add_field_data("HELMHOLTZ_IMRE_FE",mesh_nodals_positions); CHKERRQ(ierr);
     }
-
-    ierr = mField.modify_problem_add_finite_element(problem_name,"HELMHOLTZ_RERE_FE"); CHKERRQ(ierr);
-    ierr = mField.modify_problem_add_finite_element(problem_name,"HELMHOLTZ_IMIM_FE"); CHKERRQ(ierr);
-    ierr = mField.modify_problem_add_finite_element(problem_name,"HELMHOLTZ_REIM_FE"); CHKERRQ(ierr);
-    ierr = mField.modify_problem_add_finite_element(problem_name,"HELMHOLTZ_IMRE_FE"); CHKERRQ(ierr);
-    
+   
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
         
       if(it->get_Cubit_name().compare(0,13,"MAT_HELMHOLTZ") == 0) {
@@ -741,7 +735,24 @@ struct HelmholtzElement {
     }
   
     PetscFunctionReturn(0);
-  }  
+  } 
+
+  PetscErrorCode setOperators() {
+    PetscFunctionBegin;
+
+    feVolRhs["HELMHOLTZ_RERE_FE"] = new MyVolumeFE(mField);
+    feVolRhs["HELMHOLTZ_IMIM_FE"] = new MyVolumeFE(mField);
+    feVolLhs["HELMHOLTZ_RERE_FE"] = new MyVolumeFE(mField);
+    feVolLhs["HELMHOLTZ_IMIM_FE"] = new MyVolumeFE(mField);
+
+    map<int,VolumeBlock>::iterator mit = volumeData.begin();
+    for(;mit!=volumeData.end();mit++) {
+      
+
+    }
+
+    PetscFunctionReturn(0);
+  } 
   
     
 };

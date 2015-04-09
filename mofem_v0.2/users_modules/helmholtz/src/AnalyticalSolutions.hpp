@@ -26,6 +26,13 @@ struct GenericAnalyticalSolution {
 
   virtual vector<ublas::vector<double> >& operator()(double x, double y, double z) = 0;
 
+  double realValue(double x, double y, double z) {
+    return operator()(x,y,z)[REAL][0];
+  }
+  double imagValue(double x, double y, double z) {
+    return operator()(x,y,z)[IMAG][0];
+  }
+
 };
 
 /// List of analytical solution

@@ -1,6 +1,6 @@
 /* \file best_approximation_incident_wave.cpp
  
-  Calculates best approximation for incident wave problem
+  Calculates best approximation for incident wave problem. 
 
  */
 
@@ -37,8 +37,6 @@
 #include <boost/math/special_functions.hpp>
 #include <complex>
 
-#define HOON
-
 using namespace std;
 using namespace boost::math;
 namespace bio = boost::iostreams;
@@ -70,15 +68,10 @@ PetscErrorCode solve_problem(FieldInterface& m_field,FUNEVAL &fun_evaluator) {
   ierr = m_field.VecCreateGhost("EX1_PROBLEM",COL,&D); CHKERRQ(ierr);
 
   FieldApproximationH1<FUNEVAL> field_approximation(m_field);
-
-  #ifdef HOON
-
   // This increase rule for numerical intergaration. In case of 10 node
   // elements jacobian is varing lineary across element, that way to element
   // rule is added 1.
   field_approximation.addToRule = 1; 
-
-  #endif
 
   ierr = field_approximation.loopMatrixAndVector(
     "EX1_PROBLEM","FE1","reEX",A,vec_F,fun_evaluator); CHKERRQ(ierr);
@@ -159,7 +152,6 @@ int main(int argc, char *argv[]) {
 
   PetscBool is_partitioned = PETSC_FALSE;
   ierr = PetscOptionsGetBool(PETSC_NULL,"-my_is_partitioned",&is_partitioned,&flg); CHKERRQ(ierr);
- 
   if(is_partitioned == PETSC_TRUE) {
     //Read mesh to MOAB
     const char *option;
@@ -191,9 +183,7 @@ int main(int argc, char *argv[]) {
   // define fields
   ierr = m_field.add_field("reEX",H1,1); CHKERRQ(ierr);
   ierr = m_field.add_field("imEX",H1,1); CHKERRQ(ierr);
-  #ifdef HOON
   ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,3,MF_ZERO); CHKERRQ(ierr);
-  #endif
   
   // define finite element
   ierr = m_field.add_finite_element("FE1"); CHKERRQ(ierr);
@@ -203,18 +193,14 @@ int main(int argc, char *argv[]) {
   ierr = m_field.modify_finite_element_add_field_col("FE1","reEX"); CHKERRQ(ierr);
   ierr = m_field.modify_finite_element_add_field_data("FE1","reEX"); CHKERRQ(ierr);
   ierr = m_field.modify_finite_element_add_field_data("FE1","imEX"); CHKERRQ(ierr);
-  #ifdef HOON
   ierr = m_field.modify_finite_element_add_field_data("FE1","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
-  #endif
   
   // meshset consisting all entities in mesh
   EntityHandle root_set = moab.get_root_set(); 
   // add entities to field
   ierr = m_field.add_ents_to_field_by_TETs(root_set,"reEX"); CHKERRQ(ierr);
   ierr = m_field.add_ents_to_field_by_TETs(root_set,"imEX"); CHKERRQ(ierr);
-  #ifdef HOON
   ierr = m_field.add_ents_to_field_by_TETs(root_set,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
-  #endif
   // add entities to finite element
   ierr = m_field.add_ents_to_finite_element_by_TETs(root_set,"FE1"); CHKERRQ(ierr);
   
@@ -234,14 +220,11 @@ int main(int argc, char *argv[]) {
   ierr = m_field.set_field_order(root_set,MBTRI,"imEX",order); CHKERRQ(ierr);
   ierr = m_field.set_field_order(root_set,MBEDGE,"imEX",order); CHKERRQ(ierr);
   ierr = m_field.set_field_order(root_set,MBVERTEX,"imEX",1); CHKERRQ(ierr);
-  #ifdef HOON
-  //if(!m_field.check_field("MESH_NODE_POSITIONS")) {
+
   ierr = m_field.set_field_order(root_set,MBTET,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
   ierr = m_field.set_field_order(root_set,MBTRI,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
   ierr = m_field.set_field_order(root_set,MBEDGE,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
   ierr = m_field.set_field_order(root_set,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
-  //}
-  #endif
 
   // define problem
   ierr = m_field.add_problem("EX1_PROBLEM"); CHKERRQ(ierr);
@@ -252,10 +235,8 @@ int main(int argc, char *argv[]) {
   
   // build field
   ierr = m_field.build_fields(); CHKERRQ(ierr);
-  #ifdef HOON
   Projection10NodeCoordsOnField ent_method_material(m_field,"MESH_NODE_POSITIONS");
   ierr = m_field.loop_dofs("MESH_NODE_POSITIONS",ent_method_material); CHKERRQ(ierr);
-  #endif
   // build finite elemnts
   ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
   // build adjacencies
@@ -348,9 +329,7 @@ int main(int argc, char *argv[]) {
     ierr = post_proc1.addFieldValuesPostProc("reEX"); CHKERRQ(ierr);
     ierr = post_proc1.addFieldValuesPostProc("imEX"); CHKERRQ(ierr);
     ierr = post_proc1.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
-    #ifdef HOON
     ierr = m_field.loop_finite_elements("EX1_PROBLEM","FE1",post_proc1); CHKERRQ(ierr);
-    #endif
     rval = post_proc1.postProcMesh.write_file("analytical_solution_mesh_post_proc.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
   }
   
