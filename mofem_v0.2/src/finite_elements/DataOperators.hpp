@@ -36,6 +36,8 @@ namespace MoFEM {
   */
 struct DataOperator {
 
+  virtual ~DataOperator() {}
+
   /** \brief operator for linear form, usually to calculate values on right hand side
     */
   virtual PetscErrorCode doWork(

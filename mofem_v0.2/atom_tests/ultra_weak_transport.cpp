@@ -365,6 +365,7 @@ int main(int argc, char *argv[]) {
   ierr = VecDestroy(&D); CHKERRQ(ierr);
   ierr = VecDestroy(&D0); CHKERRQ(ierr);
   ierr = VecDestroy(&F); CHKERRQ(ierr);
+  ierr = VecDestroy(&E); CHKERRQ(ierr);
   ierr = KSPDestroy(&solver); CHKERRQ(ierr);
 
   PostPocOnRefinedMesh post_proc(m_field);
