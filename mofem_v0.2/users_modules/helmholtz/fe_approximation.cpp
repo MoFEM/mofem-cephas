@@ -233,7 +233,7 @@ int main(int argc, char *argv[]) {
     ierr = m_field.partition_problem("ACOUSTIC_PROBLEM"); CHKERRQ(ierr);
     ierr = m_field.partition_finite_elements("ACOUSTIC_PROBLEM"); CHKERRQ(ierr);
 
-    ierr = m_field.build_problem("BCREAL_PBCREAL_PROBLEMROBLEM"); CHKERRQ(ierr);
+    ierr = m_field.build_problem("BCREAL_PROBLEM"); CHKERRQ(ierr);
     ierr = m_field.partition_problem("BCREAL_PROBLEM"); CHKERRQ(ierr);
     ierr = m_field.partition_finite_elements("BCREAL_PROBLEM"); CHKERRQ(ierr);
 
@@ -348,7 +348,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.problem_basic_method_preProcess("ACOUSTIC_PROBLEM",analytical_ditihlet_bc_real); CHKERRQ(ierr);
   ierr = m_field.problem_basic_method_preProcess("ACOUSTIC_PROBLEM",analytical_ditihlet_bc_imag); CHKERRQ(ierr);
 
-  ierr = helmholtz_element.setOperators(A,F,"rePRES","reIMAG"); CHKERRQ(ierr);
+  ierr = helmholtz_element.setOperators(A,F,"rePRES","imPRES"); CHKERRQ(ierr);
   ierr = helmholtz_element.calculateA("ACOUSTIC_PROBLEM"); CHKERRQ(ierr);
   ierr = helmholtz_element.calculateF("ACOUSTIC_PROBLEM"); CHKERRQ(ierr);
 
@@ -425,7 +425,7 @@ int main(int argc, char *argv[]) {
 
     ierr = post_proc.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
     ierr = m_field.loop_finite_elements("ACOUSTIC_PROBLEM","HELMHOLTZ_RERE_FE",post_proc); CHKERRQ(ierr);
-    rval = post_proc.postProcMesh.write_file("analytical_solution_mesh_post_proc.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
+    rval = post_proc.postProcMesh.write_file("fe_solution_mesh_post_proc.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
 
   }
   

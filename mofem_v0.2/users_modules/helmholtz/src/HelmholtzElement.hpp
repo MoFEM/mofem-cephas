@@ -392,7 +392,7 @@ struct HelmholtzElement {
 	// it need be to declared. Declaration indicate that on imaginary part,
 	// assembled matrix has non-zero values;
 	ierr = getPorblemRowIndices(imFieldName,row_type,row_side,imRowIndices); CHKERRQ(ierr);
-	ierr = getPorblemColIndices(imFieldName,row_type,row_side,imColIndices); CHKERRQ(ierr);
+	ierr = getPorblemColIndices(imFieldName,col_type,col_side,imColIndices); CHKERRQ(ierr);
 
         ierr = MatSetValues(
           A,  
@@ -707,7 +707,7 @@ struct HelmholtzElement {
     ierr = mField.add_finite_element("HELMHOLTZ_IMIM_FE",MF_ZERO); CHKERRQ(ierr ); 
     ierr = mField.modify_finite_element_add_field_row("HELMHOLTZ_IMIM_FE",im_field_name); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_col("HELMHOLTZ_IMIM_FE",im_field_name); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_data("HELMHOLTZ_RERE_FE",im_field_name); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_data("HELMHOLTZ_IMIM_FE",im_field_name); CHKERRQ(ierr);
 
     ierr = mField.add_finite_element("HELMHOLTZ_REIM_FE",MF_ZERO); CHKERRQ(ierr ); 
     ierr = mField.modify_finite_element_add_field_row("HELMHOLTZ_REIM_FE",re_field_name); CHKERRQ(ierr);
@@ -722,6 +722,7 @@ struct HelmholtzElement {
     if(mField.check_field(mesh_nodals_positions)) {
 
       ierr = mField.modify_finite_element_add_field_data("HELMHOLTZ_RERE_FE",mesh_nodals_positions); CHKERRQ(ierr);
+      ierr = mField.modify_finite_element_add_field_data("HELMHOLTZ_IMIM_FE",mesh_nodals_positions); CHKERRQ(ierr);
       ierr = mField.modify_finite_element_add_field_data("HELMHOLTZ_REIM_FE",mesh_nodals_positions); CHKERRQ(ierr);
 
     }
@@ -807,9 +808,13 @@ struct HelmholtzElement {
     fe_name = "HELMHOLTZ_REIM_FE"; feLhs.insert(fe_name,new MySurfaceFE(mField));
     fe_name = "HELMHOLTZ_REIM_FE"; feRhs.insert(fe_name,new MySurfaceFE(mField));
 
+    if(mField.check_field(mesh_nodals_positions)) {
 
-    feRhs.at("HELMHOLTZ_REIM_FE").get_op_to_do_Rhs().push_back(
-      new OpHoCoordTri(mesh_nodals_positions,commonData.hoCoords));
+      feRhs.at("HELMHOLTZ_REIM_FE").get_op_to_do_Rhs().push_back(
+	new OpHoCoordTri(mesh_nodals_positions,commonData.hoCoords));
+
+    }
+
     feRhs.at("HELMHOLTZ_REIM_FE").get_op_to_do_Rhs().push_back(
       new OpGetValueAtGaussPts(re_field_name,commonData));
     feRhs.at("HELMHOLTZ_REIM_FE").get_op_to_do_Rhs().push_back(
