@@ -77,7 +77,7 @@ struct HelmholtzElement {
     
     map<string,ublas::vector<double> > pressureAtGaussPts; 
     map<string,ublas::matrix<double> > gradPressureAtGaussPts;
-    ublas::matrix<double> hoCoordsTri;
+    ublas::matrix<double> hoCoords;
 
   };
   CommonData commonData;
@@ -420,6 +420,21 @@ struct HelmholtzElement {
   
   };
 
+  struct ZeroFunVal {
+    
+    ublas::vector<double> vAl;    
+
+    ublas::vector<double>& operator()(double x,double y,double z) {
+      vAl.resize(2);
+      vAl[0] = 0;
+      vAl[1] = 0;
+      return vAl;
+    }
+    
+  };
+
+  ZeroFunVal zero_fun_val;
+
   /** \brief Rhs vector for Helmholtz operator
     \ingroup mofem_helmholtz_elem
 
@@ -443,6 +458,7 @@ struct HelmholtzElement {
     \f]
 
   */
+  template<typename FUNVAL>
   struct OpHelmholtzMixBCRhs: public TriElementForcesAndSurcesCore::UserDataOperator {
   
     SurfaceData &dAta;
@@ -452,12 +468,16 @@ struct HelmholtzElement {
     const string rePressure;
     const string imPressure;
 
+    FUNVAL &functionEvaluator;
+
     OpHelmholtzMixBCRhs(
       const string re_field_name,const string im_field_name,
-      Vec _F,SurfaceData &data,CommonData &common_data):
+      Vec _F,SurfaceData &data,CommonData &common_data,
+      FUNVAL &function_evaluator):
       TriElementForcesAndSurcesCore::UserDataOperator(re_field_name),
       dAta(data),commonData(common_data),F(_F),
-      rePressure(re_field_name),imPressure(im_field_name) { }
+      rePressure(re_field_name),imPressure(im_field_name),
+      functionEvaluator(function_evaluator) { }
 
     ublas::vector<double> reNf,imNf;
 
@@ -505,11 +525,23 @@ struct HelmholtzElement {
 	    area = ublas::norm_2(getNormals_at_GaussPt(gg))*0.5;
 	  }
           double val = area*getGaussPts()(2,gg);
+
+	  double x,y,z;
+	  if(commonData.hoCoords.size1() == data.getN().size1()) {
+	    x = commonData.hoCoords(gg,0);
+	    y = commonData.hoCoords(gg,1);
+	    z = commonData.hoCoords(gg,2);
+	  } else {
+	    x = getCoordsAtGaussPts()(gg,0);
+	    y = getCoordsAtGaussPts()(gg,1);
+	    z = getCoordsAtGaussPts()(gg,2);
+	  }
+	  ublas::vector<double>& f = functionEvaluator(x,y,z);
     
 	  ierr = calculateResidualRe(gg); CHKERRQ(ierr);
   
-	  noalias(reNf) += val*reResidual*data.getN(gg);
-	  noalias(imNf) += val*imResidual*data.getN(gg);
+	  noalias(reNf) += val*((reResidual-f[0])*data.getN(gg));
+	  noalias(imNf) += val*((imResidual-f[0])*data.getN(gg));
 
         }
   
@@ -775,6 +807,9 @@ struct HelmholtzElement {
     fe_name = "HELMHOLTZ_REIM_FE"; feLhs.insert(fe_name,new MySurfaceFE(mField));
     fe_name = "HELMHOLTZ_REIM_FE"; feRhs.insert(fe_name,new MySurfaceFE(mField));
 
+
+    feRhs.at("HELMHOLTZ_REIM_FE").get_op_to_do_Rhs().push_back(
+      new OpHoCoordTri(mesh_nodals_positions,commonData.hoCoords));
     feRhs.at("HELMHOLTZ_REIM_FE").get_op_to_do_Rhs().push_back(
       new OpGetValueAtGaussPts(re_field_name,commonData));
     feRhs.at("HELMHOLTZ_REIM_FE").get_op_to_do_Rhs().push_back(
@@ -783,9 +818,11 @@ struct HelmholtzElement {
     map<int,SurfaceData>::iterator miit = surfaceData.begin();
     for(;miit!=surfaceData.end();miit++) {
       feLhs.at("HELMHOLTZ_REIM_FE").get_op_to_do_Lhs().push_back(
-        new OpHelmholtzMixBCLhs(re_field_name,im_field_name,A,miit->second,commonData));
+        new OpHelmholtzMixBCLhs(re_field_name,im_field_name,A,
+	miit->second,commonData));
       feRhs.at("HELMHOLTZ_REIM_FE").get_op_to_do_Rhs().push_back(
-        new OpHelmholtzMixBCRhs(re_field_name,im_field_name,F,miit->second,commonData));
+        new OpHelmholtzMixBCRhs<ZeroFunVal>(re_field_name,im_field_name,F,
+	  miit->second,commonData,zero_fun_val));
     }
 
     PetscFunctionReturn(0);
