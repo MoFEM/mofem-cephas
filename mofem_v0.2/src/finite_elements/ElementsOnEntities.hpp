@@ -247,6 +247,19 @@ struct ForcesAndSurcesCore: public FEMethod {
     PetscFunctionReturn(0);
   }
 
+  boost::ptr_vector<DataOperator> vecUserOpN; 
+  boost::ptr_vector<DataOperator> vecUserOpNN;
+
+  /** \brief Use to push back operator for right hand side
+   * It can be used to calculate nodal forces or other quantities on the mesh.
+   */
+  boost::ptr_vector<DataOperator>& get_op_to_do_Rhs() { return vecUserOpN; }
+
+  /** \brief Use to push back operator for left hand side
+   * It can be used to calculate matrices or other quantities on mesh.
+   */
+  boost::ptr_vector<DataOperator>& get_op_to_do_Lhs() { return vecUserOpNN; }
+
 };
 
 /** \brief Tet finite element  
@@ -255,7 +268,7 @@ struct ForcesAndSurcesCore: public FEMethod {
  * User is implementing own operator at Gauss point level, by own object
  * derived from TetElementForcesAndSourcesCoreL::UserDataOperator.  Arbitrary
  * number of operator added pushing objects to vecUserOpN and
- * vecUserOpSymmNN. 
+ * vecUserOpNN. 
  *
  */
 struct TetElementForcesAndSourcesCore: public ForcesAndSurcesCore {
@@ -401,19 +414,6 @@ struct TetElementForcesAndSourcesCore: public ForcesAndSurcesCore {
     TetElementForcesAndSourcesCore *ptrFE; 
 
   };
-
-  boost::ptr_vector<UserDataOperator> vecUserOpN; 
-  boost::ptr_vector<UserDataOperator> vecUserOpNN;
-
-  /** \brief Use to push back operator for right hand side
-   * It can be used to calculate nodal forces or other quantities on the mesh.
-   */
-  boost::ptr_vector<UserDataOperator>& get_op_to_do_Rhs() { return vecUserOpN; }
-
-  /** \brief Use to push back operator for left hand side
-   * It can be used to calculate matrices or other quantities on mesh.
-   */
-  boost::ptr_vector<UserDataOperator>& get_op_to_do_Lhs() { return vecUserOpNN; }
 
 
   PetscErrorCode preProcess() {
@@ -575,19 +575,6 @@ struct TriElementForcesAndSurcesCore: public ForcesAndSurcesCore {
     TriElementForcesAndSurcesCore *ptrFE; 
   };
 
-  boost::ptr_vector<UserDataOperator> vecUserOpN; 
-  boost::ptr_vector<UserDataOperator> vecUserOpSymmNN;
-
-  /** \brief Use to push back operator for right hand side
-   * It can be used to calculate nodal forces or other quantities on the mesh.
-   */
-  boost::ptr_vector<UserDataOperator>& get_op_to_do_Rhs() { return vecUserOpN; }
-
-  /** \brief Use to push back operator for left hand side
-   * It can be used to calculate matrices or other quantities on mesh.
-   */
-  boost::ptr_vector<UserDataOperator>& get_op_to_do_Lhs() { return vecUserOpSymmNN; }
-
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
     PetscFunctionReturn(0);
@@ -653,19 +640,6 @@ struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
     EdgeElementForcesAndSurcesCore *ptrFE; 
   };
 
-  boost::ptr_vector<UserDataOperator> vecUserOpN; 
-  boost::ptr_vector<UserDataOperator> vecUserOpSymmNN;
-
-  /** \brief Use to push back operator for right hand side
-   * It can be used to calculate nodal forces or other quantities on the mesh.
-   */
-  boost::ptr_vector<UserDataOperator>& get_op_to_do_Rhs() { return vecUserOpN; }
-
-  /** \brief Use to push back operator for left hand side
-   * It can be used to calculate matrices or other quantities on mesh.
-   */
-  boost::ptr_vector<UserDataOperator>& get_op_to_do_Lhs() { return vecUserOpSymmNN; }
-
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
     PetscFunctionReturn(0);
@@ -722,19 +696,6 @@ struct VertexElementForcesAndSourcesCore: public ForcesAndSurcesCore {
     private:
     VertexElementForcesAndSourcesCore *ptrFE; 
   };
-
-  boost::ptr_vector<UserDataOperator> vecUserOpN; 
-  boost::ptr_vector<UserDataOperator> vecUserOpSymmNN;
-
-  /** \brief Use to push back operator for right hand side
-   * It can be used to calculate nodal forces or other quantities on the mesh.
-   */
-  boost::ptr_vector<UserDataOperator>& get_op_to_do_Rhs() { return vecUserOpN; }
-
-  /** \brief Use to push back operator for left hand side
-   * It can be used to calculate matrices or other quantities on mesh.
-   */
-  boost::ptr_vector<UserDataOperator>& get_op_to_do_Lhs() { return vecUserOpSymmNN; }
 
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
@@ -895,19 +856,6 @@ struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
     private:
     FlatPrismElementForcesAndSurcesCore *ptrFE; 
   };
-
-  boost::ptr_vector<UserDataOperator> vecUserOpN; 
-  boost::ptr_vector<UserDataOperator> vecUserOpSymmNN;
-
-  /** \brief Use to push back operator for right hand side
-   * It can be used to calculate nodal forces or other quantities on the mesh.
-   */
-  boost::ptr_vector<UserDataOperator>& get_op_to_do_Rhs() { return vecUserOpN; }
-
-  /** \brief Use to push back operator for left hand side
-   * It can be used to calculate matrices or other quantities on mesh.
-   */
-  boost::ptr_vector<UserDataOperator>& get_op_to_do_Lhs() { return vecUserOpSymmNN; }
 
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
