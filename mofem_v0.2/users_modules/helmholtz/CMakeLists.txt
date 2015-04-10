@@ -1,8 +1,3 @@
-# Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)                                                                                                                   
-# The MoFEM package is copyrighted by Lukasz Kaczmarczyk.•
-# It can be freely used for educational and research purposes•
-# by other institutions. If you use this softwre pleas cite my work.•
-#
 # MoFEM is free software: you can redistribute it and/or modify it under
 # the terms of the GNU Lesser General Public License as published by the
 # Free Software Foundation, either version 3 of the License, or (at your
@@ -17,10 +12,11 @@
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
 file(COPY
-    ${CMAKE_CURRENT_SOURCE_DIR}/README
-    DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
+  ${CMAKE_CURRENT_SOURCE_DIR}/README
+  DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
 
-include_directories("${MoFEM_PROJECT_SOURCE_DIR}/users_modules/helmholtz/src")
+include_directories("${UM_SOURCE_DIR}/helmholtz/src")
+include_directories("${UM_SOURCE_DIR}/analytical_dirichlet_boundary_conditions/src")
 # get access to multi-grid preconditioner (currently with elastic porblem)
 include_directories("${UM_SOURCE_DIR}/elasticity/src")
 
@@ -39,6 +35,20 @@ target_link_libraries(best_approximation
   mofem_cblas
   ${MoFEM_PROJECT_LIBS})
 
+add_executable(fe_approximation 
+  ${UM_SOURCE_DIR}/helmholtz/fe_approximation.cpp
+  ${UM_SOURCE_DIR}/elasticity/src/impl/PCMGSetUpViaApproxOrders.cpp 
+)
+target_link_libraries(fe_approximation
+  mofem_finite_element_library
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_third_party
+  mofem_cblas
+  ${MoFEM_PROJECT_LIBS})
 
 #file(COPY
 #    ${CMAKE_CURRENT_SOURCE_DIR}/meshes/cube_No_reflecting_BC_Problem.cub

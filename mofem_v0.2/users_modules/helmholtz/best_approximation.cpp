@@ -1,4 +1,4 @@
-/* \file best_approximation_incident_wave.cpp
+/* \file best_approximation.cpp
  
   Calculates best approximation for incident wave problem. 
 
@@ -21,7 +21,6 @@
 
 #include <MoFEM.hpp>
 #include <Projection10NodeCoordsOnField.hpp>
-//#include <HelmholtzElement.hpp>
 
 #include <boost/numeric/ublas/vector_proxy.hpp>
 #include <FiledApproximation.hpp>
@@ -50,7 +49,7 @@ using namespace MoFEM;
 static char help[] = "...\n\n";
 
 template <typename FUNEVAL>
-PetscErrorCode solve_problem(FieldInterface& m_field,FUNEVAL &fun_evaluator) {
+PetscErrorCode solve_problem(FieldInterface& m_field,FUNEVAL &fun_evaluator,PetscBool is_partitioned) {
   PetscFunctionBegin;
 
   PetscErrorCode ierr;
@@ -67,7 +66,7 @@ PetscErrorCode solve_problem(FieldInterface& m_field,FUNEVAL &fun_evaluator) {
   ierr = m_field.VecCreateGhost("EX1_PROBLEM",ROW,&vec_F[1]); CHKERRQ(ierr);
   ierr = m_field.VecCreateGhost("EX1_PROBLEM",COL,&D); CHKERRQ(ierr);
 
-  FieldApproximationH1<FUNEVAL> field_approximation(m_field);
+  FieldApproximationH1 field_approximation(m_field);
   // This increase rule for numerical intergaration. In case of 10 node
   // elements jacobian is varing lineary across element, that way to element
   // rule is added 1.
@@ -202,6 +201,13 @@ int main(int argc, char *argv[]) {
   ierr = m_field.modify_finite_element_add_field_data("FE1","reEX"); CHKERRQ(ierr);
   ierr = m_field.modify_finite_element_add_field_data("FE1","imEX"); CHKERRQ(ierr);
   ierr = m_field.modify_finite_element_add_field_data("FE1","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+
+  if(m_field.check_field("rePRES") && m_field.check_field("imPRESS")) {
+
+    ierr = m_field.modify_finite_element_add_field_data("FE1","rePRES"); CHKERRQ(ierr);
+    ierr = m_field.modify_finite_element_add_field_data("FE1","imPRES"); CHKERRQ(ierr);
+
+  }
   
   // meshset consisting all entities in mesh
   EntityHandle root_set = moab.get_root_set(); 
@@ -264,8 +270,8 @@ int main(int argc, char *argv[]) {
   ierr = m_field.partition_ghost_dofs("EX1_PROBLEM"); CHKERRQ(ierr);
   
   // extract data from MAT_HELMHOLTZ block
-  static double aNgularfreq;
-  static double sPeed; //Without static. I got error:use of local variable with automatic storage from containing function
+  double angularfreq;
+  double speed; 
  
   /// this works only for one block 
   int nb_of_blocks = 0; 
@@ -278,8 +284,8 @@ int main(int argc, char *argv[]) {
       SETERRQ1(PETSC_COMM_SELF,MOFEM_INVALID_DATA,
 	"not enough block attributes, expected 2 attributes ( angular freq., speed) , attributes.size() = %d ",attributes.size());
     }
-    aNgularfreq = attributes[0];
-    sPeed = attributes[1];  
+    angularfreq = attributes[0];
+    speed = attributes[1];  
     nb_of_blocks++;
 
   }
@@ -287,7 +293,7 @@ int main(int argc, char *argv[]) {
   if(nb_of_blocks!=1) {
     PetscPrintf(PETSC_COMM_SELF,"Warrning: wave number is set to all blocks baesd on last evaluated block");
   }
-  double wavenumber = aNgularfreq/sPeed;  
+  double wavenumber = angularfreq/speed;  
 
   // set wave number from line command, that overwrite numbre form block set
   ierr = PetscOptionsGetScalar(NULL,"-wave_number",&wavenumber,NULL); CHKERRQ(ierr);
@@ -302,7 +308,7 @@ int main(int argc, char *argv[]) {
 
       {
 	SphereIncidentWave function_evaluator(wavenumber);
-	ierr = solve_problem(m_field,function_evaluator); CHKERRQ(ierr);
+	ierr = solve_problem(m_field,function_evaluator,is_partitioned); CHKERRQ(ierr);
       }
 
       break;
@@ -311,7 +317,7 @@ int main(int argc, char *argv[]) {
 
       {
 	PlaneWave function_evaluator(wavenumber,0.25*M_PI);
-	ierr = solve_problem(m_field,function_evaluator); CHKERRQ(ierr);
+	ierr = solve_problem(m_field,function_evaluator,is_partitioned); CHKERRQ(ierr);
       }
 
       break;
@@ -320,25 +326,39 @@ int main(int argc, char *argv[]) {
 
       {	
 	CylinderIncidentWave function_evaluator(wavenumber);
-	ierr = solve_problem(m_field,function_evaluator); CHKERRQ(ierr);
+	ierr = solve_problem(m_field,function_evaluator,is_partitioned); CHKERRQ(ierr);
       }
 
       break;
 
   }
-  
-  rval = moab.write_file("analytical_solution_mesh.h5m"); CHKERR_PETSC(rval);
+ 
+  if(is_partitioned) {
+    rval = moab.write_file("analytical_solution.h5m"); CHKERR_PETSC(rval);
+  } else {
+    if(!pcomm->rank()) {
+      rval = moab.write_file("analytical_solution.h5m"); CHKERR_PETSC(rval);
+    }
+  }
 
   PetscBool save_postproc_mesh = PETSC_FALSE;
   ierr = PetscOptionsGetBool(NULL,"-save_postproc_mesh",&save_postproc_mesh,NULL); CHKERRQ(ierr);
   if(save_postproc_mesh) {
-    PostPocOnRefinedMesh post_proc1(m_field);
-    ierr = post_proc1.generateRefereneElemenMesh(); CHKERRQ(ierr);
-    ierr = post_proc1.addFieldValuesPostProc("reEX"); CHKERRQ(ierr);
-    ierr = post_proc1.addFieldValuesPostProc("imEX"); CHKERRQ(ierr);
-    ierr = post_proc1.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
-    ierr = m_field.loop_finite_elements("EX1_PROBLEM","FE1",post_proc1); CHKERRQ(ierr);
-    rval = post_proc1.postProcMesh.write_file("analytical_solution_mesh_post_proc.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
+
+    PostPocOnRefinedMesh post_proc(m_field);
+    ierr = post_proc.generateRefereneElemenMesh(); CHKERRQ(ierr);
+    ierr = post_proc.addFieldValuesPostProc("reEX"); CHKERRQ(ierr);
+    ierr = post_proc.addFieldValuesPostProc("imEX"); CHKERRQ(ierr);
+
+    if(m_field.check_field("rePRES") && m_field.check_field("imPRESS")) {
+      ierr = post_proc.addFieldValuesPostProc("rePRES"); CHKERRQ(ierr);
+      ierr = post_proc.addFieldValuesPostProc("imPRES"); CHKERRQ(ierr);
+    }
+
+    ierr = post_proc.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+    ierr = m_field.loop_finite_elements("EX1_PROBLEM","FE1",post_proc); CHKERRQ(ierr);
+    rval = post_proc.postProcMesh.write_file("analytical_solution_mesh_post_proc.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
+
   }
   
   // calulate total time

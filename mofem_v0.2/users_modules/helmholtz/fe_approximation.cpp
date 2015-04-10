@@ -1,4 +1,4 @@
-/* \file best_approximation_incident_wave.cpp
+/* \file fe_approximation.cpp
  
   Calculates finite element (Galerkin) approximation for incident wave problem. 
 
@@ -13,12 +13,13 @@
 
  */
 
-/* This file is part of MoFEM.
+/* 
+ * This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or (at your
  * option) any later version.
- *PhD student Thomas Xuan Meng/Users/xuanmeng/Documents/mofem-cephas/mofem_v0.2/users_modules/helmholtz/README
+ *
  * MoFEM is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
@@ -26,18 +27,18 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. 
- * abs = sqrt(rePRES^2+imPRES^2) */
+ *
+ */
  
-
 #include <MoFEM.hpp>
 
+#include <boost/numeric/ublas/vector_proxy.hpp>
+#include <boost/ptr_container/ptr_map.hpp>
 
 #include <DirichletBC.hpp>
 #include <PotsProcOnRefMesh.hpp>
-#include <HelmholtzElement.hpp>
 
 #include <Projection10NodeCoordsOnField.hpp>
-#include <AnalyticalDirichletHelmholtz.hpp>
 #include <boost/iostreams/tee.hpp>
 #include <boost/iostreams/stream.hpp>
 #include <petsctime.h>
@@ -61,6 +62,10 @@ using namespace MoFEM;
 
 #include <PCMGSetUpViaApproxOrders.hpp>
 #include <AnalyticalSolutions.hpp>
+#include <AnalyticalDirihlet.hpp>
+
+
+#include <HelmholtzElement.hpp>
 
 static char help[] = "...\n\n";
 //argc = argument counts, argv = argument vectors
@@ -164,8 +169,15 @@ int main(int argc, char *argv[]) {
 
   // Finite Elements
 
-  HelmholtzElement helmholtz_elements(m_field); 
-  ierr = helmholtz_elements.addHelmholtzElements("rePRES","imPRES"); CHKERRQ(ierr);
+  HelmholtzElement helmholtz_element(m_field); 
+  ierr = helmholtz_element.addHelmholtzElements("rePRES","imPRES"); CHKERRQ(ierr);
+
+  if(m_field.check_field("reEX") && m_field.check_field("imEX")) {
+
+    ierr = m_field.modify_finite_element_add_field_data("HELMHOLTZ_RERE_FE","reEX"); CHKERRQ(ierr);
+    ierr = m_field.modify_finite_element_add_field_data("HELMHOLTZ_RERE_FE","imEX"); CHKERRQ(ierr);
+
+  }
 
   Range bc_tris;
   for(_IT_CUBITMESHSETS_BY_NAME_FOR_LOOP_(m_field,"ANALYTICAL_BC",it)) {
@@ -191,13 +203,13 @@ int main(int argc, char *argv[]) {
   ierr = m_field.modify_problem_ref_level_add_bit("BCIMAG_PROBLEM",bit_level0); CHKERRQ(ierr);  //analytical Dirichlet
 
   // Add elements to problems
-  ierr = mField.modify_problem_add_finite_element("ACOUSTIC_PROBLEM","HELMHOLTZ_RERE_FE"); CHKERRQ(ierr);
-  ierr = mField.modify_problem_add_finite_element("ACOUSTIC_PROBLEM","HELMHOLTZ_IMIM_FE"); CHKERRQ(ierr);
-  ierr = mField.modify_problem_add_finite_element("ACOUSTIC_PROBLEM","HELMHOLTZ_REIM_FE"); CHKERRQ(ierr);
-  ierr = mField.modify_problem_add_finite_element("ACOUSTIC_PROBLEM","HELMHOLTZ_IMRE_FE"); CHKERRQ(ierr);
+  ierr = m_field.modify_problem_add_finite_element("ACOUSTIC_PROBLEM","HELMHOLTZ_RERE_FE"); CHKERRQ(ierr);
+  ierr = m_field.modify_problem_add_finite_element("ACOUSTIC_PROBLEM","HELMHOLTZ_IMIM_FE"); CHKERRQ(ierr);
+  ierr = m_field.modify_problem_add_finite_element("ACOUSTIC_PROBLEM","HELMHOLTZ_REIM_FE"); CHKERRQ(ierr);
+  ierr = m_field.modify_problem_add_finite_element("ACOUSTIC_PROBLEM","HELMHOLTZ_IMRE_FE"); CHKERRQ(ierr);
 
-  ierr = mField.modify_problem_add_finite_element("BCREAL_PROBLEM","BCREAL_FE"); CHKERRQ(ierr);
-  ierr = mField.modify_problem_add_finite_element("BCIMAG_PROBLEM","BCIMAG_FE"); CHKERRQ(ierr);
+  ierr = m_field.modify_problem_add_finite_element("BCREAL_PROBLEM","BCREAL_FE"); CHKERRQ(ierr);
+  ierr = m_field.modify_problem_add_finite_element("BCIMAG_PROBLEM","BCIMAG_FE"); CHKERRQ(ierr);
 
   // Build problems
 
@@ -260,14 +272,42 @@ int main(int argc, char *argv[]) {
   // set type of analytical solution  
   ierr = PetscOptionsGetEList(NULL,"-analytical_solution_type",analytical_solution_types,2,&choise_value,NULL); CHKERRQ(ierr);
 
+  double angularfreq;
+  double speed; 
+
+  /// this works only for one block 
+  int nb_of_blocks = 0; 
+  for(_IT_CUBITMESHSETS_BY_NAME_FOR_LOOP_(m_field,"MAT_HELMHOLTZ",it)) {
+
+    //  get block attributes
+    vector<double> attributes;
+    ierr = it->get_Cubit_attributes(attributes); CHKERRQ(ierr);
+    if(attributes.size()<2) {
+      SETERRQ1(PETSC_COMM_SELF,MOFEM_INVALID_DATA,
+	"not enough block attributes, expected 2 attributes ( angular freq., speed) , attributes.size() = %d ",attributes.size());
+    }
+    angularfreq = attributes[0];
+    speed = attributes[1];  
+    nb_of_blocks++;
+
+  }
+  
+  if(nb_of_blocks!=1) {
+    PetscPrintf(PETSC_COMM_SELF,"Warning: wave number is set to all blocks based on last evaluated block");
+  }
+  double wavenumber = angularfreq/speed;  
+
+  // set wave number from line command, that overwrite numbre form block set
+  ierr = PetscOptionsGetScalar(NULL,"-wave_number",&wavenumber,NULL); CHKERRQ(ierr);
+  
   switch((AnalyticalSolutionTypes)choise_value) {
 
     case SPHERE_INCIDENT_WAVE:
 
       {
 	SphereIncidentWave function_evaluator(wavenumber);
-	ierr = analytical_bc_real.setApproxOps(m_field,"rePRES",function_evaluator.realValue); CHKERRQ(ierr); 
-	ierr = analytical_bc_imag.setApproxOps(m_field,"imPRES",function_evaluator.imagValue); CHKERRQ(ierr);
+	ierr = analytical_bc_real.setApproxOps(m_field,"rePRES",function_evaluator,GenericAnalyticalSolution::REAL); CHKERRQ(ierr); 
+	ierr = analytical_bc_imag.setApproxOps(m_field,"imPRES",function_evaluator,GenericAnalyticalSolution::IMAG); CHKERRQ(ierr);
       }
 
       break;
@@ -276,8 +316,8 @@ int main(int argc, char *argv[]) {
 
       {
 	PlaneWave function_evaluator(wavenumber,0.25*M_PI);
-	ierr = analytical_bc_real.setApproxOps(m_field,"rePRES",function_evaluator.realValue); CHKERRQ(ierr); 
-	ierr = analytical_bc_imag.setApproxOps(m_field,"imPRES",function_evaluator.imagValue); CHKERRQ(ierr);
+	ierr = analytical_bc_real.setApproxOps(m_field,"rePRES",function_evaluator,GenericAnalyticalSolution::REAL); CHKERRQ(ierr); 
+	ierr = analytical_bc_imag.setApproxOps(m_field,"imPRES",function_evaluator,GenericAnalyticalSolution::IMAG); CHKERRQ(ierr);
       }
 
       break;
@@ -286,8 +326,8 @@ int main(int argc, char *argv[]) {
 
       {	
 	CylinderIncidentWave function_evaluator(wavenumber);
-	ierr = analytical_bc_real.setApproxOps(m_field,"rePRES",function_evaluator.realValue); CHKERRQ(ierr); 
-	ierr = analytical_bc_imag.setApproxOps(m_field,"imPRES",function_evaluator.imagValue); CHKERRQ(ierr);
+	ierr = analytical_bc_real.setApproxOps(m_field,"rePRES",function_evaluator,GenericAnalyticalSolution::REAL); CHKERRQ(ierr); 
+	ierr = analytical_bc_imag.setApproxOps(m_field,"imPRES",function_evaluator,GenericAnalyticalSolution::IMAG); CHKERRQ(ierr);
       }
 
       break;
@@ -305,13 +345,12 @@ int main(int argc, char *argv[]) {
   ierr = analytical_bc_imag.destroyProblem(); CHKERRQ(ierr);
 
   // Assemble problem
-
   ierr = m_field.problem_basic_method_preProcess("ACOUSTIC_PROBLEM",analytical_ditihlet_bc_real); CHKERRQ(ierr);
   ierr = m_field.problem_basic_method_preProcess("ACOUSTIC_PROBLEM",analytical_ditihlet_bc_imag); CHKERRQ(ierr);
 
-  ierr = hemholtz_elementa.setOperators(A,F,"rePRES","reIMAG"); CHKERRQ(ierr);
-  ierr = hemholtz.calulateA("ACOUSTIC_PROBLEM"); CHKERRQ(ierr);
-  ierr = hemholtz.calulateF("ACOUSTIC_PROBLEM"); CHKERRQ(ierr);
+  ierr = helmholtz_element.setOperators(A,F,"rePRES","reIMAG"); CHKERRQ(ierr);
+  ierr = helmholtz_element.calculateA("ACOUSTIC_PROBLEM"); CHKERRQ(ierr);
+  ierr = helmholtz_element.calculateF("ACOUSTIC_PROBLEM"); CHKERRQ(ierr);
 
   ierr = m_field.problem_basic_method_postProcess("ACOUSTIC_PROBLEM",analytical_ditihlet_bc_real); CHKERRQ(ierr);
   ierr = m_field.problem_basic_method_postProcess("ACOUSTIC_PROBLEM",analytical_ditihlet_bc_imag); CHKERRQ(ierr);
@@ -356,328 +395,43 @@ int main(int argc, char *argv[]) {
 
   }
 
-
   // Destroy the KSP solvers
   ierr = MatDestroy(&A); CHKERRQ(ierr);
   ierr = VecDestroy(&F); CHKERRQ(ierr);
   ierr = VecDestroy(&T); CHKERRQ(ierr);
   ierr = KSPDestroy(&solver); CHKERRQ(ierr);
 
-
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  
-  ierr = helmholtz_elements.addHelmholtzElements("ACOUSTIC_PROBLEM","rePRES","imPRES"); CHKERRQ(ierr);
-  ierr = helmholtz_elements.addHelmholtzFluxElement("ACOUSTIC_PROBLEM","rePRES","imPRES"); CHKERRQ(ierr);
-  if(useImpedance) {
-    ierr = helmholtz_elements.addHelmholtzImpedanceElement("ACOUSTIC_PROBLEM","rePRES","imPRES"); CHKERRQ(ierr);
-  }
-  
-  
-  //Set up the analytical Dirichlet BC
-  Range bc_tris;
-  for(_IT_CUBITMESHSETS_BY_NAME_FOR_LOOP_(m_field,"ANALYTICAL_BC",it)) {
-   rval = moab.get_entities_by_type(it->get_meshset(),MBTRI,bc_tris,true); CHKERR_PETSC(rval);
-  }
-  
-  AnalyticalDirihletBC analytical_bc1(m_field,bc_tris);
-  AnalyticalDirihletBC analytical_bc2(m_field,bc_tris);
-  ierr = analytical_bc1.initializeProblem(m_field,"BC1_PROBLEM","BC1_FE","rePRES"); CHKERRQ(ierr);
-  ierr = analytical_bc2.initializeProblem(m_field,"BC2_PROBLEM","BC2_FE","imPRES"); CHKERRQ(ierr);
-  //End of Dirichlet set up
-  
-  /*** add exact solution data in finite element */
-  if(m_field.check_field("reEX") && m_field.check_field("imEX")) {
-	  ierr = m_field.modify_finite_element_add_field_data("HELMHOLTZ_FE","reEX"); CHKERRQ(ierr);
-	  ierr = m_field.modify_finite_element_add_field_data("HELMHOLTZ_FE","imEX"); CHKERRQ(ierr);
-  }
-
-    
-  //bool useScalar = true;
-  //ierr = helmholtz_elements.setHelmholtzFiniteElementRhs_FOperators("rePRES","rePRES",F,useScalar); CHKERRQ(ierr); //The analytical F source vector
-  ierr = helmholtz_elements.setHelmholtzFiniteElementRhsOperators("rePRES","imPRES",F,useImpedance); CHKERRQ(ierr); //the Rhs of Dirichlet BC
-  ierr = helmholtz_elements.setHelmholtzFiniteElementLhsOperators("rePRES","imPRES",(A)); CHKERRQ(ierr);//Stiffness Matrix
-  //ierr = helmholtz_elements.setHelmholtzFluxFiniteElementRhsOperators("rePRES","rePRES",F); CHKERRQ(ierr);  //real Neumann BC
-  //ierr = helmholtz_elements.setHelmholtzFluxFiniteElementRhsOperators("imPRES","imPRES",F); CHKERRQ(ierr);    //Imag Neumann BC
-  ierr = helmholtz_elements.setHelmholtzIncidentWaveFiniteElementRhsOperators("rePRES","imPRES",F); CHKERRQ(ierr); // Incident wave flux.
-  if(useImpedance) {
-	//The boundary Impedance BC.
-	ierr = helmholtz_elements.setHelmholtzImpedanceFiniteElementLhsOperators("rePRES","imPRES",(A)); CHKERRQ(ierr);
-  }
-
-  
-  ierr = VecZeroEntries(T); CHKERRQ(ierr);
-  ierr = VecGhostUpdateBegin(T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecZeroEntries(F); CHKERRQ(ierr);
-  ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = MatZeroEntries(A); CHKERRQ(ierr);
-  
-  ////analytical dirichlet bc
-  AnalyticalDirihletBC::DirichletBC analytical_ditihlet_bc1(m_field,"rePRES",A,T,F);
-  AnalyticalDirihletBC::DirichletBC analytical_ditihlet_bc2(m_field,"imPRES",A,T,F);
-  
-  ////solve for analytical dirichlet bc dofs
-  ierr = analytical_bc1.setProblem(m_field,"BC1_PROBLEM"); CHKERRQ(ierr);
-  ierr = analytical_bc2.setProblem(m_field,"BC2_PROBLEM"); CHKERRQ(ierr);
-  
-  static double aNgularfreq;
-  static double sPeed; //Without static. got error:use of local variable with automatic storage from containing function
-
-  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it))
-  {
-	  cout << endl << *it << endl;
-	  
-
-	  if(it->get_Cubit_name().compare(0,13,"MAT_HELMHOLTZ") == 0) {
-		  
-		  //get block attributes
-		  vector<double> attributes;
-		  ierr = it->get_Cubit_attributes(attributes); CHKERRQ(ierr);
-		  if(attributes.size()<2) {
-			  SETERRQ1(PETSC_COMM_SELF,1,"not enough block attributes to deffine fluid pressure element, attributes.size() = %d ",attributes.size());
-		  }
-		  
-		  aNgularfreq = attributes[0];
-		  sPeed = attributes[1];
-
-	  }
-  }
-  
-  ////Extract the data output to .txt file.
-  //std::string filename("scattered_sphere_outputs.txt" );
-  //static ofstream ofs( filename.c_str() ); //put the data from cpu into file
-  //if( !ofs ){
-  //error1( "Error opening file" );}
-  //ofs.precision( 18 );
-  //cout.precision( 18 );
-
-  /* this function compute the scattered field of helmholtz operator */
-  struct AnaliticalFunction {
-	  static double fUN(double x,double y,double z,bool use_real) {
-		  
-		  
-		  const double pi = atan( 1.0 ) * 4.0;
-		  double R = sqrt(pow(x,2.0)+pow(y,2.0)+pow(z,2.0)); //radius
-		  double theta = atan2(y,x)+2*pi; //the arctan of radians (y/x)
-		  
-		  const double wAvenumber = aNgularfreq/sPeed;
-		  
-		  const double k = wAvenumber;  //Wave number
-		  const double a = 0.5;         //radius of the sphere,wait to modify by user
-		  const double const1 = k * a;
-		  double const2 = k * R;	  
-		  const complex< double > i( 0.0, 1.0 );
-		  
-		  // magnitude of incident wave
-		  const double phi_incident_mag = 1.0;
-		  
-		  const double tol = 1.0e-10;
-		  double max = 0.0;
-		  double min = 999999.0;
-		  
-		  complex< double > result = 0.0;
-		  complex< double > prev_result;
-		  
-		  double error = 100.0;
-		  unsigned int n = 0; //initialized the infinite series loop
-		  
-		  while( error > tol )  //finding the acoustic potential in one single point.
-		  {
-			  double jn_der = n / const1 * sph_bessel( n, const1 ) - sph_bessel( n + 1, const1 );  //The derivative of bessel function
-
-			  
-			  complex< double > hn_der = n / const1 * sph_hankel_1( n, const1 ) - sph_hankel_1( n + 1, const1 );
-			  //complex< double > hn_der = 0.5 * ( sph_hankel_1( n - 1, const1 ) -
-			  //( sph_hankel_1( n, const1 ) + const1 * sph_hankel_1( n + 1, const1 ) ) / const1 );
-			  double Pn = legendre_p( n, cos( theta ) );
-
-			  complex< double >hn = sph_hankel_1( n, const2 );  //S Hankel first kind function
-			  
-			  prev_result = result;
-			  result -= pow( i, n ) * ( 2.0 * n + 1.0 ) * jn_der / hn_der * Pn * hn;
-			  error = abs( abs( result ) - abs( prev_result ) );
-			  ++n;
-		  }
-          
-		  //const complex< double > inc_field = exp( i * k * R * cos( theta ) );  //incident wave
-		  //const complex< double > total_field = inc_field + result;
-		  
-		  //ofs << theta << "\t" << abs( result ) << "\t" << abs( inc_field ) << "\t" << abs( total_field ) << "\t" << R << endl; //write the file
-		  
-		  if(use_real) {
-			  return std::real(result);
-		  } else {
-			  return std::imag(result);
-		  }
-		  
-
-	  }
-
-  };
-  
-
-  
-  ierr = analytical_bc1.setApproxOps(m_field,"rePRES",AnaliticalFunction::fUN,true); CHKERRQ(ierr); //Triangles
-  ierr = analytical_bc2.setApproxOps(m_field,"imPRES",AnaliticalFunction::fUN,false); CHKERRQ(ierr);
-  
-  ierr = analytical_bc1.solveProblem(m_field,"BC1_PROBLEM","BC1_FE",analytical_ditihlet_bc1); CHKERRQ(ierr);
-  ierr = analytical_bc2.solveProblem(m_field,"BC2_PROBLEM","BC2_FE",analytical_ditihlet_bc2); CHKERRQ(ierr);  
-
-  
-  ierr = analytical_bc1.destroyProblem(); CHKERRQ(ierr);
-  ierr = analytical_bc2.destroyProblem(); CHKERRQ(ierr);
-  
-  //preproc
-  //Preprocess the analytical Dirichlet BC
-  ierr = m_field.problem_basic_method_preProcess("ACOUSTIC_PROBLEM",analytical_ditihlet_bc1); CHKERRQ(ierr);
-  ierr = m_field.problem_basic_method_preProcess("ACOUSTIC_PROBLEM",analytical_ditihlet_bc2); CHKERRQ(ierr);
-  
-  //std::string wait;
-  //ierr = MatView(A,PETSC_VIEWER_DRAW_WORLD); CHKERRQ(ierr);
-  //std::cin >> wait;
- 
-  ierr = m_field.set_global_ghost_vector("ACOUSTIC_PROBLEM",ROW,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-	
-  ierr = m_field.loop_finite_elements("ACOUSTIC_PROBLEM","HELMHOLTZ_FE",helmholtz_elements.getLoopFeRhs()); CHKERRQ(ierr);
-  ierr = m_field.loop_finite_elements("ACOUSTIC_PROBLEM","HELMHOLTZ_FE",helmholtz_elements.getLoopFeLhs()); CHKERRQ(ierr);
-  //ierr = m_field.loop_finite_elements("ACOUSTIC_PROBLEM","HELMHOLTZ_FLUX_FE",helmholtz_elements.getLoopFeFlux()); CHKERRQ(ierr); //scalar flux
-  ierr = m_field.loop_finite_elements("ACOUSTIC_PROBLEM","HELMHOLTZ_FLUX_FE",helmholtz_elements.getLoopfeIncidentWave()); CHKERRQ(ierr); //Incident wave flux
-
-
-  if(useImpedance) {
-  ierr = m_field.loop_finite_elements("ACOUSTIC_PROBLEM","HELMHOLTZ_IMPEDANCE_FE",helmholtz_elements.getLoopFeImpedanceLhs()); CHKERRQ(ierr);
-  }
-  /*above terms related to operators in HelmholtzElement.hpp */
-  
-
-  //postproc
-  //Postprocess the Analytical Dirichlet BC
-  
-  ierr = m_field.problem_basic_method_postProcess("ACOUSTIC_PROBLEM",analytical_ditihlet_bc1); CHKERRQ(ierr);
-  ierr = m_field.problem_basic_method_postProcess("ACOUSTIC_PROBLEM",analytical_ditihlet_bc2); CHKERRQ(ierr);
-
-  ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-  ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
-  ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
-  ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-  ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-  ierr = VecScale(F,-1); CHKERRQ(ierr);
-
-  //Solver
-  KSP solver;
-  ierr = KSPCreate(PETSC_COMM_WORLD,&solver); CHKERRQ(ierr);
-  ierr = KSPSetOperators(solver,A,A); CHKERRQ(ierr);
-  ierr = KSPSetFromOptions(solver); CHKERRQ(ierr);
-  ierr = KSPSetUp(solver); CHKERRQ(ierr);
-
-  ierr = KSPSolve(solver,F,T); CHKERRQ(ierr);
-  ierr = VecGhostUpdateBegin(T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-
-  ierr = m_field.problem_basic_method_preProcess("ACOUSTIC_PROBLEM",analytical_ditihlet_bc1); CHKERRQ(ierr);
-  ierr = m_field.problem_basic_method_preProcess("ACOUSTIC_PROBLEM",analytical_ditihlet_bc2); CHKERRQ(ierr);
-  
-  //Save data on mesh
-  ierr = m_field.set_global_ghost_vector("ACOUSTIC_PROBLEM",ROW,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);  
-  
-  ////Wait to putput the data in format
-  //PetscViewer viewer;
-  //ierr = PetscViewerASCIIOpen(PETSC_COMM_WORLD,"Acoustic_Impining_Sphere.txt",&viewer); CHKERRQ(ierr);
-  //VecView(T,viewer);
-  //ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
-  
-  
-  
-  //if(pcomm->rank()==0) {
-  rval = moab.write_file("impinging_finite_element.h5m"); CHKERR_PETSC(rval);
-  //}
-  
-  //destroy the KSP solvers
-  ierr = MatDestroy(&A); CHKERRQ(ierr);
-  ierr = VecDestroy(&F); CHKERRQ(ierr);
-  ierr = VecDestroy(&T); CHKERRQ(ierr);
-  ierr = KSPDestroy(&solver); CHKERRQ(ierr);
-  
-  
-  PostPocOnRefinedMesh post_proc1(m_field);
-  
-  ierr = post_proc1.generateRefereneElemenMesh(); CHKERRQ(ierr);
-  ierr = post_proc1.addFieldValuesPostProc("rePRES"); CHKERRQ(ierr);
-  ierr = post_proc1.addFieldValuesPostProc("imPRES"); CHKERRQ(ierr);
-  
-  if(m_field.check_field("reEX") && m_field.check_field("imEX")) {
-	  
-	  ierr = post_proc1.addFieldValuesPostProc("reEX"); CHKERRQ(ierr);
-	  ierr = post_proc1.addFieldValuesPostProc("imEX"); CHKERRQ(ierr);
-	  
-	  ierr = post_proc1.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
-	  ierr = m_field.loop_finite_elements("ACOUSTIC_PROBLEM","HELMHOLTZ_FE",post_proc1); CHKERRQ(ierr);
-	  
-	  rval = post_proc1.postProcMesh.write_file("four_fields_finite_element.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
-	  
-	  ////output the results from Docker
-	  //char command1[] = "mbconvert ./four_fields_finite_element.h5m ./four_fields_finite_element.vtk && cp ./four_fields_finite_element.vtk ../../../../../mnt/home/Desktop/U_pan/helmholtz_results/";
-	  //int todo1 = system( command1 );
-	  
+  if(is_partitioned) {
+    rval = moab.write_file("fe_solution.h5m"); CHKERR_PETSC(rval);
   } else {
+    if(!pcomm->rank()) {
+      rval = moab.write_file("fe_solution.h5m"); CHKERR_PETSC(rval);
+    }
+  }
+ 
+  PetscBool save_postproc_mesh = PETSC_TRUE;
+  ierr = PetscOptionsGetBool(NULL,"-save_postproc_mesh",&save_postproc_mesh,NULL); CHKERRQ(ierr);
+  if(save_postproc_mesh) {
 
-	  ierr = post_proc1.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
-	  ierr = m_field.loop_finite_elements("ACOUSTIC_PROBLEM","HELMHOLTZ_FE",post_proc1); CHKERRQ(ierr);
-	  rval = post_proc1.postProcMesh.write_file("acoustic_finite_element_out.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
-  
+    PostPocOnRefinedMesh post_proc(m_field);
+    ierr = post_proc.generateRefereneElemenMesh(); CHKERRQ(ierr);
+    ierr = post_proc.addFieldValuesPostProc("rePRES"); CHKERRQ(ierr);
+    ierr = post_proc.addFieldValuesPostProc("imPRES"); CHKERRQ(ierr);
+
+    if(m_field.check_field("reEX") && m_field.check_field("imEX")) {
+      ierr = post_proc.addFieldValuesPostProc("reEX"); CHKERRQ(ierr);
+      ierr = post_proc.addFieldValuesPostProc("imEX"); CHKERRQ(ierr);
+    }
+
+    ierr = post_proc.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+    ierr = m_field.loop_finite_elements("ACOUSTIC_PROBLEM","HELMHOLTZ_RERE_FE",post_proc); CHKERRQ(ierr);
+    rval = post_proc.postProcMesh.write_file("analytical_solution_mesh_post_proc.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
+
   }
   
-  /** get the time interval **/
   ierr = PetscTime(&v2);CHKERRQ(ierr);
   ierr = PetscGetCPUTime(&t2);CHKERRQ(ierr);
   PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Total Rank %d Time = %f S CPU Time = %f S \n",pcomm->rank(),v2-v1,t2-t1);
-
-  
-  
-  
-  
-  //wait to calculate the the magnitude of acoustic potential-abs(phi) using real and imag components.
-  //ierr = VecView(T,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-  //std::cin >> wait;
-
-  ////Calculate the L^2 Norm manually below
-  //ierr = VecPow(C,2.0); CHKERRQ(ierr); 
-  //ierr = VecAbs(C); CHKERRQ(ierr);
-  //Vec H;
-  //ierr = VecDuplicate(T,&H); CHKERRQ(ierr);
-  //ierr = VecCopy(T,H); CHKERRQ(ierr);
-  ////ierr = VecPow(H,2.0); CHKERRQ(ierr); 
-  //ierr = VecAbs(H); CHKERRQ(ierr);
-  ////std::cout << "\n \n \n \n \n \n \n " << std::endl;
-  ////ierr = VecView(H,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-  ////std::cin >> wait;
-  //ierr = VecAXPBY(C,-1.0,1.0,H); CHKERRQ(ierr);
-  //PetscReal l2norm,pointwisenorm,sum;
-  //PetscScalar pow = 2;
-  ////Compute the Global L^2 norm error and point wise error
-  //Vec G;
-  //ierr = VecDuplicate(C,&G); CHKERRQ(ierr);
-  //ierr = VecCopy(C,G); CHKERRQ(ierr);
-  //ierr = VecPow(G,pow); CHKERRQ(ierr);
-  //ierr = VecSum(G,&sum); CHKERRQ(ierr);
-  //l2norm = sqrt(sum);
-  //ierr = VecDestroy(&G); CHKERRQ(ierr);
-  
-  ////ierr = VecNorm(C,NORM_FROBENIUS,&l2norm);;
-  ////ierr = VecNorm(C,NORM_MAX,&pointwisenorm);
-  //ierr = VecMax(C,NULL,&pointwisenorm);
-  ////std::cout << "\n The Global L2 Norm of error for this problem is : --\n" << l2norm << std::endl;
-  //std::cout << "\n The Global Pointwise Norm of error for this problem is : --\n" << pointwisenorm << std::endl;
-  //std::cin >> wait;
-  ////ierr = VecSqrtAbs(C); CHKERRQ(ierr);
-  //ierr = VecView(C,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-  //std::cin >> wait;
-  //std::cout << "\n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n " << std::endl;
-  																//give the right value of Im(Scalar Solution)
-  
    
   ierr = PetscFinalize(); CHKERRQ(ierr);
 

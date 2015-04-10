@@ -29,9 +29,6 @@ using namespace MoFEM;
   */
 struct AnalyticalDirihletBC {
 
-  //ubals::vector<double> analyticalFunction(
-    //double x,double y,double z) = 0;
-
   /** \brief finite element to appeximate analytical solution on surface
     */
   struct ApproxField {
@@ -224,10 +221,12 @@ struct AnalyticalDirihletBC {
 
       ublas::matrix<double> &hoCoords;
       FUNEVAL &functionEvaluator;
+      int fieldNumber;
 
-      OpRhs(const string field_name,ublas::matrix<double> &ho_coords,FUNEVAL &function_evaluator): 
+      OpRhs(const string field_name,ublas::matrix<double> &ho_coords,FUNEVAL &function_evaluator,int field_number): 
 	TriElementForcesAndSurcesCore::UserDataOperator(field_name),
-	hoCoords(ho_coords),functionEvaluator(function_evaluator)  {}
+	hoCoords(ho_coords),functionEvaluator(function_evaluator),
+	fieldNumber(field_number)  {}
 
       ublas::vector<FieldData> NTf;
       ublas::vector<DofIdx> iNdices;
@@ -266,7 +265,8 @@ struct AnalyticalDirihletBC {
 	      z = getCoordsAtGaussPts()(gg,2);
 	    }
 	    
-	    vector<double>& a = functionEvaluator(x,y,z);
+	    ublas::vector<double>& a = functionEvaluator(x,y,z)[fieldNumber];
+
 	    if(a.size()!=rank) {
 	      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
 	    }
@@ -299,12 +299,12 @@ struct AnalyticalDirihletBC {
   
   };
 
-  struct DirihletBC: public DisplacementBCFEMethodPreAndPostProc {
+  struct DirichletBC : public DisplacementBCFEMethodPreAndPostProc {
 
-    DirihletBC(
+    DirichletBC(
       FieldInterface& m_field,const string &field,Mat A,Vec X,Vec F): 
       DisplacementBCFEMethodPreAndPostProc(m_field,field,A,X,F),tRis_ptr(NULL) {}
-    DirihletBC(
+    DirichletBC(
       FieldInterface& m_field,const string &field): 
       DisplacementBCFEMethodPreAndPostProc(m_field,field),tRis_ptr(NULL) {}
 
@@ -355,13 +355,13 @@ struct AnalyticalDirihletBC {
   PetscErrorCode setApproxOps(
     FieldInterface &m_field,
     string field_name,
-    FUNEVAL &funtcion_evaluator,
+    FUNEVAL &funtcion_evaluator,int field_number = 0,
     string nodals_positions = "MESH_NODE_POSITIONS") {
     PetscFunctionBegin;
     if(m_field.check_field(nodals_positions)) {
 	approxField.getLoopFeApprox().get_op_to_do_Rhs().push_back(new ApproxField::OpHoCoord(nodals_positions,approxField.hoCoords));
     }
-    approxField.getLoopFeApprox().get_op_to_do_Rhs().push_back(new ApproxField::OpRhs<FUNEVAL>(field_name,approxField.hoCoords,funtcion_evaluator));
+    approxField.getLoopFeApprox().get_op_to_do_Rhs().push_back(new ApproxField::OpRhs<FUNEVAL>(field_name,approxField.hoCoords,funtcion_evaluator,field_number));
     approxField.getLoopFeApprox().get_op_to_do_Lhs().push_back(new ApproxField::OpLhs(field_name,approxField.hoCoords));
     PetscFunctionReturn(0);
   }
@@ -403,7 +403,7 @@ struct AnalyticalDirihletBC {
   }
   
   PetscErrorCode solveProblem(
-    FieldInterface &m_field,string problem,string fe,DirihletBC &bc) {
+    FieldInterface &m_field,string problem,string fe,DirichletBC &bc) {
     PetscFunctionBegin;
     PetscErrorCode ierr;
 

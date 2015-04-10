@@ -45,11 +45,12 @@ static char help[] = "...\n\n";
 
 struct AnaliticalFunction {
 
-  vector<double> val;
+  vector<ublas::vector<double> > val;
 
-  vector<double>& operator()(double x,double y,double z) {
+  vector<ublas::vector<double> >& operator()(double x,double y,double z) {
     val.resize(1);
-    val[0] = pow(x,1);
+    val[0].resize(1);
+    (val[0])[0] = pow(x,1);
     return val;
   }
 };
@@ -184,14 +185,14 @@ int main(int argc, char *argv[]) {
   ierr = MatZeroEntries(A); CHKERRQ(ierr);
 
   //analytical dirihlet bc
-  AnalyticalDirihletBC::DirihletBC analytical_ditihlet_bc(m_field,"TEMP",A,T,F);
+  AnalyticalDirihletBC::DirichletBC analytical_ditihlet_bc(m_field,"TEMP",A,T,F);
 
   //solve for ditihlet bc dofs
   ierr = analytical_bc.setProblem(m_field,"BC_PROBLEM"); CHKERRQ(ierr);
   
   AnaliticalFunction testing_function;
 
-  ierr = analytical_bc.setApproxOps(m_field,"TEMP",testing_function); CHKERRQ(ierr);
+  ierr = analytical_bc.setApproxOps(m_field,"TEMP",testing_function,0); CHKERRQ(ierr);
   ierr = analytical_bc.solveProblem(m_field,"BC_PROBLEM","BC_FE",analytical_ditihlet_bc); CHKERRQ(ierr);
 
   ierr = analytical_bc.destroyProblem(); CHKERRQ(ierr);
@@ -244,69 +245,13 @@ int main(int argc, char *argv[]) {
   
   std::cout << "\n The Global Pointwise Norm of error for this problem is : --\n" << pointwisenorm << std::endl;
   
-  
   PetscViewer viewer;
   PetscViewerASCIIOpen(PETSC_COMM_WORLD,"thermal_with_analytical_bc.txt",&viewer);
   ierr = VecChop(T,1e-4); CHKERRQ(ierr);
   ierr = VecView(T,viewer); CHKERRQ(ierr);
   ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
   
-  
-  ////Open mesh_file_name.txt for writing
-  //ofstream myfile;
-  //myfile.open("field_TEMP_test.txt");
-  
-  //for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(m_field,"TEMP",dof_ptr))
-  //{
-  //    if(dof_ptr->get_ent_type()!=MBVERTEX) continue;
-  //    
-  //    if(dof_ptr->get_dof_rank()==0)
-  //    {
-  //        //Round and truncate to 3 decimal places
-  //        double fval = dof_ptr->get_FieldData();
-  //        cout << boost::format("%.3lf") % fval << "  ";
-  //        myfile << boost::format("%.3lf") % fval << "  ";
-  //    }
-  //    //if(dof_ptr->get_dof_rank()==1)
-  //    //{
-  //    //    //Round and truncate to 3 decimal places
-  //    //    double fval = dof_ptr->get_FieldData();
-  //    //    cout << boost::format("%.3lf") % roundn(fval) << "  ";
-  //    //    myfile << boost::format("%.3lf") % roundn(fval) << "  ";
-  //    //}
-  //    //if(dof_ptr->get_dof_rank()==2)
-  //    //{
-  //    //    //Round and truncate to 3 decimal places
-  //    //    double fval = dof_ptr->get_FieldData();
-  //    //    cout << boost::format("%.3lf") % roundn(fval) << endl;
-  //    //    myfile << boost::format("%.3lf") % roundn(fval) << endl;
-  //    //}
-  //    
-  //}
-  //myfile.close();
-  
-  
-
   if(debug) {
-
-
-    /*ProjectionFieldOn10NodeTet ent_method_on_10nodeTet(m_field,"TEMP",true,false,"TEMP");
-    ierr = m_field.loop_dofs("TEMP",ent_method_on_10nodeTet); CHKERRQ(ierr);
-    ent_method_on_10nodeTet.set_nodes = false;
-    ierr = m_field.loop_dofs("TEMP",ent_method_on_10nodeTet); CHKERRQ(ierr);
-    if(pcomm->rank()==0) {
-      EntityHandle out_meshset;
-      rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
-      ierr = m_field.get_problem_finite_elements_entities("TEST_PROBLEM","THERMAL_FE",out_meshset); CHKERRQ(ierr);
-      rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
-      rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
-
-    }
-	//Copy the output .vtk file to desired location.
-	char command[] = "cp out.vtk ../../../../../../mnt/home/Documents/mofem-cephas/mofem_v0.2/users_modules/analytical_dirihlet_boundary_conditions/";
-	
-	int status = system( command );*/
-
     
     PostPocOnRefinedMesh post_proc(m_field);
     ierr = post_proc.generateRefereneElemenMesh(); CHKERRQ(ierr);
@@ -318,13 +263,6 @@ int main(int argc, char *argv[]) {
 
   }
   
-
-  //Matrix View
-  //MatView(A,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
-  //ierr = VecView(T,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-  ///std::string wait;
-  //std::cin >> wait;
-
   ierr = MatDestroy(&A); CHKERRQ(ierr);
   ierr = VecDestroy(&F); CHKERRQ(ierr);
   ierr = VecDestroy(&T); CHKERRQ(ierr);
