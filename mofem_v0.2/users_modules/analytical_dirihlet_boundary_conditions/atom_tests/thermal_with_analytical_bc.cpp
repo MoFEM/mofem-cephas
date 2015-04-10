@@ -19,6 +19,8 @@
 #include <ThermalElement.hpp>
 
 #include <Projection10NodeCoordsOnField.hpp>
+
+#include <boost/numeric/ublas/vector_proxy.hpp>
 #include <AnalyticalDirihlet.hpp>
 
 #include <boost/iostreams/tee.hpp>
@@ -42,8 +44,13 @@ using namespace MoFEM;
 static char help[] = "...\n\n";
 
 struct AnaliticalFunction {
-  double operator()(double x,double y,double z) {
-    return pow(x,1);
+
+  vector<double> val;
+
+  vector<double>& operator()(double x,double y,double z) {
+    val.resize(1);
+    val[0] = pow(x,1);
+    return val;
   }
 };
 
