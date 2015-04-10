@@ -90,7 +90,7 @@ struct FieldApproximationH1 {
       int nb_col_dofs = col_data.getIndices().size()/rank;
 
       NN.resize(nb_row_dofs,nb_col_dofs);
-      bzero(&*NN.data().begin(),nb_row_dofs*nb_col_dofs*sizeof(FieldData));
+      NN.clear();
 	  
       unsigned int nb_gauss_pts = row_data.getN().size1();
       for(unsigned int gg = 0;gg<nb_gauss_pts;gg++) {
