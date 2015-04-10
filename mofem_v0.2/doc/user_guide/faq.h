@@ -81,7 +81,7 @@ where option -V sets verbose version and all test output is printed on screen
 and -D Experimental tels ctest to submit results to Experimental build on CDash
 MoFEM server.
 
-\subsection How to instal MoFem on Ubuntu?
+\subsection ubuntu_install How to instal MoFem on Ubuntu?
 
 Pleas follow this instruction, this is full install on Ubuntu from scratch. 
 
