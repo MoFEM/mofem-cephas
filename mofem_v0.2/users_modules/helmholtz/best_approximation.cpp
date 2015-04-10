@@ -83,7 +83,7 @@ PetscErrorCode solve_problem(FieldInterface& m_field,FUNEVAL &fun_evaluator) {
   ierr = KSPSetOperators(solver,A,A); CHKERRQ(ierr);
   ierr = KSPSetFromOptions(solver); CHKERRQ(ierr);
   {
-    //seta up mult-grid preconditioner
+    // SetUp mult-grid pre-conditioner
     PetscBool same = PETSC_FALSE;
     PC pc;
     ierr = KSPGetPC(solver,&pc); CHKERRQ(ierr);
@@ -104,14 +104,22 @@ PetscErrorCode solve_problem(FieldInterface& m_field,FUNEVAL &fun_evaluator) {
     // save data on mesh
     if(ss == GenericAnalyticalSolution::REAL) {
 
-      ierr = m_field.set_global_ghost_vector("EX1_PROBLEM",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      if(is_partitioned) {
+	ierr = m_field.set_global_ghost_vector("EX1_PROBLEM",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      } else {
+	ierr = m_field.set_local_ghost_vector("EX1_PROBLEM",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      }
 
       VecZeroEntries(D);
       ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
       ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
     } else {
-      ierr = m_field.set_other_global_ghost_vector("EX1_PROBLEM","reEX","imEX",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      if(is_partitioned) {
+	ierr = m_field.set_other_local_ghost_vector("EX1_PROBLEM","reEX","imEX",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      } else {
+	ierr = m_field.set_other_global_ghost_vector("EX1_PROBLEM","reEX","imEX",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      }
     }
 
   }
@@ -285,7 +293,7 @@ int main(int argc, char *argv[]) {
   ierr = PetscOptionsGetScalar(NULL,"-wave_number",&wavenumber,NULL); CHKERRQ(ierr);
 
   PetscInt choise_value = 0;
-  // set tyoe of analytical solution  
+  // set type of analytical solution  
   ierr = PetscOptionsGetEList(NULL,"-analytical_solution_type",analytical_solution_types,2,&choise_value,NULL); CHKERRQ(ierr);
 
   switch((AnalyticalSolutionTypes)choise_value) {

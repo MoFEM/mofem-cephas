@@ -59,6 +59,9 @@ using bio::stream;
 
 using namespace MoFEM;
 
+#include <PCMGSetUpViaApproxOrders.hpp>
+#include <AnalyticalSolutions.hpp>
+
 static char help[] = "...\n\n";
 //argc = argument counts, argv = argument vectors
 int main(int argc, char *argv[]) {
@@ -86,7 +89,7 @@ int main(int argc, char *argv[]) {
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
   PetscBool is_partitioned = PETSC_FALSE;
   ierr = PetscOptionsGetBool(PETSC_NULL,"-my_is_partitioned",&is_partitioned,&flg); CHKERRQ(ierr);
-  if(is_partitioned == PETSC_TRUE) {
+  if(is_partitioned) {
     //Read mesh to MOAB
     const char *option;
     option = "PARALLEL=BCAST_DELETE;PARALLEL_RESOLVE_SHARED_ENTS;PARTITION=PARALLEL_PARTITION;";
@@ -198,7 +201,7 @@ int main(int argc, char *argv[]) {
 
   // Build problems
 
- // build porblems
+  // build porblems
   if(is_partitioned) {
     // if mesh is partitioned
 
@@ -232,11 +235,137 @@ int main(int argc, char *argv[]) {
   ierr = m_field.partition_ghost_dofs("BCREAL_PROBLEM"); CHKERRQ(ierr);
   ierr = m_field.partition_ghost_dofs("BCIMAG_PROBLEM"); CHKERRQ(ierr);
 
-  // Set finite elements operators
+  // Get problem matrices and vectors 
 
-  
+  Vec F;  //Right hand side vector
+  ierr = m_field.VecCreateGhost("ACOUSTIC_PROBLEM",ROW,&F); CHKERRQ(ierr);
+  Vec T; //Solution vector
+  ierr = VecDuplicate(F,&T); CHKERRQ(ierr);
+  Mat A; //Left hand side matrix
+  ierr = m_field.MatCreateMPIAIJWithArrays("ACOUSTIC_PROBLEM",&A); CHKERRQ(ierr);
+
+  ierr = VecZeroEntries(T); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecZeroEntries(F); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = MatZeroEntries(A); CHKERRQ(ierr);
+
+  // Solve for analytical Dirichlet bc dofs
+  ierr = analytical_bc_real.setProblem(m_field,"BCREAL_PROBLEM"); CHKERRQ(ierr);
+  ierr = analytical_bc_imag.setProblem(m_field,"BCIMAG_PROBLEM"); CHKERRQ(ierr);
+
+  PetscInt choise_value = 0;
+  // set type of analytical solution  
+  ierr = PetscOptionsGetEList(NULL,"-analytical_solution_type",analytical_solution_types,2,&choise_value,NULL); CHKERRQ(ierr);
+
+  switch((AnalyticalSolutionTypes)choise_value) {
+
+    case SPHERE_INCIDENT_WAVE:
+
+      {
+	SphereIncidentWave function_evaluator(wavenumber);
+	ierr = analytical_bc_real.setApproxOps(m_field,"rePRES",function_evaluator.realValue); CHKERRQ(ierr); 
+	ierr = analytical_bc_imag.setApproxOps(m_field,"imPRES",function_evaluator.imagValue); CHKERRQ(ierr);
+      }
+
+      break;
+
+    case PLANE_WAVE:
+
+      {
+	PlaneWave function_evaluator(wavenumber,0.25*M_PI);
+	ierr = analytical_bc_real.setApproxOps(m_field,"rePRES",function_evaluator.realValue); CHKERRQ(ierr); 
+	ierr = analytical_bc_imag.setApproxOps(m_field,"imPRES",function_evaluator.imagValue); CHKERRQ(ierr);
+      }
+
+      break;
+
+    case CYLINDER_INCIDENT_WAVE:
+
+      {	
+	CylinderIncidentWave function_evaluator(wavenumber);
+	ierr = analytical_bc_real.setApproxOps(m_field,"rePRES",function_evaluator.realValue); CHKERRQ(ierr); 
+	ierr = analytical_bc_imag.setApproxOps(m_field,"imPRES",function_evaluator.imagValue); CHKERRQ(ierr);
+      }
+
+      break;
+
+  }
+
+  // Analytical boundary conditions
+  AnalyticalDirihletBC::DirichletBC analytical_ditihlet_bc_real(m_field,"rePRES",A,T,F);
+  AnalyticalDirihletBC::DirichletBC analytical_ditihlet_bc_imag(m_field,"imPRES",A,T,F);
+
+  ierr = analytical_bc_real.solveProblem(m_field,"BCREAL_PROBLEM","BCREAL_FE",analytical_ditihlet_bc_real); CHKERRQ(ierr);
+  ierr = analytical_bc_imag.solveProblem(m_field,"BCIMAG_PROBLEM","BCIMAG_FE",analytical_ditihlet_bc_imag); CHKERRQ(ierr);  
+
+  ierr = analytical_bc_real.destroyProblem(); CHKERRQ(ierr);
+  ierr = analytical_bc_imag.destroyProblem(); CHKERRQ(ierr);
+
+  // Assemble problem
+
+  ierr = m_field.problem_basic_method_preProcess("ACOUSTIC_PROBLEM",analytical_ditihlet_bc_real); CHKERRQ(ierr);
+  ierr = m_field.problem_basic_method_preProcess("ACOUSTIC_PROBLEM",analytical_ditihlet_bc_imag); CHKERRQ(ierr);
+
+  ierr = hemholtz_elementa.setOperators(A,F,"rePRES","reIMAG"); CHKERRQ(ierr);
+  ierr = hemholtz.calulateA("ACOUSTIC_PROBLEM"); CHKERRQ(ierr);
+  ierr = hemholtz.calulateF("ACOUSTIC_PROBLEM"); CHKERRQ(ierr);
+
+  ierr = m_field.problem_basic_method_postProcess("ACOUSTIC_PROBLEM",analytical_ditihlet_bc_real); CHKERRQ(ierr);
+  ierr = m_field.problem_basic_method_postProcess("ACOUSTIC_PROBLEM",analytical_ditihlet_bc_imag); CHKERRQ(ierr);
+
+  ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
+  ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
+  ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+  ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+  ierr = VecScale(F,-1); CHKERRQ(ierr);
+
+  // Solve problem
+
+  KSP solver;
+  ierr = KSPCreate(PETSC_COMM_WORLD,&solver); CHKERRQ(ierr);
+  ierr = KSPSetOperators(solver,A,A); CHKERRQ(ierr);
+  ierr = KSPSetFromOptions(solver); CHKERRQ(ierr);
+  {
+    // SetUp mult-grid pre-conditioner
+    PetscBool same = PETSC_FALSE;
+    PC pc;
+    ierr = KSPGetPC(solver,&pc); CHKERRQ(ierr);
+    PetscObjectTypeCompare((PetscObject)pc,PCMG,&same);
+    if (same) {
+      ierr = PCMGSetUpViaApproxOrders(pc,&m_field,"ACOUSTIC_PROBLEM"); CHKERRQ(ierr);
+    }
+  }
+  ierr = KSPSetUp(solver); CHKERRQ(ierr);
+
+  ierr = KSPSolve(solver,F,T); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+
+  //Save data on mesh
+  if(is_partitioned) {
+
+    // no need for global communication
+    ierr = m_field.set_local_ghost_vector("ACOUSTIC_PROBLEM",ROW,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);  
+
+  } else {
+
+    ierr = m_field.set_global_ghost_vector("ACOUSTIC_PROBLEM",ROW,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);  
+
+  }
 
 
+  // Destroy the KSP solvers
+  ierr = MatDestroy(&A); CHKERRQ(ierr);
+  ierr = VecDestroy(&F); CHKERRQ(ierr);
+  ierr = VecDestroy(&T); CHKERRQ(ierr);
+  ierr = KSPDestroy(&solver); CHKERRQ(ierr);
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   
   ierr = helmholtz_elements.addHelmholtzElements("ACOUSTIC_PROBLEM","rePRES","imPRES"); CHKERRQ(ierr);
   ierr = helmholtz_elements.addHelmholtzFluxElement("ACOUSTIC_PROBLEM","rePRES","imPRES"); CHKERRQ(ierr);
@@ -263,44 +392,6 @@ int main(int argc, char *argv[]) {
 	  ierr = m_field.modify_finite_element_add_field_data("HELMHOLTZ_FE","imEX"); CHKERRQ(ierr);
   }
 
- 
-  /****/
-  //build database
-  //build field
-  ierr = m_field.build_fields(); CHKERRQ(ierr);
-  //build finite elemnts
-  ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
-  //build adjacencies
-  ierr = m_field.build_adjacencies(bit_level0); CHKERRQ(ierr);
-  //build problem
-  ierr = m_field.build_problems(); CHKERRQ(ierr);
-
-  Projection10NodeCoordsOnField ent_method_material(m_field,"MESH_NODE_POSITIONS");
-  ierr = m_field.loop_dofs("MESH_NODE_POSITIONS",ent_method_material); CHKERRQ(ierr);
-
-  /****/
-  //mesh partitioning 
-  //partition
-  ierr = m_field.partition_problem("ACOUSTIC_PROBLEM"); CHKERRQ(ierr);
-  ierr = m_field.partition_finite_elements("ACOUSTIC_PROBLEM"); CHKERRQ(ierr);
-  //what are ghost nodes, see Petsc Manual
-  ierr = m_field.partition_ghost_dofs("ACOUSTIC_PROBLEM"); CHKERRQ(ierr);
-  
-  ////mesh partitinoning for analytical Dirichlet
-  ierr = m_field.simple_partition_problem("BC1_PROBLEM"); CHKERRQ(ierr);
-  ierr = m_field.partition_finite_elements("BC1_PROBLEM"); CHKERRQ(ierr);
-  ierr = m_field.simple_partition_problem("BC2_PROBLEM"); CHKERRQ(ierr);
-  ierr = m_field.partition_finite_elements("BC2_PROBLEM"); CHKERRQ(ierr);
-  ////what are ghost nodes, see Petsc Manual
-  ierr = m_field.partition_ghost_dofs("BC1_PROBLEM"); CHKERRQ(ierr);
-  ierr = m_field.partition_ghost_dofs("BC2_PROBLEM"); CHKERRQ(ierr);
-
-  Vec F;  //Right hand side vector
-  ierr = m_field.VecCreateGhost("ACOUSTIC_PROBLEM",ROW,&F); CHKERRQ(ierr);
-  Vec T; //Solution vector
-  ierr = VecDuplicate(F,&T); CHKERRQ(ierr);
-  Mat A; //Left hand side matrix
-  ierr = m_field.MatCreateMPIAIJWithArrays("ACOUSTIC_PROBLEM",&A); CHKERRQ(ierr);
     
   //bool useScalar = true;
   //ierr = helmholtz_elements.setHelmholtzFiniteElementRhs_FOperators("rePRES","rePRES",F,useScalar); CHKERRQ(ierr); //The analytical F source vector
