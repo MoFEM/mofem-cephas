@@ -41,7 +41,8 @@ struct AnalyticalDirihletBC {
       int getRule(int order) { return order; };
     };
 
-    ApproxField(FieldInterface &m_field): feApprox(m_field) {};
+    ApproxField(FieldInterface &m_field): feApprox(m_field) {}
+    virtual ~ApproxField() {}
 
     MyTriFE feApprox; 
     MyTriFE& getLoopFeApprox() { return feApprox; } 
@@ -167,14 +168,15 @@ struct AnalyticalDirihletBC {
 
     /** \brief Rhs operaetar used to build matrix
       */
+    template<typename FUNEVAL>
     struct OpRhs:public TriElementForcesAndSurcesCore::UserDataOperator {
 
       ublas::matrix<double> &hoCoords;
-      double (*fUN)(double x,double y,double z);
-      OpRhs(const string field_name,ublas::matrix<double> &ho_coords,
-	double (*fun)(double x,double y,double z)): 
+      FUNEVAL &functionEvaluator;
+
+      OpRhs(const string field_name,ublas::matrix<double> &ho_coords,FUNEVAL &function_evaluator): 
 	TriElementForcesAndSurcesCore::UserDataOperator(field_name),
-	hoCoords(ho_coords),fUN(fun)  {}
+	hoCoords(ho_coords),functionEvaluator(function_evaluator)  {}
 
       ublas::vector<FieldData> NTf;
       PetscErrorCode doWork(
@@ -210,7 +212,7 @@ struct AnalyticalDirihletBC {
 	      z = getCoordsAtGaussPts()(gg,2);
 	    }
 	    
-	    double a = fUN(x,y,z);
+	    double a = functionEvaluator(x,y,z);
 	    noalias(NTf) = data.getN(gg,nb_row)*a*val;
 	    ierr = VecSetValues(getFEMethod()->snes_f,data.getIndices().size(),
 	      &data.getIndices()[0],&*NTf.data().begin(),ADD_VALUES); CHKERRQ(ierr);
@@ -283,16 +285,17 @@ struct AnalyticalDirihletBC {
   Range tRis;
   AnalyticalDirihletBC(FieldInterface& m_field,Range &bc_tris): approxField(m_field),tRis(bc_tris) {};
 
+  template<typename FUNEVAL>
   PetscErrorCode setApproxOps(
     FieldInterface &m_field,
     string field_name,
-    double (*fun)(double x,double y,double z),
+    FUNEVAL &funtcion_evaluator,
     string nodals_positions = "MESH_NODE_POSITIONS") {
     PetscFunctionBegin;
     if(m_field.check_field(nodals_positions)) {
 	approxField.getLoopFeApprox().get_op_to_do_Rhs().push_back(new ApproxField::OpHoCoord(nodals_positions,approxField.hoCoords));
     }
-    approxField.getLoopFeApprox().get_op_to_do_Rhs().push_back(new ApproxField::OpRhs(field_name,approxField.hoCoords,fun));
+    approxField.getLoopFeApprox().get_op_to_do_Rhs().push_back(new ApproxField::OpRhs<FUNEVAL>(field_name,approxField.hoCoords,funtcion_evaluator));
     approxField.getLoopFeApprox().get_op_to_do_Lhs().push_back(new ApproxField::OpLhs(field_name,approxField.hoCoords));
     PetscFunctionReturn(0);
   }

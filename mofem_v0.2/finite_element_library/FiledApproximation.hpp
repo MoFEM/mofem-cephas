@@ -1,12 +1,7 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
-* --------------------------------------------------------------
-*
-* DESCRIPTION: FIXME
-*
-* This is not exactly procedure for linear elatic dynamics, since jacobian is
-* evaluated at every time step and snes procedure is involved. However it is
-* implemented like that, to test methodology for general nonlinear problem.
-*
+/* \file FieldApproximation.hpp 
+
+\brief Element to calculate approximation on volume elements
+
 */
 
 /* This file is part of MoFEM.
@@ -33,7 +28,6 @@ namespace MoFEM {
 /** \brief Finite element for approximating analytical filed on the mesh
   * \ingroup mofem_forces_and_sources
   */
-template<typename FUNEVAL>
 struct FieldApproximationH1 {
 
   FieldInterface &mField;
@@ -57,6 +51,7 @@ struct FieldApproximationH1 {
     *
     * Function work on thetrahedrals
     */
+  template<typename FUNEVAL>
   struct OpApprox: public TetElementForcesAndSourcesCore::UserDataOperator {
 
     Mat A;
@@ -267,6 +262,7 @@ struct FieldApproximationH1 {
 
   /** \brief assemble matrix and vector 
     */
+  template<typename FUNEVAL>
   PetscErrorCode loopMatrixAndVector(
     const string &problem_name,const string &fe_name,const string &field_name,
     Mat A,vector<Vec> &vec_F,FUNEVAL &function_evaluator) {
@@ -274,10 +270,10 @@ struct FieldApproximationH1 {
     PetscErrorCode ierr;
 	
     //add operator to calulate F vector
-    fe.get_op_to_do_Rhs().push_back(new OpApprox(field_name,A,vec_F,function_evaluator));
+    fe.get_op_to_do_Rhs().push_back(new OpApprox<FUNEVAL>(field_name,A,vec_F,function_evaluator));
     //add operator to calulate A matrix
     if(A) {
-      fe.get_op_to_do_Lhs().push_back(new OpApprox(field_name,A,vec_F,function_evaluator));
+      fe.get_op_to_do_Lhs().push_back(new OpApprox<FUNEVAL>(field_name,A,vec_F,function_evaluator));
     }
 	
     if(A) {

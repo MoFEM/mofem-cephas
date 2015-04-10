@@ -41,6 +41,12 @@ using namespace MoFEM;
 
 static char help[] = "...\n\n";
 
+struct AnaliticalFunction {
+  double operator()(double x,double y,double z) {
+    return pow(x,1);
+  }
+};
+
 int main(int argc, char *argv[]) {
 
   ErrorCode rval;
@@ -176,13 +182,9 @@ int main(int argc, char *argv[]) {
   //solve for ditihlet bc dofs
   ierr = analytical_bc.setProblem(m_field,"BC_PROBLEM"); CHKERRQ(ierr);
   
-  struct AnaliticalFunction {
-    static double fUN(double x,double y,double z) {
-      return pow(x,1);
-    }
-  };
+  AnaliticalFunction testing_function;
 
-  ierr = analytical_bc.setApproxOps(m_field,"TEMP",AnaliticalFunction::fUN); CHKERRQ(ierr);
+  ierr = analytical_bc.setApproxOps(m_field,"TEMP",testing_function); CHKERRQ(ierr);
   ierr = analytical_bc.solveProblem(m_field,"BC_PROBLEM","BC_FE",analytical_ditihlet_bc); CHKERRQ(ierr);
 
   ierr = analytical_bc.destroyProblem(); CHKERRQ(ierr);
