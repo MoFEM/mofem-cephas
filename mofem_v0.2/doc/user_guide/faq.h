@@ -81,6 +81,47 @@ where option -V sets verbose version and all test output is printed on screen
 and -D Experimental tels ctest to submit results to Experimental build on CDash
 MoFEM server.
 
+\subsection ubuntu_install How to instal MoFem on Ubuntu?
+
+Pleas follow this instruction, this is full install on Ubuntu from scratch. 
+
+\code
+# Install basic libraries
+apt-get update && apt-get install -y openssh-server wget valgrind git g++ gdb m4 automake libsigsegv2 build-essential libibverbs-dev libblas-dev gfortran libatlas-dev libatlas-base-dev libhdf5-openmpi-dev libjpeg-dev graphviz doxygen cmake gnuplot pstack ca-certificates python libadolc-dev bison flex libx11-dev libboost-all-dev xauth xterm
+
+# Build petsc 
+export PETSC_VERSION=3.5.3
+cd /opt && git clone https://bitbucket.org/petsc/petsc.git && cd /opt/petsc && git checkout tags/v$PETSC_VERSION
+cd /opt/petsc && ./configure --with-mpi=1 --with-debugging=0 --download-superlu_dist=1 --download-metis=1 --download-parmetis=1 --download-hypre=1 --download-mumps=1 --download-scalapack=1 --download-zoltan=1 --download-blacs=1 --download-moab=1 --download-ptscotch=1 --with-hdf5=1 --with-hdf5-dir=/usr --download-netcdf=1 --with-shared-libraries=1 && make PETSC_DIR=/opt/petsc PETSC_ARCH=arch-linux2-c-opt all
+
+# Install TetGen (for crack propagation) 
+cd /opt && wget https://bitbucket.org/likask/mofem-joseph/downloads/tetgen1.5.0.tgz && tar -xvvzf tetgen1.5.0.tgz && cd tetgen1.5.0 && cmake . && make && cp libtet.a lib/ && make clean && rm /opt/tetgen1.5.0.tgz
+
+# This SLEPC (Eigen Solver) 
+cd /opt && git clone https://bitbucket.org/slepc/slepc && cd /opt/slepc && git checkout tags/v$PETSC_VERSION
+cd /opt/slepc && PETSC_DIR=/opt/petsc PETSC_ARCH=arch-linux2-c-opt ./configure && make SLEPC_DIR=$PWD PETSC_DIR=/opt/petsc PETSC_ARCH=arch-linux2-c-opt
+
+# Cloning mofem repository
+cd $SOURCE_DIRECTORY
+git clone https://bitbucket.org/likask/mofem-cephas.git
+
+# Build libary
+cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=yes -DPETSC_DIR=/opt/petsc -DPETSC_ARCH=arch-linux2-c-opt -DMOAB_DIR=/opt/petsc/arch-linux2-c-opt/ -DADOL-C_DIR=/usr -DTETGEN_DIR=/opt/tetgen1.5.0 -DSLEPC_DIR=/opt/slepc/  -DCMAKE_INSTALL_PREFIX=$DIRECTORY_TO_INSTAL_USER_MODULES $SOURCE_DIRECTORY/mofem-cephas/mofem_v0.2/
+make -j 4 && make install
+
+# Run this to check if it is working
+ctest -D Experimental
+
+# Build user modules
+cd $DIRECTORY_TO_INSTAL_USER_MODULES
+cmake  -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=yes users_modules/
+make -j 4
+
+# Run this to check if it is working
+ctest -D Experimental
+
+\endcode
+
 
 */
 

@@ -346,11 +346,15 @@ PetscErrorCode ForcesAndSurcesCore::getProblemNodesIndices(const string &field_n
     dit = dofs.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().lower_bound(boost::make_tuple(field_name,ent,0));
     hi_dit = dofs.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().upper_bound(boost::make_tuple(field_name,ent,10000));  /// very large number
 
-    if(!nn) {
-      nodes_indices.resize(dit->get_max_rank()*distance(siit,hi_siit));
-    }
-    for(;dit!=hi_dit;dit++) {
-      nodes_indices[siit->side_number*dit->get_max_rank()+dit->get_dof_rank()] = dit->get_petsc_gloabl_dof_idx();
+    if(dit!=hi_dit) {
+
+      if(!nn) {
+	nodes_indices.resize(dit->get_max_rank()*distance(siit,hi_siit));
+      }
+      for(;dit!=hi_dit;dit++) {
+	nodes_indices[siit->side_number*dit->get_max_rank()+dit->get_dof_rank()] = dit->get_petsc_gloabl_dof_idx();
+      }
+
     }
 
   }
@@ -1848,8 +1852,8 @@ PetscErrorCode TriElementForcesAndSurcesCore::operator()() {
   }
 
   for(
-    boost::ptr_vector<UserDataOperator>::iterator oit = vecUserOpSymmNN.begin();
-    oit != vecUserOpSymmNN.end(); oit++) {
+    boost::ptr_vector<UserDataOperator>::iterator oit = vecUserOpNN.begin();
+    oit != vecUserOpNN.end(); oit++) {
 
     oit->setPtrFE(this);
     BitFieldId row_id = mField.get_field_structure(oit->row_field_name)->get_id();
@@ -2054,8 +2058,8 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
   }
 
   for(
-    boost::ptr_vector<UserDataOperator>::iterator oit = vecUserOpSymmNN.begin();
-    oit != vecUserOpSymmNN.end(); oit++) {
+    boost::ptr_vector<UserDataOperator>::iterator oit = vecUserOpNN.begin();
+    oit != vecUserOpNN.end(); oit++) {
 
     oit->setPtrFE(this);
     BitFieldId row_id = mField.get_field_structure(oit->row_field_name)->get_id();
@@ -2139,8 +2143,8 @@ PetscErrorCode VertexElementForcesAndSourcesCore::operator()() {
   }
 
   for(
-    boost::ptr_vector<UserDataOperator>::iterator oit = vecUserOpSymmNN.begin();
-    oit != vecUserOpSymmNN.end(); oit++) {
+    boost::ptr_vector<UserDataOperator>::iterator oit = vecUserOpNN.begin();
+    oit != vecUserOpNN.end(); oit++) {
 
     oit->setPtrFE(this);
     BitFieldId row_id = mField.get_field_structure(oit->row_field_name)->get_id();
@@ -2349,8 +2353,8 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
   }
 
   for(
-    boost::ptr_vector<UserDataOperator>::iterator oit = vecUserOpSymmNN.begin();
-    oit != vecUserOpSymmNN.end(); oit++) {
+    boost::ptr_vector<UserDataOperator>::iterator oit = vecUserOpNN.begin();
+    oit != vecUserOpNN.end(); oit++) {
 
     oit->setPtrFE(this);
     BitFieldId row_id = mField.get_field_structure(oit->row_field_name)->get_id();

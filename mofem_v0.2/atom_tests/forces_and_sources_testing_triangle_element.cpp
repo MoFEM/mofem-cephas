@@ -196,7 +196,7 @@ int main(int argc, char *argv[]) {
       PetscErrorCode ierr;
       ublas::vector<int> row_indices,col_indices;
       ierr = getPorblemRowIndices("FIELD1",row_type,row_side,row_indices); CHKERRQ(ierr);
-      ierr = getPorblemColIndices("FIELD2",col_type,col_side,col_indices); CHKERRQ(ierr);
+      ierr = getPorblemColIndices("FIELD1",col_type,col_side,col_indices); CHKERRQ(ierr);
 
       for(unsigned int rr = 0;rr<row_indices.size();rr++) {
 	if(row_indices[rr] != row_data.getIndices()[rr]) {

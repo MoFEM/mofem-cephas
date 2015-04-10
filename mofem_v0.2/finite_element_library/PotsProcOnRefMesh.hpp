@@ -42,7 +42,7 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
 
   }
 
-  ~PostPocOnRefinedMesh() {
+  virtual ~PostPocOnRefinedMesh() {
     ParallelComm* pcomm_post_proc_mesh = ParallelComm::get_pcomm(&postProcMesh,MYPCOMM_INDEX);
     if(pcomm_post_proc_mesh != NULL) {
       delete pcomm_post_proc_mesh;
@@ -537,6 +537,10 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
     ErrorCode rval;
+    ParallelComm* pcomm_post_proc_mesh = ParallelComm::get_pcomm(&postProcMesh,MYPCOMM_INDEX);
+    if(pcomm_post_proc_mesh != NULL) {
+      delete pcomm_post_proc_mesh;
+    }
     rval = postProcMesh.delete_mesh(); CHKERR_PETSC(rval);
     PetscFunctionReturn(0);
   }
