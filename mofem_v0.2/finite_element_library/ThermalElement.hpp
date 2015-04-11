@@ -308,7 +308,7 @@ struct ThermalElement {
 
         int nb_row_dofs = data.getIndices().size();
         Nf.resize(nb_row_dofs);
-		Nf.clear();
+	Nf.clear();
         //cerr << data.getIndices() << endl;
         //cerr << data.getDiffN() << endl;
 
@@ -328,34 +328,11 @@ struct ThermalElement {
           //cblas_dgemv(CblasRowMajor,CblasNoTrans,nb_row_dofs,3,val,
           //&data.getDiffN()(gg,0),3,&commonData.gradAtGaussPts(gg,0),1,
           //1.,&Nf[0],1);
-			
 
-	//ublas
-	
-	//std::string wait;
-	//std::cout << "\n OpGetTetTemperatureAtGaussPts = " << OpGetTetTemperatureAtGaussPts << std::endl;
-	//std::cout << "\n 
-	//std::cout << "n data.getN().size1() = \n" << data.getN().size1() << std::endl;
-	//std::cout << "\n commonData.temperatureAtGaussPts[gg] = \n" << commonData.temperatureAtGaussPts << std::endl;
-	//std::cout << "\n data.getN(gg) = \n" << data.getN(gg) <<  std::endl;
-	//std::cout << "\n commonData.getGradAtGaussPts = \n"  << commonData.getGradAtGaussPts(gg) <<  std::endl;
-	////std::cout << "n data.getDiffN(gg,nb_row_dofs) = \n" << data.getDiffN(gg,nb_row_dofs) << std::endl;
-	//std::cout << "\n prod = \n" << prod(data.getDiffN(gg,nb_row_dofs),commonData.getGradAtGaussPts(gg)) << std::endl;
-	//std::cout << "\n data.getN().size2() = \n" << data.getN().size2() << std::endl;
-	//double a = 2.0;
-	//ublas::vector<double> Y(data.getN().size1());
-	//ublas::vector<double> X(data.getN().size1());
-	//std::fill(X.begin(),X.end(),1.0);
-    //std::fill(Y.begin(),Y.end(),2.0);
-	//cblas_daxpy( data.getN().size1(), a, &X[0], 1, &Y[0], 1);
-	//std::cout << "\n Y = \n" << Y << std::endl;
-    //std::cout << "\n data.getIndices()[0]2 = \n" << data.getIndices()[0] << std::endl;
-		  
           //ublas
           ublas::noalias(Nf) += prod(prod(data.getDiffN(gg,nb_row_dofs),val), commonData.getGradAtGaussPts(gg));
           
         }
-
 
         //cerr << Nf << endl;
         if(useTsF) {
@@ -421,11 +398,7 @@ struct ThermalElement {
         int nb_row = row_data.getN().size2();
         int nb_col = col_data.getN().size2();
         K.resize(nb_row,nb_col);
-		K.clear();
-		
-		//cout << "\n row_type this turn = \n" << row_type << endl;
-		//cout << "\n col_type this turn = \n" << col_type <<  endl;
-		
+	K.clear();
         for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
 
           ublas::matrix<double>  val = dAta.cOnductivity_mat*getVolume()*getGaussPts()(3,gg);
@@ -441,27 +414,11 @@ struct ThermalElement {
           //nb_row,nb_col,3,
           //val,diff_N_row,3,diff_N_col,3,1.,&K(0,0),nb_col);
 
-		  cout << "\n nb_row = " << nb_row << endl;
-		  cout << "\n row_data.getIndices() = " << row_data.getIndices() << endl;
-		  cout << "\n nb_col = " << nb_col << endl;
-		  cout << "\n col_data.getIndices() = " << col_data.getIndices() << endl;
-		  
-		  cout<< "\n col_data.getDiffN(gg,nb_row) = " << row_data.getDiffN(gg,nb_row) << std::endl;
-		  cout<< "\n row_data.getDiffN(gg,nb_row) = " << col_data.getDiffN(gg,nb_col) << std::endl;
-
-		  
           //ublas
           ublas::matrix<double> K1=prod(row_data.getDiffN(gg,nb_row),val);
           noalias(K) += prod(K1,trans(col_data.getDiffN(gg,nb_col)));
         }
 
-		
-		
-		
-
-
-		//cout << "\n K = " << K << endl;
-		
         PetscErrorCode ierr;
         if(!useTsB) {
           const_cast<FEMethod*>(getFEMethod())->ts_B = A;
@@ -1160,14 +1117,9 @@ struct ThermalElement {
   /** \brief this function is used in case of stationary problem to set elements for rhs
     * \infroup mofem_thermal_elem
     */
-
-
-
   PetscErrorCode setThermalFiniteElementRhsOperators(string field_name,Vec &F);
 
-
   /** \brief this function is used in case of stationary heat conductivity problem for lhs
-
     * \infroup mofem_thermal_elem
     */
   PetscErrorCode setThermalFiniteElementLhsOperators(string field_name,Mat A);

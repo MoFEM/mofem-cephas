@@ -88,7 +88,6 @@ int main(int argc, char *argv[]) {
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
-  
     
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
@@ -347,6 +346,8 @@ int main(int argc, char *argv[]) {
   // Assemble problem
   ierr = m_field.problem_basic_method_preProcess("ACOUSTIC_PROBLEM",analytical_ditihlet_bc_real); CHKERRQ(ierr);
   ierr = m_field.problem_basic_method_preProcess("ACOUSTIC_PROBLEM",analytical_ditihlet_bc_imag); CHKERRQ(ierr);
+  ierr = m_field.set_local_ghost_vector("ACOUSTIC_PROBLEM",ROW,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+
 
   ierr = helmholtz_element.setOperators(A,F,"rePRES","imPRES"); CHKERRQ(ierr);
   ierr = helmholtz_element.calculateA("ACOUSTIC_PROBLEM"); CHKERRQ(ierr);
@@ -380,6 +381,7 @@ int main(int argc, char *argv[]) {
   ierr = KSPSetUp(solver); CHKERRQ(ierr);
 
   ierr = KSPSolve(solver,F,T); CHKERRQ(ierr);
+
   ierr = VecGhostUpdateBegin(T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
@@ -387,11 +389,11 @@ int main(int argc, char *argv[]) {
   if(is_partitioned) {
 
     // no need for global communication
-    ierr = m_field.set_local_ghost_vector("ACOUSTIC_PROBLEM",ROW,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);  
+    ierr = m_field.set_local_ghost_vector("ACOUSTIC_PROBLEM",ROW,T,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);  
 
   } else {
 
-    ierr = m_field.set_global_ghost_vector("ACOUSTIC_PROBLEM",ROW,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);  
+    ierr = m_field.set_global_ghost_vector("ACOUSTIC_PROBLEM",ROW,T,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);  
 
   }
 
@@ -402,7 +404,7 @@ int main(int argc, char *argv[]) {
   ierr = KSPDestroy(&solver); CHKERRQ(ierr);
 
   if(is_partitioned) {
-    rval = moab.write_file("fe_solution.h5m"); CHKERR_PETSC(rval);
+    rval = moab.write_file("fe_solution.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
   } else {
     if(!pcomm->rank()) {
       rval = moab.write_file("fe_solution.h5m"); CHKERR_PETSC(rval);

@@ -1,22 +1,34 @@
 /*! \mainpage Index Page
  
-\section Introduction
+\section introduction Introduction
 
-MoFEM (Mesh Oriented Finite Element Method) is a new finite element analysis
-code tailored for the solution of multi-physics problems with arbitrary levels
-of approximation, different levels of mesh refinement and optimised for
-high-performance computing. It is design to be able manage complexities related
-to heterogeneous order of approximations for L2,H1,H-div and H-curl spaces.
+MoFEM (Mesh Oriented Finite Element Method) it is C++ library supporting
+solution of finite elements problems and accumulator to preserve and make use
+form \em open \em community knowledge and skills.
+
+MoFEM is a finite element analysis code tailored for the solution of
+multi-physics problems with arbitrary levels of approximation, different levels
+of mesh refinement and optimised for high-performance computing. It is design
+to be able manage complexities related to heterogeneous order of approximations
+for L2,H1,H-div and H-curl spaces. 
 
 MoFEM is the blend of the Boost MultiIndex containers, MOAB (Mesh Oriented
 Database) and PETSc (Portable, Extensible Toolkit for Scientific Computation).
 MoFEM is developed in C++ and it is open-source software under the GNU Lesser
-General Public License (see Legal Stuff). The current version of MoFEM has full
-support for CUBIT/TRELIS for pre-processing and ParaView for
-post-processing. MoFEM will supports other pre-processors, f.e. gMsh and is
-currently in the process of full integration with MeshKit.
+General Public License (see Legal Stuff). 
 
-\section ThridParty Third party libraries
+MoFEM can read and write number of mesh file formats using functionality
+provided by MoAB.  The current version of MoFEM has full support for
+CUBIT/TRELIS, TetGEN, NetGEN for pre-processing and ParaView for
+post-processing. MoFEM will supports other pre-processors, f.e. gMsh, GiT,
+Salome and is currently in the process of full integration with MeshKit.
+
+\section Motivation
+
+To provide free and open, inclusive, participation community finite element
+code for engineers, students, academics and software developers. 
+
+\section thrid_party Third party libraries
 
 List of third party libraries and packages used by MoFEM:
 

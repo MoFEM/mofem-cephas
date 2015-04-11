@@ -2,6 +2,7 @@
 
 \section citizen Be a good MoFEM citizen
 
+- MoFEM is a open community of users and developers.
 - MoFEM is a team work. Don't be focussed only on your project, try improve
   MOFEM. Your modifications can help others, others modification will help
   you.

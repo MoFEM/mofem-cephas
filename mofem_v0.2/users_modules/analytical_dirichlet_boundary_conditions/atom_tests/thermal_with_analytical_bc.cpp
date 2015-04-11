@@ -199,7 +199,7 @@ int main(int argc, char *argv[]) {
   
   //preproc
   ierr = m_field.problem_basic_method_preProcess("TEST_PROBLEM",analytical_ditihlet_bc); CHKERRQ(ierr);
-  ierr = m_field.set_global_ghost_vector("TEST_PROBLEM",ROW,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  //ierr = m_field.set_global_ghost_vector("TEST_PROBLEM",ROW,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
   ierr = m_field.loop_finite_elements("TEST_PROBLEM","THERMAL_FE",thermal_elements.getLoopFeRhs()); CHKERRQ(ierr);
   ierr = m_field.loop_finite_elements("TEST_PROBLEM","THERMAL_FE",thermal_elements.getLoopFeLhs()); CHKERRQ(ierr);
@@ -232,18 +232,18 @@ int main(int argc, char *argv[]) {
   ierr = VecGhostUpdateBegin(T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
-  ierr = m_field.problem_basic_method_preProcess("TEST_PROBLEM",analytical_ditihlet_bc); CHKERRQ(ierr);
-
   //Save data on mesh
-  ierr = m_field.set_global_ghost_vector("TEST_PROBLEM",ROW,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  //ierr = m_field.problem_basic_method_preProcess("TEST_PROBLEM",analytical_ditihlet_bc); CHKERRQ(ierr);
+  ierr = m_field.set_global_ghost_vector("TEST_PROBLEM",ROW,T,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = m_field.set_local_ghost_vector("TEST_PROBLEM",ROW,T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+
   //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
   //ierr = VecView(T,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
   
   PetscReal pointwisenorm;
   ierr = VecMax(T,NULL,&pointwisenorm);
-  
-  std::cout << "\n The Global Pointwise Norm of error for this problem is : --\n" << pointwisenorm << std::endl;
+  std::cout << "\n The Global Pointwise Norm of error for this problem is : " << pointwisenorm << std::endl;
   
   PetscViewer viewer;
   PetscViewerASCIIOpen(PETSC_COMM_WORLD,"thermal_with_analytical_bc.txt",&viewer);

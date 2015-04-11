@@ -202,7 +202,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.modify_finite_element_add_field_data("FE1","imEX"); CHKERRQ(ierr);
   ierr = m_field.modify_finite_element_add_field_data("FE1","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
 
-  if(m_field.check_field("rePRES") && m_field.check_field("imPRESS")) {
+  if(m_field.check_field("rePRES") && m_field.check_field("imPRES")) {
 
     ierr = m_field.modify_finite_element_add_field_data("FE1","rePRES"); CHKERRQ(ierr);
     ierr = m_field.modify_finite_element_add_field_data("FE1","imPRES"); CHKERRQ(ierr);
@@ -334,7 +334,7 @@ int main(int argc, char *argv[]) {
   }
  
   if(is_partitioned) {
-    rval = moab.write_file("analytical_solution.h5m"); CHKERR_PETSC(rval);
+    rval = moab.write_file("analytical_solution.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
   } else {
     if(!pcomm->rank()) {
       rval = moab.write_file("analytical_solution.h5m"); CHKERR_PETSC(rval);
@@ -350,7 +350,7 @@ int main(int argc, char *argv[]) {
     ierr = post_proc.addFieldValuesPostProc("reEX"); CHKERRQ(ierr);
     ierr = post_proc.addFieldValuesPostProc("imEX"); CHKERRQ(ierr);
 
-    if(m_field.check_field("rePRES") && m_field.check_field("imPRESS")) {
+    if(m_field.check_field("rePRES") && m_field.check_field("imPRES")) {
       ierr = post_proc.addFieldValuesPostProc("rePRES"); CHKERRQ(ierr);
       ierr = post_proc.addFieldValuesPostProc("imPRES"); CHKERRQ(ierr);
     }

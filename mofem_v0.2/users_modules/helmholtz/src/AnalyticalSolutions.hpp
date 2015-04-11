@@ -87,7 +87,7 @@ struct SphereIncidentWave: public GenericAnalyticalSolution {
     while( error > tol )  //finding the acoustic potential in one single point.
     {
 
-      //The derivative of bessel function
+      //The derivative of Bessel function
       double jn_der = n / const1 * sph_bessel( n, const1 ) - sph_bessel( n + 1, const1 );
       //The derivative of Hankel function
       complex<double> hn_der = n / const1 * sph_hankel_1( n, const1 ) - sph_hankel_1( n + 1, const1 );

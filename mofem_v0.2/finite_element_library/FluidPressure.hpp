@@ -154,7 +154,7 @@ struct FluidPressure {
         rval = mField.get_moab().get_entities_by_type(bit->meshset,MBTRI,setOfFluids[bit->get_msId()].tRis,true); CHKERR_PETSC(rval);
         //this get triangles only on block surfaces
         Range tets_skin_tris;
-        rval = skin.find_skin(0,tets,false,tets_skin_tris); CHKERR(rval);//??
+        rval = skin.find_skin(0,tets,false,tets_skin_tris); CHKERR(rval);
         setOfFluids[bit->get_msId()].tRis.merge(tets_skin_tris);
         ostringstream ss;
         ss << setOfFluids[bit->get_msId()] << endl;
