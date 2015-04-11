@@ -253,7 +253,7 @@ struct AnalyticalDirihletBC {
 	    double x,y,z;
 	    double val = getGaussPts()(2,gg);
 	    if(hoCoords.size1() == data.getN().size1()) {
-	      double area = norm_2(getNormals_at_GaussPt(gg)); 
+	      double area = norm_2(getNormals_at_GaussPt(gg))*0.5; 
 	      val *= area;
 	      x = hoCoords(gg,0);
 	      y = hoCoords(gg,1);
