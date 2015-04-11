@@ -1410,7 +1410,9 @@ PetscErrorCode TetElementForcesAndSourcesCore::operator()() {
     oit->setPtrFE(this);
     BitFieldId data_id = mField.get_field_structure(oit->row_field_name)->get_id();
     if((oit->getMoFEMFEPtr()->get_BitFieldId_data()&data_id).none()) {
-      SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"no data field < %s > on finite elemeny",oit->row_field_name.c_str());
+      SETERRQ2(
+	PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"no data field < %s > on finite element < %s >",
+	oit->row_field_name.c_str(),feName.c_str());
     }
 
     FieldSpace row_space = mField.get_field_structure(oit->row_field_name)->get_space();

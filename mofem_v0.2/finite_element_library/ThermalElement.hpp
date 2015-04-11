@@ -1,5 +1,7 @@
 /** \file ThermalElement.hpp
- * \brief Operators and data structures for thermal analyse
+
+ * \brief Operators and data structures for thermal analysis
+
  *
  * Implementation of thermal element for unsteady and steady case.
  * 

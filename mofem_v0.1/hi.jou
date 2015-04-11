@@ -1,9 +1,0 @@
-reset 
-brick x 10 y 10 z 10
-create displacement 1 on surface 4 dof all fix
-create force 1 on surface 6 vector 100 0 0 0 0 0
-volume 1 size auto factor 10
-volume 1 scheme tetmesh
-mesh volume 1
-block 1 volume 1
-block 1 name "MAT_ELASTIC"

@@ -260,6 +260,19 @@ struct ForcesAndSurcesCore: public FEMethod {
    */
   boost::ptr_vector<DataOperator>& get_op_to_do_Lhs() { return vecUserOpNN; }
 
+  virtual PetscErrorCode preProcess() {
+    PetscFunctionBegin;
+    PetscFunctionReturn(0);
+  }
+  virtual PetscErrorCode operator()() {
+    PetscFunctionBegin;
+    PetscFunctionReturn(0);
+  }
+  virtual PetscErrorCode postProcess() {
+    PetscFunctionBegin;
+    PetscFunctionReturn(0);
+  }
+
 };
 
 /** \brief Tet finite element  
