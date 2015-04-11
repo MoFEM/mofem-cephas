@@ -3,8 +3,7 @@
 \section introduction Introduction
 
 MoFEM (Mesh Oriented Finite Element Method) it is C++ library supporting
-solution of finite elements problems and accumulator to preserve and make use
-form \em open \em community knowledge and skills.
+solution of finite elements problems. 
 
 MoFEM is a finite element analysis code tailored for the solution of
 multi-physics problems with arbitrary levels of approximation, different levels
@@ -22,6 +21,11 @@ provided by MoAB.  The current version of MoFEM has full support for
 CUBIT/TRELIS, TetGEN, NetGEN for pre-processing and ParaView for
 post-processing. MoFEM will supports other pre-processors, f.e. gMsh, GiT,
 Salome and is currently in the process of full integration with MeshKit.
+
+\section download_repository MoFEM download and repository
+
+MoFEM is on BitBucket repository <https://bitbucket.org/likask/mofem-cephas>.
+Current version 0.2.2 is called MoFEM-cephas.
 
 \section Motivation
 

@@ -385,7 +385,7 @@ struct AnalyticalDirihletBC {
 
   Mat A;
   Vec D,F;
-  KSP solver;
+  KSP kspSolver;
   PetscErrorCode setProblem(
     FieldInterface &m_field,string problem) {
     PetscFunctionBegin;
@@ -395,9 +395,15 @@ struct AnalyticalDirihletBC {
     ierr = m_field.VecCreateGhost(problem,COL,&D); CHKERRQ(ierr);
     ierr = m_field.MatCreateMPIAIJWithArrays(problem,&A); CHKERRQ(ierr);
 
-    ierr = KSPCreate(PETSC_COMM_WORLD,&solver); CHKERRQ(ierr);
-    ierr = KSPSetOperators(solver,A,A); CHKERRQ(ierr);
-    ierr = KSPSetFromOptions(solver); CHKERRQ(ierr);
+    ierr = KSPCreate(PETSC_COMM_WORLD,&kspSolver); CHKERRQ(ierr);
+    ierr = KSPSetOperators(kspSolver,A,A); CHKERRQ(ierr);
+    ierr = KSPSetFromOptions(kspSolver); CHKERRQ(ierr);
+
+    PC pc;
+    ierr = KSPGetPC(kspSolver,&pc); CHKERRQ(ierr);
+    ierr = PCSetType(pc,PCLU); CHKERRQ(ierr);
+    ierr = PCFactorSetMatSolverPackage(pc,MATSOLVERMUMPS); CHKERRQ(ierr);
+    ierr = PCFactorSetUpMatSolverPackage(pc);  CHKERRQ(ierr);
 
     PetscFunctionReturn(0);
   }
@@ -420,7 +426,7 @@ struct AnalyticalDirihletBC {
     ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
     ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 
-    ierr = KSPSolve(solver,F,D); CHKERRQ(ierr);
+    ierr = KSPSolve(kspSolver,F,D); CHKERRQ(ierr);
     ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
@@ -437,7 +443,7 @@ struct AnalyticalDirihletBC {
   PetscErrorCode destroyProblem() {
     PetscFunctionBegin;
     PetscErrorCode ierr;
-    ierr = KSPDestroy(&solver); CHKERRQ(ierr);
+    ierr = KSPDestroy(&kspSolver); CHKERRQ(ierr);
     ierr = MatDestroy(&A); CHKERRQ(ierr);
     ierr = VecDestroy(&F); CHKERRQ(ierr);
     ierr = VecDestroy(&D); CHKERRQ(ierr);

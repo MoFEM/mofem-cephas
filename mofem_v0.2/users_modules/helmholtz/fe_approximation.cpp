@@ -271,8 +271,8 @@ int main(int argc, char *argv[]) {
   // set type of analytical solution  
   ierr = PetscOptionsGetEList(NULL,"-analytical_solution_type",analytical_solution_types,2,&choise_value,NULL); CHKERRQ(ierr);
 
-  double angularfreq;
-  double speed; 
+  double angularfreq = 1;
+  double speed = 1; 
 
   /// this works only for one block 
   int nb_of_blocks = 0; 
@@ -368,16 +368,6 @@ int main(int argc, char *argv[]) {
   ierr = KSPCreate(PETSC_COMM_WORLD,&solver); CHKERRQ(ierr);
   ierr = KSPSetOperators(solver,A,A); CHKERRQ(ierr);
   ierr = KSPSetFromOptions(solver); CHKERRQ(ierr);
-  {
-    // SetUp mult-grid pre-conditioner
-    PetscBool same = PETSC_FALSE;
-    PC pc;
-    ierr = KSPGetPC(solver,&pc); CHKERRQ(ierr);
-    PetscObjectTypeCompare((PetscObject)pc,PCMG,&same);
-    if (same) {
-      ierr = PCMGSetUpViaApproxOrders(pc,&m_field,"ACOUSTIC_PROBLEM"); CHKERRQ(ierr);
-    }
-  }
   ierr = KSPSetUp(solver); CHKERRQ(ierr);
 
   ierr = KSPSolve(solver,F,T); CHKERRQ(ierr);

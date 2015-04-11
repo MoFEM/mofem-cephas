@@ -270,8 +270,8 @@ int main(int argc, char *argv[]) {
   ierr = m_field.partition_ghost_dofs("EX1_PROBLEM"); CHKERRQ(ierr);
   
   // extract data from MAT_HELMHOLTZ block
-  double angularfreq;
-  double speed; 
+  double angularfreq = 1;
+  double speed = 1; 
  
   /// this works only for one block 
   int nb_of_blocks = 0; 
