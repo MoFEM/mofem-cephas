@@ -520,8 +520,9 @@ PetscErrorCode Core::set_other_local_ghost_vector(
       bool alpha = true;
       switch (mode) {
 	case INSERT_VALUES:
-	  alpha = false;
+	  break;
 	case ADD_VALUES:
+	  alpha = false;
 	  break;
       }
       PetscScalar *array;
@@ -618,62 +619,61 @@ PetscErrorCode Core::set_other_global_ghost_vector(
       if(size!=nb_dofs) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency: nb. of dofs and declared nb. dofs in database");
       PetscScalar *array;
       VecGetArray(V_glob,&array);
+      bool alpha = true;
       switch (mode) {
 	case INSERT_VALUES:
-	  for(;miit!=hi_miit;miit++) {
-	    if(miit->get_petsc_gloabl_dof_idx()>=size) {
-	      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency: nb. of dofs and declared nb. dofs in database");
-	    }
-	    DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>::type::iterator diiiit;
-	    diiiit = dofsMoabField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().find(boost::make_tuple(cpy_field_name,miit->get_ent(),miit->get_EntDofIdx()));
-	    if(diiiit==dofsMoabField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().end()) {
-	      EntityHandle ent = miit->get_ent();
-	      rval = moab.add_entities(cpy_fit->get_meshset(),&ent,1); CHKERR_PETSC(rval);
-	      //create field moabent
-	      ApproximationOrder order = miit->get_max_order();
-	      pair<MoFEMEntity_multiIndex::iterator,bool> p_e_miit;
-	      try {
-		MoFEMEntity moabent(moab,cpy_fit->get_MoFEMField_ptr(),miit->get_RefMoFEMEntity_ptr());
-		p_e_miit = entsMoabField.insert(moabent);
-	      } catch (const std::exception& ex) {
-		ostringstream ss;
-		ss << "throw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
-		SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,ss.str().c_str());
-	      }
-	      if(p_e_miit.first->get_max_order()<order) {
-		bool success = entsMoabField.modify(p_e_miit.first,MoFEMEntity_change_order(moab,order));
-		if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-	      }
-	      //create field moabdof
-	      DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator hi_diit,diit;
-	      diit = dofsMoabField.get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(field_name,miit->get_ent()));
-	      hi_diit = dofsMoabField.get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(field_name,miit->get_ent()));
-	      for(;diit!=hi_diit;diit++) {
-		DofMoFEMEntity mdof(&*(p_e_miit.first),diit->get_dof_order(),diit->get_dof_rank(),diit->get_EntDofIdx());
-		pair<DofMoFEMEntity_multiIndex::iterator,bool> cpy_p_diit;
-		cpy_p_diit = dofsMoabField.insert(mdof);
-		if(cpy_p_diit.second) {
-		  bool success = dofsMoabField.modify(cpy_p_diit.first,DofMoFEMEntity_active_change(true));
-		  if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-		}
-	      }
-	      diiiit = dofsMoabField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().find(boost::make_tuple(cpy_field_name,miit->get_ent(),miit->get_EntDofIdx()));
-	      if(diiiit==dofsMoabField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
-	    }
-	    diiiit->get_FieldData() = array[miit->get_petsc_gloabl_dof_idx()];
-	    if(verb > 1) {
-	      ostringstream ss;
-	      ss << *diiiit << "set " << array[miit->get_petsc_gloabl_dof_idx()] << endl;
-	      PetscPrintf(comm,ss.str().c_str());
-	    }
-	  }
-	    //if(verb > 0) {
-	      //cerr << "AAAAAAAAAAAA\n";
-	      //ierr = check_number_of_ents_in_ents_field(cpy_field_name); CHKERRQ(ierr);
-	    //}
 	  break;
-	default:
-	  SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
+	case ADD_VALUES:
+	  alpha = false;
+	  break;
+      }
+      for(;miit!=hi_miit;miit++) {
+        if(miit->get_petsc_gloabl_dof_idx()>=size) {
+          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency: nb. of dofs and declared nb. dofs in database");
+        }
+        DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>::type::iterator diiiit;
+        diiiit = dofsMoabField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().find(boost::make_tuple(cpy_field_name,miit->get_ent(),miit->get_EntDofIdx()));
+        if(diiiit==dofsMoabField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().end()) {
+          EntityHandle ent = miit->get_ent();
+          rval = moab.add_entities(cpy_fit->get_meshset(),&ent,1); CHKERR_PETSC(rval);
+          //create field moabent
+          ApproximationOrder order = miit->get_max_order();
+          pair<MoFEMEntity_multiIndex::iterator,bool> p_e_miit;
+          try {
+    	MoFEMEntity moabent(moab,cpy_fit->get_MoFEMField_ptr(),miit->get_RefMoFEMEntity_ptr());
+    	p_e_miit = entsMoabField.insert(moabent);
+          } catch (const std::exception& ex) {
+    	ostringstream ss;
+    	ss << "throw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
+    	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,ss.str().c_str());
+          }
+          if(p_e_miit.first->get_max_order()<order) {
+    	bool success = entsMoabField.modify(p_e_miit.first,MoFEMEntity_change_order(moab,order));
+    	if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+          }
+          //create field moabdof
+          DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator hi_diit,diit;
+          diit = dofsMoabField.get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(field_name,miit->get_ent()));
+          hi_diit = dofsMoabField.get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(field_name,miit->get_ent()));
+          for(;diit!=hi_diit;diit++) {
+    	DofMoFEMEntity mdof(&*(p_e_miit.first),diit->get_dof_order(),diit->get_dof_rank(),diit->get_EntDofIdx());
+    	pair<DofMoFEMEntity_multiIndex::iterator,bool> cpy_p_diit;
+    	cpy_p_diit = dofsMoabField.insert(mdof);
+    	if(cpy_p_diit.second) {
+    	  bool success = dofsMoabField.modify(cpy_p_diit.first,DofMoFEMEntity_active_change(true));
+    	  if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+    	}
+          }
+          diiiit = dofsMoabField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().find(boost::make_tuple(cpy_field_name,miit->get_ent(),miit->get_EntDofIdx()));
+          if(diiiit==dofsMoabField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+        }
+        if(alpha) diiiit->get_FieldData() = 0;
+        diiiit->get_FieldData() += array[miit->get_petsc_gloabl_dof_idx()];
+        if(verb > 1) {
+          ostringstream ss;
+          ss << *diiiit << "set " << array[miit->get_petsc_gloabl_dof_idx()] << endl;
+          PetscPrintf(comm,ss.str().c_str());
+        }
       }
       ierr = VecRestoreArray(V_glob,&array); CHKERRQ(ierr);
       ierr = VecDestroy(&V_glob); CHKERRQ(ierr);
