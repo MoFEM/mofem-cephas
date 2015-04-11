@@ -50,52 +50,59 @@ const char *analytical_solution_types[] = {
   */
 struct SphereIncidentWave: public GenericAnalyticalSolution {
   
-   vector<ublas::vector<double> > rEsult;
-   double wAvenumber;
+  vector<complex<double> > vecAl;
+  vector<ublas::vector<double> > rEsult;
+  double wAvenumber;
+  double sphereRadius;
    
-   SphereIncidentWave(double wavenumber): wAvenumber(wavenumber) {}
-   virtual ~SphereIncidentWave() {}
+  SphereIncidentWave(double wavenumber,double sphere_radius = 0.25): 
+    wAvenumber(wavenumber),sphereRadius(sphere_radius) {}
+  virtual ~SphereIncidentWave() {}
    
   virtual vector<ublas::vector<double> >& operator()(double x, double y, double z) {
 
     const double tol = 1.0e-10;
 
-    double x2 = pow(x,2.0),y2 = pow(y,2.0);
+    double x2 = pow(x,2.0);
+    double y2 = pow(y,2.0);
     double R = sqrt(x2+y2+pow(z,2.0)); 
     double cos_theta = sqrt(x2+y2)/R;
 
-    const double k = wAvenumber;  //Wave number
-    const double a = 0.5;         //radius of the sphere,wait to modify by user
-    //const double a = 1.0;
-    const double const1 = k * a;
-    double const2 = k * R;
-    
+    const double k = wAvenumber;  	//Wave number
+    const double a = sphereRadius;      //radius of the sphere,wait to modify by user
+
     const complex< double > i( 0.0, 1.0 );
-    
-    // magnitude of incident wave
-    //const double phi_incident_mag = 1.0;
-    
-    //double max = 0.0;
-    //double min = 999999.0;
-    
+    complex< double > Al;
+
     complex< double > result = 0.0;
     complex< double > prev_result;
-    
+
     double error = 100.0;
     unsigned int n = 0; //initialized the infinite series loop
     
     while( error > tol )  //finding the acoustic potential in one single point.
     {
 
-      //The derivative of Bessel function
-      double jn_der = n / const1 * sph_bessel( n, const1 ) - sph_bessel( n + 1, const1 );
-      //The derivative of Hankel function
-      complex<double> hn_der = n / const1 * sph_hankel_1( n, const1 ) - sph_hankel_1( n + 1, const1 );
-      double Pn = legendre_p( n, cos_theta );
-      complex<double> hn = sph_hankel_1( n, const2 );  //S Hankel first kind function
+      if(vecAl.size()>n) {
+	Al = vecAl[n];
+      } else {
+	// spherical Bessel function
+	double jn = sph_bessel(n,k*a);
+	// spherical Hankel function
+	complex<double> hn = sph_hankel_1(n,k*a);
+	//Constant term
+	Al = -(2.0*n+1)*pow(i,n)*jn/hn;
+	vecAl.push_back(Al);
+      }
+      
       prev_result = result;
-      result -= pow( i, n ) * ( 2.0 * n + 1.0 ) * jn_der / hn_der * Pn * hn;
+
+      // Legendre function
+      double Pn = legendre_p(n,cos_theta);
+      result += Al*sph_hankel_1(n,k*R)*Pn;
+
       error = abs( abs( result ) - abs( prev_result ) );
+
       ++n;
 
     }
@@ -165,6 +172,7 @@ struct CylinderIncidentWave: public GenericAnalyticalSolution {
   
   vector<ublas::vector<double> > rEsult;
   double wAvenumber;
+  double shereRadius;
    
   CylinderIncidentWave(double wavenumber): wAvenumber(wavenumber) {}
   virtual ~CylinderIncidentWave() {}

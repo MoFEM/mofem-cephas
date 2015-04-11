@@ -33,9 +33,13 @@ struct AnalyticalDirihletBC {
     */
   struct ApproxField {
 
+
     struct MyTriFE: public TriElementForcesAndSurcesCore {
-      MyTriFE(FieldInterface &m_field): TriElementForcesAndSurcesCore(m_field) {}
-      int getRule(int order) { return order; };
+
+      int addToRule; ///< this is add to integration rule if 2nd order geometry approximation
+      MyTriFE(FieldInterface &m_field): TriElementForcesAndSurcesCore(m_field),addToRule(1) {}
+      int getRule(int order) { return order+addToRule; };
+
     };
 
     ApproxField(FieldInterface &m_field): feApprox(m_field) {}
@@ -314,7 +318,7 @@ struct AnalyticalDirihletBC {
       PetscFunctionBegin;
       if(map_zero_rows.empty()) {
 	if(tRis_ptr == NULL) {
-	  SETERRQ(PETSC_COMM_SELF,1,"need to inicialsised from AnalyticalDirihletBC::solveProblem");
+	  SETERRQ(PETSC_COMM_SELF,1,"need to initialised from AnalyticalDirihletBC::solveProblem");
 	}
 	ierr = iNitalize(*tRis_ptr); CHKERRQ(ierr);
       }

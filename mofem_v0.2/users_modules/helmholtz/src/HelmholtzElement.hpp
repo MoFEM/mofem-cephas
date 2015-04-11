@@ -426,7 +426,7 @@ struct HelmholtzElement {
     
     ublas::vector<double> vAl;    
 
-    ublas::vector<double>& operator()(double x,double y,double z) {
+    ublas::vector<double>& operator()(double x,double y,double z,ublas::vector<double> &normal) {
       vAl.resize(2);
       vAl[0] = 0;
       vAl[1] = 0;
@@ -497,6 +497,7 @@ struct HelmholtzElement {
     }
 
     ublas::vector<int> imRowIndices; 
+    ublas::vector<double> nOrmal;
   
     PetscErrorCode doWork(
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
@@ -519,6 +520,8 @@ struct HelmholtzElement {
 	reNf.clear();
         imNf.resize(nb_row_dofs);
 	imNf.clear();
+
+	nOrmal.resize(3);
   
         for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
 
@@ -532,13 +535,18 @@ struct HelmholtzElement {
 	  if(commonData.hoCoords.size1() == data.getN().size1()) {
 	    x = commonData.hoCoords(gg,0);
 	    y = commonData.hoCoords(gg,1);
-	    z = commonData.hoCoords(gg,2);
+	    z = commonData.hoCoords(gg,2);	
+	    if(gg == 0) {
+	      noalias(nOrmal) = getNormal();
+	    }
 	  } else {
 	    x = getCoordsAtGaussPts()(gg,0);
 	    y = getCoordsAtGaussPts()(gg,1);
 	    z = getCoordsAtGaussPts()(gg,2);
+	    noalias(nOrmal) = getNormals_at_GaussPt(gg);
+	    
 	  }
-	  ublas::vector<double>& f = functionEvaluator(x,y,z);
+	  ublas::vector<double>& f = functionEvaluator(x,y,z,nOrmal);
     
 	  ierr = calculateResidualRe(gg); CHKERRQ(ierr);
   
