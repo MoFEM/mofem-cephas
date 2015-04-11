@@ -97,47 +97,44 @@ struct MyFunApprox_re {
 		double error = 100.0;
 		unsigned int n = 0; //initialized the infinite series loop
 		
-		while( error > tol )  //finding the acoustic potential in one single point.
+		/* sound-hard sphere */
+		
+		//while( error > tol )  //finding the acoustic potential in one single point.
+		//{
+		////The derivative of bessel function
+		//	double jn_der = (n / const1 * sph_bessel( n, const1 ) - sph_bessel( n + 1, const1 ));  
+		////The derivative of Hankel function
+		//	complex< double > hn_der = (n / const1 * sph_hankel_1( n, const1 ) - sph_hankel_1( n + 1, const1 ));
+		//	
+
+		//	double Pn = legendre_p( n, cos( theta ) );
+		//	complex< double >hn = sph_hankel_1( n, const2 );  //S Hankel first kind function
+		//	prev_result = result;
+		//	result -= pow( i, n ) * ( 2.0 * n + 1.0 ) * jn_der / hn_der * Pn * hn;
+		//	error = abs( abs( result ) - abs( prev_result ) );
+		//	++n;
+		//}
+		
+		/* sound-soft sphere */
+		
+		while( error > tol )  
 		{
-		//The derivative of bessel function
-			double jn_der = (n / const1 * sph_bessel( n, const1 ) - sph_bessel( n + 1, const1 ));  
-		//The derivative of Hankel function
-			complex< double > hn_der = (n / const1 * sph_hankel_1( n, const1 ) - sph_hankel_1( n + 1, const1 ));
+
+			double jn = sph_bessel( n, const1 ); 
+
+			complex< double > hn_ka = sph_hankel_1( n, const1 );
 			
-			
-			//complex< double > hn_der_C = 0;
-			//for( unsigned int m = 0; m < n; m++) {
-			//	/* eta = (n + 1/2,m) */
-			//	double eta = 1.0;
-			//	if(m == 0) {
-			//		
-			//	} else {
-			//		for(unsigned int j = 1; j < m; j++) {
-			//			
-			//			eta *= (n + j)*((n - m + j)/j);
-			//		
-			//		}
-			//	}
-			//	
-			//	hn_der_C += ( i*k*(exp(i*const2)/pow(R,m+1.0)) - (m+1.0)*(exp(i*const2)/pow(R,m+2.0)) ) * ((pow(i,m)*eta)/(k*pow(2.0*k,m))) * exp(-i*(pi/2.0)*(n+1.0));
-			//}
-			
-			//std::cout << "\n hn_der_C= \n" << hn_der_C << "\n hn_der = \n" << hn_der << std::endl;
-			
-			
-			//double jn = sph_bessel( n, const2 );
-			//complex< double > hn_der = 0.5 * ( sph_hankel_1( n - 1, const1 ) -
-			//( sph_hankel_1( n, const1 ) + const1 * sph_hankel_1( n + 1, const1 ) ) / const1 );
 			double Pn = legendre_p( n, cos( theta ) );
-			complex< double >hn = sph_hankel_1( n, const2 );  //S Hankel first kind function
+			
+			complex< double >hn_kr = sph_hankel_1( n, const2 );  
+			
 			prev_result = result;
-			result -= pow( i, n ) * ( 2.0 * n + 1.0 ) * jn_der / hn_der * Pn * hn;
+			result -= pow( i, n ) * ( 2.0 * n + 1.0 ) * jn / hn_ka * Pn * hn_kr;
 			error = abs( abs( result ) - abs( prev_result ) );
 			++n;
 		}
 		
 		//result *= phi_incident_mag;
-		
 		//const complex< double > inc_field = exp( i * k * R * cos( theta ) );  //???? Incident wave
 		//const complex< double > total_field = inc_field + result;
 		//ofs << theta << "\t" << abs( result ) << "\t" << abs( inc_field ) << "\t" << abs( total_field ) <<  "\t" << R << endl; //write the file

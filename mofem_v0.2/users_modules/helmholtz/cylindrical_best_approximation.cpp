@@ -96,28 +96,55 @@ struct MyFunApprox_re {
 		double error = 100.0;
 		unsigned int n = 1; //initialized the infinite series loop
 		
-		double Jn_der_zero = ( - cyl_bessel_j( 1, const1 ));  
-		complex< double > Hn_der_zero = ( - cyl_hankel_1( 1, const1 ));
-		complex< double >Hn_zero = cyl_hankel_1( 0, const2 );  //S Hankel first kind function
-
-		//n=0;
-		result -= (Jn_der_zero * Hn_zero)/Hn_der_zero;
+		/*** sound hard ***/
 		
+		//double Jn_der_zero = ( - cyl_bessel_j( 1, const1 ));  
+		//complex< double > Hn_der_zero = ( - cyl_hankel_1( 1, const1 ));
+		//complex< double >Hn_zero = cyl_hankel_1( 0, const2 );  //S Hankel first kind function
+
+		////n=0;
+		//result -= (Jn_der_zero * Hn_zero)/Hn_der_zero;
+		
+		
+		//while( error > tol )  //finding the acoustic potential in one single point.
+		//{
+		//	prev_result = result;
+		////The derivative of bessel function
+		//	double Jn_der = (n / const1 * cyl_bessel_j( n, const1 ) - cyl_bessel_j( n + 1, const1 ));  
+		////The derivative of Hankel function
+		//	complex< double > Hn_der = (n / const1 * cyl_hankel_1( n, const1 ) - cyl_hankel_1( n + 1, const1 ));
+		//	
+		//	complex< double >Hn = cyl_hankel_1( n, const2 );  //S Hankel first kind function
+		//	
+		//	result -= 2.0 * pow( i, n ) * ( (Jn_der*Hn) / Hn_der ) * cos(n*theta);
+		//	error = abs( abs( result ) - abs( prev_result ) );
+		//	++n;
+		//}
+		
+		/** sound soft ***/
+		
+		double Jn_zero = cyl_bessel_j( 0, const1 );
+		complex< double > Hn_zero_kr = cyl_hankel_1( 0, const2 );  //S Hankel first kind function
+		complex< double > Hn_zero_ka = cyl_hankel_1( 0, const1 );  //S Hankel first kind function
+		//n=0;
+		result -= (Jn_zero * Hn_zero_kr)/Hn_zero_ka;
 		
 		while( error > tol )  //finding the acoustic potential in one single point.
 		{
 			prev_result = result;
-		//The derivative of bessel function
-			double Jn_der = (n / const1 * cyl_bessel_j( n, const1 ) - cyl_bessel_j( n + 1, const1 ));  
-		//The derivative of Hankel function
-			complex< double > Hn_der = (n / const1 * cyl_hankel_1( n, const1 ) - cyl_hankel_1( n + 1, const1 ));
+			//The derivative of bessel function
+			double Jn = cyl_bessel_j( n, const1 );
+			//The derivative of Hankel function
+			complex< double > Hn_ka = cyl_hankel_1( n, const1 );
 			
-			complex< double >Hn = cyl_hankel_1( n, const2 );  //S Hankel first kind function
+			complex< double >Hn_kr = cyl_hankel_1( n, const2 );  //S Hankel first kind function
 			
-			result -= 2.0 * pow( i, n ) * ( (Jn_der*Hn) / Hn_der ) * cos(n*theta);
+			result -= 2.0 * pow( i, n ) * ( (Jn*Hn_kr) / Hn_ka ) * cos(n*theta);
 			error = abs( abs( result ) - abs( prev_result ) );
 			++n;
 		}
+		
+		
 		
 		//result *= phi_incident_mag;
 		

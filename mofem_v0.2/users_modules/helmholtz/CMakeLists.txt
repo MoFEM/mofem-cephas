@@ -33,8 +33,8 @@ include_directories("${MoFEM_PROJECT_SOURCE_DIR}/users_modules/helmholtz/src")
 #add_subdirectory(atom_tests)
 #add_subdirectory(meshes)
 
-add_executable(acoustic_steady ${UM_SOURCE_DIR}/helmholtz/acoustic_steady.cpp)
-target_link_libraries(acoustic_steady
+add_executable(spherical_acoustic ${UM_SOURCE_DIR}/helmholtz/spherical_acoustic.cpp)
+target_link_libraries(spherical_acoustic
   mofem_finite_element_library
   mofem_finite_elements
   mofem_interfaces
@@ -69,8 +69,8 @@ target_link_libraries(error_norm
   ${MoFEM_PROJECT_LIBS})
 
 
-add_executable(best_approximation ${UM_SOURCE_DIR}/helmholtz/best_approximation.cpp)
-target_link_libraries(best_approximation
+add_executable(spherical_best_approximation ${UM_SOURCE_DIR}/helmholtz/spherical_best_approximation.cpp)
+target_link_libraries(spherical_best_approximation
   mofem_finite_element_library
   mofem_finite_elements
   mofem_interfaces

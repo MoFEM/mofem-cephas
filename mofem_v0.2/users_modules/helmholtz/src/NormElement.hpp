@@ -267,7 +267,7 @@ struct NormElement {
     struct OpLhs:public TetElementForcesAndSourcesCore::UserDataOperator {
 		
 		Mat A;
-		bool solveBc;
+		//bool solveBc;
 		OpLhs(const string re_field_name,Mat _A): 
 			TetElementForcesAndSourcesCore::UserDataOperator(re_field_name),
 			A(_A) { }
@@ -315,7 +315,7 @@ struct NormElement {
 						val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
 					} 
 					
-					//noalias(NTN) += val*outer_prod( row_data.getN(gg,nb_row),col_data.getN(gg,nb_col) );
+
 					cblas_dger(CblasRowMajor,nb_row,nb_col,val,
 							   &row_data.getN(gg)[0],1,&col_data.getN(gg)[0],1,
 							   &NTN(0,0),nb_col);
@@ -384,15 +384,15 @@ struct NormElement {
 		
 		PetscErrorCode doWork(
 			int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
-			//if (TypeIsTet<OP>::useTet) { //currently disabled the script for calculate error on surface
+			
 			PetscFunctionBegin;
 			PetscErrorCode ierr;
 			
 			try {
 				if(data.getIndices().size()==0) PetscFunctionReturn(0);
-				//if(dAta.tEts.find(getMoFEMFEPtr()->get_ent())==dAta.tEts.end()) PetscFunctionReturn(0);
 				
-				//unsigned int nb_row = data.getN().size2();
+				
+				
 				unsigned int nb_row = data.getIndices().size();
 				if(nb_row != data.getIndices().size()) {
 					SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,
@@ -406,6 +406,9 @@ struct NormElement {
 				ublas::vector<double> uAnaly = commonData.fieldValue1AtGaussPts;
 				ublas::vector<double> uNumer = commonData.fieldValue2AtGaussPts;
 				
+				double eRror;
+				double sqError;
+				
 				for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
 					
 					//Integrate over volume
@@ -418,13 +421,12 @@ struct NormElement {
 					}
 					ublas::matrix_row< ublas::matrix<double> > uAnalyGrad = commonData.getGradField1AtGaussPts(gg);
 					ublas::matrix_row< ublas::matrix<double> > uNumerGrad = commonData.getGradField2AtGaussPts(gg);
-					double eRror;
-					double sqError;
+		
 
 					if(useL2) { //case L2 norm
 						
-						double aa = uAnaly(gg);
-						double bb = uNumer(gg);
+						double aa = abs(uAnaly(gg));
+						double bb = abs(uNumer(gg));
 						eRror = aa - bb;
 						//eRror = uAnaly(gg) - uNumer(gg);
 						sqError = pow(eRror,2.0);
@@ -445,16 +447,11 @@ struct NormElement {
 						ublas::noalias(Nf) += val*sqError*data.getN(gg);
 					
 					} else if(useRela) { //case relative error
-					//ublas::vector<double> dEnominator;
-					//dEnominator.resize(nb_row);
-					//dEnominator.clear();
-					
+						
 						double sqUanaly = pow(norm_inf(uAnaly),2.0);
-
-					//dEnominator = val*(sqError/sqUanaly)*data.getN(gg);
 				
 						ublas::noalias(rElative_error) += val*(pow(eRror,2.0)/sqUanaly)*data.getN(gg);
-					//std::cout << "\n rElative_error = \n" << rElative_error << std::endl;
+
 					}
 
 			    }
@@ -483,36 +480,10 @@ struct NormElement {
 			 } 
 			 PetscFunctionReturn(0);
 			 
-			//} else if (!TypeIsTet<OP>::useTet) {
-    //};
+
 	
 }
 	};
-	
-	
-	//template<typename OP,typename OS = void>
-	//struct TypeIsTet
-	//{
-	//	static const bool useTet = false;
-	//};
-	
-	//template<typename OS>
-	//struct TypeIsTet<TetElementForcesAndSourcesCore,OS>
-	//{
-	//	static const bool useTet = true;
-	//};
-
-/** \brief operator to calculate error at Gauss pts
-  * \infroup mofem_thermal_elem
-  */
-//struct OpTetRhs: public OpRhs<TetElementForcesAndSourcesCore> {
-//    OpTetRhs(const string re_field_name,const string im_field_name,
-//		Vec _F,CommonData &common_data,   
-//		bool useL2): 
-//		OpRhs<TetElementForcesAndSourcesCore>(re_field_name,im_field_name,
-//				_F,common_data,useL2) {}
-
-//};
 
 
 

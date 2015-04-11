@@ -309,9 +309,15 @@ int main(int argc, char *argv[]) {
 	
 	
 	/* Global error calculation */
+	PetscScalar sum_T,sum_D;
 	PetscReal nrm2_T,nrm2_D,nrm2_P,nrm2_M,pointwisenormT,pointwisenormD,pointwisenormP,pointwisenormM;
-	ierr = VecNorm(T,NORM_FROBENIUS,&nrm2_T);;
-	ierr = VecNorm(D,NORM_2,&nrm2_D); CHKERRQ(ierr);
+	/* FIXME sum and sqrt of Vector T and D */
+	ierr = VecSum(T,&sum_T);
+	ierr = VecSum(D,&sum_D);
+	nrm2_T = sqrt(abs(sum_T));
+	nrm2_D = sqrt(abs(sum_D));
+	//ierr = VecNorm(T,NORM_FROBENIUS,&nrm2_T);;
+	//ierr = VecNorm(D,NORM_2,&nrm2_D); CHKERRQ(ierr);
 	//ierr = VecNorm(T,NORM_MAX,&pointwisenormT);
 	//ierr = VecNorm(D,NORM_MAX,&pointwisenormD);
 	
@@ -322,10 +328,10 @@ int main(int argc, char *argv[]) {
 	ierr = m_field.set_local_ghost_vector("EX1_PROBLEM",ROW,M,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	ierr = m_field.set_local_ghost_vector("EX2_PROBLEM",ROW,P,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
-	ierr = VecNorm(M,NORM_FROBENIUS,&nrm2_M);;
-	ierr = VecNorm(P,NORM_2,&nrm2_P); CHKERRQ(ierr);
-	//ierr = VecNorm(M,NORM_INFINITY,&pointwisenormM);
-	//ierr = VecNorm(P,NORM_INFINITY,&pointwisenormP);
+	//ierr = VecNorm(M,NORM_FROBENIUS,&nrm2_M);;
+	//ierr = VecNorm(P,NORM_2,&nrm2_P); CHKERRQ(ierr);
+	ierr = VecNorm(M,NORM_INFINITY,&pointwisenormM);
+	ierr = VecNorm(P,NORM_INFINITY,&pointwisenormP);
 
 	//std::cout << "\n ||U_real||_inf = \n" << pointwisenormM << "\n ||U_imag||_inf = \n" << pointwisenormP << std::endl;
 	
@@ -333,8 +339,8 @@ int main(int argc, char *argv[]) {
 	if(usel2 && !userela) {
 		std::cout << "\n The Global least square of l2 Norm of error in real field is : --\n" << nrm2_T << std::endl;
 		std::cout << "\n The Global least square of l2 Norm of error in imag field is : --\n" << nrm2_D << std::endl;
-		std::cout << "\n The Global L2 relative error of real field is : --\n" << nrm2_T/nrm2_M  << std::endl;
-		std::cout << "\n The Global L2 relative error of imag field is  : --\n" << nrm2_D/nrm2_P << std::endl;
+		std::cout << "\n The Global L2 relative error of real field is : --\n" << nrm2_T/pointwisenormM  << std::endl;
+		std::cout << "\n The Global L2 relative error of imag field is  : --\n" << nrm2_D/pointwisenormP << std::endl;
 		//std::cout << "\n The Global Pointwise of l2 Norm of error for real field is : --\n" << pointwisenorm << std::endl;
 	}
 	else if(!usel2 && !userela) {
