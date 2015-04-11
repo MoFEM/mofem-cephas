@@ -43,96 +43,9 @@ using bio::tee_device;
 using bio::stream;
 using namespace MoFEM;
 
-#include <PCMGSetUpViaApproxOrders.hpp>
 #include <AnalyticalSolutions.hpp>
 
 static char help[] = "...\n\n";
-
-template <typename FUNEVAL>
-PetscErrorCode solve_problem(FieldInterface& m_field,FUNEVAL &fun_evaluator,PetscBool is_partitioned) {
-  PetscFunctionBegin;
-
-  PetscErrorCode ierr;
-  
-
-  Mat A;
-  ierr = m_field.MatCreateMPIAIJWithArrays("EX1_PROBLEM",&A); CHKERRQ(ierr);
-  Vec D;
-
-  vector<Vec> vec_F;
-  vec_F.resize(2);
-
-  ierr = m_field.VecCreateGhost("EX1_PROBLEM",ROW,&vec_F[0]); CHKERRQ(ierr);
-  ierr = m_field.VecCreateGhost("EX1_PROBLEM",ROW,&vec_F[1]); CHKERRQ(ierr);
-  ierr = m_field.VecCreateGhost("EX1_PROBLEM",COL,&D); CHKERRQ(ierr);
-
-  FieldApproximationH1 field_approximation(m_field);
-  // This increase rule for numerical intergaration. In case of 10 node
-  // elements jacobian is varing lineary across element, that way to element
-  // rule is added 1.
-  field_approximation.addToRule = 1; 
-
-  ierr = field_approximation.loopMatrixAndVector(
-    "EX1_PROBLEM","FE1","reEX",A,vec_F,fun_evaluator); CHKERRQ(ierr);
-  ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-  ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-
-  KSP solver;
-  ierr = KSPCreate(PETSC_COMM_WORLD,&solver); CHKERRQ(ierr);
-  ierr = KSPSetOperators(solver,A,A); CHKERRQ(ierr);
-  ierr = KSPSetFromOptions(solver); CHKERRQ(ierr);
-  {
-    // SetUp mult-grid pre-conditioner
-    PetscBool same = PETSC_FALSE;
-    PC pc;
-    ierr = KSPGetPC(solver,&pc); CHKERRQ(ierr);
-    PetscObjectTypeCompare((PetscObject)pc,PCMG,&same);
-    if (same) {
-      ierr = PCMGSetUpViaApproxOrders(pc,&m_field,"EX1_PROBLEM"); CHKERRQ(ierr);
-    }
-  }
-  ierr = KSPSetUp(solver); CHKERRQ(ierr);
-
-  for(int ss = 0;ss<GenericAnalyticalSolution::LAST_VAL_TYPE;ss++) {
-
-    // solve problem
-    ierr = KSPSolve(solver,vec_F[ss],D); CHKERRQ(ierr);
-    ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-
-    // save data on mesh
-    if(ss == GenericAnalyticalSolution::REAL) {
-
-      if(is_partitioned) {
-	ierr = m_field.set_global_ghost_vector("EX1_PROBLEM",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-      } else {
-	ierr = m_field.set_local_ghost_vector("EX1_PROBLEM",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-      }
-
-      VecZeroEntries(D);
-      ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-      ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-
-    } else {
-      if(is_partitioned) {
-	ierr = m_field.set_other_local_ghost_vector("EX1_PROBLEM","reEX","imEX",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-      } else {
-	ierr = m_field.set_other_global_ghost_vector("EX1_PROBLEM","reEX","imEX",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-      }
-    }
-
-  }
-
-  // clean 
-  ierr = KSPDestroy(&solver); CHKERRQ(ierr);
-  ierr = VecDestroy(&vec_F[GenericAnalyticalSolution::REAL]); CHKERRQ(ierr);
-  ierr = VecDestroy(&vec_F[GenericAnalyticalSolution::IMAG]); CHKERRQ(ierr);
-
-  ierr = VecDestroy(&D); CHKERRQ(ierr);
-  ierr = MatDestroy(&A); CHKERRQ(ierr);
-
-  PetscFunctionReturn(0);
-}
 
 // argc = argument counts, argv = argument vectors
 int main(int argc, char *argv[]) {
@@ -240,13 +153,6 @@ int main(int argc, char *argv[]) {
   ierr = m_field.set_field_order(root_set,MBEDGE,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
   ierr = m_field.set_field_order(root_set,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
 
-  // define problem
-  ierr = m_field.add_problem("EX1_PROBLEM"); CHKERRQ(ierr);
-  // set finite elements for problem
-  ierr = m_field.modify_problem_add_finite_element("EX1_PROBLEM","FE1"); CHKERRQ(ierr);
-  // set refinment level for problem
-  ierr = m_field.modify_problem_ref_level_add_bit("EX1_PROBLEM",bit_level0); CHKERRQ(ierr);
-  
   // build field
   ierr = m_field.build_fields(); CHKERRQ(ierr);
   Projection10NodeCoordsOnField ent_method_material(m_field,"MESH_NODE_POSITIONS");
@@ -255,6 +161,13 @@ int main(int argc, char *argv[]) {
   ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
   // build adjacencies
   ierr = m_field.build_adjacencies(bit_level0); CHKERRQ(ierr);
+
+  // define problem
+  ierr = m_field.add_problem("EX1_PROBLEM"); CHKERRQ(ierr);
+  // set finite elements for problem
+  ierr = m_field.modify_problem_add_finite_element("EX1_PROBLEM","FE1"); CHKERRQ(ierr);
+  // set refinment level for problem
+  ierr = m_field.modify_problem_ref_level_add_bit("EX1_PROBLEM",bit_level0); CHKERRQ(ierr);
 
   // build porblems
   if(is_partitioned) {
@@ -304,11 +217,11 @@ int main(int argc, char *argv[]) {
 
   switch((AnalyticalSolutionTypes)choise_value) {
 
-    case SPHERE_INCIDENT_WAVE:
+    case SOFT_SPHERE_SCATTER_WAVE:
 
       {
-	SphereIncidentWave function_evaluator(wavenumber);
-	ierr = solve_problem(m_field,function_evaluator,is_partitioned); CHKERRQ(ierr);
+	SoftSphereScatterWave function_evaluator(wavenumber);
+	ierr = solve_problem(m_field,"EX1_PROBLEM","FE1","reEX","imEX",INSERT_VALUES,function_evaluator,is_partitioned); CHKERRQ(ierr);
       }
 
       break;
@@ -317,19 +230,37 @@ int main(int argc, char *argv[]) {
 
       {
 	PlaneWave function_evaluator(wavenumber,0.25*M_PI);
-	ierr = solve_problem(m_field,function_evaluator,is_partitioned); CHKERRQ(ierr);
+	ierr = solve_problem(m_field,"EX1_PROBLEM","FE1","reEX","imEX",INSERT_VALUES,function_evaluator,is_partitioned); CHKERRQ(ierr);
       }
 
       break;
 
-    case CYLINDER_INCIDENT_WAVE:
+    case CYLINDER_SCATTER_WAVE:
 
       {	
-	CylinderIncidentWave function_evaluator(wavenumber);
-	ierr = solve_problem(m_field,function_evaluator,is_partitioned); CHKERRQ(ierr);
+	CylinderScatterWave function_evaluator(wavenumber);
+	ierr = solve_problem(m_field,"EX1_PROBLEM","FE1","reEX","imEX",INSERT_VALUES,function_evaluator,is_partitioned); CHKERRQ(ierr);
       }
 
       break;
+
+    case INCIDENT_WAVE:
+
+      {	
+	IncidentWave function_evaluator(wavenumber);
+	ierr = solve_problem(m_field,"EX1_PROBLEM","FE1","reEX","imEX",INSERT_VALUES,function_evaluator,is_partitioned); CHKERRQ(ierr);
+      }
+
+      break;
+
+  }
+
+  PetscBool add_incident_wave = PETSC_TRUE;
+  ierr = PetscOptionsGetBool(NULL,"-add_incident_wave",&add_incident_wave,NULL); CHKERRQ(ierr);
+  if(add_incident_wave) {
+
+    IncidentWave function_evaluator(wavenumber);
+    ierr = solve_problem(m_field,"EX1_PROBLEM","FE1","reEX","imEX",ADD_VALUES,function_evaluator,is_partitioned); CHKERRQ(ierr);
 
   }
  

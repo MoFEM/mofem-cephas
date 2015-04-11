@@ -17,12 +17,9 @@ file(COPY
 
 include_directories("${UM_SOURCE_DIR}/helmholtz/src")
 include_directories("${UM_SOURCE_DIR}/analytical_dirichlet_boundary_conditions/src")
-# get access to multi-grid preconditioner (currently with elastic porblem)
-include_directories("${UM_SOURCE_DIR}/elasticity/src")
 
 add_executable(best_approximation 
   ${UM_SOURCE_DIR}/helmholtz/best_approximation.cpp
-  ${UM_SOURCE_DIR}/elasticity/src/impl/PCMGSetUpViaApproxOrders.cpp 
 )
 target_link_libraries(best_approximation
   mofem_finite_element_library
@@ -37,7 +34,6 @@ target_link_libraries(best_approximation
 
 add_executable(fe_approximation 
   ${UM_SOURCE_DIR}/helmholtz/fe_approximation.cpp
-  ${UM_SOURCE_DIR}/elasticity/src/impl/PCMGSetUpViaApproxOrders.cpp 
 )
 target_link_libraries(fe_approximation
   mofem_finite_element_library

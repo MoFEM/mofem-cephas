@@ -279,7 +279,7 @@ struct HelmholtzElement {
   
         // wave number "k" is the proportional to the frequency of incident wave
         // and represents number of waves per wave length 2Pi - 2Pi/K   
-        double k_pow2 = pow(dAta.wAvenumber,2.0);
+        double k_pow2 = dAta.wAvenumber*dAta.wAvenumber;
 
         for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
   
@@ -344,8 +344,8 @@ struct HelmholtzElement {
       PetscFunctionBegin;
  
       int nb_rows = row_data.getIndices().size();
-      int nb_cols = col_data.getIndices().size();
       if(nb_rows==0) PetscFunctionReturn(0);
+      int nb_cols = col_data.getIndices().size();
       if(nb_cols==0) PetscFunctionReturn(0);
       if(dAta.tEts.find(getMoFEMFEPtr()->get_ent()) == dAta.tEts.end()) {
         PetscFunctionReturn(0);
@@ -356,7 +356,7 @@ struct HelmholtzElement {
         K.resize(nb_rows,nb_cols);
         K.clear();
 
-        double k_pow2 = pow(dAta.wAvenumber,2.0);
+        double k_pow2 = dAta.wAvenumber*dAta.wAvenumber;
 
         for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
           

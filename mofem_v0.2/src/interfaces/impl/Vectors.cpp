@@ -515,40 +515,33 @@ PetscErrorCode Core::set_other_local_ghost_vector(
   if(miit->get_max_rank() != cpy_fit->get_max_rank()) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"fiedls has to have same rank");
   }
-  switch (scatter_mode) {
+  switch(scatter_mode) {
     case SCATTER_REVERSE: {
-      PetscScalar *array;
-      VecGetArray(V,&array);
+      bool alpha = true;
       switch (mode) {
 	case INSERT_VALUES:
-	  for(;miit!=hi_miit;miit++) {
-	    if(miit->get_name()!=field_name) continue;
-	    DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>::type::iterator diiiit;
-	    diiiit = dofsMoabField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().find(boost::make_tuple(cpy_field_name,miit->get_ent(),miit->get_EntDofIdx()));
-	    if(diiiit==dofsMoabField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().end()) {
-	      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"equivalalent dof does not exist, dof has to be creates, use set_other_global_ghost_vector to create dofs entries");
-	    }
-	    diiiit->get_FieldData() = array[miit->get_petsc_local_dof_idx()];
-	    if(verb > 1) {
-	      ostringstream ss;
-	      ss << *diiiit << "set " << array[miit->get_petsc_local_dof_idx()] << endl;
-	      PetscPrintf(comm,ss.str().c_str());
-	    }
-	  }
-	    //if(verb > 0) {
-	      //cerr << "AAAAAAAAAAAA\n";
-	      //ierr = check_number_of_ents_in_ents_field(cpy_field_name); CHKERRQ(ierr);
-	    //}
+	  alpha = false;
+	case ADD_VALUES:
 	  break;
-	default:
-	  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"not implemented");
+      }
+      PetscScalar *array;
+      VecGetArray(V,&array);
+      for(;miit!=hi_miit;miit++) {
+	if(miit->get_name_ref()!=field_name) continue;
+	DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>::type::iterator diiiit;
+	diiiit = dofsMoabField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().find(boost::make_tuple(cpy_field_name,miit->get_ent(),miit->get_EntDofIdx()));
+	if(diiiit==dofsMoabField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().end()) {
+	  SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"equivalent dof does not exist, dof has to be creates, use set_other_global_ghost_vector to create dofs entries");
+	}
+	if(alpha) diiiit->get_FieldData() = 0;
+	diiiit->get_FieldData() += array[miit->get_petsc_local_dof_idx()];
       }
       ierr = VecRestoreArray(V,&array); CHKERRQ(ierr);
     }
     break;
     case SCATTER_FORWARD: {
 	for(;miit!=hi_miit;miit++) {
-	  if(miit->get_name()!=field_name) continue;
+	  if(miit->get_name_ref()!=field_name) continue;
 	  DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>::type::iterator diiiit;
 	  diiiit = dofsMoabField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().find(boost::make_tuple(cpy_field_name,miit->get_ent(),miit->get_EntDofIdx()));
 	  if(diiiit==dofsMoabField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().end()) {

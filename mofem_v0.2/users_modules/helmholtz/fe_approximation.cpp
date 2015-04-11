@@ -50,6 +50,7 @@
 #include <boost/math/special_functions.hpp>
 #include <complex>
 
+#include <FiledApproximation.hpp>
 
 using namespace std;
 using namespace boost::math;
@@ -60,10 +61,8 @@ using bio::stream;
 
 using namespace MoFEM;
 
-#include <PCMGSetUpViaApproxOrders.hpp>
 #include <AnalyticalSolutions.hpp>
 #include <AnalyticalDirihlet.hpp>
-
 
 #include <HelmholtzElement.hpp>
 
@@ -293,10 +292,10 @@ int main(int argc, char *argv[]) {
   
   switch((AnalyticalSolutionTypes)choise_value) {
 
-    case SPHERE_INCIDENT_WAVE:
+    case SOFT_SPHERE_SCATTER_WAVE:
 
       {
-	SphereIncidentWave function_evaluator(wavenumber);
+	SoftSphereScatterWave function_evaluator(wavenumber);
 	ierr = analytical_bc_real.setApproxOps(m_field,"rePRES",function_evaluator,GenericAnalyticalSolution::REAL); CHKERRQ(ierr); 
 	ierr = analytical_bc_imag.setApproxOps(m_field,"imPRES",function_evaluator,GenericAnalyticalSolution::IMAG); CHKERRQ(ierr);
       }
@@ -313,15 +312,26 @@ int main(int argc, char *argv[]) {
 
       break;
 
-    case CYLINDER_INCIDENT_WAVE:
+    case CYLINDER_SCATTER_WAVE:
 
       {	
-	CylinderIncidentWave function_evaluator(wavenumber);
+	CylinderScatterWave function_evaluator(wavenumber);
 	ierr = analytical_bc_real.setApproxOps(m_field,"rePRES",function_evaluator,GenericAnalyticalSolution::REAL); CHKERRQ(ierr); 
 	ierr = analytical_bc_imag.setApproxOps(m_field,"imPRES",function_evaluator,GenericAnalyticalSolution::IMAG); CHKERRQ(ierr);
       }
 
       break;
+
+    case INCIDENT_WAVE:
+
+      {	
+	IncidentWave function_evaluator(wavenumber);
+	ierr = analytical_bc_real.setApproxOps(m_field,"rePRES",function_evaluator,GenericAnalyticalSolution::REAL); CHKERRQ(ierr); 
+	ierr = analytical_bc_imag.setApproxOps(m_field,"imPRES",function_evaluator,GenericAnalyticalSolution::IMAG); CHKERRQ(ierr);
+      }
+
+      break;
+
 
   }
 
@@ -390,6 +400,35 @@ int main(int argc, char *argv[]) {
   ierr = VecDestroy(&F); CHKERRQ(ierr);
   ierr = VecDestroy(&T); CHKERRQ(ierr);
   ierr = KSPDestroy(&solver); CHKERRQ(ierr);
+
+  PetscBool add_incident_wave = PETSC_TRUE;
+  ierr = PetscOptionsGetBool(NULL,"-add_incident_wave",&add_incident_wave,NULL); CHKERRQ(ierr);
+  if(add_incident_wave) {
+
+    // define problem
+    ierr = m_field.add_problem("INCIDENT_WAVE"); CHKERRQ(ierr);
+    // set finite elements for problem
+    ierr = m_field.modify_problem_add_finite_element("INCIDENT_WAVE","HELMHOLTZ_RERE_FE"); CHKERRQ(ierr);
+    // set refinment level for problem
+    ierr = m_field.modify_problem_ref_level_add_bit("INCIDENT_WAVE",bit_level0); CHKERRQ(ierr);
+
+    // build porblems
+    if(is_partitioned) {
+      // if mesh is partitioned
+      ierr = m_field.build_partitioned_problem("INCIDENT_WAVE",true); CHKERRQ(ierr);
+      ierr = m_field.partition_finite_elements("INCIDENT_WAVE",true); CHKERRQ(ierr);
+    } else {
+      // if not partitioned mesh is load to all processes 
+      ierr = m_field.build_problem("INCIDENT_WAVE"); CHKERRQ(ierr);
+      ierr = m_field.partition_problem("INCIDENT_WAVE"); CHKERRQ(ierr);
+      ierr = m_field.partition_finite_elements("INCIDENT_WAVE"); CHKERRQ(ierr);
+    }
+    ierr = m_field.partition_ghost_dofs("INCIDENT_WAVE"); CHKERRQ(ierr);
+
+    IncidentWave function_evaluator(wavenumber);
+    ierr = solve_problem(m_field,"INCIDENT_WAVE","HELMHOLTZ_RERE_FE","rePRES","imPRES",ADD_VALUES,function_evaluator,is_partitioned); CHKERRQ(ierr);
+
+  }
 
   if(is_partitioned) {
     rval = moab.write_file("fe_solution.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);

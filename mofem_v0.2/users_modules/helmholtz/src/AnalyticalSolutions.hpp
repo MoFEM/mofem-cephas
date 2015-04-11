@@ -30,43 +30,78 @@ struct GenericAnalyticalSolution {
 
 /// List of analytical solution
 enum AnalyticalSolutionTypes {
-  SPHERE_INCIDENT_WAVE, 
+  SOFT_SPHERE_SCATTER_WAVE, 
   PLANE_WAVE,
-  CYLINDER_INCIDENT_WAVE
+  CYLINDER_SCATTER_WAVE,
+  INCIDENT_WAVE
 };
 
 /// Line command list of analytical solutions
 const char *analytical_solution_types[] = { 
-  "sphere_incident_wave", 
+  "soft_sphere_incident_wave", 
   "plane_wave",
-  "cylinder_incident_wave"
+  "cylinder_scatter_wave"
+  "incident_wave"
+};
+
+/** Incident wave 
+  */
+struct IncidentWave: public GenericAnalyticalSolution {
+
+  vector<ublas::vector<double> > rEsult;
+  double wAvenumber;
+ 
+  IncidentWave(double wavenumber):
+    wAvenumber(wavenumber) {}
+  ~IncidentWave() {}
+
+  virtual vector<ublas::vector<double> >& operator()(double x, double y, double z) {
+
+    const complex< double > i( 0.0, 1.0 );
+    complex< double > result = 0.0;
+
+    result = exp(i*wAvenumber*z);
+
+    rEsult.resize(2);
+    rEsult[REAL].resize(1);
+    (rEsult[REAL])[0] = std::real(result);
+    rEsult[IMAG].resize(1);
+    (rEsult[IMAG])[0] = std::imag(result);
+
+    return rEsult;
+
+  }	
+
 };
 
 /** Calculate the analytical solution of impinging wave on sphere
 
   See paper: 
   Exact solution of Impinging sphere from Acoustic isogeometric boundary element analysis by R.N. Simpson etc.
+  Look as well:
+  <http://ansol.us/Products/Coustyx/Validation/MultiDomain/Scattering/PlaneWave/SoftSphere/Downloads/dataset_description.pdf>
 
   */
-struct SphereIncidentWave: public GenericAnalyticalSolution {
+struct SoftSphereScatterWave: public GenericAnalyticalSolution {
   
-  vector<complex<double> > vecAl;
+  vector<complex<double> > vecAl; ///< this is to calculate constant values of series only once
   vector<ublas::vector<double> > rEsult;
   double wAvenumber;
   double sphereRadius;
    
-  SphereIncidentWave(double wavenumber,double sphere_radius = 0.25): 
+  SoftSphereScatterWave(double wavenumber,double sphere_radius = 1.): 
     wAvenumber(wavenumber),sphereRadius(sphere_radius) {}
-  virtual ~SphereIncidentWave() {}
+  virtual ~SoftSphereScatterWave() {}
    
   virtual vector<ublas::vector<double> >& operator()(double x, double y, double z) {
 
     const double tol = 1.0e-10;
 
-    double x2 = pow(x,2.0);
-    double y2 = pow(y,2.0);
-    double R = sqrt(x2+y2+pow(z,2.0)); 
-    double cos_theta = sqrt(x2+y2)/R;
+    double x2 = x*x;
+    double y2 = y*y;
+    double z2 = z*z;
+    double R = sqrt(x2+y2+z2); 
+    double cos_theta = 1-sqrt(x2+y2)/R;
 
     const double k = wAvenumber;  	//Wave number
     const double a = sphereRadius;      //radius of the sphere,wait to modify by user
@@ -168,14 +203,14 @@ struct PlaneWave: public GenericAnalyticalSolution {
     Theofanis Strouboulis, Ivo Babuska, Realino Hidaja
 
 */
-struct CylinderIncidentWave: public GenericAnalyticalSolution {
+struct CylinderScatterWave: public GenericAnalyticalSolution {
   
   vector<ublas::vector<double> > rEsult;
   double wAvenumber;
   double shereRadius;
    
-  CylinderIncidentWave(double wavenumber): wAvenumber(wavenumber) {}
-  virtual ~CylinderIncidentWave() {}
+  CylinderScatterWave(double wavenumber): wAvenumber(wavenumber) {}
+  virtual ~CylinderScatterWave() {}
    
   virtual vector<ublas::vector<double> >& operator()(double x, double y, double z) {
 
@@ -242,4 +277,85 @@ struct CylinderIncidentWave: public GenericAnalyticalSolution {
   }
   
 };
+
+template <typename FUNEVAL>
+PetscErrorCode solve_problem(FieldInterface& m_field,
+  const string& problem_name,const string& fe_name,
+  const string& re_field,const string &im_field,
+  InsertMode mode,
+  FUNEVAL &fun_evaluator,PetscBool is_partitioned) {
+  PetscFunctionBegin;
+
+  PetscErrorCode ierr;
+  
+
+  Mat A;
+  ierr = m_field.MatCreateMPIAIJWithArrays(problem_name,&A); CHKERRQ(ierr);
+  Vec D;
+
+  vector<Vec> vec_F;
+  vec_F.resize(2);
+
+  ierr = m_field.VecCreateGhost(problem_name,ROW,&vec_F[0]); CHKERRQ(ierr);
+  ierr = m_field.VecCreateGhost(problem_name,ROW,&vec_F[1]); CHKERRQ(ierr);
+  ierr = m_field.VecCreateGhost(problem_name,COL,&D); CHKERRQ(ierr);
+
+  FieldApproximationH1 field_approximation(m_field);
+  // This increase rule for numerical intergaration. In case of 10 node
+  // elements jacobian is varing lineary across element, that way to element
+  // rule is added 1.
+  field_approximation.addToRule = 1; 
+
+  ierr = field_approximation.loopMatrixAndVector(
+    problem_name,fe_name,re_field,A,vec_F,fun_evaluator); CHKERRQ(ierr);
+  ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+  ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+
+  KSP solver;
+  ierr = KSPCreate(PETSC_COMM_WORLD,&solver); CHKERRQ(ierr);
+  ierr = KSPSetOperators(solver,A,A); CHKERRQ(ierr);
+  ierr = KSPSetFromOptions(solver); CHKERRQ(ierr);
+  ierr = KSPSetUp(solver); CHKERRQ(ierr);
+
+  for(int ss = 0;ss<GenericAnalyticalSolution::LAST_VAL_TYPE;ss++) {
+
+    // solve problem
+    ierr = KSPSolve(solver,vec_F[ss],D); CHKERRQ(ierr);
+    ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+
+    // save data on mesh
+    if(ss == GenericAnalyticalSolution::REAL) {
+
+      if(is_partitioned) {
+	ierr = m_field.set_global_ghost_vector(problem_name,COL,D,mode,SCATTER_REVERSE); CHKERRQ(ierr);
+      } else {
+	ierr = m_field.set_local_ghost_vector(problem_name,COL,D,mode,SCATTER_REVERSE); CHKERRQ(ierr);
+      }
+
+      VecZeroEntries(D);
+      ierr = VecGhostUpdateBegin(D,mode,SCATTER_FORWARD); CHKERRQ(ierr);
+      ierr = VecGhostUpdateEnd(D,mode,SCATTER_FORWARD); CHKERRQ(ierr);
+
+    } else {
+      if(is_partitioned) {
+	ierr = m_field.set_other_local_ghost_vector(problem_name,re_field,im_field,COL,D,mode,SCATTER_REVERSE); CHKERRQ(ierr);
+      } else {
+	ierr = m_field.set_other_global_ghost_vector(problem_name,re_field,im_field,COL,D,mode,SCATTER_REVERSE); CHKERRQ(ierr);
+      }
+    }
+
+  }
+
+  // clean 
+  ierr = KSPDestroy(&solver); CHKERRQ(ierr);
+  ierr = VecDestroy(&vec_F[GenericAnalyticalSolution::REAL]); CHKERRQ(ierr);
+  ierr = VecDestroy(&vec_F[GenericAnalyticalSolution::IMAG]); CHKERRQ(ierr);
+
+  ierr = VecDestroy(&D); CHKERRQ(ierr);
+  ierr = MatDestroy(&A); CHKERRQ(ierr);
+
+  PetscFunctionReturn(0);
+}
+
 
