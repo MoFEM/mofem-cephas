@@ -1,7 +1,6 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
- * FIXME: DESCRIPTION
- */
+/** \brieg DMMoFEM.hpp
+  \brief Discrete manager interface for MoFEM
+  */
 
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under

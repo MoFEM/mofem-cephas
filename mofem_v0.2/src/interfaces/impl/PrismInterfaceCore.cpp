@@ -47,9 +47,9 @@ namespace MoFEM {
 PetscErrorCode Core::get_msId_3dENTS_sides(const int msId,const CubitBCType cubit_bc_type,const BitRefLevel mesh_bit_level,const bool recursive,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-  CubitMeshSet_multiIndex::index<Composite_Cubit_msId_and_MeshSetType_mi_tag>::type::iterator 
-    miit = cubitMeshsets.get<Composite_Cubit_msId_and_MeshSetType_mi_tag>().find(boost::make_tuple(msId,cubit_bc_type.to_ulong()));
-  if(miit!=cubitMeshsets.get<Composite_Cubit_msId_and_MeshSetType_mi_tag>().end()) {
+  CubitMeshSet_multiIndex::index<Composite_Cubit_msId_And_MeshSetType_mi_tag>::type::iterator 
+    miit = cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().find(boost::make_tuple(msId,cubit_bc_type.to_ulong()));
+  if(miit!=cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().end()) {
     ierr = Core::get_msId_3dENTS_sides(miit->meshset,mesh_bit_level,recursive,verb); CHKERRQ(ierr);
   } else {
     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"msId is not there");
@@ -226,9 +226,9 @@ PetscErrorCode Core::get_msId_3dENTS_split_sides(
   const int msId,const CubitBCType cubit_bc_type,const bool add_iterfece_entities,const bool recursive,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-  CubitMeshSet_multiIndex::index<Composite_Cubit_msId_and_MeshSetType_mi_tag>::type::iterator 
-    miit = cubitMeshsets.get<Composite_Cubit_msId_and_MeshSetType_mi_tag>().find(boost::make_tuple(msId,cubit_bc_type.to_ulong()));
-  if(miit!=cubitMeshsets.get<Composite_Cubit_msId_and_MeshSetType_mi_tag>().end()) {
+  CubitMeshSet_multiIndex::index<Composite_Cubit_msId_And_MeshSetType_mi_tag>::type::iterator 
+    miit = cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().find(boost::make_tuple(msId,cubit_bc_type.to_ulong()));
+  if(miit!=cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().end()) {
     ierr = Core::get_msId_3dENTS_split_sides(
       meshset,bit,miit->meshset,add_iterfece_entities,recursive,verb); CHKERRQ(ierr);
   } else {
@@ -371,8 +371,8 @@ PetscErrorCode Core::get_msId_3dENTS_split_sides(
     rval = moab.add_entities(meshset_for_bit_level,ents_dd); CHKERR_PETSC(rval);
   }
   //
-  //typedef RefMoFEMEntity_multiIndex::index<Composite_EntityHandle_And_ParentEntType_mi_tag>::type ref_ent_by_composite;
-  //ref_ent_by_composite &by_composite = refinedEntities.get<Composite_EntityHandle_And_ParentEntType_mi_tag>();
+  //typedef RefMoFEMEntity_multiIndex::index<Composite_Ent_And_ParentEntType_mi_tag>::type ref_ent_by_composite;
+  //ref_ent_by_composite &by_composite = refinedEntities.get<Composite_Ent_And_ParentEntType_mi_tag>();
   //create new 3d ents on "father" side
   Range new_3d_ents;
   Range::iterator eit3d = side_ents3d.begin();

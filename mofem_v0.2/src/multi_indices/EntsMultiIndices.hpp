@@ -1,6 +1,8 @@
 /** \file EntsMultiIndices.hpp
  * \brief Myltindex containes, for mofem enitities data structures and other low-level functions 
- * 
+ */
+
+/* 
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or (at your
@@ -219,7 +221,7 @@ struct interface_RefMoFEMEntity {
  * \param ordered_non_unique EntType_mi_tag
  * \param ordered_non_unique ParentEntType_mi_tag
  * \param ordered_non_unique Composite_EntType_And_ParentEntType_mi_tag
- * \param ordered_non_unique Composite_EntityHandle_And_ParentEntType_mi_tag
+ * \param ordered_non_unique Composite_Ent_And_ParentEntType_mi_tag
  */
 typedef multi_index_container<
   RefMoFEMEntity,
@@ -245,13 +247,28 @@ typedef multi_index_container<
 	const_mem_fun<RefMoFEMEntity::BasicMoFEMEntity,EntityType,&RefMoFEMEntity::get_ent_type>,
 	const_mem_fun<RefMoFEMEntity,EntityType,&RefMoFEMEntity::get_parent_ent_type> > >,
     ordered_non_unique<
-      tag<Composite_EntityHandle_And_ParentEntType_mi_tag>, 
+      tag<Composite_Ent_And_ParentEntType_mi_tag>, 
       composite_key<
 	RefMoFEMEntity,
 	const_mem_fun<RefMoFEMEntity,EntityHandle,&RefMoFEMEntity::get_parent_ent>,
 	const_mem_fun<RefMoFEMEntity::BasicMoFEMEntity,EntityType,&RefMoFEMEntity::get_ent_type> > >
   > > RefMoFEMEntity_multiIndex;
 
+/** \brief multi-index view of RefMoFEMEntity by parent entity
+  \ingroup ent_multi_indices
+*/
+typedef multi_index_container<
+  const RefMoFEMEntity*,
+  indexed_by<
+    hashed_unique<
+      const_mem_fun<RefMoFEMEntity,EntityHandle,&RefMoFEMEntity::get_parent_ent> >,
+    hashed_unique<
+      tag<Composite_EntType_and_ParentEntType_mi_tag>,
+      composite_key<
+	const RefMoFEMEntity*,
+	const_mem_fun<RefMoFEMEntity,EntityHandle,&RefMoFEMEntity::get_ref_ent>,
+	const_mem_fun<RefMoFEMEntity,EntityHandle,&RefMoFEMEntity::get_parent_ent> > >
+  > > RefMoFEMEntity_multiIndex_view_by_parent_entity;
 
 /** \brief ref mofem entity, remove parent
  * \ingroup ent_multi_indices 

@@ -1,13 +1,13 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
-* --------------------------------------------------------------
-*
-* DESCRIPTION: FIXME
-*
-* This is not exactly procedure for linear elatic dynamics, since jacobian is
-* evaluated at every time step and snes procedure is involved. However it is
-* implemented like that, to test methodology for general nonlinear problem.
-*
-*/
+/** \file DataOperators.hpp
+
+  Number of structures preforming operations on integration points. 
+
+  For example:
+  - calculate Jacobian
+  - calculate Piola-Transform on shape functions
+  - calculate normals and tangent vectors at integration points on triangle
+
+ */
 
 /* This file is part of MoFEM.
 * MoFEM is free software: you can redistribute it and/or modify it under
@@ -35,6 +35,8 @@ namespace MoFEM {
   * \ingroup mofem_forces_and_sources
   */
 struct DataOperator {
+
+  virtual ~DataOperator() {}
 
   /** \brief operator for linear form, usually to calculate values on right hand side
     */

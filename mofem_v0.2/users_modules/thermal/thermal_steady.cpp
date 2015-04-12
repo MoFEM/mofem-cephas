@@ -1,7 +1,8 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
- * FIXME: DESCRIPTION
- */
+/** \file thermal_steady.cpp
+  \ingroup mofem_thermal_elem
+  \brief Example of steady thermal analysis
+*/
+
 
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under

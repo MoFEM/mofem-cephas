@@ -2,7 +2,9 @@
  * \brief Core FieldInterface class for user interface
  * 
  * Low level data structures not used directly by user
- *
+ */
+
+/*
  * MoFEM is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
@@ -298,6 +300,15 @@ struct Core:
         ss << data;
         PetscPrintf(comm,ss.str().c_str());
     }
+	
+	/*for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(this_mField,BLOCKSET|MAT_HELMHOLTZSET,it)) {
+        Mat_Helmholtz data;
+        ierr = it->get_attribute_data_structure(data); CHKERRQ(ierr);
+        ostringstream ss;
+        ss << *it << endl;
+        ss << data;
+        PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
+    }*/
     
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(this_mField,BLOCKSET|MAT_MOISTURESET,it)) {
       Mat_Moisture data;
@@ -532,9 +543,11 @@ struct Core:
   PetscErrorCode problem_basic_method_preProcess(const string &problem_name,BasicMethod &method,int verb = -1);
   PetscErrorCode problem_basic_method_postProcess(const MoFEMProblem *problem_ptr,BasicMethod &method,int verb = -1);
   PetscErrorCode problem_basic_method_postProcess(const string &problem_name,BasicMethod &method,int verb = -1);
+
   PetscErrorCode loop_finite_elements(const MoFEMProblem *problem_ptr,const string &fe_name,FEMethod &method,int lower_rank,int upper_rank,int verb = -1);
   PetscErrorCode loop_finite_elements(const string &problem_name,const string &fe_name,FEMethod &method,int lower_rank,int upper_rank,int verb = -1);
   PetscErrorCode loop_finite_elements(const string &problem_name,const string &fe_name,FEMethod &method,int verb = -1);
+
   PetscErrorCode loop_dofs(const MoFEMProblem *problem_ptr,const string &field_name,RowColData rc,EntMethod &method,int lower_rank,int upper_rank,int verb = -1);
   PetscErrorCode loop_dofs(const string &problem_name,const string &field_name,RowColData rc,EntMethod &method,int lower_rank,int upper_rank,int verb = -1);
   PetscErrorCode loop_dofs(const string &problem_name,const string &field_name,RowColData rc,EntMethod &method,int verb = -1);

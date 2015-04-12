@@ -1,12 +1,10 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
-* --------------------------------------------------------------
-*
-* DESCRIPTION: FIXME
-*
-* This is not exactly procedure for linear elatic dynamics, since jacobian is
-* evaluated at every time step and snes procedure is involved. However it is
-* implemented like that, to test methodology for general nonlinear problem.
-*
+/** \file ElementsOnEntities.hpp
+
+  \brief Implementation of elements on entities.
+
+  Those element are inherited by user to implement specific implementation of
+  particular problem.
+  
 */
 
 /* This file is part of MoFEM.
@@ -31,13 +29,259 @@ using namespace boost::numeric;
 
 namespace MoFEM {
 
+/** \brief structure to get information form mofem into DataForcesAndSurcesCore
+  * \ingroup mofem_forces_and_sources
+  * 
+  */
+struct ForcesAndSurcesCore: public FEMethod {
+
+  PetscErrorCode ierr;
+
+  FieldInterface& mField;
+  ForcesAndSurcesCore(FieldInterface& _mField): 
+    mField(_mField) {};
+  virtual ~ForcesAndSurcesCore() {}
+
+  PetscErrorCode getSense(EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data);
+  PetscErrorCode getOrder(const EntityType type,const FieldSpace space,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data);
+  PetscErrorCode getOrder(const string &field_name,const EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data);
+
+  PetscErrorCode getEdgesSense(DataForcesAndSurcesCore &data);
+  PetscErrorCode getTrisSense(DataForcesAndSurcesCore &data);
+
+  PetscErrorCode getEdgesOrder(DataForcesAndSurcesCore &data,const FieldSpace space);
+  PetscErrorCode getTrisOrder(DataForcesAndSurcesCore &data,const FieldSpace space);
+  PetscErrorCode getTetsOrder(DataForcesAndSurcesCore &data,const FieldSpace space);
+  PetscErrorCode getEdgesOrder(DataForcesAndSurcesCore &data,const string &field_name);
+  PetscErrorCode getTrisOrder(DataForcesAndSurcesCore &data,const string &field_name);
+  PetscErrorCode getTetsOrder(DataForcesAndSurcesCore &data,const string &field_name);	
+
+  // ** Indices **
+
+  /// \brief get node indices
+  PetscErrorCode getNodesIndices(const string &field_name,
+    FENumeredDofMoFEMEntity_multiIndex &dofs,ublas::vector<int> &nodes_indices);
+
+  /// \brief get indices by type (generic function)
+  PetscErrorCode getTypeIndices(const string &field_name,
+    FENumeredDofMoFEMEntity_multiIndex &dofs,EntityType type,int side_number,ublas::vector<int> &indices);
+
+  /// \brief get indices by type (generic function)
+  PetscErrorCode getTypeIndices(
+    const string &field_name,FENumeredDofMoFEMEntity_multiIndex &dofs,
+    EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data);
+
+  /// \brief get row node indices from FENumeredDofMoFEMEntity_multiIndex
+  PetscErrorCode getRowNodesIndices(DataForcesAndSurcesCore &data,const string &field_name); 
+
+  /// \brief get col node indices from FENumeredDofMoFEMEntity_multiIndex
+  PetscErrorCode getColNodesIndices(DataForcesAndSurcesCore &data,const string &field_name);
+
+  /// \brief get Edges row indices from FENumeredDofMoFEMEntity_multiIndex
+  PetscErrorCode getEdgesRowIndices(DataForcesAndSurcesCore &data,const string &field_name);
+
+  /// \brief get Edges col indices from FENumeredDofMoFEMEntity_multiIndex
+  PetscErrorCode getEdgesColIndices(DataForcesAndSurcesCore &data,const string &field_name);
+
+  /// \brief get Tris row indices from FENumeredDofMoFEMEntity_multiIndex
+  PetscErrorCode getTrisRowIndices(DataForcesAndSurcesCore &data,const string &field_name);
+
+  /// \brief get Tris col indices from FENumeredDofMoFEMEntity_multiIndex
+  PetscErrorCode getTrisColIndices(DataForcesAndSurcesCore &data,const string &field_name);
+
+  /// \brief get Tets row indices from FENumeredDofMoFEMEntity_multiIndex
+  PetscErrorCode getTetsRowIndices(DataForcesAndSurcesCore &data,const string &field_name);
+
+  /// \brief get Tets col indices from FENumeredDofMoFEMEntity_multiIndex
+  PetscErrorCode getTetsColIndices(DataForcesAndSurcesCore &data,const string &field_name);
+
+  // ** Data **
+
+  PetscErrorCode getNodesFieldData(const string &field_name,
+    FEDofMoFEMEntity_multiIndex &dofs,ublas::vector<double> &nodes_data);
+  PetscErrorCode getTypeFieldData(const string &field_name,
+    FEDofMoFEMEntity_multiIndex &dofs,
+    EntityType type,int side_number,ublas::vector<double> &ent_field_data);
+  PetscErrorCode getTypeFieldData(const string &field_name,FEDofMoFEMEntity_multiIndex &dofs,
+    EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data);
+
+  // ** DoFS **
+
+  PetscErrorCode getNodesFieldData(DataForcesAndSurcesCore &data,const string &field_name);
+  PetscErrorCode getEdgesFieldData(DataForcesAndSurcesCore &data,const string &field_name);
+  PetscErrorCode getTrisFieldData(DataForcesAndSurcesCore &data,const string &field_name);
+  PetscErrorCode getTetsFieldData(DataForcesAndSurcesCore &data,const string &field_name);
+
+  PetscErrorCode getNodesFieldDofs(const string &field_name,FEDofMoFEMEntity_multiIndex &dofs,ublas::vector<const FEDofMoFEMEntity*> &nodes_dofs);
+  PetscErrorCode getTypeFieldDofs(const string &field_name,
+    FEDofMoFEMEntity_multiIndex &dofs,EntityType type,int side_number,ublas::vector<const FEDofMoFEMEntity*> &ent_field_dofs);
+  PetscErrorCode getTypeFieldDofs(const string &field_name,
+    FEDofMoFEMEntity_multiIndex &dofs,EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data);
+
+  PetscErrorCode getNodesFieldDofs(DataForcesAndSurcesCore &data,const string &field_name);
+  PetscErrorCode getEdgesFieldDofs(DataForcesAndSurcesCore &data,const string &field_name);
+  PetscErrorCode getTrisFieldDofs(DataForcesAndSurcesCore &data,const string &field_name);
+  PetscErrorCode getTetsFieldDofs(DataForcesAndSurcesCore &data,const string &field_name);
+
+  PetscErrorCode getFaceNodes(DataForcesAndSurcesCore &data);
+  PetscErrorCode getSpacesOnEntities(DataForcesAndSurcesCore &data);
+
+  // ** Data form NumeredDofMoFEMEntity_multiIndex **
+
+  /// \brief get indices of nodal indices which are declared for problem but not this particular element
+  PetscErrorCode getProblemNodesIndices(const string &field_name,const NumeredDofMoFEMEntity_multiIndex &dofs,ublas::vector<int> &nodes_indices) const;
+
+  /// \brief get indices by type (generic function) which are declared for problem but not this particular element
+  PetscErrorCode getProblemTypeIndices(
+    const string &field_name,const NumeredDofMoFEMEntity_multiIndex &dofs,
+    EntityType type,int side_number,ublas::vector<int> &indices) const;
+
+  PetscErrorCode getProblemNodesRowIndices(const string &field_name,ublas::vector<int> &nodes_indices) const;
+  PetscErrorCode getProblemTypeRowIndices(const string &field_name,EntityType type,int side_number,ublas::vector<int> &indices) const;
+  PetscErrorCode getProblemNodesColIndices(const string &field_name,ublas::vector<int> &nodes_indices) const;
+  PetscErrorCode getProblemTypeColIndices(const string &field_name,EntityType type,int side_number,ublas::vector<int> &indices) const;
+
+  /** \brief computes approximation functions for tetrahedral and H1 space
+    */
+  PetscErrorCode shapeTETFunctions_H1(
+    DataForcesAndSurcesCore &data,
+    const double *G_X,const double *G_Y,const double *G_Z,const int G_DIM);
+
+  /** \brief computes approximation functions for tetrahedral and L2 space
+    */
+  PetscErrorCode shapeTETFunctions_L2(
+    DataForcesAndSurcesCore &data,
+    const double *G_X,const double *G_Y,const double *G_Z,const int G_DIM);
+
+
+  ublas::matrix<ublas::matrix<double> > N_face_edge;
+  ublas::vector<ublas::matrix<double> > N_face_bubble;
+  ublas::vector<ublas::matrix<double> > N_volume_edge;
+  ublas::vector<ublas::matrix<double> > N_volume_face;
+  ublas::matrix<double> N_volume_bubble;
+
+  ublas::matrix<ublas::matrix<double> > diffN_face_edge;
+  ublas::vector<ublas::matrix<double> > diffN_face_bubble;
+  ublas::vector<ublas::matrix<double> > diffN_volume_edge;
+  ublas::vector<ublas::matrix<double> > diffN_volume_face;
+  ublas::matrix<double> diffN_volume_bubble;
+
+
+  /** \brief computes approximation functions for tetrahedral and H1 space
+    */
+  PetscErrorCode shapeTETFunctions_Hdiv(
+    DataForcesAndSurcesCore &data,
+    const double *G_X,const double *G_Y,const double *G_Z,const int G_DIM);
+
+
+  /** \brief computes approximation functions for triangle and H1 space
+    */
+  PetscErrorCode shapeTRIFunctions_H1(
+    DataForcesAndSurcesCore &data,
+    const double *G_X,const double *G_Y,const int G_DIM);
+
+
+  /** \brief computes approximation functions for triangle and H1 space
+    */
+  PetscErrorCode shapeTRIFunctions_Hdiv(
+    DataForcesAndSurcesCore &data,
+    const double *G_X,const double *G_Y,const int G_DIM);
+
+  /** \brief computes approximation functions for edge and H1 space
+    */
+  PetscErrorCode shapeEDGEFunctions_H1(
+    DataForcesAndSurcesCore &data,const double *G_X,const int G_DIM);
+
+  /** \brief computes approximation functions for prism and H1 space
+    */
+  PetscErrorCode shapeFlatPRISMFunctions_H1(
+    DataForcesAndSurcesCore &data,
+    const double *G_X,const double *G_Y,const int G_DIM);
+
+
+  /** \brief computes approximation functions for prism and H1 space
+    */
+  PetscErrorCode shapeFlatPRISMFunctions_Hdiv(
+    DataForcesAndSurcesCore &data,
+    const double *G_X,const double *G_Y,const int G_DIM);
+
+  /** \brief it is used to calculate nb. of Gauss integration points
+   *
+   * This function in general should be overload, returning integration rank
+   * depending on operator type. Integration rule should be set to
+   * integrate matrix and vector exactly.
+   *
+   * If function return -1
+   * \code
+   * int getRule(int order) { return -1; };
+   * \endcode
+   * then, fuction \codes setGaussPts(order) \endcode is called.   
+   *
+   * for more details pleas look Reference:
+   *
+   * Albert Nijenhuis, Herbert Wilf, Combinatorial Algorithms for Computers and
+   * Calculators, Second Edition, Academic Press, 1978, ISBN: 0-12-519260-6,
+   * LC: QA164.N54.
+   *
+   * More details about algorithm
+   * https://github.com/johannesgerer/jburkardt-m/tree/master/gm_rule
+   * http://people.sc.fsu.edu/~jburkardt/cpp_src/gm_rule/gm_rule.html
+  **/ virtual int getRule(int order) { return order; };
+
+  /** \brief set user specific integration rule
+    *
+    * User sets 
+    * \code 
+    * ublas::matrix<double> gaussPts;
+    * \endcode
+    * where 
+    * \code
+    * gaussPts.resize(dim+1,nb_gauss_pts);
+    * \endcode
+    * number rows represents local coordinates of integration points
+    * in reference element, where last index in row is for integration weight.
+    */
+  virtual PetscErrorCode setGaussPts(int order) {
+    PetscFunctionBegin;
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"sorry, not implemented");
+    PetscFunctionReturn(0);
+  }
+
+  boost::ptr_vector<DataOperator> vecUserOpN; 
+  boost::ptr_vector<DataOperator> vecUserOpNN;
+
+  /** \brief Use to push back operator for right hand side
+   * It can be used to calculate nodal forces or other quantities on the mesh.
+   */
+  boost::ptr_vector<DataOperator>& get_op_to_do_Rhs() { return vecUserOpN; }
+
+  /** \brief Use to push back operator for left hand side
+   * It can be used to calculate matrices or other quantities on mesh.
+   */
+  boost::ptr_vector<DataOperator>& get_op_to_do_Lhs() { return vecUserOpNN; }
+
+  virtual PetscErrorCode preProcess() {
+    PetscFunctionBegin;
+    PetscFunctionReturn(0);
+  }
+  virtual PetscErrorCode operator()() {
+    PetscFunctionBegin;
+    PetscFunctionReturn(0);
+  }
+  virtual PetscErrorCode postProcess() {
+    PetscFunctionBegin;
+    PetscFunctionReturn(0);
+  }
+
+};
+
 /** \brief Tet finite element  
  * \ingroup mofem_forces_and_sources_tet_element 
  *
  * User is implementing own operator at Gauss point level, by own object
  * derived from TetElementForcesAndSourcesCoreL::UserDataOperator.  Arbitrary
  * number of operator added pushing objects to vecUserOpN and
- * vecUserOpSymmNN. 
+ * vecUserOpNN. 
  *
  */
 struct TetElementForcesAndSourcesCore: public ForcesAndSurcesCore {
@@ -80,7 +324,6 @@ struct TetElementForcesAndSourcesCore: public ForcesAndSurcesCore {
   virtual ~TetElementForcesAndSourcesCore() {}
 
   ErrorCode rval;
-  PetscErrorCode ierr;
   double vOlume;
   ublas::vector<double> coords;
 
@@ -104,6 +347,34 @@ struct TetElementForcesAndSourcesCore: public ForcesAndSurcesCore {
       const string &_row_field_name,const string &_col_field_name):
 	row_field_name(_row_field_name),col_field_name(_col_field_name),symm(true),ptrFE(NULL) {};
     virtual ~UserDataOperator() {}
+
+    /** \brief Get row indices 
+    
+    Field could be or not declared for this element but is declared for porblem
+
+    \param field_name 
+    \param type entity type
+    \param side side number, any number if type is MBVERTEX
+    \return indices
+
+    NOTE: Using those indices to assemble matrix will result in error if new non-zero values need to be created.
+
+    */
+    PetscErrorCode getPorblemRowIndices(const string filed_name,const EntityType type,const int side,ublas::vector<int>& indices);
+
+    /** \brief Get col indices 
+    
+    Field could be or not declared for this element but is declared for porblem
+
+    \param field_name 
+    \param type entity type
+    \param side side number, any number if type is MBVERTEX
+    \return indices
+
+    NOTE: Using those indices to assemble matrix will result in error if new non-zero values need to be created.
+
+    */
+    PetscErrorCode getPorblemColIndices(const string filed_name,const EntityType type,const int side,ublas::vector<int>& indices);
     
     /** \brief element volume (linear geometry)
       */
@@ -157,19 +428,6 @@ struct TetElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 
   };
 
-  boost::ptr_vector<UserDataOperator> vecUserOpN; 
-  boost::ptr_vector<UserDataOperator> vecUserOpNN;
-
-  /** \brief Use to push back operator for right hand side
-   * It can be used to calculate nodal forces or other quantities on the mesh.
-   */
-  boost::ptr_vector<UserDataOperator>& get_op_to_do_Rhs() { return vecUserOpN; }
-
-  /** \brief Use to push back operator for left hand side
-   * It can be used to calculate matrices or other quantities on mesh.
-   */
-  boost::ptr_vector<UserDataOperator>& get_op_to_do_Lhs() { return vecUserOpNN; }
-
 
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
@@ -197,7 +455,6 @@ struct TetElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 struct TriElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
   ErrorCode rval;
-  PetscErrorCode ierr;
   double aRea;;
   ublas::vector<double> normal;
   ublas::vector<double> coords;
@@ -239,6 +496,35 @@ struct TriElementForcesAndSurcesCore: public ForcesAndSurcesCore {
       const string &_row_field_name,const string &_col_field_name):
 	row_field_name(_row_field_name),col_field_name(_col_field_name),symm(true),ptrFE(NULL) {};
     virtual ~UserDataOperator() {}
+
+    /** \brief Get row indices 
+    
+    Field could be or not declared for this element but is declared for porblem
+
+    \param field_name 
+    \param type entity type
+    \param side side number, any number if type is MBVERTEX
+    \return indices
+
+    NOTE: Using those indices to assemble matrix will result in error if new non-zero values need to be created.
+
+    */
+    PetscErrorCode getPorblemRowIndices(const string filed_name,const EntityType type,const int side,ublas::vector<int>& indices);
+
+    /** \brief Get col indices 
+    
+    Field could be or not declared for this element but is declared for porblem
+
+    \param field_name 
+    \param type entity type
+    \param side side number, any number if type is MBVERTEX
+    \return indices
+
+    NOTE: Using those indices to assemble matrix will result in error if new non-zero values need to be created.
+
+    */
+    PetscErrorCode getPorblemColIndices(const string filed_name,const EntityType type,const int side,ublas::vector<int>& indices);
+
     inline double getArea() { return ptrFE->aRea; }
 
     /** \bried get triangle normal
@@ -302,19 +588,6 @@ struct TriElementForcesAndSurcesCore: public ForcesAndSurcesCore {
     TriElementForcesAndSurcesCore *ptrFE; 
   };
 
-  boost::ptr_vector<UserDataOperator> vecUserOpN; 
-  boost::ptr_vector<UserDataOperator> vecUserOpSymmNN;
-
-  /** \brief Use to push back operator for right hand side
-   * It can be used to calculate nodal forces or other quantities on the mesh.
-   */
-  boost::ptr_vector<UserDataOperator>& get_op_to_do_Rhs() { return vecUserOpN; }
-
-  /** \brief Use to push back operator for left hand side
-   * It can be used to calculate matrices or other quantities on mesh.
-   */
-  boost::ptr_vector<UserDataOperator>& get_op_to_do_Lhs() { return vecUserOpSymmNN; }
-
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
     PetscFunctionReturn(0);
@@ -345,7 +618,6 @@ struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
     ForcesAndSurcesCore(_mField),data(MBEDGE),derivedData(data) {};
 
   ErrorCode rval;
-  PetscErrorCode ierr;
   double lEngth;;
   ublas::vector<double> dIrection;
   ublas::vector<double> coords;
@@ -381,19 +653,6 @@ struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
     EdgeElementForcesAndSurcesCore *ptrFE; 
   };
 
-  boost::ptr_vector<UserDataOperator> vecUserOpN; 
-  boost::ptr_vector<UserDataOperator> vecUserOpSymmNN;
-
-  /** \brief Use to push back operator for right hand side
-   * It can be used to calculate nodal forces or other quantities on the mesh.
-   */
-  boost::ptr_vector<UserDataOperator>& get_op_to_do_Rhs() { return vecUserOpN; }
-
-  /** \brief Use to push back operator for left hand side
-   * It can be used to calculate matrices or other quantities on mesh.
-   */
-  boost::ptr_vector<UserDataOperator>& get_op_to_do_Lhs() { return vecUserOpSymmNN; }
-
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
     PetscFunctionReturn(0);
@@ -425,7 +684,6 @@ struct VertexElementForcesAndSourcesCore: public ForcesAndSurcesCore {
     ForcesAndSurcesCore(_mField),data(MBVERTEX),derivedData(data) {};
 
   ErrorCode rval;
-  PetscErrorCode ierr;
   ublas::vector<double> coords;
 
   /** \brief default operator for VERTEX element
@@ -452,19 +710,6 @@ struct VertexElementForcesAndSourcesCore: public ForcesAndSurcesCore {
     VertexElementForcesAndSourcesCore *ptrFE; 
   };
 
-  boost::ptr_vector<UserDataOperator> vecUserOpN; 
-  boost::ptr_vector<UserDataOperator> vecUserOpSymmNN;
-
-  /** \brief Use to push back operator for right hand side
-   * It can be used to calculate nodal forces or other quantities on the mesh.
-   */
-  boost::ptr_vector<UserDataOperator>& get_op_to_do_Rhs() { return vecUserOpN; }
-
-  /** \brief Use to push back operator for left hand side
-   * It can be used to calculate matrices or other quantities on mesh.
-   */
-  boost::ptr_vector<UserDataOperator>& get_op_to_do_Lhs() { return vecUserOpSymmNN; }
-
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
     PetscFunctionReturn(0);
@@ -490,7 +735,6 @@ struct VertexElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
   ErrorCode rval;
-  PetscErrorCode ierr;
   double aRea;;
   ublas::vector<double> normal;
   ublas::vector<double> coords;
@@ -625,19 +869,6 @@ struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
     private:
     FlatPrismElementForcesAndSurcesCore *ptrFE; 
   };
-
-  boost::ptr_vector<UserDataOperator> vecUserOpN; 
-  boost::ptr_vector<UserDataOperator> vecUserOpSymmNN;
-
-  /** \brief Use to push back operator for right hand side
-   * It can be used to calculate nodal forces or other quantities on the mesh.
-   */
-  boost::ptr_vector<UserDataOperator>& get_op_to_do_Rhs() { return vecUserOpN; }
-
-  /** \brief Use to push back operator for left hand side
-   * It can be used to calculate matrices or other quantities on mesh.
-   */
-  boost::ptr_vector<UserDataOperator>& get_op_to_do_Lhs() { return vecUserOpSymmNN; }
 
   PetscErrorCode preProcess() {
     PetscFunctionBegin;

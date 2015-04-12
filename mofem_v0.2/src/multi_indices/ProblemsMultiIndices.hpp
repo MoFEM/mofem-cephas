@@ -74,15 +74,15 @@ struct MoFEMProblem {
     *
     */
   #define _IT_NUMEREDFEMOFEMENTITY_BY_NAME_AND_PART_FOR_LOOP_(MOFEMPROBLEM,NAME,PART,IT) \
-    NumeredMoFEMFiniteElement_multiIndex::index<Composite_mi_tag>::type::iterator IT = MOFEMPROBLEM->get_numered_fes_begin(NAME,PART); \
+    NumeredMoFEMFiniteElement_multiIndex::index<Composite_Name_And_Part_mi_tag>::type::iterator IT = MOFEMPROBLEM->get_numered_fes_begin(NAME,PART); \
     IT!=MOFEMPROBLEM->get_numered_fes_end(NAME,PART); IT++
 
-  NumeredMoFEMFiniteElement_multiIndex::index<Composite_mi_tag>::type::iterator get_numered_fes_begin(string fe_name,int part) const { 
-    return numeredFiniteElements.get<Composite_mi_tag>().lower_bound(boost::make_tuple(fe_name,part));
+  NumeredMoFEMFiniteElement_multiIndex::index<Composite_Name_And_Part_mi_tag>::type::iterator get_numered_fes_begin(string fe_name,int part) const { 
+    return numeredFiniteElements.get<Composite_Name_And_Part_mi_tag>().lower_bound(boost::make_tuple(fe_name,part));
   }
 
-  NumeredMoFEMFiniteElement_multiIndex::index<Composite_mi_tag>::type::iterator get_numered_fes_end(string fe_name,int part) const { 
-    return numeredFiniteElements.get<Composite_mi_tag>().upper_bound(boost::make_tuple(fe_name,part));
+  NumeredMoFEMFiniteElement_multiIndex::index<Composite_Name_And_Part_mi_tag>::type::iterator get_numered_fes_end(string fe_name,int part) const { 
+    return numeredFiniteElements.get<Composite_Name_And_Part_mi_tag>().upper_bound(boost::make_tuple(fe_name,part));
   }
 
   /**

@@ -1,10 +1,14 @@
 /** \file ThermalElement.hpp
- * \brief Operators and data structures for thermal analyse
- *
- * Implementation of thermal element for unsteady and steady case.
- * 
- * Radiation and convection blocks implemented by Xuan Meng 
- *
+ \ingroup mofem_thermal_elem
+
+ \brief Operators and data structures for thermal analysis
+
+ Implementation of thermal element for unsteady and steady case.
+ Radiation and convection blocks implemented by Xuan Meng 
+
+*/
+
+/*
  * This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
