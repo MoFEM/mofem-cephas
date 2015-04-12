@@ -1,13 +1,8 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
- *
- * Description: Implementation of thermal stress, i.e. right hand side as result of thermal stresses
- *
- * This is not exactly procedure for linear elatic dynamics, since jacobian is
- * evaluated at every time step and snes procedure is involved. However it is
- * implemented like that, to test methodology for general nonlinear problem.
- *
- */
+/** \file ThermalStressElement.hpp
+  \ingroup mofem_thermal_elem
+  \brief Implemntation of thermal stresses element
+
+*/
 
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
@@ -27,7 +22,10 @@
 #define __THERMALSTRESSELEMENT_HPP
 
 namespace MoFEM {
-  
+ 
+  /** \brief Implentation of thermal stress element
+    \ingroup mofem_thermal_elem
+  */
   struct ThermalStressElement {
     
     struct MyVolumeFE: public TetElementForcesAndSourcesCore {

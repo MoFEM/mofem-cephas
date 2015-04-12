@@ -1,4 +1,4 @@
-/* \file AnalyticalSolutions.hpp
+/** \file AnalyticalSolutions.hpp
   \ingroup mofem_helmholtz_elem
 
   Analytical solutions

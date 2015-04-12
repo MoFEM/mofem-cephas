@@ -1,8 +1,11 @@
 /** \file NonLienarElasticElement.hpp
+ * \ingroup nonlinear_elastic_elem
  * \brief Operators and data structures for non-linear elastic analysis
  *
  * Implementation of nonlinear elastic element.
- *
+ */
+
+/*
  * This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the

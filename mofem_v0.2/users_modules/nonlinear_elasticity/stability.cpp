@@ -1,7 +1,10 @@
-/* \file stability.cpp
+/** \file stability.cpp
+ * \ingroup nonlinear_elastic_elem
  * 
  * Solves stability problem. Currently uses 3d tetrahedral elements.
- *
+ */
+
+/*
  * This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the

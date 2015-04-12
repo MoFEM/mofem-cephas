@@ -1,7 +1,7 @@
-/* Copyright (C) 2015, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
- * FIXME: DESCRIPTION
- */
+/** \file thermal_unsteady.cpp
+ \ingroup mofem_thermal_elem
+ \brief Example of thermal unsteady analyse.
+*/
 
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under

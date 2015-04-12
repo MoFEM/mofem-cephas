@@ -1,4 +1,6 @@
-/* \file fe_approximation.cpp
+/** \file fe_approximation.cpp
+ \ingroup mofem_helmholtz_elem
+
  
   Calculates finite element (Galerkin) approximation for incident wave problem. 
 

@@ -1,7 +1,10 @@
-/* \file nonlinear_dynamics.cpp
+/** \file nonlinear_dynamics.cpp
+ * \ingroup nonlinear_elastic_elem
  *
  * \brief Non-linear elastic dynamics.
- *
+ */
+
+/*
  * This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
