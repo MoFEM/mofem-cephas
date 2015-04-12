@@ -228,7 +228,7 @@ struct FieldApproximationH1 {
 	}
 
 	Nf.resize(fun_val.size());
-	for(int lhs = 0;lhs != fun_val.size();lhs++) {
+	for(unsigned int lhs = 0;lhs != fun_val.size();lhs++) {
 	  
 	  if(!gg) {
 	    Nf[lhs].resize(data.getIndices().size());

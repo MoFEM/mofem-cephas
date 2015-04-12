@@ -276,7 +276,7 @@ struct AnalyticalDirihletBC {
 	    }
 
 
-	    for(int rr = 0;rr<rank;rr++) {
+	    for(unsigned int rr = 0;rr<rank;rr++) {
 
 	      ublas::noalias(iNdices) = ublas::vector_slice<ublas::vector<int> >
 		(data.getIndices(), ublas::slice(rr, rank, data.getIndices().size()/rank));

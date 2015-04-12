@@ -524,6 +524,8 @@ PetscErrorCode Core::set_other_local_ghost_vector(
 	case ADD_VALUES:
 	  alpha = false;
 	  break;
+	default:
+	  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"not implemented");
       }
       PetscScalar *array;
       VecGetArray(V,&array);
@@ -626,6 +628,8 @@ PetscErrorCode Core::set_other_global_ghost_vector(
 	case ADD_VALUES:
 	  alpha = false;
 	  break;
+	default:
+	  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"not implemented");
       }
       for(;miit!=hi_miit;miit++) {
         if(miit->get_petsc_gloabl_dof_idx()>=size) {

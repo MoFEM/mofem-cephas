@@ -265,7 +265,7 @@ int main(int argc, char *argv[]) {
   }
  
   if(is_partitioned) {
-    rval = moab.write_file("analytical_solution.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
+    rval = moab.write_file("best_solution.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
   } else {
     if(!pcomm->rank()) {
       rval = moab.write_file("analytical_solution.h5m"); CHKERR_PETSC(rval);
@@ -288,7 +288,7 @@ int main(int argc, char *argv[]) {
 
     ierr = post_proc.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
     ierr = m_field.loop_finite_elements("EX1_PROBLEM","FE1",post_proc); CHKERRQ(ierr);
-    rval = post_proc.postProcMesh.write_file("analytical_solution_mesh_post_proc.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
+    rval = post_proc.postProcMesh.write_file("best_solution_mesh_post_proc.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
 
   }
   
