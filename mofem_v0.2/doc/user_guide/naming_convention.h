@@ -25,7 +25,7 @@ one with the best documentation. Because all of that always document what you ar
 
 - Follow <http://www.stack.nl/~dimitri/doxygen/manual/docblocks.html>
 
-- Thing abut yourself, you will forget. Good documentation allow to revise your code.
+- Think abut yourself, you will forget. Good documentation allow to revise your code.
 
 - Help others to understand what you are doing. 
 
