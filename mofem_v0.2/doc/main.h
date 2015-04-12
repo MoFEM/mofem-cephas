@@ -46,6 +46,8 @@ List of third party libraries and packages used by MoFEM:
 
 - \ref coding_practice
 
+- \ref guidelines_bug_reporting
+
 - \ref faqs
 
 - CDashTesting <http://cdash.eng.gla.ac.uk/cdash/>
