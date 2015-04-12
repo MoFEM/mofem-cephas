@@ -22,42 +22,15 @@ moved to MoFEM finite element library. Implementation to MoFEM library (not UM)
 need to be always discussed, agreed and planed on CMatGU
 <cmatgu@googlegroups.com>.  Work on UM is less controlled and contained to user
 directory. It is planed that it will be single version of MoFEM library but
-many UM forks. Some UM can be in developed independently from MoFEM library repository.
+many UM forks. Some UM can be in developed independently from MoFEM library
+repository. How to add user modules see \ref adding_user_module
 
- In default UM are build as a part of MoFEM
-library, i.e. source files from MoFEM source directory are used in compilation
-process. UM can be created as "stand alone" source, when out of source build is
-created as follows
+In default UM are build as a part of MoFEM library, i.e. source files from
+MoFEM source directory are used in compilation process. UM can be created as
+"stand alone" source, when out of source build is created as follows
 \code
 cmake -DSTAND_ALLONE_USERS_MODULES ../user_modules
 \endcode 
-
-\section user_module Adding user module
-
-In each module you can have two type directory data, 
-  -# Simple
-  -# Extended
-
-User module is added to \em ModulesLists.cmake file using cmake command:
-\code
-add_subdirectory(my_new_module)
-\endcode
-Simple directory structure consist no subdirectories. f.e. elasticity. Extended (recommended)
-data structure consist subdirectories, f.e. homogenisation, and follows pattern
-
-\code
--> /atom_tests
--> /src <- hpp files
--> /src/impl <- cpp files form library
--> /meshes
--> /data
--> /doc
-\endcode
-
-Not all elements of module source tree are compulsory, however each user module
-and new MoFEM functionality should have associated \em atom \em test verifying
-implementation and each module should have README file or module documentation
-in doc using Doxygen.
 
 \section Source Code Style and Best Practices
 
@@ -268,6 +241,7 @@ eliminate compilation errors, completion warnings, failed tests and memory
 leaks.
 
 Some guidance about branches:
+- Make often updates (git pull)
 - Do not commits to other people branch. You can commit only to branches created by yourself.
 - If you like to commit to other (not own created) branch, do pull request. 
 - Before marking pull request, pull from branch to which you like to commit.
