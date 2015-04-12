@@ -1,5 +1,5 @@
 /** \file HelmholtzElement.hpp
-\ingroup mofem_helmholtz_elem
+ \ingroup mofem_helmholtz_elem
 
  \brief Operators and data structures for wave propagation analyse (Galerkin Element)
 

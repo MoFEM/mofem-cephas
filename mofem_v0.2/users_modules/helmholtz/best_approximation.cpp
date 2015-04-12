@@ -1,5 +1,6 @@
-/* \file best_approximation.cpp
- 
+/** \file best_approximation.cpp
+  \ingroup mofem_helmholtz_elem
+
   Calculates best approximation for incident wave problem. 
 
  */
