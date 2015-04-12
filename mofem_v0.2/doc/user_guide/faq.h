@@ -87,7 +87,7 @@ where option -V sets verbose version and all test output is printed on screen
 and -D Experimental tels ctest to submit results to Experimental build on CDash
 MoFEM server.
 
-\section adding_user_module Adding user module?
+\section adding_user_module How to add user module?
 
 In each module you can have two type directory data, 
   -# Simple

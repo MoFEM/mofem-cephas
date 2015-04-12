@@ -25,7 +25,7 @@ Salome and is currently in the process of full integration with MeshKit.
 \section download_repository MoFEM download and repository
 
 MoFEM is on BitBucket repository <https://bitbucket.org/likask/mofem-cephas>.
-Current version 0.2.2 is called MoFEM-cephas.
+Current is called MoFEM-cephas. 
 
 \section Motivation
 
