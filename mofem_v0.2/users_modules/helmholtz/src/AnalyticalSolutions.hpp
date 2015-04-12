@@ -91,9 +91,7 @@ struct IncidentWave: public GenericAnalyticalSolution {
 /** Calculate the analytical solution of impinging wave on sphere
   \ingroup mofem_helmholtz_elem
 
-  See paper: 
-  Exact solution of Impinging sphere from Acoustic isogeometric boundary element analysis by R.N. Simpson etc.
-  Look as well:
+  Equations from:
   <http://ansol.us/Products/Coustyx/Validation/MultiDomain/Scattering/PlaneWave/SoftSphere/Downloads/dataset_description.pdf>
 
   \f[
