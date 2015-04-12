@@ -53,6 +53,12 @@ const char *analytical_solution_types[] = {
 
 /** Incident wave 
   \ingroup mofem_helmholtz_elem
+
+
+  \f[
+  p_\textrm{inc} = \exp(ikz)
+  \f]
+
   */
 struct IncidentWave: public GenericAnalyticalSolution {
 
@@ -89,6 +95,20 @@ struct IncidentWave: public GenericAnalyticalSolution {
   Exact solution of Impinging sphere from Acoustic isogeometric boundary element analysis by R.N. Simpson etc.
   Look as well:
   <http://ansol.us/Products/Coustyx/Validation/MultiDomain/Scattering/PlaneWave/SoftSphere/Downloads/dataset_description.pdf>
+
+  \f[
+  p_\textrm{scattered} = \sum_0^N A_l h_l(kr)P_l(\cos(\phi))
+  \f]
+
+  where \f$h_l\f$ is the Hankel function of the first kind, \f$\phi\f$ is polar
+  angle and \f$A_l\f$ is a constant. Constant is  should be caculated such that
+  it satisfies both the Helmholtz wave equation and the Sommerfeld radiation
+  condition.
+
+  \f[
+  A_l = -(2l+1)i^l \frac{j_l(ka)}{h_l(ka)}
+  \f]
+  where a is scatter sphere radius and \f$j_l\f$ Bessel function.
 
   */
 struct SoftSphereScatterWave: public GenericAnalyticalSolution {
