@@ -1,5 +1,6 @@
 /* \file AnalyticalSolutions.hpp
- 
+  \ingroup mofem_helmholtz_elem
+
   Analytical solutions
   
  */
@@ -19,7 +20,9 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. 
 */
 
-/// Generic structure for analytical function
+/** \brief Generic structure for analytical function
+  \ingroup mofem_helmholtz_elem
+*/
 struct GenericAnalyticalSolution {
 
   enum VALUE_TYPE { REAL = 0, IMAG, LAST_VAL_TYPE };
@@ -28,7 +31,9 @@ struct GenericAnalyticalSolution {
 
 };
 
-/// List of analytical solution
+/** List of analytical solution
+  \ingroup mofem_helmholtz_elem
+*/
 enum AnalyticalSolutionTypes {
   SOFT_SPHERE_SCATTER_WAVE, 
   PLANE_WAVE,
@@ -36,7 +41,9 @@ enum AnalyticalSolutionTypes {
   INCIDENT_WAVE
 };
 
-/// Line command list of analytical solutions
+/** Line command list of analytical solutions
+  \ingroup mofem_helmholtz_elem
+*/
 const char *analytical_solution_types[] = { 
   "soft_sphere_incident_wave", 
   "plane_wave",
@@ -45,6 +52,7 @@ const char *analytical_solution_types[] = {
 };
 
 /** Incident wave 
+  \ingroup mofem_helmholtz_elem
   */
 struct IncidentWave: public GenericAnalyticalSolution {
 
@@ -75,6 +83,7 @@ struct IncidentWave: public GenericAnalyticalSolution {
 };
 
 /** Calculate the analytical solution of impinging wave on sphere
+  \ingroup mofem_helmholtz_elem
 
   See paper: 
   Exact solution of Impinging sphere from Acoustic isogeometric boundary element analysis by R.N. Simpson etc.
@@ -155,6 +164,9 @@ struct SoftSphereScatterWave: public GenericAnalyticalSolution {
 };
 
 /** \brief Calculate the analytical solution of plane wave guide propagating in direction theta
+  \ingroup mofem_helmholtz_elem
+
+  WARRING: not tested
   
   FIXME: Paper: ????
 
@@ -197,6 +209,9 @@ struct PlaneWave: public GenericAnalyticalSolution {
 };
 
 /** \brief Calculate the analytical solution of impinging wave on sphere
+  \ingroup mofem_helmholtz_elem
+
+  WARRING: not tested
 
   Paper: 
     The generalized finite element method for Helmholtz equation: Theory, computation, and open problems
