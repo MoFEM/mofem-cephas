@@ -1,15 +1,21 @@
 /*! \page faqs Frequently Asked Questions
 
-\section faq Frequently Asked Questions
+\section own_documentation How to generate this documentation on your local machine?
 
-\subsection partition_mesh How to partition mesh?
+In you library directory execute 
+\code
+$ make doc
+\endcode
+This create directory \em html. Open file \em html/index.html to see results in your browser. 
+
+\section partition_mesh How to partition mesh?
 
 If problem is large, mesh can be partitioned for to save memory and improve efficiency. This can be done using native MoAB tool,
 \code
 mbpart -t -p PartKway  16 cylinder.cub cylinder_16parts.h5m
 \endcode
 
-\subsection running_multi_grid How to multi-grid solver via approximation orders?
+\section running_multi_grid How to multi-grid solver via approximation orders?
 
 Code is run using direct solver, i.e. \em Mumps on coarse level. Note that
 loaded mesh is portioned and each processor only reads part of the mesh, i.e.
@@ -35,7 +41,7 @@ mpirun -np 4 ./elasticity \
 \endcode a direct solver for coarse mesh is set.
 
 
-\subsection update_on_memory_stick Ho to update MoFEM on Live USB Stick?
+\section update_on_memory_stick Ho to update MoFEM on Live USB Stick?
 
 MoFEM update on Live USB stick:
 \code
@@ -55,7 +61,7 @@ $ export http_proxy=http://wwwcache.gla.ac.uk:8080
 $ export https_proxy=http://wwwcache.gla.ac.uk:8080
 \endcode
 
-\subsection ctest How to run ctest?
+\section ctest How to run ctest?
 
 You can run tests and report results to MoFEM CDash web page. Form mofem user
 modules build directory executing  run script
@@ -81,7 +87,34 @@ where option -V sets verbose version and all test output is printed on screen
 and -D Experimental tels ctest to submit results to Experimental build on CDash
 MoFEM server.
 
-\subsection ubuntu_install How to instal MoFem on Ubuntu?
+\section adding_user_module How to add user module?
+
+In each module you can have two type directory data, 
+  -# Simple
+  -# Extended
+
+User module is added to \em ModulesLists.cmake file using cmake command:
+\code
+add_subdirectory(my_new_module)
+\endcode
+Simple directory structure consist no subdirectories. f.e. elasticity. Extended (recommended)
+data structure consist subdirectories, f.e. homogenisation, and follows pattern
+
+\code
+-> /atom_tests
+-> /src <- hpp files
+-> /src/impl <- cpp files form library
+-> /meshes
+-> /data
+-> /doc
+\endcode
+
+Not all elements of module source tree are compulsory, however each user module
+and new MoFEM functionality should have associated \em atom \em test verifying
+implementation and each module should have README file or module documentation
+in doc using Doxygen.
+
+\section ubuntu_install How to instal MoFem on Ubuntu?
 
 Pleas follow this instruction, this is full install on Ubuntu from scratch. 
 
