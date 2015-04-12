@@ -1,5 +1,6 @@
 /* \file AnalyticalSolutions.hpp
- 
+  \ingroup mofem_helmholtz_elem
+
   Analytical solutions
   
  */
@@ -19,7 +20,9 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. 
 */
 
-/// Generic structure for analytical function
+/** \brief Generic structure for analytical function
+  \ingroup mofem_helmholtz_elem
+*/
 struct GenericAnalyticalSolution {
 
   enum VALUE_TYPE { REAL = 0, IMAG, LAST_VAL_TYPE };
@@ -28,7 +31,9 @@ struct GenericAnalyticalSolution {
 
 };
 
-/// List of analytical solution
+/** List of analytical solution
+  \ingroup mofem_helmholtz_elem
+*/
 enum AnalyticalSolutionTypes {
   SOFT_SPHERE_SCATTER_WAVE, 
   PLANE_WAVE,
@@ -36,7 +41,9 @@ enum AnalyticalSolutionTypes {
   INCIDENT_WAVE
 };
 
-/// Line command list of analytical solutions
+/** Line command list of analytical solutions
+  \ingroup mofem_helmholtz_elem
+*/
 const char *analytical_solution_types[] = { 
   "soft_sphere_incident_wave", 
   "plane_wave",
@@ -45,6 +52,13 @@ const char *analytical_solution_types[] = {
 };
 
 /** Incident wave 
+  \ingroup mofem_helmholtz_elem
+
+
+  \f[
+  p_\textrm{inc} = \exp(ikz)
+  \f]
+
   */
 struct IncidentWave: public GenericAnalyticalSolution {
 
@@ -75,11 +89,26 @@ struct IncidentWave: public GenericAnalyticalSolution {
 };
 
 /** Calculate the analytical solution of impinging wave on sphere
+  \ingroup mofem_helmholtz_elem
 
   See paper: 
   Exact solution of Impinging sphere from Acoustic isogeometric boundary element analysis by R.N. Simpson etc.
   Look as well:
   <http://ansol.us/Products/Coustyx/Validation/MultiDomain/Scattering/PlaneWave/SoftSphere/Downloads/dataset_description.pdf>
+
+  \f[
+  p_\textrm{scattered} = \sum_0^N A_l h_l(kr)P_l(\cos(\phi))
+  \f]
+
+  where \f$h_l\f$ is the Hankel function of the first kind, \f$\phi\f$ is polar
+  angle and \f$A_l\f$ is a constant. Constant is  should be caculated such that
+  it satisfies both the Helmholtz wave equation and the Sommerfeld radiation
+  condition.
+
+  \f[
+  A_l = -(2l+1)i^l \frac{j_l(ka)}{h_l(ka)}
+  \f]
+  where a is scatter sphere radius and \f$j_l\f$ Bessel function.
 
   */
 struct SoftSphereScatterWave: public GenericAnalyticalSolution {
@@ -155,6 +184,9 @@ struct SoftSphereScatterWave: public GenericAnalyticalSolution {
 };
 
 /** \brief Calculate the analytical solution of plane wave guide propagating in direction theta
+  \ingroup mofem_helmholtz_elem
+
+  WARRING: not tested
   
   FIXME: Paper: ????
 
@@ -197,6 +229,9 @@ struct PlaneWave: public GenericAnalyticalSolution {
 };
 
 /** \brief Calculate the analytical solution of impinging wave on sphere
+  \ingroup mofem_helmholtz_elem
+
+  WARRING: not tested
 
   Paper: 
     The generalized finite element method for Helmholtz equation: Theory, computation, and open problems
