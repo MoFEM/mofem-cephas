@@ -1,7 +1,8 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
- * FIXME: DESCRIPTION
- */
+/** \file forces_and_sources_calculate_jacobian.cpp
+
+  \brief Atom test checking with blessed file how Jacobian's are calculated on elements
+
+*/
 
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under

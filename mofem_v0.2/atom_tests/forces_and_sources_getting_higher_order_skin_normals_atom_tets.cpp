@@ -1,7 +1,8 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
- * FIXME: DESCRIPTION
- */
+/** \file  forces_and_sources_getting_higher_order_skin_normals_atom_tets.cpp
+
+  \brief Atom test to calculate normals on faces approximated with HO geometry representation
+
+*/
 
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under

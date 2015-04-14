@@ -1,8 +1,11 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
- * FIXME: DESCRIPTION
- */
+/** \file build_composite_problem.cpp
 
+  \brief Atom test for building composite problem
+  
+  \bug Not verifying what if partitioned mesh is loaded.
+
+*/
+  
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the

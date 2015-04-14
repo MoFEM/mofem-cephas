@@ -1,7 +1,8 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
- * FIXME: DESCRIPTION
- */
+/** \file cubit_bc_test.cpp
+  \brief Atom test for getting boundary conditions from cubit
+
+*/
+
 
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
@@ -54,7 +55,7 @@ int main(int argc, char *argv[]) {
 
   //Create MoFEM (Joseph) database
   MoFEM::Core core(moab);
-  FieldInterface& mField = core;
+  FieldInterface& m_field = core;
     
     //Open mesh_file_name.txt for writing
     ofstream myfile;
@@ -62,7 +63,7 @@ int main(int argc, char *argv[]) {
 
   cout << "<<<< NODESETs >>>>>" << endl;
   //NODESETs
-  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,NODESET,it)) {
+  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,NODESET,it)) {
     cout << *it << endl;
     ierr = it->print_Cubit_bc_data(cout); CHKERRQ(ierr);
     vector<char> bc_data;
@@ -125,7 +126,7 @@ int main(int argc, char *argv[]) {
 
   cout << "<<<< SIDESETs >>>>>" << endl;
   //SIDESETs
-  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SIDESET,it)) {
+  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,SIDESET,it)) {
     cout << *it << endl;
     ierr = it->print_Cubit_bc_data(cout); CHKERRQ(ierr);
     vector<char> bc_data;
@@ -189,7 +190,7 @@ int main(int argc, char *argv[]) {
 
   cout << "<<<< BLOCKSETs >>>>>" << endl;
   //BLOCKSETs
-  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it))
+  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it))
   {
       cout << endl << *it << endl;
 
@@ -214,7 +215,7 @@ int main(int argc, char *argv[]) {
   //Solution procedures are defined with block names starting with SOL_ e.g. SOL_ELASTIC_xx, SOL_NLELASTICxx, SOL_FRACTabcd etc.
   //----------------------------------------------------------------------------------------
         
-  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
+  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
 
     cout << endl << *it << endl;
                 

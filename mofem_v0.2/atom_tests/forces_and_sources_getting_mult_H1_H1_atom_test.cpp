@@ -1,7 +1,8 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
- * FIXME: DESCRIPTION
- */
+/** \file forces_and_sources_getting_mult_H1_H1_atom_test.cpp
+  \brief Atom test verifying forces and sources operator on H1 approx. space
+
+*/
+
 
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under

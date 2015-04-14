@@ -1,7 +1,9 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
- * FIXME: DESCRIPTION
- */
+/** \file dm_build_partitioned_mesh.cpp
+  \brief Atom test for build mesh which is paragoned 
+
+  Data Manager (DM) MoFEM interface is used here for convinience
+
+*/
 
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
