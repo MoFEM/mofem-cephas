@@ -590,9 +590,9 @@ target_link_libraries(dm_build_partitioned_mesh
   mofem_cblas
   mofem_third_party
   ${PROJECT_LIBS})
-add_test(dm_build_pratitioned_mesh_atom 
+add_test(dm_build_partitioned_mesh_atom 
   ${MPI_RUN} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/dm_build_partitioned_mesh -my_file disp01_2parts.h5m -dm_is_partitioned)
-add_test(dm_build_pratitioned_mesh_atom_compare ${CMAKE_COMMAND} -E compare_files 
+add_test(dm_build_partitioned_mesh_atom_compare ${CMAKE_COMMAND} -E compare_files 
   ${CMAKE_BINARY_DIR}/atom_tests/dm_build_partitioned_mesh.txt
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/dm_build_partitioned_mesh.txt)
 
