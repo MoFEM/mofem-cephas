@@ -3,9 +3,7 @@
  *
  */
 
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
- *
+/* 
  * This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -26,12 +24,12 @@
 namespace MoFEM {
 
 /** \brief Ultra weak transport problem
-  * \ingroup mofem_ultra_weak_transport_elem
-  *
-  * Note to solve this system you need to use mumps or propper preconditioner
-  * for sadlle problem. SuperLU works, but very poorly for larger systems.
-  (
-  */
+  \ingroup mofem_ultra_weak_transport_elem
+  
+  Note to solve this system you need to use direct solver or propper preconditioner
+  for sadlle problem. 
+  
+*/
 struct UltraWeakTransportElement {
 
   FieldInterface &mField;
