@@ -1,7 +1,10 @@
 /** \file ConvectiveMassElement.hpp 
  * \brief Operators and data structures for mass and convective mass element
+ * \ingroup convective_mass_elem
  *
- * Implementation of convective mass element
+ */
+
+/* Implementation of convective mass element
  *
  * This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
@@ -26,6 +29,7 @@
 
 /** \brief structure grouping operators and data used for calculation of mass (convective) element
   * \ingroup convective_mass_elem
+  * \ingroup nonlinear_elastic_elem
   *
   * In order to assemble matrices and right hand vectors, the loops over
   * elements, entities over that elements and finally loop over integration
