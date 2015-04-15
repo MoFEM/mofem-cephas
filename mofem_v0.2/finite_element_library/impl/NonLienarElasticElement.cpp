@@ -32,7 +32,7 @@
 namespace MoFEM {
 
 NonlinearElasticElement::MyVolumeFE::MyVolumeFE(FieldInterface &m_field): 
-  TetElementForcesAndSourcesCore(m_field),A(PETSC_NULL),F(PETSC_NULL) {}
+  VolumeElementForcesAndSourcesCore(m_field),A(PETSC_NULL),F(PETSC_NULL) {}
 
 int NonlinearElasticElement::MyVolumeFE::getRule(int order) { return (order-1+1); };
 
@@ -40,7 +40,7 @@ PetscErrorCode NonlinearElasticElement::MyVolumeFE::preProcess() {
   PetscFunctionBegin;
   PetscErrorCode ierr;
 
-  ierr = TetElementForcesAndSourcesCore::preProcess(); CHKERRQ(ierr);
+  ierr = VolumeElementForcesAndSourcesCore::preProcess(); CHKERRQ(ierr);
 
   if(A != PETSC_NULL) {
     snes_B = A;
@@ -114,7 +114,7 @@ PetscErrorCode NonlinearElasticElement::MyVolumeFE::postProcess() {
       break;
   }
 
-  ierr = TetElementForcesAndSourcesCore::postProcess(); CHKERRQ(ierr);
+  ierr = VolumeElementForcesAndSourcesCore::postProcess(); CHKERRQ(ierr);
 
 
   PetscFunctionReturn(0);
@@ -128,7 +128,7 @@ NonlinearElasticElement::NonlinearElasticElement(
 NonlinearElasticElement::OpGetDataAtGaussPts::OpGetDataAtGaussPts(const string field_name,
   vector<ublas::vector<double> > &values_at_gauss_pts,
   vector<ublas::matrix<double> > &gardient_at_gauss_pts):
-  TetElementForcesAndSourcesCore::UserDataOperator(field_name),
+  VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
   valuesAtGaussPts(values_at_gauss_pts),gradientAtGaussPts(gardient_at_gauss_pts),
   zeroAtType(MBVERTEX) {}
 
@@ -198,7 +198,7 @@ NonlinearElasticElement::OpJacobian::OpJacobian(
   BlockData &data,
   CommonData &common_data,
   int tag,bool jacobian,bool field_disp):
-  TetElementForcesAndSourcesCore::UserDataOperator(field_name),
+  VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
   dAta(data),commonData(common_data),
   tAg(tag),adlocReturnValue(0),
   jAcobian(jacobian),fieldDisp(field_disp) {}
@@ -319,7 +319,7 @@ PetscErrorCode NonlinearElasticElement::OpJacobian::doWork(
 }
 
 NonlinearElasticElement::OpRhs::OpRhs(const string field_name,BlockData &data,CommonData &common_data):
-  TetElementForcesAndSourcesCore::UserDataOperator(field_name),
+  VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
   dAta(data),commonData(common_data) {}
 
 PetscErrorCode NonlinearElasticElement::OpRhs::doWork(
@@ -376,7 +376,7 @@ PetscErrorCode NonlinearElasticElement::OpRhs::doWork(
 }
 
 NonlinearElasticElement::OpEnergy::OpEnergy(const string field_name,BlockData &data,CommonData &common_data,Vec *v_ptr,bool field_disp):
-  TetElementForcesAndSourcesCore::UserDataOperator(field_name),
+  VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
   dAta(data),commonData(common_data),Vptr(v_ptr),fieldDisp(field_disp) { }
 
 PetscErrorCode NonlinearElasticElement::OpEnergy::doWork(
@@ -423,7 +423,7 @@ PetscErrorCode NonlinearElasticElement::OpEnergy::doWork(
 
 NonlinearElasticElement::OpLhs_dx::OpLhs_dx(
   const string vel_field,const string field_name,BlockData &data,CommonData &common_data):
-  TetElementForcesAndSourcesCore::UserDataOperator(vel_field,field_name),
+  VolumeElementForcesAndSourcesCore::UserDataOperator(vel_field,field_name),
   dAta(data),commonData(common_data) { /*symm = false;*/  }
 
 PetscErrorCode NonlinearElasticElement::OpLhs_dx::getJac(DataForcesAndSurcesCore::EntData &col_data,int gg) {

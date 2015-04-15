@@ -27,7 +27,7 @@ namespace ObosleteUsersModules {
 struct NeummanForcesSurfaceComplexForLazy {
 
   struct MyTriangleSpatialFE;
-  struct AuxMethodSpatial: public TriElementForcesAndSurcesCore::UserDataOperator {
+  struct AuxMethodSpatial: public FaceElementForcesAndSourcesCore::UserDataOperator {
 
     MyTriangleSpatialFE *myPtr;
     AuxMethodSpatial(const string &field_name,MyTriangleSpatialFE *_myPtr);
@@ -35,7 +35,7 @@ struct NeummanForcesSurfaceComplexForLazy {
 
   };
 
-  struct AuxMethodMaterial: public TriElementForcesAndSurcesCore::UserDataOperator {
+  struct AuxMethodMaterial: public FaceElementForcesAndSourcesCore::UserDataOperator {
 
     MyTriangleSpatialFE *myPtr;
     AuxMethodMaterial(const string &field_name,MyTriangleSpatialFE *_myPtr);
@@ -43,7 +43,7 @@ struct NeummanForcesSurfaceComplexForLazy {
 
   };
 
-  struct MyTriangleSpatialFE: public TriElementForcesAndSurcesCore {
+  struct MyTriangleSpatialFE: public FaceElementForcesAndSourcesCore {
 
     double *sCaleLhs;
     double *sCaleRhs;

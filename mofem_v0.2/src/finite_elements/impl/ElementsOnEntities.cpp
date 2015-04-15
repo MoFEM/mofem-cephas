@@ -1242,7 +1242,7 @@ PetscErrorCode ForcesAndSurcesCore::shapeFlatPRISMFunctions_Hdiv(
 
 // **** Tetrahedral ****
 
-PetscErrorCode TetElementForcesAndSourcesCore::operator()() {
+PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
   PetscFunctionBegin;
 
   try {
@@ -1593,7 +1593,7 @@ PetscErrorCode TetElementForcesAndSourcesCore::operator()() {
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode TetElementForcesAndSourcesCore::UserDataOperator::getDivergenceMatrixOperato_Hdiv(
+PetscErrorCode VolumeElementForcesAndSourcesCore::UserDataOperator::getDivergenceMatrixOperato_Hdiv(
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data,
       int gg,ublas::vector<FieldData> &div) {
   PetscFunctionBegin;
@@ -1658,7 +1658,7 @@ static PetscErrorCode get_porblem_col_indices(
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode TetElementForcesAndSourcesCore::UserDataOperator::getPorblemRowIndices(
+PetscErrorCode VolumeElementForcesAndSourcesCore::UserDataOperator::getPorblemRowIndices(
   const string field_name,const EntityType type,const int side,ublas::vector<int>& indices) {
   PetscFunctionBegin;
 
@@ -1669,7 +1669,7 @@ PetscErrorCode TetElementForcesAndSourcesCore::UserDataOperator::getPorblemRowIn
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode TetElementForcesAndSourcesCore::UserDataOperator::getPorblemColIndices(
+PetscErrorCode VolumeElementForcesAndSourcesCore::UserDataOperator::getPorblemColIndices(
   const string field_name,const EntityType type,const int side,ublas::vector<int>& indices) {
   PetscFunctionBegin;
 
@@ -1682,7 +1682,7 @@ PetscErrorCode TetElementForcesAndSourcesCore::UserDataOperator::getPorblemColIn
 
 // **** Triangle ****
 
-PetscErrorCode TriElementForcesAndSurcesCore::operator()() {
+PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
   PetscFunctionBegin;
 
   if(fePtr->get_ent_type() != MBTRI) PetscFunctionReturn(0);
@@ -1962,7 +1962,7 @@ PetscErrorCode TriElementForcesAndSurcesCore::operator()() {
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode TriElementForcesAndSurcesCore::UserDataOperator::getPorblemRowIndices(
+PetscErrorCode FaceElementForcesAndSourcesCore::UserDataOperator::getPorblemRowIndices(
   const string field_name,const EntityType type,const int side,ublas::vector<int>& indices) {
   PetscFunctionBegin;
 
@@ -1972,7 +1972,7 @@ PetscErrorCode TriElementForcesAndSurcesCore::UserDataOperator::getPorblemRowInd
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode TriElementForcesAndSurcesCore::UserDataOperator::getPorblemColIndices(
+PetscErrorCode FaceElementForcesAndSourcesCore::UserDataOperator::getPorblemColIndices(
   const string field_name,const EntityType type,const int side,ublas::vector<int>& indices) {
   PetscFunctionBegin;
 
