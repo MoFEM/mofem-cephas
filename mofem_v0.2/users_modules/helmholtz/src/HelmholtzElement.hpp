@@ -689,6 +689,64 @@ struct HelmholtzElement {
       
    
   };
+
+  /** \brief Infinite Helmholtz Element
+
+  Implementation based on Demkowicz Book:
+  Computing with Adaptive HP-Elements Volume 2
+  Page: 225
+
+  Element is integrated on outer mesh surface Sa up to the infinity where
+  Sommerfeld radiation condition is applied.
+
+  Infinite part,
+  \f[
+  b_\infty(q,p) = 
+    \frac{1}{a} \int_{S_a}
+      \left\{
+      \int_0^1
+	\frac{\partial P}{\partial \xi_3}
+	\left(
+	\xi_3^2\frac{\partial \overline{Q}}{\partial \xi_3} - i2ka\overline{Q}
+	\right) 
+      \textrm{d}\xi_3
+      +(1+ika)P\overline{Q}|_{\xi_3=1}
+    \right\}
+  \textrm{d}S_a
+  +
+  a\int_{S_a}
+    \int_0^1
+      \nabla_{S_a} P\cdot
+      \nabla_{S_a} \overline{Q}
+    \textrm{d}xi_3
+  \textrm{d}S_a
+  \f]
+
+  \f[
+  x = \xi_3^{-1}x_a(\xi_1,\xi_2),\quad a/R < \xi_3 < 1
+  \f]
+
+  Pressure in above is scaled, 
+  \f[
+  p = \xi_3 e^{-ika(\xi_3^{-1}-1)}P
+  \f]
+  Note that P and p are identical on the surface \f$S_a\f$, so in fact we don't need do
+  anything with that equation. The same we can do with test function 
+  \f[
+  \overline{q} = \xi_3 e^{+ika(\xi_3^{-1}-1)}\overline{Q}
+  \f]
+
+  */
+  struct InfiniteHelmholtz {
+
+    PetscErrorCode intergarToInfinity() {
+      PetscFunctionBegin;
+
+      PetscFunctionReturn(0);
+
+    }
+
+  };
   
   /** \brief Add Helmholtz elements to problem
     * \ingroup mofem_helmholtz_elem
