@@ -18,7 +18,7 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 
-struct PostPorcStress: public TetElementForcesAndSourcesCore::UserDataOperator {
+struct PostPorcStress: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
   FieldInterface& mField;
   Interface &postProcMesh;
@@ -32,7 +32,7 @@ struct PostPorcStress: public TetElementForcesAndSourcesCore::UserDataOperator {
     vector<EntityHandle> &map_gauss_pts,
     const string field_name,
     PostPocOnRefinedMesh::CommonData &common_data):
-    TetElementForcesAndSourcesCore::UserDataOperator(field_name),
+    VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
     mField(m_field),
     postProcMesh(post_proc_mesh),
     mapGaussPts(map_gauss_pts),

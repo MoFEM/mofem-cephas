@@ -28,7 +28,7 @@ namespace MoFEM {
 /** \brief Post processing 
   * \ingroup mofem_fs_post_proc  
   */
-struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
+struct PostPocOnRefinedMesh: public VolumeElementForcesAndSourcesCore {
 
   moab::Core coreMesh;
   Interface &postProcMesh;
@@ -37,12 +37,12 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
   int nbOfRefLevels;
 
   PostPocOnRefinedMesh(FieldInterface &m_field,bool ten_nodes_post_proc_tets = true,int nb_ref_levels = -1):
-    TetElementForcesAndSourcesCore(m_field),postProcMesh(coreMesh),
+    VolumeElementForcesAndSourcesCore(m_field),postProcMesh(coreMesh),
     tenNodesPostProcTets(ten_nodes_post_proc_tets),nbOfRefLevels(nb_ref_levels) {
 
   }
 
-  ~PostPocOnRefinedMesh() {
+  virtual ~PostPocOnRefinedMesh() {
     ParallelComm* pcomm_post_proc_mesh = ParallelComm::get_pcomm(&postProcMesh,MYPCOMM_INDEX);
     if(pcomm_post_proc_mesh != NULL) {
       delete pcomm_post_proc_mesh;
@@ -244,7 +244,7 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
   }
 
 
-  struct OpHdivFunctions: public TetElementForcesAndSourcesCore::UserDataOperator {
+  struct OpHdivFunctions: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     Interface &postProcMesh;
     vector<EntityHandle> &mapGaussPts;
@@ -253,7 +253,7 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
       Interface &post_proc_mesh,
       vector<EntityHandle> &map_gauss_pts,
       const string field_name): 
-      TetElementForcesAndSourcesCore::UserDataOperator(field_name),
+      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
       postProcMesh(post_proc_mesh),mapGaussPts(map_gauss_pts) {}
 
     PetscErrorCode doWork(
@@ -302,7 +302,7 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
 
   };
 
-  struct OpGetFieldValues: public TetElementForcesAndSourcesCore::UserDataOperator {
+  struct OpGetFieldValues: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     Interface &postProcMesh;
     vector<EntityHandle> &mapGaussPts;
@@ -312,7 +312,7 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
       Interface &post_proc_mesh,
       vector<EntityHandle> &map_gauss_pts,
       const string field_name,CommonData &common_data): 
-      TetElementForcesAndSourcesCore::UserDataOperator(field_name),
+      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
       postProcMesh(post_proc_mesh),mapGaussPts(map_gauss_pts),
       commonData(common_data) {}
 
@@ -413,7 +413,7 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
 
   };
 
-  struct OpGetFieldGradientValues: public TetElementForcesAndSourcesCore::UserDataOperator {
+  struct OpGetFieldGradientValues: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     Interface &postProcMesh;
     vector<EntityHandle> &mapGaussPts;
@@ -423,7 +423,7 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
       Interface &post_proc_mesh,
       vector<EntityHandle> &map_gauss_pts,
       const string field_name,CommonData &common_data): 
-      TetElementForcesAndSourcesCore::UserDataOperator(field_name),
+      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
       postProcMesh(post_proc_mesh),mapGaussPts(map_gauss_pts),
       commonData(common_data) {}
 
@@ -537,6 +537,10 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
     ErrorCode rval;
+    ParallelComm* pcomm_post_proc_mesh = ParallelComm::get_pcomm(&postProcMesh,MYPCOMM_INDEX);
+    if(pcomm_post_proc_mesh != NULL) {
+      delete pcomm_post_proc_mesh;
+    }
     rval = postProcMesh.delete_mesh(); CHKERR_PETSC(rval);
     PetscFunctionReturn(0);
   }

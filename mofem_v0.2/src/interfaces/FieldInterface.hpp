@@ -1,12 +1,8 @@
-/** \file FieldInterface.hpp
+ /** \file FieldInterface.hpp
  * \brief MoFEM interface 
- * 
- * Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl) <br>
- * MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
+ */
+ 
+/*
  * MoFEM is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
@@ -83,54 +79,88 @@ struct FieldInterface: public FieldUnknownInterface {
   /** 
     * \ingroup mofem_bc 
     * \brief check for CUBIT Id and CUBIT type
-    *
+
+    \bug All cubit interface functions should be outsurced to dedicated inerface    
+
     * \param msId id of the BLOCKSET/SIDESET/BLOCKSET: from CUBIT
-    * \param CubitBCType see CubitBC (NODESET, SIDESET or BLOCKSET and more) 
+    * \param  see CubitBC (NODESET, SIDESET or BLOCKSET and more) 
     */
-  virtual bool check_msId_meshset(const int msId,const CubitBC_BitSet CubitBCType) = 0;
+  virtual bool check_msId_meshset(const int msId,const CubitBCType cubit_bc_type) = 0;
 
   /**
     * \ingroup mofem_bc 
     * \brief add cubit meshset
     *
-    * \param CubitBCType see CubitBC (NODESET, SIDESET or BLOCKSET and more) 
+    * \param  see CubitBC (NODESET, SIDESET or BLOCKSET and more) 
     * \param msId id of the BLOCKSET/SIDESET/BLOCKSET: from CUBIT
     *
     */
-  virtual PetscErrorCode add_Cubit_msId(const CubitBC_BitSet CubitBCType,const int msId) = 0;
+  virtual PetscErrorCode add_cubit_msId(const CubitBCType cubit_bc_tyep,const int msId) = 0;
+
+  /// DEPRECATED use add_cubit_msId instead
+  DEPRECATED PetscErrorCode add_Cubit_msId(const CubitBCType cubit_bc_type,const int msId) {
+    PetscFunctionBegin;
+    PetscErrorCode ierr;
+    ierr = add_cubit_msId(cubit_bc_type,msId); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
 
   /**
     * \ingroup mopfem_bc
     * \brief delete cubit meshset
     *
-    * \param CubitBCType see CubitBC (NODESET, SIDESET or BLOCKSET and more) 
+    * \param  see CubitBC (NODESET, SIDESET or BLOCKSET and more) 
     * \param msId id of the BLOCKSET/SIDESET/BLOCKSET: from CUBIT
     *
     */
-  virtual PetscErrorCode delete_Cubit_msId(const CubitBC_BitSet CubitBCType,const int msId) = 0;
+  virtual PetscErrorCode delete_cubit_msId(const CubitBCType cubit_bc_type,const int msId) = 0;
+
+  /// DEPRECATED use add_cubit_msId instead
+  DEPRECATED PetscErrorCode delete_Cubit_msId(const CubitBCType cubit_bc_type,const int msId) {
+    PetscFunctionBegin;
+    PetscErrorCode ierr;
+    ierr = delete_cubit_msId(cubit_bc_type,msId); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
 
   /** 
     * \ingroup mofem_bc
     * \brief get cubit meshset
     */
-  virtual PetscErrorCode get_Cubit_msId(const int msId,const CubitBC_BitSet CubitBCType,const CubitMeshSets **cubit_meshset_ptr) = 0;
+  virtual PetscErrorCode get_cubit_msId(const int msId,const CubitBCType cubit_bc_type,const CubitMeshSets **cubit_meshset_ptr) = 0;
+
+  /// DEPRECATED use get_cubit_msId
+  DEPRECATED PetscErrorCode get_Cubit_msId(const int msId,const CubitBCType cubit_bc_type,const CubitMeshSets **cubit_meshset_ptr) {
+    PetscFunctionBegin;
+    PetscErrorCode ierr;
+    ierr = get_cubit_msId(msId,cubit_bc_type,cubit_meshset_ptr); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
 
   /** 
     * \ingroup mofem_bc
     * \brief get entities from CUBIT/meshset of a particular entity dimension \n
-	  * Nodeset can contain nodes, edges, triangles and tets. This applies to other CubitBCType meshsets too. \n
+	  * Nodeset can contain nodes, edges, triangles and tets. This applies to other  meshsets too. \n
 	  * The nodeset's meshset contain the nodes in the MIDDLE of the surface or volume which is done by default in Cubit,\n
 		* Hence if all nodes on a particular nodeset are required,\n
 	  * one should get all triangles or tetrahedrons for which the nodeset was create in Cubit,\n
 	  * and get all the connectivities of tris/tets.
 		*
     * \param msId id of the BLOCKSET/SIDESET/BLOCKSET: from CUBIT
-    * \param CubitBCType see CubitBC (NODESET, SIDESET or BLOCKSET and more) 
+    * \param  see CubitBC (NODESET, SIDESET or BLOCKSET and more) 
     * \param dimensions (0 - Nodes, 1 - Edges, 2 - Faces, 3 - Volume(tetrahedral))
     * \param Range containing the retreived entities
     * \param recursive If true, meshsets containing meshsets are queried recursively. Returns the contents of meshsets, but not the meshsets themselves if true.
     */
-  virtual PetscErrorCode get_Cubit_msId_entities_by_dimension(const int msId,const unsigned int CubitBCType, const int dimension,Range &entities,const bool recursive = false) = 0;
+  virtual PetscErrorCode get_cubit_msId_entities_by_dimension(const int msId,const unsigned int cubit_bc_type, const int dimension,Range &entities,const bool recursive = false) = 0;
+
+  /// DEPRECATED use get_cubit_msId_entities_by_dimension
+  DEPRECATED PetscErrorCode get_Cubit_msId_entities_by_dimension(const int msId,const unsigned int cubit_bc_type, const int dimension,Range &entities,const bool recursive = false) {
+    PetscFunctionBegin;
+    PetscErrorCode ierr;
+    ierr = get_cubit_msId_entities_by_dimension(msId,cubit_bc_type,dimension,entities,recursive); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
 
   /** 
     * \ingroup mofem_bc 
@@ -139,30 +169,54 @@ struct FieldInterface: public FieldUnknownInterface {
     * SIDESET will get Tris, BLOCKSET will get Tets, DISPLACEMENTSET and FORCESET are stored in NODESET, PRESSURESET is stored in Sideset.
 	  *
     * \param msId id of the BLOCKSET/SIDESET/BLOCKSET: from CUBIT
-    * \param CubitBCType see CubitBC (NODESET, SIDESET or BLOCKSET and more) 
-    * \param Range containing the retreived entities related to the CubitBCType
+    * \param  see CubitBC (NODESET, SIDESET or BLOCKSET and more) 
+    * \param Range containing the retreived entities related to the 
     * \param recursive If true, meshsets containing meshsets are queried recursively.  Returns the contents of meshsets, but not the meshsets themselves if true.
     */
-  virtual PetscErrorCode get_Cubit_msId_entities_by_dimension(const int msId,const unsigned int CubitBCType, Range &entities,const bool recursive = false) = 0;
+  virtual PetscErrorCode get_cubit_msId_entities_by_dimension(const int msId,const unsigned int cubit_bc_type, Range &entities,const bool recursive = false) = 0;
+
+  /// DEPRECATED use get_cubit_msId_entities_by_dimension
+  DEPRECATED PetscErrorCode get_Cubit_msId_entities_by_dimension(const int msId,const unsigned int cubit_bc_type, Range &entities,const bool recursive = false) {
+    PetscFunctionBegin;
+    PetscErrorCode ierr;
+    ierr = get_cubit_msId_entities_by_dimension(msId,cubit_bc_type,entities,recursive); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
 
   /** 
     * \ingroup mofem_bc 
     * \brief get meshset from CUBIT Id and CUBIT type
     *
     * \param msId id of the BLOCKSET/SIDESET/BLOCKSET: from CUBIT
-    * \param CubitBCType see CubitBC (NODESET, SIDESET or BLOCKSET and more) 
+    * \param  see CubitBC (NODESET, SIDESET or BLOCKSET and more) 
     * \param meshset where to store the retrieved entities
     */
-  virtual PetscErrorCode get_Cubit_msId_meshset(const int msId,const unsigned int CubitBCType,EntityHandle &meshset) = 0;
+  virtual PetscErrorCode get_cubit_msId_meshset(const int msId,const unsigned int cubit_bc_type,EntityHandle &meshset) = 0;
+
+  /// DEPRECATED use get_cubit_msId_meshset
+  DEPRECATED PetscErrorCode get_Cubit_msId_meshset(const int msId,const unsigned int cubit_bc_type,EntityHandle &meshset) {
+    PetscFunctionBegin;
+    PetscErrorCode ierr;
+    ierr = get_cubit_msId_meshset(msId,cubit_bc_type,meshset); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
 
   /** 
     * \ingroup mofem_bc 
     * \brief get all CUBIT meshsets by CUBIT type
     *
-    * \param CubitBCType see CubitBC (NODESET, SIDESET or BLOCKSET and more). 
+    * \param  see CubitBC (NODESET, SIDESET or BLOCKSET and more). 
     * \param meshsets is range of meshsets
     */
-  virtual PetscErrorCode get_Cubit_meshsets(const unsigned int CubitBCType,Range &meshsets) = 0;
+  virtual PetscErrorCode get_cubit_meshsets(const unsigned int cubit_bc_type,Range &meshsets) = 0;
+
+  /// DEPRECATED use get_cubit_meshsets
+  DEPRECATED PetscErrorCode get_Cubit_meshsets(const unsigned int cubit_bc_type,Range &meshsets) {
+    PetscFunctionBegin;
+    PetscErrorCode ierr;
+    ierr = get_cubit_meshsets(cubit_bc_type,meshsets); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
 
    /** 
     * \ingroup mofem_bc 
@@ -173,7 +227,7 @@ struct FieldInterface: public FieldUnknownInterface {
     * }
     *
     */
-  virtual CubitMeshSet_multiIndex::iterator get_CubitMeshSets_begin() = 0;
+  virtual CubitMeshSet_multiIndex::iterator get_cubit_meshsets_begin() = 0;
 
    /** 
     * \ingroup mofem_bc 
@@ -184,7 +238,7 @@ struct FieldInterface: public FieldUnknownInterface {
     * }
     *
     */
-  virtual CubitMeshSet_multiIndex::iterator get_CubitMeshSets_end() = 0;
+  virtual CubitMeshSet_multiIndex::iterator get_cubit_mesh_sets_end() = 0;
     
     /**
      * \ingroup mofem_bc 
@@ -195,7 +249,7 @@ struct FieldInterface: public FieldUnknownInterface {
      * \param iterator 
      */
   #define _IT_CUBITMESHSETS_FOR_LOOP_(MFIELD,IT) \
-    CubitMeshSet_multiIndex::iterator IT = MFIELD.get_CubitMeshSets_begin(); IT!=MFIELD.get_CubitMeshSets_end(); IT++
+    CubitMeshSet_multiIndex::iterator IT = MFIELD.get_cubit_meshsets_begin(); IT!=MFIELD.get_cubit_mesh_sets_end(); IT++
 
   /**
     * \ingroup mofem_bc 
@@ -205,9 +259,9 @@ struct FieldInterface: public FieldUnknownInterface {
     * 	...
     * }
     *
-    * \param CubitBCType type of meshset (NODESET, SIDESET or BLOCKSET and more)
+    * \param  type of meshset (NODESET, SIDESET or BLOCKSET and more)
     */
-  virtual CubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator get_CubitMeshSets_begin(const unsigned int CubitBCType) = 0;
+  virtual CubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator get_cubit_meshsets_begin(const unsigned int ) = 0;
 
   /** 
     * \ingroup mofem_bc 
@@ -217,9 +271,9 @@ struct FieldInterface: public FieldUnknownInterface {
     * 	...
     * }
     *
-    * \param CubitBCType type of meshset (NODESET, SIDESET or BLOCKSET and more)
+    * \param  type of meshset (NODESET, SIDESET or BLOCKSET and more)
     */
-  virtual CubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator get_CubitMeshSets_end(const unsigned int CubitBCType) = 0;
+  virtual CubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator get_cubit_mesh_sets_end(const unsigned int ) = 0;
     
     /**
       * \ingroup mofem_bc 
@@ -227,12 +281,12 @@ struct FieldInterface: public FieldUnknownInterface {
       * \brief Iterator that loops over a specific Cubit MeshSet in a moFEM field
       *
       * \param mField moFEM Field
-      * \param CubitBCType see CubitBC (NODESET, SIDESET or BLOCKSET and more) 
+      * \param  see CubitBC (NODESET, SIDESET or BLOCKSET and more) 
       * \param iterator 
       */
   #define _IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT) \
-    CubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator IT = MFIELD.get_CubitMeshSets_begin(CUBITBCTYPE); \
-    IT!=MFIELD.get_CubitMeshSets_end(CUBITBCTYPE); IT++
+    CubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator IT = MFIELD.get_cubit_meshsets_begin(CUBITBCTYPE); \
+    IT!=MFIELD.get_cubit_mesh_sets_end(CUBITBCTYPE); IT++
 
   /** 
     * \ingroup mofem_bc 
@@ -242,9 +296,9 @@ struct FieldInterface: public FieldUnknownInterface {
     * 	...
     * }
     *
-    * \param CubitBCType type of meshset (NODESET, SIDESET or BLOCKSET and more)
+    * \param  type of meshset (NODESET, SIDESET or BLOCKSET and more)
     */
-  virtual CubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type::iterator get_CubitMeshSets_bySetType_begin(const unsigned int CubitBCType) = 0;
+  virtual CubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type::iterator get_CubitMeshSets_bySetType_begin(const unsigned int ) = 0;
 
   /** 
     * \ingroup mofem_bc 
@@ -254,9 +308,9 @@ struct FieldInterface: public FieldUnknownInterface {
     * 	...
     * }
     *
-    * \param CubitBCType type of meshset (NODESET, SIDESET or BLOCKSET and more)
+    * \param  type of meshset (NODESET, SIDESET or BLOCKSET and more)
     */
-  virtual CubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type::iterator get_CubitMeshSets_bySetType_end(const unsigned int CubitBCType) = 0;
+  virtual CubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type::iterator get_CubitMeshSets_bySetType_end(const unsigned int ) = 0;
     
   /**
    * \ingroup mofem_bc 
@@ -264,7 +318,7 @@ struct FieldInterface: public FieldUnknownInterface {
    * \brief Iterator that loops over a specific Cubit MeshSet having a particular BC meshset in a moFEM field
    *
    * \param mField moFEM Field
-   * \param CubitBCType see CubitBC (NODESET, SIDESET or BLOCKSET and more) 
+   * \param  see CubitBC (NODESET, SIDESET or BLOCKSET and more) 
    * \param iterator 
    *
    * Example: \code
@@ -301,11 +355,57 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode print_cubit_displacement_set() = 0;
   virtual PetscErrorCode print_cubit_pressure_set() = 0;
   virtual PetscErrorCode print_cubit_force_set() = 0;
-  virtual PetscErrorCode printCubitTEMPERATURESET() = 0;
-  virtual PetscErrorCode printCubitHeatFluxSet() = 0;
+
+  virtual PetscErrorCode print_cubit_temperature() = 0;
+  // DEPRECATED use printCubitTEMPERATURESET
+  DEPRECATED PetscErrorCode printCubitTEMPERATURESET() {
+    PetscFunctionBegin;
+    PetscErrorCode ierr;
+    ierr = print_cubit_temperature(); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
+  virtual PetscErrorCode print_cubit_heat_flux_set() = 0;
+  // DEPRECATED use get_cubit_meshsets
+  DEPRECATED PetscErrorCode printCubitHeatFluxSet() {
+    PetscFunctionBegin;
+    PetscErrorCode ierr;
+    ierr = print_cubit_heat_flux_set(); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
   virtual PetscErrorCode print_cubit_materials_set() = 0;
 
   virtual PetscErrorCode rebuild_database(int verb = -1) = 0;
+
+  /** synchronise entity range on processors (collective)
+
+    collective - need tu be run on all processors in communicator
+
+    */
+  virtual PetscErrorCode synchronise_entities(Range &ent,int verb = -1) = 0;
+
+  /** synchronise entity range on processors (collective)
+    * \ingroup mofem_field
+
+    collective - need tu be run on all processors in communicator
+
+    \param id field 
+    \param verbose level    
+
+    */
+  virtual PetscErrorCode synchronise_field_entities(const BitFieldId id,int verb = -1) = 0;
+
+  /** synchronise entity range on processors (collective)
+    * \ingroup mofem_field
+
+    collective - need tu be run on all processors in communicator
+
+    \param name field
+    \param verbose level
+
+    */
+  virtual PetscErrorCode synchronise_field_entities(const string& name,int verb = -1) = 0;
 
   /**
   * Create finite elements based from entities in meshses. Throw error if entity is not in database
@@ -1028,19 +1128,27 @@ struct FieldInterface: public FieldUnknownInterface {
    */
   virtual PetscErrorCode clear_problems(int verb = -1) = 0;
 
-  /** \brief build problem data structures, assuming that mesh is partitioned
+  /** \brief build problem data structures, assuming that mesh is partitioned (collective)
    * \ingroup mofem_problems
-   * \bug non collective communication
-   */
-  virtual PetscErrorCode build_partitioned_problem(const string &name,int verb = -1) = 0;
 
-  /** \brief build problem data structures, assuming that mesh is partitioned
-   * \ingroup mofem_problems
-   */
-  virtual PetscErrorCode build_partitioned_problem(MoFEMProblem *problem_ptr,int verb = -1) = 0;
+   collective - need tu be run on all processors in communicator
 
-  /** \brief build problem data structures, assuming that mesh is partitioned
+   */
+  virtual PetscErrorCode build_partitioned_problem(const string &name,bool square_matrix = true,int verb = -1) = 0;
+
+  /** \brief build problem data structures, assuming that mesh is partitioned (collective)
    * \ingroup mofem_problems
+
+   collective - need tu be run on all processors in communicator
+
+   */
+  virtual PetscErrorCode build_partitioned_problem(MoFEMProblem *problem_ptr,bool square_matrix = true,int verb = -1) = 0;
+
+  /** \brief build problem data structures, assuming that mesh is partitioned (collective)
+   * \ingroup mofem_problems
+
+   collective - need tu be run on all processors in communicator
+
    */
   virtual PetscErrorCode build_partitioned_problems(int verb = -1) = 0;
 
@@ -1051,7 +1159,7 @@ struct FieldInterface: public FieldUnknownInterface {
    */
   virtual PetscErrorCode simple_partition_problem(const string &name,int verb = -1) = 0;
 
-  /** \brief partition problem dofs
+  /** \brief partition problem dofs (collective)
    * \ingroup mofem_problems
    *
    * \param name problem name
@@ -1109,9 +1217,17 @@ struct FieldInterface: public FieldUnknownInterface {
     bool part_from_moab = false,int low_proc = -1,int hi_proc = -1,int verb = -1) = 0;
 
   /** \brief check if matrix fill in correspond to finite element indices
-    *
+
+    This is used to check consistency of code. If problem is notices with
+    additional non-zero elements in matrix, this function can help detect problem.
+    Should be used as a part of atom tests
+
+    \param problem_nanme
+    \param row print info at particular row 
+    \param col print info at particular col
+  
     */
-  virtual PetscErrorCode partition_check_matrix_fill_in(const string &problem_name,int verb) = 0;
+  virtual PetscErrorCode partition_check_matrix_fill_in(const string &problem_name,int row,int col,int verb) = 0;
 
   /**
     * \brief add finite elements to the meshset
@@ -1132,9 +1248,11 @@ struct FieldInterface: public FieldUnknownInterface {
    */
   virtual PetscErrorCode VecCreateSeq(const string &name,RowColData rc,Vec *V) = 0;
 
-  /** \brief create ghost vector for problem
+  /** \brief create ghost vector for problem (collective)
    * \ingroup mofem_vectors
-   *
+
+  collective - need tu be run on all processors in communicator
+
    * \param name problem name
    * \param RowColData specify what data is taken from Row, Col or Data
    * \param Vec the vector where data is stored
@@ -1142,7 +1260,7 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode VecCreateGhost(const string &name,RowColData rc,Vec *V) = 0;
 
   /**
-    * \brief create Mat (MPIAIJ) for problem
+    * \brief create Mat (MPIAIJ) for problem (collective)
     *
     * \param name of the problem
     */
@@ -1156,7 +1274,7 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode MatCreateSeqAIJWithArrays(const string &name,Mat *Aij,PetscInt **i,PetscInt **j,PetscScalar **v,int verb = -1) = 0;
 
   /** 
-    * \brief create IS for given order range 
+    * \brief create IS for given order range (collective)
     * \ingroup mofem_vectors
 
     * \param problem name
@@ -1169,7 +1287,7 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode ISCreateProblemOrder(const string &problem,RowColData rc,int min_order,int max_order,IS *is,int verb = -1) = 0;
 
   /** 
-    * \brief create IS for given problem, field and rank range
+    * \brief create IS for given problem, field and rank range (collective)
     * \ingroup mofem_vectors
     
     * \param problem name
@@ -1183,7 +1301,7 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode ISCreateProblemFieldAndRank(const string &problem,RowColData rc,const string &field,int min_rank,int max_rank,IS *is,int verb = -1) = 0;
 
   /**
-    * \brief create scatter for vectors form one to another problem
+    * \brief create scatter for vectors form one to another problem (collective)
     * \ingroup mofem_vectors
     *
     * User specify what name of field on one problem is scattered to another.
@@ -1203,7 +1321,7 @@ struct FieldInterface: public FieldUnknownInterface {
     Vec yin,const string &y_problem,const string &y_field_name,RowColData y_rc,VecScatter *newctx,int verb = -1) = 0;
 
   /**
-    * \brief create scatter for vectors form one to another problem
+    * \brief create scatter for vectors form one to another problem (collective)
     * \ingroup mofem_vectors
     *
     * \param xin vector
@@ -1265,9 +1383,11 @@ struct FieldInterface: public FieldUnknownInterface {
   }
 
   /** 
-    * \brief set values of vector from/to meshdatabase
+    * \brief set values of vector from/to mesh database (collective)
     * \ingroup mofem_vectors
-    *
+
+    collective - need tu be run on all processors in communicator
+
     * \param pointer to porblem struture
     * \param RowColData for row or column (i.e. Row,Col)
     * \param V vector
@@ -1288,9 +1408,11 @@ struct FieldInterface: public FieldUnknownInterface {
   }
 
   /** 
-    * \brief set values of vector from/to meshdatabase
+    * \brief set values of vector from/to mesh database (collective)
     * \ingroup mofem_vectors
-    *
+
+    collective - need tu be run on all processors in communicator
+
     * \param name of the problem
     * \param RowColData for row or column (i.e. Row,Col)
     * \param V vector
@@ -1362,9 +1484,11 @@ struct FieldInterface: public FieldUnknownInterface {
     PetscFunctionReturn(0);
   }
 
-  /** \brief Copy vector to field which is not part of the problem
+  /** \brief Copy vector to field which is not part of the problem (collective)
     * \ingroup mofem_vectors
-    *
+    
+    collective - need tu be run on all processors in communicator
+
     * \param problem_ptr pointer to problem
     * \param field_name field name used for indexing petsc vectors used in the problem
     * \param cpy_field field name where data from vector are stored
@@ -1388,9 +1512,11 @@ struct FieldInterface: public FieldUnknownInterface {
     PetscFunctionReturn(0);
   }
 
-  /** \brief Copy vector to field which is not part of the problem
+  /** \brief Copy vector to field which is not part of the problem (collective)
     * \ingroup mofem_vectors
-    *
+    
+    collective - need tu be run on all processors in communicator
+
     * \param name problem name
     * \param field_name field name used for indexing petsc vectors used in the problem
     * \param cpy_field field name where data from vector are stored
@@ -1751,7 +1877,7 @@ struct FieldInterface: public FieldUnknownInterface {
     * \brief get field data from entity and field
     * \ingroup mofem_field
     * 
-    * this funciont is not recommended to be used in finite elemeny implementation
+    * this function is not recommended to be used in finite element implementation
     *
     */
   template <typename DIT>

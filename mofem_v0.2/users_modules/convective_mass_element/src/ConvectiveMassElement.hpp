@@ -1,7 +1,10 @@
 /** \file ConvectiveMassElement.hpp 
  * \brief Operators and data structures for mass and convective mass element
+ * \ingroup convective_mass_elem
  *
- * Implementation of convective mass element
+ */
+
+/* Implementation of convective mass element
  *
  * This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
@@ -26,6 +29,7 @@
 
 /** \brief structure grouping operators and data used for calculation of mass (convective) element
   * \ingroup convective_mass_elem
+  * \ingroup nonlinear_elastic_elem
   *
   * In order to assemble matrices and right hand vectors, the loops over
   * elements, entities over that elements and finally loop over integration
@@ -38,14 +42,14 @@
 struct ConvectiveMassElement {
 
   /// \brief  definition of volume element
-  struct MyVolumeFE: public TetElementForcesAndSourcesCore {
+  struct MyVolumeFE: public VolumeElementForcesAndSourcesCore {
 
     Mat A;
     Vec F;
     bool initV; ///< check if ghost vector used to accumalte Kinetin energy is created
 
     MyVolumeFE(FieldInterface &_mField): 
-      TetElementForcesAndSourcesCore(_mField),A(PETSC_NULL),F(PETSC_NULL),initV(false) {
+      VolumeElementForcesAndSourcesCore(_mField),A(PETSC_NULL),F(PETSC_NULL),initV(false) {
       meshPositionsFieldName = "NoNE";
     }
     
@@ -73,7 +77,7 @@ struct ConvectiveMassElement {
       PetscFunctionBegin;
       PetscErrorCode ierr;
 
-      ierr = TetElementForcesAndSourcesCore::preProcess(); CHKERRQ(ierr);
+      ierr = VolumeElementForcesAndSourcesCore::preProcess(); CHKERRQ(ierr);
 
       if(A != PETSC_NULL) {
 	ts_B = A;
@@ -113,7 +117,7 @@ struct ConvectiveMassElement {
       PetscFunctionBegin;
       PetscErrorCode ierr;
 
-      ierr = TetElementForcesAndSourcesCore::postProcess(); CHKERRQ(ierr);
+      ierr = VolumeElementForcesAndSourcesCore::postProcess(); CHKERRQ(ierr);
 
       double *array;
       switch (ts_ctx) {
@@ -205,7 +209,7 @@ struct ConvectiveMassElement {
   };
   CommonData commonData;
 
-  struct OpGetDataAtGaussPts: public TetElementForcesAndSourcesCore::UserDataOperator {
+  struct OpGetDataAtGaussPts: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     vector<ublas::vector<double> > &valuesAtGaussPts;
     vector<ublas::matrix<double> > &gradientAtGaussPts;
@@ -214,7 +218,7 @@ struct ConvectiveMassElement {
     OpGetDataAtGaussPts(const string field_name,
       vector<ublas::vector<double> > &values_at_gauss_pts,
       vector<ublas::matrix<double> > &gardient_at_gauss_pts):
-      TetElementForcesAndSourcesCore::UserDataOperator(field_name),
+      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
       valuesAtGaussPts(values_at_gauss_pts),gradientAtGaussPts(gardient_at_gauss_pts),
       zeroAtType(MBVERTEX) {}
 
@@ -330,7 +334,7 @@ struct ConvectiveMassElement {
   
   };
 
-  struct OpMassJacobian: public TetElementForcesAndSourcesCore::UserDataOperator,CommonFunctions {
+  struct OpMassJacobian: public VolumeElementForcesAndSourcesCore::UserDataOperator,CommonFunctions {
 
     BlockData &dAta;
     CommonData &commonData;
@@ -340,7 +344,7 @@ struct ConvectiveMassElement {
     bool fieldDisp;
 
     OpMassJacobian(const string field_name,BlockData &data,CommonData &common_data,int tag,bool jacobian = true,bool linear = false):
-      TetElementForcesAndSourcesCore::UserDataOperator(field_name),
+      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
       dAta(data),commonData(common_data),tAg(tag),jAcobian(jacobian),lInear(linear),fieldDisp(false) { }
 
     ublas::vector<adouble> a,dot_W,dp_dt,a_res;
@@ -538,13 +542,13 @@ struct ConvectiveMassElement {
 
   };
 
-  struct OpMassRhs: public TetElementForcesAndSourcesCore::UserDataOperator,CommonFunctions {
+  struct OpMassRhs: public VolumeElementForcesAndSourcesCore::UserDataOperator,CommonFunctions {
 
     BlockData &dAta;
     CommonData &commonData;
 
     OpMassRhs(const string field_name,BlockData &data,CommonData &common_data):
-      TetElementForcesAndSourcesCore::UserDataOperator(field_name),
+      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
       dAta(data),commonData(common_data) { }
 
     ublas::vector<double> nf;
@@ -592,7 +596,7 @@ struct ConvectiveMassElement {
 
   };
 
-  struct OpMassLhs_dM_dv: public TetElementForcesAndSourcesCore::UserDataOperator,CommonFunctions {
+  struct OpMassLhs_dM_dv: public VolumeElementForcesAndSourcesCore::UserDataOperator,CommonFunctions {
 
     BlockData &dAta;
     CommonData &commonData;
@@ -600,7 +604,7 @@ struct ConvectiveMassElement {
 
     OpMassLhs_dM_dv(
       const string vel_field,const string field_name,BlockData &data,CommonData &common_data,Range *forcesonlyonentities_ptr = NULL):
-      TetElementForcesAndSourcesCore::UserDataOperator(vel_field,field_name),
+      VolumeElementForcesAndSourcesCore::UserDataOperator(vel_field,field_name),
       dAta(data),commonData(common_data) { 
 	symm = false;  
 	if(forcesonlyonentities_ptr!=NULL) {
@@ -807,7 +811,7 @@ struct ConvectiveMassElement {
 
   };
 
-  struct OpEnergy: public TetElementForcesAndSourcesCore::UserDataOperator,CommonFunctions {
+  struct OpEnergy: public VolumeElementForcesAndSourcesCore::UserDataOperator,CommonFunctions {
 
     BlockData &dAta;
     CommonData &commonData;
@@ -815,7 +819,7 @@ struct ConvectiveMassElement {
     bool lInear;
 
     OpEnergy(const string field_name,BlockData &data,CommonData &common_data,Vec *v_ptr,bool linear = false):
-      TetElementForcesAndSourcesCore::UserDataOperator(field_name),
+      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
       dAta(data),commonData(common_data),Vptr(v_ptr),lInear(linear) { }
 
     ublas::matrix<double> h,H,invH,F;
@@ -881,7 +885,7 @@ struct ConvectiveMassElement {
 
   };
 
-  struct OpVelocityJacobian: public TetElementForcesAndSourcesCore::UserDataOperator,CommonFunctions {
+  struct OpVelocityJacobian: public VolumeElementForcesAndSourcesCore::UserDataOperator,CommonFunctions {
 
     BlockData &dAta;
     CommonData &commonData;
@@ -889,7 +893,7 @@ struct ConvectiveMassElement {
     bool jAcobian,fieldDisp;
 
     OpVelocityJacobian(const string field_name,BlockData &data,CommonData &common_data,int tag,bool jacobian = true):
-      TetElementForcesAndSourcesCore::UserDataOperator(field_name),
+      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
       dAta(data),commonData(common_data),tAg(tag),jAcobian(jacobian),fieldDisp(false) { }
 
     ublas::vector<adouble> a_res;
@@ -1078,13 +1082,13 @@ struct ConvectiveMassElement {
 
   };
 
-  struct OpVelocityRhs: public TetElementForcesAndSourcesCore::UserDataOperator,CommonFunctions {
+  struct OpVelocityRhs: public VolumeElementForcesAndSourcesCore::UserDataOperator,CommonFunctions {
 
     BlockData &dAta;
     CommonData &commonData;
 
     OpVelocityRhs(const string field_name,BlockData &data,CommonData &common_data):
-      TetElementForcesAndSourcesCore::UserDataOperator(field_name),
+      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
       dAta(data),commonData(common_data) { }
 
     ublas::vector<double> nf;
@@ -1239,7 +1243,7 @@ struct ConvectiveMassElement {
 
   };
 
-  struct OpEshelbyDynamicMaterialMomentumJacobian: public TetElementForcesAndSourcesCore::UserDataOperator,CommonFunctions {
+  struct OpEshelbyDynamicMaterialMomentumJacobian: public VolumeElementForcesAndSourcesCore::UserDataOperator,CommonFunctions {
 
     BlockData &dAta;
     CommonData &commonData;
@@ -1248,7 +1252,7 @@ struct ConvectiveMassElement {
     bool fieldDisp;
 
     OpEshelbyDynamicMaterialMomentumJacobian(const string field_name,BlockData &data,CommonData &common_data,int tag,bool jacobian = true):
-      TetElementForcesAndSourcesCore::UserDataOperator(field_name),
+      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
       dAta(data),commonData(common_data),tAg(tag),jAcobian(jacobian),fieldDisp(false) {}
 
     ublas::vector<adouble> a,v,a_T;
@@ -1426,7 +1430,7 @@ struct ConvectiveMassElement {
 
   };
 
-  struct OpEshelbyDynamicMaterialMomentumRhs: public TetElementForcesAndSourcesCore::UserDataOperator,CommonFunctions {
+  struct OpEshelbyDynamicMaterialMomentumRhs: public VolumeElementForcesAndSourcesCore::UserDataOperator,CommonFunctions {
 
     BlockData &dAta;
     CommonData &commonData;
@@ -1434,7 +1438,7 @@ struct ConvectiveMassElement {
 
     OpEshelbyDynamicMaterialMomentumRhs(const string field_name,BlockData &data,CommonData &common_data,
       Range *forcesonlyonentities_ptr):
-      TetElementForcesAndSourcesCore::UserDataOperator(field_name),
+      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
       dAta(data),commonData(common_data) { 
 	if(forcesonlyonentities_ptr!=NULL) {
 	  forcesOnlyOnEntities = *forcesonlyonentities_ptr;

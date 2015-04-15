@@ -1,7 +1,10 @@
-/* \file stability.cpp
+/** \file stability.cpp
+ * \ingroup nonlinear_elastic_elem
  * 
  * Solves stability problem. Currently uses 3d tetrahedral elements.
- *
+ */
+
+/*
  * This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -231,7 +234,7 @@ int main(int argc, char *argv[]) {
   FieldInterface& m_field = core;
 
   Range CubitSIDESETs_meshsets;
-  ierr = m_field.get_Cubit_meshsets(SIDESET,CubitSIDESETs_meshsets); CHKERRQ(ierr);
+  ierr = m_field.get_cubit_meshsets(SIDESET,CubitSIDESETs_meshsets); CHKERRQ(ierr);
 
   //ref meshset ref level 0
   ierr = m_field.seed_ref_level_3D(0,0); CHKERRQ(ierr);
@@ -343,7 +346,7 @@ int main(int argc, char *argv[]) {
 
   //build database
   if(is_partitioned) {
-    ierr = m_field.build_partitioned_problems(1); CHKERRQ(ierr);
+    ierr = m_field.build_partitioned_problems(true); CHKERRQ(ierr);
     ierr = m_field.partition_finite_elements("ELASTIC_MECHANICS",true,0,pcomm->size(),1); CHKERRQ(ierr);
   } else {
     ierr = m_field.build_problems(); CHKERRQ(ierr);

@@ -1,8 +1,8 @@
 /** \file DofsMultiIndices.hpp
  * \brief Multi-Index contains, data structures for mofem dofs and other low-level functions 
- * 
+ */ 
 
- * MoFEM is free software: you can redistribute it and/or modify it under
+/* MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or (at your
  * option) any later version.
@@ -44,7 +44,7 @@ struct DofMoFEMEntity: public interface_MoFEMEntity<MoFEMEntity> {
   }
   static ShortId get_non_nonunique_short_id(const DofIdx _dof_,const MoFEMEntity *_ent_ptr_) {
     if(_dof_>=512) THROW_AT_LINE("_dof>=512")
-    if(sizeof(ShortId) < sizeof(char)+2) THROW_AT_LINE("sizeof(ShortId)< sizeof(char)+9")
+    if(sizeof(ShortId) < sizeof(char)+2) THROW_AT_LINE("sizeof(ShortId)< sizeof(char)+2")
     char bit_number = _ent_ptr_->get_bit_number();
     ShortId _uid_ = ((ShortId)_dof_)|(((ShortId)bit_number)<<9);
     return _uid_;
@@ -69,13 +69,13 @@ struct DofMoFEMEntity: public interface_MoFEMEntity<MoFEMEntity> {
 
   /** \brief get short uid it is unique in combination with entity handle
     *
-    * EntityHandle are controlled by MOAB, which quantity uniqueness which in
-    * MOAB instance. However two instances, can have attached different
+    * EntityHandle are controlled by MOAB, which is unique in  
+    * MOAB instance. However two MOAB instances, can have attached different
     * EntityHandles to the same entity. 
     *
     * Relation between MoAB EntityHandle can be handled by saving entity handle
     * data into tag, see MB_TYPE_HANDLE. MOAB at time of reading file or
-    * creating new moab instance, substitute tag value by approbate entity
+    * creating new MOAB instance, substitute tag value by approbate entity
     * handle.
     *
     * ShortId is created to handle problems related to saving data series, and
@@ -201,7 +201,7 @@ typedef multi_index_container<
     ordered_unique< 
       tag<Unique_mi_tag>, member<DofMoFEMEntity,GlobalUId,&DofMoFEMEntity::global_uid> >,
     ordered_unique<
-      tag<Composite_Entity_and_ShortId_mi_tag>, 
+      tag<Composite_Ent_and_ShortId_mi_tag>, 
       composite_key<
 	DofMoFEMEntity,
 	const_mem_fun<DofMoFEMEntity,EntityHandle,&DofMoFEMEntity::get_ent>,
@@ -247,6 +247,9 @@ typedef multi_index_container<
       > >
   > > DofMoFEMEntity_multiIndex;
 
+/** \brief multi-index view on DofMoFEMEntity by uid
+  \ingroup dof_multi_indices
+*/
 typedef multi_index_container<
   const DofMoFEMEntity*,
   indexed_by<
@@ -254,6 +257,9 @@ typedef multi_index_container<
       member<DofMoFEMEntity,const GlobalUId,&DofMoFEMEntity::global_uid> >
   > > DofMoFEMEntity_multiIndex_uid_view;
 
+/** \brief multi-index view on DofMoFEMEntity activity
+  \ingroup dof_multi_indices
+*/
 typedef multi_index_container<
   const DofMoFEMEntity*,
   indexed_by<
@@ -263,6 +269,9 @@ typedef multi_index_container<
       const_mem_fun<DofMoFEMEntity,int,&DofMoFEMEntity::get_active> >
   > > DofMoFEMEntity_multiIndex_active_view;
 
+/** \brief multi-index view on DofMoFEMEntity order
+  \ingroup dof_multi_indices
+*/
 typedef multi_index_container<
   const DofMoFEMEntity*,
   indexed_by<
@@ -270,6 +279,9 @@ typedef multi_index_container<
       const_mem_fun<DofMoFEMEntity,ApproximationOrder,&DofMoFEMEntity::get_dof_order> >
   > > DofMoFEMEntity_multiIndex_order_view;
 
+/** \brief multi-index view on DofMoFEMEntity type
+  \ingroup dof_multi_indices
+*/
 typedef multi_index_container<
   const DofMoFEMEntity*,
   indexed_by<
@@ -281,38 +293,7 @@ typedef multi_index_container<
  * @relates multi_index_container
  * \brief MultiIndex container keeps FEDofMoFEMEntity
  * \ingroup dof_multi_indices
- *
- * \param ordered_unique< 
- *     tag<Unique_mi_tag>, const_mem_fun<FEDofMoFEMEntity::interface_type_DofMoFEMEntity,GlobalUId,&FEDofMoFEMEntity::get_global_unique_id> >,
- * \param ordered_non_unique<
- *    tag<Ent_mi_tag>, const_mem_fun<FEDofMoFEMEntity::interface_type_DofMoFEMEntity,EntityHandle,&FEDofMoFEMEntity::get_ent> >,
- * \param ordered_non_unique<
- *    tag<FieldName_mi_tag>, const_mem_fun<FEDofMoFEMEntity::interface_type_MoFEMField,string,&FEDofMoFEMEntity::get_name> >,
- * \param ordered_non_unique<
- *    tag<Composite_Name_Type_And_Side_Number_mi_tag>, <br>
- *     composite_key<  
- *	FEDofMoFEMEntity,  <br>
- *	  const_mem_fun<FEDofMoFEMEntity::interface_type_MoFEMField,string,&FEDofMoFEMEntity::get_name>,  <br>
- *	  const_mem_fun<FEDofMoFEMEntity::interface_type_RefMoFEMEntity,EntityType,&FEDofMoFEMEntity::get_ent_type>,  <br>
- *	  KeyFromKey< <br>
- *	    member<SideNumber,int,&SideNumber::side_number>,  <br>
- *	    member<FEDofMoFEMEntity::BaseFEDofMoFEMEntity,SideNumber *,&FEDofMoFEMEntity::side_number_ptr>
- *	  >
- *     > >,
- * \param ordered_non_unique<
- *     tag<Composite_mi_tag2>,  <br>
- *     composite_key<
- *	FEDofMoFEMEntity, <br> 
- *	  const_mem_fun<FEDofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&FEDofMoFEMEntity::get_name>,  <br>
- *	  const_mem_fun<FEDofMoFEMEntity::interface_type_RefMoFEMEntity,EntityType,&FEDofMoFEMEntity::get_ent_type>  <br>
- *	> >,
- * \param ordered_non_unique<
- *     tag<Composite_Name_And_Ent>,  <br>
- *     composite_key<
- *	FEDofMoFEMEntity,  <br>
- *	  const_mem_fun<FEDofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&FEDofMoFEMEntity::get_name>,  <br>
- *	  const_mem_fun<FEDofMoFEMEntity::interface_type_DofMoFEMEntity,EntityHandle,&FEDofMoFEMEntity::get_ent>
- *	> >
+
  */
 typedef multi_index_container<
   FEDofMoFEMEntity,
@@ -364,37 +345,6 @@ typedef multi_index_container<
  * \brief MultiIndex container keeps FENumeredDofMoFEMEntity
  * \ingroup dof_multi_indices
  *
- * \param ordered_unique< 
- *     tag<Unique_mi_tag>, const_mem_fun<FEDofMoFEMEntity::interface_type_DofMoFEMEntity,GlobalUId,&FEDofMoFEMEntity::get_global_unique_id> >,
- * \param ordered_non_unique<
- *    tag<Ent_mi_tag>, const_mem_fun<FEDofMoFEMEntity::interface_type_DofMoFEMEntity,EntityHandle,&FEDofMoFEMEntity::get_ent> >,
- * \param ordered_non_unique<
- *    tag<FieldName_mi_tag>, const_mem_fun<FEDofMoFEMEntity::interface_type_MoFEMField,string,&FEDofMoFEMEntity::get_name> >,
- * \param ordered_non_unique<
- *    tag<Composite_Name_Type_And_Side_Number_mi_tag>, <br>
- *     composite_key<  
- *	FEDofMoFEMEntity,  <br>
- *	  const_mem_fun<FEDofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&FEDofMoFEMEntity::get_name>,  <br>
- *	  const_mem_fun<FEDofMoFEMEntity::interface_type_RefMoFEMEntity,EntityType,&FEDofMoFEMEntity::get_ent_type>,  <br>
- *	  KeyFromKey< <br>
- *	    member<SideNumber,int,&SideNumber::side_number>,  <br>
- *	    member<FEDofMoFEMEntity::BaseFEDofMoFEMEntity,SideNumber *,&FEDofMoFEMEntity::side_number_ptr>
- *	  >
- *     > >,
- * \param ordered_non_unique<
- *     tag<Composite_mi_tag2>,  <br>
- *     composite_key<
- *	FEDofMoFEMEntity, <br> 
- *	  const_mem_fun<FEDofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&FEDofMoFEMEntity::get_name>,  <br>
- *	  const_mem_fun<FEDofMoFEMEntity::interface_type_RefMoFEMEntity,EntityType,&FEDofMoFEMEntity::get_ent_type>  <br>
- *	> >,
- * \param ordered_non_unique<
- *     tag<Composite_Name_And_Ent>,  <br>
- *     composite_key<
- *	FEDofMoFEMEntity,  <br>
- *	  const_mem_fun<FEDofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&FEDofMoFEMEntity::get_name>,  <br>
- *	  const_mem_fun<FEDofMoFEMEntity::interface_type_DofMoFEMEntity,EntityHandle,&FEDofMoFEMEntity::get_ent>
- *	> >
  */
 typedef multi_index_container<
   FENumeredDofMoFEMEntity,
@@ -476,11 +426,11 @@ typedef multi_index_container<
 	  const_mem_fun<NumeredDofMoFEMEntity::interface_type_DofMoFEMEntity,ApproximationOrder,&NumeredDofMoFEMEntity::get_dof_order>
 	> >,
     ordered_non_unique<
-      tag<Composite_Part_Name_And_Rank_mi_tag>,
+      tag<Composite_Name_Part_And_Rank_mi_tag>,
       composite_key<
 	NumeredDofMoFEMEntity,
-	  member<NumeredDofMoFEMEntity,unsigned int,&NumeredDofMoFEMEntity::part>,
 	  const_mem_fun<NumeredDofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&NumeredDofMoFEMEntity::get_name_ref>,
+	  member<NumeredDofMoFEMEntity,unsigned int,&NumeredDofMoFEMEntity::part>,
 	  const_mem_fun<NumeredDofMoFEMEntity::interface_type_DofMoFEMEntity,ApproximationRank,&NumeredDofMoFEMEntity::get_dof_rank>
 	> >,
     ordered_non_unique<

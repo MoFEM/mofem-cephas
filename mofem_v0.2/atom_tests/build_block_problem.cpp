@@ -1,7 +1,10 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
- * FIXME: DESCRIPTION
- */
+/** \file build_block_problem.cpp
+
+  \brief Atom test for build problems by blocks
+
+  \bug Implementation not verifying what if partitioned mesh is loaded.
+
+*/
 
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under

@@ -1,8 +1,3 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
- * FIXME: DESCRIPTION
- */
-
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -58,6 +53,7 @@ struct DMCtx {
 
   //options
   PetscBool isPartitioned;		//< true if read mesh is on parts
+  PetscBool isSquareMatrix;		//< true if rows equals to cols
   PetscInt verbosity;			//< verbosity
 
   int rAnk,sIze;
@@ -95,6 +91,7 @@ DMCtx::DMCtx():
   mField_ptr(PETSC_NULL),
   kspCtx(NULL),snesCtx(NULL),tsCtx(NULL),
   isPartitioned(PETSC_FALSE),
+  isSquareMatrix(PETSC_TRUE),
   verbosity(0) {
 }
 DMCtx::~DMCtx() {
@@ -176,6 +173,25 @@ PetscErrorCode DMMoFEMCreateMoFEM(DM dm,MoFEM::FieldInterface *m_field_ptr,const
   PetscFunctionReturn(0);
 }
 
+PetscErrorCode DMMoFEMSetSquareProblem(DM dm,PetscBool square_problem) {
+  PetscFunctionBegin;
+  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
+  PetscFunctionBegin;
+  DMCtx *dm_field = (DMCtx*)dm->data;
+  dm_field->isSquareMatrix = square_problem;
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode DMMoFEMGetSquareProblem(DM dm,PetscBool *square_problem) {
+  PetscFunctionBegin;
+  PetscFunctionBegin;
+  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
+  PetscFunctionBegin;
+  DMCtx *dm_field = (DMCtx*)dm->data;
+  *square_problem = dm_field->isSquareMatrix;
+  PetscFunctionReturn(0);
+}
+
 PetscErrorCode DMMoFEMAddElement(DM dm,const char fe_name[]) {
   PetscErrorCode ierr;
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
@@ -191,7 +207,7 @@ PetscErrorCode DMoFEMMeshToLocalVector(DM dm,Vec l,InsertMode mode,ScatterMode s
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;
-  ierr = dm_field->mField_ptr->set_local_ghost_vector(dm_field->problemPtr,ROW,l,mode,scatter_mode); CHKERRQ(ierr);
+  ierr = dm_field->mField_ptr->set_local_ghost_vector(dm_field->problemPtr,COL,l,mode,scatter_mode); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -200,7 +216,7 @@ PetscErrorCode DMoFEMMeshToGlobalVector(DM dm,Vec g,InsertMode mode,ScatterMode 
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;
-  ierr = dm_field->mField_ptr->set_global_ghost_vector(dm_field->problemPtr,ROW,g,mode,scatter_mode); CHKERRQ(ierr);
+  ierr = dm_field->mField_ptr->set_global_ghost_vector(dm_field->problemPtr,COL,g,mode,scatter_mode); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -236,7 +252,7 @@ PetscErrorCode DMoFEMLoopDofs(DM dm,const char field_name[],MoFEM::EntMethod *me
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;
-  ierr = dm_field->mField_ptr->loop_dofs(dm_field->problemPtr,field_name,ROW,*method,dm_field->rAnk,dm_field->rAnk); CHKERRQ(ierr);
+  ierr = dm_field->mField_ptr->loop_dofs(dm_field->problemPtr,field_name,COL,*method,dm_field->rAnk,dm_field->rAnk); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -363,6 +379,28 @@ PetscErrorCode DMMoFEMGetSnesCtx(DM dm,MoFEM::SnesCtx **snes_ctx) {
   PetscFunctionReturn(0);
 }
 
+/** get if read mesh is partitioned
+  * \ingroup dm
+  */
+PetscErrorCode DMMoFEMSetIsPartitioned(DM dm,PetscBool is_partitioned) {
+  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
+  PetscFunctionBegin;
+  DMCtx *dm_field = (DMCtx*)dm->data;
+  dm_field->isPartitioned = is_partitioned;
+  PetscFunctionReturn(0);
+}
+
+/** get if read mesh is partitioned
+  * \ingroup dm
+  */
+PetscErrorCode DMMoFEMGetIsPartitioned(DM dm,PetscBool *is_partitioned) {
+  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
+  PetscFunctionBegin;
+  DMCtx *dm_field = (DMCtx*)dm->data;
+  *is_partitioned = dm_field->isPartitioned;
+  PetscFunctionReturn(0);
+}
+
 PetscErrorCode DMMoFEMGetTsCtx(DM dm,MoFEM::TsCtx **ts_ctx) {
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
@@ -376,7 +414,7 @@ PetscErrorCode DMCreateGlobalVector_MoFEM(DM dm,Vec *g) {
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;
-  ierr = dm_field->mField_ptr->VecCreateGhost(dm_field->problemName,ROW,g); CHKERRQ(ierr);
+  ierr = dm_field->mField_ptr->VecCreateGhost(dm_field->problemName,COL,g); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -385,7 +423,7 @@ PetscErrorCode DMCreateLocalVector_MoFEM(DM dm,Vec *l) {
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;
-  ierr = dm_field->mField_ptr->VecCreateSeq(dm_field->problemName,ROW,l); CHKERRQ(ierr);
+  ierr = dm_field->mField_ptr->VecCreateSeq(dm_field->problemName,COL,l); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -412,7 +450,10 @@ PetscErrorCode DMCreateMatrix_MoFEM(DM dm,Mat *M) {
   #else 
     ierr = PetscOptionsHead("DMMoFEM Options");CHKERRQ(ierr);
   #endif
-  ierr = PetscOptionsBool("-dm_is_partitioned","set if mesh is partitioned (works which native MOAB file formata, i.e. h5m","DMSetUp",dm_field->isPartitioned,&dm_field->isPartitioned,NULL);CHKERRQ(ierr);
+  ierr = PetscOptionsBool(
+    "-dm_is_partitioned",
+    "set if mesh is partitioned (works which native MOAB file formata, i.e. h5m","DMSetUp",
+    dm_field->isPartitioned,&dm_field->isPartitioned,NULL);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -422,14 +463,14 @@ PetscErrorCode DMSetUp_MoFEM(DM dm) {
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;
   if(dm_field->isPartitioned) {
-    ierr = dm_field->mField_ptr->build_partitioned_problems(); CHKERRQ(ierr);
-    dm_field->isProblemsBuild = PETSC_TRUE;
+    ierr = dm_field->mField_ptr->build_partitioned_problem(dm_field->problemName,dm_field->isSquareMatrix); CHKERRQ(ierr);
     ierr = dm_field->mField_ptr->partition_finite_elements(dm_field->problemName,true,0,dm_field->sIze,1); CHKERRQ(ierr);
+    dm_field->isProblemsBuild = PETSC_TRUE;
   } else {
     ierr = dm_field->mField_ptr->build_problems(); CHKERRQ(ierr);
-    dm_field->isProblemsBuild = PETSC_TRUE;
     ierr = dm_field->mField_ptr->partition_problem(dm_field->problemName); CHKERRQ(ierr);
     ierr = dm_field->mField_ptr->partition_finite_elements(dm_field->problemName); CHKERRQ(ierr);
+    dm_field->isProblemsBuild = PETSC_TRUE;
   }
   ierr = dm_field->mField_ptr->partition_ghost_dofs(dm_field->problemName); CHKERRQ(ierr);
   // dmmofem struture

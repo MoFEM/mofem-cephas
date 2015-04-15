@@ -2,13 +2,9 @@
  * \brief MoFEM interface 
  * 
  * Low level data structures not used directly by user
- *
- * Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl) <br>
- * MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
+ */
+
+/*
  * MoFEM is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
@@ -35,13 +31,13 @@ struct PrismInterface: public FieldUnknownInterface {
   /** \brief create two children meshsets in the meshset containing tetrahedral on two sides of faces
     *
     * \param msId Id of meshset 
-    * \param CubitBCType type of meshset (NODESET, SIDESET or BLOCKSET and more)
+    * \param cubit_bc_type type of meshset (NODESET, SIDESET or BLOCKSET and more)
     * \param mesh_bit_level add interface on bit level is bit_level = BitRefLevel.set() then add interface on all bit levels
     * \param recursive if true parent meshset is searched recursively
     */
   virtual PetscErrorCode get_msId_3dENTS_sides(
     const int msId,
-    const CubitBC_BitSet CubitBCType,
+    const CubitBCType cubit_bc_type,
     const BitRefLevel mesh_bit_level,
     const bool recursive,int verb = -1) = 0;
 
@@ -66,7 +62,7 @@ struct PrismInterface: public FieldUnknownInterface {
    * \param meshset meshset to get entities from
    * \param BitRefLevel new level where refinement would be stored
    * \param msId meshset ID imported from cubit 
-   * \param CubitBCType type of meshset (NODESET, SIDESET or BLOCKSET and more)
+   * \param cubit_bc_type type of meshset (NODESET, SIDESET or BLOCKSET and more)
    * \param add_intefece_entities meshset which contain the interface
    * \param recursive if true parent meshset is searched recursively
    *
@@ -85,7 +81,7 @@ struct PrismInterface: public FieldUnknownInterface {
    */
   virtual PetscErrorCode get_msId_3dENTS_split_sides(
     const EntityHandle meshset,const BitRefLevel &bit,
-    const int msId,const CubitBC_BitSet CubitBCType,
+    const int msId,const CubitBCType cubit_bc_type,
     const bool add_iterfece_entities,const bool recursive = false,int verb = -1) = 0;
 
   /**

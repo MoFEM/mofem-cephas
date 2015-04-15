@@ -1,8 +1,3 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
- * FIXME: DESCRIPTION
- */
-
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -168,7 +163,7 @@ int main(int argc, char *argv[]) {
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|TEMPERATURESET,it)) {
 
     Range tris;
-    ierr = it->get_Cubit_msId_entities_by_dimension(m_field.get_moab(),2,tris,true); CHKERRQ(ierr);
+    ierr = it->get_cubit_msId_entities_by_dimension(m_field.get_moab(),2,tris,true); CHKERRQ(ierr);
     neumann_tris.insert(tris.begin(),tris.end());
 
   }
@@ -365,6 +360,7 @@ int main(int argc, char *argv[]) {
   ierr = VecDestroy(&D); CHKERRQ(ierr);
   ierr = VecDestroy(&D0); CHKERRQ(ierr);
   ierr = VecDestroy(&F); CHKERRQ(ierr);
+  ierr = VecDestroy(&E); CHKERRQ(ierr);
   ierr = KSPDestroy(&solver); CHKERRQ(ierr);
 
   PostPocOnRefinedMesh post_proc(m_field);

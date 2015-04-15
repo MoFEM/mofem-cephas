@@ -1,13 +1,12 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
- *
- * Test for linar elastic dynamics.
- *
- * This is not exactly procedure for linear elatic dynamics, since jacobian is
- * evaluated at every time step and snes procedure is involved. However it is
- * implemented like that, to test methodology for general nonlinear problem.
- *
- */
+/** \file nonlinear_elastic.cpp
+
+ \brief Atom test for linear elastic dynamics.
+ 
+ This is not exactly procedure for linear elatic dynamics, since jacobian is
+ evaluated at every time step and snes procedure is involved. However it is
+ implemented like that, to test methodology for general nonlinear problem.
+ 
+*/
 
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
@@ -67,7 +66,7 @@ int main(int argc, char *argv[]) {
   FieldInterface& m_field = core;
 
   Range CubitSIDESETs_meshsets;
-  ierr = m_field.get_Cubit_meshsets(SIDESET,CubitSIDESETs_meshsets); CHKERRQ(ierr);
+  ierr = m_field.get_cubit_meshsets(SIDESET,CubitSIDESETs_meshsets); CHKERRQ(ierr);
 
   //ref meshset ref level 0
   ierr = m_field.seed_ref_level_3D(0,0); CHKERRQ(ierr);

@@ -8,8 +8,7 @@ add_subdirectory(thermal)
 add_subdirectory(ultraweak)
 add_subdirectory(convective_mass_element)
 add_subdirectory(ground_surface_temperature)
-add_subdirectory(field_approximation)
-add_subdirectory(analytical_dirihlet_boundary_conditions)
+add_subdirectory(analytical_dirichlet_boundary_conditions)
 
 # Obsolete, i.e. implementation is obsolete and need to be changed or replaced
 # by alternative classes or functions
@@ -39,17 +38,6 @@ add_subdirectory(helmholtz)
 
 add_subdirectory(homogenisation)
 add_subdirectory(moisture_transport)
-
-#<<<<<<< HEAD
-
-#include_directories("${MoFEM_PROJECT_SOURCE_DIR}/users_modules/analytical_dirihlet_boundary_conditions/src")
-#add_subdirectory(analytical_dirihlet_boundary_conditions)
-
-#include_directories("${MoFEM_PROJECT_SOURCE_DIR}/users_modules/convective_mass_element/src")
-#add_subdirectory(convective_mass_element)
-#=======
-# Atom tests for users modules
-#>>>>>>> 92b4bf9545635492a66861cb82ab0014644eff75
 
 add_subdirectory(atom_tests)
 

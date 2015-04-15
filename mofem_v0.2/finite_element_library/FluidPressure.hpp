@@ -34,9 +34,9 @@ namespace MoFEM {
 struct FluidPressure {
 
   FieldInterface &mField;
-  struct MyTriangleFE: public TriElementForcesAndSurcesCore {
-    MyTriangleFE(FieldInterface &_mField): TriElementForcesAndSurcesCore(_mField) {}
-    int getRule(int order) { return ceil(order/2); };
+  struct MyTriangleFE: public FaceElementForcesAndSourcesCore {
+    MyTriangleFE(FieldInterface &_mField): FaceElementForcesAndSourcesCore(_mField) {}
+    int getRule(int order) { return order; };
   };
   MyTriangleFE fe;
   MyTriangleFE& getLoopFe() { return fe; }
@@ -56,14 +56,14 @@ struct FluidPressure {
   PetscErrorCode ierr;
   ErrorCode rval;
 
-  struct OpCalculatePressure: public TriElementForcesAndSurcesCore::UserDataOperator {
+  struct OpCalculatePressure: public FaceElementForcesAndSourcesCore::UserDataOperator {
     Vec F;
     FluidData &dAta;
     bool allowNegativePressure; ///< allows for negative pressures
     bool hoGeometry;
     OpCalculatePressure(const string field_name,Vec _F,FluidData &data,
       bool allow_negative_pressure,bool ho_geometry):
-      TriElementForcesAndSurcesCore::UserDataOperator(field_name),
+      FaceElementForcesAndSourcesCore::UserDataOperator(field_name),
       F(_F),dAta(data),allowNegativePressure(allow_negative_pressure),hoGeometry(ho_geometry) {}
     ublas::vector<FieldData> Nf;
     PetscErrorCode ierr;
@@ -154,7 +154,7 @@ struct FluidPressure {
         rval = mField.get_moab().get_entities_by_type(bit->meshset,MBTRI,setOfFluids[bit->get_msId()].tRis,true); CHKERR_PETSC(rval);
         //this get triangles only on block surfaces
         Range tets_skin_tris;
-        rval = skin.find_skin(0,tets,false,tets_skin_tris); CHKERR(rval);//??
+        rval = skin.find_skin(0,tets,false,tets_skin_tris); CHKERR(rval);
         setOfFluids[bit->get_msId()].tRis.merge(tets_skin_tris);
         ostringstream ss;
         ss << setOfFluids[bit->get_msId()] << endl;

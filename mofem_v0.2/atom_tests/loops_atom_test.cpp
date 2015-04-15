@@ -1,8 +1,3 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
- * FIXME: DESCRIPTION
- */
-
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -84,15 +79,15 @@ int main(int argc, char *argv[]) {
   for (_IT_CUBITMESHSETS_BY_NAME_FOR_LOOP_(m_field,"Moon",it)){
     cout << it->get_Cubit_name() << endl;
     myfile << it->get_Cubit_name() << endl;
-    if(it->get_CubitBCType_ulong() & BLOCKSET) {
+    if(it->get_cubit_bc_type_ulong() & BLOCKSET) {
       cout << "BLOCKSET" << endl;
       myfile << "BLOCKSET" << endl;
     }
-    if(it->get_CubitBCType_ulong() & SIDESET) {
+    if(it->get_cubit_bc_type_ulong() & SIDESET) {
       cout << "SIDESET" << endl;
       myfile << "SIDESET" << endl;
     }
-    if(it->get_CubitBCType_ulong() & NODESET) {
+    if(it->get_cubit_bc_type_ulong() & NODESET) {
       cout << "NODESET" << endl;
       myfile << "NODESET" << endl;
     }

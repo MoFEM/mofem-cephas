@@ -190,8 +190,8 @@ PetscErrorCode Core::refine_TET(const Range &_tets,const BitRefLevel &bit,const 
   }
   typedef RefMoFEMElement_multiIndex::index<Ent_mi_tag>::type ref_MoFEMFiniteElement_by_ent;
   ref_MoFEMFiniteElement_by_ent &ref_MoFEMFiniteElement = refinedFiniteElements.get<Ent_mi_tag>();
-  typedef RefMoFEMElement_multiIndex::index<Composite_of_ParentEnt_And_BitsOfRefinedEdges_mi_tag>::type ref_ent_by_composite;
-  ref_ent_by_composite &by_composite = refinedFiniteElements.get<Composite_of_ParentEnt_And_BitsOfRefinedEdges_mi_tag>();
+  typedef RefMoFEMElement_multiIndex::index<Composite_ParentEnt_And_BitsOfRefinedEdges_mi_tag>::type ref_ent_by_composite;
+  ref_ent_by_composite &by_composite = refinedFiniteElements.get<Composite_ParentEnt_And_BitsOfRefinedEdges_mi_tag>();
   //
   if(respect_interface) {
     SETERRQ(PETSC_COMM_SELF,1,"not implemented, set last parameter in refine_TET to false");
@@ -670,8 +670,8 @@ PetscErrorCode Core::refine_PRISM(const EntityHandle meshset,const BitRefLevel &
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   typedef RefMoFEMEntity_multiIndex::index<Ent_mi_tag>::type ref_ENTs_by_ent;
-  typedef RefMoFEMElement_multiIndex::index<Composite_of_ParentEnt_And_BitsOfRefinedEdges_mi_tag>::type ref_fe_by_composite;
-  ref_fe_by_composite &ref_fe_by_comp = refinedFiniteElements.get<Composite_of_ParentEnt_And_BitsOfRefinedEdges_mi_tag>();
+  typedef RefMoFEMElement_multiIndex::index<Composite_ParentEnt_And_BitsOfRefinedEdges_mi_tag>::type ref_fe_by_composite;
+  ref_fe_by_composite &ref_fe_by_comp = refinedFiniteElements.get<Composite_ParentEnt_And_BitsOfRefinedEdges_mi_tag>();
   //find all vertices which parent is edge
   typedef RefMoFEMEntity_multiIndex::index<Composite_EntType_and_ParentEntType_mi_tag>::type ref_ents_by_composite;
   ref_ents_by_composite &ref_ents_by_comp = refinedEntities.get<Composite_EntType_and_ParentEntType_mi_tag>();
@@ -802,7 +802,7 @@ PetscErrorCode Core::refine_PRISM(const EntityHandle meshset,const BitRefLevel &
 	    SETERRQ(PETSC_COMM_SELF,1,msg);
 	  }
 	  ref_prism_bit.set(pp);
-	  ierr = add_prism_to_mofem_database(ref_prisms[pp]); CHKERRQ(ierr);
+	  ierr = addPrismToDatabase(ref_prisms[pp]); CHKERRQ(ierr);
 	  if(verb>2) {
 	    ostringstream ss;
 	    ss << "add prism: " << *(p_MoFEMFiniteElement.first->get_RefMoFEMElement()) << endl;

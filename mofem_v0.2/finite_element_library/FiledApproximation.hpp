@@ -1,12 +1,7 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
-* --------------------------------------------------------------
-*
-* DESCRIPTION: FIXME
-*
-* This is not exactly procedure for linear elatic dynamics, since jacobian is
-* evaluated at every time step and snes procedure is involved. However it is
-* implemented like that, to test methodology for general nonlinear problem.
-*
+/* \file FieldApproximation.hpp 
+
+\brief Element to calculate approximation on volume elements
+
 */
 
 /* This file is part of MoFEM.
@@ -33,35 +28,44 @@ namespace MoFEM {
 /** \brief Finite element for approximating analytical filed on the mesh
   * \ingroup mofem_forces_and_sources
   */
-template<typename FUNEVAL>
 struct FieldApproximationH1 {
 
   FieldInterface &mField;
   const string problemName;
-  TetElementForcesAndSourcesCore fe;
+  VolumeElementForcesAndSourcesCore fe;
+  int addToRule;
 
   FieldApproximationH1(
     FieldInterface &m_field):
-    mField(m_field),fe(m_field) {}
+    mField(m_field),fe(m_field),addToRule(0) {}
+
+  /** \brief set integration rule
+
+    Note: Add 1 to take into account 2nd order geometry approximation. Overload
+    that function if linear or HO approximation is set.
+
+  */
+  int getRule(int order) { return order+addToRule; }; 
 
   /** \brief Gauss point poperatiors to caculete matrices and vectors
     *
     * Function work on thetrahedrals
     */
-  struct OpApprox: public TetElementForcesAndSourcesCore::UserDataOperator {
+  template<typename FUNEVAL>
+  struct OpApprox: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     Mat A;
-    Vec F;
+    vector<Vec> &vecF;
     FUNEVAL &functionEvaluator;
 
-    OpApprox(const string &field_name,Mat _A,Vec _F,FUNEVAL &function_evaluator):
-      TetElementForcesAndSourcesCore::UserDataOperator(field_name),
-      A(_A),F(_F),functionEvaluator(function_evaluator) {}
-    ~OpApprox() {}
+    OpApprox(const string &field_name,Mat _A,vector<Vec> &vec_F,FUNEVAL &function_evaluator):
+      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
+      A(_A),vecF(vec_F),functionEvaluator(function_evaluator) {}
+    virtual ~OpApprox() {}
 
     ublas::matrix<FieldData> NN;
     ublas::matrix<FieldData> transNN;
-    ublas::vector<FieldData> Nf;
+    vector<ublas::vector<FieldData> > Nf;
 
     /** \brief calulate matrix
       */
@@ -72,10 +76,7 @@ struct FieldApproximationH1 {
       DataForcesAndSurcesCore::EntData &col_data) {
       PetscFunctionBegin;
 
-	  
-	  //std::string wait;
-	  //std::cout << "\n I am here !!!!!!! rank = \n" << std::endl;
-	  
+      if(A == PETSC_NULL) PetscFunctionReturn(0);
       if(row_data.getIndices().size()==0) PetscFunctionReturn(0);
       if(col_data.getIndices().size()==0) PetscFunctionReturn(0);
 
@@ -89,11 +90,7 @@ struct FieldApproximationH1 {
       int nb_col_dofs = col_data.getIndices().size()/rank;
 
       NN.resize(nb_row_dofs,nb_col_dofs);
-      bzero(&*NN.data().begin(),nb_row_dofs*nb_col_dofs*sizeof(FieldData));
-      
-	  
-
-	  
+      NN.clear();
 	  
       unsigned int nb_gauss_pts = row_data.getN().size1();
       for(unsigned int gg = 0;gg<nb_gauss_pts;gg++) {
@@ -121,11 +118,11 @@ struct FieldApproximationH1 {
       for(int rr = 0;rr < rank; rr++) {
       
 	if((row_data.getIndices().size()%rank)!=0) {
-	  SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
 	}
 
 	if((col_data.getIndices().size()%rank)!=0) {
-	    SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
 	}
 
 	unsigned int nb_rows;
@@ -156,19 +153,19 @@ struct FieldApproximationH1 {
 	}
 
 	if(nb_rows != NN.size1()) {
-	  SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
 	} 
 	if(nb_cols != NN.size2()) {
-	  SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
 	} 
 
 	ierr = MatSetValues(A,nb_rows,rows,nb_cols,cols,data,ADD_VALUES); CHKERRQ(ierr);
 	if( (row_type != col_type) || (row_side != col_side) ) {
 	  if(nb_rows != transNN.size2()) {
-	    SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
 	  } 
 	  if(nb_cols != transNN.size1()) {
-	    SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
 	  } 
 	  ierr = MatSetValues(A,nb_cols,cols,nb_rows,rows,trans_data,ADD_VALUES); CHKERRQ(ierr);
 	}
@@ -196,19 +193,16 @@ struct FieldApproximationH1 {
 
       int nb_row_dofs = data.getIndices().size()/rank;
       
-      Nf.resize(data.getIndices().size());
-      bzero(&*Nf.data().begin(),data.getIndices().size()*sizeof(FieldData));
-
       if(getCoordsAtGaussPts().size1()!=data.getN().size1()) {
-	SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
       }
       if(getCoordsAtGaussPts().size2()!=3) {
-	SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
       }
 
       // itegration 
       unsigned int nb_gauss_pts = data.getN().size1();
-      for(unsigned int gg = 0;gg<nb_gauss_pts;gg++) {
+      for(unsigned int gg = 0;gg != nb_gauss_pts;gg++) {
 
 	double x,y,z,w;
 	w = getVolume()*getGaussPts()(3,gg);
@@ -226,22 +220,39 @@ struct FieldApproximationH1 {
 	  z = getCoordsAtGaussPts()(gg,2);
 	}
 
-	//cerr << x << " " << y << " " << z << " " << w << " " << getHoGaussPtsDetJac()[gg] << endl;
 
-	ublas::vector<FieldData> fun_val = functionEvaluator(x,y,z);
-		
-	if(fun_val.size() != rank) {
-	  SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+	vector<ublas::vector<FieldData> > fun_val = functionEvaluator(x,y,z);
+	if(fun_val.size()!=vecF.size()) {
+	  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+
 	}
 
-	for(unsigned int rr = 0;rr<rank;rr++) {
-	  cblas_daxpy(nb_row_dofs,w*fun_val[rr],&data.getN()(gg,0),1,&Nf[rr],rank);
+	Nf.resize(fun_val.size());
+	for(unsigned int lhs = 0;lhs != fun_val.size();lhs++) {
+	  
+	  if(!gg) {
+	    Nf[lhs].resize(data.getIndices().size());
+	    Nf[lhs].clear();
+	  } 
+		
+	  if(fun_val[lhs].size() != rank) {
+	    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+	  }
+
+	  for(unsigned int rr = 0;rr != rank;rr++) {
+	    cblas_daxpy(nb_row_dofs,w*(fun_val[lhs])[rr],&data.getN()(gg,0),1,&(Nf[lhs])[rr],rank);
+	  }
+
 	}
 
       }
 
-      ierr = VecSetValues(F,data.getIndices().size(),
-	&data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
+      for(unsigned int lhs = 0;lhs != vecF.size();lhs++) {
+
+	ierr = VecSetValues(vecF[lhs],data.getIndices().size(),
+	  &data.getIndices()[0],&(Nf[lhs])[0],ADD_VALUES); CHKERRQ(ierr);
+
+      }
 
       PetscFunctionReturn(0);
     }
@@ -251,27 +262,47 @@ struct FieldApproximationH1 {
 
   /** \brief assemble matrix and vector 
     */
+  template<typename FUNEVAL>
   PetscErrorCode loopMatrixAndVector(
-    const string &problem_name,const string &fe_name,const string &field_name,Mat A,Vec F,
-    FUNEVAL &function_evaluator) {
+    const string &problem_name,const string &fe_name,const string &field_name,
+    Mat A,vector<Vec> &vec_F,FUNEVAL &function_evaluator) {
     PetscFunctionBegin;
     PetscErrorCode ierr;
 	
     //add operator to calulate F vector
-    fe.get_op_to_do_Rhs().push_back(new OpApprox(field_name,A,F,function_evaluator));
+    fe.get_op_to_do_Rhs().push_back(new OpApprox<FUNEVAL>(field_name,A,vec_F,function_evaluator));
     //add operator to calulate A matrix
-    fe.get_op_to_do_Lhs().push_back(new OpApprox(field_name,A,F,function_evaluator));
+    if(A) {
+      fe.get_op_to_do_Lhs().push_back(new OpApprox<FUNEVAL>(field_name,A,vec_F,function_evaluator));
+    }
 	
-    MatZeroEntries(A);
-    VecZeroEntries(F);
-    ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    if(A) {
+      ierr = MatZeroEntries(A); CHKERRQ(ierr);
+    }
+
+    for(unsigned int lhs = 0; lhs<vec_F.size(); lhs++) {
+
+      ierr = VecZeroEntries(vec_F[lhs]); CHKERRQ(ierr);
+      ierr = VecGhostUpdateBegin(vec_F[lhs],INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      ierr = VecGhostUpdateEnd(vec_F[lhs],INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+
+    }
+    
     //calulate and assembe
     ierr = mField.loop_finite_elements(problem_name,fe_name,fe);  CHKERRQ(ierr);
-    ierr = MatAssemblyBegin(A,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-    ierr = MatAssemblyEnd(A,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-    ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
-    ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
+    
+    if(A) {
+      ierr = MatAssemblyBegin(A,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+      ierr = MatAssemblyEnd(A,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+    }
+
+    for(unsigned int lhs = 0; lhs<vec_F.size(); lhs++) {
+
+      ierr = VecAssemblyBegin(vec_F[lhs]); CHKERRQ(ierr);
+      ierr = VecAssemblyEnd(vec_F[lhs]); CHKERRQ(ierr);
+
+    }
+  
     PetscFunctionReturn(0);
   }
 

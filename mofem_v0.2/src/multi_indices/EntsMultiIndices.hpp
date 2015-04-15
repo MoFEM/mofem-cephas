@@ -1,12 +1,8 @@
 /** \file EntsMultiIndices.hpp
  * \brief Myltindex containes, for mofem enitities data structures and other low-level functions 
- * 
- * Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl) <br>
- *
- * The MoFEM package is copyrighted by Lukasz Kaczmarczyk. 
- * It can be freely used for educational and research purposes 
- * by other institutions. If you use this softwre pleas cite my work. 
- *
+ */
+
+/* 
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or (at your
@@ -46,15 +42,6 @@ struct SideNumber {
  * \brief SideNumber_multiIndex for SideNumber
  * \ingroup ent_multi_indices 
  * 
- *  \param hashed_unique<
- *     member<SideNumber,EntityHandle,&SideNumber::ent> >,
- *  \param ordered_non_unique<
- *     composite_key<
- *	SideNumber,
- *	const_mem_fun<SideNumber,EntityType,&SideNumber::get_ent_type>,
- *	member<SideNumber,int,&SideNumber::side_number> > >,
- *  \param ordered_non_unique<
- *     const_mem_fun<SideNumber,EntityType,&SideNumber::get_ent_type> >
  */
 typedef multi_index_container<
   SideNumber,
@@ -84,6 +71,8 @@ struct BasicMoFEMEntity {
   int owner_proc;
   EntityHandle moab_owner_handle;
   unsigned char *pstatus_val_ptr;
+  int *sharing_procs_ptr;
+  EntityHandle *sharing_handlers_ptr;
 
   BasicMoFEMEntity(Interface &moab,const EntityHandle _ent);
 
@@ -113,7 +102,56 @@ struct BasicMoFEMEntity {
     * bit 4: ghost (0=not ghost, 1=ghost)
     *
     */
-  inline unsigned char get_pstatus() const { return *pstatus_val_ptr; };
+  inline unsigned char get_pstatus() const { return *pstatus_val_ptr; }
+
+  /** \berief get sharid processors
+
+  Returning list to shared processors. Lists end with -1. Returns NULL if not
+  sharing processors.
+
+  DO NOT MODIFY LIST. 
+
+\code
+  BasicMoFEMEntity *ent_ptr = BasicMoFEMEntity(moan,entity_handle);
+  for(int proc = 0; proc<MAX_SHARING_PROCS && -1 != ent_ptr->get_sharing_procs_ptr[proc]; proc++) {
+      if(ent_ptr->get_sharing_procs_ptr[proc] == -1) {
+	// End of the list
+	break;
+      }
+      int sharing_proc = ent_ptr->get_sharing_procs_ptr[proc];
+      EntityHandle sharing_ent = ent_ptr->get_sharing_handlers_ptr[proc];
+      if(!(ent_ptr->get_pstatus()&PSTATUS_MULTISHARED)) {
+	break;
+      }
+    }
+\endcode
+
+    */
+  inline int* get_sharing_procs_ptr() const { return sharing_procs_ptr; }
+
+  /** \berief get sharid entity handlers
+
+  Returning list to shared entity hanlders. Use it with get_sharing_procs_ptr()
+
+  DO NOT MODIFY LIST. 
+
+\code
+  BasicMoFEMEntity *ent_ptr = BasicMoFEMEntity(moan,entity_handle);
+  for(int proc = 0; proc<MAX_SHARING_PROCS && -1 != ent_ptr->get_sharing_procs_ptr[proc]; proc++) {
+      if(ent_ptr->get_sharing_procs_ptr[proc] == -1) {
+	// End of the list
+	break;
+      }
+      int sharing_proc = ent_ptr->get_sharing_procs_ptr[proc];
+      EntityHandle sharing_ent = ent_ptr->get_sharing_handlers_ptr[proc];
+      if(!(ent_ptr->get_pstatus()&PSTATUS_MULTISHARED)) {
+	break;
+      }
+    }
+\endcode
+
+    */
+  inline EntityHandle* get_sharing_handlers_ptr() const { return sharing_handlers_ptr; }
 
 };
 
@@ -167,6 +205,8 @@ struct interface_RefMoFEMEntity {
   inline unsigned char get_pstatus() const { return ref_ptr->get_pstatus(); }
   inline EntityHandle get_owner_ent() const { return ref_ptr->get_owner_ent(); }
   inline EntityHandle get_owner_proc() const { return ref_ptr->get_owner_proc(); }
+  inline int* get_sharing_procs_ptr() const { return ref_ptr->get_sharing_procs_ptr(); }
+  inline EntityHandle* get_sharing_handlers_ptr() const { return ref_ptr->get_sharing_handlers_ptr(); }
   virtual ~interface_RefMoFEMEntity() {}
 };
 
@@ -181,7 +221,7 @@ struct interface_RefMoFEMEntity {
  * \param ordered_non_unique EntType_mi_tag
  * \param ordered_non_unique ParentEntType_mi_tag
  * \param ordered_non_unique Composite_EntType_And_ParentEntType_mi_tag
- * \param ordered_non_unique Composite_EntityHandle_And_ParentEntType_mi_tag
+ * \param ordered_non_unique Composite_Ent_And_ParentEntType_mi_tag
  */
 typedef multi_index_container<
   RefMoFEMEntity,
@@ -207,13 +247,28 @@ typedef multi_index_container<
 	const_mem_fun<RefMoFEMEntity::BasicMoFEMEntity,EntityType,&RefMoFEMEntity::get_ent_type>,
 	const_mem_fun<RefMoFEMEntity,EntityType,&RefMoFEMEntity::get_parent_ent_type> > >,
     ordered_non_unique<
-      tag<Composite_EntityHandle_And_ParentEntType_mi_tag>, 
+      tag<Composite_Ent_And_ParentEntType_mi_tag>, 
       composite_key<
 	RefMoFEMEntity,
 	const_mem_fun<RefMoFEMEntity,EntityHandle,&RefMoFEMEntity::get_parent_ent>,
 	const_mem_fun<RefMoFEMEntity::BasicMoFEMEntity,EntityType,&RefMoFEMEntity::get_ent_type> > >
   > > RefMoFEMEntity_multiIndex;
 
+/** \brief multi-index view of RefMoFEMEntity by parent entity
+  \ingroup ent_multi_indices
+*/
+typedef multi_index_container<
+  const RefMoFEMEntity*,
+  indexed_by<
+    hashed_unique<
+      const_mem_fun<RefMoFEMEntity,EntityHandle,&RefMoFEMEntity::get_parent_ent> >,
+    hashed_unique<
+      tag<Composite_EntType_and_ParentEntType_mi_tag>,
+      composite_key<
+	const RefMoFEMEntity*,
+	const_mem_fun<RefMoFEMEntity,EntityHandle,&RefMoFEMEntity::get_ref_ent>,
+	const_mem_fun<RefMoFEMEntity,EntityHandle,&RefMoFEMEntity::get_parent_ent> > >
+  > > RefMoFEMEntity_multiIndex_view_by_parent_entity;
 
 /** \brief ref mofem entity, remove parent
  * \ingroup ent_multi_indices 
@@ -420,21 +475,6 @@ struct MoFEMEntity_change_order {
  * \brief MultiIndex container keeps MoFEMEntity
  * \ingroup ent_multi_indices 
  *
- * \param ordered_unique<
- *    tag<Unique_mi_tag>, member<MoFEMEntity,GlobalUId,&MoFEMEntity::local_uid> >,
- * \param ordered_non_unique<
- *    tag<BitFieldId_mi_tag>, const_mem_fun<MoFEMEntity::interface_type_MoFEMField,const BitFieldId&,&MoFEMEntity::get_id>, LtBit<BitFieldId> >,
- * \param ordered_non_unique<
- *    tag<FieldName_mi_tag>, const_mem_fun<MoFEMEntity::interface_type_MoFEMField,boost::string_ref,&MoFEMEntity::get_name_ref> >,
- * \param hashed_non_unique<
- *    tag<Ent_mi_tag>, const_mem_fun<MoFEMEntity,EntityHandle,&MoFEMEntity::get_ent> >,
- * \param ordered_non_unique<
- *   tag<Composite_Name_And_Ent_mi_tag>, 
- *     composite_key<
- *	MoFEMEntity,
- *	const_mem_fun<MoFEMEntity::interface_type_MoFEMField,boost::string_ref,&MoFEMEntity::get_name_ref>,
- *	const_mem_fun<MoFEMEntity,EntityHandle,&MoFEMEntity::get_ent>
- *     > >
  */
 typedef multi_index_container<
   MoFEMEntity,

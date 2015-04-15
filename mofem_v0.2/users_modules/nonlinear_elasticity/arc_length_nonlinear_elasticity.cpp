@@ -1,9 +1,11 @@
-/* \file arc_length_nonlinear_elasticity.cpp
+/** \file arc_length_nonlinear_elasticity.cpp
+ * \ingroup nonlinear_elastic_elem
  * \brief nonlinear elasticity (arc-length control)
  *
- * Solves nonlinear elastic problem. Using arc lebgth constrol.
- *
- * This file is part of MoFEM.
+ * Solves nonlinear elastic problem. Using arc length control.
+ */
+
+/* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or (at your
@@ -76,18 +78,6 @@ int main(int argc, char *argv[]) {
     order = 3;
   }
 
-  PetscScalar step_size_reduction;
-  ierr = PetscOptionsGetReal(PETSC_NULL,"-my_sr",&step_size_reduction,&flg); CHKERRQ(ierr);
-  if(flg != PETSC_TRUE) {
-    step_size_reduction = 1.;
-  }
-
-  PetscInt max_steps;
-  ierr = PetscOptionsGetInt(PETSC_NULL,"-my_ms",&max_steps,&flg); CHKERRQ(ierr);
-  if(flg != PETSC_TRUE) {
-    max_steps = 5;
-  }
-
   // use this if your mesh is partotioned and you run code on parts, 
   // you can solve very big problems 
   PetscBool is_partitioned = PETSC_FALSE;
@@ -141,7 +131,7 @@ int main(int argc, char *argv[]) {
     problem_bit_level = bit_levels.back();
     
     Range CubitSideSets_meshsets;
-    ierr = m_field.get_Cubit_meshsets(SIDESET,CubitSideSets_meshsets); CHKERRQ(ierr);
+    ierr = m_field.get_cubit_meshsets(SIDESET,CubitSideSets_meshsets); CHKERRQ(ierr);
 
     //Fields
     ierr = m_field.add_field("SPATIAL_POSITION",H1,3); CHKERRQ(ierr);
@@ -555,12 +545,26 @@ int main(int argc, char *argv[]) {
   ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
+  PetscScalar step_size_reduction;
+  ierr = PetscOptionsGetReal(PETSC_NULL,"-my_sr",&step_size_reduction,&flg); CHKERRQ(ierr);
+  if(flg != PETSC_TRUE) {
+    step_size_reduction = 1.;
+  }
+
+  PetscInt max_steps;
+  ierr = PetscOptionsGetInt(PETSC_NULL,"-my_ms",&max_steps,&flg); CHKERRQ(ierr);
+  if(flg != PETSC_TRUE) {
+    max_steps = 5;
+  }
 
   int its_d;
-  ierr = PetscOptionsGetInt("","-my_its_d",&its_d,&flg); CHKERRQ(ierr);
+  ierr = PetscOptionsGetInt(PETSC_NULL,"-my_its_d",&its_d,&flg); CHKERRQ(ierr);
   if(flg != PETSC_TRUE) {
-    its_d = 6;
+    its_d = 4;
   }
+  PetscScalar max_reudction = 10,min_reduction = 0.1;
+  ierr = PetscOptionsGetReal(PETSC_NULL,"-my_max_step_reduction",&max_reudction,&flg); CHKERRQ(ierr);
+  ierr = PetscOptionsGetReal(PETSC_NULL,"-my_min_step_reduction",&min_reduction,&flg); CHKERRQ(ierr);
 
   double gamma = 0.5,reduction = 1;
   //step = 1;
@@ -570,7 +574,7 @@ int main(int argc, char *argv[]) {
     reduction = step_size_reduction;
     step++;
   }
-
+  double step_size0 = step_size;
 
   if(step>1) {
     ierr = m_field.set_other_global_ghost_vector(
@@ -590,12 +594,13 @@ int main(int argc, char *argv[]) {
   ierr = VecDuplicate(arc_ctx->x0,&x00); CHKERRQ(ierr);
   bool converged_state = false;
 
-  for(;step<max_steps;step++) {
+  for(int jj = 0;step<max_steps;step++,jj++) {
 
     ierr = VecCopy(D,D0); CHKERRQ(ierr);
     ierr = VecCopy(arc_ctx->x0,x00); CHKERRQ(ierr);
 
     if(step == 1) {
+
       ierr = PetscPrintf(PETSC_COMM_WORLD,"Load Step %D step_size = %6.4e\n",step,step_size); CHKERRQ(ierr);
       ierr = arc_ctx->setS(step_size); CHKERRQ(ierr);
       ierr = arc_ctx->setAlphaBeta(0,1); CHKERRQ(ierr);
@@ -603,10 +608,13 @@ int main(int argc, char *argv[]) {
       double dlambda;
       ierr = arc_method.calculateInitDlambda(&dlambda); CHKERRQ(ierr);
       ierr = arc_method.setDlambdaToX(D,dlambda); CHKERRQ(ierr);
+
     } else if(step == 2) {
+
       ierr = arc_ctx->setAlphaBeta(1,0); CHKERRQ(ierr);
       ierr = arc_method.calculateDxAndDlambda(D); CHKERRQ(ierr);
       step_size = sqrt(arc_method.calculateLambdaInt());
+      step_size0 = step_size;
       ierr = arc_ctx->setS(step_size); CHKERRQ(ierr);
       double dlambda = arc_ctx->dlambda;
       double dx_nrm;
@@ -617,9 +625,20 @@ int main(int argc, char *argv[]) {
       ierr = VecCopy(D,arc_ctx->x0); CHKERRQ(ierr);
       ierr = VecAXPY(D,1.,arc_ctx->dx); CHKERRQ(ierr);
       ierr = arc_method.setDlambdaToX(D,dlambda); CHKERRQ(ierr);
+
     } else {
+
+      if(jj == 0) {
+	step_size0 = step_size;
+      }
+
       ierr = arc_method.calculateDxAndDlambda(D); CHKERRQ(ierr);
       step_size *= reduction;
+      if(step_size > max_reudction*step_size0) {
+	step_size = max_reudction*step_size0;
+      } else if(step_size<min_reduction*step_size0) {
+	step_size = min_reduction*step_size0;
+      }
       ierr = arc_ctx->setS(step_size); CHKERRQ(ierr);
       double dlambda = reduction*arc_ctx->dlambda;
       double dx_nrm;
@@ -631,6 +650,7 @@ int main(int argc, char *argv[]) {
       ierr = VecCopy(D,arc_ctx->x0); CHKERRQ(ierr);
       ierr = VecAXPY(D,1.,arc_ctx->dx); CHKERRQ(ierr);
       ierr = arc_method.setDlambdaToX(D,dlambda); CHKERRQ(ierr);
+
     }
 
     ierr = SNESSolve(snes,PETSC_NULL,D); CHKERRQ(ierr);
@@ -658,7 +678,13 @@ int main(int argc, char *argv[]) {
 
     } else {
       if(step > 1 && converged_state) {
+
 	reduction = pow((double)its_d/(double)(its+1),gamma);
+	if(step_size >= max_reudction*step_size0 && reduction > 1) {
+	  reduction = 1; 
+	} else if(step_size <= min_reduction*step_size0 && reduction < 1) {
+	  reduction = 1;
+	}
 	ierr = PetscPrintf(PETSC_COMM_WORLD,"reduction step_size = %6.4e\n",reduction); CHKERRQ(ierr);
       }
       //Save data on mesh

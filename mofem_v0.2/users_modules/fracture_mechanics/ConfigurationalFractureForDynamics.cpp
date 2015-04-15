@@ -223,8 +223,8 @@ struct MonitorUpdateFrezedNodes: public FEMethod {
     ierr = confProb->fix_front_nodes(mField,fix_nodes); CHKERRQ(ierr);
 
     Range corners_edges,corners_nodes;
-    ierr = mField.get_Cubit_msId_entities_by_dimension(100,SIDESET,1,corners_edges,true); CHKERRQ(ierr);
-    ierr = mField.get_Cubit_msId_entities_by_dimension(101,NODESET,0,corners_nodes,true); CHKERRQ(ierr);
+    ierr = mField.get_cubit_msId_entities_by_dimension(100,SIDESET,1,corners_edges,true); CHKERRQ(ierr);
+    ierr = mField.get_cubit_msId_entities_by_dimension(101,NODESET,0,corners_nodes,true); CHKERRQ(ierr);
     Range corners_edges_nodes;
     ErrorCode rval;
     rval = mField.get_moab().get_connectivity(corners_edges,corners_edges_nodes,true); CHKERR_PETSC(rval);
@@ -517,7 +517,7 @@ PetscErrorCode ConfigurationalFracturDynamics::coupled_dynamic_problem_definitio
     "MESH_NODE_POSITIONS",true,*ptr_bit_level0); CHKERRQ(ierr);
 
   Range crack_front_edges,crack_front_nodes,crack_front_nodes_tets;
-  ierr = m_field.get_Cubit_msId_entities_by_dimension(201,SIDESET,1,crack_front_edges,true); CHKERRQ(ierr);
+  ierr = m_field.get_cubit_msId_entities_by_dimension(201,SIDESET,1,crack_front_edges,true); CHKERRQ(ierr);
   rval = m_field.get_moab().get_connectivity(crack_front_edges,crack_front_nodes,true); CHKERR_PETSC(rval);
   rval = m_field.get_moab().get_adjacencies(crack_front_nodes,3,false,crack_front_nodes_tets,Interface::UNION); CHKERR_PETSC(rval);
   ierr = iNertia.addEshelbyDynamicMaterialMomentum("DYNAMIC_ESHELBY_TERM","SPATIAL_VELOCITY","SPATIAL_POSITION",
@@ -673,8 +673,8 @@ PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterf
   Range corners_nodes;
   {
     Range corners_edges;
-    ierr = m_field.get_Cubit_msId_entities_by_dimension(100,SIDESET,1,corners_edges,true); CHKERRQ(ierr);
-    ierr = m_field.get_Cubit_msId_entities_by_dimension(101,NODESET,0,corners_nodes,true); CHKERRQ(ierr);
+    ierr = m_field.get_cubit_msId_entities_by_dimension(100,SIDESET,1,corners_edges,true); CHKERRQ(ierr);
+    ierr = m_field.get_cubit_msId_entities_by_dimension(101,NODESET,0,corners_nodes,true); CHKERRQ(ierr);
     Range corners_edges_nodes;
     rval = m_field.get_moab().get_connectivity(corners_edges,corners_edges_nodes,true); CHKERR_PETSC(rval);
     corners_nodes.insert(corners_edges_nodes.begin(),corners_edges_nodes.end());
@@ -722,7 +722,7 @@ PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterf
   ierr = iNertia.setVelocityOperators("SPATIAL_VELOCITY","SPATIAL_POSITION","MESH_NODE_POSITIONS",true); CHKERRQ(ierr);
 
   Range crack_front_edges;
-  ierr = m_field.get_Cubit_msId_entities_by_dimension(201,SIDESET,1,crack_front_edges,true); CHKERRQ(ierr);
+  ierr = m_field.get_cubit_msId_entities_by_dimension(201,SIDESET,1,crack_front_edges,true); CHKERRQ(ierr);
   Range crack_front_edges_nodes;
   rval = m_field.get_moab().get_connectivity(crack_front_edges,crack_front_edges_nodes,true); CHKERR_PETSC(rval);
   crack_front_edges_nodes.merge(crack_front_edges);

@@ -1,7 +1,9 @@
 /** \file ElasticMaterials.hpp 
+ * \ingroup nonlinear_elastic_elem
  * \brief Elastic materials
- *
- * This file is part of MoFEM.
+ */
+
+/* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or (at your

@@ -58,6 +58,7 @@ const char *analytical_solution_types[] = {
 /** Incident wave 
   \ingroup mofem_helmholtz_elem
 
+
   equation from: 
   Ihlenburg,Finite element analysis of acoustic scattering Springer Science & Business Media.
 
@@ -81,10 +82,10 @@ struct IncidentWave: public GenericAnalyticalSolution {
 
     const complex< double > i( 0.0, 1.0 );
     complex< double > result = 0.0;
-	cOordinate[0] = x;
-	cOordinate[1] = y;
-	cOordinate[2] = z;
-	result = exp(i*wAvenumber*inner_prod(dIrection,cOordinate));
+		cOordinate[0] = x;
+		cOordinate[1] = y;
+		cOordinate[2] = z;
+		result = exp(i*wAvenumber*inner_prod(dIrection,cOordinate));
     //result = exp(i*wAvenumber*z);
 
     rEsult.resize(2);
@@ -101,6 +102,7 @@ struct IncidentWave: public GenericAnalyticalSolution {
 
 /** Calculate the analytical solution of impinging wave on sphere
   \ingroup mofem_helmholtz_elem
+
 
   equation from:
   Ihlenburg,Finite element analysis of acoustic scattering Springer Science & Business Media.
@@ -197,6 +199,7 @@ struct HardSphereScatterWave: public GenericAnalyticalSolution {
 /** Calculate the analytical solution of impinging wave on sphere
   \ingroup mofem_helmholtz_elem
 
+
   Equations from:
   <http://ansol.us/Products/Coustyx/Validation/MultiDomain/Scattering/PlaneWave/SoftSphere/Downloads/dataset_description.pdf>
 
@@ -212,7 +215,9 @@ struct HardSphereScatterWave: public GenericAnalyticalSolution {
   \f[
   A_l = -(2l+1)i^l \frac{j_l(ka)}{h_l(ka)}
   \f]
+
   where a is scatter sphere radius and \f$j_l\f$ Spherical Bessel function.
+
 
   */
 struct SoftSphereScatterWave: public GenericAnalyticalSolution {
@@ -222,6 +227,7 @@ struct SoftSphereScatterWave: public GenericAnalyticalSolution {
   double wAvenumber;
   double sphereRadius;
    
+
   SoftSphereScatterWave(double wavenumber,double sphere_radius = 0.5): 
     wAvenumber(wavenumber),sphereRadius(sphere_radius) {}
   virtual ~SoftSphereScatterWave() {}
@@ -292,6 +298,7 @@ struct SoftSphereScatterWave: public GenericAnalyticalSolution {
 
   WARRING: not tested
   
+
    Paper: Gillman, A., Djellouli, R., & Amara, M. (2007). 
    A mixed hybrid formulation based on oscillated finite element polynomials for solving Helmholtz problems. 
    Journal of computational and applied mathematics
@@ -313,6 +320,7 @@ struct PlaneWave: public GenericAnalyticalSolution {
 
     const complex< double > i( 0.0, 1.0 );
     complex< double > result = 0.0;
+
     
     //const complex< double > inc_field = exp( i * k * R * cos( theta ) );  //???? Incident wave
     //const complex< double > total_field = inc_field + result;
@@ -331,6 +339,7 @@ struct PlaneWave: public GenericAnalyticalSolution {
   
 };
 
+
 /** \brief Calculate the analytical solution of impinging wave on cylinder
   \ingroup mofem_helmholtz_elem
 
@@ -341,6 +350,7 @@ struct PlaneWave: public GenericAnalyticalSolution {
     Theofanis Strouboulis, Ivo Babuska, Realino Hidaja
 
 */
+
 struct HardCylinderScatterWave: public GenericAnalyticalSolution {
   
   vector<ublas::vector<double> > rEsult;
@@ -431,6 +441,7 @@ struct SoftCylinderScatterWave: public GenericAnalyticalSolution {
   double wAvenumber;
   double shereRadius;
    
+
   SoftCylinderScatterWave(double wavenumber): wAvenumber(wavenumber) {}
   virtual ~SoftCylinderScatterWave() {}
    
@@ -579,3 +590,8 @@ PetscErrorCode solve_problem(FieldInterface& m_field,
 
   PetscFunctionReturn(0);
 }
+
+
+
+
+

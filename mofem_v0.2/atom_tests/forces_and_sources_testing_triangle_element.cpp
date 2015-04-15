@@ -1,8 +1,3 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
- * FIXME: DESCRIPTION
- */
-
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -136,7 +131,7 @@ int main(int argc, char *argv[]) {
   //what are ghost nodes, see Petsc Manual
   ierr = m_field.partition_ghost_dofs("TEST_PROBLEM"); CHKERRQ(ierr);
 
-  TriElementForcesAndSurcesCore fe1(m_field);
+  FaceElementForcesAndSourcesCore fe1(m_field);
 
   typedef tee_device<ostream, ofstream> TeeDevice;
   typedef stream<TeeDevice> TeeStream;
@@ -145,11 +140,11 @@ int main(int argc, char *argv[]) {
   TeeDevice my_tee(cout, ofs); 
   TeeStream my_split(my_tee);
 
-  struct MyOp: public TriElementForcesAndSurcesCore::UserDataOperator {
+  struct MyOp: public FaceElementForcesAndSourcesCore::UserDataOperator {
 
     TeeStream &my_split;
     MyOp(TeeStream &_my_split):
-      TriElementForcesAndSurcesCore::UserDataOperator("FIELD1","FIELD1"),
+      FaceElementForcesAndSourcesCore::UserDataOperator("FIELD1","FIELD1"),
       my_split(_my_split) {}
 
     PetscErrorCode doWork(
@@ -183,6 +178,7 @@ int main(int argc, char *argv[]) {
       EntityType row_type,EntityType col_type,
       DataForcesAndSurcesCore::EntData &row_data,
       DataForcesAndSurcesCore::EntData &col_data) {
+
       PetscFunctionBegin;
       my_split << "NH1NH1" << endl;
       my_split << "row side: " << row_side << " row_type: " << row_type << endl;
@@ -190,6 +186,29 @@ int main(int argc, char *argv[]) {
       my_split << "NH1NH1" << endl;
       my_split << "col side: " << col_side << " col_type: " << col_type << endl;
       my_split << row_data << endl;
+
+
+      PetscErrorCode ierr;
+      ublas::vector<int> row_indices,col_indices;
+      ierr = getPorblemRowIndices("FIELD1",row_type,row_side,row_indices); CHKERRQ(ierr);
+      ierr = getPorblemColIndices("FIELD1",col_type,col_side,col_indices); CHKERRQ(ierr);
+
+      for(unsigned int rr = 0;rr<row_indices.size();rr++) {
+	if(row_indices[rr] != row_data.getIndices()[rr]) {
+	  cerr << row_indices << endl;
+	  cerr << row_data.getIndices() << endl;
+	  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"row inconsistency");
+	}
+      }
+
+      for(unsigned int cc = 0;cc<col_indices.size();cc++) {
+	if(col_indices[cc] != col_data.getIndices()[cc]) {
+	  cerr << col_indices << endl;
+	  cerr << col_data.getIndices() << endl;
+	  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"row inconsistency");
+	}
+      }
+
       PetscFunctionReturn(0);
     }
 
