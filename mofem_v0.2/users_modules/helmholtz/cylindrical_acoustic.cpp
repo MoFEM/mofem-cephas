@@ -289,17 +289,17 @@ int main(int argc, char *argv[]) {
 		  const complex< double > i( 0.0, 1.0 );
 		  
 		  // magnitude of incident wave
-		  const double phi_incident_mag = 1.0;
+		  //const double phi_incident_mag = 1.0;
 		  
 		  const double tol = 1.0e-10;
 		  double max = 0.0;
 		  double min = 999999.0;
 		  
 		  complex< double > result = 0.0;
-		  complex< double > prev_result;
+		  //complex< double > prev_result;
 		  
-		  double error = 100.0;
-		  unsigned int n = 1; //initialized the infinite series loop
+		  //double error = 100.0;
+		  //unsigned int n = 1; //initialized the infinite series loop
 		  
 		  //double Jn_der_zero = ( - cyl_bessel_j( 1, const1 ));  
 		  //complex< double > Hn_der_zero = ( - cyl_hankel_1( 1, const1 ));
@@ -324,7 +324,6 @@ int main(int argc, char *argv[]) {
 		//	  ++n;
 		  //}
           
-		  //const complex< double > inc_field = exp( i * k * R * cos( theta ) );  //incident wave
 		  const complex< double > inc_field = - exp( i * k * R * cos( theta ) );  //incident wave
 		  //const complex< double > total_field = inc_field + result;
 		  //ofs << theta << "\t" << abs( result ) << "\t" << abs( inc_field ) << "\t" << abs( total_field ) << "\t" << R << endl; //write the file
