@@ -34,10 +34,10 @@ extern "C" {
 namespace ObosleteUsersModules {
 
 NeummanForcesSurfaceComplexForLazy::AuxMethodSpatial::AuxMethodSpatial(const string &field_name,MyTriangleSpatialFE *_myPtr): 
-      TriElementForcesAndSurcesCore::UserDataOperator(field_name),myPtr(_myPtr) {}
+      FaceElementForcesAndSourcesCore::UserDataOperator(field_name),myPtr(_myPtr) {}
 
 NeummanForcesSurfaceComplexForLazy::AuxMethodMaterial::AuxMethodMaterial(const string &field_name,MyTriangleSpatialFE *_myPtr): 
-      TriElementForcesAndSurcesCore::UserDataOperator(field_name),myPtr(_myPtr) {};
+      FaceElementForcesAndSourcesCore::UserDataOperator(field_name),myPtr(_myPtr) {};
 
 PetscErrorCode NeummanForcesSurfaceComplexForLazy::
   AuxMethodSpatial::doWork(int side, EntityType type, DataForcesAndSurcesCore::EntData &data) {
@@ -156,7 +156,7 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::
 
 NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::MyTriangleSpatialFE
   (FieldInterface &_mField,Mat _Aij,Vec &_F,double *scale_lhs,double *scale_rhs): 
-  TriElementForcesAndSurcesCore(_mField),sCaleLhs(scale_lhs),sCaleRhs(scale_rhs),
+  FaceElementForcesAndSourcesCore(_mField),sCaleLhs(scale_lhs),sCaleRhs(scale_rhs),
   typeOfForces(CONSERVATIVE),eps(1e-8),uSeF(false) {
 
   meshPositionsFieldName = "NoNE";
@@ -557,7 +557,7 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::operator
     SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   }
 
-  ierr = TriElementForcesAndSurcesCore::operator()(); CHKERRQ(ierr);
+  ierr = FaceElementForcesAndSourcesCore::operator()(); CHKERRQ(ierr);
   ierr = calcTraction(); CHKERRQ(ierr);
 
   switch(snes_ctx) {

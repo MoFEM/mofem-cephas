@@ -35,8 +35,8 @@ struct UltraWeakTransportElement {
   FieldInterface &mField;
 
   /// \brief  definition of volume element
-  struct MyVolumeFE: public TetElementForcesAndSourcesCore {
-    MyVolumeFE(FieldInterface &m_field): TetElementForcesAndSourcesCore(m_field) {}
+  struct MyVolumeFE: public VolumeElementForcesAndSourcesCore {
+    MyVolumeFE(FieldInterface &m_field): VolumeElementForcesAndSourcesCore(m_field) {}
     int getRule(int order) { return order; };
   };
 
@@ -45,8 +45,8 @@ struct UltraWeakTransportElement {
   /** \brief define surface element
     *
     */
-  struct MyTriFE: public TriElementForcesAndSurcesCore {
-    MyTriFE(FieldInterface &m_field): TriElementForcesAndSurcesCore(m_field) {}
+  struct MyTriFE: public FaceElementForcesAndSourcesCore {
+    MyTriFE(FieldInterface &m_field): FaceElementForcesAndSourcesCore(m_field) {}
     int getRule(int order) { return order; };
   };
 
@@ -189,7 +189,7 @@ struct UltraWeakTransportElement {
 
   /** \brief tau,sigma in Hdiv, calculates Aij = Asemble int sigma_dot_tau dTet 
     */
-  struct OpTauDotSigma_HdivHdiv: public TetElementForcesAndSourcesCore::UserDataOperator {
+  struct OpTauDotSigma_HdivHdiv: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     UltraWeakTransportElement &cTx;
     Mat Aij;
@@ -198,7 +198,7 @@ struct UltraWeakTransportElement {
     OpTauDotSigma_HdivHdiv(
       UltraWeakTransportElement &ctx,
       const string field_name,Mat _Aij,Vec _F):
-      TetElementForcesAndSourcesCore::UserDataOperator(field_name),
+      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
       cTx(ctx),Aij(_Aij),F(_F) {}
     virtual ~OpTauDotSigma_HdivHdiv() {}
 
@@ -327,7 +327,7 @@ struct UltraWeakTransportElement {
 
   /** \brief u in L2 and tau in Hdiv, calculates Aij = Asemble int u * div(tau) dTet 
     */
-  struct OpDivTauU_HdivL2: public TetElementForcesAndSourcesCore::UserDataOperator {
+  struct OpDivTauU_HdivL2: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     UltraWeakTransportElement &cTx;
     Mat Aij;
@@ -336,7 +336,7 @@ struct UltraWeakTransportElement {
     OpDivTauU_HdivL2(
       UltraWeakTransportElement &ctx,
       const string field_name_row,string field_name_col,Mat _Aij,Vec _F):
-      TetElementForcesAndSourcesCore::UserDataOperator(field_name_row,field_name_col),
+      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name_row,field_name_col),
       cTx(ctx),Aij(_Aij),F(_F) {
   
       //this operator is not symmetric settig this varible makes element
@@ -403,7 +403,7 @@ struct UltraWeakTransportElement {
 
   /** \brief V in L2 and sigma in Hdiv, calculates Aij = Asemble int V * div(sigma) dTet 
     */
-  struct OpVDotDivSigma_L2Hdiv: public TetElementForcesAndSourcesCore::UserDataOperator {
+  struct OpVDotDivSigma_L2Hdiv: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     UltraWeakTransportElement &cTx;
     Mat Aij;
@@ -412,7 +412,7 @@ struct UltraWeakTransportElement {
     OpVDotDivSigma_L2Hdiv(
       UltraWeakTransportElement &ctx,
       const string field_name_row,string field_name_col,Mat _Aij,Vec _F):
-      TetElementForcesAndSourcesCore::UserDataOperator(field_name_row,field_name_col),
+      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name_row,field_name_col),
       cTx(ctx),Aij(_Aij),F(_F) {
   
       //this operator is not symmetric settig this varible makes element
@@ -549,7 +549,7 @@ struct UltraWeakTransportElement {
 
   /** \brief calculate source therms
     */
-  struct OpL2Source: public TetElementForcesAndSourcesCore::UserDataOperator {
+  struct OpL2Source: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     UltraWeakTransportElement &cTx;
     Vec F;
@@ -557,7 +557,7 @@ struct UltraWeakTransportElement {
     OpL2Source(
       UltraWeakTransportElement &ctx,
       const string field_name,Vec _F):
-      TetElementForcesAndSourcesCore::UserDataOperator(field_name),
+      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
       cTx(ctx),F(_F) {}
     virtual ~OpL2Source() {}
       
@@ -616,14 +616,14 @@ struct UltraWeakTransportElement {
 
   /** \brief calualte F = int_\gamma tau*n u_bar d d\Gamma
     */
-  struct OpRhsBcOnValues: public TriElementForcesAndSurcesCore::UserDataOperator {
+  struct OpRhsBcOnValues: public FaceElementForcesAndSourcesCore::UserDataOperator {
 
     UltraWeakTransportElement &cTx;
     Vec F;
 
     OpRhsBcOnValues(
       UltraWeakTransportElement &ctx,const string field_name,Vec _F):
-      TriElementForcesAndSurcesCore::UserDataOperator(field_name),
+      FaceElementForcesAndSourcesCore::UserDataOperator(field_name),
       cTx(ctx),F(_F) {}
 
     ublas::vector<FieldData> Nf;
@@ -676,14 +676,14 @@ struct UltraWeakTransportElement {
 
   };
 
-  struct OpEvaluateBcOnFluxes: public TriElementForcesAndSurcesCore::UserDataOperator {
+  struct OpEvaluateBcOnFluxes: public FaceElementForcesAndSourcesCore::UserDataOperator {
 
     UltraWeakTransportElement &cTx;
     Vec X;
     
     OpEvaluateBcOnFluxes(
       UltraWeakTransportElement &ctx,const string field_name,Vec _X):
-      TriElementForcesAndSurcesCore::UserDataOperator(field_name),
+      FaceElementForcesAndSourcesCore::UserDataOperator(field_name),
       cTx(ctx),X(_X) {}
     virtual ~OpEvaluateBcOnFluxes() {}
 
@@ -760,14 +760,14 @@ struct UltraWeakTransportElement {
 
   };
 
-  struct OpValuesAtGaussPts: public TetElementForcesAndSourcesCore::UserDataOperator {
+  struct OpValuesAtGaussPts: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     UltraWeakTransportElement &cTx;
 
     OpValuesAtGaussPts(
       UltraWeakTransportElement &ctx,
       const string field_name):
-      TetElementForcesAndSourcesCore::UserDataOperator(field_name),
+      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
       cTx(ctx) {}
     virtual ~OpValuesAtGaussPts() {}
 
@@ -797,14 +797,14 @@ struct UltraWeakTransportElement {
 
   };
 
-  struct OpValuesGradientAtGaussPts: public TetElementForcesAndSourcesCore::UserDataOperator {
+  struct OpValuesGradientAtGaussPts: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     UltraWeakTransportElement &cTx;
 
     OpValuesGradientAtGaussPts(
       UltraWeakTransportElement &ctx,
       const string field_name):
-      TetElementForcesAndSourcesCore::UserDataOperator(field_name),
+      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
       cTx(ctx) {}
     virtual ~OpValuesGradientAtGaussPts() {}
 
@@ -837,14 +837,14 @@ struct UltraWeakTransportElement {
 
   };
 
-  struct OpFluxDivergenceAtGaussPts: public TetElementForcesAndSourcesCore::UserDataOperator {
+  struct OpFluxDivergenceAtGaussPts: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     UltraWeakTransportElement &cTx;
 
     OpFluxDivergenceAtGaussPts(
       UltraWeakTransportElement &ctx,
       const string field_name):
-      TetElementForcesAndSourcesCore::UserDataOperator(field_name),
+      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
       cTx(ctx) {}
     virtual ~OpFluxDivergenceAtGaussPts() {}
 
@@ -897,14 +897,14 @@ struct UltraWeakTransportElement {
 
   /** \brief calculate error evaluator
     */
-  struct OpError_L2Norm: public TetElementForcesAndSourcesCore::UserDataOperator {
+  struct OpError_L2Norm: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     UltraWeakTransportElement &cTx;
 
     OpError_L2Norm(
       UltraWeakTransportElement &ctx,
       const string field_name):
-      TetElementForcesAndSourcesCore::UserDataOperator(field_name),
+      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
       cTx(ctx) {}
     virtual ~OpError_L2Norm() {}
 

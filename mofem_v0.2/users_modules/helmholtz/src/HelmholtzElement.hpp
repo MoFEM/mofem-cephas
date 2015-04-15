@@ -38,16 +38,16 @@ struct HelmholtzElement {
 
 
   /// \brief  Volume element
-  struct MyVolumeFE: public TetElementForcesAndSourcesCore {
+  struct MyVolumeFE: public VolumeElementForcesAndSourcesCore {
     int addToRank; ///< default value 1, i.e. assumes that geometry is approx. by quadratic functions.
-    MyVolumeFE(FieldInterface &_mField,int add_to_rank): TetElementForcesAndSourcesCore(_mField),addToRank(add_to_rank) {}
+    MyVolumeFE(FieldInterface &_mField,int add_to_rank): VolumeElementForcesAndSourcesCore(_mField),addToRank(add_to_rank) {}
     int getRule(int order) { return order+addToRank; };
   };
 
   /// \brief Surface element
-  struct MySurfaceFE: public TriElementForcesAndSurcesCore {
+  struct MySurfaceFE: public FaceElementForcesAndSourcesCore {
     int addToRank; ///< default value 1, i.e. assumes that geometry is approx. by quadratic functions.
-    MySurfaceFE(FieldInterface &_mField,int add_to_rank): TriElementForcesAndSurcesCore(_mField),addToRank(add_to_rank) {}
+    MySurfaceFE(FieldInterface &_mField,int add_to_rank): FaceElementForcesAndSourcesCore(_mField),addToRank(add_to_rank) {}
     int getRule(int order) { return order+addToRank; };
   };
 
@@ -94,13 +94,13 @@ struct HelmholtzElement {
   
   /** \brief Calculate pressure and gradient of pressure in volume
     */
-  struct OpGetValueAndGradAtGaussPts: public TetElementForcesAndSourcesCore::UserDataOperator {
+  struct OpGetValueAndGradAtGaussPts: public VolumeElementForcesAndSourcesCore::UserDataOperator {
   
     CommonData &commonData;
     const string fieldName;
     OpGetValueAndGradAtGaussPts(const string field_name,
       CommonData &common_data):
-      TetElementForcesAndSourcesCore::UserDataOperator(field_name),
+      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
       commonData(common_data),fieldName(field_name) {}
   
     PetscErrorCode doWork(
@@ -142,13 +142,13 @@ struct HelmholtzElement {
 
   /** \brief Calculate pressure on surface
     */
-  struct OpGetValueAtGaussPts: public TriElementForcesAndSurcesCore::UserDataOperator {
+  struct OpGetValueAtGaussPts: public FaceElementForcesAndSourcesCore::UserDataOperator {
   
     CommonData &commonData;
     const string fieldName;
     OpGetValueAtGaussPts(const string field_name,
       CommonData &common_data):
-      TriElementForcesAndSurcesCore::UserDataOperator(field_name),
+      FaceElementForcesAndSourcesCore::UserDataOperator(field_name),
       commonData(common_data),fieldName(field_name) {}
   
     PetscErrorCode doWork(
@@ -189,11 +189,11 @@ struct HelmholtzElement {
     This takes into account HO approximation for geometry
 
     */
-  struct OpHoCoordTri: public TriElementForcesAndSurcesCore::UserDataOperator {
+  struct OpHoCoordTri: public FaceElementForcesAndSourcesCore::UserDataOperator {
   
     ublas::matrix<double> &hoCoordsTri;
     OpHoCoordTri(const string field_name,ublas::matrix<double> &ho_coords): 
-      TriElementForcesAndSurcesCore::UserDataOperator(field_name),
+      FaceElementForcesAndSourcesCore::UserDataOperator(field_name),
       hoCoordsTri(ho_coords) {}
   
     /*  
@@ -243,7 +243,7 @@ struct HelmholtzElement {
     \f]
 
   */
-  struct OpHelmholtzRhs: public TetElementForcesAndSourcesCore::UserDataOperator {
+  struct OpHelmholtzRhs: public VolumeElementForcesAndSourcesCore::UserDataOperator {
   
     VolumeData &dAta;
     CommonData &commonData;
@@ -252,7 +252,7 @@ struct HelmholtzElement {
 
     OpHelmholtzRhs(
       const string field_name,Vec _F,VolumeData &data,CommonData &common_data):
-      TetElementForcesAndSourcesCore::UserDataOperator(field_name),
+      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
       dAta(data),commonData(common_data),fieldName(field_name),F(_F) { }
   
     ublas::vector<double> Nf;
@@ -320,7 +320,7 @@ struct HelmholtzElement {
     \f]
 
     */
-  struct OpHelmholtzLhs: public TetElementForcesAndSourcesCore::UserDataOperator {
+  struct OpHelmholtzLhs: public VolumeElementForcesAndSourcesCore::UserDataOperator {
   
     VolumeData &dAta;
     CommonData &commonData;
@@ -330,7 +330,7 @@ struct HelmholtzElement {
     OpHelmholtzLhs(
       const string &re_field_name,const string &im_field_name,
       Mat _A,VolumeData &data,CommonData &common_data):
-      TetElementForcesAndSourcesCore::UserDataOperator(re_field_name,re_field_name),
+      VolumeElementForcesAndSourcesCore::UserDataOperator(re_field_name,re_field_name),
       dAta(data),commonData(common_data),imFieldName(im_field_name),A(_A) {}
   
     ublas::matrix<double> K,transK;
@@ -461,7 +461,7 @@ struct HelmholtzElement {
 
   */
   template<typename FUNVAL>
-  struct OpHelmholtzMixBCRhs: public TriElementForcesAndSurcesCore::UserDataOperator {
+  struct OpHelmholtzMixBCRhs: public FaceElementForcesAndSourcesCore::UserDataOperator {
   
     SurfaceData &dAta;
     CommonData &commonData;
@@ -476,7 +476,7 @@ struct HelmholtzElement {
       const string re_field_name,const string im_field_name,
       Vec _F,SurfaceData &data,CommonData &common_data,
       FUNVAL &function_evaluator):
-      TriElementForcesAndSurcesCore::UserDataOperator(re_field_name),
+      FaceElementForcesAndSourcesCore::UserDataOperator(re_field_name),
       dAta(data),commonData(common_data),F(_F),
       rePressure(re_field_name),imPressure(im_field_name),
       functionEvaluator(function_evaluator) { }
@@ -584,7 +584,7 @@ struct HelmholtzElement {
   transposed and assembled with negative sign.
 
     */
-  struct OpHelmholtzMixBCLhs:public TriElementForcesAndSurcesCore::UserDataOperator {
+  struct OpHelmholtzMixBCLhs:public FaceElementForcesAndSourcesCore::UserDataOperator {
 
     SurfaceData &dAta;
     CommonData &commonData;
@@ -595,7 +595,7 @@ struct HelmholtzElement {
     OpHelmholtzMixBCLhs(
       const string re_field_name,const string im_field_name,
       Mat _A,SurfaceData &data,CommonData &common_data):
-      TriElementForcesAndSurcesCore::UserDataOperator(re_field_name,im_field_name),
+      FaceElementForcesAndSourcesCore::UserDataOperator(re_field_name,im_field_name),
       dAta(data),commonData(common_data),rePressure(re_field_name),imPressure(im_field_name),A(_A) {
       symm = false;
     }

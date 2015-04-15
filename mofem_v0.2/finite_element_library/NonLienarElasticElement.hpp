@@ -43,7 +43,7 @@ namespace MoFEM {
 struct NonlinearElasticElement {
 
   /// \brief  definition of volume element
-  struct MyVolumeFE: public TetElementForcesAndSourcesCore {
+  struct MyVolumeFE: public VolumeElementForcesAndSourcesCore {
 
     Mat A;
     Vec F;
@@ -174,7 +174,7 @@ struct NonlinearElasticElement {
 
     int gG;	///< Gauss point number
     CommonData *commonDataPtr; ///< common data shared between entities (f.e. field values at Gauss pts.)
-    TetElementForcesAndSourcesCore::UserDataOperator *opPtr; ///< pointer to finite element tetrahedral operator
+    VolumeElementForcesAndSourcesCore::UserDataOperator *opPtr; ///< pointer to finite element tetrahedral operator
 
     PetscErrorCode CalulateC_CauchyDefromationTensor() {
       PetscFunctionBegin;
@@ -288,7 +288,7 @@ struct NonlinearElasticElement {
 
   };
 
-  struct OpGetDataAtGaussPts: public TetElementForcesAndSourcesCore::UserDataOperator {
+  struct OpGetDataAtGaussPts: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     vector<ublas::vector<double> > &valuesAtGaussPts;
     vector<ublas::matrix<double> > &gradientAtGaussPts;
@@ -311,7 +311,7 @@ struct NonlinearElasticElement {
     OpGetCommonDataAtGaussPts(const string field_name,CommonData &common_data);
   };
  
-  struct OpJacobian: public TetElementForcesAndSourcesCore::UserDataOperator {
+  struct OpJacobian: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     BlockData &dAta;
     CommonData &commonData;
@@ -333,7 +333,7 @@ struct NonlinearElasticElement {
       int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data); 
   };
 
-  struct OpRhs: public TetElementForcesAndSourcesCore::UserDataOperator {
+  struct OpRhs: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     BlockData &dAta;
     CommonData &commonData;
@@ -347,7 +347,7 @@ struct NonlinearElasticElement {
 
   };
 
-  struct OpEnergy: public TetElementForcesAndSourcesCore::UserDataOperator {
+  struct OpEnergy: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     BlockData &dAta;
     CommonData &commonData;
@@ -362,7 +362,7 @@ struct NonlinearElasticElement {
   };
 
 
-  struct OpLhs_dx: public TetElementForcesAndSourcesCore::UserDataOperator {
+  struct OpLhs_dx: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     BlockData &dAta;
     CommonData &commonData;

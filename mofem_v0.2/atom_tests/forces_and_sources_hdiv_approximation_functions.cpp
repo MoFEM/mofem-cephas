@@ -135,11 +135,11 @@ int main(int argc, char *argv[]) {
   TeeStream my_split(my_tee);
 
 
-  struct OpPrintingHdivApproximationFunctions: public TetElementForcesAndSourcesCore::UserDataOperator {
+  struct OpPrintingHdivApproximationFunctions: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     TeeStream &mySplit;
     OpPrintingHdivApproximationFunctions(TeeStream &my_split):
-      TetElementForcesAndSourcesCore::UserDataOperator("HDIV"),mySplit(my_split) {}
+      VolumeElementForcesAndSourcesCore::UserDataOperator("HDIV"),mySplit(my_split) {}
 
     PetscErrorCode doWork(
       int side,
@@ -167,9 +167,9 @@ int main(int argc, char *argv[]) {
 
   };
 
-  struct MyFE: public TetElementForcesAndSourcesCore {
+  struct MyFE: public VolumeElementForcesAndSourcesCore {
 
-    MyFE(FieldInterface &m_field): TetElementForcesAndSourcesCore(m_field) {}
+    MyFE(FieldInterface &m_field): VolumeElementForcesAndSourcesCore(m_field) {}
     int getRule(int order) { return 1; };
 
   };
