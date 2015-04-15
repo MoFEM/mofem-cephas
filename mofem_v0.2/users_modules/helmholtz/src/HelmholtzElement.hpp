@@ -696,8 +696,55 @@ struct HelmholtzElement {
   Computing with Adaptive HP-Elements Volume 2
   Page: 225
 
-  Element is integrated on outer mesh surface Sa up to the infinity where
-  Sommerfeld radiation condition is applied.
+  Element is integrated on outer mesh surface \f$S_a\f$ up to the infinity where
+  Sommerfeld radiation condition is applied. Integration is done which-in
+  element.
+
+  Moreover approximations functions are scaled in such a way, that despite they
+  are different outside discretized volume, on outer mesh surface \f$S_a\f$,
+  those functions looks as a shape function which we use to approximate filed in
+  the interior.
+
+  The trick is here that this is Bubnov-Galerkin formulation, so we using the
+  same functions to approximate pressures on surface \f$S_a\f$ like we use in
+  standard FE formulation.
+
+  The Cartesian position in space is parametrised by surface \f$S_a\f$
+  parametrisation \f$(\xi_1,\xi_2\f$), which in practice is local approximation
+  on triangle on surface and radial parametrisation, as follows
+  \f[
+  x(\xi_1,\xi_2,\xi_3) = \xi_3^{-1}x_a(\xi_1,\xi_2),\quad a/R < \xi_3 < 1
+  \f]
+
+  Functions in the infinite element domain are constructed by tensor product of
+  one-divisional radial shape functions of coordinate \f$\xi_3\f$ and standard FE
+  hierarchical shape functions.
+  \f[
+  P(\xi_1,\xi_2,\xi_3) = \sum_{kl} P_{kl} \psi_k(\xi_3) e_l(\xi_1,\xi_2)
+  \f]
+  where \f$e(\xi_1,\xi_2)\f$ are standard shape functions on element face and
+  \f$\psi(\xi_3)\f$ is a radial shape function. The radial shape functions are
+  generated as follows
+  \f[
+  \psi_j = 
+  \left\{
+    \begin{array}{cc}
+      1, & j = 0 \\
+      P_j(2\xi_3-1), & j > 0
+    \end{array}
+  \right.
+  \f]
+  Note that function for \f$j>0\f$ are bubble functions so there are not
+  assembled into global coordinate system but are condensed in the finite element
+  procedure and then element is assembled. This makes a trick mentioned above,
+  that to global system are assembled additional terms but size remains
+  unchanged, moreover is symmetric.
+
+  To make all above true, pleas note that 
+  \f[	
+  p=\xi_3 e^{-ik(\xi_3^{-1}-1)}P
+  \f]
+  where for \f$\xi = 1\f$, \f$p(\xi_1,\xi_2) = P(\xi_1,\xi_2,1)\f$
 
   Infinite part,
   \f[
@@ -722,28 +769,73 @@ struct HelmholtzElement {
   \textrm{d}S_a
   \f]
 
-  \f[
-  x = \xi_3^{-1}x_a(\xi_1,\xi_2),\quad a/R < \xi_3 < 1
-  \f]
-
-  Pressure in above is scaled, 
-  \f[
-  p = \xi_3 e^{-ika(\xi_3^{-1}-1)}P
-  \f]
-  Note that P and p are identical on the surface \f$S_a\f$, so in fact we don't need do
-  anything with that equation. The same we can do with test function 
-  \f[
-  \overline{q} = \xi_3 e^{+ika(\xi_3^{-1}-1)}\overline{Q}
-  \f]
 
   */
   struct InfiniteHelmholtz {
+    
+    ublas::matrix<double> gaussPointsInRadialDirection;
+    ublas::matrix<double> radialShapeFunctions;
+    ublas::matrix<double> direvativesOfRadialShapeFunctions; 
 
-    PetscErrorCode intergarToInfinity() {
+    ublas::matrix<double> elementShapeFunctions;
+    ublas::matrxi<double> direvativeOfElementShapeFunctions;
+
+    /** \brief Generate approximation space for infinite element
+
+    It is ordered in such a way, that first indices are loop over surface
+    degrees of freedom then radial degrees of freedom. So that
+    n_surface_dofs*n_radial_dofs, wher first n_surface_dofs are for surface dofs
+    and constant radial shape function. Remaining dofs then could be statically
+    condensed.
+
+    */
+    PetscErrorCode generateBase(
+      VectorAdaptor &N,MatrixAdaptor &diffN) {
       PetscFunctionBegin;
 
-      PetscFunctionReturn(0);
+      int nb_gauss_points_on_surface = N.size1();
+      int nb_gauss_pts_radial = radialShapeFunctions.size1();
+      int nb_surface_dofs = N.size2();
+      int nb_radial_dofs = radialShapeFunctions.size2();
 
+      elementShapeFunctions.resize(
+	nb_gauss_points_on_surface*nb_gauss_pts_radial,
+	nb_surface_dofs*nb_radial_dofs);
+
+      for(int ii = 0;ii<nb_radial_dofs;ii++) {
+	for(int jj = 0;jj<nb_surface_dofs;jj++) {
+
+	  for(int gg_s = 0;gg_s<nb_gauss_points_on_surface;gg++) {
+	    for(int gg_r = 0;gg_r<nb_gauss_pts_radial;gg_r++) {
+
+	    double direvative_shf_in_radial_direction =
+	      direvativesOfRadialShapeFunctions(gg_s,ii)*N(gg_s,jj);
+
+	      elementShapeFunctions(
+		gg_r*nb_gauss_points_on_surface+gg_s,
+		ii*nb_surface_dofs+jj) =
+		radialShapeFunctions(gg_s,ii)*N(gg_r,jj);
+
+	      direvativeOfElementShapeFunctions(
+		gg_r*nb_gauss_points_on_surface+gg_s,
+		3*ii*nb_surface_dofs+3*jj+0) =
+		radialShapeFunctions(gg_s,ii)*diffN(gg_r,3*jj+0);
+	      direvativeOfElementShapeFunctions(
+		gg_r*nb_gauss_points_on_surface+gg_s,
+		3*ii*nb_surface_dofs+3*jj+1) =
+		radialShapeFunctions(gg_s,ii)*diffN(gg_r,3*jj+1);
+	      direvativeOfElementShapeFunctions(
+		gg_r*nb_gauss_points_on_surface+gg_s,
+		3*ii*nb_surface_dofs+3*jj+3) =
+		direvativesOfRadialShapeFunctions(gg_s,ii)*N(gg_r,jj);
+
+	    }
+	  }
+	
+	}
+      }
+
+      PetscFunctionReturn(0);
     }
 
   };
