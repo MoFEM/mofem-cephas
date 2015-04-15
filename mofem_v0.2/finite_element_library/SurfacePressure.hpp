@@ -56,8 +56,8 @@ struct NeummanForcesSurface {
 
   FieldInterface &mField;
 
-  struct MyTriangleFE: public TriElementForcesAndSurcesCore {
-    MyTriangleFE(FieldInterface &_mField): TriElementForcesAndSurcesCore(_mField) {}
+  struct MyTriangleFE: public FaceElementForcesAndSourcesCore {
+    MyTriangleFE(FieldInterface &_mField): FaceElementForcesAndSourcesCore(_mField) {}
     int getRule(int order) { return order; };
   };
 
@@ -81,7 +81,7 @@ struct NeummanForcesSurface {
 
   boost::ptr_vector<MethodsForOp> methodsOp;
 
-  struct OpNeumannForce: public TriElementForcesAndSurcesCore::UserDataOperator {
+  struct OpNeumannForce: public FaceElementForcesAndSourcesCore::UserDataOperator {
 
     Vec &F;
     bCForce &dAta;
@@ -89,7 +89,7 @@ struct NeummanForcesSurface {
 
     OpNeumannForce(const string field_name,Vec &_F,bCForce &data,
       boost::ptr_vector<MethodsForOp> &methods_op):
-      TriElementForcesAndSurcesCore::UserDataOperator(field_name),
+      FaceElementForcesAndSourcesCore::UserDataOperator(field_name),
       F(_F),dAta(data),methodsOp(methods_op) {}
 
     ublas::vector<FieldData> Nf;
@@ -144,7 +144,7 @@ struct NeummanForcesSurface {
 
   };
 
-  struct OpNeumannPreassure:public TriElementForcesAndSurcesCore::UserDataOperator {
+  struct OpNeumannPreassure:public FaceElementForcesAndSourcesCore::UserDataOperator {
 
     Vec &F;
     bCPreassure &dAta;
@@ -154,7 +154,7 @@ struct NeummanForcesSurface {
     OpNeumannPreassure(const string field_name,Vec &_F,
       bCPreassure &data,boost::ptr_vector<MethodsForOp> &methods_op,
       bool _ho_geometry = false):
-      TriElementForcesAndSurcesCore::UserDataOperator(field_name),
+      FaceElementForcesAndSourcesCore::UserDataOperator(field_name),
       F(_F),dAta(data),methodsOp(methods_op),ho_geometry(_ho_geometry) {}
 
     ublas::vector<FieldData> Nf;
@@ -209,7 +209,7 @@ struct NeummanForcesSurface {
 
   };
 
-  struct OpNeumannPreassureFlux:public TriElementForcesAndSurcesCore::UserDataOperator {
+  struct OpNeumannPreassureFlux:public FaceElementForcesAndSourcesCore::UserDataOperator {
 
     Vec &F;
     bCPreassure &dAta;
@@ -219,7 +219,7 @@ struct NeummanForcesSurface {
     OpNeumannPreassureFlux(const string field_name,Vec &_F,
       bCPreassure &data,boost::ptr_vector<MethodsForOp> &methods_op,
       bool _ho_geometry = false):
-      TriElementForcesAndSurcesCore::UserDataOperator(field_name),
+      FaceElementForcesAndSourcesCore::UserDataOperator(field_name),
       F(_F),dAta(data),methodsOp(methods_op),ho_geometry(_ho_geometry) {}
 
     ublas::vector<FieldData> Nf;

@@ -173,13 +173,13 @@ int main(int argc, char *argv[]) {
   TeeDevice my_tee(cout, ofs); 
   TeeStream my_split(my_tee);
 
-  struct OpTetFluxes: public TetElementForcesAndSourcesCore::UserDataOperator {
+  struct OpTetFluxes: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     FieldInterface &m_field;
     Tag tH;
 
     OpTetFluxes(FieldInterface &m_field,Tag _th):
-      TetElementForcesAndSourcesCore::UserDataOperator("HDIV"),
+      VolumeElementForcesAndSourcesCore::UserDataOperator("HDIV"),
       m_field(m_field),tH(_th) {}
 
     PetscErrorCode doWork(
@@ -226,9 +226,9 @@ int main(int argc, char *argv[]) {
 
   };
 
-  struct MyTetFE: public TetElementForcesAndSourcesCore {
+  struct MyTetFE: public VolumeElementForcesAndSourcesCore {
 
-    MyTetFE(FieldInterface &m_field): TetElementForcesAndSourcesCore(m_field) {}
+    MyTetFE(FieldInterface &m_field): VolumeElementForcesAndSourcesCore(m_field) {}
     int getRule(int order) { return -1; };
 
     ublas::matrix<double> N_tri;
@@ -264,14 +264,14 @@ int main(int argc, char *argv[]) {
 
   };
 
-  struct OpFacesSkinFluxes: public TriElementForcesAndSurcesCore::UserDataOperator {
+  struct OpFacesSkinFluxes: public FaceElementForcesAndSourcesCore::UserDataOperator {
 
     FieldInterface &m_field;
     Tag tH1,tH2;
     TeeStream &mySplit;
 
     OpFacesSkinFluxes(FieldInterface &m_field,Tag _th1,Tag _th2,TeeStream &my_split):
-      TriElementForcesAndSurcesCore::UserDataOperator("HDIV"),
+      FaceElementForcesAndSourcesCore::UserDataOperator("HDIV"),
       m_field(m_field),tH1(_th1),tH2(_th2),mySplit(my_split) {}
 
     PetscErrorCode doWork(
@@ -311,14 +311,14 @@ int main(int argc, char *argv[]) {
 
   };
 
-  struct OpFacesFluxes: public TriElementForcesAndSurcesCore::UserDataOperator {
+  struct OpFacesFluxes: public FaceElementForcesAndSourcesCore::UserDataOperator {
 
     FieldInterface &m_field;
     Tag tH1,tH2;
     TeeStream &mySplit;
 
     OpFacesFluxes(FieldInterface &m_field,Tag _th1,Tag _th2,TeeStream &my_split):
-      TriElementForcesAndSurcesCore::UserDataOperator("HDIV"),
+      FaceElementForcesAndSourcesCore::UserDataOperator("HDIV"),
       m_field(m_field),tH1(_th1),tH2(_th2),mySplit(my_split) {}
 
     PetscErrorCode doWork(
@@ -349,9 +349,9 @@ int main(int argc, char *argv[]) {
 
   };
 
-  struct MyTriFE: public TriElementForcesAndSurcesCore {
+  struct MyTriFE: public FaceElementForcesAndSourcesCore {
 
-    MyTriFE(FieldInterface &m_field): TriElementForcesAndSurcesCore(m_field) {}
+    MyTriFE(FieldInterface &m_field): FaceElementForcesAndSourcesCore(m_field) {}
     int getRule(int order) { return -1; };
 
     PetscErrorCode setGaussPts(int order) {

@@ -27,7 +27,7 @@
   #error "MoFEM need to be compiled with ADOL-C"
 #endif 
 
-struct PostPorcStress: public TetElementForcesAndSourcesCore::UserDataOperator {
+struct PostPorcStress: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
   Interface &postProcMesh;
   vector<EntityHandle> &mapGaussPts;
@@ -41,7 +41,7 @@ struct PostPorcStress: public TetElementForcesAndSourcesCore::UserDataOperator {
     const string field_name,
     NonlinearElasticElement::BlockData &data,
     PostPocOnRefinedMesh::CommonData &common_data):
-    TetElementForcesAndSourcesCore::UserDataOperator(field_name),
+    VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
     postProcMesh(post_proc_mesh),mapGaussPts(map_gauss_pts),
     dAta(data),commonData(common_data) {}
 

@@ -142,7 +142,7 @@ int main(int argc, char *argv[]) {
   Projection10NodeCoordsOnField ent_method(m_field,"MESH_NODE_POSITIONS");
   ierr = m_field.loop_dofs("MESH_NODE_POSITIONS",ent_method); CHKERRQ(ierr);
 
-  TetElementForcesAndSourcesCore fe1(m_field);
+  VolumeElementForcesAndSourcesCore fe1(m_field);
 
   typedef tee_device<ostream, ofstream> TeeDevice;
   typedef stream<TeeDevice> TeeStream;
@@ -151,11 +151,11 @@ int main(int argc, char *argv[]) {
   TeeDevice my_tee(cout, ofs); 
   TeeStream my_split(my_tee);
 
-  struct MyOp: public TetElementForcesAndSourcesCore::UserDataOperator {
+  struct MyOp: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     TeeStream &my_split;
     MyOp(TeeStream &_my_split):
-      TetElementForcesAndSourcesCore::UserDataOperator("FIELD1","FIELD2"),
+      VolumeElementForcesAndSourcesCore::UserDataOperator("FIELD1","FIELD2"),
       my_split(_my_split) {}
 
     PetscErrorCode doWork(

@@ -34,10 +34,10 @@ struct AnalyticalDirihletBC {
   struct ApproxField {
 
 
-    struct MyTriFE: public TriElementForcesAndSurcesCore {
+    struct MyTriFE: public FaceElementForcesAndSourcesCore {
 
       int addToRule; ///< this is add to integration rule if 2nd order geometry approximation
-      MyTriFE(FieldInterface &m_field): TriElementForcesAndSurcesCore(m_field),addToRule(1) {}
+      MyTriFE(FieldInterface &m_field): FaceElementForcesAndSourcesCore(m_field),addToRule(1) {}
       int getRule(int order) { return order+addToRule; };
 
     };
@@ -49,11 +49,11 @@ struct AnalyticalDirihletBC {
     MyTriFE& getLoopFeApprox() { return feApprox; } 
 
     ublas::matrix<double> hoCoords;
-    struct OpHoCoord: public TriElementForcesAndSurcesCore::UserDataOperator {
+    struct OpHoCoord: public FaceElementForcesAndSourcesCore::UserDataOperator {
 
       ublas::matrix<double> &hoCoords;
       OpHoCoord(const string field_name,ublas::matrix<double> &ho_coords): 
-	TriElementForcesAndSurcesCore::UserDataOperator(field_name),
+	FaceElementForcesAndSourcesCore::UserDataOperator(field_name),
 	hoCoords(ho_coords) {}
 
       PetscErrorCode doWork(
@@ -90,11 +90,11 @@ struct AnalyticalDirihletBC {
 
     /** \brief Lhs operaetar used to build matrix
       */
-    struct OpLhs:public TriElementForcesAndSurcesCore::UserDataOperator {
+    struct OpLhs:public FaceElementForcesAndSourcesCore::UserDataOperator {
 
       ublas::matrix<double> &hoCoords;
       OpLhs(const string field_name,ublas::matrix<double> &ho_coords): 
-	TriElementForcesAndSurcesCore::UserDataOperator(field_name),
+	FaceElementForcesAndSourcesCore::UserDataOperator(field_name),
 	hoCoords(ho_coords) { }
 
       ublas::matrix<FieldData> NN,transNN;
@@ -221,14 +221,14 @@ struct AnalyticalDirihletBC {
     /** \brief Rhs operaetar used to build matrix
       */
     template<typename FUNEVAL>
-    struct OpRhs:public TriElementForcesAndSurcesCore::UserDataOperator {
+    struct OpRhs:public FaceElementForcesAndSourcesCore::UserDataOperator {
 
       ublas::matrix<double> &hoCoords;
       FUNEVAL &functionEvaluator;
       int fieldNumber;
 
       OpRhs(const string field_name,ublas::matrix<double> &ho_coords,FUNEVAL &function_evaluator,int field_number): 
-	TriElementForcesAndSurcesCore::UserDataOperator(field_name),
+	FaceElementForcesAndSourcesCore::UserDataOperator(field_name),
 	hoCoords(ho_coords),functionEvaluator(function_evaluator),
 	fieldNumber(field_number)  {}
 

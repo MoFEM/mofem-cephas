@@ -275,16 +275,16 @@ struct ForcesAndSurcesCore: public FEMethod {
 
 };
 
-/** \brief Tet finite element  
+/** \brief Volume finite element  
  * \ingroup mofem_forces_and_sources_tet_element 
  *
  * User is implementing own operator at Gauss point level, by own object
- * derived from TetElementForcesAndSourcesCoreL::UserDataOperator.  Arbitrary
+ * derived from VolumeElementForcesAndSourcesCoreL::UserDataOperator.  Arbitrary
  * number of operator added pushing objects to vecUserOpN and
  * vecUserOpNN. 
  *
  */
-struct TetElementForcesAndSourcesCore: public ForcesAndSurcesCore {
+struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 
   DataForcesAndSurcesCore dataH1;
   DerivedDataForcesAndSurcesCore derivedDataH1;
@@ -308,7 +308,7 @@ struct TetElementForcesAndSourcesCore: public ForcesAndSurcesCore {
   OpSetHoPiolaTransform opSetHoPiolaTransform;
   OpSetHoInvJacHdiv opSetHoInvJacHdiv;
 
-  TetElementForcesAndSourcesCore(FieldInterface &_mField):
+  VolumeElementForcesAndSourcesCore(FieldInterface &_mField):
     ForcesAndSurcesCore(_mField),
     dataH1(MBTET),derivedDataH1(dataH1),
     dataL2(MBTET),derivedDataL2(dataL2),
@@ -321,7 +321,7 @@ struct TetElementForcesAndSourcesCore: public ForcesAndSurcesCore {
     opSetHoPiolaTransform(hoGaussPtsDetJac,hoGaussPtsJac),
     opSetHoInvJacHdiv(hoGaussPtsInvJac) {};
     
-  virtual ~TetElementForcesAndSourcesCore() {}
+  virtual ~VolumeElementForcesAndSourcesCore() {}
 
   ErrorCode rval;
   double vOlume;
@@ -410,9 +410,9 @@ struct TetElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 
     /** \bried return pointer to Generic Tetrahedral Finite Element object
      */ 
-    inline const TetElementForcesAndSourcesCore* getTetFE() { return ptrFE; }
+    inline const VolumeElementForcesAndSourcesCore* getTetFE() { return ptrFE; }
 
-    PetscErrorCode setPtrFE(TetElementForcesAndSourcesCore *ptr) { 
+    PetscErrorCode setPtrFE(VolumeElementForcesAndSourcesCore *ptr) { 
       PetscFunctionBegin;
       ptrFE = ptr;
       PetscFunctionReturn(0);
@@ -424,7 +424,7 @@ struct TetElementForcesAndSourcesCore: public ForcesAndSurcesCore {
       int gg,ublas::vector<double> &div);
 
     private:
-    TetElementForcesAndSourcesCore *ptrFE; 
+    VolumeElementForcesAndSourcesCore *ptrFE; 
 
   };
 
@@ -442,17 +442,19 @@ struct TetElementForcesAndSourcesCore: public ForcesAndSurcesCore {
   
 };
 
+DEPRECATED typedef VolumeElementForcesAndSourcesCore TetElementForcesAndSourcesCore;
 
-/** \brief Tri finite element  
+
+/** \brief Face finite element  
  * \ingroup mofem_forces_and_sources_tri_element
  *
  * User is implementing own operator at Gauss point level, by own object
- * derived from TriElementForcesAndSurcesCoreL::UserDataOperator.  Arbitrary
+ * derived from FaceElementForcesAndSourcesCoreL::UserDataOperator.  Arbitrary
  * number of operator added pushing objects to vecUserOpN and
  * vecUserOpSymmNN. 
  *
  */
-struct TriElementForcesAndSurcesCore: public ForcesAndSurcesCore {
+struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 
   ErrorCode rval;
   double aRea;;
@@ -474,7 +476,7 @@ struct TriElementForcesAndSurcesCore: public ForcesAndSurcesCore {
   OpGetNormals opHONormals;
   OpSetPiolaTransoformOnTriangle opSetPiolaTransoformOnTriangle;
 
-  TriElementForcesAndSurcesCore(FieldInterface &_mField):
+  FaceElementForcesAndSourcesCore(FieldInterface &_mField):
     ForcesAndSurcesCore(_mField),
     dataH1(MBTRI),derivedDataH1(dataH1),
     dataHdiv(MBTRI),derivedDataHdiv(dataHdiv),
@@ -565,7 +567,7 @@ struct TriElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
     /** \bried return pointer to triangle finite element object 
      */
-    inline const TriElementForcesAndSurcesCore* getTriElementForcesAndSurcesCore() { return ptrFE; }
+    inline const FaceElementForcesAndSourcesCore* getFaceElementForcesAndSourcesCore() { return ptrFE; }
 
     /** \bried return pointer to FEMthod object
      */
@@ -573,19 +575,19 @@ struct TriElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
      /** \bried return pointer to Generic Triangle Finite Element object
      */ 
-    inline const TriElementForcesAndSurcesCore* getTriFE() { return ptrFE; }
+    inline const FaceElementForcesAndSourcesCore* getTriFE() { return ptrFE; }
 
     /** \bried return pointer to NumeredMoFEMFiniteElement 
      */
     inline const NumeredMoFEMFiniteElement* getMoFEMFEPtr() { return ptrFE->fePtr; };
 
-    PetscErrorCode setPtrFE(TriElementForcesAndSurcesCore *ptr) { 
+    PetscErrorCode setPtrFE(FaceElementForcesAndSourcesCore *ptr) { 
       PetscFunctionBegin;
       ptrFE = ptr;
       PetscFunctionReturn(0);
     }
     private:
-    TriElementForcesAndSurcesCore *ptrFE; 
+    FaceElementForcesAndSourcesCore *ptrFE; 
   };
 
   PetscErrorCode preProcess() {
@@ -599,6 +601,8 @@ struct TriElementForcesAndSurcesCore: public ForcesAndSurcesCore {
   }
 
 };
+
+DEPRECATED typedef FaceElementForcesAndSourcesCore TriElementForcesAndSurcesCore;
 
 /** \brief Edge finite element  
  * \ingroup mofem_forces_and_sources

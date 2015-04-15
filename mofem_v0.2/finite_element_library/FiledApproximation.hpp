@@ -32,7 +32,7 @@ struct FieldApproximationH1 {
 
   FieldInterface &mField;
   const string problemName;
-  TetElementForcesAndSourcesCore fe;
+  VolumeElementForcesAndSourcesCore fe;
   int addToRule;
 
   FieldApproximationH1(
@@ -52,14 +52,14 @@ struct FieldApproximationH1 {
     * Function work on thetrahedrals
     */
   template<typename FUNEVAL>
-  struct OpApprox: public TetElementForcesAndSourcesCore::UserDataOperator {
+  struct OpApprox: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     Mat A;
     vector<Vec> &vecF;
     FUNEVAL &functionEvaluator;
 
     OpApprox(const string &field_name,Mat _A,vector<Vec> &vec_F,FUNEVAL &function_evaluator):
-      TetElementForcesAndSourcesCore::UserDataOperator(field_name),
+      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
       A(_A),vecF(vec_F),functionEvaluator(function_evaluator) {}
     virtual ~OpApprox() {}
 

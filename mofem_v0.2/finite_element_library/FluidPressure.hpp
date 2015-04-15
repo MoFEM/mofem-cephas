@@ -34,8 +34,8 @@ namespace MoFEM {
 struct FluidPressure {
 
   FieldInterface &mField;
-  struct MyTriangleFE: public TriElementForcesAndSurcesCore {
-    MyTriangleFE(FieldInterface &_mField): TriElementForcesAndSurcesCore(_mField) {}
+  struct MyTriangleFE: public FaceElementForcesAndSourcesCore {
+    MyTriangleFE(FieldInterface &_mField): FaceElementForcesAndSourcesCore(_mField) {}
     int getRule(int order) { return order; };
   };
   MyTriangleFE fe;
@@ -56,14 +56,14 @@ struct FluidPressure {
   PetscErrorCode ierr;
   ErrorCode rval;
 
-  struct OpCalculatePressure: public TriElementForcesAndSurcesCore::UserDataOperator {
+  struct OpCalculatePressure: public FaceElementForcesAndSourcesCore::UserDataOperator {
     Vec F;
     FluidData &dAta;
     bool allowNegativePressure; ///< allows for negative pressures
     bool hoGeometry;
     OpCalculatePressure(const string field_name,Vec _F,FluidData &data,
       bool allow_negative_pressure,bool ho_geometry):
-      TriElementForcesAndSurcesCore::UserDataOperator(field_name),
+      FaceElementForcesAndSourcesCore::UserDataOperator(field_name),
       F(_F),dAta(data),allowNegativePressure(allow_negative_pressure),hoGeometry(ho_geometry) {}
     ublas::vector<FieldData> Nf;
     PetscErrorCode ierr;
