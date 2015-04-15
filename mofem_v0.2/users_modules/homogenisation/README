@@ -17,6 +17,11 @@ mpirun -np 1 ./Cube_With_Inclusion_Disp -my_file ../users_modules/homogenisation
 mpirun -np 1 ./Cube_With_Inclusion_Traction -my_file ../users_modules/homogenisation/meshes/Cube_With_Inclusion.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0
 mpirun -np 1 ./Cube_With_Inclusion_Periodic -my_file ../users_modules/homogenisation/meshes/Cube_With_Inclusion.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0
 
+==== with textile RVE
+mpirun -np 1 ./Cube_With_Inclusion_Disp -my_file /mnt/home/Documents/Post-Doc\ Data/Analysis/Meshes/RVE_Cube_with_inclusion/Textile_RVE.cub  -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0
+
+
+
 
 Example run textile RVE with trans-isotropic fibres (with no interface elements)
   - first use the potential flow to calculate the fibres directions
