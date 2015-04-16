@@ -36,8 +36,6 @@ Note the image from which the containers are based upon may be updated. To use
 the new version change the dockpull alias command to the correct version.
 
 ~~~~~~
-#!shell
-
 #Docker Aliases
 #--------------
 
@@ -82,8 +80,6 @@ There are two ways of setting up Docker: launching the boot2docker app or settin
 This sets up the virtualization layer and so is only required the very first time.
 
 ~~~~~~
-#!shell
-
 boot2docker init
 ~~~~~~
 
@@ -92,15 +88,11 @@ boot2docker init
 This starts the virtual machine for the lightweight Linux OS. This needs to be done each time Docker is stopped, such as after a system reboot.
 
 ~~~~~~
-#!shell
-
 boot2docker start
 ~~~~~~
 
 To ascertain the current status of the virtual machine run:
 ~~~~~~
-#!shell
-
 boot2docker status
 ~~~~~~
 
@@ -109,8 +101,6 @@ boot2docker status
 This sets up the neccesary environment variables for boot2docker to work with Docker.
 
 ~~~~~~
-#!shell
-
 dockshellinit
 ~~~~~~
 
@@ -120,8 +110,6 @@ dockshellinit
 Download the ubuntu_mofem image which contains the pre-compiled libraries for MoFEM and also use this command to update to the most recent release image.
 
 ~~~~~~
-#!shell
-
 dockpull
 ~~~~~~
 
@@ -156,8 +144,6 @@ can be replaced with the new one and the user’s data is not lost.
 To create the sshd container run:
 
 ~~~~~~
-#!shell
-
 dockcreatesshd
 ~~~~~~
 
@@ -165,8 +151,6 @@ dockcreatesshd
 
 Start sshd container before connecting:
 ~~~~~~
-#!shell
-
 dockstartsshd
 
 ~~~~~~
@@ -174,8 +158,6 @@ dockstartsshd
 Connect to ubuntu_mofem container using ssh:
 
 ~~~~~~
-#!shell
-
 sshdock
 
 ~~~~~~
@@ -187,8 +169,6 @@ can generate a public-private key pair and copy the public key to the sshd
 container. To generate a public key in Mac OS X or Linux:
 
 ~~~~~~
-#!shell
-
 ssh-keygen -t rsa 
 ~~~~~~
 
@@ -196,8 +176,6 @@ This will prompt you for a password which you should leave blank. Then copy
 your new public key to your sshd container:
 
 ~~~~~~
-#!shell
-
 dockauthorize
 ~~~~~~
 
@@ -210,8 +188,6 @@ host clock. This can create compilation warnings and problems. To solve this
 use the command below in the host OS.
 
 ~~~~~~
-#!shell
-
 docktime
 ~~~~~~
 
@@ -237,8 +213,6 @@ directory in Mac OS X from the home directory.
 Setup file structure:
 
 ~~~~~~
-#!shell
-
 cd /build
 mkdir release
 cd release
@@ -249,7 +223,6 @@ mkdir usr_mods
 Cmake command:
 
 ~~~~~~
-#!shell
 cd /build/release/lib
 
 cmake \
@@ -267,23 +240,17 @@ cmake \
 To build the MoFEM libraries run:
 
 ~~~~~~
-#!shell
-
 make -j 4 
 ~~~~~~
 Install user’s modules:
 
 ~~~~~~
-#!shell
-
 make install
 ~~~~~~
 
 To build the user’s modules run:
 
 ~~~~~~
-#!shell
-
 cd /build/release/usr_mods
 
 cmake users_modules
@@ -301,8 +268,6 @@ directory, both MoFEM libraries and user's modules need to be re-built.
 Setup file structure:
 
 ~~~~~~
-#!shell
-
 cd /build
 mkdir debug
 cd debug
@@ -313,7 +278,6 @@ mkdir usr_mods
 Cmake command:
 
 ~~~~~~
-#!shell
 cd /build/debug/lib
 
 cmake \
@@ -331,23 +295,17 @@ cmake \
 To build the MoFEM libraries run:
 
 ~~~~~~
-#!shell
-
 make -j 4 
 ~~~~~~
 Install user’s modules:
 
 ~~~~~~
-#!shell
-
 make install
 ~~~~~~
 
 To build the user’s modules run:
 
 ~~~~~~
-#!shell
-
 cd /build/debug/usr_mods
 
 cmake -DCMAKE_BUILD_TYPE=debug users_modules
