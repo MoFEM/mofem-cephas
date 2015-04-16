@@ -1,8 +1,3 @@
-# Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
-# The MoFEM package is copyrighted by Lukasz Kaczmarczyk. 
-# It can be freely used for educational and research purposes 
-# by other institutions. If you use this softwre pleas cite my work. 
-#
 # MoFEM is free software: you can redistribute it and/or modify it under
 # the terms of the GNU Lesser General Public License as published by the
 # Free Software Foundation, either version 3 of the License, or (at your
@@ -155,17 +150,26 @@ add_subdirectory("${PROJECT_SOURCE_DIR}/users_modules.in")
 #add a target to generate API documentation with Doxygen
 find_package(Doxygen)
 if(DOXYGEN_FOUND)
-configure_file(
-  ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in
-  ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
+  configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in
+    ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
   )
-set(DOXYGEN_LINE_COMMAND 
-  ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
-  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+  set(DOXYGEN_LINE_COMMAND 
+    ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   )
-add_custom_target(doc
-  ${DOXYGEN_LINE_COMMAND}
-  COMMENT "Generating API documentation with Doxygen" VERBATIM
+  add_custom_target(doxygen_generating_documenation
+    ${DOXYGEN_LINE_COMMAND}
+    COMMENT "Generating documentation with Doxygen" VERBATIM
+  )
+  add_custom_target(doxygen_copy_figures
+    ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/doc/figures ${CMAKE_CURRENT_BINARY_DIR}/html
+    DEPENDS doxygen_generating_documenation
+    COMMENT "Copy figures for Doxygen Documenatation" VERBATIM
+  )
+  add_custom_target(doc
+    DEPENDS doxygen_generating_documenation doxygen_copy_figures
+    COMMENT "Making documentation" VERBATIM
   )
 endif(DOXYGEN_FOUND)
 
