@@ -20,6 +20,7 @@
 
 #include <Projection10NodeCoordsOnField.hpp>
 
+#include <boost/shared_ptr.hpp>
 #include <boost/numeric/ublas/vector_proxy.hpp>
 #include <AnalyticalDirihlet.hpp>
 
@@ -190,7 +191,7 @@ int main(int argc, char *argv[]) {
   //solve for ditihlet bc dofs
   ierr = analytical_bc.setProblem(m_field,"BC_PROBLEM"); CHKERRQ(ierr);
   
-  AnaliticalFunction testing_function;
+  boost::shared_ptr<AnaliticalFunction> testing_function = boost::shared_ptr<AnaliticalFunction>(new AnaliticalFunction);
 
   ierr = analytical_bc.setApproxOps(m_field,"TEMP",testing_function,0); CHKERRQ(ierr);
   ierr = analytical_bc.solveProblem(m_field,"BC_PROBLEM","BC_FE",analytical_ditihlet_bc); CHKERRQ(ierr);

@@ -224,10 +224,10 @@ struct AnalyticalDirihletBC {
     struct OpRhs:public FaceElementForcesAndSourcesCore::UserDataOperator {
 
       ublas::matrix<double> &hoCoords;
-      FUNEVAL &functionEvaluator;
+      boost::shared_ptr<FUNEVAL> functionEvaluator;
       int fieldNumber;
 
-      OpRhs(const string field_name,ublas::matrix<double> &ho_coords,FUNEVAL &function_evaluator,int field_number): 
+      OpRhs(const string field_name,ublas::matrix<double> &ho_coords,boost::shared_ptr<FUNEVAL> function_evaluator,int field_number): 
 	FaceElementForcesAndSourcesCore::UserDataOperator(field_name),
 	hoCoords(ho_coords),functionEvaluator(function_evaluator),
 	fieldNumber(field_number)  {}
@@ -269,7 +269,7 @@ struct AnalyticalDirihletBC {
 	      z = getCoordsAtGaussPts()(gg,2);
 	    }
 	    
-	    ublas::vector<double>& a = functionEvaluator(x,y,z)[fieldNumber];
+	    ublas::vector<double>& a = (*functionEvaluator)(x,y,z)[fieldNumber];
 
 	    if(a.size()!=rank) {
 	      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
@@ -359,7 +359,7 @@ struct AnalyticalDirihletBC {
   PetscErrorCode setApproxOps(
     FieldInterface &m_field,
     string field_name,
-    FUNEVAL &funtcion_evaluator,int field_number = 0,
+    boost::shared_ptr<FUNEVAL> funtcion_evaluator,int field_number = 0,
     string nodals_positions = "MESH_NODE_POSITIONS") {
     PetscFunctionBegin;
     if(m_field.check_field(nodals_positions)) {
