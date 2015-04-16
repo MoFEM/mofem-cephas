@@ -37,8 +37,8 @@ namespace MoFEM {
   */
 struct NormElement {
 
-	struct MyVolumeFE: public TetElementForcesAndSourcesCore {
-		MyVolumeFE(FieldInterface &mField): TetElementForcesAndSourcesCore(mField) {}
+	struct MyVolumeFE: public VolumeElementForcesAndSourcesCore {
+		MyVolumeFE(FieldInterface &mField): VolumeElementForcesAndSourcesCore(mField) {}
 		
 		/** \brief it is used to calculate nb. of Gauss integartion points
 		 *
@@ -100,11 +100,11 @@ struct NormElement {
 	map<int,BlockData> setOfBlocks; ///< maps block set id with appropiate BlockData	
 	
 	// \brief operator to calculate field gradient at Gauss points
-	struct OpGetGradField1AtGaussPts: public TetElementForcesAndSourcesCore::UserDataOperator {
+	struct OpGetGradField1AtGaussPts: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 	
 		CommonData &commonData;
 		OpGetGradField1AtGaussPts(const string field_name,CommonData &common_data):
-			TetElementForcesAndSourcesCore::UserDataOperator(field_name),
+			VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
 			commonData(common_data) {}
 	
 		/** \brief operator calculating temperature gradients
@@ -141,11 +141,11 @@ struct NormElement {
 	};
 	
 	/// \brief operator to calculate field gradient at Gauss points
-	struct OpGetGradField2AtGaussPts: public TetElementForcesAndSourcesCore::UserDataOperator {
+	struct OpGetGradField2AtGaussPts: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 		
 		CommonData &commonData;
 		OpGetGradField2AtGaussPts(const string field_name,CommonData &common_data):
-			TetElementForcesAndSourcesCore::UserDataOperator(field_name),
+			VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
 			commonData(common_data) {}
 		
 		/** \brief operator calculating field gradients
@@ -234,14 +234,14 @@ struct NormElement {
 	/** \brief operator to calculate field at Gauss pts
     * \infroup mofem_thermal_elem
     */
-	struct OpGetTetField1AtGaussPts: public OpGetFieldAtGaussPts<TetElementForcesAndSourcesCore> {
+	struct OpGetTetField1AtGaussPts: public OpGetFieldAtGaussPts<VolumeElementForcesAndSourcesCore> {
 		OpGetTetField1AtGaussPts(const string field1_name,CommonData &common_data):
-			OpGetFieldAtGaussPts<TetElementForcesAndSourcesCore>(field1_name,common_data.fieldValue1AtGaussPts) {}
+			OpGetFieldAtGaussPts<VolumeElementForcesAndSourcesCore>(field1_name,common_data.fieldValue1AtGaussPts) {}
 	};
 	
-	struct OpGetTetField2AtGaussPts: public OpGetFieldAtGaussPts<TetElementForcesAndSourcesCore> {
+	struct OpGetTetField2AtGaussPts: public OpGetFieldAtGaussPts<VolumeElementForcesAndSourcesCore> {
 		OpGetTetField2AtGaussPts(const string field2_name,CommonData &common_data):
-			OpGetFieldAtGaussPts<TetElementForcesAndSourcesCore>(field2_name,common_data.fieldValue2AtGaussPts) {}
+			OpGetFieldAtGaussPts<VolumeElementForcesAndSourcesCore>(field2_name,common_data.fieldValue2AtGaussPts) {}
 	};
 	
 	
@@ -256,24 +256,24 @@ struct NormElement {
 	/** \brief operator to calculate field rate at Gauss pts
 	  * \infroup mofem_thermal_elem
 	  */
-	struct OpGetTetFieldRateAtGaussPts: public OpGetFieldAtGaussPts<TetElementForcesAndSourcesCore> {
+	struct OpGetTetFieldRateAtGaussPts: public OpGetFieldAtGaussPts<VolumeElementForcesAndSourcesCore> {
 		OpGetTetFieldRateAtGaussPts(const string field_name,CommonData &common_data):
-			OpGetFieldAtGaussPts<TetElementForcesAndSourcesCore>(field_name,common_data.fieldValue1RateAtGaussPts) {}
+			OpGetFieldAtGaussPts<VolumeElementForcesAndSourcesCore>(field_name,common_data.fieldValue1RateAtGaussPts) {}
 	};
 	
 	
 	/** \brief Lhs operaetar for tetrahedral used to build matrix
 	*/
-    struct OpLhs:public TetElementForcesAndSourcesCore::UserDataOperator {
+    struct OpLhs:public VolumeElementForcesAndSourcesCore::UserDataOperator {
 		
 		Mat A;
 		//bool solveBc;
 		OpLhs(const string re_field_name,Mat _A): 
-			TetElementForcesAndSourcesCore::UserDataOperator(re_field_name),
+			VolumeElementForcesAndSourcesCore::UserDataOperator(re_field_name),
 			A(_A) { }
 		
 		OpLhs(const string re_field_name): 
-			TetElementForcesAndSourcesCore::UserDataOperator(re_field_name) { }
+			VolumeElementForcesAndSourcesCore::UserDataOperator(re_field_name) { }
 		
 		ublas::matrix<FieldData> NTN,transNTN;
 		
@@ -354,7 +354,7 @@ struct NormElement {
 	
 	/** \brief Rhs operaetar used loop differences between two fields
 	*/
-	struct OpRhs:public TetElementForcesAndSourcesCore::UserDataOperator {
+	struct OpRhs:public VolumeElementForcesAndSourcesCore::UserDataOperator {
 		
 		CommonData &commonData;
 		Vec F;//norm error
@@ -367,13 +367,13 @@ struct NormElement {
 		OpRhs(const string re_field_name,const string im_field_name,
 				   CommonData &common_data,bool usel2,bool userela
 				   ): 
-			TetElementForcesAndSourcesCore::UserDataOperator(re_field_name,im_field_name),
+			VolumeElementForcesAndSourcesCore::UserDataOperator(re_field_name,im_field_name),
 			commonData(common_data),useL2(usel2),useTsF(true),useRela(userela) {}
 		
 		OpRhs(const string re_field_name,const string im_field_name,
 			  Vec _F,CommonData &common_data,bool usel2,bool userela
 			  ): 
-			TetElementForcesAndSourcesCore::UserDataOperator(re_field_name,im_field_name),
+			VolumeElementForcesAndSourcesCore::UserDataOperator(re_field_name,im_field_name),
 			commonData(common_data),useL2(usel2),useTsF(false),useRela(userela),F(_F) {}
 		
 		

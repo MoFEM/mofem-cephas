@@ -22,6 +22,7 @@
 
 /** \brief Generic structure for analytical function
   \ingroup mofem_helmholtz_elem
+	\bug point source example not implemented.
 */
 struct GenericAnalyticalSolution {
 
@@ -356,7 +357,7 @@ struct HardCylinderScatterWave: public GenericAnalyticalSolution {
   vector<ublas::vector<double> > rEsult;
   double wAvenumber;
   //double shereRadius;
-  double a
+  double a;
   HardCylinderScatterWave(double wavenumber,double sphere_radius = 0.5): wAvenumber(wavenumber),a(sphere_radius) {}
   virtual ~HardCylinderScatterWave() {}
    
@@ -529,9 +530,10 @@ PetscErrorCode solve_problem(FieldInterface& m_field,
   vector<Vec> vec_F;
   vec_F.resize(2);
 
-  ierr = m_field.VecCreateGhost(problem_name,ROW,&vec_F[0]); CHKERRQ(ierr);
-  ierr = m_field.VecCreateGhost(problem_name,ROW,&vec_F[1]); CHKERRQ(ierr);
+  ierr = m_field.VecCreateGhost(problem_name,ROW,&vec_F[0]); CHKERRQ(ierr); /* real */
+  ierr = m_field.VecCreateGhost(problem_name,ROW,&vec_F[1]); CHKERRQ(ierr); /* imag */
   ierr = m_field.VecCreateGhost(problem_name,COL,&D); CHKERRQ(ierr);
+	cout << "\n still work \n" << endl;
 
   FieldApproximationH1 field_approximation(m_field);
   // This increase rule for numerical intergaration. In case of 10 node
@@ -559,11 +561,11 @@ PetscErrorCode solve_problem(FieldInterface& m_field,
 
     // save data on mesh
     if(ss == GenericAnalyticalSolution::REAL) {
-
+			/* set data to field from solution vec */
       if(is_partitioned) {
-	ierr = m_field.set_global_ghost_vector(problem_name,COL,D,mode,SCATTER_REVERSE); CHKERRQ(ierr);
+				ierr = m_field.set_global_ghost_vector(problem_name,COL,D,mode,SCATTER_REVERSE); CHKERRQ(ierr);
       } else {
-	ierr = m_field.set_local_ghost_vector(problem_name,COL,D,mode,SCATTER_REVERSE); CHKERRQ(ierr);
+				ierr = m_field.set_local_ghost_vector(problem_name,COL,D,mode,SCATTER_REVERSE); CHKERRQ(ierr);
       }
 
       VecZeroEntries(D);
@@ -572,9 +574,9 @@ PetscErrorCode solve_problem(FieldInterface& m_field,
 
     } else {
       if(is_partitioned) {
-	ierr = m_field.set_other_local_ghost_vector(problem_name,re_field,im_field,COL,D,mode,SCATTER_REVERSE); CHKERRQ(ierr);
+				ierr = m_field.set_other_local_ghost_vector(problem_name,re_field,im_field,COL,D,mode,SCATTER_REVERSE); CHKERRQ(ierr);
       } else {
-	ierr = m_field.set_other_global_ghost_vector(problem_name,re_field,im_field,COL,D,mode,SCATTER_REVERSE); CHKERRQ(ierr);
+				ierr = m_field.set_other_global_ghost_vector(problem_name,re_field,im_field,COL,D,mode,SCATTER_REVERSE); CHKERRQ(ierr);
       }
     }
 

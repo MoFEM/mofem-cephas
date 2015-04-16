@@ -38,9 +38,9 @@ struct HelmholtzElement {
 
 
   /// \brief  Volume element
-  struct MyVolumeFE: public TetElementForcesAndSourcesCore {
+  struct MyVolumeFE: public VolumeElementForcesAndSourcesCore {
     int addToRank; ///< default value 1, i.e. assumes that geometry is approx. by quadratic functions.
-    MyVolumeFE(FieldInterface &_mField,int add_to_rank): TetElementForcesAndSourcesCore(_mField),addToRank(add_to_rank) {}
+    MyVolumeFE(FieldInterface &_mField,int add_to_rank): VolumeElementForcesAndSourcesCore(_mField),addToRank(add_to_rank) {}
     int getRule(int order) { return order+addToRank; };
   };
 
@@ -94,13 +94,13 @@ struct HelmholtzElement {
   
   /** \brief Calculate pressure and gradient of pressure in volume
     */
-  struct OpGetValueAndGradAtGaussPts: public TetElementForcesAndSourcesCore::UserDataOperator {
+  struct OpGetValueAndGradAtGaussPts: public VolumeElementForcesAndSourcesCore::UserDataOperator {
   
     CommonData &commonData;
     const string fieldName;
     OpGetValueAndGradAtGaussPts(const string field_name,
       CommonData &common_data):
-      TetElementForcesAndSourcesCore::UserDataOperator(field_name),
+      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
       commonData(common_data),fieldName(field_name) {}
   
     PetscErrorCode doWork(
@@ -243,7 +243,7 @@ struct HelmholtzElement {
     \f]
 
   */
-  struct OpHelmholtzRhs: public TetElementForcesAndSourcesCore::UserDataOperator {
+  struct OpHelmholtzRhs: public VolumeElementForcesAndSourcesCore::UserDataOperator {
   
     VolumeData &dAta;
     CommonData &commonData;
@@ -252,7 +252,7 @@ struct HelmholtzElement {
 
     OpHelmholtzRhs(
       const string field_name,Vec _F,VolumeData &data,CommonData &common_data):
-      TetElementForcesAndSourcesCore::UserDataOperator(field_name),
+      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
       dAta(data),commonData(common_data),fieldName(field_name),F(_F) { }
   
     ublas::vector<double> Nf;
@@ -320,7 +320,7 @@ struct HelmholtzElement {
     \f]
 
     */
-  struct OpHelmholtzLhs: public TetElementForcesAndSourcesCore::UserDataOperator {
+  struct OpHelmholtzLhs: public VolumeElementForcesAndSourcesCore::UserDataOperator {
   
     VolumeData &dAta;
     CommonData &commonData;
@@ -330,7 +330,7 @@ struct HelmholtzElement {
     OpHelmholtzLhs(
       const string &re_field_name,const string &im_field_name,
       Mat _A,VolumeData &data,CommonData &common_data):
-      TetElementForcesAndSourcesCore::UserDataOperator(re_field_name,re_field_name),
+      VolumeElementForcesAndSourcesCore::UserDataOperator(re_field_name,re_field_name),
       dAta(data),commonData(common_data),imFieldName(im_field_name),A(_A) {}
   
     ublas::matrix<double> K,transK;
@@ -622,8 +622,9 @@ struct HelmholtzElement {
   
     ublas::matrix<double> K,K1;
     ublas::vector<int> imRowIndices,imColIndices;
-  
-    PetscErrorCode doWork(
+    ublas::vector<double> nOrmal;
+    
+		PetscErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
       DataForcesAndSurcesCore::EntData &row_data,
@@ -654,7 +655,7 @@ struct HelmholtzElement {
 
 					/*get cartesian coordinates */
 					double x,y,z;
-					if(commonData.hoCoords.size1() == data.getN().size1()) {
+					if(commonData.hoCoords.size1() == row_data.getN().size1()) {
 						x = commonData.hoCoords(gg,0);
 						y = commonData.hoCoords(gg,1);
 						z = commonData.hoCoords(gg,2);	
@@ -830,6 +831,7 @@ struct HelmholtzElement {
 
     string fe_name;
 
+		/* volume elements */
     fe_name = "HELMHOLTZ_RERE_FE"; feLhs.insert(fe_name,new MyVolumeFE(mField,addToRank));
     fe_name = "HELMHOLTZ_RERE_FE"; feRhs.insert(fe_name,new MyVolumeFE(mField,addToRank));
     fe_name = "HELMHOLTZ_IMIM_FE"; feRhs.insert(fe_name,new MyVolumeFE(mField,addToRank));
@@ -853,6 +855,7 @@ struct HelmholtzElement {
 
     }
 
+		/* surface elements */
     fe_name = "HELMHOLTZ_REIM_FE"; feLhs.insert(fe_name,new MySurfaceFE(mField,addToRank));
     fe_name = "HELMHOLTZ_REIM_FE"; feRhs.insert(fe_name,new MySurfaceFE(mField,addToRank));
 
@@ -872,7 +875,7 @@ struct HelmholtzElement {
     for(;miit!=surfaceData.end();miit++) {
       feLhs.at("HELMHOLTZ_REIM_FE").get_op_to_do_Lhs().push_back(
         new OpHelmholtzMixBCLhs<ZeroFunVal>(re_field_name,im_field_name,A,
-	miit->second,commonData));
+	miit->second,commonData,zero_fun_val));
       feRhs.at("HELMHOLTZ_REIM_FE").get_op_to_do_Rhs().push_back(
         new OpHelmholtzMixBCRhs<ZeroFunVal>(re_field_name,im_field_name,F,
 	  miit->second,commonData,zero_fun_val));

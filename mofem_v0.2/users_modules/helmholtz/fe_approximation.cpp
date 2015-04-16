@@ -6,7 +6,7 @@
 
   Note: 
 
-  In this implementation, first pressure field is approximated on
+  In this implementation, first acoustic potential field is approximated on
   boundary and then finite element problem is solved. 
 
   For more rigorous convergence study, trace of best approximations on boundary
@@ -291,48 +291,83 @@ int main(int argc, char *argv[]) {
 
   // set wave number from line command, that overwrite numbre form block set
   ierr = PetscOptionsGetScalar(NULL,"-wave_number",&wavenumber,NULL); CHKERRQ(ierr);
+	
+	//Applied strain on the RVE (vector of length 6) strain=[xx, yy, zz, xy, xz, zy]^T
+  double waveDirection[3];
+  int nmax=3;
+  ierr = PetscOptionsGetRealArray(PETSC_NULL,"-wave_direction",waveDirection,&nmax,&flg); CHKERRQ(ierr);
+  //ublas::vector<FieldData> wave_direction;
+	ublas::vector<double> wave_direction;
+  wave_direction.resize(3);
+  cblas_dcopy(3, &waveDirection[0], 1, &wave_direction(0), 1);
+	if(flg != PETSC_TRUE) {
+		wave_direction[0] = 1;
+		wave_direction[1] = 0;
+		wave_direction[2] = 0;
+		SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -wave_direction [3*1 vector] default:X direction [1,0,0]");
+	}
   
   switch((AnalyticalSolutionTypes)choise_value) {
 
+		case HARD_SPHERE_SCATTER_WAVE:
+		
+		{
+			HardSphereScatterWave function_evaluator(wavenumber);
+			ierr = analytical_bc_real.setApproxOps(m_field,"rePRES",function_evaluator,GenericAnalyticalSolution::REAL); CHKERRQ(ierr); 
+			ierr = analytical_bc_imag.setApproxOps(m_field,"imPRES",function_evaluator,GenericAnalyticalSolution::IMAG); CHKERRQ(ierr);
+		}
+		
+		break;
+			
     case SOFT_SPHERE_SCATTER_WAVE:
 
       {
-	SoftSphereScatterWave function_evaluator(wavenumber);
-	ierr = analytical_bc_real.setApproxOps(m_field,"rePRES",function_evaluator,GenericAnalyticalSolution::REAL); CHKERRQ(ierr); 
-	ierr = analytical_bc_imag.setApproxOps(m_field,"imPRES",function_evaluator,GenericAnalyticalSolution::IMAG); CHKERRQ(ierr);
+				SoftSphereScatterWave function_evaluator(wavenumber);
+				ierr = analytical_bc_real.setApproxOps(m_field,"rePRES",function_evaluator,GenericAnalyticalSolution::REAL); CHKERRQ(ierr); 
+				ierr = analytical_bc_imag.setApproxOps(m_field,"imPRES",function_evaluator,GenericAnalyticalSolution::IMAG); CHKERRQ(ierr);
       }
 
-      break;
+    break;
 
     case PLANE_WAVE:
 
       {
-	PlaneWave function_evaluator(wavenumber,0.25*M_PI);
-	ierr = analytical_bc_real.setApproxOps(m_field,"rePRES",function_evaluator,GenericAnalyticalSolution::REAL); CHKERRQ(ierr); 
-	ierr = analytical_bc_imag.setApproxOps(m_field,"imPRES",function_evaluator,GenericAnalyticalSolution::IMAG); CHKERRQ(ierr);
+				PlaneWave function_evaluator(wavenumber,0.25*M_PI);
+				ierr = analytical_bc_real.setApproxOps(m_field,"rePRES",function_evaluator,GenericAnalyticalSolution::REAL); CHKERRQ(ierr); 
+				ierr = analytical_bc_imag.setApproxOps(m_field,"imPRES",function_evaluator,GenericAnalyticalSolution::IMAG); CHKERRQ(ierr);
       }
 
-      break;
+    break;
 
-    case CYLINDER_SCATTER_WAVE:
+    case HARD_CYLINDER_SCATTER_WAVE:
 
       {	
-	CylinderScatterWave function_evaluator(wavenumber);
-	ierr = analytical_bc_real.setApproxOps(m_field,"rePRES",function_evaluator,GenericAnalyticalSolution::REAL); CHKERRQ(ierr); 
-	ierr = analytical_bc_imag.setApproxOps(m_field,"imPRES",function_evaluator,GenericAnalyticalSolution::IMAG); CHKERRQ(ierr);
+				HardCylinderScatterWave function_evaluator(wavenumber);
+				ierr = analytical_bc_real.setApproxOps(m_field,"rePRES",function_evaluator,GenericAnalyticalSolution::REAL); CHKERRQ(ierr); 
+				ierr = analytical_bc_imag.setApproxOps(m_field,"imPRES",function_evaluator,GenericAnalyticalSolution::IMAG); CHKERRQ(ierr);
       }
 
-      break;
+    break;
+		
+		case SOFT_CYLINDER_SCATTER_WAVE:
+		
+		{	
+			SoftCylinderScatterWave function_evaluator(wavenumber);
+			ierr = analytical_bc_real.setApproxOps(m_field,"rePRES",function_evaluator,GenericAnalyticalSolution::REAL); CHKERRQ(ierr); 
+			ierr = analytical_bc_imag.setApproxOps(m_field,"imPRES",function_evaluator,GenericAnalyticalSolution::IMAG); CHKERRQ(ierr);
+		}
+		
+    break;
 
     case INCIDENT_WAVE:
 
       {	
-	IncidentWave function_evaluator(wavenumber);
-	ierr = analytical_bc_real.setApproxOps(m_field,"rePRES",function_evaluator,GenericAnalyticalSolution::REAL); CHKERRQ(ierr); 
-	ierr = analytical_bc_imag.setApproxOps(m_field,"imPRES",function_evaluator,GenericAnalyticalSolution::IMAG); CHKERRQ(ierr);
+				IncidentWave function_evaluator(wavenumber,wave_direction);
+				ierr = analytical_bc_real.setApproxOps(m_field,"rePRES",function_evaluator,GenericAnalyticalSolution::REAL); CHKERRQ(ierr); 
+				ierr = analytical_bc_imag.setApproxOps(m_field,"imPRES",function_evaluator,GenericAnalyticalSolution::IMAG); CHKERRQ(ierr);
       }
 
-      break;
+    break;
 
 
   }
@@ -427,7 +462,7 @@ int main(int argc, char *argv[]) {
     }
     ierr = m_field.partition_ghost_dofs("INCIDENT_WAVE"); CHKERRQ(ierr);
 
-    IncidentWave function_evaluator(wavenumber);
+    IncidentWave function_evaluator(wavenumber,wave_direction);
     ierr = solve_problem(m_field,"INCIDENT_WAVE","HELMHOLTZ_RERE_FE","rePRES","imPRES",ADD_VALUES,function_evaluator,is_partitioned); CHKERRQ(ierr);
 
   }
