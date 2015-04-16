@@ -1,5 +1,5 @@
 /** \file HelmholtzElement.hpp
- \ingroup mofem_helmholtz_elem
+\ingroup mofem_helmholtz_elem
 
  \brief Operators and data structures for wave propagation analyse (Galerkin Element)
 
@@ -38,28 +38,16 @@ struct HelmholtzElement {
 
 
   /// \brief  Volume element
-<<<<<<< HEAD
   struct MyVolumeFE: public TetElementForcesAndSourcesCore {
     int addToRank; ///< default value 1, i.e. assumes that geometry is approx. by quadratic functions.
     MyVolumeFE(FieldInterface &_mField,int add_to_rank): TetElementForcesAndSourcesCore(_mField),addToRank(add_to_rank) {}
-=======
-  struct MyVolumeFE: public VolumeElementForcesAndSourcesCore {
-    int addToRank; ///< default value 1, i.e. assumes that geometry is approx. by quadratic functions.
-    MyVolumeFE(FieldInterface &_mField,int add_to_rank): VolumeElementForcesAndSourcesCore(_mField),addToRank(add_to_rank) {}
->>>>>>> 90090c7ee7f3361653673b6a2572125a649ea26d
     int getRule(int order) { return order+addToRank; };
   };
 
   /// \brief Surface element
-<<<<<<< HEAD
   struct MySurfaceFE: public TriElementForcesAndSurcesCore {
     int addToRank; ///< default value 1, i.e. assumes that geometry is approx. by quadratic functions.
     MySurfaceFE(FieldInterface &_mField,int add_to_rank): TriElementForcesAndSurcesCore(_mField),addToRank(add_to_rank) {}
-=======
-  struct MySurfaceFE: public FaceElementForcesAndSourcesCore {
-    int addToRank; ///< default value 1, i.e. assumes that geometry is approx. by quadratic functions.
-    MySurfaceFE(FieldInterface &_mField,int add_to_rank): FaceElementForcesAndSourcesCore(_mField),addToRank(add_to_rank) {}
->>>>>>> 90090c7ee7f3361653673b6a2572125a649ea26d
     int getRule(int order) { return order+addToRank; };
   };
 
@@ -106,21 +94,13 @@ struct HelmholtzElement {
   
   /** \brief Calculate pressure and gradient of pressure in volume
     */
-<<<<<<< HEAD
   struct OpGetValueAndGradAtGaussPts: public TetElementForcesAndSourcesCore::UserDataOperator {
-=======
-  struct OpGetValueAndGradAtGaussPts: public VolumeElementForcesAndSourcesCore::UserDataOperator {
->>>>>>> 90090c7ee7f3361653673b6a2572125a649ea26d
   
     CommonData &commonData;
     const string fieldName;
     OpGetValueAndGradAtGaussPts(const string field_name,
       CommonData &common_data):
-<<<<<<< HEAD
       TetElementForcesAndSourcesCore::UserDataOperator(field_name),
-=======
-      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
->>>>>>> 90090c7ee7f3361653673b6a2572125a649ea26d
       commonData(common_data),fieldName(field_name) {}
   
     PetscErrorCode doWork(
@@ -162,21 +142,13 @@ struct HelmholtzElement {
 
   /** \brief Calculate pressure on surface
     */
-<<<<<<< HEAD
   struct OpGetValueAtGaussPts: public TriElementForcesAndSurcesCore::UserDataOperator {
-=======
-  struct OpGetValueAtGaussPts: public FaceElementForcesAndSourcesCore::UserDataOperator {
->>>>>>> 90090c7ee7f3361653673b6a2572125a649ea26d
   
     CommonData &commonData;
     const string fieldName;
     OpGetValueAtGaussPts(const string field_name,
       CommonData &common_data):
-<<<<<<< HEAD
       TriElementForcesAndSurcesCore::UserDataOperator(field_name),
-=======
-      FaceElementForcesAndSourcesCore::UserDataOperator(field_name),
->>>>>>> 90090c7ee7f3361653673b6a2572125a649ea26d
       commonData(common_data),fieldName(field_name) {}
   
     PetscErrorCode doWork(
@@ -217,19 +189,11 @@ struct HelmholtzElement {
     This takes into account HO approximation for geometry
 
     */
-<<<<<<< HEAD
   struct OpHoCoordTri: public TriElementForcesAndSurcesCore::UserDataOperator {
   
     ublas::matrix<double> &hoCoordsTri;
     OpHoCoordTri(const string field_name,ublas::matrix<double> &ho_coords): 
       TriElementForcesAndSurcesCore::UserDataOperator(field_name),
-=======
-  struct OpHoCoordTri: public FaceElementForcesAndSourcesCore::UserDataOperator {
-  
-    ublas::matrix<double> &hoCoordsTri;
-    OpHoCoordTri(const string field_name,ublas::matrix<double> &ho_coords): 
-      FaceElementForcesAndSourcesCore::UserDataOperator(field_name),
->>>>>>> 90090c7ee7f3361653673b6a2572125a649ea26d
       hoCoordsTri(ho_coords) {}
   
     /*  
@@ -279,11 +243,7 @@ struct HelmholtzElement {
     \f]
 
   */
-<<<<<<< HEAD
   struct OpHelmholtzRhs: public TetElementForcesAndSourcesCore::UserDataOperator {
-=======
-  struct OpHelmholtzRhs: public VolumeElementForcesAndSourcesCore::UserDataOperator {
->>>>>>> 90090c7ee7f3361653673b6a2572125a649ea26d
   
     VolumeData &dAta;
     CommonData &commonData;
@@ -292,11 +252,7 @@ struct HelmholtzElement {
 
     OpHelmholtzRhs(
       const string field_name,Vec _F,VolumeData &data,CommonData &common_data):
-<<<<<<< HEAD
       TetElementForcesAndSourcesCore::UserDataOperator(field_name),
-=======
-      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
->>>>>>> 90090c7ee7f3361653673b6a2572125a649ea26d
       dAta(data),commonData(common_data),fieldName(field_name),F(_F) { }
   
     ublas::vector<double> Nf;
@@ -315,11 +271,11 @@ struct HelmholtzElement {
   
         PetscErrorCode ierr;
        
-	ublas::vector<double> &pressure = commonData.pressureAtGaussPts[fieldName];
-	ublas::matrix<double> &grad_p = commonData.gradPressureAtGaussPts[fieldName];
+				ublas::vector<double> &pressure = commonData.pressureAtGaussPts[fieldName];
+				ublas::matrix<double> &grad_p = commonData.gradPressureAtGaussPts[fieldName];
 
         Nf.resize(nb_row_dofs);
-	Nf.clear();
+				Nf.clear();
   
         // wave number "k" is the proportional to the frequency of incident wave
         // and represents number of waves per wave length 2Pi - 2Pi/K   
@@ -332,11 +288,11 @@ struct HelmholtzElement {
             val *= getHoGaussPtsDetJac()[gg]; // higher order geometry
           }
 
-	  const ublas::matrix_row<ublas::matrix<double> > gard_p_at_gauss_pt(grad_p,gg);
+					const ublas::matrix_row<ublas::matrix<double> > gard_p_at_gauss_pt(grad_p,gg);
 
-	  /// Integrate diffN^T grad_p - k^2 N^T p dV
+					/// Integrate diffN^T grad_p - k^2 N^T p dV
           ublas::noalias(Nf) += val*prod(data.getDiffN(gg,nb_row_dofs),gard_p_at_gauss_pt);
-	  ublas::noalias(Nf) -= val*k_pow2*data.getN(gg)*pressure[gg];
+					ublas::noalias(Nf) -= val*k_pow2*data.getN(gg)*pressure[gg];
 
         }
   
@@ -364,11 +320,7 @@ struct HelmholtzElement {
     \f]
 
     */
-<<<<<<< HEAD
   struct OpHelmholtzLhs: public TetElementForcesAndSourcesCore::UserDataOperator {
-=======
-  struct OpHelmholtzLhs: public VolumeElementForcesAndSourcesCore::UserDataOperator {
->>>>>>> 90090c7ee7f3361653673b6a2572125a649ea26d
   
     VolumeData &dAta;
     CommonData &commonData;
@@ -378,11 +330,7 @@ struct HelmholtzElement {
     OpHelmholtzLhs(
       const string &re_field_name,const string &im_field_name,
       Mat _A,VolumeData &data,CommonData &common_data):
-<<<<<<< HEAD
       TetElementForcesAndSourcesCore::UserDataOperator(re_field_name,re_field_name),
-=======
-      VolumeElementForcesAndSourcesCore::UserDataOperator(re_field_name,re_field_name),
->>>>>>> 90090c7ee7f3361653673b6a2572125a649ea26d
       dAta(data),commonData(common_data),imFieldName(im_field_name),A(_A) {}
   
     ublas::matrix<double> K,transK;
@@ -488,6 +436,22 @@ struct HelmholtzElement {
   };
 
   ZeroFunVal zero_fun_val;
+	
+	struct BT2FunVal {
+    
+    ublas::vector<double> vAl;    
+	
+    ublas::vector<double>& operator()(double x,double y,double z,ublas::vector<double> &normal) {
+      vAl.resize(2);
+			const complex< double > i( 0.0, 1.0 );
+      vAl[0] = 0;
+      vAl[1] = 0;
+      return vAl;
+    }
+    
+  };
+	
+	BT2FunVal bt2_fun_val;
 
   /** \brief Rhs vector for Helmholtz operator
     \ingroup mofem_helmholtz_elem
@@ -513,11 +477,7 @@ struct HelmholtzElement {
 
   */
   template<typename FUNVAL>
-<<<<<<< HEAD
   struct OpHelmholtzMixBCRhs: public TriElementForcesAndSurcesCore::UserDataOperator {
-=======
-  struct OpHelmholtzMixBCRhs: public FaceElementForcesAndSourcesCore::UserDataOperator {
->>>>>>> 90090c7ee7f3361653673b6a2572125a649ea26d
   
     SurfaceData &dAta;
     CommonData &commonData;
@@ -532,11 +492,7 @@ struct HelmholtzElement {
       const string re_field_name,const string im_field_name,
       Vec _F,SurfaceData &data,CommonData &common_data,
       FUNVAL &function_evaluator):
-<<<<<<< HEAD
       TriElementForcesAndSurcesCore::UserDataOperator(re_field_name),
-=======
-      FaceElementForcesAndSourcesCore::UserDataOperator(re_field_name),
->>>>>>> 90090c7ee7f3361653673b6a2572125a649ea26d
       dAta(data),commonData(common_data),F(_F),
       rePressure(re_field_name),imPressure(im_field_name),
       functionEvaluator(function_evaluator) { }
@@ -644,29 +600,25 @@ struct HelmholtzElement {
   transposed and assembled with negative sign.
 
     */
-<<<<<<< HEAD
+	template<typename FUNVAL>
   struct OpHelmholtzMixBCLhs:public TriElementForcesAndSurcesCore::UserDataOperator {
-=======
-  struct OpHelmholtzMixBCLhs:public FaceElementForcesAndSourcesCore::UserDataOperator {
->>>>>>> 90090c7ee7f3361653673b6a2572125a649ea26d
 
     SurfaceData &dAta;
     CommonData &commonData;
     const string rePressure;
-    const string imPressure;
-    
+    const string imPressure; 
+		FUNVAL &functionEvaluator;
+			
     Mat A;
     OpHelmholtzMixBCLhs(
       const string re_field_name,const string im_field_name,
-      Mat _A,SurfaceData &data,CommonData &common_data):
-<<<<<<< HEAD
+      Mat _A,SurfaceData &data,CommonData &common_data,
+			FUNVAL &function_evaluator):
       TriElementForcesAndSurcesCore::UserDataOperator(re_field_name,im_field_name),
-=======
-      FaceElementForcesAndSourcesCore::UserDataOperator(re_field_name,im_field_name),
->>>>>>> 90090c7ee7f3361653673b6a2572125a649ea26d
-      dAta(data),commonData(common_data),rePressure(re_field_name),imPressure(im_field_name),A(_A) {
+      dAta(data),commonData(common_data),rePressure(re_field_name),imPressure(im_field_name),A(_A),
+			functionEvaluator(function_evaluator) {
       symm = false;
-    }
+		}
   
     ublas::matrix<double> K,K1;
     ublas::vector<int> imRowIndices,imColIndices;
@@ -684,68 +636,86 @@ struct HelmholtzElement {
   
       try {
   
-	int nb_rows = row_data.getIndices().size();
-	int nb_cols = col_data.getIndices().size();
+				int nb_rows = row_data.getIndices().size();
+				int nb_cols = col_data.getIndices().size();
         if(nb_rows==0) PetscFunctionReturn(0);
         if(nb_cols==0) PetscFunctionReturn(0);
         
         K.resize(nb_rows,nb_cols);
-	K.clear();
+				K.clear();
 
         for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
             
-	  double area = getArea();
-	  if(getNormals_at_GaussPt().size1()) {
-	    area = ublas::norm_2(getNormals_at_GaussPt(gg))*0.5;
-	  }
-          double val = area*getGaussPts()(2,gg);
+					double area = getArea();
+					if(getNormals_at_GaussPt().size1()) {
+					area = ublas::norm_2(getNormals_at_GaussPt(gg))*0.5;
+					}
+					double val = area*getGaussPts()(2,gg);
 
-          noalias(K) += val*outer_prod(row_data.getN(gg,nb_rows),col_data.getN(gg,nb_cols));
+					/*get cartesian coordinates */
+					double x,y,z;
+					if(commonData.hoCoords.size1() == data.getN().size1()) {
+						x = commonData.hoCoords(gg,0);
+						y = commonData.hoCoords(gg,1);
+						z = commonData.hoCoords(gg,2);	
+						if(gg == 0) {
+							noalias(nOrmal) = getNormal();
+						}
+					} else {
+						x = getCoordsAtGaussPts()(gg,0);
+						y = getCoordsAtGaussPts()(gg,1);
+						z = getCoordsAtGaussPts()(gg,2);
+						noalias(nOrmal) = getNormals_at_GaussPt(gg);
+						
+					}
+					ublas::vector<double>& f = functionEvaluator(x,y,z,nOrmal);
+					
+					noalias(K) += val*f[0]*outer_prod(row_data.getN(gg,nb_rows),col_data.getN(gg,nb_cols));
 
         }
 
         PetscErrorCode ierr;
 
-	ierr = getPorblemRowIndices(imPressure,row_type,row_side,imRowIndices); CHKERRQ(ierr);
-	ierr = getPorblemRowIndices(imPressure,col_type,col_side,imColIndices); CHKERRQ(ierr);
+				ierr = getPorblemRowIndices(imPressure,row_type,row_side,imRowIndices); CHKERRQ(ierr);
+				ierr = getPorblemRowIndices(imPressure,col_type,col_side,imColIndices); CHKERRQ(ierr);
 
-	K1.resize(nb_rows,nb_rows);
+				K1.resize(nb_rows,nb_rows);
 	
-	// real-real
-	if(dAta.aDmittance_real!=0) {
-	  noalias(K1) = dAta.aDmittance_real*K;
-	  ierr = MatSetValues(
-	    A,  
-	    nb_rows,&row_data.getIndices()[0],
-	    nb_cols,&col_data.getIndices()[0],
-	    &K1(0,0),ADD_VALUES); CHKERRQ(ierr);
-	  // imag-imag
-	  noalias(K1) = dAta.aDmittance_real*K;
-	  ierr = MatSetValues(
-	    A,  
-	    nb_rows,&imRowIndices[0],
-	    nb_cols,&imRowIndices[0],
-	    &K1(0,0),ADD_VALUES); CHKERRQ(ierr);   
-	}
+				// real-real
+				if(dAta.aDmittance_real!=0) {
+				noalias(K1) = dAta.aDmittance_real*K;
+				ierr = MatSetValues(
+					A,  
+					nb_rows,&row_data.getIndices()[0],
+					nb_cols,&col_data.getIndices()[0],
+					&K1(0,0),ADD_VALUES); CHKERRQ(ierr);
+				// imag-imag
+				noalias(K1) = dAta.aDmittance_real*K;
+				ierr = MatSetValues(
+					A,  
+					nb_rows,&imRowIndices[0],
+					nb_cols,&imRowIndices[0],
+					&K1(0,0),ADD_VALUES); CHKERRQ(ierr);   
+				}
 
-	// real-imag
-	if(dAta.aDmittance_imag!=0) {
-	  noalias(K1) =  -dAta.aDmittance_imag*K;
-	  ierr = MatSetValues(
-	    A,  
-	    nb_rows,&row_data.getIndices()[0],
-	    nb_cols,&imColIndices[0],
-	    &K1(0,0),ADD_VALUES); CHKERRQ(ierr);
-	  // imag-real
-	  noalias(K1) = dAta.aDmittance_imag*K;
-	  ierr = MatSetValues(
-	    A,  
-	    nb_rows,&imRowIndices[0],
-	    nb_cols,&col_data.getIndices()[0],
-	    &K1(0,0),ADD_VALUES); CHKERRQ(ierr);   
-	}
+				// real-imag
+				if(dAta.aDmittance_imag!=0) {
+					noalias(K1) =  -dAta.aDmittance_imag*K;
+					ierr = MatSetValues(
+						A,  
+						nb_rows,&row_data.getIndices()[0],
+						nb_cols,&imColIndices[0],
+						&K1(0,0),ADD_VALUES); CHKERRQ(ierr);
+				// imag-real
+				noalias(K1) = dAta.aDmittance_imag*K;
+				ierr = MatSetValues(
+					A,  
+					nb_rows,&imRowIndices[0],
+					nb_cols,&col_data.getIndices()[0],
+					&K1(0,0),ADD_VALUES); CHKERRQ(ierr);   
+				}
   
-      } catch (const std::exception& ex) {
+			} catch (const std::exception& ex) {
         ostringstream ss;
         ss << "throw in method: " << ex.what() << endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
@@ -823,7 +793,7 @@ struct HelmholtzElement {
         ierr = mField.add_ents_to_finite_element_by_TETs(volumeData[it->get_msId()].tEts,"HELMHOLTZ_RERE_FE"); CHKERRQ(ierr);
         ierr = mField.add_ents_to_finite_element_by_TETs(volumeData[it->get_msId()].tEts,"HELMHOLTZ_IMIM_FE"); CHKERRQ(ierr);
 
-	ierr = PetscOptionsGetScalar(NULL,"-wave_number",&volumeData[it->get_msId()].wAvenumber,NULL); CHKERRQ(ierr);
+				ierr = PetscOptionsGetScalar(NULL,"-wave_number",&volumeData[it->get_msId()].wAvenumber,NULL); CHKERRQ(ierr);
 
       }
     }
@@ -873,12 +843,13 @@ struct HelmholtzElement {
     for(;mit!=volumeData.end();mit++) {
 
       feLhs.at("HELMHOLTZ_RERE_FE").get_op_to_do_Lhs().push_back(
-	new OpHelmholtzLhs(re_field_name,im_field_name,A,mit->second,commonData));
+			 new OpHelmholtzLhs(re_field_name,im_field_name,A,mit->second,commonData));
 
       feRhs.at("HELMHOLTZ_RERE_FE").get_op_to_do_Rhs().push_back(
-	new OpHelmholtzRhs(re_field_name,F,mit->second,commonData));
+			 new OpHelmholtzRhs(re_field_name,F,mit->second,commonData));
+			
       feRhs.at("HELMHOLTZ_IMIM_FE").get_op_to_do_Rhs().push_back(
-	new OpHelmholtzRhs(im_field_name,F,mit->second,commonData));
+			 new OpHelmholtzRhs(im_field_name,F,mit->second,commonData));
 
     }
 
@@ -888,7 +859,7 @@ struct HelmholtzElement {
     if(mField.check_field(mesh_nodals_positions)) {
 
       feRhs.at("HELMHOLTZ_REIM_FE").get_op_to_do_Rhs().push_back(
-	new OpHoCoordTri(mesh_nodals_positions,commonData.hoCoords));
+				new OpHoCoordTri(mesh_nodals_positions,commonData.hoCoords));
 
     }
 
@@ -900,7 +871,7 @@ struct HelmholtzElement {
     map<int,SurfaceData>::iterator miit = surfaceData.begin();
     for(;miit!=surfaceData.end();miit++) {
       feLhs.at("HELMHOLTZ_REIM_FE").get_op_to_do_Lhs().push_back(
-        new OpHelmholtzMixBCLhs(re_field_name,im_field_name,A,
+        new OpHelmholtzMixBCLhs<ZeroFunVal>(re_field_name,im_field_name,A,
 	miit->second,commonData));
       feRhs.at("HELMHOLTZ_REIM_FE").get_op_to_do_Rhs().push_back(
         new OpHelmholtzMixBCRhs<ZeroFunVal>(re_field_name,im_field_name,F,
