@@ -35,6 +35,7 @@
 #include <MoFEM.hpp>
 
 #include <boost/numeric/ublas/vector_proxy.hpp>
+#include <boost/shared_ptr.hpp>
 #include <boost/ptr_container/ptr_map.hpp>
 
 #include <DirichletBC.hpp>

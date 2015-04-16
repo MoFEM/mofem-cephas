@@ -71,8 +71,6 @@ struct HelmholtzElement {
     double aDmittance_imag;
     Range tRis; ///< surface triangles where hate flux is applied
   };
-  map<int,SurfaceData> surfaceNeumann;
-  map<int,SurfaceData> surfaceMixBcData;
   map<int,SurfaceData> surfaceSommerfieldBcData;
 
 
@@ -439,10 +437,11 @@ struct HelmholtzElement {
   };
   ZeroFunVal zeroFunVal;
 
-  struct SommerfieldOnSphere {
+  struct SommerfieldOnSphereF1 {
 
-    ublas::vector<double> vAl;    
+    SommerfieldOnSphereF1() {}
 
+    ublas::vector<double> vAl;
     ublas::vector<double>& operator()(double x,double y,double z,ublas::vector<double> &normal) {
       vAl.resize(2);
       vAl[1] = 0; // imaginary value is zero
@@ -452,10 +451,35 @@ struct HelmholtzElement {
     }
 
   };
-  SommerfieldOnSphere sommerfieldOnSphere;
+
+  struct SommerfieldOnSphereF2 {
+
+    double wAvenumber;
+    SommerfieldOnSphereF2(double wave_number): 
+      wAvenumber(wave_number) {}
+
+    ublas::vector<double> vAl;
+    ublas::vector<double>& operator()(double x,double y,double z,ublas::vector<double> &normal) {
+      const complex<double> i(0.0,1.0);
+      complex<double> p_incident = exp(i*wAvenumber*z);
+      complex<double> dp_incident_dz = i*wAvenumber*p_incident;
+      complex<double> dp_incident_dr = normal[2]*dp_incident_dz;
+      double R = sqrt(x*x+y*y+z*z);
+      const complex<double> result = dp_incident_dr + ( i*wAvenumber + 1./(2.*R) )*p_incident;
+      vAl.resize(2);
+      vAl[0] = real(result);
+      vAl[1] = imag(result);
+      return vAl;
+    }
+
+  };
 
   /** \brief Rhs vector for Helmholtz operator
     \ingroup mofem_helmholtz_elem
+
+    Operator is build using two template functions, see equations below.
+    Depending on returning values of those funcions user can apply, Nuemman, Mix or
+    any variant of above conditions.
 
     \f[
     \left.\left\{ \frac{\partial p}{\partial n} + 
@@ -503,13 +527,13 @@ struct HelmholtzElement {
     const string rePressure;
     const string imPressure;
 
-    FUNEVAL1 &functionEvaluator1;
-    FUNEVAL2 &functionEvaluator2;
+    boost::shared_ptr<FUNEVAL1> functionEvaluator1;
+    boost::shared_ptr<FUNEVAL2> functionEvaluator2;
 
     OpHelmholtzMixBCRhs(
       const string re_field_name,const string im_field_name,
       Vec _F,SurfaceData &data,CommonData &common_data,
-      FUNEVAL1 &function_evaluator1,FUNEVAL2 &function_evaluator2):
+      boost::shared_ptr<FUNEVAL1> function_evaluator1,boost::shared_ptr<FUNEVAL2> function_evaluator2):
       FaceElementForcesAndSourcesCore::UserDataOperator(re_field_name),
       dAta(data),commonData(common_data),F(_F),
       rePressure(re_field_name),imPressure(im_field_name),
@@ -579,8 +603,8 @@ struct HelmholtzElement {
 	    z = getCoordsAtGaussPts()(gg,2);
 	    noalias(nOrmal) = getNormals_at_GaussPt(gg);
 	  }
-	  ublas::vector<double>& f1 = functionEvaluator1(x,y,z,nOrmal);
-	  ublas::vector<double>& f2 = functionEvaluator2(x,y,z,nOrmal);
+	  ublas::vector<double>& f1 = (*functionEvaluator1)(x,y,z,nOrmal);
+	  ublas::vector<double>& f2 = (*functionEvaluator2)(x,y,z,nOrmal);
     
 	  ierr = calculateResidualRe(gg,f1,f2); CHKERRQ(ierr);
   
@@ -626,16 +650,19 @@ struct HelmholtzElement {
     const string rePressure;
     const string imPressure;
 
-    FUNEVAL1 &functionEvaluator1;
+    boost::shared_ptr<FUNEVAL1> functionEvaluator1;
     
     Mat A;
     OpHelmholtzMixBCLhs(
       const string re_field_name,const string im_field_name,
-      Mat _A,SurfaceData &data,CommonData &common_data,FUNEVAL1 &function_evaluator1):
+      Mat _A,SurfaceData &data,CommonData &common_data,
+      boost::shared_ptr<FUNEVAL1> function_evaluator1):
       FaceElementForcesAndSourcesCore::UserDataOperator(re_field_name,im_field_name),
       dAta(data),commonData(common_data),rePressure(re_field_name),imPressure(im_field_name),
       functionEvaluator1(function_evaluator1),A(_A) {
-      symm = false;
+
+      symm = false; /// this opetaor is not symmetric
+
     }
   
     ublas::matrix<double> K,K1,reF1K,imF1K;
@@ -692,7 +719,7 @@ struct HelmholtzElement {
 	    z = getCoordsAtGaussPts()(gg,2);
 	    noalias(nOrmal) = getNormals_at_GaussPt(gg);
 	  }
-	  ublas::vector<double>& f1 = functionEvaluator1(x,y,z,nOrmal);
+	  ublas::vector<double>& f1 = (*functionEvaluator1)(x,y,z,nOrmal);
 
           noalias(K) += val*outer_prod(row_data.getN(gg,nb_rows),col_data.getN(gg,nb_cols));
 	  if(f1[0]!=0) {
@@ -980,27 +1007,6 @@ struct HelmholtzElement {
     }
 
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
-      if(it->get_Cubit_name().compare(0,9,"MIXBC") == 0) {
-        
-        vector<double> data;
-        ierr = it->get_Cubit_attributes(data); CHKERRQ(ierr);
-        if(data.size()!=2) {
-          SETERRQ(PETSC_COMM_SELF,1,"Data inconsistency");
-        }
-        surfaceMixBcData[it->get_msId()].aDmittance_real = data[0];
-        surfaceMixBcData[it->get_msId()].aDmittance_imag = data[1];
-
-        rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,surfaceMixBcData[it->get_msId()].tRis,true); CHKERR_PETSC(rval);
-        ierr = mField.add_ents_to_finite_element_by_TRIs(surfaceMixBcData[it->get_msId()].tRis,"HELMHOLTZ_REIM_FE"); CHKERRQ(ierr);
-        ierr = mField.add_ents_to_finite_element_by_TRIs(surfaceMixBcData[it->get_msId()].tRis,"HELMHOLTZ_IMRE_FE"); CHKERRQ(ierr);
-
-	ierr = PetscOptionsGetScalar(NULL,"-sigma_real",&surfaceMixBcData[it->get_msId()].aDmittance_real,NULL); CHKERRQ(ierr);
-	ierr = PetscOptionsGetScalar(NULL,"-sigma_imag",&surfaceMixBcData[it->get_msId()].aDmittance_imag,NULL); CHKERRQ(ierr);
-
-      }
-    }
-
-    for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
       if(it->get_Cubit_name().compare(0,9,"SOMMERFELDBC") == 0) {
         
         vector<double> data;
@@ -1069,22 +1075,26 @@ struct HelmholtzElement {
     feRhs.at("HELMHOLTZ_REIM_FE").get_op_to_do_Rhs().push_back(
       new OpGetValueAtGaussPts(im_field_name,commonData));
 
-    map<int,SurfaceData>::iterator miit = surfaceMixBcData.begin();
-    for(;miit!=surfaceMixBcData.end();miit++) {
-      feLhs.at("HELMHOLTZ_REIM_FE").get_op_to_do_Lhs().push_back(
-        new OpHelmholtzMixBCLhs<ZeroFunVal>(re_field_name,im_field_name,A,miit->second,commonData,zeroFunVal));
-      feRhs.at("HELMHOLTZ_REIM_FE").get_op_to_do_Rhs().push_back(
-        new OpHelmholtzMixBCRhs<ZeroFunVal,ZeroFunVal>(re_field_name,im_field_name,F,
-	  miit->second,commonData,zeroFunVal,zeroFunVal));
-    }
+    boost::shared_ptr<SommerfieldOnSphereF1> sommerfield_on_sphere_f1 = 
+      boost::shared_ptr<SommerfieldOnSphereF1>(new SommerfieldOnSphereF1());
 
     map<int,SurfaceData>::iterator miit = surfaceSommerfieldBcData.begin();
     for(;miit!=surfaceSommerfieldBcData.end();miit++) {
+
+      double wave_number = miit->second.aDmittance_imag;
+      boost::shared_ptr<SommerfieldOnSphereF2> sommerfield_on_sphere_f2 = 
+        boost::shared_ptr<SommerfieldOnSphereF2>(new SommerfieldOnSphereF2(wave_number));
+
+      // Asembled to C matrix
       feLhs.at("HELMHOLTZ_REIM_FE").get_op_to_do_Lhs().push_back(
-        new OpHelmholtzMixBCLhs<ZeroFunVal>(re_field_name,im_field_name,A,miit->second,commonData,zeroFunVal));
+        new OpHelmholtzMixBCLhs<SommerfieldOnSphereF1>(re_field_name,im_field_name,A,miit->second,commonData,sommerfield_on_sphere_f1));
+
+      // Assembled to the right hand vector
       feRhs.at("HELMHOLTZ_REIM_FE").get_op_to_do_Rhs().push_back(
-        new OpHelmholtzMixBCRhs<ZeroFunVal,ZeroFunVal>(re_field_name,im_field_name,F,
-	  miit->second,commonData,SommerfieldOnSphere,zeroFunVal));
+        new OpHelmholtzMixBCRhs<SommerfieldOnSphereF1,SommerfieldOnSphereF2>(
+	  re_field_name,im_field_name,F,miit->second,commonData,
+	  sommerfield_on_sphere_f1,sommerfield_on_sphere_f2));
+
     }
 
     PetscFunctionReturn(0);
