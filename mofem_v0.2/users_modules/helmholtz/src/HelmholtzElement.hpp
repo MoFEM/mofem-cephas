@@ -11,16 +11,16 @@
   This work is part of PhD thesis by on Micro-fluids: Thomas Felix Xuan Meng
  */
 
- /*
-  * MoFEM is distributed in the hope that it will be useful, but WITHOUT
-  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
-  * License for more details.
-  *
-  * You should have received a copy of the GNU Lesser General Public
-  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. 
-  * The header file should contains as least #include as possible for speed 
-  */
+/*
+ * MoFEM is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+ * License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. 
+ * The header file should contains as least #include as possible for speed 
+ */
 
 #ifndef __HELMHOLTZ_ELEMENT_HPP
 #define __HELMHOLTZ_ELEMENT_HPP

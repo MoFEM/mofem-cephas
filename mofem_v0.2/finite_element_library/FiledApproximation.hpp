@@ -220,8 +220,17 @@ struct FieldApproximationH1 {
 	  z = getCoordsAtGaussPts()(gg,2);
 	}
 
+	vector<ublas::vector<FieldData> > fun_val;
+	try {
 
-	vector<ublas::vector<FieldData> > fun_val = functionEvaluator(x,y,z);
+	   fun_val = functionEvaluator(x,y,z);
+
+	} catch (exception& ex) {
+	  ostringstream ss;
+	  ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+	  SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+	}
+
 	if(fun_val.size()!=vecF.size()) {
 	  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
 
