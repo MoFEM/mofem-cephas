@@ -24,7 +24,7 @@
 #include <Projection10NodeCoordsOnField.hpp>
 
 #include <boost/numeric/ublas/vector_proxy.hpp>
-#include <FiledApproximation.hpp>
+#include <FieldApproximation.hpp>
 #include <PotsProcOnRefMesh.hpp>
 #include <boost/iostreams/tee.hpp>
 #include <boost/iostreams/stream.hpp>
@@ -230,17 +230,15 @@ int main(int argc, char *argv[]) {
 	}
 	
   PetscInt choise_value = 0;
-	cout << "\n choise_value0 = \n" << choise_value << endl;
   // set type of analytical solution  
-  ierr = PetscOptionsGetEList(NULL,"-analytical_solution_type",analytical_solution_types,2,&choise_value,&flg); CHKERRQ(ierr);
+  ierr = PetscOptionsGetEList(NULL,"-analytical_solution_type",analytical_solution_types,6,&choise_value,&flg); CHKERRQ(ierr);
 	if(flg != PETSC_TRUE) {
 		SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -analytical_solution_type needed, WARNING!!!!!!.");
 	}
 	
 		
-		cout << "\n choise_value1 = \n" << choise_value << endl;
   switch((AnalyticalSolutionTypes)choise_value) {
-		cout << "\n choise_value2 = \n" << choise_value << endl;
+		
 		case HARD_SPHERE_SCATTER_WAVE:
 		
 		{
@@ -277,8 +275,6 @@ int main(int argc, char *argv[]) {
       }
 			
     break;
-			
-			
 
     case SOFT_CYLINDER_SCATTER_WAVE:
 
@@ -300,7 +296,7 @@ int main(int argc, char *argv[]) {
 
   }
 
-  PetscBool add_incident_wave = PETSC_TRUE;
+  PetscBool add_incident_wave = PETSC_FALSE;
   ierr = PetscOptionsGetBool(NULL,"-add_incident_wave",&add_incident_wave,NULL); CHKERRQ(ierr);
   if(add_incident_wave) {
 

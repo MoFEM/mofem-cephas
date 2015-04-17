@@ -51,8 +51,8 @@ const char *analytical_solution_types[] = {
   "hard_sphere_incident_wave", 
   "soft_sphere_incident_wave", 
   "plane_wave",
-  "hard_cylinder_scatter_wave"
-  "soft_cylinder_scatter_wave"
+  "hard_cylinder_scatter_wave",
+  "soft_cylinder_scatter_wave",
   "incident_wave"
 };
 
@@ -159,18 +159,18 @@ struct HardSphereScatterWave: public GenericAnalyticalSolution {
     while( error > tol )  //finding the acoustic potential in one single point.
     {
 
-      if(vecAl.size()>n) {
-	Al = vecAl[n];
+			if(vecAl.size()>n) {
+				Al = vecAl[n];
       } else {
-	// spherical Bessel function
-	double const1 = k*a;
-	double jn_der = n / const1 * sph_bessel( n, const1 ) - sph_bessel( n + 1, const1 ); 
+				// spherical Bessel function
+				double const1 = k*a;
+				double jn_der = n / const1 * sph_bessel( n, const1 ) - sph_bessel( n + 1, const1 ); 
 	
-	// spherical Hankel function
-	complex< double > hn_der = n / const1 * sph_hankel_1( n, const1 ) - sph_hankel_1( n + 1, const1 );
-	//Constant term
-	Al = -(2.0*n+1)*pow(i,n)*jn_der/hn_der;
-	vecAl.push_back(Al);
+				// spherical Hankel function
+				complex< double > hn_der = n / const1 * sph_hankel_1( n, const1 ) - sph_hankel_1( n + 1, const1 );
+				//Constant term
+				Al = -(2.0*n+1)*pow(i,n)*jn_der/hn_der;
+				vecAl.push_back(Al);
       }
       
       prev_result = result;
@@ -297,7 +297,22 @@ struct SoftSphereScatterWave: public GenericAnalyticalSolution {
 /** \brief Calculate the analytical solution of plane wave guide propagating in direction theta
   \ingroup mofem_helmholtz_elem
 
-  WARRING: not tested
+
+  \f[
+  p_\textrm{scattered} = exp^{ik\mathbf{x}\Theta}
+  \f]
+
+	where:
+ 
+  \f[
+  \mathbf{x} = [x,y] 
+  \f]
+ 
+  \f[
+  \Theta = k[\cos(\theta),\sin(\theta)]
+  \f]
+
+  \theta is the wave propagating direction from range [0,2\pi]
   
 
    Paper: Gillman, A., Djellouli, R., & Amara, M. (2007). 
@@ -344,36 +359,61 @@ struct PlaneWave: public GenericAnalyticalSolution {
 /** \brief Calculate the analytical solution of impinging wave on cylinder
   \ingroup mofem_helmholtz_elem
 
-  WARRING: not tested
+   \f[
+  p_\textrm{scattered} = \sum_0^N A_l H_l(kr)\cos(l\theta)
+  \f]
 
+  where \f$H_l\f$ is the cylindrical Hankel function of the first kind, \f$\theta\f$ 
+  is the polar angle in polar coordinate and \f$A_l\f$ is a constant. Constant is  
+  should be caculated such that it satisfies both the Helmholtz wave equation and the 
+  Sommerfeld radiation condition.
+
+  \f[
+  A_l = -\epsilon_{l} i^l \frac{J_{l}'(ka)}{H_{l}'(ka)}
+  \f]
+
+  where a is scatter sphere radius and \f$J_l\f$ Cylindrical Bessel function.
+
+  \f[
+  \epsilon_{l} = 1 \text{when}l=0
+  \f]
+ 
+   \f[
+  \epsilon_{l} = 2 \text{when}l \neq 0
+  \f]
+ 
   Paper: 
-    The generalized finite element method for Helmholtz equation: Theory, computation, and open problems
-    Theofanis Strouboulis, Ivo Babuska, Realino Hidaja
+		Kechroud, R., Soulaimani, A., & Antoine, X. (2009). 
+		A performance study of plane wave finite element methods with a Padé-type artificial boundary condition in acoustic scattering. 
+		Advances in Engineering Software, 40(8), 738-750.
 
 */
 
 struct HardCylinderScatterWave: public GenericAnalyticalSolution {
   
+  vector<complex<double> > vecAl; ///< this is to calculate constant values of series only once
   vector<ublas::vector<double> > rEsult;
   double wAvenumber;
   //double shereRadius;
   double a;
+  
   HardCylinderScatterWave(double wavenumber,double sphere_radius = 0.5): wAvenumber(wavenumber),a(sphere_radius) {}
   virtual ~HardCylinderScatterWave() {}
    
   virtual vector<ublas::vector<double> >& operator()(double x, double y, double z) {
 
     const double tol = 1.0e-10;
-    double x2 = pow(x,2.0),y2 = pow(y,2.0);
-    double R = sqrt(x2+y2+pow(z,2.0));
-    double theta = atan2(y,x);
-
+    double x2 = x*x,y2 = y*y;
+    double R = sqrt(x2+y2);
+    double theta = atan2(y,x)+2*M_PI;
+	//double cos_theta = z/R;
+		
     const double k = wAvenumber;  //Wave number
     const double const1 = k * a;
     double const2 = k * R;
     
     const complex< double > i( 0.0, 1.0 );
-    
+    complex< double > Al;
     // magnitude of incident wave
     //const double phi_incident_mag = 1.0;
     
@@ -383,27 +423,34 @@ struct HardCylinderScatterWave: public GenericAnalyticalSolution {
     double error = 100.0;
     unsigned int n = 1; //initialized the infinite series loop
     
-	double Jn_zero = cyl_bessel_j( 0, const1 );
-	complex< double > Hn_zero_kr = cyl_hankel_1( 0, const2 );  //S Hankel first kind function
-	complex< double > Hn_zero_ka = cyl_hankel_1( 0, const1 );  //S Hankel first kind function
-	//n=0;
-	result -= (Jn_zero * Hn_zero_kr)/Hn_zero_ka;
-    
-    
+    double Jn_der_zero = ( - cyl_bessel_j( 1, const1 ));  
+    complex< double > Hn_der_zero = ( - cyl_hankel_1( 1, const1 ));
+    complex< double >Hn_zero = cyl_hankel_1( 0, const2 );  //S Hankel first kind function
+	
+    //n=0;
+    result -= (Jn_der_zero * Hn_zero)/Hn_der_zero;
+	
     while( error > tol )  //finding the acoustic potential in one single point.
-    {
+    {	
+	  if(vecAl.size()>n) {
+		Al = vecAl[n-1];
+	  } else {
+		// cylindrical Bessel function
+		double Jn_der_ka = n / const1 * cyl_bessel_j( n, const1 ) - cyl_bessel_j( n + 1, const1 ); 
+		// cylindrical Hankel function
+		complex<double> Hn_der_ka = n / const1 * cyl_hankel_1( n, const1 ) - cyl_hankel_1( n + 1, const1 ); 
+		//Constant term
+		Al = -2.0*pow(i,n)*Jn_der_ka/Hn_der_ka;
+		vecAl.push_back(Al);
+	  }
 
-		prev_result = result;
-		//The derivative of bessel function
-		double Jn = cyl_bessel_j( n, const1 );
-		//The derivative of Hankel function
-		complex< double > Hn_ka = cyl_hankel_1( n, const1 );
+	  prev_result = result;
 		
-		complex< double >Hn_kr = cyl_hankel_1( n, const2 );  //S Hankel first kind function
+	  complex< double >Hn_kr = cyl_hankel_1( n, const2 );  //S Hankel first kind function
 		
-		result -= 2.0 * pow( i, n ) * ( (Jn*Hn_kr) / Hn_ka ) * cos(n*theta);
-		error = abs( abs( result ) - abs( prev_result ) );
-		++n;
+	  result += Al * Hn_kr * cos(n*theta);
+	  error = abs( abs( result ) - abs( prev_result ) );
+	  ++n;
       
     }
     
@@ -429,38 +476,60 @@ struct HardCylinderScatterWave: public GenericAnalyticalSolution {
 /** \brief Calculate the analytical solution of impinging wave on cylinder
   \ingroup mofem_helmholtz_elem
 
-  WARRING: not tested
+   \f[
+  p_\textrm{scattered} = \sum_0^N A_l H_l(kr)\cos(l\theta)
+  \f]
 
+  where \f$H_l\f$ is the cylindrical Hankel function of the first kind, \f$\theta\f$ 
+  is the polar angle in polar coordinate and \f$A_l\f$ is a constant. Constant is  
+  should be caculated such that it satisfies both the Helmholtz wave equation and the 
+  Sommerfeld radiation condition.
+
+  \f[
+  A_l = -\epsilon_{l} i^l \frac{J_{l}(ka)}{H_{l}(ka)}
+  \f]
+
+  where a is scatter sphere radius and \f$J_l\f$ Cylindrical Bessel function.
+
+  \f[
+  \epsilon_{l} = 1 \text{when}l=0
+  \f]
+ 
+   \f[
+  \epsilon_{l} = 2 \text{when}l \neq 0
+  \f]
+ 
   Paper: 
-    The generalized finite element method for Helmholtz equation: Theory, computation, and open problems
-    Theofanis Strouboulis, Ivo Babuska, Realino Hidaja
+		Kechroud, R., Soulaimani, A., & Antoine, X. (2009). 
+		A performance study of plane wave finite element methods with a Padé-type artificial boundary condition in acoustic scattering. 
+		Advances in Engineering Software, 40(8), 738-750.
+
 
 */
 struct SoftCylinderScatterWave: public GenericAnalyticalSolution {
   
+  vector<complex<double> > vecAl; ///< this is to calculate constant values of series only once
   vector<ublas::vector<double> > rEsult;
   double wAvenumber;
-  double shereRadius;
-   
+  //double shereRadius;
+  double a;
 
-  SoftCylinderScatterWave(double wavenumber): wAvenumber(wavenumber) {}
+  SoftCylinderScatterWave(double wavenumber,double sphere_radius = 0.5): wAvenumber(wavenumber),a(sphere_radius) {}
   virtual ~SoftCylinderScatterWave() {}
    
   virtual vector<ublas::vector<double> >& operator()(double x, double y, double z) {
 
     const double tol = 1.0e-10;
-    double x2 = pow(x,2.0),y2 = pow(y,2.0);
-    double R = sqrt(x2+y2+pow(z,2.0));
-    double theta = atan2(y,x);
+    double x2 = x*x,y2 = y*y;
+    double R = sqrt(x2+y2);
+    double theta = atan2(y,x)+2*M_PI;
 
     const double k = wAvenumber;  //Wave number
-    const double a = 0.5;         //radius of the sphere,wait to modify by user
-    //const double a = 1.0;
     const double const1 = k * a;
     double const2 = k * R;
     
     const complex< double > i( 0.0, 1.0 );
-    
+	complex< double > Al;
     // magnitude of incident wave
     //const double phi_incident_mag = 1.0;
     
@@ -468,28 +537,36 @@ struct SoftCylinderScatterWave: public GenericAnalyticalSolution {
     complex< double > prev_result;
     
     double error = 100.0;
-    unsigned int n = 1; //initialized the infinite series loop
+	unsigned int n = 1; //initialized the infinite series loop
     
-    double Jn_der_zero = ( - cyl_bessel_j( 1, const1 ));  
-    complex< double > Hn_der_zero = ( - cyl_hankel_1( 1, const1 ));
-    complex< double >Hn_zero = cyl_hankel_1( 0, const2 );  //S Hankel first kind function
-
-    //n=0;
-    result -= (Jn_der_zero * Hn_zero)/Hn_der_zero;
-    
-    
+	double Jn_zero = cyl_bessel_j( 0, const1 );
+	complex< double > Hn_zero_kr = cyl_hankel_1( 0, const2 );  //S Hankel first kind function
+	complex< double > Hn_zero_ka = cyl_hankel_1( 0, const1 );  //S Hankel first kind function
+	//n=0;
+	result -= (Jn_zero * Hn_zero_kr)/Hn_zero_ka;
+	
     while( error > tol )  //finding the acoustic potential in one single point.
     {
+	  
+	  
+	  if(vecAl.size()>n) {
+		Al = vecAl[n-1];
+	  } else {
+		// cylindrical Bessel function
+		double Jn_ka = cyl_bessel_j( n, const1 );
+		// cylindrical Hankel function
+		complex<double> Hn_ka = cyl_hankel_1( n, const1 );
+		//Constant term
+		Al = -2.0*pow(i,n)*Jn_ka/Hn_ka;
+		vecAl.push_back(Al);
+	  }
+
 
       prev_result = result;
-      //The derivative of bessel function
-      double Jn_der = (n / const1 * cyl_bessel_j( n, const1 ) - cyl_bessel_j( n + 1, const1 ));  
-      //The derivative of Hankel function
-      complex< double > Hn_der = (n / const1 * cyl_hankel_1( n, const1 ) - cyl_hankel_1( n + 1, const1 ));
       
-      complex< double >Hn = cyl_hankel_1( n, const2 );  //S Hankel first kind function
+      complex< double >Hn_kr = cyl_hankel_1( n, const2 );  //S Hankel first kind function
       
-      result -= 2.0 * pow( i, n ) * ( (Jn_der*Hn) / Hn_der ) * cos(n*theta);
+      result += Al * Hn_kr * cos(n*theta);
       error = abs( abs( result ) - abs( prev_result ) );
       ++n;
     }
@@ -533,7 +610,6 @@ PetscErrorCode solve_problem(FieldInterface& m_field,
   ierr = m_field.VecCreateGhost(problem_name,ROW,&vec_F[0]); CHKERRQ(ierr); /* real */
   ierr = m_field.VecCreateGhost(problem_name,ROW,&vec_F[1]); CHKERRQ(ierr); /* imag */
   ierr = m_field.VecCreateGhost(problem_name,COL,&D); CHKERRQ(ierr);
-	cout << "\n still work \n" << endl;
 
   FieldApproximationH1 field_approximation(m_field);
   // This increase rule for numerical intergaration. In case of 10 node

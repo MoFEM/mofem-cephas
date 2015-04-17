@@ -52,7 +52,7 @@
 #include <boost/math/special_functions.hpp>
 #include <complex>
 
-#include <FiledApproximation.hpp>
+#include <FieldApproximation.hpp>
 
 using namespace std;
 using namespace boost::math;

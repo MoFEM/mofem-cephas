@@ -289,7 +289,7 @@ struct FieldApproximationH1 {
     }
     
     //calulate and assembe
-    ierr = mField.loop_finite_elements(problem_name,fe_name,fe);  CHKERRQ(ierr);
+    ierr = mField.loop_finite_elements(problem_name,fe_name,fe);  CHKERRQ(ierr); //FIX ME
     
     if(A) {
       ierr = MatAssemblyBegin(A,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
