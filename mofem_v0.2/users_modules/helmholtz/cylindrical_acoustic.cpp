@@ -24,10 +24,10 @@
 
 #include <DirichletBC.hpp>
 #include <PotsProcOnRefMesh.hpp>
-#include <HelmholtzElement.hpp>
+#include <HelmholtzElementObsolete.hpp>
 
 #include <Projection10NodeCoordsOnField.hpp>
-#include <AnalyticalDirichletHelmholtz.hpp>
+#include <AnalyticalDirichletObsolete.hpp>
 #include <boost/iostreams/tee.hpp>
 #include <boost/iostreams/stream.hpp>
 #include <petsctime.h>
@@ -65,7 +65,7 @@ int main(int argc, char *argv[]) {
   int rank;
   MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
 
-  bool useImpedance;
+  
   PetscBool flg = PETSC_TRUE;
   char mesh_file_name[255];
   ierr = PetscOptionsGetString(PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
@@ -73,13 +73,20 @@ int main(int argc, char *argv[]) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
   
-  char impedance[255];
-  ierr = PetscOptionsGetString(PETSC_NULL,"-use_impedance",impedance,255,&flg); CHKERRQ(ierr);
+  bool useImpedance;
+  PetscBool use_impedance = PETSC_FALSE;
+  ierr = PetscOptionsGetBool(NULL,"-use_impedance",&use_impedance,&flg); CHKERRQ(ierr);
   if(flg != PETSC_TRUE) {
-	  SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -use_impedance (true of false needed)");
+	SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -use_impedance (true of false needed)");
   }
-  if (strcmp ("true",impedance ) == 0) {useImpedance = true;}
-  else if(strcmp ("false",impedance ) == 0) {useImpedance = false;}
+  
+  //char impedance[255];
+  //ierr = PetscOptionsGetString(PETSC_NULL,"-use_impedance",impedance,255,&flg); CHKERRQ(ierr);
+  //if(flg != PETSC_TRUE) {
+//	  SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -use_impedance (true of false needed)");
+  //}
+  if (use_impedance) {useImpedance = true;}
+  else if(!use_impedance) {useImpedance = false;}
   
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
