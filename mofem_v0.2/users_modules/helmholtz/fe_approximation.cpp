@@ -262,7 +262,7 @@ int main(int argc, char *argv[]) {
 
   PetscInt choise_value = 0;
   // set type of analytical solution  
-  ierr = PetscOptionsGetEList(NULL,"-analytical_solution_type",analytical_solution_types,2,&choise_value,NULL); CHKERRQ(ierr);
+  ierr = PetscOptionsGetEList(NULL,"-analytical_solution_type",analytical_solution_types,6,&choise_value,NULL); CHKERRQ(ierr);
 
   double angularfreq = 1;
   double speed = 1; 
@@ -292,12 +292,12 @@ int main(int argc, char *argv[]) {
   // set wave number from line command, that overwrite numbre form block set
   ierr = PetscOptionsGetScalar(NULL,"-wave_number",&wavenumber,NULL); CHKERRQ(ierr);
 	
-	//Applied strain on the RVE (vector of length 6) strain=[xx, yy, zz, xy, xz, zy]^T
+  //wave direction unit vector=[x,y,z]^T
   double waveDirection[3];
   int nmax=3;
   ierr = PetscOptionsGetRealArray(PETSC_NULL,"-wave_direction",waveDirection,&nmax,&flg); CHKERRQ(ierr);
-  //ublas::vector<FieldData> wave_direction;
-	ublas::vector<double> wave_direction;
+  
+  ublas::vector<double> wave_direction;
   wave_direction.resize(3);
   cblas_dcopy(3, &waveDirection[0], 1, &wave_direction(0), 1);
 	if(flg != PETSC_TRUE) {
@@ -306,7 +306,7 @@ int main(int argc, char *argv[]) {
 		wave_direction[2] = 0;
 		SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -wave_direction [3*1 vector] default:X direction [1,0,0]");
 	}
-  
+	
   switch((AnalyticalSolutionTypes)choise_value) {
 
 		case HARD_SPHERE_SCATTER_WAVE:

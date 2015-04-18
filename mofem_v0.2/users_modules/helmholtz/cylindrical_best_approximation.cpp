@@ -21,10 +21,10 @@
 
 #include <MoFEM.hpp>
 #include <Projection10NodeCoordsOnField.hpp>
-#include <HelmholtzElement.hpp>
+#include <HelmholtzElementObsolete.hpp>
 
 #include <boost/numeric/ublas/vector_proxy.hpp>
-#include <FieldApproximation.hpp>
+#include <FieldApproximationObsolete.hpp>
 #include <PotsProcOnRefMesh.hpp>
 #include <boost/iostreams/tee.hpp>
 #include <boost/iostreams/stream.hpp>

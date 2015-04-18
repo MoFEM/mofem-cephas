@@ -73,13 +73,6 @@ struct HelmholtzElement {
 		int getRule(int order) { return order; };
 	};
 	
-	///// \brief  Volume element
-	//struct MyVolumeFE: public TetElementForcesAndSourcesCore {
-	//	int addToRank; ///< default value 1, i.e. assumes that geometry is approx. by quadratic functions.
-	//	MyVolumeFE(FieldInterface &_mField,int add_to_rank): TetElementForcesAndSourcesCore(_mField),addToRank(add_to_rank) {}
-	//	int getRule(int order) { return order+addToRank; };
-	//};
-	
 	MyVolumeFE feRhs; ///< cauclate right hand side for tetrahedral elements
 	MyVolumeFE& getLoopFeRhs() { return feRhs; } ///< get rhs volume element
 	MyVolumeFE feLhs; //< calculate left hand side for tetrahedral elements

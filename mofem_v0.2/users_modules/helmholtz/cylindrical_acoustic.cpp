@@ -296,40 +296,44 @@ int main(int argc, char *argv[]) {
 		  double min = 999999.0;
 		  
 		  complex< double > result = 0.0;
-		  //complex< double > prev_result;
+		  complex< double > prev_result;
 		  
-		  //double error = 100.0;
-		  //unsigned int n = 1; //initialized the infinite series loop
+		  double error = 100.0;
+		  unsigned int n = 1; //initialized the infinite series loop
 		  
-		  //double Jn_der_zero = ( - cyl_bessel_j( 1, const1 ));  
-		  //complex< double > Hn_der_zero = ( - cyl_hankel_1( 1, const1 ));
-		  //complex< double >Hn_zero = cyl_hankel_1( 0, const2 );  //S Hankel first kind function
+		  /*** sound hard ***/
 		  
-		  ////n=0;
-		  //result -= (Jn_der_zero * Hn_zero)/Hn_der_zero;
+		  double Jn_der_zero = ( - cyl_bessel_j( 1, const1 ));  
+		  complex< double > Hn_der_zero = ( - cyl_hankel_1( 1, const1 ));
+		  complex< double >Hn_zero = cyl_hankel_1( 0, const2 );  //S Hankel first kind function
+		  
+		  //n=0;
+		  result -= (Jn_der_zero * Hn_zero)/Hn_der_zero;
 		  
 		  
-		  //while( error > tol )  //finding the acoustic potential in one single point.
-		  //{
-		//	  prev_result = result;
-		//	  //The derivative of bessel function
-		//	  double Jn_der = (n / const1 * cyl_bessel_j( n, const1 ) - cyl_bessel_j( n + 1, const1 ));  
-		//	  //The derivative of Hankel function
-		//	  complex< double > Hn_der = (n / const1 * cyl_hankel_1( n, const1 ) - cyl_hankel_1( n + 1, const1 ));
-		//	  //S Hankel first kind function
-		//	  complex< double >Hn = cyl_hankel_1( n, const2 );  
-		//	  
-		//	  result -= 2.0 * pow( i, n ) * ( (Jn_der*Hn) / Hn_der ) * cos(n*theta);
-		//	  error = abs( abs( result ) - abs( prev_result ) );
-		//	  ++n;
-		  //}
+		  while( error > tol )  //finding the acoustic potential in one single point.
+		  {
+			prev_result = result;
+			//The derivative of bessel function
+			double Jn_der = (n / const1 * cyl_bessel_j( n, const1 ) - cyl_bessel_j( n + 1, const1 ));  
+			//The derivative of Hankel function
+			complex< double > Hn_der = (n / const1 * cyl_hankel_1( n, const1 ) - cyl_hankel_1( n + 1, const1 ));
+			
+			complex< double >Hn = cyl_hankel_1( n, const2 );  //S Hankel first kind function
+			
+			result -= 2.0 * pow( i, n ) * ( (Jn_der*Hn) / Hn_der ) * cos(n*theta);
+			error = abs( abs( result ) - abs( prev_result ) );
+			++n;
+		  }
           
-		  const complex< double > inc_field = - exp( i * k * R * cos( theta ) );  //incident wave
+		  /*** Incident wave ***/
+		  
+		  //const complex< double > inc_field = - exp( i * k * R * cos( theta ) );  //incident wave
 		  //const complex< double > total_field = inc_field + result;
 		  //ofs << theta << "\t" << abs( result ) << "\t" << abs( inc_field ) << "\t" << abs( total_field ) << "\t" << R << endl; //write the file
 		  
 		  
-		  result = inc_field;
+		  //result = inc_field;
 		  
 		  if(use_real) {
 			  return std::real(result);
