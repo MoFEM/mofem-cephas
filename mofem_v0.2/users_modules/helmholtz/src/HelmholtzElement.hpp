@@ -83,6 +83,9 @@ struct HelmholtzElement {
     map<string,ublas::matrix<double> > gradPressureAtGaussPts;
     ublas::matrix<double> hoCoords;
 
+    map<EntityType, vector< ublas::vector<int> > > imIndices;
+
+
   };
   CommonData commonData;
   
@@ -92,6 +95,37 @@ struct HelmholtzElement {
   HelmholtzElement(
     FieldInterface &m_field):
     mField(m_field),addToRank(1) {}
+
+  struct OpGetImIndices: public VolumeElementForcesAndSourcesCore::UserDataOperator {
+
+    CommonData &commonData;
+    const string reFieldName,imFieldName;
+    OpGetImIndices(
+      const string re_field_name,const string im_field_name,CommonData &common_data):
+      VolumeElementForcesAndSourcesCore::UserDataOperator(re_field_name),
+      commonData(common_data),reFieldName(re_field_name),imFieldName(im_field_name) {}
+
+    PetscErrorCode doWork(
+      int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+      PetscFunctionBegin;
+
+      int nb_row_dofs = data.getIndices().size();
+      if(nb_row_dofs==0) PetscFunctionReturn(0);
+
+      // Get rows and cols indices of imaginary part and assemble matrix.
+      // Note: However HELMHOLTZ_IMIM_FE element is not calculated, since
+      // matrix A on real elements is equal to matrix in imaginary elements,
+      // it need be to declared. Declaration indicate that on imaginary part,
+      // assembled matrix has non-zero values;
+      commonData.imIndices[type].resize(6);
+      PetscErrorCode ierr;
+      ierr = getPorblemRowIndices(imFieldName,type,side,
+	(commonData.imIndices[type])[side]); CHKERRQ(ierr);
+
+      PetscFunctionReturn(0);
+    }
+
+  };
   
   /** \brief Calculate pressure and gradient of pressure in volume
     */
@@ -334,7 +368,6 @@ struct HelmholtzElement {
       dAta(data),commonData(common_data),imFieldName(im_field_name),A(_A) {}
   
     ublas::matrix<double> K,transK;
-    ublas::vector<int> imRowIndices,imColIndices;
   
     PetscErrorCode doWork(
       int row_side,int col_side,
@@ -388,25 +421,17 @@ struct HelmholtzElement {
             &transK(0,0),ADD_VALUES); CHKERRQ(ierr);
         }  
 
-	// Get rows and cols indices of imaginary part and assemble matrix.
-	// Note: However HELMHOLTZ_IMIM_FE element is not calculated, since
-	// matrix A on real elements is equal to matrix in imaginary elements,
-	// it need be to declared. Declaration indicate that on imaginary part,
-	// assembled matrix has non-zero values;
-	ierr = getPorblemRowIndices(imFieldName,row_type,row_side,imRowIndices); CHKERRQ(ierr);
-	ierr = getPorblemColIndices(imFieldName,col_type,col_side,imColIndices); CHKERRQ(ierr);
-
         ierr = MatSetValues(
           A,  
-          nb_rows,&imRowIndices[0],
-          nb_cols,&imColIndices[0],
+          nb_rows,&((commonData.imIndices[row_type])[row_side])[0],
+          nb_cols,&((commonData.imIndices[col_type])[col_side])[0],
 	  &K(0,0),ADD_VALUES); CHKERRQ(ierr);
         
         if(row_side != col_side || row_type != col_type) {
           ierr = MatSetValues(
             A,
-            nb_cols,&imColIndices[0],
-            nb_rows,&imRowIndices[0],
+            nb_cols,&((commonData.imIndices[col_type])[col_side])[0],
+            nb_rows,&((commonData.imIndices[row_type])[row_side])[0],
             &transK(0,0),ADD_VALUES); CHKERRQ(ierr);
         }  
 	
@@ -1041,6 +1066,9 @@ struct HelmholtzElement {
     fe_name = "HELMHOLTZ_RERE_FE"; feLhs.insert(fe_name,new MyVolumeFE(mField,addToRank));
     fe_name = "HELMHOLTZ_RERE_FE"; feRhs.insert(fe_name,new MyVolumeFE(mField,addToRank));
     fe_name = "HELMHOLTZ_IMIM_FE"; feRhs.insert(fe_name,new MyVolumeFE(mField,addToRank));
+
+    feLhs.at("HELMHOLTZ_RERE_FE").get_op_to_do_Rhs().push_back(
+      new  OpGetImIndices(re_field_name,im_field_name,commonData));
 
     feRhs.at("HELMHOLTZ_RERE_FE").get_op_to_do_Rhs().push_back(
      new OpGetValueAndGradAtGaussPts(re_field_name,commonData));
