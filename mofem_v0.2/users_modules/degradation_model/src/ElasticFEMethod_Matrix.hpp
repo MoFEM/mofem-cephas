@@ -32,7 +32,6 @@ namespace ObosleteUsersModules {
       PetscFunctionBegin;
       D = _lambda*D_lambda + _mu*D_mu;
 //      cout<<" D before Degradation "<<D<<endl;
-      wt_Gauss=1.0;
       D=wt_Gauss*D;
 //      cout<<" wt_Gauss "<<wt_Gauss<<endl;
 //      cout<<" D After Degradation "<<D<<endl;
