@@ -19,8 +19,7 @@ General Public License (see Legal Stuff).
 MoFEM can read and write number of mesh file formats using functionality
 provided by MoAB.  The current version of MoFEM has full support for
 CUBIT/TRELIS, TetGEN, NetGEN for pre-processing and ParaView for
-post-processing. MoFEM will supports other pre-processors, f.e. gMsh, GiT,
-Salome and is currently in the process of full integration with MeshKit.
+post-processing. 
 
 \section download_repository MoFEM download and repository
 
