@@ -151,7 +151,7 @@ namespace MoFEM {
           if(eiit!=hi_eiit) {
             FaceEdgeOrder[ee] = eiit->get_max_order();
             if(NBEDGE_H1(FaceEdgeOrder[ee])>0) {
-              assert(3*NBEDGE_H1(FaceEdgeOrder[ee]) == distance(eiit,hi_eiit));
+//              assert(3*NBEDGE_H1(FaceEdgeOrder[ee]) == distance(eiit,hi_eiit));
               
               RowGlob[0][row_mat].resize(distance(eiit,hi_eiit));
               RowGlob[1][row_mat].resize(distance(eiit,hi_eiit));
@@ -171,7 +171,7 @@ namespace MoFEM {
         if(col_eiit!=col_hi_eiit) {
           FaceEdgeOrder[ee] = col_eiit->get_max_order();
           if(NBEDGE_H1(FaceEdgeOrder[ee])>0) {
-            assert(3*NBEDGE_H1(FaceEdgeOrder[ee]) == distance(col_eiit,col_hi_eiit));
+//            assert(3*NBEDGE_H1(FaceEdgeOrder[ee]) == distance(col_eiit,col_hi_eiit));
             ColGlob[ff][row_mat].resize(distance(col_eiit,col_hi_eiit));
             //                    cout<<"ColGlob[row_mat].size() "<<ColGlob[row_mat].size()<<endl;
             for(;col_eiit!=col_hi_eiit;col_eiit++) {
@@ -259,7 +259,7 @@ namespace MoFEM {
         if(fiit!=hi_fiit) {
           int face_order = fiit->get_max_order();
           //                    cout<<"face_order "<<face_order<<endl;
-          assert((unsigned int)3*NBFACE_H1(face_order)==distance(fiit,hi_fiit));
+//          assert((unsigned int)3*NBFACE_H1(face_order)==distance(fiit,hi_fiit));
           if(NBFACE_H1(face_order)>0) {
             RowGlob[0][row_mat].resize(distance(fiit,hi_fiit));  RowGlob[1][row_mat].resize(distance(fiit,hi_fiit));
             //                        cout<<"RowGlob[0][row_mat].size() "<<RowGlob[0][row_mat].size()<<endl;
@@ -307,7 +307,7 @@ namespace MoFEM {
       if(col_fiit!=col_hi_fiit) {
         int face_order = col_fiit->get_max_order();
         //                cout<<"FaceOrder[ff] "<<face_order<<endl;
-        assert((unsigned int)3*NBFACE_H1(face_order)==distance(col_fiit,col_hi_fiit));
+//        assert((unsigned int)3*NBFACE_H1(face_order)==distance(col_fiit,col_hi_fiit));
         if(NBFACE_H1(face_order)>0) {
           ColGlob[ff][row_mat].resize(distance(col_fiit,col_hi_fiit));
           //                    cout<<"ColGlob[row_mat].size() "<<ColGlob[ff][row_mat].size()<<endl;
