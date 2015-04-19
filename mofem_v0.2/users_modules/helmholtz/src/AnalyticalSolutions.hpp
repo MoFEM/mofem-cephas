@@ -64,9 +64,10 @@ struct IncidentWave: public GenericAnalyticalSolution {
 
   vector<ublas::vector<double> > rEsult;
   double wAvenumber;
+  double pOwer;
  
-  IncidentWave(double wavenumber):
-    wAvenumber(wavenumber) {}
+  IncidentWave(double wavenumber,double power = 1):
+    wAvenumber(wavenumber),pOwer(power) {}
   ~IncidentWave() {}
 
   virtual vector<ublas::vector<double> >& operator()(double x, double y, double z) {
@@ -74,7 +75,7 @@ struct IncidentWave: public GenericAnalyticalSolution {
     const complex< double > i( 0.0, 1.0 );
     complex< double > result = 0.0;
 
-    result = exp(i*wAvenumber*z);
+    result = pOwer*exp(i*wAvenumber*z);
 
     rEsult.resize(2);
     rEsult[REAL].resize(1);
