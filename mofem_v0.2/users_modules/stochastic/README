@@ -1,1 +1,18 @@
-make trans_iso_RVE_disp_7vars && mpirun -np 1 ./trans_iso_RVE_disp_7vars -my_file ~/Documents/.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 2 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0
+# ===================== Transversely isotropic RVE ======================================= 
+# 1. Potential flow problem
+make trans_iso_potential_flow && mpirun -np 1 ./trans_iso_potential_flow -my_file /mnt/home/Dropbox/DURACOMP_Cal/009_MOFEM/Meshes/RVE_TISO/RVE.cub  -ksp_type fgmres -ksp_gmres_restart 1000 -pc_type asm -sub_pc_type lu -ksp_monitor -my_order 1
+
+# 2. Linear displacement boundary condition
+
+make trans_iso_RVE_disp_7vars && mpirun -np 1 ./trans_iso_RVE_disp_7vars -my_file solution1.h5m -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0
+
+# 3. Periodic boundary condition
+
+make trans_iso_RVE_Periodic_7vars && mpirun -np 1 ./trans_iso_RVE_Periodic_7vars -my_file solution1.h5m -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0
+
+# 4. Constant traction boundary condition
+
+make trans_iso_RVE_Traction_7vars && mpirun -np 1 ./trans_iso_RVE_Traction_7vars -my_file solution1.h5m -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0
+
+
+mpirun -np 1 ../homogenisation/TransIso_Potential_Flow -my_file /mnt/home/Dropbox/DURACOMP_Cal/009_MOFEM/Meshes/RVE_TISO/RVE.cub  -ksp_type fgmres -ksp_gmres_restart 1000 -pc_type asm -sub_pc_type lu -ksp_monitor -my_order 1

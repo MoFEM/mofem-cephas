@@ -274,6 +274,108 @@ namespace MoFEM {
       PetscFunctionReturn(0);
     }
 };
+  
+  // ===========================================================================
+  //
+  // TWO-PHASE YARN - TRANSVERSELY ISOTROPIC MATERIAL
+  //
+  // ===========================================================================
+  struct YarnStiffnessMatrix_Geom_FirstOrderDerivative{
+		// fibre waviness
+		double dI1, dI3, dI5, dI6, dI8;
+		double ampltidue, length; // waviness parameters: waviness amplitude & periodic length
+		// misalignment angle
+		double theta;
+		double dmn, dm2, dn2, dm2n2, dmn3, dm3n, dn4, dm4; 
+		// fibre volume fraction
+		double vf;
+		double kf, lf, mf, nf, pf; // fibre related Hill's moduli
+		double km, lm, mm, nm, pm; // matrix related Hill's moduli
+		double dkc, dmc, dpc, dlc, dnc; // fibre volume fraction
+    
+    /***************************************************************************
+     *
+     * With repect to amplitude of waviness
+     *
+     **************************************************************************/
+    virtual PetscErrorCode D_r_Amplitude(double amplitude, double length){
+      PetscFunctionBegin;
+      
+      double alpha;
+      alpha = 2*M_PI*amplitude/length;
+      
+      dI1 = -(pow(alpha,3) + 4*alpha)/(2*pow(alpha*alpha + 1,2.5))*(2*M_PI/length);
+      dI3 = -(pow(alpha,3) - 2*alpha)/(2*pow(alpha*alpha + 1,2.5))*(2*M_PI/length);
+      dI5 = 3*pow(alpha,3)/(2*pow(alpha*alpha + 1,2.5))*(2*M_PI/length);
+      dI6 = -alpha/pow(alpha*alpha + 1,1.5)*(2*M_PI/length);
+      dI8 =  alpha/pow(alpha*alpha + 1,1.5)*(2*M_PI/length);
+			
+      PetscFunctionReturn(0);
+    }
+    
+    /***************************************************************************
+     *
+     * With repect to periodic length
+     *
+     **************************************************************************/
+    virtual PetscErrorCode D_r_Length(double amplitude, double length){
+      PetscFunctionBegin;
+      
+			double alpha;
+      alpha = 2*M_PI*amplitude/length;
+      
+      dI1 = -(pow(alpha,3) + 4*alpha)/(2*pow(alpha*alpha + 1,2.5))*(-2*M_PI*amplitude/length/length);
+      dI3 = -(pow(alpha,3) - 2*alpha)/(2*pow(alpha*alpha + 1,2.5))*(-2*M_PI*amplitude/length/length);
+      dI5 = 3*pow(alpha,3)/(2*pow(alpha*alpha + 1,2.5))*(-2*M_PI*amplitude/length/length);
+      dI6 = -alpha/pow(alpha*alpha + 1,1.5)*(-2*M_PI*amplitude/length/length);
+      dI8 =  alpha/pow(alpha*alpha + 1,1.5)*(-2*M_PI*amplitude/length/length);
+			
+      PetscFunctionReturn(0);
+    }
+ 
+    /***************************************************************************
+     *
+     * With repect to misalignment angle
+     *
+     **************************************************************************/  
+    virtual PetscErrorCode D_r_Angle(double theta) {
+			PetscFunctionBegin;
+			
+			dmn = -sin(theta)*sin(theta)+cos(theta)*cos(theta); // mn
+			dm2 = -2*cos(theta)*sin(theta); // m2
+			dn2 =  2*sin(theta)*cos(theta);
+			dmn3 = -pow(sin(theta),4) + 3*pow(cos(theta),2)*pow(sin(theta),2); // mn3
+			dm3n =  pow(cos(theta),4) - 3*pow(cos(theta),2)*pow(sin(theta),2); // nm3
+			dm2n2 = -2*cos(theta)*pow(sin(theta),3) + 2*sin(theta)*pow(cos(theta),3); // m2n2
+			dm4 = -4*pow(cos(theta),3)*sin(theta); // m4
+			dn4 = 4*pow(sin(theta),3)*cos(theta);
+			
+			PetscFunctionReturn(0);
+	  }
+      
+      /***************************************************************************
+       *
+       * With repect to misalignment angle
+       *
+       **************************************************************************/
+      virtual PetscErrorCode D_r_Fraction(double vf, 
+																							double kf, double mf, double pf, double lf, double nf,
+																						  double km, double mm, double pm, double lm, double nm) {
+				PetscFunctionBegin;
+			
+				dkc = ((kf + mm)*(km + mm)*(kf - km))/pow(kf + mm - vf*kf + vf*km,2);
+				dmc = (km*mm*(mf - mm))/(km*mm + (vf*mm - mf*(vf - 1))*(km + 2*mm)) 
+              + ((km*mm*(vf*mf - mm*(vf - 1)) + mf*mm*(km + 2*mm))*(km + 2*mm)*(mf - mm))
+							/pow((km*mm + (vf*mm - mf*(vf - 1))*(km + 2*mm)),2);
+				dpc = (2*pm*(pf*pf - pm*pm))/pow(pf + pm - vf*pf + vf*pm,2);
+				dlc = ((kf + mm)*(km + mm)*(lf - lm))/pow(kf + mm - vf*kf + vf*km,2);
+				dnc = nf - nm - (pow(lf - lm,2)*(kf + mm - 2*vf*kf - 2*vf*mm + vf*vf*kf - vf*vf*km))
+				      /pow(kf + mm - vf*kf + vf*km,2);
+				
+        PetscFunctionReturn(0);
+      }
+
+  };
 }
 #endif //__D_R_ELASTICFEMETHODTRANSISO_HPP__
 

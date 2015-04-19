@@ -16,6 +16,7 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+
 #include <MoFEM.hpp>
 using namespace MoFEM;
 
@@ -30,12 +31,10 @@ using namespace MoFEM;
 
 #include <ElasticFEMethod.hpp>
 #include "ElasticFEMethodTransIso.hpp"
-#include "ElasticFEMethodInterface.hpp"
 
 #include "ElasticFE_RVELagrange_Disp.hpp"
 #include "ElasticFE_RVELagrange_Homogenized_Stress_Disp.hpp"
 #include "RVEVolume.hpp"
-
 
 ErrorCode rval;
 PetscErrorCode ierr;
@@ -71,7 +70,6 @@ int main(int argc, char *argv[]) {
   char outName2[PETSC_MAX_PATH_LEN]="out_post_proc.vtk";
   ierr = PetscOptionsGetString(PETSC_NULL,"-my_post_out",outName2,sizeof(outName2),&flg); CHKERRQ(ierr);
   
-  
   //Applied strain on the RVE (vector of length 6) strain=[xx, yy, zz, xy, xz, zy]^T
   double myapplied_strain[6];
   int nmax=6;
@@ -80,7 +78,6 @@ int main(int argc, char *argv[]) {
   applied_strain.resize(6);
   cblas_dcopy(6, &myapplied_strain[0], 1, &applied_strain(0), 1);
   //    cout<<"applied_strain ="<<applied_strain<<endl;
-  
   
   //Read mesh to MOAB
   const char *option;
@@ -116,10 +113,10 @@ int main(int argc, char *argv[]) {
   bit_levels.push_back(BitRefLevel().set(meshset_data[0]-1));
   
   //    const clock_t begin_time = clock();
-  //ierr = mField.build_fields(); CHKERRQ(ierr);
-  //ierr = mField.build_finite_elements(); CHKERRQ(ierr);
-  //ierr = mField.build_adjacencies(bit_levels.back()); CHKERRQ(ierr);
-  //ierr = mField.build_problems(); CHKERRQ(ierr);
+  ierr = mField.build_fields(); CHKERRQ(ierr);
+  ierr = mField.build_finite_elements(); CHKERRQ(ierr);
+  ierr = mField.build_adjacencies(bit_levels.back()); CHKERRQ(ierr);
+  ierr = mField.build_problems(); CHKERRQ(ierr);
   
   //    std::cout << float( clock () - begin_time ) /  CLOCKS_PER_SEC<<endl;
 	
@@ -136,7 +133,7 @@ int main(int argc, char *argv[]) {
   rval = moab.get_entities_by_type(out_meshset, MBPRISM,LatestRefinedPrisms,true); CHKERR_PETSC(rval);
 	
   cout<<"No of Prisms/Interfaces = "<<LatestRefinedPrisms.size()<<endl;
-
+	
   BitRefLevel problem_bit_level = bit_levels.back();
   
   EntityHandle meshset_Elastic, meshset_Trans_ISO;
@@ -180,11 +177,16 @@ int main(int argc, char *argv[]) {
 			Range TetsInBlock;
 			rval = moab.get_entities_by_type(it->meshset, MBTET,TetsInBlock,true); CHKERR_PETSC(rval);
 			Range block_rope_bit_level = intersect(LatestRefinedTets,TetsInBlock);
+      
+      cout<<"=============  TetsInBlock  "<< TetsInBlock.size() <<endl;
+      
 			rval = moab.add_entities(meshset_Elastic,block_rope_bit_level);CHKERR_PETSC(rval);
+      
 		}
 	}
-  
   ierr = mField.seed_finite_elements(meshset_Elastic); CHKERRQ(ierr);
+
+  
   
 	Range prims_on_problem_bit_level;
 	ierr = mField.get_entities_by_type_and_ref_level(problem_bit_level,BitRefLevel().set(),MBPRISM,prims_on_problem_bit_level); CHKERRQ(ierr);
@@ -205,7 +207,6 @@ int main(int argc, char *argv[]) {
   //FE
   ierr = mField.add_finite_element("ELASTIC"); CHKERRQ(ierr);
   ierr = mField.add_finite_element("TRAN_ISOTROPIC_ELASTIC"); CHKERRQ(ierr);
-  ierr = mField.add_finite_element("INTERFACE"); CHKERRQ(ierr);
   ierr = mField.add_finite_element("Lagrange_elem"); CHKERRQ(ierr);
   
   //Define rows/cols and element data
@@ -216,11 +217,6 @@ int main(int argc, char *argv[]) {
   ierr = mField.modify_finite_element_add_field_row("TRAN_ISOTROPIC_ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_col("TRAN_ISOTROPIC_ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_data("TRAN_ISOTROPIC_ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
-  //FE Interface
-  ierr = mField.modify_finite_element_add_field_row("INTERFACE","DISPLACEMENT"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_col("INTERFACE","DISPLACEMENT"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_data("INTERFACE","DISPLACEMENT"); CHKERRQ(ierr);
-  
   ierr = mField.modify_finite_element_add_field_data("TRAN_ISOTROPIC_ELASTIC","POTENTIAL_FIELD"); CHKERRQ(ierr);
   
   
@@ -241,7 +237,6 @@ int main(int argc, char *argv[]) {
   
   //set finite elements for problem
   ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","ELASTIC"); CHKERRQ(ierr);
-  ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","INTERFACE"); CHKERRQ(ierr);
   ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","TRAN_ISOTROPIC_ELASTIC"); CHKERRQ(ierr);
   ierr = mField.modify_problem_add_finite_element("ELASTIC_MECHANICS","Lagrange_elem"); CHKERRQ(ierr);
   
@@ -258,7 +253,6 @@ int main(int argc, char *argv[]) {
   //add finite elements entities
   ierr = mField.add_ents_to_finite_element_by_TETs(meshset_Elastic,"ELASTIC",true); CHKERRQ(ierr);
   ierr = mField.add_ents_to_finite_element_by_TETs(meshset_Trans_ISO,"TRAN_ISOTROPIC_ELASTIC",true); CHKERRQ(ierr);
-  ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(problem_bit_level,"INTERFACE",MBPRISM); CHKERRQ(ierr);
   
   Range SurfacesFaces;
   ierr = mField.get_Cubit_msId_entities_by_dimension(103,SIDESET,2,SurfacesFaces,true); CHKERRQ(ierr);
@@ -270,7 +264,7 @@ int main(int argc, char *argv[]) {
   rval = moab.create_meshset(MESHSET_SET,BoundFacesMeshset); CHKERR_PETSC(rval);
 	rval = moab.add_entities(BoundFacesMeshset,SurfacesFaces); CHKERR_PETSC(rval);
   ierr = mField.seed_ref_level_MESHSET(BoundFacesMeshset,BitRefLevel().set()); CHKERRQ(ierr);
-  
+
   ierr = mField.add_ents_to_field_by_TRIs(BoundFacesMeshset,"Lagrange_mul_disp",2); CHKERRQ(ierr);
   
   //set app. order
@@ -334,6 +328,7 @@ int main(int argc, char *argv[]) {
     }
   };
   
+
   for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"POTENTIAL_FIELD",dof_ptr)) {
     if(dof_ptr->get_ent_type()!=MBVERTEX) continue;
     EntityHandle ent = dof_ptr->get_ent();
@@ -344,11 +339,11 @@ int main(int argc, char *argv[]) {
   }
   
   //Assemble F and Aij
-  //    double YoungModulusP;
-  //    double PoissonRatioP;
-  //    double YoungModulusZ;
-  //    double PoissonRatioPZ;
-  //    double ShearModulusZP;
+//  double YoungModulusP;
+//  double PoissonRatioP;
+//  double YoungModulusZ;
+//  double PoissonRatioPZ;
+//  double ShearModulusZP;
   double YoungModulus;
   double PoissonRatio;
   double alpha;
@@ -360,25 +355,25 @@ int main(int argc, char *argv[]) {
     //Get block name
     string name = it->get_Cubit_name();
     
-    //        if (name.compare(0,20,"MAT_ELASTIC_TRANSISO") == 0)
-    //        {
-    //            Mat_Elastic_TransIso mydata;
-    //            ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
-    //            cout << mydata;
-    //            YoungModulusP=mydata.data.Youngp;
-    //            YoungModulusZ=mydata.data.Youngz;
-    //            PoissonRatioP=mydata.data.Poissonp;
-    //            PoissonRatioPZ=mydata.data.Poissonpz;
-    //            if (mydata.data.Shearzp!=0) {
-    //                ShearModulusZP=mydata.data.Shearzp;
-    //            }else{
-    //                ShearModulusZP=YoungModulusZ/(2*(1+PoissonRatioPZ));}
-    //        }
-    if (name.compare(0,13,"MAT_ELASTIC_1") == 0)
+//    if (name.compare(0,20,"MAT_ELASTIC_TRANSISO") == 0)
+//    {
+//      Mat_Elastic_TransIso mydata;
+//      ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+//      cout << mydata;
+//      YoungModulusP=mydata.data.Youngp;
+//      YoungModulusZ=mydata.data.Youngz;
+//      PoissonRatioP=mydata.data.Poissonp;
+//      PoissonRatioPZ=mydata.data.Poissonpz;
+//      if (mydata.data.Shearzp!=0) {
+//        ShearModulusZP=mydata.data.Shearzp;
+//      }else{
+//        ShearModulusZP=YoungModulusZ/(2*(1+PoissonRatioPZ));}
+//    }
+    if (name.compare(0,11,"MAT_ELASTIC") == 0)
     {
       Mat_Elastic mydata;
       ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
-      cout << mydata;
+      //cout << mydata;
       YoungModulus=mydata.data.Young;
       PoissonRatio=mydata.data.Poisson;
     }
@@ -386,19 +381,22 @@ int main(int argc, char *argv[]) {
     {
       Mat_Interf mydata;
       ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
-      cout << mydata;
+      //cout << mydata;
       alpha = mydata.data.alpha;
     }
   }
   
   //alpha = 1e8;
   cout<<"alpha   = "<<alpha<<endl;
-	
-  InterfaceFEMethod IntMyFE(mField,Aij,D,F,YoungModulus*alpha);
-  MyElasticFEMethod MyFE(mField,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
-  TranIsotropicFibreDirRotElasticFEMethod MyTIsotFE(mField,Aij,D,F);
-  ElasticFE_RVELagrange_Disp MyFE_RVELagrange(mField,Aij,D,F,applied_strain,"DISPLACEMENT","Lagrange_mul_disp",field_rank);
   
+  MyElasticFEMethod MyFE(mField,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
+  //TranIsotropicFibreDirRotElasticFEMethod MyTIsotFE(mField,Aij,D,F);
+  //TranIso_YarnMisalignmentElasticFEMethod MyTIsotFE(mField,Aij,D,F);
+  TranIso_FibreWavinessElasticFEMethod MyTIsotFE(mField,Aij,D,F);
+  ElasticFE_RVELagrange_Disp MyFE_RVELagrange(mField, Aij, D, F, applied_strain,
+                                              "DISPLACEMENT",
+                                              "Lagrange_mul_disp",field_rank);
+
   
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -407,7 +405,6 @@ int main(int argc, char *argv[]) {
   
   ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyFE);  CHKERRQ(ierr);
 	ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","TRAN_ISOTROPIC_ELASTIC",MyTIsotFE);  CHKERRQ(ierr);
-  ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","INTERFACE",IntMyFE);  CHKERRQ(ierr);
   ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","Lagrange_elem",MyFE_RVELagrange);  CHKERRQ(ierr);
   
   ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
@@ -442,6 +439,8 @@ int main(int argc, char *argv[]) {
   //Calculation of Homogenized stress
   //====================================================================================================================================
   double RVE_volume;    RVE_volume=0.0;  //RVE volume for full RVE We need this for stress calculation
+  double RVE_volume_Matrix; RVE_volume_Matrix = 0.0;
+ 
   Vec RVE_volume_Vec;
   ierr = VecCreateMPI(PETSC_COMM_WORLD, 1, pcomm->size(), &RVE_volume_Vec);  CHKERRQ(ierr);
   ierr = VecZeroEntries(RVE_volume_Vec); CHKERRQ(ierr);
@@ -450,18 +449,22 @@ int main(int argc, char *argv[]) {
   RVEVolumeTrans MyRVEVolTrans(mField,Aij,D,F, RVE_volume_Vec);
   
   ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyRVEVol);  CHKERRQ(ierr);
+  // --
+  //ierr = VecView(RVE_volume_Vec,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+  ierr = VecSum(RVE_volume_Vec, &RVE_volume_Matrix);  CHKERRQ(ierr);
+  // --
   ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","TRAN_ISOTROPIC_ELASTIC",MyRVEVolTrans);  CHKERRQ(ierr);
   
-  ierr = VecView(RVE_volume_Vec,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+  //ierr = VecView(RVE_volume_Vec,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
   ierr = VecSum(RVE_volume_Vec, &RVE_volume);  CHKERRQ(ierr);
   cout<<"Final RVE_volume = "<< RVE_volume <<endl;
+  cout<<"Matrix volume = "<<RVE_volume_Matrix<<endl;
   cout<<"Actual RVE_volume = "<< 3*0.3*0.78<<endl;  //Lx=3, Ly=0.3; Lz=0.78
   
   //create a vector for 6 components of homogenized stress
   Vec Stress_Homo;
   ierr = VecCreateMPI(PETSC_COMM_WORLD, 6, 6*pcomm->size(), &Stress_Homo);  CHKERRQ(ierr);
   ierr = VecZeroEntries(Stress_Homo); CHKERRQ(ierr);
-  
   
   //    ierr = VecView(D,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
   ElasticFE_RVELagrange_Homogenized_Stress_Disp MyFE_RVEHomoStressDisp(mField,Aij,D,F,&RVE_volume, applied_strain, Stress_Homo,"DISPLACEMENT","Lagrange_mul_disp",field_rank);
@@ -511,7 +514,7 @@ int main(int argc, char *argv[]) {
   ierr = KSPDestroy(&solver); CHKERRQ(ierr);
   ierr = VecDestroy(&RVE_volume_Vec); CHKERRQ(ierr);
   ierr = VecDestroy(&Stress_Homo); CHKERRQ(ierr);
-  
+
   
   ierr = PetscTime(&v2);CHKERRQ(ierr);
   ierr = PetscGetCPUTime(&t2);CHKERRQ(ierr);

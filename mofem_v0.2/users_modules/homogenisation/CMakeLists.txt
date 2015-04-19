@@ -147,9 +147,20 @@ add_executable(FE2_Elasticity_Periodic ${UM_SOURCE_DIR}/homogenisation/FE2_Elast
 target_link_libraries(FE2_Elasticity_Periodic
   mofem_finite_element_library mofem_finite_elements mofem_interfaces mofem_multi_indices mofem_petsc users_modules_obsolete user_modules_homogenisation
   mofem_approx mofem_third_party mofem_cblas ${MoFEM_PROJECT_LIBS})
+  
+  
+  # ===================== RVE including geometrical parameters  ==========================
 
-
-
+# add_executable(TransIso_Disp_Geom ${UM_SOURCE_DIR}/homogenisation/TransIso_Disp_Geom.cpp)
+# target_link_libraries(TransIso_Disp_Geom
+#  mofem_finite_element_library mofem_finite_elements mofem_interfaces mofem_multi_indices mofem_petsc users_modules_obsolete user_modules_homogenisation
+#  mofem_approx mofem_third_party mofem_cblas ${MoFEM_PROJECT_LIBS})
+  
+add_executable(TransIso_Disp_NoInt_Geom ${UM_SOURCE_DIR}/homogenisation/TransIso_Disp_NoInt_Geom.cpp)
+target_link_libraries(TransIso_Disp_NoInt_Geom
+  mofem_finite_element_library mofem_finite_elements mofem_interfaces mofem_multi_indices mofem_petsc users_modules_obsolete user_modules_homogenisation
+  mofem_approx mofem_third_party mofem_cblas ${MoFEM_PROJECT_LIBS})
+  
 
 
 
