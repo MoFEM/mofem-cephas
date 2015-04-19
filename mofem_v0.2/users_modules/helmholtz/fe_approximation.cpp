@@ -209,7 +209,7 @@ int main(int argc, char *argv[]) {
     vector<double> attributes;
     ierr = it->get_Cubit_attributes(attributes); CHKERRQ(ierr);
     if(attributes.size()<2) {
-      SETERRQ1(PETSC_COMM_SELF,1,"not enough block attributes to deffine fluid pressure element, attributes.size() = %d ",attributes.size());
+      SETERRQ1(PETSC_COMM_SELF,1,"not enough block attributes to define SOFT_INCIDENT_WAVE_BC, attributes.size() = %d ",attributes.size());
     }
     
     planeWaveScatterData[it->get_msId()].wAveNumber = attributes[0];
@@ -382,7 +382,7 @@ int main(int argc, char *argv[]) {
     for(;mit!=planeWaveScatterData.end();mit++) {
 
 	// note negative field, scatter field should cancel incident wave
-	boost::shared_ptr<IncidentWave> function_evaluator = boost::shared_ptr<IncidentWave>(new IncidentWave(wavenumber,1));
+	boost::shared_ptr<IncidentWave> function_evaluator = boost::shared_ptr<IncidentWave>(new IncidentWave(wavenumber,-1));
 	ierr = analytical_bc_real.setApproxOps(m_field,"rePRES",mit->second.tRis,function_evaluator,GenericAnalyticalSolution::REAL); CHKERRQ(ierr); 
 	ierr = analytical_bc_imag.setApproxOps(m_field,"imPRES",mit->second.tRis,function_evaluator,GenericAnalyticalSolution::IMAG); CHKERRQ(ierr);
 

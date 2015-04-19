@@ -1016,7 +1016,7 @@ struct HelmholtzElement {
         vector<double> attributes;
         ierr = it->get_Cubit_attributes(attributes); CHKERRQ(ierr);
         if(attributes.size()<2) {
-          SETERRQ1(PETSC_COMM_SELF,1,"not enough block attributes to deffine fluid pressure element, attributes.size() = %d ",attributes.size());
+          SETERRQ1(PETSC_COMM_SELF,1,"not enough block attributes to define MAT_HELMHOLTZ, attributes.size() = %d ",attributes.size());
         }
         
         double aNgularfreq = attributes[0];
