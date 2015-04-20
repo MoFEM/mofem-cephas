@@ -234,14 +234,14 @@ for i in range(0, 4):
 #Rotate RVE  
 #=============================================================  
 cubit.cmd('rotate volume all angle 90 about x include_merged')
-cubit.cmd('rotate volume all angle 90 about z include_merged')
+#cubit.cmd('rotate volume all angle 90 about z include_merged')
 
 #============================================================= 
 #Defining surfaces for dispacement, traction and periodic boundary conditions  
 #============================================================= 
   
-cubit.cmd('sideset 101 surface 41 31 34 40 42 27 24')  # all -ve boundary surfaces for periodic boundary conditions  
-cubit.cmd('sideset 102 surface 43 30 33 39 25 44 28')  # all +ve boundary surfaces  for periodic boundary conditions  
+cubit.cmd('sideset 101 surface 41 30 33 39 42 27 24')  # all -ve boundary surfaces for periodic boundary conditions  
+cubit.cmd('sideset 102 surface 43 25 31 34 40 44 28')  # all +ve boundary surfaces  for periodic boundary conditions  
 cubit.cmd('sideset 103 surface 41 31 34 40 42 27 24 43 30 33 39 25 44 28')  # all boundary surfaces  
  
  
@@ -268,5 +268,6 @@ for i in range(0, 4):
 #Saving input RVE file  
 #============================================================= 
 cubit.cmd('save as "/Users/zahur/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/trans_iso/Textile_RVE_Mechanical.cub" overwrite') 
+
 
 
