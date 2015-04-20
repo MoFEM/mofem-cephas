@@ -171,6 +171,14 @@ namespace MoFEM {
       }
       
       ~OpCalculate_RVEDmat(){
+        ierr = VecDestroy(&F1); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+        ierr = VecDestroy(&F2); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+        ierr = VecDestroy(&F3); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+        ierr = VecDestroy(&F4); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+        ierr = VecDestroy(&F5); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+        ierr = VecDestroy(&F6); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+        ierr = VecDestroy(&D1); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+        ierr = MatDestroy(&A); CHKERRABORT(PETSC_COMM_WORLD,ierr);
       }
 
       Vec F1,F2,F3,F4,F5,F6,D1;
