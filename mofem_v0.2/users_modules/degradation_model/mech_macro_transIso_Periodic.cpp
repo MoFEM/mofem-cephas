@@ -815,15 +815,15 @@ int main(int argc, char *argv[]) {
         o1 << "FE2_out_" << sit->step_number << ".h5m";
         rval = post_proc.postProcMesh.write_file(o1.str().c_str(),"MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
         
-//        if(count==100){
-//          //save the solution file for subsequent strain calculation analysis
-//          ierr = m_field_Macro.set_global_VecCreateGhost("ELASTIC_PROBLEM_MACRO",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-//          rval = moab_Macro.write_file("FE2_solution_100.h5m"); CHKERR_PETSC(rval);
-//        }
+        if(count==100){
+          //save the solution file for subsequent strain calculation analysis
+          ierr = m_field_Macro.set_global_VecCreateGhost("ELASTIC_PROBLEM_MACRO",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+          rval = moab_Macro.write_file("FE2_solution_100.h5m"); CHKERR_PETSC(rval);
+        }
 
         
         ierr = KSPDestroy(&solver); CHKERRQ(ierr);
-        delete my_fe_ptr;
+//        delete my_fe_ptr;
         PetscPrintf(PETSC_COMM_WORLD,"End of step %d\n",sit->get_step_number());
 //        string wait;
 //        cin>>wait;
