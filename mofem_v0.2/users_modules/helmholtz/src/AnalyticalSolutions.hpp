@@ -74,20 +74,22 @@ struct IncidentWave: public GenericAnalyticalSolution {
   double wAvenumber;
   ublas::vector<double> dIrection;
   ublas::vector<double> cOordinate;
+  double pOwer; /* The amplitude of the incident wave */
+ 
+  IncidentWave(double wavenumber,ublas::vector<double> d,double power = 1):
+    wAvenumber(wavenumber),dIrection(d),pOwer(power) {}
   
-  IncidentWave(double wavenumber,ublas::vector<double> d):
-    wAvenumber(wavenumber),dIrection(d) {}
   ~IncidentWave() {}
 
   virtual vector<ublas::vector<double> >& operator()(double x, double y, double z) {
 
     const complex< double > i( 0.0, 1.0 );
     complex< double > result = 0.0;
-		cOordinate[0] = x;
-		cOordinate[1] = y;
-		cOordinate[2] = z;
-		result = exp(i*wAvenumber*inner_prod(dIrection,cOordinate));
-    //result = exp(i*wAvenumber*z);
+	cOordinate[0] = x;
+	cOordinate[1] = y;
+	cOordinate[2] = z;
+	result = pOwer*exp(i*wAvenumber*inner_prod(dIrection,cOordinate));
+	//result = pOwer*exp(i*wAvenumber*z);
 
     rEsult.resize(2);
     rEsult[REAL].resize(1);

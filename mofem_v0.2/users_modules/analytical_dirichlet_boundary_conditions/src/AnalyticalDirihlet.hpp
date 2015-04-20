@@ -216,6 +216,7 @@ struct AnalyticalDirihletBC {
 
 	PetscFunctionReturn(0);
       }
+
     };
 
     /** \brief Rhs operaetar used to build matrix
@@ -223,12 +224,15 @@ struct AnalyticalDirihletBC {
     template<typename FUNEVAL>
     struct OpRhs:public FaceElementForcesAndSourcesCore::UserDataOperator {
 
+      Range tRis;
       ublas::matrix<double> &hoCoords;
-      FUNEVAL &functionEvaluator;
+      boost::shared_ptr<FUNEVAL> functionEvaluator;
       int fieldNumber;
 
-      OpRhs(const string field_name,ublas::matrix<double> &ho_coords,FUNEVAL &function_evaluator,int field_number): 
-	FaceElementForcesAndSourcesCore::UserDataOperator(field_name),
+      OpRhs(const string field_name,Range tris,
+	ublas::matrix<double> &ho_coords,
+	boost::shared_ptr<FUNEVAL> function_evaluator,int field_number): 
+	FaceElementForcesAndSourcesCore::UserDataOperator(field_name),tRis(tris),
 	hoCoords(ho_coords),functionEvaluator(function_evaluator),
 	fieldNumber(field_number)  {}
 
@@ -244,6 +248,9 @@ struct AnalyticalDirihletBC {
 
 	  unsigned int nb_row = data.getIndices().size();
 	  if(nb_row==0) PetscFunctionReturn(0);
+	  if(tRis.find(getMoFEMFEPtr()->get_ent()) == tRis.end()) {
+	    PetscFunctionReturn(0);
+	  }
 
 	  const FENumeredDofMoFEMEntity *dof_ptr;
 	  ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
@@ -269,8 +276,16 @@ struct AnalyticalDirihletBC {
 	      z = getCoordsAtGaussPts()(gg,2);
 	    }
 	    
-	    ublas::vector<double>& a = functionEvaluator(x,y,z)[fieldNumber];
+	    ublas::vector<double> a; 
+	    try {
 
+	      a = (*functionEvaluator)(x,y,z)[fieldNumber];
+
+	    } catch (exception& ex) {
+	      ostringstream ss;
+	      ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+	      SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+	    }
 	    if(a.size()!=rank) {
 	      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
 	    }
@@ -352,26 +367,27 @@ struct AnalyticalDirihletBC {
   };
  
   ApproxField approxField;
-  Range tRis;
-  AnalyticalDirihletBC(FieldInterface& m_field,Range &bc_tris): approxField(m_field),tRis(bc_tris) {};
+  AnalyticalDirihletBC(FieldInterface& m_field): approxField(m_field) {};
 
   template<typename FUNEVAL>
   PetscErrorCode setApproxOps(
     FieldInterface &m_field,
-    string field_name,
-    FUNEVAL &funtcion_evaluator,int field_number = 0,
+    string field_name,Range& tris,
+    boost::shared_ptr<FUNEVAL> funtcion_evaluator,int field_number = 0,
     string nodals_positions = "MESH_NODE_POSITIONS") {
     PetscFunctionBegin;
-    if(m_field.check_field(nodals_positions)) {
+    if(approxField.getLoopFeApprox().get_op_to_do_Rhs().empty()) {
+      if(m_field.check_field(nodals_positions)) {
 	approxField.getLoopFeApprox().get_op_to_do_Rhs().push_back(new ApproxField::OpHoCoord(nodals_positions,approxField.hoCoords));
+      }
+      approxField.getLoopFeApprox().get_op_to_do_Lhs().push_back(new ApproxField::OpLhs(field_name,approxField.hoCoords));
     }
-    approxField.getLoopFeApprox().get_op_to_do_Rhs().push_back(new ApproxField::OpRhs<FUNEVAL>(field_name,approxField.hoCoords,funtcion_evaluator,field_number));
-    approxField.getLoopFeApprox().get_op_to_do_Lhs().push_back(new ApproxField::OpLhs(field_name,approxField.hoCoords));
+    approxField.getLoopFeApprox().get_op_to_do_Rhs().push_back(new ApproxField::OpRhs<FUNEVAL>(field_name,tris,approxField.hoCoords,funtcion_evaluator,field_number));
     PetscFunctionReturn(0);
   }
 
   PetscErrorCode initializeProblem(
-    FieldInterface &m_field,string fe,string field,
+    FieldInterface &m_field,string fe,string field,Range& tris,
     string nodals_positions = "MESH_NODE_POSITIONS") {
     PetscFunctionBegin;
     PetscErrorCode ierr;
@@ -383,7 +399,7 @@ struct AnalyticalDirihletBC {
     if(m_field.check_field(nodals_positions)) {
       ierr = m_field.modify_finite_element_add_field_data(fe,nodals_positions); CHKERRQ(ierr);
     }
-    ierr = m_field.add_ents_to_finite_element_by_TRIs(tRis,fe); CHKERRQ(ierr);
+    ierr = m_field.add_ents_to_finite_element_by_TRIs(tris,fe); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
@@ -413,7 +429,7 @@ struct AnalyticalDirihletBC {
   }
   
   PetscErrorCode solveProblem(
-    FieldInterface &m_field,string problem,string fe,DirichletBC &bc) {
+    FieldInterface &m_field,string problem,string fe,DirichletBC &bc,Range &tris) {
     PetscFunctionBegin;
     PetscErrorCode ierr;
 
@@ -436,7 +452,7 @@ struct AnalyticalDirihletBC {
 
     ierr = m_field.set_global_ghost_vector(problem,ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
-    bc.tRis_ptr = &tRis; 
+    bc.tRis_ptr = &tris; 
     bc.map_zero_rows.clear();
     bc.dofsIndices.clear();
     bc.dofsValues.clear();
