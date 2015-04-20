@@ -736,8 +736,8 @@ int main(int argc, char *argv[]) {
   if( recorder_ptr->check_series("Wt_SERIES") ) {
     cout<<"============== Wt_SERIES exists =============== "<<endl;
     for(_IT_SERIES_STEPS_BY_NAME_FOR_LOOP_(recorder_ptr,"Wt_SERIES",sit)) {
-//      if(count%10==0){
-      if(count==100){
+      if(count%10==0){
+//      if(count==100){
         PetscPrintf(PETSC_COMM_WORLD,"Process step %d\n",sit->get_step_number());
         ierr = recorder_ptr->load_series_data("Wt_SERIES",sit->get_step_number()); CHKERRQ(ierr);
 
@@ -823,7 +823,7 @@ int main(int argc, char *argv[]) {
 
         
         ierr = KSPDestroy(&solver); CHKERRQ(ierr);
-//        delete my_fe_ptr;
+        delete my_fe_ptr;
         PetscPrintf(PETSC_COMM_WORLD,"End of step %d\n",sit->get_step_number());
 //        string wait;
 //        cin>>wait;
