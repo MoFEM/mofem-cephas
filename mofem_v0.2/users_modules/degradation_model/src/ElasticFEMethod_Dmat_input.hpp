@@ -60,7 +60,7 @@ namespace ObosleteUsersModules {
       PetscFunctionBegin;
       K.resize(row_mat,col_mat);
       int g_dim = g_NTET.size()/4;
-      cout<<"g_dim in using Dmat =  "<<g_dim<<endl;
+//      cout<<"g_dim in using Dmat =  "<<g_dim<<endl;
 
       for(int rr = 0;rr<row_mat;rr++) {
         if(RowGlob[rr].size()==0) continue;
