@@ -15,7 +15,7 @@
 #include <MoFEM.hpp>
 #include <Projection10NodeCoordsOnField.hpp>
 #include <boost/numeric/ublas/vector_proxy.hpp>
-#include <FiledApproximation.hpp>
+#include <FieldApproximation.hpp>
 
 #include <boost/iostreams/tee.hpp>
 #include <boost/iostreams/stream.hpp>

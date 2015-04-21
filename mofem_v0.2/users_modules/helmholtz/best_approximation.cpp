@@ -24,7 +24,7 @@
 #include <Projection10NodeCoordsOnField.hpp>
 
 #include <boost/numeric/ublas/vector_proxy.hpp>
-#include <FiledApproximation.hpp>
+#include <FieldApproximation.hpp>
 #include <PotsProcOnRefMesh.hpp>
 #include <boost/iostreams/tee.hpp>
 #include <boost/iostreams/stream.hpp>
@@ -196,56 +196,88 @@ int main(int argc, char *argv[]) {
   double power_of_incident_wave = 1;
   ierr = PetscOptionsGetScalar(NULL,"-power_of_incident_wave",&power_of_incident_wave,NULL); CHKERRQ(ierr);
 
+  //wave direction unit vector=[x,y,z]^T
+  ublas::vector<double> wave_direction;
+  wave_direction.resize(3);
+  wave_direction[0] = 1; // default:X direction [1,0,0]
 
+  int nmax = 3;
+  ierr = PetscOptionsGetRealArray(PETSC_NULL,"-wave_direction",&wave_direction[0],&nmax,NULL); CHKERRQ(ierr);
+  if(nmax!=3) {
+    SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -wave_direction [3*1 vector] default:X direction [1,0,0]");
+  }
+  
   PetscInt choise_value = 0;
   // set type of analytical solution  
-  ierr = PetscOptionsGetEList(NULL,"-analytical_solution_type",analytical_solution_types,2,&choise_value,NULL); CHKERRQ(ierr);
-
+  ierr = PetscOptionsGetEList(NULL,"-analytical_solution_type",analytical_solution_types,6,&choise_value,&flg); CHKERRQ(ierr);
+  if(flg != PETSC_TRUE) {
+    SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -analytical_solution_type needed, WARNING!!!!!!.");
+  }
+    
   switch((AnalyticalSolutionTypes)choise_value) {
-
+    
+    case HARD_SPHERE_SCATTER_WAVE:
+    
+    {
+      HardSphereScatterWave function_evaluator(wavenumber);
+      ierr = solve_problem(m_field,"EX1_PROBLEM","FE1","reEX","imEX",INSERT_VALUES,function_evaluator,is_partitioned); CHKERRQ(ierr);
+    }
+    
+    break;
+      
+      
     case SOFT_SPHERE_SCATTER_WAVE:
 
       {
-	SoftSphereScatterWave function_evaluator(wavenumber);
-	ierr = solve_problem(m_field,"EX1_PROBLEM","FE1","reEX","imEX",INSERT_VALUES,function_evaluator,is_partitioned); CHKERRQ(ierr);
+        SoftSphereScatterWave function_evaluator(wavenumber);
+        ierr = solve_problem(m_field,"EX1_PROBLEM","FE1","reEX","imEX",INSERT_VALUES,function_evaluator,is_partitioned); CHKERRQ(ierr);
       }
 
-      break;
+    break;
 
     case PLANE_WAVE:
 
       {
-	PlaneWave function_evaluator(wavenumber,0.25*M_PI);
-	ierr = solve_problem(m_field,"EX1_PROBLEM","FE1","reEX","imEX",INSERT_VALUES,function_evaluator,is_partitioned); CHKERRQ(ierr);
+        PlaneWave function_evaluator(wavenumber,0.25*M_PI);
+        ierr = solve_problem(m_field,"EX1_PROBLEM","FE1","reEX","imEX",INSERT_VALUES,function_evaluator,is_partitioned); CHKERRQ(ierr);
       }
 
-      break;
+    break;
+      
+    case HARD_CYLINDER_SCATTER_WAVE:
+      
+      {  
+        HardCylinderScatterWave function_evaluator(wavenumber);
+        ierr = solve_problem(m_field,"EX1_PROBLEM","FE1","reEX","imEX",INSERT_VALUES,function_evaluator,is_partitioned); CHKERRQ(ierr);
+      }
+      
+    break;
 
-    case CYLINDER_SCATTER_WAVE:
+    case SOFT_CYLINDER_SCATTER_WAVE:
 
-      {	
-	CylinderScatterWave function_evaluator(wavenumber);
-	ierr = solve_problem(m_field,"EX1_PROBLEM","FE1","reEX","imEX",INSERT_VALUES,function_evaluator,is_partitioned); CHKERRQ(ierr);
+      {  
+        SoftCylinderScatterWave function_evaluator(wavenumber);
+        ierr = solve_problem(m_field,"EX1_PROBLEM","FE1","reEX","imEX",INSERT_VALUES,function_evaluator,is_partitioned); CHKERRQ(ierr);
       }
 
-      break;
+    break;
 
     case INCIDENT_WAVE:
 
-      {	
-	IncidentWave function_evaluator(wavenumber,power_of_incident_wave);
-	ierr = solve_problem(m_field,"EX1_PROBLEM","FE1","reEX","imEX",INSERT_VALUES,function_evaluator,is_partitioned); CHKERRQ(ierr);
+      {  
+        IncidentWave function_evaluator(wavenumber,wave_direction);
+        ierr = solve_problem(m_field,"EX1_PROBLEM","FE1","reEX","imEX",INSERT_VALUES,function_evaluator,is_partitioned); CHKERRQ(ierr);
       }
 
-      break;
+    break;
 
   }
 
-  PetscBool add_incident_wave = PETSC_TRUE;
+  PetscBool add_incident_wave = PETSC_FALSE;
   ierr = PetscOptionsGetBool(NULL,"-add_incident_wave",&add_incident_wave,NULL); CHKERRQ(ierr);
   if(add_incident_wave) {
 
-    IncidentWave function_evaluator(wavenumber,power_of_incident_wave);
+    IncidentWave function_evaluator(wavenumber,wave_direction);
     ierr = solve_problem(m_field,"EX1_PROBLEM","FE1","reEX","imEX",ADD_VALUES,function_evaluator,is_partitioned); CHKERRQ(ierr);
 
   }
@@ -258,6 +290,7 @@ int main(int argc, char *argv[]) {
     }
   }
 
+  
   PetscBool save_postproc_mesh = PETSC_FALSE;
   ierr = PetscOptionsGetBool(NULL,"-save_postproc_mesh",&save_postproc_mesh,NULL); CHKERRQ(ierr);
   if(save_postproc_mesh) {
