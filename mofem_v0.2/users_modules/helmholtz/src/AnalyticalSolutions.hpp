@@ -22,7 +22,7 @@
 
 /** \brief Generic structure for analytical function
   \ingroup mofem_helmholtz_elem
-	\bug point source example not implemented.
+  \bug point source example not implemented.
 */
 struct GenericAnalyticalSolution {
 
@@ -85,11 +85,12 @@ struct IncidentWave: public GenericAnalyticalSolution {
 
     const complex< double > i( 0.0, 1.0 );
     complex< double > result = 0.0;
-	cOordinate[0] = x;
-	cOordinate[1] = y;
-	cOordinate[2] = z;
-	result = pOwer*exp(i*wAvenumber*inner_prod(dIrection,cOordinate));
-	//result = pOwer*exp(i*wAvenumber*z);
+    cOordinate.resize(3);
+    cOordinate[0] = x;
+    cOordinate[1] = y;
+    cOordinate[2] = z;
+    result = pOwer*exp(i*wAvenumber*inner_prod(dIrection,cOordinate));
+    //result = pOwer*exp(i*wAvenumber*z);
 
     rEsult.resize(2);
     rEsult[REAL].resize(1);
@@ -99,7 +100,7 @@ struct IncidentWave: public GenericAnalyticalSolution {
 
     return rEsult;
 
-  }	
+  }  
 
 };
 
@@ -146,7 +147,7 @@ struct HardSphereScatterWave: public GenericAnalyticalSolution {
     double R = sqrt(x2+y2+z2); 
     double cos_theta = z/R;
 
-    const double k = wAvenumber;  	//Wave number
+    const double k = wAvenumber;    //Wave number
     const double a = sphereRadius;      //radius of the sphere,wait to modify by user
 
     const complex< double > i( 0.0, 1.0 );
@@ -161,18 +162,18 @@ struct HardSphereScatterWave: public GenericAnalyticalSolution {
     while( error > tol )  //finding the acoustic potential in one single point.
     {
 
-			if(vecAl.size()>n) {
-				Al = vecAl[n];
+      if(vecAl.size()>n) {
+        Al = vecAl[n];
       } else {
-				// spherical Bessel function
-				double const1 = k*a;
-				double jn_der = n / const1 * sph_bessel( n, const1 ) - sph_bessel( n + 1, const1 ); 
-	
-				// spherical Hankel function
-				complex< double > hn_der = n / const1 * sph_hankel_1( n, const1 ) - sph_hankel_1( n + 1, const1 );
-				//Constant term
-				Al = -(2.0*n+1)*pow(i,n)*jn_der/hn_der;
-				vecAl.push_back(Al);
+        // spherical Bessel function
+        double const1 = k*a;
+        double jn_der = n / const1 * sph_bessel( n, const1 ) - sph_bessel( n + 1, const1 ); 
+  
+        // spherical Hankel function
+        complex< double > hn_der = n / const1 * sph_hankel_1( n, const1 ) - sph_hankel_1( n + 1, const1 );
+        //Constant term
+        Al = -(2.0*n+1)*pow(i,n)*jn_der/hn_der;
+        vecAl.push_back(Al);
       }
       
       prev_result = result;
@@ -245,7 +246,7 @@ struct SoftSphereScatterWave: public GenericAnalyticalSolution {
     double R = sqrt(x2+y2+z2); 
     double cos_theta = z/R;
 
-    const double k = wAvenumber;  	//Wave number
+    const double k = wAvenumber;    //Wave number
     const double a = sphereRadius;      //radius of the sphere,wait to modify by user
 
     const complex< double > i( 0.0, 1.0 );
@@ -304,7 +305,7 @@ struct SoftSphereScatterWave: public GenericAnalyticalSolution {
   p_\textrm{scattered} = exp^{ik\mathbf{x}\Theta}
   \f]
 
-	where:
+  where:
  
   \f[
   \mathbf{x} = [x,y] 
@@ -385,9 +386,9 @@ struct PlaneWave: public GenericAnalyticalSolution {
   \f]
  
   Paper: 
-		Kechroud, R., Soulaimani, A., & Antoine, X. (2009). 
-		A performance study of plane wave finite element methods with a Padé-type artificial boundary condition in acoustic scattering. 
-		Advances in Engineering Software, 40(8), 738-750.
+    Kechroud, R., Soulaimani, A., & Antoine, X. (2009). 
+    A performance study of plane wave finite element methods with a Padé-type artificial boundary condition in acoustic scattering. 
+    Advances in Engineering Software, 40(8), 738-750.
 
 */
 
@@ -408,8 +409,8 @@ struct HardCylinderScatterWave: public GenericAnalyticalSolution {
     double x2 = x*x,y2 = y*y;
     double R = sqrt(x2+y2);
     double theta = atan2(y,x)+2*M_PI;
-	//double cos_theta = z/R;
-		
+  //double cos_theta = z/R;
+    
     const double k = wAvenumber;  //Wave number
     const double const1 = k * a;
     double const2 = k * R;
@@ -428,31 +429,30 @@ struct HardCylinderScatterWave: public GenericAnalyticalSolution {
     double Jn_der_zero = ( - cyl_bessel_j( 1, const1 ));  
     complex< double > Hn_der_zero = ( - cyl_hankel_1( 1, const1 ));
     complex< double >Hn_zero = cyl_hankel_1( 0, const2 );  //S Hankel first kind function
-	
+  
     //n=0;
     result -= (Jn_der_zero * Hn_zero)/Hn_der_zero;
-	
+  
     while( error > tol )  //finding the acoustic potential in one single point.
-    {	
-	  if(vecAl.size()>n) {
-		Al = vecAl[n-1];
-	  } else {
-		// cylindrical Bessel function
-		double Jn_der_ka = n / const1 * cyl_bessel_j( n, const1 ) - cyl_bessel_j( n + 1, const1 ); 
-		// cylindrical Hankel function
-		complex<double> Hn_der_ka = n / const1 * cyl_hankel_1( n, const1 ) - cyl_hankel_1( n + 1, const1 ); 
-		//Constant term
-		Al = -2.0*pow(i,n)*Jn_der_ka/Hn_der_ka;
-		vecAl.push_back(Al);
-	  }
+    {  
+      if(vecAl.size()>n) {
+	Al = vecAl[n-1];
+      } else {
+	// cylindrical Bessel function
+	double Jn_der_ka = n / const1 * cyl_bessel_j( n, const1 ) - cyl_bessel_j( n + 1, const1 ); 
+	// cylindrical Hankel function
+	complex<double> Hn_der_ka = n / const1 * cyl_hankel_1( n, const1 ) - cyl_hankel_1( n + 1, const1 ); 
+	//Constant term
+	Al = -2.0*pow(i,n)*Jn_der_ka/Hn_der_ka;
+	vecAl.push_back(Al);
+      }
 
-	  prev_result = result;
-		
-	  complex< double >Hn_kr = cyl_hankel_1( n, const2 );  //S Hankel first kind function
-		
-	  result += Al * Hn_kr * cos(n*theta);
-	  error = abs( abs( result ) - abs( prev_result ) );
-	  ++n;
+      prev_result = result;
+      complex< double >Hn_kr = cyl_hankel_1( n, const2 );  //S Hankel first kind function
+    
+      result += Al * Hn_kr * cos(n*theta);
+      error = abs( abs( result ) - abs( prev_result ) );
+      ++n;
       
     }
     
@@ -502,9 +502,9 @@ struct HardCylinderScatterWave: public GenericAnalyticalSolution {
   \f]
  
   Paper: 
-		Kechroud, R., Soulaimani, A., & Antoine, X. (2009). 
-		A performance study of plane wave finite element methods with a Padé-type artificial boundary condition in acoustic scattering. 
-		Advances in Engineering Software, 40(8), 738-750.
+    Kechroud, R., Soulaimani, A., & Antoine, X. (2009). 
+    A performance study of plane wave finite element methods with a Padé-type artificial boundary condition in acoustic scattering. 
+    Advances in Engineering Software, 40(8), 738-750.
 
 
 */
@@ -531,7 +531,7 @@ struct SoftCylinderScatterWave: public GenericAnalyticalSolution {
     double const2 = k * R;
     
     const complex< double > i( 0.0, 1.0 );
-	complex< double > Al;
+    complex< double > Al;
     // magnitude of incident wave
     //const double phi_incident_mag = 1.0;
     
@@ -539,29 +539,29 @@ struct SoftCylinderScatterWave: public GenericAnalyticalSolution {
     complex< double > prev_result;
     
     double error = 100.0;
-	unsigned int n = 1; //initialized the infinite series loop
+    unsigned int n = 1; //initialized the infinite series loop
     
-	double Jn_zero = cyl_bessel_j( 0, const1 );
-	complex< double > Hn_zero_kr = cyl_hankel_1( 0, const2 );  //S Hankel first kind function
-	complex< double > Hn_zero_ka = cyl_hankel_1( 0, const1 );  //S Hankel first kind function
-	//n=0;
-	result -= (Jn_zero * Hn_zero_kr)/Hn_zero_ka;
-	
+    double Jn_zero = cyl_bessel_j( 0, const1 );
+    complex< double > Hn_zero_kr = cyl_hankel_1( 0, const2 );  //S Hankel first kind function
+    complex< double > Hn_zero_ka = cyl_hankel_1( 0, const1 );  //S Hankel first kind function
+    //n=0;
+    result -= (Jn_zero * Hn_zero_kr)/Hn_zero_ka;
+  
     while( error > tol )  //finding the acoustic potential in one single point.
     {
-	  
-	  
-	  if(vecAl.size()>n) {
-		Al = vecAl[n-1];
-	  } else {
-		// cylindrical Bessel function
-		double Jn_ka = cyl_bessel_j( n, const1 );
-		// cylindrical Hankel function
-		complex<double> Hn_ka = cyl_hankel_1( n, const1 );
-		//Constant term
-		Al = -2.0*pow(i,n)*Jn_ka/Hn_ka;
-		vecAl.push_back(Al);
-	  }
+    
+    
+      if(vecAl.size()>n) {
+	Al = vecAl[n-1];
+      } else {
+	// cylindrical Bessel function
+	double Jn_ka = cyl_bessel_j( n, const1 );
+	// cylindrical Hankel function
+	complex<double> Hn_ka = cyl_hankel_1( n, const1 );
+	//Constant term
+	Al = -2.0*pow(i,n)*Jn_ka/Hn_ka;
+	vecAl.push_back(Al);
+      }
 
 
       prev_result = result;
@@ -601,7 +601,6 @@ PetscErrorCode solve_problem(FieldInterface& m_field,
 
   PetscErrorCode ierr;
   
-
   Mat A;
   ierr = m_field.MatCreateMPIAIJWithArrays(problem_name,&A); CHKERRQ(ierr);
   Vec D;
@@ -639,11 +638,11 @@ PetscErrorCode solve_problem(FieldInterface& m_field,
 
     // save data on mesh
     if(ss == GenericAnalyticalSolution::REAL) {
-			/* set data to field from solution vec */
+      /* set data to field from solution vec */
       if(is_partitioned) {
-				ierr = m_field.set_global_ghost_vector(problem_name,COL,D,mode,SCATTER_REVERSE); CHKERRQ(ierr);
+        ierr = m_field.set_global_ghost_vector(problem_name,COL,D,mode,SCATTER_REVERSE); CHKERRQ(ierr);
       } else {
-				ierr = m_field.set_local_ghost_vector(problem_name,COL,D,mode,SCATTER_REVERSE); CHKERRQ(ierr);
+        ierr = m_field.set_local_ghost_vector(problem_name,COL,D,mode,SCATTER_REVERSE); CHKERRQ(ierr);
       }
 
       VecZeroEntries(D);
@@ -652,9 +651,9 @@ PetscErrorCode solve_problem(FieldInterface& m_field,
 
     } else {
       if(is_partitioned) {
-				ierr = m_field.set_other_local_ghost_vector(problem_name,re_field,im_field,COL,D,mode,SCATTER_REVERSE); CHKERRQ(ierr);
+	ierr = m_field.set_other_local_ghost_vector(problem_name,re_field,im_field,COL,D,mode,SCATTER_REVERSE); CHKERRQ(ierr);
       } else {
-				ierr = m_field.set_other_global_ghost_vector(problem_name,re_field,im_field,COL,D,mode,SCATTER_REVERSE); CHKERRQ(ierr);
+	ierr = m_field.set_other_global_ghost_vector(problem_name,re_field,im_field,COL,D,mode,SCATTER_REVERSE); CHKERRQ(ierr);
       }
     }
 
@@ -670,8 +669,5 @@ PetscErrorCode solve_problem(FieldInterface& m_field,
 
   PetscFunctionReturn(0);
 }
-
-
-
 
 

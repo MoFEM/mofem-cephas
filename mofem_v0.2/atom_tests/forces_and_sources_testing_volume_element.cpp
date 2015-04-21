@@ -190,6 +190,14 @@ int main(int argc, char *argv[]) {
       ierr = getPorblemRowIndices("FIELD1",row_type,row_side,row_indices); CHKERRQ(ierr);
       ierr = getPorblemColIndices("FIELD2",col_type,col_side,col_indices); CHKERRQ(ierr);
 
+      if(row_indices.size()!=row_data.getIndices().size()) {
+	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"row inconsistency");
+      }
+
+      if(col_indices.size()!=col_data.getIndices().size()) {
+	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"col inconsistency");
+      }
+
       for(unsigned int rr = 0;rr<row_indices.size();rr++) {
 	if(row_indices[rr] != row_data.getIndices()[rr]) {
 	  cerr << row_indices << endl;

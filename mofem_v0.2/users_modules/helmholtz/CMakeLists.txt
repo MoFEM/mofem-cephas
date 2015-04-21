@@ -19,6 +19,7 @@ include_directories("${UM_SOURCE_DIR}/helmholtz/src")
 include_directories("${UM_SOURCE_DIR}/analytical_dirichlet_boundary_conditions/src")
 
 
+
 #add_executable(spherical_acoustic ${UM_SOURCE_DIR}/helmholtz/spherical_acoustic.cpp)
 #target_link_libraries(spherical_acoustic
 #  mofem_finite_element_library
@@ -121,7 +122,6 @@ target_link_libraries(error_norm
 
 add_executable(best_approximation ${UM_SOURCE_DIR}/helmholtz/best_approximation.cpp)
 target_link_libraries(best_approximation
-
   mofem_finite_element_library
   mofem_finite_elements
   mofem_interfaces

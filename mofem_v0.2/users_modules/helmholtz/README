@@ -1,24 +1,7 @@
- 
+
 Linear Helmholtz problem,
 
-options:
-
-
-/* partitioning the mesh */
-mbpart -t -p PartKway  16 cylinder.cub cylinder_16parts.h5m
-
-make -j4 && /opt/build_for_gcc-mp-4.4/local/bin/mpirun -np 3 ./best_approximation -my_file impinging_cylinder.cub -my_is_partitioned false -wave_number 20 -wave_direction 1,0,0 -analytical_solution_type hard_cylinder_scatter_wave -save_postproc_mesh true -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 4 -my_max_post_proc_ref_level 2 -add_incident_wave false
-
-
-
-make -j2 && mpirun -np 3 ./fe_approximation -my_file impinging_cylinder.cub -my_is_partitioned false -wave_number 10 -wave_direction 1,0,0 -analytical_solution_type hard_cylinder_scatter_wave -save_postproc_mesh true -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 4 -my_max_post_proc_ref_level 1 -add_incident_wave false
-
-mbconvert fe_solution_mesh_post_proc.h5m fe_solution_mesh_post_proc.vtk && cp ./fe_solution_mesh_post_proc.vtk ../../../mnt/home/Desktop/U_pan/helmholtz_results/
-
-
-make -j2 && mpirun -np 3 ./cylindrical_acoustic -my_file impinging_cylinder.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 4 -my_max_post_proc_ref_level 1 -use_impedance false
-
-mbconvert cylindrical_acoustic_finite_element_out.h5m cylindrical_acoustic_finite_element_out.vtk && cp ./cylindrical_acoustic_finite_element_out.vtk ../../../mnt/home/Desktop/U_pan/helmholtz_results/
+make -j4 && /opt/build_for_gcc-mp-4.4/local/bin/mpirun -np 1 ./acoustic_steady -my_file cube_No_reflecting_BC_Problem.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1 -my_max_post_proc_ref_level 0
 
 /* command for L2 and H1 norm calculation. */
 /opt/build_for_gcc-mp-4.4/local/bin/mpirun -np 1 \
