@@ -1,25 +1,26 @@
 reset
 
 # Geometry (all dimension for macro is in meter [mm])
-brick x 10 y 10 z 2.5
+brick x 10 y 10 z 1
 create cylinder height 60 radius 5
 move volume 2 x -5 y -5 z 0 include_merged
 subtract volume 2 from volume 1
-brick x 10 y 10 z 2.5
+brick x 10 y 10 z 1
 move volume 3 x 0 y 10 z 0 include_merged
 imprint volume all 
 merge volume all 
 
 #Meshing   
-curve 20 19 interval 2 
+curve 20 19 interval 5
 curve 20 19 scheme equal 
 mesh curve 20 19   
  
-curve 2 1  interval 3  
+curve 2 1  interval 8
 curve 2 1  scheme equal 
 mesh curve 2 1   
  
-curve 17 interval 4
+#circlular arc   
+curve 17 interval  8
 curve 17 scheme equal 
 mesh curve 17   
  
@@ -29,7 +30,7 @@ mesh surface 11
 surface 13 scheme mirror source surface 11 source vertex 14 target vertex 12 nosmoothing 
 mesh surface 13  
  
-curve 25 23 24 interval  3 
+curve 25 23 24 interval  8
 curve 25 23 24 scheme equal 
 mesh curve 25 23 24  
 surface 15  scheme TriMesh 
