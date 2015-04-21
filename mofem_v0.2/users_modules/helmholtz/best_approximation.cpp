@@ -300,8 +300,28 @@ int main(int argc, char *argv[]) {
   ierr = PetscOptionsGetBool(NULL,"-add_incident_wave",&add_incident_wave,NULL); CHKERRQ(ierr);
   if(add_incident_wave) {
 
-    IncidentWave function_evaluator(wavenumber,wave_direction);
-    ierr = solve_problem(m_field,"EX1_PROBLEM","FE1","reEX","imEX",ADD_VALUES,function_evaluator,is_partitioned); CHKERRQ(ierr);
+	// define problem
+    ierr = m_field.add_problem("INCIDENT_WAVE"); CHKERRQ(ierr);
+    // set finite elements for problem
+    ierr = m_field.modify_problem_add_finite_element("INCIDENT_WAVE","FE1"); CHKERRQ(ierr);
+    // set refinment level for problem
+    ierr = m_field.modify_problem_ref_level_add_bit("INCIDENT_WAVE",bit_level0); CHKERRQ(ierr);
+	
+    // build porblems
+    if(is_partitioned) {
+      // if mesh is partitioned
+      ierr = m_field.build_partitioned_problem("INCIDENT_WAVE",true); CHKERRQ(ierr);
+      ierr = m_field.partition_finite_elements("INCIDENT_WAVE",true); CHKERRQ(ierr);
+    } else {
+      // if not partitioned mesh is load to all processes 
+      ierr = m_field.build_problem("INCIDENT_WAVE"); CHKERRQ(ierr);
+      ierr = m_field.partition_problem("INCIDENT_WAVE"); CHKERRQ(ierr);
+      ierr = m_field.partition_finite_elements("INCIDENT_WAVE"); CHKERRQ(ierr);
+    }
+    ierr = m_field.partition_ghost_dofs("INCIDENT_WAVE"); CHKERRQ(ierr);
+	
+    IncidentWave function_evaluator(wavenumber,wave_direction,1);
+    ierr = solve_problem(m_field,"INCIDENT_WAVE","FE1","reEX","imEX",ADD_VALUES,function_evaluator,is_partitioned); CHKERRQ(ierr);
 
   }
  

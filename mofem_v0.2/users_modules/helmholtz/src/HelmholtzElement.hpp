@@ -45,9 +45,9 @@ struct HelmholtzElement {
   };
 
   /// \brief Surface element
-  struct MySurfaceFE: public TriElementForcesAndSurcesCore {
+  struct MySurfaceFE: public FaceElementForcesAndSourcesCore {
     int addToRank; ///< default value 1, i.e. assumes that geometry is approx. by quadratic functions.
-    MySurfaceFE(FieldInterface &_mField,int add_to_rank): TriElementForcesAndSurcesCore(_mField),addToRank(add_to_rank) {}
+    MySurfaceFE(FieldInterface &_mField,int add_to_rank): FaceElementForcesAndSourcesCore(_mField),addToRank(add_to_rank) {}
     int getRule(int order) { return order+addToRank; };
   };
 
@@ -177,13 +177,13 @@ struct HelmholtzElement {
 
   /** \brief Calculate pressure on surface
     */
-  struct OpGetValueAtGaussPts: public TriElementForcesAndSurcesCore::UserDataOperator {
+  struct OpGetValueAtGaussPts: public FaceElementForcesAndSourcesCore::UserDataOperator {
   
     CommonData &commonData;
     const string fieldName;
     OpGetValueAtGaussPts(const string field_name,
       CommonData &common_data):
-      TriElementForcesAndSurcesCore::UserDataOperator(field_name),
+      FaceElementForcesAndSourcesCore::UserDataOperator(field_name),
       commonData(common_data),fieldName(field_name) {}
   
     PetscErrorCode doWork(
@@ -224,11 +224,11 @@ struct HelmholtzElement {
     This takes into account HO approximation for geometry
 
     */
-  struct OpHoCoordTri: public TriElementForcesAndSurcesCore::UserDataOperator {
+  struct OpHoCoordTri: public FaceElementForcesAndSourcesCore::UserDataOperator {
   
     ublas::matrix<double> &hoCoordsTri;
     OpHoCoordTri(const string field_name,ublas::matrix<double> &ho_coords): 
-      TriElementForcesAndSurcesCore::UserDataOperator(field_name),
+      FaceElementForcesAndSourcesCore::UserDataOperator(field_name),
       hoCoordsTri(ho_coords) {}
   
     /*  
@@ -310,7 +310,7 @@ struct HelmholtzElement {
 				ublas::matrix<double> &grad_p = commonData.gradPressureAtGaussPts[fieldName];
 
         Nf.resize(nb_row_dofs);
-				Nf.clear();
+		Nf.clear();
   
         // wave number "k" is the proportional to the frequency of incident wave
         // and represents number of waves per wave length 2Pi - 2Pi/K   
@@ -323,7 +323,7 @@ struct HelmholtzElement {
             val *= getHoGaussPtsDetJac()[gg]; // higher order geometry
           }
 
-					const ublas::matrix_row<ublas::matrix<double> > gard_p_at_gauss_pt(grad_p,gg);
+		  const ublas::matrix_row<ublas::matrix<double> > gard_p_at_gauss_pt(grad_p,gg);
 
 					/// Integrate diffN^T grad_p - k^2 N^T p dV
           ublas::noalias(Nf) += val*prod(data.getDiffN(gg,nb_row_dofs),gard_p_at_gauss_pt);
@@ -735,43 +735,13 @@ struct HelmholtzElement {
         
         K.resize(nb_rows,nb_cols);
 
-		//		K.clear();
-
-        //for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
-        //    
-		//			double area = getArea();
-		//			if(getNormals_at_GaussPt().size1()) {
-		//			area = ublas::norm_2(getNormals_at_GaussPt(gg))*0.5;
-		//			}
-		//			double val = area*getGaussPts()(2,gg);
-
-		//			/*get cartesian coordinates */
-		//			double x,y,z;
-		//			if(commonData.hoCoords.size1() == row_data.getN().size1()) {
-		//				x = commonData.hoCoords(gg,0);
-		//				y = commonData.hoCoords(gg,1);
-		//				z = commonData.hoCoords(gg,2);	
-		//				if(gg == 0) {
-		//					noalias(nOrmal) = getNormal();
-		//				}
-		//			} else {
-		//				x = getCoordsAtGaussPts()(gg,0);
-		//				y = getCoordsAtGaussPts()(gg,1);
-		//				z = getCoordsAtGaussPts()(gg,2);
-		//				noalias(nOrmal) = getNormals_at_GaussPt(gg);
-		//				
-		//			}
-		//			ublas::vector<double>& f = functionEvaluator(x,y,z,nOrmal);
-		//			
-		//			noalias(K) += val*f[0]*outer_prod(row_data.getN(gg,nb_rows),col_data.getN(gg,nb_cols));
-
-	K.clear();
+		K.clear();
         reF1K.resize(nb_rows,nb_cols);
-	reF1K.clear();
+		reF1K.clear();
         imF1K.resize(nb_rows,nb_cols);
-	imF1K.clear();
+		imF1K.clear();
 
-	nOrmal.resize(3);
+		nOrmal.resize(3);
 
         for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
             

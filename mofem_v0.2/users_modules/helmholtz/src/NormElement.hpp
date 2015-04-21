@@ -1,4 +1,5 @@
 /** \file NormElement.hpp
+\ingroup mofem_helmholtz_elem
  * \brief Operators and data structures for L^2Norm analysis
  *
  * Implementation of L^2 and H_1 Norm element for error analysis
@@ -8,12 +9,7 @@
 /* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
  * --------------------------------------------------------------
  * PhD student: Thomas Felix Xuan Meng
- * This file is part of MoFEM.
- * MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
+/*
  * MoFEM is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
@@ -21,7 +17,8 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. 
- * The header file should contains as least #include as possible for speed */
+ * The header file should contains as least #include as possible for speed 
+ */
 
 #ifndef __NORM_ELEMENT_HPP
 #define __NORM_ELEMENT_HPP
@@ -37,229 +34,98 @@ namespace MoFEM {
   */
 struct NormElement {
 
-	struct MyVolumeFE: public VolumeElementForcesAndSourcesCore {
-		MyVolumeFE(FieldInterface &mField): VolumeElementForcesAndSourcesCore(mField) {}
-		
-		/** \brief it is used to calculate nb. of Gauss integartion points
-		 *
-		 * for more details pleas look
-		 *   Reference:
-		 *
-		 * Albert Nijenhuis, Herbert Wilf,
-		 * Combinatorial Algorithms for Computers and Calculators,
-		 * Second Edition,
-		 * Academic Press, 1978,
-		 * ISBN: 0-12-519260-6,
-		 * LC: QA164.N54.
-		 *
-		 * More details about algorithm
-		 * http://people.sc.fsu.edu/~jburkardt/cpp_src/gm_rule/gm_rule.html
-		**/
-		int getRule(int order) { return order; };
-	};
-	MyVolumeFE feRhs; ///< cauclate right hand side for tetrahedral elements
-	MyVolumeFE& getLoopFeRhs() { return feRhs; } ///< get rhs volume element
-	MyVolumeFE feLhs; //< calculate left hand side for tetrahedral elements
-	MyVolumeFE& getLoopFeLhs() { return feLhs; } ///< get lhs volume element
+  struct MyVolumeFE: public VolumeElementForcesAndSourcesCore {
+    int addToRank; ///< default value 1, i.e. assumes that geometry is approx. by quadratic functions.
+    MyVolumeFE(FieldInterface &_mField,int add_to_rank): VolumeElementForcesAndSourcesCore(_mField),addToRank(add_to_rank) {}
+    int getRule(int order) { return order+addToRank; };
+  };
+  
+  MyVolumeFE feRhs; ///< cauclate right hand side for tetrahedral elements
+  MyVolumeFE& getLoopFeRhs() { return feRhs; } ///< get rhs volume element
+  MyVolumeFE feLhs; //< calculate left hand side for tetrahedral elements
+  MyVolumeFE& getLoopFeLhs() { return feLhs; } ///< get lhs volume element
 	
-	struct MyTriFE: public TriElementForcesAndSurcesCore {
-		MyTriFE(FieldInterface &m_field): TriElementForcesAndSurcesCore(m_field) {}
-		int getRule(int order) { return ceil(order/2); };  
-    };
+  /// \brief Surface element
+  struct MySurfaceFE: public TriElementForcesAndSurcesCore {
+    int addToRank; ///< default value 1, i.e. assumes that geometry is approx. by quadratic functions.
+    MySurfaceFE(FieldInterface &_mField,int add_to_rank): TriElementForcesAndSurcesCore(_mField),addToRank(add_to_rank) {}
+    int getRule(int order) { return order+addToRank; };
+  };
 	
 	
-	FieldInterface &m_field;
-    NormElement(
-        FieldInterface &mField):
-        feRhs(mField),feLhs(mField),m_field(mField) {}
+  FieldInterface &m_field;
+  int addToRank; ///< default value 1, i.e. assumes that geometry is approx. by quadratic functions.
+  
+  NormElement(
+     FieldInterface &mField,int add_to_rank = 1):
+     feRhs(mField,add_to_rank),feLhs(mField,add_to_rank),m_field(mField),addToRank(add_to_rank) {}
 	
-	//Field data
-	struct CommonData {
-		//two different fields as inputs		
-		ublas::vector<double> fieldValue1AtGaussPts;
-		ublas::vector<double> fieldValue1RateAtGaussPts;
-		ublas::matrix<double> gradField1AtGaussPts;
-		
-		ublas::vector<double> fieldValue2AtGaussPts;
-		ublas::vector<double> fieldValue2RateAtGaussPts;
-		ublas::matrix<double> gradField2AtGaussPts;
-		inline ublas::matrix_row<ublas::matrix<double> > getGradField1AtGaussPts(const int gg) {
-			return ublas::matrix_row<ublas::matrix<double> >(gradField1AtGaussPts,gg);
-		};
+  //Field data
+  struct CommonData {
 	
-		inline ublas::matrix_row<ublas::matrix<double> > getGradField2AtGaussPts(const int gg) {
-			return ublas::matrix_row<ublas::matrix<double> >(gradField2AtGaussPts,gg);		
-		};
+	map<string,ublas::vector<double> > pressureAtGaussPts; 
+	map<string,ublas::matrix<double> > gradPressureAtGaussPts;
+	ublas::matrix<double> hoCoords;
+	 
+	map<EntityType, vector< ublas::vector<int> > > imIndices;
+	  
+	  
+  };
+  CommonData commonData;
 	
-	};
-	CommonData commonData;
+  struct VolumeData {
+	Range tEts; ///< constatins elements in block set
+  };
+  map<int,VolumeData> volumeData; ///< maps block set id with appropiate VolumeData	
+  
 	
-	struct BlockData {
-		Range tEts; ///< constatins elements in block set
-	};
-	map<int,BlockData> setOfBlocks; ///< maps block set id with appropiate BlockData	
-	
-	// \brief operator to calculate field gradient at Gauss points
-	struct OpGetGradField1AtGaussPts: public VolumeElementForcesAndSourcesCore::UserDataOperator {
-	
-		CommonData &commonData;
-		OpGetGradField1AtGaussPts(const string field_name,CommonData &common_data):
-			VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
-			commonData(common_data) {}
-	
-		/** \brief operator calculating temperature gradients
-		  *
-		  * temerature gradient is calculated multiplying derivatives of shape functions by degrees of freedom.
-		  */
-		PetscErrorCode doWork(
-			int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
-			PetscFunctionBegin;
-			try {
-				if(data.getFieldData().size()==0) PetscFunctionReturn(0);
-				int nb_dofs = data.getFieldData().size();
-				int nb_gauss_pts = data.getN().size1();
-				
-				//initialize
-				commonData.gradField1AtGaussPts.resize(nb_gauss_pts,3);
-				if(type == MBVERTEX) {
-					fill(commonData.gradField1AtGaussPts.data().begin(),commonData.gradField1AtGaussPts.data().end(),0);
-				}
-	
-				for(int gg = 0;gg<nb_gauss_pts;gg++) {
-					ublas::noalias(commonData.getGradField1AtGaussPts(gg)) += prod( trans(data.getDiffN(gg,nb_dofs)), data.getFieldData() );
-				}
-	
-			} catch (const std::exception& ex) {
-				ostringstream ss;
-				ss << "throw in method: " << ex.what() << endl;
-				SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
-			}
-	
-			PetscFunctionReturn(0);
-		}
-	
-	};
-	
-	/// \brief operator to calculate field gradient at Gauss points
-	struct OpGetGradField2AtGaussPts: public VolumeElementForcesAndSourcesCore::UserDataOperator {
-		
-		CommonData &commonData;
-		OpGetGradField2AtGaussPts(const string field_name,CommonData &common_data):
-			VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
-			commonData(common_data) {}
-		
-		/** \brief operator calculating field gradients
-		  *
-		  * field gradient is calculated multiplying derivatives of shape functions by degrees of freedom.
-		  */
-		PetscErrorCode doWork(
-			int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
-			PetscFunctionBegin;
-			try {
-				
-				if(data.getFieldData().size()==0) PetscFunctionReturn(0);
-				int nb_dofs = data.getFieldData().size();
-				int nb_gauss_pts = data.getN().size1();
-				
-				//initialize
-				commonData.gradField2AtGaussPts.resize(nb_gauss_pts,3);
-				if(type == MBVERTEX) {
-					fill(commonData.gradField2AtGaussPts.data().begin(),commonData.gradField2AtGaussPts.data().end(),0);
-				}
-				
-				for(int gg = 0;gg<nb_gauss_pts;gg++) {
-					ublas::noalias(commonData.getGradField2AtGaussPts(gg)) += prod( trans(data.getDiffN(gg,nb_dofs)), data.getFieldData() );
-				}
-				
-			} catch (const std::exception& ex) {
-				ostringstream ss;
-				ss << "throw in method: " << ex.what() << endl;
-				SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
-			}
-			
-			PetscFunctionReturn(0);
-		}
-		
-	};
-	
-	/** \brief opearator to caulate field value and rate of field value at Gauss points
-    * \infroup mofem_thermal_elem
+  /** \brief Calculate pressure and gradient of pressure in volume
     */
-	template<typename OP>
-	struct OpGetFieldAtGaussPts: public OP::UserDataOperator {
+  struct OpGetValueAndGradAtGaussPts: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 	
-		ublas::vector<double> &fieldAtGaussPts;
-		OpGetFieldAtGaussPts(const string field_name,ublas::vector<double> &field_at_gauss_pts):
-			OP::UserDataOperator(field_name),
-			fieldAtGaussPts(field_at_gauss_pts) {}
+    CommonData &commonData;
+    const string fieldName;
+    OpGetValueAndGradAtGaussPts(const string field_name,
+								CommonData &common_data):
+      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
+      commonData(common_data),fieldName(field_name) {}
 	
-		/** \brief operator calculating field and rate of field
-		  *
-		  * field value or rate of field value is calculated multiplyingshape functions by degrees of freedom
-		  */
-		PetscErrorCode doWork(
-			int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
-			PetscFunctionBegin;
-			try {
-
-				if(data.getFieldData().size()==0) PetscFunctionReturn(0);
-				int nb_dofs = data.getFieldData().size();
-				int nb_gauss_pts = data.getN().size1();
+    PetscErrorCode doWork(
+      int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+      PetscFunctionBegin;
+      try {
+		
+        int nb_dofs = data.getFieldData().size();
+        if(nb_dofs==0) PetscFunctionReturn(0);
+        int nb_gauss_pts = data.getN().size1();
+  
+		ublas::vector<double> &value = commonData.pressureAtGaussPts[fieldName];
+		ublas::matrix<double> &gradient = commonData.gradPressureAtGaussPts[fieldName];
+		
+        // Initialize
+		value.resize(nb_gauss_pts);
+        gradient.resize(nb_gauss_pts,3);
+        if(type == MBVERTEX) {
+		  gradient.clear();
+		  value.clear();
+        }
+		
+        for(int gg = 0;gg<nb_gauss_pts;gg++) {
+          value[gg] += inner_prod(data.getN(gg,nb_dofs),data.getFieldData());
+          ublas::noalias(ublas::matrix_row<ublas::matrix<double> >(gradient,gg))
+		  += prod( trans(data.getDiffN(gg,nb_dofs)), data.getFieldData() );
+        }
+		
+      } catch (const std::exception& ex) {
+        ostringstream ss;
+        ss << "throw in method: " << ex.what() << endl;
+        SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+      }
+	  
+      PetscFunctionReturn(0);
+    }
 	
-				//initialize
-				fieldAtGaussPts.resize(nb_gauss_pts);
-				if(type == MBVERTEX) {
-					//loop over shape functions on entities allways start from
-					//vertices, so if nodal shape functions are processed, vector of
-					//field values is zeroad at initialization
-					fill(fieldAtGaussPts.begin(),fieldAtGaussPts.end(),0);
-				}
-				
-				for(int gg = 0;gg<nb_gauss_pts;gg++) {
-					fieldAtGaussPts[gg] += inner_prod(data.getN(gg,nb_dofs),data.getFieldData());					
-				}
-	
-			} catch (const std::exception& ex) {
-				ostringstream ss;
-				ss << "throw in method: " << ex.what() << endl;
-				SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
-			}
-	
-			PetscFunctionReturn(0);
-		}
-	
-	};
-	
-	
-	/** \brief operator to calculate field at Gauss pts
-    * \infroup mofem_thermal_elem
-    */
-	struct OpGetTetField1AtGaussPts: public OpGetFieldAtGaussPts<VolumeElementForcesAndSourcesCore> {
-		OpGetTetField1AtGaussPts(const string field1_name,CommonData &common_data):
-			OpGetFieldAtGaussPts<VolumeElementForcesAndSourcesCore>(field1_name,common_data.fieldValue1AtGaussPts) {}
-	};
-	
-	struct OpGetTetField2AtGaussPts: public OpGetFieldAtGaussPts<VolumeElementForcesAndSourcesCore> {
-		OpGetTetField2AtGaussPts(const string field2_name,CommonData &common_data):
-			OpGetFieldAtGaussPts<VolumeElementForcesAndSourcesCore>(field2_name,common_data.fieldValue2AtGaussPts) {}
-	};
-	
-	
-	/** \brief operator to calculate field at Gauss ptss
-	  * \infroup mofem_thermal_elem
-	  */
-	struct OpGetTriFieldAtGaussPts: public OpGetFieldAtGaussPts<TriElementForcesAndSurcesCore> {
-		OpGetTriFieldAtGaussPts(const string field_name,CommonData &common_data):
-			OpGetFieldAtGaussPts<TriElementForcesAndSurcesCore>(field_name,common_data.fieldValue1AtGaussPts) {}
-	};
-	
-	/** \brief operator to calculate field rate at Gauss pts
-	  * \infroup mofem_thermal_elem
-	  */
-	struct OpGetTetFieldRateAtGaussPts: public OpGetFieldAtGaussPts<VolumeElementForcesAndSourcesCore> {
-		OpGetTetFieldRateAtGaussPts(const string field_name,CommonData &common_data):
-			OpGetFieldAtGaussPts<VolumeElementForcesAndSourcesCore>(field_name,common_data.fieldValue1RateAtGaussPts) {}
-	};
+  };
 	
 	
 	/** \brief Lhs operaetar for tetrahedral used to build matrix
@@ -364,17 +230,21 @@ struct NormElement {
 		bool useRela;//use relative error
 		ublas::vector<double> Nf;
 		ublas::vector<double> rElative_error;
+		const string refieldName;
+		const string imfieldName;
 		OpRhs(const string re_field_name,const string im_field_name,
 				   CommonData &common_data,bool usel2,bool userela
 				   ): 
 			VolumeElementForcesAndSourcesCore::UserDataOperator(re_field_name,im_field_name),
-			commonData(common_data),useL2(usel2),useTsF(true),useRela(userela) {}
+			commonData(common_data),useL2(usel2),useTsF(true),useRela(userela),refieldName(re_field_name)
+			,imfieldName(im_field_name) {}
 		
 		OpRhs(const string re_field_name,const string im_field_name,
 			  Vec _F,CommonData &common_data,bool usel2,bool userela
 			  ): 
 			VolumeElementForcesAndSourcesCore::UserDataOperator(re_field_name,im_field_name),
-			commonData(common_data),useL2(usel2),useTsF(false),useRela(userela),F(_F) {}
+			commonData(common_data),useL2(usel2),useTsF(false),useRela(userela),F(_F),refieldName(re_field_name)
+			,imfieldName(im_field_name) {}
 		
 		
 		/*	
@@ -398,14 +268,17 @@ struct NormElement {
 					SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,
 							"currently works only for scalar fields, extension to fields with higher rank need to be implemented");
 				}
+				
 				//resize error in specific elements on each vertex equal to dofs
 				Nf.resize(nb_row);
 				rElative_error.resize(nb_row);
 				Nf.clear();
 				rElative_error.clear();
-				ublas::vector<double> uAnaly = commonData.fieldValue1AtGaussPts;
-				ublas::vector<double> uNumer = commonData.fieldValue2AtGaussPts;
+				ublas::vector<double> &u_analy = commonData.pressureAtGaussPts[refieldName];
+				ublas::vector<double> &u_numer = commonData.pressureAtGaussPts[imfieldName];
 				
+				ublas::matrix<double> &uAnalyGrad = commonData.gradPressureAtGaussPts[refieldName];
+				ublas::matrix<double> &uNumerGrad = commonData.gradPressureAtGaussPts[imfieldName];
 				double eRror;
 				double sqError;
 				
@@ -417,26 +290,26 @@ struct NormElement {
 					if(this->getHoGaussPtsDetJac().size()>0) {
 						val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
 
-					} else{
 					}
-					ublas::matrix_row< ublas::matrix<double> > uAnalyGrad = commonData.getGradField1AtGaussPts(gg);
-					ublas::matrix_row< ublas::matrix<double> > uNumerGrad = commonData.getGradField2AtGaussPts(gg);
+					const ublas::matrix_row<ublas::matrix<double> > u_analy_grad(uAnalyGrad,gg);
+					const ublas::matrix_row<ublas::matrix<double> > u_numer_grad(uNumerGrad,gg);
 		
 
 					if(useL2) { //case L2 norm
 						
-						double aa = abs(uAnaly(gg));
-						double bb = abs(uNumer(gg));
-						eRror = aa - bb;
-						//eRror = uAnaly(gg) - uNumer(gg);
+						//double aa = abs(u_analy(gg));
+						//double bb = abs(u_numer(gg));
+						//eRror = aa - bb;
+						eRror = u_analy[gg] - u_numer[gg];
 						sqError = pow(eRror,2.0);
 
 					} else if(!useL2) { //case H1 norm
 					
-						double aa = uAnaly(gg);
-						double bb = uNumer(gg);
-						eRror = aa - bb;
-						double sqGradError = ublas::inner_prod((commonData.getGradField1AtGaussPts(gg)-commonData.getGradField2AtGaussPts(gg)),(commonData.getGradField1AtGaussPts(gg)-commonData.getGradField2AtGaussPts(gg)));
+						//double aa = uAnaly(gg);
+						//double bb = uNumer(gg);
+						//eRror = aa - bb;
+						eRror = u_analy[gg] - u_numer[gg];
+						double sqGradError = ublas::inner_prod((u_analy_grad-u_numer_grad),(u_analy_grad-u_numer_grad));
 					
 						sqError = sqGradError + pow(eRror,2.0);
 						
@@ -448,9 +321,9 @@ struct NormElement {
 					
 					} else if(useRela) { //case relative error
 						
-						double sqUanaly = pow(norm_inf(uAnaly),2.0);
+						double sq_uanaly = pow(norm_inf(u_analy),2.0);
 				
-						ublas::noalias(rElative_error) += val*(pow(eRror,2.0)/sqUanaly)*data.getN(gg);
+						ublas::noalias(rElative_error) += val*(pow(eRror,2.0)/sq_uanaly)*data.getN(gg);
 
 					}
 
@@ -465,9 +338,10 @@ struct NormElement {
 				//}
 
 				if(!useRela) {
-					ierr = VecSetValues(F,data.getIndices().size(),
-					&data.getIndices()[0],&*Nf.data().begin(),ADD_VALUES); CHKERRQ(ierr);} else {
-					ierr = VecSetValues(F,data.getIndices().size(),
+				  ierr = VecSetValues(F,data.getIndices().size(),
+					&data.getIndices()[0],&*Nf.data().begin(),ADD_VALUES); CHKERRQ(ierr);} 
+				else {
+				  ierr = VecSetValues(F,data.getIndices().size(),
 										&data.getIndices()[0],&*rElative_error.data().begin(),ADD_VALUES); CHKERRQ(ierr);	
 				}
 	            
@@ -494,7 +368,6 @@ struct NormElement {
 PetscErrorCode addNormElements(
 	const string problem,string fe,const string norm_field_name,
 	const string field1_name,const string field2_name,
-	//const string field3_name,const string field4_name,
 	const string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
 	PetscFunctionBegin;
 	PetscErrorCode ierr;
@@ -518,9 +391,9 @@ PetscErrorCode addNormElements(
 	//Range tEts;
 	for(_IT_CUBITMESHSETS_BY_NAME_FOR_LOOP_(m_field,"MAT_NORM",it)) {
 		//rval = m_Field.get_moab().get_entities_by_type(it->get_meshset(),MBTET,tEts,true); CHKERR_PETSC(rval);
-		rval = m_field.get_moab().get_entities_by_type(it->get_meshset(),MBTET,setOfBlocks[it->get_msId()].tEts,true); CHKERR_PETSC(rval);
+		rval = m_field.get_moab().get_entities_by_type(it->get_meshset(),MBTET,volumeData[it->get_msId()].tEts,true); CHKERR_PETSC(rval);
 
-		ierr = m_field.add_ents_to_finite_element_by_TETs(setOfBlocks[it->get_msId()].tEts,fe); CHKERRQ(ierr);
+		ierr = m_field.add_ents_to_finite_element_by_TETs(volumeData[it->get_msId()].tEts,fe); CHKERRQ(ierr);
 	}
 	
     
@@ -528,7 +401,6 @@ PetscErrorCode addNormElements(
 	
 	}
 
-//Range tEts;
 
 
 PetscErrorCode setNormFiniteElementRhsOperator(string norm_field_name,string field1_name,
@@ -536,15 +408,13 @@ PetscErrorCode setNormFiniteElementRhsOperator(string norm_field_name,string fie
     string nodals_positions = "MESH_NODE_POSITIONS") {
     PetscFunctionBegin;
 
-	map<int,BlockData>::iterator sit = setOfBlocks.begin();
+	map<int,VolumeData>::iterator sit = volumeData.begin();
 	
-	for(;sit!=setOfBlocks.end();sit++) {
+	for(;sit!=volumeData.end();sit++) {
 		
 		//Calculate field values at gaussian points for field1 and field2; 
-		feRhs.get_op_to_do_Rhs().push_back(new OpGetTetField1AtGaussPts(field1_name,commonData));
-		feRhs.get_op_to_do_Rhs().push_back(new OpGetTetField2AtGaussPts(field2_name,commonData));
-		feRhs.get_op_to_do_Rhs().push_back(new OpGetGradField1AtGaussPts(field1_name,commonData));
-		feRhs.get_op_to_do_Rhs().push_back(new OpGetGradField2AtGaussPts(field2_name,commonData));
+		feRhs.get_op_to_do_Rhs().push_back(new OpGetValueAndGradAtGaussPts(field1_name,commonData));
+		feRhs.get_op_to_do_Rhs().push_back(new OpGetValueAndGradAtGaussPts(field2_name,commonData));
 		
 		feLhs.get_op_to_do_Lhs().push_back(new OpLhs(norm_field_name,A));
 
