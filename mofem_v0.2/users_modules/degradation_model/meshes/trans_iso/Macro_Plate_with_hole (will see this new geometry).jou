@@ -11,16 +11,16 @@ imprint volume all
 merge volume all 
 
 #Meshing   
-curve 20 19 interval 5
+curve 20 19 interval 3
 curve 20 19 scheme equal 
 mesh curve 20 19   
  
-curve 2 1  interval 8
+curve 2 1  interval 5
 curve 2 1  scheme equal 
 mesh curve 2 1   
  
 #circlular arc   
-curve 17 interval  8
+curve 17 interval  5
 curve 17 scheme equal 
 mesh curve 17   
  
@@ -30,7 +30,7 @@ mesh surface 11
 surface 13 scheme mirror source surface 11 source vertex 14 target vertex 12 nosmoothing 
 mesh surface 13  
  
-curve 25 23 24 interval  8
+curve 25 23 24 interval  5
 curve 25 23 24 scheme equal 
 mesh curve 25 23 24  
 surface 15  scheme TriMesh 
@@ -51,7 +51,7 @@ mesh volume all
 
 set duplicate block elements on
 # Bounary Conditions for Heat Transfer Macro problem
-create temperature on surface 19 value 80   #[deg C]
+create temperature on surface 19 value 25   #[deg C]
 create heatflux on surface 6 value 1 # +ve value means heat out (Watt/m2)
 create heatflux on surface 20  value 1 # +ve value means heat out (Watt/m2)
 
