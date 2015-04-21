@@ -66,7 +66,7 @@ struct IncidentWave: public GenericAnalyticalSolution {
   double wAvenumber;
   double pOwer;
  
-  IncidentWave(double wavenumber,double power = 1):
+  IncidentWave(double wavenumber,double power):
     wAvenumber(wavenumber),pOwer(power) {}
   ~IncidentWave() {}
 

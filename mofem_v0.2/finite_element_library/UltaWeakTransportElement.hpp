@@ -342,7 +342,7 @@ struct UltraWeakTransportElement {
       //this operator is not symmetric settig this varible makes element
       //operator to loop over element entities (subsimplicies) without
       //assumption that off-diagonal matrices are symmetric.
-      symm = false;
+      sYmm = false;
     }
     virtual ~OpDivTauU_HdivL2() {}
 
@@ -418,7 +418,7 @@ struct UltraWeakTransportElement {
       //this operator is not symmetric settig this varible makes element
       //operator to loop over element entities (subsimplicies) without
       //assumption that off-diagonal matrices are symmetric.
-      symm = false;
+      sYmm = false;
 
     }
     virtual ~OpVDotDivSigma_L2Hdiv() {}

@@ -183,34 +183,19 @@ int main(int argc, char *argv[]) {
   }
   ierr = m_field.partition_ghost_dofs("EX1_PROBLEM"); CHKERRQ(ierr);
   
-  // extract data from MAT_HELMHOLTZ block
-  double angularfreq = 1;
-  double speed = 1; 
- 
-  /// this works only for one block 
-  int nb_of_blocks = 0; 
-  for(_IT_CUBITMESHSETS_BY_NAME_FOR_LOOP_(m_field,"MAT_HELMHOLTZ",it)) {
-
-    //  get block attributes
-    vector<double> attributes;
-    ierr = it->get_Cubit_attributes(attributes); CHKERRQ(ierr);
-    if(attributes.size()<2) {
-      SETERRQ1(PETSC_COMM_SELF,MOFEM_INVALID_DATA,
-	"not enough block attributes, expected 2 attributes ( angular freq., speed) , attributes.size() = %d ",attributes.size());
-    }
-    angularfreq = attributes[0];
-    speed = attributes[1];  
-    nb_of_blocks++;
-
-  }
-  
-  if(nb_of_blocks!=1) {
-    PetscPrintf(PETSC_COMM_SELF,"Warrning: wave number is set to all blocks baesd on last evaluated block");
-  }
-  double wavenumber = angularfreq/speed;  
-
+  PetscBool wavenumber_flg;
+  double wavenumber;
   // set wave number from line command, that overwrite numbre form block set
-  ierr = PetscOptionsGetScalar(NULL,"-wave_number",&wavenumber,NULL); CHKERRQ(ierr);
+  ierr = PetscOptionsGetScalar(NULL,"-wave_number",&wavenumber,&wavenumber_flg); CHKERRQ(ierr);
+  if(!wavenumber_flg) {
+
+    SETERRQ(PETSC_COMM_SELF,1,"wave number not given, set in line command -wave_number to fix problem");
+
+  }
+
+  double power_of_incident_wave = 1;
+  ierr = PetscOptionsGetScalar(NULL,"-power_of_incident_wave",&power_of_incident_wave,NULL); CHKERRQ(ierr);
+
 
   PetscInt choise_value = 0;
   // set type of analytical solution  
@@ -248,7 +233,7 @@ int main(int argc, char *argv[]) {
     case INCIDENT_WAVE:
 
       {	
-	IncidentWave function_evaluator(wavenumber);
+	IncidentWave function_evaluator(wavenumber,power_of_incident_wave);
 	ierr = solve_problem(m_field,"EX1_PROBLEM","FE1","reEX","imEX",INSERT_VALUES,function_evaluator,is_partitioned); CHKERRQ(ierr);
       }
 
@@ -260,7 +245,7 @@ int main(int argc, char *argv[]) {
   ierr = PetscOptionsGetBool(NULL,"-add_incident_wave",&add_incident_wave,NULL); CHKERRQ(ierr);
   if(add_incident_wave) {
 
-    IncidentWave function_evaluator(wavenumber);
+    IncidentWave function_evaluator(wavenumber,power_of_incident_wave);
     ierr = solve_problem(m_field,"EX1_PROBLEM","FE1","reEX","imEX",ADD_VALUES,function_evaluator,is_partitioned); CHKERRQ(ierr);
 
   }
