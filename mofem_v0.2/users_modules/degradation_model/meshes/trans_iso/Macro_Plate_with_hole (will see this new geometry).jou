@@ -1,11 +1,11 @@
 reset
 
 # Geometry (all dimension for macro is in meter [mm])
-brick x 10 y 10 z 1.5
+brick x 10 y 10 z 2.5
 create cylinder height 60 radius 5
 move volume 2 x -5 y -5 z 0 include_merged
 subtract volume 2 from volume 1
-brick x 10 y 10 z 1.5
+brick x 10 y 10 z 2.5
 move volume 3 x 0 y 10 z 0 include_merged
 imprint volume all 
 merge volume all 
@@ -19,7 +19,7 @@ curve 2 1  interval 3
 curve 2 1  scheme equal 
 mesh curve 2 1   
  
-curve 17 interval 5 
+curve 17 interval 4
 curve 17 scheme equal 
 mesh curve 17   
  
@@ -99,6 +99,7 @@ block 6 tet 58 80 32 95 160
 block 6 name "Ele_Strain_RVE"
 
 save as "/Users/zahur/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/trans_iso/Macro_Plate_with_hole.cub" overwrite
+
 
 
 
