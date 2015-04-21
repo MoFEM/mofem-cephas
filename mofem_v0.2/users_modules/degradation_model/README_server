@@ -13,7 +13,7 @@ Steps
 Example computational homogenisation for Thermal RVE (Textile RVE)
 ============================================================
 ---- RVE displacement BCs
-make Thermal_Disp_MRhs && mpirun -np 1 ./Thermal_Disp_MRhs -my_file ../users_modules/degradation_model/meshes/trans_iso/Textile_RVE_Thermal.cub  -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_output_file_Dmat thermal_Dmat.out -my_order 2
+make Thermal_Disp_MRhs && mpirun -np 1 ./Thermal_Disp_MRhs -my_file ../users_modules/degradation_model/meshes/Using_Textile_RVE/Textile_RVE_Thermal.cub  -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_output_file_Dmat thermal_Dmat.out -my_order 2
 
 ---- RVE Periodic BCs
 make Thermal_Periodic_MRhs && mpirun -np 1 ./Thermal_Periodic_MRhs -my_file ../users_modules/degradation_model/meshes/trans_iso/Textile_RVE_Thermal.cub  -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_output_file_Dmat thermal_Dmat.out -my_order 1
@@ -22,21 +22,21 @@ make Thermal_Periodic_MRhs && mpirun -np 1 ./Thermal_Periodic_MRhs -my_file ../u
 Example computational homogenisation for moisture transport RVE (Textile RVE)
 ============================================================
 ---- RVE displacement BCs
-make MoistureTrans_Disp_MRhs_with_incl && mpirun -np 1 ./MoistureTrans_Disp_MRhs_with_incl -my_file ../users_modules/degradation_model/meshes/trans_iso/Textile_RVE_moisture.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_output_file_Dmat diffusion_Dmat.out -my_order 2
+make MoistureTrans_Disp_MRhs_with_incl && mpirun -np 1 ./MoistureTrans_Disp_MRhs_with_incl -my_file ../users_modules/degradation_model/meshes/Using_Textile_RVE/Textile_RVE_moisture.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_output_file_Dmat diffusion_Dmat.out -my_order 2
 
 ---- RVE Periodic BCs
 make MoistureTrans_Periodic_MRhs_with_incl && mpirun -np 1 ./MoistureTrans_Periodic_MRhs_with_incl -my_file ../users_modules/degradation_model/meshes/trans_iso/Textile_RVE_moisture.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_output_file_Dmat diffusion_Dmat.out -my_order 1
 
 
 
-Unsteady thermal macro problem (run for 1000 days) (time here in seconds)
-============================================================
-make thermal_unsteady_inputDmat && mpirun -np 8 ./thermal_unsteady_inputDmat \
--my_file ../users_modules/degradation_model/meshes/trans_iso/Macro_Plate_with_hole.cub \
-  -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor \
-  -snes_type newtonls -snes_linesearch_type basic -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 -snes_monitor \
-  -ts_monitor -ts_type beuler -ts_dt 864000 -ts_final_time 86400000 -snes_lag_jacobian -2 \
-  -my_order 1 -my_max_post_proc_ref_level 0
+//Unsteady thermal macro problem (run for 1000 days) (time here in seconds)
+//============================================================
+//make thermal_unsteady_inputDmat && mpirun -np 8 ./thermal_unsteady_inputDmat \
+//-my_file ../users_modules/degradation_model/meshes/trans_iso/Macro_Plate_with_hole.cub \
+//  -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor \
+//  -snes_type newtonls -snes_linesearch_type basic -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 -snes_monitor \
+//  -ts_monitor -ts_type beuler -ts_dt 864000 -ts_final_time 86400000 -snes_lag_jacobian -2 \
+//  -my_order 1 -my_max_post_proc_ref_level 0
 
 
 Unsteady thermal macro problem (run for 1000 days) (time here in seconds)
@@ -62,7 +62,7 @@ make diffusion_unsteady_inputDmat && mpirun -np 8 ./diffusion_unsteady_inputDmat
 
 calculate_wt used to calculate degredaiton (1-wt)
 ============================================================
-make wt_unsteady_macro && mpirun -np 5 ./wt_unsteady_macro \
+make wt_unsteady_macro && mpirun -np 8 ./wt_unsteady_macro \
 -my_file solution_mois.h5m \
   -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor \
   -snes_type newtonls -snes_linesearch_type basic -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 -snes_monitor \
@@ -73,7 +73,7 @@ make wt_unsteady_macro && mpirun -np 5 ./wt_unsteady_macro \
 
 Mechanical problem with RVE (both matrix and fibres are isotropic materials)
 ============================================================
-make mech_macro_iso_Disp && mpirun -np 8 ./mech_macro_iso_Disp \
+make mech_macro_iso_Disp && mpirun -np 16 ./mech_macro_iso_Disp \
 -my_file_Macro solution_wt.h5m -my_file_RVE ../users_modules/degradation_model/meshes/Using_Textile_RVE/Textile_RVE_Mechanical.cub\
   -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist \
   -my_max_post_proc_ref_level 0 -my_order 1 \
