@@ -65,7 +65,7 @@ int main(int argc, char *argv[]) {
   char mesh_file_name[255];
   ierr = PetscOptionsGetString(PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
   if(flg != PETSC_TRUE) {
-    SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
+    SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
   
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
@@ -189,7 +189,7 @@ int main(int argc, char *argv[]) {
   ierr = PetscOptionsGetScalar(NULL,"-wave_number",&wavenumber,&wavenumber_flg); CHKERRQ(ierr);
   if(!wavenumber_flg) {
 
-    SETERRQ(PETSC_COMM_SELF,1,"wave number not given, set in line command -wave_number to fix problem");
+    SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"wave number not given, set in line command -wave_number to fix problem");
 
   }
 
@@ -203,8 +203,8 @@ int main(int argc, char *argv[]) {
 
   int nmax = 3;
   ierr = PetscOptionsGetRealArray(PETSC_NULL,"-wave_direction",&wave_direction[0],&nmax,NULL); CHKERRQ(ierr);
-  if(nmax!=3) {
-    SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -wave_direction [3*1 vector] default:X direction [1,0,0]");
+  if(nmax > 0 && nmax != 3) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"*** ERROR -wave_direction [3*1 vector] default:X direction [0,0,1]");
   }
   
   PetscInt choise_value = 0;
@@ -218,12 +218,12 @@ int main(int argc, char *argv[]) {
     
     case HARD_SPHERE_SCATTER_WAVE:
     
-    {
-      HardSphereScatterWave function_evaluator(wavenumber);
-      ierr = solve_problem(m_field,"EX1_PROBLEM","FE1","reEX","imEX",INSERT_VALUES,function_evaluator,is_partitioned); CHKERRQ(ierr);
-    }
+      {
+	HardSphereScatterWave function_evaluator(wavenumber);
+	ierr = solve_problem(m_field,"EX1_PROBLEM","FE1","reEX","imEX",INSERT_VALUES,function_evaluator,is_partitioned); CHKERRQ(ierr);
+      }
     
-    break;
+      break;
       
       
     case SOFT_SPHERE_SCATTER_WAVE:
@@ -270,6 +270,10 @@ int main(int argc, char *argv[]) {
       }
 
     break;
+
+    default:
+
+	SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"No analytical solution has been defined");
 
   }
 

@@ -766,9 +766,7 @@ struct HelmholtzElement {
 
         }
 
-        PetscErrorCode ierr;
-
-	
+        //PetscErrorCode ierr;
 	//reResidual = (dAta.aDmittance_real+f1[0])*re_pressure - (dAta.aDmittance_imag+f1[1])*im_pressure + f2[0];
 	//imResidual = (dAta.aDmittance_real+f1[0])*im_pressure + (dAta.aDmittance_imag+f1[1])*re_pressure + f2[1];
 	//noalias(reNf) += val*(reResidual*data.getN(gg));

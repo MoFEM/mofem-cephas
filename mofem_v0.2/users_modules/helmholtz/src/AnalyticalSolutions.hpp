@@ -85,11 +85,12 @@ struct IncidentWave: public GenericAnalyticalSolution {
 
     const complex< double > i( 0.0, 1.0 );
     complex< double > result = 0.0;
-  cOordinate[0] = x;
-  cOordinate[1] = y;
-  cOordinate[2] = z;
-  result = pOwer*exp(i*wAvenumber*inner_prod(dIrection,cOordinate));
-  //result = pOwer*exp(i*wAvenumber*z);
+    cOordinate.resize(3);
+    cOordinate[0] = x;
+    cOordinate[1] = y;
+    cOordinate[2] = z;
+    result = pOwer*exp(i*wAvenumber*inner_prod(dIrection,cOordinate));
+    //result = pOwer*exp(i*wAvenumber*z);
 
     rEsult.resize(2);
     rEsult[REAL].resize(1);
@@ -261,15 +262,15 @@ struct SoftSphereScatterWave: public GenericAnalyticalSolution {
     {
 
       if(vecAl.size()>n) {
-  Al = vecAl[n];
+	Al = vecAl[n];
       } else {
-  // spherical Bessel function
-  double jn = sph_bessel(n,k*a);
-  // spherical Hankel function
-  complex<double> hn = sph_hankel_1(n,k*a);
-  //Constant term
-  Al = -(2.0*n+1)*pow(i,n)*jn/hn;
-  vecAl.push_back(Al);
+	// spherical Bessel function
+	double jn = sph_bessel(n,k*a);
+	// spherical Hankel function
+	complex<double> hn = sph_hankel_1(n,k*a);
+	//Constant term
+	Al = -(2.0*n+1)*pow(i,n)*jn/hn;
+	vecAl.push_back(Al);
       }
       
       prev_result = result;
@@ -434,25 +435,24 @@ struct HardCylinderScatterWave: public GenericAnalyticalSolution {
   
     while( error > tol )  //finding the acoustic potential in one single point.
     {  
-    if(vecAl.size()>n) {
-    Al = vecAl[n-1];
-    } else {
-    // cylindrical Bessel function
-    double Jn_der_ka = n / const1 * cyl_bessel_j( n, const1 ) - cyl_bessel_j( n + 1, const1 ); 
-    // cylindrical Hankel function
-    complex<double> Hn_der_ka = n / const1 * cyl_hankel_1( n, const1 ) - cyl_hankel_1( n + 1, const1 ); 
-    //Constant term
-    Al = -2.0*pow(i,n)*Jn_der_ka/Hn_der_ka;
-    vecAl.push_back(Al);
-    }
+      if(vecAl.size()>n) {
+	Al = vecAl[n-1];
+      } else {
+	// cylindrical Bessel function
+	double Jn_der_ka = n / const1 * cyl_bessel_j( n, const1 ) - cyl_bessel_j( n + 1, const1 ); 
+	// cylindrical Hankel function
+	complex<double> Hn_der_ka = n / const1 * cyl_hankel_1( n, const1 ) - cyl_hankel_1( n + 1, const1 ); 
+	//Constant term
+	Al = -2.0*pow(i,n)*Jn_der_ka/Hn_der_ka;
+	vecAl.push_back(Al);
+      }
 
-    prev_result = result;
+      prev_result = result;
+      complex< double >Hn_kr = cyl_hankel_1( n, const2 );  //S Hankel first kind function
     
-    complex< double >Hn_kr = cyl_hankel_1( n, const2 );  //S Hankel first kind function
-    
-    result += Al * Hn_kr * cos(n*theta);
-    error = abs( abs( result ) - abs( prev_result ) );
-    ++n;
+      result += Al * Hn_kr * cos(n*theta);
+      error = abs( abs( result ) - abs( prev_result ) );
+      ++n;
       
     }
     
@@ -531,7 +531,7 @@ struct SoftCylinderScatterWave: public GenericAnalyticalSolution {
     double const2 = k * R;
     
     const complex< double > i( 0.0, 1.0 );
-  complex< double > Al;
+    complex< double > Al;
     // magnitude of incident wave
     //const double phi_incident_mag = 1.0;
     
@@ -539,29 +539,29 @@ struct SoftCylinderScatterWave: public GenericAnalyticalSolution {
     complex< double > prev_result;
     
     double error = 100.0;
-  unsigned int n = 1; //initialized the infinite series loop
+    unsigned int n = 1; //initialized the infinite series loop
     
-  double Jn_zero = cyl_bessel_j( 0, const1 );
-  complex< double > Hn_zero_kr = cyl_hankel_1( 0, const2 );  //S Hankel first kind function
-  complex< double > Hn_zero_ka = cyl_hankel_1( 0, const1 );  //S Hankel first kind function
-  //n=0;
-  result -= (Jn_zero * Hn_zero_kr)/Hn_zero_ka;
+    double Jn_zero = cyl_bessel_j( 0, const1 );
+    complex< double > Hn_zero_kr = cyl_hankel_1( 0, const2 );  //S Hankel first kind function
+    complex< double > Hn_zero_ka = cyl_hankel_1( 0, const1 );  //S Hankel first kind function
+    //n=0;
+    result -= (Jn_zero * Hn_zero_kr)/Hn_zero_ka;
   
     while( error > tol )  //finding the acoustic potential in one single point.
     {
     
     
-    if(vecAl.size()>n) {
-    Al = vecAl[n-1];
-    } else {
-    // cylindrical Bessel function
-    double Jn_ka = cyl_bessel_j( n, const1 );
-    // cylindrical Hankel function
-    complex<double> Hn_ka = cyl_hankel_1( n, const1 );
-    //Constant term
-    Al = -2.0*pow(i,n)*Jn_ka/Hn_ka;
-    vecAl.push_back(Al);
-    }
+      if(vecAl.size()>n) {
+	Al = vecAl[n-1];
+      } else {
+	// cylindrical Bessel function
+	double Jn_ka = cyl_bessel_j( n, const1 );
+	// cylindrical Hankel function
+	complex<double> Hn_ka = cyl_hankel_1( n, const1 );
+	//Constant term
+	Al = -2.0*pow(i,n)*Jn_ka/Hn_ka;
+	vecAl.push_back(Al);
+      }
 
 
       prev_result = result;
@@ -601,7 +601,6 @@ PetscErrorCode solve_problem(FieldInterface& m_field,
 
   PetscErrorCode ierr;
   
-
   Mat A;
   ierr = m_field.MatCreateMPIAIJWithArrays(problem_name,&A); CHKERRQ(ierr);
   Vec D;
