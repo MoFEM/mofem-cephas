@@ -828,7 +828,7 @@ struct HelmholtzElement {
    
   };
 
-  /** \brief Infinite Helmholtz Element
+  /* \brief Infinite Helmholtz Element
 
   Implementation based on Demkowicz Book:
   Computing with Adaptive HP-Elements Volume 2
@@ -909,6 +909,7 @@ struct HelmholtzElement {
 
 
   */
+  
   struct InfiniteHelmholtz {
     
     /*ublas::matrix<double> gaussPointsInRadialDirection;
