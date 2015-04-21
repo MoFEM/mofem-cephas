@@ -76,7 +76,7 @@ Mechanical problem with RVE (both matrix and fibres are isotropic materials)
 make mech_macro_iso_Disp && mpirun -np 16 ./mech_macro_iso_Disp \
 -my_file_Macro solution_wt.h5m -my_file_RVE ../users_modules/degradation_model/meshes/Using_Textile_RVE/Textile_RVE_Mechanical.cub\
   -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist \
-  -my_max_post_proc_ref_level 0 -my_order 1 \
+  -my_max_post_proc_ref_level 0 -my_order 1 -my_order_RVE 2\
 
 Calculate strain at selected gauss points to see the deformed RVEs
 ===========================================================================
