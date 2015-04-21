@@ -73,7 +73,7 @@ struct HelmholtzElement {
     Range tRis; ///< surface triangles where hate flux is applied
 
   };
-  map<int,SurfaceData> surfaceSommerfieldIncidentWaveBcData;
+  map<int,SurfaceData> hardSurfaceIncidentWaveBcData;
 
 
   /** \brief Common data used by volume and surface elements
@@ -465,40 +465,37 @@ struct HelmholtzElement {
   };
   ZeroFunVal zeroFunVal;
 
-  struct SommerfieldOnSphereF1 {
-
-    SommerfieldOnSphereF1() {}
-
-    ublas::vector<double> vAl;
-    ublas::vector<double>& operator()(double x,double y,double z,ublas::vector<double> &normal) {
-      vAl.resize(2);
-      //double R = sqrt(x*x+y*y+z*z);
-      vAl[0] = 0; //1./(2*R);
-      vAl[1] = 0; // imaginary value is zero
-      return vAl;
-    }
-
-  };
-
-  struct SommerfieldIncidentWaveF2 {
+  struct IncidentWaveNeumannF2 {
 
     double wAvenumber;
+    ublas::vector<double> dIrection;
     double pOwer;
-    SommerfieldIncidentWaveF2(double wave_number,double power): 
-      wAvenumber(wave_number),pOwer(power) {}
+    IncidentWaveNeumannF2(double wave_number,ublas::vector<double> d,double power): 
+      wAvenumber(wave_number),dIrection(d),pOwer(power) {}
 
+    ublas::vector<double> cOordinate;
     ublas::vector<double> vAl;
+
     ublas::vector<double>& operator()(double x,double y,double z,ublas::vector<double> &normal) {
-      /*double R = sqrt(x*x+y*y+z*z);
-      const complex<double> i(0.0,1.0);
-      complex<double> p_incident = pOwer*exp(i*wAvenumber*z);
-      complex<double> result = ( i*wAvenumber + 1./(2.*R) )*p_incident;
+
+      const complex< double > i( 0.0, 1.0 );
+
+      cOordinate.resize(3);
+      cOordinate[0] = x;
+      cOordinate[1] = y;
+      cOordinate[2] = z;
+
+      complex< double > p_inc = pOwer*exp(i*wAvenumber*inner_prod(dIrection,cOordinate));
+
+      complex< double > grad_x = i*wAvenumber*dIrection[0]*p_inc;
+      complex< double > grad_y = i*wAvenumber*dIrection[1]*p_inc;
+      complex< double > grad_z = i*wAvenumber*dIrection[2]*p_inc;
+
+      complex< double > grad_n = normal[0]*grad_x + normal[1]*grad_y + normal[2]*grad_z;
       vAl.resize(2);
-      vAl[0] = real(result);
-      vAl[1] = imag(result);*/
-      vAl.resize(2);
-      vAl[0] = 0;
-      vAl[1] = 0;
+      vAl[0] = std::real(grad_n);
+      vAl[1] = std::imag(grad_n);
+
       return vAl;
     }
 
@@ -1022,7 +1019,6 @@ struct HelmholtzElement {
 
     }
 
-
     PetscBool wavenumber_flg;
     double wavenumber;
     // set wave number from line command, that overwrite numbre form block set
@@ -1042,24 +1038,20 @@ struct HelmholtzElement {
 	ierr = mField.add_ents_to_finite_element_by_TETs(volumeData[it->get_msId()].tEts,"HELMHOLTZ_RERE_FE"); CHKERRQ(ierr);
 	ierr = mField.add_ents_to_finite_element_by_TETs(volumeData[it->get_msId()].tEts,"HELMHOLTZ_IMIM_FE"); CHKERRQ(ierr);
 
-	PetscBool flg;
-	double wave_number;
-	ierr = PetscOptionsGetScalar(NULL,"-wave_number",&wave_number,&flg); CHKERRQ(ierr);
-
       }
 
     }
 
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
 
-      if(it->get_Cubit_name().compare(0,23,"SOMMERFELD_INCIDENT_BC") == 0) {
+      if(it->get_Cubit_name().compare(0,23,"HARD_SURFACE_INCIDENT_WAVE_BC") == 0) {
 
-	surfaceSommerfieldIncidentWaveBcData[it->get_msId()].aDmittance_real = 0;
-	surfaceSommerfieldIncidentWaveBcData[it->get_msId()].aDmittance_imag = -wavenumber;
+	hardSurfaceIncidentWaveBcData[it->get_msId()].aDmittance_real = 0;
+	hardSurfaceIncidentWaveBcData[it->get_msId()].aDmittance_imag = 0;
 
-	rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,surfaceSommerfieldIncidentWaveBcData[it->get_msId()].tRis,true); CHKERR_PETSC(rval);
-	ierr = mField.add_ents_to_finite_element_by_TRIs(surfaceSommerfieldIncidentWaveBcData[it->get_msId()].tRis,"HELMHOLTZ_REIM_FE"); CHKERRQ(ierr);
-	ierr = mField.add_ents_to_finite_element_by_TRIs(surfaceSommerfieldIncidentWaveBcData[it->get_msId()].tRis,"HELMHOLTZ_IMRE_FE"); CHKERRQ(ierr);
+	rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,hardSurfaceIncidentWaveBcData[it->get_msId()].tRis,true); CHKERR_PETSC(rval);
+	ierr = mField.add_ents_to_finite_element_by_TRIs(hardSurfaceIncidentWaveBcData[it->get_msId()].tRis,"HELMHOLTZ_REIM_FE"); CHKERRQ(ierr);
+	ierr = mField.add_ents_to_finite_element_by_TRIs(hardSurfaceIncidentWaveBcData[it->get_msId()].tRis,"HELMHOLTZ_IMRE_FE"); CHKERRQ(ierr);
 
       }
 
@@ -1117,34 +1109,51 @@ struct HelmholtzElement {
       new  OpGetImIndices(re_field_name,im_field_name,commonData));
     feRhs.at("HELMHOLTZ_REIM_FE").get_op_to_do_Rhs().push_back(
       new  OpGetImIndices(re_field_name,im_field_name,commonData));
-
     feRhs.at("HELMHOLTZ_REIM_FE").get_op_to_do_Rhs().push_back(
       new OpGetValueAtGaussPts(re_field_name,commonData));
     feRhs.at("HELMHOLTZ_REIM_FE").get_op_to_do_Rhs().push_back(
       new OpGetValueAtGaussPts(im_field_name,commonData));
 
-    PetscErrorCode ierr;
-    double power_of_incident_wave = 1;
-    ierr = PetscOptionsGetScalar(NULL,"-power_of_incident_wave",&power_of_incident_wave,NULL); CHKERRQ(ierr);
-    boost::shared_ptr<SommerfieldOnSphereF1> sommerfield_on_sphere_f1 = 
-      boost::shared_ptr<SommerfieldOnSphereF1>(new SommerfieldOnSphereF1());
+    boost::shared_ptr<ZeroFunVal> zero_function = boost::shared_ptr<ZeroFunVal>(new ZeroFunVal());
 
-     map<int,SurfaceData>::iterator miit = surfaceSommerfieldIncidentWaveBcData.begin();
-    for(;miit!=surfaceSommerfieldIncidentWaveBcData.end();miit++) {
+    map<int,SurfaceData>::iterator miit = hardSurfaceIncidentWaveBcData.begin();
+    for(;miit!=hardSurfaceIncidentWaveBcData.end();miit++) {
 
-      // Asembled to C matrix
-      feLhs.at("HELMHOLTZ_REIM_FE").get_op_to_do_Lhs().push_back(
-        new OpHelmholtzMixBCLhs<SommerfieldOnSphereF1>(re_field_name,im_field_name,A,miit->second,commonData,sommerfield_on_sphere_f1));
+      PetscErrorCode ierr;
 
-      double wave_number = miit->second.aDmittance_imag;
-      boost::shared_ptr<SommerfieldIncidentWaveF2> sommerfield_on_sphere_f2 = 
-        boost::shared_ptr<SommerfieldIncidentWaveF2>(new SommerfieldIncidentWaveF2(wave_number,power_of_incident_wave));
+      PetscBool wavenumber_flg;
+      double wavenumber;
+      // set wave number from line command, that overwrite numbre form block seta
+      ierr = PetscOptionsGetScalar(NULL,"-wave_number",&wavenumber,&wavenumber_flg); CHKERRQ(ierr);
+      if(!wavenumber_flg) {
+
+	SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"wave number not given, set in line command -wave_number to fix problem");
+
+      }
+
+      double power_of_incident_wave = 1;
+      ierr = PetscOptionsGetScalar(NULL,"-power_of_incident_wave",&power_of_incident_wave,NULL); CHKERRQ(ierr);
+
+      ublas::vector<double> wave_direction;
+      wave_direction.resize(3);
+      wave_direction[2] = 1; // default:X direction [0,0,1]
+
+      int nmax = 3;
+      ierr = PetscOptionsGetRealArray(PETSC_NULL,"-wave_direction",&wave_direction[0],&nmax,NULL); CHKERRQ(ierr);
+      if(nmax > 0 && nmax != 3) {
+
+	SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"*** ERROR -wave_direction [3*1 vector] default:X direction [0,0,1]");
+
+      }
+
+      boost::shared_ptr<IncidentWaveNeumannF2> incident_wave_neumann_bc = 
+	boost::shared_ptr<IncidentWaveNeumannF2>(new IncidentWaveNeumannF2(wavenumber,wave_direction,power_of_incident_wave));
 
       // Assembled to the right hand vector
       feRhs.at("HELMHOLTZ_REIM_FE").get_op_to_do_Rhs().push_back(
-        new OpHelmholtzMixBCRhs<SommerfieldOnSphereF1,SommerfieldIncidentWaveF2>(
+        new OpHelmholtzMixBCRhs<ZeroFunVal,IncidentWaveNeumannF2>(
 	  re_field_name,im_field_name,F,miit->second,commonData,
-	  sommerfield_on_sphere_f1,sommerfield_on_sphere_f2));
+	  zero_function,incident_wave_neumann_bc));
 
     }
 

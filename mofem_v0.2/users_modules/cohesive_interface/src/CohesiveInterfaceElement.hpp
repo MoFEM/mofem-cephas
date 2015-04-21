@@ -416,7 +416,7 @@ struct CohesiveInterfaceElement {
     PhysicalEquation &physicalEqations;
     OpLhs(const string field_name,CommonData &common_data,PhysicalEquation &physical_eqations):
       FlatPrismElementForcesAndSurcesCore::UserDataOperator(field_name),
-      commonData(common_data),physicalEqations(physical_eqations) { symm = false; }
+      commonData(common_data),physicalEqations(physical_eqations) { sYmm = false; }
 
     ublas::matrix<double> K,D,ND;
     PetscErrorCode doWork(
