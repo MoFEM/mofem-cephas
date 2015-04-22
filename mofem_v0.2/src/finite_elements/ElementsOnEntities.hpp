@@ -206,40 +206,49 @@ struct ForcesAndSurcesCore: public FEMethod {
     const double *G_X,const double *G_Y,const int G_DIM);
 
   /** \brief it is used to calculate nb. of Gauss integration points
-   *
-   * This function in general should be overload, returning integration rank
-   * depending on operator type. Integration rule should be set to
-   * integrate matrix and vector exactly.
-   *
-   * If function return -1
-   * \code
-   * int getRule(int order) { return -1; };
-   * \endcode
-   * then, fuction \codes setGaussPts(order) \endcode is called.   
-   *
-   * for more details pleas look Reference:
-   *
-   * Albert Nijenhuis, Herbert Wilf, Combinatorial Algorithms for Computers and
-   * Calculators, Second Edition, Academic Press, 1978, ISBN: 0-12-519260-6,
-   * LC: QA164.N54.
-   *
-   * More details about algorithm
-   * https://github.com/johannesgerer/jburkardt-m/tree/master/gm_rule
-   * http://people.sc.fsu.edu/~jburkardt/cpp_src/gm_rule/gm_rule.html
-  **/ virtual int getRule(int order) { return order; };
+   
+   This function in general should be overload, returning integration rank
+   depending on operator type. Integration rule should be set to
+   integrate matrix and vector exactly.
+   
+   If function return -1
+   \code
+   int getRule(int order) { return -1; };
+   \endcode
+   then, fuction \codes setGaussPts(order) \endcode is called. In setGaussPts
+   user can implement own intergartion rule for specific approx. ordrr.  
+   
+   At this stage of development integration points are weight are calculated following this paper:
+   Albert Nijenhuis, Herbert Wilf, Combinatorial Algorithms for Computers and
+   Calculators, Second Edition, Academic Press, 1978, ISBN: 0-12-519260-6,
+   LC: QA164.N54.
+
+   More details about algorithm
+   https://github.com/johannesgerer/jburkardt-m/tree/master/gm_rule
+   http://people.sc.fsu.edu/~jburkardt/cpp_src/gm_rule/gm_rule.html
+  **/ 
+  virtual int getRule(int order) { return order; };
 
   /** \brief set user specific integration rule
-    *
-    * User sets 
-    * \code 
-    * ublas::matrix<double> gaussPts;
-    * \endcode
-    * where 
-    * \code
-    * gaussPts.resize(dim+1,nb_gauss_pts);
-    * \endcode
-    * number rows represents local coordinates of integration points
-    * in reference element, where last index in row is for integration weight.
+  
+    This function allows for user defined integration rule. The key is to
+    called matrix gaussPts, which is used by other MoFEM procedures. Matrix has
+    number of rows equal to problem dimension plus one, where last index is used to
+    store weight values. Number of columns is equal to number of integration points.
+
+    Note: that matrix is called gussPts, however user can keep in it any integration rule. 
+
+    User sets 
+    \code 
+    ublas::matrix<double> gaussPts;
+    \endcode
+    where 
+    \code
+    gaussPts.resize(dim+1,nb_gauss_pts);
+    \endcode
+    number rows represents local coordinates of integration points
+    in reference element, where last index in row is for integration weight.
+
     */
   virtual PetscErrorCode setGaussPts(int order) {
     PetscFunctionBegin;
