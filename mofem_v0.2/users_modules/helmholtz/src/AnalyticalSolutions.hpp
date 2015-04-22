@@ -133,7 +133,7 @@ struct HardSphereScatterWave: public GenericAnalyticalSolution {
   double wAvenumber;
   double sphereRadius;
    
-  HardSphereScatterWave(double wavenumber,double sphere_radius = 0.5): 
+  HardSphereScatterWave(double wavenumber,double sphere_radius = 1.): 
     wAvenumber(wavenumber),sphereRadius(sphere_radius) {}
   virtual ~HardSphereScatterWave() {}
    
@@ -232,7 +232,7 @@ struct SoftSphereScatterWave: public GenericAnalyticalSolution {
   double sphereRadius;
    
 
-  SoftSphereScatterWave(double wavenumber,double sphere_radius = 0.5): 
+  SoftSphereScatterWave(double wavenumber,double sphere_radius = 1.): 
     wAvenumber(wavenumber),sphereRadius(sphere_radius) {}
   virtual ~SoftSphereScatterWave() {}
    

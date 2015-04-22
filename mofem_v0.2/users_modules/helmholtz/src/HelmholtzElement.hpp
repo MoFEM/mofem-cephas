@@ -121,7 +121,9 @@ struct HelmholtzElement {
       // assembled matrix has non-zero values;
       PetscErrorCode ierr;
 
-      commonData.imIndices[type].resize(6);
+      if(!side) {
+	commonData.imIndices[type].resize(6);
+      }
       ierr = getPorblemRowIndices(imFieldName,type,side,
 	(commonData.imIndices[type])[side]); CHKERRQ(ierr);
 
@@ -465,6 +467,11 @@ struct HelmholtzElement {
   };
   ZeroFunVal zeroFunVal;
 
+  /** \brief calulate incident wave scatterd on hard surface
+    
+    \bug assumes that object is convex in ceneter of coordinate system
+
+    */
   struct IncidentWaveNeumannF2 {
 
     double wAvenumber;
@@ -492,6 +499,11 @@ struct HelmholtzElement {
       complex< double > grad_z = i*wAvenumber*dIrection[2]*p_inc;
 
       complex< double > grad_n = normal[0]*grad_x + normal[1]*grad_y + normal[2]*grad_z;
+
+      // check if normal pointig to ceneter;
+      double dot = -inner_prod(normal,cOordinate);
+      if(dot < 0) grad_n *= -1;
+
       vAl.resize(2);
       vAl[0] = std::real(grad_n);
       vAl[1] = std::imag(grad_n);
@@ -614,12 +626,13 @@ struct HelmholtzElement {
 
 	    noalias(nOrmal) = getNormals_at_GaussPt(gg);
 	    area = ublas::norm_2(nOrmal)*0.5;
+	    nOrmal /= 2*area;
 
 	  }
           double val = area*getGaussPts()(2,gg);
 
 	  double x,y,z;
-	  if(commonData.hoCoords.size1() == data.getN().size1()) {
+	  if(commonData.hoCoords.size1()) {
 	    x = commonData.hoCoords(gg,0);
 	    y = commonData.hoCoords(gg,1);
 	    z = commonData.hoCoords(gg,2);	
@@ -629,6 +642,7 @@ struct HelmholtzElement {
 	    z = getCoordsAtGaussPts()(gg,2);
 	    if(gg == 0) {
 	      noalias(nOrmal) = getNormal();
+	      nOrmal /= 2*area;
 	    }
 	  }
 	  ublas::vector<double>& f1 = (*functionEvaluator1)(x,y,z,nOrmal);
@@ -641,14 +655,14 @@ struct HelmholtzElement {
 
         }
   
-        /*ierr = VecSetValues(F,
+        ierr = VecSetValues(F,
 	  data.getIndices().size(),&
 	  data.getIndices()[0],
 	  &reNf[0],ADD_VALUES); CHKERRQ(ierr);
         ierr = VecSetValues(F,
 	  (commonData.imIndices[type][side]).size(),
 	  &(commonData.imIndices[type][side])[0],
-	  &imNf[0],ADD_VALUES); CHKERRQ(ierr);*/
+	  &imNf[0],ADD_VALUES); CHKERRQ(ierr);
 
       } catch (const std::exception& ex) {
         ostringstream ss;
@@ -736,7 +750,7 @@ struct HelmholtzElement {
           double val = area*getGaussPts()(2,gg);
 
 	  double x,y,z;
-	  if(commonData.hoCoords.size1() == row_data.getN().size1()) {
+	  if(commonData.hoCoords.size1()) {
 	    x = commonData.hoCoords(gg,0);
 	    y = commonData.hoCoords(gg,1);
 	    z = commonData.hoCoords(gg,2);	
@@ -1044,7 +1058,7 @@ struct HelmholtzElement {
 
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
 
-      if(it->get_Cubit_name().compare(0,23,"HARD_SURFACE_INCIDENT_WAVE_BC") == 0) {
+      if(it->get_Cubit_name().compare(0,23,"HARD_INCIDENT_WAVE_BC") == 0) {
 
 	hardSurfaceIncidentWaveBcData[it->get_msId()].aDmittance_real = 0;
 	hardSurfaceIncidentWaveBcData[it->get_msId()].aDmittance_imag = 0;
@@ -1136,6 +1150,7 @@ struct HelmholtzElement {
 
       ublas::vector<double> wave_direction;
       wave_direction.resize(3);
+      wave_direction.clear();
       wave_direction[2] = 1; // default:X direction [0,0,1]
 
       int nmax = 3;
