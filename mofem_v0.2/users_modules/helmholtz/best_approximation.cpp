@@ -214,13 +214,15 @@ int main(int argc, char *argv[]) {
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -analytical_solution_type needed, WARNING!!!!!!.");
   }
+  double scattering_sphere_radius = 1;;
+  ierr = PetscOptionsGetScalar(NULL,"-scattering_sphere_radius",&scattering_sphere_radius,NULL); CHKERRQ(ierr);
     
   switch((AnalyticalSolutionTypes)choise_value) {
     
     case HARD_SPHERE_SCATTER_WAVE:
     
       {
-	HardSphereScatterWave function_evaluator(wavenumber);
+	HardSphereScatterWave function_evaluator(wavenumber,scattering_sphere_radius);
 	ierr = solve_problem(m_field,"EX1_PROBLEM","FE1","reEX","imEX",INSERT_VALUES,function_evaluator,is_partitioned); CHKERRQ(ierr);
       }
     
@@ -230,7 +232,7 @@ int main(int argc, char *argv[]) {
     case SOFT_SPHERE_SCATTER_WAVE:
 
       {
-        SoftSphereScatterWave function_evaluator(wavenumber);
+        SoftSphereScatterWave function_evaluator(wavenumber,scattering_sphere_radius);
         ierr = solve_problem(m_field,"EX1_PROBLEM","FE1","reEX","imEX",INSERT_VALUES,function_evaluator,is_partitioned); CHKERRQ(ierr);
       }
 
