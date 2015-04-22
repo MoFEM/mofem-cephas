@@ -49,7 +49,7 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::
     case MBVERTEX: {
       if(data.getFieldData().size()!=9) {
 	SETERRQ2(PETSC_COMM_SELF,1,"it should be 9 dofs on vertices but is %d of field < %s >",
-	  data.getFieldData().size(),row_field_name.c_str());
+	  data.getFieldData().size(),rowFieldName.c_str());
       }
       myPtr->N = &*data.getN().data().begin();
       myPtr->diffN = &*data.getDiffN().data().begin();

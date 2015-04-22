@@ -299,6 +299,7 @@ int main(int argc, char *argv[]) {
   //wave direction unit vector=[x,y,z]^T
   ublas::vector<double> wave_direction;
   wave_direction.resize(3);
+  wave_direction.clear();
   wave_direction[2] = 1; // default:X direction [0,0,1]
 
   int nmax = 3;
