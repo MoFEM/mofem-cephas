@@ -793,7 +793,8 @@ struct HelmholtzElement {
 
 	K1.resize(nb_rows,nb_cols);
 
-	/*
+	PetscErrorCode ierr;
+
 	// real-real
 	noalias(K1) = dAta.aDmittance_real*K+reF1K;
 	ierr = MatSetValues(
@@ -823,7 +824,6 @@ struct HelmholtzElement {
 	  nb_rows,&(commonData.imIndices[row_type][row_side])[0],
 	  nb_cols,&col_data.getIndices()[0],
 	  &K1(0,0),ADD_VALUES); CHKERRQ(ierr);   
-	*/    
 
       } catch (const std::exception& ex) {
         ostringstream ss;
