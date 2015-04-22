@@ -73,8 +73,7 @@ struct HelmholtzElement {
     Range tRis; ///< surface triangles where hate flux is applied
 
   };
-  map<int,SurfaceData> hardSurfaceIncidentWaveBcData;
-
+  map<int,SurfaceData> surfaceIncidentWaveBcData;
 
   /** \brief Common data used by volume and surface elements
   * \ingroup mofem_helmholtz_elem
@@ -1060,14 +1059,38 @@ struct HelmholtzElement {
 
       if(it->get_Cubit_name().compare(0,23,"HARD_INCIDENT_WAVE_BC") == 0) {
 
-	hardSurfaceIncidentWaveBcData[it->get_msId()].aDmittance_real = 0;
-	hardSurfaceIncidentWaveBcData[it->get_msId()].aDmittance_imag = 0;
+	surfaceIncidentWaveBcData[it->get_msId()].aDmittance_real = 0;
+	surfaceIncidentWaveBcData[it->get_msId()].aDmittance_imag = 0;
 
-	rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,hardSurfaceIncidentWaveBcData[it->get_msId()].tRis,true); CHKERR_PETSC(rval);
-	ierr = mField.add_ents_to_finite_element_by_TRIs(hardSurfaceIncidentWaveBcData[it->get_msId()].tRis,"HELMHOLTZ_REIM_FE"); CHKERRQ(ierr);
-	ierr = mField.add_ents_to_finite_element_by_TRIs(hardSurfaceIncidentWaveBcData[it->get_msId()].tRis,"HELMHOLTZ_IMRE_FE"); CHKERRQ(ierr);
+	rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,surfaceIncidentWaveBcData[it->get_msId()].tRis,true); CHKERR_PETSC(rval);
+	ierr = mField.add_ents_to_finite_element_by_TRIs(surfaceIncidentWaveBcData[it->get_msId()].tRis,"HELMHOLTZ_REIM_FE"); CHKERRQ(ierr);
+	ierr = mField.add_ents_to_finite_element_by_TRIs(surfaceIncidentWaveBcData[it->get_msId()].tRis,"HELMHOLTZ_IMRE_FE"); CHKERRQ(ierr);
 
       }
+
+      if(it->get_Cubit_name().compare(0,22,"MIX_INCIDENT_WAVE_BC") == 0) {
+
+	//get block attributes
+	vector<double> attributes;
+	ierr = it->get_Cubit_attributes(attributes); CHKERRQ(ierr);
+	if(attributes.size()<1) {
+	  SETERRQ1(PETSC_COMM_SELF,1,"first block attribute should define surface admitance",attributes.size());
+	}
+
+	surfaceIncidentWaveBcData[it->get_msId()].aDmittance_real = 0;
+	surfaceIncidentWaveBcData[it->get_msId()].aDmittance_imag = attributes[0];
+
+	PetscErrorCode ierr;
+	ierr = PetscOptionsGetScalar(NULL,"-surface_admittance",
+	  &surfaceIncidentWaveBcData[it->get_msId()].aDmittance_imag,NULL); CHKERRQ(ierr);
+
+
+	rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,surfaceIncidentWaveBcData[it->get_msId()].tRis,true); CHKERR_PETSC(rval);
+	ierr = mField.add_ents_to_finite_element_by_TRIs(surfaceIncidentWaveBcData[it->get_msId()].tRis,"HELMHOLTZ_REIM_FE"); CHKERRQ(ierr);
+	ierr = mField.add_ents_to_finite_element_by_TRIs(surfaceIncidentWaveBcData[it->get_msId()].tRis,"HELMHOLTZ_IMRE_FE"); CHKERRQ(ierr);
+
+      }
+
 
     }
   
@@ -1130,8 +1153,8 @@ struct HelmholtzElement {
 
     boost::shared_ptr<ZeroFunVal> zero_function = boost::shared_ptr<ZeroFunVal>(new ZeroFunVal());
 
-    map<int,SurfaceData>::iterator miit = hardSurfaceIncidentWaveBcData.begin();
-    for(;miit!=hardSurfaceIncidentWaveBcData.end();miit++) {
+    map<int,SurfaceData>::iterator miit = surfaceIncidentWaveBcData.begin();
+    for(;miit!=surfaceIncidentWaveBcData.end();miit++) {
 
       PetscErrorCode ierr;
 
@@ -1163,6 +1186,13 @@ struct HelmholtzElement {
 
       boost::shared_ptr<IncidentWaveNeumannF2> incident_wave_neumann_bc = 
 	boost::shared_ptr<IncidentWaveNeumannF2>(new IncidentWaveNeumannF2(wavenumber,wave_direction,power_of_incident_wave));
+
+      if(miit->second.aDmittance_imag!=0) {
+	feRhs.at("HELMHOLTZ_REIM_FE").get_op_to_do_Rhs().push_back(
+	  new OpHelmholtzMixBCLhs<ZeroFunVal>(
+	    re_field_name,im_field_name,A,miit->second,commonData,
+	    zero_function));
+      }
 
       // Assembled to the right hand vector
       feRhs.at("HELMHOLTZ_REIM_FE").get_op_to_do_Rhs().push_back(
