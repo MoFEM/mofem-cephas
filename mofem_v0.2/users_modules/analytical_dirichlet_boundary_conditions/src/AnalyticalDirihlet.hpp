@@ -419,11 +419,11 @@ struct AnalyticalDirihletBC {
     ierr = KSPSetOperators(kspSolver,A,A); CHKERRQ(ierr);
     ierr = KSPSetFromOptions(kspSolver); CHKERRQ(ierr);
 
-    PC pc;
-    ierr = KSPGetPC(kspSolver,&pc); CHKERRQ(ierr);
-    ierr = PCSetType(pc,PCLU); CHKERRQ(ierr);
-    ierr = PCFactorSetMatSolverPackage(pc,MATSOLVERMUMPS); CHKERRQ(ierr);
-    ierr = PCFactorSetUpMatSolverPackage(pc);  CHKERRQ(ierr);
+    //PC pc;
+    //ierr = KSPGetPC(kspSolver,&pc); CHKERRQ(ierr);
+    //ierr = PCSetType(pc,PCLU); CHKERRQ(ierr);
+    //ierr = PCFactorSetMatSolverPackage(pc,MATSOLVERMUMPS); CHKERRQ(ierr);
+    //ierr = PCFactorSetUpMatSolverPackage(pc);  CHKERRQ(ierr);
 
     PetscFunctionReturn(0);
   }

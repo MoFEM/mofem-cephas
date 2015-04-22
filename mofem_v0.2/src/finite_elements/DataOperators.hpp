@@ -50,7 +50,7 @@ struct DataOperator {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode opLhs(DataForcesAndSurcesCore &row_data,DataForcesAndSurcesCore &col_data,bool symm = true);
+  virtual PetscErrorCode opLhs(DataForcesAndSurcesCore &row_data,DataForcesAndSurcesCore &col_data,bool symm = true);
 
 
   /** \brief operator for linear form, usually to calculate values on left hand side
@@ -63,8 +63,8 @@ struct DataOperator {
     SETERRQ(PETSC_COMM_SELF,1,"not implemented");
     PetscFunctionReturn(0);
   }
-  PetscErrorCode opRhs(DataForcesAndSurcesCore &data);
 
+  virtual PetscErrorCode opRhs(DataForcesAndSurcesCore &data);
 
 };
 

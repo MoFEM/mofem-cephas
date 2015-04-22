@@ -540,10 +540,10 @@ struct GroundSurfaceTemerature {
       const EntityHandle *conn;
       int num_nodes;
       rval = getFaceElementForcesAndSourcesCore()->mField.get_moab().get_connectivity(element_ent,conn,num_nodes,true); CHKERR_PETSC(rval);
-      int def_VAL = 0;
+      int def_VAL[] = { 0 };
       Tag th_solar_exposure;
       rval = getFaceElementForcesAndSourcesCore()->mField.get_moab().tag_get_handle( 
-	"SOLAR_EXPOSURE",1,MB_TYPE_INTEGER,th_solar_exposure,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR(rval);
+	"SOLAR_EXPOSURE",1,MB_TYPE_INTEGER,th_solar_exposure,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR(rval);
       ierr = getFaceElementForcesAndSourcesCore()->mField.get_moab().tag_get_data(th_solar_exposure,conn,num_nodes,nodalExposure); CHKERRQ(ierr);
       PetscFunctionReturn(0);
     }
@@ -558,7 +558,7 @@ struct GroundSurfaceTemerature {
       PetscErrorCode ierr;
 
       if(type == MBVERTEX) {
-	//ierr = getExposure(); CHKERRQ(ierr);
+	ierr = getExposure(); CHKERRQ(ierr);
       }
   
       const FENumeredDofMoFEMEntity *dof_ptr;

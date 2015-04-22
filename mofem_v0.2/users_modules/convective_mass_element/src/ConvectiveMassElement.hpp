@@ -606,7 +606,7 @@ struct ConvectiveMassElement {
       const string vel_field,const string field_name,BlockData &data,CommonData &common_data,Range *forcesonlyonentities_ptr = NULL):
       VolumeElementForcesAndSourcesCore::UserDataOperator(vel_field,field_name),
       dAta(data),commonData(common_data) { 
-	symm = false;  
+	sYmm = false;  
 	if(forcesonlyonentities_ptr!=NULL) {
 	  forcesOnlyOnEntities = *forcesonlyonentities_ptr;
 	}

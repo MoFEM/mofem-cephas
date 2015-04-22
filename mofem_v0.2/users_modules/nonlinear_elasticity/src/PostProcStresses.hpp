@@ -80,7 +80,7 @@ struct PostPorcStress: public VolumeElementForcesAndSourcesCore::UserDataOperato
     if(mapGaussPts.size()!=(unsigned int)nb_gauss_pts) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
     }
-    if(commonData.gradMap[row_field_name].size()!=(unsigned int)nb_gauss_pts) {
+    if(commonData.gradMap[rowFieldName].size()!=(unsigned int)nb_gauss_pts) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
     }
 
@@ -90,7 +90,7 @@ struct PostPorcStress: public VolumeElementForcesAndSourcesCore::UserDataOperato
     for(int gg = 0;gg<nb_gauss_pts;gg++) {
 
       dAta.materialDoublePtr->F.resize(3,3);
-      noalias(dAta.materialDoublePtr->F) = (commonData.gradMap[row_field_name])[gg];
+      noalias(dAta.materialDoublePtr->F) = (commonData.gradMap[rowFieldName])[gg];
       if(commonData.gradMap["MESH_NODE_POSITIONS"].size()==(unsigned int)nb_gauss_pts) {
 	H.resize(3,3);
 	invH.resize(3,3);
