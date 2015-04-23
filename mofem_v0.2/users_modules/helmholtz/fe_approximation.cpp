@@ -311,7 +311,7 @@ int main(int argc, char *argv[]) {
   PetscInt choise_value = 0;
   // set type of analytical solution  
   ierr = PetscOptionsGetEList(NULL,"-analytical_solution_type",analytical_solution_types,6,&choise_value,NULL); CHKERRQ(ierr);
-  double scattering_sphere_radius = 1;;
+  double scattering_sphere_radius = 0.5;
   ierr = PetscOptionsGetScalar(NULL,"-scattering_sphere_radius",&scattering_sphere_radius,NULL); CHKERRQ(ierr);
 
   switch((AnalyticalSolutionTypes)choise_value) {

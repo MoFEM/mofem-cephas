@@ -214,7 +214,7 @@ int main(int argc, char *argv[]) {
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -analytical_solution_type needed, WARNING!!!!!!.");
   }
-  double scattering_sphere_radius = 1;;
+  double scattering_sphere_radius = 0.5;
   ierr = PetscOptionsGetScalar(NULL,"-scattering_sphere_radius",&scattering_sphere_radius,NULL); CHKERRQ(ierr);
     
   switch((AnalyticalSolutionTypes)choise_value) {
