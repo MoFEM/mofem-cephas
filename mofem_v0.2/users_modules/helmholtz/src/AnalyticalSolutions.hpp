@@ -76,7 +76,7 @@ struct IncidentWave: public GenericAnalyticalSolution {
   ublas::vector<double> cOordinate;
   double pOwer; /* The amplitude of the incident wave */
  
-  IncidentWave(double wavenumber,ublas::vector<double> d,double power = 1):
+  IncidentWave(double wavenumber,ublas::vector<double> d,double power = 1.0):
     wAvenumber(wavenumber),dIrection(d),pOwer(power) {}
   
   ~IncidentWave() {}

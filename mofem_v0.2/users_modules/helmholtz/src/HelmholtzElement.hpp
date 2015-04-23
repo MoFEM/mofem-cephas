@@ -352,7 +352,7 @@ struct HelmholtzElement {
   
   };
   
-  /** \brief Mix boundary conditions on surface element
+  /** \brief Lhs for helmholtz operator
 
     \ingroup mofem_helmholtz_elem
 
@@ -527,7 +527,7 @@ struct HelmholtzElement {
       (\textrm{re}[\sigma]+i*\textrm{im}[\sigma] + \textrm{re}[F1]+i\textrm{im}[F1]) p 
       + \textrm{re}[F2]+i\textrm{im}[F2] \right\}\right|_\Gamma = 0
     \f]
-    where \f$F1(x,y,z,\mathbf{n})\f$ and \f$F2(x,y,z,\mathbf{n})\f$ are template function evaluarors given by user.
+    where \f$F1(x,y,z,\mathbf{n})\f$ and \f$F2(x,y,z,\mathbf{n})\f$ are template function evaluators given by user.
 
     \f[
     F_i =  
@@ -606,65 +606,65 @@ struct HelmholtzElement {
         PetscErrorCode ierr;
        
         int nb_row_dofs = data.getIndices().size();
-	if(!nb_row_dofs) {
+		if(!nb_row_dofs) {
           PetscFunctionReturn(0);
-	}
+		}
 
-	if(dAta.tRis.find(getMoFEMFEPtr()->get_ent()) == dAta.tRis.end()) {
-	  PetscFunctionReturn(0);
-	}
+		if(dAta.tRis.find(getMoFEMFEPtr()->get_ent()) == dAta.tRis.end()) {
+		  PetscFunctionReturn(0);
+		}
  
         reNf.resize(nb_row_dofs);
-	reNf.clear();
+		reNf.clear();
         imNf.resize(nb_row_dofs);
-	imNf.clear();
+		imNf.clear();
 
-	nOrmal.resize(3);
+		nOrmal.resize(3);
   
         for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
 
-	  double area = getArea();
-	  if(getNormals_at_GaussPt().size1()) {
+		  double area = getArea();
+		  if(getNormals_at_GaussPt().size1()) {
 
-	    noalias(nOrmal) = getNormals_at_GaussPt(gg);
-	    area = ublas::norm_2(nOrmal)*0.5;
-	    nOrmal /= 2*area;
+			noalias(nOrmal) = getNormals_at_GaussPt(gg);
+			area = ublas::norm_2(nOrmal)*0.5;
+			nOrmal /= 2*area;
 
-	  }
-          double val = area*getGaussPts()(2,gg);
+		  }
+		  double val = area*getGaussPts()(2,gg);
 
-	  double x,y,z;
-	  if(commonData.hoCoords.size1()) {
-	    x = commonData.hoCoords(gg,0);
-	    y = commonData.hoCoords(gg,1);
-	    z = commonData.hoCoords(gg,2);	
-	  } else {
-	    x = getCoordsAtGaussPts()(gg,0);
-	    y = getCoordsAtGaussPts()(gg,1);
-	    z = getCoordsAtGaussPts()(gg,2);
-	    if(gg == 0) {
-	      noalias(nOrmal) = getNormal();
-	      nOrmal /= 2*area;
-	    }
-	  }
-	  ublas::vector<double>& f1 = (*functionEvaluator1)(x,y,z,nOrmal);
-	  ublas::vector<double>& f2 = (*functionEvaluator2)(x,y,z,nOrmal);
+		  double x,y,z;
+		  if(commonData.hoCoords.size1()) {
+			x = commonData.hoCoords(gg,0);
+			y = commonData.hoCoords(gg,1);
+			z = commonData.hoCoords(gg,2);	
+		  } else {
+			x = getCoordsAtGaussPts()(gg,0);
+			y = getCoordsAtGaussPts()(gg,1);
+			z = getCoordsAtGaussPts()(gg,2);
+			if(gg == 0) {
+			  noalias(nOrmal) = getNormal();
+			  nOrmal /= 2*area;
+			}
+		  }
+		  ublas::vector<double>& f1 = (*functionEvaluator1)(x,y,z,nOrmal);
+		  ublas::vector<double>& f2 = (*functionEvaluator2)(x,y,z,nOrmal);
 
-	  ierr = calculateResidualRe(gg,f1,f2); CHKERRQ(ierr);
+		  ierr = calculateResidualRe(gg,f1,f2); CHKERRQ(ierr);
   
-	  noalias(reNf) += val*(reResidual*data.getN(gg));
-	  noalias(imNf) += val*(imResidual*data.getN(gg));
+		  noalias(reNf) += val*(reResidual*data.getN(gg));
+		  noalias(imNf) += val*(imResidual*data.getN(gg));
 
-        }
+		}
   
+		ierr = VecSetValues(F,
+		data.getIndices().size(),&
+		data.getIndices()[0],
+		&reNf[0],ADD_VALUES); CHKERRQ(ierr);
         ierr = VecSetValues(F,
-	  data.getIndices().size(),&
-	  data.getIndices()[0],
-	  &reNf[0],ADD_VALUES); CHKERRQ(ierr);
-        ierr = VecSetValues(F,
-	  (commonData.imIndices[type][side]).size(),
-	  &(commonData.imIndices[type][side])[0],
-	  &imNf[0],ADD_VALUES); CHKERRQ(ierr);
+		(commonData.imIndices[type][side]).size(),
+		&(commonData.imIndices[type][side])[0],
+		&imNf[0],ADD_VALUES); CHKERRQ(ierr);
 
       } catch (const std::exception& ex) {
         ostringstream ss;
@@ -707,7 +707,7 @@ struct HelmholtzElement {
       dAta(data),commonData(common_data),rePressure(re_field_name),imPressure(im_field_name),
       functionEvaluator1(function_evaluator1),A(_A) {
 
-      sYmm = false; /// this opetaor is not symmetric
+      sYmm = false; /// this operator is not symmetric
 
     }
   
