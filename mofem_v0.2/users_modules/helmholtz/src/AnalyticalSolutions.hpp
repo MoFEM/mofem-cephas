@@ -64,7 +64,7 @@ const char *analytical_solution_types[] = {
   Ihlenburg,Finite element analysis of acoustic scattering Springer Science & Business Media.
 
   \f[
-  p_\textrm{inc} = \exp(ikd /cdot \mathbf{x})
+  p_\textrm{inc} = \exp(ikd \cdot \mathbf{x})
   \f]
 
   */
@@ -378,11 +378,11 @@ struct PlaneWave: public GenericAnalyticalSolution {
   where a is scatter sphere radius and \f$J_l\f$ Cylindrical Bessel function.
 
   \f[
-  \epsilon_{l} = 1 \text{when}l=0
+  \epsilon_{l} = 1 \textrm{when}l=0
   \f]
  
    \f[
-  \epsilon_{l} = 2 \text{when}l \neq 0
+  \epsilon_{l} = 2 \textrm{when}l \neq 0
   \f]
  
   Paper: 

@@ -1466,6 +1466,8 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
     dataH1.dataOnEntities[MBVERTEX][0].getDiffN().data().swap(diffN.data());
   }
 
+  string last_row_eval_field_name;
+
   for(
     boost::ptr_vector<ForcesAndSurcesCore::UserDataOperator>::iterator oit = vecUserOpN.begin();
     oit != vecUserOpN.end(); oit++) {
@@ -1500,28 +1502,34 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
       break;
     }
 
-    switch(row_space) {
-      case H1:
-      ierr = getRowNodesIndices(*op_data,oit->rowFieldName); CHKERRQ(ierr);
-      ierr = getNodesFieldData(*op_data,oit->rowFieldName); CHKERRQ(ierr);
-      ierr = getNodesFieldDofs(*op_data,oit->rowFieldName); CHKERRQ(ierr);
-      case HCURL:
-      ierr = getEdgesRowIndices(*op_data,oit->rowFieldName); CHKERRQ(ierr);
-      ierr = getEdgesOrder(*op_data,oit->rowFieldName); CHKERRQ(ierr);
-      ierr = getEdgesFieldData(*op_data,oit->rowFieldName); CHKERRQ(ierr);
-      ierr = getEdgesFieldDofs(*op_data,oit->rowFieldName); CHKERRQ(ierr);
-      case HDIV:
-      ierr = getTrisRowIndices(*op_data,oit->rowFieldName); CHKERRQ(ierr);
-      ierr = getTrisOrder(*op_data,oit->rowFieldName); CHKERRQ(ierr);
-      ierr = getTrisFieldData(*op_data,oit->rowFieldName); CHKERRQ(ierr);
-      ierr = getTrisFieldDofs(*op_data,oit->rowFieldName); CHKERRQ(ierr);
-      case L2:
-      ierr = getTetsRowIndices(*op_data,oit->rowFieldName); CHKERRQ(ierr);
-      ierr = getTetsOrder(*op_data,oit->rowFieldName); CHKERRQ(ierr);
-      ierr = getTetsFieldData(*op_data,oit->rowFieldName); CHKERRQ(ierr);
-      ierr = getTetsFieldDofs(*op_data,oit->rowFieldName); CHKERRQ(ierr);
-      default:
-      break;
+    if(last_row_eval_field_name!=oit->rowFieldName) {
+  
+      switch(row_space) {
+	case H1:
+	ierr = getRowNodesIndices(*op_data,oit->rowFieldName); CHKERRQ(ierr);
+	ierr = getNodesFieldData(*op_data,oit->rowFieldName); CHKERRQ(ierr);
+	ierr = getNodesFieldDofs(*op_data,oit->rowFieldName); CHKERRQ(ierr);
+	case HCURL:
+	ierr = getEdgesRowIndices(*op_data,oit->rowFieldName); CHKERRQ(ierr);
+	ierr = getEdgesOrder(*op_data,oit->rowFieldName); CHKERRQ(ierr);
+	ierr = getEdgesFieldData(*op_data,oit->rowFieldName); CHKERRQ(ierr);
+	ierr = getEdgesFieldDofs(*op_data,oit->rowFieldName); CHKERRQ(ierr);
+	case HDIV:
+	ierr = getTrisRowIndices(*op_data,oit->rowFieldName); CHKERRQ(ierr);
+	ierr = getTrisOrder(*op_data,oit->rowFieldName); CHKERRQ(ierr);
+	ierr = getTrisFieldData(*op_data,oit->rowFieldName); CHKERRQ(ierr);
+	ierr = getTrisFieldDofs(*op_data,oit->rowFieldName); CHKERRQ(ierr);
+	case L2:
+	ierr = getTetsRowIndices(*op_data,oit->rowFieldName); CHKERRQ(ierr);
+	ierr = getTetsOrder(*op_data,oit->rowFieldName); CHKERRQ(ierr);
+	ierr = getTetsFieldData(*op_data,oit->rowFieldName); CHKERRQ(ierr);
+	ierr = getTetsFieldDofs(*op_data,oit->rowFieldName); CHKERRQ(ierr);
+	default:
+	break;
+      }
+
+      last_row_eval_field_name=oit->rowFieldName;
+
     }
 
     try {
@@ -1533,6 +1541,9 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
     }
 
   }
+
+  string last_col_eval_field_name;
+  last_row_eval_field_name.clear();
 
   for(
     boost::ptr_vector<ForcesAndSurcesCore::UserDataOperator>::iterator oit = vecUserOpNN.begin();
@@ -1571,28 +1582,34 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
       break;
     }
 
-    switch(row_space) {
-      case H1:
-      ierr = getRowNodesIndices(*row_op_data,oit->rowFieldName); CHKERRQ(ierr);
-      ierr = getNodesFieldData(*row_op_data,oit->rowFieldName); CHKERRQ(ierr);
-      ierr = getNodesFieldDofs(*row_op_data,oit->rowFieldName); CHKERRQ(ierr);
-      case HCURL:
-      ierr = getEdgesRowIndices(*row_op_data,oit->rowFieldName); CHKERRQ(ierr);
-      ierr = getEdgesOrder(*row_op_data,oit->rowFieldName); CHKERRQ(ierr);
-      ierr = getEdgesFieldData(*row_op_data,oit->rowFieldName); CHKERRQ(ierr);
-      ierr = getEdgesFieldDofs(*row_op_data,oit->rowFieldName); CHKERRQ(ierr);
-      case HDIV:
-      ierr = getTrisRowIndices(*row_op_data,oit->rowFieldName); CHKERRQ(ierr);
-      ierr = getTrisOrder(*row_op_data,oit->rowFieldName); CHKERRQ(ierr);
-      ierr = getTrisFieldData(*row_op_data,oit->rowFieldName); CHKERRQ(ierr);
-      ierr = getTrisFieldDofs(*row_op_data,oit->rowFieldName); CHKERRQ(ierr);
-      case L2:
-      ierr = getTetsRowIndices(*row_op_data,oit->rowFieldName); CHKERRQ(ierr);
-      ierr = getTetsOrder(*row_op_data,oit->rowFieldName); CHKERRQ(ierr);
-      ierr = getTetsFieldData(*row_op_data,oit->rowFieldName); CHKERRQ(ierr);
-      ierr = getTetsFieldDofs(*row_op_data,oit->rowFieldName); CHKERRQ(ierr);
-      default:
-      break;
+    if(last_row_eval_field_name!=oit->rowFieldName) {
+
+      switch(row_space) {
+	case H1:
+	ierr = getRowNodesIndices(*row_op_data,oit->rowFieldName); CHKERRQ(ierr);
+	ierr = getNodesFieldData(*row_op_data,oit->rowFieldName); CHKERRQ(ierr);
+	ierr = getNodesFieldDofs(*row_op_data,oit->rowFieldName); CHKERRQ(ierr);
+	case HCURL:
+	ierr = getEdgesRowIndices(*row_op_data,oit->rowFieldName); CHKERRQ(ierr);
+	ierr = getEdgesOrder(*row_op_data,oit->rowFieldName); CHKERRQ(ierr);
+	ierr = getEdgesFieldData(*row_op_data,oit->rowFieldName); CHKERRQ(ierr);
+	ierr = getEdgesFieldDofs(*row_op_data,oit->rowFieldName); CHKERRQ(ierr);
+	case HDIV:
+	ierr = getTrisRowIndices(*row_op_data,oit->rowFieldName); CHKERRQ(ierr);
+	ierr = getTrisOrder(*row_op_data,oit->rowFieldName); CHKERRQ(ierr);
+	ierr = getTrisFieldData(*row_op_data,oit->rowFieldName); CHKERRQ(ierr);
+	ierr = getTrisFieldDofs(*row_op_data,oit->rowFieldName); CHKERRQ(ierr);
+	case L2:
+	ierr = getTetsRowIndices(*row_op_data,oit->rowFieldName); CHKERRQ(ierr);
+	ierr = getTetsOrder(*row_op_data,oit->rowFieldName); CHKERRQ(ierr);
+	ierr = getTetsFieldData(*row_op_data,oit->rowFieldName); CHKERRQ(ierr);
+	ierr = getTetsFieldDofs(*row_op_data,oit->rowFieldName); CHKERRQ(ierr);
+	default:
+	break;
+      }
+
+      last_row_eval_field_name==oit->rowFieldName;
+
     }
 
     FieldSpace col_space = mField.get_field_structure(oit->colFieldName)->get_space();
@@ -1615,28 +1632,34 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
       break;
     }
 
-    switch(col_space) {
-      case H1:
-      ierr = getColNodesIndices(*col_op_data,oit->colFieldName); CHKERRQ(ierr);
-      ierr = getNodesFieldData(*col_op_data,oit->colFieldName); CHKERRQ(ierr);
-      ierr = getNodesFieldDofs(*col_op_data,oit->colFieldName); CHKERRQ(ierr);
-      case HCURL:
-      ierr = getEdgesColIndices(*col_op_data,oit->colFieldName); CHKERRQ(ierr);
-      ierr = getEdgesOrder(*col_op_data,oit->colFieldName); CHKERRQ(ierr);
-      ierr = getEdgesFieldData(*col_op_data,oit->colFieldName); CHKERRQ(ierr);
-      ierr = getEdgesFieldDofs(*col_op_data,oit->colFieldName); CHKERRQ(ierr);
-      case HDIV:
-      ierr = getTrisColIndices(*col_op_data,oit->colFieldName); CHKERRQ(ierr);
-      ierr = getTrisOrder(*col_op_data,oit->colFieldName); CHKERRQ(ierr);
-      ierr = getTrisFieldData(*col_op_data,oit->colFieldName); CHKERRQ(ierr);
-      ierr = getTrisFieldDofs(*col_op_data,oit->colFieldName); CHKERRQ(ierr);
-      case L2:
-      ierr = getTetsColIndices(*col_op_data,oit->colFieldName); CHKERRQ(ierr);
-      ierr = getTetsOrder(*col_op_data,oit->colFieldName); CHKERRQ(ierr);
-      ierr = getTetsFieldData(*col_op_data,oit->colFieldName); CHKERRQ(ierr);
-      ierr = getTetsFieldDofs(*col_op_data,oit->colFieldName); CHKERRQ(ierr);
-      default:
-      break;
+    if(last_col_eval_field_name!=oit->colFieldName) {
+
+      switch(col_space) {
+	case H1:
+	ierr = getColNodesIndices(*col_op_data,oit->colFieldName); CHKERRQ(ierr);
+	ierr = getNodesFieldData(*col_op_data,oit->colFieldName); CHKERRQ(ierr);
+	ierr = getNodesFieldDofs(*col_op_data,oit->colFieldName); CHKERRQ(ierr);
+	case HCURL:
+	ierr = getEdgesColIndices(*col_op_data,oit->colFieldName); CHKERRQ(ierr);
+	ierr = getEdgesOrder(*col_op_data,oit->colFieldName); CHKERRQ(ierr);
+	ierr = getEdgesFieldData(*col_op_data,oit->colFieldName); CHKERRQ(ierr);
+	ierr = getEdgesFieldDofs(*col_op_data,oit->colFieldName); CHKERRQ(ierr);
+	case HDIV:
+	ierr = getTrisColIndices(*col_op_data,oit->colFieldName); CHKERRQ(ierr);
+	ierr = getTrisOrder(*col_op_data,oit->colFieldName); CHKERRQ(ierr);
+	ierr = getTrisFieldData(*col_op_data,oit->colFieldName); CHKERRQ(ierr);
+	ierr = getTrisFieldDofs(*col_op_data,oit->colFieldName); CHKERRQ(ierr);
+	case L2:
+	ierr = getTetsColIndices(*col_op_data,oit->colFieldName); CHKERRQ(ierr);
+	ierr = getTetsOrder(*col_op_data,oit->colFieldName); CHKERRQ(ierr);
+	ierr = getTetsFieldData(*col_op_data,oit->colFieldName); CHKERRQ(ierr);
+	ierr = getTetsFieldDofs(*col_op_data,oit->colFieldName); CHKERRQ(ierr);
+	default:
+	break;
+      }
+
+      last_col_eval_field_name=oit->colFieldName;
+
     }
 
     try {
