@@ -296,15 +296,10 @@ int main(int argc, char *argv[]) {
   ierr = analytical_bc_real.setProblem(m_field,"BCREAL_PROBLEM"); CHKERRQ(ierr);
   ierr = analytical_bc_imag.setProblem(m_field,"BCIMAG_PROBLEM"); CHKERRQ(ierr);
 
-  PetscBool angle_flg;
   double angle = 0.25;
   // set wave number from line command, that overwrite numbre form block set
-  ierr = PetscOptionsGetScalar(NULL,"-wave_guid_angle",&angle,&angle_flg); CHKERRQ(ierr);
-  if(!angle_flg) {
-	
-    SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"wave_guide_angle not given, scalar between 0-2 M_PI");
-	
-  }
+  ierr = PetscOptionsGetScalar(NULL,"-wave_guide_angle",&angle,NULL); CHKERRQ(ierr);
+
   
   //wave direction unit vector=[x,y,z]^T
   ublas::vector<double> wave_direction;

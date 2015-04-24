@@ -193,15 +193,11 @@ int main(int argc, char *argv[]) {
 
   }
   
-  PetscBool angle_flg;
+
   double angle = 0.25;
   // set wave number from line command, that overwrite numbre form block set
-  ierr = PetscOptionsGetScalar(NULL,"-wave_guid_angle",&angle,&angle_flg); CHKERRQ(ierr);
-  if(!angle_flg) {
-  
-    SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"wave_guide_angle not given, scalar between 0-2 M_PI");
-  
-  }
+  ierr = PetscOptionsGetScalar(NULL,"-wave_guide_angle",&angle,NULL); CHKERRQ(ierr);
+
   
 
   double power_of_incident_wave = 1;
