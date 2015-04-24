@@ -292,10 +292,6 @@ int main(int argc, char *argv[]) {
   Mat A; //Left hand side matrix
   ierr = m_field.MatCreateMPIAIJWithArrays("ACOUSTIC_PROBLEM",&A); CHKERRQ(ierr);
 
-  // Solve for analytical Dirichlet bc dofs
-  ierr = analytical_bc_real.setProblem(m_field,"BCREAL_PROBLEM"); CHKERRQ(ierr);
-  ierr = analytical_bc_imag.setProblem(m_field,"BCIMAG_PROBLEM"); CHKERRQ(ierr);
-
   //wave direction unit vector=[x,y,z]^T
   ublas::vector<double> wave_direction;
   wave_direction.resize(3);
@@ -308,7 +304,7 @@ int main(int argc, char *argv[]) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"*** ERROR -wave_direction [3*1 vector] default:X direction [0,0,1]");
   }
 
-  PetscInt choise_value = 0;
+  PetscInt choise_value = NO_ANALYTICAL_SOLUTION;
   // set type of analytical solution  
   ierr = PetscOptionsGetEList(NULL,"-analytical_solution_type",analytical_solution_types,6,&choise_value,NULL); CHKERRQ(ierr);
   double scattering_sphere_radius = 1;;
@@ -394,6 +390,14 @@ int main(int argc, char *argv[]) {
 
       break;
 
+      case NO_ANALYTICAL_SOLUTION:
+
+	{
+	  dirihlet_bc_set = false;
+	}
+
+      break;
+
   }
 
 
@@ -416,6 +420,10 @@ int main(int argc, char *argv[]) {
       }
 
     }
+
+    // Solve for analytical Dirichlet bc dofs
+    ierr = analytical_bc_real.setProblem(m_field,"BCREAL_PROBLEM"); CHKERRQ(ierr);
+    ierr = analytical_bc_imag.setProblem(m_field,"BCIMAG_PROBLEM"); CHKERRQ(ierr);
 
     ierr = analytical_bc_real.solveProblem(m_field,"BCREAL_PROBLEM","BCREAL_FE",analytical_ditihlet_bc_real,bc_dirichlet_tris); CHKERRQ(ierr);
     ierr = analytical_bc_imag.solveProblem(m_field,"BCIMAG_PROBLEM","BCIMAG_FE",analytical_ditihlet_bc_imag,bc_dirichlet_tris); CHKERRQ(ierr);  

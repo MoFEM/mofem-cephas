@@ -169,9 +169,9 @@ NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::MyTriangleSpatialFE
   snes_f = _F;
 
   if(mField.check_field("MESH_NODE_POSITIONS")) {
-    get_op_to_do_Rhs().push_back(new AuxMethodMaterial("MESH_NODE_POSITIONS",this));
+    getRowOpPtrVector().push_back(new AuxMethodMaterial("MESH_NODE_POSITIONS",this));
   }
-  get_op_to_do_Rhs().push_back(new AuxMethodSpatial("SPATIAL_POSITION",this));
+  getRowOpPtrVector().push_back(new AuxMethodSpatial("SPATIAL_POSITION",this));
 
 }
 
@@ -590,7 +590,7 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::addForce
   PetscErrorCode ierr;
   const CubitMeshSets *cubit_meshset_ptr;
   ierr = mField.get_cubit_msId(ms_id,NODESET,&cubit_meshset_ptr); CHKERRQ(ierr);
-  ierr = cubit_meshset_ptr->get_cubit_bc_data_structure(mapForce[ms_id].data); CHKERRQ(ierr);
+  ierr = cubit_meshset_ptr->get_bc_data_structure(mapForce[ms_id].data); CHKERRQ(ierr);
   rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBTRI,mapForce[ms_id].tRis,true); CHKERR_PETSC(rval);
   PetscFunctionReturn(0);
 }
@@ -600,7 +600,7 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::addPreas
   PetscErrorCode ierr;
   const CubitMeshSets *cubit_meshset_ptr;
   ierr = mField.get_cubit_msId(ms_id,SIDESET,&cubit_meshset_ptr); CHKERRQ(ierr);
-  ierr = cubit_meshset_ptr->get_cubit_bc_data_structure(mapPreassure[ms_id].data); CHKERRQ(ierr);
+  ierr = cubit_meshset_ptr->get_bc_data_structure(mapPreassure[ms_id].data); CHKERRQ(ierr);
   rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBTRI,mapPreassure[ms_id].tRis,true); CHKERR_PETSC(rval);
   PetscFunctionReturn(0);
 }

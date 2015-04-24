@@ -484,7 +484,7 @@ int main(int argc, char *argv[]) {
     cout << endl << *it << endl;
     
     //Get block name
-    string name = it->get_Cubit_name();
+    string name = it->get_name();
     
     if (name.compare(0,11,"MAT_ELASTIC") == 0) {
       Mat_Elastic mydata;
@@ -681,7 +681,7 @@ int main(int argc, char *argv[]) {
   ierr = post_proc.addFieldValuesPostProc("DISPLACEMENT"); CHKERRQ(ierr);
   ierr = post_proc.addFieldValuesGradientPostProc("DISPLACEMENT"); CHKERRQ(ierr);
   //add postpocessing for sresses
-  post_proc.get_op_to_do_Rhs().push_back(
+  post_proc.getRowOpPtrVector().push_back(
 	  new PostPorcStress(
 	    m_field,
 	    post_proc.postProcMesh,

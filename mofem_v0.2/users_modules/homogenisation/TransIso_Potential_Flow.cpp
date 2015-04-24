@@ -140,7 +140,7 @@ int main(int argc, char *argv[]) {
     int noOfFibres=0;
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|UNKNOWNCUBITNAME,it)) {
       
-      std::size_t found=it->get_Cubit_name().find("PotentialFlow");
+      std::size_t found=it->get_name().find("PotentialFlow");
       if (found==std::string::npos) continue;
       noOfFibres += 1;
     }
@@ -151,10 +151,10 @@ int main(int argc, char *argv[]) {
     
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|UNKNOWNCUBITNAME,it)) {
       
-      std::size_t interfaceFound=it->get_Cubit_name().find("PotentialFlow_");
+      std::size_t interfaceFound=it->get_name().find("PotentialFlow_");
       if (interfaceFound==std::string::npos) continue;
       
-      std::string str2 = it->get_Cubit_name().substr (14,50);
+      std::string str2 = it->get_name().substr (14,50);
       
       fibreList[aaa] = atoi(str2.c_str());
       aaa += 1;
@@ -201,7 +201,7 @@ int main(int argc, char *argv[]) {
 		//*****INTERFACE INSERTION******
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SIDESET,cit)) {
       
-      std::size_t interfaceFound=cit->get_Cubit_name().find("interface");
+      std::size_t interfaceFound=cit->get_name().find("interface");
       if (interfaceFound==std::string::npos) continue;
       
       ierr = PetscPrintf(PETSC_COMM_WORLD,"Insert Interface %d\n",cit->get_msId()); CHKERRQ(ierr);
@@ -293,16 +293,16 @@ int main(int argc, char *argv[]) {
       
       for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|UNKNOWNCUBITNAME,it)) {
         
-        //      std::size_t found=it->get_Cubit_name().find("PotentialFlow");
+        //      std::size_t found=it->get_name().find("PotentialFlow");
         //      if (found==std::string::npos) continue;
-        //          cout<<it->get_Cubit_name()<<endl;
+        //          cout<<it->get_name()<<endl;
         
         ostringstream sss,rrr;
         //set problem level
         sss << "POTENTIAL_ELEM" << fibreList[cc];
         rrr << "PotentialFlow_" << fibreList[cc];
         
-        if(it->get_Cubit_name() ==  rrr.str().c_str() ) {
+        if(it->get_name() ==  rrr.str().c_str() ) {
           Range TetsInBlock;
           rval = moab.get_entities_by_type(it->meshset, MBTET,TetsInBlock,true); CHKERR_PETSC(rval);
           Range block_rope_bit_level = intersect(LatestRefinedTets,TetsInBlock);
@@ -351,9 +351,9 @@ int main(int argc, char *argv[]) {
         ierr = mField.modify_finite_element_add_field_data(rrr.str().c_str(),field_name); CHKERRQ(ierr);
         for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SIDESET|PRESSURESET,it)) {
           
-          //          std::size_t PressureFound=it->get_Cubit_name().find(sss.str().c_str());
+          //          std::size_t PressureFound=it->get_name().find(sss.str().c_str());
           //          if (PressureFound==std::string::npos) continue;
-          if (ppp.str().c_str()==it->get_Cubit_name() || sss.str().c_str()==it->get_Cubit_name()){
+          if (ppp.str().c_str()==it->get_name() || sss.str().c_str()==it->get_name()){
             
             if(mField.check_field(mesh_nodals_positions)) {
               ierr = mField.modify_finite_element_add_field_data( rrr.str().c_str() ,mesh_nodals_positions); CHKERRQ(ierr);
@@ -385,13 +385,13 @@ int main(int argc, char *argv[]) {
         neumann_forces.insert(fe_name,new NeummanForcesSurface(mField));
         for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SIDESET|PRESSURESET,it)) {
           
-          //          std::size_t PressureFound=it->get_Cubit_name().find(sss.str().c_str());
+          //          std::size_t PressureFound=it->get_name().find(sss.str().c_str());
           //          if (PressureFound==std::string::npos) continue;
-          if (ppp.str().c_str()==it->get_Cubit_name() || sss.str().c_str()==it->get_Cubit_name()){
+          if (ppp.str().c_str()==it->get_name() || sss.str().c_str()==it->get_name()){
             bool ho_geometry = mField.check_field(mesh_nodals_positions);
             ierr = neumann_forces.at(fe_name).addFlux(field_name,F,it->get_msId(),ho_geometry); CHKERRQ(ierr);
             /*pressure_cubit_bc_data data;
-             ierr = it->get_cubit_bc_data_structure(data); CHKERRQ(ierr);
+             ierr = it->get_bc_data_structure(data); CHKERRQ(ierr);
              my_split << *it << endl;
              my_split << data << endl;*/
           }
@@ -456,9 +456,9 @@ int main(int argc, char *argv[]) {
       //get nodes and other entities to fix
       Range fix_nodes;
       for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET|UNKNOWNCUBITNAME,it)) {
-        //        std::size_t zeroPressureFound=it->get_Cubit_name().find(ttt.str().c_str());
+        //        std::size_t zeroPressureFound=it->get_name().find(ttt.str().c_str());
         //        if (zeroPressureFound==std::string::npos) continue;
-        if (ttt.str().c_str()==it->get_Cubit_name()){
+        if (ttt.str().c_str()==it->get_name()){
           rval = moab.get_entities_by_type(it->meshset,MBVERTEX,fix_nodes,true); CHKERR_PETSC(rval);
           Range edges;
           rval = moab.get_entities_by_type(it->meshset,MBEDGE,edges,true); CHKERR_PETSC(rval);
