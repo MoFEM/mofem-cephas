@@ -37,7 +37,8 @@ cubit.cmd('sideset 101 surface 2 3 4')  # all -ve boundary surfaces
 cubit.cmd('sideset 102 surface 1 5 6')  # all +ve boundary surfaces
 cubit.cmd('sideset 103 surface 1 2 3 4 5 6')  # all boundary surfaces
 
-cubit.cmd('save as "/Users/zahur/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/RVE_Cube_mech.cub" overwrite')
+cubit.cmd('save as "/Users/zahur/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/Cube_test/RVE_Cube_mech.cub" overwrite')
+
 
 
 

@@ -5,15 +5,26 @@ cubit.cmd('new')
 cubit.cmd('brick x 1 y 1 z 1')
 interval=1; 
 
-str1='block 1 ' +' volume 1'; cubit.cmd(str1)
+
+vol=['1']        
+mat=['MAT_MOISTURE']     
+Density=[1.2e-6]        #Density [kg/mm^3]
+Conductivity=[3.36e-12]      #Moisture diffusion conductivity
+cubit.cmd('set duplicate block elements on')         
+for i in range(0, 1):         
+    str1='block ' + str(i+1) +' volume '+vol[i]; cubit.cmd(str1)         
+    str1='block ' + str(i+1) +' name "'+mat[i] + '"'; cubit.cmd(str1)      
+    str1='block ' + str(i+1) +' attribute count 4'; cubit.cmd(str1)      
+    str1='block ' + str(i+1) +' attribute index 1 '+str(Conductivity[i]); cubit.cmd(str1)     
+    str1='block ' + str(i+1) +' attribute index 4 '+str(Density[i]); cubit.cmd(str1)      
 
 
-str1='block 1 ' +' name "MAT_THERMAL"'; cubit.cmd(str1)   
-cubit.cmd('block 1 attribute count 2')
-Thermal=['1','1']
-for i in range(0, 1):
-    str1='block 1 attribute index ' + str(i+1) +' '+Thermal[i]; cubit.cmd(str1)
-    str1='block 1 attribute index ' + str(i+2) +' '+Thermal[i+1]; cubit.cmd(str1)
+#str1='block 1 ' +' volume 1'; cubit.cmd(str1)
+#str1='block 1 ' +' name "MAT_MOISTURE"'; cubit.cmd(str1)
+#cubit.cmd('block 1 attribute count 1')
+#Moisture=['1']
+#for i in range(0, 1):
+#    str1='block 1 attribute index ' + str(i+1) +' '+Moisture[i]; cubit.cmd(str1)
 
 str1='surface 4 interval '+str(interval); cubit.cmd(str1)
 cubit.cmd('surface 4 scheme trimesh')
@@ -40,7 +51,7 @@ cubit.cmd('sideset 101 surface 2 3 4')  # all -ve boundary surfaces
 cubit.cmd('sideset 102 surface 1 5 6')  # all +ve boundary surfaces
 cubit.cmd('sideset 103 surface 1 2 3 4 5 6')  # all boundary surfaces
 
-cubit.cmd('save as "/Users/zahur/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/RVE_Cube_thermal.cub" overwrite')
+cubit.cmd('save as "/Users/zahur/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/Cube_test/RVE_Cube_moisture.cub" overwrite')
 
 
 

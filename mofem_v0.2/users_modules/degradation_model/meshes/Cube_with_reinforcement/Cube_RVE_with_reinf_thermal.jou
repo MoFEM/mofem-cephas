@@ -43,23 +43,24 @@ cubit.cmd('mesh volume all')
 
 cubit.cmd('set duplicate block elements on')         
 vol=['3', '2']         
-mat=['MAT_MOISTURE_MATRIX','MAT_MOISTURE_FIBRES']     
-Conductivity=[1, 1]   
-Density=[0.2, 0.3]
+mat=['MAT_THERMAL_MATRIX','MAT_THERMAL_FIBRES']     
+Conductivity=[0.19e3, 1.03e3]   #Thermal conductivities of Epoxy resin and E-glass fibres in [ W/(mm deg C) ]
+Capcity=[1, 1] #This is not in the homogenisation process, so the exact value is given in the macro-problem mesh file
 block_id=1
 for i in range(0, 2):         
     str1='block ' + str(block_id) +' volume '+vol[i]; cubit.cmd(str1)         
     str1='block ' + str(block_id) +' name "'+mat[i] + '"'; cubit.cmd(str1)      
-    str1='block ' + str(block_id) +' attribute count 4'; cubit.cmd(str1)      
+    str1='block ' + str(block_id) +' attribute count 2'; cubit.cmd(str1)      
     str1='block ' + str(block_id) +' attribute index 1 '+str(Conductivity[i]); cubit.cmd(str1)
-    str1='block ' + str(block_id) +' attribute index 4 '+str(Density[i]); cubit.cmd(str1)
+    str1='block ' + str(block_id) +' attribute index 2 '+str(Capcity[i]); cubit.cmd(str1)
     block_id=block_id+1      
 
 cubit.cmd('sideset 101 surface 20 10 19 18')  # all -ve boundary surfaces  
 cubit.cmd('sideset 102 surface 21 17 22 12')  # all +ve boundary surfaces  
 cubit.cmd('sideset 103 surface 20 10 19 18 21 17 22 12')  # all boundary surfaces  
 
-cubit.cmd('save as "/Users/zahur/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/Cube_RVE_with_reinf_moist.cub" overwrite')
+cubit.cmd('save as "/Users/zahur/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/Cube_with_reinforcement/Cube_RVE_with_reinf_thermal.cub" overwrite')
+
 
 
 

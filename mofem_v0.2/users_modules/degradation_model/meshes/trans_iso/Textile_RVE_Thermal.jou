@@ -138,7 +138,7 @@ cubit.cmd('rotate Volume all angle 90  about X include_merged')
 vol=['14', '10,11,12,13']         
 mat=['MAT_THERMAL_MATRIX','MAT_THERMAL_FIBRES']     
 Conductivity=[0.19e3, 1.03e3]   #Thermal conductivities of Epoxy resin and E-glass fibres in [ W/(mm deg C) ]
-Capcity=[1, 1]
+Capcity=[1, 1] #This is not in the homogenisation process, so the exact value is given in the macro-problem mesh file
 cubit.cmd('set duplicate block elements on')         
 for i in range(0, 2):         
     str1='block ' + str(i+1) +' volume '+vol[i]; cubit.cmd(str1)         
@@ -156,6 +156,7 @@ cubit.cmd('sideset 103 surface 41 31 34 40 42 27 24 43 30 33 39 25 44 28')  # al
 cubit.cmd('save as "/Users/zahur/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/trans_iso/Textile_RVE_Thermal.cub" overwrite')
 
  
+
 
 
 
