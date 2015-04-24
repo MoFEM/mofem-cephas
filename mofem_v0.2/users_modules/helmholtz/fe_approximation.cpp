@@ -296,6 +296,16 @@ int main(int argc, char *argv[]) {
   ierr = analytical_bc_real.setProblem(m_field,"BCREAL_PROBLEM"); CHKERRQ(ierr);
   ierr = analytical_bc_imag.setProblem(m_field,"BCIMAG_PROBLEM"); CHKERRQ(ierr);
 
+  PetscBool angle_flg;
+  double angle = 0.25;
+  // set wave number from line command, that overwrite numbre form block set
+  ierr = PetscOptionsGetScalar(NULL,"-wave_guid_angle",&angle,&angle_flg); CHKERRQ(ierr);
+  if(!angle_flg) {
+	
+    SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"wave_guide_angle not given, scalar between 0-2 M_PI");
+	
+  }
+  
   //wave direction unit vector=[x,y,z]^T
   ublas::vector<double> wave_direction;
   wave_direction.resize(3);
@@ -345,7 +355,7 @@ int main(int argc, char *argv[]) {
 
 	{
 
-	  boost::shared_ptr<PlaneWave> function_evaluator = boost::shared_ptr<PlaneWave>(new PlaneWave(wavenumber,0.25*M_PI));
+	  boost::shared_ptr<PlaneWave> function_evaluator = boost::shared_ptr<PlaneWave>(new PlaneWave(wavenumber,angle*M_PI));
 	  ierr = analytical_bc_real.setApproxOps(m_field,"rePRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::REAL); CHKERRQ(ierr); 
 	  ierr = analytical_bc_imag.setApproxOps(m_field,"imPRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::IMAG); CHKERRQ(ierr);
 	  dirihlet_bc_set = true;

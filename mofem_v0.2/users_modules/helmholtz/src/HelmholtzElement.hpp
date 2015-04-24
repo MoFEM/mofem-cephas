@@ -74,6 +74,7 @@ struct HelmholtzElement {
 
   };
   map<int,SurfaceData> surfaceIncidentWaveBcData;
+  map<int,SurfaceData> surfaceMixedBtBcData;
 
   /** \brief Common data used by volume and surface elements
   * \ingroup mofem_helmholtz_elem
@@ -467,6 +468,35 @@ struct HelmholtzElement {
     
   };
   ZeroFunVal zeroFunVal;
+  
+  
+  
+  struct BaylissTurkel {
+    
+    ublas::vector<double> vAl;   
+	double k;
+	BaylissTurkel(double wave_number): 
+      k(wave_number) {}
+	
+    ublas::vector<double>& operator()(double x,double y,double z,ublas::vector<double> &normal) {
+	  
+	  const complex< double > i( 0.0, 1.0 );
+	  double x2=x*x,y2=y*y,z2=z*z;
+	  double R = sqrt(x2+y2+z2);
+	  double iNverseR2 = 1.0 / (2.0*R);
+	  
+	  complex< double > result = - i*k + iNverseR2;
+	  
+      vAl.resize(2);
+      vAl[0] = std::real(result);
+      vAl[1] = std::imag(result);
+      return vAl;
+    }
+    
+  };
+
+  
+  
 
   /** \brief calulate incident wave scatterd on hard surface
     
@@ -744,37 +774,37 @@ struct HelmholtzElement {
 
         for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
             
-	  double area = getArea();
-	  if(getNormals_at_GaussPt().size1()) {
-	    noalias(nOrmal) = getNormals_at_GaussPt(gg);
-	    area = ublas::norm_2(nOrmal)*0.5;
-	  }
+		  double area = getArea();
+		  if(getNormals_at_GaussPt().size1()) {
+			noalias(nOrmal) = getNormals_at_GaussPt(gg);
+			area = ublas::norm_2(nOrmal)*0.5;
+		  }
           double val = area*getGaussPts()(2,gg);
 
-	  double x,y,z;
-	  if(commonData.hoCoords.size1()) {
-	    x = commonData.hoCoords(gg,0);
-	    y = commonData.hoCoords(gg,1);
-	    z = commonData.hoCoords(gg,2);	
-	  } else {
-	    x = getCoordsAtGaussPts()(gg,0);
-	    y = getCoordsAtGaussPts()(gg,1);
-	    z = getCoordsAtGaussPts()(gg,2);
-	    if(gg == 0) {
-	      noalias(nOrmal) = getNormal();
-	    }
-	  }
+		  double x,y,z;
+		  if(commonData.hoCoords.size1()) {
+			x = commonData.hoCoords(gg,0);
+			y = commonData.hoCoords(gg,1);
+			z = commonData.hoCoords(gg,2);	
+		  } else {
+			x = getCoordsAtGaussPts()(gg,0);
+			y = getCoordsAtGaussPts()(gg,1);
+			z = getCoordsAtGaussPts()(gg,2);
+			if(gg == 0) {
+			  noalias(nOrmal) = getNormal();
+			}
+		  }
 
-	  noalias(K0) = outer_prod(row_data.getN(gg,nb_rows),col_data.getN(gg,nb_cols));
+		  noalias(K0) = outer_prod(row_data.getN(gg,nb_rows),col_data.getN(gg,nb_cols));
           noalias(K) += val*K0;
 
-	  ublas::vector<double>& f1 = (*functionEvaluator1)(x,y,z,nOrmal);
-	  if(f1[0]!=0) {
-	    noalias(reF1K) += val*f1[0]*K0;
-	  }
-	  if(f1[1]!=0) {
-	    noalias(imF1K) += val*f1[1]*K0;
-	  }
+		  ublas::vector<double>& f1 = (*functionEvaluator1)(x,y,z,nOrmal);
+		  if(f1[0]!=0) {
+			noalias(reF1K) += val*f1[0]*K0;
+		  }
+		  if(f1[1]!=0) {
+			noalias(imF1K) += val*f1[1]*K0;
+		  }
 
 
         }
@@ -1095,11 +1125,24 @@ struct HelmholtzElement {
 
       }
 
-
+	  if(it->get_Cubit_name().compare(0,23,"BT_CONDITION") == 0) {
+	  
+		surfaceIncidentWaveBcData[it->get_msId()].aDmittance_real = 0;
+		surfaceIncidentWaveBcData[it->get_msId()].aDmittance_imag = -wavenumber;
+		  
+		  
+		rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,surfaceIncidentWaveBcData[it->get_msId()].tRis,true); CHKERR_PETSC(rval);
+		ierr = mField.add_ents_to_finite_element_by_TRIs(surfaceIncidentWaveBcData[it->get_msId()].tRis,"HELMHOLTZ_REIM_FE"); CHKERRQ(ierr);
+		ierr = mField.add_ents_to_finite_element_by_TRIs(surfaceIncidentWaveBcData[it->get_msId()].tRis,"HELMHOLTZ_IMRE_FE"); CHKERRQ(ierr);
+	  }
+	  
     }
   
     PetscFunctionReturn(0);
   } 
+  
+  
+  
 
   PetscErrorCode setOperators(
     Mat A,Vec F,
@@ -1116,6 +1159,7 @@ struct HelmholtzElement {
     feLhs.at("HELMHOLTZ_RERE_FE").get_op_to_do_Rhs().push_back(
       new OpGetImIndices(re_field_name,im_field_name,commonData));
 
+	/* real field and imag field */
     feRhs.at("HELMHOLTZ_RERE_FE").get_op_to_do_Rhs().push_back(
      new OpGetValueAndGradAtGaussPts(re_field_name,commonData));
     feRhs.at("HELMHOLTZ_IMIM_FE").get_op_to_do_Rhs().push_back(
@@ -1184,13 +1228,13 @@ struct HelmholtzElement {
       ierr = PetscOptionsGetRealArray(PETSC_NULL,"-wave_direction",&wave_direction[0],&nmax,NULL); CHKERRQ(ierr);
       if(nmax > 0 && nmax != 3) {
 
-	SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"*** ERROR -wave_direction [3*1 vector] default:X direction [0,0,1]");
+		SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"*** ERROR -wave_direction [3*1 vector] default:X direction [0,0,1]");
 
       }
 
       boost::shared_ptr<IncidentWaveNeumannF2> incident_wave_neumann_bc = 
-	boost::shared_ptr<IncidentWaveNeumannF2>(new IncidentWaveNeumannF2(wavenumber,wave_direction,power_of_incident_wave));
-
+	  boost::shared_ptr<IncidentWaveNeumannF2>(new IncidentWaveNeumannF2(wavenumber,wave_direction,power_of_incident_wave));
+    
       if(miit->second.aDmittance_imag!=0) {
 	feRhs.at("HELMHOLTZ_REIM_FE").get_op_to_do_Rhs().push_back(
 	  new OpHelmholtzMixBCLhs<ZeroFunVal>(
@@ -1205,6 +1249,15 @@ struct HelmholtzElement {
 	  zero_function,incident_wave_neumann_bc));
 
     }
+	
+	
+	//boost::shared_ptr<BaylissTurkel> bT = 
+	//  boost::shared_ptr<BaylissTurkel>(new BaylissTurkel(wavenumber));
+	
+	//feLhs.at("HELMHOLTZ_REIM_FE").get_op_to_do_Lhs().push_back(
+	//	new OpHelmholtzMixBCLhs<BaylissTurkel>(
+	//	  re_field_name,im_field_name,A,miit->second,commonData,
+	//	  zero_function));
 
     PetscFunctionReturn(0);
   } 
