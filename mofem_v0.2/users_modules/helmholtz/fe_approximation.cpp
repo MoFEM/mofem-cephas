@@ -307,8 +307,6 @@ int main(int argc, char *argv[]) {
   PetscInt choise_value = NO_ANALYTICAL_SOLUTION;
   // set type of analytical solution  
   ierr = PetscOptionsGetEList(NULL,"-analytical_solution_type",analytical_solution_types,6,&choise_value,NULL); CHKERRQ(ierr);
-  double scattering_sphere_radius = 1;;
-  ierr = PetscOptionsGetScalar(NULL,"-scattering_sphere_radius",&scattering_sphere_radius,NULL); CHKERRQ(ierr);
 
   switch((AnalyticalSolutionTypes)choise_value) {
 
@@ -316,10 +314,14 @@ int main(int argc, char *argv[]) {
     
       {
 
+	double scattering_sphere_radius = 1.;
+	ierr = PetscOptionsGetScalar(NULL,"-scattering_sphere_radius",&scattering_sphere_radius,NULL); CHKERRQ(ierr);
+
 	boost::shared_ptr<HardSphereScatterWave> function_evaluator = boost::shared_ptr<HardSphereScatterWave>(new HardSphereScatterWave(wavenumber));
 	ierr = analytical_bc_real.setApproxOps(m_field,"rePRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::REAL); CHKERRQ(ierr); 
 	ierr = analytical_bc_imag.setApproxOps(m_field,"imPRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::IMAG); CHKERRQ(ierr);
 	dirihlet_bc_set = true;
+
       }
     
       break;
@@ -328,6 +330,9 @@ int main(int argc, char *argv[]) {
 
       {
     
+	double scattering_sphere_radius = 1.;
+	ierr = PetscOptionsGetScalar(NULL,"-scattering_sphere_radius",&scattering_sphere_radius,NULL); CHKERRQ(ierr);
+
 	boost::shared_ptr<SoftSphereScatterWave> function_evaluator = boost::shared_ptr<SoftSphereScatterWave>(new SoftSphereScatterWave(wavenumber));
 	ierr = analytical_bc_real.setApproxOps(m_field,"rePRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::REAL); CHKERRQ(ierr); 
 	ierr = analytical_bc_imag.setApproxOps(m_field,"imPRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::IMAG); CHKERRQ(ierr);
@@ -341,7 +346,12 @@ int main(int argc, char *argv[]) {
 
 	{
 
-	  boost::shared_ptr<PlaneWave> function_evaluator = boost::shared_ptr<PlaneWave>(new PlaneWave(wavenumber,0.25*M_PI));
+	  double angle = 0.25;
+	  // set wave number from line command, that overwrite numbre form block set
+	  ierr = PetscOptionsGetScalar(NULL,"-wave_guide_angle",&angle,NULL); CHKERRQ(ierr);
+
+
+	  boost::shared_ptr<PlaneWave> function_evaluator = boost::shared_ptr<PlaneWave>(new PlaneWave(wavenumber,angle*M_PI));
 	  ierr = analytical_bc_real.setApproxOps(m_field,"rePRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::REAL); CHKERRQ(ierr); 
 	  ierr = analytical_bc_imag.setApproxOps(m_field,"imPRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::IMAG); CHKERRQ(ierr);
 	  dirihlet_bc_set = true;
@@ -413,6 +423,7 @@ int main(int argc, char *argv[]) {
       for(;mit!=planeWaveScatterData.end();mit++) {
 
 	// note negative field, scatter field should cancel incident wave
+
 	boost::shared_ptr<IncidentWave> function_evaluator = boost::shared_ptr<IncidentWave>(new IncidentWave(wavenumber,wave_direction,-power_of_incident_wave));
 	ierr = analytical_bc_real.setApproxOps(m_field,"rePRES",mit->second.tRis,function_evaluator,GenericAnalyticalSolution::REAL); CHKERRQ(ierr); 
 	ierr = analytical_bc_imag.setApproxOps(m_field,"imPRES",mit->second.tRis,function_evaluator,GenericAnalyticalSolution::IMAG); CHKERRQ(ierr);

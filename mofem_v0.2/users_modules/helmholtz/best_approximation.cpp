@@ -214,14 +214,16 @@ int main(int argc, char *argv[]) {
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -analytical_solution_type needed, WARNING!!!!!!.");
   }
-  double scattering_sphere_radius = 1;;
-  ierr = PetscOptionsGetScalar(NULL,"-scattering_sphere_radius",&scattering_sphere_radius,NULL); CHKERRQ(ierr);
     
   switch((AnalyticalSolutionTypes)choise_value) {
     
     case HARD_SPHERE_SCATTER_WAVE:
     
       {
+
+	double scattering_sphere_radius = 1;;
+	ierr = PetscOptionsGetScalar(NULL,"-scattering_sphere_radius",&scattering_sphere_radius,NULL); CHKERRQ(ierr);
+
 	HardSphereScatterWave function_evaluator(wavenumber,scattering_sphere_radius);
 	ierr = solve_problem(m_field,"EX1_PROBLEM","FE1","reEX","imEX",INSERT_VALUES,function_evaluator,is_partitioned); CHKERRQ(ierr);
       }
@@ -232,6 +234,9 @@ int main(int argc, char *argv[]) {
     case SOFT_SPHERE_SCATTER_WAVE:
 
       {
+	double scattering_sphere_radius = 1;;
+	ierr = PetscOptionsGetScalar(NULL,"-scattering_sphere_radius",&scattering_sphere_radius,NULL); CHKERRQ(ierr);
+
         SoftSphereScatterWave function_evaluator(wavenumber,scattering_sphere_radius);
         ierr = solve_problem(m_field,"EX1_PROBLEM","FE1","reEX","imEX",INSERT_VALUES,function_evaluator,is_partitioned); CHKERRQ(ierr);
       }
@@ -241,7 +246,12 @@ int main(int argc, char *argv[]) {
     case PLANE_WAVE:
 
       {
-        PlaneWave function_evaluator(wavenumber,0.25*M_PI);
+
+	double angle = 0.25;
+	// set wave number from line command, that overwrite numbre form block set
+	ierr = PetscOptionsGetScalar(NULL,"-wave_guide_angle",&angle,NULL); CHKERRQ(ierr);
+ 
+        PlaneWave function_evaluator(wavenumber,angle*M_PI);
         ierr = solve_problem(m_field,"EX1_PROBLEM","FE1","reEX","imEX",INSERT_VALUES,function_evaluator,is_partitioned); CHKERRQ(ierr);
       }
 
