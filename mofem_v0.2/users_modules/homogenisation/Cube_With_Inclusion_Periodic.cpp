@@ -276,7 +276,7 @@ int main(int argc, char *argv[]) {
   Range TetsInBlock;
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)){
     
-		if(it->get_Cubit_name() == "MAT_ELASTIC") {
+		if(it->get_name() == "MAT_ELASTIC") {
 			rval = moab.get_entities_by_type(it->meshset, MBTET,TetsInBlock,true); CHKERR_PETSC(rval);
 		}
 	}
@@ -285,7 +285,7 @@ int main(int argc, char *argv[]) {
   
   Range TetsInBlock_stiff_inc;
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)){
-		if(it->get_Cubit_name() == "MAT_ELASTIC_Stiff_Inclusion") {
+		if(it->get_name() == "MAT_ELASTIC_Stiff_Inclusion") {
 			rval = moab.get_entities_by_type(it->meshset, MBTET,TetsInBlock_stiff_inc,true); CHKERR_PETSC(rval);
 		}
 	}

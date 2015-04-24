@@ -279,10 +279,10 @@ struct FieldApproximationH1 {
     PetscErrorCode ierr;
 	
     //add operator to calulate F vector
-    fe.get_op_to_do_Rhs().push_back(new OpApprox<FUNEVAL>(field_name,A,vec_F,function_evaluator));
+    fe.getRowOpPtrVector().push_back(new OpApprox<FUNEVAL>(field_name,A,vec_F,function_evaluator));
     //add operator to calulate A matrix
     if(A) {
-      fe.get_op_to_do_Lhs().push_back(new OpApprox<FUNEVAL>(field_name,A,vec_F,function_evaluator));
+      fe.getRowColOpPtrVector().push_back(new OpApprox<FUNEVAL>(field_name,A,vec_F,function_evaluator));
     }
 	
     if(A) {

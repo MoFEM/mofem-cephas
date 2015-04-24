@@ -1870,45 +1870,45 @@ struct ConvectiveMassElement {
     commonData.spatialVelocities = velocity_field_name;
 
     //Rhs
-    feMassRhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(velocity_field_name,commonData));
-    feMassRhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(spatial_position_field_name,commonData));
-    feMassRhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts("DOT_"+velocity_field_name,commonData));
-    feMassRhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts("DOT_"+spatial_position_field_name,commonData));
+    feMassRhs.getRowOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(velocity_field_name,commonData));
+    feMassRhs.getRowOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(spatial_position_field_name,commonData));
+    feMassRhs.getRowOpPtrVector().push_back(new OpGetCommonDataAtGaussPts("DOT_"+velocity_field_name,commonData));
+    feMassRhs.getRowOpPtrVector().push_back(new OpGetCommonDataAtGaussPts("DOT_"+spatial_position_field_name,commonData));
     if(mField.check_field(material_position_field_name)) {
-      feMassRhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(material_position_field_name,commonData));
+      feMassRhs.getRowOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(material_position_field_name,commonData));
       if(ale) {
-	feMassRhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts("DOT_"+material_position_field_name,commonData));
+	feMassRhs.getRowOpPtrVector().push_back(new OpGetCommonDataAtGaussPts("DOT_"+material_position_field_name,commonData));
       } else {
 	feMassRhs.meshPositionsFieldName = material_position_field_name;
       }
     }
     map<int,BlockData>::iterator sit = setOfBlocks.begin();
     for(;sit!=setOfBlocks.end();sit++) {
-      feMassRhs.get_op_to_do_Rhs().push_back(new OpMassJacobian(spatial_position_field_name,sit->second,commonData,tAg,false,linear));
-      feMassRhs.get_op_to_do_Rhs().push_back(new OpMassRhs(spatial_position_field_name,sit->second,commonData));
+      feMassRhs.getRowOpPtrVector().push_back(new OpMassJacobian(spatial_position_field_name,sit->second,commonData,tAg,false,linear));
+      feMassRhs.getRowOpPtrVector().push_back(new OpMassRhs(spatial_position_field_name,sit->second,commonData));
     }
 
     //Lhs
-    feMassLhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(velocity_field_name,commonData));
-    feMassLhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(spatial_position_field_name,commonData));
-    feMassLhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts("DOT_"+velocity_field_name,commonData));
-    feMassLhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts("DOT_"+spatial_position_field_name,commonData));
+    feMassLhs.getRowOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(velocity_field_name,commonData));
+    feMassLhs.getRowOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(spatial_position_field_name,commonData));
+    feMassLhs.getRowOpPtrVector().push_back(new OpGetCommonDataAtGaussPts("DOT_"+velocity_field_name,commonData));
+    feMassLhs.getRowOpPtrVector().push_back(new OpGetCommonDataAtGaussPts("DOT_"+spatial_position_field_name,commonData));
     if(mField.check_field(material_position_field_name)) {
-      feMassLhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(material_position_field_name,commonData));
+      feMassLhs.getRowOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(material_position_field_name,commonData));
       if(ale) {
-	feMassLhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts("DOT_"+material_position_field_name,commonData));
+	feMassLhs.getRowOpPtrVector().push_back(new OpGetCommonDataAtGaussPts("DOT_"+material_position_field_name,commonData));
       } else {
 	feMassLhs.meshPositionsFieldName = material_position_field_name;
       }
     }
     sit = setOfBlocks.begin();
     for(;sit!=setOfBlocks.end();sit++) {
-      feMassLhs.get_op_to_do_Rhs().push_back(new OpMassJacobian(spatial_position_field_name,sit->second,commonData,tAg,true,linear));
-      feMassLhs.get_op_to_do_Lhs().push_back(new OpMassLhs_dM_dv(spatial_position_field_name,velocity_field_name,sit->second,commonData));
-      feMassLhs.get_op_to_do_Lhs().push_back(new OpMassLhs_dM_dx(spatial_position_field_name,spatial_position_field_name,sit->second,commonData));
+      feMassLhs.getRowOpPtrVector().push_back(new OpMassJacobian(spatial_position_field_name,sit->second,commonData,tAg,true,linear));
+      feMassLhs.getRowColOpPtrVector().push_back(new OpMassLhs_dM_dv(spatial_position_field_name,velocity_field_name,sit->second,commonData));
+      feMassLhs.getRowColOpPtrVector().push_back(new OpMassLhs_dM_dx(spatial_position_field_name,spatial_position_field_name,sit->second,commonData));
       if(mField.check_field(material_position_field_name)) {
 	if(ale) {
-	  feMassLhs.get_op_to_do_Lhs().push_back(new OpMassLhs_dM_dX(spatial_position_field_name,material_position_field_name,sit->second,commonData));
+	  feMassLhs.getRowColOpPtrVector().push_back(new OpMassLhs_dM_dX(spatial_position_field_name,material_position_field_name,sit->second,commonData));
 	} else {
 	  feMassLhs.meshPositionsFieldName = material_position_field_name;
 	}
@@ -1916,15 +1916,15 @@ struct ConvectiveMassElement {
     }
 
     //Energy
-    feEnergy.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(velocity_field_name,commonData));
-    feEnergy.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(spatial_position_field_name,commonData));
+    feEnergy.getRowOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(velocity_field_name,commonData));
+    feEnergy.getRowOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(spatial_position_field_name,commonData));
     if(mField.check_field(material_position_field_name)) {
-      feEnergy.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(material_position_field_name,commonData));
+      feEnergy.getRowOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(material_position_field_name,commonData));
       feEnergy.meshPositionsFieldName = material_position_field_name;
     }
     sit = setOfBlocks.begin();
     for(;sit!=setOfBlocks.end();sit++) {
-      feEnergy.get_op_to_do_Rhs().push_back(new OpEnergy(spatial_position_field_name,sit->second,commonData,&feEnergy.V,linear));
+      feEnergy.getRowOpPtrVector().push_back(new OpEnergy(spatial_position_field_name,sit->second,commonData,&feEnergy.V,linear));
     }
 
     PetscFunctionReturn(0);
@@ -1942,45 +1942,45 @@ struct ConvectiveMassElement {
     commonData.spatialVelocities = velocity_field_name;
 
     //Rhs
-    feVelRhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(velocity_field_name,commonData));
-    feVelRhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(spatial_position_field_name,commonData));
-    feVelRhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts("DOT_"+velocity_field_name,commonData));
+    feVelRhs.getRowOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(velocity_field_name,commonData));
+    feVelRhs.getRowOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(spatial_position_field_name,commonData));
+    feVelRhs.getRowOpPtrVector().push_back(new OpGetCommonDataAtGaussPts("DOT_"+velocity_field_name,commonData));
     if(mField.check_field(material_position_field_name)) {
-      feVelRhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts("DOT_"+spatial_position_field_name,commonData));
-      feVelRhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(material_position_field_name,commonData));
+      feVelRhs.getRowOpPtrVector().push_back(new OpGetCommonDataAtGaussPts("DOT_"+spatial_position_field_name,commonData));
+      feVelRhs.getRowOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(material_position_field_name,commonData));
       if(ale) {
-	feVelRhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts("DOT_"+material_position_field_name,commonData));
+	feVelRhs.getRowOpPtrVector().push_back(new OpGetCommonDataAtGaussPts("DOT_"+material_position_field_name,commonData));
       } else {
 	feVelRhs.meshPositionsFieldName = material_position_field_name;
       }
     }
     map<int,BlockData>::iterator sit = setOfBlocks.begin();
     for(;sit!=setOfBlocks.end();sit++) {
-      feVelRhs.get_op_to_do_Rhs().push_back(new OpVelocityJacobian(velocity_field_name,sit->second,commonData,tAg,false));
-      feVelRhs.get_op_to_do_Rhs().push_back(new OpVelocityRhs(velocity_field_name,sit->second,commonData));
+      feVelRhs.getRowOpPtrVector().push_back(new OpVelocityJacobian(velocity_field_name,sit->second,commonData,tAg,false));
+      feVelRhs.getRowOpPtrVector().push_back(new OpVelocityRhs(velocity_field_name,sit->second,commonData));
     }
 
     //Lhs
-    feVelLhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(velocity_field_name,commonData));
-    feVelLhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(spatial_position_field_name,commonData));
-    feVelLhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts("DOT_"+velocity_field_name,commonData));
+    feVelLhs.getRowOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(velocity_field_name,commonData));
+    feVelLhs.getRowOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(spatial_position_field_name,commonData));
+    feVelLhs.getRowOpPtrVector().push_back(new OpGetCommonDataAtGaussPts("DOT_"+velocity_field_name,commonData));
     if(mField.check_field(material_position_field_name)) {
-      feVelLhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts("DOT_"+spatial_position_field_name,commonData));
-      feVelLhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(material_position_field_name,commonData));
+      feVelLhs.getRowOpPtrVector().push_back(new OpGetCommonDataAtGaussPts("DOT_"+spatial_position_field_name,commonData));
+      feVelLhs.getRowOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(material_position_field_name,commonData));
       if(ale) {
-	feVelLhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts("DOT_"+material_position_field_name,commonData));
+	feVelLhs.getRowOpPtrVector().push_back(new OpGetCommonDataAtGaussPts("DOT_"+material_position_field_name,commonData));
       } else {
 	feVelLhs.meshPositionsFieldName = material_position_field_name;
       }
     }
     sit = setOfBlocks.begin();
     for(;sit!=setOfBlocks.end();sit++) {
-      feVelLhs.get_op_to_do_Rhs().push_back(new OpVelocityJacobian(velocity_field_name,sit->second,commonData,tAg));
-      feVelLhs.get_op_to_do_Lhs().push_back(new OpVelocityLhs_dV_dv(velocity_field_name,velocity_field_name,sit->second,commonData));
-      feVelLhs.get_op_to_do_Lhs().push_back(new OpVelocityLhs_dV_dx(velocity_field_name,spatial_position_field_name,sit->second,commonData));
+      feVelLhs.getRowOpPtrVector().push_back(new OpVelocityJacobian(velocity_field_name,sit->second,commonData,tAg));
+      feVelLhs.getRowColOpPtrVector().push_back(new OpVelocityLhs_dV_dv(velocity_field_name,velocity_field_name,sit->second,commonData));
+      feVelLhs.getRowColOpPtrVector().push_back(new OpVelocityLhs_dV_dx(velocity_field_name,spatial_position_field_name,sit->second,commonData));
       if(mField.check_field(material_position_field_name)) {
 	if(ale) {
-	  feVelLhs.get_op_to_do_Lhs().push_back(new OpVelocityLhs_dV_dX(velocity_field_name,material_position_field_name,sit->second,commonData));
+	  feVelLhs.getRowColOpPtrVector().push_back(new OpVelocityLhs_dV_dX(velocity_field_name,material_position_field_name,sit->second,commonData));
 	} else {
 	  feVelLhs.meshPositionsFieldName = material_position_field_name;
 	}
@@ -2003,33 +2003,33 @@ struct ConvectiveMassElement {
     commonData.spatialVelocities = velocity_field_name;
 
     //Rhs
-    feTRhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(velocity_field_name,commonData));
-    feTRhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(spatial_position_field_name,commonData));
-    feTRhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(material_position_field_name,commonData));
-    feTRhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts("DOT_"+velocity_field_name,commonData));
+    feTRhs.getRowOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(velocity_field_name,commonData));
+    feTRhs.getRowOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(spatial_position_field_name,commonData));
+    feTRhs.getRowOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(material_position_field_name,commonData));
+    feTRhs.getRowOpPtrVector().push_back(new OpGetCommonDataAtGaussPts("DOT_"+velocity_field_name,commonData));
 
     map<int,BlockData>::iterator sit = setOfBlocks.begin();
     for(;sit!=setOfBlocks.end();sit++) {
-      feTRhs.get_op_to_do_Rhs().push_back(new OpEshelbyDynamicMaterialMomentumJacobian(material_position_field_name,sit->second,commonData,tAg,false));
-      feTRhs.get_op_to_do_Rhs().push_back(
+      feTRhs.getRowOpPtrVector().push_back(new OpEshelbyDynamicMaterialMomentumJacobian(material_position_field_name,sit->second,commonData,tAg,false));
+      feTRhs.getRowOpPtrVector().push_back(
 	new OpEshelbyDynamicMaterialMomentumRhs(material_position_field_name,sit->second,commonData,forces_on_entities_ptr));
     }
 
     //Lhs
-    feTLhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(velocity_field_name,commonData));
-    feTLhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(spatial_position_field_name,commonData));
-    feTLhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts("DOT_"+velocity_field_name,commonData));
+    feTLhs.getRowOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(velocity_field_name,commonData));
+    feTLhs.getRowOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(spatial_position_field_name,commonData));
+    feTLhs.getRowOpPtrVector().push_back(new OpGetCommonDataAtGaussPts("DOT_"+velocity_field_name,commonData));
     if(mField.check_field(material_position_field_name)) {
-      feTLhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(material_position_field_name,commonData));
+      feTLhs.getRowOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(material_position_field_name,commonData));
     }
     sit = setOfBlocks.begin();
     for(;sit!=setOfBlocks.end();sit++) {
-      feTLhs.get_op_to_do_Rhs().push_back(new OpEshelbyDynamicMaterialMomentumJacobian(material_position_field_name,sit->second,commonData,tAg));
-      feTLhs.get_op_to_do_Lhs().push_back(
+      feTLhs.getRowOpPtrVector().push_back(new OpEshelbyDynamicMaterialMomentumJacobian(material_position_field_name,sit->second,commonData,tAg));
+      feTLhs.getRowColOpPtrVector().push_back(
 	new OpEshelbyDynamicMaterialMomentumLhs_dv(material_position_field_name,velocity_field_name,sit->second,commonData,forces_on_entities_ptr));
-      feTLhs.get_op_to_do_Lhs().push_back(
+      feTLhs.getRowColOpPtrVector().push_back(
 	new OpEshelbyDynamicMaterialMomentumLhs_dx(material_position_field_name,spatial_position_field_name,sit->second,commonData,forces_on_entities_ptr));
-      feTLhs.get_op_to_do_Lhs().push_back(
+      feTLhs.getRowColOpPtrVector().push_back(
 	new OpEshelbyDynamicMaterialMomentumLhs_dX(material_position_field_name,material_position_field_name,sit->second,commonData,forces_on_entities_ptr));
     }
 
@@ -2048,63 +2048,63 @@ struct ConvectiveMassElement {
     commonData.spatialVelocities = velocity_field_name;
 
     //Rhs
-    feMassRhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(velocity_field_name,commonData));
-    feMassRhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(spatial_position_field_name,commonData));
-    feMassRhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts("DOT_"+velocity_field_name,commonData));
+    feMassRhs.getRowOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(velocity_field_name,commonData));
+    feMassRhs.getRowOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(spatial_position_field_name,commonData));
+    feMassRhs.getRowOpPtrVector().push_back(new OpGetCommonDataAtGaussPts("DOT_"+velocity_field_name,commonData));
     if(mField.check_field(material_position_field_name)) {
-      feMassRhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(material_position_field_name,commonData));
+      feMassRhs.getRowOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(material_position_field_name,commonData));
       feMassRhs.meshPositionsFieldName = material_position_field_name;
     }
     map<int,BlockData>::iterator sit = setOfBlocks.begin();
     for(;sit!=setOfBlocks.end();sit++) {
-      feMassRhs.get_op_to_do_Rhs().push_back(new OpMassJacobian(spatial_position_field_name,sit->second,commonData,tAg,false,linear));
-      feMassRhs.get_op_to_do_Rhs().push_back(new OpMassRhs(spatial_position_field_name,sit->second,commonData));
+      feMassRhs.getRowOpPtrVector().push_back(new OpMassJacobian(spatial_position_field_name,sit->second,commonData,tAg,false,linear));
+      feMassRhs.getRowOpPtrVector().push_back(new OpMassRhs(spatial_position_field_name,sit->second,commonData));
     }
 
     //Lhs
-    feMassLhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(velocity_field_name,commonData));
-    feMassLhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(spatial_position_field_name,commonData));
-    feMassLhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts("DOT_"+velocity_field_name,commonData));
+    feMassLhs.getRowOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(velocity_field_name,commonData));
+    feMassLhs.getRowOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(spatial_position_field_name,commonData));
+    feMassLhs.getRowOpPtrVector().push_back(new OpGetCommonDataAtGaussPts("DOT_"+velocity_field_name,commonData));
     if(mField.check_field(material_position_field_name)) {
-      feMassLhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(material_position_field_name,commonData));
+      feMassLhs.getRowOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(material_position_field_name,commonData));
       feMassLhs.meshPositionsFieldName = material_position_field_name;
     }
     sit = setOfBlocks.begin();
     for(;sit!=setOfBlocks.end();sit++) {
-      feMassLhs.get_op_to_do_Rhs().push_back(new OpMassJacobian(spatial_position_field_name,sit->second,commonData,tAg,true,linear));
-      feMassLhs.get_op_to_do_Lhs().push_back(new OpMassLhs_dM_dv(spatial_position_field_name,spatial_position_field_name,sit->second,commonData));
+      feMassLhs.getRowOpPtrVector().push_back(new OpMassJacobian(spatial_position_field_name,sit->second,commonData,tAg,true,linear));
+      feMassLhs.getRowColOpPtrVector().push_back(new OpMassLhs_dM_dv(spatial_position_field_name,spatial_position_field_name,sit->second,commonData));
       if(mField.check_field(material_position_field_name)) {
 	feMassLhs.meshPositionsFieldName = material_position_field_name;
       }
     }
 
     //Aux Lhs
-    feMassAuxLhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(velocity_field_name,commonData));
-    feMassAuxLhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(spatial_position_field_name,commonData));
-    feMassAuxLhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts("DOT_"+velocity_field_name,commonData));
+    feMassAuxLhs.getRowOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(velocity_field_name,commonData));
+    feMassAuxLhs.getRowOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(spatial_position_field_name,commonData));
+    feMassAuxLhs.getRowOpPtrVector().push_back(new OpGetCommonDataAtGaussPts("DOT_"+velocity_field_name,commonData));
     if(mField.check_field(material_position_field_name)) {
-      feMassAuxLhs.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(material_position_field_name,commonData));
+      feMassAuxLhs.getRowOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(material_position_field_name,commonData));
       feMassAuxLhs.meshPositionsFieldName = material_position_field_name;
     }
     sit = setOfBlocks.begin();
     for(;sit!=setOfBlocks.end();sit++) {
-      feMassAuxLhs.get_op_to_do_Rhs().push_back(new OpMassJacobian(spatial_position_field_name,sit->second,commonData,tAg,true,linear));
-      feMassAuxLhs.get_op_to_do_Lhs().push_back(new OpMassLhs_dM_dx(spatial_position_field_name,spatial_position_field_name,sit->second,commonData));
+      feMassAuxLhs.getRowOpPtrVector().push_back(new OpMassJacobian(spatial_position_field_name,sit->second,commonData,tAg,true,linear));
+      feMassAuxLhs.getRowColOpPtrVector().push_back(new OpMassLhs_dM_dx(spatial_position_field_name,spatial_position_field_name,sit->second,commonData));
       if(mField.check_field(material_position_field_name)) {
 	feMassAuxLhs.meshPositionsFieldName = material_position_field_name;
       }
     }
 
     //Energy E=0.5*rho*v*v
-    feEnergy.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(velocity_field_name,commonData));
-    feEnergy.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(spatial_position_field_name,commonData));
+    feEnergy.getRowOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(velocity_field_name,commonData));
+    feEnergy.getRowOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(spatial_position_field_name,commonData));
     if(mField.check_field(material_position_field_name)) {
-      feEnergy.get_op_to_do_Rhs().push_back(new OpGetCommonDataAtGaussPts(material_position_field_name,commonData));
+      feEnergy.getRowOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(material_position_field_name,commonData));
       feEnergy.meshPositionsFieldName = material_position_field_name;
     }
     sit = setOfBlocks.begin();
     for(;sit!=setOfBlocks.end();sit++) {
-      feEnergy.get_op_to_do_Rhs().push_back(new OpEnergy(spatial_position_field_name,sit->second,commonData,&feEnergy.V,linear));
+      feEnergy.getRowOpPtrVector().push_back(new OpEnergy(spatial_position_field_name,sit->second,commonData,&feEnergy.V,linear));
     }
 
     PetscFunctionReturn(0);

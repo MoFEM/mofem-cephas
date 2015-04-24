@@ -192,11 +192,11 @@ struct Core:
   PetscErrorCode get_cubit_msId_meshset(const int msId,const unsigned int cubit_bc_type,EntityHandle &meshset);
   PetscErrorCode get_cubit_meshsets(const unsigned int cubit_bc_type,Range &meshsets);
   CubitMeshSet_multiIndex::iterator get_cubit_meshsets_begin() { return cubitMeshsets.begin(); }
-  CubitMeshSet_multiIndex::iterator get_cubit_mesh_sets_end() { return cubitMeshsets.end(); }
+  CubitMeshSet_multiIndex::iterator get_cubit_meshsets_end() { return cubitMeshsets.end(); }
   CubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator get_cubit_meshsets_begin(const unsigned int cubit_bc_type) { 
     return cubitMeshsets.get<CubitMeshSets_mi_tag>().lower_bound(cubit_bc_type); 
   }
-  CubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator get_cubit_mesh_sets_end(const unsigned int cubit_bc_type) { 
+  CubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator get_cubit_meshsets_end(const unsigned int cubit_bc_type) { 
     return cubitMeshsets.get<CubitMeshSets_mi_tag>().upper_bound(cubit_bc_type); 
   }
   CubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type::iterator get_CubitMeshSets_bySetType_begin(const unsigned int cubit_bc_type) { 
@@ -211,6 +211,7 @@ struct Core:
   CubitMeshSet_multiIndex::index<CubitMeshSets_name>::type::iterator get_CubitMeshSets_byName_end(const string& name) { 
     return cubitMeshsets.get<CubitMeshSets_name>().upper_bound(name); 
   }
+  PetscErrorCode find_cubit_meshset_structure(const string name,CubitMeshSets *cubit_meshset_ptr);
 
   template<class _CUBIT_BC_DATA_TYPE_>
   PetscErrorCode printCubitSet(_CUBIT_BC_DATA_TYPE_& data,unsigned long int type) {
@@ -218,7 +219,7 @@ struct Core:
     try {
       FieldInterface& this_mField = *this;
       for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(this_mField,type,it)) {
-	ierr = it->get_cubit_bc_data_structure(data); CHKERRQ(ierr);
+	ierr = it->get_bc_data_structure(data); CHKERRQ(ierr);
 	ostringstream ss;
 	ss << *it << endl;
 	ss << data << endl;
@@ -227,7 +228,7 @@ struct Core:
 	rval = moab.get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
 	rval = moab.get_entities_by_type(it->meshset,MBEDGE,edges,true); CHKERR_PETSC(rval);
 	rval = moab.get_entities_by_type(it->meshset,MBVERTEX,nodes,true); CHKERR_PETSC(rval);
-	ss << "name "<< it->get_Cubit_name() << endl;
+	ss << "name "<< it->get_name() << endl;
 	ss << "msId "<< it->get_msId() << " nb. tets " << tets.size() << endl;
 	ss << "msId "<< it->get_msId() << " nb. tris " << tris.size() << endl;
 	ss << "msId "<< it->get_msId() << " nb. edges " << edges.size() << endl;

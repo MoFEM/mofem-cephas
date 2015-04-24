@@ -241,7 +241,7 @@ int main(int argc, char *argv[]) {
   ierr = post_proc.addFieldValuesGradientPostProc("SPATIAL_POSITION"); CHKERRQ(ierr);
   map<int,NonlinearElasticElement::BlockData>::iterator sit = elastic.setOfBlocks.begin();
   for(;sit!=elastic.setOfBlocks.end();sit++) {
-    post_proc.get_op_to_do_Rhs().push_back(
+    post_proc.getRowOpPtrVector().push_back(
 	  new PostPorcStress(
 	    post_proc.postProcMesh,
 	    post_proc.mapGaussPts,

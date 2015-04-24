@@ -502,24 +502,24 @@ struct CohesiveInterfaceElement {
     PetscFunctionBegin;
 
     //Rhs
-    feRhs.get_op_to_do_Rhs().push_back(new OpSetSignToShapeFunctions(field_name));
-    feRhs.get_op_to_do_Rhs().push_back(new OpCalculateGapGlobal(field_name,commonData));
-    feRhs.get_op_to_do_Rhs().push_back(new OpCalculateGapLocal(field_name,commonData));
+    feRhs.getRowOpPtrVector().push_back(new OpSetSignToShapeFunctions(field_name));
+    feRhs.getRowOpPtrVector().push_back(new OpCalculateGapGlobal(field_name,commonData));
+    feRhs.getRowOpPtrVector().push_back(new OpCalculateGapLocal(field_name,commonData));
     //Lhs
-    feLhs.get_op_to_do_Rhs().push_back(new OpSetSignToShapeFunctions(field_name));
-    feLhs.get_op_to_do_Rhs().push_back(new OpCalculateGapGlobal(field_name,commonData));
-    feLhs.get_op_to_do_Rhs().push_back(new OpCalculateGapLocal(field_name,commonData));
+    feLhs.getRowOpPtrVector().push_back(new OpSetSignToShapeFunctions(field_name));
+    feLhs.getRowOpPtrVector().push_back(new OpCalculateGapGlobal(field_name,commonData));
+    feLhs.getRowOpPtrVector().push_back(new OpCalculateGapLocal(field_name,commonData));
     //History
-    feHistory.get_op_to_do_Rhs().push_back(new OpSetSignToShapeFunctions(field_name));
-    feHistory.get_op_to_do_Rhs().push_back(new OpCalculateGapGlobal(field_name,commonData));
-    feHistory.get_op_to_do_Rhs().push_back(new OpCalculateGapLocal(field_name,commonData));
+    feHistory.getRowOpPtrVector().push_back(new OpSetSignToShapeFunctions(field_name));
+    feHistory.getRowOpPtrVector().push_back(new OpCalculateGapGlobal(field_name,commonData));
+    feHistory.getRowOpPtrVector().push_back(new OpCalculateGapLocal(field_name,commonData));
 
     //add equations/data for physical inerfaces
     boost::ptr_vector<CohesiveInterfaceElement::PhysicalEquation>::iterator pit;
     for(pit = interfaces.begin();pit!=interfaces.end();pit++) {
-      feRhs.get_op_to_do_Rhs().push_back(new OpRhs(field_name,commonData,*pit));
-      feLhs.get_op_to_do_Lhs().push_back(new OpLhs(field_name,commonData,*pit));
-      feHistory.get_op_to_do_Rhs().push_back(new OpHistory(field_name,commonData,*pit));
+      feRhs.getRowOpPtrVector().push_back(new OpRhs(field_name,commonData,*pit));
+      feLhs.getRowColOpPtrVector().push_back(new OpLhs(field_name,commonData,*pit));
+      feHistory.getRowOpPtrVector().push_back(new OpHistory(field_name,commonData,*pit));
     }
 
     PetscFunctionReturn(0);

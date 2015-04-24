@@ -57,28 +57,28 @@ int main(int argc, char *argv[]) {
 
   cout << "<<<< All BLOCKSETs, SIDESETs and NODESETs >>>>>" << endl;
   for(_IT_CUBITMESHSETS_FOR_LOOP_(m_field,it)) {
-    cout<< it->get_Cubit_name() << endl;
-    myfile << it->get_Cubit_name() << endl;
+    cout<< it->get_name() << endl;
+    myfile << it->get_name() << endl;
   }
   cout << "<<<< BLOCKSETs >>>>>" << endl;
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
-    cout<< it->get_Cubit_name() << endl;
-    myfile << it->get_Cubit_name() << endl;
+    cout<< it->get_name() << endl;
+    myfile << it->get_name() << endl;
   }
   cout << "<<<< NODESETs >>>>>" << endl;
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,NODESET,it)) {
-    cout<< it->get_Cubit_name() << endl;
-    myfile << it->get_Cubit_name() << endl;
+    cout<< it->get_name() << endl;
+    myfile << it->get_name() << endl;
   }
   cout << "<<<< SIDESETs >>>>>" << endl;
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,SIDESET,it)) {
-    cout<< it->get_Cubit_name() << endl;
-    myfile << it->get_Cubit_name() << endl;
+    cout<< it->get_name() << endl;
+    myfile << it->get_name() << endl;
   }
   cout <<"<<<< MeshSet of Name Moon >>>>" << endl;
   for (_IT_CUBITMESHSETS_BY_NAME_FOR_LOOP_(m_field,"Moon",it)){
-    cout << it->get_Cubit_name() << endl;
-    myfile << it->get_Cubit_name() << endl;
+    cout << it->get_name() << endl;
+    myfile << it->get_name() << endl;
     if(it->get_cubit_bc_type_ulong() & BLOCKSET) {
       cout << "BLOCKSET" << endl;
       myfile << "BLOCKSET" << endl;

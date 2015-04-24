@@ -315,18 +315,34 @@ struct ForcesAndSurcesCore: public FEMethod {
 
   };
 
-  boost::ptr_vector<UserDataOperator> vecUserOpN; 
-  boost::ptr_vector<UserDataOperator> vecUserOpNN;
+  boost::ptr_vector<UserDataOperator> rowOpPtrVector; 
+  boost::ptr_vector<UserDataOperator> colOpPtrVector; 
+  boost::ptr_vector<UserDataOperator> rowColOpPtrVector;
 
-  /** \brief Use to push back operator for right hand side
-   * It can be used to calculate nodal forces or other quantities on the mesh.
-   */
-  boost::ptr_vector<UserDataOperator>& get_op_to_do_Rhs() { return vecUserOpN; }
+  /** \brief Use to push back operator for row operator
 
-  /** \brief Use to push back operator for left hand side
-   * It can be used to calculate matrices or other quantities on mesh.
+   It can be used to calculate nodal forces or other quantities on the mesh.
+
    */
-  boost::ptr_vector<UserDataOperator>& get_op_to_do_Lhs() { return vecUserOpNN; }
+  boost::ptr_vector<UserDataOperator>& getRowOpPtrVector() { return rowOpPtrVector; }
+
+  /** \brief Use to push back operator for col operator
+
+   It can be used to calculate nodal forces or other quantities on the mesh.
+
+   */
+  boost::ptr_vector<UserDataOperator>& getColOpPtrVector() { return colOpPtrVector; }
+
+
+  /** \brief use to push back operator for row-col operator
+
+   it can be used to calculate matrices or other quantities on mesh.
+
+   */
+  boost::ptr_vector<UserDataOperator>& getRowColOpPtrVector() { return rowColOpPtrVector; }
+
+  DEPRECATED boost::ptr_vector<UserDataOperator>& get_op_to_do_Rhs() { return getRowOpPtrVector(); }
+  DEPRECATED boost::ptr_vector<UserDataOperator>& get_op_to_do_Lhs() { return getRowColOpPtrVector(); }
 
   virtual PetscErrorCode preProcess() {
     PetscFunctionBegin;
@@ -344,13 +360,13 @@ struct ForcesAndSurcesCore: public FEMethod {
 };
 
 /** \brief Volume finite element  
- * \ingroup mofem_forces_and_sources_tet_element 
- *
- * User is implementing own operator at Gauss point level, by own object
- * derived from VolumeElementForcesAndSourcesCoreL::UserDataOperator.  Arbitrary
- * number of operator added pushing objects to vecUserOpN and
- * vecUserOpNN. 
- *
+ \ingroup mofem_forces_and_sources_tet_element 
+ 
+ User is implementing own operator at Gauss point level, by own object
+ derived from VolumeElementForcesAndSourcesCoreL::UserDataOperator.  Arbitrary
+ number of operator added pushing objects to rowOpPtrVector and
+ rowColOpPtrVector. 
+ 
  */
 struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 
@@ -482,13 +498,13 @@ DEPRECATED typedef VolumeElementForcesAndSourcesCore TetElementForcesAndSourcesC
 
 
 /** \brief Face finite element  
- * \ingroup mofem_forces_and_sources_tri_element
- *
- * User is implementing own operator at Gauss point level, by own object
- * derived from FaceElementForcesAndSourcesCoreL::UserDataOperator.  Arbitrary
- * number of operator added pushing objects to vecUserOpN and
- * vecUserOpNN. 
- *
+ \ingroup mofem_forces_and_sources_tri_element
+ 
+ User is implementing own operator at Gauss point level, by own object
+ derived from FaceElementForcesAndSourcesCoreL::UserDataOperator.  Arbitrary
+ number of operator added pushing objects to rowOpPtrVector and
+ rowColOpPtrVector. 
+ 
  */
 struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 
@@ -613,17 +629,17 @@ DEPRECATED typedef FaceElementForcesAndSourcesCore TriElementForcesAndSurcesCore
  *
  * User is implementing own operator at Gauss points level, by own object
  * derived from EdgeElementForcesAndSurcesCoreL::UserDataOperator.  Arbitrary
- * number of operator added pushing objects to vecUserOpN and
- * vecUserOpNN. 
+ * number of operator added pushing objects to rowOpPtrVector and
+ * rowColOpPtrVector. 
  *
  */
 struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
-  DataForcesAndSurcesCore data;
-  DerivedDataForcesAndSurcesCore derivedData;
+  DataForcesAndSurcesCore dataH1;
+  DerivedDataForcesAndSurcesCore derivedDataH1;
 
   EdgeElementForcesAndSurcesCore(FieldInterface &_mField):
-    ForcesAndSurcesCore(_mField),data(MBEDGE),derivedData(data) {};
+    ForcesAndSurcesCore(_mField),dataH1(MBEDGE),derivedDataH1(dataH1) {};
 
   ErrorCode rval;
   double lEngth;;
@@ -675,12 +691,14 @@ struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
 /** \brief Vertex finite element  
  * \ingroup mofem_forces_and_sources
- *
- * User is implementing own operator at Gauss points level, by own object
- * derived from VertexElementForcesAndSourcesCoreL::UserDataOperator.  Arbitrary
- * number of operator added pushing objects to vecUserOpN and
- * vecUserOpNN. 
- *
+
+ User is implementing own operator at Gauss points level, by own object
+ derived from VertexElementForcesAndSourcesCoreL::UserDataOperator.  Arbitrary
+ number of operator added pushing objects to rowOpPtrVector and
+ rowColOpPtrVector. 
+
+ \bug colOp not implemented
+ 
  */
 struct VertexElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 
@@ -732,13 +750,15 @@ struct VertexElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 
 
 /** \brief FlatPrism finite element  
- * \ingroup mofem_forces_and_sources_prism_element
- *
- * User is implementing own operator at Gauss points level, by own object
- * derived from FlatPrismElementForcesAndSurcesCoreL::UserDataOperator.  Arbitrary
- * number of operator added pushing objects to vecUserOpN and
- * vecUserOpNN. 
- *
+ \ingroup mofem_forces_and_sources_prism_element
+ 
+ User is implementing own operator at Gauss points level, by own object
+ derived from FlatPrismElementForcesAndSurcesCoreL::UserDataOperator.  Arbitrary
+ number of operator added pushing objects to rowOpPtrVector and
+ rowColOpPtrVector.
+
+ \bug colOp not implemented
+ 
  */
 struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 

@@ -272,9 +272,9 @@ int main(int argc, char *argv[]) {
   ierr = m_field.modify_finite_element_add_field_data("ELASTIC","EIGEN_VECTOR"); CHKERRQ(ierr);
   ierr = m_field.modify_finite_element_add_field_data("ELASTIC","D0"); CHKERRQ(ierr);
 
-  elastic.feRhs.get_op_to_do_Rhs().push_back(
+  elastic.feRhs.getRowOpPtrVector().push_back(
     new NonlinearElasticElement::OpGetCommonDataAtGaussPts("D0",elastic.commonData));
-  elastic.feLhs.get_op_to_do_Rhs().push_back(
+  elastic.feLhs.getRowOpPtrVector().push_back(
     new NonlinearElasticElement::OpGetCommonDataAtGaussPts("D0",elastic.commonData));
   ierr = elastic.setOperators("SPATIAL_POSITION"); CHKERRQ(ierr);
 

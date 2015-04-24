@@ -41,7 +41,8 @@ enum AnalyticalSolutionTypes {
   PLANE_WAVE,
   HARD_CYLINDER_SCATTER_WAVE,
   SOFT_CYLINDER_SCATTER_WAVE,
-  INCIDENT_WAVE
+  INCIDENT_WAVE,
+  NO_ANALYTICAL_SOLUTION
 };
 
 /** Line command list of analytical solutions
@@ -53,8 +54,11 @@ const char *analytical_solution_types[] = {
   "plane_wave",
   "hard_cylinder_scatter_wave",
   "soft_cylinder_scatter_wave",
-  "incident_wave"
+  "incident_wave",
+  "no_analytical_solution"
 };
+
+// **** Analytical solutions ****
 
 /** Incident wave 
   \ingroup mofem_helmholtz_elem
@@ -358,7 +362,6 @@ struct PlaneWave: public GenericAnalyticalSolution {
   
 };
 
-
 /** \brief Calculate the analytical solution of impinging wave on cylinder
   \ingroup mofem_helmholtz_elem
 
@@ -591,6 +594,12 @@ struct SoftCylinderScatterWave: public GenericAnalyticalSolution {
   
 };
 
+// **** Surface boundary conditions ( used to enforce BC on surface ) ****
+
+// ** Dirichlet BC ** 
+
+// **** Function to solve best approximation problem ****
+
 template <typename FUNEVAL>
 PetscErrorCode solve_problem(FieldInterface& m_field,
   const string& problem_name,const string& fe_name,
@@ -669,5 +678,11 @@ PetscErrorCode solve_problem(FieldInterface& m_field,
 
   PetscFunctionReturn(0);
 }
+
+
+
+
+
+
 
 
