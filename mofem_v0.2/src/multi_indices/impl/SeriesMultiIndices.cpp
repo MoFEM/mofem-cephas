@@ -269,9 +269,9 @@ PetscErrorCode MoFEMSeriesStep::get(Interface &moab,DofMoFEMEntity_multiIndex &d
     EntityHandle ent = handles_ptr[ii];
     ShortId uid = uids_ptr[ii];
     FieldData val = data_ptr[ii];
-    DofMoFEMEntity_multiIndex::index<Composite_Entity_and_ShortId_mi_tag>::type::iterator dit;
-    dit = dofsMoabField.get<Composite_Entity_and_ShortId_mi_tag>().find(boost::make_tuple(ent,uid));
-    if(dit!=dofsMoabField.get<Composite_Entity_and_ShortId_mi_tag>().end()) {
+    DofMoFEMEntity_multiIndex::index<Composite_Ent_and_ShortId_mi_tag>::type::iterator dit;
+    dit = dofsMoabField.get<Composite_Ent_and_ShortId_mi_tag>().find(boost::make_tuple(ent,uid));
+    if(dit!=dofsMoabField.get<Composite_Ent_and_ShortId_mi_tag>().end()) {
       //cerr << *dit << endl;
       dit->get_FieldData() = val;
     } else {

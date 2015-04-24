@@ -1,8 +1,3 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
- * FIXME: DESCRIPTION
- */
-
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -62,37 +57,37 @@ int main(int argc, char *argv[]) {
 
   cout << "<<<< All BLOCKSETs, SIDESETs and NODESETs >>>>>" << endl;
   for(_IT_CUBITMESHSETS_FOR_LOOP_(m_field,it)) {
-    cout<< it->get_Cubit_name() << endl;
-    myfile << it->get_Cubit_name() << endl;
+    cout<< it->get_name() << endl;
+    myfile << it->get_name() << endl;
   }
   cout << "<<<< BLOCKSETs >>>>>" << endl;
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
-    cout<< it->get_Cubit_name() << endl;
-    myfile << it->get_Cubit_name() << endl;
+    cout<< it->get_name() << endl;
+    myfile << it->get_name() << endl;
   }
   cout << "<<<< NODESETs >>>>>" << endl;
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,NODESET,it)) {
-    cout<< it->get_Cubit_name() << endl;
-    myfile << it->get_Cubit_name() << endl;
+    cout<< it->get_name() << endl;
+    myfile << it->get_name() << endl;
   }
   cout << "<<<< SIDESETs >>>>>" << endl;
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,SIDESET,it)) {
-    cout<< it->get_Cubit_name() << endl;
-    myfile << it->get_Cubit_name() << endl;
+    cout<< it->get_name() << endl;
+    myfile << it->get_name() << endl;
   }
   cout <<"<<<< MeshSet of Name Moon >>>>" << endl;
   for (_IT_CUBITMESHSETS_BY_NAME_FOR_LOOP_(m_field,"Moon",it)){
-    cout << it->get_Cubit_name() << endl;
-    myfile << it->get_Cubit_name() << endl;
-    if(it->get_CubitBCType_ulong() & BLOCKSET) {
+    cout << it->get_name() << endl;
+    myfile << it->get_name() << endl;
+    if(it->get_cubit_bc_type_ulong() & BLOCKSET) {
       cout << "BLOCKSET" << endl;
       myfile << "BLOCKSET" << endl;
     }
-    if(it->get_CubitBCType_ulong() & SIDESET) {
+    if(it->get_cubit_bc_type_ulong() & SIDESET) {
       cout << "SIDESET" << endl;
       myfile << "SIDESET" << endl;
     }
-    if(it->get_CubitBCType_ulong() & NODESET) {
+    if(it->get_cubit_bc_type_ulong() & NODESET) {
       cout << "NODESET" << endl;
       myfile << "NODESET" << endl;
     }

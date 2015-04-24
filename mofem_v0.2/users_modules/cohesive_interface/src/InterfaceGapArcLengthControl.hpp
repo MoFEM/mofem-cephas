@@ -1,7 +1,9 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
- * FIXME: DESCRIPTION
- */
+/** \file InterfaceGapArcLengthControl.hpp
+  \brief Implementation of arc-lebgth control for cohesive elements
+
+  Arc-length in that version controls gap oppening
+
+*/ 
 
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under

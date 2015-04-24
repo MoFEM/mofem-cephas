@@ -1,13 +1,12 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
- *
- * Test for linar elastic dynamics.
- *
- * This is not exactly procedure for linear elatic dynamics, since jacobian is
- * evaluated at every time step and snes procedure is involved. However it is
- * implemented like that, to test methodology for general nonlinear problem.
- *
- */
+/** \file nonlinear_elastic.cpp
+
+ \brief Atom test for linear elastic dynamics.
+ 
+ This is not exactly procedure for linear elatic dynamics, since jacobian is
+ evaluated at every time step and snes procedure is involved. However it is
+ implemented like that, to test methodology for general nonlinear problem.
+ 
+*/
 
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
@@ -67,7 +66,7 @@ int main(int argc, char *argv[]) {
   FieldInterface& m_field = core;
 
   Range CubitSIDESETs_meshsets;
-  ierr = m_field.get_Cubit_meshsets(SIDESET,CubitSIDESETs_meshsets); CHKERRQ(ierr);
+  ierr = m_field.get_cubit_meshsets(SIDESET,CubitSIDESETs_meshsets); CHKERRQ(ierr);
 
   //ref meshset ref level 0
   ierr = m_field.seed_ref_level_3D(0,0); CHKERRQ(ierr);
@@ -94,8 +93,11 @@ int main(int argc, char *argv[]) {
   ierr = m_field.set_field_order(0,MBVERTEX,"SPATIAL_POSITION",1); CHKERRQ(ierr);
 
   NonlinearElasticElement elastic(m_field,1);
-  ierr = elastic.setBlocks(); CHKERRQ(ierr);
+  NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<double> double_kirchhoff_material;
+  NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<adouble> adouble_kirchhoff_material;
+  ierr = elastic.setBlocks(&double_kirchhoff_material,&adouble_kirchhoff_material); CHKERRQ(ierr);
   ierr = elastic.addElement("ELASTIC","SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = elastic.setOperators("SPATIAL_POSITION"); CHKERRQ(ierr);
 
   /*struct MyMat: public FunctionsToCalulatePiolaKirchhoffI {
     Interface& moAB;
@@ -110,8 +112,6 @@ int main(int argc, char *argv[]) {
   };
   MyMat mymat(moab);
   ierr = elastic.setOperators(mymat,"SPATIAL_POSITION"); CHKERRQ(ierr);*/
-  NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<adouble> st_venant_kirchhoff_material;
-  ierr = elastic.setOperators(st_venant_kirchhoff_material,"SPATIAL_POSITION"); CHKERRQ(ierr);
 
   //define problems
   ierr = m_field.add_problem("ELASTIC_MECHANICS"); CHKERRQ(ierr);

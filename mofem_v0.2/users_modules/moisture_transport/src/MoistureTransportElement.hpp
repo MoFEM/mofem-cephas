@@ -65,11 +65,11 @@ struct MoistureTransportElement: public ThermalElement {
     
     // loop over all blocksets
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_MOISTURESET,it)) {
-      if(it->get_Cubit_name().compare(0,12,"MAT_MOISTURE") == 0){
+      if(it->get_name().compare(0,19,"MAT_MOISTURE") == 0){
         Mat_Moisture diffusion_data;
         ierr = it->get_attribute_data_structure(diffusion_data); CHKERRQ(ierr);
-          cout<<"====diffusion_data.data.Diffusivity = "<<diffusion_data.data.Diffusivity<<endl;
-          cout<<"====it->get_msId() = "<<it->get_msId()<<endl;
+        //          cout<<"diffusion_data.data.Diffusivity = "<<diffusion_data.data.Diffusivity<<endl;
+        //          cout<<"it->get_msId() = "<<it->get_msId()<<endl;
         //It is moisture conductivity acting the same as heat conductivity in thermal problem
         
         setOfBlocks[it->get_msId()].cOnductivity_mat.resize(3,3); //(3X3) conductivity matrix
@@ -115,7 +115,7 @@ struct MoistureTransportElement: public ThermalElement {
     
     // loop over all blocksets
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_MOISTURESET,it)) {
-      if(it->get_Cubit_name().compare(0,19,"MAT_MOISTURE") == 0){
+      if(it->get_name().compare(0,19,"MAT_MOISTURE") == 0){
         Mat_Moisture darceys_data;
         ierr = it->get_attribute_data_structure(darceys_data); CHKERRQ(ierr);
         
@@ -169,9 +169,9 @@ struct MoistureTransportElement: public ThermalElement {
     //this is alternative method for setting boundary conditions, to bypass bu in cubit file reader.
     //not elegant, but good enough
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
-      if(it->get_Cubit_name().compare(0,9,"MASS_FLUX") == 0) {
+      if(it->get_name().compare(0,9,"MASS_FLUX") == 0) {
         vector<double> data;
-        ierr = it->get_Cubit_attributes(data); CHKERRQ(ierr);
+        ierr = it->get_attributes(data); CHKERRQ(ierr);
         if(data.size()!=1) {
           SETERRQ(PETSC_COMM_SELF,1,"Data inconsistency");
         }

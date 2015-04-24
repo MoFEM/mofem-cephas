@@ -7,9 +7,9 @@ Check before run
 Example run simple cube RVE for validaiton
 ============================================================
 
-make Cube_Disp && mpirun -np 1 ./Cube_Disp -my_file ../users_modules/homogenisation/meshes/Cube.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0
-make Cube_Trac && mpirun -np 1 ./Cube_Trac -my_file ../users_modules/homogenisation/meshes/Cube.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0
-make Cube_Periodic && mpirun -np 1 ./Cube_Periodic -my_file ../users_modules/homogenisation/meshes/Cube.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0
+mpirun -np 1 ./Cube_Disp -my_file ../users_modules/homogenisation/meshes/Cube.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0
+mpirun -np 1 ./Cube_Trac -my_file ../users_modules/homogenisation/meshes/Cube.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0
+mpirun -np 1 ./Cube_Periodic -my_file ../users_modules/homogenisation/meshes/Cube.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0
 
 Example run simple cube with inclusion or reinforcemnt RVE
 ============================================================
@@ -17,22 +17,15 @@ mpirun -np 1 ./Cube_With_Inclusion_Disp -my_file ../users_modules/homogenisation
 mpirun -np 1 ./Cube_With_Inclusion_Traction -my_file ../users_modules/homogenisation/meshes/Cube_With_Inclusion.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0
 mpirun -np 1 ./Cube_With_Inclusion_Periodic -my_file ../users_modules/homogenisation/meshes/Cube_With_Inclusion.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0
 
-==== with textile RVE
-mpirun -np 1 ./Cube_With_Inclusion_Disp -my_file /mnt/home/Documents/Post-Doc\ Data/Analysis/Meshes/RVE_Cube_with_inclusion/Textile_RVE.cub  -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0
-
-
-
 
 Example run textile RVE with trans-isotropic fibres (with no interface elements)
   - first use the potential flow to calculate the fibres directions
 ============================================================
-make TransIso_Potential_Flow_NoInt && mpirun -np 1 ./TransIso_Potential_Flow_NoInt -my_file /mnt/home/Documents/Post-Doc\ Data/Analysis/Meshes/Trans_RVE/RVE.cub  -ksp_type fgmres -ksp_gmres_restart 1000 -pc_type asm -sub_pc_type lu -ksp_monitor -my_order 1
+mpirun -np 1 ./TransIso_Potential_Flow_NoInt -my_file /mnt/home/Documents/Post-Doc\ Data/Analysis/Meshes/Trans_RVE/RVE.cub  -ksp_type fgmres -ksp_gmres_restart 1000 -pc_type asm -sub_pc_type lu -ksp_monitor -my_order 1
 
-make TransIso_Potential_Flow_NoInt && mpirun -np 1 ./TransIso_Potential_Flow_NoInt -my_file /mnt/home/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/trans_iso/Textile_RVE_Mechanical.cub  -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1
-
-make TransIso_Disp_NoInt && mpirun -np 1 ./TransIso_Disp_NoInt -my_file solution_RVE.h5m -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0
-make TransIso_Periodic_NoInt && mpirun -np 1 ./TransIso_Periodic_NoInt -my_file solution_RVE.h5m -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0
-make TransIso_Trac_NoInt && mpirun -np 1 ./TransIso_Trac_NoInt -my_file solution_RVE.h5m -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0
+mpirun -np 1 ./TransIso_Disp_NoInt -my_file solution_RVE.h5m -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0
+mpirun -np 1 ./TransIso_Periodic_NoInt -my_file solution_RVE.h5m -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0
+mpirun -np 1 ./TransIso_Trac_NoInt -my_file solution_RVE.h5m -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0
 
 Example run textile RVE with trans-isotropic fibres (with interface elements)
   - first use the potential flow to calculate the fibres directions
@@ -56,17 +49,13 @@ make && mpirun -np 1 ./MoistureTrans_Periodic -my_file ../users_modules/homogeni
 
 FE2 Elasticity
 =======================================================
-make FE2_Elasticity_Disp && mpirun -np 1 ./FE2_Elasticity_Disp -my_file_macro /mnt/home/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/homogenisation/meshes/LShape.cub  -my_file_RVE /mnt/home/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/homogenisation/meshes/Cube.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1
-
-make FE2_Elasticity_Trac && mpirun -np 1 ./FE2_Elasticity_Trac -my_file_macro /mnt/home/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/homogenisation/meshes/LShape.cub  -my_file_RVE /mnt/home/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/homogenisation/meshes/Cube.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1
-
-make FE2_Elasticity_Periodic && mpirun -np 1 ./FE2_Elasticity_Periodic -my_file_macro /mnt/home/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/homogenisation/meshes/LShape.cub  -my_file_RVE /mnt/home/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/homogenisation/meshes/Cube.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1
+make FE2_Elasticity && mpirun -np 1 ./FE2_Elasticity -my_file_macro ../users_modules/homogenisation/meshes/LShape.cub -my_file_RVE ../users_modules/homogenisation/meshes/Cube.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1
 
 
 
 copy out put files to symlink on Desktop
 -------------------------------------------------------------
 cp out.vtk /mnt/home/Desktop/
-cp *.vtk  /mnt/home/Desktop/results/
+cp *.vtk  /mnt/home/Desktop/
 
 

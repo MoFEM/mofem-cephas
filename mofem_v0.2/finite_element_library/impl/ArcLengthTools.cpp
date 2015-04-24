@@ -22,7 +22,7 @@ using namespace MoFEM;
 
 #include <ArcLengthTools.hpp>
 
-static ErrorCode rval;
+//static ErrorCode rval;
 static PetscErrorCode ierr;
 
 namespace MoFEM {

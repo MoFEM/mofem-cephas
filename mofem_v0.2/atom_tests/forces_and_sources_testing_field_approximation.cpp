@@ -1,8 +1,3 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
- * FIXME: DESCRIPTION
- */
-
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -20,7 +15,7 @@
 #include <MoFEM.hpp>
 #include <Projection10NodeCoordsOnField.hpp>
 #include <boost/numeric/ublas/vector_proxy.hpp>
-#include <FiledApproximation.hpp>
+#include <FieldApproximation.hpp>
 
 #include <boost/iostreams/tee.hpp>
 #include <boost/iostreams/stream.hpp>
@@ -37,15 +32,17 @@ using namespace MoFEM;
 
 static char help[] = "...\n\n";
 
-
+/// Example approx. function
 struct MyFunApprox {
 
-  ublas::vector<double> result;
-  ublas::vector<double>& operator()(double x, double y, double z) {
-    result.resize(3);
-    result[0] = x;
-    result[1] = y;
-    result[2] = z*z;
+  vector<ublas::vector<double> > result;
+
+  vector<ublas::vector<double> >& operator()(double x, double y, double z) {
+    result.resize(1);
+    result[0].resize(3);
+    (result[0])[0] = x;
+    (result[0])[1] = y;
+    (result[0])[2] = z*z;
     return result;
   }     
 
@@ -173,11 +170,14 @@ int main(int argc, char *argv[]) {
   ierr = m_field.VecCreateGhost("TEST_PROBLEM",ROW,&F); CHKERRQ(ierr);
   ierr = m_field.VecCreateGhost("TEST_PROBLEM",COL,&D); CHKERRQ(ierr);
 
+  vector<Vec> vec_F;
+  vec_F.push_back(F);
+
   {
     MyFunApprox function_evaluator;
-    FieldApproximationH1<MyFunApprox> field_approximation(m_field);
+    FieldApproximationH1 field_approximation(m_field);
     field_approximation.loopMatrixAndVector(
-      "TEST_PROBLEM","TEST_FE","FIELD1",A,F,function_evaluator);
+      "TEST_PROBLEM","TEST_FE","FIELD1",A,vec_F,function_evaluator);
   }
 
   ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
@@ -197,7 +197,7 @@ int main(int argc, char *argv[]) {
   ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
-  ierr = m_field.set_global_VecCreateGhost("TEST_PROBLEM",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = m_field.set_global_ghost_vector("TEST_PROBLEM",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
   ierr = KSPDestroy(&solver); CHKERRQ(ierr);
   ierr = VecDestroy(&D); CHKERRQ(ierr);
@@ -223,7 +223,7 @@ int main(int argc, char *argv[]) {
   if(pcomm->rank()==0) {
     EntityHandle out_meshset;
     rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
-    ierr = m_field.problem_get_FE("TEST_PROBLEM","TEST_FE",out_meshset); CHKERRQ(ierr);
+    ierr = m_field.get_problem_finite_elements_entities("TEST_PROBLEM","TEST_FE",out_meshset); CHKERRQ(ierr);
     rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
     rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
   }

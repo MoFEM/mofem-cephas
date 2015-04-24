@@ -138,11 +138,11 @@ int main(int argc, char *argv[]) {
   //what are ghost nodes, see Petsc Manual
   ierr = mField.partition_ghost_dofs("TEST_PROBLEM"); CHKERRQ(ierr);
 
-  struct OpTetDivergence: public TetElementForcesAndSourcesCore::UserDataOperator {
+  struct OpTetDivergence: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     FieldData &dIv;
     OpTetDivergence(FieldData &div):
-      TetElementForcesAndSourcesCore::UserDataOperator("HDIV"),dIv(div) {}
+      VolumeElementForcesAndSourcesCore::UserDataOperator("HDIV"),dIv(div) {}
 
     PetscErrorCode doWork(
       int side,
@@ -189,25 +189,25 @@ int main(int argc, char *argv[]) {
 
   };
 
-  struct MyFE: public TetElementForcesAndSourcesCore {
+  struct MyFE: public VolumeElementForcesAndSourcesCore {
 
-    MyFE(FieldInterface &m_field): TetElementForcesAndSourcesCore(m_field) {}
+    MyFE(FieldInterface &m_field): VolumeElementForcesAndSourcesCore(m_field) {}
     int getRule(int order) { return order; }; //order/2; };
 
   };
 
-  struct MyTriFE: public TriElementForcesAndSurcesCore {
+  struct MyTriFE: public FaceElementForcesAndSourcesCore {
 
-    MyTriFE(FieldInterface &m_field): TriElementForcesAndSurcesCore(m_field) {}
+    MyTriFE(FieldInterface &m_field): FaceElementForcesAndSourcesCore(m_field) {}
     int getRule(int order) { return order; };//2*order; }; //order/2; };
 
   };
 
-  struct OpFacesFluxes: public TriElementForcesAndSurcesCore::UserDataOperator {
+  struct OpFacesFluxes: public FaceElementForcesAndSourcesCore::UserDataOperator {
 
     double &dIv;
     OpFacesFluxes(double &div):
-      TriElementForcesAndSurcesCore::UserDataOperator("HDIV"),
+      FaceElementForcesAndSourcesCore::UserDataOperator("HDIV"),
       dIv(div) {}
 
     PetscErrorCode doWork(
@@ -254,10 +254,10 @@ int main(int argc, char *argv[]) {
 
 
   MyFE tet_fe(mField);
-  tet_fe.get_op_to_do_Rhs().push_back(new OpTetDivergence(divergence_vol));
+  tet_fe.getRowOpPtrVector().push_back(new OpTetDivergence(divergence_vol));
 
   MyTriFE skin_fe(mField);
-  skin_fe.get_op_to_do_Rhs().push_back(new OpFacesFluxes(divergence_skin));
+  skin_fe.getRowOpPtrVector().push_back(new OpFacesFluxes(divergence_skin));
 
   ierr = mField.loop_finite_elements("TEST_PROBLEM","TET_FE",tet_fe);  CHKERRQ(ierr);
   ierr = mField.loop_finite_elements("TEST_PROBLEM","SKIN_FE",skin_fe);  CHKERRQ(ierr);

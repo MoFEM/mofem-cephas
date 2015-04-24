@@ -1,8 +1,3 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
- * FIXME: DESCRIPTION
- */
-
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -140,11 +135,11 @@ int main(int argc, char *argv[]) {
   TeeStream my_split(my_tee);
 
 
-  struct OpPrintingHdivApproximationFunctions: public TetElementForcesAndSourcesCore::UserDataOperator {
+  struct OpPrintingHdivApproximationFunctions: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     TeeStream &mySplit;
     OpPrintingHdivApproximationFunctions(TeeStream &my_split):
-      TetElementForcesAndSourcesCore::UserDataOperator("HDIV"),mySplit(my_split) {}
+      VolumeElementForcesAndSourcesCore::UserDataOperator("HDIV"),mySplit(my_split) {}
 
     PetscErrorCode doWork(
       int side,
@@ -172,15 +167,15 @@ int main(int argc, char *argv[]) {
 
   };
 
-  struct MyFE: public TetElementForcesAndSourcesCore {
+  struct MyFE: public VolumeElementForcesAndSourcesCore {
 
-    MyFE(FieldInterface &m_field): TetElementForcesAndSourcesCore(m_field) {}
+    MyFE(FieldInterface &m_field): VolumeElementForcesAndSourcesCore(m_field) {}
     int getRule(int order) { return 1; };
 
   };
 
   MyFE tet_fe(m_field);
-  tet_fe.get_op_to_do_Rhs().push_back(new OpPrintingHdivApproximationFunctions(my_split));
+  tet_fe.getRowOpPtrVector().push_back(new OpPrintingHdivApproximationFunctions(my_split));
 
   ierr = m_field.loop_finite_elements("TEST_PROBLEM","TEST_FE",tet_fe);  CHKERRQ(ierr);
 

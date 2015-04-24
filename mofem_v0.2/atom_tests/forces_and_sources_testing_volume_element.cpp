@@ -1,8 +1,3 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
- * FIXME: DESCRIPTION
- */
-
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -49,7 +44,7 @@ int main(int argc, char *argv[]) {
   char mesh_file_name[255];
   ierr = PetscOptionsGetString(PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
   if(flg != PETSC_TRUE) {
-    SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
 
   //Create MoFEM (Joseph) database
@@ -147,7 +142,7 @@ int main(int argc, char *argv[]) {
   Projection10NodeCoordsOnField ent_method(m_field,"MESH_NODE_POSITIONS");
   ierr = m_field.loop_dofs("MESH_NODE_POSITIONS",ent_method); CHKERRQ(ierr);
 
-  TetElementForcesAndSourcesCore fe1(m_field);
+  VolumeElementForcesAndSourcesCore fe1(m_field);
 
   typedef tee_device<ostream, ofstream> TeeDevice;
   typedef stream<TeeDevice> TeeStream;
@@ -156,11 +151,11 @@ int main(int argc, char *argv[]) {
   TeeDevice my_tee(cout, ofs); 
   TeeStream my_split(my_tee);
 
-  struct MyOp: public TetElementForcesAndSourcesCore::UserDataOperator {
+  struct MyOp: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     TeeStream &my_split;
     MyOp(TeeStream &_my_split):
-      TetElementForcesAndSourcesCore::UserDataOperator("FIELD1","FIELD2"),
+      VolumeElementForcesAndSourcesCore::UserDataOperator("FIELD1","FIELD2"),
       my_split(_my_split) {}
 
     PetscErrorCode doWork(
@@ -189,13 +184,43 @@ int main(int argc, char *argv[]) {
       my_split << "NH1NH1" << endl;
       my_split << "col side: " << col_side << " col_type: " << col_type << endl;
       my_split << col_data << endl;
+      
+      PetscErrorCode ierr;
+      ublas::vector<int> row_indices,col_indices;
+      ierr = getPorblemRowIndices("FIELD1",row_type,row_side,row_indices); CHKERRQ(ierr);
+      ierr = getPorblemColIndices("FIELD2",col_type,col_side,col_indices); CHKERRQ(ierr);
+
+      if(row_indices.size()!=row_data.getIndices().size()) {
+	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"row inconsistency");
+      }
+
+      if(col_indices.size()!=col_data.getIndices().size()) {
+	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"col inconsistency");
+      }
+
+      for(unsigned int rr = 0;rr<row_indices.size();rr++) {
+	if(row_indices[rr] != row_data.getIndices()[rr]) {
+	  cerr << row_indices << endl;
+	  cerr << row_data.getIndices() << endl;
+	  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"row inconsistency");
+	}
+      }
+
+      for(unsigned int cc = 0;cc<col_indices.size();cc++) {
+	if(col_indices[cc] != col_data.getIndices()[cc]) {
+	  cerr << col_indices << endl;
+	  cerr << col_data.getIndices() << endl;
+	  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"row inconsistency");
+	}
+      }
+
       PetscFunctionReturn(0);
     }
 
   };
 
-  fe1.get_op_to_do_Rhs().push_back(new MyOp(my_split));
-  fe1.get_op_to_do_Lhs().push_back(new MyOp(my_split));
+  fe1.getRowOpPtrVector().push_back(new MyOp(my_split));
+  fe1.getRowColOpPtrVector().push_back(new MyOp(my_split));
 
   ierr = m_field.loop_finite_elements("TEST_PROBLEM","TEST_FE",fe1);  CHKERRQ(ierr);
 

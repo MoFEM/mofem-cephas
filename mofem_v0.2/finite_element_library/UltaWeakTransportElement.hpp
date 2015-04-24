@@ -3,9 +3,7 @@
  *
  */
 
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
- *
+/* 
  * This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -26,19 +24,19 @@
 namespace MoFEM {
 
 /** \brief Ultra weak transport problem
-  * \ingroup mofem_ultra_weak_transport_elem
-  *
-  * Note to solve this system you need to use mumps or propper preconditioner
-  * for sadlle problem. SuperLU works, but very poorly for larger systems.
-  (
-  */
+  \ingroup mofem_ultra_weak_transport_elem
+  
+  Note to solve this system you need to use direct solver or propper preconditioner
+  for sadlle problem. 
+  
+*/
 struct UltraWeakTransportElement {
 
   FieldInterface &mField;
 
   /// \brief  definition of volume element
-  struct MyVolumeFE: public TetElementForcesAndSourcesCore {
-    MyVolumeFE(FieldInterface &m_field): TetElementForcesAndSourcesCore(m_field) {}
+  struct MyVolumeFE: public VolumeElementForcesAndSourcesCore {
+    MyVolumeFE(FieldInterface &m_field): VolumeElementForcesAndSourcesCore(m_field) {}
     int getRule(int order) { return order; };
   };
 
@@ -47,8 +45,8 @@ struct UltraWeakTransportElement {
   /** \brief define surface element
     *
     */
-  struct MyTriFE: public TriElementForcesAndSurcesCore {
-    MyTriFE(FieldInterface &m_field): TriElementForcesAndSurcesCore(m_field) {}
+  struct MyTriFE: public FaceElementForcesAndSourcesCore {
+    MyTriFE(FieldInterface &m_field): FaceElementForcesAndSourcesCore(m_field) {}
     int getRule(int order) { return order; };
   };
 
@@ -56,6 +54,7 @@ struct UltraWeakTransportElement {
 
   UltraWeakTransportElement(FieldInterface &m_field): mField(m_field),
     feVol(m_field),feTriFluxValue(m_field) {};
+  virtual ~UltraWeakTransportElement() {}
 
   ublas::vector<FieldData> valuesAtGaussPts;
   ublas::vector<ublas::vector<FieldData> > valuesGradientAtGaussPts;
@@ -190,7 +189,7 @@ struct UltraWeakTransportElement {
 
   /** \brief tau,sigma in Hdiv, calculates Aij = Asemble int sigma_dot_tau dTet 
     */
-  struct OpTauDotSigma_HdivHdiv: public TetElementForcesAndSourcesCore::UserDataOperator {
+  struct OpTauDotSigma_HdivHdiv: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     UltraWeakTransportElement &cTx;
     Mat Aij;
@@ -199,8 +198,9 @@ struct UltraWeakTransportElement {
     OpTauDotSigma_HdivHdiv(
       UltraWeakTransportElement &ctx,
       const string field_name,Mat _Aij,Vec _F):
-      TetElementForcesAndSourcesCore::UserDataOperator(field_name),
+      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
       cTx(ctx),Aij(_Aij),F(_F) {}
+    virtual ~OpTauDotSigma_HdivHdiv() {}
 
     ublas::matrix<FieldData> NN,transNN;
     ublas::matrix<FieldData> invK,invKN;
@@ -327,7 +327,7 @@ struct UltraWeakTransportElement {
 
   /** \brief u in L2 and tau in Hdiv, calculates Aij = Asemble int u * div(tau) dTet 
     */
-  struct OpDivTauU_HdivL2: public TetElementForcesAndSourcesCore::UserDataOperator {
+  struct OpDivTauU_HdivL2: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     UltraWeakTransportElement &cTx;
     Mat Aij;
@@ -336,14 +336,15 @@ struct UltraWeakTransportElement {
     OpDivTauU_HdivL2(
       UltraWeakTransportElement &ctx,
       const string field_name_row,string field_name_col,Mat _Aij,Vec _F):
-      TetElementForcesAndSourcesCore::UserDataOperator(field_name_row,field_name_col),
+      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name_row,field_name_col),
       cTx(ctx),Aij(_Aij),F(_F) {
   
       //this operator is not symmetric settig this varible makes element
       //operator to loop over element entities (subsimplicies) without
       //assumption that off-diagonal matrices are symmetric.
-      symm = false;
+      sYmm = false;
     }
+    virtual ~OpDivTauU_HdivL2() {}
 
     ublas::vector<FieldData> div_vec,Nf;
 
@@ -402,7 +403,7 @@ struct UltraWeakTransportElement {
 
   /** \brief V in L2 and sigma in Hdiv, calculates Aij = Asemble int V * div(sigma) dTet 
     */
-  struct OpVDotDivSigma_L2Hdiv: public TetElementForcesAndSourcesCore::UserDataOperator {
+  struct OpVDotDivSigma_L2Hdiv: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     UltraWeakTransportElement &cTx;
     Mat Aij;
@@ -411,15 +412,16 @@ struct UltraWeakTransportElement {
     OpVDotDivSigma_L2Hdiv(
       UltraWeakTransportElement &ctx,
       const string field_name_row,string field_name_col,Mat _Aij,Vec _F):
-      TetElementForcesAndSourcesCore::UserDataOperator(field_name_row,field_name_col),
+      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name_row,field_name_col),
       cTx(ctx),Aij(_Aij),F(_F) {
   
       //this operator is not symmetric settig this varible makes element
       //operator to loop over element entities (subsimplicies) without
       //assumption that off-diagonal matrices are symmetric.
-      symm = false;
+      sYmm = false;
 
     }
+    virtual ~OpVDotDivSigma_L2Hdiv() {}
 
     ublas::matrix<FieldData> NN,transNN;
     ublas::vector<FieldData> div_vec,Nf;
@@ -547,7 +549,7 @@ struct UltraWeakTransportElement {
 
   /** \brief calculate source therms
     */
-  struct OpL2Source: public TetElementForcesAndSourcesCore::UserDataOperator {
+  struct OpL2Source: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     UltraWeakTransportElement &cTx;
     Vec F;
@@ -555,8 +557,9 @@ struct UltraWeakTransportElement {
     OpL2Source(
       UltraWeakTransportElement &ctx,
       const string field_name,Vec _F):
-      TetElementForcesAndSourcesCore::UserDataOperator(field_name),
+      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
       cTx(ctx),F(_F) {}
+    virtual ~OpL2Source() {}
       
     ublas::vector<FieldData> Nf;
     PetscErrorCode doWork(
@@ -613,14 +616,14 @@ struct UltraWeakTransportElement {
 
   /** \brief calualte F = int_\gamma tau*n u_bar d d\Gamma
     */
-  struct OpRhsBcOnValues: public TriElementForcesAndSurcesCore::UserDataOperator {
+  struct OpRhsBcOnValues: public FaceElementForcesAndSourcesCore::UserDataOperator {
 
     UltraWeakTransportElement &cTx;
     Vec F;
 
     OpRhsBcOnValues(
       UltraWeakTransportElement &ctx,const string field_name,Vec _F):
-      TriElementForcesAndSurcesCore::UserDataOperator(field_name),
+      FaceElementForcesAndSourcesCore::UserDataOperator(field_name),
       cTx(ctx),F(_F) {}
 
     ublas::vector<FieldData> Nf;
@@ -673,15 +676,16 @@ struct UltraWeakTransportElement {
 
   };
 
-  struct OpEvaluateBcOnFluxes: public TriElementForcesAndSurcesCore::UserDataOperator {
+  struct OpEvaluateBcOnFluxes: public FaceElementForcesAndSourcesCore::UserDataOperator {
 
     UltraWeakTransportElement &cTx;
     Vec X;
     
     OpEvaluateBcOnFluxes(
       UltraWeakTransportElement &ctx,const string field_name,Vec _X):
-      TriElementForcesAndSurcesCore::UserDataOperator(field_name),
+      FaceElementForcesAndSourcesCore::UserDataOperator(field_name),
       cTx(ctx),X(_X) {}
+    virtual ~OpEvaluateBcOnFluxes() {}
 
     ublas::matrix<FieldData> NN,L;
     ublas::vector<FieldData> Nf,normalN,x;
@@ -756,15 +760,16 @@ struct UltraWeakTransportElement {
 
   };
 
-  struct OpValuesAtGaussPts: public TetElementForcesAndSourcesCore::UserDataOperator {
+  struct OpValuesAtGaussPts: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     UltraWeakTransportElement &cTx;
 
     OpValuesAtGaussPts(
       UltraWeakTransportElement &ctx,
       const string field_name):
-      TetElementForcesAndSourcesCore::UserDataOperator(field_name),
+      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
       cTx(ctx) {}
+    virtual ~OpValuesAtGaussPts() {}
 
     PetscErrorCode doWork(
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
@@ -792,15 +797,16 @@ struct UltraWeakTransportElement {
 
   };
 
-  struct OpValuesGradientAtGaussPts: public TetElementForcesAndSourcesCore::UserDataOperator {
+  struct OpValuesGradientAtGaussPts: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     UltraWeakTransportElement &cTx;
 
     OpValuesGradientAtGaussPts(
       UltraWeakTransportElement &ctx,
       const string field_name):
-      TetElementForcesAndSourcesCore::UserDataOperator(field_name),
+      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
       cTx(ctx) {}
+    virtual ~OpValuesGradientAtGaussPts() {}
 
     PetscErrorCode doWork(
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
@@ -831,15 +837,16 @@ struct UltraWeakTransportElement {
 
   };
 
-  struct OpFluxDivergenceAtGaussPts: public TetElementForcesAndSourcesCore::UserDataOperator {
+  struct OpFluxDivergenceAtGaussPts: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     UltraWeakTransportElement &cTx;
 
     OpFluxDivergenceAtGaussPts(
       UltraWeakTransportElement &ctx,
       const string field_name):
-      TetElementForcesAndSourcesCore::UserDataOperator(field_name),
+      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
       cTx(ctx) {}
+    virtual ~OpFluxDivergenceAtGaussPts() {}
 
     ublas::vector<FieldData> div_vec;
     PetscErrorCode doWork(
@@ -890,15 +897,16 @@ struct UltraWeakTransportElement {
 
   /** \brief calculate error evaluator
     */
-  struct OpError_L2Norm: public TetElementForcesAndSourcesCore::UserDataOperator {
+  struct OpError_L2Norm: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     UltraWeakTransportElement &cTx;
 
     OpError_L2Norm(
       UltraWeakTransportElement &ctx,
       const string field_name):
-      TetElementForcesAndSourcesCore::UserDataOperator(field_name),
+      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
       cTx(ctx) {}
+    virtual ~OpError_L2Norm() {}
 
     ublas::vector<FieldData> deltaFlux;
     PetscErrorCode doWork(

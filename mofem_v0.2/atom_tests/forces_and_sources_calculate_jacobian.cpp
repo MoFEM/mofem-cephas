@@ -1,7 +1,8 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
- * FIXME: DESCRIPTION
- */
+/** \file forces_and_sources_calculate_jacobian.cpp
+
+  \brief Atom test checking with blessed file how Jacobian's are calculated on elements
+
+*/
 
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
@@ -208,7 +209,7 @@ int main(int argc, char *argv[]) {
 
       invJac.resize(3,3);
       ierr = ShapeJacMBTET(&*data.dataOnEntities[MBVERTEX][0].getDiffN().data().begin(),&*coords.begin(),&*invJac.data().begin()); CHKERRQ(ierr);
-      ierr = Shape_invJac(&*invJac.data().begin()); CHKERRQ(ierr);
+      ierr = ShapeInvJacMBTET(&*invJac.data().begin()); CHKERRQ(ierr);
 
       try {
 	ierr = opSetInvJac.opRhs(data); CHKERRQ(ierr);

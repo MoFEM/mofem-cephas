@@ -1,6 +1,8 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
- * FIXME: DESCRIPTION
+/** \file arc_length_nonlinear_elasticity.cpp
+ * \ingroup nonlinear_elastic_elem
+ * \brief nonlinear elasticity (arc-length control)
+ *
+ * Solves nonlinear elastic problem. Using arc length control.
  */
 
 /* This file is part of MoFEM.
@@ -25,80 +27,34 @@ static char help[] = "\
 #include <MoFEM.hpp>
 using namespace MoFEM;
 
-#include <DirichletBC.hpp>
-
-#include <Projection10NodeCoordsOnField.hpp>
-
 #include <boost/numeric/ublas/vector_proxy.hpp>
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <boost/numeric/ublas/vector.hpp>
 
-#include <SurfacePressure.hpp>
-#include <NodalForce.hpp>
-
-#include <FEMethod_LowLevelStudent.hpp>
-#include <FEMethod_UpLevelStudent.hpp>
-
-extern "C" {
-  #include <complex_for_lazy.h>
-}
-
+#include <DirichletBC.hpp>
 #include <ArcLengthTools.hpp>
-#include <FEMethod_ComplexForLazy.hpp>
-#include <FEMethod_DriverComplexForLazy.hpp>
-#include <SurfacePressureComplexForLazy.hpp>
-
 #include <adolc/adolc.h> 
 #include <NonLienarElasticElement.hpp>
+#include <NeoHookean.hpp>
 
 #include <PotsProcOnRefMesh.hpp>
 #include <PostProcStresses.hpp>
+#include <Projection10NodeCoordsOnField.hpp>
 
+#include <SurfacePressure.hpp>
+#include <NodalForce.hpp>
+
+#include <boost/program_options.hpp>
+using namespace std;
+namespace po = boost::program_options;
+#include <ElasticMaterials.hpp>
+
+#include <SurfacePressureComplexForLazy.hpp>
 using namespace ObosleteUsersModules;
 
 ErrorCode rval;
 PetscErrorCode ierr;
-
-template<typename TYPE>
-struct NeoHooke: public NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<TYPE> {
-
-    NeoHooke(): NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<TYPE>() {}
-
-    TYPE detC;
-    ublas::matrix<TYPE> invC;
-    
-    PetscErrorCode NeoHooke_PiolaKirchhoffII() {
-      PetscFunctionBegin;
-      invC.resize(3,3);
-      this->S.resize(3,3);
-      ierr = this->dEterminatnt(this->C,detC); CHKERRQ(ierr);
-      ierr = this->iNvert(detC,this->C,invC); CHKERRQ(ierr);
-      ierr = this->dEterminatnt(this->F,this->J); CHKERRQ(ierr);
-      for(int i = 0;i<3;i++) {
-	for(int j = 0;j<3;j++) {
-	  this->S(i,j) = this->mu*( ((i==j) ? 1 : 0) - invC(i,j) ) + this->lambda*log(this->J)*invC(i,j);
-	}
-      }
-      PetscFunctionReturn(0);
-    }
-
-    virtual PetscErrorCode CalualteP_PiolaKirchhoffI(
-      const NonlinearElasticElement::BlockData block_data,
-      const NumeredMoFEMFiniteElement *fe_ptr) {
-      PetscFunctionBegin;
-      PetscErrorCode ierr;
-      this->lambda = LAMBDA(block_data.E,block_data.PoissonRatio);
-      this->mu = MU(block_data.E,block_data.PoissonRatio);
-      ierr = this->CalulateC_CauchyDefromationTensor(); CHKERRQ(ierr);
-      ierr = this->NeoHooke_PiolaKirchhoffII(); CHKERRQ(ierr);
-      this->P.resize(3,3);
-      noalias(this->P) = prod(this->F,this->S);
-      //cerr << "P: " << P << endl;
-      PetscFunctionReturn(0);
-    }
-
-};
 
 int main(int argc, char *argv[]) {
 
@@ -120,18 +76,6 @@ int main(int argc, char *argv[]) {
   ierr = PetscOptionsGetInt(PETSC_NULL,"-my_order",&order,&flg); CHKERRQ(ierr);
   if(flg != PETSC_TRUE) {
     order = 3;
-  }
-
-  PetscScalar step_size_reduction;
-  ierr = PetscOptionsGetReal(PETSC_NULL,"-my_sr",&step_size_reduction,&flg); CHKERRQ(ierr);
-  if(flg != PETSC_TRUE) {
-    step_size_reduction = 1.;
-  }
-
-  PetscInt max_steps;
-  ierr = PetscOptionsGetInt(PETSC_NULL,"-my_ms",&max_steps,&flg); CHKERRQ(ierr);
-  if(flg != PETSC_TRUE) {
-    max_steps = 5;
   }
 
   // use this if your mesh is partotioned and you run code on parts, 
@@ -187,7 +131,7 @@ int main(int argc, char *argv[]) {
     problem_bit_level = bit_levels.back();
     
     Range CubitSideSets_meshsets;
-    ierr = m_field.get_Cubit_meshsets(SIDESET,CubitSideSets_meshsets); CHKERRQ(ierr);
+    ierr = m_field.get_cubit_meshsets(SIDESET,CubitSideSets_meshsets); CHKERRQ(ierr);
 
     //Fields
     ierr = m_field.add_field("SPATIAL_POSITION",H1,3); CHKERRQ(ierr);
@@ -276,17 +220,20 @@ int main(int argc, char *argv[]) {
     ierr = m_field.modify_problem_add_finite_element("ELASTIC_MECHANICS","FORCE_FE"); CHKERRQ(ierr);
   }
 
+  PetscBool linear;
+  ierr = PetscOptionsGetBool(PETSC_NULL,"-is_linear",&linear,&linear); CHKERRQ(ierr);
+
+  //NeoHookean<adouble> neo_hooke_adouble;
+  //NeoHookean<double> neo_hooke_double;
+  //NonlinearElasticElement elastic(m_field,2);
+  //ierr = elastic.setBlocks(&neo_hooke_double,&neo_hooke_adouble); CHKERRQ(ierr);
   NonlinearElasticElement elastic(m_field,2);
-  ierr = elastic.setBlocks(); CHKERRQ(ierr);
+  ElasticMaterials elastic_materials(m_field);
+  ierr = elastic_materials.setBlocks(elastic.setOfBlocks); CHKERRQ(ierr);
   ierr = elastic.addElement("ELASTIC","SPATIAL_POSITION"); CHKERRQ(ierr);
-  //NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<adouble> st_venant_kirchhoff_material_adouble;
-  //ierr = elastic.setOperators(st_venant_kirchhoff_material_adouble,"SPATIAL_POSITION"); CHKERRQ(ierr);
-  NeoHooke<adouble> neo_hooke_adouble;
-  ierr = elastic.setOperators(neo_hooke_adouble,"SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = elastic.setOperators("SPATIAL_POSITION"); CHKERRQ(ierr);
 
   //post_processing
-  NeoHooke<double> neo_hooke_double;
-  //NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<double> st_venant_kirchhoff_material_double;
   PostPocOnRefinedMesh post_proc(m_field);
   ierr = post_proc.generateRefereneElemenMesh(); CHKERRQ(ierr);
   ierr = post_proc.addFieldValuesPostProc("SPATIAL_POSITION"); CHKERRQ(ierr);
@@ -294,15 +241,13 @@ int main(int argc, char *argv[]) {
   ierr = post_proc.addFieldValuesGradientPostProc("SPATIAL_POSITION"); CHKERRQ(ierr);
   map<int,NonlinearElasticElement::BlockData>::iterator sit = elastic.setOfBlocks.begin();
   for(;sit!=elastic.setOfBlocks.end();sit++) {
-    post_proc.get_op_to_do_Rhs().push_back(
+    post_proc.getRowOpPtrVector().push_back(
 	  new PostPorcStress(
 	    post_proc.postProcMesh,
 	    post_proc.mapGaussPts,
 	    "SPATIAL_POSITION",
 	    sit->second,
-	    post_proc.commonData,
-	    //st_venant_kirchhoff_material_double));
-	    neo_hooke_double));
+	    post_proc.commonData));
   }
 
   //build field
@@ -382,6 +327,9 @@ int main(int argc, char *argv[]) {
   double *scale_rhs = &(scaled_reference_load);
   NeummanForcesSurfaceComplexForLazy neumann_forces(m_field,Aij,arc_ctx->F_lambda,scale_lhs,scale_rhs);
   NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE &fe_neumann = neumann_forces.getLoopSpatialFe();
+  if(linear) {
+    fe_neumann.typeOfForces = NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::NONCONSERVATIVE;
+  }
   fe_neumann.uSeF = true;
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET,it)) {
     ierr = fe_neumann.addForce(it->get_msId()); CHKERRQ(ierr);
@@ -593,16 +541,30 @@ int main(int argc, char *argv[]) {
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ARC_LENGTH",&arc_method));
   snes_ctx.get_postProcess_to_do_Mat().push_back(&my_dirichlet_bc);
 
-  ierr = m_field.set_local_VecCreateGhost("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = m_field.set_local_ghost_vector("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
+  PetscScalar step_size_reduction;
+  ierr = PetscOptionsGetReal(PETSC_NULL,"-my_sr",&step_size_reduction,&flg); CHKERRQ(ierr);
+  if(flg != PETSC_TRUE) {
+    step_size_reduction = 1.;
+  }
+
+  PetscInt max_steps;
+  ierr = PetscOptionsGetInt(PETSC_NULL,"-my_ms",&max_steps,&flg); CHKERRQ(ierr);
+  if(flg != PETSC_TRUE) {
+    max_steps = 5;
+  }
 
   int its_d;
-  ierr = PetscOptionsGetInt("","-my_its_d",&its_d,&flg); CHKERRQ(ierr);
+  ierr = PetscOptionsGetInt(PETSC_NULL,"-my_its_d",&its_d,&flg); CHKERRQ(ierr);
   if(flg != PETSC_TRUE) {
-    its_d = 6;
+    its_d = 4;
   }
+  PetscScalar max_reudction = 10,min_reduction = 0.1;
+  ierr = PetscOptionsGetReal(PETSC_NULL,"-my_max_step_reduction",&max_reudction,&flg); CHKERRQ(ierr);
+  ierr = PetscOptionsGetReal(PETSC_NULL,"-my_min_step_reduction",&min_reduction,&flg); CHKERRQ(ierr);
 
   double gamma = 0.5,reduction = 1;
   //step = 1;
@@ -612,10 +574,10 @@ int main(int argc, char *argv[]) {
     reduction = step_size_reduction;
     step++;
   }
-
+  double step_size0 = step_size;
 
   if(step>1) {
-    ierr = m_field.set_other_global_VecCreateGhost(
+    ierr = m_field.set_other_global_ghost_vector(
       "ELASTIC_MECHANICS","SPATIAL_POSITION","X0_SPATIAL_POSITION",COL,arc_ctx->x0,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     double x0_nrm;
     ierr = VecNorm(arc_ctx->x0,NORM_2,&x0_nrm);  CHKERRQ(ierr);
@@ -632,12 +594,13 @@ int main(int argc, char *argv[]) {
   ierr = VecDuplicate(arc_ctx->x0,&x00); CHKERRQ(ierr);
   bool converged_state = false;
 
-  for(;step<max_steps;step++) {
+  for(int jj = 0;step<max_steps;step++,jj++) {
 
     ierr = VecCopy(D,D0); CHKERRQ(ierr);
     ierr = VecCopy(arc_ctx->x0,x00); CHKERRQ(ierr);
 
     if(step == 1) {
+
       ierr = PetscPrintf(PETSC_COMM_WORLD,"Load Step %D step_size = %6.4e\n",step,step_size); CHKERRQ(ierr);
       ierr = arc_ctx->setS(step_size); CHKERRQ(ierr);
       ierr = arc_ctx->setAlphaBeta(0,1); CHKERRQ(ierr);
@@ -645,10 +608,13 @@ int main(int argc, char *argv[]) {
       double dlambda;
       ierr = arc_method.calculateInitDlambda(&dlambda); CHKERRQ(ierr);
       ierr = arc_method.setDlambdaToX(D,dlambda); CHKERRQ(ierr);
+
     } else if(step == 2) {
+
       ierr = arc_ctx->setAlphaBeta(1,0); CHKERRQ(ierr);
       ierr = arc_method.calculateDxAndDlambda(D); CHKERRQ(ierr);
       step_size = sqrt(arc_method.calculateLambdaInt());
+      step_size0 = step_size;
       ierr = arc_ctx->setS(step_size); CHKERRQ(ierr);
       double dlambda = arc_ctx->dlambda;
       double dx_nrm;
@@ -659,9 +625,20 @@ int main(int argc, char *argv[]) {
       ierr = VecCopy(D,arc_ctx->x0); CHKERRQ(ierr);
       ierr = VecAXPY(D,1.,arc_ctx->dx); CHKERRQ(ierr);
       ierr = arc_method.setDlambdaToX(D,dlambda); CHKERRQ(ierr);
+
     } else {
+
+      if(jj == 0) {
+	step_size0 = step_size;
+      }
+
       ierr = arc_method.calculateDxAndDlambda(D); CHKERRQ(ierr);
       step_size *= reduction;
+      if(step_size > max_reudction*step_size0) {
+	step_size = max_reudction*step_size0;
+      } else if(step_size<min_reduction*step_size0) {
+	step_size = min_reduction*step_size0;
+      }
       ierr = arc_ctx->setS(step_size); CHKERRQ(ierr);
       double dlambda = reduction*arc_ctx->dlambda;
       double dx_nrm;
@@ -673,6 +650,7 @@ int main(int argc, char *argv[]) {
       ierr = VecCopy(D,arc_ctx->x0); CHKERRQ(ierr);
       ierr = VecAXPY(D,1.,arc_ctx->dx); CHKERRQ(ierr);
       ierr = arc_method.setDlambdaToX(D,dlambda); CHKERRQ(ierr);
+
     }
 
     ierr = SNESSolve(snes,PETSC_NULL,D); CHKERRQ(ierr);
@@ -700,12 +678,18 @@ int main(int argc, char *argv[]) {
 
     } else {
       if(step > 1 && converged_state) {
+
 	reduction = pow((double)its_d/(double)(its+1),gamma);
+	if(step_size >= max_reudction*step_size0 && reduction > 1) {
+	  reduction = 1; 
+	} else if(step_size <= min_reduction*step_size0 && reduction < 1) {
+	  reduction = 1;
+	}
 	ierr = PetscPrintf(PETSC_COMM_WORLD,"reduction step_size = %6.4e\n",reduction); CHKERRQ(ierr);
       }
       //Save data on mesh
-      ierr = m_field.set_global_VecCreateGhost("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-      ierr = m_field.set_other_global_VecCreateGhost(
+      ierr = m_field.set_global_ghost_vector("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      ierr = m_field.set_other_global_ghost_vector(
 	"ELASTIC_MECHANICS","SPATIAL_POSITION","X0_SPATIAL_POSITION",COL,arc_ctx->x0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
       converged_state = true;
       

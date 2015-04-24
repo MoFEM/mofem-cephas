@@ -8,8 +8,7 @@ add_subdirectory(thermal)
 add_subdirectory(ultraweak)
 add_subdirectory(convective_mass_element)
 add_subdirectory(ground_surface_temperature)
-add_subdirectory(field_approximation)
-add_subdirectory(analytical_dirihlet_boundary_conditions)
+add_subdirectory(analytical_dirichlet_boundary_conditions)
 
 # Obsolete, i.e. implementation is obsolete and need to be changed or replaced
 # by alternative classes or functions
@@ -34,13 +33,14 @@ add_subdirectory(elasticity)
 add_subdirectory(cohesive_interface)
 add_subdirectory(nonlinear_elasticity)
 add_subdirectory(fracture_mechanics)
+
+add_subdirectory(helmholtz)
+
 add_subdirectory(homogenisation)
 add_subdirectory(moisture_transport)
 add_subdirectory(degradation_model)
 add_subdirectory(stochastic)
 
-
-# Atom tests for users modules
 
 add_subdirectory(atom_tests)
 

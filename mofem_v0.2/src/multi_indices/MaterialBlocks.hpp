@@ -4,16 +4,7 @@
  * Notes:
  * - use BLOCK_ATTRIBUTES tag to store data sttucutures
  * - data structures are tags of meshsets
- *
- */ 
 
-/*
- * Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl) <br>
- *
- * The MoFEM package is copyrighted by Lukasz Kaczmarczyk. 
- * It can be freely used for educational and research purposes 
- * by other institutions. If you use this softwre pleas cite my work. 
- *
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or (at your
@@ -74,7 +65,7 @@ struct BlockSetAttributes: public GenericAttributeData {
     
     _data_ data;
     
-    const CubitBC_BitSet type;
+    const CubitBCType type;
     const unsigned int min_number_of_atributes;
     BlockSetAttributes(): type(BLOCKSET),min_number_of_atributes(0) {};
     
@@ -127,7 +118,7 @@ struct Mat_Elastic: public GenericAttributeData {
     
     _data_ data;
     
-    const CubitBC_BitSet type;
+    const CubitBCType type;
     const unsigned int min_number_of_atributes;
     Mat_Elastic(): type(MAT_ELASTICSET),min_number_of_atributes(2) {};
     
@@ -183,7 +174,7 @@ struct Mat_Thermal: public GenericAttributeData {
 
   _data_ data;
         
-  const CubitBC_BitSet type;
+  const CubitBCType type;
   const unsigned int min_number_of_atributes;
   Mat_Thermal(): type(MAT_THERMALSET),min_number_of_atributes(2) {};
         
@@ -239,7 +230,7 @@ struct Mat_Moisture: public GenericAttributeData {
   
   _data_ data;
   
-  const CubitBC_BitSet type;
+  const CubitBCType type;
   const unsigned int min_number_of_atributes;
   Mat_Moisture(): type(MAT_MOISTURESET),min_number_of_atributes(1) {};
   
@@ -284,7 +275,7 @@ struct Block_BodyForces: public GenericAttributeData {
 
   _data_ data;
         
-  const CubitBC_BitSet type;
+  const CubitBCType type;
   const unsigned int min_number_of_atributes;
   Block_BodyForces(): type(BODYFORCESSET),min_number_of_atributes(4) {};
         
@@ -384,7 +375,7 @@ struct Mat_Interf: public GenericAttributeData {
       
   _data_ data;
       
-  const CubitBC_BitSet type;
+  const CubitBCType type;
   Mat_Interf(): type(MAT_INTERFSET) {};
       
   virtual PetscErrorCode fill_data(const vector<double>& attributes) {

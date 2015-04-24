@@ -36,8 +36,8 @@ struct BodyFroceConstantField {
 
   FieldInterface &mField;
 
-  struct MyVolumeFE: public TetElementForcesAndSourcesCore {
-    MyVolumeFE(FieldInterface &_mField): TetElementForcesAndSourcesCore(_mField) {}
+  struct MyVolumeFE: public VolumeElementForcesAndSourcesCore {
+    MyVolumeFE(FieldInterface &_mField): VolumeElementForcesAndSourcesCore(_mField) {}
     int getRule(int order) { return ceil(order/2); };
   };
 
@@ -48,13 +48,13 @@ struct BodyFroceConstantField {
     FieldInterface &m_field):
     mField(m_field),fe(m_field) {}
 
-  struct OpBodyForce: public TetElementForcesAndSourcesCore::UserDataOperator {
+  struct OpBodyForce: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     Vec F;
     Block_BodyForces &dAta;
     Range blockTets;
     OpBodyForce(const string field_name,Vec _F,Block_BodyForces &data,Range block_tets):
-      TetElementForcesAndSourcesCore::UserDataOperator(field_name),
+      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
       F(_F),dAta(data),blockTets(block_tets) {}
 
     ublas::vector<FieldData> Nf;
@@ -118,12 +118,12 @@ struct BodyFroceConstantField {
     PetscErrorCode ierr;
     ErrorCode rval;
     const CubitMeshSets *cubit_meshset_ptr;
-    ierr = mField.get_Cubit_msId(ms_id,BLOCKSET,&cubit_meshset_ptr); CHKERRQ(ierr);
+    ierr = mField.get_cubit_msId(ms_id,BLOCKSET,&cubit_meshset_ptr); CHKERRQ(ierr);
     ierr = cubit_meshset_ptr->get_attribute_data_structure(mapData[ms_id]); CHKERRQ(ierr);     
     EntityHandle meshset = cubit_meshset_ptr->get_meshset();
     Range tets;
     rval = mField.get_moab().get_entities_by_type(meshset,MBTET,tets,true); CHKERR_PETSC(rval);
-    fe.get_op_to_do_Rhs().push_back(new OpBodyForce(field_name,F,mapData[ms_id],tets));
+    fe.getRowOpPtrVector().push_back(new OpBodyForce(field_name,F,mapData[ms_id],tets));
     PetscFunctionReturn(0);
   } 
 

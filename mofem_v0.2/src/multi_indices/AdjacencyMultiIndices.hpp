@@ -1,12 +1,6 @@
 /** \file AdjacencyMultiIndices.hpp
  * \brief Myltindex containes, data structures for mofem adjacencies and other low-level functions 
  * 
- * Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl) <br>
- *
- * The MoFEM package is copyrighted by Lukasz Kaczmarczyk. 
- * It can be freely used for educational and research purposes 
- * by other institutions. If you use this softwre pleas cite my work. 
- *
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or (at your
@@ -50,21 +44,13 @@ struct MoFEMEntityEntMoFEMFiniteElementAdjacencyMap {
 /** 
  * @relates multi_index_container
  * \brief MultiIndex container keeps Adjacencies Element and dof entities adjacencies and vice veras.
- *
- * \param    hashed_unique< tag<Composite_unique_mi_tag>, <br>
-      composite_key<
-	MoFEMEntityEntMoFEMFiniteElementAdjacencyMap, <br>
-	const_mem_fun<MoFEMEntityEntMoFEMFiniteElementAdjacencyMap,GlobalUId,&MoFEMEntityEntMoFEMFiniteElementAdjacencyMap::get_ent_unique_id>, <br>
-	const_mem_fun<MoFEMEntityEntMoFEMFiniteElementAdjacencyMap,GlobalUId,&MoFEMEntityEntMoFEMFiniteElementAdjacencyMap::get_MoFEMFiniteElement_unique_id> > >, <br>
- * \param    ordered_non_unique<
-      tag<Unique_mi_tag>, const_mem_fun<MoFEMEntityEntMoFEMFiniteElementAdjacencyMap,GlobalUId,&MoFEMEntityEntMoFEMFiniteElementAdjacencyMap::get_ent_unique_id> >
- *
+
  */
 typedef multi_index_container<
   MoFEMEntityEntMoFEMFiniteElementAdjacencyMap,
   indexed_by<
     ordered_unique<
-      tag<Composite_unique_mi_tag>,       
+      tag<Composite_Unique_mi_tag>,       
       composite_key<
 	MoFEMEntityEntMoFEMFiniteElementAdjacencyMap,
 	const_mem_fun<MoFEMEntityEntMoFEMFiniteElementAdjacencyMap,GlobalUId,&MoFEMEntityEntMoFEMFiniteElementAdjacencyMap::get_ent_unique_id>,

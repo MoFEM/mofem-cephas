@@ -1,7 +1,6 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
- * FIXME: DESCRIPTION
- */
+/** \brieg DMMoFEM.hpp
+  \brief Discrete manager interface for MoFEM
+  */
 
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
@@ -34,6 +33,26 @@ PetscErrorCode DMRegister_MoFEM(const char sname[]);
   * \ingroup dm
   */
 PetscErrorCode DMMoFEMCreateMoFEM(DM dm,MoFEM::FieldInterface *m_field_ptr,const char problem_name[],const MoFEM::BitRefLevel &bit_level);
+
+/** 
+  * \brief set squared problem
+  * \ingroup dm
+
+  It if trure is assumed that matrix has the same indexing on rows and
+  collumns. This reduces interprocessor communication.
+
+  */
+PetscErrorCode DMMoFEMSetSquareProblem(DM dm,PetscBool square_problem);
+
+/** 
+  * \brief get squared problem
+  * \ingroup dm
+
+  It if trure is assumed that matrix has the same indexing on rows and
+  collumns. This reduces interprocessor communication.
+
+  */
+PetscErrorCode DMMoFEMGetSquareProblem(DM dm,PetscBool *square_problem);
 
 /** 
   * \brief add element to dm
@@ -143,6 +162,16 @@ PetscErrorCode DMMoFEMGetTsCtx(DM dm,MoFEM::TsCtx **ts_ctx);
 
 #endif
 
+/** sets if read mesh is partitioned
+  * \ingroup dm
+  */
+PetscErrorCode DMMoFEMSetIsPartitioned(DM dm,PetscBool is_partitioned);
+
+/** get if read mesh is partitioned
+  * \ingroup dm
+  */
+PetscErrorCode DMMoFEMGetIsPartitioned(DM dm,PetscBool *is_partitioned);
+
 /** 
   * \brief Create dm data structure with MoFEM data structure
   * \ingroup dm
@@ -246,7 +275,7 @@ PetscErrorCode DMLocalToGlobalEnd_MoFEM(DM,Vec,InsertMode,Vec);
 #endif //__DMMMOFEM_H
 
 /***************************************************************************//**
- * \defgroup dm MoFem discreat manager
+ * \defgroup dm MoFEM discreat manager
  ******************************************************************************/
 
 

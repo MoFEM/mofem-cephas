@@ -1,15 +1,6 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
+/* \file SurfacePressureComplexForLazy.hpp
  *
- * Description: FIXME
- *
- * This is not exactly procedure for linear elatic dynamics, since jacobian is
- * evaluated at every time step and snes procedure is involved. However it is
- * implemented like that, to test methodology for general nonlinear problem.
- *
- */
-
-/* This file is part of MoFEM.
+ * This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or (at your
@@ -28,10 +19,15 @@
 
 namespace ObosleteUsersModules {
 
+/** \brief NonLinear surface pressure element (obsolete implementation)
+  * \ingroup nonlinear_elastic_elem
+  * \ingroup mofem_static_boundary_conditions
+  *
+  */
 struct NeummanForcesSurfaceComplexForLazy {
 
   struct MyTriangleSpatialFE;
-  struct AuxMethodSpatial: public TriElementForcesAndSurcesCore::UserDataOperator {
+  struct AuxMethodSpatial: public FaceElementForcesAndSourcesCore::UserDataOperator {
 
     MyTriangleSpatialFE *myPtr;
     AuxMethodSpatial(const string &field_name,MyTriangleSpatialFE *_myPtr);
@@ -39,7 +35,7 @@ struct NeummanForcesSurfaceComplexForLazy {
 
   };
 
-  struct AuxMethodMaterial: public TriElementForcesAndSurcesCore::UserDataOperator {
+  struct AuxMethodMaterial: public FaceElementForcesAndSourcesCore::UserDataOperator {
 
     MyTriangleSpatialFE *myPtr;
     AuxMethodMaterial(const string &field_name,MyTriangleSpatialFE *_myPtr);
@@ -47,7 +43,7 @@ struct NeummanForcesSurfaceComplexForLazy {
 
   };
 
-  struct MyTriangleSpatialFE: public TriElementForcesAndSurcesCore {
+  struct MyTriangleSpatialFE: public FaceElementForcesAndSourcesCore {
 
     double *sCaleLhs;
     double *sCaleRhs;
@@ -61,7 +57,7 @@ struct NeummanForcesSurfaceComplexForLazy {
 
     MyTriangleSpatialFE(FieldInterface &_mField,Mat _Aij,Vec &_F,double *scale_lhs,double *scale_rhs);
 
-    int getRule(int order) { return max(0,order); };
+    int getRule(int order) { return max(1,order); };
 
     double *N;
     double *N_face;

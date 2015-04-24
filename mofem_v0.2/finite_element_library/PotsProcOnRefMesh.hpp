@@ -4,11 +4,6 @@
  * Create refined mesh, without enforcing continuity between element. Calculate
  * field values on nodes of that mesh.
  *
- */
-
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
- *
  * This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -33,7 +28,7 @@ namespace MoFEM {
 /** \brief Post processing 
   * \ingroup mofem_fs_post_proc  
   */
-struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
+struct PostPocOnRefinedMesh: public VolumeElementForcesAndSourcesCore {
 
   moab::Core coreMesh;
   Interface &postProcMesh;
@@ -42,12 +37,12 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
   int nbOfRefLevels;
 
   PostPocOnRefinedMesh(FieldInterface &m_field,bool ten_nodes_post_proc_tets = true,int nb_ref_levels = -1):
-    TetElementForcesAndSourcesCore(m_field),postProcMesh(coreMesh),
+    VolumeElementForcesAndSourcesCore(m_field),postProcMesh(coreMesh),
     tenNodesPostProcTets(ten_nodes_post_proc_tets),nbOfRefLevels(nb_ref_levels) {
 
   }
 
-  ~PostPocOnRefinedMesh() {
+  virtual ~PostPocOnRefinedMesh() {
     ParallelComm* pcomm_post_proc_mesh = ParallelComm::get_pcomm(&postProcMesh,MYPCOMM_INDEX);
     if(pcomm_post_proc_mesh != NULL) {
       delete pcomm_post_proc_mesh;
@@ -79,7 +74,7 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
       PetscBool flg = PETSC_TRUE;
       PetscOptionsGetInt(PETSC_NULL,"-my_max_post_proc_ref_level",&max_level,&flg);
     } else {
-     max_level = nbOfRefLevels;
+      max_level = nbOfRefLevels;
     }
 
     double base_coords[] = {
@@ -249,7 +244,7 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
   }
 
 
-  struct OpHdivFunctions: public TetElementForcesAndSourcesCore::UserDataOperator {
+  struct OpHdivFunctions: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     Interface &postProcMesh;
     vector<EntityHandle> &mapGaussPts;
@@ -258,7 +253,7 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
       Interface &post_proc_mesh,
       vector<EntityHandle> &map_gauss_pts,
       const string field_name): 
-      TetElementForcesAndSourcesCore::UserDataOperator(field_name),
+      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
       postProcMesh(post_proc_mesh),mapGaussPts(map_gauss_pts) {}
 
     PetscErrorCode doWork(
@@ -307,7 +302,7 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
 
   };
 
-  struct OpGetFieldValues: public TetElementForcesAndSourcesCore::UserDataOperator {
+  struct OpGetFieldValues: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     Interface &postProcMesh;
     vector<EntityHandle> &mapGaussPts;
@@ -317,7 +312,7 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
       Interface &post_proc_mesh,
       vector<EntityHandle> &map_gauss_pts,
       const string field_name,CommonData &common_data): 
-      TetElementForcesAndSourcesCore::UserDataOperator(field_name),
+      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
       postProcMesh(post_proc_mesh),mapGaussPts(map_gauss_pts),
       commonData(common_data) {}
 
@@ -365,12 +360,12 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
 
       switch(space) {
 	case H1:
-	  commonData.fieldMap[row_field_name].resize(nb_gauss_pts);
+	  commonData.fieldMap[rowFieldName].resize(nb_gauss_pts);
 	  if(type == MBVERTEX) {
 	    for(int gg = 0;gg<nb_gauss_pts;gg++) {
 	      rval = postProcMesh.tag_set_data(th,&mapGaussPts[gg],1,def_VAL); CHKERR_PETSC(rval);
-	      (commonData.fieldMap[row_field_name])[gg].resize(rank);
-	      (commonData.fieldMap[row_field_name])[gg].clear();
+	      (commonData.fieldMap[rowFieldName])[gg].resize(rank);
+	      (commonData.fieldMap[rowFieldName])[gg].clear();
 	    }
 	  }
 	  rval = postProcMesh.tag_get_by_ptr(th,&mapGaussPts[0],mapGaussPts.size(),tags_ptr); CHKERR_PETSC(rval);
@@ -378,7 +373,7 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
 	    for(int rr = 0;rr<rank;rr++) {
 	      ((double*)tags_ptr[gg])[rr] += cblas_ddot(
 		(data.getFieldData().size()/rank),&(data.getN(gg)[0]),1,&(data.getFieldData()[rr]),rank);
-	      (commonData.fieldMap[row_field_name])[gg][rr] += data.getFieldData()[rr];
+	      (commonData.fieldMap[rowFieldName])[gg][rr] += data.getFieldData()[rr];
 	    }
 	  }
 	  break;  
@@ -418,7 +413,7 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
 
   };
 
-  struct OpGetFieldGradientValues: public TetElementForcesAndSourcesCore::UserDataOperator {
+  struct OpGetFieldGradientValues: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     Interface &postProcMesh;
     vector<EntityHandle> &mapGaussPts;
@@ -428,7 +423,7 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
       Interface &post_proc_mesh,
       vector<EntityHandle> &map_gauss_pts,
       const string field_name,CommonData &common_data): 
-      TetElementForcesAndSourcesCore::UserDataOperator(field_name),
+      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
       postProcMesh(post_proc_mesh),mapGaussPts(map_gauss_pts),
       commonData(common_data) {}
 
@@ -478,12 +473,12 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
 
       switch(space) {
 	case H1:
-	  commonData.gradMap[row_field_name].resize(nb_gauss_pts);
+	  commonData.gradMap[rowFieldName].resize(nb_gauss_pts);
 	  if(type == MBVERTEX) {
 	    for(int gg = 0;gg<nb_gauss_pts;gg++) {
 	      rval = postProcMesh.tag_set_data(th,&mapGaussPts[gg],1,def_VAL); CHKERR_PETSC(rval);
-	      (commonData.gradMap[row_field_name])[gg].resize(rank,3);
-	      (commonData.gradMap[row_field_name])[gg].clear();
+	      (commonData.gradMap[rowFieldName])[gg].resize(rank,3);
+	      (commonData.gradMap[rowFieldName])[gg].clear();
 	    }
 	  }
 	  rval = postProcMesh.tag_get_by_ptr(th,&mapGaussPts[0],mapGaussPts.size(),tags_ptr); CHKERR_PETSC(rval);
@@ -492,7 +487,7 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
 	      for(int dd = 0;dd<3;dd++) {
 		for(unsigned int dof = 0;dof<(data.getFieldData().size()/rank);dof++) {
 		  ((double*)tags_ptr[gg])[rank*rr+dd] += data.getDiffN(gg)(dof,dd)*data.getFieldData()[rank*dof+rr];
-		  (commonData.gradMap[row_field_name])[gg](rr,dd) += data.getDiffN(gg)(dof,dd)*data.getFieldData()[rank*dof+rr];
+		  (commonData.gradMap[rowFieldName])[gg](rr,dd) += data.getDiffN(gg)(dof,dd)*data.getFieldData()[rank*dof+rr];
 		}
 	      }
 	    }
@@ -517,31 +512,35 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
 
   PetscErrorCode addHdivFunctionsPostProc(const string field_name) {
     PetscFunctionBegin;
-    get_op_to_do_Rhs().push_back(new OpHdivFunctions(postProcMesh,mapGaussPts,field_name));
+    getRowOpPtrVector().push_back(new OpHdivFunctions(postProcMesh,mapGaussPts,field_name));
     PetscFunctionReturn(0);
   }
 
   PetscErrorCode addFieldValuesPostProc(const string field_name) {
     PetscFunctionBegin;
-    get_op_to_do_Rhs().push_back(new OpGetFieldValues(postProcMesh,mapGaussPts,field_name,commonData));
+    getRowOpPtrVector().push_back(new OpGetFieldValues(postProcMesh,mapGaussPts,field_name,commonData));
     PetscFunctionReturn(0);
   }
 
   PetscErrorCode addFieldValuesGradientPostProc(const string field_name) {
     PetscFunctionBegin;
-    get_op_to_do_Rhs().push_back(new OpGetFieldGradientValues(postProcMesh,mapGaussPts,field_name,commonData));
+    getRowOpPtrVector().push_back(new OpGetFieldGradientValues(postProcMesh,mapGaussPts,field_name,commonData));
     PetscFunctionReturn(0);
   }
 
   PetscErrorCode clearOperators() {
     PetscFunctionBegin;
-    get_op_to_do_Rhs().clear();
+    getRowOpPtrVector().clear();
     PetscFunctionReturn(0);
   }
 
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
     ErrorCode rval;
+    ParallelComm* pcomm_post_proc_mesh = ParallelComm::get_pcomm(&postProcMesh,MYPCOMM_INDEX);
+    if(pcomm_post_proc_mesh != NULL) {
+      delete pcomm_post_proc_mesh;
+    }
     rval = postProcMesh.delete_mesh(); CHKERR_PETSC(rval);
     PetscFunctionReturn(0);
   }

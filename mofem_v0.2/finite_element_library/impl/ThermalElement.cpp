@@ -1,7 +1,6 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
- * FIXME: DESCRIPTION
- */
+/** \file ThermalElement.cpp
+  \ingroup mofem_thermal_elem
+*/
 
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
@@ -77,7 +76,7 @@ PetscErrorCode ThermalElement::addThermalFluxElement(const string field_name,con
   }
 
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SIDESET|HEATFLUXSET,it)) {
-    ierr = it->get_cubit_bc_data_structure(setOfFluxes[it->get_msId()].dAta); CHKERRQ(ierr);
+    ierr = it->get_bc_data_structure(setOfFluxes[it->get_msId()].dAta); CHKERRQ(ierr);
     rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,setOfFluxes[it->get_msId()].tRis,true); CHKERR_PETSC(rval);
     ierr = mField.add_ents_to_finite_element_by_TRIs(setOfFluxes[it->get_msId()].tRis,"THERMAL_FLUX_FE"); CHKERRQ(ierr);
   }
@@ -85,9 +84,9 @@ PetscErrorCode ThermalElement::addThermalFluxElement(const string field_name,con
   //this is alternative method for setting boundary conditions, to bypass bu in cubit file reader.
   //not elegant, but good enough
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
-    if(it->get_Cubit_name().compare(0,9,"HEAT_FLUX") == 0) {
+    if(it->get_name().compare(0,9,"HEAT_FLUX") == 0) {
       vector<double> data;
-      ierr = it->get_Cubit_attributes(data); CHKERRQ(ierr);
+      ierr = it->get_attributes(data); CHKERRQ(ierr);
       if(data.size()!=1) {
         SETERRQ(PETSC_COMM_SELF,1,"Data inconsistency");
       }
@@ -122,10 +121,10 @@ PetscErrorCode ThermalElement::addThermalConvectionElement(const string field_na
   //this is alternative method for setting boundary conditions, to bypass bu in cubit file reader.
   //not elegant, but good enough
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
-    if(it->get_Cubit_name().compare(0,10,"CONVECTION") == 0) {
+    if(it->get_name().compare(0,10,"CONVECTION") == 0) {
       
       vector<double> data;
-      ierr = it->get_Cubit_attributes(data); CHKERRQ(ierr);
+      ierr = it->get_attributes(data); CHKERRQ(ierr);
       if(data.size()!=2) {
         SETERRQ(PETSC_COMM_SELF,1,"Data inconsistency");
       }
@@ -158,9 +157,9 @@ PetscErrorCode ThermalElement::addThermalRadiationElement(const string field_nam
   //this is alternative method for setting boundary conditions, to bypass bu in cubit file reader.
   //not elegant, but good enough
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
-    if(it->get_Cubit_name().compare(0,9,"RADIATION") == 0) {
+    if(it->get_name().compare(0,9,"RADIATION") == 0) {
       vector<double> data;
-      ierr = it->get_Cubit_attributes(data); CHKERRQ(ierr);
+      ierr = it->get_attributes(data); CHKERRQ(ierr);
       if(data.size()!=3) {
         SETERRQ(PETSC_COMM_SELF,1,"Data inconsistency");
       }
@@ -181,10 +180,10 @@ PetscErrorCode ThermalElement::addThermalRadiationElement(const string field_nam
 PetscErrorCode ThermalElement::setThermalFiniteElementRhsOperators(string field_name,Vec &F) {
   PetscFunctionBegin;
   map<int,BlockData>::iterator sit = setOfBlocks.begin();
-  feRhs.get_op_to_do_Rhs().push_back(new OpGetGradAtGaussPts(field_name,commonData));
+  feRhs.getRowOpPtrVector().push_back(new OpGetGradAtGaussPts(field_name,commonData));
   for(;sit!=setOfBlocks.end();sit++) {
     //add finite element
-    feRhs.get_op_to_do_Rhs().push_back(new OpThermalRhs(field_name,F,sit->second,commonData));
+    feRhs.getRowOpPtrVector().push_back(new OpThermalRhs(field_name,F,sit->second,commonData));
   }
   PetscFunctionReturn(0);
 }
@@ -194,7 +193,7 @@ PetscErrorCode ThermalElement::setThermalFiniteElementLhsOperators(string field_
   map<int,BlockData>::iterator sit = setOfBlocks.begin();
   for(;sit!=setOfBlocks.end();sit++) {
     //add finite elemen
-    feLhs.get_op_to_do_Lhs().push_back(new OpThermalLhs(field_name,A,sit->second,commonData));
+    feLhs.getRowColOpPtrVector().push_back(new OpThermalLhs(field_name,A,sit->second,commonData));
   }
   PetscFunctionReturn(0);
 }
@@ -208,7 +207,7 @@ PetscErrorCode ThermalElement::setThermalFluxFiniteElementRhsOperators(string fi
   map<int,FluxData>::iterator sit = setOfFluxes.begin();
   for(;sit!=setOfFluxes.end();sit++) {
     //add finite element
-    feFlux.get_op_to_do_Rhs().push_back(new OpHeatFlux(field_name,F,sit->second,ho_geometry));
+    feFlux.getRowOpPtrVector().push_back(new OpHeatFlux(field_name,F,sit->second,ho_geometry));
   }
   PetscFunctionReturn(0);
 }
@@ -222,8 +221,8 @@ PetscErrorCode ThermalElement::setThermalConvectionFiniteElementRhsOperators(str
   map<int,ConvectionData>::iterator sit = setOfConvection.begin();
   for(;sit!=setOfConvection.end();sit++) {
     //add finite element
-    feConvectionRhs.get_op_to_do_Rhs().push_back(new OpGetTriTemperatureAtGaussPts(field_name,commonData));
-    feConvectionRhs.get_op_to_do_Rhs().push_back(new OpConvectionRhs(field_name,F,sit->second,commonData,ho_geometry));
+    feConvectionRhs.getRowOpPtrVector().push_back(new OpGetTriTemperatureAtGaussPts(field_name,commonData));
+    feConvectionRhs.getRowOpPtrVector().push_back(new OpConvectionRhs(field_name,F,sit->second,commonData,ho_geometry));
   }
   PetscFunctionReturn(0);
 } 
@@ -237,7 +236,7 @@ PetscErrorCode ThermalElement::setThermalConvectionFiniteElementLhsOperators(str
   map<int,ConvectionData>::iterator sit = setOfConvection.begin();
   for(;sit!=setOfConvection.end();sit++) {
     //add finite element
-    feConvectionLhs.get_op_to_do_Lhs().push_back(new OpConvectionLhs(field_name,A,sit->second,ho_geometry));
+    feConvectionLhs.getRowColOpPtrVector().push_back(new OpConvectionLhs(field_name,A,sit->second,ho_geometry));
   }
   PetscFunctionReturn(0);
 }
@@ -255,15 +254,15 @@ PetscErrorCode ThermalElement::setTimeSteppingProblem(string field_name,string r
     for(;sit!=setOfBlocks.end();sit++) {
       //add finite element
       //those methods are to calulate matrices on Lhs
-      //  feLhs.get_op_to_do_Lhs().push_back(new OpGetTetTemperatureAtGaussPts(field_name,commonData));
-      feLhs.get_op_to_do_Lhs().push_back(new OpThermalLhs(field_name,sit->second,commonData));
-      feLhs.get_op_to_do_Lhs().push_back(new OpHeatCapacityLsh(field_name,sit->second,commonData));
+      //  feLhs.getRowColOpPtrVector().push_back(new OpGetTetTemperatureAtGaussPts(field_name,commonData));
+      feLhs.getRowColOpPtrVector().push_back(new OpThermalLhs(field_name,sit->second,commonData));
+      feLhs.getRowColOpPtrVector().push_back(new OpHeatCapacityLsh(field_name,sit->second,commonData));
       //those methods are to calulate vectors on Rhs
-      feRhs.get_op_to_do_Rhs().push_back(new OpGetTetTemperatureAtGaussPts(field_name,commonData));
-      feRhs.get_op_to_do_Rhs().push_back(new OpGetTetRateAtGaussPts(rate_name,commonData));
-      feRhs.get_op_to_do_Rhs().push_back(new OpGetGradAtGaussPts(field_name,commonData));
-      feRhs.get_op_to_do_Rhs().push_back(new OpThermalRhs(field_name,sit->second,commonData));
-      feRhs.get_op_to_do_Rhs().push_back(new OpHeatCapacityRhs(field_name,sit->second,commonData));
+      feRhs.getRowOpPtrVector().push_back(new OpGetTetTemperatureAtGaussPts(field_name,commonData));
+      feRhs.getRowOpPtrVector().push_back(new OpGetTetRateAtGaussPts(rate_name,commonData));
+      feRhs.getRowOpPtrVector().push_back(new OpGetGradAtGaussPts(field_name,commonData));
+      feRhs.getRowOpPtrVector().push_back(new OpThermalRhs(field_name,sit->second,commonData));
+      feRhs.getRowOpPtrVector().push_back(new OpHeatCapacityRhs(field_name,sit->second,commonData));
     }
   }
 
@@ -271,7 +270,7 @@ PetscErrorCode ThermalElement::setTimeSteppingProblem(string field_name,string r
   {
     map<int,FluxData>::iterator sit = setOfFluxes.begin();
     for(;sit!=setOfFluxes.end();sit++) {
-      feFlux.get_op_to_do_Rhs().push_back(new OpHeatFlux(field_name,sit->second,ho_geometry));
+      feFlux.getRowOpPtrVector().push_back(new OpHeatFlux(field_name,sit->second,ho_geometry));
     }
   }
   
@@ -279,14 +278,14 @@ PetscErrorCode ThermalElement::setTimeSteppingProblem(string field_name,string r
   {
     map<int,ConvectionData>::iterator sit = setOfConvection.begin();
     for(;sit!=setOfConvection.end();sit++) {
-      feConvectionRhs.get_op_to_do_Rhs().push_back(new OpGetTriTemperatureAtGaussPts(field_name,commonData));
-      feConvectionRhs.get_op_to_do_Rhs().push_back(new OpConvectionRhs(field_name,sit->second,commonData,ho_geometry));
+      feConvectionRhs.getRowOpPtrVector().push_back(new OpGetTriTemperatureAtGaussPts(field_name,commonData));
+      feConvectionRhs.getRowOpPtrVector().push_back(new OpConvectionRhs(field_name,sit->second,commonData,ho_geometry));
     }
   }
   {
     map<int,ConvectionData>::iterator sit = setOfConvection.begin();
     for(;sit!=setOfConvection.end();sit++) {
-      feConvectionLhs.get_op_to_do_Lhs().push_back(new OpConvectionLhs(field_name,sit->second,ho_geometry));
+      feConvectionLhs.getRowColOpPtrVector().push_back(new OpConvectionLhs(field_name,sit->second,ho_geometry));
     }
   }
 
@@ -294,15 +293,15 @@ PetscErrorCode ThermalElement::setTimeSteppingProblem(string field_name,string r
   {
     map<int,RadiationData>::iterator sit = setOfRadiation.begin();
     for(;sit!=setOfRadiation.end();sit++) {
-      feRadiationRhs.get_op_to_do_Rhs().push_back(new OpGetTriTemperatureAtGaussPts(field_name,commonData));
-      feRadiationRhs.get_op_to_do_Rhs().push_back(new OpRadiationRhs(field_name,sit->second,commonData,ho_geometry));
+      feRadiationRhs.getRowOpPtrVector().push_back(new OpGetTriTemperatureAtGaussPts(field_name,commonData));
+      feRadiationRhs.getRowOpPtrVector().push_back(new OpRadiationRhs(field_name,sit->second,commonData,ho_geometry));
     }
   }
   {
     map<int,RadiationData>::iterator sit = setOfRadiation.begin();
     for(;sit!=setOfRadiation.end();sit++) {
-      feRadiationLhs.get_op_to_do_Rhs().push_back(new OpGetTriTemperatureAtGaussPts(field_name,commonData));
-      feRadiationLhs.get_op_to_do_Lhs().push_back(new OpRadiationLhs(field_name,sit->second,commonData,ho_geometry));
+      feRadiationLhs.getRowOpPtrVector().push_back(new OpGetTriTemperatureAtGaussPts(field_name,commonData));
+      feRadiationLhs.getRowColOpPtrVector().push_back(new OpRadiationLhs(field_name,sit->second,commonData,ho_geometry));
     }
   }
 
