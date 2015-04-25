@@ -1,14 +1,18 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
- * FIXME: DESCRIPTION
+/* 
+  \file error_norm.cpp
+  \ingroup mofem_helmholtz_elem
+
+  Calculates finite element (Galerkin) approximation for difference between two solutions in L^2 and H_1 norm. 
+  \bug work for scalar filed only, NEED further modification.
  */
 
-/* This file is part of MoFEM.
+/* 
+ * This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or (at your
  * option) any later version.
- * PhD student Thomas Xuan Meng
+ *
  * MoFEM is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
@@ -16,7 +20,8 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. 
- * abs(result) = sqrt(reEX^2+imEX^2) */
+ *
+ */
 
 
 #include <MoFEM.hpp>
@@ -53,7 +58,6 @@ int main(int argc, char *argv[]) {
 	
 	//read h5m solution file into moab
 	bool usel2; //norm type
-	bool userela; //relative error or pure error
 	PetscBool flg = PETSC_TRUE;
 	
 	char mesh_file_name[255];
@@ -62,19 +66,10 @@ int main(int argc, char *argv[]) {
 		SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
 	}
 	
-	/* cannot convert 'bool*' to 'PetscBool*' for argument '3' to '
-	 * PetscErrorCode PetscOptionsGetBool(const char*, const char*, PetscBool*, PetscBool*)' */
 	
-	//ierr = PetscOptionsGetBool(PETSC_NULL,"-norm_type",&usel2,&flg); CHKERRQ(ierr);
-	//if(flg != PETSC_TRUE) {
-	//	SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -l2_type_norm (true for l2norm, false for H1 norm)");
-	//}
-	
-	//ierr = PetscOptionsGetBool(PETSC_NULL,"-relative_error",&userela,&flg); CHKERRQ(ierr);
-	//if(flg != PETSC_TRUE) {
-	//	SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -relative_error (true or false needed))");
-	//}
-	
+	PetscBool userela = PETSC_FALSE;
+	ierr = PetscOptionsGetBool(NULL,"-relative_error",&userela,NULL); CHKERRQ(ierr);
+	/* FIX ME, change to enum for better performance */
 	char type_error_norm[255];
 	ierr = PetscOptionsGetString(PETSC_NULL,"-norm_type",type_error_norm,255,&flg); CHKERRQ(ierr);
 	if(flg != PETSC_TRUE) {
@@ -83,15 +78,6 @@ int main(int argc, char *argv[]) {
 
 	if (strcmp ("l2",type_error_norm ) == 0) {usel2 = true;}
 	else if(strcmp ("h1",type_error_norm ) == 0) {usel2 = false;}
-	
-	char relative_error[255];
-	ierr = PetscOptionsGetString(PETSC_NULL,"-relative_error",relative_error,255,&flg); CHKERRQ(ierr);
-	if(flg != PETSC_TRUE) {
-		SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -type_error_norm (L2 or H1 type needed)");
-	}
-	
-	if (strcmp ("true",relative_error ) == 0) {userela = true;}
-	else if(strcmp ("false",relative_error ) == 0) {userela = false;}
 	
 	ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
 	if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
@@ -215,11 +201,10 @@ int main(int argc, char *argv[]) {
 		//partition
 		ierr = m_field.simple_partition_problem("EX1_PROBLEM"); CHKERRQ(ierr);
 		ierr = m_field.partition_finite_elements("EX1_PROBLEM"); CHKERRQ(ierr);
-		ierr = m_field.simple_partition_problem("EX2_PROBLEM"); CHKERRQ(ierr);
-		ierr = m_field.partition_finite_elements("EX2_PROBLEM"); CHKERRQ(ierr);
+
 		//what are ghost nodes, see Petsc Manual
 		ierr = m_field.partition_ghost_dofs("EX1_PROBLEM"); CHKERRQ(ierr);
-		ierr = m_field.partition_ghost_dofs("EX2_PROBLEM"); CHKERRQ(ierr);
+
 	}
 	
 	//print block sets with materials
@@ -323,11 +308,18 @@ int main(int argc, char *argv[]) {
 	
 	Vec P,M;
 	ierr = m_field.VecCreateGhost("EX1_PROBLEM",ROW,&M); CHKERRQ(ierr);
-	ierr = m_field.VecCreateGhost("EX2_PROBLEM",ROW,&P); CHKERRQ(ierr);
+	ierr = m_field.VecCreateGhost("EX1_PROBLEM",ROW,&P); CHKERRQ(ierr);
 
 	ierr = m_field.set_local_ghost_vector("EX1_PROBLEM",ROW,M,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	ierr = m_field.set_local_ghost_vector("EX2_PROBLEM",ROW,P,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	ierr = m_field.set_other_global_ghost_vector("EX1_PROBLEM","reEX","imEX",ROW,P,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
+	
+	std::cout << "\n Vec M = \n" << std::endl;
+	ierr = VecView(M,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+	std::cout << "\n Vec P = \n" << std::endl;
+	ierr = VecView(P,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+
+	
 	//ierr = VecNorm(M,NORM_FROBENIUS,&nrm2_M);;
 	//ierr = VecNorm(P,NORM_2,&nrm2_P); CHKERRQ(ierr);
 	ierr = VecNorm(M,NORM_INFINITY,&pointwisenormM);

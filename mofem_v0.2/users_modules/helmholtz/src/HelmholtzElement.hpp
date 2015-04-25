@@ -329,12 +329,12 @@ struct HelmholtzElement {
           }
 
 
-	  const ublas::matrix_row<ublas::matrix<double> > gard_p_at_gauss_pt(grad_p,gg);
+		  const ublas::matrix_row<ublas::matrix<double> > gard_p_at_gauss_pt(grad_p,gg);
 
 
-	  /// Integrate diffN^T grad_p - k^2 N^T p dV
+		  /// Integrate diffN^T grad_p - k^2 N^T p dV
           ublas::noalias(Nf) += val*prod(data.getDiffN(gg,nb_row_dofs),gard_p_at_gauss_pt);
-	  ublas::noalias(Nf) -= val*k_pow2*data.getN(gg)*pressure[gg];
+		  ublas::noalias(Nf) -= val*k_pow2*data.getN(gg)*pressure[gg];
 
         }
   

@@ -628,7 +628,7 @@ PetscErrorCode solve_problem(FieldInterface& m_field,
   ierr = KSPSetOperators(solver,A,A); CHKERRQ(ierr);
   ierr = KSPSetFromOptions(solver); CHKERRQ(ierr);
   ierr = KSPSetUp(solver); CHKERRQ(ierr);
-
+  
   for(int ss = 0;ss<GenericAnalyticalSolution::LAST_VAL_TYPE;ss++) {
 
     // solve problem
@@ -645,16 +645,21 @@ PetscErrorCode solve_problem(FieldInterface& m_field,
         ierr = m_field.set_local_ghost_vector(problem_name,COL,D,mode,SCATTER_REVERSE); CHKERRQ(ierr);
       }
 
+	  
       VecZeroEntries(D);
       ierr = VecGhostUpdateBegin(D,mode,SCATTER_FORWARD); CHKERRQ(ierr);
       ierr = VecGhostUpdateEnd(D,mode,SCATTER_FORWARD); CHKERRQ(ierr);
 
+
+	  
     } else {
       if(is_partitioned) {
 	ierr = m_field.set_other_local_ghost_vector(problem_name,re_field,im_field,COL,D,mode,SCATTER_REVERSE); CHKERRQ(ierr);
       } else {
 	ierr = m_field.set_other_global_ghost_vector(problem_name,re_field,im_field,COL,D,mode,SCATTER_REVERSE); CHKERRQ(ierr);
       }
+	  
+	  
     }
 
   }
