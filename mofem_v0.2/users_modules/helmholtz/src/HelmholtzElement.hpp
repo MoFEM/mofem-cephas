@@ -1139,7 +1139,7 @@ struct HelmholtzElement {
 
       }
 
-      if(it->get_name().compare(0,22,"SOMMERFELD_BC") == 0) {
+      if(it->get_name().compare(0,13,"SOMMERFELD_BC") == 0) {
 
 	sommerfeldBcData[it->get_msId()].aDmittance_real = 0;
 	sommerfeldBcData[it->get_msId()].aDmittance_imag = -wavenumber;
@@ -1149,7 +1149,7 @@ struct HelmholtzElement {
 
       }
 
-      if(it->get_name().compare(0,23,"BAYLISS_TURKEL_BC") == 0) {
+      if(it->get_name().compare(0,17,"BAYLISS_TURKEL_BC") == 0) {
 	  
 	baylissTurkelBcData[it->get_msId()].aDmittance_real = 0;
 	baylissTurkelBcData[it->get_msId()].aDmittance_imag = -wavenumber;
