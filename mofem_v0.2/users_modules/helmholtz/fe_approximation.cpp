@@ -242,7 +242,6 @@ int main(int argc, char *argv[]) {
   ierr = m_field.modify_problem_add_finite_element("ACOUSTIC_PROBLEM","HELMHOLTZ_RERE_FE"); CHKERRQ(ierr);
   ierr = m_field.modify_problem_add_finite_element("ACOUSTIC_PROBLEM","HELMHOLTZ_IMIM_FE"); CHKERRQ(ierr);
   ierr = m_field.modify_problem_add_finite_element("ACOUSTIC_PROBLEM","HELMHOLTZ_REIM_FE"); CHKERRQ(ierr);
-  ierr = m_field.modify_problem_add_finite_element("ACOUSTIC_PROBLEM","HELMHOLTZ_IMRE_FE"); CHKERRQ(ierr);
 
   ierr = m_field.modify_problem_add_finite_element("BCREAL_PROBLEM","BCREAL_FE"); CHKERRQ(ierr);
   ierr = m_field.modify_problem_add_finite_element("BCIMAG_PROBLEM","BCIMAG_FE"); CHKERRQ(ierr);
@@ -462,6 +461,7 @@ int main(int argc, char *argv[]) {
   ierr = helmholtz_element.setOperators(A,F,"rePRES","imPRES"); CHKERRQ(ierr);
   ierr = helmholtz_element.calculateA("ACOUSTIC_PROBLEM"); CHKERRQ(ierr);
   ierr = helmholtz_element.calculateF("ACOUSTIC_PROBLEM"); CHKERRQ(ierr);
+
 
   if(dirihlet_bc_set) {
     ierr = m_field.problem_basic_method_postProcess("ACOUSTIC_PROBLEM",analytical_ditihlet_bc_real); CHKERRQ(ierr);
