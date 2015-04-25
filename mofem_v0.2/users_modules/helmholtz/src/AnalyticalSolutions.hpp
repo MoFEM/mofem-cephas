@@ -64,12 +64,17 @@ const char *analytical_solution_types[] = {
   \ingroup mofem_helmholtz_elem
 
 
-  equation from: 
+  Equation from: 
   Ihlenburg,Finite element analysis of acoustic scattering Springer Science & Business Media.
+
+  Some details can be found here:
+  <http://ansol.us/Products/Coustyx/Validation/MultiDomain/Scattering/PlaneWave/HardSphere/Downloads/dataset_description.pdf>
 
   \f[
   p_\textrm{inc} = \exp(ikd \cdot \mathbf{x})
   \f]
+
+  
 
   */
 struct IncidentWave: public GenericAnalyticalSolution {

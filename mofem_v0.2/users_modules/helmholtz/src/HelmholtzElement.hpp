@@ -1288,7 +1288,7 @@ struct HelmholtzElement {
 	  re_field_name,im_field_name,A,miit->second,commonData,
 	  zero_function));
 
-      // need to add second functions so that residual is calculated properly
+      // FIXME: need to add second functions so that residual is calculated properly
       feRhs.at("HELMHOLTZ_REIM_FE").getRowOpPtrVector().push_back(
         new OpHelmholtzMixBCRhs<ZeroFunVal,ZeroFunVal>(
 	  re_field_name,im_field_name,F,miit->second,commonData,
@@ -1307,7 +1307,7 @@ struct HelmholtzElement {
 	  re_field_name,im_field_name,A,miit->second,commonData,
 	  bayliss_turkel_bc));
 
-      // need to add second functions so that residual is calculated properly
+      // FIXME: need to add second functions so that residual is calculated properly
       feRhs.at("HELMHOLTZ_REIM_FE").getRowOpPtrVector().push_back(
         new OpHelmholtzMixBCRhs<BaylissTurkel,ZeroFunVal>(
 	  re_field_name,im_field_name,F,miit->second,commonData,
