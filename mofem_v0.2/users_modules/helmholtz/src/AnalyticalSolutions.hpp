@@ -74,7 +74,6 @@ const char *analytical_solution_types[] = {
   p_\textrm{inc} = \exp(ikd \cdot \mathbf{x})
   \f]
 
-  
 
   */
 struct IncidentWave: public GenericAnalyticalSolution {
@@ -142,7 +141,7 @@ struct HardSphereScatterWave: public GenericAnalyticalSolution {
   double wAvenumber;
   double sphereRadius;
    
-  HardSphereScatterWave(double wavenumber,double sphere_radius = 1.): 
+  HardSphereScatterWave(double wavenumber,double sphere_radius): 
     wAvenumber(wavenumber),sphereRadius(sphere_radius) {}
   virtual ~HardSphereScatterWave() {}
    
@@ -241,7 +240,7 @@ struct SoftSphereScatterWave: public GenericAnalyticalSolution {
   double sphereRadius;
    
 
-  SoftSphereScatterWave(double wavenumber,double sphere_radius = 1.): 
+  SoftSphereScatterWave(double wavenumber,double sphere_radius): 
     wAvenumber(wavenumber),sphereRadius(sphere_radius) {}
   virtual ~SoftSphereScatterWave() {}
    

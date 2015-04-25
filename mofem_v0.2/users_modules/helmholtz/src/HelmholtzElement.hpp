@@ -503,7 +503,7 @@ struct HelmholtzElement {
       double x2=x*x,y2=y*y,z2=z*z;
       double R = sqrt(x2+y2+z2);
 
-      complex< double > result = 1.0 / (2.0*R);
+      complex< double > result = 1.0/(2.0*R);
 	  
       vAl.resize(2);
       vAl[0] = std::real(result);
@@ -1149,7 +1149,7 @@ struct HelmholtzElement {
 
       }
 
-      if(it->get_name().compare(0,23,"BT_CONDITION") == 0) {
+      if(it->get_name().compare(0,23,"BAYLISS_TURKEL_BC") == 0) {
 	  
 	baylissTurkelBcData[it->get_msId()].aDmittance_real = 0;
 	baylissTurkelBcData[it->get_msId()].aDmittance_imag = -wavenumber;
