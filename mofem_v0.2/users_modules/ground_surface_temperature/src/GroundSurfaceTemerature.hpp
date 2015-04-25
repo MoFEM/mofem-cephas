@@ -130,7 +130,7 @@ struct GroundSurfaceTemerature {
     }
 
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
-      if(it->get_Cubit_name().compare(0,7,"ASPHALT") == 0) {
+      if(it->get_name().compare(0,7,"ASPHALT") == 0) {
 	Range tris;
         rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
 	blockData.push_back(new Asphalt(tris));
@@ -139,7 +139,7 @@ struct GroundSurfaceTemerature {
     }
 
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
-      if(it->get_Cubit_name().compare(0,8,"CONCRETE") == 0) {
+      if(it->get_name().compare(0,8,"CONCRETE") == 0) {
 	Range tris;
         rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
 	blockData.push_back(new Concrete(tris));
@@ -148,7 +148,7 @@ struct GroundSurfaceTemerature {
     }
 
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
-      if(it->get_Cubit_name().compare(0,8,"BARESOIL") == 0) {
+      if(it->get_name().compare(0,8,"BARESOIL") == 0) {
 	Range tris;
         rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
 	blockData.push_back(new BareSoil(tris));
@@ -730,8 +730,8 @@ struct GroundSurfaceTemerature {
       boost::ptr_vector<Parameters>::iterator sit = blockData.begin();
       for(;sit!=blockData.end();sit++) {
 	// add finite element operator
-	feGroundSurfaceRhs.get_op_to_do_Rhs().push_back(new OpGetTriTemperatureAtGaussPts(field_name,commonData.temperatureAtGaussPts));
-	feGroundSurfaceRhs.get_op_to_do_Rhs().push_back(new OpRhs(field_name,time_data_ptr,&*sit,commonData,ho_geometry));
+	feGroundSurfaceRhs.getRowOpPtrVector().push_back(new OpGetTriTemperatureAtGaussPts(field_name,commonData.temperatureAtGaussPts));
+	feGroundSurfaceRhs.getRowOpPtrVector().push_back(new OpRhs(field_name,time_data_ptr,&*sit,commonData,ho_geometry));
 	preProcessShade.push_back(new SolarRadiationPreProcessor(mField,time_data_ptr,&*sit));
       }
     }
@@ -739,8 +739,8 @@ struct GroundSurfaceTemerature {
       boost::ptr_vector<Parameters>::iterator sit = blockData.begin();
       for(;sit!=blockData.end();sit++) {
 	// add finite element operator
-	feGroundSurfaceLhs.get_op_to_do_Rhs().push_back(new OpGetTriTemperatureAtGaussPts(field_name,commonData.temperatureAtGaussPts));
-	feGroundSurfaceLhs.get_op_to_do_Lhs().push_back(new OpLhs(field_name,time_data_ptr,&*sit,commonData,ho_geometry));
+	feGroundSurfaceLhs.getRowOpPtrVector().push_back(new OpGetTriTemperatureAtGaussPts(field_name,commonData.temperatureAtGaussPts));
+	feGroundSurfaceLhs.getRowColOpPtrVector().push_back(new OpLhs(field_name,time_data_ptr,&*sit,commonData,ho_geometry));
       }
     }
 

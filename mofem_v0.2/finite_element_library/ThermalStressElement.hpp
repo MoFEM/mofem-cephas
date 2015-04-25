@@ -232,8 +232,8 @@ namespace MoFEM {
         map<int,BlockData>::iterator sit = setOfBlocks.begin();
         for(;sit!=setOfBlocks.end();sit++) {
           //add finite elemen
-          feThermalStressRhs.get_op_to_do_Rhs().push_back(new OpGetTemperatureAtGaussPts(thermal_field_name,commonData,verb));
-          feThermalStressRhs.get_op_to_do_Rhs().push_back(new OpThermalStressRhs(field_name,F,sit->second,commonData,verb));
+          feThermalStressRhs.getRowOpPtrVector().push_back(new OpGetTemperatureAtGaussPts(thermal_field_name,commonData,verb));
+          feThermalStressRhs.getRowOpPtrVector().push_back(new OpThermalStressRhs(field_name,F,sit->second,commonData,verb));
         }
         
       }

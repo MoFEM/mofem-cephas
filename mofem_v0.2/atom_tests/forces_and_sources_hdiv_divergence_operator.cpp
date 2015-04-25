@@ -254,10 +254,10 @@ int main(int argc, char *argv[]) {
 
 
   MyFE tet_fe(mField);
-  tet_fe.get_op_to_do_Rhs().push_back(new OpTetDivergence(divergence_vol));
+  tet_fe.getRowOpPtrVector().push_back(new OpTetDivergence(divergence_vol));
 
   MyTriFE skin_fe(mField);
-  skin_fe.get_op_to_do_Rhs().push_back(new OpFacesFluxes(divergence_skin));
+  skin_fe.getRowOpPtrVector().push_back(new OpFacesFluxes(divergence_skin));
 
   ierr = mField.loop_finite_elements("TEST_PROBLEM","TET_FE",tet_fe);  CHKERRQ(ierr);
   ierr = mField.loop_finite_elements("TEST_PROBLEM","SKIN_FE",skin_fe);  CHKERRQ(ierr);

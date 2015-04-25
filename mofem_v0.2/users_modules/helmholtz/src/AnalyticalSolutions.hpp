@@ -41,7 +41,8 @@ enum AnalyticalSolutionTypes {
   PLANE_WAVE,
   HARD_CYLINDER_SCATTER_WAVE,
   SOFT_CYLINDER_SCATTER_WAVE,
-  INCIDENT_WAVE
+  INCIDENT_WAVE,
+  NO_ANALYTICAL_SOLUTION
 };
 
 /** Line command list of analytical solutions
@@ -53,19 +54,26 @@ const char *analytical_solution_types[] = {
   "plane_wave",
   "hard_cylinder_scatter_wave",
   "soft_cylinder_scatter_wave",
-  "incident_wave"
+  "incident_wave",
+  "no_analytical_solution"
 };
+
+// **** Analytical solutions ****
 
 /** Incident wave 
   \ingroup mofem_helmholtz_elem
 
 
-  equation from: 
+  Equation from: 
   Ihlenburg,Finite element analysis of acoustic scattering Springer Science & Business Media.
+
+  Some details can be found here:
+  <http://ansol.us/Products/Coustyx/Validation/MultiDomain/Scattering/PlaneWave/HardSphere/Downloads/dataset_description.pdf>
 
   \f[
   p_\textrm{inc} = \exp(ikd \cdot \mathbf{x})
   \f]
+
 
   */
 struct IncidentWave: public GenericAnalyticalSolution {
@@ -76,7 +84,7 @@ struct IncidentWave: public GenericAnalyticalSolution {
   ublas::vector<double> cOordinate;
   double pOwer; /* The amplitude of the incident wave */
  
-  IncidentWave(double wavenumber,ublas::vector<double> d,double power = 1.0):
+  IncidentWave(double wavenumber,ublas::vector<double> d,double power = 1):
     wAvenumber(wavenumber),dIrection(d),pOwer(power) {}
   
   ~IncidentWave() {}
@@ -133,7 +141,7 @@ struct HardSphereScatterWave: public GenericAnalyticalSolution {
   double wAvenumber;
   double sphereRadius;
    
-  HardSphereScatterWave(double wavenumber,double sphere_radius = 0.5): 
+  HardSphereScatterWave(double wavenumber,double sphere_radius): 
     wAvenumber(wavenumber),sphereRadius(sphere_radius) {}
   virtual ~HardSphereScatterWave() {}
    
@@ -232,7 +240,7 @@ struct SoftSphereScatterWave: public GenericAnalyticalSolution {
   double sphereRadius;
    
 
-  SoftSphereScatterWave(double wavenumber,double sphere_radius = 0.5): 
+  SoftSphereScatterWave(double wavenumber,double sphere_radius): 
     wAvenumber(wavenumber),sphereRadius(sphere_radius) {}
   virtual ~SoftSphereScatterWave() {}
    
@@ -357,7 +365,6 @@ struct PlaneWave: public GenericAnalyticalSolution {
   }
   
 };
-
 
 /** \brief Calculate the analytical solution of impinging wave on cylinder
   \ingroup mofem_helmholtz_elem
@@ -591,6 +598,12 @@ struct SoftCylinderScatterWave: public GenericAnalyticalSolution {
   
 };
 
+// **** Surface boundary conditions ( used to enforce BC on surface ) ****
+
+// ** Dirichlet BC ** 
+
+// **** Function to solve best approximation problem ****
+
 template <typename FUNEVAL>
 PetscErrorCode solve_problem(FieldInterface& m_field,
   const string& problem_name,const string& fe_name,
@@ -674,5 +687,11 @@ PetscErrorCode solve_problem(FieldInterface& m_field,
 
   PetscFunctionReturn(0);
 }
+
+
+
+
+
+
 
 

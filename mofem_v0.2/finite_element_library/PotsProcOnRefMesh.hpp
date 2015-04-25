@@ -512,25 +512,25 @@ struct PostPocOnRefinedMesh: public VolumeElementForcesAndSourcesCore {
 
   PetscErrorCode addHdivFunctionsPostProc(const string field_name) {
     PetscFunctionBegin;
-    get_op_to_do_Rhs().push_back(new OpHdivFunctions(postProcMesh,mapGaussPts,field_name));
+    getRowOpPtrVector().push_back(new OpHdivFunctions(postProcMesh,mapGaussPts,field_name));
     PetscFunctionReturn(0);
   }
 
   PetscErrorCode addFieldValuesPostProc(const string field_name) {
     PetscFunctionBegin;
-    get_op_to_do_Rhs().push_back(new OpGetFieldValues(postProcMesh,mapGaussPts,field_name,commonData));
+    getRowOpPtrVector().push_back(new OpGetFieldValues(postProcMesh,mapGaussPts,field_name,commonData));
     PetscFunctionReturn(0);
   }
 
   PetscErrorCode addFieldValuesGradientPostProc(const string field_name) {
     PetscFunctionBegin;
-    get_op_to_do_Rhs().push_back(new OpGetFieldGradientValues(postProcMesh,mapGaussPts,field_name,commonData));
+    getRowOpPtrVector().push_back(new OpGetFieldGradientValues(postProcMesh,mapGaussPts,field_name,commonData));
     PetscFunctionReturn(0);
   }
 
   PetscErrorCode clearOperators() {
     PetscFunctionBegin;
-    get_op_to_do_Rhs().clear();
+    getRowOpPtrVector().clear();
     PetscFunctionReturn(0);
   }
 

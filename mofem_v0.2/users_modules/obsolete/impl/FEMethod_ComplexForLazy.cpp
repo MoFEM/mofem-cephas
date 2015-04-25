@@ -120,7 +120,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetMatParameters(double *_lambda,double 
           *_lambda = LAMBDA(mydata.data.Young,mydata.data.Poisson);
           *_mu = MU(mydata.data.Young,mydata.data.Poisson);
           int material_type = (int)mydata.data.User1;
-          if(it->get_Cubit_name().compare(0,29,"MAT_ELASTIC_EberleinHolzapfel") == 0) {
+          if(it->get_name().compare(0,29,"MAT_ELASTIC_EberleinHolzapfel") == 0) {
             Mat_Elastic_EberleinHolzapfel1 mydata;
             ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
             set_PhysicalEquationNumber(eberleinholzapfel1);

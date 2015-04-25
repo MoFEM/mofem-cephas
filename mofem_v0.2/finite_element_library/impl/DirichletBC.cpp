@@ -72,7 +72,7 @@ PetscErrorCode DisplacementBCFEMethodPreAndPostProc::iNitalize() {
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET|DISPLACEMENTSET,it)) {
 	DisplacementCubitBcData mydata;
-	ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
+	ierr = it->get_bc_data_structure(mydata); CHKERRQ(ierr);
 	for(int dim = 0;dim<3;dim++) {
 	  Range ents;
 	  ierr = it->get_cubit_msId_entities_by_dimension(mField.get_moab(),dim,ents,true); CHKERRQ(ierr);
@@ -236,7 +236,7 @@ PetscErrorCode SpatialPositionsBCFEMethodPreAndPostProc::iNitalize() {
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET|DISPLACEMENTSET,it)) {
 	DisplacementCubitBcData mydata;
-	ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
+	ierr = it->get_bc_data_structure(mydata); CHKERRQ(ierr);
 	for(int dim = 0;dim<3;dim++) {
 	  Range ents;
 	  ierr = it->get_cubit_msId_entities_by_dimension(mField.get_moab(),dim,ents,true); CHKERRQ(ierr);
@@ -304,7 +304,7 @@ PetscErrorCode TemperatureBCFEMethodPreAndPostProc::iNitalize() {
 
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET|TEMPERATURESET,it)) {
       TemperatureCubitBcData mydata;
-      ierr = it->get_cubit_bc_data_structure(mydata); CHKERRQ(ierr);
+      ierr = it->get_bc_data_structure(mydata); CHKERRQ(ierr);
       for(int dim = 0;dim<3;dim++) {
         Range ents;
         ierr = it->get_cubit_msId_entities_by_dimension(mField.get_moab(),dim,ents,true); CHKERRQ(ierr);
@@ -436,9 +436,9 @@ PetscErrorCode DirichletBCFromBlockSetFEMethodPreAndPostProc::iNitalize() {
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
     
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
-      if(it->get_Cubit_name().compare(0,blocksetName.length(),blocksetName) == 0) {
+      if(it->get_name().compare(0,blocksetName.length(),blocksetName) == 0) {
         vector<double> mydata;
-        ierr = it->get_Cubit_attributes(mydata); CHKERRQ(ierr);
+        ierr = it->get_attributes(mydata); CHKERRQ(ierr);
         for(int dim = 0;dim<3;dim++) {
           Range ents;
           ierr = it->get_cubit_msId_entities_by_dimension(mField.get_moab(),dim,ents,true); CHKERRQ(ierr);

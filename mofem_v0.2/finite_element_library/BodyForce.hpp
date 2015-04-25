@@ -123,7 +123,7 @@ struct BodyFroceConstantField {
     EntityHandle meshset = cubit_meshset_ptr->get_meshset();
     Range tets;
     rval = mField.get_moab().get_entities_by_type(meshset,MBTET,tets,true); CHKERR_PETSC(rval);
-    fe.get_op_to_do_Rhs().push_back(new OpBodyForce(field_name,F,mapData[ms_id],tets));
+    fe.getRowOpPtrVector().push_back(new OpBodyForce(field_name,F,mapData[ms_id],tets));
     PetscFunctionReturn(0);
   } 
 

@@ -376,13 +376,13 @@ struct AnalyticalDirihletBC {
     boost::shared_ptr<FUNEVAL> funtcion_evaluator,int field_number = 0,
     string nodals_positions = "MESH_NODE_POSITIONS") {
     PetscFunctionBegin;
-    if(approxField.getLoopFeApprox().get_op_to_do_Rhs().empty()) {
+    if(approxField.getLoopFeApprox().getRowOpPtrVector().empty()) {
       if(m_field.check_field(nodals_positions)) {
-	approxField.getLoopFeApprox().get_op_to_do_Rhs().push_back(new ApproxField::OpHoCoord(nodals_positions,approxField.hoCoords));
+	approxField.getLoopFeApprox().getRowOpPtrVector().push_back(new ApproxField::OpHoCoord(nodals_positions,approxField.hoCoords));
       }
-      approxField.getLoopFeApprox().get_op_to_do_Lhs().push_back(new ApproxField::OpLhs(field_name,approxField.hoCoords));
+      approxField.getLoopFeApprox().getRowColOpPtrVector().push_back(new ApproxField::OpLhs(field_name,approxField.hoCoords));
     }
-    approxField.getLoopFeApprox().get_op_to_do_Rhs().push_back(new ApproxField::OpRhs<FUNEVAL>(field_name,tris,approxField.hoCoords,funtcion_evaluator,field_number));
+    approxField.getLoopFeApprox().getRowOpPtrVector().push_back(new ApproxField::OpRhs<FUNEVAL>(field_name,tris,approxField.hoCoords,funtcion_evaluator,field_number));
     PetscFunctionReturn(0);
   }
 

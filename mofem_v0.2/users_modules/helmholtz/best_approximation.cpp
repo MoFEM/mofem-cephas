@@ -192,13 +192,6 @@ int main(int argc, char *argv[]) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"wave number not given, set in line command -wave_number to fix problem");
 
   }
-  
-
-  double angle = 0.25;
-  // set wave number from line command, that overwrite numbre form block set
-  ierr = PetscOptionsGetScalar(NULL,"-wave_guide_angle",&angle,NULL); CHKERRQ(ierr);
-
-  
 
   double power_of_incident_wave = 1;
   ierr = PetscOptionsGetScalar(NULL,"-power_of_incident_wave",&power_of_incident_wave,NULL); CHKERRQ(ierr);
@@ -221,14 +214,16 @@ int main(int argc, char *argv[]) {
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -analytical_solution_type needed, WARNING!!!!!!.");
   }
-  double scattering_sphere_radius = 0.5;
-  ierr = PetscOptionsGetScalar(NULL,"-scattering_sphere_radius",&scattering_sphere_radius,NULL); CHKERRQ(ierr);
     
   switch((AnalyticalSolutionTypes)choise_value) {
     
     case HARD_SPHERE_SCATTER_WAVE:
     
       {
+
+	double scattering_sphere_radius = 1;;
+	ierr = PetscOptionsGetScalar(NULL,"-scattering_sphere_radius",&scattering_sphere_radius,NULL); CHKERRQ(ierr);
+
 	HardSphereScatterWave function_evaluator(wavenumber,scattering_sphere_radius);
 	ierr = solve_problem(m_field,"EX1_PROBLEM","FE1","reEX","imEX",INSERT_VALUES,function_evaluator,is_partitioned); CHKERRQ(ierr);
       }
@@ -239,6 +234,9 @@ int main(int argc, char *argv[]) {
     case SOFT_SPHERE_SCATTER_WAVE:
 
       {
+	double scattering_sphere_radius = 1;;
+	ierr = PetscOptionsGetScalar(NULL,"-scattering_sphere_radius",&scattering_sphere_radius,NULL); CHKERRQ(ierr);
+
         SoftSphereScatterWave function_evaluator(wavenumber,scattering_sphere_radius);
         ierr = solve_problem(m_field,"EX1_PROBLEM","FE1","reEX","imEX",INSERT_VALUES,function_evaluator,is_partitioned); CHKERRQ(ierr);
       }
@@ -248,6 +246,11 @@ int main(int argc, char *argv[]) {
     case PLANE_WAVE:
 
       {
+
+	double angle = 0.25;
+	// set wave number from line command, that overwrite numbre form block set
+	ierr = PetscOptionsGetScalar(NULL,"-wave_guide_angle",&angle,NULL); CHKERRQ(ierr);
+ 
         PlaneWave function_evaluator(wavenumber,angle*M_PI);
         ierr = solve_problem(m_field,"EX1_PROBLEM","FE1","reEX","imEX",INSERT_VALUES,function_evaluator,is_partitioned); CHKERRQ(ierr);
       }
@@ -291,27 +294,7 @@ int main(int argc, char *argv[]) {
   ierr = PetscOptionsGetBool(NULL,"-add_incident_wave",&add_incident_wave,NULL); CHKERRQ(ierr);
   if(add_incident_wave) {
 
-	//// define problem
-    //ierr = m_field.add_problem("INCIDENT_WAVE"); CHKERRQ(ierr);
-    //// set finite elements for problem
-    //ierr = m_field.modify_problem_add_finite_element("INCIDENT_WAVE","FE1"); CHKERRQ(ierr);
-    //// set refinment level for problem
-    //ierr = m_field.modify_problem_ref_level_add_bit("INCIDENT_WAVE",bit_level0); CHKERRQ(ierr);
-	
-    //// build porblems
-    //if(is_partitioned) {
-    //  // if mesh is partitioned
-    //  ierr = m_field.build_partitioned_problem("INCIDENT_WAVE",true); CHKERRQ(ierr);
-    //  ierr = m_field.partition_finite_elements("INCIDENT_WAVE",true); CHKERRQ(ierr);
-    //} else {
-    //  // if not partitioned mesh is load to all processes 
-    //  ierr = m_field.build_problem("INCIDENT_WAVE"); CHKERRQ(ierr);
-    //  ierr = m_field.partition_problem("INCIDENT_WAVE"); CHKERRQ(ierr);
-    //  ierr = m_field.partition_finite_elements("INCIDENT_WAVE"); CHKERRQ(ierr);
-    //}
-    //ierr = m_field.partition_ghost_dofs("INCIDENT_WAVE"); CHKERRQ(ierr);
-	
-    IncidentWave function_evaluator(wavenumber,wave_direction,1);
+    IncidentWave function_evaluator(wavenumber,wave_direction);
     ierr = solve_problem(m_field,"EX1_PROBLEM","FE1","reEX","imEX",ADD_VALUES,function_evaluator,is_partitioned); CHKERRQ(ierr);
 
   }
@@ -357,3 +340,7 @@ int main(int argc, char *argv[]) {
 }
 
  
+
+
+
+

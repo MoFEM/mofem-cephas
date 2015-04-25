@@ -77,8 +77,9 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode check_number_of_ents_in_ents_finite_element() = 0;
 
   /** 
-    * \ingroup mofem_bc 
     * \brief check for CUBIT Id and CUBIT type
+    * \ingroup mofem_bc 
+
 
     \bug All cubit interface functions should be outsurced to dedicated inerface    
 
@@ -88,8 +89,9 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual bool check_msId_meshset(const int msId,const CubitBCType cubit_bc_type) = 0;
 
   /**
-    * \ingroup mofem_bc 
     * \brief add cubit meshset
+    * \ingroup mofem_bc 
+
     *
     * \param  see CubitBC (NODESET, SIDESET or BLOCKSET and more) 
     * \param msId id of the BLOCKSET/SIDESET/BLOCKSET: from CUBIT
@@ -106,8 +108,9 @@ struct FieldInterface: public FieldUnknownInterface {
   }
 
   /**
-    * \ingroup mopfem_bc
     * \brief delete cubit meshset
+    * \ingroup mopfem_bc
+
     *
     * \param  see CubitBC (NODESET, SIDESET or BLOCKSET and more) 
     * \param msId id of the BLOCKSET/SIDESET/BLOCKSET: from CUBIT
@@ -124,8 +127,9 @@ struct FieldInterface: public FieldUnknownInterface {
   }
 
   /** 
-    * \ingroup mofem_bc
     * \brief get cubit meshset
+    * \ingroup mofem_bc
+
     */
   virtual PetscErrorCode get_cubit_msId(const int msId,const CubitBCType cubit_bc_type,const CubitMeshSets **cubit_meshset_ptr) = 0;
 
@@ -138,14 +142,15 @@ struct FieldInterface: public FieldUnknownInterface {
   }
 
   /** 
+    * \brief get entities from CUBIT/meshset of a particular entity dimension 
     * \ingroup mofem_bc
-    * \brief get entities from CUBIT/meshset of a particular entity dimension \n
-	  * Nodeset can contain nodes, edges, triangles and tets. This applies to other  meshsets too. \n
-	  * The nodeset's meshset contain the nodes in the MIDDLE of the surface or volume which is done by default in Cubit,\n
-		* Hence if all nodes on a particular nodeset are required,\n
-	  * one should get all triangles or tetrahedrons for which the nodeset was create in Cubit,\n
-	  * and get all the connectivities of tris/tets.
-		*
+
+    * Nodeset can contain nodes, edges, triangles and tets. This applies to other  meshsets too.
+    * The nodeset's meshset contain the nodes in the MIDDLE of the surface or volume which is done by default in Cubit,
+    * Hence if all nodes on a particular nodeset are required,
+    * one should get all triangles or tetrahedrons for which the nodeset was create in Cubit,
+    * and get all the connectivities of tris/tets.
+
     * \param msId id of the BLOCKSET/SIDESET/BLOCKSET: from CUBIT
     * \param  see CubitBC (NODESET, SIDESET or BLOCKSET and more) 
     * \param dimensions (0 - Nodes, 1 - Edges, 2 - Faces, 3 - Volume(tetrahedral))
@@ -163,11 +168,12 @@ struct FieldInterface: public FieldUnknownInterface {
   }
 
   /** 
+    * \brief get entities related to CUBIT/meshset,
     * \ingroup mofem_bc 
-    * \brief get entities related to CUBIT/meshset, \n
-	  * NODESET will get Vertices only, even if the NODESET contains edges, tris and tets\n
+
+    * NODESET will get Vertices only, even if the NODESET contains edges, tris and tets
     * SIDESET will get Tris, BLOCKSET will get Tets, DISPLACEMENTSET and FORCESET are stored in NODESET, PRESSURESET is stored in Sideset.
-	  *
+
     * \param msId id of the BLOCKSET/SIDESET/BLOCKSET: from CUBIT
     * \param  see CubitBC (NODESET, SIDESET or BLOCKSET and more) 
     * \param Range containing the retreived entities related to the 
@@ -238,22 +244,24 @@ struct FieldInterface: public FieldUnknownInterface {
     * }
     *
     */
-  virtual CubitMeshSet_multiIndex::iterator get_cubit_mesh_sets_end() = 0;
+  virtual CubitMeshSet_multiIndex::iterator get_cubit_meshsets_end() = 0;
     
     /**
-     * \ingroup mofem_bc 
-     * \ingroup mofem_access
      * \brief Iterator that loops over all the Cubit MeshSets in a moFEM field
+     * \ingroup mofem_access
+     * \ingroup mofem_bc 
+
      *
      * \param mField moFEM Field
      * \param iterator 
      */
   #define _IT_CUBITMESHSETS_FOR_LOOP_(MFIELD,IT) \
-    CubitMeshSet_multiIndex::iterator IT = MFIELD.get_cubit_meshsets_begin(); IT!=MFIELD.get_cubit_mesh_sets_end(); IT++
+    CubitMeshSet_multiIndex::iterator IT = MFIELD.get_cubit_meshsets_begin(); IT!=MFIELD.get_cubit_meshsets_end(); IT++
 
   /**
-    * \ingroup mofem_bc 
     * \brief get begin iterator of cubit mehset of given type (instead you can use _IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT)
+    * \ingroup mofem_bc 
+
     *
     * for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET|DISPLACEMENTSET,it) {
     * 	...
@@ -264,8 +272,9 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual CubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator get_cubit_meshsets_begin(const unsigned int ) = 0;
 
   /** 
-    * \ingroup mofem_bc 
     * \brief get end iterator of cubit mehset of given type (instead you can use _IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT)
+    * \ingroup mofem_bc 
+
     *
     * for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET,it) {
     * 	...
@@ -273,12 +282,13 @@ struct FieldInterface: public FieldUnknownInterface {
     *
     * \param  type of meshset (NODESET, SIDESET or BLOCKSET and more)
     */
-  virtual CubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator get_cubit_mesh_sets_end(const unsigned int ) = 0;
+  virtual CubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator get_cubit_meshsets_end(const unsigned int ) = 0;
     
     /**
-      * \ingroup mofem_bc 
-      * \ingroup mofem_access
       * \brief Iterator that loops over a specific Cubit MeshSet in a moFEM field
+      * \ingroup mofem_access
+      * \ingroup mofem_bc 
+
       *
       * \param mField moFEM Field
       * \param  see CubitBC (NODESET, SIDESET or BLOCKSET and more) 
@@ -286,11 +296,12 @@ struct FieldInterface: public FieldUnknownInterface {
       */
   #define _IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT) \
     CubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator IT = MFIELD.get_cubit_meshsets_begin(CUBITBCTYPE); \
-    IT!=MFIELD.get_cubit_mesh_sets_end(CUBITBCTYPE); IT++
+    IT!=MFIELD.get_cubit_meshsets_end(CUBITBCTYPE); IT++
 
   /** 
-    * \ingroup mofem_bc 
     * \brief get begin iterator of cubit mehset of given type (instead you can use _IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT)
+    * \ingroup mofem_bc 
+
     *
     * for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,NODESET|DISPLACEMENTSET,it) {
     * 	...
@@ -301,8 +312,9 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual CubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type::iterator get_CubitMeshSets_bySetType_begin(const unsigned int ) = 0;
 
   /** 
-    * \ingroup mofem_bc 
     * \brief get end iterator of cubit mehset of given type (instead you can use _IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT)
+    * \ingroup mofem_bc 
+
     *
     * for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,NODESET|DISPLACEMENTSET,it) {
     * 	...
@@ -313,9 +325,10 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual CubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type::iterator get_CubitMeshSets_bySetType_end(const unsigned int ) = 0;
     
   /**
-   * \ingroup mofem_bc 
-   * \ingroup mofem_access
    * \brief Iterator that loops over a specific Cubit MeshSet having a particular BC meshset in a moFEM field
+   * \ingroup mofem_access
+   * \ingroup mofem_bc 
+
    *
    * \param mField moFEM Field
    * \param  see CubitBC (NODESET, SIDESET or BLOCKSET and more) 
@@ -335,10 +348,11 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual CubitMeshSet_multiIndex::index<CubitMeshSets_name>::type::iterator get_CubitMeshSets_byName_end(const string& name) = 0;
 
   /**
-    * \ingroup mofem_bc 
-    * \ingroup mofem_access
     * \brief Iterator that loops over Cubit BlockSet having a particular name
-    *
+    * \ingroup mofem_access
+    * \ingroup mofem_bc 
+
+
     * \param MFIELD mField
     * \param NAME name
     * \param IT iterator 

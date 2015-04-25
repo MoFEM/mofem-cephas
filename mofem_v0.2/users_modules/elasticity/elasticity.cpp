@@ -409,7 +409,7 @@ int main(int argc, char *argv[]) {
   ierr = post_proc.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
   ierr = post_proc.addFieldValuesGradientPostProc("DISPLACEMENT"); CHKERRQ(ierr);
   //add postpocessing for sresses
-  post_proc.get_op_to_do_Rhs().push_back(
+  post_proc.getRowOpPtrVector().push_back(
 	  new PostPorcStress(
 	    m_field,
 	    post_proc.postProcMesh,
