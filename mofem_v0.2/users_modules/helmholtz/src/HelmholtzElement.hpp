@@ -77,6 +77,59 @@ struct HelmholtzElement {
   map<int,SurfaceData> sommerfeldBcData;
   map<int,SurfaceData> baylissTurkelBcData;
 
+  struct GlobalParameters {
+    pair<double,PetscBool> wAveNumber;
+    pair<double,PetscBool> surfaceAdmittance;
+    pair<double,PetscBool> powerOfIncidentWave;
+    pair<ublas::vector<double>,PetscBool> waveDirection;
+  };
+  GlobalParameters globalParameters;
+
+  PetscErrorCode getGlobalParametersFromLineCommandOptions() {
+    PetscErrorCode ierr;
+
+    PetscFunctionBegin;
+    ierr = PetscOptionsBegin(mField.get_comm(),NULL,"Helmholtz problem options","none"); CHKERRQ(ierr);
+
+    globalParameters.wAveNumber.first = 1;
+    ierr = PetscOptionsReal("-wave_number","wave number","",
+      globalParameters.wAveNumber.first,
+      &globalParameters.wAveNumber.first,&globalParameters.wAveNumber.second); CHKERRQ(ierr);
+    if(!globalParameters.wAveNumber.second) {
+
+      SETERRQ(PETSC_COMM_SELF,1,"wave number not given, set in line command -wave_number to fix problem");
+
+    }
+
+    globalParameters.surfaceAdmittance.first = 0;
+    ierr = PetscOptionsReal("-surface_admittance","surface admitance applied to all surface elements on MIX_INCIDENT_WAVE_BC","",
+      globalParameters.surfaceAdmittance.first,
+      &globalParameters.surfaceAdmittance.first,&globalParameters.surfaceAdmittance.second); CHKERRQ(ierr);
+
+    globalParameters.powerOfIncidentWave.first = 0;
+    ierr = PetscOptionsReal("-power_of_incident_wave",
+      "power of incident wave applied to all surface elements on MIX_INCIDENT_WAVE_BC and HARD_INCIDENT_WAVE_BC","",
+      globalParameters.powerOfIncidentWave.first,
+      &globalParameters.powerOfIncidentWave.first,&globalParameters.powerOfIncidentWave.second); CHKERRQ(ierr);
+
+    globalParameters.waveDirection.first.resize(3);
+    globalParameters.waveDirection.first.clear();
+    globalParameters.waveDirection.first[2] = 1;
+    int nmax = 3;
+    ierr = PetscOptionsRealArray("-wave_direction","direction of incident wave","", 
+      &globalParameters.waveDirection.first[0],&nmax,&globalParameters.waveDirection.second); CHKERRQ(ierr);
+    if(globalParameters.waveDirection.second) {
+      if(nmax > 0 && nmax != 3) {
+
+	SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"*** ERROR -wave_direction [3*1 vector] default:X direction [0,0,1]");
+
+      }
+    }
+
+    ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
   /** \brief Common data used by volume and surface elements
   * \ingroup mofem_helmholtz_elem
   */
