@@ -408,7 +408,7 @@ struct HelmholtzElement {
 
 	  /// Integrate diffN^T grad_p - k^2 N^T p dV
           ublas::noalias(Nf) += val*prod(data.getDiffN(gg,nb_row_dofs),gard_p_at_gauss_pt);
-	  ublas::noalias(Nf) -= val*k_pow2*data.getN(gg)*pressure[gg];
+	  ublas::noalias(Nf) -= val*k_pow2*data.getN(gg,nb_row_dofs)*pressure[gg];
 
         }
   
@@ -753,8 +753,8 @@ struct HelmholtzElement {
 
 	  ierr = calculateResidualRe(gg,f1,f2); CHKERRQ(ierr);
   
-	  noalias(reNf) += val*(reResidual*data.getN(gg));
-	  noalias(imNf) += val*(imResidual*data.getN(gg));
+	  noalias(reNf) += val*(reResidual*data.getN(gg,nb_row_dofs));
+	  noalias(imNf) += val*(imResidual*data.getN(gg,nb_row_dofs));
 
         }
   
