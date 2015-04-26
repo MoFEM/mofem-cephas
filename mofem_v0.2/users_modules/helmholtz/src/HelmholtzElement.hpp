@@ -1135,21 +1135,11 @@ struct HelmholtzElement {
 
     }
 
-    PetscBool wavenumber_flg;
-    double wavenumber;
-    // set wave number from line command, that overwrite numbre form block set
-    ierr = PetscOptionsGetScalar(NULL,"-wave_number",&wavenumber,&wavenumber_flg); CHKERRQ(ierr);
-    if(!wavenumber_flg) {
-
-      SETERRQ(PETSC_COMM_SELF,1,"wave number not given, set in line command -wave_number to fix problem");
-
-    }
-   
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
         
       if(it->get_name().compare(0,13,"MAT_HELMHOLTZ") == 0) {
 
-	volumeData[it->get_msId()].wAvenumber = wavenumber;
+	volumeData[it->get_msId()].wAvenumber = globalParameters.wAveNumber.first;
 	rval = mField.get_moab().get_entities_by_type(it->meshset,MBTET,volumeData[it->get_msId()].tEts,true); CHKERR_PETSC(rval);
 	ierr = mField.add_ents_to_finite_element_by_TETs(volumeData[it->get_msId()].tEts,"HELMHOLTZ_RERE_FE"); CHKERRQ(ierr);
 	ierr = mField.add_ents_to_finite_element_by_TETs(volumeData[it->get_msId()].tEts,"HELMHOLTZ_IMIM_FE"); CHKERRQ(ierr);
@@ -1181,11 +1171,11 @@ struct HelmholtzElement {
 
 	surfaceIncidentWaveBcData[it->get_msId()].aDmittance_real = 0;
 	surfaceIncidentWaveBcData[it->get_msId()].aDmittance_imag = attributes[0];
+	if(globalParameters.surfaceAdmittance.second) {
 
-	PetscErrorCode ierr;
-	ierr = PetscOptionsGetScalar(NULL,"-surface_admittance",
-	  &surfaceIncidentWaveBcData[it->get_msId()].aDmittance_imag,NULL); CHKERRQ(ierr);
+	  surfaceIncidentWaveBcData[it->get_msId()].aDmittance_imag = globalParameters.surfaceAdmittance.first;
 
+	}
 
 	rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,surfaceIncidentWaveBcData[it->get_msId()].tRis,true); CHKERR_PETSC(rval);
 	ierr = mField.add_ents_to_finite_element_by_TRIs(surfaceIncidentWaveBcData[it->get_msId()].tRis,"HELMHOLTZ_REIM_FE"); CHKERRQ(ierr);
@@ -1195,7 +1185,7 @@ struct HelmholtzElement {
       if(it->get_name().compare(0,13,"SOMMERFELD_BC") == 0) {
 
 	sommerfeldBcData[it->get_msId()].aDmittance_real = 0;
-	sommerfeldBcData[it->get_msId()].aDmittance_imag = -wavenumber;
+	sommerfeldBcData[it->get_msId()].aDmittance_imag = -globalParameters.wAveNumber.first;
 
 	rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,sommerfeldBcData[it->get_msId()].tRis,true); CHKERR_PETSC(rval);
 	ierr = mField.add_ents_to_finite_element_by_TRIs(sommerfeldBcData[it->get_msId()].tRis,"HELMHOLTZ_REIM_FE"); CHKERRQ(ierr);
@@ -1205,7 +1195,7 @@ struct HelmholtzElement {
       if(it->get_name().compare(0,17,"BAYLISS_TURKEL_BC") == 0) {
 	  
 	baylissTurkelBcData[it->get_msId()].aDmittance_real = 0;
-	baylissTurkelBcData[it->get_msId()].aDmittance_imag = -wavenumber;
+	baylissTurkelBcData[it->get_msId()].aDmittance_imag = -globalParameters.wAveNumber.first;
 		  
 		  
 	rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,baylissTurkelBcData[it->get_msId()].tRis,true); CHKERR_PETSC(rval);
@@ -1285,37 +1275,11 @@ struct HelmholtzElement {
     map<int,SurfaceData>::iterator miit = surfaceIncidentWaveBcData.begin();
     for(;miit!=surfaceIncidentWaveBcData.end();miit++) {
 
-      PetscErrorCode ierr;
-
-      PetscBool wavenumber_flg;
-      double wavenumber;
-
-      // Set wave number from line command, that overwrite numbre form block seta
-      ierr = PetscOptionsGetScalar(NULL,"-wave_number",&wavenumber,&wavenumber_flg); CHKERRQ(ierr);
-      if(!wavenumber_flg) {
-
-	SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"wave number not given, set in line command -wave_number to fix problem");
-
-      }
-
-      double power_of_incident_wave = 1;
-      ierr = PetscOptionsGetScalar(NULL,"-power_of_incident_wave",&power_of_incident_wave,NULL); CHKERRQ(ierr);
-
-      ublas::vector<double> wave_direction;
-      wave_direction.resize(3);
-      wave_direction.clear();
-      wave_direction[2] = 1; // default:X direction [0,0,1]
-
-      int nmax = 3;
-      ierr = PetscOptionsGetRealArray(PETSC_NULL,"-wave_direction",&wave_direction[0],&nmax,NULL); CHKERRQ(ierr);
-      if(nmax > 0 && nmax != 3) {
-
-	SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"*** ERROR -wave_direction [3*1 vector] default:X direction [0,0,1]");
-
-      }
-
       boost::shared_ptr<IncidentWaveNeumannF2> incident_wave_neumann_bc = 
-	  boost::shared_ptr<IncidentWaveNeumannF2>(new IncidentWaveNeumannF2(wavenumber,wave_direction,power_of_incident_wave));
+	  boost::shared_ptr<IncidentWaveNeumannF2>(new IncidentWaveNeumannF2(
+	  globalParameters.wAveNumber.first,
+	  globalParameters.waveDirection.first,
+	  globalParameters.powerOfIncidentWave.first));
     
       if(miit->second.aDmittance_imag!=0) {
 	feRhs.at("HELMHOLTZ_REIM_FE").getRowColOpPtrVector().push_back(
