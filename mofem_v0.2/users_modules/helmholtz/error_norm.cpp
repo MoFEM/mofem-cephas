@@ -320,16 +320,16 @@ int main(int argc, char *argv[]) {
 	
 	//out stream the global error
 	if(usel2 && !userela) {
-      std::cout << "\n The Global least square of l2 Norm of error in real field is : --\n" << nrm2_T << std::endl;
-      std::cout << "\n The Global least square of l2 Norm of error in imag field is : --\n" << nrm2_D << std::endl;
+      //std::cout << "\n The Global least square of l2 Norm of error in real field is : --\n" << nrm2_T << std::endl;
+      //std::cout << "\n The Global least square of l2 Norm of error in imag field is : --\n" << nrm2_D << std::endl;
       //cout << "\n 1 : \n" << sqrt(nrm2_T*nrm2_T + nrm2_D*nrm2_D)/sqrt(nrm2_M*nrm2_M + nrm2_P*nrm2_P) << endl;
       std::cout << "\n The Global L2 relative error of real field is : --\n" << nrm2_T/nrm2_M  << std::endl;
       std::cout << "\n The Global L2 relative error of imag field is  : --\n" << nrm2_D/nrm2_P << std::endl;
       cout << "\n Global error  of total potential in l2 norm  \n" << sqrt((nrm2_T/nrm2_M)*(nrm2_T/nrm2_M) + (nrm2_D/nrm2_P)*(nrm2_D/nrm2_P)) << endl;
 	}
 	else if(!usel2 && !userela) {
-      std::cout << "\n The Global least square of H1 Norm of error real field is  : --\n" << nrm2_T << std::endl;
-      std::cout << "\n The Global least square of H1 Norm of error in imag field is : --\n" << nrm2_D << std::endl;
+      //std::cout << "\n The Global least square of H1 Norm of error real field is  : --\n" << nrm2_T << std::endl;
+      //std::cout << "\n The Global least square of H1 Norm of error in imag field is : --\n" << nrm2_D << std::endl;
       std::cout << "\n The Global H1 relative error of real field is : --\n" << nrm2_T/nrm2_M  << std::endl;
       std::cout << "\n The Global H1 relative error of imag field is  : --\n" << nrm2_D/nrm2_P << std::endl;
       cout << "\n Global error  of total potential in l2 norm  \n" << sqrt((nrm2_T/nrm2_M)*(nrm2_T/nrm2_M) + (nrm2_D/nrm2_P)*(nrm2_D/nrm2_P)) << endl;

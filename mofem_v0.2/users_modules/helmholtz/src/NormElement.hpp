@@ -323,10 +323,10 @@ struct NormElement {
 						
 					} else if(useRela) { //case relative error
 						
-                        double uAnaly_max = norm_inf(u_analy);
-						double sq_uanaly = uAnaly_max * uAnaly_max;
+                        //double uAnaly_max = norm_inf(u_analy);
+						//double sq_uanaly = uAnaly_max * uAnaly_max;
 				
-						ublas::noalias(rElative_error) += val*(pow(eRror,2.0)/sq_uanaly)*data.getN(gg,nb_row);
+						//ublas::noalias(rElative_error) += val*(pow(eRror,2.0)/sq_uanaly)*data.getN(gg,nb_row);
 
 					}
 
@@ -394,9 +394,9 @@ PetscErrorCode addNormElements(
 	//Range tEts;
 	for(_IT_CUBITMESHSETS_BY_NAME_FOR_LOOP_(m_field,"MAT_NORM",it)) {
 		//rval = m_Field.get_moab().get_entities_by_type(it->get_meshset(),MBTET,tEts,true); CHKERR_PETSC(rval);
-		rval = m_field.get_moab().get_entities_by_type(it->get_meshset(),MBTET,volumeData[it->get_msId()].tEts,true); CHKERR_PETSC(rval);
+      rval = m_field.get_moab().get_entities_by_type(it->get_meshset(),MBTET,volumeData[it->get_msId()].tEts,true); CHKERR_PETSC(rval);
 
-		ierr = m_field.add_ents_to_finite_element_by_TETs(volumeData[it->get_msId()].tEts,fe); CHKERRQ(ierr);
+      ierr = m_field.add_ents_to_finite_element_by_TETs(volumeData[it->get_msId()].tEts,fe); CHKERRQ(ierr);
 	}
 	
     
