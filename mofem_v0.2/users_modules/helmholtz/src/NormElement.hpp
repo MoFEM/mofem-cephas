@@ -4,6 +4,11 @@
  *
  * Implementation of L^2 and H_1 Norm element for error analysis
  *
+ * \bug works only for scalar field, in order to implement for vector field, look at field approximation.hpp and helmholtzElement.hpp
+ */
+
+/*
+  This work is part of PhD thesis by on Micro-fluids: Thomas Felix Xuan Meng
  */
 
 /* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
@@ -57,7 +62,7 @@ struct NormElement {
   int addToRank; ///< default value 1, i.e. assumes that geometry is approx. by quadratic functions.
   
   NormElement(
-     FieldInterface &mField,add_to_rank = 1;):
+     FieldInterface &mField,int add_to_rank = 1):
      feRhs(mField,add_to_rank),feLhs(mField,add_to_rank),m_field(mField),addToRank(add_to_rank) {}
 	
   //Field data
@@ -287,6 +292,7 @@ struct NormElement {
 				double sqError;
 				
 				for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
+                  
 					//Integrate over volume
 					double val = getVolume()*getGaussPts()(3,gg);//this->getGaussPts()(3,gg); 
 					if(this->getHoGaussPtsDetJac().size()>0) {
@@ -298,16 +304,12 @@ struct NormElement {
 					const ublas::matrix_row<ublas::matrix<double> > u_numer_grad(uNumerGrad,gg);
 
 					if(useL2) { //case L2 norm
-						//double aa = abs(u_analy(gg));
-						//double bb = abs(u_numer(gg));
-						//eRror = aa - bb;
+                      
 						eRror = u_analy[gg] - u_numer[gg];
 						sqError = pow(eRror,2.0);
+                        
 					} else if(!useL2) { //case H1 norm
 					
-						//double aa = uAnaly(gg);
-						//double bb = uNumer(gg);
-						//eRror = aa - bb;
 						eRror = u_analy[gg] - u_numer[gg];
 						double sqGradError = ublas::inner_prod((u_analy_grad-u_numer_grad),(u_analy_grad-u_numer_grad));
 					
@@ -321,7 +323,8 @@ struct NormElement {
 						
 					} else if(useRela) { //case relative error
 						
-						double sq_uanaly = pow(norm_inf(u_analy),2.0);
+                        double uAnaly_max = norm_inf(u_analy);
+						double sq_uanaly = uAnaly_max * uAnaly_max;
 				
 						ublas::noalias(rElative_error) += val*(pow(eRror,2.0)/sq_uanaly)*data.getN(gg,nb_row);
 
@@ -408,9 +411,9 @@ PetscErrorCode setNormFiniteElementRhsOperator(string norm_field_name,string fie
     string nodals_positions = "MESH_NODE_POSITIONS") {
     PetscFunctionBegin;
 
-	//feRhs.getRowOpPtrVector().push_back(new OpGetValueAndGradAtGaussPts(field1_name,commonData));
+	feRhs.getRowOpPtrVector().push_back(new OpGetValueAndGradAtGaussPts(field1_name,commonData));
 	
-	//feRhs.getRowOpPtrVector().push_back(new OpGetValueAndGradAtGaussPts(field2_name,commonData));
+	feRhs.getRowOpPtrVector().push_back(new OpGetValueAndGradAtGaussPts(field2_name,commonData));
 	
 	map<int,VolumeData>::iterator sit = volumeData.begin();
 	
@@ -418,9 +421,9 @@ PetscErrorCode setNormFiniteElementRhsOperator(string norm_field_name,string fie
 		
 		//Calculate field values at gaussian points for field1 and field2; 
 
-//feLhs.getRowColOpPtrVector().push_back(new OpLhs(norm_field_name,A));
-
-		//feRhs.getRowOpPtrVector().push_back(new OpRhs(norm_field_name,field1_name,field2_name,F,commonData,usel2,userela));
+      feLhs.getRowColOpPtrVector().push_back(new OpLhs(norm_field_name,A));
+      
+      feRhs.getRowOpPtrVector().push_back(new OpRhs(norm_field_name,field1_name,field2_name,F,commonData,usel2,userela));
 
 	}
 	
