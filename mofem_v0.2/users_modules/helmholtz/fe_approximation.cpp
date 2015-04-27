@@ -573,9 +573,9 @@ int main(int argc, char *argv[]) {
   ierr = m_field.set_local_ghost_vector("ACOUSTIC_PROBLEM",COL,V,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   
   /* retrieve the abs value of solution */
-  ierr = VecAbs(M); CHKERRQ(ierr);
-  ierr = VecAbs(P); CHKERRQ(ierr);
-  ierr = VecAbs(V); CHKERRQ(ierr);
+  //ierr = VecAbs(M); CHKERRQ(ierr);
+  //ierr = VecAbs(P); CHKERRQ(ierr);
+  //ierr = VecAbs(V); CHKERRQ(ierr);
   
   VecScatter scatter_real,scatter_imag;
   

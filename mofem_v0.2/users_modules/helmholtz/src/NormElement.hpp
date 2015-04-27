@@ -57,8 +57,8 @@ struct NormElement {
   int addToRank; ///< default value 1, i.e. assumes that geometry is approx. by quadratic functions.
   
   NormElement(
-     FieldInterface &mField):
-     feRhs(mField,addToRank),feLhs(mField,addToRank),m_field(mField),addToRank(1) {}
+     FieldInterface &mField,add_to_rank = 1;):
+     feRhs(mField,add_to_rank),feLhs(mField,add_to_rank),m_field(mField),addToRank(add_to_rank) {}
 	
   //Field data
   struct CommonData {
@@ -408,9 +408,9 @@ PetscErrorCode setNormFiniteElementRhsOperator(string norm_field_name,string fie
     string nodals_positions = "MESH_NODE_POSITIONS") {
     PetscFunctionBegin;
 
-	feRhs.getRowOpPtrVector().push_back(new OpGetValueAndGradAtGaussPts(field1_name,commonData));
+	//feRhs.getRowOpPtrVector().push_back(new OpGetValueAndGradAtGaussPts(field1_name,commonData));
 	
-	feRhs.getRowOpPtrVector().push_back(new OpGetValueAndGradAtGaussPts(field2_name,commonData));
+	//feRhs.getRowOpPtrVector().push_back(new OpGetValueAndGradAtGaussPts(field2_name,commonData));
 	
 	map<int,VolumeData>::iterator sit = volumeData.begin();
 	
@@ -418,12 +418,12 @@ PetscErrorCode setNormFiniteElementRhsOperator(string norm_field_name,string fie
 		
 		//Calculate field values at gaussian points for field1 and field2; 
 
-		feLhs.getRowColOpPtrVector().push_back(new OpLhs(norm_field_name,A));
+//feLhs.getRowColOpPtrVector().push_back(new OpLhs(norm_field_name,A));
 
-		feRhs.getRowOpPtrVector().push_back(new OpRhs(norm_field_name,field1_name,field2_name,F,commonData,usel2,userela));
+		//feRhs.getRowOpPtrVector().push_back(new OpRhs(norm_field_name,field1_name,field2_name,F,commonData,usel2,userela));
 
 	}
-	cerr << "\n go \n" << endl;
+	
 	PetscFunctionReturn(0);
 }
 
