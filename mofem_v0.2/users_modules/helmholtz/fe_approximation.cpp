@@ -177,6 +177,7 @@ int main(int argc, char *argv[]) {
   // Finite Elements
 
   HelmholtzElement helmholtz_element(m_field); 
+  ierr = helmholtz_element.getGlobalParametersFromLineCommandOptions(); CHKERRQ(ierr);
   ierr = helmholtz_element.addHelmholtzElements("rePRES","imPRES"); CHKERRQ(ierr);
 
   if(m_field.check_field("reEX") && m_field.check_field("imEX")) {

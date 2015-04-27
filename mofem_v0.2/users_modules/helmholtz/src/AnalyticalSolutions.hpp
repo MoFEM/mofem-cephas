@@ -653,9 +653,11 @@ PetscErrorCode solve_problem(FieldInterface& m_field,
     if(ss == GenericAnalyticalSolution::REAL) {
       /* set data to field from solution vec */
       if(is_partitioned) {
-		ierr = m_field.set_local_ghost_vector(problem_name,COL,D,mode,SCATTER_REVERSE); CHKERRQ(ierr);
+
+        ierr = m_field.set_local_ghost_vector(problem_name,COL,D,mode,SCATTER_REVERSE); CHKERRQ(ierr);
       } else {
-		ierr = m_field.set_global_ghost_vector(problem_name,COL,D,mode,SCATTER_REVERSE); CHKERRQ(ierr);
+        ierr = m_field.set_global_ghost_vector(problem_name,COL,D,mode,SCATTER_REVERSE); CHKERRQ(ierr);
+
       }
 
 	  
