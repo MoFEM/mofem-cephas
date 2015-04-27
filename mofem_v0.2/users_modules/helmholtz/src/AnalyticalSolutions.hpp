@@ -141,7 +141,7 @@ struct HardSphereScatterWave: public GenericAnalyticalSolution {
   double wAvenumber;
   double sphereRadius;
    
-  HardSphereScatterWave(double wavenumber,double sphere_radius): 
+  HardSphereScatterWave(double wavenumber,double sphere_radius = 0.5): 
     wAvenumber(wavenumber),sphereRadius(sphere_radius) {}
   virtual ~HardSphereScatterWave() {}
    
@@ -240,7 +240,7 @@ struct SoftSphereScatterWave: public GenericAnalyticalSolution {
   double sphereRadius;
    
 
-  SoftSphereScatterWave(double wavenumber,double sphere_radius): 
+  SoftSphereScatterWave(double wavenumber,double sphere_radius = 0.5): 
     wAvenumber(wavenumber),sphereRadius(sphere_radius) {}
   virtual ~SoftSphereScatterWave() {}
    
@@ -653,9 +653,9 @@ PetscErrorCode solve_problem(FieldInterface& m_field,
     if(ss == GenericAnalyticalSolution::REAL) {
       /* set data to field from solution vec */
       if(is_partitioned) {
-        ierr = m_field.set_global_ghost_vector(problem_name,COL,D,mode,SCATTER_REVERSE); CHKERRQ(ierr);
+		ierr = m_field.set_local_ghost_vector(problem_name,COL,D,mode,SCATTER_REVERSE); CHKERRQ(ierr);
       } else {
-        ierr = m_field.set_local_ghost_vector(problem_name,COL,D,mode,SCATTER_REVERSE); CHKERRQ(ierr);
+		ierr = m_field.set_global_ghost_vector(problem_name,COL,D,mode,SCATTER_REVERSE); CHKERRQ(ierr);
       }
 
 	  

@@ -334,11 +334,11 @@ struct HelmholtzElement {
   
         PetscErrorCode ierr;
        
-	ublas::vector<double> &pressure = commonData.pressureAtGaussPts[fieldName];
-	ublas::matrix<double> &grad_p = commonData.gradPressureAtGaussPts[fieldName];
+		ublas::vector<double> &pressure = commonData.pressureAtGaussPts[fieldName];
+		ublas::matrix<double> &grad_p = commonData.gradPressureAtGaussPts[fieldName];
 
         Nf.resize(nb_row_dofs);
-	Nf.clear();
+		Nf.clear();
   
         // wave number "k" is the proportional to the frequency of incident wave
         // and represents number of waves per wave length 2Pi - 2Pi/K   
@@ -351,13 +351,16 @@ struct HelmholtzElement {
             val *= getHoGaussPtsDetJac()[gg]; // higher order geometry
           }
 
-
+  
 		  const ublas::matrix_row<ublas::matrix<double> > gard_p_at_gauss_pt(grad_p,gg);
 
 		  /// Integrate diffN^T grad_p - k^2 N^T p dV
 
           ublas::noalias(Nf) += val*prod(data.getDiffN(gg,nb_row_dofs),gard_p_at_gauss_pt);
-		  ublas::noalias(Nf) -= val*k_pow2*data.getN(gg)*pressure[gg];
+		  ublas::noalias(Nf) -= val*k_pow2*data.getN(gg,nb_row_dofs)*pressure[gg];
+		  
+		  //std::cout << "\n data.getN(gg) = \n" << data.getN(gg) << std::endl;
+		  //std::cout << "\n data.getN(gg,nb_row_dofs) =\n" << data.getN(gg,nb_row_dofs) << std::endl;
 
         }
   
@@ -430,7 +433,7 @@ struct HelmholtzElement {
           }
 
           noalias(K) += val*prod(row_data.getDiffN(gg,nb_rows),trans(col_data.getDiffN(gg,nb_cols)));
-	  noalias(K) -= val*k_pow2*outer_prod( row_data.getN(gg,nb_rows),col_data.getN(gg,nb_cols) );
+		  noalias(K) -= val*k_pow2*outer_prod( row_data.getN(gg,nb_rows),col_data.getN(gg,nb_cols) );
 
         }
 
@@ -1141,7 +1144,7 @@ struct HelmholtzElement {
 
       }
 
-      if(it->get_name().compare(0,22,"SOMMERFELD_BC") == 0) {
+      if(it->get_name().compare(0,13,"SOMMERFELD_BC") == 0) {
 
 	sommerfeldBcData[it->get_msId()].aDmittance_real = 0;
 	sommerfeldBcData[it->get_msId()].aDmittance_imag = -wavenumber;
@@ -1151,9 +1154,9 @@ struct HelmholtzElement {
 
       }
 
-      if(it->get_name().compare(0,23,"BAYLISS_TURKEL_BC") == 0) {
+      if(it->get_name().compare(0,17,"BAYLISS_TURKEL_BC") == 0) {
 	  
-	baylissTurkelBcData[it->get_msId()].aDmittance_real = 0;
+	baylissTurkelBcData[it->get_msId()].aDmittance_real = 1;
 	baylissTurkelBcData[it->get_msId()].aDmittance_imag = -wavenumber;
 		  
 		  

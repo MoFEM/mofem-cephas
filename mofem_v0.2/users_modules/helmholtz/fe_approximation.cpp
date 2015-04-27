@@ -224,9 +224,9 @@ int main(int argc, char *argv[]) {
 
   }
 
-  ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
-  // Build adjacencies
-  ierr = m_field.build_adjacencies(bit_level0); CHKERRQ(ierr);
+  //ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
+  //// Build adjacencies
+  //ierr = m_field.build_adjacencies(bit_level0); CHKERRQ(ierr);
 
   // Problem
   ierr = m_field.add_problem("ACOUSTIC_PROBLEM"); CHKERRQ(ierr);
@@ -246,7 +246,11 @@ int main(int argc, char *argv[]) {
   ierr = m_field.modify_problem_add_finite_element("BCREAL_PROBLEM","BCREAL_FE"); CHKERRQ(ierr);
   ierr = m_field.modify_problem_add_finite_element("BCIMAG_PROBLEM","BCIMAG_FE"); CHKERRQ(ierr);
 
+  
   // Build problems
+  ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
+  // Build adjacencies
+  ierr = m_field.build_adjacencies(bit_level0); CHKERRQ(ierr);
 
   // build porblems
   if(is_partitioned) {
@@ -260,6 +264,15 @@ int main(int argc, char *argv[]) {
 
     ierr = m_field.build_partitioned_problem("BCIMAG_PROBLEM",true); CHKERRQ(ierr);
     ierr = m_field.partition_finite_elements("BCIMAG_PROBLEM",true); CHKERRQ(ierr);
+	
+	if(m_field.check_field("reEX") && m_field.check_field("imEX")) {
+	
+      ierr = m_field.build_partitioned_problem("EX1_PROBLEM",true); CHKERRQ(ierr);
+	  ierr = m_field.partition_finite_elements("EX1_PROBLEM"); CHKERRQ(ierr);
+	  ierr = m_field.partition_ghost_dofs("EX1_PROBLEM"); CHKERRQ(ierr);
+	
+	}
+	
 
   } else {
     // if not partitioned mesh is load to all processes 
@@ -275,6 +288,15 @@ int main(int argc, char *argv[]) {
     ierr = m_field.build_problem("BCIMAG_PROBLEM"); CHKERRQ(ierr);
     ierr = m_field.partition_problem("BCIMAG_PROBLEM"); CHKERRQ(ierr);
     ierr = m_field.partition_finite_elements("BCIMAG_PROBLEM"); CHKERRQ(ierr);
+	
+	if(m_field.check_field("reEX") && m_field.check_field("imEX")) {
+
+      ierr = m_field.build_problem("EX1_PROBLEM"); CHKERRQ(ierr);
+      ierr = m_field.partition_problem("EX1_PROBLEM"); CHKERRQ(ierr);
+	  ierr = m_field.partition_finite_elements("EX1_PROBLEM"); CHKERRQ(ierr);
+	  ierr = m_field.partition_ghost_dofs("EX1_PROBLEM"); CHKERRQ(ierr);
+	
+	}
 
   }
 
@@ -504,7 +526,7 @@ int main(int argc, char *argv[]) {
   ierr = VecDestroy(&T); CHKERRQ(ierr);
   ierr = KSPDestroy(&solver); CHKERRQ(ierr);
 
-  PetscBool add_incident_wave = PETSC_TRUE;
+  PetscBool add_incident_wave = PETSC_FALSE;
   ierr = PetscOptionsGetBool(NULL,"-add_incident_wave",&add_incident_wave,NULL); CHKERRQ(ierr);
   
   if(add_incident_wave) {
@@ -534,6 +556,56 @@ int main(int argc, char *argv[]) {
       ADD_VALUES,function_evaluator,is_partitioned); CHKERRQ(ierr);
 
   }
+  
+  
+  Vec P,M;
+  ierr = m_field.VecCreateGhost("EX1_PROBLEM",COL,&M); CHKERRQ(ierr);
+  ierr = VecDuplicate(M,&P); CHKERRQ(ierr);
+  
+  ierr = m_field.set_local_ghost_vector("EX1_PROBLEM",COL,M,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = m_field.set_other_global_ghost_vector("EX1_PROBLEM","reEX","imEX",COL,P,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  
+  double nrm2_M;
+  ierr = VecNorm(M,NORM_2,&nrm2_M);  CHKERRQ(ierr);
+ 
+  Vec V;
+  ierr = m_field.VecCreateGhost("ACOUSTIC_PROBLEM",COL,&V); CHKERRQ(ierr);
+  ierr = m_field.set_local_ghost_vector("ACOUSTIC_PROBLEM",COL,V,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  
+  /* retrieve the abs value of solution */
+  ierr = VecAbs(M); CHKERRQ(ierr);
+  ierr = VecAbs(P); CHKERRQ(ierr);
+  ierr = VecAbs(V); CHKERRQ(ierr);
+  
+  VecScatter scatter_real,scatter_imag;
+  
+  ierr = m_field.VecScatterCreate(V,"ACOUSTIC_PROBLEM","rePRES",COL,M,"EX1_PROBLEM","reEX",COL,&scatter_real); CHKERRQ(ierr);
+
+  ierr = m_field.VecScatterCreate(V,"ACOUSTIC_PROBLEM","imPRES",COL,P,"EX1_PROBLEM","reEX",COL,&scatter_imag); CHKERRQ(ierr);
+   
+  VecScale(V,-1);
+  ierr = VecScatterBegin(scatter_real,V,M,ADD_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecScatterEnd(scatter_real,V,M,ADD_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+ 
+  double nrm2_ErrM;
+  ierr = VecNorm(M,NORM_2,&nrm2_ErrM);  CHKERRQ(ierr);
+  cout << "\n nrm2_ErrM = " << nrm2_ErrM << "\n nrm2_M = " << nrm2_M << endl;
+  PetscPrintf(PETSC_COMM_WORLD,"L2 relative error on real field of acoustic problem %6.4e\n",(nrm2_ErrM)/(nrm2_M));
+  
+  
+  ierr = VecDestroy(&M); CHKERRQ(ierr);
+  ierr = VecDestroy(&P); CHKERRQ(ierr);
+  ierr = VecDestroy(&V); CHKERRQ(ierr);
+  
+  
+  
+  
+  //std::cout << "\n Vec M = \n" << std::endl;
+ //ierr = VecView(M,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+  //std::cout << "\n Vec P = \n" << std::endl;
+  //ierr = VecView(P,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+  
+  
 
   if(is_partitioned) {
     rval = moab.write_file("fe_solution.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);

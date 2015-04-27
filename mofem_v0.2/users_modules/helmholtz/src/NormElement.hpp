@@ -57,8 +57,8 @@ struct NormElement {
   int addToRank; ///< default value 1, i.e. assumes that geometry is approx. by quadratic functions.
   
   NormElement(
-     FieldInterface &mField,int add_to_rank = 1):
-     feRhs(mField,add_to_rank),feLhs(mField,add_to_rank),m_field(mField),addToRank(add_to_rank) {}
+     FieldInterface &mField):
+     feRhs(mField,addToRank),feLhs(mField,addToRank),m_field(mField),addToRank(1) {}
 	
   //Field data
   struct CommonData {
@@ -230,20 +230,24 @@ struct NormElement {
 		bool useRela;//use relative error
 		ublas::vector<double> Nf;
 		ublas::vector<double> rElative_error;
+		const string normfieldName;
 		const string refieldName;
 		const string imfieldName;
-		OpRhs(const string re_field_name,const string im_field_name,
+		
+		OpRhs(const string norm_field_name,const string re_field_name,const string im_field_name,
 				   CommonData &common_data,bool usel2,bool userela
 				   ): 
-			VolumeElementForcesAndSourcesCore::UserDataOperator(re_field_name,im_field_name),
-			commonData(common_data),useL2(usel2),useTsF(true),useRela(userela),refieldName(re_field_name)
+			VolumeElementForcesAndSourcesCore::UserDataOperator(norm_field_name),
+			commonData(common_data),useL2(usel2),useTsF(true),useRela(userela),normfieldName(norm_field_name)
+			,refieldName(re_field_name)
 			,imfieldName(im_field_name) {}
 		
-		OpRhs(const string re_field_name,const string im_field_name,
+		OpRhs(const string norm_field_name,const string re_field_name,const string im_field_name,
 			  Vec _F,CommonData &common_data,bool usel2,bool userela
 			  ): 
-			VolumeElementForcesAndSourcesCore::UserDataOperator(re_field_name,im_field_name),
-			commonData(common_data),useL2(usel2),useTsF(false),useRela(userela),F(_F),refieldName(re_field_name)
+			VolumeElementForcesAndSourcesCore::UserDataOperator(norm_field_name),
+			commonData(common_data),useL2(usel2),useTsF(false),useRela(userela),F(_F),normfieldName(norm_field_name)
+			,refieldName(re_field_name)
 			,imfieldName(im_field_name) {}
 		
 		
@@ -283,26 +287,22 @@ struct NormElement {
 				double sqError;
 				
 				for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
-					
 					//Integrate over volume
 					double val = getVolume()*getGaussPts()(3,gg);//this->getGaussPts()(3,gg); 
-					
 					if(this->getHoGaussPtsDetJac().size()>0) {
 						val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
 
 					}
+					
 					const ublas::matrix_row<ublas::matrix<double> > u_analy_grad(uAnalyGrad,gg);
 					const ublas::matrix_row<ublas::matrix<double> > u_numer_grad(uNumerGrad,gg);
-		
 
 					if(useL2) { //case L2 norm
-						
 						//double aa = abs(u_analy(gg));
 						//double bb = abs(u_numer(gg));
 						//eRror = aa - bb;
 						eRror = u_analy[gg] - u_numer[gg];
 						sqError = pow(eRror,2.0);
-
 					} else if(!useL2) { //case H1 norm
 					
 						//double aa = uAnaly(gg);
@@ -317,13 +317,13 @@ struct NormElement {
 					//need to calculate sqrt of norm^2
 					if(!useRela) { //case Norm error
 						
-						ublas::noalias(Nf) += val*sqError*data.getN(gg);
-					
+						ublas::noalias(Nf) += val*sqError*data.getN(gg,nb_row);
+						
 					} else if(useRela) { //case relative error
 						
 						double sq_uanaly = pow(norm_inf(u_analy),2.0);
 				
-						ublas::noalias(rElative_error) += val*(pow(eRror,2.0)/sq_uanaly)*data.getN(gg);
+						ublas::noalias(rElative_error) += val*(pow(eRror,2.0)/sq_uanaly)*data.getN(gg,nb_row);
 
 					}
 
@@ -408,19 +408,22 @@ PetscErrorCode setNormFiniteElementRhsOperator(string norm_field_name,string fie
     string nodals_positions = "MESH_NODE_POSITIONS") {
     PetscFunctionBegin;
 
+	feRhs.getRowOpPtrVector().push_back(new OpGetValueAndGradAtGaussPts(field1_name,commonData));
+	
+	feRhs.getRowOpPtrVector().push_back(new OpGetValueAndGradAtGaussPts(field2_name,commonData));
+	
 	map<int,VolumeData>::iterator sit = volumeData.begin();
 	
 	for(;sit!=volumeData.end();sit++) {
 		
 		//Calculate field values at gaussian points for field1 and field2; 
-		feRhs.get_op_to_do_Rhs().push_back(new OpGetValueAndGradAtGaussPts(field1_name,commonData));
-		feRhs.get_op_to_do_Rhs().push_back(new OpGetValueAndGradAtGaussPts(field2_name,commonData));
-		
-		feLhs.get_op_to_do_Lhs().push_back(new OpLhs(norm_field_name,A));
 
-		feRhs.get_op_to_do_Rhs().push_back(new OpRhs(norm_field_name,norm_field_name,F,commonData,usel2,userela));
+		feLhs.getRowColOpPtrVector().push_back(new OpLhs(norm_field_name,A));
+
+		feRhs.getRowOpPtrVector().push_back(new OpRhs(norm_field_name,field1_name,field2_name,F,commonData,usel2,userela));
+
 	}
-
+	cerr << "\n go \n" << endl;
 	PetscFunctionReturn(0);
 }
 

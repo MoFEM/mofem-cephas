@@ -47,3 +47,17 @@ target_link_libraries(fe_approximation
   ${MoFEM_PROJECT_LIBS})
 
 
+add_executable(error_norm
+  ${UM_SOURCE_DIR}/helmholtz/error_norm.cpp
+)
+target_link_libraries(error_norm
+  mofem_finite_element_library
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_third_party
+  mofem_cblas
+  ${MoFEM_PROJECT_LIBS})
+

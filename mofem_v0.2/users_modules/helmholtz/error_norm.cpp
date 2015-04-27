@@ -3,7 +3,7 @@
   \ingroup mofem_helmholtz_elem
 
   Calculates finite element (Galerkin) approximation for difference between two solutions in L^2 and H_1 norm. 
-  \bug work for scalar filed only, NEED further modification.
+  \bug work for scalar filed only, NEED further modification. As well as calculate A matrix twice.
  */
 
 /* 
@@ -199,11 +199,12 @@ int main(int argc, char *argv[]) {
 	
 	if(m_field.check_field("reEX") && m_field.check_field("imEX")) {
 		//partition
-		ierr = m_field.simple_partition_problem("EX1_PROBLEM"); CHKERRQ(ierr);
-		ierr = m_field.partition_finite_elements("EX1_PROBLEM"); CHKERRQ(ierr);
+      ierr = m_field.build_problem("EX1_PROBLEM"); CHKERRQ(ierr);
+      ierr = m_field.partition_problem("EX1_PROBLEM"); CHKERRQ(ierr);
+      ierr = m_field.partition_finite_elements("EX1_PROBLEM"); CHKERRQ(ierr);
 
-		//what are ghost nodes, see Petsc Manual
-		ierr = m_field.partition_ghost_dofs("EX1_PROBLEM"); CHKERRQ(ierr);
+      //what are ghost nodes, see Petsc Manual
+      ierr = m_field.partition_ghost_dofs("EX1_PROBLEM"); CHKERRQ(ierr);
 
 	}
 	
@@ -308,7 +309,7 @@ int main(int argc, char *argv[]) {
 	
 	Vec P,M;
 	ierr = m_field.VecCreateGhost("EX1_PROBLEM",ROW,&M); CHKERRQ(ierr);
-	ierr = m_field.VecCreateGhost("EX1_PROBLEM",ROW,&P); CHKERRQ(ierr);
+    ierr = VecDuplicate(M,&P); CHKERRQ(ierr);
 
 	ierr = m_field.set_local_ghost_vector("EX1_PROBLEM",ROW,M,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	ierr = m_field.set_other_global_ghost_vector("EX1_PROBLEM","reEX","imEX",ROW,P,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
