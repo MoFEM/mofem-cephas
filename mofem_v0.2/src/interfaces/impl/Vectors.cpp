@@ -600,7 +600,7 @@ PetscErrorCode Core::set_other_global_ghost_vector(
   }
   dofs_by_name::iterator miit = dofs->lower_bound(field_name);
   if(miit==dofs->end()) {
-    SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"cpy field < %s > not found, (top tip: check spelling)",field_name.c_str());
+    SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"problem field < %s > not found, (top tip: check spelling)",field_name.c_str());
   }
   dofs_by_name::iterator hi_miit = dofs->upper_bound(field_name);
   if(miit->get_space() != cpy_fit->get_space()) {

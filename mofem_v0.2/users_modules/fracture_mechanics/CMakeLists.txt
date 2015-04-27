@@ -19,6 +19,7 @@
 
 include_directories(${UM_SOURCE_DIR}/fracture_mechanics)
 include_directories(${UM_SOURCE_DIR}/elasticity/src)
+include_directories(${UM_SOURCE_DIR}/nonlinear_elasticity/src)
 include_directories(${UM_SOURCE_DIR}/convective_mass_element/src)
 
 add_library(fracture_mechanics

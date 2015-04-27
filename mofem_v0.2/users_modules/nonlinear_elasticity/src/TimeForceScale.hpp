@@ -1,5 +1,4 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
+/* \brief TimeForceScale.hpp
  *
  * Edited and modified by Hassan.
  *

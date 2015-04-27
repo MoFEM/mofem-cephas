@@ -15,8 +15,8 @@ file(COPY
   ${CMAKE_CURRENT_SOURCE_DIR}/README
   DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
 
-include_directories("${UM_SOURCE_DIR}/helmholtz/src")
-include_directories("${UM_SOURCE_DIR}/analytical_dirichlet_boundary_conditions/src")
+include_directories(${UM_SOURCE_DIR}/helmholtz/src)
+include_directories(${UM_SOURCE_DIR}/analytical_dirichlet_boundary_conditions/src)
 
 add_executable(best_approximation 
   ${UM_SOURCE_DIR}/helmholtz/best_approximation.cpp
