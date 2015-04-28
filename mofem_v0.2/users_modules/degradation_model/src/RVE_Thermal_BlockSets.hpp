@@ -55,7 +55,7 @@ namespace MoFEM {
       //There can be situation that composite is attached to steel, so MAT_THERMAL for steel and MAT_RVE_THERMAL for RVE
       for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
 //        cout<<"_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_  "<<endl;
-        if(it->get_Cubit_name().compare(0,11,"MAT_THERMAL") == 0) {
+        if(it->get_name().compare(0,11,"MAT_THERMAL") == 0) {
 //          cout<<"MAT_THERMAL  "<<endl;
           Mat_Thermal temp_data;
           ierr = it->get_attribute_data_structure(temp_data); CHKERRQ(ierr);
@@ -71,7 +71,7 @@ namespace MoFEM {
           ierr = mField.add_ents_to_finite_element_by_TETs(setOfBlocks[it->get_msId()].tEts,"THERMAL_FE"); CHKERRQ(ierr);
 
         }
-        else if(it->get_Cubit_name().compare(0,15,"MAT_RVE_THERMAL") == 0){
+        else if(it->get_name().compare(0,15,"MAT_RVE_THERMAL") == 0){
 //          cout<<"MAT_RVE_THERMAL  "<<endl;
           setOfBlocks[it->get_msId()].cOnductivity_mat.resize(3,3); //(3X3) conductivity matrix
           setOfBlocks[it->get_msId()].cOnductivity_mat.clear();
@@ -85,7 +85,7 @@ namespace MoFEM {
 //          cout<< "setOfBlocks[it->get_msId()].cOnductivity_mat After Reading= "<<setOfBlocks[it->get_msId()].cOnductivity_mat<<endl;
           
           vector<double> RVE_thermal_data;
-          ierr = it->get_Cubit_attributes(RVE_thermal_data); CHKERRQ(ierr);
+          ierr = it->get_attributes(RVE_thermal_data); CHKERRQ(ierr);
           setOfBlocks[it->get_msId()].cApacity = RVE_thermal_data[0];
 //          cout<< "setOfBlocks[it->get_msId()].cApacity= "<<setOfBlocks[it->get_msId()].cApacity<<endl;
 

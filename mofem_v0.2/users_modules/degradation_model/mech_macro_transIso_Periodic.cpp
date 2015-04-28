@@ -160,7 +160,7 @@ int main(int argc, char *argv[]) {
   
   EntityHandle out_meshset;
   rval = moab_RVE.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
-  //    ierr = m_field_RVE.problem_get_FE("POTENTIAL_PROBLEM","POTENTIAL_ELEM",out_meshset); CHKERRQ(ierr);
+  //    ierr = m_field_RVE.get_problem_finite_elements_entities("POTENTIAL_PROBLEM","POTENTIAL_ELEM",out_meshset); CHKERRQ(ierr);
   ierr = m_field_RVE.get_entities_by_ref_level(bit_levels.back(),BitRefLevel().set(),out_meshset); CHKERRQ(ierr);
   Range LatestRefinedTets;
   rval = moab_RVE.get_entities_by_type(out_meshset, MBTET,LatestRefinedTets,true); CHKERR_PETSC(rval);
@@ -180,7 +180,7 @@ int main(int argc, char *argv[]) {
 	int noOfFibres=0;
 	for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field_RVE,BLOCKSET|UNKNOWNCUBITNAME,it)) {
 		
-		std::size_t found=it->get_Cubit_name().find("PotentialFlow");
+		std::size_t found=it->get_name().find("PotentialFlow");
 		if (found==std::string::npos) continue;
 		noOfFibres += 1;
 	}
@@ -209,7 +209,7 @@ int main(int argc, char *argv[]) {
   
 	for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field_RVE,BLOCKSET,it)){
     
-		if(it->get_Cubit_name() == "MAT_ELASTIC_1") {
+		if(it->get_name() == "MAT_ELASTIC_1") {
 			Range TetsInBlock;
 			rval = moab_RVE.get_entities_by_type(it->meshset, MBTET,TetsInBlock,true); CHKERR_PETSC(rval);
 			Range block_rope_bit_level = intersect(LatestRefinedTets,TetsInBlock);
@@ -324,7 +324,7 @@ int main(int argc, char *argv[]) {
   
   
   Range SurfacesFaces;
-  ierr = m_field_RVE.get_Cubit_msId_entities_by_dimension(103,SIDESET,2,SurfacesFaces,true); CHKERRQ(ierr);
+  ierr = m_field_RVE.get_cubit_msId_entities_by_dimension(103,SIDESET,2,SurfacesFaces,true); CHKERRQ(ierr);
   ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SideSet 103 = %d\n",SurfacesFaces.size()); CHKERRQ(ierr);
   
   //to create meshset from range
@@ -340,7 +340,7 @@ int main(int argc, char *argv[]) {
   
   //Populating the Multi-index container with -ve triangles
   Range SurTrisNeg;
-  ierr = m_field_RVE.get_Cubit_msId_entities_by_dimension(101,SIDESET,2,SurTrisNeg,true); CHKERRQ(ierr);
+  ierr = m_field_RVE.get_cubit_msId_entities_by_dimension(101,SIDESET,2,SurTrisNeg,true); CHKERRQ(ierr);
   ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SideSet 101 = %d\n",SurTrisNeg.size()); CHKERRQ(ierr);
   Face_CenPos_Handle_multiIndex Face_CenPos_Handle_varNeg, Face_CenPos_Handle_varPos;
   double TriCen[3], coords_Tri[9];
@@ -378,7 +378,7 @@ int main(int argc, char *argv[]) {
   
   //Populating the Multi-index container with +ve triangles
   Range SurTrisPos;
-  ierr = m_field_RVE.get_Cubit_msId_entities_by_dimension(102,SIDESET,2,SurTrisPos,true); CHKERRQ(ierr);
+  ierr = m_field_RVE.get_cubit_msId_entities_by_dimension(102,SIDESET,2,SurTrisPos,true); CHKERRQ(ierr);
   ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SideSet 102 = %d\n",SurTrisPos.size()); CHKERRQ(ierr);
   for(Range::iterator it = SurTrisPos.begin(); it!=SurTrisPos.end();  it++) {
     const EntityHandle* conn_face;  int num_nodes_Tri;
@@ -761,7 +761,7 @@ int main(int argc, char *argv[]) {
         ierr = VecZeroEntries(D); CHKERRQ(ierr);
         ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
         ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-        ierr = m_field_Macro.set_global_VecCreateGhost("ELASTIC_PROBLEM_MACRO",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+        ierr = m_field_Macro.set_global_ghost_vector("ELASTIC_PROBLEM_MACRO",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
         //      ierr = VecView(D,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
@@ -808,7 +808,7 @@ int main(int argc, char *argv[]) {
         
         
         //Save data on mesh
-        ierr = m_field_Macro.set_local_VecCreateGhost("ELASTIC_PROBLEM_MACRO",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+        ierr = m_field_Macro.set_local_ghost_vector("ELASTIC_PROBLEM_MACRO",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
         ierr = m_field_Macro.loop_finite_elements("ELASTIC_PROBLEM_MACRO","ELASTIC_FE_MACRO",post_proc); CHKERRQ(ierr);
         ostringstream o1;
         o1 << "FE2_out_" << sit->step_number << ".h5m";
@@ -816,7 +816,7 @@ int main(int argc, char *argv[]) {
         
         if(count==100){
           //save the solution file for subsequent strain calculation analysis
-          ierr = m_field_Macro.set_global_VecCreateGhost("ELASTIC_PROBLEM_MACRO",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+          ierr = m_field_Macro.set_global_ghost_vector("ELASTIC_PROBLEM_MACRO",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
           rval = moab_Macro.write_file("FE2_solution_100.h5m"); CHKERR_PETSC(rval);
         }
 

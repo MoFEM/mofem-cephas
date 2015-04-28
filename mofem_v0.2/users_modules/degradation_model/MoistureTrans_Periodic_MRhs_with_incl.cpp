@@ -214,7 +214,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.add_ents_to_field_by_TETs(0,"CONC"); CHKERRQ(ierr);
   
   Range SurfacesFaces;
-  ierr = mField.get_Cubit_msId_entities_by_dimension(103,SIDESET,2,SurfacesFaces,true); CHKERRQ(ierr);
+  ierr = mField.get_cubit_msId_entities_by_dimension(103,SIDESET,2,SurfacesFaces,true); CHKERRQ(ierr);
   ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SideSet 103 = %d\n",SurfacesFaces.size()); CHKERRQ(ierr);
   
   //to create meshset from range
@@ -230,7 +230,7 @@ int main(int argc, char *argv[]) {
   
   //Populating the Multi-index container with -ve triangles
   Range SurTrisNeg;
-  ierr = mField.get_Cubit_msId_entities_by_dimension(101,SIDESET,2,SurTrisNeg,true); CHKERRQ(ierr);
+  ierr = mField.get_cubit_msId_entities_by_dimension(101,SIDESET,2,SurTrisNeg,true); CHKERRQ(ierr);
   ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SideSet 101 = %d\n",SurTrisNeg.size()); CHKERRQ(ierr);
   Face_CenPos_Handle_multiIndex Face_CenPos_Handle_varNeg, Face_CenPos_Handle_varPos;
   double TriCen[3], coords_Tri[9];
@@ -268,7 +268,7 @@ int main(int argc, char *argv[]) {
   
   //Populating the Multi-index container with +ve triangles
   Range SurTrisPos;
-  ierr = mField.get_Cubit_msId_entities_by_dimension(102,SIDESET,2,SurTrisPos,true); CHKERRQ(ierr);
+  ierr = mField.get_cubit_msId_entities_by_dimension(102,SIDESET,2,SurTrisPos,true); CHKERRQ(ierr);
   ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SideSet 102 = %d\n",SurTrisPos.size()); CHKERRQ(ierr);
   for(Range::iterator it = SurTrisPos.begin(); it!=SurTrisPos.end();  it++) {
     const EntityHandle* conn_face;  int num_nodes_Tri;
@@ -475,7 +475,7 @@ int main(int argc, char *argv[]) {
   double density_matrix, density_fibres;
   Range TetsInBlock, TetsInBlock_stiff_inc;
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)){
-		if(it->get_Cubit_name() == "MAT_MOISTURE_MATRIX") {
+		if(it->get_name() == "MAT_MOISTURE_MATRIX") {
 			rval = moab.get_entities_by_type(it->meshset, MBTET,TetsInBlock,true); CHKERR_PETSC(rval);
       
       Mat_Moisture mydata;
@@ -483,7 +483,7 @@ int main(int argc, char *argv[]) {
       density_matrix=mydata.data.Density;
 
 		}
-    if(it->get_Cubit_name() == "MAT_MOISTURE_FIBRES") {
+    if(it->get_name() == "MAT_MOISTURE_FIBRES") {
 			rval = moab.get_entities_by_type(it->meshset, MBTET,TetsInBlock_stiff_inc,true); CHKERR_PETSC(rval);
       
       Mat_Moisture mydata;
@@ -642,7 +642,7 @@ int main(int argc, char *argv[]) {
   ierr = KSPSolve(solver,F1,C1); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(C1,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(C1,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = mField.set_global_VecCreateGhost("MOISTURE_PROBLEM",ROW,C1,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = mField.set_global_ghost_vector("MOISTURE_PROBLEM",ROW,C1,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   
   ublas::matrix<FieldData> Dmat;
   Dmat.resize(3,3); Dmat.clear();
@@ -686,7 +686,7 @@ int main(int argc, char *argv[]) {
   ierr = KSPSolve(solver,F2,C1); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(C1,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(C1,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = mField.set_global_VecCreateGhost("MOISTURE_PROBLEM",ROW,C1,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = mField.set_global_ghost_vector("MOISTURE_PROBLEM",ROW,C1,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   {
     ierr = VecZeroEntries(Stress_Homo); CHKERRQ(ierr);
     ElasticFE_RVELagrange_Homogenized_Stress_Periodic MyFE_RVEHomoStressPeriodic(mField,A,C1,F2,&RVE_volume, applied_strain, Stress_Homo,"CONC","LAGRANGE_MUL_FIELD",field_rank);
@@ -715,7 +715,7 @@ int main(int argc, char *argv[]) {
   ierr = KSPSolve(solver,F3,C1); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(C1,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(C1,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = mField.set_global_VecCreateGhost("MOISTURE_PROBLEM",ROW,C1,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = mField.set_global_ghost_vector("MOISTURE_PROBLEM",ROW,C1,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
   {
     ierr = VecZeroEntries(Stress_Homo); CHKERRQ(ierr);
@@ -765,7 +765,7 @@ int main(int argc, char *argv[]) {
   if(pcomm->rank()==0) {
     EntityHandle out_meshset;
     rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
-    ierr = mField.problem_get_FE("MOISTURE_PROBLEM","DIFFUSION_FE",out_meshset); CHKERRQ(ierr);
+    ierr = mField.get_problem_finite_elements_entities("MOISTURE_PROBLEM","DIFFUSION_FE",out_meshset); CHKERRQ(ierr);
     rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
     rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
   }

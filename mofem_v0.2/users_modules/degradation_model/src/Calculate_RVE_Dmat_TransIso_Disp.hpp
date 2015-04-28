@@ -30,8 +30,8 @@ namespace MoFEM {
 
   struct Calculate_RVE_Dmat_TransIso_Disp {
     
-    struct MyVolumeFE: public TetElementForcesAndSourcesCore {
-      MyVolumeFE(FieldInterface &_mField): TetElementForcesAndSourcesCore(_mField) {}
+    struct MyVolumeFE: public VolumeElementForcesAndSourcesCore {
+      MyVolumeFE(FieldInterface &_mField): VolumeElementForcesAndSourcesCore(_mField) {}
       
       
       int getRule(int order) { return -1; }; //with -1 this function will not work
@@ -143,20 +143,20 @@ namespace MoFEM {
       
     };
     
-    struct OpGetWtAtGaussPts: public OpGetFieldAtGaussPts<TetElementForcesAndSourcesCore> {
+    struct OpGetWtAtGaussPts: public OpGetFieldAtGaussPts<VolumeElementForcesAndSourcesCore> {
       OpGetWtAtGaussPts(const string wt_field_name,CommonData &common_data):
-      OpGetFieldAtGaussPts<TetElementForcesAndSourcesCore>(wt_field_name,common_data.wtAtGaussPts) {}
+      OpGetFieldAtGaussPts<VolumeElementForcesAndSourcesCore>(wt_field_name,common_data.wtAtGaussPts) {}
     };
 
   
-    struct OpCalculate_RVEDmat: public TetElementForcesAndSourcesCore::UserDataOperator {
+    struct OpCalculate_RVEDmat: public VolumeElementForcesAndSourcesCore::UserDataOperator {
       
       PetscErrorCode ierr;
       FieldInterface &m_field_RVE;
       
       CommonData &commonData;
       OpCalculate_RVEDmat(FieldInterface &m_field_RVE, const string field_name,CommonData &common_data):
-      TetElementForcesAndSourcesCore::UserDataOperator(field_name),
+      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
       m_field_RVE(m_field_RVE),commonData(common_data){
         ierr = m_field_RVE.VecCreateGhost("ELASTIC_PROBLEM_RVE",ROW,&F1); CHKERRABORT(PETSC_COMM_WORLD,ierr);
         ierr = m_field_RVE.VecCreateGhost("ELASTIC_PROBLEM_RVE",ROW,&F2); CHKERRABORT(PETSC_COMM_WORLD,ierr);
@@ -224,7 +224,7 @@ namespace MoFEM {
               ierr = VecZeroEntries(F6); CHKERRQ(ierr);
               ierr = MatZeroEntries(A); CHKERRQ(ierr);
               ierr = VecZeroEntries(D1); CHKERRQ(ierr);
-              ierr = m_field_RVE.set_global_VecCreateGhost("ELASTIC_PROBLEM_RVE",ROW,D1,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+              ierr = m_field_RVE.set_global_ghost_vector("ELASTIC_PROBLEM_RVE",ROW,D1,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
               ierr = m_field_RVE.loop_finite_elements("ELASTIC_PROBLEM_RVE","ELASTIC_FE_RVE",my_fe_marix);  CHKERRQ(ierr);
               ierr = m_field_RVE.loop_finite_elements("ELASTIC_PROBLEM_RVE","TRAN_ISO_FE_RVE",my_fe_transiso);  CHKERRQ(ierr);
@@ -278,7 +278,7 @@ namespace MoFEM {
               //=============================================================================================================
               //solve for F1
               ierr = KSPSolve(solver,F1,D1); CHKERRQ(ierr);
-              ierr = m_field_RVE.set_global_VecCreateGhost("ELASTIC_PROBLEM_RVE",ROW,D1,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+              ierr = m_field_RVE.set_global_ghost_vector("ELASTIC_PROBLEM_RVE",ROW,D1,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 //              ierr = VecView(D1,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
               ublas::matrix<FieldData> Dmat;
@@ -323,7 +323,7 @@ namespace MoFEM {
               //=============================================================================================================
               //solve for F2
               ierr = KSPSolve(solver,F2,D1); CHKERRQ(ierr);
-              ierr = m_field_RVE.set_global_VecCreateGhost("ELASTIC_PROBLEM_RVE",ROW,D1,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+              ierr = m_field_RVE.set_global_ghost_vector("ELASTIC_PROBLEM_RVE",ROW,D1,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
               
               {
                 ierr = VecZeroEntries(Stress_Homo); CHKERRQ(ierr);
@@ -354,7 +354,7 @@ namespace MoFEM {
               //=============================================================================================================
               //solve for F3
               ierr = KSPSolve(solver,F3,D1); CHKERRQ(ierr);
-              ierr = m_field_RVE.set_global_VecCreateGhost("ELASTIC_PROBLEM_RVE",ROW,D1,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+              ierr = m_field_RVE.set_global_ghost_vector("ELASTIC_PROBLEM_RVE",ROW,D1,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
               
               {
                 ierr = VecZeroEntries(Stress_Homo); CHKERRQ(ierr);
@@ -383,7 +383,7 @@ namespace MoFEM {
               //=============================================================================================================
               //solve for F4
               ierr = KSPSolve(solver,F4,D1); CHKERRQ(ierr);
-              ierr = m_field_RVE.set_global_VecCreateGhost("ELASTIC_PROBLEM_RVE",ROW,D1,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+              ierr = m_field_RVE.set_global_ghost_vector("ELASTIC_PROBLEM_RVE",ROW,D1,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
               
               
               {
@@ -412,7 +412,7 @@ namespace MoFEM {
               //=============================================================================================================
               //solve for F5
               ierr = KSPSolve(solver,F5,D1); CHKERRQ(ierr);
-              ierr = m_field_RVE.set_global_VecCreateGhost("ELASTIC_PROBLEM_RVE",ROW,D1,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+              ierr = m_field_RVE.set_global_ghost_vector("ELASTIC_PROBLEM_RVE",ROW,D1,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
               
               {
                 ierr = VecZeroEntries(Stress_Homo); CHKERRQ(ierr);
@@ -441,7 +441,7 @@ namespace MoFEM {
               //=============================================================================================================
               //solve for F6
               ierr = KSPSolve(solver,F6,D1); CHKERRQ(ierr);
-              ierr = m_field_RVE.set_global_VecCreateGhost("ELASTIC_PROBLEM_RVE",ROW,D1,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+              ierr = m_field_RVE.set_global_ghost_vector("ELASTIC_PROBLEM_RVE",ROW,D1,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
               
               {
                 ierr = VecZeroEntries(Stress_Homo); CHKERRQ(ierr);
@@ -507,9 +507,9 @@ namespace MoFEM {
     PetscErrorCode setRVE_DmatRhsOperators(FieldInterface &m_field_RVE, string field_name,string wt_field_name) {
       PetscFunctionBegin;
       //first calculate wt at each gauss point
-      feRhs.get_op_to_do_Rhs().push_back(new OpGetWtAtGaussPts(wt_field_name,commonData));
+      feRhs.getRowOpPtrVector().push_back(new OpGetWtAtGaussPts(wt_field_name,commonData));
       //At each gauss point run RVE with its own mesh
-      feRhs.get_op_to_do_Rhs().push_back(new OpCalculate_RVEDmat(m_field_RVE,field_name,commonData));
+      feRhs.getRowOpPtrVector().push_back(new OpCalculate_RVEDmat(m_field_RVE,field_name,commonData));
 
       PetscFunctionReturn(0);
     }

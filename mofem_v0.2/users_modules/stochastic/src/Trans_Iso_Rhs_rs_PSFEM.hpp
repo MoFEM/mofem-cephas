@@ -587,7 +587,7 @@ namespace MoFEM {
          // cout<<"Isotropic material \t";
          double _young,_pois;
   	 for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)){
-            string name = it->get_Cubit_name();
+            string name = it->get_name();
             if (name.compare(0,13,"MAT_ELASTIC_1") == 0){
                Mat_Elastic mydata;
                ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
@@ -664,7 +664,7 @@ namespace MoFEM {
          // cout<<"Isotropic material \t";
          double _young,_pois;
   	 for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)){
-            string name = it->get_Cubit_name();
+            string name = it->get_name();
             if (name.compare(0,13,"MAT_ELASTIC_1") == 0){
                Mat_Elastic mydata;
                ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
