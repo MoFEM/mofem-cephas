@@ -277,6 +277,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.loop_finite_elements("THERMAL_PROBLEM","THERMAL_FE",MyRVEVol);  CHKERRQ(ierr);
   //  ierr = VecView(RVE_volume_Vec,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
   ierr = VecSum(RVE_volume_Vec, &RVE_volume);  CHKERRQ(ierr);
+  ierr = VecDestroy(&RVE_volume_Vec); CHKERRQ(ierr);
   cout<<"Final RVE_volume = "<< RVE_volume <<endl;
 //=========================================================================================================================
 
@@ -422,6 +423,8 @@ int main(int argc, char *argv[]) {
   ierr = VecDestroy(&C1); CHKERRQ(ierr);
   ierr = VecDestroy(&C2); CHKERRQ(ierr);
   ierr = VecDestroy(&C3); CHKERRQ(ierr);
+
+  ierr = VecDestroy(&Stress_Homo); CHKERRQ(ierr);
 
   ierr = MatDestroy(&A); CHKERRQ(ierr);
   ierr = KSPDestroy(&solver); CHKERRQ(ierr);
