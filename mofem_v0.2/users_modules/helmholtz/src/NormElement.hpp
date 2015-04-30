@@ -45,7 +45,7 @@ struct NormElement {
     FieldInterface& mField;
     int addToRank; ///< default value 1, i.e. assumes that geometry is approx. by quadratic functions.
     double& eRror;
-    MyVolumeFE(FieldInterface &m_field,double error,int add_to_rank): 
+    MyVolumeFE(FieldInterface &m_field,double &error,int add_to_rank): 
         VolumeElementForcesAndSourcesCore(m_field),mField(m_field),addToRank(add_to_rank),
         eRror(error) {}
     int getRule(int order) { return order+addToRank; };
@@ -86,7 +86,7 @@ struct NormElement {
   int addToRank; ///< default value 1, i.e. assumes that geometry is approx. by quadratic functions.
   
   NormElement(
-     FieldInterface &mField,double error,int add_to_rank = 1):
+     FieldInterface &mField,double &error,int add_to_rank = 1):
      feRhs(mField,error,add_to_rank),feLhs(mField,error,add_to_rank),m_field(mField),addToRank(add_to_rank),
      eRror(error) {}
 	
@@ -267,7 +267,7 @@ struct NormElement {
         double& eRror;
         
 		OpRhs(const string norm_field_name,const string re_field_name,const string im_field_name,
-				   CommonData &common_data,double error,bool usel2,bool userela): 
+				   CommonData &common_data,double &error,bool usel2,bool userela): 
 			VolumeElementForcesAndSourcesCore::UserDataOperator(norm_field_name),
 			commonData(common_data),eRror(error),
              useL2(usel2),useTsF(true),useRela(userela),normfieldName(norm_field_name)
@@ -275,7 +275,7 @@ struct NormElement {
 			,imfieldName(im_field_name) {}
 		
 		OpRhs(const string norm_field_name,const string re_field_name,const string im_field_name,
-			  Vec _F,CommonData &common_data,double error,bool usel2,bool userela
+			  Vec _F,CommonData &common_data,double &error,bool usel2,bool userela
 			  ): 
 			VolumeElementForcesAndSourcesCore::UserDataOperator(norm_field_name),
 			commonData(common_data),eRror(error),

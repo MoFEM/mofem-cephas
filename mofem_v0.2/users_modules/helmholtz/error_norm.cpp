@@ -156,8 +156,8 @@ int main(int argc, char *argv[]) {
 	ierr = m_field.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
 	}
 	
-    double real_error = 0;
-    double imag_error = 0;
+    double real_error;
+    double imag_error;
 	NormElement norm_elements_re(m_field,real_error);
 	NormElement norm_elements_im(m_field,imag_error);
 
