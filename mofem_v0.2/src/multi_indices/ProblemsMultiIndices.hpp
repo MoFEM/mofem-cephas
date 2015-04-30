@@ -160,7 +160,7 @@ struct MoFEMProblem {
     */
   #define _IT_NUMEREDDOFMOFEMENTITY_ROW_BY_LOCIDX_FOR_LOOP_(MOFEMPROBLEM,IT) \
     NumeredDofMoFEMEntity_multiIndex::index<PetscLocalIdx_mi_tag>::type::iterator IT = MOFEMPROBLEM->get_numered_dofs_rows_by_locidx_begin(0); \
-    IT!=MOFEMPROBLEM->get_numered_dofs_rows_by_locidx_end(MOFEMPROBLEM->get_nb_local_dofs_row()); IT++
+    IT!=MOFEMPROBLEM->get_numered_dofs_rows_by_locidx_end(MOFEMPROBLEM->get_nb_local_dofs_row()-1); IT++
 
   /**
     * \brief use with loops to iterate col dofs 
@@ -174,7 +174,7 @@ struct MoFEMProblem {
     */
   #define _IT_NUMEREDDOFMOFEMENTITY_COL_BY_LOCIDX_FOR_LOOP_(MOFEMPROBLEM,IT) \
     NumeredDofMoFEMEntity_multiIndex::index<PetscLocalIdx_mi_tag>::type::iterator IT = MOFEMPROBLEM->get_numered_dofs_cols_by_locidx_begin(0); \
-    IT!=MOFEMPROBLEM->get_numered_dofs_cols_by_locidx_end(MOFEMPROBLEM->get_nb_local_dofs_row()); IT++
+    IT!=MOFEMPROBLEM->get_numered_dofs_cols_by_locidx_end(MOFEMPROBLEM->get_nb_local_dofs_row()-1); IT++
 
   /// get begin iterator for numered_dofs_rows (insted you can use #_IT_NUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_ for loops)
   NumeredDofMoFEMEntity_multiIndex::index<PetscLocalIdx_mi_tag>::type::iterator get_numered_dofs_rows_by_locidx_begin(const DofIdx locidx) const 

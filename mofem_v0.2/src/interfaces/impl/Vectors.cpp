@@ -141,6 +141,7 @@ PetscErrorCode Core::ISCreateProblemOrder(const string &problem,RowColData rc,in
 }
 PetscErrorCode Core::ISCreateProblemFieldAndRank(const string &problem,RowColData rc,const string &field,int min_rank,int max_rank,IS *is,int verb) {
   PetscFunctionBegin;
+
   if(verb==-1) verb = verbose;
   typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type moFEMProblems_by_name;
   moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<Problem_mi_tag>();
@@ -151,11 +152,11 @@ PetscErrorCode Core::ISCreateProblemFieldAndRank(const string &problem,RowColDat
   switch(rc) {
     case ROW:
     it = p->numered_dofs_rows.get<Composite_Name_Part_And_Rank_mi_tag>().lower_bound(boost::make_tuple(field,rAnk,min_rank));
-    hi_it = p->numered_dofs_rows.get<Composite_Name_Part_And_Rank_mi_tag>().lower_bound(boost::make_tuple(field,rAnk,max_rank));
+    hi_it = p->numered_dofs_rows.get<Composite_Name_Part_And_Rank_mi_tag>().upper_bound(boost::make_tuple(field,rAnk,max_rank));
     break;
     case COL:
     it = p->numered_dofs_cols.get<Composite_Name_Part_And_Rank_mi_tag>().lower_bound(boost::make_tuple(field,rAnk,min_rank));
-    hi_it = p->numered_dofs_cols.get<Composite_Name_Part_And_Rank_mi_tag>().lower_bound(boost::make_tuple(field,rAnk,max_rank));
+    hi_it = p->numered_dofs_cols.get<Composite_Name_Part_And_Rank_mi_tag>().upper_bound(boost::make_tuple(field,rAnk,max_rank));
     break;
     default:
      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
@@ -644,12 +645,12 @@ PetscErrorCode Core::set_other_global_ghost_vector(
           ApproximationOrder order = miit->get_max_order();
           pair<MoFEMEntity_multiIndex::iterator,bool> p_e_miit;
           try {
-    	MoFEMEntity moabent(moab,cpy_fit->get_MoFEMField_ptr(),miit->get_RefMoFEMEntity_ptr());
-    	p_e_miit = entsMoabField.insert(moabent);
+	    MoFEMEntity moabent(moab,cpy_fit->get_MoFEMField_ptr(),miit->get_RefMoFEMEntity_ptr());
+	    p_e_miit = entsMoabField.insert(moabent);
           } catch (const std::exception& ex) {
-    	ostringstream ss;
-    	ss << "throw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
-    	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,ss.str().c_str());
+	    ostringstream ss;
+	    ss << "throw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
+	    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,ss.str().c_str());
           }
           if(p_e_miit.first->get_max_order()<order) {
     	bool success = entsMoabField.modify(p_e_miit.first,MoFEMEntity_change_order(moab,order));
@@ -660,13 +661,13 @@ PetscErrorCode Core::set_other_global_ghost_vector(
           diit = dofsMoabField.get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(field_name,miit->get_ent()));
           hi_diit = dofsMoabField.get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(field_name,miit->get_ent()));
           for(;diit!=hi_diit;diit++) {
-    	DofMoFEMEntity mdof(&*(p_e_miit.first),diit->get_dof_order(),diit->get_dof_rank(),diit->get_EntDofIdx());
-    	pair<DofMoFEMEntity_multiIndex::iterator,bool> cpy_p_diit;
-    	cpy_p_diit = dofsMoabField.insert(mdof);
-    	if(cpy_p_diit.second) {
-    	  bool success = dofsMoabField.modify(cpy_p_diit.first,DofMoFEMEntity_active_change(true));
-    	  if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-    	}
+	    DofMoFEMEntity mdof(&*(p_e_miit.first),diit->get_dof_order(),diit->get_dof_rank(),diit->get_EntDofIdx());
+	    pair<DofMoFEMEntity_multiIndex::iterator,bool> cpy_p_diit;
+	    cpy_p_diit = dofsMoabField.insert(mdof);
+	    if(cpy_p_diit.second) {
+	      bool success = dofsMoabField.modify(cpy_p_diit.first,DofMoFEMEntity_active_change(true));
+	      if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+	    }
           }
           diiiit = dofsMoabField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().find(boost::make_tuple(cpy_field_name,miit->get_ent(),miit->get_EntDofIdx()));
           if(diiiit==dofsMoabField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");

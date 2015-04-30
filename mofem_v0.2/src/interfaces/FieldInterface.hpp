@@ -490,7 +490,7 @@ struct FieldInterface: public FieldUnknownInterface {
     * \param BitRefLevel bitLevel
     * \param BitRefLevel mask
     * \param EntityType type of entities
-    * \param EntityHandle meshset   
+    * \retval EntityHandle meshset   
     *
     */
   virtual PetscErrorCode get_entities_by_type_and_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,const EntityHandle meshset,int verb = -1) = 0;
@@ -501,7 +501,7 @@ struct FieldInterface: public FieldUnknownInterface {
    * \param BitRefLevel bitLevel
    * \param BitRefLevel mask
    * \param EntityType type of entities
-   * \param Range ents   
+   * \retval ents   
    *
    */
   virtual PetscErrorCode get_entities_by_type_and_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,Range &ents,int verb = -1) = 0;
@@ -521,7 +521,7 @@ struct FieldInterface: public FieldUnknownInterface {
    *
    * \param BitRefLevel bitLevel
    * \param BitRefLevel mask
-   * \param Range   
+   * \retval ents
    */
   virtual PetscErrorCode get_entities_by_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,Range &ents) = 0;
 
@@ -1287,6 +1287,48 @@ struct FieldInterface: public FieldUnknownInterface {
     */
   virtual PetscErrorCode MatCreateSeqAIJWithArrays(const string &name,Mat *Aij,PetscInt **i,PetscInt **j,PetscScalar **v,int verb = -1) = 0;
 
+  /** \brief create IS for give two problems and field
+    * \ingroup mofem_vectors
+
+    Note that indices are ordered in ascending order of local indices in problem_y 
+
+    \param x_problem name of problem
+    \param x_field_name name of field in problem_x
+    \param x_rc that is ROW or COL
+    \param y_problem name of problem
+    \param y_field_name name of field in problem_y
+    \param y_rc that is ROW or COL
+
+    \retval idx indexes in problem_x
+    \retval idy indexes in problem_y   
+
+    */
+  virtual PetscErrorCode ISCreateFromProblemFieldToOtherProblemField(
+    const string &x_problem,const string &x_field_name,RowColData x_rc,
+    const string &y_problem,const string &y_field_name,RowColData y_rc,
+    vector<int> &idx,vector<int> &idy,int verb = -1) = 0;
+
+  /** \brief create IS for give two problems and field
+    * \ingroup mofem_vectors
+
+    Note that indices are ordered in ascending order of local indices in problem_y 
+
+    \param x_problem name of problem
+    \param x_field_name name of field in problem_x
+    \param x_rc that is ROW or COL
+    \param y_problem name of problem
+    \param y_field_name name of field in problem_y
+    \param y_rc that is ROW or COL
+
+    \retval ix IS indexes in problem_x
+    \retval iy IS indexes in problem_y   
+
+    */
+  virtual PetscErrorCode ISCreateFromProblemFieldToOtherProblemField(
+    const string &x_problem,const string &x_field_name,RowColData x_rc,
+    const string &y_problem,const string &y_field_name,RowColData y_rc,
+    IS *ix,IS *iy,int verb = -1) = 0;
+
   /** 
     * \brief create IS for given order range (collective)
     * \ingroup mofem_vectors
@@ -1295,7 +1337,7 @@ struct FieldInterface: public FieldUnknownInterface {
     * \param rc ROW or COL 
     * \param min_order
     * \param max_order
-    * \param is out value
+    * \retval is out value
     
     */
   virtual PetscErrorCode ISCreateProblemOrder(const string &problem,RowColData rc,int min_order,int max_order,IS *is,int verb = -1) = 0;
@@ -1309,7 +1351,7 @@ struct FieldInterface: public FieldUnknownInterface {
     * \param field name
     * \param min_rank
     * \param max_rank
-    * \param is out value
+    * \retval is out value
     
     */
   virtual PetscErrorCode ISCreateProblemFieldAndRank(const string &problem,RowColData rc,const string &field,int min_rank,int max_rank,IS *is,int verb = -1) = 0;
@@ -1328,7 +1370,8 @@ struct FieldInterface: public FieldUnknownInterface {
     * \param yin vector
     * \param y_problem problem name
     * \param y_field_name
-    * \param newctx scatter
+    * \retval newctx scatter
+
     */
   virtual PetscErrorCode VecScatterCreate(
     Vec xin,const string &x_problem,const string &x_field_name,RowColData x_rc,
@@ -1342,7 +1385,8 @@ struct FieldInterface: public FieldUnknownInterface {
     * \param x_proble problem name
     * \param yin vector
     * \param y_problem problem name
-    * \param newctx scatter
+    * \retval newctx scatter
+
     */
   virtual PetscErrorCode VecScatterCreate(Vec xin,const string &x_problem,RowColData x_rc,Vec yin,const string &y_problem,RowColData y_rc,VecScatter *newctx,int verb = -1) = 0;
 
