@@ -156,8 +156,10 @@ int main(int argc, char *argv[]) {
 	ierr = m_field.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
 	}
 	
-	NormElement norm_elements_re(m_field);
-	NormElement norm_elements_im(m_field);
+    double real_error = 0;
+    double imag_error = 0;
+	NormElement norm_elements_re(m_field,real_error);
+	NormElement norm_elements_im(m_field,imag_error);
 
 	if(m_field.check_field("reEX") && m_field.check_field("rePRES")) {
 	//&& m_field.check_field("imPRES") && m_field.check_field("imEX") ) {
@@ -250,6 +252,12 @@ int main(int argc, char *argv[]) {
 	ierr = m_field.loop_finite_elements("NORM_PROBLEM2","NORM_FE2",norm_elements_im.getLoopFeRhs()); CHKERRQ(ierr);
 	ierr = m_field.loop_finite_elements("NORM_PROBLEM2","NORM_FE2",norm_elements_im.getLoopFeLhs()); CHKERRQ(ierr);
 
+    
+    //real_error = sqrt(norm_elements_re.eRror);
+    //imag_error = sqrt(norm_elements_im.eRror);
+    
+    cout << "\n real global l2 error is: \n" <<  real_error << endl;
+    
     /* create ghost points */
 	ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 	ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
@@ -311,7 +319,7 @@ int main(int argc, char *argv[]) {
 	ierr = m_field.set_local_ghost_vector("EX1_PROBLEM",ROW,M,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	ierr = m_field.set_other_global_ghost_vector("EX1_PROBLEM","reEX","imEX",ROW,P,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	
-	ierr = VecNorm(M,NORM_FROBENIUS,&nrm2_M);;
+	ierr = VecNorm(M,NORM_FROBENIUS,&nrm2_M);
 	ierr = VecNorm(P,NORM_2,&nrm2_P); CHKERRQ(ierr);
 	//ierr = VecNorm(M,NORM_INFINITY,&nrm2_M);
 

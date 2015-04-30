@@ -260,12 +260,13 @@ int main(int argc, char *argv[]) {
     ierr = m_field.build_partitioned_problem("ACOUSTIC_PROBLEM",true); CHKERRQ(ierr);
     ierr = m_field.partition_finite_elements("ACOUSTIC_PROBLEM",true); CHKERRQ(ierr);
 
-    ierr = m_field.build_partitioned_problem("BCREAL_PROBLEM",true); CHKERRQ(ierr);
-    ierr = m_field.partition_finite_elements("BCREAL_PROBLEM",true); CHKERRQ(ierr);
+    if(dirihlet_bc_set) {
+      ierr = m_field.build_partitioned_problem("BCREAL_PROBLEM",true); CHKERRQ(ierr);
+      ierr = m_field.partition_finite_elements("BCREAL_PROBLEM",true); CHKERRQ(ierr);
 
-    ierr = m_field.build_partitioned_problem("BCIMAG_PROBLEM",true); CHKERRQ(ierr);
-    ierr = m_field.partition_finite_elements("BCIMAG_PROBLEM",true); CHKERRQ(ierr);
-	
+      ierr = m_field.build_partitioned_problem("BCIMAG_PROBLEM",true); CHKERRQ(ierr);
+      ierr = m_field.partition_finite_elements("BCIMAG_PROBLEM",true); CHKERRQ(ierr);
+	}
 	if(m_field.check_field("reEX") && m_field.check_field("imEX")) {
 	
       ierr = m_field.build_partitioned_problem("EX1_PROBLEM",true); CHKERRQ(ierr);
@@ -282,14 +283,15 @@ int main(int argc, char *argv[]) {
     ierr = m_field.partition_problem("ACOUSTIC_PROBLEM"); CHKERRQ(ierr);
     ierr = m_field.partition_finite_elements("ACOUSTIC_PROBLEM"); CHKERRQ(ierr);
 
-    ierr = m_field.build_problem("BCREAL_PROBLEM"); CHKERRQ(ierr);
-    ierr = m_field.partition_problem("BCREAL_PROBLEM"); CHKERRQ(ierr);
-    ierr = m_field.partition_finite_elements("BCREAL_PROBLEM"); CHKERRQ(ierr);
+    if(dirihlet_bc_set) {
+      ierr = m_field.build_problem("BCREAL_PROBLEM"); CHKERRQ(ierr);
+      ierr = m_field.partition_problem("BCREAL_PROBLEM"); CHKERRQ(ierr);
+      ierr = m_field.partition_finite_elements("BCREAL_PROBLEM"); CHKERRQ(ierr);
 
-    ierr = m_field.build_problem("BCIMAG_PROBLEM"); CHKERRQ(ierr);
-    ierr = m_field.partition_problem("BCIMAG_PROBLEM"); CHKERRQ(ierr);
-    ierr = m_field.partition_finite_elements("BCIMAG_PROBLEM"); CHKERRQ(ierr);
-	
+      ierr = m_field.build_problem("BCIMAG_PROBLEM"); CHKERRQ(ierr);
+      ierr = m_field.partition_problem("BCIMAG_PROBLEM"); CHKERRQ(ierr);
+      ierr = m_field.partition_finite_elements("BCIMAG_PROBLEM"); CHKERRQ(ierr);
+	}
 	if(m_field.check_field("reEX") && m_field.check_field("imEX")) {
 
       ierr = m_field.build_problem("EX1_PROBLEM"); CHKERRQ(ierr);
@@ -432,7 +434,6 @@ int main(int argc, char *argv[]) {
 
   }
 
-
   // Analytical boundary conditions
   AnalyticalDirihletBC::DirichletBC analytical_ditihlet_bc_real(m_field,"rePRES",A,T,F);
   AnalyticalDirihletBC::DirichletBC analytical_ditihlet_bc_imag(m_field,"imPRES",A,T,F);
@@ -496,7 +497,7 @@ int main(int argc, char *argv[]) {
   ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
   ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
   ierr = VecScale(F,-1); CHKERRQ(ierr);
-
+  
   // Solve problem
   KSP solver;
   ierr = KSPCreate(PETSC_COMM_WORLD,&solver); CHKERRQ(ierr);

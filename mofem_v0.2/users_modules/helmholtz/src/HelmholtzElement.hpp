@@ -106,7 +106,7 @@ struct HelmholtzElement {
       globalParameters.surfaceAdmittance.first,
       &globalParameters.surfaceAdmittance.first,&globalParameters.surfaceAdmittance.second); CHKERRQ(ierr);
 
-    globalParameters.powerOfIncidentWave.first = 0;
+    globalParameters.powerOfIncidentWave.first = 1;
     ierr = PetscOptionsReal("-power_of_incident_wave",
       "power of incident wave applied to all surface elements on MIX_INCIDENT_WAVE_BC and HARD_INCIDENT_WAVE_BC","",
       globalParameters.powerOfIncidentWave.first,
@@ -419,7 +419,6 @@ struct HelmholtzElement {
 
 
         }
-  
         ierr = VecSetValues(F,data.getIndices().size(),
           &data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
   
@@ -1160,11 +1159,11 @@ struct HelmholtzElement {
 
       if(it->get_name().compare(0,23,"HARD_INCIDENT_WAVE_BC") == 0) {
 
-	surfaceIncidentWaveBcData[it->get_msId()].aDmittance_real = 0;
-	surfaceIncidentWaveBcData[it->get_msId()].aDmittance_imag = 0;
+        surfaceIncidentWaveBcData[it->get_msId()].aDmittance_real = 0;
+        surfaceIncidentWaveBcData[it->get_msId()].aDmittance_imag = 0;
 
-	rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,surfaceIncidentWaveBcData[it->get_msId()].tRis,true); CHKERR_PETSC(rval);
-	ierr = mField.add_ents_to_finite_element_by_TRIs(surfaceIncidentWaveBcData[it->get_msId()].tRis,"HELMHOLTZ_REIM_FE"); CHKERRQ(ierr);
+        rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,surfaceIncidentWaveBcData[it->get_msId()].tRis,true); CHKERR_PETSC(rval);
+        ierr = mField.add_ents_to_finite_element_by_TRIs(surfaceIncidentWaveBcData[it->get_msId()].tRis,"HELMHOLTZ_REIM_FE"); CHKERRQ(ierr);
 
       }
 

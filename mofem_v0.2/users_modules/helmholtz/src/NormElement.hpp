@@ -39,10 +39,42 @@ namespace MoFEM {
   */
 struct NormElement {
 
+  double& eRror;
+  
   struct MyVolumeFE: public VolumeElementForcesAndSourcesCore {
+    FieldInterface& mField;
     int addToRank; ///< default value 1, i.e. assumes that geometry is approx. by quadratic functions.
-    MyVolumeFE(FieldInterface &_mField,int add_to_rank): VolumeElementForcesAndSourcesCore(_mField),addToRank(add_to_rank) {}
+    double& eRror;
+    MyVolumeFE(FieldInterface &m_field,double error,int add_to_rank): 
+        VolumeElementForcesAndSourcesCore(m_field),mField(m_field),addToRank(add_to_rank),
+        eRror(error) {}
     int getRule(int order) { return order+addToRank; };
+    
+    PetscErrorCode preProcessor() {
+      PetscFunctionBegin; 
+      eRror = 0;
+      PetscFunctionReturn(0);
+    }
+    
+    PetscErrorCode postProcessor() {
+      PetscFunctionBegin; 
+      int rank;
+      MPI_Comm_rank(mField.get_comm(),&rank);
+      Vec ghost;
+      if(!rank) {
+        VecCreateGhostWithArray(mField.get_comm(),1,1,0,NULL,&eRror,&ghost);
+      } else {
+        int g[] = {0};
+        VecCreateGhostWithArray(mField.get_comm(),0,1,1,g,&eRror,&ghost);
+      }
+      VecGhostUpdateBegin(ghost,ADD_VALUES,SCATTER_REVERSE);
+      VecGhostUpdateEnd(ghost,ADD_VALUES,SCATTER_REVERSE);
+      VecGhostUpdateBegin(ghost,INSERT_VALUES,SCATTER_FORWARD);
+      VecGhostUpdateEnd(ghost,INSERT_VALUES,SCATTER_FORWARD);
+      VecDestroy(&ghost);
+      PetscFunctionReturn(0);
+    }
+    
   };
   
   MyVolumeFE feRhs; ///< cauclate right hand side for tetrahedral elements
@@ -50,20 +82,13 @@ struct NormElement {
   MyVolumeFE feLhs; //< calculate left hand side for tetrahedral elements
   MyVolumeFE& getLoopFeLhs() { return feLhs; } ///< get lhs volume element
 	
-  /// \brief Surface element
-  struct MySurfaceFE: public TriElementForcesAndSurcesCore {
-    int addToRank; ///< default value 1, i.e. assumes that geometry is approx. by quadratic functions.
-    MySurfaceFE(FieldInterface &_mField,int add_to_rank): TriElementForcesAndSurcesCore(_mField),addToRank(add_to_rank) {}
-    int getRule(int order) { return order+addToRank; };
-  };
-	
-	
   FieldInterface &m_field;
   int addToRank; ///< default value 1, i.e. assumes that geometry is approx. by quadratic functions.
   
   NormElement(
-     FieldInterface &mField,int add_to_rank = 1):
-     feRhs(mField,add_to_rank),feLhs(mField,add_to_rank),m_field(mField),addToRank(add_to_rank) {}
+     FieldInterface &mField,double error,int add_to_rank = 1):
+     feRhs(mField,error,add_to_rank),feLhs(mField,error,add_to_rank),m_field(mField),addToRank(add_to_rank),
+     eRror(error) {}
 	
   //Field data
   struct CommonData {
@@ -239,19 +264,22 @@ struct NormElement {
 		const string refieldName;
 		const string imfieldName;
 		
+        double& eRror;
+        
 		OpRhs(const string norm_field_name,const string re_field_name,const string im_field_name,
-				   CommonData &common_data,bool usel2,bool userela
-				   ): 
+				   CommonData &common_data,double error,bool usel2,bool userela): 
 			VolumeElementForcesAndSourcesCore::UserDataOperator(norm_field_name),
-			commonData(common_data),useL2(usel2),useTsF(true),useRela(userela),normfieldName(norm_field_name)
+			commonData(common_data),eRror(error),
+             useL2(usel2),useTsF(true),useRela(userela),normfieldName(norm_field_name)
 			,refieldName(re_field_name)
 			,imfieldName(im_field_name) {}
 		
 		OpRhs(const string norm_field_name,const string re_field_name,const string im_field_name,
-			  Vec _F,CommonData &common_data,bool usel2,bool userela
+			  Vec _F,CommonData &common_data,double error,bool usel2,bool userela
 			  ): 
 			VolumeElementForcesAndSourcesCore::UserDataOperator(norm_field_name),
-			commonData(common_data),useL2(usel2),useTsF(false),useRela(userela),F(_F),normfieldName(norm_field_name)
+			commonData(common_data),eRror(error),
+            useL2(usel2),useTsF(false),useRela(userela),F(_F),normfieldName(norm_field_name)
 			,refieldName(re_field_name)
 			,imfieldName(im_field_name) {}
 		
@@ -288,8 +316,7 @@ struct NormElement {
 				
 				ublas::matrix<double> &uAnalyGrad = commonData.gradPressureAtGaussPts[refieldName];
 				ublas::matrix<double> &uNumerGrad = commonData.gradPressureAtGaussPts[imfieldName];
-				double eRror;
-				double sqError;
+				double error;
 				
 				for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
                   
@@ -303,23 +330,25 @@ struct NormElement {
 					const ublas::matrix_row<ublas::matrix<double> > u_analy_grad(uAnalyGrad,gg);
 					const ublas::matrix_row<ublas::matrix<double> > u_numer_grad(uNumerGrad,gg);
 
+                    ublas::vector<double> GradError = u_analy_grad - u_numer_grad;
+                    
 					if(useL2) { //case L2 norm
                       
-						eRror = u_analy[gg] - u_numer[gg];
-						sqError = pow(eRror,2.0);
-                        
+						error = u_analy[gg] - u_numer[gg];
+						eRror += error*error*val;
+                        cout << " eRror inside function \n " << eRror << endl;
 					} else if(!useL2) { //case H1 norm
 					
-						eRror = u_analy[gg] - u_numer[gg];
-						double sqGradError = ublas::inner_prod((u_analy_grad-u_numer_grad),(u_analy_grad-u_numer_grad));
+						error = u_analy[gg] - u_numer[gg];
+						
 					
-						sqError = sqGradError + pow(eRror,2.0);
+						eRror += (ublas::inner_prod(GradError,GradError) + error*error)*val;
 						
 					}
 					//need to calculate sqrt of norm^2
 					if(!useRela) { //case Norm error
 						
-						ublas::noalias(Nf) += val*sqError*data.getN(gg,nb_row);
+						ublas::noalias(Nf) += val*error*data.getN(gg,nb_row);
 						
 					} else if(useRela) { //case relative error
 						
@@ -423,7 +452,7 @@ PetscErrorCode setNormFiniteElementRhsOperator(string norm_field_name,string fie
 
       feLhs.getRowColOpPtrVector().push_back(new OpLhs(norm_field_name,A));
       
-      feRhs.getRowOpPtrVector().push_back(new OpRhs(norm_field_name,field1_name,field2_name,F,commonData,usel2,userela));
+      feRhs.getRowOpPtrVector().push_back(new OpRhs(norm_field_name,field1_name,field2_name,F,commonData,eRror,usel2,userela));
 
 	}
 	
