@@ -31,7 +31,7 @@ struct TimeForceScale: public MethodsForOp {
     TimeForceScale(): readFile(0),debug(1) {
       PetscErrorCode ierr;
       ierr = timeData(); CHKERRABORT(PETSC_COMM_WORLD,ierr);
-    };
+    }
 
     ErrorCode rval;
     PetscErrorCode ierr;
