@@ -1197,6 +1197,7 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode compose_problem(const string &name,const string &problem_for_rows,bool copy_rows,const string &problem_for_cols,bool copy_cols,int verb = -1) = 0;
 
   /** \brief build indexing and partition problem by blocking problems
+    * \ingroup mofem_problems
     *
     * \param name problem name
     * \param block_problems problems consisting blocks

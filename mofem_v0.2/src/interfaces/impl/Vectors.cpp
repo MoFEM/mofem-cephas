@@ -202,11 +202,11 @@ PetscErrorCode Core::ISCreateFromProblemFieldToOtherProblemField(
   switch (y_rc) {
     case ROW:
       y_dit = p_y->numered_dofs_rows.get<PetscLocalIdx_mi_tag>().lower_bound(0);
-      hi_y_dit = p_y->numered_dofs_rows.get<PetscLocalIdx_mi_tag>().lower_bound(p_y->get_nb_local_dofs_row()); // should be lower
+      hi_y_dit = p_y->numered_dofs_rows.get<PetscLocalIdx_mi_tag>().upper_bound(p_y->get_nb_local_dofs_row()-1);
       break;
     case COL:
       y_dit = p_y->numered_dofs_cols.get<PetscLocalIdx_mi_tag>().lower_bound(0);
-      hi_y_dit = p_y->numered_dofs_cols.get<PetscLocalIdx_mi_tag>().lower_bound(p_y->get_nb_local_dofs_col()); // should be lower
+      hi_y_dit = p_y->numered_dofs_cols.get<PetscLocalIdx_mi_tag>().upper_bound(p_y->get_nb_local_dofs_col()-1);
       break;
     default:
      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
