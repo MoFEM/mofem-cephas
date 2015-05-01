@@ -58,7 +58,7 @@ struct HelmholtzElement {
   * \ingroup mofem_helmholtz_elem
   */
   struct VolumeData {
-    double wAvenumber;
+    double waveNumber;
     Range tEts; ///< contains elements in block set
   };
   map<int,VolumeData> volumeData; 
@@ -78,9 +78,11 @@ struct HelmholtzElement {
   map<int,SurfaceData> baylissTurkelBcData;
 
   struct GlobalParameters {
-    pair<double,PetscBool> wAveNumber;
+    pair<double,PetscBool> waveNumber;
     pair<double,PetscBool> surfaceAdmittance;
-    pair<double,PetscBool> powerOfIncidentWave;
+    pair<double,PetscBool> powerOfIncidentWaveReal;
+    pair<double,PetscBool> powerOfIncidentWaveImag;
+
     pair<ublas::vector<double>,PetscBool> waveDirection;
   };
   GlobalParameters globalParameters;
@@ -91,11 +93,11 @@ struct HelmholtzElement {
     PetscFunctionBegin;
     ierr = PetscOptionsBegin(mField.get_comm(),NULL,"Helmholtz problem options","none"); CHKERRQ(ierr);
 
-    globalParameters.wAveNumber.first = 1;
+    globalParameters.waveNumber.first = 1;
     ierr = PetscOptionsReal("-wave_number","wave number","",
-      globalParameters.wAveNumber.first,
-      &globalParameters.wAveNumber.first,&globalParameters.wAveNumber.second); CHKERRQ(ierr);
-    if(!globalParameters.wAveNumber.second) {
+      globalParameters.waveNumber.first,
+      &globalParameters.waveNumber.first,&globalParameters.waveNumber.second); CHKERRQ(ierr);
+    if(!globalParameters.waveNumber.second) {
 
       SETERRQ(PETSC_COMM_SELF,1,"wave number not given, set in line command -wave_number to fix problem");
 
@@ -106,11 +108,14 @@ struct HelmholtzElement {
       globalParameters.surfaceAdmittance.first,
       &globalParameters.surfaceAdmittance.first,&globalParameters.surfaceAdmittance.second); CHKERRQ(ierr);
 
-    globalParameters.powerOfIncidentWave.first = 0;
+    globalParameters.powerOfIncidentWaveReal.first = 1;
     ierr = PetscOptionsReal("-power_of_incident_wave",
       "power of incident wave applied to all surface elements on MIX_INCIDENT_WAVE_BC and HARD_INCIDENT_WAVE_BC","",
-      globalParameters.powerOfIncidentWave.first,
-      &globalParameters.powerOfIncidentWave.first,&globalParameters.powerOfIncidentWave.second); CHKERRQ(ierr);
+      globalParameters.powerOfIncidentWaveReal.first,
+      &globalParameters.powerOfIncidentWaveReal.first,&globalParameters.powerOfIncidentWaveReal.second); CHKERRQ(ierr);
+
+    globalParameters.powerOfIncidentWaveImag.first = 0;
+    globalParameters.powerOfIncidentWaveImag.second = PETSC_FALSE;
 
     globalParameters.waveDirection.first.resize(3);
     globalParameters.waveDirection.first.clear();
@@ -395,7 +400,7 @@ struct HelmholtzElement {
   
         // wave number "k" is the proportional to the frequency of incident wave
         // and represents number of waves per wave length 2Pi - 2Pi/K   
-        double k_pow2 = dAta.wAvenumber*dAta.wAvenumber;
+        double k_pow2 = dAta.waveNumber*dAta.waveNumber;
 
         for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
   
@@ -470,7 +475,7 @@ struct HelmholtzElement {
         K.resize(nb_rows,nb_cols);
         K.clear();
 
-        double k_pow2 = dAta.wAvenumber*dAta.wAvenumber;
+        double k_pow2 = dAta.waveNumber*dAta.waveNumber;
 
         for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
           
@@ -577,11 +582,14 @@ struct HelmholtzElement {
     */
   struct IncidentWaveNeumannF2 {
 
-    double wAvenumber;
-    ublas::vector<double> dIrection;
-    double pOwer;
-    IncidentWaveNeumannF2(double wave_number,ublas::vector<double> d,double power): 
-      wAvenumber(wave_number),dIrection(d),pOwer(power) {}
+    double& waveNumber;
+    ublas::vector<double>& dIrection;
+    double& pOwerReal;
+    double& pOwerImag;
+
+    IncidentWaveNeumannF2(
+      double& wave_number,ublas::vector<double>& d,double& power_real,double &power_imag): 
+      waveNumber(wave_number),dIrection(d),pOwerReal(power_real),pOwerImag(power_imag) {}
 
     ublas::vector<double> cOordinate;
     ublas::vector<double> vAl;
@@ -595,11 +603,11 @@ struct HelmholtzElement {
       cOordinate[1] = y;
       cOordinate[2] = z;
 
-      complex< double > p_inc = pOwer*exp(i*wAvenumber*inner_prod(dIrection,cOordinate));
+      complex< double > p_inc = (pOwerReal+i*pOwerImag)*exp(i*waveNumber*inner_prod(dIrection,cOordinate));
 
-      complex< double > grad_x = i*wAvenumber*dIrection[0]*p_inc;
-      complex< double > grad_y = i*wAvenumber*dIrection[1]*p_inc;
-      complex< double > grad_z = i*wAvenumber*dIrection[2]*p_inc;
+      complex< double > grad_x = i*waveNumber*dIrection[0]*p_inc;
+      complex< double > grad_y = i*waveNumber*dIrection[1]*p_inc;
+      complex< double > grad_z = i*waveNumber*dIrection[2]*p_inc;
 
       complex< double > grad_n = normal[0]*grad_x + normal[1]*grad_y + normal[2]*grad_z;
 
@@ -748,13 +756,21 @@ struct HelmholtzElement {
 	      nOrmal /= 2*area;
 	    }
 	  }
-	  ublas::vector<double>& f1 = (*functionEvaluator1)(x,y,z,nOrmal);
-	  ublas::vector<double>& f2 = (*functionEvaluator2)(x,y,z,nOrmal);
 
-	  ierr = calculateResidualRe(gg,f1,f2); CHKERRQ(ierr);
+	  try {
+	    ublas::vector<double>& f1 = (*functionEvaluator1)(x,y,z,nOrmal);
+	    ublas::vector<double>& f2 = (*functionEvaluator2)(x,y,z,nOrmal);
+
+	    ierr = calculateResidualRe(gg,f1,f2); CHKERRQ(ierr);
   
-	  noalias(reNf) += val*(reResidual*data.getN(gg,nb_row_dofs));
-	  noalias(imNf) += val*(imResidual*data.getN(gg,nb_row_dofs));
+	    noalias(reNf) += val*(reResidual*data.getN(gg,nb_row_dofs));
+	    noalias(imNf) += val*(imResidual*data.getN(gg,nb_row_dofs));
+
+	  } catch (const std::exception& ex) {
+	    ostringstream ss;
+	    ss << "throw in method: " << ex.what() << endl;
+	    SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+	  }
 
         }
   
@@ -1101,18 +1117,27 @@ struct HelmholtzElement {
     */
   PetscErrorCode addHelmholtzElements(
     const string re_field_name,const string im_field_name,
-    const string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
+    const string mesh_nodals_positions = "MESH_NODE_POSITIONS",
+    const string pressure_field = "P") {
     PetscFunctionBegin;
   
     PetscErrorCode ierr;
     ErrorCode rval;
+
+    if(mField.check_field(pressure_field)) {
+
+      ierr = mField.add_finite_element("PRESSURE_FE",MF_ZERO); CHKERRQ(ierr ); 
+      ierr = mField.modify_finite_element_add_field_row("PRESSURE_FE",pressure_field); CHKERRQ(ierr);
+      ierr = mField.modify_finite_element_add_field_col("PRESSURE_FE",pressure_field); CHKERRQ(ierr);
+      ierr = mField.modify_finite_element_add_field_data("PRESSURE_FE",pressure_field); CHKERRQ(ierr);
+
+    }
     
     ierr = mField.add_finite_element("HELMHOLTZ_RERE_FE",MF_ZERO); CHKERRQ(ierr ); 
     ierr = mField.modify_finite_element_add_field_row("HELMHOLTZ_RERE_FE",re_field_name); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_col("HELMHOLTZ_RERE_FE",re_field_name); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_data("HELMHOLTZ_RERE_FE",re_field_name); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_data("HELMHOLTZ_RERE_FE",im_field_name); CHKERRQ(ierr);
-
 
     ierr = mField.add_finite_element("HELMHOLTZ_IMIM_FE",MF_ZERO); CHKERRQ(ierr ); 
     ierr = mField.modify_finite_element_add_field_row("HELMHOLTZ_IMIM_FE",im_field_name); CHKERRQ(ierr);
@@ -1133,16 +1158,28 @@ struct HelmholtzElement {
       ierr = mField.modify_finite_element_add_field_data("HELMHOLTZ_IMIM_FE",mesh_nodals_positions); CHKERRQ(ierr);
       ierr = mField.modify_finite_element_add_field_data("HELMHOLTZ_REIM_FE",mesh_nodals_positions); CHKERRQ(ierr);
 
+      if(mField.check_field(pressure_field)) {
+
+	ierr = mField.modify_finite_element_add_field_data("PRESSURE_FE",mesh_nodals_positions); CHKERRQ(ierr);
+
+      }
+
     }
 
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
         
       if(it->get_name().compare(0,13,"MAT_HELMHOLTZ") == 0) {
 
-	volumeData[it->get_msId()].wAvenumber = globalParameters.wAveNumber.first;
+	volumeData[it->get_msId()].waveNumber = globalParameters.waveNumber.first;
 	rval = mField.get_moab().get_entities_by_type(it->meshset,MBTET,volumeData[it->get_msId()].tEts,true); CHKERR_PETSC(rval);
 	ierr = mField.add_ents_to_finite_element_by_TETs(volumeData[it->get_msId()].tEts,"HELMHOLTZ_RERE_FE"); CHKERRQ(ierr);
 	ierr = mField.add_ents_to_finite_element_by_TETs(volumeData[it->get_msId()].tEts,"HELMHOLTZ_IMIM_FE"); CHKERRQ(ierr);
+
+	if(mField.check_field(pressure_field)) {
+
+	  ierr = mField.add_ents_to_finite_element_by_TETs(volumeData[it->get_msId()].tEts,"PRESSURE_FE"); CHKERRQ(ierr);
+
+	}
 
       }
 
@@ -1185,7 +1222,7 @@ struct HelmholtzElement {
       if(it->get_name().compare(0,13,"SOMMERFELD_BC") == 0) {
 
 	sommerfeldBcData[it->get_msId()].aDmittance_real = 0;
-	sommerfeldBcData[it->get_msId()].aDmittance_imag = -globalParameters.wAveNumber.first;
+	sommerfeldBcData[it->get_msId()].aDmittance_imag = -globalParameters.waveNumber.first;
 
 	rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,sommerfeldBcData[it->get_msId()].tRis,true); CHKERR_PETSC(rval);
 	ierr = mField.add_ents_to_finite_element_by_TRIs(sommerfeldBcData[it->get_msId()].tRis,"HELMHOLTZ_REIM_FE"); CHKERRQ(ierr);
@@ -1195,7 +1232,7 @@ struct HelmholtzElement {
       if(it->get_name().compare(0,17,"BAYLISS_TURKEL_BC") == 0) {
 	  
 	baylissTurkelBcData[it->get_msId()].aDmittance_real = 0;
-	baylissTurkelBcData[it->get_msId()].aDmittance_imag = -globalParameters.wAveNumber.first;
+	baylissTurkelBcData[it->get_msId()].aDmittance_imag = -globalParameters.waveNumber.first;
 		  
 		  
 	rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,baylissTurkelBcData[it->get_msId()].tRis,true); CHKERR_PETSC(rval);
@@ -1208,9 +1245,6 @@ struct HelmholtzElement {
     PetscFunctionReturn(0);
   } 
   
-  
-  
-
   PetscErrorCode setOperators(
     Mat A,Vec F,
     const string re_field_name,const string im_field_name,
@@ -1276,10 +1310,12 @@ struct HelmholtzElement {
     for(;miit!=surfaceIncidentWaveBcData.end();miit++) {
 
       boost::shared_ptr<IncidentWaveNeumannF2> incident_wave_neumann_bc = 
-	  boost::shared_ptr<IncidentWaveNeumannF2>(new IncidentWaveNeumannF2(
-	  globalParameters.wAveNumber.first,
+	  boost::shared_ptr<IncidentWaveNeumannF2>(
+	  new IncidentWaveNeumannF2(
+	  globalParameters.waveNumber.first,
 	  globalParameters.waveDirection.first,
-	  globalParameters.powerOfIncidentWave.first));
+	  globalParameters.powerOfIncidentWaveReal.first,
+	  globalParameters.powerOfIncidentWaveImag.first));
     
       if(miit->second.aDmittance_imag!=0) {
 	feRhs.at("HELMHOLTZ_REIM_FE").getRowColOpPtrVector().push_back(

@@ -7,11 +7,10 @@
   Note: 
 
   In this implementation, first acoustic potential field is approximated on
-  boundary and then finite element problem is solved. 
-
-  For more rigorous convergence study, trace of best approximations on boundary
-  can be calculated and then finite element for domain and Neumann/mix boundary.
-  That will give exact pollution error.
+  boundary and then finite element problem is solved.  For more rigorous
+  convergence study, trace of best approximations on boundary can be calculated
+  and then finite element for domain and Neumann/mix boundary.  That will give
+  exact pollution error.
 
  */
 
@@ -35,6 +34,7 @@
 #include <MoFEM.hpp>
 
 #include <boost/numeric/ublas/vector_proxy.hpp>
+#include <boost/numeric/ublas/symmetric.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/ptr_container/ptr_map.hpp>
 
@@ -69,33 +69,394 @@ using namespace MoFEM;
 
 #include <HelmholtzElement.hpp>
 
-// Taken form:
-// http://www.scratchapixel.com/old/lessons/mathematics-physics/discrete-fourier-transform-dft-part-1/1d-forward-and-inverse-dft-in-c/
-void forward_dft(const double *s, const int &N, double *&a, double *&b) {
-  // note: this code is not optimised at all, written for clarity not speed.
-  for (int k = 0; k <= N / 2; ++k) {
-    a[k] = b[k] = 0;
-    for (int x = 0; x < N; ++x) {
-      a[k] += s[x] * cos(2 * M_PI / N * k * x);
-      b[k] += s[x] * sin(2 * M_PI / N * k * x);
-    }
-    // normalization
-    a[k] *= (k == 0 || k == N / 2) ? 1. / N : 2. / N;
-    b[k] *= 2. / N;
-  }
-}
+struct TimeSeries {
 
-// Taken form:
-// http://www.scratchapixel.com/old/lessons/mathematics-physics/discrete-fourier-transform-dft-part-1/1d-forward-and-inverse-dft-in-c/
-void inverse_dft(const double *a, const double *b, const int &N, double *&s) {
-  // note: this code is not optimised at all, written for clarity not speed.
-  for (int x = 0; x < N; ++x) {
-    s[x] = a[0];
-    for (int k = 1; k <= N / 2; ++k) {
-      s[x] += a[k] * cos(2 * M_PI / N * k * x) + b[k] * sin(2 * M_PI / N * k * x);
+  FieldInterface& mField;
+  HelmholtzElement& helmholtzElement;
+  AnalyticalDirihletBC::DirichletBC& analyticalDitihletBcReal;
+  AnalyticalDirihletBC::DirichletBC& analyticalDitihletBcImag;
+  bool dirihletBcSet;
+
+  map<double,double> tSeries;
+  int readFile,debug;
+
+  TimeSeries(FieldInterface &m_field,
+    HelmholtzElement& helmholtz_element,
+    AnalyticalDirihletBC::DirichletBC analytical_ditihlet_bc_real,
+    AnalyticalDirihletBC::DirichletBC analytical_ditihlet_bc_imag,
+    bool dirihlet_bc_set): 
+      mField(m_field),helmholtzElement(helmholtz_element),
+      analyticalDitihletBcReal(analytical_ditihlet_bc_real),
+      analyticalDitihletBcImag(analytical_ditihlet_bc_imag),
+      dirihletBcSet(dirihlet_bc_set),
+      readFile(0),debug(1) {}
+
+  ErrorCode rval;
+  PetscErrorCode ierr;
+
+  PetscErrorCode timeData() {
+    PetscFunctionBegin;
+    char time_file_name[255];
+    PetscBool flg = PETSC_TRUE;
+    ierr = PetscOptionsGetString(PETSC_NULL,"-time_data_file",time_file_name,255,&flg); CHKERRQ(ierr);
+    if(flg != PETSC_TRUE) {
+      SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -time_data_file (time_data FILE NEEDED)");
+    }
+    FILE *time_data = fopen(time_file_name,"r");
+    if(time_data == NULL) {
+	SETERRQ1(PETSC_COMM_SELF,1,"*** ERROR data file < %s > open unsucessfull",time_file_name);
+    }
+    double no1 = 0.0, no2 = 0.0;
+    tSeries[no1] = no2;
+    while(! feof (time_data)){
+      int n = fscanf(time_data,"%lf %lf",&no1,&no2);
+      if((n <= 0)||((no1==0)&&(no2==0))) {
+        fgetc(time_data);
+	  continue;
+	}
+	if(n != 2){
+	  SETERRQ1(PETSC_COMM_SELF,1,"*** ERROR read data file error (check input time data file) { n = %d }",n);
+	}
+	tSeries[no1] = no2;
+    }
+    int r = fclose(time_data);      
+    if(debug) {
+      map<double, double>::iterator tit = tSeries.begin();
+      for(;tit!=tSeries.end();tit++) {
+	PetscPrintf(PETSC_COMM_WORLD,"** read time series %3.2e time %3.2e\n",tit->first,tit->second);
+      }
+    }
+    if(r!=0) {
+      SETERRQ(PETSC_COMM_SELF,1,"*** ERROR file cloase unsucessfull");
+    }
+    readFile=1;
+    PetscFunctionReturn(0);
+  }
+
+  ublas::vector<double> sSeries,aSeries,bSeries;
+  
+  PetscErrorCode forwardDft() {
+    PetscFunctionBegin;
+
+    int N = tSeries.size();
+    if(N%2) {
+      SETERRQ(PETSC_COMM_SELF,1,"odd number of number of points, should be even");
+    }
+
+    sSeries.resize(N);
+   
+    map<double,double>::iterator mit = tSeries.begin();
+    for(int ii = 0;mit!=tSeries.end();mit++,ii++) {
+      sSeries[ii] = mit->second;
+    }
+ 
+    aSeries.resize(N);
+    bSeries.resize(N);
+    forwardDft(sSeries,aSeries,bSeries);
+    
+    PetscFunctionReturn(0);
+  }
+
+  ublas::vector<Vec> pSeries,pSeriesReal,pSeriesImag;
+  VecScatter scatterImag,scatterReal;
+
+  PetscErrorCode createVectorSeries(Vec T) {
+    PetscFunctionBegin;
+
+    int n = aSeries.size();
+
+    pSeries.resize(n);
+    pSeriesReal.resize(n);
+    pSeriesImag.resize(n);
+
+    ierr = mField.VecCreateGhost("PRESSURE_IN_TIME",ROW,&pSeries[0]); CHKERRQ(ierr);
+    for(int k = 1;k<n;k++) {
+      ierr = VecDuplicate(pSeries[0],&pSeries[k]); CHKERRQ(ierr);
+    }
+
+    for(int k = 0;k<n;k++) {
+
+      ierr = VecDuplicate(pSeries[0],&pSeriesReal[k]); CHKERRQ(ierr);
+      ierr = VecDuplicate(pSeries[0],&pSeriesImag[k]); CHKERRQ(ierr);
+
+    }
+
+    ierr = mField.VecScatterCreate(T,"ACOUSTIC_PROBLEM","rePRES",ROW,pSeriesReal[0],"PRESSURE_IN_TIME","P",ROW,&scatterReal); CHKERRQ(ierr);
+    ierr = mField.VecScatterCreate(T,"ACOUSTIC_PROBLEM","imPRES",ROW,pSeriesImag[0],"PRESSURE_IN_TIME","P",ROW,&scatterImag); CHKERRQ(ierr);
+
+  
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode destroyVectorSeries() {
+    PetscFunctionBegin;
+ 
+    int n = aSeries.size();
+  
+    for(int k = 0;n<k;k++) {
+
+      ierr = VecDestroy(&pSeries[k]); CHKERRQ(ierr);
+      ierr = VecDestroy(&pSeriesReal[k]); CHKERRQ(ierr);
+      ierr = VecDestroy(&pSeriesImag[k]); CHKERRQ(ierr);
+
+    }
+
+    ierr = VecScatterDestroy(&scatterReal); CHKERRQ(ierr);
+    ierr = VecScatterDestroy(&scatterImag); CHKERRQ(ierr);
+
+    PetscFunctionReturn(0);
+  }
+
+  /** \brief Solve problem for each wave number
+
+  */
+  PetscErrorCode solveForwardDFT(KSP solver,Mat A,Vec F,Vec T) {
+    PetscFunctionBegin;
+
+    int n = aSeries.size();
+
+    for(int k = 0;k<n;k++) { 
+
+      // Zero vectors
+      ierr = VecZeroEntries(T); CHKERRQ(ierr);
+      ierr = VecGhostUpdateBegin(T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      ierr = VecGhostUpdateEnd(T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+
+      ierr = VecZeroEntries(F); CHKERRQ(ierr);
+      ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      ierr = MatZeroEntries(A); CHKERRQ(ierr);
+
+      // Set wave number
+      double c = 1; // wave speed
+      ierr = PetscOptionsGetScalar(NULL,"-wave_speed",&c,NULL); CHKERRQ(ierr);
+
+      const double wave_number = 2*M_PI*k/c;
+      PetscPrintf(PETSC_COMM_WORLD,"Calculate frequency %d for wave number %3.4g out of %d\n",k,wave_number,n);
+
+
+      map<int,HelmholtzElement::VolumeData>::iterator vit = helmholtzElement.volumeData.begin();
+      for(;vit != helmholtzElement.volumeData.end();vit++) {
+	vit->second.waveNumber = wave_number;
+      }
+      helmholtzElement.globalParameters.waveNumber.first = wave_number;
+      helmholtzElement.globalParameters.powerOfIncidentWaveReal.first = aSeries[k];
+      helmholtzElement.globalParameters.powerOfIncidentWaveImag.first = bSeries[k];
+
+      // Assemble problem
+      if(dirihletBcSet) {
+        ierr = mField.problem_basic_method_preProcess("ACOUSTIC_PROBLEM",analyticalDitihletBcReal); CHKERRQ(ierr);
+        ierr = mField.problem_basic_method_preProcess("ACOUSTIC_PROBLEM",analyticalDitihletBcImag); CHKERRQ(ierr);
+      }
+    
+      ierr = helmholtzElement.calculateA("ACOUSTIC_PROBLEM"); CHKERRQ(ierr);
+      ierr = helmholtzElement.calculateF("ACOUSTIC_PROBLEM"); CHKERRQ(ierr);
+    
+      if(dirihletBcSet) {
+        ierr = mField.problem_basic_method_postProcess("ACOUSTIC_PROBLEM",analyticalDitihletBcReal); CHKERRQ(ierr);
+        ierr = mField.problem_basic_method_postProcess("ACOUSTIC_PROBLEM",analyticalDitihletBcImag); CHKERRQ(ierr);
+      }
+  
+      ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
+      ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
+      ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+      ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+      ierr = VecScale(F,-1); CHKERRQ(ierr);
+
+      // Solve problem
+      ierr = KSPSetOperators(solver,A,A); CHKERRQ(ierr);
+      ierr = KSPSetFromOptions(solver); CHKERRQ(ierr);
+      ierr = KSPSetUp(solver); CHKERRQ(ierr);
+  
+      ierr = KSPSolve(solver,F,T); CHKERRQ(ierr);
+  
+      //ierr = VecGhostUpdateBegin(T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      //ierr = VecGhostUpdateEnd(T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+
+      ierr = VecScatterBegin(scatterReal,T,pSeriesReal[k],INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      ierr = VecScatterEnd(scatterReal,T,pSeriesReal[k],INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      ierr = VecScatterBegin(scatterImag,T,pSeriesImag[k],INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      ierr = VecScatterEnd(scatterImag,T,pSeriesImag[k],INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+
+      ierr = VecGhostUpdateBegin(pSeriesReal[k],INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      ierr = VecGhostUpdateEnd(pSeriesReal[k],INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      ierr = VecGhostUpdateBegin(pSeriesImag[k],INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      ierr = VecGhostUpdateEnd(pSeriesImag[k],INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+
+
+    }
+
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode pressureInTimeDomainInverseDft() {
+    PetscFunctionBegin;
+
+    PostPocOnRefinedMesh post_proc(mField);
+    ierr = post_proc.generateRefereneElemenMesh(); CHKERRQ(ierr);
+    ierr = post_proc.addFieldValuesPostProc("P"); CHKERRQ(ierr);
+    ierr = post_proc.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+
+
+    int n = pSeries.size();
+    int size;
+    ierr = VecGetLocalSize(pSeries[0],&size); CHKERRQ(ierr);
+
+    for(int ii = 0;ii<size;ii++) {
+
+      for(int k = 0;k<n;k++) { 
+
+	double *p_real,*p_imag;
+	ierr = VecGetArray(pSeriesReal[k],&p_real); CHKERRQ(ierr);
+	ierr = VecGetArray(pSeriesImag[k],&p_imag); CHKERRQ(ierr);
+
+	aSeries[k] = p_real[ii];
+	bSeries[k] = p_imag[ii];
+
+	ierr = VecRestoreArray(pSeriesReal[k],&p_real); CHKERRQ(ierr);
+	ierr = VecRestoreArray(pSeriesImag[k],&p_imag); CHKERRQ(ierr);
+
+
+      }
+  
+      //cerr << sSeries << endl;
+      inverseDft(aSeries,bSeries,sSeries);
+      //cerr << sSeries << endl;
+      
+      for(int k = 0;k<n;k++) {
+
+	double *a_p;
+	ierr = VecGetArray(pSeries[k],&a_p); CHKERRQ(ierr);
+	a_p[ ii ] = sSeries[k];
+	ierr = VecRestoreArray(pSeries[k],&a_p); CHKERRQ(ierr);
+
+
+      }
+
+
+    }
+
+    for(int k = 0;k<n;k++) {
+
+	ierr = VecGhostUpdateBegin(pSeries[k],INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	ierr = VecGhostUpdateEnd(pSeries[k],INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+
+	ierr = mField.set_local_ghost_vector("PRESSURE_IN_TIME",ROW,pSeries[k],INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	ierr = mField.loop_finite_elements("PRESSURE_IN_TIME","PRESSURE_FE",post_proc); CHKERRQ(ierr);
+
+	ostringstream ss;
+	ss << "pressure_time_step_" << k << ".h5m";
+	rval = post_proc.postProcMesh.write_file(ss.str().c_str(),"MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
+	PetscPrintf(PETSC_COMM_WORLD,"Saved %s\n",ss.str().c_str());
+
+    }
+
+
+    PetscFunctionReturn(0);
+  }
+
+  private:
+
+  
+  ublas::symmetric_matrix<double, ublas::upper> cosKN,sinKN;
+
+  /** Forward FFT
+
+    Assume that input signal is real.
+
+    It is N^2 complexity, not the fastest one, but good enough, this is not
+    bottle neck for calculations. Solution of spatial problem is most time consuming. 
+
+    Taken and then modified, from:
+    <http://www.scratchapixel.com/old/lessons/mathematics-physics/discrete-fourier-transform-dft-part-1/1d-forward-and-inverse-dft-in-c/>
+
+    note: this code is not optimised at all, written for clarity not speed.
+
+  */
+  void forwardDft(const ublas::vector<double>& s,ublas::vector<double>& a,ublas::vector<double>& b) {
+   
+    int N  = s.size();
+
+    cosKN.resize(N);
+    sinKN.resize(N);
+
+    for (int k = 0; k < N; ++k) {
+      for (int n = k; n < N; ++n) {
+      
+	cosKN(k,n) = cos(2 * M_PI / N * k * n);
+	sinKN(k,n) = sin(2 * M_PI / N * k * n);
+
+      }
+    }
+
+    a.clear();
+    b.clear();
+
+    for (int k = 0; k < N; ++k) {
+      a[k] = b[k] = 0;
+      for (int n = 0; n < N; ++n) {
+	
+        a[k] += s[n] * cosKN(k,n);
+        b[k] -= s[n] * sinKN(k,n);
+
+      }
+      // normalization
+      a[k] *= 1./N;
+      b[k] *= 1./N;
     }
   }
-}
+
+
+  /** Inverse FFT 
+
+    Calculate only real values, since pressure in time domain is real. Note
+    that amplitudes in frequency domain are complex.
+
+    Note: this code need to be fast FIXME
+    Note: this code is not optimised at all, written for clarity not speed.
+
+  */
+  void inverseDft(const ublas::vector<double>& a,ublas::vector<double>& b,ublas::vector<double>& s) {
+
+    int N  = s.size();
+    s.clear();
+
+
+    /*int ee = 0;
+    for(int e = 2; e<=N; e = e*2 ) {
+
+      int NN = e - ee;
+      ee = e;
+
+      for(int nn = 0;n<NN;nn++) {
+
+	int n = 
+  
+      }
+
+
+      //int nn = 0;
+      //for(int n = 0;n<N; n += N/e,nn++) {
+
+	//int kk = 0;
+	//for(int k = 0; k<N; k += N/e,kk++) {
+
+	  //s[n] +=  a[k]*cos(2*PI/e * kk * nn) - b[k]*sin(2*PI/e * kk * nn);  //a[k]*cosKN(k,n) - b[k]*sinKN(k,n);
+
+	//}
+      //}
+
+    }*/
+
+    for (int n = 0; n<N; ++n) {
+      for (int k = 0; k<N; ++k) {
+        s[n] += a[k]*cosKN(k,n) - b[k]*sinKN(k,n);
+      }
+    }
+
+  }
+
+};
 
 struct PlaneIncidentWaveSacttrerData {
 
@@ -104,6 +465,7 @@ struct PlaneIncidentWaveSacttrerData {
 };
 
 static char help[] = "...\n\n";
+
 //argc = argument counts, argv = argument vectors
 int main(int argc, char *argv[]) {
 
@@ -160,12 +522,14 @@ int main(int argc, char *argv[]) {
   //Fields
   ierr = m_field.add_field("rePRES",H1,1); CHKERRQ(ierr);  
   ierr = m_field.add_field("imPRES",H1,1); CHKERRQ(ierr);
+  ierr = m_field.add_field("P",H1,1); CHKERRQ(ierr);  // in time domain
   
   //meshset consisting all entities in mesh
   EntityHandle root_set = moab.get_root_set(); 
   //add entities to field
   ierr = m_field.add_ents_to_field_by_TETs(root_set,"rePRES"); CHKERRQ(ierr);
   ierr = m_field.add_ents_to_field_by_TETs(root_set,"imPRES"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_TETs(root_set,"P"); CHKERRQ(ierr);
 
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
@@ -183,8 +547,15 @@ int main(int argc, char *argv[]) {
   ierr = m_field.set_field_order(root_set,MBTRI,"imPRES",order); CHKERRQ(ierr);
   ierr = m_field.set_field_order(root_set,MBEDGE,"imPRES",order); CHKERRQ(ierr);
   ierr = m_field.set_field_order(root_set,MBVERTEX,"imPRES",1); CHKERRQ(ierr);
+
+  ierr = m_field.set_field_order(root_set,MBTET,"P",order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(root_set,MBTRI,"P",order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(root_set,MBEDGE,"P",order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(root_set,MBVERTEX,"P",1); CHKERRQ(ierr);
+
   
   if(!m_field.check_field("MESH_NODE_POSITIONS")) {
+
     ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,3); CHKERRQ(ierr);
     ierr = m_field.add_ents_to_field_by_TETs(root_set,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
     ierr = m_field.set_field_order(0,MBTET,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
@@ -205,7 +576,6 @@ int main(int argc, char *argv[]) {
   // Finite Elements
 
   HelmholtzElement helmholtz_element(m_field); 
-  ierr = helmholtz_element.getGlobalParametersFromLineCommandOptions(); CHKERRQ(ierr);
   ierr = helmholtz_element.addHelmholtzElements("rePRES","imPRES"); CHKERRQ(ierr);
 
   if(m_field.check_field("reEX") && m_field.check_field("imEX")) {
@@ -473,30 +843,7 @@ int main(int argc, char *argv[]) {
 
   }
 
-  // Zero vectors
-  ierr = VecZeroEntries(T); CHKERRQ(ierr);
-  ierr = VecGhostUpdateBegin(T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecZeroEntries(F); CHKERRQ(ierr);
-  ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = MatZeroEntries(A); CHKERRQ(ierr);
-
-  // Assemble problem
-  if(dirihlet_bc_set) {
-    ierr = m_field.problem_basic_method_preProcess("ACOUSTIC_PROBLEM",analytical_ditihlet_bc_real); CHKERRQ(ierr);
-    ierr = m_field.problem_basic_method_preProcess("ACOUSTIC_PROBLEM",analytical_ditihlet_bc_imag); CHKERRQ(ierr);
-  }
-
   ierr = helmholtz_element.setOperators(A,F,"rePRES","imPRES"); CHKERRQ(ierr);
-  ierr = helmholtz_element.calculateA("ACOUSTIC_PROBLEM"); CHKERRQ(ierr);
-  ierr = helmholtz_element.calculateF("ACOUSTIC_PROBLEM"); CHKERRQ(ierr);
-
-
-  if(dirihlet_bc_set) {
-    ierr = m_field.problem_basic_method_postProcess("ACOUSTIC_PROBLEM",analytical_ditihlet_bc_real); CHKERRQ(ierr);
-    ierr = m_field.problem_basic_method_postProcess("ACOUSTIC_PROBLEM",analytical_ditihlet_bc_imag); CHKERRQ(ierr);
-  }
 
   PetscBool monohromatic_wave = PETSC_TRUE;
   ierr = PetscOptionsGetBool(PETSC_NULL,"-monohromatic_wave",&monohromatic_wave,NULL); CHKERRQ(ierr);
@@ -504,7 +851,33 @@ int main(int argc, char *argv[]) {
   KSP solver;
   ierr = KSPCreate(PETSC_COMM_WORLD,&solver); CHKERRQ(ierr);
 
+  ierr = helmholtz_element.getGlobalParametersFromLineCommandOptions(); CHKERRQ(ierr);
+
   if(monohromatic_wave) {
+
+    // Zero vectors
+    ierr = VecZeroEntries(T); CHKERRQ(ierr);
+    ierr = VecGhostUpdateBegin(T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecGhostUpdateEnd(T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecZeroEntries(F); CHKERRQ(ierr);
+    ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = MatZeroEntries(A); CHKERRQ(ierr);
+  
+    // Assemble problem
+    if(dirihlet_bc_set) {
+      ierr = m_field.problem_basic_method_preProcess("ACOUSTIC_PROBLEM",analytical_ditihlet_bc_real); CHKERRQ(ierr);
+      ierr = m_field.problem_basic_method_preProcess("ACOUSTIC_PROBLEM",analytical_ditihlet_bc_imag); CHKERRQ(ierr);
+    }
+  
+    ierr = helmholtz_element.calculateA("ACOUSTIC_PROBLEM"); CHKERRQ(ierr);
+    ierr = helmholtz_element.calculateF("ACOUSTIC_PROBLEM"); CHKERRQ(ierr);
+  
+  
+    if(dirihlet_bc_set) {
+      ierr = m_field.problem_basic_method_postProcess("ACOUSTIC_PROBLEM",analytical_ditihlet_bc_real); CHKERRQ(ierr);
+      ierr = m_field.problem_basic_method_postProcess("ACOUSTIC_PROBLEM",analytical_ditihlet_bc_imag); CHKERRQ(ierr);
+    }
 
     ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
     ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
@@ -536,27 +909,35 @@ int main(int argc, char *argv[]) {
 
   } else {
 
-    /*PetscInt number_of_coefficients = 5;
-    ierr = PetscOptionsGetInt(PETSC_NULL,"-number_of_coefficients",&number_of_coefficients,NULL); CHKERRQ(ierr);
+    // define problem
+    ierr = m_field.add_problem("PRESSURE_IN_TIME"); CHKERRQ(ierr);
+    // set finite elements for problem
+    ierr = m_field.modify_problem_add_finite_element("PRESSURE_IN_TIME","PRESSURE_FE"); CHKERRQ(ierr);
+    // set refinment level for problem
+    ierr = m_field.modify_problem_ref_level_add_bit("PRESSURE_IN_TIME",bit_level0); CHKERRQ(ierr);
 
-    ublas::vector<double> s(number_of_coefficients);
-    ublas::vector<double> a(number_of_coefficients);
-    ublas::vector<double> b(number_of_coefficients);
-
-    const double l = 1.0; // duration of impuls // FIXME read from line command
-    const double c = 1.0; // sound speed // FIXME read from line command
-    for(int n = 0;n<number_of_coefficients;n++) {
-      
-      double x = n*(l/number_of_coefficients);
-      double f = abs(x-0.5*l);	// this is hat impulse
-
-      s[n] = f;
-
+    // build porblems
+    if(is_partitioned) {
+      // if mesh is partitioned
+      ierr = m_field.build_partitioned_problem("PRESSURE_IN_TIME",true); CHKERRQ(ierr);
+      ierr = m_field.partition_finite_elements("PRESSURE_IN_TIME",true); CHKERRQ(ierr);
+    } else {
+      // if not partitioned mesh is load to all processes 
+      ierr = m_field.build_problem("PRESSURE_IN_TIME"); CHKERRQ(ierr);
+      ierr = m_field.partition_problem("PRESSURE_IN_TIME"); CHKERRQ(ierr);
+      ierr = m_field.partition_finite_elements("PRESSURE_IN_TIME"); CHKERRQ(ierr);
     }
+    ierr = m_field.partition_ghost_dofs("PRESSURE_IN_TIME"); CHKERRQ(ierr);
 
-    forward_dft(&s[0],number_of_coefficients,&a[0],&b[0]);
-    */
-    
+    TimeSeries time_series(m_field,helmholtz_element,
+      analytical_ditihlet_bc_real,analytical_ditihlet_bc_imag,
+      dirihlet_bc_set);
+    ierr = time_series.timeData();  CHKERRQ(ierr);
+    ierr = time_series.forwardDft(); CHKERRQ(ierr);
+    ierr = time_series.createVectorSeries(T); CHKERRQ(ierr);
+    ierr = time_series.solveForwardDFT(solver,A,F,T); CHKERRQ(ierr);
+    ierr = time_series.pressureInTimeDomainInverseDft(); CHKERRQ(ierr);
+    ierr = time_series.destroyVectorSeries(); CHKERRQ(ierr);
 
 
   }

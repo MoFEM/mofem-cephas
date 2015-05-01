@@ -29,6 +29,8 @@ struct GenericAnalyticalSolution {
   enum VALUE_TYPE { REAL = 0, IMAG, LAST_VAL_TYPE };
 
   virtual vector<ublas::vector<double> >& operator()(double x, double y, double z) = 0;
+  virtual ~GenericAnalyticalSolution() {}
+
 
 };
 
@@ -83,10 +85,10 @@ struct IncidentWave: public GenericAnalyticalSolution {
   ublas::vector<double> dIrection;
   ublas::vector<double> cOordinate;
   double pOwer; /* The amplitude of the incident wave */
+  double pOwerI;
  
-  IncidentWave(double wavenumber,ublas::vector<double> d,double power = 1):
-    wAvenumber(wavenumber),dIrection(d),pOwer(power) {}
-  
+  IncidentWave(double wavenumber,ublas::vector<double> d,double power = 1,double i_power = 0):
+    wAvenumber(wavenumber),dIrection(d),pOwer(power),pOwerI(i_power) {}
   ~IncidentWave() {}
 
   virtual vector<ublas::vector<double> >& operator()(double x, double y, double z) {
@@ -97,8 +99,8 @@ struct IncidentWave: public GenericAnalyticalSolution {
     cOordinate[0] = x;
     cOordinate[1] = y;
     cOordinate[2] = z;
-    result = pOwer*exp(i*wAvenumber*inner_prod(dIrection,cOordinate));
-    //result = pOwer*exp(i*wAvenumber*z);
+
+    result = (pOwer+i*pOwerI)*exp(i*wAvenumber*inner_prod(dIrection,cOordinate));
 
     rEsult.resize(2);
     rEsult[REAL].resize(1);

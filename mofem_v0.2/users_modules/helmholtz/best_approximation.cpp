@@ -307,7 +307,6 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  
   PetscBool save_postproc_mesh = PETSC_FALSE;
   ierr = PetscOptionsGetBool(NULL,"-save_postproc_mesh",&save_postproc_mesh,NULL); CHKERRQ(ierr);
   if(save_postproc_mesh) {
