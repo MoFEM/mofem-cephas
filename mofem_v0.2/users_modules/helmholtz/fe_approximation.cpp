@@ -187,9 +187,11 @@ int main(int argc, char *argv[]) {
 
   }
 
+  bool dirihlet_bc_set = false;
   Range bc_dirichlet_tris,analytical_bc_tris;
   for(_IT_CUBITMESHSETS_BY_NAME_FOR_LOOP_(m_field,"ANALYTICAL_BC",it)) {
     rval = moab.get_entities_by_type(it->get_meshset(),MBTRI,analytical_bc_tris,true); CHKERR_PETSC(rval);
+    dirihlet_bc_set = true;
   }
   bc_dirichlet_tris.merge(analytical_bc_tris);
   AnalyticalDirihletBC analytical_bc_real(m_field);
@@ -210,7 +212,7 @@ int main(int argc, char *argv[]) {
   double power_of_incident_wave = 1;
   ierr = PetscOptionsGetScalar(NULL,"-power_of_incident_wave",&power_of_incident_wave,NULL); CHKERRQ(ierr);
 
-  bool dirihlet_bc_set = false;
+  
   // This is added for a case than on some surface, defined by the user a
   // incident plane wave is scattered.
   map<int,PlaneIncidentWaveSacttrerData> planeWaveScatterData;

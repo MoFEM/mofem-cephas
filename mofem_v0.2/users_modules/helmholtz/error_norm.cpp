@@ -220,12 +220,16 @@ int main(int argc, char *argv[]) {
 	ierr = m_field.VecCreateGhost("NORM_PROBLEM2",ROW,&G); CHKERRQ(ierr);
 	Vec D;
 	ierr = VecDuplicate(G,&D); CHKERRQ(ierr);
-	Mat B;
-	ierr = m_field.MatCreateMPIAIJWithArrays("NORM_PROBLEM2",&B); CHKERRQ(ierr);
 
-	ierr = norm_elements_re.setNormFiniteElementRhsOperator("erorNORM_re","reEX","rePRES",A,F,usel2,userela); CHKERRQ(ierr);
-	ierr = norm_elements_im.setNormFiniteElementRhsOperator("erorNORM_im","imEX","imPRES",B,G,usel2,userela); CHKERRQ(ierr);
-	
+
+	/*   Set operators  */
+    ierr = norm_elements_re.setNormFiniteElementRhsOperator("erorNORM_re","reEX","rePRES",F,usel2,userela); CHKERRQ(ierr);
+    ierr = norm_elements_re.setNormFiniteElementLhsOperator("erorNORM_re","reEX","rePRES",A); CHKERRQ(ierr);
+    
+	ierr = norm_elements_im.setNormFiniteElementRhsOperator("erorNORM_im","imEX","imPRES",G,usel2,userela); CHKERRQ(ierr);
+
+    
+    
     /* create matrix and vectors */
 	ierr = VecZeroEntries(T); CHKERRQ(ierr);
 	ierr = VecGhostUpdateBegin(T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -242,23 +246,15 @@ int main(int argc, char *argv[]) {
 	ierr = VecZeroEntries(G); CHKERRQ(ierr);
 	ierr = VecGhostUpdateBegin(G,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	ierr = VecGhostUpdateEnd(G,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	ierr = MatZeroEntries(B); CHKERRQ(ierr);
+
 	ierr = m_field.set_global_ghost_vector("NORM_PROBLEM2",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
     /* looop over finite elements */
-	ierr = m_field.loop_finite_elements("NORM_PROBLEM1","NORM_FE1",norm_elements_re.getLoopFeRhs()); CHKERRQ(ierr);
-	ierr = m_field.loop_finite_elements("NORM_PROBLEM1","NORM_FE1",norm_elements_re.getLoopFeLhs()); CHKERRQ(ierr);
-
-	ierr = m_field.loop_finite_elements("NORM_PROBLEM2","NORM_FE2",norm_elements_im.getLoopFeRhs()); CHKERRQ(ierr);
-	ierr = m_field.loop_finite_elements("NORM_PROBLEM2","NORM_FE2",norm_elements_im.getLoopFeLhs()); CHKERRQ(ierr);
-
-    
-    //real_error = sqrt(norm_elements_re.eRror);
-    //imag_error = sqrt(norm_elements_im.eRror);
-    
-    cout << "\n real global l2 error is: \n" <<  real_error << endl;
-    
-    /* create ghost points */
+	ierr = m_field.loop_finite_elements("NORM_PROBLEM1","NORM_FE1",norm_elements_re.getLoopFe()); CHKERRQ(ierr);
+	ierr = m_field.loop_finite_elements("NORM_PROBLEM2","NORM_FE2",norm_elements_im.getLoopFe()); CHKERRQ(ierr);
+      
+      
+      /* create ghost points */
 	ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 	ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 	ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
@@ -270,8 +266,7 @@ int main(int argc, char *argv[]) {
 	ierr = VecGhostUpdateEnd(G,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 	ierr = VecAssemblyBegin(G); CHKERRQ(ierr);
 	ierr = VecAssemblyEnd(G); CHKERRQ(ierr);
-	ierr = MatAssemblyBegin(B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-	ierr = MatAssemblyEnd(B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+
 	
 	//Solver
 	KSP solver1;
@@ -285,14 +280,9 @@ int main(int argc, char *argv[]) {
 	ierr = VecGhostUpdateEnd(T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	ierr = m_field.set_global_ghost_vector("NORM_PROBLEM1",ROW,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
    
-	//Solver
-	KSP solver2;
-	ierr = KSPCreate(PETSC_COMM_WORLD,&solver2); CHKERRQ(ierr);
-	ierr = KSPSetOperators(solver2,B,B); CHKERRQ(ierr);
-	ierr = KSPSetFromOptions(solver2); CHKERRQ(ierr);
-	ierr = KSPSetUp(solver2); CHKERRQ(ierr);
+    
 	
-	ierr = KSPSolve(solver2,G,D); CHKERRQ(ierr);
+	ierr = KSPSolve(solver1,G,D); CHKERRQ(ierr);
 	ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	ierr = m_field.set_global_ghost_vector("NORM_PROBLEM2",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
@@ -307,37 +297,48 @@ int main(int argc, char *argv[]) {
 	//ierr = VecSum(D,&sum_D);
 	//nrm2_T = sqrt(abs(sum_T));
 	//nrm2_D = sqrt(abs(sum_D));
-	ierr = VecNorm(T,NORM_FROBENIUS,&nrm2_T);;
+	ierr = VecNorm(T,NORM_2,&nrm2_T);;
 	ierr = VecNorm(D,NORM_2,&nrm2_D); CHKERRQ(ierr);
 	//ierr = VecNorm(T,NORM_MAX,&pointwisenormT);
-
-	
-	Vec P,M;
+    
+    Vec P,M;
 	ierr = m_field.VecCreateGhost("EX1_PROBLEM",ROW,&M); CHKERRQ(ierr);
     ierr = VecDuplicate(M,&P); CHKERRQ(ierr);
-
+    
 	ierr = m_field.set_local_ghost_vector("EX1_PROBLEM",ROW,M,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	ierr = m_field.set_other_global_ghost_vector("EX1_PROBLEM","reEX","imEX",ROW,P,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	
+
+    if(usel2) {
+      ierr = VecNorm(M,NORM_INFINITY,&nrm2_M);
+      ierr = VecNorm(P,NORM_INFINITY,&nrm2_P);
+      PetscPrintf(PETSC_COMM_WORLD,"\n real part of global l2 error is: %f \n",sqrt(real_error)/nrm2_M);
+      PetscPrintf(PETSC_COMM_WORLD,"\n imag part of global l2 error is: %f \n",sqrt(imag_error)/nrm2_P);
+    } else {
+      ierr = VecNorm(M,NORM_INFINITY,&nrm2_M);
+      ierr = VecNorm(P,NORM_INFINITY,&nrm2_P);
+      PetscPrintf(PETSC_COMM_WORLD,"\n real part of global H1 error is: %f \n",sqrt(real_error)/nrm2_M);
+      PetscPrintf(PETSC_COMM_WORLD,"\n imag part of global H1 error is: %f \n",sqrt(imag_error)/nrm2_P);
+    }
+    	
 	ierr = VecNorm(M,NORM_FROBENIUS,&nrm2_M);
 	ierr = VecNorm(P,NORM_2,&nrm2_P); CHKERRQ(ierr);
 	//ierr = VecNorm(M,NORM_INFINITY,&nrm2_M);
-
-
-
+    
 	
 	//out stream the global error
 	if(usel2 && !userela) {
-      //std::cout << "\n The Global least square of l2 Norm of error in real field is : --\n" << nrm2_T << std::endl;
-      //std::cout << "\n The Global least square of l2 Norm of error in imag field is : --\n" << nrm2_D << std::endl;
-      //cout << "\n 1 : \n" << sqrt(nrm2_T*nrm2_T + nrm2_D*nrm2_D)/sqrt(nrm2_M*nrm2_M + nrm2_P*nrm2_P) << endl;
-      std::cout << "\n The Global L2 relative error of real field is : --\n" << nrm2_T/nrm2_M  << std::endl;
-      std::cout << "\n The Global L2 relative error of imag field is  : --\n" << nrm2_D/nrm2_P << std::endl;
-      cout << "\n Global error  of total potential in l2 norm  \n" << sqrt((nrm2_T/nrm2_M)*(nrm2_T/nrm2_M) + (nrm2_D/nrm2_P)*(nrm2_D/nrm2_P)) << endl;
+      PetscPrintf(PETSC_COMM_WORLD,"\n The Global L2 error of real field is : %f \n",nrm2_T);
+      PetscPrintf(PETSC_COMM_WORLD,"\n The Global L2 error of imag field is : %f \n",nrm2_D);
+
+      PetscPrintf(PETSC_COMM_WORLD,"\n The Global L2 relative error of real field is : %f \n",nrm2_T/nrm2_M);
+      PetscPrintf(PETSC_COMM_WORLD,"\n The Global L2 relative error of imag field is : %f \n",nrm2_D/nrm2_P);
+      PetscPrintf(PETSC_COMM_WORLD,"\n Global error  of total potential in l2 norm is : %f \n",sqrt((nrm2_T/nrm2_M)*(nrm2_T/nrm2_M) + (nrm2_D/nrm2_P)*(nrm2_D/nrm2_P)));
+      //std::cout << "\n The Global L2 relative error of real field is : --\n" << nrm2_T/nrm2_M  << std::endl;
+      //std::cout << "\n The Global L2 relative error of imag field is  : --\n" << nrm2_D/nrm2_P << std::endl;
+      //cout << "\n Global error  of total potential in l2 norm  \n" << sqrt((nrm2_T/nrm2_M)*(nrm2_T/nrm2_M) + (nrm2_D/nrm2_P)*(nrm2_D/nrm2_P)) << endl;
 	}
 	else if(!usel2 && !userela) {
-      //std::cout << "\n The Global least square of H1 Norm of error real field is  : --\n" << nrm2_T << std::endl;
-      //std::cout << "\n The Global least square of H1 Norm of error in imag field is : --\n" << nrm2_D << std::endl;
+
       std::cout << "\n The Global H1 relative error of real field is : --\n" << nrm2_T/nrm2_M  << std::endl;
       std::cout << "\n The Global H1 relative error of imag field is  : --\n" << nrm2_D/nrm2_P << std::endl;
       cout << "\n Global error  of total potential in l2 norm  \n" << sqrt((nrm2_T/nrm2_M)*(nrm2_T/nrm2_M) + (nrm2_D/nrm2_P)*(nrm2_D/nrm2_P)) << endl;
@@ -360,7 +361,7 @@ int main(int argc, char *argv[]) {
 	ierr = MatDestroy(&B); CHKERRQ(ierr);
 	ierr = VecDestroy(&G); CHKERRQ(ierr);
 	ierr = VecDestroy(&D); CHKERRQ(ierr);
-	ierr = KSPDestroy(&solver2); CHKERRQ(ierr);
+	//ierr = KSPDestroy(&solver2); CHKERRQ(ierr);
 
 	ierr = VecDestroy(&M); CHKERRQ(ierr);
 	ierr = VecDestroy(&P); CHKERRQ(ierr);

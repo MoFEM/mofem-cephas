@@ -11,9 +11,6 @@
   This work is part of PhD thesis by on Micro-fluids: Thomas Felix Xuan Meng
  */
 
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
- * PhD student: Thomas Felix Xuan Meng
 /*
  * MoFEM is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -50,44 +47,47 @@ struct NormElement {
         eRror(error) {}
     int getRule(int order) { return order+addToRank; };
     
-    PetscErrorCode preProcessor() {
+    PetscErrorCode preProcess() {
       PetscFunctionBegin; 
+      PetscErrorCode ierr;
       eRror = 0;
       PetscFunctionReturn(0);
     }
     
-    PetscErrorCode postProcessor() {
+    PetscErrorCode postProcess() {
       PetscFunctionBegin; 
+      PetscErrorCode ierr;
+      
       int rank;
       MPI_Comm_rank(mField.get_comm(),&rank);
       Vec ghost;
       if(!rank) {
-        VecCreateGhostWithArray(mField.get_comm(),1,1,0,NULL,&eRror,&ghost);
+        ierr = VecCreateGhostWithArray(mField.get_comm(),1,1,0,NULL,&eRror,&ghost); CHKERRQ(ierr);
       } else {
         int g[] = {0};
-        VecCreateGhostWithArray(mField.get_comm(),0,1,1,g,&eRror,&ghost);
+        ierr = VecCreateGhostWithArray(mField.get_comm(),0,1,1,g,&eRror,&ghost); CHKERRQ(ierr);
       }
-      VecGhostUpdateBegin(ghost,ADD_VALUES,SCATTER_REVERSE);
-      VecGhostUpdateEnd(ghost,ADD_VALUES,SCATTER_REVERSE);
-      VecGhostUpdateBegin(ghost,INSERT_VALUES,SCATTER_FORWARD);
-      VecGhostUpdateEnd(ghost,INSERT_VALUES,SCATTER_FORWARD);
-      VecDestroy(&ghost);
+      //cerr << eRror << " rank " << rank << endl;
+      ierr = VecGhostUpdateBegin(ghost,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      ierr = VecGhostUpdateEnd(ghost,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      ierr = VecGhostUpdateBegin(ghost,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      ierr = VecGhostUpdateEnd(ghost,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      ierr = VecDestroy(&ghost); CHKERRQ(ierr);
+      //cerr << eRror << " after rank " << rank << endl;
       PetscFunctionReturn(0);
     }
     
   };
   
-  MyVolumeFE feRhs; ///< cauclate right hand side for tetrahedral elements
-  MyVolumeFE& getLoopFeRhs() { return feRhs; } ///< get rhs volume element
-  MyVolumeFE feLhs; //< calculate left hand side for tetrahedral elements
-  MyVolumeFE& getLoopFeLhs() { return feLhs; } ///< get lhs volume element
+  MyVolumeFE fE; //< calculate left hand side for tetrahedral elements
+  MyVolumeFE& getLoopFe() { return fE; } ///< get lhs volume element
 	
   FieldInterface &m_field;
   int addToRank; ///< default value 1, i.e. assumes that geometry is approx. by quadratic functions.
   
   NormElement(
      FieldInterface &mField,double &error,int add_to_rank = 1):
-     feRhs(mField,error,add_to_rank),feLhs(mField,error,add_to_rank),m_field(mField),addToRank(add_to_rank),
+     fE(mField,error,add_to_rank),m_field(mField),addToRank(add_to_rank),
      eRror(error) {}
 	
   //Field data
@@ -206,7 +206,7 @@ struct NormElement {
 				for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
 					double val = getVolume()*getGaussPts()(3,gg);
 	
-					//if(hoCoords.size1() == row_data.getN().size1()) {
+
 					if(this->getHoGaussPtsDetJac().size()>0) {
 						val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
 					} 
@@ -336,7 +336,7 @@ struct NormElement {
                       
 						error = u_analy[gg] - u_numer[gg];
 						eRror += error*error*val;
-                        cout << " eRror inside function \n " << eRror << endl;
+
 					} else if(!useL2) { //case H1 norm
 					
 						error = u_analy[gg] - u_numer[gg];
@@ -351,11 +351,6 @@ struct NormElement {
 						ublas::noalias(Nf) += val*error*data.getN(gg,nb_row);
 						
 					} else if(useRela) { //case relative error
-						
-                        //double uAnaly_max = norm_inf(u_analy);
-						//double sq_uanaly = uAnaly_max * uAnaly_max;
-				
-						//ublas::noalias(rElative_error) += val*(pow(eRror,2.0)/sq_uanaly)*data.getN(gg,nb_row);
 
 					}
 
@@ -422,7 +417,7 @@ PetscErrorCode addNormElements(
 	
 	//Range tEts;
 	for(_IT_CUBITMESHSETS_BY_NAME_FOR_LOOP_(m_field,"MAT_NORM",it)) {
-		//rval = m_Field.get_moab().get_entities_by_type(it->get_meshset(),MBTET,tEts,true); CHKERR_PETSC(rval);
+      //rval = m_Field.get_moab().get_entities_by_type(it->get_meshset(),MBTET,tEts,true); CHKERR_PETSC(rval);
       rval = m_field.get_moab().get_entities_by_type(it->get_meshset(),MBTET,volumeData[it->get_msId()].tEts,true); CHKERR_PETSC(rval);
 
       ierr = m_field.add_ents_to_finite_element_by_TETs(volumeData[it->get_msId()].tEts,fe); CHKERRQ(ierr);
@@ -434,29 +429,46 @@ PetscErrorCode addNormElements(
 	}
 
 
+    
+    
 
 PetscErrorCode setNormFiniteElementRhsOperator(string norm_field_name,string field1_name,
-	string field2_name,Mat A,Vec &F,bool usel2,bool userela,
+	string field2_name,Vec &F,bool usel2,bool userela,
     string nodals_positions = "MESH_NODE_POSITIONS") {
     PetscFunctionBegin;
 
-	feRhs.getRowOpPtrVector().push_back(new OpGetValueAndGradAtGaussPts(field1_name,commonData));
-	
-	feRhs.getRowOpPtrVector().push_back(new OpGetValueAndGradAtGaussPts(field2_name,commonData));
+	fE.getRowOpPtrVector().push_back(new OpGetValueAndGradAtGaussPts(field1_name,commonData));
+	fE.getRowOpPtrVector().push_back(new OpGetValueAndGradAtGaussPts(field2_name,commonData));
 	
 	map<int,VolumeData>::iterator sit = volumeData.begin();
 	
 	for(;sit!=volumeData.end();sit++) {
 		
 		//Calculate field values at gaussian points for field1 and field2; 
-
-      feLhs.getRowColOpPtrVector().push_back(new OpLhs(norm_field_name,A));
-      
-      feRhs.getRowOpPtrVector().push_back(new OpRhs(norm_field_name,field1_name,field2_name,F,commonData,eRror,usel2,userela));
+      fE.getRowOpPtrVector().push_back(new OpRhs(norm_field_name,field1_name,field2_name,F,commonData,eRror,usel2,userela));
 
 	}
 	
 	PetscFunctionReturn(0);
+}
+
+
+PetscErrorCode setNormFiniteElementLhsOperator(string norm_field_name,string field1_name,
+	string field2_name,Mat A,bool usel2 = false,bool userela = false,
+    string nodals_positions = "MESH_NODE_POSITIONS") {
+  PetscFunctionBegin;
+
+  map<int,VolumeData>::iterator sit = volumeData.begin();
+  
+  for(;sit!=volumeData.end();sit++) {
+    
+    //Calculate field values at gaussian points for field1 and field2; 
+
+    fE.getRowColOpPtrVector().push_back(new OpLhs(norm_field_name,A));
+
+  }
+  
+  PetscFunctionReturn(0);
 }
 
 
