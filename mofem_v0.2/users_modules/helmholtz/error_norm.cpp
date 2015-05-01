@@ -357,11 +357,9 @@ int main(int argc, char *argv[]) {
 	ierr = VecDestroy(&F); CHKERRQ(ierr);
 	ierr = VecDestroy(&T); CHKERRQ(ierr);
 	ierr = KSPDestroy(&solver1); CHKERRQ(ierr);
-	
-	ierr = MatDestroy(&B); CHKERRQ(ierr);
+
 	ierr = VecDestroy(&G); CHKERRQ(ierr);
 	ierr = VecDestroy(&D); CHKERRQ(ierr);
-	//ierr = KSPDestroy(&solver2); CHKERRQ(ierr);
 
 	ierr = VecDestroy(&M); CHKERRQ(ierr);
 	ierr = VecDestroy(&P); CHKERRQ(ierr);
@@ -380,7 +378,7 @@ int main(int argc, char *argv[]) {
 	
 	
 	//output the results from Docker
-	//char command1[] = "mbconvert norm_error.h5m ./norm_error.vtk && cp ./norm_error.vtk ../../../../mnt/home/Desktop/U_pan/helmholtz_results/";
+	//char command1[] = "mbconvert norm_error.h5m ./norm_error.vtk";
 	//int todo1 = system( command1 );
 	
 	
