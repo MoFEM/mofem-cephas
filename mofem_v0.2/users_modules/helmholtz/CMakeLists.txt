@@ -18,6 +18,9 @@ file(COPY
 include_directories(${UM_SOURCE_DIR}/helmholtz/src)
 include_directories(${UM_SOURCE_DIR}/analytical_dirichlet_boundary_conditions/src)
 
+include_directories(${MoFEM_PROJECT_SOURCE_DIR}/third_party/kiss_fft130)
+include_directories(${MoFEM_PROJECT_SOURCE_DIR}/third_party/kiss_fft130/tools)
+
 add_executable(best_approximation 
   ${UM_SOURCE_DIR}/helmholtz/best_approximation.cpp
 )

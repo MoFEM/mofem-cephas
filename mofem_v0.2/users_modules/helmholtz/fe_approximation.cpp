@@ -69,6 +69,10 @@ using namespace MoFEM;
 
 #include <HelmholtzElement.hpp>
 
+#include <boost/shared_array.hpp>
+#include <kiss_fft.h>
+#include <kiss_fft.c>
+
 struct TimeSeries {
 
   FieldInterface& mField;
@@ -133,26 +137,32 @@ struct TimeSeries {
     PetscFunctionReturn(0);
   }
 
-  ublas::vector<double> sSeries,aSeries,bSeries;
+  boost::shared_array<kiss_fft_cpx> complexIn;
+  boost::shared_array<kiss_fft_cpx> complexOut;
+  kiss_fft_cfg forwardCfg;
+  kiss_fft_cfg inverseCfg;
   
   PetscErrorCode forwardDft() {
     PetscFunctionBegin;
 
-    int N = tSeries.size();
-    if(N%2) {
+    int n = tSeries.size();
+    if(n%2) {
       SETERRQ(PETSC_COMM_SELF,1,"odd number of number of points, should be even");
     }
 
-    sSeries.resize(N);
-   
+    complexIn = boost::shared_array<kiss_fft_cpx>(new kiss_fft_cpx[n]);
     map<double,double>::iterator mit = tSeries.begin();
     for(int ii = 0;mit!=tSeries.end();mit++,ii++) {
-      sSeries[ii] = mit->second;
+
+      complexIn[ii].r = mit->second;
+      complexIn[ii].i = 0;
+
     }
  
-    aSeries.resize(N);
-    bSeries.resize(N);
-    forwardDft(sSeries,aSeries,bSeries);
+    forwardCfg = kiss_fft_alloc(n, 0, NULL, NULL);
+
+    complexOut = boost::shared_array<kiss_fft_cpx>(new kiss_fft_cpx[n]);
+    kiss_fft(forwardCfg,complexIn.get(),complexOut.get());
     
     PetscFunctionReturn(0);
   }
@@ -163,7 +173,7 @@ struct TimeSeries {
   PetscErrorCode createVectorSeries(Vec T) {
     PetscFunctionBegin;
 
-    int n = aSeries.size();
+    int n = tSeries.size();
 
     pSeries.resize(n);
     pSeriesReal.resize(n);
@@ -191,7 +201,7 @@ struct TimeSeries {
   PetscErrorCode destroyVectorSeries() {
     PetscFunctionBegin;
  
-    int n = aSeries.size();
+    int n = tSeries.size();
   
     for(int k = 0;n<k;k++) {
 
@@ -204,6 +214,8 @@ struct TimeSeries {
     ierr = VecScatterDestroy(&scatterReal); CHKERRQ(ierr);
     ierr = VecScatterDestroy(&scatterImag); CHKERRQ(ierr);
 
+    kiss_fft_cleanup();
+
     PetscFunctionReturn(0);
   }
 
@@ -213,7 +225,7 @@ struct TimeSeries {
   PetscErrorCode solveForwardDFT(KSP solver,Mat A,Vec F,Vec T) {
     PetscFunctionBegin;
 
-    int n = aSeries.size();
+    int n = tSeries.size();
 
     for(int k = 0;k<n;k++) { 
 
@@ -232,16 +244,26 @@ struct TimeSeries {
       ierr = PetscOptionsGetScalar(NULL,"-wave_speed",&c,NULL); CHKERRQ(ierr);
 
       const double wave_number = 2*M_PI*k/c;
-      PetscPrintf(PETSC_COMM_WORLD,"Calculate frequency %d for wave number %3.4g out of %d\n",k,wave_number,n);
+      PetscPrintf(PETSC_COMM_WORLD,"\n\nCalculate frequency %d for wave number %3.4g out of %d\n",k,wave_number,n);
 
 
       map<int,HelmholtzElement::VolumeData>::iterator vit = helmholtzElement.volumeData.begin();
       for(;vit != helmholtzElement.volumeData.end();vit++) {
 	vit->second.waveNumber = wave_number;
       }
+      map<int,HelmholtzElement::SurfaceData>::iterator sit =  helmholtzElement.sommerfeldBcData.begin();
+      for(;sit != helmholtzElement.sommerfeldBcData.end(); sit++) {
+	sit->second.aDmittance_imag = -wave_number;
+      }
+      sit =  helmholtzElement.baylissTurkelBcData.begin();
+      for(;sit != helmholtzElement.baylissTurkelBcData.end(); sit++) {
+	sit->second.aDmittance_imag = -wave_number;
+      }
+
       helmholtzElement.globalParameters.waveNumber.first = wave_number;
-      helmholtzElement.globalParameters.powerOfIncidentWaveReal.first = aSeries[k];
-      helmholtzElement.globalParameters.powerOfIncidentWaveImag.first = bSeries[k];
+      helmholtzElement.globalParameters.powerOfIncidentWaveReal.first = complexOut[k].r;
+      helmholtzElement.globalParameters.powerOfIncidentWaveImag.first = complexOut[k].i;
+      PetscPrintf(PETSC_COMM_WORLD,"Complex amplitude %6.4e + i%6.4e\n",complexOut[k].r,complexOut[k].i);
 
       // Assemble problem
       if(dirihletBcSet) {
@@ -298,7 +320,9 @@ struct TimeSeries {
     ierr = post_proc.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
 
 
-    int n = pSeries.size();
+    int n = tSeries.size();
+    inverseCfg = kiss_fft_alloc(n, 1, NULL, NULL);
+
     int size;
     ierr = VecGetLocalSize(pSeries[0],&size); CHKERRQ(ierr);
 
@@ -310,24 +334,22 @@ struct TimeSeries {
 	ierr = VecGetArray(pSeriesReal[k],&p_real); CHKERRQ(ierr);
 	ierr = VecGetArray(pSeriesImag[k],&p_imag); CHKERRQ(ierr);
 
-	aSeries[k] = p_real[ii];
-	bSeries[k] = p_imag[ii];
+	complexOut[k].r = p_real[ii];
+	complexOut[k].i = p_imag[ii];
 
 	ierr = VecRestoreArray(pSeriesReal[k],&p_real); CHKERRQ(ierr);
 	ierr = VecRestoreArray(pSeriesImag[k],&p_imag); CHKERRQ(ierr);
 
 
       }
-  
-      //cerr << sSeries << endl;
-      inverseDft(aSeries,bSeries,sSeries);
-      //cerr << sSeries << endl;
+
+      kiss_fft(inverseCfg,complexOut.get(),complexIn.get());
       
       for(int k = 0;k<n;k++) {
 
 	double *a_p;
 	ierr = VecGetArray(pSeries[k],&a_p); CHKERRQ(ierr);
-	a_p[ ii ] = sSeries[k];
+	a_p[ ii ] = complexIn[k].r;
 	ierr = VecRestoreArray(pSeries[k],&a_p); CHKERRQ(ierr);
 
 
@@ -353,107 +375,6 @@ struct TimeSeries {
 
 
     PetscFunctionReturn(0);
-  }
-
-  private:
-
-  
-  ublas::symmetric_matrix<double, ublas::upper> cosKN,sinKN;
-
-  /** Forward FFT
-
-    Assume that input signal is real.
-
-    It is N^2 complexity, not the fastest one, but good enough, this is not
-    bottle neck for calculations. Solution of spatial problem is most time consuming. 
-
-    Taken and then modified, from:
-    <http://www.scratchapixel.com/old/lessons/mathematics-physics/discrete-fourier-transform-dft-part-1/1d-forward-and-inverse-dft-in-c/>
-
-    note: this code is not optimised at all, written for clarity not speed.
-
-  */
-  void forwardDft(const ublas::vector<double>& s,ublas::vector<double>& a,ublas::vector<double>& b) {
-   
-    int N  = s.size();
-
-    cosKN.resize(N);
-    sinKN.resize(N);
-
-    for (int k = 0; k < N; ++k) {
-      for (int n = k; n < N; ++n) {
-      
-	cosKN(k,n) = cos(2 * M_PI / N * k * n);
-	sinKN(k,n) = sin(2 * M_PI / N * k * n);
-
-      }
-    }
-
-    a.clear();
-    b.clear();
-
-    for (int k = 0; k < N; ++k) {
-      a[k] = b[k] = 0;
-      for (int n = 0; n < N; ++n) {
-	
-        a[k] += s[n] * cosKN(k,n);
-        b[k] -= s[n] * sinKN(k,n);
-
-      }
-      // normalization
-      a[k] *= 1./N;
-      b[k] *= 1./N;
-    }
-  }
-
-
-  /** Inverse FFT 
-
-    Calculate only real values, since pressure in time domain is real. Note
-    that amplitudes in frequency domain are complex.
-
-    Note: this code need to be fast FIXME
-    Note: this code is not optimised at all, written for clarity not speed.
-
-  */
-  void inverseDft(const ublas::vector<double>& a,ublas::vector<double>& b,ublas::vector<double>& s) {
-
-    int N  = s.size();
-    s.clear();
-
-
-    /*int ee = 0;
-    for(int e = 2; e<=N; e = e*2 ) {
-
-      int NN = e - ee;
-      ee = e;
-
-      for(int nn = 0;n<NN;nn++) {
-
-	int n = 
-  
-      }
-
-
-      //int nn = 0;
-      //for(int n = 0;n<N; n += N/e,nn++) {
-
-	//int kk = 0;
-	//for(int k = 0; k<N; k += N/e,kk++) {
-
-	  //s[n] +=  a[k]*cos(2*PI/e * kk * nn) - b[k]*sin(2*PI/e * kk * nn);  //a[k]*cosKN(k,n) - b[k]*sinKN(k,n);
-
-	//}
-      //}
-
-    }*/
-
-    for (int n = 0; n<N; ++n) {
-      for (int k = 0; k<N; ++k) {
-        s[n] += a[k]*cosKN(k,n) - b[k]*sinKN(k,n);
-      }
-    }
-
   }
 
 };
