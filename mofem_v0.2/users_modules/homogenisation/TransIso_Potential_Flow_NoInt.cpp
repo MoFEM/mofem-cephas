@@ -96,9 +96,9 @@ int main(int argc, char *argv[]) {
     //=======================================================================================================
     
     Range SurTrisNeg, SurTrisPos;
-    ierr = mField.get_Cubit_msId_entities_by_dimension(101,SIDESET,2,SurTrisNeg,true); CHKERRQ(ierr);
+    ierr = mField.get_cubit_msId_entities_by_dimension(101,SIDESET,2,SurTrisNeg,true); CHKERRQ(ierr);
     ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SideSet 101 = %d\n",SurTrisNeg.size()); CHKERRQ(ierr);
-    ierr = mField.get_Cubit_msId_entities_by_dimension(102,SIDESET,2,SurTrisPos,true); CHKERRQ(ierr);
+    ierr = mField.get_cubit_msId_entities_by_dimension(102,SIDESET,2,SurTrisPos,true); CHKERRQ(ierr);
     ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SideSet 102 = %d\n",SurTrisPos.size()); CHKERRQ(ierr);
     
     Range SurNodesNeg,SurNodesPos;
@@ -452,7 +452,7 @@ int main(int argc, char *argv[]) {
       ierr = KSPSolve(solver,F[cc],D[cc]); CHKERRQ(ierr);
       ierr = VecGhostUpdateBegin(D[cc],INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
       ierr = VecGhostUpdateEnd(D[cc],INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-      ierr = mField.set_global_VecCreateGhost( sss.str().c_str() ,ROW,D[cc],INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      ierr = mField.set_global_ghost_vector( sss.str().c_str() ,ROW,D[cc],INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
       
       ierr = KSPDestroy(&solver); CHKERRQ(ierr);
       ierr = VecDestroy(&F[cc]); CHKERRQ(ierr);
@@ -494,8 +494,8 @@ int main(int argc, char *argv[]) {
         sss << "POTENTIAL_PROBLEM" << fibreList[cc];
         rrr << "POTENTIAL_ELEM" << fibreList[cc];
         ttt << "out_potential_flow" << fibreList[cc] <<".vtk";
-        ierr = mField.problem_get_FE( sss.str().c_str() , rrr.str().c_str() ,out_meshset); CHKERRQ(ierr);
-        ierr = mField.problem_get_FE( sss.str().c_str() , rrr.str().c_str() ,out_meshset1); CHKERRQ(ierr);
+        ierr = mField.get_problem_finite_elements_entities( sss.str().c_str() , rrr.str().c_str() ,out_meshset); CHKERRQ(ierr);
+        ierr = mField.get_problem_finite_elements_entities( sss.str().c_str() , rrr.str().c_str() ,out_meshset1); CHKERRQ(ierr);
         
         rval = moab.write_file( ttt.str().c_str() ,"VTK","",&out_meshset1,1); CHKERR_PETSC(rval);
         rval = moab.delete_entities(&out_meshset1,1); CHKERR_PETSC(rval);

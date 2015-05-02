@@ -1,12 +1,6 @@
 /** \file ProblemsMultiIndices.hpp
  * \brief Myltindex containes, data structures for problems and other low-level functions 
  * 
- * Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl) <br>
- *
- * The MoFEM package is copyrighted by Lukasz Kaczmarczyk. 
- * It can be freely used for educational and research purposes 
- * by other institutions. If you use this softwre pleas cite my work. 
- *
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or (at your
@@ -80,15 +74,15 @@ struct MoFEMProblem {
     *
     */
   #define _IT_NUMEREDFEMOFEMENTITY_BY_NAME_AND_PART_FOR_LOOP_(MOFEMPROBLEM,NAME,PART,IT) \
-    NumeredMoFEMFiniteElement_multiIndex::index<Composite_mi_tag>::type::iterator IT = MOFEMPROBLEM->get_numered_fes_begin(NAME,PART); \
+    NumeredMoFEMFiniteElement_multiIndex::index<Composite_Name_And_Part_mi_tag>::type::iterator IT = MOFEMPROBLEM->get_numered_fes_begin(NAME,PART); \
     IT!=MOFEMPROBLEM->get_numered_fes_end(NAME,PART); IT++
 
-  NumeredMoFEMFiniteElement_multiIndex::index<Composite_mi_tag>::type::iterator get_numered_fes_begin(string fe_name,int part) const { 
-    return numeredFiniteElements.get<Composite_mi_tag>().lower_bound(boost::make_tuple(fe_name,part));
+  NumeredMoFEMFiniteElement_multiIndex::index<Composite_Name_And_Part_mi_tag>::type::iterator get_numered_fes_begin(string fe_name,int part) const { 
+    return numeredFiniteElements.get<Composite_Name_And_Part_mi_tag>().lower_bound(boost::make_tuple(fe_name,part));
   }
 
-  NumeredMoFEMFiniteElement_multiIndex::index<Composite_mi_tag>::type::iterator get_numered_fes_end(string fe_name,int part) const { 
-    return numeredFiniteElements.get<Composite_mi_tag>().upper_bound(boost::make_tuple(fe_name,part));
+  NumeredMoFEMFiniteElement_multiIndex::index<Composite_Name_And_Part_mi_tag>::type::iterator get_numered_fes_end(string fe_name,int part) const { 
+    return numeredFiniteElements.get<Composite_Name_And_Part_mi_tag>().upper_bound(boost::make_tuple(fe_name,part));
   }
 
   /**
@@ -409,18 +403,20 @@ struct problem_MoFEMFiniteElement_change_bit_add {
 /** \brief increase nb. dof in row
   * \ingroup problems_multi_indices
   */
-struct problem_row_change {
+struct problem_add_row_dof {
   const DofMoFEMEntity *dof_ptr;
-  problem_row_change(const DofMoFEMEntity *_dof_ptr);
+  problem_add_row_dof(const DofMoFEMEntity *_dof_ptr);
+  pair<NumeredDofMoFEMEntity_multiIndex::iterator,bool> p;
   void operator()(MoFEMProblem &e);
 };
 
 /** \brief increase nb. dof in col
   * \ingroup problems_multi_indices
   */
-struct problem_col_change {
+struct problem_add_col_dof {
   const DofMoFEMEntity *dof_ptr;
-  problem_col_change(const DofMoFEMEntity *_dof_ptr);
+  problem_add_col_dof(const DofMoFEMEntity *_dof_ptr);
+  pair<NumeredDofMoFEMEntity_multiIndex::iterator,bool> p;
   void operator()(MoFEMProblem &e);
 };
 

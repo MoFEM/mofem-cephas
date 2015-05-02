@@ -4,11 +4,6 @@
  * Create refined mesh, without enforcing continuity between element. Calculate
  * field values on nodes of that mesh.
  *
- */
-
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
- *
  * This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -47,7 +42,7 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
 
   }
 
-  ~PostPocOnRefinedMesh() {
+  virtual ~PostPocOnRefinedMesh() {
     ParallelComm* pcomm_post_proc_mesh = ParallelComm::get_pcomm(&postProcMesh,MYPCOMM_INDEX);
     if(pcomm_post_proc_mesh != NULL) {
       delete pcomm_post_proc_mesh;
@@ -79,7 +74,7 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
       PetscBool flg = PETSC_TRUE;
       PetscOptionsGetInt(PETSC_NULL,"-my_max_post_proc_ref_level",&max_level,&flg);
     } else {
-     max_level = nbOfRefLevels;
+      max_level = nbOfRefLevels;
     }
 
     double base_coords[] = {
@@ -542,6 +537,10 @@ struct PostPocOnRefinedMesh: public TetElementForcesAndSourcesCore {
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
     ErrorCode rval;
+    ParallelComm* pcomm_post_proc_mesh = ParallelComm::get_pcomm(&postProcMesh,MYPCOMM_INDEX);
+    if(pcomm_post_proc_mesh != NULL) {
+      delete pcomm_post_proc_mesh;
+    }
     rval = postProcMesh.delete_mesh(); CHKERR_PETSC(rval);
     PetscFunctionReturn(0);
   }

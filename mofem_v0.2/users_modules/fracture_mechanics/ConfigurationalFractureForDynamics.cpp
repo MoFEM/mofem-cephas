@@ -208,7 +208,7 @@ struct MonitorUpdateFrezedNodes: public FEMethod {
     ierr = VecGhostUpdateEnd(F_Material,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = VecAssemblyBegin(F_Material); CHKERRQ(ierr);
     ierr = VecAssemblyEnd(F_Material); CHKERRQ(ierr);
-    ierr = mField.set_other_global_VecCreateGhost("COUPLED_DYNAMIC","MESH_NODE_POSITIONS","MATERIAL_FORCE",
+    ierr = mField.set_other_global_ghost_vector("COUPLED_DYNAMIC","MESH_NODE_POSITIONS","MATERIAL_FORCE",
       ROW,F_Material,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = VecDestroy(&F_Material); CHKERRQ(ierr);
 
@@ -223,8 +223,8 @@ struct MonitorUpdateFrezedNodes: public FEMethod {
     ierr = confProb->fix_front_nodes(mField,fix_nodes); CHKERRQ(ierr);
 
     Range corners_edges,corners_nodes;
-    ierr = mField.get_Cubit_msId_entities_by_dimension(100,SIDESET,1,corners_edges,true); CHKERRQ(ierr);
-    ierr = mField.get_Cubit_msId_entities_by_dimension(101,NODESET,0,corners_nodes,true); CHKERRQ(ierr);
+    ierr = mField.get_cubit_msId_entities_by_dimension(100,SIDESET,1,corners_edges,true); CHKERRQ(ierr);
+    ierr = mField.get_cubit_msId_entities_by_dimension(101,NODESET,0,corners_nodes,true); CHKERRQ(ierr);
     Range corners_edges_nodes;
     ErrorCode rval;
     rval = mField.get_moab().get_connectivity(corners_edges,corners_edges_nodes,true); CHKERR_PETSC(rval);
@@ -348,9 +348,9 @@ struct MyPrePostProcessDynamics: public FEMethod {
 	break;
     }
 
-    ierr = mField.set_other_local_VecCreateGhost(problemPtr,velocityField,"DOT_"+velocityField,COL,ts_u_t,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = mField.set_other_local_VecCreateGhost(problemPtr,spatialPositionField,"DOT_"+spatialPositionField,COL,ts_u_t,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = mField.set_other_local_VecCreateGhost(problemPtr,meshPositionField,"DOT_"+meshPositionField,COL,ts_u_t,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = mField.set_other_local_ghost_vector(problemPtr,velocityField,"DOT_"+velocityField,COL,ts_u_t,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = mField.set_other_local_ghost_vector(problemPtr,spatialPositionField,"DOT_"+spatialPositionField,COL,ts_u_t,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = mField.set_other_local_ghost_vector(problemPtr,meshPositionField,"DOT_"+meshPositionField,COL,ts_u_t,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
     PetscFunctionReturn(0);
   }
@@ -517,7 +517,7 @@ PetscErrorCode ConfigurationalFracturDynamics::coupled_dynamic_problem_definitio
     "MESH_NODE_POSITIONS",true,*ptr_bit_level0); CHKERRQ(ierr);
 
   Range crack_front_edges,crack_front_nodes,crack_front_nodes_tets;
-  ierr = m_field.get_Cubit_msId_entities_by_dimension(201,SIDESET,1,crack_front_edges,true); CHKERRQ(ierr);
+  ierr = m_field.get_cubit_msId_entities_by_dimension(201,SIDESET,1,crack_front_edges,true); CHKERRQ(ierr);
   rval = m_field.get_moab().get_connectivity(crack_front_edges,crack_front_nodes,true); CHKERR_PETSC(rval);
   rval = m_field.get_moab().get_adjacencies(crack_front_nodes,3,false,crack_front_nodes_tets,Interface::UNION); CHKERR_PETSC(rval);
   ierr = iNertia.addEshelbyDynamicMaterialMomentum("DYNAMIC_ESHELBY_TERM","SPATIAL_VELOCITY","SPATIAL_POSITION",
@@ -564,7 +564,7 @@ PetscErrorCode ConfigurationalFracturDynamics::fix_front_nodes(FieldInterface& m
     double g = mit->second;
     double rate = map_ent_rate_work[mit->first];
     ierr = PetscPrintf(PETSC_COMM_WORLD,
-      "front node = %ld g/g_c = %4.3f rate = %4.3g\n",
+      "front node = %ld g/g_c = %4.3g rate = %4.3g\n",
       mit->first,mit->second/gc,rate); CHKERRQ(ierr);
     if( ((g/gc + treshhold) < 1) || (rate<0) || (g != g)) {
       fix_nodes.insert(mit->first);
@@ -673,8 +673,8 @@ PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterf
   Range corners_nodes;
   {
     Range corners_edges;
-    ierr = m_field.get_Cubit_msId_entities_by_dimension(100,SIDESET,1,corners_edges,true); CHKERRQ(ierr);
-    ierr = m_field.get_Cubit_msId_entities_by_dimension(101,NODESET,0,corners_nodes,true); CHKERRQ(ierr);
+    ierr = m_field.get_cubit_msId_entities_by_dimension(100,SIDESET,1,corners_edges,true); CHKERRQ(ierr);
+    ierr = m_field.get_cubit_msId_entities_by_dimension(101,NODESET,0,corners_nodes,true); CHKERRQ(ierr);
     Range corners_edges_nodes;
     rval = m_field.get_moab().get_connectivity(corners_edges,corners_edges_nodes,true); CHKERR_PETSC(rval);
     corners_nodes.insert(corners_edges_nodes.begin(),corners_edges_nodes.end());
@@ -722,7 +722,7 @@ PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterf
   ierr = iNertia.setVelocityOperators("SPATIAL_VELOCITY","SPATIAL_POSITION","MESH_NODE_POSITIONS",true); CHKERRQ(ierr);
 
   Range crack_front_edges;
-  ierr = m_field.get_Cubit_msId_entities_by_dimension(201,SIDESET,1,crack_front_edges,true); CHKERRQ(ierr);
+  ierr = m_field.get_cubit_msId_entities_by_dimension(201,SIDESET,1,crack_front_edges,true); CHKERRQ(ierr);
   Range crack_front_edges_nodes;
   rval = m_field.get_moab().get_connectivity(crack_front_edges,crack_front_edges_nodes,true); CHKERR_PETSC(rval);
   crack_front_edges_nodes.merge(crack_front_edges);
@@ -843,7 +843,7 @@ PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterf
   ierr = TSSetIJacobian(ts,K,K,f_TSSetIJacobian,&ts_ctx); CHKERRQ(ierr);
   ierr = TSMonitorSet(ts,f_TSMonitorSet,&ts_ctx,PETSC_NULL); CHKERRQ(ierr);
 
-  ierr = m_field.set_local_VecCreateGhost("COUPLED_DYNAMIC",COL,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = m_field.set_local_ghost_vector("COUPLED_DYNAMIC",COL,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 

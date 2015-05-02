@@ -26,7 +26,7 @@
 namespace MoFEM {
 
 /**
- * \brief Store variables for ArcLength analaysis
+ * \brief Store variables for ArcLength analysis
  * \ingroup arc_length_control
  *
  * r_lambda = f_lambda - s
@@ -36,19 +36,19 @@ namespace MoFEM {
  *
  * db*ddx + diag*ddlambda - r_lambda = 0
  *
- * User need to implement fuctions calulating f_lambda, i.e. f(dx*dx) and
- * direvative, db
+ * User need to implement functions calculating f_lambda, i.e. f(dx*dx) and
+ * derivative, db
  * 
  * alpha,beta parameters
  * dlambda is load factor
  * s arc-length radius
- * F_lambda reference load vcetor
+ * F_lambda reference load vector
  * F_lambda2 dot product of F_lambda
  * diag value on matrix diagonal
- * x0  displacement vetor at begining of step
- * x current displacemengt vector
+ * x0  displacement vector at beginning of step
+ * x current displacement vector
  * dx2 dot product of dx vector
- * db direvative of f(dx*dx), i.e. db = d[ f(dx*dx) ]/dx
+ * db derivative of f(dx*dx), i.e. db = d[ f(dx*dx) ]/dx
  *
  * x_lambda is solution of eq. K*x_lambda = F_lambda
  */
@@ -65,10 +65,10 @@ struct ArcLengthCtx {
   double dx2;		///< inner_prod(dX,dX)
   double F_lambda2;	///< inner_prod(F_lambda,F_lambda);
   double res_lambda;	///< f_lambda - s
-  Vec F_lambda;		///< F_lambda reference load vcetor
-  Vec db;		///< db direvative of f(dx*dx), i.e. db = d[ f(dx*dx) ]/dx
+  Vec F_lambda;		///< F_lambda reference load vector
+  Vec db;		///< db derivative of f(dx*dx), i.e. db = d[ f(dx*dx) ]/dx
   Vec x_lambda;		///< solution of eq. K*x_lambda = F_lambda
-  Vec x0;		///< displacement vetor at begining of step
+  Vec x0;		///< displacement vector at beginning of step
   Vec dx;		///< dx = x-x0
 
   /** 
@@ -77,7 +77,7 @@ struct ArcLengthCtx {
   PetscErrorCode setS(double s);
 
   /**
-   * \brief set parematers controling arc-length equaitions
+   * \brief set parameters controlling arc-length equations
    * alpha controls off diagonal therms
    * beta controls diagonal therm
    */
@@ -107,7 +107,7 @@ struct ArcLengthSnesCtx: public SnesCtx {
 /** \brief shell matrix for arc-length method
  * \ingroup arc_length_control
  *
- * Shell matrix which has tructure
+ * Shell matrix which has structure
  * [ K 		-dF_lambda]
  * [ db		 diag	]
  */
@@ -131,7 +131,7 @@ struct ArcLengthMatShell {
 PetscErrorCode ArcLengthMatMultShellOp(Mat A,Vec x,Vec f);
 
 /**
- * \brief structure for Arc Length precodnditioner
+ * \brief structure for Arc Length pre-conditioner
  * \ingroup arc_length_control
  */
 struct PCArcLengthCtx {
@@ -141,12 +141,12 @@ struct PCArcLengthCtx {
   PCArcLengthCtx(Mat shell_Aij,Mat _Aij,ArcLengthCtx* arc_ptr); 
   ~PCArcLengthCtx();
 
-  friend PetscErrorCode PCApplyArcLength(PC pC,Vec pc_f,Vec pc_x);
-  friend PetscErrorCode PCSetupArcLength(PC pC);
+  friend PetscErrorCode PCApplyArcLength(PC pc,Vec pc_f,Vec pc_x);
+  friend PetscErrorCode PCSetupArcLength(PC pc);
 };
 
 /**
- * apply oppertor for Arc Length precoditionet
+ * apply operator for Arc Length pre-conditioner
  * solves K*pc_x = pc_f
  * solves K*x_lambda = -dF_lambda
  * solves ddlambda = ( res_lambda - db*x_lambda )/( diag + db*pc_x )
@@ -155,8 +155,9 @@ struct PCArcLengthCtx {
 PetscErrorCode PCApplyArcLength(PC pc,Vec pc_f,Vec pc_x);
 
 /**
- * set up struture for Arc Length precoditioner
- * it sets precoditioner for matrix K
+ * set up structure for Arc Length pre-conditioner
+
+ * it sets pre-conditioner for matrix K
  */
 PetscErrorCode PCSetupArcLength(PC pc);
 
@@ -187,10 +188,10 @@ struct PrePostProcessForArcLength: public FEMethod {
 /** \brief Implementation of cylindrical arc-length method, i.e. alpha*dx*x + dlmabda^2*beta^2*F_lamda*F_lambda = s^2
   * \ingroup arc_length_control
   * 
-  * This is particular impmentation of ArcLength control, i.e. sperical arc
-  * length control. If beta is set to 0 and alpha is non-zero it is culindrical
+  * This is particular implementation of ArcLength control, i.e. spherical arc
+  * length control. If beta is set to 0 and alpha is non-zero it is cylindrical
   * arc-length control. Works well with general problem with non-linear
-  * geometry. It not guarantee disipative loading path in case of physical
+  * geometry. It not guarantee dissipative loading path in case of physical
   * nonlinearities.
   *
   */

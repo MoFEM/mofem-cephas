@@ -9,6 +9,7 @@ Example Static (elastcity)
 
 mpirun -np 2 ./elasticity -my_file LShape.cub -ksp_type gmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 2
 
+<<<<<<< HEAD
 make && mpirun -np 1 ./elasticity_old -my_file LShape.cub -ksp_type fgmres -pc_type asm -sub_pc_type lu -ksp_monitor -my_order 1
 
 Example dynamic (dynamic)
@@ -22,6 +23,8 @@ mpirun -np 2 ./dynamics -my_file LShape.cub -ksp_type fgmres -pc_type lu -pc_fac
 -my_time_data - a txt file of two column to set time line and load scale 
 -my_output_prt  specify how often (per step) to print output files
 
+=======
+>>>>>>> 4c71115df9398c45357ea59be27c041fd194b5e2
 Example thermo-elasticity
 =========================
 

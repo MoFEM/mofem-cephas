@@ -1,7 +1,18 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * DirichletBCFromBlockSetFEMethodPreAndPostProc implmented by Zahur Ullah (Zahur.Ullah@glasgow.ac.uk)
- * --------------------------------------------------------------
- * FIXME: DESCRIPTION
+/* \file Dirichlet.hpp
+ * \brief Implementation of Dirichlet boundary conditions
+ *
+ *
+ * Structures and method in this file erase rows and column, set value on
+ * matrix diagonal and on the right hand side vector to enforce boundary
+ * condition.
+ * 
+ * Current implementation is suboptimal, classes name too long. Need to
+ * rethinking and improved, more elegant and more efficient implementation.
+ *
+ */
+
+/* Notes:
+ * DirichletBCFromBlockSetFEMethodPreAndPostProc implemented by Zahur Ullah (Zahur.Ullah@glasgow.ac.uk)
  */
 
 /* This file is part of MoFEM.
@@ -18,38 +29,27 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef __MOABFEMETHOD_DIRICHLETBC_HPP__
-#define __MOABFEMETHOD_DIRICHLETBC_HPP__
+#ifndef __DIRICHLETBC_HPP__
+#define __DIRICHLETBC_HPP__
 
 using namespace boost::numeric;
 
 namespace MoFEM {
 
+/** \brief Set Dirichlet boundary conditions on displacements
+  * \ingroup dirihlet_bc
+  */
 struct DisplacementBCFEMethodPreAndPostProc: public FEMethod {
 
   FieldInterface& mField;
-  const string fieldName;
+  const string fieldName;			///< field name to set Dirichlet BC
+  double dIag;					///< diagonal value set on zeroed column and rows
 
   DisplacementBCFEMethodPreAndPostProc(
     FieldInterface& _mField,const string &_field_name,
-    Mat _Aij,Vec _X,Vec _F): mField(_mField),fieldName(_field_name) {
-    snes_B = _Aij;
-    snes_x = _X;
-    snes_f = _F;
-    ts_B = _Aij;
-    ts_u = _X;
-    ts_F = _F;
-  };
-
-  DisplacementBCFEMethodPreAndPostProc(FieldInterface& _mField,const string &_field_name): 
-    mField(_mField),fieldName(_field_name) {
-    snes_B = PETSC_NULL;
-    snes_x = PETSC_NULL;
-    snes_f = PETSC_NULL;
-    ts_B = PETSC_NULL;
-    ts_u = PETSC_NULL;
-    ts_F = PETSC_NULL;
-  }; 
+    Mat _Aij,Vec _X,Vec _F);
+  DisplacementBCFEMethodPreAndPostProc(
+    FieldInterface& _mField,const string &_field_name); 
 
   PetscErrorCode ierr;
   ErrorCode rval;
@@ -65,7 +65,9 @@ struct DisplacementBCFEMethodPreAndPostProc: public FEMethod {
 
 };
 
-
+/** \brief Set Dirichlet boundary conditions on spatial displacements
+  * \ingroup dirihlet_bc
+  */
 struct SpatialPositionsBCFEMethodPreAndPostProc: public DisplacementBCFEMethodPreAndPostProc {
 
   SpatialPositionsBCFEMethodPreAndPostProc(
@@ -97,7 +99,9 @@ struct TemperatureBCFEMethodPreAndPostProc: public DisplacementBCFEMethodPreAndP
 
 };
 
-  
+/** \brief Fix dofs on entities
+  * \ingroup dirihlet_bc
+  */
 struct FixBcAtEntities: public DisplacementBCFEMethodPreAndPostProc {
 
   Range &eNts;
@@ -122,9 +126,11 @@ struct FixBcAtEntities: public DisplacementBCFEMethodPreAndPostProc {
 };
   
   
-/**
-  * Implemntaiton of generalised Dirichlet Boundary Conditions from CUBIT Blockset
-  * (or not using CUBIT buildin boundary conditons, e.g. Temprature or Displacements etc).
+/** \brief blockset boundary conditions
+  * \ingroup dirihlet_bc
+  *
+  * Implementation of generalised Dirichlet Boundary Conditions from CUBIT Blockset
+  * (or not using CUBIT building boundary conditions, e.g. Temperature or Displacements etc).
   * It can work for any Problem rank (1,2,3)
 **/
 struct DirichletBCFromBlockSetFEMethodPreAndPostProc: public DisplacementBCFEMethodPreAndPostProc {
@@ -142,4 +148,9 @@ struct DirichletBCFromBlockSetFEMethodPreAndPostProc: public DisplacementBCFEMet
 
     
 }
-#endif //__MOABFEMETHOD_DIRICHLETBC_HPP__
+#endif //__DIRICHLETBC_HPP__
+
+/***************************************************************************//**
+ * \defgroup dirihlet_bc Dirichlet boundary conditions
+ ******************************************************************************/
+

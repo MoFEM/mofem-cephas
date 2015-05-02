@@ -2,13 +2,9 @@
  * \brief MoFEM interface 
  * 
  * Low level data structures not used directly by user
- *
- * Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl) <br>
- * MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
+ */
+
+/*
  * MoFEM is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
@@ -27,13 +23,24 @@ namespace MoFEM {
 
 static const MOFEMuuid IDD_MOFEMMeshRefine = MOFEMuuid( BitIntefaceId(MESH_REFINE) );
 
+/** \brief Mesh refinement interface
+
+  Currently this class is abstraction to Core interface. In future should be
+  outsourced as independent interface.
+  
+  \bug Not working on partitioned meshes
+  \bug Need to be implemented as a stand alone interface not as a part of core
+  structure which should be only basic database
+  \bug If outsourced, class member functions should follow name convention
+
+  */
 struct MeshRefinment: public FieldUnknownInterface {
 
   ///destructor
   virtual ~MeshRefinment() {}
 
   /**
-   * \brief make vertices in the middle of edges in meshset and add them to refinment levels defined by bit
+   * \brief make vertices in the middle of edges in meshset and add them to refinement levels defined by bit
    *
    * Takes entities fromm meshsets and queried recursively (get entities from meshsets in meshsets, usually have to be used for CUBIT meshset).
    * If meshset does not contain any edges, get entities in dimension 3 and get edge adjacencies.
@@ -48,7 +55,7 @@ struct MeshRefinment: public FieldUnknownInterface {
   /**
    * \brief make vertices in the middle of edges in meshset and add them to refinment levels defined by bit
    *
-   * Takes entities fromm meshsets and queried recursively (get entities from meshsets in meshsets, usually have to be used for CUBIT meshset).
+   * Takes entities from meshsets and queried recursively (get entities from meshsets in meshsets, usually have to be used for CUBIT meshset).
    * If meshset does not contain any edges, get entities in dimension 3 and get edge adjacencies.
    *
    * \param Range consisting edges for refine 
@@ -86,7 +93,6 @@ struct MeshRefinment: public FieldUnknownInterface {
    * \param BitRefLevel bitLevel
    * \param recursive If true, meshsets containing meshsets are queried recursively.  Returns the contents of meshsets, but not the meshsets themselves if true.
    */
-    
   virtual PetscErrorCode refine_MESHSET(const EntityHandle meshset,const BitRefLevel &bit,
     const bool recursive = false,int verb = -1) = 0;
 

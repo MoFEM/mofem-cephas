@@ -56,6 +56,7 @@ struct UltraWeakTransportElement {
 
   UltraWeakTransportElement(FieldInterface &m_field): mField(m_field),
     feVol(m_field),feTriFluxValue(m_field) {};
+  virtual ~UltraWeakTransportElement() {}
 
   ublas::vector<FieldData> valuesAtGaussPts;
   ublas::vector<ublas::vector<FieldData> > valuesGradientAtGaussPts;
@@ -201,6 +202,7 @@ struct UltraWeakTransportElement {
       const string field_name,Mat _Aij,Vec _F):
       TetElementForcesAndSourcesCore::UserDataOperator(field_name),
       cTx(ctx),Aij(_Aij),F(_F) {}
+    virtual ~OpTauDotSigma_HdivHdiv() {}
 
     ublas::matrix<FieldData> NN,transNN;
     ublas::matrix<FieldData> invK,invKN;
@@ -344,6 +346,7 @@ struct UltraWeakTransportElement {
       //assumption that off-diagonal matrices are symmetric.
       symm = false;
     }
+    virtual ~OpDivTauU_HdivL2() {}
 
     ublas::vector<FieldData> div_vec,Nf;
 
@@ -420,6 +423,7 @@ struct UltraWeakTransportElement {
       symm = false;
 
     }
+    virtual ~OpVDotDivSigma_L2Hdiv() {}
 
     ublas::matrix<FieldData> NN,transNN;
     ublas::vector<FieldData> div_vec,Nf;
@@ -557,6 +561,7 @@ struct UltraWeakTransportElement {
       const string field_name,Vec _F):
       TetElementForcesAndSourcesCore::UserDataOperator(field_name),
       cTx(ctx),F(_F) {}
+    virtual ~OpL2Source() {}
       
     ublas::vector<FieldData> Nf;
     PetscErrorCode doWork(
@@ -682,6 +687,7 @@ struct UltraWeakTransportElement {
       UltraWeakTransportElement &ctx,const string field_name,Vec _X):
       TriElementForcesAndSurcesCore::UserDataOperator(field_name),
       cTx(ctx),X(_X) {}
+    virtual ~OpEvaluateBcOnFluxes() {}
 
     ublas::matrix<FieldData> NN,L;
     ublas::vector<FieldData> Nf,normalN,x;
@@ -765,6 +771,7 @@ struct UltraWeakTransportElement {
       const string field_name):
       TetElementForcesAndSourcesCore::UserDataOperator(field_name),
       cTx(ctx) {}
+    virtual ~OpValuesAtGaussPts() {}
 
     PetscErrorCode doWork(
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
@@ -801,6 +808,7 @@ struct UltraWeakTransportElement {
       const string field_name):
       TetElementForcesAndSourcesCore::UserDataOperator(field_name),
       cTx(ctx) {}
+    virtual ~OpValuesGradientAtGaussPts() {}
 
     PetscErrorCode doWork(
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
@@ -840,6 +848,7 @@ struct UltraWeakTransportElement {
       const string field_name):
       TetElementForcesAndSourcesCore::UserDataOperator(field_name),
       cTx(ctx) {}
+    virtual ~OpFluxDivergenceAtGaussPts() {}
 
     ublas::vector<FieldData> div_vec;
     PetscErrorCode doWork(
@@ -899,6 +908,7 @@ struct UltraWeakTransportElement {
       const string field_name):
       TetElementForcesAndSourcesCore::UserDataOperator(field_name),
       cTx(ctx) {}
+    virtual ~OpError_L2Norm() {}
 
     ublas::vector<FieldData> deltaFlux;
     PetscErrorCode doWork(

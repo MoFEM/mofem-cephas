@@ -1,0 +1,161 @@
+/*! \page faqs Frequently Asked Questions
+
+\section own_documentation How to generate this documentation on your local machine?
+
+In you library directory execute 
+\code
+$ make doc
+\endcode
+This create directory \em html. Open file \em html/index.html to see results in your browser. 
+
+\section partition_mesh How to partition mesh?
+
+If problem is large, mesh can be partitioned for to save memory and improve efficiency. This can be done using native MoAB tool,
+\code
+mbpart -t -p PartKway  16 cylinder.cub cylinder_16parts.h5m
+\endcode
+
+\section running_multi_grid How to multi-grid solver via approximation orders?
+
+Code is run using direct solver, i.e. \em Mumps on coarse level. Note that
+loaded mesh is portioned and each processor only reads part of the mesh, i.e.
+\em  -my_is_partitioned.
+
+\code
+mpirun -np 4 ./elasticity \
+  -my_file dam_4parts.h5m -my_is_partitioned \
+  -ksp_type gmres -ksp_max_it 1000  -ksp_atol 1e-13 -ksp_rtol 0  -ksp_monitor_lg_residualnorm  -ksp_final_residual -ksp_monitor -ksp_converged_reason 
+  -my_order 1  -my_block_config block_congig.in   \
+  -mofem_mg_verbose 1 -mofem_mg_coarse_order 1 -mofem_mg_levels 4  \
+  -pc_type mg \
+  -mg_coarse_ksp_type preonly -mg_coarse_pc_type lu -mg_coarse_pc_factor_mat_solver_package mumps \
+  -pc_mg_smoothup 20 -pc_mg_smoothdown 20  -pc_mg_type multiplicative
+\endcode
+
+- Option \em -my_is_partitioned is set if mesh is partitioned using \em mbpart 
+- Option \em -mofem_mg_coarse_order 1 set coarse level is for linear approximation, i.e. order 1. 
+- Option \em -mofem_mg_levels 4 set number of multi-grid level. In that case maximal approx. order for some part of mesh is 4, thus 4 multi-grid levels.
+- Option -pc_mg_smoothup 20 -pc_mg_smoothdown 20 set number of smoothing iterations, for more details look to PETSc manual.
+- In line \code
+-mg_coarse_ksp_type preonly -mg_coarse_pc_type lu -mg_coarse_pc_factor_mat_solver_package mumps
+\endcode a direct solver for coarse mesh is set.
+
+
+\section update_on_memory_stick Ho to update MoFEM on Live USB Stick?
+
+MoFEM update on Live USB stick:
+\code
+$ mofem_update.sh
+$ mofem_build.sh
+\endcode
+
+Following command run test verifying updated code:
+\code
+$ mofem_fast_check.sh
+\endcode
+
+If you run MoFEM update at University of Glasgow behind proxy server, set proxy
+servers as follows:
+\code
+$ export http_proxy=http://wwwcache.gla.ac.uk:8080
+$ export https_proxy=http://wwwcache.gla.ac.uk:8080
+\endcode
+
+\section ctest How to run ctest?
+
+You can run tests and report results to MoFEM CDash web page. Form mofem user
+modules build directory executing  run script
+\code./bin/mofem_fast_check.sh\endcode
+Results of test can be seen on <http://cdash.eng.gla.ac.uk/cdash/>. 
+
+Note that test tests for MoFEM library and \em User \em Modules are run independently
+and can be seen as a two different projects.
+
+If you run test behind proxy server you can have to set \em http_proxy and \em
+http_proxy environmental variables. For example if you run mofem at Glasgow
+University, please do:
+\code
+$ export http_proxy=http://wwwcache.gla.ac.uk:8080
+$ export https_proxy=http://wwwcache.gla.ac.uk:8080
+\endcode
+
+You can as well run ctest directly by simply executing command line:
+\code 
+ctest -V -D Experimental
+\endcode
+where option -V sets verbose version and all test output is printed on screen
+and -D Experimental tels ctest to submit results to Experimental build on CDash
+MoFEM server.
+
+\section adding_user_module How to add user module?
+
+In each module you can have two type directory data, 
+  -# Simple
+  -# Extended
+
+User module is added to \em ModulesLists.cmake file using cmake command:
+\code
+add_subdirectory(my_new_module)
+\endcode
+Simple directory structure consist no subdirectories. f.e. elasticity. Extended (recommended)
+data structure consist subdirectories, f.e. homogenisation, and follows pattern
+
+\code
+-> /atom_tests
+-> /src <- hpp files
+-> /src/impl <- cpp files form library
+-> /meshes
+-> /data
+-> /doc
+\endcode
+
+Not all elements of module source tree are compulsory, however each user module
+and new MoFEM functionality should have associated \em atom \em test verifying
+implementation and each module should have README file or module documentation
+in doc using Doxygen.
+
+\section ubuntu_install How to instal MoFem on Ubuntu?
+
+Pleas follow this instruction, this is full install on Ubuntu from scratch. 
+
+\code
+# Install basic libraries
+apt-get update && apt-get install -y openssh-server wget valgrind git g++ gdb m4 automake libsigsegv2 build-essential libibverbs-dev libblas-dev gfortran libatlas-dev libatlas-base-dev libhdf5-openmpi-dev libjpeg-dev graphviz doxygen cmake gnuplot pstack ca-certificates python libadolc-dev bison flex libx11-dev libboost-all-dev xauth xterm
+
+# Build petsc 
+export PETSC_VERSION=3.5.3
+cd /opt && git clone https://bitbucket.org/petsc/petsc.git && cd /opt/petsc && git checkout tags/v$PETSC_VERSION
+cd /opt/petsc && ./configure --with-mpi=1 --with-debugging=0 --download-superlu_dist=1 --download-metis=1 --download-parmetis=1 --download-hypre=1 --download-mumps=1 --download-scalapack=1 --download-zoltan=1 --download-blacs=1 --download-moab=1 --download-ptscotch=1 --with-hdf5=1 --with-hdf5-dir=/usr --download-netcdf=1 --with-shared-libraries=1 && make PETSC_DIR=/opt/petsc PETSC_ARCH=arch-linux2-c-opt all
+
+# Install TetGen (for crack propagation) 
+cd /opt && wget https://bitbucket.org/likask/mofem-joseph/downloads/tetgen1.5.0.tgz && tar -xvvzf tetgen1.5.0.tgz && cd tetgen1.5.0 && cmake . && make && cp libtet.a lib/ && make clean && rm /opt/tetgen1.5.0.tgz
+
+# This SLEPC (Eigen Solver) 
+cd /opt && git clone https://bitbucket.org/slepc/slepc && cd /opt/slepc && git checkout tags/v$PETSC_VERSION
+cd /opt/slepc && PETSC_DIR=/opt/petsc PETSC_ARCH=arch-linux2-c-opt ./configure && make SLEPC_DIR=$PWD PETSC_DIR=/opt/petsc PETSC_ARCH=arch-linux2-c-opt
+
+# Cloning mofem repository
+cd $SOURCE_DIRECTORY
+git clone https://bitbucket.org/likask/mofem-cephas.git
+
+# Build libary
+cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=yes -DPETSC_DIR=/opt/petsc -DPETSC_ARCH=arch-linux2-c-opt -DMOAB_DIR=/opt/petsc/arch-linux2-c-opt/ -DADOL-C_DIR=/usr -DTETGEN_DIR=/opt/tetgen1.5.0 -DSLEPC_DIR=/opt/slepc/  -DCMAKE_INSTALL_PREFIX=$DIRECTORY_TO_INSTAL_USER_MODULES $SOURCE_DIRECTORY/mofem-cephas/mofem_v0.2/
+make -j 4 && make install
+
+# Run this to check if it is working
+ctest -D Experimental
+
+# Build user modules
+cd $DIRECTORY_TO_INSTAL_USER_MODULES
+cmake  -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=yes users_modules/
+make -j 4
+
+# Run this to check if it is working
+ctest -D Experimental
+
+\endcode
+
+
+*/
+
+

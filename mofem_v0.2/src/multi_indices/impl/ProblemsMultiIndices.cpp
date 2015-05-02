@@ -101,20 +101,18 @@ PetscErrorCode MoFEMProblem::get_col_dofs_by_petsc_gloabl_dof_idx(DofIdx idx,con
 void problem_MoFEMFiniteElement_change_bit_add::operator()(MoFEMProblem &p) {
   *(p.tag_BitFEId_data) |= f_id;
 }
-problem_row_change::problem_row_change(const DofMoFEMEntity *_dof_ptr): dof_ptr(_dof_ptr) {
+problem_add_row_dof::problem_add_row_dof(const DofMoFEMEntity *_dof_ptr): dof_ptr(_dof_ptr) {
   assert(dof_ptr->active);
 }
-void problem_row_change::operator()(MoFEMProblem &e) { 
-  pair<NumeredDofMoFEMEntity_multiIndex::iterator,bool> p 
-    = e.numered_dofs_rows.insert(NumeredDofMoFEMEntity(dof_ptr)); 
+void problem_add_row_dof::operator()(MoFEMProblem &e) { 
+  p = e.numered_dofs_rows.insert(NumeredDofMoFEMEntity(dof_ptr)); 
   if(p.second) {
     (*(DofIdx*)e.tag_nbdof_data_row)++;
   }
 }
-problem_col_change::problem_col_change(const DofMoFEMEntity *_dof_ptr): dof_ptr(_dof_ptr) {}
-void problem_col_change::operator()(MoFEMProblem &e) { 
-  pair<NumeredDofMoFEMEntity_multiIndex::iterator,bool> p 
-    = e.numered_dofs_cols.insert(NumeredDofMoFEMEntity(dof_ptr)); 
+problem_add_col_dof::problem_add_col_dof(const DofMoFEMEntity *_dof_ptr): dof_ptr(_dof_ptr) {}
+void problem_add_col_dof::operator()(MoFEMProblem &e) { 
+  p = e.numered_dofs_cols.insert(NumeredDofMoFEMEntity(dof_ptr)); 
   if(p.second) {
     (*(DofIdx*)e.tag_nbdof_data_col)++;
   }

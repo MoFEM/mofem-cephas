@@ -1,13 +1,13 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
-* --------------------------------------------------------------
-*
-* DESCRIPTION: FIXME
-*
-* This is not exactly procedure for linear elatic dynamics, since jacobian is
-* evaluated at every time step and snes procedure is involved. However it is
-* implemented like that, to test methodology for general nonlinear problem.
-*
-*/
+/** \file DataOperators.hpp
+
+  Number of structures preforming operations on integration points. 
+
+  For example:
+  - calculate Jacobian
+  - calculate Piola-Transform on shape functions
+  - calculate normals and tangent vectors at integration points on triangle
+
+ */
 
 /* This file is part of MoFEM.
 * MoFEM is free software: you can redistribute it and/or modify it under
@@ -36,7 +36,9 @@ namespace MoFEM {
   */
 struct DataOperator {
 
-  /** \brief operator for linear form, usaully to calculate values on right hand side
+  virtual ~DataOperator() {}
+
+  /** \brief operator for linear form, usually to calculate values on right hand side
     */
   virtual PetscErrorCode doWork(
     int row_side,int col_side,
@@ -51,7 +53,7 @@ struct DataOperator {
   PetscErrorCode opLhs(DataForcesAndSurcesCore &row_data,DataForcesAndSurcesCore &col_data,bool symm = true);
 
 
-  /** \brief operator for linear form, usaully to calculate values on left hand side
+  /** \brief operator for linear form, usually to calculate values on left hand side
     */
   virtual PetscErrorCode doWork(
     int side,
@@ -66,7 +68,7 @@ struct DataOperator {
 
 };
 
-/// \brief transform local reference direvatives of shape funcion to global diervatives 
+/// \brief transform local reference derivatives of shape function to global derivatives 
 struct OpSetInvJacH1: public DataOperator {
 
   ublas::matrix<double> &invJac;
@@ -78,7 +80,7 @@ struct OpSetInvJacH1: public DataOperator {
 
 };
 
-/// \brief transform local reference direvatives of shape funcion to global diervatives 
+/// \brief transform local reference derivatives of shape function to global derivatives 
 struct OpSetInvJacHdiv: public DataOperator {
 
   ublas::matrix<double> &invJac;
@@ -90,7 +92,7 @@ struct OpSetInvJacHdiv: public DataOperator {
 
 };
 
-/** \brief transform local reference direvatives of shape funcion to global diervatives if higer order geometry is given 
+/** \brief transform local reference derivatives of shape function to global derivatives if higher order geometry is given 
   */
 struct OpSetHoInvJacH1: public DataOperator {
 
@@ -104,7 +106,7 @@ struct OpSetHoInvJacH1: public DataOperator {
 };
 
 
-/** \brief transform local reference direvatives of shape funcion to global diervatives if higer order geometry is given 
+/** \brief transform local reference derivatives of shape function to global derivatives if higher order geometry is given 
   */
 struct OpSetHoInvJacHdiv: public DataOperator {
 
@@ -117,7 +119,7 @@ struct OpSetHoInvJacHdiv: public DataOperator {
  
 };
 
-/** \brief apply covariant (Piola) transfor for Hdiv space
+/** \brief apply covariant (Piola) transfer for Hdiv space
   */
 struct OpSetPiolaTransform: public DataOperator {
 
@@ -133,7 +135,7 @@ struct OpSetPiolaTransform: public DataOperator {
 
 };
 
-/** \brief apply covariant (Piola) transfor for Hdiv space for HO geometry
+/** \brief apply covariant (Piola) transfer for Hdiv space for HO geometry
   */
 struct OpSetHoPiolaTransform: public DataOperator {
 
@@ -240,7 +242,7 @@ struct OpGetNormalsOnPrism: public DataOperator {
 };
 
 
-/** \brief transfrom Hdiv space fluxes from reference elemento to physical triangle
+/** \brief transform Hdiv space fluxes from reference element to physical triangle
  */
 struct OpSetPiolaTransoformOnTriangle: public DataOperator {
 

@@ -1,15 +1,14 @@
 /** \file ThermalElement.hpp
- * \brief Operators and data structures for thermal analys
- *
- * Implementation of thermal element for unsteady and steady case.
- * 
- * Radiation and convection blocks implemented by Xuan Meng 
- *
- */
+ \ingroup mofem_thermal_elem
 
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
- *
+ \brief Operators and data structures for thermal analysis
+
+ Implementation of thermal element for unsteady and steady case.
+ Radiation and convection blocks implemented by Xuan Meng 
+
+*/
+
+/*
  * This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -29,7 +28,7 @@
 
 namespace MoFEM {
 
-/** \brief struture grouping operators and data used for thermal problems
+/** \brief structure grouping operators and data used for thermal problems
   * \ingroup mofem_thermal_elem
   *
   * In order to assemble matrices and right hand vectors, the loops over
@@ -46,7 +45,7 @@ struct ThermalElement {
   struct MyVolumeFE: public TetElementForcesAndSourcesCore {
     MyVolumeFE(FieldInterface &_mField): TetElementForcesAndSourcesCore(_mField) {}
 
-    /** \brief it is used to calculate nb. of Gauss integartion points
+    /** \brief it is used to calculate nb. of Gauss integration points
      *
      * for more details pleas look
      *   Reference:
@@ -99,16 +98,16 @@ struct ThermalElement {
     feRadiationRhs(m_field),feRadiationLhs(m_field),
     mField(m_field) {}
 
-  /** \brief data for calulation heat conductivity and heat capacity elements
+  /** \brief data for calculation heat conductivity and heat capacity elements
     * \infroup mofem_thermal_elem
     */
   struct BlockData {
     //double cOnductivity;
-    ublas::matrix<double> cOnductivity_mat;  //This is (3x3) conductivity matix
+    ublas::matrix<double> cOnductivity_mat;  //This is (3x3) conductivity matrix
     double cApacity;   // rou * c_p == material density multiple heat capacity
-    Range tEts; ///< constatins elements in block set
+    Range tEts; ///< contains elements in block set
   };
-  map<int,BlockData> setOfBlocks; ///< maps block set id with appropiate BlockData
+  map<int,BlockData> setOfBlocks; ///< maps block set id with appropriate BlockData
 
   /** \brief data for calulation heat flux
     * \infroup mofem_thermal_elem
@@ -117,7 +116,7 @@ struct ThermalElement {
     HeatfluxCubitBcData dAta; ///< for more details look to BCMultiIndices.hpp to see details of HeatfluxCubitBcData
     Range tRis; ///< suraface triangles where hate flux is applied
   };
-  map<int,FluxData> setOfFluxes; ///< maps side set id with appropiate FluxData
+  map<int,FluxData> setOfFluxes; ///< maps side set id with appropriate FluxData
 
 
   /** \brief data for convection
@@ -126,21 +125,21 @@ struct ThermalElement {
   struct ConvectionData {
     double cOnvection; /*The summation of Convection coefficients*/
     double tEmperature; /*Ambient temperature of the area contains the black body */
-    Range tRis; ///< those will be on body skin, except thos with contact whith other body where temperature is applied
+    Range tRis; ///< those will be on body skin, except this with contact with other body where temperature is applied
   };
-  map<int,ConvectionData> setOfConvection; //< maps block set id with appropiate data
+  map<int,ConvectionData> setOfConvection; //< maps block set id with appropriate data
 
   /** \brief data for radiation
     * \infroup mofem_thermal_elem
     */
   struct RadiationData {
         double sIgma; /* The Stefan-Boltzmann constant*/
-        double eMissivity; /* The surface emissitivity coefficients range = [0,1] */
+        double eMissivity; /* The surface emissivity coefficients range = [0,1] */
         //double aBsorption; /* The surface absorption coefficients */
         double aMbienttEmp; /* The incident radiant heat flow per unit surface area; or the ambient temperature of space*/
-        Range tRis; ///< those will be on body skin, except thos with contact whith other body where temperature is applied
+        Range tRis; ///< those will be on body skin, except this with contact with other body where temperature is applied
   };
-  map<int,RadiationData> setOfRadiation; //< maps block set id with appropiate data
+  map<int,RadiationData> setOfRadiation; //< maps block set id with appropriate data
 
   /** \brief common data used by volume elements
     * \infroup mofem_thermal_elem
@@ -165,7 +164,7 @@ struct ThermalElement {
 
     /** \brief operator calculating temperature gradients
       *
-      * temerature gradient is calculated multiplying derivatives of shape functions by degrees of freedom.
+      * temperature gradient is calculated multiplying derivatives of shape functions by degrees of freedom.
       */
     PetscErrorCode doWork(
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
@@ -197,7 +196,7 @@ struct ThermalElement {
 
   };
 
-  /** \brief opearator to caulate tempereature  and rate of temperature at Gauss points
+  /** \brief operator to calculate temperature  and rate of temperature at Gauss points
     * \infroup mofem_thermal_elem
     */
   template<typename OP>
@@ -210,7 +209,7 @@ struct ThermalElement {
 
     /** \brief operator calculating temperature and rate of temperature
       *
-      * temperature temperature or rate of temperature is calculated multiplyingshape functions by degrees of freedom
+      * temperature temperature or rate of temperature is calculated multiplying shape functions by degrees of freedom
       */
     PetscErrorCode doWork(
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
@@ -224,9 +223,9 @@ struct ThermalElement {
         //initialize
         fieldAtGaussPts.resize(nb_gauss_pts);
         if(type == MBVERTEX) {
-          //loop over shape functions on entities allways start from
+          //loop over shape functions on entities always start from
           //vertices, so if nodal shape functions are processed, vector of
-          //field values is zeroad at initialization
+          //field values is zero at initialization
           fill(fieldAtGaussPts.begin(),fieldAtGaussPts.end(),0);
         }
 
@@ -246,7 +245,7 @@ struct ThermalElement {
 
   };
 
-  /** \brief operator to calculate tempereature at Gauss pts
+  /** \brief operator to calculate temperature at Gauss pts
     * \infroup mofem_thermal_elem
     */
   struct OpGetTetTemperatureAtGaussPts: public OpGetFieldAtGaussPts<TetElementForcesAndSourcesCore> {
@@ -254,7 +253,7 @@ struct ThermalElement {
       OpGetFieldAtGaussPts<TetElementForcesAndSourcesCore>(field_name,common_data.temperatureAtGaussPts) {}
   };
 
-  /** \brief operator to calculate tempereature at Gauss pts
+  /** \brief operator to calculate temperature at Gauss pts
     * \infroup mofem_thermal_elem
     */
   struct OpGetTriTemperatureAtGaussPts: public OpGetFieldAtGaussPts<TriElementForcesAndSurcesCore> {
@@ -1026,7 +1025,7 @@ struct ThermalElement {
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
       PetscErrorCode ierr;
-      ierr = mField.set_other_local_VecCreateGhost(
+      ierr = mField.set_other_local_ghost_vector(
         problemPtr,tempName,rateName,ROW,ts_u_t,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
       PetscFunctionReturn(0);
     }
@@ -1057,7 +1056,7 @@ struct ThermalElement {
       PetscFunctionBegin;
       PetscErrorCode ierr;
 
-      ierr = mField.set_global_VecCreateGhost(
+      ierr = mField.set_global_ghost_vector(
              problemPtr,ROW,ts_u,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
       BitRefLevel proble_bit_level = problemPtr->get_BitRefLevel();
@@ -1086,7 +1085,7 @@ struct ThermalElement {
   /** \brief add heat flux element
     * \infroup mofem_thermal_elem
     *
-    * It get data from heat flux set and define elemenet in moab. Alternatively
+    * It get data from heat flux set and define element in moab. Alternatively
     * uses block set with name HEAT_FLUX.
     *
     * \param field name
@@ -1098,7 +1097,7 @@ struct ThermalElement {
   /** \brief add convection element
   * \infroup mofem_thermal_elem
   *
-  * It get data from convection set and define elemenet in moab. Alternatively
+  * It get data from convection set and define element in moab. Alternatively
   * uses block set with name CONVECTION.
   *
   * \param field name
@@ -1109,7 +1108,7 @@ struct ThermalElement {
   /** \brief add Non-linear Radiation element
   * \infroup mofem_thermal_elem
   *
-  * It get data from Radiation set and define elemenet in moab. Alternatively
+  * It get data from Radiation set and define element in moab. Alternatively
   * uses block set with name RADIATION.
   *
   * \param field name
@@ -1122,12 +1121,12 @@ struct ThermalElement {
     */
   PetscErrorCode setThermalFiniteElementRhsOperators(string field_name,Vec &F);
 
-  /** \brief this fucntion is used in case of stationary heat conductivity problem for lhs
+  /** \brief this function is used in case of stationary heat conductivity problem for lhs
     * \infroup mofem_thermal_elem
     */
   PetscErrorCode setThermalFiniteElementLhsOperators(string field_name,Mat A);
 
-  /** \brief this function is used in case of statonary problem for heat flux terms
+  /** \brief this function is used in case of stationary problem for heat flux terms
     * \infroup mofem_thermal_elem
     */
   PetscErrorCode setThermalFluxFiniteElementRhsOperators(string field_name,Vec &F,const string mesh_nodals_positions = "MESH_NODE_POSITIONS");
@@ -1140,12 +1139,12 @@ struct ThermalElement {
    */
   PetscErrorCode setThermalConvectionFiniteElementLhsOperators(string field_name,Mat A,const string mesh_nodals_positions = "MESH_NODE_POSITIONS");
 
-  /** \brief set up operators for unsedy heat flux; convection; radiation problem
+  /** \brief set up operators for unsteady heat flux; convection; radiation problem
     * \infroup mofem_thermal_elem
     */
   PetscErrorCode setTimeSteppingProblem(string field_name,string rate_name,const string mesh_nodals_positions = "MESH_NODE_POSITIONS");
 
-  /** \brief set up operators for unsedy heat flux; convection; radiation problem
+  /** \brief set up operators for unsteady heat flux; convection; radiation problem
     * \infroup mofem_thermal_elem
     */
   PetscErrorCode setTimeSteppingProblem(TsCtx &ts_ctx,string field_name,string rate_name,const string mesh_nodals_positions = "MESH_NODE_POSITIONS");

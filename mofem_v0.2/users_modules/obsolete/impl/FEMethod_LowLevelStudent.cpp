@@ -513,7 +513,7 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_TET(vector<double>& _gNT
       {
 	double invJac[9];
 	ierr = ShapeJacMBTET(diffNTET,&*_coords_.begin(),invJac); CHKERRQ(ierr);
-	ierr = Shape_invJac(invJac); CHKERRQ(ierr);
+	ierr = ShapeInvJacMBTET(invJac); CHKERRQ(ierr);
 	ierr = ShapeDiffMBTETinvJ(diffNTET,invJac,diffNTETinvJac); CHKERRQ(ierr);
 	//
 	SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fe_ent_ptr->get_side_number_table());

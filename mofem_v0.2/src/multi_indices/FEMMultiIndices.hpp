@@ -1,13 +1,8 @@
 /** \file FEMMultiIndices.hpp
  * \brief Myltindex containes, data structures for mofem finite elements and other low-level functions 
- * 
- * Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl) <br>
- *
- * The MoFEM package is copyrighted by Lukasz Kaczmarczyk. 
- * It can be freely used for educational and research purposes 
- * by other institutions. If you use this softwre pleas cite my work. 
- *
- * MoFEM is free software: you can redistribute it and/or modify it under
+ */ 
+
+/* MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or (at your
  * option) any later version.
@@ -137,19 +132,6 @@ struct interface_RefMoFEMElement: interface_RefMoFEMEntity<T> {
   virtual ~interface_RefMoFEMElement() {}
 };
 
-typedef multi_index_container<
-  const RefMoFEMEntity*,
-  indexed_by<
-    hashed_unique<
-      const_mem_fun<RefMoFEMEntity,EntityHandle,&RefMoFEMEntity::get_parent_ent> >,
-    hashed_unique<
-      tag<Composite_EntType_and_ParentEntType_mi_tag>,
-      composite_key<
-	const RefMoFEMEntity*,
-	const_mem_fun<RefMoFEMEntity,EntityHandle,&RefMoFEMEntity::get_ref_ent>,
-	const_mem_fun<RefMoFEMEntity,EntityHandle,&RefMoFEMEntity::get_parent_ent> > >
-  > > RefMoFEMEntity_multiIndex_view_by_parent_entity;
-
 struct ptrWrapperRefMoFEMElement: public interface_RefMoFEMElement<RefMoFEMElement> {
   typedef interface_RefMoFEMEntity<RefMoFEMElement> interface_type_RefMoFEMEntity;
   typedef interface_RefMoFEMElement<RefMoFEMElement> interface_type_RefMoFEMElement;
@@ -175,7 +157,7 @@ struct ptrWrapperRefMoFEMElement: public interface_RefMoFEMElement<RefMoFEMEleme
  * \param hashed_unique Ent_mi_tag 
  * \param ordered_non_unique Meshset_mi_tag 
  * \param ordered_non_unique Ent_Ent_mi_tag
- * \param ordered_non_unique Composite_of_ParentEnt_And_BitsOfRefinedEdges_mi_tag
+ * \param ordered_non_unique Composite_ParentEnt_And_BitsOfRefinedEdges_mi_tag
  */
 typedef multi_index_container<
   ptrWrapperRefMoFEMElement,
@@ -187,7 +169,7 @@ typedef multi_index_container<
     ordered_non_unique<
       tag<EntType_mi_tag>, const_mem_fun<ptrWrapperRefMoFEMElement::interface_type_RefMoFEMEntity,EntityType,&ptrWrapperRefMoFEMElement::get_ent_type> >,
     ordered_non_unique<
-      tag<Composite_of_ParentEnt_And_BitsOfRefinedEdges_mi_tag>,
+      tag<Composite_ParentEnt_And_BitsOfRefinedEdges_mi_tag>,
       composite_key<
 	ptrWrapperRefMoFEMElement,
 	const_mem_fun<ptrWrapperRefMoFEMElement::interface_type_RefMoFEMEntity,EntityHandle,&ptrWrapperRefMoFEMElement::get_parent_ent>,
@@ -200,6 +182,34 @@ typedef multi_index_container<
 	const_mem_fun<ptrWrapperRefMoFEMElement::interface_type_RefMoFEMEntity,EntityHandle,&ptrWrapperRefMoFEMElement::get_parent_ent> > >
   > > RefMoFEMElement_multiIndex;
 
+/** \brief change parent
+  * \ingroup  fe_multi_indices
+  *
+  * Using this function with care. Some other multi-indices can deponent on this.
+
+  Known dependent multi-indices (verify if that list is full): 
+  - RefMoFEMEntity_multiIndex
+  - RefMoFEMElement_multiIndex
+
+  */
+struct RefMoFEMElement_change_parent {
+  Interface &mOab;
+  const RefMoFEMEntity_multiIndex *refEntPtr;
+  RefMoFEMEntity_multiIndex::iterator refEntIt;
+  EntityHandle pArent;
+  ErrorCode rval;
+  RefMoFEMElement_change_parent(Interface &moab,
+    const RefMoFEMEntity_multiIndex *ref_ent_ptr,
+    RefMoFEMEntity_multiIndex::iterator ref_ent_it,
+    EntityHandle parent): 
+    mOab(moab),
+    refEntPtr(ref_ent_ptr),
+    refEntIt(ref_ent_it),
+    pArent(parent) {}
+  void operator()(ptrWrapperRefMoFEMElement &e) { 
+    const_cast<RefMoFEMEntity_multiIndex*>(refEntPtr)->modify(refEntIt,RefMoFEMEntity_change_parent(mOab,pArent));
+  }
+};
 
 struct EntMoFEMFiniteElement;
 
@@ -433,22 +443,6 @@ struct interface_NumeredMoFEMFiniteElement: public interface_EntMoFEMFiniteEleme
  * \brief MultiIndex container for EntMoFEMFiniteElement
  * \ingroup fe_multi_indices
  *
- * \param ordered_unique<
-      tag<Unique_mi_tag>, member<EntMoFEMFiniteElement,GlobalUId,&EntMoFEMFiniteElement::global_uid> >,
- * \param    ordered_non_unique<
-      tag<Ent_mi_tag>, <br> const_mem_fun<EntMoFEMFiniteElement,EntityHandle,&EntMoFEMFiniteElement::get_ent> >,
- * \param    ordered_non_unique<
-      tag<FiniteElement_name_mi_tag>, <br> const_mem_fun<EntMoFEMFiniteElement::interface_type_MoFEMFiniteElement,boost::string_ref,&EntMoFEMFiniteElement::get_name_ref> >,
- * \param    ordered_non_unique<
-      tag<BitFEId_mi_tag>, <br> const_mem_fun<EntMoFEMFiniteElement::interface_type_MoFEMFiniteElement,BitFEId,&EntMoFEMFiniteElement::get_id>, LtBit<BitFEId> >,
- * \param    ordered_non_unique<
-      tag<EntType_mi_tag>, <br> const_mem_fun<EntMoFEMFiniteElement::interface_type_RefMoFEMEntity,EntityType,&EntMoFEMFiniteElement::get_ent_type> >,
- * \param    ordered_non_unique<
-      tag<Composite_mi_tag>, 
-      composite_key<
-	EntMoFEMFiniteElement, <br>
-	const_mem_fun<EntMoFEMFiniteElement,EntityHandle,&EntMoFEMFiniteElement::get_ent>,
-	const_mem_fun<EntMoFEMFiniteElement::interface_type_MoFEMFiniteElement,boost::string_ref,&EntMoFEMFiniteElement::get_name_ref> > >
  */
 typedef multi_index_container<
   EntMoFEMFiniteElement,
@@ -472,22 +466,9 @@ typedef multi_index_container<
   > > EntMoFEMFiniteElement_multiIndex;
 
 /** 
- * @relates multi_index_container
- * \brief MultiIndex for entities for NumeredMoFEMFiniteElement
- * \ingroup fe_multi_indices
- *
- * \param  ordered_unique<
-      tag<Unique_mi_tag>, const_mem_fun<NumeredMoFEMFiniteElement::interface_type_EntMoFEMFiniteElement,GlobalUId,&NumeredMoFEMFiniteElement::get_global_unique_id> >,
- * \param    ordered_non_unique<
-      tag<FiniteElement_name_mi_tag>, <br> const_mem_fun<NumeredMoFEMFiniteElement::interface_type_MoFEMFiniteElement,string,&NumeredMoFEMFiniteElement::get_name> >,
- * \param    ordered_non_unique<
-      tag<FiniteElement_Part_mi_tag>, <br> member<NumeredMoFEMFiniteElement,unsigned int,&NumeredMoFEMFiniteElement::part> >,
- * \param    ordered_non_unique<
-      tag<Composite_mi_tag>,       
-      composite_key< <br>
-	NumeredMoFEMFiniteElement,
-	const_mem_fun<NumeredMoFEMFiniteElement::interface_type_MoFEMFiniteElement,boost::string_ref,&NumeredMoFEMFiniteElement::get_name_ref>,
-	member<NumeredMoFEMFiniteElement,unsigned int,&NumeredMoFEMFiniteElement::part> > >
+  @relates multi_index_container
+  \brief MultiIndex for entities for NumeredMoFEMFiniteElement
+  \ingroup fe_multi_indices
  */
 typedef multi_index_container<
   NumeredMoFEMFiniteElement,
@@ -507,7 +488,7 @@ typedef multi_index_container<
 	const_mem_fun<NumeredMoFEMFiniteElement::interface_type_MoFEMFiniteElement,boost::string_ref,&NumeredMoFEMFiniteElement::get_name_ref>,
 	const_mem_fun<NumeredMoFEMFiniteElement::interface_type_EntMoFEMFiniteElement,EntityHandle,&NumeredMoFEMFiniteElement::get_ent> > >,
     ordered_non_unique<
-      tag<Composite_mi_tag>,       
+      tag<Composite_Name_And_Part_mi_tag>,       
       composite_key<
 	NumeredMoFEMFiniteElement,
 	const_mem_fun<NumeredMoFEMFiniteElement::interface_type_MoFEMFiniteElement,boost::string_ref,&NumeredMoFEMFiniteElement::get_name_ref>,
@@ -515,9 +496,9 @@ typedef multi_index_container<
   > > NumeredMoFEMFiniteElement_multiIndex;
 
 /**  
- * @relates multi_index_container
- * \brief MultiIndex for entities for MoFEMFiniteElement
- * \ingroup fe_multi_indices
+  @relates multi_index_container
+  \brief MultiIndex for entities for MoFEMFiniteElement
+  \ingroup fe_multi_indices
  */
 typedef multi_index_container<
   MoFEMFiniteElement,

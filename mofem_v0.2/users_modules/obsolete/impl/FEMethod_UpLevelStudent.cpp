@@ -64,7 +64,7 @@ PetscErrorCode FEMethod_UpLevelStudent::OpStudentStart_TET(vector<double>& _gNTE
   }
   EntityHandle fe_handle = fePtr->get_ent();
 
-  V = Shape_intVolumeMBTET(diffNTET,&*coords.data().begin()); 
+  V = ShapeVolumeMBTET(diffNTET,&*coords.data().begin()); 
   if( V <= 0 ) {
     SETERRQ(PETSC_COMM_SELF,1,"negative volume");
     throw FEMethod_UpLevelStudent_ExceptionNegatvieTetVolume();
@@ -762,8 +762,8 @@ PetscErrorCode FEMethod_UpLevelStudent::GetHierarchicalGeometryApproximation(
   ublas::matrix<FieldData> _H_(3,3);
   for(unsigned int gg = 0;gg<invH.size();gg++) {
     ublas::noalias(_H_) = invH[gg];
-    detH[gg] = Shape_detJac(&*_H_.data().begin());
-    ierr = Shape_invJac(&*invH[gg].data().begin()); CHKERRQ(ierr);
+    detH[gg] = ShapeDetJacMBTET(&*_H_.data().begin());
+    ierr = ShapeInvJacMBTET(&*invH[gg].data().begin()); CHKERRQ(ierr);
   }
   PetscFunctionReturn(0);
 }

@@ -1,12 +1,6 @@
 /** \file definitions.h
  * \brief useful compiler directives and definitions
  * 
- * Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl) <br>
- *
- * The MoFEM package is copyrighted by Lukasz Kaczmarczyk. 
- * It can be freely used for educational and research purposes 
- * by other institutions. If you use this softwre pleas cite my work. 
- *
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or (at your
@@ -26,11 +20,10 @@
 
 /** \brief Interfaces IDs
   * 
-  *
-  * To manage differnt complexities realated to field, finite elements mesh
-  * refinmets, etc. a appropiate interfaces realted to each complexities are
-  * created. Intefaces by itself could vary by funcionality or the sema funcion
-  * can me manged with two intefaces with varing level of abstraction.
+  * To manage different complexities related to field, finite elements mesh
+  * refinements, etc. a appropriate interfaces related to each complexities are
+  * created. Interfaces by itself could vary by functionality or the same function
+  * can me manged with two interfaces with waring level of abstraction.
   *
   */
 enum MoFEMInterfaces {
@@ -45,9 +38,10 @@ enum MoFEMInterfaces {
   FE_METHOD = 1<<2|1<<3|1<<4|1<<5,
   ENT_METHOD = 1<<2|1<<3|1<<4|1<<6,
   //Independet Interfaces
-  TETGEN_INTERFACE = 1<<3|1<<4,
-  NETGEN_INTERFACE = 1<<3|1<<5,
-  NODEMERGER_INTERFACE = 1<<3|1<<6
+  TETGEN_INTERFACE = 1<<3|1<<4,		///< used to generate mesh using TetGen
+  NETGEN_INTERFACE = 1<<3|1<<5,		///< used to generate mesh using NetGen
+  NODEMERGER_INTERFACE = 1<<3|1<<6,	///< used to merge nodes
+  BITLEVELCOUPLER_INTERFACE = 1<<3|1<<7 ///< used to couple bit levels by finding parent children relation
 };
 
 /** \brief Error handling
@@ -68,12 +62,13 @@ enum MoFEMErrorCode {
   MOFEM_CHAR_THROW = 105,
   MOFEM_STD_EXCEPTION_THROW = 106,
   MOFEM_INVALID_DATA = 107,
-  MOFEM_ATOM_TEST_INVALID = 108
+  MOFEM_ATOM_TEST_INVALID = 108,
+  MOFEM_MOAB_ERROR = 109
 };
 
 /// \brief approximation spaces
 enum FieldSpace { 
-  NOFIELD = 1, 	///< signel scalar or vector of scalars describe state
+  NOFIELD = 1, 	///< scalar or vector of scalars describe (no true field)
   H1, 		///< continuous field
   HDIV,		///< field with continuous normal traction
   HCURL,	///< field with continuous tangents
@@ -99,9 +94,25 @@ enum ByWhat {
   BYALL = 1<<0|1<<1|1<<2 
 };
 
+<<<<<<< HEAD
 #define BITREFEDGES_SIZE 6 /*number of edges on tets*/
 #define BITREFLEVEL_SIZE 128 /*max number of refinments*/
 #define BITFIELDID_SIZE 64 /*max number of fields*/
+=======
+//taken from http://stackoverflow.com/questions/295120/c-mark-as-deprecated
+#ifdef __GNUC__
+#define DEPRECATED __attribute__((deprecated))
+#elif defined(_MSC_VER)
+#define DEPRECATED __declspec(deprecated)
+#else
+#pragma message("WARNING: You need to implement DEPRECATED for this compiler")
+#define DEPRECATED
+#endif
+
+#define BITREFEDGES_SIZE 6 /*number of edges on tetrahedral*/
+#define BITREFLEVEL_SIZE 128 /*max number of refinements*/
+#define BITFIELDID_SIZE 32 /*max number of fields*/
+>>>>>>> 4c71115df9398c45357ea59be27c041fd194b5e2
 #define BITFEID_SIZE 32 /*max number of finite elements*/
 #define BITPROBLEMID_SIZE 32 /*max number of problems*/
 #define BITINTERFACEUID_SIZE 32 
@@ -151,7 +162,7 @@ enum ByWhat {
     std::ostringstream ss; \
     ss << "Error code  " << val << " at " << __FILE__ << ":" << __LINE__ << std::endl; \
     std::string str(ss.str()); \
-    SETERRQ(PETSC_COMM_SELF,1,str.c_str()); \
+    SETERRQ(PETSC_COMM_SELF,MOFEM_MOAB_ERROR,str.c_str()); \
   } \
 } while (false)
 

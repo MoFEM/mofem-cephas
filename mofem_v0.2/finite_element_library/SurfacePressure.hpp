@@ -277,7 +277,7 @@ struct NeummanForcesSurface {
     PetscErrorCode ierr;
     ErrorCode rval;
     const CubitMeshSets *cubit_meshset_ptr;
-    ierr = mField.get_Cubit_msId(ms_id,NODESET,&cubit_meshset_ptr); CHKERRQ(ierr);
+    ierr = mField.get_cubit_msId(ms_id,NODESET,&cubit_meshset_ptr); CHKERRQ(ierr);
     ierr = cubit_meshset_ptr->get_cubit_bc_data_structure(mapForce[ms_id].data); CHKERRQ(ierr);
     rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBTRI,mapForce[ms_id].tRis,true); CHKERR_PETSC(rval);
     fe.get_op_to_do_Rhs().push_back(new OpNeumannForce(field_name,F,mapForce[ms_id],methodsOp));
@@ -289,7 +289,7 @@ struct NeummanForcesSurface {
     PetscErrorCode ierr;
     ErrorCode rval;
     const CubitMeshSets *cubit_meshset_ptr;
-    ierr = mField.get_Cubit_msId(ms_id,SIDESET,&cubit_meshset_ptr); CHKERRQ(ierr);
+    ierr = mField.get_cubit_msId(ms_id,SIDESET,&cubit_meshset_ptr); CHKERRQ(ierr);
     ierr = cubit_meshset_ptr->get_cubit_bc_data_structure(mapPreassure[ms_id].data); CHKERRQ(ierr);
     rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBTRI,mapPreassure[ms_id].tRis,true); CHKERR_PETSC(rval);
     fe.get_op_to_do_Rhs().push_back(new OpNeumannPreassure(field_name,F,mapPreassure[ms_id],methodsOp,ho_geometry));
@@ -301,7 +301,7 @@ struct NeummanForcesSurface {
     PetscErrorCode ierr;
     ErrorCode rval;
     const CubitMeshSets *cubit_meshset_ptr;
-    ierr = mField.get_Cubit_msId(ms_id,SIDESET,&cubit_meshset_ptr); CHKERRQ(ierr);
+    ierr = mField.get_cubit_msId(ms_id,SIDESET,&cubit_meshset_ptr); CHKERRQ(ierr);
     ierr = cubit_meshset_ptr->get_cubit_bc_data_structure(mapPreassure[ms_id].data); CHKERRQ(ierr);
     rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBTRI,mapPreassure[ms_id].tRis,true); CHKERR_PETSC(rval);
     fe.get_op_to_do_Rhs().push_back(new OpNeumannPreassureFlux(field_name,F,mapPreassure[ms_id],methodsOp,ho_geometry));
@@ -435,7 +435,7 @@ struct MetaNeummanForces {
 
 
 /***************************************************************************//**
- * \defgroup mofem_static_boundary_conditions Static boundary conditions 
+ * \defgroup mofem_static_boundary_conditions Pressure and force boundary conditions
  * \ingroup mofem_forces_and_sources 
  ******************************************************************************/
 

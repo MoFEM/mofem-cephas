@@ -46,4 +46,8 @@ namespace MoFEM {
 
   };
 }
+<<<<<<< HEAD
 #endif
+=======
+#endif
+>>>>>>> 4c71115df9398c45357ea59be27c041fd194b5e2

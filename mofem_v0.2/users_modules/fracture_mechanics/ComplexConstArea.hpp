@@ -668,7 +668,7 @@ struct Snes_CTgc_CONSTANT_AREA: public FEMethod {
     
     Vec D;
     ierr = mField.VecCreateGhost(problem,COL,&D); CHKERRQ(ierr);
-    ierr = mField.set_local_VecCreateGhost(problem,COL,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = mField.set_local_ghost_vector(problem,COL,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
@@ -681,7 +681,7 @@ struct Snes_CTgc_CONSTANT_AREA: public FEMethod {
     ierr = VecScatterEnd(scatter,D,_D_,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGhostUpdateBegin(_D_,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(_D_,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = mField.set_local_VecCreateGhost("C_CRACKFRONT_MATRIX",COL,_D_,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = mField.set_local_ghost_vector("C_CRACKFRONT_MATRIX",COL,_D_,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = VecDestroy(&_D_); CHKERRQ(ierr);
     ierr = VecDestroy(&D); CHKERRQ(ierr);
     ierr = VecScatterDestroy(&scatter); CHKERRQ(ierr);

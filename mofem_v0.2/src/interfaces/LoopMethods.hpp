@@ -2,13 +2,9 @@
  * \brief MoFEM interface 
  * 
  * Low level data structures not used directly by user
- *
- * Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl) <br>
- * MoFEM is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.
- *
+ */
+
+/*
  * MoFEM is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
@@ -31,7 +27,7 @@ static const MOFEMuuid IDD_MOFEMEntMethod = MOFEMuuid( BitIntefaceId(ENT_METHOD)
 
 /**
  * \brief data structure for ksp (nlinear solver) context
- * \ingroup mofem_loop_methods
+ * \ingroup mofem_loops
  *
  * Struture stores context data which are set in finctions run by PETSc SNES functions.
  *
@@ -51,11 +47,13 @@ struct KspMethod {
   Vec ksp_f;
   Mat ksp_A,ksp_B;
 
+  PetscErrorCode copy_ksp(const KspMethod &ksp);
+
 };
 
 /**
  * \brief data structure for snes (nonlinear solver) context
- * \ingroup mofem_loop_methods
+ * \ingroup mofem_loops
  *
  * Struture stores context data which are set in finctions run by PETSc SNES functions.
  *
@@ -74,11 +72,14 @@ struct SnesMethod {
   PetscErrorCode set_snes(SNES _snes);
   Vec snes_x,snes_f;
   Mat snes_A,snes_B;
+
+  PetscErrorCode copy_snes(const SnesMethod &snes);
+
 };
 
 /**
  * \brief data structure for ts (time stepping) context
- * \ingroup mofem_loop_methods
+ * \ingroup mofem_loops
  *
  * Struture stores context data which are set in finctions run by PETSc Time Stepping functions.
  */
@@ -98,11 +99,14 @@ struct TSMethod {
 
   PetscInt ts_step;
   PetscReal ts_a,ts_t;
+
+  PetscErrorCode copy_ts(const TSMethod &ts);
+
 };
 
 /**
  * \brief Data strutucture to exchange data between mofem and User Loop Methods.
- * \ingroup mofem_loop_methods
+ * \ingroup mofem_loops
  *
  * It allows to exchange data between MoFEM and user functoions. It stores informaton about multi-indices.
  */
@@ -116,12 +120,13 @@ struct BasicMethod: public FieldUnknownInterface,KspMethod,SnesMethod,TSMethod {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"unknown inteface");
   }
 
-  BasicMethod();    
-  //
+  BasicMethod();
+
   virtual PetscErrorCode preProcess() = 0;
   virtual PetscErrorCode operator()() = 0;
   virtual PetscErrorCode postProcess() = 0;
-  //
+
+  int rAnk,sIze;
   const RefMoFEMEntity_multiIndex *refinedEntitiesPtr;
   const RefMoFEMElement_multiIndex *refinedFiniteElementsPtr;
   const MoFEMProblem *problemPtr;
@@ -132,11 +137,15 @@ struct BasicMethod: public FieldUnknownInterface,KspMethod,SnesMethod,TSMethod {
   const EntMoFEMFiniteElement_multiIndex *finiteElementsEntitiesPtr;
   const MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_multiIndex *adjacenciesPtr;
   virtual ~BasicMethod() {};
+
+  private:
+  void iNit();
+
 };
 
 /**
   * \brief structure for User Loop Methods on finite elements
-  * \ingroup mofem_loop_methods
+  * \ingroup mofem_loops
   *
   * It can be used to calculate stiffnes matrices, residuals, load vectors etc.
   */  
@@ -188,20 +197,20 @@ struct FEMethod: public BasicMethod {
   const FENumeredDofMoFEMEntity_multiIndex *colPtr;
 
   /** \brief loop over all dofs which are on a particular FE row 
-    * \ingroup mofem_loop_methods
+    * \ingroup mofem_loops
     */
   #define _IT_GET_FEROW_DOFS_FOR_LOOP_(FE,IT) \
   FENumeredDofMoFEMEntity_multiIndex::iterator IT = FE->rowPtr->begin(); IT != FE->rowPtr->end();IT++ 
 
   /** \brief loop over all dofs which are on a particular FE column 
-    * \ingroup mofem_loop_methods
+    * \ingroup mofem_loops
     */
   #define _IT_GET_FECOL_DOFS_FOR_LOOP_(FE,IT) \
   FENumeredDofMoFEMEntity_multiIndex::iterator IT = FE->colPtr->begin(); IT != FE->colPtr->end();IT++ 
 
 
   /** \brief loop over all dofs which are on a particular FE data 
-    * \ingroup mofem_loop_methods
+    * \ingroup mofem_loops
     */
   #define _IT_GET_FEDATA_DOFS_FOR_LOOP_(FE,IT) \
   FEDofMoFEMEntity_multiIndex::iterator IT = FE->dataPtr->begin(); IT != FE->dataPtr->end();IT++ 
@@ -218,7 +227,7 @@ struct FEMethod: public BasicMethod {
   } 
 
     /** \brief loop over all dofs which are on a particular FE row, field, entity type and canonical side number
-     * \ingroup mofem_loop_methods
+     * \ingroup mofem_loops
      *
      * \param FE finite elements
      * \param Name field name
@@ -232,7 +241,7 @@ struct FEMethod: public BasicMethod {
     IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type>(FE->rowPtr->get<Composite_mi_tag>(),NAME,TYPE,SIDE); IT++
 
   /** \brief loop over all dofs which are on a particular FE column, field, entity type and canonical side number
-    * \ingroup mofem_loop_methods
+    * \ingroup mofem_loops
     */ 
   #define _IT_GET_FECOL_BY_SIDE_DOFS_FOR_LOOP_(FE,NAME,TYPE,SIDE,IT) \
   FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator \
@@ -240,7 +249,7 @@ struct FEMethod: public BasicMethod {
     IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type>(FE->colPtr->get<Composite_mi_tag>(),NAME,TYPE,SIDE); IT++
 
   /** \brief loop over all dofs which are on a particular FE data, field, entity type and canonical side number
-    * \ingroup mofem_loop_methods
+    * \ingroup mofem_loops
     */
   #define _IT_GET_FEDATA_BY_SIDE_DOFS_FOR_LOOP_(FE,NAME,TYPE,SIDE,IT) \
   FEDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator \
@@ -257,7 +266,7 @@ struct FEMethod: public BasicMethod {
   } 
 
   /** \brief loop over all dofs which are on a particular FE row, field and entity type
-    * \ingroup mofem_loop_methods
+    * \ingroup mofem_loops
     */
   #define _IT_GET_FEROW_BY_TYPE_DOFS_FOR_LOOP_(FE,NAME,TYPE,IT) \
   FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator \
@@ -265,7 +274,7 @@ struct FEMethod: public BasicMethod {
     IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type>(FE->rowPtr->get<Composite_Name_And_Type_mi_tag>(),NAME,TYPE); IT++
 
   /** \brief loop over all dofs which are on a particular FE column, field and entity type
-    * \ingroup mofem_loop_methods
+    * \ingroup mofem_loops
     */
   #define _IT_GET_FECOL_BY_TYPE_DOFS_FOR_LOOP_(FE,NAME,TYPE,IT) \
   FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator \
@@ -273,7 +282,7 @@ struct FEMethod: public BasicMethod {
     IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type>(FE->colPtr->get<Composite_Name_And_Type_mi_tag>(),NAME,TYPE); IT++
 
   /** \brief loop over all dofs which are on a particular FE data, field and entity type
-    * \ingroup mofem_loop_methods
+    * \ingroup mofem_loops
     */
   #define _IT_GET_FEDATA_BY_TYPE_DOFS_FOR_LOOP_(FE,NAME,TYPE,IT) \
   FEDofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator \
@@ -290,7 +299,7 @@ struct FEMethod: public BasicMethod {
   } 
 
   /** \brief loop over all dofs which are on a particular FE row and field
-    * \ingroup mofem_loop_methods
+    * \ingroup mofem_loops
     */
   #define _IT_GET_FEROW_BY_NAME_DOFS_FOR_LOOP_(FE,NAME,IT) \
   FENumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator \
@@ -298,7 +307,7 @@ struct FEMethod: public BasicMethod {
     IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type>(FE->rowPtr->get<FieldName_mi_tag>(),NAME); IT++
 
   /** \brief loop over all dofs which are on a particular FE column and field
-    * \ingroup mofem_loop_methods
+    * \ingroup mofem_loops
     */
   #define _IT_GET_FECOL_BY_NAME_DOFS_FOR_LOOP_(FE,NAME,IT) \
   FENumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator \
@@ -306,7 +315,7 @@ struct FEMethod: public BasicMethod {
     IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type>(FE->colPtr->get<FieldName_mi_tag>(),NAME); IT++
 
   /** \brief loop over all dofs which are on a particular FE data and field
-    * \ingroup mofem_loop_methods
+    * \ingroup mofem_loops
     */
   #define _IT_GET_FEDATA_BY_NAME_DOFS_FOR_LOOP_(FE,NAME,IT) \
   FEDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator \
@@ -323,7 +332,7 @@ struct FEMethod: public BasicMethod {
   } 
 
   /** \brief loop over all dofs which are on a particular FE row and given element entity (handle from moab)
-    * \ingroup mofem_loop_methods
+    * \ingroup mofem_loops
     */
   #define _IT_GET_FEROW_DOFS_BY_ENT_FOR_LOOP_(FE,ENT,IT) \
     FENumeredDofMoFEMEntity_multiIndex::index<Ent_mi_tag>::type::iterator \
@@ -331,7 +340,7 @@ struct FEMethod: public BasicMethod {
     IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<Ent_mi_tag>::type>(FE->rowPtr->get<Ent_mi_tag>(),ENT); IT++
 
   /** \brief loop over all dofs which are on a particular FE column and given element entity (handle from moab)
-    * \ingroup mofem_loop_methods
+    * \ingroup mofem_loops
     */
   #define _IT_GET_FECOL_DOFS_BY_ENT_FOR_LOOP_(FE,ENT,IT) \
   FENumeredDofMoFEMEntity_multiIndex::index<Ent_mi_tag>::type::iterator \
@@ -339,7 +348,7 @@ struct FEMethod: public BasicMethod {
     IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<Ent_mi_tag>::type>(FE->colPtr->get<Ent_mi_tag>(),ENT); IT++
 
   /** \brief loop over all dofs which are on a particular FE data and given element entity (handle from moab)
-    * \ingroup mofem_loop_methods
+    * \ingroup mofem_loops
     */
   #define _IT_GET_FEDATA_DOFS_BY_ENT_FOR_LOOP_(FE,ENT,IT) \
   FEDofMoFEMEntity_multiIndex::index<Ent_mi_tag>::type::iterator \
@@ -356,7 +365,7 @@ struct FEMethod: public BasicMethod {
   } 
 
   /** \brief loop over all dofs which are on a particular FE row, field and given element entity (handle from moab)
-    * \ingroup mofem_loop_methods
+    * \ingroup mofem_loops
     */
   #define _IT_GET_FEROW_DOFS_BY_NAME_AND_ENT_FOR_LOOP_(FE,NAME,ENT,IT) \
   FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator \
@@ -364,7 +373,7 @@ struct FEMethod: public BasicMethod {
     IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type>(FE->rowPtr->get<Composite_Name_And_Ent_mi_tag>(),NAME,ENT); IT++
 
   /** \brief loop over all dofs which are on a particular FE column, field and given element entity (handle from moab)
-    * \ingroup mofem_loop_methods
+    * \ingroup mofem_loops
     */
   #define _IT_GET_FECOL_DOFS_BY_NAME_AND_ENT_FOR_LOOP_(FE,NAME,ENT,IT) \
   FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator \
@@ -372,7 +381,7 @@ struct FEMethod: public BasicMethod {
     IT != FE->get_end<FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type>(FE->colPtr->get<Composite_Name_And_Ent_mi_tag>(),NAME,ENT); IT++
 
   /** \brief loop over all dofs which are on a particular FE data, field and given element entity (handle from moab)
-    * \ingroup mofem_loop_methods
+    * \ingroup mofem_loops
     */
   #define _IT_GET_FEDATA_DOFS_BY_NAME_AND_ENT_FOR_LOOP_(FE,NAME,ENT,IT) \
   FEDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator \
@@ -383,7 +392,7 @@ struct FEMethod: public BasicMethod {
 
 /**
  * \brief Data strutucture to exchange data between mofem and User Loop Methods on Entirties.
- * \ingroup mofem_loop_methods
+ * \ingroup mofem_loops
  *
  * It allows to exchange data between MoFEM and user functoions. It stores informaton about multi-indices.
  */
@@ -415,7 +424,7 @@ struct EntMethod: public BasicMethod {
 #endif // __LOOPMETHODS_HPP__
 
 /***************************************************************************//**
- * \defgroup mofem_loop_methods Methods for Loops
+ * \defgroup mofem_loops Loops
  * \ingroup mofem
  ******************************************************************************/
 

@@ -156,7 +156,7 @@ int main(int argc, char *argv[]) {
   //add finite elements entities
   ierr = mField.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"ELASTIC",MBTET); CHKERRQ(ierr);
   Range SurfacesFaces;
-  ierr = mField.get_Cubit_msId_entities_by_dimension(103,SIDESET,2,SurfacesFaces,true); CHKERRQ(ierr);
+  ierr = mField.get_cubit_msId_entities_by_dimension(103,SIDESET,2,SurfacesFaces,true); CHKERRQ(ierr);
   ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SideSet 103 = %d\n",SurfacesFaces.size()); CHKERRQ(ierr);
   ierr = mField.add_ents_to_finite_element_by_TRIs(SurfacesFaces,"Lagrange_elem"); CHKERRQ(ierr);
   
@@ -289,7 +289,7 @@ int main(int argc, char *argv[]) {
   
   
   //Save data on mesh
-  ierr = mField.set_global_VecCreateGhost("ELASTIC_MECHANICS",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = mField.set_global_ghost_vector("ELASTIC_MECHANICS",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
   
   //Calculation of Homogenized stress
@@ -333,6 +333,7 @@ int main(int argc, char *argv[]) {
   //=======================================================================================================================================================
   
   
+<<<<<<< HEAD
 //  PostProcVertexMethod ent_method(moab);
 //  ierr = mField.loop_dofs("ELASTIC_MECHANICS","DISPLACEMENT",ROW,ent_method); CHKERRQ(ierr);
 //  
@@ -374,12 +375,24 @@ int main(int argc, char *argv[]) {
 //  ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",post_proc); CHKERRQ(ierr);
 //  rval = post_proc.postProcMesh.write_file("out_RVE.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
 
+=======
+  PostProcVertexMethod ent_method(moab);
+  ierr = mField.loop_dofs("ELASTIC_MECHANICS","DISPLACEMENT",ROW,ent_method); CHKERRQ(ierr);
+  
+  if(pcomm->rank()==0) {
+    EntityHandle out_meshset;
+    rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
+    ierr = mField.get_problem_finite_elements_entities("ELASTIC_MECHANICS","ELASTIC",out_meshset); CHKERRQ(ierr);
+    rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
+    rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
+  }
+>>>>>>> 4c71115df9398c45357ea59be27c041fd194b5e2
   
   
   
   //End Disp
   /*Range ents;*/
-  //ierr = mField.get_Cubit_msId_entities_by_dimension(1,NodeSet,0,ents,true); CHKERRQ(ierr);
+  //ierr = mField.get_cubit_msId_entities_by_dimension(1,NodeSet,0,ents,true); CHKERRQ(ierr);
   //for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"DISPLACEMENT",dit)) {
   //if(find(ents.begin(),ents.end(),dit->get_ent())!=ents.end()) {
   //PetscSynchronizedPrintf(PETSC_COMM_WORLD, "val = %6.7e\n",dit->get_FieldData());
@@ -388,7 +401,7 @@ int main(int argc, char *argv[]) {
   
   //Support stresses
   //Range ents;
-  //ierr = mField.get_Cubit_msId_entities_by_dimension(4,NodeSet,0,ents,true); CHKERRQ(ierr);
+  //ierr = mField.get_cubit_msId_entities_by_dimension(4,NodeSet,0,ents,true); CHKERRQ(ierr);
   
   //Destroy matrices
   ierr = VecDestroy(&F); CHKERRQ(ierr);

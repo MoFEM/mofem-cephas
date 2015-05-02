@@ -1,7 +1,3 @@
-# Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
-# The MoFEM package is copyrighted by Lukasz Kaczmarczyk. 
-# It can be freely used for educational and research purposes 
-# by other institutions. If you use this softwre pleas cite my work. 
 #
 # MoFEM is free software: you can redistribute it and/or modify it under
 # the terms of the GNU Lesser General Public License as published by the
@@ -17,8 +13,12 @@
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
 include_directories("${UM_SOURCE_DIR}/elasticity/src")
+include_directories("${UM_SOURCE_DIR}/nonlinear_elastic_materials/src")
 
-add_executable(elasticity ${UM_SOURCE_DIR}/elasticity/elasticity.cpp)
+add_executable(elasticity 
+  ${UM_SOURCE_DIR}/elasticity/elasticity.cpp
+  ${UM_SOURCE_DIR}/elasticity/src/impl/PCMGSetUpViaApproxOrders.cpp
+)
 target_link_libraries(elasticity 
   mofem_finite_element_library
   mofem_finite_elements
@@ -44,21 +44,8 @@ target_link_libraries(elasticity_old
   mofem_cblas
   ${MoFEM_PROJECT_LIBS})
 
-add_executable(dynamics ${UM_SOURCE_DIR}/elasticity/dynamics.cpp)
-target_link_libraries(dynamics
-  users_modules_obsolete
-  mofem_finite_element_library
-  mofem_finite_elements
-  mofem_interfaces
-  mofem_multi_indices
-  mofem_petsc
-  mofem_approx
-  mofem_third_party
-  mofem_cblas
-  ${MoFEM_PROJECT_LIBS})
-
 cm_export_file("LShape.cub" export_files_elasticity)
-cm_export_file("data.txt" export_files_elasticity)
+cm_export_file("LShape2Parts.h5m" export_files_elasticity)
 
 file(COPY
     ${CMAKE_CURRENT_SOURCE_DIR}/README
@@ -73,15 +60,15 @@ add_test(ElasticityTest
   -pc_factor_mat_solver_package mumps
   -ksp_monitor -log_summary)
 
-add_test(DynamicsTest
-  ${MoFEM_MPI_RUN} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/dynamics
-  -my_file LShape.cub
-  -my_time_data_file data.txt
-  -ksp_type fgmres 
-  -pc_type asm -sub_pc_type lu -ksp_atol 1e-10 -ksp_rtol 1e-10 
-  -snes_monitor -snes_type newtonls -snes_linesearch_type basic 
-  -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 
-  -ts_monitor -ts_type alpha -ts_dt 0.1 -ts_final_time 1
+add_test(MultiGridViaOrderSolver
+  ${MoFEM_MPI_RUN} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/elasticity 
+  -my_file LShape2Parts.h5m -my_is_partitioned
+  -ksp_type fgmres -ksp_monitor 
+  -my_order 4
+  -pc_type mg 
+  -mofem_mg_verbose 1 -mofem_mg_coarse_order 2 -mofem_mg_levels 3
+  -mg_coarse_ksp_type preonly -mg_coarse_pc_type lu -mg_coarse_pc_factor_mat_solver_package mumps
+  -pc_mg_smoothup 10 -pc_mg_smoothdown 10 
+  -pc_mg_galerkin true -pc_mg_type multiplicative
   -log_summary)
-
 
