@@ -210,7 +210,7 @@ int main(int argc, char *argv[]) {
   
   PetscInt choise_value = 0;
   // set type of analytical solution  
-  ierr = PetscOptionsGetEList(NULL,"-analytical_solution_type",analytical_solution_types,6,&choise_value,&flg); CHKERRQ(ierr);
+  ierr = PetscOptionsGetEList(NULL,"-analytical_solution_type",analytical_solution_types,7,&choise_value,&flg); CHKERRQ(ierr);
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -analytical_solution_type needed, WARNING!!!!!!.");
   }
@@ -221,7 +221,7 @@ int main(int argc, char *argv[]) {
     
       {
 
-	double scattering_sphere_radius = 1;;
+	double scattering_sphere_radius = 0.5;
 	ierr = PetscOptionsGetScalar(NULL,"-scattering_sphere_radius",&scattering_sphere_radius,NULL); CHKERRQ(ierr);
 
 	HardSphereScatterWave function_evaluator(wavenumber,scattering_sphere_radius);
@@ -234,7 +234,7 @@ int main(int argc, char *argv[]) {
     case SOFT_SPHERE_SCATTER_WAVE:
 
       {
-	double scattering_sphere_radius = 1;;
+	double scattering_sphere_radius = 0.5;
 	ierr = PetscOptionsGetScalar(NULL,"-scattering_sphere_radius",&scattering_sphere_radius,NULL); CHKERRQ(ierr);
 
         SoftSphereScatterWave function_evaluator(wavenumber,scattering_sphere_radius);
