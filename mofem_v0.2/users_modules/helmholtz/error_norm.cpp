@@ -158,8 +158,11 @@ int main(int argc, char *argv[]) {
 	
     double real_error;
     double imag_error;
-	NormElement norm_elements_re(m_field,real_error);
-	NormElement norm_elements_im(m_field,imag_error);
+    double real_analy;
+    double imag_analy;
+    
+	NormElement norm_elements_re(m_field,real_error,real_analy);
+	NormElement norm_elements_im(m_field,imag_error,imag_analy);
 
 	if(m_field.check_field("reEX") && m_field.check_field("rePRES")) {
 	//&& m_field.check_field("imPRES") && m_field.check_field("imEX") ) {
@@ -307,17 +310,20 @@ int main(int argc, char *argv[]) {
     
 	ierr = m_field.set_local_ghost_vector("EX1_PROBLEM",ROW,M,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	ierr = m_field.set_other_global_ghost_vector("EX1_PROBLEM","reEX","imEX",ROW,P,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-
+    
+    //PetscPrintf(PETSC_COMM_WORLD,"\n real part of l2 norm of analytical solution is: %f \n",real_analy);
+    //PetscPrintf(PETSC_COMM_WORLD,"\n imag part of l2 norm of analytical solution is: %f \n",imag_analy);
+    
     if(usel2) {
       ierr = VecNorm(M,NORM_INFINITY,&nrm2_M);
       ierr = VecNorm(P,NORM_INFINITY,&nrm2_P);
-      PetscPrintf(PETSC_COMM_WORLD,"\n real part of global l2 error is: %f \n",sqrt(real_error)/nrm2_M);
-      PetscPrintf(PETSC_COMM_WORLD,"\n imag part of global l2 error is: %f \n",sqrt(imag_error)/nrm2_P);
+      PetscPrintf(PETSC_COMM_WORLD,"\n real part of global l2 error is: %f \n",sqrt(real_error)/sqrt(real_analy));
+      PetscPrintf(PETSC_COMM_WORLD,"\n imag part of global l2 error is: %f \n",sqrt(imag_error)/sqrt(imag_analy));
     } else {
       ierr = VecNorm(M,NORM_INFINITY,&nrm2_M);
       ierr = VecNorm(P,NORM_INFINITY,&nrm2_P);
-      PetscPrintf(PETSC_COMM_WORLD,"\n real part of global H1 error is: %f \n",sqrt(real_error)/nrm2_M);
-      PetscPrintf(PETSC_COMM_WORLD,"\n imag part of global H1 error is: %f \n",sqrt(imag_error)/nrm2_P);
+      PetscPrintf(PETSC_COMM_WORLD,"\n real part of global H1 error is: %f \n",sqrt(real_error)/sqrt(real_analy));
+      PetscPrintf(PETSC_COMM_WORLD,"\n imag part of global H1 error is: %f \n",sqrt(imag_error)/sqrt(imag_analy));
     }
     	
 	ierr = VecNorm(M,NORM_FROBENIUS,&nrm2_M);

@@ -37,20 +37,23 @@ namespace MoFEM {
 struct NormElement {
 
   double& eRror;
+  double& aNaly;
   
   struct MyVolumeFE: public VolumeElementForcesAndSourcesCore {
     FieldInterface& mField;
     int addToRank; ///< default value 1, i.e. assumes that geometry is approx. by quadratic functions.
     double& eRror;
-    MyVolumeFE(FieldInterface &m_field,double &error,int add_to_rank): 
+    double& aNaly;
+    MyVolumeFE(FieldInterface &m_field,double &error,double &analy,int add_to_rank): 
         VolumeElementForcesAndSourcesCore(m_field),mField(m_field),addToRank(add_to_rank),
-        eRror(error) {}
+        eRror(error),aNaly(analy) {}
     int getRule(int order) { return order+addToRank; };
     
     PetscErrorCode preProcess() {
       PetscFunctionBegin; 
       PetscErrorCode ierr;
       eRror = 0;
+      aNaly = 0;
       PetscFunctionReturn(0);
     }
     
@@ -60,20 +63,33 @@ struct NormElement {
       
       int rank;
       MPI_Comm_rank(mField.get_comm(),&rank);
-      Vec ghost;
+      Vec ghost1;
+      Vec ghost2;
       if(!rank) {
-        ierr = VecCreateGhostWithArray(mField.get_comm(),1,1,0,NULL,&eRror,&ghost); CHKERRQ(ierr);
+        ierr = VecCreateGhostWithArray(mField.get_comm(),1,1,0,NULL,&eRror,&ghost1); CHKERRQ(ierr);
+        ierr = VecCreateGhostWithArray(mField.get_comm(),1,1,0,NULL,&aNaly,&ghost2); CHKERRQ(ierr);
       } else {
         int g[] = {0};
-        ierr = VecCreateGhostWithArray(mField.get_comm(),0,1,1,g,&eRror,&ghost); CHKERRQ(ierr);
+        //cout << "\n g = \n" << g << endl;
+        //cout << "\n ghost = \n" << ghost << endl;
+        ierr = VecCreateGhostWithArray(mField.get_comm(),0,1,1,g,&eRror,&ghost1); CHKERRQ(ierr);
+        //cout << "\n g after = \n" << g << endl;
+        //cout << "\n ghost after = \n" << ghost << endl;
+        ierr = VecCreateGhostWithArray(mField.get_comm(),0,1,1,g,&aNaly,&ghost2); CHKERRQ(ierr);
       }
-      //cerr << eRror << " rank " << rank << endl;
-      ierr = VecGhostUpdateBegin(ghost,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-      ierr = VecGhostUpdateEnd(ghost,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-      ierr = VecGhostUpdateBegin(ghost,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-      ierr = VecGhostUpdateEnd(ghost,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-      ierr = VecDestroy(&ghost); CHKERRQ(ierr);
-      //cerr << eRror << " after rank " << rank << endl;
+
+      ierr = VecGhostUpdateBegin(ghost1,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      ierr = VecGhostUpdateEnd(ghost1,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      ierr = VecGhostUpdateBegin(ghost1,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      ierr = VecGhostUpdateEnd(ghost1,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      ierr = VecDestroy(&ghost1); CHKERRQ(ierr);
+      
+      ierr = VecGhostUpdateBegin(ghost2,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      ierr = VecGhostUpdateEnd(ghost2,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      ierr = VecGhostUpdateBegin(ghost2,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      ierr = VecGhostUpdateEnd(ghost2,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      ierr = VecDestroy(&ghost2); CHKERRQ(ierr);
+
       PetscFunctionReturn(0);
     }
     
@@ -86,9 +102,9 @@ struct NormElement {
   int addToRank; ///< default value 1, i.e. assumes that geometry is approx. by quadratic functions.
   
   NormElement(
-     FieldInterface &mField,double &error,int add_to_rank = 1):
-     fE(mField,error,add_to_rank),m_field(mField),addToRank(add_to_rank),
-     eRror(error) {}
+     FieldInterface &mField,double &error,double &analy,int add_to_rank = 1):
+     fE(mField,error,analy,add_to_rank),m_field(mField),addToRank(add_to_rank),
+     eRror(error),aNaly(analy) {}
 	
   //Field data
   struct CommonData {
@@ -265,20 +281,21 @@ struct NormElement {
 		const string imfieldName;
 		
         double& eRror;
+        double& aNaly;
         
 		OpRhs(const string norm_field_name,const string re_field_name,const string im_field_name,
-				   CommonData &common_data,double &error,bool usel2,bool userela): 
+				   CommonData &common_data,double &error,double &analy,bool usel2,bool userela): 
 			VolumeElementForcesAndSourcesCore::UserDataOperator(norm_field_name),
-			commonData(common_data),eRror(error),
+			commonData(common_data),eRror(error),aNaly(analy),
              useL2(usel2),useTsF(true),useRela(userela),normfieldName(norm_field_name)
 			,refieldName(re_field_name)
 			,imfieldName(im_field_name) {}
 		
 		OpRhs(const string norm_field_name,const string re_field_name,const string im_field_name,
-			  Vec _F,CommonData &common_data,double &error,bool usel2,bool userela
+			  Vec _F,CommonData &common_data,double &error,double &analy,bool usel2,bool userela
 			  ): 
 			VolumeElementForcesAndSourcesCore::UserDataOperator(norm_field_name),
-			commonData(common_data),eRror(error),
+			commonData(common_data),eRror(error),aNaly(analy),
             useL2(usel2),useTsF(false),useRela(userela),F(_F),normfieldName(norm_field_name)
 			,refieldName(re_field_name)
 			,imfieldName(im_field_name) {}
@@ -336,12 +353,12 @@ struct NormElement {
                       
 						error = u_analy[gg] - u_numer[gg];
 						eRror += error*error*val;
-
+                        aNaly += u_analy(gg)*u_analy(gg)*val;
 					} else if(!useL2) { //case H1 norm
 					
 						error = u_analy[gg] - u_numer[gg];
 						
-					
+                        aNaly += u_analy(gg)*u_analy(gg)*val;
 						eRror += (ublas::inner_prod(GradError,GradError) + error*error)*val;
 						
 					}
@@ -445,7 +462,7 @@ PetscErrorCode setNormFiniteElementRhsOperator(string norm_field_name,string fie
 	for(;sit!=volumeData.end();sit++) {
 		
 		//Calculate field values at gaussian points for field1 and field2; 
-      fE.getRowOpPtrVector().push_back(new OpRhs(norm_field_name,field1_name,field2_name,F,commonData,eRror,usel2,userela));
+      fE.getRowOpPtrVector().push_back(new OpRhs(norm_field_name,field1_name,field2_name,F,commonData,eRror,aNaly,usel2,userela));
 
 	}
 	
