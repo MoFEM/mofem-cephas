@@ -154,7 +154,7 @@ struct HardSphereScatterWave: public GenericAnalyticalSolution {
     double z2 = z*z;
     double R = sqrt(x2+y2+z2); 
     //double cos_theta = z/R; //Incident wave in Z direction, X =>sin_theta*sin_phi, Y =>sin_theta*cos_phi
-    double cos_theta = cos( atan2(y,x)+2.0*M_PI );
+    double cos_theta = cos( atan2(y,x)+2.0*M_PI ); //Incident wave in X direction.
 
     const double k = wAvenumber;    //Wave number
     const double a = sphereRadius;      //radius of the sphere,wait to modify by user
@@ -253,8 +253,8 @@ struct SoftSphereScatterWave: public GenericAnalyticalSolution {
     double y2 = y*y;
     double z2 = z*z;
     double R = sqrt(x2+y2+z2); 
-    double cos_theta = z/R;
-
+    //double cos_theta = z/R; //incident wave in Z direction
+    double cos_theta = cos( atan2(y,x)+2.0*M_PI ); //incident wave in X direction.
     const double k = wAvenumber;    //Wave number
     const double a = sphereRadius;      //radius of the sphere,wait to modify by user
 

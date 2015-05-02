@@ -220,7 +220,7 @@ int main(int argc, char *argv[]) {
     case HARD_SPHERE_SCATTER_WAVE:
     
       {
-
+   
 	double scattering_sphere_radius = 0.5;
 	ierr = PetscOptionsGetScalar(NULL,"-scattering_sphere_radius",&scattering_sphere_radius,NULL); CHKERRQ(ierr);
 
