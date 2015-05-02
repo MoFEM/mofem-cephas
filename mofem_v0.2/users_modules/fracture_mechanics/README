@@ -1,0 +1,9 @@
+Check before run
+================
+
+* Check the location of your mesh file
+* Check what version of openmpi (or other MPI library) you are using
+
+Example run
+===========
+

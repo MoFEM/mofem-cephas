@@ -1,9 +1,0 @@
-#!python
-cubit.cmd('brick x 1 y 1 z 1')
-cubit.cmd('volume 1  size 1')
-cubit.cmd('volume 1 scheme Tetmesh')
-cubit.cmd('mesh volume 1')
-cubit.cmd('create Displacement  on node 3  dof all fix 1.5 ')
-cubit.cmd('create temperature  on node 3  value 200')
-cubit.cmd('create pressure  on surface 5  magnitude -100 ')
-cubit.cmd('create heatflux  on surface 5  value 0.005 ')

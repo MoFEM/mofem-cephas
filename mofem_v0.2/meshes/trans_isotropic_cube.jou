@@ -1,0 +1,49 @@
+reset
+brick x 1 y 1 z 1
+
+volume 1 scheme Tetmesh
+volume all size 1
+
+mesh volume 1
+set duplicate block elements on
+block 1 volume 1 
+
+#!Define block attributes
+block 1 attribute count 5
+#Young's modulus in xy plane (Ep)
+block 1 attribute index 1 1 
+#Young's modulus in z-direction (Ez)
+block 1 attribute index 2 1
+#Poisson's ratio in xy plane (vp)
+block 1 attribute index 3 0.2
+#Poisson's ratio in z-direction (vpz)
+block 1 attribute index 4 0.15
+#Shear modulus in z-direction (Gzp)
+block 1 attribute index 5 1
+
+#!Displacement bcs
+create Displacement  on surface 2  dof 3 fix  0
+create Displacement  on curve 6  dof 2 fix 0
+create displacement on curve 6 dof 2 fix 0
+create displacement on vertex 7 dof 1 dof 2 dof 3 fix 0
+
+#!Force
+create force  on surface 1  force value 1 direction   z
+
+block 2 volume 1
+
+#create pressure on surface 3 magnitude 1
+#create pressure on surface 5 magnitude -1
+#nodeset 6 vertex 1 
+#nodeset 6 name 'ZeroPressure'
+
+#!Add material name and description
+block 1 name "MAT_ELASTIC_TRANSISO_1" 
+block 2 name "PotentialFlow" 
+
+block 1 description 'Transverse Isotropic material properties' 
+save as "/Users/likask/MyBuild/mofem-bitbucket/mofem_v0.2/meshes/trans_isotropic_cube.cub" overwrite
+
+
+
+

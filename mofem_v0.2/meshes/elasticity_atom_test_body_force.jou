@@ -1,0 +1,36 @@
+#!python
+cubit.cmd('reset')
+
+cubit.cmd('brick x 1 y 1 z 1')
+cubit.cmd('set duplicate block elements off')
+cubit.cmd('block 1 volume 1  ')
+cubit.cmd('block 1 attribute count 2')
+
+#!Young's Modulus
+cubit.cmd('block 1 name "MAT_ELASTIC1"')
+cubit.cmd('block 1 attribute index 1 4.')
+#!Poisson ratio
+cubit.cmd('block 1 attribute index 2 0.0')
+
+#!Displacement bcs
+cubit.cmd('create Displacement on vertex 7 dof 1 dof 2 dof 3 fix 0')
+cubit.cmd('create Displacement on vertex 4 dof 1 dof 2 fix 0')
+cubit.cmd('create Displacement on vertex 8 dof 1 fix 0')
+
+#!BodyForce
+cubit.cmd('block 2 volume 1') 
+cubit.cmd('block 2 name "BODY_FORCES")
+cubit.cmd('block 2 attribute count 4')
+cubit.cmd('block 2 attribute index 1 1.')
+cubit.cmd('block 2 attribute index 2 0.')
+cubit.cmd('block 2 attribute index 3 1.')
+cubit.cmd('block 2 attribute index 4 0.')
+
+#!Mesh
+cubit.cmd('volume 1  size 1')
+cubit.cmd('volume 1 scheme Tetmesh')
+cubit.cmd('mesh volume 1')
+
+
+#cubit.cmd('save as "/Users/likask/MyBuild/mofem-bitbucket/mofem_v0.2/meshes/elasticity_atom_test_body_force.cub" overwrite')
+
