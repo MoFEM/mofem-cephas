@@ -317,8 +317,11 @@ int main(int argc, char *argv[]) {
     if(usel2) {
       ierr = VecNorm(M,NORM_INFINITY,&nrm2_M);
       ierr = VecNorm(P,NORM_INFINITY,&nrm2_P);
-      PetscPrintf(PETSC_COMM_WORLD,"\n real part of global l2 error is: %f \n",sqrt(real_error)/sqrt(real_analy));
-      PetscPrintf(PETSC_COMM_WORLD,"\n imag part of global l2 error is: %f \n",sqrt(imag_error)/sqrt(imag_analy));
+      double a = sqrt(real_error)/sqrt(real_analy);
+      double b = sqrt(imag_error)/sqrt(imag_analy);
+      PetscPrintf(PETSC_COMM_WORLD,"\n real part of global relative l2 error is: %f \n",a);
+      PetscPrintf(PETSC_COMM_WORLD,"\n imag part of global relative l2 error is: %f \n",b);
+      PetscPrintf(PETSC_COMM_WORLD,"\n total global l2 realtive error is: %f \n",sqrt(a*a+b*b));
     } else {
       ierr = VecNorm(M,NORM_INFINITY,&nrm2_M);
       ierr = VecNorm(P,NORM_INFINITY,&nrm2_P);
@@ -333,8 +336,8 @@ int main(int argc, char *argv[]) {
 	
 	//out stream the global error
 	if(usel2 && !userela) {
-      PetscPrintf(PETSC_COMM_WORLD,"\n The Global L2 error of real field is : %f \n",nrm2_T);
-      PetscPrintf(PETSC_COMM_WORLD,"\n The Global L2 error of imag field is : %f \n",nrm2_D);
+      //PetscPrintf(PETSC_COMM_WORLD,"\n The Global L2 error of real field is : %f \n",nrm2_T);
+      //PetscPrintf(PETSC_COMM_WORLD,"\n The Global L2 error of imag field is : %f \n",nrm2_D);
 
       PetscPrintf(PETSC_COMM_WORLD,"\n The Global L2 relative error of real field is : %f \n",nrm2_T/nrm2_M);
       PetscPrintf(PETSC_COMM_WORLD,"\n The Global L2 relative error of imag field is : %f \n",nrm2_D/nrm2_P);
