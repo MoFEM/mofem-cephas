@@ -146,7 +146,7 @@ struct TimeSeries {
     PetscFunctionBegin;
 
     int n = tSeries.size();
-    if(n%2) {
+    if(!(n%2)) {
       SETERRQ(PETSC_COMM_SELF,1,"odd number of number of points, should be even");
     }
 
@@ -167,7 +167,7 @@ struct TimeSeries {
     PetscFunctionReturn(0);
   }
 
-  ublas::vector<Vec> pSeries,pSeriesReal,pSeriesImag;
+  ublas::vector<Vec> pSeriesReal,pSeriesImag;
   VecScatter scatterImag,scatterReal;
 
   PetscErrorCode createVectorSeries(Vec T) {
@@ -175,19 +175,17 @@ struct TimeSeries {
 
     int n = tSeries.size();
 
-    pSeries.resize(n);
     pSeriesReal.resize(n);
     pSeriesImag.resize(n);
 
-    ierr = mField.VecCreateGhost("PRESSURE_IN_TIME",ROW,&pSeries[0]); CHKERRQ(ierr);
+    ierr = mField.VecCreateGhost("PRESSURE_IN_TIME",ROW,&pSeriesReal[0]); CHKERRQ(ierr);
     for(int k = 1;k<n;k++) {
-      ierr = VecDuplicate(pSeries[0],&pSeries[k]); CHKERRQ(ierr);
+      ierr = VecDuplicate(pSeriesReal[0],&pSeriesReal[k]); CHKERRQ(ierr);
     }
 
     for(int k = 0;k<n;k++) {
 
-      ierr = VecDuplicate(pSeries[0],&pSeriesReal[k]); CHKERRQ(ierr);
-      ierr = VecDuplicate(pSeries[0],&pSeriesImag[k]); CHKERRQ(ierr);
+      ierr = VecDuplicate(pSeriesReal[0],&pSeriesImag[k]); CHKERRQ(ierr);
 
     }
 
@@ -205,7 +203,6 @@ struct TimeSeries {
   
     for(int k = 0;n<k;k++) {
 
-      ierr = VecDestroy(&pSeries[k]); CHKERRQ(ierr);
       ierr = VecDestroy(&pSeriesReal[k]); CHKERRQ(ierr);
       ierr = VecDestroy(&pSeriesImag[k]); CHKERRQ(ierr);
 
@@ -260,7 +257,7 @@ struct TimeSeries {
 	sit->second.aDmittance_imag = -wave_number;
       }
 
-      helmholtzElement.globalParameters.waveNumber.first = wave_number;
+      //helmholtzElement.globalParameters.waveNumber.first = wave_number;
       helmholtzElement.globalParameters.powerOfIncidentWaveReal.first = complexOut[k].r;
       helmholtzElement.globalParameters.powerOfIncidentWaveImag.first = complexOut[k].i;
       PetscPrintf(PETSC_COMM_WORLD,"Complex amplitude %6.4e + i%6.4e\n",complexOut[k].r,complexOut[k].i);
@@ -324,7 +321,7 @@ struct TimeSeries {
     inverseCfg = kiss_fft_alloc(n, 1, NULL, NULL);
 
     int size;
-    ierr = VecGetLocalSize(pSeries[0],&size); CHKERRQ(ierr);
+    ierr = VecGetLocalSize(pSeriesReal[0],&size); CHKERRQ(ierr);
 
     for(int ii = 0;ii<size;ii++) {
 
@@ -348,10 +345,13 @@ struct TimeSeries {
       for(int k = 0;k<n;k++) {
 
 	double *a_p;
-	ierr = VecGetArray(pSeries[k],&a_p); CHKERRQ(ierr);
+	ierr = VecGetArray(pSeriesReal[k],&a_p); CHKERRQ(ierr);
 	a_p[ ii ] = complexIn[k].r;
-	ierr = VecRestoreArray(pSeries[k],&a_p); CHKERRQ(ierr);
+	ierr = VecRestoreArray(pSeriesReal[k],&a_p); CHKERRQ(ierr);
 
+	ierr = VecGetArray(pSeriesImag[k],&a_p); CHKERRQ(ierr);
+	a_p[ ii ] = complexIn[k].i;
+	ierr = VecRestoreArray(pSeriesImag[k],&a_p); CHKERRQ(ierr);
 
       }
 
@@ -360,16 +360,31 @@ struct TimeSeries {
 
     for(int k = 0;k<n;k++) {
 
-	ierr = VecGhostUpdateBegin(pSeries[k],INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	ierr = VecGhostUpdateEnd(pSeries[k],INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	ierr = VecGhostUpdateBegin(pSeriesReal[k],INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	ierr = VecGhostUpdateEnd(pSeriesReal[k],INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
-	ierr = mField.set_local_ghost_vector("PRESSURE_IN_TIME",ROW,pSeries[k],INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	ierr = VecGhostUpdateBegin(pSeriesImag[k],INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	ierr = VecGhostUpdateEnd(pSeriesImag[k],INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+
+	ierr = mField.set_local_ghost_vector("PRESSURE_IN_TIME",ROW,pSeriesReal[k],INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 	ierr = mField.loop_finite_elements("PRESSURE_IN_TIME","PRESSURE_FE",post_proc); CHKERRQ(ierr);
 
-	ostringstream ss;
-	ss << "pressure_time_step_" << k << ".h5m";
-	rval = post_proc.postProcMesh.write_file(ss.str().c_str(),"MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
-	PetscPrintf(PETSC_COMM_WORLD,"Saved %s\n",ss.str().c_str());
+	{
+	  ostringstream ss;
+	  ss << "pressure_real_time_step_" << k << ".h5m";
+	  rval = post_proc.postProcMesh.write_file(ss.str().c_str(),"MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
+	  PetscPrintf(PETSC_COMM_WORLD,"Saved %s\n",ss.str().c_str());
+	}
+
+	ierr = mField.set_local_ghost_vector("PRESSURE_IN_TIME",ROW,pSeriesImag[k],INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	ierr = mField.loop_finite_elements("PRESSURE_IN_TIME","PRESSURE_FE",post_proc); CHKERRQ(ierr);
+
+	{
+	  ostringstream ss;
+	  ss << "pressure_imag_time_step_" << k << ".h5m";
+	  rval = post_proc.postProcMesh.write_file(ss.str().c_str(),"MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
+	  PetscPrintf(PETSC_COMM_WORLD,"Saved %s\n",ss.str().c_str());
+	}
 
     }
 
