@@ -74,13 +74,17 @@ PetscErrorCode ierr;
 static char help[] = "...\n\n";
 
 const char* args[] = {
-    "_r_Amp", "_r_Len","_r_Theta","_r_Vf",                             // 1st-order 
-	"_rs_AmpAmp","_rs_LenLen","_rs_AmpLen","_rs_ThetaTheta","_rs_VfVf" // 2nd-order
+    "_r_Amp", "_r_Len","_r_Theta","_r_Vf",                  // 1st-order - geometry
+    "_r_Ez", "_r_Ep", "_r_NUp", "_r_NUpz", "_r_Gzp", // 1st order - material: fibre
+    "_r_Em", "_r_NUm",                               // 1st-order - material: matrix	
+	"_rs_AmpAmp","_rs_LenLen","_rs_AmpLen","_rs_ThetaTheta","_rs_VfVf", // 2nd-order - geometry
+    "_rs_EzEz", "_rs_EpEp", "_rs_NUpNUp", "_rs_NUpzNUpz", "_rs_GzpGzp", // 2nd order - material: fibre	
+	"_rs_EmEm", "_rs_NUmNUm"                         // 2nd order - material: matrix
     };
 
-double nvars = 4;    // number of variables
-double nders = 9;   // number of partial derivatives (firsr- and second- order)
-vector<string> stochastic_fields(args, args + 9);
+double nvars = 11;    // number of variables
+double nders = 23;   // number of partial derivatives (firsr- and second- order)
+vector<string> stochastic_fields(args, args + 23);
 
 // =============================================================================
 //
@@ -187,7 +191,7 @@ int main(int argc, char *argv[]) {
   ublas::vector<FieldData> applied_strain;
   applied_strain.resize(6);
   cblas_dcopy(6, &myapplied_strain[0], 1, &applied_strain(0), 1);
-  //    cout<<"applied_strain ="<<applied_strain<<endl;
+  // cout<<"applied_strain ="<<applied_strain(0)<<endl;
   
   /*****************************************************************************
    *
@@ -653,6 +657,7 @@ int main(int argc, char *argv[]) {
   
   ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","ELASTIC",MyRVEVol);  CHKERRQ(ierr);
   ierr = VecView(RVE_volume_Vec,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+  ierr = VecSum(RVE_volume_Vec, &RVE_volume);  CHKERRQ(ierr);
   ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","TRAN_ISOTROPIC_ELASTIC",MyRVEVolTrans);  CHKERRQ(ierr);
   ierr = VecView(RVE_volume_Vec,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
   ierr = VecSum(RVE_volume_Vec, &RVE_volume);  CHKERRQ(ierr);
@@ -701,7 +706,25 @@ int main(int argc, char *argv[]) {
 
   // write the result in file
   ofstream TheFile;
-  TheFile.open("//mnt//home//Dropbox//DURACOMP_Cal//009_MoFEM//03_EEP_Geometry uncertainties//Results//Result_6.txt",ofstream::out); 
+  
+  if (applied_strain[0]==1) {
+	TheFile.open("//mnt//home//Dropbox//DURACOMP_Cal//009_MoFEM//03_EEP_Geometry_Uncertainties//Results//Result_1.txt",ofstream::out); 
+  }
+  else if (applied_strain[1]==1) {
+	TheFile.open("//mnt//home//Dropbox//DURACOMP_Cal//009_MoFEM//03_EEP_Geometry_Uncertainties//Results//Result_2.txt",ofstream::out); 
+  }
+  else if (applied_strain[2]==1) {
+	TheFile.open("//mnt//home//Dropbox//DURACOMP_Cal//009_MoFEM//03_EEP_Geometry_Uncertainties//Results//Result_3.txt",ofstream::out); 
+  }
+  else if (applied_strain[3]==1) {
+	TheFile.open("//mnt//home//Dropbox//DURACOMP_Cal//009_MoFEM//03_EEP_Geometry_Uncertainties//Results//Result_4.txt",ofstream::out); 
+  }
+  else if (applied_strain[4]==1) {
+	TheFile.open("//mnt//home//Dropbox//DURACOMP_Cal//009_MoFEM//03_EEP_Geometry_Uncertainties//Results//Result_5.txt",ofstream::out); 
+  }
+  else if (applied_strain[5]==1) {
+	TheFile.open("//mnt//home//Dropbox//DURACOMP_Cal//009_MoFEM//03_EEP_Geometry_Uncertainties//Results//Result_6.txt",ofstream::out); 
+  }
   
   if(pcomm->rank()==0){
     PetscScalar    *avec;
@@ -727,7 +750,7 @@ int main(int argc, char *argv[]) {
   //----------------------------------------------------------------------------
   // a. Solving the equation to get nodal displacement
   //----------------------------------------------------------------------------
-  
+
   for(int ii=0; ii < nders; ii++){
     //
     ierr = VecZeroEntries(dF); CHKERRQ(ierr);
@@ -746,14 +769,14 @@ int main(int argc, char *argv[]) {
 										  "TRAN_ISOTROPIC_ELASTIC",
 										  my_fe_r_Amp);  CHKERRQ(ierr);						  
     }
-    else if (ii == 1){ // due to fibre waviness - periodic length
+	else if (ii == 1){ // due to fibre waviness - periodic length
       Trans_Iso_Geom_Rhs_r_PSFEM my_fe_r_Len(mField,Aij,D,dF,"Length",
-	                                      "transversely_isotropic","reinforcement");
+                                             "transversely_isotropic","reinforcement");
       ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM",
-	                                     "TRAN_ISOTROPIC_ELASTIC",
-										  my_fe_r_Len);  CHKERRQ(ierr);
+                                         "TRAN_ISOTROPIC_ELASTIC",
+                                         my_fe_r_Len);  CHKERRQ(ierr);
     }
-    else if (ii == 2){ // due to fibre misalignment - angle
+	else if (ii == 2){ // due to fibre misalignment - angle
       Trans_Iso_Geom_Rhs_r_PSFEM my_fe_r_Theta(mField,Aij,D,dF,"Angle",
                                              "transversely_isotropic","reinforcement");
       ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM",
@@ -767,7 +790,60 @@ int main(int argc, char *argv[]) {
                                          "TRAN_ISOTROPIC_ELASTIC",
                                          my_fe_r_Vf);  CHKERRQ(ierr);
     }
-    else if (ii == 4){ // 2nd order derivative due to fibre waviness - amplitude
+	else if (ii == 4){ // due to material properties: fibre axial modulus - Ez
+      Trans_Iso_Geom_Rhs_r_PSFEM my_fe_r_Ez(mField,Aij,D,dF,"YoungZ",
+                                             "transversely_isotropic","reinforcement");
+      ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM",
+                                         "TRAN_ISOTROPIC_ELASTIC",
+                                         my_fe_r_Ez);  CHKERRQ(ierr);
+    }
+	else if (ii == 5){ // due to material properties: fibre transverse modulus - Ep
+      Trans_Iso_Geom_Rhs_r_PSFEM my_fe_r_Ep(mField,Aij,D,dF,"YoungP",
+                                             "transversely_isotropic","reinforcement");
+      ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM",
+                                         "TRAN_ISOTROPIC_ELASTIC",
+                                         my_fe_r_Ep);  CHKERRQ(ierr);
+    }
+	else if (ii == 6){ // due to material properties: fibre transverse Poisson - NUp
+      Trans_Iso_Geom_Rhs_r_PSFEM my_fe_r_NUp(mField,Aij,D,dF,"PoissonP",
+                                             "transversely_isotropic","reinforcement");
+      ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM",
+                                         "TRAN_ISOTROPIC_ELASTIC",
+                                         my_fe_r_NUp);  CHKERRQ(ierr);
+    }
+	else if (ii == 7){ // due to material properties: fibre axial Poisson - NUpz
+      Trans_Iso_Geom_Rhs_r_PSFEM my_fe_r_NUpz(mField,Aij,D,dF,"PoissonZ",
+                                             "transversely_isotropic","reinforcement");
+      ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM",
+                                         "TRAN_ISOTROPIC_ELASTIC",
+                                         my_fe_r_NUpz);  CHKERRQ(ierr);
+    }
+	else if (ii == 8){ // due to material properties: fibre shear modulus - Gzp
+      Trans_Iso_Geom_Rhs_r_PSFEM my_fe_r_Gzp(mField,Aij,D,dF,"ShearZP",
+                                             "transversely_isotropic","reinforcement");
+      ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM",
+                                         "TRAN_ISOTROPIC_ELASTIC",
+                                         my_fe_r_Gzp);  CHKERRQ(ierr);
+    }
+	else if (ii == 9){ // due to material properties: matrix modulus - Em
+	  Trans_Iso_Rhs_r_PSFEM my_fe_k_r_Em(mField,Aij,D,dF,"Young","isotropic","matrix");
+      ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","ELASTIC",my_fe_k_r_Em);  CHKERRQ(ierr);
+      Trans_Iso_Geom_Rhs_r_PSFEM my_fe_r_Emf(mField,Aij,D,dF,"YoungM",
+	                                      "transversely_isotropic","reinforcement");
+      ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM",
+	                                     "TRAN_ISOTROPIC_ELASTIC",
+										  my_fe_r_Emf);  CHKERRQ(ierr);
+    }
+    else if (ii == 10){ // due to material properties: matrix Poisson - NUm
+	  Trans_Iso_Rhs_r_PSFEM my_fe_k_r_NUm(mField,Aij,D,dF,"Poisson","isotropic","matrix");
+      ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","ELASTIC",my_fe_k_r_NUm);  CHKERRQ(ierr);
+      Trans_Iso_Geom_Rhs_r_PSFEM my_fe_r_NUmf(mField,Aij,D,dF,"PoissonM",
+	                                      "transversely_isotropic","reinforcement");
+      ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM",
+	                                     "TRAN_ISOTROPIC_ELASTIC",
+										  my_fe_r_NUmf);  CHKERRQ(ierr);
+    }
+    else if (ii == 11){ // 2nd order derivative due to fibre waviness - amplitude
       Trans_Iso_Geom_Rhs_rs_PSFEM my_fe_rs_AmpAmp(mField,Aij,D,ddF,"DISP_r_Amp",
 	                                              "Amplitude","Amplitude",
                                                   "transversely_isotropic",
@@ -776,7 +852,7 @@ int main(int argc, char *argv[]) {
 	                                     "TRAN_ISOTROPIC_ELASTIC",
 										  my_fe_rs_AmpAmp);  CHKERRQ(ierr);
     }
-    else if (ii == 5){ // 2nd order derivative due to fibre waviness - length
+    else if (ii == 12){ // 2nd order derivative due to fibre waviness - length
       Trans_Iso_Geom_Rhs_rs_PSFEM my_fe_rs_LenLen(mField,Aij,D,ddF,"DISP_r_Len",
 	                                              "Length","Length",
                                                   "transversely_isotropic",
@@ -785,7 +861,7 @@ int main(int argc, char *argv[]) {
 	                                     "TRAN_ISOTROPIC_ELASTIC",
 										  my_fe_rs_LenLen);  CHKERRQ(ierr);
     }
-    else if (ii == 6){ // 2nd order derivative due to fibre waviness - amplitude & length
+    else if (ii == 13){ // 2nd order derivative due to fibre waviness - amplitude & length
       Trans_Iso_Geom_Rhs_rs_PSFEM my_fe_rs_AmpLen(mField,Aij,D,ddF,"DISP_r_Len",
 	                                              "Amplitude","Length",
                                                   "transversely_isotropic",
@@ -794,7 +870,7 @@ int main(int argc, char *argv[]) {
 	                                     "TRAN_ISOTROPIC_ELASTIC",
 										  my_fe_rs_AmpLen);  CHKERRQ(ierr);
     }
-    else if (ii == 7){ // 2nd order derivative due to fibre misalignment - theta & theta
+    else if (ii == 14){ // 2nd order derivative due to fibre misalignment - theta & theta
       Trans_Iso_Geom_Rhs_rs_PSFEM my_fe_rs_ThetaTheta(mField,Aij,D,ddF,"DISP_r_Theta",
                                                   "Angle","Angle",
                                                   "transversely_isotropic",
@@ -803,7 +879,7 @@ int main(int argc, char *argv[]) {
                                          "TRAN_ISOTROPIC_ELASTIC",
                                          my_fe_rs_ThetaTheta);  CHKERRQ(ierr);
     }
-    else if (ii == 8){ // 2nd order derivative due to fibre volume fraction - Vf & Vf
+    else if (ii == 15){ // 2nd order derivative due to fibre volume fraction - Vf & Vf
       Trans_Iso_Geom_Rhs_rs_PSFEM my_fe_rs_VfVf(mField,Aij,D,ddF,"DISP_r_Vf",
                                                       "Fraction","Fraction",
                                                       "transversely_isotropic",
@@ -812,6 +888,74 @@ int main(int argc, char *argv[]) {
                                          "TRAN_ISOTROPIC_ELASTIC",
                                          my_fe_rs_VfVf);  CHKERRQ(ierr);
     }
+	else if (ii == 16){ // 2nd order derivative due to material properties - Ez & Ez
+      Trans_Iso_Geom_Rhs_rs_PSFEM my_fe_rs_EzEz(mField,Aij,D,ddF,"DISP_r_Ez",
+                                                      "YoungZ","YoungZ",
+                                                      "transversely_isotropic",
+                                                      "reinforcement");
+      ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM",
+                                         "TRAN_ISOTROPIC_ELASTIC",
+                                         my_fe_rs_EzEz);  CHKERRQ(ierr);
+    }
+	else if (ii == 17){ // 2nd order derivative due to material properties - Ep & Ep
+      Trans_Iso_Geom_Rhs_rs_PSFEM my_fe_rs_EpEp(mField,Aij,D,ddF,"DISP_r_Ep",
+                                                      "YoungP","YoungP",
+                                                      "transversely_isotropic",
+                                                      "reinforcement");
+      ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM",
+                                         "TRAN_ISOTROPIC_ELASTIC",
+                                         my_fe_rs_EpEp);  CHKERRQ(ierr);
+    }
+	else if (ii == 18){ // 2nd order derivative due to material properties - NUp & NUp
+      Trans_Iso_Geom_Rhs_rs_PSFEM my_fe_rs_NUpNUp(mField,Aij,D,ddF,"DISP_r_NUp",
+                                                      "PoissonP","PoissonP",
+                                                      "transversely_isotropic",
+                                                      "reinforcement");
+      ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM",
+                                         "TRAN_ISOTROPIC_ELASTIC",
+                                         my_fe_rs_NUpNUp);  CHKERRQ(ierr);
+    }
+	else if (ii == 19){ // 2nd order derivative due to material properties - NUpz & NUpz
+      Trans_Iso_Geom_Rhs_rs_PSFEM my_fe_rs_NUpzNUpz(mField,Aij,D,ddF,"DISP_r_NUpz",
+                                                      "PoissonZ","PoissonZ",
+                                                      "transversely_isotropic",
+                                                      "reinforcement");
+      ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM",
+                                         "TRAN_ISOTROPIC_ELASTIC",
+                                         my_fe_rs_NUpzNUpz);  CHKERRQ(ierr);
+    }
+	else if (ii == 20){ // 2nd order derivative due to material properties - Gzp & Gzp
+      Trans_Iso_Geom_Rhs_rs_PSFEM my_fe_rs_GzpGzp(mField,Aij,D,ddF,"DISP_r_Gzp",
+                                                      "ShearZP","ShearZP",
+                                                      "transversely_isotropic",
+                                                      "reinforcement");
+      ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM",
+                                         "TRAN_ISOTROPIC_ELASTIC",
+                                         my_fe_rs_GzpGzp);  CHKERRQ(ierr);
+    }
+	else if (ii == 21){ // 2nd order derivative due to material properties - Em & Em
+      Trans_Iso_Rhs_rs_PSFEM my_fe_k_rs_EmEm(mField,Aij,D,ddF,"DISP_r_Em","Young","Young", "isotropic", "matrix");
+      ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","ELASTIC",my_fe_k_rs_EmEm);  CHKERRQ(ierr);
+      Trans_Iso_Geom_Rhs_rs_PSFEM my_fe_rs_EmfEmf(mField,Aij,D,ddF,"DISP_r_Em",
+                                                      "YoungM","YoungM",
+                                                      "transversely_isotropic",
+                                                      "reinforcement");
+      ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM",
+                                         "TRAN_ISOTROPIC_ELASTIC",
+                                         my_fe_rs_EmfEmf);  CHKERRQ(ierr);
+    }
+	else if (ii == 22){ // 2nd order derivative due to material properties - NUm & NUm
+      Trans_Iso_Rhs_rs_PSFEM my_fe_k_rs_NUmNUm(mField,Aij,D,ddF,"DISP_r_NUm","Poisson","Poisson", "isotropic", "matrix");
+      ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","ELASTIC",my_fe_k_rs_NUmNUm);  CHKERRQ(ierr);
+      Trans_Iso_Geom_Rhs_rs_PSFEM my_fe_rs_NUmfNUmf(mField,Aij,D,ddF,"DISP_r_NUm",
+                                                      "PoissonM","PoissonM",
+                                                      "transversely_isotropic",
+                                                      "reinforcement");
+      ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM",
+                                         "TRAN_ISOTROPIC_ELASTIC",
+                                         my_fe_rs_NUmfNUmf);  CHKERRQ(ierr);
+    }
+	
 
 
     ostringstream ss_field;

@@ -187,7 +187,7 @@ namespace ObosleteUsersModules {
       AARotMat=RotMat.AARotMat;
       
       StressRotMat = ublas::zero_matrix<FieldData>(6,6);
-      
+      /*
       StressRotMat(0, 0) =       AARotMat(0,0) * AARotMat(0,0);
       StressRotMat(0, 1) =       AARotMat(0,1) * AARotMat(0,1);
       StressRotMat(0, 2) =       AARotMat(0,2) * AARotMat(0,2);
@@ -229,49 +229,49 @@ namespace ObosleteUsersModules {
       StressRotMat(5, 3) = ( AARotMat(0,1) * AARotMat(1,2) + AARotMat(0,2) * AARotMat(1,1) );
       StressRotMat(5, 4) = ( AARotMat(0,0) * AARotMat(1,2) + AARotMat(0,2) * AARotMat(1,0) );
       StressRotMat(5, 5) = ( AARotMat(0,0) * AARotMat(1,1) + AARotMat(0,1) * AARotMat(1,0) );
-      
+      */
       // -------------
-//      StressRotMat(0, 0) =       AARotMat(0,0) * AARotMat(0,0);
-//      StressRotMat(0, 1) =       AARotMat(1,0) * AARotMat(1,0);
-//      StressRotMat(0, 2) =       AARotMat(2,0) * AARotMat(2,0);
-//      StressRotMat(0, 3) = 2.0 * AARotMat(1,0) * AARotMat(0,0);
-//      StressRotMat(0, 4) = 2.0 * AARotMat(2,0) * AARotMat(1,0);
-//      StressRotMat(0, 5) = 2.0 * AARotMat(0,0) * AARotMat(2,0);
-//      
-//      StressRotMat(1, 0) =       AARotMat(0,1) * AARotMat(0,1);
-//      StressRotMat(1, 1) =       AARotMat(1,1) * AARotMat(1,1);
-//      StressRotMat(1, 2) =       AARotMat(2,1) * AARotMat(2,1);
-//      StressRotMat(1, 3) = 2.0 * AARotMat(1,1) * AARotMat(0,1);
-//      StressRotMat(1, 4) = 2.0 * AARotMat(2,1) * AARotMat(1,1);
-//      StressRotMat(1, 5) = 2.0 * AARotMat(0,1) * AARotMat(2,1);
-//      
-//      StressRotMat(2, 0) =       AARotMat(0,2) * AARotMat(0,2);
-//      StressRotMat(2, 1) =       AARotMat(1,2) * AARotMat(1,2);
-//      StressRotMat(2, 2) =       AARotMat(2,2) * AARotMat(2,2);
-//      StressRotMat(2, 3) = 2.0 * AARotMat(1,2) * AARotMat(0,2);
-//      StressRotMat(2, 4) = 2.0 * AARotMat(2,2) * AARotMat(1,2);
-//      StressRotMat(2, 5) = 2.0 * AARotMat(0,2) * AARotMat(2,2);
-//      
-//      StressRotMat(3, 0) =   AARotMat(0,1) * AARotMat(0,0);
-//      StressRotMat(3, 1) =   AARotMat(1,1) * AARotMat(1,0);
-//      StressRotMat(3, 2) =   AARotMat(2,1) * AARotMat(2,0);
-//      StressRotMat(3, 3) = ( AARotMat(1,1) * AARotMat(0,0) + AARotMat(0,1) * AARotMat(1,0) );
-//      StressRotMat(3, 4) = ( AARotMat(2,1) * AARotMat(1,0) + AARotMat(1,1) * AARotMat(2,0) );
-//      StressRotMat(3, 5) = ( AARotMat(0,1) * AARotMat(2,0) + AARotMat(2,1) * AARotMat(0,0) );
-//      
-//      StressRotMat(4, 0) =   AARotMat(0,2) * AARotMat(0,1);
-//      StressRotMat(4, 1) =   AARotMat(1,2) * AARotMat(1,1);
-//      StressRotMat(4, 2) =   AARotMat(2,2) * AARotMat(2,1);
-//      StressRotMat(4, 3) = ( AARotMat(1,2) * AARotMat(0,1) + AARotMat(0,2) * AARotMat(1,1) );
-//      StressRotMat(4, 4) = ( AARotMat(2,2) * AARotMat(1,1) + AARotMat(1,2) * AARotMat(2,1) );
-//      StressRotMat(4, 5) = ( AARotMat(0,2) * AARotMat(2,1) + AARotMat(2,2) * AARotMat(0,1) );
-//      
-//      StressRotMat(5, 0) =   AARotMat(0,0) * AARotMat(0,2);
-//      StressRotMat(5, 1) =   AARotMat(1,0) * AARotMat(1,2);
-//      StressRotMat(5, 2) =   AARotMat(2,0) * AARotMat(2,2);
-//      StressRotMat(5, 3) = ( AARotMat(1,0) * AARotMat(0,2) + AARotMat(0,0) * AARotMat(1,2) );
-//      StressRotMat(5, 4) = ( AARotMat(2,0) * AARotMat(1,2) + AARotMat(1,0) * AARotMat(2,2) );
-//      StressRotMat(5, 5) = ( AARotMat(0,0) * AARotMat(2,2) + AARotMat(2,0) * AARotMat(0,2) );
+      StressRotMat(0, 0) =       AARotMat(0,0) * AARotMat(0,0);
+      StressRotMat(0, 1) =       AARotMat(1,0) * AARotMat(1,0);
+      StressRotMat(0, 2) =       AARotMat(2,0) * AARotMat(2,0);
+      StressRotMat(0, 3) = 2.0 * AARotMat(1,0) * AARotMat(0,0);
+      StressRotMat(0, 4) = 2.0 * AARotMat(2,0) * AARotMat(1,0);
+      StressRotMat(0, 5) = 2.0 * AARotMat(0,0) * AARotMat(2,0);
+      
+      StressRotMat(1, 0) =       AARotMat(0,1) * AARotMat(0,1);
+      StressRotMat(1, 1) =       AARotMat(1,1) * AARotMat(1,1);
+      StressRotMat(1, 2) =       AARotMat(2,1) * AARotMat(2,1);
+      StressRotMat(1, 3) = 2.0 * AARotMat(1,1) * AARotMat(0,1);
+      StressRotMat(1, 4) = 2.0 * AARotMat(2,1) * AARotMat(1,1);
+      StressRotMat(1, 5) = 2.0 * AARotMat(0,1) * AARotMat(2,1);
+      
+      StressRotMat(2, 0) =       AARotMat(0,2) * AARotMat(0,2);
+      StressRotMat(2, 1) =       AARotMat(1,2) * AARotMat(1,2);
+      StressRotMat(2, 2) =       AARotMat(2,2) * AARotMat(2,2);
+      StressRotMat(2, 3) = 2.0 * AARotMat(1,2) * AARotMat(0,2);
+      StressRotMat(2, 4) = 2.0 * AARotMat(2,2) * AARotMat(1,2);
+      StressRotMat(2, 5) = 2.0 * AARotMat(0,2) * AARotMat(2,2);
+      
+      StressRotMat(3, 0) =   AARotMat(0,1) * AARotMat(0,0);
+      StressRotMat(3, 1) =   AARotMat(1,1) * AARotMat(1,0);
+      StressRotMat(3, 2) =   AARotMat(2,1) * AARotMat(2,0);
+      StressRotMat(3, 3) = ( AARotMat(1,1) * AARotMat(0,0) + AARotMat(0,1) * AARotMat(1,0) );
+      StressRotMat(3, 4) = ( AARotMat(2,1) * AARotMat(1,0) + AARotMat(1,1) * AARotMat(2,0) );
+      StressRotMat(3, 5) = ( AARotMat(0,1) * AARotMat(2,0) + AARotMat(2,1) * AARotMat(0,0) );
+      
+      StressRotMat(4, 0) =   AARotMat(0,2) * AARotMat(0,1);
+      StressRotMat(4, 1) =   AARotMat(1,2) * AARotMat(1,1);
+      StressRotMat(4, 2) =   AARotMat(2,2) * AARotMat(2,1);
+      StressRotMat(4, 3) = ( AARotMat(1,2) * AARotMat(0,1) + AARotMat(0,2) * AARotMat(1,1) );
+      StressRotMat(4, 4) = ( AARotMat(2,2) * AARotMat(1,1) + AARotMat(1,2) * AARotMat(2,1) );
+      StressRotMat(4, 5) = ( AARotMat(0,2) * AARotMat(2,1) + AARotMat(2,2) * AARotMat(0,1) );
+      
+      StressRotMat(5, 0) =   AARotMat(0,0) * AARotMat(0,2);
+      StressRotMat(5, 1) =   AARotMat(1,0) * AARotMat(1,2);
+      StressRotMat(5, 2) =   AARotMat(2,0) * AARotMat(2,2);
+      StressRotMat(5, 3) = ( AARotMat(1,0) * AARotMat(0,2) + AARotMat(0,0) * AARotMat(1,2) );
+      StressRotMat(5, 4) = ( AARotMat(2,0) * AARotMat(1,2) + AARotMat(1,0) * AARotMat(2,2) );
+      StressRotMat(5, 5) = ( AARotMat(0,0) * AARotMat(2,2) + AARotMat(2,0) * AARotMat(0,2) );
       
     }
 
@@ -298,90 +298,90 @@ namespace ObosleteUsersModules {
       
       StrainRotMat = ublas::zero_matrix<FieldData>(6,6);
       
-      StrainRotMat(0, 0) = AARotMat(0,0) * AARotMat(0,0);
-      StrainRotMat(0, 1) = AARotMat(0,1) * AARotMat(0,1);
-      StrainRotMat(0, 2) = AARotMat(0,2) * AARotMat(0,2);
-      StrainRotMat(0, 3) = AARotMat(0,1) * AARotMat(0,2);
-      StrainRotMat(0, 4) = AARotMat(0,0) * AARotMat(0,2);
-      StrainRotMat(0, 5) = AARotMat(0,0) * AARotMat(0,1);
-      
-      StrainRotMat(1, 0) = AARotMat(1,0) * AARotMat(1,0);
-      StrainRotMat(1, 1) = AARotMat(1,1) * AARotMat(1,1);
-      StrainRotMat(1, 2) = AARotMat(1,2) * AARotMat(1,2);
-      StrainRotMat(1, 3) = AARotMat(1,1) * AARotMat(1,2);
-      StrainRotMat(1, 4) = AARotMat(1,0) * AARotMat(1,2);
-      StrainRotMat(1, 5) = AARotMat(1,0) * AARotMat(1,1);
-      
-      StrainRotMat(2, 0) = AARotMat(2,0) * AARotMat(2,0);
-      StrainRotMat(2, 1) = AARotMat(2,1) * AARotMat(2,1);
-      StrainRotMat(2, 2) = AARotMat(2,2) * AARotMat(2,2);
-      StrainRotMat(2, 3) = AARotMat(2,1) * AARotMat(2,2);
-      StrainRotMat(2, 4) = AARotMat(2,0) * AARotMat(2,2);
-      StrainRotMat(2, 5) = AARotMat(2,0) * AARotMat(2,1);
-      
-      StrainRotMat(3, 0) = 2.0 * AARotMat(1,0) * AARotMat(2,0);
-      StrainRotMat(3, 1) = 2.0 * AARotMat(1,1) * AARotMat(2,1);
-      StrainRotMat(3, 2) = 2.0 * AARotMat(1,2) * AARotMat(2,2);
-      StrainRotMat(3, 3) =     ( AARotMat(1,1) * AARotMat(2,2) + AARotMat(1,2) * AARotMat(2,1) );
-      StrainRotMat(3, 4) =     ( AARotMat(1,0) * AARotMat(2,2) + AARotMat(1,2) * AARotMat(2,0) );
-      StrainRotMat(3, 5) =     ( AARotMat(1,0) * AARotMat(2,1) + AARotMat(1,1) * AARotMat(2,0) );
-      
-      StrainRotMat(4, 0) = 2.0 * AARotMat(0,0) * AARotMat(2,0);
-      StrainRotMat(4, 1) = 2.0 * AARotMat(0,1) * AARotMat(2,1);
-      StrainRotMat(4, 2) = 2.0 * AARotMat(0,2) * AARotMat(2,2);
-      StrainRotMat(4, 3) =     ( AARotMat(0,1) * AARotMat(2,2) + AARotMat(0,2) * AARotMat(2,1) );
-      StrainRotMat(4, 4) =     ( AARotMat(0,0) * AARotMat(2,2) + AARotMat(0,2) * AARotMat(2,0) );
-      StrainRotMat(4, 5) =     ( AARotMat(0,0) * AARotMat(2,1) + AARotMat(0,1) * AARotMat(2,0) );
-      
-      StrainRotMat(5, 0) = 2.0 * AARotMat(0,0) * AARotMat(1,0);
-      StrainRotMat(5, 1) = 2.0 * AARotMat(0,1) * AARotMat(1,1);
-      StrainRotMat(5, 2) = 2.0 * AARotMat(0,2) * AARotMat(1,2);
-      StrainRotMat(5, 3) =     ( AARotMat(0,1) * AARotMat(1,2) + AARotMat(0,2) * AARotMat(1,1) );
-      StrainRotMat(5, 4) =     ( AARotMat(0,0) * AARotMat(1,2) + AARotMat(0,2) * AARotMat(1,0) );
-      StrainRotMat(5, 5) =     ( AARotMat(0,0) * AARotMat(1,1) + AARotMat(0,1) * AARotMat(1,0) );
+//      StrainRotMat(0, 0) = AARotMat(0,0) * AARotMat(0,0);
+//      StrainRotMat(0, 1) = AARotMat(0,1) * AARotMat(0,1);
+//      StrainRotMat(0, 2) = AARotMat(0,2) * AARotMat(0,2);
+//      StrainRotMat(0, 3) = AARotMat(0,1) * AARotMat(0,2);
+//      StrainRotMat(0, 4) = AARotMat(0,0) * AARotMat(0,2);
+//      StrainRotMat(0, 5) = AARotMat(0,0) * AARotMat(0,1);
+//      
+//      StrainRotMat(1, 0) = AARotMat(1,0) * AARotMat(1,0);
+//      StrainRotMat(1, 1) = AARotMat(1,1) * AARotMat(1,1);
+//      StrainRotMat(1, 2) = AARotMat(1,2) * AARotMat(1,2);
+//      StrainRotMat(1, 3) = AARotMat(1,1) * AARotMat(1,2);
+//      StrainRotMat(1, 4) = AARotMat(1,0) * AARotMat(1,2);
+//      StrainRotMat(1, 5) = AARotMat(1,0) * AARotMat(1,1);
+//      
+//      StrainRotMat(2, 0) = AARotMat(2,0) * AARotMat(2,0);
+//      StrainRotMat(2, 1) = AARotMat(2,1) * AARotMat(2,1);
+//      StrainRotMat(2, 2) = AARotMat(2,2) * AARotMat(2,2);
+//      StrainRotMat(2, 3) = AARotMat(2,1) * AARotMat(2,2);
+//      StrainRotMat(2, 4) = AARotMat(2,0) * AARotMat(2,2);
+//      StrainRotMat(2, 5) = AARotMat(2,0) * AARotMat(2,1);
+//      
+//      StrainRotMat(3, 0) = 2.0 * AARotMat(1,0) * AARotMat(2,0);
+//      StrainRotMat(3, 1) = 2.0 * AARotMat(1,1) * AARotMat(2,1);
+//      StrainRotMat(3, 2) = 2.0 * AARotMat(1,2) * AARotMat(2,2);
+//      StrainRotMat(3, 3) =     ( AARotMat(1,1) * AARotMat(2,2) + AARotMat(1,2) * AARotMat(2,1) );
+//      StrainRotMat(3, 4) =     ( AARotMat(1,0) * AARotMat(2,2) + AARotMat(1,2) * AARotMat(2,0) );
+//      StrainRotMat(3, 5) =     ( AARotMat(1,0) * AARotMat(2,1) + AARotMat(1,1) * AARotMat(2,0) );
+//      
+//      StrainRotMat(4, 0) = 2.0 * AARotMat(0,0) * AARotMat(2,0);
+//      StrainRotMat(4, 1) = 2.0 * AARotMat(0,1) * AARotMat(2,1);
+//      StrainRotMat(4, 2) = 2.0 * AARotMat(0,2) * AARotMat(2,2);
+//      StrainRotMat(4, 3) =     ( AARotMat(0,1) * AARotMat(2,2) + AARotMat(0,2) * AARotMat(2,1) );
+//      StrainRotMat(4, 4) =     ( AARotMat(0,0) * AARotMat(2,2) + AARotMat(0,2) * AARotMat(2,0) );
+//      StrainRotMat(4, 5) =     ( AARotMat(0,0) * AARotMat(2,1) + AARotMat(0,1) * AARotMat(2,0) );
+//      
+//      StrainRotMat(5, 0) = 2.0 * AARotMat(0,0) * AARotMat(1,0);
+//      StrainRotMat(5, 1) = 2.0 * AARotMat(0,1) * AARotMat(1,1);
+//      StrainRotMat(5, 2) = 2.0 * AARotMat(0,2) * AARotMat(1,2);
+//      StrainRotMat(5, 3) =     ( AARotMat(0,1) * AARotMat(1,2) + AARotMat(0,2) * AARotMat(1,1) );
+//      StrainRotMat(5, 4) =     ( AARotMat(0,0) * AARotMat(1,2) + AARotMat(0,2) * AARotMat(1,0) );
+//      StrainRotMat(5, 5) =     ( AARotMat(0,0) * AARotMat(1,1) + AARotMat(0,1) * AARotMat(1,0) );
       
       // ------
-//      StrainRotMat(0, 0) = AARotMat(0,0) * AARotMat(0,0);
-//      StrainRotMat(0, 1) = AARotMat(1,0) * AARotMat(1,0);
-//      StrainRotMat(0, 2) = AARotMat(2,0) * AARotMat(2,0);
-//      StrainRotMat(0, 3) = AARotMat(1,0) * AARotMat(0,0);
-//      StrainRotMat(0, 4) = AARotMat(2,0) * AARotMat(1,0);
-//      StrainRotMat(0, 5) = AARotMat(0,0) * AARotMat(2,0);
-//      
-//      StrainRotMat(1, 0) = AARotMat(0,1) * AARotMat(0,1);
-//      StrainRotMat(1, 1) = AARotMat(1,1) * AARotMat(1,1);
-//      StrainRotMat(1, 2) = AARotMat(2,1) * AARotMat(2,1);
-//      StrainRotMat(1, 3) = AARotMat(1,1) * AARotMat(0,1);
-//      StrainRotMat(1, 4) = AARotMat(2,1) * AARotMat(1,1);
-//      StrainRotMat(1, 5) = AARotMat(0,1) * AARotMat(2,1);
-//      
-//      StrainRotMat(2, 0) = AARotMat(0,2) * AARotMat(0,2);
-//      StrainRotMat(2, 1) = AARotMat(1,2) * AARotMat(1,2);
-//      StrainRotMat(2, 2) = AARotMat(2,2) * AARotMat(2,2);
-//      StrainRotMat(2, 3) = AARotMat(1,2) * AARotMat(0,2);
-//      StrainRotMat(2, 4) = AARotMat(2,2) * AARotMat(1,2);
-//      StrainRotMat(2, 5) = AARotMat(0,2) * AARotMat(2,2);
-//      
-//      StrainRotMat(3, 0) = 2.0 * AARotMat(0,1) * AARotMat(0,0);
-//      StrainRotMat(3, 1) = 2.0 * AARotMat(1,1) * AARotMat(1,0);
-//      StrainRotMat(3, 2) = 2.0 * AARotMat(2,1) * AARotMat(2,0);
-//      StrainRotMat(3, 3) =     ( AARotMat(1,1) * AARotMat(0,0) + AARotMat(0,1) * AARotMat(1,0) );
-//      StrainRotMat(3, 4) =     ( AARotMat(2,1) * AARotMat(1,0) + AARotMat(1,1) * AARotMat(2,0) );
-//      StrainRotMat(3, 5) =     ( AARotMat(0,1) * AARotMat(2,0) + AARotMat(2,1) * AARotMat(0,0) );
-//      
-//      StrainRotMat(4, 0) = 2.0 * AARotMat(0,2) * AARotMat(0,1);
-//      StrainRotMat(4, 1) = 2.0 * AARotMat(1,2) * AARotMat(1,1);
-//      StrainRotMat(4, 2) = 2.0 * AARotMat(2,2) * AARotMat(2,1);
-//      StrainRotMat(4, 3) =     ( AARotMat(1,2) * AARotMat(0,1) + AARotMat(0,2) * AARotMat(1,1) );
-//      StrainRotMat(4, 4) =     ( AARotMat(2,2) * AARotMat(1,1) + AARotMat(1,2) * AARotMat(2,1) );
-//      StrainRotMat(4, 5) =     ( AARotMat(0,2) * AARotMat(2,1) + AARotMat(2,2) * AARotMat(0,1) );
-//      
-//      StrainRotMat(5, 0) = 2.0 * AARotMat(0,0) * AARotMat(0,2);
-//      StrainRotMat(5, 1) = 2.0 * AARotMat(1,0) * AARotMat(1,2);
-//      StrainRotMat(5, 2) = 2.0 * AARotMat(2,0) * AARotMat(2,2);
-//      StrainRotMat(5, 3) =     ( AARotMat(1,0) * AARotMat(0,2) + AARotMat(0,0) * AARotMat(1,2) );
-//      StrainRotMat(5, 4) =     ( AARotMat(2,0) * AARotMat(1,2) + AARotMat(1,0) * AARotMat(2,2) );
-//      StrainRotMat(5, 5) =     ( AARotMat(0,0) * AARotMat(2,2) + AARotMat(2,0) * AARotMat(0,2) );
+      StrainRotMat(0, 0) = AARotMat(0,0) * AARotMat(0,0);
+      StrainRotMat(0, 1) = AARotMat(1,0) * AARotMat(1,0);
+      StrainRotMat(0, 2) = AARotMat(2,0) * AARotMat(2,0);
+      StrainRotMat(0, 3) = AARotMat(1,0) * AARotMat(0,0);
+      StrainRotMat(0, 4) = AARotMat(2,0) * AARotMat(1,0);
+      StrainRotMat(0, 5) = AARotMat(0,0) * AARotMat(2,0);
+      
+      StrainRotMat(1, 0) = AARotMat(0,1) * AARotMat(0,1);
+      StrainRotMat(1, 1) = AARotMat(1,1) * AARotMat(1,1);
+      StrainRotMat(1, 2) = AARotMat(2,1) * AARotMat(2,1);
+      StrainRotMat(1, 3) = AARotMat(1,1) * AARotMat(0,1);
+      StrainRotMat(1, 4) = AARotMat(2,1) * AARotMat(1,1);
+      StrainRotMat(1, 5) = AARotMat(0,1) * AARotMat(2,1);
+      
+      StrainRotMat(2, 0) = AARotMat(0,2) * AARotMat(0,2);
+      StrainRotMat(2, 1) = AARotMat(1,2) * AARotMat(1,2);
+      StrainRotMat(2, 2) = AARotMat(2,2) * AARotMat(2,2);
+      StrainRotMat(2, 3) = AARotMat(1,2) * AARotMat(0,2);
+      StrainRotMat(2, 4) = AARotMat(2,2) * AARotMat(1,2);
+      StrainRotMat(2, 5) = AARotMat(0,2) * AARotMat(2,2);
+      
+      StrainRotMat(3, 0) = 2.0 * AARotMat(0,1) * AARotMat(0,0);
+      StrainRotMat(3, 1) = 2.0 * AARotMat(1,1) * AARotMat(1,0);
+      StrainRotMat(3, 2) = 2.0 * AARotMat(2,1) * AARotMat(2,0);
+      StrainRotMat(3, 3) =     ( AARotMat(1,1) * AARotMat(0,0) + AARotMat(0,1) * AARotMat(1,0) );
+      StrainRotMat(3, 4) =     ( AARotMat(2,1) * AARotMat(1,0) + AARotMat(1,1) * AARotMat(2,0) );
+      StrainRotMat(3, 5) =     ( AARotMat(0,1) * AARotMat(2,0) + AARotMat(2,1) * AARotMat(0,0) );
+      
+      StrainRotMat(4, 0) = 2.0 * AARotMat(0,2) * AARotMat(0,1);
+      StrainRotMat(4, 1) = 2.0 * AARotMat(1,2) * AARotMat(1,1);
+      StrainRotMat(4, 2) = 2.0 * AARotMat(2,2) * AARotMat(2,1);
+      StrainRotMat(4, 3) =     ( AARotMat(1,2) * AARotMat(0,1) + AARotMat(0,2) * AARotMat(1,1) );
+      StrainRotMat(4, 4) =     ( AARotMat(2,2) * AARotMat(1,1) + AARotMat(1,2) * AARotMat(2,1) );
+      StrainRotMat(4, 5) =     ( AARotMat(0,2) * AARotMat(2,1) + AARotMat(2,2) * AARotMat(0,1) );
+      
+      StrainRotMat(5, 0) = 2.0 * AARotMat(0,0) * AARotMat(0,2);
+      StrainRotMat(5, 1) = 2.0 * AARotMat(1,0) * AARotMat(1,2);
+      StrainRotMat(5, 2) = 2.0 * AARotMat(2,0) * AARotMat(2,2);
+      StrainRotMat(5, 3) =     ( AARotMat(1,0) * AARotMat(0,2) + AARotMat(0,0) * AARotMat(1,2) );
+      StrainRotMat(5, 4) =     ( AARotMat(2,0) * AARotMat(1,2) + AARotMat(1,0) * AARotMat(2,2) );
+      StrainRotMat(5, 5) =     ( AARotMat(0,0) * AARotMat(2,2) + AARotMat(2,0) * AARotMat(0,2) );
       
       
     }
@@ -1321,16 +1321,21 @@ namespace ObosleteUsersModules {
       l_c = (vf*l_f*(k_m+m_m)+vm*l_m*(k_f+m_m))/(vf*(k_m+m_m)+vm*(p_f+p_m));
       n_c = vf*n_f+vm*n_m+(l_c-vf*l_f-vm*l_m)*(l_f-l_m)/(k_f-k_m);
       
-      StiffnessMatrix(0,0) = n_c;
+	  // case 1: fibre direction in x-axis
+      /*StiffnessMatrix(0,0) = n_c;
       StiffnessMatrix(0,1) = StiffnessMatrix(0,2) = l_c;
       StiffnessMatrix(1,1) = StiffnessMatrix(2,2) = k_c + m_c;
       StiffnessMatrix(1,2) = k_c - m_c;
       StiffnessMatrix(3,3) = m_c;
-      StiffnessMatrix(4,4) = StiffnessMatrix(5,5) = p_c;
-      //cout<<StiffnessMatrix<<endl;
-      
-      
-      
+      StiffnessMatrix(4,4) = StiffnessMatrix(5,5) = p_c;*/
+	  // case 2: fibre direction in z-axis
+	  StiffnessMatrix(0,0) = StiffnessMatrix(1,1) = k_c + m_c;
+	  StiffnessMatrix(0,1) = k_c - m_c;
+	  StiffnessMatrix(0,2) = StiffnessMatrix(1,2) = l_c;
+	  StiffnessMatrix(2,2) = n_c;
+	  StiffnessMatrix(3,3) = m_c;
+	  StiffnessMatrix(4,4) = StiffnessMatrix(5,5) = p_c;
+      // cout<<"Yarn C matrix \t"<<StiffnessMatrix<<endl;
     }
     
   };
@@ -1382,7 +1387,6 @@ namespace ObosleteUsersModules {
       k_f=k_t; l_f=l_t; n_f=n_t; m_f=m_t; p_f=p_t;
       k_m=k_i; l_m=l_i; n_m=n_i; m_m=m_i; p_m=p_i;
       
-      //vf=0.6;
       vm = 1-vf;
       
       k_c = (vf*k_f*(k_m+m_m)+vm*k_m*(k_f+m_m))/(vf*(k_m+m_m)+vm*(k_f+m_m));
@@ -1405,15 +1409,24 @@ namespace ObosleteUsersModules {
       G13 = G12;
       G23 = m_c;
       
-      ComplianceMatrix(0,0) = 1/E1;
-      ComplianceMatrix(0,1) = ComplianceMatrix(1,0) = -NU12/E1;
-      ComplianceMatrix(0,2) = ComplianceMatrix(2,0) = -NU13/E1;
-      ComplianceMatrix(1,1) = 1/E2;
-      ComplianceMatrix(1,2) = ComplianceMatrix(2,1) = -NU23/E2;
-      ComplianceMatrix(2,2) = 1/E3;
+	  // case 1: fibre direction in x-axis
+//      ComplianceMatrix(0,0) = 1/E1;
+//      ComplianceMatrix(0,1) = ComplianceMatrix(1,0) = -NU12/E1;
+//      ComplianceMatrix(0,2) = ComplianceMatrix(2,0) = -NU13/E1;
+//      ComplianceMatrix(1,1) = 1/E2;
+//      ComplianceMatrix(1,2) = ComplianceMatrix(2,1) = -NU23/E2;
+//      ComplianceMatrix(2,2) = 1/E3;
+//      ComplianceMatrix(3,3) = 2*(1+NU23)/E2;
+//      ComplianceMatrix(4,4) = ComplianceMatrix(5,5) = 1/G12;
+	  
+	  // case 2: fibre direction in z-axis
+	  ComplianceMatrix(0,0) = ComplianceMatrix(1,1) = 1/E2;
+	  ComplianceMatrix(0,1) = -NU23/E2;
+	  ComplianceMatrix(0,2) = ComplianceMatrix(1,2) = -NU12/E1;
+	  ComplianceMatrix(2,2) = 1/E1;
       ComplianceMatrix(3,3) = 2*(1+NU23)/E2;
       ComplianceMatrix(4,4) = ComplianceMatrix(5,5) = 1/G12;
-      //cout<<ComplianceMatrix<<endl;
+      // cout<<"Yarn S matrix \t"<<ComplianceMatrix<<endl;
     }
   };
   
@@ -1452,7 +1465,7 @@ namespace ObosleteUsersModules {
                                     double *_nu_pz, double *_G_zp,
                                     double *_lambda, double *_mu,
                                     double *_vf,
-                                    double *_theta_f) {
+                                    double *_theta_f, double *_WavinessFactor) {
       PetscFunctionBegin;
       double YoungModulus_1, PoissonRatio_1;       // For 1st isotropic material
       // double YoungModulus_2, PoissonRatio_2;       // For 2nd isotropic material
@@ -1503,6 +1516,8 @@ namespace ObosleteUsersModules {
                
                *_lambda = LAMBDA(YoungModulus_1,PoissonRatio_1);
                *_mu     = MU(YoungModulus_1,PoissonRatio_1);
+			   
+               *_WavinessFactor = mydata.data.ThermalExpansion; // waviness factor
 
                *_E_p     = mydata.data.User1;
                *_E_z     = mydata.data.User2;
@@ -1543,7 +1558,7 @@ namespace ObosleteUsersModules {
                               double _nu_pz, double _G_zp,
                               double _lambda, double _mu,
                               double _vf,
-                              double _theta_f) {
+                              double _theta_f, double _WavinessFactor) {
       PetscFunctionBegin;
       
       // ------
@@ -1678,11 +1693,12 @@ namespace ObosleteUsersModules {
         double _lambda, _mu;
         double _vf;
         double _theta_f;
+        double _WavinessFactor;		
         //cout<<"Fint"<<endl;
         ierr = GetMatParameters(&_E_p, &_E_z, &_nu_p, &_nu_pz, &_G_zp,
-                                &_lambda, &_mu, &_vf, &_theta_f); CHKERRQ(ierr);
+                                &_lambda, &_mu, &_vf, &_theta_f, &_WavinessFactor); CHKERRQ(ierr);
         ierr = calculateD(_E_p, _E_z, _nu_p, _nu_pz, _G_zp,
-                          _lambda, _mu, _vf, _theta_f); CHKERRQ(ierr);
+                          _lambda, _mu, _vf, _theta_f, _WavinessFactor); CHKERRQ(ierr);
         
         //Gradient at Gauss points;
         vector< ublas::matrix< FieldData > > GradU_at_GaussPt;
@@ -1763,11 +1779,12 @@ namespace ObosleteUsersModules {
       double _lambda, _mu;
       double _vf;
       double _theta_f;
+      double _WavinessFactor;	  
       //cout<<"Stiffness"<<endl;
       ierr = GetMatParameters(&_E_p, &_E_z, &_nu_p, &_nu_pz, &_G_zp,
-                              &_lambda, &_mu, &_vf, &_theta_f); CHKERRQ(ierr);
+                              &_lambda, &_mu, &_vf, &_theta_f, &_WavinessFactor); CHKERRQ(ierr);
       ierr = calculateD(_E_p, _E_z, _nu_p, _nu_pz, _G_zp,
-                        _lambda, _mu, _vf, _theta_f); CHKERRQ(ierr);
+                        _lambda, _mu, _vf, _theta_f, _WavinessFactor); CHKERRQ(ierr);
       //cout<<"K calculation"<<endl;
       K.resize(row_mat,col_mat);
       int g_dim = g_NTET.size()/4;
@@ -2060,7 +2077,7 @@ namespace ObosleteUsersModules {
                                     double *_nu_pz, double *_G_zp,
                                     double *_lambda, double *_mu,
                                     double *_vf,
-                                    double *_theta_f) {
+                                    double *_theta_f, double *_WavinessFactor) {
       PetscFunctionBegin;
       double YoungModulus_1, PoissonRatio_1;       // For 1st isotropic material
       // double YoungModulus_2, PoissonRatio_2;       // For 2nd isotropic material
@@ -2069,6 +2086,13 @@ namespace ObosleteUsersModules {
       if (propeties_from_BLOCKSET_MAT_ELASTICSET) {
         EntityHandle ent = fePtr->get_ent();
         for (_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_ELASTICSET,it)) {
+		  string name = it->get_Cubit_name();
+		   // if (name.compare(0,13,"MAT_ELASTIC_1") == 0) {
+		   //  Mat_Elastic mydata;
+		   // ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+		   // *_lambda = LAMBDA(mydata.data.Young,mydata.data.Poisson);
+		   // *_mu = MU(mydata.data.Young,mydata.data.Poisson);
+		   // }
           // isotropic material 1 - matrix
           //cout<<it->get_Cubit_name()<<endl;
           //          if (it->get_Cubit_name().compare(0,13,"MAT_ELASTIC_1") == 0) {cout<<"Isotropic"<<endl;
@@ -2089,7 +2113,7 @@ namespace ObosleteUsersModules {
           //            }
           //          }
           // transversly isotropic material
-          if (it->get_Cubit_name().compare(0,22,"MAT_ELASTIC_TRANSISO_1") == 0) {
+          if (name.compare(0,22,"MAT_ELASTIC_TRANSISO_1") == 0) {
             
             //Mat_Elastic_TransIso mydata;
             Mat_Elastic mydata;
@@ -2108,10 +2132,11 @@ namespace ObosleteUsersModules {
                 
                 YoungModulus_1 = mydata.data.Young;
                 PoissonRatio_1 = mydata.data.Poisson;
-                
                 *_lambda = LAMBDA(YoungModulus_1,PoissonRatio_1);
                 *_mu     = MU(YoungModulus_1,PoissonRatio_1);
-                
+				
+                *_WavinessFactor = mydata.data.ThermalExpansion; // waviness factor			
+
                 *_E_p     = mydata.data.User1;
                 *_E_z     = mydata.data.User2;
                 *_nu_p    = mydata.data.User3;
@@ -2120,18 +2145,7 @@ namespace ObosleteUsersModules {
                 
                 *_vf      = mydata.data.User6; // Fibre volume fraction
                 
-                *_theta_f = mydata.data.User7; // Misalignment angle
-                
-//                               cout<<"Young modulus \t = \t"<<YoungModulus_1<<endl;
-//                               cout<<"Poisson's ratio \t = \t"<<PoissonRatio_1<<endl;
-//                               cout<<"Axial modulus \t = \t"<<*_E_p<<endl;
-//                               cout<<"Transverse modulus \t = \t"<<*_E_z<<endl;
-//                               cout<<"Transverse Poisson \t = \t"<<*_nu_p<<endl;
-//                               cout<<"Axial Poisson \t = \t"<<*_nu_pz<<endl;
-//                               cout<<"Fibre volue fraction \t = \t"<<*_vf<<endl;
-//                               cout<<"Matrix modulus \t = \t"<<YoungModulus_1<<endl;
-//                               cout<<"Matrix Poisson \t = \t"<<PoissonRatio_1<<endl;
-                
+                *_theta_f = mydata.data.User7; // Misalignment angle  
               }
             }
           }
@@ -2151,7 +2165,7 @@ namespace ObosleteUsersModules {
                               double _nu_pz, double _G_zp,
                               double _lambda, double _mu,
                               double _vf,
-                              double _theta_f) {
+                              double _theta_f, double _WavinessFactor) {
       PetscFunctionBegin;
       
 			// --------
@@ -2160,26 +2174,26 @@ namespace ObosleteUsersModules {
       StiffnessMatrix.resize(6);
       StiffnessMatrix.clear();
       
-      TransverseIsotropicStiffnessMatrix TranIsoMat(_nu_p,_nu_pz,_E_p,_E_z,_G_zp);
+      //TransverseIsotropicStiffnessMatrix TranIsoMat(_nu_p,_nu_pz,_E_p,_E_z,_G_zp);
       
-//      YarnStiffnessMatrix TranIsoMat(_nu_p, _nu_pz, _E_p, _E_z, _G_zp,
-//                                     _lambda, _mu, _vf);
+      YarnStiffnessMatrix TranIsoMat(_nu_p, _nu_pz, _E_p, _E_z, _G_zp,
+                                     _lambda, _mu, _vf);
       StiffnessMatrix = TranIsoMat.StiffnessMatrix;
       
       //cout<<"Original stiffness matrix"<<endl;
-      //cout<<StiffnessMatrix<<endl;
+      // cout<<"Yarn C matrix \t"<<StiffnessMatrix<<endl;
       
       // Get compliance matrix
       ublas::symmetric_matrix<FieldData,ublas::upper> SMat;
       SMat.resize(6);
       SMat.clear();
       
-      TransverseIsotropicComplianceMatrix TranIsoMat_S(_nu_p,_nu_pz,_E_p,_E_z,_G_zp);
-//      YarnComplianceMatrix TranIsoMat_S(_nu_p, _nu_pz, _E_p, _E_z, _G_zp,
-//                                        _lambda, _mu, _vf);
+      //TransverseIsotropicComplianceMatrix TranIsoMat_S(_nu_p,_nu_pz,_E_p,_E_z,_G_zp);
+      YarnComplianceMatrix TranIsoMat_S(_nu_p, _nu_pz, _E_p, _E_z, _G_zp,
+                                        _lambda, _mu, _vf);
       SMat = TranIsoMat_S.ComplianceMatrix;
       //cout<<"Original compliance matrix"<<endl;
-      //cout<<SMat<<endl;
+      // cout<<"Yarn S matrix \t"<<SMat<<endl;
       
 			// --------
       // 2. Get waviness parameter
@@ -2189,8 +2203,9 @@ namespace ObosleteUsersModules {
       
       double I1, I3, I5, I6, I8;
       double W_mgn, L_wave, alpha_w;
-      W_mgn  =  1.19;   // unit: mm
+      // W_mgn  =  _amplitude;//1.19;   // unit: mm
       L_wave = 27.9 ;   // unit: mm
+      W_mgn  = L_wave*_WavinessFactor;
       
       alpha_w = 2*M_PI*W_mgn/L_wave;
       
@@ -2199,10 +2214,11 @@ namespace ObosleteUsersModules {
       I5 = 1-(1+3*alpha_w*alpha_w/2)/pow((1+alpha_w*alpha_w),1.5);    // n^4
       I6 = 1/sqrt(1+alpha_w*alpha_w);                                 // m^2
       I8 = 1-1/sqrt(1+alpha_w*alpha_w);                               // n^2
-      //cout<<"alpha ="<<alpha_w<<"\t I1 = "<<I1<<"\t I3 = "<<I3<<"\t I5 = "<<I5<<"\t I6 = "<<I6<<"\t I8 = "<<I8<<endl;
+      // cout<<"alpha ="<<alpha_w<<"\t I1 = "<<I1<<"\t I3 = "<<I3<<"\t I5 = "<<I5<<"\t I6 = "<<I6<<"\t I8 = "<<I8<<endl;
 
       // --------
       // 3. Calculate transformed compliance matrix
+	  // rotate about y-axis
       ComplianceMatrix(0,0) = SMat(0,0)*I1 + (2*SMat(0,2)+SMat(5,5))*I3 + SMat(2,2)*I5;
       ComplianceMatrix(0,1) = SMat(0,1)*I6 + SMat(0,2)*I8;
       ComplianceMatrix(0,2) = SMat(0,2)*(I1+I5) + (SMat(0,0)+SMat(2,2)-SMat(5,5))*I3;
@@ -2213,18 +2229,19 @@ namespace ObosleteUsersModules {
       ComplianceMatrix(4,4) = 2*(2*SMat(0,0)-4*SMat(0,2)+2*SMat(2,2)-SMat(5,5))*I3 + SMat(5,5)*(I1+I5);
       ComplianceMatrix(5,5) = SMat(5,5)*I6 + 2*(SMat(0,0)-SMat(0,1))*I8;
       
+	  // rotate about x-axis
 //      ComplianceMatrix(0,0) = SMat(0,0);
 //      ComplianceMatrix(0,1) = SMat(0,1)*I6 + SMat(0,2)*I8;
 //      ComplianceMatrix(0,2) = SMat(0,2)*I6 + SMat(0,1)*I8;
-//      ComplianceMatrix(1,1) = SMat(0,0)*I1 + (2*SMat(0,0)-2*SMat(0,1)+2*SMat(0,2))*I3 + SMat(2,2)*I5;
-//      ComplianceMatrix(1,2) = SMat(0,2)*I1 + (SMat(2,2)+SMat(0,0)-2*(SMat(0,0)-SMat(0,1)))*I3 + SMat(0,2)*I5;
+//      ComplianceMatrix(1,1) = SMat(0,0)*I1 + 2*(SMat(0,0)-SMat(0,1)+SMat(0,2))*I3 + SMat(2,2)*I5;
+//      ComplianceMatrix(1,2) = SMat(0,2)*I1 + (SMat(2,2)-SMat(0,0)+2*SMat(0,1))*I3 + SMat(0,2)*I5;
 //      ComplianceMatrix(2,2) = SMat(2,2)*I1 + SMat(0,0)*I5 + 2*(SMat(0,0)-SMat(0,1)+SMat(0,2))*I3;
 //      ComplianceMatrix(3,3) = 2*(SMat(0,0)-SMat(0,1))*(I1-2*I3+I5)+4*(SMat(0,0)-2*SMat(0,2)+SMat(2,2))*I3;
-//      ComplianceMatrix(4,4) = SMat(4,4)*(I6+I8);
-//      ComplianceMatrix(5,5) = SMat(4,4)*(I6+I8);
+//      ComplianceMatrix(4,4) = SMat(5,5);
+//      ComplianceMatrix(5,5) = SMat(5,5);
       
-      //cout<<"Modified compliance matrix"<<endl;
-      //cout<<ComplianceMatrix<<endl;
+      // cout<<"Transformed compliance matrix"<<endl;
+      // cout<<ComplianceMatrix<<endl;
 			
       // --------
       // 4. Update the stiffness matrix of yarn with the consideration of waviness
@@ -2263,8 +2280,8 @@ namespace ObosleteUsersModules {
       
       StiffnessMatrix(5,5) = 1/ComplianceMatrix(5,5);
       
-      //cout<<"Modified stiffness matrix"<<endl;
-      //cout<<StiffnessMatrix<<endl;
+      //cout<<"Transformed C matrix"<<endl;
+	  //cout<<StiffnessMatrix<<endl;
       
 			// ----------
       // 5. Rotating the stiffness matrix according to misalignment information
@@ -2340,11 +2357,12 @@ namespace ObosleteUsersModules {
         double _lambda, _mu;
         double _vf;
         double _theta_f;
+        double _WavinessFactor;
         //cout<<"Fint"<<endl;
         ierr = GetMatParameters(&_E_p, &_E_z, &_nu_p, &_nu_pz, &_G_zp,
-                                &_lambda, &_mu, &_vf, &_theta_f); CHKERRQ(ierr);
+                                &_lambda, &_mu, &_vf, &_theta_f, &_WavinessFactor); CHKERRQ(ierr);
         ierr = calculateD(_E_p, _E_z, _nu_p, _nu_pz, _G_zp,
-                          _lambda, _mu, _vf, _theta_f); CHKERRQ(ierr);
+                          _lambda, _mu, _vf, _theta_f, _WavinessFactor); CHKERRQ(ierr);
         
         //Gradient at Gauss points;
         vector< ublas::matrix< FieldData > > GradU_at_GaussPt;
@@ -2425,15 +2443,16 @@ namespace ObosleteUsersModules {
       double _lambda, _mu;
       double _vf;
       double _theta_f;
+      double _WavinessFactor;
       // -----------
       // 1. Get material parameters
       //cout<<"Stiffness"<<endl;
       ierr = GetMatParameters(&_E_p, &_E_z, &_nu_p, &_nu_pz, &_G_zp,
-                              &_lambda, &_mu, &_vf, &_theta_f); CHKERRQ(ierr);
+                              &_lambda, &_mu, &_vf, &_theta_f, &_WavinessFactor); CHKERRQ(ierr);
       // -----------
       // 2. Calculate constitutive matrix
       ierr = calculateD(_E_p, _E_z, _nu_p, _nu_pz, _G_zp,
-                        _lambda, _mu, _vf, _theta_f); CHKERRQ(ierr);
+                        _lambda, _mu, _vf, _theta_f, _WavinessFactor); CHKERRQ(ierr);
       
       // -----------
       // 3. Calculate stiffness matrix

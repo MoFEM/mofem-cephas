@@ -644,46 +644,1121 @@ namespace MoFEM {
       PetscFunctionReturn(0);
     }
 		
-		/***************************************************************************
+    /***************************************************************************
      *
      * With repect to misalignment angle
      *
      **************************************************************************/
-		virtual PetscErrorCode D_rs_Misalignment(double theta) {
-			PetscFunctionBegin;
+    virtual PetscErrorCode D_rs_Misalignment(double theta) {
+	  PetscFunctionBegin;
 			
-			ddmn   = -4*cos(theta)*sin(theta); // mn
-			ddm2   = 2*(pow(sin(theta),2) - pow(cos(theta),2)); // m2
-			ddn2   = 2*(pow(cos(theta),2) - pow(sin(theta),2)); // n2
-			ddmn3  = -10*pow(sin(theta),3)*cos(theta)+6*pow(cos(theta),3)*sin(theta); // mn3
-			ddm3n  = 6*cos(theta)*pow(sin(theta),3)-10*pow(cos(theta),3)*sin(theta); // m3n
-			ddm2n2 = 2*pow(sin(theta),4)-12*pow(sin(theta),2)*pow(cos(theta),2)+2*pow(cos(theta),4); // m2n2
-			ddm4   = 4*pow(cos(theta),4)-12*pow(sin(theta),2)*pow(cos(theta),2); // m4
-			ddn4   = 12*pow(sin(theta),2)*pow(cos(theta),2) - 4*pow(sin(theta),4); // n4
+	  ddmn   = -4*cos(theta)*sin(theta); // mn
+	  ddm2   = 2*(pow(sin(theta),2) - pow(cos(theta),2)); // m2
+	  ddn2   = 2*(pow(cos(theta),2) - pow(sin(theta),2)); // n2
+	  ddmn3  = -10*pow(sin(theta),3)*cos(theta)+6*pow(cos(theta),3)*sin(theta); // mn3
+	  ddm3n  = 6*cos(theta)*pow(sin(theta),3)-10*pow(cos(theta),3)*sin(theta); // m3n
+	  ddm2n2 = 2*pow(sin(theta),4)-12*pow(sin(theta),2)*pow(cos(theta),2)+2*pow(cos(theta),4); // m2n2
+	  ddm4   = 4*pow(cos(theta),4)-12*pow(sin(theta),2)*pow(cos(theta),2); // m4
+	  ddn4   = 12*pow(sin(theta),2)*pow(cos(theta),2) - 4*pow(sin(theta),4); // n4
 			
-			PetscFunctionReturn(0);
-		}
+	  PetscFunctionReturn(0);
+	}
 		
-		/***************************************************************************
-		 *
-		 * With repect to misalignment angle
-		 *
-		 **************************************************************************/
-		 virtual PetscErrorCode D_rs_Fraction(double vf, 
-																					 double kf, double mf, double pf, double lf, double nf,
-																					 double km, double mm, double pm, double lm, double nm) {
-				PetscFunctionBegin;
+    /***************************************************************************
+     *
+     * With repect to fibre volume fraction
+     *
+     **************************************************************************/
+    virtual PetscErrorCode D_rs_Fraction(double vf, 
+										  double kf, double mf, double pf, double lf, double nf,
+										  double km, double mm, double pm, double lm, double nm) {
+	  PetscFunctionBegin;
 			
-				ddkc = (2*(kf + mm)*(km + mm)*pow(kf - km,2))/pow(kf + mm - vf*kf + vf*km,3);
-				ddmc = (2*(km*mm*(vf*mf - mm*(vf - 1)) + mf*mm*(km + 2*mm))*pow(km+2*mm,2)*pow(mf-mm,2))
-				       /pow((km*mm + (vf*mm - mf*(vf - 1))*(km + 2*mm)),3) 
-							 + (2*km*mm*(km + 2*mm)*pow(mf - mm,2))/pow((km*mm + (vf*mm - mf*(vf - 1))*(km + 2*mm)),2);
-				ddpc = (4*pm*(pf + pm)*pow((pf - pm),2))/pow((pf + pm - vf*pf + vf*pm),3);
-				ddlc = (2*(kf + mm)*(km + mm)*(kf - km)*(lf - lm))/pow((kf + mm - vf*kf + vf*km),3);
-				ddnc = (2*(kf + mm)*(km + mm)*pow((lf - lm),2))/pow((kf + mm - vf*kf + vf*km),3);
+	  ddkc = (2*(kf + mm)*(km + mm)*pow((kf - km),2))/pow((kf + mm - kf*vf + km*vf),3);
+	  ddmc = (2*pow((km + 2*mm)*(mf - mm),2)*(km*mm*(mf*vf - mm*(vf - 1)) + mf*mm*(km + 2*mm)))/pow((km*mm + (mm*vf - mf*(vf - 1))*(km + 2*mm)),3) 
+			+ (2*km*mm*(km + 2*mm)*pow((mf - mm),2))/pow((km*mm + (mm*vf - mf*(vf - 1))*(km + 2*mm)),2);
+	  ddpc = (4*pm*(pf + pm)*pow((pf - pm),2))/pow((pf + pm - vf*pf + vf*pm),3);
+	  ddlc = (2*(km + mm)*(kf*lm + lm*mm - lf*pf - lf*pm)*(km + mm - pf - pm))/pow((pf + pm + km*vf + mm*vf - pf*vf - pm*vf),3);
+	  ddnc = (2*(km + mm)*(lf - lm)*(kf*lm + lm*mm - lf*pf - lf*pm)*(km + mm - pf - pm))
+	         /((kf - km)*pow((pf + pm + km*vf + mm*vf - pf*vf - pm*vf),3));
 				
-			  PetscFunctionReturn(0);
-      }
+	  PetscFunctionReturn(0);
+	}
+
+    /***************************************************************************
+     *
+     * With repect to Young's modulus in z-direction, E_z
+     * 
+     **************************************************************************/
+	virtual PetscErrorCode D_rs_YoungZ(double nu_p, double nu_pz, double E_p, double E_z, double G_zp,
+	                                  double Em, double NUm, double vf){
+		
+      PetscFunctionBegin;
+      
+	  ddkc = -(16*pow(E_p,2)*pow(Em,3)*pow(nu_pz,4)*vf*pow(NUm-1,2)*(vf - 2*NUm + 1))
+	        /pow((pow(E_p,2)*NUm + pow(E_p,2)*vf - pow(E_p,2) + 2*pow(E_p,2)*pow(NUm,2) - E_p*Em 
+			- 2*pow(E_p,2)*pow(NUm,2)*vf + 2*E_p*Em*NUm + E_p*Em*nu_p - E_p*Em*vf 
+			+ 2*E_z*Em*pow(nu_pz,2) - pow(E_p,2)*NUm*vf - 4*E_z*Em*NUm*pow(nu_pz,2) 
+			+ 2*E_z*Em*pow(nu_pz,2)*vf - 2*E_p*Em*NUm*nu_p + E_p*Em*nu_p*vf),3);
+      ddmc = 0;
+	  ddpc = 0;
+	  ddlc = -(8*pow(E_p,2)*Em*pow(nu_pz,3)*(vf + NUm*nu_pz - NUm*vf - nu_p*vf 
+	        + NUm*nu_p*vf - NUm*nu_pz*vf))/(pow((2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p),3)
+			*(Em + 2*G_zp + Em*vf - 2*G_zp*vf - 4*G_zp*pow(NUm,2) - 2*Em*NUm 
+			- 2*G_zp*NUm + 2*G_zp*NUm*vf + 4*G_zp*pow(NUm,2)*vf));
+	  ddnc = (8*E_p*E_z*pow(nu_pz,4)*vf*(nu_p - 1))/pow((E_p*nu_p - E_p + 2*E_z*pow(nu_pz,2)),3) 
+	        - (16*Em*pow(nu_pz,4)*((Em*NUm)/(2*pow(NUm,2) + NUm - 1) 
+			- (E_p*E_z*nu_pz)/(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p))
+			*((2*((Em*NUm*(vf - 1)*(pow(E_p,2)*NUm + pow(E_p,2) + E_p*Em - E_p*Em*nu_p 
+			- 2*E_z*Em*pow(nu_pz,2)))/(2*(2*NUm - 1)*pow(NUm + 1,2)
+			*(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p)) 
+			+ (2*E_p*E_z*Em*nu_pz*vf*(NUm - 1))
+			/((4*E_z*pow(nu_pz,2) - 2*E_p + 2*E_p*nu_p)*(2*pow(NUm,2) + NUm - 1)))
+			*(2*pow(NUm,2) + NUm - 1))/(Em + 2*G_zp + Em*vf - 2*G_zp*vf 
+			- 4*G_zp*pow(NUm,2) - 2*Em*NUm - 2*G_zp*NUm + 2*G_zp*NUm*vf 
+			+ 4*G_zp*pow(NUm,2)*vf) - (Em*NUm*(vf - 1))/(2*pow(NUm,2) + NUm - 1) 
+			+ (E_p*E_z*nu_pz*vf)/(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p))
+			*(2*pow(NUm,2) + NUm - 1))/pow((pow(E_p,2)*NUm - pow(E_p,2) + 2*pow(E_p,2)*pow(NUm,2) 
+			+ E_p*Em - E_p*Em*nu_p - 2*E_z*Em*pow(nu_pz,2)),2) 
+			- (4*E_p*pow(nu_pz,2)*vf*(nu_p - 1))/pow((E_p*nu_p - E_p + 2*E_z*pow(nu_pz,2)),2) 
+			- (16*Em*Em*pow(nu_pz,4)*((Em*NUm)/(2*pow(NUm,2) + NUm - 1) 
+			- (E_p*E_z*nu_pz)/(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p))
+			*((2*((Em*NUm*(vf - 1)*(pow(E_p,2)*NUm + pow(E_p,2) + E_p*Em 
+			- E_p*Em*nu_p - 2*E_z*Em*pow(nu_pz,2)))/(2*(2*NUm - 1)
+			*pow(NUm + 1,2)*(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p)) 
+			+ (2*E_p*E_z*Em*nu_pz*vf*(NUm - 1))
+			/((4*E_z*pow(nu_pz,2) - 2*E_p + 2*E_p*nu_p)*(2*pow(NUm,2) + NUm - 1)))
+			*(2*pow(NUm,2) + NUm - 1))/(Em + 2*G_zp + Em*vf - 2*G_zp*vf 
+			- 4*G_zp*pow(NUm,2) - 2*Em*NUm - 2*G_zp*NUm 
+			+ 2*G_zp*NUm*vf + 4*G_zp*pow(NUm,2)*vf) - (Em*NUm*(vf - 1))/(2*pow(NUm,2) + NUm - 1) 
+			+ (E_p*E_z*nu_pz*vf)/(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p))
+			*(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p)*(2*pow(NUm,2) + NUm - 1))
+			/pow((pow(E_p,2)*NUm - pow(E_p,2) + 2*pow(E_p,2)*pow(NUm,2) + E_p*Em - E_p*Em*nu_p 
+			- 2*E_z*Em*pow(nu_pz,2)),3) + (8*pow(E_p,2)*Em*pow(nu_pz,3)*(nu_p - 1)
+			*((2*((Em*NUm*(vf - 1)*(pow(E_p,2)*NUm + pow(E_p,2) + E_p*Em - E_p*Em*nu_p 
+			- 2*E_z*Em*pow(nu_pz,2)))/(2*(2*NUm - 1)*pow(NUm + 1,2)
+			*(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p)) 
+			+ (2*E_p*E_z*Em*nu_pz*vf*(NUm - 1))
+			/((4*E_z*pow(nu_pz,2) - 2*E_p + 2*E_p*nu_p)*(2*pow(NUm,2) + NUm - 1)))
+			*(2*pow(NUm,2) + NUm - 1))/(Em + 2*G_zp + Em*vf - 2*G_zp*vf - 4*G_zp*pow(NUm,2) 
+			- 2*Em*NUm - 2*G_zp*NUm + 2*G_zp*NUm*vf + 4*G_zp*pow(NUm,2)*vf) 
+			- (Em*NUm*(vf - 1))/(2*pow(NUm,2) + NUm - 1) + (E_p*E_z*nu_pz*vf)
+			/(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p))*(2*pow(NUm,2) + NUm - 1))
+			/((2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p)*pow((pow(E_p,2)*NUm - pow(E_p,2) 
+			+ 2*pow(E_p,2)*pow(NUm,2) + E_p*Em - E_p*Em*nu_p - 2*E_z*Em*pow(nu_pz,2)),2)) 
+			- (4*pow(E_p,4)*pow(nu_pz,2)*(nu_p - 1)*(vf - 1)*(2*pow(NUm,2) + NUm - 1)
+			*(Em*vf - 2*G_zp*vf + 2*Em*NUm*nu_pz + 2*G_zp*NUm*vf - Em*nu_p*vf 
+			+ 2*G_zp*nu_p*vf + 4*G_zp*pow(NUm,2)*vf - 4*G_zp*pow(NUm,2)*nu_p*vf 
+			- 2*G_zp*NUm*nu_p*vf))/(pow((E_p*nu_p - E_p + 2*E_z*pow(nu_pz,2)),3)
+			*(pow(E_p,2)*NUm - pow(E_p,2) + 2*pow(E_p,2)*pow(NUm,2) + E_p*Em - E_p*Em*nu_p 
+			- 2*E_z*Em*pow(nu_pz,2))*(Em + 2*G_zp + Em*vf - 2*G_zp*vf - 4*G_zp*pow(NUm,2) 
+			- 2*Em*NUm - 2*G_zp*NUm + 2*G_zp*NUm*vf + 4*G_zp*pow(NUm,2)*vf)) 
+			+ (8*pow(E_p,2)*Em*pow(nu_pz,3)*((Em*NUm)/(2*pow(NUm,2) + NUm - 1) 
+			- (E_p*E_z*nu_pz)/(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p))
+			*(vf - 1)*(2*pow(NUm,2) + NUm - 1)*(Em*vf - 2*G_zp*vf 
+			+ 2*Em*NUm*nu_pz + 2*G_zp*NUm*vf - Em*nu_p*vf + 2*G_zp*nu_p*vf 
+			+ 4*G_zp*pow(NUm,2)*vf - 4*G_zp*pow(NUm,2)*nu_p*vf - 2*G_zp*NUm*nu_p*vf))
+			/((2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p)*pow((pow(E_p,2)*NUm - pow(E_p,2) 
+			+ 2*pow(E_p,2)*pow(NUm,2) + E_p*Em - E_p*Em*nu_p - 2*E_z*Em*pow(nu_pz,2)),2)
+			*(Em + 2*G_zp + Em*vf - 2*G_zp*vf - 4*G_zp*pow(NUm,2) - 2*Em*NUm 
+			- 2*G_zp*NUm + 2*G_zp*NUm*vf + 4*G_zp*pow(NUm,2)*vf));
+
+      PetscFunctionReturn(0);
+    }	
+	
+    /***************************************************************************
+     *
+     * With repect to transverse modulus, E_p
+     * 
+     **************************************************************************/	
+	virtual PetscErrorCode D_rs_YoungP(double nu_p, double nu_pz, double E_p, double E_z, double G_zp,
+	                                  double Em, double NUm, double vf){
+		
+      PetscFunctionBegin;
+      
+	  ddkc = -(4*pow(Em,2)*vf*pow(NUm - 1,2)*(pow(E_p,3)*NUm + pow(E_p,3)*nu_p + pow(E_p,3)*vf 
+	         - pow(E_p,3) + 2*pow(E_p,3)*pow(NUm,2) + 6*pow(E_p,2)*E_z*pow(nu_pz,2) 
+			 + 4*pow(E_z,2)*Em*pow(nu_pz,4) - 2*pow(E_p,3)*pow(NUm,2)*nu_p 
+			 - 2*pow(E_p,3)*pow(NUm,2)*vf - pow(E_p,3)*NUm*nu_p - pow(E_p,3)*NUm*vf 
+			 - pow(E_p,3)*nu_p*vf + pow(E_p,3)*NUm*nu_p*vf - 6*pow(E_p,2)*E_z*NUm*pow(nu_pz,2) 
+			 - 8*pow(E_z,2)*Em*NUm*pow(nu_pz,4) - 6*pow(E_p,2)*E_z*pow(nu_pz,2)*vf 
+			 + 4*pow(E_z,2)*Em*pow(nu_pz,4)*vf + 2*pow(E_p,3)*pow(NUm,2)*nu_p*vf 
+			 - 12*pow(E_p,2)*E_z*pow(NUm,2)*pow(nu_pz,2) + 12*pow(E_p,2)*E_z*pow(NUm,2)*pow(nu_pz,2)*vf 
+			 + 6*pow(E_p,2)*E_z*NUm*pow(nu_pz,2)*vf))/pow((pow(E_p,2)*NUm + pow(E_p,2)*vf 
+			 - pow(E_p,2) + 2*pow(E_p,2)*pow(NUm,2) - E_p*Em - 2*pow(E_p,2)*pow(NUm,2)*vf 
+			 + 2*E_p*Em*NUm + E_p*Em*nu_p - E_p*Em*vf + 2*E_z*Em*pow(nu_pz,2) 
+			 - pow(E_p,2)*NUm*vf - 4*E_z*Em*NUm*pow(nu_pz,2) + 2*E_z*Em*pow(nu_pz,2)*vf 
+			 - 2*E_p*Em*NUm*nu_p + E_p*Em*nu_p*vf),3);
+	  ddmc = -(16*pow(Em,2)*vf*pow(NUm - 1,2)*(nu_p + 1)*(vf - 1)
+	         *(4*pow(NUm,2) + NUm - 3))/pow((3*E_p + Em + Em*nu_p - 3*E_p*vf 
+			 + 3*Em*vf - 4*E_p*pow(NUm,2) - E_p*NUm + E_p*NUm*vf - 4*Em*NUm*vf 
+			 + 3*Em*nu_p*vf + 4*E_p*pow(NUm,2)*vf - 4*Em*NUm*nu_p*vf),3);
+	  ddpc = 0;
+	  ddlc = -(8*pow(E_z,2)*Em*pow(nu_pz,3)*(vf + NUm*nu_pz - NUm*vf - nu_p*vf 
+	        + NUm*nu_p*vf - NUm*nu_pz*vf))/(pow((2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p),3)
+			*(Em + 2*G_zp + Em*vf - 2*G_zp*vf - 4*G_zp*pow(NUm,2) 
+			- 2*Em*NUm - 2*G_zp*NUm + 2*G_zp*NUm*vf + 4*G_zp*pow(NUm,2)*vf));
+	  ddnc = (2*E_p*E_z*vf*pow(nu_p - 1,3))/pow((E_p*nu_p - E_p + 2*E_z*pow(nu_pz,2)),3) 
+	         - (2*E_z*vf*pow(nu_p - 1,2))/pow((E_p*nu_p - E_p + 2*E_z*pow(nu_pz,2)),2) 
+			 + (4*((Em*NUm)/(2*pow(NUm,2) + NUm - 1) 
+			 - (E_p*E_z*nu_pz)/(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p))
+			 *(nu_p - 1)*((2*((Em*NUm*(vf - 1)*(pow(E_p,2)*NUm + pow(E_p,2) 
+			 + E_p*Em - E_p*Em*nu_p - 2*E_z*Em*pow(nu_pz,2)))/(2*(2*NUm - 1)
+			 *pow(NUm + 1,2)*(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p)) 
+			 + (2*E_p*E_z*Em*nu_pz*vf*(NUm - 1))/((4*E_z*pow(nu_pz,2) 
+			 - 2*E_p + 2*E_p*nu_p)*(2*pow(NUm,2) + NUm - 1)))
+			 *(2*pow(NUm,2) + NUm - 1))/(Em + 2*G_zp + Em*vf 
+			 - 2*G_zp*vf - 4*G_zp*pow(NUm,2) - 2*Em*NUm - 2*G_zp*NUm 
+			 + 2*G_zp*NUm*vf + 4*G_zp*pow(NUm,2)*vf) 
+			 - (Em*NUm*(vf - 1))/(2*pow(NUm,2) + NUm - 1) 
+			 + (E_p*E_z*nu_pz*vf)/(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p))
+			 *(2*pow(NUm,2) + NUm - 1)*(4*E_p*pow(NUm,2) + 2*E_p*NUm - 2*E_p 
+			 + Em - Em*nu_p))/pow((pow(E_p,2)*NUm - pow(E_p,2) + 2*pow(E_p,2)*pow(NUm,2) 
+			 + E_p*Em - E_p*Em*nu_p - 2*E_z*Em*pow(nu_pz,2)),2) 
+			 - (4*((Em*NUm)/(2*pow(NUm,2) + NUm - 1) 
+			 - (E_p*E_z*nu_pz)/(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p))
+			 *((2*((Em*NUm*(vf - 1)*(pow(E_p,2)*NUm + pow(E_p,2) + E_p*Em 
+			 - E_p*Em*nu_p - 2*E_z*Em*pow(nu_pz,2)))/(2*(2*NUm - 1)
+			 *pow(NUm + 1,2)*(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p)) 
+			 + (2*E_p*E_z*Em*nu_pz*vf*(NUm - 1))/((4*E_z*pow(nu_pz,2) 
+			 - 2*E_p + 2*E_p*nu_p)*(2*pow(NUm,2) + NUm - 1)))
+			 *(2*pow(NUm,2) + NUm - 1))/(Em + 2*G_zp + Em*vf 
+			 - 2*G_zp*vf - 4*G_zp*pow(NUm,2) - 2*Em*NUm - 2*G_zp*NUm 
+			 + 2*G_zp*NUm*vf + 4*G_zp*pow(NUm,2)*vf) 
+			 - (Em*NUm*(vf - 1))/(2*pow(NUm,2) + NUm - 1) 
+			 + (E_p*E_z*nu_pz*vf)/(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p))
+			 *(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p)*(2*pow(NUm,2) + NUm - 1)
+			 *pow((4*E_p*pow(NUm,2) + 2*E_p*NUm - 2*E_p + Em - Em*nu_p),2))
+			 /pow((pow(E_p,2)*NUm - pow(E_p,2) + 2*pow(E_p,2)*pow(NUm,2) + E_p*Em - E_p*Em*nu_p 
+			 - 2*E_z*Em*pow(nu_pz,2)),3) + (2*((Em*NUm)/(2*pow(NUm,2) + NUm - 1) 
+			 - (E_p*E_z*nu_pz)/(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p))
+			 *((2*((Em*NUm*(vf - 1)*(pow(E_p,2)*NUm + pow(E_p,2) + E_p*Em 
+			 - E_p*Em*nu_p - 2*E_z*Em*pow(nu_pz,2)))/(2*(2*NUm - 1)
+			 *pow(NUm + 1,2)*(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p)) 
+			 + (2*E_p*E_z*Em*nu_pz*vf*(NUm - 1))/((4*E_z*pow(nu_pz,2) 
+			 - 2*E_p + 2*E_p*nu_p)*(2*pow(NUm,2) + NUm - 1)))*(2*pow(NUm,2) + NUm - 1))
+			 /(Em + 2*G_zp + Em*vf - 2*G_zp*vf - 4*G_zp*pow(NUm,2) 
+			 - 2*Em*NUm - 2*G_zp*NUm + 2*G_zp*NUm*vf + 4*G_zp*pow(NUm,2)*vf) 
+			 - (Em*NUm*(vf - 1))/(2*pow(NUm,2) + NUm - 1) 
+			 + (E_p*E_z*nu_pz*vf)/(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p))
+			 *(4*pow(NUm,2) + 2*NUm - 2)*(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p)
+			 *(2*pow(NUm,2) + NUm - 1))/pow((pow(E_p,2)*NUm - pow(E_p,2) + 2*pow(E_p,2)*pow(NUm,2) 
+			 + E_p*Em - E_p*Em*nu_p - 2*E_z*Em*pow(nu_pz,2)),2) 
+			 - (8*pow(E_z,2)*pow(nu_pz,3)*((2*((Em*NUm*(vf - 1)
+			 *(pow(E_p,2)*NUm + pow(E_p,2) + E_p*Em - E_p*Em*nu_p 
+			 - 2*E_z*Em*pow(nu_pz,2)))/(2*(2*NUm - 1)*pow(NUm + 1,2)
+			 *(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p)) 
+			 + (2*E_p*E_z*Em*nu_pz*vf*(NUm - 1))/((4*E_z*pow(nu_pz,2) 
+			 - 2*E_p + 2*E_p*nu_p)*(2*pow(NUm,2) + NUm - 1)))*(2*pow(NUm,2) + NUm - 1))
+			 /(Em + 2*G_zp + Em*vf - 2*G_zp*vf 
+			 - 4*G_zp*pow(NUm,2) - 2*Em*NUm - 2*G_zp*NUm 
+			 + 2*G_zp*NUm*vf + 4*G_zp*pow(NUm,2)*vf) 
+			 - (Em*NUm*(vf - 1))/(2*pow(NUm,2) + NUm - 1) 
+			 + (E_p*E_z*nu_pz*vf)/(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p))
+			 *(2*pow(NUm,2) + NUm - 1)*(4*E_p*pow(NUm,2) + 2*E_p*NUm - 2*E_p 
+			 + Em - Em*nu_p))/((2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p)
+			 *pow((pow(E_p,2)*NUm - pow(E_p,2) + 2*pow(E_p,2)*pow(NUm,2) + E_p*Em - E_p*Em*nu_p 
+			 - 2*E_z*Em*pow(nu_pz,2)),2)) + (4*((Em*NUm)/(2*pow(NUm,2) + NUm - 1) 
+			 - (E_p*E_z*nu_pz)/(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p))
+			 *(vf - 1)*(2*pow(NUm,2) + NUm - 1)*(4*E_p*pow(NUm,2) 
+			 + 2*E_p*NUm - 2*E_p + Em - Em*nu_p)
+			 *(pow(E_p,2)*Em*NUm*nu_p - pow(E_p,2)*Em*NUm 
+			 + 2*pow(E_z,2)*Em*pow(nu_pz,3)*vf - 4*pow(E_z,2)*G_zp*pow(nu_pz,3)*vf 
+			 + 8*pow(E_z,2)*G_zp*pow(NUm,2)*pow(nu_pz,3)*vf + 4*E_p*E_z*Em*NUm*pow(nu_pz,2) 
+			 + 4*pow(E_z,2)*G_zp*NUm*pow(nu_pz,3)*vf))/((2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p)
+			 *pow((pow(E_p,2)*NUm - pow(E_p,2) + 2*pow(E_p,2)*pow(NUm,2) 
+			 + E_p*Em - E_p*Em*nu_p - 2*E_z*Em*pow(nu_pz,2)),2)
+			 *(Em + 2*G_zp + Em*vf - 2*G_zp*vf - 4*G_zp*pow(NUm,2) 
+			 - 2*Em*NUm - 2*G_zp*NUm + 2*G_zp*NUm*vf 
+			 + 4*G_zp*pow(NUm,2)*vf)) + (8*pow(E_z,2)*pow(nu_pz,3)*(vf - 1)
+			 *(2*pow(NUm,2) + NUm - 1)*(pow(E_p,2)*Em*NUm*nu_p - pow(E_p,2)*Em*NUm 
+			 + 2*pow(E_z,2)*Em*pow(nu_pz,3)*vf - 4*pow(E_z,2)*G_zp*pow(nu_pz,3)*vf 
+			 + 8*pow(E_z,2)*G_zp*pow(NUm,2)*pow(nu_pz,3)*vf + 4*E_p*E_z*Em*NUm*pow(nu_pz,2) 
+			 + 4*pow(E_z,2)*G_zp*NUm*pow(nu_pz,3)*vf))/(pow((E_p*nu_p - E_p 
+			 + 2*E_z*pow(nu_pz,2)),3)*(pow(E_p,2)*NUm - pow(E_p,2) + 2*pow(E_p,2)*pow(NUm,2) 
+			 + E_p*Em - E_p*Em*nu_p - 2*E_z*Em*pow(nu_pz,2))
+			 *(Em + 2*G_zp + Em*vf - 2*G_zp*vf - 4*G_zp*pow(NUm,2) 
+			 - 2*Em*NUm - 2*G_zp*NUm + 2*G_zp*NUm*vf + 4*G_zp*pow(NUm,2)*vf)) 
+			 - (4*((Em*NUm)/(2*pow(NUm,2) + NUm - 1) 
+			 - (E_p*E_z*nu_pz)/(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p))
+			 *(nu_p - 1)*(vf - 1)*(2*pow(NUm,2) + NUm - 1)
+			 *(pow(E_p,2)*Em*NUm*nu_p - pow(E_p,2)*Em*NUm + 2*pow(E_z,2)*Em*pow(nu_pz,3)*vf 
+			 - 4*pow(E_z,2)*G_zp*pow(nu_pz,3)*vf + 8*pow(E_z,2)*G_zp*pow(NUm,2)*pow(nu_pz,3)*vf 
+			 + 4*E_p*E_z*Em*NUm*pow(nu_pz,2) + 4*pow(E_z,2)*G_zp*NUm*pow(nu_pz,3)*vf))
+			 /(pow((E_p*nu_p - E_p + 2*E_z*pow(nu_pz,2)),2)
+			 *(pow(E_p,2)*NUm - pow(E_p,2) + 2*pow(E_p,2)*pow(NUm,2) + E_p*Em - E_p*Em*nu_p 
+			 - 2*E_z*Em*pow(nu_pz,2))*(Em + 2*G_zp + Em*vf - 2*G_zp*vf 
+			 - 4*G_zp*pow(NUm,2) - 2*Em*NUm - 2*G_zp*NUm + 2*G_zp*NUm*vf 
+			 + 4*G_zp*pow(NUm,2)*vf)) - (8*pow(E_z,2)*pow(nu_pz,3)*((Em*NUm)
+			 /(2*pow(NUm,2) + NUm - 1) - (E_p*E_z*nu_pz)/(2*E_z*pow(nu_pz,2) 
+			 - E_p + E_p*nu_p))*(vf - 1)*(2*pow(NUm,2) + NUm - 1)
+			 *(Em*vf - 2*G_zp*vf + 2*Em*NUm*nu_pz + 2*G_zp*NUm*vf 
+			 - Em*nu_p*vf + 2*G_zp*nu_p*vf + 4*G_zp*pow(NUm,2)*vf 
+			 - 4*G_zp*pow(NUm,2)*nu_p*vf - 2*G_zp*NUm*nu_p*vf))
+			 /(pow((E_p*nu_p - E_p + 2*E_z*pow(nu_pz,2)),2)
+			 *(pow(E_p,2)*NUm - pow(E_p,2) + 2*pow(E_p,2)*pow(NUm,2) + E_p*Em 
+			 - E_p*Em*nu_p - 2*E_z*Em*pow(nu_pz,2))*(Em + 2*G_zp + Em*vf 
+			 - 2*G_zp*vf - 4*G_zp*pow(NUm,2) - 2*Em*NUm - 2*G_zp*NUm 
+			 + 2*G_zp*NUm*vf + 4*G_zp*pow(NUm,2)*vf));
+
+      PetscFunctionReturn(0);
+    }	
+    /***************************************************************************
+     *
+     * With repect to transverse Poisson's ratio, nu_p
+     * 
+     **************************************************************************/	
+	virtual PetscErrorCode D_rs_PoissonP(double nu_p, double nu_pz, double E_p, 
+	                                  double E_z, double G_zp,
+	                                  double Em, double NUm, double vf){
+		
+	  PetscFunctionBegin;
+	  ddkc = -(4*pow(E_p,4)*pow(Em,3)*vf*pow(NUm-1,2)*(vf - 2*NUm + 1))
+	         /pow((pow(E_p,2)*NUm + pow(E_p,2)*vf - pow(E_p,2) + 2*pow(E_p,2)*pow(NUm,2) 
+			 - E_p*Em - 2*pow(E_p,2)*pow(NUm,2)*vf + 2*E_p*Em*NUm 
+			 + E_p*Em*nu_p - E_p*Em*vf + 2*E_z*Em*pow(nu_pz,2)
+			 - pow(E_p,2)*NUm*vf - 4*E_z*Em*NUm*pow(nu_pz,2)
+			 + 2*E_z*Em*pow(nu_pz,2)*vf - 2*E_p*Em*NUm*nu_p + E_p*Em*nu_p*vf),3);
+	  ddmc = (16*E_p*pow(Em,3)*vf*pow(NUm-1,2)*(3*vf - 4*NUm*vf + 1))
+	         /pow((3*E_p + Em + Em*nu_p - 3*E_p*vf + 3*Em*vf 
+			 - 4*E_p*pow(NUm,2) - E_p*NUm + E_p*NUm*vf - 4*Em*NUm*vf 
+			 + 3*Em*nu_p*vf + 4*E_p*pow(NUm,2)*vf - 4*Em*NUm*nu_p*vf),3);
+	  ddpc = 0;
+	  ddlc = -(2*pow(E_p,3)*Em*(E_p*NUm - E_p*NUm*vf + 2*E_z*nu_pz*vf 
+			  - 2*E_z*NUm*nu_pz*vf))/(pow((2*E_z*pow(nu_pz,2)- E_p 
+			  + E_p*nu_p),3)*(Em + 2*G_zp + Em*vf - 2*G_zp*vf 
+			  - 4*G_zp*pow(NUm,2) - 2*Em*NUm - 2*G_zp*NUm 
+			  + 2*G_zp*NUm*vf + 4*G_zp*pow(NUm,2)*vf));
+	  ddnc = (2*pow(E_p,3)*E_z*vf*(nu_p - 1))/pow((E_p*nu_p - E_p 
+	        + 2*E_z*pow(nu_pz,2)),3) - (2*pow(E_p,2)*E_z*vf)
+			/pow((E_p*nu_p - E_p + 2*E_z*pow(nu_pz,2)),2) 
+			- (4*pow(E_p,2)*Em*((Em*NUm)/(2*pow(NUm,2) + NUm - 1) 
+			- (E_p*E_z*nu_pz)/(2*E_z*pow(nu_pz,2)- E_p + E_p*nu_p))
+			*((2*((Em*NUm*(vf - 1)*(pow(E_p,2)*NUm + pow(E_p,2) + E_p*Em 
+			- E_p*Em*nu_p - 2*E_z*Em*pow(nu_pz,2)))/(2*(2*NUm - 1)
+			*pow(NUm + 1,2)*(2*E_z*pow(nu_pz,2)- E_p + E_p*nu_p)) 
+			+ (2*E_p*E_z*Em*nu_pz*vf*(NUm - 1))
+			/((4*E_z*pow(nu_pz,2)- 2*E_p + 2*E_p*nu_p)
+			*(2*pow(NUm,2) + NUm - 1)))*(2*pow(NUm,2) + NUm - 1))
+			/(Em + 2*G_zp + Em*vf - 2*G_zp*vf - 4*G_zp*pow(NUm,2) 
+			- 2*Em*NUm - 2*G_zp*NUm + 2*G_zp*NUm*vf + 4*G_zp*pow(NUm,2)*vf) 
+			- (Em*NUm*(vf - 1))/(2*pow(NUm,2) + NUm - 1) 
+			+ (E_p*E_z*nu_pz*vf)/(2*E_z*pow(nu_pz,2)- E_p + E_p*nu_p))
+			*(2*pow(NUm,2) + NUm - 1))/pow((pow(E_p,2)*NUm - pow(E_p,2) + 2*pow(E_p,2)*pow(NUm,2) 
+			+ E_p*Em - E_p*Em*nu_p - 2*E_z*Em*pow(nu_pz,2)),2) 
+			- (4*pow(E_p,2)*pow(Em,2)*((Em*NUm)/(2*pow(NUm,2) + NUm - 1) 
+			- (E_p*E_z*nu_pz)/(2*E_z*pow(nu_pz,2)- E_p + E_p*nu_p))
+			*((2*((Em*NUm*(vf - 1)*(pow(E_p,2)*NUm + pow(E_p,2) + E_p*Em 
+			- E_p*Em*nu_p - 2*E_z*Em*pow(nu_pz,2)))/(2*(2*NUm - 1)
+			*pow(NUm + 1,2)*(2*E_z*pow(nu_pz,2)- E_p + E_p*nu_p)) 
+			+ (2*E_p*E_z*Em*nu_pz*vf*(NUm - 1))
+			/((4*E_z*pow(nu_pz,2)- 2*E_p + 2*E_p*nu_p)*(2*pow(NUm,2) + NUm - 1)))
+			*(2*pow(NUm,2) + NUm - 1))/(Em + 2*G_zp + Em*vf - 2*G_zp*vf 
+			- 4*G_zp*pow(NUm,2) - 2*Em*NUm - 2*G_zp*NUm + 2*G_zp*NUm*vf 
+			+ 4*G_zp*pow(NUm,2)*vf) - (Em*NUm*(vf - 1))/(2*pow(NUm,2) + NUm - 1) 
+			+ (E_p*E_z*nu_pz*vf)/(2*E_z*pow(nu_pz,2)- E_p + E_p*nu_p))
+			*(2*E_z*pow(nu_pz,2)- E_p + E_p*nu_p)*(2*pow(NUm,2) + NUm - 1))
+			/pow((pow(E_p,2)*NUm - pow(E_p,2) + 2*pow(E_p,2)*pow(NUm,2) + E_p*Em - E_p*Em*nu_p 
+			- 2*E_z*Em*pow(nu_pz,2)),3) - (4*pow(E_p,3)*E_z*Em*nu_pz*((2*((Em*NUm
+			*(vf - 1)*(pow(E_p,2)*NUm + pow(E_p,2) + E_p*Em - E_p*Em*nu_p 
+			- 2*E_z*Em*pow(nu_pz,2)))/(2*(2*NUm - 1)*pow(NUm + 1,2)
+			*(2*E_z*pow(nu_pz,2)- E_p + E_p*nu_p)) 
+			+ (2*E_p*E_z*Em*nu_pz*vf*(NUm - 1))/((4*E_z*pow(nu_pz,2)
+			- 2*E_p + 2*E_p*nu_p)*(2*pow(NUm,2) + NUm - 1)))
+			*(2*pow(NUm,2) + NUm - 1))/(Em + 2*G_zp + Em*vf 
+			- 2*G_zp*vf - 4*G_zp*pow(NUm,2) - 2*Em*NUm 
+			- 2*G_zp*NUm + 2*G_zp*NUm*vf + 4*G_zp*pow(NUm,2)*vf) 
+			- (Em*NUm*(vf - 1))/(2*pow(NUm,2) + NUm - 1) 
+			+ (E_p*E_z*nu_pz*vf)/(2*E_z*pow(nu_pz,2)- E_p + E_p*nu_p))
+			*(2*pow(NUm,2) + NUm - 1))/((2*E_z*pow(nu_pz,2)- E_p + E_p*nu_p)
+			*pow((pow(E_p,2)*NUm - pow(E_p,2) + 2*pow(E_p,2)*pow(NUm,2) + E_p*Em - E_p*Em*nu_p 
+			- 2*E_z*Em*pow(nu_pz,2)),2)) + (4*pow(E_p,4)*E_z*nu_pz*(vf - 1)
+			*(2*pow(NUm,2) + NUm - 1)*(E_p*Em*NUm + E_z*Em*nu_pz*vf 
+			- 2*E_z*G_zp*nu_pz*vf + 2*E_z*G_zp*NUm*nu_pz*vf 
+			+ 4*E_z*G_zp*pow(NUm,2)*nu_pz*vf))/(pow((E_p*nu_p - E_p + 2*E_z*pow(nu_pz,2)),3)
+			*(pow(E_p,2)*NUm - pow(E_p,2) + 2*pow(E_p,2)*pow(NUm,2) + E_p*Em - E_p*Em*nu_p 
+			- 2*E_z*Em*pow(nu_pz,2))*(Em + 2*G_zp + Em*vf - 2*G_zp*vf 
+			- 4*G_zp*pow(NUm,2) - 2*Em*NUm - 2*G_zp*NUm 
+			+ 2*G_zp*NUm*vf + 4*G_zp*pow(NUm,2)*vf)) 
+			+ (4*pow(E_p,3)*Em*((Em*NUm)/(2*pow(NUm,2) + NUm - 1) 
+			- (E_p*E_z*nu_pz)/(2*E_z*pow(nu_pz,2)- E_p + E_p*nu_p))
+			*(vf - 1)*(2*pow(NUm,2) + NUm - 1)*(E_p*Em*NUm + E_z*Em*nu_pz*vf 
+			- 2*E_z*G_zp*nu_pz*vf + 2*E_z*G_zp*NUm*nu_pz*vf 
+			+ 4*E_z*G_zp*pow(NUm,2)*nu_pz*vf))/((2*E_z*pow(nu_pz,2)- E_p + E_p*nu_p)
+			*pow((pow(E_p,2)*NUm - pow(E_p,2) + 2*pow(E_p,2)*pow(NUm,2) + E_p*Em 
+			- E_p*Em*nu_p - 2*E_z*Em*pow(nu_pz,2)),2)
+			*(Em + 2*G_zp + Em*vf - 2*G_zp*vf - 4*G_zp*pow(NUm,2) 
+			- 2*Em*NUm - 2*G_zp*NUm + 2*G_zp*NUm*vf + 4*G_zp*pow(NUm,2)*vf));
+			
+  //cout<<"ddkc= \t"<<ddkc<<"\t ddmc = \t"<<ddmc<<"\t ddlc= \t"<<ddlc<<"\t ddnc= \t"<<ddnc<<endl;
+	  PetscFunctionReturn(0);
+    }	
+    /***************************************************************************
+     *
+     * With repect to Young's modulus in z-direction, E_z
+     * 
+     **************************************************************************/
+	virtual PetscErrorCode D_rs_PoissonPZ(double nu_p, double nu_pz, double E_p, double E_z, double G_zp,
+	                                  double Em, double NUm, double vf){
+		
+	  PetscFunctionBegin;
+      
+	  ddkc = -(8*pow(E_p,2)*E_z*pow(Em,2)*vf*pow(NUm - 1,2)*(pow(E_p,2) - pow(E_p,2)*vf 
+	         - pow(E_p,2)*NUm - 2*pow(E_p,2)*pow(NUm,2) + E_p*Em + 2*pow(E_p,2)*pow(NUm,2)*vf 
+			  - 2*E_p*Em*NUm - E_p*Em*nu_p + E_p*Em*vf 
+			  + 6*E_z*Em*pow(nu_pz,2) + pow(E_p,2)*NUm*vf - 12*E_z*Em*NUm*pow(nu_pz,2) 
+			  + 6*E_z*Em*pow(nu_pz,2)*vf + 2*E_p*Em*NUm*nu_p - E_p*Em*nu_p*vf))
+			  /pow((pow(E_p,2)*NUm + pow(E_p,2)*vf - pow(E_p,2) + 2*pow(E_p,2)*pow(NUm,2) 
+			  - E_p*Em - 2*pow(E_p,2)*pow(NUm,2)*vf + 2*E_p*Em*NUm + E_p*Em*nu_p 
+			  - E_p*Em*vf + 2*E_z*Em*pow(nu_pz,2) - pow(E_p,2)*NUm*vf 
+			  - 4*E_z*Em*NUm*pow(nu_pz,2) + 2*E_z*Em*pow(nu_pz,2)*vf 
+			  - 2*E_p*Em*NUm*nu_p + E_p*Em*nu_p*vf),3);
+	  ddmc = 0;
+	  ddpc = 0;
+	  ddlc = -(4*E_p*E_z*Em*(pow(E_p,2)*NUm + 4*pow(E_z,2)*pow(nu_pz,3)*vf 
+	         - pow(E_p,2)*NUm*nu_p - pow(E_p,2)*NUm*vf + 6*E_p*E_z*NUm*pow(nu_pz,2) 
+			 + pow(E_p,2)*NUm*nu_p*vf - 4*pow(E_z,2)*NUm*pow(nu_pz,3)*vf 
+			 + 6*E_p*E_z*nu_pz*vf - 6*E_p*E_z*NUm*nu_pz*vf 
+			 - 6*E_p*E_z*nu_p*nu_pz*vf - 6*E_p*E_z*NUm*pow(nu_pz,2)*vf 
+			 + 6*E_p*E_z*NUm*nu_p*nu_pz*vf))/(pow((2*E_z*pow(nu_pz,2) - E_p 
+			 + E_p*nu_p),3)*(Em + 2*G_zp + Em*vf - 2*G_zp*vf 
+			 - 4*G_zp*pow(NUm,2) - 2*Em*NUm - 2*G_zp*NUm 
+			 + 2*G_zp*NUm*vf + 4*G_zp*pow(NUm,2)*vf));
+	  ddnc = (32*E_p*pow(E_z,3)*pow(nu_pz,2)*vf*(nu_p - 1))
+	         /pow((E_p*nu_p - E_p + 2*E_z*pow(nu_pz,2)),3) 
+			 - (8*E_z*((Em*NUm)/(2*pow(NUm,2) + NUm - 1) 
+			 - (E_p*E_z*nu_pz)/(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p))
+			 *((2*((Em*NUm*(vf - 1)*(pow(E_p,2)*NUm + pow(E_p,2) + E_p*Em 
+			 - E_p*Em*nu_p - 2*E_z*Em*pow(nu_pz,2)))/(2*(2*NUm - 1)*pow(NUm + 1,2)
+			 *(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p)) 
+			 + (2*E_p*E_z*Em*nu_pz*vf*(NUm - 1))/((4*E_z*pow(nu_pz,2) 
+			 - 2*E_p + 2*E_p*nu_p)*(2*pow(NUm,2) + NUm - 1)))
+			 *(2*pow(NUm,2) + NUm - 1))/(Em + 2*G_zp + Em*vf - 2*G_zp*vf 
+			 - 4*G_zp*pow(NUm,2) - 2*Em*NUm - 2*G_zp*NUm + 2*G_zp*NUm*vf 
+			 + 4*G_zp*pow(NUm,2)*vf) - (Em*NUm*(vf - 1))/(2*pow(NUm,2) + NUm - 1) 
+			 + (E_p*E_z*nu_pz*vf)/(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p))
+			 *(2*pow(NUm,2) + NUm - 1))/(pow(E_p,2)*NUm - pow(E_p,2) + 2*pow(E_p,2)*pow(NUm,2) 
+			 + E_p*Em - E_p*Em*nu_p - 2*E_z*Em*pow(nu_pz,2)) 
+			 - (4*E_p*pow(E_z,2)*vf*(nu_p - 1))/pow((E_p*nu_p - E_p + 2*E_z*pow(nu_pz,2)),2) 
+			 - (64*pow(E_z,2)*Em*pow(nu_pz,2)*((Em*NUm)/(2*pow(NUm,2) + NUm - 1) 
+			 - (E_p*E_z*nu_pz)/(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p))
+			 *((2*((Em*NUm*(vf - 1)*(pow(E_p,2)*NUm + pow(E_p,2) + E_p*Em 
+			 - E_p*Em*nu_p - 2*E_z*Em*pow(nu_pz,2)))/(2*(2*NUm - 1)
+			 *pow(NUm + 1,2)*(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p)) 
+			 + (2*E_p*E_z*Em*nu_pz*vf*(NUm - 1))/((4*E_z*pow(nu_pz,2) - 2*E_p 
+			 + 2*E_p*nu_p)*(2*pow(NUm,2) + NUm - 1)))*(2*pow(NUm,2) + NUm - 1))
+			 /(Em + 2*G_zp + Em*vf - 2*G_zp*vf - 4*G_zp*pow(NUm,2) 
+			 - 2*Em*NUm - 2*G_zp*NUm + 2*G_zp*NUm*vf 
+			 + 4*G_zp*pow(NUm,2)*vf) - (Em*NUm*(vf - 1))/(2*pow(NUm,2) + NUm - 1) 
+			 + (E_p*E_z*nu_pz*vf)/(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p))
+			 *(2*pow(NUm,2) + NUm - 1))/pow((pow(E_p,2)*NUm - pow(E_p,2) + 2*pow(E_p,2)*pow(NUm,2) 
+			 + E_p*Em - E_p*Em*nu_p - 2*E_z*Em*pow(nu_pz,2)),2) 
+			 - (8*E_z*Em*((Em*NUm)/(2*pow(NUm,2) + NUm - 1) 
+			 - (E_p*E_z*nu_pz)/(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p))
+			 *((2*((Em*NUm*(vf - 1)*(pow(E_p,2)*NUm + pow(E_p,2) + E_p*Em 
+			 - E_p*Em*nu_p - 2*E_z*Em*pow(nu_pz,2)))/(2*(2*NUm - 1)
+			 *pow((NUm + 1),2)*(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p)) 
+			 + (2*E_p*E_z*Em*nu_pz*vf*(NUm - 1))/((4*E_z*pow(nu_pz,2) 
+			 - 2*E_p + 2*E_p*nu_p)*(2*pow(NUm,2) + NUm - 1)))
+			 *(2*pow(NUm,2) + NUm - 1))/(Em + 2*G_zp + Em*vf - 2*G_zp*vf 
+			 - 4*G_zp*pow(NUm,2) - 2*Em*NUm - 2*G_zp*NUm + 2*G_zp*NUm*vf 
+			 + 4*G_zp*pow(NUm,2)*vf) - (Em*NUm*(vf - 1))/(2*pow(NUm,2) + NUm - 1) 
+			 + (E_p*E_z*nu_pz*vf)/(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p))
+			 *(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p)*(2*pow(NUm,2) + NUm - 1))
+			 /pow((pow(E_p,2)*NUm - pow(E_p,2) + 2*pow(E_p,2)*pow(NUm,2) + E_p*Em - E_p*Em*nu_p 
+			 - 2*E_z*Em*pow(nu_pz,2)),2) - (64*pow(E_z,2)*pow(Em,2)*pow(nu_pz,2)*((Em*NUm)
+			 /(2*pow(NUm,2) + NUm - 1) - (E_p*E_z*nu_pz)/(2*E_z*pow(nu_pz,2) 
+			 - E_p + E_p*nu_p))*((2*((Em*NUm*(vf - 1)*(pow(E_p,2)*NUm + pow(E_p,2) 
+			 + E_p*Em - E_p*Em*nu_p - 2*E_z*Em*pow(nu_pz,2)))
+			 /(2*(2*NUm - 1)*pow((NUm + 1),2)*(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p)) 
+			 + (2*E_p*E_z*Em*nu_pz*vf*(NUm - 1))/((4*E_z*pow(nu_pz,2) - 2*E_p 
+			 + 2*E_p*nu_p)*(2*pow(NUm,2) + NUm - 1)))*(2*pow(NUm,2) + NUm - 1))
+			 /(Em + 2*G_zp + Em*vf - 2*G_zp*vf - 4*G_zp*pow(NUm,2) 
+			 - 2*Em*NUm - 2*G_zp*NUm + 2*G_zp*NUm*vf + 4*G_zp*pow(NUm,2)*vf) 
+			 - (Em*NUm*(vf - 1))/(2*pow(NUm,2) + NUm - 1) 
+			 + (E_p*E_z*nu_pz*vf)/(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p))
+			 *(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p)*(2*pow(NUm,2) + NUm - 1))
+			 /pow((pow(E_p,2)*NUm - pow(E_p,2) + 2*pow(E_p,2)*pow(NUm,2) + E_p*Em - E_p*Em*nu_p 
+			 - 2*E_z*Em*pow(nu_pz,2)),3) - (16*E_p*pow(E_z,2)*nu_pz*((2*((Em*NUm
+			 *(vf - 1)*(pow(E_p,2)*NUm + pow(E_p,2) + E_p*Em - E_p*Em*nu_p 
+			 - 2*E_z*Em*pow(nu_pz,2)))/(2*(2*NUm - 1)*pow((NUm + 1),2)
+			 *(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p)) 
+			 + (2*E_p*E_z*Em*nu_pz*vf*(NUm - 1))
+			 /((4*E_z*pow(nu_pz,2) - 2*E_p + 2*E_p*nu_p)*(2*pow(NUm,2) + NUm - 1)))
+			 *(2*pow(NUm,2) + NUm - 1))/(Em + 2*G_zp + Em*vf 
+			 - 2*G_zp*vf - 4*G_zp*pow(NUm,2) - 2*Em*NUm - 2*G_zp*NUm 
+			 + 2*G_zp*NUm*vf + 4*G_zp*pow(NUm,2)*vf) 
+			 - (Em*NUm*(vf - 1))/(2*pow(NUm,2) + NUm - 1) 
+			 + (E_p*E_z*nu_pz*vf)/(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p))
+			 *(2*E_z*pow(nu_pz,2) + E_p - E_p*nu_p)*(2*pow(NUm,2) + NUm - 1))
+			 /(pow((E_p*nu_p - E_p + 2*E_z*pow(nu_pz,2)),2)*(pow(E_p,2)*NUm - pow(E_p,2) 
+			 + 2*pow(E_p,2)*pow(NUm,2) + E_p*Em - E_p*Em*nu_p - 2*E_z*Em*pow(nu_pz,2))) 
+			 + (8*E_p*pow(E_z,2)*nu_pz*((2*((Em*NUm*(vf - 1)
+			 *(pow(E_p,2)*NUm + pow(E_p,2) + E_p*Em - E_p*Em*nu_p 
+			 - 2*E_z*Em*pow(nu_pz,2)))/(2*(2*NUm - 1)*pow((NUm + 1),2)
+			 *(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p)) 
+			 + (2*E_p*E_z*Em*nu_pz*vf*(NUm - 1))/((4*E_z*pow(nu_pz,2) - 2*E_p 
+			 + 2*E_p*nu_p)*(2*pow(NUm,2) + NUm - 1)))*(2*pow(NUm,2) + NUm - 1))
+			 /(Em + 2*G_zp + Em*vf - 2*G_zp*vf 
+			 - 4*G_zp*pow(NUm,2) - 2*Em*NUm - 2*G_zp*NUm 
+			 + 2*G_zp*NUm*vf + 4*G_zp*pow(NUm,2)*vf) 
+			 - (Em*NUm*(vf - 1))/(2*pow(NUm,2) + NUm - 1) 
+			 + (E_p*E_z*nu_pz*vf)/(2*E_z*pow(nu_pz,2) - E_p 
+			 + E_p*nu_p))*(2*E_z*pow(nu_pz,2) + 3*E_p - 3*E_p*nu_p)
+			 *(2*pow(NUm,2) + NUm - 1))/(pow((E_p*nu_p - E_p + 2*E_z*pow(nu_pz,2)),2)
+			 *(pow(E_p,2)*NUm - pow(E_p,2) + 2*pow(E_p,2)*pow(NUm,2) 
+			 + E_p*Em - E_p*Em*nu_p - 2*E_z*Em*pow(nu_pz,2))) 
+			 - (8*E_p*E_z*((Em*NUm)/(2*pow(NUm,2) + NUm - 1) 
+			 - (E_p*E_z*nu_pz)/(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p))
+			 *(vf - 1)*(2*pow(NUm,2) + NUm - 1)*(pow(E_p,2)*Em*NUm - pow(E_p,2)
+			 *Em*NUm*nu_p + 2*pow(E_z,2)*Em*pow(nu_pz,3)*vf - 4*pow(E_z,2)*G_zp*pow(nu_pz,3)*vf 
+			 + 3*E_p*E_z*Em*nu_pz*vf - 6*E_p*E_z*G_zp*nu_pz*vf 
+			 + 8*pow(E_z,2)*G_zp*pow(NUm,2)*pow(nu_pz,3)*vf + 6*E_p*E_z*Em*NUm*pow(nu_pz,2) 
+			 + 4*pow(E_z,2)*G_zp*NUm*pow(nu_pz,3)*vf + 6*E_p*E_z*G_zp*NUm*nu_pz*vf 
+			 - 3*E_p*E_z*Em*nu_p*nu_pz*vf + 6*E_p*E_z*G_zp*nu_p*nu_pz*vf 
+			 + 12*E_p*E_z*G_zp*pow(NUm,2)*nu_pz*vf - 12*E_p*E_z*G_zp*pow(NUm,2)*nu_p*nu_pz*vf 
+			 - 6*E_p*E_z*G_zp*NUm*nu_p*nu_pz*vf))
+			 /(pow((E_p*nu_p - E_p + 2*E_z*pow(nu_pz,2)),2)*(pow(E_p,2)*NUm - pow(E_p,2) 
+			 + 2*pow(E_p,2)*pow(NUm,2) + E_p*Em - E_p*Em*nu_p - 2*E_z*Em*pow(nu_pz,2))
+			 *(Em + 2*G_zp + Em*vf - 2*G_zp*vf - 4*G_zp*pow(NUm,2) 
+			 - 2*Em*NUm - 2*G_zp*NUm + 2*G_zp*NUm*vf + 4*G_zp*pow(NUm,2)*vf)) 
+			 - (16*E_p*pow(E_z,2)*Em*nu_pz*((2*((Em*NUm*(vf - 1)
+			 *(pow(E_p,2)*NUm + pow(E_p,2) + E_p*Em - E_p*Em*nu_p 
+			 - 2*E_z*Em*pow(nu_pz,2)))/(2*(2*NUm - 1)*pow((NUm + 1),2)
+			 *(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p)) 
+			 + (2*E_p*E_z*Em*nu_pz*vf*(NUm - 1))/((4*E_z*pow(nu_pz,2) - 2*E_p 
+			 + 2*E_p*nu_p)*(2*pow(NUm,2) + NUm - 1)))*(2*pow(NUm,2) + NUm - 1))
+			 /(Em + 2*G_zp + Em*vf - 2*G_zp*vf - 4*G_zp*pow(NUm,2) 
+			 - 2*Em*NUm - 2*G_zp*NUm + 2*G_zp*NUm*vf + 4*G_zp*pow(NUm,2)*vf) 
+			 - (Em*NUm*(vf - 1))/(2*pow(NUm,2) + NUm - 1) 
+			 + (E_p*E_z*nu_pz*vf)/(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p))
+			 *(2*E_z*pow(nu_pz,2) + E_p - E_p*nu_p)*(2*pow(NUm,2) + NUm - 1))
+			 /((2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p)*pow((pow(E_p,2)*NUm 
+			 - pow(E_p,2) + 2*pow(E_p,2)*pow(NUm,2) + E_p*Em - E_p*Em*nu_p - 2*E_z*Em*pow(nu_pz,2)),2)) 
+			 + (4*pow(E_p,2)*pow(E_z,2)*(vf - 1)*(2*E_z*pow(nu_pz,2) + E_p - E_p*nu_p)
+			 *(2*pow(NUm,2) + NUm - 1)*(E_p*Em*vf - 2*E_p*G_zp*vf 
+			 + 4*E_p*G_zp*pow(NUm,2)*vf + 2*E_z*Em*pow(nu_pz,2)*vf 
+			 - 4*E_z*G_zp*pow(nu_pz,2)*vf + 4*E_p*Em*NUm*nu_pz 
+			 + 2*E_p*G_zp*NUm*vf - E_p*Em*nu_p*vf + 2*E_p*G_zp*nu_p*vf 
+			 - 2*E_p*G_zp*NUm*nu_p*vf - 4*E_p*G_zp*pow(NUm,2)*nu_p*vf 
+			 + 4*E_z*G_zp*NUm*pow(nu_pz,2)*vf + 8*E_z*G_zp*pow(NUm,2)*pow(nu_pz,2)*vf))
+			 /(pow((E_p*nu_p - E_p + 2*E_z*pow(nu_pz,2)),3)*(pow(E_p,2)*NUm - pow(E_p,2) 
+			 + 2*pow(E_p,2)*pow(NUm,2) + E_p*Em - E_p*Em*nu_p - 2*E_z*Em*pow(nu_pz,2))
+			 *(Em + 2*G_zp + Em*vf - 2*G_zp*vf - 4*G_zp*pow(NUm,2) 
+			 - 2*Em*NUm - 2*G_zp*NUm + 2*G_zp*NUm*vf + 4*G_zp*pow(NUm,2)*vf)) 
+			 + (16*E_p*pow(E_z,2)*nu_pz*((Em*NUm)/(2*pow(NUm,2) + NUm - 1) 
+			 - (E_p*E_z*nu_pz)/(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p))
+			 *(vf - 1)*(2*pow(NUm,2) + NUm - 1)*(E_p*Em*vf - 2*E_p*G_zp*vf 
+			 + 4*E_p*G_zp*pow(NUm,2)*vf + 2*E_z*Em*pow(nu_pz,2)*vf 
+			 - 4*E_z*G_zp*pow(nu_pz,2)*vf + 4*E_p*Em*NUm*nu_pz 
+			 + 2*E_p*G_zp*NUm*vf - E_p*Em*nu_p*vf + 2*E_p*G_zp*nu_p*vf 
+			 - 2*E_p*G_zp*NUm*nu_p*vf - 4*E_p*G_zp*pow(NUm,2)*nu_p*vf 
+			 + 4*E_z*G_zp*NUm*pow(nu_pz,2)*vf + 8*E_z*G_zp*pow(NUm,2)*pow(nu_pz,2)*vf))
+			 /(pow((E_p*nu_p - E_p + 2*E_z*pow(nu_pz,2)),2)*(pow(E_p,2)*NUm - pow(E_p,2) 
+			 + 2*pow(E_p,2)*pow(NUm,2) + E_p*Em - E_p*Em*nu_p - 2*E_z*Em*pow(nu_pz,2))
+			 *(Em + 2*G_zp + Em*vf - 2*G_zp*vf - 4*G_zp*pow(NUm,2) - 2*Em*NUm 
+			 - 2*G_zp*NUm + 2*G_zp*NUm*vf + 4*G_zp*pow(NUm,2)*vf)) 
+			 + (16*E_p*pow(E_z,2)*Em*nu_pz*((Em*NUm)/(2*pow(NUm,2) + NUm - 1) 
+			 - (E_p*E_z*nu_pz)/(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p))
+			 *(vf - 1)*(2*pow(NUm,2) + NUm - 1)*(E_p*Em*vf - 2*E_p*G_zp*vf 
+			 + 4*E_p*G_zp*pow(NUm,2)*vf + 2*E_z*Em*pow(nu_pz,2)*vf 
+			 - 4*E_z*G_zp*pow(nu_pz,2)*vf + 4*E_p*Em*NUm*nu_pz 
+			 + 2*E_p*G_zp*NUm*vf - E_p*Em*nu_p*vf + 2*E_p*G_zp*nu_p*vf 
+			 - 2*E_p*G_zp*NUm*nu_p*vf - 4*E_p*G_zp*pow(NUm,2)*nu_p*vf 
+			 + 4*E_z*G_zp*NUm*pow(nu_pz,2)*vf + 8*E_z*G_zp*pow(NUm,2)*pow(nu_pz,2)*vf))
+			 /((2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p)*pow((pow(E_p,2)*NUm - pow(E_p,2) 
+			 + 2*pow(E_p,2)*pow(NUm,2) + E_p*Em - E_p*Em*nu_p - 2*E_z*Em*pow(nu_pz,2)),2)
+			 *(Em + 2*G_zp + Em*vf - 2*G_zp*vf 
+			 - 4*G_zp*pow(NUm,2) - 2*Em*NUm - 2*G_zp*NUm 
+			 + 2*G_zp*NUm*vf + 4*G_zp*pow(NUm,2)*vf));
+
+	  PetscFunctionReturn(0);
+    }	 
+    /***************************************************************************
+     *
+     * With repect to Shear modulus in z-direction, G_zp
+     * 
+     **************************************************************************/	
+	virtual PetscErrorCode D_rs_ShearZP(double nu_p, double nu_pz, double E_p, double E_z, double G_zp,
+	                                  double Em, double NUm, double vf){
+		
+	  PetscFunctionBegin;
+      
+	  ddkc = 0;
+	  ddmc = 0;
+	  ddpc = (16*pow(Em,2)*vf*(NUm + 1)*(vf - 1))/pow((Em + 2*G_zp + Em*vf 
+	         - 2*G_zp*vf + 2*G_zp*NUm - 2*G_zp*NUm*vf),3);
+	  ddlc = -(2*((Em*NUm*(1/((2*nu_p - 2)/E_p + (4*E_z*pow(nu_pz,2))/pow(E_p,2)) 
+	         - Em/(2*(NUm + 1)))*(vf - 1))/((2*NUm - 1)*(NUm + 1)) 
+			 + (2*E_z*nu_pz*vf*(Em/(NUm + 1) 
+			 - (Em*NUm)/((2*NUm - 1)*(NUm + 1))))/(E_p*((2*nu_p - 2)/E_p 
+			 + (4*E_z*pow(nu_pz,2))/pow(E_p,2))))*pow((vf - 1),2))/pow((vf*(Em/(NUm + 1) 
+			 - (Em*NUm)/((2*NUm - 1)*(NUm + 1))) 
+			 - (G_zp + Em/(2*NUm + 2))*(vf - 1)),3);
+	  ddnc = -(32*((Em*NUm*(vf - 1)*(pow(E_p,2)*NUm + pow(E_p,2) + E_p*Em 
+			  - E_p*Em*nu_p - 2*E_z*Em*pow(nu_pz,2)))/(2*(2*NUm - 1)*pow((NUm + 1),2)
+			  *(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p)) 
+			  + (2*E_p*E_z*Em*nu_pz*vf*(NUm - 1))
+			  /((4*E_z*pow(nu_pz,2) - 2*E_p + 2*E_p*nu_p)*(2*pow(NUm,2) + NUm - 1)))
+			  *((Em*NUm)/(2*pow(NUm,2) + NUm - 1) - (E_p*E_z*nu_pz)
+			  /(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p))*pow((vf - 1),2)
+			  *(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p)*pow((2*pow(NUm,2) + NUm - 1),4))
+			  /((pow(E_p,2)*NUm - pow(E_p,2) + 2*pow(E_p,2)*pow(NUm,2) + E_p*Em 
+			  - E_p*Em*nu_p - 2*E_z*Em*pow(nu_pz,2))*pow((Em + 2*G_zp + Em*vf 
+			  - 2*G_zp*vf - 4*G_zp*pow(NUm,2) - 2*Em*NUm - 2*G_zp*NUm 
+			  + 2*G_zp*NUm*vf + 4*G_zp*pow(NUm,2)*vf),3));
+
+	  PetscFunctionReturn(0);
+    }	
+    /***************************************************************************
+     *
+     * With repect to Young's modulus - matrix (isotropic material)
+     * 
+     **************************************************************************/
+	virtual PetscErrorCode D_rs_Young(double nu_p, double nu_pz, double E_p, double E_z, double G_zp,
+	                                  double Em, double NUm, double vf){
+		
+	  PetscFunctionBegin;
+      
+	  ddkc = -(4*pow(E_p,4)*vf*pow((NUm - 1),2)*(vf - 1)*(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p)
+	         *(2*pow(NUm,2) + NUm - 1))/pow((pow(E_p,2)*NUm + pow(E_p,2)*vf - pow(E_p,2) + 2*pow(E_p,2)*pow(NUm,2) 
+			 - E_p*Em - 2*pow(E_p,2)*pow(NUm,2)*vf + 2*E_p*Em*NUm + E_p*Em*nu_p 
+			 - E_p*Em*vf + 2*E_z*Em*pow(nu_pz,2) - pow(E_p,2)*NUm*vf 
+			 - 4*E_z*Em*NUm*pow(nu_pz,2) + 2*E_z*Em*pow(nu_pz,2)*vf - 2*E_p*Em*NUm*nu_p 
+			 + E_p*Em*nu_p*vf),3);
+	  ddmc = -(16*pow(E_p,2)*vf*pow((NUm - 1),2)*(nu_p + 1)*(vf - 1)*(4*pow(NUm,2) + NUm - 3))
+	         /pow((3*E_p + Em + Em*nu_p - 3*E_p*vf + 3*Em*vf - 4*E_p*pow(NUm,2) - E_p*NUm 
+			 + E_p*NUm*vf - 4*Em*NUm*vf + 3*Em*nu_p*vf + 4*E_p*pow(NUm,2)*vf 
+			 - 4*Em*NUm*nu_p*vf),3);
+	  ddpc = (16*G_zp*G_zp*vf*(NUm + 1)*(vf - 1))/pow((Em + 2*G_zp + Em*vf 
+	         - 2*G_zp*vf + 2*G_zp*NUm - 2*G_zp*NUm*vf),3);
+	  ddlc = (4*G_zp*(vf - 1)*(2*pow(NUm,2) + NUm - 1)*(pow(E_p,2)*NUm - 2*pow(E_p,2)*pow(NUm,2) 
+	         - pow(E_p,2)*NUm*pow(vf,2) + 2*pow(E_p,2)*pow(NUm,2)*vf - 2*E_p*G_zp*NUm 
+			 + 4*E_p*G_zp*pow(NUm,2) - 4*E_p*G_zp*pow(NUm,2)*nu_p + 4*E_z*G_zp*NUm*pow(nu_pz,2) 
+			 - 2*E_p*G_zp*NUm*pow(vf,2) - 8*E_p*G_zp*pow(NUm,2)*vf + 2*E_p*E_z*nu_pz*pow(vf,2) 
+			 - 8*E_z*G_zp*pow(NUm,2)*pow(nu_pz,2) + 4*E_p*G_zp*pow(NUm,2)*pow(vf,2) 
+			 + 2*E_p*G_zp*NUm*nu_p + 4*E_p*G_zp*NUm*vf + 2*E_p*E_z*nu_pz*vf 
+			 - 6*E_p*E_z*NUm*nu_pz*vf - 4*E_p*G_zp*NUm*nu_p*vf 
+			 - 8*E_z*G_zp*pow(NUm,2)*pow(nu_pz,2)*pow(vf,2) - 2*E_p*E_z*NUm*nu_pz*pow(vf,2) 
+			 + 4*E_p*E_z*pow(NUm,2)*nu_pz*vf + 2*E_p*G_zp*NUm*nu_p*pow(vf,2) 
+			 + 8*E_p*G_zp*pow(NUm,2)*nu_p*vf - 8*E_z*G_zp*NUm*pow(nu_pz,2)*vf 
+			 - 4*E_p*G_zp*pow(NUm,2)*nu_p*pow(vf,2) + 4*E_z*G_zp*NUm*pow(nu_pz,2)*pow(vf,2) 
+			 + 16*E_z*G_zp*pow(NUm,2)*pow(nu_pz,2)*vf))/((2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p)
+			 *pow((Em + 2*G_zp + Em*vf - 2*G_zp*vf - 4*G_zp*pow(NUm,2) 
+			 - 2*Em*NUm - 2*G_zp*NUm + 2*G_zp*NUm*vf + 4*G_zp*pow(NUm,2)*vf),3));
+
+	  ddnc = (4*NUm*((NUm*(vf - 1))/(2*pow(NUm,2) + NUm - 1) 
+	         - (2*((NUm*(vf - 1)*(pow(E_p,2)*NUm + pow(E_p,2) + E_p*Em - E_p*Em*nu_p 
+			  - 2*E_z*Em*pow(nu_pz,2)))/(2*(2*NUm - 1)*pow((NUm + 1),2)
+			  *(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p)) 
+			  - (Em*NUm*(vf - 1))/(2*(2*NUm - 1)*pow((NUm + 1),2)) 
+			  + (2*E_p*E_z*nu_pz*vf*(NUm - 1))/((4*E_z*pow(nu_pz,2) - 2*E_p + 2*E_p*nu_p)
+			  *(2*pow(NUm,2) + NUm - 1)))*(2*pow(NUm,2) + NUm - 1))
+			  /(Em + 2*G_zp + Em*vf - 2*G_zp*vf - 4*G_zp*pow(NUm,2) 
+			  - 2*Em*NUm - 2*G_zp*NUm + 2*G_zp*NUm*vf + 4*G_zp*pow(NUm,2)*vf) 
+			  + (2*((Em*NUm*(vf - 1)*(pow(E_p,2)*NUm + pow(E_p,2) + E_p*Em - E_p*Em*nu_p 
+			  - 2*E_z*Em*pow(nu_pz,2)))/(2*(2*NUm - 1)*pow((NUm + 1),2)
+			  *(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p)) 
+			  + (2*E_p*E_z*Em*nu_pz*vf*(NUm - 1))/((4*E_z*pow(nu_pz,2) - 2*E_p + 2*E_p*nu_p)
+			  *(2*pow(NUm,2) + NUm - 1)))*(vf - 2*NUm + 1)*(2*pow(NUm,2) + NUm - 1))
+			  /pow((Em + 2*G_zp + Em*vf - 2*G_zp*vf - 4*G_zp*pow(NUm,2) - 2*Em*NUm 
+			  - 2*G_zp*NUm + 2*G_zp*NUm*vf + 4*G_zp*pow(NUm,2)*vf),2))
+			  *(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p))/(pow(E_p,2)*NUm - pow(E_p,2) 
+			  + 2*pow(E_p,2)*pow(NUm,2) + E_p*Em - E_p*Em*nu_p - 2*E_z*Em*pow(nu_pz,2)) 
+			  - (4*NUm*((2*((Em*NUm*(vf - 1)*(pow(E_p,2)*NUm + pow(E_p,2) + E_p*Em 
+			  - E_p*Em*nu_p - 2*E_z*Em*pow(nu_pz,2)))/(2*(2*NUm - 1)*pow((NUm + 1),2)
+			  *(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p)) + (2*E_p*E_z*Em*nu_pz*vf
+			  *(NUm - 1))/((4*E_z*pow(nu_pz,2) - 2*E_p + 2*E_p*nu_p)
+			  *(2*pow(NUm,2) + NUm - 1)))*(2*pow(NUm,2) + NUm - 1))
+			  /(Em + 2*G_zp + Em*vf - 2*G_zp*vf - 4*G_zp*pow(NUm,2) 
+			  - 2*Em*NUm - 2*G_zp*NUm + 2*G_zp*NUm*vf + 4*G_zp*pow(NUm,2)*vf) 
+			  - (Em*NUm*(vf - 1))/(2*pow(NUm,2) + NUm - 1) 
+			  + (E_p*E_z*nu_pz*vf)/(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p))
+			  *pow((2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p),2))/pow((pow(E_p,2)*NUm - pow(E_p,2) 
+			  + 2*pow(E_p,2)*pow(NUm,2) + E_p*Em - E_p*Em*nu_p - 2*E_z*Em*pow(nu_pz,2)),2) 
+			  - (4*((Em*NUm)/(2*pow(NUm,2) + NUm - 1) 
+			  - (E_p*E_z*nu_pz)/(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p))
+			  *((2*((Em*NUm*(vf - 1)*(pow(E_p,2)*NUm + pow(E_p,2) + E_p*Em - E_p*Em*nu_p 
+			  - 2*E_z*Em*pow(nu_pz,2)))/(2*(2*NUm - 1)*pow((NUm + 1),2)
+			  *(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p)) 
+			  + (2*E_p*E_z*Em*nu_pz*vf*(NUm - 1))
+			  /((4*E_z*pow(nu_pz,2) - 2*E_p + 2*E_p*nu_p)*(2*pow(NUm,2) + NUm - 1)))
+			  *(2*pow(NUm,2) + NUm - 1))/(Em + 2*G_zp + Em*vf - 2*G_zp*vf 
+			  - 4*G_zp*pow(NUm,2) - 2*Em*NUm - 2*G_zp*NUm + 2*G_zp*NUm*vf + 4*G_zp*pow(NUm,2)*vf) 
+			  - (Em*NUm*(vf - 1))/(2*pow(NUm,2) + NUm - 1) 
+			  + (E_p*E_z*nu_pz*vf)/(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p))
+			  *pow((2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p),3)*(2*pow(NUm,2) + NUm - 1))
+			  /pow((pow(E_p,2)*NUm - pow(E_p,2) + 2*pow(E_p,2)*pow(NUm,2) + E_p*Em - E_p*Em*nu_p - 2*E_z*Em*pow(nu_pz,2)),3) 
+			  + (4*((Em*NUm)/(2*pow(NUm,2) + NUm - 1) 
+			  - (E_p*E_z*nu_pz)/(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p))*((NUm*(vf - 1))
+			  /(2*pow(NUm,2) + NUm - 1) - (2*((NUm*(vf - 1)*(pow(E_p,2)*NUm + pow(E_p,2) + E_p*Em 
+			  - E_p*Em*nu_p - 2*E_z*Em*pow(nu_pz,2)))/(2*(2*NUm - 1)*pow((NUm + 1),2)
+			  *(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p)) 
+			  - (Em*NUm*(vf - 1))/(2*(2*NUm - 1)*pow((NUm + 1),2)) 
+			  + (2*E_p*E_z*nu_pz*vf*(NUm - 1))/((4*E_z*pow(nu_pz,2) - 2*E_p + 2*E_p*nu_p)
+			  *(2*pow(NUm,2) + NUm - 1)))*(2*pow(NUm,2) + NUm - 1))/(Em + 2*G_zp + Em*vf 
+			  - 2*G_zp*vf - 4*G_zp*pow(NUm,2) - 2*Em*NUm - 2*G_zp*NUm + 2*G_zp*NUm*vf 
+			  + 4*G_zp*pow(NUm,2)*vf) + (2*((Em*NUm*(vf - 1)*(pow(E_p,2)*NUm + pow(E_p,2) + E_p*Em 
+			  - E_p*Em*nu_p - 2*E_z*Em*pow(nu_pz,2)))/(2*(2*NUm - 1)*pow((NUm + 1),2)
+			  *(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p)) + (2*E_p*E_z*Em*nu_pz*vf*(NUm - 1))
+			  /((4*E_z*pow(nu_pz,2) - 2*E_p + 2*E_p*nu_p)*(2*pow(NUm,2) + NUm - 1)))
+			  *(vf - 2*NUm + 1)*(2*pow(NUm,2) + NUm - 1))/pow((Em + 2*G_zp + Em*vf 
+			  - 2*G_zp*vf - 4*G_zp*pow(NUm,2) - 2*Em*NUm - 2*G_zp*NUm 
+			  + 2*G_zp*NUm*vf + 4*G_zp*pow(NUm,2)*vf),2))*pow((2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p),2)
+			  *(2*pow(NUm,2) + NUm - 1))/pow((pow(E_p,2)*NUm - pow(E_p,2) + 2*pow(E_p,2)*pow(NUm,2) + E_p*Em 
+			  - E_p*Em*nu_p - 2*E_z*Em*pow(nu_pz,2)),2) 
+			  - (8*G_zp*((Em*NUm)/(2*pow(NUm,2) + NUm - 1) 
+			  - (E_p*E_z*nu_pz)/(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p))*(vf - 1)
+			  *pow((2*pow(NUm,2) + NUm - 1),2)*(pow(E_p,2)*NUm - 2*pow(E_p,2)*pow(NUm,2) - pow(E_p,2)*NUm*pow(vf,2) 
+			  + 2*pow(E_p,2)*pow(NUm,2)*vf - 2*E_p*G_zp*NUm + 4*E_p*G_zp*pow(NUm,2) 
+			  - 4*E_p*G_zp*pow(NUm,2)*nu_p + 4*E_z*G_zp*NUm*pow(nu_pz,2) 
+			  - 2*E_p*G_zp*NUm*pow(vf,2) - 8*E_p*G_zp*pow(NUm,2)*vf + 2*E_p*E_z*nu_pz*pow(vf,2) 
+			  - 8*E_z*G_zp*pow(NUm,2)*pow(nu_pz,2) + 4*E_p*G_zp*pow(NUm,2)*pow(vf,2) 
+			  + 2*E_p*G_zp*NUm*nu_p + 4*E_p*G_zp*NUm*vf + 2*E_p*E_z*nu_pz*vf 
+			  - 6*E_p*E_z*NUm*nu_pz*vf - 4*E_p*G_zp*NUm*nu_p*vf 
+			  - 8*E_z*G_zp*pow(NUm,2)*pow(nu_pz,2)*pow(vf,2) - 2*E_p*E_z*NUm*nu_pz*pow(vf,2) 
+			  + 4*E_p*E_z*pow(NUm,2)*nu_pz*vf + 2*E_p*G_zp*NUm*nu_p*pow(vf,2) 
+			  + 8*E_p*G_zp*pow(NUm,2)*nu_p*vf - 8*E_z*G_zp*NUm*pow(nu_pz,2)*vf 
+			  - 4*E_p*G_zp*pow(NUm,2)*nu_p*pow(vf,2) + 4*E_z*G_zp*NUm*pow(nu_pz,2)*pow(vf,2) 
+			  + 16*E_z*G_zp*pow(NUm,2)*pow(nu_pz,2)*vf))/((pow(E_p,2)*NUm - pow(E_p,2) 
+			  + 2*pow(E_p,2)*pow(NUm,2) + E_p*Em - E_p*Em*nu_p - 2*E_z*Em*pow(nu_pz,2))
+			  *pow((Em + 2*G_zp + Em*vf - 2*G_zp*vf - 4*G_zp*pow(NUm,2) 
+			  - 2*Em*NUm - 2*G_zp*NUm + 2*G_zp*NUm*vf + 4*G_zp*pow(NUm,2)*vf),3));
+	  
+	  PetscFunctionReturn(0);
+    }	
+    /***************************************************************************
+     *
+     * With repect to Poisson's ratio- matrix (isotropic material)
+     * 
+     **************************************************************************/
+	virtual PetscErrorCode D_rs_Poisson(double nu_p, double nu_pz, double E_p, double E_z, double G_zp,
+	                                  double Em, double NUm, double vf){
+		
+	  PetscFunctionBegin;
+      
+	  ddkc = (Em*(9*pow(E_p,2)*NUm + pow(E_p,2)*vf + 3*pow(E_p,2) + 18*pow(E_p,2)*pow(NUm,2) 
+	        + 12*pow(E_p,2)*pow(NUm,3) + 3*E_p*Em + 6*pow(E_p,2)*pow(NUm,2)*vf 
+			+ 4*pow(E_p,2)*pow(NUm,3)*vf - 8*pow(E_p,2)*pow(NUm,4)*vf - 3*E_p*Em*nu_p 
+			- 3*E_p*Em*vf + 24*E_p*Em*pow(NUm,2) - 6*E_z*Em*pow(nu_pz,2) 
+			- 5*pow(E_p,2)*NUm*vf - 24*E_p*Em*pow(NUm,2)*nu_p - 24*E_p*Em*pow(NUm,2)*vf 
+			+ 6*E_z*Em*pow(nu_pz,2)*vf - 48*E_z*Em*pow(NUm,2)*pow(nu_pz,2) 
+			+ 3*E_p*Em*nu_p*vf + 24*E_p*Em*pow(NUm,2)*nu_p*vf 
+			+ 48*E_z*Em*pow(NUm,2)*pow(nu_pz,2)*vf))/(2*pow((2*NUm - 1),3)*pow((NUm + 1),4)
+			*(((vf - 1)*(pow(E_p,2)*NUm + pow(E_p,2) + E_p*Em - E_p*Em*nu_p - 2*E_z*Em*pow(nu_pz,2)))
+			/(2*(NUm + 1)*(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p)) 
+			+ (Em*vf*(NUm - 1))/(2*pow(NUm,2) + NUm - 1))
+			*(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p)) + (pow(Em,2)*(3*vf - 6*NUm 
+			+ 6*NUm*vf + 12*pow(NUm,2)*vf + 12*pow(NUm,2) - 8*pow(NUm,3) + 1)
+			*(pow(E_p,2)*NUm + pow(E_p,2)*vf + pow(E_p,2) + E_p*Em - 2*pow(E_p,2)*pow(NUm,2)*vf 
+			- E_p*Em*nu_p - E_p*Em*vf - 2*E_z*Em*pow(nu_pz,2) - pow(E_p,2)*NUm*vf 
+			+ 2*E_z*Em*pow(nu_pz,2)*vf + E_p*Em*nu_p*vf))/(4*(2*NUm - 1)
+			*pow((NUm + 1),2)*pow((((vf - 1)*(pow(E_p,2)*NUm + pow(E_p,2) + E_p*Em 
+			- E_p*Em*nu_p - 2*E_z*Em*pow(nu_pz,2)))/(2*(NUm + 1)
+			*(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p)) 
+			+ (Em*vf*(NUm - 1))/(2*pow(NUm,2) + NUm - 1)),2)*(2*E_z*pow(nu_pz,2) 
+			- E_p + E_p*nu_p)*pow((2*pow(NUm,2) + NUm - 1),3)) 
+			+ (pow(Em,3)*pow((4*NUm + vf + 4*NUm*vf - 4*pow(NUm,2) - 1),2)
+			*(pow(E_p,2)*NUm + pow(E_p,2)*vf + pow(E_p,2) + E_p*Em - 2*pow(E_p,2)*pow(NUm,2)*vf 
+			- E_p*Em*nu_p - E_p*Em*vf - 2*E_z*Em*pow(nu_pz,2) - pow(E_p,2)*NUm*vf 
+			+ 2*E_z*Em*pow(nu_pz,2)*vf + E_p*Em*nu_p*vf))/(8*(2*NUm - 1)*pow((NUm + 1),2)
+			*pow((((vf - 1)*(pow(E_p,2)*NUm + pow(E_p,2) + E_p*Em - E_p*Em*nu_p 
+			- 2*E_z*Em*pow(nu_pz,2)))/(2*(NUm + 1)*(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p)) 
+			+ (Em*vf*(NUm - 1))/(2*pow(NUm,2) + NUm - 1)),3)
+			*(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p)*pow((2*pow(NUm,2) + NUm - 1),4)) 
+			+ (pow(Em,2)*(4*NUm + vf + 4*NUm*vf - 4*pow(NUm,2) - 1)*(5*pow(E_p,2)*NUm 
+			- pow(E_p,2)*vf + pow(E_p,2) + 4*pow(E_p,2)*pow(NUm,2) - 4*pow(E_p,2)*pow(NUm,3)*vf 
+			+ 6*E_p*Em*NUm + 3*pow(E_p,2)*NUm*vf - 12*E_z*Em*NUm*pow(nu_pz,2) 
+			- 6*E_p*Em*NUm*nu_p - 6*E_p*Em*NUm*vf + 6*E_p*Em*NUm*nu_p*vf 
+			+ 12*E_z*Em*NUm*pow(nu_pz,2)*vf))/(4*pow((2*NUm - 1),2)*pow((NUm + 1),3)
+			*pow((((vf - 1)*(pow(E_p,2)*NUm + pow(E_p,2) + E_p*Em - E_p*Em*nu_p 
+			- 2*E_z*Em*pow(nu_pz,2)))/(2*(NUm + 1)*(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p)) 
+			+ (Em*vf*(NUm - 1))/(2*pow(NUm,2) + NUm - 1)),2)
+			*(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p)*pow((2*pow(NUm,2) + NUm - 1),2));	
+	  ddmc = -(Em*(vf - 1)*(64*pow(E_p,3)*pow(NUm,6)*vf - 64*pow(E_p,3)*pow(NUm,6) 
+	        - 48*pow(E_p,3)*pow(NUm,5)*pow(vf,2)+ 96*pow(E_p,3)*pow(NUm,5)*vf - 48*pow(E_p,3)*pow(NUm,5) 
+			- 156*pow(E_p,3)*pow(NUm,4)*pow(vf,2)+ 24*pow(E_p,3)*pow(NUm,4)*vf + 132*pow(E_p,3)*pow(NUm,4) 
+			- 193*pow(E_p,3)*pow(NUm,3)*pow(vf,2)+ 122*pow(E_p,3)*pow(NUm,3)*vf + 71*pow(E_p,3)*pow(NUm,3) 
+			- 123*pow(E_p,3)*pow(NUm,2)*pow(vf,2)+ 222*pow(E_p,3)*pow(NUm,2)*vf - 99*pow(E_p,3)*pow(NUm,2) 
+			- 51*pow(E_p,3)*NUm*pow(vf,2)+ 78*pow(E_p,3)*NUm*vf - 27*pow(E_p,3)*NUm 
+			- 13*pow(E_p,3)*pow(vf,2)- 14*pow(E_p,3)*vf + 27*pow(E_p,3) 
+			+ 144*pow(E_p,2)*Em*pow(NUm,4)*nu_p*pow(vf,2)- 192*pow(E_p,2)*Em*pow(NUm,4)*nu_p*vf 
+			+ 48*pow(E_p,2)*Em*pow(NUm,4)*nu_p + 144*pow(E_p,2)*Em*pow(NUm,4)*pow(vf,2)
+			- 192*pow(E_p,2)*Em*pow(NUm,4)*vf + 48*pow(E_p,2)*Em*pow(NUm,4) 
+			+ 324*pow(E_p,2)*Em*pow(NUm,3)*nu_p*pow(vf,2)- 316*pow(E_p,2)*Em*pow(NUm,3)*nu_p*vf 
+			+ 24*pow(E_p,2)*Em*pow(NUm,3)*nu_p + 324*pow(E_p,2)*Em*pow(NUm,3)*pow(vf,2)
+			- 316*pow(E_p,2)*Em*pow(NUm,3)*vf + 24*pow(E_p,2)*Em*pow(NUm,3) 
+			+ 255*pow(E_p,2)*Em*pow(NUm,2)*nu_p*pow(vf,2)- 90*pow(E_p,2)*Em*pow(NUm,2)*nu_p*vf 
+			- 69*pow(E_p,2)*Em*pow(NUm,2)*nu_p + 255*pow(E_p,2)*Em*pow(NUm,2)*pow(vf,2)
+			- 90*pow(E_p,2)*Em*pow(NUm,2)*vf - 69*pow(E_p,2)*Em*pow(NUm,2) 
+			+ 114*pow(E_p,2)*Em*NUm*nu_p*pow(vf,2)- 18*pow(E_p,2)*Em*NUm*nu_p 
+			+ 114*pow(E_p,2)*Em*NUm*pow(vf,2)- 18*pow(E_p,2)*Em*NUm 
+			+ 39*pow(E_p,2)*Em*nu_p*pow(vf,2)- 34*pow(E_p,2)*Em*nu_p*vf 
+			+ 27*pow(E_p,2)*Em*nu_p + 39*pow(E_p,2)*Em*pow(vf,2)
+			- 34*pow(E_p,2)*Em*vf + 27*pow(E_p,2)*Em 
+			- 144*E_p*pow(Em,2)*pow(NUm,3)*pow(nu_p,2)*pow(vf,2)+ 112*E_p*pow(Em,2)*pow(NUm,3)*pow(nu_p,2)*vf 
+			- 288*E_p*pow(Em,2)*pow(NUm,3)*nu_p*pow(vf,2)+ 224*E_p*pow(Em,2)*pow(NUm,3)*nu_p*vf 
+			- 144*E_p*pow(Em,2)*pow(NUm,3)*pow(vf,2)+ 112*E_p*pow(Em,2)*pow(NUm,3)*vf 
+			- 180*E_p*pow(Em,2)*pow(NUm,2)*pow(nu_p,2)*pow(vf,2)+ 96*E_p*pow(Em,2)*pow(NUm,2)*pow(nu_p,2)*vf 
+			- 12*E_p*pow(Em,2)*pow(NUm,2)*pow(nu_p,2) - 360*E_p*pow(Em,2)*pow(NUm,2)*nu_p*pow(vf,2)
+			+ 192*E_p*pow(Em,2)*pow(NUm,2)*nu_p*vf - 24*E_p*pow(Em,2)*pow(NUm,2)*nu_p 
+			- 180*E_p*pow(Em,2)*pow(NUm,2)*pow(vf,2)+ 96*E_p*pow(Em,2)*pow(NUm,2)*vf 
+			- 12*E_p*pow(Em,2)*pow(NUm,2) - 75*E_p*pow(Em,2)*NUm*pow(nu_p,2)*pow(vf,2)
+			- 18*E_p*pow(Em,2)*NUm*pow(nu_p,2)*vf - 3*E_p*pow(Em,2)*NUm*pow(nu_p,2) 
+			- 150*E_p*pow(Em,2)*NUm*nu_p*pow(vf,2)- 36*E_p*pow(Em,2)*NUm*nu_p*vf 
+			- 6*E_p*pow(Em,2)*NUm*nu_p - 75*E_p*pow(Em,2)*NUm*pow(vf,2)- 18*E_p*pow(Em,2)*NUm*vf 
+			- 3*E_p*pow(Em,2)*NUm - 39*E_p*pow(Em,2)*pow(nu_p,2)*pow(vf,2)- 2*E_p*pow(Em,2)*pow(nu_p,2)*vf 
+			+ 9*E_p*pow(Em,2)*pow(nu_p,2) - 78*E_p*pow(Em,2)*nu_p*pow(vf,2)- 4*E_p*pow(Em,2)*nu_p*vf 
+			+ 18*E_p*pow(Em,2)*nu_p - 39*E_p*pow(Em,2)*pow(vf,2)- 2*E_p*pow(Em,2)*vf 
+			+ 9*E_p*pow(Em,2) + 48*pow(Em,3)*pow(NUm,2)*pow(nu_p,3)*pow(vf,2)
+			+ 144*pow(Em,3)*pow(NUm,2)*pow(nu_p,2)*pow(vf,2)+ 144*pow(Em,3)*pow(NUm,2)*nu_p*pow(vf,2)
+			+ 48*pow(Em,3)*pow(NUm,2)*pow(vf,2)+ 12*pow(Em,3)*NUm*pow(nu_p,3)*pow(vf,2)
+			- 12*pow(Em,3)*NUm*pow(nu_p,3)*vf + 36*pow(Em,3)*NUm*pow(nu_p,2)*pow(vf,2)
+			- 36*pow(Em,3)*NUm*pow(nu_p,2)*vf + 36*pow(Em,3)*NUm*nu_p*pow(vf,2)
+			- 36*pow(Em,3)*NUm*nu_p*vf + 12*pow(Em,3)*NUm*pow(vf,2)- 12*pow(Em,3)*NUm*vf 
+			+ 13*pow(Em,3)*pow(nu_p,3)*pow(vf,2)+ 2*pow(Em,3)*pow(nu_p,3)*vf + pow(Em,3)*pow(nu_p,3) 
+			+ 39*pow(Em,3)*pow(nu_p,2)*pow(vf,2)+ 6*pow(Em,3)*pow(nu_p,2)*vf + 3*pow(Em,3)*pow(nu_p,2) 
+			+ 39*pow(Em,3)*nu_p*pow(vf,2)+ 6*pow(Em,3)*nu_p*vf + 3*pow(Em,3)*nu_p + 13*pow(Em,3)*pow(vf,2)
+			+ 2*pow(Em,3)*vf + pow(Em,3)))/(pow((NUm + 1),3)*pow((3*E_p + Em + Em*nu_p 
+			- 3*E_p*vf + 3*Em*vf - 4*E_p*pow(NUm,2) - E_p*NUm + E_p*NUm*vf 
+			- 4*Em*NUm*vf + 3*Em*nu_p*vf + 4*E_p*pow(NUm,2)*vf 
+			- 4*Em*NUm*nu_p*vf),3));
+	  ddpc = -(Em*(vf - 1)*(pow(Em,3)*pow(vf,2)+ 2*pow(Em,3)*vf + pow(Em,3) 
+	         - 6*pow(Em,2)*G_zp*NUm*pow(vf,2)+ 6*pow(Em,2)*G_zp*NUm 
+			  - 6*pow(Em,2)*G_zp*pow(vf,2)+ 6*pow(Em,2)*G_zp + 12*Em*pow(G_zp,2)*pow(NUm,2)*pow(vf,2)
+			  - 24*Em*pow(G_zp,2)*pow(NUm,2)*vf + 12*Em*pow(G_zp,2)*pow(NUm,2) + 24*Em*pow(G_zp,2)*NUm*pow(vf,2)
+			  - 48*Em*pow(G_zp,2)*NUm*vf + 24*Em*pow(G_zp,2)*NUm + 12*Em*pow(G_zp,2)*pow(vf,2)
+			  - 24*Em*pow(G_zp,2)*vf + 12*Em*pow(G_zp,2) - 8*pow(G_zp,3)*pow(NUm,3)*pow(vf,2)
+			  + 8*pow(G_zp,3)*pow(NUm,3) - 24*pow(G_zp,3)*pow(NUm,2)*pow(vf,2)+ 24*pow(G_zp,3)*pow(NUm,2) 
+			  - 24*pow(G_zp,3)*NUm*pow(vf,2)+ 24*pow(G_zp,3)*NUm - 8*pow(G_zp,3)*pow(vf,2)+ 8*pow(G_zp,3)))
+			  /(pow((NUm + 1),3)*pow((Em + 2*G_zp + Em*vf - 2*G_zp*vf + 2*G_zp*NUm 
+			  - 2*G_zp*NUm*vf),3));
+	  ddlc = (4*pow(Em,2)*((Em*NUm*(vf - 1)*(pow(E_p,2)*NUm + pow(E_p,2) + E_p*Em 
+	         - E_p*Em*nu_p - 2*E_z*Em*pow(nu_pz,2)))/(2*(2*NUm - 1)*pow((NUm + 1),2)
+			 *(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p)) 
+			 + (2*E_p*E_z*Em*nu_pz*vf*(NUm - 1))/((4*E_z*pow(nu_pz,2) - 2*E_p + 2*E_p*nu_p)
+			 *(2*pow(NUm,2) + NUm - 1)))*pow((4*NUm + vf + 4*NUm*vf - 4*pow(NUm,2) - 1),2))
+			 /((2*pow(NUm,2) + NUm - 1)*pow((Em + 2*G_zp + Em*vf - 2*G_zp*vf 
+			 - 4*G_zp*pow(NUm,2) - 2*Em*NUm - 2*G_zp*NUm + 2*G_zp*NUm*vf 
+			 + 4*G_zp*pow(NUm,2)*vf),3)) - (4*Em*((Em*NUm*(vf - 1)
+			 *(pow(E_p,2)*NUm + pow(E_p,2) + E_p*Em - E_p*Em*nu_p 
+			 - 2*E_z*Em*pow(nu_pz,2)))/(2*(2*NUm - 1)*pow((NUm + 1),3)
+			 *(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p)) 
+			 - (Em*(vf - 1)*(pow(E_p,2)*NUm + pow(E_p,2) + E_p*Em - E_p*Em*nu_p 
+			 - 2*E_z*Em*pow(nu_pz,2)))/(2*(2*NUm - 1)*pow((NUm + 1),2)*(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p)) 
+			 - (pow(Em,2)*NUm*(vf - 1))/(2*(2*NUm - 1)*pow((NUm + 1),3)) 
+			 + (Em*NUm*(vf - 1)*(pow(E_p,2)*NUm + pow(E_p,2) + E_p*Em - E_p*Em*nu_p 
+			 - 2*E_z*Em*pow(nu_pz,2)))/(pow((2*NUm - 1),2)*pow((NUm + 1),2)
+			 *(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p)) 
+			 + (4*E_p*E_z*Em*NUm*nu_pz*vf*(NUm - 2))/((4*E_z*pow(nu_pz,2) - 2*E_p + 2*E_p*nu_p)
+			 *pow((NUm + 2*pow(NUm,2) - 1),2)))*(4*NUm + vf + 4*NUm*vf - 4*pow(NUm,2) - 1))
+			 /pow((Em + 2*G_zp + Em*vf - 2*G_zp*vf - 4*G_zp*pow(NUm,2) - 2*Em*NUm 
+			 - 2*G_zp*NUm + 2*G_zp*NUm*vf + 4*G_zp*pow(NUm,2)*vf),2) 
+			 - (4*Em*((Em*NUm*(vf - 1)*(pow(E_p,2)*NUm + pow(E_p,2) + E_p*Em 
+			 - E_p*Em*nu_p - 2*E_z*Em*pow(nu_pz,2)))/(2*(2*NUm - 1)*pow((NUm + 1),2)
+			 *(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p)) 
+			 + (2*E_p*E_z*Em*nu_pz*vf*(NUm - 1))
+			 /((4*E_z*pow(nu_pz,2) - 2*E_p + 2*E_p*nu_p)*(2*pow(NUm,2) + NUm - 1)))
+			 *(3*vf - 6*NUm + 6*NUm*vf + 12*pow(NUm,2)*vf + 12*pow(NUm,2) - 8*pow(NUm,3) + 1))
+			 /((2*pow(NUm,2) + NUm - 1)*pow((Em + 2*G_zp + Em*vf - 2*G_zp*vf 
+			 - 4*G_zp*pow(NUm,2) - 2*Em*NUm - 2*G_zp*NUm + 2*G_zp*NUm*vf + 4*G_zp*pow(NUm,2)*vf),2)) 
+			 - (2*Em*(2*pow(NUm,2) + NUm - 1)*(7*pow(E_p,2)*NUm - pow(E_p,2)*vf + pow(E_p,2) 
+			 + 6*pow(E_p,2)*pow(NUm,2) + 4*pow(E_p,2)*pow(NUm,3) + 4*pow(E_p,2)*pow(NUm,4) 
+			 - 6*pow(E_p,2)*pow(NUm,2)*vf - 4*pow(E_p,2)*pow(NUm,3)*vf - 4*pow(E_p,2)*pow(NUm,4)*vf 
+			 + 9*E_p*Em*NUm - 6*E_p*Em*pow(NUm,2) + 12*E_p*Em*pow(NUm,3) 
+			 - 7*pow(E_p,2)*NUm*vf + 6*E_p*Em*pow(NUm,2)*nu_p - 12*E_p*Em*pow(NUm,3)*nu_p 
+			 - 18*E_z*Em*NUm*pow(nu_pz,2) + 6*E_p*Em*pow(NUm,2)*vf - 12*E_p*Em*pow(NUm,3)*vf 
+			 + 12*E_z*Em*pow(NUm,2)*pow(nu_pz,2) - 24*E_z*Em*pow(NUm,3)*pow(nu_pz,2) - 9*E_p*Em*NUm*nu_p 
+			 - 9*E_p*Em*NUm*vf + 4*E_p*E_z*nu_pz*vf + 4*E_p*E_z*NUm*nu_pz*vf 
+			 + 9*E_p*Em*NUm*nu_p*vf + 24*E_p*E_z*pow(NUm,2)*nu_pz*vf 
+			 + 16*E_p*E_z*pow(NUm,3)*nu_pz*vf - 8*E_p*E_z*pow(NUm,4)*nu_pz*vf 
+			 - 6*E_p*Em*pow(NUm,2)*nu_p*vf + 12*E_p*Em*pow(NUm,3)*nu_p*vf 
+			 + 18*E_z*Em*NUm*pow(nu_pz,2)*vf - 12*E_z*Em*pow(NUm,2)*pow(nu_pz,2)*vf 
+			 + 24*E_z*Em*pow(NUm,3)*pow(nu_pz,2)*vf))/(pow((2*NUm - 1),3)*pow((NUm + 1),4)
+			 *(2*E_z*pow(nu_pz,2) - E_p + E_p*nu_p)*(Em + 2*G_zp + Em*vf 
+			 - 2*G_zp*vf - 4*G_zp*pow(NUm,2) - 2*Em*NUm - 2*G_zp*NUm 
+			 + 2*G_zp*NUm*vf + 4*G_zp*pow(NUm,2)*vf));
+	  ddnc = (4*Em*(NUm - 1)*(vf - 1))/pow((NUm + 2*pow(NUm,2) - 1),2) 
+	        - (8*((Em*NUm)/(NUm + 2*pow(NUm,2) - 1) 
+			 - (E_p*E_z*nu_pz)/(E_p*nu_p - E_p + 2*E_z*pow(nu_pz,2)))
+			 *((2*((Em*NUm*(vf - 1)*(pow(E_p,2)*NUm + pow(E_p,2) + E_p*Em 
+			 - E_p*Em*nu_p - 2*E_z*Em*pow(nu_pz,2)))/(2*(2*NUm - 1)*pow((NUm + 1),2)
+			 *(E_p*nu_p - E_p + 2*E_z*pow(nu_pz,2))) 
+			 + (2*E_p*E_z*Em*nu_pz*vf*(NUm - 1))/((2*E_p*nu_p - 2*E_p + 4*E_z*pow(nu_pz,2))
+			 *(NUm + 2*pow(NUm,2) - 1)))*(NUm + 2*pow(NUm,2) - 1))
+			 /(Em + 2*G_zp + Em*vf - 2*G_zp*vf - 4*G_zp*pow(NUm,2) 
+			 - 2*Em*NUm - 2*G_zp*NUm + 2*G_zp*NUm*vf + 4*G_zp*pow(NUm,2)*vf) 
+			 - (Em*NUm*(vf - 1))/(NUm + 2*pow(NUm,2) - 1) 
+			 + (E_p*E_z*nu_pz*vf)/(E_p*nu_p - E_p + 2*E_z*pow(nu_pz,2)))
+			 *(E_p*nu_p - E_p + 2*E_z*pow(nu_pz,2)))/(pow(E_p,2)*NUm - pow(E_p,2) 
+			 + 2*pow(E_p,2)*pow(NUm,2) + E_p*Em - E_p*Em*nu_p - 2*E_z*Em*pow(nu_pz,2)) 
+			 + (2*Em*(4*NUm + 1)*(vf - 1))/pow((NUm + 2*pow(NUm,2) - 1),2) 
+			 - (2*((Em*NUm)/(NUm + 2*pow(NUm,2) - 1) 
+			 - (E_p*E_z*nu_pz)/(E_p*nu_p - E_p + 2*E_z*pow(nu_pz,2)))
+			 *(E_p*nu_p - E_p + 2*E_z*pow(nu_pz,2))*(NUm + 2*pow(NUm,2) - 1)
+			 *((8*((Em*NUm*(vf - 1)*(pow(E_p,2)*NUm + pow(E_p,2) + E_p*Em 
+			 - E_p*Em*nu_p - 2*E_z*Em*pow(nu_pz,2)))/(2*(2*NUm - 1)*pow((NUm + 1),2)
+			 *(E_p*nu_p - E_p + 2*E_z*pow(nu_pz,2))) + (2*E_p*E_z*Em*nu_pz*vf*(NUm - 1))
+			 /((2*E_p*nu_p - 2*E_p + 4*E_z*pow(nu_pz,2))*(NUm + 2*pow(NUm,2) - 1))))
+			 /(Em + 2*G_zp + Em*vf - 2*G_zp*vf - 4*G_zp*pow(NUm,2) - 2*Em*NUm 
+			 - 2*G_zp*NUm + 2*G_zp*NUm*vf + 4*G_zp*pow(NUm,2)*vf) 
+			 + (4*(4*NUm + 1)*((Em*NUm*(vf - 1)*(pow(E_p,2)*NUm + pow(E_p,2) + E_p*Em 
+			 - E_p*Em*nu_p - 2*E_z*Em*pow(nu_pz,2)))/(2*(2*NUm - 1)*pow((NUm + 1),2)
+			 *(E_p*nu_p - E_p + 2*E_z*pow(nu_pz,2))) + (2*E_p*E_z*Em*nu_pz*vf*(NUm - 1))
+			 /((2*E_p*nu_p - 2*E_p + 4*E_z*pow(nu_pz,2))*(NUm + 2*pow(NUm,2) - 1)))
+			 *(2*Em + 2*G_zp - 2*G_zp*vf + 8*G_zp*NUm - 8*G_zp*NUm*vf))
+			 /pow((Em + 2*G_zp + Em*vf - 2*G_zp*vf - 4*G_zp*pow(NUm,2) 
+			 - 2*Em*NUm - 2*G_zp*NUm + 2*G_zp*NUm*vf + 4*G_zp*pow(NUm,2)*vf),2) 
+			 + (2*Em*(4*NUm + 1)*(vf - 1))/pow((NUm + 2*pow(NUm,2) - 1),2) 
+			 + (16*((Em*NUm*(vf - 1)*(pow(E_p,2)*NUm + pow(E_p,2) + E_p*Em 
+			 - E_p*Em*nu_p - 2*E_z*Em*pow(nu_pz,2)))/(2*(2*NUm - 1)*pow((NUm + 1),2)
+			 *(E_p*nu_p - E_p + 2*E_z*pow(nu_pz,2))) 
+			 + (2*E_p*E_z*Em*nu_pz*vf*(NUm - 1))/((2*E_p*nu_p - 2*E_p 
+			 + 4*E_z*pow(nu_pz,2))*(NUm + 2*pow(NUm,2) - 1)))*(NUm + 2*pow(NUm,2) - 1)
+			 *pow((Em + G_zp - G_zp*vf + 4*G_zp*NUm - 4*G_zp*NUm*vf),2))
+			 /pow((Em + 2*G_zp + Em*vf - 2*G_zp*vf - 4*G_zp*pow(NUm,2) 
+			 - 2*Em*NUm - 2*G_zp*NUm + 2*G_zp*NUm*vf + 4*G_zp*pow(NUm,2)*vf),3) 
+			 + (4*Em*NUm*(vf - 1))/pow((NUm + 2*pow(NUm,2) - 1),2) 
+			 - (16*G_zp*((Em*NUm*(vf - 1)*(pow(E_p,2)*NUm + pow(E_p,2) 
+			 + E_p*Em - E_p*Em*nu_p - 2*E_z*Em*pow(nu_pz,2)))/(2*(2*NUm - 1)
+			 *pow((NUm + 1),2)*(E_p*nu_p - E_p + 2*E_z*pow(nu_pz,2))) 
+			 + (2*E_p*E_z*Em*nu_pz*vf*(NUm - 1))/((2*E_p*nu_p - 2*E_p 
+			 + 4*E_z*pow(nu_pz,2))*(NUm + 2*pow(NUm,2) - 1)))*(vf - 1)
+			 *(NUm + 2*pow(NUm,2) - 1))/pow((Em + 2*G_zp + Em*vf - 2*G_zp*vf 
+			 - 4*G_zp*pow(NUm,2) - 2*Em*NUm - 2*G_zp*NUm + 2*G_zp*NUm*vf 
+			 + 4*G_zp*pow(NUm,2)*vf),2) - (2*Em*NUm*pow((4*NUm + 1),2)*(vf - 1))
+			 /pow((NUm + 2*pow(NUm,2) - 1),3) - (2*Em*(NUm + 2*pow(NUm,2) - 1)
+			 *(7*pow(E_p,2)*NUm - pow(E_p,2)*vf + pow(E_p,2) + 6*pow(E_p,2)*pow(NUm,2) 
+			 + 4*pow(E_p,2)*pow(NUm,3) + 4*pow(E_p,2)*pow(NUm,4) - 6*pow(E_p,2)*pow(NUm,2)*vf 
+			 - 4*pow(E_p,2)*pow(NUm,3)*vf - 4*pow(E_p,2)*pow(NUm,4)*vf + 9*E_p*Em*NUm 
+			 - 6*E_p*Em*pow(NUm,2) + 12*E_p*Em*pow(NUm,3) - 7*pow(E_p,2)*NUm*vf 
+			 + 6*E_p*Em*pow(NUm,2)*nu_p - 12*E_p*Em*pow(NUm,3)*nu_p 
+			 - 18*E_z*Em*NUm*pow(nu_pz,2) + 6*E_p*Em*pow(NUm,2)*vf 
+			 - 12*E_p*Em*pow(NUm,3)*vf + 12*E_z*Em*pow(NUm,2)*pow(nu_pz,2) 
+			 - 24*E_z*Em*pow(NUm,3)*pow(nu_pz,2) - 9*E_p*Em*NUm*nu_p 
+			 - 9*E_p*Em*NUm*vf + 4*E_p*E_z*nu_pz*vf + 4*E_p*E_z*NUm*nu_pz*vf 
+			 + 9*E_p*Em*NUm*nu_p*vf + 24*E_p*E_z*pow(NUm,2)*nu_pz*vf 
+			 + 16*E_p*E_z*pow(NUm,3)*nu_pz*vf - 8*E_p*E_z*pow(NUm,4)*nu_pz*vf 
+			 - 6*E_p*Em*pow(NUm,2)*nu_p*vf + 12*E_p*Em*pow(NUm,3)*nu_p*vf 
+			 + 18*E_z*Em*NUm*pow(nu_pz,2)*vf - 12*E_z*Em*pow(NUm,2)*pow(nu_pz,2)*vf 
+			 + 24*E_z*Em*pow(NUm,3)*pow(nu_pz,2)*vf))/(pow((2*NUm - 1),3)*pow((NUm + 1),4)
+			 *(E_p*nu_p - E_p + 2*E_z*pow(nu_pz,2))*(Em + 2*G_zp + Em*vf 
+			 - 2*G_zp*vf - 4*G_zp*pow(NUm,2) - 2*Em*NUm - 2*G_zp*NUm 
+			 + 2*G_zp*NUm*vf + 4*G_zp*pow(NUm,2)*vf)) + (2*Em*(4*NUm + 1)
+			 *(pow(E_p,2)*NUm - pow(E_p,2)*vf + pow(E_p,2) + 2*pow(E_p,2)*pow(NUm,2) + 2*pow(E_p,2)*pow(NUm,3) 
+			 + E_p*Em - 2*pow(E_p,2)*pow(NUm,2)*vf - 2*pow(E_p,2)*pow(NUm,3)*vf - E_p*Em*NUm 
+			 - E_p*Em*nu_p - E_p*Em*vf + 4*E_p*Em*pow(NUm,2) - 2*E_z*Em*pow(nu_pz,2) 
+			 - pow(E_p,2)*NUm*vf - 4*E_p*Em*pow(NUm,2)*nu_p + 2*E_z*Em*NUm*pow(nu_pz,2) 
+			 - 4*E_p*Em*pow(NUm,2)*vf + 2*E_z*Em*pow(nu_pz,2)*vf 
+			 - 8*E_z*Em*pow(NUm,2)*pow(nu_pz,2) + E_p*Em*NUm*nu_p 
+			 + E_p*Em*NUm*vf + E_p*Em*nu_p*vf + 8*E_p*E_z*NUm*nu_pz*vf 
+			 - E_p*Em*NUm*nu_p*vf + 4*E_p*E_z*pow(NUm,2)*nu_pz*vf 
+			 - 4*E_p*E_z*pow(NUm,3)*nu_pz*vf + 4*E_p*Em*pow(NUm,2)*nu_p*vf 
+			 - 2*E_z*Em*NUm*pow(nu_pz,2)*vf + 8*E_z*Em*pow(NUm,2)*pow(nu_pz,2)*vf))
+			 /(pow((2*NUm - 1),2)*pow((NUm + 1),3)*(E_p*nu_p - E_p + 2*E_z*pow(nu_pz,2))
+			 *(Em + 2*G_zp + Em*vf - 2*G_zp*vf - 4*G_zp*pow(NUm,2) - 2*Em*NUm 
+			 - 2*G_zp*NUm + 2*G_zp*NUm*vf + 4*G_zp*pow(NUm,2)*vf)) 
+			 + (2*Em*(NUm + 2*pow(NUm,2) - 1)*(2*Em + 2*G_zp - 2*G_zp*vf 
+			 + 8*G_zp*NUm - 8*G_zp*NUm*vf)*(pow(E_p,2)*NUm - pow(E_p,2)*vf + pow(E_p,2) 
+			 + 2*pow(E_p,2)*pow(NUm,2) + 2*pow(E_p,2)*pow(NUm,3) + E_p*Em - 2*pow(E_p,2)*pow(NUm,2)*vf 
+			 - 2*pow(E_p,2)*pow(NUm,3)*vf - E_p*Em*NUm - E_p*Em*nu_p - E_p*Em*vf 
+			 + 4*E_p*Em*pow(NUm,2) - 2*E_z*Em*pow(nu_pz,2) - pow(E_p,2)*NUm*vf 
+			 - 4*E_p*Em*pow(NUm,2)*nu_p + 2*E_z*Em*NUm*pow(nu_pz,2) - 4*E_p*Em*pow(NUm,2)*vf 
+			 + 2*E_z*Em*pow(nu_pz,2)*vf - 8*E_z*Em*pow(NUm,2)*pow(nu_pz,2) + E_p*Em*NUm*nu_p 
+			 + E_p*Em*NUm*vf + E_p*Em*nu_p*vf + 8*E_p*E_z*NUm*nu_pz*vf 
+			 - E_p*Em*NUm*nu_p*vf + 4*E_p*E_z*pow(NUm,2)*nu_pz*vf 
+			 - 4*E_p*E_z*pow(NUm,3)*nu_pz*vf + 4*E_p*Em*pow(NUm,2)*nu_p*vf 
+			 - 2*E_z*Em*NUm*pow(nu_pz,2)*vf + 8*E_z*Em*pow(NUm,2)*pow(nu_pz,2)*vf))
+			 /(pow((2*NUm - 1),2)*pow((NUm + 1),3)*(E_p*nu_p - E_p 
+			 + 2*E_z*pow(nu_pz,2))*pow((Em + 2*G_zp + Em*vf - 2*G_zp*vf 
+			 - 4*G_zp*pow(NUm,2) - 2*Em*NUm - 2*G_zp*NUm + 2*G_zp*NUm*vf 
+			 + 4*G_zp*pow(NUm,2)*vf),2))))/(pow(E_p,2)*NUm - pow(E_p,2) + 2*pow(E_p,2)*pow(NUm,2) 
+			 + E_p*Em - E_p*Em*nu_p - 2*E_z*Em*pow(nu_pz,2)) 
+			 - (4*(4*NUm + 1)*((Em*NUm)/(NUm + 2*pow(NUm,2) - 1) 
+			 - (E_p*E_z*nu_pz)/(E_p*nu_p - E_p + 2*E_z*pow(nu_pz,2)))
+			 *(E_p*nu_p - E_p + 2*E_z*pow(nu_pz,2))*((2*(4*NUm + 1)
+			 *((Em*NUm*(vf - 1)*(pow(E_p,2)*NUm + pow(E_p,2) + E_p*Em - E_p*Em*nu_p 
+			 - 2*E_z*Em*pow(nu_pz,2)))/(2*(2*NUm - 1)*pow((NUm + 1),2)
+			 *(E_p*nu_p - E_p + 2*E_z*pow(nu_pz,2))) 
+			 + (2*E_p*E_z*Em*nu_pz*vf*(NUm - 1))/((2*E_p*nu_p - 2*E_p + 4*E_z*pow(nu_pz,2))
+			 *(NUm + 2*pow(NUm,2) - 1))))/(Em + 2*G_zp + Em*vf - 2*G_zp*vf 
+			 - 4*G_zp*pow(NUm,2) - 2*Em*NUm - 2*G_zp*NUm + 2*G_zp*NUm*vf + 4*G_zp*pow(NUm,2)*vf) 
+			 - (Em*(vf - 1))/(NUm + 2*pow(NUm,2) - 1) 
+			 + (2*((Em*NUm*(vf - 1)*(pow(E_p,2)*NUm + pow(E_p,2) + E_p*Em 
+			 - E_p*Em*nu_p - 2*E_z*Em*pow(nu_pz,2)))/(2*(2*NUm - 1)*pow((NUm + 1),2)
+			 *(E_p*nu_p - E_p + 2*E_z*pow(nu_pz,2))) 
+			 + (2*E_p*E_z*Em*nu_pz*vf*(NUm - 1))/((2*E_p*nu_p - 2*E_p 
+			 + 4*E_z*pow(nu_pz,2))*(NUm + 2*pow(NUm,2) - 1)))*(NUm + 2*pow(NUm,2) - 1)
+			 *(2*Em + 2*G_zp - 2*G_zp*vf + 8*G_zp*NUm - 8*G_zp*NUm*vf))
+			 /pow((Em + 2*G_zp + Em*vf - 2*G_zp*vf - 4*G_zp*pow(NUm,2) 
+			 - 2*Em*NUm - 2*G_zp*NUm + 2*G_zp*NUm*vf + 4*G_zp*pow(NUm,2)*vf),2) 
+			 + (Em*NUm*(4*NUm + 1)*(vf - 1))/pow((NUm + 2*pow(NUm,2) - 1),2) 
+			 + (Em*(NUm + 2*pow(NUm,2) - 1)*(pow(E_p,2)*NUm - pow(E_p,2)*vf + pow(E_p,2) 
+			 + 2*pow(E_p,2)*pow(NUm,2) + 2*pow(E_p,2)*pow(NUm,3) + E_p*Em - 2*pow(E_p,2)*pow(NUm,2)*vf 
+			 - 2*pow(E_p,2)*pow(NUm,3)*vf - E_p*Em*NUm - E_p*Em*nu_p - E_p*Em*vf 
+			 + 4*E_p*Em*pow(NUm,2) - 2*E_z*Em*pow(nu_pz,2) - pow(E_p,2)*NUm*vf 
+			 - 4*E_p*Em*pow(NUm,2)*nu_p + 2*E_z*Em*NUm*pow(nu_pz,2) - 4*E_p*Em*pow(NUm,2)*vf 
+			 + 2*E_z*Em*pow(nu_pz,2)*vf - 8*E_z*Em*pow(NUm,2)*pow(nu_pz,2) + E_p*Em*NUm*nu_p 
+			 + E_p*Em*NUm*vf + E_p*Em*nu_p*vf + 8*E_p*E_z*NUm*nu_pz*vf 
+			 - E_p*Em*NUm*nu_p*vf + 4*E_p*E_z*pow(NUm,2)*nu_pz*vf 
+			 - 4*E_p*E_z*pow(NUm,3)*nu_pz*vf + 4*E_p*Em*pow(NUm,2)*nu_p*vf 
+			 - 2*E_z*Em*NUm*pow(nu_pz,2)*vf + 8*E_z*Em*pow(NUm,2)*pow(nu_pz,2)*vf))
+			 /(pow((2*NUm - 1),2)*pow((NUm + 1),3)*(E_p*nu_p - E_p + 2*E_z*pow(nu_pz,2))
+			 *(Em + 2*G_zp + Em*vf - 2*G_zp*vf - 4*G_zp*pow(NUm,2) - 2*Em*NUm 
+			 - 2*G_zp*NUm + 2*G_zp*NUm*vf + 4*G_zp*pow(NUm,2)*vf))))/(pow(E_p,2)*NUm 
+			 - pow(E_p,2) + 2*pow(E_p,2)*pow(NUm,2) + E_p*Em - E_p*Em*nu_p - 2*E_z*Em*pow(nu_pz,2)) 
+			 - (2*Em*pow((4*NUm + 1),2)*(NUm - 1)*(vf - 1))/pow((NUm + 2*pow(NUm,2) - 1),3) 
+			 - (4*Em*((2*((Em*NUm*(vf - 1)*(pow(E_p,2)*NUm + pow(E_p,2) + E_p*Em 
+			 - E_p*Em*nu_p - 2*E_z*Em*pow(nu_pz,2)))/(2*(2*NUm - 1)*pow((NUm + 1),2)
+			 *(E_p*nu_p - E_p + 2*E_z*pow(nu_pz,2))) 
+			 + (2*E_p*E_z*Em*nu_pz*vf*(NUm - 1))/((2*E_p*nu_p - 2*E_p 
+			 + 4*E_z*pow(nu_pz,2))*(NUm + 2*pow(NUm,2) - 1)))*(NUm + 2*pow(NUm,2) - 1))
+			 /(Em + 2*G_zp + Em*vf - 2*G_zp*vf - 4*G_zp*pow(NUm,2) 
+			 - 2*Em*NUm - 2*G_zp*NUm + 2*G_zp*NUm*vf 
+			 + 4*G_zp*pow(NUm,2)*vf) - (Em*NUm*(vf - 1))/(NUm + 2*pow(NUm,2) - 1) 
+			 + (E_p*E_z*nu_pz*vf)/(E_p*nu_p - E_p + 2*E_z*pow(nu_pz,2)))
+			 *(6*NUm + 4*pow(NUm,3) + 1)*(E_p*nu_p - E_p + 2*E_z*pow(nu_pz,2)))
+			 /(pow((NUm + 2*pow(NUm,2) - 1),2)*(pow(E_p,2)*NUm - pow(E_p,2) + 2*pow(E_p,2)*pow(NUm,2) 
+			 + E_p*Em - E_p*Em*nu_p - 2*E_z*Em*pow(nu_pz,2))) 
+			 + (4*Em*(2*pow(NUm,2) + 1)*(E_p*nu_p - E_p + 2*E_z*pow(nu_pz,2))
+			 *((2*(4*NUm + 1)*((Em*NUm*(vf - 1)*(pow(E_p,2)*NUm + pow(E_p,2) 
+			 + E_p*Em - E_p*Em*nu_p - 2*E_z*Em*pow(nu_pz,2)))/(2*(2*NUm - 1)
+			 *pow((NUm + 1),2)*(E_p*nu_p - E_p + 2*E_z*pow(nu_pz,2))) 
+			 + (2*E_p*E_z*Em*nu_pz*vf*(NUm - 1))/((2*E_p*nu_p - 2*E_p 
+			 + 4*E_z*pow(nu_pz,2))*(NUm + 2*pow(NUm,2) - 1))))/(Em + 2*G_zp + Em*vf 
+			 - 2*G_zp*vf - 4*G_zp*pow(NUm,2) - 2*Em*NUm - 2*G_zp*NUm 
+			 + 2*G_zp*NUm*vf + 4*G_zp*pow(NUm,2)*vf) 
+			 - (Em*(vf - 1))/(NUm + 2*pow(NUm,2) - 1) 
+			 + (2*((Em*NUm*(vf - 1)*(pow(E_p,2)*NUm + pow(E_p,2) + E_p*Em 
+			 - E_p*Em*nu_p - 2*E_z*Em*pow(nu_pz,2)))/(2*(2*NUm - 1)*pow((NUm + 1),2)
+			 *(E_p*nu_p - E_p + 2*E_z*pow(nu_pz,2))) 
+			 + (2*E_p*E_z*Em*nu_pz*vf*(NUm - 1))/((2*E_p*nu_p 
+			 - 2*E_p + 4*E_z*pow(nu_pz,2))*(NUm + 2*pow(NUm,2) - 1)))
+			 *(NUm + 2*pow(NUm,2) - 1)*(2*Em + 2*G_zp - 2*G_zp*vf 
+			 + 8*G_zp*NUm - 8*G_zp*NUm*vf))/pow((Em + 2*G_zp + Em*vf 
+			 - 2*G_zp*vf - 4*G_zp*pow(NUm,2) - 2*Em*NUm - 2*G_zp*NUm 
+			 + 2*G_zp*NUm*vf + 4*G_zp*pow(NUm,2)*vf),2) + (Em*NUm*(4*NUm + 1)
+			 *(vf - 1))/pow((NUm + 2*pow(NUm,2) - 1),2) + (Em*(NUm + 2*pow(NUm,2) - 1)
+			 *(pow(E_p,2)*NUm - pow(E_p,2)*vf + pow(E_p,2) + 2*pow(E_p,2)*pow(NUm,2) + 2*pow(E_p,2)*pow(NUm,3) 
+			 + E_p*Em - 2*pow(E_p,2)*pow(NUm,2)*vf - 2*pow(E_p,2)*pow(NUm,3)*vf 
+			 - E_p*Em*NUm - E_p*Em*nu_p - E_p*Em*vf + 4*E_p*Em*pow(NUm,2) 
+			 - 2*E_z*Em*pow(nu_pz,2) - pow(E_p,2)*NUm*vf - 4*E_p*Em*pow(NUm,2)*nu_p 
+			 + 2*E_z*Em*NUm*pow(nu_pz,2) - 4*E_p*Em*pow(NUm,2)*vf 
+			 + 2*E_z*Em*pow(nu_pz,2)*vf - 8*E_z*Em*pow(NUm,2)*pow(nu_pz,2) 
+			 + E_p*Em*NUm*nu_p + E_p*Em*NUm*vf + E_p*Em*nu_p*vf 
+			 + 8*E_p*E_z*NUm*nu_pz*vf - E_p*Em*NUm*nu_p*vf 
+			 + 4*E_p*E_z*pow(NUm,2)*nu_pz*vf - 4*E_p*E_z*pow(NUm,3)*nu_pz*vf 
+			 + 4*E_p*Em*pow(NUm,2)*nu_p*vf - 2*E_z*Em*NUm*pow(nu_pz,2)*vf 
+			 + 8*E_z*Em*pow(NUm,2)*pow(nu_pz,2)*vf))/(pow((2*NUm - 1),2)*pow((NUm + 1),3)*(E_p*nu_p - E_p 
+			 + 2*E_z*pow(nu_pz,2))*(Em + 2*G_zp + Em*vf - 2*G_zp*vf - 4*G_zp*pow(NUm,2) 
+			 - 2*Em*NUm - 2*G_zp*NUm + 2*G_zp*NUm*vf + 4*G_zp*pow(NUm,2)*vf))))
+			 /((NUm + 2*pow(NUm,2) - 1)*(pow(E_p,2)*NUm - pow(E_p,2) + 2*pow(E_p,2)*pow(NUm,2) 
+			 + E_p*Em - E_p*Em*nu_p - 2*E_z*Em*pow(nu_pz,2))) 
+			 + (4*pow(E_p,2)*pow((4*NUm + 1),2)*((Em*NUm)/(NUm + 2*pow(NUm,2) - 1) 
+			 - (E_p*E_z*nu_pz)/(E_p*nu_p - E_p 
+			 + 2*E_z*pow(nu_pz,2)))*((2*((Em*NUm*(vf - 1)*(pow(E_p,2)*NUm + pow(E_p,2) 
+			 + E_p*Em - E_p*Em*nu_p - 2*E_z*Em*pow(nu_pz,2)))/(2*(2*NUm - 1)
+			 *pow((NUm + 1),2)*(E_p*nu_p - E_p + 2*E_z*pow(nu_pz,2))) 
+			 + (2*E_p*E_z*Em*nu_pz*vf*(NUm - 1))/((2*E_p*nu_p - 2*E_p 
+			 + 4*E_z*pow(nu_pz,2))*(NUm + 2*pow(NUm,2) - 1)))*(NUm + 2*pow(NUm,2) - 1))
+			 /(Em + 2*G_zp + Em*vf - 2*G_zp*vf - 4*G_zp*pow(NUm,2) - 2*Em*NUm 
+			 - 2*G_zp*NUm + 2*G_zp*NUm*vf + 4*G_zp*pow(NUm,2)*vf) 
+			 - (Em*NUm*(vf - 1))/(NUm + 2*pow(NUm,2) - 1) 
+			 + (E_p*E_z*nu_pz*vf)/(E_p*nu_p - E_p + 2*E_z*pow(nu_pz,2)))
+			 *(E_p*nu_p - E_p + 2*E_z*pow(nu_pz,2)))/pow((pow(E_p,2)*NUm - pow(E_p,2) 
+			 + 2*pow(E_p,2)*pow(NUm,2) + E_p*Em - E_p*Em*nu_p - 2*E_z*Em*pow(nu_pz,2)),2) 
+			 + (8*pow(E_p,2)*((Em*NUm)/(NUm + 2*pow(NUm,2) - 1) 
+			 - (E_p*E_z*nu_pz)/(E_p*nu_p - E_p + 2*E_z*pow(nu_pz,2)))
+			 *((2*((Em*NUm*(vf - 1)*(pow(E_p,2)*NUm + pow(E_p,2) + E_p*Em 
+			 - E_p*Em*nu_p - 2*E_z*Em*pow(nu_pz,2)))/(2*(2*NUm - 1)
+			 *pow((NUm + 1),2)*(E_p*nu_p - E_p + 2*E_z*pow(nu_pz,2))) 
+			 + (2*E_p*E_z*Em*nu_pz*vf*(NUm - 1))/((2*E_p*nu_p - 2*E_p 
+			 + 4*E_z*pow(nu_pz,2))*(NUm + 2*pow(NUm,2) - 1)))*(NUm + 2*pow(NUm,2) - 1))
+			 /(Em + 2*G_zp + Em*vf - 2*G_zp*vf - 4*G_zp*pow(NUm,2) - 2*Em*NUm 
+			 - 2*G_zp*NUm + 2*G_zp*NUm*vf + 4*G_zp*pow(NUm,2)*vf) 
+			 - (Em*NUm*(vf - 1))/(NUm + 2*pow(NUm,2) - 1) 
+			 + (E_p*E_z*nu_pz*vf)/(E_p*nu_p - E_p + 2*E_z*pow(nu_pz,2)))*(E_p*nu_p 
+			 - E_p + 2*E_z*pow(nu_pz,2))*(NUm + 2*pow(NUm,2) - 1))
+			 /pow((pow(E_p,2)*NUm - pow(E_p,2) + 2*pow(E_p,2)*pow(NUm,2) + E_p*Em - E_p*Em*nu_p 
+			 - 2*E_z*Em*pow(nu_pz,2)),2) - (4*pow(E_p,4)*pow((4*NUm + 1),2)*((Em*NUm)
+			 /(NUm + 2*pow(NUm,2) - 1) - (E_p*E_z*nu_pz)/(E_p*nu_p 
+			 - E_p + 2*E_z*pow(nu_pz,2)))*((2*((Em*NUm*(vf - 1)*(pow(E_p,2)*NUm 
+			 + pow(E_p,2) + E_p*Em - E_p*Em*nu_p - 2*E_z*Em*pow(nu_pz,2)))
+			 /(2*(2*NUm - 1)*pow((NUm + 1),2)*(E_p*nu_p - E_p + 2*E_z*pow(nu_pz,2))) 
+			 + (2*E_p*E_z*Em*nu_pz*vf*(NUm - 1))/((2*E_p*nu_p - 2*E_p 
+			 + 4*E_z*pow(nu_pz,2))*(NUm + 2*pow(NUm,2) - 1)))*(NUm + 2*pow(NUm,2) - 1))
+			 /(Em + 2*G_zp + Em*vf - 2*G_zp*vf - 4*G_zp*pow(NUm,2) - 2*Em*NUm 
+			 - 2*G_zp*NUm + 2*G_zp*NUm*vf + 4*G_zp*pow(NUm,2)*vf) 
+			 - (Em*NUm*(vf - 1))/(NUm + 2*pow(NUm,2) - 1) 
+			 + (E_p*E_z*nu_pz*vf)/(E_p*nu_p - E_p + 2*E_z*pow(nu_pz,2)))
+			 *(E_p*nu_p - E_p + 2*E_z*pow(nu_pz,2))*(NUm + 2*pow(NUm,2) - 1))
+			 /pow((pow(E_p,2)*NUm - pow(E_p,2) + 2*pow(E_p,2)*pow(NUm,2) + E_p*Em 
+			 - E_p*Em*nu_p - 2*E_z*Em*pow(nu_pz,2)),3) 
+			 + (4*Em*(4*NUm + 1)*(2*pow(NUm,2) + 1)*((2*((Em*NUm*(vf - 1)
+			 *(pow(E_p,2)*NUm + pow(E_p,2) + E_p*Em - E_p*Em*nu_p 
+			 - 2*E_z*Em*pow(nu_pz,2)))/(2*(2*NUm - 1)*pow((NUm + 1),2)
+			 *(E_p*nu_p - E_p + 2*E_z*pow(nu_pz,2))) 
+			 + (2*E_p*E_z*Em*nu_pz*vf*(NUm - 1))/((2*E_p*nu_p - 2*E_p 
+			 + 4*E_z*pow(nu_pz,2))*(NUm + 2*pow(NUm,2) - 1)))*(NUm + 2*pow(NUm,2) - 1))
+			 /(Em + 2*G_zp + Em*vf - 2*G_zp*vf - 4*G_zp*pow(NUm,2) - 2*Em*NUm 
+			 - 2*G_zp*NUm + 2*G_zp*NUm*vf + 4*G_zp*pow(NUm,2)*vf) 
+			 - (Em*NUm*(vf - 1))/(NUm + 2*pow(NUm,2) - 1) 
+			 + (E_p*E_z*nu_pz*vf)/(E_p*nu_p - E_p + 2*E_z*pow(nu_pz,2)))
+			 *(E_p*nu_p - E_p + 2*E_z*pow(nu_pz,2)))/(pow((NUm + 2*pow(NUm,2) - 1),2)
+			 *(pow(E_p,2)*NUm - pow(E_p,2) + 2*pow(E_p,2)*pow(NUm,2) + E_p*Em - E_p*Em*nu_p 
+			 - 2*E_z*Em*pow(nu_pz,2))) + (4*pow(E_p,2)*(4*NUm + 1)*((Em*NUm)
+			 /(NUm + 2*pow(NUm,2) - 1) - (E_p*E_z*nu_pz)/(E_p*nu_p - E_p 
+			 + 2*E_z*pow(nu_pz,2)))*(E_p*nu_p - E_p + 2*E_z*pow(nu_pz,2))
+			 *(NUm + 2*pow(NUm,2) - 1)*((2*(4*NUm + 1)*((Em*NUm*(vf - 1)
+			 *(pow(E_p,2)*NUm + pow(E_p,2) + E_p*Em - E_p*Em*nu_p 
+			 - 2*E_z*Em*pow(nu_pz,2)))/(2*(2*NUm - 1)*pow((NUm + 1),2)
+			 *(E_p*nu_p - E_p + 2*E_z*pow(nu_pz,2))) 
+			 + (2*E_p*E_z*Em*nu_pz*vf*(NUm - 1))/((2*E_p*nu_p - 2*E_p 
+			 + 4*E_z*pow(nu_pz,2))*(NUm + 2*pow(NUm,2) - 1))))/(Em + 2*G_zp 
+			 + Em*vf - 2*G_zp*vf - 4*G_zp*pow(NUm,2) - 2*Em*NUm 
+			 - 2*G_zp*NUm + 2*G_zp*NUm*vf + 4*G_zp*pow(NUm,2)*vf) 
+			 - (Em*(vf - 1))/(NUm + 2*pow(NUm,2) - 1) 
+			 + (2*((Em*NUm*(vf - 1)*(pow(E_p,2)*NUm + pow(E_p,2) + E_p*Em 
+			 - E_p*Em*nu_p - 2*E_z*Em*pow(nu_pz,2)))/(2*(2*NUm - 1)*pow((NUm + 1),2)
+			 *(E_p*nu_p - E_p + 2*E_z*pow(nu_pz,2))) + (2*E_p*E_z*Em*nu_pz*vf
+			 *(NUm - 1))/((2*E_p*nu_p - 2*E_p + 4*E_z*pow(nu_pz,2))
+			 *(NUm + 2*pow(NUm,2) - 1)))*(NUm + 2*pow(NUm,2) - 1)
+			 *(2*Em + 2*G_zp - 2*G_zp*vf + 8*G_zp*NUm 
+			 - 8*G_zp*NUm*vf))/pow((Em + 2*G_zp + Em*vf - 2*G_zp*vf 
+			 - 4*G_zp*pow(NUm,2) - 2*Em*NUm - 2*G_zp*NUm + 2*G_zp*NUm*vf 
+			 + 4*G_zp*pow(NUm,2)*vf),2) + (Em*NUm*(4*NUm + 1)*(vf - 1))
+			 /pow((NUm + 2*pow(NUm,2) - 1),2) + (Em*(NUm + 2*pow(NUm,2) - 1)
+			 *(pow(E_p,2)*NUm - pow(E_p,2)*vf + pow(E_p,2) + 2*pow(E_p,2)*pow(NUm,2) 
+			 + 2*pow(E_p,2)*pow(NUm,3) + E_p*Em - 2*pow(E_p,2)*pow(NUm,2)*vf 
+			 - 2*pow(E_p,2)*pow(NUm,3)*vf - E_p*Em*NUm - E_p*Em*nu_p - E_p*Em*vf 
+			 + 4*E_p*Em*pow(NUm,2) - 2*E_z*Em*pow(nu_pz,2) - pow(E_p,2)*NUm*vf 
+			 - 4*E_p*Em*pow(NUm,2)*nu_p + 2*E_z*Em*NUm*pow(nu_pz,2) 
+			 - 4*E_p*Em*pow(NUm,2)*vf + 2*E_z*Em*pow(nu_pz,2)*vf 
+			 - 8*E_z*Em*pow(NUm,2)*pow(nu_pz,2) + E_p*Em*NUm*nu_p 
+			 + E_p*Em*NUm*vf + E_p*Em*nu_p*vf + 8*E_p*E_z*NUm*nu_pz*vf 
+			 - E_p*Em*NUm*nu_p*vf + 4*E_p*E_z*pow(NUm,2)*nu_pz*vf 
+			 - 4*E_p*E_z*pow(NUm,3)*nu_pz*vf + 4*E_p*Em*pow(NUm,2)*nu_p*vf 
+			 - 2*E_z*Em*NUm*pow(nu_pz,2)*vf + 8*E_z*Em*pow(NUm,2)*pow(nu_pz,2)*vf))
+			 /(pow((2*NUm - 1),2)*pow((NUm + 1),3)*(E_p*nu_p - E_p + 2*E_z*pow(nu_pz,2))
+			 *(Em + 2*G_zp + Em*vf - 2*G_zp*vf - 4*G_zp*pow(NUm,2) 
+			 - 2*Em*NUm - 2*G_zp*NUm + 2*G_zp*NUm*vf + 4*G_zp*pow(NUm,2)*vf))))
+			 /pow((pow(E_p,2)*NUm - pow(E_p,2) + 2*pow(E_p,2)*pow(NUm,2) + E_p*Em 
+			 - E_p*Em*nu_p - 2*E_z*Em*pow(nu_pz,2)),2) 
+			 - (4*pow(E_p,2)*Em*(4*NUm + 1)*(2*pow(NUm,2) + 1)*((2*((Em*NUm*(vf - 1)
+			 *(pow(E_p,2)*NUm + pow(E_p,2) + E_p*Em - E_p*Em*nu_p - 2*E_z*Em*pow(nu_pz,2)))
+			 /(2*(2*NUm - 1)*pow((NUm + 1),2)*(E_p*nu_p - E_p + 2*E_z*pow(nu_pz,2))) 
+			 + (2*E_p*E_z*Em*nu_pz*vf*(NUm - 1))/((2*E_p*nu_p - 2*E_p 
+			 + 4*E_z*pow(nu_pz,2))*(NUm + 2*pow(NUm,2) - 1)))*(NUm + 2*pow(NUm,2) - 1))
+			 /(Em + 2*G_zp + Em*vf - 2*G_zp*vf - 4*G_zp*pow(NUm,2) - 2*Em*NUm 
+			 - 2*G_zp*NUm + 2*G_zp*NUm*vf + 4*G_zp*pow(NUm,2)*vf) 
+			 - (Em*NUm*(vf - 1))/(NUm + 2*pow(NUm,2) - 1) 
+			 + (E_p*E_z*nu_pz*vf)/(E_p*nu_p - E_p + 2*E_z*pow(nu_pz,2)))
+			 *(E_p*nu_p - E_p + 2*E_z*pow(nu_pz,2)))/((NUm + 2*pow(NUm,2) - 1)
+			 *pow((pow(E_p,2)*NUm - pow(E_p,2) + 2*pow(E_p,2)*pow(NUm,2) + E_p*Em 
+			 - E_p*Em*nu_p - 2*E_z*Em*pow(nu_pz,2)),2));
+	  
+	  PetscFunctionReturn(0);
+    }	  
   };
 }
 #endif //__D_RS_ELASTICFEMETHODTRANSISO_HPP__
