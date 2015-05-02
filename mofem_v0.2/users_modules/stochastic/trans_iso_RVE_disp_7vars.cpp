@@ -724,6 +724,27 @@ int main(int argc, char *argv[]) {
   
 //  if(pcomm->rank()) cout<< " Stress_Homo =  "<<endl;
 //  ierr = VecView(Stress_Homo,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+// write the result in file
+  ofstream TheFile;
+  
+  if (applied_strain[0]==1) {
+	TheFile.open("//mnt//home//Dropbox//DURACOMP_Cal//009_MoFEM//03_EEP_Geometry_Uncertainties//Results//Result_TI_1.txt",ofstream::out); 
+  }
+  else if (applied_strain[1]==1) {
+	TheFile.open("//mnt//home//Dropbox//DURACOMP_Cal//009_MoFEM//03_EEP_Geometry_Uncertainties//Results//Result_TI_2.txt",ofstream::out); 
+  }
+  else if (applied_strain[2]==1) {
+	TheFile.open("//mnt//home//Dropbox//DURACOMP_Cal//009_MoFEM//03_EEP_Geometry_Uncertainties//Results//Result_TI_3.txt",ofstream::out); 
+  }
+  else if (applied_strain[3]==1) {
+	TheFile.open("//mnt//home//Dropbox//DURACOMP_Cal//009_MoFEM//03_EEP_Geometry_Uncertainties//Results//Result_TI_4.txt",ofstream::out); 
+  }
+  else if (applied_strain[4]==1) {
+	TheFile.open("//mnt//home//Dropbox//DURACOMP_Cal//009_MoFEM//03_EEP_Geometry_Uncertainties//Results//Result_TI_5.txt",ofstream::out); 
+  }
+  else if (applied_strain[5]==1) {
+	TheFile.open("//mnt//home//Dropbox//DURACOMP_Cal//009_MoFEM//03_EEP_Geometry_Uncertainties//Results//Result_TI_6.txt",ofstream::out); 
+  }
 
   if(pcomm->rank()==0){
     PetscScalar    *avec;
@@ -733,6 +754,7 @@ int main(int argc, char *argv[]) {
     for(int ii=0; ii<6; ii++){
       cout.precision(15);
       cout <<*avec<<endl;
+	  TheFile<<setprecision(15)<<*avec<<'\n';
       avec++;
     }
   }
@@ -866,12 +888,16 @@ int main(int argc, char *argv[]) {
       for(int ii=0; ii<6; ii++){
         cout.precision(15);
         cout<<*avec_r<<endl;
+		// write result to output file
+		TheFile<<setprecision(15)<<*avec_r<<'\n';
+		
         avec_r++;
       }
     }
     cout<< "\n\n";
   }
 
+ TheFile.close();
   
   // ===========================================================================
   //
@@ -881,7 +907,7 @@ int main(int argc, char *argv[]) {
   // Save data on mesh
   ierr = write_soltion(mField,"out.vtk","out_post_proc.vtk");   CHKERRQ(ierr);
 
-  ofstream TheFile;
+  /* ofstream TheFile;
   TheFile.open("Result.txt",ofstream::out); 
   if(pcomm->rank()==0){
     PetscScalar    *avec;
@@ -892,8 +918,8 @@ int main(int argc, char *argv[]) {
       avec++;
     }
   }
-  TheFile.close();
- 
+  TheFile.close();*/
+  
   // ===========================================================================
   //
   //  VIII. FINISH
