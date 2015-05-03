@@ -296,7 +296,7 @@ int main(int argc, char *argv[]) {
 
     IncidentWave function_evaluator(wavenumber,wave_direction);
     ierr = solve_problem(m_field,"EX1_PROBLEM","FE1","reEX","imEX",ADD_VALUES,function_evaluator,is_partitioned); CHKERRQ(ierr);
-
+ 
   }
  
   if(is_partitioned) {
