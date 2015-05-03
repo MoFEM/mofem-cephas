@@ -351,12 +351,12 @@ struct NormElement {
                     
 					if(useL2) { //case L2 norm
                       
-						error = u_analy[gg] - u_numer[gg];
+						error = (u_analy[gg] - u_numer[gg])*(u_analy[gg] - u_numer[gg]);
 						eRror += error*error*val;
                         aNaly += u_analy(gg)*u_analy(gg)*val;
 					} else if(!useL2) { //case H1 norm
 					
-						error = u_analy[gg] - u_numer[gg];
+						error = (ublas::inner_prod(GradError,GradError) + (u_analy[gg] - u_numer[gg])*(u_analy[gg] - u_numer[gg]));
 						
                         aNaly += u_analy(gg)*u_analy(gg)*val;
 						eRror += (ublas::inner_prod(GradError,GradError) + error*error)*val;
