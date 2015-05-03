@@ -445,15 +445,15 @@ struct HardCylinderScatterWave: public GenericAnalyticalSolution {
     while( error > tol )  //finding the acoustic potential in one single point.
     {
       if(vecAl.size()>n) {
-	Al = vecAl[n-1];
+        Al = vecAl[n-1];
       } else {
-	// cylindrical Bessel function
-	double Jn_der_ka = n / const1 * cyl_bessel_j( n, const1 ) - cyl_bessel_j( n + 1, const1 );
-	// cylindrical Hankel function
-	complex<double> Hn_der_ka = n / const1 * cyl_hankel_1( n, const1 ) - cyl_hankel_1( n + 1, const1 );
-	//Constant term
-	Al = -2.0*pow(i,n)*Jn_der_ka/Hn_der_ka;
-	vecAl.push_back(Al);
+        // cylindrical Bessel function
+        double Jn_der_ka = n / const1 * cyl_bessel_j( n, const1 ) - cyl_bessel_j( n + 1, const1 );
+        // cylindrical Hankel function
+        complex<double> Hn_der_ka = n / const1 * cyl_hankel_1( n, const1 ) - cyl_hankel_1( n + 1, const1 );
+        //Constant term
+        Al = -2.0*pow(i,n)*Jn_der_ka/Hn_der_ka;
+        vecAl.push_back(Al);
       }
 
       prev_result = result;
@@ -561,15 +561,15 @@ struct SoftCylinderScatterWave: public GenericAnalyticalSolution {
 
 
       if(vecAl.size()>n) {
-	Al = vecAl[n-1];
+        Al = vecAl[n-1];
       } else {
-	// cylindrical Bessel function
-	double Jn_ka = cyl_bessel_j( n, const1 );
-	// cylindrical Hankel function
-	complex<double> Hn_ka = cyl_hankel_1( n, const1 );
-	//Constant term
-	Al = -2.0*pow(i,n)*Jn_ka/Hn_ka;
-	vecAl.push_back(Al);
+        // cylindrical Bessel function
+        double Jn_ka = cyl_bessel_j( n, const1 );
+        // cylindrical Hankel function
+        complex<double> Hn_ka = cyl_hankel_1( n, const1 );
+        //Constant term
+        Al = -2.0*pow(i,n)*Jn_ka/Hn_ka;
+        vecAl.push_back(Al);
       }
 
 
@@ -666,9 +666,9 @@ PetscErrorCode solve_problem(FieldInterface& m_field,
 
     } else {
       if(is_partitioned) {
-	ierr = m_field.set_other_local_ghost_vector(problem_name,re_field,im_field,COL,D,mode,SCATTER_REVERSE); CHKERRQ(ierr);
+        ierr = m_field.set_other_local_ghost_vector(problem_name,re_field,im_field,COL,D,mode,SCATTER_REVERSE); CHKERRQ(ierr);
       } else {
-	ierr = m_field.set_other_global_ghost_vector(problem_name,re_field,im_field,COL,D,mode,SCATTER_REVERSE); CHKERRQ(ierr);
+        ierr = m_field.set_other_global_ghost_vector(problem_name,re_field,im_field,COL,D,mode,SCATTER_REVERSE); CHKERRQ(ierr);
       }
     }
 
