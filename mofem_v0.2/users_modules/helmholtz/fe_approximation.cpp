@@ -1,10 +1,10 @@
 /** \file fe_approximation.cpp
  \ingroup mofem_helmholtz_elem
 
- 
-  Calculates finite element (Galerkin) approximation for incident wave problem. 
 
-  Note: 
+  Calculates finite element (Galerkin) approximation for incident wave problem.
+
+  Note:
 
   In this implementation, first acoustic potential field is approximated on
   boundary and then finite element problem is solved.  For more rigorous
@@ -14,7 +14,7 @@
 
  */
 
-/* 
+/*
  * This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -27,10 +27,10 @@
  * License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. 
+ * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>.
  *
  */
- 
+
 #include <MoFEM.hpp>
 
 #include <boost/numeric/ublas/vector_proxy.hpp>
@@ -88,7 +88,7 @@ struct TimeSeries {
     HelmholtzElement& helmholtz_element,
     AnalyticalDirihletBC::DirichletBC analytical_ditihlet_bc_real,
     AnalyticalDirihletBC::DirichletBC analytical_ditihlet_bc_imag,
-    bool dirihlet_bc_set): 
+    bool dirihlet_bc_set):
       mField(m_field),helmholtzElement(helmholtz_element),
       analyticalDitihletBcReal(analytical_ditihlet_bc_real),
       analyticalDitihletBcImag(analytical_ditihlet_bc_imag),
@@ -123,7 +123,7 @@ struct TimeSeries {
 	}
 	tSeries[no1] = no2;
     }
-    int r = fclose(time_data);      
+    int r = fclose(time_data);
     if(debug) {
       map<double, double>::iterator tit = tSeries.begin();
       for(;tit!=tSeries.end();tit++) {
@@ -141,7 +141,7 @@ struct TimeSeries {
   boost::shared_array<kiss_fft_cpx> complexOut;
   kiss_fft_cfg forwardCfg;
   kiss_fft_cfg inverseCfg;
-  
+
   PetscErrorCode forwardDft() {
     PetscFunctionBegin;
 
@@ -158,12 +158,12 @@ struct TimeSeries {
       complexIn[ii].i = 0;
 
     }
- 
+
     forwardCfg = kiss_fft_alloc(n, 0, NULL, NULL);
 
     complexOut = boost::shared_array<kiss_fft_cpx>(new kiss_fft_cpx[n]);
     kiss_fft(forwardCfg,complexIn.get(),complexOut.get());
-    
+
     PetscFunctionReturn(0);
   }
 
@@ -192,15 +192,15 @@ struct TimeSeries {
     ierr = mField.VecScatterCreate(T,"ACOUSTIC_PROBLEM","rePRES",ROW,pSeriesReal[0],"PRESSURE_IN_TIME","P",ROW,&scatterReal); CHKERRQ(ierr);
     ierr = mField.VecScatterCreate(T,"ACOUSTIC_PROBLEM","imPRES",ROW,pSeriesImag[0],"PRESSURE_IN_TIME","P",ROW,&scatterImag); CHKERRQ(ierr);
 
-  
+
     PetscFunctionReturn(0);
   }
 
   PetscErrorCode destroyVectorSeries() {
     PetscFunctionBegin;
- 
+
     int n = tSeries.size();
-  
+
     for(int k = 0;n<k;k++) {
 
       ierr = VecDestroy(&pSeriesReal[k]); CHKERRQ(ierr);
@@ -224,7 +224,7 @@ struct TimeSeries {
 
     int n = tSeries.size();
 
-    for(int k = 0;k<n;k++) { 
+    for(int k = 0;k<n;k++) {
 
       // Zero vectors
       ierr = VecZeroEntries(T); CHKERRQ(ierr);
@@ -267,15 +267,15 @@ struct TimeSeries {
         ierr = mField.problem_basic_method_preProcess("ACOUSTIC_PROBLEM",analyticalDitihletBcReal); CHKERRQ(ierr);
         ierr = mField.problem_basic_method_preProcess("ACOUSTIC_PROBLEM",analyticalDitihletBcImag); CHKERRQ(ierr);
       }
-    
+
       ierr = helmholtzElement.calculateA("ACOUSTIC_PROBLEM"); CHKERRQ(ierr);
       ierr = helmholtzElement.calculateF("ACOUSTIC_PROBLEM"); CHKERRQ(ierr);
-    
+
       if(dirihletBcSet) {
         ierr = mField.problem_basic_method_postProcess("ACOUSTIC_PROBLEM",analyticalDitihletBcReal); CHKERRQ(ierr);
         ierr = mField.problem_basic_method_postProcess("ACOUSTIC_PROBLEM",analyticalDitihletBcImag); CHKERRQ(ierr);
       }
-  
+
       ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
       ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
       ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
@@ -286,9 +286,9 @@ struct TimeSeries {
       ierr = KSPSetOperators(solver,A,A); CHKERRQ(ierr);
       ierr = KSPSetFromOptions(solver); CHKERRQ(ierr);
       ierr = KSPSetUp(solver); CHKERRQ(ierr);
-  
+
       ierr = KSPSolve(solver,F,T); CHKERRQ(ierr);
-  
+
       //ierr = VecGhostUpdateBegin(T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
       //ierr = VecGhostUpdateEnd(T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
@@ -325,7 +325,7 @@ struct TimeSeries {
 
     for(int ii = 0;ii<size;ii++) {
 
-      for(int k = 0;k<n;k++) { 
+      for(int k = 0;k<n;k++) {
 
 	double *p_real,*p_imag;
 	ierr = VecGetArray(pSeriesReal[k],&p_real); CHKERRQ(ierr);
@@ -341,7 +341,7 @@ struct TimeSeries {
       }
 
       kiss_fft(inverseCfg,complexOut.get(),complexIn.get());
-      
+
       for(int k = 0;k<n;k++) {
 
 	double *a_p;
@@ -422,7 +422,7 @@ int main(int argc, char *argv[]) {
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
-    
+
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
   PetscBool is_partitioned = PETSC_FALSE;
@@ -431,11 +431,11 @@ int main(int argc, char *argv[]) {
     //Read mesh to MOAB
     const char *option;
     option = "PARALLEL=BCAST_DELETE;PARALLEL_RESOLVE_SHARED_ENTS;PARTITION=PARALLEL_PARTITION;";
-    rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
+    rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
   } else {
     const char *option;
     option = "";
-    rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
+    rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
   }
 
   // Create MoFEM (cephas) database
@@ -447,7 +447,7 @@ int main(int argc, char *argv[]) {
   PetscLogDouble v1,v2;
   ierr = PetscTime(&v1); CHKERRQ(ierr);
   ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
-  
+
   //set entitities bit level
   BitRefLevel bit_level0;
   bit_level0.set(0);
@@ -456,12 +456,12 @@ int main(int argc, char *argv[]) {
   ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
 
   //Fields
-  ierr = m_field.add_field("rePRES",H1,1); CHKERRQ(ierr);  
+  ierr = m_field.add_field("rePRES",H1,1); CHKERRQ(ierr);
   ierr = m_field.add_field("imPRES",H1,1); CHKERRQ(ierr);
   ierr = m_field.add_field("P",H1,1); CHKERRQ(ierr);  // in time domain
-  
+
   //meshset consisting all entities in mesh
-  EntityHandle root_set = moab.get_root_set(); 
+  EntityHandle root_set = moab.get_root_set();
   //add entities to field
   ierr = m_field.add_ents_to_field_by_TETs(root_set,"rePRES"); CHKERRQ(ierr);
   ierr = m_field.add_ents_to_field_by_TETs(root_set,"imPRES"); CHKERRQ(ierr);
@@ -489,7 +489,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.set_field_order(root_set,MBEDGE,"P",order); CHKERRQ(ierr);
   ierr = m_field.set_field_order(root_set,MBVERTEX,"P",1); CHKERRQ(ierr);
 
-  
+
   if(!m_field.check_field("MESH_NODE_POSITIONS")) {
 
     ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,3); CHKERRQ(ierr);
@@ -511,7 +511,7 @@ int main(int argc, char *argv[]) {
 
   // Finite Elements
 
-  HelmholtzElement helmholtz_element(m_field); 
+  HelmholtzElement helmholtz_element(m_field);
   ierr = helmholtz_element.addHelmholtzElements("rePRES","imPRES"); CHKERRQ(ierr);
 
   if(m_field.check_field("reEX") && m_field.check_field("imEX")) {
@@ -597,7 +597,7 @@ int main(int argc, char *argv[]) {
     ierr = m_field.partition_finite_elements("BCIMAG_PROBLEM",true); CHKERRQ(ierr);
 
   } else {
-    // if not partitioned mesh is load to all processes 
+    // if not partitioned mesh is load to all processes
 
     ierr = m_field.build_problem("ACOUSTIC_PROBLEM"); CHKERRQ(ierr);
     ierr = m_field.partition_problem("ACOUSTIC_PROBLEM"); CHKERRQ(ierr);
@@ -617,7 +617,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.partition_ghost_dofs("BCREAL_PROBLEM"); CHKERRQ(ierr);
   ierr = m_field.partition_ghost_dofs("BCIMAG_PROBLEM"); CHKERRQ(ierr);
 
-  // Get problem matrices and vectors 
+  // Get problem matrices and vectors
 
   Vec F;  //Right hand side vector
   ierr = m_field.VecCreateGhost("ACOUSTIC_PROBLEM",ROW,&F); CHKERRQ(ierr);
@@ -639,36 +639,36 @@ int main(int argc, char *argv[]) {
   }
 
   PetscInt choise_value = NO_ANALYTICAL_SOLUTION;
-  // set type of analytical solution  
+  // set type of analytical solution
   ierr = PetscOptionsGetEList(NULL,"-analytical_solution_type",analytical_solution_types,6,&choise_value,NULL); CHKERRQ(ierr);
 
   switch((AnalyticalSolutionTypes)choise_value) {
 
     case HARD_SPHERE_SCATTER_WAVE:
-    
+
       {
 
 	double scattering_sphere_radius = 1.;
 	ierr = PetscOptionsGetScalar(NULL,"-scattering_sphere_radius",&scattering_sphere_radius,NULL); CHKERRQ(ierr);
 
 	boost::shared_ptr<HardSphereScatterWave> function_evaluator = boost::shared_ptr<HardSphereScatterWave>(new HardSphereScatterWave(wavenumber,scattering_sphere_radius));
-	ierr = analytical_bc_real.setApproxOps(m_field,"rePRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::REAL); CHKERRQ(ierr); 
+	ierr = analytical_bc_real.setApproxOps(m_field,"rePRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::REAL); CHKERRQ(ierr);
 	ierr = analytical_bc_imag.setApproxOps(m_field,"imPRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::IMAG); CHKERRQ(ierr);
 	dirihlet_bc_set = true;
 
       }
-    
+
       break;
-      
+
     case SOFT_SPHERE_SCATTER_WAVE:
 
       {
-    
+
 	double scattering_sphere_radius = 1.;
 	ierr = PetscOptionsGetScalar(NULL,"-scattering_sphere_radius",&scattering_sphere_radius,NULL); CHKERRQ(ierr);
 
 	boost::shared_ptr<SoftSphereScatterWave> function_evaluator = boost::shared_ptr<SoftSphereScatterWave>(new SoftSphereScatterWave(wavenumber,scattering_sphere_radius));
-	ierr = analytical_bc_real.setApproxOps(m_field,"rePRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::REAL); CHKERRQ(ierr); 
+	ierr = analytical_bc_real.setApproxOps(m_field,"rePRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::REAL); CHKERRQ(ierr);
 	ierr = analytical_bc_imag.setApproxOps(m_field,"imPRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::IMAG); CHKERRQ(ierr);
   	dirihlet_bc_set = true;
 
@@ -686,7 +686,7 @@ int main(int argc, char *argv[]) {
 
 
 	  boost::shared_ptr<PlaneWave> function_evaluator = boost::shared_ptr<PlaneWave>(new PlaneWave(wavenumber,angle*M_PI));
-	  ierr = analytical_bc_real.setApproxOps(m_field,"rePRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::REAL); CHKERRQ(ierr); 
+	  ierr = analytical_bc_real.setApproxOps(m_field,"rePRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::REAL); CHKERRQ(ierr);
 	  ierr = analytical_bc_imag.setApproxOps(m_field,"imPRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::IMAG); CHKERRQ(ierr);
 	  dirihlet_bc_set = true;
 
@@ -696,10 +696,10 @@ int main(int argc, char *argv[]) {
 
       case HARD_CYLINDER_SCATTER_WAVE:
 
-	{ 
- 
+	{
+
 	  boost::shared_ptr<HardCylinderScatterWave> function_evaluator = boost::shared_ptr<HardCylinderScatterWave>(new HardCylinderScatterWave(wavenumber));
-	  ierr = analytical_bc_real.setApproxOps(m_field,"rePRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::REAL); CHKERRQ(ierr); 
+	  ierr = analytical_bc_real.setApproxOps(m_field,"rePRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::REAL); CHKERRQ(ierr);
 	  ierr = analytical_bc_imag.setApproxOps(m_field,"imPRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::IMAG); CHKERRQ(ierr);
 	  dirihlet_bc_set = true;
 
@@ -707,27 +707,27 @@ int main(int argc, char *argv[]) {
 	}
 
       break;
-    
+
       case SOFT_CYLINDER_SCATTER_WAVE:
-    
+
 	{
-  
+
 	  boost::shared_ptr<SoftCylinderScatterWave> function_evaluator = boost::shared_ptr<SoftCylinderScatterWave>(new SoftCylinderScatterWave(wavenumber));
-	  ierr = analytical_bc_real.setApproxOps(m_field,"rePRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::REAL); CHKERRQ(ierr); 
+	  ierr = analytical_bc_real.setApproxOps(m_field,"rePRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::REAL); CHKERRQ(ierr);
 	  ierr = analytical_bc_imag.setApproxOps(m_field,"imPRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::IMAG); CHKERRQ(ierr);
 	  dirihlet_bc_set = true;
 
 	}
-    
+
       break;
 
       case INCIDENT_WAVE:
 
-	{  
+	{
 
-	  boost::shared_ptr<IncidentWave> function_evaluator = 
+	  boost::shared_ptr<IncidentWave> function_evaluator =
 	    boost::shared_ptr<IncidentWave>(new IncidentWave(wavenumber,wave_direction,power_of_incident_wave));
-	  ierr = analytical_bc_real.setApproxOps(m_field,"rePRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::REAL); CHKERRQ(ierr); 
+	  ierr = analytical_bc_real.setApproxOps(m_field,"rePRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::REAL); CHKERRQ(ierr);
 	  ierr = analytical_bc_imag.setApproxOps(m_field,"imPRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::IMAG); CHKERRQ(ierr);
 	  dirihlet_bc_set = true;
 
@@ -760,7 +760,7 @@ int main(int argc, char *argv[]) {
 	// note negative field, scatter field should cancel incident wave
 
 	boost::shared_ptr<IncidentWave> function_evaluator = boost::shared_ptr<IncidentWave>(new IncidentWave(wavenumber,wave_direction,-power_of_incident_wave));
-	ierr = analytical_bc_real.setApproxOps(m_field,"rePRES",mit->second.tRis,function_evaluator,GenericAnalyticalSolution::REAL); CHKERRQ(ierr); 
+	ierr = analytical_bc_real.setApproxOps(m_field,"rePRES",mit->second.tRis,function_evaluator,GenericAnalyticalSolution::REAL); CHKERRQ(ierr);
 	ierr = analytical_bc_imag.setApproxOps(m_field,"imPRES",mit->second.tRis,function_evaluator,GenericAnalyticalSolution::IMAG); CHKERRQ(ierr);
 
       }
@@ -772,7 +772,7 @@ int main(int argc, char *argv[]) {
     ierr = analytical_bc_imag.setProblem(m_field,"BCIMAG_PROBLEM"); CHKERRQ(ierr);
 
     ierr = analytical_bc_real.solveProblem(m_field,"BCREAL_PROBLEM","BCREAL_FE",analytical_ditihlet_bc_real,bc_dirichlet_tris); CHKERRQ(ierr);
-    ierr = analytical_bc_imag.solveProblem(m_field,"BCIMAG_PROBLEM","BCIMAG_FE",analytical_ditihlet_bc_imag,bc_dirichlet_tris); CHKERRQ(ierr);  
+    ierr = analytical_bc_imag.solveProblem(m_field,"BCIMAG_PROBLEM","BCIMAG_FE",analytical_ditihlet_bc_imag,bc_dirichlet_tris); CHKERRQ(ierr);
 
     ierr = analytical_bc_real.destroyProblem(); CHKERRQ(ierr);
     ierr = analytical_bc_imag.destroyProblem(); CHKERRQ(ierr);
@@ -799,17 +799,17 @@ int main(int argc, char *argv[]) {
     ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = MatZeroEntries(A); CHKERRQ(ierr);
-  
+
     // Assemble problem
     if(dirihlet_bc_set) {
       ierr = m_field.problem_basic_method_preProcess("ACOUSTIC_PROBLEM",analytical_ditihlet_bc_real); CHKERRQ(ierr);
       ierr = m_field.problem_basic_method_preProcess("ACOUSTIC_PROBLEM",analytical_ditihlet_bc_imag); CHKERRQ(ierr);
     }
-  
+
     ierr = helmholtz_element.calculateA("ACOUSTIC_PROBLEM"); CHKERRQ(ierr);
     ierr = helmholtz_element.calculateF("ACOUSTIC_PROBLEM"); CHKERRQ(ierr);
-  
-  
+
+
     if(dirihlet_bc_set) {
       ierr = m_field.problem_basic_method_postProcess("ACOUSTIC_PROBLEM",analytical_ditihlet_bc_real); CHKERRQ(ierr);
       ierr = m_field.problem_basic_method_postProcess("ACOUSTIC_PROBLEM",analytical_ditihlet_bc_imag); CHKERRQ(ierr);
@@ -820,27 +820,27 @@ int main(int argc, char *argv[]) {
     ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
     ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
     ierr = VecScale(F,-1); CHKERRQ(ierr);
-  
+
     // Solve problem
     ierr = KSPSetOperators(solver,A,A); CHKERRQ(ierr);
     ierr = KSPSetFromOptions(solver); CHKERRQ(ierr);
     ierr = KSPSetUp(solver); CHKERRQ(ierr);
-  
+
     ierr = KSPSolve(solver,F,T); CHKERRQ(ierr);
-  
+
     ierr = VecGhostUpdateBegin(T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  
+
     //Save data on mesh
     if(is_partitioned) {
-  
+
       // no need for global communication
-      ierr = m_field.set_local_ghost_vector("ACOUSTIC_PROBLEM",ROW,T,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);  
-  
+      ierr = m_field.set_local_ghost_vector("ACOUSTIC_PROBLEM",ROW,T,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+
     } else {
-  
-      ierr = m_field.set_global_ghost_vector("ACOUSTIC_PROBLEM",ROW,T,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);  
-  
+
+      ierr = m_field.set_global_ghost_vector("ACOUSTIC_PROBLEM",ROW,T,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+
     }
 
   } else {
@@ -858,7 +858,7 @@ int main(int argc, char *argv[]) {
       ierr = m_field.build_partitioned_problem("PRESSURE_IN_TIME",true); CHKERRQ(ierr);
       ierr = m_field.partition_finite_elements("PRESSURE_IN_TIME",true); CHKERRQ(ierr);
     } else {
-      // if not partitioned mesh is load to all processes 
+      // if not partitioned mesh is load to all processes
       ierr = m_field.build_problem("PRESSURE_IN_TIME"); CHKERRQ(ierr);
       ierr = m_field.partition_problem("PRESSURE_IN_TIME"); CHKERRQ(ierr);
       ierr = m_field.partition_finite_elements("PRESSURE_IN_TIME"); CHKERRQ(ierr);
@@ -888,53 +888,53 @@ int main(int argc, char *argv[]) {
 
     PetscBool add_incident_wave = PETSC_TRUE;
     ierr = PetscOptionsGetBool(NULL,"-add_incident_wave",&add_incident_wave,NULL); CHKERRQ(ierr);
-    
+
     if(add_incident_wave) {
-  
+
       // define problem
       ierr = m_field.add_problem("INCIDENT_WAVE"); CHKERRQ(ierr);
       // set finite elements for problem
       ierr = m_field.modify_problem_add_finite_element("INCIDENT_WAVE","HELMHOLTZ_RERE_FE"); CHKERRQ(ierr);
       // set refinment level for problem
       ierr = m_field.modify_problem_ref_level_add_bit("INCIDENT_WAVE",bit_level0); CHKERRQ(ierr);
-  
+
       // build porblems
       if(is_partitioned) {
         // if mesh is partitioned
         ierr = m_field.build_partitioned_problem("INCIDENT_WAVE",true); CHKERRQ(ierr);
         ierr = m_field.partition_finite_elements("INCIDENT_WAVE",true); CHKERRQ(ierr);
       } else {
-        // if not partitioned mesh is load to all processes 
+        // if not partitioned mesh is load to all processes
         ierr = m_field.build_problem("INCIDENT_WAVE"); CHKERRQ(ierr);
         ierr = m_field.partition_problem("INCIDENT_WAVE"); CHKERRQ(ierr);
         ierr = m_field.partition_finite_elements("INCIDENT_WAVE"); CHKERRQ(ierr);
       }
       ierr = m_field.partition_ghost_dofs("INCIDENT_WAVE"); CHKERRQ(ierr);
       IncidentWave function_evaluator(wavenumber,wave_direction,power_of_incident_wave);
-  
+
       ierr = solve_problem(m_field,"INCIDENT_WAVE","HELMHOLTZ_RERE_FE","rePRES","imPRES",
         ADD_VALUES,function_evaluator,is_partitioned); CHKERRQ(ierr);
-  
+
     }
 
     PetscBool save_postproc_mesh = PETSC_TRUE;
     ierr = PetscOptionsGetBool(NULL,"-save_postproc_mesh",&save_postproc_mesh,NULL); CHKERRQ(ierr);
     if(save_postproc_mesh) {
-  
+
       PostPocOnRefinedMesh post_proc(m_field);
       ierr = post_proc.generateRefereneElemenMesh(); CHKERRQ(ierr);
       ierr = post_proc.addFieldValuesPostProc("rePRES"); CHKERRQ(ierr);
       ierr = post_proc.addFieldValuesPostProc("imPRES"); CHKERRQ(ierr);
-  
+
       if(m_field.check_field("reEX") && m_field.check_field("imEX")) {
         ierr = post_proc.addFieldValuesPostProc("reEX"); CHKERRQ(ierr);
         ierr = post_proc.addFieldValuesPostProc("imEX"); CHKERRQ(ierr);
       }
-  
+
       ierr = post_proc.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
       ierr = m_field.loop_finite_elements("ACOUSTIC_PROBLEM","HELMHOLTZ_RERE_FE",post_proc); CHKERRQ(ierr);
       rval = post_proc.postProcMesh.write_file("fe_solution_mesh_post_proc.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
-  
+
     }
 
     if(is_partitioned) {
@@ -947,14 +947,13 @@ int main(int argc, char *argv[]) {
 
   }
 
-  
+
   ierr = PetscTime(&v2);CHKERRQ(ierr);
   ierr = PetscGetCPUTime(&t2);CHKERRQ(ierr);
   PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Total Rank %d Time = %f S CPU Time = %f S \n",pcomm->rank(),v2-v1,t2-t1);
-   
+
   ierr = PetscFinalize(); CHKERRQ(ierr);
 
   return 0;
 
 }
-

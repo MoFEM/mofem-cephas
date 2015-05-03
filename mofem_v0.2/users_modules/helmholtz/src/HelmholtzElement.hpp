@@ -18,8 +18,8 @@
  * License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. 
- * The header file should contains as least #include as possible for speed 
+ * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>.
+ * The header file should contains as least #include as possible for speed
  */
 
 #ifndef __HELMHOLTZ_ELEMENT_HPP
@@ -27,11 +27,11 @@
 
 /** \brief Structure grouping operators and data used for wave propagation problem
   \ingroup mofem_helmholtz_elem
-  
+
   Complex-real transformation, See Ercegovac, Milos, and Jean-Michel Muller.
   "Solving Systems of Linear Equations in Complex Domain: Complex E-Method."
-  (2007)"  
-  
+  (2007)"
+
   Three dimensional homogeneous isotropic medium and time harmonic Helmholtz operator
 */
 struct HelmholtzElement {
@@ -51,7 +51,7 @@ struct HelmholtzElement {
     int getRule(int order) { return order+addToRank; };
   };
 
-  boost::ptr_map<string,ForcesAndSurcesCore> feRhs; // surface element for LHS 
+  boost::ptr_map<string,ForcesAndSurcesCore> feRhs; // surface element for LHS
   boost::ptr_map<string,ForcesAndSurcesCore> feLhs; // surface element for RHS
 
   /** \brief Volume element data
@@ -61,7 +61,7 @@ struct HelmholtzElement {
     double waveNumber;
     Range tEts; ///< contains elements in block set
   };
-  map<int,VolumeData> volumeData; 
+  map<int,VolumeData> volumeData;
 
   /** \brief Surface element data
   * \ingroup mofem_helmholtz_elem
@@ -121,7 +121,7 @@ struct HelmholtzElement {
     globalParameters.waveDirection.first.clear();
     globalParameters.waveDirection.first[2] = 1;
     int nmax = 3;
-    ierr = PetscOptionsRealArray("-wave_direction","direction of incident wave","", 
+    ierr = PetscOptionsRealArray("-wave_direction","direction of incident wave","",
       &globalParameters.waveDirection.first[0],&nmax,&globalParameters.waveDirection.second); CHKERRQ(ierr);
     if(globalParameters.waveDirection.second) {
       if(nmax > 0 && nmax != 3) {
@@ -139,8 +139,8 @@ struct HelmholtzElement {
   * \ingroup mofem_helmholtz_elem
   */
   struct CommonData {
-    
-    map<string,ublas::vector<double> > pressureAtGaussPts; 
+
+    map<string,ublas::vector<double> > pressureAtGaussPts;
     map<string,ublas::matrix<double> > gradPressureAtGaussPts;
     ublas::matrix<double> hoCoords;
 
@@ -148,7 +148,7 @@ struct HelmholtzElement {
 
   };
   CommonData commonData;
-  
+
   FieldInterface &mField;
   int addToRank; ///< default value 1, i.e. assumes that geometry is approx. by quadratic functions.
 
@@ -170,7 +170,7 @@ struct HelmholtzElement {
 
       if(reFieldName!=imFieldName) {
 
-	takeIndicesFromElementRowIndices = false;      
+	takeIndicesFromElementRowIndices = false;
 
       } else {
 
@@ -212,30 +212,30 @@ struct HelmholtzElement {
     }
 
   };
-  
+
   /** \brief Calculate pressure and gradient of pressure in volume
     */
   struct OpGetValueAndGradAtGaussPts: public VolumeElementForcesAndSourcesCore::UserDataOperator {
-  
+
     CommonData &commonData;
     const string fieldName;
     OpGetValueAndGradAtGaussPts(const string field_name,
       CommonData &common_data):
       VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
       commonData(common_data),fieldName(field_name) {}
-  
+
     PetscErrorCode doWork(
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
       try {
- 
+
         int nb_dofs = data.getFieldData().size();
         if(nb_dofs==0) PetscFunctionReturn(0);
         int nb_gauss_pts = data.getN().size1();
 
 	ublas::vector<double> &value = commonData.pressureAtGaussPts[fieldName];
 	ublas::matrix<double> &gradient = commonData.gradPressureAtGaussPts[fieldName];
-  
+
         // Initialize
 	value.resize(nb_gauss_pts);
         gradient.resize(nb_gauss_pts,3);
@@ -243,93 +243,93 @@ struct HelmholtzElement {
 	  gradient.clear();
 	  value.clear();
         }
-  
+
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
           value[gg] += inner_prod(data.getN(gg,nb_dofs),data.getFieldData());
           ublas::noalias(ublas::matrix_row<ublas::matrix<double> >(gradient,gg))
 	    += prod( trans(data.getDiffN(gg,nb_dofs)), data.getFieldData() );
         }
-  
+
       } catch (const std::exception& ex) {
         ostringstream ss;
         ss << "throw in method: " << ex.what() << endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
-  
+
       PetscFunctionReturn(0);
     }
-  
+
   };
 
   /** \brief Calculate pressure on surface
     */
   struct OpGetValueAtGaussPts: public FaceElementForcesAndSourcesCore::UserDataOperator {
-  
+
     CommonData &commonData;
     const string fieldName;
     OpGetValueAtGaussPts(const string field_name,
       CommonData &common_data):
       FaceElementForcesAndSourcesCore::UserDataOperator(field_name),
       commonData(common_data),fieldName(field_name) {}
-  
+
     PetscErrorCode doWork(
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
       try {
- 
+
         int nb_dofs = data.getFieldData().size();
         if(nb_dofs==0) PetscFunctionReturn(0);
         int nb_gauss_pts = data.getN().size1();
 
 	ublas::vector<double> &value = commonData.pressureAtGaussPts[fieldName];
-  
+
         // Initialize
 	value.resize(nb_gauss_pts);
         if(type == MBVERTEX) {
 	  value.clear();
         }
-  
+
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
           value[gg] += inner_prod(data.getN(gg,nb_dofs),data.getFieldData());
         }
-  
+
       } catch (const std::exception& ex) {
         ostringstream ss;
         ss << "throw in method: " << ex.what() << endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
-  
+
       PetscFunctionReturn(0);
     }
-  
+
   };
 
-  
-  /** \brief Coordinates at integration points, on surface. 
+
+  /** \brief Coordinates at integration points, on surface.
 
     This takes into account HO approximation for geometry
 
     */
   struct OpHoCoordTri: public FaceElementForcesAndSourcesCore::UserDataOperator {
-  
+
     ublas::matrix<double> &hoCoordsTri;
-    OpHoCoordTri(const string field_name,ublas::matrix<double> &ho_coords): 
+    OpHoCoordTri(const string field_name,ublas::matrix<double> &ho_coords):
       FaceElementForcesAndSourcesCore::UserDataOperator(field_name),
       hoCoordsTri(ho_coords) {}
-  
-    /*  
+
+    /*
     Cartesian coordinates for integration points inside elements
     X^coordinates = DOF dot* N
     */
     PetscErrorCode doWork(
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
-  
+
       try {
- 
+
         int nb_dofs = data.getFieldData().size();
         if(nb_dofs==0) PetscFunctionReturn(0);
-  
+
         hoCoordsTri.resize(data.getN().size1(),3);
         if(type == MBVERTEX) {
           hoCoordsTri.clear();
@@ -339,23 +339,23 @@ struct HelmholtzElement {
 
 	  // Calculate x,y,z at each GaussPts
           for(int dd = 0;dd<3;dd++) {
-            hoCoordsTri(gg,dd) += cblas_ddot(nb_dofs/3,&data.getN(gg)[0],1,&data.getFieldData()[dd],3); 
+            hoCoordsTri(gg,dd) += cblas_ddot(nb_dofs/3,&data.getN(gg)[0],1,&data.getFieldData()[dd],3);
           }
 
         }
-  
+
       } catch (const std::exception& ex) {
         ostringstream ss;
         ss << "throw in method: " << ex.what() << endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
-  
+
       PetscFunctionReturn(0);
     }
-  
+
   };
-  
-  
+
+
   /** \brief Rhs vector for Helmholtz operator
     \ingroup mofem_helmholtz_elem
 
@@ -365,7 +365,7 @@ struct HelmholtzElement {
 
   */
   struct OpHelmholtzRhs: public VolumeElementForcesAndSourcesCore::UserDataOperator {
-  
+
     VolumeData &dAta;
     CommonData &commonData;
     const string fieldName;
@@ -375,35 +375,35 @@ struct HelmholtzElement {
       const string field_name,Vec _F,VolumeData &data,CommonData &common_data):
       VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
       dAta(data),commonData(common_data),fieldName(field_name),F(_F) { }
-  
+
     ublas::vector<double> Nf;
-  
+
     PetscErrorCode doWork(
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
- 
+
       int nb_row_dofs = data.getIndices().size();
       if(nb_row_dofs==0) PetscFunctionReturn(0);
       if(dAta.tEts.find(getMoFEMFEPtr()->get_ent()) == dAta.tEts.end()) {
         PetscFunctionReturn(0);
       }
-  
+
       try {
-  
+
         PetscErrorCode ierr;
-       
+
 	ublas::vector<double> &pressure = commonData.pressureAtGaussPts[fieldName];
 	ublas::matrix<double> &grad_p = commonData.gradPressureAtGaussPts[fieldName];
 
         Nf.resize(nb_row_dofs);
 	Nf.clear();
-  
+
         // wave number "k" is the proportional to the frequency of incident wave
-        // and represents number of waves per wave length 2Pi - 2Pi/K   
+        // and represents number of waves per wave length 2Pi - 2Pi/K
         double k_pow2 = dAta.waveNumber*dAta.waveNumber;
 
         for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
-  
+
           double val = getVolume()*getGaussPts()(3,gg);
           if(getHoGaussPtsDetJac().size()>0) {
             val *= getHoGaussPtsDetJac()[gg]; // higher order geometry
@@ -416,21 +416,21 @@ struct HelmholtzElement {
 	  ublas::noalias(Nf) -= val*k_pow2*data.getN(gg,nb_row_dofs)*pressure[gg];
 
         }
-  
+
         ierr = VecSetValues(F,data.getIndices().size(),
           &data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
-  
+
       } catch (const std::exception& ex) {
         ostringstream ss;
         ss << "throw in method: " << ex.what() << endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
-  
+
       PetscFunctionReturn(0);
     }
-  
+
   };
-  
+
   /** \brief Lhs for helmholtz operator
 
     \ingroup mofem_helmholtz_elem
@@ -441,7 +441,7 @@ struct HelmholtzElement {
 
     */
   struct OpHelmholtzLhs: public VolumeElementForcesAndSourcesCore::UserDataOperator {
-  
+
     VolumeData &dAta;
     CommonData &commonData;
     const string imFieldName;
@@ -452,16 +452,16 @@ struct HelmholtzElement {
       Mat _A,VolumeData &data,CommonData &common_data):
       VolumeElementForcesAndSourcesCore::UserDataOperator(re_field_name,re_field_name),
       dAta(data),commonData(common_data),imFieldName(im_field_name),A(_A) {}
-  
+
     ublas::matrix<double> K,transK;
-  
+
     PetscErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
       DataForcesAndSurcesCore::EntData &row_data,
       DataForcesAndSurcesCore::EntData &col_data) {
       PetscFunctionBegin;
- 
+
       int nb_rows = row_data.getIndices().size();
       if(nb_rows==0) PetscFunctionReturn(0);
       int nb_cols = col_data.getIndices().size();
@@ -469,16 +469,16 @@ struct HelmholtzElement {
       if(dAta.tEts.find(getMoFEMFEPtr()->get_ent()) == dAta.tEts.end()) {
         PetscFunctionReturn(0);
       }
-  
+
       try {
-  
+
         K.resize(nb_rows,nb_cols);
         K.clear();
 
         double k_pow2 = dAta.waveNumber*dAta.waveNumber;
 
         for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
-          
+
 
           double val = getVolume()*getGaussPts()(3,gg);
           if(getHoGaussPtsDetJac().size()>0) {
@@ -492,11 +492,11 @@ struct HelmholtzElement {
 
         PetscErrorCode ierr;
         ierr = MatSetValues(
-          A,  
+          A,
           nb_rows,&row_data.getIndices()[0],
           nb_cols,&col_data.getIndices()[0],
 	  &K(0,0),ADD_VALUES); CHKERRQ(ierr);
-        
+
         if(row_side != col_side || row_type != col_type) {
           transK.resize(nb_cols,nb_rows);
           noalias(transK) = trans(K);
@@ -505,38 +505,38 @@ struct HelmholtzElement {
             nb_cols,&col_data.getIndices()[0],
             nb_rows,&row_data.getIndices()[0],
             &transK(0,0),ADD_VALUES); CHKERRQ(ierr);
-        }  
+        }
 
         ierr = MatSetValues(
-          A,  
+          A,
           nb_rows,&((commonData.imIndices[row_type])[row_side])[0],
           nb_cols,&((commonData.imIndices[col_type])[col_side])[0],
 	  &K(0,0),ADD_VALUES); CHKERRQ(ierr);
-        
+
         if(row_side != col_side || row_type != col_type) {
           ierr = MatSetValues(
             A,
             nb_cols,&((commonData.imIndices[col_type])[col_side])[0],
             nb_rows,&((commonData.imIndices[row_type])[row_side])[0],
             &transK(0,0),ADD_VALUES); CHKERRQ(ierr);
-        }  
-	
-  
+        }
+
+
       } catch (const std::exception& ex) {
         ostringstream ss;
         ss << "throw in method: " << ex.what() << endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
-  
+
       PetscFunctionReturn(0);
     }
-  
+
   };
 
 
   struct ZeroFunVal {
-    
-    ublas::vector<double> vAl;    
+
+    ublas::vector<double> vAl;
 
     ublas::vector<double>& operator()(double x,double y,double z,ublas::vector<double> &normal) {
       vAl.resize(2);
@@ -544,39 +544,39 @@ struct HelmholtzElement {
       vAl[1] = 0;
       return vAl;
     }
-    
+
   };
   ZeroFunVal zeroFunVal;
-  
-  
-  
+
+
+
   struct BaylissTurkel {
-    
+
     BaylissTurkel() {}
 
-    ublas::vector<double> vAl;   
+    ublas::vector<double> vAl;
     ublas::vector<double>& operator()(double x,double y,double z,ublas::vector<double> &normal) {
-	  
+
       const complex< double > i( 0.0, 1.0 );
       double x2=x*x,y2=y*y,z2=z*z;
       double R = sqrt(x2+y2+z2);
 
       complex< double > result = 1.0/(2.0*R);
-	  
+
       vAl.resize(2);
       vAl[0] = std::real(result);
       vAl[1] = std::imag(result);
 
       return vAl;
     }
-    
+
   };
 
-  
-  
+
+
 
   /** \brief calulate incident wave scatterd on hard surface
-    
+
     \bug assumes that object is convex in ceneter of coordinate system
 
     */
@@ -588,7 +588,7 @@ struct HelmholtzElement {
     double& pOwerImag;
 
     IncidentWaveNeumannF2(
-      double& wave_number,ublas::vector<double>& d,double& power_real,double &power_imag): 
+      double& wave_number,ublas::vector<double>& d,double& power_real,double &power_imag):
       waveNumber(wave_number),dIrection(d),pOwerReal(power_real),pOwerImag(power_imag) {}
 
     ublas::vector<double> cOordinate;
@@ -632,17 +632,17 @@ struct HelmholtzElement {
     any variant of above conditions.
 
     \f[
-    \left.\left\{ \frac{\partial p}{\partial n} + 
-      (\textrm{re}[\sigma]+i*\textrm{im}[\sigma] + \textrm{re}[F1]+i\textrm{im}[F1]) p 
+    \left.\left\{ \frac{\partial p}{\partial n} +
+      (\textrm{re}[\sigma]+i*\textrm{im}[\sigma] + \textrm{re}[F1]+i\textrm{im}[F1]) p
       + \textrm{re}[F2]+i\textrm{im}[F2] \right\}\right|_\Gamma = 0
     \f]
     where \f$F1(x,y,z,\mathbf{n})\f$ and \f$F2(x,y,z,\mathbf{n})\f$ are template function evaluators given by user.
 
     \f[
-    F_i =  
-      \int_{\Omega^e} \frac{\partial N_i}{\partial x_j}\frac{\partial p}{\partial x_j} \textrm{d}V + 
+    F_i =
+      \int_{\Omega^e} \frac{\partial N_i}{\partial x_j}\frac{\partial p}{\partial x_j} \textrm{d}V +
       \int_{\Gamma^e} N_i \left\{
-	(\textrm{re}[\sigma]+i*\textrm{im}[\sigma] + \textrm{re}[F1]+i\textrm{im}[F1]) p + \textrm{re}[F2]+i\textrm{im}[F2] 
+	(\textrm{re}[\sigma]+i*\textrm{im}[\sigma] + \textrm{re}[F1]+i\textrm{im}[F1]) p + \textrm{re}[F2]+i\textrm{im}[F2]
       \right\} \textrm{d}V
     \f]
 
@@ -650,26 +650,26 @@ struct HelmholtzElement {
     volume operator. Expanding surface integral and taking into account that
     admittance and shape function are complex numbers, we get:
     \f[
-    \textrm{re}[F^\Gamma_i] = \int_{\Gamma^e} N_i 
+    \textrm{re}[F^\Gamma_i] = \int_{\Gamma^e} N_i
       \left\{
-      (\textrm{re}[\sigma]+\textrm{re}[F1])\textrm{re}[p] - (\textrm{im}[\sigma]+\textrm{im}[F1])\textrm{im}[p] +  \textrm{re}[F2]) 
+      (\textrm{re}[\sigma]+\textrm{re}[F1])\textrm{re}[p] - (\textrm{im}[\sigma]+\textrm{im}[F1])\textrm{im}[p] +  \textrm{re}[F2])
       \right\}
     \textrm{d}V
     \f]
     and
     \f[
-    \textrm{im}[F^\Gamma_i] = \int_{\Gamma^e} N_i 
+    \textrm{im}[F^\Gamma_i] = \int_{\Gamma^e} N_i
       \left\{
-      (\textrm{re}[\sigma]+\textrm{re}[F1])\textrm{im}[p] + (\textrm{im}[\sigma]+\textrm{im}[F1])\textrm{re}[p] +  \textrm{im}[F2]) 
+      (\textrm{re}[\sigma]+\textrm{re}[F1])\textrm{im}[p] + (\textrm{im}[\sigma]+\textrm{im}[F1])\textrm{re}[p] +  \textrm{im}[F2])
       \right\}
     \textrm{d}V
     \f]
 
- 
+
   */
   template<typename FUNEVAL1,typename FUNEVAL2>
   struct OpHelmholtzMixBCRhs: public FaceElementForcesAndSourcesCore::UserDataOperator {
-  
+
     SurfaceData &dAta;
     CommonData &commonData;
     Vec F;
@@ -697,7 +697,7 @@ struct HelmholtzElement {
 
       double re_pressure = commonData.pressureAtGaussPts[rePressure](gg);
       double im_pressure = commonData.pressureAtGaussPts[imPressure](gg);
-    
+
       reResidual = (dAta.aDmittance_real+f1[0])*re_pressure - (dAta.aDmittance_imag+f1[1])*im_pressure + f2[0];
       imResidual = (dAta.aDmittance_real+f1[0])*im_pressure + (dAta.aDmittance_imag+f1[1])*re_pressure + f2[1];
 
@@ -705,15 +705,15 @@ struct HelmholtzElement {
     }
 
     ublas::vector<double> nOrmal;
-  
+
     PetscErrorCode doWork(
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
-  
+
       try {
-  
+
         PetscErrorCode ierr;
-       
+
         int nb_row_dofs = data.getIndices().size();
 	if(!nb_row_dofs) {
           PetscFunctionReturn(0);
@@ -722,14 +722,14 @@ struct HelmholtzElement {
 	if(dAta.tRis.find(getMoFEMFEPtr()->get_ent()) == dAta.tRis.end()) {
 	  PetscFunctionReturn(0);
 	}
- 
+
         reNf.resize(nb_row_dofs);
 	reNf.clear();
         imNf.resize(nb_row_dofs);
 	imNf.clear();
 
 	nOrmal.resize(3);
-  
+
         for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
 
 	  double area = getArea();
@@ -746,7 +746,7 @@ struct HelmholtzElement {
 	  if(commonData.hoCoords.size1()) {
 	    x = commonData.hoCoords(gg,0);
 	    y = commonData.hoCoords(gg,1);
-	    z = commonData.hoCoords(gg,2);	
+	    z = commonData.hoCoords(gg,2);
 	  } else {
 	    x = getCoordsAtGaussPts()(gg,0);
 	    y = getCoordsAtGaussPts()(gg,1);
@@ -762,7 +762,7 @@ struct HelmholtzElement {
 	    ublas::vector<double>& f2 = (*functionEvaluator2)(x,y,z,nOrmal);
 
 	    ierr = calculateResidualRe(gg,f1,f2); CHKERRQ(ierr);
-  
+
 	    noalias(reNf) += val*(reResidual*data.getN(gg,nb_row_dofs));
 	    noalias(imNf) += val*(imResidual*data.getN(gg,nb_row_dofs));
 
@@ -773,7 +773,7 @@ struct HelmholtzElement {
 	  }
 
         }
-  
+
         ierr = VecSetValues(F,
 	  data.getIndices().size(),&
 	  data.getIndices()[0],
@@ -788,19 +788,19 @@ struct HelmholtzElement {
         ss << "throw in method: " << ex.what() << endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
-  
+
       PetscFunctionReturn(0);
     }
-  
+
   };
 
-  /** \brief Mix boundary conditions 
-    * \ingroup mofem_helmholtz_elem 
+  /** \brief Mix boundary conditions
+    * \ingroup mofem_helmholtz_elem
 
   \f[
   C_{ij}= \int_{\Gamma^e} (\sigma+F1) N_i N_j \textrm{d}S
   \f]
-  
+
   Note that off diagonal imaginary part is assembled on the fly. C matrix is
   transposed and assembled with negative sign.
 
@@ -814,7 +814,7 @@ struct HelmholtzElement {
     const string imPressure;
 
     boost::shared_ptr<FUNEVAL1> functionEvaluator1;
-    
+
     Mat A;
     OpHelmholtzMixBCLhs(
       const string re_field_name,const string im_field_name,
@@ -827,19 +827,19 @@ struct HelmholtzElement {
       sYmm = false; /// This operator is not symmetric
 
     }
-  
+
     ublas::matrix<double> K,K0,K1,reF1K,imF1K;
     ublas::vector<double> nOrmal;
-  
+
     PetscErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
       DataForcesAndSurcesCore::EntData &row_data,
       DataForcesAndSurcesCore::EntData &col_data) {
       PetscFunctionBegin;
-  
+
       try {
-  
+
 	int nb_rows = row_data.getIndices().size();
 	int nb_cols = col_data.getIndices().size();
         if(nb_rows==0) PetscFunctionReturn(0);
@@ -848,7 +848,7 @@ struct HelmholtzElement {
 	if(dAta.tRis.find(getMoFEMFEPtr()->get_ent()) == dAta.tRis.end()) {
 	  PetscFunctionReturn(0);
 	}
-        
+
         K.resize(nb_rows,nb_cols);
 	K.clear();
         reF1K.resize(nb_rows,nb_cols);
@@ -860,7 +860,7 @@ struct HelmholtzElement {
 	nOrmal.resize(3);
 
         for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
-            
+
 	  double area = getArea();
 	  if(getNormals_at_GaussPt().size1()) {
 	    noalias(nOrmal) = getNormals_at_GaussPt(gg);
@@ -872,7 +872,7 @@ struct HelmholtzElement {
 	  if(commonData.hoCoords.size1()) {
 	    x = commonData.hoCoords(gg,0);
 	    y = commonData.hoCoords(gg,1);
-	    z = commonData.hoCoords(gg,2);	
+	    z = commonData.hoCoords(gg,2);
 	  } else {
 	    x = getCoordsAtGaussPts()(gg,0);
 	    y = getCoordsAtGaussPts()(gg,1);
@@ -917,42 +917,42 @@ struct HelmholtzElement {
 	// real-real
 	noalias(K1) = dAta.aDmittance_real*K+reF1K;
 	ierr = MatSetValues(
-	  A,  
+	  A,
 	  nb_rows,&row_data.getIndices()[0],
 	  nb_cols,&col_data.getIndices()[0],
 	  &K1(0,0),ADD_VALUES); CHKERRQ(ierr);
 	// imag-imag
 	noalias(K1) = dAta.aDmittance_real*K+reF1K;
 	ierr = MatSetValues(
-	  A,  
+	  A,
 	  nb_rows,&(commonData.imIndices[row_type][row_side])[0],
 	  nb_cols,&(commonData.imIndices[col_type][col_side])[0],
-	  &K1(0,0),ADD_VALUES); CHKERRQ(ierr);   
+	  &K1(0,0),ADD_VALUES); CHKERRQ(ierr);
 
 	// real-imag
 	noalias(K1) = -(dAta.aDmittance_imag*K+imF1K);
 	ierr = MatSetValues(
-	  A,  
+	  A,
 	  nb_rows,&row_data.getIndices()[0],
 	  nb_cols,&(commonData.imIndices[col_type][col_side])[0],
 	  &K1(0,0),ADD_VALUES); CHKERRQ(ierr);
 	// imag-real
 	noalias(K1) = dAta.aDmittance_imag*K+imF1K;
 	ierr = MatSetValues(
-	  A,  
+	  A,
 	  nb_rows,&(commonData.imIndices[row_type][row_side])[0],
 	  nb_cols,&col_data.getIndices()[0],
-	  &K1(0,0),ADD_VALUES); CHKERRQ(ierr);   
+	  &K1(0,0),ADD_VALUES); CHKERRQ(ierr);
 
       } catch (const std::exception& ex) {
         ostringstream ss;
         ss << "throw in method: " << ex.what() << endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
-  
+
       PetscFunctionReturn(0);
     }
-   
+
   };
 
   /* \brief Infinite Helmholtz Element
@@ -991,7 +991,7 @@ struct HelmholtzElement {
   \f$\psi(\xi_3)\f$ is a radial shape function. The radial shape functions are
   generated as follows
   \f[
-  \psi_j = 
+  \psi_j =
   \left\{
     \begin{array}{cc}
       1, & j = 0 \\
@@ -1005,22 +1005,22 @@ struct HelmholtzElement {
   that to global system are assembled additional terms but size remains
   unchanged, moreover is symmetric.
 
-  To make all above true, pleas note that 
-  \f[	
+  To make all above true, pleas note that
+  \f[
   p=\xi_3 e^{-ik(\xi_3^{-1}-1)}P
   \f]
   where for \f$\xi = 1\f$, \f$p(\xi_1,\xi_2) = P(\xi_1,\xi_2,1)\f$
 
   Infinite part,
   \f[
-  b_\infty(q,p) = 
+  b_\infty(q,p) =
     \frac{1}{a} \int_{S_a}
       \left\{
       \int_0^1
 	\frac{\partial P}{\partial \xi_3}
 	\left(
 	\xi_3^2\frac{\partial \overline{Q}}{\partial \xi_3} - i2ka\overline{Q}
-	\right) 
+	\right)
       \textrm{d}\xi_3
       +(1+ika)P\overline{Q}|_{\xi_3=1}
     \right\}
@@ -1036,12 +1036,12 @@ struct HelmholtzElement {
 
 
   */
-  
+
   struct InfiniteHelmholtz {
-    
+
     /*ublas::matrix<double> gaussPointsInRadialDirection;
     ublas::matrix<double> radialShapeFunctions;
-    ublas::matrix<double> direvativesOfRadialShapeFunctions; 
+    ublas::matrix<double> direvativesOfRadialShapeFunctions;
 
     ublas::matrix<double> elementShapeFunctions;
     ublas::matrxi<double> direvativeOfElementShapeFunctions;*/
@@ -1097,7 +1097,7 @@ struct HelmholtzElement {
 
 	    }
 	  }
-	
+
 	}
       }*/
 
@@ -1105,7 +1105,7 @@ struct HelmholtzElement {
     //}
 
   };
-  
+
   /** \brief Add Helmholtz elements to problem
     * \ingroup mofem_helmholtz_elem
     *
@@ -1120,38 +1120,38 @@ struct HelmholtzElement {
     const string mesh_nodals_positions = "MESH_NODE_POSITIONS",
     const string pressure_field = "P") {
     PetscFunctionBegin;
-  
+
     PetscErrorCode ierr;
     ErrorCode rval;
 
     if(mField.check_field(pressure_field)) {
 
-      ierr = mField.add_finite_element("PRESSURE_FE",MF_ZERO); CHKERRQ(ierr ); 
+      ierr = mField.add_finite_element("PRESSURE_FE",MF_ZERO); CHKERRQ(ierr );
       ierr = mField.modify_finite_element_add_field_row("PRESSURE_FE",pressure_field); CHKERRQ(ierr);
       ierr = mField.modify_finite_element_add_field_col("PRESSURE_FE",pressure_field); CHKERRQ(ierr);
       ierr = mField.modify_finite_element_add_field_data("PRESSURE_FE",pressure_field); CHKERRQ(ierr);
 
     }
-    
-    ierr = mField.add_finite_element("HELMHOLTZ_RERE_FE",MF_ZERO); CHKERRQ(ierr ); 
+
+    ierr = mField.add_finite_element("HELMHOLTZ_RERE_FE",MF_ZERO); CHKERRQ(ierr );
     ierr = mField.modify_finite_element_add_field_row("HELMHOLTZ_RERE_FE",re_field_name); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_col("HELMHOLTZ_RERE_FE",re_field_name); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_data("HELMHOLTZ_RERE_FE",re_field_name); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_data("HELMHOLTZ_RERE_FE",im_field_name); CHKERRQ(ierr);
 
-    ierr = mField.add_finite_element("HELMHOLTZ_IMIM_FE",MF_ZERO); CHKERRQ(ierr ); 
+    ierr = mField.add_finite_element("HELMHOLTZ_IMIM_FE",MF_ZERO); CHKERRQ(ierr );
     ierr = mField.modify_finite_element_add_field_row("HELMHOLTZ_IMIM_FE",im_field_name); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_col("HELMHOLTZ_IMIM_FE",im_field_name); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_data("HELMHOLTZ_IMIM_FE",im_field_name); CHKERRQ(ierr);
 
-    ierr = mField.add_finite_element("HELMHOLTZ_REIM_FE",MF_ZERO); CHKERRQ(ierr ); 
+    ierr = mField.add_finite_element("HELMHOLTZ_REIM_FE",MF_ZERO); CHKERRQ(ierr );
     ierr = mField.modify_finite_element_add_field_row("HELMHOLTZ_REIM_FE",re_field_name); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_row("HELMHOLTZ_REIM_FE",im_field_name); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_col("HELMHOLTZ_REIM_FE",re_field_name); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_col("HELMHOLTZ_REIM_FE",im_field_name); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_data("HELMHOLTZ_REIM_FE",re_field_name); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_data("HELMHOLTZ_REIM_FE",im_field_name); CHKERRQ(ierr);
-    
+
     if(mField.check_field(mesh_nodals_positions)) {
 
       ierr = mField.modify_finite_element_add_field_data("HELMHOLTZ_RERE_FE",mesh_nodals_positions); CHKERRQ(ierr);
@@ -1167,7 +1167,7 @@ struct HelmholtzElement {
     }
 
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
-        
+
       if(it->get_name().compare(0,13,"MAT_HELMHOLTZ") == 0) {
 
 	volumeData[it->get_msId()].waveNumber = globalParameters.waveNumber.first;
@@ -1230,21 +1230,21 @@ struct HelmholtzElement {
       }
 
       if(it->get_name().compare(0,17,"BAYLISS_TURKEL_BC") == 0) {
-	  
+
 	baylissTurkelBcData[it->get_msId()].aDmittance_real = 0;
 	baylissTurkelBcData[it->get_msId()].aDmittance_imag = -globalParameters.waveNumber.first;
-		  
-		  
+
+
 	rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,baylissTurkelBcData[it->get_msId()].tRis,true); CHKERR_PETSC(rval);
 	ierr = mField.add_ents_to_finite_element_by_TRIs(baylissTurkelBcData[it->get_msId()].tRis,"HELMHOLTZ_REIM_FE"); CHKERRQ(ierr);
 
       }
-	  
+
     }
-  
+
     PetscFunctionReturn(0);
-  } 
-  
+  }
+
   PetscErrorCode setOperators(
     Mat A,Vec F,
     const string re_field_name,const string im_field_name,
@@ -1270,16 +1270,16 @@ struct HelmholtzElement {
     for(;mit!=volumeData.end();mit++) {
 
       feLhs.at("HELMHOLTZ_RERE_FE").getRowColOpPtrVector().push_back(
-	new OpHelmholtzLhs(re_field_name,im_field_name,A,mit->second,commonData));
+	       new OpHelmholtzLhs(re_field_name,im_field_name,A,mit->second,commonData));
 
       feRhs.at("HELMHOLTZ_RERE_FE").getRowOpPtrVector().push_back(
-	new OpHelmholtzRhs(re_field_name,F,mit->second,commonData));
+	       new OpHelmholtzRhs(re_field_name,F,mit->second,commonData));
       feRhs.at("HELMHOLTZ_IMIM_FE").getRowOpPtrVector().push_back(
-	new OpHelmholtzRhs(im_field_name,F,mit->second,commonData));
+	       new OpHelmholtzRhs(im_field_name,F,mit->second,commonData));
 
     }
 
-    fe_name = "HELMHOLTZ_REIM_FE"; 
+    fe_name = "HELMHOLTZ_REIM_FE";
     feLhs.insert(fe_name,new MySurfaceFE(mField,addToRank));
     feRhs.insert(fe_name,new MySurfaceFE(mField,addToRank));
 
@@ -1309,14 +1309,14 @@ struct HelmholtzElement {
     map<int,SurfaceData>::iterator miit = surfaceIncidentWaveBcData.begin();
     for(;miit!=surfaceIncidentWaveBcData.end();miit++) {
 
-      boost::shared_ptr<IncidentWaveNeumannF2> incident_wave_neumann_bc = 
+      boost::shared_ptr<IncidentWaveNeumannF2> incident_wave_neumann_bc =
 	  boost::shared_ptr<IncidentWaveNeumannF2>(
 	  new IncidentWaveNeumannF2(
 	  globalParameters.waveNumber.first,
 	  globalParameters.waveDirection.first,
 	  globalParameters.powerOfIncidentWaveReal.first,
 	  globalParameters.powerOfIncidentWaveImag.first));
-    
+
       if(miit->second.aDmittance_imag!=0) {
 	feRhs.at("HELMHOLTZ_REIM_FE").getRowColOpPtrVector().push_back(
 	  new OpHelmholtzMixBCLhs<ZeroFunVal>(
@@ -1331,8 +1331,8 @@ struct HelmholtzElement {
 	  zero_function,incident_wave_neumann_bc));
 
     }
-	
-	
+
+
     miit = sommerfeldBcData.begin();
     for(;miit!=sommerfeldBcData.end();miit++) {
 
@@ -1349,7 +1349,7 @@ struct HelmholtzElement {
 
     }
 
-    boost::shared_ptr<BaylissTurkel> bayliss_turkel_bc = 
+    boost::shared_ptr<BaylissTurkel> bayliss_turkel_bc =
       boost::shared_ptr<BaylissTurkel>(new BaylissTurkel());
 
     miit = baylissTurkelBcData.begin();
@@ -1369,7 +1369,7 @@ struct HelmholtzElement {
     }
 
     PetscFunctionReturn(0);
-  } 
+  }
 
   PetscErrorCode calculateA(const string problem_name) {
     PetscFunctionBegin;
@@ -1399,9 +1399,9 @@ struct HelmholtzElement {
 
     PetscFunctionReturn(0);
   }
-    
+
 };
-  
+
 #endif //__HELMHOLTZ_ELEMENT_HPP
 
 /***************************************************************************//**
