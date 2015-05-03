@@ -49,7 +49,7 @@ alias dockshellinit='`boot2docker shellinit 2>/dev/null | grep export`'
 alias docklist='docker ps -a'
 
 #Pull the ubuntu_mofem image from remote Docker server. Note this version number may change
-alias dockpull='docker pull mofem_host/ubuntu_mofem:v0.6'
+alias dockpull='docker pull likask/ubuntu_mofem:v0.6'
 
 #Update docker time: After the system waking from sleep Docker’s time is wrong and this can affect building/compilation.
 alias docktime='/usr/local/bin/boot2docker ssh sudo ntpclient -s -h pool.ntp.org'
