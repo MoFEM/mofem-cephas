@@ -169,7 +169,7 @@ can generate a public-private key pair and copy the public key to the sshd
 container. To generate a public key in Mac OS X or Linux:
 
 ~~~~~~
-ssh-keygen -t rsa 
+ssh-keygen -t rsa
 ~~~~~~
 
 This will prompt you for a password which you should leave blank. Then copy
@@ -232,7 +232,7 @@ cmake \
 -DMOAB_DIR=/opt/petsc/arch-linux2-c-opt \
 -DADOL-C_DIR=/usr \
 -DTETGEN_DIR=/opt/tetgen1.5.0 \
--DBUILD_SHARED_LIBS=yes 
+-DBUILD_SHARED_LIBS=yes
 -DCMAKE_INSTALL_PREFIX=/build/release/usr_mods \
 /mnt/home/*mofem_source_code_directory*
 ~~~~~~
@@ -240,7 +240,7 @@ cmake \
 To build the MoFEM libraries run:
 
 ~~~~~~
-make -j 4 
+make -j 4
 ~~~~~~
 Install user’s modules:
 
@@ -253,7 +253,7 @@ To build the user’s modules run:
 ~~~~~~
 cd /build/release/usr_mods
 
-cmake users_modules
+cmake -DCMAKE_BUILD_TYPE=Release users_modules
 make -j 4
 ~~~~~~
 
@@ -281,13 +281,13 @@ Cmake command:
 cd /build/debug/lib
 
 cmake \
--DCMAKE_BUILD_TYPE=debug\
+-DCMAKE_BUILD_TYPE=Debug\
 -DCMAKE_CXX_FLAGS="-Wall" \
 -DPETSC_DIR=/opt/petsc -DPETSC_ARCH=arch-linux2-c-debug \
 -DMOAB_DIR=/opt/petsc/arch-linux2-c-debug \
 -DADOL-C_DIR=/usr \
 -DTETGEN_DIR=/opt/tetgen1.5.0 \
--DBUILD_SHARED_LIBS=yes 
+-DBUILD_SHARED_LIBS=yes
 -DCMAKE_INSTALL_PREFIX=/build/debug/usr_mods \
 /mnt/home/*mofem_source_code_directory*
 ~~~~~~
@@ -295,7 +295,7 @@ cmake \
 To build the MoFEM libraries run:
 
 ~~~~~~
-make -j 4 
+make -j 4
 ~~~~~~
 Install user’s modules:
 
@@ -308,7 +308,7 @@ To build the user’s modules run:
 ~~~~~~
 cd /build/debug/usr_mods
 
-cmake -DCMAKE_BUILD_TYPE=debug users_modules
+cmake -DCMAKE_BUILD_TYPE=Debug users_modules
 make -j 4
 ~~~~~~
 
@@ -328,4 +328,3 @@ the host OS. To get the files there are several options:
 2. Create a symbolic link of the executable in Docker to your host system. Note this will need to include any input files.
 
 3. Change the location of the install directory to the host system
-
