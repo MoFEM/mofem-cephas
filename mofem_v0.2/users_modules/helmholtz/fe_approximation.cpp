@@ -73,6 +73,8 @@ using namespace MoFEM;
 #include <kiss_fft.h>
 #include <kiss_fft.c>
 
+/** \brief Read impulse and apply FFT
+  */
 struct TimeSeries {
 
   FieldInterface& mField;
@@ -108,7 +110,7 @@ struct TimeSeries {
     }
     FILE *time_data = fopen(time_file_name,"r");
     if(time_data == NULL) {
-	SETERRQ1(PETSC_COMM_SELF,1,"*** ERROR data file < %s > open unsucessfull",time_file_name);
+      SETERRQ1(PETSC_COMM_SELF,1,"*** ERROR data file < %s > open unsucessfull",time_file_name);
     }
     double no1 = 0.0, no2 = 0.0;
     tSeries[no1] = no2;
@@ -116,18 +118,18 @@ struct TimeSeries {
       int n = fscanf(time_data,"%lf %lf",&no1,&no2);
       if((n <= 0)||((no1==0)&&(no2==0))) {
         fgetc(time_data);
-	  continue;
-	}
-	if(n != 2){
-	  SETERRQ1(PETSC_COMM_SELF,1,"*** ERROR read data file error (check input time data file) { n = %d }",n);
-	}
-	tSeries[no1] = no2;
+        continue;
+      }
+      if(n != 2){
+        SETERRQ1(PETSC_COMM_SELF,1,"*** ERROR read data file error (check input time data file) { n = %d }",n);
+      }
+      tSeries[no1] = no2;
     }
     int r = fclose(time_data);
     if(debug) {
       map<double, double>::iterator tit = tSeries.begin();
       for(;tit!=tSeries.end();tit++) {
-	PetscPrintf(PETSC_COMM_WORLD,"** read time series %3.2e time %3.2e\n",tit->first,tit->second);
+        PetscPrintf(PETSC_COMM_WORLD,"** read time series %3.2e time %3.2e\n",tit->first,tit->second);
       }
     }
     if(r!=0) {
@@ -246,15 +248,15 @@ struct TimeSeries {
 
       map<int,HelmholtzElement::VolumeData>::iterator vit = helmholtzElement.volumeData.begin();
       for(;vit != helmholtzElement.volumeData.end();vit++) {
-	vit->second.waveNumber = wave_number;
+        vit->second.waveNumber = wave_number;
       }
       map<int,HelmholtzElement::SurfaceData>::iterator sit =  helmholtzElement.sommerfeldBcData.begin();
       for(;sit != helmholtzElement.sommerfeldBcData.end(); sit++) {
-	sit->second.aDmittance_imag = -wave_number;
+        sit->second.aDmittance_imag = -wave_number;
       }
       sit =  helmholtzElement.baylissTurkelBcData.begin();
       for(;sit != helmholtzElement.baylissTurkelBcData.end(); sit++) {
-	sit->second.aDmittance_imag = -wave_number;
+        sit->second.aDmittance_imag = -wave_number;
       }
 
       //helmholtzElement.globalParameters.waveNumber.first = wave_number;
@@ -327,15 +329,15 @@ struct TimeSeries {
 
       for(int k = 0;k<n;k++) {
 
-	double *p_real,*p_imag;
-	ierr = VecGetArray(pSeriesReal[k],&p_real); CHKERRQ(ierr);
-	ierr = VecGetArray(pSeriesImag[k],&p_imag); CHKERRQ(ierr);
+        double *p_real,*p_imag;
+        ierr = VecGetArray(pSeriesReal[k],&p_real); CHKERRQ(ierr);
+        ierr = VecGetArray(pSeriesImag[k],&p_imag); CHKERRQ(ierr);
 
-	complexOut[k].r = p_real[ii];
-	complexOut[k].i = p_imag[ii];
+        complexOut[k].r = p_real[ii];
+        complexOut[k].i = p_imag[ii];
 
-	ierr = VecRestoreArray(pSeriesReal[k],&p_real); CHKERRQ(ierr);
-	ierr = VecRestoreArray(pSeriesImag[k],&p_imag); CHKERRQ(ierr);
+        ierr = VecRestoreArray(pSeriesReal[k],&p_real); CHKERRQ(ierr);
+        ierr = VecRestoreArray(pSeriesImag[k],&p_imag); CHKERRQ(ierr);
 
 
       }
@@ -344,14 +346,14 @@ struct TimeSeries {
 
       for(int k = 0;k<n;k++) {
 
-	double *a_p;
-	ierr = VecGetArray(pSeriesReal[k],&a_p); CHKERRQ(ierr);
-	a_p[ ii ] = complexIn[k].r;
-	ierr = VecRestoreArray(pSeriesReal[k],&a_p); CHKERRQ(ierr);
+        double *a_p;
+        ierr = VecGetArray(pSeriesReal[k],&a_p); CHKERRQ(ierr);
+        a_p[ ii ] = complexIn[k].r;
+        ierr = VecRestoreArray(pSeriesReal[k],&a_p); CHKERRQ(ierr);
 
-	ierr = VecGetArray(pSeriesImag[k],&a_p); CHKERRQ(ierr);
-	a_p[ ii ] = complexIn[k].i;
-	ierr = VecRestoreArray(pSeriesImag[k],&a_p); CHKERRQ(ierr);
+        ierr = VecGetArray(pSeriesImag[k],&a_p); CHKERRQ(ierr);
+        a_p[ ii ] = complexIn[k].i;
+        ierr = VecRestoreArray(pSeriesImag[k],&a_p); CHKERRQ(ierr);
 
       }
 
@@ -360,31 +362,31 @@ struct TimeSeries {
 
     for(int k = 0;k<n;k++) {
 
-	ierr = VecGhostUpdateBegin(pSeriesReal[k],INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	ierr = VecGhostUpdateEnd(pSeriesReal[k],INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      ierr = VecGhostUpdateBegin(pSeriesReal[k],INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      ierr = VecGhostUpdateEnd(pSeriesReal[k],INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
-	ierr = VecGhostUpdateBegin(pSeriesImag[k],INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	ierr = VecGhostUpdateEnd(pSeriesImag[k],INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      ierr = VecGhostUpdateBegin(pSeriesImag[k],INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      ierr = VecGhostUpdateEnd(pSeriesImag[k],INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
-	ierr = mField.set_local_ghost_vector("PRESSURE_IN_TIME",ROW,pSeriesReal[k],INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-	ierr = mField.loop_finite_elements("PRESSURE_IN_TIME","PRESSURE_FE",post_proc); CHKERRQ(ierr);
+      ierr = mField.set_local_ghost_vector("PRESSURE_IN_TIME",ROW,pSeriesReal[k],INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      ierr = mField.loop_finite_elements("PRESSURE_IN_TIME","PRESSURE_FE",post_proc); CHKERRQ(ierr);
 
-	{
-	  ostringstream ss;
-	  ss << "pressure_real_time_step_" << k << ".h5m";
-	  rval = post_proc.postProcMesh.write_file(ss.str().c_str(),"MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
-	  PetscPrintf(PETSC_COMM_WORLD,"Saved %s\n",ss.str().c_str());
-	}
+      {
+        ostringstream ss;
+        ss << "pressure_real_time_step_" << k << ".h5m";
+        rval = post_proc.postProcMesh.write_file(ss.str().c_str(),"MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
+        PetscPrintf(PETSC_COMM_WORLD,"Saved %s\n",ss.str().c_str());
+      }
 
-	ierr = mField.set_local_ghost_vector("PRESSURE_IN_TIME",ROW,pSeriesImag[k],INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-	ierr = mField.loop_finite_elements("PRESSURE_IN_TIME","PRESSURE_FE",post_proc); CHKERRQ(ierr);
+      ierr = mField.set_local_ghost_vector("PRESSURE_IN_TIME",ROW,pSeriesImag[k],INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      ierr = mField.loop_finite_elements("PRESSURE_IN_TIME","PRESSURE_FE",post_proc); CHKERRQ(ierr);
 
-	{
-	  ostringstream ss;
-	  ss << "pressure_imag_time_step_" << k << ".h5m";
-	  rval = post_proc.postProcMesh.write_file(ss.str().c_str(),"MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
-	  PetscPrintf(PETSC_COMM_WORLD,"Saved %s\n",ss.str().c_str());
-	}
+      {
+        ostringstream ss;
+        ss << "pressure_imag_time_step_" << k << ".h5m";
+        rval = post_proc.postProcMesh.write_file(ss.str().c_str(),"MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
+        PetscPrintf(PETSC_COMM_WORLD,"Saved %s\n",ss.str().c_str());
+      }
 
     }
 
@@ -646,102 +648,102 @@ int main(int argc, char *argv[]) {
 
     case HARD_SPHERE_SCATTER_WAVE:
 
-      {
+    {
 
-	double scattering_sphere_radius = 1.;
-	ierr = PetscOptionsGetScalar(NULL,"-scattering_sphere_radius",&scattering_sphere_radius,NULL); CHKERRQ(ierr);
+      double scattering_sphere_radius = 1.;
+      ierr = PetscOptionsGetScalar(NULL,"-scattering_sphere_radius",&scattering_sphere_radius,NULL); CHKERRQ(ierr);
 
-	boost::shared_ptr<HardSphereScatterWave> function_evaluator = boost::shared_ptr<HardSphereScatterWave>(new HardSphereScatterWave(wavenumber,scattering_sphere_radius));
-	ierr = analytical_bc_real.setApproxOps(m_field,"rePRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::REAL); CHKERRQ(ierr);
-	ierr = analytical_bc_imag.setApproxOps(m_field,"imPRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::IMAG); CHKERRQ(ierr);
-	dirihlet_bc_set = true;
+      boost::shared_ptr<HardSphereScatterWave> function_evaluator = boost::shared_ptr<HardSphereScatterWave>(new HardSphereScatterWave(wavenumber,scattering_sphere_radius));
+      ierr = analytical_bc_real.setApproxOps(m_field,"rePRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::REAL); CHKERRQ(ierr);
+      ierr = analytical_bc_imag.setApproxOps(m_field,"imPRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::IMAG); CHKERRQ(ierr);
+      dirihlet_bc_set = true;
 
-      }
+    }
 
-      break;
+    break;
 
     case SOFT_SPHERE_SCATTER_WAVE:
 
-      {
+    {
 
-	double scattering_sphere_radius = 1.;
-	ierr = PetscOptionsGetScalar(NULL,"-scattering_sphere_radius",&scattering_sphere_radius,NULL); CHKERRQ(ierr);
+      double scattering_sphere_radius = 1.;
+      ierr = PetscOptionsGetScalar(NULL,"-scattering_sphere_radius",&scattering_sphere_radius,NULL); CHKERRQ(ierr);
 
-	boost::shared_ptr<SoftSphereScatterWave> function_evaluator = boost::shared_ptr<SoftSphereScatterWave>(new SoftSphereScatterWave(wavenumber,scattering_sphere_radius));
-	ierr = analytical_bc_real.setApproxOps(m_field,"rePRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::REAL); CHKERRQ(ierr);
-	ierr = analytical_bc_imag.setApproxOps(m_field,"imPRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::IMAG); CHKERRQ(ierr);
-  	dirihlet_bc_set = true;
+      boost::shared_ptr<SoftSphereScatterWave> function_evaluator = boost::shared_ptr<SoftSphereScatterWave>(new SoftSphereScatterWave(wavenumber,scattering_sphere_radius));
+      ierr = analytical_bc_real.setApproxOps(m_field,"rePRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::REAL); CHKERRQ(ierr);
+      ierr = analytical_bc_imag.setApproxOps(m_field,"imPRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::IMAG); CHKERRQ(ierr);
+      dirihlet_bc_set = true;
 
-      }
+    }
 
-      break;
+    break;
 
-      case PLANE_WAVE:
+    case PLANE_WAVE:
 
-	{
+    {
 
-	  double angle = 0.25;
-	  // set wave number from line command, that overwrite numbre form block set
-	  ierr = PetscOptionsGetScalar(NULL,"-wave_guide_angle",&angle,NULL); CHKERRQ(ierr);
-
-
-	  boost::shared_ptr<PlaneWave> function_evaluator = boost::shared_ptr<PlaneWave>(new PlaneWave(wavenumber,angle*M_PI));
-	  ierr = analytical_bc_real.setApproxOps(m_field,"rePRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::REAL); CHKERRQ(ierr);
-	  ierr = analytical_bc_imag.setApproxOps(m_field,"imPRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::IMAG); CHKERRQ(ierr);
-	  dirihlet_bc_set = true;
-
-	}
-
-      break;
-
-      case HARD_CYLINDER_SCATTER_WAVE:
-
-	{
-
-	  boost::shared_ptr<HardCylinderScatterWave> function_evaluator = boost::shared_ptr<HardCylinderScatterWave>(new HardCylinderScatterWave(wavenumber));
-	  ierr = analytical_bc_real.setApproxOps(m_field,"rePRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::REAL); CHKERRQ(ierr);
-	  ierr = analytical_bc_imag.setApproxOps(m_field,"imPRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::IMAG); CHKERRQ(ierr);
-	  dirihlet_bc_set = true;
+      double angle = 0.25;
+      // set wave number from line command, that overwrite numbre form block set
+      ierr = PetscOptionsGetScalar(NULL,"-wave_guide_angle",&angle,NULL); CHKERRQ(ierr);
 
 
-	}
+      boost::shared_ptr<PlaneWave> function_evaluator = boost::shared_ptr<PlaneWave>(new PlaneWave(wavenumber,angle*M_PI));
+      ierr = analytical_bc_real.setApproxOps(m_field,"rePRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::REAL); CHKERRQ(ierr);
+      ierr = analytical_bc_imag.setApproxOps(m_field,"imPRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::IMAG); CHKERRQ(ierr);
+      dirihlet_bc_set = true;
 
-      break;
+    }
 
-      case SOFT_CYLINDER_SCATTER_WAVE:
+    break;
 
-	{
+    case HARD_CYLINDER_SCATTER_WAVE:
 
-	  boost::shared_ptr<SoftCylinderScatterWave> function_evaluator = boost::shared_ptr<SoftCylinderScatterWave>(new SoftCylinderScatterWave(wavenumber));
-	  ierr = analytical_bc_real.setApproxOps(m_field,"rePRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::REAL); CHKERRQ(ierr);
-	  ierr = analytical_bc_imag.setApproxOps(m_field,"imPRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::IMAG); CHKERRQ(ierr);
-	  dirihlet_bc_set = true;
+    {
 
-	}
+      boost::shared_ptr<HardCylinderScatterWave> function_evaluator = boost::shared_ptr<HardCylinderScatterWave>(new HardCylinderScatterWave(wavenumber));
+      ierr = analytical_bc_real.setApproxOps(m_field,"rePRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::REAL); CHKERRQ(ierr);
+      ierr = analytical_bc_imag.setApproxOps(m_field,"imPRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::IMAG); CHKERRQ(ierr);
+      dirihlet_bc_set = true;
 
-      break;
 
-      case INCIDENT_WAVE:
+    }
 
-	{
+    break;
 
-	  boost::shared_ptr<IncidentWave> function_evaluator =
-	    boost::shared_ptr<IncidentWave>(new IncidentWave(wavenumber,wave_direction,power_of_incident_wave));
-	  ierr = analytical_bc_real.setApproxOps(m_field,"rePRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::REAL); CHKERRQ(ierr);
-	  ierr = analytical_bc_imag.setApproxOps(m_field,"imPRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::IMAG); CHKERRQ(ierr);
-	  dirihlet_bc_set = true;
+    case SOFT_CYLINDER_SCATTER_WAVE:
 
-	}
+    {
 
-      break;
+      boost::shared_ptr<SoftCylinderScatterWave> function_evaluator = boost::shared_ptr<SoftCylinderScatterWave>(new SoftCylinderScatterWave(wavenumber));
+      ierr = analytical_bc_real.setApproxOps(m_field,"rePRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::REAL); CHKERRQ(ierr);
+      ierr = analytical_bc_imag.setApproxOps(m_field,"imPRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::IMAG); CHKERRQ(ierr);
+      dirihlet_bc_set = true;
 
-      case NO_ANALYTICAL_SOLUTION:
+    }
 
-	{
-	  dirihlet_bc_set = false;
-	}
+    break;
 
-      break;
+    case INCIDENT_WAVE:
+
+    {
+
+      boost::shared_ptr<IncidentWave> function_evaluator =
+      boost::shared_ptr<IncidentWave>(new IncidentWave(wavenumber,wave_direction,power_of_incident_wave));
+      ierr = analytical_bc_real.setApproxOps(m_field,"rePRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::REAL); CHKERRQ(ierr);
+      ierr = analytical_bc_imag.setApproxOps(m_field,"imPRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::IMAG); CHKERRQ(ierr);
+      dirihlet_bc_set = true;
+
+    }
+
+    break;
+
+    case NO_ANALYTICAL_SOLUTION:
+
+    {
+      dirihlet_bc_set = false;
+    }
+
+    break;
 
   }
 
@@ -940,9 +942,11 @@ int main(int argc, char *argv[]) {
     if(is_partitioned) {
       rval = moab.write_file("fe_solution.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
     } else {
+
       if(!pcomm->rank()) {
         rval = moab.write_file("fe_solution.h5m"); CHKERR_PETSC(rval);
       }
+
     }
 
   }
