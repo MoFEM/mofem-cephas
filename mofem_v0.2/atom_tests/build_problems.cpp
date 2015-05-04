@@ -50,9 +50,7 @@ int main(int argc, char *argv[]) {
 
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-  BARRIER_RANK_START(pcomm)
   rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
-  BARRIER_RANK_END(pcomm)
 
   //Create MoFEM (Joseph) database
   MoFEM::Core core(moab);
@@ -120,6 +118,12 @@ int main(int argc, char *argv[]) {
   ierr = m_field.build_problems(); CHKERRQ(ierr);
   ierr = m_field.partition_problem("P1"); CHKERRQ(ierr);
   ierr = m_field.partition_problem("P2"); CHKERRQ(ierr);
+  ierr = m_field.partition_finite_elements("P1"); CHKERRQ(ierr);
+  ierr = m_field.partition_finite_elements("P2"); CHKERRQ(ierr);
+  ierr = m_field.partition_ghost_dofs("P1"); CHKERRQ(ierr);
+  ierr = m_field.partition_ghost_dofs("P2"); CHKERRQ(ierr);
+  ierr = m_field.partition_check_matrix_fill_in("P1",-1,-1,0); CHKERRQ(ierr);
+  ierr = m_field.partition_check_matrix_fill_in("P2",-1,-1,0); CHKERRQ(ierr);
 
   //compose problem
   ierr = m_field.add_problem("P3"); CHKERRQ(ierr);
@@ -127,17 +131,18 @@ int main(int argc, char *argv[]) {
   ierr = m_field.modify_problem_add_finite_element("P3","E3"); CHKERRQ(ierr);
 
   ierr = m_field.build_problem("P3"); CHKERRQ(ierr);
-  ierr = m_field.compose_problem("P3","P1",false,"P2",true); CHKERRQ(ierr);
+  ierr = m_field.partition_compose_problem("P3","P1",false,"P2",true); CHKERRQ(ierr);
   ierr = m_field.partition_finite_elements("P3"); CHKERRQ(ierr);
   ierr = m_field.partition_ghost_dofs("P3"); CHKERRQ(ierr);
+  ierr = m_field.partition_check_matrix_fill_in("P3",-1,-1,0); CHKERRQ(ierr);
 
-  Mat m;
+  /*Mat m;
   ierr = m_field.MatCreateMPIAIJWithArrays("P3",&m); CHKERRQ(ierr);
   PetscViewer viewer;
   ierr = PetscViewerASCIIOpen(PETSC_COMM_WORLD,"build_composite_problem.txt",&viewer); CHKERRQ(ierr);
   MatView(m,viewer);
   ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
-  ierr = MatDestroy(&m); CHKERRQ(ierr);
+  ierr = MatDestroy(&m); CHKERRQ(ierr);*/
 
   //finish work cleaning memory, getting statistics, ect.
   ierr = PetscFinalize(); CHKERRQ(ierr);

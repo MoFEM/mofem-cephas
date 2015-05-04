@@ -551,7 +551,6 @@ PetscErrorCode Core::MatCreateSeqAIJWithArrays(const string &name,Mat *Aij,Petsc
 PetscErrorCode Core::partition_problem(const string &name,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-  verb = 10;
   if(!(*build_MoFEM&(1<<0))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"fields not build");
   if(!(*build_MoFEM&(1<<1))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"FEs not build");
   if(!(*build_MoFEM&(1<<2))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"entFEAdjacencies not build");
@@ -585,9 +584,11 @@ PetscErrorCode Core::partition_problem(const string &name,int verb) {
     ss << "throw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
     SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }
+
   if(verb>1) {
     PetscPrintf(comm,"\t<- done\n");
   }
+
   int m,n;
   ierr = MatGetSize(Adj,&m,&n); CHKERRQ(ierr);
   if(verb>2) {
@@ -764,6 +765,7 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const string &problem_name,i
 
         FENumeredDofMoFEMEntity_multiIndex::iterator cit = colPtr->begin();
         for(;cit!=colPtr->end();cit++) {
+
           if(refinedEntitiesPtr->find(cit->get_ent())==refinedEntitiesPtr->end()) {
             SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
           }
@@ -819,8 +821,6 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const string &problem_name,i
 
           }
 
-
-
         }
 
         if(rit->get_ent_type()!=MBVERTEX) {
@@ -868,6 +868,10 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const string &problem_name,i
   ierr = MatCreateMPIAIJWithArrays(problem_name,&A); CHKERRQ(ierr);
   ierr = MatSetOption(A,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_TRUE);  CHKERRQ(ierr);
 
+  //MatView(A,PETSC_VIEWER_DRAW_WORLD);
+  //std::string wait;
+  //std::cin >> wait;
+
   TestMatrixFillIn method(this,A,row_print,col_print);
 
   typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
@@ -881,10 +885,11 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const string &problem_name,i
     PetscPrintf(comm,"check problem < %s >\n",problem_name.c_str());
   }
 
-  //MoFEMFiniteElement set
-  MoFEMFiniteElement_multiIndex::iterator fe = finiteElements.begin();
-  MoFEMFiniteElement_multiIndex::iterator hi_fe = finiteElements.end();
+  //Loop all elements in problem and check if assemble is without error
+  NumeredMoFEMFiniteElement_multiIndex::iterator fe = p_miit->numeredFiniteElements.begin();
+  NumeredMoFEMFiniteElement_multiIndex::iterator hi_fe = p_miit->numeredFiniteElements.end();
   for(;fe!=hi_fe;fe++) {
+
     if(verb>0) {
       PetscPrintf(comm,"\tcheck element %s\n",fe->get_name().c_str());
     }
