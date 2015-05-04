@@ -19,7 +19,11 @@
 using namespace MoFEM;
 #include <PCMGSetUpViaApproxOrders.hpp>
 
-#include <petsc-private/petscimpl.h> 
+#ifdef __APPLE__
+  #include <petsc/private/petscimpl.h>
+#else
+  #include <petsc-private/petscimpl.h>
+#endif 
 
 static PetscErrorCode ierr;
 //static ErrorCode rval;
