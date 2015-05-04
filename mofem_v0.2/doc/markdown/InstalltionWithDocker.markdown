@@ -232,7 +232,7 @@ cmake \
 -DMOAB_DIR=/opt/petsc/arch-linux2-c-opt \
 -DADOL-C_DIR=/usr \
 -DTETGEN_DIR=/opt/tetgen1.5.0 \
--DBUILD_SHARED_LIBS=yes
+-DBUILD_SHARED_LIBS=yes \
 -DCMAKE_INSTALL_PREFIX=/build/release/usr_mods \
 /mnt/home/*mofem_source_code_directory*
 ~~~~~~
@@ -287,7 +287,7 @@ cmake \
 -DMOAB_DIR=/opt/petsc/arch-linux2-c-debug \
 -DADOL-C_DIR=/usr \
 -DTETGEN_DIR=/opt/tetgen1.5.0 \
--DBUILD_SHARED_LIBS=yes
+-DBUILD_SHARED_LIBS=yes \
 -DCMAKE_INSTALL_PREFIX=/build/debug/usr_mods \
 /mnt/home/*mofem_source_code_directory*
 ~~~~~~

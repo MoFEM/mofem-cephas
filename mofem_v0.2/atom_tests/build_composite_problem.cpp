@@ -1,11 +1,11 @@
 /** \file build_composite_problem.cpp
 
   \brief Atom test for building composite problem
-  
+
   \bug Not verifying what if partitioned mesh is loaded.
 
 */
-  
+
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -50,9 +50,9 @@ int main(int argc, char *argv[]) {
 
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-  BARRIER_RANK_START(pcomm) 
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
-  BARRIER_RANK_END(pcomm) 
+  BARRIER_RANK_START(pcomm)
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
+  BARRIER_RANK_END(pcomm)
 
   //Create MoFEM (Joseph) database
   MoFEM::Core core(moab);
@@ -70,7 +70,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.add_field("F2",HDIV,1); CHKERRQ(ierr);
 
   //meshset consisting all entities in mesh
-  EntityHandle root_set = moab.get_root_set(); 
+  EntityHandle root_set = moab.get_root_set();
   //add entities to field
   ierr = m_field.add_ents_to_field_by_TETs(root_set,"F1"); CHKERRQ(ierr);
   ierr = m_field.add_ents_to_field_by_TETs(root_set,"F2"); CHKERRQ(ierr);
@@ -118,7 +118,7 @@ int main(int argc, char *argv[]) {
 
   //build problems
   ierr = m_field.build_problems(); CHKERRQ(ierr);
-  ierr = m_field.partition_problem("P1"); CHKERRQ(ierr);
+  ierr = m_field.simple_partition_problem("P1"); CHKERRQ(ierr);
   ierr = m_field.partition_problem("P2"); CHKERRQ(ierr);
 
   //compose problem
@@ -145,5 +145,3 @@ int main(int argc, char *argv[]) {
   return 0;
 
 }
-
-

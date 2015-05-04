@@ -14,13 +14,18 @@
 
 //petsc
 #include <petscsys.h>
-#include <petscvec.h> 
-#include <petscmat.h> 
-#include <petscsnes.h> 
-#include <petscts.h> 
+#include <petscvec.h>
+#include <petscmat.h>
+#include <petscsnes.h>
+#include <petscts.h>
 
-#include <petsc-private/dmimpl.h> /*I  "petscdm.h"   I*/
-#include <petsc-private/vecimpl.h> /*I  "petscdm.h"   I*/
+#ifdef __APPLE__
+  #include <petsc/private/dmimpl.h> /*I  "petscdm.h"   I*/
+  #include <petsc/private/vecimpl.h> /*I  "petscdm.h"   I*/
+#else
+  #include <petsc-private/dmimpl.h> /*I  "petscdm.h"   I*/
+  #include <petsc-private/vecimpl.h> /*I  "petscdm.h"   I*/
+#endif
 
 //moab
 #include <moab/ParallelComm.hpp>
@@ -46,7 +51,7 @@ struct DMCtx {
 
   FieldInterface *mField_ptr; 		//< MoFEM interface
   string problemName;			//< problem name
-  
+
   KspCtx *kspCtx;			//< data structure KSP
   SnesCtx *snesCtx;			//< data structure SNES
   TsCtx	*tsCtx;				//< data structure for TS solver
@@ -64,7 +69,7 @@ struct DMCtx {
   //pouinter to data structures
   const MoFEMProblem *problemPtr;	//< pinter to problem data struture
 
-  DMCtx(); 
+  DMCtx();
   virtual ~DMCtx();
 
   friend PetscErrorCode DMCreate_MoFEM(DM dm);
@@ -72,10 +77,10 @@ struct DMCtx {
   friend PetscErrorCode DMCreateGlobalVector_MoFEM(DM dm,Vec *globV);
   friend PetscErrorCode DMCreateLocalVector_MoFEM(DM dm,Vec *locV);
   friend PetscErrorCode DMCreateMatrix_MoFEM(DM dm,Mat *M);
-  friend PetscErrorCode DMSetUp_MoFEM(DM dm); 
+  friend PetscErrorCode DMSetUp_MoFEM(DM dm);
   #if PETSC_VERSION_GE(3,5,3)
     friend PetscErrorCode DMSetFromOptions_MoFEM(PetscOptions *PetscOptionsObject,DM dm);
-  #else 
+  #else
     friend PetscErrorCode DMSetFromOptions_MoFEM(DM dm);
   #endif
   friend PetscErrorCode DMGlobalToLocalBegin_MoFEM(DM dm,Vec,InsertMode,Vec);
@@ -87,7 +92,7 @@ struct DMCtx {
 
 PetscBool DMCtx::isProblemsBuild = PETSC_FALSE;
 
-DMCtx::DMCtx(): 
+DMCtx::DMCtx():
   mField_ptr(PETSC_NULL),
   kspCtx(NULL),snesCtx(NULL),tsCtx(NULL),
   isPartitioned(PETSC_FALSE),
@@ -150,7 +155,7 @@ PetscErrorCode DMMoFEMCreateMoFEM(DM dm,MoFEM::FieldInterface *m_field_ptr,const
   }
   if(!m_field_ptr) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"DM function not implemented into MoFEM");
-  } 
+  }
   dm_field->mField_ptr = m_field_ptr;
   dm_field->problemName = problem_name;
   ierr = dm_field->mField_ptr->add_problem(dm_field->problemName,MF_ZERO); CHKERRQ(ierr);
@@ -428,7 +433,7 @@ PetscErrorCode DMCreateLocalVector_MoFEM(DM dm,Vec *l) {
 }
 
 PetscErrorCode DMCreateMatrix_MoFEM(DM dm,Mat *M) {
-  PetscErrorCode ierr;	
+  PetscErrorCode ierr;
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;
@@ -436,18 +441,18 @@ PetscErrorCode DMCreateMatrix_MoFEM(DM dm,Mat *M) {
   PetscFunctionReturn(0);
 }
 
-  #if PETSC_VERSION_GE(3,5,3)
-    PetscErrorCode DMSetFromOptions_MoFEM(PetscOptions *PetscOptionsObject,DM dm) {
-  #else 
-    PetscErrorCode DMSetFromOptions_MoFEM(DM dm) {
-  #endif 
+#if PETSC_VERSION_GE(3,5,3)
+PetscErrorCode DMSetFromOptions_MoFEM(PetscOptions *PetscOptionsObject,DM dm) {
+#else
+PetscErrorCode DMSetFromOptions_MoFEM(DM dm) {
+#endif
   PetscErrorCode ierr;
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;
   #if PETSC_VERSION_GE(3,5,3)
     ierr = PetscOptionsHead(PetscOptionsObject,"DMMoFEM Options");CHKERRQ(ierr);
-  #else 
+  #else
     ierr = PetscOptionsHead("DMMoFEM Options");CHKERRQ(ierr);
   #endif
   ierr = PetscOptionsBool(
@@ -484,7 +489,7 @@ PetscErrorCode DMGlobalToLocalBegin_MoFEM(DM dm,Vec g,InsertMode mode,Vec l) {
   PetscErrorCode ierr;
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
-  
+
   ierr = VecGhostUpdateBegin(g,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
@@ -525,7 +530,7 @@ PetscErrorCode DMLocalToGlobalBegin_MoFEM(DM dm,Vec l,InsertMode mode,Vec g) {
   PetscErrorCode ierr;
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
-  
+
   DMCtx *dm_field = (DMCtx*)dm->data;
   int nb_dofs = dm_field->problemPtr->get_nb_local_dofs_row();
   int nb_ghost = dm_field->problemPtr->get_nb_ghost_dofs_row();
@@ -554,9 +559,3 @@ PetscErrorCode DMLocalToGlobalEnd_MoFEM(DM,Vec l,InsertMode mode,Vec g) {
   PetscFunctionBegin;
   PetscFunctionReturn(0);
 }
-
-
-
-
-
-
