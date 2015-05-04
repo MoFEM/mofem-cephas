@@ -77,7 +77,7 @@ int main(int argc, char *argv[]) {
 
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
-  int order = 1;
+  int order = 2;
   ierr = m_field.set_field_order(root_set,MBTET,"F1",order-1); CHKERRQ(ierr);
   ierr = m_field.set_field_order(root_set,MBTET,"F2",order); CHKERRQ(ierr);
   ierr = m_field.set_field_order(root_set,MBTRI,"F2",order); CHKERRQ(ierr);
@@ -113,7 +113,7 @@ int main(int argc, char *argv[]) {
 
   //build problems
   ierr = m_field.build_problems(); CHKERRQ(ierr);
-  ierr = m_field.simple_partition_problem("P1"); CHKERRQ(ierr);
+  ierr = m_field.partition_problem("P1"); CHKERRQ(ierr);
   ierr = m_field.partition_problem("P2"); CHKERRQ(ierr);
 
   //compose problem

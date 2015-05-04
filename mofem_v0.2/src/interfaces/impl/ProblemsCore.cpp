@@ -617,40 +617,41 @@ PetscErrorCode Core::simple_partition_problem(const string &name,int verb) {
     hi_miit_row = dofs_row_by_idx.lower_bound(ranges_row[part+1]);
     if(distance(miit_row,hi_miit_row) != ranges_row[part+1]-ranges_row[part]) {
       SETERRQ4(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,
-	  "data inconsistency, distance(miit_row,hi_miit_row) != rend - rstart (%d != %d - %d = %d) ",
-	  distance(miit_row,hi_miit_row),ranges_row[part+1],ranges_row[part],ranges_row[part+1]-ranges_row[part]);
-    }
-    // loop rows
-    for(;miit_row!=hi_miit_row;miit_row++) {
-      bool success = dofs_row_by_idx.modify(miit_row,NumeredDofMoFEMEntity_part_change(part,miit_row->dof_idx));
-      if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-      if(part == (unsigned int)rAnk) {
-	success = dofs_row_by_idx.modify(miit_row,NumeredDofMoFEMEntity_local_idx_change(nb_row_local_dofs++));
-	if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+        "data inconsistency, distance(miit_row,hi_miit_row) != rend - rstart (%d != %d - %d = %d) ",
+        distance(miit_row,hi_miit_row),ranges_row[part+1],ranges_row[part],ranges_row[part+1]-ranges_row[part]);
+      }
+      // loop rows
+      for(;miit_row!=hi_miit_row;miit_row++) {
+        bool success = dofs_row_by_idx.modify(miit_row,NumeredDofMoFEMEntity_part_change(part,miit_row->dof_idx));
+        if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+        if(part == (unsigned int)rAnk) {
+          success = dofs_row_by_idx.modify(miit_row,NumeredDofMoFEMEntity_local_idx_change(nb_row_local_dofs++));
+          if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+        }
+      }
+      miit_col = dofs_col_by_idx.lower_bound(ranges_col[part]);
+      hi_miit_col = dofs_col_by_idx.lower_bound(ranges_col[part+1]);
+      if(distance(miit_col,hi_miit_col) != ranges_col[part+1]-ranges_col[part]) {
+        SETERRQ4(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,
+          "data inconsistency, distance(miit_col,hi_miit_col) != rend - rstart (%d != %d - %d = %d) ",
+          distance(miit_col,hi_miit_col),ranges_col[part+1],ranges_col[part],ranges_col[part+1]-ranges_col[part]
+        );
+      }
+      // loop cols
+      for(;miit_col!=hi_miit_col;miit_col++) {
+        bool success = dofs_col_by_idx.modify(miit_col,NumeredDofMoFEMEntity_part_change(part,miit_col->dof_idx));
+        if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+        if(part == (unsigned int)rAnk) {
+          success = dofs_col_by_idx.modify(miit_col,NumeredDofMoFEMEntity_local_idx_change(nb_col_local_dofs++));
+          if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+        }
       }
     }
-    miit_col = dofs_col_by_idx.lower_bound(ranges_col[part]);
-    hi_miit_col = dofs_col_by_idx.lower_bound(ranges_col[part+1]);
-    if(distance(miit_col,hi_miit_col) != ranges_col[part+1]-ranges_col[part]) {
-      SETERRQ4(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,
-	  "data inconsistency, distance(miit_col,hi_miit_col) != rend - rstart (%d != %d - %d = %d) ",
-	  distance(miit_col,hi_miit_col),ranges_col[part+1],ranges_col[part],ranges_col[part+1]-ranges_col[part]);
-    }
-    // loop cols
-    for(;miit_col!=hi_miit_col;miit_col++) {
-      bool success = dofs_col_by_idx.modify(miit_col,NumeredDofMoFEMEntity_part_change(part,miit_col->dof_idx));
-      if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-      if(part == (unsigned int)rAnk) {
-	success = dofs_col_by_idx.modify(miit_col,NumeredDofMoFEMEntity_local_idx_change(nb_col_local_dofs++));
-	if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-      }
-    }
-  }
-  ierr = PetscLayoutDestroy(&layout_row); CHKERRQ(ierr);
-  ierr = PetscLayoutDestroy(&layout_col); CHKERRQ(ierr);
-  ierr = printPartitionedProblem(&*p_miit,verb); CHKERRQ(ierr);
-  *build_MoFEM |= 1<<4;
-  PetscFunctionReturn(0);
+    ierr = PetscLayoutDestroy(&layout_row); CHKERRQ(ierr);
+    ierr = PetscLayoutDestroy(&layout_col); CHKERRQ(ierr);
+    ierr = printPartitionedProblem(&*p_miit,verb); CHKERRQ(ierr);
+    *build_MoFEM |= 1<<4;
+    PetscFunctionReturn(0);
 }
 PetscErrorCode Core::compose_problem(const string &name,const string &problem_for_rows,bool copy_rows,const string &problem_for_cols,bool copy_cols,int verb) {
   PetscFunctionBegin;
@@ -666,8 +667,10 @@ PetscErrorCode Core::compose_problem(const string &name,const string &problem_fo
   MoFEMProblem_multiIndex_by_name::iterator p_miit = moFEMProblems_set.find(name);
   if(p_miit==moFEMProblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem with name < %s > not defined (top tip check spelling)",name.c_str());
   if(verb>0) {
-    PetscPrintf(comm,"Compose problem %s from rows of %s and columns of %s\n",
-      p_miit->get_name().c_str(),problem_for_rows.c_str(),problem_for_cols.c_str());
+    PetscPrintf(
+      comm,"Compose problem %s from rows of %s and columns of %s\n",
+      p_miit->get_name().c_str(),problem_for_rows.c_str(),problem_for_cols.c_str()
+    );
   }
   //find p_miit_row
   MoFEMProblem_multiIndex_by_name::iterator p_miit_row = moFEMProblems_set.find(problem_for_rows);
@@ -688,44 +691,41 @@ PetscErrorCode Core::compose_problem(const string &name,const string &problem_fo
     // build indices
     *nb_local_dofs[ss] = 0;
     if(!copy[ss]) {
-      NumeredDofMoFEMEntitys_by_uid &dofs_by_uid
-	= const_cast<NumeredDofMoFEMEntitys_by_uid&>(copied_dofs[ss]->get<Unique_mi_tag>());
-      for(NumeredDofMoFEMEntity_multiIndex::iterator
-	dit = composed_dofs[ss]->begin();dit!=composed_dofs[ss]->end();dit++) {
-	NumeredDofMoFEMEntitys_by_uid::iterator diit = dofs_by_uid.find(dit->get_global_unique_id());
-	if(diit==dofs_by_uid.end()) {
-	  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency, could not find dof in composite problem");
-	}
-	int part_number = diit->get_part(); // get part number
-	int petsc_global_dof = dit->get_dof_idx();
-	bool success;
-	success = composed_dofs[ss]->modify(dit,NumeredDofMoFEMEntity_part_change(part_number,petsc_global_dof));
-	if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-	if(dit->get_part() == (unsigned int)rAnk) {
-	  success =composed_dofs[ss]->modify(dit,NumeredDofMoFEMEntity_local_idx_change((*nb_local_dofs[ss])++));
-	  if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-	}
+      NumeredDofMoFEMEntitys_by_uid &dofs_by_uid = const_cast<NumeredDofMoFEMEntitys_by_uid&>(copied_dofs[ss]->get<Unique_mi_tag>());
+      for(NumeredDofMoFEMEntity_multiIndex::iterator dit = composed_dofs[ss]->begin();dit!=composed_dofs[ss]->end();dit++) {
+        NumeredDofMoFEMEntitys_by_uid::iterator diit = dofs_by_uid.find(dit->get_global_unique_id());
+        if(diit==dofs_by_uid.end()) {
+          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency, could not find dof in composite problem");
+        }
+        int part_number = diit->get_part(); // get part number
+        int petsc_global_dof = dit->get_dof_idx();
+        bool success;
+        success = composed_dofs[ss]->modify(dit,NumeredDofMoFEMEntity_part_change(part_number,petsc_global_dof));
+        if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+        if(dit->get_part() == (unsigned int)rAnk) {
+          success =composed_dofs[ss]->modify(dit,NumeredDofMoFEMEntity_local_idx_change((*nb_local_dofs[ss])++));
+          if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+        }
       }
     } else {
-      for(NumeredDofMoFEMEntity_multiIndex::iterator
-	dit = copied_dofs[ss]->begin();dit!=copied_dofs[ss]->end();dit++) {
-	pair<NumeredDofMoFEMEntity_multiIndex::iterator,bool> p;
-	p = composed_dofs[ss]->insert(NumeredDofMoFEMEntity(dit->get_DofMoFEMEntity_ptr()));
-	if(p.second) {
-	  (*nb_dofs[ss])++;
-	}
-	int dof_idx = dit->get_dof_idx();
-	int part_number = dit->get_part(); // get part number
-	int petsc_global_dof = dit->get_petsc_gloabl_dof_idx();
-	bool success;
-	success = composed_dofs[ss]->modify(p.first,NumeredDofMoFEMEntity_mofem_index_change(dof_idx));
-	if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-	success = composed_dofs[ss]->modify(p.first,NumeredDofMoFEMEntity_part_change(part_number,petsc_global_dof));
-	if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-	if(p.first->get_part() == (unsigned int)rAnk) {
-	  success =composed_dofs[ss]->modify(p.first,NumeredDofMoFEMEntity_local_idx_change((*nb_local_dofs[ss])++));
-	  if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-	}
+      for(NumeredDofMoFEMEntity_multiIndex::iterator dit = copied_dofs[ss]->begin();dit!=copied_dofs[ss]->end();dit++) {
+        pair<NumeredDofMoFEMEntity_multiIndex::iterator,bool> p;
+        p = composed_dofs[ss]->insert(NumeredDofMoFEMEntity(dit->get_DofMoFEMEntity_ptr()));
+        if(p.second) {
+          (*nb_dofs[ss])++;
+        }
+        int dof_idx = dit->get_dof_idx();
+        int part_number = dit->get_part(); // get part number
+        int petsc_global_dof = dit->get_petsc_gloabl_dof_idx();
+        bool success;
+        success = composed_dofs[ss]->modify(p.first,NumeredDofMoFEMEntity_mofem_index_change(dof_idx));
+        if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+        success = composed_dofs[ss]->modify(p.first,NumeredDofMoFEMEntity_part_change(part_number,petsc_global_dof));
+        if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+        if(p.first->get_part() == (unsigned int)rAnk) {
+          success =composed_dofs[ss]->modify(p.first,NumeredDofMoFEMEntity_local_idx_change((*nb_local_dofs[ss])++));
+          if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+        }
       }
     }
   }
