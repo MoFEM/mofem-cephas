@@ -1,8 +1,3 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
- * FIXME: DESCRIPTION
- */
-
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -35,8 +30,8 @@ void tricircumcenter3d_tp(double a[3],double b[3],double c[3],
 
 namespace ObosleteUsersModules {
 
-/** 
-  * 
+/**
+  *
   * dN/dX = (1/A) * [ Spin[dX/dksi]*dN/deta - Spin[dX/deta]*dN/dksi ]
   *
   */
@@ -48,14 +43,14 @@ struct C_CONSTANT_AREA: public FEMethod {
 
   Interface& moab;
 
-  
+
   Mat C;	//<< constrains matrix
   Mat Q;	//<< projection matrix (usuall this is shell matrix)
   string lambda_field_name;
   int verbose;
 
   C_CONSTANT_AREA(FieldInterface& _mField,Mat _C,Mat _Q,string _lambda_field_name,int _verbose = 0):
-    mField(_mField),moab(_mField.get_moab()),C(_C),Q(_Q),lambda_field_name(_lambda_field_name),verbose(_verbose) { 
+    mField(_mField),moab(_mField.get_moab()),C(_C),Q(_Q),lambda_field_name(_lambda_field_name),verbose(_verbose) {
     //calculate face shape functions direvatives
     diffNTRI.resize(3,2);
     ShapeDiffMBTRI(&*diffNTRI.data().begin());
@@ -112,14 +107,14 @@ struct C_CONSTANT_AREA: public FEMethod {
       ss << "thorw in method: " << ex.what() << endl;
       SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
     }
-    const EntityHandle* conn_face; 
-    int num_nodes; 
+    const EntityHandle* conn_face;
+    int num_nodes;
     rval = moab.get_connectivity(face,conn_face,num_nodes,true); CHKERR_PETSC(rval);
     if(num_nodes != 3) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"face should have three nodes");
     ierr = moab.get_coords(conn_face,num_nodes,&*coords.data().begin()); CHKERRQ(ierr);
     for(int nn = 0;nn<num_nodes;nn++) {
       if(is_that_C_otherwise_dC) {
-	try { 
+	try {
 	  // it is C
 	  // get rows which are Lagrabge multipliers
 	  FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator dit,hi_dit;
@@ -244,7 +239,7 @@ struct C_CONSTANT_AREA: public FEMethod {
       adj_side_elems.clear();
       ierr = mField.get_adjacencies(bit,&face,1,3,adj_side_elems,Interface::INTERSECT,5); CHKERRQ(ierr);
       Range::iterator it = adj_side_elems.begin();
-      for(;it!=adj_side_elems.end();it++) {	
+      for(;it!=adj_side_elems.end();it++) {
 	Range nodes;
 	rval = mField.get_moab().get_connectivity(&*it,1,nodes,true); CHKERR_PETSC(rval);
 	PetscPrintf(PETSC_COMM_WORLD,"%lu %lu %lu %lu\n",nodes[0],nodes[1],nodes[2],nodes[3]);
@@ -300,7 +295,7 @@ struct C_CONSTANT_AREA: public FEMethod {
     __CLPK_doublecomplex x_one = { 1, 0 };
     __CLPK_doublecomplex x_zero = { 0, 0 };
     __CLPK_doublecomplex x_normal[3];
-    __CLPK_doublecomplex x_diffX_eta[3]; 
+    __CLPK_doublecomplex x_diffX_eta[3];
     x_diffX_eta[0].r = diffX_eta[0]; x_diffX_eta[0].i = i_diffX_eta[0];
     x_diffX_eta[1].r = diffX_eta[1]; x_diffX_eta[1].i = i_diffX_eta[1];
     x_diffX_eta[2].r = diffX_eta[2]; x_diffX_eta[2].i = i_diffX_eta[2];
@@ -331,7 +326,7 @@ struct C_CONSTANT_AREA: public FEMethod {
       cpow((x_normal[0].r+I*x_normal[0].i),2+I*0)+
       cpow((x_normal[1].r+I*x_normal[1].i),2+I*0)+
       cpow((x_normal[2].r+I*x_normal[2].i),2+I*0));
-    // calculate dA/dX 
+    // calculate dA/dX
     __CLPK_doublecomplex xNSpinX_xi[3],xNSpinX_eta[3];
     bzero(xNSpinX_xi,3*sizeof(__CLPK_doublecomplex));
     bzero(xNSpinX_eta,3*sizeof(__CLPK_doublecomplex));
@@ -351,7 +346,7 @@ struct C_CONSTANT_AREA: public FEMethod {
       iA[1] = xNSpinX_xi[1].i*diffNTRI[2*order[nn]+1]-xNSpinX_eta[1].i*diffNTRI[2*order[nn]+0];
       iA[2] = xNSpinX_xi[2].i*diffNTRI[2*order[nn]+1]-xNSpinX_eta[2].i*diffNTRI[2*order[nn]+0];
       if(C != NULL) {
-        C[3*nn + 0] = A[0]; 
+        C[3*nn + 0] = A[0];
         C[3*nn + 1] = A[1];
         C[3*nn + 2] = A[2];
       }
@@ -367,7 +362,7 @@ struct C_CONSTANT_AREA: public FEMethod {
 	ierr = Spin(iSpinA,iA); CHKERRQ(ierr); // unit [1/m]
 	__CLPK_doublecomplex xSpinA[9];
 	// make spin matrix to calculate cross product
-	ierr = make_complex_matrix(SpinA,iSpinA,xSpinA); CHKERRQ(ierr); 
+	ierr = make_complex_matrix(SpinA,iSpinA,xSpinA); CHKERRQ(ierr);
 	__CLPK_doublecomplex xT[3];
 	cblas_zgemv(CblasRowMajor,CblasNoTrans,3,3,&x_scalar,xSpinA,3,x_normal,1,&x_zero,xT,1); // unit [1/m]
 	if(T != NULL) {
@@ -394,7 +389,7 @@ struct C_CONSTANT_AREA: public FEMethod {
     PetscFunctionBegin;
     if(Q != PETSC_NULL) {
       for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_FOR_LOOP_(problemPtr,lambda_field_name,dofs)) {
-	#if PETSC_VERSION_GE(3,5,3) 
+	#if PETSC_VERSION_GE(3,5,3)
 	  ierr = MatCreateVecs(C,&mapV[dofs->get_petsc_gloabl_dof_idx()],PETSC_NULL); CHKERRQ(ierr);
 	#else
 	  ierr = MatGetVecs(C,&mapV[dofs->get_petsc_gloabl_dof_idx()],PETSC_NULL); CHKERRQ(ierr);
@@ -436,16 +431,16 @@ struct C_CONSTANT_AREA: public FEMethod {
 	      3,&(disp_dofs_col_idx.data()[3*NN]),
 	      &ELEM_CONSTRAIN.data()[3*NN],ADD_VALUES); CHKERRQ(ierr);
 	  }
-	}	
+	}
       }
     } catch (const std::exception& ex) {
       ostringstream ss;
       ss << "thorw in method: " << ex.what() << endl;
       SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
-    } 
+    }
     PetscFunctionReturn(0);
   }
-  
+
   PetscErrorCode postProcess() {
     PetscFunctionBegin;
     if(Q != PETSC_NULL) {
@@ -486,7 +481,7 @@ struct C_CONSTANT_AREA: public FEMethod {
     }
     PetscFunctionReturn(0);
   }
-  
+
 };
 
 struct C_FRONT_TANGENT: public C_CONSTANT_AREA {
@@ -532,27 +527,27 @@ struct C_FRONT_TANGENT: public C_CONSTANT_AREA {
 	      3,&(disp_dofs_col_idx.data()[3*NN]),
 	      &ELEM_CONSTRAIN.data()[3*NN],ADD_VALUES); CHKERRQ(ierr);
 	  }
-	}	
+	}
       }
     } catch (const std::exception& ex) {
       ostringstream ss;
       ss << "thorw in method: " << ex.what() << endl;
       SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
-    } 
+    }
     PetscFunctionReturn(0);
   }
 
 };
 
-/** 
-  * 
-  * Calculate direcative of dA^2/dX^2 
+/**
+  *
+  * Calculate direcative of dA^2/dX^2
   *
   */
 struct dCTgc_CONSTANT_AREA: public C_CONSTANT_AREA {
 
   Mat dCT;
-  double gc;  
+  double gc;
   const double eps;
 
   dCTgc_CONSTANT_AREA(FieldInterface& _mField,Mat _dCT,string _lambda_field_name,int _verbose = 0):
@@ -580,9 +575,9 @@ struct dCTgc_CONSTANT_AREA: public C_CONSTANT_AREA {
 	  SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
     }
     try {
-      double center[3]; 
-      const EntityHandle* conn_face; 
-      int num_nodes; 
+      double center[3];
+      const EntityHandle* conn_face;
+      int num_nodes;
       rval = moab.get_connectivity(face,conn_face,num_nodes,true); CHKERR_PETSC(rval);
       rval = moab.get_coords(conn_face,num_nodes,&*coords.data().begin()); CHKERR_PETSC(rval);
       tricircumcenter3d_tp(&coords.data()[0],&coords.data()[3],&coords.data()[6],center,NULL,NULL);
@@ -613,7 +608,7 @@ struct dCTgc_CONSTANT_AREA: public C_CONSTANT_AREA {
 	ostringstream ss;
 	ss << "thorw in method: " << ex.what() << endl;
 	SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
-    } 
+    }
     PetscFunctionReturn(0);
   }
 
@@ -621,7 +616,7 @@ struct dCTgc_CONSTANT_AREA: public C_CONSTANT_AREA {
     PetscFunctionBegin;
     PetscFunctionReturn(0);
   }
-  
+
 };
 
 struct Snes_CTgc_CONSTANT_AREA: public FEMethod {
@@ -665,7 +660,7 @@ struct Snes_CTgc_CONSTANT_AREA: public FEMethod {
     if(flg != PETSC_TRUE) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"*** ERROR -my_gc (what is fracture energy ?)");
     }
-    
+
     Vec D;
     ierr = mField.VecCreateGhost(problem,COL,&D); CHKERRQ(ierr);
     ierr = mField.set_local_ghost_vector(problem,COL,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);

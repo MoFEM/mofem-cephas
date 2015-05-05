@@ -106,7 +106,7 @@ if(ADOL-C_LIBRARY)
 
   add_test(NonLinearDynamics
     ${MoFEM_MPI_RUN} -np 4 ${CMAKE_CURRENT_BINARY_DIR}/nonlinear_dynamics -my_file LShape.cub 
-      -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist
+      -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package mumps
       -ksp_atol 1e-10 -ksp_rtol 1e-10 -snes_monitor 
       -snes_type newtonls -snes_linesearch_type basic
       -snes_max_it 100 -snes_atol 1e-7 -snes_rtol 1e-7
