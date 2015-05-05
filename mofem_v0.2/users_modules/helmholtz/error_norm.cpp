@@ -302,7 +302,6 @@ int main(int argc, char *argv[]) {
 	//nrm2_D = sqrt(abs(sum_D));
 	ierr = VecNorm(T,NORM_2,&nrm2_T);;
 	ierr = VecNorm(D,NORM_2,&nrm2_D); CHKERRQ(ierr);
-	//ierr = VecNorm(T,NORM_MAX,&pointwisenormT);
     
     Vec P,M;
 	ierr = m_field.VecCreateGhost("EX1_PROBLEM",ROW,&M); CHKERRQ(ierr);
@@ -321,40 +320,47 @@ int main(int argc, char *argv[]) {
       PetscPrintf(PETSC_COMM_WORLD,"\n imag part of global relative l2 error is: %f \n",b);
       PetscPrintf(PETSC_COMM_WORLD,"\n total global l2 realtive error is: %f \n",sqrt(a*a+b*b));
     } else {
-      PetscPrintf(PETSC_COMM_WORLD,"\n real part of global H1 error is: %f \n",sqrt(real_error)/sqrt(real_analy));
-      PetscPrintf(PETSC_COMM_WORLD,"\n imag part of global H1 error is: %f \n",sqrt(imag_error)/sqrt(imag_analy));
+      
+      double a = sqrt(real_error)/sqrt(real_analy);
+      double b = sqrt(imag_error)/sqrt(imag_analy);
+      PetscPrintf(PETSC_COMM_WORLD,"\n real part of global H1 error is: %f \n",a);
+      PetscPrintf(PETSC_COMM_WORLD,"\n imag part of global H1 error is: %f \n",b);
+      PetscPrintf(PETSC_COMM_WORLD,"\n total global H1 realtive error is: %f \n",sqrt(a*a+b*b));
+    
     }
     	
-	ierr = VecNorm(M,NORM_FROBENIUS,&nrm2_M);
-	ierr = VecNorm(P,NORM_2,&nrm2_P); CHKERRQ(ierr);
-	//ierr = VecNorm(M,NORM_INFINITY,&nrm2_M);
+    /* Projection of global error */
+    
+	//ierr = VecNorm(M,NORM_FROBENIUS,&nrm2_M);
+	//ierr = VecNorm(P,NORM_2,&nrm2_P); CHKERRQ(ierr);
+	////ierr = VecNorm(M,NORM_INFINITY,&nrm2_M);
     
 	
-	//out stream the global error
-	if(usel2 && !userela) {
-      //PetscPrintf(PETSC_COMM_WORLD,"\n The Global L2 error of real field is : %f \n",nrm2_T);
-      //PetscPrintf(PETSC_COMM_WORLD,"\n The Global L2 error of imag field is : %f \n",nrm2_D);
+	////out stream the global error
+	//if(usel2 && !userela) {
+    //  //PetscPrintf(PETSC_COMM_WORLD,"\n The Global L2 error of real field is : %f \n",nrm2_T);
+    //  //PetscPrintf(PETSC_COMM_WORLD,"\n The Global L2 error of imag field is : %f \n",nrm2_D);
 
-      PetscPrintf(PETSC_COMM_WORLD,"\n The Global L2 relative error of real field is : %f \n",nrm2_T/nrm2_M);
-      PetscPrintf(PETSC_COMM_WORLD,"\n The Global L2 relative error of imag field is : %f \n",nrm2_D/nrm2_P);
-      PetscPrintf(PETSC_COMM_WORLD,"\n Global error  of total potential in l2 norm is : %f \n",sqrt((nrm2_T/nrm2_M)*(nrm2_T/nrm2_M) + (nrm2_D/nrm2_P)*(nrm2_D/nrm2_P)));
-      //std::cout << "\n The Global L2 relative error of real field is : --\n" << nrm2_T/nrm2_M  << std::endl;
-      //std::cout << "\n The Global L2 relative error of imag field is  : --\n" << nrm2_D/nrm2_P << std::endl;
-      //cout << "\n Global error  of total potential in l2 norm  \n" << sqrt((nrm2_T/nrm2_M)*(nrm2_T/nrm2_M) + (nrm2_D/nrm2_P)*(nrm2_D/nrm2_P)) << endl;
-	}
-	else if(!usel2 && !userela) {
+    //  PetscPrintf(PETSC_COMM_WORLD,"\n The Global L2 relative error of real field is : %f \n",nrm2_T/nrm2_M);
+    //  PetscPrintf(PETSC_COMM_WORLD,"\n The Global L2 relative error of imag field is : %f \n",nrm2_D/nrm2_P);
+    //  PetscPrintf(PETSC_COMM_WORLD,"\n Global error  of total potential in l2 norm is : %f \n",sqrt((nrm2_T/nrm2_M)*(nrm2_T/nrm2_M) + (nrm2_D/nrm2_P)*(nrm2_D/nrm2_P)));
+    //  //std::cout << "\n The Global L2 relative error of real field is : --\n" << nrm2_T/nrm2_M  << std::endl;
+    //  //std::cout << "\n The Global L2 relative error of imag field is  : --\n" << nrm2_D/nrm2_P << std::endl;
+    //  //cout << "\n Global error  of total potential in l2 norm  \n" << sqrt((nrm2_T/nrm2_M)*(nrm2_T/nrm2_M) + (nrm2_D/nrm2_P)*(nrm2_D/nrm2_P)) << endl;
+	//}
+	//else if(!usel2 && !userela) {
 
-      std::cout << "\n The Global H1 relative error of real field is : --\n" << nrm2_T/nrm2_M  << std::endl;
-      std::cout << "\n The Global H1 relative error of imag field is  : --\n" << nrm2_D/nrm2_P << std::endl;
-      cout << "\n Global error  of total potential in l2 norm  \n" << sqrt((nrm2_T/nrm2_M)*(nrm2_T/nrm2_M) + (nrm2_D/nrm2_P)*(nrm2_D/nrm2_P)) << endl;
-	}
-	else if(userela) {
-		//NEED TO BE FIXED
-		//we need two vector, one is exact solution, one is error in the norm, then find the maximum of 
-		//two vectors, and devide second one by first one. it is the global pointwise relative error.
-		std::cout << "\n The Global least square of H1 Norm of error real field is : --\n" << nrm2_T << std::endl;
-		//std::cout << "\n The Global Pointwise of H1 Norm of error for real field is : --\n" << pointwisenorm << std::endl;
-	}
+    //  std::cout << "\n The Global H1 relative error of real field is : --\n" << nrm2_T/nrm2_M  << std::endl;
+    //  std::cout << "\n The Global H1 relative error of imag field is  : --\n" << nrm2_D/nrm2_P << std::endl;
+    //  cout << "\n Global error  of total potential in l2 norm  \n" << sqrt((nrm2_T/nrm2_M)*(nrm2_T/nrm2_M) + (nrm2_D/nrm2_P)*(nrm2_D/nrm2_P)) << endl;
+	//}
+	//else if(userela) {
+	//	//NEED TO BE FIXED
+	//	//we need two vector, one is exact solution, one is error in the norm, then find the maximum of 
+	//	//two vectors, and devide second one by first one. it is the global pointwise relative error.
+	//	std::cout << "\n The Global least square of H1 Norm of error real field is : --\n" << nrm2_T << std::endl;
+	//	//std::cout << "\n The Global Pointwise of H1 Norm of error for real field is : --\n" << pointwisenorm << std::endl;
+	//}
 
 
 	/*  destroy objects  */

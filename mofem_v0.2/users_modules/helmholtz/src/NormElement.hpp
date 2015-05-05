@@ -334,6 +334,7 @@ struct NormElement {
 				ublas::matrix<double> &uAnalyGrad = commonData.gradPressureAtGaussPts[refieldName];
 				ublas::matrix<double> &uNumerGrad = commonData.gradPressureAtGaussPts[imfieldName];
 				double error;
+                double PlainError;
 				
 				for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
                   
@@ -354,12 +355,14 @@ struct NormElement {
 						error = (u_analy[gg] - u_numer[gg])*(u_analy[gg] - u_numer[gg]);
 						eRror += error*error*val;
                         aNaly += u_analy(gg)*u_analy(gg)*val;
+                        
 					} else if(!useL2) { //case H1 norm
 					
-						error = (ublas::inner_prod(GradError,GradError) + (u_analy[gg] - u_numer[gg])*(u_analy[gg] - u_numer[gg]));
+                        PlainError = u_analy[gg] - u_numer[gg];
+						error = ublas::inner_prod(GradError,GradError) + PlainError*PlainError;
 						
-                        aNaly += u_analy(gg)*u_analy(gg)*val;
-						eRror += (ublas::inner_prod(GradError,GradError) + error*error)*val;
+                        aNaly += (u_analy(gg)*u_analy(gg) + ublas::inner_prod(u_analy_grad,u_analy_grad)) * val;
+						eRror += (ublas::inner_prod(GradError,GradError) + PlainError*PlainError)*val;
 						
 					}
 					//need to calculate sqrt of norm^2
