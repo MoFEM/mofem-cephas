@@ -2798,6 +2798,7 @@ namespace MoFEM {
 	  double I1, I3, I5, I6, I8;
       double W_mgn, L_wave, alpha_w;
       // W_mg<< = 27.9 ;   // unit: mm
+	  L_wave = 27.9;
       W_mgn  = L_wave*_WavinessFactor;
       
       alpha_w = 2*M_PI*W_mgn/L_wave;
@@ -2894,6 +2895,12 @@ namespace MoFEM {
       ConstitutiveMatrix(5,5) = 1/ComplianceMatrix(5,5);
 	  
 	  // cout<<"Transformed CMat = \t"<<ConstitutiveMatrix<<endl;
+//	  if (ix_first_randvar.compare(0,8,"PoissonP") == 0) {
+//		cout<<"PI = \t"<<M
+//		cout<<"I1 = \t"<<I1<<"\t I3 = \t"<<I3<<"\t I5 = \t"<<I5<<"\t I6 = \t"<<I6<<"\t I8 = \t"<<I8<<endl;
+//		cout<<"original SMat = \t"<<SMat<<endl;
+//		cout<<"transformed SMat = \t"<<ComplianceMatrix<<endl;
+//	    cout<<"CMat= \t"<<ConstitutiveMatrix<<endl; }	  
 	  
 	 //   3.4.1 Calculate derivative of transformed stiffness matrix by using the
 	  //         formula: d2C/dxdy = C [dS/dy] C [dS/dx] C - C [d2C/dxdy]C  
@@ -2916,6 +2923,8 @@ namespace MoFEM {
 	  DummyMatrix3 = prod(ComplianceMatrix_r, DummyMatrix2);
 	  DummyMatrix4 = prod(ConstitutiveMatrix, DummyMatrix3);
 	  CMat_rs1 = DummyMatrix4; 
+//	  if (ix_first_randvar.compare(0,8,"PoissonP") == 0) {
+//	    cout<<"CMat_rs1= \t"<<CMat_rs1<<endl; }	  
 	  
 	  //DummyMatrix1.clear();DummyMatrix2.clear();
 	  DummyMatrix1 = ublas::zero_matrix<FieldData>(6,6);
@@ -2923,6 +2932,8 @@ namespace MoFEM {
 	  DummyMatrix1 = prod(ComplianceMatrix_rs,ConstitutiveMatrix);
 	  DummyMatrix2 = prod(ConstitutiveMatrix, DummyMatrix1);
 	  CMat_rs2 = DummyMatrix2; 
+//	  if (ix_first_randvar.compare(0,8,"PoissonP") == 0) {
+//	    cout<<"CMat_rs2= \t"<<CMat_rs2<<endl; }	  
 	
 	  //DummyMatrix1.clear();DummyMatrix2.clear();
 	  //DummyMatrix3.clear();DummyMatrix4.clear();
@@ -2935,10 +2946,15 @@ namespace MoFEM {
 	  DummyMatrix3 = prod(ComplianceMatrix_r, DummyMatrix2);
 	  DummyMatrix4 = prod(ConstitutiveMatrix, DummyMatrix3);
 	  CMat_rs3 = DummyMatrix4;
+//	  if (ix_first_randvar.compare(0,8,"PoissonP") == 0) {
+//	    cout<<"CMat_rs3= \t"<<CMat_rs3<<endl; }		  
 	  
 	  ConstitutiveMatrix_rs  = CMat_rs1 - CMat_rs2 + CMat_rs3;
 	  
 	  // cout<<"Transformed CMat_rs = \t"<<ConstitutiveMatrix_rs<<endl;
+
+//	  if (ix_first_randvar.compare(0,8,"PoissonP") == 0) {
+//	    cout<<"CMat_rs= \t"<<ConstitutiveMatrix_rs<<endl; }	  
 	  
 	  // -----------
 	  // 4. Rotate the constitutive matrix

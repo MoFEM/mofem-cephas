@@ -26,10 +26,10 @@ include_directories("${MoFEM_PROJECT_SOURCE_DIR}/users_modules/stochastic/src")
 
 # 1. Potential flow problem
 
-  add_executable(trans_iso_potential_flow ${UM_SOURCE_DIR}/stochastic/trans_iso_potential_flow.cpp)
-target_link_libraries(trans_iso_potential_flow
-  mofem_finite_element_library mofem_finite_elements mofem_interfaces mofem_multi_indices mofem_petsc users_modules_obsolete user_modules_homogenisation
-  mofem_approx mofem_third_party mofem_cblas ${MoFEM_PROJECT_LIBS})
+#  add_executable(trans_iso_potential_flow ${UM_SOURCE_DIR}/stochastic/trans_iso_potential_flow.cpp)
+#target_link_libraries(trans_iso_potential_flow
+#  mofem_finite_element_library mofem_finite_elements mofem_interfaces mofem_multi_indices mofem_petsc users_modules_obsolete user_modules_homogenisation
+#  mofem_approx mofem_third_party mofem_cblas ${MoFEM_PROJECT_LIBS})
 
 # 2. Linear displacement boundary condition
 

@@ -477,7 +477,7 @@ int main(int argc, char *argv[]) {
     //Add finite element to lagrange element for rigid body translation
     Range Tris_NewWholeMesh, Tri_OldNewSurf, SurfacesFaces;
     ierr = mField.get_entities_by_type_and_ref_level(bit_levels.back(),BitRefLevel().set(),MBTRI,Tris_NewWholeMesh); CHKERRQ(ierr);
-    ierr = mField.get_Cubit_msId_entities_by_dimension(103,SIDESET,2,Tri_OldNewSurf,true); CHKERRQ(ierr);
+    ierr = mField.get_cubit_msId_entities_by_dimension(103,SIDESET,2,Tri_OldNewSurf,true); CHKERRQ(ierr);
     SurfacesFaces = intersect(Tris_NewWholeMesh,Tri_OldNewSurf);
     ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SIDESET 103 = %d\n",SurfacesFaces.size()); CHKERRQ(ierr);
 
@@ -496,7 +496,7 @@ int main(int argc, char *argv[]) {
 
     //Populating the Multi-index container with -ve triangles
     Range Tri_OldNewSurfNeg, SurTrisNeg;
-    ierr = mField.get_Cubit_msId_entities_by_dimension(101,SIDESET,2,Tri_OldNewSurfNeg,true); CHKERRQ(ierr);
+    ierr = mField.get_cubit_msId_entities_by_dimension(101,SIDESET,2,Tri_OldNewSurfNeg,true); CHKERRQ(ierr);
     SurTrisNeg = intersect(Tris_NewWholeMesh,Tri_OldNewSurfNeg);
     ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SIDESET 101 = %d\n",SurTrisNeg.size()); CHKERRQ(ierr);
 
@@ -538,7 +538,7 @@ int main(int argc, char *argv[]) {
     
     //Populating the Multi-index container with +ve triangles
     Range Tri_OldNewSurfPos, SurTrisPos;
-    ierr = mField.get_Cubit_msId_entities_by_dimension(102,SIDESET,2,Tri_OldNewSurfPos,true); CHKERRQ(ierr);
+    ierr = mField.get_cubit_msId_entities_by_dimension(102,SIDESET,2,Tri_OldNewSurfPos,true); CHKERRQ(ierr);
     SurTrisPos = intersect(Tris_NewWholeMesh,Tri_OldNewSurfPos);
     ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SIDESET 102 = %d\n",SurTrisPos.size()); CHKERRQ(ierr);
   
@@ -1153,8 +1153,8 @@ int main(int argc, char *argv[]) {
        ierr = VecGhostUpdateBegin(dD,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
        ierr = VecGhostUpdateEnd(dD,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
        // ierr = VecView(dD,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-       ierr = mField.set_other_global_VecCreateGhost("STOCHASIC_PROBLEM","DISPLACEMENT",ss_field.str().c_str(),ROW,dD,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-       ierr = mField.set_other_global_VecCreateGhost("STOCHASIC_PROBLEM","Lagrange_mul_disp","Lagrange_mul_disp",ROW,dD,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+       ierr = mField.set_other_global_ghost_vector("STOCHASIC_PROBLEM","DISPLACEMENT",ss_field.str().c_str(),ROW,dD,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+       ierr = mField.set_other_global_ghost_vector("STOCHASIC_PROBLEM","Lagrange_mul_disp","Lagrange_mul_disp",ROW,dD,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
        }
     else { // solution for second-order problem
        ierr = VecGhostUpdateBegin(ddF,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
@@ -1166,8 +1166,8 @@ int main(int argc, char *argv[]) {
        ierr = VecGhostUpdateBegin(ddD,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
        ierr = VecGhostUpdateEnd(ddD,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
        // ierr = VecView(dD,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-       ierr = mField.set_other_global_VecCreateGhost("STOCHASIC_PROBLEM","DISPLACEMENT",ss_field.str().c_str(),ROW,ddD,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-       ierr = mField.set_other_global_VecCreateGhost("STOCHASIC_PROBLEM","Lagrange_mul_disp","Lagrange_mul_disp",ROW,ddD,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);      
+       ierr = mField.set_other_global_ghost_vector("STOCHASIC_PROBLEM","DISPLACEMENT",ss_field.str().c_str(),ROW,ddD,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+       ierr = mField.set_other_global_ghost_vector("STOCHASIC_PROBLEM","Lagrange_mul_disp","Lagrange_mul_disp",ROW,ddD,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);      
        }
 
 
@@ -1210,9 +1210,9 @@ int main(int argc, char *argv[]) {
     if(pcomm->rank()==0) {
         EntityHandle out_meshset;
         rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
-        ierr = mField.problem_get_FE("STOCHASIC_PROBLEM","ELASTIC",out_meshset); CHKERRQ(ierr);
-        ierr = mField.problem_get_FE("STOCHASIC_PROBLEM","TRAN_ISOTROPIC_ELASTIC",out_meshset); CHKERRQ(ierr);
-        ierr = mField.problem_get_FE("STOCHASIC_PROBLEM","INTERFACE",out_meshset); CHKERRQ(ierr);
+        ierr = mField.get_problem_finite_elements_entities("STOCHASIC_PROBLEM","ELASTIC",out_meshset); CHKERRQ(ierr);
+        ierr = mField.get_problem_finite_elements_entities("STOCHASIC_PROBLEM","TRAN_ISOTROPIC_ELASTIC",out_meshset); CHKERRQ(ierr);
+        ierr = mField.get_problem_finite_elements_entities("STOCHASIC_PROBLEM","INTERFACE",out_meshset); CHKERRQ(ierr);
         rval = moab.write_file(outName,"VTK","",&out_meshset,1); CHKERR_PETSC(rval);
         rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
     }

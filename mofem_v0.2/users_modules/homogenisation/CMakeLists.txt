@@ -30,11 +30,8 @@ add_library(user_modules_homogenisation
   ${UM_SOURCE_DIR}/homogenisation/src/impl/ElasticFE_RVELagrange_Periodic.cpp
   ${UM_SOURCE_DIR}/homogenisation/src/impl/ElasticFE_RVELagrange_Homogenized_Stress_Periodic.cpp
   ${UM_SOURCE_DIR}/homogenisation/src/impl/ElasticFE_RVELagrange_Disp_Multi_Rhs.cpp
-<<<<<<< HEAD
   ${UM_SOURCE_DIR}/homogenisation/src/impl/ElasticFE_RVELagrange_Traction_Multi_Rhs.cpp
   ${UM_SOURCE_DIR}/homogenisation/src/impl/ElasticFE_RVELagrange_Periodic_Multi_Rhs.cpp
-=======
->>>>>>> 4c71115df9398c45357ea59be27c041fd194b5e2
 )
 
 add_subdirectory(atom_tests)
