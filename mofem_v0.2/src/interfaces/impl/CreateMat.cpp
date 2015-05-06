@@ -72,7 +72,7 @@ struct CreateRowComressedADJMatrix: public Core {
   PetscErrorCode getEntityAdjacenies(
     ProblemsByName::iterator p_miit,
     typename boost::multi_index::index<NumeredDofMoFEMEntity_multiIndex,TAG>::type::iterator mit_row,
-    MoFEMEntity* &mofem_ent_ptr,NumeredDofMoFEMEntity_multiIndex_uid_view_hashed &dofs_col_view);
+    MoFEMEntity* &mofem_ent_ptr,NumeredDofMoFEMEntity_multiIndex_uid_view_hashed &dofs_col_view,int verb);
 
 
 };
@@ -81,7 +81,8 @@ template<typename TAG>
 PetscErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
   ProblemsByName::iterator p_miit,
   typename boost::multi_index::index<NumeredDofMoFEMEntity_multiIndex,TAG>::type::iterator mit_row,
-  MoFEMEntity* &mofem_ent_ptr,NumeredDofMoFEMEntity_multiIndex_uid_view_hashed &dofs_col_view
+  MoFEMEntity* &mofem_ent_ptr,NumeredDofMoFEMEntity_multiIndex_uid_view_hashed &dofs_col_view,
+  int verb
 ) {
   PetscFunctionBegin;
 
@@ -93,30 +94,36 @@ PetscErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
   hi_adj_miit = entFEAdjacencies.get<Unique_mi_tag>().upper_bound(mofem_ent_ptr->get_global_unique_id());
 
   dofs_col_view.clear();
-  for(;adj_miit!=hi_adj_miit;adj_miit++) {
-
-    if(adj_miit->by_other&BYROW) {
-
-      if((adj_miit->EntMoFEMFiniteElement_ptr->get_id()&p_miit->get_BitFEId()).none()) {
+  for (; adj_miit != hi_adj_miit; adj_miit++) {
+    if (adj_miit->by_other&BYROW) {
+      if ((adj_miit->EntMoFEMFiniteElement_ptr->get_id()&p_miit->get_BitFEId()).none()) {
         // if element is not part of problem
         continue;
       }
-
-      if((adj_miit->EntMoFEMFiniteElement_ptr->get_BitRefLevel()&mit_row->get_BitRefLevel()).none()) {
+      if ((adj_miit->EntMoFEMFiniteElement_ptr->get_BitRefLevel()&mit_row->get_BitRefLevel()).none()) {
         // if entity is not problem refinement level
         continue;
       }
 
-      if(debug) {
+      if (verb > 2) {
+          stringstream ss;
 
-        cerr << "p_miit->numered_dofs_cols.size() ";
-        cerr << p_miit->numered_dofs_cols.size() << endl;
+          ss << "rank " << rAnk << ":  numered_dofs_cols" << endl;
+          DofMoFEMEntity_multiIndex_uid_view::iterator dit, hi_dit;
+          dit = adj_miit->EntMoFEMFiniteElement_ptr->col_dof_view.begin();
+          hi_dit = adj_miit->EntMoFEMFiniteElement_ptr->col_dof_view.end();
 
+          for (; dit != hi_dit; dit++) {
+            ss << "\t" << **dit << endl;
+          }
+          PetscSynchronizedPrintf(comm, "%s", ss.str().c_str());
       }
 
-      ierr = adj_miit->EntMoFEMFiniteElement_ptr->get_MoFEMFiniteElement_col_dof_view(
-        p_miit->numered_dofs_cols,dofs_col_view,Interface::UNION
-      ); CHKERRQ(ierr);
+      ierr = adj_miit->EntMoFEMFiniteElement_ptr->
+        get_MoFEMFiniteElement_col_dof_view(
+          p_miit->numered_dofs_cols,
+          dofs_col_view,
+          Interface::UNION); CHKERRQ(ierr);
 
     }
 
@@ -151,7 +158,7 @@ PetscErrorCode CreateRowComressedADJMatrix::createMat(
   }
 
   // Get adjacencies form other processors
-  map<int,vector<int> > adjacent_dofs_on_other_parts;
+  map<int, vector<int> > adjacent_dofs_on_other_parts;
 
   // If not partitioned set petsc layout for matrix. If partitioned need to get
   // adjacencies form other parts. Note if algebra is only partitioned no need
@@ -162,29 +169,26 @@ PetscErrorCode CreateRowComressedADJMatrix::createMat(
 
     // Get range of local indices
     PetscLayout layout;
-    ierr = PetscLayoutCreate(comm,&layout); CHKERRQ(ierr);
-    ierr = PetscLayoutSetBlockSize(layout,1); CHKERRQ(ierr);
-    ierr = PetscLayoutSetSize(layout,nb_dofs_row); CHKERRQ(ierr);
+    ierr = PetscLayoutCreate(comm, &layout); CHKERRQ(ierr);
+    ierr = PetscLayoutSetBlockSize(layout, 1); CHKERRQ(ierr);
+    ierr = PetscLayoutSetSize(layout, nb_dofs_row); CHKERRQ(ierr);
     ierr = PetscLayoutSetUp(layout); CHKERRQ(ierr);
-    PetscInt rstart,rend;
-    ierr = PetscLayoutGetRange(layout,&rstart,&rend); CHKERRQ(ierr);
+    PetscInt rstart, rend;
+    ierr = PetscLayoutGetRange(layout, &rstart, &rend); CHKERRQ(ierr);
     ierr = PetscLayoutDestroy(&layout); CHKERRQ(ierr);
-    if(verb > 0) {
-      PetscSynchronizedPrintf(comm,"\tcreate_Mat: row lower %d row upper %d\n",rstart,rend);
+    if (verb > 0) {
+      PetscSynchronizedPrintf(comm, "\tcreate_Mat: row lower %d row upper %d\n", rstart, rend);
+      PetscSynchronizedFlush(comm, PETSC_STDOUT);
     }
     miit_row = dofs_row_by_idx.lower_bound(rstart);
     hi_miit_row = dofs_row_by_idx.lower_bound(rend);
-    if(distance(miit_row,hi_miit_row) != rend-rstart) {
-
+    if (distance(miit_row, hi_miit_row) != rend-rstart) {
       SETERRQ4(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,
         "data inconsistency, distance(miit_row,hi_miit_row) != rend - rstart (%d != %d - %d = %d) ",
-        distance(miit_row,hi_miit_row),rend,rstart,rend-rstart
+        distance(miit_row, hi_miit_row), rend, rstart, rend-rstart
       );
-
     }
-
   } else {
-
     //get adjacent nodes on other partitions
     vector<vector<int> > dofs_vec(sIze);
 
@@ -207,7 +211,7 @@ PetscErrorCode CreateRowComressedADJMatrix::createMat(
         if( (mofem_ent_ptr == NULL) ? 1 : mofem_ent_ptr->get_global_unique_id() != mit_row->get_MoFEMEntity_ptr()->get_global_unique_id() ) {
 
           // get entity adjacencies
-          ierr = getEntityAdjacenies<TAG>(p_miit,mit_row,mofem_ent_ptr,dofs_col_view); CHKERRQ(ierr);
+          ierr = getEntityAdjacenies<TAG>(p_miit,mit_row,mofem_ent_ptr,dofs_col_view,verb); CHKERRQ(ierr);
 
           // Add that row. Patterns is that first index is row index, second is
           // size of adjacencies after that follows column adjacencies.
@@ -217,7 +221,7 @@ PetscErrorCode CreateRowComressedADJMatrix::createMat(
           // add adjacent cools
           NumeredDofMoFEMEntity_multiIndex_uid_view_hashed::iterator cvit;
           cvit = dofs_col_view.begin();
-          for(;cvit!=dofs_col_view.end();cvit++) {
+          for(; cvit!=dofs_col_view.end(); cvit++) {
 
             int col_idx = TAG::get_index(*cvit);
             if(col_idx<0) {
@@ -280,6 +284,7 @@ PetscErrorCode CreateRowComressedADJMatrix::createMat(
     // olengths. And post Irecvs on these buffers using node info from onodes
     int **rbuf;		// must bee freed by user
     MPI_Request *r_waits; // must bee freed by user
+
     // rbuf has a pointers to messages. It has size of of nrecvs (number of
     // messages) +1. In the first index a block is allocated,
     // such that rbuf[i] = rbuf[i-1]+olengths[i-1].
@@ -372,19 +377,13 @@ PetscErrorCode CreateRowComressedADJMatrix::createMat(
       }
 
       // Get entity adjacencies, no need to repeat that operation for dofs when
-      // are on the same entity. For simplicity is assumed that those shere the
+      // are on the same entity. For simplicity is assumed that those share the
       // same adjacencies.
       if( (mofem_ent_ptr == NULL) ? 1 : (mofem_ent_ptr->get_global_unique_id() != miit_row->get_MoFEMEntity_ptr()->get_global_unique_id()) ) {
 
         // get entity adjacencies
-        ierr = getEntityAdjacenies<TAG>(p_miit,miit_row,mofem_ent_ptr,dofs_col_view); CHKERRQ(ierr);
+        ierr = getEntityAdjacenies<TAG>(p_miit,miit_row,mofem_ent_ptr,dofs_col_view,verb); CHKERRQ(ierr);
         row_last_evaluated_idx = TAG::get_index(miit_row);
-
-        if(debug) {
-
-          cerr << "dofs_col_view.size() " << dofs_col_view.size() << endl;
-
-        }
 
         dofs_vec.resize(0);
         NumeredDofMoFEMEntity_multiIndex_uid_view_hashed::iterator cvit;
@@ -393,18 +392,13 @@ PetscErrorCode CreateRowComressedADJMatrix::createMat(
         for(;cvit!=dofs_col_view.end();cvit++) {
 
           int idx = TAG::get_index(*cvit);
-
-          if(debug) {
-            cerr << "add idx to j " << idx << endl;
-          }
-
           dofs_vec.push_back(idx);
+
           if(idx<0) {
             SETERRQ1(
               PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,"data inconsistency, dof index is smaller than 0, problem name < %s >",name.c_str()
             );
           }
-
           if(idx>=p_miit->get_nb_dofs_col()) {
 
             ostringstream ss;
@@ -437,12 +431,11 @@ PetscErrorCode CreateRowComressedADJMatrix::createMat(
         int new_size = distance(dofs_vec.begin(),new_end);
         dofs_vec.resize(new_size);
 
-        if(debug) {
+        if(verb>2) {
 
-          cerr << "dofs_vec for " << *mofem_ent_ptr << " : ";
-          ostream_iterator<int> out_it(std::cerr,", ");
-          copy(dofs_vec.begin(), dofs_vec.end(), out_it );
-          cerr << endl;
+          stringstream ss;
+          ss << "rank " << rAnk << ": dofs_vec for " << *mofem_ent_ptr << endl;
+          PetscSynchronizedPrintf(comm,"%s",ss.str().c_str());
 
         }
 
@@ -460,6 +453,9 @@ PetscErrorCode CreateRowComressedADJMatrix::createMat(
       }
 
       // add indices to compressed matrix
+      if(verb>1) {
+        PetscSynchronizedPrintf(comm,"rank %d: ",rAnk);
+      }
       vector<DofIdx>::iterator diit,hi_diit;
       diit = dofs_vec.begin();
       hi_diit = dofs_vec.end();
@@ -472,8 +468,19 @@ PetscErrorCode CreateRowComressedADJMatrix::createMat(
         }
         j.push_back(*diit);
 
+        if(verb>1) {
+          PetscSynchronizedPrintf(comm,"%d ",*diit);
+        }
+
+      }
+      if(verb>1) {
+        PetscSynchronizedPrintf(comm,"\n",*diit);
       }
 
+    }
+
+    if(verb>1) {
+	     PetscSynchronizedFlush(comm,PETSC_STDOUT);
     }
 
     //build adj matrix
@@ -505,7 +512,9 @@ PetscErrorCode CreateRowComressedADJMatrix::createMat(
         SETERRQ(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,"data inconsistency");
       }
       PetscInt nb_local_dofs_col = p_miit->get_nb_local_dofs_col();
-      ierr = ::MatCreateMPIAIJWithArrays(comm,nb_local_dofs_row,nb_local_dofs_col,nb_row_dofs,nb_col_dofs,*_i,*_j,PETSC_NULL,M); CHKERRQ(ierr);
+      ierr = ::MatCreateMPIAIJWithArrays(
+        comm,nb_local_dofs_row,nb_local_dofs_col,nb_row_dofs,nb_col_dofs,*_i,*_j,PETSC_NULL,M
+      ); CHKERRQ(ierr);
 
     } else if(strcmp(type,MATAIJ)==0) {
 
@@ -599,13 +608,22 @@ PetscErrorCode Core::partition_problem(const string &name,int verb) {
   MatPartitioning part;
   IS is;
   ierr = MatPartitioningCreate(comm,&part); CHKERRQ(ierr);
+  //#ifdef __APPLE__
+  //ierr = PetscBarrier((PetscObject)Adj); CHKERRQ(ierr);
+  //#endif
   ierr = MatPartitioningSetAdjacency(part,Adj); CHKERRQ(ierr);
   ierr = MatPartitioningSetFromOptions(part); CHKERRQ(ierr);
   ierr = MatPartitioningSetNParts(part,sIze); CHKERRQ(ierr);
+  //#ifdef __APPLE__
+  //ierr = PetscBarrier((PetscObject)part); CHKERRQ(ierr);
+  //#endif
   ierr = MatPartitioningApply(part,&is); CHKERRQ(ierr);
   if(verb>2) {
     ISView(is,PETSC_VIEWER_STDOUT_WORLD);
   }
+  #ifdef __APPLE__
+  ierr = PetscBarrier((PetscObject)is); CHKERRQ(ierr);
+  #endif
 
   //gather
   IS is_gather,is_num,is_gather_num;
@@ -669,11 +687,11 @@ PetscErrorCode Core::partition_problem(const string &name,int verb) {
         assert(miit_dofs_row->petsc_gloabl_dof_idx==miit_dofs_col->petsc_gloabl_dof_idx);
         success = dofs_row_by_idx_no_const.modify(miit_dofs_row,NumeredDofMoFEMEntity_local_idx_change(nb_row_local_dofs++));
         if(!success) {
-  	SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+          SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
         }
         success = dofs_col_by_idx_no_const.modify(miit_dofs_col,NumeredDofMoFEMEntity_local_idx_change(nb_col_local_dofs++));
         if(!success) {
-  	SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+          SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
         }
       }
     }
@@ -868,9 +886,15 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const string &problem_name,i
   ierr = MatCreateMPIAIJWithArrays(problem_name,&A); CHKERRQ(ierr);
   ierr = MatSetOption(A,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_TRUE);  CHKERRQ(ierr);
 
-  //MatView(A,PETSC_VIEWER_DRAW_WORLD);
-  //std::string wait;
-  //std::cin >> wait;
+  if(verb>1) {
+    MatView(A,PETSC_VIEWER_STDOUT_WORLD);
+  }
+
+  if(verb>2) {
+    MatView(A,PETSC_VIEWER_DRAW_WORLD);
+    std::string wait;
+    std::cin >> wait;
+  }
 
   TestMatrixFillIn method(this,A,row_print,col_print);
 

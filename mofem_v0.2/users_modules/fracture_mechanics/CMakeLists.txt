@@ -78,7 +78,7 @@ file(COPY
     ${CMAKE_CURRENT_SOURCE_DIR}/README
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
 
-cm_export_file("crack1.cub" export_files_material_mechanics)
+cm_export_file("crack1.h5m" export_files_material_mechanics)
 
 configure_file(
   "${UM_SOURCE_DIR}/fracture_mechanics/convergence_study.sh.in"
@@ -101,7 +101,7 @@ file(COPY arc_length.sh
 
 #testing
 add_test(ConvergenceStudy_sh ${CMAKE_CURRENT_BINARY_DIR}/convergence_study.sh
-  -f crack1.cub -l 1e-4 -o 2 -r 1 -d TEST_SIF -p 2 -pc_factor_mat_solver_package=mumps
+  -f crack1.h5m -l 1e-4 -o 2 -r 1 -d TEST_SIF -p 2 -pc_factor_mat_solver_package=mumps
 )
 add_test(ArcLength_sh ${CMAKE_CURRENT_BINARY_DIR}/arc_length.sh
   -f TEST_SIF/out_spatial_2_1.h5m -a 2e-3 -n 1 -g 1e-6 -d TEST_ARC -p 2

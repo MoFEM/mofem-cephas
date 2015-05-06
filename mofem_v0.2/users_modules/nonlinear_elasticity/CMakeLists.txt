@@ -1,8 +1,3 @@
-# Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
-# The MoFEM package is copyrighted by Lukasz Kaczmarczyk. 
-# It can be freely used for educational and research purposes 
-# by other institutions. If you use this softwre pleas cite my work. 
-#
 # MoFEM is free software: you can redistribute it and/or modify it under
 # the terms of the GNU Lesser General Public License as published by the
 # Free Software Foundation, either version 3 of the License, or (at your
@@ -27,9 +22,9 @@ add_subdirectory(atom_tests)
 
 if(ADOL-C_LIBRARY)
 
-  add_executable(arc_length_nonlinear_elasticity 
+  add_executable(arc_length_nonlinear_elasticity
     ${UM_SOURCE_DIR}/nonlinear_elasticity/arc_length_nonlinear_elasticity.cpp)
-  target_link_libraries(arc_length_nonlinear_elasticity 
+  target_link_libraries(arc_length_nonlinear_elasticity
     mofem_finite_element_library
     mofem_finite_elements
     mofem_interfaces
@@ -43,7 +38,7 @@ if(ADOL-C_LIBRARY)
     boost_program_options
     ${MoFEM_PROJECT_LIBS})
 
-  cm_export_file("dome_thin_symm.cub" export_files_arc_length_nonlinearelasticity)
+  cm_export_file("dome_thin_symm.h5m" export_files_arc_length_nonlinearelasticity)
 
   file(COPY
     ${CMAKE_CURRENT_SOURCE_DIR}/README
@@ -74,18 +69,18 @@ if(ADOL-C_LIBRARY)
     FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE)
 
   #testing
-  add_test(ArcLengthNonLinearElasticityTest 
+  add_test(ArcLengthNonLinearElasticityTest
     ${MoFEM_MPI_RUN} -np 4 ${CMAKE_CURRENT_BINARY_DIR}/arc_length_nonlinear_elasticity
-    -my_file dome_thin_symm.cub -ksp_type fgmres 
+    -my_file dome_thin_symm.h5m -ksp_type fgmres
     -pc_type lu -pc_factor_mat_solver_package mumps
-    -ksp_atol 1e-10 -ksp_rtol 1e-10 
-    -snes_monitor 
-    -snes_type newtonls -snes_linesearch_type basic -snes_linesearch_monitor 
-    -snes_max_it 16 -snes_atol 1e-8 -snes_rtol 1e-8 
+    -ksp_atol 1e-10 -ksp_rtol 1e-10
+    -snes_monitor
+    -snes_type newtonls -snes_linesearch_type basic -snes_linesearch_monitor
+    -snes_max_it 16 -snes_atol 1e-8 -snes_rtol 1e-8
     -my_sr 1e-6 -my_ms 3 -snes_converged_reason
     -log_summary)
 
-  cm_export_file("LShape.cub" export_files_nonlinear_dynamics)
+  cm_export_file("LShape.h5m" export_files_nonlinear_dynamics)
   cm_export_file("data.txt" export_files_nonlinear_dynamics)
 
   add_executable(nonlinear_dynamics
@@ -105,24 +100,24 @@ if(ADOL-C_LIBRARY)
     ${MoFEM_PROJECT_LIBS})
 
   add_test(NonLinearDynamics
-    ${MoFEM_MPI_RUN} -np 4 ${CMAKE_CURRENT_BINARY_DIR}/nonlinear_dynamics -my_file LShape.cub 
+    ${MoFEM_MPI_RUN} -np 4 ${CMAKE_CURRENT_BINARY_DIR}/nonlinear_dynamics -my_file LShape.h5m
       -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package mumps
-      -ksp_atol 1e-10 -ksp_rtol 1e-10 -snes_monitor 
+      -ksp_atol 1e-10 -ksp_rtol 1e-10 -snes_monitor
       -snes_type newtonls -snes_linesearch_type basic
       -snes_max_it 100 -snes_atol 1e-7 -snes_rtol 1e-7
       -ts_monitor -ts_type alpha -ts_dt 0.001 -ts_final_time 0.002
       -my_time_data_file data.txt -my_output_prt 1
       -my_max_post_proc_ref_level 0 -my_disp_order 3 -my_vel_order 3)
 
-  if(SLEPC_LIBRARY) 
+  if(SLEPC_LIBRARY)
 
-    #cm_export_file("dome_stability.cub" export_files_arc_length_nonlinearelasticity)
-    #cm_export_file("cylinder.cub" export_files_arc_length_nonlinearelasticity)
-    cm_export_file("rod.cub" export_files_arc_length_nonlinearelasticity)
+    #cm_export_file("dome_stability.h5m" export_files_arc_length_nonlinearelasticity)
+    #cm_export_file("cylinder.h5m" export_files_arc_length_nonlinearelasticity)
+    cm_export_file("rod.h5m" export_files_arc_length_nonlinearelasticity)
 
     add_executable(stability
       ${UM_SOURCE_DIR}/nonlinear_elasticity/stability.cpp)
-    target_link_libraries(stability 
+    target_link_libraries(stability
       mofem_finite_element_library
       mofem_finite_elements
       mofem_interfaces
@@ -136,17 +131,15 @@ if(ADOL-C_LIBRARY)
       boost_program_options
       ${MoFEM_PROJECT_LIBS})
 
-    add_test(EigenProblem
-      ${MoFEM_MPI_RUN} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/stability  
-	-my_file rod.cub 
-	-ksp_type gmres -pc_type lu -pc_factor_mat_solver_package mumps -ksp_monitor -ksp_atol 1e-12 -ksp_rtol 1e-12 
-	-st_ksp_type preonly -st_pc_type cholesky -st_pc_factor_mat_solver_package mumps 
-	-eps_monitor -eps_tol 1e-12 
-	-eps_nev 2 -eps_ncv 10  -eps_smalest_real -eps_gen_no_hermitian 
-	-my_max_post_proc_ref_level 0 -st_ksp_atol 1e-12 -st_ksp_rtol 1e-12 -my_order 2)
-    
+      add_test(EigenProblem
+        ${MoFEM_MPI_RUN} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/stability
+        -my_file rod.h5m
+        -ksp_type gmres -pc_type lu -pc_factor_mat_solver_package mumps -ksp_monitor -ksp_atol 1e-12 -ksp_rtol 1e-12
+        -st_ksp_type preonly -st_pc_type cholesky -st_pc_factor_mat_solver_package mumps
+        -eps_monitor -eps_tol 1e-12
+        -eps_nev 2 -eps_ncv 10  -eps_smalest_real -eps_gen_no_hermitian
+      -my_max_post_proc_ref_level 0 -st_ksp_atol 1e-12 -st_ksp_rtol 1e-12 -my_order 2)
+
   endif(SLEPC_LIBRARY)
 
 endif(ADOL-C_LIBRARY)
-
-
