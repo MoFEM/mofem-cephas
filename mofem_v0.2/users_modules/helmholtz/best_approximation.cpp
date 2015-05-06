@@ -15,7 +15,7 @@
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
  * License for more details.
- *
+
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>.
 */
@@ -219,74 +219,74 @@ int main(int argc, char *argv[]) {
 
     case HARD_SPHERE_SCATTER_WAVE:
 
-    {
+      {
 
-      double scattering_sphere_radius = 1;;
-      ierr = PetscOptionsGetScalar(NULL,"-scattering_sphere_radius",&scattering_sphere_radius,NULL); CHKERRQ(ierr);
+	double scattering_sphere_radius = 1;;
+	ierr = PetscOptionsGetScalar(NULL,"-scattering_sphere_radius",&scattering_sphere_radius,NULL); CHKERRQ(ierr);
 
-      HardSphereScatterWave function_evaluator(wavenumber,scattering_sphere_radius);
-      ierr = solve_problem(m_field,"EX1_PROBLEM","FE1","reEX","imEX",INSERT_VALUES,function_evaluator,is_partitioned); CHKERRQ(ierr);
-    }
+	HardSphereScatterWave function_evaluator(wavenumber,scattering_sphere_radius);
+	ierr = solve_problem(m_field,"EX1_PROBLEM","FE1","reEX","imEX",INSERT_VALUES,function_evaluator,is_partitioned); CHKERRQ(ierr);
+      }
 
-    break;
+      break;
 
 
     case SOFT_SPHERE_SCATTER_WAVE:
 
-    {
-      double scattering_sphere_radius = 1;;
-      ierr = PetscOptionsGetScalar(NULL,"-scattering_sphere_radius",&scattering_sphere_radius,NULL); CHKERRQ(ierr);
+      {
+	double scattering_sphere_radius = 1;;
+	ierr = PetscOptionsGetScalar(NULL,"-scattering_sphere_radius",&scattering_sphere_radius,NULL); CHKERRQ(ierr);
 
-      SoftSphereScatterWave function_evaluator(wavenumber,scattering_sphere_radius);
-      ierr = solve_problem(m_field,"EX1_PROBLEM","FE1","reEX","imEX",INSERT_VALUES,function_evaluator,is_partitioned); CHKERRQ(ierr);
-    }
+        SoftSphereScatterWave function_evaluator(wavenumber,scattering_sphere_radius);
+        ierr = solve_problem(m_field,"EX1_PROBLEM","FE1","reEX","imEX",INSERT_VALUES,function_evaluator,is_partitioned); CHKERRQ(ierr);
+      }
 
     break;
 
     case PLANE_WAVE:
 
-    {
+      {
 
-      double angle = 0.25;
-      // set wave number from line command, that overwrite numbre form block set
-      ierr = PetscOptionsGetScalar(NULL,"-wave_guide_angle",&angle,NULL); CHKERRQ(ierr);
+	double angle = 0.25;
+	// set wave number from line command, that overwrite numbre form block set
+	ierr = PetscOptionsGetScalar(NULL,"-wave_guide_angle",&angle,NULL); CHKERRQ(ierr);
 
-      PlaneWave function_evaluator(wavenumber,angle*M_PI);
-      ierr = solve_problem(m_field,"EX1_PROBLEM","FE1","reEX","imEX",INSERT_VALUES,function_evaluator,is_partitioned); CHKERRQ(ierr);
-    }
+        PlaneWave function_evaluator(wavenumber,angle*M_PI);
+        ierr = solve_problem(m_field,"EX1_PROBLEM","FE1","reEX","imEX",INSERT_VALUES,function_evaluator,is_partitioned); CHKERRQ(ierr);
+      }
 
     break;
 
     case HARD_CYLINDER_SCATTER_WAVE:
 
-    {
-      HardCylinderScatterWave function_evaluator(wavenumber);
-      ierr = solve_problem(m_field,"EX1_PROBLEM","FE1","reEX","imEX",INSERT_VALUES,function_evaluator,is_partitioned); CHKERRQ(ierr);
-    }
+      {
+        HardCylinderScatterWave function_evaluator(wavenumber);
+        ierr = solve_problem(m_field,"EX1_PROBLEM","FE1","reEX","imEX",INSERT_VALUES,function_evaluator,is_partitioned); CHKERRQ(ierr);
+      }
 
     break;
 
     case SOFT_CYLINDER_SCATTER_WAVE:
 
-    {
-      SoftCylinderScatterWave function_evaluator(wavenumber);
-      ierr = solve_problem(m_field,"EX1_PROBLEM","FE1","reEX","imEX",INSERT_VALUES,function_evaluator,is_partitioned); CHKERRQ(ierr);
-    }
+      {
+        SoftCylinderScatterWave function_evaluator(wavenumber);
+        ierr = solve_problem(m_field,"EX1_PROBLEM","FE1","reEX","imEX",INSERT_VALUES,function_evaluator,is_partitioned); CHKERRQ(ierr);
+      }
 
     break;
 
     case INCIDENT_WAVE:
 
-    {
-      IncidentWave function_evaluator(wavenumber,wave_direction);
-      ierr = solve_problem(m_field,"EX1_PROBLEM","FE1","reEX","imEX",INSERT_VALUES,function_evaluator,is_partitioned); CHKERRQ(ierr);
-    }
+      {
+        IncidentWave function_evaluator(wavenumber,wave_direction);
+        ierr = solve_problem(m_field,"EX1_PROBLEM","FE1","reEX","imEX",INSERT_VALUES,function_evaluator,is_partitioned); CHKERRQ(ierr);
+      }
 
     break;
 
     default:
 
-    SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"No analytical solution has been defined");
+	   SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"No analytical solution has been defined");
 
   }
 

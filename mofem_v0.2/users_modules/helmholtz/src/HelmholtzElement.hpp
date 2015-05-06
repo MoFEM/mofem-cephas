@@ -121,12 +121,13 @@ struct HelmholtzElement {
     globalParameters.waveDirection.first.clear();
     globalParameters.waveDirection.first[2] = 1;
     int nmax = 3;
-    ierr = PetscOptionsRealArray("-wave_direction","direction of incident wave","",
-      &globalParameters.waveDirection.first[0],&nmax,&globalParameters.waveDirection.second); CHKERRQ(ierr);
+    ierr = PetscOptionsRealArray(
+      "-wave_direction","direction of incident wave","",&globalParameters.waveDirection.first[0],&nmax,&globalParameters.waveDirection.second
+    ); CHKERRQ(ierr);
     if(globalParameters.waveDirection.second) {
       if(nmax > 0 && nmax != 3) {
 
-	SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"*** ERROR -wave_direction [3*1 vector] default:X direction [0,0,1]");
+        SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"*** ERROR -wave_direction [3*1 vector] default:X direction [0,0,1]");
 
       }
     }
@@ -170,41 +171,39 @@ struct HelmholtzElement {
 
       if(reFieldName!=imFieldName) {
 
-	takeIndicesFromElementRowIndices = false;
+        takeIndicesFromElementRowIndices = false;
 
       } else {
 
-	takeIndicesFromElementRowIndices = true;
+        takeIndicesFromElementRowIndices = true;
 
       }
 
     }
 
-    PetscErrorCode doWork(
-      int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
 
       int nb_row_dofs = data.getIndices().size();
       if(nb_row_dofs==0) PetscFunctionReturn(0);
 
       if(!side) {
-	commonData.imIndices[type].resize(6);
+        commonData.imIndices[type].resize(6);
       }
 
       if(takeIndicesFromElementRowIndices) {
 
-	(commonData.imIndices[type])[side] = data.getIndices();
+        (commonData.imIndices[type])[side] = data.getIndices();
 
       } else {
 
-	// Get rows and cols indices of imaginary part and assemble matrix.
-	// Note: However HELMHOLTZ_IMIM_FE element is not calculated, since
-	// matrix A on real elements is equal to matrix in imaginary elements,
-	// it need be to declared. Declaration indicate that on imaginary part,
-	// assembled matrix has non-zero values;
-	PetscErrorCode ierr;
-	ierr = getPorblemRowIndices(imFieldName,type,side,
-	  (commonData.imIndices[type])[side]); CHKERRQ(ierr);
+      	// Get rows and cols indices of imaginary part and assemble matrix.
+      	// Note: However HELMHOLTZ_IMIM_FE element is not calculated, since
+      	// matrix A on real elements is equal to matrix in imaginary elements,
+      	// it need be to declared. Declaration indicate that on imaginary part,
+      	// assembled matrix has non-zero values;
+      	PetscErrorCode ierr;
+      	ierr = getPorblemRowIndices(imFieldName,type,side,(commonData.imIndices[type])[side]); CHKERRQ(ierr);
 
       }
 
@@ -236,18 +235,19 @@ struct HelmholtzElement {
 	ublas::vector<double> &value = commonData.pressureAtGaussPts[fieldName];
 	ublas::matrix<double> &gradient = commonData.gradPressureAtGaussPts[fieldName];
 
-        // Initialize
-	value.resize(nb_gauss_pts);
+        // initialize
+        value.resize(nb_gauss_pts);
         gradient.resize(nb_gauss_pts,3);
         if(type == MBVERTEX) {
-	  gradient.clear();
-	  value.clear();
+          gradient.clear();
+          value.clear();
         }
 
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
+
           value[gg] += inner_prod(data.getN(gg,nb_dofs),data.getFieldData());
-          ublas::noalias(ublas::matrix_row<ublas::matrix<double> >(gradient,gg))
-	    += prod( trans(data.getDiffN(gg,nb_dofs)), data.getFieldData() );
+          ublas::noalias(ublas::matrix_row<ublas::matrix<double> >(gradient,gg)) += prod( trans(data.getDiffN(gg,nb_dofs)), data.getFieldData() );
+
         }
 
       } catch (const std::exception& ex) {
@@ -337,7 +337,7 @@ struct HelmholtzElement {
 
         for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
 
-	  // Calculate x,y,z at each GaussPts
+	        // Calculate x,y,z at each GaussPts
           for(int dd = 0;dd<3;dd++) {
             hoCoordsTri(gg,dd) += cblas_ddot(nb_dofs/3,&data.getN(gg)[0],1,&data.getFieldData()[dd],3);
           }
@@ -719,73 +719,74 @@ struct HelmholtzElement {
         PetscErrorCode ierr;
 
         int nb_row_dofs = data.getIndices().size();
-	if(!nb_row_dofs) {
+        if(!nb_row_dofs) {
           PetscFunctionReturn(0);
-	}
+        }
 
-	if(dAta.tRis.find(getMoFEMFEPtr()->get_ent()) == dAta.tRis.end()) {
-	  PetscFunctionReturn(0);
-	}
+        if(dAta.tRis.find(getMoFEMFEPtr()->get_ent()) == dAta.tRis.end()) {
+          PetscFunctionReturn(0);
+        }
 
         reNf.resize(nb_row_dofs);
-	reNf.clear();
+        reNf.clear();
         imNf.resize(nb_row_dofs);
-	imNf.clear();
-
-	nOrmal.resize(3);
+        imNf.clear();
+        nOrmal.resize(3);
 
         for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
 
-	  double area = getArea();
-	  if(getNormals_at_GaussPt().size1()) {
+          double area = getArea();
+          if(getNormals_at_GaussPt().size1()) {
 
-	    noalias(nOrmal) = getNormals_at_GaussPt(gg);
-	    area = ublas::norm_2(nOrmal)*0.5;
-	    nOrmal /= 2*area;
+            noalias(nOrmal) = getNormals_at_GaussPt(gg);
+            area = ublas::norm_2(nOrmal)*0.5;
+            nOrmal /= 2*area;
 
-	  }
+          }
           double val = area*getGaussPts()(2,gg);
 
-	  double x,y,z;
-	  if(commonData.hoCoords.size1()) {
-	    x = commonData.hoCoords(gg,0);
-	    y = commonData.hoCoords(gg,1);
-	    z = commonData.hoCoords(gg,2);
-	  } else {
-	    x = getCoordsAtGaussPts()(gg,0);
-	    y = getCoordsAtGaussPts()(gg,1);
-	    z = getCoordsAtGaussPts()(gg,2);
-	    if(gg == 0) {
-	      noalias(nOrmal) = getNormal();
-	      nOrmal /= 2*area;
-	    }
-	  }
+          double x,y,z;
+          if(commonData.hoCoords.size1()) {
+            x = commonData.hoCoords(gg,0);
+            y = commonData.hoCoords(gg,1);
+            z = commonData.hoCoords(gg,2);
+          } else {
+            x = getCoordsAtGaussPts()(gg,0);
+            y = getCoordsAtGaussPts()(gg,1);
+            z = getCoordsAtGaussPts()(gg,2);
+            if(gg == 0) {
+              noalias(nOrmal) = getNormal();
+              nOrmal /= 2*area;
+            }
+          }
 
-	  try {
-	    ublas::vector<double>& f1 = (*functionEvaluator1)(x,y,z,nOrmal);
-	    ublas::vector<double>& f2 = (*functionEvaluator2)(x,y,z,nOrmal);
+          try {
+            ublas::vector<double>& f1 = (*functionEvaluator1)(x,y,z,nOrmal);
+            ublas::vector<double>& f2 = (*functionEvaluator2)(x,y,z,nOrmal);
 
-	    ierr = calculateResidualRe(gg,f1,f2); CHKERRQ(ierr);
+            ierr = calculateResidualRe(gg,f1,f2); CHKERRQ(ierr);
 
-	    noalias(reNf) += val*(reResidual*data.getN(gg,nb_row_dofs));
-	    noalias(imNf) += val*(imResidual*data.getN(gg,nb_row_dofs));
+            noalias(reNf) += val*(reResidual*data.getN(gg,nb_row_dofs));
+            noalias(imNf) += val*(imResidual*data.getN(gg,nb_row_dofs));
 
-	  } catch (const std::exception& ex) {
-	    ostringstream ss;
-	    ss << "throw in method: " << ex.what() << endl;
-	    SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
-	  }
+          } catch (const std::exception& ex) {
+            ostringstream ss;
+            ss << "throw in method: " << ex.what() << endl;
+            SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+          }
 
         }
 
         ierr = VecSetValues(F,
-	  data.getIndices().size(),&
-	  data.getIndices()[0],
-	  &reNf[0],ADD_VALUES); CHKERRQ(ierr);
+          data.getIndices().size(),&
+          data.getIndices()[0],
+          &reNf[0],ADD_VALUES
+        ); CHKERRQ(ierr);
         ierr = VecSetValues(F,
-	  (commonData.imIndices[type][side]).size(),
-	  &(commonData.imIndices[type][side])[0],
-	  &imNf[0],ADD_VALUES); CHKERRQ(ierr);
+          (commonData.imIndices[type][side]).size(),
+          &(commonData.imIndices[type][side])[0],
+          &imNf[0],ADD_VALUES
+        ); CHKERRQ(ierr);
 
       } catch (const std::exception& ex) {
         ostringstream ss;
@@ -1327,7 +1328,7 @@ struct HelmholtzElement {
       }
 
       // assembled to the right hand vector
-      ferhs.at("helmholtz_reim_fe").getrowopptrvector().push_back(
+      feRhs.at("HELMHOLTZ_REIM_FE").getRowOpPtrVector().push_back(
         new OpHelmholtzMixBCRhs<ZeroFunVal,IncidentWaveNeumannF2>(
           re_field_name,im_field_name,F,miit->second,commonData,
           zero_function,incident_wave_neumann_bc
@@ -1392,7 +1393,6 @@ struct HelmholtzElement {
       ierr = mField.loop_finite_elements(problem_name,mit->first,*(mit->second)); CHKERRQ(ierr); CHKERRQ(ierr);
 
     }
-
 
     PetscFunctionReturn(0);
   }

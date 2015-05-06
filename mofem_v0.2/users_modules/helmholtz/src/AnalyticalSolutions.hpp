@@ -31,7 +31,6 @@ struct GenericAnalyticalSolution {
   virtual vector<ublas::vector<double> >& operator()(double x, double y, double z) = 0;
   virtual ~GenericAnalyticalSolution() {}
 
-
 };
 
 /** List of analytical solution
