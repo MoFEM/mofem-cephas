@@ -70,7 +70,7 @@ if(ADOL-C_LIBRARY)
 
   #testing
   add_test(ArcLengthNonLinearElasticityTest
-    ${MoFEM_MPI_RUN} -np 4 ${CMAKE_CURRENT_BINARY_DIR}/arc_length_nonlinear_elasticity
+    ${MoFEM_MPI_RUN} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/arc_length_nonlinear_elasticity
     -my_file dome_thin_symm.h5m -ksp_type fgmres
     -pc_type lu -pc_factor_mat_solver_package mumps
     -ksp_atol 1e-10 -ksp_rtol 1e-10
@@ -100,7 +100,7 @@ if(ADOL-C_LIBRARY)
     ${MoFEM_PROJECT_LIBS})
 
   add_test(NonLinearDynamics
-    ${MoFEM_MPI_RUN} -np 4 ${CMAKE_CURRENT_BINARY_DIR}/nonlinear_dynamics -my_file LShape.h5m
+    ${MoFEM_MPI_RUN} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/nonlinear_dynamics -my_file LShape.h5m
       -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package mumps
       -ksp_atol 1e-10 -ksp_rtol 1e-10 -snes_monitor
       -snes_type newtonls -snes_linesearch_type basic
