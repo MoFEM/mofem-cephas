@@ -375,24 +375,28 @@ int main(int argc, char *argv[]) {
 	ierr = VecDestroy(&M); CHKERRQ(ierr);
 	ierr = VecDestroy(&P); CHKERRQ(ierr);
 	
-	PostPocOnRefinedMesh post_proc1(m_field);
-	ierr = post_proc1.generateRefereneElemenMesh(); CHKERRQ(ierr);
-	ierr = post_proc1.addFieldValuesPostProc("erorNORM_re"); CHKERRQ(ierr);
-	ierr = post_proc1.addFieldValuesPostProc("erorNORM_im"); CHKERRQ(ierr);
-	ierr = post_proc1.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
-	ierr = m_field.loop_finite_elements("NORM_PROBLEM1","NORM_FE1",post_proc1); CHKERRQ(ierr);
-	rval = post_proc1.postProcMesh.write_file("norm_error.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
-
+    
+    PetscBool save_postproc_mesh = PETSC_TRUE;
+    ierr = PetscOptionsGetBool(NULL,"-save_postproc_mesh",&save_postproc_mesh,NULL); CHKERRQ(ierr);
+    if(save_postproc_mesh) {
+    
+      PostPocOnRefinedMesh post_proc1(m_field);
+      ierr = post_proc1.generateRefereneElemenMesh(); CHKERRQ(ierr);
+      ierr = post_proc1.addFieldValuesPostProc("erorNORM_re"); CHKERRQ(ierr);
+      ierr = post_proc1.addFieldValuesPostProc("erorNORM_im"); CHKERRQ(ierr);
+      ierr = post_proc1.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+      ierr = m_field.loop_finite_elements("NORM_PROBLEM1","NORM_FE1",post_proc1); CHKERRQ(ierr);
+      rval = post_proc1.postProcMesh.write_file("norm_error.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
+   
+    }
+    
 	ierr = PetscTime(&v2);CHKERRQ(ierr);
 	ierr = PetscGetCPUTime(&t2);CHKERRQ(ierr);
 	PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Total Rank %d Time = %f S CPU Time = %f S \n",pcomm->rank(),v2-v1,t2-t1);
 	
-	
 	//output the results from Docker
 	//char command1[] = "mbconvert norm_error.h5m ./norm_error.vtk";
 	//int todo1 = system( command1 );
-	
-	
 	
 	ierr = PetscFinalize(); CHKERRQ(ierr);
 
