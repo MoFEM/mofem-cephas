@@ -26,10 +26,10 @@
 #include <moab/ParallelComm.hpp>
 
 #include <petscsys.h>
-#include <petscvec.h> 
-#include <petscmat.h> 
-#include <petscsnes.h> 
-#include <petscts.h> 
+#include <petscvec.h>
+#include <petscmat.h>
+#include <petscsnes.h>
+#include <petscts.h>
 
 #include <definitions.h>
 #include <h1_hdiv_hcurl_l2.h>
@@ -56,7 +56,7 @@ DisplacementBCFEMethodPreAndPostProc::DisplacementBCFEMethodPreAndPostProc(
   ts_F = _F;
 };
 
-DisplacementBCFEMethodPreAndPostProc::DisplacementBCFEMethodPreAndPostProc(FieldInterface& _mField,const string &_field_name): 
+DisplacementBCFEMethodPreAndPostProc::DisplacementBCFEMethodPreAndPostProc(FieldInterface& _mField,const string &_field_name):
   mField(_mField),fieldName(_field_name),dIag(1) {
   snes_B = PETSC_NULL;
   snes_x = PETSC_NULL;
@@ -119,7 +119,7 @@ PetscErrorCode DisplacementBCFEMethodPreAndPostProc::iNitalize() {
     dofsValues.resize(map_zero_rows.size());
     int ii = 0;
     map<DofIdx,FieldData>::iterator mit = map_zero_rows.begin();
-    for(;mit!=map_zero_rows.end();mit++,ii++) { 
+    for(;mit!=map_zero_rows.end();mit++,ii++) {
       dofsIndices[ii] = mit->first;
       dofsValues[ii] = mit->second;
     }
@@ -133,7 +133,7 @@ PetscErrorCode DisplacementBCFEMethodPreAndPostProc::preProcess() {
 
   switch (ts_ctx) {
     case CTX_TSSETIFUNCTION: {
-      snes_ctx = CTX_SNESSETFUNCTION;      
+      snes_ctx = CTX_SNESSETFUNCTION;
       snes_x = ts_u;
       snes_f = ts_F;
       break;
@@ -165,7 +165,7 @@ PetscErrorCode DisplacementBCFEMethodPreAndPostProc::postProcess() {
 
   switch (ts_ctx) {
     case CTX_TSSETIFUNCTION: {
-      snes_ctx = CTX_SNESSETFUNCTION;      
+      snes_ctx = CTX_SNESSETFUNCTION;
       snes_x = ts_u;
       snes_f = ts_F;
       break;
@@ -197,21 +197,21 @@ PetscErrorCode DisplacementBCFEMethodPreAndPostProc::postProcess() {
     break;
     case CTX_SNESSETFUNCTION: {
       if(snes_x != PETSC_NULL) {
-	if(dofsIndices.size()>0) {
-	  dofsXValues.resize(dofsIndices.size());
-	  ierr = VecGetValues(snes_x,dofsIndices.size(),&dofsIndices[0],&dofsXValues[0]); CHKERRQ(ierr);
-	}
-	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
-	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+        if(dofsIndices.size()>0) {
+          dofsXValues.resize(dofsIndices.size());
+          ierr = VecGetValues(snes_x,dofsIndices.size(),&dofsIndices[0],&dofsXValues[0]); CHKERRQ(ierr);
+        }
+        ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
+        ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
       }
       int ii = 0;
       for(vector<int>::iterator vit = dofsIndices.begin();vit!=dofsIndices.end();vit++,ii++) {
-	double val = 0;
-	if(!dofsXValues.empty()) {
-	  val += dofsXValues[ii];
-	  val += -map_zero_rows[*vit]; // in snes it is on the left hand side, that way -1
-	} 
-	ierr = VecSetValue(snes_f,*vit,val,INSERT_VALUES); CHKERRQ(ierr);
+        double val = 0;
+        if(!dofsXValues.empty()) {
+          val += dofsXValues[ii];
+          val += -map_zero_rows[*vit]; // in snes it is on the left hand side, that way -1
+        }
+        ierr = VecSetValue(snes_f,*vit,val,INSERT_VALUES); CHKERRQ(ierr);
       }
       ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
       ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
@@ -224,7 +224,7 @@ PetscErrorCode DisplacementBCFEMethodPreAndPostProc::postProcess() {
     }
     break;
     default:
-	SETERRQ(PETSC_COMM_SELF,1,"unknown snes stage");
+    SETERRQ(PETSC_COMM_SELF,1,"unknown snes stage");
   }
 
   PetscFunctionReturn(0);
@@ -289,7 +289,7 @@ PetscErrorCode SpatialPositionsBCFEMethodPreAndPostProc::iNitalize() {
     dofsValues.resize(map_zero_rows.size());
     int ii = 0;
     map<DofIdx,FieldData>::iterator mit = map_zero_rows.begin();
-    for(;mit!=map_zero_rows.end();mit++,ii++) { 
+    for(;mit!=map_zero_rows.end();mit++,ii++) {
       dofsIndices[ii] = mit->first;
       dofsValues[ii] = mit->second;
     }
@@ -333,7 +333,7 @@ PetscErrorCode TemperatureBCFEMethodPreAndPostProc::iNitalize() {
     dofsValues.resize(map_zero_rows.size());
     int ii = 0;
     map<DofIdx,FieldData>::iterator mit = map_zero_rows.begin();
-    for(;mit!=map_zero_rows.end();mit++,ii++) { 
+    for(;mit!=map_zero_rows.end();mit++,ii++) {
       dofsIndices[ii] = mit->first;
       dofsValues[ii] = mit->second;
     }
@@ -357,7 +357,7 @@ PetscErrorCode FixBcAtEntities::iNitalize() {
     dofsValues.resize(map_zero_rows.size());
     int ii = 0;
     map<DofIdx,FieldData>::iterator mit = map_zero_rows.begin();
-    for(;mit!=map_zero_rows.end();mit++,ii++) { 
+    for(;mit!=map_zero_rows.end();mit++,ii++) {
       dofsIndices[ii] = mit->first;
       dofsValues[ii] = mit->second;
     }
@@ -429,12 +429,12 @@ PetscErrorCode FixBcAtEntities::postProcess() {
   PetscFunctionReturn(0);
 }
 
-  
+
 PetscErrorCode DirichletBCFromBlockSetFEMethodPreAndPostProc::iNitalize() {
   PetscFunctionBegin;
   if(map_zero_rows.empty()) {
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
-    
+
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
       if(it->get_name().compare(0,blocksetName.length(),blocksetName) == 0) {
         vector<double> mydata;
@@ -452,7 +452,7 @@ PetscErrorCode DirichletBCFromBlockSetFEMethodPreAndPostProc::iNitalize() {
             rval = mField.get_moab().get_connectivity(ents,_nodes,true); CHKERR_PETSC(rval);
             ents.insert(_nodes.begin(),_nodes.end());
           }
-          
+
           for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
             for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,fieldName,*eit,pcomm->rank(),dof)) {
               if(dof->get_ent_type() == MBVERTEX) {
@@ -489,10 +489,9 @@ PetscErrorCode DirichletBCFromBlockSetFEMethodPreAndPostProc::iNitalize() {
       dofsIndices[ii] = mit->first;
       dofsValues[ii] = mit->second;
     }
-    
+
   }
   PetscFunctionReturn(0);
 }
 
 }
-

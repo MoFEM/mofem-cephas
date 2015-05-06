@@ -1,13 +1,8 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
- *
- * Description: FIXME
- *
- * This is not exactly procedure for linear elatic dynamics, since jacobian is
- * evaluated at every time step and snes procedure is involved. However it is
- * implemented like that, to test methodology for general nonlinear problem.
- *
- */
+/* \fiele SurfacePressure.hpp
+  \brief Implementation of pressure and forces on triangles surface
+
+*/
+
 
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
@@ -44,7 +39,7 @@ struct MethodsForOp {
     }
     PetscFunctionReturn(0);
   }
-  
+
   virtual ~MethodsForOp() {}
 
 };
@@ -107,37 +102,35 @@ struct NeummanForcesSurface {
       const FENumeredDofMoFEMEntity *dof_ptr;
       ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
       int rank = dof_ptr->get_max_rank();
-
       int nb_row_dofs = data.getIndices().size()/rank;
-      
+
       Nf.resize(data.getIndices().size());
-      bzero(&*Nf.data().begin(),data.getIndices().size()*sizeof(FieldData));
+      Nf.clear();
 
-      for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
+      for (unsigned int gg = 0;gg<data.getN().size1();gg++) {
 
-	double val = getArea()*getGaussPts()(2,gg);
-	for(int rr = 0;rr<rank;rr++) {
+        double val = getArea()*getGaussPts()(2,gg);
+        for (int rr = 0;rr<rank;rr++) {
 
-	  double force;
-	  if(rr == 0) {
-	    force = dAta.data.data.value3;
-	  } else if(rr == 1) {
-	    force = dAta.data.data.value4;
-	  } else if(rr == 2) {
-	    force = dAta.data.data.value5;
-	  } else {
-	    SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-	  }
-	  force *= dAta.data.data.value1;
-	  cblas_daxpy(nb_row_dofs,val*force,&data.getN()(gg,0),1,&Nf[rr],rank);
+          double force;
+          if(rr == 0) {
+            force = dAta.data.data.value3;
+          } else if(rr == 1) {
+            force = dAta.data.data.value4;
+          } else if(rr == 2) {
+            force = dAta.data.data.value5;
+          } else {
+            SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+          }
+          force *= dAta.data.data.value1;
+          cblas_daxpy(nb_row_dofs,val*force,&data.getN()(gg,0),1,&Nf[rr],rank);
 
-	}
+        }
 
       }
 
-      ierr = MethodsForOp::applyScale(getFEMethod(),methodsOp,Nf); CHKERRQ(ierr);
-      ierr = VecSetValues(F,data.getIndices().size(),
-	&data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
+      ierr = MethodsForOp::applyScale(getFEMethod(), methodsOp, Nf); CHKERRQ(ierr);
+      ierr = VecSetValues(F,data.getIndices().size(), &data.getIndices()[0], &Nf[0], ADD_VALUES); CHKERRQ(ierr);
 
       PetscFunctionReturn(0);
     }
@@ -149,13 +142,13 @@ struct NeummanForcesSurface {
     Vec &F;
     bCPreassure &dAta;
     boost::ptr_vector<MethodsForOp> &methodsOp;
-    bool ho_geometry;
+    bool hoGeometry;
 
     OpNeumannPreassure(const string field_name,Vec &_F,
       bCPreassure &data,boost::ptr_vector<MethodsForOp> &methods_op,
-      bool _ho_geometry = false):
+      bool ho_geometry = false):
       FaceElementForcesAndSourcesCore::UserDataOperator(field_name),
-      F(_F),dAta(data),methodsOp(methods_op),ho_geometry(_ho_geometry) {}
+      F(_F),dAta(data),methodsOp(methods_op),hoGeometry(ho_geometry) {}
 
     ublas::vector<FieldData> Nf;
 
@@ -173,7 +166,7 @@ struct NeummanForcesSurface {
       int rank = dof_ptr->get_max_rank();
 
       int nb_row_dofs = data.getIndices().size()/rank;
-      
+
       Nf.resize(data.getIndices().size());
       bzero(&*Nf.data().begin(),data.getIndices().size()*sizeof(FieldData));
 
@@ -182,27 +175,27 @@ struct NeummanForcesSurface {
 
       for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
 
-	double val = getGaussPts()(2,gg);
-	for(int rr = 0;rr<rank;rr++) {
+        double val = getGaussPts()(2,gg);
+        for(int rr = 0;rr<rank;rr++) {
 
-	  double force;
-	  if(ho_geometry) {
-	    force = dAta.data.data.value1*getNormals_at_GaussPt()(gg,rr);
-	  } else {
-	    force = dAta.data.data.value1*getNormal()[rr];
-	  }
-	  cblas_daxpy(nb_row_dofs,0.5*val*force,&data.getN()(gg,0),1,&Nf[rr],rank);
+          double force;
+          if(hoGeometry) {
+            force = dAta.data.data.value1*getNormals_at_GaussPt()(gg,rr);
+          } else {
+            force = dAta.data.data.value1*getNormal()[rr];
+          }
+          cblas_daxpy(nb_row_dofs,0.5*val*force,&data.getN()(gg,0),1,&Nf[rr],rank);
 
-	}
+        }
 
       }
-    
+
       /*cerr << "VecSetValues\n";
       cerr << Nf << endl;
       cerr << data.getIndices() << endl;*/
       ierr = MethodsForOp::applyScale(getFEMethod(),methodsOp,Nf); CHKERRQ(ierr);
       ierr = VecSetValues(F,data.getIndices().size(),
-	&data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
+	      &data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
 
       PetscFunctionReturn(0);
     }
@@ -214,13 +207,13 @@ struct NeummanForcesSurface {
     Vec &F;
     bCPreassure &dAta;
     boost::ptr_vector<MethodsForOp> &methodsOp;
-    bool ho_geometry;
+    bool hoGeometry;
 
     OpNeumannPreassureFlux(const string field_name,Vec &_F,
       bCPreassure &data,boost::ptr_vector<MethodsForOp> &methods_op,
-      bool _ho_geometry = false):
+      bool ho_geometry = false):
       FaceElementForcesAndSourcesCore::UserDataOperator(field_name),
-      F(_F),dAta(data),methodsOp(methods_op),ho_geometry(_ho_geometry) {}
+      F(_F),dAta(data),methodsOp(methods_op),hoGeometry(ho_geometry) {}
 
     ublas::vector<FieldData> Nf;
 
@@ -238,33 +231,31 @@ struct NeummanForcesSurface {
       int rank = dof_ptr->get_max_rank();
 
       int nb_row_dofs = data.getIndices().size()/rank;
-      
-      Nf.resize(data.getIndices().size());
-      bzero(&*Nf.data().begin(),data.getIndices().size()*sizeof(FieldData));
 
+      Nf.resize(data.getIndices().size());
+      Nf.clear();
       //cerr << getNormal() << endl;
       //cerr << getNormals_at_GaussPt() << endl;
 
       for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
 
-	double val = getGaussPts()(2,gg);
-	double flux;
-	if(ho_geometry) {
-	  double area = cblas_dnrm2(3,&getNormals_at_GaussPt()(gg,0),1);
-	  flux = dAta.data.data.value1*area;
-	} else {
-	  flux = dAta.data.data.value1*getArea();
-	}
-	cblas_daxpy(nb_row_dofs,val*flux,&data.getN()(gg,0),1,&*Nf.data().begin(),1);
+        double val = getGaussPts()(2,gg);
+        double flux;
+        if(hoGeometry) {
+          double area = cblas_dnrm2(3,&getNormals_at_GaussPt()(gg,0),1);
+          flux = dAta.data.data.value1*area;
+        } else {
+          flux = dAta.data.data.value1*getArea();
+        }
+        cblas_daxpy(nb_row_dofs,val*flux,&data.getN()(gg,0),1,&*Nf.data().begin(),1);
 
       }
-    
+
       //cerr << "VecSetValues\n";
       //cerr << Nf << endl;
       //cerr << data.getIndices() << endl;
-      ierr = MethodsForOp::applyScale(getFEMethod(),methodsOp,Nf); CHKERRQ(ierr);
-      ierr = VecSetValues(F,data.getIndices().size(),
-	&data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
+      ierr = MethodsForOp::applyScale(getFEMethod(), methodsOp, Nf); CHKERRQ(ierr);
+      ierr = VecSetValues(F, data.getIndices().size(), &data.getIndices()[0], &Nf[0], ADD_VALUES); CHKERRQ(ierr);
 
       PetscFunctionReturn(0);
     }
@@ -308,7 +299,7 @@ struct NeummanForcesSurface {
     PetscFunctionReturn(0);
   }
 
-  
+
 
 };
 
@@ -329,7 +320,6 @@ struct MetaNeummanForces {
     if(mField.check_field(mesh_nodals_positions)) {
       ierr = mField.modify_finite_element_add_field_data("FORCE_FE",mesh_nodals_positions); CHKERRQ(ierr);
     }
-    
 
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET|FORCESET,it)) {
       Range tris;
@@ -353,7 +343,7 @@ struct MetaNeummanForces {
     PetscFunctionReturn(0);
   }
 
-  static PetscErrorCode setNeumannFiniteElementOperators( 
+  static PetscErrorCode setNeumannFiniteElementOperators(
     FieldInterface &mField,
     boost::ptr_map<string,NeummanForcesSurface> &neumann_forces,
     Vec &F,const string field_name,const string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
@@ -407,7 +397,7 @@ struct MetaNeummanForces {
     PetscFunctionReturn(0);
   }
 
-  static PetscErrorCode setNeumannFluxFiniteElementOperators( 
+  static PetscErrorCode setNeumannFluxFiniteElementOperators(
     FieldInterface &mField,
     boost::ptr_map<string,NeummanForcesSurface> &neumann_forces,
     Vec &F,const string field_name,const string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
@@ -436,7 +426,5 @@ struct MetaNeummanForces {
 
 /***************************************************************************//**
  * \defgroup mofem_static_boundary_conditions Pressure and force boundary conditions
- * \ingroup mofem_forces_and_sources 
+ * \ingroup mofem_forces_and_sources
  ******************************************************************************/
-
-

@@ -1,8 +1,3 @@
-/* Copyright (C) 2014, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
- * FIXME: DESCRIPTION
- */
-
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -24,13 +19,13 @@ struct FaceSplittingTools {
 
   FieldInterface& mField;
   MeshRefinment* rEfiner;
-  PrismInterface* prismInterface; 
-  
-  FaceSplittingTools(FieldInterface& _mField): 
+  PrismInterface* prismInterface;
+
+  FaceSplittingTools(FieldInterface& _mField):
     mField(_mField) {
-    
+
     ErrorCode rval;
-    
+
     int def_bit_level_vec[BITREFLEVEL_SIZE];
     bzero(def_bit_level_vec,BITREFLEVEL_SIZE*sizeof(int));
     rval = mField.get_moab().tag_get_handle(
@@ -71,9 +66,9 @@ struct FaceSplittingTools {
     int& back() { return ptr[ptr[0]]; }
     int* begin() { return &ptr[1]; };
     int* end() { return &ptr[ptr[0]+1]; }
-    void push_back(int a) { 
+    void push_back(int a) {
       ptr[0]++;
-      ptr[ptr[0]] = a; 
+      ptr[ptr[0]] = a;
     }
   };
 
@@ -116,4 +111,3 @@ struct FaceSplittingTools {
 
 
 #endif // __FACESPLITTINGTOOL_HPP__
-

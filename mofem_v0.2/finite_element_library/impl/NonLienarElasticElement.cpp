@@ -1,4 +1,4 @@
-/** 
+/**
  * \brief Operators and data structures for thermal analyse
  *
  * Implementation of nonlinear elastic element.
@@ -26,12 +26,12 @@
 #include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <boost/numeric/ublas/vector.hpp>
 
-#include <adolc/adolc.h> 
+#include <adolc/adolc.h>
 #include <NonLienarElasticElement.hpp>
 
 namespace MoFEM {
 
-NonlinearElasticElement::MyVolumeFE::MyVolumeFE(FieldInterface &m_field): 
+NonlinearElasticElement::MyVolumeFE::MyVolumeFE(FieldInterface &m_field):
   VolumeElementForcesAndSourcesCore(m_field),A(PETSC_NULL),F(PETSC_NULL) {}
 
 int NonlinearElasticElement::MyVolumeFE::getRule(int order) { return (order-1+1); };
@@ -53,15 +53,15 @@ PetscErrorCode NonlinearElasticElement::MyVolumeFE::preProcess() {
   switch (ts_ctx) {
     case CTX_TSSETIFUNCTION: {
       if(!F) {
-	snes_ctx = CTX_SNESSETFUNCTION;
-	snes_f = ts_F;
+        snes_ctx = CTX_SNESSETFUNCTION;
+        snes_f = ts_F;
       }
       break;
     }
     case CTX_TSSETIJACOBIAN: {
       if(!A) {
-	snes_ctx = CTX_SNESSETJACOBIAN;
-	snes_B = ts_B;
+        snes_ctx = CTX_SNESSETJACOBIAN;
+        snes_B = ts_B;
       }
       break;
     }
@@ -72,20 +72,20 @@ PetscErrorCode NonlinearElasticElement::MyVolumeFE::preProcess() {
   int ghosts[] = { 0 };
   int rank;
   MPI_Comm_rank(mField.get_comm(),&rank);
-  
+
   switch (snes_ctx) {
     case CTX_SNESNONE:
-      if(rank == 0) {
-	ierr = VecCreateGhost(mField.get_comm(),1,1,1,ghosts,&V); CHKERRQ(ierr);
-      } else {
-	ierr = VecCreateGhost(mField.get_comm(),0,1,1,ghosts,&V); CHKERRQ(ierr);
-      }
-      ierr = VecZeroEntries(V); CHKERRQ(ierr);
-      ierr = VecGhostUpdateBegin(V,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-      ierr = VecGhostUpdateEnd(V,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-      break;
+    if(rank == 0) {
+      ierr = VecCreateGhost(mField.get_comm(),1,1,1,ghosts,&V); CHKERRQ(ierr);
+    } else {
+      ierr = VecCreateGhost(mField.get_comm(),0,1,1,ghosts,&V); CHKERRQ(ierr);
+    }
+    ierr = VecZeroEntries(V); CHKERRQ(ierr);
+    ierr = VecGhostUpdateBegin(V,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecGhostUpdateEnd(V,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    break;
     default:
-      break;
+    break;
   }
 
   PetscFunctionReturn(0);
@@ -94,7 +94,7 @@ PetscErrorCode NonlinearElasticElement::MyVolumeFE::preProcess() {
 
 PetscErrorCode NonlinearElasticElement::MyVolumeFE::postProcess() {
   PetscFunctionBegin;
-  
+
   double *array;
 
   switch (snes_ctx) {
@@ -152,10 +152,10 @@ PetscErrorCode NonlinearElasticElement::OpGetDataAtGaussPts::doWork(
       gradientAtGaussPts[gg].resize(3,3);
     }
 
-    if(type == zeroAtType) { 
+    if(type == zeroAtType) {
       for(int gg = 0;gg<nb_gauss_pts;gg++) {
-	valuesAtGaussPts[gg].clear();
-	gradientAtGaussPts[gg].clear();
+        valuesAtGaussPts[gg].clear();
+        gradientAtGaussPts[gg].clear();
       }
     }
 
@@ -164,12 +164,12 @@ PetscErrorCode NonlinearElasticElement::OpGetDataAtGaussPts::doWork(
       ublas::vector<double> N = data.getN(gg,nb_dofs/3);
       ublas::matrix<double> diffN = data.getDiffN(gg,nb_dofs/3);
       for(int dd = 0;dd<nb_dofs/3;dd++) {
-	for(int rr1 = 0;rr1<3;rr1++) {
-	  valuesAtGaussPts[gg][rr1] += N[dd]*values[3*dd+rr1];
-	  for(int rr2 = 0;rr2<3;rr2++) {
-	    gradientAtGaussPts[gg](rr1,rr2) += diffN(dd,rr2)*values[3*dd+rr1];
-	  }
-	}
+        for(int rr1 = 0;rr1<3;rr1++) {
+          valuesAtGaussPts[gg][rr1] += N[dd]*values[3*dd+rr1];
+          for(int rr2 = 0;rr2<3;rr2++) {
+            gradientAtGaussPts[gg](rr1,rr2) += diffN(dd,rr2)*values[3*dd+rr1];
+          }
+        }
       }
     }
 
@@ -189,9 +189,9 @@ PetscErrorCode NonlinearElasticElement::OpGetDataAtGaussPts::doWork(
 
 NonlinearElasticElement::OpGetCommonDataAtGaussPts::OpGetCommonDataAtGaussPts(const string field_name,CommonData &common_data):
   OpGetDataAtGaussPts(field_name,
-  common_data.dataAtGaussPts[field_name], 
+  common_data.dataAtGaussPts[field_name],
   common_data.gradAtGaussPts[field_name]) {}
- 
+
 
 NonlinearElasticElement::OpJacobian::OpJacobian(
   const string field_name,
@@ -221,99 +221,94 @@ PetscErrorCode NonlinearElasticElement::OpJacobian::doWork(
   dAta.materialAdoublePtr->opPtr = this;
 
   try {
-    
+
     int nb_gauss_pts = row_data.getN().size1();
     commonData.P.resize(nb_gauss_pts);
     commonData.jacStressRowPtr.resize(nb_gauss_pts);
     commonData.jacStress.resize(nb_gauss_pts);
 
     vector<ublas::matrix<double> > &F = (commonData.gradAtGaussPts[commonData.spatialPositions]);
-  
+
     for(int gg = 0;gg<nb_gauss_pts;gg++) {
-    
+
       dAta.materialAdoublePtr->gG = gg;
 
       if(gg == 0) {
-	    
-	//if(lastId != dAta.iD) {
-	//lastId = dAta.iD;
-	//recorder on
-	trace_on(tAg);
 
-	dAta.materialAdoublePtr->F.resize(3,3);
-	nb_active_variables = 0;
-	for(int dd1 = 0;dd1<3;dd1++) {
-	  for(int dd2 = 0;dd2<3;dd2++) {
-	    dAta.materialAdoublePtr->F(dd1,dd2) <<= F[gg](dd1,dd2);
-	    if(fieldDisp) {
-	      if(dd1 == dd2) {
-		dAta.materialAdoublePtr->F(dd1,dd2) += 1;
-	      }
-	    }
-	    nb_active_variables++;
-	  }
-	}
-	ierr = dAta.materialAdoublePtr->SetUserActiveVariables(nb_active_variables); CHKERRQ(ierr);
-	ierr = dAta.materialAdoublePtr->CalualteP_PiolaKirchhoffI(dAta,getMoFEMFEPtr()); CHKERRQ(ierr);
-	commonData.P[gg].resize(3,3);
-	for(int dd1 = 0;dd1<3;dd1++) {
-	  for(int dd2 = 0;dd2<3;dd2++) {
-	    dAta.materialAdoublePtr->P(dd1,dd2) >>= (commonData.P[gg])(dd1,dd2);
-	  }
-	}
-	    
-	trace_off();
-	//recorder off
-	//}
+        trace_on(tAg);
+
+        dAta.materialAdoublePtr->F.resize(3,3);
+        nb_active_variables = 0;
+        for(int dd1 = 0;dd1<3;dd1++) {
+          for(int dd2 = 0;dd2<3;dd2++) {
+            dAta.materialAdoublePtr->F(dd1,dd2) <<= F[gg](dd1,dd2);
+            if(fieldDisp) {
+              if(dd1 == dd2) {
+                dAta.materialAdoublePtr->F(dd1,dd2) += 1;
+              }
+            }
+            nb_active_variables++;
+          }
+        }
+        ierr = dAta.materialAdoublePtr->SetUserActiveVariables(nb_active_variables); CHKERRQ(ierr);
+        ierr = dAta.materialAdoublePtr->CalualteP_PiolaKirchhoffI(dAta,getMoFEMFEPtr()); CHKERRQ(ierr);
+        commonData.P[gg].resize(3,3);
+        for(int dd1 = 0;dd1<3;dd1++) {
+          for(int dd2 = 0;dd2<3;dd2++) {
+            dAta.materialAdoublePtr->P(dd1,dd2) >>= (commonData.P[gg])(dd1,dd2);
+          }
+        }
+
+        trace_off();
 
       }
 
       active_varibles.resize(nb_active_variables);
       for(int dd1 = 0;dd1<3;dd1++) {
-	for(int dd2 = 0;dd2<3;dd2++) {
-	  active_varibles(dd1*3+dd2) = F[gg](dd1,dd2);
-	  if(fieldDisp) {
-	    if(dd1 == dd2) {
-	      active_varibles(dd1*3+dd2) += 1;
-	    }
-	  }
-	}
+        for(int dd2 = 0;dd2<3;dd2++) {
+          active_varibles(dd1*3+dd2) = F[gg](dd1,dd2);
+          if(fieldDisp) {
+            if(dd1 == dd2) {
+              active_varibles(dd1*3+dd2) += 1;
+            }
+          }
+        }
       }
       ierr = dAta.materialAdoublePtr->SetUserActiveVariables(active_varibles); CHKERRQ(ierr);
 
       if(!jAcobian) {
-	commonData.P[gg].resize(3,3);
-	int r;
-	//play recorder for values
-	r = function(tAg,9,nb_active_variables,&active_varibles[0],&commonData.P[gg](0,0));
-	if(r<adlocReturnValue) { // function is locally analytic
-	  SETERRQ1(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"ADOL-C function evaluation with error r = %d",r);
-	}
+        commonData.P[gg].resize(3,3);
+        int r;
+        //play recorder for values
+        r = ::function(tAg,9,nb_active_variables,&active_varibles[0],&commonData.P[gg](0,0));
+        if(r<adlocReturnValue) { // function is locally analytic
+          SETERRQ1(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"ADOL-C function evaluation with error r = %d",r);
+        }
       } else {
-	if(commonData.jacStressRowPtr[gg].size()!=9) {
-	  commonData.jacStressRowPtr[gg].resize(9);
-	  commonData.jacStress[gg].resize(9,nb_active_variables);
-	  for(int dd = 0;dd<9;dd++) {
-	    (commonData.jacStressRowPtr[gg])[dd] = &(commonData.jacStress[gg](dd,0));     
-	  }
-	}
-	int r;
-	//play recorder for jacobians
-	r = jacobian(
-	  tAg,9,nb_active_variables,
-	  &active_varibles[0],&(commonData.jacStressRowPtr[gg])[0]);
-	if(r<adlocReturnValue) {
-	  SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"ADOL-C function evaluation with error");
-	}
+        if(commonData.jacStressRowPtr[gg].size()!=9) {
+          commonData.jacStressRowPtr[gg].resize(9);
+          commonData.jacStress[gg].resize(9,nb_active_variables);
+          for(int dd = 0;dd<9;dd++) {
+            (commonData.jacStressRowPtr[gg])[dd] = &(commonData.jacStress[gg](dd,0));
+          }
+        }
+        int r;
+        //play recorder for jacobians
+        r = jacobian(
+          tAg,9,nb_active_variables,
+          &active_varibles[0],&(commonData.jacStressRowPtr[gg])[0]);
+          if(r<adlocReturnValue) {
+            SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"ADOL-C function evaluation with error");
+          }
+        }
+
       }
 
+    } catch (const std::exception& ex) {
+      ostringstream ss;
+      ss << "throw in method: " << ex.what() << endl;
+      SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
     }
-
-  } catch (const std::exception& ex) {
-    ostringstream ss;
-    ss << "throw in method: " << ex.what() << endl;
-    SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
-  }
 
   PetscFunctionReturn(0);
 }
@@ -351,11 +346,11 @@ PetscErrorCode NonlinearElasticElement::OpRhs::doWork(
         val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
       }
       for(int dd = 0;dd<nb_dofs/3;dd++) {
-	for(int rr = 0;rr<3;rr++) {
-	  for(int nn = 0;nn<3;nn++) {
-	    nf[3*dd+rr] += val*diffN(dd,nn)*P(rr,nn);
-	  }
-	}
+        for(int rr = 0;rr<3;rr++) {
+          for(int nn = 0;nn<3;nn++) {
+            nf[3*dd+rr] += val*diffN(dd,nn)*P(rr,nn);
+          }
+        }
       }
 
     }
@@ -364,7 +359,7 @@ PetscErrorCode NonlinearElasticElement::OpRhs::doWork(
       SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
     }
     ierr = VecSetValues(getFEMethod()->snes_f,nb_dofs,
-      &row_data.getIndices()[0],&nf[0],ADD_VALUES); CHKERRQ(ierr);
+    &row_data.getIndices()[0],&nf[0],ADD_VALUES); CHKERRQ(ierr);
 
   } catch (const std::exception& ex) {
     ostringstream ss;
@@ -402,9 +397,9 @@ PetscErrorCode NonlinearElasticElement::OpEnergy::doWork(
       dAta.materialDoublePtr->F.resize(3,3);
       noalias(dAta.materialDoublePtr->F) = F[gg];
       if(fieldDisp) {
-	for(int dd = 0;dd<3;dd++) {	    
-	  dAta.materialAdoublePtr->F(dd,dd) += 1;
-	}
+        for(int dd = 0;dd<3;dd++) {
+          dAta.materialAdoublePtr->F(dd,dd) += 1;
+        }
       }
       ierr = dAta.materialDoublePtr->CalulateElasticEnergy(dAta,getMoFEMFEPtr()); CHKERRQ(ierr);
       ierr = VecSetValue(*Vptr,0,val*dAta.materialDoublePtr->eNergy,ADD_VALUES); CHKERRQ(ierr);
@@ -441,7 +436,7 @@ PetscErrorCode NonlinearElasticElement::OpLhs_dx::getJac(DataForcesAndSurcesCore
 	  //jac(ii,3*dd+rr) += commonData.jacStress[gg](ii,jj)*F.data()[jj];
 	  jac(ii,3*dd+rr) += commonData.jacStress[gg](ii,3*rr+jj)*diffN(dd,jj);
 	}
-      }	
+      }
     }
   }
   PetscFunctionReturn(0);
@@ -464,7 +459,7 @@ PetscErrorCode NonlinearElasticElement::OpLhs_dx::doWork(
   if(dAta.tEts.find(getMoFEMFEPtr()->get_ent()) == dAta.tEts.end()) {
     PetscFunctionReturn(0);
   }
-      
+
   try {
 
     k.resize(nb_row,nb_col);
@@ -487,7 +482,7 @@ PetscErrorCode NonlinearElasticElement::OpLhs_dx::doWork(
 	  for(int rr1 = 0;rr1<3;rr1++) {
 	    for(int dd2 = 0;dd2<nb_col/3;dd2++) {
 	      for(int rr2 = 0;rr2<3;rr2++) {
-		k(3*dd1+rr1,3*dd2+rr2) += 
+		k(3*dd1+rr1,3*dd2+rr2) +=
 		  diffN(dd1,0)*jac(3*rr1+0,3*dd2+rr2)+
 		  diffN(dd1,1)*jac(3*rr1+1,3*dd2+rr2)+
    		  diffN(dd1,2)*jac(3*rr1+2,3*dd2+rr2);
@@ -530,7 +525,7 @@ PetscErrorCode NonlinearElasticElement::setBlocks(
   PetscFunctionBegin;
   ErrorCode rval;
   PetscErrorCode ierr;
-  
+
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_ELASTICSET,it)) {
     Mat_Elastic mydata;
     ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
@@ -621,5 +616,3 @@ PetscErrorCode NonlinearElasticElement::setOperators(
 }
 
 }
-
-
