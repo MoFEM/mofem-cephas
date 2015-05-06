@@ -19,7 +19,7 @@
 #include <petscsnes.h>
 #include <petscts.h>
 
-#ifdef __APPLE__
+#ifdef PETSC_DEV
   #include <petsc/private/dmimpl.h> /*I  "petscdm.h"   I*/
   #include <petsc/private/vecimpl.h> /*I  "petscdm.h"   I*/
 #else

@@ -1,8 +1,3 @@
-# Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
-# The MoFEM package is copyrighted by Lukasz Kaczmarczyk.
-# It can be freely used for educational and research purposes
-# by other institutions. If you use this softwre pleas cite my work.
-#
 # MoFEM is free software: you can redistribute it and/or modify it under
 # the terms of the GNU Lesser General Public License as published by the
 # Free Software Foundation, either version 3 of the License, or (at your
@@ -42,9 +37,9 @@ file(COPY
 #testing
 add_test(ArcLengthInterfaceTest
   ${MoFEM_MPI_RUN} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/arc_length_interface
-  -my_file PeelTestHalfCrack.h5m
+  -my_file PeelTestHalfCrack.h5m -my_order 1
   -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package mumps
   -ksp_monitor ksp_monitor -ksp_atol 1e-10 -ksp_rtol 1e-10
   -snes_monitor -snes_type newtonls -snes_linesearch_type l2 -snes_linesearch_monitor
-  -snes_max_it 16 -snes_atol 1e-8 -snes_rtol 1e-8 -my_sr 1e-1 -my_ms 4 -snes_converged_reason
+  -snes_max_it 16 -snes_atol 1e-8 -snes_rtol 1e-8 -my_sr 1e-1 -my_ms 3 -snes_converged_reason
   -log_summary)

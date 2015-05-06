@@ -1,6 +1,6 @@
 /** \file TetGenInterface.hpp
- * \brief TetGen interface 
- * 
+ * \brief TetGen interface
+ *
  * MoFEM TetGen interface
  *
  */
@@ -20,7 +20,7 @@
 
 #include "FieldUnknownInterface.hpp"
 
-struct tetgenio;
+class tetgenio;
 
 namespace MoFEM {
 
@@ -40,9 +40,9 @@ struct TetGenInterface: public FieldUnknownInterface {
   typedef map<unsigned long,EntityHandle> tetGenMoab_Map;
   typedef map<int,Range> idxRange_Map;
 
-  
+
   /** \brief create TetGen data structure form range of moab entities
-    
+
     \param ents range of entities (tetrahedrons or nodes)
     \param in tegen data structure (look to TetGen user manual)
     \param moab_tetgen_map mapping moab to TetGen entities
@@ -54,12 +54,12 @@ struct TetGenInterface: public FieldUnknownInterface {
     moabTetGen_Map& moab_tetgen_map,
     tetGenMoab_Map& tetgen_moab_map);
 
-  enum tetGenNodesTypes { 
-    RIDGEVERTEX = 0, 
-    FREESEGVERTEX = 1, 
-    FREEFACETVERTEX = 2, 
+  enum tetGenNodesTypes {
+    RIDGEVERTEX = 0,
+    FREESEGVERTEX = 1,
+    FREEFACETVERTEX = 2,
     FREEVOLVERTEX = 3 };
-  
+
   /** \brief set point tags and type
 
   Set type of entity, look in TetGen manual for details
@@ -114,7 +114,7 @@ struct TetGenInterface: public FieldUnknownInterface {
     \param moab_tetgen_map mapping MoAB to TetGen entities
     \param tetgen_moab_map mapping TetGen to MoAB entities
     \param ents rerun entities which are in TetGen data structure
-    \param bit set level to created entities 
+    \param bit set level to created entities
     \param error_if_created throw error if node need to be created
 
     */
@@ -125,7 +125,7 @@ struct TetGenInterface: public FieldUnknownInterface {
     BitRefLevel bit,
     bool id_in_tags = false,
     bool error_if_created = false);
-  
+
   /** \brief set markers to faces
 
     \param markers data structure with markers
@@ -178,17 +178,17 @@ struct TetGenInterface: public FieldUnknownInterface {
   PetscErrorCode groupPlanar_Triangle(Range &tris,vector<Range> &sorted,const double eps = 1e-9);
 
   /** \brief Group surface strangles in planar regions
-      
+
     \param tris input triangles
     \param sorted output sorted planar faces
     \param eps tolerance
-    
+
   */
   PetscErrorCode groupRegion_Triangle(Range &tris,vector<vector<Range> > &sorted,const double eps = 1e-9);
 
-  /** make planar polygon facet 
+  /** make planar polygon facet
 
-    \param ents surface triangles      
+    \param ents surface triangles
     \param plygons output list of polygons
     \param reduce_edges reduce edges if on the line
     \param not_reducable_nodes do not reduce node on edge if in this range
@@ -198,7 +198,7 @@ struct TetGenInterface: public FieldUnknownInterface {
 
     */
   PetscErrorCode makePolygonFacet(Range &ents,Range &polygons,
-    bool reduce_edges = false,Range *not_reducable_nodes = NULL,const double eps = 1e-9); 
+    bool reduce_edges = false,Range *not_reducable_nodes = NULL,const double eps = 1e-9);
 
 };
 

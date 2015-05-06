@@ -1,6 +1,6 @@
 /** \file Core.cpp
- * \brief Myltindex containes, data structures and other low-level functions 
- * 
+ * \brief Myltindex containes, data structures and other low-level functions
+ *
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or (at your
@@ -21,11 +21,11 @@
 #include <boost/ptr_container/ptr_map.hpp>
 
 #include <petscsys.h>
-#include <petscvec.h> 
-#include <petscmat.h> 
-#include <petscsnes.h> 
+#include <petscvec.h>
+#include <petscmat.h>
+#include <petscsnes.h>
 #include <petscts.h>
-#include <petscconfiginfo.h> 
+#include <petscconfiginfo.h>
 
 #include <version.h>
 #include <definitions.h>
@@ -56,7 +56,7 @@
 
 namespace MoFEM {
 
-const static int debug = 1;
+//const static int debug = 1;
 
 PetscErrorCode print_MoFem_verison(MPI_Comm comm) {
   PetscFunctionBegin;
@@ -94,7 +94,7 @@ PetscErrorCode Core::queryInterface(const MOFEMuuid& uuid,FieldUnknownInterface*
 
 PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr) {
   PetscFunctionBegin;
-  
+
   #ifdef WITH_TETGEN
   if(type == typeid(TetGenInterface)) {
     if(iFaces.find(IDD_MOFEMTetGegInterface.uUId.to_ulong()) == iFaces.end()) {
@@ -122,7 +122,7 @@ PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr)
     }
     ptr = iFaces.at(IDD_MOFENNodeMerger.uUId.to_ulong());
     PetscFunctionReturn(0);
-  } 
+  }
 
   //BitLevelCoupler
   if(type == typeid(BitLevelCouplerInterface)) {
@@ -131,7 +131,7 @@ PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr)
     }
     ptr = iFaces.at(IDD_MOFENNodeMerger.uUId.to_ulong());
     PetscFunctionReturn(0);
-  } 
+  }
 
   if(type == typeid(MeshRefinment)) {
     ptr = static_cast<MeshRefinment*>(this);
@@ -164,7 +164,7 @@ static void error_printf_normal(void) {
 }
 
 PetscErrorCode mofem_error_handler(MPI_Comm comm,int line,const char *fun,const char *file,PetscErrorCode n,PetscErrorType p,const char *mess,void *ctx) {
-  PetscFunctionBegin; 
+  PetscFunctionBegin;
 
   int rank = 0;
   if (comm != PETSC_COMM_SELF) MPI_Comm_rank(comm,&rank);
@@ -173,32 +173,32 @@ PetscErrorCode mofem_error_handler(MPI_Comm comm,int line,const char *fun,const 
 
     if(p == PETSC_ERROR_INITIAL) {
       error_printf_hilight();
-      (*PetscErrorPrintf)("--------------------- MoFEM Error Message---------------------------------------------------------------------------\n"); 
-      (*PetscErrorPrintf)("MoFEM version %d.%d.%d\n",MoFEM_VERSION_MAJOR,MoFEM_VERSION_MINOR,MoFEM_VERSION_BUILD); 
-      (*PetscErrorPrintf)("MoFEM git commit id %s\n",GIT_SHA1_NAME); 
+      (*PetscErrorPrintf)("--------------------- MoFEM Error Message---------------------------------------------------------------------------\n");
+      (*PetscErrorPrintf)("MoFEM version %d.%d.%d\n",MoFEM_VERSION_MAJOR,MoFEM_VERSION_MINOR,MoFEM_VERSION_BUILD);
+      (*PetscErrorPrintf)("MoFEM git commit id %s\n",GIT_SHA1_NAME);
       (*PetscErrorPrintf)("See http://userweb.eng.gla.ac.uk/lukasz.kaczmarczyk/MoFem/html/guidelines_bug_reporting.html for bug reporting.\n");
       (*PetscErrorPrintf)("See http://userweb.eng.gla.ac.uk/lukasz.kaczmarczyk/MoFem/html/faq_and_bugs.html for trouble shooting.\n");
-      error_printf_normal(); 
+      error_printf_normal();
 
     }
 
     PetscTraceBackErrorHandler(PETSC_COMM_SELF,line,fun,file,n,p,mess,ctx);
 
     PetscBool ismain,isunknown;
-  
-    PetscStrncmp(fun,"main",4,&ismain); 
-    PetscStrncmp(fun,"unknown",7,&isunknown); 
 
-    if(ismain || isunknown) { 
+    PetscStrncmp(fun,"main",4,&ismain);
+    PetscStrncmp(fun,"unknown",7,&isunknown);
+
+    if(ismain || isunknown) {
 
       stringstream strs_version;
       strs_version << "MoFEM_version_" << MoFEM_VERSION_MAJOR << "." << MoFEM_VERSION_MINOR << "." << MoFEM_VERSION_BUILD;
 
       error_printf_hilight();
-      (*PetscErrorPrintf)("----------MoFEM End of Error Message -------send entire error message to CMatGU <cmatgu@googlegroups.com> ----------\n"); 
-      error_printf_normal(); 
+      (*PetscErrorPrintf)("----------MoFEM End of Error Message -------send entire error message to CMatGU <cmatgu@googlegroups.com> ----------\n");
+      error_printf_normal();
 
-    } 
+    }
 
   } else {
 
@@ -211,7 +211,7 @@ PetscErrorCode mofem_error_handler(MPI_Comm comm,int line,const char *fun,const 
   PetscFunctionReturn(n);
 }
 
-Core::Core(Interface& _moab,MPI_Comm _comm,int _verbose): 
+Core::Core(Interface& _moab,MPI_Comm _comm,int _verbose):
   moab(_moab),comm(_comm),verbose(_verbose) {
 
   if(!isGloballyInitialised) {
@@ -257,7 +257,7 @@ Core::Core(Interface& _moab,MPI_Comm _comm,int _verbose):
   BitRefEdges def_bit_egde = 0;
   rval = moab.tag_get_handle("_RefBitEdge",sizeof(BitRefEdges),MB_TYPE_OPAQUE,
     th_RefBitEdge,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_bit_egde); CHKERR_THROW(rval);
-    
+
   //Tags Field
   const unsigned long int def_id = 0;
   rval = moab.tag_get_handle("_FieldId",sizeof(BitFieldId),MB_TYPE_OPAQUE,
@@ -307,34 +307,34 @@ Core::Core(Interface& _moab,MPI_Comm _comm,int _verbose):
   //Global Variables
   //Fields
   int def_shift = 1;
-  rval = moab.tag_get_handle("_FieldShift",1,MB_TYPE_INTEGER,th_FieldShift,MB_TAG_CREAT|MB_TAG_MESH,&def_shift); 
+  rval = moab.tag_get_handle("_FieldShift",1,MB_TYPE_INTEGER,th_FieldShift,MB_TAG_CREAT|MB_TAG_MESH,&def_shift);
   if(rval==MB_ALREADY_ALLOCATED) rval = MB_SUCCESS;
   CHKERR_THROW(rval);
   const void* tag_data[1];
   rval = moab.tag_get_by_ptr(th_FieldShift,&root_meshset,1,tag_data); CHKERR_THROW(rval);
   fShift = (int*)tag_data[0];
   //FE
-  rval = moab.tag_get_handle("_FEShift",1,MB_TYPE_INTEGER,th_FEShift,MB_TAG_CREAT|MB_TAG_MESH,&def_shift); 
+  rval = moab.tag_get_handle("_FEShift",1,MB_TYPE_INTEGER,th_FEShift,MB_TAG_CREAT|MB_TAG_MESH,&def_shift);
   if(rval==MB_ALREADY_ALLOCATED) rval = MB_SUCCESS;
   CHKERR_THROW(rval);
   rval = moab.tag_get_by_ptr(th_FEShift,&root_meshset,1,tag_data); CHKERR_THROW(rval);
   feShift = (int*)tag_data[0];
   //Problem
-  rval = moab.tag_get_handle("_ProblemShift",1,MB_TYPE_INTEGER,th_ProblemShift,MB_TAG_CREAT|MB_TAG_MESH,&def_shift); 
+  rval = moab.tag_get_handle("_ProblemShift",1,MB_TYPE_INTEGER,th_ProblemShift,MB_TAG_CREAT|MB_TAG_MESH,&def_shift);
   if(rval==MB_ALREADY_ALLOCATED) rval = MB_SUCCESS;
   CHKERR_THROW(rval);
   rval = moab.tag_get_by_ptr(th_ProblemShift,&root_meshset,1,tag_data); CHKERR_THROW(rval);
   pShift = (int*)tag_data[0];
   //SaftyNets
   int def_bool = 0;
-  rval = moab.tag_get_handle("_MoFEMBuild",1,MB_TYPE_INTEGER,th_MoFEMBuild,MB_TAG_CREAT|MB_TAG_MESH,&def_bool); 
+  rval = moab.tag_get_handle("_MoFEMBuild",1,MB_TYPE_INTEGER,th_MoFEMBuild,MB_TAG_CREAT|MB_TAG_MESH,&def_bool);
   if(rval==MB_ALREADY_ALLOCATED) rval = MB_SUCCESS;
   rval = moab.tag_get_by_ptr(th_MoFEMBuild,&root_meshset,1,(const void **)&build_MoFEM); CHKERR_THROW(rval);
   //Meshsets
   int default_val = -1;
-  rval = moab.tag_get_handle(DIRICHLET_SET_TAG_NAME,1, MB_TYPE_INTEGER, 
+  rval = moab.tag_get_handle(DIRICHLET_SET_TAG_NAME,1, MB_TYPE_INTEGER,
     nsTag, MB_TAG_SPARSE|MB_TAG_CREAT, &default_val); CHKERR_THROW(rval);
-  rval = moab.tag_get_handle(NEUMANN_SET_TAG_NAME,1, MB_TYPE_INTEGER, 
+  rval = moab.tag_get_handle(NEUMANN_SET_TAG_NAME,1, MB_TYPE_INTEGER,
     ssTag, MB_TAG_SPARSE|MB_TAG_CREAT, &default_val); CHKERR_THROW(rval);
   const int def_bc_data_len = 0;
   std::string tag_name = std::string(DIRICHLET_SET_TAG_NAME)+"__BC_DATA";
@@ -347,11 +347,11 @@ Core::Core(Interface& _moab,MPI_Comm _comm,int _verbose):
     bhTag,MB_TAG_SPARSE|MB_TAG_CREAT,&default_val); CHKERR_THROW(rval);
   std::vector<unsigned int> def_uint_zero(3,0);
   rval= moab.tag_get_handle(BLOCK_HEADER,3*sizeof(unsigned int),MB_TYPE_INTEGER,
-    bhTag_header,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_uint_zero[0]); CHKERR_THROW(rval); 
+    bhTag_header,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_uint_zero[0]); CHKERR_THROW(rval);
   Tag block_attribs;
   int def_Block_Attributes_length = 0;
   rval = moab.tag_get_handle(BLOCK_ATTRIBUTES,def_Block_Attributes_length,MB_TYPE_DOUBLE,
-    block_attribs,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_VARLEN,NULL); CHKERR_THROW(rval); 
+    block_attribs,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_VARLEN,NULL); CHKERR_THROW(rval);
   Tag entity_name_tag;
   rval = moab.tag_get_handle(
     NAME_TAG_NAME,NAME_TAG_SIZE,MB_TYPE_OPAQUE,entity_name_tag,MB_TAG_SPARSE|MB_TAG_CREAT); CHKERR_THROW(rval);
@@ -360,10 +360,10 @@ Core::Core(Interface& _moab,MPI_Comm _comm,int _verbose):
     th_SeriesName,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES|MB_TAG_VARLEN,NULL); CHKERR_THROW(rval);
   //For VTK files
   int def_elem_type = MBMAXTYPE;
-  rval = moab.tag_get_handle("ElemType",1,MB_TYPE_INTEGER,th_ElemType,MB_TAG_CREAT|MB_TAG_SPARSE,&def_elem_type); CHKERR_THROW(rval); 
+  rval = moab.tag_get_handle("ElemType",1,MB_TYPE_INTEGER,th_ElemType,MB_TAG_CREAT|MB_TAG_SPARSE,&def_elem_type); CHKERR_THROW(rval);
   //
   clearMap();
-  initialiseDatabseInformationFromMesh(verbose); 
+  initialiseDatabseInformationFromMesh(verbose);
   // Petsc Logs
   PetscLogEventRegister("FE_preProcess",0,&USER_EVENT_preProcess);
   PetscLogEventRegister("FE_operator",0,&USER_EVENT_operator);
@@ -435,11 +435,11 @@ BitFieldId Core::getFieldShift() {
 }
 BitFEId Core::getFEShift() {
   assert((unsigned int)*feShift<BitFEId().set().to_ulong());
-  return BitFEId(1<<(((*feShift)++)-1)); 
+  return BitFEId(1<<(((*feShift)++)-1));
 }
 BitProblemId Core::getProblemShift() {
   assert((unsigned int)*pShift<BitProblemId().set().to_ulong());
-  return BitProblemId(1<<(((*pShift)++)-1)); 
+  return BitProblemId(1<<(((*pShift)++)-1));
 }
 PetscErrorCode Core::clearMap() {
   PetscFunctionBegin;
@@ -475,7 +475,7 @@ PetscErrorCode Core::addPrismToDatabase(const EntityHandle prism,int verb) {
       if(face_side4.size()!=1) SETERRQ(PETSC_COMM_SELF,1,"prims don't have side face 4");
       p_MoFEMFiniteElement.first->get_side_number_ptr(moab,*face_side3.begin());
       p_MoFEMFiniteElement.first->get_side_number_ptr(moab,*face_side4.begin());
-    } 
+    }
   } catch (const char* msg) {
     SETERRQ(PETSC_COMM_SELF,1,msg);
   }
@@ -493,17 +493,17 @@ PetscErrorCode Core::synchronise_entities(Range &ents,int verb) {
 
   Range::iterator eit = ents.begin();
   for(;eit!=ents.end();eit++) {
-    
+
     RefMoFEMEntity_multiIndex::iterator meit;
     meit = refinedEntities.get<Ent_mi_tag>().find(*eit);
     if(meit == refinedEntities.get<Ent_mi_tag>().end()) {
       continue;
       SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,
 	"rank %d entity %lu not exist on database, local entity can not be found for this owner",
-	rAnk,*eit); 	
+	rAnk,*eit);
     }
 
-    unsigned char pstatus = meit->get_pstatus(); 
+    unsigned char pstatus = meit->get_pstatus();
 
     if(pstatus == 0) continue;
 
@@ -531,16 +531,16 @@ PetscErrorCode Core::synchronise_entities(Range &ents,int verb) {
       }
     }
 
-  
+
   }
 
   int nsends = 0; 			// number of messages to send
-  vector<int> sbuffer_lengths(sIze); 	// length of the message to proc 
+  vector<int> sbuffer_lengths(sIze); 	// length of the message to proc
   const size_t block_size = sizeof(EntityHandle)/sizeof(int);
   for(int proc  = 0;proc<sIze;proc++) {
- 
+
     if(!sbuffer[proc].empty()) {
-    
+
       sbuffer_lengths[proc] = sbuffer[proc].size()*block_size;
       nsends++;
 
@@ -552,7 +552,7 @@ PetscErrorCode Core::synchronise_entities(Range &ents,int verb) {
 
   }
 
-  // Make sure it is a PETSc comm 
+  // Make sure it is a PETSc comm
   ierr = PetscCommDuplicate(comm,&comm,NULL); CHKERRQ(ierr);
 
   vector<MPI_Status> status(sIze);
@@ -563,7 +563,7 @@ PetscErrorCode Core::synchronise_entities(Range &ents,int verb) {
 
   // Computes info about messages that a MPI-node will receive, including (from-id,length) pairs for each message.
   int *onodes;		// list of node-ids from which messages are expected
-  int *olengths;	// corresponding message lengths	
+  int *olengths;	// corresponding message lengths
   ierr = PetscGatherMessageLengths(comm,nsends,nrecvs,&sbuffer_lengths[0],&onodes,&olengths);  CHKERRQ(ierr);
 
   // Gets a unique new tag from a PETSc communicator. All processors that share
@@ -578,10 +578,10 @@ PetscErrorCode Core::synchronise_entities(Range &ents,int verb) {
   int **rbuf;		// must bee freed by user
   MPI_Request *r_waits; // must bee freed by user
   // rbuf has a pointers to messages. It has size of of nrecvs (number of
-  // messages) +1. In the first index a block is allocated, 
-  // such that rbuf[i] = rbuf[i-1]+olengths[i-1]. 
+  // messages) +1. In the first index a block is allocated,
+  // such that rbuf[i] = rbuf[i-1]+olengths[i-1].
   ierr = PetscPostIrecvInt(comm,tag,nrecvs,onodes,olengths,&rbuf,&r_waits); CHKERRQ(ierr);
-  
+
   MPI_Request *s_waits; // status of sens messages
   ierr = PetscMalloc1(nsends,&s_waits); CHKERRQ(ierr);
 
@@ -596,7 +596,7 @@ PetscErrorCode Core::synchronise_entities(Range &ents,int verb) {
     kk++;
   }
 
-  // Wait for received 
+  // Wait for received
   if(nrecvs) {
     ierr = MPI_Waitall(nrecvs,r_waits,&status[0]);CHKERRQ(ierr);
   }
@@ -623,7 +623,7 @@ PetscErrorCode Core::synchronise_entities(Range &ents,int verb) {
       meit = refinedEntities.get<Ent_mi_tag>().find(ent);
       if(meit == refinedEntities.get<Ent_mi_tag>().end()) {
 	SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,
-	  "rank %d entity %lu not exist on database, local entity can not be found for this owner",rAnk,ent); 	
+	  "rank %d entity %lu not exist on database, local entity can not be found for this owner",rAnk,ent);
       }
       if(verb>2) {
 	PetscSynchronizedPrintf(comm,"received %ul (%ul) from %d at %d\n",meit->get_ref_ent(),ent,onodes[kk],rAnk);
@@ -639,16 +639,16 @@ PetscErrorCode Core::synchronise_entities(Range &ents,int verb) {
   }
 
 
-  // Cleaning 
-  ierr = PetscFree(s_waits); CHKERRQ(ierr);   
-  ierr = PetscFree(rbuf[0]); CHKERRQ(ierr);   
-  ierr = PetscFree(rbuf); CHKERRQ(ierr);   
-  ierr = PetscFree(r_waits); CHKERRQ(ierr);   
+  // Cleaning
+  ierr = PetscFree(s_waits); CHKERRQ(ierr);
+  ierr = PetscFree(rbuf[0]); CHKERRQ(ierr);
+  ierr = PetscFree(rbuf); CHKERRQ(ierr);
+  ierr = PetscFree(r_waits); CHKERRQ(ierr);
   ierr = PetscFree(onodes); CHKERRQ(ierr);
   ierr = PetscFree(olengths); CHKERRQ(ierr);
 
   if(verb>0) {
-    PetscSynchronizedFlush(comm,PETSC_STDOUT); 
+    PetscSynchronizedFlush(comm,PETSC_STDOUT);
   }
 
   PetscFunctionReturn(0);

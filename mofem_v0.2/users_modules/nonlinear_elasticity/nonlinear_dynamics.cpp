@@ -264,10 +264,8 @@ int main(int argc, char *argv[]) {
     rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
   } else {
     const char *option;
-    option = "PARALLEL=BCAST;";
-    //BARRIER_RANK_START(pcomm);
+    option = "";
     rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
-    //BARRIER_RANK_END(pcomm);
   }
 
   MoFEM::Core core(moab);

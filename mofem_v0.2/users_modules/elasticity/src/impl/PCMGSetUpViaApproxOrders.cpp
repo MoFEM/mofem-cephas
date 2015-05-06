@@ -1,6 +1,6 @@
 /** \file PCMGSetUpViaApproxOrders.cpp
- * \brief implementation of multi-grid solver for p- adaptivity 
- * 
+ * \brief implementation of multi-grid solver for p- adaptivity
+ *
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or (at your
@@ -19,11 +19,11 @@
 using namespace MoFEM;
 #include <PCMGSetUpViaApproxOrders.hpp>
 
-#ifdef __APPLE__
+#ifdef PETSC_DEV
   #include <petsc/private/petscimpl.h>
 #else
   #include <petsc-private/petscimpl.h>
-#endif 
+#endif
 
 static PetscErrorCode ierr;
 //static ErrorCode rval;
@@ -34,9 +34,9 @@ struct PCMGSetUpViaApproxOrdersCtx {
   string problemName;			///< Problem name
   int nbLevels;				///< number of multi-grid levels
   int coarseOrder;			///< approximation order of coarse level
-  int verboseLevel;			
+  int verboseLevel;
 
-  PCMGSetUpViaApproxOrdersCtx(FieldInterface *mfield_ptr,string problem_name): 
+  PCMGSetUpViaApproxOrdersCtx(FieldInterface *mfield_ptr,string problem_name):
     mFieldPtr(mfield_ptr),problemName(problem_name),
     nbLevels(2),coarseOrder(2),
     verboseLevel(0) {
@@ -106,7 +106,7 @@ struct PCMGSetUpViaApproxOrdersCtx {
 
     ierr = PCMGSetLevels(pc,nbLevels,NULL);  CHKERRQ(ierr);
     // prolongation and restriction uses the same matrices
-    ierr = PCMGSetGalerkin(pc,PETSC_TRUE); CHKERRQ(ierr); 
+    ierr = PCMGSetGalerkin(pc,PETSC_TRUE); CHKERRQ(ierr);
 
     map<int,int> idx_map;
     int kk = 1;
@@ -119,7 +119,7 @@ struct PCMGSetUpViaApproxOrdersCtx {
       int row_loc_size,row_glob_size,col_loc_size,col_glob_size;
 
       row_loc_size = is_loc_size[kk];		//bigger
-      row_glob_size = is_glob_size[kk];		
+      row_glob_size = is_glob_size[kk];
       col_loc_size = is_loc_size[kk-1];		//smaller
       col_glob_size = is_glob_size[kk-1];
 
@@ -146,7 +146,7 @@ struct PCMGSetUpViaApproxOrdersCtx {
       const int *row_indices_ptr,*col_indices_ptr;
       ierr = ISGetIndices(is_vec[kk],&row_indices_ptr); CHKERRQ(ierr);
       ierr = ISGetIndices(is_vec[kk-1],&col_indices_ptr); CHKERRQ(ierr);
-      
+
       idx_map.clear();
       for(int ii = 0;ii<row_loc_size;ii++) {
 	idx_map[row_indices_ptr[ii]] = rstart+ii;
@@ -157,7 +157,7 @@ struct PCMGSetUpViaApproxOrdersCtx {
 	map<int,int>::iterator mit = idx_map.find(col_indices_ptr[jj]);
 	if(mit != idx_map.end()) {
 	  ierr = MatSetValue(R,mit->second,cstart+jj,1,INSERT_VALUES); CHKERRQ(ierr);
-	} 
+	}
       }
 
       ierr = ISRestoreIndices(is_vec[kk],&row_indices_ptr); CHKERRQ(ierr);
@@ -172,10 +172,10 @@ struct PCMGSetUpViaApproxOrdersCtx {
 	std::string wait;
 	std::cin >> wait;
       }
-  
+
       ierr = PCMGSetInterpolation(pc,kk,R); CHKERRQ(ierr);
 
-      { 
+      {
 	// FIXME: If restriction is not set, MatPtAP generate error. This is rather PETSc than MoFEM problem.
 	// Petsc Development GIT revision: v3.5.3-1524-gee900cc  GIT Date: 2015-01-31 17:44:15 -0600
 
@@ -221,7 +221,7 @@ struct PCMGSetUpViaApproxOrdersCtx {
     }
 
     if(verb>0) {
-      PetscSynchronizedFlush(mFieldPtr->get_comm(),PETSC_STDOUT); 
+      PetscSynchronizedFlush(mFieldPtr->get_comm(),PETSC_STDOUT);
     }
 
     PetscFunctionReturn(0);
@@ -245,9 +245,9 @@ PetscErrorCode PCMGSetUpViaApproxOrders(PC pc,FieldInterface *mfield_ptr,const c
   if(result > MPI_CONGRUENT) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"MoFEM and PC have to use the same communicator");
   }
-  
 
-  PCMGSetUpViaApproxOrdersCtx ctx(mfield_ptr,problem_name); 
+
+  PCMGSetUpViaApproxOrdersCtx ctx(mfield_ptr,problem_name);
   ierr = ctx.getOptions(); CHKERRQ(ierr);
   ierr = ctx.buildProlongationOperator(pc,verb); CHKERRQ(ierr);
 
