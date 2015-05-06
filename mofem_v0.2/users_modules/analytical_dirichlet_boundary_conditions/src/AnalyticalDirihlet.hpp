@@ -45,14 +45,14 @@ struct AnalyticalDirihletBC {
     ApproxField(FieldInterface &m_field): feApprox(m_field) {}
     virtual ~ApproxField() {}
 
-    MyTriFE feApprox; 
-    MyTriFE& getLoopFeApprox() { return feApprox; } 
+    MyTriFE feApprox;
+    MyTriFE& getLoopFeApprox() { return feApprox; }
 
     ublas::matrix<double> hoCoords;
     struct OpHoCoord: public FaceElementForcesAndSourcesCore::UserDataOperator {
 
       ublas::matrix<double> &hoCoords;
-      OpHoCoord(const string field_name,ublas::matrix<double> &ho_coords): 
+      OpHoCoord(const string field_name,ublas::matrix<double> &ho_coords):
 	FaceElementForcesAndSourcesCore::UserDataOperator(field_name),
 	hoCoords(ho_coords) {}
 
@@ -86,14 +86,14 @@ struct AnalyticalDirihletBC {
       }
 
     };
-  
+
 
     /** \brief Lhs operaetar used to build matrix
       */
     struct OpLhs:public FaceElementForcesAndSourcesCore::UserDataOperator {
 
       ublas::matrix<double> &hoCoords;
-      OpLhs(const string field_name,ublas::matrix<double> &ho_coords): 
+      OpLhs(const string field_name,ublas::matrix<double> &ho_coords):
 	FaceElementForcesAndSourcesCore::UserDataOperator(field_name),
 	hoCoords(ho_coords) { }
 
@@ -121,23 +121,23 @@ struct AnalyticalDirihletBC {
 
 	NN.resize(nb_row_dofs,nb_col_dofs);
 	NN.clear();
-	  
+
 	unsigned int nb_gauss_pts = row_data.getN().size1();
 	for(unsigned int gg = 0;gg<nb_gauss_pts;gg++) {
 
 	  double w = getGaussPts()(2,gg);
 	  if(hoCoords.size1() == row_data.getN().size1()) {
-	  
-	    // higher order element
-	    double area = norm_2(getNormals_at_GaussPt(gg))*0.5; 
-	    w *= area;
 
-	  } else {
-	    
-	    //linear element
-	    w *= getArea();
+      // higher order element
+      double area = norm_2(getNormals_at_GaussPt(gg))*0.5;
+      w *= area;
 
-	  }
+    } else {
+
+      //linear element
+      w *= getArea();
+
+    }
 
 	  cblas_dger(CblasRowMajor,
 	    nb_row_dofs,nb_col_dofs,
@@ -145,7 +145,7 @@ struct AnalyticalDirihletBC {
 	    &*NN.data().begin(),nb_col_dofs);
 
 	}
-      
+
 	if( (row_type != col_type) || (row_side != col_side) ) {
 	  transNN.resize(nb_col_dofs,nb_row_dofs);
 	  ublas::noalias(transNN) = trans(NN);
@@ -158,7 +158,7 @@ struct AnalyticalDirihletBC {
 	col_indices.resize(nb_col_dofs);
 
 	for(int rr = 0;rr < rank; rr++) {
-      
+
 	  if((row_data.getIndices().size()%rank)!=0) {
 	    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
 	  }
@@ -196,19 +196,19 @@ struct AnalyticalDirihletBC {
 
 	  if(nb_rows != NN.size1()) {
 	    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
-	  } 
+	  }
 	  if(nb_cols != NN.size2()) {
 	    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
-	  } 
-  
+	  }
+
 	  ierr = MatSetValues(getFEMethod()->snes_B,nb_rows,rows,nb_cols,cols,data,ADD_VALUES); CHKERRQ(ierr);
 	  if( (row_type != col_type) || (row_side != col_side) ) {
 	    if(nb_rows != transNN.size2()) {
 	      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
-	    } 
+	    }
 	    if(nb_cols != transNN.size1()) {
 	      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
-	    } 
+	    }
 	    ierr = MatSetValues(getFEMethod()->snes_B,nb_cols,cols,nb_rows,rows,trans_data,ADD_VALUES); CHKERRQ(ierr);
 	  }
 
@@ -231,7 +231,7 @@ struct AnalyticalDirihletBC {
 
       OpRhs(const string field_name,Range tris,
 	ublas::matrix<double> &ho_coords,
-	boost::shared_ptr<FUNEVAL> function_evaluator,int field_number): 
+	boost::shared_ptr<FUNEVAL> function_evaluator,int field_number):
 	FaceElementForcesAndSourcesCore::UserDataOperator(field_name),tRis(tris),
 	hoCoords(ho_coords),functionEvaluator(function_evaluator),
 	fieldNumber(field_number)  {}
@@ -243,7 +243,7 @@ struct AnalyticalDirihletBC {
 	int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
 	PetscFunctionBegin;
 	PetscErrorCode ierr;
-  
+
 	try {
 
 	  unsigned int nb_row = data.getIndices().size();
@@ -255,7 +255,7 @@ struct AnalyticalDirihletBC {
 	  const FENumeredDofMoFEMEntity *dof_ptr;
 	  ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
 	  unsigned int rank = dof_ptr->get_max_rank();
-  
+
 	  NTf.resize(nb_row/rank);
           iNdices.resize(nb_row/rank);
 
@@ -264,7 +264,7 @@ struct AnalyticalDirihletBC {
 	    double x,y,z;
 	    double val = getGaussPts()(2,gg);
 	    if(hoCoords.size1() == data.getN().size1()) {
-	      double area = norm_2(getNormals_at_GaussPt(gg))*0.5; 
+	      double area = norm_2(getNormals_at_GaussPt(gg))*0.5;
 	      val *= area;
 	      x = hoCoords(gg,0);
 	      y = hoCoords(gg,1);
@@ -275,8 +275,8 @@ struct AnalyticalDirihletBC {
 	      y = getCoordsAtGaussPts()(gg,1);
 	      z = getCoordsAtGaussPts()(gg,2);
 	    }
-	    
-	    ublas::vector<double> a; 
+
+	    ublas::vector<double> a;
 	    try {
 
 	      a = (*functionEvaluator)(x,y,z)[fieldNumber];
@@ -315,16 +315,16 @@ struct AnalyticalDirihletBC {
       }
 
     };
-  
+
   };
 
   struct DirichletBC : public DisplacementBCFEMethodPreAndPostProc {
 
     DirichletBC(
-      FieldInterface& m_field,const string &field,Mat A,Vec X,Vec F): 
+      FieldInterface& m_field,const string &field,Mat A,Vec X,Vec F):
       DisplacementBCFEMethodPreAndPostProc(m_field,field,A,X,F),tRis_ptr(NULL) {}
     DirichletBC(
-      FieldInterface& m_field,const string &field): 
+      FieldInterface& m_field,const string &field):
       DisplacementBCFEMethodPreAndPostProc(m_field,field),tRis_ptr(NULL) {}
 
     Range *tRis_ptr;
@@ -339,7 +339,7 @@ struct AnalyticalDirihletBC {
       }
       PetscFunctionReturn(0);
     }
-  
+
     PetscErrorCode iNitalize(Range &tris) {
       PetscFunctionBegin;
       ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
@@ -356,7 +356,7 @@ struct AnalyticalDirihletBC {
       dofsValues.resize(map_zero_rows.size());
       int ii = 0;
       map<DofIdx,FieldData>::iterator mit = map_zero_rows.begin();
-      for(;mit!=map_zero_rows.end();mit++,ii++) { 
+      for(;mit!=map_zero_rows.end();mit++,ii++) {
 	dofsIndices[ii] = mit->first;
 	dofsValues[ii] = mit->second;
       }
@@ -365,7 +365,7 @@ struct AnalyticalDirihletBC {
 
 
   };
- 
+
   ApproxField approxField;
   AnalyticalDirihletBC(FieldInterface& m_field): approxField(m_field) {};
 
@@ -427,7 +427,7 @@ struct AnalyticalDirihletBC {
 
     PetscFunctionReturn(0);
   }
-  
+
   PetscErrorCode solveProblem(
     FieldInterface &m_field,string problem,string fe,DirichletBC &bc,Range &tris) {
     PetscFunctionBegin;
@@ -452,11 +452,11 @@ struct AnalyticalDirihletBC {
 
     ierr = m_field.set_global_ghost_vector(problem,ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
-    bc.tRis_ptr = &tris; 
+    bc.tRis_ptr = &tris;
     bc.map_zero_rows.clear();
     bc.dofsIndices.clear();
     bc.dofsValues.clear();
-  
+
     PetscFunctionReturn(0);
   }
 
@@ -475,4 +475,3 @@ struct AnalyticalDirihletBC {
 };
 
 #endif //__ANALYTICALDIRIHLETBC_HPP__
-

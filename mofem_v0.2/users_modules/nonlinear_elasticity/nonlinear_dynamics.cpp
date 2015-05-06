@@ -317,7 +317,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.modify_finite_element_add_field_col("NEUMANN_FE","SPATIAL_POSITION"); CHKERRQ(ierr);
   ierr = m_field.modify_finite_element_add_field_data("NEUMANN_FE","SPATIAL_POSITION"); CHKERRQ(ierr);
   ierr = m_field.modify_finite_element_add_field_data("NEUMANN_FE","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
-  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET,it)) {
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET, it)) {
     Range tris;
     rval = moab.get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
     ierr = m_field.add_ents_to_finite_element_by_TRIs(tris,"NEUMANN_FE"); CHKERRQ(ierr);
@@ -325,12 +325,12 @@ int main(int argc, char *argv[]) {
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,SIDESET|PRESSURESET,it)) {
     Range tris;
     rval = moab.get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
-    ierr = m_field.add_ents_to_finite_element_by_TRIs(tris,"NEUMANN_FE"); CHKERRQ(ierr);
+    ierr = m_field.add_ents_to_finite_element_by_TRIs(tris, "NEUMANN_FE"); CHKERRQ(ierr);
   }
-  //add nodal force element
+  // Add nodal force element
   ierr = MetaNodalForces::addNodalForceElement(m_field,"SPATIAL_POSITION"); CHKERRQ(ierr);
 
-  //Velocity
+  // Velocity
   ierr = m_field.add_field("SPATIAL_VELOCITY",H1,3,MF_ZERO); CHKERRQ(ierr);
   ierr = m_field.add_ents_to_field_by_TETs(0,"SPATIAL_VELOCITY"); CHKERRQ(ierr);
 
