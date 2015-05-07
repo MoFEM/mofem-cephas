@@ -1,15 +1,15 @@
-/* Copyright (C) 2014, 
+/* Copyright (C) 2014,
  *   Zahur Ullah (Zahur.Ullah AT glasgow.ac.uk)
  *   Xiao-Yi Zhou (xiaoyi.zhou AT newcastle.ac.uk)
  * --------------------------------------------------------------
  * This routine conducts finite element implementation for stochastic multiscale
- * homogenization problem under constant traction boundary condition by 
+ * homogenization problem under constant traction boundary condition by
  * perturbation technique for two-phase composites consisting of isotropic
  * material based matrix and transversely isotropic material based reinforcement
- * /inclusion/fibre, it thuse has seven independent material parameters, which 
- * are Young's modulus and Poisson's ration of matrix, and Young's modulus in 
- * p- and z-direction, Poisson's ratio in p- and z-direction, and shear modulus 
- * in z-direction of reinforcement/fibre/inclusion, to characterize  
+ * /inclusion/fibre, it thuse has seven independent material parameters, which
+ * are Young's modulus and Poisson's ration of matrix, and Young's modulus in
+ * p- and z-direction, Poisson's ratio in p- and z-direction, and shear modulus
+ * in z-direction of reinforcement/fibre/inclusion, to characterize
  * the mechanical properties of this composite.
  *
  * HISTORY
@@ -17,13 +17,13 @@
  * 2014.09.12 (first version)
  *
  * REFERENCES
- * 1. Kleiber M. and Hien T. D. (1992) The stochastic finite element method - 
- *      Basic perturbation technique and computer implementation. John Wiley & 
+ * 1. Kleiber M. and Hien T. D. (1992) The stochastic finite element method -
+ *      Basic perturbation technique and computer implementation. John Wiley &
  *      Sons.
- * 2. Kaczamarczyk L., Pearce C. J. and Bicanic N. (2008) Scale transition and 
+ * 2. Kaczamarczyk L., Pearce C. J. and Bicanic N. (2008) Scale transition and
  *      enforcement of RVE boundary conditions in second-order computational
- *      homogenization. International Journal for Numerical Methods in 
- *      Engineering, 74(3) p506-522. 
+ *      homogenization. International Journal for Numerical Methods in
+ *      Engineering, 74(3) p506-522.
  */
 
 /* This file is part of MoFEM.
@@ -79,7 +79,7 @@ const char* args[] = {
     "_r_Em", "_r_Pm",
     "_r_NUp",     "_r_NUpz",      "_r_Ep",    "_r_Ez",    "_r_Gzp",     // 1st order
     "_rs_EmEm", "_rs_PmPm",                                             // 2nd order
-    "_rs_NUpNUp", "_rs_NUpzNUpz", "_rs_EpEp", "_rs_EzEz", "_rs_GzpGzp", 
+    "_rs_NUpNUp", "_rs_NUpzNUpz", "_rs_EpEp", "_rs_EzEz", "_rs_GzpGzp",
     };
 
 double nvars = 7;    // number of variables
@@ -92,14 +92,14 @@ vector<string> stochastic_fields(args, args + 14);
 //
 // =============================================================================
 int main(int argc, char *argv[]) {
-    
+
     PetscInitialize(&argc,&argv,(char *)0,help);
-    
+
     moab::Core mb_instance;
     Interface& moab = mb_instance;
     int rank;
     MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
-  
+
   // ===========================================================================
   //
   //  I. READ MESH DATA AND FINITE ELEMENT ANALYSIS CONTROL PARAMETERS FROM FILE
@@ -110,29 +110,29 @@ int main(int argc, char *argv[]) {
    *
    * Read parameters from line command
    *
-   ****************************************************************************/ 
+   ****************************************************************************/
     PetscBool flg = PETSC_TRUE;
     char mesh_file_name[255];
     ierr = PetscOptionsGetString(PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
     if(flg != PETSC_TRUE) {
         SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
     }
-    
+
     PetscInt order;
     ierr = PetscOptionsGetInt(PETSC_NULL,"-my_order",&order,&flg); CHKERRQ(ierr);
     if(flg != PETSC_TRUE) {
         order = 1;
     }
-    
+
     char outName[PETSC_MAX_PATH_LEN]="out.vtk";
     ierr = PetscOptionsGetString(PETSC_NULL,"-my_out",outName,sizeof(outName),&flg); CHKERRQ(ierr);
-    
+
     char outName2[PETSC_MAX_PATH_LEN]="out_post_proc.vtk";
     ierr = PetscOptionsGetString(PETSC_NULL,"-my_post_out",outName2,sizeof(outName2),&flg); CHKERRQ(ierr);
-  
+
   /*****************************************************************************
    *
-   * Read Applied strain on the RVE (vector of length 6) 
+   * Read Applied strain on the RVE (vector of length 6)
    * strain=[xx, yy, zz, xy, xz, zy]^T
    *
    ****************************************************************************/
@@ -154,45 +154,45 @@ int main(int argc, char *argv[]) {
     rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
     ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
     if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
-    
+
     //We need that for code profiling
     PetscLogDouble t1,t2;
     PetscLogDouble v1,v2;
     ierr = PetscTime(&v1); CHKERRQ(ierr);
     ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
-    
+
     //Create MoFEM (Joseph) database
     MoFEM::Core core(moab);
     FieldInterface& mField = core;
-    
+
   /*****************************************************************************
    *
    * Get fibre direction information from the potential-flow calculation
    *
-   ****************************************************************************/	
+   ****************************************************************************/
     Tag th_phi;
     //    double def_val  = 0;
     rval = moab.tag_get_handle("PHI",1,MB_TYPE_DOUBLE,th_phi); CHKERR_PETSC(rval);
-	
+
     Tag th_meshset_info;
     int def_meshset_info[2] = {0,0};
     rval = moab.tag_get_handle("MESHSET_INFO",2,MB_TYPE_INTEGER,th_meshset_info,MB_TAG_CREAT|MB_TAG_SPARSE,&def_meshset_info);
-    
+
     int meshset_data[2];
   	EntityHandle root = moab.get_root_set();
     rval = moab.tag_get_data(th_meshset_info,&root,1,meshset_data); CHKERR_PETSC(rval);
-    
+
     vector<BitRefLevel> bit_levels;
     bit_levels.push_back(BitRefLevel().set(meshset_data[0]-1));
-    
+
     //    const clock_t begin_time = clock();
     ierr = mField.build_fields(); CHKERRQ(ierr);
     ierr = mField.build_finite_elements(); CHKERRQ(ierr);
     ierr = mField.build_adjacencies(bit_levels.back()); CHKERRQ(ierr);
     ierr = mField.build_problems(); CHKERRQ(ierr);
-    
+
     //    std::cout << float( clock () - begin_time ) /  CLOCKS_PER_SEC<<endl;
-	
+
    /*****************************************************************************
    *
    * Select element into various mesh-set
@@ -200,44 +200,44 @@ int main(int argc, char *argv[]) {
    * meshset_Matrix: element set for matrix
    * meshset_Inclusion: element set for inclusion/fibre
    *
-   ****************************************************************************/ 
-    
+   ****************************************************************************/
+
     EntityHandle out_meshset;
     rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
     //    ierr = mField.problem_get_FE("POTENTIAL_PROBLEM","POTENTIAL_ELEM",out_meshset); CHKERRQ(ierr);
     ierr = mField.get_entities_by_ref_level(bit_levels.back(),BitRefLevel().set(),out_meshset); CHKERRQ(ierr);
     Range LatestRefinedTets;
     rval = moab.get_entities_by_type(out_meshset, MBTET,LatestRefinedTets,true); CHKERR_PETSC(rval);
-    
+
     Range LatestRefinedPrisms;
     rval = moab.get_entities_by_type(out_meshset, MBPRISM,LatestRefinedPrisms,true); CHKERR_PETSC(rval);
-	
+
     cout<<"No of Prisms/Interfaces = "<<LatestRefinedPrisms.size()<<endl;
-	
+
     BitRefLevel problem_bit_level = bit_levels.back();
-    
+
     EntityHandle meshset_Elastic, meshset_Trans_ISO;
     rval = moab.create_meshset(MESHSET_SET,meshset_Elastic); CHKERR_PETSC(rval);
     rval = moab.create_meshset(MESHSET_SET,meshset_Trans_ISO); CHKERR_PETSC(rval);
-	
+
 	///Getting No. of Fibres to be used for Potential Flow Problem
 	int noOfFibres=0;
 	for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|UNKNOWNCUBITNAME,it)) {
-		
-		std::size_t found=it->get_Cubit_name().find("PotentialFlow");
+
+		std::size_t found=it->get_name().find("PotentialFlow");
 		if (found==std::string::npos) continue;
 		noOfFibres += 1;
 	}
 	cout<<"No. of Fibres for Potential Flow : "<<noOfFibres<<endl;
-	
+
 	vector<int> fibreList(noOfFibres,0);
 	for (int aa=0; aa<noOfFibres; aa++) {
 		fibreList[aa] = aa + 1;
 	}
-    
-	Range RangeFibre[noOfFibres];
-	EntityHandle fibre_meshset[noOfFibres];
-	
+
+	vector<Range> RangeFibre(noOfFibres);
+	vector<EntityHandle> fibre_meshset(noOfFibres);
+
 	for (int ii=0; ii<noOfFibres; ii++) {
 		ostringstream sss;
 		sss << "POTENTIAL_ELEM" << ii+1;
@@ -248,12 +248,12 @@ int main(int argc, char *argv[]) {
 			rval = moab.unite_meshset(meshset_Trans_ISO,fibre_meshset[ii]); CHKERR_PETSC(rval);
 		}
 	}
-    
+
     rval = moab.write_file("meshset_Trans_ISO.vtk","VTK","",&meshset_Trans_ISO,1); CHKERR_PETSC(rval);
-    
+
 	for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)){
-        
-		if(it->get_Cubit_name() == "MAT_ELASTIC_1") {
+
+		if(it->get_name() == "MAT_ELASTIC_1") {
 			Range TetsInBlock;
 			rval = moab.get_entities_by_type(it->meshset, MBTET,TetsInBlock,true); CHKERR_PETSC(rval);
 			Range block_rope_bit_level = intersect(LatestRefinedTets,TetsInBlock);
@@ -261,7 +261,7 @@ int main(int argc, char *argv[]) {
 		}
 	}
     ierr = mField.seed_finite_elements(meshset_Elastic); CHKERRQ(ierr);
-    
+
 	Range prims_on_problem_bit_level;
 	ierr = mField.get_entities_by_type_and_ref_level(problem_bit_level,BitRefLevel().set(),MBPRISM,prims_on_problem_bit_level); CHKERRQ(ierr);
   //to create meshset from range
@@ -269,13 +269,13 @@ int main(int argc, char *argv[]) {
   rval = moab.create_meshset(MESHSET_SET,meshset_prims_on_problem_bit_level); CHKERR_PETSC(rval);
 	rval = moab.add_entities(meshset_prims_on_problem_bit_level,prims_on_problem_bit_level); CHKERR_PETSC(rval);
   ierr = mField.seed_ref_level_MESHSET(meshset_prims_on_problem_bit_level,BitRefLevel().set()); CHKERRQ(ierr);
-	
+
   // ===========================================================================
   //
   // II. DEFINE PROBLEM
   //
   // ===========================================================================
-    
+
   //Fields
   int field_rank=3;
   ierr = mField.add_field("DISPLACEMENT",H1,field_rank); CHKERRQ(ierr);
@@ -296,7 +296,7 @@ int main(int argc, char *argv[]) {
     //cout<<ss_field.str().c_str()<<endl;
     ierr = mField.add_field(ss_field.str().c_str(),H1,field_rank,MF_ZERO); CHKERRQ(ierr);
   }
-  
+
   /*****************************************************************************
    *
    * Create finite element for the defined fields
@@ -315,9 +315,9 @@ int main(int argc, char *argv[]) {
    *
    * [K][U] = [F]                                           Zeroth-order problem
    * [K][D_r U] = - [D_r K][U]                               First-order problem
-   * [K][H_rs U] = - [H_rs K][U] - 2[D_r K][D_s U]          Second-order problem 
+   * [K][H_rs U] = - [H_rs K][U] - 2[D_r K][D_s U]          Second-order problem
    *
-   ****************************************************************************/  
+   ****************************************************************************/
     //Define rows/cols and element data
     ierr = mField.modify_finite_element_add_field_row("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_col("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
@@ -347,60 +347,60 @@ int main(int argc, char *argv[]) {
   }
 
     ierr = mField.modify_finite_element_add_field_data("TRAN_ISOTROPIC_ELASTIC","POTENTIAL_FIELD"); CHKERRQ(ierr);
-    
-    
+
+
     //Define rows/cols and element data for C and CT (for lagrange multipliers)
     //==========================================================================
     //C row as Lagrange_mul_disp and col as DISPLACEMENT
     ierr = mField.modify_finite_element_add_field_row("Lagrange_elem","Lagrange_mul_disp"); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_col("Lagrange_elem","DISPLACEMENT"); CHKERRQ(ierr);
-    
+
     //CT col as Lagrange_mul_disp and row as DISPLACEMENT
     ierr = mField.modify_finite_element_add_field_col("Lagrange_elem","Lagrange_mul_disp"); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_row("Lagrange_elem","DISPLACEMENT"); CHKERRQ(ierr);
-    
+
     //As for stress we need both displacement and temprature (Lukasz)
     ierr = mField.modify_finite_element_add_field_data("Lagrange_elem","Lagrange_mul_disp"); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_data("Lagrange_elem","DISPLACEMENT"); CHKERRQ(ierr);
     //==========================================================================
 
-    
+
     //Define rows/cols and element data for C1 and C1T (for lagrange multipliers to contol the rigid body translations)
     //==========================================================================
     //C1 row as Lagrange_elem_rigid_trans and col as DISPLACEMENT
     ierr = mField.modify_finite_element_add_field_row("Lagrange_elem_rigid_trans","Lagrange_mul_disp_rigid_trans"); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_col("Lagrange_elem_rigid_trans","DISPLACEMENT"); CHKERRQ(ierr);
-    
+
     //C1T col as Lagrange_elem_rigid_trans and row as DISPLACEMENT
     ierr = mField.modify_finite_element_add_field_col("Lagrange_elem_rigid_trans","Lagrange_mul_disp_rigid_trans"); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_row("Lagrange_elem_rigid_trans","DISPLACEMENT"); CHKERRQ(ierr);
-    
+
     //As for stress we need both displacement and temprature (Lukasz)
     ierr = mField.modify_finite_element_add_field_data("Lagrange_elem_rigid_trans","Lagrange_mul_disp_rigid_trans"); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_data("Lagrange_elem_rigid_trans","DISPLACEMENT"); CHKERRQ(ierr);
     //==========================================================================
-    
-    
-    
+
+
+
     //Define rows/cols and element data for C2 and C2T (for lagrange multipliers to contol the rigid body rotations)
     //==========================================================================
     //C2 row as Lagrange_elem_rigid_trans and col as DISPLACEMENT
     ierr = mField.modify_finite_element_add_field_row("Lagrange_elem_rigid_rotation","Lagrange_mul_disp_rigid_rotation"); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_col("Lagrange_elem_rigid_rotation","DISPLACEMENT"); CHKERRQ(ierr);
-    
+
     //C2T col as Lagrange_elem_rigid_trans and row as DISPLACEMENT
     ierr = mField.modify_finite_element_add_field_col("Lagrange_elem_rigid_rotation","Lagrange_mul_disp_rigid_rotation"); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_row("Lagrange_elem_rigid_rotation","DISPLACEMENT"); CHKERRQ(ierr);
-    
+
     //As for stress we need both displacement and temprature (Lukasz)
     ierr = mField.modify_finite_element_add_field_data("Lagrange_elem_rigid_rotation","Lagrange_mul_disp_rigid_rotation"); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_data("Lagrange_elem_rigid_rotation","DISPLACEMENT"); CHKERRQ(ierr);
     //==========================================================================
 
-    
+
      //define problems
     ierr = mField.add_problem("STOCHASIC_PROBLEM"); CHKERRQ(ierr);
-    
+
     //set finite elements for problem
     ierr = mField.modify_problem_add_finite_element("STOCHASIC_PROBLEM","ELASTIC"); CHKERRQ(ierr);
     ierr = mField.modify_problem_add_finite_element("STOCHASIC_PROBLEM","TRAN_ISOTROPIC_ELASTIC"); CHKERRQ(ierr);
@@ -408,10 +408,10 @@ int main(int argc, char *argv[]) {
     ierr = mField.modify_problem_add_finite_element("STOCHASIC_PROBLEM","Lagrange_elem_rigid_trans"); CHKERRQ(ierr);
     ierr = mField.modify_problem_add_finite_element("STOCHASIC_PROBLEM","Lagrange_elem_rigid_rotation"); CHKERRQ(ierr);
 
-    
+
     //set refinment level for problem
     ierr = mField.modify_problem_ref_level_add_bit("STOCHASIC_PROBLEM",problem_bit_level); CHKERRQ(ierr);
-    
+
   // ===========================================================================
   //
   // III. DECLARE PROBLEM
@@ -439,7 +439,7 @@ int main(int argc, char *argv[]) {
    ****************************************************************************/
     ierr = mField.add_ents_to_finite_element_by_TETs(meshset_Elastic,"ELASTIC",true); CHKERRQ(ierr);
     ierr = mField.add_ents_to_finite_element_by_TETs(meshset_Trans_ISO,"TRAN_ISOTROPIC_ELASTIC",true); CHKERRQ(ierr);
-    
+
     Range SurfacesFaces;
     ierr = mField.get_cubit_msId_entities_by_dimension(103,SIDESET,2,SurfacesFaces,true); CHKERRQ(ierr);
     ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SIDESET 103 = %d\n",SurfacesFaces.size()); CHKERRQ(ierr);
@@ -453,12 +453,12 @@ int main(int argc, char *argv[]) {
   ierr = mField.add_ents_to_finite_element_by_TRIs(SurfacesFaces,"Lagrange_elem"); CHKERRQ(ierr);
     ierr = mField.add_ents_to_finite_element_by_TRIs(SurfacesFaces,"Lagrange_elem_rigid_trans"); CHKERRQ(ierr);
     ierr = mField.add_ents_to_finite_element_by_TRIs(SurfacesFaces,"Lagrange_elem_rigid_rotation"); CHKERRQ(ierr);
-  
+
   /*****************************************************************************
    *
    * Set applied order
    * See reference for detals:
-   *   Ainsworth M. and Coyle J. (2003) Hierarchic finite element bases on 
+   *   Ainsworth M. and Coyle J. (2003) Hierarchic finite element bases on
           unstructured tetrahedral meshes. IJNME, 58(14). pp.2103-2130.
    ****************************************************************************/
     //set app. order
@@ -479,73 +479,73 @@ int main(int argc, char *argv[]) {
     ierr = mField.set_field_order(0,MBEDGE,ss_field.str().c_str(),order_st); CHKERRQ(ierr);
     ierr = mField.set_field_order(0,MBVERTEX,ss_field.str().c_str(),1); CHKERRQ(ierr);
   }
-  
+
   // ===========================================================================
   //
   //  IV. BUILD DATABASE
   //
   // ===========================================================================
-    
+
     //build field
     ierr = mField.build_fields(); CHKERRQ(ierr);
-    
+
     //build finite elemnts
     ierr = mField.build_finite_elements(); CHKERRQ(ierr);
-    
+
     //build adjacencies
     ierr = mField.build_adjacencies(problem_bit_level); CHKERRQ(ierr);
-    
+
     //build problem
     ierr = mField.build_problems(); CHKERRQ(ierr);
-    
+
   // ===========================================================================
   //
   //  V. MESH PARTITION
   //
   // ===========================================================================
-    
+
     //partition
     ierr = mField.partition_problem("STOCHASIC_PROBLEM"); CHKERRQ(ierr);
     ierr = mField.partition_finite_elements("STOCHASIC_PROBLEM"); CHKERRQ(ierr);
     //what are ghost nodes, see Petsc Manual
     ierr = mField.partition_ghost_dofs("STOCHASIC_PROBLEM"); CHKERRQ(ierr);
-    
+
   // ===========================================================================
   //
   //  VI. SOLUTION PHASE
   //
-  // =========================================================================== 
+  // ===========================================================================
 
   /*****************************************************************************
    *
    *  0. PREPARATION FOR PROCESSING SOLVE
    *
-   ****************************************************************************/  
+   ****************************************************************************/
   //create matrices
   Vec F,dF,ddF,D,dD,ddD;
-  
+
   ierr = mField.VecCreateGhost("STOCHASIC_PROBLEM",ROW,&F); CHKERRQ(ierr);
   ierr = mField.VecCreateGhost("STOCHASIC_PROBLEM",ROW,&dF); CHKERRQ(ierr);
   ierr = mField.VecCreateGhost("STOCHASIC_PROBLEM",ROW,&ddF); CHKERRQ(ierr);
-  
+
   ierr = mField.VecCreateGhost("STOCHASIC_PROBLEM",COL,&D); CHKERRQ(ierr);
   ierr = mField.VecCreateGhost("STOCHASIC_PROBLEM",COL,&dD); CHKERRQ(ierr);
   ierr = mField.VecCreateGhost("STOCHASIC_PROBLEM",COL,&ddD); CHKERRQ(ierr);
 
   /*****************************************************************************
    *
-   *  1. Assembling global stiffness matrix K 
+   *  1. Assembling global stiffness matrix K
    *     and external force vector F
-   ****************************************************************************/  
-    
+   ****************************************************************************/
+
     Mat Aij;
     ierr = mField.MatCreateMPIAIJWithArrays("STOCHASIC_PROBLEM",&Aij); CHKERRQ(ierr);
-    
+
     struct MyElasticFEMethod: public ElasticFEMethod {
         MyElasticFEMethod(FieldInterface& _mField,
                           Mat &_Aij,Vec &_D,Vec& _F,double _lambda,double _mu):
         ElasticFEMethod(_mField,_Aij,_D,_F,_lambda,_mu) {};
-        
+
         PetscErrorCode Fint(Vec F_int) {
             PetscFunctionBegin;
             ierr = ElasticFEMethod::Fint(); CHKERRQ(ierr);
@@ -558,7 +558,7 @@ int main(int argc, char *argv[]) {
             PetscFunctionReturn(0);
         }
     };
-  
+
     for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"POTENTIAL_FIELD",dof_ptr)) {
         if(dof_ptr->get_ent_type()!=MBVERTEX) continue;
         EntityHandle ent = dof_ptr->get_ent();
@@ -567,7 +567,7 @@ int main(int argc, char *argv[]) {
         rval = moab.tag_get_data(th_phi,&ent,1,&phi); CHKERR_PETSC(rval);
         fval = phi;
     }
-    
+
     //Assemble F and Aij
 //    double YoungModulusP;
 //    double PoissonRatioP;
@@ -577,14 +577,14 @@ int main(int argc, char *argv[]) {
     double YoungModulus;
     double PoissonRatio;
     double alpha;
-    
+
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it))
     {
         cout << endl << *it << endl;
-        
+
         //Get block name
-        string name = it->get_Cubit_name();
-        
+        string name = it->get_name();
+
 //        if (name.compare(0,20,"MAT_ELASTIC_TRANSISO") == 0)
 //        {
 //            Mat_Elastic_TransIso mydata;
@@ -615,45 +615,45 @@ int main(int argc, char *argv[]) {
             alpha = mydata.data.alpha;
         }
     }
-    
+
     //alpha = 1e8;
     cout<<"alpha   = "<<alpha<<endl;
-	
+
     //InterfaceFEMethod IntMyFE(mField,Aij,D,F,YoungModulus*alpha);
     MyElasticFEMethod MyFE(mField,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
     TranIsotropicFibreDirRotElasticFEMethod MyTIsotFE(mField,Aij,D,F);
-    
+
   ElasticFE_RVELagrange_Traction MyFE_RVELagrange(mField,Aij,D,F,applied_strain,"DISPLACEMENT","Lagrange_mul_disp",field_rank);
   ElasticFE_RVELagrange_RigidBodyTranslation MyFE_RVELagrangeRigidBodyTrans(mField,Aij,D,F,applied_strain,"DISPLACEMENT","Lagrange_mul_disp",field_rank,"Lagrange_mul_disp_rigid_trans");
   ElasticFE_RVELagrange_RigidBodyRotation MyFE_RVELagrangeRigidBodyRotation(mField,Aij,D,F,applied_strain,"DISPLACEMENT","Lagrange_mul_disp",field_rank);
 
-    
+
     ierr = VecZeroEntries(F); CHKERRQ(ierr);
     ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = MatZeroEntries(Aij); CHKERRQ(ierr);
-    
+
     ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","ELASTIC",MyFE);  CHKERRQ(ierr);
     PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT);
 	ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","TRAN_ISOTROPIC_ELASTIC",MyTIsotFE);  CHKERRQ(ierr);
 	PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT);
-    
+
     ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","Lagrange_elem",MyFE_RVELagrange);  CHKERRQ(ierr);
     PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT);
     ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","Lagrange_elem_rigid_trans",MyFE_RVELagrangeRigidBodyTrans);  CHKERRQ(ierr);
     PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT);
     ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","Lagrange_elem_rigid_rotation",MyFE_RVELagrangeRigidBodyRotation);  CHKERRQ(ierr);
     PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT);
-    
-    
+
+
     ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
     ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
     ierr = MatAssemblyBegin(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
     ierr = MatAssemblyEnd(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-    
-    
+
+
 //    //Matrix View
 //    MatView(Aij,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
 //    std::string wait;
@@ -661,20 +661,20 @@ int main(int argc, char *argv[]) {
 
   /*****************************************************************************
    *
-   *  2. Get the volume of RVE 
+   *  2. Get the volume of RVE
    *
-   ****************************************************************************/ 
+   ****************************************************************************/
     double RVE_volume;    RVE_volume=0.0;  //RVE volume for full RVE We need this for stress calculation
     Vec RVE_volume_Vec;
     ierr = VecCreateMPI(PETSC_COMM_WORLD, 1, pcomm->size(), &RVE_volume_Vec);  CHKERRQ(ierr);
     ierr = VecZeroEntries(RVE_volume_Vec); CHKERRQ(ierr);
-    
+
     RVEVolume MyRVEVol(mField,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio), RVE_volume_Vec);
     RVEVolumeTrans MyRVEVolTrans(mField,Aij,D,F, RVE_volume_Vec);
-    
+
     ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","ELASTIC",MyRVEVol);  CHKERRQ(ierr);
     ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","TRAN_ISOTROPIC_ELASTIC",MyRVEVolTrans);  CHKERRQ(ierr);
-    
+
     ierr = VecView(RVE_volume_Vec,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
     ierr = VecSum(RVE_volume_Vec, &RVE_volume);  CHKERRQ(ierr);
     cout<<"Final RVE_volume = "<< RVE_volume <<endl;
@@ -695,15 +695,15 @@ int main(int argc, char *argv[]) {
     ierr = KSPSetOperators(solver,Aij,Aij); CHKERRQ(ierr);
     ierr = KSPSetFromOptions(solver); CHKERRQ(ierr);
     ierr = KSPSetUp(solver); CHKERRQ(ierr);
-    
+
     ierr = KSPSolve(solver,F,D); CHKERRQ(ierr);
     ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    
+
     //Save data on mesh
     ierr = mField.set_global_VecCreateGhost("STOCHASIC_PROBLEM",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-    
+
   //----------------------------------------------------------------------------
   // 3.2 Calculating zeroth-order homogenized stress using volume averaging theorem
   //----------------------------------------------------------------------------
@@ -719,7 +719,7 @@ int main(int argc, char *argv[]) {
   if(pcomm->rank()==0){
     PetscScalar    *avec;
     VecGetArray(Stress_Homo, &avec);
-    
+
     cout<< "\nStress_Homo =\n";
     for(int ii=0; ii<6; ii++){
       cout.precision(15);
@@ -731,21 +731,21 @@ int main(int argc, char *argv[]) {
 
    /*****************************************************************************
    *  4. SOLVE THE FIRST-ORDER AND SECOND-ORDER FINITE ELEMENT EQUILIBRIUM EQUATION
-   *     1st order-[K][U_r] = -[K_r][U} 
+   *     1st order-[K][U_r] = -[K_r][U}
    *     2nd order-[K][U_rs] = -[K_rs][U]-2[K_r][U_s]
    *
-   ****************************************************************************/ 
+   ****************************************************************************/
 
   //----------------------------------------------------------------------------
   // a. Solving the equation to get nodal displacement
   //----------------------------------------------------------------------------
 
   for(int ii=0; ii < nders; ii++){
-    // 
+    //
     ierr = VecZeroEntries(dF); CHKERRQ(ierr);
     ierr = VecGhostUpdateBegin(dF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(dF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    // 
+    //
     ierr = VecZeroEntries(ddF); CHKERRQ(ierr);
     ierr = VecGhostUpdateBegin(ddF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(ddF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -815,7 +815,7 @@ int main(int argc, char *argv[]) {
        ierr = VecGhostUpdateEnd(dF,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
        ierr = VecAssemblyBegin(dF); CHKERRQ(ierr);
        ierr = VecAssemblyEnd(dF); CHKERRQ(ierr);
-    
+
        ierr = KSPSolve(solver,dF,dD); CHKERRQ(ierr);
        ierr = VecGhostUpdateBegin(dD,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
        ierr = VecGhostUpdateEnd(dD,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -828,13 +828,13 @@ int main(int argc, char *argv[]) {
        ierr = VecGhostUpdateEnd(ddF,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
        ierr = VecAssemblyBegin(ddF); CHKERRQ(ierr);
        ierr = VecAssemblyEnd(ddF); CHKERRQ(ierr);
-    
+
        ierr = KSPSolve(solver,ddF,ddD); CHKERRQ(ierr);
        ierr = VecGhostUpdateBegin(ddD,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
        ierr = VecGhostUpdateEnd(ddD,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
        // ierr = VecView(dD,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
        ierr = mField.set_other_global_ghost_vector("STOCHASIC_PROBLEM","DISPLACEMENT",ss_field.str().c_str(),ROW,ddD,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-       ierr = mField.set_other_global_ghost_vector("STOCHASIC_PROBLEM","Lagrange_mul_disp","Lagrange_mul_disp",ROW,ddD,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);      
+       ierr = mField.set_other_global_ghost_vector("STOCHASIC_PROBLEM","Lagrange_mul_disp","Lagrange_mul_disp",ROW,ddD,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
        }
 
   //----------------------------------------------------------------------------
@@ -846,7 +846,7 @@ int main(int argc, char *argv[]) {
 
   ElasticFE_RVELagrange_Homogenized_Stress_Traction MyFE_RVEHomoStressTraction_r(mField,Aij,D,F,&RVE_volume, applied_strain, Stress_Homo_r,"DISPLACEMENT","Lagrange_mul_disp",field_rank);
     ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","Lagrange_elem",MyFE_RVEHomoStressTraction_r);  CHKERRQ(ierr);
-  
+
     if(pcomm->rank()==0){
       PetscScalar    *avec_r;
       VecGetArray(Stress_Homo_r, &avec_r);
@@ -862,16 +862,16 @@ int main(int argc, char *argv[]) {
     cout<< "\n\n";
   }
 
-  
+
   // ===========================================================================
   //
   //  VII. OUTPUT
   //
-  // =========================================================================== 
-    
+  // ===========================================================================
+
      PostProcVertexMethod ent_method(moab);
     ierr = mField.loop_dofs("STOCHASIC_PROBLEM","DISPLACEMENT",ROW,ent_method); CHKERRQ(ierr);
-    
+
     if(pcomm->rank()==0) {
         EntityHandle out_meshset;
         rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
@@ -881,17 +881,17 @@ int main(int argc, char *argv[]) {
         rval = moab.write_file(outName,"VTK","",&out_meshset,1); CHKERR_PETSC(rval);
         rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
     }
-    
+
 //    TranIso_PostProc_FibreDirRot_OnRefMesh fe_post_proc_method( mField, LAMBDA(YoungModulusP,PoissonRatioP),MU(YoungModulusP,PoissonRatioP), YoungModulusP,YoungModulusZ,PoissonRatioP,PoissonRatioPZ,ShearModulusZP);
 //
 //    ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","ELASTIC",fe_post_proc_method);  CHKERRQ(ierr);
 //    ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","TRAN_ISOTROPIC_ELASTIC",fe_post_proc_method);  CHKERRQ(ierr);
-//    
+//
 //    PetscSynchronizedFlush(PETSC_COMM_WORLD);
 //    if(pcomm->rank()==0) {
 //        rval = fe_post_proc_method.moab_post_proc.write_file(outName2,"VTK",""); CHKERR_PETSC(rval);
 //    }
-//    
+//
 //    PostProcCohesiveForces fe_post_proc_prisms(mField,YoungModulus*alpha);
 //    ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","INTERFACE",fe_post_proc_prisms);  CHKERRQ(ierr);
 //    PetscSynchronizedFlush(PETSC_COMM_WORLD);
@@ -900,45 +900,45 @@ int main(int argc, char *argv[]) {
 //    }
 
   ofstream TheFile;
-  TheFile.open("Result.txt",ofstream::out); 
+  TheFile.open("Result.txt",ofstream::out);
   if(pcomm->rank()==0){
     PetscScalar    *avec;
     VecGetArray(Stress_Homo, &avec);
-    
+
     for(int ii=0; ii<6; ii++){
       TheFile<<setprecision(15)<<*avec<<'\n';
       avec++;
     }
   }
   TheFile.close();
-    
+
   // ===========================================================================
   //
   //  VIII. FINISH
   //
-  // =========================================================================== 
+  // ===========================================================================
   // Destroy matrices
   ierr = VecDestroy(&F); CHKERRQ(ierr);
   ierr = VecDestroy(&dF); CHKERRQ(ierr);
   ierr = VecDestroy(&ddF); CHKERRQ(ierr);
-  
-  
+
+
   ierr = VecDestroy(&D); CHKERRQ(ierr);
   ierr = VecDestroy(&dD); CHKERRQ(ierr);
   ierr = VecDestroy(&ddD); CHKERRQ(ierr);
- 
+
   ierr = MatDestroy(&Aij); CHKERRQ(ierr);
   ierr = KSPDestroy(&solver); CHKERRQ(ierr);
   ierr = VecDestroy(&RVE_volume_Vec); CHKERRQ(ierr);
   ierr = VecDestroy(&Stress_Homo); CHKERRQ(ierr);
 
-  
+
     ierr = PetscTime(&v2);CHKERRQ(ierr);
     ierr = PetscGetCPUTime(&t2);CHKERRQ(ierr);
-    
+
     PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Total Rank %d Time = %f CPU Time = %f\n",pcomm->rank(),v2-v1,t2-t1);
     PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT);
-    
+
     PetscFinalize();
-    
+
 }

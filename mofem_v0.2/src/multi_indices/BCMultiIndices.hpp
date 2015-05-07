@@ -20,10 +20,9 @@
 
 namespace MoFEM {
 
-
-/** 
+/**
  * \brief this struct keeps basic methods for moab meshset about material and boundary conditions
- * \ingroup mofem_bc 
+ * \ingroup mofem_bc
  *
  */
 struct CubitMeshSets {
@@ -31,7 +30,7 @@ struct CubitMeshSets {
   CubitBCType cubit_bc_type; 	///< type of meshset from cubit NodeSet, BlockSet, SideSet and more
   vector<Tag> tag_handles;	///< vector of tag handles to types of data passed from cubit
   int *msId;			///< cubit meshset ID
-  char* tag_bc_data;		
+  char* tag_bc_data;
   int tag_bc_size;
   unsigned int *tag_block_header_data;
   double* tag_block_attributes;
@@ -52,19 +51,19 @@ struct CubitMeshSets {
   PetscErrorCode get_cubit_msId_entities_by_dimension(Interface &moab,Range &entities,const bool recursive = false)  const;
   PetscErrorCode get_cubit_msId_entities_by_type(Interface &moab,const EntityType type,Range &entities,const bool recursive = false) const;
 
-  /** 
+  /**
    *  \brief Function that returns the CubitBCType type of the contents of bc_data
    */
   PetscErrorCode get_type_from_bc_data(const vector<char> &bc_data,CubitBCType &type) const;
 
-  /** 
+  /**
    *  \brief Function that returns the CubitBCType type of the contents of bc_data
   */
   PetscErrorCode get_type_from_bc_data(CubitBCType &type) const;
-    
+
   /**
    * \brief get bc_data vector from MoFEM database
-   * 
+   *
    * \param bc_data is the in/out vector were bc_data will be stored
    */
   PetscErrorCode get_bc_data(vector<char>& bc_data) const;
@@ -75,7 +74,7 @@ struct CubitMeshSets {
     ierr = get_bc_data(bc_data); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
-    
+
   /**
   * \brief get block_headers vector from MoFEM database
   *
@@ -104,7 +103,7 @@ struct CubitMeshSets {
     ierr = print_block_header_data(os); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
-    
+
   /**
    * \brief print bc_data int stream given by os
    *
@@ -125,7 +124,7 @@ struct CubitMeshSets {
     PetscFunctionBegin;
     PetscErrorCode ierr;
     if((cubit_bc_type&data.type).none()) {
-      SETERRQ(PETSC_COMM_SELF,1,"bc_data are not for _CUBIT_BC_DATA_TYPE_ structure");  
+      SETERRQ(PETSC_COMM_SELF,1,"bc_data are not for _CUBIT_BC_DATA_TYPE_ structure");
     }
     vector<char> bc_data;
     get_bc_data(bc_data);
@@ -134,7 +133,7 @@ struct CubitMeshSets {
   }
 
   template<class _CUBIT_BC_DATA_TYPE_>
-  DEPRECATED 
+  DEPRECATED
   PetscErrorCode get_cubit_bc_data_structure(_CUBIT_BC_DATA_TYPE_& data) const {
     PetscFunctionBegin;
     PetscErrorCode ierr;
@@ -164,8 +163,8 @@ struct CubitMeshSets {
     PetscErrorCode ierr;
     ierr = get_type_from_name(type); CHKERRQ(ierr);
     PetscFunctionReturn(0);
-  } 
-    
+  }
+
   /**
    * \brief get Cubit block attributes
    *
@@ -245,7 +244,7 @@ struct CubitMeshSets {
     ierr = print_name(os); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
-    
+
   template<class _ATTRIBUTE_TYPE_>
   PetscErrorCode get_attribute_data_structure(_ATTRIBUTE_TYPE_ &data) const {
     PetscFunctionBegin;
@@ -269,15 +268,15 @@ struct CubitMeshSets {
     ierr = data.set_data(ptr,8*tag_block_attributes_size); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
-     
+
   friend ostream& operator<<(ostream& os,const CubitMeshSets& e);
 
   private:
   Tag nsTag,ssTag,nsTag_data,ssTag_data,bhTag,bhTag_header,block_attribs,entityNameTag;
   PetscErrorCode get_tags_hanlders(Interface &moab);
-    
+
 };
-    
+
 /**
  * @relates multi_index_container
  * \brief CubitMeshSet_multiIndex
@@ -296,7 +295,7 @@ typedef multi_index_container<
     ordered_non_unique<
       tag<CubitMeshSets_name>, const_mem_fun<CubitMeshSets,string,&CubitMeshSets::get_name> >,
     hashed_unique<
-      tag<Composite_Cubit_msId_And_MeshSetType_mi_tag>,       
+      tag<Composite_Cubit_msId_And_MeshSetType_mi_tag>,
       composite_key<
 	CubitMeshSets,
 	  const_mem_fun<CubitMeshSets,int,&CubitMeshSets::get_msId>,
@@ -311,4 +310,3 @@ typedef multi_index_container<
  * \defgroup mofem_bc Boundary conditions
  * \ingroup mofem
  ******************************************************************************/
-

@@ -128,7 +128,7 @@ int main(int argc, char *argv[]) {
 	int noOfFibres=0;
 	for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field_RVE,BLOCKSET|UNKNOWNCUBITNAME,it)) {
 		
-		std::size_t found=it->get_Cubit_name().find("PotentialFlow");
+		std::size_t found=it->get_name().find("PotentialFlow");
 		if (found==std::string::npos) continue;
 		noOfFibres += 1;
 	}
@@ -157,7 +157,7 @@ int main(int argc, char *argv[]) {
   
 	for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field_RVE,BLOCKSET,it)){
     
-		if(it->get_Cubit_name() == "MAT_ELASTIC_1") {
+		if(it->get_name() == "MAT_ELASTIC_1") {
 			Range TetsInBlock;
 			rval = moab_RVE.get_entities_by_type(it->meshset, MBTET,TetsInBlock,true); CHKERR_PETSC(rval);
 			Range block_rope_bit_level = intersect(LatestRefinedTets,TetsInBlock);

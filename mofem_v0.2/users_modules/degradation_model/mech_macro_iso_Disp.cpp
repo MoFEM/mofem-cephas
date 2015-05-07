@@ -149,11 +149,11 @@ int main(int argc, char *argv[]) {
   Range TetsInBlock, TetsInBlock_stiff_inc;
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field_RVE,BLOCKSET,it)){
     
-		if(it->get_Cubit_name() == "MAT_ELASTIC") {
+		if(it->get_name() == "MAT_ELASTIC") {
 			rval = moab_RVE.get_entities_by_type(it->meshset, MBTET,TetsInBlock,true); CHKERR_PETSC(rval);
 		}
     
-    if(it->get_Cubit_name() == "MAT_ELASTIC_Stiff_Inclusion") {
+    if(it->get_name() == "MAT_ELASTIC_Stiff_Inclusion") {
 			rval = moab_RVE.get_entities_by_type(it->meshset, MBTET,TetsInBlock_stiff_inc,true); CHKERR_PETSC(rval);
 		}
 	}

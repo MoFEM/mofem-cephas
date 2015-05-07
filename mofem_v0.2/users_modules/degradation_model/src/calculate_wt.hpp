@@ -458,7 +458,7 @@ namespace MoFEM {
           ierr = mField.modify_problem_add_finite_element(problem_name,fe_name); CHKERRQ(ierr);
           
           for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
-            if(it->get_Cubit_name().compare(0,17,"MAT_RVE_DIFFUSION") == 0){
+            if(it->get_name().compare(0,17,"MAT_RVE_DIFFUSION") == 0){
               rval = mField.get_moab().get_entities_by_type(it->meshset,MBTET,setOfBlocks[it->get_msId()].tEts,true); CHKERR_PETSC(rval);
               ierr = mField.add_ents_to_finite_element_by_TETs(setOfBlocks[it->get_msId()].tEts,fe_name); CHKERRQ(ierr);
               //reading saturation concentraiton from the command line (can be input from the CUBIT BLOCKSETS)
