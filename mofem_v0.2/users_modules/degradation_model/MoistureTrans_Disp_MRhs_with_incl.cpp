@@ -202,7 +202,7 @@ int main(int argc, char *argv[]) {
   double density_matrix, density_fibres;
   Range TetsInBlock, TetsInBlock_stiff_inc;
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)){
-		if(it->get_Cubit_name() == "MAT_MOISTURE_MATRIX") {
+		if(it->get_name() == "MAT_MOISTURE_MATRIX") {
 			rval = moab.get_entities_by_type(it->meshset, MBTET,TetsInBlock,true); CHKERR_PETSC(rval);
       
       Mat_Moisture mydata;
@@ -210,7 +210,7 @@ int main(int argc, char *argv[]) {
       density_matrix=mydata.data.Density;
 
 		}
-    if(it->get_Cubit_name() == "MAT_MOISTURE_FIBRES") {
+    if(it->get_name() == "MAT_MOISTURE_FIBRES") {
 			rval = moab.get_entities_by_type(it->meshset, MBTET,TetsInBlock_stiff_inc,true); CHKERR_PETSC(rval);
       
       Mat_Moisture mydata;

@@ -112,7 +112,7 @@ int main(int argc, char *argv[]) {
   //add finite elements entities
   Range TetsInBlock_Ele_Strain_RVE;
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)){
-		if(it->get_Cubit_name() == "Ele_Strain_RVE") {
+		if(it->get_name() == "Ele_Strain_RVE") {
 			rval = moab.get_entities_by_type(it->meshset, MBTET,TetsInBlock_Ele_Strain_RVE,true); CHKERR_PETSC(rval);
 //      cout<<"TetsInBlock in Ele_Strain_RVE   "<<TetsInBlock<<endl;
 		}
