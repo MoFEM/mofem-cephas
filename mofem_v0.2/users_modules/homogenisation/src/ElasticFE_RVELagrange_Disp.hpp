@@ -17,8 +17,8 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef __ELASTICFE_RVELAGRANGE_DISP_HPP__
-#define __ELASTICFE_RVELAGRANGE_DISP_HPP__
+#ifndef __ELASTICFE_RVELAGRANGE_DISP_HPP
+#define __ELASTICFE_RVELAGRANGE_DISP_HPP
 
 using namespace ObosleteUsersModules;
 

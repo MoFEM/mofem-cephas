@@ -20,6 +20,9 @@
 include_directories("${MoFEM_PROJECT_SOURCE_DIR}/users_modules/homogenisation/src")
 include_directories("${MoFEM_PROJECT_SOURCE_DIR}/users_modules/moisture_transport/src")
 
+include_directories("${UM_SOURCE_DIR}/elasticity/src")
+include_directories("${UM_SOURCE_DIR}/nonlinear_elastic_materials/src")
+
 add_library(user_modules_homogenisation
   ${UM_SOURCE_DIR}/homogenisation/src/impl/ElasticFE_RVELagrange_Disp.cpp
   ${UM_SOURCE_DIR}/homogenisation/src/impl/ElasticFE_RVELagrange_Homogenized_Stress_Disp.cpp
@@ -52,6 +55,30 @@ add_executable(Cube_Periodic ${UM_SOURCE_DIR}/homogenisation/Cube_Periodic.cpp)
 target_link_libraries(Cube_Periodic
   mofem_finite_element_library mofem_finite_elements mofem_interfaces mofem_multi_indices mofem_petsc users_modules_obsolete user_modules_homogenisation
   mofem_approx mofem_third_party mofem_cblas ${MoFEM_PROJECT_LIBS})
+
+# ===================== Simple cube HOG ============================================
+add_executable(Cube_Disp_HOG ${UM_SOURCE_DIR}/homogenisation/Cube_Disp_HOG.cpp)
+target_link_libraries(Cube_Disp_HOG
+  mofem_finite_element_library mofem_finite_elements mofem_interfaces mofem_multi_indices mofem_petsc users_modules_obsolete user_modules_homogenisation
+  mofem_approx mofem_third_party mofem_cblas ${MoFEM_PROJECT_LIBS})
+
+
+add_executable(Cube_Disp_HOG_New ${UM_SOURCE_DIR}/homogenisation/Cube_Disp_HOG_New.cpp)
+target_link_libraries(Cube_Disp_HOG_New
+  mofem_finite_element_library mofem_finite_elements mofem_interfaces mofem_multi_indices mofem_petsc users_modules_obsolete user_modules_homogenisation
+  mofem_approx mofem_third_party mofem_cblas ${MoFEM_PROJECT_LIBS})
+
+
+add_executable(Cube_Trac_HOG ${UM_SOURCE_DIR}/homogenisation/Cube_Trac_HOG.cpp)
+target_link_libraries(Cube_Trac_HOG
+  mofem_finite_element_library mofem_finite_elements mofem_interfaces mofem_multi_indices mofem_petsc users_modules_obsolete user_modules_homogenisation
+  mofem_approx mofem_third_party mofem_cblas ${MoFEM_PROJECT_LIBS})
+
+add_executable(Cube_Periodic_HOG ${UM_SOURCE_DIR}/homogenisation/Cube_Periodic_HOG.cpp)
+target_link_libraries(Cube_Periodic_HOG
+  mofem_finite_element_library mofem_finite_elements mofem_interfaces mofem_multi_indices mofem_petsc users_modules_obsolete user_modules_homogenisation
+  mofem_approx mofem_third_party mofem_cblas ${MoFEM_PROJECT_LIBS})
+
 
 # =================== Simple cube with reinforcement ================================
 

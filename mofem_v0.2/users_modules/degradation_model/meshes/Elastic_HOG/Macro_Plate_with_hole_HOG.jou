@@ -1,0 +1,72 @@
+reset 
+ 
+# Geometry (all dimension for macro is in meter [mm]) 
+brick x 20 y 20 z 1 
+create cylinder height 60 radius 7 
+subtract volume 2 from volume 1 
+ 
+#volume 1 size auto factor 10 
+#volume 1 scheme Tetmesh 
+#mesh volume 1 
+ 
+#Meshing
+curve 1 2 3 4 interval 2
+curve 1 2 3 4 scheme equal
+mesh curve 1 2 3 4
+
+curve 16  interval 5
+curve 16 scheme equal
+mesh curve 16
+
+curve 9 10 11 12 interval 1
+curve 9 10 11 12 scheme equal
+mesh curve 9 10 11 12
+
+surface 11 scheme trimesh
+mesh surface 11
+
+surface 12  scheme copy source surface 11  nosmoothing
+mesh surface 12 
+
+volume 1 scheme Tetmesh
+mesh volume 1
+
+
+block 2 volume all  
+block 2 name 'MAT_ELASTIC' 
+block 2 attribute count 4 
+block 2 attribute index 1 1 
+block 2 attribute index 2 0  
+ 
+create displacement on surface 3 dof 2 fix 0 
+create displacement on surface 4 dof 1 fix 0 
+create force on surface 5 vector 0 1 0 0 0 0 
+ 
+
+set duplicate block elements on 
+block 1 tet all      
+block 1 element type tetra10   
+ 
+ 
+save as "/Users/zahur/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/Elastic_HOG/Plate_with_hole_HOG.cub" overwrite 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

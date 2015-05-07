@@ -158,23 +158,11 @@ namespace MoFEM {
       OpCalculate_RVEDmat(FieldInterface &m_field_RVE, const string field_name,CommonData &common_data):
       VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
       m_field_RVE(m_field_RVE),commonData(common_data){
-        ierr = m_field_RVE.VecCreateGhost("ELASTIC_PROBLEM_RVE",ROW,&F1); CHKERRABORT(PETSC_COMM_WORLD,ierr);
-        ierr = m_field_RVE.VecCreateGhost("ELASTIC_PROBLEM_RVE",ROW,&F2); CHKERRABORT(PETSC_COMM_WORLD,ierr);
-        ierr = m_field_RVE.VecCreateGhost("ELASTIC_PROBLEM_RVE",ROW,&F3); CHKERRABORT(PETSC_COMM_WORLD,ierr);
-        ierr = m_field_RVE.VecCreateGhost("ELASTIC_PROBLEM_RVE",ROW,&F4); CHKERRABORT(PETSC_COMM_WORLD,ierr);
-        ierr = m_field_RVE.VecCreateGhost("ELASTIC_PROBLEM_RVE",ROW,&F5); CHKERRABORT(PETSC_COMM_WORLD,ierr);
-        ierr = m_field_RVE.VecCreateGhost("ELASTIC_PROBLEM_RVE",ROW,&F6); CHKERRABORT(PETSC_COMM_WORLD,ierr);
-        
-        ierr = m_field_RVE.VecCreateGhost("ELASTIC_PROBLEM_RVE",ROW,&D1); CHKERRABORT(PETSC_COMM_WORLD,ierr);
-        
-        ierr = m_field_RVE.MatCreateMPIAIJWithArrays("ELASTIC_PROBLEM_RVE",&A); CHKERRABORT(PETSC_COMM_WORLD,ierr);
       }
       
       ~OpCalculate_RVEDmat(){
       }
 
-      Vec F1,F2,F3,F4,F5,F6,D1;
-      Mat A;
 
       PetscErrorCode doWork(
                             int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
@@ -193,20 +181,34 @@ namespace MoFEM {
             int field_rank=3; // it is mechanical problem
             applied_strain.resize(1.5*field_rank+1.5); applied_strain.clear();
 
-            //=============================================================================================================
-            //Calculation of RVE volume
-            //=============================================================================================================
-            double RVE_volume;    RVE_volume=0.0;  //RVE volume for full RVE We need this for stress calculation
-            Vec RVE_volume_Vec;
-            ParallelComm* pcomm_RVE = ParallelComm::get_pcomm(&m_field_RVE.get_moab(),MYPCOMM_INDEX);
-//            cout<<" pcomm_RVE->size() = "<<pcomm_RVE->size()<<endl;
-            ierr = VecCreateMPI(PETSC_COMM_SELF, 1, pcomm_RVE->size(), &RVE_volume_Vec);  CHKERRQ(ierr);
-            ierr = VecZeroEntries(RVE_volume_Vec); CHKERRQ(ierr);
-            RVEVolume MyRVEVol(m_field_RVE,A,D1,F1,0.0,0.0, RVE_volume_Vec);
-            
-            //=============================================================================================================
-
+ 
             for(int gg = 0;gg<nb_gauss_pts;gg++) {
+              Vec F1,F2,F3,F4,F5,F6,D1;
+              Mat A;
+              ierr = m_field_RVE.VecCreateGhost("ELASTIC_PROBLEM_RVE",ROW,&F1); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+              ierr = m_field_RVE.VecCreateGhost("ELASTIC_PROBLEM_RVE",ROW,&F2); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+              ierr = m_field_RVE.VecCreateGhost("ELASTIC_PROBLEM_RVE",ROW,&F3); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+              ierr = m_field_RVE.VecCreateGhost("ELASTIC_PROBLEM_RVE",ROW,&F4); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+              ierr = m_field_RVE.VecCreateGhost("ELASTIC_PROBLEM_RVE",ROW,&F5); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+              ierr = m_field_RVE.VecCreateGhost("ELASTIC_PROBLEM_RVE",ROW,&F6); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+              
+              ierr = m_field_RVE.VecCreateGhost("ELASTIC_PROBLEM_RVE",ROW,&D1); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+              
+              ierr = m_field_RVE.MatCreateMPIAIJWithArrays("ELASTIC_PROBLEM_RVE",&A); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+
+              //=============================================================================================================
+              //Calculation of RVE volume
+              //=============================================================================================================
+              double RVE_volume;    RVE_volume=0.0;  //RVE volume for full RVE We need this for stress calculation
+              Vec RVE_volume_Vec;
+              ParallelComm* pcomm_RVE = ParallelComm::get_pcomm(&m_field_RVE.get_moab(),MYPCOMM_INDEX);
+              //            cout<<" pcomm_RVE->size() = "<<pcomm_RVE->size()<<endl;
+              ierr = VecCreateMPI(PETSC_COMM_SELF, 1, pcomm_RVE->size(), &RVE_volume_Vec);  CHKERRQ(ierr);
+              ierr = VecZeroEntries(RVE_volume_Vec); CHKERRQ(ierr);
+              RVEVolume MyRVEVol(m_field_RVE,A,D1,F1,0.0,0.0, RVE_volume_Vec);
+              
+              //=============================================================================================================
+
 //              cout<<"gg Start =  "<<gg <<endl;
               //We don't need to calculate internal forces for RVE, as ElasticFEMethod is used to assemble A matirx only
               //so noo need to create MyElasticFEMethod here
@@ -481,6 +483,20 @@ namespace MoFEM {
               commonData.Dmat_RVE[fe_ent](gg).resize(6,6);
               commonData.Dmat_RVE[fe_ent](gg)=Dmat;
 //              cout<<"gg End =  "<<gg <<endl;
+              
+              ierr = VecDestroy(&F1); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+              ierr = VecDestroy(&F2); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+              ierr = VecDestroy(&F3); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+              ierr = VecDestroy(&F4); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+              ierr = VecDestroy(&F5); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+              ierr = VecDestroy(&F6); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+              ierr = VecDestroy(&D1); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+              ierr = VecDestroy(&Stress_Homo); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+              ierr = VecDestroy(&RVE_volume_Vec); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+              
+              ierr = MatDestroy(&A); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+              ierr = KSPDestroy(&solver); CHKERRQ(ierr);
+              
 //              string wait;
 //              cin>>wait;
             }

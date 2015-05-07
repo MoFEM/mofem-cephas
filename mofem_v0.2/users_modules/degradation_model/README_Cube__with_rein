@@ -55,20 +55,28 @@ make wt_unsteady_macro && mpirun -np 1 ./wt_unsteady_macro \
 Mechanical problem with RVE (both matrix and fibres are isotropic materials)
 ============================================================
 make mech_macro_iso_Disp && mpirun -np 1 ./mech_macro_iso_Disp \
--my_file_Macro solution_wt.h5m -my_file_RVE /mnt/home/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/Using_Textile_RVE/Textile_RVE_Mechanical.cub\
+-my_file_Macro solution_wt.h5m -my_file_RVE /mnt/home/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/Cube_with_reinforcement/Cube_RVE_with_reinf_mechanical.cub\
   -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist \
   -my_max_post_proc_ref_level 0 -my_order 1 -my_order_RVE 1 -log_summary\
 
 
-Calculate strain at selected gauss points to see the deformed RVEs
-===========================================================================
-make Strain_calculation && mpirun -np 1 ./Strain_calculation -my_file FE2_solution_100.h5m -ksp_type fgmres -pc_type asm -sub_pc_type lu -ksp_monitor -my_order 1
 
-mpirun -np 4 ../homogenisation/Cube_With_Inclusion_Disp -my_file /mnt/home/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/Using_Textile_RVE/Textile_RVE_Mechanical.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1 -myapplied_strain -0.0019058,0.128656,-0.0194785,-0.00154818,0.00177996,-0.000416649
+Mechanical problem with RVE (isotropic matrix and tansverse-isotropic fibres)
+==========================================================================================
+==== Potential flow for fibre directions 
+mpirun -np 1 ../homogenisation/TransIso_Potential_Flow_NoInt -my_file /mnt/home/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes//Cube_with_reinforcement/Cube_RVE_with_reinf_Mech_TransIso.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1 -log_summary
 
-Cube_With_Inclusion_Traction
-Cube_With_Inclusion_Disp
-Cube_With_Inclusion_Periodic
+======= Displacement BCs
+make mech_macro_transIso_Disp && mpirun -np 1 ./mech_macro_transIso_Disp \
+-my_file_Macro solution_wt.h5m -my_file_RVE solution_RVE.h5m\
+  -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist\
+  -my_max_post_proc_ref_level 0 -my_order 1 -log_summary\
+
+======= Periodic BCs
+make mech_macro_transIso_Periodic && mpirun -np 1 ./mech_macro_transIso_Periodic \
+-my_file_Macro solution_wt.h5m -my_file_RVE solution_RVE.h5m\
+  -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist \
+  -my_max_post_proc_ref_level 0 -my_order 1 -my_order_RVE 1 -log_summary\
 
 
 

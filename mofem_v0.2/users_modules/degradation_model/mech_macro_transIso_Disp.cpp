@@ -462,8 +462,8 @@ int main(int argc, char *argv[]) {
         
         //here pointer to object is used instead of object, because the pointer will be destroyed at the end of code before PetscFinalize to make sure all
         //its internal matrices and vectores are destroyed.
-        //      ElasticFEMethod_Dmat_input my_fe(m_field_Macro,A,D,Fint,0.0,0.0,calculate_rve_dmat.commonData.Dmat_RVE,"DISP_MACRO");
-        ElasticFEMethod_Dmat_input* my_fe_ptr = new ElasticFEMethod_Dmat_input(m_field_Macro,A,D,Fint,0.0,0.0,calculate_rve_dmat_TransIso.commonData.Dmat_RVE,"DISP_MACRO");
+      ElasticFEMethod_Dmat_input my_fe(m_field_Macro,A,D,Fint,0.0,0.0,calculate_rve_dmat_TransIso.commonData.Dmat_RVE,"DISP_MACRO");
+//        ElasticFEMethod_Dmat_input* my_fe_ptr = new ElasticFEMethod_Dmat_input(m_field_Macro,A,D,Fint,0.0,0.0,calculate_rve_dmat_TransIso.commonData.Dmat_RVE,"DISP_MACRO");
         //preproc
         ierr = m_field_Macro.problem_basic_method_preProcess("ELASTIC_PROBLEM_MACRO",my_dirichlet_bc); CHKERRQ(ierr);
 
@@ -494,7 +494,7 @@ int main(int argc, char *argv[]) {
         //      }
         
         //loop over macro elemnts to assemble A matrix and Fint vector
-        ierr = m_field_Macro.loop_finite_elements("ELASTIC_PROBLEM_MACRO","ELASTIC_FE_MACRO",*my_fe_ptr);  CHKERRQ(ierr);
+        ierr = m_field_Macro.loop_finite_elements("ELASTIC_PROBLEM_MACRO","ELASTIC_FE_MACRO",my_fe);  CHKERRQ(ierr);
         
         my_dirichlet_bc.snes_B=A;
         my_dirichlet_bc.snes_x = D;
@@ -537,7 +537,6 @@ int main(int argc, char *argv[]) {
         }
 
         ierr = KSPDestroy(&solver); CHKERRQ(ierr);
-        delete my_fe_ptr;
         PetscPrintf(PETSC_COMM_WORLD,"End of step %d\n",sit->get_step_number());
 //        string wait;
 //        cin>>wait;

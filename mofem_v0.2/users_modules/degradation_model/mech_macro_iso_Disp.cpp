@@ -231,7 +231,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field_RVE.print_cubit_materials_set(); CHKERRQ(ierr);
   
   
-  //====================================================================================================
+//  //====================================================================================================
   //  DEFINING MACRO PROBLEM
   //====================================================================================================
 
@@ -299,7 +299,7 @@ int main(int argc, char *argv[]) {
   }
 
   
-  
+
   //Calculate Dmat for each Guass point here
   Calculate_RVE_Dmat_iso_Disp calculate_rve_dmat(m_field_Macro);
   ierr = calculate_rve_dmat.addElasticElements("DISP_MACRO"); CHKERRQ(ierr);
@@ -376,8 +376,8 @@ int main(int argc, char *argv[]) {
   if( recorder_ptr->check_series("Wt_SERIES") ) {
     cout<<"============== Wt_SERIES exists =============== "<<endl;
     for(_IT_SERIES_STEPS_BY_NAME_FOR_LOOP_(recorder_ptr,"Wt_SERIES",sit)) {
-//      if(count%10==0){
-      if(count==100){
+      if(count%10==0){
+//      if(count<1){
         PetscPrintf(PETSC_COMM_WORLD,"Process step %d\n",sit->get_step_number());
         ierr = recorder_ptr->load_series_data("Wt_SERIES",sit->get_step_number()); CHKERRQ(ierr);
         
@@ -387,8 +387,7 @@ int main(int argc, char *argv[]) {
         
         //here pointer to object is used instead of object, because the pointer will be destroyed at the end of code before PetscFinalize to make sure all
         //its internal matrices and vectores are destroyed.
-        //      ElasticFEMethod_Dmat_input my_fe(m_field_Macro,A,D,Fint,0.0,0.0,calculate_rve_dmat.commonData.Dmat_RVE,"DISP_MACRO");
-        ElasticFEMethod_Dmat_input* my_fe_ptr = new ElasticFEMethod_Dmat_input(m_field_Macro,A,D,Fint,0.0,0.0,calculate_rve_dmat.commonData.Dmat_RVE,"DISP_MACRO");
+        ElasticFEMethod_Dmat_input my_fe(m_field_Macro,A,D,Fint,0.0,0.0,calculate_rve_dmat.commonData.Dmat_RVE,"DISP_MACRO");
         //preproc
         ierr = m_field_Macro.problem_basic_method_preProcess("ELASTIC_PROBLEM_MACRO",my_dirichlet_bc); CHKERRQ(ierr);
         
@@ -419,7 +418,7 @@ int main(int argc, char *argv[]) {
         //      }
         
         //loop over macro elemnts to assemble A matrix and Fint vector
-        ierr = m_field_Macro.loop_finite_elements("ELASTIC_PROBLEM_MACRO","ELASTIC_FE_MACRO",*my_fe_ptr);  CHKERRQ(ierr);
+        ierr = m_field_Macro.loop_finite_elements("ELASTIC_PROBLEM_MACRO","ELASTIC_FE_MACRO",my_fe);  CHKERRQ(ierr);
         
         my_dirichlet_bc.snes_B=A;
         my_dirichlet_bc.snes_x = D;
@@ -459,7 +458,6 @@ int main(int argc, char *argv[]) {
         rval = post_proc.postProcMesh.write_file(o1.str().c_str(),"MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
         
         ierr = KSPDestroy(&solver); CHKERRQ(ierr);
-        delete my_fe_ptr;
         PetscPrintf(PETSC_COMM_WORLD,"End of step %d\n",sit->get_step_number());
         //      string wait;
         //      cin>>wait;

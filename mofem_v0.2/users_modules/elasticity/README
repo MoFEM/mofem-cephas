@@ -9,6 +9,8 @@ Example Static (elastcity)
 
 mpirun -np 2 ./elasticity -my_file LShape.cub -ksp_type gmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 2
 
+mpirun -np 2 ./elasticity -my_file /mnt/home/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/Elastic_HOG/Plate_with_hole_HOG.cub -ksp_type gmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1 -my_max_post_proc_ref_level 0
+
 Example thermo-elasticity
 =========================
 
@@ -16,3 +18,11 @@ mpirun -np 2 ../thermal/thermal_unseady   -my_file heat_exchange.cub -ksp_type f
 
 mpirun -np 2 ./elasticity "-my_file" ../thermal/solution.h5m "-ksp_type" "fgmres" "-pc_type" "lu" "-pc_factor_mat_solver_package" "superlu_dist" -ksp_monitor -my_order 1 -my_max_post_proc_ref_level 2 -my_ref_temp -5
 
+
+
+All files conversion using script
+../degradation_model/do_vtk1.sh  out.h5m
+
+cp *.vtk /mnt/home/Desktop/results/
+
+rm *.vtk *.info *.h5m *.out
