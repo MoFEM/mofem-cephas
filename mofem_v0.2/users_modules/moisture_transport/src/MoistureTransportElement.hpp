@@ -65,8 +65,7 @@ struct MoistureTransportElement: public ThermalElement {
     
     // loop over all blocksets
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_MOISTURESET,it)) {
-      if(it->get_Cubit_name().compare(0,12,"MAT_MOISTURE") == 0){
-      if(it->get_name().compare(0,19,"MAT_MOISTURE") == 0){
+      if(it->get_name().compare(0,12,"MAT_MOISTURE") == 0) {
         Mat_Moisture diffusion_data;
         ierr = it->get_attribute_data_structure(diffusion_data); CHKERRQ(ierr);
           cout<<"====diffusion_data.data.Diffusivity = "<<diffusion_data.data.Diffusivity<<endl;
@@ -87,6 +86,7 @@ struct MoistureTransportElement: public ThermalElement {
         ierr = mField.add_ents_to_finite_element_by_TETs(setOfBlocks[it->get_msId()].tEts,"DIFFUSION_FE"); CHKERRQ(ierr);
       }
     }
+    
     PetscFunctionReturn(0);
   }
   

@@ -85,8 +85,8 @@ namespace MoFEM {
     //        std::cin >> wait;
     //cout<<"area "<<area << endl;
     
-    
-    for(int rr=0; rr<1; rr++){
+    for(int rr=0; rr<1; rr++) {
+
       for(int gg = 0;gg<g_TRI_dim;gg++) {
         double w = area*G_W_TRI[gg];
         
@@ -184,7 +184,10 @@ namespace MoFEM {
         ierr = VecSetValues(F6,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f.data())[0],ADD_VALUES); CHKERRQ(ierr);
       }
       
-      PetscFunctionReturn(0);
     }
+
+    PetscFunctionReturn(0);
+
   }
+
 }
