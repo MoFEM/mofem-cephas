@@ -140,9 +140,9 @@ namespace MoFEM {
           }
           
           
-          cout<<"&row_data.getIndices()[0] "<< endl;
-            for (int ii = nb_row,ii<nb_row; ii++) row_data.getIndices()[ii];
-          cout<<"&col_data.getIndices()[0] "<<&col_data.getIndices()[0]<<endl;
+//          cout<<"&row_data.getIndices()[0] "<< endl;
+//            for (int ii = nb_row,ii<nb_row; ii++) row_data.getIndices()[ii];
+//          cout<<"&col_data.getIndices()[0] "<<&col_data.getIndices()[0]<<endl;
 
           PetscErrorCode ierr;
           ierr = MatSetValues(

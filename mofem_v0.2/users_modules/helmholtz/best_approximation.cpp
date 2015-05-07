@@ -1,7 +1,7 @@
 /** \file best_approximation.cpp
   \ingroup mofem_helmholtz_elem
 
-  Calculates best approximation for incident wave problem. 
+  Calculates best approximation for incident wave problem.
 
  */
 
@@ -15,9 +15,9 @@
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
  * License for more details.
- *
+
  * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. 
+ * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <MoFEM.hpp>
@@ -50,24 +50,24 @@ static char help[] = "...\n\n";
 
 // argc = argument counts, argv = argument vectors
 int main(int argc, char *argv[]) {
-  
+
   ErrorCode rval;
   PetscErrorCode ierr;
-  
+
   PetscInitialize(&argc,&argv,(char *)0,help);
-  
+
   moab::Core mb_instance;
   Interface& moab = mb_instance;
   int rank;
   MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
-  
+
   PetscBool flg = PETSC_TRUE;
   char mesh_file_name[255];
   ierr = PetscOptionsGetString(PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
-  
+
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
@@ -77,38 +77,38 @@ int main(int argc, char *argv[]) {
     //Read mesh to MOAB
     const char *option;
     option = "PARALLEL=BCAST_DELETE;PARALLEL_RESOLVE_SHARED_ENTS;PARTITION=PARALLEL_PARTITION;";
-    rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
+    rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
   } else {
     const char *option;
     option = "";
-    rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
+    rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
   }
 
   // create MoFEM database
   MoFEM::Core core(moab);
   FieldInterface& m_field = core;
-  
+
   // count the comsumption of time by single run
   PetscLogDouble t1,t2;
   PetscLogDouble v1,v2;
   ierr = PetscTime(&v1); CHKERRQ(ierr);
   ierr = PetscGetCPUTime(&t1); CHKERRQ(ierr);
-  
+
   // set entitities bit level
   BitRefLevel bit_level0;
   bit_level0.set(0);
   EntityHandle meshset_level0;
   rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
   ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
-  
+
   // define fields
   ierr = m_field.add_field("reEX",H1,1); CHKERRQ(ierr);
   ierr = m_field.add_field("imEX",H1,1); CHKERRQ(ierr);
   ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,3,MF_ZERO); CHKERRQ(ierr);
-  
+
   // define finite element
   ierr = m_field.add_finite_element("FE1"); CHKERRQ(ierr);
-  
+
   // Define rows/cols and element data
   ierr = m_field.modify_finite_element_add_field_row("FE1","reEX"); CHKERRQ(ierr);
   ierr = m_field.modify_finite_element_add_field_col("FE1","reEX"); CHKERRQ(ierr);
@@ -122,16 +122,16 @@ int main(int argc, char *argv[]) {
     ierr = m_field.modify_finite_element_add_field_data("FE1","imPRES"); CHKERRQ(ierr);
 
   }
-  
+
   // meshset consisting all entities in mesh
-  EntityHandle root_set = moab.get_root_set(); 
+  EntityHandle root_set = moab.get_root_set();
   // add entities to field
   ierr = m_field.add_ents_to_field_by_TETs(root_set,"reEX"); CHKERRQ(ierr);
   ierr = m_field.add_ents_to_field_by_TETs(root_set,"imEX"); CHKERRQ(ierr);
   ierr = m_field.add_ents_to_field_by_TETs(root_set,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
   // add entities to finite element
   ierr = m_field.add_ents_to_finite_element_by_TETs(root_set,"FE1"); CHKERRQ(ierr);
-  
+
   // set app. order
   // see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
   int order = 3;
@@ -143,7 +143,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.set_field_order(root_set,MBTRI,"reEX",order); CHKERRQ(ierr);
   ierr = m_field.set_field_order(root_set,MBEDGE,"reEX",order); CHKERRQ(ierr);
   ierr = m_field.set_field_order(root_set,MBVERTEX,"reEX",1); CHKERRQ(ierr);
-  
+
   ierr = m_field.set_field_order(root_set,MBTET,"imEX",order); CHKERRQ(ierr);
   ierr = m_field.set_field_order(root_set,MBTRI,"imEX",order); CHKERRQ(ierr);
   ierr = m_field.set_field_order(root_set,MBEDGE,"imEX",order); CHKERRQ(ierr);
@@ -176,13 +176,13 @@ int main(int argc, char *argv[]) {
     ierr = m_field.build_partitioned_problem("EX1_PROBLEM",true); CHKERRQ(ierr);
     ierr = m_field.partition_finite_elements("EX1_PROBLEM",true); CHKERRQ(ierr);
   } else {
-    // if not partitioned mesh is load to all processes 
+    // if not partitioned mesh is load to all processes
     ierr = m_field.build_problem("EX1_PROBLEM"); CHKERRQ(ierr);
     ierr = m_field.partition_problem("EX1_PROBLEM"); CHKERRQ(ierr);
     ierr = m_field.partition_finite_elements("EX1_PROBLEM"); CHKERRQ(ierr);
   }
   ierr = m_field.partition_ghost_dofs("EX1_PROBLEM"); CHKERRQ(ierr);
-  
+
   PetscBool wavenumber_flg;
   double wavenumber;
   // set wave number from line command, that overwrite numbre form block set
@@ -207,18 +207,18 @@ int main(int argc, char *argv[]) {
   if(nmax > 0 && nmax != 3) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"*** ERROR -wave_direction [3*1 vector] default:X direction [0,0,1]");
   }
-  
+
   PetscInt choise_value = 0;
-  // set type of analytical solution  
+  // set type of analytical solution
   ierr = PetscOptionsGetEList(NULL,"-analytical_solution_type",analytical_solution_types,6,&choise_value,&flg); CHKERRQ(ierr);
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -analytical_solution_type needed, WARNING!!!!!!.");
   }
-    
+
   switch((AnalyticalSolutionTypes)choise_value) {
-    
+
     case HARD_SPHERE_SCATTER_WAVE:
-    
+
       {
 
 	double scattering_sphere_radius = 1;;
@@ -227,10 +227,10 @@ int main(int argc, char *argv[]) {
 	HardSphereScatterWave function_evaluator(wavenumber,scattering_sphere_radius);
 	ierr = solve_problem(m_field,"EX1_PROBLEM","FE1","reEX","imEX",INSERT_VALUES,function_evaluator,is_partitioned); CHKERRQ(ierr);
       }
-    
+
       break;
-      
-      
+
+
     case SOFT_SPHERE_SCATTER_WAVE:
 
       {
@@ -250,25 +250,25 @@ int main(int argc, char *argv[]) {
 	double angle = 0.25;
 	// set wave number from line command, that overwrite numbre form block set
 	ierr = PetscOptionsGetScalar(NULL,"-wave_guide_angle",&angle,NULL); CHKERRQ(ierr);
- 
+
         PlaneWave function_evaluator(wavenumber,angle*M_PI);
         ierr = solve_problem(m_field,"EX1_PROBLEM","FE1","reEX","imEX",INSERT_VALUES,function_evaluator,is_partitioned); CHKERRQ(ierr);
       }
 
     break;
-      
+
     case HARD_CYLINDER_SCATTER_WAVE:
-      
-      {  
+
+      {
         HardCylinderScatterWave function_evaluator(wavenumber);
         ierr = solve_problem(m_field,"EX1_PROBLEM","FE1","reEX","imEX",INSERT_VALUES,function_evaluator,is_partitioned); CHKERRQ(ierr);
       }
-      
+
     break;
 
     case SOFT_CYLINDER_SCATTER_WAVE:
 
-      {  
+      {
         SoftCylinderScatterWave function_evaluator(wavenumber);
         ierr = solve_problem(m_field,"EX1_PROBLEM","FE1","reEX","imEX",INSERT_VALUES,function_evaluator,is_partitioned); CHKERRQ(ierr);
       }
@@ -277,7 +277,7 @@ int main(int argc, char *argv[]) {
 
     case INCIDENT_WAVE:
 
-      {  
+      {
         IncidentWave function_evaluator(wavenumber,wave_direction);
         ierr = solve_problem(m_field,"EX1_PROBLEM","FE1","reEX","imEX",INSERT_VALUES,function_evaluator,is_partitioned); CHKERRQ(ierr);
       }
@@ -286,7 +286,7 @@ int main(int argc, char *argv[]) {
 
     default:
 
-	SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"No analytical solution has been defined");
+	   SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"No analytical solution has been defined");
 
   }
 
@@ -298,7 +298,7 @@ int main(int argc, char *argv[]) {
     ierr = solve_problem(m_field,"EX1_PROBLEM","FE1","reEX","imEX",ADD_VALUES,function_evaluator,is_partitioned); CHKERRQ(ierr);
 
   }
- 
+
   if(is_partitioned) {
     rval = moab.write_file("best_solution.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
   } else {
@@ -307,7 +307,6 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  
   PetscBool save_postproc_mesh = PETSC_FALSE;
   ierr = PetscOptionsGetBool(NULL,"-save_postproc_mesh",&save_postproc_mesh,NULL); CHKERRQ(ierr);
   if(save_postproc_mesh) {
@@ -327,20 +326,14 @@ int main(int argc, char *argv[]) {
     rval = post_proc.postProcMesh.write_file("best_solution_mesh_post_proc.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
 
   }
-  
+
   // calulate total time
   ierr = PetscTime(&v2);CHKERRQ(ierr);
   ierr = PetscGetCPUTime(&t2);CHKERRQ(ierr);
   PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Total Rank %d Time = %f S CPU Time = %f S \n",pcomm->rank(),v2-v1,t2-t1);
-  
+
   ierr = PetscFinalize(); CHKERRQ(ierr);
-  
+
   return 0;
 
 }
-
- 
-
-
-
-

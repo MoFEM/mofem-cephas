@@ -1,7 +1,7 @@
 # Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
-# The MoFEM package is copyrighted by Lukasz Kaczmarczyk. 
-# It can be freely used for educational and research purposes 
-# by other institutions. If you use this softwre pleas cite my work. 
+# The MoFEM package is copyrighted by Lukasz Kaczmarczyk.
+# It can be freely used for educational and research purposes
+# by other institutions. If you use this softwre pleas cite my work.
 #
 # MoFEM is free software: you can redistribute it and/or modify it under
 # the terms of the GNU Lesser General Public License as published by the
@@ -18,7 +18,12 @@
 
 if(ADOL-C_LIBRARY)
 
-  add_executable(convective_matrix 
+  find_program(GSED NAMES gsed sed)
+  if(NOT GSED)
+    message(FATAL_ERROR gsed/sed not found)
+  endif (NOT GSED)
+
+  add_executable(convective_matrix
     ${UM_SOURCE_DIR}/convective_mass_element/atom_tests/convective_matrix.cpp)
 
   target_link_libraries(convective_matrix
@@ -45,10 +50,8 @@ if(ADOL-C_LIBRARY)
 
   cm_export_file("LShape.cub" export_files_convective_matrix)
   add_test(convective_matrix convective_matrix.sh)
-  add_test(convective_matrix_compare ${CMAKE_COMMAND} -E compare_files 
-    ${CMAKE_SOURCE_DIR}/convective_mass_element/atom_tests/blessed_files/convective_matrix.txt 
+  add_test(convective_matrix_compare ${CMAKE_COMMAND} -E compare_files
+    ${CMAKE_SOURCE_DIR}/convective_mass_element/atom_tests/blessed_files/convective_matrix.txt
     ${CMAKE_BINARY_DIR}/convective_mass_element/atom_tests/convective_matrix.txt)
 
 endif(ADOL-C_LIBRARY)
-
-

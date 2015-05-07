@@ -45,7 +45,7 @@ using namespace boost::numeric;
 
 namespace ObosleteUsersModules {
 
-const int debug_constrains = 1;
+//const int debug_constrains = 1;
 
 PetscErrorCode ConstrainSurfacGeometry::preProcess() {
   PetscFunctionBegin;

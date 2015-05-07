@@ -15,11 +15,11 @@
 include_directories("${UM_SOURCE_DIR}/elasticity/src")
 include_directories("${UM_SOURCE_DIR}/nonlinear_elastic_materials/src")
 
-add_executable(elasticity 
+add_executable(elasticity
   ${UM_SOURCE_DIR}/elasticity/elasticity.cpp
   ${UM_SOURCE_DIR}/elasticity/src/impl/PCMGSetUpViaApproxOrders.cpp
 )
-target_link_libraries(elasticity 
+target_link_libraries(elasticity
   mofem_finite_element_library
   mofem_finite_elements
   mofem_interfaces
@@ -44,7 +44,7 @@ target_link_libraries(elasticity_old
   mofem_cblas
   ${MoFEM_PROJECT_LIBS})
 
-cm_export_file("LShape.cub" export_files_elasticity)
+cm_export_file("LShape.h5m" export_files_elasticity)
 cm_export_file("LShape2Parts.h5m" export_files_elasticity)
 
 file(COPY
@@ -52,23 +52,22 @@ file(COPY
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
 
 #testing
-add_test(ElasticityTest 
-  ${MoFEM_MPI_RUN} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/elasticity 
-  -my_file LShape.cub 
-  -ksp_type fgmres 
-  -pc_type lu 
+add_test(ElasticityTest
+  ${MoFEM_MPI_RUN} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/elasticity
+  -my_file LShape.h5m
+  -ksp_type fgmres
+  -pc_type lu
   -pc_factor_mat_solver_package mumps
   -ksp_monitor -log_summary)
 
 add_test(MultiGridViaOrderSolver
-  ${MoFEM_MPI_RUN} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/elasticity 
+  ${MoFEM_MPI_RUN} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/elasticity
   -my_file LShape2Parts.h5m -my_is_partitioned
-  -ksp_type fgmres -ksp_monitor 
+  -ksp_type fgmres -ksp_monitor
   -my_order 4
-  -pc_type mg 
+  -pc_type mg
   -mofem_mg_verbose 1 -mofem_mg_coarse_order 2 -mofem_mg_levels 3
   -mg_coarse_ksp_type preonly -mg_coarse_pc_type lu -mg_coarse_pc_factor_mat_solver_package mumps
-  -pc_mg_smoothup 10 -pc_mg_smoothdown 10 
+  -pc_mg_smoothup 10 -pc_mg_smoothdown 10
   -pc_mg_galerkin true -pc_mg_type multiplicative
   -log_summary)
-

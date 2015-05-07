@@ -155,8 +155,8 @@ int main(int argc, char *argv[]) {
 		fibreList[aa] = aa + 1;
 	}
   
-	Range RangeFibre[noOfFibres];
-	EntityHandle fibre_meshset[noOfFibres];
+	vector<Range> RangeFibre(noOfFibres);
+	vector<EntityHandle> fibre_meshset(noOfFibres);
 	
 	for (int ii=0; ii<noOfFibres; ii++) {
 		ostringstream sss;

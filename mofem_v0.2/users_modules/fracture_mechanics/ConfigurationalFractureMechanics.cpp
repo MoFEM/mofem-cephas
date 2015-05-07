@@ -1,8 +1,3 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
- * FIXME: DESCRIPTION
- */
-
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -1618,11 +1613,11 @@ PetscErrorCode ConfigurationalFractureMechanics::constrains_partition_problems(F
   PetscErrorCode ierr;
 
   //partition
-  ierr = m_field.simple_partition_problem("CCT_ALL_MATRIX",0); CHKERRQ(ierr);
+  ierr = m_field.partition_simple_problem("CCT_ALL_MATRIX",0); CHKERRQ(ierr);
   ierr = m_field.partition_finite_elements("CCT_ALL_MATRIX"); CHKERRQ(ierr);
   ierr = m_field.partition_ghost_dofs("CCT_ALL_MATRIX"); CHKERRQ(ierr);
   //partition
-  ierr = m_field.compose_problem("C_ALL_MATRIX","CCT_ALL_MATRIX",false,problem,true); CHKERRQ(ierr);
+  ierr = m_field.partition_compose_problem("C_ALL_MATRIX","CCT_ALL_MATRIX",false,problem,true); CHKERRQ(ierr);
   ierr = m_field.partition_finite_elements("C_ALL_MATRIX"); CHKERRQ(ierr);
   ierr = m_field.partition_ghost_dofs("C_ALL_MATRIX"); CHKERRQ(ierr);
 
@@ -1635,11 +1630,11 @@ PetscErrorCode ConfigurationalFractureMechanics::crackfront_partition_problems(F
   PetscErrorCode ierr;
 
   //partition
-  ierr = m_field.simple_partition_problem("CTC_CRACKFRONT_MATRIX",0); CHKERRQ(ierr);
+  ierr = m_field.partition_simple_problem("CTC_CRACKFRONT_MATRIX",0); CHKERRQ(ierr);
   ierr = m_field.partition_finite_elements("CTC_CRACKFRONT_MATRIX"); CHKERRQ(ierr);
   ierr = m_field.partition_ghost_dofs("CTC_CRACKFRONT_MATRIX"); CHKERRQ(ierr);
   //partition
-  ierr = m_field.compose_problem("C_CRACKFRONT_MATRIX","CTC_CRACKFRONT_MATRIX",false,problem,true); CHKERRQ(ierr);
+  ierr = m_field.partition_compose_problem("C_CRACKFRONT_MATRIX","CTC_CRACKFRONT_MATRIX",false,problem,true); CHKERRQ(ierr);
   ierr = m_field.partition_finite_elements("C_CRACKFRONT_MATRIX"); CHKERRQ(ierr);
   ierr = m_field.partition_ghost_dofs("C_CRACKFRONT_MATRIX"); CHKERRQ(ierr);
 
