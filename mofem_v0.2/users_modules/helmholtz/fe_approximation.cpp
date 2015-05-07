@@ -445,9 +445,15 @@ int main(int argc, char *argv[]) {
       for(;mit!=planeWaveScatterData.end();mit++) {
 
         // note negative field, scatter field should cancel incident wave
-        boost::shared_ptr<IncidentWave> function_evaluator = boost::shared_ptr<IncidentWave>(new IncidentWave(wavenumber,wave_direction,-power_of_incident_wave));
-        ierr = analytical_bc_real.setApproxOps(m_field,"rePRES",mit->second.tRis,function_evaluator,GenericAnalyticalSolution::REAL); CHKERRQ(ierr);
-        ierr = analytical_bc_imag.setApproxOps(m_field,"imPRES",mit->second.tRis,function_evaluator,GenericAnalyticalSolution::IMAG); CHKERRQ(ierr);
+        boost::shared_ptr<IncidentWave> function_evaluator = boost::shared_ptr<IncidentWave>(
+          new IncidentWave(wavenumber,wave_direction,-power_of_incident_wave)
+        );
+        ierr = analytical_bc_real.setApproxOps(
+          m_field,"rePRES",mit->second.tRis,function_evaluator,GenericAnalyticalSolution::REAL
+        ); CHKERRQ(ierr);
+        ierr = analytical_bc_imag.setApproxOps(
+          m_field,"imPRES",mit->second.tRis,function_evaluator,GenericAnalyticalSolution::IMAG
+        ); CHKERRQ(ierr);
 
       }
 
@@ -457,8 +463,12 @@ int main(int argc, char *argv[]) {
     ierr = analytical_bc_real.setProblem(m_field,"BCREAL_PROBLEM"); CHKERRQ(ierr);
     ierr = analytical_bc_imag.setProblem(m_field,"BCIMAG_PROBLEM"); CHKERRQ(ierr);
 
-    ierr = analytical_bc_real.solveProblem(m_field,"BCREAL_PROBLEM","BCREAL_FE",analytical_ditihlet_bc_real,bc_dirichlet_tris); CHKERRQ(ierr);
-    ierr = analytical_bc_imag.solveProblem(m_field,"BCIMAG_PROBLEM","BCIMAG_FE",analytical_ditihlet_bc_imag,bc_dirichlet_tris); CHKERRQ(ierr);
+    ierr = analytical_bc_real.solveProblem(
+      m_field,"BCREAL_PROBLEM","BCREAL_FE",analytical_ditihlet_bc_real,bc_dirichlet_tris
+    ); CHKERRQ(ierr);
+    ierr = analytical_bc_imag.solveProblem(
+      m_field,"BCIMAG_PROBLEM","BCIMAG_FE",analytical_ditihlet_bc_imag,bc_dirichlet_tris
+    ); CHKERRQ(ierr);
 
     ierr = analytical_bc_real.destroyProblem(); CHKERRQ(ierr);
     ierr = analytical_bc_imag.destroyProblem(); CHKERRQ(ierr);

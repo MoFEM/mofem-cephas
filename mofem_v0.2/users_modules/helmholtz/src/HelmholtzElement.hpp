@@ -537,7 +537,6 @@ struct HelmholtzElement {
 
   };
 
-
   struct ZeroFunVal {
 
     ublas::vector<double> vAl;
@@ -551,8 +550,6 @@ struct HelmholtzElement {
 
   };
   ZeroFunVal zeroFunVal;
-
-
 
   struct BaylissTurkel {
 

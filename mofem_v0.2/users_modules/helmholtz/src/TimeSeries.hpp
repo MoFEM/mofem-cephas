@@ -324,7 +324,9 @@ struct TimeSeries {
       ierr = VecGhostUpdateBegin(pSeriesImag[k],INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
       ierr = VecGhostUpdateEnd(pSeriesImag[k],INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
-      ierr = mField.set_local_ghost_vector("PRESSURE_IN_TIME",ROW,pSeriesReal[k],INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      ierr = mField.set_local_ghost_vector(
+        "PRESSURE_IN_TIME",ROW,pSeriesReal[k],INSERT_VALUES,SCATTER_REVERSE
+      ); CHKERRQ(ierr);
       ierr = mField.loop_finite_elements("PRESSURE_IN_TIME","PRESSURE_FE",post_proc); CHKERRQ(ierr);
 
       {
@@ -334,7 +336,9 @@ struct TimeSeries {
         PetscPrintf(PETSC_COMM_WORLD,"Saved %s\n",ss.str().c_str());
       }
 
-      ierr = mField.set_local_ghost_vector("PRESSURE_IN_TIME",ROW,pSeriesImag[k],INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      ierr = mField.set_local_ghost_vector(
+        "PRESSURE_IN_TIME",ROW,pSeriesImag[k],INSERT_VALUES,SCATTER_REVERSE
+      ); CHKERRQ(ierr);
       ierr = mField.loop_finite_elements("PRESSURE_IN_TIME","PRESSURE_FE",post_proc); CHKERRQ(ierr);
 
       {
