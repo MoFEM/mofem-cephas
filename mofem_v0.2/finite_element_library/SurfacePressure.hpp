@@ -1,13 +1,8 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
- *
- * Description: FIXME
- *
- * This is not exactly procedure for linear elatic dynamics, since jacobian is
- * evaluated at every time step and snes procedure is involved. However it is
- * implemented like that, to test methodology for general nonlinear problem.
- *
- */
+/* \fiele SurfacePressure.hpp
+  \brief Implementation of pressure and forces on triangles surface
+
+*/
+
 
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
@@ -44,7 +39,7 @@ struct MethodsForOp {
     }
     PetscFunctionReturn(0);
   }
-  
+
   virtual ~MethodsForOp() {}
 
 };
@@ -56,8 +51,8 @@ struct NeummanForcesSurface {
 
   FieldInterface &mField;
 
-  struct MyTriangleFE: public TriElementForcesAndSurcesCore {
-    MyTriangleFE(FieldInterface &_mField): TriElementForcesAndSurcesCore(_mField) {}
+  struct MyTriangleFE: public FaceElementForcesAndSourcesCore {
+    MyTriangleFE(FieldInterface &_mField): FaceElementForcesAndSourcesCore(_mField) {}
     int getRule(int order) { return order; };
   };
 
@@ -81,7 +76,7 @@ struct NeummanForcesSurface {
 
   boost::ptr_vector<MethodsForOp> methodsOp;
 
-  struct OpNeumannForce: public TriElementForcesAndSurcesCore::UserDataOperator {
+  struct OpNeumannForce: public FaceElementForcesAndSourcesCore::UserDataOperator {
 
     Vec &F;
     bCForce &dAta;
@@ -89,7 +84,7 @@ struct NeummanForcesSurface {
 
     OpNeumannForce(const string field_name,Vec &_F,bCForce &data,
       boost::ptr_vector<MethodsForOp> &methods_op):
-      TriElementForcesAndSurcesCore::UserDataOperator(field_name),
+      FaceElementForcesAndSourcesCore::UserDataOperator(field_name),
       F(_F),dAta(data),methodsOp(methods_op) {}
 
     ublas::vector<FieldData> Nf;
@@ -107,55 +102,53 @@ struct NeummanForcesSurface {
       const FENumeredDofMoFEMEntity *dof_ptr;
       ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
       int rank = dof_ptr->get_max_rank();
-
       int nb_row_dofs = data.getIndices().size()/rank;
-      
+
       Nf.resize(data.getIndices().size());
-      bzero(&*Nf.data().begin(),data.getIndices().size()*sizeof(FieldData));
+      Nf.clear();
 
-      for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
+      for (unsigned int gg = 0;gg<data.getN().size1();gg++) {
 
-	double val = getArea()*getGaussPts()(2,gg);
-	for(int rr = 0;rr<rank;rr++) {
+        double val = getArea()*getGaussPts()(2,gg);
+        for (int rr = 0;rr<rank;rr++) {
 
-	  double force;
-	  if(rr == 0) {
-	    force = dAta.data.data.value3;
-	  } else if(rr == 1) {
-	    force = dAta.data.data.value4;
-	  } else if(rr == 2) {
-	    force = dAta.data.data.value5;
-	  } else {
-	    SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-	  }
-	  force *= dAta.data.data.value1;
-	  cblas_daxpy(nb_row_dofs,val*force,&data.getN()(gg,0),1,&Nf[rr],rank);
+          double force;
+          if(rr == 0) {
+            force = dAta.data.data.value3;
+          } else if(rr == 1) {
+            force = dAta.data.data.value4;
+          } else if(rr == 2) {
+            force = dAta.data.data.value5;
+          } else {
+            SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+          }
+          force *= dAta.data.data.value1;
+          cblas_daxpy(nb_row_dofs,val*force,&data.getN()(gg,0),1,&Nf[rr],rank);
 
-	}
+        }
 
       }
 
-      ierr = MethodsForOp::applyScale(getFEMethod(),methodsOp,Nf); CHKERRQ(ierr);
-      ierr = VecSetValues(F,data.getIndices().size(),
-	&data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
+      ierr = MethodsForOp::applyScale(getFEMethod(), methodsOp, Nf); CHKERRQ(ierr);
+      ierr = VecSetValues(F,data.getIndices().size(), &data.getIndices()[0], &Nf[0], ADD_VALUES); CHKERRQ(ierr);
 
       PetscFunctionReturn(0);
     }
 
   };
 
-  struct OpNeumannPreassure:public TriElementForcesAndSurcesCore::UserDataOperator {
+  struct OpNeumannPreassure:public FaceElementForcesAndSourcesCore::UserDataOperator {
 
     Vec &F;
     bCPreassure &dAta;
     boost::ptr_vector<MethodsForOp> &methodsOp;
-    bool ho_geometry;
+    bool hoGeometry;
 
     OpNeumannPreassure(const string field_name,Vec &_F,
       bCPreassure &data,boost::ptr_vector<MethodsForOp> &methods_op,
-      bool _ho_geometry = false):
-      TriElementForcesAndSurcesCore::UserDataOperator(field_name),
-      F(_F),dAta(data),methodsOp(methods_op),ho_geometry(_ho_geometry) {}
+      bool ho_geometry = false):
+      FaceElementForcesAndSourcesCore::UserDataOperator(field_name),
+      F(_F),dAta(data),methodsOp(methods_op),hoGeometry(ho_geometry) {}
 
     ublas::vector<FieldData> Nf;
 
@@ -173,7 +166,7 @@ struct NeummanForcesSurface {
       int rank = dof_ptr->get_max_rank();
 
       int nb_row_dofs = data.getIndices().size()/rank;
-      
+
       Nf.resize(data.getIndices().size());
       bzero(&*Nf.data().begin(),data.getIndices().size()*sizeof(FieldData));
 
@@ -182,45 +175,45 @@ struct NeummanForcesSurface {
 
       for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
 
-	double val = getGaussPts()(2,gg);
-	for(int rr = 0;rr<rank;rr++) {
+        double val = getGaussPts()(2,gg);
+        for(int rr = 0;rr<rank;rr++) {
 
-	  double force;
-	  if(ho_geometry) {
-	    force = dAta.data.data.value1*getNormals_at_GaussPt()(gg,rr);
-	  } else {
-	    force = dAta.data.data.value1*getNormal()[rr];
-	  }
-	  cblas_daxpy(nb_row_dofs,0.5*val*force,&data.getN()(gg,0),1,&Nf[rr],rank);
+          double force;
+          if(hoGeometry) {
+            force = dAta.data.data.value1*getNormals_at_GaussPt()(gg,rr);
+          } else {
+            force = dAta.data.data.value1*getNormal()[rr];
+          }
+          cblas_daxpy(nb_row_dofs,0.5*val*force,&data.getN()(gg,0),1,&Nf[rr],rank);
 
-	}
+        }
 
       }
-    
+
       /*cerr << "VecSetValues\n";
       cerr << Nf << endl;
       cerr << data.getIndices() << endl;*/
       ierr = MethodsForOp::applyScale(getFEMethod(),methodsOp,Nf); CHKERRQ(ierr);
       ierr = VecSetValues(F,data.getIndices().size(),
-	&data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
+	      &data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
 
       PetscFunctionReturn(0);
     }
 
   };
 
-  struct OpNeumannPreassureFlux:public TriElementForcesAndSurcesCore::UserDataOperator {
+  struct OpNeumannPreassureFlux:public FaceElementForcesAndSourcesCore::UserDataOperator {
 
     Vec &F;
     bCPreassure &dAta;
     boost::ptr_vector<MethodsForOp> &methodsOp;
-    bool ho_geometry;
+    bool hoGeometry;
 
     OpNeumannPreassureFlux(const string field_name,Vec &_F,
       bCPreassure &data,boost::ptr_vector<MethodsForOp> &methods_op,
-      bool _ho_geometry = false):
-      TriElementForcesAndSurcesCore::UserDataOperator(field_name),
-      F(_F),dAta(data),methodsOp(methods_op),ho_geometry(_ho_geometry) {}
+      bool ho_geometry = false):
+      FaceElementForcesAndSourcesCore::UserDataOperator(field_name),
+      F(_F),dAta(data),methodsOp(methods_op),hoGeometry(ho_geometry) {}
 
     ublas::vector<FieldData> Nf;
 
@@ -238,33 +231,31 @@ struct NeummanForcesSurface {
       int rank = dof_ptr->get_max_rank();
 
       int nb_row_dofs = data.getIndices().size()/rank;
-      
-      Nf.resize(data.getIndices().size());
-      bzero(&*Nf.data().begin(),data.getIndices().size()*sizeof(FieldData));
 
+      Nf.resize(data.getIndices().size());
+      Nf.clear();
       //cerr << getNormal() << endl;
       //cerr << getNormals_at_GaussPt() << endl;
 
       for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
 
-	double val = getGaussPts()(2,gg);
-	double flux;
-	if(ho_geometry) {
-	  double area = cblas_dnrm2(3,&getNormals_at_GaussPt()(gg,0),1);
-	  flux = dAta.data.data.value1*area;
-	} else {
-	  flux = dAta.data.data.value1*getArea();
-	}
-	cblas_daxpy(nb_row_dofs,val*flux,&data.getN()(gg,0),1,&*Nf.data().begin(),1);
+        double val = getGaussPts()(2,gg);
+        double flux;
+        if(hoGeometry) {
+          double area = cblas_dnrm2(3,&getNormals_at_GaussPt()(gg,0),1);
+          flux = dAta.data.data.value1*area;
+        } else {
+          flux = dAta.data.data.value1*getArea();
+        }
+        cblas_daxpy(nb_row_dofs,val*flux,&data.getN()(gg,0),1,&*Nf.data().begin(),1);
 
       }
-    
+
       //cerr << "VecSetValues\n";
       //cerr << Nf << endl;
       //cerr << data.getIndices() << endl;
-      ierr = MethodsForOp::applyScale(getFEMethod(),methodsOp,Nf); CHKERRQ(ierr);
-      ierr = VecSetValues(F,data.getIndices().size(),
-	&data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
+      ierr = MethodsForOp::applyScale(getFEMethod(), methodsOp, Nf); CHKERRQ(ierr);
+      ierr = VecSetValues(F, data.getIndices().size(), &data.getIndices()[0], &Nf[0], ADD_VALUES); CHKERRQ(ierr);
 
       PetscFunctionReturn(0);
     }
@@ -278,9 +269,9 @@ struct NeummanForcesSurface {
     ErrorCode rval;
     const CubitMeshSets *cubit_meshset_ptr;
     ierr = mField.get_cubit_msId(ms_id,NODESET,&cubit_meshset_ptr); CHKERRQ(ierr);
-    ierr = cubit_meshset_ptr->get_cubit_bc_data_structure(mapForce[ms_id].data); CHKERRQ(ierr);
+    ierr = cubit_meshset_ptr->get_bc_data_structure(mapForce[ms_id].data); CHKERRQ(ierr);
     rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBTRI,mapForce[ms_id].tRis,true); CHKERR_PETSC(rval);
-    fe.get_op_to_do_Rhs().push_back(new OpNeumannForce(field_name,F,mapForce[ms_id],methodsOp));
+    fe.getRowOpPtrVector().push_back(new OpNeumannForce(field_name,F,mapForce[ms_id],methodsOp));
     PetscFunctionReturn(0);
   }
 
@@ -290,9 +281,9 @@ struct NeummanForcesSurface {
     ErrorCode rval;
     const CubitMeshSets *cubit_meshset_ptr;
     ierr = mField.get_cubit_msId(ms_id,SIDESET,&cubit_meshset_ptr); CHKERRQ(ierr);
-    ierr = cubit_meshset_ptr->get_cubit_bc_data_structure(mapPreassure[ms_id].data); CHKERRQ(ierr);
+    ierr = cubit_meshset_ptr->get_bc_data_structure(mapPreassure[ms_id].data); CHKERRQ(ierr);
     rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBTRI,mapPreassure[ms_id].tRis,true); CHKERR_PETSC(rval);
-    fe.get_op_to_do_Rhs().push_back(new OpNeumannPreassure(field_name,F,mapPreassure[ms_id],methodsOp,ho_geometry));
+    fe.getRowOpPtrVector().push_back(new OpNeumannPreassure(field_name,F,mapPreassure[ms_id],methodsOp,ho_geometry));
     PetscFunctionReturn(0);
   }
 
@@ -302,13 +293,13 @@ struct NeummanForcesSurface {
     ErrorCode rval;
     const CubitMeshSets *cubit_meshset_ptr;
     ierr = mField.get_cubit_msId(ms_id,SIDESET,&cubit_meshset_ptr); CHKERRQ(ierr);
-    ierr = cubit_meshset_ptr->get_cubit_bc_data_structure(mapPreassure[ms_id].data); CHKERRQ(ierr);
+    ierr = cubit_meshset_ptr->get_bc_data_structure(mapPreassure[ms_id].data); CHKERRQ(ierr);
     rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBTRI,mapPreassure[ms_id].tRis,true); CHKERR_PETSC(rval);
-    fe.get_op_to_do_Rhs().push_back(new OpNeumannPreassureFlux(field_name,F,mapPreassure[ms_id],methodsOp,ho_geometry));
+    fe.getRowOpPtrVector().push_back(new OpNeumannPreassureFlux(field_name,F,mapPreassure[ms_id],methodsOp,ho_geometry));
     PetscFunctionReturn(0);
   }
 
-  
+
 
 };
 
@@ -329,7 +320,6 @@ struct MetaNeummanForces {
     if(mField.check_field(mesh_nodals_positions)) {
       ierr = mField.modify_finite_element_add_field_data("FORCE_FE",mesh_nodals_positions); CHKERRQ(ierr);
     }
-    
 
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET|FORCESET,it)) {
       Range tris;
@@ -353,7 +343,7 @@ struct MetaNeummanForces {
     PetscFunctionReturn(0);
   }
 
-  static PetscErrorCode setNeumannFiniteElementOperators( 
+  static PetscErrorCode setNeumannFiniteElementOperators(
     FieldInterface &mField,
     boost::ptr_map<string,NeummanForcesSurface> &neumann_forces,
     Vec &F,const string field_name,const string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
@@ -365,7 +355,7 @@ struct MetaNeummanForces {
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET|FORCESET,it)) {
       ierr = neumann_forces.at(fe_name).addForce(field_name,F,it->get_msId());  CHKERRQ(ierr);
       /*ForceCubitBcData data;
-      ierr = it->get_cubit_bc_data_structure(data); CHKERRQ(ierr);
+      ierr = it->get_bc_data_structure(data); CHKERRQ(ierr);
       my_split << *it << endl;
       my_split << data << endl;*/
     }
@@ -375,7 +365,7 @@ struct MetaNeummanForces {
       bool ho_geometry = mField.check_field(mesh_nodals_positions);
       ierr =  neumann_forces.at(fe_name).addPreassure(field_name,F,it->get_msId(),ho_geometry); CHKERRQ(ierr);
       /*PressureCubitBcData data;
-      ierr = it->get_cubit_bc_data_structure(data); CHKERRQ(ierr);
+      ierr = it->get_bc_data_structure(data); CHKERRQ(ierr);
       my_split << *it << endl;
       my_split << data << endl;*/
     }
@@ -407,7 +397,7 @@ struct MetaNeummanForces {
     PetscFunctionReturn(0);
   }
 
-  static PetscErrorCode setNeumannFluxFiniteElementOperators( 
+  static PetscErrorCode setNeumannFluxFiniteElementOperators(
     FieldInterface &mField,
     boost::ptr_map<string,NeummanForcesSurface> &neumann_forces,
     Vec &F,const string field_name,const string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
@@ -420,7 +410,7 @@ struct MetaNeummanForces {
       bool ho_geometry = mField.check_field(mesh_nodals_positions);
       ierr = neumann_forces.at(fe_name).addFlux(field_name,F,it->get_msId(),ho_geometry); CHKERRQ(ierr);
       /*PressureCubitBcData data;
-      ierr = it->get_cubit_bc_data_structure(data); CHKERRQ(ierr);
+      ierr = it->get_bc_data_structure(data); CHKERRQ(ierr);
       my_split << *it << endl;
       my_split << data << endl;*/
     }
@@ -436,7 +426,5 @@ struct MetaNeummanForces {
 
 /***************************************************************************//**
  * \defgroup mofem_static_boundary_conditions Pressure and force boundary conditions
- * \ingroup mofem_forces_and_sources 
+ * \ingroup mofem_forces_and_sources
  ******************************************************************************/
-
-

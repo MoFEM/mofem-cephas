@@ -1,7 +1,7 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
- * FIXME: DESCRIPTION
- */
+/** \file arc_length_interface.cpp
+  * \brief Example of arc-length with witerface element
+
+*/
 
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
@@ -51,13 +51,13 @@ using namespace MoFEM;
 #include <ElasticFEMethod.hpp>
 
 //Use this below if you need to use old (obsolte) method you implement
-//interface element. New element can work with highet order geometry and is
-//much easier to extent to new material models
+//interface element. New element can work with higher order geometry and is
+//much easier to extend to new material models
 //#define OLDINTERFACEMETHOD
 #ifdef OLDINTERFACEMETHOD
   #include <ElasticFEMethodInterface.hpp>
   #include <NonLinearFEMethodInterface.hpp>
-#endif 
+#endif
 
 using namespace boost::numeric;
 using namespace ObosleteUsersModules;
@@ -75,7 +75,7 @@ const double poisson_ratio = 0.0;
 struct MyArcLengthIntElemFEMethod: public ArcLengthIntElemFEMethod {
   FieldInterface& m_field;
   Range PostProcNodes;
-  MyArcLengthIntElemFEMethod(FieldInterface& _m_field,ArcLengthCtx *_arc_ptr): 
+  MyArcLengthIntElemFEMethod(FieldInterface& _m_field,ArcLengthCtx *_arc_ptr):
     ArcLengthIntElemFEMethod(_m_field.get_moab(),_arc_ptr),m_field(_m_field) {
 
     for(_IT_CUBITMESHSETS_BY_NAME_FOR_LOOP_(m_field,"LoadPath",cit)) {
@@ -120,7 +120,7 @@ struct MyArcLengthIntElemFEMethod: public ArcLengthIntElemFEMethod {
 };
 
 struct MyPrePostProcessFEMethodRhs: public FEMethod {
-  
+
   FieldInterface& m_field;
   Vec &F_body_force;
   ArcLengthCtx *arc_ptr;
@@ -131,53 +131,53 @@ struct MyPrePostProcessFEMethodRhs: public FEMethod {
     arc_ptr(_arc_ptr) {}
 
   PetscErrorCode ierr;
-    
-    PetscErrorCode preProcess() {
-      PetscFunctionBegin;
-      
-	//PetscAttachDebugger();
-      switch(snes_ctx) {
-        case CTX_SNESNONE: {}
-	  break;
-        case CTX_SNESSETFUNCTION: {
-          ierr = VecZeroEntries(snes_f); CHKERRQ(ierr);
-          ierr = VecGhostUpdateBegin(snes_f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-          ierr = VecGhostUpdateEnd(snes_f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-        }
-        break;
-        default:
-          SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+
+  PetscErrorCode preProcess() {
+    PetscFunctionBegin;
+
+    switch(snes_ctx) {
+      case CTX_SNESNONE: {}
+      break;
+      case CTX_SNESSETFUNCTION: {
+        ierr = VecZeroEntries(snes_f); CHKERRQ(ierr);
+        ierr = VecGhostUpdateBegin(snes_f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+        ierr = VecGhostUpdateEnd(snes_f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
       }
-      
-      PetscFunctionReturn(0);
+      break;
+      default:
+      SETERRQ(PETSC_COMM_SELF,1,"not implemented");
     }
-    
-    PetscErrorCode postProcess() {
-      PetscFunctionBegin;
-      switch(snes_ctx) {
-        case CTX_SNESNONE: {}
-	  break;
-        case CTX_SNESSETFUNCTION: {
-          ierr = VecGhostUpdateBegin(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-          ierr = VecGhostUpdateEnd(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-          ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
-          ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
-	    //add F_lambda
-	    ierr = VecAXPY(snes_f,arc_ptr->getFieldData(),arc_ptr->F_lambda); CHKERRQ(ierr);
-	    ierr = VecAXPY(snes_f,-1.,F_body_force); CHKERRQ(ierr);
-	    PetscPrintf(PETSC_COMM_WORLD,"\tlambda = %6.4e\n",arc_ptr->getFieldData());  
-	    //snes_f norm
-	    double fnorm;
-	    ierr = VecNorm(snes_f,NORM_2,&fnorm); CHKERRQ(ierr);	
-	    PetscPrintf(PETSC_COMM_WORLD,"\tfnorm = %6.4e\n",fnorm);  
-        }
-        break;
-        default:
-          SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode postProcess() {
+    PetscFunctionBegin;
+    switch(snes_ctx) {
+      case CTX_SNESNONE: {}
+      break;
+      case CTX_SNESSETFUNCTION: {
+        ierr = VecGhostUpdateBegin(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+        ierr = VecGhostUpdateEnd(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+        ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
+        ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+        //add F_lambda
+        ierr = VecAXPY(snes_f,arc_ptr->getFieldData(),arc_ptr->F_lambda); CHKERRQ(ierr);
+        ierr = VecAXPY(snes_f,-1.,F_body_force); CHKERRQ(ierr);
+        PetscPrintf(PETSC_COMM_WORLD,"\tlambda = %6.4e\n",arc_ptr->getFieldData());
+        //snes_f norm
+        double fnorm;
+        ierr = VecNorm(snes_f,NORM_2,&fnorm); CHKERRQ(ierr);
+        PetscPrintf(PETSC_COMM_WORLD,"\tfnorm = %6.4e\n",fnorm);
       }
-      
-      PetscFunctionReturn(0);
+      break;
+      default:
+      SETERRQ(PETSC_COMM_SELF,1,"not implemented");
     }
+
+    PetscFunctionReturn(0);
+  }
+
 };
 
 int main(int argc, char *argv[]) {
@@ -229,18 +229,18 @@ int main(int argc, char *argv[]) {
   //Read mesh to MOAB
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
   //data stored on mesh for restart
   Tag th_step_size,th_step;
   double def_step_size = 1;
-  rval = moab.tag_get_handle("_STEPSIZE",1,MB_TYPE_DOUBLE,th_step_size,MB_TAG_CREAT|MB_TAG_MESH,&def_step_size);  
+  rval = moab.tag_get_handle("_STEPSIZE",1,MB_TYPE_DOUBLE,th_step_size,MB_TAG_CREAT|MB_TAG_MESH,&def_step_size);
   if(rval==MB_ALREADY_ALLOCATED) rval = MB_SUCCESS;
   CHKERR(rval);
   int def_step = 1;
-  rval = moab.tag_get_handle("_STEP",1,MB_TYPE_INTEGER,th_step,MB_TAG_CREAT|MB_TAG_MESH,&def_step);  
+  rval = moab.tag_get_handle("_STEP",1,MB_TYPE_INTEGER,th_step,MB_TAG_CREAT|MB_TAG_MESH,&def_step);
   if(rval==MB_ALREADY_ALLOCATED) rval = MB_SUCCESS;
   CHKERR(rval);
   const void* tag_data_step_size[1];
@@ -261,7 +261,7 @@ int main(int argc, char *argv[]) {
   Tag th_my_ref_level;
   BitRefLevel def_bit_level = 0;
   rval = m_field.get_moab().tag_get_handle("_MY_REFINMENT_LEVEL",sizeof(BitRefLevel),MB_TYPE_OPAQUE,
-    th_my_ref_level,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_bit_level); 
+    th_my_ref_level,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_bit_level);
   const EntityHandle root_meshset = m_field.get_moab().get_root_set();
   BitRefLevel *ptr_bit_level0;
   rval = m_field.get_moab().tag_get_by_ptr(th_my_ref_level,&root_meshset,1,(const void**)&ptr_bit_level0); CHKERR_PETSC(rval);
@@ -280,32 +280,32 @@ int main(int argc, char *argv[]) {
       ierr = PetscPrintf(PETSC_COMM_WORLD,"Insert Interface %d\n",cit->get_msId()); CHKERRQ(ierr);
       EntityHandle cubit_meshset = cit->get_meshset();
       {
-	//get tet enties form back bit_level
-	EntityHandle ref_level_meshset = 0;
-	rval = moab.create_meshset(MESHSET_SET,ref_level_meshset); CHKERR_PETSC(rval);
-	ierr = m_field.get_entities_by_type_and_ref_level(bit_levels.back(),BitRefLevel().set(),MBTET,ref_level_meshset); CHKERRQ(ierr);
-	ierr = m_field.get_entities_by_type_and_ref_level(bit_levels.back(),BitRefLevel().set(),MBPRISM,ref_level_meshset); CHKERRQ(ierr);
-	Range ref_level_tets;
-	rval = moab.get_entities_by_handle(ref_level_meshset,ref_level_tets,true); CHKERR_PETSC(rval);
-	//get faces and test to split
-	ierr = interface.get_msId_3dENTS_sides(cubit_meshset,bit_levels.back(),true,0); CHKERRQ(ierr);
-	//set new bit level
-	bit_levels.push_back(BitRefLevel().set(ll++));
-	//split faces and 
-	ierr = interface.get_msId_3dENTS_split_sides(ref_level_meshset,bit_levels.back(),cubit_meshset,true,true,0); CHKERRQ(ierr);
-	//clean meshsets
-	rval = moab.delete_entities(&ref_level_meshset,1); CHKERR_PETSC(rval);
+        //get tet enties form back bit_level
+        EntityHandle ref_level_meshset = 0;
+        rval = moab.create_meshset(MESHSET_SET,ref_level_meshset); CHKERR_PETSC(rval);
+        ierr = m_field.get_entities_by_type_and_ref_level(bit_levels.back(),BitRefLevel().set(),MBTET,ref_level_meshset); CHKERRQ(ierr);
+        ierr = m_field.get_entities_by_type_and_ref_level(bit_levels.back(),BitRefLevel().set(),MBPRISM,ref_level_meshset); CHKERRQ(ierr);
+        Range ref_level_tets;
+        rval = moab.get_entities_by_handle(ref_level_meshset,ref_level_tets,true); CHKERR_PETSC(rval);
+        //get faces and test to split
+        ierr = interface.get_msId_3dENTS_sides(cubit_meshset,bit_levels.back(),true,0); CHKERRQ(ierr);
+        //set new bit level
+        bit_levels.push_back(BitRefLevel().set(ll++));
+        //split faces and
+        ierr = interface.get_msId_3dENTS_split_sides(ref_level_meshset,bit_levels.back(),cubit_meshset,true,true,0); CHKERRQ(ierr);
+        //clean meshsets
+        rval = moab.delete_entities(&ref_level_meshset,1); CHKERR_PETSC(rval);
       }
       //update cubit meshsets
       for(_IT_CUBITMESHSETS_FOR_LOOP_(m_field,ciit)) {
-	EntityHandle cubit_meshset = ciit->meshset; 
-	ierr = m_field.update_meshset_by_entities_children(cubit_meshset,bit_levels.back(),cubit_meshset,MBVERTEX,true); CHKERRQ(ierr);
-	ierr = m_field.update_meshset_by_entities_children(cubit_meshset,bit_levels.back(),cubit_meshset,MBEDGE,true); CHKERRQ(ierr);
-	ierr = m_field.update_meshset_by_entities_children(cubit_meshset,bit_levels.back(),cubit_meshset,MBTRI,true); CHKERRQ(ierr);
-	ierr = m_field.update_meshset_by_entities_children(cubit_meshset,bit_levels.back(),cubit_meshset,MBTET,true); CHKERRQ(ierr);
+        EntityHandle cubit_meshset = ciit->meshset;
+        ierr = m_field.update_meshset_by_entities_children(cubit_meshset,bit_levels.back(),cubit_meshset,MBVERTEX,true); CHKERRQ(ierr);
+        ierr = m_field.update_meshset_by_entities_children(cubit_meshset,bit_levels.back(),cubit_meshset,MBEDGE,true); CHKERRQ(ierr);
+        ierr = m_field.update_meshset_by_entities_children(cubit_meshset,bit_levels.back(),cubit_meshset,MBTRI,true); CHKERRQ(ierr);
+        ierr = m_field.update_meshset_by_entities_children(cubit_meshset,bit_levels.back(),cubit_meshset,MBTET,true); CHKERRQ(ierr);
       }
     }
-    
+
     bit_level0 = bit_levels.back();
     problem_bit_level = bit_level0;
 
@@ -444,7 +444,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.build_problems(); CHKERRQ(ierr);
 
   /****/
-  //mesh partitioning 
+  //mesh partitioning
 
   //partition
   ierr = m_field.partition_problem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
@@ -465,7 +465,7 @@ int main(int argc, char *argv[]) {
   ierr = VecDuplicate(F,&F_body_force); CHKERRQ(ierr);
   Mat Aij;
   ierr = m_field.MatCreateMPIAIJWithArrays("ELASTIC_MECHANICS",&Aij); CHKERRQ(ierr);
-  
+
   //Assemble F and Aij
   double young_modulus=1;
   double poisson_ratio=0.0;
@@ -474,18 +474,18 @@ int main(int argc, char *argv[]) {
     double beta = 0;
     double ft = 1;
     double Gf = 1;
-  #endif  
+  #endif
 
   boost::ptr_vector<CohesiveInterfaceElement::PhysicalEquation> interface_materials;
 
-  //FIXME this in fact allow only for one type of interface, 
+  //FIXME this in fact allow only for one type of interface,
   //problem is Young Moduls in interface mayoung_modulusterial
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
     cout << endl << *it << endl;
-    
+
     //Get block name
-    string name = it->get_Cubit_name();
-    
+    string name = it->get_name();
+
     if (name.compare(0,11,"MAT_ELASTIC") == 0) {
       Mat_Elastic mydata;
       ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
@@ -504,24 +504,24 @@ int main(int argc, char *argv[]) {
 	Gf = mydata.data.Gf;
       #endif
 
-      interface_materials.push_back(new CohesiveInterfaceElement::PhysicalEquation(m_field)); 
+      interface_materials.push_back(new CohesiveInterfaceElement::PhysicalEquation(m_field));
       interface_materials.back().h = 1;
       interface_materials.back().youngModulus = mydata.data.alpha;
       interface_materials.back().beta = mydata.data.beta;
       interface_materials.back().ft = mydata.data.ft;
       interface_materials.back().Gf = mydata.data.Gf;
 
-      EntityHandle meshset = it->get_meshset();	
+      EntityHandle meshset = it->get_meshset();
       Range tris;
       rval = moab.get_entities_by_type(meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
       Range ents3d;
       rval = moab.get_adjacencies(tris,3,false,ents3d,Interface::UNION); CHKERR_PETSC(rval);
       interface_materials.back().pRisms = ents3d.subset_by_type(MBPRISM);
-      
+
     }
   }
-  
-  { //FIXME 
+
+  { //FIXME
     boost::ptr_vector<CohesiveInterfaceElement::PhysicalEquation>::iterator pit = interface_materials.begin();
     for(; pit != interface_materials.end();pit++) {
       pit->youngModulus = young_modulus;
@@ -625,7 +625,7 @@ int main(int argc, char *argv[]) {
   snes_ctx.get_preProcess_to_do_Mat().push_back(&my_dirichlet_bc);
   #ifdef OLDINTERFACEMETHOD
     loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("INTERFACE",&int_my_fe));
-  #else 
+  #else
     loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("INTERFACE",&cohesive_elements.getFeLhs()));
   #endif
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ELASTIC",&my_fe));
@@ -681,7 +681,7 @@ int main(int argc, char *argv[]) {
   ierr = post_proc.addFieldValuesPostProc("DISPLACEMENT"); CHKERRQ(ierr);
   ierr = post_proc.addFieldValuesGradientPostProc("DISPLACEMENT"); CHKERRQ(ierr);
   //add postpocessing for sresses
-  post_proc.get_op_to_do_Rhs().push_back(
+  post_proc.getRowOpPtrVector().push_back(
 	  new PostPorcStress(
 	    m_field,
 	    post_proc.postProcMesh,
@@ -709,8 +709,9 @@ int main(int argc, char *argv[]) {
       double dx_nrm;
       ierr = VecNorm(arc_ctx->dx,NORM_2,&dx_nrm);  CHKERRQ(ierr);
       ierr = PetscPrintf(PETSC_COMM_WORLD,
-	"Load Step %D step_size = %6.4e dlambda0 = %6.4e dx_nrm = %6.4e dx2 = %6.4e\n",
-	step,step_size,dlambda,dx_nrm,arc_ctx->dx2); CHKERRQ(ierr);
+        "Load Step %D step_size = %6.4e dlambda0 = %6.4e dx_nrm = %6.4e dx2 = %6.4e\n",
+        step,step_size,dlambda,dx_nrm,arc_ctx->dx2
+      ); CHKERRQ(ierr);
       ierr = VecCopy(D,arc_ctx->x0); CHKERRQ(ierr);
       ierr = VecAXPY(D,1.,arc_ctx->dx); CHKERRQ(ierr);
       ierr = my_arc_method.set_dlambda_to_x(D,dlambda); CHKERRQ(ierr);
@@ -725,8 +726,9 @@ int main(int argc, char *argv[]) {
       ierr = VecScale(arc_ctx->dx,reduction); CHKERRQ(ierr);
       ierr = VecNorm(arc_ctx->dx,NORM_2,&dx_nrm);  CHKERRQ(ierr);
       ierr = PetscPrintf(PETSC_COMM_WORLD,
-	"Load Step %D step_size = %6.4e dlambda0 = %6.4e dx_nrm = %6.4e dx2 = %6.4e\n",
-	step,step_size,dlambda,dx_nrm,arc_ctx->dx2); CHKERRQ(ierr);
+        "Load Step %D step_size = %6.4e dlambda0 = %6.4e dx_nrm = %6.4e dx2 = %6.4e\n",
+        step,step_size,dlambda,dx_nrm,arc_ctx->dx2
+      ); CHKERRQ(ierr);
       ierr = VecCopy(D,arc_ctx->x0); CHKERRQ(ierr);
       ierr = VecAXPY(D,1.,arc_ctx->dx); CHKERRQ(ierr);
       ierr = my_arc_method.set_dlambda_to_x(D,dlambda); CHKERRQ(ierr);
@@ -746,7 +748,7 @@ int main(int argc, char *argv[]) {
       ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","INTERFACE",int_my_fe,0,pcomm->size());  CHKERRQ(ierr);
       //standard procedure
       ierr = int_my_fe.set_ctxInt(NonLinearInterfaceFEMethod::CTX_INTERFACENONE); CHKERRQ(ierr);
-    #else 
+    #else
       ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","INTERFACE",cohesive_elements.getFeHistory(),0,pcomm->size());  CHKERRQ(ierr);
     #endif
     //Remove nodes of damaged prisms
@@ -758,7 +760,7 @@ int main(int argc, char *argv[]) {
 
     SNESConvergedReason reason;
     ierr = SNESGetConvergedReason(snes,&reason); CHKERRQ(ierr);
-    
+
     if (reason < 0) {
       ierr = arc_ctx->setAlphaBeta(1,0); CHKERRQ(ierr);
       reduction =0.1;
@@ -769,7 +771,7 @@ int main(int argc, char *argv[]) {
         reduction = pow((double)its_d/(double)(its+1),gamma);
         ierr = PetscPrintf(PETSC_COMM_WORLD,"reduction step_size = %6.4e\n", reduction); CHKERRQ(ierr);
       }
-      
+
     //Save data on mesh
     ierr = m_field.set_global_ghost_vector("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = m_field.set_other_global_ghost_vector(
@@ -786,17 +788,20 @@ int main(int argc, char *argv[]) {
     }
 
     if(step % 1 == 0) {
+
       if(pcomm->rank()==0) {
-	ostringstream sss;
-	sss << "restart_" << step << ".h5m";
-	rval = moab.write_file(sss.str().c_str()); CHKERR_PETSC(rval);
+        ostringstream sss;
+        sss << "restart_" << step << ".h5m";
+        rval = moab.write_file(sss.str().c_str()); CHKERR_PETSC(rval);
       }
+
       ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",post_proc); CHKERRQ(ierr);
       ostringstream ss;
       ss << "out_values_" << step << ".h5m";
       rval = post_proc.postProcMesh.write_file(ss.str().c_str(),"MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
+
     }
-    
+
   }
 
   //Save data on mesh
@@ -817,4 +822,3 @@ int main(int argc, char *argv[]) {
   PetscFinalize();
 
 }
-

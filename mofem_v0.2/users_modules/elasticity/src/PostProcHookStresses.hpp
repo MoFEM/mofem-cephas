@@ -18,7 +18,7 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 
-struct PostPorcStress: public TetElementForcesAndSourcesCore::UserDataOperator {
+struct PostPorcStress: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
   FieldInterface& mField;
   Interface &postProcMesh;
@@ -32,7 +32,7 @@ struct PostPorcStress: public TetElementForcesAndSourcesCore::UserDataOperator {
     vector<EntityHandle> &map_gauss_pts,
     const string field_name,
     PostPocOnRefinedMesh::CommonData &common_data):
-    TetElementForcesAndSourcesCore::UserDataOperator(field_name),
+    VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
     mField(m_field),
     postProcMesh(post_proc_mesh),
     mapGaussPts(map_gauss_pts),
@@ -151,12 +151,12 @@ struct PostPorcStress: public TetElementForcesAndSourcesCore::UserDataOperator {
     for(int gg = 0;gg<nb_gauss_pts;gg++) {
       
       strain.resize(6);
-      strain[0] = (commonData.gradMap[row_field_name][gg])(0,0);
-      strain[1] = (commonData.gradMap[row_field_name][gg])(1,1);
-      strain[3] = (commonData.gradMap[row_field_name][gg])(2,2);
-      strain[3] = (commonData.gradMap[row_field_name][gg])(0,1)+(commonData.gradMap[row_field_name][gg])(1,0);
-      strain[4] = (commonData.gradMap[row_field_name][gg])(1,2)+(commonData.gradMap[row_field_name][gg])(2,1);
-      strain[5] = (commonData.gradMap[row_field_name][gg])(0,2)+(commonData.gradMap[row_field_name][gg])(2,0);
+      strain[0] = (commonData.gradMap[rowFieldName][gg])(0,0);
+      strain[1] = (commonData.gradMap[rowFieldName][gg])(1,1);
+      strain[3] = (commonData.gradMap[rowFieldName][gg])(2,2);
+      strain[3] = (commonData.gradMap[rowFieldName][gg])(0,1)+(commonData.gradMap[rowFieldName][gg])(1,0);
+      strain[4] = (commonData.gradMap[rowFieldName][gg])(1,2)+(commonData.gradMap[rowFieldName][gg])(2,1);
+      strain[5] = (commonData.gradMap[rowFieldName][gg])(0,2)+(commonData.gradMap[rowFieldName][gg])(2,0);
 
       stress.resize(6);
       noalias(stress) = prod(D,strain);

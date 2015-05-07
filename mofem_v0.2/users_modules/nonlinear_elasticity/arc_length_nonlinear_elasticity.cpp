@@ -19,10 +19,10 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-static char help[] = "\
--my_file mesh file name\n\
--my_sr reduction of step size\n\
--my_ms maximal number of steps\n\n";
+ static char help[] = "\
+ -my_file mesh file name\n\
+ -my_sr reduction of step size\n\
+ -my_ms maximal number of steps\n\n";
 
 #include <MoFEM.hpp>
 using namespace MoFEM;
@@ -34,7 +34,7 @@ using namespace MoFEM;
 
 #include <DirichletBC.hpp>
 #include <ArcLengthTools.hpp>
-#include <adolc/adolc.h> 
+#include <adolc/adolc.h>
 #include <NonLienarElasticElement.hpp>
 #include <NeoHookean.hpp>
 
@@ -71,40 +71,40 @@ int main(int argc, char *argv[]) {
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
-	
+
   PetscInt order;
   ierr = PetscOptionsGetInt(PETSC_NULL,"-my_order",&order,&flg); CHKERRQ(ierr);
   if(flg != PETSC_TRUE) {
     order = 3;
   }
 
-  // use this if your mesh is partotioned and you run code on parts, 
-  // you can solve very big problems 
+  // use this if your mesh is partotioned and you run code on parts,
+  // you can solve very big problems
   PetscBool is_partitioned = PETSC_FALSE;
   ierr = PetscOptionsGetBool(PETSC_NULL,"-my_is_partitioned",&is_partitioned,&flg); CHKERRQ(ierr);
- 
+
   if(is_partitioned == PETSC_TRUE) {
     //Read mesh to MOAB
     const char *option;
     option = "PARALLEL=BCAST_DELETE;PARALLEL_RESOLVE_SHARED_ENTS;PARTITION=PARALLEL_PARTITION;";
-    rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
+    rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
     rval = pcomm->resolve_shared_ents(0,3,0); CHKERR_PETSC(rval);
     rval = pcomm->resolve_shared_ents(0,3,1); CHKERR_PETSC(rval);
     rval = pcomm->resolve_shared_ents(0,3,2); CHKERR_PETSC(rval);
   } else {
     const char *option;
     option = "";
-    rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
+    rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
   }
 
   //data stored on mesh for restart
   Tag th_step_size,th_step;
   double def_step_size = 1;
-  rval = moab.tag_get_handle("_STEPSIZE",1,MB_TYPE_DOUBLE,th_step_size,MB_TAG_CREAT|MB_TAG_MESH,&def_step_size);  
+  rval = moab.tag_get_handle("_STEPSIZE",1,MB_TYPE_DOUBLE,th_step_size,MB_TAG_CREAT|MB_TAG_MESH,&def_step_size);
   if(rval==MB_ALREADY_ALLOCATED) rval = MB_SUCCESS;
   CHKERR(rval);
   int def_step = 1;
-  rval = moab.tag_get_handle("_STEP",1,MB_TYPE_INTEGER,th_step,MB_TAG_CREAT|MB_TAG_MESH,&def_step);  
+  rval = moab.tag_get_handle("_STEP",1,MB_TYPE_INTEGER,th_step,MB_TAG_CREAT|MB_TAG_MESH,&def_step);
   if(rval==MB_ALREADY_ALLOCATED) rval = MB_SUCCESS;
   CHKERR(rval);
   const void* tag_data_step_size[1];
@@ -127,9 +127,9 @@ int main(int argc, char *argv[]) {
   BitRefLevel problem_bit_level;
 
   if(step == 1) {
-    
+
     problem_bit_level = bit_levels.back();
-    
+
     Range CubitSideSets_meshsets;
     ierr = m_field.get_cubit_meshsets(SIDESET,CubitSideSets_meshsets); CHKERRQ(ierr);
 
@@ -241,7 +241,7 @@ int main(int argc, char *argv[]) {
   ierr = post_proc.addFieldValuesGradientPostProc("SPATIAL_POSITION"); CHKERRQ(ierr);
   map<int,NonlinearElasticElement::BlockData>::iterator sit = elastic.setOfBlocks.begin();
   for(;sit!=elastic.setOfBlocks.end();sit++) {
-    post_proc.get_op_to_do_Rhs().push_back(
+    post_proc.getRowOpPtrVector().push_back(
 	  new PostPorcStress(
 	    post_proc.postProcMesh,
 	    post_proc.mapGaussPts,
@@ -296,7 +296,7 @@ int main(int argc, char *argv[]) {
   ierr = VecDuplicate(F,&D); CHKERRQ(ierr);
   Mat Aij;
   ierr = m_field.MatCreateMPIAIJWithArrays("ELASTIC_MECHANICS",&Aij); CHKERRQ(ierr);
-    
+
   ArcLengthCtx* arc_ctx = new ArcLengthCtx(m_field,"ELASTIC_MECHANICS");
 
   PetscInt M,N;
@@ -342,7 +342,7 @@ int main(int argc, char *argv[]) {
   ierr = my_dirichlet_bc.iNitalize(); CHKERRQ(ierr);
 
   struct MyPrePostProcessFEMethod: public FEMethod {
-    
+
     FieldInterface& m_field;
     ArcLengthCtx *arc_ptr;
 
@@ -350,14 +350,14 @@ int main(int argc, char *argv[]) {
     Range &nodeSet;
 
     MyPrePostProcessFEMethod(FieldInterface& _m_field,
-      ArcLengthCtx *_arc_ptr,SpatialPositionsBCFEMethodPreAndPostProc *bc,Range &node_set): 
+      ArcLengthCtx *_arc_ptr,SpatialPositionsBCFEMethodPreAndPostProc *bc,Range &node_set):
       m_field(_m_field),arc_ptr(_arc_ptr),bC(bc),nodeSet(node_set) {}
-  
+
     PetscErrorCode ierr;
-      
+
       PetscErrorCode preProcess() {
         PetscFunctionBegin;
-        
+
 	//PetscAttachDebugger();
         switch(snes_ctx) {
           case CTX_SNESSETFUNCTION: {
@@ -372,10 +372,10 @@ int main(int argc, char *argv[]) {
           default:
             SETERRQ(PETSC_COMM_SELF,1,"not implemented");
         }
-        
+
         PetscFunctionReturn(0);
       }
-      
+
     PetscErrorCode postProcess() {
       PetscFunctionBegin;
       switch(snes_ctx) {
@@ -412,18 +412,18 @@ int main(int argc, char *argv[]) {
   };
 
   struct AssembleLambdaFEMethod: public FEMethod {
-    
+
     FieldInterface& m_field;
     ArcLengthCtx *arc_ptr;
 
     SpatialPositionsBCFEMethodPreAndPostProc *bC;
 
     AssembleLambdaFEMethod(FieldInterface& _m_field,
-      ArcLengthCtx *_arc_ptr,SpatialPositionsBCFEMethodPreAndPostProc *bc): 
+      ArcLengthCtx *_arc_ptr,SpatialPositionsBCFEMethodPreAndPostProc *bc):
       m_field(_m_field),arc_ptr(_arc_ptr),bC(bc) {}
-  
+
     PetscErrorCode ierr;
-      
+
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
       PetscFunctionReturn(0);
@@ -450,15 +450,15 @@ int main(int argc, char *argv[]) {
 	  PetscPrintf(PETSC_COMM_WORLD,"\tFlambda2 = %6.4e\n",arc_ptr->F_lambda2);
 	  //add F_lambda
 	  ierr = VecAXPY(snes_f,arc_ptr->getFieldData(),arc_ptr->F_lambda); CHKERRQ(ierr);
-	  PetscPrintf(PETSC_COMM_WORLD,"\tlambda = %6.4e\n",arc_ptr->getFieldData());  
+	  PetscPrintf(PETSC_COMM_WORLD,"\tlambda = %6.4e\n",arc_ptr->getFieldData());
 	  double fnorm;
-	  ierr = VecNorm(snes_f,NORM_2,&fnorm); CHKERRQ(ierr);	
-	  PetscPrintf(PETSC_COMM_WORLD,"\tfnorm = %6.4e\n",fnorm);  
+	  ierr = VecNorm(snes_f,NORM_2,&fnorm); CHKERRQ(ierr);
+	  PetscPrintf(PETSC_COMM_WORLD,"\tfnorm = %6.4e\n",fnorm);
 	}
         break;
         default:
           SETERRQ(PETSC_COMM_SELF,1,"not implemented");
-      }  
+      }
       PetscFunctionReturn(0);
     }
 
@@ -466,7 +466,7 @@ int main(int argc, char *argv[]) {
 
   MyPrePostProcessFEMethod pre_post_method(m_field,arc_ctx,&my_dirichlet_bc,node_set);
   AssembleLambdaFEMethod assemble_F_lambda(m_field,arc_ctx,&my_dirichlet_bc);
-  
+
   SNES snes;
   ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);
   ierr = SNESSetApplicationContext(snes,&snes_ctx); CHKERRQ(ierr);
@@ -620,8 +620,9 @@ int main(int argc, char *argv[]) {
       double dx_nrm;
       ierr = VecNorm(arc_ctx->dx,NORM_2,&dx_nrm);  CHKERRQ(ierr);
       ierr = PetscPrintf(PETSC_COMM_WORLD,
-	"Load Step %D step_size = %6.4e dlambda0 = %6.4e dx_nrm = %6.4e dx2 = %6.4e\n",
-	step,step_size,dlambda,dx_nrm,arc_ctx->dx2); CHKERRQ(ierr);
+        "Load Step %D step_size = %6.4e dlambda0 = %6.4e dx_nrm = %6.4e dx2 = %6.4e\n",
+        step,step_size,dlambda,dx_nrm,arc_ctx->dx2
+      ); CHKERRQ(ierr);
       ierr = VecCopy(D,arc_ctx->x0); CHKERRQ(ierr);
       ierr = VecAXPY(D,1.,arc_ctx->dx); CHKERRQ(ierr);
       ierr = arc_method.setDlambdaToX(D,dlambda); CHKERRQ(ierr);
@@ -629,15 +630,15 @@ int main(int argc, char *argv[]) {
     } else {
 
       if(jj == 0) {
-	step_size0 = step_size;
+        step_size0 = step_size;
       }
 
       ierr = arc_method.calculateDxAndDlambda(D); CHKERRQ(ierr);
       step_size *= reduction;
       if(step_size > max_reudction*step_size0) {
-	step_size = max_reudction*step_size0;
+        step_size = max_reudction*step_size0;
       } else if(step_size<min_reduction*step_size0) {
-	step_size = min_reduction*step_size0;
+        step_size = min_reduction*step_size0;
       }
       ierr = arc_ctx->setS(step_size); CHKERRQ(ierr);
       double dlambda = reduction*arc_ctx->dlambda;
@@ -645,8 +646,9 @@ int main(int argc, char *argv[]) {
       ierr = VecScale(arc_ctx->dx,reduction); CHKERRQ(ierr);
       ierr = VecNorm(arc_ctx->dx,NORM_2,&dx_nrm);  CHKERRQ(ierr);
       ierr = PetscPrintf(PETSC_COMM_WORLD,
-	"Load Step %D step_size = %6.4e dlambda0 = %6.4e dx_nrm = %6.4e dx2 = %6.4e\n",
-	step,step_size,dlambda,dx_nrm,arc_ctx->dx2); CHKERRQ(ierr);
+        "Load Step %D step_size = %6.4e dlambda0 = %6.4e dx_nrm = %6.4e dx2 = %6.4e\n",
+        step,step_size,dlambda,dx_nrm,arc_ctx->dx2
+      ); CHKERRQ(ierr);
       ierr = VecCopy(D,arc_ctx->x0); CHKERRQ(ierr);
       ierr = VecAXPY(D,1.,arc_ctx->dx); CHKERRQ(ierr);
       ierr = arc_method.setDlambdaToX(D,dlambda); CHKERRQ(ierr);
@@ -670,31 +672,34 @@ int main(int argc, char *argv[]) {
       ierr = PetscPrintf(PETSC_COMM_WORLD,"\tRead x0_nrm = %6.4e dlambda = %6.4e\n",x0_nrm,arc_ctx->dlambda);
       ierr = arc_ctx->setAlphaBeta(1,0); CHKERRQ(ierr);
 
-      
+
       reduction = 0.1;
       converged_state = false;
-      
+
       continue;
 
     } else {
+
       if(step > 1 && converged_state) {
 
-	reduction = pow((double)its_d/(double)(its+1),gamma);
-	if(step_size >= max_reudction*step_size0 && reduction > 1) {
-	  reduction = 1; 
-	} else if(step_size <= min_reduction*step_size0 && reduction < 1) {
-	  reduction = 1;
-	}
-	ierr = PetscPrintf(PETSC_COMM_WORLD,"reduction step_size = %6.4e\n",reduction); CHKERRQ(ierr);
+        reduction = pow((double)its_d/(double)(its+1),gamma);
+        if(step_size >= max_reudction*step_size0 && reduction > 1) {
+          reduction = 1;
+        } else if(step_size <= min_reduction*step_size0 && reduction < 1) {
+          reduction = 1;
+        }
+        ierr = PetscPrintf(PETSC_COMM_WORLD,"reduction step_size = %6.4e\n",reduction); CHKERRQ(ierr);
       }
+
       //Save data on mesh
       ierr = m_field.set_global_ghost_vector("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
       ierr = m_field.set_other_global_ghost_vector(
-	"ELASTIC_MECHANICS","SPATIAL_POSITION","X0_SPATIAL_POSITION",COL,arc_ctx->x0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+        "ELASTIC_MECHANICS","SPATIAL_POSITION","X0_SPATIAL_POSITION",COL,arc_ctx->x0,INSERT_VALUES,SCATTER_REVERSE
+      ); CHKERRQ(ierr);
       converged_state = true;
-      
+
     }
-    
+
     if(step % 1 == 0) {
       //Save restart file
       ostringstream sss;
@@ -713,7 +718,7 @@ int main(int argc, char *argv[]) {
 
   ierr = VecDestroy(&D0); CHKERRQ(ierr);
   ierr = VecDestroy(&x00); CHKERRQ(ierr);
-  
+
   //detroy matrices
   ierr = VecDestroy(&F); CHKERRQ(ierr);
   ierr = VecDestroy(&D); CHKERRQ(ierr);
@@ -731,6 +736,3 @@ int main(int argc, char *argv[]) {
   return 0;
 
 }
-
-
-

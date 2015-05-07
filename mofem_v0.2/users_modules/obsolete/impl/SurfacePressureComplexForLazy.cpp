@@ -34,10 +34,10 @@ extern "C" {
 namespace ObosleteUsersModules {
 
 NeummanForcesSurfaceComplexForLazy::AuxMethodSpatial::AuxMethodSpatial(const string &field_name,MyTriangleSpatialFE *_myPtr): 
-      TriElementForcesAndSurcesCore::UserDataOperator(field_name),myPtr(_myPtr) {}
+      FaceElementForcesAndSourcesCore::UserDataOperator(field_name),myPtr(_myPtr) {}
 
 NeummanForcesSurfaceComplexForLazy::AuxMethodMaterial::AuxMethodMaterial(const string &field_name,MyTriangleSpatialFE *_myPtr): 
-      TriElementForcesAndSurcesCore::UserDataOperator(field_name),myPtr(_myPtr) {};
+      FaceElementForcesAndSourcesCore::UserDataOperator(field_name),myPtr(_myPtr) {};
 
 PetscErrorCode NeummanForcesSurfaceComplexForLazy::
   AuxMethodSpatial::doWork(int side, EntityType type, DataForcesAndSurcesCore::EntData &data) {
@@ -49,7 +49,7 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::
     case MBVERTEX: {
       if(data.getFieldData().size()!=9) {
 	SETERRQ2(PETSC_COMM_SELF,1,"it should be 9 dofs on vertices but is %d of field < %s >",
-	  data.getFieldData().size(),row_field_name.c_str());
+	  data.getFieldData().size(),rowFieldName.c_str());
       }
       myPtr->N = &*data.getN().data().begin();
       myPtr->diffN = &*data.getDiffN().data().begin();
@@ -156,7 +156,7 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::
 
 NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::MyTriangleSpatialFE
   (FieldInterface &_mField,Mat _Aij,Vec &_F,double *scale_lhs,double *scale_rhs): 
-  TriElementForcesAndSurcesCore(_mField),sCaleLhs(scale_lhs),sCaleRhs(scale_rhs),
+  FaceElementForcesAndSourcesCore(_mField),sCaleLhs(scale_lhs),sCaleRhs(scale_rhs),
   typeOfForces(CONSERVATIVE),eps(1e-8),uSeF(false) {
 
   meshPositionsFieldName = "NoNE";
@@ -169,9 +169,9 @@ NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::MyTriangleSpatialFE
   snes_f = _F;
 
   if(mField.check_field("MESH_NODE_POSITIONS")) {
-    get_op_to_do_Rhs().push_back(new AuxMethodMaterial("MESH_NODE_POSITIONS",this));
+    getRowOpPtrVector().push_back(new AuxMethodMaterial("MESH_NODE_POSITIONS",this));
   }
-  get_op_to_do_Rhs().push_back(new AuxMethodSpatial("SPATIAL_POSITION",this));
+  getRowOpPtrVector().push_back(new AuxMethodSpatial("SPATIAL_POSITION",this));
 
 }
 
@@ -557,7 +557,7 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::operator
     SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   }
 
-  ierr = TriElementForcesAndSurcesCore::operator()(); CHKERRQ(ierr);
+  ierr = FaceElementForcesAndSourcesCore::operator()(); CHKERRQ(ierr);
   ierr = calcTraction(); CHKERRQ(ierr);
 
   switch(snes_ctx) {
@@ -590,7 +590,7 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::addForce
   PetscErrorCode ierr;
   const CubitMeshSets *cubit_meshset_ptr;
   ierr = mField.get_cubit_msId(ms_id,NODESET,&cubit_meshset_ptr); CHKERRQ(ierr);
-  ierr = cubit_meshset_ptr->get_cubit_bc_data_structure(mapForce[ms_id].data); CHKERRQ(ierr);
+  ierr = cubit_meshset_ptr->get_bc_data_structure(mapForce[ms_id].data); CHKERRQ(ierr);
   rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBTRI,mapForce[ms_id].tRis,true); CHKERR_PETSC(rval);
   PetscFunctionReturn(0);
 }
@@ -600,7 +600,7 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::addPreas
   PetscErrorCode ierr;
   const CubitMeshSets *cubit_meshset_ptr;
   ierr = mField.get_cubit_msId(ms_id,SIDESET,&cubit_meshset_ptr); CHKERRQ(ierr);
-  ierr = cubit_meshset_ptr->get_cubit_bc_data_structure(mapPreassure[ms_id].data); CHKERRQ(ierr);
+  ierr = cubit_meshset_ptr->get_bc_data_structure(mapPreassure[ms_id].data); CHKERRQ(ierr);
   rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBTRI,mapPreassure[ms_id].tRis,true); CHKERR_PETSC(rval);
   PetscFunctionReturn(0);
 }

@@ -1,8 +1,3 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
- * FIXME: DESCRIPTION
- */
-
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -132,7 +127,7 @@ int main(int argc, char *argv[]) {
   /****/
   //mesh partitioning 
   //partition
-  ierr = mField.simple_partition_problem("TEST_PROBLEM"); CHKERRQ(ierr);
+  ierr = mField.partition_simple_problem("TEST_PROBLEM"); CHKERRQ(ierr);
   ierr = mField.partition_finite_elements("TEST_PROBLEM"); CHKERRQ(ierr);
   //what are ghost nodes, see Petsc Manual
   ierr = mField.partition_ghost_dofs("TEST_PROBLEM"); CHKERRQ(ierr);
@@ -184,8 +179,8 @@ int main(int argc, char *argv[]) {
 
   };
 
-  fe1.get_op_to_do_Rhs().push_back(new MyOp(my_split));
-  fe1.get_op_to_do_Lhs().push_back(new MyOp(my_split));
+  fe1.getRowOpPtrVector().push_back(new MyOp(my_split));
+  fe1.getRowColOpPtrVector().push_back(new MyOp(my_split));
 
   ierr = mField.loop_finite_elements("TEST_PROBLEM","TEST_FE",fe1);  CHKERRQ(ierr);
 

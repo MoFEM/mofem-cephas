@@ -1,6 +1,6 @@
 /** \file Core.hpp
  * \brief Core FieldInterface class for user interface
- * 
+ *
  * Low level data structures not used directly by user
  */
 
@@ -26,7 +26,7 @@ namespace MoFEM {
 
 /** \brief Core FieldInterface class
  *  \ingroup mofem
- 
+
   This class is not used directly by the user. It is database with basic
   functions to access data. Abstraction of this is MoFEM Interface structure.
 
@@ -34,7 +34,7 @@ namespace MoFEM {
   without interfering with users modules programmer work.
 
  */
-struct Core: 
+struct Core:
   public FieldInterface, MeshRefinment, PrismInterface, SeriesRecorder {
 
   PetscErrorCode queryInterface(const MOFEMuuid& uuid, FieldUnknownInterface** iface);
@@ -56,7 +56,7 @@ struct Core:
   //Database
   ErrorCode rval;
   PetscErrorCode ierr;
-  //Data and low level methods 
+  //Data and low level methods
   Tag th_Part;
   Tag th_RefType,th_RefParentHandle,th_RefBitLevel,th_RefBitLevel_Mask,th_RefBitEdge,th_RefFEMeshset;
   Tag th_FieldId,th_FieldName,th_FieldName_DataNamePrefix,th_FieldSpace;
@@ -87,7 +87,7 @@ struct Core:
   //entFEAdjacencies
   MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_multiIndex entFEAdjacencies;	///< adjacencies of elements to dofs
   //moFEMProblems
-  MoFEMProblem_multiIndex moFEMProblems;					///< problems	
+  MoFEMProblem_multiIndex moFEMProblems;					///< problems
   //cubit
   CubitMeshSet_multiIndex cubitMeshsets;					///< cubit meshsets
   //series
@@ -192,25 +192,26 @@ struct Core:
   PetscErrorCode get_cubit_msId_meshset(const int msId,const unsigned int cubit_bc_type,EntityHandle &meshset);
   PetscErrorCode get_cubit_meshsets(const unsigned int cubit_bc_type,Range &meshsets);
   CubitMeshSet_multiIndex::iterator get_cubit_meshsets_begin() { return cubitMeshsets.begin(); }
-  CubitMeshSet_multiIndex::iterator get_cubit_mesh_sets_end() { return cubitMeshsets.end(); }
-  CubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator get_cubit_meshsets_begin(const unsigned int cubit_bc_type) { 
-    return cubitMeshsets.get<CubitMeshSets_mi_tag>().lower_bound(cubit_bc_type); 
+  CubitMeshSet_multiIndex::iterator get_cubit_meshsets_end() { return cubitMeshsets.end(); }
+  CubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator get_cubit_meshsets_begin(const unsigned int cubit_bc_type) {
+    return cubitMeshsets.get<CubitMeshSets_mi_tag>().lower_bound(cubit_bc_type);
   }
-  CubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator get_cubit_mesh_sets_end(const unsigned int cubit_bc_type) { 
-    return cubitMeshsets.get<CubitMeshSets_mi_tag>().upper_bound(cubit_bc_type); 
+  CubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator get_cubit_meshsets_end(const unsigned int cubit_bc_type) {
+    return cubitMeshsets.get<CubitMeshSets_mi_tag>().upper_bound(cubit_bc_type);
   }
-  CubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type::iterator get_CubitMeshSets_bySetType_begin(const unsigned int cubit_bc_type) { 
-    return cubitMeshsets.get<CubitMeshSets_mask_meshset_mi_tag>().lower_bound(cubit_bc_type); 
+  CubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type::iterator get_CubitMeshSets_bySetType_begin(const unsigned int cubit_bc_type) {
+    return cubitMeshsets.get<CubitMeshSets_mask_meshset_mi_tag>().lower_bound(cubit_bc_type);
   }
-  CubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type::iterator get_CubitMeshSets_bySetType_end(const unsigned int cubit_bc_type) { 
-    return cubitMeshsets.get<CubitMeshSets_mask_meshset_mi_tag>().upper_bound(cubit_bc_type); 
+  CubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type::iterator get_CubitMeshSets_bySetType_end(const unsigned int cubit_bc_type) {
+    return cubitMeshsets.get<CubitMeshSets_mask_meshset_mi_tag>().upper_bound(cubit_bc_type);
   }
-  CubitMeshSet_multiIndex::index<CubitMeshSets_name>::type::iterator get_CubitMeshSets_byName_begin(const string& name) { 
-    return cubitMeshsets.get<CubitMeshSets_name>().lower_bound(name); 
+  CubitMeshSet_multiIndex::index<CubitMeshSets_name>::type::iterator get_CubitMeshSets_byName_begin(const string& name) {
+    return cubitMeshsets.get<CubitMeshSets_name>().lower_bound(name);
   }
-  CubitMeshSet_multiIndex::index<CubitMeshSets_name>::type::iterator get_CubitMeshSets_byName_end(const string& name) { 
-    return cubitMeshsets.get<CubitMeshSets_name>().upper_bound(name); 
+  CubitMeshSet_multiIndex::index<CubitMeshSets_name>::type::iterator get_CubitMeshSets_byName_end(const string& name) {
+    return cubitMeshsets.get<CubitMeshSets_name>().upper_bound(name);
   }
+  PetscErrorCode find_cubit_meshset_structure(const string name,CubitMeshSets *cubit_meshset_ptr);
 
   template<class _CUBIT_BC_DATA_TYPE_>
   PetscErrorCode printCubitSet(_CUBIT_BC_DATA_TYPE_& data,unsigned long int type) {
@@ -218,7 +219,7 @@ struct Core:
     try {
       FieldInterface& this_mField = *this;
       for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(this_mField,type,it)) {
-	ierr = it->get_cubit_bc_data_structure(data); CHKERRQ(ierr);
+	ierr = it->get_bc_data_structure(data); CHKERRQ(ierr);
 	ostringstream ss;
 	ss << *it << endl;
 	ss << data << endl;
@@ -227,7 +228,7 @@ struct Core:
 	rval = moab.get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
 	rval = moab.get_entities_by_type(it->meshset,MBEDGE,edges,true); CHKERR_PETSC(rval);
 	rval = moab.get_entities_by_type(it->meshset,MBVERTEX,nodes,true); CHKERR_PETSC(rval);
-	ss << "name "<< it->get_Cubit_name() << endl;
+	ss << "name "<< it->get_name() << endl;
 	ss << "msId "<< it->get_msId() << " nb. tets " << tets.size() << endl;
 	ss << "msId "<< it->get_msId() << " nb. tris " << tris.size() << endl;
 	ss << "msId "<< it->get_msId() << " nb. edges " << edges.size() << endl;
@@ -247,14 +248,14 @@ struct Core:
     ierr = printCubitSet(mydata,NODESET|mydata.type.to_ulong()); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
-  
+
   PetscErrorCode print_cubit_pressure_set() {
     PetscFunctionBegin;
     PressureCubitBcData mydata;
     ierr = printCubitSet(mydata,SIDESET|mydata.type.to_ulong()); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
-   
+
   PetscErrorCode print_cubit_force_set() {
     PetscFunctionBegin;
     ForceCubitBcData mydata;
@@ -268,7 +269,7 @@ struct Core:
     ierr = printCubitSet(mydata,NODESET|mydata.type.to_ulong()); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
-    
+
   PetscErrorCode print_cubit_heat_flux_set() {
     PetscFunctionBegin;
     HeatfluxCubitBcData mydata;
@@ -291,7 +292,7 @@ struct Core:
       ss << endl;
       PetscPrintf(comm,ss.str().c_str());
     }
-      
+
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(this_mField,BLOCKSET|MAT_THERMALSET,it)) {
         Mat_Thermal data;
         ierr = it->get_attribute_data_structure(data); CHKERRQ(ierr);
@@ -300,7 +301,7 @@ struct Core:
         ss << data;
         PetscPrintf(comm,ss.str().c_str());
     }
-	
+
 	/*for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(this_mField,BLOCKSET|MAT_HELMHOLTZSET,it)) {
         Mat_Helmholtz data;
         ierr = it->get_attribute_data_structure(data); CHKERRQ(ierr);
@@ -309,7 +310,7 @@ struct Core:
         ss << data;
         PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
     }*/
-    
+
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(this_mField,BLOCKSET|MAT_MOISTURESET,it)) {
       Mat_Moisture data;
       ierr = it->get_attribute_data_structure(data); CHKERRQ(ierr);
@@ -319,7 +320,7 @@ struct Core:
       PetscPrintf(comm,ss.str().c_str());
     }
 
-    
+
     PetscFunctionReturn(0);
   }
 
@@ -478,13 +479,11 @@ struct Core:
   PetscErrorCode build_partitioned_problems(int verb = -1);
   PetscErrorCode build_partitioned_problem(const string &name,bool square_matrix = true,int verb = -1);
   PetscErrorCode build_partitioned_problem(MoFEMProblem *problem_ptr,bool square_matrix = true,int verb = -1);
-  PetscErrorCode simple_partition_problem(const string &name,int verb = -1);
+  PetscErrorCode partition_simple_problem(const string &name,int verb = -1);
   PetscErrorCode partition_problem(const string &name,int verb = -1);
-  PetscErrorCode compose_problem(const string &name,const string &problem_for_rows,bool copy_rows,const string &problem_for_cols,bool copy_cols,int verb = -1);
-  PetscErrorCode block_problem(const string &name,const vector<string> block_problems,int verb = -1);
+  PetscErrorCode partition_compose_problem(const string &name,const string &problem_for_rows,bool copy_rows,const string &problem_for_cols,bool copy_cols,int verb = -1);
   PetscErrorCode partition_ghost_dofs(const string &name,int verb = -1);
-  PetscErrorCode partition_finite_elements(
-    const string &name,bool part_from_moab = false,int low_proc = -1,int hi_proc = -1,int verb = -1);
+  PetscErrorCode partition_finite_elements(const string &name,bool part_from_moab = false,int low_proc = -1,int hi_proc = -1,int verb = -1);
   PetscErrorCode partition_check_matrix_fill_in(const string &problem_neme,int row,int col,int verb);
   PetscErrorCode printPartitionedProblem(const MoFEMProblem *problem_ptr,int verb = -1);
   PetscErrorCode debugPartitionedProblem(const MoFEMProblem *problem_ptr,int verb = -1);
@@ -492,7 +491,7 @@ struct Core:
   ///save meshsets
   PetscErrorCode get_problem_finite_elements_entities(const string &name,const string &fe_name,const EntityHandle meshset);
 
-  //vector and matrices 
+  //vector and matrices
   PetscErrorCode MatCreateMPIAIJWithArrays(const string &name,Mat *Aij,int verb = -1);
   PetscErrorCode MatCreateSeqAIJWithArrays(const string &name,Mat *Aij,PetscInt **i,PetscInt **j,PetscScalar **v,int verb = -1);
 
@@ -500,7 +499,7 @@ struct Core:
   PetscErrorCode VecCreateGhost(const string &name,RowColData rc,Vec *V);
   PetscErrorCode set_local_ghost_vector(const MoFEMProblem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode);
   PetscErrorCode set_local_ghost_vector(const string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode);
-  PetscErrorCode set_global_ghost_vector(const MoFEMProblem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode); 
+  PetscErrorCode set_global_ghost_vector(const MoFEMProblem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode);
   PetscErrorCode set_global_ghost_vector(const string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode);
 
   /// get IS for order
@@ -589,7 +588,7 @@ struct Core:
     const BitRefLevel &bit,
     const EntityHandle *from_entities,const int num_netities,const int to_dimension,Range &adj_entities,const int operation_type = Interface::INTERSECT,const int verb = 0);
 
-  
+
   //Petsc Logs
   PetscLogEvent USER_EVENT_preProcess;
   PetscLogEvent USER_EVENT_operator;

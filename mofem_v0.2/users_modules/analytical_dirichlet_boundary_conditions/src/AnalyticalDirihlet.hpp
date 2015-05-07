@@ -34,10 +34,10 @@ struct AnalyticalDirihletBC {
   struct ApproxField {
 
 
-    struct MyTriFE: public TriElementForcesAndSurcesCore {
+    struct MyTriFE: public FaceElementForcesAndSourcesCore {
 
       int addToRule; ///< this is add to integration rule if 2nd order geometry approximation
-      MyTriFE(FieldInterface &m_field): TriElementForcesAndSurcesCore(m_field),addToRule(1) {}
+      MyTriFE(FieldInterface &m_field): FaceElementForcesAndSourcesCore(m_field),addToRule(1) {}
       int getRule(int order) { return order+addToRule; };
 
     };
@@ -45,15 +45,15 @@ struct AnalyticalDirihletBC {
     ApproxField(FieldInterface &m_field): feApprox(m_field) {}
     virtual ~ApproxField() {}
 
-    MyTriFE feApprox; 
-    MyTriFE& getLoopFeApprox() { return feApprox; } 
+    MyTriFE feApprox;
+    MyTriFE& getLoopFeApprox() { return feApprox; }
 
     ublas::matrix<double> hoCoords;
-    struct OpHoCoord: public TriElementForcesAndSurcesCore::UserDataOperator {
+    struct OpHoCoord: public FaceElementForcesAndSourcesCore::UserDataOperator {
 
       ublas::matrix<double> &hoCoords;
-      OpHoCoord(const string field_name,ublas::matrix<double> &ho_coords): 
-	TriElementForcesAndSurcesCore::UserDataOperator(field_name),
+      OpHoCoord(const string field_name,ublas::matrix<double> &ho_coords):
+	FaceElementForcesAndSourcesCore::UserDataOperator(field_name),
 	hoCoords(ho_coords) {}
 
       PetscErrorCode doWork(
@@ -86,15 +86,15 @@ struct AnalyticalDirihletBC {
       }
 
     };
-  
+
 
     /** \brief Lhs operaetar used to build matrix
       */
-    struct OpLhs:public TriElementForcesAndSurcesCore::UserDataOperator {
+    struct OpLhs:public FaceElementForcesAndSourcesCore::UserDataOperator {
 
       ublas::matrix<double> &hoCoords;
-      OpLhs(const string field_name,ublas::matrix<double> &ho_coords): 
-	TriElementForcesAndSurcesCore::UserDataOperator(field_name),
+      OpLhs(const string field_name,ublas::matrix<double> &ho_coords):
+	FaceElementForcesAndSourcesCore::UserDataOperator(field_name),
 	hoCoords(ho_coords) { }
 
       ublas::matrix<FieldData> NN,transNN;
@@ -121,23 +121,23 @@ struct AnalyticalDirihletBC {
 
 	NN.resize(nb_row_dofs,nb_col_dofs);
 	NN.clear();
-	  
+
 	unsigned int nb_gauss_pts = row_data.getN().size1();
 	for(unsigned int gg = 0;gg<nb_gauss_pts;gg++) {
 
 	  double w = getGaussPts()(2,gg);
 	  if(hoCoords.size1() == row_data.getN().size1()) {
-	  
-	    // higher order element
-	    double area = norm_2(getNormals_at_GaussPt(gg))*0.5; 
-	    w *= area;
 
-	  } else {
-	    
-	    //linear element
-	    w *= getArea();
+      // higher order element
+      double area = norm_2(getNormals_at_GaussPt(gg))*0.5;
+      w *= area;
 
-	  }
+    } else {
+
+      //linear element
+      w *= getArea();
+
+    }
 
 	  cblas_dger(CblasRowMajor,
 	    nb_row_dofs,nb_col_dofs,
@@ -145,7 +145,7 @@ struct AnalyticalDirihletBC {
 	    &*NN.data().begin(),nb_col_dofs);
 
 	}
-      
+
 	if( (row_type != col_type) || (row_side != col_side) ) {
 	  transNN.resize(nb_col_dofs,nb_row_dofs);
 	  ublas::noalias(transNN) = trans(NN);
@@ -158,7 +158,7 @@ struct AnalyticalDirihletBC {
 	col_indices.resize(nb_col_dofs);
 
 	for(int rr = 0;rr < rank; rr++) {
-      
+
 	  if((row_data.getIndices().size()%rank)!=0) {
 	    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
 	  }
@@ -196,19 +196,19 @@ struct AnalyticalDirihletBC {
 
 	  if(nb_rows != NN.size1()) {
 	    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
-	  } 
+	  }
 	  if(nb_cols != NN.size2()) {
 	    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
-	  } 
-  
+	  }
+
 	  ierr = MatSetValues(getFEMethod()->snes_B,nb_rows,rows,nb_cols,cols,data,ADD_VALUES); CHKERRQ(ierr);
 	  if( (row_type != col_type) || (row_side != col_side) ) {
 	    if(nb_rows != transNN.size2()) {
 	      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
-	    } 
+	    }
 	    if(nb_cols != transNN.size1()) {
 	      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
-	    } 
+	    }
 	    ierr = MatSetValues(getFEMethod()->snes_B,nb_cols,cols,nb_rows,rows,trans_data,ADD_VALUES); CHKERRQ(ierr);
 	  }
 
@@ -216,19 +216,23 @@ struct AnalyticalDirihletBC {
 
 	PetscFunctionReturn(0);
       }
+
     };
 
     /** \brief Rhs operaetar used to build matrix
       */
     template<typename FUNEVAL>
-    struct OpRhs:public TriElementForcesAndSurcesCore::UserDataOperator {
+    struct OpRhs:public FaceElementForcesAndSourcesCore::UserDataOperator {
 
+      Range tRis;
       ublas::matrix<double> &hoCoords;
-      FUNEVAL &functionEvaluator;
+      boost::shared_ptr<FUNEVAL> functionEvaluator;
       int fieldNumber;
 
-      OpRhs(const string field_name,ublas::matrix<double> &ho_coords,FUNEVAL &function_evaluator,int field_number): 
-	TriElementForcesAndSurcesCore::UserDataOperator(field_name),
+      OpRhs(const string field_name,Range tris,
+	ublas::matrix<double> &ho_coords,
+	boost::shared_ptr<FUNEVAL> function_evaluator,int field_number):
+	FaceElementForcesAndSourcesCore::UserDataOperator(field_name),tRis(tris),
 	hoCoords(ho_coords),functionEvaluator(function_evaluator),
 	fieldNumber(field_number)  {}
 
@@ -239,16 +243,19 @@ struct AnalyticalDirihletBC {
 	int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
 	PetscFunctionBegin;
 	PetscErrorCode ierr;
-  
+
 	try {
 
 	  unsigned int nb_row = data.getIndices().size();
 	  if(nb_row==0) PetscFunctionReturn(0);
+	  if(tRis.find(getMoFEMFEPtr()->get_ent()) == tRis.end()) {
+	    PetscFunctionReturn(0);
+	  }
 
 	  const FENumeredDofMoFEMEntity *dof_ptr;
 	  ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
 	  unsigned int rank = dof_ptr->get_max_rank();
-  
+
 	  NTf.resize(nb_row/rank);
           iNdices.resize(nb_row/rank);
 
@@ -257,7 +264,7 @@ struct AnalyticalDirihletBC {
 	    double x,y,z;
 	    double val = getGaussPts()(2,gg);
 	    if(hoCoords.size1() == data.getN().size1()) {
-	      double area = norm_2(getNormals_at_GaussPt(gg))*0.5; 
+	      double area = norm_2(getNormals_at_GaussPt(gg))*0.5;
 	      val *= area;
 	      x = hoCoords(gg,0);
 	      y = hoCoords(gg,1);
@@ -268,9 +275,17 @@ struct AnalyticalDirihletBC {
 	      y = getCoordsAtGaussPts()(gg,1);
 	      z = getCoordsAtGaussPts()(gg,2);
 	    }
-	    
-	    ublas::vector<double>& a = functionEvaluator(x,y,z)[fieldNumber];
 
+	    ublas::vector<double> a;
+	    try {
+
+	      a = (*functionEvaluator)(x,y,z)[fieldNumber];
+
+	    } catch (exception& ex) {
+	      ostringstream ss;
+	      ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+	      SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+	    }
 	    if(a.size()!=rank) {
 	      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
 	    }
@@ -300,16 +315,16 @@ struct AnalyticalDirihletBC {
       }
 
     };
-  
+
   };
 
   struct DirichletBC : public DisplacementBCFEMethodPreAndPostProc {
 
     DirichletBC(
-      FieldInterface& m_field,const string &field,Mat A,Vec X,Vec F): 
+      FieldInterface& m_field,const string &field,Mat A,Vec X,Vec F):
       DisplacementBCFEMethodPreAndPostProc(m_field,field,A,X,F),tRis_ptr(NULL) {}
     DirichletBC(
-      FieldInterface& m_field,const string &field): 
+      FieldInterface& m_field,const string &field):
       DisplacementBCFEMethodPreAndPostProc(m_field,field),tRis_ptr(NULL) {}
 
     Range *tRis_ptr;
@@ -324,7 +339,7 @@ struct AnalyticalDirihletBC {
       }
       PetscFunctionReturn(0);
     }
-  
+
     PetscErrorCode iNitalize(Range &tris) {
       PetscFunctionBegin;
       ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
@@ -341,7 +356,7 @@ struct AnalyticalDirihletBC {
       dofsValues.resize(map_zero_rows.size());
       int ii = 0;
       map<DofIdx,FieldData>::iterator mit = map_zero_rows.begin();
-      for(;mit!=map_zero_rows.end();mit++,ii++) { 
+      for(;mit!=map_zero_rows.end();mit++,ii++) {
 	dofsIndices[ii] = mit->first;
 	dofsValues[ii] = mit->second;
       }
@@ -350,28 +365,29 @@ struct AnalyticalDirihletBC {
 
 
   };
- 
+
   ApproxField approxField;
-  Range tRis;
-  AnalyticalDirihletBC(FieldInterface& m_field,Range &bc_tris): approxField(m_field),tRis(bc_tris) {};
+  AnalyticalDirihletBC(FieldInterface& m_field): approxField(m_field) {};
 
   template<typename FUNEVAL>
   PetscErrorCode setApproxOps(
     FieldInterface &m_field,
-    string field_name,
-    FUNEVAL &funtcion_evaluator,int field_number = 0,
+    string field_name,Range& tris,
+    boost::shared_ptr<FUNEVAL> funtcion_evaluator,int field_number = 0,
     string nodals_positions = "MESH_NODE_POSITIONS") {
     PetscFunctionBegin;
-    if(m_field.check_field(nodals_positions)) {
-	approxField.getLoopFeApprox().get_op_to_do_Rhs().push_back(new ApproxField::OpHoCoord(nodals_positions,approxField.hoCoords));
+    if(approxField.getLoopFeApprox().getRowOpPtrVector().empty()) {
+      if(m_field.check_field(nodals_positions)) {
+	approxField.getLoopFeApprox().getRowOpPtrVector().push_back(new ApproxField::OpHoCoord(nodals_positions,approxField.hoCoords));
+      }
+      approxField.getLoopFeApprox().getRowColOpPtrVector().push_back(new ApproxField::OpLhs(field_name,approxField.hoCoords));
     }
-    approxField.getLoopFeApprox().get_op_to_do_Rhs().push_back(new ApproxField::OpRhs<FUNEVAL>(field_name,approxField.hoCoords,funtcion_evaluator,field_number));
-    approxField.getLoopFeApprox().get_op_to_do_Lhs().push_back(new ApproxField::OpLhs(field_name,approxField.hoCoords));
+    approxField.getLoopFeApprox().getRowOpPtrVector().push_back(new ApproxField::OpRhs<FUNEVAL>(field_name,tris,approxField.hoCoords,funtcion_evaluator,field_number));
     PetscFunctionReturn(0);
   }
 
   PetscErrorCode initializeProblem(
-    FieldInterface &m_field,string fe,string field,
+    FieldInterface &m_field,string fe,string field,Range& tris,
     string nodals_positions = "MESH_NODE_POSITIONS") {
     PetscFunctionBegin;
     PetscErrorCode ierr;
@@ -383,7 +399,7 @@ struct AnalyticalDirihletBC {
     if(m_field.check_field(nodals_positions)) {
       ierr = m_field.modify_finite_element_add_field_data(fe,nodals_positions); CHKERRQ(ierr);
     }
-    ierr = m_field.add_ents_to_finite_element_by_TRIs(tRis,fe); CHKERRQ(ierr);
+    ierr = m_field.add_ents_to_finite_element_by_TRIs(tris,fe); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
@@ -403,17 +419,17 @@ struct AnalyticalDirihletBC {
     ierr = KSPSetOperators(kspSolver,A,A); CHKERRQ(ierr);
     ierr = KSPSetFromOptions(kspSolver); CHKERRQ(ierr);
 
-    PC pc;
-    ierr = KSPGetPC(kspSolver,&pc); CHKERRQ(ierr);
-    ierr = PCSetType(pc,PCLU); CHKERRQ(ierr);
-    ierr = PCFactorSetMatSolverPackage(pc,MATSOLVERMUMPS); CHKERRQ(ierr);
-    ierr = PCFactorSetUpMatSolverPackage(pc);  CHKERRQ(ierr);
+    //PC pc;
+    //ierr = KSPGetPC(kspSolver,&pc); CHKERRQ(ierr);
+    //ierr = PCSetType(pc,PCLU); CHKERRQ(ierr);
+    //ierr = PCFactorSetMatSolverPackage(pc,MATSOLVERMUMPS); CHKERRQ(ierr);
+    //ierr = PCFactorSetUpMatSolverPackage(pc);  CHKERRQ(ierr);
 
     PetscFunctionReturn(0);
   }
-  
+
   PetscErrorCode solveProblem(
-    FieldInterface &m_field,string problem,string fe,DirichletBC &bc) {
+    FieldInterface &m_field,string problem,string fe,DirichletBC &bc,Range &tris) {
     PetscFunctionBegin;
     PetscErrorCode ierr;
 
@@ -436,11 +452,11 @@ struct AnalyticalDirihletBC {
 
     ierr = m_field.set_global_ghost_vector(problem,ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
-    bc.tRis_ptr = &tRis; 
+    bc.tRis_ptr = &tris;
     bc.map_zero_rows.clear();
     bc.dofsIndices.clear();
     bc.dofsValues.clear();
-  
+
     PetscFunctionReturn(0);
   }
 
@@ -459,4 +475,3 @@ struct AnalyticalDirihletBC {
 };
 
 #endif //__ANALYTICALDIRIHLETBC_HPP__
-

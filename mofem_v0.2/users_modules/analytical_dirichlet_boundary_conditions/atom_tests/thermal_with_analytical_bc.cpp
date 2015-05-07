@@ -20,6 +20,7 @@
 
 #include <Projection10NodeCoordsOnField.hpp>
 
+#include <boost/shared_ptr.hpp>
 #include <boost/numeric/ublas/vector_proxy.hpp>
 #include <AnalyticalDirihlet.hpp>
 
@@ -138,8 +139,8 @@ int main(int argc, char *argv[]) {
     rval = moab.get_entities_by_type(it->get_meshset(),MBTRI,bc_tris,true); CHKERR_PETSC(rval);
   }
 
-  AnalyticalDirihletBC analytical_bc(m_field,bc_tris);
-  ierr = analytical_bc.initializeProblem(m_field,"BC_FE","TEMP"); CHKERRQ(ierr);
+  AnalyticalDirihletBC analytical_bc(m_field);
+  ierr = analytical_bc.initializeProblem(m_field,"BC_FE","TEMP",bc_tris); CHKERRQ(ierr);
   ierr = m_field.modify_problem_add_finite_element("BC_PROBLEM","BC_FE"); CHKERRQ(ierr);
 
   /****/
@@ -159,12 +160,12 @@ int main(int argc, char *argv[]) {
   /****/
   //mesh partitioning 
   //partition
-  ierr = m_field.simple_partition_problem("TEST_PROBLEM"); CHKERRQ(ierr);
+  ierr = m_field.partition_simple_problem("TEST_PROBLEM"); CHKERRQ(ierr);
   ierr = m_field.partition_finite_elements("TEST_PROBLEM"); CHKERRQ(ierr);
   //what are ghost nodes, see Petsc Manual
   ierr = m_field.partition_ghost_dofs("TEST_PROBLEM"); CHKERRQ(ierr);
 
-  ierr = m_field.simple_partition_problem("BC_PROBLEM"); CHKERRQ(ierr);
+  ierr = m_field.partition_simple_problem("BC_PROBLEM"); CHKERRQ(ierr);
   ierr = m_field.partition_finite_elements("BC_PROBLEM"); CHKERRQ(ierr);
   //what are ghost nodes, see Petsc Manual
   ierr = m_field.partition_ghost_dofs("BC_PROBLEM"); CHKERRQ(ierr);
@@ -190,10 +191,10 @@ int main(int argc, char *argv[]) {
   //solve for ditihlet bc dofs
   ierr = analytical_bc.setProblem(m_field,"BC_PROBLEM"); CHKERRQ(ierr);
   
-  AnaliticalFunction testing_function;
+  boost::shared_ptr<AnaliticalFunction> testing_function = boost::shared_ptr<AnaliticalFunction>(new AnaliticalFunction);
 
-  ierr = analytical_bc.setApproxOps(m_field,"TEMP",testing_function,0); CHKERRQ(ierr);
-  ierr = analytical_bc.solveProblem(m_field,"BC_PROBLEM","BC_FE",analytical_ditihlet_bc); CHKERRQ(ierr);
+  ierr = analytical_bc.setApproxOps(m_field,"TEMP",bc_tris,testing_function,0); CHKERRQ(ierr);
+  ierr = analytical_bc.solveProblem(m_field,"BC_PROBLEM","BC_FE",analytical_ditihlet_bc,bc_tris); CHKERRQ(ierr);
 
   ierr = analytical_bc.destroyProblem(); CHKERRQ(ierr);
   

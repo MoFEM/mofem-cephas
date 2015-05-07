@@ -49,8 +49,8 @@ struct GroundSurfaceTemerature {
     *
     * This element is used to integrate heat fluxes; convection and radiation
     */
-  struct MyTriFE: public TriElementForcesAndSurcesCore {
-    MyTriFE(FieldInterface &_mField): TriElementForcesAndSurcesCore(_mField) {}
+  struct MyTriFE: public FaceElementForcesAndSourcesCore {
+    MyTriFE(FieldInterface &_mField): FaceElementForcesAndSourcesCore(_mField) {}
     int getRule(int order) { return order; };
   };
   MyTriFE feGroundSurfaceRhs; //< radiation element
@@ -130,7 +130,7 @@ struct GroundSurfaceTemerature {
     }
 
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
-      if(it->get_Cubit_name().compare(0,7,"ASPHALT") == 0) {
+      if(it->get_name().compare(0,7,"ASPHALT") == 0) {
 	Range tris;
         rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
 	blockData.push_back(new Asphalt(tris));
@@ -139,7 +139,7 @@ struct GroundSurfaceTemerature {
     }
 
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
-      if(it->get_Cubit_name().compare(0,8,"CONCRETE") == 0) {
+      if(it->get_name().compare(0,8,"CONCRETE") == 0) {
 	Range tris;
         rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
 	blockData.push_back(new Concrete(tris));
@@ -148,7 +148,7 @@ struct GroundSurfaceTemerature {
     }
 
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
-      if(it->get_Cubit_name().compare(0,8,"BARESOIL") == 0) {
+      if(it->get_name().compare(0,8,"BARESOIL") == 0) {
 	Range tris;
         rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
 	blockData.push_back(new BareSoil(tris));
@@ -465,11 +465,11 @@ struct GroundSurfaceTemerature {
   /** \brief opearator to caulate tempereature at Gauss points
     * \infroup mofem_thermal_elem
     */
-  struct OpGetTriTemperatureAtGaussPts: public TriElementForcesAndSurcesCore::UserDataOperator {
+  struct OpGetTriTemperatureAtGaussPts: public FaceElementForcesAndSourcesCore::UserDataOperator {
 
     ublas::vector<double> &fieldAtGaussPts;
     OpGetTriTemperatureAtGaussPts(const string field_name,ublas::vector<double> &field_at_gauss_pts):
-      TriElementForcesAndSurcesCore::UserDataOperator(field_name),
+      FaceElementForcesAndSourcesCore::UserDataOperator(field_name),
       fieldAtGaussPts(field_at_gauss_pts) {}
 
     /** \brief operator calculating temperature and rate of temperature
@@ -510,7 +510,7 @@ struct GroundSurfaceTemerature {
 
   };
 
-  struct OpRhs:public TriElementForcesAndSurcesCore::UserDataOperator {
+  struct OpRhs:public FaceElementForcesAndSourcesCore::UserDataOperator {
         
     CommonData &commonData; 
     GenricClimateModel* timeDataPtr;
@@ -523,7 +523,7 @@ struct GroundSurfaceTemerature {
       Parameters *parameters_ptr,
       CommonData &common_data,
       bool _ho_geometry = false):
-	TriElementForcesAndSurcesCore::UserDataOperator(field_name),
+	FaceElementForcesAndSourcesCore::UserDataOperator(field_name),
 	commonData(common_data),
 	timeDataPtr(time_data_ptr),
 	pArametersPtr(parameters_ptr),
@@ -539,12 +539,12 @@ struct GroundSurfaceTemerature {
       EntityHandle element_ent = getMoFEMFEPtr()->get_ent();
       const EntityHandle *conn;
       int num_nodes;
-      rval = getTriElementForcesAndSurcesCore()->mField.get_moab().get_connectivity(element_ent,conn,num_nodes,true); CHKERR_PETSC(rval);
-      int def_VAL = 0;
+      rval = getFaceElementForcesAndSourcesCore()->mField.get_moab().get_connectivity(element_ent,conn,num_nodes,true); CHKERR_PETSC(rval);
+      int def_VAL[] = { 0 };
       Tag th_solar_exposure;
-      rval = getTriElementForcesAndSurcesCore()->mField.get_moab().tag_get_handle( 
-	"SOLAR_EXPOSURE",1,MB_TYPE_INTEGER,th_solar_exposure,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR(rval);
-      ierr = getTriElementForcesAndSurcesCore()->mField.get_moab().tag_get_data(th_solar_exposure,conn,num_nodes,nodalExposure); CHKERRQ(ierr);
+      rval = getFaceElementForcesAndSourcesCore()->mField.get_moab().tag_get_handle( 
+	"SOLAR_EXPOSURE",1,MB_TYPE_INTEGER,th_solar_exposure,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR(rval);
+      ierr = getFaceElementForcesAndSourcesCore()->mField.get_moab().tag_get_data(th_solar_exposure,conn,num_nodes,nodalExposure); CHKERRQ(ierr);
       PetscFunctionReturn(0);
     }
 
@@ -558,7 +558,7 @@ struct GroundSurfaceTemerature {
       PetscErrorCode ierr;
 
       if(type == MBVERTEX) {
-	//ierr = getExposure(); CHKERRQ(ierr);
+	ierr = getExposure(); CHKERRQ(ierr);
       }
   
       const FENumeredDofMoFEMEntity *dof_ptr;
@@ -598,7 +598,7 @@ struct GroundSurfaceTemerature {
 	
 	eXposure = 0;
 	for(int nn = 0;nn<3;nn++) {
-	  eXposure += getTriElementForcesAndSurcesCore()->dataH1.dataOnEntities[MBVERTEX][0].getN()(gg,nn)*nodalExposure[nn];
+	  eXposure += getFaceElementForcesAndSourcesCore()->dataH1.dataOnEntities[MBVERTEX][0].getN()(gg,nn)*nodalExposure[nn];
 	}
 
 	double hnet  = 0;
@@ -730,8 +730,8 @@ struct GroundSurfaceTemerature {
       boost::ptr_vector<Parameters>::iterator sit = blockData.begin();
       for(;sit!=blockData.end();sit++) {
 	// add finite element operator
-	feGroundSurfaceRhs.get_op_to_do_Rhs().push_back(new OpGetTriTemperatureAtGaussPts(field_name,commonData.temperatureAtGaussPts));
-	feGroundSurfaceRhs.get_op_to_do_Rhs().push_back(new OpRhs(field_name,time_data_ptr,&*sit,commonData,ho_geometry));
+	feGroundSurfaceRhs.getRowOpPtrVector().push_back(new OpGetTriTemperatureAtGaussPts(field_name,commonData.temperatureAtGaussPts));
+	feGroundSurfaceRhs.getRowOpPtrVector().push_back(new OpRhs(field_name,time_data_ptr,&*sit,commonData,ho_geometry));
 	preProcessShade.push_back(new SolarRadiationPreProcessor(mField,time_data_ptr,&*sit));
       }
     }
@@ -739,8 +739,8 @@ struct GroundSurfaceTemerature {
       boost::ptr_vector<Parameters>::iterator sit = blockData.begin();
       for(;sit!=blockData.end();sit++) {
 	// add finite element operator
-	feGroundSurfaceLhs.get_op_to_do_Rhs().push_back(new OpGetTriTemperatureAtGaussPts(field_name,commonData.temperatureAtGaussPts));
-	feGroundSurfaceLhs.get_op_to_do_Lhs().push_back(new OpLhs(field_name,time_data_ptr,&*sit,commonData,ho_geometry));
+	feGroundSurfaceLhs.getRowOpPtrVector().push_back(new OpGetTriTemperatureAtGaussPts(field_name,commonData.temperatureAtGaussPts));
+	feGroundSurfaceLhs.getRowColOpPtrVector().push_back(new OpLhs(field_name,time_data_ptr,&*sit,commonData,ho_geometry));
       }
     }
 

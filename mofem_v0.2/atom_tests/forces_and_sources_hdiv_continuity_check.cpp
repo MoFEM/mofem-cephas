@@ -1,8 +1,3 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
- * FIXME: DESCRIPTION
- */
-
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -167,7 +162,7 @@ int main(int argc, char *argv[]) {
   /****/
   //mesh partitioning 
   //partition
-  ierr = m_field.simple_partition_problem("TEST_PROBLEM"); CHKERRQ(ierr);
+  ierr = m_field.partition_simple_problem("TEST_PROBLEM"); CHKERRQ(ierr);
   ierr = m_field.partition_finite_elements("TEST_PROBLEM"); CHKERRQ(ierr);
   //what are ghost nodes, see Petsc Manual
   ierr = m_field.partition_ghost_dofs("TEST_PROBLEM"); CHKERRQ(ierr);
@@ -178,13 +173,13 @@ int main(int argc, char *argv[]) {
   TeeDevice my_tee(cout, ofs); 
   TeeStream my_split(my_tee);
 
-  struct OpTetFluxes: public TetElementForcesAndSourcesCore::UserDataOperator {
+  struct OpTetFluxes: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     FieldInterface &m_field;
     Tag tH;
 
     OpTetFluxes(FieldInterface &m_field,Tag _th):
-      TetElementForcesAndSourcesCore::UserDataOperator("HDIV"),
+      VolumeElementForcesAndSourcesCore::UserDataOperator("HDIV"),
       m_field(m_field),tH(_th) {}
 
     PetscErrorCode doWork(
@@ -231,9 +226,9 @@ int main(int argc, char *argv[]) {
 
   };
 
-  struct MyTetFE: public TetElementForcesAndSourcesCore {
+  struct MyTetFE: public VolumeElementForcesAndSourcesCore {
 
-    MyTetFE(FieldInterface &m_field): TetElementForcesAndSourcesCore(m_field) {}
+    MyTetFE(FieldInterface &m_field): VolumeElementForcesAndSourcesCore(m_field) {}
     int getRule(int order) { return -1; };
 
     ublas::matrix<double> N_tri;
@@ -269,14 +264,14 @@ int main(int argc, char *argv[]) {
 
   };
 
-  struct OpFacesSkinFluxes: public TriElementForcesAndSurcesCore::UserDataOperator {
+  struct OpFacesSkinFluxes: public FaceElementForcesAndSourcesCore::UserDataOperator {
 
     FieldInterface &m_field;
     Tag tH1,tH2;
     TeeStream &mySplit;
 
     OpFacesSkinFluxes(FieldInterface &m_field,Tag _th1,Tag _th2,TeeStream &my_split):
-      TriElementForcesAndSurcesCore::UserDataOperator("HDIV"),
+      FaceElementForcesAndSourcesCore::UserDataOperator("HDIV"),
       m_field(m_field),tH1(_th1),tH2(_th2),mySplit(my_split) {}
 
     PetscErrorCode doWork(
@@ -316,14 +311,14 @@ int main(int argc, char *argv[]) {
 
   };
 
-  struct OpFacesFluxes: public TriElementForcesAndSurcesCore::UserDataOperator {
+  struct OpFacesFluxes: public FaceElementForcesAndSourcesCore::UserDataOperator {
 
     FieldInterface &m_field;
     Tag tH1,tH2;
     TeeStream &mySplit;
 
     OpFacesFluxes(FieldInterface &m_field,Tag _th1,Tag _th2,TeeStream &my_split):
-      TriElementForcesAndSurcesCore::UserDataOperator("HDIV"),
+      FaceElementForcesAndSourcesCore::UserDataOperator("HDIV"),
       m_field(m_field),tH1(_th1),tH2(_th2),mySplit(my_split) {}
 
     PetscErrorCode doWork(
@@ -354,9 +349,9 @@ int main(int argc, char *argv[]) {
 
   };
 
-  struct MyTriFE: public TriElementForcesAndSurcesCore {
+  struct MyTriFE: public FaceElementForcesAndSourcesCore {
 
-    MyTriFE(FieldInterface &m_field): TriElementForcesAndSurcesCore(m_field) {}
+    MyTriFE(FieldInterface &m_field): FaceElementForcesAndSourcesCore(m_field) {}
     int getRule(int order) { return -1; };
 
     PetscErrorCode setGaussPts(int order) {
@@ -380,12 +375,12 @@ int main(int argc, char *argv[]) {
   Tag th1;
   double def_val[] = {0,0,0};
   rval = moab.tag_get_handle("T",3,MB_TYPE_DOUBLE,th1,MB_TAG_CREAT|MB_TAG_SPARSE,&def_val); CHKERR_PETSC(rval);
-  tet_fe.get_op_to_do_Rhs().push_back(new OpTetFluxes(m_field,th1));
+  tet_fe.getRowOpPtrVector().push_back(new OpTetFluxes(m_field,th1));
 
   Tag th2;
   rval = moab.tag_get_handle("TN",1,MB_TYPE_DOUBLE,th2,MB_TAG_CREAT|MB_TAG_SPARSE,&def_val); CHKERR_PETSC(rval);
-  tri_fe.get_op_to_do_Rhs().push_back(new OpFacesFluxes(m_field,th1,th2,my_split));
-  skin_fe.get_op_to_do_Rhs().push_back(new OpFacesSkinFluxes(m_field,th1,th2,my_split));
+  tri_fe.getRowOpPtrVector().push_back(new OpFacesFluxes(m_field,th1,th2,my_split));
+  skin_fe.getRowOpPtrVector().push_back(new OpFacesSkinFluxes(m_field,th1,th2,my_split));
 
   for(Range::iterator fit = faces.begin();fit!=faces.end();fit++) {
     rval = moab.tag_set_data(th1,&*fit,1,&def_val); CHKERR_PETSC(rval);

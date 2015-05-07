@@ -34,8 +34,8 @@ namespace MoFEM {
 struct FluidPressure {
 
   FieldInterface &mField;
-  struct MyTriangleFE: public TriElementForcesAndSurcesCore {
-    MyTriangleFE(FieldInterface &_mField): TriElementForcesAndSurcesCore(_mField) {}
+  struct MyTriangleFE: public FaceElementForcesAndSourcesCore {
+    MyTriangleFE(FieldInterface &_mField): FaceElementForcesAndSourcesCore(_mField) {}
     int getRule(int order) { return order; };
   };
   MyTriangleFE fe;
@@ -56,14 +56,14 @@ struct FluidPressure {
   PetscErrorCode ierr;
   ErrorCode rval;
 
-  struct OpCalculatePressure: public TriElementForcesAndSurcesCore::UserDataOperator {
+  struct OpCalculatePressure: public FaceElementForcesAndSourcesCore::UserDataOperator {
     Vec F;
     FluidData &dAta;
     bool allowNegativePressure; ///< allows for negative pressures
     bool hoGeometry;
     OpCalculatePressure(const string field_name,Vec _F,FluidData &data,
       bool allow_negative_pressure,bool ho_geometry):
-      TriElementForcesAndSurcesCore::UserDataOperator(field_name),
+      FaceElementForcesAndSourcesCore::UserDataOperator(field_name),
       F(_F),dAta(data),allowNegativePressure(allow_negative_pressure),hoGeometry(ho_geometry) {}
     ublas::vector<FieldData> Nf;
     PetscErrorCode ierr;
@@ -130,11 +130,11 @@ struct FluidPressure {
     // loop over all blocksets and get data which name is FluidPressure
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,bit)) {
 
-      if(bit->get_Cubit_name().compare(0,14,"FLUID_PRESSURE") == 0) {
+      if(bit->get_name().compare(0,14,"FLUID_PRESSURE") == 0) {
 
 	//get block attributes
 	vector<double> attributes;
-	ierr = bit->get_Cubit_attributes(attributes); CHKERRQ(ierr);
+	ierr = bit->get_attributes(attributes); CHKERRQ(ierr);
 	if(attributes.size()<7) {
 	  SETERRQ1(PETSC_COMM_SELF,1,"not enough block attributes to deffine fluid pressure element, attributes.size() = %d ",attributes.size());
 	}
@@ -176,7 +176,7 @@ struct FluidPressure {
     map<MeshSetId,FluidData>::iterator sit = setOfFluids.begin();
     for(;sit!=setOfFluids.end();sit++) {
       //add finite element
-      fe.get_op_to_do_Rhs().push_back(new OpCalculatePressure(field_name,F,sit->second,allow_negative_pressure,ho_geometry));
+      fe.getRowOpPtrVector().push_back(new OpCalculatePressure(field_name,F,sit->second,allow_negative_pressure,ho_geometry));
     }
     PetscFunctionReturn(0);
   }

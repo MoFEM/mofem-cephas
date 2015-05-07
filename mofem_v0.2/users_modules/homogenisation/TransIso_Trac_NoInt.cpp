@@ -149,7 +149,7 @@ int main(int argc, char *argv[]) {
 	int noOfFibres=0;
 	for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|UNKNOWNCUBITNAME,it)) {
 		
-		std::size_t found=it->get_Cubit_name().find("PotentialFlow");
+		std::size_t found=it->get_name().find("PotentialFlow");
 		if (found==std::string::npos) continue;
 		noOfFibres += 1;
 	}
@@ -160,8 +160,8 @@ int main(int argc, char *argv[]) {
 		fibreList[aa] = aa + 1;
 	}
     
-	Range RangeFibre[noOfFibres];
-	EntityHandle fibre_meshset[noOfFibres];
+	vector<Range> RangeFibre(noOfFibres);
+	vector<EntityHandle> fibre_meshset(noOfFibres);
 	
 	for (int ii=0; ii<noOfFibres; ii++) {
 		ostringstream sss;
@@ -178,7 +178,7 @@ int main(int argc, char *argv[]) {
     
 	for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)){
         
-		if(it->get_Cubit_name() == "MAT_ELASTIC_1") {
+		if(it->get_name() == "MAT_ELASTIC_1") {
 			Range TetsInBlock;
 			rval = moab.get_entities_by_type(it->meshset, MBTET,TetsInBlock,true); CHKERR_PETSC(rval);
 			Range block_rope_bit_level = intersect(LatestRefinedTets,TetsInBlock);
@@ -393,7 +393,7 @@ int main(int argc, char *argv[]) {
         cout << endl << *it << endl;
         
         //Get block name
-        string name = it->get_Cubit_name();
+        string name = it->get_name();
         
 //        if (name.compare(0,20,"MAT_ELASTIC_TRANSISO") == 0)
 //        {

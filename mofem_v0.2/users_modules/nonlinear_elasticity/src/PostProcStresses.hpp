@@ -27,7 +27,7 @@
   #error "MoFEM need to be compiled with ADOL-C"
 #endif 
 
-struct PostPorcStress: public TetElementForcesAndSourcesCore::UserDataOperator {
+struct PostPorcStress: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
   Interface &postProcMesh;
   vector<EntityHandle> &mapGaussPts;
@@ -41,7 +41,7 @@ struct PostPorcStress: public TetElementForcesAndSourcesCore::UserDataOperator {
     const string field_name,
     NonlinearElasticElement::BlockData &data,
     PostPocOnRefinedMesh::CommonData &common_data):
-    TetElementForcesAndSourcesCore::UserDataOperator(field_name),
+    VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
     postProcMesh(post_proc_mesh),mapGaussPts(map_gauss_pts),
     dAta(data),commonData(common_data) {}
 
@@ -80,7 +80,7 @@ struct PostPorcStress: public TetElementForcesAndSourcesCore::UserDataOperator {
     if(mapGaussPts.size()!=(unsigned int)nb_gauss_pts) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
     }
-    if(commonData.gradMap[row_field_name].size()!=(unsigned int)nb_gauss_pts) {
+    if(commonData.gradMap[rowFieldName].size()!=(unsigned int)nb_gauss_pts) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
     }
 
@@ -90,7 +90,7 @@ struct PostPorcStress: public TetElementForcesAndSourcesCore::UserDataOperator {
     for(int gg = 0;gg<nb_gauss_pts;gg++) {
 
       dAta.materialDoublePtr->F.resize(3,3);
-      noalias(dAta.materialDoublePtr->F) = (commonData.gradMap[row_field_name])[gg];
+      noalias(dAta.materialDoublePtr->F) = (commonData.gradMap[rowFieldName])[gg];
       if(commonData.gradMap["MESH_NODE_POSITIONS"].size()==(unsigned int)nb_gauss_pts) {
 	H.resize(3,3);
 	invH.resize(3,3);

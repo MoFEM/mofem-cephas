@@ -1,7 +1,7 @@
 # Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
-# The MoFEM package is copyrighted by Lukasz Kaczmarczyk. 
-# It can be freely used for educational and research purposes 
-# by other institutions. If you use this softwre pleas cite my work. 
+# The MoFEM package is copyrighted by Lukasz Kaczmarczyk.
+# It can be freely used for educational and research purposes
+# by other institutions. If you use this softwre pleas cite my work.
 #
 # MoFEM is free software: you can redistribute it and/or modify it under
 # the terms of the GNU Lesser General Public License as published by the
@@ -36,11 +36,18 @@ link_directories("${PROJECT_BINARY_DIR}/src/petsc")
 link_directories("${PROJECT_BINARY_DIR}/src/finite_elements")
 link_directories("${PROJECT_BINARY_DIR}/finite_element_library")
 
-add_library(mofem_finite_element_library
+set(MOFEM_FINITE_ELEMENT_LIBRARY_FILES
   ${PROJECT_SOURCE_DIR}/finite_element_library/impl/ConstrainMatrixCtx.cpp
   ${PROJECT_SOURCE_DIR}/finite_element_library/impl/ArcLengthTools.cpp
   ${PROJECT_SOURCE_DIR}/finite_element_library/impl/DirichletBC.cpp
   ${PROJECT_SOURCE_DIR}/finite_element_library/impl/ThermalElement.cpp
-  ${PROJECT_SOURCE_DIR}/finite_element_library/impl/NonLienarElasticElement.cpp
 )
 
+if(ADOL-C_LIBRARY)
+  set(MOFEM_FINITE_ELEMENT_LIBRARY_FILES
+    ${MOFEM_FINITE_ELEMENT_LIBRARY_FILES}
+    ${PROJECT_SOURCE_DIR}/finite_element_library/impl/NonLienarElasticElement.cpp
+  )
+endif(ADOL-C_LIBRARY)
+
+add_library(mofem_finite_element_library ${MOFEM_FINITE_ELEMENT_LIBRARY_FILES})

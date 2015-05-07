@@ -36,7 +36,7 @@ target_link_libraries(homogenisation_disp_atom_test
   ${MoFEM_PROJECT_LIBS})
 
 #displacement boundary conditions
-add_test(homogenisation_disp_atom_test ${MoFEM_MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/homogenisation_disp_atom_test -my_file Cube_atom_test.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -my_order 1 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0)
+add_test(homogenisation_disp_atom_test ${MoFEM_MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/homogenisation_disp_atom_test -my_file Cube_atom_test.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package mumps -my_order 1 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0)
 
 
 add_executable(homogenisation_trac_atom_test ${UM_SOURCE_DIR}/homogenisation/atom_tests/homogenisation_trac_atom_test.cpp)
@@ -54,7 +54,7 @@ target_link_libraries(homogenisation_trac_atom_test
   ${MoFEM_PROJECT_LIBS})
 
 #displacement boundary conditions
-add_test(homogenisation_trac_atom_test ${MoFEM_MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/homogenisation_trac_atom_test -my_file Cube_atom_test.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -my_order 1 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0)
+add_test(homogenisation_trac_atom_test ${MoFEM_MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/homogenisation_trac_atom_test -my_file Cube_atom_test.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package mumps -my_order 1 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0)
 
 
 add_executable(homogenisation_periodic_atom_test ${UM_SOURCE_DIR}/homogenisation/atom_tests/homogenisation_periodic_atom_test.cpp)
@@ -72,5 +72,5 @@ target_link_libraries(homogenisation_periodic_atom_test
   ${MoFEM_PROJECT_LIBS})
 
 #displacement boundary conditions
-add_test(homogenisation_periodic_atom_test ${MoFEM_MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/homogenisation_periodic_atom_test -my_file Cube_atom_test.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -my_order 1 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0)
+add_test(homogenisation_periodic_atom_test ${MoFEM_MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/homogenisation_periodic_atom_test -my_file Cube_atom_test.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package mumps -my_order 1 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0)
 

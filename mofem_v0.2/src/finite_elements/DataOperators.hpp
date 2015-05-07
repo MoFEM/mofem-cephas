@@ -1,6 +1,6 @@
 /** \file DataOperators.hpp
 
-  Number of structures preforming operations on integration points. 
+  Number of structures preforming operations on integration points.
 
   For example:
   - calculate Jacobian
@@ -22,7 +22,6 @@
 *
 * You should have received a copy of the GNU Lesser General Public
 * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
-
 
 #ifndef __DATAOPERATORS_HPP
 #define __DATAOPERATORS_HPP
@@ -50,7 +49,7 @@ struct DataOperator {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode opLhs(DataForcesAndSurcesCore &row_data,DataForcesAndSurcesCore &col_data,bool symm = true);
+  virtual PetscErrorCode opLhs(DataForcesAndSurcesCore &row_data,DataForcesAndSurcesCore &col_data,bool symm = true);
 
 
   /** \brief operator for linear form, usually to calculate values on left hand side
@@ -63,12 +62,12 @@ struct DataOperator {
     SETERRQ(PETSC_COMM_SELF,1,"not implemented");
     PetscFunctionReturn(0);
   }
-  PetscErrorCode opRhs(DataForcesAndSurcesCore &data);
 
+  virtual PetscErrorCode opRhs(DataForcesAndSurcesCore &data);
 
 };
 
-/// \brief transform local reference derivatives of shape function to global derivatives 
+/// \brief transform local reference derivatives of shape function to global derivatives
 struct OpSetInvJacH1: public DataOperator {
 
   ublas::matrix<double> &invJac;
@@ -80,7 +79,7 @@ struct OpSetInvJacH1: public DataOperator {
 
 };
 
-/// \brief transform local reference derivatives of shape function to global derivatives 
+/// \brief transform local reference derivatives of shape function to global derivatives
 struct OpSetInvJacHdiv: public DataOperator {
 
   ublas::matrix<double> &invJac;
@@ -92,7 +91,7 @@ struct OpSetInvJacHdiv: public DataOperator {
 
 };
 
-/** \brief transform local reference derivatives of shape function to global derivatives if higher order geometry is given 
+/** \brief transform local reference derivatives of shape function to global derivatives if higher order geometry is given
   */
 struct OpSetHoInvJacH1: public DataOperator {
 
@@ -102,11 +101,11 @@ struct OpSetHoInvJacH1: public DataOperator {
   ublas::matrix<FieldData> diffNinvJac;
   PetscErrorCode doWork(
     int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
- 
+
 };
 
 
-/** \brief transform local reference derivatives of shape function to global derivatives if higher order geometry is given 
+/** \brief transform local reference derivatives of shape function to global derivatives if higher order geometry is given
   */
 struct OpSetHoInvJacHdiv: public DataOperator {
 
@@ -116,7 +115,7 @@ struct OpSetHoInvJacHdiv: public DataOperator {
   ublas::matrix<FieldData> diffHdiv_invJac;
   PetscErrorCode doWork(
     int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
- 
+
 };
 
 /** \brief apply covariant (Piola) transfer for Hdiv space
@@ -125,7 +124,7 @@ struct OpSetPiolaTransform: public DataOperator {
 
     double &vOlume;
     ublas::matrix<double> &Jac;
-    OpSetPiolaTransform(double &_vOlume,ublas::matrix<double> &_Jac): 
+    OpSetPiolaTransform(double &_vOlume,ublas::matrix<double> &_Jac):
       vOlume(_vOlume),Jac(_Jac) {}
 
     ublas::matrix<FieldData> piolaN;
@@ -141,7 +140,7 @@ struct OpSetHoPiolaTransform: public DataOperator {
 
     ublas::vector<double> &detHoJac;
     ublas::matrix<double> &hoJac;
-    OpSetHoPiolaTransform(ublas::vector<double> &_detJac,ublas::matrix<double> &_Jac): 
+    OpSetHoPiolaTransform(ublas::vector<double> &_detJac,ublas::matrix<double> &_Jac):
       detHoJac(_detJac),hoJac(_Jac) {}
 
     ublas::matrix<FieldData> piolaN;
@@ -159,14 +158,14 @@ struct OpGetData: public DataOperator {
 
   ublas::matrix<FieldData> &data_at_GaussPt;
   ublas::matrix<FieldData> &dataGrad_at_GaussPt;
- 
+
   const unsigned int dim;
   const ApproximationRank rank;
 
   OpGetData(
     ublas::matrix<FieldData> &_data_at_GaussPt,
     ublas::matrix<FieldData> &_dataGrad_at_GaussPt,
-    ApproximationRank _rank,unsigned int _dim = 3): 
+    ApproximationRank _rank,unsigned int _dim = 3):
       data_at_GaussPt(_data_at_GaussPt),
       dataGrad_at_GaussPt(_dataGrad_at_GaussPt),
       dim(_dim),rank(_rank) {}
@@ -190,7 +189,7 @@ struct OpGetNormals: public DataOperator {
   OpGetNormals(
     ublas::matrix<FieldData> &_nOrmals_at_GaussPt,
     ublas::matrix<FieldData> &_tAngent1_at_GaussPt,
-    ublas::matrix<FieldData> &_tAngent2_at_GaussPt): 
+    ublas::matrix<FieldData> &_tAngent2_at_GaussPt):
     nOrmals_at_GaussPt(_nOrmals_at_GaussPt),
     tAngent1_at_GaussPt(_tAngent1_at_GaussPt),
     tAngent2_at_GaussPt(_tAngent2_at_GaussPt) {}
@@ -223,7 +222,7 @@ struct OpGetNormalsOnPrism: public DataOperator {
     ublas::matrix<FieldData> &_tAngent2_at_GaussPtF3,
     ublas::matrix<FieldData> &_nOrmals_at_GaussPtF4,
     ublas::matrix<FieldData> &_tAngent1_at_GaussPtF4,
-    ublas::matrix<FieldData> &_tAngent2_at_GaussPtF4): 
+    ublas::matrix<FieldData> &_tAngent2_at_GaussPtF4):
     nOrmals_at_GaussPtF3(_nOrmals_at_GaussPtF3),
     tAngent1_at_GaussPtF3(_tAngent1_at_GaussPtF3),
     tAngent2_at_GaussPtF3(_tAngent2_at_GaussPtF3),
@@ -270,5 +269,3 @@ struct OpSetPiolaTransoformOnTriangle: public DataOperator {
 /***************************************************************************//**
  * \defgroup mofem_forces_and_sources Forces and sources
  ******************************************************************************/
-
-

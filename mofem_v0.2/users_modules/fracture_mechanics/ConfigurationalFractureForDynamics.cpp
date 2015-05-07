@@ -280,7 +280,7 @@ struct MonitorLoadPath: public FEMethod {
     //ierr = mField.get_problem("COUPLED_DYNAMIC",&problemPtr); CHKERRQ(ierr);
 
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|UNKNOWNCUBITNAME,it)) {
-      if(it->get_Cubit_name() != "LoadPath") continue;
+      if(it->get_name() != "LoadPath") continue;
 
       Range nodes;
       rval = mField.get_moab().get_entities_by_type(it->meshset,MBVERTEX,nodes,true); CHKERR_PETSC(rval);
