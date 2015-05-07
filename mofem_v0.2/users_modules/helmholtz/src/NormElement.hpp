@@ -39,6 +39,7 @@ struct NormElement {
   double& eRror;
   double& aNaly;
   
+  /// \brief  Volume element
   struct MyVolumeFE: public VolumeElementForcesAndSourcesCore {
     FieldInterface& mField;
     int addToRank; ///< default value 1, i.e. assumes that geometry is approx. by quadratic functions.
@@ -66,16 +67,16 @@ struct NormElement {
       Vec ghost1;
       Vec ghost2;
       if(!rank) {
+        
         ierr = VecCreateGhostWithArray(mField.get_comm(),1,1,0,NULL,&eRror,&ghost1); CHKERRQ(ierr);
         ierr = VecCreateGhostWithArray(mField.get_comm(),1,1,0,NULL,&aNaly,&ghost2); CHKERRQ(ierr);
+        
       } else {
+        
         int g[] = {0};
-        //cout << "\n g = \n" << g << endl;
-        //cout << "\n ghost = \n" << ghost << endl;
         ierr = VecCreateGhostWithArray(mField.get_comm(),0,1,1,g,&eRror,&ghost1); CHKERRQ(ierr);
-        //cout << "\n g after = \n" << g << endl;
-        //cout << "\n ghost after = \n" << ghost << endl;
         ierr = VecCreateGhostWithArray(mField.get_comm(),0,1,1,g,&aNaly,&ghost2); CHKERRQ(ierr);
+        
       }
 
       ierr = VecGhostUpdateBegin(ghost1,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
@@ -106,7 +107,9 @@ struct NormElement {
      fE(mField,error,analy,add_to_rank),m_field(mField),addToRank(add_to_rank),
      eRror(error),aNaly(analy) {}
 	
-  //Field data
+   /** \brief Common data used by volume and surface elements
+   * \ingroup mofem_helmholtz_elem
+   */
   struct CommonData {
 	
 	map<string,ublas::vector<double> > pressureAtGaussPts; 
@@ -174,12 +177,18 @@ struct NormElement {
   };
 	
 	
-	/** \brief Lhs operaetar for tetrahedral used to build matrix
-	*/
+  /** \brief Lhs Matrix for Norm Element
+    \ingroup mofem_helmholtz_elem
+  
+    \f[
+    A_{ik} = \int_{\Omega^e} N_i N_k \textrm{d}V
+    \f]
+  
+  */
     struct OpLhs:public VolumeElementForcesAndSourcesCore::UserDataOperator {
 		
 		Mat A;
-		//bool solveBc;
+		
 		OpLhs(const string re_field_name,Mat _A): 
 			VolumeElementForcesAndSourcesCore::UserDataOperator(re_field_name),
 			A(_A) { }
@@ -223,32 +232,32 @@ struct NormElement {
 					double val = getVolume()*getGaussPts()(3,gg);
 	
 
-					if(this->getHoGaussPtsDetJac().size()>0) {
-						val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
-					} 
+                  if(this->getHoGaussPtsDetJac().size()>0) {
+                    val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
+                  } 
 					
 
-					cblas_dger(CblasRowMajor,nb_row,nb_col,val,
+                  cblas_dger(CblasRowMajor,nb_row,nb_col,val,
 							   &row_data.getN(gg)[0],1,&col_data.getN(gg)[0],1,
 							   &NTN(0,0),nb_col);
 					
 						
 				}
 					
+				ierr = MatSetValues(
+                           A,
+                           nb_row,&row_data.getIndices()[0],
+						   nb_col,&col_data.getIndices()[0],
+						   &NTN(0,0),ADD_VALUES); CHKERRQ(ierr);
+				if(row_side != col_side || row_type != col_type) {
+					transNTN.resize(nb_col,nb_row);
+					noalias(transNTN) = trans(NTN);
 					ierr = MatSetValues(
 							   A,
-							   nb_row,&row_data.getIndices()[0],
 							   nb_col,&col_data.getIndices()[0],
-							   &NTN(0,0),ADD_VALUES); CHKERRQ(ierr);
-					if(row_side != col_side || row_type != col_type) {
-						transNTN.resize(nb_col,nb_row);
-						noalias(transNTN) = trans(NTN);
-						ierr = MatSetValues(
-								   A,
-								   nb_col,&col_data.getIndices()[0],
-								   nb_row,&row_data.getIndices()[0],
-								   &transNTN(0,0),ADD_VALUES); CHKERRQ(ierr);
-					}
+							   nb_row,&row_data.getIndices()[0],
+							   &transNTN(0,0),ADD_VALUES); CHKERRQ(ierr);
+				}
 					
 					
 					
@@ -264,13 +273,19 @@ struct NormElement {
     };
 	
 	
-	/** \brief Rhs operaetar used loop differences between two fields
-	*/
+    /** \brief Rhs vector for Norm Element
+      \ingroup mofem_helmholtz_elem
+    
+      \f[
+      F_i = \int_{\Omega^e} (\Phi_{ref} - \Phi_{fem}) N_i  \textrm{d}V
+      \f]
+    
+    */
+    
 	struct OpRhs:public VolumeElementForcesAndSourcesCore::UserDataOperator {
 		
 		CommonData &commonData;
 		Vec F;//norm error
-		//Vec D;//relative error
 		bool useL2;
 		bool useTsF;
 		bool useRela;//use relative error
@@ -408,100 +423,105 @@ struct NormElement {
 
 
 
-/*
-  Add the error norm element with same problem and same field as the original problem
- 
- */
-PetscErrorCode addNormElements(
-	const string problem,string fe,const string norm_field_name,
-	const string field1_name,const string field2_name,
-	const string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
-	PetscFunctionBegin;
-	PetscErrorCode ierr;
-	ErrorCode rval;
-	ierr = m_field.add_finite_element(fe,MF_ZERO); CHKERRQ(ierr);
-    ierr = m_field.modify_finite_element_add_field_row(fe,norm_field_name); CHKERRQ(ierr);
-    ierr = m_field.modify_finite_element_add_field_col(fe,norm_field_name); CHKERRQ(ierr);
-    ierr = m_field.modify_finite_element_add_field_data(fe,norm_field_name); CHKERRQ(ierr);
-	
-    ierr = m_field.modify_finite_element_add_field_data(fe,field1_name); CHKERRQ(ierr);
-    ierr = m_field.modify_finite_element_add_field_data(fe,field2_name); CHKERRQ(ierr);
+    /** \brief Add Norm Element Problem
+      * \ingroup mofem_helmholtz_elem
+      *
+      * It get data from block set and define element in moab
+      *w
+      * \param problem name
+      * \param field name
+      * \param name of mesh nodal positions (if not defined nodal coordinates are used)
+      */
+  PetscErrorCode addNormElements(
+      const string problem,string fe,const string norm_field_name,
+      const string field1_name,const string field2_name,
+      const string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
+      PetscFunctionBegin;
+      PetscErrorCode ierr;
+      ErrorCode rval;
+      ierr = m_field.add_finite_element(fe,MF_ZERO); CHKERRQ(ierr);
+      ierr = m_field.modify_finite_element_add_field_row(fe,norm_field_name); CHKERRQ(ierr);
+      ierr = m_field.modify_finite_element_add_field_col(fe,norm_field_name); CHKERRQ(ierr);
+      ierr = m_field.modify_finite_element_add_field_data(fe,norm_field_name); CHKERRQ(ierr);
+      
+      ierr = m_field.modify_finite_element_add_field_data(fe,field1_name); CHKERRQ(ierr);
+      ierr = m_field.modify_finite_element_add_field_data(fe,field2_name); CHKERRQ(ierr);
 
 	
 	
-	if(m_field.check_field(mesh_nodals_positions)) {
-		ierr = m_field.modify_finite_element_add_field_data(fe,mesh_nodals_positions); CHKERRQ(ierr);
+      if(m_field.check_field(mesh_nodals_positions)) {
+        ierr = m_field.modify_finite_element_add_field_data(fe,mesh_nodals_positions); CHKERRQ(ierr);
+      }
+      ierr = m_field.modify_problem_add_finite_element(problem,fe); CHKERRQ(ierr);
+	
+	
+      //Range tEts;
+      for(_IT_CUBITMESHSETS_BY_NAME_FOR_LOOP_(m_field,"MAT_NORM",it)) {
+  
+        rval = m_field.get_moab().get_entities_by_type(it->get_meshset(),MBTET,volumeData[it->get_msId()].tEts,true); CHKERR_PETSC(rval);
+  
+        ierr = m_field.add_ents_to_finite_element_by_TETs(volumeData[it->get_msId()].tEts,fe); CHKERRQ(ierr);
+      }
+	
+      
+      PetscFunctionReturn(0);
+	
+     }
+
+
+    
+    
+
+  PetscErrorCode setNormFiniteElementRhsOperator(string norm_field_name,string field1_name,
+      string field2_name,Vec &F,bool usel2,bool userela,
+      string nodals_positions = "MESH_NODE_POSITIONS") {
+      PetscFunctionBegin;
+  
+      fE.getRowOpPtrVector().push_back(new OpGetValueAndGradAtGaussPts(field1_name,commonData));
+      fE.getRowOpPtrVector().push_back(new OpGetValueAndGradAtGaussPts(field2_name,commonData));
+	
+      map<int,VolumeData>::iterator sit = volumeData.begin();
+	
+      for(;sit!=volumeData.end();sit++) {
+		
+          //Calculate field values at gaussian points for field1 and field2; 
+        fE.getRowOpPtrVector().push_back(new OpRhs(norm_field_name,field1_name,field2_name,F,commonData,eRror,aNaly,usel2,userela));
+  
+      }
+	
+      PetscFunctionReturn(0);
+  }
+
+
+  PetscErrorCode setNormFiniteElementLhsOperator(string norm_field_name,string field1_name,
+      string field2_name,Mat A,bool usel2 = false,bool userela = false,
+      string nodals_positions = "MESH_NODE_POSITIONS") {
+    PetscFunctionBegin;
+  
+    map<int,VolumeData>::iterator sit = volumeData.begin();
+    
+    for(;sit!=volumeData.end();sit++) {
+      
+      //Calculate field values at gaussian points for field1 and field2; 
+
+      fE.getRowColOpPtrVector().push_back(new OpLhs(norm_field_name,A));
+  
     }
-	ierr = m_field.modify_problem_add_finite_element(problem,fe); CHKERRQ(ierr);
-	
-	
-	//Range tEts;
-	for(_IT_CUBITMESHSETS_BY_NAME_FOR_LOOP_(m_field,"MAT_NORM",it)) {
-      //rval = m_Field.get_moab().get_entities_by_type(it->get_meshset(),MBTET,tEts,true); CHKERR_PETSC(rval);
-      rval = m_field.get_moab().get_entities_by_type(it->get_meshset(),MBTET,volumeData[it->get_msId()].tEts,true); CHKERR_PETSC(rval);
-
-      ierr = m_field.add_ents_to_finite_element_by_TETs(volumeData[it->get_msId()].tEts,fe); CHKERRQ(ierr);
-	}
-	
     
     PetscFunctionReturn(0);
-	
-	}
-
-
+   }
     
     
-
-PetscErrorCode setNormFiniteElementRhsOperator(string norm_field_name,string field1_name,
-	string field2_name,Vec &F,bool usel2,bool userela,
-    string nodals_positions = "MESH_NODE_POSITIONS") {
-    PetscFunctionBegin;
-
-	fE.getRowOpPtrVector().push_back(new OpGetValueAndGradAtGaussPts(field1_name,commonData));
-	fE.getRowOpPtrVector().push_back(new OpGetValueAndGradAtGaussPts(field2_name,commonData));
-	
-	map<int,VolumeData>::iterator sit = volumeData.begin();
-	
-	for(;sit!=volumeData.end();sit++) {
-		
-		//Calculate field values at gaussian points for field1 and field2; 
-      fE.getRowOpPtrVector().push_back(new OpRhs(norm_field_name,field1_name,field2_name,F,commonData,eRror,aNaly,usel2,userela));
-
-	}
-	
-	PetscFunctionReturn(0);
-}
-
-
-PetscErrorCode setNormFiniteElementLhsOperator(string norm_field_name,string field1_name,
-	string field2_name,Mat A,bool usel2 = false,bool userela = false,
-    string nodals_positions = "MESH_NODE_POSITIONS") {
-  PetscFunctionBegin;
-
-  map<int,VolumeData>::iterator sit = volumeData.begin();
+  };
   
-  for(;sit!=volumeData.end();sit++) {
-    
-    //Calculate field values at gaussian points for field1 and field2; 
-
-    fE.getRowColOpPtrVector().push_back(new OpLhs(norm_field_name,A));
-
   }
-  
-  PetscFunctionReturn(0);
-}
-
-
-};
-
-}
 
 
 #endif //__NORM_ELEMENT_HPP
 
 
 /***************************************************************************//**
- * \defgroup mofem_Norm_elem Norm element
+ * \defgroup mofem_helmholtz_elem Norm element
  * \ingroup mofem_forces_and_sources
  ******************************************************************************/
 
