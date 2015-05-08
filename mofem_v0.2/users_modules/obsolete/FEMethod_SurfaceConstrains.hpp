@@ -38,7 +38,9 @@ struct ConstrainSurfacGeometry:public FEMethod {
   bool useProjectionFromCrackFront;
 
   ConstrainSurfacGeometry(FieldInterface& _mField,Mat _C,string _lambdaFieldName,int _verbose = 0);
+
   ConstrainSurfacGeometry(FieldInterface& _mField,Mat _C,int _verbose = 0);
+
   void runInConstructor();
 
   PetscErrorCode preProcess();
@@ -73,8 +75,8 @@ struct ConstrainSurfacGeometry:public FEMethod {
 
 struct ConstraunSurfaceGeometryRhs: public ConstrainSurfacGeometry {
   Vec g;
-  ConstraunSurfaceGeometryRhs(FieldInterface& _mField,Vec _g,string _lambdaFieldName,int _verbose = 0); 
-  ConstraunSurfaceGeometryRhs(FieldInterface& _mField,Vec _g,int _verbose = 0); 
+  ConstraunSurfaceGeometryRhs(FieldInterface& _mField,Vec _g,string _lambdaFieldName,int _verbose = 0);
+  ConstraunSurfaceGeometryRhs(FieldInterface& _mField,Vec _g,int _verbose = 0);
 
   ublas::vector<double,ublas::bounded_array<double,3> > g_VEC_ELEM;
   ublas::vector<double,ublas::bounded_array<double,9> > f_VEC_ELEM;
@@ -120,7 +122,7 @@ struct SnesConstrainSurfacGeometryTools: public FEMethod {
     }
     PetscErrorCode ierr;
     switch(snes_ctx) {
-      case CTX_SNESSETFUNCTION: { 
+      case CTX_SNESSETFUNCTION: {
 	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
 	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
       }
@@ -163,9 +165,9 @@ struct SnesConstrainSurfacGeometry: public SnesConstrainSurfacGeometryTools {
     PetscFunctionBegin;
     PetscErrorCode ierr;
     matMethod.useProjectionFromCrackFront = useProjectionFromCrackFront;
-    vecMethod.useProjectionFromCrackFront = useProjectionFromCrackFront; 
+    vecMethod.useProjectionFromCrackFront = useProjectionFromCrackFront;
     switch(snes_ctx) {
-      case CTX_SNESSETFUNCTION: { 
+      case CTX_SNESSETFUNCTION: {
 	vecMethod.g = snes_f;
 	ierr = setElemData(vecMethod); CHKERRQ(ierr);
 	ierr = vecMethod.operator()(true,nonlinear); CHKERRQ(ierr);
@@ -187,7 +189,7 @@ struct SnesConstrainSurfacGeometry: public SnesConstrainSurfacGeometryTools {
     PetscFunctionBegin;
     PetscErrorCode ierr;
     switch(snes_ctx) {
-      case CTX_SNESSETFUNCTION: { 
+      case CTX_SNESSETFUNCTION: {
 	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
 	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
       }

@@ -19,10 +19,10 @@
 * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 #include <petscsys.h>
-#include <petscvec.h> 
-#include <petscmat.h> 
-#include <petscsnes.h> 
-#include <petscts.h> 
+#include <petscvec.h>
+#include <petscmat.h>
+#include <petscsnes.h>
+#include <petscts.h>
 
 #include <definitions.h>
 #include <h1_hdiv_hcurl_l2.h>
@@ -62,10 +62,11 @@ namespace MoFEM {
 // ** Sense **
 
 PetscErrorCode ForcesAndSurcesCore::getSense(EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data) {
-    PetscFunctionBegin;
-    try {
+  PetscFunctionBegin;
+  try {
     SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fePtr->get_side_number_table());
-    if(data.size() < side_table.get<2>().count(type)) { // prims has 9 edges, some of edges for "flat" prism are not active
+    if(data.size() < side_table.get<2>().count(type)) {
+      // prims has 9 edges, some of edges for "flat" prism are not active
       SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency %u < %u",data.size(),side_table.get<2>().count(type));
     }
     SideNumber_multiIndex::nth_index<2>::type::iterator siit = side_table.get<2>().lower_bound(type);
@@ -73,32 +74,32 @@ PetscErrorCode ForcesAndSurcesCore::getSense(EntityType type,boost::ptr_vector<D
     for(;siit!=hi_siit;siit++) {
       data[siit->side_number].getSense() = siit->sense;
       if(siit->brother_side_number!=-1) {
-	if(data.size() < (unsigned)siit->brother_side_number) {
-	  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
-	}
-	data[siit->brother_side_number].getSense() = siit->sense;
+        if(data.size() < (unsigned)siit->brother_side_number) {
+          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+        }
+        data[siit->brother_side_number].getSense() = siit->sense;
       }
     }
-    } catch (exception& ex) {
-      ostringstream ss;
-      ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
-      SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
-    }
-
-    PetscFunctionReturn(0);
+  } catch (exception& ex) {
+    ostringstream ss;
+    ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+    SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }
+
+  PetscFunctionReturn(0);
+}
 
 PetscErrorCode ForcesAndSurcesCore::getEdgesSense(DataForcesAndSurcesCore &data) {
-    PetscFunctionBegin;
-    ierr = getSense(MBEDGE,data.dataOnEntities[MBEDGE]); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
+  PetscFunctionBegin;
+  ierr = getSense(MBEDGE,data.dataOnEntities[MBEDGE]); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
 
 PetscErrorCode ForcesAndSurcesCore::getTrisSense(DataForcesAndSurcesCore &data) {
-    PetscFunctionBegin;
-    ierr = getSense(MBTRI,data.dataOnEntities[MBTRI]); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
+  PetscFunctionBegin;
+  ierr = getSense(MBTRI,data.dataOnEntities[MBTRI]); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
 
 // ** Order **
 
@@ -225,7 +226,7 @@ PetscErrorCode ForcesAndSurcesCore::getNodesIndices(
       int side_number = dit->side_number_ptr->side_number;
       nodes_indices[side_number*dit->get_max_rank()+dit->get_dof_rank()] = idx;
       int  brother_side_number = dit->side_number_ptr->brother_side_number;
-      if(brother_side_number!=-1) { 
+      if(brother_side_number!=-1) {
 	if(nodes_indices.size()<(unsigned int)(brother_side_number*dit->get_max_rank()+dit->get_max_rank())) {
 	  nodes_indices.resize(brother_side_number*dit->get_max_rank()+dit->get_max_rank());
 	}
@@ -259,7 +260,7 @@ PetscErrorCode ForcesAndSurcesCore::getTypeIndices(
       int idx = dit->get_petsc_gloabl_dof_idx();
       indices.resize(dit->get_nb_dofs_on_ent());
       indices[dit->get_EntDofIdx()] = idx;
-    } 
+    }
     PetscFunctionReturn(0);
   }
 
@@ -423,9 +424,10 @@ PetscErrorCode ForcesAndSurcesCore::getProblemTypeColIndices(const string &field
 // ** Data **
 
 PetscErrorCode ForcesAndSurcesCore::getNodesFieldData(
-    const string &field_name,FEDofMoFEMEntity_multiIndex &dofs,ublas::vector<FieldData> &nodes_field_data) {
-    PetscFunctionBegin;
-    try {
+  const string &field_name,FEDofMoFEMEntity_multiIndex &dofs,ublas::vector<double> &nodes_field_data
+) {
+  PetscFunctionBegin;
+  try {
     FEDofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator dit,hi_dit;
     dit = dofs.get<Composite_Name_And_Type_mi_tag>().lower_bound(boost::make_tuple(field_name,MBVERTEX));
     hi_dit = dofs.get<Composite_Name_And_Type_mi_tag>().upper_bound(boost::make_tuple(field_name,MBVERTEX));
@@ -434,34 +436,35 @@ PetscErrorCode ForcesAndSurcesCore::getNodesFieldData(
       FieldData val = dit->get_FieldData();
       int side_number = dit->side_number_ptr->side_number;
       if(side_number == -1) {
-	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
       }
       nodes_field_data[side_number*dit->get_max_rank()+dit->get_dof_rank()] = val;
       int  brother_side_number = dit->side_number_ptr->brother_side_number;
       if(brother_side_number!=-1) {
-	if(nodes_field_data.size()<(unsigned int)(brother_side_number*dit->get_max_rank()+dit->get_max_rank())) {
-	  nodes_field_data.resize(brother_side_number*dit->get_max_rank()+dit->get_max_rank());
-	}
-	nodes_field_data[brother_side_number*dit->get_max_rank()+dit->get_dof_rank()] = val;
+        if(nodes_field_data.size()<(unsigned int)(brother_side_number*dit->get_max_rank()+dit->get_max_rank())) {
+          nodes_field_data.resize(brother_side_number*dit->get_max_rank()+dit->get_max_rank());
+        }
+        nodes_field_data[brother_side_number*dit->get_max_rank()+dit->get_dof_rank()] = val;
       }
     }
-    } catch (exception& ex) {
-      ostringstream ss;
-      ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
-      SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
-    }
-    PetscFunctionReturn(0);
+  } catch (exception& ex) {
+    ostringstream ss;
+    ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+    SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+  }
+  PetscFunctionReturn(0);
   }
 
-PetscErrorCode ForcesAndSurcesCore::getNodesFieldData(DataForcesAndSurcesCore &data,const string &field_name) {
+  PetscErrorCode ForcesAndSurcesCore::getNodesFieldData(DataForcesAndSurcesCore &data,const string &field_name) {
     PetscFunctionBegin;
     ierr = getNodesFieldData(
       field_name,const_cast<FEDofMoFEMEntity_multiIndex&>(fePtr->get_data_dofs()),data.dataOnEntities[MBVERTEX][0].getFieldData()); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
+      PetscFunctionReturn(0);
+    }
 
-PetscErrorCode ForcesAndSurcesCore::getTypeFieldData(
-  const string &field_name,FEDofMoFEMEntity_multiIndex &dofs,EntityType type,int side_number,ublas::vector<FieldData> &ent_field_data) {
+  PetscErrorCode ForcesAndSurcesCore::getTypeFieldData(
+    const string &field_name,FEDofMoFEMEntity_multiIndex &dofs,EntityType type,int side_number,ublas::vector<double> &ent_field_data
+  ) {
     PetscFunctionBegin;
     FEDofMoFEMEntity_multiIndex::index<Composite_Name_Type_And_Side_Number_mi_tag>::type::iterator dit,hi_dit;
     dit = dofs.get<Composite_Name_Type_And_Side_Number_mi_tag>().lower_bound(boost::make_tuple(field_name,type,side_number));
@@ -471,7 +474,7 @@ PetscErrorCode ForcesAndSurcesCore::getTypeFieldData(
       FieldData val = dit->get_FieldData();
       ent_field_data.resize(dit->get_nb_dofs_on_ent());
       ent_field_data[dit->get_EntDofIdx()] = val;
-    } 
+    }
     PetscFunctionReturn(0);
   }
 
@@ -480,7 +483,7 @@ PetscErrorCode ForcesAndSurcesCore::getTypeFieldData(
   boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data) {
     PetscFunctionBegin;
     SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fePtr->get_side_number_table());
-    if(data.size() < side_table.get<2>().count(type)) { 
+    if(data.size() < side_table.get<2>().count(type)) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
     }
     SideNumber_multiIndex::nth_index<2>::type::iterator siit = side_table.get<2>().lower_bound(type);
@@ -561,7 +564,7 @@ PetscErrorCode ForcesAndSurcesCore::getTypeFieldDofs(
     for(;dit!=hi_dit;dit++) {
       ent_field_dofs.resize(dit->get_nb_dofs_on_ent());
       ent_field_dofs[dit->get_EntDofIdx()] = &*dit;
-    } 
+    }
     PetscFunctionReturn(0);
   }
 
@@ -635,7 +638,7 @@ PetscErrorCode ForcesAndSurcesCore::getFaceNodes(DataForcesAndSurcesCore &data) 
       face_conn[1] = side->sense == 1 ? cannonical_face_sense_p1[side->side_number][0] : cannonical_face_sense_m1[side->side_number][2];
       face_conn[2] = side->sense == 1 ? cannonical_face_sense_p1[side->side_number][1] : cannonical_face_sense_m1[side->side_number][0];
     }
-    for(int nn = 0;nn<3;nn++) data.facesNodes(side->side_number,nn) = face_conn[nn]; 
+    for(int nn = 0;nn<3;nn++) data.facesNodes(side->side_number,nn) = face_conn[nn];
     {
       const EntityHandle *conn_tet;
       int num_nodes_tet;
@@ -750,7 +753,7 @@ PetscErrorCode ForcesAndSurcesCore::shapeTETFunctions_H1(
 
     PetscFunctionReturn(0);
   }
-  
+
 PetscErrorCode ForcesAndSurcesCore::shapeTETFunctions_L2(
     DataForcesAndSurcesCore &data,
     const double *G_X,const double *G_Y,const double *G_Z,const int G_DIM) {
@@ -779,7 +782,7 @@ PetscErrorCode ForcesAndSurcesCore::shapeTETFunctions_Hdiv(
     const double *G_X,const double *G_Y,const double *G_Z,const int G_DIM) {
     PetscFunctionBegin;
 
-    //calculate shape function for tet, needed to construct shape functions for h_div 
+    //calculate shape function for tet, needed to construct shape functions for h_div
 
     if(data.dataOnEntities[MBVERTEX][0].getN().size1() != (unsigned int)G_DIM) {
       data.dataOnEntities[MBVERTEX][0].getN().resize(G_DIM,4);
@@ -911,13 +914,13 @@ PetscErrorCode ForcesAndSurcesCore::shapeTETFunctions_Hdiv(
 	for(int dd = 3*NBFACE_FACE_HDIV(oo);dd<3*NBFACE_FACE_HDIV(oo+1);dd++,col++) {
 	  for(int gg = 0;gg<G_DIM;gg++) {
 	    data.dataOnEntities[MBTRI][ff].getHdivN()(gg,col) = N_face_bubble[ff](gg,dd);
-	  }	
+	  }
 	}
 	//direvatives
 	for(int dd = 9*NBFACE_FACE_HDIV(oo);dd<9*NBFACE_FACE_HDIV(oo+1);dd++,diff_col++) {
 	  for(int gg = 0;gg<G_DIM;gg++) {
 	    data.dataOnEntities[MBTRI][ff].getDiffHdivN()(gg,diff_col) = diffN_face_bubble[ff](gg,dd);
-	  }	
+	  }
 	}
       }
     }
@@ -959,13 +962,13 @@ PetscErrorCode ForcesAndSurcesCore::shapeTETFunctions_Hdiv(
       for(int dd = 3*NBVOLUME_VOLUME_HDIV(oo);dd<3*NBVOLUME_VOLUME_HDIV(oo+1);dd++,col++) {
 	for(int gg = 0;gg<G_DIM;gg++) {
 	  data.dataOnEntities[MBTET][0].getHdivN()(gg,col) = N_volume_bubble(gg,dd);
-	}	
+	}
       }
       //direvatives
       for(int dd = 9*NBVOLUME_VOLUME_HDIV(oo);dd<9*NBVOLUME_VOLUME_HDIV(oo+1);dd++,diff_col++) {
 	for(int gg = 0;gg<G_DIM;gg++) {
 	  data.dataOnEntities[MBTET][0].getDiffHdivN()(gg,diff_col) = diffN_volume_bubble(gg,dd);
-	}	
+	}
       }
 
     }
@@ -1075,7 +1078,7 @@ PetscErrorCode ForcesAndSurcesCore::shapeTRIFunctions_Hdiv(
     for(int dd = 3*NBFACE_FACE_HDIV(oo);dd<3*NBFACE_FACE_HDIV(oo+1);dd++,col++) {
       for(int gg = 0;gg<G_DIM;gg++) {
 	data.dataOnEntities[MBTRI][0].getHdivN()(gg,col) = N_face_bubble[0](gg,dd);
-      }	
+      }
     }
   }
 
@@ -1106,7 +1109,7 @@ PetscErrorCode ForcesAndSurcesCore::shapeEDGEFunctions_H1(DataForcesAndSurcesCor
 	double L = data.dataOnEntities[MBEDGE][0].getN()(gg,pp);
 	double diffL = data.dataOnEntities[MBEDGE][0].getDiffN()(gg,pp);
 	data.dataOnEntities[MBEDGE][0].getN()(gg,pp) = data.dataOnEntities[MBVERTEX][0].getN()(gg,0)*data.dataOnEntities[MBVERTEX][0].getN()(gg,1)*L;
-	data.dataOnEntities[MBEDGE][0].getDiffN()(gg,pp) = 
+	data.dataOnEntities[MBEDGE][0].getDiffN()(gg,pp) =
 	  ((+1.)*data.dataOnEntities[MBVERTEX][0].getN()(gg,1)+data.dataOnEntities[MBVERTEX][0].getN()(gg,0)*(-1.))*L + data.dataOnEntities[MBVERTEX][0].getN()(gg,0)*data.dataOnEntities[MBVERTEX][0].getN()(gg,1)*diffL;
       }
     }
@@ -1180,7 +1183,7 @@ PetscErrorCode ForcesAndSurcesCore::shapeFlatPRISMFunctions_H1(
   if(data.dataOnEntities[MBEDGE].size()!=9) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
   }
-  
+
   int valid_edges[] = { 1,1,1, 0,0,0, 1,1,1 };
   int sense[9],order[9];
   double *H1edgeN[9],*diffH1edgeN[9];
@@ -1253,7 +1256,7 @@ static PetscErrorCode get_porblem_row_indices(
     default:
       ierr = fe_ptr->getProblemTypeRowIndices(field_name,type,side,indices); CHKERRQ(ierr);
   }
-  
+
   PetscFunctionReturn(0);
 }
 
@@ -1270,7 +1273,7 @@ static PetscErrorCode get_porblem_col_indices(
     default:
       ierr = fe_ptr->getProblemTypeColIndices(field_name,type,side,indices); CHKERRQ(ierr);
   }
-  
+
   PetscFunctionReturn(0);
 }
 
@@ -1380,7 +1383,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
   rval = mField.get_moab().get_connectivity(ent,conn,num_nodes,true); CHKERR_PETSC(rval);
   coords.resize(num_nodes*3);
   rval = mField.get_moab().get_coords(conn,num_nodes,&*coords.data().begin()); CHKERR_PETSC(rval);
-  vOlume = ShapeVolumeMBTET(&*dataH1.dataOnEntities[MBVERTEX][0].getDiffN().data().begin(),&*coords.data().begin()); 
+  vOlume = ShapeVolumeMBTET(&*dataH1.dataOnEntities[MBVERTEX][0].getDiffN().data().begin(),&*coords.data().begin());
   Jac.resize(3,3);
   invJac.resize(3,3);
   ierr = ShapeJacMBTET(&*dataH1.dataOnEntities[MBVERTEX][0].getDiffN().data().begin(),&*coords.begin(),&*Jac.data().begin()); CHKERRQ(ierr);
@@ -1484,9 +1487,9 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
     }
 
     for(;oit!=hi_oit;oit++) {
-  
+
       oit->setPtrFE(this);
-  
+
       BitFieldId data_id = mField.get_field_structure(oit->rowFieldName)->get_id();
       if((oit->getMoFEMFEPtr()->get_BitFieldId_data()&data_id).none()) {
         SETERRQ2(
@@ -1500,7 +1503,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
       } else {
 	space = mField.get_field_structure(oit->colFieldName)->get_space();
       }
-      
+
       DataForcesAndSurcesCore *op_data = NULL;
       switch(space) {
         case H1:
@@ -1519,7 +1522,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
   	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
         break;
       }
-  
+
       string data_field_name;
       bool get_data = false;
 
@@ -1528,7 +1531,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
 	data_field_name = oit->rowFieldName;
 
         if(last_row_eval_field_name!=oit->rowFieldName) {
-      
+
 	  get_data = true;
 
           switch(space) {
@@ -1543,9 +1546,9 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
 	    default:
 	    break;
           }
-    
+
           last_row_eval_field_name=oit->rowFieldName;
-    
+
         }
 
       } else {
@@ -1554,7 +1557,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
 
 
         if(last_col_eval_field_name!=oit->colFieldName) {
-      
+
 	  get_data = true;
 
           switch(space) {
@@ -1569,9 +1572,9 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
 	    default:
 	    break;
           }
-    
+
           last_col_eval_field_name=oit->colFieldName;
-    
+
         }
 
       }
@@ -1599,7 +1602,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
         }
 
       }
-  
+
       try {
         ierr = oit->opRhs(*op_data); CHKERRQ(ierr);
       } catch (exception& ex) {
@@ -1607,7 +1610,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
         ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
         SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
       }
-  
+
     }
   }
 
@@ -1766,7 +1769,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::UserDataOperator::getDivergenc
 
   int dd = 0;
   for(;dd<nb_dofs;dd++) {
-    div[dd] = 
+    div[dd] =
       (data.getDiffHdivN(dd,gg))(0,0)+
       (data.getDiffHdivN(dd,gg))(1,1)+
       (data.getDiffHdivN(dd,gg))(2,2);
@@ -1912,9 +1915,9 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
     }
 
     for(;oit!=hi_oit;oit++) {
-  
+
       oit->setPtrFE(this);
-  
+
       BitFieldId data_id = mField.get_field_structure(oit->rowFieldName)->get_id();
       if((oit->getMoFEMFEPtr()->get_BitFieldId_data()&data_id).none()) {
         SETERRQ2(
@@ -1928,7 +1931,7 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
       } else {
 	space = mField.get_field_structure(oit->colFieldName)->get_space();
       }
-      
+
       DataForcesAndSurcesCore *op_data = NULL;
       switch(space) {
         case H1:
@@ -1947,7 +1950,7 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
   	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
         break;
       }
-  
+
       string data_field_name;
       bool get_data = false;
 
@@ -1956,7 +1959,7 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
 	data_field_name = oit->rowFieldName;
 
         if(last_row_eval_field_name!=oit->rowFieldName) {
-      
+
 	  get_data = true;
 
           switch(space) {
@@ -1969,9 +1972,9 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
 	    default:
 	    break;
           }
-    
+
           last_row_eval_field_name=oit->rowFieldName;
-    
+
         }
 
       } else {
@@ -1980,7 +1983,7 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
 
 
         if(last_col_eval_field_name!=oit->colFieldName) {
-      
+
 	  get_data = true;
 
           switch(space) {
@@ -1993,9 +1996,9 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
 	    default:
 	    break;
           }
-    
+
           last_col_eval_field_name=oit->colFieldName;
-    
+
         }
 
       }
@@ -2019,7 +2022,7 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
         }
 
       }
-  
+
       try {
         ierr = oit->opRhs(*op_data); CHKERRQ(ierr);
       } catch (exception& ex) {
@@ -2027,7 +2030,7 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
         ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
         SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
       }
-  
+
     }
   }
 
@@ -2188,8 +2191,8 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
   coordsAtGaussPts.resize(nb_gauss_pts,3);
   for(int gg = 0;gg<nb_gauss_pts;gg++) {
     for(int dd = 0;dd<3;dd++) {
-      coordsAtGaussPts(gg,dd) 
-	= N_MBEDGE0(gaussPts(0,gg))*coords[dd] + N_MBEDGE1(gaussPts(0,gg))*coords[3+dd]; 
+      coordsAtGaussPts(gg,dd)
+	= N_MBEDGE0(gaussPts(0,gg))*coords[dd] + N_MBEDGE1(gaussPts(0,gg))*coords[3+dd];
     }
   }
   //cerr << coordsAtGaussPts << endl;
@@ -2213,9 +2216,9 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
     }
 
     for(;oit!=hi_oit;oit++) {
-  
+
       oit->setPtrFE(this);
-  
+
       BitFieldId data_id = mField.get_field_structure(oit->rowFieldName)->get_id();
       if((oit->getMoFEMFEPtr()->get_BitFieldId_data()&data_id).none()) {
         SETERRQ2(
@@ -2229,7 +2232,7 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
       } else {
 	space = mField.get_field_structure(oit->colFieldName)->get_space();
       }
-      
+
       DataForcesAndSurcesCore *op_data = NULL;
       switch(space) {
         case H1:
@@ -2246,7 +2249,7 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
   	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
         break;
       }
-  
+
       string data_field_name;
       bool get_data = false;
 
@@ -2255,7 +2258,7 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
 	data_field_name = oit->rowFieldName;
 
         if(last_row_eval_field_name!=oit->rowFieldName) {
-      
+
 	  get_data = true;
 
           switch(space) {
@@ -2266,9 +2269,9 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
 	    default:
 	    break;
           }
-    
+
           last_row_eval_field_name=oit->rowFieldName;
-    
+
         }
 
       } else {
@@ -2277,7 +2280,7 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
 
 
         if(last_col_eval_field_name!=oit->colFieldName) {
-      
+
 	  get_data = true;
 
           switch(space) {
@@ -2288,9 +2291,9 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
 	    default:
 	    break;
           }
-    
+
           last_col_eval_field_name=oit->colFieldName;
-    
+
         }
 
       }
@@ -2310,7 +2313,7 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
         }
 
       }
-  
+
       try {
         ierr = oit->opRhs(*op_data); CHKERRQ(ierr);
       } catch (exception& ex) {
@@ -2318,7 +2321,7 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
         ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
         SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
       }
-  
+
     }
   }
 
@@ -2676,7 +2679,7 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
       ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
     }
-  } 
+  }
   } catch (exception& ex) {
     ostringstream ss;
     ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
@@ -2698,7 +2701,7 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
     }
 
     FieldSpace row_space = mField.get_field_structure(oit->rowFieldName)->get_space();
-    
+
     DataForcesAndSurcesCore *op_data = NULL;
     switch(row_space) {
       case H1:

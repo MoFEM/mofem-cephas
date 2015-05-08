@@ -287,15 +287,7 @@ struct FieldApproximationH1 {
       ierr = MatZeroEntries(A); CHKERRQ(ierr);
     }
 
-    for(unsigned int lhs = 0; lhs<vec_F.size(); lhs++) {
-
-      ierr = VecZeroEntries(vec_F[lhs]); CHKERRQ(ierr);
-      ierr = VecGhostUpdateBegin(vec_F[lhs],INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-      ierr = VecGhostUpdateEnd(vec_F[lhs],INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-
-    }
-
-    //calulate and assembe
+    //calulate and assemble
     ierr = mField.loop_finite_elements(problem_name,fe_name,fe);  CHKERRQ(ierr);
 
     if(A) {

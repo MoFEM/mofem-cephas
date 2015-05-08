@@ -53,49 +53,50 @@ PetscErrorCode ConstrainSurfacGeometry::preProcess() {
 }
 
 void ConstrainSurfacGeometry::runInConstructor() {
-    diffNTRI.resize(6);
-    ShapeDiffMBTRI(&diffNTRI[0]);
-    g_NTRI.resize(7*3);
-    ShapeMBTRI(&g_NTRI[0],G_TRI_X7,G_TRI_Y7,7);
-    G_TRI_W = G_TRI_W7;
-    double def_VAL[3*9];
-    fill(&def_VAL[0],&def_VAL[3*9],0);
-    lambdaGlobalRowIndices.resize(3);
-    lambdaGlobalColIndices.resize(3);
-    dofGlobalRowIndices.resize(1+6+4+1);
-    dofGlobalColIndices.resize(1+6+4+1);
-    dofGlobalRowIndices[0].resize(9);
-    dofGlobalColIndices[0].resize(9);
-    entLambdaData.resize(3);
-    entDofsData.resize(9);
-    ent_idofs_data.resize(9);
-    cOords.resize(9);
-    //
-    C_MAT_ELEM.resize(3,9);
-    iC_MAT_ELEM.resize(3,9);
-    ig_VEC_ELEM.resize(3);
-    CT_MAT_ELEM.resize(9,3);
-    dC_MAT_ELEM.resize(3,9);
-    dCT_MAT_ELEM.resize(9,9);
-    //crack front nodes
-    if(mField.check_msId_meshset(201,SIDESET)) {
-      Range crack_front_edges;
-      mField.get_cubit_msId_entities_by_dimension(201,SIDESET,1,crack_front_edges,true);
-      mField.get_moab().get_connectivity(crack_front_edges,crackFrontEdgesNodes,true);
-      //projected nodes
-      mField.get_moab().tag_get_handle(
-	"PROJECTION_CRACK_SURFACE",3,MB_TYPE_DOUBLE,thProjection,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL);
+  diffNTRI.resize(6);
+  ShapeDiffMBTRI(&diffNTRI[0]);
+  g_NTRI.resize(7*3);
+  ShapeMBTRI(&g_NTRI[0],G_TRI_X7,G_TRI_Y7,7);
+  G_TRI_W = G_TRI_W7;
+  double def_VAL[3*9];
+  fill(&def_VAL[0],&def_VAL[3*9],0);
+  lambdaGlobalRowIndices.resize(3);
+  lambdaGlobalColIndices.resize(3);
+  dofGlobalRowIndices.resize(1+6+4+1);
+  dofGlobalColIndices.resize(1+6+4+1);
+  dofGlobalRowIndices[0].resize(9);
+  dofGlobalColIndices[0].resize(9);
+  entLambdaData.resize(3);
+  entDofsData.resize(9);
+  ent_idofs_data.resize(9);
+  cOords.resize(9);
+  //
+  C_MAT_ELEM.resize(3,9);
+  iC_MAT_ELEM.resize(3,9);
+  ig_VEC_ELEM.resize(3);
+  CT_MAT_ELEM.resize(9,3);
+  dC_MAT_ELEM.resize(3,9);
+  dCT_MAT_ELEM.resize(9,9);
+  //crack front nodes
+  if(mField.check_msId_meshset(201,SIDESET)) {
+    Range crack_front_edges;
+    mField.get_cubit_msId_entities_by_dimension(201,SIDESET,1,crack_front_edges,true);
+    mField.get_moab().get_connectivity(crack_front_edges,crackFrontEdgesNodes,true);
+    //projected nodes
+    mField.get_moab().tag_get_handle(
+      "PROJECTION_CRACK_SURFACE",3,MB_TYPE_DOUBLE,thProjection,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL);
     }
   }
- 
-ConstrainSurfacGeometry::ConstrainSurfacGeometry(FieldInterface& _mField,Mat _C,string _lambdaFieldName,int _verbose): 
-    FEMethod(),mField(_mField),C(_C),lambdaFieldName(_lambdaFieldName),
-    useProjectionFromCrackFront(false) {
+
+  ConstrainSurfacGeometry::ConstrainSurfacGeometry(FieldInterface& _mField,Mat _C,string _lambdaFieldName,int _verbose):
+  FEMethod(),mField(_mField),C(_C),lambdaFieldName(_lambdaFieldName),
+  useProjectionFromCrackFront(false) {
     runInConstructor();
   }
-ConstrainSurfacGeometry::ConstrainSurfacGeometry(FieldInterface& _mField,Mat _C,int _verbose): 
-    FEMethod(),mField(_mField),C(_C),lambdaFieldName("LAMBDA_SURFACE"),
-    useProjectionFromCrackFront(false) {
+
+  ConstrainSurfacGeometry::ConstrainSurfacGeometry(FieldInterface& _mField,Mat _C,int _verbose):
+  FEMethod(),mField(_mField),C(_C),lambdaFieldName("LAMBDA_SURFACE"),
+  useProjectionFromCrackFront(false) {
     runInConstructor();
   }
 
@@ -143,7 +144,7 @@ PetscErrorCode ConstrainSurfacGeometry::cOnstrain(double *dofs_iX,double *C,doub
     adj_side_elems.clear();
     ierr = mField.get_adjacencies(bit,&fAce,1,3,adj_side_elems,Interface::INTERSECT,5); CHKERRQ(ierr);
     Range::iterator it = adj_side_elems.begin();
-    for(;it!=adj_side_elems.end();it++) {	
+    for(;it!=adj_side_elems.end();it++) {
       Range nodes;
       rval = mField.get_moab().get_connectivity(&*it,1,nodes,true); CHKERR_PETSC(rval);
       PetscPrintf(PETSC_COMM_WORLD,"%lu %lu %lu %lu\n",nodes[0],nodes[1],nodes[2],nodes[3]);
@@ -231,7 +232,7 @@ PetscErrorCode ConstrainSurfacGeometry::cOnstrain(double *dofs_iX,double *C,doub
 PetscErrorCode ConstrainSurfacGeometry::iNtegrate(bool transpose,bool nonlinear) {
   PetscFunctionBegin;
   const double eps = 1e-10;
-  double center[3]; 
+  double center[3];
   tricircumcenter3d_tp(&cOords.data()[0],&cOords.data()[3],&cOords.data()[6],center,NULL,NULL);
   cblas_daxpy(3,-1,&cOords.data()[0],1,center,1);
   double r = cblas_dnrm2(3,center,1);
@@ -239,7 +240,7 @@ PetscErrorCode ConstrainSurfacGeometry::iNtegrate(bool transpose,bool nonlinear)
     ierr = cOnstrain(NULL,&*C_MAT_ELEM.data().begin(),NULL,NULL,NULL); CHKERRQ(ierr);
     if(transpose) {
       ublas::noalias(CT_MAT_ELEM) = trans(C_MAT_ELEM);
-    } 
+    }
     if(nonlinear) {
       ublas::noalias(dC_MAT_ELEM) = ublas::zero_matrix<double>(3,9);
       ublas::noalias(dCT_MAT_ELEM) = ublas::zero_matrix<double>(9,9);
@@ -288,7 +289,7 @@ PetscErrorCode ConstrainSurfacGeometry::aSsemble(bool transpose,bool nonlinear) 
 	ierr = MatSetValues(C,
 	  dofGlobalRowIndices[0].size(),&(dofGlobalRowIndices[0].data()[0]),
 	  dofGlobalColIndices[0].size(),&(dofGlobalColIndices[0].data()[0]),
-	  &dCT_MAT_ELEM.data()[0],ADD_VALUES); CHKERRQ(ierr); 
+	  &dCT_MAT_ELEM.data()[0],ADD_VALUES); CHKERRQ(ierr);
       }
     }
     PetscFunctionReturn(0);
@@ -298,8 +299,8 @@ PetscErrorCode ConstrainSurfacGeometry::operator()(bool transpose,bool nonlinear
     PetscFunctionBegin;
     try {
       fAce = fePtr->get_ent();
-      const EntityHandle* conn_face; 
-      int num_nodes; 
+      const EntityHandle* conn_face;
+      int num_nodes;
       rval = mField.get_moab().get_connectivity(fAce,conn_face,num_nodes,true); CHKERR_PETSC(rval);
       for(int nn = 0;nn<num_nodes;nn++) {
   	FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator dit,hi_dit;
@@ -391,11 +392,11 @@ PetscErrorCode ConstrainSurfacGeometry::postProcess() {
   PetscFunctionReturn(0);
 }
 
-ConstraunSurfaceGeometryRhs::ConstraunSurfaceGeometryRhs(FieldInterface& _mField,Vec _g,string _lambdaFieldName,int _verbose): 
+ConstraunSurfaceGeometryRhs::ConstraunSurfaceGeometryRhs(FieldInterface& _mField,Vec _g,string _lambdaFieldName,int _verbose):
     ConstrainSurfacGeometry(_mField,PETSC_NULL,_lambdaFieldName,_verbose),g(_g) {
     g_VEC_ELEM.resize(3);
   }
-ConstraunSurfaceGeometryRhs::ConstraunSurfaceGeometryRhs(FieldInterface& _mField,Vec _g,int _verbose): 
+ConstraunSurfaceGeometryRhs::ConstraunSurfaceGeometryRhs(FieldInterface& _mField,Vec _g,int _verbose):
     ConstrainSurfacGeometry(_mField,PETSC_NULL,_verbose),g(_g) {
     g_VEC_ELEM.resize(3);
   }
@@ -442,4 +443,3 @@ PetscErrorCode ConstraunSurfaceGeometryRhs::aSsemble(bool transpose,bool nonline
 
 
 }
-

@@ -37,7 +37,7 @@
 #include <boost/ptr_container/ptr_map.hpp>
 
 #include <DirichletBC.hpp>
-#include <PotsProcOnRefMesh.hpp>
+#include <PostProcOnRefMesh.hpp>
 
 #include <Projection10NodeCoordsOnField.hpp>
 #include <boost/iostreams/tee.hpp>
@@ -497,7 +497,7 @@ int main(int argc, char *argv[]) {
       ierr = m_field.build_problem("INCIDENT_WAVE"); CHKERRQ(ierr);
       ierr = m_field.partition_problem("INCIDENT_WAVE"); CHKERRQ(ierr);
       ierr = m_field.partition_finite_elements("INCIDENT_WAVE"); CHKERRQ(ierr);
-    }
+      }
     ierr = m_field.partition_ghost_dofs("INCIDENT_WAVE"); CHKERRQ(ierr);
 
   }
@@ -586,12 +586,12 @@ int main(int argc, char *argv[]) {
     TimeSeries time_series(m_field,helmholtz_element,
       analytical_ditihlet_bc_real,analytical_ditihlet_bc_imag,
       dirihlet_bc_set);
-    ierr = time_series.timeData();  CHKERRQ(ierr);
+    ierr = time_series.readData();  CHKERRQ(ierr);
     ierr = time_series.forwardDft(); CHKERRQ(ierr);
-    ierr = time_series.createVectorSeries(T); CHKERRQ(ierr);
+    ierr = time_series.createTimeVectorSeries(T); CHKERRQ(ierr);
     ierr = time_series.solveForwardDFT(solver,A,F,T); CHKERRQ(ierr);
     ierr = time_series.pressureInTimeDomainInverseDft(); CHKERRQ(ierr);
-    ierr = time_series.destroyVectorSeries(); CHKERRQ(ierr);
+    ierr = time_series.destroyTimeVectorSeries(); CHKERRQ(ierr);
 
 
   }
