@@ -4,7 +4,7 @@
 
   Those element are inherited by user to implement specific implementation of
   particular problem.
-  
+
 */
 
 /* This file is part of MoFEM.
@@ -31,14 +31,14 @@ namespace MoFEM {
 
 /** \brief structure to get information form mofem into DataForcesAndSurcesCore
   * \ingroup mofem_forces_and_sources
-  * 
+  *
   */
 struct ForcesAndSurcesCore: public FEMethod {
 
   PetscErrorCode ierr;
 
   FieldInterface& mField;
-  ForcesAndSurcesCore(FieldInterface& _mField): 
+  ForcesAndSurcesCore(FieldInterface& _mField):
     mField(_mField) {};
   virtual ~ForcesAndSurcesCore() {}
 
@@ -54,7 +54,7 @@ struct ForcesAndSurcesCore: public FEMethod {
   PetscErrorCode getTetsOrder(DataForcesAndSurcesCore &data,const FieldSpace space);
   PetscErrorCode getEdgesOrder(DataForcesAndSurcesCore &data,const string &field_name);
   PetscErrorCode getTrisOrder(DataForcesAndSurcesCore &data,const string &field_name);
-  PetscErrorCode getTetsOrder(DataForcesAndSurcesCore &data,const string &field_name);	
+  PetscErrorCode getTetsOrder(DataForcesAndSurcesCore &data,const string &field_name);
 
   // ** Indices **
 
@@ -72,7 +72,7 @@ struct ForcesAndSurcesCore: public FEMethod {
     EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data);
 
   /// \brief get row node indices from FENumeredDofMoFEMEntity_multiIndex
-  PetscErrorCode getRowNodesIndices(DataForcesAndSurcesCore &data,const string &field_name); 
+  PetscErrorCode getRowNodesIndices(DataForcesAndSurcesCore &data,const string &field_name);
 
   /// \brief get col node indices from FENumeredDofMoFEMEntity_multiIndex
   PetscErrorCode getColNodesIndices(DataForcesAndSurcesCore &data,const string &field_name);
@@ -206,18 +206,18 @@ struct ForcesAndSurcesCore: public FEMethod {
     const double *G_X,const double *G_Y,const int G_DIM);
 
   /** \brief it is used to calculate nb. of Gauss integration points
-   
+
    This function in general should be overload, returning integration rank
    depending on operator type. Integration rule should be set to
    integrate matrix and vector exactly.
-   
+
    If function return -1
    \code
    int getRule(int order) { return -1; };
    \endcode
    then, fuction \codes setGaussPts(order) \endcode is called. In setGaussPts
-   user can implement own intergartion rule for specific approx. ordrr.  
-   
+   user can implement own intergartion rule for specific approx. ordrr.
+
    At this stage of development integration points are weight are calculated following this paper:
    Albert Nijenhuis, Herbert Wilf, Combinatorial Algorithms for Computers and
    Calculators, Second Edition, Academic Press, 1978, ISBN: 0-12-519260-6,
@@ -226,23 +226,23 @@ struct ForcesAndSurcesCore: public FEMethod {
    More details about algorithm
    https://github.com/johannesgerer/jburkardt-m/tree/master/gm_rule
    http://people.sc.fsu.edu/~jburkardt/cpp_src/gm_rule/gm_rule.html
-  **/ 
+  **/
   virtual int getRule(int order) { return order; };
 
   /** \brief set user specific integration rule
-  
+
     This function allows for user defined integration rule. The key is to
     called matrix gaussPts, which is used by other MoFEM procedures. Matrix has
     number of rows equal to problem dimension plus one, where last index is used to
     store weight values. Number of columns is equal to number of integration points.
 
-    Note: that matrix is called gussPts, however user can keep in it any integration rule. 
+    Note: that matrix is called gussPts, however user can keep in it any integration rule.
 
-    User sets 
-    \code 
+    User sets
+    \code
     ublas::matrix<double> gaussPts;
     \endcode
-    where 
+    where
     \code
     gaussPts.resize(dim+1,nb_gauss_pts);
     \endcode
@@ -256,67 +256,103 @@ struct ForcesAndSurcesCore: public FEMethod {
     PetscFunctionReturn(0);
   }
 
+  /** \brief Data operator to do calculations at integration points.
+    * \ingroup mofem_forces_and_sources
 
+    Is inherited and implemented by user to do calculations. It can be used in many
+    different ways but typically is used to integrate matrices (f.e. stiffness matrux) and
+    the right hand vector (f.e. force vector).
 
+    Note: It is assumed that operator is executed for symmetric problem. That means that
+    is executed for not repeating entities on finite element. For example on triangle we have
+    nodes, 3 edges and one face. Because of symmetry calculations are for:
+    nodes-nodes,
+    nodes-edge0, nodes-edge_1, nodes-edge_2,
+    nodes-face,
+    edges_1-edges_1, edges_1-edge_1, edge_1-edge_2,
+    edge_1-edge_1, edge_1-edge_2,
+    edge_2-edge_2,
+    edge_1-face, edge_1-face, edges_3-face,
+    face - face
+
+    In case of non symmetric problem in addition calculations of lower off diagonal terms. F.e.
+    edge_1-edge_0,
+    esges_3-edge_0, edge_3-edge_1,
+
+    In that case class variable UserDataOperator::sYmm = false;
+
+    NoteL: By default sYmm is set for symmetric problems
+
+  */
   struct UserDataOperator: public DataOperator {
 
     string rowFieldName;
     string colFieldName;
     bool sYmm;
 
+    /// set if operator is executed taking in account symmetry
+    void setSymm() {
+      sYmm = true;
+    }
+
+    /// unset if operator is executed for  non symmetric problem
+    void unSetSymm() {
+      sYmm = false;
+    }
+
     UserDataOperator(
       const string &_field_name):
-	rowFieldName(_field_name),colFieldName(_field_name),sYmm(true),ptrFE(NULL) {};
-    UserDataOperator(
-      const string &_row_field_name,const string &_col_field_name):
-	rowFieldName(_row_field_name),colFieldName(_col_field_name),sYmm(true),ptrFE(NULL) {};
-    virtual ~UserDataOperator() {}
+      rowFieldName(_field_name),colFieldName(_field_name),sYmm(true),ptrFE(NULL) {};
+      UserDataOperator(
+        const string &_row_field_name,const string &_col_field_name):
+        rowFieldName(_row_field_name),colFieldName(_col_field_name),sYmm(true),ptrFE(NULL) {};
+        virtual ~UserDataOperator() {}
 
-    /** \bried return pointer to NumeredMoFEMFiniteElement 
+    /** \bried return pointer to NumeredMoFEMFiniteElement
      */
     inline const NumeredMoFEMFiniteElement* getMoFEMFEPtr() { return ptrFE->fePtr; };
 
-    /** \brief Get row indices 
-    
+    /** \brief Get row indices
+
     Field could be or not declared for this element but is declared for porblem
-  
-    \param field_name 
+
+    \param field_name
     \param type entity type
     \param side side number, any number if type is MBVERTEX
     \return indices
-  
+
     NOTE: Using those indices to assemble matrix will result in error if new non-zero values need to be created.
-  
+
     */
     PetscErrorCode getPorblemRowIndices(const string filed_name,const EntityType type,const int side,ublas::vector<int>& indices);
-  
-    /** \brief Get col indices 
-    
+
+    /** \brief Get col indices
+
     Field could be or not declared for this element but is declared for porblem
-  
-    \param field_name 
+
+    \param field_name
     \param type entity type
     \param side side number, any number if type is MBVERTEX
     \return indices
-  
+
     NOTE: Using those indices to assemble matrix will result in error if new non-zero values need to be created.
-  
+
     */
     PetscErrorCode getPorblemColIndices(const string filed_name,const EntityType type,const int side,ublas::vector<int>& indices);
-  
-    virtual PetscErrorCode setPtrFE(ForcesAndSurcesCore *ptr) { 
+
+    virtual PetscErrorCode setPtrFE(ForcesAndSurcesCore *ptr) {
       PetscFunctionBegin;
       ptrFE = ptr;
       PetscFunctionReturn(0);
     }
-    
+
     private:
-    ForcesAndSurcesCore *ptrFE; 
+    ForcesAndSurcesCore *ptrFE;
 
   };
 
-  boost::ptr_vector<UserDataOperator> rowOpPtrVector; 
-  boost::ptr_vector<UserDataOperator> colOpPtrVector; 
+  boost::ptr_vector<UserDataOperator> rowOpPtrVector;
+  boost::ptr_vector<UserDataOperator> colOpPtrVector;
   boost::ptr_vector<UserDataOperator> rowColOpPtrVector;
 
   /** \brief Use to push back operator for row operator
@@ -359,14 +395,14 @@ struct ForcesAndSurcesCore: public FEMethod {
 
 };
 
-/** \brief Volume finite element  
- \ingroup mofem_forces_and_sources_tet_element 
- 
+/** \brief Volume finite element
+ \ingroup mofem_forces_and_sources_tet_element
+
  User is implementing own operator at Gauss point level, by own object
  derived from VolumeElementForcesAndSourcesCoreL::UserDataOperator.  Arbitrary
  number of operator added pushing objects to rowOpPtrVector and
- rowColOpPtrVector. 
- 
+ rowColOpPtrVector.
+
  */
 struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 
@@ -404,7 +440,7 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
     opSetHoInvJacH1(hoGaussPtsInvJac),
     opSetHoPiolaTransform(hoGaussPtsDetJac,hoGaussPtsJac),
     opSetHoInvJacHdiv(hoGaussPtsInvJac) {};
-    
+
   virtual ~VolumeElementForcesAndSourcesCore() {}
 
   ErrorCode rval;
@@ -427,13 +463,13 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
     UserDataOperator(
       const string &_row_field_name,const string &_col_field_name):
       ForcesAndSurcesCore::UserDataOperator(_row_field_name,_col_field_name) {};
-    
+
     /** \brief element volume (linear geometry)
       */
     inline double getVolume() { return ptrFE->vOlume; }
 
-    /** \brief nodal coordinates 
-      */ 
+    /** \brief nodal coordinates
+      */
     inline ublas::vector<double>& getCoords() { return ptrFE->coords; }
 
     /** \brief matrix of Gauss pts
@@ -455,12 +491,12 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
     inline ublas::vector<double>& getHoGaussPtsDetJac() { return ptrFE->hoGaussPtsDetJac; }
 
     /** \bried return pointer to Generic Finite Element object
-     */ 
+     */
     inline const FEMethod* getFEMethod() { return ptrFE; }
 
 
     /** \bried return pointer to Generic Tetrahedral Finite Element object
-     */ 
+     */
     inline const VolumeElementForcesAndSourcesCore* getTetFE() { return ptrFE; }
 
     //differential operators
@@ -468,7 +504,7 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data,
       int gg,ublas::vector<double> &div);
 
-    PetscErrorCode setPtrFE(ForcesAndSurcesCore *ptr) { 
+    PetscErrorCode setPtrFE(ForcesAndSurcesCore *ptr) {
       PetscFunctionBegin;
       ptrFE = dynamic_cast<VolumeElementForcesAndSourcesCore*>(ptr);
       ForcesAndSurcesCore::UserDataOperator::setPtrFE(ptr);
@@ -476,7 +512,7 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
     }
 
     private:
-    VolumeElementForcesAndSourcesCore *ptrFE; 
+    VolumeElementForcesAndSourcesCore *ptrFE;
 
   };
 
@@ -491,20 +527,20 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
     PetscFunctionReturn(0);
   }
 
-  
+
 };
 
 DEPRECATED typedef VolumeElementForcesAndSourcesCore TetElementForcesAndSourcesCore;
 
 
-/** \brief Face finite element  
+/** \brief Face finite element
  \ingroup mofem_forces_and_sources_tri_element
- 
+
  User is implementing own operator at Gauss point level, by own object
  derived from FaceElementForcesAndSourcesCoreL::UserDataOperator.  Arbitrary
  number of operator added pushing objects to rowOpPtrVector and
- rowColOpPtrVector. 
- 
+ rowColOpPtrVector.
+
  */
 struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 
@@ -573,8 +609,8 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
       *
       * \param gg gauss point number
       */
-    inline ublas::matrix_row<ublas::matrix<double> > getNormals_at_GaussPt(const int gg) { 
-      return ublas::matrix_row<ublas::matrix<double> >(ptrFE->nOrmals_at_GaussPt,gg); 
+    inline ublas::matrix_row<ublas::matrix<double> > getNormals_at_GaussPt(const int gg) {
+      return ublas::matrix_row<ublas::matrix<double> >(ptrFE->nOrmals_at_GaussPt,gg);
     }
 
     /** \bried if higher order geometry return tangent vector to triangle at Gauss pts.
@@ -585,7 +621,7 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
      */
     inline ublas::matrix<double>& getTangent2_at_GaussPt() { return ptrFE->tAngent2_at_GaussPt; }
 
-    /** \bried return pointer to triangle finite element object 
+    /** \bried return pointer to triangle finite element object
      */
     inline const FaceElementForcesAndSourcesCore* getFaceElementForcesAndSourcesCore() { return ptrFE; }
 
@@ -594,10 +630,10 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
     inline const FEMethod* getFEMethod() { return ptrFE; }
 
      /** \bried return pointer to Generic Triangle Finite Element object
-     */ 
+     */
     inline const FaceElementForcesAndSourcesCore* getTriFE() { return ptrFE; }
 
-    PetscErrorCode setPtrFE(ForcesAndSurcesCore *ptr) { 
+    PetscErrorCode setPtrFE(ForcesAndSurcesCore *ptr) {
       PetscFunctionBegin;
       ptrFE = dynamic_cast<FaceElementForcesAndSourcesCore*>(ptr);
       ForcesAndSurcesCore::UserDataOperator::setPtrFE(ptr);
@@ -605,7 +641,7 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
     }
 
     private:
-    FaceElementForcesAndSourcesCore *ptrFE; 
+    FaceElementForcesAndSourcesCore *ptrFE;
 
 
   };
@@ -624,13 +660,13 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 
 DEPRECATED typedef FaceElementForcesAndSourcesCore TriElementForcesAndSurcesCore;
 
-/** \brief Edge finite element  
+/** \brief Edge finite element
  * \ingroup mofem_forces_and_sources
  *
  * User is implementing own operator at Gauss points level, by own object
  * derived from EdgeElementForcesAndSurcesCoreL::UserDataOperator.  Arbitrary
  * number of operator added pushing objects to rowOpPtrVector and
- * rowColOpPtrVector. 
+ * rowColOpPtrVector.
  *
  */
 struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
@@ -666,7 +702,7 @@ struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
     inline const FEMethod* getFEMethod() { return ptrFE; }
     inline const EdgeElementForcesAndSurcesCore* getEdgeFE() { return ptrFE; }
 
-    PetscErrorCode setPtrFE(ForcesAndSurcesCore *ptr) { 
+    PetscErrorCode setPtrFE(ForcesAndSurcesCore *ptr) {
       PetscFunctionBegin;
       ptrFE = dynamic_cast<EdgeElementForcesAndSurcesCore*>(ptr);
       ForcesAndSurcesCore::UserDataOperator::setPtrFE(ptr);
@@ -674,7 +710,7 @@ struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
     }
 
     private:
-    EdgeElementForcesAndSurcesCore *ptrFE; 
+    EdgeElementForcesAndSurcesCore *ptrFE;
   };
 
   PetscErrorCode preProcess() {
@@ -689,16 +725,16 @@ struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
 };
 
-/** \brief Vertex finite element  
+/** \brief Vertex finite element
  * \ingroup mofem_forces_and_sources
 
  User is implementing own operator at Gauss points level, by own object
  derived from VertexElementForcesAndSourcesCoreL::UserDataOperator.  Arbitrary
  number of operator added pushing objects to rowOpPtrVector and
- rowColOpPtrVector. 
+ rowColOpPtrVector.
 
  \bug colOp not implemented
- 
+
  */
 struct VertexElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 
@@ -725,7 +761,7 @@ struct VertexElementForcesAndSourcesCore: public ForcesAndSurcesCore {
     inline ublas::vector<double>& getCoords() { return ptrFE->coords; }
     inline const FEMethod* getFEMethod() { return ptrFE; }
 
-    PetscErrorCode setPtrFE(ForcesAndSurcesCore *ptr) { 
+    PetscErrorCode setPtrFE(ForcesAndSurcesCore *ptr) {
       PetscFunctionBegin;
       ptrFE = dynamic_cast<VertexElementForcesAndSourcesCore*>(ptr);
       ForcesAndSurcesCore::UserDataOperator::setPtrFE(ptr);
@@ -733,7 +769,7 @@ struct VertexElementForcesAndSourcesCore: public ForcesAndSurcesCore {
     }
 
     private:
-    VertexElementForcesAndSourcesCore *ptrFE; 
+    VertexElementForcesAndSourcesCore *ptrFE;
   };
 
   PetscErrorCode preProcess() {
@@ -749,16 +785,16 @@ struct VertexElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 };
 
 
-/** \brief FlatPrism finite element  
+/** \brief FlatPrism finite element
  \ingroup mofem_forces_and_sources_prism_element
- 
+
  User is implementing own operator at Gauss points level, by own object
  derived from FlatPrismElementForcesAndSurcesCoreL::UserDataOperator.  Arbitrary
  number of operator added pushing objects to rowOpPtrVector and
  rowColOpPtrVector.
 
  \bug colOp not implemented
- 
+
  */
 struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
@@ -823,39 +859,39 @@ struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
     inline ublas::matrix<double>& getCoordsAtGaussPts() { return ptrFE->coordsAtGaussPts; }
 
     /** \bried if higher order geometry return normals at face F3 at Gauss pts.
-     * 
-     * Face 3 is top face in canonical triangle numeration, see 
+     *
+     * Face 3 is top face in canonical triangle numeration, see
      * Canonical numbering systems for finite-element codes Timothy J. Tautges
      */
     inline ublas::matrix<double>& getNormals_at_GaussPtF3() { return ptrFE->nOrmals_at_GaussPtF3; }
 
     /** \bried if higher order geometry return normals at face F4 at Gauss pts.
-     * 
-     * Face 4 is top face in canonical triangle numeration, see 
+     *
+     * Face 4 is top face in canonical triangle numeration, see
      * Canonical numbering systems for finite-element codes Timothy J. Tautges
      */
     inline ublas::matrix<double>& getNormals_at_GaussPtF4() { return ptrFE->nOrmals_at_GaussPtF4; }
 
     /** \bried if higher order geometry return normals at Gauss pts.
       *
-      * Face 3 is top face in canonical triangle numeration, see 
+      * Face 3 is top face in canonical triangle numeration, see
       * Canonical numbering systems for finite-element codes Timothy J. Tautges
       *
       * \param gg gauss point number
       */
-    inline ublas::matrix_row<ublas::matrix<double> > getNormals_at_GaussPtF3(const int gg) { 
-      return ublas::matrix_row<ublas::matrix<double> >(ptrFE->nOrmals_at_GaussPtF3,gg); 
+    inline ublas::matrix_row<ublas::matrix<double> > getNormals_at_GaussPtF3(const int gg) {
+      return ublas::matrix_row<ublas::matrix<double> >(ptrFE->nOrmals_at_GaussPtF3,gg);
     }
 
     /** \bried if higher order geometry return normals at Gauss pts.
       *
-      * Face 3 is top face in canonical triangle numeration, see 
+      * Face 3 is top face in canonical triangle numeration, see
       * Canonical numbering systems for finite-element codes Timothy J. Tautges
       *
       * \param gg gauss point number
       */
-    inline ublas::matrix_row<ublas::matrix<double> > getNormals_at_GaussPtF4(const int gg) { 
-      return ublas::matrix_row<ublas::matrix<double> >(ptrFE->nOrmals_at_GaussPtF4,gg); 
+    inline ublas::matrix_row<ublas::matrix<double> > getNormals_at_GaussPtF4(const int gg) {
+      return ublas::matrix_row<ublas::matrix<double> >(ptrFE->nOrmals_at_GaussPtF4,gg);
     }
 
     /** \bried if higher order geometry return tangent vector to triangle at Gauss pts.
@@ -874,7 +910,7 @@ struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
      */
     inline ublas::matrix<double>& getTangent2_at_GaussPtF4() { return ptrFE->tAngent2_at_GaussPtF4; }
 
-    /** \bried return pointer to triangle finite element object 
+    /** \bried return pointer to triangle finite element object
      */
     inline const FlatPrismElementForcesAndSurcesCore* getFlatPrismElementForcesAndSurcesCore() { return ptrFE; }
 
@@ -882,7 +918,7 @@ struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
      */
     inline const FEMethod* getFEMethod() { return ptrFE; }
 
-    PetscErrorCode setPtrFE(ForcesAndSurcesCore *ptr) { 
+    PetscErrorCode setPtrFE(ForcesAndSurcesCore *ptr) {
       PetscFunctionBegin;
       ptrFE = dynamic_cast<FlatPrismElementForcesAndSurcesCore*>(ptr);
       ForcesAndSurcesCore::UserDataOperator::setPtrFE(ptr);
@@ -890,7 +926,7 @@ struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
     }
 
     private:
-    FlatPrismElementForcesAndSurcesCore *ptrFE; 
+    FlatPrismElementForcesAndSurcesCore *ptrFE;
 
   };
 
@@ -915,20 +951,16 @@ struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
  ******************************************************************************/
 
 /***************************************************************************//**
- * \defgroup mofem_forces_and_sources_tet_element Tetrahedral Element 
+ * \defgroup mofem_forces_and_sources_tet_element Tetrahedral Element
  * \ingroup mofem_forces_and_sources
  ******************************************************************************/
 
 /***************************************************************************//**
- * \defgroup mofem_forces_and_sources_tri_element Triangular Element 
+ * \defgroup mofem_forces_and_sources_tri_element Triangular Element
  * \ingroup mofem_forces_and_sources
  ******************************************************************************/
 
 /***************************************************************************//**
- * \defgroup mofem_forces_and_sources_prism_element Prism Element 
+ * \defgroup mofem_forces_and_sources_prism_element Prism Element
  * \ingroup mofem_forces_and_sources
  ******************************************************************************/
-
-
-
-
