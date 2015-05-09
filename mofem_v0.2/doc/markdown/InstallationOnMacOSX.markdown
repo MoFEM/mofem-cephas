@@ -1,4 +1,4 @@
-## Installation on MacOSX ##
+## Installation on OS X ##
 
 If you have any problems, feedback or would like to suggest corrections,
 please email [cmatgu@googlegroups.com](mailto:cmatgu@googlegroups.com).
