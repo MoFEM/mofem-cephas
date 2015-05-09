@@ -23,9 +23,9 @@ brew install --with-graphviz doxygen
 brew install wget
 ~~~~~~
 
-###3. Install PETSc and other liblaries
+###3. Install PETSc and other libraries
 
-Change to your MOFEM_INSTALL_DIR
+Change to your ```$MOFEM_INSTALL_DIR```
 ~~~~~~
 cd $HOME/$MOFEM_INSTALL_DIR
 ~~~~~~
@@ -52,7 +52,7 @@ develop code is recommened that you compile petsce with debugging flag on.
 
 ###4. Compile ADOL-C
 
-Change to your MOFEM_INSTALL_DIR
+Change to your ```$MOFEM_INSTALL_DIR```
 ~~~~~~
 cd $HOME/$MOFEM_INSTALL_DIR
 ~~~~~~
@@ -81,7 +81,7 @@ cp libtet.a lib/
 
 ###6. Clone sourcecode and install MoFEM liblary
 
-Change to your MOFEM_INSTALL_DIR
+Change to your ```$MOFEM_INSTALL_DIR```
 ~~~~~~
 cd $HOME/$MOFEM_INSTALL_DIR
 ~~~~~~
@@ -115,7 +115,7 @@ ctest -D Experimental
 
 ###7. Configuration, compilation and testing user modules
 
-Change to your MOFEM_INSTALL_DIR
+Change to your ```$MOFEM_INSTALL_DIR```
 ~~~~~~
 cd $HOME/$MOFEM_INSTALL_DIR/user_modules
 ~~~~~~

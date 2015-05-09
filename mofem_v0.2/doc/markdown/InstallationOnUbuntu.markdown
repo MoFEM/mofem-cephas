@@ -17,9 +17,9 @@ export MOFEM_INSTALL_DIR=$HOME/mofem_installation
 mkdir $MOFEM_INSTALL_DIR
 ~~~~~~
 
-###2. Install PETSc and other liblaries
+###2. Install PETSc and other libraries
 
-Change to your MOFEM_INSTALL_DIR
+Change to your ```$MOFEM_INSTALL_DIR```
 ~~~~~~
 cd $HOME/$MOFEM_INSTALL_DIR
 ~~~~~~
@@ -69,7 +69,7 @@ cp libtet.a lib/
 
 ###4. Clone sourcecode and install MoFEM liblary
 
-Change to your MOFEM_INSTALL_DIR
+Change to your ```$MOFEM_INSTALL_DIR```
 ~~~~~~
 cd $HOME/$MOFEM_INSTALL_DIR
 ~~~~~~
@@ -113,7 +113,7 @@ ctest -D Experimental
 
 ###5. Configuration, compilation and testing user modules
 
-Change to your MOFEM_INSTALL_DIR
+Change to your ```$MOFEM_INSTALL_DIR```
 ~~~~~~
 cd $HOME/$MOFEM_INSTALL_DIR/user_modules
 ~~~~~~
@@ -151,7 +151,7 @@ ctest -D Experimental
 
 ###6. Configuration, compilation and testing user modules
 
-Change to your MOFEM_INSTALL_DIR
+Change to your ```$MOFEM_INSTALL_DIR```
 ~~~~~~
 cd $HOME/$MOFEM_INSTALL_DIR/user_modules
 ~~~~~~
