@@ -224,7 +224,7 @@ Setup file structure:
 
 ~~~~~~
 export MOFEM_SOURCE_CODE_DIR=/home/home
-export MOFEM_INSTALL_DIR=$HOME/build
+export MOFEM_INSTALL_DIR=/build
 mkdir $MOFEM_INSTALL_DIR
 
 cd $MOFEM_INSTALL_DIR
