@@ -451,7 +451,7 @@ struct HelmholtzElement {
     \f]
 
     */
-  struct OpHelmholtzLhs: public VolumeElementForcesAndSourcesCore::UserDataOperator {
+    struct OpHelmholtzLhs: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     VolumeData &dAta;
     CommonData &commonData;
@@ -1191,15 +1191,13 @@ struct HelmholtzElement {
 
       if(it->get_name().compare(0,13,"MAT_HELMHOLTZ") == 0) {
 
-        volumeData[it->get_msId()].waveNumber = globalParameters.waveNumber.first;
         rval = mField.get_moab().get_entities_by_type(it->meshset,MBTET,volumeData[it->get_msId()].tEts,true); CHKERR_PETSC(rval);
         ierr = mField.add_ents_to_finite_element_by_TETs(volumeData[it->get_msId()].tEts,"HELMHOLTZ_RERE_FE"); CHKERRQ(ierr);
         ierr = mField.add_ents_to_finite_element_by_TETs(volumeData[it->get_msId()].tEts,"HELMHOLTZ_IMIM_FE"); CHKERRQ(ierr);
+        volumeData[it->get_msId()].waveNumber = globalParameters.waveNumber.first;
 
         if(mField.check_field(pressure_field)) {
-
           ierr = mField.add_ents_to_finite_element_by_TETs(volumeData[it->get_msId()].tEts,"PRESSURE_FE"); CHKERRQ(ierr);
-
         }
 
       }
@@ -1224,7 +1222,7 @@ struct HelmholtzElement {
         vector<double> attributes;
         ierr = it->get_attributes(attributes); CHKERRQ(ierr);
         if(attributes.size()<1) {
-          SETERRQ1(PETSC_COMM_SELF,1,"first block attribute should define surface admitance",attributes.size());
+          SETERRQ1(PETSC_COMM_SELF,1,"first block attribute should define surface admittance",attributes.size());
         }
 
         surfaceIncidentWaveBcData[it->get_msId()].aDmittance_real = 0;

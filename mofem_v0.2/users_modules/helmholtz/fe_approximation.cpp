@@ -192,12 +192,11 @@ int main(int argc, char *argv[]) {
   // Finite Elements
 
   HelmholtzElement helmholtz_element(m_field);
+  ierr = helmholtz_element.getGlobalParametersFromLineCommandOptions(); CHKERRQ(ierr);
   ierr = helmholtz_element.addHelmholtzElements("rePRES","imPRES"); CHKERRQ(ierr);
   if(m_field.check_field("reEX") && m_field.check_field("imEX")) {
-
     ierr = m_field.modify_finite_element_add_field_data("HELMHOLTZ_RERE_FE","reEX"); CHKERRQ(ierr);
     ierr = m_field.modify_finite_element_add_field_data("HELMHOLTZ_RERE_FE","imEX"); CHKERRQ(ierr);
-
   }
 
   Range bc_dirichlet_tris,analytical_bc_tris;
@@ -309,7 +308,6 @@ int main(int argc, char *argv[]) {
   Mat A; //Left hand side matrix
   ierr = m_field.MatCreateMPIAIJWithArrays("ACOUSTIC_PROBLEM",&A); CHKERRQ(ierr);
   ierr = helmholtz_element.setOperators(A,F,"rePRES","imPRES"); CHKERRQ(ierr);
-  ierr = helmholtz_element.getGlobalParametersFromLineCommandOptions(); CHKERRQ(ierr);
 
   //wave direction unit vector=[x,y,z]^T
   ublas::vector<double> wave_direction;
