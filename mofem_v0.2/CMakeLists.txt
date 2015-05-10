@@ -19,7 +19,7 @@ include(cmake/FindMOAB.cmake)
 
 message(${PETSCVAR_CXX})
 
-set(CMAKE_C_COMPILER ${PETSCVAR_CC} ) 
+set(CMAKE_C_COMPILER ${PETSCVAR_CC} )
 string(REGEX MATCH  "^.*mpicxx" PETSCVAR_CXX_ "${PETSCVAR_CXX}")
 message(${PETSCVAR_CXX_})
 set(CMAKE_CXX_COMPILER ${PETSCVAR_CXX_})
@@ -47,7 +47,7 @@ include(cmake/FindSLEPC.cmake)
 
 #CGAL tools
 #find_package(CGAL HINTS ${CGAL_DIR}/lib/CGAL)
-#if(CGAL_CONFIG_LOADED) 
+#if(CGAL_CONFIG_LOADED)
 #  include_directories(${CGAL_INCLUDE_DIRS})
 #  link_directories(${CGAL_LIBRARIES_DIR})
 #  add_definitions( -DWITH_CGAL )
@@ -79,16 +79,16 @@ configure_file(
 include_directories("${PROJECT_SOURCE_DIR}/include")
 
 #add coverage
-if(WITHCOVERAGE) 
+if(WITHCOVERAGE)
   set(GCC_COVERAGE_COMPILE_FLAGS "-Wall -fprofile-arcs -ftest-coverage")
   add_definitions(${GCC_COVERAGE_COMPILE_FLAGS})
   set(CMAKE_EXE_LINKER_FLAGS "${GCC_COVERAGE_COMPILE_FLAGS}")
-endif(WITHCOVERAGE) 
+endif(WITHCOVERAGE)
 
 #add check for verbose testing
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --verbose)
 
-resolve_includes(PROJECT_INCLUDE_DIRECTORIES 
+resolve_includes(PROJECT_INCLUDE_DIRECTORIES
   "${PETSCVAR_PACKAGES_INCLUDES} ${MOAB_INCLUDES0} ${MOAB_INCLUDES}"
   )
 
@@ -98,7 +98,7 @@ include_directories(
   ${PETSCVAR_DIR}/include
   )
 
-if(TAO_LIBRARY) 
+if(TAO_LIBRARY)
   include_directories(${TAO_DIR}/include)
   add_definitions(-DTAO)
 endif(TAO_LIBRARY)
@@ -109,7 +109,7 @@ resolve_libraries(PROJECT_LIBS "
   ${TETGEN_LIBRARY}
   ${NETGEN_LIBRARY}
   ${MOAB_LIBS_LINK}
-  -L${PETSC_DIR}/${PETSC_ARCH}/lib 
+  -L${PETSC_DIR}/${PETSC_ARCH}/lib
   ${PETSCVAR_PETSC_WITH_EXTERNAL_LIB}
   ${TAO_LIBRARY}
   ${MPI_F90_LIB}
@@ -117,8 +117,8 @@ resolve_libraries(PROJECT_LIBS "
 
 message(STATUS ${PROJECT_LIBS})
 file(COPY
-  ${CMAKE_CURRENT_SOURCE_DIR}/INSTALL
-  DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
+  ${PROJECT_SOURCE_DIR}/INSTALL
+  DESTINATION ${PROJECT_BINARY_DIR}
 )
 
 #add executable library form subdirectory
@@ -134,13 +134,13 @@ add_subdirectory("${PROJECT_SOURCE_DIR}/atom_tests")
 
 #add generation of examplaes
 configure_file(
-  ${CMAKE_CURRENT_SOURCE_DIR}/MoFEMConfig.cmake.in
-  ${CMAKE_CURRENT_BINARY_DIR}/MoFEMConfig.cmake
+  ${PROJECT_SOURCE_DIR}/MoFEMConfig.cmake.in
+  ${PROJECT_BINARY_DIR}/MoFEMConfig.cmake
   )
 
 configure_file(
-  ${CMAKE_CURRENT_SOURCE_DIR}/MoFEMConfig-version.cmake.in
-  ${CMAKE_CURRENT_BINARY_DIR}/MoFEMConfig-version.cmake
+  ${PROJECT_SOURCE_DIR}/MoFEMConfig-version.cmake.in
+  ${PROJECT_BINARY_DIR}/MoFEMConfig-version.cmake
   )
 install(FILES ${PROJECT_BINARY_DIR}/MoFEMConfig.cmake DESTINATION ${CMAKE_INSTALL_PREFIX})
 install(FILES ${PROJECT_BINARY_DIR}/MoFEMConfig-version.cmake DESTINATION ${CMAKE_INSTALL_PREFIX})
@@ -150,20 +150,22 @@ add_subdirectory("${PROJECT_SOURCE_DIR}/users_modules.in")
 #add a target to generate API documentation with Doxygen
 find_package(Doxygen)
 if(DOXYGEN_FOUND)
+
   configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in
-    ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
+    ${PROJECT_SOURCE_DIR}/Doxyfile.in
+    ${PROJECT_BINARY_DIR}/Doxyfile
   )
-  set(DOXYGEN_LINE_COMMAND 
-    ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+
+  set(DOXYGEN_LINE_COMMAND
+    ${DOXYGEN_EXECUTABLE} ${PROJECT_BINARY_DIR}/Doxyfile
+    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
   )
   add_custom_target(doxygen_generating_documenation
     ${DOXYGEN_LINE_COMMAND}
     COMMENT "Generating documentation with Doxygen" VERBATIM
   )
   add_custom_target(doxygen_copy_figures
-    ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/doc/figures ${CMAKE_CURRENT_BINARY_DIR}/html
+    ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/doc/figures ${PROJECT_BINARY_DIR}/html
     DEPENDS doxygen_generating_documenation
     COMMENT "Copy figures for Doxygen Documenatation" VERBATIM
   )
@@ -171,6 +173,6 @@ if(DOXYGEN_FOUND)
     DEPENDS doxygen_generating_documenation doxygen_copy_figures
     COMMENT "Making documentation" VERBATIM
   )
+
+
 endif(DOXYGEN_FOUND)
-
-
