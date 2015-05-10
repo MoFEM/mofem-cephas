@@ -29,7 +29,6 @@ git clone https://bitbucket.org/petsc/petsc.git
 cd /opt/petsc
 git checkout tags/v$PETSC_VERSION
 
-
 # Configure and compile petsc:
 wget ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4.3.3.1.tar.gz
 ./configure --with-mpi=1 --with-debugging=0 --download-superlu_dist=1 --download-metis=1 --download-parmetis=1 --download-hypre=1 --download-mumps=1 --download-scalapack=1 --download-zoltan=1 --download-blacs=1 --download-moab=1 --download-ptscotch=1 --with-hdf5=1 --with-hdf5-dir=/usr --download-netcdf=/opt/petsc/netcdf-4.3.3.1.tar.gz --with-shared-libraries=1
@@ -43,10 +42,12 @@ ctest -D Experimental
 ~~~~~~
 
 Note: PETSc is compiled with debugging switch off for efficiency. If you
-develop code is recommened that you compile petsce with debugging flag on.
+develop code is recommended that you compile PETSc with debugging flag on in
+addition. You can have two versions of MoFEM compiled, for debugging and
+development and other version for larger calculations.
 
 Note: Version pets3.5.3 is checkout. MoFEM should work with development
-version of petsc if mofem is configured with `` -DCMAKE_C_FLAGS="-Wall
+version of PETSc if mofem is configured with `` -DCMAKE_C_FLAGS="-Wall
 -DPETSC_DEV" -DCMAKE_CXX_FLAGS="-Wall -DPETSC_DEV"``.
 
 ###3. Install TetGem and other libraries

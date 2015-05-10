@@ -164,7 +164,7 @@ sshdock
 
 Password: mofem
 
-To stop the need to enter a password everytime you log into the container you
+To stop the need to enter a password every time you log into the container you
 can generate a public-private key pair and copy the public key to the sshd
 container. To generate a public key in Mac OS X or Linux:
 
@@ -208,11 +208,11 @@ the user due to differing locations. The placeholder for this location in the
 cmake command is: `$MOFEM_SOURCE_CODE_DIR` and should be changed to the
 directory in Mac OS X from the home directory.
 
-Firt we need to clone MoFEM source directory into your ```$HOME``` on your
+First we need to clone MoFEM source directory into your ```$HOME``` on your
 native system (not docer). You could be able to edit source code using your
-favorite editor on your native system and manage *Git* reposytory.
+favorite editor on your native system and manage *Git* repository.
 
-Cloning MoFEM sourcecode (note that folloing line you should execute in your native operating system):
+Cloning MoFEM sourcecode (note that following line you should execute in your native operating system):
 ~~~~~~
 cd $HOME
 git clone https://bitbucket.org/likask/mofem-cephas.git mofem-cephas
@@ -303,7 +303,7 @@ cmake \
 -DTETGEN_DIR=/opt/tetgen1.5.0 \
 -DBUILD_SHARED_LIBS=yes \
 -DCMAKE_INSTALL_PREFIX=$MOFEM_INSTALL_DIR/debug/usr_mods \
-/mnt/home/*mofem_source_code_directory*
+$MOFEM_SOURCE_CODE_DIR
 ~~~~~~
 
 To build the MoFEM libraries run:
