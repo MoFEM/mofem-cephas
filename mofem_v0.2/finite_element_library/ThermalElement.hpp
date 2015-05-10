@@ -960,7 +960,7 @@ struct ThermalElement {
         int nb_row = row_data.getN().size2();
         int nb_col = col_data.getN().size2();
         K.resize(nb_row,nb_col);
-	K.clear();
+        K.clear();
 
         for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
 

@@ -352,10 +352,11 @@ struct TimeSeries {
               mField,"INCIDENT_WAVE","HELMHOLTZ_RERE_FE","rePRESS",PETSC_NULL,vec_F,function_evaluator
             ); CHKERRQ(ierr);
           }
+
         }
 
         for (size_t ss = 0; ss < 2; ss++) {
-          // solve indicent wave approximation problem
+          // Solve incident wave approximation problem
           ierr = KSPSolve(approx_incindent_wave_solver,vec_F[ss],D_approx_incident_wave); CHKERRQ(ierr);
           ierr = VecGhostUpdateBegin(D_approx_incident_wave,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
           ierr = VecGhostUpdateEnd(D_approx_incident_wave,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
