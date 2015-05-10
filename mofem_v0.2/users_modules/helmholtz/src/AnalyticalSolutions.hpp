@@ -672,6 +672,7 @@ PetscErrorCode solve_problem(FieldInterface& m_field,
 
   Mat A;
   ierr = m_field.MatCreateMPIAIJWithArrays(problem_name,&A); CHKERRQ(ierr);
+  ierr = MatZeroEntries(A); CHKERRQ(ierr);
   Vec D;
 
   vector<Vec> vec_F;
@@ -696,14 +697,12 @@ PetscErrorCode solve_problem(FieldInterface& m_field,
   ierr = KSPSetUp(solver); CHKERRQ(ierr);
 
   for(int ss = 0;ss<GenericAnalyticalSolution::LAST_VAL_TYPE;ss++) {
-
     // solve problem
     ierr = KSPSolve(solver,vec_F[ss],D); CHKERRQ(ierr);
     ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
     ierr = save_data_on_mesh(m_field,problem_name,re_field,im_field,D,ss,mode,is_partitioned); CHKERRQ(ierr);
-
   }
 
   // clean

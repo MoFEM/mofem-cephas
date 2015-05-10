@@ -101,19 +101,20 @@ struct FieldApproximationH1 {
         cblas_dger(CblasRowMajor,
           nb_row_dofs,nb_col_dofs,
           w,&row_data.getN()(gg,0),1,&col_data.getN()(gg,0),1,
-          &*NN.data().begin(),nb_col_dofs);
-        }
+          &*NN.data().begin(),nb_col_dofs
+        );
+      }
 
-        if( (row_type != col_type) || (row_side != col_side) ) {
-          transNN.resize(nb_col_dofs,nb_row_dofs);
-          ublas::noalias(transNN) = trans(NN);
-        }
+      if( (row_type != col_type) || (row_side != col_side) ) {
+        transNN.resize(nb_col_dofs,nb_row_dofs);
+        ublas::noalias(transNN) = trans(NN);
+      }
 
-        double *data = &*NN.data().begin();
-        double *trans_data = &*transNN.data().begin();
-        ublas::vector<DofIdx> row_indices,col_indices;
-        row_indices.resize(nb_row_dofs);
-        col_indices.resize(nb_col_dofs);
+      double *data = &*NN.data().begin();
+      double *trans_data = &*transNN.data().begin();
+      ublas::vector<DofIdx> row_indices,col_indices;
+      row_indices.resize(nb_row_dofs);
+      col_indices.resize(nb_col_dofs);
 
       for(int rr = 0;rr < rank; rr++) {
 
@@ -174,7 +175,7 @@ struct FieldApproximationH1 {
       PetscFunctionReturn(0);
     }
 
-    /** \brief caclulate vector
+    /** \brief calculate vector
       */
     PetscErrorCode doWork(
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
@@ -206,7 +207,7 @@ struct FieldApproximationH1 {
         double x,y,z,w;
         w = getVolume()*getGaussPts()(3,gg);
         if(getHoCoordsAtGaussPts().size1()==nb_gauss_pts) {
-          //intergation poits global positions if higher order geometry is given
+          //intergation points global positions if higher order geometry is given
           x = getHoCoordsAtGaussPts()(gg,0);
           y = getHoCoordsAtGaussPts()(gg,1);
           z = getHoCoordsAtGaussPts()(gg,2);
@@ -276,9 +277,9 @@ struct FieldApproximationH1 {
     PetscFunctionBegin;
     PetscErrorCode ierr;
 
-    //add operator to calulate F vector
+    //add operator to calculate F vector
     fe.getRowOpPtrVector().push_back(new OpApprox<FUNEVAL>(field_name,A,vec_F,function_evaluator));
-    //add operator to calulate A matrix
+    //add operator to calculate A matrix
     if(A) {
       fe.getRowColOpPtrVector().push_back(new OpApprox<FUNEVAL>(field_name,A,vec_F,function_evaluator));
     }

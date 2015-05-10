@@ -56,9 +56,9 @@ int main(int argc, char *argv[]) {
 
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-  BARRIER_RANK_START(pcomm) 
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
-  BARRIER_RANK_END(pcomm) 
+  BARRIER_RANK_START(pcomm)
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
+  BARRIER_RANK_END(pcomm)
 
   //set entitities bit level
   BitRefLevel bit_level0;
@@ -92,7 +92,7 @@ int main(int argc, char *argv[]) {
 
 
   //meshset consisting all entities in mesh
-  EntityHandle root_set = moab.get_root_set(); 
+  EntityHandle root_set = moab.get_root_set();
   //add entities to field
   ierr = m_field.add_ents_to_field_by_TETs(root_set,"FIELD1"); CHKERRQ(ierr);
   ierr = m_field.add_ents_to_field_by_TETs(root_set,"FIELD2"); CHKERRQ(ierr);
@@ -131,7 +131,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.build_problems(); CHKERRQ(ierr);
 
   /****/
-  //mesh partitioning 
+  //mesh partitioning
   //partition
   ierr = m_field.partition_simple_problem("TEST_PROBLEM"); CHKERRQ(ierr);
   ierr = m_field.partition_finite_elements("TEST_PROBLEM"); CHKERRQ(ierr);
@@ -148,7 +148,7 @@ int main(int argc, char *argv[]) {
   typedef stream<TeeDevice> TeeStream;
 
   ofstream ofs("forces_and_sources_testing_volume_element.txt");
-  TeeDevice my_tee(cout, ofs); 
+  TeeDevice my_tee(cout, ofs);
   TeeStream my_split(my_tee);
 
   struct MyOp: public VolumeElementForcesAndSourcesCore::UserDataOperator {
@@ -184,34 +184,34 @@ int main(int argc, char *argv[]) {
       my_split << "NH1NH1" << endl;
       my_split << "col side: " << col_side << " col_type: " << col_type << endl;
       my_split << col_data << endl;
-      
+
       PetscErrorCode ierr;
       ublas::vector<int> row_indices,col_indices;
       ierr = getPorblemRowIndices("FIELD1",row_type,row_side,row_indices); CHKERRQ(ierr);
       ierr = getPorblemColIndices("FIELD2",col_type,col_side,col_indices); CHKERRQ(ierr);
 
       if(row_indices.size()!=row_data.getIndices().size()) {
-	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"row inconsistency");
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"row inconsistency");
       }
 
       if(col_indices.size()!=col_data.getIndices().size()) {
-	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"col inconsistency");
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"col inconsistency");
       }
 
       for(unsigned int rr = 0;rr<row_indices.size();rr++) {
-	if(row_indices[rr] != row_data.getIndices()[rr]) {
-	  cerr << row_indices << endl;
-	  cerr << row_data.getIndices() << endl;
-	  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"row inconsistency");
-	}
+        if(row_indices[rr] != row_data.getIndices()[rr]) {
+          cerr << row_indices << endl;
+          cerr << row_data.getIndices() << endl;
+          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"row inconsistency");
+        }
       }
 
       for(unsigned int cc = 0;cc<col_indices.size();cc++) {
-	if(col_indices[cc] != col_data.getIndices()[cc]) {
-	  cerr << col_indices << endl;
-	  cerr << col_data.getIndices() << endl;
-	  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"row inconsistency");
-	}
+        if(col_indices[cc] != col_data.getIndices()[cc]) {
+          cerr << col_indices << endl;
+          cerr << col_data.getIndices() << endl;
+          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"row inconsistency");
+        }
       }
 
       PetscFunctionReturn(0);
@@ -229,5 +229,3 @@ int main(int argc, char *argv[]) {
   return 0;
 
 }
-
-

@@ -269,11 +269,13 @@ int main(int argc, char *argv[]) {
     ierr = m_field.build_partitioned_problem("ACOUSTIC_PROBLEM",true); CHKERRQ(ierr);
     ierr = m_field.partition_finite_elements("ACOUSTIC_PROBLEM",true); CHKERRQ(ierr);
 
-    ierr = m_field.build_partitioned_problem("BCREAL_PROBLEM",true); CHKERRQ(ierr);
-    ierr = m_field.partition_finite_elements("BCREAL_PROBLEM",true); CHKERRQ(ierr);
+    if(dirihlet_bc_set) {
+      ierr = m_field.build_partitioned_problem("BCREAL_PROBLEM",true); CHKERRQ(ierr);
+      ierr = m_field.partition_finite_elements("BCREAL_PROBLEM",true); CHKERRQ(ierr);
 
-    ierr = m_field.build_partitioned_problem("BCIMAG_PROBLEM",true); CHKERRQ(ierr);
-    ierr = m_field.partition_finite_elements("BCIMAG_PROBLEM",true); CHKERRQ(ierr);
+      ierr = m_field.build_partitioned_problem("BCIMAG_PROBLEM",true); CHKERRQ(ierr);
+      ierr = m_field.partition_finite_elements("BCIMAG_PROBLEM",true); CHKERRQ(ierr);
+    }
 
   } else {
     // if not partitioned mesh is load to all processes
@@ -282,22 +284,24 @@ int main(int argc, char *argv[]) {
     ierr = m_field.partition_problem("ACOUSTIC_PROBLEM"); CHKERRQ(ierr);
     ierr = m_field.partition_finite_elements("ACOUSTIC_PROBLEM"); CHKERRQ(ierr);
 
-    ierr = m_field.build_problem("BCREAL_PROBLEM"); CHKERRQ(ierr);
-    ierr = m_field.partition_problem("BCREAL_PROBLEM"); CHKERRQ(ierr);
-    ierr = m_field.partition_finite_elements("BCREAL_PROBLEM"); CHKERRQ(ierr);
+    if(dirihlet_bc_set) {
+      ierr = m_field.build_problem("BCREAL_PROBLEM"); CHKERRQ(ierr);
+      ierr = m_field.partition_problem("BCREAL_PROBLEM"); CHKERRQ(ierr);
+      ierr = m_field.partition_finite_elements("BCREAL_PROBLEM"); CHKERRQ(ierr);
 
-    ierr = m_field.build_problem("BCIMAG_PROBLEM"); CHKERRQ(ierr);
-    ierr = m_field.partition_problem("BCIMAG_PROBLEM"); CHKERRQ(ierr);
-    ierr = m_field.partition_finite_elements("BCIMAG_PROBLEM"); CHKERRQ(ierr);
-
+      ierr = m_field.build_problem("BCIMAG_PROBLEM"); CHKERRQ(ierr);
+      ierr = m_field.partition_problem("BCIMAG_PROBLEM"); CHKERRQ(ierr);
+      ierr = m_field.partition_finite_elements("BCIMAG_PROBLEM"); CHKERRQ(ierr);
+    }
   }
 
   ierr = m_field.partition_ghost_dofs("ACOUSTIC_PROBLEM"); CHKERRQ(ierr);
-  ierr = m_field.partition_ghost_dofs("BCREAL_PROBLEM"); CHKERRQ(ierr);
-  ierr = m_field.partition_ghost_dofs("BCIMAG_PROBLEM"); CHKERRQ(ierr);
+  if(dirihlet_bc_set) {
+    ierr = m_field.partition_ghost_dofs("BCREAL_PROBLEM"); CHKERRQ(ierr);
+    ierr = m_field.partition_ghost_dofs("BCIMAG_PROBLEM"); CHKERRQ(ierr);
+  }
 
   // Get problem matrices and vectors
-
   Vec F;  //Right hand side vector
   ierr = m_field.VecCreateGhost("ACOUSTIC_PROBLEM",ROW,&F); CHKERRQ(ierr);
   Vec T; //Solution vector

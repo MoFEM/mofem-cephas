@@ -1,7 +1,7 @@
 /** \file HelmholtzElement.hpp
  \ingroup mofem_helmholtz_elem
 
- \brief Operators and data structures for wave propagation analyse (Galerkin Element)
+ \brief Operators and data structures for wave propagation analyze (Galerkin Element)
 
  Implementation of Helmholtz element for wave propagation problem
 
@@ -246,7 +246,14 @@ struct HelmholtzElement {
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
 
           value[gg] += inner_prod(data.getN(gg,nb_dofs),data.getFieldData());
-          ublas::noalias(ublas::matrix_row<ublas::matrix<double> >(gradient,gg)) += prod( trans(data.getDiffN(gg,nb_dofs)), data.getFieldData() );
+          //ublas::noalias(ublas::matrix_row<ublas::matrix<double> >(gradient,gg)) +=
+          //prod( trans(data.getDiffN(gg,nb_dofs)), data.getFieldData() );
+          cblas_dgemv(CblasRowMajor,CblasTrans,
+            nb_dofs,3,1,
+            &data.getDiffN()(gg,0),3,
+            &data.getFieldData()[0],1,
+            1,&gradient(gg,0),1
+          );
 
         }
 
@@ -408,10 +415,15 @@ struct HelmholtzElement {
             val *= getHoGaussPtsDetJac()[gg]; // higher order geometry
           }
 
-          const ublas::matrix_row<ublas::matrix<double> > gard_p_at_gauss_pt(grad_p,gg);
-
           /// Integrate diffN^T grad_p - k^2 N^T p dV
-          ublas::noalias(Nf) += val*prod(data.getDiffN(gg,nb_row_dofs),gard_p_at_gauss_pt);
+
+          //const ublas::matrix_row<ublas::matrix<double> > gard_p_at_gauss_pt(grad_p,gg);
+          //ublas::noalias(Nf) += val*prod(data.getDiffN(gg,nb_row_dofs),gard_p_at_gauss_pt);
+          cblas_dgemv(CblasRowMajor,CblasNoTrans,nb_row_dofs,3,val,
+            &data.getDiffN()(gg,0),3,
+            &grad_p(gg,0),1,
+            1.,&Nf[0],1
+          );
           ublas::noalias(Nf) -= val*k_pow2*data.getN(gg,nb_row_dofs)*pressure[gg];
 
         }
@@ -478,15 +490,31 @@ struct HelmholtzElement {
 
         for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
 
-
           double val = getVolume()*getGaussPts()(3,gg);
           if(getHoGaussPtsDetJac().size()>0) {
             val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
           }
 
-          noalias(K) += val*prod(row_data.getDiffN(gg,nb_rows),trans(col_data.getDiffN(gg,nb_cols)));
-          noalias(K) -= val*k_pow2*outer_prod( row_data.getN(gg,nb_rows),col_data.getN(gg,nb_cols) );
-
+          const double *diff_row_mat_ptr = &row_data.getDiffN()(gg,0);
+          const double *diff_col_mat_ptr = &col_data.getDiffN()(gg,0);
+          cblas_dgemm(
+            CblasRowMajor,CblasNoTrans,CblasTrans,
+            nb_rows,nb_cols,3,
+            +val,diff_row_mat_ptr,3,
+            diff_col_mat_ptr,3,
+            1,&K(0,0),nb_cols
+          );
+          const double *row_mat_ptr = &row_data.getN()(gg,0);
+          const double *col_mat_ptr = &col_data.getN()(gg,0);
+          cblas_dger(CblasRowMajor,
+            nb_rows,nb_cols,
+            -val*k_pow2,
+            row_mat_ptr,1,
+            col_mat_ptr,1,
+            &K(0,0),nb_cols
+          );
+          //noalias(K) -= val*k_pow2*outer_prod( row_data.getN(gg,nb_rows),col_data.getN(gg,nb_cols) );
+          //noalias(K) += val*prod(row_data.getDiffN(gg,nb_rows),trans(col_data.getDiffN(gg,nb_cols)));
         }
 
         PetscErrorCode ierr;

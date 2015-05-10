@@ -56,7 +56,7 @@ struct DataForcesAndSurcesCore {
     /// \brief get global indices of dofs on entity
     virtual const ublas::vector<DofIdx>& getIndices() const { return iNdices; }
 
-    /// \brief get dofs values 
+    /// \brief get dofs values
     virtual const ublas::vector<double>& getFieldData() const { return fieldData; }
 
     /// \brief get dofs data stature FEDofMoFEMEntity
@@ -64,7 +64,7 @@ struct DataForcesAndSurcesCore {
 
     /** \brief get shape functions
       * this return matrix (nb. of rows is equal to nb. of Gauss pts, nb. of
-      * columns is equalt to number of shape functions on this entity 
+      * columns is equalt to number of shape functions on this entity
       */
     virtual const ublas::matrix<double>& getN() const { return N; }
 
@@ -79,11 +79,11 @@ struct DataForcesAndSurcesCore {
      * derivative of nodal functions in case of simplexes, EDGES, TRIANGLES and
      * TETS are constant. So that matrix rows represents nb. of shape
      * functions, columns are derivatives. Nb. of columns depend on element
-     * dimension, for EDGES is one, for TRIS is 2 and TETS is 3. 
+     * dimension, for EDGES is one, for TRIS is 2 and TETS is 3.
      *
      * Note that for node element this function make no sense.
      *
-     */   
+     */
     virtual const ublas::matrix<double>& getDiffN() const { return diffN; }
 
     virtual int& getSense() { return sEnse; }
@@ -112,18 +112,18 @@ struct DataForcesAndSurcesCore {
       * \param gg nb. of Gauss pts.
       *
       */
-    inline const MatrixAdaptor getDiffN(int gg) {
-      if(getN().size1() == getDiffN().size1()) {
-	int size = getN().size2();	
-	int dim = getDiffN().size2()/size;
-	double *data = &getDiffN()(gg,0);
-	return MatrixAdaptor(getN().size2(),dim,ublas::shallow_array_adaptor<double>(getDiffN().size2(),data));
-      } else {
-	// in some cases, f.e. for derivatives of nodal shape functions at only one
-	// gauss point is needed
-	return MatrixAdaptor(getN().size1(),getN().size2(),ublas::shallow_array_adaptor<double>(getDiffN().data().size(),&getDiffN().data()[0]));
+      inline const MatrixAdaptor getDiffN(int gg) {
+        if(getN().size1() == getDiffN().size1()) {
+          int size = getN().size2();
+          int dim = getDiffN().size2()/size;
+          double *data = &getDiffN()(gg,0);
+          return MatrixAdaptor(getN().size2(),dim,ublas::shallow_array_adaptor<double>(getDiffN().size2(),data));
+        } else {
+          // in some cases, f.e. for derivatives of nodal shape functions at only one
+          // gauss point is needed
+          return MatrixAdaptor(getN().size1(),getN().size2(),ublas::shallow_array_adaptor<double>(getDiffN().data().size(),&getDiffN().data()[0]));
+        }
       }
-    }
 
     /** \brief get shape functions at Gauss pts
       *
@@ -172,19 +172,19 @@ struct DataForcesAndSurcesCore {
       }
     }
 
-    /** \brief get shape functions for Hdiv space 
+    /** \brief get shape functions for Hdiv space
       */
     inline const ublas::matrix<double>&  getHdivN() const { return getN(); };
 
-    /** \brief get derivatives of shape functions for Hdiv space 
+    /** \brief get derivatives of shape functions for Hdiv space
       */
     inline const ublas::matrix<double>&  getDiffHdivN() const { return getDiffN(); };
 
-    /** \brief get shape functions for Hdiv space 
+    /** \brief get shape functions for Hdiv space
       */
     inline ublas::matrix<double>&  getHdivN() { return getN(); };
 
-    /** \brief get derivatives of shape functions for Hdiv space 
+    /** \brief get derivatives of shape functions for Hdiv space
       */
     inline ublas::matrix<double>&  getDiffHdivN() { return getDiffN(); };
 
@@ -266,7 +266,7 @@ struct DerivedDataForcesAndSurcesCore: public DataForcesAndSurcesCore  {
 
   struct DerivedEntData: public DataForcesAndSurcesCore::EntData {
     DataForcesAndSurcesCore::EntData &entData;
-    DerivedEntData(DataForcesAndSurcesCore::EntData &ent_data): 
+    DerivedEntData(DataForcesAndSurcesCore::EntData &ent_data):
       entData(ent_data),oRder(0) {}
     const ublas::vector<DofIdx>& getIndices() const { return iNdices; }
     ublas::vector<DofIdx>& getIndices() { return iNdices; }
@@ -305,5 +305,3 @@ struct DerivedDataForcesAndSurcesCore: public DataForcesAndSurcesCore  {
 /***************************************************************************//**
  * \defgroup mofem_forces_and_sources Forces and sources
  ******************************************************************************/
-
-
