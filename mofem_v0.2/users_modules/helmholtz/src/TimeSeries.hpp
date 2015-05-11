@@ -331,7 +331,7 @@ struct TimeSeries {
         double incident_wave_speed = 1; // wave speed
         ierr = PetscOptionsGetScalar(NULL,"-incident_wave_speed",&incident_wave_speed,NULL); CHKERRQ(ierr);
 
-        // loop over frequencies in space
+        // loop over frequencies in space and sum them up, for given wave number in time frequency
         for (int s = 0; s < ns; s++) {
 
           double real_power = complexSpaceOut[s].r*complexTimeOut[k].r - complexSpaceOut[s].i*complexTimeOut[k].i;
@@ -343,10 +343,25 @@ struct TimeSeries {
             real_power,imag_power
           );
 
+          if(s==0) {
+            for(int ss = 0;ss<2;ss++) {
+              ierr = VecZeroEntries(vec_F[ss]); CHKERRQ(ierr);
+            }
+          }
+
           if(s==0 && k == 0) {
+
+            ierr = MatZeroEntries(A_approx_incident_wave); CHKERRQ(ierr);
             ierr = calculate_matrix_and_vector(
               mField,"INCIDENT_WAVE","HELMHOLTZ_RERE_FE","rePRESS",A_approx_incident_wave,vec_F,function_evaluator
             ); CHKERRQ(ierr);
+
+            {
+              //Matrix View
+              MatView(A_approx_incident_wave,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
+              std::string wait;
+              std::cin >> wait;
+            }
           } else {
             ierr = calculate_matrix_and_vector(
               mField,"INCIDENT_WAVE","HELMHOLTZ_RERE_FE","rePRESS",PETSC_NULL,vec_F,function_evaluator

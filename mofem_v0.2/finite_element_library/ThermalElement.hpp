@@ -32,10 +32,10 @@ namespace MoFEM {
   * \ingroup mofem_thermal_elem
   *
   * In order to assemble matrices and right hand vectors, the loops over
-  * elements, enetities over that elememnts and finally loop over intergration
+  * elements, entities over that elements and finally loop over integration
   * points are executed.
   *
-  * Following implementation separte those three cegories of loops and to eeach
+  * Following implementation separate those three types of loops and to each
   * loop attach operator.
   *
   */
@@ -109,12 +109,12 @@ struct ThermalElement {
   };
   map<int,BlockData> setOfBlocks; ///< maps block set id with appropriate BlockData
 
-  /** \brief data for calulation heat flux
+  /** \brief data for calculation heat flux
     * \infroup mofem_thermal_elem
     */
   struct FluxData {
     HeatfluxCubitBcData dAta; ///< for more details look to BCMultiIndices.hpp to see details of HeatfluxCubitBcData
-    Range tRis; ///< suraface triangles where hate flux is applied
+    Range tRis; ///< surface triangles where hate flux is applied
   };
   map<int,FluxData> setOfFluxes; ///< maps side set id with appropriate FluxData
 

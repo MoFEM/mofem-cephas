@@ -21,18 +21,18 @@ mkdir $MOFEM_INSTALL_DIR
 
 ~~~~~~
 # Change to your $MOFEM_INSTALL_DIR
-cd $HOME/$MOFEM_INSTALL_DIR
+cd $MOFEM_INSTALL_DIR
 
 # Colone PETSc repository:
-export PETSC_VERSION 3.5.3
+export PETSC_VERSION=3.5.3
 git clone https://bitbucket.org/petsc/petsc.git
-cd /opt/petsc
+cd $MOFEM_INSTALL_DIR/petsc
 git checkout tags/v$PETSC_VERSION
 
 # Configure and compile petsc:
 wget ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4.3.3.1.tar.gz
-./configure --with-mpi=1 --with-debugging=0 --download-superlu_dist=1 --download-metis=1 --download-parmetis=1 --download-hypre=1 --download-mumps=1 --download-scalapack=1 --download-zoltan=1 --download-blacs=1 --download-moab=1 --download-ptscotch=1 --with-hdf5=1 --with-hdf5-dir=/usr --download-netcdf=/opt/petsc/netcdf-4.3.3.1.tar.gz --with-shared-libraries=1
-make PETSC_DIR=/opt/petsc PETSC_ARCH=arch-linux2-c-opt all
+./configure --with-mpi=1 --with-debugging=0 --download-superlu_dist=1 --download-metis=1 --download-parmetis=1 --download-hypre=1 --download-mumps=1 --download-scalapack=1 --download-zoltan=1 --download-blacs=1 --download-moab=1 --download-ptscotch=1 --with-hdf5=1 --with-hdf5-dir=/usr --download-netcdf=$MOFEM_INSTALL_DIR/petsc/netcdf-4.3.3.1.tar.gz --with-shared-libraries=1
+make PETSC_DIR=$PWD PETSC_ARCH=arch-linux2-c-opt all
 
 # Building code (assuming that you have computer with 4 cores):
 make -j4 install
@@ -50,12 +50,12 @@ Note: Version pets3.5.3 is checkout. MoFEM should work with development
 version of PETSc if mofem is configured with `` -DCMAKE_C_FLAGS="-Wall
 -DPETSC_DEV" -DCMAKE_CXX_FLAGS="-Wall -DPETSC_DEV"``.
 
-###3. Install TetGem and other libraries
+###3. Install TetGen and other libraries
 
 ####3.1 TetGen
 
 ~~~~~~
-cd $HOME/$MOFEM_INSTALL_DIR
+cd $MOFEM_INSTALL_DIR
 wget https://bitbucket.org/likask/mofem-joseph/downloads/tetgen1.5.0.tgz
 tar -xvvzf tetgen1.5.0.tgz
 cd tetgen1.5.0
@@ -64,13 +64,13 @@ make
 cp libtet.a lib/
 ~~~~~~
 
-###4. Clone sourcecode and install core MoFEM library
+###4. Clone source code and install core MoFEM library
 
 ~~~~~~
 # Change to your $MOFEM_INSTALL_DIR
-cd $HOME/$MOFEM_INSTALL_DIR
+cd $MOFEM_INSTALL_DIR
 
-# Cloning MoFEM sourcecode:
+# Cloning MoFEM source code:
 git clone https://bitbucket.org/likask/mofem-cephas.git mofem-cephas
 
 # Make a build directory

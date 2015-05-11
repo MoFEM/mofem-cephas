@@ -27,17 +27,17 @@ brew install wget
 
 ~~~~~~
 # Change to your $MOFEM_INSTALL_DIR
-cd $HOME/$MOFEM_INSTALL_DIR
+cd $MOFEM_INSTALL_DIR
 
-# Colone PETSc repository:
-export PETSC_VERSION 3.5.3
+# Clone PETSc repository:
+export PETSC_VERSION=3.5.3
 git clone https://bitbucket.org/petsc/petsc.git
-cd /opt/petsc
+cd $MOFEM_INSTALL_DIR/petsc
 git checkout tags/v$PETSC_VERSION
 
 # Configure and compile petsc:
 wget ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4.3.3.1.tar.gz
-./configure --with-debugging=0 --download-fblaslapack=1 --download-superlu_dist=1 --download-metis=1 --download-parmetis=1 --download-hypre=1 --download-mumps=1 --download-scalapack=1 --download-blacs=1 --download-moab=1 --download-hdf5=1 --download-netcdf=/opt/petsc/netcdf-4.3.3.1.tar.gz  --download-openmpi=1 --download-mumps=1 --download-ptscotch=1
+./configure --with-debugging=0 --download-fblaslapack=1 --download-superlu_dist=1 --download-metis=1 --download-parmetis=1 --download-hypre=1 --download-mumps=1 --download-scalapack=1 --download-blacs=1 --download-moab=1 --download-hdf5=1 --download-netcdf=$MOFEM_INSTALL_DIR/petsc/netcdf-4.3.3.1.tar.gz  --download-openmpi=1 --download-mumps=1 --download-ptscotch=1
 make PETSC_DIR=$PWD PETSC_ARCH=arch-darwin-c-opt all
 ~~~~~~
 
@@ -54,7 +54,7 @@ development and other version for larger calculations.
 
 ~~~~~~
 # Change to your $MOFEM_INSTALL_DIR
-cd $HOME/$MOFEM_INSTALL_DIR
+cd $MOFEM_INSTALL_DIR
 
 # Get library, configure make and install
 wget http://www.coin-or.org/download/source/ADOL-C/ADOL-C-2.5.2.zip
@@ -69,7 +69,7 @@ make install
 ####5.1 TetGen
 
 ~~~~~~
-cd $HOME/$MOFEM_INSTALL_DIR
+cd $MOFEM_INSTALL_DIR
 wget https://bitbucket.org/likask/mofem-joseph/downloads/tetgen1.5.0.tgz
 tar -xvvzf tetgen1.5.0.tgz
 cd tetgen1.5.0
@@ -78,11 +78,11 @@ make
 cp libtet.a lib/
 ~~~~~~
 
-###6. Clone sourcecode and install MoFEM library
+###6. Clone source code and install MoFEM library
 
 ~~~~~~
 # Change to your $MOFEM_INSTALL_DIR
-cd $HOME/$MOFEM_INSTALL_DIR
+cd $MOFEM_INSTALL_DIR
 
 # Cloning MoFEM sourcecode:
 git clone https://bitbucket.org/likask/mofem-cephas.git mofem-cephas
@@ -105,7 +105,7 @@ ctest -D Experimental
 
 ~~~~~~
 # Change to your $MOFEM_INSTALL_DIR
-cd $HOME/$MOFEM_INSTALL_DIR/user_modules
+cd $MOFEM_INSTALL_DIR/user_modules
 
 # Configuration:
 cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS="-Wall"  -DCMAKE_CXX_FLAGS="-Wall -Wno-bind-to-temporary-copy -Wno-overloaded-virtual" $MOFEM_INSTALL_DIR/user_modules

@@ -1,5 +1,5 @@
 /** \file dm_build_partitioned_mesh.cpp
-  \brief Atom test for build mesh which is paragoned 
+  \brief Atom test for build mesh which is paragoned
 
   Data Manager (DM) MoFEM interface is used here for convinience
 
@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
   const char *option;
   option = "PARALLEL=BCAST_DELETE;PARALLEL_RESOLVE_SHARED_ENTS;PARTITION=PARALLEL_PARTITION;";
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
   //rval = pcomm->resolve_shared_ents(0,3,0); CHKERR_PETSC(rval);
   //rval = pcomm->resolve_shared_ents(0,3,1); CHKERR_PETSC(rval);
   //rval = pcomm->resolve_shared_ents(0,3,2); CHKERR_PETSC(rval);
@@ -66,7 +66,7 @@ int main(int argc, char *argv[]) {
   MoFEM::Core core(moab);
   FieldInterface& m_field = core;
 
-  EntityHandle root_set = moab.get_root_set(); 
+  EntityHandle root_set = moab.get_root_set();
   //add all entities to database, all of them will be used
   BitRefLevel bit_level0;
   bit_level0.set(0);
@@ -115,12 +115,12 @@ int main(int argc, char *argv[]) {
   PetscBool save_file = PETSC_TRUE;
   ierr = PetscOptionsGetBool(PETSC_NULL,"-my_save_fiele",&save_file,&flg); CHKERRQ(ierr);
   if(save_file) {
- 
+
     PetscViewer viewer;
     ierr = PetscViewerASCIIOpen(PETSC_COMM_WORLD,"dm_build_partitioned_mesh.txt",&viewer); CHKERRQ(ierr);
     MatView(m,viewer);
     ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
-  
+
   }
 
   ierr = MatDestroy(&m); CHKERRQ(ierr);
@@ -133,5 +133,3 @@ int main(int argc, char *argv[]) {
   return 0;
 
 }
-
-
