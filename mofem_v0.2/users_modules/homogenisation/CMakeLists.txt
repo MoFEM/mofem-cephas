@@ -63,12 +63,6 @@ target_link_libraries(Cube_Disp_HOG
   mofem_approx mofem_third_party mofem_cblas ${MoFEM_PROJECT_LIBS})
 
 
-add_executable(Cube_Disp_HOG_New ${UM_SOURCE_DIR}/homogenisation/Cube_Disp_HOG_New.cpp)
-target_link_libraries(Cube_Disp_HOG_New
-  mofem_finite_element_library mofem_finite_elements mofem_interfaces mofem_multi_indices mofem_petsc users_modules_obsolete user_modules_homogenisation
-  mofem_approx mofem_third_party mofem_cblas ${MoFEM_PROJECT_LIBS})
-
-
 add_executable(Cube_Trac_HOG ${UM_SOURCE_DIR}/homogenisation/Cube_Trac_HOG.cpp)
 target_link_libraries(Cube_Trac_HOG
   mofem_finite_element_library mofem_finite_elements mofem_interfaces mofem_multi_indices mofem_petsc users_modules_obsolete user_modules_homogenisation
