@@ -13,10 +13,10 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 #include <petscsys.h>
-#include <petscvec.h> 
-#include <petscmat.h> 
-#include <petscsnes.h> 
-#include <petscts.h> 
+#include <petscvec.h>
+#include <petscmat.h>
+#include <petscsnes.h>
+#include <petscts.h>
 
 #include <definitions.h>
 #include <Common.hpp>
@@ -120,4 +120,3 @@ PetscErrorCode SnesMat(SNES snes,Vec x,Mat A,Mat B,void *ctx) {
 }
 
 }
-

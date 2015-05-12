@@ -23,13 +23,13 @@
 namespace ObosleteUsersModules {
 
 struct FEMethod_UpLevelStudent_ExceptionNegatvieTetVolume: public MofemException {
-  FEMethod_UpLevelStudent_ExceptionNegatvieTetVolume(): 
+  FEMethod_UpLevelStudent_ExceptionNegatvieTetVolume():
     MofemException(MOFEM_DATA_INCONSISTENCT,"Negative volume") {}
 };
 
-/** 
+/**
  * \brief The student user interface for FE method
- * 
+ *
  * This class give user some data structures and methods on those that
  * structures which could be useful.
 */
@@ -67,7 +67,7 @@ struct FEMethod_UpLevelStudent: public FEMethod_LowLevelStudent {
    * It has to be run at the begining of the function when Interface PRISM
    * element is evaluated. The matrix element shape functions are calculated in
    * the form that degrees of shepe functon on one face (face4), have negative
-   * value comparing to oposite face. For example 
+   * value comparing to oposite face. For example
    * gap = ShapeN_FunForPrism * nodal_displacements.
    *
    *
@@ -90,6 +90,7 @@ struct FEMethod_UpLevelStudent: public FEMethod_LowLevelStudent {
    * \param vector on return stores global indices
    */
   PetscErrorCode GetRowGlobalIndices(const string &field_name,vector<DofIdx> &RowGlobDofs);
+
   PetscErrorCode GetRowLocalIndices(const string &field_name,vector<DofIdx> &RowLocalDofs);
 
   /**
@@ -101,7 +102,9 @@ struct FEMethod_UpLevelStudent: public FEMethod_LowLevelStudent {
    * \param side_number  do need to be specified for MBTET or MBPRISM
    */
   PetscErrorCode GetRowGlobalIndices(const string &field_name,EntityType type,vector<DofIdx> &RowGlobDofs,int side_number = -1);
+
   PetscErrorCode GetRowLocalIndices(const string &field_name,EntityType type,vector<DofIdx> &RowLocalDofs,int side_number = -1);
+
 
   /**
    * \brief Copy gloabl indices for dofs adjacent to nodes
@@ -127,7 +130,7 @@ struct FEMethod_UpLevelStudent: public FEMethod_LowLevelStudent {
    * \brief Copy dofs values for dofs adjacent to nodes
    *
    * \param field_name name of the approx. field
-   * \param vector on return stores dofs values 
+   * \param vector on return stores dofs values
    */
   PetscErrorCode GetDataVector(const string &field_name,ublas::vector<FieldData> &Data);
 
@@ -136,7 +139,7 @@ struct FEMethod_UpLevelStudent: public FEMethod_LowLevelStudent {
    *
    * \param field_name name of the approx. field
    * \param type type of the entity (MBEDGE, MBTRI, MBTET or MBPRISM)
-   * \param vector on return stores dofs values 
+   * \param vector on return stores dofs values
    * \param side_number  do need to be specified for MBTET or MBPRISM
    */
   PetscErrorCode GetDataVector(const string &field_name,EntityType type,ublas::vector<FieldData> &Data,int side_number = -1);
@@ -148,8 +151,8 @@ struct FEMethod_UpLevelStudent: public FEMethod_LowLevelStudent {
    * points in shape functions, f.e. in case of tetrahedral (MBTET) g_dim =
    * g_NTET.size()/4
    *
-   * \param field_name name of the approx. field 
-   * \param vector of vectors on return values of field at gauss points 
+   * \param field_name name of the approx. field
+   * \param vector of vectors on return values of field at gauss points
    &
    */
   PetscErrorCode GetGaussDataVector(const string &field_name,vector<ublas::vector<FieldData> > &Data);
@@ -160,8 +163,8 @@ struct FEMethod_UpLevelStudent: public FEMethod_LowLevelStudent {
    * points in shape functions, f.e. in case of tetrahedral (MBTET) g_dim =
    * g_NTET.size()/4
    *
-   * \param field_name name of the approx. field 
-   * \param vector on return direvatives of the field at gauss points 
+   * \param field_name name of the approx. field
+   * \param vector on return direvatives of the field at gauss points
    */
   PetscErrorCode GetGaussDiffDataVector(const string &field_name,vector< ublas::matrix<FieldData> > &Data);
 
@@ -171,9 +174,9 @@ struct FEMethod_UpLevelStudent: public FEMethod_LowLevelStudent {
    * points in shape functions, f.e. in case of tetrahedral (MBTET) g_dim =
    * g_NTET.size()/4
    *
-   * \param field_name name of the approx. field 
+   * \param field_name name of the approx. field
    * \param vector on return stores
-   * values of field at gauss points 
+   * values of field at gauss points
    */
   PetscErrorCode GetGaussRowNMatrix(const string &field_name,vector< ublas::matrix<FieldData> > &NMatrix);
 
@@ -183,10 +186,10 @@ struct FEMethod_UpLevelStudent: public FEMethod_LowLevelStudent {
    * points in shape functions, f.e. in case of tetrahedral (MBTET) g_dim =
    * g_NTET.size()/4
    *
-   * \param field_name name of the approx. field 
+   * \param field_name name of the approx. field
    * \param type type of the entity (MBEDGE, MBTRI, MBTET or MBPRISM)
    * \param vector on return stores
-   * \param side_number  do need to be specified for MBTET or MBPRISM   
+   * \param side_number  do need to be specified for MBTET or MBPRISM
    */
   PetscErrorCode GetGaussRowNMatrix(const string &field_name,EntityType type,vector< ublas::matrix<FieldData> > &NMatrix,int side_number = -1);
 
@@ -196,9 +199,9 @@ struct FEMethod_UpLevelStudent: public FEMethod_LowLevelStudent {
    * points in shape functions, f.e. in case of tetrahedral (MBTET) g_dim =
    * g_NTET.size()/4
    *
-   * \param field_name name of the approx. field 
+   * \param field_name name of the approx. field
    * \param vector on return stores
-   * values of field at gauss points 
+   * values of field at gauss points
    */
   PetscErrorCode GetGaussColNMatrix(const string &field_name,vector< ublas::matrix<FieldData> > &NMatrix);
 
@@ -208,10 +211,10 @@ struct FEMethod_UpLevelStudent: public FEMethod_LowLevelStudent {
    * points in shape functions, f.e. in case of tetrahedral (MBTET) g_dim =
    * g_NTET.size()/4
    *
-   * \param field_name name of the approx. field 
+   * \param field_name name of the approx. field
    * \param type type of the entity (MBEDGE, MBTRI, MBTET or MBPRISM)
    * \param vector on return stores
-   * \param side_number  do need to be specified for MBTET or MBPRISM   
+   * \param side_number  do need to be specified for MBTET or MBPRISM
    */
   PetscErrorCode GetGaussColNMatrix(const string &field_name,EntityType type,vector< ublas::matrix<FieldData> > &NMatrix,int side_number = -1);
 
@@ -221,9 +224,9 @@ struct FEMethod_UpLevelStudent: public FEMethod_LowLevelStudent {
    * points in shape functions, f.e. in case of tetrahedral (MBTET) g_dim =
    * g_NTET.size()/4
    *
-   * \param field_name name of the approx. field 
+   * \param field_name name of the approx. field
    * \param vector on return stores
-   * values of field at gauss points 
+   * values of field at gauss points
    */
   PetscErrorCode GetGaussRowDiffNMatrix(const string &field_name,vector< ublas::matrix<FieldData> > &diffNMatrix);
 
@@ -233,10 +236,10 @@ struct FEMethod_UpLevelStudent: public FEMethod_LowLevelStudent {
    * points in shape functions, f.e. in case of tetrahedral (MBTET) g_dim =
    * g_NTET.size()/4
    *
-   * \param field_name name of the approx. field 
+   * \param field_name name of the approx. field
    * \param type type of the entity (MBEDGE, MBTRI, MBTET or MBPRISM)
    * \param vector on return stores
-   * \param side_number  do need to be specified for MBTET or MBPRISM   
+   * \param side_number  do need to be specified for MBTET or MBPRISM
    */
   PetscErrorCode GetGaussRowDiffNMatrix(const string &field_name,EntityType type,vector< ublas::matrix<FieldData> > &diffNMatrix,int side_number = -1);
 
@@ -246,9 +249,9 @@ struct FEMethod_UpLevelStudent: public FEMethod_LowLevelStudent {
    * points in shape functions, f.e. in case of tetrahedral (MBTET) g_dim =
    * g_NTET.size()/4
    *
-   * \param field_name name of the approx. field 
+   * \param field_name name of the approx. field
    * \param vector on return stores
-   * values of field at gauss points 
+   * values of field at gauss points
    */
   PetscErrorCode GetGaussColDiffNMatrix(const string &field_name,vector< ublas::matrix<FieldData> > &diffNMatrix);
 
@@ -258,19 +261,19 @@ struct FEMethod_UpLevelStudent: public FEMethod_LowLevelStudent {
    * points in shape functions, f.e. in case of tetrahedral (MBTET) g_dim =
    * g_NTET.size()/4
    *
-   * \param field_name name of the approx. field 
+   * \param field_name name of the approx. field
    * \param type type of the entity (MBEDGE, MBTRI, MBTET or MBPRISM)
    * \param vector on return stores
-   * \param side_number  do need to be specified for MBTET or MBPRISM   
+   * \param side_number  do need to be specified for MBTET or MBPRISM
    */
   PetscErrorCode GetGaussColDiffNMatrix(const string &field_name,EntityType type,vector< ublas::matrix<FieldData> > &diffNMatrix,int side_number = -1);
 
-  /** 
+  /**
    * \brief Make B matrix for 3D field
    *
    * For more detail look page 30 CHAPTER 6. DISPLACEMENT METHODS, FEAP Version 7.3 Theory Manual Robert L. Taylor
    *
-   */ 
+   */
   PetscErrorCode MakeBMatrix3D(const string &field_name,
     vector<ublas::matrix<FieldData> > &diffNMatrix,vector<ublas::matrix<FieldData> > &BMatrix);
 
@@ -281,11 +284,11 @@ struct FEMethod_UpLevelStudent: public FEMethod_LowLevelStudent {
    * g_NTRI.size()/3
    *
    * \param EntityHandle moab entity handle to face (MBTRI) on tetrahedral (MBTET)
-   * \param field_name name of the approx. field 
+   * \param field_name name of the approx. field
    * \param vector on return stores
    * \param entity type on face (MBVERTEX, MBEDGE or MBTRI)
    * \param entity hande on face (it need to be given when entity type is MBEDEGE)
-   * values of field at gauss points 
+   * values of field at gauss points
    */
   PetscErrorCode GetGaussRowFaceNMatrix(
     EntityHandle ent,const string &field_name,vector< ublas::matrix<FieldData> > &diffNMatrix,

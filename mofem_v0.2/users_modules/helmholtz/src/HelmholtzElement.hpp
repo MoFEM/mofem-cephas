@@ -1,7 +1,7 @@
 /** \file HelmholtzElement.hpp
  \ingroup mofem_helmholtz_elem
 
- \brief Operators and data structures for wave propagation analyse (Galerkin Element)
+ \brief Operators and data structures for wave propagation analyze (Galerkin Element)
 
  Implementation of Helmholtz element for wave propagation problem
 
@@ -232,8 +232,8 @@ struct HelmholtzElement {
         if(nb_dofs==0) PetscFunctionReturn(0);
         int nb_gauss_pts = data.getN().size1();
 
-	ublas::vector<double> &value = commonData.pressureAtGaussPts[fieldName];
-	ublas::matrix<double> &gradient = commonData.gradPressureAtGaussPts[fieldName];
+        ublas::vector<double> &value = commonData.pressureAtGaussPts[fieldName];
+        ublas::matrix<double> &gradient = commonData.gradPressureAtGaussPts[fieldName];
 
         // initialize
         value.resize(nb_gauss_pts);
@@ -246,7 +246,14 @@ struct HelmholtzElement {
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
 
           value[gg] += inner_prod(data.getN(gg,nb_dofs),data.getFieldData());
-          ublas::noalias(ublas::matrix_row<ublas::matrix<double> >(gradient,gg)) += prod( trans(data.getDiffN(gg,nb_dofs)), data.getFieldData() );
+          //ublas::noalias(ublas::matrix_row<ublas::matrix<double> >(gradient,gg)) +=
+          //prod( trans(data.getDiffN(gg,nb_dofs)), data.getFieldData() );
+          cblas_dgemv(CblasRowMajor,CblasTrans,
+            nb_dofs,3,1,
+            &data.getDiffN()(gg,0),3,
+            &data.getFieldData()[0],1,
+            1,&gradient(gg,0),1
+          );
 
         }
 
@@ -355,7 +362,6 @@ struct HelmholtzElement {
 
   };
 
-
   /** \brief Rhs vector for Helmholtz operator
     \ingroup mofem_helmholtz_elem
 
@@ -409,10 +415,15 @@ struct HelmholtzElement {
             val *= getHoGaussPtsDetJac()[gg]; // higher order geometry
           }
 
-          const ublas::matrix_row<ublas::matrix<double> > gard_p_at_gauss_pt(grad_p,gg);
-
           /// Integrate diffN^T grad_p - k^2 N^T p dV
-          ublas::noalias(Nf) += val*prod(data.getDiffN(gg,nb_row_dofs),gard_p_at_gauss_pt);
+
+          //const ublas::matrix_row<ublas::matrix<double> > gard_p_at_gauss_pt(grad_p,gg);
+          //ublas::noalias(Nf) += val*prod(data.getDiffN(gg,nb_row_dofs),gard_p_at_gauss_pt);
+          cblas_dgemv(CblasRowMajor,CblasNoTrans,nb_row_dofs,3,val,
+            &data.getDiffN()(gg,0),3,
+            &grad_p(gg,0),1,
+            1.,&Nf[0],1
+          );
           ublas::noalias(Nf) -= val*k_pow2*data.getN(gg,nb_row_dofs)*pressure[gg];
 
         }
@@ -440,7 +451,7 @@ struct HelmholtzElement {
     \f]
 
     */
-  struct OpHelmholtzLhs: public VolumeElementForcesAndSourcesCore::UserDataOperator {
+    struct OpHelmholtzLhs: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     VolumeData &dAta;
     CommonData &commonData;
@@ -479,15 +490,31 @@ struct HelmholtzElement {
 
         for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
 
-
           double val = getVolume()*getGaussPts()(3,gg);
           if(getHoGaussPtsDetJac().size()>0) {
             val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
           }
 
-          noalias(K) += val*prod(row_data.getDiffN(gg,nb_rows),trans(col_data.getDiffN(gg,nb_cols)));
-          noalias(K) -= val*k_pow2*outer_prod( row_data.getN(gg,nb_rows),col_data.getN(gg,nb_cols) );
-
+          const double *diff_row_mat_ptr = &row_data.getDiffN()(gg,0);
+          const double *diff_col_mat_ptr = &col_data.getDiffN()(gg,0);
+          cblas_dgemm(
+            CblasRowMajor,CblasNoTrans,CblasTrans,
+            nb_rows,nb_cols,3,
+            +val,diff_row_mat_ptr,3,
+            diff_col_mat_ptr,3,
+            1,&K(0,0),nb_cols
+          );
+          const double *row_mat_ptr = &row_data.getN()(gg,0);
+          const double *col_mat_ptr = &col_data.getN()(gg,0);
+          cblas_dger(CblasRowMajor,
+            nb_rows,nb_cols,
+            -val*k_pow2,
+            row_mat_ptr,1,
+            col_mat_ptr,1,
+            &K(0,0),nb_cols
+          );
+          //noalias(K) -= val*k_pow2*outer_prod( row_data.getN(gg,nb_rows),col_data.getN(gg,nb_cols) );
+          //noalias(K) += val*prod(row_data.getDiffN(gg,nb_rows),trans(col_data.getDiffN(gg,nb_cols)));
         }
 
         PetscErrorCode ierr;
@@ -537,7 +564,6 @@ struct HelmholtzElement {
 
   };
 
-
   struct ZeroFunVal {
 
     ublas::vector<double> vAl;
@@ -551,8 +577,6 @@ struct HelmholtzElement {
 
   };
   ZeroFunVal zeroFunVal;
-
-
 
   struct BaylissTurkel {
 
@@ -579,21 +603,14 @@ struct HelmholtzElement {
 
 
 
-  /** \brief calulate incident wave scatterd on hard surface
+  /** \brief Calculate incident wave scattered on hard surface
 
-    \bug assumes that object is convex in ceneter of coordinate system
-
+    \bug Assumes that normal sf surface pointing outward.
     */
   struct IncidentWaveNeumannF2 {
 
-    double& waveNumber;
-    ublas::vector<double>& dIrection;
-    double& pOwerReal;
-    double& pOwerImag;
-
-    IncidentWaveNeumannF2(
-      double& wave_number,ublas::vector<double>& d,double& power_real,double &power_imag):
-      waveNumber(wave_number),dIrection(d),pOwerReal(power_real),pOwerImag(power_imag) {}
+    GlobalParameters &globalParameters;
+    IncidentWaveNeumannF2(GlobalParameters &global_parameters): globalParameters(global_parameters) {}
 
     ublas::vector<double> cOordinate;
     ublas::vector<double> vAl;
@@ -607,17 +624,20 @@ struct HelmholtzElement {
       cOordinate[1] = y;
       cOordinate[2] = z;
 
-      complex< double > p_inc = (pOwerReal+i*pOwerImag)*exp(i*waveNumber*inner_prod(dIrection,cOordinate));
+      double x1d = inner_prod(globalParameters.waveDirection.first,cOordinate);
+      complex<double> power = globalParameters.powerOfIncidentWaveReal.first+i*globalParameters.powerOfIncidentWaveImag.first;
+      complex<double> angle = globalParameters.waveNumber.first*(x1d);
+      complex<double> p_inc = power*exp(i*angle);
 
-      complex< double > grad_x = i*waveNumber*dIrection[0]*p_inc;
-      complex< double > grad_y = i*waveNumber*dIrection[1]*p_inc;
-      complex< double > grad_z = i*waveNumber*dIrection[2]*p_inc;
+      ublas::vector<complex<double > > grad(3);
+      for(int ii = 0;ii<3;ii++) {
+        grad[ii] = i*power*globalParameters.waveNumber.first*globalParameters.waveDirection.first[ii]*p_inc;
+      }
+      complex<double > grad_n = inner_prod(grad,normal);
 
-      complex< double > grad_n = normal[0]*grad_x + normal[1]*grad_y + normal[2]*grad_z;
-
-      // check if normal pointig to ceneter;
-      double dot = -inner_prod(normal,cOordinate);
-      if(dot < 0) grad_n *= -1;
+      //// check if normal pointing to ceneter;
+      //double dot = -inner_prod(normal,cOordinate);
+      //if(dot < 0) grad_n *= -1;
 
       vAl.resize(2);
       vAl[0] = std::real(grad_n);
@@ -632,7 +652,7 @@ struct HelmholtzElement {
     \ingroup mofem_helmholtz_elem
 
     Operator is build using two template functions, see equations below.
-    Depending on returning values of those funcions user can apply, Nuemman, Mix or
+    Depending on returning values of those functions user can apply, Nuemman, Mix or
     any variant of above conditions.
 
     \f[
@@ -1171,15 +1191,13 @@ struct HelmholtzElement {
 
       if(it->get_name().compare(0,13,"MAT_HELMHOLTZ") == 0) {
 
-        volumeData[it->get_msId()].waveNumber = globalParameters.waveNumber.first;
         rval = mField.get_moab().get_entities_by_type(it->meshset,MBTET,volumeData[it->get_msId()].tEts,true); CHKERR_PETSC(rval);
         ierr = mField.add_ents_to_finite_element_by_TETs(volumeData[it->get_msId()].tEts,"HELMHOLTZ_RERE_FE"); CHKERRQ(ierr);
         ierr = mField.add_ents_to_finite_element_by_TETs(volumeData[it->get_msId()].tEts,"HELMHOLTZ_IMIM_FE"); CHKERRQ(ierr);
+        volumeData[it->get_msId()].waveNumber = globalParameters.waveNumber.first;
 
         if(mField.check_field(pressure_field)) {
-
           ierr = mField.add_ents_to_finite_element_by_TETs(volumeData[it->get_msId()].tEts,"PRESSURE_FE"); CHKERRQ(ierr);
-
         }
 
       }
@@ -1204,7 +1222,7 @@ struct HelmholtzElement {
         vector<double> attributes;
         ierr = it->get_attributes(attributes); CHKERRQ(ierr);
         if(attributes.size()<1) {
-          SETERRQ1(PETSC_COMM_SELF,1,"first block attribute should define surface admitance",attributes.size());
+          SETERRQ1(PETSC_COMM_SELF,1,"first block attribute should define surface admittance",attributes.size());
         }
 
         surfaceIncidentWaveBcData[it->get_msId()].aDmittance_real = 0;
@@ -1310,14 +1328,7 @@ struct HelmholtzElement {
     for(;miit!=surfaceIncidentWaveBcData.end();miit++) {
 
       boost::shared_ptr<IncidentWaveNeumannF2> incident_wave_neumann_bc =
-      boost::shared_ptr<IncidentWaveNeumannF2>(
-        new IncidentWaveNeumannF2(
-          globalParameters.waveNumber.first,
-          globalParameters.waveDirection.first,
-          globalParameters.powerOfIncidentWaveReal.first,
-          globalParameters.powerOfIncidentWaveImag.first
-        )
-      );
+        boost::shared_ptr<IncidentWaveNeumannF2>(new IncidentWaveNeumannF2(globalParameters));
 
       if(miit->second.aDmittance_imag!=0) {
 

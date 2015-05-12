@@ -38,7 +38,7 @@ using namespace MoFEM;
 #include <ConvectiveMassElement.hpp>
 #include <NonLienarElasticElement.hpp>
 
-#include <PotsProcOnRefMesh.hpp>
+#include <PostProcOnRefMesh.hpp>
 #include <PostProcStresses.hpp>
 
 #include <boost/program_options.hpp>

@@ -4,7 +4,7 @@
  \brief Operators and data structures for thermal analysis
 
  Implementation of thermal element for unsteady and steady case.
- Radiation and convection blocks implemented by Xuan Meng 
+ Radiation and convection blocks implemented by Xuan Meng
 
 */
 
@@ -32,10 +32,10 @@ namespace MoFEM {
   * \ingroup mofem_thermal_elem
   *
   * In order to assemble matrices and right hand vectors, the loops over
-  * elements, enetities over that elememnts and finally loop over intergration
+  * elements, entities over that elements and finally loop over integration
   * points are executed.
   *
-  * Following implementation separte those three cegories of loops and to eeach
+  * Following implementation separate those three types of loops and to each
   * loop attach operator.
   *
   */
@@ -109,12 +109,12 @@ struct ThermalElement {
   };
   map<int,BlockData> setOfBlocks; ///< maps block set id with appropriate BlockData
 
-  /** \brief data for calulation heat flux
+  /** \brief data for calculation heat flux
     * \infroup mofem_thermal_elem
     */
   struct FluxData {
     HeatfluxCubitBcData dAta; ///< for more details look to BCMultiIndices.hpp to see details of HeatfluxCubitBcData
-    Range tRis; ///< suraface triangles where hate flux is applied
+    Range tRis; ///< surface triangles where hate flux is applied
   };
   map<int,FluxData> setOfFluxes; ///< maps side set id with appropriate FluxData
 
@@ -231,7 +231,7 @@ struct ThermalElement {
 
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
           fieldAtGaussPts[gg] += inner_prod(data.getN(gg,nb_dofs),data.getFieldData());
-  
+
         }
 
       } catch (const std::exception& ex) {
@@ -310,7 +310,7 @@ struct ThermalElement {
 
         int nb_row_dofs = data.getIndices().size();
         Nf.resize(nb_row_dofs);
-	Nf.clear();
+        Nf.clear();
         //cerr << data.getIndices() << endl;
         //cerr << data.getDiffN() << endl;
 
@@ -321,7 +321,7 @@ struct ThermalElement {
           if(getHoGaussPtsDetJac().size()>0) {
             val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
           }
-          
+
           //cerr << val << endl;
           //cerr << data.getDiffN() << endl;
           //cerr << data.getIndices() << endl;
@@ -333,7 +333,7 @@ struct ThermalElement {
 
           //ublas
           ublas::noalias(Nf) += prod(prod(data.getDiffN(gg,nb_row_dofs),val), commonData.getGradAtGaussPts(gg));
-          
+
         }
 
         //cerr << Nf << endl;
@@ -560,7 +560,7 @@ struct ThermalElement {
           //  nb_row,nb_col,val,N_row,1,N_col,1,&M(0,0),nb_col);
           //ublas
           noalias(M) += val*outer_prod( row_data.getN(gg,nb_row),col_data.getN(gg,nb_col) );
-          
+
         }
 
 	M *= getVolume()*dAta.cApacity*getFEMethod()->ts_a;
@@ -593,8 +593,8 @@ struct ThermalElement {
     }
 
   };
-  
-  
+
+
 
   /** \brief operator for calculate heat flux and assemble to right hand side
     * \infroup mofem_thermal_elem
@@ -673,10 +673,10 @@ struct ThermalElement {
 
   };
 
-  
-  /** 
+
+  /**
     * operator to calculate radiation therms on body surface and assemble to lhs of equations
-    * for the jocabian Matrix of Picard Linearization 
+    * for the jocabian Matrix of Picard Linearization
     * \infroup mofem_thermal_elem
     */
   struct OpRadiationLhs:public FaceElementForcesAndSourcesCore::UserDataOperator {
@@ -762,14 +762,14 @@ struct ThermalElement {
 
         PetscFunctionReturn(0);
       }
-  
+
   };
 
   /** \brief operator to calculate radiation therms on body surface and assemble to rhs of transient equations(Residual Vector)
     * \infroup mofem_thermal_elem
     */
   struct OpRadiationRhs:public FaceElementForcesAndSourcesCore::UserDataOperator {
-        
+
     CommonData &commonData; //get the temperature or temperature Rate from CommonData
     RadiationData &dAta;
     bool ho_geometry;
@@ -782,41 +782,41 @@ struct ThermalElement {
     OpRadiationRhs(const string field_name,Vec _F,RadiationData &data,CommonData &common_data,bool _ho_geometry = false):
       FaceElementForcesAndSourcesCore::UserDataOperator(field_name),
       commonData(common_data),dAta(data),ho_geometry(_ho_geometry),useTsF(false),F(_F) {}
-  
+
     ublas::vector<FieldData> Nf;
-  
+
     /** \brief calculate Transient Radiation condition on the right hand side residual
       *
-      *  R=int_S N^T * sIgma * eMissivity * (Ta^4 -Ts^4) dS 
+      *  R=int_S N^T * sIgma * eMissivity * (Ta^4 -Ts^4) dS
      **/
     PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
-  
+
       if(data.getIndices().size()==0) PetscFunctionReturn(0);
       if(dAta.tRis.find(getMoFEMFEPtr()->get_ent())==dAta.tRis.end()) PetscFunctionReturn(0);
-  
+
       PetscErrorCode ierr;
-  
+
       const FENumeredDofMoFEMEntity *dof_ptr;
       ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
       int rank = dof_ptr->get_max_rank();
       int nb_row_dofs = data.getIndices().size()/rank;
-  
+
       Nf.resize(data.getIndices().size());
       Nf.clear();
       //cerr << getNormal() << endl;
       //cerr << getNormals_at_GaussPt() << endl;
-  
+
       for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
-  
+
 	double T4_at_Gauss_pt = pow(commonData.temperatureAtGaussPts[gg],4.0);
 	double ambientTemp = pow(dAta.aMbienttEmp,4.0);
 	double tEmp = 0;
-        
+
 	if(ambientTemp > 0) {
 	  tEmp = -ambientTemp + T4_at_Gauss_pt;
 	}
-  
+
 	double val = getGaussPts()(2,gg);
 	double radiationConst;
 
@@ -827,23 +827,23 @@ struct ThermalElement {
           radiationConst = dAta.sIgma*dAta.eMissivity*tEmp*getArea();
         }
         ublas::noalias(Nf) += val*radiationConst*data.getN(gg,nb_row_dofs);
-  
+
       }
-  
+
       //cerr << "VecSetValues\n";
       //cerr << Nf << endl;
       //cerr << data.getIndices() << endl;
-  
+
       if(useTsF) {
 	ierr = VecSetValues(getFEMethod()->ts_F,data.getIndices().size(),&data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
       } else {
         ierr = VecSetValues(F,data.getIndices().size(),&data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
       }
-  
+
       PetscFunctionReturn(0);
     }
-  
-  };  
+
+  };
 
   /** \brief operator to calculate convection therms on body surface and assemble to rhs of equations
     * \infroup mofem_thermal_elem
@@ -901,7 +901,7 @@ struct ThermalElement {
 	}
 	double val = getGaussPts()(2,gg)*convectionConst;
 	ublas::noalias(Nf) += val*data.getN(gg,nb_row_dofs);
-				
+
       }
 
       //cerr << "VecSetValues\n";
@@ -920,7 +920,7 @@ struct ThermalElement {
     }
 
   };
-  
+
 
   /// \biref operator to calculate convection therms on body surface and assemble to lhs of equations
   struct OpConvectionLhs:public FaceElementForcesAndSourcesCore::UserDataOperator {
@@ -960,7 +960,7 @@ struct ThermalElement {
         int nb_row = row_data.getN().size2();
         int nb_col = col_data.getN().size2();
         K.resize(nb_row,nb_col);
-	K.clear();
+        K.clear();
 
         for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
 
@@ -1159,7 +1159,3 @@ struct ThermalElement {
  * \defgroup mofem_thermal_elem Thermal element
  * \ingroup mofem_forces_and_sources
  ******************************************************************************/
-
-
-
-

@@ -28,6 +28,7 @@ struct TimeSeries {
   HelmholtzElement& helmholtzElement;
   AnalyticalDirihletBC::DirichletBC& analyticalDitihletBcReal;
   AnalyticalDirihletBC::DirichletBC& analyticalDitihletBcImag;
+
   bool dirichletBcSet;
   int readFile,debug;
 
@@ -45,23 +46,21 @@ struct TimeSeries {
   ErrorCode rval;
   PetscErrorCode ierr;
 
-  map<double,double> tSeries;
-
-  PetscErrorCode timeData() {
+  PetscErrorCode readData(const char* str,map<double,double> &series) {
     PetscFunctionBegin;
 
     char time_file_name[255];
     PetscBool flg = PETSC_TRUE;
-    ierr = PetscOptionsGetString(PETSC_NULL,"-time_data_file",time_file_name,255,&flg); CHKERRQ(ierr);
+    ierr = PetscOptionsGetString(PETSC_NULL,str,time_file_name,255,&flg); CHKERRQ(ierr);
     if(flg != PETSC_TRUE) {
-      SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -time_data_file (time_data FILE NEEDED)");
+      SETERRQ1(PETSC_COMM_SELF,1,"*** ERROR %s (DATA FILE NEEDED)",str);
     }
     FILE *time_data = fopen(time_file_name,"r");
     if(time_data == NULL) {
       SETERRQ1(PETSC_COMM_SELF,1,"*** ERROR data file < %s > open unsucessfull",time_file_name);
     }
     double no1 = 0.0, no2 = 0.0;
-    tSeries[no1] = no2;
+    series[no1] = no2;
     while(! feof (time_data)){
       int n = fscanf(time_data,"%lf %lf",&no1,&no2);
       if((n <= 0)||((no1==0)&&(no2==0))) {
@@ -71,30 +70,61 @@ struct TimeSeries {
       if(n != 2){
         SETERRQ1(PETSC_COMM_SELF,1,"*** ERROR read data file error (check input time data file) { n = %d }",n);
       }
-      tSeries[no1] = no2;
+      series[no1] = no2;
     }
     int r = fclose(time_data);
 
     if(debug) {
-      map<double, double>::iterator tit = tSeries.begin();
-      for(;tit!=tSeries.end();tit++) {
+      map<double, double>::iterator tit = series.begin();
+      for(;tit!=series.end();tit++) {
         PetscPrintf(PETSC_COMM_WORLD,"** read time series %3.2e time %3.2e\n",tit->first,tit->second);
       }
     }
     if(r!=0) {
-      SETERRQ(PETSC_COMM_SELF,1,"*** ERROR file cloase unsucessfull");
+      SETERRQ(PETSC_COMM_SELF,1,"*** ERROR file close unsuccessful");
     }
     readFile=1;
 
     PetscFunctionReturn(0);
   }
 
-  boost::shared_array<kiss_fft_cpx> complexIn;
-  boost::shared_array<kiss_fft_cpx> complexOut;
+  map<double,double> tSeries;
+  map<double,double> sSeries;
+
+  PetscErrorCode readTimeData() {
+    PetscFunctionBegin;
+    ierr = readData("-time_data",tSeries); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode readSpaceData() {
+    PetscFunctionBegin;
+    ierr = readData("-space_data",sSeries); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode readData() {
+    PetscFunctionBegin;
+
+    ierr = readTimeData(); CHKERRQ(ierr);
+    ierr = readSpaceData(); CHKERRQ(ierr);
+
+    PetscFunctionReturn(0);
+  }
+
+  boost::shared_array<kiss_fft_cpx> complexSpaceIn;  ///< Impulse amplitudes in space (imaginary)
+  boost::shared_array<kiss_fft_cpx> complexSpaceOut; ///< Impulse amplitude in space (real)
+  boost::shared_array<kiss_fft_cpx> complexTimeIn;  ///< Impulse amplitudes in time (imaginary)
+  boost::shared_array<kiss_fft_cpx> complexTimeOut; ///< Impulse amplitude in time (real)
+
   kiss_fft_cfg forwardCfg;
   kiss_fft_cfg inverseCfg;
 
-  PetscErrorCode forwardDft() {
+  PetscErrorCode forwardDft(
+    map<double,double> series,
+    boost::shared_array<kiss_fft_cpx> &complex_in,
+    boost::shared_array<kiss_fft_cpx> &complex_out
+  ) {
     PetscFunctionBegin;
 
     int n = tSeries.size();
@@ -102,19 +132,26 @@ struct TimeSeries {
       SETERRQ(PETSC_COMM_SELF,1,"odd number of number of points, should be even");
     }
 
-    complexIn = boost::shared_array<kiss_fft_cpx>(new kiss_fft_cpx[n]);
+    complex_in = boost::shared_array<kiss_fft_cpx>(new kiss_fft_cpx[n]);
     map<double,double>::iterator mit = tSeries.begin();
     for(int ii = 0;mit!=tSeries.end();mit++,ii++) {
-
-      complexIn[ii].r = mit->second;
-      complexIn[ii].i = 0;
-
+      complex_in[ii].r = mit->second;
+      complex_in[ii].i = 0;
     }
 
     forwardCfg = kiss_fft_alloc(n, 0, NULL, NULL);
+    complex_out = boost::shared_array<kiss_fft_cpx>(new kiss_fft_cpx[n]);
+    kiss_fft(forwardCfg,complex_in.get(),complex_out.get());
 
-    complexOut = boost::shared_array<kiss_fft_cpx>(new kiss_fft_cpx[n]);
-    kiss_fft(forwardCfg,complexIn.get(),complexOut.get());
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode forwardDft() {
+    PetscFunctionBegin;
+
+
+    ierr = forwardDft(tSeries,complexSpaceIn,complexSpaceOut); CHKERRQ(ierr);
+    ierr = forwardDft(sSeries,complexTimeIn,complexTimeOut); CHKERRQ(ierr);
 
     PetscFunctionReturn(0);
   }
@@ -122,7 +159,7 @@ struct TimeSeries {
   ublas::vector<Vec> pSeriesReal,pSeriesImag;
   VecScatter scatterImag,scatterReal;
 
-  PetscErrorCode createVectorSeries(Vec T) {
+  PetscErrorCode createTimeVectorSeries(Vec T) {
     PetscFunctionBegin;
 
     int n = tSeries.size();
@@ -143,15 +180,15 @@ struct TimeSeries {
 
     ierr = mField.VecScatterCreate(
       T,"ACOUSTIC_PROBLEM","rePRES",ROW,pSeriesReal[0],"PRESSURE_IN_TIME","P",ROW,&scatterReal
-      ); CHKERRQ(ierr);
+    ); CHKERRQ(ierr);
     ierr = mField.VecScatterCreate(
       T,"ACOUSTIC_PROBLEM","imPRES",ROW,pSeriesImag[0],"PRESSURE_IN_TIME","P",ROW,&scatterImag
-      ); CHKERRQ(ierr);
+    ); CHKERRQ(ierr);
 
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode destroyVectorSeries() {
+  PetscErrorCode destroyTimeVectorSeries() {
     PetscFunctionBegin;
 
     int n = tSeries.size();
@@ -177,13 +214,43 @@ struct TimeSeries {
   PetscErrorCode solveForwardDFT(KSP solver,Mat A,Vec F,Vec T) {
     PetscFunctionBegin;
 
+    const bool only_incident_wave = true;
+    int nt = tSeries.size();
+    int ns = sSeries.size();
+
     PetscBool add_incident_wave = PETSC_FALSE;
     ierr = PetscOptionsGetBool(NULL,"-add_incident_wave",&add_incident_wave,NULL); CHKERRQ(ierr);
+    PetscBool is_partitioned = PETSC_FALSE;
+    ierr = PetscOptionsGetBool(NULL,"-my_is_partitioned",&is_partitioned,PETSC_NULL); CHKERRQ(ierr);
 
-    const bool only_incident_wave = true;
-    int n = tSeries.size();
+    KSP approx_incindent_wave_solver;
 
-    for(int k = 0;k<n;k++) {
+    Mat A_approx_incident_wave;
+    Vec D_approx_incident_wave;
+    vector<Vec> vec_F;
+    vec_F.resize(2);
+    VecScatter scatter_incident_wave;
+
+    if(add_incident_wave) {
+
+      ierr = mField.MatCreateMPIAIJWithArrays("INCIDENT_WAVE",&A_approx_incident_wave); CHKERRQ(ierr);
+
+      ierr = KSPCreate(PETSC_COMM_WORLD,&approx_incindent_wave_solver); CHKERRQ(ierr);
+      ierr = KSPSetOperators(approx_incindent_wave_solver,A_approx_incident_wave,A_approx_incident_wave); CHKERRQ(ierr);
+      ierr = KSPSetFromOptions(approx_incindent_wave_solver); CHKERRQ(ierr);
+      ierr = KSPSetUp(approx_incindent_wave_solver); CHKERRQ(ierr);
+
+      ierr = mField.VecCreateGhost("INCIDENT_WAVE",ROW,&vec_F[0]); CHKERRQ(ierr); /* real */
+      ierr = mField.VecCreateGhost("INCIDENT_WAVE",ROW,&vec_F[1]); CHKERRQ(ierr); /* imag */
+      ierr = mField.VecCreateGhost("INCIDENT_WAVE",COL,&D_approx_incident_wave); CHKERRQ(ierr);
+
+      ierr = mField.VecScatterCreate(
+        D_approx_incident_wave,"INCIDENT_WAVE","rePRES",ROW,pSeriesReal[0],"PRESSURE_IN_TIME","P",ROW,&scatter_incident_wave
+      ); CHKERRQ(ierr);
+
+    }
+
+    for(int k = 0;k<nt;k++) {
 
       // Zero vectors
       ierr = VecZeroEntries(T); CHKERRQ(ierr);
@@ -196,11 +263,11 @@ struct TimeSeries {
       ierr = MatZeroEntries(A); CHKERRQ(ierr);
 
       // Set wave number
-      double c = 1; // wave speed
-      ierr = PetscOptionsGetScalar(NULL,"-wave_speed",&c,NULL); CHKERRQ(ierr);
+      double reference_wave_speed = 1; // wave speed
+      ierr = PetscOptionsGetScalar(NULL,"-reference_wave_speed",&reference_wave_speed,NULL); CHKERRQ(ierr);
 
-      const double wave_number = 2*M_PI*k/c;
-      PetscPrintf(PETSC_COMM_WORLD,"\n\nCalculate frequency %d for wave number %3.4g out of %d\n",k,wave_number,n);
+      const double wave_number = 2*M_PI*k/reference_wave_speed;
+      PetscPrintf(PETSC_COMM_WORLD,"\n\nCalculate frequency %d for wave number %3.4g out of %d\n",k,wave_number,nt);
 
       map<int,HelmholtzElement::VolumeData>::iterator vit = helmholtzElement.volumeData.begin();
       for(;vit != helmholtzElement.volumeData.end();vit++) {
@@ -215,10 +282,10 @@ struct TimeSeries {
         sit->second.aDmittance_imag = -wave_number;
       }
 
-      //helmholtzElement.globalParameters.waveNumber.first = wave_number;
-      helmholtzElement.globalParameters.powerOfIncidentWaveReal.first = complexOut[k].r;
-      helmholtzElement.globalParameters.powerOfIncidentWaveImag.first = complexOut[k].i;
-      PetscPrintf(PETSC_COMM_WORLD,"Complex amplitude %6.4e + i%6.4e\n",complexOut[k].r,complexOut[k].i);
+      helmholtzElement.globalParameters.waveNumber.first = wave_number;
+      //helmholtzElement.globalParameters.powerOfIncidentWaveReal.first = complexOut[k].r;
+      //helmholtzElement.globalParameters.powerOfIncidentWaveImag.first = complexOut[k].i;
+      //PetscPrintf(PETSC_COMM_WORLD,"Complex amplitude %6.4e + i%6.4e\n",complexOut[k].r,complexOut[k].i);
 
       if(!only_incident_wave) {
 
@@ -259,11 +326,91 @@ struct TimeSeries {
       ierr = VecScatterBegin(scatterImag,T,pSeriesImag[k],INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
       ierr = VecScatterEnd(scatterImag,T,pSeriesImag[k],INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
+      if(add_incident_wave) {
+
+        double incident_wave_speed = 1; // wave speed
+        ierr = PetscOptionsGetScalar(NULL,"-incident_wave_speed",&incident_wave_speed,NULL); CHKERRQ(ierr);
+
+        // loop over frequencies in space and sum them up, for given wave number in time frequency
+        for (int s = 0; s < ns; s++) {
+
+          double real_power = complexSpaceOut[s].r*complexTimeOut[k].r - complexSpaceOut[s].i*complexTimeOut[k].i;
+          double imag_power = complexSpaceOut[s].r*complexTimeOut[k].i + complexSpaceOut[s].i*complexTimeOut[k].r;
+
+          IncidentWave function_evaluator(
+            s/incident_wave_speed,
+            helmholtzElement.globalParameters.waveDirection.first,
+            real_power,imag_power
+          );
+
+          if(s==0) {
+            for(int ss = 0;ss<2;ss++) {
+              ierr = VecZeroEntries(vec_F[ss]); CHKERRQ(ierr);
+            }
+          }
+
+          if(s==0 && k == 0) {
+
+            ierr = MatZeroEntries(A_approx_incident_wave); CHKERRQ(ierr);
+            ierr = calculate_matrix_and_vector(
+              mField,"INCIDENT_WAVE","HELMHOLTZ_RERE_FE","rePRESS",A_approx_incident_wave,vec_F,function_evaluator
+            ); CHKERRQ(ierr);
+
+            {
+              //Matrix View
+              MatView(A_approx_incident_wave,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
+              std::string wait;
+              std::cin >> wait;
+            }
+          } else {
+            ierr = calculate_matrix_and_vector(
+              mField,"INCIDENT_WAVE","HELMHOLTZ_RERE_FE","rePRESS",PETSC_NULL,vec_F,function_evaluator
+            ); CHKERRQ(ierr);
+          }
+
+        }
+
+        for (size_t ss = 0; ss < 2; ss++) {
+          // Solve incident wave approximation problem
+          ierr = KSPSolve(approx_incindent_wave_solver,vec_F[ss],D_approx_incident_wave); CHKERRQ(ierr);
+          ierr = VecGhostUpdateBegin(D_approx_incident_wave,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+          ierr = VecGhostUpdateEnd(D_approx_incident_wave,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+          if(ss) {
+            ierr = VecScatterBegin(
+              scatter_incident_wave,D_approx_incident_wave,pSeriesReal[k],ADD_VALUES,SCATTER_FORWARD
+            ); CHKERRQ(ierr);
+            ierr = VecScatterEnd(
+              scatter_incident_wave,D_approx_incident_wave,pSeriesReal[k],ADD_VALUES,SCATTER_FORWARD
+            ); CHKERRQ(ierr);
+          } else {
+            ierr = VecScatterBegin(
+              scatter_incident_wave,D_approx_incident_wave,pSeriesImag[k],ADD_VALUES,SCATTER_FORWARD
+            ); CHKERRQ(ierr);
+            ierr = VecScatterEnd(
+              scatter_incident_wave,D_approx_incident_wave,pSeriesImag[k],ADD_VALUES,SCATTER_FORWARD
+            ); CHKERRQ(ierr);
+          }
+        }
+
+      }
+
       ierr = VecGhostUpdateBegin(pSeriesReal[k],INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
       ierr = VecGhostUpdateEnd(pSeriesReal[k],INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
       ierr = VecGhostUpdateBegin(pSeriesImag[k],INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
       ierr = VecGhostUpdateEnd(pSeriesImag[k],INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
+    }
+
+    if(add_incident_wave) {
+
+      ierr = KSPDestroy(&approx_incindent_wave_solver); CHKERRQ(ierr);
+
+      ierr = MatDestroy(&A_approx_incident_wave); CHKERRQ(ierr);
+      ierr = VecDestroy(&vec_F[0]); CHKERRQ(ierr);
+      ierr = VecDestroy(&vec_F[1]); CHKERRQ(ierr);
+      ierr = VecDestroy(&D_approx_incident_wave); CHKERRQ(ierr);
+
+      ierr = VecScatterDestroy(&scatter_incident_wave); CHKERRQ(ierr);
     }
 
     PetscFunctionReturn(0);
@@ -291,25 +438,25 @@ struct TimeSeries {
         ierr = VecGetArray(pSeriesReal[k],&p_real); CHKERRQ(ierr);
         ierr = VecGetArray(pSeriesImag[k],&p_imag); CHKERRQ(ierr);
 
-        complexOut[k].r = p_real[ii];
-        complexOut[k].i = p_imag[ii];
+        //complexOut[k].r = p_real[ii];
+        //complexOut[k].i = p_imag[ii];
 
         ierr = VecRestoreArray(pSeriesReal[k],&p_real); CHKERRQ(ierr);
         ierr = VecRestoreArray(pSeriesImag[k],&p_imag); CHKERRQ(ierr);
 
       }
 
-      kiss_fft(inverseCfg,complexOut.get(),complexIn.get());
+      //kiss_fft(inverseCfg,complexOut.get(),complexIn.get());
 
       for(int k = 0;k<n;k++) {
 
         double *a_p;
         ierr = VecGetArray(pSeriesReal[k],&a_p); CHKERRQ(ierr);
-        a_p[ ii ] = complexIn[k].r;
+        //a_p[ ii ] = complexIn[k].r;
         ierr = VecRestoreArray(pSeriesReal[k],&a_p); CHKERRQ(ierr);
 
         ierr = VecGetArray(pSeriesImag[k],&a_p); CHKERRQ(ierr);
-        a_p[ ii ] = complexIn[k].i;
+        //a_p[ ii ] = complexIn[k].i;
         ierr = VecRestoreArray(pSeriesImag[k],&a_p); CHKERRQ(ierr);
 
       }
@@ -324,7 +471,9 @@ struct TimeSeries {
       ierr = VecGhostUpdateBegin(pSeriesImag[k],INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
       ierr = VecGhostUpdateEnd(pSeriesImag[k],INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
-      ierr = mField.set_local_ghost_vector("PRESSURE_IN_TIME",ROW,pSeriesReal[k],INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      ierr = mField.set_local_ghost_vector(
+        "PRESSURE_IN_TIME",ROW,pSeriesReal[k],INSERT_VALUES,SCATTER_REVERSE
+      ); CHKERRQ(ierr);
       ierr = mField.loop_finite_elements("PRESSURE_IN_TIME","PRESSURE_FE",post_proc); CHKERRQ(ierr);
 
       {
@@ -334,7 +483,9 @@ struct TimeSeries {
         PetscPrintf(PETSC_COMM_WORLD,"Saved %s\n",ss.str().c_str());
       }
 
-      ierr = mField.set_local_ghost_vector("PRESSURE_IN_TIME",ROW,pSeriesImag[k],INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      ierr = mField.set_local_ghost_vector(
+        "PRESSURE_IN_TIME",ROW,pSeriesImag[k],INSERT_VALUES,SCATTER_REVERSE
+      ); CHKERRQ(ierr);
       ierr = mField.loop_finite_elements("PRESSURE_IN_TIME","PRESSURE_FE",post_proc); CHKERRQ(ierr);
 
       {

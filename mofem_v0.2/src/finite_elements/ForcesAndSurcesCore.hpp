@@ -1,8 +1,8 @@
-/** \file ForcesAndSurcesCore.hpp 
+/** \file ForcesAndSurcesCore.hpp
  * \brief Forces and sources data structures
  *
  * It is set of objects to implement finite elements, in particular it is used
- * to implement source and force therms on right hand side. 
+ * to implement source and force therms on right hand side.
  *
 */
 
@@ -40,4 +40,3 @@
 #include <ElementsOnEntities.hpp>
 
 #endif //__FORCESANDSURCESCORE_HPP
-
