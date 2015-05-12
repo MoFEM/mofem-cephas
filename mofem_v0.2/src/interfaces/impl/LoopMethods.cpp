@@ -1,13 +1,5 @@
-
 /** \file LoopMethods.cpp
- * \brief Myltindex containes, data structures and other low-level functions
- *
- * Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl) <br>
- *
- * The MoFEM package is copyrighted by Lukasz Kaczmarczyk.
- * It can be freely used for educational and research purposes
- * by other institutions. If you use this softwre pleas cite my work.
- *
+
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or (at your
@@ -106,6 +98,7 @@ PetscErrorCode TSMethod::copy_ts(const TSMethod &ts) {
 
 //BasicMethod
 BasicMethod::BasicMethod():
+  nInTheLoop(0),loopSize(0),
   refinedEntitiesPtr(NULL),refinedFiniteElementsPtr(NULL),
   problemPtr(NULL),fieldsPtr(NULL),entitiesPtr(NULL),dofsPtr(NULL),
   finiteElementsPtr(NULL),finiteElementsEntitiesPtr(NULL),adjacenciesPtr(NULL) {}

@@ -60,11 +60,15 @@ struct ForcesAndSurcesCore: public FEMethod {
 
   /// \brief get node indices
   PetscErrorCode getNodesIndices(const string &field_name,
-    FENumeredDofMoFEMEntity_multiIndex &dofs,ublas::vector<int> &nodes_indices);
+    FENumeredDofMoFEMEntity_multiIndex &dofs,
+    ublas::vector<int> &nodes_indices
+  );
 
   /// \brief get indices by type (generic function)
   PetscErrorCode getTypeIndices(const string &field_name,
-    FENumeredDofMoFEMEntity_multiIndex &dofs,EntityType type,int side_number,ublas::vector<int> &indices);
+    FENumeredDofMoFEMEntity_multiIndex &dofs,EntityType type,int side_number,
+    ublas::vector<int> &indices
+  );
 
   /// \brief get indices by type (generic function)
   PetscErrorCode getTypeIndices(
@@ -95,28 +99,67 @@ struct ForcesAndSurcesCore: public FEMethod {
   /// \brief get Tets col indices from FENumeredDofMoFEMEntity_multiIndex
   PetscErrorCode getTetsColIndices(DataForcesAndSurcesCore &data,const string &field_name);
 
+  /// \brief get NoField indices
+  PetscErrorCode getNoFieldIndices(
+    const string &field_name,FENumeredDofMoFEMEntity_multiIndex &dofs,ublas::vector<int> &nodes_indices
+  );
+
+  /// \brief get col NoField indices
+  PetscErrorCode getNoFieldRowIndices(DataForcesAndSurcesCore &data,const string &field_name);
+
+  /// \brief get col NoField indices
+  PetscErrorCode getNoFieldColIndices(DataForcesAndSurcesCore &data,const string &field_name);
+
   // ** Data **
 
-  PetscErrorCode getNodesFieldData(const string &field_name,
-    FEDofMoFEMEntity_multiIndex &dofs,ublas::vector<double> &nodes_data);
-  PetscErrorCode getTypeFieldData(const string &field_name,
-    FEDofMoFEMEntity_multiIndex &dofs,
-    EntityType type,int side_number,ublas::vector<double> &ent_field_data);
-  PetscErrorCode getTypeFieldData(const string &field_name,FEDofMoFEMEntity_multiIndex &dofs,
-    EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data);
+  PetscErrorCode getNodesFieldData(
+    const string &field_name,FEDofMoFEMEntity_multiIndex &dofs,ublas::vector<double> &nodes_data
+  );
 
-  // ** DoFS **
+  PetscErrorCode getTypeFieldData(
+    const string &field_name,FEDofMoFEMEntity_multiIndex &dofs,
+    EntityType type,int side_number,ublas::vector<double> &ent_field_data
+  );
+
+  PetscErrorCode getTypeFieldData(
+    const string &field_name,FEDofMoFEMEntity_multiIndex &dofs,
+    EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data
+  );
+
+  PetscErrorCode getNoFieldFieldData(
+    const string &field_name,FEDofMoFEMEntity_multiIndex &dofs,ublas::vector<double> &ent_field_data
+  );
+
+  PetscErrorCode getNoFieldFieldData(
+    DataForcesAndSurcesCore &data,const string &field_name
+  );
 
   PetscErrorCode getNodesFieldData(DataForcesAndSurcesCore &data,const string &field_name);
   PetscErrorCode getEdgesFieldData(DataForcesAndSurcesCore &data,const string &field_name);
   PetscErrorCode getTrisFieldData(DataForcesAndSurcesCore &data,const string &field_name);
   PetscErrorCode getTetsFieldData(DataForcesAndSurcesCore &data,const string &field_name);
 
-  PetscErrorCode getNodesFieldDofs(const string &field_name,FEDofMoFEMEntity_multiIndex &dofs,ublas::vector<const FEDofMoFEMEntity*> &nodes_dofs);
-  PetscErrorCode getTypeFieldDofs(const string &field_name,
-    FEDofMoFEMEntity_multiIndex &dofs,EntityType type,int side_number,ublas::vector<const FEDofMoFEMEntity*> &ent_field_dofs);
-  PetscErrorCode getTypeFieldDofs(const string &field_name,
-    FEDofMoFEMEntity_multiIndex &dofs,EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data);
+  // ** DoFS **
+
+  PetscErrorCode getNodesFieldDofs(
+    const string &field_name,FEDofMoFEMEntity_multiIndex &dofs,ublas::vector<const FEDofMoFEMEntity*> &nodes_dofs
+  );
+
+  PetscErrorCode getTypeFieldDofs(
+    const string &field_name,FEDofMoFEMEntity_multiIndex &dofs,
+    EntityType type,int side_number,ublas::vector<const FEDofMoFEMEntity*> &ent_field_dofs
+  );
+
+  PetscErrorCode getTypeFieldDofs(
+    const string &field_name,FEDofMoFEMEntity_multiIndex &dofs,
+    EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data
+  );
+
+  PetscErrorCode getNoFieldFieldDofs(
+    const string &field_name,FEDofMoFEMEntity_multiIndex &dofs,ublas::vector<const FEDofMoFEMEntity*> &nodes_dofs
+  );
+
+  PetscErrorCode getNoFieldFieldDofs(DataForcesAndSurcesCore &data,const string &field_name);
 
   PetscErrorCode getNodesFieldDofs(DataForcesAndSurcesCore &data,const string &field_name);
   PetscErrorCode getEdgesFieldDofs(DataForcesAndSurcesCore &data,const string &field_name);
@@ -291,22 +334,18 @@ struct ForcesAndSurcesCore: public FEMethod {
     bool sYmm;
 
     /// set if operator is executed taking in account symmetry
-    void setSymm() {
-      sYmm = true;
-    }
+    inline void setSymm() { sYmm = true; }
 
     /// unset if operator is executed for  non symmetric problem
-    void unSetSymm() {
-      sYmm = false;
-    }
+    inline void unSetSymm() { sYmm = false; }
 
     UserDataOperator(
       const string &_field_name):
       rowFieldName(_field_name),colFieldName(_field_name),sYmm(true),ptrFE(NULL) {};
       UserDataOperator(
-        const string &_row_field_name,const string &_col_field_name):
-        rowFieldName(_row_field_name),colFieldName(_col_field_name),sYmm(true),ptrFE(NULL) {};
-        virtual ~UserDataOperator() {}
+        const string &_row_field_name,const string &_col_field_name
+      ): rowFieldName(_row_field_name),colFieldName(_col_field_name),sYmm(true),ptrFE(NULL) {}
+      virtual ~UserDataOperator() {}
 
     /** \bried return pointer to NumeredMoFEMFiniteElement
      */
@@ -345,6 +384,10 @@ struct ForcesAndSurcesCore: public FEMethod {
       ptrFE = ptr;
       PetscFunctionReturn(0);
     }
+
+    /** \bried return pointer to Generic Finite Element object
+     */
+    inline const FEMethod* getFEMethod() { return ptrFE; }
 
     private:
     ForcesAndSurcesCore *ptrFE;
@@ -412,6 +455,7 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
   DerivedDataForcesAndSurcesCore derivedDataL2;
   DataForcesAndSurcesCore dataHdiv;
   DerivedDataForcesAndSurcesCore derivedDataHdiv;
+  DataForcesAndSurcesCore dataNoField,dataNoFieldCol;
 
   OpSetInvJacH1 opSetInvJacH1;
   OpSetPiolaTransform opPiolaTransform;
@@ -433,6 +477,7 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
     dataH1(MBTET),derivedDataH1(dataH1),
     dataL2(MBTET),derivedDataL2(dataL2),
     dataHdiv(MBTET),derivedDataHdiv(dataHdiv),
+    dataNoField(MBTET),dataNoFieldCol(MBTET),
     opSetInvJacH1(invJac),
     opPiolaTransform(vOlume,Jac),opSetInvJacHdiv(invJac),
     meshPositionsFieldName("MESH_NODE_POSITIONS"),
@@ -489,11 +534,6 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 
     inline ublas::matrix<double>& getHoGaussPtsInvJac() { return ptrFE->hoGaussPtsInvJac; }
     inline ublas::vector<double>& getHoGaussPtsDetJac() { return ptrFE->hoGaussPtsDetJac; }
-
-    /** \bried return pointer to Generic Finite Element object
-     */
-    inline const FEMethod* getFEMethod() { return ptrFE; }
-
 
     /** \bried return pointer to Generic Tetrahedral Finite Element object
      */
@@ -625,11 +665,7 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
      */
     inline const FaceElementForcesAndSourcesCore* getFaceElementForcesAndSourcesCore() { return ptrFE; }
 
-    /** \bried return pointer to FEMthod object
-     */
-    inline const FEMethod* getFEMethod() { return ptrFE; }
-
-     /** \bried return pointer to Generic Triangle Finite Element object
+    /** \bried return pointer to Generic Triangle Finite Element object
      */
     inline const FaceElementForcesAndSourcesCore* getTriFE() { return ptrFE; }
 
@@ -699,7 +735,6 @@ struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
     inline ublas::vector<double>& getCoords() { return ptrFE->coords; }
     inline ublas::matrix<double>& getGaussPts() { return ptrFE->gaussPts; }
     inline ublas::matrix<double>& getCoordsAtGaussPts() { return ptrFE->coordsAtGaussPts; }
-    inline const FEMethod* getFEMethod() { return ptrFE; }
     inline const EdgeElementForcesAndSurcesCore* getEdgeFE() { return ptrFE; }
 
     PetscErrorCode setPtrFE(ForcesAndSurcesCore *ptr) {
@@ -759,7 +794,6 @@ struct VertexElementForcesAndSourcesCore: public ForcesAndSurcesCore {
       ForcesAndSurcesCore::UserDataOperator(_row_field_name,_col_field_name) {};
 
     inline ublas::vector<double>& getCoords() { return ptrFE->coords; }
-    inline const FEMethod* getFEMethod() { return ptrFE; }
 
     PetscErrorCode setPtrFE(ForcesAndSurcesCore *ptr) {
       PetscFunctionBegin;
@@ -913,10 +947,6 @@ struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
     /** \bried return pointer to triangle finite element object
      */
     inline const FlatPrismElementForcesAndSurcesCore* getFlatPrismElementForcesAndSurcesCore() { return ptrFE; }
-
-    /** \bried return pointer to FEMthod object
-     */
-    inline const FEMethod* getFEMethod() { return ptrFE; }
 
     PetscErrorCode setPtrFE(ForcesAndSurcesCore *ptr) {
       PetscFunctionBegin;

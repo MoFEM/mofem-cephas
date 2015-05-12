@@ -70,23 +70,32 @@ int main(int argc, char *argv[]) {
   //Fields
   ierr = m_field.add_field("FIELD1",H1,1); CHKERRQ(ierr);
   ierr = m_field.add_field("FIELD2",H1,3); CHKERRQ(ierr);
+  ierr = m_field.add_field("FIELD3",NOFIELD,3); CHKERRQ(ierr);
   ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,3); CHKERRQ(ierr);
 
   //FE
-  ierr = m_field.add_finite_element("TEST_FE"); CHKERRQ(ierr);
+  ierr = m_field.add_finite_element("TEST_FE1"); CHKERRQ(ierr);
+  ierr = m_field.add_finite_element("TEST_FE2"); CHKERRQ(ierr);
 
   //Define rows/cols and element data
-  ierr = m_field.modify_finite_element_add_field_row("TEST_FE","FIELD1"); CHKERRQ(ierr);
-  ierr = m_field.modify_finite_element_add_field_col("TEST_FE","FIELD2"); CHKERRQ(ierr);
-  ierr = m_field.modify_finite_element_add_field_data("TEST_FE","FIELD1"); CHKERRQ(ierr);
-  ierr = m_field.modify_finite_element_add_field_data("TEST_FE","FIELD2"); CHKERRQ(ierr);
-  ierr = m_field.modify_finite_element_add_field_data("TEST_FE","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_row("TEST_FE1","FIELD1"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_col("TEST_FE1","FIELD2"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_data("TEST_FE1","FIELD1"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_data("TEST_FE1","FIELD2"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_data("TEST_FE1","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+
+  ierr = m_field.modify_finite_element_add_field_row("TEST_FE2","FIELD3"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_col("TEST_FE2","FIELD1"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_data("TEST_FE2","FIELD1"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_data("TEST_FE2","FIELD3"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_data("TEST_FE2","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
 
   //Problem
   ierr = m_field.add_problem("TEST_PROBLEM"); CHKERRQ(ierr);
 
   //set finite elements for problem
-  ierr = m_field.modify_problem_add_finite_element("TEST_PROBLEM","TEST_FE"); CHKERRQ(ierr);
+  ierr = m_field.modify_problem_add_finite_element("TEST_PROBLEM","TEST_FE1"); CHKERRQ(ierr);
+  ierr = m_field.modify_problem_add_finite_element("TEST_PROBLEM","TEST_FE2"); CHKERRQ(ierr);
   //set refinment level for problem
   ierr = m_field.modify_problem_ref_level_add_bit("TEST_PROBLEM",bit_level0); CHKERRQ(ierr);
 
@@ -99,12 +108,12 @@ int main(int argc, char *argv[]) {
   ierr = m_field.add_ents_to_field_by_TETs(root_set,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
 
   //add entities to finite element
-  ierr = m_field.add_ents_to_finite_element_by_TETs(root_set,"TEST_FE"); CHKERRQ(ierr);
-
+  ierr = m_field.add_ents_to_finite_element_by_TETs(root_set,"TEST_FE1"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_finite_element_by_TETs(root_set,"TEST_FE2"); CHKERRQ(ierr);
 
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
-  int order = 3;
+  int order = 4;
   ierr = m_field.set_field_order(root_set,MBTET,"FIELD1",order); CHKERRQ(ierr);
   ierr = m_field.set_field_order(root_set,MBTRI,"FIELD1",order); CHKERRQ(ierr);
   ierr = m_field.set_field_order(root_set,MBEDGE,"FIELD1",order); CHKERRQ(ierr);
@@ -142,7 +151,6 @@ int main(int argc, char *argv[]) {
   Projection10NodeCoordsOnField ent_method(m_field,"MESH_NODE_POSITIONS");
   ierr = m_field.loop_dofs("MESH_NODE_POSITIONS",ent_method); CHKERRQ(ierr);
 
-  VolumeElementForcesAndSourcesCore fe1(m_field);
 
   typedef tee_device<ostream, ofstream> TeeDevice;
   typedef stream<TeeDevice> TeeStream;
@@ -151,10 +159,10 @@ int main(int argc, char *argv[]) {
   TeeDevice my_tee(cout, ofs);
   TeeStream my_split(my_tee);
 
-  struct MyOp: public VolumeElementForcesAndSourcesCore::UserDataOperator {
+  struct MyOp1: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     TeeStream &my_split;
-    MyOp(TeeStream &_my_split):
+    MyOp1(TeeStream &_my_split):
       VolumeElementForcesAndSourcesCore::UserDataOperator("FIELD1","FIELD2"),
       my_split(_my_split) {}
 
@@ -219,10 +227,59 @@ int main(int argc, char *argv[]) {
 
   };
 
-  fe1.getRowOpPtrVector().push_back(new MyOp(my_split));
-  fe1.getRowColOpPtrVector().push_back(new MyOp(my_split));
+  struct MyOp2: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
-  ierr = m_field.loop_finite_elements("TEST_PROBLEM","TEST_FE",fe1);  CHKERRQ(ierr);
+    TeeStream &my_split;
+    MyOp2(TeeStream &_my_split):
+      VolumeElementForcesAndSourcesCore::UserDataOperator("FIELD3","FIELD1"),
+      my_split(_my_split) {}
+
+    PetscErrorCode doWork(
+      int side,
+      EntityType type,
+      DataForcesAndSurcesCore::EntData &data) {
+      PetscFunctionBegin;
+
+      if(type != MBENTITYSET) PetscFunctionReturn(0);
+
+      my_split << "NPFIELD" << endl;
+      my_split << "side: " << side << " type: " << type << endl;
+      my_split << data << endl;
+      PetscFunctionReturn(0);
+    }
+
+    PetscErrorCode doWork(
+      int row_side,int col_side,
+      EntityType row_type,EntityType col_type,
+      DataForcesAndSurcesCore::EntData &row_data,
+      DataForcesAndSurcesCore::EntData &col_data) {
+      PetscFunctionBegin;
+
+      unSetSymm();
+
+      if(row_type != MBENTITYSET) PetscFunctionReturn(0);
+
+      my_split << "NOFILEDH1" << endl;
+      my_split << "row side: " << row_side << " row_type: " << row_type << endl;
+      my_split << row_data << endl;
+      my_split << "col side: " << col_side << " col_type: " << col_type << endl;
+      my_split << col_data << endl;
+
+      PetscFunctionReturn(0);
+    }
+
+  };
+
+  VolumeElementForcesAndSourcesCore fe1(m_field);
+  fe1.getRowOpPtrVector().push_back(new MyOp1(my_split));
+  fe1.getRowColOpPtrVector().push_back(new MyOp1(my_split));
+
+  VolumeElementForcesAndSourcesCore fe2(m_field);
+  fe2.getRowOpPtrVector().push_back(new MyOp2(my_split));
+  fe2.getRowColOpPtrVector().push_back(new MyOp2(my_split));
+
+  ierr = m_field.loop_finite_elements("TEST_PROBLEM","TEST_FE1",fe1);  CHKERRQ(ierr);
+  ierr = m_field.loop_finite_elements("TEST_PROBLEM","TEST_FE2",fe2);  CHKERRQ(ierr);
 
   ierr = PetscFinalize(); CHKERRQ(ierr);
 

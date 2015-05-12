@@ -204,7 +204,7 @@ SideNumber* RefMoFEMElement_PRISM::get_side_number_ptr(Interface &moab,EntityHan
   return NULL;
 }
 RefMoFEMElement_TET::RefMoFEMElement_TET(Interface &moab,const RefMoFEMEntity *_RefMoFEMEntity_ptr):
-  RefMoFEMElement(moab,_RefMoFEMEntity_ptr),tag_BitRefEdges(NULL) {
+RefMoFEMElement(moab,_RefMoFEMEntity_ptr),tag_BitRefEdges(NULL) {
   ErrorCode rval;
   Tag th_RefBitEdge;
   rval = moab.tag_get_handle("_RefBitEdge",th_RefBitEdge); CHKERR_THROW(rval);
@@ -214,12 +214,13 @@ RefMoFEMElement_TET::RefMoFEMElement_TET(Interface &moab,const RefMoFEMEntity *_
     case MBTET:
     break;
     default:
-      PetscTraceBackErrorHandler(
-	PETSC_COMM_WORLD,
-	__LINE__,PETSC_FUNCTION_NAME,__FILE__,
-	MOFEM_DATA_INCONSISTENCT,PETSC_ERROR_INITIAL,
-	"this work only for TETs",PETSC_NULL);
-      THROW_AT_LINE("this work only for TETs");
+    PetscTraceBackErrorHandler(
+      PETSC_COMM_WORLD,
+      __LINE__,PETSC_FUNCTION_NAME,__FILE__,
+      MOFEM_DATA_INCONSISTENCT,PETSC_ERROR_INITIAL,
+      "this work only for TETs",PETSC_NULL
+    );
+    THROW_AT_LINE("this work only for TETs");
   }
   rval = moab.tag_get_handle("_RefType",th_RefType); CHKERR_THROW(rval);
   rval = moab.tag_get_by_ptr(th_RefType,&ref_ptr->ent,1,(const void **)&tag_type_data); CHKERR_THROW(rval);
@@ -399,25 +400,25 @@ PetscErrorCode DefaultElementAdjacency::defaultEdge(Interface &moab,const MoFEMF
   Range nodes;
   switch (field_ptr->get_space()) {
     case H1:
-      //moab.get_connectivity(&fe_ent,1,nodes,true);
-      //use get adjacencies, this will allow take in account adjacencies set user
-      rval = moab.get_adjacencies(&fe_ent,1,0,false,nodes,Interface::UNION); CHKERR_PETSC(rval);
-      {
-	Range topo_nodes;
-	rval = moab.get_connectivity(&fe_ent,1,topo_nodes,true); CHKERR_PETSC(rval);
-	Range mid_nodes;
-	rval = moab.get_connectivity(&fe_ent,1,mid_nodes,false); CHKERR_PETSC(rval);
-	mid_nodes = subtract(mid_nodes,topo_nodes);
-	nodes = subtract(nodes,mid_nodes);
-      }
-      adjacency.insert(nodes.begin(),nodes.end());
-      adjacency.insert(fe_ent);
-      break;
+    //moab.get_connectivity(&fe_ent,1,nodes,true);
+    //use get adjacencies, this will allow take in account adjacencies set user
+    rval = moab.get_adjacencies(&fe_ent,1,0,false,nodes,Interface::UNION); CHKERR_PETSC(rval);
+    {
+      Range topo_nodes;
+      rval = moab.get_connectivity(&fe_ent,1,topo_nodes,true); CHKERR_PETSC(rval);
+      Range mid_nodes;
+      rval = moab.get_connectivity(&fe_ent,1,mid_nodes,false); CHKERR_PETSC(rval);
+      mid_nodes = subtract(mid_nodes,topo_nodes);
+      nodes = subtract(nodes,mid_nodes);
+    }
+    adjacency.insert(nodes.begin(),nodes.end());
+    adjacency.insert(fe_ent);
+    break;
     case NOFIELD:
-      adjacency.insert(field_ptr->get_meshset());
-      break;
+    adjacency.insert(field_ptr->get_meshset());
+    break;
     default:
-      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"this field is not implemented for EDGE finite element");
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"this field is not implemented for EDGE finite element");
   }
   PetscFunctionReturn(0);
 }
@@ -428,39 +429,39 @@ PetscErrorCode DefaultElementAdjacency::defaultTri(Interface &moab,const MoFEMFi
   EntityHandle fe_ent = fe_ptr->get_ent();
   switch (field_ptr->get_space()) {
     case H1:
-      //moab.get_connectivity(&fe_ent,1,nodes,true);
-      //use get adjacencies, this will allow take in account adjacencies set user
-      rval = moab.get_adjacencies(&fe_ent,1,0,false,nodes,Interface::UNION); CHKERR_PETSC(rval);
-      {
-	Range topo_nodes;
-	rval = moab.get_connectivity(&fe_ent,1,topo_nodes,true); CHKERR_PETSC(rval);
-	Range mid_nodes;
-	rval = moab.get_connectivity(&fe_ent,1,mid_nodes,false); CHKERR_PETSC(rval);
-	mid_nodes = subtract(mid_nodes,topo_nodes);
-	nodes = subtract(nodes,mid_nodes);
-      }
-      adjacency.insert(nodes.begin(),nodes.end());
-      rval = moab.get_adjacencies(&fe_ent,1,1,false,edges); CHKERR_PETSC(rval);
-      adjacency.insert(edges.begin(),edges.end());
-      for(Range::iterator eeit = edges.begin();eeit!=edges.end();eeit++) {
-	fe_ptr->get_side_number_ptr(moab,*eeit);
-      }
-      //add faces
-      adjacency.insert(fe_ent);
-      break;
+    //moab.get_connectivity(&fe_ent,1,nodes,true);
+    //use get adjacencies, this will allow take in account adjacencies set user
+    rval = moab.get_adjacencies(&fe_ent,1,0,false,nodes,Interface::UNION); CHKERR_PETSC(rval);
+    {
+      Range topo_nodes;
+      rval = moab.get_connectivity(&fe_ent,1,topo_nodes,true); CHKERR_PETSC(rval);
+      Range mid_nodes;
+      rval = moab.get_connectivity(&fe_ent,1,mid_nodes,false); CHKERR_PETSC(rval);
+      mid_nodes = subtract(mid_nodes,topo_nodes);
+      nodes = subtract(nodes,mid_nodes);
+    }
+    adjacency.insert(nodes.begin(),nodes.end());
+    rval = moab.get_adjacencies(&fe_ent,1,1,false,edges); CHKERR_PETSC(rval);
+    adjacency.insert(edges.begin(),edges.end());
+    for(Range::iterator eeit = edges.begin();eeit!=edges.end();eeit++) {
+      fe_ptr->get_side_number_ptr(moab,*eeit);
+    }
+    //add faces
+    adjacency.insert(fe_ent);
+    break;
     case HDIV:
-      adjacency.insert(fe_ent);
-      break;
+    adjacency.insert(fe_ent);
+    break;
     case NOFIELD:
-      adjacency.insert(field_ptr->get_meshset());
-      break;
+    adjacency.insert(field_ptr->get_meshset());
+    break;
     case L2:
-      //FIXME this is matter of convention what should be done here
-      //no ajacencies for L2 field
-      //adjacency.insert(fe_ent); // add this just in case, if L2 is on skeleton
-      break;
+    //FIXME this is matter of convention what should be done here
+    //no ajacencies for L2 field
+    //adjacency.insert(fe_ent); // add this just in case, if L2 is on skeleton
+    break;
     default:
-      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"this field is not implemented for TRI finite element");
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"this field is not implemented for TRI finite element");
   }
   PetscFunctionReturn(0);
 }
@@ -561,18 +562,18 @@ PetscErrorCode DefaultElementAdjacency::defaultPrism(Interface &moab,const MoFEM
   SideNumber_multiIndex &side_table = fe_ptr->get_RefMoFEMElement()->get_side_number_table();
   switch(field_ptr->get_space()) {
     case H1:
-      //moab.get_connectivity(&fe_ent,1,nodes,true);
-      //use get adjacencies, this will allow take in account adjacencies set user
-      rval = moab.get_adjacencies(&fe_ent,1,0,false,nodes,Interface::UNION); CHKERR_PETSC(rval);
-      {
-	Range topo_nodes;
-	rval = moab.get_connectivity(&fe_ent,1,topo_nodes,true); CHKERR_PETSC(rval);
-	Range mid_nodes;
-	rval = moab.get_connectivity(&fe_ent,1,mid_nodes,false); CHKERR_PETSC(rval);
-	mid_nodes = subtract(mid_nodes,topo_nodes);
-	nodes = subtract(nodes,mid_nodes);
-      }
-      adjacency.insert(nodes.begin(),nodes.end());
+    //moab.get_connectivity(&fe_ent,1,nodes,true);
+    //use get adjacencies, this will allow take in account adjacencies set user
+    rval = moab.get_adjacencies(&fe_ent,1,0,false,nodes,Interface::UNION); CHKERR_PETSC(rval);
+    {
+      Range topo_nodes;
+      rval = moab.get_connectivity(&fe_ent,1,topo_nodes,true); CHKERR_PETSC(rval);
+      Range mid_nodes;
+      rval = moab.get_connectivity(&fe_ent,1,mid_nodes,false); CHKERR_PETSC(rval);
+      mid_nodes = subtract(mid_nodes,topo_nodes);
+      nodes = subtract(nodes,mid_nodes);
+    }
+    adjacency.insert(nodes.begin(),nodes.end());
     case HCURL: {
       SideNumber_multiIndex::nth_index<2>::type::iterator
       siit = side_table.get<2>().lower_bound(MBEDGE), hi_siit = side_table.get<2>().upper_bound(MBEDGE);
@@ -584,13 +585,13 @@ PetscErrorCode DefaultElementAdjacency::defaultPrism(Interface &moab,const MoFEM
       for(;siit!=hi_siit;siit++) adjacency.insert(siit->ent);
     }
     case L2:
-      adjacency.insert(fe_ent);
-      break;
+    adjacency.insert(fe_ent);
+    break;
     case NOFIELD:
-      adjacency.insert(field_ptr->get_meshset());
-      break;
+    adjacency.insert(field_ptr->get_meshset());
+    break;
     default:
-      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"this field is not implemented for TRI finite element");
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"this field is not implemented for TRI finite element");
   }
   PetscFunctionReturn(0);
 }
@@ -726,7 +727,7 @@ static PetscErrorCode get_fe_MoFEMFiniteElement_dof_view(
   typename boost::multi_index::index<MOFEM_DOFS,Unique_mi_tag>::type::iterator mofem_it,mofem_it_end;
   DofMoFEMEntity_multiIndex_uid_view::iterator it,it_end;
   if(operation_type==Interface::UNION) {
-    
+
     mofem_it = mofem_dofs.template get<Unique_mi_tag>().begin();
     mofem_it_end = mofem_dofs.template get<Unique_mi_tag>().end();
     it = fe_dofs_view.begin();
