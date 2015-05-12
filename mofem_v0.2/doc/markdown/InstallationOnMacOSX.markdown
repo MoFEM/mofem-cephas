@@ -28,6 +28,7 @@ brew install --with-graphviz doxygen
 brew install wget
 brew install boost
 brew install gcc
+brew install gnu-sed
 ~~~~~~
 
 ###3. Install PETSc and other libraries
@@ -36,11 +37,12 @@ brew install gcc
 # Change to your $MOFEM_INSTALL_DIR
 cd $MOFEM_INSTALL_DIR
 
-# Clone PETSc repository:
-export PETSC_VERSION=3.5.3
 git clone https://bitbucket.org/petsc/petsc.git
 cd $MOFEM_INSTALL_DIR/petsc
-git checkout tags/v$PETSC_VERSION
+
+# Fix PETSc vetsion
+# export PETSC_VERSION=3.5.3
+# git checkout tags/v$PETSC_VERSION
 
 # Configure and compile petsc:
 wget ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4.3.3.1.tar.gz
@@ -71,9 +73,20 @@ cd ADOL-C-2.5.2
 make install
 ~~~~~~
 
-###5. Install TetGem and other libraries
+###5. Install other libraries
 
-####5.1 TetGen
+####5.3 Boost 1.57
+
+~~~~~~
+wget
+tar -xvvzf boost_1_57_0.tar.gz
+./bootstrap.sh --prefix=$MOFEM_INSTALL_DIR/local
+./b2 install
+~~~~~~
+
+Note: It will take some time to build boost.
+
+####5.2 TetGen
 
 ~~~~~~
 cd $MOFEM_INSTALL_DIR
@@ -99,7 +112,7 @@ mkdir $MOFEM_INSTALL_DIR/lib
 cd $MOFEM_INSTALL_DIR/lib
 
 # Configuring and compiling code:
-cmake -DCMAKE_Fortran_COMPILER=/usr/local/bin/gfortran -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS="-Wall"  -DCMAKE_CXX_FLAGS="-Wall  -Wno-bind-to-temporary-copy -Wno-overloaded-virtual" -DPETSC_DIR=$MOFEM_INSTALL_DIR/petsc/ -DPETSC_ARCH=arch-darwin-c-opt -DMOAB_DIR=$MOFEM_INSTALL_DIR/petsc/arch-darwin-c-opt/ -DADOL-C_DIR=$MOFEM_INSTALL_DIR/local/ -DCMAKE_INSTALL_PREFIX=$MOFEM_INSTALL_DIR/user_modules $MOFEM_INSTALL_DIR/mofem-cephas/mofem_v0.2
+cmake -DCMAKE_Fortran_COMPILER=/usr/local/bin/gfortran -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS="-Wall"  -DCMAKE_CXX_FLAGS="-Wall - DPETSC_DEV -Wno-bind-to-temporary-copy -Wno-overloaded-virtual" -DPETSC_DIR=$MOFEM_INSTALL_DIR/petsc/ -DPETSC_ARCH=arch-darwin-c-opt -DMOAB_DIR=$MOFEM_INSTALL_DIR/petsc/arch-darwin-c-opt/ -DADOL-C_DIR=$MOFEM_INSTALL_DIR/local/ -DCMAKE_INSTALL_PREFIX=$MOFEM_INSTALL_DIR/user_modules $MOFEM_INSTALL_DIR/mofem-cephas/mofem_v0.2
 
 # Building code (assuming that you have computer with 4 cores):
 make -j4 install
@@ -115,13 +128,13 @@ ctest -D Experimental
 cd $MOFEM_INSTALL_DIR/user_modules
 
 # Configuration:
-cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS="-Wall"  -DCMAKE_CXX_FLAGS="-Wall -Wno-bind-to-temporary-copy -Wno-overloaded-virtual" $MOFEM_INSTALL_DIR/user_modules
+cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS="-Wall"  -DCMAKE_CXX_FLAGS="-Wall -DPETSC_DEV -Wno-bind-to-temporary-copy -Wno-overloaded-virtual -DPETSC_DEV" -DCMAKE_EXE_LINKER_FLAGS="$MOFEM_INSTALL_DIR/local/lib" user_modules
 
 # Build:
 make -j4
 
 # Testing:
-cmake -D Experimental
+ctest -D Experimental
 ~~~~~~
 
 Note that results of the test are publish on MoFEM CDashTesting web page. If you do not like publish results pleas remove option ``-D Experimental``

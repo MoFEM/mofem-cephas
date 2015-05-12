@@ -24,10 +24,13 @@ mkdir $MOFEM_INSTALL_DIR
 cd $MOFEM_INSTALL_DIR
 
 # Colone PETSc repository:
-export PETSC_VERSION=3.5.3
+
 git clone https://bitbucket.org/petsc/petsc.git
 cd $MOFEM_INSTALL_DIR/petsc
-git checkout tags/v$PETSC_VERSION
+
+# Fix PETSc vetsion
+# export PETSC_VERSION=3.5.3
+# git checkout tags/v$PETSC_VERSION
 
 # Configure and compile petsc:
 wget ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4.3.3.1.tar.gz
@@ -94,13 +97,13 @@ ctest -D Experimental
 cd $HOME/$MOFEM_INSTALL_DIR/user_modules
 
 # Configuration:
-cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS="-Wall" -DCMAKE_CXX_FLAGS="-Wall" $MOFEM_INSTALL_DIR/user_modules
+cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS="-Wall" -DCMAKE_CXX_FLAGS="-Wall"  user_modules
 
 # Build:
 make -j4
 
 # Testing:
-cmake -D Experimental
+ctest -D Experimental
 ~~~~~~
 
 Note that results of the test are publish on MoFEM CDashTesting web page. If you do not like publish results pleas remove option ``-D Experimental``
