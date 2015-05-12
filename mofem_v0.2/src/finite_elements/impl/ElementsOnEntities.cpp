@@ -370,12 +370,11 @@ PetscErrorCode ForcesAndSurcesCore::getNoFieldRowIndices(DataForcesAndSurcesCore
 
 PetscErrorCode ForcesAndSurcesCore::getNoFieldColIndices(DataForcesAndSurcesCore &data,const string &field_name) {
   PetscFunctionBegin;
-  EntityType fe_type = fePtr->get_ent_type();
-  if(data.dataOnEntities[fe_type].size() == 0) {
+  if(data.dataOnEntities[MBENTITYSET].size() == 0) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
   }
   ierr = getNoFieldIndices(
-    field_name,const_cast<FENumeredDofMoFEMEntity_multiIndex&>(fePtr->get_cols_dofs()),data.dataOnEntities[fe_type][0].getIndices()
+    field_name,const_cast<FENumeredDofMoFEMEntity_multiIndex&>(fePtr->get_cols_dofs()),data.dataOnEntities[MBENTITYSET][0].getIndices()
   ); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
@@ -577,8 +576,7 @@ PetscErrorCode ForcesAndSurcesCore::getNoFieldFieldData(
   DataForcesAndSurcesCore &data,const string &field_name
 ) {
   PetscFunctionBegin;
-  EntityType fe_type = fePtr->get_ent_type();
-  if(data.dataOnEntities[fe_type].size() == 0) {
+  if(data.dataOnEntities[MBENTITYSET].size() == 0) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
   }
   ierr = getNoFieldFieldData(
@@ -693,8 +691,7 @@ PetscErrorCode ForcesAndSurcesCore::getNoFieldFieldDofs(
   DataForcesAndSurcesCore &data,const string &field_name
 ) {
   PetscFunctionBegin;
-  EntityType fe_type = fePtr->get_ent_type();
-  if(data.dataOnEntities[fe_type].size() == 0) {
+  if(data.dataOnEntities[MBENTITYSET].size() == 0) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
   }
   ierr = getNoFieldFieldDofs(
@@ -2831,72 +2828,127 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
       SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented yet");
     }
 
-    for(
-      boost::ptr_vector<ForcesAndSurcesCore::UserDataOperator>::iterator oit = rowOpPtrVector.begin();
-      oit != rowOpPtrVector.end(); oit++
-    ) {
+    for(int ss = 0;ss<2;ss++) {
 
-      oit->setPtrFE(this);
-      BitFieldId data_id = mField.get_field_structure(oit->rowFieldName)->get_id();
-      if((oit->getMoFEMFEPtr()->get_BitFieldId_data()&data_id).none()) {
-        SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"no data field < %s > on finite elemeny",oit->rowFieldName.c_str());
+      boost::ptr_vector<ForcesAndSurcesCore::UserDataOperator>::iterator oit,hi_oit;
+      if(!ss) {
+
+        oit = rowOpPtrVector.begin();
+        hi_oit = rowOpPtrVector.end();
+
+      } else {
+
+        oit = colOpPtrVector.begin();
+        hi_oit = colOpPtrVector.end();
+
       }
 
-      FieldSpace row_space = mField.get_field_structure(oit->rowFieldName)->get_space();
+      for(;oit!=hi_oit;oit++) {
 
-      DataForcesAndSurcesCore *op_data = NULL;
-      switch(row_space) {
-        case H1:
-        op_data = &dataH1;
-        break;
-        case HCURL:
-        SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented yet");
-        break;
-        case HDIV:
-        op_data = &dataHdiv;
-        break;
-        case L2:
-        SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented yet");
-        break;
-        default:
-        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
-        break;
-      }
+        oit->setPtrFE(this);
+        BitFieldId data_id;
+        FieldSpace space;
+        string data_field_name;
 
-      try {
+        if(!ss) {
+          data_id = mField.get_field_structure(oit->rowFieldName)->get_id();
+          if((oit->getMoFEMFEPtr()->get_BitFieldId_data()&data_id).none()) {
+            SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"no data field < %s > on finite elemeny",oit->rowFieldName.c_str());
+          }
+          space = mField.get_field_structure(oit->rowFieldName)->get_space();
+          data_field_name = oit->rowFieldName;
+        } else {
+          data_id = mField.get_field_structure(oit->colFieldName)->get_id();
+          if((oit->getMoFEMFEPtr()->get_BitFieldId_data()&data_id).none()) {
+            SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"no data field < %s > on finite elemeny",oit->colFieldName.c_str());
+          }
+          space = mField.get_field_structure(oit->colFieldName)->get_space();
+          data_field_name = oit->colFieldName;
+        }
 
-        switch(row_space) {
+        DataForcesAndSurcesCore *op_data = NULL;
+        switch(space) {
           case H1:
-          ierr = getRowNodesIndices(*op_data,oit->rowFieldName); CHKERRQ(ierr);
-          ierr = getNodesFieldData(*op_data,oit->rowFieldName); CHKERRQ(ierr);
-          ierr = getNodesFieldDofs(*op_data,oit->rowFieldName); CHKERRQ(ierr);
+          op_data = &dataH1;
+          break;
           case HCURL:
-          ierr = getEdgesRowIndices(*op_data,oit->rowFieldName); CHKERRQ(ierr);
-          ierr = getEdgesOrder(*op_data,oit->rowFieldName); CHKERRQ(ierr);
-          ierr = getEdgesFieldData(*op_data,oit->rowFieldName); CHKERRQ(ierr);
-          ierr = getEdgesFieldDofs(*op_data,oit->rowFieldName); CHKERRQ(ierr);
+          SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented yet");
+          break;
           case HDIV:
+          op_data = &dataHdiv;
+          break;
           case L2:
-          ierr = getTrisRowIndices(*op_data,oit->rowFieldName); CHKERRQ(ierr);
-          ierr = getTrisOrder(*op_data,oit->rowFieldName); CHKERRQ(ierr);
-          ierr = getTrisFieldData(*op_data,oit->rowFieldName); CHKERRQ(ierr);
-          ierr = getTrisFieldDofs(*op_data,oit->rowFieldName); CHKERRQ(ierr);
+          SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented yet");
+          break;
+          case NOFIELD:
+          op_data = &dataNoField;
+          break;
           default:
+          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
           break;
         }
 
-      } catch (exception& ex) {
-        ostringstream ss;
-        ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
-        SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
-      }
+        try {
 
-      try {
-        ierr = oit->opRhs(*op_data); CHKERRQ(ierr);
-      } catch (exception& ex) {
-        ostringstream ss;
-        ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
-        SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+          switch(space) {
+            case H1:
+            if(!ss) {
+              ierr = getRowNodesIndices(*op_data,data_field_name); CHKERRQ(ierr);
+            } else {
+              ierr = getColNodesIndices(*op_data,data_field_name); CHKERRQ(ierr);
+            }
+            ierr = getNodesFieldData(*op_data,data_field_name); CHKERRQ(ierr);
+            ierr = getNodesFieldDofs(*op_data,data_field_name); CHKERRQ(ierr);
+            case HCURL:
+            if(!ss) {
+              ierr = getEdgesRowIndices(*op_data,data_field_name); CHKERRQ(ierr);
+            } else {
+              ierr = getEdgesColIndices(*op_data,data_field_name); CHKERRQ(ierr);
+            }
+            ierr = getEdgesOrder(*op_data,data_field_name); CHKERRQ(ierr);
+            ierr = getEdgesFieldData(*op_data,data_field_name); CHKERRQ(ierr);
+            ierr = getEdgesFieldDofs(*op_data,data_field_name); CHKERRQ(ierr);
+            case HDIV:
+            case L2:
+            if(!ss) {
+              ierr = getTrisRowIndices(*op_data,data_field_name); CHKERRQ(ierr);
+            } else {
+              ierr = getTrisColIndices(*op_data,data_field_name); CHKERRQ(ierr);
+            }
+            ierr = getTrisOrder(*op_data,data_field_name); CHKERRQ(ierr);
+            ierr = getTrisFieldData(*op_data,data_field_name); CHKERRQ(ierr);
+            ierr = getTrisFieldDofs(*op_data,data_field_name); CHKERRQ(ierr);
+            break;
+            case NOFIELD:
+            if(!getNinTheLoop()) {
+              // NOFIELD data are the same for each element, can be retreived only once
+              if(!ss) {
+                ierr = getNoFieldRowIndices(*op_data,data_field_name); CHKERRQ(ierr);
+              } else {
+                ierr = getNoFieldColIndices(*op_data,data_field_name); CHKERRQ(ierr);
+              }
+              ierr = getNoFieldFieldData(*op_data,data_field_name); CHKERRQ(ierr);
+              ierr = getNoFieldFieldDofs(*op_data,data_field_name); CHKERRQ(ierr);
+            }
+            break;
+            default:
+            break;
+          }
+
+        } catch (exception& ex) {
+          ostringstream ss;
+          ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+          SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+        }
+
+        try {
+          ierr = oit->opRhs(*op_data); CHKERRQ(ierr);
+        } catch (exception& ex) {
+          ostringstream ss;
+          ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+          SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+        }
+
       }
 
     }
@@ -2933,6 +2985,9 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
         case L2:
         SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented yet");
         break;
+        case NOFIELD:
+        row_op_data = &dataNoField;
+        break;
         default:
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
         break;
@@ -2954,6 +3009,14 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
         ierr = getTrisOrder(*row_op_data,oit->rowFieldName); CHKERRQ(ierr);
         ierr = getTrisFieldData(*row_op_data,oit->rowFieldName); CHKERRQ(ierr);
         ierr = getTrisFieldDofs(*row_op_data,oit->rowFieldName); CHKERRQ(ierr);
+        break;
+        case NOFIELD:
+        if(!getNinTheLoop()) {
+          // NOFIELD data are the same for each element, can be retreived only once
+          ierr = getNoFieldRowIndices(*row_op_data,oit->rowFieldName); CHKERRQ(ierr);
+          ierr = getNoFieldFieldData(*row_op_data,oit->rowFieldName); CHKERRQ(ierr);
+          ierr = getNoFieldFieldDofs(*row_op_data,oit->rowFieldName); CHKERRQ(ierr);
+        }
         default:
         break;
       }
@@ -2976,6 +3039,9 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
         default:
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
         break;
+        case NOFIELD:
+        col_op_data = &dataNoFieldCol;
+        break;
       }
 
       switch(col_space) {
@@ -2994,6 +3060,14 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
         ierr = getTrisOrder(*col_op_data,oit->colFieldName); CHKERRQ(ierr);
         ierr = getTrisFieldData(*col_op_data,oit->colFieldName); CHKERRQ(ierr);
         ierr = getTrisFieldDofs(*col_op_data,oit->colFieldName); CHKERRQ(ierr);
+        break;
+        case NOFIELD:
+        if(!getNinTheLoop()) {
+          // NOFIELD data are the same for each element, can be retreived only once
+          ierr = getNoFieldColIndices(*col_op_data,oit->colFieldName); CHKERRQ(ierr);
+          ierr = getNoFieldFieldData(*col_op_data,oit->colFieldName); CHKERRQ(ierr);
+          ierr = getNoFieldFieldDofs(*col_op_data,oit->colFieldName); CHKERRQ(ierr);
+        }
         default:
         break;
       }

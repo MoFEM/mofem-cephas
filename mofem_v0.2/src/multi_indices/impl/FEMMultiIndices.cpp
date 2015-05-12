@@ -84,6 +84,11 @@ SideNumber* RefMoFEMElement_PRISM::get_side_number_ptr(Interface &moab,EntityHan
     miit = const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,0,0,0)).first;
     return const_cast<SideNumber*>(&*miit);
   }
+  if(moab.type_from_handle(ent)==MBENTITYSET) {
+    miit = const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,0,0,0)).first;
+    return const_cast<SideNumber*>(&*miit);
+  }
+
   ErrorCode rval;
   int side_number,sense,offset;
   rval = moab.side_number(ref_ptr->ent,ent,side_number,sense,offset); CHKERR_THROW(rval);

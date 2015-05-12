@@ -845,6 +845,7 @@ struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
   DerivedDataForcesAndSurcesCore derivedDataH1;
   DataForcesAndSurcesCore dataHdiv;
   DerivedDataForcesAndSurcesCore derivedDataHdiv;
+  DataForcesAndSurcesCore dataNoField,dataNoFieldCol;
 
   string meshPositionsFieldName;
 
@@ -860,6 +861,7 @@ struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
     ForcesAndSurcesCore(_mField),
     dataH1(MBPRISM),derivedDataH1(dataH1),
     dataHdiv(MBPRISM),derivedDataHdiv(dataHdiv),
+    dataNoField(MBPRISM),dataNoFieldCol(MBPRISM),
     meshPositionsFieldName("MESH_NODE_POSITIONS"),
     opHONormals(
     nOrmals_at_GaussPtF3,tAngent1_at_GaussPtF3,tAngent2_at_GaussPtF3,
