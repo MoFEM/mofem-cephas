@@ -2113,6 +2113,9 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
         case L2:
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
         break;
+        case NOFIELD:
+        op_data = &dataNoField;
+        break;
         default:
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
         break;
@@ -2136,6 +2139,13 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
             ierr = getEdgesRowIndices(*op_data,oit->rowFieldName); CHKERRQ(ierr);
             case HDIV:
             ierr = getTrisRowIndices(*op_data,oit->rowFieldName); CHKERRQ(ierr);
+            break;
+            case NOFIELD:
+            if(!getNinTheLoop()) {
+              // NOFIELD data arr the same for each element, can be retreived only once
+              ierr = getNoFieldRowIndices(*op_data,oit->rowFieldName); CHKERRQ(ierr);
+            }
+            break;
             default:
             break;
           }
@@ -2160,6 +2170,13 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
             ierr = getEdgesColIndices(*op_data,oit->colFieldName); CHKERRQ(ierr);
             case HDIV:
             ierr = getTrisColIndices(*op_data,oit->colFieldName); CHKERRQ(ierr);
+            break;
+            case NOFIELD:
+            if(!getNinTheLoop()) {
+              // NOFIELD data arr the same for each element, can be retreived only once
+              ierr = getNoFieldColIndices(*op_data,oit->colFieldName); CHKERRQ(ierr);
+            }
+            break;
             default:
             break;
           }
@@ -2184,6 +2201,13 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
           ierr = getTrisOrder(*op_data,data_field_name); CHKERRQ(ierr);
           ierr = getTrisFieldData(*op_data,data_field_name); CHKERRQ(ierr);
           ierr = getTrisFieldDofs(*op_data,data_field_name); CHKERRQ(ierr);
+          break;
+          case NOFIELD:
+          if(!getNinTheLoop()) {
+            ierr = getNoFieldFieldData(*op_data,oit->colFieldName); CHKERRQ(ierr);
+            ierr = getNoFieldFieldDofs(*op_data,oit->colFieldName); CHKERRQ(ierr);
+          }
+          break;
           default:
           break;
         }
@@ -2237,6 +2261,9 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
       case L2:
       SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented yet");
       break;
+      case NOFIELD:
+      row_op_data = &dataNoField;
+      break;
       default:
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
       break;
@@ -2259,6 +2286,14 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
         ierr = getTrisOrder(*row_op_data,oit->rowFieldName); CHKERRQ(ierr);
         ierr = getTrisFieldData(*row_op_data,oit->rowFieldName); CHKERRQ(ierr);
         ierr = getTrisFieldDofs(*row_op_data,oit->rowFieldName); CHKERRQ(ierr);
+        break;
+        case NOFIELD:
+        if(!getNinTheLoop()) {
+          ierr = getNoFieldRowIndices(*row_op_data,oit->rowFieldName); CHKERRQ(ierr);
+          ierr = getNoFieldFieldData(*row_op_data,oit->rowFieldName); CHKERRQ(ierr);
+          ierr = getNoFieldFieldDofs(*row_op_data,oit->rowFieldName); CHKERRQ(ierr);
+        }
+        break;
         default:
         break;
       }
@@ -2282,6 +2317,9 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
       case L2:
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
       break;
+      case NOFIELD:
+      col_op_data = &dataNoFieldCol;
+      break;
       default:
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
       break;
@@ -2304,6 +2342,14 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
         ierr = getTrisOrder(*col_op_data,oit->colFieldName); CHKERRQ(ierr);
         ierr = getTrisFieldData(*col_op_data,oit->colFieldName); CHKERRQ(ierr);
         ierr = getTrisFieldDofs(*col_op_data,oit->colFieldName); CHKERRQ(ierr);
+        break;
+        case NOFIELD:
+        if(!getNinTheLoop()) {
+          ierr = getNoFieldColIndices(*col_op_data,oit->colFieldName); CHKERRQ(ierr);
+          ierr = getNoFieldFieldData(*col_op_data,oit->colFieldName); CHKERRQ(ierr);
+          ierr = getNoFieldFieldDofs(*col_op_data,oit->colFieldName); CHKERRQ(ierr);
+        }
+        break;
         default:
         break;
       }

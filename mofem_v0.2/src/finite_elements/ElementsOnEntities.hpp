@@ -595,6 +595,7 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
   DerivedDataForcesAndSurcesCore derivedDataH1;
   DataForcesAndSurcesCore dataHdiv;
   DerivedDataForcesAndSurcesCore derivedDataHdiv;
+  DataForcesAndSurcesCore dataNoField,dataNoFieldCol;
 
   string meshPositionsFieldName;
 
@@ -608,6 +609,7 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
     ForcesAndSurcesCore(_mField),
     dataH1(MBTRI),derivedDataH1(dataH1),
     dataHdiv(MBTRI),derivedDataHdiv(dataHdiv),
+    dataNoField(MBTRI),dataNoFieldCol(MBTRI),
     meshPositionsFieldName("MESH_NODE_POSITIONS"),
     opHONormals(nOrmals_at_GaussPt,tAngent1_at_GaussPt,tAngent2_at_GaussPt),
     opSetPiolaTransoformOnTriangle(normal,nOrmals_at_GaussPt) {};

@@ -55,13 +55,13 @@ PetscErrorCode ConstrainMatrixCtx::initializeQorP(Vec x) {
       ierr = MatTranspose(C,MAT_INITIAL_MATRIX,&CT); CHKERRQ(ierr);
       ierr = MatTransposeMatMult(CT,CT,MAT_INITIAL_MATRIX,PETSC_DEFAULT,&CCT); CHKERRQ(ierr); // need to be calculated when C is changed
       if(createKSP) {
-	ierr = KSPCreate(mField.get_comm(),&kSP); CHKERRQ(ierr); // neet to be recalculated when C is changed
-	ierr = KSPSetOperators(kSP,CCT,CCT); CHKERRQ(ierr);
-	ierr = KSPSetFromOptions(kSP); CHKERRQ(ierr);
-	ierr = KSPSetInitialGuessKnoll(kSP,PETSC_TRUE); CHKERRQ(ierr);
-	ierr = KSPGetTolerances(kSP,&rTol,&absTol,&dTol,&maxIts); CHKERRQ(ierr);
-	ierr = KSPSetUp(kSP); CHKERRQ(ierr);
-	ierr = KSPMonitorCancel(kSP); CHKERRQ(ierr);
+        ierr = KSPCreate(mField.get_comm(),&kSP); CHKERRQ(ierr); // neet to be recalculated when C is changed
+        ierr = KSPSetOperators(kSP,CCT,CCT); CHKERRQ(ierr);
+        ierr = KSPSetFromOptions(kSP); CHKERRQ(ierr);
+        ierr = KSPSetInitialGuessKnoll(kSP,PETSC_TRUE); CHKERRQ(ierr);
+        ierr = KSPGetTolerances(kSP,&rTol,&absTol,&dTol,&maxIts); CHKERRQ(ierr);
+        ierr = KSPSetUp(kSP); CHKERRQ(ierr);
+        ierr = KSPMonitorCancel(kSP); CHKERRQ(ierr);
       }
       #if PETSC_VERSION_GE(3,5,3)
       ierr = MatCreateVecs(C,&X,PETSC_NULL); CHKERRQ(ierr);
@@ -114,21 +114,21 @@ PetscErrorCode ConstrainMatrixCtx::initializeQTKQ() {
       PetscLogEventBegin(USER_EVENT_projInit,0,0,0,0);
       ierr = MatTransposeMatMult(C,C,MAT_INITIAL_MATRIX,PETSC_DEFAULT,&CTC); CHKERRQ(ierr); // need to be recalculated when C is changed
       if(debug) {
-	//MatView(CCT,PETSC_VIEWER_DRAW_WORLD);
-	int m,n;
-	MatGetSize(CCT,&m,&n);
-	PetscPrintf(mField.get_comm(),"CCT size (%d,%d)\n",m,n);
-	//std::string wait;
-	//std::cin >> wait;
+        //MatView(CCT,PETSC_VIEWER_DRAW_WORLD);
+        int m,n;
+        MatGetSize(CCT,&m,&n);
+        PetscPrintf(mField.get_comm(),"CCT size (%d,%d)\n",m,n);
+        //std::string wait;
+        //std::cin >> wait;
       }
       #if PETSC_VERSION_GE(3,5,3)
-	ierr = MatCreateVecs(K,&Qx,PETSC_NULL); CHKERRQ(ierr);
-	ierr = MatCreateVecs(K,PETSC_NULL,&KQx); CHKERRQ(ierr);
-	ierr = MatCreateVecs(CTC,PETSC_NULL,&CTCx); CHKERRQ(ierr);
+      ierr = MatCreateVecs(K,&Qx,PETSC_NULL); CHKERRQ(ierr);
+      ierr = MatCreateVecs(K,PETSC_NULL,&KQx); CHKERRQ(ierr);
+      ierr = MatCreateVecs(CTC,PETSC_NULL,&CTCx); CHKERRQ(ierr);
       #else
-	ierr = MatGetVecs(K,&Qx,PETSC_NULL); CHKERRQ(ierr);
-	ierr = MatGetVecs(K,PETSC_NULL,&KQx); CHKERRQ(ierr);
-	ierr = MatGetVecs(CTC,PETSC_NULL,&CTCx); CHKERRQ(ierr);
+      ierr = MatGetVecs(K,&Qx,PETSC_NULL); CHKERRQ(ierr);
+      ierr = MatGetVecs(K,PETSC_NULL,&KQx); CHKERRQ(ierr);
+      ierr = MatGetVecs(CTC,PETSC_NULL,&CTCx); CHKERRQ(ierr);
       #endif
       PetscLogEventEnd(USER_EVENT_projInit,0,0,0,0);
     }

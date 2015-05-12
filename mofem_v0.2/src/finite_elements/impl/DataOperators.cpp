@@ -865,12 +865,12 @@ PetscErrorCode OpSetPiolaTransoformOnTriangle::doWork(
     for(;dd<nb_dofs;dd++) {
       double val = data.getHdivN()(gg,3*dd);
       if(nOrmals_at_GaussPt.size1()==(unsigned int)nb_gauss_pts) {
-	double l = cblas_dnrm2(3,&nOrmals_at_GaussPt(gg,0),1);
-	cblas_dcopy(3,&nOrmals_at_GaussPt(gg,0),1,&data.getHdivN()(gg,3*dd),1);
-	cblas_dscal(3,val/pow(l,2),&data.getHdivN()(gg,3*dd),1);
+        double l = cblas_dnrm2(3,&nOrmals_at_GaussPt(gg,0),1);
+        cblas_dcopy(3,&nOrmals_at_GaussPt(gg,0),1,&data.getHdivN()(gg,3*dd),1);
+        cblas_dscal(3,val/pow(l,2),&data.getHdivN()(gg,3*dd),1);
       } else {
-	cblas_dcopy(3,&normal[0],1,&data.getHdivN()(gg,3*dd),1);
-	cblas_dscal(3,val/pow(l0,2),&data.getHdivN()(gg,3*dd),1);
+        cblas_dcopy(3,&normal[0],1,&data.getHdivN()(gg,3*dd),1);
+        cblas_dscal(3,val/pow(l0,2),&data.getHdivN()(gg,3*dd),1);
       }
     }
 
