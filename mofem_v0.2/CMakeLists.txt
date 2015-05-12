@@ -22,7 +22,7 @@ message(${PETSCVAR_CXX})
 set(CMAKE_C_COMPILER ${PETSCVAR_CC} )
 string(REGEX MATCH  "^.*mpicxx" PETSCVAR_CXX_ "${PETSCVAR_CXX}")
 message("${PETSCVAR_CXX_}")
-set(CMAKE_CXX_COMPILER "${PETSCVAR_CXX_}")
+set(CMAKE_CXX_COMPILER ${PETSCVAR_CXX_})
 
 #get mpipath bin directory
 string(REGEX REPLACE "mpicc" "" "MPI_BIN_PATH" ${CMAKE_C_COMPILER})
