@@ -203,13 +203,13 @@ int main(int argc, char *argv[]) {
 
   //mesh partitioning 
   //partition
-  ierr = m_field.simple_partition_problem("ULTRAWEAK"); CHKERRQ(ierr);
+  ierr = m_field.partition_simple_problem("ULTRAWEAK"); CHKERRQ(ierr);
   ierr = m_field.partition_finite_elements("ULTRAWEAK"); CHKERRQ(ierr);
   //what are ghost nodes, see Petsc Manual
   ierr = m_field.partition_ghost_dofs("ULTRAWEAK"); CHKERRQ(ierr);
 
   //partition for problem calculating error
-  ierr = m_field.simple_partition_problem("ULTRAWEAK_CALCULATE_ERROR"); CHKERRQ(ierr);
+  ierr = m_field.partition_simple_problem("ULTRAWEAK_CALCULATE_ERROR"); CHKERRQ(ierr);
   ierr = m_field.partition_finite_elements("ULTRAWEAK_CALCULATE_ERROR"); CHKERRQ(ierr);
   ierr = m_field.partition_ghost_dofs("ULTRAWEAK_CALCULATE_ERROR"); CHKERRQ(ierr);
 

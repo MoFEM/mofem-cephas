@@ -117,7 +117,7 @@ int main(int argc, char *argv[]) {
   /****/
   //mesh partitioning 
   //partition
-  ierr = m_field.simple_partition_problem("PROB"); CHKERRQ(ierr);
+  ierr = m_field.partition_simple_problem("PROB"); CHKERRQ(ierr);
   ierr = m_field.partition_finite_elements("PROB"); CHKERRQ(ierr);
   //what are ghost nodes, see Petsc Manual
   ierr = m_field.partition_ghost_dofs("PROB"); CHKERRQ(ierr);

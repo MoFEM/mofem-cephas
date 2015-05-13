@@ -160,12 +160,12 @@ int main(int argc, char *argv[]) {
   /****/
   //mesh partitioning 
   //partition
-  ierr = m_field.simple_partition_problem("TEST_PROBLEM"); CHKERRQ(ierr);
+  ierr = m_field.partition_simple_problem("TEST_PROBLEM"); CHKERRQ(ierr);
   ierr = m_field.partition_finite_elements("TEST_PROBLEM"); CHKERRQ(ierr);
   //what are ghost nodes, see Petsc Manual
   ierr = m_field.partition_ghost_dofs("TEST_PROBLEM"); CHKERRQ(ierr);
 
-  ierr = m_field.simple_partition_problem("BC_PROBLEM"); CHKERRQ(ierr);
+  ierr = m_field.partition_simple_problem("BC_PROBLEM"); CHKERRQ(ierr);
   ierr = m_field.partition_finite_elements("BC_PROBLEM"); CHKERRQ(ierr);
   //what are ghost nodes, see Petsc Manual
   ierr = m_field.partition_ghost_dofs("BC_PROBLEM"); CHKERRQ(ierr);

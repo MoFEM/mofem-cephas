@@ -61,9 +61,9 @@ int main(int argc, char *argv[]) {
 
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-  BARRIER_RANK_START(pcomm) 
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
-  BARRIER_RANK_END(pcomm) 
+  BARRIER_RANK_START(pcomm)
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
+  BARRIER_RANK_END(pcomm)
 
   //Create MoFEM (Joseph) database
   MoFEM::Core core(moab);
@@ -82,7 +82,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.add_field("ERROR",L2,1); CHKERRQ(ierr);
 
   //meshset consisting all entities in mesh
-  EntityHandle root_set = moab.get_root_set(); 
+  EntityHandle root_set = moab.get_root_set();
   //add entities to field
   ierr = m_field.add_ents_to_field_by_TETs(root_set,"FLUXES"); CHKERRQ(ierr);
   ierr = m_field.add_ents_to_field_by_TETs(root_set,"VALUES"); CHKERRQ(ierr);
@@ -98,7 +98,7 @@ int main(int argc, char *argv[]) {
 
   ierr = m_field.set_field_order(root_set,MBTET,"FLUXES",order+1); CHKERRQ(ierr);
   ierr = m_field.set_field_order(root_set,MBTRI,"FLUXES",order+1); CHKERRQ(ierr);
- 
+
   ierr = m_field.set_field_order(root_set,MBTET,"VALUES",order); CHKERRQ(ierr);
   ierr = m_field.set_field_order(root_set,MBTET,"ERROR",0); CHKERRQ(ierr);
 
@@ -107,7 +107,7 @@ int main(int argc, char *argv[]) {
 
   //finite elements
 
-  /** thefine sources and other stuff 
+  /** thefine sources and other stuff
     *
     * UltraWeakTransportElement is a class collecting functons, opertors and
     * data for ultra week implementation of transport element. See there to
@@ -118,9 +118,9 @@ int main(int argc, char *argv[]) {
     *
     */
   struct MyUltraWeakFE: public UltraWeakTransportElement {
-   
+
     MyUltraWeakFE(FieldInterface &m_field): UltraWeakTransportElement(m_field) {};
- 
+
     PetscErrorCode getFlux(EntityHandle ent,const double x,const double y,const double z,double &flux) {
       PetscFunctionBegin;
       //double d = sqrt(x*x+y*y+z*z);
@@ -157,7 +157,7 @@ int main(int argc, char *argv[]) {
   Skinner skin(&moab);
   Range skin_faces; // skin faces from 3d ents
   rval = skin.find_skin(0,tets,false,skin_faces); CHKERR(rval);
-  
+
   // note: what is essential (dirichlet) is neutral (neumann) for ultra wik comparic to classical FE
   /*Range neumann_tris;
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|TEMPERATURESET,it)) {
@@ -181,7 +181,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.add_problem("ULTRAWEAK"); CHKERRQ(ierr);
   //set refinment level for problem
   ierr = m_field.modify_problem_ref_level_add_bit("ULTRAWEAK",bit_level0); CHKERRQ(ierr);
-  
+
   ierr = m_field.modify_problem_add_finite_element("ULTRAWEAK","ULTRAWEAK"); CHKERRQ(ierr);
 
   //boundary conditions
@@ -196,15 +196,15 @@ int main(int argc, char *argv[]) {
   //build problem
   ierr = m_field.build_problems(); CHKERRQ(ierr);
 
-  //mesh partitioning 
+  //mesh partitioning
   //partition
-  ierr = m_field.simple_partition_problem("ULTRAWEAK"); CHKERRQ(ierr);
+  ierr = m_field.partition_simple_problem("ULTRAWEAK"); CHKERRQ(ierr);
   ierr = m_field.partition_finite_elements("ULTRAWEAK"); CHKERRQ(ierr);
   //what are ghost nodes, see Petsc Manual
   ierr = m_field.partition_ghost_dofs("ULTRAWEAK"); CHKERRQ(ierr);
 
   //partition for problem calculating error
-  ierr = m_field.simple_partition_problem("ULTRAWEAK_CALCULATE_ERROR"); CHKERRQ(ierr);
+  ierr = m_field.partition_simple_problem("ULTRAWEAK_CALCULATE_ERROR"); CHKERRQ(ierr);
   ierr = m_field.partition_finite_elements("ULTRAWEAK_CALCULATE_ERROR"); CHKERRQ(ierr);
   ierr = m_field.partition_ghost_dofs("ULTRAWEAK_CALCULATE_ERROR"); CHKERRQ(ierr);
 
@@ -315,7 +315,7 @@ int main(int argc, char *argv[]) {
   ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
-  //calulate residuals 
+  //calulate residuals
   ufe.feVol.getRowColOpPtrVector().clear();
   ufe.feVol.getRowOpPtrVector().clear();
 
@@ -385,7 +385,7 @@ int main(int argc, char *argv[]) {
   ierr = post_proc_error.clearOperators(); CHKERRQ(ierr);
 
   //if(pcomm->rank()==0) {
-    //EntityHandle fe_meshset = m_field.get_finite_element_meshset("ULTRAWEAK"); 
+    //EntityHandle fe_meshset = m_field.get_finite_element_meshset("ULTRAWEAK");
     //rval = moab.write_file("error.vtk","VTK","",&fe_meshset,1); CHKERR_PETSC(rval); CHKERR_PETSC(rval);
   //}
 
@@ -394,5 +394,3 @@ int main(int argc, char *argv[]) {
   return 0;
 
 }
-
-

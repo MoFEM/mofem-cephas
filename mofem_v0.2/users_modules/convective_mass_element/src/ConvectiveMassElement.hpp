@@ -499,7 +499,7 @@ struct ConvectiveMassElement {
 	    if(gg>0) {
 	      res.resize(3);
 	      int r;
-	      r = function(tAg,3,nb_active_vars,&active[0],&res[0]);
+	      r = ::function(tAg,3,nb_active_vars,&active[0],&res[0]);
 	      if(r!=3) { // function is locally analytic
 		SETERRQ1(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"ADOL-C function evaluation with error r = %d",r);
 	      }
@@ -1039,7 +1039,7 @@ struct ConvectiveMassElement {
 	    if(gg>0) {
 	      res.resize(3);
 	      int r;
-	      r = function(tAg,3,nb_active_vars,&active[0],&res[0]);
+	      r = ::function(tAg,3,nb_active_vars,&active[0],&res[0]);
 	      if(r!=3) {
 		SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"ADOL-C function evaluation with error");
 	      }
@@ -1387,7 +1387,7 @@ struct ConvectiveMassElement {
 	    if(gg>0) {
 	      res.resize(3);
 	      int r;
-	      r = function(tAg,3,nb_active_vars,&active[0],&res[0]);
+	      r = ::function(tAg,3,nb_active_vars,&active[0],&res[0]);
 	      if(r!=3) { // function is locally analytic
 		SETERRQ1(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"ADOL-C function evaluation with error r = %d",r);
 	      }

@@ -2,7 +2,7 @@
   \ingroup mofem_helmholtz_elem
 
   Analytical solutions
-  
+
  */
 
 /* This file is part of MoFEM.
@@ -17,7 +17,7 @@
  * License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. 
+ * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>.
 */
 
 /** \brief Generic structure for analytical function
@@ -29,6 +29,7 @@ struct GenericAnalyticalSolution {
   enum VALUE_TYPE { REAL = 0, IMAG, LAST_VAL_TYPE };
 
   virtual vector<ublas::vector<double> >& operator()(double x, double y, double z) = 0;
+  virtual ~GenericAnalyticalSolution() {}
 
 };
 
@@ -37,7 +38,7 @@ struct GenericAnalyticalSolution {
 */
 enum AnalyticalSolutionTypes {
   HARD_SPHERE_SCATTER_WAVE,
-  SOFT_SPHERE_SCATTER_WAVE, 
+  SOFT_SPHERE_SCATTER_WAVE,
   PLANE_WAVE,
   HARD_CYLINDER_SCATTER_WAVE,
   SOFT_CYLINDER_SCATTER_WAVE,
@@ -48,9 +49,9 @@ enum AnalyticalSolutionTypes {
 /** Line command list of analytical solutions
   \ingroup mofem_helmholtz_elem
 */
-const char *analytical_solution_types[] = { 
-  "hard_sphere_incident_wave", 
-  "soft_sphere_incident_wave", 
+const char *analytical_solution_types[] = {
+  "hard_sphere_incident_wave",
+  "soft_sphere_incident_wave",
   "plane_wave",
   "hard_cylinder_scatter_wave",
   "soft_cylinder_scatter_wave",
@@ -60,11 +61,11 @@ const char *analytical_solution_types[] = {
 
 // **** Analytical solutions ****
 
-/** Incident wave 
+/** Incident wave
   \ingroup mofem_helmholtz_elem
 
 
-  Equation from: 
+  Equation from:
   Ihlenburg,Finite element analysis of acoustic scattering Springer Science & Business Media.
 
   Some details can be found here:
@@ -83,10 +84,10 @@ struct IncidentWave: public GenericAnalyticalSolution {
   ublas::vector<double> dIrection;
   ublas::vector<double> cOordinate;
   double pOwer; /* The amplitude of the incident wave */
- 
-  IncidentWave(double wavenumber,ublas::vector<double> d,double power = 1):
-    wAvenumber(wavenumber),dIrection(d),pOwer(power) {}
-  
+  double pOwerI;
+
+  IncidentWave(double wavenumber,ublas::vector<double> d,double power = 1,double i_power = 0):
+    wAvenumber(wavenumber),dIrection(d),pOwer(power),pOwerI(i_power) {}
   ~IncidentWave() {}
 
   virtual vector<ublas::vector<double> >& operator()(double x, double y, double z) {
@@ -97,8 +98,8 @@ struct IncidentWave: public GenericAnalyticalSolution {
     cOordinate[0] = x;
     cOordinate[1] = y;
     cOordinate[2] = z;
-    result = pOwer*exp(i*wAvenumber*inner_prod(dIrection,cOordinate));
-    //result = pOwer*exp(i*wAvenumber*z);
+
+    result = (pOwer+i*pOwerI)*exp(i*wAvenumber*inner_prod(dIrection,cOordinate));
 
     rEsult.resize(2);
     rEsult[REAL].resize(1);
@@ -108,7 +109,7 @@ struct IncidentWave: public GenericAnalyticalSolution {
 
     return rEsult;
 
-  }  
+  }
 
 };
 
@@ -135,26 +136,30 @@ struct IncidentWave: public GenericAnalyticalSolution {
 
   */
 struct HardSphereScatterWave: public GenericAnalyticalSolution {
-  
-  vector<complex<double> > vecAl; ///< this is to calculate constant values of series only once
-  vector<ublas::vector<double> > rEsult;
-  double wAvenumber;
-  double sphereRadius;
+
+    vector<complex<double> > vecAl; ///< this is to calculate constant values of series only once
+    vector<ublas::vector<double> > rEsult;
+    double wAvenumber;
+    double sphereRadius;
+
    
-  HardSphereScatterWave(double wavenumber,double sphere_radius = 0.5): 
+    HardSphereScatterWave(double wavenumber,double sphere_radius = 0.5): 
+
     wAvenumber(wavenumber),sphereRadius(sphere_radius) {}
-  virtual ~HardSphereScatterWave() {}
-   
-  virtual vector<ublas::vector<double> >& operator()(double x, double y, double z) {
+    virtual ~HardSphereScatterWave() {}
+
+    virtual vector<ublas::vector<double> >& operator()(double x, double y, double z) {
 
     const double tol = 1.0e-10;
 
     double x2 = x*x;
     double y2 = y*y;
     double z2 = z*z;
+
     double R = sqrt(x2+y2+z2); 
     double cos_theta = z/R; //Incident wave in Z direction, X =>sin_theta*sin_phi, Y =>sin_theta*cos_phi
     //double cos_theta = cos( atan2(y,x)+2.0*M_PI ); //Incident wave in X direction.
+
 
     const double k = wAvenumber;    //Wave number
     const double a = sphereRadius;      //radius of the sphere,wait to modify by user
@@ -167,7 +172,7 @@ struct HardSphereScatterWave: public GenericAnalyticalSolution {
 
     double error = 100.0;
     unsigned int n = 0; //initialized the infinite series loop
-    
+
     while( error > tol )  //finding the acoustic potential in one single point.
     {
 
@@ -176,15 +181,15 @@ struct HardSphereScatterWave: public GenericAnalyticalSolution {
       } else {
         // spherical Bessel function
         double const1 = k*a;
-        double jn_der = n / const1 * sph_bessel( n, const1 ) - sph_bessel( n + 1, const1 ); 
-  
+        double jn_der = n / const1 * sph_bessel( n, const1 ) - sph_bessel( n + 1, const1 );
+
         // spherical Hankel function
         complex< double > hn_der = n / const1 * sph_hankel_1( n, const1 ) - sph_hankel_1( n + 1, const1 );
         //Constant term
         Al = -(2.0*n+1)*pow(i,n)*jn_der/hn_der;
         vecAl.push_back(Al);
       }
-      
+
       prev_result = result;
 
       // Legendre function
@@ -204,9 +209,9 @@ struct HardSphereScatterWave: public GenericAnalyticalSolution {
     (rEsult[IMAG])[0] = std::imag(result);
 
     return rEsult;
-    
+
   }
-  
+
 };
 
 /** Calculate the analytical solution of impinging wave on sphere
@@ -234,17 +239,18 @@ struct HardSphereScatterWave: public GenericAnalyticalSolution {
 
   */
 struct SoftSphereScatterWave: public GenericAnalyticalSolution {
-  
+
   vector<complex<double> > vecAl; ///< this is to calculate constant values of series only once
   vector<ublas::vector<double> > rEsult;
   double wAvenumber;
   double sphereRadius;
-   
+
 
   SoftSphereScatterWave(double wavenumber,double sphere_radius = 0.5): 
+
     wAvenumber(wavenumber),sphereRadius(sphere_radius) {}
   virtual ~SoftSphereScatterWave() {}
-   
+
   virtual vector<ublas::vector<double> >& operator()(double x, double y, double z) {
 
     const double tol = 1.0e-10;
@@ -252,9 +258,11 @@ struct SoftSphereScatterWave: public GenericAnalyticalSolution {
     double x2 = x*x;
     double y2 = y*y;
     double z2 = z*z;
+
     double R = sqrt(x2+y2+z2); 
     //double cos_theta = z/R; //incident wave in Z direction
     double cos_theta = cos( atan2(y,x)+2.0*M_PI ); //incident wave in X direction.
+
     const double k = wAvenumber;    //Wave number
     const double a = sphereRadius;      //radius of the sphere,wait to modify by user
 
@@ -266,7 +274,7 @@ struct SoftSphereScatterWave: public GenericAnalyticalSolution {
 
     double error = 100.0;
     unsigned int n = 0; //initialized the infinite series loop
-    
+
     while( error > tol )  //finding the acoustic potential in one single point.
     {
 
@@ -281,7 +289,7 @@ struct SoftSphereScatterWave: public GenericAnalyticalSolution {
 	Al = -(2.0*n+1)*pow(i,n)*jn/hn;
 	vecAl.push_back(Al);
       }
-      
+
       prev_result = result;
 
       // Legendre function
@@ -301,9 +309,9 @@ struct SoftSphereScatterWave: public GenericAnalyticalSolution {
     (rEsult[IMAG])[0] = std::imag(result);
 
     return rEsult;
-    
+
   }
-  
+
 };
 
 /** \brief Calculate the analytical solution of plane wave guide propagating in direction theta
@@ -315,46 +323,46 @@ struct SoftSphereScatterWave: public GenericAnalyticalSolution {
   \f]
 
   where:
- 
+
   \f[
-  \mathbf{x} = [x,y] 
+  \mathbf{x} = [x,y]
   \f]
- 
+
   \f[
   \Theta = k[\cos(\theta),\sin(\theta)]
   \f]
 
   \theta is the wave propagating direction from range [0,2\pi]
-  
 
-   Paper: Gillman, A., Djellouli, R., & Amara, M. (2007). 
-   A mixed hybrid formulation based on oscillated finite element polynomials for solving Helmholtz problems. 
+
+   Paper: Gillman, A., Djellouli, R., & Amara, M. (2007).
+   A mixed hybrid formulation based on oscillated finite element polynomials for solving Helmholtz problems.
    Journal of computational and applied mathematics
 
 */
 struct PlaneWave: public GenericAnalyticalSolution {
-  
+
   vector<ublas::vector<double> > rEsult;
   double wAvenumber;
   double tHeta;
-   
+
   PlaneWave(double wavenumber,double theta):
     wAvenumber(wavenumber),tHeta(theta) {}
   virtual ~PlaneWave() {}
-   
+
   virtual vector<ublas::vector<double> >& operator()(double x, double y, double z) {
-    
+
     const double k = wAvenumber;  //Wave number
 
     const complex< double > i( 0.0, 1.0 );
     complex< double > result = 0.0;
 
-    
+
     //const complex< double > inc_field = exp( i * k * R * cos( theta ) );  //???? Incident wave
     //const complex< double > total_field = inc_field + result;
-    
+
     result = exp(i*(k*cos(tHeta)*x+k*sin(tHeta)*y));
-    
+
     rEsult.resize(2);
     rEsult[REAL].resize(1);
     (rEsult[REAL])[0] = std::real(result);
@@ -364,7 +372,7 @@ struct PlaneWave: public GenericAnalyticalSolution {
     return rEsult;
 
   }
-  
+
 };
 
 /** \brief Calculate the analytical solution of impinging wave on cylinder
@@ -374,9 +382,9 @@ struct PlaneWave: public GenericAnalyticalSolution {
   p_\textrm{scattered} = \sum_0^N A_l H_l(kr)\cos(l\theta)
   \f]
 
-  where \f$H_l\f$ is the cylindrical Hankel function of the first kind, \f$\theta\f$ 
-  is the polar angle in polar coordinate and \f$A_l\f$ is a constant. Constant is  
-  should be caculated such that it satisfies both the Helmholtz wave equation and the 
+  where \f$H_l\f$ is the cylindrical Hankel function of the first kind, \f$\theta\f$
+  is the polar angle in polar coordinate and \f$A_l\f$ is a constant. Constant is
+  should be caculated such that it satisfies both the Helmholtz wave equation and the
   Sommerfeld radiation condition.
 
   \f[
@@ -388,29 +396,29 @@ struct PlaneWave: public GenericAnalyticalSolution {
   \f[
   \epsilon_{l} = 1 \textrm{when}l=0
   \f]
- 
+
    \f[
   \epsilon_{l} = 2 \textrm{when}l \neq 0
   \f]
- 
-  Paper: 
-    Kechroud, R., Soulaimani, A., & Antoine, X. (2009). 
-    A performance study of plane wave finite element methods with a Padé-type artificial boundary condition in acoustic scattering. 
+
+  Paper:
+    Kechroud, R., Soulaimani, A., & Antoine, X. (2009).
+    A performance study of plane wave finite element methods with a Padé-type artificial boundary condition in acoustic scattering.
     Advances in Engineering Software, 40(8), 738-750.
 
 */
 
 struct HardCylinderScatterWave: public GenericAnalyticalSolution {
-  
+
   vector<complex<double> > vecAl; ///< this is to calculate constant values of series only once
   vector<ublas::vector<double> > rEsult;
   double wAvenumber;
   //double shereRadius;
   double a;
-  
+
   HardCylinderScatterWave(double wavenumber,double sphere_radius = 0.5): wAvenumber(wavenumber),a(sphere_radius) {}
   virtual ~HardCylinderScatterWave() {}
-   
+
   virtual vector<ublas::vector<double> >& operator()(double x, double y, double z) {
 
     const double tol = 1.0e-10;
@@ -418,68 +426,68 @@ struct HardCylinderScatterWave: public GenericAnalyticalSolution {
     double R = sqrt(x2+y2);
     double theta = atan2(y,x)+2*M_PI;
   //double cos_theta = z/R;
-    
+
     const double k = wAvenumber;  //Wave number
     const double const1 = k * a;
     double const2 = k * R;
-    
+
     const complex< double > i( 0.0, 1.0 );
     complex< double > Al;
     // magnitude of incident wave
     //const double phi_incident_mag = 1.0;
-    
+
     complex< double > result = 0.0;
     complex< double > prev_result;
-    
+
     double error = 100.0;
     unsigned int n = 1; //initialized the infinite series loop
-    
-    double Jn_der_zero = ( - cyl_bessel_j( 1, const1 ));  
+
+    double Jn_der_zero = ( - cyl_bessel_j( 1, const1 ));
     complex< double > Hn_der_zero = ( - cyl_hankel_1( 1, const1 ));
     complex< double >Hn_zero = cyl_hankel_1( 0, const2 );  //S Hankel first kind function
-  
+
     //n=0;
     result -= (Jn_der_zero * Hn_zero)/Hn_der_zero;
-  
+
     while( error > tol )  //finding the acoustic potential in one single point.
-    {  
+    {
       if(vecAl.size()>n) {
-	Al = vecAl[n-1];
+        Al = vecAl[n-1];
       } else {
-	// cylindrical Bessel function
-	double Jn_der_ka = n / const1 * cyl_bessel_j( n, const1 ) - cyl_bessel_j( n + 1, const1 ); 
-	// cylindrical Hankel function
-	complex<double> Hn_der_ka = n / const1 * cyl_hankel_1( n, const1 ) - cyl_hankel_1( n + 1, const1 ); 
-	//Constant term
-	Al = -2.0*pow(i,n)*Jn_der_ka/Hn_der_ka;
-	vecAl.push_back(Al);
+        // cylindrical Bessel function
+        double Jn_der_ka = n / const1 * cyl_bessel_j( n, const1 ) - cyl_bessel_j( n + 1, const1 );
+        // cylindrical Hankel function
+        complex<double> Hn_der_ka = n / const1 * cyl_hankel_1( n, const1 ) - cyl_hankel_1( n + 1, const1 );
+        //Constant term
+        Al = -2.0*pow(i,n)*Jn_der_ka/Hn_der_ka;
+        vecAl.push_back(Al);
       }
 
       prev_result = result;
       complex< double >Hn_kr = cyl_hankel_1( n, const2 );  //S Hankel first kind function
-    
+
       result += Al * Hn_kr * cos(n*theta);
       error = abs( abs( result ) - abs( prev_result ) );
       ++n;
-      
+
     }
-    
+
     //result *= phi_incident_mag;
-    
+
     //const complex< double > inc_field = exp( i * k * R * cos( theta ) );  //???? Incident wave
     //const complex< double > total_field = inc_field + result;
     //ofs << theta << "\t" << abs( result ) << "\t" << abs( inc_field ) << "\t" << abs( total_field ) <<  "\t" << R << endl; //write the file
-    
+
     rEsult.resize(2);
     rEsult[REAL].resize(1);
     (rEsult[REAL])[0] = std::real(result);
     rEsult[IMAG].resize(1);
     (rEsult[IMAG])[0] = std::imag(result);
-  
+
     return rEsult;
-    
+
   }
-  
+
 };
 
 
@@ -490,9 +498,9 @@ struct HardCylinderScatterWave: public GenericAnalyticalSolution {
   p_\textrm{scattered} = \sum_0^N A_l H_l(kr)\cos(l\theta)
   \f]
 
-  where \f$H_l\f$ is the cylindrical Hankel function of the first kind, \f$\theta\f$ 
-  is the polar angle in polar coordinate and \f$A_l\f$ is a constant. Constant is  
-  should be caculated such that it satisfies both the Helmholtz wave equation and the 
+  where \f$H_l\f$ is the cylindrical Hankel function of the first kind, \f$\theta\f$
+  is the polar angle in polar coordinate and \f$A_l\f$ is a constant. Constant is
+  should be caculated such that it satisfies both the Helmholtz wave equation and the
   Sommerfeld radiation condition.
 
   \f[
@@ -504,20 +512,20 @@ struct HardCylinderScatterWave: public GenericAnalyticalSolution {
   \f[
   \epsilon_{l} = 1 \text{when}l=0
   \f]
- 
+
    \f[
   \epsilon_{l} = 2 \text{when}l \neq 0
   \f]
- 
-  Paper: 
-    Kechroud, R., Soulaimani, A., & Antoine, X. (2009). 
-    A performance study of plane wave finite element methods with a Padé-type artificial boundary condition in acoustic scattering. 
+
+  Paper:
+    Kechroud, R., Soulaimani, A., & Antoine, X. (2009).
+    A performance study of plane wave finite element methods with a Padé-type artificial boundary condition in acoustic scattering.
     Advances in Engineering Software, 40(8), 738-750.
 
 
 */
 struct SoftCylinderScatterWave: public GenericAnalyticalSolution {
-  
+
   vector<complex<double> > vecAl; ///< this is to calculate constant values of series only once
   vector<ublas::vector<double> > rEsult;
   double wAvenumber;
@@ -526,7 +534,7 @@ struct SoftCylinderScatterWave: public GenericAnalyticalSolution {
 
   SoftCylinderScatterWave(double wavenumber,double sphere_radius = 0.5): wAvenumber(wavenumber),a(sphere_radius) {}
   virtual ~SoftCylinderScatterWave() {}
-   
+
   virtual vector<ublas::vector<double> >& operator()(double x, double y, double z) {
 
     const double tol = 1.0e-10;
@@ -537,71 +545,71 @@ struct SoftCylinderScatterWave: public GenericAnalyticalSolution {
     const double k = wAvenumber;  //Wave number
     const double const1 = k * a;
     double const2 = k * R;
-    
+
     const complex< double > i( 0.0, 1.0 );
     complex< double > Al;
     // magnitude of incident wave
     //const double phi_incident_mag = 1.0;
-    
+
     complex< double > result = 0.0;
     complex< double > prev_result;
-    
+
     double error = 100.0;
     unsigned int n = 1; //initialized the infinite series loop
-    
+
     double Jn_zero = cyl_bessel_j( 0, const1 );
     complex< double > Hn_zero_kr = cyl_hankel_1( 0, const2 );  //S Hankel first kind function
     complex< double > Hn_zero_ka = cyl_hankel_1( 0, const1 );  //S Hankel first kind function
     //n=0;
     result -= (Jn_zero * Hn_zero_kr)/Hn_zero_ka;
-  
+
     while( error > tol )  //finding the acoustic potential in one single point.
     {
-    
-    
+
+
       if(vecAl.size()>n) {
-	Al = vecAl[n-1];
+        Al = vecAl[n-1];
       } else {
-	// cylindrical Bessel function
-	double Jn_ka = cyl_bessel_j( n, const1 );
-	// cylindrical Hankel function
-	complex<double> Hn_ka = cyl_hankel_1( n, const1 );
-	//Constant term
-	Al = -2.0*pow(i,n)*Jn_ka/Hn_ka;
-	vecAl.push_back(Al);
+        // cylindrical Bessel function
+        double Jn_ka = cyl_bessel_j( n, const1 );
+        // cylindrical Hankel function
+        complex<double> Hn_ka = cyl_hankel_1( n, const1 );
+        //Constant term
+        Al = -2.0*pow(i,n)*Jn_ka/Hn_ka;
+        vecAl.push_back(Al);
       }
 
 
       prev_result = result;
-      
+
       complex< double >Hn_kr = cyl_hankel_1( n, const2 );  //S Hankel first kind function
-      
+
       result += Al * Hn_kr * cos(n*theta);
       error = abs( abs( result ) - abs( prev_result ) );
       ++n;
     }
-    
+
     //result *= phi_incident_mag;
-    
+
     //const complex< double > inc_field = exp( i * k * R * cos( theta ) );  //???? Incident wave
     //const complex< double > total_field = inc_field + result;
     //ofs << theta << "\t" << abs( result ) << "\t" << abs( inc_field ) << "\t" << abs( total_field ) <<  "\t" << R << endl; //write the file
-    
+
     rEsult.resize(2);
     rEsult[REAL].resize(1);
     (rEsult[REAL])[0] = std::real(result);
     rEsult[IMAG].resize(1);
     (rEsult[IMAG])[0] = std::imag(result);
-  
+
     return rEsult;
-    
+
   }
-  
+
 };
 
 // **** Surface boundary conditions ( used to enforce BC on surface ) ****
 
-// ** Dirichlet BC ** 
+// ** Dirichlet BC **
 
 // **** Function to solve best approximation problem ****
 
@@ -614,7 +622,7 @@ PetscErrorCode solve_problem(FieldInterface& m_field,
   PetscFunctionBegin;
 
   PetscErrorCode ierr;
-  
+
   Mat A;
   ierr = m_field.MatCreateMPIAIJWithArrays(problem_name,&A); CHKERRQ(ierr);
   Vec D;
@@ -630,7 +638,7 @@ PetscErrorCode solve_problem(FieldInterface& m_field,
   // This increase rule for numerical intergaration. In case of 10 node
   // elements jacobian is varing lineary across element, that way to element
   // rule is added 1.
-  field_approximation.addToRule = 1; 
+  field_approximation.addToRule = 1;
 
   ierr = field_approximation.loopMatrixAndVector(
     problem_name,fe_name,re_field,A,vec_F,fun_evaluator); CHKERRQ(ierr);
@@ -670,9 +678,9 @@ PetscErrorCode solve_problem(FieldInterface& m_field,
 	  
     } else {
       if(is_partitioned) {
-	ierr = m_field.set_other_local_ghost_vector(problem_name,re_field,im_field,COL,D,mode,SCATTER_REVERSE); CHKERRQ(ierr);
+        ierr = m_field.set_other_local_ghost_vector(problem_name,re_field,im_field,COL,D,mode,SCATTER_REVERSE); CHKERRQ(ierr);
       } else {
-	ierr = m_field.set_other_global_ghost_vector(problem_name,re_field,im_field,COL,D,mode,SCATTER_REVERSE); CHKERRQ(ierr);
+        ierr = m_field.set_other_global_ghost_vector(problem_name,re_field,im_field,COL,D,mode,SCATTER_REVERSE); CHKERRQ(ierr);
       }
 	  
 	  
@@ -680,7 +688,7 @@ PetscErrorCode solve_problem(FieldInterface& m_field,
 
   }
 
-  // clean 
+  // clean
   ierr = KSPDestroy(&solver); CHKERRQ(ierr);
   ierr = VecDestroy(&vec_F[GenericAnalyticalSolution::REAL]); CHKERRQ(ierr);
   ierr = VecDestroy(&vec_F[GenericAnalyticalSolution::IMAG]); CHKERRQ(ierr);
@@ -690,11 +698,3 @@ PetscErrorCode solve_problem(FieldInterface& m_field,
 
   PetscFunctionReturn(0);
 }
-
-
-
-
-
-
-
-
