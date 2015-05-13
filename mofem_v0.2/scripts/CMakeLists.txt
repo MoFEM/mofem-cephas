@@ -1,7 +1,7 @@
 # Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
-# The MoFEM package is copyrighted by Lukasz Kaczmarczyk. 
-# It can be freely used for educational and research purposes 
-# by other institutions. If you use this softwre pleas cite my work. 
+# The MoFEM package is copyrighted by Lukasz Kaczmarczyk.
+# It can be freely used for educational and research purposes
+# by other institutions. If you use this softwre pleas cite my work.
 #
 # MoFEM is free software: you can redistribute it and/or modify it under
 # the terms of the GNU Lesser General Public License as published by the
@@ -39,3 +39,23 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/mofem_build.sh DESTINATION bin PERMISS
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/mofem_fast_check.sh DESTINATION bin PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/mofem_update.sh DESTINATION bin PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE )
 
+find_program(SFTP NAMES sftp)
+if(SFTP)
+
+  configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/publish_doc.sh.in
+    ${CMAKE_CURRENT_SOURCE_DIR}/publish_doc.sh
+    @ONLY
+  )
+  file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/publish_doc.sh
+    DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
+    FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE
+  )
+
+  add_custom_target(doc_publish_likask
+    ${CMAKE_CURRENT_BINARY_DIR}/publish_doc.sh
+    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+    COMMENT "Publish (likask) doxygen documentation" VERBATIM
+  )
+
+endif(SFTP)

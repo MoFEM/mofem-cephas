@@ -15,10 +15,10 @@
 #include <MoFEM.hpp>
 
 #include <DirichletBC.hpp>
-#include <PotsProcOnRefMesh.hpp>
+#include <PostProcOnRefMesh.hpp>
 
 #include <cholesky.hpp>
-#include <UltaWeakTransportElement.hpp>
+#include <UltraWeakTransportElement.hpp>
 
 #include <Projection10NodeCoordsOnField.hpp>
 

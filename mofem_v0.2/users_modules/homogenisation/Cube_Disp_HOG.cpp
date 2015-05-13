@@ -26,7 +26,7 @@ using namespace MoFEM;
 #include <FEMethod_LowLevelStudent.hpp>
 #include <FEMethod_UpLevelStudent.hpp>
 
-#include <PotsProcOnRefMesh.hpp>
+#include <PostProcOnRefMesh.hpp>
 #include <PostProcHookStresses.hpp>
 
 #include <adolc/adolc.h>

@@ -1,4 +1,4 @@
-/** \file build_composite_problem.cpp
+/** \file build_problems.cpp
 
   \brief Atom test for building composite problem
 

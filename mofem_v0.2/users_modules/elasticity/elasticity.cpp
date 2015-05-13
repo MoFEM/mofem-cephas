@@ -35,7 +35,7 @@ namespace po = boost::program_options;
 #include <BodyForce.hpp>
 #include <ThermalStressElement.hpp>
 
-#include <PotsProcOnRefMesh.hpp>
+#include <PostProcOnRefMesh.hpp>
 #include <PostProcHookStresses.hpp>
 
 #include <adolc/adolc.h> 

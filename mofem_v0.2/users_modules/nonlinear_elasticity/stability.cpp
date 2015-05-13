@@ -38,7 +38,7 @@ using namespace MoFEM;
 #include <adolc/adolc.h> 
 #include <NonLienarElasticElement.hpp>
 
-#include <PotsProcOnRefMesh.hpp>
+#include <PostProcOnRefMesh.hpp>
 #include <PostProcStresses.hpp>
 #include <Hooke.hpp>
 

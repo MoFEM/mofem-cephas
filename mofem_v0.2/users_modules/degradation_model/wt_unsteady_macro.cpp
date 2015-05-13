@@ -20,7 +20,7 @@
 #include <MoFEM.hpp>
 
 #include <DirichletBC.hpp>
-#include <PotsProcOnRefMesh.hpp>
+#include <PostProcOnRefMesh.hpp>
 #include <calculate_wt.hpp>
 
 #include <Projection10NodeCoordsOnField.hpp>

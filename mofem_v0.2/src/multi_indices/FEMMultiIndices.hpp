@@ -150,7 +150,7 @@ struct ptrWrapperRefMoFEMElement: public interface_RefMoFEMElement<RefMoFEMEleme
 };
 
 /**
- * \typedef RefMoFEMElement
+ * \typedef RefMoFEMElement_multiIndex
  * type multiIndex container for RefMoFEMElement
  * \ingroup fe_multi_indices
  *

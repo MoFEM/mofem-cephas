@@ -25,7 +25,7 @@
 
 #include <boost/numeric/ublas/vector_proxy.hpp>
 #include <FieldApproximation.hpp>
-#include <PotsProcOnRefMesh.hpp>
+#include <PostProcOnRefMesh.hpp>
 #include <boost/iostreams/tee.hpp>
 #include <boost/iostreams/stream.hpp>
 #include <petsctime.h>

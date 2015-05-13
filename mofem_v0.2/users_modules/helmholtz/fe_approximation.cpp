@@ -37,7 +37,7 @@
 #include <boost/ptr_container/ptr_map.hpp>
 
 #include <DirichletBC.hpp>
-#include <PotsProcOnRefMesh.hpp>
+#include <PostProcOnRefMesh.hpp>
 
 #include <Projection10NodeCoordsOnField.hpp>
 #include <boost/iostreams/tee.hpp>
@@ -192,12 +192,11 @@ int main(int argc, char *argv[]) {
   // Finite Elements
 
   HelmholtzElement helmholtz_element(m_field);
+  ierr = helmholtz_element.getGlobalParametersFromLineCommandOptions(); CHKERRQ(ierr);
   ierr = helmholtz_element.addHelmholtzElements("rePRES","imPRES"); CHKERRQ(ierr);
   if(m_field.check_field("reEX") && m_field.check_field("imEX")) {
-
     ierr = m_field.modify_finite_element_add_field_data("HELMHOLTZ_RERE_FE","reEX"); CHKERRQ(ierr);
     ierr = m_field.modify_finite_element_add_field_data("HELMHOLTZ_RERE_FE","imEX"); CHKERRQ(ierr);
-
   }
 
   Range bc_dirichlet_tris,analytical_bc_tris;
@@ -269,11 +268,13 @@ int main(int argc, char *argv[]) {
     ierr = m_field.build_partitioned_problem("ACOUSTIC_PROBLEM",true); CHKERRQ(ierr);
     ierr = m_field.partition_finite_elements("ACOUSTIC_PROBLEM",true); CHKERRQ(ierr);
 
-    ierr = m_field.build_partitioned_problem("BCREAL_PROBLEM",true); CHKERRQ(ierr);
-    ierr = m_field.partition_finite_elements("BCREAL_PROBLEM",true); CHKERRQ(ierr);
+    if(dirihlet_bc_set) {
+      ierr = m_field.build_partitioned_problem("BCREAL_PROBLEM",true); CHKERRQ(ierr);
+      ierr = m_field.partition_finite_elements("BCREAL_PROBLEM",true); CHKERRQ(ierr);
 
-    ierr = m_field.build_partitioned_problem("BCIMAG_PROBLEM",true); CHKERRQ(ierr);
-    ierr = m_field.partition_finite_elements("BCIMAG_PROBLEM",true); CHKERRQ(ierr);
+      ierr = m_field.build_partitioned_problem("BCIMAG_PROBLEM",true); CHKERRQ(ierr);
+      ierr = m_field.partition_finite_elements("BCIMAG_PROBLEM",true); CHKERRQ(ierr);
+    }
 
   } else {
     // if not partitioned mesh is load to all processes
@@ -282,22 +283,24 @@ int main(int argc, char *argv[]) {
     ierr = m_field.partition_problem("ACOUSTIC_PROBLEM"); CHKERRQ(ierr);
     ierr = m_field.partition_finite_elements("ACOUSTIC_PROBLEM"); CHKERRQ(ierr);
 
-    ierr = m_field.build_problem("BCREAL_PROBLEM"); CHKERRQ(ierr);
-    ierr = m_field.partition_problem("BCREAL_PROBLEM"); CHKERRQ(ierr);
-    ierr = m_field.partition_finite_elements("BCREAL_PROBLEM"); CHKERRQ(ierr);
+    if(dirihlet_bc_set) {
+      ierr = m_field.build_problem("BCREAL_PROBLEM"); CHKERRQ(ierr);
+      ierr = m_field.partition_problem("BCREAL_PROBLEM"); CHKERRQ(ierr);
+      ierr = m_field.partition_finite_elements("BCREAL_PROBLEM"); CHKERRQ(ierr);
 
-    ierr = m_field.build_problem("BCIMAG_PROBLEM"); CHKERRQ(ierr);
-    ierr = m_field.partition_problem("BCIMAG_PROBLEM"); CHKERRQ(ierr);
-    ierr = m_field.partition_finite_elements("BCIMAG_PROBLEM"); CHKERRQ(ierr);
-
+      ierr = m_field.build_problem("BCIMAG_PROBLEM"); CHKERRQ(ierr);
+      ierr = m_field.partition_problem("BCIMAG_PROBLEM"); CHKERRQ(ierr);
+      ierr = m_field.partition_finite_elements("BCIMAG_PROBLEM"); CHKERRQ(ierr);
+    }
   }
 
   ierr = m_field.partition_ghost_dofs("ACOUSTIC_PROBLEM"); CHKERRQ(ierr);
-  ierr = m_field.partition_ghost_dofs("BCREAL_PROBLEM"); CHKERRQ(ierr);
-  ierr = m_field.partition_ghost_dofs("BCIMAG_PROBLEM"); CHKERRQ(ierr);
+  if(dirihlet_bc_set) {
+    ierr = m_field.partition_ghost_dofs("BCREAL_PROBLEM"); CHKERRQ(ierr);
+    ierr = m_field.partition_ghost_dofs("BCIMAG_PROBLEM"); CHKERRQ(ierr);
+  }
 
   // Get problem matrices and vectors
-
   Vec F;  //Right hand side vector
   ierr = m_field.VecCreateGhost("ACOUSTIC_PROBLEM",ROW,&F); CHKERRQ(ierr);
   Vec T; //Solution vector
@@ -305,7 +308,6 @@ int main(int argc, char *argv[]) {
   Mat A; //Left hand side matrix
   ierr = m_field.MatCreateMPIAIJWithArrays("ACOUSTIC_PROBLEM",&A); CHKERRQ(ierr);
   ierr = helmholtz_element.setOperators(A,F,"rePRES","imPRES"); CHKERRQ(ierr);
-  ierr = helmholtz_element.getGlobalParametersFromLineCommandOptions(); CHKERRQ(ierr);
 
   //wave direction unit vector=[x,y,z]^T
   ublas::vector<double> wave_direction;
@@ -445,9 +447,15 @@ int main(int argc, char *argv[]) {
       for(;mit!=planeWaveScatterData.end();mit++) {
 
         // note negative field, scatter field should cancel incident wave
-        boost::shared_ptr<IncidentWave> function_evaluator = boost::shared_ptr<IncidentWave>(new IncidentWave(wavenumber,wave_direction,-power_of_incident_wave));
-        ierr = analytical_bc_real.setApproxOps(m_field,"rePRES",mit->second.tRis,function_evaluator,GenericAnalyticalSolution::REAL); CHKERRQ(ierr);
-        ierr = analytical_bc_imag.setApproxOps(m_field,"imPRES",mit->second.tRis,function_evaluator,GenericAnalyticalSolution::IMAG); CHKERRQ(ierr);
+        boost::shared_ptr<IncidentWave> function_evaluator = boost::shared_ptr<IncidentWave>(
+          new IncidentWave(wavenumber,wave_direction,-power_of_incident_wave)
+        );
+        ierr = analytical_bc_real.setApproxOps(
+          m_field,"rePRES",mit->second.tRis,function_evaluator,GenericAnalyticalSolution::REAL
+        ); CHKERRQ(ierr);
+        ierr = analytical_bc_imag.setApproxOps(
+          m_field,"imPRES",mit->second.tRis,function_evaluator,GenericAnalyticalSolution::IMAG
+        ); CHKERRQ(ierr);
 
       }
 
@@ -457,8 +465,12 @@ int main(int argc, char *argv[]) {
     ierr = analytical_bc_real.setProblem(m_field,"BCREAL_PROBLEM"); CHKERRQ(ierr);
     ierr = analytical_bc_imag.setProblem(m_field,"BCIMAG_PROBLEM"); CHKERRQ(ierr);
 
-    ierr = analytical_bc_real.solveProblem(m_field,"BCREAL_PROBLEM","BCREAL_FE",analytical_ditihlet_bc_real,bc_dirichlet_tris); CHKERRQ(ierr);
-    ierr = analytical_bc_imag.solveProblem(m_field,"BCIMAG_PROBLEM","BCIMAG_FE",analytical_ditihlet_bc_imag,bc_dirichlet_tris); CHKERRQ(ierr);
+    ierr = analytical_bc_real.solveProblem(
+      m_field,"BCREAL_PROBLEM","BCREAL_FE",analytical_ditihlet_bc_real,bc_dirichlet_tris
+    ); CHKERRQ(ierr);
+    ierr = analytical_bc_imag.solveProblem(
+      m_field,"BCIMAG_PROBLEM","BCIMAG_FE",analytical_ditihlet_bc_imag,bc_dirichlet_tris
+    ); CHKERRQ(ierr);
 
     ierr = analytical_bc_real.destroyProblem(); CHKERRQ(ierr);
     ierr = analytical_bc_imag.destroyProblem(); CHKERRQ(ierr);
@@ -487,7 +499,7 @@ int main(int argc, char *argv[]) {
       ierr = m_field.build_problem("INCIDENT_WAVE"); CHKERRQ(ierr);
       ierr = m_field.partition_problem("INCIDENT_WAVE"); CHKERRQ(ierr);
       ierr = m_field.partition_finite_elements("INCIDENT_WAVE"); CHKERRQ(ierr);
-    }
+      }
     ierr = m_field.partition_ghost_dofs("INCIDENT_WAVE"); CHKERRQ(ierr);
 
   }
@@ -576,12 +588,12 @@ int main(int argc, char *argv[]) {
     TimeSeries time_series(m_field,helmholtz_element,
       analytical_ditihlet_bc_real,analytical_ditihlet_bc_imag,
       dirihlet_bc_set);
-    ierr = time_series.timeData();  CHKERRQ(ierr);
+    ierr = time_series.readData();  CHKERRQ(ierr);
     ierr = time_series.forwardDft(); CHKERRQ(ierr);
-    ierr = time_series.createVectorSeries(T); CHKERRQ(ierr);
+    ierr = time_series.createTimeVectorSeries(T); CHKERRQ(ierr);
     ierr = time_series.solveForwardDFT(solver,A,F,T); CHKERRQ(ierr);
     ierr = time_series.pressureInTimeDomainInverseDft(); CHKERRQ(ierr);
-    ierr = time_series.destroyVectorSeries(); CHKERRQ(ierr);
+    ierr = time_series.destroyTimeVectorSeries(); CHKERRQ(ierr);
 
 
   }

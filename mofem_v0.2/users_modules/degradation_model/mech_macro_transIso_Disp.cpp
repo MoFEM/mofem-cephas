@@ -28,7 +28,7 @@ using namespace MoFEM;
 #include <FEMethod_LowLevelStudent.hpp>
 #include <FEMethod_UpLevelStudent.hpp>
 
-#include <PotsProcOnRefMesh.hpp>
+#include <PostProcOnRefMesh.hpp>
 
 #include <ElasticFEMethod.hpp>  
 using namespace ObosleteUsersModules;

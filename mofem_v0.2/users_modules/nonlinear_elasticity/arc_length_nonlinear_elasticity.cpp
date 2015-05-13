@@ -38,7 +38,7 @@ using namespace MoFEM;
 #include <NonLienarElasticElement.hpp>
 #include <NeoHookean.hpp>
 
-#include <PotsProcOnRefMesh.hpp>
+#include <PostProcOnRefMesh.hpp>
 #include <PostProcStresses.hpp>
 #include <Projection10NodeCoordsOnField.hpp>
 

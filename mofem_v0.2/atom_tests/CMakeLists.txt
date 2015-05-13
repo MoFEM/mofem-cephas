@@ -725,7 +725,7 @@ add_test(serial_matrix_compare ${CMAKE_COMMAND} -E compare_files
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/serial_matrix.txt
 )
 
-#build composite problem
+#test for build problems
 add_executable(build_problems build_problems.cpp)
 target_link_libraries(build_problems
   mofem_finite_elements
