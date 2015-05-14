@@ -1,47 +1,5 @@
 /*! \page coding_practice Coding practice
 
-\section citizen Be a good MoFEM citizen
-
-- MoFEM is a open community of users and developers.
-
-- MoFEM is a team work. Don't be focussed only on your project. Your
-  modifications can help others, others modification will help you.
-
-- MoFEM is not own by anyone, you are become owner proportionally to your
-  contribution.
-
-- If you find bugs,or you think that documentation can be improved, you are
-  strongly encourage to contribute.
-
-- If you have idea how to improve MoFEM library, f.e. some functions
-  names are not clear or new functionality can be added,
-  propose that on our discussion group CMatGU <cmatgu@googlegroups.com>.
-
-\section documentation_partice Document the code
-
-Code documentation is essential for its future. MoFEM will live only if others
-know how to do work with it. Not necessary the best code will survive but that
-one with the best documentation. Because all of that always document what you are doing,
-
-- Follow <http://www.stack.nl/~dimitri/doxygen/manual/docblocks.html>
-
-- Think about yourself, you will forget.
-
-- Good documentation allow to revise your own code.
-
-- Help others to understand what you are doing.
-
-- Report assumptions, limitations and bugs in your code.
-
-- Think about different kind of users, f.e. end user who execute only code,
-  beginner programmers and advanced developers.
-
-- Link different part and your work in \em Modules.
-
-- Use latex formulas to place your equations.
-
-- Add to, and correct existing documentation.
-
 
 \section mofam_and_user_modules MoFEM and User Modules
 

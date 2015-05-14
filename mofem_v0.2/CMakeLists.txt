@@ -124,13 +124,6 @@ file(COPY
 enable_testing()
 include(CTest)
 
-add_subdirectory("${PROJECT_SOURCE_DIR}/scripts")
-add_subdirectory("${PROJECT_SOURCE_DIR}/third_party")
-add_subdirectory("${PROJECT_SOURCE_DIR}/include")
-add_subdirectory("${PROJECT_SOURCE_DIR}/src")
-add_subdirectory("${PROJECT_SOURCE_DIR}/finite_element_library")
-add_subdirectory("${PROJECT_SOURCE_DIR}/atom_tests")
-
 #add generation of examplaes
 configure_file(
   ${PROJECT_SOURCE_DIR}/MoFEMConfig.cmake.in
@@ -144,9 +137,7 @@ configure_file(
 install(FILES ${PROJECT_BINARY_DIR}/MoFEMConfig.cmake DESTINATION ${CMAKE_INSTALL_PREFIX})
 install(FILES ${PROJECT_BINARY_DIR}/MoFEMConfig-version.cmake DESTINATION ${CMAKE_INSTALL_PREFIX})
 
-add_subdirectory("${PROJECT_SOURCE_DIR}/users_modules.in")
-
-#add a target to generate API documentation with Doxygen
+#add a target to generate API documentation with Doxyge
 find_package(Doxygen)
 if(DOXYGEN_FOUND)
 
@@ -154,24 +145,26 @@ if(DOXYGEN_FOUND)
     ${PROJECT_SOURCE_DIR}/Doxyfile.in
     ${PROJECT_BINARY_DIR}/Doxyfile
   )
-
   set(DOXYGEN_LINE_COMMAND
     ${DOXYGEN_EXECUTABLE} ${PROJECT_BINARY_DIR}/Doxyfile
-    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
   )
   add_custom_target(doxygen_generating_documenation
     ${DOXYGEN_LINE_COMMAND}
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
     COMMENT "Generating documentation with Doxygen" VERBATIM
   )
-  add_custom_target(doxygen_copy_figures
-    ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/doc/figures ${PROJECT_BINARY_DIR}/html
-    DEPENDS doxygen_generating_documenation
-    COMMENT "Copy figures for Doxygen Documenatation" VERBATIM
-  )
   add_custom_target(doc
-    DEPENDS doxygen_generating_documenation doxygen_copy_figures
+    DEPENDS doxygen_generating_documenation
     COMMENT "Making documentation" VERBATIM
   )
 
-
 endif(DOXYGEN_FOUND)
+
+add_subdirectory("${PROJECT_SOURCE_DIR}/scripts")
+add_subdirectory("${PROJECT_SOURCE_DIR}/third_party")
+add_subdirectory("${PROJECT_SOURCE_DIR}/include")
+add_subdirectory("${PROJECT_SOURCE_DIR}/src")
+add_subdirectory("${PROJECT_SOURCE_DIR}/finite_element_library")
+add_subdirectory("${PROJECT_SOURCE_DIR}/atom_tests")
+add_subdirectory("${PROJECT_SOURCE_DIR}/users_modules.in")
+add_subdirectory("${PROJECT_SOURCE_DIR}/doc")
