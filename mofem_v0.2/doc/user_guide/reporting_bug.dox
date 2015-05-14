@@ -10,13 +10,13 @@ The MoFEM maintenance e-mail, CMatGU <cmatgu@googlegroups.com>, is intended for 
 \section bug_reporting Guidelines for Bug Reports
 
 The more information that you convey about a bug, the easier it will be for us to target the problem. We suggest providing the following information:
-- Line command 
+- Line command
 - Version and git commit id ( shown at beginning of analysis )
-- Error trace or full log file 
+- Error trace or full log file
 
 In some specific cases, additionally you can
-- Send mesh file ( if file not too big )
-- Run ctest \codectest -D Experimental\endcode. 
+- Send mesh file ( if file is not too big )
+- Run ctest \codectest -D Experimental\endcode.
 
 \section example_bug_repoty Example bug report
 

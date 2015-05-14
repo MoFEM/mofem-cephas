@@ -1,0 +1,120 @@
+/*! \page  a_guide_to_writing_documentation A guide to writing documentation
+
+\section why_write_documentation Why write documentation?
+
+Code documentation is essential for its future. MoFEM will live only if others
+know how to do work with it. Not necessary the best code will survive but that
+one with the best documentation. Because all of that always document what you are doing,
+
+- Follow <http://www.stack.nl/~dimitri/doxygen/manual/docblocks.html>
+
+- Think about yourself, you will forget.
+
+- Good documentation allow to revise your own code.
+
+- Help others to understand what you are doing.
+
+- Report assumptions, limitations and bugs in your code.
+
+- Think about different kind of users, f.e. end user who execute only code,
+  beginner programmers and advanced developers.
+
+- Link different part and your work in \em Modules.
+
+- Use latex formulas to place your equations.
+
+\section genaral_about_writting About writing manual
+
+- If possible, make it instructive, step by step
+
+- Try to use examples which others can follow
+
+- First, you need to ask yourself who you’re writing for. At first, you
+generally just need to appeal to two audiences: Developers or Users.
+
+- In first paragraph indicate to who you write this documentation what is
+propose if it.
+
+- Try to indicate of level of difficulty.
+
+- User references to other part of documentation if applicable.
+
+- Use link to other sources in internet, f.e. Wikipedia.
+
+\section building_documentation Writing good manual
+
+It is simple, you execute command in your shell,
+\code
+make doc
+\endcode
+
+Now you can see documentation in web-browser, by opening a file
+\code
+$MOFEM_DIR/htm/index.html
+\endcode
+
+\section writing_documentaion Writing documents, technical aspect
+
+Follow Doxygen <http://www.stack.nl/~dimitri/doxygen/index.html> to
+write your documentation files. Another option is Markdown which is
+supported by Doxygen
+<http://www.stack.nl/~dimitri/doxygen/manual/markdown.html>. Before you
+start you can look how existing documentation is written and follow that example.
+
+- Useful list of command in Doxygen <http://www.stack.nl/~dimitri/doxygen/manual/commands.html>
+
+- If you write general documentation about MoFEM, you locale your files in \em /doc/user_guide.
+
+- If your documentation is about MoFEM and written in Markdown, locate it in \em /doc/markdown
+
+- If documentation is about some \em user \em module, then locate documentation
+  files in user module directory, f.e. \em users_modules/nonlinear_elasticity/doc
+
+\section documentation_linked_figures Figures
+
+Publishing figures with documentation need additional effort. All figures
+linked in your documentation have to be copied with documentation directory created by Doxygen.
+
+- If you write documentation about use of MoFEM library, this is straightforward, you simply
+copy your figures to \em doc/figures. CMake will do a job for you, and copy
+files with figures to appropriate directory.
+
+- If you write user module documentation, you do it like above, only
+difference, you place you figure in directory user_modules/doc/figures.
+
+- It is very important that name of your figure file is unique. All figures
+(or any other linked files) are copied to same directory
+\em ${PROJECT_BINARY_DIR}/html while documentation is created by Doxygen.
+
+- Including figure in case of Dofygen document:
+
+\code
+\image latex application.eps "My application" width=10cm
+\image html application.jpg
+\endcode
+
+More details about including images are here <http://www.stack.nl/~dimitri/doxygen/manual/commands.html#cmdimage>
+
+- Including figure in case of Markdown documentation
+
+\code
+![Caption text](img.jpg)
+![Caption text](img.jpg "Image title")
+![Caption text][img def]
+![img def]
+
+[img def]: img.jpg "Optional Title"
+\endcode
+
+you can use also @ref link an image
+
+\code
+![Caption text](@ref image.png)
+![img def]
+
+[img def]: @ref image.png "Caption text"
+\endcode
+
+More details about including in Markdown are here <http://www.stack.nl/~dimitri/doxygen/manual/markdown.html#md_images>
+
+*/
