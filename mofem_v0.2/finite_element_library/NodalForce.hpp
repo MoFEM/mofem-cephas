@@ -49,12 +49,11 @@ struct NodalForce {
 
     OpNodalForce(const string field_name,Vec &_F,bCForce &data,
       boost::ptr_vector<MethodsForOp> &methods_op,bool use_snes_f = false):
-      VertexElementForcesAndSourcesCore::UserDataOperator(field_name),
+      VertexElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
       F(_F),useSnesF(use_snes_f),dAta(data),methodsOp(methods_op) {}
 
     ublas::vector<FieldData> Nf;
-    PetscErrorCode doWork(
-      int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
 
       if(data.getIndices().size()==0) PetscFunctionReturn(0);
@@ -90,7 +89,7 @@ struct NodalForce {
       Vec myF = F;
       if(useSnesF) {
 	myF = getFEMethod()->snes_f;
-      } 
+      }
       ierr = VecSetValues(myF,data.getIndices().size(),
 	&data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
 
@@ -124,7 +123,7 @@ struct MetaNodalForces {
       ErrorCode rval;
       double def_scale = 1.;
       const EntityHandle root_meshset = mField.get_moab().get_root_set();
-      rval = mField.get_moab().tag_get_handle("_LoadFactor_Scale_",1,MB_TYPE_DOUBLE,thScale,MB_TAG_CREAT|MB_TAG_EXCL|MB_TAG_MESH,&def_scale); 
+      rval = mField.get_moab().tag_get_handle("_LoadFactor_Scale_",1,MB_TYPE_DOUBLE,thScale,MB_TAG_CREAT|MB_TAG_EXCL|MB_TAG_MESH,&def_scale);
       if(rval == MB_ALREADY_ALLOCATED) {
 	rval = mField.get_moab().tag_get_by_ptr(thScale,&root_meshset,1,(const void**)&sCale); CHKERR_THROW(rval);
       } else {
@@ -168,7 +167,7 @@ struct MetaNodalForces {
     PetscFunctionReturn(0);
   }
 
-  static PetscErrorCode setNodalForceElementOperators( 
+  static PetscErrorCode setNodalForceElementOperators(
     FieldInterface &mField,
     boost::ptr_map<string,NodalForce> &nodal_forces,
     Vec &F,const string field_name) {

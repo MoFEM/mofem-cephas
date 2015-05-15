@@ -164,10 +164,12 @@ struct HelmholtzElement {
     bool takeIndicesFromElementRowIndices;
 
     OpGetImIndices(
-      const string re_field_name,const string im_field_name,CommonData &common_data):
-      ForcesAndSurcesCore::UserDataOperator(re_field_name),
-      commonData(common_data),
-      reFieldName(re_field_name),imFieldName(im_field_name) {
+      const string re_field_name,const string im_field_name,CommonData &common_data
+    ):
+    ForcesAndSurcesCore::UserDataOperator(re_field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
+    commonData(common_data),
+    reFieldName(re_field_name),
+    imFieldName(im_field_name) {
 
       if(reFieldName!=imFieldName) {
 
@@ -218,10 +220,9 @@ struct HelmholtzElement {
 
     CommonData &commonData;
     const string fieldName;
-    OpGetValueAndGradAtGaussPts(const string field_name,
-      CommonData &common_data):
-      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
-      commonData(common_data),fieldName(field_name) {}
+    OpGetValueAndGradAtGaussPts(const string field_name,CommonData &common_data):
+    VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
+    commonData(common_data),fieldName(field_name) {}
 
     PetscErrorCode doWork(
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
@@ -274,10 +275,9 @@ struct HelmholtzElement {
 
     CommonData &commonData;
     const string fieldName;
-    OpGetValueAtGaussPts(const string field_name,
-      CommonData &common_data):
-      FaceElementForcesAndSourcesCore::UserDataOperator(field_name),
-      commonData(common_data),fieldName(field_name) {}
+    OpGetValueAtGaussPts(const string field_name,CommonData &common_data):
+    FaceElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
+    commonData(common_data),fieldName(field_name) {}
 
     PetscErrorCode doWork(
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
@@ -321,15 +321,14 @@ struct HelmholtzElement {
 
     ublas::matrix<double> &hoCoordsTri;
     OpHoCoordTri(const string field_name,ublas::matrix<double> &ho_coords):
-      FaceElementForcesAndSourcesCore::UserDataOperator(field_name),
+      FaceElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
       hoCoordsTri(ho_coords) {}
 
     /*
     Cartesian coordinates for integration points inside elements
     X^coordinates = DOF dot* N
     */
-    PetscErrorCode doWork(
-      int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
 
       try {
@@ -379,8 +378,11 @@ struct HelmholtzElement {
 
     OpHelmholtzRhs(
       const string field_name,Vec _F,VolumeData &data,CommonData &common_data):
-      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
-      dAta(data),commonData(common_data),fieldName(field_name),F(_F) { }
+      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
+      dAta(data),
+      commonData(common_data),
+      fieldName(field_name),
+      F(_F) { }
 
     ublas::vector<double> Nf;
 
@@ -460,9 +462,15 @@ struct HelmholtzElement {
 
     OpHelmholtzLhs(
       const string &re_field_name,const string &im_field_name,
-      Mat _A,VolumeData &data,CommonData &common_data):
-      VolumeElementForcesAndSourcesCore::UserDataOperator(re_field_name,re_field_name),
-      dAta(data),commonData(common_data),imFieldName(im_field_name),A(_A) {}
+      Mat _A,VolumeData &data,CommonData &common_data
+    ):
+    VolumeElementForcesAndSourcesCore::UserDataOperator(
+      re_field_name,re_field_name,ForcesAndSurcesCore::UserDataOperator::OPROWCOL
+    ),
+    dAta(data),
+    commonData(common_data),
+    imFieldName(im_field_name),
+    A(_A) {}
 
     ublas::matrix<double> K,transK;
 
@@ -707,11 +715,14 @@ struct HelmholtzElement {
     OpHelmholtzMixBCRhs(
       const string re_field_name,const string im_field_name,
       Vec _F,SurfaceData &data,CommonData &common_data,
-      boost::shared_ptr<FUNEVAL1> function_evaluator1,boost::shared_ptr<FUNEVAL2> function_evaluator2):
-      FaceElementForcesAndSourcesCore::UserDataOperator(re_field_name),
-      dAta(data),commonData(common_data),F(_F),
-      rePressure(re_field_name),imPressure(im_field_name),
-      functionEvaluator1(function_evaluator1),functionEvaluator2(function_evaluator2) {}
+      boost::shared_ptr<FUNEVAL1> function_evaluator1,boost::shared_ptr<FUNEVAL2> function_evaluator2
+    ):
+    FaceElementForcesAndSourcesCore::UserDataOperator(re_field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
+    dAta(data),commonData(common_data),F(_F),
+    rePressure(re_field_name),
+    imPressure(im_field_name),
+    functionEvaluator1(function_evaluator1),
+    functionEvaluator2(function_evaluator2) {}
 
     ublas::vector<double> reNf,imNf;
 
@@ -844,10 +855,16 @@ struct HelmholtzElement {
     OpHelmholtzMixBCLhs(
       const string re_field_name,const string im_field_name,
       Mat _A,SurfaceData &data,CommonData &common_data,
-      boost::shared_ptr<FUNEVAL1> function_evaluator1):
-      FaceElementForcesAndSourcesCore::UserDataOperator(re_field_name,re_field_name), // Note: operator is real-real
-      dAta(data),commonData(common_data),rePressure(re_field_name),imPressure(im_field_name),
-      functionEvaluator1(function_evaluator1),A(_A) {
+      boost::shared_ptr<FUNEVAL1> function_evaluator1
+    ):
+    FaceElementForcesAndSourcesCore::UserDataOperator(
+      re_field_name,re_field_name,ForcesAndSurcesCore::UserDataOperator::OPROWCOL
+    ), // Note: operator is real-real
+    dAta(data),
+    commonData(common_data),
+    rePressure(re_field_name),
+    imPressure(im_field_name),
+    functionEvaluator1(function_evaluator1),A(_A) {
 
       sYmm = false; /// This operator is not symmetric
 
