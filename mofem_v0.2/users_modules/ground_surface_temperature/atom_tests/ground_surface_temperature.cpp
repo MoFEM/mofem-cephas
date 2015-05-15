@@ -99,7 +99,7 @@ struct MyTimeData: public GenricClimateModel {
 
     spaData.hour = 0;        	// Observer local hour,   valid range: 0 to  24,  error code: 4
     spaData.minute = 0;         // Observer local minute, valid range: 0 to  59,  error code: 5
-    spaData.second = 0;         // Observer local second, valid range: 0 to <60,  error code: 6	
+    spaData.second = 0;         // Observer local second, valid range: 0 to <60,  error code: 6
 
     //This is London
     spaData.longitude = 0.1275;   // Observer longitude (negative west of Greenwich)
@@ -121,7 +121,7 @@ struct MyTimeData: public GenricClimateModel {
     if(r) {
       SETERRQ1(PETSC_COMM_SELF,1,"wrong input data for solar position calulator error codde %d",r);
     }
-    
+
     zenith = spaData.zenith;
     azimuth = spaData.azimuth;
 
@@ -155,7 +155,7 @@ int main(int argc, char *argv[]) {
   Interface& moab = mb_instance;
   const char *option;
   option = "";
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
@@ -176,7 +176,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,3); CHKERRQ(ierr);
 
   //meshset consisting all entities in mesh
-  EntityHandle root_set = moab.get_root_set(); 
+  EntityHandle root_set = moab.get_root_set();
   //add entities to field (root_mesh, i.e. on all mesh etities fields are approx.)
   ierr = m_field.add_ents_to_field_by_TETs(root_set,"TEMP"); CHKERRQ(ierr);
 
@@ -196,13 +196,13 @@ int main(int argc, char *argv[]) {
   ierr = m_field.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
 
   GroundSurfaceTemerature ground_surface(m_field);
-  ground_surface.addSurfaces("TEMP"); 
+  ground_surface.addSurfaces("TEMP");
 
   //build database, i.e. declare dofs, elements and ajacencies
 
   //build field
   ierr = m_field.build_fields(); CHKERRQ(ierr);
-  //priject 10 node tet approximation of gemetry on hierarhical basis 
+  //priject 10 node tet approximation of gemetry on hierarhical basis
   Projection10NodeCoordsOnField ent_method_material(m_field,"MESH_NODE_POSITIONS");
   ierr = m_field.loop_dofs("MESH_NODE_POSITIONS",ent_method_material); CHKERRQ(ierr);
   //build finite elemnts
@@ -243,7 +243,7 @@ int main(int argc, char *argv[]) {
     time_data.spaData.year = current_time.tm_year+1900;
 
     PetscPrintf(PETSC_COMM_WORLD,"%s",asctime(&current_time));
-        
+
     ierr = time_data.set(); CHKERRQ(ierr);
     ierr = shade_ptr->preProcess(); CHKERRQ(ierr);
 
@@ -306,7 +306,7 @@ int main(int argc, char *argv[]) {
   //ierr = VecChop(F,1e-4); CHKERRQ(ierr);
   //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
   ierr = VecView(F,viewer); CHKERRQ(ierr);
-  
+
   //MatView(Aij,PETSC_VIEWER_DRAW_WORLD);
   MatChop(Aij,1e-4);
   //MatView(Aij,PETSC_VIEWER_STDOUT_WORLD);
@@ -324,6 +324,3 @@ int main(int argc, char *argv[]) {
   PetscFinalize();
   return 0;
 }
-
-
-
