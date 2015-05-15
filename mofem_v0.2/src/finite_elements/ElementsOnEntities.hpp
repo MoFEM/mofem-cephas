@@ -502,8 +502,8 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
   OpSetHoPiolaTransform opSetHoPiolaTransform;
   OpSetHoInvJacHdiv opSetHoInvJacHdiv;
 
-  VolumeElementForcesAndSourcesCore(FieldInterface &_mField):
-    ForcesAndSurcesCore(_mField),
+  VolumeElementForcesAndSourcesCore(FieldInterface &m_field):
+    ForcesAndSurcesCore(m_field),
     dataH1(MBTET),derivedDataH1(dataH1),
     dataL2(MBTET),derivedDataL2(dataL2),
     dataHdiv(MBTET),derivedDataHdiv(dataHdiv),
@@ -638,8 +638,8 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
   OpGetNormals opHONormals;
   OpSetPiolaTransoformOnTriangle opSetPiolaTransoformOnTriangle;
 
-  FaceElementForcesAndSourcesCore(FieldInterface &_mField):
-    ForcesAndSurcesCore(_mField),
+  FaceElementForcesAndSourcesCore(FieldInterface &m_field):
+    ForcesAndSurcesCore(m_field),
     dataH1(MBTRI),derivedDataH1(dataH1),
     dataHdiv(MBTRI),derivedDataHdiv(dataHdiv),
     dataNoField(MBTRI),dataNoFieldCol(MBTRI),
@@ -748,8 +748,8 @@ struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
   DerivedDataForcesAndSurcesCore derivedDataH1;
   DataForcesAndSurcesCore dataNoField,dataNoFieldCol;
 
-  EdgeElementForcesAndSurcesCore(FieldInterface &_mField):
-    ForcesAndSurcesCore(_mField),
+  EdgeElementForcesAndSurcesCore(FieldInterface &m_field):
+    ForcesAndSurcesCore(m_field),
     dataH1(MBEDGE),
     derivedDataH1(dataH1),
     dataNoField(MBEDGE),
@@ -820,10 +820,16 @@ struct VertexElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 
   DataForcesAndSurcesCore data;
   DerivedDataForcesAndSurcesCore derivedData;
+  DataForcesAndSurcesCore dataNoField,dataNoFieldCol;
   string meshPositionsFieldName;
 
-  VertexElementForcesAndSourcesCore(FieldInterface &_mField):
-    ForcesAndSurcesCore(_mField),data(MBVERTEX),derivedData(data) {};
+  VertexElementForcesAndSourcesCore(FieldInterface &m_field):
+    ForcesAndSurcesCore(m_field),
+    data(MBVERTEX),
+    derivedData(data),
+    dataNoField(MBVERTEX),
+    dataNoFieldCol(MBVERTEX)
+  {};
 
   ErrorCode rval;
   ublas::vector<double> coords;
