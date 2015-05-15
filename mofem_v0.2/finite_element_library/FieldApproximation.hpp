@@ -59,7 +59,7 @@ struct FieldApproximationH1 {
     FUNEVAL &functionEvaluator;
 
     OpApprox(const string &field_name,Mat _A,vector<Vec> &vec_F,FUNEVAL &function_evaluator):
-      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
+      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW|UserDataOperator::OPROWCOL),
       A(_A),vecF(vec_F),functionEvaluator(function_evaluator) {}
     virtual ~OpApprox() {}
 
@@ -278,10 +278,10 @@ struct FieldApproximationH1 {
     PetscErrorCode ierr;
 
     //add operator to calculate F vector
-    fe.getRowOpPtrVector().push_back(new OpApprox<FUNEVAL>(field_name,A,vec_F,function_evaluator));
+    fe.getOpPtrVector().push_back(new OpApprox<FUNEVAL>(field_name,A,vec_F,function_evaluator));
     //add operator to calculate A matrix
     if(A) {
-      fe.getRowColOpPtrVector().push_back(new OpApprox<FUNEVAL>(field_name,A,vec_F,function_evaluator));
+      fe.getOpPtrVector().push_back(new OpApprox<FUNEVAL>(field_name,A,vec_F,function_evaluator));
     }
 
     if(A) {

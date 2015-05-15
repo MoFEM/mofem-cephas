@@ -1,4 +1,4 @@
-/*! \page guidelines_bug_reporting Guidelines for Bug Reports
+/*! \page guidelines_bug_reporting Guidelines for bug reporting
 
 The MoFEM maintenance e-mail, CMatGU <cmatgu@googlegroups.com>, is intended for users to
 
@@ -7,7 +7,7 @@ The MoFEM maintenance e-mail, CMatGU <cmatgu@googlegroups.com>, is intended for 
 - ask for help in tracking down bugs, and
 - request new features within MoFEM.
 
-\section bug_reporting Guidelines for Bug Reports
+\section bug_reporting Guidelines for bug reporting
 
 The more information that you convey about a bug, the easier it will be for us to target the problem. We suggest providing the following information:
 - Line command

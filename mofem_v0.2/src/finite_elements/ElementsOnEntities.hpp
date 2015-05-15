@@ -196,7 +196,6 @@ struct ForcesAndSurcesCore: public FEMethod {
     DataForcesAndSurcesCore &data,
     const double *G_X,const double *G_Y,const double *G_Z,const int G_DIM);
 
-
   ublas::matrix<ublas::matrix<double> > N_face_edge;
   ublas::vector<ublas::matrix<double> > N_face_bubble;
   ublas::vector<ublas::matrix<double> > N_volume_edge;
@@ -339,12 +338,32 @@ struct ForcesAndSurcesCore: public FEMethod {
     /// unset if operator is executed for  non symmetric problem
     inline void unSetSymm() { sYmm = false; }
 
+    enum OpType {
+      OPROW = 1<<0,
+      OPCOL = 1<<1,
+      OPROWCOL = 1<<2
+    };
+    char opType;
+
+    inline int getOpType() const { return opType; }
+    inline void setOpType(const OpType type) { opType = type; }
+    inline void addOpType(const OpType type) { opType |= type; }
+
+    UserDataOperator(const string &_field_name,const char type):
+      rowFieldName(_field_name),
+      colFieldName(_field_name),
+      sYmm(true),
+      opType(type),
+      ptrFE(NULL) {};
+
     UserDataOperator(
-      const string &_field_name):
-      rowFieldName(_field_name),colFieldName(_field_name),sYmm(true),ptrFE(NULL) {};
-      UserDataOperator(
-        const string &_row_field_name,const string &_col_field_name
-      ): rowFieldName(_row_field_name),colFieldName(_col_field_name),sYmm(true),ptrFE(NULL) {}
+        const string &_row_field_name,const string &_col_field_name,const char type
+      ):
+      rowFieldName(_row_field_name),
+      colFieldName(_col_field_name),
+      sYmm(true),
+      opType(type),
+      ptrFE(NULL) {}
       virtual ~UserDataOperator() {}
 
     /** \bried return pointer to NumeredMoFEMFiniteElement
@@ -394,34 +413,45 @@ struct ForcesAndSurcesCore: public FEMethod {
 
   };
 
-  boost::ptr_vector<UserDataOperator> rowOpPtrVector;
-  boost::ptr_vector<UserDataOperator> colOpPtrVector;
-  boost::ptr_vector<UserDataOperator> rowColOpPtrVector;
+  boost::ptr_vector<UserDataOperator> opPtrVector;
 
   /** \brief Use to push back operator for row operator
 
    It can be used to calculate nodal forces or other quantities on the mesh.
 
    */
-  boost::ptr_vector<UserDataOperator>& getRowOpPtrVector() { return rowOpPtrVector; }
+  boost::ptr_vector<UserDataOperator>& getOpPtrVector() { return opPtrVector; }
+
+  /** \brief Use to push back operator for row operator
+
+   It can be used to calculate nodal forces or other quantities on the mesh.
+
+   This function is DEPRECATED: use getOpPtrVector instead.
+
+   */
+  DEPRECATED boost::ptr_vector<UserDataOperator>& getRowOpPtrVector() { return opPtrVector; }
 
   /** \brief Use to push back operator for col operator
 
    It can be used to calculate nodal forces or other quantities on the mesh.
 
+   This function is DEPRECATED: use getOpPtrVector instead.
+
    */
-  boost::ptr_vector<UserDataOperator>& getColOpPtrVector() { return colOpPtrVector; }
+  DEPRECATED boost::ptr_vector<UserDataOperator>& getColOpPtrVector() { return opPtrVector; }
 
 
   /** \brief use to push back operator for row-col operator
 
-   it can be used to calculate matrices or other quantities on mesh.
+   It can be used to calculate matrices or other quantities on mesh.
+
+   This function is DEPRECATED: use getOpPtrVector instead.
 
    */
-  boost::ptr_vector<UserDataOperator>& getRowColOpPtrVector() { return rowColOpPtrVector; }
+  DEPRECATED boost::ptr_vector<UserDataOperator>& getRowColOpPtrVector() { return opPtrVector; }
 
-  DEPRECATED boost::ptr_vector<UserDataOperator>& get_op_to_do_Rhs() { return getRowOpPtrVector(); }
-  DEPRECATED boost::ptr_vector<UserDataOperator>& get_op_to_do_Lhs() { return getRowColOpPtrVector(); }
+  DEPRECATED boost::ptr_vector<UserDataOperator>& get_op_to_do_Rhs() { return getOpPtrVector(); }
+  DEPRECATED boost::ptr_vector<UserDataOperator>& get_op_to_do_Lhs() { return getOpPtrVector(); }
 
   virtual PetscErrorCode preProcess() {
     PetscFunctionBegin;
@@ -472,8 +502,8 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
   OpSetHoPiolaTransform opSetHoPiolaTransform;
   OpSetHoInvJacHdiv opSetHoInvJacHdiv;
 
-  VolumeElementForcesAndSourcesCore(FieldInterface &_mField):
-    ForcesAndSurcesCore(_mField),
+  VolumeElementForcesAndSourcesCore(FieldInterface &m_field):
+    ForcesAndSurcesCore(m_field),
     dataH1(MBTET),derivedDataH1(dataH1),
     dataL2(MBTET),derivedDataL2(dataL2),
     dataHdiv(MBTET),derivedDataHdiv(dataHdiv),
@@ -504,10 +534,13 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
   struct UserDataOperator: public ForcesAndSurcesCore::UserDataOperator {
 
     UserDataOperator(
-      const string &_field_name): ForcesAndSurcesCore::UserDataOperator(_field_name) {};
+      const string &field_name,const char type):
+      ForcesAndSurcesCore::UserDataOperator(field_name,type) {}
+
+
     UserDataOperator(
-      const string &_row_field_name,const string &_col_field_name):
-      ForcesAndSurcesCore::UserDataOperator(_row_field_name,_col_field_name) {};
+      const string &row_field_name,const string &col_field_name,const char type):
+      ForcesAndSurcesCore::UserDataOperator(row_field_name,col_field_name,type) {};
 
     /** \brief element volume (linear geometry)
       */
@@ -605,8 +638,8 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
   OpGetNormals opHONormals;
   OpSetPiolaTransoformOnTriangle opSetPiolaTransoformOnTriangle;
 
-  FaceElementForcesAndSourcesCore(FieldInterface &_mField):
-    ForcesAndSurcesCore(_mField),
+  FaceElementForcesAndSourcesCore(FieldInterface &m_field):
+    ForcesAndSurcesCore(m_field),
     dataH1(MBTRI),derivedDataH1(dataH1),
     dataHdiv(MBTRI),derivedDataHdiv(dataHdiv),
     dataNoField(MBTRI),dataNoFieldCol(MBTRI),
@@ -620,10 +653,12 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
   struct UserDataOperator: public ForcesAndSurcesCore::UserDataOperator {
 
     UserDataOperator(
-      const string &_field_name): ForcesAndSurcesCore::UserDataOperator(_field_name) {};
+      const string &field_name,const char type):
+      ForcesAndSurcesCore::UserDataOperator(field_name,type) {}
+
     UserDataOperator(
-      const string &_row_field_name,const string &_col_field_name):
-      ForcesAndSurcesCore::UserDataOperator(_row_field_name,_col_field_name) {};
+      const string &row_field_name,const string &col_field_name,const char type):
+      ForcesAndSurcesCore::UserDataOperator(row_field_name,col_field_name,type) {};
 
     inline double getArea() { return ptrFE->aRea; }
 
@@ -711,9 +746,15 @@ struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
   DataForcesAndSurcesCore dataH1;
   DerivedDataForcesAndSurcesCore derivedDataH1;
+  DataForcesAndSurcesCore dataNoField,dataNoFieldCol;
 
-  EdgeElementForcesAndSurcesCore(FieldInterface &_mField):
-    ForcesAndSurcesCore(_mField),dataH1(MBEDGE),derivedDataH1(dataH1) {};
+  EdgeElementForcesAndSurcesCore(FieldInterface &m_field):
+    ForcesAndSurcesCore(m_field),
+    dataH1(MBEDGE),
+    derivedDataH1(dataH1),
+    dataNoField(MBEDGE),
+    dataNoFieldCol(MBEDGE)
+  {};
 
   ErrorCode rval;
   double lEngth;;
@@ -727,10 +768,12 @@ struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
   struct UserDataOperator: public ForcesAndSurcesCore::UserDataOperator {
 
     UserDataOperator(
-      const string &_field_name): ForcesAndSurcesCore::UserDataOperator(_field_name) {};
+      const string &field_name,const char type):
+      ForcesAndSurcesCore::UserDataOperator(field_name,type) {}
+
     UserDataOperator(
-      const string &_row_field_name,const string &_col_field_name):
-      ForcesAndSurcesCore::UserDataOperator(_row_field_name,_col_field_name) {};
+      const string &row_field_name,const string &col_field_name,const char type):
+      ForcesAndSurcesCore::UserDataOperator(row_field_name,col_field_name,type) {}
 
     inline double getLength() { return ptrFE->lEngth; }
     inline ublas::vector<double>& getDirection() { return ptrFE->dIrection; }
@@ -770,17 +813,21 @@ struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
  number of operator added pushing objects to rowOpPtrVector and
  rowColOpPtrVector.
 
- \bug colOp not implemented
-
  */
 struct VertexElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 
   DataForcesAndSurcesCore data;
   DerivedDataForcesAndSurcesCore derivedData;
+  DataForcesAndSurcesCore dataNoField,dataNoFieldCol;
   string meshPositionsFieldName;
 
-  VertexElementForcesAndSourcesCore(FieldInterface &_mField):
-    ForcesAndSurcesCore(_mField),data(MBVERTEX),derivedData(data) {};
+  VertexElementForcesAndSourcesCore(FieldInterface &m_field):
+    ForcesAndSurcesCore(m_field),
+    data(MBVERTEX),
+    derivedData(data),
+    dataNoField(MBVERTEX),
+    dataNoFieldCol(MBVERTEX)
+  {};
 
   ErrorCode rval;
   ublas::vector<double> coords;
@@ -790,10 +837,12 @@ struct VertexElementForcesAndSourcesCore: public ForcesAndSurcesCore {
   struct UserDataOperator: public ForcesAndSurcesCore::UserDataOperator {
 
     UserDataOperator(
-      const string &_field_name): ForcesAndSurcesCore::UserDataOperator(_field_name) {};
+      const string &field_name,const char type):
+      ForcesAndSurcesCore::UserDataOperator(field_name,type) {}
+
     UserDataOperator(
-      const string &_row_field_name,const string &_col_field_name):
-      ForcesAndSurcesCore::UserDataOperator(_row_field_name,_col_field_name) {};
+      const string &row_field_name,const string &col_field_name,const char type):
+      ForcesAndSurcesCore::UserDataOperator(row_field_name,col_field_name,type) {}
 
     inline ublas::vector<double>& getCoords() { return ptrFE->coords; }
 
@@ -828,8 +877,6 @@ struct VertexElementForcesAndSourcesCore: public ForcesAndSurcesCore {
  derived from FlatPrismElementForcesAndSurcesCoreL::UserDataOperator.  Arbitrary
  number of operator added pushing objects to rowOpPtrVector and
  rowColOpPtrVector.
-
- \bug colOp not implemented
 
  */
 struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
@@ -873,10 +920,12 @@ struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
   struct UserDataOperator: public ForcesAndSurcesCore::UserDataOperator {
 
     UserDataOperator(
-      const string &_field_name): ForcesAndSurcesCore::UserDataOperator(_field_name) {};
+      const string &field_name,const char type):
+      ForcesAndSurcesCore::UserDataOperator(field_name,type) {}
+
     UserDataOperator(
-      const string &_row_field_name,const string &_col_field_name):
-      ForcesAndSurcesCore::UserDataOperator(_row_field_name,_col_field_name) {};
+      const string &row_field_name,const string &col_field_name,const char type):
+      ForcesAndSurcesCore::UserDataOperator(row_field_name,col_field_name,type) {}
 
     inline double getArea() { return ptrFE->aRea; }
 

@@ -33,11 +33,17 @@ extern "C" {
 
 namespace ObosleteUsersModules {
 
-NeummanForcesSurfaceComplexForLazy::AuxMethodSpatial::AuxMethodSpatial(const string &field_name,MyTriangleSpatialFE *_myPtr): 
-      FaceElementForcesAndSourcesCore::UserDataOperator(field_name),myPtr(_myPtr) {}
+NeummanForcesSurfaceComplexForLazy::AuxMethodSpatial::AuxMethodSpatial(
+  const string &field_name,MyTriangleSpatialFE *my_ptr,const char type
+):
+FaceElementForcesAndSourcesCore::UserDataOperator(field_name,type),
+myPtr(my_ptr) {}
 
-NeummanForcesSurfaceComplexForLazy::AuxMethodMaterial::AuxMethodMaterial(const string &field_name,MyTriangleSpatialFE *_myPtr): 
-      FaceElementForcesAndSourcesCore::UserDataOperator(field_name),myPtr(_myPtr) {};
+NeummanForcesSurfaceComplexForLazy::AuxMethodMaterial::AuxMethodMaterial(
+  const string &field_name,MyTriangleSpatialFE *my_ptr,const char type
+):
+FaceElementForcesAndSourcesCore::UserDataOperator(field_name,type),
+myPtr(my_ptr) {};
 
 PetscErrorCode NeummanForcesSurfaceComplexForLazy::
   AuxMethodSpatial::doWork(int side, EntityType type, DataForcesAndSurcesCore::EntData &data) {
@@ -45,11 +51,12 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::
 
   try {
 
-  switch (type) {
-    case MBVERTEX: {
-      if(data.getFieldData().size()!=9) {
-	SETERRQ2(PETSC_COMM_SELF,1,"it should be 9 dofs on vertices but is %d of field < %s >",
-	  data.getFieldData().size(),rowFieldName.c_str());
+    switch (type) {
+      case MBVERTEX: {
+        if(data.getFieldData().size()!=9) {
+          SETERRQ2(PETSC_COMM_SELF,1,"it should be 9 dofs on vertices but is %d of field < %s >",
+          data.getFieldData().size(),rowFieldName.c_str()
+        );
       }
       myPtr->N = &*data.getN().data().begin();
       myPtr->diffN = &*data.getDiffN().data().begin();
@@ -126,7 +133,7 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::
       myPtr->dofs_X = &*myPtr->dOfs_X.data().begin();
     }
     break;
-    case MBEDGE: {	
+    case MBEDGE: {
       myPtr->order_edge_material[side] = data.getOrder();
       myPtr->dOfs_X_edge.resize(3);
       myPtr->dOfs_X_edge[side].resize(data.getFieldData().size());
@@ -155,7 +162,7 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::
 }
 
 NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::MyTriangleSpatialFE
-  (FieldInterface &_mField,Mat _Aij,Vec &_F,double *scale_lhs,double *scale_rhs): 
+  (FieldInterface &_mField,Mat _Aij,Vec &_F,double *scale_lhs,double *scale_rhs):
   FaceElementForcesAndSourcesCore(_mField),sCaleLhs(scale_lhs),sCaleRhs(scale_rhs),
   typeOfForces(CONSERVATIVE),eps(1e-8),uSeF(false) {
 
@@ -169,9 +176,9 @@ NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::MyTriangleSpatialFE
   snes_f = _F;
 
   if(mField.check_field("MESH_NODE_POSITIONS")) {
-    getRowOpPtrVector().push_back(new AuxMethodMaterial("MESH_NODE_POSITIONS",this));
+    getOpPtrVector().push_back(new AuxMethodMaterial("MESH_NODE_POSITIONS",this,ForcesAndSurcesCore::UserDataOperator::OPROW));
   }
-  getRowOpPtrVector().push_back(new AuxMethodSpatial("SPATIAL_POSITION",this));
+  getOpPtrVector().push_back(new AuxMethodSpatial("SPATIAL_POSITION",this,ForcesAndSurcesCore::UserDataOperator::OPROW));
 
 }
 
@@ -182,7 +189,7 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::rHs() {
 
   try {
 
-  fExtNode.resize(9);	
+  fExtNode.resize(9);
   fExtFace.resize(dataH1.dataOnEntities[MBTRI][0].getFieldData().size());
   fExtEdge.resize(3);
   for(int ee = 0;ee<3;ee++) {
@@ -217,7 +224,7 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::rHs() {
 	for(;s<dOfs_X_edge[ee].size();s++) {
 	  dOfs_X_edge[ee][s] = 0;
 	}
-	dofs_X_edge[ee] = &*dOfs_X_edge[ee].data().begin();	
+	dofs_X_edge[ee] = &*dOfs_X_edge[ee].data().begin();
       }
       unsigned int s = dOfs_X_face.size();
       dOfs_X_face.resize(dOfs_x_face.size(),true);
@@ -251,9 +258,9 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::rHs() {
   //}
 
   try {
- 
+
   Vec f = snes_f;
-  if(uSeF) f = F; 
+  if(uSeF) f = F;
 
   ierr = VecSetValues(f,
     9,dofs_x_indices,
@@ -455,7 +462,7 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::calcTrac
     if(mif->second.tRis.find(ent)!=mif->second.tRis.end()) {
       tGlob.resize(3);
       tGlob[0] = mif->second.data.data.value3;
-      tGlob[1] = mif->second.data.data.value4; 
+      tGlob[1] = mif->second.data.data.value4;
       tGlob[2] = mif->second.data.data.value5;
       tGlob *= mif->second.data.data.value1;
       tGlobNodal.resize(3,3);
@@ -606,7 +613,7 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::addPreas
 }
 
 NeummanForcesSurfaceComplexForLazy::MyTriangleMaterialFE::MyTriangleMaterialFE
-  (FieldInterface &_mField,Mat _Aij,Vec &_F,double *scale_lhs,double *scale_rhs): 
+  (FieldInterface &_mField,Mat _Aij,Vec &_F,double *scale_lhs,double *scale_rhs):
   MyTriangleSpatialFE(_mField,_Aij,_F,scale_lhs,scale_rhs) {}
 
 PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleMaterialFE::rHs() {
@@ -615,19 +622,19 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleMaterialFE::rHs() {
   //cerr << "MyTriangleMaterialFE::rHs()\n";
 
   try {
-    
+
   if(dOfs_X_indices.size()!=9) {
     SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
   }
   /*cerr << "dOfs_X_indices: " << dOfs_X_indices << endl;
   cerr << "dOfs_X_indices: " << dOfs_X << endl;
   cerr << "order_face_material " << order_face_material << endl;
-  cerr << "order_edge_material " 
-    << order_edge_material[0] << " " 
+  cerr << "order_edge_material "
+    << order_edge_material[0] << " "
     << order_edge_material[1] << " "
     << order_edge_material[2] << endl;*/
 
-  fExtNode.resize(9);	
+  fExtNode.resize(9);
   ierr = Fext_H_hierarchical(
     order_face_material,order_edge_material,//2
     N,N_face,N_edge,diffN,diffN_face,diffN_edge,//8
@@ -638,7 +645,7 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleMaterialFE::rHs() {
     gaussPts.size2(),&gaussPts(2,0)); CHKERRQ(ierr);
 
   Vec f = snes_f;
-  if(uSeF) f = F; 
+  if(uSeF) f = F;
   ierr = VecSetValues(f,
     9,dofs_X_indices,
     &*fExtNode.data().begin(),ADD_VALUES); CHKERRQ(ierr);
@@ -685,14 +692,14 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleMaterialFE::lHs() {
   PetscFunctionReturn(0);
 }
 
-NeummanForcesSurfaceComplexForLazy::NeummanForcesSurfaceComplexForLazy(FieldInterface &m_field,Mat _Aij,Vec _F): 
+NeummanForcesSurfaceComplexForLazy::NeummanForcesSurfaceComplexForLazy(FieldInterface &m_field,Mat _Aij,Vec _F):
   mField(m_field),feSpatial(m_field,_Aij,_F,NULL,NULL),feMaterial(m_field,_Aij,_F,NULL,NULL) {
 
   ErrorCode rval;
 
   double def_scale = 1.;
   const EntityHandle root_meshset = mField.get_moab().get_root_set();
-  rval = mField.get_moab().tag_get_handle("_LoadFactor_Scale_",1,MB_TYPE_DOUBLE,thScale,MB_TAG_CREAT|MB_TAG_EXCL|MB_TAG_MESH,&def_scale); 
+  rval = mField.get_moab().tag_get_handle("_LoadFactor_Scale_",1,MB_TYPE_DOUBLE,thScale,MB_TAG_CREAT|MB_TAG_EXCL|MB_TAG_MESH,&def_scale);
   if(rval == MB_ALREADY_ALLOCATED) {
     rval = mField.get_moab().tag_get_by_ptr(thScale,&root_meshset,1,(const void**)&sCale); CHKERR_THROW(rval);
   } else {
@@ -708,12 +715,9 @@ NeummanForcesSurfaceComplexForLazy::NeummanForcesSurfaceComplexForLazy(FieldInte
 
 }
 
-NeummanForcesSurfaceComplexForLazy::NeummanForcesSurfaceComplexForLazy(FieldInterface &m_field,Mat _Aij,Vec _F,double *scale_lhs,double *scale_rhs): 
+NeummanForcesSurfaceComplexForLazy::NeummanForcesSurfaceComplexForLazy(FieldInterface &m_field,Mat _Aij,Vec _F,double *scale_lhs,double *scale_rhs):
   mField(m_field),
   feSpatial(m_field,_Aij,_F,scale_lhs,scale_rhs),
   feMaterial(m_field,_Aij,_F,scale_lhs,scale_rhs) {}
 
 }
-
-
-

@@ -35,7 +35,7 @@ generally just need to appeal to two audiences: Developers or Users.
 - In first paragraph indicate to who you write this documentation what is
 propose if it.
 
-- Try to indicate of level of difficulty.
+- Try to indicate level of difficulty.
 
 - User references to other part of documentation if applicable.
 
@@ -115,6 +115,6 @@ you can use also @ref link an image
 [img def]: @ref image.png "Caption text"
 \endcode
 
-More details about including in Markdown are here <http://www.stack.nl/~dimitri/doxygen/manual/markdown.html#md_images>
+More details about linking images in Markdown are here <http://www.stack.nl/~dimitri/doxygen/manual/markdown.html#md_images>
 
 */

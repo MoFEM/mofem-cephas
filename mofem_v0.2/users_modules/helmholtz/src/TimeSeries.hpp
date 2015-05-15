@@ -238,7 +238,6 @@ struct TimeSeries {
       ierr = KSPCreate(PETSC_COMM_WORLD,&approx_incindent_wave_solver); CHKERRQ(ierr);
       ierr = KSPSetOperators(approx_incindent_wave_solver,A_approx_incident_wave,A_approx_incident_wave); CHKERRQ(ierr);
       ierr = KSPSetFromOptions(approx_incindent_wave_solver); CHKERRQ(ierr);
-      ierr = KSPSetUp(approx_incindent_wave_solver); CHKERRQ(ierr);
 
       ierr = mField.VecCreateGhost("INCIDENT_WAVE",ROW,&vec_F[0]); CHKERRQ(ierr); /* real */
       ierr = mField.VecCreateGhost("INCIDENT_WAVE",ROW,&vec_F[1]); CHKERRQ(ierr); /* imag */
@@ -349,22 +348,25 @@ struct TimeSeries {
             }
           }
 
-          if(s==0 && k == 0) {
+          if(s == 0 && k == 0) {
 
             ierr = MatZeroEntries(A_approx_incident_wave); CHKERRQ(ierr);
             ierr = calculate_matrix_and_vector(
-              mField,"INCIDENT_WAVE","HELMHOLTZ_RERE_FE","rePRESS",A_approx_incident_wave,vec_F,function_evaluator
+              mField,"INCIDENT_WAVE","HELMHOLTZ_RERE_FE","rePRES",A_approx_incident_wave,vec_F,function_evaluator
             ); CHKERRQ(ierr);
 
-            {
+            /*{
               //Matrix View
               MatView(A_approx_incident_wave,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
               std::string wait;
               std::cin >> wait;
-            }
+            }*/
+            ierr = KSPSetUp(approx_incindent_wave_solver); CHKERRQ(ierr);
+
           } else {
+
             ierr = calculate_matrix_and_vector(
-              mField,"INCIDENT_WAVE","HELMHOLTZ_RERE_FE","rePRESS",PETSC_NULL,vec_F,function_evaluator
+              mField,"INCIDENT_WAVE","HELMHOLTZ_RERE_FE","rePRES",PETSC_NULL,vec_F,function_evaluator
             ); CHKERRQ(ierr);
           }
 
@@ -372,6 +374,7 @@ struct TimeSeries {
 
         for (size_t ss = 0; ss < 2; ss++) {
           // Solve incident wave approximation problem
+          ierr = VecZeroEntries(D_approx_incident_wave); CHKERRQ(ierr);
           ierr = KSPSolve(approx_incindent_wave_solver,vec_F[ss],D_approx_incident_wave); CHKERRQ(ierr);
           ierr = VecGhostUpdateBegin(D_approx_incident_wave,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
           ierr = VecGhostUpdateEnd(D_approx_incident_wave,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -438,25 +441,25 @@ struct TimeSeries {
         ierr = VecGetArray(pSeriesReal[k],&p_real); CHKERRQ(ierr);
         ierr = VecGetArray(pSeriesImag[k],&p_imag); CHKERRQ(ierr);
 
-        //complexOut[k].r = p_real[ii];
-        //complexOut[k].i = p_imag[ii];
+        complexTimeIn[k].r = p_real[ii];
+        complexTimeIn[k].i = p_imag[ii];
 
         ierr = VecRestoreArray(pSeriesReal[k],&p_real); CHKERRQ(ierr);
         ierr = VecRestoreArray(pSeriesImag[k],&p_imag); CHKERRQ(ierr);
 
       }
 
-      //kiss_fft(inverseCfg,complexOut.get(),complexIn.get());
+      kiss_fft(inverseCfg,complexTimeIn.get(),complexTimeIn.get());
 
       for(int k = 0;k<n;k++) {
 
         double *a_p;
         ierr = VecGetArray(pSeriesReal[k],&a_p); CHKERRQ(ierr);
-        //a_p[ ii ] = complexIn[k].r;
+        a_p[ ii ] = complexTimeIn[k].r;
         ierr = VecRestoreArray(pSeriesReal[k],&a_p); CHKERRQ(ierr);
 
         ierr = VecGetArray(pSeriesImag[k],&a_p); CHKERRQ(ierr);
-        //a_p[ ii ] = complexIn[k].i;
+        a_p[ ii ] = complexTimeIn[k].i;
         ierr = VecRestoreArray(pSeriesImag[k],&a_p); CHKERRQ(ierr);
 
       }

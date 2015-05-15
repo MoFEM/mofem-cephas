@@ -128,7 +128,7 @@ NonlinearElasticElement::NonlinearElasticElement(
 NonlinearElasticElement::OpGetDataAtGaussPts::OpGetDataAtGaussPts(const string field_name,
   vector<ublas::vector<double> > &values_at_gauss_pts,
   vector<ublas::matrix<double> > &gardient_at_gauss_pts):
-  VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
+  VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
   valuesAtGaussPts(values_at_gauss_pts),gradientAtGaussPts(gardient_at_gauss_pts),
   zeroAtType(MBVERTEX) {}
 
@@ -198,7 +198,7 @@ NonlinearElasticElement::OpJacobian::OpJacobian(
   BlockData &data,
   CommonData &common_data,
   int tag,bool jacobian,bool field_disp):
-  VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
+  VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
   dAta(data),commonData(common_data),
   tAg(tag),adlocReturnValue(0),
   jAcobian(jacobian),fieldDisp(field_disp) {}
@@ -314,7 +314,7 @@ PetscErrorCode NonlinearElasticElement::OpJacobian::doWork(
 }
 
 NonlinearElasticElement::OpRhs::OpRhs(const string field_name,BlockData &data,CommonData &common_data):
-  VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
+  VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
   dAta(data),commonData(common_data) {}
 
 PetscErrorCode NonlinearElasticElement::OpRhs::doWork(
@@ -371,7 +371,7 @@ PetscErrorCode NonlinearElasticElement::OpRhs::doWork(
 }
 
 NonlinearElasticElement::OpEnergy::OpEnergy(const string field_name,BlockData &data,CommonData &common_data,Vec *v_ptr,bool field_disp):
-  VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
+  VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
   dAta(data),commonData(common_data),Vptr(v_ptr),fieldDisp(field_disp) { }
 
 PetscErrorCode NonlinearElasticElement::OpEnergy::doWork(
@@ -418,7 +418,7 @@ PetscErrorCode NonlinearElasticElement::OpEnergy::doWork(
 
 NonlinearElasticElement::OpLhs_dx::OpLhs_dx(
   const string vel_field,const string field_name,BlockData &data,CommonData &common_data):
-  VolumeElementForcesAndSourcesCore::UserDataOperator(vel_field,field_name),
+  VolumeElementForcesAndSourcesCore::UserDataOperator(vel_field,field_name,UserDataOperator::OPROWCOL),
   dAta(data),commonData(common_data) { /*symm = false;*/  }
 
 PetscErrorCode NonlinearElasticElement::OpLhs_dx::getJac(DataForcesAndSurcesCore::EntData &col_data,int gg) {
@@ -429,13 +429,13 @@ PetscErrorCode NonlinearElasticElement::OpLhs_dx::getJac(DataForcesAndSurcesCore
   for(int dd = 0;dd<nb_col/3;dd++) {
     for(int rr = 0;rr<3;rr++) {
       for(int ii = 0;ii<9;ii++) {
-	for(int jj = 0;jj<3;jj++) {
-	  //This project dirvative \frac{\partial P}{\partial F}, that is
-	  //\frac{\partial P}{\partial x_DOF} =  \frac{\partial P}{\partial F}\frac{\partial F}{\partial x_DOF},
-	  //where second therm \frac{\partial F}{\partial x_DOF} is derivative of shape function
-	  //jac(ii,3*dd+rr) += commonData.jacStress[gg](ii,jj)*F.data()[jj];
-	  jac(ii,3*dd+rr) += commonData.jacStress[gg](ii,3*rr+jj)*diffN(dd,jj);
-	}
+        for(int jj = 0;jj<3;jj++) {
+          //This project dirvative \frac{\partial P}{\partial F}, that is
+          //\frac{\partial P}{\partial x_DOF} =  \frac{\partial P}{\partial F}\frac{\partial F}{\partial x_DOF},
+          //where second therm \frac{\partial F}{\partial x_DOF} is derivative of shape function
+          //jac(ii,3*dd+rr) += commonData.jacStress[gg](ii,jj)*F.data()[jj];
+          jac(ii,3*dd+rr) += commonData.jacStress[gg](ii,3*rr+jj)*diffN(dd,jj);
+        }
       }
     }
   }
@@ -581,35 +581,35 @@ PetscErrorCode NonlinearElasticElement::setOperators(
   commonData.meshPositions = material_position_field_name;
 
   //Rhs
-  feRhs.getRowOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(spatial_position_field_name,commonData));
+  feRhs.getOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(spatial_position_field_name,commonData));
   if(mField.check_field(material_position_field_name)) {
-    feRhs.getRowOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(material_position_field_name,commonData));
+    feRhs.getOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(material_position_field_name,commonData));
   }
   map<int,BlockData>::iterator sit = setOfBlocks.begin();
   for(;sit!=setOfBlocks.end();sit++) {
-    feRhs.getRowOpPtrVector().push_back(new OpJacobian(spatial_position_field_name,sit->second,commonData,tAg,false,field_disp));
-    feRhs.getRowOpPtrVector().push_back(new OpRhs(spatial_position_field_name,sit->second,commonData));
+    feRhs.getOpPtrVector().push_back(new OpJacobian(spatial_position_field_name,sit->second,commonData,tAg,false,field_disp));
+    feRhs.getOpPtrVector().push_back(new OpRhs(spatial_position_field_name,sit->second,commonData));
   }
 
   //Energy
-  feEnergy.getRowOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(spatial_position_field_name,commonData));
+  feEnergy.getOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(spatial_position_field_name,commonData));
   if(mField.check_field(material_position_field_name)) {
-    feEnergy.getRowOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(material_position_field_name,commonData));
+    feEnergy.getOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(material_position_field_name,commonData));
   }
   sit = setOfBlocks.begin();
   for(;sit!=setOfBlocks.end();sit++) {
-    feEnergy.getRowOpPtrVector().push_back(new OpEnergy(spatial_position_field_name,sit->second,commonData,&feEnergy.V,field_disp));
+    feEnergy.getOpPtrVector().push_back(new OpEnergy(spatial_position_field_name,sit->second,commonData,&feEnergy.V,field_disp));
   }
 
   //Lhs
-  feLhs.getRowOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(spatial_position_field_name,commonData));
+  feLhs.getOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(spatial_position_field_name,commonData));
   if(mField.check_field(material_position_field_name)) {
-    feLhs.getRowOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(material_position_field_name,commonData));
+    feLhs.getOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(material_position_field_name,commonData));
   }
   sit = setOfBlocks.begin();
   for(;sit!=setOfBlocks.end();sit++) {
-    feLhs.getRowOpPtrVector().push_back(new OpJacobian(spatial_position_field_name,sit->second,commonData,tAg,true,field_disp));
-    feLhs.getRowColOpPtrVector().push_back(new OpLhs_dx(spatial_position_field_name,spatial_position_field_name,sit->second,commonData));
+    feLhs.getOpPtrVector().push_back(new OpJacobian(spatial_position_field_name,sit->second,commonData,tAg,true,field_disp));
+    feLhs.getOpPtrVector().push_back(new OpLhs_dx(spatial_position_field_name,spatial_position_field_name,sit->second,commonData));
   }
 
   PetscFunctionReturn(0);

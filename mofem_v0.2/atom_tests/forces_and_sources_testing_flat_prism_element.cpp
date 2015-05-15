@@ -184,10 +184,11 @@ int main(int argc, char *argv[]) {
 
   struct MyOp: public FlatPrismElementForcesAndSurcesCore::UserDataOperator {
 
-    TeeStream &my_split;
-    MyOp(TeeStream &_my_split):
-      FlatPrismElementForcesAndSurcesCore::UserDataOperator("FIELD1","FIELD1"),
-      my_split(_my_split) {}
+    TeeStream &mySplit;
+    MyOp(TeeStream &mySplit,const char type):
+      FlatPrismElementForcesAndSurcesCore::UserDataOperator("FIELD1","FIELD1",type),
+      mySplit(mySplit)
+    {}
 
     PetscErrorCode doWork(
       int side,
@@ -241,19 +242,19 @@ int main(int argc, char *argv[]) {
         *it = fabs(*it)<eps ? 0.0 : *it;
       }
 
-      my_split << "NH1" << endl;
-      my_split << "side: " << side << " type: " << type << endl;
-      my_split << data << endl;
-      my_split << setprecision(3) << getCoords() << endl;
-      my_split << setprecision(3) << getCoordsAtGaussPts() << endl;
-      my_split << setprecision(3) << getArea() << endl;
-      my_split << setprecision(3) << "nornal " << getNormal() << endl;
-      my_split << setprecision(3) << "normal at Gauss pt F3 " << getNormals_at_GaussPtF3() << endl;
-      my_split << setprecision(3) << getTangent1_at_GaussPtF3() << endl;
-      my_split << setprecision(3) << getTangent2_at_GaussPtF3() << endl;
-      my_split << setprecision(3) << "normal at Gauss pt F4 " << getNormals_at_GaussPtF4() << endl;
-      my_split << setprecision(3) << getTangent1_at_GaussPtF4() << endl;
-      my_split << setprecision(3) << getTangent2_at_GaussPtF4() << endl;
+      mySplit << "NH1" << endl;
+      mySplit << "side: " << side << " type: " << type << endl;
+      mySplit << data << endl;
+      mySplit << setprecision(3) << getCoords() << endl;
+      mySplit << setprecision(3) << getCoordsAtGaussPts() << endl;
+      mySplit << setprecision(3) << getArea() << endl;
+      mySplit << setprecision(3) << "nornal " << getNormal() << endl;
+      mySplit << setprecision(3) << "normal at Gauss pt F3 " << getNormals_at_GaussPtF3() << endl;
+      mySplit << setprecision(3) << getTangent1_at_GaussPtF3() << endl;
+      mySplit << setprecision(3) << getTangent2_at_GaussPtF3() << endl;
+      mySplit << setprecision(3) << "normal at Gauss pt F4 " << getNormals_at_GaussPtF4() << endl;
+      mySplit << setprecision(3) << getTangent1_at_GaussPtF4() << endl;
+      mySplit << setprecision(3) << getTangent2_at_GaussPtF4() << endl;
       PetscFunctionReturn(0);
     }
 
@@ -266,12 +267,12 @@ int main(int argc, char *argv[]) {
 
       if(row_data.getFieldData().empty()) PetscFunctionReturn(0);
 
-      my_split << "NH1NH1" << endl;
-      my_split << "row side: " << row_side << " row_type: " << row_type << endl;
-      my_split << row_data << endl;
-      my_split << "NH1NH1" << endl;
-      my_split << "col side: " << col_side << " col_type: " << col_type << endl;
-      my_split << row_data << endl;
+      mySplit << "NH1NH1" << endl;
+      mySplit << "row side: " << row_side << " row_type: " << row_type << endl;
+      mySplit << row_data << endl;
+      mySplit << "NH1NH1" << endl;
+      mySplit << "col side: " << col_side << " col_type: " << col_type << endl;
+      mySplit << row_data << endl;
 
       PetscFunctionReturn(0);
     }
@@ -280,10 +281,10 @@ int main(int argc, char *argv[]) {
 
   struct MyOp2: public FaceElementForcesAndSourcesCore::UserDataOperator {
 
-    TeeStream &my_split;
-    MyOp2(TeeStream &_my_split):
-    FaceElementForcesAndSourcesCore::UserDataOperator("FIELD1","FIELD2"),
-      my_split(_my_split) {}
+    TeeStream &mySplit;
+    MyOp2(TeeStream &my_split,const char type):
+    FaceElementForcesAndSourcesCore::UserDataOperator("FIELD1","FIELD2",type),
+      mySplit(my_split) {}
 
     PetscErrorCode doWork(
       int side,
@@ -293,9 +294,9 @@ int main(int argc, char *argv[]) {
 
       if(type != MBENTITYSET) PetscFunctionReturn(0);
 
-      my_split << "NPFIELD" << endl;
-      my_split << "side: " << side << " type: " << type << endl;
-      my_split << data << endl;
+      mySplit << "NPFIELD" << endl;
+      mySplit << "side: " << side << " type: " << type << endl;
+      mySplit << data << endl;
       PetscFunctionReturn(0);
     }
 
@@ -310,11 +311,11 @@ int main(int argc, char *argv[]) {
 
       if(col_type != MBENTITYSET) PetscFunctionReturn(0);
 
-      my_split << "NOFILEDH1" << endl;
-      my_split << "row side: " << row_side << " row_type: " << row_type << endl;
-      my_split << row_data << endl;
-      my_split << "col side: " << col_side << " col_type: " << col_type << endl;
-      my_split << col_data << endl;
+      mySplit << "NOFILEDH1" << endl;
+      mySplit << "row side: " << row_side << " row_type: " << row_type << endl;
+      mySplit << row_data << endl;
+      mySplit << "col side: " << col_side << " col_type: " << col_type << endl;
+      mySplit << col_data << endl;
 
       PetscFunctionReturn(0);
     }
@@ -323,13 +324,13 @@ int main(int argc, char *argv[]) {
 
 
   FlatPrismElementForcesAndSurcesCore fe1(m_field);
-  fe1.getRowOpPtrVector().push_back(new MyOp(my_split));
-  fe1.getRowColOpPtrVector().push_back(new MyOp(my_split));
+  fe1.getOpPtrVector().push_back(new MyOp(my_split,ForcesAndSurcesCore::UserDataOperator::OPROW));
+  fe1.getOpPtrVector().push_back(new MyOp(my_split,ForcesAndSurcesCore::UserDataOperator::OPROWCOL));
   ierr = m_field.loop_finite_elements("TEST_PROBLEM","TEST_FE1",fe1);  CHKERRQ(ierr);
 
   FlatPrismElementForcesAndSurcesCore fe2(m_field);
-  fe2.getColOpPtrVector().push_back(new MyOp2(my_split));
-  fe2.getRowColOpPtrVector().push_back(new MyOp2(my_split));
+  fe2.getOpPtrVector().push_back(new MyOp2(my_split,ForcesAndSurcesCore::UserDataOperator::OPCOL));
+  fe2.getOpPtrVector().push_back(new MyOp2(my_split,ForcesAndSurcesCore::UserDataOperator::OPROWCOL));
   ierr = m_field.loop_finite_elements("TEST_PROBLEM","TEST_FE2",fe2);  CHKERRQ(ierr);
 
   ierr = PetscFinalize(); CHKERRQ(ierr);
