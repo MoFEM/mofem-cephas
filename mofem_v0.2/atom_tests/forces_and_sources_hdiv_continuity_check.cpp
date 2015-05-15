@@ -375,12 +375,12 @@ int main(int argc, char *argv[]) {
   Tag th1;
   double def_val[] = {0,0,0};
   rval = moab.tag_get_handle("T",3,MB_TYPE_DOUBLE,th1,MB_TAG_CREAT|MB_TAG_SPARSE,&def_val); CHKERR_PETSC(rval);
-  tet_fe.getRowOpPtrVector().push_back(new OpTetFluxes(m_field,th1));
+  tet_fe.getOpPtrVector().push_back(new OpTetFluxes(m_field,th1));
 
   Tag th2;
   rval = moab.tag_get_handle("TN",1,MB_TYPE_DOUBLE,th2,MB_TAG_CREAT|MB_TAG_SPARSE,&def_val); CHKERR_PETSC(rval);
-  tri_fe.getRowOpPtrVector().push_back(new OpFacesFluxes(m_field,th1,th2,my_split));
-  skin_fe.getRowOpPtrVector().push_back(new OpFacesSkinFluxes(m_field,th1,th2,my_split));
+  tri_fe.getOpPtrVector().push_back(new OpFacesFluxes(m_field,th1,th2,my_split));
+  skin_fe.getOpPtrVector().push_back(new OpFacesSkinFluxes(m_field,th1,th2,my_split));
 
   for(Range::iterator fit = faces.begin();fit!=faces.end();fit++) {
     rval = moab.tag_set_data(th1,&*fit,1,&def_val); CHKERR_PETSC(rval);

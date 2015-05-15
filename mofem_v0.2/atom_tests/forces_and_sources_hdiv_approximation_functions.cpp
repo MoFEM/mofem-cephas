@@ -176,7 +176,7 @@ int main(int argc, char *argv[]) {
   };
 
   MyFE tet_fe(m_field);
-  tet_fe.getRowOpPtrVector().push_back(new OpPrintingHdivApproximationFunctions(my_split));
+  tet_fe.getOpPtrVector().push_back(new OpPrintingHdivApproximationFunctions(my_split));
 
   ierr = m_field.loop_finite_elements("TEST_PROBLEM","TEST_FE",tet_fe);  CHKERRQ(ierr);
 

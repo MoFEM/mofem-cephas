@@ -199,7 +199,10 @@ struct UltraWeakTransportElement {
       UltraWeakTransportElement &ctx,
       const string field_name,Mat _Aij,Vec _F
     ):
-    VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
+    VolumeElementForcesAndSourcesCore::UserDataOperator(
+      field_name,
+      UserDataOperator::OPROW|UserDataOperator::OPROWCOL
+    ),
     cTx(ctx),Aij(_Aij),F(_F) {}
     virtual ~OpTauDotSigma_HdivHdiv() {}
 
@@ -341,10 +344,15 @@ struct UltraWeakTransportElement {
 
     OpDivTauU_HdivL2(
       UltraWeakTransportElement &ctx,
-      const string field_name_row,string field_name_col,Mat _Aij,Vec _F):
-      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name_row,field_name_col,UserDataOperator::OPROW),
-      cTx(ctx),Aij(_Aij),F(_F) {
-
+      const string field_name_row,string field_name_col,Mat _Aij,Vec _F
+    ):
+    VolumeElementForcesAndSourcesCore::UserDataOperator(
+      field_name_row,field_name_col,
+      UserDataOperator::OPROW
+    ),
+    cTx(ctx),
+    Aij(_Aij),
+    F(_F) {
       //this operator is not symmetric settig this varible makes element
       //operator to loop over element entities (subsimplicies) without
       //assumption that off-diagonal matrices are symmetric.
@@ -356,50 +364,49 @@ struct UltraWeakTransportElement {
 
     PetscErrorCode doWork(
       int side,EntityType type,
-      DataForcesAndSurcesCore::EntData &data) {
+      DataForcesAndSurcesCore::EntData &data
+    ) {
       PetscFunctionBegin;
 
       PetscErrorCode ierr;
 
       try {
 
-	if(data.getFieldData().size()==0) PetscFunctionReturn(0);
+        if(data.getFieldData().size()==0) PetscFunctionReturn(0);
 
-	int nb_row = data.getIndices().size();
-	Nf.resize(nb_row);
-	bzero(&*Nf.data().begin(),Nf.data().size()*sizeof(FieldData));
+        int nb_row = data.getIndices().size();
+        Nf.resize(nb_row);
+        bzero(&*Nf.data().begin(),Nf.data().size()*sizeof(FieldData));
 
-	div_vec.resize(data.getHdivN().size2()/3,0);
-	if(div_vec.size()!=data.getIndices().size()) {
-	  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
-	}
+        div_vec.resize(data.getHdivN().size2()/3,0);
+        if(div_vec.size()!=data.getIndices().size()) {
+          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+        }
 
-	int nb_gauss_pts = data.getN().size1();
-	int gg = 0;
-	for(;gg<nb_gauss_pts;gg++) {
+        int nb_gauss_pts = data.getN().size1();
+        int gg = 0;
+        for(;gg<nb_gauss_pts;gg++) {
 
-	  double w = getGaussPts()(3,gg)*getVolume();
-	  if(getHoGaussPtsDetJac().size()>0) {
-	    w *= getHoGaussPtsDetJac()(gg);
-	  }
+          double w = getGaussPts()(3,gg)*getVolume();
+          if(getHoGaussPtsDetJac().size()>0) {
+            w *= getHoGaussPtsDetJac()(gg);
+          }
 
-	  ierr = getDivergenceMatrixOperato_Hdiv(
-	    side,type,data,gg,div_vec); CHKERRQ(ierr);
+          ierr = getDivergenceMatrixOperato_Hdiv(side,type,data,gg,div_vec); CHKERRQ(ierr);
 
-	  noalias(Nf) -= w*div_vec*cTx.valuesAtGaussPts[gg];
+          noalias(Nf) -= w*div_vec*cTx.valuesAtGaussPts[gg];
 
-	}
+        }
 
-	ierr = VecSetValues(
-	  F,nb_row,&data.getIndices()[0],
-	  &Nf[0],ADD_VALUES); CHKERRQ(ierr);
-
-
+        ierr = VecSetValues(
+          F,nb_row,&data.getIndices()[0],
+          &Nf[0],ADD_VALUES
+        ); CHKERRQ(ierr);
 
       } catch (const std::exception& ex) {
-	ostringstream ss;
-	ss << "throw in method: " << ex.what() << endl;
-	SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+        ostringstream ss;
+        ss << "throw in method: " << ex.what() << endl;
+        SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
       }
 
       PetscFunctionReturn(0);
@@ -419,7 +426,10 @@ struct UltraWeakTransportElement {
       UltraWeakTransportElement &ctx,
       const string field_name_row,string field_name_col,Mat _Aij,Vec _F
     ):
-    VolumeElementForcesAndSourcesCore::UserDataOperator(field_name_row,field_name_col,UserDataOperator::OPROWCOL),
+    VolumeElementForcesAndSourcesCore::UserDataOperator(
+      field_name_row,field_name_col,
+      UserDataOperator::OPROW|UserDataOperator::OPROWCOL
+    ),
     cTx(ctx),Aij(_Aij),F(_F) {
 
       //this operator is not symmetric settig this varible makes element
@@ -502,50 +512,51 @@ struct UltraWeakTransportElement {
         PetscFunctionReturn(0);
       }
 
-    PetscErrorCode doWork(
-      int side,EntityType type,
-      DataForcesAndSurcesCore::EntData &data) {
-      PetscFunctionBegin;
+      PetscErrorCode doWork(
+        int side,EntityType type,
+        DataForcesAndSurcesCore::EntData &data
+      ) {
+        PetscFunctionBegin;
 
-      PetscErrorCode ierr;
+        PetscErrorCode ierr;
 
-      try {
+        try {
 
-	if(data.getIndices().size()==0) PetscFunctionReturn(0);
-	if(data.getIndices().size()!=data.getN().size2()) {
-	  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
-	}
+          if(data.getIndices().size()==0) PetscFunctionReturn(0);
+          if(data.getIndices().size()!=data.getN().size2()) {
+            SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+          }
 
-	int nb_row = data.getIndices().size();
-	Nf.resize(nb_row);
-	bzero(&*Nf.data().begin(),Nf.data().size()*sizeof(FieldData));
+          int nb_row = data.getIndices().size();
+          Nf.resize(nb_row);
+          bzero(&*Nf.data().begin(),Nf.data().size()*sizeof(FieldData));
 
-	int nb_gauss_pts = data.getN().size1();
-	int gg = 0;
-	for(;gg<nb_gauss_pts;gg++) {
+          int nb_gauss_pts = data.getN().size1();
+          int gg = 0;
+          for(;gg<nb_gauss_pts;gg++) {
 
-	  double w = getGaussPts()(3,gg)*getVolume();
-	  if(getHoGaussPtsDetJac().size()>0) {
-	    w *= getHoGaussPtsDetJac()(gg);
-	  }
+            double w = getGaussPts()(3,gg)*getVolume();
+            if(getHoGaussPtsDetJac().size()>0) {
+              w *= getHoGaussPtsDetJac()(gg);
+            }
 
-	  noalias(Nf) -= w*data.getN(gg)*cTx.divergenceAtGaussPts[gg];
+            noalias(Nf) -= w*data.getN(gg)*cTx.divergenceAtGaussPts[gg];
 
-	}
+          }
 
-	ierr = VecSetValues(
-	  F,nb_row,&data.getIndices()[0],
-	  &Nf[0],ADD_VALUES); CHKERRQ(ierr);
+          ierr = VecSetValues(
+            F,nb_row,&data.getIndices()[0],
+            &Nf[0],ADD_VALUES
+          ); CHKERRQ(ierr);
 
-      } catch (const std::exception& ex) {
-	ostringstream ss;
-	ss << "throw in method: " << ex.what() << endl;
-	SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
-      }
+        } catch (const std::exception& ex) {
+          ostringstream ss;
+          ss << "throw in method: " << ex.what() << endl;
+          SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+        }
 
-      PetscFunctionReturn(0);
+        PetscFunctionReturn(0);
     }
-
 
   };
 
@@ -781,7 +792,6 @@ struct UltraWeakTransportElement {
         if(data.getFieldData().size() == 0)  PetscFunctionReturn(0);
 
         int nb_gauss_pts = data.getN().size1();
-
         cTx.valuesAtGaussPts.resize(nb_gauss_pts);
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
           cTx.valuesAtGaussPts[gg] = inner_prod( trans(data.getN(gg)), data.getFieldData() );
@@ -868,17 +878,15 @@ struct UltraWeakTransportElement {
       if(type == MBTRI && side == 0) {
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
           cTx.fluxesAtGaussPts[gg].resize(3);
-          bzero(&(cTx.fluxesAtGaussPts[gg][0]),3*sizeof(FieldData));
+          cTx.fluxesAtGaussPts[gg].clear();
         }
-        bzero(&cTx.divergenceAtGaussPts[0],nb_gauss_pts*sizeof(FieldData));
+        cTx.divergenceAtGaussPts.clear();
       }
 
       div_vec.resize(nb_dofs);
-
       for(int gg = 0;gg<nb_gauss_pts;gg++) {
 
         ierr = getDivergenceMatrixOperato_Hdiv(side,type,data,gg,div_vec); CHKERRQ(ierr);
-
         cTx.divergenceAtGaussPts[gg] += inner_prod(div_vec,data.getFieldData());
         noalias(cTx.fluxesAtGaussPts[gg]) += prod( trans(data.getHdivN(gg)), data.getFieldData());
 
@@ -919,70 +927,69 @@ struct UltraWeakTransportElement {
 
       try {
 
-      if(data.getFieldData().size() == 0)  PetscFunctionReturn(0);
-      int nb_gauss_pts = data.getN().size1();
-      EntityHandle fe_ent = getMoFEMFEPtr()->get_ent();
+        if(data.getFieldData().size() == 0)  PetscFunctionReturn(0);
+        int nb_gauss_pts = data.getN().size1();
+        EntityHandle fe_ent = getMoFEMFEPtr()->get_ent();
 
-      double def_VAL = 0;
-      Tag th_error_div_sigma;
-      rval = cTx.mField.get_moab().tag_get_handle("ERRORL2_DIVSIGMA_F",1,MB_TYPE_DOUBLE,th_error_div_sigma,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR_PETSC(rval);
-      Tag th_error_flux;
-      rval = cTx.mField.get_moab().tag_get_handle("ERRORL2_FLUX",1,MB_TYPE_DOUBLE,th_error_flux,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR_PETSC(rval);
-      if(type == MBTRI && side == 0) {
-	cTx.mField.get_moab().tag_set_data(th_error_div_sigma,&fe_ent,1,&def_VAL);
-      }
+        double def_VAL = 0;
+        Tag th_error_div_sigma;
+        rval = cTx.mField.get_moab().tag_get_handle("ERRORL2_DIVSIGMA_F",1,MB_TYPE_DOUBLE,th_error_div_sigma,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR_PETSC(rval);
+        Tag th_error_flux;
+        rval = cTx.mField.get_moab().tag_get_handle("ERRORL2_FLUX",1,MB_TYPE_DOUBLE,th_error_flux,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR_PETSC(rval);
+        if(type == MBTRI && side == 0) {
+          cTx.mField.get_moab().tag_set_data(th_error_div_sigma,&fe_ent,1,&def_VAL);
+        }
 
-      double* error_div_ptr;
-      rval = cTx.mField.get_moab().tag_get_by_ptr(th_error_div_sigma,&fe_ent,1,(const void**)&error_div_ptr); CHKERR_PETSC(rval);
-      double* error_flux_ptr;
-      rval = cTx.mField.get_moab().tag_get_by_ptr(th_error_flux,&fe_ent,1,(const void**)&error_flux_ptr); CHKERR_PETSC(rval);
+        double* error_div_ptr;
+        rval = cTx.mField.get_moab().tag_get_by_ptr(th_error_div_sigma,&fe_ent,1,(const void**)&error_div_ptr); CHKERR_PETSC(rval);
+        double* error_flux_ptr;
+        rval = cTx.mField.get_moab().tag_get_by_ptr(th_error_flux,&fe_ent,1,(const void**)&error_flux_ptr); CHKERR_PETSC(rval);
 
-      deltaFlux.resize(3);
-      for(int gg = 0;gg<nb_gauss_pts;gg++) {
-	double w = getGaussPts()(3,gg)*getVolume();
-	if(getHoGaussPtsDetJac().size()>0) {
-	  w *= getHoGaussPtsDetJac()(gg);
-	}
+        deltaFlux.resize(3);
+        for(int gg = 0;gg<nb_gauss_pts;gg++) {
+          double w = getGaussPts()(3,gg)*getVolume();
+          if(getHoGaussPtsDetJac().size()>0) {
+            w *= getHoGaussPtsDetJac()(gg);
+          }
 
-	const double x = getCoordsAtGaussPts()(gg,0);
-	const double y = getCoordsAtGaussPts()(gg,1);
-	const double z = getCoordsAtGaussPts()(gg,2);
-	double flux;
-	ierr = cTx.getFlux(fe_ent,x,y,z,flux); CHKERRQ(ierr);
+          const double x = getCoordsAtGaussPts()(gg,0);
+          const double y = getCoordsAtGaussPts()(gg,1);
+          const double z = getCoordsAtGaussPts()(gg,2);
+          double flux;
+          ierr = cTx.getFlux(fe_ent,x,y,z,flux); CHKERRQ(ierr);
 
-	if(gg == 0) {
-	  *error_div_ptr = 0;
-	  *error_flux_ptr = 0;
-	}
+          if(gg == 0) {
+            *error_div_ptr = 0;
+            *error_flux_ptr = 0;
+          }
 
-	*error_div_ptr += w*( pow(cTx.divergenceAtGaussPts[gg] + flux,2) );
-	noalias(deltaFlux) = cTx.fluxesAtGaussPts[gg]+cTx.valuesGradientAtGaussPts[gg];
-	*error_flux_ptr += w*( inner_prod(deltaFlux,deltaFlux) );
+          *error_div_ptr += w*( pow(cTx.divergenceAtGaussPts[gg] + flux,2) );
+          noalias(deltaFlux) = cTx.fluxesAtGaussPts[gg]+cTx.valuesGradientAtGaussPts[gg];
+          *error_flux_ptr += w*( inner_prod(deltaFlux,deltaFlux) );
 
-	//cerr << cTx.fluxesAtGaussPts[gg] << " " << cTx.valuesGradientAtGaussPts[gg] << endl;
+          //cerr << cTx.fluxesAtGaussPts[gg] << " " << cTx.valuesGradientAtGaussPts[gg] << endl;
 
-      }
+        }
 
-      if(type == MBTET) {
-	*error_div_ptr = sqrt(*error_div_ptr);
-	*error_flux_ptr = sqrt(*error_flux_ptr);
-      }
+        if(type == MBTET) {
+          *error_div_ptr = sqrt(*error_div_ptr);
+          *error_flux_ptr = sqrt(*error_flux_ptr);
+        }
 
-      const FENumeredDofMoFEMEntity *dof_ptr;
-      ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
-      dof_ptr->get_FieldData() = *error_flux_ptr;
+        const FENumeredDofMoFEMEntity *dof_ptr;
+        ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
+        dof_ptr->get_FieldData() = *error_flux_ptr;
 
       } catch (const std::exception& ex) {
-	ostringstream ss;
-	ss << "throw in method: " << ex.what() << endl;
-	SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+        ostringstream ss;
+        ss << "throw in method: " << ex.what() << endl;
+        SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
       PetscFunctionReturn(0);
     }
 
   };
-
 
 };
 

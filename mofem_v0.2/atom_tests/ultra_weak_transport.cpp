@@ -224,8 +224,8 @@ int main(int argc, char *argv[]) {
   ierr = VecGhostUpdateEnd(D0,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecZeroEntries(D); CHKERRQ(ierr);
 
-  ufe.feTriFluxValue.getRowOpPtrVector().clear();
-  ufe.feTriFluxValue.getRowOpPtrVector().push_back(new MyUltraWeakFE::OpEvaluateBcOnFluxes(ufe,"FLUXES",D0));
+  ufe.feTriFluxValue.getOpPtrVector().clear();
+  ufe.feTriFluxValue.getOpPtrVector().push_back(new MyUltraWeakFE::OpEvaluateBcOnFluxes(ufe,"FLUXES",D0));
   ierr = m_field.loop_finite_elements("ULTRAWEAK","ULTRAWEAK_FLUXDIRICHLET",ufe.feTriFluxValue); CHKERRQ(ierr);
 
   ierr = VecGhostUpdateBegin(D0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
@@ -238,18 +238,18 @@ int main(int argc, char *argv[]) {
   IS dirchlet_ids;
   ierr = ufe.getDirihletBCIndices(&dirchlet_ids); CHKERRQ(ierr);
 
-  ufe.feVol.getRowOpPtrVector().push_back(new MyUltraWeakFE::OpFluxDivergenceAtGaussPts(ufe,"FLUXES"));
-  ufe.feVol.getRowOpPtrVector().push_back(new MyUltraWeakFE::OpVDotDivSigma_L2Hdiv(ufe,"VALUES","FLUXES",Aij,F));
-  ufe.feVol.getRowOpPtrVector().push_back(new MyUltraWeakFE::OpTauDotSigma_HdivHdiv(ufe,"FLUXES",Aij,F));
-  ufe.feVol.getRowOpPtrVector().push_back(new MyUltraWeakFE::OpValuesAtGaussPts(ufe,"VALUES"));
-  ufe.feVol.getRowOpPtrVector().push_back(new MyUltraWeakFE::OpDivTauU_HdivL2(ufe,"FLUXES","VALUES",Aij,F));
-  ufe.feVol.getRowOpPtrVector().push_back(new MyUltraWeakFE::OpL2Source(ufe,"VALUES",F));
-  ufe.feVol.getRowColOpPtrVector().push_back(new MyUltraWeakFE::OpTauDotSigma_HdivHdiv(ufe,"FLUXES",Aij,F));
-  ufe.feVol.getRowColOpPtrVector().push_back(new MyUltraWeakFE::OpVDotDivSigma_L2Hdiv(ufe,"VALUES","FLUXES",Aij,F));
+  ufe.feVol.getOpPtrVector().push_back(new MyUltraWeakFE::OpFluxDivergenceAtGaussPts(ufe,"FLUXES"));
+  //ufe.feVol.getOpPtrVector().push_back(new MyUltraWeakFE::OpVDotDivSigma_L2Hdiv(ufe,"VALUES","FLUXES",Aij,F));
+  //ufe.feVol.getOpPtrVector().push_back(new MyUltraWeakFE::OpTauDotSigma_HdivHdiv(ufe,"FLUXES",Aij,F));
+  ufe.feVol.getOpPtrVector().push_back(new MyUltraWeakFE::OpValuesAtGaussPts(ufe,"VALUES"));
+  ufe.feVol.getOpPtrVector().push_back(new MyUltraWeakFE::OpDivTauU_HdivL2(ufe,"FLUXES","VALUES",Aij,F));
+  ufe.feVol.getOpPtrVector().push_back(new MyUltraWeakFE::OpL2Source(ufe,"VALUES",F));
+  ufe.feVol.getOpPtrVector().push_back(new MyUltraWeakFE::OpTauDotSigma_HdivHdiv(ufe,"FLUXES",Aij,F));
+  ufe.feVol.getOpPtrVector().push_back(new MyUltraWeakFE::OpVDotDivSigma_L2Hdiv(ufe,"VALUES","FLUXES",Aij,F));
   ierr = m_field.loop_finite_elements("ULTRAWEAK","ULTRAWEAK",ufe.feVol); CHKERRQ(ierr);
 
-  ufe.feTriFluxValue.getRowOpPtrVector().clear();
-  ufe.feTriFluxValue.getRowOpPtrVector().push_back(new MyUltraWeakFE::OpRhsBcOnValues(ufe,"FLUXES",F));
+  ufe.feTriFluxValue.getOpPtrVector().clear();
+  ufe.feTriFluxValue.getOpPtrVector().push_back(new MyUltraWeakFE::OpRhsBcOnValues(ufe,"FLUXES",F));
   ierr = m_field.loop_finite_elements("ULTRAWEAK","ULTRAWEAK_FLUXNEUMANN",ufe.feTriFluxValue); CHKERRQ(ierr);
 
   ierr = MatAssemblyBegin(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
@@ -297,12 +297,11 @@ int main(int argc, char *argv[]) {
   ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
 
   //evaluate error
-  ufe.feVol.getRowColOpPtrVector().clear();
-  ufe.feVol.getRowOpPtrVector().clear();
+  ufe.feVol.getOpPtrVector().clear();
 
-  ufe.feVol.getRowOpPtrVector().push_back(new MyUltraWeakFE::OpValuesGradientAtGaussPts(ufe,"VALUES"));
-  ufe.feVol.getRowOpPtrVector().push_back(new MyUltraWeakFE::OpFluxDivergenceAtGaussPts(ufe,"FLUXES"));
-  ufe.feVol.getRowOpPtrVector().push_back(new MyUltraWeakFE::OpError_L2Norm(ufe,"ERROR"));
+  ufe.feVol.getOpPtrVector().push_back(new MyUltraWeakFE::OpValuesGradientAtGaussPts(ufe,"VALUES"));
+  ufe.feVol.getOpPtrVector().push_back(new MyUltraWeakFE::OpFluxDivergenceAtGaussPts(ufe,"FLUXES"));
+  ufe.feVol.getOpPtrVector().push_back(new MyUltraWeakFE::OpError_L2Norm(ufe,"ERROR"));
   ierr = m_field.loop_finite_elements("ULTRAWEAK_CALCULATE_ERROR","ULTRAWEAK_ERROR",ufe.feVol); CHKERRQ(ierr);
 
   Vec E;
@@ -316,19 +315,18 @@ int main(int argc, char *argv[]) {
   ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
   //calulate residuals
-  ufe.feVol.getRowColOpPtrVector().clear();
-  ufe.feVol.getRowOpPtrVector().clear();
+  ufe.feVol.getOpPtrVector().clear();
 
-  ufe.feVol.getRowOpPtrVector().push_back(new MyUltraWeakFE::OpFluxDivergenceAtGaussPts(ufe,"FLUXES"));
-  ufe.feVol.getRowOpPtrVector().push_back(new MyUltraWeakFE::OpVDotDivSigma_L2Hdiv(ufe,"VALUES","FLUXES",Aij,F));
-  ufe.feVol.getRowOpPtrVector().push_back(new MyUltraWeakFE::OpTauDotSigma_HdivHdiv(ufe,"FLUXES",Aij,F));
-  ufe.feVol.getRowOpPtrVector().push_back(new MyUltraWeakFE::OpValuesAtGaussPts(ufe,"VALUES"));
-  ufe.feVol.getRowOpPtrVector().push_back(new MyUltraWeakFE::OpDivTauU_HdivL2(ufe,"FLUXES","VALUES",Aij,F));
-  ufe.feVol.getRowOpPtrVector().push_back(new MyUltraWeakFE::OpL2Source(ufe,"VALUES",F));
+  ufe.feVol.getOpPtrVector().push_back(new MyUltraWeakFE::OpFluxDivergenceAtGaussPts(ufe,"FLUXES"));
+  ufe.feVol.getOpPtrVector().push_back(new MyUltraWeakFE::OpVDotDivSigma_L2Hdiv(ufe,"VALUES","FLUXES",Aij,F));
+  ufe.feVol.getOpPtrVector().push_back(new MyUltraWeakFE::OpTauDotSigma_HdivHdiv(ufe,"FLUXES",Aij,F));
+  ufe.feVol.getOpPtrVector().push_back(new MyUltraWeakFE::OpValuesAtGaussPts(ufe,"VALUES"));
+  ufe.feVol.getOpPtrVector().push_back(new MyUltraWeakFE::OpDivTauU_HdivL2(ufe,"FLUXES","VALUES",Aij,F));
+  ufe.feVol.getOpPtrVector().push_back(new MyUltraWeakFE::OpL2Source(ufe,"VALUES",F));
   ierr = m_field.loop_finite_elements("ULTRAWEAK","ULTRAWEAK",ufe.feVol); CHKERRQ(ierr);
 
-  ufe.feTriFluxValue.getRowOpPtrVector().clear();
-  ufe.feTriFluxValue.getRowOpPtrVector().push_back(new MyUltraWeakFE::OpRhsBcOnValues(ufe,"FLUXES",F));
+  ufe.feTriFluxValue.getOpPtrVector().clear();
+  ufe.feTriFluxValue.getOpPtrVector().push_back(new MyUltraWeakFE::OpRhsBcOnValues(ufe,"FLUXES",F));
   ierr = m_field.loop_finite_elements("ULTRAWEAK","ULTRAWEAK_FLUXNEUMANN",ufe.feTriFluxValue); CHKERRQ(ierr);
 
   ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
@@ -336,8 +334,8 @@ int main(int argc, char *argv[]) {
   ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
   ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
 
-  ufe.feTriFluxValue.getRowOpPtrVector().clear();
-  ufe.feTriFluxValue.getRowOpPtrVector().push_back(new MyUltraWeakFE::OpEvaluateBcOnFluxes(ufe,"FLUXES",F));
+  ufe.feTriFluxValue.getOpPtrVector().clear();
+  ufe.feTriFluxValue.getOpPtrVector().push_back(new MyUltraWeakFE::OpEvaluateBcOnFluxes(ufe,"FLUXES",F));
   ierr = m_field.loop_finite_elements("ULTRAWEAK","ULTRAWEAK_FLUXDIRICHLET",ufe.feTriFluxValue); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
