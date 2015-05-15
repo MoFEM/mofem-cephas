@@ -142,8 +142,8 @@ int main(int argc, char *argv[]) {
   struct MyOp: public EdgeElementForcesAndSurcesCore::UserDataOperator {
 
     TeeStream &my_split;
-    MyOp(TeeStream &_my_split):
-      EdgeElementForcesAndSurcesCore::UserDataOperator("FIELD1","FIELD1",UserDataOperator::OPROW|UserDataOperator::OPROWCOL),
+    MyOp(TeeStream &_my_split,const char type):
+      EdgeElementForcesAndSurcesCore::UserDataOperator("FIELD1","FIELD1",type),
       my_split(_my_split) {}
 
     PetscErrorCode doWork(
@@ -180,8 +180,8 @@ int main(int argc, char *argv[]) {
 
   };
 
-  fe1.getRowOpPtrVector().push_back(new MyOp(my_split));
-  fe1.getRowColOpPtrVector().push_back(new MyOp(my_split));
+  fe1.getOpPtrVector().push_back(new MyOp(my_split,ForcesAndSurcesCore::UserDataOperator::OPROW));
+  fe1.getOpPtrVector().push_back(new MyOp(my_split,ForcesAndSurcesCore::UserDataOperator::OPROWCOL));
 
   ierr = m_field.loop_finite_elements("TEST_PROBLEM","TEST_FE",fe1);  CHKERRQ(ierr);
 

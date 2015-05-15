@@ -746,9 +746,15 @@ struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
   DataForcesAndSurcesCore dataH1;
   DerivedDataForcesAndSurcesCore derivedDataH1;
+  DataForcesAndSurcesCore dataNoField,dataNoFieldCol;
 
   EdgeElementForcesAndSurcesCore(FieldInterface &_mField):
-    ForcesAndSurcesCore(_mField),dataH1(MBEDGE),derivedDataH1(dataH1) {};
+    ForcesAndSurcesCore(_mField),
+    dataH1(MBEDGE),
+    derivedDataH1(dataH1),
+    dataNoField(MBEDGE),
+    dataNoFieldCol(MBEDGE)
+  {};
 
   ErrorCode rval;
   double lEngth;;
