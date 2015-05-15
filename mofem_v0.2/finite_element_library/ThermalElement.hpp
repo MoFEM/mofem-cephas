@@ -159,7 +159,7 @@ struct ThermalElement {
 
     CommonData &commonData;
     OpGetGradAtGaussPts(const string field_name,CommonData &common_data):
-      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
+      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
       commonData(common_data) {}
 
     /** \brief operator calculating temperature gradients
@@ -204,7 +204,7 @@ struct ThermalElement {
 
     ublas::vector<double> &fieldAtGaussPts;
     OpGetFieldAtGaussPts(const string field_name,ublas::vector<double> &field_at_gauss_pts):
-      OP::UserDataOperator(field_name),
+      OP::UserDataOperator(field_name,OP::UserDataOperator::OPROW),
       fieldAtGaussPts(field_at_gauss_pts) {}
 
     /** \brief operator calculating temperature and rate of temperature
@@ -278,12 +278,12 @@ struct ThermalElement {
     CommonData &commonData;
     bool useTsF;
     OpThermalRhs(const string field_name,BlockData &data,CommonData &common_data):
-      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
+      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
       dAta(data),commonData(common_data),useTsF(true) {}
 
     Vec F;
     OpThermalRhs(const string field_name,Vec _F,BlockData &data,CommonData &common_data):
-      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
+      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
       dAta(data),commonData(common_data),useTsF(false),F(_F) { }
 
     ublas::vector<double> Nf;
@@ -366,12 +366,12 @@ struct ThermalElement {
     CommonData &commonData;
     bool useTsB;
     OpThermalLhs(const string field_name,BlockData &data,CommonData &common_data):
-      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
+      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROWCOL),
       dAta(data),commonData(common_data),useTsB(true) { }
 
     Mat A;
     OpThermalLhs(const string field_name,Mat _A,BlockData &data,CommonData &common_data):
-      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
+      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROWCOL),
       dAta(data),commonData(common_data),useTsB(false),A(_A) {}
 
     ublas::matrix<double> K,transK;
@@ -460,7 +460,7 @@ struct ThermalElement {
     BlockData &dAta;
     CommonData &commonData;
     OpHeatCapacityRhs(const string field_name,BlockData &data,CommonData &common_data):
-      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
+      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
       dAta(data),commonData(common_data) {}
 
     ublas::vector<double> Nf;
@@ -518,7 +518,7 @@ struct ThermalElement {
     BlockData &dAta;
     CommonData &commonData;
     OpHeatCapacityLsh(const string field_name,BlockData &data,CommonData &common_data):
-      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
+      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROWCOL),
       dAta(data),commonData(common_data) {}
 
     ublas::matrix<double> M,transM;
@@ -605,13 +605,13 @@ struct ThermalElement {
     bool ho_geometry;
     bool useTsF;
     OpHeatFlux(const string field_name,FluxData &data,bool _ho_geometry = false):
-      FaceElementForcesAndSourcesCore::UserDataOperator(field_name),
+      FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
       dAta(data),ho_geometry(_ho_geometry),useTsF(true) { }
 
     Vec F;
     OpHeatFlux(const string field_name,Vec _F,
            FluxData &data,bool _ho_geometry = false):
-      FaceElementForcesAndSourcesCore::UserDataOperator(field_name),
+      FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
       dAta(data),ho_geometry(_ho_geometry),useTsF(false),F(_F) { }
 
     ublas::vector<FieldData> Nf;
@@ -686,12 +686,12 @@ struct ThermalElement {
     bool useTsB;
 
     OpRadiationLhs(const string field_name,RadiationData &data,CommonData &common_data,bool _ho_geometry = false):
-      FaceElementForcesAndSourcesCore::UserDataOperator(field_name),
+      FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROWCOL),
       commonData(common_data),dAta(data),ho_geometry(_ho_geometry),useTsB(true) { }
 
     Mat A;
     OpRadiationLhs(const string field_name,Mat _A,RadiationData &data,CommonData &common_data,bool _ho_geometry = false):
-      FaceElementForcesAndSourcesCore::UserDataOperator(field_name),
+      FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROWCOL),
       commonData(common_data),dAta(data),ho_geometry(_ho_geometry),useTsB(false),A(_A) { }
 
     ublas::matrix<double> N,transN;
@@ -775,12 +775,12 @@ struct ThermalElement {
     bool ho_geometry;
     bool useTsF;
     OpRadiationRhs(const string field_name,RadiationData &data,CommonData &common_data,bool _ho_geometry = false):
-      FaceElementForcesAndSourcesCore::UserDataOperator(field_name),
+      FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
       commonData(common_data),dAta(data),ho_geometry(_ho_geometry),useTsF(true) {}
 
     Vec F;
     OpRadiationRhs(const string field_name,Vec _F,RadiationData &data,CommonData &common_data,bool _ho_geometry = false):
-      FaceElementForcesAndSourcesCore::UserDataOperator(field_name),
+      FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
       commonData(common_data),dAta(data),ho_geometry(_ho_geometry),useTsF(false),F(_F) {}
 
     ublas::vector<FieldData> Nf;
@@ -809,19 +809,19 @@ struct ThermalElement {
 
       for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
 
-	double T4_at_Gauss_pt = pow(commonData.temperatureAtGaussPts[gg],4.0);
-	double ambientTemp = pow(dAta.aMbienttEmp,4.0);
-	double tEmp = 0;
+        double T4_at_Gauss_pt = pow(commonData.temperatureAtGaussPts[gg],4.0);
+        double ambientTemp = pow(dAta.aMbienttEmp,4.0);
+        double tEmp = 0;
 
-	if(ambientTemp > 0) {
-	  tEmp = -ambientTemp + T4_at_Gauss_pt;
-	}
+        if(ambientTemp > 0) {
+          tEmp = -ambientTemp + T4_at_Gauss_pt;
+        }
 
-	double val = getGaussPts()(2,gg);
-	double radiationConst;
+        double val = getGaussPts()(2,gg);
+        double radiationConst;
 
-	if(ho_geometry) {
-	  double area = norm_2(getNormals_at_GaussPt(gg))*0.5;
+        if(ho_geometry) {
+          double area = norm_2(getNormals_at_GaussPt(gg))*0.5;
           radiationConst = dAta.sIgma*dAta.eMissivity*tEmp*area;
         } else {
           radiationConst = dAta.sIgma*dAta.eMissivity*tEmp*getArea();
@@ -835,7 +835,7 @@ struct ThermalElement {
       //cerr << data.getIndices() << endl;
 
       if(useTsF) {
-	ierr = VecSetValues(getFEMethod()->ts_F,data.getIndices().size(),&data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
+        ierr = VecSetValues(getFEMethod()->ts_F,data.getIndices().size(),&data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
       } else {
         ierr = VecSetValues(F,data.getIndices().size(),&data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
       }
@@ -855,12 +855,12 @@ struct ThermalElement {
     bool ho_geometry;
     bool useTsF;
     OpConvectionRhs(const string field_name,ConvectionData &data,CommonData &common_data,bool _ho_geometry = false):
-      FaceElementForcesAndSourcesCore::UserDataOperator(field_name),
+      FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
       commonData(common_data),dAta(data),ho_geometry(_ho_geometry),useTsF(true) {}
 
     Vec F;
     OpConvectionRhs(const string field_name,Vec _F,ConvectionData &data,CommonData &common_data,bool _ho_geometry = false):
-      FaceElementForcesAndSourcesCore::UserDataOperator(field_name),
+      FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
       commonData(common_data),dAta(data),ho_geometry(_ho_geometry),useTsF(false),F(_F) {}
 
     ublas::vector<FieldData> Nf;
@@ -931,13 +931,13 @@ struct ThermalElement {
 
     OpConvectionLhs(const string field_name,
             ConvectionData &data,bool _ho_geometry = false):
-      FaceElementForcesAndSourcesCore::UserDataOperator(field_name),
+      FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROWCOL),
       dAta(data),ho_geometry(_ho_geometry),useTsB(true) {}
 
     Mat A;
     OpConvectionLhs(const string field_name,Mat _A,
             ConvectionData &data,bool _ho_geometry = false):
-      FaceElementForcesAndSourcesCore::UserDataOperator(field_name),
+      FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROWCOL),
       dAta(data),ho_geometry(_ho_geometry),useTsB(false),A(_A) {}
 
     ublas::matrix<double> K,transK;

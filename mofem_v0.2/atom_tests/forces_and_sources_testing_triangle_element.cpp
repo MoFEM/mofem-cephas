@@ -149,7 +149,7 @@ int main(int argc, char *argv[]) {
 
     TeeStream &my_split;
     MyOp1(TeeStream &_my_split):
-      FaceElementForcesAndSourcesCore::UserDataOperator("FIELD1","FIELD1"),
+      FaceElementForcesAndSourcesCore::UserDataOperator("FIELD1","FIELD1",UserDataOperator::OPROW|UserDataOperator::OPROWCOL),
       my_split(_my_split) {}
 
     PetscErrorCode doWork(
@@ -236,7 +236,7 @@ int main(int argc, char *argv[]) {
 
     TeeStream &my_split;
     MyOp2(TeeStream &_my_split):
-    FaceElementForcesAndSourcesCore::UserDataOperator("FIELD2","FIELD1"),
+    FaceElementForcesAndSourcesCore::UserDataOperator("FIELD2","FIELD1",UserDataOperator::OPROW|UserDataOperator::OPROWCOL),
       my_split(_my_split) {}
 
     PetscErrorCode doWork(

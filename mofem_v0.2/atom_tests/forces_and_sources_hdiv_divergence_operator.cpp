@@ -136,7 +136,7 @@ int main(int argc, char *argv[]) {
 
     FieldData &dIv;
     OpTetDivergence(FieldData &div):
-      VolumeElementForcesAndSourcesCore::UserDataOperator("HDIV"),dIv(div) {}
+      VolumeElementForcesAndSourcesCore::UserDataOperator("HDIV",UserDataOperator::OPROW),dIv(div) {}
 
     PetscErrorCode doWork(
       int side,
@@ -161,17 +161,17 @@ int main(int argc, char *argv[]) {
 
       int gg = 0;
       for(;gg<nb_gauss_pts;gg++) {
-	ierr = getDivergenceMatrixOperato_Hdiv(side,type,data,gg,div_vec); CHKERRQ(ierr);
-	//cout << std::fixed << div_vec << endl;
-	unsigned int dd = 0;
-	for(;dd<div_vec.size();dd++) {
-	  double w = getGaussPts()(3,gg)*getVolume();
-	  if(getHoGaussPtsDetJac().size()>0) {
-	    w *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
-	  }
-	  dIv += div_vec[dd]*w;
-	}
-	//cout << std::fixed << data.getDiffHdivN(gg) << endl;
+        ierr = getDivergenceMatrixOperato_Hdiv(side,type,data,gg,div_vec); CHKERRQ(ierr);
+        //cout << std::fixed << div_vec << endl;
+        unsigned int dd = 0;
+        for(;dd<div_vec.size();dd++) {
+          double w = getGaussPts()(3,gg)*getVolume();
+          if(getHoGaussPtsDetJac().size()>0) {
+            w *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
+          }
+          dIv += div_vec[dd]*w;
+        }
+        //cout << std::fixed << data.getDiffHdivN(gg) << endl;
       }
 
       //cout << std::fixed << data.getDiffHdivN() << endl;
@@ -201,7 +201,7 @@ int main(int argc, char *argv[]) {
 
     double &dIv;
     OpFacesFluxes(double &div):
-      FaceElementForcesAndSourcesCore::UserDataOperator("HDIV"),
+      FaceElementForcesAndSourcesCore::UserDataOperator("HDIV",UserDataOperator::OPROW),
       dIv(div) {}
 
     PetscErrorCode doWork(

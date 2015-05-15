@@ -59,7 +59,7 @@ struct FieldApproximationH1 {
     FUNEVAL &functionEvaluator;
 
     OpApprox(const string &field_name,Mat _A,vector<Vec> &vec_F,FUNEVAL &function_evaluator):
-      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
+      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW|UserDataOperator::OPROWCOL),
       A(_A),vecF(vec_F),functionEvaluator(function_evaluator) {}
     virtual ~OpApprox() {}
 

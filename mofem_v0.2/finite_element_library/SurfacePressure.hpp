@@ -84,7 +84,7 @@ struct NeummanForcesSurface {
 
     OpNeumannForce(const string field_name,Vec &_F,bCForce &data,
       boost::ptr_vector<MethodsForOp> &methods_op):
-      FaceElementForcesAndSourcesCore::UserDataOperator(field_name),
+      FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
       F(_F),dAta(data),methodsOp(methods_op) {}
 
     ublas::vector<FieldData> Nf;
@@ -147,7 +147,7 @@ struct NeummanForcesSurface {
     OpNeumannPreassure(const string field_name,Vec &_F,
       bCPreassure &data,boost::ptr_vector<MethodsForOp> &methods_op,
       bool ho_geometry = false):
-      FaceElementForcesAndSourcesCore::UserDataOperator(field_name),
+      FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
       F(_F),dAta(data),methodsOp(methods_op),hoGeometry(ho_geometry) {}
 
     ublas::vector<FieldData> Nf;
@@ -212,7 +212,7 @@ struct NeummanForcesSurface {
     OpNeumannPreassureFlux(const string field_name,Vec &_F,
       bCPreassure &data,boost::ptr_vector<MethodsForOp> &methods_op,
       bool ho_geometry = false):
-      FaceElementForcesAndSourcesCore::UserDataOperator(field_name),
+      FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
       F(_F),dAta(data),methodsOp(methods_op),hoGeometry(ho_geometry) {}
 
     ublas::vector<FieldData> Nf;

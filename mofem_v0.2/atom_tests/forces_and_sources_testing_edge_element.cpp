@@ -143,7 +143,7 @@ int main(int argc, char *argv[]) {
 
     TeeStream &my_split;
     MyOp(TeeStream &_my_split):
-      EdgeElementForcesAndSurcesCore::UserDataOperator("FIELD1","FIELD1"),
+      EdgeElementForcesAndSurcesCore::UserDataOperator("FIELD1","FIELD1",UserDataOperator::OPROW|UserDataOperator::OPROWCOL),
       my_split(_my_split) {}
 
     PetscErrorCode doWork(

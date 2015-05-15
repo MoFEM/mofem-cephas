@@ -54,7 +54,7 @@ struct BodyFroceConstantField {
     Block_BodyForces &dAta;
     Range blockTets;
     OpBodyForce(const string field_name,Vec _F,Block_BodyForces &data,Range block_tets):
-      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
+      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
       F(_F),dAta(data),blockTets(block_tets) {}
 
     ublas::vector<FieldData> Nf;
@@ -73,39 +73,39 @@ struct BodyFroceConstantField {
       int rank = dof_ptr->get_max_rank();
 
       int nb_row_dofs = data.getIndices().size()/rank;
-      
+
       Nf.resize(data.getIndices().size());
       bzero(&*Nf.data().begin(),data.getIndices().size()*sizeof(FieldData));
 
       for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
 
-	double val = getVolume()*getGaussPts()(3,gg);
-	if(getHoGaussPtsDetJac().size()>0) {
-	  val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
-	}
-	for(int rr = 0;rr<rank;rr++) {
+        double val = getVolume()*getGaussPts()(3,gg);
+        if(getHoGaussPtsDetJac().size()>0) {
+          val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
+        }
+        for(int rr = 0;rr<rank;rr++) {
 
-	  double acc;
-	  if(rr == 0) {
-	    acc = -dAta.data.acceleration_x;
-	  } else if(rr == 1) {
-	    acc = -dAta.data.acceleration_y;
-	  } else if(rr == 2) {
-	    acc = -dAta.data.acceleration_z;
-	  } else {
-	    SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-	  }
-	  acc *= dAta.data.density;
-	  cblas_daxpy(nb_row_dofs,val*acc,&data.getN()(gg,0),1,&Nf[rr],rank);
-	  
-	}
+          double acc;
+          if(rr == 0) {
+            acc = -dAta.data.acceleration_x;
+          } else if(rr == 1) {
+            acc = -dAta.data.acceleration_y;
+          } else if(rr == 2) {
+            acc = -dAta.data.acceleration_z;
+          } else {
+            SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+          }
+          acc *= dAta.data.density;
+          cblas_daxpy(nb_row_dofs,val*acc,&data.getN()(gg,0),1,&Nf[rr],rank);
+
+        }
 
       }
-    
-      //cerr << Nf << endl;
 
+      //cerr << Nf << endl;
       ierr = VecSetValues(F,data.getIndices().size(),
-	&data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
+        &data.getIndices()[0],&Nf[0],ADD_VALUES
+      ); CHKERRQ(ierr);
 
       PetscFunctionReturn(0);
     }
@@ -119,13 +119,13 @@ struct BodyFroceConstantField {
     ErrorCode rval;
     const CubitMeshSets *cubit_meshset_ptr;
     ierr = mField.get_cubit_msId(ms_id,BLOCKSET,&cubit_meshset_ptr); CHKERRQ(ierr);
-    ierr = cubit_meshset_ptr->get_attribute_data_structure(mapData[ms_id]); CHKERRQ(ierr);     
+    ierr = cubit_meshset_ptr->get_attribute_data_structure(mapData[ms_id]); CHKERRQ(ierr);
     EntityHandle meshset = cubit_meshset_ptr->get_meshset();
     Range tets;
     rval = mField.get_moab().get_entities_by_type(meshset,MBTET,tets,true); CHKERR_PETSC(rval);
     fe.getRowOpPtrVector().push_back(new OpBodyForce(field_name,F,mapData[ms_id],tets));
     PetscFunctionReturn(0);
-  } 
+  }
 
 
   private:
@@ -140,7 +140,5 @@ struct BodyFroceConstantField {
 
 /***************************************************************************//**
  * \defgroup mofem_body_forces Body forces elements
- * \ingroup mofem_forces_and_sources 
+ * \ingroup mofem_forces_and_sources
  ******************************************************************************/
-
-

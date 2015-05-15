@@ -44,7 +44,7 @@ PetscErrorCode ThermalElement::addThermalElements(const string field_name,const 
 
     Mat_Thermal temp_data;
     ierr = it->get_attribute_data_structure(temp_data); CHKERRQ(ierr);
-    
+
     setOfBlocks[it->get_msId()].cOnductivity_mat.resize(3,3); //(3X3) conductivity matrix
     setOfBlocks[it->get_msId()].cOnductivity_mat.clear();
     setOfBlocks[it->get_msId()].cOnductivity_mat(0,0)=temp_data.data.Conductivity;
@@ -122,7 +122,7 @@ PetscErrorCode ThermalElement::addThermalConvectionElement(const string field_na
   //not elegant, but good enough
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
     if(it->get_name().compare(0,10,"CONVECTION") == 0) {
-      
+
       vector<double> data;
       ierr = it->get_attributes(data); CHKERRQ(ierr);
       if(data.size()!=2) {
@@ -142,10 +142,10 @@ PetscErrorCode ThermalElement::addThermalConvectionElement(const string field_na
 
 PetscErrorCode ThermalElement::addThermalRadiationElement(const string field_name,const string mesh_nodals_positions) {
   PetscFunctionBegin;
-  
+
   PetscErrorCode ierr;
   ErrorCode rval;
-  
+
   ierr = mField.add_finite_element("THERMAL_RADIATION_FE",MF_ZERO); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_row("THERMAL_RADIATION_FE",field_name); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_col("THERMAL_RADIATION_FE",field_name); CHKERRQ(ierr);
@@ -153,7 +153,7 @@ PetscErrorCode ThermalElement::addThermalRadiationElement(const string field_nam
   if(mField.check_field(mesh_nodals_positions)) {
     ierr = mField.modify_finite_element_add_field_data("THERMAL_RADIATION_FE",mesh_nodals_positions); CHKERRQ(ierr);
   }
-  
+
   //this is alternative method for setting boundary conditions, to bypass bu in cubit file reader.
   //not elegant, but good enough
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
@@ -170,10 +170,10 @@ PetscErrorCode ThermalElement::addThermalRadiationElement(const string field_nam
       //cerr << setOfFluxes[it->get_msId()].dAta << endl;
       rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,setOfRadiation[it->get_msId()].tRis,true); CHKERR_PETSC(rval);
       ierr = mField.add_ents_to_finite_element_by_TRIs(setOfRadiation[it->get_msId()].tRis,"THERMAL_RADIATION_FE"); CHKERRQ(ierr);
-      
+
     }
   }
-  
+
   PetscFunctionReturn(0);
 }
 
@@ -225,7 +225,7 @@ PetscErrorCode ThermalElement::setThermalConvectionFiniteElementRhsOperators(str
     feConvectionRhs.getRowOpPtrVector().push_back(new OpConvectionRhs(field_name,F,sit->second,commonData,ho_geometry));
   }
   PetscFunctionReturn(0);
-} 
+}
 
 PetscErrorCode ThermalElement::setThermalConvectionFiniteElementLhsOperators(string field_name,Mat A,const string mesh_nodals_positions) {
   PetscFunctionBegin;
@@ -243,7 +243,7 @@ PetscErrorCode ThermalElement::setThermalConvectionFiniteElementLhsOperators(str
 
 PetscErrorCode ThermalElement::setTimeSteppingProblem(string field_name,string rate_name,const string mesh_nodals_positions) {
   PetscFunctionBegin;
- 
+
   bool ho_geometry = false;
   if(mField.check_field(mesh_nodals_positions)) {
     ho_geometry = true;
@@ -273,7 +273,7 @@ PetscErrorCode ThermalElement::setTimeSteppingProblem(string field_name,string r
       feFlux.getRowOpPtrVector().push_back(new OpHeatFlux(field_name,sit->second,ho_geometry));
     }
   }
-  
+
   // Convection
   {
     map<int,ConvectionData>::iterator sit = setOfConvection.begin();
@@ -312,7 +312,7 @@ PetscErrorCode ThermalElement::setTimeSteppingProblem(string field_name,string r
 
 PetscErrorCode ThermalElement::setTimeSteppingProblem(TsCtx &ts_ctx,string field_name,string rate_name,const string mesh_nodals_positions) {
   PetscFunctionBegin;
-  
+
   PetscErrorCode ierr;
   ierr = setTimeSteppingProblem(field_name,rate_name,mesh_nodals_positions); CHKERRQ(ierr);
 
@@ -322,12 +322,12 @@ PetscErrorCode ThermalElement::setTimeSteppingProblem(TsCtx &ts_ctx,string field
   loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("THERMAL_FLUX_FE",&feFlux));
   loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("THERMAL_CONVECTION_FE",&feConvectionRhs));
   loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("THERMAL_RADIATION_FE",&feRadiationRhs));
-  
+
   //lhs
   TsCtx::loops_to_do_type& loops_to_do_Mat = ts_ctx.get_loops_to_do_IJacobian();
-  loops_to_do_Mat.push_back(TsCtx::loop_pair_type("THERMAL_FE",&feLhs));    
+  loops_to_do_Mat.push_back(TsCtx::loop_pair_type("THERMAL_FE",&feLhs));
   loops_to_do_Mat.push_back(TsCtx::loop_pair_type("THERMAL_CONVECTION_FE",&feConvectionLhs));
-  loops_to_do_Mat.push_back(TsCtx::loop_pair_type("THERMAL_RADIATION_FE",&feRadiationLhs));    
+  loops_to_do_Mat.push_back(TsCtx::loop_pair_type("THERMAL_RADIATION_FE",&feRadiationLhs));
   //monitor
   //TsCtx::loops_to_do_type& loops_to_do_Monitor = ts_ctx.get_loops_to_do_Monitor();
 
@@ -335,4 +335,3 @@ PetscErrorCode ThermalElement::setTimeSteppingProblem(TsCtx &ts_ctx,string field
 }
 
 }
-
