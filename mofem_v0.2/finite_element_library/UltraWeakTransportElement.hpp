@@ -52,8 +52,10 @@ struct UltraWeakTransportElement {
 
   MyTriFE feTriFluxValue;
 
-  UltraWeakTransportElement(FieldInterface &m_field): mField(m_field),
-    feVol(m_field),feTriFluxValue(m_field) {};
+  UltraWeakTransportElement(FieldInterface &m_field):
+  mField(m_field),
+  feVol(m_field),feTriFluxValue(m_field) {};
+
   virtual ~UltraWeakTransportElement() {}
 
   ublas::vector<FieldData> valuesAtGaussPts;
@@ -977,7 +979,9 @@ struct UltraWeakTransportElement {
         }
 
         const FENumeredDofMoFEMEntity *dof_ptr;
-        ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
+        ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(
+          data.getIndices()[0],&dof_ptr
+        ); CHKERRQ(ierr);
         dof_ptr->get_FieldData() = *error_flux_ptr;
 
       } catch (const std::exception& ex) {
