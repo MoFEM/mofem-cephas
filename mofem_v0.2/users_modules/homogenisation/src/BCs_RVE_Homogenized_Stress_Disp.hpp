@@ -28,8 +28,6 @@ namespace MoFEM {
     BCs_RVE_Homogenized_Stress_Disp(FieldInterface &m_field):BCs_RVELagrange_Disp(m_field),
     mField(m_field){}
     
-
-    
     
     /// \biref operator to calculate the RVE homogenised stress
     struct OpRVEHomoStress:public FaceElementForcesAndSourcesCore::UserDataOperator {

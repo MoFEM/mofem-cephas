@@ -42,6 +42,9 @@ using namespace MoFEM;
 
 #include "BCs_RVELagrange_Disp.hpp"
 #include "BCs_RVELagrange_Trac.hpp"
+#include "BCs_RVELagrange_Trac_Rigid_Trans.hpp"
+#include "BCs_RVELagrange_Trac_Rigid_Rot.hpp"
+
 //#include "ElasticFE_RVELagrange_Homogenized_Stress_Traction.hpp"
 //#include "ElasticFE_RVELagrange_RigidBodyTranslation.hpp"
 //#include "ElasticFE_RVELagrange_RigidBodyRotation.hpp"
@@ -252,23 +255,55 @@ int main(int argc, char *argv[]) {
 
   lagrangian_element.setRVEBCsOperators("DISPLACEMENT","Lagrange_mul_disp",Aij,F1,F2,F3,F4,F5,F6,"MESH_NODE_POSITIONS");
   ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","Lagrange_elem",lagrangian_element.getLoopFeRVEBCLhs()); CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","Lagrange_elem",lagrangian_element.getLoopFeRVEBCRhs()); CHKERRQ(ierr);
+  
+  BCs_RVELagrange_Trac_Rigid_Trans lagrangian_element_rigid_body_trans(mField);
+  lagrangian_element_rigid_body_trans.setRVEBCsRigidBodyTranOperators("DISPLACEMENT","Lagrange_mul_disp_rigid_trans",Aij, lagrangian_element.setOfRVEBC);
+  ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","Lagrange_elem_rigid_trans",lagrangian_element_rigid_body_trans.getLoopFeRVEBCLhs()); CHKERRQ(ierr);
 
+  BCs_RVELagrange_Trac_Rigid_Rot lagrangian_element_rigid_body_rot(mField);
+  lagrangian_element_rigid_body_rot.setRVEBCsRigidBodyRotOperators("DISPLACEMENT","Lagrange_mul_disp_rigid_rotation",Aij, lagrangian_element.setOfRVEBC);
+  ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","Lagrange_elem_rigid_rotation",lagrangian_element_rigid_body_rot.getLoopFeRVEBCLhs()); CHKERRQ(ierr);
 
-//  ElasticFE_RVELagrange_Traction MyFE_RVELagrange(mField,Aij,D,F,applied_strain,"DISPLACEMENT","Lagrange_mul_disp",field_rank);
-//  ElasticFE_RVELagrange_RigidBodyTranslation MyFE_RVELagrangeRigidBodyTrans(mField,Aij,D,F,applied_strain,"DISPLACEMENT","Lagrange_mul_disp",field_rank,"Lagrange_mul_disp_rigid_trans");
-//  ElasticFE_RVELagrange_RigidBodyRotation MyFE_RVELagrangeRigidBodyRotation(mField,Aij,D,F,applied_strain,"DISPLACEMENT","Lagrange_mul_disp",field_rank);
-//  
-//  ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","Lagrange_elem",MyFE_RVELagrange);  CHKERRQ(ierr);
-//  ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","Lagrange_elem_rigid_trans",MyFE_RVELagrangeRigidBodyTrans);  CHKERRQ(ierr);
-//  ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","Lagrange_elem_rigid_rotation",MyFE_RVELagrangeRigidBodyRotation);  CHKERRQ(ierr);
-//  
-//  ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-//  ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-//  ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
-//  ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
-//  ierr = MatAssemblyBegin(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-//  ierr = MatAssemblyEnd(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-//  
+  //Matrix View
+  MatView(Aij,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
+  std::string wait;
+  std::cin >> wait;
+
+  ierr = MatAssemblyBegin(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+  ierr = MatAssemblyEnd(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+  
+  ierr = VecGhostUpdateBegin(F1,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(F1,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = VecAssemblyBegin(F1); CHKERRQ(ierr);
+  ierr = VecAssemblyEnd(F1); CHKERRQ(ierr);
+  
+  ierr = VecGhostUpdateBegin(F2,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(F2,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = VecAssemblyBegin(F2); CHKERRQ(ierr);
+  ierr = VecAssemblyEnd(F2); CHKERRQ(ierr);
+  
+  ierr = VecGhostUpdateBegin(F3,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(F3,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = VecAssemblyBegin(F3); CHKERRQ(ierr);
+  ierr = VecAssemblyEnd(F3); CHKERRQ(ierr);
+  
+  ierr = VecGhostUpdateBegin(F4,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(F4,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = VecAssemblyBegin(F4); CHKERRQ(ierr);
+  ierr = VecAssemblyEnd(F4); CHKERRQ(ierr);
+  
+  ierr = VecGhostUpdateBegin(F5,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(F5,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = VecAssemblyBegin(F5); CHKERRQ(ierr);
+  ierr = VecAssemblyEnd(F5); CHKERRQ(ierr);
+  
+  ierr = VecGhostUpdateBegin(F6,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(F6,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = VecAssemblyBegin(F6); CHKERRQ(ierr);
+  ierr = VecAssemblyEnd(F6); CHKERRQ(ierr);
+
+//
 //  //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 //  //ierr = MatView(Aij,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 //  
