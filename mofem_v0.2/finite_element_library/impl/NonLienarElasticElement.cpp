@@ -581,35 +581,35 @@ PetscErrorCode NonlinearElasticElement::setOperators(
   commonData.meshPositions = material_position_field_name;
 
   //Rhs
-  feRhs.getRowOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(spatial_position_field_name,commonData));
+  feRhs.getOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(spatial_position_field_name,commonData));
   if(mField.check_field(material_position_field_name)) {
-    feRhs.getRowOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(material_position_field_name,commonData));
+    feRhs.getOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(material_position_field_name,commonData));
   }
   map<int,BlockData>::iterator sit = setOfBlocks.begin();
   for(;sit!=setOfBlocks.end();sit++) {
-    feRhs.getRowOpPtrVector().push_back(new OpJacobian(spatial_position_field_name,sit->second,commonData,tAg,false,field_disp));
-    feRhs.getRowOpPtrVector().push_back(new OpRhs(spatial_position_field_name,sit->second,commonData));
+    feRhs.getOpPtrVector().push_back(new OpJacobian(spatial_position_field_name,sit->second,commonData,tAg,false,field_disp));
+    feRhs.getOpPtrVector().push_back(new OpRhs(spatial_position_field_name,sit->second,commonData));
   }
 
   //Energy
-  feEnergy.getRowOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(spatial_position_field_name,commonData));
+  feEnergy.getOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(spatial_position_field_name,commonData));
   if(mField.check_field(material_position_field_name)) {
-    feEnergy.getRowOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(material_position_field_name,commonData));
+    feEnergy.getOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(material_position_field_name,commonData));
   }
   sit = setOfBlocks.begin();
   for(;sit!=setOfBlocks.end();sit++) {
-    feEnergy.getRowOpPtrVector().push_back(new OpEnergy(spatial_position_field_name,sit->second,commonData,&feEnergy.V,field_disp));
+    feEnergy.getOpPtrVector().push_back(new OpEnergy(spatial_position_field_name,sit->second,commonData,&feEnergy.V,field_disp));
   }
 
   //Lhs
-  feLhs.getRowOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(spatial_position_field_name,commonData));
+  feLhs.getOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(spatial_position_field_name,commonData));
   if(mField.check_field(material_position_field_name)) {
-    feLhs.getRowOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(material_position_field_name,commonData));
+    feLhs.getOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(material_position_field_name,commonData));
   }
   sit = setOfBlocks.begin();
   for(;sit!=setOfBlocks.end();sit++) {
-    feLhs.getRowOpPtrVector().push_back(new OpJacobian(spatial_position_field_name,sit->second,commonData,tAg,true,field_disp));
-    feLhs.getRowColOpPtrVector().push_back(new OpLhs_dx(spatial_position_field_name,spatial_position_field_name,sit->second,commonData));
+    feLhs.getOpPtrVector().push_back(new OpJacobian(spatial_position_field_name,sit->second,commonData,tAg,true,field_disp));
+    feLhs.getOpPtrVector().push_back(new OpLhs_dx(spatial_position_field_name,spatial_position_field_name,sit->second,commonData));
   }
 
   PetscFunctionReturn(0);

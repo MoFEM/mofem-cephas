@@ -1276,24 +1276,24 @@ struct HelmholtzElement {
     fe_name = "HELMHOLTZ_RERE_FE"; feRhs.insert(fe_name,new MyVolumeFE(mField,addToRank));
     fe_name = "HELMHOLTZ_IMIM_FE"; feRhs.insert(fe_name,new MyVolumeFE(mField,addToRank));
 
-    feLhs.at("HELMHOLTZ_RERE_FE").getRowOpPtrVector().push_back(
+    feLhs.at("HELMHOLTZ_RERE_FE").getOpPtrVector().push_back(
       new OpGetImIndices(re_field_name,im_field_name,commonData));
 
     /* real field and imag field */
-    feRhs.at("HELMHOLTZ_RERE_FE").getRowOpPtrVector().push_back(
+    feRhs.at("HELMHOLTZ_RERE_FE").getOpPtrVector().push_back(
       new OpGetValueAndGradAtGaussPts(re_field_name,commonData));
-    feRhs.at("HELMHOLTZ_IMIM_FE").getRowOpPtrVector().push_back(
+    feRhs.at("HELMHOLTZ_IMIM_FE").getOpPtrVector().push_back(
      new OpGetValueAndGradAtGaussPts(im_field_name,commonData));
 
     map<int,VolumeData>::iterator mit = volumeData.begin();
     for(;mit!=volumeData.end();mit++) {
 
-      feLhs.at("HELMHOLTZ_RERE_FE").getRowColOpPtrVector().push_back(
+      feLhs.at("HELMHOLTZ_RERE_FE").getOpPtrVector().push_back(
 	       new OpHelmholtzLhs(re_field_name,im_field_name,A,mit->second,commonData));
 
-      feRhs.at("HELMHOLTZ_RERE_FE").getRowOpPtrVector().push_back(
+      feRhs.at("HELMHOLTZ_RERE_FE").getOpPtrVector().push_back(
 	       new OpHelmholtzRhs(re_field_name,F,mit->second,commonData));
-      feRhs.at("HELMHOLTZ_IMIM_FE").getRowOpPtrVector().push_back(
+      feRhs.at("HELMHOLTZ_IMIM_FE").getOpPtrVector().push_back(
 	       new OpHelmholtzRhs(im_field_name,F,mit->second,commonData));
 
     }
@@ -1304,23 +1304,23 @@ struct HelmholtzElement {
 
     if(mField.check_field(mesh_nodals_positions)) {
 
-      feLhs.at("HELMHOLTZ_REIM_FE").getRowOpPtrVector().push_back(
+      feLhs.at("HELMHOLTZ_REIM_FE").getOpPtrVector().push_back(
         new OpHoCoordTri(mesh_nodals_positions,commonData.hoCoords)
       );
 
-      feRhs.at("HELMHOLTZ_REIM_FE").getRowOpPtrVector().push_back(
+      feRhs.at("HELMHOLTZ_REIM_FE").getOpPtrVector().push_back(
         new OpHoCoordTri(mesh_nodals_positions,commonData.hoCoords)
       );
 
     }
 
     // Get im indices
-    feLhs.at("HELMHOLTZ_REIM_FE").getRowOpPtrVector().push_back(new OpGetImIndices(im_field_name,im_field_name,commonData));
-    feRhs.at("HELMHOLTZ_REIM_FE").getRowOpPtrVector().push_back(new OpGetImIndices(im_field_name,im_field_name,commonData));
+    feLhs.at("HELMHOLTZ_REIM_FE").getOpPtrVector().push_back(new OpGetImIndices(im_field_name,im_field_name,commonData));
+    feRhs.at("HELMHOLTZ_REIM_FE").getOpPtrVector().push_back(new OpGetImIndices(im_field_name,im_field_name,commonData));
 
     // Get field values
-    feRhs.at("HELMHOLTZ_REIM_FE").getRowOpPtrVector().push_back(new OpGetValueAtGaussPts(re_field_name,commonData));
-    feRhs.at("HELMHOLTZ_REIM_FE").getRowOpPtrVector().push_back(new OpGetValueAtGaussPts(im_field_name,commonData));
+    feRhs.at("HELMHOLTZ_REIM_FE").getOpPtrVector().push_back(new OpGetValueAtGaussPts(re_field_name,commonData));
+    feRhs.at("HELMHOLTZ_REIM_FE").getOpPtrVector().push_back(new OpGetValueAtGaussPts(im_field_name,commonData));
 
     boost::shared_ptr<ZeroFunVal> zero_function = boost::shared_ptr<ZeroFunVal>(new ZeroFunVal());
 
@@ -1332,14 +1332,14 @@ struct HelmholtzElement {
 
       if(miit->second.aDmittance_imag!=0) {
 
-        feRhs.at("HELMHOLTZ_REIM_FE").getRowColOpPtrVector().push_back(
+        feRhs.at("HELMHOLTZ_REIM_FE").getOpPtrVector().push_back(
           new OpHelmholtzMixBCLhs<ZeroFunVal>(re_field_name,im_field_name,A,miit->second,commonData, zero_function)
         );
 
       }
 
       // assembled to the right hand vector
-      feRhs.at("HELMHOLTZ_REIM_FE").getRowOpPtrVector().push_back(
+      feRhs.at("HELMHOLTZ_REIM_FE").getOpPtrVector().push_back(
         new OpHelmholtzMixBCRhs<ZeroFunVal,IncidentWaveNeumannF2>(
           re_field_name,im_field_name,F,miit->second,commonData,
           zero_function,incident_wave_neumann_bc
@@ -1351,7 +1351,7 @@ struct HelmholtzElement {
     miit = sommerfeldBcData.begin();
     for(;miit!=sommerfeldBcData.end();miit++) {
 
-      feLhs.at("HELMHOLTZ_REIM_FE").getRowColOpPtrVector().push_back(
+      feLhs.at("HELMHOLTZ_REIM_FE").getOpPtrVector().push_back(
         new OpHelmholtzMixBCLhs<ZeroFunVal>(
           re_field_name,im_field_name,A,miit->second,commonData,
           zero_function
@@ -1359,7 +1359,7 @@ struct HelmholtzElement {
       );
 
       // FIXME: need to add second functions so that residual is calculated properly
-      feRhs.at("HELMHOLTZ_REIM_FE").getRowOpPtrVector().push_back(
+      feRhs.at("HELMHOLTZ_REIM_FE").getOpPtrVector().push_back(
         new OpHelmholtzMixBCRhs<ZeroFunVal,ZeroFunVal>(
           re_field_name,im_field_name,F,miit->second,commonData,
           zero_function,zero_function
@@ -1374,7 +1374,7 @@ struct HelmholtzElement {
     miit = baylissTurkelBcData.begin();
     for(;miit!=baylissTurkelBcData.end();miit++) {
 
-      feLhs.at("HELMHOLTZ_REIM_FE").getRowColOpPtrVector().push_back(
+      feLhs.at("HELMHOLTZ_REIM_FE").getOpPtrVector().push_back(
         new OpHelmholtzMixBCLhs<BaylissTurkel>(
           re_field_name,im_field_name,A,miit->second,commonData,
           bayliss_turkel_bc
@@ -1382,7 +1382,7 @@ struct HelmholtzElement {
       );
 
       // FIXME: need to add second functions so that residual is calculated properly
-      feRhs.at("HELMHOLTZ_REIM_FE").getRowOpPtrVector().push_back(
+      feRhs.at("HELMHOLTZ_REIM_FE").getOpPtrVector().push_back(
         new OpHelmholtzMixBCRhs<BaylissTurkel,ZeroFunVal>(
           re_field_name,im_field_name,F,miit->second,commonData,
           bayliss_turkel_bc,zero_function

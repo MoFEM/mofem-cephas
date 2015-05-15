@@ -169,9 +169,9 @@ NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::MyTriangleSpatialFE
   snes_f = _F;
 
   if(mField.check_field("MESH_NODE_POSITIONS")) {
-    getRowOpPtrVector().push_back(new AuxMethodMaterial("MESH_NODE_POSITIONS",this));
+    getOpPtrVector().push_back(new AuxMethodMaterial("MESH_NODE_POSITIONS",this));
   }
-  getRowOpPtrVector().push_back(new AuxMethodSpatial("SPATIAL_POSITION",this));
+  getOpPtrVector().push_back(new AuxMethodSpatial("SPATIAL_POSITION",this));
 
 }
 

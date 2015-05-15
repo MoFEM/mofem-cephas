@@ -271,7 +271,7 @@ struct NeummanForcesSurface {
     ierr = mField.get_cubit_msId(ms_id,NODESET,&cubit_meshset_ptr); CHKERRQ(ierr);
     ierr = cubit_meshset_ptr->get_bc_data_structure(mapForce[ms_id].data); CHKERRQ(ierr);
     rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBTRI,mapForce[ms_id].tRis,true); CHKERR_PETSC(rval);
-    fe.getRowOpPtrVector().push_back(new OpNeumannForce(field_name,F,mapForce[ms_id],methodsOp));
+    fe.getOpPtrVector().push_back(new OpNeumannForce(field_name,F,mapForce[ms_id],methodsOp));
     PetscFunctionReturn(0);
   }
 
@@ -283,7 +283,7 @@ struct NeummanForcesSurface {
     ierr = mField.get_cubit_msId(ms_id,SIDESET,&cubit_meshset_ptr); CHKERRQ(ierr);
     ierr = cubit_meshset_ptr->get_bc_data_structure(mapPreassure[ms_id].data); CHKERRQ(ierr);
     rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBTRI,mapPreassure[ms_id].tRis,true); CHKERR_PETSC(rval);
-    fe.getRowOpPtrVector().push_back(new OpNeumannPreassure(field_name,F,mapPreassure[ms_id],methodsOp,ho_geometry));
+    fe.getOpPtrVector().push_back(new OpNeumannPreassure(field_name,F,mapPreassure[ms_id],methodsOp,ho_geometry));
     PetscFunctionReturn(0);
   }
 
@@ -295,7 +295,7 @@ struct NeummanForcesSurface {
     ierr = mField.get_cubit_msId(ms_id,SIDESET,&cubit_meshset_ptr); CHKERRQ(ierr);
     ierr = cubit_meshset_ptr->get_bc_data_structure(mapPreassure[ms_id].data); CHKERRQ(ierr);
     rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBTRI,mapPreassure[ms_id].tRis,true); CHKERR_PETSC(rval);
-    fe.getRowOpPtrVector().push_back(new OpNeumannPreassureFlux(field_name,F,mapPreassure[ms_id],methodsOp,ho_geometry));
+    fe.getOpPtrVector().push_back(new OpNeumannPreassureFlux(field_name,F,mapPreassure[ms_id],methodsOp,ho_geometry));
     PetscFunctionReturn(0);
   }
 

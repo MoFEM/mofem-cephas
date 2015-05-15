@@ -730,8 +730,8 @@ struct GroundSurfaceTemerature {
       boost::ptr_vector<Parameters>::iterator sit = blockData.begin();
       for(;sit!=blockData.end();sit++) {
 	// add finite element operator
-	feGroundSurfaceRhs.getRowOpPtrVector().push_back(new OpGetTriTemperatureAtGaussPts(field_name,commonData.temperatureAtGaussPts));
-	feGroundSurfaceRhs.getRowOpPtrVector().push_back(new OpRhs(field_name,time_data_ptr,&*sit,commonData,ho_geometry));
+	feGroundSurfaceRhs.getOpPtrVector().push_back(new OpGetTriTemperatureAtGaussPts(field_name,commonData.temperatureAtGaussPts));
+	feGroundSurfaceRhs.getOpPtrVector().push_back(new OpRhs(field_name,time_data_ptr,&*sit,commonData,ho_geometry));
 	preProcessShade.push_back(new SolarRadiationPreProcessor(mField,time_data_ptr,&*sit));
       }
     }
@@ -739,8 +739,8 @@ struct GroundSurfaceTemerature {
       boost::ptr_vector<Parameters>::iterator sit = blockData.begin();
       for(;sit!=blockData.end();sit++) {
 	// add finite element operator
-	feGroundSurfaceLhs.getRowOpPtrVector().push_back(new OpGetTriTemperatureAtGaussPts(field_name,commonData.temperatureAtGaussPts));
-	feGroundSurfaceLhs.getRowColOpPtrVector().push_back(new OpLhs(field_name,time_data_ptr,&*sit,commonData,ho_geometry));
+	feGroundSurfaceLhs.getOpPtrVector().push_back(new OpGetTriTemperatureAtGaussPts(field_name,commonData.temperatureAtGaussPts));
+	feGroundSurfaceLhs.getOpPtrVector().push_back(new OpLhs(field_name,time_data_ptr,&*sit,commonData,ho_geometry));
       }
     }
 

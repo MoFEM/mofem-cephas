@@ -177,7 +177,7 @@ struct FluidPressure {
     map<MeshSetId,FluidData>::iterator sit = setOfFluids.begin();
     for(;sit!=setOfFluids.end();sit++) {
       //add finite element
-      fe.getRowOpPtrVector().push_back(new OpCalculatePressure(field_name,F,sit->second,allow_negative_pressure,ho_geometry));
+      fe.getOpPtrVector().push_back(new OpCalculatePressure(field_name,F,sit->second,allow_negative_pressure,ho_geometry));
     }
     PetscFunctionReturn(0);
   }

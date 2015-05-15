@@ -2450,6 +2450,146 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
       SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented yet");
     }
 
+    const UserDataOperator::OpType types[2] = {
+      UserDataOperator::OPROW, UserDataOperator::OPCOL
+    };
+    vector<string> last_eval_field_name(2);
+    DataForcesAndSurcesCore *op_data[2];
+    FieldSpace space[2];
+
+    boost::ptr_vector<UserDataOperator>::iterator oit,hi_oit;
+    oit = opPtrVector.begin();
+    hi_oit = opPtrVector.end();
+
+    for(;oit!=hi_oit;oit++) {
+
+      oit->setPtrFE(this);
+
+      for(int ss = 0;ss!=2;ss++) {
+
+        string field_name = !ss ? oit->rowFieldName : oit->colFieldName;
+        BitFieldId data_id = mField.get_field_structure(field_name)->get_id();
+        if((oit->getMoFEMFEPtr()->get_BitFieldId_data()&data_id).none()) {
+          SETERRQ2(
+            PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"no data field < %s > on finite element < %s >",
+            field_name.c_str(),feName.c_str()
+          );
+        }
+
+        if(oit->getOpType()&types[ss] || oit->getOpType()&UserDataOperator::OPROWCOL) {
+
+          space[ss] = mField.get_field_structure(field_name)->get_space();
+
+          switch(space[ss]) {
+            case H1:
+            op_data[ss] = !ss ? &dataH1 : &derivedDataH1;
+            break;
+            case HCURL:
+            SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented yet");
+            break;
+            case HDIV:
+            op_data[ss] = !ss ? &dataHdiv : &derivedDataHdiv;
+            break;
+            case L2:
+            SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not make sanes on face");
+            break;
+            case NOFIELD:
+            op_data[ss] = !ss ? &dataNoField : &dataNoFieldCol;
+            break;
+            case LASTSPACE:
+            SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"unknown space");
+            break;
+          }
+
+          if(last_eval_field_name[ss]!=field_name) {
+
+            switch(space[ss]) {
+              case H1:
+              if(!ss) {
+                ierr = getRowNodesIndices(*op_data[ss],field_name); CHKERRQ(ierr);
+              } else {
+                ierr = getColNodesIndices(*op_data[ss],field_name); CHKERRQ(ierr);
+              }
+              ierr = getNodesFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
+              ierr = getNodesFieldDofs(*op_data[ss],field_name); CHKERRQ(ierr);
+              case HCURL:
+              if(!ss) {
+                ierr = getEdgesRowIndices(*op_data[ss],field_name); CHKERRQ(ierr);
+              } else {
+                ierr = getEdgesColIndices(*op_data[ss],field_name); CHKERRQ(ierr);
+              }
+              ierr = getEdgesOrder(*op_data[ss],field_name); CHKERRQ(ierr);
+              ierr = getEdgesFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
+              ierr = getEdgesFieldDofs(*op_data[ss],field_name); CHKERRQ(ierr);
+              case HDIV:
+              if(!ss) {
+                ierr = getTrisRowIndices(*op_data[ss],field_name); CHKERRQ(ierr);
+              } else {
+                ierr = getTrisColIndices(*op_data[ss],field_name); CHKERRQ(ierr);
+              }
+              ierr = getTrisOrder(*op_data[ss],field_name); CHKERRQ(ierr);
+              ierr = getTrisFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
+              ierr = getTrisFieldDofs(*op_data[ss],field_name); CHKERRQ(ierr);
+              break;
+              case L2:
+              SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not make sanes on face");
+              break;
+              case NOFIELD:
+              if(!getNinTheLoop()) {
+                // NOFIELD data arr the same for each element, can be retreived only once
+                if(!ss) {
+                  ierr = getNoFieldRowIndices(*op_data[ss],field_name); CHKERRQ(ierr);
+                } else {
+                  ierr = getNoFieldColIndices(*op_data[ss],field_name); CHKERRQ(ierr);
+                }
+                ierr = getNoFieldFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
+              }
+              break;
+              case LASTSPACE:
+              SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"unknown space");
+              break;
+            }
+            last_eval_field_name[ss]=field_name;
+
+          }
+        }
+      }
+
+      if(oit->getOpType()&UserDataOperator::OPROW) {
+        try {
+          ierr = oit->opRhs(*op_data[0]); CHKERRQ(ierr);
+        } catch (exception& ex) {
+          ostringstream ss;
+          ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+          SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+        }
+      }
+
+
+      if(oit->getOpType()&UserDataOperator::OPCOL) {
+        try {
+          ierr = oit->opRhs(*op_data[1]); CHKERRQ(ierr);
+        } catch (exception& ex) {
+          ostringstream ss;
+          ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+          SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+        }
+      }
+
+
+      if(oit->getOpType()&UserDataOperator::OPROWCOL) {
+        try {
+          ierr = oit->opLhs(*op_data[0],*op_data[1],oit->sYmm); CHKERRQ(ierr);
+        } catch (exception& ex) {
+          ostringstream ss;
+          ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+          SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+        }
+      }
+
+    }
+
+
     /*for(int ss = 0;ss<2;ss++) {
 
       boost::ptr_vector<ForcesAndSurcesCore::UserDataOperator>::iterator oit,hi_oit;

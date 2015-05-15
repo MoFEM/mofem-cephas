@@ -450,8 +450,8 @@ struct ForcesAndSurcesCore: public FEMethod {
    */
   DEPRECATED boost::ptr_vector<UserDataOperator>& getRowColOpPtrVector() { return opPtrVector; }
 
-  DEPRECATED boost::ptr_vector<UserDataOperator>& get_op_to_do_Rhs() { return getRowOpPtrVector(); }
-  DEPRECATED boost::ptr_vector<UserDataOperator>& get_op_to_do_Lhs() { return getRowColOpPtrVector(); }
+  DEPRECATED boost::ptr_vector<UserDataOperator>& get_op_to_do_Rhs() { return getOpPtrVector(); }
+  DEPRECATED boost::ptr_vector<UserDataOperator>& get_op_to_do_Lhs() { return getOpPtrVector(); }
 
   virtual PetscErrorCode preProcess() {
     PetscFunctionBegin;
@@ -813,8 +813,6 @@ struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
  number of operator added pushing objects to rowOpPtrVector and
  rowColOpPtrVector.
 
- \bug colOp not implemented
-
  */
 struct VertexElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 
@@ -879,8 +877,6 @@ struct VertexElementForcesAndSourcesCore: public ForcesAndSurcesCore {
  derived from FlatPrismElementForcesAndSurcesCoreL::UserDataOperator.  Arbitrary
  number of operator added pushing objects to rowOpPtrVector and
  rowColOpPtrVector.
-
- \bug colOp not implemented
 
  */
 struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
