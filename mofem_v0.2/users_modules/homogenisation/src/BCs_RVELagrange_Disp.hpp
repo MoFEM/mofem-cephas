@@ -94,7 +94,7 @@ namespace MoFEM {
       Mat Aij;
       OpRVEBCsLhs(const string field_name, const string lagrang_field_name, Mat _Aij,
                       RVEBC_Data &data,bool _ho_geometry = false):
-      FaceElementForcesAndSourcesCore::UserDataOperator(lagrang_field_name, field_name),Aij(_Aij),
+      FaceElementForcesAndSourcesCore::UserDataOperator(lagrang_field_name, field_name, UserDataOperator::OPROWCOL),Aij(_Aij),
       dAta(data),ho_geometry(_ho_geometry){
                sYmm = false;  //This will make sure to loop over all intities (e.g. for order=2 it will make doWork to loop 16 time)
       }
@@ -210,7 +210,7 @@ namespace MoFEM {
       
       OpRVEBCsRhs(const string field_name, const string lagrang_field_name,  Vec _F1, Vec _F2, Vec _F3, Vec _F4, Vec _F5, Vec _F6,
                   RVEBC_Data &data, bool _ho_geometry = false):
-      FaceElementForcesAndSourcesCore::UserDataOperator(lagrang_field_name, field_name),F1(_F1), F2(_F2), F3(_F3), F4(_F4), F5(_F5), F6(_F6),
+      FaceElementForcesAndSourcesCore::UserDataOperator(lagrang_field_name, UserDataOperator::OPROW),F1(_F1), F2(_F2), F3(_F3), F4(_F4), F5(_F5), F6(_F6),
       dAta(data),ho_geometry(_ho_geometry){}
       
       ublas::vector<FieldData> f;
@@ -351,8 +351,8 @@ namespace MoFEM {
       map<int,RVEBC_Data>::iterator sit = setOfRVEBC.begin();
       for(;sit!=setOfRVEBC.end();sit++) {
         //        cout<<"Hi from setRVEBCsOperators "<<endl;
-        feRVEBCLhs.getRowColOpPtrVector().push_back(new OpRVEBCsLhs(field_name,lagrang_field_name, _Aij, sit->second,ho_geometry));
-        feRVEBCRhs.getRowOpPtrVector().push_back(new OpRVEBCsRhs(field_name,lagrang_field_name, _F1, _F2, _F3, _F4, _F5, _F6, sit->second,ho_geometry));
+        feRVEBCLhs.getOpPtrVector().push_back(new OpRVEBCsLhs(field_name,lagrang_field_name, _Aij, sit->second,ho_geometry));
+        feRVEBCRhs.getOpPtrVector().push_back(new OpRVEBCsRhs(field_name,lagrang_field_name, _F1, _F2, _F3, _F4, _F5, _F6, sit->second,ho_geometry));
         
       }
       PetscFunctionReturn(0);

@@ -35,7 +35,7 @@ namespace MoFEM {
       bool ho_geometry;
       Mat Aij;
       OpRVEBCsLhs(const string field_name, const string lagrang_field_name, Mat _Aij, RVEBC_Data &data):
-      FaceElementForcesAndSourcesCore::UserDataOperator(lagrang_field_name, field_name),Aij(_Aij),
+      FaceElementForcesAndSourcesCore::UserDataOperator(lagrang_field_name, field_name, UserDataOperator::OPROWCOL),Aij(_Aij),
       dAta(data){
         sYmm = false;  //This will make sure to loop over all intities (e.g. for order=2 it will make doWork to loop 16 time)
       }
@@ -106,7 +106,7 @@ namespace MoFEM {
       for(;sit!=setOfRVEBC.end();sit++) {
 //        cout<<"Hi from setRVEBCsOperators "<<endl;
         //LHS
-        feRVEBCLhs.getRowColOpPtrVector().push_back(new OpRVEBCsLhs(field_name,lagrang_field_name, _Aij, sit->second));
+        feRVEBCLhs.getOpPtrVector().push_back(new OpRVEBCsLhs(field_name,lagrang_field_name, _Aij, sit->second));
       }
       PetscFunctionReturn(0);
     }

@@ -45,7 +45,7 @@ namespace MoFEM {
       FieldInterface &mField;
       
       OpVolumeCal(FieldInterface &m_field, string field_name, Vec _RVE_volume_Vec, NonlinearElasticElement::BlockData &data):
-      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
+      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name, UserDataOperator::OPROWCOL),
       mField(m_field), RVE_volume_Vec(_RVE_volume_Vec), dAta(data) { }
       
       PetscErrorCode doWork(
@@ -85,7 +85,7 @@ namespace MoFEM {
       map<int,NonlinearElasticElement::BlockData>::iterator sit = setOfBlocks.begin();
       for(;sit!=setOfBlocks.end();sit++) {
 //        cout<<"Hi from loop "<<endl;
-        feLhs.getRowColOpPtrVector().push_back(new OpVolumeCal(mField, field_name, _RVE_volume_Vec, sit->second));
+        feLhs.getOpPtrVector().push_back(new OpVolumeCal(mField, field_name, _RVE_volume_Vec, sit->second));
       }
     }
     

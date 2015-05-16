@@ -1,6 +1,6 @@
 #!/bin/sh
 
 SFTP=@SFTP@
-CMAKE_CURRENT_SOURCE_DIR=@CMAKE_CURRENT_SOURCE_DIR@
+PROJECT_SOURCE_DIR=@PROJECT_SOURCE_DIR@
 
-$SFTP -C -b $CMAKE_CURRENT_SOURCE_DIR/publish_doc "campus\lk58p"@userweb.eng.gla.ac.uk
+$SFTP -C -b $PROJECT_SOURCE_DIR/scripts/publish_doc "campus\lk58p"@userweb.eng.gla.ac.uk

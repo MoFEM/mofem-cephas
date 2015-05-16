@@ -141,7 +141,7 @@ namespace MoFEM {
 //      map<int,RVEBC_Data>::iterator sit = setOfRVEBC.begin();
 //      for(;sit!=setOfRVEBC.end();sit++) {
 //        //        cout<<"Hi from setOfRVEBC "<<endl;
-//        feRVEBCRhs.getRowOpPtrVector().push_back(new OpRVEHomoStress(field_name, lagrang_field_name, RVE_volume, Stress_Homo, sit->second, ho_geometry));
+//        feRVEBCRhs.getOpPtrVector().push_back(new OpRVEHomoStress(field_name, lagrang_field_name, RVE_volume, Stress_Homo, sit->second, ho_geometry));
 //        
 //      }
 //      PetscFunctionReturn(0);

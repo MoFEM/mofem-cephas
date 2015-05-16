@@ -42,9 +42,9 @@ namespace MoFEM {
 //        
 //        //RHS
 //        //Caclculte D_mat
-//        feRVEBCRhs.getColOpPtrVector().push_back(new OpRVEBCsRhs_Cal(field_name, sit->second, commonData, common_functions, ho_geometry));
+//        feRVEBCRhs.getOpPtrVector().push_back(new OpRVEBCsRhs_Cal(field_name, sit->second, commonData, common_functions, ho_geometry));
 //        //Caclculte f and assemplbe
-//        feRVEBCRhs.getRowOpPtrVector().push_back(new OpRVEBCsRhs_Assemble(lagrang_field_name, _F1, _F2, _F3, _F4, _F5, _F6, sit->second, commonData, ho_geometry));
+//        feRVEBCRhs.getOpPtrVector().push_back(new OpRVEBCsRhs_Assemble(lagrang_field_name, _F1, _F2, _F3, _F4, _F5, _F6, sit->second, commonData, ho_geometry));
 //      }
 //      PetscFunctionReturn(0);
 //    }

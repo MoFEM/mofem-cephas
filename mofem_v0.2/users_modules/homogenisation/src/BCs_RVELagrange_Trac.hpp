@@ -145,7 +145,7 @@ namespace MoFEM {
       Mat Aij;
       OpRVEBCsLhs(const string field_name, const string lagrang_field_name, Mat _Aij,
                   RVEBC_Data &data, CommonFunctions &_common_functions, bool _ho_geometry = false):
-      FaceElementForcesAndSourcesCore::UserDataOperator(lagrang_field_name, field_name),Aij(_Aij),
+      FaceElementForcesAndSourcesCore::UserDataOperator(lagrang_field_name, field_name, UserDataOperator::OPROWCOL),Aij(_Aij),
       dAta(data),ho_geometry(_ho_geometry), common_functions(_common_functions){
         sYmm = false;  //This will make sure to loop over all intities (e.g. for order=2 it will make doWork to loop 16 time)
       }
@@ -239,7 +239,7 @@ namespace MoFEM {
       CommonData &commonData;
       CommonFunctions common_functions;
       
-      OpRVEBCsRhs_Cal(const string field_name, RVEBC_Data &data, CommonData &_commonData, CommonFunctions &_common_functions, bool _ho_geometry = false): FaceElementForcesAndSourcesCore::UserDataOperator(field_name),dAta(data), commonData(_commonData), common_functions(_common_functions),  ho_geometry(_ho_geometry){ }
+      OpRVEBCsRhs_Cal(const string field_name, RVEBC_Data &data, CommonData &_commonData, CommonFunctions &_common_functions, bool _ho_geometry = false): FaceElementForcesAndSourcesCore::UserDataOperator(field_name, UserDataOperator::OPCOL),dAta(data), commonData(_commonData), common_functions(_common_functions),  ho_geometry(_ho_geometry){ }
       
       ublas::vector<FieldData> f;
       
@@ -320,7 +320,7 @@ namespace MoFEM {
       CommonData &commonData;
       Vec F1, F2, F3, F4, F5, F6;
       
-      OpRVEBCsRhs_Assemble(const string lagrang_field_name, Vec _F1, Vec _F2, Vec _F3, Vec _F4, Vec _F5, Vec _F6, RVEBC_Data &data, CommonData &_commonData, bool _ho_geometry = false): FaceElementForcesAndSourcesCore::UserDataOperator(lagrang_field_name),dAta(data), F1(_F1), F2(_F2), F3(_F3), F4(_F4), F5(_F5), F6(_F6), commonData(_commonData), ho_geometry(_ho_geometry){ }
+      OpRVEBCsRhs_Assemble(const string lagrang_field_name, Vec _F1, Vec _F2, Vec _F3, Vec _F4, Vec _F5, Vec _F6, RVEBC_Data &data, CommonData &_commonData, bool _ho_geometry = false): FaceElementForcesAndSourcesCore::UserDataOperator(lagrang_field_name,UserDataOperator::OPROW),dAta(data), F1(_F1), F2(_F2), F3(_F3), F4(_F4), F5(_F5), F6(_F6), commonData(_commonData), ho_geometry(_ho_geometry){ }
       
       ublas::vector<FieldData> f;
       
@@ -328,10 +328,10 @@ namespace MoFEM {
        *  R=int_S N^T*alpha*N_f  dS **/
       PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
         PetscFunctionBegin;
-//        cout<<"rank "<<commonData.rank<<endl;
-//        cout<<"D_mat "<<commonData.D_mat<<endl;
-        int rank =commonData.rank;
-        ublas::matrix<FieldData> D_mat=commonData.D_mat;
+        cout<<"rank "<<commonData.rank<<endl;
+        cout<<"D_mat "<<commonData.D_mat<<endl;
+//        int rank =commonData.rank;
+//        ublas::matrix<FieldData> D_mat=commonData.D_mat;
 //        ublas::vector<FieldData> applied_strain;
 //        applied_strain.resize(1.5*rank+1.5);
 //
@@ -400,19 +400,13 @@ namespace MoFEM {
       for(;sit!=setOfRVEBC.end();sit++) {
 //        cout<<"Hi from setRVEBCsOperators "<<endl;
         //LHS
-        feRVEBCLhs.getRowColOpPtrVector().push_back(new OpRVEBCsLhs(field_name,lagrang_field_name, _Aij, sit->second, common_functions, ho_geometry));
+        feRVEBCLhs.getOpPtrVector().push_back(new OpRVEBCsLhs(field_name,lagrang_field_name, _Aij, sit->second, common_functions, ho_geometry));
         
         //RHS
-        
-//        feRVEBCRhs.getOpPtrVector().push_back(new OpRVEBCsRhs_Cal(field_name, sit->second, commonData, common_functions, ho_geometry,ForcesAndSurcesCore::UserDataOperator::OPROW));
-//        fe1.getOpPtrVector().push_back(new MyOp1(field_name_col,ForcesAndSurcesCore::UserDataOperator::OPCOL));
-        
-        
-        
         //Caclculte D_mat
-        feRVEBCRhs.getColOpPtrVector().push_back(new OpRVEBCsRhs_Cal(field_name, sit->second, commonData, common_functions, ho_geometry));
-        //Caclculte f and assemplbe
-//        feRVEBCRhs.getRowOpPtrVector().push_back(new OpRVEBCsRhs_Assemble(lagrang_field_name, _F1, _F2, _F3, _F4, _F5, _F6, sit->second, commonData, ho_geometry));
+        feRVEBCRhs.getOpPtrVector().push_back(new OpRVEBCsRhs_Cal(field_name, sit->second, commonData, common_functions, ho_geometry));
+        //Caclculte Rhs=D_mat*epsilon  and assemble
+        feRVEBCRhs.getOpPtrVector().push_back(new OpRVEBCsRhs_Assemble(lagrang_field_name, _F1, _F2, _F3, _F4, _F5, _F6, sit->second, commonData, ho_geometry));
       }
       PetscFunctionReturn(0);
     }

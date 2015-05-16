@@ -114,7 +114,7 @@ struct MonitorPostProc: public FEMethod {
 
       map<int,NonlinearElasticElement::BlockData>::iterator sit = setOfBlocks.begin();
       for (; sit != setOfBlocks.end(); sit++) {
-        postProc.getRowOpPtrVector().push_back(
+        postProc.getOpPtrVector().push_back(
           new PostPorcStress(
             postProc.postProcMesh,
             postProc.mapGaussPts,

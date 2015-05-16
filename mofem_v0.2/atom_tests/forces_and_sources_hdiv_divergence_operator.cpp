@@ -136,7 +136,7 @@ int main(int argc, char *argv[]) {
 
     FieldData &dIv;
     OpTetDivergence(FieldData &div):
-      VolumeElementForcesAndSourcesCore::UserDataOperator("HDIV"),dIv(div) {}
+      VolumeElementForcesAndSourcesCore::UserDataOperator("HDIV",UserDataOperator::OPROW),dIv(div) {}
 
     PetscErrorCode doWork(
       int side,
@@ -161,17 +161,17 @@ int main(int argc, char *argv[]) {
 
       int gg = 0;
       for(;gg<nb_gauss_pts;gg++) {
-	ierr = getDivergenceMatrixOperato_Hdiv(side,type,data,gg,div_vec); CHKERRQ(ierr);
-	//cout << std::fixed << div_vec << endl;
-	unsigned int dd = 0;
-	for(;dd<div_vec.size();dd++) {
-	  double w = getGaussPts()(3,gg)*getVolume();
-	  if(getHoGaussPtsDetJac().size()>0) {
-	    w *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
-	  }
-	  dIv += div_vec[dd]*w;
-	}
-	//cout << std::fixed << data.getDiffHdivN(gg) << endl;
+        ierr = getDivergenceMatrixOperato_Hdiv(side,type,data,gg,div_vec); CHKERRQ(ierr);
+        //cout << std::fixed << div_vec << endl;
+        unsigned int dd = 0;
+        for(;dd<div_vec.size();dd++) {
+          double w = getGaussPts()(3,gg)*getVolume();
+          if(getHoGaussPtsDetJac().size()>0) {
+            w *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
+          }
+          dIv += div_vec[dd]*w;
+        }
+        //cout << std::fixed << data.getDiffHdivN(gg) << endl;
       }
 
       //cout << std::fixed << data.getDiffHdivN() << endl;
@@ -201,7 +201,7 @@ int main(int argc, char *argv[]) {
 
     double &dIv;
     OpFacesFluxes(double &div):
-      FaceElementForcesAndSourcesCore::UserDataOperator("HDIV"),
+      FaceElementForcesAndSourcesCore::UserDataOperator("HDIV",UserDataOperator::OPROW),
       dIv(div) {}
 
     PetscErrorCode doWork(
@@ -217,25 +217,25 @@ int main(int argc, char *argv[]) {
 
       int gg = 0;
       for(;gg<nb_gauss_pts;gg++) {
-	int dd = 0;
-	for(;dd<nb_dofs;dd++) {
-	  double area;
-	  ublas::vector<double> n;
-	  if(getNormals_at_GaussPt().size1() == (unsigned int)nb_gauss_pts) {
-	    n = getNormals_at_GaussPt(gg);
-	    area = norm_2(getNormals_at_GaussPt(gg))*0.5;
-	  } else {
-	    n = getNormal();
-	    area = getArea();
-	  }
-	  n /= norm_2(n);
-	  dIv +=
-	    ( n[0]*data.getHdivN(gg)(dd,0) +
-	      n[1]*data.getHdivN(gg)(dd,1) +
-	      n[2]*data.getHdivN(gg)(dd,2) )
-	    *getGaussPts()(2,gg)*area;
-	}
-	//cout << getNormal() << endl;
+        int dd = 0;
+        for(;dd<nb_dofs;dd++) {
+          double area;
+          ublas::vector<double> n;
+          if(getNormals_at_GaussPt().size1() == (unsigned int)nb_gauss_pts) {
+            n = getNormals_at_GaussPt(gg);
+            area = norm_2(getNormals_at_GaussPt(gg))*0.5;
+          } else {
+            n = getNormal();
+            area = getArea();
+          }
+          n /= norm_2(n);
+          dIv +=
+          ( n[0]*data.getHdivN(gg)(dd,0) +
+          n[1]*data.getHdivN(gg)(dd,1) +
+          n[2]*data.getHdivN(gg)(dd,2) )
+          *getGaussPts()(2,gg)*area;
+        }
+        //cout << getNormal() << endl;
       }
 
       PetscFunctionReturn(0);
@@ -248,10 +248,10 @@ int main(int argc, char *argv[]) {
 
 
   MyFE tet_fe(m_field);
-  tet_fe.getRowOpPtrVector().push_back(new OpTetDivergence(divergence_vol));
+  tet_fe.getOpPtrVector().push_back(new OpTetDivergence(divergence_vol));
 
   MyTriFE skin_fe(m_field);
-  skin_fe.getRowOpPtrVector().push_back(new OpFacesFluxes(divergence_skin));
+  skin_fe.getOpPtrVector().push_back(new OpFacesFluxes(divergence_skin));
 
   ierr = m_field.loop_finite_elements("TEST_PROBLEM","TET_FE",tet_fe);  CHKERRQ(ierr);
   ierr = m_field.loop_finite_elements("TEST_PROBLEM","SKIN_FE",skin_fe);  CHKERRQ(ierr);

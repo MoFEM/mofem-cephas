@@ -148,8 +148,8 @@ int main(int argc, char *argv[]) {
   struct MyOp1: public FaceElementForcesAndSourcesCore::UserDataOperator {
 
     TeeStream &my_split;
-    MyOp1(TeeStream &_my_split):
-      FaceElementForcesAndSourcesCore::UserDataOperator("FIELD1","FIELD1"),
+    MyOp1(TeeStream &_my_split,const char type):
+      FaceElementForcesAndSourcesCore::UserDataOperator("FIELD1","FIELD1",type),
       my_split(_my_split) {}
 
     PetscErrorCode doWork(
@@ -235,8 +235,8 @@ int main(int argc, char *argv[]) {
   struct MyOp2: public FaceElementForcesAndSourcesCore::UserDataOperator {
 
     TeeStream &my_split;
-    MyOp2(TeeStream &_my_split):
-    FaceElementForcesAndSourcesCore::UserDataOperator("FIELD2","FIELD1"),
+    MyOp2(TeeStream &_my_split,const char type):
+    FaceElementForcesAndSourcesCore::UserDataOperator("FIELD2","FIELD1",type),
       my_split(_my_split) {}
 
     PetscErrorCode doWork(
@@ -247,7 +247,7 @@ int main(int argc, char *argv[]) {
 
       if(type != MBENTITYSET) PetscFunctionReturn(0);
 
-      my_split << "NPFIELD" << endl;
+      my_split << "NOFIELD" << endl;
       my_split << "side: " << side << " type: " << type << endl;
       my_split << data << endl;
       PetscFunctionReturn(0);
@@ -276,12 +276,12 @@ int main(int argc, char *argv[]) {
   };
 
   FaceElementForcesAndSourcesCore fe1(m_field);
-  fe1.getRowOpPtrVector().push_back(new MyOp1(my_split));
-  fe1.getRowColOpPtrVector().push_back(new MyOp1(my_split));
+  fe1.getOpPtrVector().push_back(new MyOp1(my_split,ForcesAndSurcesCore::UserDataOperator::OPROW));
+  fe1.getOpPtrVector().push_back(new MyOp1(my_split,ForcesAndSurcesCore::UserDataOperator::OPROWCOL));
 
   FaceElementForcesAndSourcesCore fe2(m_field);
-  fe2.getRowOpPtrVector().push_back(new MyOp2(my_split));
-  fe2.getRowColOpPtrVector().push_back(new MyOp2(my_split));
+  fe2.getOpPtrVector().push_back(new MyOp2(my_split,ForcesAndSurcesCore::UserDataOperator::OPROW));
+  fe2.getOpPtrVector().push_back(new MyOp2(my_split,ForcesAndSurcesCore::UserDataOperator::OPROWCOL));
 
   ierr = m_field.loop_finite_elements("TEST_PROBLEM","TEST_FE1",fe1);  CHKERRQ(ierr);
   ierr = m_field.loop_finite_elements("TEST_PROBLEM","TEST_FE2",fe2);  CHKERRQ(ierr);

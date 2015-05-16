@@ -101,7 +101,7 @@ namespace MoFEM {
       
       ublas::vector<double> &fieldAtGaussPts;
       OpGetFieldAtGaussPts(const string field_name,ublas::vector<double> &field_at_gauss_pts):
-      OP::UserDataOperator(field_name),
+      OP::UserDataOperator(field_name,OP::UserDataOperator::OPROW),
       fieldAtGaussPts(field_at_gauss_pts) {}
       
       /** \brief operator calculating temperature and rate of temperature
@@ -156,7 +156,7 @@ namespace MoFEM {
       
       CommonData &commonData;
       OpCalculate_RVEDmat(FieldInterface &m_field_RVE, const string field_name,CommonData &common_data):
-      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
+      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name, UserDataOperator::OPROW),
       m_field_RVE(m_field_RVE),commonData(common_data){}
       
       ~OpCalculate_RVEDmat(){
@@ -524,9 +524,9 @@ namespace MoFEM {
     PetscErrorCode setRVE_DmatRhsOperators(FieldInterface &m_field_RVE, string field_name,string wt_field_name) {
       PetscFunctionBegin;
       //first calculate wt at each gauss point
-      feRhs.getRowOpPtrVector().push_back(new OpGetWtAtGaussPts(wt_field_name,commonData));
+      feRhs.getOpPtrVector().push_back(new OpGetWtAtGaussPts(wt_field_name,commonData));
       //At each gauss point run RVE with its own mesh
-      feRhs.getRowOpPtrVector().push_back(new OpCalculate_RVEDmat(m_field_RVE,field_name,commonData));
+      feRhs.getOpPtrVector().push_back(new OpCalculate_RVEDmat(m_field_RVE,field_name,commonData));
 
       PetscFunctionReturn(0);
     }

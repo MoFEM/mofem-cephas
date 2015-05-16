@@ -162,8 +162,8 @@ int main(int argc, char *argv[]) {
   struct MyOp1: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     TeeStream &my_split;
-    MyOp1(TeeStream &_my_split):
-      VolumeElementForcesAndSourcesCore::UserDataOperator("FIELD1","FIELD2"),
+    MyOp1(TeeStream &_my_split,char type):
+      VolumeElementForcesAndSourcesCore::UserDataOperator("FIELD1","FIELD2",type),
       my_split(_my_split) {}
 
     PetscErrorCode doWork(
@@ -230,8 +230,8 @@ int main(int argc, char *argv[]) {
   struct MyOp2: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     TeeStream &my_split;
-    MyOp2(TeeStream &_my_split):
-      VolumeElementForcesAndSourcesCore::UserDataOperator("FIELD3","FIELD1"),
+    MyOp2(TeeStream &_my_split,char type):
+      VolumeElementForcesAndSourcesCore::UserDataOperator("FIELD3","FIELD1",type),
       my_split(_my_split) {}
 
     PetscErrorCode doWork(
@@ -271,12 +271,12 @@ int main(int argc, char *argv[]) {
   };
 
   VolumeElementForcesAndSourcesCore fe1(m_field);
-  fe1.getRowOpPtrVector().push_back(new MyOp1(my_split));
-  fe1.getRowColOpPtrVector().push_back(new MyOp1(my_split));
+  fe1.getOpPtrVector().push_back(new MyOp1(my_split,ForcesAndSurcesCore::UserDataOperator::OPROW));
+  fe1.getOpPtrVector().push_back(new MyOp1(my_split,ForcesAndSurcesCore::UserDataOperator::OPROWCOL));
 
   VolumeElementForcesAndSourcesCore fe2(m_field);
-  fe2.getRowOpPtrVector().push_back(new MyOp2(my_split));
-  fe2.getRowColOpPtrVector().push_back(new MyOp2(my_split));
+  fe2.getOpPtrVector().push_back(new MyOp2(my_split,ForcesAndSurcesCore::UserDataOperator::OPROW));
+  fe2.getOpPtrVector().push_back(new MyOp2(my_split,ForcesAndSurcesCore::UserDataOperator::OPROWCOL));
 
   ierr = m_field.loop_finite_elements("TEST_PROBLEM","TEST_FE1",fe1);  CHKERRQ(ierr);
   ierr = m_field.loop_finite_elements("TEST_PROBLEM","TEST_FE2",fe2);  CHKERRQ(ierr);

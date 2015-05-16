@@ -37,7 +37,7 @@ namespace MoFEM {
       Vec Stress_Homo;
       
       OpRVEHomoStress(const string field_name, const string lagrang_field_name,  double _RVE_volume, Vec _Stress_Homo, RVEBC_Data &data, bool _ho_geometry = false):
-      FaceElementForcesAndSourcesCore::UserDataOperator(lagrang_field_name),Stress_Homo(_Stress_Homo),
+      FaceElementForcesAndSourcesCore::UserDataOperator(lagrang_field_name, UserDataOperator::OPROW),Stress_Homo(_Stress_Homo),
       RVE_volume(_RVE_volume), dAta(data), ho_geometry(_ho_geometry){}
       
       /** brief calculate Convection condition on the right hand side
@@ -143,7 +143,7 @@ namespace MoFEM {
       map<int,RVEBC_Data>::iterator sit = setOfRVEBC.begin();
       for(;sit!=setOfRVEBC.end();sit++) {
         //        cout<<"Hi from setOfRVEBC "<<endl;
-        feRVEBCRhs.getRowOpPtrVector().push_back(new OpRVEHomoStress(field_name, lagrang_field_name, RVE_volume, Stress_Homo, sit->second, ho_geometry));
+        feRVEBCRhs.getOpPtrVector().push_back(new OpRVEHomoStress(field_name, lagrang_field_name, RVE_volume, Stress_Homo, sit->second, ho_geometry));
         
       }
       PetscFunctionReturn(0);

@@ -167,7 +167,7 @@ namespace MoFEM {
       
       ublas::vector<double> &fieldAtGaussPts;
       OpGetFieldAtGaussPts(const string field_name,ublas::vector<double> &field_at_gauss_pts):
-      OP::UserDataOperator(field_name),
+      OP::UserDataOperator(field_name,OP::UserDataOperator::OPROW),
       fieldAtGaussPts(field_at_gauss_pts) {}
       
       /** \brief operator calculating temperature and rate of temperature
@@ -254,7 +254,7 @@ namespace MoFEM {
       CommonData &commonData;
       bool useTsF;
       OpGetDegradationRhs(const string field_name,BlockData &data,CommonData &common_data):
-      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
+      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name, UserDataOperator::OPROW),
       dAta(data),commonData(common_data),useTsF(true) {}
       
       ublas::vector<double> Nf;
@@ -338,7 +338,7 @@ namespace MoFEM {
       BlockData &dAta;
       CommonData &commonData;
       OpGetDegradationLhs(const string field_name,BlockData &data,CommonData &common_data):
-      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
+      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name, UserDataOperator::OPROW),
       dAta(data),commonData(common_data) {}
       
       ublas::matrix<double> M,transM;
@@ -489,13 +489,13 @@ namespace MoFEM {
         for(;sit!=setOfBlocks.end();sit++) {
 //           cout<<"HI before setTimeSteppingProblem() "<<endl;
           //add finite element
-          feLhsDegradation.getRowColOpPtrVector().push_back(new OpGetDegradationLhs(field_name,sit->second,commonData));
+          feLhsDegradation.getOpPtrVector().push_back(new OpGetDegradationLhs(field_name,sit->second,commonData));
           
-          feRhsDegradation.getRowOpPtrVector().push_back(new OpGetTempAtGaussPts(thermal_field_name, commonData));
-          feRhsDegradation.getRowOpPtrVector().push_back(new OpGetConcAtGaussPts(conc_field_name,    commonData));
-          feRhsDegradation.getRowOpPtrVector().push_back(new OpGetTetWtAtGaussPts(field_name,commonData));
-          feRhsDegradation.getRowOpPtrVector().push_back(new OpGetTetWtRateAtGaussPts(rate_name,commonData));
-          feRhsDegradation.getRowOpPtrVector().push_back(new OpGetDegradationRhs(field_name, sit->second,  commonData));
+          feRhsDegradation.getOpPtrVector().push_back(new OpGetTempAtGaussPts(thermal_field_name, commonData));
+          feRhsDegradation.getOpPtrVector().push_back(new OpGetConcAtGaussPts(conc_field_name,    commonData));
+          feRhsDegradation.getOpPtrVector().push_back(new OpGetTetWtAtGaussPts(field_name,commonData));
+          feRhsDegradation.getOpPtrVector().push_back(new OpGetTetWtRateAtGaussPts(rate_name,commonData));
+          feRhsDegradation.getOpPtrVector().push_back(new OpGetDegradationRhs(field_name, sit->second,  commonData));
 
 //          cout<<"HI After setTimeSteppingProblem() "<<endl;
         }
