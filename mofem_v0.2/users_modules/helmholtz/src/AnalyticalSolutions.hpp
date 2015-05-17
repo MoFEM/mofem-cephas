@@ -83,11 +83,18 @@ struct IncidentWave: public GenericAnalyticalSolution {
   double wAvenumber;
   ublas::vector<double> dIrection;
   ublas::vector<double> cOordinate;
-  double pOwerReal; ///< The real amplitude of the incident wave
-  double pOwerImag;
+  double amplitudeReal; ///< The real amplitude of the incident wave
+  double amplitudeImag;
+  double pHase;
 
-  IncidentWave(double wavenumber,ublas::vector<double> d,double r_power = 1,double i_power = 0):
-    wAvenumber(wavenumber),dIrection(d),pOwerReal(r_power),pOwerImag(i_power) {}
+  IncidentWave(double wavenumber,ublas::vector<double> d,double r_amplitude = 1,double i_amplitude = 0,double phase = 0):
+    wAvenumber(wavenumber),
+    dIrection(d),
+    amplitudeReal(r_amplitude),
+    amplitudeImag(i_amplitude),
+    pHase(phase)
+    {}
+
   ~IncidentWave() {}
 
   virtual vector<ublas::vector<double> >& operator()(double x, double y, double z) {
@@ -99,7 +106,7 @@ struct IncidentWave: public GenericAnalyticalSolution {
     cOordinate[1] = y;
     cOordinate[2] = z;
 
-    result = (pOwerReal+i*pOwerImag)*exp(i*wAvenumber*inner_prod(dIrection,cOordinate));
+    result = (amplitudeReal+i*amplitudeImag)*exp(i*wAvenumber*inner_prod(dIrection,cOordinate)+i*pHase);
 
     rEsult.resize(2);
     rEsult[REAL].resize(1);
@@ -617,7 +624,7 @@ PetscErrorCode calculate_matrix_and_vector(
   // This increase rule for numerical integration. In case of 10 node
   // elements jacobian is varying linearly across element, that way to element
   // rule is added 1.
-  field_approximation.addToRule = 2;
+  field_approximation.multRule = 2;
 
   ierr = field_approximation.loopMatrixAndVector(
     problem_name,fe_name,re_field,A,vec_F,fun_evaluator

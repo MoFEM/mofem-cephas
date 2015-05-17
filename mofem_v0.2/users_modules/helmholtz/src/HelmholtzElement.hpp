@@ -80,8 +80,8 @@ struct HelmholtzElement {
   struct GlobalParameters {
     pair<double,PetscBool> waveNumber;
     pair<double,PetscBool> surfaceAdmittance;
-    pair<double,PetscBool> powerOfIncidentWaveReal;
-    pair<double,PetscBool> powerOfIncidentWaveImag;
+    pair<double,PetscBool> amplitudeOfIncidentWaveReal;
+    pair<double,PetscBool> amplitudeOfIncidentWaveImag;
 
     pair<ublas::vector<double>,PetscBool> waveDirection;
   };
@@ -108,14 +108,14 @@ struct HelmholtzElement {
       globalParameters.surfaceAdmittance.first,
       &globalParameters.surfaceAdmittance.first,&globalParameters.surfaceAdmittance.second); CHKERRQ(ierr);
 
-    globalParameters.powerOfIncidentWaveReal.first = 1;
-    ierr = PetscOptionsReal("-power_of_incident_wave",
-      "power of incident wave applied to all surface elements on MIX_INCIDENT_WAVE_BC and HARD_INCIDENT_WAVE_BC","",
-      globalParameters.powerOfIncidentWaveReal.first,
-      &globalParameters.powerOfIncidentWaveReal.first,&globalParameters.powerOfIncidentWaveReal.second); CHKERRQ(ierr);
+    globalParameters.amplitudeOfIncidentWaveReal.first = 1;
+    ierr = PetscOptionsReal("-amplitude_of_incident_wave",
+      "amplitude of incident wave applied to all surface elements on MIX_INCIDENT_WAVE_BC and HARD_INCIDENT_WAVE_BC","",
+      globalParameters.amplitudeOfIncidentWaveReal.first,
+      &globalParameters.amplitudeOfIncidentWaveReal.first,&globalParameters.amplitudeOfIncidentWaveReal.second); CHKERRQ(ierr);
 
-    globalParameters.powerOfIncidentWaveImag.first = 0;
-    globalParameters.powerOfIncidentWaveImag.second = PETSC_FALSE;
+    globalParameters.amplitudeOfIncidentWaveImag.first = 0;
+    globalParameters.amplitudeOfIncidentWaveImag.second = PETSC_FALSE;
 
     globalParameters.waveDirection.first.resize(3);
     globalParameters.waveDirection.first.clear();
@@ -633,13 +633,13 @@ struct HelmholtzElement {
       cOordinate[2] = z;
 
       double x1d = inner_prod(globalParameters.waveDirection.first,cOordinate);
-      complex<double> power = globalParameters.powerOfIncidentWaveReal.first+i*globalParameters.powerOfIncidentWaveImag.first;
+      complex<double> amplitude = globalParameters.amplitudeOfIncidentWaveReal.first+i*globalParameters.amplitudeOfIncidentWaveImag.first;
       complex<double> angle = globalParameters.waveNumber.first*(x1d);
-      complex<double> p_inc = power*exp(i*angle);
+      complex<double> p_inc = amplitude*exp(i*angle);
 
       ublas::vector<complex<double > > grad(3);
       for(int ii = 0;ii<3;ii++) {
-        grad[ii] = i*power*globalParameters.waveNumber.first*globalParameters.waveDirection.first[ii]*p_inc;
+        grad[ii] = i*amplitude*globalParameters.waveNumber.first*globalParameters.waveDirection.first[ii]*p_inc;
       }
       complex<double > grad_n = inner_prod(grad,normal);
 
