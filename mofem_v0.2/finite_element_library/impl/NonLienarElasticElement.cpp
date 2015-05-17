@@ -126,8 +126,8 @@ NonlinearElasticElement::NonlinearElasticElement(
   mField(m_field),tAg(tag) {}
 
 NonlinearElasticElement::OpGetDataAtGaussPts::OpGetDataAtGaussPts(const string field_name,
-  vector<ublas::vector<double> > &values_at_gauss_pts,
-  vector<ublas::matrix<double> > &gardient_at_gauss_pts):
+  vector<VectorDouble > &values_at_gauss_pts,
+  vector<MatrixDouble > &gardient_at_gauss_pts):
   VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
   valuesAtGaussPts(values_at_gauss_pts),gradientAtGaussPts(gardient_at_gauss_pts),
   zeroAtType(MBVERTEX) {}
@@ -144,7 +144,7 @@ PetscErrorCode NonlinearElasticElement::OpGetDataAtGaussPts::doWork(
     int nb_gauss_pts = data.getN().size1();
 
     //initialize
-    ublas::vector<double>& values = data.getFieldData();
+    VectorDouble& values = data.getFieldData();
     valuesAtGaussPts.resize(nb_gauss_pts);
     gradientAtGaussPts.resize(nb_gauss_pts);
     for(int gg = 0;gg<nb_gauss_pts;gg++) {
@@ -161,8 +161,8 @@ PetscErrorCode NonlinearElasticElement::OpGetDataAtGaussPts::doWork(
 
     //cerr << valuesAtGaussPts[0] << " : ";
     for(int gg = 0;gg<nb_gauss_pts;gg++) {
-      ublas::vector<double> N = data.getN(gg,nb_dofs/3);
-      ublas::matrix<double> diffN = data.getDiffN(gg,nb_dofs/3);
+      VectorDouble N = data.getN(gg,nb_dofs/3);
+      MatrixDouble diffN = data.getDiffN(gg,nb_dofs/3);
       for(int dd = 0;dd<nb_dofs/3;dd++) {
         for(int rr1 = 0;rr1<3;rr1++) {
           valuesAtGaussPts[gg][rr1] += N[dd]*values[3*dd+rr1];
@@ -227,7 +227,7 @@ PetscErrorCode NonlinearElasticElement::OpJacobian::doWork(
     commonData.jacStressRowPtr.resize(nb_gauss_pts);
     commonData.jacStress.resize(nb_gauss_pts);
 
-    vector<ublas::matrix<double> > &F = (commonData.gradAtGaussPts[commonData.spatialPositions]);
+    vector<MatrixDouble > &F = (commonData.gradAtGaussPts[commonData.spatialPositions]);
 
     for(int gg = 0;gg<nb_gauss_pts;gg++) {
 
@@ -337,7 +337,7 @@ PetscErrorCode NonlinearElasticElement::OpRhs::doWork(
       //diffN - on rows has degrees of freedom
       //diffN - on columns has rerevatives direvatives of shape functin
       const DataForcesAndSurcesCore::MatrixAdaptor &diffN = row_data.getDiffN(gg,nb_dofs/3);
-      const ublas::matrix<double>& P = commonData.P[gg];
+      const MatrixDouble& P = commonData.P[gg];
       //cerr << (commonData.gradAtGaussPts[commonData.spatialPositions][gg]) << endl;
       //cerr << diffN << endl;
       //cerr << P << endl;
@@ -386,7 +386,7 @@ PetscErrorCode NonlinearElasticElement::OpEnergy::doWork(
 
   try {
 
-    vector<ublas::matrix<double> > &F = (commonData.gradAtGaussPts[commonData.spatialPositions]);
+    vector<MatrixDouble > &F = (commonData.gradAtGaussPts[commonData.spatialPositions]);
 
     for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
       double val = getVolume()*getGaussPts()(3,gg);

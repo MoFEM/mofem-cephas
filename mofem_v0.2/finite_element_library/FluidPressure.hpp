@@ -46,8 +46,8 @@ struct FluidPressure {
   typedef int MeshSetId;
   struct FluidData {
     double dEnsity; ///< fluid density [kg/m^2] or any consistent unit
-    ublas::vector<double> aCCeleration; ///< acceleration [m/s^2]
-    ublas::vector<double> zEroPressure; ///< fluid level of reference zero pressure.
+    VectorDouble aCCeleration; ///< acceleration [m/s^2]
+    VectorDouble zEroPressure; ///< fluid level of reference zero pressure.
     Range tRis; ///< range of surface elemennt to which fluid pressure is applied
     friend ostream& operator<<(ostream& os,const FluidPressure::FluidData &e);
   };
@@ -84,22 +84,22 @@ struct FluidPressure {
 
       for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
 
-	ublas::vector<double> dist;
-	dist = ublas::matrix_row<ublas::matrix<double> >(getCoordsAtGaussPts(),gg);
-	dist -= dAta.zEroPressure;
-	double dot = cblas_ddot(3,&dist[0],1,&dAta.aCCeleration[0],1);
-	if(!allowNegativePressure) dot = fmax(0,dot);
-	double pressure = dot*dAta.dEnsity;
+        VectorDouble dist;
+        dist = ublas::matrix_row<MatrixDouble >(getCoordsAtGaussPts(),gg);
+        dist -= dAta.zEroPressure;
+        double dot = cblas_ddot(3,&dist[0],1,&dAta.aCCeleration[0],1);
+        if(!allowNegativePressure) dot = fmax(0,dot);
+        double pressure = dot*dAta.dEnsity;
 
-	for(int rr = 0;rr<rank;rr++) {
-	  double force;
-	  if(hoGeometry) {
-	    force = pressure*getNormals_at_GaussPt()(gg,rr);
-	  } else {
-	    force = pressure*getNormal()[rr];
-	  }
-	  cblas_daxpy(nb_row_dofs,getGaussPts()(2,gg)*force,&data.getN()(gg,0),1,&Nf[rr],rank);
-	}
+        for(int rr = 0;rr<rank;rr++) {
+          double force;
+          if(hoGeometry) {
+            force = pressure*getNormals_at_GaussPt()(gg,rr);
+          } else {
+            force = pressure*getNormal()[rr];
+          }
+          cblas_daxpy(nb_row_dofs,getGaussPts()(2,gg)*force,&data.getN()(gg,0),1,&Nf[rr],rank);
+        }
 
       }
 

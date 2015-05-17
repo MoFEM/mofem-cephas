@@ -478,6 +478,9 @@ int main(int argc, char *argv[]) {
   }
 
 
+  PetscBool monohromatic_wave = PETSC_TRUE;
+  ierr = PetscOptionsGetBool(PETSC_NULL,"-monohromatic_wave",&monohromatic_wave,NULL); CHKERRQ(ierr);
+
   PetscBool add_incident_wave = PETSC_FALSE;
   ierr = PetscOptionsGetBool(NULL,"-add_incident_wave",&add_incident_wave,NULL); CHKERRQ(ierr);
   if(add_incident_wave) {
@@ -507,8 +510,6 @@ int main(int argc, char *argv[]) {
   KSP solver;
   ierr = KSPCreate(PETSC_COMM_WORLD,&solver); CHKERRQ(ierr);
 
-  PetscBool monohromatic_wave = PETSC_TRUE;
-  ierr = PetscOptionsGetBool(PETSC_NULL,"-monohromatic_wave",&monohromatic_wave,NULL); CHKERRQ(ierr);
   if(monohromatic_wave) {
 
     // Zero vectors
@@ -589,12 +590,11 @@ int main(int argc, char *argv[]) {
       analytical_ditihlet_bc_real,analytical_ditihlet_bc_imag,
       dirihlet_bc_set);
     ierr = time_series.readData();  CHKERRQ(ierr);
-    ierr = time_series.forwardDft(); CHKERRQ(ierr);
     ierr = time_series.createTimeVectorSeries(T); CHKERRQ(ierr);
-    ierr = time_series.solveForwardDFT(solver,A,F,T); CHKERRQ(ierr);
+    ierr = time_series.forwardDft(); CHKERRQ(ierr);
+    //ierr = time_series.solveForwardDFT(solver,A,F,T); CHKERRQ(ierr);
     ierr = time_series.pressureInTimeDomainInverseDft(); CHKERRQ(ierr);
     ierr = time_series.destroyTimeVectorSeries(); CHKERRQ(ierr);
-
 
   }
 
@@ -646,7 +646,6 @@ int main(int argc, char *argv[]) {
     }
 
   }
-
 
   ierr = PetscTime(&v2);CHKERRQ(ierr);
   ierr = PetscGetCPUTime(&t2);CHKERRQ(ierr);

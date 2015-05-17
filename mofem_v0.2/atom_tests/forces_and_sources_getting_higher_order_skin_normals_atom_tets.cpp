@@ -139,9 +139,9 @@ int main(int argc, char *argv[]) {
     ErrorCode rval;
     PetscErrorCode ierr;
 
-    ublas::matrix<FieldData> nOrmals_at_GaussPt;
-    ublas::matrix<FieldData> tAngent1_at_GaussPt;
-    ublas::matrix<FieldData> tAngent2_at_GaussPt;
+    MatrixDouble nOrmals_at_GaussPt;
+    MatrixDouble tAngent1_at_GaussPt;
+    MatrixDouble tAngent2_at_GaussPt;
     DataForcesAndSurcesCore data;
     OpGetNormals op;
 

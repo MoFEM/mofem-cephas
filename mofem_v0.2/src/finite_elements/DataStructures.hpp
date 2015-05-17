@@ -27,6 +27,19 @@ using namespace boost::numeric;
 
 namespace MoFEM {
 
+  // array with std allocators (i.e. concept of capaity is useful here)
+  typedef ublas::unbounded_array<int,std::allocator<int> > IntAllacator;
+  typedef ublas::unbounded_array<const FEDofMoFEMEntity*,std::allocator<const FEDofMoFEMEntity*> > DofsAllacator;
+  typedef ublas::unbounded_array<double,std::allocator<double> > DoubleAllacator;
+  typedef ublas::unbounded_array<double,std::allocator<double> > DoubleMatrixAllacator;
+
+  // bounded vector
+  typedef ublas::vector<int,IntAllacator > VectorInt;
+  typedef ublas::vector<const FEDofMoFEMEntity*,DofsAllacator > VectorDofs;
+  typedef ublas::vector<double,DoubleAllacator > VectorDouble;
+  typedef ublas::matrix<double,ublas::row_major, DoubleMatrixAllacator > MatrixDouble;
+
+
 /** \brief data structure for finite element entity
   * \ingroup mofem_forces_and_sources
   *
@@ -54,19 +67,19 @@ struct DataForcesAndSurcesCore {
     virtual ApproximationOrder getOrder() const { return oRder; }
 
     /// \brief get global indices of dofs on entity
-    virtual const ublas::vector<DofIdx>& getIndices() const { return iNdices; }
+    virtual const VectorInt& getIndices() const { return iNdices; }
 
     /// \brief get dofs values
-    virtual const ublas::vector<double>& getFieldData() const { return fieldData; }
+    virtual const VectorDouble& getFieldData() const { return fieldData; }
 
     /// \brief get dofs data stature FEDofMoFEMEntity
-    virtual const ublas::vector<const FEDofMoFEMEntity*>& getFieldDofs() const { return dOfs; }
+    virtual const VectorDofs& getFieldDofs() const { return dOfs; }
 
     /** \brief get shape functions
       * this return matrix (nb. of rows is equal to nb. of Gauss pts, nb. of
       * columns is equalt to number of shape functions on this entity
       */
-    virtual const ublas::matrix<double>& getN() const { return N; }
+    virtual const MatrixDouble& getN() const { return N; }
 
     /** \brief get derivatives of shape functions
      *
@@ -84,19 +97,19 @@ struct DataForcesAndSurcesCore {
      * Note that for node element this function make no sense.
      *
      */
-    virtual const ublas::matrix<double>& getDiffN() const { return diffN; }
+    virtual const MatrixDouble& getDiffN() const { return diffN; }
 
     virtual int& getSense() { return sEnse; }
     virtual ApproximationOrder& getOrder() { return oRder; }
-    virtual ublas::vector<DofIdx>& getIndices() { return iNdices; }
-    virtual ublas::vector<double>& getFieldData() { return fieldData; }
-    virtual ublas::vector<const FEDofMoFEMEntity*>& getFieldDofs() { return dOfs; }
-    virtual ublas::matrix<double>& getN() { return N; }
+    virtual VectorInt& getIndices() { return iNdices; }
+    virtual VectorDouble& getFieldData() { return fieldData; }
+    virtual VectorDofs& getFieldDofs() { return dOfs; }
+    virtual MatrixDouble& getN() { return N; }
 
     /** \brief get derivatives of shape functions
      *
      */
-    virtual ublas::matrix<double>& getDiffN() { return diffN; }
+    virtual MatrixDouble& getDiffN() { return diffN; }
 
     /// \brief get shape functions at Gauss pts
     inline const VectorAdaptor getN(int gg) {
@@ -174,19 +187,19 @@ struct DataForcesAndSurcesCore {
 
     /** \brief get shape functions for Hdiv space
     */
-    inline const ublas::matrix<double>&  getHdivN() const { return getN(); };
+    inline const MatrixDouble&  getHdivN() const { return getN(); };
 
     /** \brief get derivatives of shape functions for Hdiv space
     */
-    inline const ublas::matrix<double>&  getDiffHdivN() const { return getDiffN(); };
+    inline const MatrixDouble&  getDiffHdivN() const { return getDiffN(); };
 
     /** \brief get shape functions for Hdiv space
     */
-    inline ublas::matrix<double>&  getHdivN() { return getN(); };
+    inline MatrixDouble&  getHdivN() { return getN(); };
 
     /** \brief get derivatives of shape functions for Hdiv space
     */
-    inline ublas::matrix<double>&  getDiffHdivN() { return getDiffN(); };
+    inline MatrixDouble&  getDiffHdivN() { return getDiffN(); };
 
     /** \brief get Hdiv of shape functions at Gauss pts
     *
@@ -229,11 +242,11 @@ struct DataForcesAndSurcesCore {
   private:
     int sEnse;
     ApproximationOrder oRder;
-    ublas::vector<DofIdx> iNdices;
-    ublas::vector<const FEDofMoFEMEntity*> dOfs;
-    ublas::vector<double> fieldData;
-    ublas::matrix<double> N;
-    ublas::matrix<double> diffN;
+    VectorInt iNdices;
+    VectorDofs dOfs;
+    VectorDouble fieldData;
+    MatrixDouble N;
+    MatrixDouble diffN;
 
   };
 
@@ -268,28 +281,28 @@ struct DerivedDataForcesAndSurcesCore: public DataForcesAndSurcesCore  {
     DataForcesAndSurcesCore::EntData &entData;
     DerivedEntData(DataForcesAndSurcesCore::EntData &ent_data):
       entData(ent_data),oRder(0) {}
-    const ublas::vector<DofIdx>& getIndices() const { return iNdices; }
-    ublas::vector<DofIdx>& getIndices() { return iNdices; }
-    const ublas::vector<double>& getFieldData() const { return fieldData; }
-    const ublas::vector<const FEDofMoFEMEntity*>& getFieldDofs() const { return dOfs; }
-    ublas::vector<double>& getFieldData() { return fieldData; }
-    ublas::vector<const FEDofMoFEMEntity*>& getFieldDofs() { return dOfs; }
+    const VectorInt& getIndices() const { return iNdices; }
+    VectorInt& getIndices() { return iNdices; }
+    const VectorDouble& getFieldData() const { return fieldData; }
+    const VectorDofs& getFieldDofs() const { return dOfs; }
+    VectorDouble& getFieldData() { return fieldData; }
+    VectorDofs& getFieldDofs() { return dOfs; }
     ApproximationOrder getOrder() const { return oRder; }
     ApproximationOrder& getOrder() { return oRder; }
 
     inline int getSense() const { return entData.getSense(); }
-    inline const ublas::matrix<double>& getN() const { return entData.getN(); }
-    inline const ublas::matrix<double>& getDiffN() const { return entData.getDiffN(); }
-    inline ublas::matrix<double>& getN() { return entData.getN(); }
-    inline ublas::matrix<double>& getDiffN() { return entData.getDiffN(); }
-    inline const ublas::matrix<double>&  getHdivN() const { return entData.getHdivN(); };
-    inline ublas::matrix<double>&  getHdivN() { return entData.getHdivN(); };
+    inline const MatrixDouble& getN() const { return entData.getN(); }
+    inline const MatrixDouble& getDiffN() const { return entData.getDiffN(); }
+    inline MatrixDouble& getN() { return entData.getN(); }
+    inline MatrixDouble& getDiffN() { return entData.getDiffN(); }
+    inline const MatrixDouble&  getHdivN() const { return entData.getHdivN(); };
+    inline MatrixDouble&  getHdivN() { return entData.getHdivN(); };
 
     private:
     ApproximationOrder oRder;
-    ublas::vector<DofIdx> iNdices;
-    ublas::vector<double> fieldData;
-    ublas::vector<const FEDofMoFEMEntity*> dOfs;
+    VectorInt iNdices;
+    VectorDofs dOfs;
+    VectorDouble fieldData;
 
   };
 
