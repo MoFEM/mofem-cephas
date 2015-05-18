@@ -156,7 +156,7 @@ int main(int argc, char *argv[]) {
       int nb_gauss_pts = data.getDiffHdivN().size1();
       int nb_dofs = data.getFieldData().size();
 
-      ublas::vector<FieldData> div_vec;
+      VectorDouble div_vec;
       div_vec.resize(nb_dofs,0);
 
       int gg = 0;
@@ -220,7 +220,7 @@ int main(int argc, char *argv[]) {
         int dd = 0;
         for(;dd<nb_dofs;dd++) {
           double area;
-          ublas::vector<double> n;
+          VectorDouble n;
           if(getNormals_at_GaussPt().size1() == (unsigned int)nb_gauss_pts) {
             n = getNormals_at_GaussPt(gg);
             area = norm_2(getNormals_at_GaussPt(gg))*0.5;

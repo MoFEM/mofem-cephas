@@ -343,7 +343,7 @@ PetscErrorCode OpSetInvJacH1::doWork(
 
     if(data.getDiffN().size2()==0) PetscFunctionReturn(0);
 
-    diffNinvJac.resize(data.getDiffN().size1(),data.getDiffN().size2());
+    diffNinvJac.resize(data.getDiffN().size1(),data.getDiffN().size2(),false);
     unsigned int nb_gauss_pts = data.getN().size1();
     unsigned int nb_dofs = data.getN().size2();
     if(type!=MBVERTEX) {
@@ -404,7 +404,7 @@ PetscErrorCode OpSetInvJacHdiv::doWork(
 
   try {
 
-    diffHdiv_invJac.resize(data.getDiffHdivN().size1(),data.getDiffHdivN().size2());
+    diffHdiv_invJac.resize(data.getDiffHdivN().size1(),data.getDiffHdivN().size2(),false);
 
     unsigned int nb_gauss_pts = data.getDiffHdivN().size1();
     unsigned int nb_dofs = data.getDiffHdivN().size2()/9;
@@ -448,8 +448,8 @@ PetscErrorCode OpSetPiolaTransform::doWork(
   unsigned int nb_gauss_pts = data.getHdivN().size1();
   unsigned int nb_dofs = data.getHdivN().size2()/3;
   unsigned int gg = 0;
-  piolaN.resize(nb_gauss_pts,data.getHdivN().size2());
-  piolaDiffN.resize(nb_gauss_pts,data.getDiffHdivN().size2());
+  piolaN.resize(nb_gauss_pts,data.getHdivN().size2(),false);
+  piolaDiffN.resize(nb_gauss_pts,data.getDiffHdivN().size2(),false);
   for(;gg<nb_gauss_pts;gg++) {
     unsigned int dd = 0;
     for(;dd<nb_dofs;dd++) {
@@ -483,32 +483,32 @@ PetscErrorCode OpSetHoInvJacH1::doWork(
 
   try {
 
-  if(data.getDiffN().size2()==0) PetscFunctionReturn(0);
+    if(data.getDiffN().size2()==0) PetscFunctionReturn(0);
 
-  unsigned int nb_gauss_pts = data.getN().size1();
-  unsigned int nb_dofs = data.getN().size2();
-  // Note for Vetex diffN row has size of number of dof
-  diffNinvJac.resize(nb_gauss_pts,3*nb_dofs);
+    unsigned int nb_gauss_pts = data.getN().size1();
+    unsigned int nb_dofs = data.getN().size2();
+    // Note for Vetex diffN row has size of number of dof
+    diffNinvJac.resize(nb_gauss_pts,3*nb_dofs,false);
 
-  unsigned int gg = 0;
-  for(;gg<nb_gauss_pts;gg++) {
-    double *inv_H = &invHoJac(gg,0);
-    for(unsigned dd = 0;dd<nb_dofs;dd++) {
-      double *diff_N;
-      if(type == MBVERTEX) {
-        diff_N = &data.getDiffN()(dd,0);
-      } else {
-        diff_N = &data.getDiffN()(gg,3*dd);
+    unsigned int gg = 0;
+    for(;gg<nb_gauss_pts;gg++) {
+      double *inv_h = &invHoJac(gg,0);
+      for(unsigned dd = 0;dd<nb_dofs;dd++) {
+        double *diff_n;
+        if(type == MBVERTEX) {
+          diff_n = &data.getDiffN()(dd,0);
+        } else {
+          diff_n = &data.getDiffN()(gg,3*dd);
+        }
+        double *diff_n_inv_jac = &diffNinvJac(gg,3*dd);
+        cblas_dgemv(CblasRowMajor,CblasTrans,3,3,1.,inv_h,3,diff_n,1,0.,diff_n_inv_jac,1);
       }
-      double *diff_N_inv_Jac = &diffNinvJac(gg,3*dd);
-      cblas_dgemv(CblasRowMajor,CblasTrans,3,3,1.,inv_H,3,diff_N,1,0.,diff_N_inv_Jac,1);
     }
-  }
 
-  if(type == MBVERTEX) {
-    data.getDiffN().resize(diffNinvJac.size1(),diffNinvJac.size2());
-  }
-  data.getDiffN().data().swap(diffNinvJac.data());
+    if(type == MBVERTEX) {
+      data.getDiffN().resize(diffNinvJac.size1(),diffNinvJac.size2(),false);
+    }
+    data.getDiffN().data().swap(diffNinvJac.data());
 
   } catch (exception& ex) {
     ostringstream ss;
@@ -529,7 +529,7 @@ PetscErrorCode OpSetHoInvJacHdiv::doWork(
 
   try {
 
-  diffHdiv_invJac.resize(data.getDiffHdivN().size1(),data.getDiffHdivN().size2());
+  diffHdiv_invJac.resize(data.getDiffHdivN().size1(),data.getDiffHdivN().size2(),false);
 
   unsigned int nb_gauss_pts = data.getDiffHdivN().size1();
   unsigned int nb_dofs = data.getDiffHdivN().size2()/9;
@@ -570,8 +570,8 @@ PetscErrorCode OpSetHoPiolaTransform::doWork(
   unsigned int nb_gauss_pts = data.getHdivN().size1();
   unsigned int nb_dofs = data.getHdivN().size2()/3;
   unsigned int gg = 0;
-  piolaN.resize(nb_gauss_pts,data.getHdivN().size2());
-  piolaDiffN.resize(nb_gauss_pts,data.getDiffHdivN().size2());
+  piolaN.resize(nb_gauss_pts,data.getHdivN().size2(),false);
+  piolaDiffN.resize(nb_gauss_pts,data.getDiffHdivN().size2(),false);
 
   for(;gg<nb_gauss_pts;gg++) {
     unsigned int dd = 0;
@@ -623,8 +623,8 @@ PetscErrorCode OpGetData::doWork(
       );
     }
 
-    data_at_GaussPt.resize(data.getN().size1(),rank);
-    dataGrad_at_GaussPt.resize(data.getN().size1(),rank*dim);
+    data_at_GaussPt.resize(data.getN().size1(),rank,false);
+    dataGrad_at_GaussPt.resize(data.getN().size1(),rank*dim,false);
 
     if(type == MBVERTEX) {
       bzero(&*data_at_GaussPt.data().begin(),data.getN().size1()*rank*sizeof(FieldData));
@@ -740,7 +740,7 @@ PetscErrorCode OpGetNormals::calculateNormals() {
 
   sPin.resize(3,3);
   sPin.clear();
-  nOrmals_at_GaussPt.resize(tAngent1_at_GaussPt.size1(),3);
+  nOrmals_at_GaussPt.resize(tAngent1_at_GaussPt.size1(),3,false);
   for(unsigned int gg = 0;gg<tAngent1_at_GaussPt.size1();gg++) {
     ierr = Spin(&*sPin.data().begin(),&tAngent1_at_GaussPt(gg,0)); CHKERRQ(ierr);
     cblas_dgemv(
@@ -778,14 +778,14 @@ PetscErrorCode OpGetNormalsOnPrism::doWork(int side,EntityType type,DataForcesAn
     case MBEDGE:
     case MBTRI: {
       if(2*data.getN().size2() != data.getDiffN().size2()) {
-	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
       }
       unsigned int nb_dofs = data.getFieldData().size();
       if(nb_dofs%3!=0) {
-	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
       }
       if(nb_dofs > 3*data.getN().size2()) {
-	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
       }
       for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
 	for(int dd = 0;dd<3;dd++) {
@@ -820,7 +820,7 @@ PetscErrorCode OpGetNormalsOnPrism::calculateNormals() {
   try {
   sPin.resize(3,3);
   sPin.clear();
-  nOrmals_at_GaussPtF3.resize(tAngent1_at_GaussPtF3.size1(),3);
+  nOrmals_at_GaussPtF3.resize(tAngent1_at_GaussPtF3.size1(),3,false);
   for(unsigned int gg = 0;gg<tAngent1_at_GaussPtF3.size1();gg++) {
     ierr = Spin(&*sPin.data().begin(),&tAngent1_at_GaussPtF3(gg,0)); CHKERRQ(ierr);
     cblas_dgemv(
@@ -829,7 +829,7 @@ PetscErrorCode OpGetNormalsOnPrism::calculateNormals() {
       &nOrmals_at_GaussPtF3(gg,0),1);
   }
   sPin.clear();
-  nOrmals_at_GaussPtF4.resize(tAngent1_at_GaussPtF4.size1(),3);
+  nOrmals_at_GaussPtF4.resize(tAngent1_at_GaussPtF4.size1(),3,false);
   for(unsigned int gg = 0;gg<tAngent1_at_GaussPtF4.size1();gg++) {
     ierr = Spin(&*sPin.data().begin(),&tAngent1_at_GaussPtF4(gg,0)); CHKERRQ(ierr);
     cblas_dgemv(

@@ -80,11 +80,11 @@ struct ConvectiveMassElement {
       ierr = VolumeElementForcesAndSourcesCore::preProcess(); CHKERRQ(ierr);
 
       if(A != PETSC_NULL) {
-	ts_B = A;
+        ts_B = A;
       }
 
       if(F != PETSC_NULL) {
-	ts_F = F;
+        ts_F = F;
       }
 
       int ghosts[] = { 0 };
@@ -92,21 +92,21 @@ struct ConvectiveMassElement {
       MPI_Comm_rank(mField.get_comm(),&rank);
 
       switch (ts_ctx) {
-	case CTX_TSNONE:
-	  if(!initV) {
-	    if(rank == 0) {
-	      ierr = VecCreateGhost(mField.get_comm(),1,1,1,ghosts,&V); CHKERRQ(ierr);
-	    } else {
-	      ierr = VecCreateGhost(mField.get_comm(),0,1,1,ghosts,&V); CHKERRQ(ierr);
-	    }
-	    initV = true;
-	  }
-	  ierr = VecZeroEntries(V); CHKERRQ(ierr);
-	  ierr = VecGhostUpdateBegin(V,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	  ierr = VecGhostUpdateEnd(V,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	  break;
-	default:
-	  break;
+        case CTX_TSNONE:
+        if(!initV) {
+          if(rank == 0) {
+            ierr = VecCreateGhost(mField.get_comm(),1,1,1,ghosts,&V); CHKERRQ(ierr);
+          } else {
+            ierr = VecCreateGhost(mField.get_comm(),0,1,1,ghosts,&V); CHKERRQ(ierr);
+          }
+          initV = true;
+        }
+        ierr = VecZeroEntries(V); CHKERRQ(ierr);
+        ierr = VecGhostUpdateBegin(V,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+        ierr = VecGhostUpdateEnd(V,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+        break;
+        default:
+        break;
       }
 
       PetscFunctionReturn(0);
@@ -121,23 +121,23 @@ struct ConvectiveMassElement {
 
       double *array;
       switch (ts_ctx) {
-	case CTX_TSNONE:
-	  ierr = VecAssemblyBegin(V); CHKERRQ(ierr);
-	  ierr = VecAssemblyEnd(V); CHKERRQ(ierr);
-	  ierr = VecGhostUpdateBegin(V,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-	  ierr = VecGhostUpdateEnd(V,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-	  ierr = VecGhostUpdateBegin(V,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	  ierr = VecGhostUpdateEnd(V,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	  ierr = VecGetArray(V,&array); CHKERRQ(ierr);
-	  eNergy = array[0];
-	  ierr = VecRestoreArray(V,&array); CHKERRQ(ierr);
-	  if(initV) {
-	    ierr = VecDestroy(&V); CHKERRQ(ierr);
-	    initV = false;
-	  }
-	  break;
-	default:
-	  break;
+        case CTX_TSNONE:
+        ierr = VecAssemblyBegin(V); CHKERRQ(ierr);
+        ierr = VecAssemblyEnd(V); CHKERRQ(ierr);
+        ierr = VecGhostUpdateBegin(V,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+        ierr = VecGhostUpdateEnd(V,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+        ierr = VecGhostUpdateBegin(V,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+        ierr = VecGhostUpdateEnd(V,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+        ierr = VecGetArray(V,&array); CHKERRQ(ierr);
+        eNergy = array[0];
+        ierr = VecRestoreArray(V,&array); CHKERRQ(ierr);
+        if(initV) {
+          ierr = VecDestroy(&V); CHKERRQ(ierr);
+          initV = false;
+        }
+        break;
+        default:
+        break;
       }
 
       PetscFunctionReturn(0);
@@ -226,56 +226,51 @@ struct ConvectiveMassElement {
       *
       */
     PetscErrorCode doWork(
-      int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+      int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+    ) {
       PetscFunctionBegin;
       try {
 
- 	int nb_dofs = data.getFieldData().size();
-	if(nb_dofs == 0) {
-	  PetscFunctionReturn(0);
-	}
-	int nb_gauss_pts = data.getN().size1();
+        int nb_dofs = data.getFieldData().size();
+        if(nb_dofs == 0) {
+          PetscFunctionReturn(0);
+        }
+        int nb_gauss_pts = data.getN().size1();
 
-	//initialize
-	ublas::vector<double>& values = data.getFieldData();
-	valuesAtGaussPts.resize(nb_gauss_pts);
-	gradientAtGaussPts.resize(nb_gauss_pts);
-	for(int gg = 0;gg<nb_gauss_pts;gg++) {
-	  valuesAtGaussPts[gg].resize(3);
-	  gradientAtGaussPts[gg].resize(3,3);
-	}
-
-        if(type == zeroAtType) {
-	  for(int gg = 0;gg<nb_gauss_pts;gg++) {
-	    valuesAtGaussPts[gg].clear();
-	    gradientAtGaussPts[gg].clear();
-	  }
+        //initialize
+        ublas::vector<double>& values = data.getFieldData();
+        valuesAtGaussPts.resize(nb_gauss_pts);
+        gradientAtGaussPts.resize(nb_gauss_pts);
+        for(int gg = 0;gg<nb_gauss_pts;gg++) {
+          valuesAtGaussPts[gg].resize(3);
+          gradientAtGaussPts[gg].resize(3,3);
         }
 
-	//cerr << valuesAtGaussPts[0] << " : ";
+        if(type == zeroAtType) {
+          for(int gg = 0;gg<nb_gauss_pts;gg++) {
+            valuesAtGaussPts[gg].clear();
+            gradientAtGaussPts[gg].clear();
+          }
+        }
 
-	for(int gg = 0;gg<nb_gauss_pts;gg++) {
-	  ublas::vector<double> N = data.getN(gg,nb_dofs/3);
-	  ublas::matrix<double> diffN = data.getDiffN(gg,nb_dofs/3);
-	  for(int dd = 0;dd<nb_dofs/3;dd++) {
-	    for(int rr1 = 0;rr1<3;rr1++) {
-	      valuesAtGaussPts[gg][rr1] += N[dd]*values[3*dd+rr1];
-	      for(int rr2 = 0;rr2<3;rr2++) {
-		gradientAtGaussPts[gg](rr1,rr2) += diffN(dd,rr2)*values[3*dd+rr1];
-	      }
-	    }
-	  }
-	}
+        //cerr << valuesAtGaussPts[0] << " : ";
 
-	//cerr << row_field_name << " " << col_field_name << endl;
-	//cerr << side << " " << type << endl;
-	//cerr << values << endl;
-	//cerr << valuesAtGaussPts[0] << endl;
-
+        for(int gg = 0;gg<nb_gauss_pts;gg++) {
+          ublas::vector<double> N = data.getN(gg,nb_dofs/3);
+          ublas::matrix<double> diffN = data.getDiffN(gg,nb_dofs/3);
+          for(int dd = 0;dd<nb_dofs/3;dd++) {
+            for(int rr1 = 0;rr1<3;rr1++) {
+              valuesAtGaussPts[gg][rr1] += N[dd]*values[3*dd+rr1];
+              for(int rr2 = 0;rr2<3;rr2++) {
+                gradientAtGaussPts[gg](rr1,rr2) += diffN(dd,rr2)*values[3*dd+rr1];
+              }
+            }
+          }
+        }
       } catch (const std::exception& ex) {
-	ostringstream ss;
-	ss << "throw in method: " << ex.what() << endl;
-	SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+        ostringstream ss;
+        ss << "throw in method: " << ex.what() << endl;
+        SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
       PetscFunctionReturn(0);

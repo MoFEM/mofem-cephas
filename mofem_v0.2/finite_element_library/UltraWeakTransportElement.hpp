@@ -52,14 +52,16 @@ struct UltraWeakTransportElement {
 
   MyTriFE feTriFluxValue;
 
-  UltraWeakTransportElement(FieldInterface &m_field): mField(m_field),
-    feVol(m_field),feTriFluxValue(m_field) {};
+  UltraWeakTransportElement(FieldInterface &m_field):
+  mField(m_field),
+  feVol(m_field),feTriFluxValue(m_field) {};
+
   virtual ~UltraWeakTransportElement() {}
 
-  ublas::vector<FieldData> valuesAtGaussPts;
-  ublas::vector<ublas::vector<FieldData> > valuesGradientAtGaussPts;
-  ublas::vector<FieldData> divergenceAtGaussPts;
-  ublas::vector<ublas::vector<FieldData> > fluxesAtGaussPts;
+  VectorDouble valuesAtGaussPts;
+  ublas::vector<VectorDouble > valuesGradientAtGaussPts;
+  VectorDouble divergenceAtGaussPts;
+  ublas::vector<VectorDouble > fluxesAtGaussPts;
 
   set<PetscInt> bcIndices;
   PetscErrorCode getDirihletBCIndices(IS *is) {
@@ -208,8 +210,8 @@ struct UltraWeakTransportElement {
 
     ublas::matrix<FieldData> NN,transNN;
     ublas::matrix<FieldData> invK,invKN;
-    ublas::vector<FieldData> Nf;
-    ublas::vector<FieldData> invKFlux;
+    VectorDouble Nf;
+    VectorDouble invKFlux;
 
     PetscErrorCode doWork(
       int row_side,int col_side,
@@ -360,7 +362,7 @@ struct UltraWeakTransportElement {
     }
     virtual ~OpDivTauU_HdivL2() {}
 
-    ublas::vector<FieldData> div_vec,Nf;
+    VectorDouble div_vec,Nf;
 
     PetscErrorCode doWork(
       int side,EntityType type,
@@ -441,7 +443,7 @@ struct UltraWeakTransportElement {
     virtual ~OpVDotDivSigma_L2Hdiv() {}
 
     ublas::matrix<FieldData> NN,transNN;
-    ublas::vector<FieldData> div_vec,Nf;
+    VectorDouble div_vec,Nf;
 
     PetscErrorCode doWork(
       int row_side,int col_side,
@@ -577,7 +579,7 @@ struct UltraWeakTransportElement {
 
     virtual ~OpL2Source() {}
 
-    ublas::vector<FieldData> Nf;
+    VectorDouble Nf;
     PetscErrorCode doWork(
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
         PetscFunctionBegin;
@@ -643,7 +645,7 @@ struct UltraWeakTransportElement {
       FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
       cTx(ctx),F(_F) {}
 
-    ublas::vector<FieldData> Nf;
+    VectorDouble Nf;
     PetscErrorCode doWork(
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data
     ) {
@@ -706,7 +708,7 @@ struct UltraWeakTransportElement {
     virtual ~OpEvaluateBcOnFluxes() {}
 
     ublas::matrix<FieldData> NN,L;
-    ublas::vector<FieldData> Nf,normalN,x;
+    VectorDouble Nf,normalN,x;
     PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
       PetscErrorCode ierr;
@@ -861,7 +863,7 @@ struct UltraWeakTransportElement {
 
     virtual ~OpFluxDivergenceAtGaussPts() {}
 
-    ublas::vector<FieldData> div_vec;
+    VectorDouble div_vec;
     PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
       PetscErrorCode ierr;
@@ -917,7 +919,7 @@ struct UltraWeakTransportElement {
       cTx(ctx) {}
     virtual ~OpError_L2Norm() {}
 
-    ublas::vector<FieldData> deltaFlux;
+    VectorDouble deltaFlux;
     PetscErrorCode doWork(
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
@@ -977,7 +979,9 @@ struct UltraWeakTransportElement {
         }
 
         const FENumeredDofMoFEMEntity *dof_ptr;
-        ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
+        ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(
+          data.getIndices()[0],&dof_ptr
+        ); CHKERRQ(ierr);
         dof_ptr->get_FieldData() = *error_flux_ptr;
 
       } catch (const std::exception& ex) {

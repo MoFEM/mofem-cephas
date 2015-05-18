@@ -62,15 +62,14 @@ using bio::stream;
 
 using namespace MoFEM;
 
-#include <AnalyticalSolutions.hpp>
-#include <AnalyticalDirihlet.hpp>
-
-#include <HelmholtzElement.hpp>
 
 #include <boost/shared_array.hpp>
 #include <kiss_fft.h>
 #include <kiss_fft.c>
 
+#include <AnalyticalSolutions.hpp>
+#include <AnalyticalDirihlet.hpp>
+#include <HelmholtzElement.hpp>
 #include <TimeSeries.hpp>
 
 struct PlaneIncidentWaveSacttrerData {
@@ -478,6 +477,9 @@ int main(int argc, char *argv[]) {
   }
 
 
+  PetscBool monochromatic_wave = PETSC_TRUE;
+  ierr = PetscOptionsGetBool(PETSC_NULL,"-monochromatic_wave",&monochromatic_wave,NULL); CHKERRQ(ierr);
+
   PetscBool add_incident_wave = PETSC_FALSE;
   ierr = PetscOptionsGetBool(NULL,"-add_incident_wave",&add_incident_wave,NULL); CHKERRQ(ierr);
   if(add_incident_wave) {
@@ -507,9 +509,7 @@ int main(int argc, char *argv[]) {
   KSP solver;
   ierr = KSPCreate(PETSC_COMM_WORLD,&solver); CHKERRQ(ierr);
 
-  PetscBool monohromatic_wave = PETSC_TRUE;
-  ierr = PetscOptionsGetBool(PETSC_NULL,"-monohromatic_wave",&monohromatic_wave,NULL); CHKERRQ(ierr);
-  if(monohromatic_wave) {
+  if(monochromatic_wave) {
 
     // Zero vectors
     ierr = VecZeroEntries(T); CHKERRQ(ierr);
@@ -588,13 +588,16 @@ int main(int argc, char *argv[]) {
     TimeSeries time_series(m_field,helmholtz_element,
       analytical_ditihlet_bc_real,analytical_ditihlet_bc_imag,
       dirihlet_bc_set);
-    ierr = time_series.readData();  CHKERRQ(ierr);
-    ierr = time_series.forwardDft(); CHKERRQ(ierr);
-    ierr = time_series.createTimeVectorSeries(T); CHKERRQ(ierr);
-    ierr = time_series.solveForwardDFT(solver,A,F,T); CHKERRQ(ierr);
-    ierr = time_series.pressureInTimeDomainInverseDft(); CHKERRQ(ierr);
-    ierr = time_series.destroyTimeVectorSeries(); CHKERRQ(ierr);
 
+    ierr = time_series.readData(); CHKERRQ(ierr);
+    ierr = time_series.createPressureSeries(T); CHKERRQ(ierr);
+    ierr = time_series.forwardSpaceDft(); CHKERRQ(ierr);
+    ierr = time_series.pressureForwardDft(); CHKERRQ(ierr);
+    ierr = time_series.solveForwardDFT(solver,A,F,T); CHKERRQ(ierr);
+    ierr = time_series.pressureInverseDft(); CHKERRQ(ierr);
+    ierr = time_series.generateReferenceElementMesh(); CHKERRQ(ierr);
+    ierr = time_series.saveResults(); CHKERRQ(ierr);
+    ierr = time_series.destroyPressureSeries(); CHKERRQ(ierr);
 
   }
 
@@ -604,7 +607,7 @@ int main(int argc, char *argv[]) {
   ierr = VecDestroy(&T); CHKERRQ(ierr);
   ierr = KSPDestroy(&solver); CHKERRQ(ierr);
 
-  if(monohromatic_wave) {
+  if(monochromatic_wave) {
 
     if(add_incident_wave) {
 
@@ -620,7 +623,7 @@ int main(int argc, char *argv[]) {
     if(save_postproc_mesh) {
 
       PostPocOnRefinedMesh post_proc(m_field);
-      ierr = post_proc.generateRefereneElemenMesh(); CHKERRQ(ierr);
+      ierr = post_proc.generateReferenceElementMesh(); CHKERRQ(ierr);
       ierr = post_proc.addFieldValuesPostProc("rePRES"); CHKERRQ(ierr);
       ierr = post_proc.addFieldValuesPostProc("imPRES"); CHKERRQ(ierr);
 
@@ -646,7 +649,6 @@ int main(int argc, char *argv[]) {
     }
 
   }
-
 
   ierr = PetscTime(&v2);CHKERRQ(ierr);
   ierr = PetscGetCPUTime(&t2);CHKERRQ(ierr);

@@ -33,19 +33,19 @@ struct FieldApproximationH1 {
   FieldInterface &mField;
   const string problemName;
   VolumeElementForcesAndSourcesCore fe;
-  int addToRule;
+  int multRule;
 
   FieldApproximationH1(
     FieldInterface &m_field):
-    mField(m_field),fe(m_field),addToRule(0) {}
+    mField(m_field),fe(m_field),multRule(1) {}
 
   /** \brief set integration rule
 
-    Note: Add 1 to take into account 2nd order geometry approximation. Overload
+    Note: Multiply 2 to take into account 2nd order geometry approximation. Overload
     that function if linear or HO approximation is set.
 
   */
-  int getRule(int order) { return order+addToRule; };
+  int getRule(int order) { return order*multRule; };
 
   /** \brief Gauss point operators to calculate matrices and vectors
     *
@@ -89,7 +89,7 @@ struct FieldApproximationH1 {
       int nb_row_dofs = row_data.getIndices().size()/rank;
       int nb_col_dofs = col_data.getIndices().size()/rank;
 
-      NN.resize(nb_row_dofs,nb_col_dofs);
+      NN.resize(nb_row_dofs,nb_col_dofs,false);
       NN.clear();
 
       unsigned int nb_gauss_pts = row_data.getN().size1();
@@ -106,13 +106,13 @@ struct FieldApproximationH1 {
       }
 
       if( (row_type != col_type) || (row_side != col_side) ) {
-        transNN.resize(nb_col_dofs,nb_row_dofs);
+        transNN.resize(nb_col_dofs,nb_row_dofs,false);
         ublas::noalias(transNN) = trans(NN);
       }
 
       double *data = &*NN.data().begin();
       double *trans_data = &*transNN.data().begin();
-      ublas::vector<DofIdx> row_indices,col_indices;
+      VectorInt row_indices,col_indices;
       row_indices.resize(nb_row_dofs);
       col_indices.resize(nb_col_dofs);
 
@@ -133,9 +133,9 @@ struct FieldApproximationH1 {
 
         if(rank > 1) {
 
-          ublas::noalias(row_indices) = ublas::vector_slice<ublas::vector<DofIdx> >
+          ublas::noalias(row_indices) = ublas::vector_slice<VectorInt >
           (row_data.getIndices(), ublas::slice(rr, rank, row_data.getIndices().size()/rank));
-          ublas::noalias(col_indices) = ublas::vector_slice<ublas::vector<DofIdx> >
+          ublas::noalias(col_indices) = ublas::vector_slice<VectorInt >
           (col_data.getIndices(), ublas::slice(rr, rank, col_data.getIndices().size()/rank));
 
           nb_rows = row_indices.size();

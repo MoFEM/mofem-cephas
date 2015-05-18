@@ -36,10 +36,13 @@ struct PostPocOnRefinedMesh: public VolumeElementForcesAndSourcesCore {
   bool tenNodesPostProcTets;
   int nbOfRefLevels;
 
-  PostPocOnRefinedMesh(FieldInterface &m_field,bool ten_nodes_post_proc_tets = true,int nb_ref_levels = -1):
-    VolumeElementForcesAndSourcesCore(m_field),postProcMesh(coreMesh),
-    tenNodesPostProcTets(ten_nodes_post_proc_tets),nbOfRefLevels(nb_ref_levels) {
-
+  PostPocOnRefinedMesh(FieldInterface &m_field,
+    bool ten_nodes_post_proc_tets = true,
+    int nb_ref_levels = -1):
+    VolumeElementForcesAndSourcesCore(m_field),
+    postProcMesh(coreMesh),
+    tenNodesPostProcTets(ten_nodes_post_proc_tets),
+    nbOfRefLevels(nb_ref_levels) {
   }
 
   virtual ~PostPocOnRefinedMesh() {
@@ -63,7 +66,13 @@ struct PostPocOnRefinedMesh: public VolumeElementForcesAndSourcesCore {
   };
   CommonData commonData;
 
-  PetscErrorCode generateRefereneElemenMesh() {
+  DEPRECATED PetscErrorCode generateRefereneElemenMesh() {
+    PetscFunctionBegin;
+    ierr = generateReferenceElementMesh(); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode generateReferenceElementMesh() {
     PetscFunctionBegin;
 
     ErrorCode rval;
@@ -133,7 +142,7 @@ struct PostPocOnRefinedMesh: public VolumeElementForcesAndSourcesCore {
       int num_nodes;
       rval = moab_ref.get_connectivity(*tit,conn,num_nodes,false); CHKERR_PETSC(rval);
       for(int nn = 0;nn<num_nodes;nn++) {
-	refTets(tt,nn) = little_map[conn[nn]];
+        refTets(tt,nn) = little_map[conn[nn]];
       }
     }
 
@@ -160,78 +169,78 @@ struct PostPocOnRefinedMesh: public VolumeElementForcesAndSourcesCore {
     commonData.tEts.clear();
     for(unsigned int tt = 0;tt<refTets.size1();tt++) {
       EntityHandle conn[] = {
-	mapGaussPts[refTets(tt,0)], mapGaussPts[refTets(tt,1)],
-	mapGaussPts[refTets(tt,2)], mapGaussPts[refTets(tt,3)] };
-      EntityHandle tet;
-      rval = postProcMesh.create_element(MBTET,conn,4,tet); CHKERR_PETSC(rval);
-      commonData.tEts.insert(tet);
-    }
-
-    //cerr << commonData.tEts.size() << endl;
-
-    EntityHandle meshset;
-    rval = postProcMesh.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERR_PETSC(rval);
-    rval = postProcMesh.add_entities(meshset,commonData.tEts); CHKERR_PETSC(rval);
-    //create higher order entities
-    if(tenNodesPostProcTets) {
-      rval = postProcMesh.convert_entities(meshset,true,false,false); CHKERR_PETSC(rval);
-    }
-
-    commonData.tEts.clear();
-    rval = postProcMesh.get_entities_by_type(meshset,MBTET,commonData.tEts,true); CHKERR_PETSC(rval);
-
-    //cerr << "<-- " << commonData.tEts.size() << endl;
-    Range nodes;
-    rval = postProcMesh.get_connectivity(commonData.tEts,nodes,false); CHKERR_PETSC(rval);
-
-    gaussPts.resize(nodes.size(),4);
-    Range::iterator nit = nodes.begin();
-    for(int gg = 0;nit!=nodes.end();nit++,gg++) {
-      rval = postProcMesh.get_coords(&*nit,1,&gaussPts(gg,0)); CHKERR_PETSC(rval);
-      gaussPts(gg,3) = 0;
-    }
-    gaussPts = trans(gaussPts);
-
-    //cerr << gaussPts << endl;
-
-    ublas::matrix<FieldData> N;
-    N.resize(nodes.size(),4);
-    ierr = ShapeMBTET(&*N.data().begin(),&gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0),nodes.size()); CHKERRQ(ierr);
-    //cerr << N << endl;
-
-    ublas::matrix<double> coords_at_gauss_pts;
-    coords_at_gauss_pts.resize(nodes.size(),3);
-
-    EntityHandle fe_ent = fePtr->get_ent();
-
-    ublas::vector<double> coords(12);
-    {
-      const EntityHandle *conn;
-      int num_nodes;
-      mField.get_moab().get_connectivity(fe_ent,conn,num_nodes,false);
-      coords.resize(3*num_nodes);
-      rval = mField.get_moab().get_coords(conn,num_nodes,&coords[0]); CHKERR_PETSC(rval);
-      //cerr << coords << endl;
-    }
-
-    for(unsigned int gg = 0;gg<nodes.size();gg++) {
-      for(int dd = 0;dd<3;dd++) {
-	coords_at_gauss_pts(gg,dd) = cblas_ddot(4,&N(gg,0),1,&coords[dd],3);
+        mapGaussPts[refTets(tt,0)], mapGaussPts[refTets(tt,1)],
+        mapGaussPts[refTets(tt,2)], mapGaussPts[refTets(tt,3)] };
+        EntityHandle tet;
+        rval = postProcMesh.create_element(MBTET,conn,4,tet); CHKERR_PETSC(rval);
+        commonData.tEts.insert(tet);
       }
-    }
 
-    //cerr << coords_at_gauss_pts << endl;
+      //cerr << commonData.tEts.size() << endl;
 
-    mapGaussPts.resize(nodes.size());
-    nit = nodes.begin();
-    for(int gg = 0;nit!=nodes.end();nit++,gg++) {
-      rval = postProcMesh.set_coords(&*nit,1,&coords_at_gauss_pts(gg,0)); CHKERR_PETSC(rval);
-      mapGaussPts[gg] = *nit;
-    }
+      EntityHandle meshset;
+      rval = postProcMesh.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERR_PETSC(rval);
+      rval = postProcMesh.add_entities(meshset,commonData.tEts); CHKERR_PETSC(rval);
+      //create higher order entities
+      if(tenNodesPostProcTets) {
+        rval = postProcMesh.convert_entities(meshset,true,false,false); CHKERR_PETSC(rval);
+      }
 
-    //tEts.clear();
-    //rval = postProcMesh.get_entities_by_type(0,MBTET,tEts,true); CHKERR_PETSC(rval);
-    //cerr << "<--- <--- " << tEts.size() << endl;
+      commonData.tEts.clear();
+      rval = postProcMesh.get_entities_by_type(meshset,MBTET,commonData.tEts,true); CHKERR_PETSC(rval);
+
+      //cerr << "<-- " << commonData.tEts.size() << endl;
+      Range nodes;
+      rval = postProcMesh.get_connectivity(commonData.tEts,nodes,false); CHKERR_PETSC(rval);
+
+      gaussPts.resize(nodes.size(),4);
+      Range::iterator nit = nodes.begin();
+      for(int gg = 0;nit!=nodes.end();nit++,gg++) {
+        rval = postProcMesh.get_coords(&*nit,1,&gaussPts(gg,0)); CHKERR_PETSC(rval);
+        gaussPts(gg,3) = 0;
+      }
+      gaussPts = trans(gaussPts);
+
+      //cerr << gaussPts << endl;
+
+      ublas::matrix<FieldData> N;
+      N.resize(nodes.size(),4);
+      ierr = ShapeMBTET(&*N.data().begin(),&gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0),nodes.size()); CHKERRQ(ierr);
+      //cerr << N << endl;
+
+      ublas::matrix<double> coords_at_gauss_pts;
+      coords_at_gauss_pts.resize(nodes.size(),3);
+
+      EntityHandle fe_ent = fePtr->get_ent();
+
+      ublas::vector<double> coords(12);
+      {
+        const EntityHandle *conn;
+        int num_nodes;
+        mField.get_moab().get_connectivity(fe_ent,conn,num_nodes,false);
+        coords.resize(3*num_nodes);
+        rval = mField.get_moab().get_coords(conn,num_nodes,&coords[0]); CHKERR_PETSC(rval);
+        //cerr << coords << endl;
+      }
+
+      for(unsigned int gg = 0;gg<nodes.size();gg++) {
+        for(int dd = 0;dd<3;dd++) {
+          coords_at_gauss_pts(gg,dd) = cblas_ddot(4,&N(gg,0),1,&coords[dd],3);
+        }
+      }
+
+      //cerr << coords_at_gauss_pts << endl;
+
+      mapGaussPts.resize(nodes.size());
+      nit = nodes.begin();
+      for(int gg = 0;nit!=nodes.end();nit++,gg++) {
+        rval = postProcMesh.set_coords(&*nit,1,&coords_at_gauss_pts(gg,0)); CHKERR_PETSC(rval);
+        mapGaussPts[gg] = *nit;
+      }
+
+      //tEts.clear();
+      //rval = postProcMesh.get_entities_by_type(0,MBTET,tEts,true); CHKERR_PETSC(rval);
+      //cerr << "<--- <--- " << tEts.size() << endl;
 
     } catch (exception& ex) {
       ostringstream ss;
@@ -307,15 +316,25 @@ struct PostPocOnRefinedMesh: public VolumeElementForcesAndSourcesCore {
     Interface &postProcMesh;
     vector<EntityHandle> &mapGaussPts;
     CommonData &commonData;
+    const string tagName;
+    Vec V;
 
     OpGetFieldValues(
       Interface &post_proc_mesh,
       vector<EntityHandle> &map_gauss_pts,
-      const string field_name,CommonData &common_data
+      const string field_name,
+      const string tag_name,
+      CommonData &common_data,
+      Vec v = PETSC_NULL
     ):
     VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
     postProcMesh(post_proc_mesh),mapGaussPts(map_gauss_pts),
-    commonData(common_data) {}
+    commonData(common_data),
+    tagName(tag_name),
+    V(v) {}
+
+    ublas::vector<double> vAlues;
+    ublas::vector<double> *vAluesPtr;
 
     PetscErrorCode doWork(
       int side,
@@ -324,13 +343,29 @@ struct PostPocOnRefinedMesh: public VolumeElementForcesAndSourcesCore {
     ) {
       PetscFunctionBegin;
 
-      if(data.getFieldData().size()==0) PetscFunctionReturn(0);
-
       ErrorCode rval;
-      //PetscErrorCode ierr;
+      PetscErrorCode ierr;
+
+      if(data.getFieldData().size()==0) PetscFunctionReturn(0);
+      if(V) {
+        vAlues.resize(data.getFieldData().size());
+        double *a;
+        ierr = VecGetArray(V,&a); CHKERRQ(ierr);
+        VectorDofs::iterator it,hi_it;
+        it = data.getFieldDofs().begin();
+        hi_it = data.getFieldDofs().end();
+        for(int ii = 0;it!=hi_it;it++,ii++) {
+          int local_idx = getFEMethod()->rowPtr->find((*it)->get_global_unique_id())->get_petsc_local_dof_idx();
+          vAlues[ii] = a[local_idx];
+        }
+        ierr = VecRestoreArray(V,&a); CHKERRQ(ierr);
+        vAluesPtr = &vAlues;
+      } else {
+        vAluesPtr = &data.getFieldData();
+      }
+
 
       const MoFEM::FEDofMoFEMEntity *dof_ptr = data.getFieldDofs()[0];
-      string tag_name = dof_ptr->get_name();
       int rank = dof_ptr->get_max_rank();
 
       int tag_length = rank;
@@ -350,7 +385,7 @@ struct PostPocOnRefinedMesh: public VolumeElementForcesAndSourcesCore {
       double def_VAL[tag_length];
       bzero(def_VAL,tag_length*sizeof(double));
       Tag th;
-      rval = postProcMesh.tag_get_handle(tag_name.c_str(),tag_length,MB_TYPE_DOUBLE,th,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_PETSC(rval);
+      rval = postProcMesh.tag_get_handle(tagName.c_str(),tag_length,MB_TYPE_DOUBLE,th,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_PETSC(rval);
 
       // zero tags, this for Vertex if H1 and TRI if Hdiv, EDGE for Hcurl
       // no need for L2
@@ -374,9 +409,9 @@ struct PostPocOnRefinedMesh: public VolumeElementForcesAndSourcesCore {
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
           for(int rr = 0;rr<rank;rr++) {
             ((double*)tags_ptr[gg])[rr] += cblas_ddot(
-              (data.getFieldData().size()/rank),&(data.getN(gg)[0]),1,&(data.getFieldData()[rr]),rank
+              (vAluesPtr->size()/rank),&(data.getN(gg)[0]),1,&((*vAluesPtr)[rr]),rank
             );
-            (commonData.fieldMap[rowFieldName])[gg][rr] += data.getFieldData()[rr];
+            (commonData.fieldMap[rowFieldName])[gg][rr] += (*vAluesPtr)[rr];
           }
         }
         break;
@@ -385,7 +420,7 @@ struct PostPocOnRefinedMesh: public VolumeElementForcesAndSourcesCore {
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
           for(int rr = 0;rr<rank;rr++) {
             ((double*)tags_ptr[gg])[rr] = cblas_ddot(
-              (data.getFieldData().size()/rank),&(data.getN(gg)[0]),1,&(data.getFieldData()[rr]),rank
+              (vAluesPtr->size()/rank),&(data.getN(gg)[0]),1,&((*vAluesPtr)[rr]),rank
             );
           }
         }
@@ -401,7 +436,7 @@ struct PostPocOnRefinedMesh: public VolumeElementForcesAndSourcesCore {
           for(int rr = 0;rr<rank;rr++) {
             for(int dd = 0;dd<3;dd++) {
               ((double*)tags_ptr[gg])[3*rr+dd] += cblas_ddot(
-                (data.getFieldData().size()/rank),&(data.getHdivN(gg)(0,dd)),3,&(data.getFieldData()[rr]),rank
+                (vAluesPtr->size()/rank),&(data.getHdivN(gg)(0,dd)),3,&((*vAluesPtr)[rr]),rank
               );
 
             }
@@ -423,14 +458,25 @@ struct PostPocOnRefinedMesh: public VolumeElementForcesAndSourcesCore {
     Interface &postProcMesh;
     vector<EntityHandle> &mapGaussPts;
     CommonData &commonData;
+    const string tagName;
+    Vec V;
 
     OpGetFieldGradientValues(
       Interface &post_proc_mesh,
       vector<EntityHandle> &map_gauss_pts,
-      const string field_name,CommonData &common_data):
+      const string field_name,
+      const string tag_name,
+      CommonData &common_data,
+      Vec v = PETSC_NULL):
       VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
       postProcMesh(post_proc_mesh),mapGaussPts(map_gauss_pts),
-      commonData(common_data) {}
+      commonData(common_data),
+      tagName(tag_name),
+      V(v)
+      {}
+
+    ublas::vector<double> vAlues;
+    ublas::vector<double> *vAluesPtr;
 
     PetscErrorCode doWork(
       int side,
@@ -438,13 +484,28 @@ struct PostPocOnRefinedMesh: public VolumeElementForcesAndSourcesCore {
       DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
 
-      if(data.getFieldData().size()==0) PetscFunctionReturn(0);
-
       ErrorCode rval;
-      //PetscErrorCode ierr;
+      PetscErrorCode ierr;
+
+      if(data.getFieldData().size()==0) PetscFunctionReturn(0);
+      if(V) {
+        vAlues.resize(data.getFieldData().size());
+        double *a;
+        ierr = VecGetArray(V,&a); CHKERRQ(ierr);
+        VectorDofs::iterator it,hi_it;
+        it = data.getFieldDofs().begin();
+        hi_it = data.getFieldDofs().end();
+        for(int ii = 0;it!=hi_it;it++,ii++) {
+          int local_idx = getFEMethod()->rowPtr->find((*it)->get_global_unique_id())->get_petsc_local_dof_idx();
+          vAlues[ii] = a[local_idx];
+        }
+        ierr = VecRestoreArray(V,&a); CHKERRQ(ierr);
+        vAluesPtr = &vAlues;
+      } else {
+        vAluesPtr = &data.getFieldData();
+      }
 
       const MoFEM::FEDofMoFEMEntity *dof_ptr = data.getFieldDofs()[0];
-      string tag_name = dof_ptr->get_name()+"_GRAD";
       int rank = dof_ptr->get_max_rank();
 
       int tag_length = rank*3;
@@ -464,7 +525,7 @@ struct PostPocOnRefinedMesh: public VolumeElementForcesAndSourcesCore {
       double def_VAL[tag_length];
       bzero(def_VAL,tag_length*sizeof(double));
       Tag th;
-      rval = postProcMesh.tag_get_handle(tag_name.c_str(),tag_length,MB_TYPE_DOUBLE,th,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_PETSC(rval);
+      rval = postProcMesh.tag_get_handle(tagName.c_str(),tag_length,MB_TYPE_DOUBLE,th,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_PETSC(rval);
 
       // zero tags, this for Vertex if H1 and TRI if Hdiv, EDGE for Hcurl
       // no need for L2
@@ -490,9 +551,9 @@ struct PostPocOnRefinedMesh: public VolumeElementForcesAndSourcesCore {
           for(int gg = 0;gg<nb_gauss_pts;gg++) {
             for(int rr = 0;rr<rank;rr++) {
               for(int dd = 0;dd<3;dd++) {
-                for(unsigned int dof = 0;dof<(data.getFieldData().size()/rank);dof++) {
-                  ((double*)tags_ptr[gg])[rank*rr+dd] += data.getDiffN(gg)(dof,dd)*data.getFieldData()[rank*dof+rr];
-                  (commonData.gradMap[rowFieldName])[gg](rr,dd) += data.getDiffN(gg)(dof,dd)*data.getFieldData()[rank*dof+rr];
+                for(unsigned int dof = 0;dof<(vAluesPtr->size()/rank);dof++) {
+                  ((double*)tags_ptr[gg])[rank*rr+dd] += data.getDiffN(gg)(dof,dd)*(*vAluesPtr)[rank*dof+rr];
+                  (commonData.gradMap[rowFieldName])[gg](rr,dd) += data.getDiffN(gg)(dof,dd)*(*vAluesPtr)[rank*dof+rr];
                 }
               }
             }
@@ -521,15 +582,35 @@ struct PostPocOnRefinedMesh: public VolumeElementForcesAndSourcesCore {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode addFieldValuesPostProc(const string field_name) {
+  PetscErrorCode addFieldValuesPostProc(const string field_name,Vec v = PETSC_NULL) {
     PetscFunctionBegin;
-    getOpPtrVector().push_back(new OpGetFieldValues(postProcMesh,mapGaussPts,field_name,commonData));
+    getOpPtrVector().push_back(
+      new OpGetFieldValues(postProcMesh,mapGaussPts,field_name,field_name,commonData,v)
+    );
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode addFieldValuesGradientPostProc(const string field_name) {
+  PetscErrorCode addFieldValuesPostProc(const string field_name,const string tag_name,Vec v = PETSC_NULL) {
     PetscFunctionBegin;
-    getOpPtrVector().push_back(new OpGetFieldGradientValues(postProcMesh,mapGaussPts,field_name,commonData));
+    getOpPtrVector().push_back(
+      new OpGetFieldValues(postProcMesh,mapGaussPts,field_name,tag_name,commonData,v)
+    );
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode addFieldValuesGradientPostProc(const string field_name,Vec v = PETSC_NULL) {
+    PetscFunctionBegin;
+    getOpPtrVector().push_back(
+      new OpGetFieldGradientValues(postProcMesh,mapGaussPts,field_name,field_name+"_GRAD",commonData,v)
+    );
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode addFieldValuesGradientPostProc(const string field_name,const string tag_name,Vec v = PETSC_NULL) {
+    PetscFunctionBegin;
+    getOpPtrVector().push_back(
+      new OpGetFieldGradientValues(postProcMesh,mapGaussPts,field_name,tag_name,commonData,v)
+    );
     PetscFunctionReturn(0);
   }
 

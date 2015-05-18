@@ -194,7 +194,7 @@ int main(int argc, char *argv[]) {
       my_split << col_data << endl;
 
       PetscErrorCode ierr;
-      ublas::vector<int> row_indices,col_indices;
+      VectorInt row_indices,col_indices;
       ierr = getPorblemRowIndices("FIELD1",row_type,row_side,row_indices); CHKERRQ(ierr);
       ierr = getPorblemColIndices("FIELD2",col_type,col_side,col_indices); CHKERRQ(ierr);
 
