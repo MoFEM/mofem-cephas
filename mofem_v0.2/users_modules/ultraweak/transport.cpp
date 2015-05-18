@@ -368,7 +368,7 @@ int main(int argc, char *argv[]) {
   ierr = KSPDestroy(&solver); CHKERRQ(ierr);
 
   PostPocOnRefinedMesh post_proc(m_field);
-  ierr = post_proc.generateRefereneElemenMesh(); CHKERRQ(ierr);
+  ierr = post_proc.generateReferenceElementMesh(); CHKERRQ(ierr);
 
   ierr = post_proc.addFieldValuesPostProc("VALUES"); CHKERRQ(ierr);
   ierr = m_field.loop_finite_elements("ULTRAWEAK","ULTRAWEAK",post_proc);  CHKERRQ(ierr);
@@ -382,7 +382,7 @@ int main(int argc, char *argv[]) {
   ierr = post_proc.clearOperators(); CHKERRQ(ierr);
 
   PostPocOnRefinedMesh post_proc_error(m_field,false,0);
-  ierr = post_proc_error.generateRefereneElemenMesh(); CHKERRQ(ierr);
+  ierr = post_proc_error.generateReferenceElementMesh(); CHKERRQ(ierr);
   ierr = post_proc_error.addFieldValuesPostProc("ERROR"); CHKERRQ(ierr);
   ierr = m_field.loop_finite_elements("ULTRAWEAK_CALCULATE_ERROR","ULTRAWEAK_ERROR",post_proc_error);  CHKERRQ(ierr);
   rval = post_proc_error.postProcMesh.write_file("out_error.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);

@@ -106,7 +106,7 @@ struct MonitorPostProc: public FEMethod {
     ErrorCode rval;
 
     if(!iNit) {
-      ierr = postProc.generateRefereneElemenMesh(); CHKERRQ(ierr);
+      ierr = postProc.generateReferenceElementMesh(); CHKERRQ(ierr);
       ierr = postProc.addFieldValuesPostProc("SPATIAL_POSITION"); CHKERRQ(ierr);
       ierr = postProc.addFieldValuesPostProc("SPATIAL_VELOCITY"); CHKERRQ(ierr);
       ierr = postProc.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);

@@ -589,14 +589,15 @@ int main(int argc, char *argv[]) {
       analytical_ditihlet_bc_real,analytical_ditihlet_bc_imag,
       dirihlet_bc_set);
 
-    ierr = time_series.readData();  CHKERRQ(ierr);
-    ierr = time_series.createTimeVectorSeries(T); CHKERRQ(ierr);
+    ierr = time_series.readData(); CHKERRQ(ierr);
+    ierr = time_series.createPressureSeries(T); CHKERRQ(ierr);
     ierr = time_series.forwardSpaceDft(); CHKERRQ(ierr);
     ierr = time_series.pressureForwardDft(); CHKERRQ(ierr);
     ierr = time_series.solveForwardDFT(solver,A,F,T); CHKERRQ(ierr);
     ierr = time_series.pressureInverseDft(); CHKERRQ(ierr);
+    ierr = time_series.generateReferenceElementMesh(); CHKERRQ(ierr);
     ierr = time_series.saveResults(); CHKERRQ(ierr);
-    ierr = time_series.destroyTimeVectorSeries(); CHKERRQ(ierr);
+    ierr = time_series.destroyPressureSeries(); CHKERRQ(ierr);
 
   }
 
@@ -622,7 +623,7 @@ int main(int argc, char *argv[]) {
     if(save_postproc_mesh) {
 
       PostPocOnRefinedMesh post_proc(m_field);
-      ierr = post_proc.generateRefereneElemenMesh(); CHKERRQ(ierr);
+      ierr = post_proc.generateReferenceElementMesh(); CHKERRQ(ierr);
       ierr = post_proc.addFieldValuesPostProc("rePRES"); CHKERRQ(ierr);
       ierr = post_proc.addFieldValuesPostProc("imPRES"); CHKERRQ(ierr);
 

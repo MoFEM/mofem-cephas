@@ -312,7 +312,7 @@ int main(int argc, char *argv[]) {
   if(save_postproc_mesh) {
 
     PostPocOnRefinedMesh post_proc(m_field);
-    ierr = post_proc.generateRefereneElemenMesh(); CHKERRQ(ierr);
+    ierr = post_proc.generateReferenceElementMesh(); CHKERRQ(ierr);
     ierr = post_proc.addFieldValuesPostProc("reEX"); CHKERRQ(ierr);
     ierr = post_proc.addFieldValuesPostProc("imEX"); CHKERRQ(ierr);
 

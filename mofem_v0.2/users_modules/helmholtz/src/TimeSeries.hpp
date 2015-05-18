@@ -47,7 +47,8 @@ Transform to get acoustic wave pressures in discrete times.
 Note that analysis is with assumption that all signals are periodic, as it essential
 property of Dictate Fourier Transform.
 
-In following procedure a KISS FTP library is used to preform Fast Fourier Transform.
+In following procedure a KISS FTP library <http://sourceforge.net/projects/kissfft/>
+is used to do Fast Fourier Transform.
 
   */
 struct TimeSeries {
@@ -60,6 +61,8 @@ struct TimeSeries {
   bool dirichletBcSet;
   int readFile,debug;
 
+  PostPocOnRefinedMesh postProc;
+
   TimeSeries(FieldInterface &m_field,
     HelmholtzElement& helmholtz_element,
     AnalyticalDirihletBC::DirichletBC &analytical_ditihlet_bc_real,
@@ -69,7 +72,10 @@ struct TimeSeries {
       analyticalDitihletBcReal(analytical_ditihlet_bc_real),
       analyticalDitihletBcImag(analytical_ditihlet_bc_imag),
       dirichletBcSet(dirihlet_bc_set),
-      readFile(0),debug(1) {}
+      readFile(0),
+      debug(1),
+      postProc(m_field)
+      {}
 
   ErrorCode rval;
   PetscErrorCode ierr;
@@ -191,10 +197,10 @@ struct TimeSeries {
     ierr = VecDuplicate(F[0],&F[1]); CHKERRQ(ierr);
     ierr = mField.VecCreateGhost("INCIDENT_WAVE",COL,&D_approx_incident_wave); CHKERRQ(ierr);
     ierr = mField.VecScatterCreate(
-      D_approx_incident_wave,"INCIDENT_WAVE","rePRES",ROW,pSeries[0][0],"PRESSURE_IN_TIME","P",ROW,&scatter_incident_wave[0]
+      D_approx_incident_wave,"INCIDENT_WAVE","rePRES",ROW,pSeriesIncidentWave[0][0],"PRESSURE_IN_TIME","P",ROW,&scatter_incident_wave[0]
     ); CHKERRQ(ierr);
     ierr = mField.VecScatterCreate(
-      D_approx_incident_wave,"INCIDENT_WAVE","imPRES",ROW,pSeries[1][0],"PRESSURE_IN_TIME","P",ROW,&scatter_incident_wave[1]
+      D_approx_incident_wave,"INCIDENT_WAVE","imPRES",ROW,pSeriesIncidentWave[1][0],"PRESSURE_IN_TIME","P",ROW,&scatter_incident_wave[1]
     ); CHKERRQ(ierr);
 
     if(!helmholtzElement.globalParameters.signalLength.second) {
@@ -243,10 +249,10 @@ struct TimeSeries {
         ierr = VecGhostUpdateBegin(D_approx_incident_wave,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
         ierr = VecGhostUpdateEnd(D_approx_incident_wave,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
         ierr = VecScatterBegin(
-          scatter_incident_wave[ss],D_approx_incident_wave,pSeries[ss](t),INSERT_VALUES,SCATTER_FORWARD
+          scatter_incident_wave[ss],D_approx_incident_wave,pSeriesIncidentWave[ss](t),INSERT_VALUES,SCATTER_FORWARD
         ); CHKERRQ(ierr);
         ierr = VecScatterEnd(
-          scatter_incident_wave[ss],D_approx_incident_wave,pSeries[ss](t),INSERT_VALUES,SCATTER_FORWARD
+          scatter_incident_wave[ss],D_approx_incident_wave,pSeriesIncidentWave[ss](t),INSERT_VALUES,SCATTER_FORWARD
         ); CHKERRQ(ierr);
       }
 
@@ -279,21 +285,51 @@ struct TimeSeries {
     ierr = PetscOptionsGetBool(NULL,"-add_incident_wave",&add_incident_wave,NULL); CHKERRQ(ierr);
     if(add_incident_wave) {
       ierr = forwardDftIncidentWave(); CHKERRQ(ierr);
-    } else {
-      for(int ss = 0;ss<2;ss++) {
-        int n = sSeries.size();
-        for(int t = 0;t<n;t++) {
-          ierr = VecZeroEntries(pSeries[ss](t)); CHKERRQ(ierr);
-        }
-      }
     }
-
 
     PetscFunctionReturn(0)  ;
   }
 
-  vector<ublas::vector<Vec> > pSeries;
+  vector<ublas::vector<Vec> > pSeriesIncidentWave;
+  vector<ublas::vector<Vec> > pSeriesScatterWave;
   vector<VecScatter> scatterPressure;
+
+
+  PetscErrorCode createSeries(Vec T,vector<ublas::vector<Vec> > &p_series) {
+    PetscFunctionBegin;
+
+    int n = sSeries.size();
+
+    p_series.resize(2);
+    p_series[0].resize(n);
+    p_series[1].resize(n);
+
+    for(int ss = 0;ss<2;ss++) {
+      ierr = mField.VecCreateGhost("PRESSURE_IN_TIME",ROW,&p_series[ss][0]); CHKERRQ(ierr);
+      for(int k = 1;k<n;k++) {
+        ierr = VecDuplicate(p_series[ss][0],&p_series[ss][k]); CHKERRQ(ierr);
+      }
+    }
+
+
+    PetscFunctionReturn(0);
+  }
+
+  /** \brief Destroy pressure series.
+  */
+  PetscErrorCode destroySeries(vector<ublas::vector<Vec> > &p_series) {
+    PetscFunctionBegin;
+
+    int n = sSeries.size();
+
+    for(int ss = 0;ss<2;ss++) {
+      for(int k = 0;n<k;k++) {
+        ierr = VecDestroy(&p_series[ss][k]); CHKERRQ(ierr);
+      }
+    }
+
+    PetscFunctionReturn(0);
+  }
 
   /** \brief Create vectors for each wave lengths
 
@@ -301,28 +337,23 @@ struct TimeSeries {
 pressures at time steps or wave length depending on stage of algorithm.
 
   */
-  PetscErrorCode createTimeVectorSeries(Vec T) {
+  PetscErrorCode createPressureSeries(Vec T) {
     PetscFunctionBegin;
 
-    int n = sSeries.size();
-
-    pSeries.resize(2);
-    pSeries[0].resize(n);
-    pSeries[1].resize(n);
-
-    for(int ss = 0;ss<2;ss++) {
-      ierr = mField.VecCreateGhost("PRESSURE_IN_TIME",ROW,&pSeries[ss][0]); CHKERRQ(ierr);
-      for(int k = 1;k<n;k++) {
-        ierr = VecDuplicate(pSeries[ss][0],&pSeries[ss][k]); CHKERRQ(ierr);
-      }
+    PetscBool add_incident_wave = PETSC_FALSE;
+    ierr = PetscOptionsGetBool(NULL,"-add_incident_wave",&add_incident_wave,NULL); CHKERRQ(ierr);
+    if(add_incident_wave) {
+      ierr = createSeries(T,pSeriesIncidentWave); CHKERRQ(ierr);
     }
+
+    ierr = createSeries(T,pSeriesScatterWave); CHKERRQ(ierr);
 
     scatterPressure.resize(2);
     ierr = mField.VecScatterCreate(
-      T,"ACOUSTIC_PROBLEM","rePRES",ROW,pSeries[0][0],"PRESSURE_IN_TIME","P",ROW,&scatterPressure[0]
+      T,"ACOUSTIC_PROBLEM","rePRES",ROW,pSeriesScatterWave[0][0],"PRESSURE_IN_TIME","P",ROW,&scatterPressure[0]
     ); CHKERRQ(ierr);
     ierr = mField.VecScatterCreate(
-      T,"ACOUSTIC_PROBLEM","imPRES",ROW,pSeries[0][0],"PRESSURE_IN_TIME","P",ROW,&scatterPressure[1]
+      T,"ACOUSTIC_PROBLEM","imPRES",ROW,pSeriesScatterWave[0][0],"PRESSURE_IN_TIME","P",ROW,&scatterPressure[1]
     ); CHKERRQ(ierr);
 
     PetscFunctionReturn(0);
@@ -330,15 +361,19 @@ pressures at time steps or wave length depending on stage of algorithm.
 
   /** \brief Destroy pressure series.
   */
-  PetscErrorCode destroyTimeVectorSeries() {
+  PetscErrorCode destroyPressureSeries() {
     PetscFunctionBegin;
 
-    int n = sSeries.size();
+
+    PetscBool add_incident_wave = PETSC_FALSE;
+    ierr = PetscOptionsGetBool(NULL,"-add_incident_wave",&add_incident_wave,NULL); CHKERRQ(ierr);
+    if(add_incident_wave) {
+      ierr = destroySeries(pSeriesIncidentWave); CHKERRQ(ierr);
+    }
+
+    ierr = destroySeries(pSeriesScatterWave); CHKERRQ(ierr);
 
     for(int ss = 0;ss<2;ss++) {
-      for(int k = 0;n<k;k++) {
-        ierr = VecDestroy(&pSeries[ss][k]); CHKERRQ(ierr);
-      }
       ierr = VecScatterDestroy(&scatterPressure[ss]); CHKERRQ(ierr);
     }
 
@@ -367,20 +402,13 @@ of boundary conditions could be easily implemented.
     helmholtzElement.globalParameters.complexOut = complexOut;
     helmholtzElement.globalParameters.complexOutSize = n;
 
-
     // Zero vectors
     ierr = VecZeroEntries(T); CHKERRQ(ierr);
     ierr = VecGhostUpdateBegin(T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
-    vector<ublas::vector<Vec> > series;
-    series.resize(2);
-    for(int ss = 0;ss<2;ss++) {
-      series[ss].resize(pSeries[ss].size());
-      for(int t = 0;t<n;t++) {
-        ierr = VecDuplicate(pSeries[ss](0),&series[ss](t)); CHKERRQ(ierr);
-      }
-    }
+    vector<ublas::vector<Vec> > rhs_series;
+    ierr = createSeries(T,rhs_series); CHKERRQ(ierr);
 
     double signal_length = helmholtzElement.globalParameters.signalLength.first;
     double signal_duration = helmholtzElement.globalParameters.signalDuration.first;
@@ -405,17 +433,17 @@ of boundary conditions could be easily implemented.
 
       for(int ss = 0;ss<2;ss++) {
         ierr = VecScatterBegin(
-          scatterPressure[ss],F,series[ss](t),INSERT_VALUES,SCATTER_FORWARD
+          scatterPressure[ss],F,rhs_series[ss](t),INSERT_VALUES,SCATTER_FORWARD
         ); CHKERRQ(ierr);
         ierr = VecScatterEnd(
-          scatterPressure[ss],F,series[ss](t),INSERT_VALUES,SCATTER_FORWARD
+          scatterPressure[ss],F,rhs_series[ss](t),INSERT_VALUES,SCATTER_FORWARD
         ); CHKERRQ(ierr);
       }
 
     }
 
     // From now transform right hand vector to frequency domain
-    ierr = seriesForwardDft(series); CHKERRQ(ierr);
+    ierr = seriesForwardDft(rhs_series); CHKERRQ(ierr);
 
     // Solve problem in frequency domain
     for(int f = 0;f<n;f++) {
@@ -451,10 +479,10 @@ of boundary conditions could be easily implemented.
 
       for(int ss = 0;ss<2;ss++) {
         ierr = VecScatterBegin(
-          scatterPressure[ss],series[ss](f),F,INSERT_VALUES,SCATTER_REVERSE
+          scatterPressure[ss],rhs_series[ss](f),F,INSERT_VALUES,SCATTER_REVERSE
         ); CHKERRQ(ierr);
         ierr = VecScatterEnd(
-          scatterPressure[ss],series[ss](f),F,INSERT_VALUES,SCATTER_REVERSE
+          scatterPressure[ss],rhs_series[ss](f),F,INSERT_VALUES,SCATTER_REVERSE
         ); CHKERRQ(ierr);
       }
 
@@ -467,20 +495,16 @@ of boundary conditions could be easily implemented.
 
       for(int ss = 0;ss<2;ss++) {
         ierr = VecScatterBegin(
-          scatterPressure[ss],T,pSeries[ss](f),ADD_VALUES,SCATTER_FORWARD
+          scatterPressure[ss],T,pSeriesScatterWave[ss](f),INSERT_VALUES,SCATTER_FORWARD
         ); CHKERRQ(ierr);
         ierr = VecScatterEnd(
-          scatterPressure[ss],T,pSeries[ss](f),ADD_VALUES,SCATTER_FORWARD
+          scatterPressure[ss],T,pSeriesScatterWave[ss](f),INSERT_VALUES,SCATTER_FORWARD
         ); CHKERRQ(ierr);
       }
 
     }
 
-    for(int ss = 0;ss<2;ss++) {
-      for(int t = 0;t<n;t++) {
-        ierr = VecDestroy(&series[ss](t)); CHKERRQ(ierr);
-      }
-    }
+    ierr = destroySeries(rhs_series); CHKERRQ(ierr);
 
     PetscFunctionReturn(0);
   }
@@ -579,14 +603,20 @@ of boundary conditions could be easily implemented.
   /// Aplly Forward FFT to pressure degrees of freedom
   PetscErrorCode pressureForwardDft() {
     PetscFunctionBegin;
-    ierr = seriesForwardDft(pSeries); CHKERRQ(ierr);
+    ierr = seriesForwardDft(pSeriesIncidentWave); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
   /// Aplly Inverse FFT to pressure degrees of freedom
   PetscErrorCode pressureInverseDft() {
     PetscFunctionBegin;
-    ierr = seriesInverseDft(pSeries); CHKERRQ(ierr);
+    ierr = seriesInverseDft(pSeriesIncidentWave); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode generateReferenceElementMesh() {
+    PetscFunctionBegin;
+    ierr = postProc.generateReferenceElementMesh(); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
@@ -594,45 +624,47 @@ of boundary conditions could be easily implemented.
   PetscErrorCode saveResults() {
     PetscFunctionBegin;
 
-    PostPocOnRefinedMesh post_proc(mField);
-    ierr = post_proc.generateRefereneElemenMesh(); CHKERRQ(ierr);
-    ierr = post_proc.addFieldValuesPostProc("P"); CHKERRQ(ierr);
-    ierr = post_proc.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+    ierr = postProc.clearOperators(); CHKERRQ(ierr);
+    ierr = postProc.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+
+    Vec p_inicent_wave;
+    PetscBool add_incident_wave = PETSC_FALSE;
+    ierr = PetscOptionsGetBool(NULL,"-add_incident_wave",&add_incident_wave,NULL); CHKERRQ(ierr);
+    if(add_incident_wave) {
+      ierr = VecDuplicate(pSeriesIncidentWave[0](0),&p_inicent_wave); CHKERRQ(ierr);
+      ierr = postProc.addFieldValuesPostProc("P","P_INCIDENT_WAVE",p_inicent_wave); CHKERRQ(ierr);
+    }
+
+    Vec p_scatter_wave;
+    ierr = VecDuplicate(pSeriesIncidentWave[0](0),&p_scatter_wave); CHKERRQ(ierr);
+    ierr = postProc.addFieldValuesPostProc("P","P_SCATTER_WAVE",p_scatter_wave); CHKERRQ(ierr);
 
     int n = sSeries.size();
     for(int k = 0;k<n;k++) {
 
-      ierr = VecGhostUpdateBegin(pSeries[0][k],INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-      ierr = VecGhostUpdateEnd(pSeries[0][k],INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      ierr = VecCopy(pSeriesIncidentWave[0](k),p_inicent_wave); CHKERRQ(ierr);
+      ierr = VecGhostUpdateBegin(p_inicent_wave,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      ierr = VecGhostUpdateEnd(p_inicent_wave,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
-      ierr = VecGhostUpdateBegin(pSeries[1][k],INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-      ierr = VecGhostUpdateEnd(pSeries[1][k],INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      ierr = VecCopy(pSeriesScatterWave[0](k),p_scatter_wave); CHKERRQ(ierr);
+      ierr = VecGhostUpdateBegin(p_scatter_wave,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      ierr = VecGhostUpdateEnd(p_scatter_wave,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
-      ierr = mField.set_local_ghost_vector(
-        "PRESSURE_IN_TIME",ROW,pSeries[0][k],INSERT_VALUES,SCATTER_REVERSE
-      ); CHKERRQ(ierr);
-      ierr = mField.loop_finite_elements("PRESSURE_IN_TIME","PRESSURE_FE",post_proc); CHKERRQ(ierr);
+      ierr = mField.loop_finite_elements("PRESSURE_IN_TIME","PRESSURE_FE",postProc); CHKERRQ(ierr);
 
       {
         ostringstream ss;
         ss << "pressure_real_time_step_" << k << ".h5m";
-        rval = post_proc.postProcMesh.write_file(ss.str().c_str(),"MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
-        PetscPrintf(PETSC_COMM_WORLD,"Saved %s\n",ss.str().c_str());
-      }
-
-      ierr = mField.set_local_ghost_vector(
-        "PRESSURE_IN_TIME",ROW,pSeries[1][k],INSERT_VALUES,SCATTER_REVERSE
-      ); CHKERRQ(ierr);
-      ierr = mField.loop_finite_elements("PRESSURE_IN_TIME","PRESSURE_FE",post_proc); CHKERRQ(ierr);
-
-      {
-        ostringstream ss;
-        ss << "pressure_imag_time_step_" << k << ".h5m";
-        rval = post_proc.postProcMesh.write_file(ss.str().c_str(),"MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
+        rval = postProc.postProcMesh.write_file(ss.str().c_str(),"MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
         PetscPrintf(PETSC_COMM_WORLD,"Saved %s\n",ss.str().c_str());
       }
 
     }
+
+    if(add_incident_wave) {
+      ierr = VecDestroy(&p_inicent_wave); CHKERRQ(ierr);
+    }
+    ierr = VecDestroy(&p_scatter_wave); CHKERRQ(ierr);
 
     PetscFunctionReturn(0);
   }
