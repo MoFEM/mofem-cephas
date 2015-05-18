@@ -21,6 +21,34 @@
  */
 
 /** \brief Read impulse and apply FFT
+  \ingroup mofem_helmholtz_elem
+
+ First signal is read from text file. Currently is assumed that this signal
+gives profile for plane wave. Spherical or other wave types can be easily
+added and implemented.
+
+ Before signal is applied the Discrete Fourier Transform (in space) is applied. Next
+for each wavelength in space a phase shift is applied according to wave
+speed. With that at hand incident wave and boundary conditions are applied
+for each discrete point in time.
+
+ Note that wave in space is superposition of incident waves. This
+superposition makes wave with approximated wave profile which is read from
+text file. Moreover obtained wave fulfill wave propagation equation a priori.
+
+ Next Dictate Fourier Transform in time domain is applied to get frequency
+(time) space. Having boundary conditions in frequency domain, Helmholtz
+problem is solved for each wave length.
+
+ At this point plane wave (or other wave) and scattering wave in frequency
+space is known. The last and final step is to apply inverse Discrete Fourier
+Transform to get acoustic wave pressures in discrete times.
+
+Note that analysis is with assumption that all signals are periodic, as it essential
+property of Dictate Fourier Transform.
+
+In following procedure a KISS FTP library is used to preform Fast Fourier Transform.
+
   */
 struct TimeSeries {
 
@@ -46,6 +74,8 @@ struct TimeSeries {
   ErrorCode rval;
   PetscErrorCode ierr;
 
+  /** \brief Read signal from text file
+   */
   PetscErrorCode readData(const char* str,map<double,double> &series) {
     PetscFunctionBegin;
 
@@ -90,12 +120,19 @@ struct TimeSeries {
 
   map<double,double> sSeries;
 
+  /** \brief This is wrapper to reading signal profile in space
+   */
   PetscErrorCode readSpaceData() {
     PetscFunctionBegin;
     ierr = readData("-space_data",sSeries); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
+  /** \brief Read all text files
+
+    At this point only signal profile in space is read.
+
+  */
   PetscErrorCode readData() {
     PetscFunctionBegin;
     ierr = readSpaceData(); CHKERRQ(ierr);
@@ -108,6 +145,8 @@ struct TimeSeries {
   kiss_fft_cfg forwardCfg;
   kiss_fft_cfg inverseCfg;
 
+  /** \brief Apply Forward FFT for signal.
+  */
   PetscErrorCode forwardSignalDft(
     map<double,double> series,
     boost::shared_array<kiss_fft_cpx> &complex_in,
@@ -130,7 +169,8 @@ struct TimeSeries {
     PetscFunctionReturn(0);
   }
 
-
+  /** \brief Apply Inverse FFT for incident wave
+   */
   PetscErrorCode forwardDftIncidentWave() {
     PetscFunctionBegin;
 
@@ -223,6 +263,9 @@ struct TimeSeries {
     PetscFunctionReturn(0);
   }
 
+  /** \brief Apply Froward FFT and compose wave
+
+   */
   PetscErrorCode forwardSpaceDft() {
     PetscFunctionBegin;
     int n = sSeries.size();
@@ -252,6 +295,12 @@ struct TimeSeries {
   vector<ublas::vector<Vec> > pSeries;
   vector<VecScatter> scatterPressure;
 
+  /** \brief Create vectors for each wave lengths
+
+ There are two series, for real and imaginary values. Each series keeps
+pressures at time steps or wave length depending on stage of algorithm.
+
+  */
   PetscErrorCode createTimeVectorSeries(Vec T) {
     PetscFunctionBegin;
 
@@ -279,6 +328,8 @@ struct TimeSeries {
     PetscFunctionReturn(0);
   }
 
+  /** \brief Destroy pressure series.
+  */
   PetscErrorCode destroyTimeVectorSeries() {
     PetscFunctionBegin;
 
@@ -296,7 +347,17 @@ struct TimeSeries {
     PetscFunctionReturn(0);
   }
 
-  /** \brief Solve problem for each wave number
+  /** \brief Solve problem for each wave number.
+
+ Calculate right hand vector for boundary condition at each time step. Each
+boundary condition is calculated as superposition of plane waves, having given
+Fourier Transform of signal and phase shift in space according to wave speed in medium.
+
+Next Forward FFT is applied to right hand vector and for each wave length
+Helmholtz problem is solved. This is most time consuming stage of algorithm.
+
+Currently only boundary conditions are implemented for hard and mix surface. Other types
+of boundary conditions could be easily implemented.
 
   */
   PetscErrorCode solveForwardDFT(KSP solver,Mat A,Vec F,Vec T) {
@@ -424,6 +485,11 @@ struct TimeSeries {
     PetscFunctionReturn(0);
   }
 
+  /** \brief Apply Forward FFT to data series.
+
+  Note that series is vector of vectors consisting DOFs.
+
+  */
   PetscErrorCode seriesForwardDft(vector<ublas::vector<Vec> > &series) {
     PetscFunctionBegin;
 
@@ -463,6 +529,10 @@ struct TimeSeries {
     PetscFunctionReturn(0);
   }
 
+
+  /** \brief Apply Inverse FFT to data series.
+
+  */
   PetscErrorCode seriesInverseDft(vector<ublas::vector<Vec> > &series) {
     PetscFunctionBegin;
 
@@ -506,18 +576,21 @@ struct TimeSeries {
     PetscFunctionReturn(0);
   }
 
+  /// Aplly Forward FFT to pressure degrees of freedom
   PetscErrorCode pressureForwardDft() {
     PetscFunctionBegin;
     ierr = seriesForwardDft(pSeries); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
+  /// Aplly Inverse FFT to pressure degrees of freedom
   PetscErrorCode pressureInverseDft() {
     PetscFunctionBegin;
     ierr = seriesInverseDft(pSeries); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
+  /// Save data on mesh
   PetscErrorCode saveResults() {
     PetscFunctionBegin;
 
