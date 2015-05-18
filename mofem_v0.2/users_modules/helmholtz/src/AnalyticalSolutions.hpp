@@ -120,6 +120,75 @@ struct IncidentWave: public GenericAnalyticalSolution {
 
 };
 
+#ifdef KISS_FFT_H
+
+/**
+
+ Incident wave, i.t. is inverse Fourier transform evaluated at arbitrary
+ spatial points.
+
+  */
+struct IncidentWaveDFT: public GenericAnalyticalSolution {
+
+  vector<ublas::vector<double> > rEsult;
+  double signalLength;
+  double signalDuration;
+  ublas::vector<double> dIrection;
+  boost::shared_array<kiss_fft_cpx> complexOut;
+  int sIze;
+  int timeStep;
+  ublas::vector<double> cOordinate;
+
+  IncidentWaveDFT(
+    double signal_length,
+    double signal_duration,
+    ublas::vector<double> &d,
+    boost::shared_array<kiss_fft_cpx> complex_out,
+    int size,
+    int time_step
+    ):
+    signalLength(signal_length),
+    signalDuration(signal_duration),
+    dIrection(d),
+    complexOut(complex_out),
+    sIze(size),
+    timeStep(time_step)
+    {}
+
+  ~IncidentWaveDFT() {}
+
+  virtual vector<ublas::vector<double> >& operator()(double x, double y, double z) {
+
+    const complex< double > i( 0.0, 1.0 );
+    complex< double > result = 0.0;
+    cOordinate.resize(3);
+    cOordinate[0] = x;
+    cOordinate[1] = y;
+    cOordinate[2] = z;
+
+    for(int f = 0;f<sIze;f++) {
+      double speed = signalLength/signalDuration;
+      double wave_number = 2*M_PI*f/signalLength;
+      double delta_t = signalDuration/sIze;
+      double distance = speed*delta_t*timeStep;
+      double phase= 2*M_PI*f*(distance/signalLength);
+      result += (complexOut[f].r+i*complexOut[f].i)*exp(i*wave_number*inner_prod(dIrection,cOordinate)+i*phase);
+    }
+
+    rEsult.resize(2);
+    rEsult[REAL].resize(1);
+    (rEsult[REAL])[0] = std::real(result);
+    rEsult[IMAG].resize(1);
+    (rEsult[IMAG])[0] = std::imag(result);
+
+    return rEsult;
+
+  }
+
+};
+
+#endif // KISS_FFT_H
+
 /** Calculate the analytical solution of impinging wave on sphere
   \ingroup mofem_helmholtz_elem
 
@@ -316,7 +385,6 @@ struct SoftSphereScatterWave: public GenericAnalyticalSolution {
 /** \brief Calculate the analytical solution of plane wave guide propagating in direction theta
   \ingroup mofem_helmholtz_elem
 
-
   \f[
   p_\textrm{scattered} = exp^{ik\mathbf{x}\Theta}
   \f]
@@ -406,7 +474,6 @@ struct PlaneWave: public GenericAnalyticalSolution {
     Advances in Engineering Software, 40(8), 738-750.
 
 */
-
 struct HardCylinderScatterWave: public GenericAnalyticalSolution {
 
   vector<complex<double> > vecAl; ///< this is to calculate constant values of series only once
@@ -424,7 +491,7 @@ struct HardCylinderScatterWave: public GenericAnalyticalSolution {
     double x2 = x*x,y2 = y*y;
     double R = sqrt(x2+y2);
     double theta = atan2(y,x)+2*M_PI;
-  //double cos_theta = z/R;
+    //double cos_theta = z/R;
 
     const double k = wAvenumber;  //Wave number
     const double const1 = k * a;
