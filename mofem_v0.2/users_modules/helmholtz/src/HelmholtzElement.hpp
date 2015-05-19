@@ -740,7 +740,7 @@ struct HelmholtzElement {
           grad[ii] += i*wave_number*direction[ii]*p_inc_frequency;
         }
       }
-      grad /= 2*(double)size;
+      grad /= size;
 
       complex<double > grad_n = inner_prod(grad,normal);
 
