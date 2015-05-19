@@ -174,6 +174,7 @@ struct IncidentWaveDFT: public GenericAnalyticalSolution {
       double phase= 2*M_PI*f*(distance/signalLength);
       result += (complexOut[f].r+i*complexOut[f].i)*exp(i*wave_number*inner_prod(dIrection,cOordinate)+i*phase);
     }
+    result /= 2*(double)sIze;
 
     rEsult.resize(2);
     rEsult[REAL].resize(1);
@@ -698,8 +699,8 @@ PetscErrorCode calculate_matrix_and_vector(
   FieldApproximationH1 field_approximation(m_field);
   // This increase rule for numerical integration. In case of 10 node
   // elements jacobian is varying linearly across element, that way to element
-  // rule is added 1.
-  field_approximation.multRule = 2;
+  // rule is add 1.
+  field_approximation.addToRule = 1;
 
   ierr = field_approximation.loopMatrixAndVector(
     problem_name,fe_name,re_field,A,vec_F,fun_evaluator

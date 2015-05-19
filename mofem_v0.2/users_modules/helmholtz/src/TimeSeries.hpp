@@ -523,11 +523,11 @@ of boundary conditions could be easily implemented.
     int size;
     ierr = VecGetLocalSize(series[0](0),&size); CHKERRQ(ierr);
 
-    for(int ss = 0;ss<2;ss++) {
+    /*for(int ss = 0;ss<2;ss++) {
       for(int t = 0;t<n;t++) {
         ierr = VecScale(series[ss](t),1./(double)n); CHKERRQ(ierr);
       }
-    }
+    }*/
 
     for(int i = 0;i<size;i++) {
       double *a_real,*a_imag;
