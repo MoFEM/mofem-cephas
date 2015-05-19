@@ -1,7 +1,8 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
- * FIXME: DESCRIPTION
- */
+/** \file forces_and_sources_calculate_jacobian.cpp
+
+  \brief Atom test checking with blessed file how Jacobian's are calculated on elements
+
+*/
 
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
@@ -60,9 +61,9 @@ int main(int argc, char *argv[]) {
 
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-  BARRIER_RANK_START(pcomm) 
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
-  BARRIER_RANK_END(pcomm) 
+  BARRIER_RANK_START(pcomm)
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
+  BARRIER_RANK_END(pcomm)
 
   //set entitities bit level
   BitRefLevel bit_level0;
@@ -90,7 +91,7 @@ int main(int argc, char *argv[]) {
 
 
   //meshset consisting all entities in mesh
-  EntityHandle root_set = moab.get_root_set(); 
+  EntityHandle root_set = moab.get_root_set();
   //add entities to field
   ierr = m_field.add_ents_to_field_by_TETs(root_set,"FIELD1"); CHKERRQ(ierr);
   //add entities to finite element
@@ -116,9 +117,9 @@ int main(int argc, char *argv[]) {
   ierr = m_field.build_problems(); CHKERRQ(ierr);
 
   /****/
-  //mesh partitioning 
+  //mesh partitioning
   //partition
-  ierr = m_field.simple_partition_problem("TEST_PROBLEM"); CHKERRQ(ierr);
+  ierr = m_field.partition_simple_problem("TEST_PROBLEM"); CHKERRQ(ierr);
   ierr = m_field.partition_finite_elements("TEST_PROBLEM"); CHKERRQ(ierr);
   //what are ghost nodes, see Petsc Manual
   ierr = m_field.partition_ghost_dofs("TEST_PROBLEM"); CHKERRQ(ierr);
@@ -132,7 +133,7 @@ int main(int argc, char *argv[]) {
     typedef stream<TeeDevice> TeeStream;
 
     ofstream ofs;
-    TeeDevice my_tee; 
+    TeeDevice my_tee;
     TeeStream my_split;
 
     struct PrintJacobian: public DataOperator {
@@ -145,23 +146,23 @@ int main(int argc, char *argv[]) {
       }
 
       PetscErrorCode doWork(
-	int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
-	PetscFunctionBegin;
-	my_split << "side: " << side << " type: " << type << data.getDiffN() << endl;
-	PetscFunctionReturn(0);
-      }
+        int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+          PetscFunctionBegin;
+          my_split << "side: " << side << " type: " << type << data.getDiffN() << endl;
+          PetscFunctionReturn(0);
+        }
 
-    };
+      };
 
-    ublas::matrix<double> invJac;
-    ublas::matrix<double> dataFIELD1;
-    ublas::matrix<double> dataDiffFIELD1;
-    ublas::vector<double> coords;
+    MatrixDouble invJac;
+    MatrixDouble dataFIELD1;
+    MatrixDouble dataDiffFIELD1;
+    VectorDouble coords;
     PrintJacobian opPrintJac;
     OpSetInvJacH1 opSetInvJac;
     OpGetData opGetData_FIELD1;
 
-    ForcesAndSurcesCore_TestFE(FieldInterface &_m_field): 
+    ForcesAndSurcesCore_TestFE(FieldInterface &_m_field):
       ForcesAndSurcesCore(_m_field),
       ofs("forces_and_sources_calculate_jacobian.txt"),
       my_tee(cout, ofs),my_split(my_tee),
@@ -244,5 +245,3 @@ int main(int argc, char *argv[]) {
   return 0;
 
 }
-
-

@@ -1,6 +1,6 @@
 /** \file LoopMethods.hpp
- * \brief MoFEM interface 
- * 
+ * \brief MoFEM interface
+ *
  * Low level data structures not used directly by user
  */
 
@@ -33,9 +33,9 @@ static const MOFEMuuid IDD_MOFEMEntMethod = MOFEMuuid( BitIntefaceId(ENT_METHOD)
  *
  */
 struct KspMethod {
-  
+
   enum KSPContext { CTX_SETFUNCTION, CTX_OPERATORS, CTX_KSPNONE };
-  
+
   KSPContext ksp_ctx;
   KspMethod(): ksp_ctx(CTX_KSPNONE) {}
   virtual ~KspMethod() {};
@@ -55,7 +55,7 @@ struct KspMethod {
  * \brief data structure for snes (nonlinear solver) context
  * \ingroup mofem_loops
  *
- * Struture stores context data which are set in finctions run by PETSc SNES functions.
+ * Structure stores context data which are set in functions run by PETSc SNES functions.
  *
  */
 struct SnesMethod {
@@ -81,7 +81,7 @@ struct SnesMethod {
  * \brief data structure for ts (time stepping) context
  * \ingroup mofem_loops
  *
- * Struture stores context data which are set in finctions run by PETSc Time Stepping functions.
+ * Structure stores context data which are set in functions run by PETSc Time Stepping functions.
  */
 struct TSMethod {
   enum TSContext { CTX_TSSETRHSFUNCTION, CTX_TSSETRHSJACOBIAN, CTX_TSSETIFUNCTION, CTX_TSSETIJACOBIAN, CTX_TSTSMONITORSET, CTX_TSNONE };
@@ -105,10 +105,10 @@ struct TSMethod {
 };
 
 /**
- * \brief Data strutucture to exchange data between mofem and User Loop Methods.
+ * \brief Data structure to exchange data between mofem and User Loop Methods.
  * \ingroup mofem_loops
  *
- * It allows to exchange data between MoFEM and user functoions. It stores informaton about multi-indices.
+ * It allows to exchange data between MoFEM and user functions. It stores information about multi-indices.
  */
 struct BasicMethod: public FieldUnknownInterface,KspMethod,SnesMethod,TSMethod {
 
@@ -121,6 +121,17 @@ struct BasicMethod: public FieldUnknownInterface,KspMethod,SnesMethod,TSMethod {
   }
 
   BasicMethod();
+
+  int nInTheLoop;
+  int loopSize;
+
+  /** \brief get number of evaluated element in the loop
+  */
+  inline int getNinTheLoop() { return nInTheLoop; }
+
+  /** \brief get loop size
+  */
+  inline int getLoopSize() { return loopSize; }
 
   virtual PetscErrorCode preProcess() = 0;
   virtual PetscErrorCode operator()() = 0;
@@ -147,8 +158,8 @@ struct BasicMethod: public FieldUnknownInterface,KspMethod,SnesMethod,TSMethod {
   * \brief structure for User Loop Methods on finite elements
   * \ingroup mofem_loops
   *
-  * It can be used to calculate stiffnes matrices, residuals, load vectors etc.
-  */  
+  * It can be used to calculate stiffness matrices, residuals, load vectors etc.
+  */
 struct FEMethod: public BasicMethod {
 
   PetscErrorCode queryInterface (const MOFEMuuid& uuid, FieldUnknownInterface** iface) {
@@ -157,37 +168,37 @@ struct FEMethod: public BasicMethod {
       *iface = dynamic_cast<FEMethod*>(this);
       PetscFunctionReturn(0);
     }
-    PetscErrorCode ierr; 
+    PetscErrorCode ierr;
     ierr = queryInterface(uuid,iface); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
   FEMethod();
 
-  /** \brief function is run at the beginig of looop
+  /** \brief function is run at the beginning of loop
    *
    * It is used to zeroing matrices and vectors, calculation of shape
    * functions on reference element, preporocessing boundary conditions, etc.
    */
   PetscErrorCode preProcess();
 
-  /** \brief function is run for every finite element 
+  /** \brief function is run for every finite element
    *
    * It is used to calculate element local matrices and assembly. It can be
    * used for post-processing.
    */
   PetscErrorCode operator()();
 
-  /** \brief function is run at the end of looop
+  /** \brief function is run at the end of loop
    *
-   * It is used to assembly matrices and vectors, calulating global variables,
+   * It is used to assembly matrices and vectors, calculating global variables,
    * f.e. total internal energy, ect.
-   * 
+   *
    * Iterating over dofs:
    * Example1 iterating over dofs in row by name of the field
-   * for(_IT_GET_FEROW_BY_NAME_DOFS_FOR_LOOP_(this,"DISPLACEMENT",it)) { ... } 
-   * 
-   * 
+   * for(_IT_GET_FEROW_BY_NAME_DOFS_FOR_LOOP_(this,"DISPLACEMENT",it)) { ... }
+   *
+   *
    */
   PetscErrorCode postProcess();
   string feName;
@@ -196,35 +207,35 @@ struct FEMethod: public BasicMethod {
   const FENumeredDofMoFEMEntity_multiIndex *rowPtr;
   const FENumeredDofMoFEMEntity_multiIndex *colPtr;
 
-  /** \brief loop over all dofs which are on a particular FE row 
+  /** \brief loop over all dofs which are on a particular FE row
     * \ingroup mofem_loops
     */
   #define _IT_GET_FEROW_DOFS_FOR_LOOP_(FE,IT) \
-  FENumeredDofMoFEMEntity_multiIndex::iterator IT = FE->rowPtr->begin(); IT != FE->rowPtr->end();IT++ 
+  FENumeredDofMoFEMEntity_multiIndex::iterator IT = FE->rowPtr->begin(); IT != FE->rowPtr->end();IT++
 
-  /** \brief loop over all dofs which are on a particular FE column 
+  /** \brief loop over all dofs which are on a particular FE column
     * \ingroup mofem_loops
     */
   #define _IT_GET_FECOL_DOFS_FOR_LOOP_(FE,IT) \
-  FENumeredDofMoFEMEntity_multiIndex::iterator IT = FE->colPtr->begin(); IT != FE->colPtr->end();IT++ 
+  FENumeredDofMoFEMEntity_multiIndex::iterator IT = FE->colPtr->begin(); IT != FE->colPtr->end();IT++
 
 
-  /** \brief loop over all dofs which are on a particular FE data 
+  /** \brief loop over all dofs which are on a particular FE data
     * \ingroup mofem_loops
     */
   #define _IT_GET_FEDATA_DOFS_FOR_LOOP_(FE,IT) \
-  FEDofMoFEMEntity_multiIndex::iterator IT = FE->dataPtr->begin(); IT != FE->dataPtr->end();IT++ 
+  FEDofMoFEMEntity_multiIndex::iterator IT = FE->dataPtr->begin(); IT != FE->dataPtr->end();IT++
 
   template<class MULTIINDEX>
-  typename MULTIINDEX::iterator get_begin(const MULTIINDEX &index,  
+  typename MULTIINDEX::iterator get_begin(const MULTIINDEX &index,
     const string &field_name,const EntityType type,const int side_number) const {
     return index.lower_bound(boost::make_tuple(field_name,type,side_number));
-  } 
+  }
   template<class MULTIINDEX>
-  typename MULTIINDEX::iterator get_end(const MULTIINDEX &index,  
+  typename MULTIINDEX::iterator get_end(const MULTIINDEX &index,
     const string &field_name,const EntityType type,const int side_number) const {
     return index.upper_bound(boost::make_tuple(field_name,type,side_number));
-  } 
+  }
 
     /** \brief loop over all dofs which are on a particular FE row, field, entity type and canonical side number
      * \ingroup mofem_loops
@@ -242,7 +253,7 @@ struct FEMethod: public BasicMethod {
 
   /** \brief loop over all dofs which are on a particular FE column, field, entity type and canonical side number
     * \ingroup mofem_loops
-    */ 
+    */
   #define _IT_GET_FECOL_BY_SIDE_DOFS_FOR_LOOP_(FE,NAME,TYPE,SIDE,IT) \
   FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type::iterator \
     IT = FE->get_begin<FENumeredDofMoFEMEntity_multiIndex::index<Composite_mi_tag>::type>(FE->colPtr->get<Composite_mi_tag>(),NAME,TYPE,SIDE); \
@@ -259,11 +270,11 @@ struct FEMethod: public BasicMethod {
   template<class MULTIINDEX>
   typename MULTIINDEX::iterator get_begin(const MULTIINDEX &index,const string &field_name,const EntityType type) const {
     return index.lower_bound(boost::make_tuple(field_name,type));
-  } 
+  }
   template<class MULTIINDEX>
   typename MULTIINDEX::iterator get_end(const MULTIINDEX &index,const string &field_name,const EntityType type) const {
     return index.upper_bound(boost::make_tuple(field_name,type));
-  } 
+  }
 
   /** \brief loop over all dofs which are on a particular FE row, field and entity type
     * \ingroup mofem_loops
@@ -292,11 +303,11 @@ struct FEMethod: public BasicMethod {
   template<class MULTIINDEX>
   typename MULTIINDEX::iterator get_begin(const MULTIINDEX &index,const string &field_name) const {
     return index.lower_bound(field_name);
-  } 
+  }
   template<class MULTIINDEX>
   typename MULTIINDEX::iterator get_end(const MULTIINDEX &index,const string &field_name) const {
     return index.upper_bound(field_name);
-  } 
+  }
 
   /** \brief loop over all dofs which are on a particular FE row and field
     * \ingroup mofem_loops
@@ -325,11 +336,11 @@ struct FEMethod: public BasicMethod {
   template<class MULTIINDEX>
   typename MULTIINDEX::iterator get_begin(const MULTIINDEX &index,const EntityHandle ent) const {
     return index.lower_bound(ent);
-  } 
+  }
   template<class MULTIINDEX>
   typename MULTIINDEX::iterator get_end(const MULTIINDEX &index,const EntityHandle ent) const {
     return index.upper_bound(ent);
-  } 
+  }
 
   /** \brief loop over all dofs which are on a particular FE row and given element entity (handle from moab)
     * \ingroup mofem_loops
@@ -358,11 +369,11 @@ struct FEMethod: public BasicMethod {
   template<class MULTIINDEX>
   typename MULTIINDEX::iterator get_begin(const MULTIINDEX &index,const string &field_name,const EntityHandle ent) const {
     return index.lower_bound(boost::make_tuple(field_name,ent));
-  } 
+  }
   template<class MULTIINDEX>
   typename MULTIINDEX::iterator get_end(const MULTIINDEX &index,const string &field_name,const EntityHandle ent) const {
     return index.upper_bound(boost::make_tuple(field_name,ent));
-  } 
+  }
 
   /** \brief loop over all dofs which are on a particular FE row, field and given element entity (handle from moab)
     * \ingroup mofem_loops
@@ -410,11 +421,11 @@ struct EntMethod: public BasicMethod {
   }
 
   EntMethod();
-  
+
   PetscErrorCode preProcess();
   PetscErrorCode operator()();
   PetscErrorCode postProcess();
- 
+
   const DofMoFEMEntity *dofPtr;
   const NumeredDofMoFEMEntity *dofNumeredPtr;
 };
@@ -427,4 +438,3 @@ struct EntMethod: public BasicMethod {
  * \defgroup mofem_loops Loops
  * \ingroup mofem
  ******************************************************************************/
-

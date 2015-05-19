@@ -1,4 +1,4 @@
-/** \file GroundSurfaceTemerature.hpp 
+/** \file GroundSurfaceTemerature.hpp
  * \brief Operators and data structures for thermal analys
  *
  * Implementation of boundary conditions for ground temerature
@@ -25,7 +25,7 @@
 
 #ifndef WITH_ADOL_C
   #error "MoFEM need to be compiled with ADOL-C"
-#endif 
+#endif
 
 /** \brief Implementation of ground surface temperature
   *
@@ -49,8 +49,8 @@ struct GroundSurfaceTemerature {
     *
     * This element is used to integrate heat fluxes; convection and radiation
     */
-  struct MyTriFE: public TriElementForcesAndSurcesCore {
-    MyTriFE(FieldInterface &_mField): TriElementForcesAndSurcesCore(_mField) {}
+  struct MyTriFE: public FaceElementForcesAndSourcesCore {
+    MyTriFE(FieldInterface &_mField): FaceElementForcesAndSourcesCore(_mField) {}
     int getRule(int order) { return order; };
   };
   MyTriFE feGroundSurfaceRhs; //< radiation element
@@ -63,7 +63,7 @@ struct GroundSurfaceTemerature {
     feGroundSurfaceRhs(m_field),
     feGroundSurfaceLhs(m_field) {};
 
-  struct Parameters {	
+  struct Parameters {
 
     double alpha; 	//< Solar albedo
     double d;		//< Constatnt used to clulate albedo for urtain angle
@@ -74,7 +74,7 @@ struct GroundSurfaceTemerature {
     double rhoCp;	//< Density specific heat pavement (J/m3/°C)
     Range tRis;		//< Triangles on which parameters are defined
 
-    Parameters(Range &tris): 
+    Parameters(Range &tris):
       tRis(tris) {}
 
   };
@@ -120,7 +120,7 @@ struct GroundSurfaceTemerature {
 
     PetscErrorCode ierr;
     ErrorCode rval;
-  
+
     ierr = mField.add_finite_element("GROUND_SURFACE_FE",MF_ZERO); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_row("GROUND_SURFACE_FE",field_name); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_col("GROUND_SURFACE_FE",field_name); CHKERRQ(ierr);
@@ -130,29 +130,29 @@ struct GroundSurfaceTemerature {
     }
 
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
-      if(it->get_Cubit_name().compare(0,7,"ASPHALT") == 0) {
-	Range tris;
+      if(it->get_name().compare(0,7,"ASPHALT") == 0) {
+        Range tris;
         rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
-	blockData.push_back(new Asphalt(tris));
-	ierr = mField.add_ents_to_finite_element_by_TRIs(tris,"GROUND_SURFACE_FE"); CHKERRQ(ierr);
+        blockData.push_back(new Asphalt(tris));
+        ierr = mField.add_ents_to_finite_element_by_TRIs(tris,"GROUND_SURFACE_FE"); CHKERRQ(ierr);
       }
     }
 
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
-      if(it->get_Cubit_name().compare(0,8,"CONCRETE") == 0) {
-	Range tris;
+      if(it->get_name().compare(0,8,"CONCRETE") == 0) {
+        Range tris;
         rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
-	blockData.push_back(new Concrete(tris));
-	ierr = mField.add_ents_to_finite_element_by_TRIs(tris,"GROUND_SURFACE_FE"); CHKERRQ(ierr);
+        blockData.push_back(new Concrete(tris));
+        ierr = mField.add_ents_to_finite_element_by_TRIs(tris,"GROUND_SURFACE_FE"); CHKERRQ(ierr);
       }
     }
 
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
-      if(it->get_Cubit_name().compare(0,8,"BARESOIL") == 0) {
-	Range tris;
+      if(it->get_name().compare(0,8,"BARESOIL") == 0) {
+        Range tris;
         rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
-	blockData.push_back(new BareSoil(tris));
-	ierr = mField.add_ents_to_finite_element_by_TRIs(tris,"GROUND_SURFACE_FE"); CHKERRQ(ierr);
+        blockData.push_back(new BareSoil(tris));
+        ierr = mField.add_ents_to_finite_element_by_TRIs(tris,"GROUND_SURFACE_FE"); CHKERRQ(ierr);
       }
     }
 
@@ -164,7 +164,7 @@ struct GroundSurfaceTemerature {
     // Atmospheric Radiation Measurement Program Observations
     // F. Yang
     // Environmental Modeling Center National Centers for Environmental Prediction Camp Springs, Maryland
-    alpha = alpha*(1+d/(1+2*d*cos_omega)); 
+    alpha = alpha*(1+d/(1+2*d*cos_omega));
     return (1-alpha)*time_data_ptr->Rs; // net solar radiation (W/m2)
   }
 
@@ -172,10 +172,10 @@ struct GroundSurfaceTemerature {
     const double sigma = 5.67037321e-8;
     double sigma_eps = eps*sigma;
     double ea = time_data_ptr->calulateVapourPressure(time_data_ptr->calulateVapourPressure(time_data_ptr->Td));
-    ea *= 1e-3; // this need to be expressed in kPa 
+    ea *= 1e-3; // this need to be expressed in kPa
     // equation taken from William R. Herb but need too look as well at, Klok and Oerlemans, 2002
-    // incoming longwave radiation (W/m2) 
-    return sigma_eps*(time_data_ptr->CR+0.67*(1-time_data_ptr->CR)*pow(ea,0.08))*pow((time_data_ptr->Ta+273.15),4); 
+    // incoming longwave radiation (W/m2)
+    return sigma_eps*(time_data_ptr->CR+0.67*(1-time_data_ptr->CR)*pow(ea,0.08))*pow((time_data_ptr->Ta+273.15),4);
   }
 
   static double outgoingLongWaveRadiation(double eps,double T) {
@@ -260,7 +260,7 @@ struct GroundSurfaceTemerature {
     GenricClimateModel *timeDataPtr;
     PreProcess(GenricClimateModel *time_data_ptr):
       timeDataPtr(time_data_ptr) {};
-      
+
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
       PetscErrorCode ierr;
@@ -297,7 +297,7 @@ struct GroundSurfaceTemerature {
 	mField.get_moab().delete_entities(&kdTree_rootMeshset,1);
       }
     }
- 
+
     Range sKin,skinNodes;
     EntityHandle kdTree_rootMeshset;
 
@@ -311,28 +311,28 @@ struct GroundSurfaceTemerature {
       rval = kdTree.build_tree(sKin,&kdTree_rootMeshset); CHKERR_PETSC(rval);
       PetscFunctionReturn(0);
     }
-    
+
     double azimuth,zenith;
 
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
-  
+
       ErrorCode rval;
       PetscErrorCode ierr;
-	
+
       int def_VAL = 0;
       Tag th_solar_exposure;
       rval = mField.get_moab().
-	tag_get_handle("SOLAR_EXPOSURE",1,MB_TYPE_INTEGER,th_solar_exposure,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); 
+	tag_get_handle("SOLAR_EXPOSURE",1,MB_TYPE_INTEGER,th_solar_exposure,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL);
 
       double zero[3] = {0,0,0};
       Tag th_solar_radiation;
       rval = mField.get_moab().
-	tag_get_handle("SOLAR_RADIATION",1,MB_TYPE_DOUBLE,th_solar_radiation,MB_TAG_CREAT|MB_TAG_SPARSE,zero); 
+	tag_get_handle("SOLAR_RADIATION",1,MB_TYPE_DOUBLE,th_solar_radiation,MB_TAG_CREAT|MB_TAG_SPARSE,zero);
 
       Tag th_ray_direction;
       rval = mField.get_moab().
-	tag_get_handle("SUN_RAY",3,MB_TYPE_DOUBLE,th_ray_direction,MB_TAG_CREAT|MB_TAG_SPARSE,zero); 
+	tag_get_handle("SUN_RAY",3,MB_TYPE_DOUBLE,th_ray_direction,MB_TAG_CREAT|MB_TAG_SPARSE,zero);
 
       if(!iNit) {
 	rval = mField.get_moab().get_connectivity(pArametersPtr->tRis,skinNodes,true); CHKERR_PETSC(rval);
@@ -349,8 +349,8 @@ struct GroundSurfaceTemerature {
       zenith = timeDataPtr->zenith;
       //assume that X pointing to North
       double ray_unit_dir[] = {
-	cos(azimuth*M_PI/180)*sin(zenith*M_PI/180), 
-	sin(azimuth*M_PI/180)*sin(zenith*M_PI/180), 
+	cos(azimuth*M_PI/180)*sin(zenith*M_PI/180),
+	sin(azimuth*M_PI/180)*sin(zenith*M_PI/180),
 	cos(zenith*M_PI/180) };
 
       vector<EntityHandle> triangles_out;
@@ -361,7 +361,7 @@ struct GroundSurfaceTemerature {
       Range::iterator tit = pArametersPtr->tRis.begin();
       for(;tit!=pArametersPtr->tRis.end();tit++) {
 
-	if(ray_unit_dir[2]<=0) { 
+	if(ray_unit_dir[2]<=0) {
 	  rval = mField.get_moab().tag_set_data(th_solar_radiation,&*tit,1,zero); CHKERR_PETSC(rval);
 	  continue;
 	}
@@ -369,7 +369,7 @@ struct GroundSurfaceTemerature {
 	int num_nodes;
         const EntityHandle* conn;
 	rval = mField.get_moab().get_connectivity(*tit,conn,num_nodes,true); CHKERR_PETSC(rval);
-	double coords[9]; 
+	double coords[9];
 	rval = mField.get_moab().get_coords(conn,3,coords); CHKERR_PETSC(rval);
 
 	double normal[3];
@@ -410,9 +410,9 @@ struct GroundSurfaceTemerature {
 	  cos_phi /= sqrt(pow(normal[0],2) + pow(normal[1],2) + pow(normal[2],2));
 	  cos_phi = fabs(cos_phi);
 
-	  hsol = netSolarRadiation(pArametersPtr->alpha,pArametersPtr->d,cos_phi,timeDataPtr);	
+	  hsol = netSolarRadiation(pArametersPtr->alpha,pArametersPtr->d,cos_phi,timeDataPtr);
 	}
-	
+
 	rval = mField.get_moab().tag_set_data(th_solar_radiation,&*tit,1,&hsol); CHKERR_PETSC(rval);
 
       }
@@ -420,14 +420,14 @@ struct GroundSurfaceTemerature {
       Range::iterator nit = skinNodes.begin();
       for(;nit!=skinNodes.end();nit++) {
 
-	if(ray_unit_dir[2]<=0) { 
+	if(ray_unit_dir[2]<=0) {
 	  int set = 0;
 	  rval = mField.get_moab().tag_set_data(th_solar_exposure,&*nit,1,&set); CHKERR_PETSC(rval);
 	  rval = mField.get_moab().tag_set_data(th_ray_direction,&*nit,1,zero); CHKERR_PETSC(rval);
 	  continue;
 	}
-    
-	double coords[3]; 
+
+	double coords[3];
 	rval = mField.get_moab().get_coords(&*nit,1,coords); CHKERR_PETSC(rval);
 
 	triangles_out.resize(0);
@@ -465,19 +465,18 @@ struct GroundSurfaceTemerature {
   /** \brief opearator to caulate tempereature at Gauss points
     * \infroup mofem_thermal_elem
     */
-  struct OpGetTriTemperatureAtGaussPts: public TriElementForcesAndSurcesCore::UserDataOperator {
+  struct OpGetTriTemperatureAtGaussPts: public FaceElementForcesAndSourcesCore::UserDataOperator {
 
     ublas::vector<double> &fieldAtGaussPts;
     OpGetTriTemperatureAtGaussPts(const string field_name,ublas::vector<double> &field_at_gauss_pts):
-      TriElementForcesAndSurcesCore::UserDataOperator(field_name),
+      FaceElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
       fieldAtGaussPts(field_at_gauss_pts) {}
 
     /** \brief operator calculating temperature and rate of temperature
       *
       * temperature temperature or rate of temperature is calculated multiplyingshape functions by degrees of freedom
       */
-    PetscErrorCode doWork(
-      int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
       try {
 
@@ -496,7 +495,7 @@ struct GroundSurfaceTemerature {
 
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
           fieldAtGaussPts[gg] += inner_prod(data.getN(gg,nb_dofs),data.getFieldData());
-  
+
         }
 
       } catch (const std::exception& ex) {
@@ -510,9 +509,9 @@ struct GroundSurfaceTemerature {
 
   };
 
-  struct OpRhs:public TriElementForcesAndSurcesCore::UserDataOperator {
-        
-    CommonData &commonData; 
+  struct OpRhs:public FaceElementForcesAndSourcesCore::UserDataOperator {
+
+    CommonData &commonData;
     GenricClimateModel* timeDataPtr;
     Parameters *pArametersPtr;
     bool ho_geometry;
@@ -522,12 +521,13 @@ struct GroundSurfaceTemerature {
       GenricClimateModel *time_data_ptr,
       Parameters *parameters_ptr,
       CommonData &common_data,
-      bool _ho_geometry = false):
-	TriElementForcesAndSurcesCore::UserDataOperator(field_name),
-	commonData(common_data),
-	timeDataPtr(time_data_ptr),
-	pArametersPtr(parameters_ptr),
-	ho_geometry(_ho_geometry) {
+      bool _ho_geometry = false
+    ):
+    FaceElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
+    commonData(common_data),
+    timeDataPtr(time_data_ptr),
+    pArametersPtr(parameters_ptr),
+    ho_geometry(_ho_geometry) {
 
     }
 
@@ -539,103 +539,105 @@ struct GroundSurfaceTemerature {
       EntityHandle element_ent = getMoFEMFEPtr()->get_ent();
       const EntityHandle *conn;
       int num_nodes;
-      rval = getTriElementForcesAndSurcesCore()->mField.get_moab().get_connectivity(element_ent,conn,num_nodes,true); CHKERR_PETSC(rval);
-      int def_VAL = 0;
+      rval = getFaceElementForcesAndSourcesCore()->mField.get_moab().get_connectivity(element_ent,conn,num_nodes,true); CHKERR_PETSC(rval);
+      int def_VAL[] = { 0 };
       Tag th_solar_exposure;
-      rval = getTriElementForcesAndSurcesCore()->mField.get_moab().tag_get_handle( 
-	"SOLAR_EXPOSURE",1,MB_TYPE_INTEGER,th_solar_exposure,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR(rval);
-      ierr = getTriElementForcesAndSurcesCore()->mField.get_moab().tag_get_data(th_solar_exposure,conn,num_nodes,nodalExposure); CHKERRQ(ierr);
-      PetscFunctionReturn(0);
-    }
+      rval = getFaceElementForcesAndSourcesCore()->mField.get_moab().tag_get_handle(
+        "SOLAR_EXPOSURE",1,MB_TYPE_INTEGER,th_solar_exposure,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR(rval);
+        ierr = getFaceElementForcesAndSourcesCore()->mField.get_moab().tag_get_data(th_solar_exposure,conn,num_nodes,nodalExposure); CHKERRQ(ierr);
+        PetscFunctionReturn(0);
+      }
 
     ublas::vector<FieldData> Nf;
     PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
-  
+
       if(data.getIndices().size()==0) PetscFunctionReturn(0);
       if(pArametersPtr->tRis.find(getMoFEMFEPtr()->get_ent())==pArametersPtr->tRis.end()) PetscFunctionReturn(0);
 
       PetscErrorCode ierr;
 
       if(type == MBVERTEX) {
-	//ierr = getExposure(); CHKERRQ(ierr);
+        ierr = getExposure(); CHKERRQ(ierr);
       }
-  
+
       const FENumeredDofMoFEMEntity *dof_ptr;
       ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
       int rank = dof_ptr->get_max_rank();
       int nb_row_dofs = data.getIndices().size()/rank;
-  
+
       Nf.resize(data.getIndices().size());
       Nf.clear();
-  
+
       for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
 
-	double val = getGaussPts()(2,gg);
+        double val = getGaussPts()(2,gg);
 
-	ublas::vector<double> normal;
-	if(ho_geometry) {
-	  normal = getNormals_at_GaussPt(gg);
-	} else {
-	  normal = getNormal();
-	}
-	val *= norm_2(normal)*0.5;
+        ublas::vector<double> normal;
+        if(ho_geometry) {
+          normal = getNormals_at_GaussPt(gg);
+        } else {
+          normal = getNormal();
+        }
+        val *= norm_2(normal)*0.5;
 
-	double T = commonData.temperatureAtGaussPts[gg];
+        double T = commonData.temperatureAtGaussPts[gg];
 
-	double azimuth = timeDataPtr->azimuth;
-	double zenith = timeDataPtr->zenith;
-	//assume that X pointing to North
-	double ray_unit_dir[] = {
-	  cos(azimuth*M_PI/180)*sin(zenith*M_PI/180), 
-	  sin(azimuth*M_PI/180)*sin(zenith*M_PI/180), 
-	  cos(zenith*M_PI/180) };
-	double cos_phi = 0;
-	for(int nn = 0;nn<3;nn++) {
-	  cos_phi += normal[nn]*ray_unit_dir[nn];
-	}
-	cos_phi /= norm_2(normal);
-	
-	eXposure = 0;
-	for(int nn = 0;nn<3;nn++) {
-	  eXposure += getTriElementForcesAndSurcesCore()->dataH1.dataOnEntities[MBVERTEX][0].getN()(gg,nn)*nodalExposure[nn];
-	}
+        double azimuth = timeDataPtr->azimuth;
+        double zenith = timeDataPtr->zenith;
+        //assume that X pointing to North
+        double ray_unit_dir[] = {
+          cos(azimuth*M_PI/180)*sin(zenith*M_PI/180),
+          sin(azimuth*M_PI/180)*sin(zenith*M_PI/180),
+          cos(zenith*M_PI/180) };
+          double cos_phi = 0;
+          for(int nn = 0;nn<3;nn++) {
+            cos_phi += normal[nn]*ray_unit_dir[nn];
+          }
+          cos_phi /= norm_2(normal);
 
-	double hnet  = 0;
-	
-	if(eXposure>0) {
-	  hnet += netSolarRadiation(pArametersPtr->alpha,pArametersPtr->d,cos_phi,timeDataPtr);
-	}	
-	hnet += incomingLongWaveRadiation(pArametersPtr->eps,timeDataPtr);
-	hnet += outgoingLongWaveRadiation(pArametersPtr->eps,T);
+          eXposure = 0;
+          for(int nn = 0;nn<3;nn++) {
+            eXposure += getFaceElementForcesAndSourcesCore()->dataH1.dataOnEntities[MBVERTEX][0].getN()(gg,nn)*nodalExposure[nn];
+          }
 
-	hnet += convectinBetweenLandOrWaterAndAtmosphere(T,
-	  pArametersPtr->CSh,pArametersPtr->rhoCp,pArametersPtr->Cfc,pArametersPtr->Cnc,
-	  timeDataPtr);
-	hnet /= (double)86400; // number of second in the day
-  
-        ublas::noalias(Nf) -= val*hnet*data.getN(gg,nb_row_dofs);
-  
-      }
-  
-      ierr = VecSetValues(getFEMethod()->ts_F,data.getIndices().size(),&data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
-  
-      PetscFunctionReturn(0);
-    }
+          double hnet  = 0;
+
+          if(eXposure>0) {
+            hnet += netSolarRadiation(pArametersPtr->alpha,pArametersPtr->d,cos_phi,timeDataPtr);
+          }
+          hnet += incomingLongWaveRadiation(pArametersPtr->eps,timeDataPtr);
+          hnet += outgoingLongWaveRadiation(pArametersPtr->eps,T);
+
+          hnet += convectinBetweenLandOrWaterAndAtmosphere(T,
+            pArametersPtr->CSh,pArametersPtr->rhoCp,pArametersPtr->Cfc,pArametersPtr->Cnc,
+            timeDataPtr);
+            hnet /= (double)86400; // number of second in the day
+
+            ublas::noalias(Nf) -= val*hnet*data.getN(gg,nb_row_dofs);
+
+          }
+
+          ierr = VecSetValues(getFEMethod()->ts_F,data.getIndices().size(),&data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
+
+          PetscFunctionReturn(0);
+        }
 
 
-  
+
   };
 
   struct OpLhs:public OpRhs {
-        
+
     OpLhs(
       const string field_name,
       GenricClimateModel *time_data_ptr,
       Parameters *parameters_ptr,
       CommonData &common_data,
       bool _ho_geometry = false):
-	OpRhs(field_name,time_data_ptr,parameters_ptr,common_data,_ho_geometry) {}
+	    OpRhs(field_name,time_data_ptr,parameters_ptr,common_data,_ho_geometry) {
+        setOpType(ForcesAndSurcesCore::UserDataOperator::OPROWCOL);
+      }
 
     PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
@@ -655,62 +657,64 @@ struct GroundSurfaceTemerature {
 
       try {
 
-	if(row_data.getIndices().size()==0) PetscFunctionReturn(0);
+        if(row_data.getIndices().size()==0) PetscFunctionReturn(0);
         if(col_data.getIndices().size()==0) PetscFunctionReturn(0);
 
         int nb_row = row_data.getN().size2();
         int nb_col = col_data.getN().size2();
 
-	if(row_type == MBVERTEX) {
-	  //ierr = getExposure(); CHKERRQ(ierr);
-	}
+        if(row_type == MBVERTEX) {
+          //ierr = getExposure(); CHKERRQ(ierr);
+        }
 
         NN.resize(nb_row,nb_col);
-	NN.clear();
+        NN.clear();
 
         for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
 
-	  double val = getGaussPts()(2,gg);
-	  ublas::vector<double> normal;
-	  if(ho_geometry) {
-	    normal = getNormals_at_GaussPt(gg);
-	  } else {
-	    normal = getNormal();
-	  }
-	  val *= norm_2(normal)*0.5;
-	  double T = commonData.temperatureAtGaussPts[gg];
+          double val = getGaussPts()(2,gg);
+          ublas::vector<double> normal;
+          if(ho_geometry) {
+            normal = getNormals_at_GaussPt(gg);
+          } else {
+            normal = getNormal();
+          }
+          val *= norm_2(normal)*0.5;
+          double T = commonData.temperatureAtGaussPts[gg];
 
-	  double grad[1] = { 0 };
-	  grad[0] += outgoingLongWaveRadiation_dT(pArametersPtr->eps,T);
-	  grad[0] += convectinBetweenLandOrWaterAndAtmosphere_dT(T,
-	    pArametersPtr->CSh,pArametersPtr->rhoCp,pArametersPtr->Cfc,pArametersPtr->Cnc,
-	    timeDataPtr);
-	  grad[0] /= (double)86400; // number of second in the day
+          double grad[1] = { 0 };
+          grad[0] += outgoingLongWaveRadiation_dT(pArametersPtr->eps,T);
+          grad[0] += convectinBetweenLandOrWaterAndAtmosphere_dT(T,
+            pArametersPtr->CSh,pArametersPtr->rhoCp,pArametersPtr->Cfc,pArametersPtr->Cnc,
+            timeDataPtr);
+            grad[0] /= (double)86400; // number of second in the day
 
-	  noalias(NN) -= val*grad[0]*outer_prod( row_data.getN(gg,nb_row),col_data.getN(gg,nb_col));
+            noalias(NN) -= val*grad[0]*outer_prod( row_data.getN(gg,nb_row),col_data.getN(gg,nb_col));
 
-        }
+          }
 
-	ierr = MatSetValues(
-	  (getFEMethod()->ts_B),
-	  nb_row,&row_data.getIndices()[0],
-	  nb_col,&col_data.getIndices()[0],
-	  &NN(0,0),ADD_VALUES); CHKERRQ(ierr);
-        if(row_side != col_side || row_type != col_type) {
-          transNN.resize(nb_col,nb_row);
-          noalias(transNN) = trans( NN );
           ierr = MatSetValues(
-	    (getFEMethod()->ts_B),
-            nb_col,&col_data.getIndices()[0],
+            (getFEMethod()->ts_B),
             nb_row,&row_data.getIndices()[0],
-            &transNN(0,0),ADD_VALUES); CHKERRQ(ierr);
-        }
+            nb_col,&col_data.getIndices()[0],
+            &NN(0,0),ADD_VALUES
+          ); CHKERRQ(ierr);
+          if(row_side != col_side || row_type != col_type) {
+            transNN.resize(nb_col,nb_row);
+            noalias(transNN) = trans( NN );
+            ierr = MatSetValues(
+              (getFEMethod()->ts_B),
+              nb_col,&col_data.getIndices()[0],
+              nb_row,&row_data.getIndices()[0],
+              &transNN(0,0),ADD_VALUES
+            ); CHKERRQ(ierr);
+          }
 
-      } catch (const std::exception& ex) {
-        ostringstream ss;
+        } catch (const std::exception& ex) {
+          ostringstream ss;
           ss << "throw in method: " << ex.what() << endl;
           SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
-      }
+        }
 
       PetscFunctionReturn(0);
     }
@@ -729,18 +733,22 @@ struct GroundSurfaceTemerature {
     {
       boost::ptr_vector<Parameters>::iterator sit = blockData.begin();
       for(;sit!=blockData.end();sit++) {
-	// add finite element operator
-	feGroundSurfaceRhs.get_op_to_do_Rhs().push_back(new OpGetTriTemperatureAtGaussPts(field_name,commonData.temperatureAtGaussPts));
-	feGroundSurfaceRhs.get_op_to_do_Rhs().push_back(new OpRhs(field_name,time_data_ptr,&*sit,commonData,ho_geometry));
-	preProcessShade.push_back(new SolarRadiationPreProcessor(mField,time_data_ptr,&*sit));
+        // add finite element operator
+        feGroundSurfaceRhs.getOpPtrVector().push_back(
+          new OpGetTriTemperatureAtGaussPts(field_name,commonData.temperatureAtGaussPts)
+        );
+        feGroundSurfaceRhs.getOpPtrVector().push_back(new OpRhs(field_name,time_data_ptr,&*sit,commonData,ho_geometry));
+        preProcessShade.push_back(new SolarRadiationPreProcessor(mField,time_data_ptr,&*sit));
       }
     }
     {
       boost::ptr_vector<Parameters>::iterator sit = blockData.begin();
       for(;sit!=blockData.end();sit++) {
-	// add finite element operator
-	feGroundSurfaceLhs.get_op_to_do_Rhs().push_back(new OpGetTriTemperatureAtGaussPts(field_name,commonData.temperatureAtGaussPts));
-	feGroundSurfaceLhs.get_op_to_do_Lhs().push_back(new OpLhs(field_name,time_data_ptr,&*sit,commonData,ho_geometry));
+        // add finite element operator
+        feGroundSurfaceLhs.getOpPtrVector().push_back(
+          new OpGetTriTemperatureAtGaussPts(field_name,commonData.temperatureAtGaussPts)
+        );
+        feGroundSurfaceLhs.getOpPtrVector().push_back(new OpLhs(field_name,time_data_ptr,&*sit,commonData,ho_geometry));
       }
     }
 
@@ -751,4 +759,3 @@ struct GroundSurfaceTemerature {
 };
 
 #endif //__GROUNDSURFACETEMERATURE_HPP
-

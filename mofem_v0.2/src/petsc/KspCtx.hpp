@@ -45,7 +45,7 @@ struct KspCtx {
   PetscLogEvent USER_EVENT_KspRhs;
   PetscLogEvent USER_EVENT_KspMat;
 
-  KspCtx(FieldInterface &_mField,const string &_problem_name): 
+  KspCtx(FieldInterface &_mField,const string &_problem_name):
     mField(_mField),moab(_mField.get_moab()),problemName(_problem_name) {
     PetscLogEventRegister("LoopKSPRhs",0,&USER_EVENT_KspRhs);
     PetscLogEventRegister("LoopKSPMat",0,&USER_EVENT_KspMat);

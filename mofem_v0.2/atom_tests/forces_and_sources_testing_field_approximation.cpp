@@ -15,7 +15,7 @@
 #include <MoFEM.hpp>
 #include <Projection10NodeCoordsOnField.hpp>
 #include <boost/numeric/ublas/vector_proxy.hpp>
-#include <FiledApproximation.hpp>
+#include <FieldApproximation.hpp>
 
 #include <boost/iostreams/tee.hpp>
 #include <boost/iostreams/stream.hpp>
@@ -44,7 +44,7 @@ struct MyFunApprox {
     (result[0])[1] = y;
     (result[0])[2] = z*z;
     return result;
-  }     
+  }
 
 };
 
@@ -76,9 +76,9 @@ int main(int argc, char *argv[]) {
 
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-  BARRIER_RANK_START(pcomm) 
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
-  BARRIER_RANK_END(pcomm) 
+  BARRIER_RANK_START(pcomm)
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
+  BARRIER_RANK_END(pcomm)
 
   //set entitities bit level
   BitRefLevel bit_level0;
@@ -113,7 +113,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.modify_problem_ref_level_add_bit("TEST_PROBLEM",bit_level0); CHKERRQ(ierr);
 
   //meshset consisting all entities in mesh
-  EntityHandle root_set = moab.get_root_set(); 
+  EntityHandle root_set = moab.get_root_set();
   //add entities to field
   ierr = m_field.add_ents_to_field_by_TETs(root_set,"FIELD1"); CHKERRQ(ierr);
   #ifdef HOON
@@ -157,9 +157,9 @@ int main(int argc, char *argv[]) {
   ierr = m_field.build_problems(); CHKERRQ(ierr);
 
   /****/
-  //mesh partitioning 
+  //mesh partitioning
   //partition
-  ierr = m_field.simple_partition_problem("TEST_PROBLEM"); CHKERRQ(ierr);
+  ierr = m_field.partition_simple_problem("TEST_PROBLEM"); CHKERRQ(ierr);
   ierr = m_field.partition_finite_elements("TEST_PROBLEM"); CHKERRQ(ierr);
   //what are ghost nodes, see Petsc Manual
   ierr = m_field.partition_ghost_dofs("TEST_PROBLEM"); CHKERRQ(ierr);
@@ -232,7 +232,7 @@ int main(int argc, char *argv[]) {
   typedef stream<TeeDevice> TeeStream;
 
   ofstream ofs("forces_and_sources_testing_field_approximation.txt");
-  TeeDevice tee(cout, ofs); 
+  TeeDevice tee(cout, ofs);
   TeeStream my_split(tee);
 
   Range nodes;
@@ -241,7 +241,6 @@ int main(int argc, char *argv[]) {
   nodes_vals.resize(nodes.size(),3);
   rval = moab.tag_get_data(
     ent_method_field1_on_10nodeTet.th,nodes,&*nodes_vals.data().begin()); CHKERR(rval);
-  
 
   const double eps = 1e-4;
 
@@ -271,5 +270,3 @@ int main(int argc, char *argv[]) {
   return 0;
 
 }
-
-

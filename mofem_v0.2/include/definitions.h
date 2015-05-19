@@ -1,6 +1,6 @@
 /** \file definitions.h
  * \brief useful compiler directives and definitions
- * 
+ *
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or (at your
@@ -19,7 +19,7 @@
 #define __DEFINITONS_H__
 
 /** \brief Interfaces IDs
-  * 
+  *
   * To manage different complexities related to field, finite elements mesh
   * refinements, etc. a appropriate interfaces related to each complexities are
   * created. Interfaces by itself could vary by functionality or the same function
@@ -45,12 +45,12 @@ enum MoFEMInterfaces {
 };
 
 /** \brief Error handling
-  * 
+  *
   * This is complementary to PETSC error codes. The numerical values for
   * these are defined in include/petscerror.h. The names are defined in err.c
   *
   * MoAB error messeges are defined in naob/Types.hpp
-  *	
+  *
   */
 enum MoFEMErrorCode {
   MOFEM_SUCESS = 0,
@@ -67,14 +67,14 @@ enum MoFEMErrorCode {
 };
 
 /// \brief approximation spaces
-enum FieldSpace { 
+enum FieldSpace {
   NOFIELD = 1, 	///< scalar or vector of scalars describe (no true field)
   H1, 		///< continuous field
   HDIV,		///< field with continuous normal traction
   HCURL,	///< field with continuous tangents
   L2,		///< field with C-1 continuity
   LASTSPACE 	///< FieldSpace in [ 0, LASTSPACE )
-}; 
+};
 
 
 /// \brief Those types control how functions respond on arguments, f.e. error handling
@@ -88,10 +88,10 @@ enum RowColData {
   ROW,COL,DATA,LASTROWCOLDATA
 };
 
-enum ByWhat { 
+enum ByWhat {
   BYROW = 1<<0, BYCOL = 1<<1, BYDATA = 1<<2,
   BYROWDATA = 1<<0|1<<2, BYCOLDATA = 1<<1|1<<2, BYROWCOL = 1<<0|1<<1,
-  BYALL = 1<<0|1<<1|1<<2 
+  BYALL = 1<<0|1<<1|1<<2
 };
 
 //taken from http://stackoverflow.com/questions/295120/c-mark-as-deprecated
@@ -109,7 +109,7 @@ enum ByWhat {
 #define BITFIELDID_SIZE 32 /*max number of fields*/
 #define BITFEID_SIZE 32 /*max number of finite elements*/
 #define BITPROBLEMID_SIZE 32 /*max number of problems*/
-#define BITINTERFACEUID_SIZE 32 
+#define BITINTERFACEUID_SIZE 32
 
 //// default comunicator number
 #define MYPCOMM_INDEX 0
@@ -147,7 +147,7 @@ enum ByWhat {
     std::cerr << "Error code  " << val << " at " << __FILE__ << ":" << __LINE__ << std::endl; \
     assert(1); \
   } \
-} while (false) 
+} while (false)
 
 /// check moab error and communicate it using petsc interface
 #define CHKERR_PETSC(a) do { \
@@ -178,4 +178,3 @@ enum ByWhat {
 }
 
 #endif //__DEFINITONS_H__
-

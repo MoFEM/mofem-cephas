@@ -25,9 +25,9 @@
 
 #ifndef WITH_ADOL_C
   #error "MoFEM need to be compiled with ADOL-C"
-#endif 
+#endif
 
-struct PostPorcStress: public TetElementForcesAndSourcesCore::UserDataOperator {
+struct PostPorcStress: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
   Interface &postProcMesh;
   vector<EntityHandle> &mapGaussPts;
@@ -40,10 +40,11 @@ struct PostPorcStress: public TetElementForcesAndSourcesCore::UserDataOperator {
     vector<EntityHandle> &map_gauss_pts,
     const string field_name,
     NonlinearElasticElement::BlockData &data,
-    PostPocOnRefinedMesh::CommonData &common_data):
-    TetElementForcesAndSourcesCore::UserDataOperator(field_name),
-    postProcMesh(post_proc_mesh),mapGaussPts(map_gauss_pts),
-    dAta(data),commonData(common_data) {}
+    PostPocOnRefinedMesh::CommonData &common_data
+  ):
+  VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
+  postProcMesh(post_proc_mesh),mapGaussPts(map_gauss_pts),
+  dAta(data),commonData(common_data) {}
 
   PetscErrorCode doWork(
     int side,
@@ -54,12 +55,12 @@ struct PostPorcStress: public TetElementForcesAndSourcesCore::UserDataOperator {
     if(type != MBVERTEX) PetscFunctionReturn(0);
     if(data.getIndices().size()==0) PetscFunctionReturn(0);
     if(dAta.tEts.find(getMoFEMFEPtr()->get_ent()) == dAta.tEts.end()) {
-	PetscFunctionReturn(0);
+      PetscFunctionReturn(0);
     }
 
     ErrorCode rval;
     PetscErrorCode ierr;
-     
+
     const FENumeredDofMoFEMEntity *dof_ptr;
     ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
 
@@ -80,7 +81,7 @@ struct PostPorcStress: public TetElementForcesAndSourcesCore::UserDataOperator {
     if(mapGaussPts.size()!=(unsigned int)nb_gauss_pts) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
     }
-    if(commonData.gradMap[row_field_name].size()!=(unsigned int)nb_gauss_pts) {
+    if(commonData.gradMap[rowFieldName].size()!=(unsigned int)nb_gauss_pts) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
     }
 
@@ -90,14 +91,14 @@ struct PostPorcStress: public TetElementForcesAndSourcesCore::UserDataOperator {
     for(int gg = 0;gg<nb_gauss_pts;gg++) {
 
       dAta.materialDoublePtr->F.resize(3,3);
-      noalias(dAta.materialDoublePtr->F) = (commonData.gradMap[row_field_name])[gg];
+      noalias(dAta.materialDoublePtr->F) = (commonData.gradMap[rowFieldName])[gg];
       if(commonData.gradMap["MESH_NODE_POSITIONS"].size()==(unsigned int)nb_gauss_pts) {
-	H.resize(3,3);
-	invH.resize(3,3);
-	noalias(H) = (commonData.gradMap["MESH_NODE_POSITIONS"])[gg];
-	ierr = dAta.materialDoublePtr->dEterminatnt(H,detH);  CHKERRQ(ierr);
-	ierr = dAta.materialDoublePtr->iNvert(detH,H,invH); CHKERRQ(ierr);
-	noalias(dAta.materialDoublePtr->F) = prod(dAta.materialDoublePtr->F,invH);  
+        H.resize(3,3);
+        invH.resize(3,3);
+        noalias(H) = (commonData.gradMap["MESH_NODE_POSITIONS"])[gg];
+        ierr = dAta.materialDoublePtr->dEterminatnt(H,detH);  CHKERRQ(ierr);
+        ierr = dAta.materialDoublePtr->iNvert(detH,H,invH); CHKERRQ(ierr);
+        noalias(dAta.materialDoublePtr->F) = prod(dAta.materialDoublePtr->F,invH);
       }
 
       ierr = dAta.materialDoublePtr->CalualteP_PiolaKirchhoffI(dAta,getMoFEMFEPtr()); CHKERRQ(ierr);
@@ -114,6 +115,3 @@ struct PostPorcStress: public TetElementForcesAndSourcesCore::UserDataOperator {
 };
 
 #endif //__POSTPROCSTRESSES_HPP
-
-
-

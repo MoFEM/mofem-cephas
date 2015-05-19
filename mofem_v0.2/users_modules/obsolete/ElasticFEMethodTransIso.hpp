@@ -332,7 +332,7 @@ namespace ObosleteUsersModules {
         EntityHandle ent = fePtr->get_ent();
         for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_ELASTICSET,it)) {
           
-          if(it->get_Cubit_name().compare(0,20,"MAT_ELASTIC_TRANSISO") == 0) {
+          if(it->get_name().compare(0,20,"MAT_ELASTIC_TRANSISO") == 0) {
 
             Mat_Elastic_TransIso mydata;
             ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
@@ -581,7 +581,7 @@ namespace ObosleteUsersModules {
         EntityHandle ent = fePtr->get_ent();
         for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_ELASTICSET,it)) {
           
-          if(it->get_Cubit_name().compare(0,20,"MAT_ELASTIC_TRANSISO") == 0) {
+          if(it->get_name().compare(0,20,"MAT_ELASTIC_TRANSISO") == 0) {
             
             Mat_Elastic_TransIso mydata;
             ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);

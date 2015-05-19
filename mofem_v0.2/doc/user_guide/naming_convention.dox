@@ -1,45 +1,5 @@
 /*! \page coding_practice Coding practice
 
-\section citizen Be a good MoFEM citizen
-
-- MoFEM is a open community of users and developers.
-
-- MoFEM is a team work. Don't be focussed only on your project. Your
-  modifications can help others, others modification will help you.
-
-- MoFEM is not own by anyone, you are become owner proportionally to your
-  contribution. 
-
-- If you find bugs,or you think that documentation can be improved, you are
-  strongly encourage to contribute. 
-
-- If you have idea how to improve MoFEM library, f.e. some functions
-  names are not clear or new functionality is can be added, 
-  propose that on our discussion group CMatGU <cmatgu@googlegroups.com>.
-
-\section documentation_partice Document the code
-
-Code documentation is essential for its future. MoFEM will live only if others
-know how to do work with it. Not necessary the best code will survive but that
-one with the best documentation. Because all of that always document what you are doing,
-
-- Follow <http://www.stack.nl/~dimitri/doxygen/manual/docblocks.html>
-
-- Think abut yourself, you will forget. Good documentation allow to revise your code.
-
-- Help others to understand what you are doing. 
-
-- Report assumptions, limitations and bugs in your code.
-
-- Think about different kind of users, f.e. end user who execute only code,
-  beginner programmers and advanced developers. 
-
-- Link different part and your work in \em Modules.
-
-- Use latex formulas to place your equations.
-
-- Add to, and correct existing documentation. 
-
 
 \section mofam_and_user_modules MoFEM and User Modules
 
@@ -66,13 +26,14 @@ often. However, the repository should always remain in a state where the code
 can be compiled. Most of the time, the code should also successfully execute
 "ctest" run from the top-level directory. If you commit code that violates this
 principal, it should be your first priority to return the repository code to a
-compilable state, and your second priority to make sure "ctest" runs without
+compilable state, and your second priority to make sure that all tests
+(ctest) runs without
 errors.
 
 Finished proration of work should be committed by pull-request to CDashTesting
 branch. Commits to the CDashTesting branch should also come with a non-trivial,
 useful, non-verbose log message. It is required that before pull request user
-merge current CDashTesting branch and verify if all ctest run without fails. If
+merge current CDashTesting branch and verify if all tests run without fails. If
 pull request is accepted it is user responsibility to verify results on
 CDash server <http://cdash.eng.gla.ac.uk/cdash/>. The first priority will be to
 eliminate compilation errors, completion warnings, failed tests and memory
@@ -81,10 +42,10 @@ leaks.
 Some guidance about branches:
 - Make often updates (git pull)
 - Do not commits to other people branch. You can commit only to branches created by yourself.
-- If you like to commit to other (not own created) branch, do pull request. 
+- If you like to commit to other (not own created) branch, do pull request.
 - Before marking pull request, pull from branch to which you like to commit.
-- Pull regularly form CDasgTesting branch.
-- If you working on two different tasks make two different branches. This simplifies code revision. 
+- Pull regularly form CDashTesting branch.
+- If you working on two different tasks make two different branches. This simplifies code revision.
 
 \section Source Code Style and Best Practices
 
@@ -95,28 +56,28 @@ MoFEM code should follow MoAB code style and best pratices listed here
 
   - Make indentations. Indent code to better convey the logical structure of
     your code. Without indenting, code becomes difficult to follow. \code
-if (...) { 
-if (...) { 
+if (...) {
+if (...) {
 ...
 } else {
 ...
 }} else if {
-... 
-} else { 
-... 
+...
+} else {
+...
 }
 \endcode
 Can you follow this ? This is much better \code
-if (...) { 
-  if (...) { 
+if (...) {
+  if (...) {
     ...
   } else {
     ...
   }
 } else if {
-  ... 
-} else { 
-  ... 
+  ...
+} else {
+  ...
 }
 \endcode
 
@@ -129,7 +90,7 @@ if (...) {
   - Indentation should have TWO SPACES. You have to set up your favorite editor to
     make TWO SPACES for TAB.
 
-  - Use empty lines to provide organisational clues to source code, blocks
+  - Use empty lines to provide organizational clues to source code, blocks
     (\em paragraphs -like structure) help the reader in comprehending the logical
     segmenting.
 
@@ -140,9 +101,9 @@ if (...) {
   - Class names should be in the CamelBack style, e.g. EdgeMesh or VertexMesher.
 
   - Class member variables should be camelBack, e.g. EdgeMesh::schemeType; each
-    member variable, e.g. int memberVariable, should have set/get functions 
+    member variable, e.g. int memberVariable, should have set/get functions
     void member_variable(int newval) and int member_variable(), respectively
-  
+
   - Abstract class members should be abstract_class_member, e.g. set_field_orer()
 
   - Enumeration values should be all capitalized, with underscores avoided if
@@ -158,25 +119,25 @@ calculate_kinetic_energy ( . . . )
 or any other derivatives.
 
   - Avoid elusive names, open to subjective interpretation like \code
-Analyse ( . . . ) / / subroutine or function or method
+Analyze ( . . . ) / / subroutine or function or method
 nnsmcomp1 / / variable
 \endcode
 
   - Each class header should be fully commented.
-  
+
   - A \\file comment block at the top of the file; DO NOT include things like
     Author and Date blocks; this stuff is available from subversion if we
     really need to know.
 
   - Each function in both the public and private interfaces should be
     commented, INCLUDING ANY ARGUMENTS AND RETURN VALUES. See the MOAB classes
-    for examples of how to format these comments. 
+    for examples of how to format these comments.
 
   - Developers should avoid using #include in header files, as they propagate
-    dependencies more widely than necessary. 
+    dependencies more widely than necessary.
 
   - Local variables and function argument have names with small letters, i.e.
-    temperature_val, nodal_position. 
+    temperature_val, nodal_position.
 
   - If variable is a pointer, it should have name as follows \code
 class A {
@@ -202,7 +163,7 @@ mofem_v0.2/src/interfaces/FieldInterface.hpp:1300:107: warning: 'PetscErrorCode 
     - Don't use a pre-processor macro where a const variable or an inline or
       template function will suffice. There is absolutely benefit to the former
       over the later with modern compilers. Further, using macros bypasses
-      typechecking that the compiler would otherwise do for you and if used in
+      type checking that the compiler would otherwise do for you and if used in
       headers, introduce names into the global rather than MoFEM namespace.
 
     - Don't define constants that are already provided by standard libraries.
@@ -243,10 +204,10 @@ ierr = fun(); CHKERRQ(ierr);
 
   - Use smart pointers
     <http://www.boost.org/doc/libs/1_57_0/libs/smart_ptr/smart_ptr.htm>. If
-    exsisting code uses regular pointer, take opportunity and change it to smart
+    existing code uses regular pointer, take opportunity and change it to smart
     pointer.
 
-  - Check program with line command argument -log_summary, verifing if number of created PTESc
+  - Check program with line command argument -log_summary, verifying if number of created PTESc
     objects is equal to number of destroyed objects \code
 Memory usage is given in bytes:
 

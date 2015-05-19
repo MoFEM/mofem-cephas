@@ -1,7 +1,9 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
- * FIXME: DESCRIPTION
- */
+/** \file NonLinearFEMethodInterface.hpp
+  \brief Implementation of non-linear (softening) interface element
+
+*/
+
+
 
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under

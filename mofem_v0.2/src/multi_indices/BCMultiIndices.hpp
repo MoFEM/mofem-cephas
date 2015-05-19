@@ -20,10 +20,9 @@
 
 namespace MoFEM {
 
-
-/** 
+/**
  * \brief this struct keeps basic methods for moab meshset about material and boundary conditions
- * \ingroup mofem_bc 
+ * \ingroup mofem_bc
  *
  */
 struct CubitMeshSets {
@@ -31,7 +30,7 @@ struct CubitMeshSets {
   CubitBCType cubit_bc_type; 	///< type of meshset from cubit NodeSet, BlockSet, SideSet and more
   vector<Tag> tag_handles;	///< vector of tag handles to types of data passed from cubit
   int *msId;			///< cubit meshset ID
-  char* tag_bc_data;		
+  char* tag_bc_data;
   int tag_bc_size;
   unsigned int *tag_block_header_data;
   double* tag_block_attributes;
@@ -52,29 +51,43 @@ struct CubitMeshSets {
   PetscErrorCode get_cubit_msId_entities_by_dimension(Interface &moab,Range &entities,const bool recursive = false)  const;
   PetscErrorCode get_cubit_msId_entities_by_type(Interface &moab,const EntityType type,Range &entities,const bool recursive = false) const;
 
-  /** 
+  /**
    *  \brief Function that returns the CubitBCType type of the contents of bc_data
    */
   PetscErrorCode get_type_from_bc_data(const vector<char> &bc_data,CubitBCType &type) const;
 
-  /** 
+  /**
    *  \brief Function that returns the CubitBCType type of the contents of bc_data
   */
   PetscErrorCode get_type_from_bc_data(CubitBCType &type) const;
-    
+
   /**
    * \brief get bc_data vector from MoFEM database
-   * 
+   *
    * \param bc_data is the in/out vector were bc_data will be stored
    */
-  PetscErrorCode get_Cubit_bc_data(vector<char>& bc_data) const;
-    
+  PetscErrorCode get_bc_data(vector<char>& bc_data) const;
+
+  DEPRECATED PetscErrorCode get_Cubit_bc_data(vector<char>& bc_data) const {
+    PetscFunctionBegin;
+    PetscErrorCode ierr;
+    ierr = get_bc_data(bc_data); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
   /**
   * \brief get block_headers vector from MoFEM database
   *
   * \param material_data is the in/out vector were the material data will be stored
   */
-  PetscErrorCode get_Cubit_block_header_data(vector<unsigned int>& material_data) const;
+  PetscErrorCode get_block_header_data(vector<unsigned int>& material_data) const;
+
+  DEPRECATED PetscErrorCode get_Cubit_block_header_data(vector<unsigned int>& material_data) const {
+    PetscFunctionBegin;
+    PetscErrorCode ierr;
+    ierr = get_block_header_data(material_data); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
 
   /**
   * \brief print material_data int stream given by os
@@ -82,68 +95,118 @@ struct CubitMeshSets {
   * f.e. it->print_Cubit_material_data(cout), i.e. printing to standard output
   * f.e. it->print_Cubit_material_data(cerr), i.e. printing to standard error output
   */
-  PetscErrorCode print_Cubit_block_header_data(ostream& os) const;
-    
+  PetscErrorCode print_block_header_data(ostream& os) const;
+
+  DEPRECATED PetscErrorCode print_Cubit_block_header_data(ostream& os) const {
+    PetscFunctionBegin;
+    PetscErrorCode ierr;
+    ierr = print_block_header_data(os); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
   /**
    * \brief print bc_data int stream given by os
    *
-   * f.e. it->print_Cubit_bc_data(cout), i.e. printing to standard output
-   * f.e. it->print_Cubit_bc_data(cerr), i.e. printing to standard error output
+   * f.e. it->print_bc_data(cout), i.e. printing to standard output
+   * f.e. it->print_bc_data(cerr), i.e. printing to standard error output
    */
-  PetscErrorCode print_Cubit_bc_data(ostream& os) const;
+  PetscErrorCode print_bc_data(ostream& os) const;
+
+  DEPRECATED PetscErrorCode print_Cubit_bc_data(ostream& os) const {
+    PetscFunctionBegin;
+    PetscErrorCode ierr;
+    ierr = print_bc_data(os); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
 
   template<class _CUBIT_BC_DATA_TYPE_>
-  PetscErrorCode get_cubit_bc_data_structure(_CUBIT_BC_DATA_TYPE_& data) const {
+  PetscErrorCode get_bc_data_structure(_CUBIT_BC_DATA_TYPE_& data) const {
     PetscFunctionBegin;
     PetscErrorCode ierr;
     if((cubit_bc_type&data.type).none()) {
-      SETERRQ(PETSC_COMM_SELF,1,"bc_data are not for _CUBIT_BC_DATA_TYPE_ structure");  
+      SETERRQ(PETSC_COMM_SELF,1,"bc_data are not for _CUBIT_BC_DATA_TYPE_ structure");
     }
     vector<char> bc_data;
-    get_Cubit_bc_data(bc_data);
+    get_bc_data(bc_data);
     ierr = data.fill_data(bc_data); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
+  template<class _CUBIT_BC_DATA_TYPE_>
+  DEPRECATED
+  PetscErrorCode get_cubit_bc_data_structure(_CUBIT_BC_DATA_TYPE_& data) const {
+    PetscFunctionBegin;
+    PetscErrorCode ierr;
+    ierr = get_bc_data_structure(data); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
   /**
    *  \brief Function that returns the CubitBCType type of the block name, sideset name etc.
    */
-  PetscErrorCode get_type_from_Cubit_name(const string &name,CubitBCType &type) const;
+  PetscErrorCode get_type_from_name(const string &name,CubitBCType &type) const;
+
+  DEPRECATED PetscErrorCode get_type_from_Cubit_name(const string &name,CubitBCType &type) const {
+    PetscFunctionBegin;
+    PetscErrorCode ierr;
+    ierr = get_type_from_name(name,type); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
 
   /**
    *  \brief Function that returns the CubitBCType type of the block name, sideset name etc.
    */
-  PetscErrorCode get_type_from_Cubit_name(CubitBCType &type) const;
-    
+  PetscErrorCode get_type_from_name(CubitBCType &type) const;
+
+  DEPRECATED PetscErrorCode get_type_from_Cubit_name(CubitBCType &type) const {
+    PetscFunctionBegin;
+    PetscErrorCode ierr;
+    ierr = get_type_from_name(type); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
   /**
    * \brief get Cubit block attributes
    *
    * \param attributes is the vector where the block attribute data will be stored
    */
-  PetscErrorCode get_Cubit_attributes(vector<double> &attributes) const;
+  PetscErrorCode get_attributes(vector<double> &attributes) const;
+
+  DEPRECATED PetscErrorCode get_Cubit_attributes(vector<double> &attributes) const {
+    PetscFunctionBegin;
+    PetscErrorCode ierr;
+    ierr = get_attributes(attributes); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
 
   /**
    * \brief print the attributes vector
    *
-   * f.e. it->print_Cubit_attributes(cout), i.e. printing to standard output
-   * f.e. it->print_Cubit_attributes(cerr), i.e. printing to standard error output
+   * f.e. it->print_attributes(cout), i.e. printing to standard output
+   * f.e. it->print_attributes(cerr), i.e. printing to standard error output
    */
-  PetscErrorCode print_Cubit_attributes(ostream& os) const;
+  PetscErrorCode print_attributes(ostream& os) const;
+
+  DEPRECATED PetscErrorCode print_Cubit_attributes(ostream& os) const {
+    PetscFunctionBegin;
+    PetscErrorCode ierr;
+    ierr = print_attributes(os); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
 
   /**
    * \brief get name of block, sideset etc. (this is set in Cubit block properties)
    *
    * Block Name Conventions:
-   * -----------------------
+
    * Materials are defined with block names starting with MAT_
    * e.g. MAT_ELASTIC_abcd, MAT_FRACTcdef etc.
    * Solution procedures are defined with block names starting with SOL_ e.g.
    * SOL_ELASTIC_xx, SOL_NLELASTICxx, SOL_FRACTabcd etc.
    *
    * List of materials/solution procedures
-   * ---------------------------------------------------------------------------
+
    * Block name /  Number of attributes  / (1) Attribute 1, (2) Attribute 2 etc.
-   * ---------------------------------------------------------------------------
    *
    * MAT_ELASTIC / 10 /  (1) Young's  modulus
    *                    (2) Poisson's ratio
@@ -161,16 +224,27 @@ struct CubitMeshSets {
    *
    * To be extended as appropriate
    */
-   string get_Cubit_name() const;
+  string get_name() const;
+
+  DEPRECATED string get_Cubit_name() const {
+    return get_name();
+  }
 
   /**
    * \brief print name of block, sideset etc. (this is set in Cubit setting properties)
    *
-   * e.g. it->print_Cubit_name(cout), i.e. printing to standard output
-   * e.g it->print_Cubit_name(cerr), i.e. printing to standard error output
+   * e.g. it->print_name(cout), i.e. printing to standard output
+   * e.g it->print_name(cerr), i.e. printing to standard error output
    */
-  PetscErrorCode print_Cubit_name(ostream& os) const;
-    
+  PetscErrorCode print_name(ostream& os) const;
+
+  DEPRECATED PetscErrorCode print_Cubit_name(ostream& os) const {
+    PetscFunctionBegin;
+    PetscErrorCode ierr;
+    ierr = print_name(os); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
   template<class _ATTRIBUTE_TYPE_>
   PetscErrorCode get_attribute_data_structure(_ATTRIBUTE_TYPE_ &data) const {
     PetscFunctionBegin;
@@ -179,7 +253,7 @@ struct CubitMeshSets {
         SETERRQ(PETSC_COMM_SELF,1,"attributes are not for _ATTRIBUTE_TYPE_ structure");
     }
     vector<double> attributes;
-    ierr = get_Cubit_attributes(attributes); CHKERRQ(ierr);
+    ierr = get_attributes(attributes); CHKERRQ(ierr);
     ierr = data.fill_data(attributes); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
@@ -194,37 +268,18 @@ struct CubitMeshSets {
     ierr = data.set_data(ptr,8*tag_block_attributes_size); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
-     
+
   friend ostream& operator<<(ostream& os,const CubitMeshSets& e);
 
   private:
   Tag nsTag,ssTag,nsTag_data,ssTag_data,bhTag,bhTag_header,block_attribs,entityNameTag;
   PetscErrorCode get_tags_hanlders(Interface &moab);
-    
+
 };
-    
+
 /**
  * @relates multi_index_container
  * \brief CubitMeshSet_multiIndex
- *
- * \param hashed_unique<
-      tag<Meshset_mi_tag>, member<CubitMeshSets,EntityHandle,&CubitMeshSets::meshset> >,
- * \param ordered_non_unique<
-      tag<CubitMeshSets_mi_tag>, const_mem_fun<CubitMeshSets,unsigned long int,&CubitMeshSets::get_cubit_bc_type_ulong> >,
- * \param ordered_non_unique<
-      tag<CubitMeshSets_mask_meshset_mi_tag>, const_mem_fun<CubitMeshSets,unsigned long int,&CubitMeshSets::get_cubit_bc_type_mask_meshset_types_ulong> >,
- * \param ordered_non_unique<
-      tag<CubitMeshSets_bc_data_mi_tag>, const_mem_fun<CubitMeshSets,unsigned long int,&CubitMeshSets::get_cubit_bc_type_bc_data_types_ulong> >,
- * \param ordered_non_unique<
-      tag<CubitMeshSets_name>, const_mem_fun<CubitMeshSets,string,&CubitMeshSets::get_Cubit_name> >,
- *
- * \param    hashed_unique<
-      tag<Composite_mi_tag>,       
-      composite_key<
-	CubitMeshSets, <br>
-	  const_mem_fun<CubitMeshSets,int,&CubitMeshSets::get_msId>,
-	  const_mem_fun<CubitMeshSets,unsigned long int,&CubitMeshSets::get_cubit_bc_type_ulong> > >
- *
  */
 typedef multi_index_container<
   CubitMeshSets,
@@ -238,9 +293,9 @@ typedef multi_index_container<
     ordered_non_unique<
       tag<CubitMeshSets_bc_data_mi_tag>, const_mem_fun<CubitMeshSets,unsigned long int,&CubitMeshSets::get_cubit_bc_type_bc_data_types_ulong> >,
     ordered_non_unique<
-      tag<CubitMeshSets_name>, const_mem_fun<CubitMeshSets,string,&CubitMeshSets::get_Cubit_name> >,
+      tag<CubitMeshSets_name>, const_mem_fun<CubitMeshSets,string,&CubitMeshSets::get_name> >,
     hashed_unique<
-      tag<Composite_Cubit_msId_And_MeshSetType_mi_tag>,       
+      tag<Composite_Cubit_msId_And_MeshSetType_mi_tag>,
       composite_key<
 	CubitMeshSets,
 	  const_mem_fun<CubitMeshSets,int,&CubitMeshSets::get_msId>,
@@ -255,4 +310,3 @@ typedef multi_index_container<
  * \defgroup mofem_bc Boundary conditions
  * \ingroup mofem
  ******************************************************************************/
-

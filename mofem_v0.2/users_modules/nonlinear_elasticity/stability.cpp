@@ -38,7 +38,7 @@ using namespace MoFEM;
 #include <adolc/adolc.h> 
 #include <NonLienarElasticElement.hpp>
 
-#include <PotsProcOnRefMesh.hpp>
+#include <PostProcOnRefMesh.hpp>
 #include <PostProcStresses.hpp>
 #include <Hooke.hpp>
 
@@ -272,9 +272,9 @@ int main(int argc, char *argv[]) {
   ierr = m_field.modify_finite_element_add_field_data("ELASTIC","EIGEN_VECTOR"); CHKERRQ(ierr);
   ierr = m_field.modify_finite_element_add_field_data("ELASTIC","D0"); CHKERRQ(ierr);
 
-  elastic.feRhs.get_op_to_do_Rhs().push_back(
+  elastic.feRhs.getOpPtrVector().push_back(
     new NonlinearElasticElement::OpGetCommonDataAtGaussPts("D0",elastic.commonData));
-  elastic.feLhs.get_op_to_do_Rhs().push_back(
+  elastic.feLhs.getOpPtrVector().push_back(
     new NonlinearElasticElement::OpGetCommonDataAtGaussPts("D0",elastic.commonData));
   ierr = elastic.setOperators("SPATIAL_POSITION"); CHKERRQ(ierr);
 
@@ -552,7 +552,7 @@ int main(int argc, char *argv[]) {
 
   //get solutions
   PostPocOnRefinedMesh post_proc(m_field);
-  ierr = post_proc.generateRefereneElemenMesh(); CHKERRQ(ierr);
+  ierr = post_proc.generateReferenceElementMesh(); CHKERRQ(ierr);
   ierr = post_proc.addFieldValuesGradientPostProc("SPATIAL_POSITION"); CHKERRQ(ierr);
   ierr = post_proc.addFieldValuesPostProc("SPATIAL_POSITION"); CHKERRQ(ierr);
   ierr = post_proc.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);

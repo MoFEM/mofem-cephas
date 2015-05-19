@@ -1,4 +1,4 @@
-/** \file H1HdivHcurlL2.h
+/** \file h1_hdiv_hcurl_l2.h
   \brief Functions to approximate hierarchical spaces
 */
 
@@ -43,7 +43,7 @@ extern "C" {
 #define NBVOLUME_FACE_HDIV(P) ((P>2) ? ((P-2)*(P-2)+(P-2)) : 0)
 #define NBVOLUME_VOLUME_HDIV(P) ((P>3) ? ((P-3)*(P-2)*(P-1)/2) : 0)
 
-/** 
+/**
  * \brief Calculate Lagrange approximation basis
  *
  * \param p is approximation order
@@ -58,9 +58,9 @@ PetscErrorCode L2_FaceShapeFunctions_MBTRI(int p,double *N,double *diffN,double 
 PetscErrorCode L2_ShapeFunctions_MBTET(int p,double *N,double *diffN,double *L2N,double *diff_L2N,int GDIM);
 PetscErrorCode L2_VolumeShapeDiffMBTETinvJ(int base_p,int p,double *volume_diffN,double *invJac,double *volume_diffNinvJac,int GDIM);
 
-/** 
+/**
  * \brief H1_EdgeShapeFunctions_MBTRI
- * 
+ *
  * \param sense of edges, it is array of inegers dim 3 (3-egdes of triangle)
  * \param p of edges
  */

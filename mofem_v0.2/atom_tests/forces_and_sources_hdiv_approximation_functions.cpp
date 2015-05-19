@@ -1,8 +1,3 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
- * FIXME: DESCRIPTION
- */
-
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -20,7 +15,7 @@
 #include <MoFEM.hpp>
 
 #include <DirichletBC.hpp>
-#include <PotsProcOnRefMesh.hpp>
+#include <PostProcOnRefMesh.hpp>
 
 #include <Projection10NodeCoordsOnField.hpp>
 
@@ -54,7 +49,7 @@ int main(int argc, char *argv[]) {
     0,0,0,
     1,0,0,
     0,1,0,
-    0,0,1 
+    0,0,1
   };
 
   EntityHandle nodes[4];
@@ -101,7 +96,7 @@ int main(int argc, char *argv[]) {
 
 
   //meshset consisting all entities in mesh
-  EntityHandle root_set = moab.get_root_set(); 
+  EntityHandle root_set = moab.get_root_set();
   //add entities to field
   ierr = m_field.add_ents_to_field_by_TETs(root_set,"HDIV"); CHKERRQ(ierr);
   //add entities to finite element
@@ -125,9 +120,9 @@ int main(int argc, char *argv[]) {
   ierr = m_field.build_problems(); CHKERRQ(ierr);
 
   /****/
-  //mesh partitioning 
+  //mesh partitioning
   //partition
-  ierr = m_field.simple_partition_problem("TEST_PROBLEM"); CHKERRQ(ierr);
+  ierr = m_field.partition_simple_problem("TEST_PROBLEM"); CHKERRQ(ierr);
   ierr = m_field.partition_finite_elements("TEST_PROBLEM"); CHKERRQ(ierr);
   //what are ghost nodes, see Petsc Manual
   ierr = m_field.partition_ghost_dofs("TEST_PROBLEM"); CHKERRQ(ierr);
@@ -136,15 +131,16 @@ int main(int argc, char *argv[]) {
   typedef stream<TeeDevice> TeeStream;
 
   ofstream ofs("forces_and_sources_hdiv_approximation_functions.txt");
-  TeeDevice my_tee(cout, ofs); 
+  TeeDevice my_tee(cout, ofs);
   TeeStream my_split(my_tee);
 
 
-  struct OpPrintingHdivApproximationFunctions: public TetElementForcesAndSourcesCore::UserDataOperator {
+  struct OpPrintingHdivApproximationFunctions: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     TeeStream &mySplit;
     OpPrintingHdivApproximationFunctions(TeeStream &my_split):
-      TetElementForcesAndSourcesCore::UserDataOperator("HDIV"),mySplit(my_split) {}
+      VolumeElementForcesAndSourcesCore::UserDataOperator("HDIV",UserDataOperator::OPROW),mySplit(my_split)
+    {}
 
     PetscErrorCode doWork(
       int side,
@@ -156,7 +152,7 @@ int main(int argc, char *argv[]) {
 
       mySplit << endl << "type " << type << " side " << side << endl;
       mySplit.precision(5);
-  
+
       const double eps = 1e-6;
       int dd = 0;
       int size = data.getHdivN().data().size();
@@ -165,27 +161,27 @@ int main(int argc, char *argv[]) {
       }
 
       mySplit << std::fixed << data.getHdivN() << endl;
-      
+
 
       PetscFunctionReturn(0);
-    }	
+    }
 
   };
 
-  struct MyFE: public TetElementForcesAndSourcesCore {
+  struct MyFE: public VolumeElementForcesAndSourcesCore {
 
-    MyFE(FieldInterface &m_field): TetElementForcesAndSourcesCore(m_field) {}
+    MyFE(FieldInterface &m_field): VolumeElementForcesAndSourcesCore(m_field) {}
     int getRule(int order) { return 1; };
 
   };
 
   MyFE tet_fe(m_field);
-  tet_fe.get_op_to_do_Rhs().push_back(new OpPrintingHdivApproximationFunctions(my_split));
+  tet_fe.getOpPtrVector().push_back(new OpPrintingHdivApproximationFunctions(my_split));
 
   ierr = m_field.loop_finite_elements("TEST_PROBLEM","TEST_FE",tet_fe);  CHKERRQ(ierr);
 
   PostPocOnRefinedMesh post_proc(m_field);
-  ierr = post_proc.generateRefereneElemenMesh(); CHKERRQ(ierr);
+  ierr = post_proc.generateReferenceElementMesh(); CHKERRQ(ierr);
   ierr = post_proc.addHdivFunctionsPostProc("HDIV");  CHKERRQ(ierr);
   ierr = m_field.loop_finite_elements("TEST_PROBLEM","TEST_FE",post_proc);  CHKERRQ(ierr);
 

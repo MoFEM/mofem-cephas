@@ -21,33 +21,33 @@ namespace ObosleteUsersModules {
 
 /** \brief NonLinear surface pressure element (obsolete implementation)
   * \ingroup nonlinear_elastic_elem
-  * \ingroup mofem_static_boundary_conditions
   *
   */
 struct NeummanForcesSurfaceComplexForLazy {
 
   struct MyTriangleSpatialFE;
-  struct AuxMethodSpatial: public TriElementForcesAndSurcesCore::UserDataOperator {
+  struct AuxMethodSpatial: public FaceElementForcesAndSourcesCore::UserDataOperator {
 
     MyTriangleSpatialFE *myPtr;
-    AuxMethodSpatial(const string &field_name,MyTriangleSpatialFE *_myPtr);
+    AuxMethodSpatial(const string &field_name,MyTriangleSpatialFE *my_ptr,const char type);
     PetscErrorCode doWork(int side, EntityType type, DataForcesAndSurcesCore::EntData &data);
 
   };
 
-  struct AuxMethodMaterial: public TriElementForcesAndSurcesCore::UserDataOperator {
+  struct AuxMethodMaterial: public FaceElementForcesAndSourcesCore::UserDataOperator {
 
     MyTriangleSpatialFE *myPtr;
-    AuxMethodMaterial(const string &field_name,MyTriangleSpatialFE *_myPtr);
+    AuxMethodMaterial(const string &field_name,MyTriangleSpatialFE *my_ptr,const char type);
     PetscErrorCode doWork(int side, EntityType type, DataForcesAndSurcesCore::EntData &data);
 
   };
 
-  struct MyTriangleSpatialFE: public TriElementForcesAndSurcesCore {
+  struct MyTriangleSpatialFE: public FaceElementForcesAndSourcesCore {
 
     double *sCaleLhs;
     double *sCaleRhs;
     enum FORCES { CONSERVATIVE = 1, NONCONSERVATIVE = 2};
+
     FORCES typeOfForces;
     const double eps;
     bool uSeF;
@@ -150,7 +150,7 @@ struct NeummanForcesSurfaceComplexForLazy {
 
   struct MyTriangleMaterialFE: public MyTriangleSpatialFE {
 
-    MyTriangleMaterialFE(FieldInterface &_mField,Mat _Aij,Vec &_F,double *scale_lhs,double *scale_rhs); 
+    MyTriangleMaterialFE(FieldInterface &_mField,Mat _Aij,Vec &_F,double *scale_lhs,double *scale_rhs);
 
     PetscErrorCode rHs();
     PetscErrorCode lHs();
@@ -182,4 +182,3 @@ struct NeummanForcesSurfaceComplexForLazy {
 }
 
 #endif //__COMPLEX_FOR_LAZY_NEUMANM_FORCES_HPP
-

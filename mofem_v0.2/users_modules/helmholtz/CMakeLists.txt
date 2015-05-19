@@ -15,10 +15,13 @@ file(COPY
   ${CMAKE_CURRENT_SOURCE_DIR}/README
   DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
 
-include_directories("${UM_SOURCE_DIR}/helmholtz/src")
-include_directories("${UM_SOURCE_DIR}/analytical_dirichlet_boundary_conditions/src")
+include_directories(${UM_SOURCE_DIR}/helmholtz/src)
+include_directories(${UM_SOURCE_DIR}/analytical_dirichlet_boundary_conditions/src)
 
-add_executable(best_approximation 
+include_directories(${MoFEM_PROJECT_SOURCE_DIR}/third_party/kiss_fft130)
+include_directories(${MoFEM_PROJECT_SOURCE_DIR}/third_party/kiss_fft130/tools)
+
+add_executable(best_approximation
   ${UM_SOURCE_DIR}/helmholtz/best_approximation.cpp
 )
 target_link_libraries(best_approximation
@@ -32,7 +35,7 @@ target_link_libraries(best_approximation
   mofem_cblas
   ${MoFEM_PROJECT_LIBS})
 
-add_executable(fe_approximation 
+add_executable(fe_approximation
   ${UM_SOURCE_DIR}/helmholtz/fe_approximation.cpp
 )
 target_link_libraries(fe_approximation
@@ -45,5 +48,3 @@ target_link_libraries(fe_approximation
   mofem_third_party
   mofem_cblas
   ${MoFEM_PROJECT_LIBS})
-
-

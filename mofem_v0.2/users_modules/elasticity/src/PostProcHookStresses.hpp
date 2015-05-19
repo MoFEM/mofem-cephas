@@ -1,8 +1,3 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
- * FIXME: DESCRIPTION
- */
-
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -18,7 +13,7 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 
-struct PostPorcStress: public TetElementForcesAndSourcesCore::UserDataOperator {
+struct PostPorcStress: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
   FieldInterface& mField;
   Interface &postProcMesh;
@@ -32,7 +27,7 @@ struct PostPorcStress: public TetElementForcesAndSourcesCore::UserDataOperator {
     vector<EntityHandle> &map_gauss_pts,
     const string field_name,
     PostPocOnRefinedMesh::CommonData &common_data):
-    TetElementForcesAndSourcesCore::UserDataOperator(field_name),
+    VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
     mField(m_field),
     postProcMesh(post_proc_mesh),
     mapGaussPts(map_gauss_pts),
@@ -60,7 +55,7 @@ struct PostPorcStress: public TetElementForcesAndSourcesCore::UserDataOperator {
 	  *_lambda = LAMBDA(mydata.data.Young,mydata.data.Poisson);
 	  *_mu = MU(mydata.data.Young,mydata.data.Poisson);
 	  *_block_id = it->get_msId();
-	  PetscFunctionReturn(0);  
+	  PetscFunctionReturn(0);
 	}
       }
     }
@@ -84,7 +79,7 @@ struct PostPorcStress: public TetElementForcesAndSourcesCore::UserDataOperator {
 
     ErrorCode rval;
     PetscErrorCode ierr;
-     
+
     //const MoFEM::FEDofMoFEMEntity *dof_ptr = data.getFieldDofs()[0];
 
     int id;
@@ -149,14 +144,14 @@ struct PostPorcStress: public TetElementForcesAndSourcesCore::UserDataOperator {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
     }
     for(int gg = 0;gg<nb_gauss_pts;gg++) {
-      
+
       strain.resize(6);
-      strain[0] = (commonData.gradMap[row_field_name][gg])(0,0);
-      strain[1] = (commonData.gradMap[row_field_name][gg])(1,1);
-      strain[3] = (commonData.gradMap[row_field_name][gg])(2,2);
-      strain[3] = (commonData.gradMap[row_field_name][gg])(0,1)+(commonData.gradMap[row_field_name][gg])(1,0);
-      strain[4] = (commonData.gradMap[row_field_name][gg])(1,2)+(commonData.gradMap[row_field_name][gg])(2,1);
-      strain[5] = (commonData.gradMap[row_field_name][gg])(0,2)+(commonData.gradMap[row_field_name][gg])(2,0);
+      strain[0] = (commonData.gradMap[rowFieldName][gg])(0,0);
+      strain[1] = (commonData.gradMap[rowFieldName][gg])(1,1);
+      strain[3] = (commonData.gradMap[rowFieldName][gg])(2,2);
+      strain[3] = (commonData.gradMap[rowFieldName][gg])(0,1)+(commonData.gradMap[rowFieldName][gg])(1,0);
+      strain[4] = (commonData.gradMap[rowFieldName][gg])(1,2)+(commonData.gradMap[rowFieldName][gg])(2,1);
+      strain[5] = (commonData.gradMap[rowFieldName][gg])(0,2)+(commonData.gradMap[rowFieldName][gg])(2,0);
 
       stress.resize(6);
       noalias(stress) = prod(D,strain);
@@ -173,7 +168,7 @@ struct PostPorcStress: public TetElementForcesAndSourcesCore::UserDataOperator {
 
       ublas::matrix< FieldData > eigen_vectors = Stress;
       ublas::vector<double> eigen_values(3);
-      
+
       //LAPACK - eigenvalues and vectors. Applied twice for initial creates memory space
       int n = 3, lda = 3, info, lwork = -1;
       double wkopt;
@@ -183,13 +178,13 @@ struct PostPorcStress: public TetElementForcesAndSourcesCore::UserDataOperator {
       double work[lwork];
       info = lapack_dsyev('V','U',n,&(eigen_vectors.data()[0]),lda,&(eigen_values.data()[0]),work,lwork);
       if(info != 0) SETERRQ1(PETSC_COMM_SELF,1,"is something wrong with lapack_dsyev info = %d",info);
-      
+
       //eigen_vectors = trans(eigen_vectors);
       for (int ii=0; ii < 3; ii++) {
-        prin_vals_vect[0] = eigen_values[0]; 
-        prin_vals_vect[1] = eigen_values[1]; 
-        prin_vals_vect[2] = eigen_values[2]; 
-        prin_stress_vect1[ii] = eigen_vectors.data()[ii+3*0]; 
+        prin_vals_vect[0] = eigen_values[0];
+        prin_vals_vect[1] = eigen_values[1];
+        prin_vals_vect[2] = eigen_values[2];
+        prin_stress_vect1[ii] = eigen_vectors.data()[ii+3*0];
         prin_stress_vect2[ii] = eigen_vectors.data()[ii+3*1];
         prin_stress_vect3[ii] = eigen_vectors.data()[ii+3*2];
       }
