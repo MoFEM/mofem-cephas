@@ -603,14 +603,23 @@ of boundary conditions could be easily implemented.
   /// Aplly Forward FFT to pressure degrees of freedom
   PetscErrorCode pressureForwardDft() {
     PetscFunctionBegin;
-    ierr = seriesForwardDft(pSeriesIncidentWave); CHKERRQ(ierr);
+    PetscBool add_incident_wave = PETSC_FALSE;
+    ierr = PetscOptionsGetBool(NULL,"-add_incident_wave",&add_incident_wave,NULL); CHKERRQ(ierr);
+    if(add_incident_wave) {
+      ierr = seriesForwardDft(pSeriesIncidentWave); CHKERRQ(ierr);
+    }
     PetscFunctionReturn(0);
   }
 
   /// Aplly Inverse FFT to pressure degrees of freedom
   PetscErrorCode pressureInverseDft() {
     PetscFunctionBegin;
-    ierr = seriesInverseDft(pSeriesIncidentWave); CHKERRQ(ierr);
+    PetscBool add_incident_wave = PETSC_FALSE;
+    ierr = PetscOptionsGetBool(NULL,"-add_incident_wave",&add_incident_wave,NULL); CHKERRQ(ierr);
+    if(add_incident_wave) {
+      ierr = seriesInverseDft(pSeriesIncidentWave); CHKERRQ(ierr);
+    }
+    ierr = seriesInverseDft(pSeriesScatterWave); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
