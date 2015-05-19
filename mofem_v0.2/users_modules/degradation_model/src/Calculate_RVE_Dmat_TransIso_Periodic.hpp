@@ -182,6 +182,7 @@ namespace MoFEM {
             applied_strain.resize(1.5*field_rank+1.5); applied_strain.clear();
 
 //            cout<<"nb_gauss_pts for calculateion D =  "<<nb_gauss_pts <<endl;
+            double RVE_volume;    RVE_volume=0.0;  //RVE volume for full RVE We need this for stress calculation
             for(int gg = 0;gg<nb_gauss_pts;gg++) {
               Vec F1,F2,F3,F4,F5,F6,D1;
               Mat A;
@@ -200,7 +201,6 @@ namespace MoFEM {
               //=============================================================================================================
               //Calculation of RVE volume
               //=============================================================================================================
-              double RVE_volume;    RVE_volume=0.0;  //RVE volume for full RVE We need this for stress calculation
               Vec RVE_volume_Vec;
               ParallelComm* pcomm_RVE = ParallelComm::get_pcomm(&m_field_RVE.get_moab(),MYPCOMM_INDEX);
               //            cout<<" pcomm_RVE->size() = "<<pcomm_RVE->size()<<endl;
@@ -484,7 +484,7 @@ namespace MoFEM {
 //                }
 //              }
 //
-              cout<<"fe_ent "<<fe_ent <<endl;
+              cout<<"fe_ent "<<fe_ent << "nb_gauss_pts  "<<nb_gauss_pts<<"  gg  "<< gg<<endl;
               cout<<"Dmat = "<<Dmat<<endl;
 
               commonData.Dmat_RVE[fe_ent](gg).resize(6,6);

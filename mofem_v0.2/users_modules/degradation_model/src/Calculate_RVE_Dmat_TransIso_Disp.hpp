@@ -181,7 +181,8 @@ namespace MoFEM {
             int field_rank=3; // it is mechanical problem
             applied_strain.resize(1.5*field_rank+1.5); applied_strain.clear();
 
- 
+            cout<<"nb_gauss_pts "<<nb_gauss_pts<<endl;
+            
             for(int gg = 0;gg<nb_gauss_pts;gg++) {
               Vec F1,F2,F3,F4,F5,F6,D1;
               Mat A;
@@ -477,12 +478,11 @@ namespace MoFEM {
 //                }
 //              }
 //              
-              cout<<"fe_ent "<<fe_ent <<endl;
+              cout<<"fe_ent "<<fe_ent << "gg  "<<gg<<endl;
               cout<<"Dmat = "<<Dmat<<endl;
 
               commonData.Dmat_RVE[fe_ent](gg).resize(6,6);
               commonData.Dmat_RVE[fe_ent](gg)=Dmat;
-//              cout<<"gg End =  "<<gg <<endl;
               
               ierr = VecDestroy(&F1); CHKERRABORT(PETSC_COMM_WORLD,ierr);
               ierr = VecDestroy(&F2); CHKERRABORT(PETSC_COMM_WORLD,ierr);
