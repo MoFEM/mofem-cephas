@@ -469,12 +469,14 @@ int main(int argc, char *argv[]) {
   ierr = post_proc.addFieldValuesGradientPostProc("DISPLACEMENT"); CHKERRQ(ierr);
   //add postpocessing for sresses
   post_proc.getOpPtrVector().push_back(
-                                          new PostPorcStress(
-                                                             mField,
-                                                             post_proc.postProcMesh,
-                                                             post_proc.mapGaussPts,
-                                                             "DISPLACEMENT",
-                                                             post_proc.commonData));
+                                       new PostPorcStress(
+                                                          mField,
+                                                          post_proc.postProcMesh,
+                                                          post_proc.mapGaussPts,
+                                                          "DISPLACEMENT",
+                                                          post_proc.commonData
+                                                          )
+                                       );
   
   
   //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);

@@ -30,19 +30,9 @@ make MoistureTrans_Periodic_MRhs_with_incl && mpirun -np 1 ./MoistureTrans_Perio
 
 
 //Unsteady thermal macro problem (run for 1000 days) (time here in seconds)
-//============================================================
-//make thermal_unsteady_inputDmat && mpirun -np 8 ./thermal_unsteady_inputDmat \
-//-my_file ../users_modules/degradation_model/meshes/trans_iso/Macro_Plate_with_hole.cub \
-//  -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor \
-//  -snes_type newtonls -snes_linesearch_type basic -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 -snes_monitor \
-//  -ts_monitor -ts_type beuler -ts_dt 864000 -ts_final_time 86400000 -snes_lag_jacobian -2 \
-//  -my_order 1 -my_max_post_proc_ref_level 0
-
-
-Unsteady thermal macro problem (run for 1000 days) (time here in seconds)
 ============================================================
 make thermal_unsteady_inputDmat && mpirun -np 8 ./thermal_unsteady_inputDmat \
--my_file ../users_modules/degradation_model/meshes/Using_Textile_RVE/Macro_Plate_with_hole.cub \
+-my_file ../users_modules/degradation_model/meshes/trans_iso/Macro_Plate_with_hole.cub \
   -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor \
   -snes_type newtonls -snes_linesearch_type basic -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 -snes_monitor \
   -ts_monitor -ts_type beuler -ts_dt 864000 -ts_final_time 86400000 -snes_lag_jacobian -2 \

@@ -338,7 +338,7 @@ namespace MoFEM {
       BlockData &dAta;
       CommonData &commonData;
       OpGetDegradationLhs(const string field_name,BlockData &data,CommonData &common_data):
-      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name, UserDataOperator::OPROW),
+      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name, UserDataOperator::OPROWCOL),
       dAta(data),commonData(common_data) {}
       
       ublas::matrix<double> M,transM;

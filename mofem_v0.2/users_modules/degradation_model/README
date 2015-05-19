@@ -31,7 +31,7 @@ make MoistureTrans_Periodic_MRhs_with_incl && mpirun -np 1 ./MoistureTrans_Perio
 Unsteady thermal macro problem (run for 1000 days=86400000 in sec with step of 10 days=864000) (time here in seconds)
 ============================================================
 make thermal_unsteady_inputDmat && mpirun -np 1 ./thermal_unsteady_inputDmat \
--my_file /mnt/home/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/Using_Textile_RVE/Macro_Plate_with_hole.cub \
+-my_file /mnt/home/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/trans_iso/Macro_Plate_with_hole.cub \
   -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor \
   -snes_type newtonls -snes_linesearch_type basic -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 -snes_monitor \
   -ts_monitor -ts_type beuler -ts_dt 864000 -ts_final_time 86400000 -snes_lag_jacobian -2 \
@@ -93,7 +93,7 @@ make mech_macro_transIso_Disp && mpirun -np 1 ./mech_macro_transIso_Disp \
 make mech_macro_transIso_Periodic && mpirun -np 2 ./mech_macro_transIso_Periodic \
 -my_file_Macro solution_wt.h5m -my_file_RVE solution_RVE.h5m\
   -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist \
-  -my_max_post_proc_ref_level 0 -my_order 1 -my_order_RVE 2\
+  -my_max_post_proc_ref_level 0 -my_order 1 -my_order_RVE 1\
 
 
 Conversion from .h5m to vtk
@@ -104,7 +104,7 @@ One file conversion
 All files conversion using script
 ./do_vtk1.sh FE2_out_*.h5m
 
-cp *.vtk /mnt/home/Desktop/results/
+cp *.vtk /mnt/home/Desktop/Results/
 
 cp out.vtk /mnt/home/Desktop/RVE_out/
 
