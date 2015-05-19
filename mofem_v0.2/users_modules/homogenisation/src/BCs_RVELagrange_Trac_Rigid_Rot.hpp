@@ -56,38 +56,39 @@ namespace MoFEM {
         try {
           if(row_data.getIndices().size()==0) PetscFunctionReturn(0);
           if(col_data.getIndices().size()==0) PetscFunctionReturn(0);
-//          cout<<"row_data.getIndices().size() "<<row_data.getIndices().size()<<endl;
-//          cout<<"col_data.getIndices().size() "<<col_data.getIndices().size()<<endl;
-          PetscErrorCode ierr;
-          ublas::matrix<FieldData> Mat_face;          Mat_face.resize(3,9);           Mat_face.clear();
-          ublas::matrix<FieldData> Mat_face_Tran;     Mat_face_Tran.resize(9,3);      Mat_face_Tran.clear();
+          if(col_type==MBVERTEX){
+  //          cout<<"row_data.getIndices().size() "<<row_data.getIndices().size()<<endl;
+  //          cout<<"col_data.getIndices().size() "<<col_data.getIndices().size()<<endl;
+            PetscErrorCode ierr;
+            ublas::matrix<FieldData> Mat_face;          Mat_face.resize(3,9);           Mat_face.clear();
+            ublas::matrix<FieldData> Mat_face_Tran;     Mat_face_Tran.resize(9,3);      Mat_face_Tran.clear();
 
-          
-          int num_nodes;   const EntityHandle* conn_face;  double coords_face[9];
-          EntityHandle face_tri = getMoFEMFEPtr()->get_ent(); //handle of finite element
-//          EntityHandle face_tri;  face_tri=fePtr->get_ent();
-          ErrorCode rval;
-          rval = mField.get_moab().get_connectivity(face_tri,conn_face,num_nodes,true); CHKERR_PETSC(rval);
-          rval = mField.get_moab().get_coords(conn_face,num_nodes,coords_face); CHKERR_PETSC(rval);
-          
-//          for(int ii=0; ii<9; ii++) cout<<"coord "<<coords_face[ii]<<endl;
-//          cout<< "num_nodes ="<<num_nodes << endl;
-//          cout<< "conn_face ="<<conn_face << endl;
-          for(int nn=0; nn<3; nn++){
-            Mat_face(0,3*nn+1)=-coords_face[3*nn+2];    Mat_face(0,3*nn+2)= coords_face[3*nn+1];
-            Mat_face(1,3*nn+0)= coords_face[3*nn+2];    Mat_face(1,3*nn+2)=-coords_face[3*nn+0];
-            Mat_face(2,3*nn+0)=-coords_face[3*nn+1];    Mat_face(2,3*nn+1)= coords_face[3*nn+0];
+            
+            int num_nodes;   const EntityHandle* conn_face;  double coords_face[9];
+            EntityHandle face_tri = getMoFEMFEPtr()->get_ent(); //handle of finite element
+  //          EntityHandle face_tri;  face_tri=fePtr->get_ent();
+            ErrorCode rval;
+            rval = mField.get_moab().get_connectivity(face_tri,conn_face,num_nodes,true); CHKERR_PETSC(rval);
+            rval = mField.get_moab().get_coords(conn_face,num_nodes,coords_face); CHKERR_PETSC(rval);
+            
+  //          for(int ii=0; ii<9; ii++) cout<<"coord "<<coords_face[ii]<<endl;
+  //          cout<< "num_nodes ="<<num_nodes << endl;
+  //          cout<< "conn_face ="<<conn_face << endl;
+            for(int nn=0; nn<3; nn++){
+              Mat_face(0,3*nn+1)=-coords_face[3*nn+2];    Mat_face(0,3*nn+2)= coords_face[3*nn+1];
+              Mat_face(1,3*nn+0)= coords_face[3*nn+2];    Mat_face(1,3*nn+2)=-coords_face[3*nn+0];
+              Mat_face(2,3*nn+0)=-coords_face[3*nn+1];    Mat_face(2,3*nn+1)= coords_face[3*nn+0];
+            }
+
+            // Matrix C1
+            int nb_rows=row_data.getIndices().size();
+            int nb_cols=col_data.getIndices().size();
+            ierr = MatSetValues(Aij,nb_rows,&row_data.getIndices()[0],nb_cols,&col_data.getIndices()[0],&Mat_face(0,0),ADD_VALUES); CHKERRQ(ierr);
+
+            // Matrix C1T
+            noalias(Mat_face_Tran) = trans(Mat_face);
+            ierr = MatSetValues(Aij,nb_cols,&col_data.getIndices()[0],nb_rows,&row_data.getIndices()[0],&Mat_face_Tran(0,0),ADD_VALUES); CHKERRQ(ierr);
           }
-
-          // Matrix C1
-          int nb_rows=row_data.getIndices().size();
-          int nb_cols=col_data.getIndices().size();
-          ierr = MatSetValues(Aij,nb_rows,&row_data.getIndices()[0],nb_cols,&col_data.getIndices()[0],&Mat_face(0,0),ADD_VALUES); CHKERRQ(ierr);
-
-          // Matrix C1T
-          noalias(Mat_face_Tran) = trans(Mat_face);
-          ierr = MatSetValues(Aij,nb_cols,&col_data.getIndices()[0],nb_rows,&row_data.getIndices()[0],&Mat_face_Tran(0,0),ADD_VALUES); CHKERRQ(ierr);
-          
         } catch (const std::exception& ex) {
           ostringstream ss;
           ss << "throw in method: " << ex.what() << endl;

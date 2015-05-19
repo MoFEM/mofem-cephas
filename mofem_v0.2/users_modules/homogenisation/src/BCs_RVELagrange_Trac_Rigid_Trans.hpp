@@ -55,38 +55,39 @@ namespace MoFEM {
         try {
           if(row_data.getIndices().size()==0) PetscFunctionReturn(0);
           if(col_data.getIndices().size()==0) PetscFunctionReturn(0);
-//          cout<<"row_data.getIndices().size() "<<row_data.getIndices().size()<<endl;
-//          cout<<"col_data.getIndices().size() "<<col_data.getIndices().size()<<endl;
-          PetscErrorCode ierr;
-          const FENumeredDofMoFEMEntity *dof_ptr;
-          ierr = getMoFEMFEPtr()->get_col_dofs_by_petsc_gloabl_dof_idx(col_data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
-          int rank = dof_ptr->get_max_rank();
-//          cout<<"rank "<< rank<< endl;
-          ublas::matrix<FieldData> Mat_face;          Mat_face.resize(rank,3*rank);           Mat_face.clear();
-          ublas::matrix<FieldData> Mat_face_Tran;     Mat_face_Tran.resize(3*rank,rank);      Mat_face_Tran.clear();
-          switch(rank) {
-            case 3:
-              for(int nn=0; nn<3; nn++){
-                Mat_face(0,3*nn+0)=1.0;  Mat_face(1,3*nn+1)=1.0;   Mat_face(2,3*nn+2)=1.0;
-              }
-              break;
-            case 1:
-              Mat_face(0,0)=1.0; Mat_face(0,1)=1.0; Mat_face(0,2)=1.0;
-              break;
-            default:
-              SETERRQ(PETSC_COMM_SELF,1,"not implemented");
-          }
-//          cout<<"Mat_face "<< Mat_face<< endl;
+          if(col_type==MBVERTEX){
+  //          cout<<"row_data.getIndices().size() "<<row_data.getIndices().size()<<endl;
+  //          cout<<"col_data.getIndices().size() "<<col_data.getIndices().size()<<endl;
+            PetscErrorCode ierr;
+            const FENumeredDofMoFEMEntity *dof_ptr;
+            ierr = getMoFEMFEPtr()->get_col_dofs_by_petsc_gloabl_dof_idx(col_data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
+            int rank = dof_ptr->get_max_rank();
+  //          cout<<"rank "<< rank<< endl;
+            ublas::matrix<FieldData> Mat_face;          Mat_face.resize(rank,3*rank);           Mat_face.clear();
+            ublas::matrix<FieldData> Mat_face_Tran;     Mat_face_Tran.resize(3*rank,rank);      Mat_face_Tran.clear();
+            switch(rank) {
+              case 3:
+                for(int nn=0; nn<3; nn++){
+                  Mat_face(0,3*nn+0)=1.0;  Mat_face(1,3*nn+1)=1.0;   Mat_face(2,3*nn+2)=1.0;
+                }
+                break;
+              case 1:
+                Mat_face(0,0)=1.0; Mat_face(0,1)=1.0; Mat_face(0,2)=1.0;
+                break;
+              default:
+                SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+            }
+  //          cout<<"Mat_face "<< Mat_face<< endl;
 
-          // Matrix C1
-          int nb_rows=row_data.getIndices().size();
-          int nb_cols=col_data.getIndices().size();
-          ierr = MatSetValues(Aij,nb_rows,&row_data.getIndices()[0],nb_cols,&col_data.getIndices()[0],&Mat_face(0,0),ADD_VALUES); CHKERRQ(ierr);
-          
-          // Matrix C1T
-          noalias(Mat_face_Tran) = trans(Mat_face);
-          ierr = MatSetValues(Aij,nb_cols,&col_data.getIndices()[0],nb_rows,&row_data.getIndices()[0],&Mat_face_Tran(0,0),ADD_VALUES); CHKERRQ(ierr);
-          
+            // Matrix C1
+            int nb_rows=row_data.getIndices().size();
+            int nb_cols=col_data.getIndices().size();
+            ierr = MatSetValues(Aij,nb_rows,&row_data.getIndices()[0],nb_cols,&col_data.getIndices()[0],&Mat_face(0,0),ADD_VALUES); CHKERRQ(ierr);
+            
+            // Matrix C1T
+            noalias(Mat_face_Tran) = trans(Mat_face);
+            ierr = MatSetValues(Aij,nb_cols,&col_data.getIndices()[0],nb_rows,&row_data.getIndices()[0],&Mat_face_Tran(0,0),ADD_VALUES); CHKERRQ(ierr);
+          }
         } catch (const std::exception& ex) {
           ostringstream ss;
           ss << "throw in method: " << ex.what() << endl;

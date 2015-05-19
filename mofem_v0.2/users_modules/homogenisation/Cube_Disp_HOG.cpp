@@ -54,7 +54,7 @@ PetscErrorCode Stress_cal(FieldInterface &mField, string field_name,string lagra
   
   ierr = VecZeroEntries(Stress_Homo); CHKERRQ(ierr);
   BCs_RVE_Homogenized_Stress_Disp rve_homo_stress_disp(mField);
-  rve_homo_stress_disp.setRVEBCsHomoStressOperators("DISPLACEMENT","Lagrange_mul_disp", RVE_volume, Stress_Homo, setOfRVEBC,"MESH_NODE_POSITIONS");
+  rve_homo_stress_disp.setRVEBCsHomoStressOperators("DISPLACEMENT","Lagrange_mul_disp", Stress_Homo, setOfRVEBC,"MESH_NODE_POSITIONS");
   ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","Lagrange_elem",rve_homo_stress_disp.getLoopFeRVEBCRhs()); CHKERRQ(ierr);
   
   ierr = VecAssemblyBegin(Stress_Homo); CHKERRQ(ierr);

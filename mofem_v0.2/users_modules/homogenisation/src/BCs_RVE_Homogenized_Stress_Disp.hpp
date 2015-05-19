@@ -33,12 +33,10 @@ namespace MoFEM {
     struct OpRVEHomoStress:public FaceElementForcesAndSourcesCore::UserDataOperator {
       RVEBC_Data &dAta;
       bool ho_geometry;
-      double RVE_volume;
       Vec Stress_Homo;
       
-      OpRVEHomoStress(const string field_name, const string lagrang_field_name,  double _RVE_volume, Vec _Stress_Homo, RVEBC_Data &data, bool _ho_geometry = false):
-      FaceElementForcesAndSourcesCore::UserDataOperator(lagrang_field_name, UserDataOperator::OPROW),Stress_Homo(_Stress_Homo),
-      RVE_volume(_RVE_volume), dAta(data), ho_geometry(_ho_geometry){}
+      OpRVEHomoStress(const string field_name, const string lagrang_field_name, Vec _Stress_Homo, RVEBC_Data &data, bool _ho_geometry = false):
+      FaceElementForcesAndSourcesCore::UserDataOperator(lagrang_field_name, UserDataOperator::OPROW),Stress_Homo(_Stress_Homo), dAta(data), ho_geometry(_ho_geometry){}
       
       /** brief calculate Convection condition on the right hand side
        *  R=int_S N^T*alpha*N_f  dS **/
@@ -109,7 +107,7 @@ namespace MoFEM {
         }
         
         //        cout<<"data.getFieldData() "<<data.getFieldData()<<endl;
-        Stress_Homo_elem+=prod(trans(D_mat), -1*data.getFieldData());   //Lamda=data.getFieldData() is reaction force (so multiply for -1 to get the force)
+        Stress_Homo_elem=prod(trans(D_mat), -1*data.getFieldData());   //Lamda=data.getFieldData() is reaction force (so multiply for -1 to get the force)
         //        cout<<"Stress_Homo_elem "<<Stress_Homo_elem<<endl;
         int Indices6[6]={0, 1, 2, 3, 4, 5};
         int Indices3[3]={0, 1, 2};
@@ -131,7 +129,7 @@ namespace MoFEM {
     
     
     
-    PetscErrorCode setRVEBCsHomoStressOperators(string field_name,string lagrang_field_name, double RVE_volume, Vec Stress_Homo, map<int,RVEBC_Data> &setOfRVEBC, const string mesh_nodals_positions) {
+    PetscErrorCode setRVEBCsHomoStressOperators(string field_name,string lagrang_field_name, Vec Stress_Homo, map<int,RVEBC_Data> &setOfRVEBC, const string mesh_nodals_positions) {
       PetscFunctionBegin;
       
       bool ho_geometry = false;
@@ -143,7 +141,7 @@ namespace MoFEM {
       map<int,RVEBC_Data>::iterator sit = setOfRVEBC.begin();
       for(;sit!=setOfRVEBC.end();sit++) {
         //        cout<<"Hi from setOfRVEBC "<<endl;
-        feRVEBCRhs.getOpPtrVector().push_back(new OpRVEHomoStress(field_name, lagrang_field_name, RVE_volume, Stress_Homo, sit->second, ho_geometry));
+        feRVEBCRhs.getOpPtrVector().push_back(new OpRVEHomoStress(field_name, lagrang_field_name, Stress_Homo, sit->second, ho_geometry));
         
       }
       PetscFunctionReturn(0);

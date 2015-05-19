@@ -44,6 +44,9 @@ using namespace MoFEM;
 #include "BCs_RVELagrange_Trac.hpp"
 #include "BCs_RVELagrange_Trac_Rigid_Trans.hpp"
 #include "BCs_RVELagrange_Trac_Rigid_Rot.hpp"
+#include "BCs_RVEVolume.hpp"
+#include "BCs_RVE_Homogenized_Stress_Trac.hpp"
+
 
 //#include "ElasticFE_RVELagrange_Homogenized_Stress_Traction.hpp"
 //#include "ElasticFE_RVELagrange_RigidBodyTranslation.hpp"
@@ -52,6 +55,34 @@ using namespace MoFEM;
 
 ErrorCode rval;
 PetscErrorCode ierr;
+
+
+PetscErrorCode Stress_cal(FieldInterface &mField, string field_name,string lagrang_field_name, double RVE_volume, map<int,BCs_RVELagrange_Disp::RVEBC_Data> &setOfRVEBC, Vec Stress_Homo, ublas::matrix<FieldData> &Dmat, int Dmatcol) {
+  PetscFunctionBegin;
+  
+  ierr = VecZeroEntries(Stress_Homo); CHKERRQ(ierr);
+  BCs_RVE_Homogenized_Stress_Trac rve_homo_stress_trac(mField);
+  rve_homo_stress_trac.setRVEBCsHomoStressOperators("DISPLACEMENT","Lagrange_mul_disp", Stress_Homo, setOfRVEBC,"MESH_NODE_POSITIONS");
+  ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","Lagrange_elem",rve_homo_stress_trac.getLoopFeRVEBCRhs()); CHKERRQ(ierr);
+  
+  ierr = VecAssemblyBegin(Stress_Homo); CHKERRQ(ierr);
+  ierr = VecAssemblyEnd(Stress_Homo); CHKERRQ(ierr);
+  ierr = VecScale(Stress_Homo, 1.0/(RVE_volume)); CHKERRQ(ierr);
+//  ierr = VecView(Stress_Homo,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+
+  PetscScalar *avec;
+  VecGetArray(Stress_Homo, &avec);
+  for(int ii=0; ii<6; ii++){
+    Dmat(ii,Dmatcol)=*avec;
+    avec++;
+  }
+  
+  PetscFunctionReturn(0);
+}
+
+
+
+
 
 static char help[] = "...\n\n";
 
@@ -265,10 +296,10 @@ int main(int argc, char *argv[]) {
   lagrangian_element_rigid_body_rot.setRVEBCsRigidBodyRotOperators("DISPLACEMENT","Lagrange_mul_disp_rigid_rotation",Aij, lagrangian_element.setOfRVEBC);
   ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","Lagrange_elem_rigid_rotation",lagrangian_element_rigid_body_rot.getLoopFeRVEBCLhs()); CHKERRQ(ierr);
 
-  //Matrix View
-  MatView(Aij,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
-  std::string wait;
-  std::cin >> wait;
+//  //Matrix View
+//  MatView(Aij,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
+//  std::string wait;
+//  std::cin >> wait;
 
   ierr = MatAssemblyBegin(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
   ierr = MatAssemblyEnd(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
@@ -303,106 +334,173 @@ int main(int argc, char *argv[]) {
   ierr = VecAssemblyBegin(F6); CHKERRQ(ierr);
   ierr = VecAssemblyEnd(F6); CHKERRQ(ierr);
 
-//
-//  //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-//  //ierr = MatView(Aij,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-//  
-//  
-//////Matrix View
-////MatView(Aij,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
-////std::string wait;
-////std::cin >> wait;
-//  
-//  //Solver
-//  KSP solver;
-//  ierr = KSPCreate(PETSC_COMM_WORLD,&solver); CHKERRQ(ierr);
-//  ierr = KSPSetOperators(solver,Aij,Aij); CHKERRQ(ierr);
-//  ierr = KSPSetFromOptions(solver); CHKERRQ(ierr);
-//  ierr = KSPSetUp(solver); CHKERRQ(ierr);
-//  
-//  ierr = KSPSolve(solver,F,D); CHKERRQ(ierr);
-//  ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-//  ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-//  
-//  //Save data on mesh
-//  ierr = mField.set_global_ghost_vector("ELASTIC_MECHANICS",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-////  ierr = VecView(D,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-//  
-//  
-//  //Calculation of Homogenized stress
-//  //=======================================================================================================================================================
-//  double RVE_volume;    RVE_volume=0.0;  //RVE volume for full RVE We need this for stress calculation
-//  Vec RVE_volume_Vec;
-//  ierr = VecCreateMPI(PETSC_COMM_WORLD, 1, pcomm->size(), &RVE_volume_Vec);  CHKERRQ(ierr);
-//  ierr = VecZeroEntries(RVE_volume_Vec); CHKERRQ(ierr);
-//  
-//  RVEVolume MyRVEVol(mField,Aij,D,F,0.0,0.0, RVE_volume_Vec);
-//  ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyRVEVol);  CHKERRQ(ierr);
-//  ierr = VecView(RVE_volume_Vec,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-//  ierr = VecSum(RVE_volume_Vec, &RVE_volume);  CHKERRQ(ierr);
-//  cout<<"Final RVE_volume = "<< RVE_volume <<endl;
-//  
-//  //create a vector for 6 components of homogenized stress
-//  Vec Stress_Homo;
-//  ierr = VecCreateMPI(PETSC_COMM_WORLD, 6, 6*pcomm->size(), &Stress_Homo);  CHKERRQ(ierr);
-//  ierr = VecZeroEntries(Stress_Homo); CHKERRQ(ierr);
-//  
-//  ////    ierr = VecView(D,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-//  ElasticFE_RVELagrange_Homogenized_Stress_Traction MyFE_RVEHomoStressTraction(mField,Aij,D,F,&RVE_volume,applied_strain, Stress_Homo,"DISPLACEMENT","Lagrange_mul_disp",field_rank);
-//  ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","Lagrange_elem",MyFE_RVEHomoStressTraction);  CHKERRQ(ierr);
-//  
-////  if(pcomm->rank()) cout<< " Stress_Homo =  "<<endl;
-////  ierr = VecView(Stress_Homo,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-//  
-//  if(pcomm->rank()==0){
-//    PetscScalar    *avec;
-//    VecGetArray(Stress_Homo, &avec);
-//    
-//    cout<< "\nStress_Homo = \n\n";
-//    for(int ii=0; ii<6; ii++){
-//      cout <<*avec<<endl; ;
-//      avec++;
-//    }
-//  }
-//  cout<< "\n\n";
-//
-//  
-//  //=======================================================================================================================================================
-//
-//  PostPocOnRefinedMesh post_proc(mField);
-//  ierr = post_proc.generateRefereneElemenMesh(); CHKERRQ(ierr);
-//  ierr = post_proc.addFieldValuesPostProc("DISPLACEMENT"); CHKERRQ(ierr);
-//  ierr = post_proc.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
-//  ierr = post_proc.addFieldValuesGradientPostProc("DISPLACEMENT"); CHKERRQ(ierr);
-//  //add postpocessing for sresses
-//  post_proc.getOpPtrVector().push_back(
-//                                          new PostPorcStress(
-//                                                             mField,
-//                                                             post_proc.postProcMesh,
-//                                                             post_proc.mapGaussPts,
-//                                                             "DISPLACEMENT",
-//                                                             post_proc.commonData));
-//  
-//  
-//  //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-//  ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",post_proc); CHKERRQ(ierr);
-//  rval = post_proc.postProcMesh.write_file("out.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
-//
-//  
-//  //Destroy matrices
-//  ierr = VecDestroy(&F); CHKERRQ(ierr);
-//  ierr = VecDestroy(&Stress_Homo); CHKERRQ(ierr);
-//  ierr = VecDestroy(&RVE_volume_Vec); CHKERRQ(ierr);
-//
-//  ierr = VecDestroy(&D); CHKERRQ(ierr);
-//  ierr = MatDestroy(&Aij); CHKERRQ(ierr);
-//  ierr = KSPDestroy(&solver); CHKERRQ(ierr);
-//  
-//  
-//  ierr = PetscTime(&v2);CHKERRQ(ierr);
-//  ierr = PetscGetCPUTime(&t2);CHKERRQ(ierr);
-//  
-//  PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Total Rank %d Time = %f CPU Time = %f\n",pcomm->rank(),v2-v1,t2-t1);
+
+  //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+  //ierr = MatView(Aij,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+  
+  
+////Matrix View
+//MatView(Aij,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
+//std::string wait;
+//std::cin >> wait;
+  
+  //  ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+  //  ierr = MatView(Aij,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+  
+  //=============================================================================================================
+  //Calculation of RVE volume for homogenised stress calculaiton
+  //=============================================================================================================
+  double RVE_volume;    RVE_volume=0.0;  //RVE volume for full RVE We need this for stress calculation
+  Vec RVE_volume_Vec;
+  ierr = VecCreateMPI(PETSC_COMM_WORLD, 1, pcomm->size(), &RVE_volume_Vec);  CHKERRQ(ierr);
+  ierr = VecZeroEntries(RVE_volume_Vec); CHKERRQ(ierr);
+  
+  BCs_RVEVolume rvevolume_element(mField);
+  rvevolume_element.setRVEVolumeOperators(mField, "DISPLACEMENT", RVE_volume_Vec, elastic.setOfBlocks);
+  ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",rvevolume_element.getLoopFeLhs()); CHKERRQ(ierr);
+  //    ierr = VecView(RVE_volume_Vec,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+  ierr = VecSum(RVE_volume_Vec, &RVE_volume);  CHKERRQ(ierr);
+  cout<<"Final RVE_volume = "<< RVE_volume <<endl;
+  //=============================================================================================================
+  
+  //Solver
+  KSP solver;
+  ierr = KSPCreate(PETSC_COMM_WORLD,&solver); CHKERRQ(ierr);
+  ierr = KSPSetOperators(solver,Aij,Aij); CHKERRQ(ierr);
+  ierr = KSPSetFromOptions(solver); CHKERRQ(ierr);
+  ierr = KSPSetUp(solver); CHKERRQ(ierr);
+  
+  //solve for F1
+  ierr = KSPSolve(solver,F1,D); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  
+  //Save data on mesh
+  ierr = mField.set_global_ghost_vector("ELASTIC_MECHANICS",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+
+//  ierr = VecView(F1,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+//  ierr = VecView(D,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+  
+  //=============================================================================================================
+  // homogenised stress for strian [1 0 0 0 0 0]^T
+  //=============================================================================================================
+  ublas::matrix<FieldData> Dmat;
+  Dmat.resize(6,6); Dmat.clear();
+
+  //create a vector for 6 components of homogenized stress
+  Vec Stress_Homo;
+  ierr = VecCreateMPI(PETSC_COMM_WORLD, 6, 6*pcomm->size(), &Stress_Homo);  CHKERRQ(ierr);
+  
+  int Dmatcol=0;
+  ierr = Stress_cal(mField, "DISPLACEMENT","Lagrange_mul_disp", RVE_volume, lagrangian_element.setOfRVEBC, Stress_Homo, Dmat, Dmatcol); CHKERRQ(ierr);
+  
+
+  //=============================================================================================================
+  // homogenised stress for strian [0 1 0 0 0 0]^T
+  //=============================================================================================================
+  //solve for F2
+  ierr = KSPSolve(solver,F2,D); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = mField.set_global_ghost_vector("ELASTIC_MECHANICS",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  Dmatcol=1;
+  ierr = Stress_cal(mField, "DISPLACEMENT","Lagrange_mul_disp", RVE_volume, lagrangian_element.setOfRVEBC, Stress_Homo, Dmat, Dmatcol); CHKERRQ(ierr);
+
+  
+  //=============================================================================================================
+  // homogenised stress for strian [0 0 1 0 0 0]^T
+  //=============================================================================================================
+  //solve for F3
+  ierr = KSPSolve(solver,F3,D); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = mField.set_global_ghost_vector("ELASTIC_MECHANICS",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  Dmatcol=2;
+  ierr = Stress_cal(mField, "DISPLACEMENT","Lagrange_mul_disp", RVE_volume, lagrangian_element.setOfRVEBC, Stress_Homo, Dmat, Dmatcol); CHKERRQ(ierr);
+  //=============================================================================================================
+  // homogenised stress for strian [0 0 0 1 0 0]^T
+  //=============================================================================================================
+  //solve for F4
+  ierr = KSPSolve(solver,F4,D); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = mField.set_global_ghost_vector("ELASTIC_MECHANICS",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  Dmatcol=3;
+  ierr = Stress_cal(mField, "DISPLACEMENT","Lagrange_mul_disp", RVE_volume, lagrangian_element.setOfRVEBC, Stress_Homo, Dmat, Dmatcol); CHKERRQ(ierr);
+  //=============================================================================================================
+  // homogenised stress for strian [0 0 0 0 1 0]^T
+  //=============================================================================================================
+  //solve for F5
+  ierr = KSPSolve(solver,F5,D); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = mField.set_global_ghost_vector("ELASTIC_MECHANICS",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  Dmatcol=4;
+  ierr = Stress_cal(mField, "DISPLACEMENT","Lagrange_mul_disp", RVE_volume, lagrangian_element.setOfRVEBC, Stress_Homo, Dmat, Dmatcol); CHKERRQ(ierr);
+  //=============================================================================================================
+  // homogenised stress for strian [0 0 0 0 0 1]^T
+  //=============================================================================================================
+  //solve for F6
+  ierr = KSPSolve(solver,F6,D); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = mField.set_global_ghost_vector("ELASTIC_MECHANICS",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  Dmatcol=5;
+  ierr = Stress_cal(mField, "DISPLACEMENT","Lagrange_mul_disp", RVE_volume, lagrangian_element.setOfRVEBC, Stress_Homo, Dmat, Dmatcol); CHKERRQ(ierr);
+  
+  
+  if(pcomm->rank()==0){
+    cout<< "\nStress_Homo = \n\n";
+    for(int ii=0; ii<6; ii++){
+      for (int jj=0; jj<6; jj++){
+        cout <<Dmat(ii,jj)<<"    ";
+      }
+      cout<<endl;
+    }
+  }
+
+
+  //=======================================================================================================================================================
+
+  PostPocOnRefinedMesh post_proc(mField);
+  ierr = post_proc.generateRefereneElemenMesh(); CHKERRQ(ierr);
+  ierr = post_proc.addFieldValuesPostProc("DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = post_proc.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+  ierr = post_proc.addFieldValuesGradientPostProc("DISPLACEMENT"); CHKERRQ(ierr);
+  //add postpocessing for sresses
+  post_proc.getOpPtrVector().push_back(
+                                          new PostPorcStress(
+                                                             mField,
+                                                             post_proc.postProcMesh,
+                                                             post_proc.mapGaussPts,
+                                                             "DISPLACEMENT",
+                                                             post_proc.commonData));
+  
+  
+  //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",post_proc); CHKERRQ(ierr);
+  rval = post_proc.postProcMesh.write_file("out.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
+
+  
+  //Destroy matrices
+  //Destroy matrices and vectors
+  ierr = VecDestroy(&F1); CHKERRQ(ierr);
+  ierr = VecDestroy(&F2); CHKERRQ(ierr);
+  ierr = VecDestroy(&F3); CHKERRQ(ierr);
+  ierr = VecDestroy(&F4); CHKERRQ(ierr);
+  ierr = VecDestroy(&F5); CHKERRQ(ierr);
+  ierr = VecDestroy(&F6); CHKERRQ(ierr);
+  ierr = VecDestroy(&Stress_Homo); CHKERRQ(ierr);
+  ierr = VecDestroy(&RVE_volume_Vec); CHKERRQ(ierr);
+  
+  ierr = VecDestroy(&D); CHKERRQ(ierr);
+  ierr = MatDestroy(&Aij); CHKERRQ(ierr);
+  ierr = KSPDestroy(&solver); CHKERRQ(ierr);
+  
+  ierr = PetscTime(&v2);CHKERRQ(ierr);
+  ierr = PetscGetCPUTime(&t2);CHKERRQ(ierr);
+  
+  PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Total Rank %d Time = %f CPU Time = %f\n",pcomm->rank(),v2-v1,t2-t1);
   
   PetscFinalize();
   

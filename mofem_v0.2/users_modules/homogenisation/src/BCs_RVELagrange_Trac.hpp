@@ -151,6 +151,7 @@ namespace MoFEM {
       }
       
       ublas::matrix<double> K,transK, NTN;
+      ublas::vector<ublas::matrix<double> > N_mat_row;
       /** \brief calculate thermal convection term in the lhs of equations
        *
        * C = intS N^T  N dS
@@ -165,9 +166,8 @@ namespace MoFEM {
         try {
           if(row_data.getIndices().size()==0) PetscFunctionReturn(0);
           if(col_data.getIndices().size()==0) PetscFunctionReturn(0);
-//          cout<<"row_data.getIndices().size() "<<row_data.getIndices().size()<<endl;
 //          cout<<"col_data.getIndices().size() "<<col_data.getIndices().size()<<endl;
-          
+//          cout<<"row_data.getIndices().size() "<<row_data.getIndices().size()<<endl;
 //          cout<<"OpRVEBCsLhs "<<endl;
           int nb_row = row_data.getIndices().size();
           int nb_col = col_data.getIndices().size();
@@ -182,40 +182,46 @@ namespace MoFEM {
           K.resize(nb_row,nb_col);
           K.clear();
           //        cout<<"no of Gauss points per element = "<<row_data.getN().size1()<<endl;
-          ublas::matrix<FieldData> N_mat, H_mat;
+          
+          N_mat_row.resize(col_data.getN().size1());
+          ublas::matrix<FieldData> N_mat_col, H_mat;
           for(unsigned int gg = 0;gg<col_data.getN().size1();gg++) {
             double area;
             if(ho_geometry) {
               area = norm_2(getNormals_at_GaussPt(gg))*0.5;
-              //              cout<<"area with ho_geometry = "<<area<<endl;
+//              cout<<"area with ho_geometry = "<<area<<endl;
             }   else {
               area = getArea();
               //              cout<<"area without ho_geometry = "<<area<<endl;
             }
             double val = getGaussPts()(2,gg)*area;
             
-            ierr = common_functions.shapeMat(rank, gg, col_data, N_mat); CHKERRQ(ierr);
-//            cout<<"N_mat "<<N_mat<<endl;
-            
-            ierr = common_functions.HMat(getNormals_at_GaussPt(gg), rank, N_mat, H_mat); CHKERRQ(ierr);
+            if(col_type==MBVERTEX) {ierr = common_functions.shapeMat(rank, gg, col_data, N_mat_row(gg)); CHKERRQ(ierr);}
+            ierr = common_functions.shapeMat(rank, gg, col_data, N_mat_col); CHKERRQ(ierr);
+//            cout<<"N_mat_row(gg) "<<N_mat_row(gg)<<endl;
+//            cout<<"N_mat_col "<<N_mat_col<<endl;
+
+            ierr = common_functions.HMat(getNormals_at_GaussPt(gg), rank, N_mat_row(gg), H_mat); CHKERRQ(ierr);
 //            cout<<"H_mat "<<H_mat<<endl;
             if(gg==0){
-              NTN=prod(trans(N_mat),N_mat);  //we don't need to define its size NTN
+              NTN=prod(trans(N_mat_row(gg)),N_mat_col);  //we don't need to define size NTN
               K=val*prod(H_mat, NTN); //we don't need to defien size of K
             }else{
-              NTN=prod(trans(N_mat),N_mat);
+              NTN=prod(trans(N_mat_row(gg)),N_mat_col);
               K+=val*prod(H_mat, NTN);
             }
           }
 //          cout<<"K = "<<K<<endl;
+//          string wait;
+//          cin>>wait;
           // Matrix C
           int nb_rows=row_data.getIndices().size();
           int nb_cols=col_data.getIndices().size();
           ierr = MatSetValues(Aij,nb_rows,&row_data.getIndices()[0],nb_cols,&col_data.getIndices()[0],&K(0,0),ADD_VALUES); CHKERRQ(ierr);
           
           // Matrix CT
-          transK.resize(N_mat.size2(), H_mat.size1());
-          noalias(transK) = trans(K);
+//          transK.resize(N_mat.size2(), H_mat.size1());
+          transK = trans(K);
           ierr = MatSetValues(Aij,nb_cols,&col_data.getIndices()[0],nb_rows,&row_data.getIndices()[0],&transK(0,0),ADD_VALUES); CHKERRQ(ierr);
           
         } catch (const std::exception& ex) {
@@ -223,7 +229,6 @@ namespace MoFEM {
           ss << "throw in method: " << ex.what() << endl;
           SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
         }
-        
         PetscFunctionReturn(0);
       }
       
@@ -241,18 +246,25 @@ namespace MoFEM {
       
       OpRVEBCsRhs_Cal(const string field_name, RVEBC_Data &data, CommonData &_commonData, CommonFunctions &_common_functions, bool _ho_geometry = false): FaceElementForcesAndSourcesCore::UserDataOperator(field_name, UserDataOperator::OPCOL),dAta(data), commonData(_commonData), common_functions(_common_functions),  ho_geometry(_ho_geometry){ }
       
-      ublas::vector<FieldData> f;
-      
       /** brief calculate Convection condition on the right hand side
        *  R=int_S N^T*alpha*N_f  dS **/
       PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
         PetscFunctionBegin;
         if(data.getIndices().size()==0) PetscFunctionReturn(0);
+        if(type!=MBVERTEX) PetscFunctionReturn(0);
 //        cout<<"data.getIndices().size() "<<data.getIndices().size()<<endl;
         PetscErrorCode ierr;
         const FENumeredDofMoFEMEntity *dof_ptr;
         ierr = getMoFEMFEPtr()->get_col_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
         int rank = dof_ptr->get_max_rank();
+        
+//        //We assemble the matrics for traction boundary conditions for only nodes as we are not specifying order for its lagrange
+//        if(rank==3){
+//          if(data.getIndices().size()!=9) PetscFunctionReturn(0);
+//        } else {
+//          if(data.getIndices().size()!=3) PetscFunctionReturn(0);
+//        }
+
         commonData.rank=rank;
 //        cout<<"commonData.rank "<<commonData.rank<<endl;
 
@@ -296,6 +308,7 @@ namespace MoFEM {
 //          cout<<"H_mat "<<H_mat<<endl;
 
           if(gg==0){
+//            cout<<"commonData.D_mat "<<commonData.D_mat<<endl;
             NTX=val*prod(trans(N_mat),X_mat);
             commonData.D_mat=prod(H_mat, NTX);
           }else{
@@ -309,9 +322,6 @@ namespace MoFEM {
     };
 
     
-    
-    
-    
     /// \biref operator to calculate the RHS of the constrain for the RVE boundary conditions
     struct OpRVEBCsRhs_Assemble: public FaceElementForcesAndSourcesCore::UserDataOperator {
       
@@ -320,7 +330,7 @@ namespace MoFEM {
       CommonData &commonData;
       Vec F1, F2, F3, F4, F5, F6;
       
-      OpRVEBCsRhs_Assemble(const string lagrang_field_name, Vec _F1, Vec _F2, Vec _F3, Vec _F4, Vec _F5, Vec _F6, RVEBC_Data &data, CommonData &_commonData, bool _ho_geometry = false): FaceElementForcesAndSourcesCore::UserDataOperator(lagrang_field_name,UserDataOperator::OPROW),dAta(data), F1(_F1), F2(_F2), F3(_F3), F4(_F4), F5(_F5), F6(_F6), commonData(_commonData), ho_geometry(_ho_geometry){ }
+      OpRVEBCsRhs_Assemble(const string lagrang_field_name, Vec _F1, Vec _F2, Vec _F3, Vec _F4, Vec _F5, Vec _F6, RVEBC_Data &data, CommonData &_commonData, bool _ho_geometry = false): FaceElementForcesAndSourcesCore::UserDataOperator(lagrang_field_name, UserDataOperator::OPROW),dAta(data), F1(_F1), F2(_F2), F3(_F3), F4(_F4), F5(_F5), F6(_F6), commonData(_commonData), ho_geometry(_ho_geometry){ }
       
       ublas::vector<FieldData> f;
       
@@ -328,60 +338,62 @@ namespace MoFEM {
        *  R=int_S N^T*alpha*N_f  dS **/
       PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
         PetscFunctionBegin;
-        cout<<"rank "<<commonData.rank<<endl;
-        cout<<"D_mat "<<commonData.D_mat<<endl;
-//        int rank =commonData.rank;
-//        ublas::matrix<FieldData> D_mat=commonData.D_mat;
-//        ublas::vector<FieldData> applied_strain;
-//        applied_strain.resize(1.5*rank+1.5);
-//
-////        ublas::vector<FieldData> applied_strain;
-////        applied_strain.resize(1.5*rank+1.5);
-//        applied_strain.clear();
-//        applied_strain(0)=1.0;
-//        //        cout<<"applied_strain = "<<applied_strain<<endl;
-//        PetscErrorCode ierr;
-//        f=prod(D_mat, applied_strain);
-//        ierr = VecSetValues(F1,data.getIndices().size(),&data.getIndices()[0],&f[0],ADD_VALUES); CHKERRQ(ierr);
-//        //      cout<<"Hello "<<endl;
-//        //      std::string wait;
-//        //      std::cin >> wait;
-//        applied_strain.clear();
-//        applied_strain(1)=1.0;
-//        //      cout<<"applied_strain = "<<applied_strain<<endl;
-//        f=prod(D_mat, applied_strain);
-//        //      cout<<"f = "<<f<<endl;
-//        ierr = VecSetValues(F2,data.getIndices().size(),&data.getIndices()[0],&f[0],ADD_VALUES); CHKERRQ(ierr);
-//        
-//        applied_strain.clear();
-//        applied_strain(2)=1.0;
-//        //      cout<<"applied_strain = "<<applied_strain<<endl;
-//        f=prod(D_mat, applied_strain);
-//        //      cout<<"f = "<<f<<endl;
-//        ierr = VecSetValues(F3,data.getIndices().size(),&data.getIndices()[0],&f[0],ADD_VALUES); CHKERRQ(ierr);
-//        
-//        if(rank==3){ //This poriton will execute for mechanical problem (rank=3) only
-//          applied_strain.clear();
-//          applied_strain(3)=1.0;
-//          //      cout<<"applied_strain = "<<applied_strain<<endl;
-//          f=prod(D_mat, applied_strain);
-//          //      cout<<"f = "<<f<<endl;
-//          ierr = VecSetValues(F4,data.getIndices().size(),&data.getIndices()[0],&f[0],ADD_VALUES); CHKERRQ(ierr);
-//          
-//          applied_strain.clear();
-//          applied_strain(4)=1.0;
-//          //      cout<<"applied_strain = "<<applied_strain<<endl;
-//          f=prod(D_mat, applied_strain);
-//          //      cout<<"f = "<<f<<endl;
-//          ierr = VecSetValues(F5,data.getIndices().size(),&data.getIndices()[0],&f[0],ADD_VALUES); CHKERRQ(ierr);
-//          
-//          applied_strain.clear();
-//          applied_strain(5)=1.0;
-//          //      cout<<"applied_strain = "<<applied_strain<<endl;
-//          f=prod(D_mat, applied_strain);
-//          //      cout<<"f = "<<f<<endl;
-//          ierr = VecSetValues(F6,data.getIndices().size(),&data.getIndices()[0],&f[0],ADD_VALUES); CHKERRQ(ierr);
-//        }
+        if(data.getIndices().size()==0) PetscFunctionReturn(0);
+//        cout<<"data.getIndices().size() = "<<data.getIndices().size()<<endl;
+        
+//        cout<<"rank "<<commonData.rank<<endl;
+//        cout<<"D_mat "<<commonData.D_mat<<endl;
+        int rank =commonData.rank;
+        ublas::matrix<FieldData> D_mat=commonData.D_mat;
+        ublas::vector<FieldData> applied_strain;
+        applied_strain.resize(1.5*rank+1.5,false);
+
+        applied_strain.clear();
+        applied_strain(0)=1.0;
+        PetscErrorCode ierr;
+        f=prod(D_mat, applied_strain);
+//        cout<<"f = "<<f<<endl;
+//        string wait;
+//        std::cin >> wait;
+        
+        ierr = VecSetValues(F1,data.getIndices().size(),&data.getIndices()[0],&f[0],ADD_VALUES); CHKERRQ(ierr);
+//        cout<<"Hello = "<<endl;
+        applied_strain.clear();
+        applied_strain(1)=1.0;
+        //      cout<<"applied_strain = "<<applied_strain<<endl;
+        f=prod(D_mat, applied_strain);
+        ierr = VecSetValues(F2,data.getIndices().size(),&data.getIndices()[0],&f[0],ADD_VALUES); CHKERRQ(ierr);
+        
+        applied_strain.clear();
+        applied_strain(2)=1.0;
+        //      cout<<"applied_strain = "<<applied_strain<<endl;
+        f=prod(D_mat, applied_strain);
+        //      cout<<"f = "<<f<<endl;
+        ierr = VecSetValues(F3,data.getIndices().size(),&data.getIndices()[0],&f[0],ADD_VALUES); CHKERRQ(ierr);
+        
+        if(rank==3){ //This poriton will execute for mechanical problem (rank=3) only
+          applied_strain.clear();
+          applied_strain(3)=1.0;
+          //      cout<<"applied_strain = "<<applied_strain<<endl;
+          f=prod(D_mat, applied_strain);
+          //      cout<<"f = "<<f<<endl;
+          ierr = VecSetValues(F4,data.getIndices().size(),&data.getIndices()[0],&f[0],ADD_VALUES); CHKERRQ(ierr);
+          
+          applied_strain.clear();
+          applied_strain(4)=1.0;
+          //      cout<<"applied_strain = "<<applied_strain<<endl;
+          f=prod(D_mat, applied_strain);
+          //      cout<<"f = "<<f<<endl;
+          ierr = VecSetValues(F5,data.getIndices().size(),&data.getIndices()[0],&f[0],ADD_VALUES); CHKERRQ(ierr);
+          
+          applied_strain.clear();
+          applied_strain(5)=1.0;
+          //      cout<<"applied_strain = "<<applied_strain<<endl;
+          f=prod(D_mat, applied_strain);
+          //      cout<<"f = "<<f<<endl;
+          ierr = VecSetValues(F6,data.getIndices().size(),&data.getIndices()[0],&f[0],ADD_VALUES); CHKERRQ(ierr);
+//          commonData.D_mat.clear(); //destroy this after use
+        }
         PetscFunctionReturn(0);
       }
     };
@@ -404,6 +416,7 @@ namespace MoFEM {
         
         //RHS
         //Caclculte D_mat
+//        commonData.D_mat.resize(6,6);  commonData.D_mat.clear();
         feRVEBCRhs.getOpPtrVector().push_back(new OpRVEBCsRhs_Cal(field_name, sit->second, commonData, common_functions, ho_geometry));
         //Caclculte Rhs=D_mat*epsilon  and assemble
         feRVEBCRhs.getOpPtrVector().push_back(new OpRVEBCsRhs_Assemble(lagrang_field_name, _F1, _F2, _F3, _F4, _F5, _F6, sit->second, commonData, ho_geometry));
