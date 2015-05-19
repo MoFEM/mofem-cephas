@@ -3,7 +3,7 @@
  *
  */
 
-/* 
+/*
  * This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -25,10 +25,10 @@ namespace MoFEM {
 
 /** \brief Ultra weak transport problem
   \ingroup mofem_ultra_weak_transport_elem
-  
+
   Note to solve this system you need to use direct solver or propper preconditioner
-  for sadlle problem. 
-  
+  for sadlle problem.
+
 */
 struct UltraWeakTransportElement {
 
@@ -40,7 +40,7 @@ struct UltraWeakTransportElement {
     int getRule(int order) { return order; };
   };
 
-  MyVolumeFE feVol;   
+  MyVolumeFE feVol;
 
   /** \brief define surface element
     *
@@ -81,7 +81,7 @@ struct UltraWeakTransportElement {
     PetscFunctionBegin;
     flux  = 0;
     PetscFunctionReturn(0);
-  } 
+  }
 
   virtual PetscErrorCode getResistivity(
     const EntityHandle ent,
@@ -114,14 +114,14 @@ struct UltraWeakTransportElement {
     PetscFunctionReturn(0);
   }
 
-  /** \brief data for evaluation of het conductivity and heat capacity elements
-    * \infroup mofem_thermal_elem 
+  /** \brief data for evaluation of heat conductivity and heat capacity elements
+    * \infroup mofem_thermal_elem
     */
   struct BlockData {
     double cOnductivity;
     double cApacity;
     Range tEts; ///< constatins elements in block set
-  }; 
+  };
   map<int,BlockData> setOfBlocks; ///< maps block set id with appropiate BlockData
 
   /// \brief add finite elements
@@ -157,7 +157,7 @@ struct UltraWeakTransportElement {
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_THERMALSET,it)) {
 
       Mat_Thermal temp_data;
-      ierr = it->get_attribute_data_structure(temp_data); CHKERRQ(ierr);  
+      ierr = it->get_attribute_data_structure(temp_data); CHKERRQ(ierr);
       setOfBlocks[it->get_msId()].cOnductivity = temp_data.data.Conductivity;
       setOfBlocks[it->get_msId()].cApacity = temp_data.data.HeatCapacity;
       rval = mField.get_moab().get_entities_by_type(it->meshset,MBTET,setOfBlocks[it->get_msId()].tEts,true); CHKERR_PETSC(rval);
@@ -187,7 +187,14 @@ struct UltraWeakTransportElement {
     PetscFunctionReturn(0);
   }
 
-  /** \brief tau,sigma in Hdiv, calculates Aij = Asemble int sigma_dot_tau dTet 
+  /** \brief tau,sigma in Hdiv, calculates Aij = Asemble int sigma_dot_tau dTet
+
+  \f[
+  A_{ij} = \int_{\Omega^e} \sigma_{i} \mathbf{C} \tau_{j} \textrm{d}V
+  F_{ij} = \int_{\Omega^e} f_{i} \mathbf{C} \tau_{i} \textrm{d}V
+
+  \f]
+
     */
   struct OpTauDotSigma_HdivHdiv: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
@@ -218,34 +225,34 @@ struct UltraWeakTransportElement {
 
       try {
 
-	if(row_data.getFieldData().size()==0) PetscFunctionReturn(0);
-	if(col_data.getFieldData().size()==0) PetscFunctionReturn(0);
+	       if(row_data.getFieldData().size()==0) PetscFunctionReturn(0);
+	       if(col_data.getFieldData().size()==0) PetscFunctionReturn(0);
 
-	EntityHandle fe_ent = getMoFEMFEPtr()->get_ent();
+	       EntityHandle fe_ent = getMoFEMFEPtr()->get_ent();
 
-	int nb_row = row_data.getFieldData().size();
-	int nb_col = col_data.getFieldData().size();
-	NN.resize(nb_row,nb_col);
-	bzero(&NN(0,0),NN.data().size()*sizeof(FieldData));
+	       int nb_row = row_data.getFieldData().size();
+	       int nb_col = col_data.getFieldData().size();
+	       NN.resize(nb_row,nb_col);
+	       bzero(&NN(0,0),NN.data().size()*sizeof(FieldData));
 
-	invKN.resize(3,nb_col);
-	int nb_gauss_pts = row_data.getHdivN().size1();
-	int gg = 0;
-	for(;gg<nb_gauss_pts;gg++) {
+	       invKN.resize(3,nb_col);
+	       int nb_gauss_pts = row_data.getHdivN().size1();
+	       int gg = 0;
+	       for(;gg<nb_gauss_pts;gg++) {
 
-	  double w = getGaussPts()(3,gg)*getVolume();
-	  if(getHoGaussPtsDetJac().size()>0) {
-	    w *= getHoGaussPtsDetJac()(gg);
-	  }
+	         double w = getGaussPts()(3,gg)*getVolume();
+	         if(getHoGaussPtsDetJac().size()>0) {
+	          w *= getHoGaussPtsDetJac()(gg);
+	       }
 
-	  const double x = getCoordsAtGaussPts()(gg,0);
-	  const double y = getCoordsAtGaussPts()(gg,1);
-	  const double z = getCoordsAtGaussPts()(gg,2);
-	  ierr = cTx.getResistivity(fe_ent,x,y,z,invK); CHKERRQ(ierr);
-	  noalias(invKN) = prod(invK,trans(col_data.getHdivN(gg)));
-	  noalias(NN) += w*prod(row_data.getHdivN(gg),invKN); 
+	       const double x = getCoordsAtGaussPts()(gg,0);
+	       const double y = getCoordsAtGaussPts()(gg,1);
+	       const double z = getCoordsAtGaussPts()(gg,2);
+	       ierr = cTx.getResistivity(fe_ent,x,y,z,invK); CHKERRQ(ierr);
+	       noalias(invKN) = prod(invK,trans(col_data.getHdivN(gg)));
+	       noalias(NN) += w*prod(row_data.getHdivN(gg),invKN);
 
-	}
+	     }
 
 	ierr = MatSetValues(
 	  Aij,
@@ -306,7 +313,7 @@ struct UltraWeakTransportElement {
 
 	  invKFlux.resize(3);
 	  noalias(invKFlux) = prod(invK,cTx.fluxesAtGaussPts[gg]);
-	  noalias(Nf) += w*prod(data.getHdivN(gg),invKFlux); 
+	  noalias(Nf) += w*prod(data.getHdivN(gg),invKFlux);
 
 	}
 
@@ -325,7 +332,7 @@ struct UltraWeakTransportElement {
 
   };
 
-  /** \brief u in L2 and tau in Hdiv, calculates Aij = Asemble int u * div(tau) dTet 
+  /** \brief u in L2 and tau in Hdiv, calculates Aij = Asemble int u * div(tau) dTet
     */
   struct OpDivTauU_HdivL2: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
@@ -338,7 +345,7 @@ struct UltraWeakTransportElement {
       const string field_name_row,string field_name_col,Mat _Aij,Vec _F):
       VolumeElementForcesAndSourcesCore::UserDataOperator(field_name_row,field_name_col),
       cTx(ctx),Aij(_Aij),F(_F) {
-  
+
       //this operator is not symmetric settig this varible makes element
       //operator to loop over element entities (subsimplicies) without
       //assumption that off-diagonal matrices are symmetric.
@@ -401,7 +408,7 @@ struct UltraWeakTransportElement {
 
   };
 
-  /** \brief V in L2 and sigma in Hdiv, calculates Aij = Asemble int V * div(sigma) dTet 
+  /** \brief V in L2 and sigma in Hdiv, calculates Aij = Asemble int V * div(sigma) dTet
     */
   struct OpVDotDivSigma_L2Hdiv: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
@@ -414,7 +421,7 @@ struct UltraWeakTransportElement {
       const string field_name_row,string field_name_col,Mat _Aij,Vec _F):
       VolumeElementForcesAndSourcesCore::UserDataOperator(field_name_row,field_name_col),
       cTx(ctx),Aij(_Aij),F(_F) {
-  
+
       //this operator is not symmetric settig this varible makes element
       //operator to loop over element entities (subsimplicies) without
       //assumption that off-diagonal matrices are symmetric.
@@ -458,7 +465,7 @@ struct UltraWeakTransportElement {
 
 	  ierr = getDivergenceMatrixOperato_Hdiv(
 	    col_side,col_type,col_data,gg,div_vec); CHKERRQ(ierr);
-      
+
 	  //FIXME this multiplication should be done in blas or ublas
 	  for(int rr = 0;rr<nb_row;rr++) {
 	    for(int cc = 0;cc<nb_col;cc++) {
@@ -560,7 +567,7 @@ struct UltraWeakTransportElement {
       VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
       cTx(ctx),F(_F) {}
     virtual ~OpL2Source() {}
-      
+
     ublas::vector<FieldData> Nf;
     PetscErrorCode doWork(
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
@@ -585,7 +592,7 @@ struct UltraWeakTransportElement {
 	  if(getHoGaussPtsDetJac().size()>0) {
 	    w *= getHoGaussPtsDetJac()(gg);
 	  }
-      
+
 
 	  const double x = getCoordsAtGaussPts()(gg,0);
 	  const double y = getCoordsAtGaussPts()(gg,1);
@@ -596,7 +603,7 @@ struct UltraWeakTransportElement {
 	  for(int rr = 0;rr<nb_row;rr++) {
 	    Nf[rr] += w*data.getN(gg)[rr]*flux;
 	  }
-	
+
 	}
 
 	ierr = VecSetValues(
@@ -680,7 +687,7 @@ struct UltraWeakTransportElement {
 
     UltraWeakTransportElement &cTx;
     Vec X;
-    
+
     OpEvaluateBcOnFluxes(
       UltraWeakTransportElement &ctx,const string field_name,Vec _X):
       FaceElementForcesAndSourcesCore::UserDataOperator(field_name),
@@ -735,7 +742,7 @@ struct UltraWeakTransportElement {
 	  noalias(Nf) -= w*normalN*flux;
 
 	}
- 
+
 	cTx.bcIndices.insert(data.getIndices().begin(),data.getIndices().end());
 
 	cholesky_decompose(NN,L);
@@ -778,14 +785,14 @@ struct UltraWeakTransportElement {
       try {
 
       if(data.getFieldData().size() == 0)  PetscFunctionReturn(0);
-  
+
       int nb_gauss_pts = data.getN().size1();
 
       cTx.valuesAtGaussPts.resize(nb_gauss_pts);
       for(int gg = 0;gg<nb_gauss_pts;gg++) {
 	cTx.valuesAtGaussPts[gg] = inner_prod( trans(data.getN(gg)), data.getFieldData() );
       }
-      
+
       } catch (const std::exception& ex) {
 	ostringstream ss;
 	ss << "throw in method: " << ex.what() << endl;
@@ -815,7 +822,7 @@ struct UltraWeakTransportElement {
       try {
 
       if(data.getFieldData().size() == 0)  PetscFunctionReturn(0);
-  
+
       int nb_gauss_pts = data.getDiffN().size1();
 
       cTx.valuesGradientAtGaussPts.resize(nb_gauss_pts);
@@ -825,7 +832,7 @@ struct UltraWeakTransportElement {
 	cTx.valuesGradientAtGaussPts[gg].resize(3);
 	noalias(cTx.valuesGradientAtGaussPts[gg]) = prod( trans(data.getDiffN(gg)), data.getFieldData() );
       }
-      
+
       } catch (const std::exception& ex) {
 	ostringstream ss;
 	ss << "throw in method: " << ex.what() << endl;
@@ -864,29 +871,29 @@ struct UltraWeakTransportElement {
       cTx.fluxesAtGaussPts.resize(nb_gauss_pts);
       cTx.divergenceAtGaussPts.resize(nb_gauss_pts);
       if(type == MBTRI && side == 0) {
-	for(int gg = 0;gg<nb_gauss_pts;gg++) {
-	  cTx.fluxesAtGaussPts[gg].resize(3);
-	  bzero(&(cTx.fluxesAtGaussPts[gg][0]),3*sizeof(FieldData));
-	}
-	bzero(&cTx.divergenceAtGaussPts[0],nb_gauss_pts*sizeof(FieldData));
+	       for(int gg = 0;gg<nb_gauss_pts;gg++) {
+	         cTx.fluxesAtGaussPts[gg].resize(3);
+	         bzero(&(cTx.fluxesAtGaussPts[gg][0]),3*sizeof(FieldData));
+	       }
+	       bzero(&cTx.divergenceAtGaussPts[0],nb_gauss_pts*sizeof(FieldData));
       }
 
       div_vec.resize(nb_dofs);
 
       for(int gg = 0;gg<nb_gauss_pts;gg++) {
 
-	ierr = getDivergenceMatrixOperato_Hdiv(
-	  side,type,data,gg,div_vec); CHKERRQ(ierr);
+	       ierr = getDivergenceMatrixOperato_Hdiv(
+	        side,type,data,gg,div_vec); CHKERRQ(ierr);
 
-	cTx.divergenceAtGaussPts[gg] += inner_prod(div_vec,data.getFieldData());
-	noalias(cTx.fluxesAtGaussPts[gg]) += prod( trans(data.getHdivN(gg)), data.getFieldData());
+	       cTx.divergenceAtGaussPts[gg] += inner_prod(div_vec,data.getFieldData());
+	       noalias(cTx.fluxesAtGaussPts[gg]) += prod( trans(data.getHdivN(gg)), data.getFieldData());
 
       }
 
       } catch (const std::exception& ex) {
-	ostringstream ss;
-	ss << "throw in method: " << ex.what() << endl;
-	SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+	     ostringstream ss;
+	     ss << "throw in method: " << ex.what() << endl;
+	     SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
       PetscFunctionReturn(0);
@@ -921,7 +928,7 @@ struct UltraWeakTransportElement {
       if(data.getFieldData().size() == 0)  PetscFunctionReturn(0);
       int nb_gauss_pts = data.getN().size1();
       EntityHandle fe_ent = getMoFEMFEPtr()->get_ent();
-    
+
       double def_VAL = 0;
       Tag th_error_div_sigma;
       rval = cTx.mField.get_moab().tag_get_handle("ERRORL2_DIVSIGMA_F",1,MB_TYPE_DOUBLE,th_error_div_sigma,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR_PETSC(rval);
@@ -930,7 +937,7 @@ struct UltraWeakTransportElement {
       if(type == MBTRI && side == 0) {
 	cTx.mField.get_moab().tag_set_data(th_error_div_sigma,&fe_ent,1,&def_VAL);
       }
-      
+
       double* error_div_ptr;
       rval = cTx.mField.get_moab().tag_get_by_ptr(th_error_div_sigma,&fe_ent,1,(const void**)&error_div_ptr); CHKERR_PETSC(rval);
       double* error_flux_ptr;
@@ -992,8 +999,5 @@ struct UltraWeakTransportElement {
 
 /***************************************************************************//**
  * \defgroup mofem_ultra_weak_transport_elem Ultra weak transport element
- * \ingroup mofem_forces_and_sources 
+ * \ingroup mofem_forces_and_sources
  ******************************************************************************/
-
-
-
