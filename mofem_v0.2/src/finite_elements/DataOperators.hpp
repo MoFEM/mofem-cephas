@@ -70,10 +70,10 @@ struct DataOperator {
 /// \brief transform local reference derivatives of shape function to global derivatives
 struct OpSetInvJacH1: public DataOperator {
 
-  ublas::matrix<double> &invJac;
-  OpSetInvJacH1(ublas::matrix<double> &_invJac): invJac(_invJac) {}
+  MatrixDouble &invJac;
+  OpSetInvJacH1(MatrixDouble &_invJac): invJac(_invJac) {}
 
-  ublas::matrix<FieldData> diffNinvJac;
+  MatrixDouble diffNinvJac;
   PetscErrorCode doWork(
     int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
 
@@ -82,10 +82,10 @@ struct OpSetInvJacH1: public DataOperator {
 /// \brief transform local reference derivatives of shape function to global derivatives
 struct OpSetInvJacHdiv: public DataOperator {
 
-  ublas::matrix<double> &invJac;
-  OpSetInvJacHdiv(ublas::matrix<double> &_invJac): invJac(_invJac) {}
+  MatrixDouble &invJac;
+  OpSetInvJacHdiv(MatrixDouble &_invJac): invJac(_invJac) {}
 
-  ublas::matrix<FieldData> diffHdiv_invJac;
+  MatrixDouble diffHdiv_invJac;
   PetscErrorCode doWork(
     int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
 
@@ -95,12 +95,11 @@ struct OpSetInvJacHdiv: public DataOperator {
   */
 struct OpSetHoInvJacH1: public DataOperator {
 
-  ublas::matrix<double> &invHoJac;
-  OpSetHoInvJacH1(ublas::matrix<double> &_invHoJac): invHoJac(_invHoJac) {}
+  MatrixDouble &invHoJac;
+  OpSetHoInvJacH1(MatrixDouble &inv_ho_jac): invHoJac(inv_ho_jac) {}
 
-  ublas::matrix<FieldData> diffNinvJac;
-  PetscErrorCode doWork(
-    int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
+  MatrixDouble diffNinvJac;
+  PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
 
 };
 
@@ -109,46 +108,44 @@ struct OpSetHoInvJacH1: public DataOperator {
   */
 struct OpSetHoInvJacHdiv: public DataOperator {
 
-  ublas::matrix<double> &invHoJac;
-  OpSetHoInvJacHdiv(ublas::matrix<double> &_invHoJac): invHoJac(_invHoJac) {}
+  MatrixDouble &invHoJac;
+  OpSetHoInvJacHdiv(MatrixDouble &inv_ho_jac): invHoJac(inv_ho_jac) {}
 
-  ublas::matrix<FieldData> diffHdiv_invJac;
+  MatrixDouble diffHdiv_invJac;
   PetscErrorCode doWork(
     int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
 
 };
 
 /** \brief apply covariant (Piola) transfer for Hdiv space
-  */
+*/
 struct OpSetPiolaTransform: public DataOperator {
 
-    double &vOlume;
-    ublas::matrix<double> &Jac;
-    OpSetPiolaTransform(double &_vOlume,ublas::matrix<double> &_Jac):
-      vOlume(_vOlume),Jac(_Jac) {}
+  double &vOlume;
+  MatrixDouble &Jac;
+  OpSetPiolaTransform(double &_vOlume,MatrixDouble &_Jac):
+  vOlume(_vOlume),Jac(_Jac) {}
 
-    ublas::matrix<FieldData> piolaN;
-    ublas::matrix<FieldData> piolaDiffN;
-    PetscErrorCode doWork(
-      int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
+  MatrixDouble piolaN;
+  MatrixDouble piolaDiffN;
+  PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
 
 };
 
 /** \brief apply covariant (Piola) transfer for Hdiv space for HO geometry
-  */
+*/
 struct OpSetHoPiolaTransform: public DataOperator {
 
-    ublas::vector<double> &detHoJac;
-    ublas::matrix<double> &hoJac;
-    OpSetHoPiolaTransform(ublas::vector<double> &_detJac,ublas::matrix<double> &_Jac):
-      detHoJac(_detJac),hoJac(_Jac) {}
+  VectorDouble &detHoJac;
+  MatrixDouble &hoJac;
+  OpSetHoPiolaTransform(VectorDouble &det_jac,MatrixDouble &jac):
+  detHoJac(det_jac),hoJac(jac) {}
 
-    ublas::matrix<FieldData> piolaN;
-    ublas::matrix<FieldData> piolaDiffN;
-    PetscErrorCode doWork(
-      int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
+  MatrixDouble piolaN;
+  MatrixDouble piolaDiffN;
+  PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
 
-};
+  };
 
 
 /** \brief operator to calculate function values and its gradients at Gauss points
@@ -156,15 +153,15 @@ struct OpSetHoPiolaTransform: public DataOperator {
   */
 struct OpGetData: public DataOperator {
 
-  ublas::matrix<FieldData> &data_at_GaussPt;
-  ublas::matrix<FieldData> &dataGrad_at_GaussPt;
+  MatrixDouble &data_at_GaussPt;
+  MatrixDouble &dataGrad_at_GaussPt;
 
   const unsigned int dim;
   const ApproximationRank rank;
 
   OpGetData(
-    ublas::matrix<FieldData> &_data_at_GaussPt,
-    ublas::matrix<FieldData> &_dataGrad_at_GaussPt,
+    MatrixDouble &_data_at_GaussPt,
+    MatrixDouble &_dataGrad_at_GaussPt,
     ApproximationRank _rank,unsigned int _dim = 3):
       data_at_GaussPt(_data_at_GaussPt),
       dataGrad_at_GaussPt(_dataGrad_at_GaussPt),
@@ -182,19 +179,19 @@ struct OpGetData: public DataOperator {
   */
 struct OpGetNormals: public DataOperator {
 
-  ublas::matrix<FieldData> &nOrmals_at_GaussPt;
-  ublas::matrix<FieldData> &tAngent1_at_GaussPt;
-  ublas::matrix<FieldData> &tAngent2_at_GaussPt;
+  MatrixDouble &nOrmals_at_GaussPt;
+  MatrixDouble &tAngent1_at_GaussPt;
+  MatrixDouble &tAngent2_at_GaussPt;
 
   OpGetNormals(
-    ublas::matrix<FieldData> &_nOrmals_at_GaussPt,
-    ublas::matrix<FieldData> &_tAngent1_at_GaussPt,
-    ublas::matrix<FieldData> &_tAngent2_at_GaussPt):
+    MatrixDouble &_nOrmals_at_GaussPt,
+    MatrixDouble &_tAngent1_at_GaussPt,
+    MatrixDouble &_tAngent2_at_GaussPt):
     nOrmals_at_GaussPt(_nOrmals_at_GaussPt),
     tAngent1_at_GaussPt(_tAngent1_at_GaussPt),
     tAngent2_at_GaussPt(_tAngent2_at_GaussPt) {}
 
-  ublas::matrix<FieldData> sPin;
+  MatrixDouble sPin;
   PetscErrorCode doWork(
     int side,
     EntityType type,
@@ -209,20 +206,20 @@ struct OpGetNormals: public DataOperator {
   */
 struct OpGetNormalsOnPrism: public DataOperator {
 
-  ublas::matrix<FieldData> &nOrmals_at_GaussPtF3;
-  ublas::matrix<FieldData> &tAngent1_at_GaussPtF3;
-  ublas::matrix<FieldData> &tAngent2_at_GaussPtF3;
-  ublas::matrix<FieldData> &nOrmals_at_GaussPtF4;
-  ublas::matrix<FieldData> &tAngent1_at_GaussPtF4;
-  ublas::matrix<FieldData> &tAngent2_at_GaussPtF4;
+  MatrixDouble &nOrmals_at_GaussPtF3;
+  MatrixDouble &tAngent1_at_GaussPtF3;
+  MatrixDouble &tAngent2_at_GaussPtF3;
+  MatrixDouble &nOrmals_at_GaussPtF4;
+  MatrixDouble &tAngent1_at_GaussPtF4;
+  MatrixDouble &tAngent2_at_GaussPtF4;
 
   OpGetNormalsOnPrism(
-    ublas::matrix<FieldData> &_nOrmals_at_GaussPtF3,
-    ublas::matrix<FieldData> &_tAngent1_at_GaussPtF3,
-    ublas::matrix<FieldData> &_tAngent2_at_GaussPtF3,
-    ublas::matrix<FieldData> &_nOrmals_at_GaussPtF4,
-    ublas::matrix<FieldData> &_tAngent1_at_GaussPtF4,
-    ublas::matrix<FieldData> &_tAngent2_at_GaussPtF4):
+    MatrixDouble &_nOrmals_at_GaussPtF3,
+    MatrixDouble &_tAngent1_at_GaussPtF3,
+    MatrixDouble &_tAngent2_at_GaussPtF3,
+    MatrixDouble &_nOrmals_at_GaussPtF4,
+    MatrixDouble &_tAngent1_at_GaussPtF4,
+    MatrixDouble &_tAngent2_at_GaussPtF4):
     nOrmals_at_GaussPtF3(_nOrmals_at_GaussPtF3),
     tAngent1_at_GaussPtF3(_tAngent1_at_GaussPtF3),
     tAngent2_at_GaussPtF3(_tAngent2_at_GaussPtF3),
@@ -230,7 +227,7 @@ struct OpGetNormalsOnPrism: public DataOperator {
     tAngent1_at_GaussPtF4(_tAngent1_at_GaussPtF4),
     tAngent2_at_GaussPtF4(_tAngent2_at_GaussPtF4) {}
 
-  ublas::matrix<FieldData> sPin;
+  MatrixDouble sPin;
   PetscErrorCode doWork(
     int side,
     EntityType type,
@@ -245,12 +242,12 @@ struct OpGetNormalsOnPrism: public DataOperator {
  */
 struct OpSetPiolaTransoformOnTriangle: public DataOperator {
 
-  const ublas::vector<double> &normal;
-  const ublas::matrix<FieldData> &nOrmals_at_GaussPt;
+  const VectorDouble &normal;
+  const MatrixDouble &nOrmals_at_GaussPt;
 
   OpSetPiolaTransoformOnTriangle(
-    const ublas::vector<double> &_normal,
-    const ublas::matrix<FieldData> &_nOrmals_at_GaussPt):
+    const VectorDouble &_normal,
+    const MatrixDouble &_nOrmals_at_GaussPt):
     normal(_normal),nOrmals_at_GaussPt(_nOrmals_at_GaussPt) {}
 
   PetscErrorCode doWork(

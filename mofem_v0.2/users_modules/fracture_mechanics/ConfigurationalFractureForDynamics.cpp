@@ -3,7 +3,7 @@ using namespace MoFEM;
 #include <adolc/adolc.h> 
 #include <ConvectiveMassElement.hpp>
 #include <TimeForceScale.hpp>
-#include <PotsProcOnRefMesh.hpp>
+#include <PostProcOnRefMesh.hpp>
 #include <ConfigurationalFractureForDynamics.hpp>
 
 struct MonitorRestart: public FEMethod {
@@ -121,7 +121,7 @@ struct MonitorPostProc: public FEMethod {
     ErrorCode rval;
 
     if(!iNit) {
-      ierr = postProc.generateRefereneElemenMesh(); CHKERRQ(ierr);
+      ierr = postProc.generateReferenceElementMesh(); CHKERRQ(ierr);
       ierr = postProc.addFieldValuesPostProc("SPATIAL_POSITION"); CHKERRQ(ierr);
       ierr = postProc.addFieldValuesPostProc("SPATIAL_VELOCITY"); CHKERRQ(ierr);
       ierr = postProc.addFieldValuesGradientPostProc("SPATIAL_POSITION"); CHKERRQ(ierr);

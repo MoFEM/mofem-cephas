@@ -20,7 +20,7 @@
 #include <MoFEM.hpp>
 
 #include <DirichletBC.hpp>
-#include <PotsProcOnRefMesh.hpp>
+#include <PostProcOnRefMesh.hpp>
 #include <ThermalElement.hpp>
 
 #include <Projection10NodeCoordsOnField.hpp>
@@ -102,7 +102,7 @@ struct MonitorPostProc: public FEMethod {
     PetscFunctionBegin;
     PetscErrorCode ierr;
     if(!iNit) {
-      ierr = postProc.generateRefereneElemenMesh(); CHKERRQ(ierr);
+      ierr = postProc.generateReferenceElementMesh(); CHKERRQ(ierr);
       ierr = postProc.addFieldValuesPostProc("TEMP"); CHKERRQ(ierr);
       ierr = postProc.addFieldValuesPostProc("TEMP_RATE"); CHKERRQ(ierr);
       ierr = postProc.addFieldValuesGradientPostProc("TEMP"); CHKERRQ(ierr);

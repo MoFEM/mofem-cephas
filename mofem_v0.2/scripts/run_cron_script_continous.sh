@@ -20,7 +20,7 @@ else
     /usr/bin/make install
     chmod u+x $CTEST_USER_MODULES_PATH/scripts/run_cron_script.sh
     $CTEST_USER_MODULES_PATH/scripts/run_cron_script.sh
-  fi  
-  cd $CWD  
+  fi
+  cd $CWD
   rm -v $HOME/tests_cephas.lock
 fi

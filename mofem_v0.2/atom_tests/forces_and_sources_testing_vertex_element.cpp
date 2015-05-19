@@ -58,9 +58,9 @@ int main(int argc, char *argv[]) {
 
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-  BARRIER_RANK_START(pcomm) 
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
-  BARRIER_RANK_END(pcomm) 
+  BARRIER_RANK_START(pcomm)
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
+  BARRIER_RANK_END(pcomm)
 
   //set entitities bit level
   BitRefLevel bit_level0;
@@ -89,7 +89,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.modify_problem_ref_level_add_bit("TEST_PROBLEM",bit_level0); CHKERRQ(ierr);
 
   //meshset consisting all entities in mesh
-  EntityHandle root_set = moab.get_root_set(); 
+  EntityHandle root_set = moab.get_root_set();
   //add entities to field
   ierr = mField.add_ents_to_field_by_TETs(root_set,"FIELD1"); CHKERRQ(ierr);
   //add entities to finite element
@@ -125,7 +125,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.build_problems(); CHKERRQ(ierr);
 
   /****/
-  //mesh partitioning 
+  //mesh partitioning
   //partition
   ierr = mField.partition_simple_problem("TEST_PROBLEM"); CHKERRQ(ierr);
   ierr = mField.partition_finite_elements("TEST_PROBLEM"); CHKERRQ(ierr);
@@ -138,14 +138,14 @@ int main(int argc, char *argv[]) {
   typedef stream<TeeDevice> TeeStream;
 
   ofstream ofs("forces_and_sources_testing_vertex_element.txt");
-  TeeDevice my_tee(cout, ofs); 
+  TeeDevice my_tee(cout, ofs);
   TeeStream my_split(my_tee);
 
   struct MyOp: public VertexElementForcesAndSourcesCore::UserDataOperator {
 
     TeeStream &my_split;
-    MyOp(TeeStream &_my_split):
-      VertexElementForcesAndSourcesCore::UserDataOperator("FIELD1","FIELD1"),
+    MyOp(TeeStream &_my_split,const char type):
+      VertexElementForcesAndSourcesCore::UserDataOperator("FIELD1","FIELD1",type),
       my_split(_my_split) {}
 
     PetscErrorCode doWork(
@@ -179,8 +179,8 @@ int main(int argc, char *argv[]) {
 
   };
 
-  fe1.getRowOpPtrVector().push_back(new MyOp(my_split));
-  fe1.getRowColOpPtrVector().push_back(new MyOp(my_split));
+  fe1.getOpPtrVector().push_back(new MyOp(my_split,ForcesAndSurcesCore::UserDataOperator::OPROW));
+  fe1.getOpPtrVector().push_back(new MyOp(my_split,ForcesAndSurcesCore::UserDataOperator::OPROWCOL));
 
   ierr = mField.loop_finite_elements("TEST_PROBLEM","TEST_FE",fe1);  CHKERRQ(ierr);
 
@@ -189,5 +189,3 @@ int main(int argc, char *argv[]) {
   return 0;
 
 }
-
-

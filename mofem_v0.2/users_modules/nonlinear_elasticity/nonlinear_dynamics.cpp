@@ -38,7 +38,7 @@ using namespace MoFEM;
 #include <ConvectiveMassElement.hpp>
 #include <NonLienarElasticElement.hpp>
 
-#include <PotsProcOnRefMesh.hpp>
+#include <PostProcOnRefMesh.hpp>
 #include <PostProcStresses.hpp>
 
 #include <boost/program_options.hpp>
@@ -106,7 +106,7 @@ struct MonitorPostProc: public FEMethod {
     ErrorCode rval;
 
     if(!iNit) {
-      ierr = postProc.generateRefereneElemenMesh(); CHKERRQ(ierr);
+      ierr = postProc.generateReferenceElementMesh(); CHKERRQ(ierr);
       ierr = postProc.addFieldValuesPostProc("SPATIAL_POSITION"); CHKERRQ(ierr);
       ierr = postProc.addFieldValuesPostProc("SPATIAL_VELOCITY"); CHKERRQ(ierr);
       ierr = postProc.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
@@ -114,7 +114,7 @@ struct MonitorPostProc: public FEMethod {
 
       map<int,NonlinearElasticElement::BlockData>::iterator sit = setOfBlocks.begin();
       for (; sit != setOfBlocks.end(); sit++) {
-        postProc.getRowOpPtrVector().push_back(
+        postProc.getOpPtrVector().push_back(
           new PostPorcStress(
             postProc.postProcMesh,
             postProc.mapGaussPts,

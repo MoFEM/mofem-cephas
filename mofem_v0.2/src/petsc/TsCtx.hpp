@@ -1,5 +1,5 @@
 /** \file TsCtx.hpp 
- * \brief Context for PETSc Time Stepping 
+ * \brief Context for PETSc Time Stepping
  */
 
 /* This file is part of MoFEM.
@@ -52,7 +52,7 @@ struct TsCtx {
   PetscLogEvent USER_EVENT_TsCtxMonitor;
 
   bool zero_matrix;
-  TsCtx(FieldInterface &_mField,const string &_problem_name): 
+  TsCtx(FieldInterface &_mField,const string &_problem_name):
     mField(_mField),moab(_mField.get_moab()),problemName(_problem_name),zero_matrix(true) {
     PetscLogEventRegister("LoopTsIFunction",0,&USER_EVENT_TsCtxIFunction);
     PetscLogEventRegister("LoopTsIJacobian",0,&USER_EVENT_TsCtxIJacobian);

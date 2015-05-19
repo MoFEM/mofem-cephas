@@ -248,7 +248,6 @@ struct FieldInterface: public FieldUnknownInterface {
 
     /**
      * \brief Iterator that loops over all the Cubit MeshSets in a moFEM field
-     * \ingroup mofem_access
      * \ingroup mofem_bc
 
      *
@@ -286,7 +285,6 @@ struct FieldInterface: public FieldUnknownInterface {
 
     /**
       * \brief Iterator that loops over a specific Cubit MeshSet in a moFEM field
-      * \ingroup mofem_access
       * \ingroup mofem_bc
 
       *
@@ -326,7 +324,6 @@ struct FieldInterface: public FieldUnknownInterface {
 
   /**
    * \brief Iterator that loops over a specific Cubit MeshSet having a particular BC meshset in a moFEM field
-   * \ingroup mofem_access
    * \ingroup mofem_bc
 
    *
@@ -349,7 +346,6 @@ struct FieldInterface: public FieldUnknownInterface {
 
   /**
     * \brief Iterator that loops over Cubit BlockSet having a particular name
-    * \ingroup mofem_access
     * \ingroup mofem_bc
 
 
@@ -1807,13 +1803,11 @@ struct FieldInterface: public FieldUnknownInterface {
 
   /** \brief Get problem database (data structure)
     * \ingroup mofem_problems
-    * \ingroup mofem_access
     */
   virtual PetscErrorCode get_problem(const string &problem_name,const MoFEMProblem **problem_ptr) = 0;
 
   /** \brief Get dofs multi index
     * \ingroup mofem_field
-    * \ingroup mofem_access
     *
     */
   virtual PetscErrorCode get_dofs(const DofMoFEMEntity_multiIndex **dofs_ptr) = 0;
@@ -1844,7 +1838,6 @@ struct FieldInterface: public FieldUnknownInterface {
 
   /** \brief loop over all dofs from a moFEM field and particular field
     * \ingroup mofem_field
-    * \ingroup mofem_access
     */
   #define _IT_GET_ENT_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT) \
     MoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator IT = MFIELD.get_ent_moabfield_by_name_begin(NAME); \
@@ -1876,7 +1869,6 @@ struct FieldInterface: public FieldUnknownInterface {
 
   /** loop over all dofs from a moFEM field and particular field
     * \ingroup mofem_field
-    * \ingroup mofem_access
     */
   #define _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT) \
     DofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator IT = MFIELD.get_dofs_by_name_begin(NAME); \
@@ -1979,7 +1971,6 @@ struct FieldInterface: public FieldUnknownInterface {
 
   /** \brief loop over all dofs from a moFEM field and particular field
     * \ingroup mofem_field
-    * \ingroup mofem_access
     */
   #define _IT_GET_DOFS_FIELD_BY_NAME_AND_TYPE_FOR_LOOP_(MFIELD,NAME,TYPE,IT) \
     DofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator IT = MFIELD.get_dofs_by_name_and_type_begin(NAME,TYPE); \

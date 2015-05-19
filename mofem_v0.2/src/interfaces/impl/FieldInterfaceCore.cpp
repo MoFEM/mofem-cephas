@@ -954,7 +954,7 @@ PetscErrorCode Core::dofs_NoField(const BitFieldId id,map<EntityType,int> &dof_c
       //insert dof
       d_miit = dofsMoabField.insert(DofMoFEMEntity(&*(e_miit.first),0,rank,rank));
       if(d_miit.second) {
-	dof_counter[d_miit.first->get_ent_type()]++;
+        dof_counter[d_miit.first->get_ent_type()]++;
       }
       bool success = dofsMoabField.modify(d_miit.first,DofMoFEMEntity_active_change(true));
       if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
@@ -1536,35 +1536,35 @@ PetscErrorCode Core::add_ents_to_finite_element_EntType_by_bit_ref(const BitRefL
 PetscErrorCode Core::add_ents_to_finite_element_EntType_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,const string &name,EntityType type,int verb) {
   PetscFunctionBegin;
   try {
-  if(verb==-1) verb = verbose;
-  *build_MoFEM &= 1<<0;
-  const BitFEId id = get_BitFEId(name);
-  const EntityHandle idm = get_finite_element_meshset(id);
-  typedef RefMoFEMElement_multiIndex::index<EntType_mi_tag>::type refMoabFE_by_type;
-  refMoabFE_by_type &ref_MoFEMFiniteElement = refinedFiniteElements.get<EntType_mi_tag>();
-  refMoabFE_by_type::iterator miit = ref_MoFEMFiniteElement.lower_bound(type);
-  refMoabFE_by_type::iterator hi_miit = ref_MoFEMFiniteElement.upper_bound(type);
-  if(verb > 1) {
-    PetscSynchronizedPrintf(comm,"nb. ref elements in database %d\n",distance(miit,hi_miit));
-  }
-  int nb_add_FEs = 0;
-  for(;miit!=hi_miit;miit++) {
-    BitRefLevel bit2 = miit->get_BitRefLevel();
-    //check if all bits in mask are ib fe bit2
-    //if((miit->get_BitRefLevel()&bit)!=bit) continue;
-    if((bit2&mask) != bit2) continue;
-    if((bit2&bit).any()) {
-      EntityHandle ent = miit->get_ref_ent();
-      rval = moab.add_entities(idm,&ent,1); CHKERR_PETSC(rval);
-      nb_add_FEs++;
+    if(verb==-1) verb = verbose;
+    *build_MoFEM &= 1<<0;
+    const BitFEId id = get_BitFEId(name);
+    const EntityHandle idm = get_finite_element_meshset(id);
+    typedef RefMoFEMElement_multiIndex::index<EntType_mi_tag>::type refMoabFE_by_type;
+    refMoabFE_by_type &ref_MoFEMFiniteElement = refinedFiniteElements.get<EntType_mi_tag>();
+    refMoabFE_by_type::iterator miit = ref_MoFEMFiniteElement.lower_bound(type);
+    refMoabFE_by_type::iterator hi_miit = ref_MoFEMFiniteElement.upper_bound(type);
+    if(verb > 1) {
+      PetscSynchronizedPrintf(comm,"nb. ref elements in database %d\n",distance(miit,hi_miit));
     }
-  }
-  if(verb > 0) {
-    ostringstream ss;
-    ss << "Add Nb. FEs " << nb_add_FEs << " form BitRef " << bit << endl;
-    PetscSynchronizedPrintf(comm,"%s",ss.str().c_str());
-    PetscSynchronizedFlush(comm,PETSC_STDOUT);
-  }
+    int nb_add_FEs = 0;
+    for(;miit!=hi_miit;miit++) {
+      BitRefLevel bit2 = miit->get_BitRefLevel();
+      //check if all bits in mask are ib fe bit2
+      //if((miit->get_BitRefLevel()&bit)!=bit) continue;
+      if((bit2&mask) != bit2) continue;
+      if((bit2&bit).any()) {
+        EntityHandle ent = miit->get_ref_ent();
+        rval = moab.add_entities(idm,&ent,1); CHKERR_PETSC(rval);
+        nb_add_FEs++;
+      }
+    }
+    if(verb > 0) {
+      ostringstream ss;
+      ss << "Add Nb. FEs " << nb_add_FEs << " form BitRef " << bit << endl;
+      PetscSynchronizedPrintf(comm,"%s",ss.str().c_str());
+      PetscSynchronizedFlush(comm,PETSC_STDOUT);
+    }
   } catch (const char* msg) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_CHAR_THROW,msg);
   }
@@ -1712,7 +1712,9 @@ PetscErrorCode Core::build_finite_element_uids_view(EntMoFEMFiniteElement &ent_f
     // common field id for Row, Col and Data
     BitFieldId id_common = 0;
     //check if the field (ii) is added to finite element
-    for(int ss = 0;ss<Last;ss++) id_common |= FEAdj_fields[ss]&BitFieldId().set(ii);
+    for(int ss = 0;ss<Last;ss++) {
+      id_common |= FEAdj_fields[ss]&BitFieldId().set(ii);
+    }
     if( id_common.none() ) continue;
     //find in database data associated with the field (ii)
     field_by_id::iterator miit = moabFields_by_id.find(BitFieldId().set(ii));
@@ -2688,12 +2690,15 @@ PetscErrorCode Core::loop_finite_elements(
   FEs_by_composite::iterator miit = numeredFiniteElements.lower_bound(boost::make_tuple(fe_name,lower_rank));
   FEs_by_composite::iterator hi_miit = numeredFiniteElements.upper_bound(boost::make_tuple(fe_name,upper_rank));
 
-  for(;miit!=hi_miit;miit++) {
+  method.loopSize = distance(miit,hi_miit);
+  for(int nn = 0;miit!=hi_miit;miit++,nn++) {
 
+    method.nInTheLoop = nn;
     method.fePtr = &*miit;
     method.dataPtr = const_cast<FEDofMoFEMEntity_multiIndex*>(&(miit->fe_ptr->data_dofs));
     method.rowPtr = const_cast<FENumeredDofMoFEMEntity_multiIndex*>(&(miit->rows_dofs));
     method.colPtr = const_cast<FENumeredDofMoFEMEntity_multiIndex*>(&(miit->cols_dofs));
+
     try {
       PetscLogEventBegin(USER_EVENT_operator,0,0,0,0);
       ierr = method(); CHKERRQ(ierr);
@@ -2782,8 +2787,10 @@ PetscErrorCode Core::loop_dofs(const string &field_name,EntMethod &method,int ve
   DofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator miit,hi_miit;
   miit = dofsMoabField.get<FieldName_mi_tag>().lower_bound(field_name);
   hi_miit = dofsMoabField.get<FieldName_mi_tag>().upper_bound(field_name);
+  method.loopSize = distance(miit,hi_miit);
   ierr = method.preProcess(); CHKERRQ(ierr);
-  for(;miit!=hi_miit;miit++) {
+  for(int nn = 0; miit!=hi_miit; miit++, nn++) {
+    method.nInTheLoop = nn;
     method.dofPtr = &*miit;
     method.dofNumeredPtr = NULL;
     try {
