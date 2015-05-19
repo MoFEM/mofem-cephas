@@ -3,7 +3,7 @@ using namespace MoFEM;
 #include <adolc/adolc.h> 
 #include <ConvectiveMassElement.hpp>
 #include <TimeForceScale.hpp>
-#include <PotsProcOnRefMesh.hpp>
+#include <PostProcOnRefMesh.hpp>
 #include <ConfigurationalFractureForDynamics.hpp>
 
 struct MonitorRestart: public FEMethod {
@@ -121,7 +121,7 @@ struct MonitorPostProc: public FEMethod {
     ErrorCode rval;
 
     if(!iNit) {
-      ierr = postProc.generateRefereneElemenMesh(); CHKERRQ(ierr);
+      ierr = postProc.generateReferenceElementMesh(); CHKERRQ(ierr);
       ierr = postProc.addFieldValuesPostProc("SPATIAL_POSITION"); CHKERRQ(ierr);
       ierr = postProc.addFieldValuesPostProc("SPATIAL_VELOCITY"); CHKERRQ(ierr);
       ierr = postProc.addFieldValuesGradientPostProc("SPATIAL_POSITION"); CHKERRQ(ierr);
@@ -280,7 +280,7 @@ struct MonitorLoadPath: public FEMethod {
     //ierr = mField.get_problem("COUPLED_DYNAMIC",&problemPtr); CHKERRQ(ierr);
 
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|UNKNOWNCUBITNAME,it)) {
-      if(it->get_Cubit_name() != "LoadPath") continue;
+      if(it->get_name() != "LoadPath") continue;
 
       Range nodes;
       rval = mField.get_moab().get_entities_by_type(it->meshset,MBVERTEX,nodes,true); CHKERR_PETSC(rval);

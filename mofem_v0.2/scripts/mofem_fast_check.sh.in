@@ -14,6 +14,6 @@ fi
 cd $MOFEM_INSTALL_PREFIX
 if [ -f $HOME/.mofem_config/ctest_users_modules_script ]; then
   ctest -V -S $HOME/.mofem_config/ctest_users_modules_script
-else 
+else
   ctest -D Experimental
 fi

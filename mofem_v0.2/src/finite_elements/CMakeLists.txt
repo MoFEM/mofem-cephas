@@ -20,7 +20,7 @@ add_library(mofem_finite_elements
 
 #install(FILES 
 #  ForcesAndSurcesCore.hpp 
-#  PotsProcOnRefMesh.hpp
+#  PostProcOnRefMesh.hpp
 #  DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
 
 install(TARGETS mofem_finite_elements DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)

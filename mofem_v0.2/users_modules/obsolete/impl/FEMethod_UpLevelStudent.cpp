@@ -64,7 +64,7 @@ PetscErrorCode FEMethod_UpLevelStudent::OpStudentStart_TET(vector<double>& _gNTE
   }
   EntityHandle fe_handle = fePtr->get_ent();
 
-  V = ShapeVolumeMBTET(diffNTET,&*coords.data().begin()); 
+  V = ShapeVolumeMBTET(diffNTET,&*coords.data().begin());
   if( V <= 0 ) {
     SETERRQ(PETSC_COMM_SELF,1,"negative volume");
     throw FEMethod_UpLevelStudent_ExceptionNegatvieTetVolume();
@@ -156,7 +156,7 @@ PetscErrorCode FEMethod_UpLevelStudent::GetRowGlobalIndices(const string &field_
 	  if(eiit->side_number_ptr->brother_side_number!=side_number) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	} else {
 	  RowGlobDofs.resize(0);
-	  PetscFunctionReturn(0); 
+	  PetscFunctionReturn(0);
 	}
       }
       switch(type) {
@@ -217,7 +217,7 @@ PetscErrorCode FEMethod_UpLevelStudent::GetRowLocalIndices(const string &field_n
 	  if(eiit->side_number_ptr->brother_side_number!=side_number) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	} else {
 	  RowLocalDofs.resize(0);
-	  PetscFunctionReturn(0); 
+	  PetscFunctionReturn(0);
 	}
       }
       switch(type) {
@@ -284,7 +284,7 @@ PetscErrorCode FEMethod_UpLevelStudent::GetColGlobalIndices(const string &field_
 	  if(eiit->side_number_ptr->brother_side_number!=side_number) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	} else {
 	  ColGlobDofs.resize(0);
-	  PetscFunctionReturn(0); 
+	  PetscFunctionReturn(0);
 	}
       }
       switch(type) {
@@ -345,7 +345,7 @@ PetscErrorCode FEMethod_UpLevelStudent::GetColLocalIndices(const string &field_n
 	  if(eiit->side_number_ptr->brother_side_number!=side_number) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	} else {
 	  ColLocalDofs.resize(0);
-	  PetscFunctionReturn(0); 
+	  PetscFunctionReturn(0);
 	}
       }
       switch(type) {
@@ -786,7 +786,7 @@ PetscErrorCode FEMethod_UpLevelStudent::GetHierarchicalGeometryApproximation_App
 	&*_invH_.data().begin(),3,
 	&_diffNMatrix_.data()[rank*_diffNMatrix_.size2()*rr],_diffNMatrix_.size2(),
 	0.,
-	&_diffNMatrix__.data()[rank*_diffNMatrix__.size2()*rr],_diffNMatrix__.size2()); 
+	&_diffNMatrix__.data()[rank*_diffNMatrix__.size2()*rr],_diffNMatrix__.size2());
     }
     ublas::noalias(_diffNMatrix_) = _diffNMatrix__;
   }
@@ -794,4 +794,3 @@ PetscErrorCode FEMethod_UpLevelStudent::GetHierarchicalGeometryApproximation_App
 }
 
 }
-

@@ -35,10 +35,10 @@ namespace po = boost::program_options;
 #include <BodyForce.hpp>
 #include <ThermalStressElement.hpp>
 
-#include <PotsProcOnRefMesh.hpp>
+#include <PostProcOnRefMesh.hpp>
 #include <PostProcHookStresses.hpp>
 
-#include <adolc/adolc.h> 
+#include <adolc/adolc.h>
 #include <NonLienarElasticElement.hpp>
 #include <Hooke.hpp>
 
@@ -49,7 +49,7 @@ using namespace boost::numeric;
 ErrorCode rval;
 PetscErrorCode ierr;
 
-static char help[] = 
+static char help[] =
   "-my_block_config set block data\n"
   "\n";
 
@@ -88,7 +88,7 @@ int main(int argc, char *argv[]) {
   ierr = PetscOptionsInt("-my_order",
     "default approximation order","",
       2,&order,PETSC_NULL); CHKERRQ(ierr);
-  ierr = PetscOptionsBool("-my_is_partitioned", 
+  ierr = PetscOptionsBool("-my_is_partitioned",
     "set if mesh is partitioned (this result that each process keeps only part of the mes","",
     PETSC_FALSE,&is_partitioned,PETSC_NULL); CHKERRQ(ierr);
   ierr = PetscOptionsString("-my_block_config",
@@ -110,11 +110,11 @@ int main(int argc, char *argv[]) {
     option = "PARALLEL=BCAST_DELETE;"
       "PARALLEL_RESOLVE_SHARED_ENTS;"
       "PARTITION=PARALLEL_PARTITION;";
-    rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
+    rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
   } else {
     const char *option;
     option = "";
-    rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
+    rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
   }
 
   //Create MoFEM (Joseph) database
@@ -129,7 +129,7 @@ int main(int argc, char *argv[]) {
   Range meshset_level0;
   ierr = m_field.get_entities_by_ref_level(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
   PetscSynchronizedPrintf(PETSC_COMM_WORLD,"meshset_level0 %d\n",meshset_level0.size());
-  PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT); 
+  PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT);
 
   //Define problem
 
@@ -162,7 +162,7 @@ int main(int argc, char *argv[]) {
   map<int,BlockOptionData> block_data;
   if(flg_block_config) {
     try {
-      ifstream ini_file(block_config_file);  
+      ifstream ini_file(block_config_file);
       //cerr << block_config_file << endl;
       po::variables_map vm;
       po::options_description config_file_options;
@@ -186,7 +186,7 @@ int main(int argc, char *argv[]) {
       }
       po::parsed_options parsed = parse_config_file(ini_file,config_file_options,true);
       store(parsed,vm);
-      po::notify(vm); 
+      po::notify(vm);
       for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
 	if(block_data[it->get_msId()].oRder == -1) continue;
         if(block_data[it->get_msId()].oRder == order) continue;
@@ -260,7 +260,7 @@ int main(int argc, char *argv[]) {
 
   if(m_field.check_field("TEMP")) {
     ierr = thermal_stress_elem.addThermalSterssElement("ELASTIC","DISPLACEMENT","TEMP"); CHKERRQ(ierr);
-  } 
+  }
 
   //build database
   //build field
@@ -333,7 +333,7 @@ int main(int argc, char *argv[]) {
   ierr = MatZeroEntries(Aij); CHKERRQ(ierr);
 
   //assemble Aij and F
- 
+
   DisplacementBCFEMethodPreAndPostProc my_dirichlet_bc(m_field,"DISPLACEMENT",Aij,D,F);
   //set kinematic boundary conditions
   ierr = DMoFEMPreProcessFiniteElements(dm,&my_dirichlet_bc); CHKERRQ(ierr);
@@ -404,12 +404,12 @@ int main(int argc, char *argv[]) {
 
 
   PostPocOnRefinedMesh post_proc(m_field);
-  ierr = post_proc.generateRefereneElemenMesh(); CHKERRQ(ierr);
+  ierr = post_proc.generateReferenceElementMesh(); CHKERRQ(ierr);
   ierr = post_proc.addFieldValuesPostProc("DISPLACEMENT"); CHKERRQ(ierr);
   ierr = post_proc.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
   ierr = post_proc.addFieldValuesGradientPostProc("DISPLACEMENT"); CHKERRQ(ierr);
   //add postpocessing for sresses
-  post_proc.get_op_to_do_Rhs().push_back(
+  post_proc.getOpPtrVector().push_back(
 	  new PostPorcStress(
 	    m_field,
 	    post_proc.postProcMesh,
@@ -427,38 +427,38 @@ int main(int argc, char *argv[]) {
     ierr = m_field.query_interface(recorder_ptr); CHKERRQ(ierr);
     if( recorder_ptr->check_series("THEMP_SERIES") ) {
       for(_IT_SERIES_STEPS_BY_NAME_FOR_LOOP_(recorder_ptr,"THEMP_SERIES",sit)) {
-	PetscPrintf(PETSC_COMM_WORLD,"Process step %d\n",sit->get_step_number());
-	ierr = recorder_ptr->load_series_data("THEMP_SERIES",sit->get_step_number()); CHKERRQ(ierr);
-	ierr = VecZeroEntries(F_thermal); CHKERRQ(ierr);
-	ierr = VecGhostUpdateBegin(F_thermal,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	ierr = VecGhostUpdateEnd(F_thermal,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	ierr = DMoFEMLoopFiniteElements(dm,"ELASTIC",&thermal_stress_elem.getLoopThermalStressRhs()); CHKERRQ(ierr);
-	ierr = VecGhostUpdateBegin(F_thermal,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-	ierr = VecGhostUpdateEnd(F_thermal,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-	ierr = VecAssemblyBegin(F_thermal); CHKERRQ(ierr);
-	ierr = VecAssemblyEnd(F_thermal); CHKERRQ(ierr);
+        PetscPrintf(PETSC_COMM_WORLD,"Process step %d\n",sit->get_step_number());
+        ierr = recorder_ptr->load_series_data("THEMP_SERIES",sit->get_step_number()); CHKERRQ(ierr);
+        ierr = VecZeroEntries(F_thermal); CHKERRQ(ierr);
+        ierr = VecGhostUpdateBegin(F_thermal,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+        ierr = VecGhostUpdateEnd(F_thermal,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+        ierr = DMoFEMLoopFiniteElements(dm,"ELASTIC",&thermal_stress_elem.getLoopThermalStressRhs()); CHKERRQ(ierr);
+        ierr = VecGhostUpdateBegin(F_thermal,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+        ierr = VecGhostUpdateEnd(F_thermal,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+        ierr = VecAssemblyBegin(F_thermal); CHKERRQ(ierr);
+        ierr = VecAssemblyEnd(F_thermal); CHKERRQ(ierr);
 
-	PetscReal nrm_F;
-	ierr = VecNorm(F,NORM_2,&nrm_F); CHKERRQ(ierr);
-	PetscPrintf(PETSC_COMM_WORLD,"norm2 F = %6.4e\n",nrm_F);
-	PetscReal nrm_F_thremal;
-	ierr = VecNorm(F_thermal,NORM_2,&nrm_F_thremal); CHKERRQ(ierr);
-	PetscPrintf(PETSC_COMM_WORLD,"norm2 F_thernal = %6.4e\n",nrm_F_thremal);
-	ierr = VecScale(F_thermal,-1); CHKERRQ(ierr); //check this !!!
-	ierr = VecAXPY(F_thermal,1,F); CHKERRQ(ierr);
+        PetscReal nrm_F;
+        ierr = VecNorm(F,NORM_2,&nrm_F); CHKERRQ(ierr);
+        PetscPrintf(PETSC_COMM_WORLD,"norm2 F = %6.4e\n",nrm_F);
+        PetscReal nrm_F_thremal;
+        ierr = VecNorm(F_thermal,NORM_2,&nrm_F_thremal); CHKERRQ(ierr);
+        PetscPrintf(PETSC_COMM_WORLD,"norm2 F_thernal = %6.4e\n",nrm_F_thremal);
+        ierr = VecScale(F_thermal,-1); CHKERRQ(ierr); //check this !!!
+        ierr = VecAXPY(F_thermal,1,F); CHKERRQ(ierr);
         my_dirichlet_bc.snes_x = D;
         my_dirichlet_bc.snes_f = F_thermal;
-	ierr = DMoFEMPostProcessFiniteElements(dm,&my_dirichlet_bc); CHKERRQ(ierr);
-	ierr = KSPSolve(solver,F_thermal,D); CHKERRQ(ierr);
-	ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+        ierr = DMoFEMPostProcessFiniteElements(dm,&my_dirichlet_bc); CHKERRQ(ierr);
+        ierr = KSPSolve(solver,F_thermal,D); CHKERRQ(ierr);
+        ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+        ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
-	//Save data on mesh
-	ierr = DMoFEMMeshToLocalVector(dm,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-	ierr = DMoFEMLoopFiniteElements(dm,"ELASTIC",&post_proc); CHKERRQ(ierr);
-	ostringstream o1;
-	o1 << "out_" << sit->step_number << ".h5m";
-	rval = post_proc.postProcMesh.write_file(o1.str().c_str(),"MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
+        //Save data on mesh
+        ierr = DMoFEMMeshToLocalVector(dm,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+        ierr = DMoFEMLoopFiniteElements(dm,"ELASTIC",&post_proc); CHKERRQ(ierr);
+        ostringstream o1;
+        o1 << "out_" << sit->step_number << ".h5m";
+        rval = post_proc.postProcMesh.write_file(o1.str().c_str(),"MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
       }
     } else {
       ierr = VecZeroEntries(F_thermal); CHKERRQ(ierr);
@@ -469,7 +469,7 @@ int main(int argc, char *argv[]) {
       ierr = VecGhostUpdateEnd(F_thermal,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
       ierr = VecAssemblyBegin(F_thermal); CHKERRQ(ierr);
       ierr = VecAssemblyEnd(F_thermal); CHKERRQ(ierr);
- 
+
       PetscReal nrm_F;
       ierr = VecNorm(F,NORM_2,&nrm_F); CHKERRQ(ierr);
       PetscPrintf(PETSC_COMM_WORLD,"norm2 F = %6.4e\n",nrm_F);
@@ -497,7 +497,7 @@ int main(int argc, char *argv[]) {
     ierr = KSPSolve(solver,F,D); CHKERRQ(ierr);
     ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  
+
     //Save data on mesh
     ierr = DMoFEMMeshToLocalVector(dm,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = DMoFEMLoopFiniteElements(dm,"ELASTIC",&post_proc); CHKERRQ(ierr);
@@ -507,7 +507,7 @@ int main(int argc, char *argv[]) {
   elastic.getLoopFeEnergy().snes_ctx = SnesMethod::CTX_SNESNONE;
   ierr = DMoFEMLoopFiniteElements(dm,"ELASTIC",&elastic.getLoopFeEnergy()); CHKERRQ(ierr);
   PetscPrintf(PETSC_COMM_WORLD,"Elastic energy %6.4e\n",elastic.getLoopFeEnergy().eNergy);
-      
+
   //Destroy matrices
   ierr = VecDestroy(&F); CHKERRQ(ierr);
   ierr = VecDestroy(&D); CHKERRQ(ierr);
@@ -517,4 +517,3 @@ int main(int argc, char *argv[]) {
   PetscFinalize();
 
 }
-

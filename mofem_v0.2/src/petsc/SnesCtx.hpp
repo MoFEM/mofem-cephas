@@ -1,5 +1,5 @@
-/** \file SnesCtx.hpp 
- * \brief Context for PETSc SNES, i.e. nonlinear spolver
+/** \file SnesCtx.hpp
+ * \brief Context for PETSc SNES, i.e. nonlinear solver
  */
 
 /* This file is part of MoFEM.
@@ -45,7 +45,7 @@ struct SnesCtx {
   PetscLogEvent USER_EVENT_SnesRhs;
   PetscLogEvent USER_EVENT_SnesMat;
 
-  SnesCtx(FieldInterface &_mField,const string &_problem_name): 
+  SnesCtx(FieldInterface &_mField,const string &_problem_name):
     mField(_mField),moab(_mField.get_moab()),problemName(_problem_name) {
     PetscLogEventRegister("LoopSNESRhs",0,&USER_EVENT_SnesRhs);
     PetscLogEventRegister("LoopSNESMat",0,&USER_EVENT_SnesMat);

@@ -1,5 +1,7 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
+/** \file convective_matrix.cpp
+
+ * \ingroup convective_mass_elem
+ * \ingroup nonlinear_elastic_elem
  *
  * Atom test for convective mass element
  *
