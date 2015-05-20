@@ -1,78 +1,54 @@
 reset
 
 # Geometry (all dimension for macro is in meter [mm])
-brick x 10 y 10 z 1
+brick x 10 y 10 z 2
 create cylinder height 60 radius 5
 move volume 2 x -5 y -5 z 0 include_merged
 subtract volume 2 from volume 1
-brick x 10 y 10 z 1
+brick x 10 y 10 z 2
 move volume 3 x 0 y 10 z 0 include_merged
-imprint volume all 
-merge volume all 
+unite volume all
 
 #Meshing   
-curve 20 19 interval 3
-curve 20 19 scheme equal 
-mesh curve 20 19   
- 
-curve 2 1  interval 5
-curve 2 1  scheme equal 
-mesh curve 2 1   
- 
-#circlular arc   
-curve 17 interval  5
-curve 17 scheme equal 
-mesh curve 17   
- 
+curve 25 24 1 19 17 18 16 10 34 33  size auto factor 4
+curve 25 24 1 19 17 18 16 10 34 33 scheme equal
+mesh curve 25 24 1 19 17 18 16 10 34 33 
+
 surface 11  scheme TriMesh 
 mesh surface 11  
  
-surface 13 scheme mirror source surface 11 source vertex 14 target vertex 12 nosmoothing 
+surface 13 scheme mirror source surface 11 source vertex 13 target vertex 11 nosmoothing 
 mesh surface 13  
  
-curve 25 23 24 interval  5
-curve 25 23 24 scheme equal 
-mesh curve 25 23 24  
-surface 15  scheme TriMesh 
-mesh surface 15  
- 
-surface 16 scheme mirror source surface 15 source vertex 17 target vertex 22 nosmoothing 
-mesh surface 16  
- 
-curve 18 11 33 16 10 12 34 interval 1 
-curve 18 11 33 16 10 12 34 scheme equal 
-mesh curve 18 11 33 16 10 12 34 
- 
+surface 14 12 10 6 19  scheme TriMesh 
+mesh surface 14 12 10 6 19  
+
 #volume all size auto factor 10 
 volume all scheme Tetmesh 
 mesh volume all 
 
-
-
 set duplicate block elements on
 # Bounary Conditions for Heat Transfer Macro problem
-create temperature on surface 19 value 25   #[deg C]
+create temperature on surface 19 value 30   #[deg C]
 create heatflux on surface 6 value 1 # +ve value means heat out (Watt/m2)
-create heatflux on surface 20  value 1 # +ve value means heat out (Watt/m2)
-
 
 # Bounary Conditions for Moisture Transport Macro problem
 # block 1 surface 5, 6, 13, 10
 block 1 surface 19
 block 1 name 'MASS_CONC'
 block 1 attribute count 1   
-block 1 attribute index 1 1 # relative humidity 
+block 1 attribute index 1 0.7 # relative humidity 
 
-block 2 surface 6 20
+block 2 surface 6
 block 2 name 'MASS_FLUX'
 block 2 attribute count 1
 block 2 attribute index 1 0.5e-9
 
 # Bounary Conditions for Mechanical Macro problem
-create displacement on surface 14 18 dof 1 fix 0
+create displacement on surface 14 dof 1 fix 0
 create displacement on surface 12 dof 2 fix 0
-create displacement on surface 13 16 dof 3 fix 0
-create force on surface 19 16 vector 0 1 0 0 0 0
+create displacement on surface 13 dof 3 fix 0
+create force on surface 19 vector 0 1e6 0 0 0 0
 
 #Here thermal conductivity and moisture diffusivity homogenised matrices will be read directly from input RVE binary files so no need to defined material properties here
 block 3 volume all
@@ -96,10 +72,12 @@ block 5 attribute index 2 0   #Poisson's ratio (This will not be used in the cal
 
 #Mark elements to see the strain for plotting different RVEs 
 set duplicate block elements on
-block 6 tet 58 80 32 95 160
+block 6 tet 816 810 136 1158 1593
 block 6 name "Ele_Strain_RVE"
 
-save as "/Users/zahur/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/trans_iso/Macro_Plate_with_hole.cub" overwrite
+save as "/Users/zahur/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/trans_iso/Macro_Plate_with_hole_New.cub" overwrite
+
+
 
 
 
