@@ -41,6 +41,8 @@ set(MOFEM_FINITE_ELEMENT_LIBRARY_FILES
   ${PROJECT_SOURCE_DIR}/finite_element_library/impl/ArcLengthTools.cpp
   ${PROJECT_SOURCE_DIR}/finite_element_library/impl/DirichletBC.cpp
   ${PROJECT_SOURCE_DIR}/finite_element_library/impl/ThermalElement.cpp
+  ${PROJECT_SOURCE_DIR}/finite_element_library/impl/NodeForce.cpp
+  ${PROJECT_SOURCE_DIR}/finite_element_library/impl/SurfacePressure.cpp
 )
 
 if(ADOL-C_LIBRARY)

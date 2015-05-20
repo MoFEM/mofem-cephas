@@ -458,6 +458,7 @@ add_test(forces_and_sources_testing_flat_prism_element_test_compare ${CMAKE_COMM
 # neumann forces
 add_executable(neumann_forces_atom neumann_forces.cpp)
 target_link_libraries(neumann_forces_atom
+  mofem_finite_element_library
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
