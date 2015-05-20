@@ -39,23 +39,23 @@ struct HelmholtzElement {
 
   /// \brief  Volume element
   struct MyVolumeFE: public VolumeElementForcesAndSourcesCore {
-    int multRank; ///< default value 1, i.e. assumes that geometry is approx. by quadratic functions.
+    int addToRank; ///< default value 1, i.e. assumes that geometry is approx. by quadratic functions.
 
     MyVolumeFE(FieldInterface &m_field,int add_to_rank):
     VolumeElementForcesAndSourcesCore(m_field),
-    multRank(add_to_rank) {}
+    addToRank(add_to_rank) {}
 
-    int getRule(int order) { return order*multRank; };
+    int getRule(int order) { return order+addToRank; };
   };
 
   /// \brief Surface element
   struct MySurfaceFE: public FaceElementForcesAndSourcesCore {
-    int multRank; ///< default value 1, i.e. assumes that geometry is approx. by quadratic functions.
-    MySurfaceFE(FieldInterface &m_field,int mult_rank):
+    int addToRank; ///< default value 1, i.e. assumes that geometry is approx. by quadratic functions.
+    MySurfaceFE(FieldInterface &m_field,int add_to_rank):
     FaceElementForcesAndSourcesCore(m_field),
-    multRank(mult_rank) {}
+    addToRank(add_to_rank) {}
 
-    int getRule(int order) { return order*multRank; };
+    int getRule(int order) { return order+addToRank; };
   };
 
   boost::ptr_map<string,ForcesAndSurcesCore> feRhs; // surface element for LHS
@@ -188,12 +188,12 @@ struct HelmholtzElement {
   CommonData commonData;
 
   FieldInterface &mField;
-  int multRank; ///< default value 1, i.e. assumes that geometry is approx. by quadratic functions.
+  int addToRank; ///< default value 1, i.e. assumes that geometry is approx. by quadratic functions.
 
   HelmholtzElement(
     FieldInterface &m_field):
     mField(m_field),
-    multRank(2) {}
+    addToRank(1) {}
 
   struct OpGetImIndices: public ForcesAndSurcesCore::UserDataOperator  {
 
@@ -740,6 +740,7 @@ struct HelmholtzElement {
           grad[ii] += i*wave_number*direction[ii]*p_inc_frequency;
         }
       }
+      grad /= size;
 
       complex<double > grad_n = inner_prod(grad,normal);
 
@@ -1387,9 +1388,9 @@ struct HelmholtzElement {
 
     string fe_name;
 
-    fe_name = "HELMHOLTZ_RERE_FE"; feLhs.insert(fe_name,new MyVolumeFE(mField,multRank));
-    fe_name = "HELMHOLTZ_RERE_FE"; feRhs.insert(fe_name,new MyVolumeFE(mField,multRank));
-    fe_name = "HELMHOLTZ_IMIM_FE"; feRhs.insert(fe_name,new MyVolumeFE(mField,multRank));
+    fe_name = "HELMHOLTZ_RERE_FE"; feLhs.insert(fe_name,new MyVolumeFE(mField,addToRank));
+    fe_name = "HELMHOLTZ_RERE_FE"; feRhs.insert(fe_name,new MyVolumeFE(mField,addToRank));
+    fe_name = "HELMHOLTZ_IMIM_FE"; feRhs.insert(fe_name,new MyVolumeFE(mField,addToRank));
 
     feLhs.at("HELMHOLTZ_RERE_FE").getOpPtrVector().push_back(
       new OpGetImIndices(re_field_name,im_field_name,commonData));
@@ -1414,8 +1415,8 @@ struct HelmholtzElement {
     }
 
     fe_name = "HELMHOLTZ_REIM_FE";
-    feLhs.insert(fe_name,new MySurfaceFE(mField,multRank));
-    feRhs.insert(fe_name,new MySurfaceFE(mField,multRank));
+    feLhs.insert(fe_name,new MySurfaceFE(mField,addToRank));
+    feRhs.insert(fe_name,new MySurfaceFE(mField,addToRank));
 
     if(mField.check_field(mesh_nodals_positions)) {
 

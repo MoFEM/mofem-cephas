@@ -33,11 +33,11 @@ struct FieldApproximationH1 {
   FieldInterface &mField;
   const string problemName;
   VolumeElementForcesAndSourcesCore fe;
-  int multRule;
+  int addToRule;
 
   FieldApproximationH1(
     FieldInterface &m_field):
-    mField(m_field),fe(m_field),multRule(1) {}
+    mField(m_field),fe(m_field),addToRule(1) {}
 
   /** \brief set integration rule
 
@@ -45,7 +45,7 @@ struct FieldApproximationH1 {
     that function if linear or HO approximation is set.
 
   */
-  int getRule(int order) { return order*multRule; };
+  int getRule(int order) { return order+addToRule; };
 
   /** \brief Gauss point operators to calculate matrices and vectors
     *
@@ -67,7 +67,7 @@ struct FieldApproximationH1 {
     ublas::matrix<FieldData> transNN;
     vector<ublas::vector<FieldData> > Nf;
 
-    /** \brief calulate matrix
+    /** \brief calculate matrix
       */
     PetscErrorCode doWork(
       int row_side,int col_side,
@@ -93,11 +93,12 @@ struct FieldApproximationH1 {
       NN.clear();
 
       unsigned int nb_gauss_pts = row_data.getN().size1();
-      for(unsigned int gg = 0;gg<nb_gauss_pts;gg++) {
+      for(unsigned int gg = 0;gg!=nb_gauss_pts;gg++) {
         double w = getVolume()*getGaussPts()(3,gg);
         if(getHoCoordsAtGaussPts().size1()==nb_gauss_pts) {
           w *= getHoGaussPtsDetJac()[gg];
         }
+        //noalias(NN) += w*outer_prod(row_data.getN(gg),col_data.getN(gg));
         cblas_dger(CblasRowMajor,
           nb_row_dofs,nb_col_dofs,
           w,&row_data.getN()(gg,0),1,&col_data.getN()(gg,0),1,
