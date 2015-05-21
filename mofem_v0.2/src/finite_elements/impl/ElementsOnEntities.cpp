@@ -1219,19 +1219,29 @@ PetscErrorCode ForcesAndSurcesCore::shapeEDGEFunctions_H1(DataForcesAndSurcesCor
   data.dataOnEntities[MBEDGE][0].getN().resize(G_DIM,NBEDGE_H1(order),false);
   data.dataOnEntities[MBEDGE][0].getDiffN().resize(G_DIM,NBEDGE_H1(order),false);
   if(data.dataOnEntities[MBEDGE][0].getOrder()>1) {
-    double diff_s = 0.5;
+    double diff_s = 0.5; // s = s(xi), ds/dxi = 0.5, because change of basis
     for(int gg = 0;gg<G_DIM;gg++) {
-      double s = 2*G_X[gg]-1;
-      ierr = Legendre_polynomials(NBEDGE_H1(order)-1,s,&diff_s,
+
+      double s = 2*G_X[gg]-1; // makes form -1..1
+
+      // calculate Legendre polynomials at integration points
+      ierr = Legendre_polynomials(
+        NBEDGE_H1(order)-1,s,&diff_s,
         &data.dataOnEntities[MBEDGE][0].getN()(gg,0),
-        &data.dataOnEntities[MBEDGE][0].getDiffN()(gg,0),1); CHKERRQ(ierr);
+        &data.dataOnEntities[MBEDGE][0].getDiffN()(gg,0),1
+      ); CHKERRQ(ierr);
+
       for(unsigned int pp = 0;pp<data.dataOnEntities[MBEDGE][0].getN().size2();pp++) {
+
         double L = data.dataOnEntities[MBEDGE][0].getN()(gg,pp);
         double diffL = data.dataOnEntities[MBEDGE][0].getDiffN()(gg,pp);
 
+        // Calculate edge shape functions N0*N1*L(p), where N0 and N1 are nodal shape functions
         data.dataOnEntities[MBEDGE][0].getN()(gg,pp) =
           data.dataOnEntities[MBVERTEX][0].getN()(gg,0)*data.dataOnEntities[MBVERTEX][0].getN()(gg,1)*L;
 
+        // Calculate derivative edge shape functions
+        // dN/dksi = dN0/dxi*N1*L + N0*dN1/ksi*L + N0*N1*dL/dxi
         data.dataOnEntities[MBEDGE][0].getDiffN()(gg,pp) =
           ((+1.)*data.dataOnEntities[MBVERTEX][0].getN()(gg,1)
           +data.dataOnEntities[MBVERTEX][0].getN()(gg,0)*(-1.))*L
@@ -1685,7 +1695,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
               break;
               case NOFIELD:
               if(!getNinTheLoop()) {
-                // NOFIELD data arr the same for each element, can be retreived only once
+                // NOFIELD data are the same for each element, can be retreived only once
                 if(!ss) {
                   ierr = getNoFieldRowIndices(*op_data[ss],field_name); CHKERRQ(ierr);
                 } else {
@@ -1978,7 +1988,7 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
             break;
             case NOFIELD:
             if(!getNinTheLoop()) {
-              // NOFIELD data arr the same for each element, can be retreived only once
+              // NOFIELD data are the same for each element, can be retreived only once
               if(!ss) {
                 ierr = getNoFieldRowIndices(*op_data[ss],field_name); CHKERRQ(ierr);
               } else {
@@ -2073,6 +2083,20 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
   }
   //cerr << coordsAtGaussPts << endl;
 
+  tAngent_at_GaussPt.resize(0,3,false);
+  if(mField.check_field(meshPositionsFieldName)) {
+    ierr = getEdgesOrder(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
+    ierr = getNodesFieldData(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
+    ierr = getEdgesFieldData(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
+    try {
+      ierr = opGetHoTangentOnEdge.opRhs(dataH1); CHKERRQ(ierr);
+    } catch (exception& ex) {
+      ostringstream ss;
+      ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+      SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+    }
+  }
+
   const UserDataOperator::OpType types[2] = {
     UserDataOperator::OPROW, UserDataOperator::OPCOL
   };
@@ -2153,7 +2177,7 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
             break;
             case NOFIELD:
             if(!getNinTheLoop()) {
-              // NOFIELD data arr the same for each element, can be retreived only once
+              // NOFIELD data are the same for each element, can be retreived only once
               if(!ss) {
                 ierr = getNoFieldRowIndices(*op_data[ss],field_name); CHKERRQ(ierr);
               } else {
@@ -2294,7 +2318,7 @@ PetscErrorCode VertexElementForcesAndSourcesCore::operator()() {
             break;
             case NOFIELD:
             if(!getNinTheLoop()) {
-              // NOFIELD data arr the same for each element, can be retreived only once
+              // NOFIELD data are the same for each element, can be retreived only once
               if(!ss) {
                 ierr = getNoFieldRowIndices(*op_data[ss],field_name); CHKERRQ(ierr);
               } else {
@@ -2541,7 +2565,7 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
               break;
               case NOFIELD:
               if(!getNinTheLoop()) {
-                // NOFIELD data arr the same for each element, can be retreived only once
+                // NOFIELD data are the same for each element, can be retreived only once
                 if(!ss) {
                   ierr = getNoFieldRowIndices(*op_data[ss],field_name); CHKERRQ(ierr);
                 } else {
@@ -2593,261 +2617,6 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
       }
 
     }
-
-
-    /*for(int ss = 0;ss<2;ss++) {
-
-      boost::ptr_vector<ForcesAndSurcesCore::UserDataOperator>::iterator oit,hi_oit;
-      if(!ss) {
-
-        oit = rowOpPtrVector.begin();
-        hi_oit = rowOpPtrVector.end();
-
-      } else {
-
-        oit = colOpPtrVector.begin();
-        hi_oit = colOpPtrVector.end();
-
-      }
-
-      for(;oit!=hi_oit;oit++) {
-
-        oit->setPtrFE(this);
-        BitFieldId data_id;
-        FieldSpace space;
-        string data_field_name;
-
-        if(!ss) {
-          data_id = mField.get_field_structure(oit->rowFieldName)->get_id();
-          if((oit->getMoFEMFEPtr()->get_BitFieldId_data()&data_id).none()) {
-            SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"no data field < %s > on finite elemeny",oit->rowFieldName.c_str());
-          }
-          space = mField.get_field_structure(oit->rowFieldName)->get_space();
-          data_field_name = oit->rowFieldName;
-        } else {
-          data_id = mField.get_field_structure(oit->colFieldName)->get_id();
-          if((oit->getMoFEMFEPtr()->get_BitFieldId_data()&data_id).none()) {
-            SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"no data field < %s > on finite elemeny",oit->colFieldName.c_str());
-          }
-          space = mField.get_field_structure(oit->colFieldName)->get_space();
-          data_field_name = oit->colFieldName;
-        }
-
-        DataForcesAndSurcesCore *op_data = NULL;
-        switch(space) {
-          case H1:
-          op_data = &dataH1;
-          break;
-          case HCURL:
-          SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented yet");
-          break;
-          case HDIV:
-          op_data = &dataHdiv;
-          break;
-          case L2:
-          SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented yet");
-          break;
-          case NOFIELD:
-          op_data = &dataNoField;
-          break;
-          default:
-          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
-          break;
-        }
-
-        try {
-
-          switch(space) {
-            case H1:
-            if(!ss) {
-              ierr = getRowNodesIndices(*op_data,data_field_name); CHKERRQ(ierr);
-            } else {
-              ierr = getColNodesIndices(*op_data,data_field_name); CHKERRQ(ierr);
-            }
-            ierr = getNodesFieldData(*op_data,data_field_name); CHKERRQ(ierr);
-            ierr = getNodesFieldDofs(*op_data,data_field_name); CHKERRQ(ierr);
-            case HCURL:
-            if(!ss) {
-              ierr = getEdgesRowIndices(*op_data,data_field_name); CHKERRQ(ierr);
-            } else {
-              ierr = getEdgesColIndices(*op_data,data_field_name); CHKERRQ(ierr);
-            }
-            ierr = getEdgesOrder(*op_data,data_field_name); CHKERRQ(ierr);
-            ierr = getEdgesFieldData(*op_data,data_field_name); CHKERRQ(ierr);
-            ierr = getEdgesFieldDofs(*op_data,data_field_name); CHKERRQ(ierr);
-            case HDIV:
-            case L2:
-            if(!ss) {
-              ierr = getTrisRowIndices(*op_data,data_field_name); CHKERRQ(ierr);
-            } else {
-              ierr = getTrisColIndices(*op_data,data_field_name); CHKERRQ(ierr);
-            }
-            ierr = getTrisOrder(*op_data,data_field_name); CHKERRQ(ierr);
-            ierr = getTrisFieldData(*op_data,data_field_name); CHKERRQ(ierr);
-            ierr = getTrisFieldDofs(*op_data,data_field_name); CHKERRQ(ierr);
-            break;
-            case NOFIELD:
-            if(!getNinTheLoop()) {
-              // NOFIELD data are the same for each element, can be retreived only once
-              if(!ss) {
-                ierr = getNoFieldRowIndices(*op_data,data_field_name); CHKERRQ(ierr);
-              } else {
-                ierr = getNoFieldColIndices(*op_data,data_field_name); CHKERRQ(ierr);
-              }
-              ierr = getNoFieldFieldData(*op_data,data_field_name); CHKERRQ(ierr);
-              ierr = getNoFieldFieldDofs(*op_data,data_field_name); CHKERRQ(ierr);
-            }
-            break;
-            default:
-            break;
-          }
-
-        } catch (exception& ex) {
-          ostringstream ss;
-          ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
-          SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
-        }
-
-        try {
-          ierr = oit->opRhs(*op_data); CHKERRQ(ierr);
-        } catch (exception& ex) {
-          ostringstream ss;
-          ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
-          SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
-        }
-
-      }
-
-    }
-
-    for(
-      boost::ptr_vector<ForcesAndSurcesCore::UserDataOperator>::iterator oit = rowColOpPtrVector.begin();
-      oit != rowColOpPtrVector.end(); oit++
-    ) {
-
-      oit->setPtrFE(this);
-      BitFieldId row_id = mField.get_field_structure(oit->rowFieldName)->get_id();
-      BitFieldId col_id = mField.get_field_structure(oit->colFieldName)->get_id();
-
-      if((oit->getMoFEMFEPtr()->get_BitFieldId_data()&row_id).none()) {
-        SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"no row field < %s > on finite elemeny",oit->rowFieldName.c_str());
-      }
-      if((oit->getMoFEMFEPtr()->get_BitFieldId_data()&col_id).none()) {
-        SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"no data field < %s > on finite elemeny",oit->colFieldName.c_str());
-      }
-
-      FieldSpace row_space = mField.get_field_structure(oit->rowFieldName)->get_space();
-
-      DataForcesAndSurcesCore *row_op_data = NULL;
-      switch(row_space) {
-        case H1:
-        row_op_data = &dataH1;
-        break;
-        case HCURL:
-        SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented yet");
-        break;
-        case HDIV:
-        row_op_data = &dataHdiv;
-        break;
-        case L2:
-        SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented yet");
-        break;
-        case NOFIELD:
-        row_op_data = &dataNoField;
-        break;
-        default:
-        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
-        break;
-      }
-
-      switch(row_space) {
-        case H1:
-        ierr = getRowNodesIndices(*row_op_data,oit->rowFieldName); CHKERRQ(ierr);
-        ierr = getNodesFieldData(*row_op_data,oit->rowFieldName); CHKERRQ(ierr);
-        ierr = getNodesFieldDofs(*row_op_data,oit->rowFieldName); CHKERRQ(ierr);
-        case HCURL:
-        ierr = getEdgesRowIndices(*row_op_data,oit->rowFieldName); CHKERRQ(ierr);
-        ierr = getEdgesOrder(*row_op_data,oit->rowFieldName); CHKERRQ(ierr);
-        ierr = getEdgesFieldData(*row_op_data,oit->rowFieldName); CHKERRQ(ierr);
-        ierr = getEdgesFieldDofs(*row_op_data,oit->rowFieldName); CHKERRQ(ierr);
-        case HDIV:
-        case L2:
-        ierr = getTrisRowIndices(*row_op_data,oit->rowFieldName); CHKERRQ(ierr);
-        ierr = getTrisOrder(*row_op_data,oit->rowFieldName); CHKERRQ(ierr);
-        ierr = getTrisFieldData(*row_op_data,oit->rowFieldName); CHKERRQ(ierr);
-        ierr = getTrisFieldDofs(*row_op_data,oit->rowFieldName); CHKERRQ(ierr);
-        break;
-        case NOFIELD:
-        if(!getNinTheLoop()) {
-          // NOFIELD data are the same for each element, can be retreived only once
-          ierr = getNoFieldRowIndices(*row_op_data,oit->rowFieldName); CHKERRQ(ierr);
-          ierr = getNoFieldFieldData(*row_op_data,oit->rowFieldName); CHKERRQ(ierr);
-          ierr = getNoFieldFieldDofs(*row_op_data,oit->rowFieldName); CHKERRQ(ierr);
-        }
-        default:
-        break;
-      }
-
-      FieldSpace col_space = mField.get_field_structure(oit->colFieldName)->get_space();
-      DataForcesAndSurcesCore *col_op_data = NULL;
-      switch(col_space) {
-        case H1:
-        col_op_data = &derivedDataH1;
-        break;
-        case HCURL:
-        SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented yet");
-        break;
-        case HDIV:
-        col_op_data = &derivedDataHdiv;
-        break;
-        case L2:
-        SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented yet");
-        break;
-        default:
-        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
-        break;
-        case NOFIELD:
-        col_op_data = &dataNoFieldCol;
-        break;
-      }
-
-      switch(col_space) {
-        case H1:
-        ierr = getColNodesIndices(*col_op_data,oit->colFieldName); CHKERRQ(ierr);
-        ierr = getNodesFieldData(*col_op_data,oit->colFieldName); CHKERRQ(ierr);
-        ierr = getNodesFieldDofs(*col_op_data,oit->colFieldName); CHKERRQ(ierr);
-        case HCURL:
-        ierr = getEdgesColIndices(*col_op_data,oit->colFieldName); CHKERRQ(ierr);
-        ierr = getEdgesOrder(*col_op_data,oit->colFieldName); CHKERRQ(ierr);
-        ierr = getEdgesFieldData(*col_op_data,oit->colFieldName); CHKERRQ(ierr);
-        ierr = getEdgesFieldDofs(*col_op_data,oit->colFieldName); CHKERRQ(ierr);
-        case HDIV:
-        case L2:
-        ierr = getTrisColIndices(*col_op_data,oit->colFieldName); CHKERRQ(ierr);
-        ierr = getTrisOrder(*col_op_data,oit->colFieldName); CHKERRQ(ierr);
-        ierr = getTrisFieldData(*col_op_data,oit->colFieldName); CHKERRQ(ierr);
-        ierr = getTrisFieldDofs(*col_op_data,oit->colFieldName); CHKERRQ(ierr);
-        break;
-        case NOFIELD:
-        if(!getNinTheLoop()) {
-          // NOFIELD data are the same for each element, can be retreived only once
-          ierr = getNoFieldColIndices(*col_op_data,oit->colFieldName); CHKERRQ(ierr);
-          ierr = getNoFieldFieldData(*col_op_data,oit->colFieldName); CHKERRQ(ierr);
-          ierr = getNoFieldFieldDofs(*col_op_data,oit->colFieldName); CHKERRQ(ierr);
-        }
-        default:
-        break;
-      }
-
-      try {
-        ierr = oit->opLhs(*row_op_data,*col_op_data,oit->sYmm); CHKERRQ(ierr);
-      } catch (exception& ex) {
-        ostringstream ss;
-        ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
-        SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
-      }
-
-    }*/
 
   } catch (exception& ex) {
     ostringstream ss;

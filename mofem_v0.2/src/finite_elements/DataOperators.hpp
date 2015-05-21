@@ -257,6 +257,18 @@ struct OpSetPiolaTransoformOnTriangle: public DataOperator {
 
 };
 
+/** \brief Calculate tangent vector on edge form HO geometry approximation
+ */
+struct OpGetHoTangentOnEdge: public DataOperator {
+
+  MatrixDouble &tAngent;
+
+  OpGetHoTangentOnEdge(MatrixDouble &tangent):
+    tAngent(tangent) {}
+
+  PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
+
+};
 
 
 }
