@@ -137,7 +137,7 @@ PetscErrorCode Base_scale(
 /**
  * \brief calculate local coordinates for given global coordinates
  *
- * new verison for multiple points need to be implemented
+ * new version for multiple points need to be implemented
  */
 PetscErrorCode ShapeMBTET_inverse(double *N,double *diffN,const double *elem_coords,const double *glob_coords,double *loc_coords);
 
@@ -145,16 +145,32 @@ PetscErrorCode ShapeMBTET_inverse(double *N,double *diffN,const double *elem_coo
 PetscErrorCode GradientOfDeformation(double *diffN,double *dofs,double *F);
 
 /**
- * \brief Calculate Lagrange approximation basis
- *
- * \param p is approximation order
- * \param s is is position [-1,1]
- * \param diff_s derivatives of shape functions
- * \param L approximation functions
- * \param diffL derivatives
- * \param dim dimension
+ \brief Calculate Lagrange approximation basis
+
+ Lagrange polynomial is given by
+ \f[
+ L_0(s)=1;\quad L_1(s) = s
+ \f]
+ and following terms are generated inductively
+ \f[
+ L_{l+1}=\frac{2l+1}{l+1}sL_l(s)-\frac{l}{l+1}L_{l-1}(s)
+ \f]
+
+ Note that:
+ \f[
+ s\in[-1,1] \quad \textrm{and}\; s=s(\xi_0,\xi_1,\xi_2)
+ \f]
+ where \f$\xi_i\f$ are barycentric coordinates of element.
+
+ \param p is approximation order
+ \param s is position \f$s\in[-1,1]\f$
+ \param diff_s derivatives of shape functions, i.e. \f$\frac{\partial s}{\partial \xi_i}\f$
+ \retval L approximation functions
+ \retval diffL derivatives, i.e. \f$\frac{\partial L}{\partial \xi_i}\f$
+ \param dim dimension
  */
 PetscErrorCode Lagrange_basis(int p,double s,double *diff_s,double *L,double *diffL,const int dim);
+
 /**
  * \brief Calculate Gegenbauer Polynomials and their derivatives
  *
