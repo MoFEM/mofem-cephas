@@ -87,9 +87,9 @@ PetscErrorCode Hdiv_EdgeBasedVolumeShapeFunctions_MBTET(
 	  diff_ksi_0i[dd] =
 	    diffN[3*edges_nodes[2*ee+1]+dd]-diffN[3*edges_nodes[2*ee+0]+dd];
 	}
-	ierr = Lagrange_basis(p,ksi_0i,diff_ksi_0i,Psi_l,diff_Psi_l,3); CHKERRQ(ierr);
+	ierr = Legendre_polynomials(p,ksi_0i,diff_ksi_0i,Psi_l,diff_Psi_l,3); CHKERRQ(ierr);
       } else {
-	ierr = Lagrange_basis(p,ksi_0i,NULL,Psi_l,NULL,3); CHKERRQ(ierr);
+	ierr = Legendre_polynomials(p,ksi_0i,NULL,Psi_l,NULL,3); CHKERRQ(ierr);
       }
       int l = 0;
       for(;l<=p-2;l++) {
@@ -151,11 +151,11 @@ PetscErrorCode Hdiv_FaceBasedVolumeShapeFunctions_MBTET(
       double Psi_l[ p+1 ],Psi_m[ p+1 ];
       double diff_Psi_l[ 3*(p+1) ],diff_Psi_m[ 3*(p+1) ];
       if(diffPHI_v_f != NULL) {
-	ierr = Lagrange_basis(p,ksi_0i,diff_ksi_0i,Psi_l,diff_Psi_l,3); CHKERRQ(ierr);
-	ierr = Lagrange_basis(p,ksi_0j,diff_ksi_0j,Psi_m,diff_Psi_m,3); CHKERRQ(ierr);
+	ierr = Legendre_polynomials(p,ksi_0i,diff_ksi_0i,Psi_l,diff_Psi_l,3); CHKERRQ(ierr);
+	ierr = Legendre_polynomials(p,ksi_0j,diff_ksi_0j,Psi_m,diff_Psi_m,3); CHKERRQ(ierr);
       } else {
-	ierr = Lagrange_basis(p,ksi_0i,NULL,Psi_l,NULL,3); CHKERRQ(ierr);
-	ierr = Lagrange_basis(p,ksi_0j,NULL,Psi_m,NULL,3); CHKERRQ(ierr);
+	ierr = Legendre_polynomials(p,ksi_0i,NULL,Psi_l,NULL,3); CHKERRQ(ierr);
+	ierr = Legendre_polynomials(p,ksi_0j,NULL,Psi_m,NULL,3); CHKERRQ(ierr);
       }
       double Beta_0ij = 
 	N[node_shift+faces_nodes[3*ff+0]]*N[node_shift+faces_nodes[3*ff+1]]*N[node_shift+faces_nodes[3*ff+2]];
@@ -247,13 +247,13 @@ PetscErrorCode Hdiv_VolumeBubbleShapeFunctions_MBTET(
 	diff_ksi_0j[dd] = diffN[ 3*2+dd ] - diffN[ 3*0+dd ];
 	diff_ksi_0k[dd] = diffN[ 3*3+dd ] - diffN[ 3*0+dd ];
       }
-      ierr = Lagrange_basis(p,ksi_0i,diff_ksi_0i,Psi_l,diff_Psi_l,3); CHKERRQ(ierr);
-      ierr = Lagrange_basis(p,ksi_0j,diff_ksi_0j,Psi_m,diff_Psi_m,3); CHKERRQ(ierr);
-      ierr = Lagrange_basis(p,ksi_0k,diff_ksi_0k,Psi_n,diff_Psi_n,3); CHKERRQ(ierr);
+      ierr = Legendre_polynomials(p,ksi_0i,diff_ksi_0i,Psi_l,diff_Psi_l,3); CHKERRQ(ierr);
+      ierr = Legendre_polynomials(p,ksi_0j,diff_ksi_0j,Psi_m,diff_Psi_m,3); CHKERRQ(ierr);
+      ierr = Legendre_polynomials(p,ksi_0k,diff_ksi_0k,Psi_n,diff_Psi_n,3); CHKERRQ(ierr);
     } else {
-      ierr = Lagrange_basis(p,ksi_0i,NULL,Psi_l,NULL,3); CHKERRQ(ierr);
-      ierr = Lagrange_basis(p,ksi_0j,NULL,Psi_m,NULL,3); CHKERRQ(ierr);
-      ierr = Lagrange_basis(p,ksi_0k,NULL,Psi_n,NULL,3); CHKERRQ(ierr);
+      ierr = Legendre_polynomials(p,ksi_0i,NULL,Psi_l,NULL,3); CHKERRQ(ierr);
+      ierr = Legendre_polynomials(p,ksi_0j,NULL,Psi_m,NULL,3); CHKERRQ(ierr);
+      ierr = Legendre_polynomials(p,ksi_0k,NULL,Psi_n,NULL,3); CHKERRQ(ierr);
     }
     int shift = ii*NBVOLUME_VOLUME_HDIV(p);
     int jj = 0;
@@ -343,9 +343,9 @@ PetscErrorCode Hdiv_EdgeFaceShapeFunctions_MBTET_ON_FACE(
 	for(;dd<3;dd++) {
 	  diff_ksi_0i[dd] = diffN[3*n1_idx+dd] - diffN[3*n0_idx+dd];
 	}
-	ierr = Lagrange_basis(p,ksi_0i,diff_ksi_0i,Psi_l,diff_Psi_l,3); CHKERRQ(ierr);
+	ierr = Legendre_polynomials(p,ksi_0i,diff_ksi_0i,Psi_l,diff_Psi_l,3); CHKERRQ(ierr);
       } else {
-	ierr = Lagrange_basis(p,ksi_0i,NULL,Psi_l,NULL,3); CHKERRQ(ierr);
+	ierr = Legendre_polynomials(p,ksi_0i,NULL,Psi_l,NULL,3); CHKERRQ(ierr);
       }
       int nOposite_idx = faces_nodes[face_oposite_edges_node[ee]];
       double lambda = N[node_shift+nOposite_idx];
@@ -412,11 +412,11 @@ PetscErrorCode Hdiv_FaceBubbleShapeFunctions_MBTET_ON_FACE(
 	diff_ksi_0i[dd] = diffN[3*faces_nodes[1] + dd] - diffN[3*faces_nodes[0] + dd];
 	diff_ksi_0j[dd] = diffN[3*faces_nodes[2] + dd] - diffN[3*faces_nodes[0] + dd];
       }
-      ierr = Lagrange_basis(p,ksi_0i,diff_ksi_0i,Psi_l,diff_Psi_l,3); CHKERRQ(ierr);
-      ierr = Lagrange_basis(p,ksi_0j,diff_ksi_0j,Psi_m,diff_Psi_m,3); CHKERRQ(ierr);
+      ierr = Legendre_polynomials(p,ksi_0i,diff_ksi_0i,Psi_l,diff_Psi_l,3); CHKERRQ(ierr);
+      ierr = Legendre_polynomials(p,ksi_0j,diff_ksi_0j,Psi_m,diff_Psi_m,3); CHKERRQ(ierr);
     } else {
-      ierr = Lagrange_basis(p,ksi_0i,NULL,Psi_l,NULL,3); CHKERRQ(ierr);
-      ierr = Lagrange_basis(p,ksi_0j,NULL,Psi_m,NULL,3); CHKERRQ(ierr);
+      ierr = Legendre_polynomials(p,ksi_0i,NULL,Psi_l,NULL,3); CHKERRQ(ierr);
+      ierr = Legendre_polynomials(p,ksi_0j,NULL,Psi_m,NULL,3); CHKERRQ(ierr);
     }
     double Beta_0ij = 
       N[node_shift+faces_nodes[0]]*N[node_shift+faces_nodes[1]]*N[node_shift+faces_nodes[2]];

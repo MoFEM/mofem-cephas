@@ -145,7 +145,7 @@ PetscErrorCode ShapeMBTET_inverse(double *N,double *diffN,const double *elem_coo
 PetscErrorCode GradientOfDeformation(double *diffN,double *dofs,double *F);
 
 /**
- \brief Calculate Lagrange approximation basis
+ \brief Calculate Legendre approximation basis
 
  Lagrange polynomial is given by
  \f[
@@ -169,7 +169,7 @@ PetscErrorCode GradientOfDeformation(double *diffN,double *dofs,double *F);
  \retval diffL derivatives, i.e. \f$\frac{\partial L}{\partial \xi_i}\f$
  \param dim dimension
  */
-PetscErrorCode Lagrange_basis(int p,double s,double *diff_s,double *L,double *diffL,const int dim);
+PetscErrorCode Legendre_polynomials(int p,double s,double *diff_s,double *L,double *diffL,const int dim);
 
 /**
  * \brief Calculate Gegenbauer Polynomials and their derivatives

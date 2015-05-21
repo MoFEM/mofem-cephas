@@ -147,7 +147,7 @@ struct ProjectionFieldOn10NodeTet: public Projection10NodeCoordsOnField {
 	th,MB_TAG_CREAT|MB_TAG_SPARSE,&*def_VAL.data().begin()); CHKERR_THROW(rval);
     }
     L.resize(max_ApproximationOrder+1);
-    ierr = Lagrange_basis(max_ApproximationOrder,0.,NULL,&*L.data().begin(),NULL,3); CHKERRQ(ierr);
+    ierr = Legendre_polynomials(max_ApproximationOrder,0.,NULL,&*L.data().begin(),NULL,3); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 

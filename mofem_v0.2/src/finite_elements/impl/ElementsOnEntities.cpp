@@ -1222,7 +1222,7 @@ PetscErrorCode ForcesAndSurcesCore::shapeEDGEFunctions_H1(DataForcesAndSurcesCor
     double diff_s = 0.5;
     for(int gg = 0;gg<G_DIM;gg++) {
       double s = 2*G_X[gg]-1;
-      ierr = Lagrange_basis(NBEDGE_H1(order)-1,s,&diff_s,
+      ierr = Legendre_polynomials(NBEDGE_H1(order)-1,s,&diff_s,
         &data.dataOnEntities[MBEDGE][0].getN()(gg,0),
         &data.dataOnEntities[MBEDGE][0].getDiffN()(gg,0),1); CHKERRQ(ierr);
       for(unsigned int pp = 0;pp<data.dataOnEntities[MBEDGE][0].getN().size2();pp++) {

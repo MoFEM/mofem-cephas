@@ -57,9 +57,9 @@ PetscErrorCode H1_EdgeShapeFunctions_MBTRI(int *sense,int *p,double *N,double *d
     double ksi20 = (N[node_shift+0] - N[node_shift+2])*sense[2];
     double L01[p[0]+1],L12[p[1]+1],L20[p[2]+1];
     double diffL01[2*(p[0]+1)],diffL12[2*(p[1]+1)],diffL20[2*(p[2]+1)];
-    ierr = Lagrange_basis(p[0],ksi01,diff_ksi01,L01,diffL01,2);  CHKERRQ(ierr);
-    ierr = Lagrange_basis(p[1],ksi12,diff_ksi12,L12,diffL12,2); CHKERRQ(ierr);
-    ierr = Lagrange_basis(p[2],ksi20,diff_ksi20,L20,diffL20,2); CHKERRQ(ierr);
+    ierr = Legendre_polynomials(p[0],ksi01,diff_ksi01,L01,diffL01,2);  CHKERRQ(ierr);
+    ierr = Legendre_polynomials(p[1],ksi12,diff_ksi12,L12,diffL12,2); CHKERRQ(ierr);
+    ierr = Legendre_polynomials(p[2],ksi20,diff_ksi20,L20,diffL20,2); CHKERRQ(ierr);
     int shift;
     if(edgeN!=NULL) {
       //edge01
@@ -135,8 +135,8 @@ PetscErrorCode H1_FaceShapeFunctions_MBTRI(const int *face_nodes,int p,double *N
     ksi_faces[1] = N[ node_shift+face_nodes[2] ] - N[ node_shift+face_nodes[0] ];
     double L0[ p+1 ],L1[ p+1 ];
     double diffL0[ 2*(p+1) ],diffL1[ 2*(p+1) ];
-    ierr = Lagrange_basis(p,ksi_faces[0],diff_ksi_faces[0],L0,diffL0,2);  CHKERRQ(ierr);
-    ierr = Lagrange_basis(p,ksi_faces[1],diff_ksi_faces[1],L1,diffL1,2);  CHKERRQ(ierr);
+    ierr = Legendre_polynomials(p,ksi_faces[0],diff_ksi_faces[0],L0,diffL0,2);  CHKERRQ(ierr);
+    ierr = Legendre_polynomials(p,ksi_faces[1],diff_ksi_faces[1],L1,diffL1,2);  CHKERRQ(ierr);
     double v = N[node_shift+0]*N[node_shift+1]*N[node_shift+2];
     double v2[2];
     if(diff_faceN!=NULL) {
@@ -200,7 +200,7 @@ PetscErrorCode H1_EdgeShapeFunctions_MBTET(int *sense,int *p,double *N,double *d
     for(ee = 0;ee<6;ee++) {
       if(P[ee]==0) continue;
       double L[p[ee]+1],diffL[3*(p[ee]+1)];
-      ierr = Lagrange_basis(p[ee],edges_ksi[ee],edges_diff_ksi[ee],L,diffL,3);  CHKERRQ(ierr);
+      ierr = Legendre_polynomials(p[ee],edges_ksi[ee],edges_diff_ksi[ee],L,diffL,3);  CHKERRQ(ierr);
       if(edgeN != NULL)
       if(edgeN[ee] != NULL) {
         int shift = ii*P[ee];
@@ -250,8 +250,8 @@ PetscErrorCode H1_FaceShapeFunctions_MBTET(int *faces_nodes,int *p,double *N,dou
         if(P[ff]==0) continue;
         double L0[ p[ff]+1 ],L1[ p[ff]+1 ];
         double diffL0[ 3*(p[ff]+1) ],diffL1[ 3*(p[ff]+1) ];
-        ierr = Lagrange_basis(p[ff],ksi_faces[ff*2+0],diff_ksi_faces[ff*2+0],L0,diffL0,3);  CHKERRQ(ierr);
-        ierr = Lagrange_basis(p[ff],ksi_faces[ff*2+1],diff_ksi_faces[ff*2+1],L1,diffL1,3);  CHKERRQ(ierr);
+        ierr = Legendre_polynomials(p[ff],ksi_faces[ff*2+0],diff_ksi_faces[ff*2+0],L0,diffL0,3);  CHKERRQ(ierr);
+        ierr = Legendre_polynomials(p[ff],ksi_faces[ff*2+1],diff_ksi_faces[ff*2+1],L1,diffL1,3);  CHKERRQ(ierr);
         double v = N[node_shift+faces_nodes[3*ff+0]]*N[node_shift+faces_nodes[3*ff+1]]*N[node_shift+faces_nodes[3*ff+2]];
         double v2[3];
         dd = 0;
@@ -311,9 +311,9 @@ PetscErrorCode H1_VolumeShapeFunctions_MBTET(int p,double *N,double *diffN,doubl
     double ksiL2 = N[ node_shift+3 ] - N[ node_shift + 0];
     double L0[ p+1 ],L1[ p+1 ],L2[ p+1 ];
     double diffL0[ 3*(p+1) ],diffL1[ 3*(p+1) ],diffL2[ 3*(p+1) ];
-    ierr = Lagrange_basis(p,ksiL0,diff_ksiL0,L0,diffL0,3); CHKERRQ(ierr);
-    ierr = Lagrange_basis(p,ksiL1,diff_ksiL1,L1,diffL1,3); CHKERRQ(ierr);
-    ierr = Lagrange_basis(p,ksiL2,diff_ksiL2,L2,diffL2,3); CHKERRQ(ierr);
+    ierr = Legendre_polynomials(p,ksiL0,diff_ksiL0,L0,diffL0,3); CHKERRQ(ierr);
+    ierr = Legendre_polynomials(p,ksiL1,diff_ksiL1,L1,diffL1,3); CHKERRQ(ierr);
+    ierr = Legendre_polynomials(p,ksiL2,diff_ksiL2,L2,diffL2,3); CHKERRQ(ierr);
     double v = N[node_shift+0]*N[node_shift+1]*N[node_shift+2]*N[node_shift+3];
     double v2[3];
     dd = 0;

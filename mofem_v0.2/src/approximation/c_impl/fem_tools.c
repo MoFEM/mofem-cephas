@@ -345,7 +345,7 @@ PetscErrorCode GradientOfDeformation(double *diffN,double *dofs,double *F) {
 }
 
 // Approximation
-PetscErrorCode Lagrange_basis(int p,double s,double *diff_s,double *L,double *diffL,const int dim) {
+PetscErrorCode Legendre_polynomials(int p,double s,double *diff_s,double *L,double *diffL,const int dim) {
   PetscFunctionBegin;
   if(dim < 1) SETERRQ(PETSC_COMM_SELF,1,"dim < 1");
   if(dim > 3) SETERRQ(PETSC_COMM_SELF,1,"dim > 3");
