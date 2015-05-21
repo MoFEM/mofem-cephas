@@ -35,7 +35,7 @@ double ShapeDetJacMBTET(double *Jac) {
     detJac *= Jac[3*i+i];
     if( IPIV[i] != i+1 ) j++;
   }
-  if ( (j - ( j/2 )*2) != 0 ) 
+  if ( (j - ( j/2 )*2) != 0 )
     detJac = - detJac;
   return detJac;
 }
@@ -63,24 +63,24 @@ PetscErrorCode Grundmann_Moeller_integration_points_1D_EDGE(int rule,double *G_T
   int point_num;
   double *w;
   double *x;
-	
+
 //  GM_RULE_SET determines the weights and abscissas
 //  pof a Grundmann-Moeller quadrature rule for
 //  the DIM_NUM dimensional simplex,
 //  using a rule of in index RULE,
 //	  which will have degree of exactness 2*RULE+1.
-	
+
 //  printf ( "  Here we use DIM_NUM = %d\n", dim_num  );
 //  printf ( "  RULE = %d\n", rule );
 //  printf ( "  DEGREE = %d\n", 2 * rule + 1 );
-	
+
   point_num = gm_rule_size ( rule, dim_num );
-	
+
   ierr = PetscMalloc(point_num*sizeof(double),&w); CHKERRQ(ierr);
   ierr = PetscMalloc(dim_num*point_num*sizeof(double),&x); CHKERRQ(ierr);
-	
+
   gm_rule_set ( rule, dim_num, point_num, w, x );
-	
+
   for( point = 0; point < point_num; point++ ){
     G_TRI_X[point] = x[0+point*dim_num];
     G_TRI_W[point] = w[point];
@@ -102,24 +102,24 @@ PetscErrorCode Grundmann_Moeller_integration_points_2D_TRI(int rule,double *G_TR
   int point_num;
   double *w;
   double *x;
-	
+
 //  GM_RULE_SET determines the weights and abscissas
 //  pof a Grundmann-Moeller quadrature rule for
 //  the DIM_NUM dimensional simplex,
 //  using a rule of in index RULE,
 //	  which will have degree of exactness 2*RULE+1.
-	
+
 //  printf ( "  Here we use DIM_NUM = %d\n", dim_num  );
 //  printf ( "  RULE = %d\n", rule );
 //  printf ( "  DEGREE = %d\n", 2 * rule + 1 );
-	
+
   point_num = gm_rule_size ( rule, dim_num );
-	
+
   ierr = PetscMalloc(point_num*sizeof(double),&w); CHKERRQ(ierr);
   ierr = PetscMalloc(dim_num*point_num*sizeof(double),&x); CHKERRQ(ierr);
-	
+
   gm_rule_set ( rule, dim_num, point_num, w, x );
-	
+
   for( point = 0; point < point_num; point++ ){
       G_TRI_X[point] = x[0+point*dim_num];
       G_TRI_Y[point] = x[1+point*dim_num];
@@ -128,13 +128,13 @@ PetscErrorCode Grundmann_Moeller_integration_points_2D_TRI(int rule,double *G_TR
 
   ierr = PetscFree(w); CHKERRQ(ierr);
   ierr = PetscFree(x); CHKERRQ(ierr);
-	
+
   PetscFunctionReturn(0);
 }
 
 PetscErrorCode Grundmann_Moeller_integration_points_3D_TET(int rule,double *G_TET_X,double *G_TET_Y,double *G_TET_Z, double *G_TET_W){
   PetscFunctionBegin;
-	
+
   PetscErrorCode ierr;
 
   int dim_num=3;
@@ -142,11 +142,11 @@ PetscErrorCode Grundmann_Moeller_integration_points_3D_TET(int rule,double *G_TE
   int point_num;
   double *w;
   double *x;
-	
+
 //	printf ( "  Here we use DIM_NUM = %d\n", dim_num  );
 //	printf ( "  RULE = %d\n", rule );
 //	printf ( "  DEGREE = %d\n", 2 * rule + 1 );
-		
+
   point_num = gm_rule_size ( rule, dim_num );
 
   ierr = PetscMalloc(point_num*sizeof(double),&w); CHKERRQ(ierr);
@@ -238,12 +238,12 @@ PetscErrorCode ShapeFaceDiffNormalMBTRI(double *diffN,const double *coords,doubl
   //B_ksi[] = [
   // diffN[2*0+0],	0,	0,	diffN[2*1+0],	0,	0,	diffN[2*2+0],	0, 	0
   // 0,		diffN[2*0+0],	0,	0,	diffN[2*1+0],	0,	0,	diffN[2*2+0],	0
-  // 0,		0,	diffM[2*0+0],	0,	0,	diffN[2*1+0],	0,	0,	diffN[2*2+0]	
+  // 0,		0,	diffM[2*0+0],	0,	0,	diffN[2*1+0],	0,	0,	diffN[2*2+0]
   //]
   //B_eta[] = [
   // diffN[2*0+1],	0,	0,	diffN[2*1+1],	0,	0,	diffN[2*2+1],	0, 	0
   // 0,		diffN[2*0+1],	0,	0,	diffN[2*1+1],	0,	0,	diffN[2*2+1],	0
-  // 0,		0,	diffM[2*0+1],	0,	0,	diffN[2*1+1],	0,	0,	diffN[2*2+1]	
+  // 0,		0,	diffM[2*0+1],	0,	0,	diffN[2*1+1],	0,	0,	diffN[2*2+1]
   //]
   ii = 0;
   for(;ii<3;ii++) {
@@ -267,7 +267,7 @@ PetscErrorCode ShapeJacMBTET(double *diffN,const double *coords,double *Jac) {
   for(ii = 0; ii<4; ii++) 	//shape func.
     for(jj = 0; jj<3; jj++) 	//space
       for(kk = 0; kk<3; kk++) 	//direvative of shape func.
-	Jac[ jj*3+kk ] += 
+	Jac[ jj*3+kk ] +=
 	diffN[ ii*3+kk ]*coords[ ii*3+jj ];
   PetscFunctionReturn(0);
 }
@@ -301,7 +301,7 @@ PetscErrorCode ShapeDiffMBTET(double *diffN) {
 }
 PetscErrorCode ShapeMBTET_inverse(double *N,double *diffN,const double *elem_coords,const double *glob_coords,double *loc_coords) {
   PetscFunctionBegin;
-  double A[3*3];  
+  double A[3*3];
   int IPIV[3];
   //COL MAJOR
   //X
@@ -310,7 +310,7 @@ PetscErrorCode ShapeMBTET_inverse(double *N,double *diffN,const double *elem_coo
   A[0+3*2] = cblas_ddot(4,&diffN[0*3+2],3,&elem_coords[0*3+0],3);
   loc_coords[0] = glob_coords[0] - cblas_ddot(4,&N[0],1,&elem_coords[0*3+0],3);
   //printf("A\n[ %3.2f %3.2f %3.2f ] %3.2f \n",A[0*3],A[1*3],A[2*3],R[0]);
-  //Y 
+  //Y
   A[1+3*0] = cblas_ddot(4,&diffN[0*3+0],3,&elem_coords[0*3+1],3);
   A[1+3*1] = cblas_ddot(4,&diffN[0*3+1],3,&elem_coords[0*3+1],3);
   A[1+3*2] = cblas_ddot(4,&diffN[0*3+2],3,&elem_coords[0*3+1],3);
@@ -339,7 +339,7 @@ PetscErrorCode GradientOfDeformation(double *diffN,double *dofs,double *F) {
   int col,row = 0;
   for(;row<3;row++)
   for(col = 0;col<3;col++) {
-    F[3*row+col] = cblas_ddot(4,&diffN[col],3,&dofs[row],3); 
+    F[3*row+col] = cblas_ddot(4,&diffN[col],3,&dofs[row],3);
   }
   PetscFunctionReturn(0);
 }
@@ -355,7 +355,9 @@ PetscErrorCode Lagrange_basis(int p,double s,double *diff_s,double *L,double *di
     diffL[0*(p+1)+0] = 0;
     if(dim >= 2) {
       diffL[1*(p+1)+0] = 0;
-      if(dim == 3) diffL[2*(p+1)+0] = 0;
+      if(dim == 3) {
+        diffL[2*(p+1)+0] = 0;
+      }
     }
   }
   if(p==0) PetscFunctionReturn(0);
@@ -367,7 +369,9 @@ PetscErrorCode Lagrange_basis(int p,double s,double *diff_s,double *L,double *di
     diffL[0*(p+1)+1] = diff_s[0];
     if(dim >= 2) {
       diffL[1*(p+1)+1] = diff_s[1];
-      if(dim == 3) diffL[2*(p+1)+1] = diff_s[2];
+      if(dim == 3) {
+        diffL[2*(p+1)+1] = diff_s[2];
+      }
     }
   }
   if(p==1) PetscFunctionReturn(0);
@@ -375,15 +379,17 @@ PetscErrorCode Lagrange_basis(int p,double s,double *diff_s,double *L,double *di
   for(;l<p;l++) {
     double A = ( (2*(double)l+1)/((double)l+1) );
     double B = ( (double)l/((double)l+1) );
-    L[l+1] = A*s*L[l] - B*L[l-1]; 
+    L[l+1] = A*s*L[l] - B*L[l-1];
     if(diffL!=NULL) {
       if(diff_s==NULL) {
-	SETERRQ(PETSC_COMM_SELF,1,"diff_s == NULL");
+        SETERRQ(PETSC_COMM_SELF,1,"diff_s == NULL");
       }
-      diffL[0*(p+1)+l+1] = A*(s*diffL[0*(p+1)+l] + diff_s[0]*L[l]) - B*diffL[0*(p+1)+l-1]; 
+      diffL[0*(p+1)+l+1] = A*(s*diffL[0*(p+1)+l] + diff_s[0]*L[l]) - B*diffL[0*(p+1)+l-1];
       if(dim >= 2) {
-	diffL[1*(p+1)+l+1] = A*(s*diffL[1*(p+1)+l] + diff_s[1]*L[l]) - B*diffL[1*(p+1)+l-1]; 
-	if(dim == 3) diffL[2*(p+1)+l+1] = A*(s*diffL[2*(p+1)+l] + diff_s[2]*L[l]) - B*diffL[2*(p+1)+l-1];
+        diffL[1*(p+1)+l+1] = A*(s*diffL[1*(p+1)+l] + diff_s[1]*L[l]) - B*diffL[1*(p+1)+l-1];
+        if(dim == 3) {
+          diffL[2*(p+1)+l+1] = A*(s*diffL[2*(p+1)+l] + diff_s[2]*L[l]) - B*diffL[2*(p+1)+l-1];
+        }
       }
     }
   }
@@ -421,15 +427,15 @@ PetscErrorCode Gegenbauer_polynomials(int p,double alpha, double s,double *diff_
   for(;l<p;l++) {
     double A = ( (2*(alpha+(double)l))/((double)l+1) );
     double B = ( (2*alpha+(double)l-1)/((double)l+1) );
-    L[l+1] = A*s*L[l] - B*L[l-1]; 
+    L[l+1] = A*s*L[l] - B*L[l-1];
     if(diffL!=NULL) {
       if(diff_s==NULL) {
-	SETERRQ(PETSC_COMM_SELF,1,"diff_s == NULL");
+        SETERRQ(PETSC_COMM_SELF,1,"diff_s == NULL");
       }
-      diffL[0*(p+1)+l+1] = A*(s*diffL[0*(p+1)+l] + diff_s[0]*L[l]) - B*diffL[0*(p+1)+l-1]; 
+      diffL[0*(p+1)+l+1] = A*(s*diffL[0*(p+1)+l] + diff_s[0]*L[l]) - B*diffL[0*(p+1)+l-1];
       if(dim >= 2) {
-	diffL[1*(p+1)+l+1] = A*(s*diffL[1*(p+1)+l] + diff_s[1]*L[l]) - B*diffL[1*(p+1)+l-1]; 
-	if(dim == 3) diffL[2*(p+1)+l+1] = A*(s*diffL[2*(p+1)+l] + diff_s[2]*L[l]) - B*diffL[2*(p+1)+l-1];
+        diffL[1*(p+1)+l+1] = A*(s*diffL[1*(p+1)+l] + diff_s[1]*L[l]) - B*diffL[1*(p+1)+l-1];
+        if(dim == 3) diffL[2*(p+1)+l+1] = A*(s*diffL[2*(p+1)+l] + diff_s[2]*L[l]) - B*diffL[2*(p+1)+l-1];
       }
     }
   }
@@ -520,7 +526,7 @@ PetscErrorCode DeterminantComplexGradient(__CLPK_doublecomplex *xF,__CLPK_double
     det *= xF[3*i+i].r + I*xF[3*i+i].i;
     if( IPIV[i] != i+1 ) j++;
   }
-  if ( (j - ( j/2 )*2) != 0 ) 
+  if ( (j - ( j/2 )*2) != 0 )
     det = - det;
   (*det_xF).r = creal(det);
   (*det_xF).i = cimag(det);
@@ -534,7 +540,7 @@ PetscErrorCode Spin(double *spinOmega,double *vecOmega) {
   spinOmega[1*3+0] = +vecOmega[2];
   spinOmega[1*3+2] = -vecOmega[0];
   spinOmega[2*3+0] = -vecOmega[1];
-  spinOmega[2*3+1] = +vecOmega[0]; 
+  spinOmega[2*3+1] = +vecOmega[0];
   PetscFunctionReturn(0);
 }
 PetscErrorCode make_complex_matrix(double *reA,double *imA,__CLPK_doublecomplex *xA) {
@@ -574,7 +580,7 @@ PetscErrorCode Normal_hierarchical(
 	diffX_z_node += dofs[3*nn + 2]*diffN[2*nn+0];
 	diffY_x_node += dofs[3*nn + 0]*diffN[2*nn+1];
 	diffY_y_node += dofs[3*nn + 1]*diffN[2*nn+1];
-	diffY_z_node += dofs[3*nn + 2]*diffN[2*nn+1]; 
+	diffY_z_node += dofs[3*nn + 2]*diffN[2*nn+1];
       }
       if(idofs!=NULL) {
 	diffX_x_node += I*idofs[3*nn + 0]*diffN[2*nn+0];
@@ -582,7 +588,7 @@ PetscErrorCode Normal_hierarchical(
 	diffX_z_node += I*idofs[3*nn + 2]*diffN[2*nn+0];
 	diffY_x_node += I*idofs[3*nn + 0]*diffN[2*nn+1];
 	diffY_y_node += I*idofs[3*nn + 1]*diffN[2*nn+1];
-	diffY_z_node += I*idofs[3*nn + 2]*diffN[2*nn+1]; 
+	diffY_z_node += I*idofs[3*nn + 2]*diffN[2*nn+1];
       }
     }
   }
@@ -600,7 +606,7 @@ PetscErrorCode Normal_hierarchical(
 	diffX_z += cblas_ddot(nb_dofs_face,&dofs_face[2],3,&diffN_face[gg*2*nb_dofs_approx_face+0],2);
 	diffY_x += cblas_ddot(nb_dofs_face,&dofs_face[0],3,&diffN_face[gg*2*nb_dofs_approx_face+1],2);
 	diffY_y += cblas_ddot(nb_dofs_face,&dofs_face[1],3,&diffN_face[gg*2*nb_dofs_approx_face+1],2);
-	diffY_z += cblas_ddot(nb_dofs_face,&dofs_face[2],3,&diffN_face[gg*2*nb_dofs_approx_face+1],2); 
+	diffY_z += cblas_ddot(nb_dofs_face,&dofs_face[2],3,&diffN_face[gg*2*nb_dofs_approx_face+1],2);
       }
       if(idofs_face!=NULL) {
 	diffX_x += I*cblas_ddot(nb_dofs_face,&idofs_face[0],3,&diffN_face[gg*2*nb_dofs_approx_face+0],2);
@@ -608,7 +614,7 @@ PetscErrorCode Normal_hierarchical(
 	diffX_z += I*cblas_ddot(nb_dofs_face,&idofs_face[2],3,&diffN_face[gg*2*nb_dofs_approx_face+0],2);
 	diffY_x += I*cblas_ddot(nb_dofs_face,&idofs_face[0],3,&diffN_face[gg*2*nb_dofs_approx_face+1],2);
 	diffY_y += I*cblas_ddot(nb_dofs_face,&idofs_face[1],3,&diffN_face[gg*2*nb_dofs_approx_face+1],2);
-	diffY_z += I*cblas_ddot(nb_dofs_face,&idofs_face[2],3,&diffN_face[gg*2*nb_dofs_approx_face+1],2); 
+	diffY_z += I*cblas_ddot(nb_dofs_face,&idofs_face[2],3,&diffN_face[gg*2*nb_dofs_approx_face+1],2);
       }
     }
   }
@@ -625,7 +631,7 @@ PetscErrorCode Normal_hierarchical(
 	    diffX_z += cblas_ddot(nb_dofs_edge,&(dofs_edge[ee])[2],3,&(diffN_edge[ee])[gg*2*nb_dofs_approx_edge+0],2);
 	    diffY_x += cblas_ddot(nb_dofs_edge,&(dofs_edge[ee])[0],3,&(diffN_edge[ee])[gg*2*nb_dofs_approx_edge+1],2);
 	    diffY_y += cblas_ddot(nb_dofs_edge,&(dofs_edge[ee])[1],3,&(diffN_edge[ee])[gg*2*nb_dofs_approx_edge+1],2);
-	    diffY_z += cblas_ddot(nb_dofs_edge,&(dofs_edge[ee])[2],3,&(diffN_edge[ee])[gg*2*nb_dofs_approx_edge+1],2); 
+	    diffY_z += cblas_ddot(nb_dofs_edge,&(dofs_edge[ee])[2],3,&(diffN_edge[ee])[gg*2*nb_dofs_approx_edge+1],2);
 	  }
 	}
 	if(idofs_edge!=NULL) {
@@ -635,7 +641,7 @@ PetscErrorCode Normal_hierarchical(
 	  diffX_z += I*cblas_ddot(nb_dofs_edge,&(idofs_edge[ee])[2],3,&(diffN_edge[ee])[gg*2*nb_dofs_approx_edge+0],2);
 	  diffY_x += I*cblas_ddot(nb_dofs_edge,&(idofs_edge[ee])[0],3,&(diffN_edge[ee])[gg*2*nb_dofs_approx_edge+1],2);
 	  diffY_y += I*cblas_ddot(nb_dofs_edge,&(idofs_edge[ee])[1],3,&(diffN_edge[ee])[gg*2*nb_dofs_approx_edge+1],2);
-	  diffY_z += I*cblas_ddot(nb_dofs_edge,&(idofs_edge[ee])[2],3,&(diffN_edge[ee])[gg*2*nb_dofs_approx_edge+1],2); 
+	  diffY_z += I*cblas_ddot(nb_dofs_edge,&(idofs_edge[ee])[2],3,&(diffN_edge[ee])[gg*2*nb_dofs_approx_edge+1],2);
 	}
       }
     }
@@ -664,7 +670,7 @@ PetscErrorCode Normal_hierarchical(
 PetscErrorCode Base_scale(
   __CLPK_doublecomplex *xnormal,__CLPK_doublecomplex *xs1,__CLPK_doublecomplex *xs2) {
   PetscFunctionBegin;
-  complex double xnrm2_normal = csqrt( 
+  complex double xnrm2_normal = csqrt(
       cpow(xnormal[0].r+I*xnormal[0].i,2) +
       cpow(xnormal[1].r+I*xnormal[1].i,2) +
       cpow(xnormal[2].r+I*xnormal[2].i,2) );
@@ -672,7 +678,7 @@ PetscErrorCode Base_scale(
   for(;dd<3;dd++) {
       complex double s1 = (xs1[dd].r+I*xs1[dd].i)*xnrm2_normal;
       complex double s2 = (xs2[dd].r+I*xs2[dd].i)*xnrm2_normal;
-      xs1[dd].r = creal(s1); 
+      xs1[dd].r = creal(s1);
       xs1[dd].i = cimag(s1);
       xs2[dd].r = creal(s2);
       xs2[dd].i = cimag(s2);
@@ -699,7 +705,7 @@ PetscErrorCode ShapeDiffMBEDGE(double *diffN) {
 }
 
 //FIXME: NOT PROPERLY TESTED YET
-//HO 
+//HO
 //MBTRIQ
 #define N_MBTRIQ0(x, y) ( (1.-x-y)*(2*(1.-x-y)-1.) )
 #define N_MBTRIQ1(x, y) ( x*(2.*x-1.) )
@@ -892,7 +898,7 @@ PetscErrorCode ShapeJacMBTETQ(const double *diffN,const double *coords,double *J
   for(ii = 0; ii<10; ii++) 	//shape func.
     for(jj = 0; jj<3; jj++) 	//space
       for(kk = 0; kk<3; kk++) 	//direvative of shape func.
-	Jac[ jj*3+kk ] += 
+	Jac[ jj*3+kk ] +=
 	  diffN[ ii*3+kk ]*coords[ ii*3+jj ];
   PetscFunctionReturn(0);
 }
@@ -920,8 +926,8 @@ double ShapeVolumeMBTETQ(const double *diffN,const double *coords,int G_DIM,doub
 }
 /*PetscErrorCode ShapeMBTETQ_inverse(ShapeData *data,const double *elem_coords,const double *glob_coords,double *loc_coords,const double eps) {
   PetscFunctionBegin;
-  double A[3*3];  
-  double R[3];  
+  double A[3*3];
+  double R[3];
   double *N = (*data).N;
   double *diffN = (*data).diffN;
   int IPIV[3];
@@ -940,7 +946,7 @@ double ShapeVolumeMBTETQ(const double *diffN,const double *coords,int G_DIM,doub
     A[0+3*1] = cblas_ddot(10,&diffN[0*3+1],3,&elem_coords[0],3);
     A[0+3*2] = cblas_ddot(10,&diffN[0*3+2],3,&elem_coords[0],3);
     R[0] = glob_coords[0] - cblas_ddot(10,&N[0],1,&elem_coords[0],3);
-    //Y 
+    //Y
     A[1+3*0] = cblas_ddot(10,&diffN[0*3+0],3,&elem_coords[1],3);
     A[1+3*1] = cblas_ddot(10,&diffN[0*3+1],3,&elem_coords[1],3);
     A[1+3*2] = cblas_ddot(10,&diffN[0*3+2],3,&elem_coords[1],3);

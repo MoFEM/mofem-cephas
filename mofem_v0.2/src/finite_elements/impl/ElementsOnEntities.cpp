@@ -1115,7 +1115,7 @@ PetscErrorCode ForcesAndSurcesCore::shapeTRIFunctions_H1(
   double *_H1edgeN_[3],*_diffH1edgeN_[3];
   for(int ee = 0;ee<3;ee++) {
     if(data.dataOnEntities[MBEDGE][ee].getSense() == 0) {
-	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
     }
     _sense_[ee] = data.dataOnEntities[MBEDGE][ee].getSense();
     _order_[ee] = data.dataOnEntities[MBEDGE][ee].getOrder();
@@ -1179,7 +1179,7 @@ PetscErrorCode ForcesAndSurcesCore::shapeTRIFunctions_Hdiv(
     &data.dataOnEntities[MBVERTEX][0].getN()(0,0),NULL,
     PHI_f,NULL,G_DIM,3); CHKERRQ(ierr);
 
-  // set shape functions into data strucrure
+  // set shape functions into data structure
 
   if(data.dataOnEntities[MBTRI].size()!=1) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
@@ -1189,14 +1189,14 @@ PetscErrorCode ForcesAndSurcesCore::shapeTRIFunctions_Hdiv(
   for(int oo = 0;oo<face_order;oo++) {
     for(int ee = 0;ee<3;ee++) {
       for(int dd = 3*NBFACE_EDGE_HDIV(oo);dd<3*NBFACE_EDGE_HDIV(oo+1);dd++,col++) {
-	for(int gg = 0;gg<G_DIM;gg++) {
-	  data.dataOnEntities[MBTRI][0].getHdivN()(gg,col) = N_face_edge(0,ee)(gg,dd);
-	}
+        for(int gg = 0;gg<G_DIM;gg++) {
+          data.dataOnEntities[MBTRI][0].getHdivN()(gg,col) = N_face_edge(0,ee)(gg,dd);
+        }
       }
     }
     for(int dd = 3*NBFACE_FACE_HDIV(oo);dd<3*NBFACE_FACE_HDIV(oo+1);dd++,col++) {
       for(int gg = 0;gg<G_DIM;gg++) {
-	data.dataOnEntities[MBTRI][0].getHdivN()(gg,col) = N_face_bubble[0](gg,dd);
+        data.dataOnEntities[MBTRI][0].getHdivN()(gg,col) = N_face_bubble[0](gg,dd);
       }
     }
   }
@@ -1223,13 +1223,19 @@ PetscErrorCode ForcesAndSurcesCore::shapeEDGEFunctions_H1(DataForcesAndSurcesCor
     for(int gg = 0;gg<G_DIM;gg++) {
       double s = 2*G_X[gg]-1;
       ierr = Lagrange_basis(NBEDGE_H1(order)-1,s,&diff_s,
-      &data.dataOnEntities[MBEDGE][0].getN()(gg,0),&data.dataOnEntities[MBEDGE][0].getDiffN()(gg,0),1); CHKERRQ(ierr);
+        &data.dataOnEntities[MBEDGE][0].getN()(gg,0),
+        &data.dataOnEntities[MBEDGE][0].getDiffN()(gg,0),1); CHKERRQ(ierr);
       for(unsigned int pp = 0;pp<data.dataOnEntities[MBEDGE][0].getN().size2();pp++) {
         double L = data.dataOnEntities[MBEDGE][0].getN()(gg,pp);
         double diffL = data.dataOnEntities[MBEDGE][0].getDiffN()(gg,pp);
-        data.dataOnEntities[MBEDGE][0].getN()(gg,pp) = data.dataOnEntities[MBVERTEX][0].getN()(gg,0)*data.dataOnEntities[MBVERTEX][0].getN()(gg,1)*L;
+
+        data.dataOnEntities[MBEDGE][0].getN()(gg,pp) =
+          data.dataOnEntities[MBVERTEX][0].getN()(gg,0)*data.dataOnEntities[MBVERTEX][0].getN()(gg,1)*L;
+
         data.dataOnEntities[MBEDGE][0].getDiffN()(gg,pp) =
-        ((+1.)*data.dataOnEntities[MBVERTEX][0].getN()(gg,1)+data.dataOnEntities[MBVERTEX][0].getN()(gg,0)*(-1.))*L + data.dataOnEntities[MBVERTEX][0].getN()(gg,0)*data.dataOnEntities[MBVERTEX][0].getN()(gg,1)*diffL;
+          ((+1.)*data.dataOnEntities[MBVERTEX][0].getN()(gg,1)
+          +data.dataOnEntities[MBVERTEX][0].getN()(gg,0)*(-1.))*L
+          +data.dataOnEntities[MBVERTEX][0].getN()(gg,0)*data.dataOnEntities[MBVERTEX][0].getN()(gg,1)*diffL;
       }
     }
   }
@@ -2051,19 +2057,18 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
   int num_nodes;
   const EntityHandle* conn;
   rval = mField.get_moab().get_connectivity(ent,conn,num_nodes,true); CHKERR_PETSC(rval);
-  coords.resize(num_nodes*3,false);
-  rval = mField.get_moab().get_coords(conn,num_nodes,&*coords.data().begin()); CHKERR_PETSC(rval);
+  cOords.resize(num_nodes*3,false);
+  rval = mField.get_moab().get_coords(conn,num_nodes,&*cOords.data().begin()); CHKERR_PETSC(rval);
 
   dIrection.resize(3,false);
-  cblas_dcopy(3,&coords[3],1,&*dIrection.data().begin(),1);
-  cblas_daxpy(3,-1.,&coords[0],1,&*dIrection.data().begin(),1);
+  cblas_dcopy(3,&cOords[3],1,&*dIrection.data().begin(),1);
+  cblas_daxpy(3,-1.,&cOords[0],1,&*dIrection.data().begin(),1);
   lEngth = cblas_dnrm2(3,&*dIrection.data().begin(),1);
 
   coordsAtGaussPts.resize(nb_gauss_pts,3,false);
   for(int gg = 0;gg<nb_gauss_pts;gg++) {
     for(int dd = 0;dd<3;dd++) {
-      coordsAtGaussPts(gg,dd)
-      = N_MBEDGE0(gaussPts(0,gg))*coords[dd] + N_MBEDGE1(gaussPts(0,gg))*coords[3+dd];
+      coordsAtGaussPts(gg,dd) = N_MBEDGE0(gaussPts(0,gg))*cOords[dd] + N_MBEDGE1(gaussPts(0,gg))*cOords[3+dd];
     }
   }
   //cerr << coordsAtGaussPts << endl;

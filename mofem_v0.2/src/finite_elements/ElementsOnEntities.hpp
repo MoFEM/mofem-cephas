@@ -759,7 +759,7 @@ struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
   ErrorCode rval;
   double lEngth;;
   VectorDouble dIrection;
-  VectorDouble coords;
+  VectorDouble cOords;
   MatrixDouble gaussPts;
   MatrixDouble coordsAtGaussPts;
 
@@ -777,7 +777,7 @@ struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
     inline double getLength() { return ptrFE->lEngth; }
     inline VectorDouble& getDirection() { return ptrFE->dIrection; }
-    inline VectorDouble& getCoords() { return ptrFE->coords; }
+    inline VectorDouble& getCoords() { return ptrFE->cOords; }
     inline MatrixDouble& getGaussPts() { return ptrFE->gaussPts; }
     inline MatrixDouble& getCoordsAtGaussPts() { return ptrFE->coordsAtGaussPts; }
     inline const EdgeElementForcesAndSurcesCore* getEdgeFE() { return ptrFE; }

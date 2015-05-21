@@ -24,7 +24,7 @@ using namespace boost::numeric;
 
 namespace MoFEM {
 
-  NodalForce::MyFE::MyFE(FieldInterface &_m_field): VertexElementForcesAndSourcesCore(_m_field) {}
+  NodalForce::MyFE::MyFE(FieldInterface &m_field): VertexElementForcesAndSourcesCore(m_field) {}
 
   NodalForce::OpNodalForce::OpNodalForce(const string field_name,Vec &_F,bCForce &data,
     boost::ptr_vector<MethodsForOp> &methods_op,bool use_snes_f):

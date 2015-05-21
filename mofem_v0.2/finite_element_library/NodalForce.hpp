@@ -12,8 +12,8 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef __NODAL_FORCES_HPP
-#define __NODAL_FORCES_HPP
+#ifndef __NODAL_FORCES_HPP__
+#define __NODAL_FORCES_HPP__
 
 namespace MoFEM {
 
@@ -26,7 +26,7 @@ struct NodalForce {
   NodalForce(FieldInterface &m_field): mField(m_field),fe(m_field) {}
 
   struct MyFE: public VertexElementForcesAndSourcesCore {
-    MyFE(FieldInterface &_m_field);
+    MyFE(FieldInterface &m_field);
   };
 
   MyFE fe;
@@ -134,4 +134,4 @@ struct MetaNodalForces {
 
 }
 
-#endif //__NODAL_FORCES_HPP
+#endif //__NODAL_FORCES_HPP__

@@ -18,8 +18,8 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 
-#ifndef __SURFACE_PERSSURE_HPP
-#define __SURFACE_PERSSURE_HPP
+#ifndef __SURFACE_PERSSURE_HPP__
+#define __SURFACE_PERSSURE_HPP__
 
 namespace MoFEM {
 
@@ -149,7 +149,7 @@ struct NeummanForcesSurface {
 
 /// Meta functions to add elements from blocksets
 struct MetaNeummanForces {
-  
+
   static PetscErrorCode addNeumannBCElements(
     FieldInterface &mField,
     const string field_name,
@@ -266,7 +266,7 @@ struct MetaNeummanForces {
 
 }
 
-#endif //__SURFACE_PERSSURE_HPP
+#endif //__SURFACE_PERSSURE_HPP__
 
 
 /***************************************************************************//**
