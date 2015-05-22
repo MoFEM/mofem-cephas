@@ -22,76 +22,76 @@
 
 #define DM_NO_ELEMENT "DMNONEFE"
 
-/** 
+/**
   * \brief Register MoFEM problem
   * \ingroup dm
   */
 PetscErrorCode DMRegister_MoFEM(const char sname[]);
 
-/** 
+/**
   * \brief Must be called by user to set MoFEM data structures
   * \ingroup dm
   */
 PetscErrorCode DMMoFEMCreateMoFEM(DM dm,MoFEM::FieldInterface *m_field_ptr,const char problem_name[],const MoFEM::BitRefLevel &bit_level);
 
-/** 
+/**
   * \brief set squared problem
   * \ingroup dm
 
-  It if trure is assumed that matrix has the same indexing on rows and
-  collumns. This reduces interprocessor communication.
+  It if true is assumed that matrix has the same indexing on rows and
+  columns. This reduces interprocessor communication.
 
   */
 PetscErrorCode DMMoFEMSetSquareProblem(DM dm,PetscBool square_problem);
 
-/** 
+/**
   * \brief get squared problem
   * \ingroup dm
 
-  It if trure is assumed that matrix has the same indexing on rows and
-  collumns. This reduces interprocessor communication.
+  It if true is assumed that matrix has the same indexing on rows and
+  columns. This reduces interprocessor communication.
 
   */
 PetscErrorCode DMMoFEMGetSquareProblem(DM dm,PetscBool *square_problem);
 
-/** 
+/**
   * \brief add element to dm
   * \ingroup dm
   */
 PetscErrorCode DMMoFEMAddElement(DM dm,const char fe_name[]);
 
-/** 
+/**
   * \brief set local (or ghosted) vector values on mesh for partition only
   * \ingroup dm
   */
 PetscErrorCode DMoFEMMeshToLocalVector(DM dm,Vec l,InsertMode mode,ScatterMode scatter_mode);
 
-/** 
+/**
   * \brief set ghosted vector values on all existing mesh entities
   * \ingroup dm
   */
 PetscErrorCode DMoFEMMeshToGlobalVector(DM dm,Vec g,InsertMode mode,ScatterMode scatter_mode);
 
-/** 
+/**
   * \brief execute finite element method for each element in dm (problem)
   * \ingroup dm
   */
 PetscErrorCode DMoFEMPreProcessFiniteElements(DM dm,MoFEM::FEMethod *method);
 
-/** 
+/**
   * \brief execute finite element method for each element in dm (problem)
   * \ingroup dm
   */
 PetscErrorCode DMoFEMPostProcessFiniteElements(DM dm,MoFEM::FEMethod *method);
 
-/** 
+/**
   * \brief execute finite element method for each element in dm (problem)
   * \ingroup dm
   */
 PetscErrorCode DMoFEMLoopFiniteElements(DM dm,const char fe_name[],MoFEM::FEMethod *method);
 
-/** 
-  * \brief execute method for dofs on field in problem 
+/**
+  * \brief execute method for dofs on field in problem
   * \ingroup dm
   */
 PetscErrorCode DMoFEMLoopDofs(DM dm,const char field_name[],MoFEM::EntMethod *method);
@@ -108,25 +108,25 @@ PetscErrorCode DMMoFEMKSPSetComputeRHS(DM dm,const char fe_name[],MoFEM::FEMetho
   */
 PetscErrorCode DMMoFEMKSPSetComputeOperators(DM dm,const char fe_name[],MoFEM::FEMethod *method,MoFEM::FEMethod *pre_only,MoFEM::FEMethod *post_only);
 
-/** 
+/**
   * \brief set SNES residual evaluation function
   * \ingroup dm
   */
 PetscErrorCode DMMoFEMSNESSetFunction(DM dm,const char fe_name[],MoFEM::FEMethod *method,MoFEM::FEMethod *pre_only,MoFEM::FEMethod *post_only);
 
-/** 
+/**
   * \brief set SNES Jacobian evaluation function
   * \ingroup dm
   */
 PetscErrorCode DMMoFEMSNESSetJacobian(DM dm,const char fe_name[],MoFEM::FEMethod *method,MoFEM::FEMethod *pre_only,MoFEM::FEMethod *post_only);
 
-/** 
+/**
   * \brief set TS implicit function evaluation function
   * \ingroup dm
   */
 PetscErrorCode DMMoFEMTSSetIFunction(DM dm,const char fe_name[],MoFEM::FEMethod *method,MoFEM::FEMethod *pre_only,MoFEM::FEMethod *post_only);
 
-/** 
+/**
   * \brief set TS Jacobian evaluation function
   * \ingroup dm
   */
@@ -136,9 +136,9 @@ PetscErrorCode DMMoFEMTSSetIJacobian(DM dm,const char fe_name[],MoFEM::FEMethod 
 
 /**
   * \brief get MoFEM::KspCtx data structure
-  * \ingroup dm 
+  * \ingroup dm
   */
-PetscErrorCode DMMoFEMGetKspCtx(DM dm,MoFEM::KspCtx **ksp_ctx); 
+PetscErrorCode DMMoFEMGetKspCtx(DM dm,MoFEM::KspCtx **ksp_ctx);
 
 #endif
 
@@ -146,19 +146,19 @@ PetscErrorCode DMMoFEMGetKspCtx(DM dm,MoFEM::KspCtx **ksp_ctx);
 
 /**
   * \brief get MoFEM::SnesCtx data structure
-  * \ingroup dm 
+  * \ingroup dm
   */
-PetscErrorCode DMMoFEMGetSnesCtx(DM dm,MoFEM::SnesCtx **snes_ctx); 
+PetscErrorCode DMMoFEMGetSnesCtx(DM dm,MoFEM::SnesCtx **snes_ctx);
 
-#endif 
+#endif
 
 #ifdef __MOABTS_HPP__
 
 /**
   * \brief get MoFEM::TsCtx data structure
-  * \ingroup dm 
+  * \ingroup dm
   */
-PetscErrorCode DMMoFEMGetTsCtx(DM dm,MoFEM::TsCtx **ts_ctx); 
+PetscErrorCode DMMoFEMGetTsCtx(DM dm,MoFEM::TsCtx **ts_ctx);
 
 #endif
 
@@ -172,20 +172,20 @@ PetscErrorCode DMMoFEMSetIsPartitioned(DM dm,PetscBool is_partitioned);
   */
 PetscErrorCode DMMoFEMGetIsPartitioned(DM dm,PetscBool *is_partitioned);
 
-/** 
+/**
   * \brief Create dm data structure with MoFEM data structure
   * \ingroup dm
   */
 PetscErrorCode DMCreate_MoFEM(DM dm);
 
-/** 
+/**
   * \brief Destroys dm with MoFEM data structure
   * \ingroup dm
   */
 PetscErrorCode DMDestroym_MoFEM(DM dm);
 
-/** 
- * \brief DMShellSetCreateGlobalVector 
+/**
+ * \brief DMShellSetCreateGlobalVector
  * \ingroup dm
  *
  * sets the routine to create a global vector
@@ -193,8 +193,8 @@ PetscErrorCode DMDestroym_MoFEM(DM dm);
  */
 PetscErrorCode DMCreateGlobalVector_MoFEM(DM dm,Vec *g);
 
-/** 
- * \brief DMShellSetCreateLocalVector 
+/**
+ * \brief DMShellSetCreateLocalVector
  * \ingroup dm
  *
  * sets the routine to create a local vector
@@ -216,18 +216,18 @@ PetscErrorCode DMCreateMatrix_MoFEM(DM dm,Mat *M);
   */
 #if PETSC_VERSION_GE(3,5,3)
     PetscErrorCode DMSetFromOptions_MoFEM(PetscOptions *PetscOptionsObject,DM dm);
-#else 
+#else
     PetscErrorCode DMSetFromOptions_MoFEM(DM dm);
-#endif 
+#endif
 
-/** 
+/**
   * sets up the MoFEM structures inside a DM object
   * \ingroup dm
   */
 PetscErrorCode DMSetUp_MoFEM(DM dm);
 
-/** 
-  * destroy the MoFEM strutcture 
+/**
+  * destroy the MoFEM structure
   * \ingroup dm
   */
 PetscErrorCode DMDestroy_MoFEM(DM dm);
@@ -275,7 +275,5 @@ PetscErrorCode DMLocalToGlobalEnd_MoFEM(DM,Vec,InsertMode,Vec);
 #endif //__DMMMOFEM_H
 
 /***************************************************************************//**
- * \defgroup dm MoFEM discreat manager
+ * \defgroup dm MoFEM discreet manager
  ******************************************************************************/
-
-

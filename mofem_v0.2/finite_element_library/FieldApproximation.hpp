@@ -1,4 +1,4 @@
-/* \file FieldApproximation.hpp 
+/* \file FieldApproximation.hpp
 
 \brief Element to calculate approximation on volume elements
 
@@ -37,19 +37,19 @@ struct FieldApproximationH1 {
 
   FieldApproximationH1(
     FieldInterface &m_field):
-    mField(m_field),fe(m_field),addToRule(0) {}
+    mField(m_field),fe(m_field),addToRule(1) {}
 
   /** \brief set integration rule
 
-    Note: Add 1 to take into account 2nd order geometry approximation. Overload
+    Note: Multiply 2 to take into account 2nd order geometry approximation. Overload
     that function if linear or HO approximation is set.
 
   */
-  int getRule(int order) { return order+addToRule; }; 
+  int getRule(int order) { return order+addToRule; };
 
-  /** \brief Gauss point poperatiors to caculete matrices and vectors
+  /** \brief Gauss point operators to calculate matrices and vectors
     *
-    * Function work on thetrahedrals
+    * Function work on tetrahedron
     */
   template<typename FUNEVAL>
   struct OpApprox: public VolumeElementForcesAndSourcesCore::UserDataOperator {
@@ -59,7 +59,7 @@ struct FieldApproximationH1 {
     FUNEVAL &functionEvaluator;
 
     OpApprox(const string &field_name,Mat _A,vector<Vec> &vec_F,FUNEVAL &function_evaluator):
-      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
+      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW|UserDataOperator::OPROWCOL),
       A(_A),vecF(vec_F),functionEvaluator(function_evaluator) {}
     virtual ~OpApprox() {}
 
@@ -67,7 +67,7 @@ struct FieldApproximationH1 {
     ublas::matrix<FieldData> transNN;
     vector<ublas::vector<FieldData> > Nf;
 
-    /** \brief calulate matrix
+    /** \brief calculate matrix
       */
     PetscErrorCode doWork(
       int row_side,int col_side,
@@ -89,93 +89,94 @@ struct FieldApproximationH1 {
       int nb_row_dofs = row_data.getIndices().size()/rank;
       int nb_col_dofs = col_data.getIndices().size()/rank;
 
-      NN.resize(nb_row_dofs,nb_col_dofs);
+      NN.resize(nb_row_dofs,nb_col_dofs,false);
       NN.clear();
-	  
+
       unsigned int nb_gauss_pts = row_data.getN().size1();
-      for(unsigned int gg = 0;gg<nb_gauss_pts;gg++) {
-	double w = getVolume()*getGaussPts()(3,gg);
-	if(getHoCoordsAtGaussPts().size1()==nb_gauss_pts) {
-	  w *= getHoGaussPtsDetJac()[gg];
-	}
-	cblas_dger(CblasRowMajor,
-	    nb_row_dofs,nb_col_dofs,
-	    w,&row_data.getN()(gg,0),1,&col_data.getN()(gg,0),1,
-	    &*NN.data().begin(),nb_col_dofs);
+      for(unsigned int gg = 0;gg!=nb_gauss_pts;gg++) {
+        double w = getVolume()*getGaussPts()(3,gg);
+        if(getHoCoordsAtGaussPts().size1()==nb_gauss_pts) {
+          w *= getHoGaussPtsDetJac()[gg];
+        }
+        //noalias(NN) += w*outer_prod(row_data.getN(gg),col_data.getN(gg));
+        cblas_dger(CblasRowMajor,
+          nb_row_dofs,nb_col_dofs,
+          w,&row_data.getN()(gg,0),1,&col_data.getN()(gg,0),1,
+          &*NN.data().begin(),nb_col_dofs
+        );
       }
-      
+
       if( (row_type != col_type) || (row_side != col_side) ) {
-	transNN.resize(nb_col_dofs,nb_row_dofs);
-	ublas::noalias(transNN) = trans(NN);
+        transNN.resize(nb_col_dofs,nb_row_dofs,false);
+        ublas::noalias(transNN) = trans(NN);
       }
 
       double *data = &*NN.data().begin();
       double *trans_data = &*transNN.data().begin();
-      ublas::vector<DofIdx> row_indices,col_indices;
+      VectorInt row_indices,col_indices;
       row_indices.resize(nb_row_dofs);
       col_indices.resize(nb_col_dofs);
 
       for(int rr = 0;rr < rank; rr++) {
-      
-	if((row_data.getIndices().size()%rank)!=0) {
-	  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
-	}
 
-	if((col_data.getIndices().size()%rank)!=0) {
-	    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
-	}
+        if((row_data.getIndices().size()%rank)!=0) {
+          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+        }
 
-	unsigned int nb_rows;
-	unsigned int nb_cols;
-	int *rows;
-	int *cols;
+        if((col_data.getIndices().size()%rank)!=0) {
+          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+        }
 
+        unsigned int nb_rows;
+        unsigned int nb_cols;
+        int *rows;
+        int *cols;
 
-	if(rank > 1) {
+        if(rank > 1) {
 
-	  ublas::noalias(row_indices) = ublas::vector_slice<ublas::vector<DofIdx> >
-	    (row_data.getIndices(), ublas::slice(rr, rank, row_data.getIndices().size()/rank));
-	  ublas::noalias(col_indices) = ublas::vector_slice<ublas::vector<DofIdx> >
-	    (col_data.getIndices(), ublas::slice(rr, rank, col_data.getIndices().size()/rank));
+          ublas::noalias(row_indices) = ublas::vector_slice<VectorInt >
+          (row_data.getIndices(), ublas::slice(rr, rank, row_data.getIndices().size()/rank));
+          ublas::noalias(col_indices) = ublas::vector_slice<VectorInt >
+          (col_data.getIndices(), ublas::slice(rr, rank, col_data.getIndices().size()/rank));
 
-	  nb_rows = row_indices.size();
-	  nb_cols = col_indices.size();
-	  rows = &*row_indices.data().begin();
-	  cols = &*col_indices.data().begin();
+          nb_rows = row_indices.size();
+          nb_cols = col_indices.size();
+          rows = &*row_indices.data().begin();
+          cols = &*col_indices.data().begin();
 
-	} else {
+        } else {
 
-	  nb_rows = row_data.getIndices().size();
-	  nb_cols = col_data.getIndices().size();
-	  rows = &*row_data.getIndices().data().begin();
-	  cols = &*col_data.getIndices().data().begin();
+          nb_rows = row_data.getIndices().size();
+          nb_cols = col_data.getIndices().size();
+          rows = &*row_data.getIndices().data().begin();
+          cols = &*col_data.getIndices().data().begin();
 
-	}
+        }
 
-	if(nb_rows != NN.size1()) {
-	  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
-	} 
-	if(nb_cols != NN.size2()) {
-	  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
-	} 
+        if(nb_rows != NN.size1()) {
+          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+        }
+        if(nb_cols != NN.size2()) {
+          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+        }
 
-	ierr = MatSetValues(A,nb_rows,rows,nb_cols,cols,data,ADD_VALUES); CHKERRQ(ierr);
-	if( (row_type != col_type) || (row_side != col_side) ) {
-	  if(nb_rows != transNN.size2()) {
-	    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
-	  } 
-	  if(nb_cols != transNN.size1()) {
-	    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
-	  } 
-	  ierr = MatSetValues(A,nb_cols,cols,nb_rows,rows,trans_data,ADD_VALUES); CHKERRQ(ierr);
-	}
+        ierr = MatSetValues(A,nb_rows,rows,nb_cols,cols,data,ADD_VALUES); CHKERRQ(ierr);
+        if( (row_type != col_type) || (row_side != col_side) ) {
+          if(nb_rows != transNN.size2()) {
+            SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+          }
+          if(nb_cols != transNN.size1()) {
+            SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+          }
+          ierr = MatSetValues(A,nb_cols,cols,nb_rows,rows,trans_data,ADD_VALUES); CHKERRQ(ierr);
+        }
 
       }
 
-      PetscFunctionReturn(0);	
+      PetscFunctionReturn(0);
     }
 
-    /** \brief caclulate vector
+    /** \brief calculate vector
       */
     PetscErrorCode doWork(
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
@@ -192,84 +193,83 @@ struct FieldApproximationH1 {
       unsigned int rank = dof_ptr->get_max_rank();
 
       int nb_row_dofs = data.getIndices().size()/rank;
-      
+
       if(getCoordsAtGaussPts().size1()!=data.getN().size1()) {
-	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
       }
       if(getCoordsAtGaussPts().size2()!=3) {
-	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
       }
 
-      // itegration 
+      // itegration
       unsigned int nb_gauss_pts = data.getN().size1();
       for(unsigned int gg = 0;gg != nb_gauss_pts;gg++) {
 
-	double x,y,z,w;
-	w = getVolume()*getGaussPts()(3,gg);
-	if(getHoCoordsAtGaussPts().size1()==nb_gauss_pts) {
-	  //intergation poits global positions if higher order geometry is given
-	  x = getHoCoordsAtGaussPts()(gg,0);
-	  y = getHoCoordsAtGaussPts()(gg,1);
-	  z = getHoCoordsAtGaussPts()(gg,2);
-	  // correction of jacobian for higher order geometry
-	  w *= getHoGaussPtsDetJac()[gg];
-	} else {
-	  //intergartion point global positions for linear tetrahedral element
-	  x = getCoordsAtGaussPts()(gg,0);
-	  y = getCoordsAtGaussPts()(gg,1);
-	  z = getCoordsAtGaussPts()(gg,2);
-	}
+        double x,y,z,w;
+        w = getVolume()*getGaussPts()(3,gg);
+        if(getHoCoordsAtGaussPts().size1()==nb_gauss_pts) {
+          //intergation points global positions if higher order geometry is given
+          x = getHoCoordsAtGaussPts()(gg,0);
+          y = getHoCoordsAtGaussPts()(gg,1);
+          z = getHoCoordsAtGaussPts()(gg,2);
+          // correction of jacobian for higher order geometry
+          w *= getHoGaussPtsDetJac()[gg];
+        } else {
+          //intergartion point global positions for linear tetrahedral element
+          x = getCoordsAtGaussPts()(gg,0);
+          y = getCoordsAtGaussPts()(gg,1);
+          z = getCoordsAtGaussPts()(gg,2);
+        }
 
-	vector<ublas::vector<FieldData> > fun_val;
-	try {
+        vector<ublas::vector<FieldData> > fun_val;
+        try {
 
-	   fun_val = functionEvaluator(x,y,z);
+          fun_val = functionEvaluator(x,y,z);
 
-	} catch (exception& ex) {
-	  ostringstream ss;
-	  ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
-	  SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
-	}
+        } catch (exception& ex) {
+          ostringstream ss;
+          ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+          SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+        }
 
-	if(fun_val.size()!=vecF.size()) {
-	  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+        if(fun_val.size()!=vecF.size()) {
+          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
 
-	}
+        }
 
-	Nf.resize(fun_val.size());
-	for(unsigned int lhs = 0;lhs != fun_val.size();lhs++) {
-	  
-	  if(!gg) {
-	    Nf[lhs].resize(data.getIndices().size());
-	    Nf[lhs].clear();
-	  } 
-		
-	  if(fun_val[lhs].size() != rank) {
-	    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
-	  }
+        Nf.resize(fun_val.size());
+        for(unsigned int lhs = 0;lhs != fun_val.size();lhs++) {
 
-	  for(unsigned int rr = 0;rr != rank;rr++) {
-	    cblas_daxpy(nb_row_dofs,w*(fun_val[lhs])[rr],&data.getN()(gg,0),1,&(Nf[lhs])[rr],rank);
-	  }
+          if(!gg) {
+            Nf[lhs].resize(data.getIndices().size());
+            Nf[lhs].clear();
+          }
 
-	}
+          if(fun_val[lhs].size() != rank) {
+            SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+          }
+
+          for(unsigned int rr = 0;rr != rank;rr++) {
+            cblas_daxpy(nb_row_dofs,w*(fun_val[lhs])[rr],&data.getN()(gg,0),1,&(Nf[lhs])[rr],rank);
+          }
+
+        }
 
       }
 
       for(unsigned int lhs = 0;lhs != vecF.size();lhs++) {
 
-	ierr = VecSetValues(vecF[lhs],data.getIndices().size(),
-	  &data.getIndices()[0],&(Nf[lhs])[0],ADD_VALUES); CHKERRQ(ierr);
+        ierr = VecSetValues(vecF[lhs],data.getIndices().size(),
+        &data.getIndices()[0],&(Nf[lhs])[0],ADD_VALUES); CHKERRQ(ierr);
 
       }
 
       PetscFunctionReturn(0);
     }
 
-
   };
 
-  /** \brief assemble matrix and vector 
+  /** \brief assemble matrix and vector
     */
   template<typename FUNEVAL>
   PetscErrorCode loopMatrixAndVector(
@@ -277,29 +277,21 @@ struct FieldApproximationH1 {
     Mat A,vector<Vec> &vec_F,FUNEVAL &function_evaluator) {
     PetscFunctionBegin;
     PetscErrorCode ierr;
-	
-    //add operator to calulate F vector
-    fe.getRowOpPtrVector().push_back(new OpApprox<FUNEVAL>(field_name,A,vec_F,function_evaluator));
-    //add operator to calulate A matrix
+
+    //add operator to calculate F vector
+    fe.getOpPtrVector().push_back(new OpApprox<FUNEVAL>(field_name,A,vec_F,function_evaluator));
+    //add operator to calculate A matrix
     if(A) {
-      fe.getRowColOpPtrVector().push_back(new OpApprox<FUNEVAL>(field_name,A,vec_F,function_evaluator));
+      fe.getOpPtrVector().push_back(new OpApprox<FUNEVAL>(field_name,A,vec_F,function_evaluator));
     }
-	
+
     if(A) {
       ierr = MatZeroEntries(A); CHKERRQ(ierr);
     }
 
-    for(unsigned int lhs = 0; lhs<vec_F.size(); lhs++) {
+    //calulate and assemble
+    ierr = mField.loop_finite_elements(problem_name,fe_name,fe);  CHKERRQ(ierr);
 
-      ierr = VecZeroEntries(vec_F[lhs]); CHKERRQ(ierr);
-      ierr = VecGhostUpdateBegin(vec_F[lhs],INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-      ierr = VecGhostUpdateEnd(vec_F[lhs],INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-
-    }
-    
-    //calulate and assembe
-    ierr = mField.loop_finite_elements(problem_name,fe_name,fe);  CHKERRQ(ierr); 
-    
     if(A) {
       ierr = MatAssemblyBegin(A,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
       ierr = MatAssemblyEnd(A,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
@@ -311,7 +303,7 @@ struct FieldApproximationH1 {
       ierr = VecAssemblyEnd(vec_F[lhs]); CHKERRQ(ierr);
 
     }
-  
+
     PetscFunctionReturn(0);
   }
 
@@ -321,4 +313,3 @@ struct FieldApproximationH1 {
 }
 
 #endif //__FILEDAPPROXIMATION_HPP
-

@@ -1,4 +1,4 @@
-##Installation with docker##
+##Installation with Docker##
 
 Docker is an open platform that allows for the distribution and deployment of
 applications across different systems. In the context of MoFEM it allows for
@@ -164,7 +164,7 @@ sshdock
 
 Password: mofem
 
-To stop the need to enter a password everytime you log into the container you
+To stop the need to enter a password every time you log into the container you
 can generate a public-private key pair and copy the public key to the sshd
 container. To generate a public key in Mac OS X or Linux:
 
@@ -200,20 +200,34 @@ This adds further complications during the building process which will be
 explained below. The reason for this is it allows the MoFEM core to be used as
 a library for other projects.
 
-Building should be done through the sshd container into the /build mounted
+Building should be done through the sshd container into the ''$MOFEM_INSTALL_DIR'' mounted
 volume and the source code on the host system can be found in /mnt/home
 
 Please note that the location of the MoFEM source code needs to be specified by
 the user due to differing locations. The placeholder for this location in the
-cmake command is: `mofem_source_code_directory` and should be changed to the
+cmake command is: `$MOFEM_SOURCE_CODE_DIR` and should be changed to the
 directory in Mac OS X from the home directory.
+
+First we need to clone MoFEM source directory into your ```$HOME``` on your
+native system (not docer). You could be able to edit source code using your
+favorite editor on your native system and manage *Git* repository.
+
+Cloning MoFEM sourcecode (note that following line you should execute in your native operating system):
+~~~~~~
+cd $HOME
+git clone https://bitbucket.org/likask/mofem-cephas.git mofem-cephas
+~~~~~~
 
 ####6.1.1 Release####
 
 Setup file structure:
 
 ~~~~~~
-cd /build
+export MOFEM_SOURCE_CODE_DIR=/home/home
+export MOFEM_INSTALL_DIR=/build
+mkdir $MOFEM_INSTALL_DIR
+
+cd $MOFEM_INSTALL_DIR
 mkdir release
 cd release
 mkdir lib
@@ -223,7 +237,7 @@ mkdir usr_mods
 Cmake command:
 
 ~~~~~~
-cd /build/release/lib
+cd $MOFEM_INSTALL_DIR/release/lib
 
 cmake \
 -DCMAKE_BUILD_TYPE=Release \
@@ -233,7 +247,7 @@ cmake \
 -DADOL-C_DIR=/usr \
 -DTETGEN_DIR=/opt/tetgen1.5.0 \
 -DBUILD_SHARED_LIBS=yes \
--DCMAKE_INSTALL_PREFIX=/build/release/usr_mods \
+-DCMAKE_INSTALL_PREFIX=$MOFEM_INSTALL_DIR/release/usr_mods \
 /mnt/home/*mofem_source_code_directory*
 ~~~~~~
 
@@ -251,7 +265,7 @@ make install
 To build the user’s modules run:
 
 ~~~~~~
-cd /build/release/usr_mods
+cd $MOFEM_INSTALL_DIR/release/usr_mods
 
 cmake -DCMAKE_BUILD_TYPE=Release users_modules
 make -j 4
@@ -268,7 +282,7 @@ directory, both MoFEM libraries and user's modules need to be re-built.
 Setup file structure:
 
 ~~~~~~
-cd /build
+cd $MOFEM_INSTALL_DIR
 mkdir debug
 cd debug
 mkdir lib
@@ -278,7 +292,7 @@ mkdir usr_mods
 Cmake command:
 
 ~~~~~~
-cd /build/debug/lib
+cd $MOFEM_INSTALL_DIR/debug/lib
 
 cmake \
 -DCMAKE_BUILD_TYPE=Debug\
@@ -288,8 +302,8 @@ cmake \
 -DADOL-C_DIR=/usr \
 -DTETGEN_DIR=/opt/tetgen1.5.0 \
 -DBUILD_SHARED_LIBS=yes \
--DCMAKE_INSTALL_PREFIX=/build/debug/usr_mods \
-/mnt/home/*mofem_source_code_directory*
+-DCMAKE_INSTALL_PREFIX=$MOFEM_INSTALL_DIR/debug/usr_mods \
+$MOFEM_SOURCE_CODE_DIR
 ~~~~~~
 
 To build the MoFEM libraries run:
@@ -306,7 +320,7 @@ make install
 To build the user’s modules run:
 
 ~~~~~~
-cd /build/debug/usr_mods
+cd $MOFEM_INSTALL_DIR/debug/usr_mods
 
 cmake -DCMAKE_BUILD_TYPE=Debug users_modules
 make -j 4

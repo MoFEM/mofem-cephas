@@ -1,5 +1,5 @@
 /** \file MaterialBlocks.hpp
- * \brief Data structures for Meshset/Blocsk with material data 
+ * \brief Data structures for Meshset/Blocsk with material data
  *
  * Notes:
  * - use BLOCK_ATTRIBUTES tag to store data sttucutures
@@ -29,7 +29,7 @@ namespace MoFEM {
  */
 struct GenericAttributeData {
     PetscErrorCode ierr;
-    
+
     virtual PetscErrorCode fill_data(const vector<double>& attributes) {
       PetscFunctionBegin;
       SETERRQ(PETSC_COMM_SELF,1,"It makes no sense for the generic attribute type");
@@ -62,13 +62,13 @@ struct BlockSetAttributes: public GenericAttributeData {
         double User9; // User attribute 9
         double User10; // User attribute 10
     };
-    
+
     _data_ data;
-    
+
     const CubitBCType type;
     const unsigned int min_number_of_atributes;
     BlockSetAttributes(): type(BLOCKSET),min_number_of_atributes(0) {};
-    
+
     virtual PetscErrorCode fill_data(const vector<double>& attributes) {
       PetscFunctionBegin;
       if(8*attributes.size()>sizeof(data)) {
@@ -88,20 +88,20 @@ struct BlockSetAttributes: public GenericAttributeData {
       memcpy(tag_ptr,&data,size);
       PetscFunctionReturn(0);
     }
-    
+
     /*! \brief Print data
      */
     friend ostream& operator<<(ostream& os,const BlockSetAttributes& e);
-    
+
 };
 
 /*! \struct Mat_Elastic
  *  \brief Elastic material data structure
  */
 struct Mat_Elastic: public GenericAttributeData {
-  
+
     /** \brief block tag data structute
-      * 
+      *
       */
     struct __attribute__ ((packed)) _data_{
         double Young; 			///< Young's modulus
@@ -115,13 +115,13 @@ struct Mat_Elastic: public GenericAttributeData {
         double User6; // User attribute 7
         double User7; // User attribute 8
     };
-    
+
     _data_ data;
-    
+
     const CubitBCType type;
     const unsigned int min_number_of_atributes;
     Mat_Elastic(): type(MAT_ELASTICSET),min_number_of_atributes(2) {};
-    
+
     virtual PetscErrorCode fill_data(const vector<double>& attributes) {
         PetscFunctionBegin;
         if(attributes.size()<min_number_of_atributes) {
@@ -143,14 +143,14 @@ struct Mat_Elastic: public GenericAttributeData {
       memcpy(tag_ptr,&data,size);
       PetscFunctionReturn(0);
     }
-    
+
     /*! \brief Print Mat_Elastic data
      */
     friend ostream& operator<<(ostream& os,const Mat_Elastic& e);
-    
+
 };
-    
-    
+
+
 /*! \struct Mat_Thermal
  *  \brief Thermal material data structure
  */
@@ -173,11 +173,11 @@ struct Mat_Thermal: public GenericAttributeData {
   };
 
   _data_ data;
-        
+
   const CubitBCType type;
   const unsigned int min_number_of_atributes;
   Mat_Thermal(): type(MAT_THERMALSET),min_number_of_atributes(2) {};
-        
+
   virtual PetscErrorCode fill_data(const vector<double>& attributes) {
     PetscFunctionBegin;
     if(attributes.size()<min_number_of_atributes) {
@@ -204,8 +204,8 @@ struct Mat_Thermal: public GenericAttributeData {
   */
   friend ostream& operator<<(ostream& os,const Mat_Thermal& e);
 };
-  
- 
+
+
 /*! \struct Mat_Moisture
  *  \brief moisture transport material data structure
  */
@@ -227,13 +227,13 @@ struct Mat_Moisture: public GenericAttributeData {
     double User8; // User attribute 8
     double User9; // User attribute 9
   };
-  
+
   _data_ data;
-  
+
   const CubitBCType type;
   const unsigned int min_number_of_atributes;
   Mat_Moisture(): type(MAT_MOISTURESET),min_number_of_atributes(1) {};
-  
+
   virtual PetscErrorCode fill_data(const vector<double>& attributes) {
     PetscFunctionBegin;
     if(attributes.size()<min_number_of_atributes) {
@@ -246,14 +246,14 @@ struct Mat_Moisture: public GenericAttributeData {
     memcpy(&data, &attributes[0],8*attributes.size());
     PetscFunctionReturn(0);
   }
-  
+
   /*! \brief Print Mat_Elastic data
    */
   friend ostream& operator<<(ostream& os,const Mat_Moisture& e);
 };
 
-  
-  
+
+
 /** \brief Body force data structure
   */
 struct Block_BodyForces: public GenericAttributeData {
@@ -262,9 +262,9 @@ struct Block_BodyForces: public GenericAttributeData {
     *
     */
   struct __attribute__ ((packed)) _data_{
-    double density; 		///< matreial density 
-    double acceleration_x; 	///< acceleration X 
-    double acceleration_y; 	///< accelereaion Y 
+    double density; 		///< matreial density
+    double acceleration_x; 	///< acceleration X
+    double acceleration_y; 	///< accelereaion Y
     double acceleration_z; 	///< acceleration Z
     double User4; // User attribute 4
     double User5; // User attribute 5
@@ -274,11 +274,11 @@ struct Block_BodyForces: public GenericAttributeData {
   };
 
   _data_ data;
-        
+
   const CubitBCType type;
   const unsigned int min_number_of_atributes;
   Block_BodyForces(): type(BODYFORCESSET),min_number_of_atributes(4) {};
-        
+
   virtual PetscErrorCode fill_data(const vector<double>& attributes) {
     PetscFunctionBegin;
     if(attributes.size()<min_number_of_atributes) {
@@ -300,14 +300,14 @@ struct Block_BodyForces: public GenericAttributeData {
     memcpy(tag_ptr,&data,size);
     PetscFunctionReturn(0);
   }
-        
+
   /*! \brief Print Mat_Elastic data
   */
   friend ostream& operator<<(ostream& os,const Block_BodyForces& e);
 };
-    
-    
-    
+
+
+
 /*! \struct Mat_Elastic_TransIso
  *  \brief Transverse Isotropic material data structure
  */
@@ -323,12 +323,12 @@ struct Block_BodyForces: public GenericAttributeData {
       double Poissonpz; ///< Poisson's ratio in z-direction (vpz)
       double Shearzp; 	///< Shear modulus in z-direction (Gzp)
     };
-    
+
     _data_ data;
-    
+
     const unsigned int min_number_of_atributes;
     Mat_Elastic_TransIso(): Mat_Elastic(),min_number_of_atributes(5) {};
-    
+
     virtual PetscErrorCode fill_data(const vector<double>& attributes) {
       PetscFunctionBegin;
       //Fill data
@@ -339,7 +339,7 @@ struct Block_BodyForces: public GenericAttributeData {
       memcpy(&data, &attributes[0], sizeof(data));
       bzero(&data,sizeof(data));
       memcpy(&data, &attributes[0],8*attributes.size());
-      
+
       PetscFunctionReturn(0);
     }
     virtual PetscErrorCode set_data(void *tag_ptr,unsigned int size) {
@@ -351,11 +351,11 @@ struct Block_BodyForces: public GenericAttributeData {
       memcpy(tag_ptr,&data,size);
       PetscFunctionReturn(0);
     }
-   
+
     /*! \brief Print Mat_Elastic_TransIso data
      */
     friend ostream& operator<<(ostream& os,const Mat_Elastic_TransIso& e);
-    
+
   };
 
 /*! \struct Mat_Interf
@@ -372,12 +372,12 @@ struct Mat_Interf: public GenericAttributeData {
     double ft;    ///< Maximum stress of crack
     double Gf;    ///< Fracture Energy
   };
-      
+
   _data_ data;
-      
+
   const CubitBCType type;
   Mat_Interf(): type(MAT_INTERFSET) {};
-      
+
   virtual PetscErrorCode fill_data(const vector<double>& attributes) {
     PetscFunctionBegin;
     //Fill data
@@ -394,13 +394,13 @@ struct Mat_Interf: public GenericAttributeData {
     memcpy(tag_ptr,&data,size);
     PetscFunctionReturn(0);
   }
-      
+
   /*! \brief Print Mat_Interf data
     */
   friend ostream& operator<<(ostream& os,const Mat_Interf& e);
 };
 
-/*! \struct Mat_Elastic with Fibres
+/** \brief Mat_Elastic with Fibres
  *  \brief Elastic material data structure
  */
 struct Mat_Elastic_EberleinHolzapfel1: public Mat_Elastic {
@@ -420,12 +420,12 @@ struct Mat_Elastic_EberleinHolzapfel1: public Mat_Elastic {
       double a1y; // User attribute 7
       double a1z; // User attribute 8
     };
-    
+
     _data_ data;
-    
+
     const unsigned int min_number_of_atributes;
     Mat_Elastic_EberleinHolzapfel1(): Mat_Elastic(),min_number_of_atributes(10) {};
-    
+
     virtual PetscErrorCode fill_data(const vector<double>& attributes) {
         PetscFunctionBegin;
         if(attributes.size()<min_number_of_atributes) {
@@ -439,11 +439,11 @@ struct Mat_Elastic_EberleinHolzapfel1: public Mat_Elastic {
         PetscFunctionReturn(0);
     }
 
-    
+
     /*! \brief Print Mat_Elastic data
      */
     friend ostream& operator<<(ostream& os,const Mat_Elastic_EberleinHolzapfel1& e);
-    
+
 };
 
 }

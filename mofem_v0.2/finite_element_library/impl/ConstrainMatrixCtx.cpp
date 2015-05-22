@@ -1,5 +1,5 @@
 /** \file ConstrainMatrixCtx.cpp
- * \brief Implementation of projection matrix 
+ * \brief Implementation of projection matrix
  *
  * FIXME: DESCRIPTION
  */
@@ -55,19 +55,19 @@ PetscErrorCode ConstrainMatrixCtx::initializeQorP(Vec x) {
       ierr = MatTranspose(C,MAT_INITIAL_MATRIX,&CT); CHKERRQ(ierr);
       ierr = MatTransposeMatMult(CT,CT,MAT_INITIAL_MATRIX,PETSC_DEFAULT,&CCT); CHKERRQ(ierr); // need to be calculated when C is changed
       if(createKSP) {
-	ierr = KSPCreate(mField.get_comm(),&kSP); CHKERRQ(ierr); // neet to be recalculated when C is changed
-	ierr = KSPSetOperators(kSP,CCT,CCT); CHKERRQ(ierr);
-	ierr = KSPSetFromOptions(kSP); CHKERRQ(ierr);
-	ierr = KSPSetInitialGuessKnoll(kSP,PETSC_TRUE); CHKERRQ(ierr);
-	ierr = KSPGetTolerances(kSP,&rTol,&absTol,&dTol,&maxIts); CHKERRQ(ierr);
-	ierr = KSPSetUp(kSP); CHKERRQ(ierr);
-	ierr = KSPMonitorCancel(kSP); CHKERRQ(ierr);
+        ierr = KSPCreate(mField.get_comm(),&kSP); CHKERRQ(ierr); // neet to be recalculated when C is changed
+        ierr = KSPSetOperators(kSP,CCT,CCT); CHKERRQ(ierr);
+        ierr = KSPSetFromOptions(kSP); CHKERRQ(ierr);
+        ierr = KSPSetInitialGuessKnoll(kSP,PETSC_TRUE); CHKERRQ(ierr);
+        ierr = KSPGetTolerances(kSP,&rTol,&absTol,&dTol,&maxIts); CHKERRQ(ierr);
+        ierr = KSPSetUp(kSP); CHKERRQ(ierr);
+        ierr = KSPMonitorCancel(kSP); CHKERRQ(ierr);
       }
-      #if PETSC_VERSION_GE(3,5,3) 
+      #if PETSC_VERSION_GE(3,5,3)
       ierr = MatCreateVecs(C,&X,PETSC_NULL); CHKERRQ(ierr);
       ierr = MatCreateVecs(C,PETSC_NULL,&Cx); CHKERRQ(ierr);
       ierr = MatCreateVecs(CCT,PETSC_NULL,&CCTm1_Cx); CHKERRQ(ierr);
-      #else 
+      #else
       ierr = MatGetVecs(C,&X,PETSC_NULL); CHKERRQ(ierr);
       ierr = MatGetVecs(C,PETSC_NULL,&Cx); CHKERRQ(ierr);
       ierr = MatGetVecs(CCT,PETSC_NULL,&CCTm1_Cx); CHKERRQ(ierr);
@@ -114,21 +114,21 @@ PetscErrorCode ConstrainMatrixCtx::initializeQTKQ() {
       PetscLogEventBegin(USER_EVENT_projInit,0,0,0,0);
       ierr = MatTransposeMatMult(C,C,MAT_INITIAL_MATRIX,PETSC_DEFAULT,&CTC); CHKERRQ(ierr); // need to be recalculated when C is changed
       if(debug) {
-	//MatView(CCT,PETSC_VIEWER_DRAW_WORLD);
-	int m,n;
-	MatGetSize(CCT,&m,&n);
-	PetscPrintf(mField.get_comm(),"CCT size (%d,%d)\n",m,n);
-	//std::string wait;
-	//std::cin >> wait;
+        //MatView(CCT,PETSC_VIEWER_DRAW_WORLD);
+        int m,n;
+        MatGetSize(CCT,&m,&n);
+        PetscPrintf(mField.get_comm(),"CCT size (%d,%d)\n",m,n);
+        //std::string wait;
+        //std::cin >> wait;
       }
-      #if PETSC_VERSION_GE(3,5,3) 
-	ierr = MatCreateVecs(K,&Qx,PETSC_NULL); CHKERRQ(ierr);
-	ierr = MatCreateVecs(K,PETSC_NULL,&KQx); CHKERRQ(ierr);
-	ierr = MatCreateVecs(CTC,PETSC_NULL,&CTCx); CHKERRQ(ierr);
-      #else 
-	ierr = MatGetVecs(K,&Qx,PETSC_NULL); CHKERRQ(ierr);
-	ierr = MatGetVecs(K,PETSC_NULL,&KQx); CHKERRQ(ierr);
-	ierr = MatGetVecs(CTC,PETSC_NULL,&CTCx); CHKERRQ(ierr);
+      #if PETSC_VERSION_GE(3,5,3)
+      ierr = MatCreateVecs(K,&Qx,PETSC_NULL); CHKERRQ(ierr);
+      ierr = MatCreateVecs(K,PETSC_NULL,&KQx); CHKERRQ(ierr);
+      ierr = MatCreateVecs(CTC,PETSC_NULL,&CTCx); CHKERRQ(ierr);
+      #else
+      ierr = MatGetVecs(K,&Qx,PETSC_NULL); CHKERRQ(ierr);
+      ierr = MatGetVecs(K,PETSC_NULL,&KQx); CHKERRQ(ierr);
+      ierr = MatGetVecs(CTC,PETSC_NULL,&CTCx); CHKERRQ(ierr);
       #endif
       PetscLogEventEnd(USER_EVENT_projInit,0,0,0,0);
     }
@@ -252,7 +252,7 @@ PetscErrorCode ConstrainMatrixMultOpCTC_QTKQ(Mat CTC_QTKQ,Vec x,Vec f) {
   int M,N,m,n;
   ierr = MatGetSize(ctx->K,&M,&N); CHKERRQ(ierr);
   ierr = MatGetLocalSize(ctx->K,&m,&n); CHKERRQ(ierr);
-  ierr = MatCreateShell(ctx->mField.get_comm(),m,n,M,N,ctx,&Q); CHKERRQ(ierr); 
+  ierr = MatCreateShell(ctx->mField.get_comm(),m,n,M,N,ctx,&Q); CHKERRQ(ierr);
   ierr = MatShellSetOperation(Q,MATOP_MULT,(void(*)(void))PorjectionMatrixMultOpQ); CHKERRQ(ierr);
   ierr = ctx->initializeQTKQ(); CHKERRQ(ierr);
   ierr = MatMult(Q,x,ctx->Qx); CHKERRQ(ierr);
@@ -289,4 +289,3 @@ PetscErrorCode ConstrainMatrixDestroyOpQTKQ(Mat QTKQ) {
 
 
 }
-

@@ -38,7 +38,7 @@ using namespace MoFEM;
 #include <NonLienarElasticElement.hpp>
 #include <NeoHookean.hpp>
 
-#include <PotsProcOnRefMesh.hpp>
+#include <PostProcOnRefMesh.hpp>
 #include <PostProcStresses.hpp>
 #include <Projection10NodeCoordsOnField.hpp>
 
@@ -235,13 +235,13 @@ int main(int argc, char *argv[]) {
 
   //post_processing
   PostPocOnRefinedMesh post_proc(m_field);
-  ierr = post_proc.generateRefereneElemenMesh(); CHKERRQ(ierr);
+  ierr = post_proc.generateReferenceElementMesh(); CHKERRQ(ierr);
   ierr = post_proc.addFieldValuesPostProc("SPATIAL_POSITION"); CHKERRQ(ierr);
   ierr = post_proc.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
   ierr = post_proc.addFieldValuesGradientPostProc("SPATIAL_POSITION"); CHKERRQ(ierr);
   map<int,NonlinearElasticElement::BlockData>::iterator sit = elastic.setOfBlocks.begin();
   for(;sit!=elastic.setOfBlocks.end();sit++) {
-    post_proc.getRowOpPtrVector().push_back(
+    post_proc.getOpPtrVector().push_back(
 	  new PostPorcStress(
 	    post_proc.postProcMesh,
 	    post_proc.mapGaussPts,

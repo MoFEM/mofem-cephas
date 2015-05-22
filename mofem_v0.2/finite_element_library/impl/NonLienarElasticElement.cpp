@@ -126,9 +126,9 @@ NonlinearElasticElement::NonlinearElasticElement(
   mField(m_field),tAg(tag) {}
 
 NonlinearElasticElement::OpGetDataAtGaussPts::OpGetDataAtGaussPts(const string field_name,
-  vector<ublas::vector<double> > &values_at_gauss_pts,
-  vector<ublas::matrix<double> > &gardient_at_gauss_pts):
-  VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
+  vector<VectorDouble > &values_at_gauss_pts,
+  vector<MatrixDouble > &gardient_at_gauss_pts):
+  VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
   valuesAtGaussPts(values_at_gauss_pts),gradientAtGaussPts(gardient_at_gauss_pts),
   zeroAtType(MBVERTEX) {}
 
@@ -144,7 +144,7 @@ PetscErrorCode NonlinearElasticElement::OpGetDataAtGaussPts::doWork(
     int nb_gauss_pts = data.getN().size1();
 
     //initialize
-    ublas::vector<double>& values = data.getFieldData();
+    VectorDouble& values = data.getFieldData();
     valuesAtGaussPts.resize(nb_gauss_pts);
     gradientAtGaussPts.resize(nb_gauss_pts);
     for(int gg = 0;gg<nb_gauss_pts;gg++) {
@@ -161,8 +161,8 @@ PetscErrorCode NonlinearElasticElement::OpGetDataAtGaussPts::doWork(
 
     //cerr << valuesAtGaussPts[0] << " : ";
     for(int gg = 0;gg<nb_gauss_pts;gg++) {
-      ublas::vector<double> N = data.getN(gg,nb_dofs/3);
-      ublas::matrix<double> diffN = data.getDiffN(gg,nb_dofs/3);
+      VectorDouble N = data.getN(gg,nb_dofs/3);
+      MatrixDouble diffN = data.getDiffN(gg,nb_dofs/3);
       for(int dd = 0;dd<nb_dofs/3;dd++) {
         for(int rr1 = 0;rr1<3;rr1++) {
           valuesAtGaussPts[gg][rr1] += N[dd]*values[3*dd+rr1];
@@ -198,7 +198,7 @@ NonlinearElasticElement::OpJacobian::OpJacobian(
   BlockData &data,
   CommonData &common_data,
   int tag,bool jacobian,bool field_disp):
-  VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
+  VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
   dAta(data),commonData(common_data),
   tAg(tag),adlocReturnValue(0),
   jAcobian(jacobian),fieldDisp(field_disp) {}
@@ -227,7 +227,7 @@ PetscErrorCode NonlinearElasticElement::OpJacobian::doWork(
     commonData.jacStressRowPtr.resize(nb_gauss_pts);
     commonData.jacStress.resize(nb_gauss_pts);
 
-    vector<ublas::matrix<double> > &F = (commonData.gradAtGaussPts[commonData.spatialPositions]);
+    vector<MatrixDouble > &F = (commonData.gradAtGaussPts[commonData.spatialPositions]);
 
     for(int gg = 0;gg<nb_gauss_pts;gg++) {
 
@@ -314,7 +314,7 @@ PetscErrorCode NonlinearElasticElement::OpJacobian::doWork(
 }
 
 NonlinearElasticElement::OpRhs::OpRhs(const string field_name,BlockData &data,CommonData &common_data):
-  VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
+  VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
   dAta(data),commonData(common_data) {}
 
 PetscErrorCode NonlinearElasticElement::OpRhs::doWork(
@@ -337,7 +337,7 @@ PetscErrorCode NonlinearElasticElement::OpRhs::doWork(
       //diffN - on rows has degrees of freedom
       //diffN - on columns has rerevatives direvatives of shape functin
       const DataForcesAndSurcesCore::MatrixAdaptor &diffN = row_data.getDiffN(gg,nb_dofs/3);
-      const ublas::matrix<double>& P = commonData.P[gg];
+      const MatrixDouble& P = commonData.P[gg];
       //cerr << (commonData.gradAtGaussPts[commonData.spatialPositions][gg]) << endl;
       //cerr << diffN << endl;
       //cerr << P << endl;
@@ -371,7 +371,7 @@ PetscErrorCode NonlinearElasticElement::OpRhs::doWork(
 }
 
 NonlinearElasticElement::OpEnergy::OpEnergy(const string field_name,BlockData &data,CommonData &common_data,Vec *v_ptr,bool field_disp):
-  VolumeElementForcesAndSourcesCore::UserDataOperator(field_name),
+  VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
   dAta(data),commonData(common_data),Vptr(v_ptr),fieldDisp(field_disp) { }
 
 PetscErrorCode NonlinearElasticElement::OpEnergy::doWork(
@@ -386,7 +386,7 @@ PetscErrorCode NonlinearElasticElement::OpEnergy::doWork(
 
   try {
 
-    vector<ublas::matrix<double> > &F = (commonData.gradAtGaussPts[commonData.spatialPositions]);
+    vector<MatrixDouble > &F = (commonData.gradAtGaussPts[commonData.spatialPositions]);
 
     for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
       double val = getVolume()*getGaussPts()(3,gg);
@@ -418,7 +418,7 @@ PetscErrorCode NonlinearElasticElement::OpEnergy::doWork(
 
 NonlinearElasticElement::OpLhs_dx::OpLhs_dx(
   const string vel_field,const string field_name,BlockData &data,CommonData &common_data):
-  VolumeElementForcesAndSourcesCore::UserDataOperator(vel_field,field_name),
+  VolumeElementForcesAndSourcesCore::UserDataOperator(vel_field,field_name,UserDataOperator::OPROWCOL),
   dAta(data),commonData(common_data) { /*symm = false;*/  }
 
 PetscErrorCode NonlinearElasticElement::OpLhs_dx::getJac(DataForcesAndSurcesCore::EntData &col_data,int gg) {
@@ -429,13 +429,13 @@ PetscErrorCode NonlinearElasticElement::OpLhs_dx::getJac(DataForcesAndSurcesCore
   for(int dd = 0;dd<nb_col/3;dd++) {
     for(int rr = 0;rr<3;rr++) {
       for(int ii = 0;ii<9;ii++) {
-	for(int jj = 0;jj<3;jj++) {
-	  //This project dirvative \frac{\partial P}{\partial F}, that is
-	  //\frac{\partial P}{\partial x_DOF} =  \frac{\partial P}{\partial F}\frac{\partial F}{\partial x_DOF},
-	  //where second therm \frac{\partial F}{\partial x_DOF} is derivative of shape function
-	  //jac(ii,3*dd+rr) += commonData.jacStress[gg](ii,jj)*F.data()[jj];
-	  jac(ii,3*dd+rr) += commonData.jacStress[gg](ii,3*rr+jj)*diffN(dd,jj);
-	}
+        for(int jj = 0;jj<3;jj++) {
+          //This project dirvative \frac{\partial P}{\partial F}, that is
+          //\frac{\partial P}{\partial x_DOF} =  \frac{\partial P}{\partial F}\frac{\partial F}{\partial x_DOF},
+          //where second therm \frac{\partial F}{\partial x_DOF} is derivative of shape function
+          //jac(ii,3*dd+rr) += commonData.jacStress[gg](ii,jj)*F.data()[jj];
+          jac(ii,3*dd+rr) += commonData.jacStress[gg](ii,3*rr+jj)*diffN(dd,jj);
+        }
       }
     }
   }
@@ -581,35 +581,35 @@ PetscErrorCode NonlinearElasticElement::setOperators(
   commonData.meshPositions = material_position_field_name;
 
   //Rhs
-  feRhs.getRowOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(spatial_position_field_name,commonData));
+  feRhs.getOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(spatial_position_field_name,commonData));
   if(mField.check_field(material_position_field_name)) {
-    feRhs.getRowOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(material_position_field_name,commonData));
+    feRhs.getOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(material_position_field_name,commonData));
   }
   map<int,BlockData>::iterator sit = setOfBlocks.begin();
   for(;sit!=setOfBlocks.end();sit++) {
-    feRhs.getRowOpPtrVector().push_back(new OpJacobian(spatial_position_field_name,sit->second,commonData,tAg,false,field_disp));
-    feRhs.getRowOpPtrVector().push_back(new OpRhs(spatial_position_field_name,sit->second,commonData));
+    feRhs.getOpPtrVector().push_back(new OpJacobian(spatial_position_field_name,sit->second,commonData,tAg,false,field_disp));
+    feRhs.getOpPtrVector().push_back(new OpRhs(spatial_position_field_name,sit->second,commonData));
   }
 
   //Energy
-  feEnergy.getRowOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(spatial_position_field_name,commonData));
+  feEnergy.getOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(spatial_position_field_name,commonData));
   if(mField.check_field(material_position_field_name)) {
-    feEnergy.getRowOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(material_position_field_name,commonData));
+    feEnergy.getOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(material_position_field_name,commonData));
   }
   sit = setOfBlocks.begin();
   for(;sit!=setOfBlocks.end();sit++) {
-    feEnergy.getRowOpPtrVector().push_back(new OpEnergy(spatial_position_field_name,sit->second,commonData,&feEnergy.V,field_disp));
+    feEnergy.getOpPtrVector().push_back(new OpEnergy(spatial_position_field_name,sit->second,commonData,&feEnergy.V,field_disp));
   }
 
   //Lhs
-  feLhs.getRowOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(spatial_position_field_name,commonData));
+  feLhs.getOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(spatial_position_field_name,commonData));
   if(mField.check_field(material_position_field_name)) {
-    feLhs.getRowOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(material_position_field_name,commonData));
+    feLhs.getOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(material_position_field_name,commonData));
   }
   sit = setOfBlocks.begin();
   for(;sit!=setOfBlocks.end();sit++) {
-    feLhs.getRowOpPtrVector().push_back(new OpJacobian(spatial_position_field_name,sit->second,commonData,tAg,true,field_disp));
-    feLhs.getRowColOpPtrVector().push_back(new OpLhs_dx(spatial_position_field_name,spatial_position_field_name,sit->second,commonData));
+    feLhs.getOpPtrVector().push_back(new OpJacobian(spatial_position_field_name,sit->second,commonData,tAg,true,field_disp));
+    feLhs.getOpPtrVector().push_back(new OpLhs_dx(spatial_position_field_name,spatial_position_field_name,sit->second,commonData));
   }
 
   PetscFunctionReturn(0);

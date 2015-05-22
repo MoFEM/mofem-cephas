@@ -46,8 +46,8 @@ struct FluidPressure {
   typedef int MeshSetId;
   struct FluidData {
     double dEnsity; ///< fluid density [kg/m^2] or any consistent unit
-    ublas::vector<double> aCCeleration; ///< acceleration [m/s^2]
-    ublas::vector<double> zEroPressure; ///< fluid level of reference zero pressure.
+    VectorDouble aCCeleration; ///< acceleration [m/s^2]
+    VectorDouble zEroPressure; ///< fluid level of reference zero pressure.
     Range tRis; ///< range of surface elemennt to which fluid pressure is applied
     friend ostream& operator<<(ostream& os,const FluidPressure::FluidData &e);
   };
@@ -63,7 +63,7 @@ struct FluidPressure {
     bool hoGeometry;
     OpCalculatePressure(const string field_name,Vec _F,FluidData &data,
       bool allow_negative_pressure,bool ho_geometry):
-      FaceElementForcesAndSourcesCore::UserDataOperator(field_name),
+      FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
       F(_F),dAta(data),allowNegativePressure(allow_negative_pressure),hoGeometry(ho_geometry) {}
     ublas::vector<FieldData> Nf;
     PetscErrorCode ierr;
@@ -78,29 +78,29 @@ struct FluidPressure {
       ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
       int rank = dof_ptr->get_max_rank();
       int nb_row_dofs = data.getIndices().size()/rank;
-      
+
       Nf.resize(data.getIndices().size());
       bzero(&*Nf.data().begin(),data.getIndices().size()*sizeof(FieldData));
 
       for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
 
-	ublas::vector<double> dist;
-	dist = ublas::matrix_row<ublas::matrix<double> >(getCoordsAtGaussPts(),gg);
-	dist -= dAta.zEroPressure;
-	double dot = cblas_ddot(3,&dist[0],1,&dAta.aCCeleration[0],1);
-	if(!allowNegativePressure) dot = fmax(0,dot);
-	double pressure = dot*dAta.dEnsity;
+        VectorDouble dist;
+        dist = ublas::matrix_row<MatrixDouble >(getCoordsAtGaussPts(),gg);
+        dist -= dAta.zEroPressure;
+        double dot = cblas_ddot(3,&dist[0],1,&dAta.aCCeleration[0],1);
+        if(!allowNegativePressure) dot = fmax(0,dot);
+        double pressure = dot*dAta.dEnsity;
 
-	for(int rr = 0;rr<rank;rr++) {
-	  double force;
-	  if(hoGeometry) {
-	    force = pressure*getNormals_at_GaussPt()(gg,rr);
-	  } else {
-	    force = pressure*getNormal()[rr];
-	  }
-	  cblas_daxpy(nb_row_dofs,getGaussPts()(2,gg)*force,&data.getN()(gg,0),1,&Nf[rr],rank);
-	}
-      
+        for(int rr = 0;rr<rank;rr++) {
+          double force;
+          if(hoGeometry) {
+            force = pressure*getNormals_at_GaussPt()(gg,rr);
+          } else {
+            force = pressure*getNormal()[rr];
+          }
+          cblas_daxpy(nb_row_dofs,getGaussPts()(2,gg)*force,&data.getN()(gg,0),1,&Nf[rr],rank);
+        }
+
       }
 
       //cerr << Nf << endl;
@@ -114,7 +114,8 @@ struct FluidPressure {
   };
 
   PetscErrorCode addNeumannFluidPressureBCElements(
-    const string field_name,const string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
+    const string field_name,const string mesh_nodals_positions = "MESH_NODE_POSITIONS"
+  ) {
     PetscFunctionBegin;
 
     ierr = mField.add_finite_element("FLUID_PRESSURE_FE",MF_ZERO); CHKERRQ(ierr);
@@ -132,17 +133,17 @@ struct FluidPressure {
 
       if(bit->get_name().compare(0,14,"FLUID_PRESSURE") == 0) {
 
-	//get block attributes
-	vector<double> attributes;
-	ierr = bit->get_attributes(attributes); CHKERRQ(ierr);
-	if(attributes.size()<7) {
-	  SETERRQ1(PETSC_COMM_SELF,1,"not enough block attributes to deffine fluid pressure element, attributes.size() = %d ",attributes.size());
-	}
-	setOfFluids[bit->get_msId()].dEnsity = attributes[0];
-	setOfFluids[bit->get_msId()].aCCeleration.resize(3);
-	setOfFluids[bit->get_msId()].aCCeleration[0] = attributes[1];
-	setOfFluids[bit->get_msId()].aCCeleration[1] = attributes[2];
-	setOfFluids[bit->get_msId()].aCCeleration[2] = attributes[3];
+        //get block attributes
+        vector<double> attributes;
+        ierr = bit->get_attributes(attributes); CHKERRQ(ierr);
+        if(attributes.size()<7) {
+          SETERRQ1(PETSC_COMM_SELF,1,"not enough block attributes to deffine fluid pressure element, attributes.size() = %d ",attributes.size());
+        }
+        setOfFluids[bit->get_msId()].dEnsity = attributes[0];
+        setOfFluids[bit->get_msId()].aCCeleration.resize(3);
+        setOfFluids[bit->get_msId()].aCCeleration[0] = attributes[1];
+        setOfFluids[bit->get_msId()].aCCeleration[1] = attributes[2];
+        setOfFluids[bit->get_msId()].aCCeleration[2] = attributes[3];
         setOfFluids[bit->get_msId()].zEroPressure.resize(3);
         setOfFluids[bit->get_msId()].zEroPressure[0] = attributes[4];
         setOfFluids[bit->get_msId()].zEroPressure[1] = attributes[5];
@@ -159,7 +160,7 @@ struct FluidPressure {
         ostringstream ss;
         ss << setOfFluids[bit->get_msId()] << endl;
         PetscPrintf(mField.get_comm(),ss.str().c_str());
-  
+
         ierr = mField.add_ents_to_finite_element_by_TRIs(setOfFluids[bit->get_msId()].tRis,"FLUID_PRESSURE_FE"); CHKERRQ(ierr);
 
       }
@@ -176,7 +177,7 @@ struct FluidPressure {
     map<MeshSetId,FluidData>::iterator sit = setOfFluids.begin();
     for(;sit!=setOfFluids.end();sit++) {
       //add finite element
-      fe.getRowOpPtrVector().push_back(new OpCalculatePressure(field_name,F,sit->second,allow_negative_pressure,ho_geometry));
+      fe.getOpPtrVector().push_back(new OpCalculatePressure(field_name,F,sit->second,allow_negative_pressure,ho_geometry));
     }
     PetscFunctionReturn(0);
   }
@@ -193,4 +194,3 @@ ostream& operator<<(ostream& os,const FluidPressure::FluidData &e) {
 }
 
 #endif //__FLUID_PRESSSURE_HPP
-

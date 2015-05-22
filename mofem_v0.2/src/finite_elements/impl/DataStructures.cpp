@@ -19,10 +19,10 @@
 * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 #include <petscsys.h>
-#include <petscvec.h> 
-#include <petscmat.h> 
-#include <petscsnes.h> 
-#include <petscts.h> 
+#include <petscvec.h>
+#include <petscmat.h>
+#include <petscsnes.h>
+#include <petscts.h>
 
 #include <definitions.h>
 #include <h1_hdiv_hcurl_l2.h>
@@ -57,46 +57,48 @@ extern "C" {
 
 namespace MoFEM {
 
-template<class T> 
+template<class T>
 void cOnstructor(DataForcesAndSurcesCore *data,EntityType type,T) {
-    
-    switch (type) {
-      case MBTET:
-	data->dataOnEntities[MBVERTEX].push_back(new T());
-	for(int ee = 0;ee<6;ee++) {
-	  data->dataOnEntities[MBEDGE].push_back(new T());
-	}
-	for(int ff = 0;ff<4;ff++) {
-	  data->dataOnEntities[MBTRI].push_back(new T());
-	}
-	data->dataOnEntities[MBTET].push_back(new T());
-	break;
-      case MBTRI:
-	data->dataOnEntities[MBVERTEX].push_back(new T());
-	for(int ee = 0;ee<3;ee++) {
-	  data->dataOnEntities[MBEDGE].push_back(new T());
-	}
-	data->dataOnEntities[MBTRI].push_back(new T());
-	break;
-      case MBEDGE:
-	data->dataOnEntities[MBVERTEX].push_back(new T());
-	data->dataOnEntities[MBEDGE].push_back(new T());
-	break;
-      case MBVERTEX:
-	data->dataOnEntities[MBVERTEX].push_back(new T());
-	break;
-      case MBPRISM:
-	data->dataOnEntities[MBVERTEX].push_back(new T());
-	for(int ee = 0;ee<9;ee++) {
-	  data->dataOnEntities[MBEDGE].push_back(new T());
-	}
-	for(int ff = 0;ff<5;ff++) {
-	  data->dataOnEntities[MBTRI].push_back(new T());
-	}
-	break;
-      default:
-	throw("not implemenyed");
+
+  data->dataOnEntities[MBENTITYSET].push_back(new T());
+
+  switch (type) {
+    case MBTET:
+    data->dataOnEntities[MBVERTEX].push_back(new T());
+    for(int ee = 0;ee<6;ee++) {
+      data->dataOnEntities[MBEDGE].push_back(new T());
     }
+    for(int ff = 0;ff<4;ff++) {
+      data->dataOnEntities[MBTRI].push_back(new T());
+    }
+    data->dataOnEntities[MBTET].push_back(new T());
+    break;
+    case MBTRI:
+    data->dataOnEntities[MBVERTEX].push_back(new T());
+    for(int ee = 0;ee<3;ee++) {
+      data->dataOnEntities[MBEDGE].push_back(new T());
+    }
+    data->dataOnEntities[MBTRI].push_back(new T());
+    break;
+    case MBEDGE:
+    data->dataOnEntities[MBVERTEX].push_back(new T());
+    data->dataOnEntities[MBEDGE].push_back(new T());
+    break;
+    case MBVERTEX:
+    data->dataOnEntities[MBVERTEX].push_back(new T());
+    break;
+    case MBPRISM:
+    data->dataOnEntities[MBVERTEX].push_back(new T());
+    for(int ee = 0;ee<9;ee++) {
+      data->dataOnEntities[MBEDGE].push_back(new T());
+    }
+    for(int ff = 0;ff<5;ff++) {
+      data->dataOnEntities[MBTRI].push_back(new T());
+    }
+    break;
+    default:
+    throw("not implemenyed");
+  }
 
 }
 
@@ -107,30 +109,30 @@ DataForcesAndSurcesCore::DataForcesAndSurcesCore(EntityType type) {
 
 DerivedDataForcesAndSurcesCore::DerivedDataForcesAndSurcesCore(DataForcesAndSurcesCore &data): DataForcesAndSurcesCore() {
 
-    boost::ptr_vector<EntData>::iterator iit;
+  boost::ptr_vector<EntData>::iterator iit;
 
-    boost::ptr_vector<EntData>::iterator it;
-    for(it = data.dataOnEntities[MBVERTEX].begin();it!=data.dataOnEntities[MBVERTEX].end();it++) {
-      dataOnEntities[MBVERTEX].push_back(new DerivedEntData(*it));
-    }
-    for(it = data.dataOnEntities[MBEDGE].begin();it!=data.dataOnEntities[MBEDGE].end();it++) {
-      dataOnEntities[MBEDGE].push_back(new DerivedEntData(*it));
-    }
-    for(it = data.dataOnEntities[MBTRI].begin();it!=data.dataOnEntities[MBTRI].end();it++) {
-      dataOnEntities[MBTRI].push_back(new DerivedEntData(*it));
-    }
-    for(it = data.dataOnEntities[MBTET].begin();it!=data.dataOnEntities[MBTET].end();it++) {
-      dataOnEntities[MBTET].push_back(new DerivedEntData(*it));
-    }
+  boost::ptr_vector<EntData>::iterator it;
+  for(it = data.dataOnEntities[MBVERTEX].begin();it!=data.dataOnEntities[MBVERTEX].end();it++) {
+    dataOnEntities[MBVERTEX].push_back(new DerivedEntData(*it));
   }
+  for(it = data.dataOnEntities[MBEDGE].begin();it!=data.dataOnEntities[MBEDGE].end();it++) {
+    dataOnEntities[MBEDGE].push_back(new DerivedEntData(*it));
+  }
+  for(it = data.dataOnEntities[MBTRI].begin();it!=data.dataOnEntities[MBTRI].end();it++) {
+    dataOnEntities[MBTRI].push_back(new DerivedEntData(*it));
+  }
+  for(it = data.dataOnEntities[MBTET].begin();it!=data.dataOnEntities[MBTET].end();it++) {
+    dataOnEntities[MBTET].push_back(new DerivedEntData(*it));
+  }
+}
 
 ostream& operator<<(ostream& os,const DataForcesAndSurcesCore::EntData &e) {
-  os << 
-    "sEnse: " << e.getSense() << endl << 
+  os <<
+    "sEnse: " << e.getSense() << endl <<
     "oRder: " << e.getOrder() << endl <<
     "iNdices: " << e.getIndices() << endl;
   os.precision(2);
-  os << 
+  os <<
     "fieldData: " << std::fixed << e.getFieldData() << endl;
   os <<
     "N: " << std::fixed << e.getN() << endl <<
@@ -153,6 +155,5 @@ ostream& operator<<(ostream& os,const DataForcesAndSurcesCore &e) {
   }
   return os;
 }
-
 
 }

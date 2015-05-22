@@ -59,9 +59,7 @@ int main(int argc, char *argv[]) {
 
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-  BARRIER_RANK_START(pcomm) 
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
-  BARRIER_RANK_END(pcomm) 
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
 
   //set entitities bit level
   BitRefLevel bit_level0;
@@ -72,25 +70,33 @@ int main(int argc, char *argv[]) {
 
   //Fields
   ierr = m_field.add_field("FIELD1",H1,3); CHKERRQ(ierr);
+  ierr = m_field.add_field("FIELD2",NOFIELD,3); CHKERRQ(ierr);
 
   //FE
-  ierr = m_field.add_finite_element("TEST_FE"); CHKERRQ(ierr);
+  ierr = m_field.add_finite_element("TEST_FE1"); CHKERRQ(ierr);
+  ierr = m_field.add_finite_element("TEST_FE2"); CHKERRQ(ierr);
 
   //Define rows/cols and element data
-  ierr = m_field.modify_finite_element_add_field_row("TEST_FE","FIELD1"); CHKERRQ(ierr);
-  ierr = m_field.modify_finite_element_add_field_col("TEST_FE","FIELD1"); CHKERRQ(ierr);
-  ierr = m_field.modify_finite_element_add_field_data("TEST_FE","FIELD1"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_row("TEST_FE1","FIELD1"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_col("TEST_FE1","FIELD1"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_data("TEST_FE1","FIELD1"); CHKERRQ(ierr);
+
+  ierr = m_field.modify_finite_element_add_field_row("TEST_FE2","FIELD2"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_col("TEST_FE2","FIELD1"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_data("TEST_FE2","FIELD1"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_data("TEST_FE2","FIELD2"); CHKERRQ(ierr);
 
   //Problem
   ierr = m_field.add_problem("TEST_PROBLEM"); CHKERRQ(ierr);
 
   //set finite elements for problem
-  ierr = m_field.modify_problem_add_finite_element("TEST_PROBLEM","TEST_FE"); CHKERRQ(ierr);
+  ierr = m_field.modify_problem_add_finite_element("TEST_PROBLEM","TEST_FE1"); CHKERRQ(ierr);
+  ierr = m_field.modify_problem_add_finite_element("TEST_PROBLEM","TEST_FE2"); CHKERRQ(ierr);
   //set refinment level for problem
   ierr = m_field.modify_problem_ref_level_add_bit("TEST_PROBLEM",bit_level0); CHKERRQ(ierr);
 
   //meshset consisting all entities in mesh
-  EntityHandle root_set = moab.get_root_set(); 
+  EntityHandle root_set = moab.get_root_set();
   //add entities to field
   ierr = m_field.add_ents_to_field_by_TETs(root_set,"FIELD1"); CHKERRQ(ierr);
   //add entities to finite element
@@ -99,7 +105,8 @@ int main(int argc, char *argv[]) {
   Skinner skin(&m_field.get_moab());
   Range tets_skin;
   rval = skin.find_skin(0,tets,false,tets_skin); CHKERR(rval);
-  ierr = m_field.add_ents_to_finite_element_by_TRIs(tets_skin,"TEST_FE"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_finite_element_by_TRIs(tets_skin,"TEST_FE1"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_finite_element_by_TRIs(tets_skin,"TEST_FE2"); CHKERRQ(ierr);
 
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
@@ -124,27 +131,25 @@ int main(int argc, char *argv[]) {
   ierr = m_field.build_problems(); CHKERRQ(ierr);
 
   /****/
-  //mesh partitioning 
+  //mesh partitioning
   //partition
   ierr = m_field.partition_simple_problem("TEST_PROBLEM"); CHKERRQ(ierr);
   ierr = m_field.partition_finite_elements("TEST_PROBLEM"); CHKERRQ(ierr);
   //what are ghost nodes, see Petsc Manual
   ierr = m_field.partition_ghost_dofs("TEST_PROBLEM"); CHKERRQ(ierr);
 
-  FaceElementForcesAndSourcesCore fe1(m_field);
-
   typedef tee_device<ostream, ofstream> TeeDevice;
   typedef stream<TeeDevice> TeeStream;
 
   ofstream ofs("forces_and_sources_testing_triangle_element.txt");
-  TeeDevice my_tee(cout, ofs); 
+  TeeDevice my_tee(cout, ofs);
   TeeStream my_split(my_tee);
 
-  struct MyOp: public FaceElementForcesAndSourcesCore::UserDataOperator {
+  struct MyOp1: public FaceElementForcesAndSourcesCore::UserDataOperator {
 
     TeeStream &my_split;
-    MyOp(TeeStream &_my_split):
-      FaceElementForcesAndSourcesCore::UserDataOperator("FIELD1","FIELD1"),
+    MyOp1(TeeStream &_my_split,const char type):
+      FaceElementForcesAndSourcesCore::UserDataOperator("FIELD1","FIELD1",type),
       my_split(_my_split) {}
 
     PetscErrorCode doWork(
@@ -155,14 +160,15 @@ int main(int argc, char *argv[]) {
 
       const double eps = 1e-4;
       for(
-	ublas::unbounded_array<double>::iterator it = getNormal().data().begin();
-	it!=getNormal().data().end();it++) {
-	*it = fabs(*it)<eps ? 0.0 : *it;
+        ublas::unbounded_array<double>::iterator it = getNormal().data().begin();
+        it!=getNormal().data().end();it++
+      ) {
+        *it = fabs(*it)<eps ? 0.0 : *it;
       }
 
       my_split << "NH1" << endl;
       my_split << "side: " << side << " type: " << type << endl;
-      my_split << data << endl;
+      my_split << "data: " << data << endl;
       my_split << setprecision(3) << getCoords() << endl;
       my_split << setprecision(3) << getCoordsAtGaussPts() << endl;
       my_split << setprecision(3) << getArea() << endl;
@@ -170,6 +176,7 @@ int main(int argc, char *argv[]) {
       my_split << setprecision(3) << getNormals_at_GaussPt() << endl;
       my_split << setprecision(3) << getTangent1_at_GaussPt() << endl;
       my_split << setprecision(3) << getTangent2_at_GaussPt() << endl;
+      my_split << endl;
       PetscFunctionReturn(0);
     }
 
@@ -177,7 +184,8 @@ int main(int argc, char *argv[]) {
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
       DataForcesAndSurcesCore::EntData &row_data,
-      DataForcesAndSurcesCore::EntData &col_data) {
+      DataForcesAndSurcesCore::EntData &col_data
+    ) {
 
       PetscFunctionBegin;
       my_split << "NH1NH1" << endl;
@@ -189,49 +197,97 @@ int main(int argc, char *argv[]) {
 
 
       PetscErrorCode ierr;
-      ublas::vector<int> row_indices,col_indices;
+      VectorInt row_indices,col_indices;
       ierr = getPorblemRowIndices("FIELD1",row_type,row_side,row_indices); CHKERRQ(ierr);
       ierr = getPorblemColIndices("FIELD1",col_type,col_side,col_indices); CHKERRQ(ierr);
 
       if(row_indices.size()!=row_data.getIndices().size()) {
-	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"row inconsistency");
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"row inconsistency");
       }
 
       if(col_indices.size()!=col_data.getIndices().size()) {
-	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"col inconsistency");
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"col inconsistency");
       }
 
       for(unsigned int rr = 0;rr<row_indices.size();rr++) {
-	if(row_indices[rr] != row_data.getIndices()[rr]) {
-	  cerr << row_indices << endl;
-	  cerr << row_data.getIndices() << endl;
-	  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"row inconsistency");
-	}
+        if(row_indices[rr] != row_data.getIndices()[rr]) {
+          cerr << row_indices << endl;
+          cerr << row_data.getIndices() << endl;
+          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"row inconsistency");
+        }
       }
 
       for(unsigned int cc = 0;cc<col_indices.size();cc++) {
-	if(col_indices[cc] != col_data.getIndices()[cc]) {
-	  cerr << col_indices << endl;
-	  cerr << col_data.getIndices() << endl;
-	  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"row inconsistency");
-	}
+        if(col_indices[cc] != col_data.getIndices()[cc]) {
+          cerr << col_indices << endl;
+          cerr << col_data.getIndices() << endl;
+          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"row inconsistency");
+        }
       }
+
+      my_split << row_data << endl;
 
       PetscFunctionReturn(0);
     }
 
   };
 
-  fe1.getRowOpPtrVector().push_back(new MyOp(my_split));
-  fe1.getRowColOpPtrVector().push_back(new MyOp(my_split));
+  struct MyOp2: public FaceElementForcesAndSourcesCore::UserDataOperator {
 
-  ierr = m_field.loop_finite_elements("TEST_PROBLEM","TEST_FE",fe1);  CHKERRQ(ierr);
+    TeeStream &my_split;
+    MyOp2(TeeStream &_my_split,const char type):
+    FaceElementForcesAndSourcesCore::UserDataOperator("FIELD2","FIELD1",type),
+      my_split(_my_split) {}
 
+    PetscErrorCode doWork(
+      int side,
+      EntityType type,
+      DataForcesAndSurcesCore::EntData &data) {
+      PetscFunctionBegin;
+
+      if(type != MBENTITYSET) PetscFunctionReturn(0);
+
+      my_split << "NOFIELD" << endl;
+      my_split << "side: " << side << " type: " << type << endl;
+      my_split << data << endl;
+      PetscFunctionReturn(0);
+    }
+
+    PetscErrorCode doWork(
+      int row_side,int col_side,
+      EntityType row_type,EntityType col_type,
+      DataForcesAndSurcesCore::EntData &row_data,
+      DataForcesAndSurcesCore::EntData &col_data) {
+      PetscFunctionBegin;
+
+      unSetSymm();
+
+      if(row_type != MBENTITYSET) PetscFunctionReturn(0);
+
+      my_split << "NOFILEDH1" << endl;
+      my_split << "row side: " << row_side << " row_type: " << row_type << endl;
+      my_split << row_data << endl;
+      my_split << "col side: " << col_side << " col_type: " << col_type << endl;
+      my_split << col_data << endl;
+
+      PetscFunctionReturn(0);
+    }
+
+  };
+
+  FaceElementForcesAndSourcesCore fe1(m_field);
+  fe1.getOpPtrVector().push_back(new MyOp1(my_split,ForcesAndSurcesCore::UserDataOperator::OPROW));
+  fe1.getOpPtrVector().push_back(new MyOp1(my_split,ForcesAndSurcesCore::UserDataOperator::OPROWCOL));
+
+  FaceElementForcesAndSourcesCore fe2(m_field);
+  fe2.getOpPtrVector().push_back(new MyOp2(my_split,ForcesAndSurcesCore::UserDataOperator::OPROW));
+  fe2.getOpPtrVector().push_back(new MyOp2(my_split,ForcesAndSurcesCore::UserDataOperator::OPROWCOL));
+
+  ierr = m_field.loop_finite_elements("TEST_PROBLEM","TEST_FE1",fe1);  CHKERRQ(ierr);
+  ierr = m_field.loop_finite_elements("TEST_PROBLEM","TEST_FE2",fe2);  CHKERRQ(ierr);
 
   ierr = PetscFinalize(); CHKERRQ(ierr);
 
   return 0;
 
 }
-
-

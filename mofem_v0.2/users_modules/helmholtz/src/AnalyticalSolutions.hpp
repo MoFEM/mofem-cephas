@@ -83,11 +83,18 @@ struct IncidentWave: public GenericAnalyticalSolution {
   double wAvenumber;
   ublas::vector<double> dIrection;
   ublas::vector<double> cOordinate;
-  double pOwer; /* The amplitude of the incident wave */
-  double pOwerI;
+  double amplitudeReal; ///< The real amplitude of the incident wave
+  double amplitudeImag;
+  double pHase;
 
-  IncidentWave(double wavenumber,ublas::vector<double> d,double power = 1,double i_power = 0):
-    wAvenumber(wavenumber),dIrection(d),pOwer(power),pOwerI(i_power) {}
+  IncidentWave(double wavenumber,ublas::vector<double> d,double r_amplitude = 1,double i_amplitude = 0,double phase = 0):
+    wAvenumber(wavenumber),
+    dIrection(d),
+    amplitudeReal(r_amplitude),
+    amplitudeImag(i_amplitude),
+    pHase(phase)
+    {}
+
   ~IncidentWave() {}
 
   virtual vector<ublas::vector<double> >& operator()(double x, double y, double z) {
@@ -99,7 +106,7 @@ struct IncidentWave: public GenericAnalyticalSolution {
     cOordinate[1] = y;
     cOordinate[2] = z;
 
-    result = (pOwer+i*pOwerI)*exp(i*wAvenumber*inner_prod(dIrection,cOordinate));
+    result = (amplitudeReal+i*amplitudeImag)*exp(i*wAvenumber*inner_prod(dIrection,cOordinate)+i*pHase);
 
     rEsult.resize(2);
     rEsult[REAL].resize(1);
@@ -113,6 +120,76 @@ struct IncidentWave: public GenericAnalyticalSolution {
 
 };
 
+#ifdef KISS_FFT_H
+
+/**
+
+ Incident wave, i.t. is inverse Fourier transform evaluated at arbitrary
+ spatial points.
+
+  */
+struct IncidentWaveDFT: public GenericAnalyticalSolution {
+
+  vector<ublas::vector<double> > rEsult;
+  double signalLength;
+  double signalDuration;
+  ublas::vector<double> dIrection;
+  boost::shared_array<kiss_fft_cpx> complexOut;
+  int sIze;
+  int timeStep;
+  ublas::vector<double> cOordinate;
+
+  IncidentWaveDFT(
+    double signal_length,
+    double signal_duration,
+    ublas::vector<double> &d,
+    boost::shared_array<kiss_fft_cpx> complex_out,
+    int size,
+    int time_step
+    ):
+    signalLength(signal_length),
+    signalDuration(signal_duration),
+    dIrection(d),
+    complexOut(complex_out),
+    sIze(size),
+    timeStep(time_step)
+    {}
+
+  ~IncidentWaveDFT() {}
+
+  virtual vector<ublas::vector<double> >& operator()(double x, double y, double z) {
+
+    const complex< double > i( 0.0, 1.0 );
+    cOordinate.resize(3);
+    cOordinate[0] = x;
+    cOordinate[1] = y;
+    cOordinate[2] = z;
+
+    complex< double > result = 0.0;
+    for(int f = 0;f<sIze;f++) {
+      double speed = signalLength/signalDuration;
+      double wave_number = 2*M_PI*f/signalLength;
+      double delta_t = signalDuration/sIze;
+      double distance = speed*delta_t*timeStep;
+      double phase= 2*M_PI*f*(distance/signalLength);
+      result += (complexOut[f].r+i*complexOut[f].i)*exp(i*wave_number*inner_prod(dIrection,cOordinate)+i*phase);
+    }
+    result /= sIze;
+
+    rEsult.resize(2);
+    rEsult[REAL].resize(1);
+    (rEsult[REAL])[0] = std::real(result);
+    rEsult[IMAG].resize(1);
+    (rEsult[IMAG])[0] = std::imag(result);
+
+    return rEsult;
+
+  }
+
+};
+
+#endif // KISS_FFT_H
+
 /** Calculate the analytical solution of impinging wave on sphere
   \ingroup mofem_helmholtz_elem
 
@@ -125,7 +202,7 @@ struct IncidentWave: public GenericAnalyticalSolution {
   \f]
 
   where \f$h_l\f$ is the Hankel function of the first kind, \f$\phi\f$ is polar
-  angle and \f$A_l\f$ is a constant. Constant is  should be caculated such that
+  angle and \f$A_l\f$ is a constant. Constant is  should be calculated such that
   it satisfies both the Helmholtz wave equation and the Sommerfeld radiation
   condition.
 
@@ -309,7 +386,6 @@ struct SoftSphereScatterWave: public GenericAnalyticalSolution {
 /** \brief Calculate the analytical solution of plane wave guide propagating in direction theta
   \ingroup mofem_helmholtz_elem
 
-
   \f[
   p_\textrm{scattered} = exp^{ik\mathbf{x}\Theta}
   \f]
@@ -399,7 +475,6 @@ struct PlaneWave: public GenericAnalyticalSolution {
     Advances in Engineering Software, 40(8), 738-750.
 
 */
-
 struct HardCylinderScatterWave: public GenericAnalyticalSolution {
 
   vector<complex<double> > vecAl; ///< this is to calculate constant values of series only once
@@ -417,7 +492,7 @@ struct HardCylinderScatterWave: public GenericAnalyticalSolution {
     double x2 = x*x,y2 = y*y;
     double R = sqrt(x2+y2);
     double theta = atan2(y,x)+2*M_PI;
-  //double cos_theta = z/R;
+    //double cos_theta = z/R;
 
     const double k = wAvenumber;  //Wave number
     const double const1 = k * a;
@@ -502,11 +577,11 @@ struct HardCylinderScatterWave: public GenericAnalyticalSolution {
   where a is scatter sphere radius and \f$J_l\f$ Cylindrical Bessel function.
 
   \f[
-  \epsilon_{l} = 1 \text{when}l=0
+  \epsilon_{l} = 1 \textrm{when}l=0
   \f]
 
    \f[
-  \epsilon_{l} = 2 \text{when}l \neq 0
+  \epsilon_{l} = 2 \textrm{when}l \neq 0
   \f]
 
   Paper:
@@ -605,6 +680,61 @@ struct SoftCylinderScatterWave: public GenericAnalyticalSolution {
 
 // **** Function to solve best approximation problem ****
 
+template <typename FUNVAL>
+PetscErrorCode calculate_matrix_and_vector(
+  FieldInterface& m_field,const string &problem_name,const string &fe_name,const string &re_field,
+  Mat A,vector<Vec> vec_F,FUNVAL &fun_evaluator
+) {
+  PetscFunctionBegin;
+
+  PetscErrorCode ierr;
+  FieldApproximationH1 field_approximation(m_field);
+  // This increase rule for numerical integration. In case of 10 node
+  // elements jacobian is varying linearly across element, that way to element
+  // rule is add 1.
+  field_approximation.addToRule = 1;
+
+  ierr = field_approximation.loopMatrixAndVector(
+    problem_name,fe_name,re_field,A,vec_F,fun_evaluator
+  ); CHKERRQ(ierr);
+
+  if(A) {
+    ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+    ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+  }
+
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode save_data_on_mesh(
+  FieldInterface& m_field,const string &problem_name,const string& re_field,const string &im_field,
+  Vec D,int vt,InsertMode mode,PetscBool is_partitioned
+) {
+  PetscFunctionBegin;
+
+  PetscErrorCode ierr;
+  // save data on mesh
+  if(vt == GenericAnalyticalSolution::REAL) {
+    /* set data to field from solution vec */
+    if(is_partitioned) {
+      ierr = m_field.set_local_ghost_vector(problem_name,COL,D,mode,SCATTER_REVERSE); CHKERRQ(ierr);
+    } else {
+      ierr = m_field.set_global_ghost_vector(problem_name,COL,D,mode,SCATTER_REVERSE); CHKERRQ(ierr);
+    }
+
+  } else {
+
+    if(is_partitioned) {
+      ierr = m_field.set_other_local_ghost_vector(problem_name,re_field,im_field,COL,D,mode,SCATTER_REVERSE); CHKERRQ(ierr);
+    } else {
+      ierr = m_field.set_other_global_ghost_vector(problem_name,re_field,im_field,COL,D,mode,SCATTER_REVERSE); CHKERRQ(ierr);
+    }
+
+  }
+
+  PetscFunctionReturn(0);
+}
+
 template <typename FUNEVAL>
 PetscErrorCode solve_problem(FieldInterface& m_field,
   const string& problem_name,const string& fe_name,
@@ -617,6 +747,7 @@ PetscErrorCode solve_problem(FieldInterface& m_field,
 
   Mat A;
   ierr = m_field.MatCreateMPIAIJWithArrays(problem_name,&A); CHKERRQ(ierr);
+  ierr = MatZeroEntries(A); CHKERRQ(ierr);
   Vec D;
 
   vector<Vec> vec_F;
@@ -626,16 +757,13 @@ PetscErrorCode solve_problem(FieldInterface& m_field,
   ierr = m_field.VecCreateGhost(problem_name,ROW,&vec_F[1]); CHKERRQ(ierr); /* imag */
   ierr = m_field.VecCreateGhost(problem_name,COL,&D); CHKERRQ(ierr);
 
-  FieldApproximationH1 field_approximation(m_field);
-  // This increase rule for numerical intergaration. In case of 10 node
-  // elements jacobian is varing lineary across element, that way to element
-  // rule is added 1.
-  field_approximation.addToRule = 1;
+  for(int ss = 0;ss<2;ss++) {
+    ierr = VecZeroEntries(vec_F[ss]); CHKERRQ(ierr);
+    ierr = VecGhostUpdateBegin(vec_F[ss],INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecGhostUpdateEnd(vec_F[ss],INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  }
 
-  ierr = field_approximation.loopMatrixAndVector(
-    problem_name,fe_name,re_field,A,vec_F,fun_evaluator); CHKERRQ(ierr);
-  ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-  ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+  ierr = calculate_matrix_and_vector(m_field,problem_name,fe_name,re_field,A,vec_F,fun_evaluator); CHKERRQ(ierr);
 
   KSP solver;
   ierr = KSPCreate(PETSC_COMM_WORLD,&solver); CHKERRQ(ierr);
@@ -644,33 +772,12 @@ PetscErrorCode solve_problem(FieldInterface& m_field,
   ierr = KSPSetUp(solver); CHKERRQ(ierr);
 
   for(int ss = 0;ss<GenericAnalyticalSolution::LAST_VAL_TYPE;ss++) {
-
     // solve problem
     ierr = KSPSolve(solver,vec_F[ss],D); CHKERRQ(ierr);
     ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
-    // save data on mesh
-    if(ss == GenericAnalyticalSolution::REAL) {
-      /* set data to field from solution vec */
-      if(is_partitioned) {
-        ierr = m_field.set_local_ghost_vector(problem_name,COL,D,mode,SCATTER_REVERSE); CHKERRQ(ierr);
-      } else {
-        ierr = m_field.set_global_ghost_vector(problem_name,COL,D,mode,SCATTER_REVERSE); CHKERRQ(ierr);
-      }
-
-      VecZeroEntries(D);
-      ierr = VecGhostUpdateBegin(D,mode,SCATTER_FORWARD); CHKERRQ(ierr);
-      ierr = VecGhostUpdateEnd(D,mode,SCATTER_FORWARD); CHKERRQ(ierr);
-
-    } else {
-      if(is_partitioned) {
-        ierr = m_field.set_other_local_ghost_vector(problem_name,re_field,im_field,COL,D,mode,SCATTER_REVERSE); CHKERRQ(ierr);
-      } else {
-        ierr = m_field.set_other_global_ghost_vector(problem_name,re_field,im_field,COL,D,mode,SCATTER_REVERSE); CHKERRQ(ierr);
-      }
-    }
-
+    ierr = save_data_on_mesh(m_field,problem_name,re_field,im_field,D,ss,mode,is_partitioned); CHKERRQ(ierr);
   }
 
   // clean

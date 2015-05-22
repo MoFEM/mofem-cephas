@@ -1,8 +1,8 @@
-/** \file FEM.h
+/** \file fem_tools.h
  * \brief Core FieldInterface class for user interface
  */
 
-/* 
+/*
  * MoFEM is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
@@ -77,8 +77,8 @@ void print_mat_complex(__CLPK_doublecomplex *M,int m,int n);
 
 /// \brief calculate shape functions on trianangle
 /// \param N shape function array
-/// \param X array of Guass X coordinates 
-/// \param Y array of Guass Y coordinates 
+/// \param X array of Guass X coordinates
+/// \param Y array of Guass Y coordinates
 /// \param G_DIM number of Gauss points
 PetscErrorCode ShapeMBTRI(double *N,const double *X,const double *Y,const int G_DIM);
 /// calculate direvatives of shape functions
@@ -94,7 +94,7 @@ PetscErrorCode ShapeFaceBaseMBTRI(
   double *normal,double *s1,double *s2);
 /// calculate direvative of normal in respect to nodal positions
 PetscErrorCode ShapeFaceDiffNormalMBTRI(double *diffN,const double *coords,double *diff_normal);
-/// calculate jacobioan 
+/// calculate jacobioan
 void ShapeJacMBTRI(double *diffN,const double *coords,double *Jac);
 /// calculate direvatives of shape functions in space
 void ShapeDiffMBTRIinvJ(double *diffN,double *invJac,double *diffNinvJac);
@@ -134,7 +134,7 @@ PetscErrorCode Normal_hierarchical(
 PetscErrorCode Base_scale(
   __CLPK_doublecomplex *xnormal,__CLPK_doublecomplex *xs1,__CLPK_doublecomplex *xs2);
 
-/** 
+/**
  * \brief calculate local coordinates for given global coordinates
  *
  * new verison for multiple points need to be implemented
@@ -144,7 +144,7 @@ PetscErrorCode ShapeMBTET_inverse(double *N,double *diffN,const double *elem_coo
 /// calculate gradient of deformation
 PetscErrorCode GradientOfDeformation(double *diffN,double *dofs,double *F);
 
-/** 
+/**
  * \brief Calculate Lagrange approximation basis
  *
  * \param p is approximation order
@@ -155,7 +155,7 @@ PetscErrorCode GradientOfDeformation(double *diffN,double *dofs,double *F);
  * \param dim dimension
  */
 PetscErrorCode Lagrange_basis(int p,double s,double *diff_s,double *L,double *diffL,const int dim);
-/** 
+/**
  * \brief Calculate Gegenbauer Polynomials and their derivatives
  *
  * \param p is approximation order
@@ -202,30 +202,30 @@ PetscErrorCode Grundmann_Moeller_integration_points_3D_TET(int rule,double *G_TE
 //http://people.sc.fsu.edu/~jburkardt/datasets/quadrature_rules_tet/quadrature_rules_tet.html
 //TRI
 static const double G_TRI_X1[] = {
-3.3333333333333331e-01 
+3.3333333333333331e-01
 };
 static const double G_TRI_Y1[] = {
-3.3333333333333331e-01 
+3.3333333333333331e-01
 };
 static const double G_TRI_W1[] = {
-1. 
+1.
 };
 static const double G_TRI_X3[] = {
-0.5, 0., 0.5 
+0.5, 0., 0.5
 };
 static const double G_TRI_Y3[] = {
-0., 0.5, 0.5 
+0., 0.5, 0.5
 };
 static const double G_TRI_W3[] = {
-3.3333333333333331e-01, 3.3333333333333331e-01, 3.3333333333333331e-01 
+3.3333333333333331e-01, 3.3333333333333331e-01, 3.3333333333333331e-01
 };
 static const double G_TRI_X4[] = {
 7.503111022260811058e-02, 1.785587282636164064e-01,
-2.800199154990741235e-01, 6.663902460147014262e-01 
+2.800199154990741235e-01, 6.663902460147014262e-01
 };
 static const double G_TRI_Y4[] = {
 2.800199154990741235e-01, 6.663902460147014262e-01,
-7.503111022260811058e-02, 1.785587282636164064e-01 
+7.503111022260811058e-02, 1.785587282636164064e-01
 };
 static const double G_TRI_W4[] = {
 1.8195861825602258066e-01, 3.1804138174397683647e-01,
@@ -258,7 +258,7 @@ static const double G_TRI_W13[] = {
  -0.149570044467670, 0.175615257433204, 0.175615257433204, 0.175615257433204, 0.053347235608839,
   0.053347235608839, 0.053347235608839, 0.077113760890257, 0.077113760890257, 0.077113760890257,
   0.077113760890257, 0.077113760890257, 0.077113760890257 };
-    
+
 static const double G_TRI_X19[] = {
 0.333333333333333, 0.797426985353087, 0.101286507323456, 0.101286507323456, 0.059715871789770,
 0.470142064105115, 0.470142064105115, 0.535795346449899, 0.232102326775050, 0.232102326775050,
@@ -274,7 +274,7 @@ static const double G_TRI_W19[] = {
 7.78275410047754301E-002, 7.78275410047754301E-002, 7.96477389272090969E-002, 7.96477389272090969E-002, 7.96477389272090969E-002,
 2.55776756586981006E-002, 2.55776756586981006E-002, 2.55776756586981006E-002, 4.32835393772893970E-002, 4.32835393772893970E-002,
 4.32835393772893970E-002, 4.32835393772893970E-002, 4.32835393772893970E-002, 4.32835393772893970E-002};
-	 
+
 static const double G_TRI_X28[] = {
 0.333333333333333,   0.948021718143423,   0.025989140928288,   0.025989140928288,   0.811424994704155,
 0.094287502647923,   0.094287502647923,   0.010726449965571,   0.494636775017215,   0.494636775017215,
@@ -296,7 +296,7 @@ static const double G_TRI_W28[] = {
 0.06932913870553720,  0.04105631542928860,  0.04105631542928860,   0.04105631542928860,   0.04105631542928860,
 0.04105631542928860,  0.04105631542928860,  0.007362383783300573,  0.007362383783300573,  0.007362383783300573,
 0.007362383783300573, 0.007362383783300573, 0.007362383783300573};
-    
+
 static const double G_TRI_X37[] = {
 0.333333333333333,   0.950275662924106,   0.024862168537947,   0.024862168537947,   0.171614914923835,
 0.414192542538082,   0.414192542538082,   0.539412243677190,   0.230293878161405,   0.230293878161405,
@@ -457,35 +457,35 @@ static const double G_TET_X4[] = {
 0.5556470949048655, 0.0240937534217468
 };
 static const double G_TET_Y4[] = {
-0.5656137776620919, 0.0501800797762026, 
+0.5656137776620919, 0.0501800797762026,
 0.1487681308666864, 0.2354380116950194
 };
 static const double G_TET_Z4[] = {
-0.2180665126782654, 0.5635595064952189, 
+0.2180665126782654, 0.5635595064952189,
 0.0350112499848832, 0.1833627308416330
 };
 static const double G_TET_W4[] = {
 0.25,0.25,0.25,0.25
 };
 static const double G_TET_X5[] = {
-0.25000000000000000, 0.50000000000000000, 
-0.16666666666666667, 0.16666666666666667, 
-0.16666666666666667 
+0.25000000000000000, 0.50000000000000000,
+0.16666666666666667, 0.16666666666666667,
+0.16666666666666667
 };
 static const double G_TET_Y5[] = {
-0.25000000000000000, 0.16666666666666667, 
-0.50000000000000000, 0.16666666666666667, 
+0.25000000000000000, 0.16666666666666667,
+0.50000000000000000, 0.16666666666666667,
 0.16666666666666667
 };
 static const double G_TET_Z5[] = {
-0.25000000000000000, 0.16666666666666667, 
-0.16666666666666667, 0.50000000000000000, 
+0.25000000000000000, 0.16666666666666667,
+0.16666666666666667, 0.50000000000000000,
 0.16666666666666667
 };
 static const double G_TET_W5[] = {
--0.80000000000000000, 0.45000000000000000, 
-0.45000000000000000, 0.45000000000000000, 
-0.45000000000000000 
+-0.80000000000000000, 0.45000000000000000,
+0.45000000000000000, 0.45000000000000000,
+0.45000000000000000
 };
 static const double G_TET_X10[] = {
   0.5684305841968444, 0.1438564719343852, 0.1438564719343852, 0.1438564719343852,
@@ -493,8 +493,8 @@ static const double G_TET_X10[] = {
   0.0000000000000000, 0.0000000000000000
 };
 static const double G_TET_Y10[] = {
-  0.1438564719343852, 0.1438564719343852, 0.1438564719343852, 0.5684305841968444, 
-  0.5000000000000000, 0.0000000000000000, 0.5000000000000000, 0.0000000000000000, 
+  0.1438564719343852, 0.1438564719343852, 0.1438564719343852, 0.5684305841968444,
+  0.5000000000000000, 0.0000000000000000, 0.5000000000000000, 0.0000000000000000,
   0.5000000000000000, 0.0000000000000000
 };
 static const double G_TET_Z10[] = {

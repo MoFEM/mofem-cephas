@@ -53,36 +53,35 @@ struct AnalyticalDirihletBC {
 
       ublas::matrix<double> &hoCoords;
       OpHoCoord(const string field_name,ublas::matrix<double> &ho_coords):
-	FaceElementForcesAndSourcesCore::UserDataOperator(field_name),
-	hoCoords(ho_coords) {}
+      FaceElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
+      hoCoords(ho_coords) {}
 
-      PetscErrorCode doWork(
-	int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
-	PetscFunctionBegin;
+      PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+        PetscFunctionBegin;
 
-	try {
+        try {
 
-	  if(data.getFieldData().size()==0) PetscFunctionReturn(0);
+          if(data.getFieldData().size()==0) PetscFunctionReturn(0);
 
-	  hoCoords.resize(data.getN().size1(),3);
-	  if(type == MBVERTEX) {
-	    hoCoords.clear();
-	  }
+          hoCoords.resize(data.getN().size1(),3);
+          if(type == MBVERTEX) {
+            hoCoords.clear();
+          }
 
-	  int nb_dofs = data.getFieldData().size();
-	  for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
-	    for(int dd = 0;dd<3;dd++) {
-	      hoCoords(gg,dd) += cblas_ddot(nb_dofs/3,&data.getN(gg)[0],1,&data.getFieldData()[dd],3);
-	    }
-	  }
+          int nb_dofs = data.getFieldData().size();
+          for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
+            for(int dd = 0;dd<3;dd++) {
+              hoCoords(gg,dd) += cblas_ddot(nb_dofs/3,&data.getN(gg)[0],1,&data.getFieldData()[dd],3);
+            }
+          }
 
-	} catch (const std::exception& ex) {
-	  ostringstream ss;
-	  ss << "throw in method: " << ex.what() << endl;
-	  SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
-	}
+        } catch (const std::exception& ex) {
+          ostringstream ss;
+          ss << "throw in method: " << ex.what() << endl;
+          SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+        }
 
-	PetscFunctionReturn(0);
+        PetscFunctionReturn(0);
       }
 
     };
@@ -94,128 +93,129 @@ struct AnalyticalDirihletBC {
 
       ublas::matrix<double> &hoCoords;
       OpLhs(const string field_name,ublas::matrix<double> &ho_coords):
-	FaceElementForcesAndSourcesCore::UserDataOperator(field_name),
-	hoCoords(ho_coords) { }
+      FaceElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROWCOL),
+      hoCoords(ho_coords) { }
 
       ublas::matrix<FieldData> NN,transNN;
       PetscErrorCode doWork(
-	int row_side,int col_side,
-	EntityType row_type,EntityType col_type,
-	DataForcesAndSurcesCore::EntData &row_data,
-	DataForcesAndSurcesCore::EntData &col_data) {
-	PetscFunctionBegin;
+        int row_side,int col_side,
+        EntityType row_type,EntityType col_type,
+        DataForcesAndSurcesCore::EntData &row_data,
+        DataForcesAndSurcesCore::EntData &col_data
+      ) {
+        PetscFunctionBegin;
 
-	PetscFunctionBegin;
+        PetscFunctionBegin;
 
-	if(row_data.getIndices().size()==0) PetscFunctionReturn(0);
-	if(col_data.getIndices().size()==0) PetscFunctionReturn(0);
+        if(row_data.getIndices().size()==0) PetscFunctionReturn(0);
+        if(col_data.getIndices().size()==0) PetscFunctionReturn(0);
 
-	PetscErrorCode ierr;
+        PetscErrorCode ierr;
 
-	const FENumeredDofMoFEMEntity *dof_ptr;
-	ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(row_data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
-	int rank = dof_ptr->get_max_rank();
+        const FENumeredDofMoFEMEntity *dof_ptr;
+        ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(row_data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
+        int rank = dof_ptr->get_max_rank();
 
-	int nb_row_dofs = row_data.getIndices().size()/rank;
-	int nb_col_dofs = col_data.getIndices().size()/rank;
+        int nb_row_dofs = row_data.getIndices().size()/rank;
+        int nb_col_dofs = col_data.getIndices().size()/rank;
 
-	NN.resize(nb_row_dofs,nb_col_dofs);
-	NN.clear();
+        NN.resize(nb_row_dofs,nb_col_dofs);
+        NN.clear();
 
-	unsigned int nb_gauss_pts = row_data.getN().size1();
-	for(unsigned int gg = 0;gg<nb_gauss_pts;gg++) {
+        unsigned int nb_gauss_pts = row_data.getN().size1();
+        for(unsigned int gg = 0;gg<nb_gauss_pts;gg++) {
 
-	  double w = getGaussPts()(2,gg);
-	  if(hoCoords.size1() == row_data.getN().size1()) {
+          double w = getGaussPts()(2,gg);
+          if(hoCoords.size1() == row_data.getN().size1()) {
 
-      // higher order element
-      double area = norm_2(getNormals_at_GaussPt(gg))*0.5;
-      w *= area;
+            // higher order element
+            double area = norm_2(getNormals_at_GaussPt(gg))*0.5;
+            w *= area;
 
-    } else {
+          } else {
 
-      //linear element
-      w *= getArea();
+            //linear element
+            w *= getArea();
 
-    }
+          }
 
-	  cblas_dger(CblasRowMajor,
-	    nb_row_dofs,nb_col_dofs,
-	    w,&row_data.getN()(gg,0),1,&col_data.getN()(gg,0),1,
-	    &*NN.data().begin(),nb_col_dofs);
+          cblas_dger(CblasRowMajor,
+            nb_row_dofs,nb_col_dofs,
+            w,&row_data.getN()(gg,0),1,&col_data.getN()(gg,0),1,
+            &*NN.data().begin(),nb_col_dofs);
 
-	}
+          }
 
-	if( (row_type != col_type) || (row_side != col_side) ) {
-	  transNN.resize(nb_col_dofs,nb_row_dofs);
-	  ublas::noalias(transNN) = trans(NN);
-	}
+          if( (row_type != col_type) || (row_side != col_side) ) {
+            transNN.resize(nb_col_dofs,nb_row_dofs);
+            ublas::noalias(transNN) = trans(NN);
+          }
 
-	double *data = &*NN.data().begin();
-	double *trans_data = &*transNN.data().begin();
-	ublas::vector<DofIdx> row_indices,col_indices;
-	row_indices.resize(nb_row_dofs);
-	col_indices.resize(nb_col_dofs);
+          double *data = &*NN.data().begin();
+          double *trans_data = &*transNN.data().begin();
+          ublas::vector<DofIdx> row_indices,col_indices;
+          row_indices.resize(nb_row_dofs);
+          col_indices.resize(nb_col_dofs);
 
-	for(int rr = 0;rr < rank; rr++) {
+          for(int rr = 0;rr < rank; rr++) {
 
-	  if((row_data.getIndices().size()%rank)!=0) {
-	    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
-	  }
+            if((row_data.getIndices().size()%rank)!=0) {
+              SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+            }
 
-	  if((col_data.getIndices().size()%rank)!=0) {
-	    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
-	  }
+            if((col_data.getIndices().size()%rank)!=0) {
+              SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+            }
 
-	  unsigned int nb_rows;
-	  unsigned int nb_cols;
-	  int *rows;
-	  int *cols;
+            unsigned int nb_rows;
+            unsigned int nb_cols;
+            int *rows;
+            int *cols;
 
 
-	  if(rank > 1) {
+            if(rank > 1) {
 
-	    ublas::noalias(row_indices) = ublas::vector_slice<ublas::vector<DofIdx> >
-	      (row_data.getIndices(), ublas::slice(rr, rank, row_data.getIndices().size()/rank));
-	    ublas::noalias(col_indices) = ublas::vector_slice<ublas::vector<DofIdx> >
-	      (col_data.getIndices(), ublas::slice(rr, rank, col_data.getIndices().size()/rank));
+              ublas::noalias(row_indices) = ublas::vector_slice<ublas::vector<DofIdx> >
+              (row_data.getIndices(), ublas::slice(rr, rank, row_data.getIndices().size()/rank));
+              ublas::noalias(col_indices) = ublas::vector_slice<ublas::vector<DofIdx> >
+              (col_data.getIndices(), ublas::slice(rr, rank, col_data.getIndices().size()/rank));
 
-	    nb_rows = row_indices.size();
-	    nb_cols = col_indices.size();
-	    rows = &*row_indices.data().begin();
-	    cols = &*col_indices.data().begin();
+              nb_rows = row_indices.size();
+              nb_cols = col_indices.size();
+              rows = &*row_indices.data().begin();
+              cols = &*col_indices.data().begin();
 
-	  } else {
+            } else {
 
-	    nb_rows = row_data.getIndices().size();
-	    nb_cols = col_data.getIndices().size();
-	    rows = &*row_data.getIndices().data().begin();
-	    cols = &*col_data.getIndices().data().begin();
+              nb_rows = row_data.getIndices().size();
+              nb_cols = col_data.getIndices().size();
+              rows = &*row_data.getIndices().data().begin();
+              cols = &*col_data.getIndices().data().begin();
 
-	  }
+            }
 
-	  if(nb_rows != NN.size1()) {
-	    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
-	  }
-	  if(nb_cols != NN.size2()) {
-	    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
-	  }
+            if(nb_rows != NN.size1()) {
+              SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+            }
+            if(nb_cols != NN.size2()) {
+              SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+            }
 
-	  ierr = MatSetValues(getFEMethod()->snes_B,nb_rows,rows,nb_cols,cols,data,ADD_VALUES); CHKERRQ(ierr);
-	  if( (row_type != col_type) || (row_side != col_side) ) {
-	    if(nb_rows != transNN.size2()) {
-	      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
-	    }
-	    if(nb_cols != transNN.size1()) {
-	      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
-	    }
-	    ierr = MatSetValues(getFEMethod()->snes_B,nb_cols,cols,nb_rows,rows,trans_data,ADD_VALUES); CHKERRQ(ierr);
-	  }
+            ierr = MatSetValues(getFEMethod()->snes_B,nb_rows,rows,nb_cols,cols,data,ADD_VALUES); CHKERRQ(ierr);
+            if( (row_type != col_type) || (row_side != col_side) ) {
+              if(nb_rows != transNN.size2()) {
+                SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+              }
+              if(nb_cols != transNN.size1()) {
+                SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+              }
+              ierr = MatSetValues(getFEMethod()->snes_B,nb_cols,cols,nb_rows,rows,trans_data,ADD_VALUES); CHKERRQ(ierr);
+            }
 
-	}
+          }
 
-	PetscFunctionReturn(0);
-      }
+          PetscFunctionReturn(0);
+        }
 
     };
 
@@ -230,88 +230,89 @@ struct AnalyticalDirihletBC {
       int fieldNumber;
 
       OpRhs(const string field_name,Range tris,
-	ublas::matrix<double> &ho_coords,
-	boost::shared_ptr<FUNEVAL> function_evaluator,int field_number):
-	FaceElementForcesAndSourcesCore::UserDataOperator(field_name),tRis(tris),
-	hoCoords(ho_coords),functionEvaluator(function_evaluator),
-	fieldNumber(field_number)  {}
+        ublas::matrix<double> &ho_coords,
+        boost::shared_ptr<FUNEVAL> function_evaluator,int field_number
+      ):
+      FaceElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
+      tRis(tris),
+      hoCoords(ho_coords),functionEvaluator(function_evaluator),
+      fieldNumber(field_number)  {}
 
       ublas::vector<FieldData> NTf;
       ublas::vector<DofIdx> iNdices;
 
-      PetscErrorCode doWork(
-	int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
-	PetscFunctionBegin;
-	PetscErrorCode ierr;
+      PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+        PetscFunctionBegin;
+        PetscErrorCode ierr;
 
-	try {
+        try {
 
-	  unsigned int nb_row = data.getIndices().size();
-	  if(nb_row==0) PetscFunctionReturn(0);
-	  if(tRis.find(getMoFEMFEPtr()->get_ent()) == tRis.end()) {
-	    PetscFunctionReturn(0);
-	  }
+          unsigned int nb_row = data.getIndices().size();
+          if(nb_row==0) PetscFunctionReturn(0);
+          if(tRis.find(getMoFEMFEPtr()->get_ent()) == tRis.end()) {
+            PetscFunctionReturn(0);
+          }
 
-	  const FENumeredDofMoFEMEntity *dof_ptr;
-	  ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
-	  unsigned int rank = dof_ptr->get_max_rank();
+          const FENumeredDofMoFEMEntity *dof_ptr;
+          ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
+          unsigned int rank = dof_ptr->get_max_rank();
 
-	  NTf.resize(nb_row/rank);
+          NTf.resize(nb_row/rank);
           iNdices.resize(nb_row/rank);
 
-	  for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
+          for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
 
-	    double x,y,z;
-	    double val = getGaussPts()(2,gg);
-	    if(hoCoords.size1() == data.getN().size1()) {
-	      double area = norm_2(getNormals_at_GaussPt(gg))*0.5;
-	      val *= area;
-	      x = hoCoords(gg,0);
-	      y = hoCoords(gg,1);
-	      z = hoCoords(gg,2);
-	    } else {
-	      val *= getArea();
-	      x = getCoordsAtGaussPts()(gg,0);
-	      y = getCoordsAtGaussPts()(gg,1);
-	      z = getCoordsAtGaussPts()(gg,2);
-	    }
+            double x,y,z;
+            double val = getGaussPts()(2,gg);
+            if(hoCoords.size1() == data.getN().size1()) {
+              double area = norm_2(getNormals_at_GaussPt(gg))*0.5;
+              val *= area;
+              x = hoCoords(gg,0);
+              y = hoCoords(gg,1);
+              z = hoCoords(gg,2);
+            } else {
+              val *= getArea();
+              x = getCoordsAtGaussPts()(gg,0);
+              y = getCoordsAtGaussPts()(gg,1);
+              z = getCoordsAtGaussPts()(gg,2);
+            }
 
-	    ublas::vector<double> a;
-	    try {
+            ublas::vector<double> a;
+            try {
 
-	      a = (*functionEvaluator)(x,y,z)[fieldNumber];
+              a = (*functionEvaluator)(x,y,z)[fieldNumber];
 
-	    } catch (exception& ex) {
-	      ostringstream ss;
-	      ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
-	      SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
-	    }
-	    if(a.size()!=rank) {
-	      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
-	    }
-
-
-	    for(unsigned int rr = 0;rr<rank;rr++) {
-
-	      ublas::noalias(iNdices) = ublas::vector_slice<ublas::vector<int> >
-		(data.getIndices(), ublas::slice(rr, rank, data.getIndices().size()/rank));
-
-	      noalias(NTf) = data.getN(gg,nb_row/rank)*a[rr]*val;
-	      ierr = VecSetValues(getFEMethod()->snes_f,iNdices.size(),
-		&iNdices[0],&*NTf.data().begin(),ADD_VALUES); CHKERRQ(ierr);
-
-	    }
-
-	  }
+            } catch (exception& ex) {
+              ostringstream ss;
+              ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+              SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+            }
+            if(a.size()!=rank) {
+              SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+            }
 
 
-	} catch (const std::exception& ex) {
-	  ostringstream ss;
-	  ss << "throw in method: " << ex.what() << endl;
-	  SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
-	}
+            for(unsigned int rr = 0;rr<rank;rr++) {
 
-	PetscFunctionReturn(0);
+              ublas::noalias(iNdices) = ublas::vector_slice<ublas::vector<int> >
+              (data.getIndices(), ublas::slice(rr, rank, data.getIndices().size()/rank));
+
+              noalias(NTf) = data.getN(gg,nb_row/rank)*a[rr]*val;
+              ierr = VecSetValues(getFEMethod()->snes_f,iNdices.size(),
+              &iNdices[0],&*NTf.data().begin(),ADD_VALUES); CHKERRQ(ierr);
+
+            }
+
+          }
+
+
+        } catch (const std::exception& ex) {
+          ostringstream ss;
+          ss << "throw in method: " << ex.what() << endl;
+          SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+        }
+
+        PetscFunctionReturn(0);
       }
 
     };
@@ -376,13 +377,13 @@ struct AnalyticalDirihletBC {
     boost::shared_ptr<FUNEVAL> funtcion_evaluator,int field_number = 0,
     string nodals_positions = "MESH_NODE_POSITIONS") {
     PetscFunctionBegin;
-    if(approxField.getLoopFeApprox().getRowOpPtrVector().empty()) {
+    if(approxField.getLoopFeApprox().getOpPtrVector().empty()) {
       if(m_field.check_field(nodals_positions)) {
-	approxField.getLoopFeApprox().getRowOpPtrVector().push_back(new ApproxField::OpHoCoord(nodals_positions,approxField.hoCoords));
+	approxField.getLoopFeApprox().getOpPtrVector().push_back(new ApproxField::OpHoCoord(nodals_positions,approxField.hoCoords));
       }
-      approxField.getLoopFeApprox().getRowColOpPtrVector().push_back(new ApproxField::OpLhs(field_name,approxField.hoCoords));
+      approxField.getLoopFeApprox().getOpPtrVector().push_back(new ApproxField::OpLhs(field_name,approxField.hoCoords));
     }
-    approxField.getLoopFeApprox().getRowOpPtrVector().push_back(new ApproxField::OpRhs<FUNEVAL>(field_name,tris,approxField.hoCoords,funtcion_evaluator,field_number));
+    approxField.getLoopFeApprox().getOpPtrVector().push_back(new ApproxField::OpRhs<FUNEVAL>(field_name,tris,approxField.hoCoords,funtcion_evaluator,field_number));
     PetscFunctionReturn(0);
   }
 

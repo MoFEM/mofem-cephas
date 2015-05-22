@@ -15,7 +15,7 @@
 #include <MoFEM.hpp>
 
 #include <DirichletBC.hpp>
-#include <PotsProcOnRefMesh.hpp>
+#include <PostProcOnRefMesh.hpp>
 #include <ThermalElement.hpp>
 
 #include <Projection10NodeCoordsOnField.hpp>
@@ -255,7 +255,7 @@ int main(int argc, char *argv[]) {
   if(debug) {
     
     PostPocOnRefinedMesh post_proc(m_field);
-    ierr = post_proc.generateRefereneElemenMesh(); CHKERRQ(ierr);
+    ierr = post_proc.generateReferenceElementMesh(); CHKERRQ(ierr);
     ierr = post_proc.addFieldValuesPostProc("TEMP"); CHKERRQ(ierr);
     ierr = post_proc.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
     ierr = post_proc.addFieldValuesGradientPostProc("TEMP"); CHKERRQ(ierr);
