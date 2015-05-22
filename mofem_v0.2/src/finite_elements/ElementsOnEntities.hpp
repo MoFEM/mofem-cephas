@@ -747,19 +747,25 @@ struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
   DataForcesAndSurcesCore dataH1;
   DerivedDataForcesAndSurcesCore derivedDataH1;
   DataForcesAndSurcesCore dataNoField,dataNoFieldCol;
+  string meshPositionsFieldName;
+
+  MatrixDouble tAngent_at_GaussPt;
+  OpGetHoTangentOnEdge opGetHoTangentOnEdge;
 
   EdgeElementForcesAndSurcesCore(FieldInterface &m_field):
     ForcesAndSurcesCore(m_field),
     dataH1(MBEDGE),
     derivedDataH1(dataH1),
     dataNoField(MBEDGE),
-    dataNoFieldCol(MBEDGE)
+    dataNoFieldCol(MBEDGE),
+    meshPositionsFieldName("MESH_NODE_POSITIONS"),
+    opGetHoTangentOnEdge(tAngent_at_GaussPt)
   {};
 
   ErrorCode rval;
   double lEngth;;
   VectorDouble dIrection;
-  VectorDouble coords;
+  VectorDouble cOords;
   MatrixDouble gaussPts;
   MatrixDouble coordsAtGaussPts;
 
@@ -777,9 +783,10 @@ struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
     inline double getLength() { return ptrFE->lEngth; }
     inline VectorDouble& getDirection() { return ptrFE->dIrection; }
-    inline VectorDouble& getCoords() { return ptrFE->coords; }
+    inline VectorDouble& getCoords() { return ptrFE->cOords; }
     inline MatrixDouble& getGaussPts() { return ptrFE->gaussPts; }
     inline MatrixDouble& getCoordsAtGaussPts() { return ptrFE->coordsAtGaussPts; }
+    inline MatrixDouble& getTangetAtGaussPtrs() { return ptrFE->tAngent_at_GaussPt; }
     inline const EdgeElementForcesAndSurcesCore* getEdgeFE() { return ptrFE; }
 
     PetscErrorCode setPtrFE(ForcesAndSurcesCore *ptr) {

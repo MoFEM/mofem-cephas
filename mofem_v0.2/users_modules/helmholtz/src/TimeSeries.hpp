@@ -659,9 +659,13 @@ of boundary conditions could be easily implemented.
       ierr = postProc.addFieldValuesPostProc("P","P_INCIDENT_WAVE",p_inicent_wave); CHKERRQ(ierr);
     }
 
-    Vec p_scatter_wave;
-    ierr = VecDuplicate(pSeriesIncidentWave[0](0),&p_scatter_wave); CHKERRQ(ierr);
-    ierr = postProc.addFieldValuesPostProc("P","P_SCATTER_WAVE",p_scatter_wave); CHKERRQ(ierr);
+    Vec p_scatter_wave_real;
+    ierr = VecDuplicate(pSeriesIncidentWave[0](0),&p_scatter_wave_real); CHKERRQ(ierr);
+    ierr = postProc.addFieldValuesPostProc("P","P_SCATTER_WAVE_REAL",p_scatter_wave_real); CHKERRQ(ierr);
+
+    Vec p_scatter_wave_imag;
+    ierr = VecDuplicate(pSeriesIncidentWave[1](0),&p_scatter_wave_imag); CHKERRQ(ierr);
+    ierr = postProc.addFieldValuesPostProc("P","P_SCATTER_WAVE_IMAG",p_scatter_wave_imag); CHKERRQ(ierr);
 
     int n = sSeries.size();
     for(int k = 0;k<n;k++) {
@@ -670,9 +674,13 @@ of boundary conditions could be easily implemented.
       ierr = VecGhostUpdateBegin(p_inicent_wave,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
       ierr = VecGhostUpdateEnd(p_inicent_wave,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
-      ierr = VecCopy(pSeriesScatterWave[0](k),p_scatter_wave); CHKERRQ(ierr);
-      ierr = VecGhostUpdateBegin(p_scatter_wave,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-      ierr = VecGhostUpdateEnd(p_scatter_wave,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      ierr = VecCopy(pSeriesScatterWave[0](k),p_scatter_wave_real); CHKERRQ(ierr);
+      ierr = VecGhostUpdateBegin(p_scatter_wave_real,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      ierr = VecGhostUpdateEnd(p_scatter_wave_real,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+
+      ierr = VecCopy(pSeriesScatterWave[1](k),p_scatter_wave_imag); CHKERRQ(ierr);
+      ierr = VecGhostUpdateBegin(p_scatter_wave_imag,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      ierr = VecGhostUpdateEnd(p_scatter_wave_imag,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
       ierr = mField.loop_finite_elements("PRESSURE_IN_TIME","PRESSURE_FE",postProc); CHKERRQ(ierr);
 
@@ -688,7 +696,8 @@ of boundary conditions could be easily implemented.
     if(add_incident_wave) {
       ierr = VecDestroy(&p_inicent_wave); CHKERRQ(ierr);
     }
-    ierr = VecDestroy(&p_scatter_wave); CHKERRQ(ierr);
+    ierr = VecDestroy(&p_scatter_wave_real); CHKERRQ(ierr);
+    ierr = VecDestroy(&p_scatter_wave_imag); CHKERRQ(ierr);
 
     PetscFunctionReturn(0);
   }
