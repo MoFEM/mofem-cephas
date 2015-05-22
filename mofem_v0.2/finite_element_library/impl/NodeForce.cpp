@@ -46,9 +46,7 @@ namespace MoFEM {
       const FENumeredDofMoFEMEntity *dof_ptr;
       ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
       int rank = dof_ptr->get_max_rank();
-      if(rank != 3) {
-        SETERRQ(PETSC_COMM_SELF,1,"wrong field rank");
-      }
+
       if(data.getIndices().size()!=(unsigned int)rank) {
         SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
       }
@@ -71,8 +69,10 @@ namespace MoFEM {
       if(useSnesF) {
         myF = getFEMethod()->snes_f;
       }
-      ierr = VecSetValues(myF,data.getIndices().size(),
-      &data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
+      ierr = VecSetValues(
+        myF,data.getIndices().size(),
+        &data.getIndices()[0],&Nf[0],ADD_VALUES
+      ); CHKERRQ(ierr);
 
       PetscFunctionReturn(0);
     }

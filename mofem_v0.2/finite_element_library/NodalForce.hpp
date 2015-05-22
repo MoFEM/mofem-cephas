@@ -109,25 +109,21 @@ struct MetaNodalForces {
     PetscFunctionReturn(0);
   }
 
-  /// Set inergration point operators
+  /// Set integration point operators
   static PetscErrorCode setNodalForceElementOperators(
     FieldInterface &mField,
     boost::ptr_map<string,NodalForce> &nodal_forces,
-    Vec &F,const string field_name) {
-      PetscFunctionBegin;
-      PetscErrorCode ierr;
-      string fe_name;
-      fe_name = "FORCE_FE";
-      nodal_forces.insert(fe_name,new NodalForce(mField));
-      for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET|FORCESET,it)) {
-        ierr = nodal_forces.at(fe_name).addForce(field_name,F,it->get_msId());  CHKERRQ(ierr);
-        /*ForceCubitBcData data;
-        ierr = it->get_bc_data_structure(data); CHKERRQ(ierr);
-        my_split << *it << endl;
-        my_split << data << endl;*/
-      }
-      PetscFunctionReturn(0);
+    Vec &F,const string field_name
+  ) {
+    PetscFunctionBegin;
+    PetscErrorCode ierr;
+    string fe_name = "FORCE_FE";
+    nodal_forces.insert(fe_name,new NodalForce(mField));
+    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET|FORCESET,it)) {
+      ierr = nodal_forces.at(fe_name).addForce(field_name,F,it->get_msId());  CHKERRQ(ierr);
     }
+    PetscFunctionReturn(0);
+  }
 
 };
 

@@ -42,6 +42,7 @@ set(MOFEM_FINITE_ELEMENT_LIBRARY_FILES
   ${PROJECT_SOURCE_DIR}/finite_element_library/impl/DirichletBC.cpp
   ${PROJECT_SOURCE_DIR}/finite_element_library/impl/ThermalElement.cpp
   ${PROJECT_SOURCE_DIR}/finite_element_library/impl/NodeForce.cpp
+  ${PROJECT_SOURCE_DIR}/finite_element_library/impl/EdgeForce.cpp
   ${PROJECT_SOURCE_DIR}/finite_element_library/impl/SurfacePressure.cpp
 )
 

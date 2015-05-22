@@ -836,7 +836,8 @@ PetscErrorCode OpGetNormalsOnPrism::calculateNormals() {
 PetscErrorCode OpSetPiolaTransoformOnTriangle::doWork(
     int side,
     EntityType type,
-    DataForcesAndSurcesCore::EntData &data) {
+    DataForcesAndSurcesCore::EntData &data
+) {
   PetscFunctionBegin;
 
   if(type != MBTRI) PetscFunctionReturn(0);
