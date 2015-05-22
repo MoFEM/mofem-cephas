@@ -62,7 +62,7 @@ namespace MoFEM {
         } else if(rr == 2) {
           Nf[2] = dAta.data.data.value5*dAta.data.data.value1;
         } else {
-          SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
         }
       }
 
@@ -77,7 +77,6 @@ namespace MoFEM {
       PetscFunctionReturn(0);
     }
 
-
     PetscErrorCode NodalForce::addForce(const string field_name,Vec &F,int ms_id,bool use_snes_f) {
       PetscFunctionBegin;
       PetscErrorCode ierr;
@@ -89,7 +88,6 @@ namespace MoFEM {
       fe.getOpPtrVector().push_back(new OpNodalForce(field_name,F,mapForce[ms_id],methodsOp,use_snes_f));
       PetscFunctionReturn(0);
     }
-
 
     MetaNodalForces::TagForceScale::TagForceScale(FieldInterface &m_field): mField(m_field) {
       ErrorCode rval;
@@ -104,7 +102,6 @@ namespace MoFEM {
         rval = mField.get_moab().tag_get_by_ptr(thScale,&root_meshset,1,(const void**)&sCale); CHKERR_THROW(rval);
       }
     }
-
 
     PetscErrorCode MetaNodalForces::TagForceScale::scaleNf(const FEMethod *fe,ublas::vector<FieldData> &Nf) {
       PetscFunctionBegin;

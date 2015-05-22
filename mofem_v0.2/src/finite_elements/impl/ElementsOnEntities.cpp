@@ -1546,7 +1546,11 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
       SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
     }
 
-    if(mField.check_field(meshPositionsFieldName)) {
+
+    if(
+      dataPtr->get<FieldName_mi_tag>().find(meshPositionsFieldName)!=
+      dataPtr->get<FieldName_mi_tag>().end()
+    ) {
       BitFieldId id = mField.get_field_structure(meshPositionsFieldName)->get_id();
       if((fePtr->get_BitFieldId_data()&id).none()) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"no MESH_NODE_POSITIONS in element data");
@@ -1590,6 +1594,11 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
         SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
       }
     } else {
+
+      hoCoordsAtGaussPts.resize(0,0,false);
+      hoGaussPtsInvJac.resize(0,0,false);
+      hoGaussPtsDetJac.resize(0,false);
+
       MatrixDouble diffN(nb_gauss_pts,12);
       for(int gg = 0;gg<nb_gauss_pts;gg++) {
         for(int nn = 0;nn<4;nn++) {
@@ -1600,6 +1609,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
       }
       dataH1.dataOnEntities[MBVERTEX][0].getDiffN().resize(diffN.size1(),diffN.size2(),false);
       dataH1.dataOnEntities[MBVERTEX][0].getDiffN().data().swap(diffN.data());
+
     }
 
     const UserDataOperator::OpType types[2] = {
@@ -1876,10 +1886,10 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
   dataH1.dataOnEntities[MBVERTEX][0].getDiffN().resize(diffN.size1(),diffN.size2(),false);
   dataH1.dataOnEntities[MBVERTEX][0].getDiffN().data().swap(diffN.data());
 
-  if(mField.check_field(meshPositionsFieldName)) {
-    nOrmals_at_GaussPt.resize(nb_gauss_pts,3,false);
-    tAngent1_at_GaussPt.resize(nb_gauss_pts,3,false);
-    tAngent2_at_GaussPt.resize(nb_gauss_pts,3,false);
+  if(
+    dataPtr->get<FieldName_mi_tag>().find(meshPositionsFieldName)!=
+    dataPtr->get<FieldName_mi_tag>().end()
+  ) {
     ierr = getEdgesOrder(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
     ierr = getTrisOrder(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
     ierr = getNodesFieldData(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
@@ -1896,6 +1906,12 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
       ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
     }
+  } else {
+
+    nOrmals_at_GaussPt.resize(0,0,false);
+    tAngent1_at_GaussPt.resize(0,0,false);
+    tAngent2_at_GaussPt.resize(0,0,false);
+
   }
 
   if(dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
@@ -2083,8 +2099,11 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
   }
   //cerr << coordsAtGaussPts << endl;
 
-  tAngent_at_GaussPt.resize(0,3,false);
-  if(mField.check_field(meshPositionsFieldName)) {
+  if(
+    dataPtr->get<FieldName_mi_tag>().find(meshPositionsFieldName)!=
+    dataPtr->get<FieldName_mi_tag>().end()
+  ) {
+
     ierr = getEdgesOrder(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
     ierr = getNodesFieldData(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
     ierr = getEdgesFieldData(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
@@ -2095,6 +2114,8 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
       ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
     }
+  } else {
+    tAngent_at_GaussPt.resize(0,3,false);
   }
 
   const UserDataOperator::OpType types[2] = {
@@ -2445,7 +2466,11 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
     }
 
     try {
-      if(mField.check_field(meshPositionsFieldName)) {
+
+      if(
+        dataPtr->get<FieldName_mi_tag>().find(meshPositionsFieldName)!=
+        dataPtr->get<FieldName_mi_tag>().end()
+      ) {
         nOrmals_at_GaussPtF3.resize(nb_gauss_pts,3,false);
         tAngent1_at_GaussPtF3.resize(nb_gauss_pts,3,false);
         tAngent2_at_GaussPtF3.resize(nb_gauss_pts,3,false);
@@ -2468,6 +2493,13 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
           ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
           SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
         }
+      } else {
+        nOrmals_at_GaussPtF3.resize(0,3,false);
+        tAngent1_at_GaussPtF3.resize(0,3,false);
+        tAngent2_at_GaussPtF3.resize(0,3,false);
+        nOrmals_at_GaussPtF4.resize(0,3,false);
+        tAngent1_at_GaussPtF4.resize(0,3,false);
+        tAngent2_at_GaussPtF4.resize(0,3,false);
       }
     } catch (exception& ex) {
       ostringstream ss;

@@ -674,24 +674,17 @@ PetscErrorCode OpGetData::doWork(
 PetscErrorCode OpGetNormals::doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
   PetscFunctionBegin;
 
-  if(data.getFieldData().size()==0)  PetscFunctionReturn(0);
+  unsigned int nb_dofs = data.getFieldData().size();
+  if(nb_dofs==0)  PetscFunctionReturn(0);
 
-  /*{ // Flat Prism, caculate normals only on face 4, see cannonical orderinf for prism
-    if(ptrFE->get_ent() == MBPRISM) {
-      const int valid_edges[] = {1,1,1, 0,0,0, 0,0,0};
-      const int valid_faces[] = {0,0,0, 1,0};
-      switch (type) {
-	case MBEDGE: { if(!valid_edges[side]) PetscFunctionReturn(0); }
-	case MBTRI: { if(!valid_faces[side]) PetscFunctionReturn(0); }
-	default:
-	break;
-      }
-    }
-  }*/
+  int nb_gauss_pts = data.getN().size1();
+  nOrmals_at_GaussPt.resize(nb_gauss_pts,3,false);
+  tAngent1_at_GaussPt.resize(nb_gauss_pts,3,false);
+  tAngent2_at_GaussPt.resize(nb_gauss_pts,3,false);
 
   switch (type) {
     case MBVERTEX: {
-      for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
+      for(unsigned int gg = 0;gg<nb_gauss_pts;gg++) {
         for(int nn = 0;nn<3;nn++) {
           tAngent1_at_GaussPt(gg,nn) = cblas_ddot(3,&data.getDiffN()(0,0),2,&data.getFieldData()[nn],3);
           tAngent2_at_GaussPt(gg,nn) = cblas_ddot(3,&data.getDiffN()(0,1),2,&data.getFieldData()[nn],3);
@@ -701,30 +694,21 @@ PetscErrorCode OpGetNormals::doWork(int side,EntityType type,DataForcesAndSurces
     break;
     case MBEDGE:
     case MBTRI: {
-      /*cerr << side << " " << type << endl;
-      cerr << data.getN() << endl;
-      cerr << data.getDiffN() << endl;
-      cerr << data.getFieldData() << endl;
-      cerr << "t1 " << tAngent1_at_GaussPt << endl;
-      cerr << "t2 " << tAngent2_at_GaussPt << endl;*/
       if(2*data.getN().size2() != data.getDiffN().size2()) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
       }
-      unsigned int nb_dofs = data.getFieldData().size();
       if(nb_dofs%3!=0) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
       }
       if(nb_dofs > 3*data.getN().size2()) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
       }
-      for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
+      for(unsigned int gg = 0;gg<nb_gauss_pts;gg++) {
         for(int dd = 0;dd<3;dd++) {
           tAngent1_at_GaussPt(gg,dd) += cblas_ddot(nb_dofs/3,&data.getDiffN()(gg,0),2,&data.getFieldData()[dd],3);
           tAngent2_at_GaussPt(gg,dd) += cblas_ddot(nb_dofs/3,&data.getDiffN()(gg,1),2,&data.getFieldData()[dd],3);
         }
       }
-      //cerr << "t1 " << tAngent1_at_GaussPt << endl;
-      //cerr << "t2 " << tAngent2_at_GaussPt << endl;
     }
     break;
     default:

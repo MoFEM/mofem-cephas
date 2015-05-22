@@ -109,7 +109,6 @@ struct MetaNodalForces {
     PetscFunctionReturn(0);
   }
 
-
   /// Set inergration point operators
   static PetscErrorCode setNodalForceElementOperators(
     FieldInterface &mField,
