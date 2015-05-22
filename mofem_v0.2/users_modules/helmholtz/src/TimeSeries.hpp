@@ -97,7 +97,7 @@ struct TimeSeries {
     }
     double no1 = 0.0, no2 = 0.0;
     series[no1] = no2;
-    while(! feof (time_data)){
+    while(! feof (time_data)){ //check if end-of-file is reached
       int n = fscanf(time_data,"%lf %lf",&no1,&no2);
       if((n <= 0)||((no1==0)&&(no2==0))) {
         fgetc(time_data);
@@ -166,10 +166,11 @@ struct TimeSeries {
     map<double,double>::iterator mit = sSeries.begin();
     for(int ii = 0;mit!=sSeries.end();mit++,ii++) {
       complex_in[ii].r = mit->second;
-      complex_in[ii].i = 0;
+      complex_in[ii].i = 0;  //Imaginary parts?
     }
 
     complex_out = boost::shared_array<kiss_fft_cpx>(new kiss_fft_cpx[n]);
+    /* forwardCfg returned from kiss_fft_alloc */
     kiss_fft(forwardCfg,complex_in.get(),complex_out.get());
 
     PetscFunctionReturn(0);

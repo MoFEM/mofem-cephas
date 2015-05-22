@@ -1,0 +1,232 @@
+/*! \page acoustic_wave monochromatic acoustic wave (Usage example)
+
+This is simple example how to run monochromatic acoustic wave problems with analytical solutions. Is is
+directed for beginners starting work with MoFEM.
+\section introduction Introduction
+\subsection introduction_description Description
+Three acoustic problems implemented with analytical solutions, as well as scalar L2 and H1 norm error estimation techniques which can perform convergence tests or for the usage of h&p adaptivity. Due to the large amounts of mathematical formulations, for details of acoustic problems and derivation of analytical solutions please see [1].
+For moFEM feature of Hierarchic finite element referred to [2].
+\subsection introduction_background Background
+
+For the details of SommerFeld boundary condition and Baliss-Turkel Boundary condition see [3], while using hierarchic finite element [2].
+
+\subsection introduction_options options
+There are command line options you can choose from in order to execute the desired
+analysis. The commands of the following are generic for both best_approximation.cpp(calculate analytical solution on computational domain) and
+fe_approximation.cpp(calculate finite element solution on computational domain). The general commands shared by other
+examples will not be addressed here again.
+
+  -my_file input mesh file
+  -my_is_partitioned bool operator indicates whether a partitioned mesh is used.
+  -wave_number a scalar represents the wavenumber k
+  -wave_direction 3*3 unit vector (direction of the incident wave)
+  -analytical_solution_type characters chosen from:
+    -# hard_sphere_incident_wave
+    -# soft_sphere_incident_wave
+    -# plane_wave
+    -# hard_cylinder_scatter_wave
+    -# soft_cylinder_scatter_wave
+    -# incident_wave
+    -# no_analytical_solution
+  -add_incident_wave bool (whether you require a scatterer potential or total potential)
+  -power_of_incident_wave scalar (the amplitude of incident wave)
+  -save_postproc_mesh bool operator whether you want to output the computation results after the refinement in .h5m format.
+  -wave_guide_angle double between 0 - 2 \f$\pi\f$ indicates the propagating angle for wave guide problem only.
+
+\subsection introduction_input_file Input files
+Following description and line commands are in presumption that user parent
+working directory is \em
+users_modules/helmholtz/meshes/ in build directory.
+All input files used in this example can be found in the meshes directory.
+
+
+
+\section wave_guide Wave guide example
+Wave guide problem describes the propagation of Plane Waves with various directions. It is a
+2D problem in general, but can be extended to 3D.
+
+
+
+\subsection wave_guide_input_file Input files
+Mesh file with boundary conditions, material properties can be created with Cubit journal file with plane_wave_cube.jou,
+
+\code
+reset
+Set Maximum Arc_Span 30
+
+brick x 3 y 3 z 0.5
+
+set duplicate block elements on
+
+block 1 volume all
+block 1 name 'MAT_HELMHOLTZ'
+block 1 attribute count 2
+
+#heat Angular Frequency
+block 1 attribute index 1 4
+#Sound of speed
+block 1 attribute index 2 1
+
+block 3 volume all
+block 3 name 'MAT_NORM'
+block 3 attribute count 0
+
+#Apply the analytical incident wave on the boundary of the wave guide problem
+block 4 surface all
+block 4 name 'ANALYTICAL_BC'
+
+volume all scheme Tetmesh
+volume all size auto factor 6.5
+mesh volume all
+
+#set higher order geometry
+set duplicate block elements on
+block 6 tet all
+block 6 element type tetra10
+\endcode
+\subsection execution Executing code
+First run
+\code
+mpirun -np 5 ./best_approximation \
+-my_file plane_wave_cube.cub \
+-my_is_partitioned false \
+-wave_number 3 \
+-wave_direction 1,0,0 \
+-analytical_solution_type plane_wave \
+-save_postproc_mesh true \
+-ksp_type fgmres \
+-pc_type lu \
+-pc_factor_mat_solver_package superlu_dist \
+-ksp_monitor \
+-my_order 5 \
+-my_max_post_proc_ref_level 0 \
+-add_incident_wave false \
+-wave_guide_angle 0
+\endcode
+to calculate the exact solution of plane wave guide problem. Secondly, run
+
+\code
+mpirun -np 5 ./fe_approximation \
+-my_file analytical_solution.h5m \
+-my_is_partitioned false \
+-wave_number 3 \
+-wave_direction 1,0,0 \
+-analytical_solution_type plane_wave \
+-save_postproc_mesh true \
+-ksp_type fgmres \
+-pc_type lu \
+-pc_factor_mat_solver_package mumps \
+-ksp_monitor \
+-my_order 2 \
+-my_max_post_proc_ref_level 0 \
+-add_incident_wave false \
+-wave_guide_angle 0
+\endcode
+to calculate the finite element solution of wave guide problem.
+Finally, run
+
+\code
+mpirun -np 2 ./error_norm \
+-my_file fe_solution.h5m \
+-norm_type l2 \
+-relative_error false \
+-ksp_type fgmres \
+-pc_type lu \
+-pc_factor_mat_solver_package superlu_dist  \
+-ksp_monitor  \
+-my_order 1 \
+-my_max_post_proc_ref_level 0 \
+-save_postproc_mesh true
+\endcode
+will results a .h5m file contains the local error of desired as well as global error prints out on the screen.
+The command -norm_type has two options: h1 and l2 respectively.
+
+\subsection paraview VTK files for paraview
+
+VTK format file can be generated use
+\code
+mbconvert ./xxx.h5m xxx.vtk
+\endcode
+ to be opend by Paraview.
+
+
+\section cylinder_example Cylinder scatterer example
+Cylinder scatterer example describes an infinite height cylinder as a scatterer (either soft or rigid),
+ and an incident wave is impinging from arbitrary directions on the surface of the scatterer. both total acoustic
+  potential and scattering potential filed (pressure) can be calculated from moFEM on the computational domain.
+  quantities of Particle velocity and radius stress will be implemented soon.
+
+\subsection cylinder_input_file Input files
+Mesh file with boundary conditions, material properties can be created with Cubit journal file with impinging_cylinder.jou,
+
+\code
+
+reset
+Set Maximum Arc_Span 30
+
+create cylinder height 0.5 radius 3
+create cylinder height 5 radius 0.5
+chop volume 1  with volume 2
+delete volume 3
+
+block 1 volume all
+block 1 name 'MAT_HELMHOLTZ'
+block 1 attribute count 2
+
+#heat Angular Frequency
+block 1 attribute index 1 10
+#Sound of speed
+block 1 attribute index 2 1
+
+block 3 volume all
+block 3 name 'MAT_NORM'
+block 3 attribute count 0
+
+#Choose from analytical solution or non-reflection BC
+
+#block 4 surface all
+#block 4 name 'ANALYTICAL_BC'
+
+#ommerfeld BC or B-T 1st BC
+block 4 surface 1
+#block 4 name 'SOMMERFELD_BC'
+block 4 name 'BAYLISS_TURKEL_BC'
+
+#Choose whether the scatterer is sound-soft or sound-hard
+block 5 surface 10
+#block 5 name 'SOFT_INCIDENT_WAVE_BC'
+block 5 name 'HARD_INCIDENT_WAVE_BC'
+#block 5 attribute count 2
+## Wave length
+#block 5 attribute index 1 2
+## Power
+#block 5 attribute index 2 1
+
+volume all scheme Tetmesh
+volume all size auto factor 6
+mesh volume all
+
+set duplicate block elements on
+block 6 tet all
+block 6 element type tetra10
+\endcode
+
+
+\subsection execution2 Executing code
+First run
+
+\code
+
+
+
+
+
+
+\subsection reference Reference
+1. Ihlenburg, F. Finite element analysis of acoustic scattering Springer Science & Business Media. 1998
+
+2. M. Ainsworth and J. Coyle. Hierarchic finite element bases on unstructured tetrahedral meshes. International Journal for Numerical Methods in Engineering, 58(14):2103– 2130, 2003.
+
+3. Strouboulis T, Babuska I, Hidajat R.The generalized finite element method for Helmholtz equation. Part II: Effect of choice of handbook functions, error due to absorbing boundary conditions and its assessment. Computer Methods in Applied Mechanics and Engineering 197.5 (2008): 364-380.
+
+ */

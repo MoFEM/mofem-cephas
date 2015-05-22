@@ -25,7 +25,7 @@
 
 
 #include <MoFEM.hpp>
-#include <PostProcOnRefMesh.hpp>
+#include <PotsProcOnRefMesh.hpp>
 #include <NormElement.hpp>
 
 #include <Projection10NodeCoordsOnField.hpp>
@@ -68,8 +68,8 @@ int main(int argc, char *argv[]) {
 	}
 
 
-	//PetscBool userela = PETSC_FALSE;
-	//ierr = PetscOptionsGetBool(NULL,"-relative_error",&userela,NULL); CHKERRQ(ierr);
+	PetscBool userela = PETSC_FALSE;
+	ierr = PetscOptionsGetBool(NULL,"-relative_error",&userela,NULL); CHKERRQ(ierr);
 
 	/* FIX ME, change to enum for better performance */
 	char type_error_norm[255];
@@ -228,9 +228,9 @@ int main(int argc, char *argv[]) {
 
 
 	/*   Set operators  */
-  ierr = norm_elements_re.setNormFiniteElementRhsOperator("erorNORM_re","reEX","rePRES",F,usel2); CHKERRQ(ierr);
+  ierr = norm_elements_re.setNormFiniteElementRhsOperator("erorNORM_re","reEX","rePRES",F,usel2,userela); CHKERRQ(ierr);
   ierr = norm_elements_re.setNormFiniteElementLhsOperator("erorNORM_re","reEX","rePRES",A); CHKERRQ(ierr);
-	ierr = norm_elements_im.setNormFiniteElementRhsOperator("erorNORM_im","imEX","imPRES",G,usel2); CHKERRQ(ierr);
+	ierr = norm_elements_im.setNormFiniteElementRhsOperator("erorNORM_im","imEX","imPRES",G,usel2,userela); CHKERRQ(ierr);
 
 
 
@@ -294,6 +294,22 @@ int main(int argc, char *argv[]) {
 
 
 	/* Global error calculation */
+	//PetscScalar sum_T,sum_D;
+	PetscReal nrm2_T,nrm2_D,nrm2_P,nrm2_M;
+	/* FIXME sum and sqrt of Vector T and D */
+	//ierr = VecSum(T,&sum_T);
+	//ierr = VecSum(D,&sum_D);
+	//nrm2_T = sqrt(abs(sum_T));
+	//nrm2_D = sqrt(abs(sum_D));
+	ierr = VecNorm(T,NORM_2,&nrm2_T);;
+	ierr = VecNorm(D,NORM_2,&nrm2_D); CHKERRQ(ierr);
+
+  Vec P,M;
+	ierr = m_field.VecCreateGhost("EX1_PROBLEM",ROW,&M); CHKERRQ(ierr);
+  ierr = VecDuplicate(M,&P); CHKERRQ(ierr);
+
+	ierr = m_field.set_local_ghost_vector("EX1_PROBLEM",ROW,M,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+	ierr = m_field.set_other_global_ghost_vector("EX1_PROBLEM","reEX","imEX",ROW,P,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
     //PetscPrintf(PETSC_COMM_WORLD,"\n real part of l2 norm of analytical solution is: %f \n",real_analy);
     //PetscPrintf(PETSC_COMM_WORLD,"\n imag part of l2 norm of analytical solution is: %f \n",imag_analy);
@@ -314,6 +330,40 @@ int main(int argc, char *argv[]) {
 
     }
 
+    /* Projection of global error */
+
+	//ierr = VecNorm(M,NORM_FROBENIUS,&nrm2_M);
+	//ierr = VecNorm(P,NORM_2,&nrm2_P); CHKERRQ(ierr);
+	////ierr = VecNorm(M,NORM_INFINITY,&nrm2_M);
+
+
+	////out stream the global error
+	//if(usel2 && !userela) {
+    //  //PetscPrintf(PETSC_COMM_WORLD,"\n The Global L2 error of real field is : %f \n",nrm2_T);
+    //  //PetscPrintf(PETSC_COMM_WORLD,"\n The Global L2 error of imag field is : %f \n",nrm2_D);
+
+    //  PetscPrintf(PETSC_COMM_WORLD,"\n The Global L2 relative error of real field is : %f \n",nrm2_T/nrm2_M);
+    //  PetscPrintf(PETSC_COMM_WORLD,"\n The Global L2 relative error of imag field is : %f \n",nrm2_D/nrm2_P);
+    //  PetscPrintf(PETSC_COMM_WORLD,"\n Global error  of total potential in l2 norm is : %f \n",sqrt((nrm2_T/nrm2_M)*(nrm2_T/nrm2_M) + (nrm2_D/nrm2_P)*(nrm2_D/nrm2_P)));
+    //  //std::cout << "\n The Global L2 relative error of real field is : --\n" << nrm2_T/nrm2_M  << std::endl;
+    //  //std::cout << "\n The Global L2 relative error of imag field is  : --\n" << nrm2_D/nrm2_P << std::endl;
+    //  //cout << "\n Global error  of total potential in l2 norm  \n" << sqrt((nrm2_T/nrm2_M)*(nrm2_T/nrm2_M) + (nrm2_D/nrm2_P)*(nrm2_D/nrm2_P)) << endl;
+	//}
+	//else if(!usel2 && !userela) {
+
+    //  std::cout << "\n The Global H1 relative error of real field is : --\n" << nrm2_T/nrm2_M  << std::endl;
+    //  std::cout << "\n The Global H1 relative error of imag field is  : --\n" << nrm2_D/nrm2_P << std::endl;
+    //  cout << "\n Global error  of total potential in l2 norm  \n" << sqrt((nrm2_T/nrm2_M)*(nrm2_T/nrm2_M) + (nrm2_D/nrm2_P)*(nrm2_D/nrm2_P)) << endl;
+	//}
+	//else if(userela) {
+	//	//NEED TO BE FIXED
+	//	//we need two vector, one is exact solution, one is error in the norm, then find the maximum of
+	//	//two vectors, and devide second one by first one. it is the global pointwise relative error.
+	//	std::cout << "\n The Global least square of H1 Norm of error real field is : --\n" << nrm2_T << std::endl;
+	//	//std::cout << "\n The Global Pointwise of H1 Norm of error for real field is : --\n" << pointwisenorm << std::endl;
+	//}
+
+
 	/*  destroy objects  */
 	ierr = MatDestroy(&A); CHKERRQ(ierr);
 	ierr = VecDestroy(&F); CHKERRQ(ierr);
@@ -323,12 +373,16 @@ int main(int argc, char *argv[]) {
 	ierr = VecDestroy(&G); CHKERRQ(ierr);
 	ierr = VecDestroy(&D); CHKERRQ(ierr);
 
+	ierr = VecDestroy(&M); CHKERRQ(ierr);
+	ierr = VecDestroy(&P); CHKERRQ(ierr);
+
+
     PetscBool save_postproc_mesh = PETSC_TRUE;
     ierr = PetscOptionsGetBool(NULL,"-save_postproc_mesh",&save_postproc_mesh,NULL); CHKERRQ(ierr);
     if(save_postproc_mesh) {
 
       PostPocOnRefinedMesh post_proc1(m_field);
-			ierr = post_proc1.generateReferenceElementMesh(); CHKERRQ(ierr);
+      ierr = post_proc1.generateRefereneElemenMesh(); CHKERRQ(ierr);
       ierr = post_proc1.addFieldValuesPostProc("erorNORM_re"); CHKERRQ(ierr);
       ierr = post_proc1.addFieldValuesPostProc("erorNORM_im"); CHKERRQ(ierr);
       ierr = post_proc1.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
@@ -340,6 +394,10 @@ int main(int argc, char *argv[]) {
 	ierr = PetscTime(&v2);CHKERRQ(ierr);
 	ierr = PetscGetCPUTime(&t2);CHKERRQ(ierr);
 	PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Total Rank %d Time = %f S CPU Time = %f S \n",pcomm->rank(),v2-v1,t2-t1);
+
+	//output the results from Docker
+	//char command1[] = "mbconvert norm_error.h5m ./norm_error.vtk";
+	//int todo1 = system( command1 );
 
 	ierr = PetscFinalize(); CHKERRQ(ierr);
 

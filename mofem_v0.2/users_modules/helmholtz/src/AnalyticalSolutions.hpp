@@ -168,13 +168,13 @@ struct IncidentWaveDFT: public GenericAnalyticalSolution {
 
     for(int f = 0;f<sIze;f++) {
       double speed = signalLength/signalDuration;
-      double wave_number = 2*M_PI*f/signalLength;
+      double wave_number = 2*M_PI*f/signalLength; //? K=w/c
       double delta_t = signalDuration/sIze;
       double distance = speed*delta_t*timeStep;
       double phase= 2*M_PI*f*(distance/signalLength);
       result += (complexOut[f].r+i*complexOut[f].i)*exp(i*wave_number*inner_prod(dIrection,cOordinate)+i*phase);
     }
-    result /= 2*(double)sIze;
+    result /= 2*(double)sIze; //?
 
     rEsult.resize(2);
     rEsult[REAL].resize(1);
@@ -666,7 +666,7 @@ struct SoftCylinderScatterWave: public GenericAnalyticalSolution {
 
     //result *= phi_incident_mag;
 
-    //const complex< double > inc_field = exp( i * k * R * cos( theta ) );  //???? Incident wave
+    //const complex< double > inc_field = exp( i * k * R * cos( theta ) );  
     //const complex< double > total_field = inc_field + result;
     //ofs << theta << "\t" << abs( result ) << "\t" << abs( inc_field ) << "\t" << abs( total_field ) <<  "\t" << R << endl; //write the file
 

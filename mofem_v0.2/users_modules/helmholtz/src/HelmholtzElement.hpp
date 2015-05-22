@@ -253,6 +253,12 @@ struct HelmholtzElement {
 
   };
 
+  /** \brief Calculate the value of the particle velocity at the
+       vertex in volume
+       FIX ME how to retrieve the field data and shape functions on vertex.
+    */
+
+
   /** \brief Calculate pressure and gradient of pressure in volume
     */
   struct OpGetValueAndGradAtGaussPts: public VolumeElementForcesAndSourcesCore::UserDataOperator {
@@ -734,7 +740,7 @@ struct HelmholtzElement {
 
       for(int f = 0;f<size;f++) {
         double speed = signal_length/signal_duration;
-        double wave_number = 2*M_PI*f/signal_length;
+        double wave_number = 2*M_PI*f/signal_length; //2pi/lambda
         double delta_t = signal_duration/size;
         double distance = speed*delta_t*time_step;
         double phase= 2*M_PI*f*(distance/signal_length);

@@ -117,6 +117,10 @@ int main(int argc, char *argv[]) {
     rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
   }
 
+
+  PetscBool practicle_velocity = PETSC_FALSE;
+  ierr = PetscOptionsGetBool(PETSC_NULL,"-practicle_velocity",&practicle_velocity,NULL); CHKERRQ(ierr);
+
   // Create MoFEM (cephas) database
   MoFEM::Core core(moab);
   FieldInterface& m_field = core;
@@ -139,12 +143,24 @@ int main(int argc, char *argv[]) {
   ierr = m_field.add_field("imPRES",H1,1); CHKERRQ(ierr);
   ierr = m_field.add_field("P",H1,1); CHKERRQ(ierr);  // in time domain
 
+  if(practicle_velocity) {
+  //Particle Velocity field, do not confused with speed of sound.
+  ierr = m_field.add_field("reVEL",H1,3); CHKERRQ(ierr);
+  ierr = m_field.add_field("imVEL",H1,3); CHKERRQ(ierr);
+  }
+
   //meshset consisting all entities in mesh
   EntityHandle root_set = moab.get_root_set();
   //add entities to field
   ierr = m_field.add_ents_to_field_by_TETs(root_set,"rePRES"); CHKERRQ(ierr);
   ierr = m_field.add_ents_to_field_by_TETs(root_set,"imPRES"); CHKERRQ(ierr);
   ierr = m_field.add_ents_to_field_by_TETs(root_set,"P"); CHKERRQ(ierr);
+
+  if(practicle_velocity) {
+  //Particle Velocity field, do not confused with speed of sound.
+  ierr = m_field.add_ents_to_field_by_TETs(root_set,"reVEL"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_TETs(root_set,"imVEL"); CHKERRQ(ierr);
+  }
 
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
@@ -168,6 +184,17 @@ int main(int argc, char *argv[]) {
   ierr = m_field.set_field_order(root_set,MBEDGE,"P",order); CHKERRQ(ierr);
   ierr = m_field.set_field_order(root_set,MBVERTEX,"P",1); CHKERRQ(ierr);
 
+  if(practicle_velocity) {
+  //Particle Velocity field, do not confused with speed of sound.
+  ierr = m_field.set_field_order(root_set,MBTET,"reVEL",order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(root_set,MBTRI,"reVEL",order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(root_set,MBEDGE,"reVEL",order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(root_set,MBVERTEX,"reVEL",1); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(root_set,MBTET,"imVEL",order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(root_set,MBTRI,"imVEL",order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(root_set,MBEDGE,"imVEL",order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(root_set,MBVERTEX,"imVEL",1); CHKERRQ(ierr);
+  }
 
   if(!m_field.check_field("MESH_NODE_POSITIONS")) {
 
@@ -223,7 +250,7 @@ int main(int argc, char *argv[]) {
   double power_of_incident_wave = 1;
   ierr = PetscOptionsGetScalar(NULL,"-power_of_incident_wave",&power_of_incident_wave,NULL); CHKERRQ(ierr);
 
-  
+
   // This is added for a case than on some surface, defined by the user a
   // incident plane wave is scattered.
   map<int,PlaneIncidentWaveSacttrerData> planeWaveScatterData;
@@ -260,7 +287,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.modify_problem_add_finite_element("BCREAL_PROBLEM","BCREAL_FE"); CHKERRQ(ierr);
   ierr = m_field.modify_problem_add_finite_element("BCIMAG_PROBLEM","BCIMAG_FE"); CHKERRQ(ierr);
 
-  
+
   // Build problems
   ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
   // Build adjacencies
@@ -362,7 +389,7 @@ int main(int argc, char *argv[]) {
     case SOFT_SPHERE_SCATTER_WAVE:
 
       {
-    
+
       double scattering_sphere_radius = 0.5;
       ierr = PetscOptionsGetScalar(NULL,"-scattering_sphere_radius",&scattering_sphere_radius,NULL); CHKERRQ(ierr);
 
@@ -614,41 +641,41 @@ int main(int argc, char *argv[]) {
     ierr = time_series.destroyPressureSeries(); CHKERRQ(ierr);
 
   }
-  
-  
+
+
   //Vec P,M;
   //ierr = m_field.VecCreateGhost("EX1_PROBLEM",COL,&M); CHKERRQ(ierr);
   //ierr = VecDuplicate(M,&P); CHKERRQ(ierr);
-  
+
   //ierr = m_field.set_local_ghost_vector("EX1_PROBLEM",COL,M,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   //ierr = m_field.set_other_global_ghost_vector("EX1_PROBLEM","reEX","imEX",COL,P,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  
+
   //double nrm2_M;
   //ierr = VecNorm(M,NORM_2,&nrm2_M);  CHKERRQ(ierr);
- 
+
   //Vec V;
   //ierr = m_field.VecCreateGhost("ACOUSTIC_PROBLEM",COL,&V); CHKERRQ(ierr);
   //ierr = m_field.set_local_ghost_vector("ACOUSTIC_PROBLEM",COL,V,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  
+
   //VecScatter scatter_real,scatter_imag;
 
   //ierr = m_field.VecScatterCreate(V,"ACOUSTIC_PROBLEM","rePRES",COL,M,"EX1_PROBLEM","reEX",COL,&scatter_real); CHKERRQ(ierr);
 
   //ierr = m_field.VecScatterCreate(V,"ACOUSTIC_PROBLEM","imPRES",COL,P,"EX1_PROBLEM","reEX",COL,&scatter_imag); CHKERRQ(ierr);
-  
+
   //VecScale(V,-1);
 
   //ierr = VecScatterBegin(scatter_real,V,M,ADD_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   //ierr = VecScatterEnd(scatter_real,V,M,ADD_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  
-  
-  
+
+
+
 
   //double nrm2_ErrM;
   //ierr = VecNorm(M,NORM_2,&nrm2_ErrM);  CHKERRQ(ierr);
   //PetscPrintf(PETSC_COMM_WORLD,"L2 relative error on real field of acoustic problem %6.4e\n",(nrm2_ErrM)/(nrm2_M));
-  
-  
+
+
   //ierr = VecDestroy(&M); CHKERRQ(ierr);
   //ierr = VecDestroy(&P); CHKERRQ(ierr);
   //ierr = VecDestroy(&V); CHKERRQ(ierr);
