@@ -1,5 +1,5 @@
 # ===================== Transversely isotropic RVE ======================================= 
-# 1. Potential flow problem
+
 make trans_iso_potential_flow && mpirun -np 1 ./trans_iso_potential_flow -my_file /mnt/home/Dropbox/DURACOMP_Cal/009_MOFEM/Meshes/RVE_TISO/RVE.cub  -ksp_type fgmres -ksp_gmres_restart 1000 -pc_type asm -sub_pc_type lu -ksp_monitor -my_order 1
 
 # 2. Linear displacement boundary condition
@@ -16,3 +16,28 @@ make trans_iso_RVE_Traction_7vars && mpirun -np 1 ./trans_iso_RVE_Traction_7vars
 
 
 mpirun -np 1 ../homogenisation/TransIso_Potential_Flow -my_file /mnt/home/Dropbox/DURACOMP_Cal/009_MOFEM/Meshes/RVE_TISO/RVE.cub  -ksp_type fgmres -ksp_gmres_restart 1000 -pc_type asm -sub_pc_type lu -ksp_monitor -my_order 1
+
+
+******************************************************************************************
+*                                                                                        *
+* Example run textile RVE with trans-isotropic fibres (with no interface elements)       *
+*  (1) use the potential flow to calculate the fibres directions                         *
+*  (2) use the perturbation method based -stochastic-homogenisation to calculate the     *
+*      average macroscopic stress induced by the given macroscopic strain                *
+*                                                                                        *
+******************************************************************************************
+
+# 1. Potential flow problem
+make ../homogenisation/TransIso_Potential_Flow_NoInt && \
+mpirun -np 1 ../homogenisation/TransIso_Potential_Flow_NoInt \
+-my_file /mnt/home/Dropbox/DURACOMP_Cal/009_MOFEM/Meshes/RVE_TISO_GEOM/RVE_CERL_Waviness_VF00W00M00.cub \
+-ksp_type fgmres -ksp_gmres_restart 1000 \
+-pc_type asm -sub_pc_type lu -ksp_monitor -my_order 1
+
+
+make trans_iso_RVE_Geom_disp && \
+mpirun -np 1 ./trans_iso_RVE_Geom_disp \
+-my_file solution_RVE.h5m \
+-ksp_type fgmres -pc_type lu \
+-pc_factor_mat_solver_package mumps -ksp_monitor -my_order 1 \
+-myapplied_strain 0.0,0.0,0.0,0.0,0.0,1.0
