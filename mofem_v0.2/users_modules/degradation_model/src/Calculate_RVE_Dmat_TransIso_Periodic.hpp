@@ -183,6 +183,9 @@ namespace MoFEM {
 
 //            cout<<"nb_gauss_pts for calculateion D =  "<<nb_gauss_pts <<endl;
             double RVE_volume;    RVE_volume=0.0;  //RVE volume for full RVE We need this for stress calculation
+            
+            
+//            if(fe_ent==5764607523034236331){
             for(int gg = 0;gg<nb_gauss_pts;gg++) {
               Vec F1,F2,F3,F4,F5,F6,D1;
               Mat A;
@@ -318,13 +321,17 @@ namespace MoFEM {
                   Dmat(ii,0)=*avec;
                   avec++;
                 }
+                
+                
 //                if(pcomm_RVE->rank()==0){
 //                  cout<< "\nStress_Homo = \n\n";
 //                  for(int ii=0; ii<6; ii++){
 //                    cout <<Dmat(ii,0)<<endl;
 //                  }
 //                }
-                
+//                
+//              string wait;
+//              cin>>wait;
               }
               
               
@@ -505,9 +512,8 @@ namespace MoFEM {
               ierr = KSPDestroy(&solver); CHKERRQ(ierr);
 
               
-//              string wait;
-//              cin>>wait;
             }
+//            }
           }
           
 //          cout<<"fe_ent "<<fe_ent <<endl;

@@ -703,7 +703,8 @@ int main(int argc, char *argv[]) {
   ierr = mField_Macro.set_field_order(0,MBEDGE,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
   ierr = mField_Macro.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
 
-  ierr = MetaNeummanForces::addNeumannBCElements(mField_Macro,"ELASTIC_PROB","DISP_MACORO"); CHKERRQ(ierr);
+  ierr = MetaNeummanForces::addNeumannBCElements(mField_Macro,"DISP_MACORO"); CHKERRQ(ierr);
+  ierr = mField_Macro.modify_problem_add_finite_element("ELASTIC_PROB","FORCE_FE"); CHKERRQ(ierr);
   
   //build database
 
