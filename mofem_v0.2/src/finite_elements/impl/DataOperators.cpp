@@ -877,6 +877,7 @@ PetscErrorCode OpGetHoTangentOnEdge::doWork(int side,EntityType type,DataForcesA
     int nb_gauss_pts = data.getN().size1();
     tAngent.resize(nb_gauss_pts,3,false);
 
+    int nb_approx_fun = data.getN().size2();
     double *diff = &*data.getDiffN().data().begin();
     double *dofs[] = { &data.getFieldData()[0], &data.getFieldData()[1], &data.getFieldData()[2] };
 
@@ -896,7 +897,7 @@ PetscErrorCode OpGetHoTangentOnEdge::doWork(int side,EntityType type,DataForcesA
         }
         for(int dd = 0;dd!=3;dd++) {
           for(int gg = 0;gg!=nb_gauss_pts;gg++) {
-            tAngent(gg,dd) += cblas_ddot(nb_dofs/3,&diff[3*gg],1,dofs[dd],3);
+            tAngent(gg,dd) += cblas_ddot(nb_dofs/3,&diff[gg*nb_approx_fun],1,dofs[dd],3);
           }
         }
       break;

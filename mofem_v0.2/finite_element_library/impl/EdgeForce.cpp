@@ -1,5 +1,5 @@
 
-/** \file NodeForce.cpp
+/** \file EdgeForce.cpp
   \ingroup mofem_static_boundary_conditions
 */
 
@@ -73,9 +73,9 @@ namespace MoFEM {
           SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
         }
 
-        for(unsigned int gg = 0;gg<nb_gauss_pts;gg++) {
+        for(int gg = 0;gg<nb_gauss_pts;gg++) {
 
-          if(!rank) {
+          if(!rr) {
             wEights[gg] = 0;
             if(getTangetAtGaussPtrs().size1()>0) {
               for(int dd = 0;dd<3;dd++) {
@@ -88,7 +88,7 @@ namespace MoFEM {
             wEights[gg] *= getGaussPts()(1,gg);
           }
 
-          cblas_daxpy(nb_dofs,wEights[gg]*force,&data.getN()(gg,0),1,&Nf[rr],rank);
+          cblas_daxpy(nb_dofs/rank,wEights[gg]*force,&data.getN()(gg,0),1,&Nf[rr],rank);
 
         }
 

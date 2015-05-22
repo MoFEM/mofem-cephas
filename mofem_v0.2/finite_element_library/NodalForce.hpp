@@ -1,3 +1,7 @@
+/** \file NodalForce.cpp
+  \ingroup mofem_static_boundary_conditions
+*/
+
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -83,47 +87,64 @@ struct MetaNodalForces {
   };
 
   /// Add element taking information from NODESET
-  static PetscErrorCode addNodalForceElement (FieldInterface &mField,const string field_name) {
+  static PetscErrorCode addElement (FieldInterface &m_field,const string field_name) {
     PetscFunctionBegin;
     PetscErrorCode ierr;
     ErrorCode rval;
-    ierr = mField.add_finite_element("FORCE_FE",MF_ZERO); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_row("FORCE_FE",field_name); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_col("FORCE_FE",field_name); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_data("FORCE_FE",field_name); CHKERRQ(ierr);
-    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET|FORCESET,it)) {
+    ierr = m_field.add_finite_element("FORCE_FE",MF_ZERO); CHKERRQ(ierr);
+    ierr = m_field.modify_finite_element_add_field_row("FORCE_FE",field_name); CHKERRQ(ierr);
+    ierr = m_field.modify_finite_element_add_field_col("FORCE_FE",field_name); CHKERRQ(ierr);
+    ierr = m_field.modify_finite_element_add_field_data("FORCE_FE",field_name); CHKERRQ(ierr);
+    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET,it)) {
       Range tris;
-      rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
+      rval = m_field.get_moab().get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
       Range edges;
-      rval = mField.get_moab().get_entities_by_type(it->meshset,MBEDGE,edges,true); CHKERR_PETSC(rval);
+      rval = m_field.get_moab().get_entities_by_type(it->meshset,MBEDGE,edges,true); CHKERR_PETSC(rval);
       Range tris_nodes;
-      rval = mField.get_moab().get_connectivity(tris,tris_nodes); CHKERR_PETSC(rval);
+      rval = m_field.get_moab().get_connectivity(tris,tris_nodes); CHKERR_PETSC(rval);
       Range edges_nodes;
-      rval = mField.get_moab().get_connectivity(edges,edges_nodes); CHKERR_PETSC(rval);
+      rval = m_field.get_moab().get_connectivity(edges,edges_nodes); CHKERR_PETSC(rval);
       Range nodes;
-      rval = mField.get_moab().get_entities_by_type(it->meshset,MBVERTEX,nodes,true); CHKERR_PETSC(rval);
+      rval = m_field.get_moab().get_entities_by_type(it->meshset,MBVERTEX,nodes,true); CHKERR_PETSC(rval);
       nodes = subtract(nodes,tris_nodes);
       nodes = subtract(nodes,edges_nodes);
-      ierr = mField.add_ents_to_finite_element_by_VERTICEs(nodes,"FORCE_FE"); CHKERRQ(ierr);
+      ierr = m_field.add_ents_to_finite_element_by_VERTICEs(nodes,"FORCE_FE"); CHKERRQ(ierr);
     }
     PetscFunctionReturn(0);
   }
 
   /// Set integration point operators
-  static PetscErrorCode setNodalForceElementOperators(
-    FieldInterface &mField,
-    boost::ptr_map<string,NodalForce> &nodal_forces,
-    Vec &F,const string field_name
+  static PetscErrorCode setOperators(
+    FieldInterface &m_field, boost::ptr_map<string,NodalForce> &nodal_forces, Vec &F,const string field_name
   ) {
     PetscFunctionBegin;
     PetscErrorCode ierr;
     string fe_name = "FORCE_FE";
-    nodal_forces.insert(fe_name,new NodalForce(mField));
-    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET|FORCESET,it)) {
+    nodal_forces.insert(fe_name,new NodalForce(m_field));
+    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET,it)) {
       ierr = nodal_forces.at(fe_name).addForce(field_name,F,it->get_msId());  CHKERRQ(ierr);
     }
     PetscFunctionReturn(0);
   }
+
+  /// Depreciated, changed name to addElement
+  static DEPRECATED PetscErrorCode addNodalForceElement (FieldInterface &mField,const string field_name) {
+    PetscFunctionBegin;
+    PetscErrorCode ierr;
+    ierr = addElement(mField,field_name); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
+  /// Depreciated, changed name to setOperators
+  static DEPRECATED PetscErrorCode setNodalForceElementOperators(
+    FieldInterface &m_field, boost::ptr_map<string,NodalForce> &nodal_forces,Vec &F,const string field_name
+  ) {
+    PetscFunctionBegin;
+    PetscErrorCode ierr;
+    ierr = setOperators(m_field,nodal_forces,F,field_name); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
 
 };
 

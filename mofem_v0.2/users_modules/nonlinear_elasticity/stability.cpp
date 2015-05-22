@@ -323,7 +323,7 @@ int main(int argc, char *argv[]) {
     ierr = m_field.add_ents_to_finite_element_by_TRIs(tris,"NEUAMNN_FE"); CHKERRQ(ierr);
   }
   //add nodal force element
-  ierr = MetaNodalForces::addNodalForceElement(m_field,"SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = MetaNodalForces::addElement(m_field,"SPATIAL_POSITION"); CHKERRQ(ierr);
   ierr = m_field.modify_problem_add_finite_element("ELASTIC_MECHANICS","FORCE_FE"); CHKERRQ(ierr);
 
   //build field
@@ -397,7 +397,7 @@ int main(int argc, char *argv[]) {
   boost::ptr_map<string,NodalForce> nodal_forces;
   string fe_name_str ="FORCE_FE";
   nodal_forces.insert(fe_name_str,new NodalForce(m_field));
-  ierr = MetaNodalForces::setNodalForceElementOperators(m_field,nodal_forces,F,"SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = MetaNodalForces::setOperators(m_field,nodal_forces,F,"SPATIAL_POSITION"); CHKERRQ(ierr);
   boost::ptr_map<string,NodalForce>::iterator fit = nodal_forces.begin();
   for(;fit!=nodal_forces.end();fit++) {
     ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS",fit->first,fit->second->getLoopFe()); CHKERRQ(ierr);
