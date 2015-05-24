@@ -215,7 +215,7 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  //define eleatic element
+  // Add elastic element
   Hooke<adouble> hooke_adouble;
   Hooke<double> hooke_double;
   NonlinearElasticElement elastic(m_field,2);
@@ -234,17 +234,16 @@ int main(int argc, char *argv[]) {
     ierr = m_field.add_ents_to_finite_element_by_TETs(tets,"BODY_FORCE"); CHKERRQ(ierr);
   }
 
-  //neuman forces
+  // Add Neumann forces
   ierr = MetaNeummanForces::addNeumannBCElements(m_field,"DISPLACEMENT"); CHKERRQ(ierr);
   ierr = MetaNodalForces::addElement(m_field,"DISPLACEMENT"); CHKERRQ(ierr);
   ierr = MetaEdgeForces::addElement(m_field,"DISPLACEMENT"); CHKERRQ(ierr);
 
-  //define fluid pressure finite elements
+  // Add fluid pressure finite elements
   FluidPressure fluid_pressure_fe(m_field);
   fluid_pressure_fe.addNeumannFluidPressureBCElements("DISPLACEMENT");
-  //define elements for thermo elasticity if themperature field avelible
+  // Add elements for thermo elasticity if temperature field is defined
   ThermalStressElement thermal_stress_elem(m_field);
-
   if(!m_field.check_field("TEMP")) {
     bool add_temp_field = false;
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {

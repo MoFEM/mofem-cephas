@@ -48,6 +48,7 @@ namespace MoFEM {
 
       PetscErrorCode ierr;
 
+      // Get pointer to DOF and its rank
       const FENumeredDofMoFEMEntity *dof_ptr;
       ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
       int rank = dof_ptr->get_max_rank();
@@ -60,8 +61,10 @@ namespace MoFEM {
       int nb_gauss_pts = data.getN().size1();
       wEights.resize(nb_gauss_pts,false);
 
+      // This will work for fluxes and other fields with rank other than 3.
       for(int rr = 0;rr<rank;rr++) {
 
+        // Get force value for each vector element from blockset data.
         double force;
         if(rr == 0) {
           force = dAta.data.data.value3*dAta.data.data.value1;
@@ -73,11 +76,13 @@ namespace MoFEM {
           SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
         }
 
+        // Integrate force on the line
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
 
           if(!rr) {
             wEights[gg] = 0;
             if(getTangetAtGaussPtrs().size1()>0) {
+              // This is if edge is curved, i.e. HO geometry
               for(int dd = 0;dd<3;dd++) {
                 wEights[gg] += pow(getTangetAtGaussPtrs()(gg,dd),2);
               }
@@ -94,7 +99,11 @@ namespace MoFEM {
 
       }
 
+      // I time/step varying force or calulate in arc-length control. This hack
+      // scale force appropriately, and is controled for user
       ierr = MethodsForOp::applyScale(getFEMethod(),methodsOp,Nf); CHKERRQ(ierr);
+
+      // Assemble force into right-hand vector
       Vec myF = F;
       if(useSnesF) {
         myF = getFEMethod()->snes_f;
@@ -115,6 +124,7 @@ namespace MoFEM {
       ierr = mField.get_cubit_msId(ms_id,NODESET,&cubit_meshset_ptr); CHKERRQ(ierr);
       ierr = cubit_meshset_ptr->get_bc_data_structure(mapForce[ms_id].data); CHKERRQ(ierr);
       rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBEDGE,mapForce[ms_id].eDges,true); CHKERR_PETSC(rval);
+      // Add operator for element, set data and entities operating on the data
       fe.getOpPtrVector().push_back(new OpEdgeForce(field_name,F,mapForce[ms_id],methodsOp,use_snes_f));
       PetscFunctionReturn(0);
     }

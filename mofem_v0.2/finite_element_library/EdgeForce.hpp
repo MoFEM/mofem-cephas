@@ -27,10 +27,15 @@ namespace MoFEM {
   struct EdgeForce {
 
     FieldInterface &mField;
-    EdgeForce(FieldInterface &m_field): mField(m_field),fe(m_field) {}
+    EdgeForce(FieldInterface &m_field): mField(m_field),fe(m_field,1){}
 
     struct MyFE: public EdgeElementForcesAndSurcesCore {
-      MyFE(FieldInterface &m_field): EdgeElementForcesAndSurcesCore(m_field) {}
+      int addToRule;
+      MyFE(FieldInterface &m_field,int add_to_rule):
+      EdgeElementForcesAndSurcesCore(m_field),
+      addToRule(add_to_rule)
+      {}
+      int getRule(int order) { return order+addToRule; };
     };
 
     MyFE fe;
@@ -81,6 +86,9 @@ namespace MoFEM {
       ierr = m_field.modify_finite_element_add_field_row("FORCE_FE",field_name); CHKERRQ(ierr);
       ierr = m_field.modify_finite_element_add_field_col("FORCE_FE",field_name); CHKERRQ(ierr);
       ierr = m_field.modify_finite_element_add_field_data("FORCE_FE",field_name); CHKERRQ(ierr);
+      if(m_field.check_field("MESH_NODE_POSITIONS")) {
+        ierr = m_field.modify_finite_element_add_field_data("FORCE_FE","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+      }
       for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET,it)) {
         Range tris;
         rval = m_field.get_moab().get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
