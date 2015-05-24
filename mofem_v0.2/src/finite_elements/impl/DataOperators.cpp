@@ -684,7 +684,7 @@ PetscErrorCode OpGetNormals::doWork(int side,EntityType type,DataForcesAndSurces
 
   switch (type) {
     case MBVERTEX: {
-      for(unsigned int gg = 0;gg<nb_gauss_pts;gg++) {
+      for(int gg = 0;gg<nb_gauss_pts;gg++) {
         for(int nn = 0;nn<3;nn++) {
           tAngent1_at_GaussPt(gg,nn) = cblas_ddot(3,&data.getDiffN()(0,0),2,&data.getFieldData()[nn],3);
           tAngent2_at_GaussPt(gg,nn) = cblas_ddot(3,&data.getDiffN()(0,1),2,&data.getFieldData()[nn],3);
@@ -703,7 +703,7 @@ PetscErrorCode OpGetNormals::doWork(int side,EntityType type,DataForcesAndSurces
       if(nb_dofs > 3*data.getN().size2()) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
       }
-      for(unsigned int gg = 0;gg<nb_gauss_pts;gg++) {
+      for(int gg = 0;gg<nb_gauss_pts;gg++) {
         for(int dd = 0;dd<3;dd++) {
           tAngent1_at_GaussPt(gg,dd) += cblas_ddot(nb_dofs/3,&data.getDiffN()(gg,0),2,&data.getFieldData()[dd],3);
           tAngent2_at_GaussPt(gg,dd) += cblas_ddot(nb_dofs/3,&data.getDiffN()(gg,1),2,&data.getFieldData()[dd],3);
