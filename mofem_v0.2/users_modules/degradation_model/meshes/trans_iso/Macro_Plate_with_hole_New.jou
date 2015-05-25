@@ -1,13 +1,13 @@
 reset
 
 # Geometry (all dimension for macro is in meter [mm])
-brick x 10 y 10 z 1
+brick x 10 y 10 z 0.75
 create cylinder height 60 radius 3
 move volume 2 x -5 y -5 z 0 include_merged
 subtract volume 2 from volume 1
 
 #Meshing   
-curve 20 2 1 19 17 18 11 16 10 12   size auto factor 5
+curve 20 2 1 19 17 18 11 16 10 12   size auto factor 3
 curve 20 2 1 19 17 18 11 16 10 12  scheme equal
 mesh curve 20 2 1 19 17 18 11 16 10 12 
 
