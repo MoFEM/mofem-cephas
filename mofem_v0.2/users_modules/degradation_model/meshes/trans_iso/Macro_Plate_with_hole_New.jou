@@ -2,26 +2,23 @@ reset
 
 # Geometry (all dimension for macro is in meter [mm])
 brick x 10 y 10 z 1
-create cylinder height 60 radius 5
+create cylinder height 60 radius 3
 move volume 2 x -5 y -5 z 0 include_merged
 subtract volume 2 from volume 1
-brick x 10 y 10 z 1
-move volume 3 x 0 y 10 z 0 include_merged
-unite volume all
 
 #Meshing   
-curve 25 24 1 19 17 18 16 10 34 33  size auto factor 4
-curve 25 24 1 19 17 18 16 10 34 33 scheme equal
-mesh curve 25 24 1 19 17 18 16 10 34 33 
+curve 20 2 1 19 17 18 11 16 10 12   size auto factor 5
+curve 20 2 1 19 17 18 11 16 10 12  scheme equal
+mesh curve 20 2 1 19 17 18 11 16 10 12 
 
 surface 11  scheme TriMesh 
 mesh surface 11  
  
-surface 13 scheme mirror source surface 11 source vertex 13 target vertex 11 nosmoothing 
+surface 13 scheme mirror source surface 11 source vertex 14 target vertex 12 nosmoothing 
 mesh surface 13  
  
-surface 14 12 10 6 19  scheme TriMesh 
-mesh surface 14 12 10 6 19  
+surface 5 6 12 10 14   scheme TriMesh 
+mesh surface 5 6 12 10 14  
 
 #volume all size auto factor 10 
 volume all scheme Tetmesh 
@@ -29,12 +26,11 @@ mesh volume all
 
 set duplicate block elements on
 # Bounary Conditions for Heat Transfer Macro problem
-create temperature on surface 19 value 80   #[deg C]
+create temperature on surface 5 value 80   #[deg C]
 create heatflux on surface 6 value 1 # +ve value means heat out (Watt/m2)
 
 # Bounary Conditions for Moisture Transport Macro problem
-# block 1 surface 5, 6, 13, 10
-block 1 surface 19
+block 1 surface 5
 block 1 name 'MASS_CONC'
 block 1 attribute count 1   
 block 1 attribute index 1 1 # relative humidity 
@@ -48,7 +44,7 @@ block 2 attribute index 1 0.5e-9
 create displacement on surface 14 dof 1 fix 0
 create displacement on surface 12 dof 2 fix 0
 create displacement on surface 13 dof 3 fix 0
-create force on surface 19 vector 0 1e6 0 0 0 0
+create force on surface 5 vector 0 1e3 0 0 0 0
 
 #Here thermal conductivity and moisture diffusivity homogenised matrices will be read directly from input RVE binary files so no need to defined material properties here
 block 3 volume all
@@ -76,6 +72,8 @@ block 6 tet 816 810 136 1158 1593
 block 6 name "Ele_Strain_RVE"
 
 save as "/Users/zahur/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/trans_iso/Macro_Plate_with_hole_New.cub" overwrite
+
+
 
 
 
