@@ -31,6 +31,7 @@ namespace po = boost::program_options;
 
 #include <SurfacePressure.hpp>
 #include <NodalForce.hpp>
+#include <EdgeForce.hpp>
 #include <FluidPressure.hpp>
 #include <BodyForce.hpp>
 #include <ThermalStressElement.hpp>
@@ -170,42 +171,42 @@ int main(int argc, char *argv[]) {
         ostringstream str_order;
         str_order << "block_" << it->get_msId() << ".displacemet_order";
         config_file_options.add_options()
-	 (str_order.str().c_str(),po::value<int>(&block_data[it->get_msId()].oRder)->default_value(order));
-	ostringstream str_cond;
+        (str_order.str().c_str(),po::value<int>(&block_data[it->get_msId()].oRder)->default_value(order));
+        ostringstream str_cond;
         str_cond << "block_" << it->get_msId() << ".young_modulus";
         config_file_options.add_options()
-	 (str_cond.str().c_str(),po::value<double>(&block_data[it->get_msId()].yOung)->default_value(-1));
-	ostringstream str_capa;
+        (str_cond.str().c_str(),po::value<double>(&block_data[it->get_msId()].yOung)->default_value(-1));
+        ostringstream str_capa;
         str_capa << "block_" << it->get_msId() << ".poisson_ratio";
         config_file_options.add_options()
-	 (str_capa.str().c_str(),po::value<double>(&block_data[it->get_msId()].pOisson)->default_value(-1));
-	ostringstream str_init_temp;
+        (str_capa.str().c_str(),po::value<double>(&block_data[it->get_msId()].pOisson)->default_value(-1));
+        ostringstream str_init_temp;
         str_init_temp << "block_" << it->get_msId() << ".initial_temperature";
         config_file_options.add_options()
-	 (str_init_temp.str().c_str(),po::value<double>(&block_data[it->get_msId()].initTemp)->default_value(0));
+        (str_init_temp.str().c_str(),po::value<double>(&block_data[it->get_msId()].initTemp)->default_value(0));
       }
       po::parsed_options parsed = parse_config_file(ini_file,config_file_options,true);
       store(parsed,vm);
       po::notify(vm);
       for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
-	if(block_data[it->get_msId()].oRder == -1) continue;
+        if(block_data[it->get_msId()].oRder == -1) continue;
         if(block_data[it->get_msId()].oRder == order) continue;
-	PetscPrintf(PETSC_COMM_WORLD,"Set block %d order to %d\n",it->get_msId(),block_data[it->get_msId()].oRder);
-	Range block_ents;
-	rval = moab.get_entities_by_handle(it->get_meshset(),block_ents,true); CHKERR(rval);
-	Range ents_to_set_order;
-	ierr = moab.get_adjacencies(block_ents,3,false,ents_to_set_order,Interface::UNION); CHKERRQ(ierr);
-	ents_to_set_order = ents_to_set_order.subset_by_type(MBTET);
-	ierr = moab.get_adjacencies(block_ents,2,false,ents_to_set_order,Interface::UNION); CHKERRQ(ierr);
-	ierr = moab.get_adjacencies(block_ents,1,false,ents_to_set_order,Interface::UNION); CHKERRQ(ierr);
-	ierr = m_field.synchronise_entities(ents_to_set_order); CHKERRQ(ierr);
+        PetscPrintf(PETSC_COMM_WORLD,"Set block %d order to %d\n",it->get_msId(),block_data[it->get_msId()].oRder);
+        Range block_ents;
+        rval = moab.get_entities_by_handle(it->get_meshset(),block_ents,true); CHKERR(rval);
+        Range ents_to_set_order;
+        ierr = moab.get_adjacencies(block_ents,3,false,ents_to_set_order,Interface::UNION); CHKERRQ(ierr);
+        ents_to_set_order = ents_to_set_order.subset_by_type(MBTET);
+        ierr = moab.get_adjacencies(block_ents,2,false,ents_to_set_order,Interface::UNION); CHKERRQ(ierr);
+        ierr = moab.get_adjacencies(block_ents,1,false,ents_to_set_order,Interface::UNION); CHKERRQ(ierr);
+        ierr = m_field.synchronise_entities(ents_to_set_order); CHKERRQ(ierr);
         ierr = m_field.set_field_order(ents_to_set_order,"DISPLACEMENT",block_data[it->get_msId()].oRder); CHKERRQ(ierr);
       }
       vector<string> additional_parameters;
       additional_parameters = collect_unrecognized(parsed.options,po::include_positional);
       for(vector<string>::iterator vit = additional_parameters.begin();
-	vit!=additional_parameters.end();vit++) {
-	ierr = PetscPrintf(PETSC_COMM_WORLD,"** WARNING Unrecognised option %s\n",vit->c_str()); CHKERRQ(ierr);
+      vit!=additional_parameters.end();vit++) {
+        ierr = PetscPrintf(PETSC_COMM_WORLD,"** WARNING Unrecognised option %s\n",vit->c_str()); CHKERRQ(ierr);
       }
     } catch (const std::exception& ex) {
       ostringstream ss;
@@ -214,7 +215,7 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  //define eleatic element
+  // Add elastic element
   Hooke<adouble> hooke_adouble;
   Hooke<double> hooke_double;
   NonlinearElasticElement elastic(m_field,2);
@@ -233,22 +234,22 @@ int main(int argc, char *argv[]) {
     ierr = m_field.add_ents_to_finite_element_by_TETs(tets,"BODY_FORCE"); CHKERRQ(ierr);
   }
 
-  //neuman forces
+  // Add Neumann forces
   ierr = MetaNeummanForces::addNeumannBCElements(m_field,"DISPLACEMENT"); CHKERRQ(ierr);
-  ierr = MetaNodalForces::addNodalForceElement(m_field,"DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = MetaNodalForces::addElement(m_field,"DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = MetaEdgeForces::addElement(m_field,"DISPLACEMENT"); CHKERRQ(ierr);
 
-  //define fluid pressure finite elements
+  // Add fluid pressure finite elements
   FluidPressure fluid_pressure_fe(m_field);
   fluid_pressure_fe.addNeumannFluidPressureBCElements("DISPLACEMENT");
-  //define elements for thermo elasticity if themperature field avelible
+  // Add elements for thermo elasticity if temperature field is defined
   ThermalStressElement thermal_stress_elem(m_field);
-
   if(!m_field.check_field("TEMP")) {
     bool add_temp_field = false;
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
       if(block_data[it->get_msId()].initTemp!=0) {
-	add_temp_field = true;
-	break;
+        add_temp_field = true;
+        break;
       }
     }
     if(add_temp_field) {
@@ -271,13 +272,13 @@ int main(int argc, char *argv[]) {
   if(m_field.check_field("TEMP")) {
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
       if(block_data[it->get_msId()].initTemp!=0) {
-	PetscPrintf(PETSC_COMM_WORLD,"Set block %d temperature to %3.2g\n",
-	  it->get_msId(),block_data[it->get_msId()].initTemp);
-	Range block_ents;
-	rval = moab.get_entities_by_handle(it->meshset,block_ents,true); CHKERR(rval);
-	Range vertices;
-	rval = moab.get_connectivity(block_ents,vertices,true); CHKERR_PETSC(rval);
-	ierr = m_field.set_field(block_data[it->get_msId()].initTemp,MBVERTEX,vertices,"TEMP"); CHKERRQ(ierr);
+        PetscPrintf(PETSC_COMM_WORLD,"Set block %d temperature to %3.2g\n",
+        it->get_msId(),block_data[it->get_msId()].initTemp);
+        Range block_ents;
+        rval = moab.get_entities_by_handle(it->meshset,block_ents,true); CHKERR(rval);
+        Range vertices;
+        rval = moab.get_connectivity(block_ents,vertices,true); CHKERR_PETSC(rval);
+        ierr = m_field.set_field(block_data[it->get_msId()].initTemp,MBVERTEX,vertices,"TEMP"); CHKERRQ(ierr);
       }
     }
   }
@@ -345,16 +346,29 @@ int main(int argc, char *argv[]) {
   //forces and preassures on surface
   boost::ptr_map<string,NeummanForcesSurface> neumann_forces;
   ierr = MetaNeummanForces::setNeumannFiniteElementOperators(m_field,neumann_forces,F,"DISPLACEMENT"); CHKERRQ(ierr);
-  boost::ptr_map<string,NeummanForcesSurface>::iterator mit = neumann_forces.begin();
-  for(;mit!=neumann_forces.end();mit++) {
-    ierr = DMoFEMLoopFiniteElements(dm,mit->first.c_str(),&mit->second->getLoopFe()); CHKERRQ(ierr);
+  {
+    boost::ptr_map<string,NeummanForcesSurface>::iterator mit = neumann_forces.begin();
+    for(;mit!=neumann_forces.end();mit++) {
+      ierr = DMoFEMLoopFiniteElements(dm,mit->first.c_str(),&mit->second->getLoopFe()); CHKERRQ(ierr);
+    }
   }
   //noadl forces
   boost::ptr_map<string,NodalForce> nodal_forces;
-  ierr = MetaNodalForces::setNodalForceElementOperators(m_field,nodal_forces,F,"DISPLACEMENT"); CHKERRQ(ierr);
-  boost::ptr_map<string,NodalForce>::iterator fit = nodal_forces.begin();
-  for(;fit!=nodal_forces.end();fit++) {
-    ierr = DMoFEMLoopFiniteElements(dm,fit->first.c_str(),&fit->second->getLoopFe()); CHKERRQ(ierr);
+  ierr = MetaNodalForces::setOperators(m_field,nodal_forces,F,"DISPLACEMENT"); CHKERRQ(ierr);
+  {
+    boost::ptr_map<string,NodalForce>::iterator fit = nodal_forces.begin();
+    for(;fit!=nodal_forces.end();fit++) {
+      ierr = DMoFEMLoopFiniteElements(dm,fit->first.c_str(),&fit->second->getLoopFe()); CHKERRQ(ierr);
+    }
+  }
+  //edge forces
+  boost::ptr_map<string,EdgeForce> edge_forces;
+  ierr = MetaEdgeForces::setOperators(m_field,edge_forces,F,"DISPLACEMENT"); CHKERRQ(ierr);
+  {
+    boost::ptr_map<string,EdgeForce>::iterator fit = edge_forces.begin();
+    for(;fit!=edge_forces.end();fit++) {
+      ierr = DMoFEMLoopFiniteElements(dm,fit->first.c_str(),&fit->second->getLoopFe()); CHKERRQ(ierr);
+    }
   }
   //body forces
   BodyFroceConstantField body_forces_methods(m_field);

@@ -44,8 +44,8 @@ problem is solved for each wave length.
 space is known. The last and final step is to apply inverse Discrete Fourier
 Transform to get acoustic wave pressures in discrete times.
 
-Note that analysis is with assumption that all signals are periodic, as it essential
-property of Dictate Fourier Transform.
+Note that analysis is with assumption that all signals are periodic, as
+result of essential property of Dictate Fourier Transform.
 
 In following procedure a KISS FTP library <http://sourceforge.net/projects/kissfft/>
 is used to do Fast Fourier Transform.
@@ -172,6 +172,21 @@ struct TimeSeries {
     complex_out = boost::shared_array<kiss_fft_cpx>(new kiss_fft_cpx[n]);
     /* forwardCfg returned from kiss_fft_alloc */
     kiss_fft(forwardCfg,complex_in.get(),complex_out.get());
+
+    /*const complex< double > i( 0.0, 1.0 );
+    int rank;
+    MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
+    for(int f = 0;f<n;f++) {
+      double wave_number = 2*M_PI*f/(double)n;
+      complex<double> p = 0;
+      for(int k = 0;k<n;k++) {
+        p += (complex_out[k].r+i*complex_out[k].i)*exp(i*(wave_number*k) - i*(2*M_PI*k*0.21) );
+      }
+      p /= n;
+      if(!rank) {
+        cerr << std::real(p) << " " << std::imag(p) << endl;
+      }
+    }*/
 
     PetscFunctionReturn(0);
   }
@@ -645,9 +660,13 @@ of boundary conditions could be easily implemented.
       ierr = postProc.addFieldValuesPostProc("P","P_INCIDENT_WAVE",p_inicent_wave); CHKERRQ(ierr);
     }
 
-    Vec p_scatter_wave;
-    ierr = VecDuplicate(pSeriesIncidentWave[0](0),&p_scatter_wave); CHKERRQ(ierr);
-    ierr = postProc.addFieldValuesPostProc("P","P_SCATTER_WAVE",p_scatter_wave); CHKERRQ(ierr);
+    Vec p_scatter_wave_real;
+    ierr = VecDuplicate(pSeriesIncidentWave[0](0),&p_scatter_wave_real); CHKERRQ(ierr);
+    ierr = postProc.addFieldValuesPostProc("P","P_SCATTER_WAVE_REAL",p_scatter_wave_real); CHKERRQ(ierr);
+
+    Vec p_scatter_wave_imag;
+    ierr = VecDuplicate(pSeriesIncidentWave[1](0),&p_scatter_wave_imag); CHKERRQ(ierr);
+    ierr = postProc.addFieldValuesPostProc("P","P_SCATTER_WAVE_IMAG",p_scatter_wave_imag); CHKERRQ(ierr);
 
     int n = sSeries.size();
     for(int k = 0;k<n;k++) {
@@ -656,9 +675,13 @@ of boundary conditions could be easily implemented.
       ierr = VecGhostUpdateBegin(p_inicent_wave,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
       ierr = VecGhostUpdateEnd(p_inicent_wave,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
-      ierr = VecCopy(pSeriesScatterWave[0](k),p_scatter_wave); CHKERRQ(ierr);
-      ierr = VecGhostUpdateBegin(p_scatter_wave,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-      ierr = VecGhostUpdateEnd(p_scatter_wave,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      ierr = VecCopy(pSeriesScatterWave[0](k),p_scatter_wave_real); CHKERRQ(ierr);
+      ierr = VecGhostUpdateBegin(p_scatter_wave_real,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      ierr = VecGhostUpdateEnd(p_scatter_wave_real,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+
+      ierr = VecCopy(pSeriesScatterWave[1](k),p_scatter_wave_imag); CHKERRQ(ierr);
+      ierr = VecGhostUpdateBegin(p_scatter_wave_imag,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      ierr = VecGhostUpdateEnd(p_scatter_wave_imag,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
       ierr = mField.loop_finite_elements("PRESSURE_IN_TIME","PRESSURE_FE",postProc); CHKERRQ(ierr);
 
@@ -674,7 +697,8 @@ of boundary conditions could be easily implemented.
     if(add_incident_wave) {
       ierr = VecDestroy(&p_inicent_wave); CHKERRQ(ierr);
     }
-    ierr = VecDestroy(&p_scatter_wave); CHKERRQ(ierr);
+    ierr = VecDestroy(&p_scatter_wave_real); CHKERRQ(ierr);
+    ierr = VecDestroy(&p_scatter_wave_imag); CHKERRQ(ierr);
 
     PetscFunctionReturn(0);
   }
