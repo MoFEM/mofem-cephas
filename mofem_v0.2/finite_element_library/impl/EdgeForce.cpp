@@ -99,8 +99,8 @@ namespace MoFEM {
 
       }
 
-      // I time/step varying force or calulate in arc-length control. This hack
-      // scale force appropriately, and is controled for user
+      // I time/step varying force or calculate in arc-length control. This hack
+      // scale force appropriately, and is controlled for user
       ierr = MethodsForOp::applyScale(getFEMethod(),methodsOp,Nf); CHKERRQ(ierr);
 
       // Assemble force into right-hand vector

@@ -71,7 +71,6 @@ PetscErrorCode FaceSplittingTools::meshRefine(const int verb) {
       Range level_edges;
       ierr = mField.get_entities_by_type_and_ref_level(current_ref,BitRefLevel().set(),MBEDGE,level_edges); CHKERRQ(ierr);
 
-
       Range crack_edges;
       ierr = mField.get_cubit_msId_entities_by_dimension(201,SIDESET,1,crack_edges,true); CHKERRQ(ierr);
       Range crack_edges_nodes;
@@ -79,7 +78,8 @@ PetscErrorCode FaceSplittingTools::meshRefine(const int verb) {
 
       Range crack_edges_nodes_tets;
       rval = mField.get_moab().get_adjacencies(
-	crack_edges_nodes,3,false,crack_edges_nodes_tets,Interface::UNION); CHKERR_PETSC(rval);
+        crack_edges_nodes,3,false,crack_edges_nodes_tets,Interface::UNION
+      ); CHKERR_PETSC(rval);
       Range edges_to_refine;
       rval = mField.get_moab().get_adjacencies(crack_edges_nodes_tets,1,false,edges_to_refine,Interface::UNION); CHKERR_PETSC(rval);
       //edges_to_refine.merge(already_refined_edges);
@@ -88,9 +88,9 @@ PetscErrorCode FaceSplittingTools::meshRefine(const int verb) {
 
       int last_ref_bit = meshRefineBitLevels.back();
       if(!meshIntefaceBitLevels.empty()) {
-	if(last_ref_bit<meshIntefaceBitLevels.back()) {
-	  last_ref_bit = meshIntefaceBitLevels.back();
-	}
+        if(last_ref_bit<meshIntefaceBitLevels.back()) {
+          last_ref_bit = meshIntefaceBitLevels.back();
+        }
       }
       last_ref_bit++;
       meshRefineBitLevels.push_back(last_ref_bit);
@@ -100,15 +100,14 @@ PetscErrorCode FaceSplittingTools::meshRefine(const int verb) {
       ierr = rEfiner->refine_TET(level_tets,last_ref,false); CHKERRQ(ierr);
 
       for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,cubit_it)) {
-	EntityHandle cubit_meshset = cubit_it->meshset;
-	ierr = mField.update_meshset_by_entities_children(cubit_meshset,last_ref,cubit_meshset,MBVERTEX,true); CHKERRQ(ierr);
-	ierr = mField.update_meshset_by_entities_children(cubit_meshset,last_ref,cubit_meshset,MBEDGE,true); CHKERRQ(ierr);
-	ierr = mField.update_meshset_by_entities_children(cubit_meshset,last_ref,cubit_meshset,MBTRI,true); CHKERRQ(ierr);
-	ierr = mField.update_meshset_by_entities_children(cubit_meshset,last_ref,cubit_meshset,MBTET,true); CHKERRQ(ierr);
+        EntityHandle cubit_meshset = cubit_it->meshset;
+        ierr = mField.update_meshset_by_entities_children(cubit_meshset,last_ref,cubit_meshset,MBVERTEX,true); CHKERRQ(ierr);
+        ierr = mField.update_meshset_by_entities_children(cubit_meshset,last_ref,cubit_meshset,MBEDGE,true); CHKERRQ(ierr);
+        ierr = mField.update_meshset_by_entities_children(cubit_meshset,last_ref,cubit_meshset,MBTRI,true); CHKERRQ(ierr);
+        ierr = mField.update_meshset_by_entities_children(cubit_meshset,last_ref,cubit_meshset,MBTET,true); CHKERRQ(ierr);
       }
 
       current_ref_bit = meshRefineBitLevels.back();
-
 
   }
 
@@ -186,7 +185,7 @@ PetscErrorCode FaceSplittingTools::splitFaces(const int verb) {
       ierr = mField.update_meshset_by_entities_children(cubit_meshset,last_ref,cubit_meshset,MBTET,true); CHKERRQ(ierr);
     }
 
-    //remove tets which have 4 nodes on crack surface, those are surce of problems. In case of planar crack, volume of such
+    //remove tets which have 4 nodes on crack surface, those are source of problems. In case of planar crack, volume of such
     //tets is negative. In some other cases quality could be negative.
     Range last_ref_tets,last_ref_tris;
     ierr = mField.get_entities_by_type_and_ref_level(last_ref,BitRefLevel().set(),MBTET,last_ref_tets); CHKERRQ(ierr);
@@ -214,39 +213,40 @@ PetscErrorCode FaceSplittingTools::splitFaces(const int verb) {
     if(0) {//tets_on_surface.size()>0) { //swith off removing tets on surface
       Range tets_on_surface_faces;
       rval = mField.get_moab().get_adjacencies(
-	tets_on_surface,2,false,tets_on_surface_faces,Interface::UNION); CHKERR_PETSC(rval);
+        tets_on_surface,2,false,tets_on_surface_faces,Interface::UNION
+      ); CHKERR_PETSC(rval);
       tets_on_surface_faces = intersect(tets_on_surface_faces,interface_tris);
 
       if(pcomm->rank()>0) {
-	if(verb>5) {
-	  EntityHandle out_meshset;
-	  rval = mField.get_moab().create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
-	  rval = mField.get_moab().add_entities(out_meshset,tets_on_surface); CHKERR_PETSC(rval);
-	  //rval = mField.get_moab().add_entities(out_meshset,interface_tris); CHKERR_PETSC(rval);
-	  //rval = mField.get_moab().add_entities(out_meshset,tets_on_surface_faces); CHKERR_PETSC(rval);
-	  rval = mField.get_moab().write_file("tets_on_surface.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
-	  rval = mField.get_moab().delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
-	}
+        if(verb>5) {
+          EntityHandle out_meshset;
+          rval = mField.get_moab().create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
+          rval = mField.get_moab().add_entities(out_meshset,tets_on_surface); CHKERR_PETSC(rval);
+          //rval = mField.get_moab().add_entities(out_meshset,interface_tris); CHKERR_PETSC(rval);
+          //rval = mField.get_moab().add_entities(out_meshset,tets_on_surface_faces); CHKERR_PETSC(rval);
+          rval = mField.get_moab().write_file("tets_on_surface.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
+          rval = mField.get_moab().delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
+        }
       }
 
       for(Range::iterator tit = tets_on_surface.begin();tit!=tets_on_surface.end();tit++) {
 
-	RefMoFEMEntity_multiIndex::index<Ent_mi_tag>::type::iterator mit;
-	mit = refinedEntitiesPtr_ptr->get<Ent_mi_tag>().find(*tit);
-	if(mit == refinedEntitiesPtr_ptr->get<Ent_mi_tag>().end()) {
-	  SETERRQ(PETSC_COMM_SELF,1,"no such tet in database");
-	}
-	bool success;
-	success = const_cast<RefMoFEMEntity_multiIndex*>(refinedEntitiesPtr_ptr)
-	  ->modify(mit,RefMoFEMEntity_change_set_nth_bit(last_ref_bit,false));
-	if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
-	success = const_cast<RefMoFEMEntity_multiIndex*>(refinedEntitiesPtr_ptr)
-	  ->modify(mit,RefMoFEMEntity_change_set_nth_bit(BITREFLEVEL_SIZE-2,true));
-	if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
+        RefMoFEMEntity_multiIndex::index<Ent_mi_tag>::type::iterator mit;
+        mit = refinedEntitiesPtr_ptr->get<Ent_mi_tag>().find(*tit);
+        if(mit == refinedEntitiesPtr_ptr->get<Ent_mi_tag>().end()) {
+          SETERRQ(PETSC_COMM_SELF,1,"no such tet in database");
+        }
+        bool success;
+        success = const_cast<RefMoFEMEntity_multiIndex*>(refinedEntitiesPtr_ptr)
+        ->modify(mit,RefMoFEMEntity_change_set_nth_bit(last_ref_bit,false));
+        if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
+        success = const_cast<RefMoFEMEntity_multiIndex*>(refinedEntitiesPtr_ptr)
+        ->modify(mit,RefMoFEMEntity_change_set_nth_bit(BITREFLEVEL_SIZE-2,true));
+        if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
 
       }
       if(verb>=0) {
-	PetscPrintf(PETSC_COMM_WORLD,"number of block quasi-flat (on crack surface) tets: %u\n",tets_on_surface.size());
+        PetscPrintf(PETSC_COMM_WORLD,"number of block quasi-flat (on crack surface) tets: %u\n",tets_on_surface.size());
       }
 
       Range level_nodes;
@@ -260,21 +260,21 @@ PetscErrorCode FaceSplittingTools::splitFaces(const int verb) {
       rval = mField.get_moab().get_connectivity(level_tets,level_tets_nodes,true); CHKERR_PETSC(rval);
       ents_to_set_level.merge(subtract(level_nodes,level_tets_nodes));
       if(verb>=0) {
-	PetscPrintf(PETSC_COMM_WORLD,"number of block entities of quasi-flat (on crack surface) tets: %u\n",ents_to_set_level.size());
+        PetscPrintf(PETSC_COMM_WORLD,"number of block entities of quasi-flat (on crack surface) tets: %u\n",ents_to_set_level.size());
       }
 
       for(Range::iterator eit = ents_to_set_level.begin();eit!=ents_to_set_level.end();eit++) {
-	RefMoFEMEntity_multiIndex::index<Ent_mi_tag>::type::iterator mit;
-	mit = refinedEntitiesPtr_ptr->get<Ent_mi_tag>().find(*eit);
-	if(mit == refinedEntitiesPtr_ptr->get<Ent_mi_tag>().end()) {
-	  SETERRQ(PETSC_COMM_SELF,1,"no such tet in database");
-	}
-	bool success;
-	//success = const_cast<RefMoFEMEntity_multiIndex*>(refinedEntitiesPtr_ptr)
-	//  ->modify(mit,RefMoFEMEntity_change_set_nth_bit(last_ref_bit,false));
-	success = const_cast<RefMoFEMEntity_multiIndex*>(refinedEntitiesPtr_ptr)
-	  ->modify(mit,RefMoFEMEntity_change_set_nth_bit(BITREFLEVEL_SIZE-2,true));
-	if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
+        RefMoFEMEntity_multiIndex::index<Ent_mi_tag>::type::iterator mit;
+        mit = refinedEntitiesPtr_ptr->get<Ent_mi_tag>().find(*eit);
+        if(mit == refinedEntitiesPtr_ptr->get<Ent_mi_tag>().end()) {
+          SETERRQ(PETSC_COMM_SELF,1,"no such tet in database");
+        }
+        bool success;
+        //success = const_cast<RefMoFEMEntity_multiIndex*>(refinedEntitiesPtr_ptr)
+        //  ->modify(mit,RefMoFEMEntity_change_set_nth_bit(last_ref_bit,false));
+        success = const_cast<RefMoFEMEntity_multiIndex*>(refinedEntitiesPtr_ptr)
+        ->modify(mit,RefMoFEMEntity_change_set_nth_bit(BITREFLEVEL_SIZE-2,true));
+        if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
       }
 
     }
@@ -377,21 +377,22 @@ PetscErrorCode FaceSplittingTools::roundCornersFillGaps_in_Cubit200(int nb,int v
       rval = mField.get_moab().get_adjacencies(&*fit,1,1,false,adj_edges); CHKERR_PETSC(rval);
       adj_edges = intersect(adj_edges,skin_edges);
       if(adj_edges.size()>=(unsigned int)nb) {
-	rval = mField.get_moab().get_adjacencies(
-	  crack_surface_tris,3,false,crack_surface_tris_tets,Interface::UNION); CHKERR_PETSC(rval);
-	crack_surface_tris_tets = intersect(crack_surface_tris_tets,mesh_level_tets);
-	Range fit_tet;
-	rval = mField.get_moab().get_adjacencies(&*fit,1,3,false,fit_tet); CHKERR_PETSC(rval);
-	fit_tet = intersect(fit_tet,mesh_level_tets);
-	//do not add faces which are adjacent to tets which have faces adjacent to existing crack surface
-	if(intersect(fit_tet,crack_surface_tris_tets).size()==0) {
-	  if(verb>=0) {
-	    ierr = PetscPrintf(PETSC_COMM_WORLD,"add face to meshset200\n");
-	  }
-	  ierr = mField.get_moab().add_entities(meshset200,&*fit,1); CHKERRQ(ierr);
-	  crack_surface_tris.insert(*fit);
-	  end = true;
-	}
+        rval = mField.get_moab().get_adjacencies(
+          crack_surface_tris,3,false,crack_surface_tris_tets,Interface::UNION
+        ); CHKERR_PETSC(rval);
+        crack_surface_tris_tets = intersect(crack_surface_tris_tets,mesh_level_tets);
+        Range fit_tet;
+        rval = mField.get_moab().get_adjacencies(&*fit,1,3,false,fit_tet); CHKERR_PETSC(rval);
+        fit_tet = intersect(fit_tet,mesh_level_tets);
+        //do not add faces which are adjacent to tets which have faces adjacent to existing crack surface
+        if(intersect(fit_tet,crack_surface_tris_tets).size()==0) {
+          if(verb>=0) {
+            ierr = PetscPrintf(PETSC_COMM_WORLD,"add face to meshset200\n");
+          }
+          ierr = mField.get_moab().add_entities(meshset200,&*fit,1); CHKERRQ(ierr);
+          crack_surface_tris.insert(*fit);
+          end = true;
+        }
       }
     }
   } while(end);
@@ -543,16 +544,17 @@ PetscErrorCode FaceSplittingTools::crackFrontEdgeLengths(
       double alpha[4] = {1,1,1,1};
       double quality0,quality,b;
       ierr = quality_volume_length_F(
-	V,alpha,0,
-	diffNTET,coords_edges,coords,
-	NULL,NULL,NULL,
-	&quality0,&quality,&b,
-	NULL,NULL);
+        V,alpha,0,
+        diffNTET,coords_edges,coords,
+        NULL,NULL,NULL,
+        &quality0,&quality,&b,
+        NULL,NULL
+      );
       if(quality<0.1) {
-	rval = mField.get_moab().get_adjacencies(&*tit,1,1,false,bad_quality_edges_nodes,Interface::UNION); CHKERR_PETSC(rval);
-	Range bad_quality_nodes;
-	rval = mField.get_moab().get_adjacencies(&*tit,1,0,false,bad_quality_nodes,Interface::UNION); CHKERR_PETSC(rval);
-	bad_quality_edges_nodes.merge(bad_quality_nodes);
+        rval = mField.get_moab().get_adjacencies(&*tit,1,1,false,bad_quality_edges_nodes,Interface::UNION); CHKERR_PETSC(rval);
+        Range bad_quality_nodes;
+        rval = mField.get_moab().get_adjacencies(&*tit,1,0,false,bad_quality_nodes,Interface::UNION); CHKERR_PETSC(rval);
+        bad_quality_edges_nodes.merge(bad_quality_nodes);
       }
     }
 
@@ -568,12 +570,12 @@ PetscErrorCode FaceSplittingTools::crackFrontEdgeLengths(
     eiit = adj_edges_nodes.begin();
     for(;eiit != adj_edges_nodes.end();eiit++) {
       if(length_map2.find(*eiit)==length_map2.end()) {
-	continue;
-	//SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+        continue;
+        //SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
       }
       double l = length_map2[*eiit];
       if(l<(ave_l2-sdev_l2)) {
-	eit_to_remove.insert(*eiit);
+        eit_to_remove.insert(*eiit);
       }
     }
 
@@ -582,11 +584,11 @@ PetscErrorCode FaceSplittingTools::crackFrontEdgeLengths(
     eiit = adj_edges_on_crack_surface.begin();
     for(;eiit != adj_edges_on_crack_surface.end();eiit++) {
       if(length_map1.find(*eiit)==length_map1.end()) {
-	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
       }
       double l = length_map1[*eiit];
       if(l>(ave_l1+sdev_l1)) {
-	to_split.insert(*eiit);
+        to_split.insert(*eiit);
       }
     }
 
@@ -690,8 +692,8 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(vector<string> &switche
 
       BitRefLevel new_bit;
       if((mit->get_BitRefLevel()&BitRefLevel().set(back)).any()) {
-	new_bit.set(0);
-	new_bit.set(BITREFLEVEL_SIZE-1);
+        new_bit.set(0);
+        new_bit.set(BITREFLEVEL_SIZE-1);
       }
 
       const_cast<RefMoFEMEntity_multiIndex*>(refinedEntitiesPtr_ptr)->modify(mit,RefMoFEMEntity_change_set_bit(new_bit));
@@ -730,9 +732,9 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(vector<string> &switche
     if(to_split.size()>0) {
       int last_ref_bit = meshRefineBitLevels.back();
       if(!meshIntefaceBitLevels.empty()) {
-	if(last_ref_bit<meshIntefaceBitLevels.back()) {
-	  last_ref_bit = meshIntefaceBitLevels.back();
-	}
+        if(last_ref_bit<meshIntefaceBitLevels.back()) {
+          last_ref_bit = meshIntefaceBitLevels.back();
+        }
       }
       last_ref_bit++;
       meshRefineBitLevels.push_back(last_ref_bit);
@@ -742,11 +744,11 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(vector<string> &switche
       ierr = mField.seed_finite_elements(level_tets); CHKERRQ(ierr);
       ierr = rEfiner->refine_TET(level_tets,new_ref,false); CHKERRQ(ierr);
       for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,cubit_it)) {
-	EntityHandle meshset = cubit_it->meshset;
-	ierr = mField.update_meshset_by_entities_children(meshset,new_ref,meshset,MBVERTEX,true); CHKERRQ(ierr);
-	ierr = mField.update_meshset_by_entities_children(meshset,new_ref,meshset,MBEDGE,true); CHKERRQ(ierr);
-	ierr = mField.update_meshset_by_entities_children(meshset,new_ref,meshset,MBTRI,true); CHKERRQ(ierr);
-	ierr = mField.update_meshset_by_entities_children(meshset,new_ref,meshset,MBTET,true); CHKERRQ(ierr);
+        EntityHandle meshset = cubit_it->meshset;
+        ierr = mField.update_meshset_by_entities_children(meshset,new_ref,meshset,MBVERTEX,true); CHKERRQ(ierr);
+        ierr = mField.update_meshset_by_entities_children(meshset,new_ref,meshset,MBEDGE,true); CHKERRQ(ierr);
+        ierr = mField.update_meshset_by_entities_children(meshset,new_ref,meshset,MBTRI,true); CHKERRQ(ierr);
+        ierr = mField.update_meshset_by_entities_children(meshset,new_ref,meshset,MBTET,true); CHKERRQ(ierr);
       }
       ierr = addCrackFront_to_Cubit201(verb); CHKERRQ(ierr);
     }
@@ -1284,8 +1286,7 @@ PetscErrorCode FaceSplittingTools::getCornerEdges(Range &edges_to_cat,int verb) 
   Range mesh_level_tets_skin_nodes;
   rval = mField.get_moab().get_connectivity(mesh_level_tets_skin,mesh_level_tets_skin_nodes,true); CHKERR_PETSC(rval);
   Range mesh_level_tets_skin_edges;
-  rval = mField.get_moab().get_adjacencies(
-    mesh_level_tets_skin,1,false,mesh_level_tets_skin_edges,Interface::UNION); CHKERR_PETSC(rval);
+  rval = mField.get_moab().get_adjacencies(mesh_level_tets_skin,1,false,mesh_level_tets_skin_edges,Interface::UNION); CHKERR_PETSC(rval);
 
   //crack front edges
   Range crack_edges;
@@ -1346,9 +1347,16 @@ PetscErrorCode FaceSplittingTools::getCornerEdges(Range &edges_to_cat,int verb) 
     surfaces = intersect(surfaces,mesh_level_tris);
     rval = skin.find_skin(0,surfaces,false,surfaces_edges_map[msId]); CHKERR_PETSC(rval);
   }
+  Range free_edges;
+  for(map<int,Range>::iterator mit = surfaces_edges_map.begin();mit!=surfaces_edges_map.end();mit++) {
+    for(map<int,Range>::iterator miit = surfaces_edges_map.begin();miit!=surfaces_edges_map.end();miit++) {
+      free_edges.merge(intersect(mit->second,miit->second));
+    }
+  }
   for(map<int,Range>::iterator mit = surfaces_edges_map.begin();mit!=surfaces_edges_map.end();mit++) {
     corners_edges.merge(mit->second);
   }
+  corners_edges = subtract(corners_edges,free_edges);
   corners_edges = subtract(corners_edges,crack_surface_skin);
   Range corners_edges_nodes;
   rval = mField.get_moab().get_connectivity(corners_edges,corners_edges_nodes,true); CHKERR_PETSC(rval);
@@ -1577,14 +1585,14 @@ PetscErrorCode FaceSplittingTools::propagateBySplit(Range &new_nodes,Range &edge
     cblas_daxpy(3,-1,coords,1,delta,1);
     map<EntityHandle,vector<double> >::iterator mit = normal_map.find(triangle);
     if(mit == normal_map.end()) {
-	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
     }
     double *normal = &*mit->second.begin();
     double dot = cblas_ddot(3,normal,1,delta,1);
     signed_distance_map[*nit] = dot;
     normal_nodes_map[*nit] = mit->second;
     if(verb>0) {
-	rval = mField.get_moab().tag_set_data(th_distance,&*nit,1,&dot); CHKERR_PETSC(rval);
+      rval = mField.get_moab().tag_set_data(th_distance,&*nit,1,&dot); CHKERR_PETSC(rval);
     }
   }
 
@@ -1597,18 +1605,17 @@ PetscErrorCode FaceSplittingTools::propagateBySplit(Range &new_nodes,Range &edge
     EntityHandle node = mit->first;
     double *normal = &*mit->second.begin();
     Range node_edges;
-    rval = mField.get_moab().get_adjacencies(
-	&node,1,1,false,node_edges,Interface::UNION); CHKERR_PETSC(rval);
+    rval = mField.get_moab().get_adjacencies(&node,1,1,false,node_edges,Interface::UNION); CHKERR_PETSC(rval);
     double max_l = 0;
     for(Range::iterator eit = node_edges.begin();eit!=node_edges.end();eit++) {
-	int num_nodes;
-	const EntityHandle* conn;
-	rval = mField.get_moab().get_connectivity(*eit,conn,num_nodes,true); CHKERR_PETSC(rval);
-	double coords[3*num_nodes];
-	rval = mField.get_moab().get_coords(conn,num_nodes,coords); CHKERR_PETSC(rval);
-	cblas_daxpy(3,-1,&coords[3],1,coords,1);
-	double l = fabs(cblas_ddot(3,normal,1,coords,1));
-	max_l = fmax(l,max_l);
+      int num_nodes;
+      const EntityHandle* conn;
+      rval = mField.get_moab().get_connectivity(*eit,conn,num_nodes,true); CHKERR_PETSC(rval);
+      double coords[3*num_nodes];
+      rval = mField.get_moab().get_coords(conn,num_nodes,coords); CHKERR_PETSC(rval);
+      cblas_daxpy(3,-1,&coords[3],1,coords,1);
+      double l = fabs(cblas_ddot(3,normal,1,coords,1));
+      max_l = fmax(l,max_l);
     }
     double dot = signed_distance_map[node];
     if(fabs(dot/max_l) < 0.125) {
@@ -1620,8 +1627,8 @@ PetscErrorCode FaceSplittingTools::propagateBySplit(Range &new_nodes,Range &edge
       //rval = mField.get_moab().set_coords(&node,1,coords); CHKERR_PETSC(rval);
       signed_distance_map[node] = 0;
       if(verb>0) {
-	double dot0 = 0;
-	rval = mField.get_moab().tag_set_data(th_distance,&node,1,&dot0); CHKERR_PETSC(rval);
+        double dot0 = 0;
+        rval = mField.get_moab().tag_set_data(th_distance,&node,1,&dot0); CHKERR_PETSC(rval);
       }
     }
   }
@@ -1635,7 +1642,8 @@ PetscErrorCode FaceSplittingTools::propagateBySplit(Range &new_nodes,Range &edge
     if(dot>=0) continue;
     Range node_edges;
     rval = mField.get_moab().get_adjacencies(
-	&node,1,1,false,node_edges,Interface::UNION); CHKERR_PETSC(rval);
+	     &node,1,1,false,node_edges,Interface::UNION
+    ); CHKERR_PETSC(rval);
     node_edges = intersect(node_edges,edges_to_cat);
     for(Range::iterator eit = node_edges.begin();eit!=node_edges.end();eit++) {
       int num_nodes;
@@ -1643,11 +1651,11 @@ PetscErrorCode FaceSplittingTools::propagateBySplit(Range &new_nodes,Range &edge
       rval = mField.get_moab().get_connectivity(*eit,conn,num_nodes,true); CHKERR_PETSC(rval);
       EntityHandle node2 = (conn[0] == node) ? conn[1] : conn[0];
       if(signed_distance_map.find(node2) == signed_distance_map.end()) {
-	continue;
+        continue;
       }
       double dot2 = signed_distance_map[node2];
       if(dot*dot2 >= 0) {
-	continue;
+        continue;
       }
       double coords[3];
       rval = mField.get_moab().get_coords(&node,1,coords); CHKERR_PETSC(rval);
