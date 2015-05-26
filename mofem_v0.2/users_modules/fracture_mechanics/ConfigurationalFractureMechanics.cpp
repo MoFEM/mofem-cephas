@@ -1806,9 +1806,9 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_spatial_problem(FieldInte
   boost::ptr_map<string,NodalForce> nodal_forces;
   string fe_name_str ="FORCE_FE";
   nodal_forces.insert(fe_name_str,new NodalForce(m_field));
+  nodal_forces.at(fe_name_str).methodsOp.push_back(new MetaNodalForces::TagForceScale(m_field));
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET,it)) {
     ierr = nodal_forces.at(fe_name_str).addForce("SPATIAL_POSITION",F,it->get_msId(),true);  CHKERRQ(ierr);
-    nodal_forces.at(fe_name_str).methodsOp.push_back(new MetaNodalForces::TagForceScale(m_field));
   }
   {
     boost::ptr_map<string,NodalForce>::iterator fit = nodal_forces.begin();
@@ -1819,9 +1819,9 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_spatial_problem(FieldInte
   //edge forces
   boost::ptr_map<string,EdgeForce> edge_forces;
   edge_forces.insert(fe_name_str,new EdgeForce(m_field));
+  edge_forces.at(fe_name_str).methodsOp.push_back(new MetaNodalForces::TagForceScale(m_field));
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET,it)) {
     ierr = edge_forces.at(fe_name_str).addForce("SPATIAL_POSITION",F,it->get_msId(),true);  CHKERRQ(ierr);
-    edge_forces.at(fe_name_str).methodsOp.push_back(new MetaNodalForces::TagForceScale(m_field));
   }
   {
     boost::ptr_map<string,EdgeForce>::iterator fit = edge_forces.begin();

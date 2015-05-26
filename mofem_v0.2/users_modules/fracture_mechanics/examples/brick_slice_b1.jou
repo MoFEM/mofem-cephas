@@ -55,18 +55,8 @@ chop volume 1  with volume 3
 imprint volume all 
 merge volume all 
 
-#brick x 0.02 y 0.02 z 0.02
-#brick x 0.02 y 0.01 z 0.1
-#move Vertex 165  location vertex 156  include_merged
-#unite volume 2 3  
-#move Vertex 164  location vertex 148  include_merged
-#chop volume 1  with volume 2
-#
-#split curve 194  at vertex 148
-#split curve 196  at vertex 76  
-
-
-webcut volume 5  with plane vertex 70  vertex 144  vertex 143 
+webcut volume 5  with plane vertex 151  vertex 82  vertex 122 
+webcut volume 5  with plane vertex 146  vertex 73  vertex 127  
 imprint volume all 
 merge volume all 
 
@@ -76,29 +66,40 @@ Sideset 100 curve 163 164 165 168 161 167 166 169 179   remove
 Nodeset 101 vertex 108 109 2 1   
 
 Sideset 102 surface all
-Sideset 102 surface  60 58 59 67 72 remove
-Sideset 10200 surface 72
+Sideset 102 surface  60 58 59 89 70 83 82 69 remove
+Sideset 10200 surface 89
 Sideset 10201 surface 67
+
+
 
 Sideset 200  surface 60
 Sideset 201  curve 163
 
-create Displacement  on surface 2  dof all fix 0 
-create force  on curve 142  force value 1 direction   -0.766 0.643 0 
-create force  on curve 144  force value 1 direction   0.766 -0.643 0 
+create Displacement  on surface 2  dof all fix 0  
+create force  on curve 142  force value 1 direction   -0.766 0.643 0  
+create force  on curve 144  force value 1 direction   0.766 -0.643 0  
+ 
+block 1 volume all       
+block 1 name 'MAT_ELASTIC'      
+block 1 attribute count 2      
+block 1 attribute index 1 0.96       
+block 1 attribute index 2 0.2     
+  
+healer autoheal volume all
+merge tolerance 0.0005
+imprint tolerant volume all
+merge volume all
 
-block 1 volume all      
-block 1 name 'MAT_ELASTIC'     
-block 1 attribute count 2     
-block 1 attribute index 1 9.600      
-block 1 attribute index 2 0.2    
-   
+set acisoption integer 'check_level' 70
+healer autoheal volume 7 9 
+
 volume all scheme Tetmesh    
-volume 6 5 size auto factor 7
-volume 4 7 size auto factor 4
+volume 6 5 9 7  size auto factor 7
+volume 8 4 size auto factor 5
 
 mesh volume all   
-#    
+    
+
 
 
 
