@@ -166,7 +166,7 @@ struct TimeSeries {
     map<double,double>::iterator mit = sSeries.begin();
     for(int ii = 0;mit!=sSeries.end();mit++,ii++) {
       complex_in[ii].r = mit->second;
-      complex_in[ii].i = 0;  //Imaginary parts?
+      complex_in[ii].i = 0;
     }
 
     complex_out = boost::shared_array<kiss_fft_cpx>(new kiss_fft_cpx[n]);
@@ -323,6 +323,7 @@ struct TimeSeries {
     for(int ss = 0;ss<2;ss++) {
       ierr = mField.VecCreateGhost("PRESSURE_IN_TIME",ROW,&p_series[ss][0]); CHKERRQ(ierr);
       for(int k = 1;k<n;k++) {
+        //Duplicate the ghost format to all the vectors inside real and imaginary containers.
         ierr = VecDuplicate(p_series[ss][0],&p_series[ss][k]); CHKERRQ(ierr);
       }
     }

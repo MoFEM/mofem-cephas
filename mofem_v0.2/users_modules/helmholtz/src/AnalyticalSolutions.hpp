@@ -339,8 +339,8 @@ struct SoftSphereScatterWave: public GenericAnalyticalSolution {
     double z2 = z*z;
 
     double R = sqrt(x2+y2+z2);
-    //double cos_theta = z/R; //incident wave in Z direction
-    double cos_theta = cos( atan2(y,x)+2.0*M_PI ); //incident wave in X direction.
+    double cos_theta = z/R; //incident wave in Z direction
+    //double cos_theta = cos( atan2(y,x)+2.0*M_PI ); //incident wave in X direction.
 
     const double k = wAvenumber;    //Wave number
     const double a = sphereRadius;      //radius of the sphere,wait to modify by user

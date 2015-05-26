@@ -1,4 +1,4 @@
-/*! \page acoustic_wave monochromatic acoustic wave (Usage example)
+/*! \page acoustic_wave1 monochromatic acoustic wave (Usage example)
 
 This is simple example how to run monochromatic acoustic wave problems with analytical solutions. Is is
 directed for beginners starting work with MoFEM.
@@ -8,6 +8,7 @@ Three acoustic problems implemented with analytical solutions, as well as scalar
 For moFEM feature of Hierarchic finite element referred to [2].
 \subsection introduction_background Background
 
+
 For the details of SommerFeld boundary condition and Baliss-Turkel Boundary condition see [3], while using hierarchic finite element [2].
 
 \subsection introduction_options options
@@ -16,23 +17,23 @@ analysis. The commands of the following are generic for both best_approximation.
 fe_approximation.cpp(calculate finite element solution on computational domain). The general commands shared by other
 examples will not be addressed here again.
 
-  -mpirun -np Integer The number of processors used. In some times, over used processors will delay the calculation time severely.
-  -my_file input mesh file
-  -my_is_partitioned bool operator indicates whether a partitioned mesh is used.
-  -wave_number a scalar represents the wavenumber k
-  -wave_direction 3*3 unit vector (direction of the incident wave)
-  -analytical_solution_type characters chosen from:
-    -# hard_sphere_incident_wave
-    -# soft_sphere_incident_wave
-    -# plane_wave
-    -# hard_cylinder_scatter_wave
-    -# soft_cylinder_scatter_wave
-    -# incident_wave
+  - mpirun -np Integer The number of processors used. In some times, over used processors will delay the calculation time severely.
+  - my_file input mesh file
+  - my_is_partitioned bool operator indicates whether a partitioned mesh is used.
+  - wave_number a scalar represents the wavenumber k
+  - wave_direction 3*3 unit vector (direction of the incident wave)
+  - analytical_solution_type characters chosen from (implemented in \ref AnalyticalSolutions.hpp):
+    -# hard_sphere_incident_wave \ref HardSphereScatterWave
+    -# soft_sphere_incident_wave \ref SoftSphereScatterWave
+    -# plane_wave \ref PlaneWave
+    -# hard_cylinder_scatter_wave \ref HardCylinderScatterWave
+    -# soft_cylinder_scatter_wave \ref SoftCylinderScatterWave
+    -# incident_wave \ref IncidentWave
     -# no_analytical_solution
-  -add_incident_wave bool (whether you require a scatterer potential or total potential, alternatively, adding plane wave potential filed)
-  -power_of_incident_wave scalar (the amplitude of incident wave)
-  -save_postproc_mesh bool operator whether you want to output the computation results after the refinement in .h5m format.
-  -wave_guide_angle double between 0 - 2 \f$\pi\f$ indicates the propagating angle for wave guide problem only.
+  - add_incident_wave bool (whether you require a scatterer potential or total potential, alternatively, adding plane wave potential filed)
+  - power_of_incident_wave scalar (the amplitude of incident wave)
+  - save_postproc_mesh bool operator whether you want to output the computation results after the refinement in .h5m format.
+  - wave_guide_angle double between 0 - 2 \f$\pi\f$ indicates the propagating angle for wave guide problem only.
 
 \subsection introduction_input_file Input files
 Following description and line commands are in presumption that user parent
@@ -150,6 +151,20 @@ mbconvert ./xxx.h5m xxx.vtk
 \endcode
  to be opend by Paraview.
 
+\subsection wave_guide_example Snapshot
+
+\image html wave_guide.png "Plane Wave Guide Problem" width=5cm
+
+\image html wave_guide_real.png "Imag part of total potential for wave guide problem K=10" width=5cm
+
+\image html wave_guide_imag.png "Real part of total potential for wave guide problem K=10" width=5cm
+
+
+\image html wave_guide_h_convergence.png "log-log h-convergence of l2 relative error versus DOFs for wave guide problem K=10" width=3cm
+
+\image html wave_guide_p_convergence.png "log-log p-convergence of l2 relative error versus DOFs for wave guide problem K=10" width=3cm
+
+
 
 \section cylinder_example Cylinder scatterer example
 Cylinder scatterer example describes an infinite height cylinder as a scatterer (either soft or rigid),
@@ -265,6 +280,17 @@ mpirun -np 2 ./best_approximation \
  \endcode
  for the calculation of relative error in h1 or l2 norm. The above codes for calculation of error can be reused in every analytical examples provided in this page.
 
+Note that the #block 5 name 'SOFT_INCIDENT_WAVE_BC' and 'HARD_INCIDENT_WAVE_BC' corresponding to
+Dirichlet BC and Neumann BC on the surface of the scatterer respectively. Consequently, for the best approximation results of the problem with analytical solution,
+we need to select the proper option for -analytical_solution_type carefully.
+
+
+\subsection cylinder_example Snapshot
+
+
+\image html cylindrical_sound_soft.png "Absolute value of total potential for impinging Soft Cylinder problem" width=4cm
+
+
 
  \section spherical_example Spherical scatterer example
  Spherical scatterer example describes a sphere as a scatterer (either soft or rigid), with artificial boundary to be
@@ -331,11 +357,98 @@ block 6 tet all
 block 6 element type tetra10
 \endcode
 
+
+\subsection execution3 Executing code
+First run
+
+\code
+mpirun -np 2 ./best_approximation \
+-my_file impinging_sphere.cub \
+-my_is_partitioned false \
+-wave_number 3 \
+-wave_direction 0,0,1 \
+-analytical_solution_type soft_sphere_incident_wave \
+-save_postproc_mesh true \
+-ksp_type fgmres \
+-pc_type lu \
+-pc_factor_mat_solver_package superlu_dist \
+-ksp_monitor \
+-my_order 2 \
+-my_max_post_proc_ref_level 0 \
+-add_incident_wave false
+ \endcode
+ calculate the exact solution on the computational domain. Then, run
+
+ \code
+ mpirun -np 2 ./fe_approximation \
+ -my_file analytical_solution.h5m \
+ -my_is_partitioned false \
+ -wave_number 3 \
+ -wave_direction 0,0,1 \
+ -save_postproc_mesh true \
+ -ksp_type fgmres \
+ -pc_type lu \
+ -pc_factor_mat_solver_package superlu_dist \
+ -ksp_monitor \
+ -my_order 2 \
+ -my_max_post_proc_ref_level 0 \
+ -add_incident_wave false
+ \endcode
+ to calculate the finite element solution with proper defined boundary conditions. Finally, run
+
+
+ \code
+ mpirun -np 2 ./error_norm \
+ -my_file fe_solution.h5m \
+ -norm_type l2 \
+ -ksp_type fgmres \
+ -pc_type lu \
+ -pc_factor_mat_solver_package superlu_dist \
+ -ksp_monitor  \
+ -my_order 1 \
+ -my_max_post_proc_ref_level 0
+ \endcode
+ for the calculation of relative error in h1 or l2 norm. The above codes for calculation of error can be reused in every analytical examples provided in this page.
+
+
+
+
+\subsection sphere_example Snapshot
+
+
+\image html sphere_sound_soft.png "Absolute value of total potential for impinging Soft Sphere problem" width=2cm
+
+
+
 \section submarine_example Arbitrary shape scatterer
 
 It is possible to derive an analytical solution for non-regular shape of scatterer, however, it is insufficient and time consuming.
- If one would like to solve a Exterior Boundary problem with arbitrary shape scatterer, e.g. submarine.
+ If one would like to solve a Exterior Boundary problem with arbitrary shape scatterer, e.g. a submarine.
 
+\subsection sub_marine_input_file Input files
+Mesh file with boundary conditions, material properties of sub_marine can be found in helmholtz/meshes/sub_marine.cub,
+
+
+\subsection execution4 Executing code
+
+\code
+mpirun -np 3 ./fe_approximation \
+-my_file sub_marine.cub \
+-my_is_partitioned false \
+-wave_number 5 \
+-wave_direction 1,0,0 \
+-save_postproc_mesh true \
+-ksp_type fgmres -pc_type lu \
+-pc_factor_mat_solver_package superlu_dist \
+-ksp_monitor -my_order 3 \
+-my_max_post_proc_ref_level 1 \
+-add_incident_wave true
+\endcode
+
+\subsection sub_marine_example Snapshot
+
+
+\image html sub_marine.png "Absolute value of total potential for Sub-marine problem with k =10" width=5cm
 
 
 \subsection reference Reference
@@ -345,4 +458,13 @@ It is possible to derive an analytical solution for non-regular shape of scatter
 
 3. Strouboulis T, Babuska I, Hidajat R.The generalized finite element method for Helmholtz equation. Part II: Effect of choice of handbook functions, error due to absorbing boundary conditions and its assessment. Computer Methods in Applied Mechanics and Engineering 197.5 (2008): 364-380.
 
- */
+*/
+
+
+
+
+/*! \page acoustic_wave2 non-monochromatic acoustic wave (Usage example)
+
+Coming Soon.
+
+*/
