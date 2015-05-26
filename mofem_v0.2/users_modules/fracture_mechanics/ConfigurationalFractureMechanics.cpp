@@ -2581,13 +2581,13 @@ PetscErrorCode ConfigurationalFractureMechanics::fix_all_but_one(FieldInterface&
     } else {
       freez_or_not_to_freez = false;
       if(max_g_j_ent==0) {
-	max_g_j = g_j;
-	max_g_j_ent = mit->first;
+        max_g_j = g_j;
+        max_g_j_ent = mit->first;
       } else {
-	if(g_j < max_g_j) {
-	  max_g_j = g_j;
-	  max_g_j_ent = mit->first;
-	}
+        if(g_j < max_g_j) {
+          max_g_j = g_j;
+          max_g_j_ent = mit->first;
+        }
       }
     }
     if(freeze_all_but_one) {
@@ -2604,11 +2604,11 @@ PetscErrorCode ConfigurationalFractureMechanics::fix_all_but_one(FieldInterface&
       EntityHandle node = mit->first;
       rval = m_field.get_moab().tag_get_data(th_freez,&node,1,&freez); CHKERR_PETSC(rval);
       if(freez == 0) {
-	ierr = PetscPrintf(PETSC_COMM_WORLD,"\n");
+        ierr = PetscPrintf(PETSC_COMM_WORLD,"\n");
       } else if(freez == 1) {
-	ierr = PetscPrintf(PETSC_COMM_WORLD," unfreeze\n");
-	int freez = 0;
-	rval = m_field.get_moab().tag_set_data(th_freez,&node,1,&freez); CHKERR_PETSC(rval);
+        ierr = PetscPrintf(PETSC_COMM_WORLD," unfreeze\n");
+        int freez = 0;
+        rval = m_field.get_moab().tag_set_data(th_freez,&node,1,&freez); CHKERR_PETSC(rval);
       }
     }
   }
