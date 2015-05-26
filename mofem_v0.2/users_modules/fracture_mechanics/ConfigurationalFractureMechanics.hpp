@@ -18,7 +18,7 @@
 using namespace ObosleteUsersModules;
 
 struct ConfigurationalFractureMechanics {
- 
+
   Tag th_MaterialFireWall;
   typedef bitset<17> Material_FirelWall_def;
   Material_FirelWall_def *material_FirelWall;
@@ -58,10 +58,10 @@ struct ConfigurationalFractureMechanics {
       delete fe_post_proc_stresses_method;
     }
   }
-  
+
   PetscErrorCode set_material_fire_wall(FieldInterface& m_field);
   PetscErrorCode thermal_field(FieldInterface& m_field);
-  PetscErrorCode spatial_problem_definition(FieldInterface& m_field); 
+  PetscErrorCode spatial_problem_definition(FieldInterface& m_field);
   PetscErrorCode material_problem_definition(FieldInterface& m_field);
   PetscErrorCode coupled_problem_definition(FieldInterface& m_field);
   PetscErrorCode arclength_problem_definition(FieldInterface& m_field);
@@ -86,7 +86,7 @@ struct ConfigurationalFractureMechanics {
   int nb_un_freez_nodes;
   bool freeze_all_but_one;
   int total_its;
-  PetscErrorCode solve_coupled_problem(FieldInterface& m_field,SNES *snes,double da,const double fraction_treshold = 1e-1);
+  PetscErrorCode solve_coupled_problem(FieldInterface& m_field,SNES *snes,double da,const double fraction_treshold = 1e-2);
 
   PetscErrorCode calculate_material_forces(FieldInterface& m_field,string problem,string fe);
   PetscErrorCode surface_projection_data(FieldInterface& m_field,string problem);
@@ -144,7 +144,7 @@ PetscErrorCode SNESMonitorSpatialAndSmoothing_FEMEthod(SNES snes,PetscInt its,Pe
 PetscErrorCode main_spatial_solution(FieldInterface& m_field,ConfigurationalFractureMechanics& conf_prob);
 PetscErrorCode main_material_forces(FieldInterface& m_field,ConfigurationalFractureMechanics& conf_prob);
 
-//crack propagation 
+//crack propagation
 
 /** \brief rescale load factor, such that maximally stressed crack front node has griffithe energy equal to gc
   *
