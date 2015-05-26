@@ -2567,6 +2567,7 @@ PetscErrorCode ConfigurationalFractureMechanics::fix_all_but_one(FieldInterface&
     map<EntityHandle,double>::iterator mit = map_ent_j.begin();
     mit!=map_ent_j.end();mit++) {
     double fraction = (max_j-mit->second)/max_j;
+    double fraction_gc = (gc-map_ent_g[mit->first])/gc;
     double step_work_of_fracture = 0;
     if(!map_ent_work.empty()) {
       step_work_of_fracture = map_ent_work[mit->first];
@@ -2576,7 +2577,7 @@ PetscErrorCode ConfigurationalFractureMechanics::fix_all_but_one(FieldInterface&
       "front node = %ld max_j = %6.4e j = %6.4e (%6.4e) g/j = %4.3f step work of fracture = %2.1g",
       mit->first,max_j,mit->second,fraction,g_j,step_work_of_fracture); CHKERRQ(ierr);
     bool freez_or_not_to_freez;
-    if( (fraction > fraction_treshold || step_work_of_fracture<0 )&&(mit!=max_mit)) {
+    if( (fraction > fraction_treshold || fraction_gc > fraction_treshold || step_work_of_fracture<0 )&&(mit!=max_mit)) {
       freez_or_not_to_freez = true;
     } else {
       freez_or_not_to_freez = false;
