@@ -1,3 +1,32 @@
+/* \file ConfigurationalFractureMechanics.hpp
+
+ This implementation which is accumulation research in period of couple of
+years. It is far for being optimal and efficient.
+
+This need to be reimplemented, using automatic differentiation and by
+grouping elements in the problem by type of of entity, i.e.
+volume, face and edge rather than by functionality.
+
+Moreover matrix should be filled by blocks, whereas only where fracture
+process takes place should be updated. Moreover multi-grid solver
+implemented in mofem could be used with dynamic tolerance. All this will
+improve scalability and efficiency of the code. It could run in several
+times faster that is running now.
+
+In addition configuration by blocks using boost parsing need to be
+implemented. And connection with CGM functionality to keep information
+relating geometry and mesh.
+
+One matrix should be calculated, where some sub-problems in material and
+spatial space should use projection matrixes and indices scattering to
+create sub-problems. This will reduce size of the code and reduce of
+possibility of implementation errors, enabling faster changes and
+improvements.
+
+All Functions should be grouped in structures.
+
+*/
+
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -80,7 +109,7 @@ struct ConfigurationalFractureMechanics {
   PetscErrorCode solve_spatial_problem(FieldInterface& m_field,SNES *snes,bool postproc = true);
   PetscErrorCode solve_material_problem(FieldInterface& m_field,SNES *snes);
 
-  PetscErrorCode fix_all_but_one(FieldInterface& m_field,Range &fix_nodes,const double fraction_treshold);
+  PetscErrorCode fix_all_but_one(FieldInterface& m_field,double da,Range &fix_nodes,const double fraction_treshold);
 
   double aRea,lambda,energy;
   int nb_un_freez_nodes;

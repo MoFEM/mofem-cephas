@@ -2535,7 +2535,7 @@ PetscErrorCode MySnesConvernceTest_SNESLINESEARCHL2(SNES snes,int it,double xnor
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode ConfigurationalFractureMechanics::fix_all_but_one(FieldInterface& m_field,Range &fix_nodes,const double fraction_treshold) {
+PetscErrorCode ConfigurationalFractureMechanics::fix_all_but_one(FieldInterface& m_field,double da,Range &fix_nodes,const double fraction_treshold) {
   PetscFunctionBegin;
 
   PetscErrorCode ierr;
@@ -2576,8 +2576,11 @@ PetscErrorCode ConfigurationalFractureMechanics::fix_all_but_one(FieldInterface&
     ierr = PetscPrintf(PETSC_COMM_WORLD,
       "front node = %ld max_j = %6.4e j = %6.4e (%6.4e) g/j = %4.3f step work of fracture = %2.1g",
       mit->first,max_j,mit->second,fraction,g_j,step_work_of_fracture); CHKERRQ(ierr);
+    if(da == 0) {
+      step_work_of_fracture = 0;
+    }
     bool freez_or_not_to_freez;
-    if( (fraction > fraction_treshold || fraction_gc > fraction_treshold || step_work_of_fracture<0 )&&(mit!=max_mit)) {
+    if( (fraction > fraction_treshold || fraction_gc > fraction_treshold || step_work_of_fracture < 0 )&&(mit!=max_mit)) {
       freez_or_not_to_freez = true;
     } else {
       freez_or_not_to_freez = false;
@@ -2674,7 +2677,7 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   //corners_nodes.merge(subtract(level_nodes,crack_front_nodes));
 
   Range fix_nodes;
-  ierr = fix_all_but_one(m_field,fix_nodes,fraction_treshold); CHKERRQ(ierr);
+  ierr = fix_all_but_one(m_field,da,fix_nodes,fraction_treshold); CHKERRQ(ierr);
   da *= fabs(crack_front_nodes.size()-fix_nodes.size())/(double)crack_front_nodes.size();
   corners_nodes.merge(fix_nodes);
 

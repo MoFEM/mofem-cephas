@@ -47,55 +47,49 @@ sweep surface 1  direction z 1 distance 0.1
 delete curve 47 53 
 delete vertex 103 
 
-brick x 0.018 y 0.03 z 0.03
-webcut volume 2  with plane vertex 157  vertex 161  vertex 154  
-delete volume 2 
-move Vertex 156  location vertex 148  include_merged 
-chop volume 1  with volume 3
-imprint volume all 
-merge volume all 
+webcut volume 1  with plane vertex 151  vertex 82  vertex 122  
+webcut volume 1  with plane vertex 146  vertex 73  vertex 127   
+imprint volume all  
+merge volume all  
+unite volume 2 4
+unite volume 2 1
 
-webcut volume 5  with plane vertex 151  vertex 82  vertex 122 
-webcut volume 5  with plane vertex 146  vertex 73  vertex 127  
-imprint volume all 
-merge volume all 
+brick x 0.018 y 0.02 z 0.03
+webcut volume 6  with plane vertex 181  vertex 178  vertex 185 
+delete volume 7 
+brick x 0.018 y 0.01 z 0.1
+move Vertex 193  location vertex 180  include_merged
+unite volume 6 8
+move Vertex 192  location vertex 148  include_merged
+chop volume 5  with volume 6
+imprint volume all  
+merge volume all  
 
-Sideset 100  curve all
-Sideset 100 curve 163 164 165 168 161 167 166 169 179   remove
-
-Nodeset 101 vertex 108 109 2 1   
-
-Sideset 102 surface all
-Sideset 102 surface  60 58 59 89 70 83 82 69 remove
-Sideset 10200 surface 89
-Sideset 10201 surface 67
-
-
-
-Sideset 200  surface 60
-Sideset 201  curve 163
-
-create Displacement  on surface 2  dof all fix 0  
-create force  on curve 142  force value 1 direction   -0.766 0.643 0  
-create force  on curve 144  force value 1 direction   0.766 -0.643 0  
+Sideset 100  curve all 
+Sideset 100 curve 170 169 151 150 223 222 198 193 217 220 221 216 199 224 219 218 171 149  remove 
  
-block 1 volume all       
-block 1 name 'MAT_ELASTIC'      
-block 1 attribute count 2      
-block 1 attribute index 1 0.96       
-block 1 attribute index 2 0.2     
+Nodeset 101 vertex 1 108 109 2     
+ 
+Sideset 102 surface all 
+Sideset 102 surface  63 50 93 81 82 57 59 73 83  remove 
+Sideset 10200 surface 59 73 57 
+ 
+Sideset 200  surface 83
+Sideset 201  curve 199 216  
+ 
+create Displacement  on surface 2  dof all fix 0   
+create force  on curve 142  force value 1 direction   -0.766 0.643 0   
+create force  on curve 144  force value 1 direction   0.766 -0.643 0   
   
-healer autoheal volume all
-merge tolerance 0.0005
-imprint tolerant volume all
-merge volume all
-
-set acisoption integer 'check_level' 70
-healer autoheal volume 7 9 
-
-volume all scheme Tetmesh    
-volume 6 5 9 7  size auto factor 7
-volume 8 4 size auto factor 5
+block 1 volume all         
+block 1 name 'MAT_ELASTIC'        
+block 1 attribute count 2        
+block 1 attribute index 1 9.6         
+block 1 attribute index 2 0.2       
+    
+volume all scheme Tetmesh      
+volume 3 2  size auto factor 8  
+volume 9 10  size auto factor 5 
 
 mesh volume all   
     
