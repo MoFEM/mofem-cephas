@@ -19,10 +19,10 @@ include_directories(${UM_SOURCE_DIR}/nonlinear_elasticity/src)
 include_directories(${UM_SOURCE_DIR}/convective_mass_element/src)
 
 add_library(fracture_mechanics
+  ${UM_SOURCE_DIR}/fracture_mechanics/MainCrackFunction.cpp
   ${UM_SOURCE_DIR}/fracture_mechanics/FaceSplittingTool.cpp
   ${UM_SOURCE_DIR}/fracture_mechanics/ConfigurationalFractureMechanics.cpp
 )
-
 
 add_executable(spatial_problem
   ${UM_SOURCE_DIR}/fracture_mechanics/spatial_problem.cpp

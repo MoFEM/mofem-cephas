@@ -170,19 +170,5 @@ struct ConfigurationalFractureMechanics {
 PetscErrorCode SNESMonitorSpatialAndSmoothing_FEMEthod(SNES snes,PetscInt its,PetscReal fgnorm,void *dummy);
 
 
-PetscErrorCode main_spatial_solution(FieldInterface& m_field,ConfigurationalFractureMechanics& conf_prob);
-PetscErrorCode main_material_forces(FieldInterface& m_field,ConfigurationalFractureMechanics& conf_prob);
-
-//crack propagation
-
-/** \brief rescale load factor, such that maximally stressed crack front node has griffithe energy equal to gc
-  *
-  */
-PetscErrorCode main_rescale_load_factor(FieldInterface& m_field,ConfigurationalFractureMechanics& conf_prob);
-
-PetscErrorCode main_arc_length_setup(FieldInterface& m_field,ConfigurationalFractureMechanics& conf_prob);
-PetscErrorCode main_arc_length_restart(FieldInterface& m_field,ConfigurationalFractureMechanics& conf_prob);
-PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFractureMechanics& conf_prob);
-
 
 #endif //__CONFIGURATIONAL_MECHANICS_HPP__

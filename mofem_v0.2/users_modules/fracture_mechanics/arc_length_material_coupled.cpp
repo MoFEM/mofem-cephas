@@ -47,6 +47,7 @@ extern "C" {
 
 #include <FaceSplittingTool.hpp>
 #include <ConfigurationalFractureMechanics.hpp>
+#include <MainCrackFunction.hpp>
 
 ErrorCode rval;
 PetscErrorCode ierr;

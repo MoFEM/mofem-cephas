@@ -5,191 +5,194 @@ set -e
 ARGS=$@
 
 while test $# -gt 0; do
-        case "$1" in
-                -h|--help)
-                        echo "crack propagation"
-                        echo " "
-                        echo "arc_length.sh [arguments]"
-                        echo " "
-                        echo "options:"
-                        echo "-h, --help"
-                        echo "-f, --file_name=FILE"
-			echo "-a, --da=CRACK_AREA_INCREMENT"
-			echo "-n, --nb_steps=NUMBER_OF_STEPS"
-			echo "-g, --gc=GRIFFITH_ENERGY"
-			echo "-d, --dir=DIR_NAME"
-			echo "-p, --proc=NB_OF_PROCESSORS"
-      			echo "-t, --rol=TOLERANCE"
-			echo "-i. --its_d=DESIRED_NUMBER_OF_ITS"
-			echo "-s, --spit_iter=NB_SPLIT"
-			echo "-m, --mesh_quality_stiffnes=ALPHA2"
-			echo "--pc_factor_mat_solver_package=[superlu_dist,mumps]"
-			echo "--showme"
-                        exit 0
-                        ;;
-		--showme)
-			export SHOWME=1
-			shift
-			;;
-                -f)
-                        shift
-                        if test $# -gt 0; then
-                                export FILE=$1
-                        else
-                                echo "no file name specified"
-                                exit 1
-                        fi
-                        shift
-                        ;;
-                --file_name*)
-                        export FILE=`echo $1 | sed -e 's/^[^=]*=//g'`
-                        shift
-                        ;;
-                -d)
-                        shift
-                        if test $# -gt 0; then
-                                export DIR_NAME=$1
-                        else
-                                echo "no file name specified"
-                                exit 1
-                        fi
-                        shift
-                        ;;
-                --dir*)
-                        export DIR_NAME=`echo $1 | sed -e 's/^[^=]*=//g'`
-                        shift
-                        ;;
+  case "$1" in
+    -h|--help)
+    echo "crack propagation"
+    echo " "
+    echo "arc_length.sh [arguments]"
+    echo " "
+    echo "options:"
+    echo "-h, --help"
+    echo "-f, --file_name=FILE"
+    echo "-a, --da=CRACK_AREA_INCREMENT"
+    echo "-n, --nb_steps=NUMBER_OF_STEPS"
+    echo "-g, --gc=GRIFFITH_ENERGY"
+    echo "-d, --dir=DIR_NAME"
+    echo "-p, --proc=NB_OF_PROCESSORS"
+    echo "-t, --rol=TOLERANCE"
+    echo "-i. --its_d=DESIRED_NUMBER_OF_ITS"
+    echo "-s, --spit_iter=NB_SPLIT"
+    echo "-m, --mesh_quality_stiffnes=ALPHA2"
+    echo "--fraction_treshold=[0.1]"
+    echo "--pc_factor_mat_solver_package=[superlu_dist,mumps]"
+    echo "--showme"
+    exit 0
+    ;;
+    --showme)
+    export SHOWME=1
+    shift
+    ;;
+    -f)
+    shift
+    if test $# -gt 0; then
+      export FILE=$1
+    else
+      echo "no file name specified"
+      exit 1
+    fi
+    shift
+    ;;
+    --file_name*)
+    export FILE=`echo $1 | sed -e 's/^[^=]*=//g'`
+    shift
+    ;;
+    -d)
+    shift
+    if test $# -gt 0; then
+      export DIR_NAME=$1
+    else
+      echo "no file name specified"
+      exit 1
+    fi
+    shift
+    ;;
+    --dir*)
+    export DIR_NAME=`echo $1 | sed -e 's/^[^=]*=//g'`
+    shift
+    ;;
+    -a)
+    shift
+    if test $# -gt 0; then
+      export DA=$1
+    else
+      echo "no crack area increment energy specified"
+      exit 1
+    fi
+    shift
+    ;;
+    --da*)
+    export DA=`echo $1 | sed -e 's/^[^=]*=//g'`
+    shift
+    ;;
+    -n)
+    shift
+    if test $# -gt 0; then
+      export NBSTEPS=$1
+    else
+      echo "no number of steps specified"
+      exit 1
+    fi
+    shift
+    ;;
+    --nb_steps*)
+    export NBSTEPS=`echo $1 | sed -e 's/^[^=]*=//g'`
+    shift
+    ;;
 
-		-a)
-                        shift
-                        if test $# -gt 0; then
-                                export DA=$1
-                        else
-                                echo "no crack area increment energy specified"
-                                exit 1
-                        fi
-                        shift
-                        ;;
-                --da*)
-                        export DA=`echo $1 | sed -e 's/^[^=]*=//g'`
-                        shift
-                        ;;
-		-n)
-                        shift
-                        if test $# -gt 0; then
-                                export NBSTEPS=$1
-                        else
-                                echo "no number of steps specified"
-                                exit 1
-                        fi
-                        shift
-                        ;;
-                --nb_steps*)
-                        export NBSTEPS=`echo $1 | sed -e 's/^[^=]*=//g'`
-                        shift
-                        ;;
+    -g)
+    shift
+    if test $# -gt 0; then
+      export GC=$1
+    else
+      echo "no griffith energy specified"
+      exit 1
+    fi
+    shift
+    ;;
+    --gc*)
+    export GC=`echo $1 | sed -e 's/^[^=]*=//g'`
+    shift
+    ;;
 
-		-g)
-                        shift
-                        if test $# -gt 0; then
-                                export GC=$1
-                        else
-                                echo "no griffith energy specified"
-                                exit 1
-                        fi
-                        shift
-                        ;;
-                --gc*)
-                        export GC=`echo $1 | sed -e 's/^[^=]*=//g'`
-                        shift
-                        ;;
-
-		-p)
-                        shift
-                        if test $# -gt 0; then
-                                export NB_PROC=$1
-                        else
-                                echo "no processors number specified"
-                                exit 1
-                        fi
-                        shift
-                        ;;
-                --proc*)
-                        export NB_PROC=`echo $1 | sed -e 's/^[^=]*=//g'`
-                        shift
-                        ;;
-		-t)
-                        shift
-                        if test $# -gt 0; then
-                                export TOL=$1
-                        else
-                                echo "no tolerance specified"
-                                exit 1
-                        fi
-                        shift
-                        ;;
-                --tol*)
-                        export TOL=`echo $1 | sed -e 's/^[^=]*=//g'`
-                        shift
-                        ;;
-		-s)
-                        shift
-                        if test $# -gt 0; then
-                                export NBSPLIT=$1
-                        else
-                                echo "number of splits"
-                                exit 1
-                        fi
-                        shift
-                        ;;
-                --split_iter*)
-                        export NBSPLIT=`echo $1 | sed -e 's/^[^=]*=//g'`
-                        shift
-                        ;;
-		-i)
-                        shift
-                        if test $# -gt 0; then
-                                export ITSD=$1
-                        else
-                                echo "no desired number of iterations specified"
-                                exit 1
-                        fi
-                        shift
-                        ;;
-                --its_d*)
-                        export ITSD=`echo $1 | sed -e 's/^[^=]*=//g'`
-                        shift
-                        ;;
-		-m)
-                        shift
-                        if test $# -gt 0; then
-                                export ALPHA2=$1
-                        else
-                                echo "mesh stiffnes parameter not specified"
-                                exit 1
-                        fi
-                        shift
-                        ;;
-                --mesh_quality_stiffnes*)
-                        export ALPHA2=`echo $1 | sed -e 's/^[^=]*=//g'`
-                        shift
-			;;
-		--snes_linesearch_type*)
-                        export LINESEARCHTYPE=`echo $1 | sed -e 's/^[^=]*=//g'`
-                        shift
-                        ;;
-		--pc_factor_mat_solver_package*)
-                        export PCFACTOR=`echo $1 | sed -e 's/^[^=]*=//g'`
-                        shift
-                        ;;
-		--my_nb_sub_steps*)
-                        export NBSUBSTEPS=`echo $1 | sed -e 's/^[^=]*=//g'`
-                        shift
-                        ;;
-                *)
-                        break
-                        ;;
-        esac
+    -p)
+    shift
+    if test $# -gt 0; then
+      export NB_PROC=$1
+    else
+      echo "no processors number specified"
+      exit 1
+    fi
+    shift
+    ;;
+    --proc*)
+    export NB_PROC=`echo $1 | sed -e 's/^[^=]*=//g'`
+    shift
+    ;;
+    -t)
+    shift
+    if test $# -gt 0; then
+      export TOL=$1
+    else
+      echo "no tolerance specified"
+      exit 1
+    fi
+    shift
+    ;;
+    --tol*)
+    export TOL=`echo $1 | sed -e 's/^[^=]*=//g'`
+    shift
+    ;;
+    -s)
+    shift
+    if test $# -gt 0; then
+      export NBSPLIT=$1
+    else
+      echo "number of splits"
+      exit 1
+    fi
+    shift
+    ;;
+    --split_iter*)
+    export NBSPLIT=`echo $1 | sed -e 's/^[^=]*=//g'`
+    shift
+    ;;
+    -i)
+    shift
+    if test $# -gt 0; then
+      export ITSD=$1
+    else
+      echo "no desired number of iterations specified"
+      exit 1
+    fi
+    shift
+    ;;
+    --its_d*)
+    export ITSD=`echo $1 | sed -e 's/^[^=]*=//g'`
+    shift
+    ;;
+    -m)
+    shift
+    if test $# -gt 0; then
+      export ALPHA2=$1
+    else
+      echo "mesh stiffnes parameter not specified"
+      exit 1
+    fi
+    shift
+    ;;
+    --mesh_quality_stiffnes*)
+    export ALPHA2=`echo $1 | sed -e 's/^[^=]*=//g'`
+    shift
+    ;;
+    --snes_linesearch_type*)
+    export LINESEARCHTYPE=`echo $1 | sed -e 's/^[^=]*=//g'`
+    shift
+    ;;
+    --pc_factor_mat_solver_package*)
+    export PCFACTOR=`echo $1 | sed -e 's/^[^=]*=//g'`
+    shift
+    ;;
+    --fraction_treshold*)
+    export FRACTION_TRESHOLD=`echo $1 | sed -e 's/^[^=]*=//g'`
+    ;;
+    --my_nb_sub_steps*)
+    export NBSUBSTEPS=`echo $1 | sed -e 's/^[^=]*=//g'`
+    shift
+    ;;
+    *)
+    break
+    ;;
+  esac
 done
 
 if [ -z \$\{FILE+x\} ]; then
@@ -247,6 +250,10 @@ if [ -z ${PCFACTOR+x} ]; then
   PCFACTOR=superlu_dist
 fi
 
+if [ -z ${FRACTION_TRESHOLD+x} ]; then
+  FRACTION_TRESHOLD=1e-1
+fi
+
 if [ -z ${NBSPLIT+x} ]; then
   NBSPLIT=0
 fi
@@ -254,7 +261,6 @@ fi
 if [ -z ${ALPHA2+x} ]; then
   ALPHA2=1e-3
 fi
-
 
 BIN_PATH="@CMAKE_CURRENT_BINARY_DIR@"
 MPIRUN="@MoFEM_MPI_RUN@ -np $NB_PROC"
@@ -286,7 +292,7 @@ COMMAND="$MPIRUN $BIN_PATH/arc_length_material_coupled \
   -snes_linesearch_minlambda 0.01 \
   -mat_partitioning_type parmetis \
   -my_tol $TOL -my_its_d $ITSD \
-  -my_gc $GC -my_alpha2 $ALPHA2 -my_gamma 0. \
+  -my_gc $GC -my_alpha2 $ALPHA2 -my_gamma 0. -my_fraction_treshold $FRACTION_TRESHOLD \
   -my_da $DA -my_load_steps $NBSTEPS \
   -my_nb_sub_steps $NBSUBSTEPS \
   -log_summary"
