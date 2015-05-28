@@ -1,4 +1,4 @@
-/*! \page acoustic_wave1 monochromatic acoustic wave (Usage example)
+/*! \page acoustic_wave1 Monochromatic Acoustic Wave (Usage example)
 
 This is simple example how to run monochromatic acoustic wave problems with analytical solutions. Is is
 directed for beginners starting work with MoFEM.
@@ -11,29 +11,7 @@ For moFEM feature of Hierarchic finite element referred to [2].
 
 For the details of SommerFeld boundary condition and Baliss-Turkel Boundary condition see [3], while using hierarchic finite element [2].
 
-\subsection introduction_options options
-There are command line options you can choose from in order to execute the desired
-analysis. The commands of the following are generic for both best_approximation.cpp(calculate analytical solution on computational domain) and
-fe_approximation.cpp(calculate finite element solution on computational domain). The general commands shared by other
-examples will not be addressed here again.
 
-  - mpirun -np Integer The number of processors used. In some times, over used processors will delay the calculation time severely.
-  - my_file input mesh file
-  - my_is_partitioned bool operator indicates whether a partitioned mesh is used.
-  - wave_number a scalar represents the wavenumber k
-  - wave_direction 3*3 unit vector (direction of the incident wave)
-  - analytical_solution_type characters chosen from (implemented in \ref AnalyticalSolutions.hpp):
-    -# hard_sphere_incident_wave \ref HardSphereScatterWave
-    -# soft_sphere_incident_wave \ref SoftSphereScatterWave
-    -# plane_wave \ref PlaneWave
-    -# hard_cylinder_scatter_wave \ref HardCylinderScatterWave
-    -# soft_cylinder_scatter_wave \ref SoftCylinderScatterWave
-    -# incident_wave \ref IncidentWave
-    -# no_analytical_solution
-  - add_incident_wave bool (whether you require a scatterer potential or total potential, alternatively, adding plane wave potential filed)
-  - power_of_incident_wave scalar (the amplitude of incident wave)
-  - save_postproc_mesh bool operator whether you want to output the computation results after the refinement in .h5m format.
-  - wave_guide_angle double between 0 - 2 \f$\pi\f$ indicates the propagating angle for wave guide problem only.
 
 \subsection introduction_input_file Input files
 Following description and line commands are in presumption that user parent
@@ -143,6 +121,35 @@ mpirun -np 2 ./error_norm \
 will results a .h5m file contains the local error of desired as well as global error prints out on the screen.
 The command -norm_type has two options: h1 and l2 respectively.
 
+\subsection introduction_options Options
+There are command line options you can choose from in order to execute the desired
+analysis. The commands of the following are generic for both best_approximation.cpp (calculate analytical solution on computational domain) and
+fe_approximation.cpp (calculate finite element solution on computational domain). The general commands shared by other
+examples will not be addressed again in this page.
+
+  - The number of processors can be determined by \em -mpirun -np 2. Some times,
+    over used processors will delay the calculation time severely.
+  - Input mesh file \em my_file input_mesh_file
+  - Bool operator (true or false) indicates whether a partitioned mesh is used \em my_is_partitioned
+  - A scalar represents the wavenumber \em -wave_number k
+  - The approximation order p \em -my_order 2
+  - 3*3 unit vector (direction of the incident wave) \em -wave_direction
+  - Characters represents the different type of benchmark problems \em -analytical_solution_type (implemented in \ref AnalyticalSolutions.hpp):
+    -# hard_sphere_incident_wave \ref HardSphereScatterWave
+    -# soft_sphere_incident_wave \ref SoftSphereScatterWave
+    -# plane_wave \ref PlaneWave
+    -# hard_cylinder_scatter_wave \ref HardCylinderScatterWave
+    -# soft_cylinder_scatter_wave \ref SoftCylinderScatterWave
+    -# incident_wave \ref IncidentWave
+    -# no_analytical_solution
+  - Bool operator decide you want the incident wave solution added to you scatterer solution.
+    \em -add_incident_wave (whether you require a scatterer potential or total potential, alternatively, adding incident wave potential field)
+  - Scalar represents the amplitude of incident wave \em -power_of_incident_wave A
+  - Bool operator decides whether you want to output the computation results after the refinement in .h5m format. \em -save_postproc_mesh
+  - Double number between 0 - 2\f$\pi\f$ indicates the propagating angle for wave guide problem only. \em -wave_guide_angle
+
+
+
 \subsection paraview VTK files for paraview
 
 VTK format file can be generated use
@@ -164,7 +171,9 @@ mbconvert ./xxx.h5m xxx.vtk
 
 \image html wave_guide_p_convergence.png "log-log p-convergence of l2 relative error versus DOFs for wave guide problem K=10" width=3cm
 
-
+The above figures shown the h & p convergence of the relative error in l2 norm, with similar no. of DOFs (degree of freedom), we increase
+ the approximation order p of finite element solution from 1-6. As we can observe from graph the convergence rate of p enrichment is faster than h refinement,
+ in addition, results in smaller error. The h refinement shows linear convergence rate despite the oscillation due to low no. of DOFs at the beginning of refinement process.
 
 \section cylinder_example Cylinder scatterer example
 Cylinder scatterer example describes an infinite height cylinder as a scatterer (either soft or rigid),
@@ -463,8 +472,22 @@ mpirun -np 3 ./fe_approximation \
 
 
 
-/*! \page acoustic_wave2 non-monochromatic acoustic wave (Usage example)
+/*! \page acoustic_wave2 Non-monochromatic Acoustic Wave (Usage example)
 
 Coming Soon.
+
+/subsection read_data Read Data
+
+Data format
+
+
+\code
+time step || amplitude
+    1     || 1
+
+
+\endcode
+
+signal_length -- length of the signal L used in FFT.
 
 */

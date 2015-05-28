@@ -656,6 +656,21 @@ struct HelmholtzElement {
   };
 
   /** \brief Calculate incident wave scattered on hard surface
+      \ingroup mofem_helmholtz_elem
+
+    This part shows the Neumann boundary condition of the exterior boundary
+    value problem for the rigid scatterer.
+
+    \f]
+    \left. \left\{ \mathbf{n} \cdot  (ik\mathbf{d} A_{0} e^{ik \mathbf{d} \cdot \mathbf{x}})
+    \right\}
+    \f[
+
+    where \f$\mathbf{n})\f$ is the normal vector point outward of the surface of scatterer.
+      \f$\mathbf{x})\f$ is the cartesian coordinates and \f$d\f$ is the unit vector represents the
+      direction of the incident wave. Further more
+
+
 
     \bug Assumes that normal sf surface pointing outward.
     */
@@ -706,6 +721,45 @@ struct HelmholtzElement {
 
     It is inverse Fourier transform evaluated at arbitrary Gauss points.
 
+    This part shows the Neumann boundary condition of the exterior boundary
+    value problem for the rigid scatterer.
+
+    The following parameters are used in the calculation of plane incident wave
+    \f[
+    &f = \frac{1}{T} frequency in hertz of s^{-1} \\
+    &T = \frac{1}{f} period or duration in s (second) \\
+    &\lambda = \frac{2 \pi}{k} = \frac{c}{f} wavelength in meter \\
+
+    &c = \frac{\lambda}{T} = \frac{\omega}{k} = wavespeed (phase velocity) in m\s \\
+
+    &k = \frac{\omeag}{c} wave number in rad \cdot m^{-1} \\
+
+    &\omega = 2 \pi f = \frac{2 \pi}{T} angular frequency in rad/s \\
+
+    &\delta t = T/n is the stride of the signal length between each time steps \\
+    &\delta n is the stride of time step for there is n time steps. \\
+    &\phi = 2 \pi f ( (c \delta t \delta n)/lambda ) is the phase \\
+
+    \f]
+
+    for input signal \f$ x(n) \f$ which n is the number of the data in time domain,
+    through the fast forward transformation (thanks to the package KISS), we can transfer
+    any arbitrary signal from time (or spatial) domain into frequency domain. Since
+    the Euler formulation, the combination of sinusoid functions can be expressed in
+    complex exponentialform. (this related to the Euler Identity) the reuslts in frequency are
+    put as boundary condition of the helmholtz problem.
+
+
+    \f[
+    \left. \left\{ \frac{1}{n} \mathbf{n} \cdot  (ik\mathbf{d} A_{0} e^{ik \mathbf{d} \cdot \mathbf{x} + \phi})
+    \right\}
+    \f]
+
+    where \f$\mathbf{n})\f$ is the normal vector point outward of the surface of scatterer.
+      \f$\mathbf{x})\f$ is the cartesian coordinates and \f$d\f$ is the unit vector represents the
+      direction of the incident wave.
+
+
     \bug Assumes that normal sf surface pointing outward.
 
     */
@@ -737,11 +791,11 @@ struct HelmholtzElement {
       complex<double> p_inc_frequency = 0;
       ublas::vector<complex<double > > grad(3);
       grad.clear();
-
+      //manually apply the IFFT.
       for(int f = 0;f<size;f++) {
         double speed = signal_length/signal_duration;
-        double wave_number = 2*M_PI*f/signal_length; //2pi/lambda
-        double delta_t = signal_duration/size;
+        double wave_number = 2*M_PI*f/signal_length; //2pi f / lambda
+        double delta_t = signal_duration/size; //time step
         double distance = speed*delta_t*time_step;
         double phase= 2*M_PI*f*(distance/signal_length);
         p_inc_frequency = (complex_out[f].r+i*complex_out[f].i)*exp(i*wave_number*inner_prod(direction,cOordinate)+i*phase);
@@ -1459,7 +1513,7 @@ struct HelmholtzElement {
         );
       }
 
-      if(globalParameters.isMonochromaticWave.first) {
+      if(!globalParameters.isMonochromaticWave.first) {
         boost::shared_ptr<IncidentWaveNeumannDFT_F2> incident_wave_neumann_bc;
         incident_wave_neumann_bc = boost::shared_ptr<IncidentWaveNeumannDFT_F2>(new IncidentWaveNeumannDFT_F2(globalParameters));
         // assembled to the right hand vector
