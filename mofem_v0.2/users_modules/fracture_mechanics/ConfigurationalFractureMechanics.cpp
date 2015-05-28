@@ -3810,17 +3810,19 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
     rval = m_field.get_moab().tag_get_by_ptr(th_t_val,&root_meshset,1,(const void**)&load_factor_ptr); CHKERR_THROW(rval);
     double& load_factor = *load_factor_ptr;
 
+    double fraction_treshold = 1e-1;
     bool at_least_one_step_converged = false;
     conf_prob.freeze_all_but_one = false;
     double _da_ = (aa == 0) ? 0 : da;
     int ii = 0;
     for(;ii<nb_sub_steps;ii++) {
       ierr = PetscPrintf(PETSC_COMM_WORLD,"\n* number of substeps = %D _da_ = %6.4e\n\n",ii,_da_); CHKERRQ(ierr);
-      ierr = conf_prob.solve_coupled_problem(m_field,&snes,_da_); CHKERRQ(ierr);
+      ierr = conf_prob.solve_coupled_problem(m_field,&snes,_da_,fraction_treshold); CHKERRQ(ierr);
       if(conf_prob.total_its == 0) break;
       SNESConvergedReason reason;
       ierr = SNESGetConvergedReason(snes,&reason); CHKERRQ(ierr);
       if(reason > 0) {
+        fraction_treshold = 1e-1;
         if(da > 0) {
           if(aa > 0 && ii == 0) {
             if(flg != PETSC_TRUE) {
@@ -3849,6 +3851,7 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
         ierr = conf_prob.delete_front_projection_data(m_field); CHKERRQ(ierr);
         _da_ = 0;
       } else {
+        fraction_treshold *= 0.25;
         ierr = PetscPrintf(PETSC_COMM_WORLD,"* reset unknowns vector\n"); CHKERRQ(ierr);
         ierr = m_field.set_global_ghost_vector("COUPLED_PROBLEM",COL,D0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
         load_factor = load_factor0;
