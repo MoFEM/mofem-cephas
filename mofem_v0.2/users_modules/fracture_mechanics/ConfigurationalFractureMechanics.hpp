@@ -25,6 +25,9 @@ improvements.
 
 All Functions should be grouped in structures.
 
+Week constrains using Neitsche method should be used to enforce constrains
+on geometry. 
+
 */
 
 /* This file is part of MoFEM.

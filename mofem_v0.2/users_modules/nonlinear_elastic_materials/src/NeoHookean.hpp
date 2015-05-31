@@ -56,14 +56,14 @@ struct NeoHookean: public NonlinearElasticElement::FunctionsToCalulatePiolaKirch
       PetscFunctionReturn(0);
     }
 
-    virtual PetscErrorCode CalualteP_PiolaKirchhoffI(
+    virtual PetscErrorCode calculateP_PiolaKirchhoffI(
       const NonlinearElasticElement::BlockData block_data,
       const NumeredMoFEMFiniteElement *fe_ptr) {
       PetscFunctionBegin;
       PetscErrorCode ierr;
       this->lambda = LAMBDA(block_data.E,block_data.PoissonRatio);
       this->mu = MU(block_data.E,block_data.PoissonRatio);
-      ierr = this->CalulateC_CauchyDefromationTensor(); CHKERRQ(ierr);
+      ierr = this->calculateC_CauchyDefromationTensor(); CHKERRQ(ierr);
       ierr = this->NeoHooke_PiolaKirchhoffII(); CHKERRQ(ierr);
       this->P.resize(3,3);
       noalias(this->P) = prod(this->F,this->S);
@@ -81,13 +81,13 @@ struct NeoHookean: public NonlinearElasticElement::FunctionsToCalulatePiolaKirch
     Richard D. Wood
 
     */
-    virtual PetscErrorCode CalulateElasticEnergy(const NonlinearElasticElement::BlockData block_data,
+    virtual PetscErrorCode calculateElasticEnergy(const NonlinearElasticElement::BlockData block_data,
       const NumeredMoFEMFiniteElement *fe_ptr) {
       PetscFunctionBegin;
       PetscErrorCode ierr;
       this->lambda = LAMBDA(block_data.E,block_data.PoissonRatio);
       this->mu = MU(block_data.E,block_data.PoissonRatio);
-      ierr = this->CalulateC_CauchyDefromationTensor(); CHKERRQ(ierr);
+      ierr = this->calculateC_CauchyDefromationTensor(); CHKERRQ(ierr);
       ierr = this->dEterminatnt(this->F,this->J); CHKERRQ(ierr);
       this->eNergy = 0;
       for(int ii = 0;ii<3;ii++) {

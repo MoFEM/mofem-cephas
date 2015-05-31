@@ -12,4 +12,4 @@
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
 cm_export_file("brick_slice_b1.jou" export_files_material_mechanics_examples)
-cm_export_file("brick_slice_b1.h5m" export_files_material_mechanics_examples)
+cm_export_file("brick_slice_b1.cub" export_files_material_mechanics_examples)

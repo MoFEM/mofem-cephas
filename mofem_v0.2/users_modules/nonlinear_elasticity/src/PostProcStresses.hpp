@@ -101,9 +101,9 @@ struct PostPorcStress: public VolumeElementForcesAndSourcesCore::UserDataOperato
         noalias(dAta.materialDoublePtr->F) = prod(dAta.materialDoublePtr->F,invH);
       }
 
-      ierr = dAta.materialDoublePtr->CalualteP_PiolaKirchhoffI(dAta,getMoFEMFEPtr()); CHKERRQ(ierr);
+      ierr = dAta.materialDoublePtr->calculateP_PiolaKirchhoffI(dAta,getMoFEMFEPtr()); CHKERRQ(ierr);
       rval = postProcMesh.tag_set_data(th_piola1,&mapGaussPts[gg],1,&dAta.materialDoublePtr->P(0,0)); CHKERR_PETSC(rval);
-      dAta.materialDoublePtr->CalulateElasticEnergy(dAta,getMoFEMFEPtr()); CHKERRQ(ierr);
+      dAta.materialDoublePtr->calculateElasticEnergy(dAta,getMoFEMFEPtr()); CHKERRQ(ierr);
       rval = postProcMesh.tag_set_data(th_energy,&mapGaussPts[gg],1,&dAta.materialDoublePtr->eNergy); CHKERR_PETSC(rval);
 
     }

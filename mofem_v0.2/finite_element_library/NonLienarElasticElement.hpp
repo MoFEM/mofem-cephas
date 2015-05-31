@@ -114,9 +114,10 @@ struct NonlinearElasticElement {
     string spatialPositions;
     string meshPositions;
     vector<MatrixDouble > P; ///< this need to be I Piola-Kirchoff stress tensor
+    vector<MatrixDouble > SiGma; ///< this is Eshelby Stress
     vector<vector<double*> > jacStressRowPtr;
     vector<MatrixDouble > jacStress; ///< this is simply material tangent operator
-  };
+   };
   CommonData commonData;
 
   /** \brief Implementation of elastic (non-linear) St. Kirchoff equation
@@ -125,7 +126,7 @@ struct NonlinearElasticElement {
   template<typename TYPE>
   struct FunctionsToCalulatePiolaKirchhoffI {
 
-    /** \brief Calulate determinant of 3x3 matrix
+    /** \brief Calculate determinant of 3x3 matrix
       */
     PetscErrorCode dEterminatnt(ublas::matrix<TYPE> a,TYPE &det) {
       PetscFunctionBegin;
@@ -147,7 +148,7 @@ struct NonlinearElasticElement {
     }
 
 
-    /** \brief Calusta invers of 3x3 matrix
+    /** \brief Calculate inverse of 3x3 matrix
       */
     PetscErrorCode iNvert(TYPE det,ublas::matrix<TYPE> a,ublas::matrix<TYPE> &inv_a) {
       PetscFunctionBegin;
@@ -169,42 +170,42 @@ struct NonlinearElasticElement {
     }
 
     double lambda,mu;
-    ublas::matrix<TYPE> F,C,E,S,invF,P;
+    ublas::matrix<TYPE> F,C,E,S,invF,P,SiGma;
     TYPE J,eNergy;
 
     int gG;	///< Gauss point number
     CommonData *commonDataPtr; ///< common data shared between entities (f.e. field values at Gauss pts.)
     VolumeElementForcesAndSourcesCore::UserDataOperator *opPtr; ///< pointer to finite element tetrahedral operator
 
-    PetscErrorCode CalulateC_CauchyDefromationTensor() {
+    PetscErrorCode calculateC_CauchyDefromationTensor() {
       PetscFunctionBegin;
       C.resize(3,3);
       noalias(C) = prod(trans(F),F);
       PetscFunctionReturn(0);
     }
 
-    PetscErrorCode CalulateE_GreenStrain() {
+    PetscErrorCode calculateE_GreenStrain() {
       PetscFunctionBegin;
       E.resize(3,3);
       noalias(E) = C;
       for(int dd = 0;dd<3;dd++) {
-	E(dd,dd) -= 1;
+        E(dd,dd) -= 1;
       }
       E *= 0.5;
       PetscFunctionReturn(0);
     }
 
     //St. Venant–Kirchhoff Material
-    PetscErrorCode CalculateS_PiolaKirchhoffII() {
+    PetscErrorCode calculateS_PiolaKirchhoffII() {
       PetscFunctionBegin;
       TYPE trE = 0;
       for(int dd = 0;dd<3;dd++) {
-	trE += E(dd,dd);
+        trE += E(dd,dd);
       }
       S.resize(3,3);
       S.clear();
       for(int dd = 0;dd<3;dd++) {
-	S(dd,dd) = trE*lambda;
+        S(dd,dd) = trE*lambda;
       }
       S += 2*mu*E;
       PetscFunctionReturn(0);
@@ -213,7 +214,7 @@ struct NonlinearElasticElement {
     /** \brief Function overload to implement user material
       *
 
-      * Calculation of Piola Kirchoff I is implemented by user. Tangent matrix
+      * Calculation of Piola Kirchhoff I is implemented by user. Tangent matrix
       * user implemented physical equation is calculated using automatic
       * differentiation.
 
@@ -232,57 +233,77 @@ struct NonlinearElasticElement {
       Richard D. Wood
 
       */
-    virtual PetscErrorCode CalualteP_PiolaKirchhoffI(
+    virtual PetscErrorCode calculateP_PiolaKirchhoffI(
       const BlockData block_data,
-      const NumeredMoFEMFiniteElement *fe_ptr) {
+      const NumeredMoFEMFiniteElement *fe_ptr
+    ) {
       PetscFunctionBegin;
       PetscErrorCode ierr;
       lambda = LAMBDA(block_data.E,block_data.PoissonRatio);
       mu = MU(block_data.E,block_data.PoissonRatio);
-      ierr = CalulateC_CauchyDefromationTensor(); CHKERRQ(ierr);
-      ierr = CalulateE_GreenStrain(); CHKERRQ(ierr);
-      ierr = CalculateS_PiolaKirchhoffII(); CHKERRQ(ierr);
+      ierr = calculateC_CauchyDefromationTensor(); CHKERRQ(ierr);
+      ierr = calculateE_GreenStrain(); CHKERRQ(ierr);
+      ierr = calculateS_PiolaKirchhoffII(); CHKERRQ(ierr);
       P.resize(3,3);
       noalias(P) = prod(F,S);
       //cerr << "P: " << P << endl;
       PetscFunctionReturn(0);
     }
 
-    virtual PetscErrorCode SetUserActiveVariables(
+    virtual PetscErrorCode setUserActiveVariables(
       int &nb_active_variables) {
       PetscFunctionBegin;
       PetscFunctionReturn(0);
     }
 
-    virtual PetscErrorCode SetUserActiveVariables(
+    virtual PetscErrorCode setUserActiveVariables(
       VectorDouble &active_varibles) {
       PetscFunctionBegin;
       PetscFunctionReturn(0);
     }
 
-
-    /** \brief calculate elastic energy density
+    /** \brief Calculate elastic energy density
       *
-      * \f$\Psi = \frac{1}{2}\lambda(\textrm{tr}[\mathbf{E}])^2+\mu\mathbf{E}:\mathbf{E}\f$
+      * \f[\Psi = \frac{1}{2}\lambda(\textrm{tr}[\mathbf{E}])^2+\mu\mathbf{E}:\mathbf{E}\f]
       */
-    virtual PetscErrorCode CalulateElasticEnergy(const BlockData block_data,
-      const NumeredMoFEMFiniteElement *fe_ptr) {
+    virtual PetscErrorCode calculateElasticEnergy(
+      const BlockData block_data,
+      const NumeredMoFEMFiniteElement *fe_ptr
+    ) {
       PetscFunctionBegin;
       PetscErrorCode ierr;
       lambda = LAMBDA(block_data.E,block_data.PoissonRatio);
       mu = MU(block_data.E,block_data.PoissonRatio);
-      ierr = CalulateC_CauchyDefromationTensor(); CHKERRQ(ierr);
-      ierr = CalulateE_GreenStrain(); CHKERRQ(ierr);
+      ierr = calculateC_CauchyDefromationTensor(); CHKERRQ(ierr);
+      ierr = calculateE_GreenStrain(); CHKERRQ(ierr);
       TYPE trace = 0;
       eNergy = 0;
       for(int ii = 0;ii<3;ii++) {
-	trace += E(ii,ii);
-	for(int jj = 0;jj<3;jj++) {
-	  TYPE e = E(ii,jj);
-	  eNergy += mu*e*e;
-	}
+        trace += E(ii,ii);
+        for(int jj = 0;jj<3;jj++) {
+          TYPE e = E(ii,jj);
+          eNergy += mu*e*e;
+        }
       }
       eNergy += 0.5*lambda*trace*trace;
+      PetscFunctionReturn(0);
+    }
+
+    /** \brief Calculate Eshelby stress
+    */
+    virtual PetscErrorCode calculateSiGma_EshelbyStress(
+      const BlockData block_data,
+      const NumeredMoFEMFiniteElement *fe_ptr
+    ) {
+      PetscFunctionBegin;
+      PetscErrorCode ierr;
+      ierr = calculateP_PiolaKirchhoffI(block_data,fe_ptr); CHKERRQ(ierr);
+      ierr = calculateElasticEnergy(block_data,fe_ptr); CHKERRQ(ierr);
+      SiGma.resize(3,3,false);
+      noalias(SiGma) = -prod(trans(F),P);
+      for(int dd = 0;dd<3;dd++) {
+        SiGma(dd,dd) += eNergy;
+      }
       PetscFunctionReturn(0);
     }
 
@@ -311,7 +332,7 @@ struct NonlinearElasticElement {
     OpGetCommonDataAtGaussPts(const string field_name,CommonData &common_data);
   };
 
-  struct OpJacobian: public VolumeElementForcesAndSourcesCore::UserDataOperator {
+  struct OpJacobianPiolaKirchhoffStress: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     BlockData &dAta;
     CommonData &commonData;
@@ -319,27 +340,55 @@ struct NonlinearElasticElement {
     int adlocReturnValue;
     bool jAcobian;
     bool fieldDisp;
+    bool aLe;
 
-    OpJacobian(
+    /**
+      \brief Construct operator to calculate Pilo Kirchhoff stress or its derivatives over gradient deformation
+
+      \param field_name approximation field name of spatial positions or displacements
+      \param data reference to block data (what is Young modulus, Poisson ratio or what elements are part of the block)
+      \param tag adol-c unique tag of the tape
+      \param jacobian if true derivative of Piola Stress is calculated otherwise just stress is calculated
+      \param field_disp if true approximation field keeps displacements not spatial positions
+
+    */
+    OpJacobianPiolaKirchhoffStress(
       const string field_name,
       BlockData &data,
       CommonData &common_data,
-      int tag,bool jacobian,bool field_disp);
+      int tag,
+      bool jacobian,
+      bool field_disp
+    );
 
     VectorDouble active_varibles;
     int nb_active_variables;
 
-    PetscErrorCode doWork(
-      int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data);
+    vector<MatrixDouble > *ptrh;
+    vector<MatrixDouble > *ptrH;
+
+    adouble detH;
+    ublas::matrix<adouble> h;
+    ublas::matrix<adouble> H;
+    ublas::matrix<adouble> invH;
+
+    virtual PetscErrorCode calculateStress();
+
+    PetscErrorCode doWork(int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data);
+
   };
 
-  struct OpRhs: public VolumeElementForcesAndSourcesCore::UserDataOperator {
+  struct OpRhsPiolaKirchhoff: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     BlockData &dAta;
     CommonData &commonData;
     bool fieldDisp;
+    bool aLe;
 
-    OpRhs(const string field_name,BlockData &data,CommonData &common_data);
+    ublas::vector<int> iNdices;
+    Range forcesOnlyOnEntities;
+
+    OpRhsPiolaKirchhoff(const string field_name,BlockData &data,CommonData &common_data);
 
     VectorDouble nf;
     PetscErrorCode doWork(
@@ -361,23 +410,101 @@ struct NonlinearElasticElement {
 
   };
 
-
-  struct OpLhs_dx: public VolumeElementForcesAndSourcesCore::UserDataOperator {
+  struct OpLhsPiolaKirchhoff_dx: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     BlockData &dAta;
     CommonData &commonData;
     int tAg;
+    bool aLe;
 
-    OpLhs_dx(const string vel_field,const string field_name,BlockData &data,CommonData &common_data);
+    ublas::vector<int> rowIndices;
+    ublas::vector<int> colIndices;
+    Range forcesOnlyOnEntitiesRow;
+    Range forcesOnlyOnEntitiesCol;
+
+    OpLhsPiolaKirchhoff_dx(const string vel_field,const string field_name,BlockData &data,CommonData &common_data);
 
     MatrixDouble k,trans_k,jac,F;
+
+    /**
+      \brief Directive of Piola Kirchhoff stress over spatial DOFs
+
+      This project derivative \f$\frac{\partial P}{\partial F}\f$, that is
+      \f[
+      \frac{\partial P}{\partial x_\textrm{DOF}} =  \frac{\partial P}{\partial F}\frac{\partial F}{\partial x_\textrm{DOF}},
+      \f]
+      where second therm \f$\frac{\partial F}{\partial x_\textrm{DOF}}\f$ is derivative of shape function
+
+    */
     virtual PetscErrorCode getJac(DataForcesAndSurcesCore::EntData &col_data,int gg);
+
+    virtual PetscErrorCode aSemble(
+      int row_side,int col_side,
+      EntityType row_type,EntityType col_type,
+      DataForcesAndSurcesCore::EntData &row_data,
+      DataForcesAndSurcesCore::EntData &col_data
+    );
 
     PetscErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
       DataForcesAndSurcesCore::EntData &row_data,
       DataForcesAndSurcesCore::EntData &col_data);
+
+  };
+
+
+  struct OpLhsPiolaKirchhoff_dX: public OpLhsPiolaKirchhoff_dx {
+
+    OpLhsPiolaKirchhoff_dX(const string vel_field,const string field_name,BlockData &data,CommonData &common_data);
+
+    /// \berief Derivative of Piola Kirchhoff stress over material DOFs
+    PetscErrorCode getJac(DataForcesAndSurcesCore::EntData &col_data,int gg);
+
+    PetscErrorCode aSemble(
+      int row_side,int col_side,
+      EntityType row_type,EntityType col_type,
+      DataForcesAndSurcesCore::EntData &row_data,
+      DataForcesAndSurcesCore::EntData &col_data
+    );
+
+  };
+
+  struct OpJacobianEshelbyStress: public OpJacobianPiolaKirchhoffStress {
+
+    OpJacobianEshelbyStress(
+      const string field_name,
+      BlockData &data,
+      CommonData &common_data,
+      int tag,
+      bool jacobian
+    );
+
+    PetscErrorCode calculateStress();
+
+  };
+
+  struct OpRhsEshelbyStree: public OpRhsPiolaKirchhoff {
+
+    OpRhsEshelbyStree(
+      const string field_name,BlockData &data,CommonData &common_data
+    );
+
+  };
+
+  struct OpLhsEshelby_dx: public OpLhsPiolaKirchhoff_dX {
+
+    OpLhsEshelby_dx(
+      const string vel_field,const string field_name,BlockData &data,CommonData &common_data
+    );
+
+  };
+
+  struct OpLhsEshelby_dX: public OpLhsPiolaKirchhoff_dx {
+
+    OpLhsEshelby_dX(
+      const string vel_field,const string field_name,BlockData &data,CommonData &common_data
+    );
 
   };
 
