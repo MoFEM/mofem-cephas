@@ -2232,7 +2232,7 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& m_fi
         Vec F,Vec G):
       OpLhsEshelby_dX(vel_field,field_name,data,common_data),
       E_Release(F),
-      F_Griffith(F)
+      F_Griffith(G)
       {}
 
       ublas::vector<double> vAlues;
