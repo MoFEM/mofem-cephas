@@ -2190,6 +2190,7 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& m_fi
 
     Vec E_Release;
     ierr = VecDuplicate(F_Material,&E_Release); CHKERRQ(ierr);
+    ierr = VecSetOption(E_Release,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE);  CHKERRQ(ierr);
 
     ErrorCode rval;
     Range crack_front_edges,crack_front_nodes;
@@ -2220,7 +2221,7 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& m_fi
 
     struct EnergyRelease: public NonlinearElasticElement::OpLhsEshelby_dX {
 
-      Vec F_Material;
+      Vec E_Release;
       Vec F_Griffith;
 
       EnergyRelease(
@@ -2230,7 +2231,7 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& m_fi
         NonlinearElasticElement::CommonData &common_data,
         Vec F,Vec G):
       OpLhsEshelby_dX(vel_field,field_name,data,common_data),
-      F_Material(F),
+      E_Release(F),
       F_Griffith(F)
       {}
 
@@ -2278,7 +2279,7 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& m_fi
         retVal.resize(nb_row);
         retVal = prod(k,vAlues);
 
-        ierr = VecSetValues(F_Material,nb_row,row_indices_ptr,&retVal[0],ADD_VALUES); CHKERRQ(ierr);
+        ierr = VecSetValues(E_Release,nb_row,row_indices_ptr,&retVal[0],ADD_VALUES); CHKERRQ(ierr);
 
         PetscFunctionReturn(0);
       }
@@ -2303,13 +2304,13 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& m_fi
       );
       material_fe.feLhs.getOpPtrVector().push_back(
         new EnergyRelease(
-          "MATER_POSITION","SPATIAL_POSITION",sit->second,material_fe.commonData,E_Release,F_Griffith
+          "MESH_NODE_POSITIONS","MESH_NODE_POSITIONS",sit->second,material_fe.commonData,E_Release,F_Griffith
         )
       );
     }
 
-    material_fe.feRhs.meshPositionsFieldName = "NONE";
-    material_fe.feRhs.addToRule = 0;
+    material_fe.feLhs.meshPositionsFieldName = "NONE";
+    material_fe.feLhs.addToRule = 0;
 
     ierr = VecZeroEntries(E_Release);  CHKERRQ(ierr);
     ierr = VecGhostUpdateBegin(E_Release,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -2319,7 +2320,7 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& m_fi
     if(problem == "COUPLED_PROBLEM") {
       fe = "MATERIAL_COUPLED";
     }
-    ierr = m_field.loop_finite_elements(problem,fe,material_fe.feRhs);  CHKERRQ(ierr);
+    ierr = m_field.loop_finite_elements(problem,fe,material_fe.feLhs);  CHKERRQ(ierr);
 
     ierr = VecAssemblyBegin(E_Release); CHKERRQ(ierr);
     ierr = VecAssemblyEnd(E_Release); CHKERRQ(ierr);
