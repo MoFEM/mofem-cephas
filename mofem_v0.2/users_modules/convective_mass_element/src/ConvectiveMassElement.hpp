@@ -1514,45 +1514,45 @@ struct OpEnergy: public VolumeElementForcesAndSourcesCore::UserDataOperator,Comm
       OpMassLhs_dM_dv(vel_field,field_name,data,common_data,forcesonlyonentities_ptr) {};
 
 
-    virtual PetscErrorCode getJac(DataForcesAndSurcesCore::EntData &col_data,int gg) {
-      PetscFunctionBegin;
-      int nb_col = col_data.getIndices().size();
-      jac.clear();
-      //cerr << commonData.jacT[gg] << endl;
-      //cerr << jac << endl;
-      ublas::vector<double> N = col_data.getN(gg,nb_col/3);
-      for(int dd = 0;dd<nb_col/3;dd++) {
-	for(int nn = 0;nn<3;nn++) {
-	  jac(0,3*dd+nn) = commonData.jacT[gg](0,nn)*N(dd)*getFEMethod()->ts_a;
-	  jac(1,3*dd+nn) = commonData.jacT[gg](1,nn)*N(dd)*getFEMethod()->ts_a;
-	  jac(2,3*dd+nn) = commonData.jacT[gg](2,nn)*N(dd)*getFEMethod()->ts_a;
-	}
+      virtual PetscErrorCode getJac(DataForcesAndSurcesCore::EntData &col_data,int gg) {
+        PetscFunctionBegin;
+        int nb_col = col_data.getIndices().size();
+        jac.clear();
+        //cerr << commonData.jacT[gg] << endl;
+        //cerr << jac << endl;
+        ublas::vector<double> N = col_data.getN(gg,nb_col/3);
+        for(int dd = 0;dd<nb_col/3;dd++) {
+          for(int nn = 0;nn<3;nn++) {
+            jac(0,3*dd+nn) = commonData.jacT[gg](0,nn)*N(dd)*getFEMethod()->ts_a;
+            jac(1,3*dd+nn) = commonData.jacT[gg](1,nn)*N(dd)*getFEMethod()->ts_a;
+            jac(2,3*dd+nn) = commonData.jacT[gg](2,nn)*N(dd)*getFEMethod()->ts_a;
+          }
+        }
+        for(int dd = 0;dd<nb_col/3;dd++) {
+          for(int nn = 0;nn<3;nn++) {
+            jac(0,3*dd+nn) += commonData.jacT[gg](0,3+nn)*N(dd);
+            jac(1,3*dd+nn) += commonData.jacT[gg](1,3+nn)*N(dd);
+            jac(2,3*dd+nn) += commonData.jacT[gg](2,3+nn)*N(dd);
+          }
+        }
+        ublas::matrix<double> diffN = col_data.getDiffN(gg,nb_col/3);
+        for(int dd = 0;dd<nb_col/3;dd++) {
+          //h00 //h01 //h02
+          jac(0,3*dd+0) += commonData.jacT[gg](0,3+3+3*0+0)*diffN(dd,0);
+          jac(0,3*dd+0) += commonData.jacT[gg](0,3+3+3*0+1)*diffN(dd,1);
+          jac(0,3*dd+0) += commonData.jacT[gg](0,3+3+3*0+2)*diffN(dd,2);
+          //h10 //h11 //h12
+          jac(1,3*dd+1) += commonData.jacT[gg](1,3+3+3*1+0)*diffN(dd,0);
+          jac(1,3*dd+1) += commonData.jacT[gg](1,3+3+3*1+1)*diffN(dd,1);
+          jac(1,3*dd+1) += commonData.jacT[gg](1,3+3+3*1+2)*diffN(dd,2);
+          //h20 //h21 //h22
+          jac(2,3*dd+2) += commonData.jacT[gg](2,3+3+3*2+0)*diffN(dd,0);
+          jac(2,3*dd+2) += commonData.jacT[gg](2,3+3+3*2+1)*diffN(dd,1);
+          jac(2,3*dd+2) += commonData.jacT[gg](2,3+3+3*2+2)*diffN(dd,2);
+        }
+        PetscFunctionReturn(0);
       }
-      for(int dd = 0;dd<nb_col/3;dd++) {
-	for(int nn = 0;nn<3;nn++) {
-	  jac(0,3*dd+nn) += commonData.jacT[gg](0,3+nn)*N(dd);
-	  jac(1,3*dd+nn) += commonData.jacT[gg](1,3+nn)*N(dd);
-	  jac(2,3*dd+nn) += commonData.jacT[gg](2,3+nn)*N(dd);
-	}
-      }
-      ublas::matrix<double> diffN = col_data.getDiffN(gg,nb_col/3);
-      for(int dd = 0;dd<nb_col/3;dd++) {
-	//h00 //h01 //h02
-	jac(0,3*dd+0) += commonData.jacT[gg](0,3+3+3*0+0)*diffN(dd,0);
-	jac(0,3*dd+0) += commonData.jacT[gg](0,3+3+3*0+1)*diffN(dd,1);
-	jac(0,3*dd+0) += commonData.jacT[gg](0,3+3+3*0+2)*diffN(dd,2);
-	//h10 //h11 //h12
-	jac(1,3*dd+1) += commonData.jacT[gg](1,3+3+3*1+0)*diffN(dd,0);
-	jac(1,3*dd+1) += commonData.jacT[gg](1,3+3+3*1+1)*diffN(dd,1);
-	jac(1,3*dd+1) += commonData.jacT[gg](1,3+3+3*1+2)*diffN(dd,2);
-	//h20 //h21 //h22
-	jac(2,3*dd+2) += commonData.jacT[gg](2,3+3+3*2+0)*diffN(dd,0);
-	jac(2,3*dd+2) += commonData.jacT[gg](2,3+3+3*2+1)*diffN(dd,1);
-	jac(2,3*dd+2) += commonData.jacT[gg](2,3+3+3*2+2)*diffN(dd,2);
-      }
-      PetscFunctionReturn(0);
-    }
-  };
+    };
 
   struct OpEshelbyDynamicMaterialMomentumLhs_dx: public OpEshelbyDynamicMaterialMomentumLhs_dv {
 
@@ -1560,29 +1560,29 @@ struct OpEnergy: public VolumeElementForcesAndSourcesCore::UserDataOperator,Comm
       const string vel_field,const string field_name,BlockData &data,CommonData &common_data,Range *forcesonlyonentities_ptr):
       OpEshelbyDynamicMaterialMomentumLhs_dv(vel_field,field_name,data,common_data,forcesonlyonentities_ptr) {};
 
-    virtual PetscErrorCode getJac(DataForcesAndSurcesCore::EntData &col_data,int gg) {
-      PetscFunctionBegin;
-      int nb_col = col_data.getIndices().size();
-      jac.clear();
-      //cerr << commonData.jacT[gg] << endl;
-      //cerr << jac << endl;
-      ublas::matrix<double> diffN = col_data.getDiffN(gg,nb_col/3);
-      for(int dd = 0;dd<nb_col/3;dd++) {
-	//h00 //h01 //h02
-	jac(0,3*dd+0) += commonData.jacT[gg](0,3+3+9+3*0+0)*diffN(dd,0);
-	jac(0,3*dd+0) += commonData.jacT[gg](0,3+3+9+3*0+1)*diffN(dd,1);
-	jac(0,3*dd+0) += commonData.jacT[gg](0,3+3+9+3*0+2)*diffN(dd,2);
-	//h10 //h11 //h12
-	jac(1,3*dd+1) += commonData.jacT[gg](1,3+3+9+3*1+0)*diffN(dd,0);
-	jac(1,3*dd+1) += commonData.jacT[gg](1,3+3+9+3*1+1)*diffN(dd,1);
-	jac(1,3*dd+1) += commonData.jacT[gg](1,3+3+9+3*1+2)*diffN(dd,2);
-	//h20 //h21 //h22
-	jac(2,3*dd+2) += commonData.jacT[gg](2,3+3+9+3*2+0)*diffN(dd,0);
-	jac(2,3*dd+2) += commonData.jacT[gg](2,3+3+9+3*2+1)*diffN(dd,1);
-	jac(2,3*dd+2) += commonData.jacT[gg](2,3+3+9+3*2+2)*diffN(dd,2);
+      virtual PetscErrorCode getJac(DataForcesAndSurcesCore::EntData &col_data,int gg) {
+        PetscFunctionBegin;
+        int nb_col = col_data.getIndices().size();
+        jac.clear();
+        //cerr << commonData.jacT[gg] << endl;
+        //cerr << jac << endl;
+        ublas::matrix<double> diffN = col_data.getDiffN(gg,nb_col/3);
+        for(int dd = 0;dd<nb_col/3;dd++) {
+          //h00 //h01 //h02
+          jac(0,3*dd+0) += commonData.jacT[gg](0,3+3+9+3*0+0)*diffN(dd,0);
+          jac(0,3*dd+0) += commonData.jacT[gg](0,3+3+9+3*0+1)*diffN(dd,1);
+          jac(0,3*dd+0) += commonData.jacT[gg](0,3+3+9+3*0+2)*diffN(dd,2);
+          //h10 //h11 //h12
+          jac(1,3*dd+1) += commonData.jacT[gg](1,3+3+9+3*1+0)*diffN(dd,0);
+          jac(1,3*dd+1) += commonData.jacT[gg](1,3+3+9+3*1+1)*diffN(dd,1);
+          jac(1,3*dd+1) += commonData.jacT[gg](1,3+3+9+3*1+2)*diffN(dd,2);
+          //h20 //h21 //h22
+          jac(2,3*dd+2) += commonData.jacT[gg](2,3+3+9+3*2+0)*diffN(dd,0);
+          jac(2,3*dd+2) += commonData.jacT[gg](2,3+3+9+3*2+1)*diffN(dd,1);
+          jac(2,3*dd+2) += commonData.jacT[gg](2,3+3+9+3*2+2)*diffN(dd,2);
+        }
+        PetscFunctionReturn(0);
       }
-      PetscFunctionReturn(0);
-    }
 
   };
 

@@ -66,6 +66,13 @@ extern "C" {
 #include <ConfigurationalFractureMechanics.hpp>
 #include <MainCrackFunction.hpp>
 
+#include <adolc/adolc.h>
+#include <NonLienarElasticElement.hpp>
+#include <Hooke.hpp>
+
+#include <PostProcOnRefMesh.hpp>
+#include <PostProcStresses.hpp>
+
 using namespace ObosleteUsersModules;
 
 PetscErrorCode main_spatial_solution(FieldInterface& m_field,ConfigurationalFractureMechanics& conf_prob) {
@@ -519,14 +526,61 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
       "load_path: %4D Area %6.4e Lambda %6.4e Energy %6.4e\n",
       step,conf_prob.aRea,conf_prob.lambda,conf_prob.energy
     ); CHKERRQ(ierr);
+
+    {
+
+      Hooke<adouble> hooke_adouble;
+      Hooke<double> hooke_double;
+
+      PostPocOnRefinedMesh post_proc(m_field);
+      ierr = post_proc.generateReferenceElementMesh(); CHKERRQ(ierr);
+      ierr = post_proc.addFieldValuesPostProc("SPATIAL_POSITION"); CHKERRQ(ierr);
+      ierr = post_proc.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+      ierr = post_proc.addFieldValuesGradientPostProc("SPATIAL_POSITION"); CHKERRQ(ierr);
+
+      map<int,NonlinearElasticElement::BlockData> set_of_blocks;
+      for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,BLOCKSET|MAT_ELASTICSET,it)) {
+        Mat_Elastic mydata;
+        ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+        int id = it->get_msId();
+        EntityHandle meshset = it->get_meshset();
+        rval = m_field.get_moab().get_entities_by_type(meshset,MBTET,set_of_blocks[id].tEts,true); CHKERR_PETSC(rval);
+        set_of_blocks[id].iD = id;
+        set_of_blocks[id].E = mydata.data.Young;
+        set_of_blocks[id].PoissonRatio = mydata.data.Poisson;
+        set_of_blocks[id].materialDoublePtr = &hooke_double;
+        set_of_blocks[id].materialAdoublePtr = &hooke_adouble;
+      }
+
+      map<int,NonlinearElasticElement::BlockData>::iterator sit = set_of_blocks.begin();
+      for (; sit != set_of_blocks.end(); sit++) {
+        post_proc.getOpPtrVector().push_back(
+          new PostPorcStress(
+            post_proc.postProcMesh,
+            post_proc.mapGaussPts,
+            "SPATIAL_POSITION",
+            sit->second,
+            post_proc.commonData
+          )
+        );
+
+      }
+
+      ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",post_proc); CHKERRQ(ierr);
+      ostringstream ss;
+      ss << "out_load_step_" << step << ".h5m";
+      rval = post_proc.postProcMesh.write_file(ss.str().c_str(),"MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
+
+    }
+
     if(pcomm->rank()==0) {
-      EntityHandle out_meshset;
+      /*EntityHandle out_meshset;
       rval = m_field.get_moab().create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
       ierr = m_field.get_problem_finite_elements_entities("COUPLED_PROBLEM","MATERIAL_COUPLED",out_meshset); CHKERRQ(ierr);
       ostringstream ss;
       ss << "out_load_step_" << step << ".vtk";
       rval = m_field.get_moab().write_file(ss.str().c_str(),"VTK","",&out_meshset,1); CHKERR_PETSC(rval);
-      rval = m_field.get_moab().delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
+      rval = m_field.get_moab().delete_entities(&out_meshset,1); CHKERR_PETSC(rval);*/
 
       {
         Range SurfacesFaces;

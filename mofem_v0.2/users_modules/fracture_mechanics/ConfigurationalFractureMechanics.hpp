@@ -26,7 +26,7 @@ improvements.
 All Functions should be grouped in structures.
 
 Week constrains using Neitsche method should be used to enforce constrains
-on geometry. 
+on geometry.
 
 */
 
@@ -110,7 +110,6 @@ struct ConfigurationalFractureMechanics {
 
   PostProcStressNonLinearElasticity *fe_post_proc_stresses_method;
   PetscErrorCode solve_spatial_problem(FieldInterface& m_field,SNES *snes,bool postproc = true);
-  PetscErrorCode solve_material_problem(FieldInterface& m_field,SNES *snes);
 
   PetscErrorCode fix_all_but_one(FieldInterface& m_field,double da,Range &fix_nodes,const double fraction_treshold);
 

@@ -48,6 +48,8 @@ struct NonlinearElasticElement {
     Mat A;
     Vec F;
 
+    int addToRule;
+
     MyVolumeFE(FieldInterface &m_field);
 
     /** \brief it is used to calculate nb. of Gauss integration points
@@ -102,6 +104,8 @@ struct NonlinearElasticElement {
     Range tEts; ///< constatins elements in block set
     FunctionsToCalulatePiolaKirchhoffI<adouble> *materialAdoublePtr;
     FunctionsToCalulatePiolaKirchhoffI<double> *materialDoublePtr;
+    Range forcesOnlyOnEntitiesRow;
+    Range forcesOnlyOnEntitiesCol;
   };
   map<int,BlockData> setOfBlocks; ///< maps block set id with appropriate BlockData
 
@@ -113,8 +117,7 @@ struct NonlinearElasticElement {
     map<string,vector<MatrixDouble > > gradAtGaussPts;
     string spatialPositions;
     string meshPositions;
-    vector<MatrixDouble > P; ///< this need to be I Piola-Kirchoff stress tensor
-    vector<MatrixDouble > SiGma; ///< this is Eshelby Stress
+    vector<MatrixDouble > sTress;
     vector<vector<double*> > jacStressRowPtr;
     vector<MatrixDouble > jacStress; ///< this is simply material tangent operator
    };
@@ -339,8 +342,9 @@ struct NonlinearElasticElement {
     int tAg;//,lastId;
     int adlocReturnValue;
     bool jAcobian;
-    bool fieldDisp;
+    bool fUnction;
     bool aLe;
+    bool fieldDisp;
 
     /**
       \brief Construct operator to calculate Pilo Kirchhoff stress or its derivatives over gradient deformation
@@ -358,6 +362,7 @@ struct NonlinearElasticElement {
       CommonData &common_data,
       int tag,
       bool jacobian,
+      bool ale,
       bool field_disp
     );
 
@@ -386,13 +391,12 @@ struct NonlinearElasticElement {
     bool aLe;
 
     ublas::vector<int> iNdices;
-    Range forcesOnlyOnEntities;
-
     OpRhsPiolaKirchhoff(const string field_name,BlockData &data,CommonData &common_data);
 
     VectorDouble nf;
     PetscErrorCode doWork(
-      int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data);
+      int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data
+    );
 
   };
 
@@ -419,8 +423,6 @@ struct NonlinearElasticElement {
 
     ublas::vector<int> rowIndices;
     ublas::vector<int> colIndices;
-    Range forcesOnlyOnEntitiesRow;
-    Range forcesOnlyOnEntitiesCol;
 
     OpLhsPiolaKirchhoff_dx(const string vel_field,const string field_name,BlockData &data,CommonData &common_data);
 
@@ -477,17 +479,25 @@ struct NonlinearElasticElement {
       BlockData &data,
       CommonData &common_data,
       int tag,
-      bool jacobian
+      bool jacobian,
+      bool ale
     );
 
     PetscErrorCode calculateStress();
 
   };
 
-  struct OpRhsEshelbyStree: public OpRhsPiolaKirchhoff {
+  struct OpRhsEshelbyStrees: public OpRhsPiolaKirchhoff {
 
-    OpRhsEshelbyStree(
+    OpRhsEshelbyStrees(
       const string field_name,BlockData &data,CommonData &common_data
+    );
+
+    PetscErrorCode aSemble(
+      int row_side,int col_side,
+      EntityType row_type,EntityType col_type,
+      DataForcesAndSurcesCore::EntData &row_data,
+      DataForcesAndSurcesCore::EntData &col_data
     );
 
   };
@@ -498,6 +508,8 @@ struct NonlinearElasticElement {
       const string vel_field,const string field_name,BlockData &data,CommonData &common_data
     );
 
+    PetscErrorCode getJac(DataForcesAndSurcesCore::EntData &col_data,int gg);
+
   };
 
   struct OpLhsEshelby_dX: public OpLhsPiolaKirchhoff_dx {
@@ -505,6 +517,8 @@ struct NonlinearElasticElement {
     OpLhsEshelby_dX(
       const string vel_field,const string field_name,BlockData &data,CommonData &common_data
     );
+
+    PetscErrorCode getJac(DataForcesAndSurcesCore::EntData &col_data,int gg);
 
   };
 

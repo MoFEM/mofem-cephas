@@ -54,7 +54,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       if(snes_f!=PETSC_NULL) {
 	//VEC & MAT Options
 	//If index is set to -1 ingonre its assembly
-	VecSetOption(snes_f, VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); 
+	VecSetOption(snes_f, VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE);
       }
 
       propeties_from_BLOCKSET_MAT_ELASTICSET = false;
@@ -62,10 +62,10 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	propeties_from_BLOCKSET_MAT_ELASTICSET = true;
       }
 
-    }; 
+    };
 
     ErrorCode rval;
-    
+
     ParallelComm* pcomm;
     ublas::matrix<FieldData> D_lambda,D_mu,D;
 
@@ -124,7 +124,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	      *_mu = MU(mydata.data.Young,mydata.data.Poisson);
 	      if(_User1!=NULL) *_User1 = mydata.data.User1;
 	      if(_User2!=NULL) *_User2 = mydata.data.User2;
-	    PetscFunctionReturn(0);  
+	    PetscFunctionReturn(0);
 	  }
 	}
 
@@ -254,7 +254,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 
       PetscFunctionReturn(0);
     }
-   
+
 
     virtual PetscErrorCode GetMatrices() {
       PetscFunctionBegin;
@@ -292,18 +292,18 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	    w,&*D.data().begin(),D.size2(),
 	    &*row_Mat.data().begin(),row_Mat.size2(),
 	    0.,&*BD.data().begin(),BD.size2());
-	  for(int cc = rr;cc<col_mat;cc++) {
-	    if(ColGlob[cc].size()==0) continue;
-	    ublas::matrix<FieldData> &col_Mat = (colBMatrices[cc])[gg];
-	    if(gg == 0) {
-	      K(rr,cc).resize(BD.size2(),col_Mat.size2());
-	      //ublas::noalias(K(rr,cc)) = prod(trans(BD) , col_Mat ); // int BT*D*B
-	      cblas_dgemm(CblasRowMajor,CblasTrans,CblasNoTrans,
-		BD.size2(),col_Mat.size2(),BD.size1(),
-		1.,&*BD.data().begin(),BD.size2(),
-		&*col_Mat.data().begin(),col_Mat.size2(),
-		0.,&*K(rr,cc).data().begin(),K(rr,cc).size2());
-	    } else {
+      for(int cc = rr;cc<col_mat;cc++) {
+        if(ColGlob[cc].size()==0) continue;
+        ublas::matrix<FieldData> &col_Mat = (colBMatrices[cc])[gg];
+        if(gg == 0) {
+          K(rr,cc).resize(BD.size2(),col_Mat.size2());
+          //ublas::noalias(K(rr,cc)) = prod(trans(BD) , col_Mat ); // int BT*D*B
+          cblas_dgemm(CblasRowMajor,CblasTrans,CblasNoTrans,
+            BD.size2(),col_Mat.size2(),BD.size1(),
+            1.,&*BD.data().begin(),BD.size2(),
+            &*col_Mat.data().begin(),col_Mat.size2(),
+            0.,&*K(rr,cc).data().begin(),K(rr,cc).size2());
+          } else {
 	      //ublas::noalias(K(rr,cc)) += prod(trans(BTD) , col_Mat ); // int BT*D*B
 	      cblas_dgemm(CblasRowMajor,CblasTrans,CblasNoTrans,
 		BD.size2(),col_Mat.size2(),BD.size1(),
@@ -355,7 +355,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       ierr = GetMatParameters(&_lambda,&_mu); CHKERRQ(ierr);
       ierr = calculateD(_lambda,_mu); CHKERRQ(ierr);
 
-      //Gradient at Gauss points; 
+      //Gradient at Gauss points;
       vector< ublas::matrix< FieldData > > GradU_at_GaussPt;
       ierr = GetGaussDiffDataVector(fieldName,GradU_at_GaussPt); CHKERRQ(ierr);
       unsigned int g_dim = g_NTET.size()/4;
@@ -367,23 +367,23 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	try {
 	  ublas::matrix< FieldData > GradU = *viit;
 	  if(!invH.empty()) {
-	    //GradU = 
+	    //GradU =
 	      //[ dU/dChi1 dU/dChi2 dU/dChi3 ]
 	      //[ dV/dChi1 dV/dChi2 dU/dChi3 ]
 	      //[ dW/dChi1 dW/dChi2 dW/dChi3 ]
-	    //H = 
+	    //H =
 	      //[ dX1/dChi1 dX1/dChi2 dX1/dChi3 ]
 	      //[ dX2/dChi1 dX2/dChi2 dX2/dChi3 ]
-	      //[ dX3/dChi1 dX3/dChi2 dX3/dChi3 ]    
-	    //invH = 
+	      //[ dX3/dChi1 dX3/dChi2 dX3/dChi3 ]
+	    //invH =
 	      //[ dChi1/dX1 dChi1/dX2 dChi1/dX3 ]
 	      //[ dChi2/dX1 dChi2/dX2 dChi2/dX3 ]
 	      //[ dChi3/dX1 dChi3/dX2 dChi3/dX3 ]
-	    //GradU = 
+	    //GradU =
 	      //[ dU/dX1 dU/dX2 dU/dX3 ]
 	      //[ dV/dX1 dV/dX2 dV/dX3 ] = GradU * invH
-	      //[ dW/dX1 dW/dX2 dW/dX3 ] 
-	    GradU = prod( GradU, invH[gg] ); 
+	      //[ dW/dX1 dW/dX2 dW/dX3 ]
+	    GradU = prod( GradU, invH[gg] );
 	  }
 	  ublas::matrix< FieldData > Strain = 0.5*( GradU + trans(GradU) );
 	  ublas::vector< FieldData > VoightStrain(6);
@@ -410,7 +410,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 	  ostringstream ss;
 	  ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
 	  SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
-	} 
+	}
       }
 
       } catch (const std::exception& ex) {
@@ -483,7 +483,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
       g_NTET.resize(4*45);
       ierr = ShapeMBTET(&g_NTET[0],G_TET_X45,G_TET_Y45,G_TET_Z45,45); CHKERRQ(ierr);
       G_TET_W = G_TET_W45;
-			
+
       // See FEAP - - A Finite Element Analysis Program
       D_lambda.resize(6,6);
       D_lambda.clear();
@@ -560,7 +560,7 @@ struct ElasticFEMethod: public FEMethod_UpLevelStudent {
 
 };
 
-    
+
 }
 
 #endif //__ELASTICFEMETHOD_HPP__
