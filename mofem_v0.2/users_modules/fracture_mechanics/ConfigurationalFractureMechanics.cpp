@@ -2277,7 +2277,8 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& m_fi
         ierr = VecRestoreArray(F_Griffith,&a); CHKERRQ(ierr);
 
         retVal.resize(nb_row);
-        retVal = prod(k,vAlues);
+        noalias(retVal) = prod(k,vAlues);
+
 
         ierr = VecSetValues(E_Release,nb_row,row_indices_ptr,&retVal[0],ADD_VALUES); CHKERRQ(ierr);
 
@@ -2330,16 +2331,21 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& m_fi
     ierr = VecGhostUpdateBegin(E_Release,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(E_Release,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
+    Vec E_ReleaseLocal,F_MaterialLocal;
+    ierr = VecGhostGetLocalForm(E_Release,&E_ReleaseLocal); CHKERRQ(ierr);
+    ierr = VecGhostGetLocalForm(F_Material,&F_MaterialLocal); CHKERRQ(ierr);
     int size;
-    ierr = VecGetLocalSize(E_Release,&size); CHKERRQ(ierr);
+    ierr = VecGetLocalSize(E_ReleaseLocal,&size); CHKERRQ(ierr);
     double *a,*b;
-    ierr = VecGetArray(F_Material,&a); CHKERRQ(ierr);
-    ierr = VecGetArray(E_Release,&b); CHKERRQ(ierr);
+    ierr = VecGetArray(F_MaterialLocal,&a); CHKERRQ(ierr);
+    ierr = VecGetArray(E_ReleaseLocal,&b); CHKERRQ(ierr);
     for(int i = 0;i<size;i++) {
       a[i] = copysign(a[i],-b[i]);
     }
-    ierr = VecRestoreArray(F_Material,&a); CHKERRQ(ierr);
-    ierr = VecRestoreArray(E_Release,&b); CHKERRQ(ierr);
+    ierr = VecRestoreArray(F_MaterialLocal,&a); CHKERRQ(ierr);
+    ierr = VecRestoreArray(E_ReleaseLocal,&b); CHKERRQ(ierr);
+    ierr = VecGhostRestoreLocalForm(E_Release,&E_ReleaseLocal); CHKERRQ(ierr);
+    ierr = VecGhostRestoreLocalForm(F_Material,&F_MaterialLocal); CHKERRQ(ierr);
 
     ierr = VecGhostUpdateBegin(F_Material,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(F_Material,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -2554,7 +2560,7 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& m_fi
     ublas::vector<double,ublas::bounded_array<double,3> > normal(3);
     for(int nn = 0;nn<num_nodes; nn++) {
       for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_(m_field,"MESH_NODE_POSITIONS",conn[nn],dit)) {
-	dofsX[nn*3+dit->get_dof_rank()] = dit->get_FieldData();
+        dofsX[nn*3+dit->get_dof_rank()] = dit->get_FieldData();
       }
     }
     ierr = ShapeFaceNormalMBTRI(&diffNTRI[0],&dofsX.data()[0],&normal.data()[0]); CHKERRQ(ierr);
