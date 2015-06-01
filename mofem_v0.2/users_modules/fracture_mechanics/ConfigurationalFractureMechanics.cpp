@@ -2283,7 +2283,9 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& m_fi
         ierr = VecRestoreArray(F_Griffith,&a); CHKERRQ(ierr);
 
         retVal.resize(nb_row);
-        noalias(retVal) = prod(k,vAlues);
+        for(int ii = 0;ii<nb_row;ii++) {
+          retVal[ii] = k(ii,ii)*vAlues[ii];
+        }
 
         ierr = VecSetValues(E_Release,nb_row,row_indices_ptr,&retVal[0],ADD_VALUES); CHKERRQ(ierr);
 
