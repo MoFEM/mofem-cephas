@@ -2234,7 +2234,8 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& m_fi
         const string field_name,
         NonlinearElasticElement::BlockData &data,
         NonlinearElasticElement::CommonData &common_data,
-        Vec F,Vec G):
+        Vec F,
+        Vec G):
       OpLhsEshelby_dX(vel_field,field_name,data,common_data),
       E_Release(F),
       F_Griffith(G)
@@ -2271,7 +2272,7 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& m_fi
 
         vAlues.resize(nb_col);
         vAlues.clear();
-        
+
         double *a;
         ierr = VecGetArray(F_Griffith,&a); CHKERRQ(ierr);
         VectorDofs::iterator it,hi_it;
@@ -2296,7 +2297,6 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& m_fi
 
     };
 
-
     material_fe.feLhs.getOpPtrVector().push_back(
       new NonlinearElasticElement::OpGetCommonDataAtGaussPts("SPATIAL_POSITION",material_fe.commonData)
     );
@@ -2320,6 +2320,8 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& m_fi
     ierr = VecZeroEntries(E_Release);  CHKERRQ(ierr);
     ierr = VecGhostUpdateBegin(E_Release,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(E_Release,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecGhostUpdateBegin(F_Griffith,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecGhostUpdateEnd(F_Griffith,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
     string fe = "MATERIAL";
     if(problem == "COUPLED_PROBLEM") {
@@ -2346,7 +2348,9 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& m_fi
     ierr = VecGetArray(F_MaterialLocal,&a); CHKERRQ(ierr);
     ierr = VecGetArray(E_ReleaseLocal,&b); CHKERRQ(ierr);
     for(int i = 0;i<size;i++) {
-      a[i] = copysign(a[i],-b[i]);
+      if(b[i]!=0) {
+        a[i] = copysign(a[i],-b[i]);
+      }
     }
     ierr = VecRestoreArray(F_MaterialLocal,&a); CHKERRQ(ierr);
     ierr = VecRestoreArray(E_ReleaseLocal,&b); CHKERRQ(ierr);
