@@ -2219,6 +2219,11 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& m_fi
 
     }
 
+    material_fe.commonData.spatialPositions = "SPATIAL_POSITION";
+    material_fe.commonData.meshPositions = "MESH_NODE_POSITIONS";
+    material_fe.feLhs.meshPositionsFieldName = "NONE";
+    material_fe.feLhs.addToRule = 0;
+
     struct EnergyRelease: public NonlinearElasticElement::OpLhsEshelby_dX {
 
       Vec E_Release;
@@ -2271,6 +2276,7 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& m_fi
         it = col_data.getFieldDofs().begin();
         hi_it = col_data.getFieldDofs().end();
         for(int ii = 0;it!=hi_it;it++,ii++) {
+          if(rowIndices[ii]==-1) continue;
           int local_idx = getFEMethod()->colPtr->find((*it)->get_global_unique_id())->get_petsc_local_dof_idx();
           vAlues[ii] = a[local_idx];
         }
@@ -2279,7 +2285,6 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& m_fi
         retVal.resize(nb_row);
         noalias(retVal) = prod(k,vAlues);
 
-
         ierr = VecSetValues(E_Release,nb_row,row_indices_ptr,&retVal[0],ADD_VALUES); CHKERRQ(ierr);
 
         PetscFunctionReturn(0);
@@ -2287,8 +2292,6 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& m_fi
 
     };
 
-    material_fe.commonData.spatialPositions = "SPATIAL_POSITION";
-    material_fe.commonData.meshPositions = "MESH_NODE_POSITIONS";
 
     material_fe.feLhs.getOpPtrVector().push_back(
       new NonlinearElasticElement::OpGetCommonDataAtGaussPts("SPATIAL_POSITION",material_fe.commonData)
@@ -2310,9 +2313,6 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& m_fi
       );
     }
 
-    material_fe.feLhs.meshPositionsFieldName = "NONE";
-    material_fe.feLhs.addToRule = 0;
-
     ierr = VecZeroEntries(E_Release);  CHKERRQ(ierr);
     ierr = VecGhostUpdateBegin(E_Release,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(E_Release,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -2330,6 +2330,8 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& m_fi
     ierr = VecGhostUpdateEnd(E_Release,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = VecGhostUpdateBegin(E_Release,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(E_Release,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+
+    //ierr = VecView(E_Release,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
     Vec E_ReleaseLocal,F_MaterialLocal;
     ierr = VecGhostGetLocalForm(E_Release,&E_ReleaseLocal); CHKERRQ(ierr);
@@ -3580,19 +3582,19 @@ PetscErrorCode ConfigurationalFractureMechanics::FrontAreaArcLengthControl::preP
   }
   switch(snes_ctx) {
     case CTX_SNESSETFUNCTION: {
-	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
-	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
-	ierr = get_dlambda(snes_x); CHKERRQ(ierr);
-	ierr = calculate_lambda_int(); CHKERRQ(ierr);
-      }
-      break;
+      ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
+      ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+      ierr = get_dlambda(snes_x); CHKERRQ(ierr);
+      ierr = calculate_lambda_int(); CHKERRQ(ierr);
+    }
+    break;
     case CTX_SNESSETJACOBIAN:
-	ierr = MatAssemblyBegin(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-	ierr = MatAssemblyEnd(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-	ierr = calculate_db(); CHKERRQ(ierr);
-      break;
+    ierr = MatAssemblyBegin(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+    ierr = MatAssemblyEnd(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+    ierr = calculate_db(); CHKERRQ(ierr);
+    break;
     default:
-      break;
+    break;
   }
   PetscFunctionReturn(0);
 }
