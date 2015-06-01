@@ -2270,6 +2270,8 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& m_fi
         }
 
         vAlues.resize(nb_col);
+        vAlues.clear();
+        
         double *a;
         ierr = VecGetArray(F_Griffith,&a); CHKERRQ(ierr);
         VectorDofs::iterator it,hi_it;
