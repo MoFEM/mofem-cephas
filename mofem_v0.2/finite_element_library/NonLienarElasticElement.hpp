@@ -493,13 +493,6 @@ struct NonlinearElasticElement {
       const string field_name,BlockData &data,CommonData &common_data
     );
 
-    PetscErrorCode aSemble(
-      int row_side,int col_side,
-      EntityType row_type,EntityType col_type,
-      DataForcesAndSurcesCore::EntData &row_data,
-      DataForcesAndSurcesCore::EntData &col_data
-    );
-
   };
 
   struct OpLhsEshelby_dx: public OpLhsPiolaKirchhoff_dX {

@@ -2186,183 +2186,6 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& m_fi
   ierr = m_field.set_other_global_ghost_vector(
     problem,"MESH_NODE_POSITIONS","GRIFFITH_FORCE_TANGENT",ROW,F_Griffith_Tangent,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
-  {
-
-    Vec E_Release;
-    ierr = VecDuplicate(F_Material,&E_Release); CHKERRQ(ierr);
-    ierr = VecSetOption(E_Release,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE);  CHKERRQ(ierr);
-
-    ErrorCode rval;
-    Range crack_front_edges,crack_front_nodes;
-    ierr = m_field.get_cubit_msId_entities_by_dimension(201,SIDESET,1,crack_front_edges,true); CHKERRABORT(PETSC_COMM_WORLD,ierr);
-    m_field.get_moab().get_connectivity(crack_front_edges,crack_front_nodes,true);
-
-    NonlinearElasticElement material_fe(m_field,-1);
-
-    Hooke<adouble> hooke_adouble;
-    Hooke<double> hooke_double;
-
-    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,BLOCKSET|MAT_ELASTICSET,it)) {
-      Mat_Elastic mydata;
-      ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
-      int id = it->get_msId();
-      EntityHandle meshset = it->get_meshset();
-      rval = m_field.get_moab().get_entities_by_type(meshset,MBTET,material_fe.setOfBlocks[id].tEts,true); CHKERR_PETSC(rval);
-      material_fe.setOfBlocks[id].iD = id;
-      material_fe.setOfBlocks[id].E = mydata.data.Young;
-      material_fe.setOfBlocks[id].PoissonRatio = mydata.data.Poisson;
-      material_fe.setOfBlocks[id].materialDoublePtr = &hooke_double;
-      material_fe.setOfBlocks[id].materialAdoublePtr = &hooke_adouble;
-
-      material_fe.setOfBlocks[id].forcesOnlyOnEntitiesRow.merge(crack_front_edges);
-      material_fe.setOfBlocks[id].forcesOnlyOnEntitiesRow.merge(crack_front_nodes);
-
-    }
-
-    material_fe.commonData.spatialPositions = "SPATIAL_POSITION";
-    material_fe.commonData.meshPositions = "MESH_NODE_POSITIONS";
-    material_fe.feLhs.meshPositionsFieldName = "NONE";
-    material_fe.feLhs.addToRule = 0;
-
-    struct EnergyRelease: public NonlinearElasticElement::OpLhsEshelby_dX {
-
-      Vec E_Release;
-      Vec F_Griffith;
-
-      EnergyRelease(
-        const string vel_field,
-        const string field_name,
-        NonlinearElasticElement::BlockData &data,
-        NonlinearElasticElement::CommonData &common_data,
-        Vec F,
-        Vec G):
-      OpLhsEshelby_dX(vel_field,field_name,data,common_data),
-      E_Release(F),
-      F_Griffith(G)
-      {}
-
-      ublas::vector<double> vAlues;
-      ublas::vector<double> retVal;
-
-      PetscErrorCode aSemble(
-        int row_side,int col_side,
-        EntityType row_type,EntityType col_type,
-        DataForcesAndSurcesCore::EntData &row_data,
-        DataForcesAndSurcesCore::EntData &col_data
-      ) {
-        PetscFunctionBegin;
-
-        PetscErrorCode ierr;
-        int nb_row = row_data.getIndices().size();
-        int nb_col = col_data.getIndices().size();
-
-        int *row_indices_ptr = &row_data.getIndices()[0];
-        if(!dAta.forcesOnlyOnEntitiesRow.empty()) {
-          rowIndices.resize(nb_row,false);
-          noalias(rowIndices) = row_data.getIndices();
-          row_indices_ptr = &rowIndices[0];
-          ublas::vector<const FEDofMoFEMEntity*>& dofs = row_data.getFieldDofs();
-          ublas::vector<const FEDofMoFEMEntity*>::iterator dit = dofs.begin();
-          for(int ii = 0;dit!=dofs.end();dit++,ii++) {
-            if(dAta.forcesOnlyOnEntitiesRow.find((*dit)->get_ent())==dAta.forcesOnlyOnEntitiesRow.end()) {
-              rowIndices[ii] = -1;
-            }
-          }
-        }
-
-        vAlues.resize(nb_col);
-        vAlues.clear();
-
-        double *a;
-        ierr = VecGetArray(F_Griffith,&a); CHKERRQ(ierr);
-        VectorDofs::iterator it,hi_it;
-        it = col_data.getFieldDofs().begin();
-        hi_it = col_data.getFieldDofs().end();
-        for(int ii = 0;it!=hi_it;it++,ii++) {
-          if(rowIndices[ii]==-1) continue;
-          int local_idx = getFEMethod()->rowPtr->find((*it)->get_global_unique_id())->get_petsc_local_dof_idx();
-          vAlues[ii] = a[local_idx];
-        }
-        ierr = VecRestoreArray(F_Griffith,&a); CHKERRQ(ierr);
-
-        retVal.resize(nb_row);
-        for(int ii = 0;ii<nb_row;ii++) {
-          retVal[ii] = k(ii,ii)*vAlues[ii];
-        }
-
-        ierr = VecSetValues(E_Release,nb_row,row_indices_ptr,&retVal[0],ADD_VALUES); CHKERRQ(ierr);
-
-        PetscFunctionReturn(0);
-      }
-
-    };
-
-    material_fe.feLhs.getOpPtrVector().push_back(
-      new NonlinearElasticElement::OpGetCommonDataAtGaussPts("SPATIAL_POSITION",material_fe.commonData)
-    );
-    material_fe.feLhs.getOpPtrVector().push_back(
-      new NonlinearElasticElement::OpGetCommonDataAtGaussPts("MESH_NODE_POSITIONS",material_fe.commonData)
-    );
-    map<int,NonlinearElasticElement::BlockData>::iterator sit = material_fe.setOfBlocks.begin();
-    for(;sit!=material_fe.setOfBlocks.end();sit++) {
-      material_fe.feLhs.getOpPtrVector().push_back(
-        new NonlinearElasticElement::OpJacobianEshelbyStress(
-          "SPATIAL_POSITION",sit->second,material_fe.commonData,2,true,true
-        )
-      );
-      material_fe.feLhs.getOpPtrVector().push_back(
-        new EnergyRelease(
-          "MESH_NODE_POSITIONS","MESH_NODE_POSITIONS",sit->second,material_fe.commonData,E_Release,F_Griffith
-        )
-      );
-    }
-
-    ierr = VecZeroEntries(E_Release);  CHKERRQ(ierr);
-    ierr = VecGhostUpdateBegin(E_Release,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = VecGhostUpdateEnd(E_Release,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = VecGhostUpdateBegin(F_Griffith,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = VecGhostUpdateEnd(F_Griffith,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-
-    string fe = "MATERIAL";
-    if(problem == "COUPLED_PROBLEM") {
-      fe = "MATERIAL_COUPLED";
-    }
-    ierr = m_field.loop_finite_elements(problem,fe,material_fe.feLhs);  CHKERRQ(ierr);
-
-    ierr = VecAssemblyBegin(E_Release); CHKERRQ(ierr);
-    ierr = VecAssemblyEnd(E_Release); CHKERRQ(ierr);
-
-    ierr = VecGhostUpdateBegin(E_Release,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = VecGhostUpdateEnd(E_Release,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = VecGhostUpdateBegin(E_Release,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = VecGhostUpdateEnd(E_Release,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-
-    //ierr = VecView(E_Release,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-
-    Vec E_ReleaseLocal,F_MaterialLocal;
-    ierr = VecGhostGetLocalForm(E_Release,&E_ReleaseLocal); CHKERRQ(ierr);
-    ierr = VecGhostGetLocalForm(F_Material,&F_MaterialLocal); CHKERRQ(ierr);
-    int size;
-    ierr = VecGetLocalSize(E_ReleaseLocal,&size); CHKERRQ(ierr);
-    double *a,*b;
-    ierr = VecGetArray(F_MaterialLocal,&a); CHKERRQ(ierr);
-    ierr = VecGetArray(E_ReleaseLocal,&b); CHKERRQ(ierr);
-    for(int i = 0;i<size;i++) {
-      if(b[i]!=0) {
-        a[i] = copysign(a[i],-b[i]);
-      }
-    }
-    ierr = VecRestoreArray(F_MaterialLocal,&a); CHKERRQ(ierr);
-    ierr = VecRestoreArray(E_ReleaseLocal,&b); CHKERRQ(ierr);
-    ierr = VecGhostRestoreLocalForm(E_Release,&E_ReleaseLocal); CHKERRQ(ierr);
-    ierr = VecGhostRestoreLocalForm(F_Material,&F_MaterialLocal); CHKERRQ(ierr);
-
-    ierr = VecGhostUpdateBegin(F_Material,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = VecGhostUpdateEnd(F_Material,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = VecDestroy(&E_Release); CHKERRQ(ierr);
-
-  }
-
   Vec LambdaVec,LambdaVec_Tangent;
   ierr = m_field.VecCreateGhost("C_CRACKFRONT_MATRIX",ROW,&LambdaVec); CHKERRQ(ierr);
   ierr = VecDuplicate(LambdaVec,&LambdaVec_Tangent); CHKERRQ(ierr);
@@ -3289,9 +3112,10 @@ PetscErrorCode ConfigurationalFractureMechanics::calculate_material_forces(Field
   ierr = m_field.get_entities_by_type_and_ref_level(bit_to_block,BitRefLevel().set(),MBVERTEX,nodes_to_block); CHKERRQ(ierr);
   corners_nodes.merge(nodes_to_block);
 
-  Vec F_Material;
+  Vec F_Material,E_Release;
   ierr = m_field.VecCreateGhost(problem,COL,&F_Material); CHKERRQ(ierr);
   ierr = VecSetOption(F_Material,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE);  CHKERRQ(ierr);
+  ierr = VecDuplicate(F_Material,&E_Release); CHKERRQ(ierr);
 
   {
     Range crack_front_edges,crack_front_nodes;
@@ -3343,7 +3167,6 @@ PetscErrorCode ConfigurationalFractureMechanics::calculate_material_forces(Field
           "SPATIAL_POSITION",sit->second,material_fe.commonData,2,false,true
         )
       );
-      //material_fe.feRhs.getOpPtrVector().back().jAcobian = true;
       material_fe.feRhs.getOpPtrVector().push_back(
         new NonlinearElasticElement::OpRhsEshelbyStrees("MESH_NODE_POSITIONS",sit->second,material_fe.commonData)
       );
