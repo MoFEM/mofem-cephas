@@ -110,26 +110,21 @@ int main(int argc, char *argv[]) {
 	ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
 
 	//Fields
-	ierr = m_field.add_field("erorNORM_re",H1,1); CHKERRQ(ierr);
-	ierr = m_field.add_field("erorNORM_im",H1,1); CHKERRQ(ierr);
-
+	ierr = m_field.add_field("erorNORM",H1,1); CHKERRQ(ierr);
 
 	//Problem
-	ierr = m_field.add_problem("NORM_PROBLEM1"); CHKERRQ(ierr);
-	ierr = m_field.add_problem("NORM_PROBLEM2"); CHKERRQ(ierr);
-
+	ierr = m_field.add_problem("NORM_PROBLEM"); CHKERRQ(ierr);
 
 	//set refinment level for problem
-	ierr = m_field.modify_problem_ref_level_add_bit("NORM_PROBLEM1",bit_level0); CHKERRQ(ierr);
-	ierr = m_field.modify_problem_ref_level_add_bit("NORM_PROBLEM2",bit_level0); CHKERRQ(ierr);
+	ierr = m_field.modify_problem_ref_level_add_bit("NORM_PROBLEM",bit_level0); CHKERRQ(ierr);
+
 
 
 
 	//meshset consisting all entities in mesh
 	EntityHandle root_set = moab.get_root_set();
 	//add entities to field
-	ierr = m_field.add_ents_to_field_by_TETs(root_set,"erorNORM_re"); CHKERRQ(ierr);
-	ierr = m_field.add_ents_to_field_by_TETs(root_set,"erorNORM_im"); CHKERRQ(ierr);
+	ierr = m_field.add_ents_to_field_by_TETs(root_set,"erorNORM"); CHKERRQ(ierr);
 
 
 	//set app. order , approximation error of norm should be as least 1 order higher than numerical spaces.
@@ -140,14 +135,10 @@ int main(int argc, char *argv[]) {
 		order = 2;
 	}
 
-	ierr = m_field.set_field_order(root_set,MBTET,"erorNORM_re",order); CHKERRQ(ierr);
-	ierr = m_field.set_field_order(root_set,MBTRI,"erorNORM_re",order); CHKERRQ(ierr);
-	ierr = m_field.set_field_order(root_set,MBEDGE,"erorNORM_re",order); CHKERRQ(ierr);
-	ierr = m_field.set_field_order(root_set,MBVERTEX,"erorNORM_re",1); CHKERRQ(ierr);
-	ierr = m_field.set_field_order(root_set,MBTET,"erorNORM_im",order); CHKERRQ(ierr);
-	ierr = m_field.set_field_order(root_set,MBTRI,"erorNORM_im",order); CHKERRQ(ierr);
-	ierr = m_field.set_field_order(root_set,MBEDGE,"erorNORM_im",order); CHKERRQ(ierr);
-	ierr = m_field.set_field_order(root_set,MBVERTEX,"erorNORM_im",1); CHKERRQ(ierr);
+	ierr = m_field.set_field_order(root_set,MBTET,"erorNORM",order); CHKERRQ(ierr);
+	ierr = m_field.set_field_order(root_set,MBTRI,"erorNORM",order); CHKERRQ(ierr);
+	ierr = m_field.set_field_order(root_set,MBEDGE,"erorNORM",order); CHKERRQ(ierr);
+	ierr = m_field.set_field_order(root_set,MBVERTEX,"erorNORM",1); CHKERRQ(ierr);
 
 	if(!m_field.check_field("MESH_NODE_POSITIONS")) {
 	ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,3); CHKERRQ(ierr);
@@ -158,19 +149,16 @@ int main(int argc, char *argv[]) {
 	ierr = m_field.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
 	}
 
-  double real_error;
-  double imag_error;
-  double real_analy;
-  double imag_analy;
+  double error;
 
-	NormElement norm_elements_re(m_field,real_error,real_analy);
-	NormElement norm_elements_im(m_field,imag_error,imag_analy);
+  double analy;
+
+
+	NormElement norm_elements(m_field,error,analy);
 
 	if(m_field.check_field("reEX") && m_field.check_field("rePRES")) {
 	//&& m_field.check_field("imPRES") && m_field.check_field("imEX") ) {
-		norm_elements_re.addNormElements("NORM_PROBLEM1","NORM_FE1","erorNORM_re","reEX","rePRES");
-		norm_elements_im.addNormElements("NORM_PROBLEM2","NORM_FE2","erorNORM_im","imEX","imPRES");
-		ierr = m_field.modify_finite_element_add_field_data("NORM_FE1","erorNORM_im"); CHKERRQ(ierr);
+		norm_elements.addNormElements("NORM_PROBLEM","NORM_FE","erorNORM","reEX","rePRES","imEX","imPRES");
 	}
 
 
@@ -193,14 +181,10 @@ int main(int argc, char *argv[]) {
 	/****/
 	//mesh partitioning
 	//partition
-	ierr = m_field.partition_problem("NORM_PROBLEM1"); CHKERRQ(ierr);
-	ierr = m_field.partition_finite_elements("NORM_PROBLEM1"); CHKERRQ(ierr);
+	ierr = m_field.partition_problem("NORM_PROBLEM"); CHKERRQ(ierr);
+	ierr = m_field.partition_finite_elements("NORM_PROBLEM"); CHKERRQ(ierr);
 	//what are ghost nodes, see Petsc Manual
-	ierr = m_field.partition_ghost_dofs("NORM_PROBLEM1"); CHKERRQ(ierr);
-
-	ierr = m_field.partition_problem("NORM_PROBLEM2"); CHKERRQ(ierr);
-	ierr = m_field.partition_finite_elements("NORM_PROBLEM2"); CHKERRQ(ierr);
-	ierr = m_field.partition_ghost_dofs("NORM_PROBLEM2"); CHKERRQ(ierr);
+	ierr = m_field.partition_ghost_dofs("NORM_PROBLEM"); CHKERRQ(ierr);
 
 	if(m_field.check_field("reEX") && m_field.check_field("imEX")) {
 
@@ -215,22 +199,16 @@ int main(int argc, char *argv[]) {
 	//ierr = m_field.print_cubit_materials_set(); CHKERRQ(ierr);
 
 	Vec F;
-	ierr = m_field.VecCreateGhost("NORM_PROBLEM1",ROW,&F); CHKERRQ(ierr);
+	ierr = m_field.VecCreateGhost("NORM_PROBLEM",ROW,&F); CHKERRQ(ierr);
 	Vec T;
 	ierr = VecDuplicate(F,&T); CHKERRQ(ierr);
 	Mat A;
-	ierr = m_field.MatCreateMPIAIJWithArrays("NORM_PROBLEM1",&A); CHKERRQ(ierr);
-
-	Vec G;
-	ierr = m_field.VecCreateGhost("NORM_PROBLEM2",ROW,&G); CHKERRQ(ierr);
-	Vec D;
-	ierr = VecDuplicate(G,&D); CHKERRQ(ierr);
+	ierr = m_field.MatCreateMPIAIJWithArrays("NORM_PROBLEM",&A); CHKERRQ(ierr);
 
 
 	/*   Set operators  */
-  ierr = norm_elements_re.setNormFiniteElementRhsOperator("erorNORM_re","reEX","rePRES",F,usel2); CHKERRQ(ierr);
-  ierr = norm_elements_re.setNormFiniteElementLhsOperator("erorNORM_re","reEX","rePRES",A); CHKERRQ(ierr);
-	ierr = norm_elements_im.setNormFiniteElementRhsOperator("erorNORM_im","imEX","imPRES",G,usel2); CHKERRQ(ierr);
+  ierr = norm_elements.setNormFiniteElementRhsOperator("erorNORM","reEX","rePRES","imEX","imPRES",F,usel2); CHKERRQ(ierr);
+  ierr = norm_elements.setNormFiniteElementLhsOperator("erorNORM",A); CHKERRQ(ierr);
 
 
 
@@ -242,20 +220,10 @@ int main(int argc, char *argv[]) {
 	ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	ierr = MatZeroEntries(A); CHKERRQ(ierr);
-	ierr = m_field.set_global_ghost_vector("NORM_PROBLEM1",ROW,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-
-	ierr = VecZeroEntries(D); CHKERRQ(ierr);
-	ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	ierr = VecZeroEntries(G); CHKERRQ(ierr);
-	ierr = VecGhostUpdateBegin(G,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	ierr = VecGhostUpdateEnd(G,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-
-	ierr = m_field.set_global_ghost_vector("NORM_PROBLEM2",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+	ierr = m_field.set_global_ghost_vector("NORM_PROBLEM",ROW,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
     /* looop over finite elements */
-	ierr = m_field.loop_finite_elements("NORM_PROBLEM1","NORM_FE1",norm_elements_re.getLoopFe()); CHKERRQ(ierr);
-	ierr = m_field.loop_finite_elements("NORM_PROBLEM2","NORM_FE2",norm_elements_im.getLoopFe()); CHKERRQ(ierr);
+	ierr = m_field.loop_finite_elements("NORM_PROBLEM","NORM_FE",norm_elements.getLoopFe()); CHKERRQ(ierr);
 
 
       /* create ghost points */
@@ -265,12 +233,6 @@ int main(int argc, char *argv[]) {
 	ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
 	ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 	ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-
-	ierr = VecGhostUpdateBegin(G,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-	ierr = VecGhostUpdateEnd(G,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-	ierr = VecAssemblyBegin(G); CHKERRQ(ierr);
-	ierr = VecAssemblyEnd(G); CHKERRQ(ierr);
-
 
 	//Solver
 	KSP solver1;
@@ -282,16 +244,7 @@ int main(int argc, char *argv[]) {
 	ierr = KSPSolve(solver1,F,T); CHKERRQ(ierr);
 	ierr = VecGhostUpdateBegin(T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 	ierr = VecGhostUpdateEnd(T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	ierr = m_field.set_global_ghost_vector("NORM_PROBLEM1",ROW,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-
-
-
-	ierr = KSPSolve(solver1,G,D); CHKERRQ(ierr);
-	ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	ierr = m_field.set_global_ghost_vector("NORM_PROBLEM2",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-
-
+	ierr = m_field.set_global_ghost_vector("NORM_PROBLEM",ROW,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
 	/* Global error calculation */
 
@@ -299,18 +252,12 @@ int main(int argc, char *argv[]) {
     //PetscPrintf(PETSC_COMM_WORLD,"\n imag part of l2 norm of analytical solution is: %f \n",imag_analy);
 
     if(usel2) {
-      double a = sqrt(real_error)/sqrt(real_analy);
-      double b = sqrt(imag_error)/sqrt(imag_analy);
-      PetscPrintf(PETSC_COMM_WORLD,"\n real part of global relative l2 error is: %f \n",a);
-      PetscPrintf(PETSC_COMM_WORLD,"\n imag part of global relative l2 error is: %f \n",b);
-      PetscPrintf(PETSC_COMM_WORLD,"\n total global l2 realtive error is: %f \n",sqrt(a*a+b*b));
+			double aa = sqrt(error)/sqrt(analy);
+      PetscPrintf(PETSC_COMM_WORLD,"\n global l2 realtive error is: %f \n",aa);
     } else {
 
-      double a = sqrt(real_error)/sqrt(real_analy);
-      double b = sqrt(imag_error)/sqrt(imag_analy);
-      PetscPrintf(PETSC_COMM_WORLD,"\n real part of global H1 error is: %f \n",a);
-      PetscPrintf(PETSC_COMM_WORLD,"\n imag part of global H1 error is: %f \n",b);
-      PetscPrintf(PETSC_COMM_WORLD,"\n total global H1 realtive error is: %f \n",sqrt(a*a+b*b));
+      double aa = sqrt(error)/sqrt(analy);
+      PetscPrintf(PETSC_COMM_WORLD,"\n global H1 realtive error is: %f \n",aa);
 
     }
 
@@ -320,19 +267,15 @@ int main(int argc, char *argv[]) {
 	ierr = VecDestroy(&T); CHKERRQ(ierr);
 	ierr = KSPDestroy(&solver1); CHKERRQ(ierr);
 
-	ierr = VecDestroy(&G); CHKERRQ(ierr);
-	ierr = VecDestroy(&D); CHKERRQ(ierr);
-
     PetscBool save_postproc_mesh = PETSC_TRUE;
     ierr = PetscOptionsGetBool(NULL,"-save_postproc_mesh",&save_postproc_mesh,NULL); CHKERRQ(ierr);
     if(save_postproc_mesh) {
 
       PostPocOnRefinedMesh post_proc1(m_field);
 			ierr = post_proc1.generateReferenceElementMesh(); CHKERRQ(ierr);
-      ierr = post_proc1.addFieldValuesPostProc("erorNORM_re"); CHKERRQ(ierr);
-      ierr = post_proc1.addFieldValuesPostProc("erorNORM_im"); CHKERRQ(ierr);
+      ierr = post_proc1.addFieldValuesPostProc("erorNORM"); CHKERRQ(ierr);
       ierr = post_proc1.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
-      ierr = m_field.loop_finite_elements("NORM_PROBLEM1","NORM_FE1",post_proc1); CHKERRQ(ierr);
+      ierr = m_field.loop_finite_elements("NORM_PROBLEM","NORM_FE",post_proc1); CHKERRQ(ierr);
       rval = post_proc1.postProcMesh.write_file("norm_error.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
 
     }
