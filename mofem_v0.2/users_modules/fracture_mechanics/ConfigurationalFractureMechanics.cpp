@@ -2280,7 +2280,7 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& m_fi
         hi_it = col_data.getFieldDofs().end();
         for(int ii = 0;it!=hi_it;it++,ii++) {
           if(rowIndices[ii]==-1) continue;
-          int local_idx = getFEMethod()->colPtr->find((*it)->get_global_unique_id())->get_petsc_local_dof_idx();
+          int local_idx = getFEMethod()->rowPtr->find((*it)->get_global_unique_id())->get_petsc_local_dof_idx();
           vAlues[ii] = a[local_idx];
         }
         ierr = VecRestoreArray(F_Griffith,&a); CHKERRQ(ierr);
