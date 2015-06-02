@@ -291,48 +291,48 @@ struct TangentWithMeshSmoothingFrontConstrain: public C_CONSTANT_AREA {
     C_CONSTANT_AREA(_mField,PETSC_NULL,PETSC_NULL,_lambda_field_name,_verbose),
     meshFEPtr(_mesh_fe_ptr),eps(1e-10) {}
 
-  Tag thFrontTangent;
-  PetscErrorCode preProcess() {
-    PetscFunctionBegin;
+    Tag thFrontTangent;
+    PetscErrorCode preProcess() {
+      PetscFunctionBegin;
 
-    switch (ts_ctx) {
-      case CTX_TSSETIFUNCTION: {
-	snes_ctx = CTX_SNESSETFUNCTION;
-	snes_f = ts_F;
-	break;
+      switch (ts_ctx) {
+        case CTX_TSSETIFUNCTION: {
+          snes_ctx = CTX_SNESSETFUNCTION;
+          snes_f = ts_F;
+          break;
+        }
+        case CTX_TSSETIJACOBIAN: {
+          snes_ctx = CTX_SNESSETJACOBIAN;
+          snes_B = ts_B;
+          break;
+        }
+        default:
+        break;
       }
-      case CTX_TSSETIJACOBIAN: {
-	snes_ctx = CTX_SNESSETJACOBIAN;
-	snes_B = ts_B;
-	break;
-      }
-      default:
-      break;
-    }
 
-    ierr = C_CONSTANT_AREA::preProcess(); CHKERRQ(ierr);
-    /*//TAG  - only for one proc analysis
-    double def[] = {0,0,0};
-    rval = mField.get_moab().tag_get_handle("FRONT_TANGENT",3,MB_TYPE_DOUBLE,
+      ierr = C_CONSTANT_AREA::preProcess(); CHKERRQ(ierr);
+      /*//TAG  - only for one proc analysis
+      double def[] = {0,0,0};
+      rval = mField.get_moab().tag_get_handle("FRONT_TANGENT",3,MB_TYPE_DOUBLE,
       thFrontTangent,MB_TAG_CREAT|MB_TAG_SPARSE,&def); CHKERR_THROW(rval);*/
-    switch(snes_ctx) {
-      case CTX_SNESSETFUNCTION: {
-	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
-	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
-	ierr = VecZeroEntries(meshFEPtr->tangentFrontF); CHKERRQ(ierr);
-	ierr = VecGhostUpdateBegin(meshFEPtr->tangentFrontF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	ierr = VecGhostUpdateEnd(meshFEPtr->tangentFrontF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	ierr = VecAssemblyBegin(meshFEPtr->tangentFrontF); CHKERRQ(ierr);
-	ierr = VecAssemblyEnd(meshFEPtr->tangentFrontF); CHKERRQ(ierr);
-	/*//resent tags - only for one proc analysis
-	for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,lambda_field_name,dit)) {
-	  EntityHandle ent = dit->get_ent();
-	  rval = mField.get_moab().tag_set_data(thFrontTangent,&ent,1,def); CHKERR_PETSC(rval);
-	}*/
+      switch(snes_ctx) {
+        case CTX_SNESSETFUNCTION: {
+          ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
+          ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+          ierr = VecZeroEntries(meshFEPtr->tangentFrontF); CHKERRQ(ierr);
+          ierr = VecGhostUpdateBegin(meshFEPtr->tangentFrontF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+          ierr = VecGhostUpdateEnd(meshFEPtr->tangentFrontF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+          ierr = VecAssemblyBegin(meshFEPtr->tangentFrontF); CHKERRQ(ierr);
+          ierr = VecAssemblyEnd(meshFEPtr->tangentFrontF); CHKERRQ(ierr);
+          /*//resent tags - only for one proc analysis
+          for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,lambda_field_name,dit)) {
+          EntityHandle ent = dit->get_ent();
+          rval = mField.get_moab().tag_set_data(thFrontTangent,&ent,1,def); CHKERR_PETSC(rval);
+        }*/
       } break;
       case CTX_SNESSETJACOBIAN: {
-	ierr = MatAssemblyBegin(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-	ierr = MatAssemblyEnd(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+        ierr = MatAssemblyBegin(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+        ierr = MatAssemblyEnd(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
       } break;
       default: {
       } break;
@@ -364,7 +364,7 @@ struct TangentWithMeshSmoothingFrontConstrain: public C_CONSTANT_AREA {
       int side;
       rval = moab.tag_get_data(th_interface_side,&face,1,&side); CHKERR_PETSC(rval);
       if(side == 1) {
-	ELEM_CONSTRAIN1 *= -1;
+        ELEM_CONSTRAIN1 *= -1;
       }
       //quality
       ublas::vector<double,ublas::bounded_array<double,9> > F_FRONT_MESH_SMOOTHING(9);
@@ -372,122 +372,125 @@ struct TangentWithMeshSmoothingFrontConstrain: public C_CONSTANT_AREA {
       double *f_front_mesh_array;
       ierr = VecGetArray(meshFEPtr->frontF,&f_front_mesh_array); CHKERRQ(ierr);
       for(int nn = 0;nn<3;nn++) {
-	for(int dd = 0;dd<3;dd++) {
-	  if(local_disp_dofs_row_idx[3*nn+dd]==-1) continue;
-	  F_FRONT_MESH_SMOOTHING[3*nn+dd] = f_front_mesh_array[local_disp_dofs_row_idx[3*nn+dd]];
-	}
+        for(int dd = 0;dd<3;dd++) {
+          if(local_disp_dofs_row_idx[3*nn+dd]==-1) continue;
+          F_FRONT_MESH_SMOOTHING[3*nn+dd] = f_front_mesh_array[local_disp_dofs_row_idx[3*nn+dd]];
+        }
       }
       ierr = VecRestoreArray(meshFEPtr->frontF,&f_front_mesh_array); CHKERRQ(ierr);
       //tangent
       if(snes_ctx == CTX_SNESSETJACOBIAN) {
-	double center[3];
-	tricircumcenter3d_tp(&coords.data()[0],&coords.data()[3],&coords.data()[6],center,NULL,NULL);
-	cblas_daxpy(3,-1,&coords.data()[0],1,center,1);
-	double r = cblas_dnrm2(3,center,1);
-	for(int nn = 0;nn<3;nn++) {
-	  for(int dd = 0;dd<3;dd++) {
-	    // ---> calculate tangent starts here
-	    ublas::vector<double,ublas::bounded_array<double,9> > idofs_X(9,0);
-	    idofs_X[nn*3+dd] = r*eps;
-	    ublas::vector<double,ublas::bounded_array<double,9> > dELEM_CONSTRAIN1(9);
-	    ierr = calcDirevatives(
-	      &*diffNTRI.data().begin(),
-	      &*dofs_X.data().begin(),
-	      &*idofs_X.data().begin(),
-	      NULL,NULL,NULL,&*dELEM_CONSTRAIN1.data().begin()); CHKERRQ(ierr);
-	    if(side == 1) {
-	      dELEM_CONSTRAIN1 /= -r*eps;
-	    } else {
-	      dELEM_CONSTRAIN1 /= +r*eps;
-	    }
-	    //dg -> C*q_quality
-	    double g[3] = {0,0,0};
-	    for(int nnn = 0;nnn<3;nnn++) {
-	      if(lambda_dofs_row_indx[nnn] == -1) continue;
-	      for(int ddd = 0;ddd<3;ddd++) {
-		g[nnn] += dELEM_CONSTRAIN1[nnn*3+ddd]*F_FRONT_MESH_SMOOTHING[3*nnn+ddd];
-	      }
-	    }
-	    for(int nnn = 0;nnn<3;nnn++) {
-	      if(lambda_dofs_row_indx[nnn] == -1) continue;
-	      ierr = MatSetValues(snes_B,
-		1,&lambda_dofs_row_indx[nnn],1,&disp_dofs_col_idx[3*nn+dd],
-		&g[nnn],ADD_VALUES); CHKERRQ(ierr);
-	    }
-	    //dCT_lambda
-	    for(int nnn = 0;nnn<3;nnn++) {
-	      for(int ddd = 0;ddd<3;ddd++) {
-		dELEM_CONSTRAIN1[nnn*3+ddd] *= lambda[nnn];
-	      }
-	    }
-	    for(int nnn = 0;nnn<3;nnn++) {
-	      if(lambda_dofs_row_indx[nnn] == -1) continue;
-	      ierr = MatSetValues(snes_B,
-		3,&disp_dofs_row_idx[3*nnn],
-		1,&disp_dofs_col_idx[3*nn+dd],
-		&dELEM_CONSTRAIN1[3*nnn],ADD_VALUES); CHKERRQ(ierr);
-	    }
-	    // ---> calculate tangent end here
-	  }
-	}
+        double center[3];
+        tricircumcenter3d_tp(&coords.data()[0],&coords.data()[3],&coords.data()[6],center,NULL,NULL);
+        cblas_daxpy(3,-1,&coords.data()[0],1,center,1);
+        double r = cblas_dnrm2(3,center,1);
+        for(int nn = 0;nn<3;nn++) {
+          for(int dd = 0;dd<3;dd++) {
+            // ---> calculate tangent starts here
+            ublas::vector<double,ublas::bounded_array<double,9> > idofs_X(9,0);
+            idofs_X[nn*3+dd] = r*eps;
+            ublas::vector<double,ublas::bounded_array<double,9> > dELEM_CONSTRAIN1(9);
+            ierr = calcDirevatives(
+              &*diffNTRI.data().begin(),
+              &*dofs_X.data().begin(),
+              &*idofs_X.data().begin(),
+              NULL,NULL,NULL,&*dELEM_CONSTRAIN1.data().begin()
+            ); CHKERRQ(ierr);
+            if(side == 1) {
+              dELEM_CONSTRAIN1 /= -r*eps;
+            } else {
+              dELEM_CONSTRAIN1 /= +r*eps;
+            }
+            //dg -> C*q_quality
+            double g[3] = {0,0,0};
+            for(int nnn = 0;nnn<3;nnn++) {
+              if(lambda_dofs_row_indx[nnn] == -1) continue;
+              for(int ddd = 0;ddd<3;ddd++) {
+                g[nnn] += dELEM_CONSTRAIN1[nnn*3+ddd]*F_FRONT_MESH_SMOOTHING[3*nnn+ddd];
+              }
+            }
+            for(int nnn = 0;nnn<3;nnn++) {
+              if(lambda_dofs_row_indx[nnn] == -1) continue;
+              ierr = MatSetValues(snes_B,
+                1,&lambda_dofs_row_indx[nnn],1,&disp_dofs_col_idx[3*nn+dd],
+                &g[nnn],ADD_VALUES
+              ); CHKERRQ(ierr);
+            }
+            //dCT_lambda
+            for(int nnn = 0;nnn<3;nnn++) {
+              for(int ddd = 0;ddd<3;ddd++) {
+                dELEM_CONSTRAIN1[nnn*3+ddd] *= lambda[nnn];
+              }
+            }
+            for(int nnn = 0;nnn<3;nnn++) {
+              if(lambda_dofs_row_indx[nnn] == -1) continue;
+              ierr = MatSetValues(snes_B,
+                3,&disp_dofs_row_idx[3*nnn],
+                1,&disp_dofs_col_idx[3*nn+dd],
+                &dELEM_CONSTRAIN1[3*nnn],ADD_VALUES
+              ); CHKERRQ(ierr);
+            }
+            // ---> calculate tangent end here
+          }
+        }
       }
       switch(snes_ctx) {
-	case CTX_SNESSETFUNCTION: {
-	  ublas::vector<double,ublas::bounded_array<double,3> > g(3);
-	  for(int nn = 0;nn<3;nn++) {
-	    g[nn] = cblas_ddot(3,&ELEM_CONSTRAIN1[3*nn],1,&F_FRONT_MESH_SMOOTHING[3*nn],1);
-	  }
-	  //cerr << "g : " << g << endl;
-	  ierr = VecSetValues(snes_f,3,&*lambda_dofs_row_indx.data().begin(),&*g.data().begin(),ADD_VALUES); CHKERRQ(ierr);
-	  ierr = VecSetValues(meshFEPtr->tangentFrontF,9,&disp_dofs_row_idx[0],&*ELEM_CONSTRAIN1.data().begin(),ADD_VALUES); CHKERRQ(ierr);
-	  ublas::vector<double,ublas::bounded_array<double,9> > f(9);
-	  for(int nn = 0;nn<3;nn++) {
-	    for(int dd = 0;dd<3;dd++) {
-	      f[nn*3+dd] = lambda[nn]*ELEM_CONSTRAIN1[3*nn+dd];
-	    }
-	  }
-	  //cerr << "f : " << f << endl;
-	  ierr = VecSetValues(snes_f,9,&disp_dofs_row_idx[0],&*f.data().begin(),ADD_VALUES); CHKERRQ(ierr);
-	  /*//TAG - only for one proc analysis
-	  for(int nn = 0;nn<3;nn++) {
-	    EntityHandle ent = lambda_dofs_row_ents[nn];
-	    if(ent == no_handle) continue;
-	    double *t;
-	    rval = mField.get_moab().tag_get_by_ptr(thFrontTangent,&ent,1,(const void **)&t); CHKERR_PETSC(rval);
-	    cblas_daxpy(3,+1,&ELEM_CONSTRAIN1[3*nn],1,t,1);
-	  }*/
-	} break;
-	case CTX_SNESSETJACOBIAN: {
-	  for(int nn = 0;nn<3;nn++) {
-	    int lambda_dof_idx = lambda_dofs_col_indx[nn];
-	    ierr = MatSetValues(snes_B,3,&disp_dofs_row_idx[3*nn],1,&lambda_dof_idx,&ELEM_CONSTRAIN1[3*nn],ADD_VALUES); CHKERRQ(ierr);
-	  }
-	} break;
-	default:
-	  break;
-      }
-    } catch (const std::exception& ex) {
-      ostringstream ss;
-      ss << "thorw in method: " << ex.what() << endl;
-      SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+        case CTX_SNESSETFUNCTION: {
+          ublas::vector<double,ublas::bounded_array<double,3> > g(3);
+          for(int nn = 0;nn<3;nn++) {
+            g[nn] = cblas_ddot(3,&ELEM_CONSTRAIN1[3*nn],1,&F_FRONT_MESH_SMOOTHING[3*nn],1);
+          }
+          //cerr << "g : " << g << endl;
+          ierr = VecSetValues(snes_f,3,&*lambda_dofs_row_indx.data().begin(),&*g.data().begin(),ADD_VALUES); CHKERRQ(ierr);
+          ierr = VecSetValues(meshFEPtr->tangentFrontF,9,&disp_dofs_row_idx[0],&*ELEM_CONSTRAIN1.data().begin(),ADD_VALUES); CHKERRQ(ierr);
+          ublas::vector<double,ublas::bounded_array<double,9> > f(9);
+          for(int nn = 0;nn<3;nn++) {
+            for(int dd = 0;dd<3;dd++) {
+              f[nn*3+dd] = lambda[nn]*ELEM_CONSTRAIN1[3*nn+dd];
+            }
+          }
+          //cerr << "f : " << f << endl;
+          ierr = VecSetValues(snes_f,9,&disp_dofs_row_idx[0],&*f.data().begin(),ADD_VALUES); CHKERRQ(ierr);
+          /*//TAG - only for one proc analysis
+          for(int nn = 0;nn<3;nn++) {
+          EntityHandle ent = lambda_dofs_row_ents[nn];
+          if(ent == no_handle) continue;
+          double *t;
+          rval = mField.get_moab().tag_get_by_ptr(thFrontTangent,&ent,1,(const void **)&t); CHKERR_PETSC(rval);
+          cblas_daxpy(3,+1,&ELEM_CONSTRAIN1[3*nn],1,t,1);
+        }*/
+      } break;
+      case CTX_SNESSETJACOBIAN: {
+        for(int nn = 0;nn<3;nn++) {
+          int lambda_dof_idx = lambda_dofs_col_indx[nn];
+          ierr = MatSetValues(snes_B,3,&disp_dofs_row_idx[3*nn],1,&lambda_dof_idx,&ELEM_CONSTRAIN1[3*nn],ADD_VALUES); CHKERRQ(ierr);
+        }
+      } break;
+      default:
+      break;
     }
-    PetscFunctionReturn(0);
+  } catch (const std::exception& ex) {
+    ostringstream ss;
+    ss << "thorw in method: " << ex.what() << endl;
+    SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+  }
+  PetscFunctionReturn(0);
   }
 
   PetscErrorCode postProcess() {
     PetscFunctionBegin;
     switch(snes_ctx) {
       case CTX_SNESSETFUNCTION: {
-	ierr = VecAssemblyBegin(meshFEPtr->tangentFrontF); CHKERRQ(ierr);
-	ierr = VecAssemblyEnd(meshFEPtr->tangentFrontF); CHKERRQ(ierr);
-	ierr = VecGhostUpdateBegin(meshFEPtr->tangentFrontF,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-	ierr = VecGhostUpdateEnd(meshFEPtr->tangentFrontF,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-	ierr = VecGhostUpdateBegin(meshFEPtr->tangentFrontF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	ierr = VecGhostUpdateEnd(meshFEPtr->tangentFrontF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+        ierr = VecAssemblyBegin(meshFEPtr->tangentFrontF); CHKERRQ(ierr);
+        ierr = VecAssemblyEnd(meshFEPtr->tangentFrontF); CHKERRQ(ierr);
+        ierr = VecGhostUpdateBegin(meshFEPtr->tangentFrontF,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+        ierr = VecGhostUpdateEnd(meshFEPtr->tangentFrontF,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+        ierr = VecGhostUpdateBegin(meshFEPtr->tangentFrontF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+        ierr = VecGhostUpdateEnd(meshFEPtr->tangentFrontF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
       } break;
       case CTX_SNESSETJACOBIAN: {
-	ierr = MatAssemblyBegin(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-	ierr = MatAssemblyEnd(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+        ierr = MatAssemblyBegin(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+        ierr = MatAssemblyEnd(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
       } break;
       default: {
       } break;
@@ -541,49 +544,49 @@ struct BothSurfaceConstrains: public FEMethod {
     vector<int> lambda_dofs(9,-1);
     vector<double> lambda_vals(9,0);
     for(_IT_GET_FEROW_BY_TYPE_DOFS_FOR_LOOP_(this,"LAMBDA_BOTH_SIDES",MBVERTEX,it)) {
-	lambda_dofs[3*it->side_number_ptr->side_number+it->get_EntDofIdx()] = it->get_petsc_gloabl_dof_idx();
-	lambda_vals[3*it->side_number_ptr->side_number+it->get_EntDofIdx()] = it->get_FieldData();
-	//cerr << "l "
-	  //<< 3*it->side_number_ptr->side_number+it->get_EntDofIdx() << " "
-	  //<< lambda_dofs[3*it->side_number_ptr->side_number+it->get_EntDofIdx()] << " "
-	  //<< lambda_vals[3*it->side_number_ptr->side_number+it->get_EntDofIdx()]
-	  //<< endl;
+      lambda_dofs[3*it->side_number_ptr->side_number+it->get_EntDofIdx()] = it->get_petsc_gloabl_dof_idx();
+      lambda_vals[3*it->side_number_ptr->side_number+it->get_EntDofIdx()] = it->get_FieldData();
+      //cerr << "l "
+      //<< 3*it->side_number_ptr->side_number+it->get_EntDofIdx() << " "
+      //<< lambda_dofs[3*it->side_number_ptr->side_number+it->get_EntDofIdx()] << " "
+      //<< lambda_vals[3*it->side_number_ptr->side_number+it->get_EntDofIdx()]
+      //<< endl;
     }
     vector<int> positions_dofs(18,-1);
     vector<double> positions_vals(18,0);
     for(_IT_GET_FEROW_BY_TYPE_DOFS_FOR_LOOP_(this,"MESH_NODE_POSITIONS",MBVERTEX,it)) {
-	int dd = 3*it->side_number_ptr->side_number+it->get_EntDofIdx();
-	if(lambda_dofs[dd>8 ? dd -9 : dd] == -1) continue;
-	positions_dofs[dd] = it->get_petsc_gloabl_dof_idx();
-	positions_vals[dd] = it->get_FieldData();
-	//cerr << "p " << dd << " " << positions_dofs[dd] << " " << positions_vals[dd] << endl;
+      int dd = 3*it->side_number_ptr->side_number+it->get_EntDofIdx();
+      if(lambda_dofs[dd>8 ? dd -9 : dd] == -1) continue;
+      positions_dofs[dd] = it->get_petsc_gloabl_dof_idx();
+      positions_vals[dd] = it->get_FieldData();
+      //cerr << "p " << dd << " " << positions_dofs[dd] << " " << positions_vals[dd] << endl;
     }
     //cerr << endl;
     const double alpha = 0;
     const double betha = 1e2;
     switch(snes_ctx) {
-	case CTX_SNESSETFUNCTION:
-	  for(int ii = 0;ii<9;ii++) {
-	    if(lambda_dofs[ii] == -1) continue;
-	    double val1 = betha*(positions_vals[0+ii] - positions_vals[9+ii]) + alpha*lambda_vals[ii];
-	    ierr = VecSetValue(snes_f,lambda_dofs[ii],val1,INSERT_VALUES); CHKERRQ(ierr);
-	    double val2 = betha*lambda_vals[ii];
-	    ierr = VecSetValue(snes_f,positions_dofs[0+ii],+val2,INSERT_VALUES); CHKERRQ(ierr);
-	    ierr = VecSetValue(snes_f,positions_dofs[9+ii],-val2,INSERT_VALUES); CHKERRQ(ierr);
-	  }
-	break;
-	case CTX_SNESSETJACOBIAN:
-	  for(int ii = 0;ii<9;ii++) {
-	    if(lambda_dofs[ii] == -1) continue;
-	    ierr = MatSetValue(snes_B,lambda_dofs[ii],positions_dofs[0+ii],+1*betha,INSERT_VALUES); CHKERRQ(ierr);
-	    ierr = MatSetValue(snes_B,lambda_dofs[ii],positions_dofs[9+ii],-1*betha,INSERT_VALUES); CHKERRQ(ierr);
-	    ierr = MatSetValue(snes_B,positions_dofs[0+ii],lambda_dofs[ii],+1*betha,INSERT_VALUES); CHKERRQ(ierr);
-	    ierr = MatSetValue(snes_B,positions_dofs[9+ii],lambda_dofs[ii],-1*betha,INSERT_VALUES); CHKERRQ(ierr);
-	    ierr = MatSetValue(snes_B,lambda_dofs[ii],lambda_dofs[ii],alpha,INSERT_VALUES); CHKERRQ(ierr);
-	  }
-	break;
-	default:
-	break;
+      case CTX_SNESSETFUNCTION:
+      for(int ii = 0;ii<9;ii++) {
+        if(lambda_dofs[ii] == -1) continue;
+        double val1 = betha*(positions_vals[0+ii] - positions_vals[9+ii]) + alpha*lambda_vals[ii];
+        ierr = VecSetValue(snes_f,lambda_dofs[ii],val1,INSERT_VALUES); CHKERRQ(ierr);
+        double val2 = betha*lambda_vals[ii];
+        ierr = VecSetValue(snes_f,positions_dofs[0+ii],+val2,INSERT_VALUES); CHKERRQ(ierr);
+        ierr = VecSetValue(snes_f,positions_dofs[9+ii],-val2,INSERT_VALUES); CHKERRQ(ierr);
+      }
+      break;
+      case CTX_SNESSETJACOBIAN:
+      for(int ii = 0;ii<9;ii++) {
+        if(lambda_dofs[ii] == -1) continue;
+        ierr = MatSetValue(snes_B,lambda_dofs[ii],positions_dofs[0+ii],+1*betha,INSERT_VALUES); CHKERRQ(ierr);
+        ierr = MatSetValue(snes_B,lambda_dofs[ii],positions_dofs[9+ii],-1*betha,INSERT_VALUES); CHKERRQ(ierr);
+        ierr = MatSetValue(snes_B,positions_dofs[0+ii],lambda_dofs[ii],+1*betha,INSERT_VALUES); CHKERRQ(ierr);
+        ierr = MatSetValue(snes_B,positions_dofs[9+ii],lambda_dofs[ii],-1*betha,INSERT_VALUES); CHKERRQ(ierr);
+        ierr = MatSetValue(snes_B,lambda_dofs[ii],lambda_dofs[ii],alpha,INSERT_VALUES); CHKERRQ(ierr);
+      }
+      break;
+      default:
+      break;
     }
 
     PetscFunctionReturn(0);
@@ -592,17 +595,17 @@ struct BothSurfaceConstrains: public FEMethod {
     PetscFunctionBegin;
     PetscErrorCode ierr;
     switch(snes_ctx) {
-	case CTX_SNESSETFUNCTION: {
-	  ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
-	  ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
-	}
-	break;
-	case CTX_SNESSETJACOBIAN:
-	  ierr = MatAssemblyBegin(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-	  ierr = MatAssemblyEnd(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-	break;
-	default:
-	break;
+      case CTX_SNESSETFUNCTION: {
+        ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
+        ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+      }
+      break;
+      case CTX_SNESSETJACOBIAN:
+      ierr = MatAssemblyBegin(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+      ierr = MatAssemblyEnd(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+      break;
+      default:
+      break;
     }
     PetscFunctionReturn(0);
   }
