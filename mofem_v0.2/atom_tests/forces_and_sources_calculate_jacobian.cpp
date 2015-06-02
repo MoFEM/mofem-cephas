@@ -160,7 +160,7 @@ int main(int argc, char *argv[]) {
     VectorDouble coords;
     PrintJacobian opPrintJac;
     OpSetInvJacH1 opSetInvJac;
-    OpGetData opGetData_FIELD1;
+    OpGetDataAndGradient opGetData_FIELD1;
 
     ForcesAndSurcesCore_TestFE(FieldInterface &_m_field):
       ForcesAndSurcesCore(_m_field),

@@ -497,7 +497,7 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
   MatrixDouble hoGaussPtsInvJac;
   VectorDouble hoGaussPtsDetJac;
 
-  OpGetData opHOatGaussPoints; ///< higher order geometry data at Gauss pts
+  OpGetDataAndGradient opHOatGaussPoints; ///< higher order geometry data at Gauss pts
   OpSetHoInvJacH1 opSetHoInvJacH1;
   OpSetHoPiolaTransform opSetHoPiolaTransform;
   OpSetHoInvJacHdiv opSetHoInvJacHdiv;
