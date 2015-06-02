@@ -69,6 +69,8 @@ extern "C" {
 #include <NonLienarElasticElement.hpp>
 #include <Hooke.hpp>
 
+#include <GriffithForceElement.hpp>
+
 #include <PostProcOnRefMesh.hpp>
 #include <PostProcStresses.hpp>
 
