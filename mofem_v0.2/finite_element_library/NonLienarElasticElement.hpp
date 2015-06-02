@@ -260,7 +260,7 @@ struct NonlinearElasticElement {
     }
 
     virtual PetscErrorCode setUserActiveVariables(
-      VectorDouble &active_varibles) {
+      VectorDouble &activeVariables) {
       PetscFunctionBegin;
       PetscFunctionReturn(0);
     }
@@ -366,7 +366,7 @@ struct NonlinearElasticElement {
       bool field_disp
     );
 
-    VectorDouble active_varibles;
+    VectorDouble activeVariables;
     int nb_active_variables;
 
     vector<MatrixDouble > *ptrh;

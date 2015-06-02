@@ -331,15 +331,15 @@ PetscErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::doWork(
 
       }
 
-      active_varibles.resize(nb_active_variables,false);
+      activeVariables.resize(nb_active_variables,false);
 
       if(!aLe) {
         for(int dd1 = 0;dd1<3;dd1++) {
           for(int dd2 = 0;dd2<3;dd2++) {
-            active_varibles(dd1*3+dd2) = (*ptrh)[gg](dd1,dd2);
+            activeVariables(dd1*3+dd2) = (*ptrh)[gg](dd1,dd2);
             if(fieldDisp) {
               if(dd1 == dd2) {
-                active_varibles(dd1*3+dd2) += 1;
+                activeVariables(dd1*3+dd2) += 1;
               }
             }
           }
@@ -347,22 +347,22 @@ PetscErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::doWork(
       } else {
         for(int dd1 = 0;dd1<3;dd1++) {
           for(int dd2 = 0;dd2<3;dd2++) {
-            active_varibles(dd1*3+dd2) = (*ptrh)[gg](dd1,dd2);
+            activeVariables(dd1*3+dd2) = (*ptrh)[gg](dd1,dd2);
           }
         }
         for(int dd1 = 0;dd1<3;dd1++) {
           for(int dd2 = 0;dd2<3;dd2++) {
-            active_varibles(9+dd1*3+dd2) = (*ptrH)[gg](dd1,dd2);
+            activeVariables(9+dd1*3+dd2) = (*ptrH)[gg](dd1,dd2);
           }
         }
       }
-      ierr = dAta.materialAdoublePtr->setUserActiveVariables(active_varibles); CHKERRQ(ierr);
+      ierr = dAta.materialAdoublePtr->setUserActiveVariables(activeVariables); CHKERRQ(ierr);
 
       if(fUnction) {
         commonData.sTress[gg].resize(3,3,false);
         int r;
         //play recorder for values
-        r = ::function(tAg,9,nb_active_variables,&active_varibles[0],&commonData.sTress[gg](0,0));
+        r = ::function(tAg,9,nb_active_variables,&activeVariables[0],&commonData.sTress[gg](0,0));
         if(r<adlocReturnValue) { // function is locally analytic
           SETERRQ1(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"ADOL-C function evaluation with error r = %d",r);
         }
@@ -380,11 +380,13 @@ PetscErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::doWork(
         //play recorder for jacobians
         r = jacobian(
           tAg,9,nb_active_variables,
-          &active_varibles[0],&(commonData.jacStressRowPtr[gg])[0]);
-          if(r<adlocReturnValue) {
-            SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"ADOL-C function evaluation with error");
-          }
+          &activeVariables[0],
+          &(commonData.jacStressRowPtr[gg])[0]
+        );
+        if(r<adlocReturnValue) {
+          SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"ADOL-C function evaluation with error");
         }
+      }
 
       }
 

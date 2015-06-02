@@ -105,8 +105,10 @@ struct FluidPressure {
 
       //cerr << Nf << endl;
       //cerr << data.getIndices() << endl;
-      ierr = VecSetValues(F,data.getIndices().size(),
-	&data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
+      ierr = VecSetValues(
+        F,data.getIndices().size(),
+        &data.getIndices()[0],&Nf[0],ADD_VALUES
+      ); CHKERRQ(ierr);
 
 
       PetscFunctionReturn(0);
