@@ -1735,7 +1735,7 @@ PetscErrorCode FaceSplittingTools::propagateBySplit(Range &new_nodes,Range &edge
         ierr = mField.get_entities_by_type_and_ref_level(last_ref,BitRefLevel().set(),MBTET,meshset_out); CHKERRQ(ierr);
         mField.get_moab().write_file("split_sides.vtk","VTK","",&meshset_out,1);
         rval = mField.get_moab().delete_entities(&meshset_out,1); CHKERR_PETSC(rval);
-        
+
       }
 
     }

@@ -12,43 +12,49 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef __CONSTANT_FRONT_AREA_HPP__
-#define __CONSTANT_FRONT_AREA_HPP__
+#ifndef __GRIFFITH_FORCE_ELEMENT_HPP__
+#define __GRIFFITH_FORCE_ELEMENT_HPP__
 
 #ifndef WITH_ADOL_C
   #error "MoFEM need to be compiled with ADOL-C"
 #endif
 
-struct ConstantFrontArea {
-
-  Range frontEdges;
-  Range frontNodes;
+struct GriffithForceElement {
 
   FieldInterface &mField;
 
   struct MyTriangleFE: public FaceElementForcesAndSourcesCore {
-    MyTriangleFE(FieldInterface &m_field);
+    MyTriangleFE(FieldInterface &m_field):
+    FaceElementForcesAndSourcesCore(m_field)
+    {}
     int getRule(int order) { return order; };
   };
 
-  MyTriangleFE fe;
-  MyTriangleFE& getLoopFe() { return fe; }
+  MyTriangleFE feRhs;
+  MyTriangleFE& getLoopFeRhs() { return feRhs; }
+  MyTriangleFE feLhs;
+  MyTriangleFE& getLoopFeLhs() { return feLhs ; }
 
-  ConstantFrontArea(FieldInterface &m_field):
+  GriffithForceElement(FieldInterface &m_field):
     mField(m_field),
-    fe(m_field) {}
+    feRhs(m_field),
+    feLhs(m_field) {}
 
   struct CommonData {
 
-    ublas::vector<double> grifithForce;
-    ublas::matrix<double> tangentGrifithForce;
-    vector<double*> tangentGrifithForceRowPtr;
+    ublas::vector<double> griffithForce;
+    ublas::matrix<double> tangentGriffithForce;
+    vector<double*> tangentGriffithForceRowPtr;
 
   };
+  CommonData commonData;
 
   struct BlockData {
     double gc;
+    Range frontEdges;
+    Range frontNodes;
   };
+  map<int,BlockData> blockData;
 
   struct OpJacobian: public FaceElementForcesAndSourcesCore::UserDataOperator {
 
@@ -97,7 +103,7 @@ struct ConstantFrontArea {
       TYPE referenceArea;
       TYPE currentArea;
 
-      ublas::vector<TYPE> grifithForce;
+      ublas::vector<TYPE> griffithForce;
 
       PetscErrorCode sPin(ublas::matrix<TYPE> &spin,ublas::vector<TYPE> &vec) {
         PetscFunctionBegin;
@@ -173,9 +179,9 @@ struct ConstantFrontArea {
         double gc
       ) {
         PetscFunctionBegin;
-        grifithForce.resize(9);
+        griffithForce.resize(9);
         for(int dd = 0;dd<9;dd++) {
-          grifithForce[dd] = (A(0,dd) + A(1,dd) + A(2,dd))*gc;
+          griffithForce[dd] = (A(0,dd) + A(1,dd) + A(2,dd))*gc;
         }
         PetscFunctionReturn(0);
       }
@@ -224,9 +230,9 @@ struct ConstantFrontArea {
 
       ierr = auxFun.calulateGrifthForce(blockData.gc); CHKERRQ(ierr);
 
-      commonData.grifithForce.resize(nb_dofs,false);
+      commonData.griffithForce.resize(nb_dofs,false);
       for(int dd = 0;dd!=nb_dofs;dd++) {
-        auxFun.grifithForce[dd] >>= commonData.grifithForce[dd];
+        auxFun.griffithForce[dd] >>= commonData.griffithForce[dd];
       }
 
       trace_off();
@@ -240,21 +246,15 @@ struct ConstantFrontArea {
 
   struct OpRhs: public FaceElementForcesAndSourcesCore::UserDataOperator {
 
-    FieldInterface &mField;
+    int tAg;
+    BlockData &blockData;
     CommonData &commonData;
 
-    int tAg;
-    Range &frontEdges;
-    Range &frontNodes;
-
-
-    OpRhs(FieldInterface &m_field,CommonData &common_data,int tag,Range &front_edges,Range &front_nodes):
+    OpRhs(int tag,BlockData &block_data,CommonData &common_data):
     FaceElementForcesAndSourcesCore::UserDataOperator("MESH_NODE_POSITIONS",UserDataOperator::OPROW),
-    mField(m_field),
-    commonData(common_data),
     tAg(tag),
-    frontEdges(front_edges),
-    frontNodes(front_nodes)
+    blockData(block_data),
+    commonData(common_data)
     {}
 
     ublas::vector<int> iNdices;
@@ -277,7 +277,7 @@ struct ConstantFrontArea {
       dit = dofs.begin();
       hi_dit = dofs.end();
       for(int ii = 0;dit!=hi_dit;dit++,ii++) {
-        if(frontNodes.find((*dit)->get_ent())==frontNodes.end()) {
+        if(blockData.frontNodes.find((*dit)->get_ent())==blockData.frontNodes.end()) {
           iNdices[ii] = -1;
         }
       }
@@ -290,10 +290,10 @@ struct ConstantFrontArea {
         activeVariables[9+dd] = data.getFieldData()[dd];
       }
 
-      commonData.grifithForce.resize(9,false);
+      commonData.griffithForce.resize(9,false);
       int r;
       //play recorder for values
-      r = ::function(tAg,nb_dofs,18,&activeVariables[0],&commonData.grifithForce[0]);
+      r = ::function(tAg,nb_dofs,18,&activeVariables[0],&commonData.griffithForce[0]);
       if(r<3) { // function is locally analytic
         SETERRQ1(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"ADOL-C function evaluation with error r = %d",r);
       }
@@ -302,7 +302,7 @@ struct ConstantFrontArea {
         getFEMethod()->snes_f,
         nb_dofs,
         &iNdices[0],
-        &commonData.grifithForce[0],
+        &commonData.griffithForce[0],
         ADD_VALUES
       ); CHKERRQ(ierr);
 
@@ -313,25 +313,19 @@ struct ConstantFrontArea {
 
   struct OpLhs: public FaceElementForcesAndSourcesCore::UserDataOperator {
 
-    FieldInterface &mField;
+    int tAg;
+    BlockData &blockData;
     CommonData &commonData;
 
-    int tAg;
-    Range &frontEdges;
-    Range &frontNodes;
-
-
-    OpLhs(FieldInterface &m_field,CommonData &common_data,int tag,Range &front_edges,Range &front_nodes):
+    OpLhs(int tag,BlockData &block_data,CommonData &common_data):
     FaceElementForcesAndSourcesCore::UserDataOperator(
       "MESH_NODE_POSITIONS",
       "MESH_NODE_POSITIONS",
       UserDataOperator::OPROWCOL
     ),
-    mField(m_field),
-    commonData(common_data),
     tAg(tag),
-    frontEdges(front_edges),
-    frontNodes(front_nodes)
+    blockData(block_data),
+    commonData(common_data)
     {}
 
     ublas::vector<int> rowIndices;
@@ -362,7 +356,7 @@ struct ConstantFrontArea {
       dit = dofs.begin();
       hi_dit = dofs.end();
       for(int ii = 0;dit!=hi_dit;dit++,ii++) {
-        if(frontNodes.find((*dit)->get_ent())==frontNodes.end()) {
+        if(blockData.frontNodes.find((*dit)->get_ent())==blockData.frontNodes.end()) {
           rowIndices[ii] = -1;
         }
       }
@@ -375,10 +369,10 @@ struct ConstantFrontArea {
         activeVariables[9+dd] = row_data.getFieldData()[dd];
       }
 
-      commonData.tangentGrifithForce.resize(9,18,false);
-      commonData.tangentGrifithForceRowPtr.resize(9);
+      commonData.tangentGriffithForce.resize(9,18,false);
+      commonData.tangentGriffithForceRowPtr.resize(9);
       for(int dd = 0;dd<9;dd++) {
-        commonData.tangentGrifithForceRowPtr[dd] = &commonData.tangentGrifithForce(dd,0);
+        commonData.tangentGriffithForceRowPtr[dd] = &commonData.tangentGriffithForce(dd,0);
       }
 
       int r;
@@ -386,7 +380,7 @@ struct ConstantFrontArea {
       r = jacobian(
         tAg,row_nb_dofs,18,
         &activeVariables[0],
-        &commonData.tangentGrifithForceRowPtr[0]
+        &commonData.tangentGriffithForceRowPtr[0]
       );
       if(r<3) { // function is locally analytic
         SETERRQ1(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"ADOL-C function evaluation with error r = %d",r);
@@ -394,7 +388,7 @@ struct ConstantFrontArea {
       k.resize(9,9,false);
       for(int dd1 = 0;dd1<9;dd1++) {
         for(int dd2 = 0;dd2<9;dd2++) {
-          k(dd1,dd2) = commonData.tangentGrifithForce(dd1,9+dd2);
+          k(dd1,dd2) = commonData.tangentGriffithForce(dd1,9+dd2);
         }
       }
 
@@ -413,4 +407,4 @@ struct ConstantFrontArea {
 
 };
 
-#endif //__CONSTANT_FRONT_AREA_HPP__
+#endif //__GRIFFITH_FORCE_ELEMENT_HPP__

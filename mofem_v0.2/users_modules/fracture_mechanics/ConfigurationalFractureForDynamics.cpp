@@ -357,7 +357,7 @@ struct MonitorUpdateFrezedNodes: public FEMethod {
 
     //caculate griffith forces
     ierr = confProb->project_force_vector(mField,"COUPLED_DYNAMIC"); CHKERRQ(ierr);
-    ierr = confProb->griffith_force_vector(mField,"COUPLED_DYNAMIC"); CHKERRQ(ierr);
+    ierr = confProb->calculate_griffith_foces(mField,"COUPLED_DYNAMIC"); CHKERRQ(ierr);
     ierr = confProb->griffith_g(mField,"COUPLED_DYNAMIC"); CHKERRQ(ierr);
 
     //fix nodes

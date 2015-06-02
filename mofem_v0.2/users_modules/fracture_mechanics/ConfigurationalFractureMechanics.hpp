@@ -125,7 +125,7 @@ struct ConfigurationalFractureMechanics {
   PetscErrorCode project_force_vector(FieldInterface& m_field,string problem);
   PetscErrorCode front_projection_data(FieldInterface& m_field,string problem);
   PetscErrorCode delete_front_projection_data(FieldInterface& m_field);
-  PetscErrorCode griffith_force_vector(FieldInterface& m_field,string problem);
+  PetscErrorCode calculate_griffith_foces(FieldInterface& m_field,string problem);
 
   PetscErrorCode project_form_th_projection_tag(FieldInterface& m_field,string problem,bool do_not_project = false);
 

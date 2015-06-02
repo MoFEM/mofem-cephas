@@ -884,6 +884,7 @@ PetscErrorCode ConfigurationalFractureMechanics::material_problem_definition(Fie
   material_FirelWall->set(FW_material_problem_definition);
 
   PetscErrorCode ierr;
+  ErrorCode rval;
 
   //Fields
   ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,3,MF_ZERO); CHKERRQ(ierr);
@@ -904,11 +905,34 @@ PetscErrorCode ConfigurationalFractureMechanics::material_problem_definition(Fie
     ierr = m_field.modify_finite_element_add_field_data("MATERIAL","TEMPERATURE"); CHKERRQ(ierr);
   }
 
+  {
+    ierr = m_field.add_finite_element("GRIFFITH_FORCE_ELEMENT",MF_ZERO); CHKERRQ(ierr);
+    ierr = m_field.modify_finite_element_add_field_row("GRIFFITH_FORCE_ELEMENT","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+    ierr = m_field.modify_finite_element_add_field_col("GRIFFITH_FORCE_ELEMENT","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+    ierr = m_field.modify_finite_element_add_field_data("GRIFFITH_FORCE_ELEMENT","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+
+
+    Range crack_surfaces_faces;
+    ierr = m_field.get_cubit_msId_entities_by_dimension(200,SIDESET,2,crack_surfaces_faces,true); CHKERRQ(ierr);
+    Range crack_front_edges;
+    ierr = m_field.get_cubit_msId_entities_by_dimension(201,SIDESET,1,crack_front_edges,true); CHKERRQ(ierr);
+    Range crack_front_nodes;
+    rval = m_field.get_moab().get_connectivity(crack_front_edges,crack_front_nodes,true); CHKERR_PETSC(rval);
+    Range crack_surfaces_edge_faces;
+    rval = m_field.get_moab().get_adjacencies(
+      crack_front_nodes,2,false,crack_surfaces_edge_faces,Interface::UNION
+    ); CHKERR_PETSC(rval);
+    crack_surfaces_edge_faces = crack_surfaces_edge_faces.subset_by_type(MBTRI);
+    crack_surfaces_edge_faces = intersect(crack_surfaces_edge_faces,crack_surfaces_faces);
+    ierr = m_field.add_ents_to_finite_element_by_TRIs(crack_surfaces_edge_faces,"GRIFFITH_FORCE_ELEMENT"); CHKERRQ(ierr);
+  }
+
   //define problems
   ierr = m_field.add_problem("MATERIAL_MECHANICS",MF_ZERO); CHKERRQ(ierr);
 
   //set finite elements for problems
   ierr = m_field.modify_problem_add_finite_element("MATERIAL_MECHANICS","MATERIAL"); CHKERRQ(ierr);
+  ierr = m_field.modify_problem_add_finite_element("MATERIAL_MECHANICS","GRIFFITH_FORCE_ELEMENT"); CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
@@ -962,6 +986,7 @@ PetscErrorCode ConfigurationalFractureMechanics::coupled_problem_definition(Fiel
   ierr = m_field.modify_problem_add_finite_element("COUPLED_PROBLEM","NEUAMNN_FE"); CHKERRQ(ierr);
   ierr = m_field.modify_problem_add_finite_element("COUPLED_PROBLEM","FORCE_FE"); CHKERRQ(ierr);
   ierr = m_field.modify_problem_add_finite_element("COUPLED_PROBLEM","MESH_SMOOTHER"); CHKERRQ(ierr);
+  ierr = m_field.modify_problem_add_finite_element("COUPLED_PROBLEM","GRIFFITH_FORCE_ELEMENT"); CHKERRQ(ierr);
 
   ierr = m_field.modify_problem_add_finite_element("COUPLED_PROBLEM","CandCT_SURFACE_ELEM"); CHKERRQ(ierr);
   ierr = m_field.modify_problem_add_finite_element("COUPLED_PROBLEM","BOTH_SIDE_OF_CRACK"); CHKERRQ(ierr);
@@ -2074,44 +2099,54 @@ PetscErrorCode ConfigurationalFractureMechanics::delete_front_projection_data(Fi
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode ConfigurationalFractureMechanics::griffith_force_vector(FieldInterface& m_field,string problem) {
+PetscErrorCode ConfigurationalFractureMechanics::calculate_griffith_foces(FieldInterface& m_field,string problem) {
   PetscFunctionBegin;
 
   PetscErrorCode ierr;
+  ErrorCode rval;
 
   Vec GriffithForceVec;
   ierr = m_field.VecCreateGhost("C_CRACKFRONT_MATRIX",COL,&GriffithForceVec); CHKERRQ(ierr);
   Vec LambdaVec;
   ierr = m_field.VecCreateGhost("C_CRACKFRONT_MATRIX",ROW,&LambdaVec); CHKERRQ(ierr);
+  double gc;
+  PetscBool flg;
+  ierr = PetscOptionsGetReal(PETSC_NULL,"-my_gc",&gc,&flg); CHKERRQ(ierr);
+  //if(flg != PETSC_TRUE) {
+  //SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_gc (what is the fracture energy ?)");
+  //}
+  if(flg == PETSC_TRUE) {
+    ierr = VecSet(LambdaVec,gc); CHKERRQ(ierr);
+  } else {
+    ierr = VecSet(LambdaVec,1); CHKERRQ(ierr);
+  }
 
   {
 
-    double gc;
-    PetscBool flg;
-    ierr = PetscOptionsGetReal(PETSC_NULL,"-my_gc",&gc,&flg); CHKERRQ(ierr);
-    //if(flg != PETSC_TRUE) {
-    //SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_gc (what is the fracture energy ?)");
-    //}
-    if(flg == PETSC_TRUE) {
-      ierr = VecSet(LambdaVec,gc); CHKERRQ(ierr);
-    } else {
-      ierr = VecSet(LambdaVec,1); CHKERRQ(ierr);
-    }
+    GriffithForceElement griffith_force_element(m_field);
 
-    Range corners_edges,corners_nodes;
-    ierr = m_field.get_cubit_msId_entities_by_dimension(100,SIDESET,1,corners_edges,true); CHKERRQ(ierr);
-    ierr = m_field.get_cubit_msId_entities_by_dimension(101,NODESET,0,corners_nodes,true); CHKERRQ(ierr);
-    ErrorCode rval;
-    Range corners_edges_nodes;
-    rval = m_field.get_moab().get_connectivity(corners_edges,corners_edges_nodes,true); CHKERR_PETSC(rval);
-    corners_nodes.merge(corners_edges_nodes);
-    Range blocked_nodes;
-    BitRefLevel bit_to_block = BitRefLevel().set(BITREFLEVEL_SIZE-2);
-    ierr = m_field.get_entities_by_type_and_ref_level(bit_to_block,BitRefLevel().set(),MBVERTEX,blocked_nodes); CHKERRQ(ierr);
-    corners_nodes.merge(blocked_nodes);
+    griffith_force_element.blockData[0].gc = gc;
+    ierr = m_field.get_cubit_msId_entities_by_dimension(
+      201,SIDESET,1,griffith_force_element.blockData[0].frontEdges,true
+    ); CHKERRQ(ierr);
+    rval = m_field.get_moab().get_connectivity(
+      griffith_force_element.blockData[0].frontEdges,griffith_force_element.blockData[0].frontNodes,true
+    ); CHKERR_PETSC(rval);
+    griffith_force_element.feRhs.getOpPtrVector().push_back(
+      new GriffithForceElement::OpJacobian(
+        3,griffith_force_element.blockData[0],griffith_force_element.commonData
+      )
+    );
+    griffith_force_element.feRhs.getOpPtrVector().push_back(
+      new GriffithForceElement::OpRhs(
+        3,griffith_force_element.blockData[0],griffith_force_element.commonData
+      )
+    );
 
+  }
+
+  {
     C_CONSTANT_AREA C_AREA_ELEM(m_field,projFrontCtx->C,PETSC_NULL,"LAMBDA_CRACKFRONT_AREA");
-
     ierr = MatSetOption(projFrontCtx->C,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
     ierr = MatSetOption(projFrontCtx->C,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
 
@@ -2121,7 +2156,6 @@ PetscErrorCode ConfigurationalFractureMechanics::griffith_force_vector(FieldInte
     ierr = MatAssemblyEnd(projFrontCtx->C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 
     ierr = MatMultTranspose(projFrontCtx->C,LambdaVec,GriffithForceVec); CHKERRQ(ierr);
-
   }
 
   // projection matrix
