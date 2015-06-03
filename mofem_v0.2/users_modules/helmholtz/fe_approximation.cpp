@@ -357,6 +357,9 @@ int main(int argc, char *argv[]) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"*** ERROR -wave_direction [3*1 vector] default:X direction [0,0,1]");
   }
 
+  ierr = analytical_bc_real.setProblem(m_field,"BCREAL_PROBLEM"); CHKERRQ(ierr);
+  ierr = analytical_bc_imag.setProblem(m_field,"BCIMAG_PROBLEM"); CHKERRQ(ierr);
+
   PetscInt choise_value = NO_ANALYTICAL_SOLUTION;
   // set type of analytical solution
   ierr = PetscOptionsGetEList(NULL,"-analytical_solution_type",analytical_solution_types,6,&choise_value,NULL); CHKERRQ(ierr);
@@ -499,8 +502,6 @@ int main(int argc, char *argv[]) {
     }
     cerr << "\n before i am ok 0" << endl;
     // Solve for analytical Dirichlet bc dofs
-    ierr = analytical_bc_real.setProblem(m_field,"BCREAL_PROBLEM"); CHKERRQ(ierr);
-    ierr = analytical_bc_imag.setProblem(m_field,"BCIMAG_PROBLEM"); CHKERRQ(ierr);
     cerr << "\n before i am ok 1" << endl;
     ierr = analytical_bc_real.solveProblem(
       m_field,"BCREAL_PROBLEM","BCREAL_FE",analytical_ditihlet_bc_real,bc_dirichlet_tris
