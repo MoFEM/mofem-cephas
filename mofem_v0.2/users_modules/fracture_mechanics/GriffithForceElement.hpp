@@ -24,10 +24,52 @@ struct GriffithForceElement {
   FieldInterface &mField;
 
   struct MyTriangleFE: public FaceElementForcesAndSourcesCore {
+
+    Mat B;
+    Vec F;
+
     MyTriangleFE(FieldInterface &m_field):
-    FaceElementForcesAndSourcesCore(m_field)
+    FaceElementForcesAndSourcesCore(m_field),
+    B(PETSC_NULL),
+    F(PETSC_NULL)
     {}
     int getRule(int order) { return order-1; };
+
+    PetscErrorCode preProcess() {
+      PetscFunctionBegin;
+      PetscErrorCode ierr;
+
+      ierr = FaceElementForcesAndSourcesCore::preProcess(); CHKERRQ(ierr);
+
+      if(B != PETSC_NULL) {
+        snes_B = B;
+      }
+
+      if(F != PETSC_NULL) {
+        snes_f = F;
+      }
+
+      switch (ts_ctx) {
+        case CTX_TSSETIFUNCTION: {
+          if(!F) {
+            snes_ctx = CTX_SNESSETFUNCTION;
+            snes_f = ts_F;
+          }
+          break;
+        }
+        case CTX_TSSETIJACOBIAN: {
+          if(!B) {
+            snes_ctx = CTX_SNESSETJACOBIAN;
+            snes_B = ts_B;
+          }
+          break;
+        }
+        default:
+        break;
+      }
+      PetscFunctionReturn(0);
+    }
+
   };
 
   MyTriangleFE feRhs;
@@ -411,7 +453,8 @@ struct GriffithForceElement {
 
       int col_nb_dofs = row_data.getIndices().size();
 
-      ierr = MatSetValues(getFEMethod()->snes_B,
+      ierr = MatSetValues(
+        getFEMethod()->snes_B,
         row_nb_dofs,&rowIndices[0],
         col_nb_dofs,&col_data.getIndices()[0],
         &k(0,0),ADD_VALUES

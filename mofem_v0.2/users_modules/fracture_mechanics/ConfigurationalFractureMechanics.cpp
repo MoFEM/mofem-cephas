@@ -2664,14 +2664,14 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   da *= fabs(crack_front_nodes.size()-fix_nodes.size())/(double)crack_front_nodes.size();
   corners_nodes.merge(fix_nodes);
 
-  //arc elem
+  // Arc elem
   ArcLengthCtx arc_ctx(m_field,"COUPLED_PROBLEM");
   ArcLengthSnesCtx arc_snes_ctx(m_field,"COUPLED_PROBLEM",&arc_ctx);
   ArcLengthMatShell arc_mat_ctx(K,&arc_ctx,"COUPLED_PROBLEM");
   PCArcLengthCtx pc_ctx(K,K,&arc_ctx);
   FrontAreaArcLengthControl arc_elem(m_field,this,&arc_ctx);
 
-  //spatial and material forces
+  // Spatial and material forces
 
   NonlinearElasticElement spatial_fe(m_field,-1);
   NonlinearElasticElement material_fe(m_field,-1);
@@ -2791,18 +2791,62 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   material_fe.feLhs.meshPositionsFieldName = "NONE";
   material_fe.feLhs.addToRule = 0;
 
-  //meshs smoothing
+  // Griffith force element
+  GriffithForceElement griffith_force_element(m_field);
+
+  double gc;
+  ierr = PetscOptionsGetReal(PETSC_NULL,"-my_gc",&gc,&flg); CHKERRQ(ierr);
+  griffith_force_element.blockData[0].gc = gc;
+  ierr = m_field.get_cubit_msId_entities_by_dimension(
+    201,SIDESET,1,griffith_force_element.blockData[0].frontEdges,true
+  ); CHKERRQ(ierr);
+
+  griffith_force_element.blockData[0].gc = gc;
+  ierr = m_field.get_cubit_msId_entities_by_dimension(
+    201,SIDESET,1,griffith_force_element.blockData[0].frontEdges,true
+  ); CHKERRQ(ierr);
+  rval = m_field.get_moab().get_connectivity(
+    griffith_force_element.blockData[0].frontEdges,griffith_force_element.blockData[0].frontNodes,true
+  ); CHKERR_PETSC(rval);
+
+  griffith_force_element.feRhs.getOpPtrVector().push_back(
+    new GriffithForceElement::OpJacobian(
+      3,griffith_force_element.blockData[0],griffith_force_element.commonData
+    )
+  );
+  griffith_force_element.feRhs.getOpPtrVector().push_back(
+    new GriffithForceElement::OpRhs(
+      3,griffith_force_element.blockData[0],griffith_force_element.commonData
+    )
+  );
+  griffith_force_element.feLhs.getOpPtrVector().push_back(
+    new GriffithForceElement::OpJacobian(
+      3,griffith_force_element.blockData[0],griffith_force_element.commonData
+    )
+  );
+  griffith_force_element.feLhs.getOpPtrVector().push_back(
+    new GriffithForceElement::OpLhs(
+      3,griffith_force_element.blockData[0],griffith_force_element.commonData
+    )
+  );
+
+  // Crack front
+  //Snes_CTgc_CONSTANT_AREA ct_gc(m_field,projFrontCtx,"COUPLED_PROBLEM","LAMBDA_CRACKFRONT_AREA");
+  //Snes_dCTgc_CONSTANT_AREA dct_gc(m_field,K,"LAMBDA_CRACKFRONT_AREA");
+  Snes_CalculateC_NeededForCrackAreaArcLengthControl calculate_C_for_arclength(
+    m_field,projFrontCtx,"COUPLED_PROBLEM","LAMBDA_CRACKFRONT_AREA"
+  );
+
+  // Meshs smoothing
   MyMeshSmoothing smoother(m_field);
   ierr = smoother.initCrackFrontData(m_field); CHKERRQ(ierr);
   set_qual_ver(3);
+  TangentWithMeshSmoothingFrontConstrain tangent_constrain(m_field,&smoother,"LAMBDA_CRACK_TANGENT_CONSTRAIN");
   //constrains
   SnesConstrainSurfacGeometry constrain_body_surface(m_field,"LAMBDA_SURFACE");
   constrain_body_surface.nonlinear = true;
   SnesConstrainSurfacGeometry constrain_crack_surface(m_field,"LAMBDA_CRACK_SURFACE");
   constrain_crack_surface.nonlinear = true;
-  Snes_CTgc_CONSTANT_AREA ct_gc(m_field,projFrontCtx,"COUPLED_PROBLEM","LAMBDA_CRACKFRONT_AREA");
-  Snes_dCTgc_CONSTANT_AREA dct_gc(m_field,K,"LAMBDA_CRACKFRONT_AREA");
-  TangentWithMeshSmoothingFrontConstrain tangent_constrain(m_field,&smoother,"LAMBDA_CRACK_TANGENT_CONSTRAIN");
   map<int,SnesConstrainSurfacGeometry*> other_body_surface_constrains;
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,SIDESET,it)) {
     int msId = it->get_msId();
@@ -2861,7 +2905,8 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   arc_snes_ctx.get_preProcess_to_do_Rhs().push_back(&pre_post_method);
   arc_snes_ctx.get_preProcess_to_do_Rhs().push_back(&my_dirichlet_bc);
   arc_snes_ctx.get_preProcess_to_do_Rhs().push_back(&fix_material_pts);
-  arc_snes_ctx.get_preProcess_to_do_Rhs().push_back(&ct_gc);
+  //arc_snes_ctx.get_preProcess_to_do_Rhs().push_back(&ct_gc);
+  arc_snes_ctx.get_preProcess_to_do_Rhs().push_back(&calculate_C_for_arclength);
   SnesCtx::loops_to_do_type& loops_to_do_Rhs = arc_snes_ctx.get_loops_to_do_Rhs();
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("BOTH_SIDE_OF_CRACK",&both_sides_constrains));
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("CandCT_SURFACE_ELEM",&constrain_body_surface));
@@ -2876,6 +2921,7 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("C_TANGENT_ELEM",&tangent_constrain));
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ELASTIC_COUPLED",&spatial_fe.feRhs));
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("MATERIAL_COUPLED",&material_fe.feRhs));
+  loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("GRIFFITH_FORCE_ELEMENT",&griffith_force_element.feRhs));
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("NEUAMNN_FE",&fe_forces));
   //nodal forces
   boost::ptr_map<string,NodalForce> nodal_forces;
@@ -2915,7 +2961,7 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   arc_snes_ctx.get_preProcess_to_do_Mat().push_back(&fix_material_pts);
   SnesCtx::loops_to_do_type& loops_to_do_Mat = arc_snes_ctx.get_loops_to_do_Mat();
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("BOTH_SIDE_OF_CRACK",&both_sides_constrains));
-  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("dCT_CRACKFRONT_AREA_ELEM",&dct_gc));
+  //loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("dCT_CRACKFRONT_AREA_ELEM",&dct_gc));
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("CandCT_SURFACE_ELEM",&constrain_body_surface));
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("CandCT_CRACK_SURFACE_ELEM",&constrain_crack_surface));
   for(map<int,SnesConstrainSurfacGeometry*>::iterator mit = other_body_surface_constrains.begin();
@@ -2928,6 +2974,7 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("C_TANGENT_ELEM",&tangent_constrain));
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ELASTIC_COUPLED",&spatial_fe.feLhs));
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("MATERIAL_COUPLED",&material_fe.feLhs));
+  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("GRIFFITH_FORCE_ELEMENT",&griffith_force_element.feLhs));
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("NEUAMNN_FE",&fe_forces));
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ARC_LENGTH",&arc_elem));
   arc_snes_ctx.get_postProcess_to_do_Mat().push_back(&fix_material_pts);
@@ -3097,15 +3144,19 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   ierr = VecZeroEntries(F);  CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ct_gc.snes_f = F;
-  ierr = ct_gc.preProcess(); CHKERRQ(ierr);
+  //ct_gc.snes_f = F;
+  //ierr = ct_gc.preProcess(); CHKERRQ(ierr);
+  griffith_force_element.feRhs.snes_f = F;
+  ierr = m_field.loop_finite_elements(
+    "COUPLED_PROBLEM","GRIFFITH_FORCE_ELEMENT",griffith_force_element.feRhs
+  );  CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = m_field.set_other_global_ghost_vector(
-    "COUPLED_PROBLEM","MESH_NODE_POSITIONS","GRIFFITH_FORCE",
-    ROW,F,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    "COUPLED_PROBLEM","MESH_NODE_POSITIONS","GRIFFITH_FORCE",ROW,F,INSERT_VALUES,SCATTER_REVERSE
+  ); CHKERRQ(ierr);
 
   //calulate work of fracture
   const MoFEMProblem *problem_ptr;
@@ -3361,9 +3412,10 @@ PetscErrorCode ConfigurationalFractureMechanics::FrontAreaArcLengthControl::calc
     aRea0 += norm_2(normal)*0.25;
     for(int nn = 0;nn<num_nodes; nn++) {
       if(find(crackFrontNodes.begin(),crackFrontNodes.end(),conn[nn])!=crackFrontNodes.end()) {
-      for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_(mField,"MESH_NODE_POSITIONS",conn[nn],dit)) {
-	dofsX[nn*3+dit->get_dof_rank()] = dit->get_FieldData();
-      }}
+        for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_(mField,"MESH_NODE_POSITIONS",conn[nn],dit)) {
+          dofsX[nn*3+dit->get_dof_rank()] = dit->get_FieldData();
+        }
+      }
     }
     ierr = ShapeFaceNormalMBTRI(&diffNTRI[0],&dofsX.data()[0],&normal.data()[0]); CHKERRQ(ierr);
     //crack surface area is a half of crack top and bottom body surface

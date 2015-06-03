@@ -12,8 +12,8 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef __MOABFEMETHOD_CONSTAREA_HPP__
-#define __MOABFEMETHOD_CONSTAREA_HPP__
+#ifndef __COMPLEX_CONST_AREA_HPP__
+#define __COMPLEX_CONST_AREA_HPP__
 
 #include <math.h>
 #include <complex>
@@ -696,6 +696,7 @@ struct Snes_CTgc_CONSTANT_AREA: public FEMethod {
     ierr = mField.loop_finite_elements("C_CRACKFRONT_MATRIX","C_CRACKFRONT_AREA_ELEM",C_AREA_ELEM);  CHKERRQ(ierr);
     ierr = MatAssemblyBegin(proj_ctx->C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
     ierr = MatAssemblyEnd(proj_ctx->C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+
     /*{
       //Matrix View
       MatView(C,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
@@ -736,6 +737,83 @@ struct Snes_CTgc_CONSTANT_AREA: public FEMethod {
 
 };
 
+struct Snes_CalculateC_NeededForCrackAreaArcLengthControl: public FEMethod {
+
+  FieldInterface& mField;
+  ConstrainMatrixCtx *proj_ctx;
+  string problem;
+  string lambda_field_name;
+  double gc;
+  int verbose;
+
+  Snes_CalculateC_NeededForCrackAreaArcLengthControl(
+    FieldInterface& _mField,ConstrainMatrixCtx *_proj_all_ctx,
+    string _problem,string _lambda_field_name,int _verbose = 0):
+    mField(_mField),proj_ctx(_proj_all_ctx),
+    problem(_problem),lambda_field_name(_lambda_field_name),verbose(_verbose) {}
+
+  ErrorCode rval;
+  PetscErrorCode ierr;
+
+  PetscErrorCode preProcess() {
+    PetscFunctionBegin;
+
+    switch (ts_ctx) {
+      case CTX_TSSETIFUNCTION: {
+        snes_ctx = CTX_SNESSETFUNCTION;
+        snes_f = ts_F;
+        break;
+      }
+      case CTX_TSSETIJACOBIAN: {
+        snes_ctx = CTX_SNESSETJACOBIAN;
+        snes_B = ts_B;
+        break;
+      }
+      default:
+      break;
+    }
+
+    PetscBool flg;
+    ierr = PetscOptionsGetReal(PETSC_NULL,"-my_gc",&gc,&flg); CHKERRQ(ierr);
+    if(flg != PETSC_TRUE) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"*** ERROR -my_gc (what is fracture energy ?)");
+    }
+
+    Vec D;
+    ierr = mField.VecCreateGhost(problem,COL,&D); CHKERRQ(ierr);
+    ierr = mField.set_local_ghost_vector(problem,COL,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+
+    Vec _D_;
+    ierr = mField.VecCreateGhost("C_CRACKFRONT_MATRIX",COL,&_D_); CHKERRQ(ierr);
+    VecScatter scatter;
+    string y_problem = "C_CRACKFRONT_MATRIX";
+    ierr = mField.VecScatterCreate(D,problem,COL,_D_,y_problem,COL,&scatter); CHKERRQ(ierr);
+    ierr = VecScatterBegin(scatter,D,_D_,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecScatterEnd(scatter,D,_D_,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecGhostUpdateBegin(_D_,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecGhostUpdateEnd(_D_,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = mField.set_local_ghost_vector("C_CRACKFRONT_MATRIX",COL,_D_,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = VecDestroy(&_D_); CHKERRQ(ierr);
+    ierr = VecDestroy(&D); CHKERRQ(ierr);
+    ierr = VecScatterDestroy(&scatter); CHKERRQ(ierr);
+
+    C_CONSTANT_AREA C_AREA_ELEM(mField,proj_ctx->C,PETSC_NULL,lambda_field_name);
+
+    ierr = MatSetOption(proj_ctx->C,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
+    ierr = MatSetOption(proj_ctx->C,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
+
+    ierr = MatZeroEntries(proj_ctx->C); CHKERRQ(ierr);
+    ierr = mField.loop_finite_elements("C_CRACKFRONT_MATRIX","C_CRACKFRONT_AREA_ELEM",C_AREA_ELEM);  CHKERRQ(ierr);
+    ierr = MatAssemblyBegin(proj_ctx->C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+    ierr = MatAssemblyEnd(proj_ctx->C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+
+    PetscFunctionReturn(0);
+  }
+
+};
+
 struct Snes_dCTgc_CONSTANT_AREA: public dCTgc_CONSTANT_AREA {
 
   ConstrainMatrixCtx *proj_ctx;
@@ -770,4 +848,4 @@ struct Snes_dCTgc_CONSTANT_AREA: public dCTgc_CONSTANT_AREA {
 
 }
 
-#endif // __MOABFEMETHOD_CONSTAREA_HPP__
+#endif // __COMPLEX_CONST_AREA_HPP__

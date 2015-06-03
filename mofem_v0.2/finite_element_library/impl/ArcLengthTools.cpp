@@ -228,8 +228,12 @@ PetscErrorCode PCApplyArcLength(PC pc,Vec pc_f,Vec pc_x) {
   double ddlambda = (res_lambda - db_dot_pc_x)/denominator;
   if(ddlambda != ddlambda) {
     ostringstream ss;
-    ss << "problem with ddlambda: " << res_lambda << " " << ddlambda << " " << db_dot_pc_x << " " << db_dot_x_lambda << " " << ctx->arcPtr->diag;
-    //cerr << ss.str() << endl;
+    ss
+    << "problem with ddlambda=" << res_lambda
+    << " ddlamnda=" << ddlambda
+    << " db_dot_pc_x=" << db_dot_pc_x
+    << " db_dot_x_lambda=" << db_dot_x_lambda
+    << " ctx->arcPtr->diag=" << ctx->arcPtr->diag;
     SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   }
   ierr = VecAXPY(pc_x,ddlambda,ctx->arcPtr->x_lambda); CHKERRQ(ierr);
