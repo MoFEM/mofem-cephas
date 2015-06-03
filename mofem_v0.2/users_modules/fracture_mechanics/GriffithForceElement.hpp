@@ -27,7 +27,7 @@ struct GriffithForceElement {
     MyTriangleFE(FieldInterface &m_field):
     FaceElementForcesAndSourcesCore(m_field)
     {}
-    int getRule(int order) { return order; };
+    int getRule(int order) { return order-1; };
   };
 
   MyTriangleFE feRhs;
@@ -224,8 +224,7 @@ struct GriffithForceElement {
           ierr = auxFun.matrixA(); CHKERRQ(ierr);
           ierr = auxFun.calulateGrifthForce(blockData.gc,val); CHKERRQ(ierr);
 
-
-          cerr << "gg: " << gg << endl;
+          /*cerr << "gg: " << gg << endl;
           cerr << auxFun.Bksi << endl;
           cerr << auxFun.Beta << endl;
           cerr << auxFun.currentXdEta << endl;
@@ -233,11 +232,11 @@ struct GriffithForceElement {
           cerr << "area " << auxFun.currentArea << endl;
           cerr << "normal " << auxFun.currentNormal << endl;
           cerr << "A " << auxFun.A << endl;
-          cerr << "Griffith Force " << auxFun.griffithForce << endl;
+          cerr << "Griffith Force " << auxFun.griffithForce << endl;*/
 
         }
 
-        cerr << "Griffith Force " << auxFun.griffithForce << endl;
+        //cerr << "Griffith Force " << auxFun.griffithForce << endl;
 
         commonData.griffithForce.resize(nb_dofs,false);
         for(int dd = 0;dd!=nb_dofs;dd++) {
@@ -314,7 +313,7 @@ struct GriffithForceElement {
         SETERRQ1(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"ADOL-C function evaluation with error r = %d",r);
       }
 
-      cerr << commonData.griffithForce << endl;
+      //cerr << commonData.griffithForce << endl;
 
       ierr = VecSetValues(
         getFEMethod()->snes_f,

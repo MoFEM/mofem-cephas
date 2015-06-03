@@ -2105,103 +2105,93 @@ PetscErrorCode ConfigurationalFractureMechanics::calculate_griffith_foces(FieldI
   PetscErrorCode ierr;
   ErrorCode rval;
 
-  Vec GriffithForceVec;
-  //ierr = m_field.VecCreateGhost("C_CRACKFRONT_MATRIX",COL,&GriffithForceVec); CHKERRQ(ierr);
-
-  ierr = m_field.VecCreateGhost(problem,COL,&GriffithForceVec); CHKERRQ(ierr);
-  ierr = VecSetOption(GriffithForceVec,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE);  CHKERRQ(ierr);
-  Vec LambdaVec;
-  ierr = m_field.VecCreateGhost("C_CRACKFRONT_MATRIX",ROW,&LambdaVec); CHKERRQ(ierr);
   double gc;
   PetscBool flg;
   ierr = PetscOptionsGetReal(PETSC_NULL,"-my_gc",&gc,&flg); CHKERRQ(ierr);
-  //if(flg != PETSC_TRUE) {
-  //SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_gc (what is the fracture energy ?)");
-  //}
-  if(flg == PETSC_TRUE) {
-    ierr = VecSet(LambdaVec,gc); CHKERRQ(ierr);
-  } else {
-    ierr = VecSet(LambdaVec,1); CHKERRQ(ierr);
-  }
 
   {
-    GriffithForceElement griffith_force_element(m_field);
+    Vec GriffithForceVec;
+    ierr = m_field.VecCreateGhost(problem,COL,&GriffithForceVec); CHKERRQ(ierr);
+    ierr = VecSetOption(GriffithForceVec,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE);  CHKERRQ(ierr);
+    {
+      GriffithForceElement griffith_force_element(m_field);
 
-    griffith_force_element.blockData[0].gc = gc;
-    ierr = m_field.get_cubit_msId_entities_by_dimension(
-      201,SIDESET,1,griffith_force_element.blockData[0].frontEdges,true
-    ); CHKERRQ(ierr);
-    rval = m_field.get_moab().get_connectivity(
-      griffith_force_element.blockData[0].frontEdges,griffith_force_element.blockData[0].frontNodes,true
-    ); CHKERR_PETSC(rval);
-    griffith_force_element.feRhs.getOpPtrVector().push_back(
-      new GriffithForceElement::OpJacobian(
-        3,griffith_force_element.blockData[0],griffith_force_element.commonData
-      )
-    );
-    griffith_force_element.feRhs.getOpPtrVector().push_back(
-      new GriffithForceElement::OpRhs(
-        3,griffith_force_element.blockData[0],griffith_force_element.commonData
-      )
-    );
-    griffith_force_element.feRhs.snes_f = GriffithForceVec;
-    ierr = VecZeroEntries(GriffithForceVec); CHKERRQ(ierr);
-    ierr = VecGhostUpdateBegin(GriffithForceVec,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = VecGhostUpdateEnd(GriffithForceVec,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = m_field.loop_finite_elements(
-      problem,"GRIFFITH_FORCE_ELEMENT",griffith_force_element.feRhs
-    );  CHKERRQ(ierr);
-    ierr = VecAssemblyBegin(GriffithForceVec); CHKERRQ(ierr);
-    ierr = VecAssemblyEnd(GriffithForceVec); CHKERRQ(ierr);
-    ierr = VecGhostUpdateBegin(GriffithForceVec,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = VecGhostUpdateEnd(GriffithForceVec,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = VecGhostUpdateBegin(GriffithForceVec,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = VecGhostUpdateEnd(GriffithForceVec,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  }
+      griffith_force_element.blockData[0].gc = gc;
+      ierr = m_field.get_cubit_msId_entities_by_dimension(
+        201,SIDESET,1,griffith_force_element.blockData[0].frontEdges,true
+      ); CHKERRQ(ierr);
+      rval = m_field.get_moab().get_connectivity(
+        griffith_force_element.blockData[0].frontEdges,griffith_force_element.blockData[0].frontNodes,true
+      ); CHKERR_PETSC(rval);
+      griffith_force_element.feRhs.getOpPtrVector().push_back(
+        new GriffithForceElement::OpJacobian(
+          3,griffith_force_element.blockData[0],griffith_force_element.commonData
+        )
+      );
+      griffith_force_element.feRhs.getOpPtrVector().push_back(
+        new GriffithForceElement::OpRhs(
+          3,griffith_force_element.blockData[0],griffith_force_element.commonData
+        )
+      );
+      griffith_force_element.feRhs.snes_f = GriffithForceVec;
+      ierr = VecZeroEntries(GriffithForceVec); CHKERRQ(ierr);
+      ierr = VecGhostUpdateBegin(GriffithForceVec,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      ierr = VecGhostUpdateEnd(GriffithForceVec,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      ierr = m_field.loop_finite_elements(
+        problem,"GRIFFITH_FORCE_ELEMENT",griffith_force_element.feRhs
+      );  CHKERRQ(ierr);
+      ierr = VecAssemblyBegin(GriffithForceVec); CHKERRQ(ierr);
+      ierr = VecAssemblyEnd(GriffithForceVec); CHKERRQ(ierr);
+      ierr = VecGhostUpdateBegin(GriffithForceVec,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      ierr = VecGhostUpdateEnd(GriffithForceVec,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      ierr = VecGhostUpdateBegin(GriffithForceVec,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      ierr = VecGhostUpdateEnd(GriffithForceVec,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    }
 
-  /*{
-    C_CONSTANT_AREA C_AREA_ELEM(m_field,projFrontCtx->C,PETSC_NULL,"LAMBDA_CRACKFRONT_AREA");
-    ierr = MatSetOption(projFrontCtx->C,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
-    ierr = MatSetOption(projFrontCtx->C,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
+    // projection matrix
+    Mat Q;
+    {
+      int M,m;
+      ierr = VecGetSize(GriffithForceVec,&M); CHKERRQ(ierr);
+      ierr = VecGetLocalSize(GriffithForceVec,&m); CHKERRQ(ierr);
+      ierr = MatCreateShell(PETSC_COMM_WORLD,m,m,M,M,projSurfaceCtx,&Q); CHKERRQ(ierr);
+      ierr = MatShellSetOperation(Q,MATOP_MULT,(void(*)(void))PorjectionMatrixMultOpQ); CHKERRQ(ierr);
+    }
 
-    ierr = MatZeroEntries(projFrontCtx->C); CHKERRQ(ierr);
-    ierr = m_field.loop_finite_elements("C_CRACKFRONT_MATRIX","C_CRACKFRONT_AREA_ELEM",C_AREA_ELEM);  CHKERRQ(ierr);
-    ierr = MatAssemblyBegin(projFrontCtx->C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-    ierr = MatAssemblyEnd(projFrontCtx->C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+    // project griffith force
+    {
+      Vec QTGriffithForceVec;
+      ierr = VecDuplicate(GriffithForceVec,&QTGriffithForceVec); CHKERRQ(ierr);
+      ierr = MatMult(Q,GriffithForceVec,QTGriffithForceVec); CHKERRQ(ierr);
+      ierr = VecGhostUpdateBegin(QTGriffithForceVec,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      ierr = VecGhostUpdateEnd(QTGriffithForceVec,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      ierr = m_field.set_other_global_ghost_vector(
+        problem,"MESH_NODE_POSITIONS","GRIFFITH_FORCE",ROW,QTGriffithForceVec,INSERT_VALUES,SCATTER_REVERSE
+      ); CHKERRQ(ierr);
+      PostProcVertexMethod ent_method_area(m_field.get_moab(),"MESH_NODE_POSITIONS",QTGriffithForceVec,"GRIFFITH_FORCE");
+      ierr = m_field.loop_dofs(problem,"MESH_NODE_POSITIONS",COL,ent_method_area); CHKERRQ(ierr);
+      double nrm2_griffith_force;
+      ierr = VecNorm(QTGriffithForceVec,NORM_2,&nrm2_griffith_force);   CHKERRQ(ierr);
+      ierr = PetscPrintf(PETSC_COMM_WORLD,"nrm2_QTGriffithForceVec = %6.4e\n",nrm2_griffith_force); CHKERRQ(ierr);
+      ierr = VecDestroy(&QTGriffithForceVec); CHKERRQ(ierr);
+    }
 
-    ierr = MatMultTranspose(projFrontCtx->C,LambdaVec,GriffithForceVec); CHKERRQ(ierr);
-  }*/
+    ierr = MatDestroy(&Q); CHKERRQ(ierr);
+    ierr = VecDestroy(&GriffithForceVec); CHKERRQ(ierr);
 
-  // projection matrix
-  Mat Q;
-  {
-    int M,m;
-    ierr = VecGetSize(GriffithForceVec,&M); CHKERRQ(ierr);
-    ierr = VecGetLocalSize(GriffithForceVec,&m); CHKERRQ(ierr);
-    ierr = MatCreateShell(PETSC_COMM_WORLD,m,m,M,M,projSurfaceCtx,&Q); CHKERRQ(ierr);
-    ierr = MatShellSetOperation(Q,MATOP_MULT,(void(*)(void))PorjectionMatrixMultOpQ); CHKERRQ(ierr);
-  }
-
-  // project griffith force
-  {
-    Vec QTGriffithForceVec;
-    ierr = VecDuplicate(GriffithForceVec,&QTGriffithForceVec); CHKERRQ(ierr);
-    ierr = MatMult(Q,GriffithForceVec,QTGriffithForceVec); CHKERRQ(ierr);
-    ierr = VecGhostUpdateBegin(QTGriffithForceVec,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = VecGhostUpdateEnd(QTGriffithForceVec,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = m_field.set_other_global_ghost_vector(
-      problem,"MESH_NODE_POSITIONS","GRIFFITH_FORCE",ROW,QTGriffithForceVec,INSERT_VALUES,SCATTER_REVERSE
-    ); CHKERRQ(ierr);
-    PostProcVertexMethod ent_method_area(m_field.get_moab(),"MESH_NODE_POSITIONS",QTGriffithForceVec,"GRIFFITH_FORCE");
-    ierr = m_field.loop_dofs(problem,"MESH_NODE_POSITIONS",COL,ent_method_area); CHKERRQ(ierr);
-    double nrm2_griffith_force;
-    ierr = VecNorm(QTGriffithForceVec,NORM_2,&nrm2_griffith_force);   CHKERRQ(ierr);
-    ierr = PetscPrintf(PETSC_COMM_WORLD,"nrm2_QTGriffithForceVec = %6.4e\n",nrm2_griffith_force); CHKERRQ(ierr);
-    ierr = VecDestroy(&QTGriffithForceVec); CHKERRQ(ierr);
   }
 
   //tangent front froce
   {
+    Vec GriffithForceVec;
+    ierr = m_field.VecCreateGhost("C_CRACKFRONT_MATRIX",COL,&GriffithForceVec); CHKERRQ(ierr);
+    Vec LambdaVec;
+    ierr = m_field.VecCreateGhost("C_CRACKFRONT_MATRIX",ROW,&LambdaVec); CHKERRQ(ierr);
+    if(flg == PETSC_TRUE) {
+      ierr = VecSet(LambdaVec,gc); CHKERRQ(ierr);
+    } else {
+      ierr = VecSet(LambdaVec,1); CHKERRQ(ierr);
+    }
     ConstrainMatrixCtx projFrontCtx_tangent(m_field,problem,"C_CRACKFRONT_MATRIX");
     ierr = m_field.MatCreateMPIAIJWithArrays("C_CRACKFRONT_MATRIX",&projFrontCtx_tangent.C); CHKERRQ(ierr);
     C_FRONT_TANGENT C_TANGENT_ELEM(m_field,projFrontCtx_tangent.C,PETSC_NULL,"LAMBDA_CRACKFRONT_AREA");
@@ -2220,12 +2210,9 @@ PetscErrorCode ConfigurationalFractureMechanics::calculate_griffith_foces(FieldI
       ierr = m_field.loop_dofs(problem,"MESH_NODE_POSITIONS",COL,ent_method_tangent
     ); CHKERRQ(ierr);
     ierr = MatDestroy(&projFrontCtx_tangent.C); CHKERRQ(ierr);
+    ierr = VecDestroy(&LambdaVec); CHKERRQ(ierr);
+    ierr = VecDestroy(&GriffithForceVec); CHKERRQ(ierr);
   }
-
-  //cleaning
-  ierr = MatDestroy(&Q); CHKERRQ(ierr);
-  ierr = VecDestroy(&LambdaVec); CHKERRQ(ierr);
-  ierr = VecDestroy(&GriffithForceVec); CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
