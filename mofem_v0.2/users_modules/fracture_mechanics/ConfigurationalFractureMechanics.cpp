@@ -2107,6 +2107,7 @@ PetscErrorCode ConfigurationalFractureMechanics::calculate_griffith_foces(FieldI
 
   Vec GriffithForceVec;
   ierr = m_field.VecCreateGhost("C_CRACKFRONT_MATRIX",COL,&GriffithForceVec); CHKERRQ(ierr);
+  ierr = VecSetOption(GriffithForceVec,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE);  CHKERRQ(ierr);
   Vec LambdaVec;
   ierr = m_field.VecCreateGhost("C_CRACKFRONT_MATRIX",ROW,&LambdaVec); CHKERRQ(ierr);
   double gc;
@@ -2122,7 +2123,6 @@ PetscErrorCode ConfigurationalFractureMechanics::calculate_griffith_foces(FieldI
   }
 
   {
-
     GriffithForceElement griffith_force_element(m_field);
 
     griffith_force_element.blockData[0].gc = gc;
@@ -2142,10 +2142,22 @@ PetscErrorCode ConfigurationalFractureMechanics::calculate_griffith_foces(FieldI
         3,griffith_force_element.blockData[0],griffith_force_element.commonData
       )
     );
-
+    griffith_force_element.feRhs.snes_f = GriffithForceVec;
+    ierr = VecZeroEntries(GriffithForceVec); CHKERRQ(ierr);
+    ierr = VecGhostUpdateBegin(GriffithForceVec,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecGhostUpdateEnd(GriffithForceVec,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = m_field.loop_finite_elements(
+      problem,"GRIFFITH_FORCE_ELEMENT",griffith_force_element.feRhs
+    );  CHKERRQ(ierr);
+    ierr = VecAssemblyBegin(GriffithForceVec); CHKERRQ(ierr);
+    ierr = VecAssemblyEnd(GriffithForceVec); CHKERRQ(ierr);
+    ierr = VecGhostUpdateBegin(GriffithForceVec,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = VecGhostUpdateEnd(GriffithForceVec,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = VecGhostUpdateBegin(GriffithForceVec,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecGhostUpdateEnd(GriffithForceVec,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   }
 
-  {
+  /*{
     C_CONSTANT_AREA C_AREA_ELEM(m_field,projFrontCtx->C,PETSC_NULL,"LAMBDA_CRACKFRONT_AREA");
     ierr = MatSetOption(projFrontCtx->C,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
     ierr = MatSetOption(projFrontCtx->C,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
@@ -2156,7 +2168,7 @@ PetscErrorCode ConfigurationalFractureMechanics::calculate_griffith_foces(FieldI
     ierr = MatAssemblyEnd(projFrontCtx->C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 
     ierr = MatMultTranspose(projFrontCtx->C,LambdaVec,GriffithForceVec); CHKERRQ(ierr);
-  }
+  }*/
 
   // projection matrix
   Mat Q;
@@ -2216,7 +2228,7 @@ PetscErrorCode ConfigurationalFractureMechanics::calculate_griffith_foces(FieldI
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode ConfigurationalFractureMechanics::griffith_g(FieldInterface& m_field,string problem) {
+PetscErrorCode ConfigurationalFractureMechanics::calculate_griffith_g(FieldInterface& m_field,string problem) {
   PetscFunctionBegin;
 
   PetscErrorCode ierr;
@@ -2683,7 +2695,9 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
     ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
     int id = it->get_msId();
     EntityHandle meshset = it->get_meshset();
-    rval = m_field.get_moab().get_entities_by_type(meshset,MBTET,spatial_fe.setOfBlocks[id].tEts,true); CHKERR_PETSC(rval);
+    rval = m_field.get_moab().get_entities_by_type(
+      meshset,MBTET,spatial_fe.setOfBlocks[id].tEts,true
+    ); CHKERR_PETSC(rval);
 
     spatial_fe.setOfBlocks[id].iD = id;
     spatial_fe.setOfBlocks[id].E = mydata.data.Young;

@@ -132,7 +132,7 @@ struct ConfigurationalFractureMechanics {
   map<EntityHandle,double> map_ent_g,map_ent_j,map_ent_work;
   PetscScalar ave_g,min_g,max_g;
   PetscScalar ave_j,min_j,max_j;
-  PetscErrorCode griffith_g(FieldInterface& m_field,string problem);
+  PetscErrorCode calculate_griffith_g(FieldInterface& m_field,string problem);
 
  struct FrontAreaArcLengthControl: public FEMethod {
 

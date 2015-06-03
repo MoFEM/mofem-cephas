@@ -181,7 +181,7 @@ PetscErrorCode main_material_forces(FieldInterface& m_field,ConfigurationalFract
   ierr = conf_prob.calculate_material_forces(m_field,"MATERIAL_MECHANICS","MATERIAL"); CHKERRQ(ierr);
   ierr = conf_prob.calculate_griffith_foces(m_field,"MATERIAL_MECHANICS"); CHKERRQ(ierr);
   ierr = conf_prob.project_force_vector(m_field,"MATERIAL_MECHANICS"); CHKERRQ(ierr);
-  ierr = conf_prob.griffith_g(m_field,"MATERIAL_MECHANICS"); CHKERRQ(ierr);
+  ierr = conf_prob.calculate_griffith_g(m_field,"MATERIAL_MECHANICS"); CHKERRQ(ierr);
   ierr = conf_prob.delete_surface_projection_data(m_field); CHKERRQ(ierr);
   ierr = conf_prob.delete_front_projection_data(m_field); CHKERRQ(ierr);
 
@@ -313,7 +313,7 @@ PetscErrorCode main_rescale_load_factor(FieldInterface& m_field,ConfigurationalF
   ierr = conf_prob.surface_projection_data(m_field,"COUPLED_PROBLEM"); CHKERRQ(ierr);
   ierr = conf_prob.project_force_vector(m_field,"COUPLED_PROBLEM"); CHKERRQ(ierr);
   ierr = conf_prob.calculate_griffith_foces(m_field,"COUPLED_PROBLEM"); CHKERRQ(ierr);
-  ierr = conf_prob.griffith_g(m_field,"COUPLED_PROBLEM"); CHKERRQ(ierr);
+  ierr = conf_prob.calculate_griffith_g(m_field,"COUPLED_PROBLEM"); CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
@@ -393,7 +393,7 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
       ierr = conf_prob.surface_projection_data(m_field,"COUPLED_PROBLEM"); CHKERRQ(ierr);
       ierr = conf_prob.project_force_vector(m_field,"COUPLED_PROBLEM"); CHKERRQ(ierr);
       ierr = conf_prob.calculate_griffith_foces(m_field,"COUPLED_PROBLEM"); CHKERRQ(ierr);
-      ierr = conf_prob.griffith_g(m_field,"COUPLED_PROBLEM"); CHKERRQ(ierr);
+      ierr = conf_prob.calculate_griffith_g(m_field,"COUPLED_PROBLEM"); CHKERRQ(ierr);
       ierr = conf_prob.delete_surface_projection_data(m_field); CHKERRQ(ierr);
       ierr = conf_prob.delete_front_projection_data(m_field); CHKERRQ(ierr);
     }
@@ -468,7 +468,7 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
         ierr = conf_prob.surface_projection_data(m_field,"COUPLED_PROBLEM"); CHKERRQ(ierr);
         ierr = conf_prob.project_force_vector(m_field,"COUPLED_PROBLEM"); CHKERRQ(ierr);
         ierr = conf_prob.calculate_griffith_foces(m_field,"COUPLED_PROBLEM"); CHKERRQ(ierr);
-        ierr = conf_prob.griffith_g(m_field,"COUPLED_PROBLEM"); CHKERRQ(ierr);
+        ierr = conf_prob.calculate_griffith_g(m_field,"COUPLED_PROBLEM"); CHKERRQ(ierr);
         ierr = conf_prob.delete_surface_projection_data(m_field); CHKERRQ(ierr);
         ierr = conf_prob.delete_front_projection_data(m_field); CHKERRQ(ierr);
         _da_ = 0;
@@ -490,7 +490,7 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
           ierr = conf_prob.surface_projection_data(m_field,"COUPLED_PROBLEM"); CHKERRQ(ierr);
           ierr = conf_prob.project_force_vector(m_field,"COUPLED_PROBLEM"); CHKERRQ(ierr);
           ierr = conf_prob.calculate_griffith_foces(m_field,"COUPLED_PROBLEM"); CHKERRQ(ierr);
-          ierr = conf_prob.griffith_g(m_field,"COUPLED_PROBLEM"); CHKERRQ(ierr);
+          ierr = conf_prob.calculate_griffith_g(m_field,"COUPLED_PROBLEM"); CHKERRQ(ierr);
         }
         if(!at_least_one_step_converged) {
           if(da > 0 && aa > 0) {
@@ -694,7 +694,7 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
     ierr = conf_prob.surface_projection_data(m_field,"COUPLED_PROBLEM"); CHKERRQ(ierr);
     ierr = conf_prob.project_force_vector(m_field,"COUPLED_PROBLEM"); CHKERRQ(ierr);
     ierr = conf_prob.calculate_griffith_foces(m_field,"COUPLED_PROBLEM"); CHKERRQ(ierr);
-    ierr = conf_prob.griffith_g(m_field,"COUPLED_PROBLEM"); CHKERRQ(ierr);
+    ierr = conf_prob.calculate_griffith_g(m_field,"COUPLED_PROBLEM"); CHKERRQ(ierr);
     ierr = conf_prob.delete_surface_projection_data(m_field); CHKERRQ(ierr);
     ierr = conf_prob.delete_front_projection_data(m_field); CHKERRQ(ierr);
     #endif

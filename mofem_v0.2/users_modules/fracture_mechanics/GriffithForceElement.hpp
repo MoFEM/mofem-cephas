@@ -155,10 +155,11 @@ struct GriffithForceElement {
         PetscErrorCode ierr;
         ierr = sPin(currentSpinKsi,currentXdKsi); CHKERRQ(ierr);
         ierr = sPin(currentSpinEta,currentXdEta); CHKERRQ(ierr);
-        currentNormal = prod(currentSpinKsi,currentXdEta);
+        currentNormal.resize(3,false);
+        noalias(currentNormal) = prod(currentSpinKsi,currentXdEta);
         currentArea = 0;
         for(int dd = 0;dd!=3;dd++) {
-          currentArea = currentNormal[dd]*currentNormal[dd];
+          currentArea += currentNormal[dd]*currentNormal[dd];
         }
         currentArea = sqrt(currentArea)*0.5;
         /*ierr = sPin(referenceSpinKsi,referenceXdKsi); CHKERRQ(ierr);
@@ -179,9 +180,12 @@ struct GriffithForceElement {
         double gc
       ) {
         PetscFunctionBegin;
-        griffithForce.resize(9);
-        for(int dd = 0;dd<9;dd++) {
-          griffithForce[dd] = (A(0,dd) + A(1,dd) + A(2,dd))*gc;
+        griffithForce.resize(9,false);
+        for(int dd = 0;dd!=9;dd++) {
+          griffithForce[dd] = 0;
+          for(int ii = 0;ii!=3;ii++) {
+            griffithForce[dd] += gc*currentNormal[ii]*A(ii,dd);
+          }
         }
         PetscFunctionReturn(0);
       }
@@ -199,45 +203,64 @@ struct GriffithForceElement {
         PetscFunctionReturn(0);
       }
 
-      PetscErrorCode ierr;
-      int nb_dofs = data.getFieldData().size();
-      int nb_gauss_pts = data.getN().size1();
+      try {
 
-      auxFun.referenceCoords.resize(3,false);
-      auxFun.currentCoords.resize(3,false);
+        PetscErrorCode ierr;
+        int nb_dofs = data.getFieldData().size();
+        int nb_gauss_pts = data.getN().size1();
 
-      trace_on(tAg);
+        auxFun.referenceCoords.resize(9,false);
+        auxFun.currentCoords.resize(9,false);
 
-      for(int dd = 0;dd!=nb_dofs;dd++) {
-        auxFun.referenceCoords[dd] <<= getCoords()[dd];
+        trace_on(tAg);
+
+        for(int dd = 0;dd!=nb_dofs;dd++) {
+          auxFun.referenceCoords[dd] <<= getCoords()[dd];
+        }
+        for(int dd = 0;dd!=nb_dofs;dd++) {
+          auxFun.currentCoords[dd] <<= data.getFieldData()[dd];
+        }
+
+        auxFun.A.resize(3,9,false);
+        auxFun.A.clear();
+        for(int gg = 0;gg!=nb_gauss_pts;gg++) {
+
+          double val = getGaussPts()(2,gg);
+
+          ierr = auxFun.matrixB(gg,data); CHKERRQ(ierr);
+          ierr = auxFun.dIffX(); CHKERRQ(ierr);
+          ierr = auxFun.nOrmal(); CHKERRQ(ierr);
+          ierr = auxFun.matrixA(val); CHKERRQ(ierr);
+
+          cerr << "gg: " << endl;
+          cerr << auxFun.Bksi << endl;
+          cerr << auxFun.Beta << endl;
+          cerr << auxFun.currentXdEta << endl;
+          cerr << auxFun.currentXdEta << endl;
+          cerr << "area " << auxFun.currentArea << endl;
+          cerr << "normal " << auxFun.currentNormal << endl;
+          cerr << "A " << auxFun.A << endl;
+
+        }
+
+        ierr = auxFun.calulateGrifthForce(blockData.gc); CHKERRQ(ierr);
+        cerr << "Griffith Force " << auxFun.griffithForce << endl;
+
+        commonData.griffithForce.resize(nb_dofs,false);
+        for(int dd = 0;dd!=nb_dofs;dd++) {
+          auxFun.griffithForce[dd] >>= commonData.griffithForce[dd];
+        }
+
+        trace_off();
+
+        isTapeRecorded = true;
+
+
+      } catch (const std::exception& ex) {
+        ostringstream ss;
+        ss << "throw in method: " << ex.what() << endl;
+        SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
-      for(int dd = 0;dd!=nb_dofs;dd++) {
-        auxFun.currentCoords[dd] <<= data.getFieldData()[dd];
-      }
-
-      auxFun.A.resize(3,3,false);
-      auxFun.A.clear();
-      for(int gg = 0;gg!=nb_gauss_pts;gg++) {
-
-        double val = getGaussPts()(2,gg);
-
-        ierr = auxFun.matrixB(gg,data); CHKERRQ(ierr);
-        ierr = auxFun.dIffX(); CHKERRQ(ierr);
-        ierr = auxFun.nOrmal(); CHKERRQ(ierr);
-        ierr = auxFun.matrixA(val); CHKERRQ(ierr);
-
-      }
-
-      ierr = auxFun.calulateGrifthForce(blockData.gc); CHKERRQ(ierr);
-
-      commonData.griffithForce.resize(nb_dofs,false);
-      for(int dd = 0;dd!=nb_dofs;dd++) {
-        auxFun.griffithForce[dd] >>= commonData.griffithForce[dd];
-      }
-
-      trace_off();
-
-      isTapeRecorded = true;
 
       PetscFunctionReturn(0);
     }
@@ -297,6 +320,8 @@ struct GriffithForceElement {
       if(r<3) { // function is locally analytic
         SETERRQ1(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"ADOL-C function evaluation with error r = %d",r);
       }
+
+      cerr << commonData.griffithForce << endl;
 
       ierr = VecSetValues(
         getFEMethod()->snes_f,
