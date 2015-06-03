@@ -2106,7 +2106,9 @@ PetscErrorCode ConfigurationalFractureMechanics::calculate_griffith_foces(FieldI
   ErrorCode rval;
 
   Vec GriffithForceVec;
-  ierr = m_field.VecCreateGhost("C_CRACKFRONT_MATRIX",COL,&GriffithForceVec); CHKERRQ(ierr);
+  //ierr = m_field.VecCreateGhost("C_CRACKFRONT_MATRIX",COL,&GriffithForceVec); CHKERRQ(ierr);
+
+  ierr = m_field.VecCreateGhost(problem,COL,&GriffithForceVec); CHKERRQ(ierr);
   ierr = VecSetOption(GriffithForceVec,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE);  CHKERRQ(ierr);
   Vec LambdaVec;
   ierr = m_field.VecCreateGhost("C_CRACKFRONT_MATRIX",ROW,&LambdaVec); CHKERRQ(ierr);

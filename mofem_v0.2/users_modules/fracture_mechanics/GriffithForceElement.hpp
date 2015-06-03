@@ -143,10 +143,6 @@ struct GriffithForceElement {
         currentXdEta.resize(3,false);
         noalias(currentXdKsi) = prod(Bksi,currentCoords);
         noalias(currentXdEta) = prod(Beta,currentCoords);
-        /*referenceXdKsi.resize(3,false);
-        referenceXdEta.resize(3,false);
-        noalias(referenceXdKsi) = prod(Bksi,referenceCoords);
-        noalias(referenceXdEta) = prod(Beta,referenceCoords);*/
         PetscFunctionReturn(0);
       }
 
@@ -156,35 +152,29 @@ struct GriffithForceElement {
         ierr = sPin(currentSpinKsi,currentXdKsi); CHKERRQ(ierr);
         ierr = sPin(currentSpinEta,currentXdEta); CHKERRQ(ierr);
         currentNormal.resize(3,false);
-        noalias(currentNormal) = prod(currentSpinKsi,currentXdEta);
+        noalias(currentNormal) = 0.5*prod(currentSpinKsi,currentXdEta);
         currentArea = 0;
         for(int dd = 0;dd!=3;dd++) {
           currentArea += currentNormal[dd]*currentNormal[dd];
         }
-        currentArea = sqrt(currentArea)*0.5;
-        /*ierr = sPin(referenceSpinKsi,referenceXdKsi); CHKERRQ(ierr);
-        ierr = sPin(referenceSpinEta,referenceXdEta); CHKERRQ(ierr);
-        referenceNormal = prod(referenceSpinKsi,referenceXdEta);
-        referenceArea = norm_2(referenceNormal)*0.5;*/
+        currentArea = sqrt(currentArea);
         PetscFunctionReturn(0);
       }
 
-
-      PetscErrorCode matrixA(double beta) {
+      PetscErrorCode matrixA() {
         PetscFunctionBegin;
-        noalias(A) += beta*(prod(currentSpinKsi,Beta) - prod(currentSpinEta,Bksi));
+        A.resize(3,9,false);
+        noalias(A) = 0.5*(prod(currentSpinKsi,Beta) - prod(currentSpinEta,Bksi));
         PetscFunctionReturn(0);
       }
 
       PetscErrorCode calulateGrifthForce(
-        double gc
+        double gc,double beta
       ) {
         PetscFunctionBegin;
-        griffithForce.resize(9,false);
         for(int dd = 0;dd!=9;dd++) {
-          griffithForce[dd] = 0;
           for(int ii = 0;ii!=3;ii++) {
-            griffithForce[dd] += gc*currentNormal[ii]*A(ii,dd);
+            griffithForce[dd] += gc*beta*A(ii,dd)*currentNormal[ii]/currentArea;
           }
         }
         PetscFunctionReturn(0);
@@ -221,18 +211,21 @@ struct GriffithForceElement {
           auxFun.currentCoords[dd] <<= data.getFieldData()[dd];
         }
 
-        auxFun.A.resize(3,9,false);
-        auxFun.A.clear();
+        auxFun.griffithForce.resize(9,false);
+        auxFun.griffithForce.clear();
+
         for(int gg = 0;gg!=nb_gauss_pts;gg++) {
 
-          double val = getGaussPts()(2,gg);
+          double val = getGaussPts()(2,gg)*0.5;
 
           ierr = auxFun.matrixB(gg,data); CHKERRQ(ierr);
           ierr = auxFun.dIffX(); CHKERRQ(ierr);
           ierr = auxFun.nOrmal(); CHKERRQ(ierr);
-          ierr = auxFun.matrixA(val); CHKERRQ(ierr);
+          ierr = auxFun.matrixA(); CHKERRQ(ierr);
+          ierr = auxFun.calulateGrifthForce(blockData.gc,val); CHKERRQ(ierr);
 
-          cerr << "gg: " << endl;
+
+          cerr << "gg: " << gg << endl;
           cerr << auxFun.Bksi << endl;
           cerr << auxFun.Beta << endl;
           cerr << auxFun.currentXdEta << endl;
@@ -240,10 +233,10 @@ struct GriffithForceElement {
           cerr << "area " << auxFun.currentArea << endl;
           cerr << "normal " << auxFun.currentNormal << endl;
           cerr << "A " << auxFun.A << endl;
+          cerr << "Griffith Force " << auxFun.griffithForce << endl;
 
         }
 
-        ierr = auxFun.calulateGrifthForce(blockData.gc); CHKERRQ(ierr);
         cerr << "Griffith Force " << auxFun.griffithForce << endl;
 
         commonData.griffithForce.resize(nb_dofs,false);

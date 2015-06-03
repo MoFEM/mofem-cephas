@@ -573,7 +573,7 @@ struct dCTgc_CONSTANT_AREA: public C_CONSTANT_AREA {
     PetscFunctionBegin;
     EntityHandle face = fePtr->get_ent();
     try {
-	ierr = getData(false,false); CHKERRQ(ierr);
+      ierr = getData(false,false); CHKERRQ(ierr);
     } catch (const std::exception& ex) {
 	  ostringstream ss;
 	  ss << "thorw in method: " << ex.what() << endl;
@@ -589,30 +589,31 @@ struct dCTgc_CONSTANT_AREA: public C_CONSTANT_AREA {
       cblas_daxpy(3,-1,&coords.data()[0],1,center,1);
       double r = cblas_dnrm2(3,center,1);
       for(int NN = 0;NN<3;NN++) {
-	for(int dd = 0;dd<3;dd++) {
-	  ublas::vector<double,ublas::bounded_array<double,9> > idofs_X(9,0);
-	  idofs_X[NN*3+dd] = r*eps;
-	  ublas::vector<double,ublas::bounded_array<double,9> > dELEM_CONSTRAIN(9);
-	  ierr = calcDirevatives(&*diffNTRI.data().begin(),
-	    &*dofs_X.data().begin(),
-	    &*idofs_X.data().begin(),
-	    NULL,&*dELEM_CONSTRAIN.data().begin(),NULL,NULL); CHKERRQ(ierr);
-	  dELEM_CONSTRAIN /= r*eps;
-	  /*cerr << idofs_X << endl;
-	  cerr << dELEM_CONSTRAIN << endl;
-	  cerr << lambda_dofs_row_indx << endl;*/
-	  dELEM_CONSTRAIN *= gc;
-	  //cerr << dELEM_CONSTRAIN << endl;
-	  ierr = MatSetValues(dCT,
-	    9,&(disp_dofs_row_idx.data()[0]),
-	    1,&(disp_dofs_col_idx.data()[3*NN+dd]),
-	    &dELEM_CONSTRAIN.data()[0],ADD_VALUES); CHKERRQ(ierr);
-	}
+        for(int dd = 0;dd<3;dd++) {
+          ublas::vector<double,ublas::bounded_array<double,9> > idofs_X(9,0);
+          idofs_X[NN*3+dd] = r*eps;
+          ublas::vector<double,ublas::bounded_array<double,9> > dELEM_CONSTRAIN(9);
+          ierr = calcDirevatives(&*diffNTRI.data().begin(),
+          &*dofs_X.data().begin(),
+          &*idofs_X.data().begin(),
+          NULL,&*dELEM_CONSTRAIN.data().begin(),NULL,NULL); CHKERRQ(ierr);
+          dELEM_CONSTRAIN /= r*eps;
+          /*cerr << idofs_X << endl;
+          cerr << dELEM_CONSTRAIN << endl;
+          cerr << lambda_dofs_row_indx << endl;*/
+          dELEM_CONSTRAIN *= gc;
+          //cerr << dELEM_CONSTRAIN << endl;
+          ierr = MatSetValues(dCT,
+            9,&(disp_dofs_row_idx.data()[0]),
+            1,&(disp_dofs_col_idx.data()[3*NN+dd]),
+            &dELEM_CONSTRAIN.data()[0],ADD_VALUES
+          ); CHKERRQ(ierr);
+        }
       }
     } catch (const std::exception& ex) {
-	ostringstream ss;
-	ss << "thorw in method: " << ex.what() << endl;
-	SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+      ostringstream ss;
+      ss << "thorw in method: " << ex.what() << endl;
+      SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
     }
     PetscFunctionReturn(0);
   }
