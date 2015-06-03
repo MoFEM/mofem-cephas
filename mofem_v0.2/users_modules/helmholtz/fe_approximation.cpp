@@ -497,11 +497,11 @@ int main(int argc, char *argv[]) {
       }
 
     }
-
+    cerr << "\n before i am ok 0" << endl;
     // Solve for analytical Dirichlet bc dofs
     ierr = analytical_bc_real.setProblem(m_field,"BCREAL_PROBLEM"); CHKERRQ(ierr);
     ierr = analytical_bc_imag.setProblem(m_field,"BCIMAG_PROBLEM"); CHKERRQ(ierr);
-
+    cerr << "\n before i am ok 1" << endl;
     ierr = analytical_bc_real.solveProblem(
       m_field,"BCREAL_PROBLEM","BCREAL_FE",analytical_ditihlet_bc_real,bc_dirichlet_tris
     ); CHKERRQ(ierr);
@@ -669,7 +669,7 @@ int main(int argc, char *argv[]) {
   //ierr = VecScatterEnd(scatter_real,V,M,ADD_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
 
-
+  cerr << "\n I am ok0 \n" << endl;
 
   //double nrm2_ErrM;
   //ierr = VecNorm(M,NORM_2,&nrm2_ErrM);  CHKERRQ(ierr);
@@ -685,7 +685,7 @@ int main(int argc, char *argv[]) {
   ierr = VecDestroy(&F); CHKERRQ(ierr);
   ierr = VecDestroy(&T); CHKERRQ(ierr);
   ierr = KSPDestroy(&solver); CHKERRQ(ierr);
-
+  cerr << "\n I am ok1 \n" << endl;
   if(monochromatic_wave) {
 
     if(add_incident_wave) {
@@ -716,7 +716,7 @@ int main(int argc, char *argv[]) {
       rval = post_proc.postProcMesh.write_file("fe_solution_mesh_post_proc.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
 
     }
-
+    cerr << "\n I am ok \n" << endl;
     if(is_partitioned) {
       rval = moab.write_file("fe_solution.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
     } else {
