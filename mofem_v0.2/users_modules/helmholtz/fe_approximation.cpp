@@ -117,10 +117,6 @@ int main(int argc, char *argv[]) {
     rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
   }
 
-
-  PetscBool practicle_velocity = PETSC_FALSE;
-  ierr = PetscOptionsGetBool(PETSC_NULL,"-practicle_velocity",&practicle_velocity,NULL); CHKERRQ(ierr);
-
   // Create MoFEM (cephas) database
   MoFEM::Core core(moab);
   FieldInterface& m_field = core;
@@ -143,24 +139,12 @@ int main(int argc, char *argv[]) {
   ierr = m_field.add_field("imPRES",H1,1); CHKERRQ(ierr);
   ierr = m_field.add_field("P",H1,1); CHKERRQ(ierr);  // in time domain
 
-  if(practicle_velocity) {
-  //Particle Velocity field, do not confused with speed of sound.
-  ierr = m_field.add_field("reVEL",H1,3); CHKERRQ(ierr);
-  ierr = m_field.add_field("imVEL",H1,3); CHKERRQ(ierr);
-  }
-
   //meshset consisting all entities in mesh
   EntityHandle root_set = moab.get_root_set();
   //add entities to field
   ierr = m_field.add_ents_to_field_by_TETs(root_set,"rePRES"); CHKERRQ(ierr);
   ierr = m_field.add_ents_to_field_by_TETs(root_set,"imPRES"); CHKERRQ(ierr);
   ierr = m_field.add_ents_to_field_by_TETs(root_set,"P"); CHKERRQ(ierr);
-
-  if(practicle_velocity) {
-  //Particle Velocity field, do not confused with speed of sound.
-  ierr = m_field.add_ents_to_field_by_TETs(root_set,"reVEL"); CHKERRQ(ierr);
-  ierr = m_field.add_ents_to_field_by_TETs(root_set,"imVEL"); CHKERRQ(ierr);
-  }
 
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
@@ -183,18 +167,6 @@ int main(int argc, char *argv[]) {
   ierr = m_field.set_field_order(root_set,MBTRI,"P",order); CHKERRQ(ierr);
   ierr = m_field.set_field_order(root_set,MBEDGE,"P",order); CHKERRQ(ierr);
   ierr = m_field.set_field_order(root_set,MBVERTEX,"P",1); CHKERRQ(ierr);
-
-  if(practicle_velocity) {
-  //Particle Velocity field, do not confused with speed of sound.
-  ierr = m_field.set_field_order(root_set,MBTET,"reVEL",order); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(root_set,MBTRI,"reVEL",order); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(root_set,MBEDGE,"reVEL",order); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(root_set,MBVERTEX,"reVEL",1); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(root_set,MBTET,"imVEL",order); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(root_set,MBTRI,"imVEL",order); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(root_set,MBEDGE,"imVEL",order); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(root_set,MBVERTEX,"imVEL",1); CHKERRQ(ierr);
-  }
 
   if(!m_field.check_field("MESH_NODE_POSITIONS")) {
 
@@ -357,9 +329,6 @@ int main(int argc, char *argv[]) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"*** ERROR -wave_direction [3*1 vector] default:X direction [0,0,1]");
   }
 
-  ierr = analytical_bc_real.setProblem(m_field,"BCREAL_PROBLEM"); CHKERRQ(ierr);
-  ierr = analytical_bc_imag.setProblem(m_field,"BCIMAG_PROBLEM"); CHKERRQ(ierr);
-
   PetscInt choise_value = NO_ANALYTICAL_SOLUTION;
   // set type of analytical solution
   ierr = PetscOptionsGetEList(NULL,"-analytical_solution_type",analytical_solution_types,6,&choise_value,NULL); CHKERRQ(ierr);
@@ -500,9 +469,9 @@ int main(int argc, char *argv[]) {
       }
 
     }
-    cerr << "\n before i am ok 0" << endl;
     // Solve for analytical Dirichlet bc dofs
-    cerr << "\n before i am ok 1" << endl;
+    ierr = analytical_bc_real.setProblem(m_field,"BCREAL_PROBLEM"); CHKERRQ(ierr);
+    ierr = analytical_bc_imag.setProblem(m_field,"BCIMAG_PROBLEM"); CHKERRQ(ierr);
     ierr = analytical_bc_real.solveProblem(
       m_field,"BCREAL_PROBLEM","BCREAL_FE",analytical_ditihlet_bc_real,bc_dirichlet_tris
     ); CHKERRQ(ierr);
@@ -669,9 +638,6 @@ int main(int argc, char *argv[]) {
   //ierr = VecScatterBegin(scatter_real,V,M,ADD_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   //ierr = VecScatterEnd(scatter_real,V,M,ADD_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
-
-  cerr << "\n I am ok0 \n" << endl;
-
   //double nrm2_ErrM;
   //ierr = VecNorm(M,NORM_2,&nrm2_ErrM);  CHKERRQ(ierr);
   //PetscPrintf(PETSC_COMM_WORLD,"L2 relative error on real field of acoustic problem %6.4e\n",(nrm2_ErrM)/(nrm2_M));
@@ -686,7 +652,6 @@ int main(int argc, char *argv[]) {
   ierr = VecDestroy(&F); CHKERRQ(ierr);
   ierr = VecDestroy(&T); CHKERRQ(ierr);
   ierr = KSPDestroy(&solver); CHKERRQ(ierr);
-  cerr << "\n I am ok1 \n" << endl;
   if(monochromatic_wave) {
 
     if(add_incident_wave) {
@@ -717,7 +682,6 @@ int main(int argc, char *argv[]) {
       rval = post_proc.postProcMesh.write_file("fe_solution_mesh_post_proc.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
 
     }
-    cerr << "\n I am ok \n" << endl;
     if(is_partitioned) {
       rval = moab.write_file("fe_solution.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
     } else {
