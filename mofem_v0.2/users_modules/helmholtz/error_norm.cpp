@@ -149,8 +149,8 @@ int main(int argc, char *argv[]) {
 	ierr = m_field.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
 	}
 
+	/* global error and analytical solution */
   double error;
-
   double analy;
 
 
@@ -188,10 +188,10 @@ int main(int argc, char *argv[]) {
 
 	if(m_field.check_field("reEX") && m_field.check_field("imEX")) {
 
-      ierr = m_field.build_problem("EX1_PROBLEM"); CHKERRQ(ierr);
-      ierr = m_field.partition_problem("EX1_PROBLEM"); CHKERRQ(ierr);
-      ierr = m_field.partition_finite_elements("EX1_PROBLEM"); CHKERRQ(ierr);
-      ierr = m_field.partition_ghost_dofs("EX1_PROBLEM"); CHKERRQ(ierr);
+    ierr = m_field.build_problem("EX1_PROBLEM"); CHKERRQ(ierr);
+    ierr = m_field.partition_problem("EX1_PROBLEM"); CHKERRQ(ierr);
+    ierr = m_field.partition_finite_elements("EX1_PROBLEM"); CHKERRQ(ierr);
+    ierr = m_field.partition_ghost_dofs("EX1_PROBLEM"); CHKERRQ(ierr);
 
 	}
 
@@ -251,15 +251,15 @@ int main(int argc, char *argv[]) {
     //PetscPrintf(PETSC_COMM_WORLD,"\n real part of l2 norm of analytical solution is: %f \n",real_analy);
     //PetscPrintf(PETSC_COMM_WORLD,"\n imag part of l2 norm of analytical solution is: %f \n",imag_analy);
 
-    if(usel2) {
-			double aa = sqrt(error)/sqrt(analy);
-      PetscPrintf(PETSC_COMM_WORLD,"\n global l2 realtive error is: %f \n",aa);
-    } else {
+  if(usel2) {
+		double aa = sqrt(error)/sqrt(analy);
+    PetscPrintf(PETSC_COMM_WORLD,"\n global l2 realtive error is: %f \n",aa);
+  } else {
 
-      double aa = sqrt(error)/sqrt(analy);
-      PetscPrintf(PETSC_COMM_WORLD,"\n global H1 realtive error is: %f \n",aa);
+    double aa = sqrt(error)/sqrt(analy);
+    PetscPrintf(PETSC_COMM_WORLD,"\n global H1 realtive error is: %f \n",aa);
 
-    }
+  }
 
 	/*  destroy objects  */
 	ierr = MatDestroy(&A); CHKERRQ(ierr);
@@ -267,18 +267,19 @@ int main(int argc, char *argv[]) {
 	ierr = VecDestroy(&T); CHKERRQ(ierr);
 	ierr = KSPDestroy(&solver1); CHKERRQ(ierr);
 
-    PetscBool save_postproc_mesh = PETSC_TRUE;
-    ierr = PetscOptionsGetBool(NULL,"-save_postproc_mesh",&save_postproc_mesh,NULL); CHKERRQ(ierr);
-    if(save_postproc_mesh) {
+	/* save local error indicator on mesh */
+  PetscBool save_postproc_mesh = PETSC_TRUE;
+  ierr = PetscOptionsGetBool(NULL,"-save_postproc_mesh",&save_postproc_mesh,NULL); CHKERRQ(ierr);
+  if(save_postproc_mesh) {
 
-      PostPocOnRefinedMesh post_proc1(m_field);
-			ierr = post_proc1.generateReferenceElementMesh(); CHKERRQ(ierr);
-      ierr = post_proc1.addFieldValuesPostProc("erorNORM"); CHKERRQ(ierr);
-      ierr = post_proc1.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
-      ierr = m_field.loop_finite_elements("NORM_PROBLEM","NORM_FE",post_proc1); CHKERRQ(ierr);
-      rval = post_proc1.postProcMesh.write_file("norm_error.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
+    PostPocOnRefinedMesh post_proc1(m_field);
+		ierr = post_proc1.generateReferenceElementMesh(); CHKERRQ(ierr);
+    ierr = post_proc1.addFieldValuesPostProc("erorNORM"); CHKERRQ(ierr);
+    ierr = post_proc1.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+    ierr = m_field.loop_finite_elements("NORM_PROBLEM","NORM_FE",post_proc1); CHKERRQ(ierr);
+    rval = post_proc1.postProcMesh.write_file("norm_error.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
 
-    }
+  }
 
 	ierr = PetscTime(&v2);CHKERRQ(ierr);
 	ierr = PetscGetCPUTime(&t2);CHKERRQ(ierr);

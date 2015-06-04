@@ -538,7 +538,6 @@ int main(int argc, char *argv[]) {
     ierr = helmholtz_element.calculateA("ACOUSTIC_PROBLEM"); CHKERRQ(ierr);
     ierr = helmholtz_element.calculateF("ACOUSTIC_PROBLEM"); CHKERRQ(ierr);
 
-
     if(dirihlet_bc_set) {
       ierr = m_field.problem_basic_method_postProcess("ACOUSTIC_PROBLEM",analytical_ditihlet_bc_real); CHKERRQ(ierr);
       ierr = m_field.problem_basic_method_postProcess("ACOUSTIC_PROBLEM",analytical_ditihlet_bc_imag); CHKERRQ(ierr);

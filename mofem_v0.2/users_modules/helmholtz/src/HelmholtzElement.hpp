@@ -128,11 +128,11 @@ struct HelmholtzElement {
       &globalParameters.amplitudeOfIncidentWaveReal.second
     ); CHKERRQ(ierr);
 
-    globalParameters.isMonochromaticWave.first = PETSC_FALSE;
+    globalParameters.isMonochromaticWave.first = PETSC_TRUE;
     ierr = PetscOptionsBool(
       "-monochromatic_wave",
       "If true analysis is for monochromatic wave","",
-      PETSC_FALSE,
+      PETSC_TRUE,
       &globalParameters.isMonochromaticWave.first,
       &globalParameters.isMonochromaticWave.second
     ); CHKERRQ(ierr);
