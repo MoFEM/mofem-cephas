@@ -4,7 +4,9 @@
  *
  * Implementation of L^2 and H_1 Norm element for error analysis
  *
- * \bug works only for scalar field, in order to implement for vector field, look at field approximation.hpp and helmholtzElement.hpp
+ * \bug works only for scalar field, in order to implement for vector field,
+   look at field approximation.hpp and helmholtzElement.hpp
+   In addition, the p error estimator line command option need to be implemented.
  */
 
 /*
@@ -189,12 +191,12 @@ struct NormElement {
 
 		Mat A;
 
-		OpLhs(const string re_field_name,Mat _A):
-			VolumeElementForcesAndSourcesCore::UserDataOperator(re_field_name,ForcesAndSurcesCore::UserDataOperator::OPROWCOL),
+		OpLhs(const string field_name,Mat _A):
+			VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROWCOL),
 			A(_A) { }
 
-		OpLhs(const string re_field_name):
-			VolumeElementForcesAndSourcesCore::UserDataOperator(re_field_name,ForcesAndSurcesCore::UserDataOperator::OPROWCOL) { }
+		OpLhs(const string field_name):
+			VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROWCOL) { }
 
 		ublas::matrix<FieldData> NTN,transNTN;
 
@@ -292,28 +294,36 @@ struct NormElement {
 		ublas::vector<double> Nf;
 		ublas::vector<double> rElative_error;
 		const string normfieldName;
-		const string refieldName;
-		const string imfieldName;
+		const string anfieldName1;
+    const string anfieldName2;
+		const string nufieldName1;
+    const string nufieldName2;
 
     double& eRror;
     double& aNaly;
 
-		OpRhs(const string norm_field_name,const string re_field_name,const string im_field_name,
+		OpRhs(const string norm_field_name,const string an_field_name1,const string nu_field_name1,
+           const string an_field_name2,const string nu_field_name2,
 				   CommonData &common_data,double &error,double &analy,bool usel2):
 			VolumeElementForcesAndSourcesCore::UserDataOperator(norm_field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
 			commonData(common_data),eRror(error),aNaly(analy),
       useL2(usel2),useTsF(true),normfieldName(norm_field_name)
-			,refieldName(re_field_name)
-			,imfieldName(im_field_name) {}
+			,anfieldName1(an_field_name1)
+			,nufieldName1(nu_field_name1)
+      ,anfieldName2(an_field_name2)
+      ,nufieldName2(nu_field_name2) {}
 
-		OpRhs(const string norm_field_name,const string re_field_name,const string im_field_name,
+		OpRhs(const string norm_field_name,const string an_field_name1,const string nu_field_name1,
+           const string an_field_name2,const string nu_field_name2,
 			  Vec _F,CommonData &common_data,double &error,double &analy,bool usel2
 			  ):
 			VolumeElementForcesAndSourcesCore::UserDataOperator(norm_field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
 			commonData(common_data),eRror(error),aNaly(analy),
       useL2(usel2),useTsF(false),F(_F),normfieldName(norm_field_name)
-			,refieldName(re_field_name)
-			,imfieldName(im_field_name) {}
+      ,anfieldName1(an_field_name1)
+			,nufieldName1(nu_field_name1)
+      ,anfieldName2(an_field_name2)
+      ,nufieldName2(nu_field_name2) {}
 
 
 		/*
@@ -343,11 +353,19 @@ struct NormElement {
 				rElative_error.resize(nb_row);
 				Nf.clear();
 				rElative_error.clear();
-				ublas::vector<double> &u_analy = commonData.pressureAtGaussPts[refieldName];
-				ublas::vector<double> &u_numer = commonData.pressureAtGaussPts[imfieldName];
+				ublas::vector<double> &u_analy1 = commonData.pressureAtGaussPts[anfieldName1];
+				ublas::vector<double> &u_numer1 = commonData.pressureAtGaussPts[nufieldName1];
 
-				ublas::matrix<double> &uAnalyGrad = commonData.gradPressureAtGaussPts[refieldName];
-				ublas::matrix<double> &uNumerGrad = commonData.gradPressureAtGaussPts[imfieldName];
+        ublas::vector<double> &u_analy2 = commonData.pressureAtGaussPts[anfieldName2];
+				ublas::vector<double> &u_numer2 = commonData.pressureAtGaussPts[nufieldName2];
+
+
+				ublas::matrix<double> &uAnalyGrad1 = commonData.gradPressureAtGaussPts[anfieldName1];
+				ublas::matrix<double> &uNumerGrad1 = commonData.gradPressureAtGaussPts[nufieldName1];
+
+        ublas::matrix<double> &uAnalyGrad2 = commonData.gradPressureAtGaussPts[anfieldName2];
+        ublas::matrix<double> &uNumerGrad2 = commonData.gradPressureAtGaussPts[nufieldName2];
+
 				double error;
         double PlainError;
 
@@ -360,24 +378,33 @@ struct NormElement {
 
 					}
 
-					const ublas::matrix_row<ublas::matrix<double> > u_analy_grad(uAnalyGrad,gg);
-					const ublas::matrix_row<ublas::matrix<double> > u_numer_grad(uNumerGrad,gg);
+					const ublas::matrix_row<ublas::matrix<double> > u_analy_grad1(uAnalyGrad1,gg);
+					const ublas::matrix_row<ublas::matrix<double> > u_numer_grad1(uNumerGrad1,gg);
+          const ublas::matrix_row<ublas::matrix<double> > u_analy_grad2(uAnalyGrad2,gg);
+          const ublas::matrix_row<ublas::matrix<double> > u_numer_grad2(uNumerGrad2,gg);
 
-          ublas::vector<double> GradError = u_analy_grad - u_numer_grad;
+          ublas::vector<double> GradError1 = u_analy_grad1 - u_numer_grad1;
+          ublas::vector<double> GradError2 = u_analy_grad2 - u_numer_grad2;
 
 					if(useL2) { //case L2 norm
-
-						error = (u_analy[gg] - u_numer[gg])*(u_analy[gg] - u_numer[gg]);
+            /* real and imaginary part of error multiply its complex conjugate */
+						error = (u_analy1[gg] - u_numer1[gg])*(u_analy1[gg] - u_numer1[gg])
+                    + (u_analy2[gg] - u_numer2[gg])*(u_analy2[gg] - u_numer2[gg]);
 						eRror += error*val;
-            aNaly += u_analy(gg)*u_analy(gg)*val;
+            aNaly += (u_analy1(gg)*u_analy1(gg) + u_analy2(gg)*u_analy2(gg))*val;
 
 					} else if(!useL2) { //case H1 norm
 
-            PlainError = u_analy[gg] - u_numer[gg];
-						error = ublas::inner_prod(GradError,GradError) + PlainError*PlainError;
+            PlainError = (u_analy1[gg] - u_numer1[gg])*(u_analy1[gg] - u_numer1[gg])
+                       + (u_analy2[gg] - u_numer2[gg])*(u_analy2[gg] - u_numer2[gg]);
+						error = ublas::inner_prod(GradError1,GradError1) + ublas::inner_prod(GradError2,GradError2)
+                    + PlainError;
 
-            aNaly += (u_analy(gg)*u_analy(gg) + ublas::inner_prod(u_analy_grad,u_analy_grad)) * val;
-						eRror += (ublas::inner_prod(GradError,GradError) + PlainError*PlainError)*val;
+            aNaly += (u_analy1(gg)*u_analy1(gg) + u_analy2(gg)*u_analy2(gg) +
+                     ublas::inner_prod(u_analy_grad1,u_analy_grad1)
+                      + ublas::inner_prod(u_analy_grad2,u_analy_grad2)) * val;
+						eRror += (ublas::inner_prod(GradError1,GradError1) +
+                     ublas::inner_prod(GradError2,GradError2) + PlainError)*val;
 
 					}
 					//need to calculate sqrt of norm^2
@@ -429,7 +456,9 @@ struct NormElement {
       */
   PetscErrorCode addNormElements(
       const string problem,string fe,const string norm_field_name,
-      const string field1_name,const string field2_name,
+      const string an_field_name1,
+      const string nu_field_name1,const string an_field_name2,
+      const string nu_field_name2,
       const string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
       PetscFunctionBegin;
       PetscErrorCode ierr;
@@ -439,9 +468,10 @@ struct NormElement {
       ierr = m_field.modify_finite_element_add_field_col(fe,norm_field_name); CHKERRQ(ierr);
       ierr = m_field.modify_finite_element_add_field_data(fe,norm_field_name); CHKERRQ(ierr);
 
-      ierr = m_field.modify_finite_element_add_field_data(fe,field1_name); CHKERRQ(ierr);
-      ierr = m_field.modify_finite_element_add_field_data(fe,field2_name); CHKERRQ(ierr);
-
+      ierr = m_field.modify_finite_element_add_field_data(fe,an_field_name1); CHKERRQ(ierr);
+      ierr = m_field.modify_finite_element_add_field_data(fe,nu_field_name1); CHKERRQ(ierr);
+      ierr = m_field.modify_finite_element_add_field_data(fe,an_field_name2); CHKERRQ(ierr);
+      ierr = m_field.modify_finite_element_add_field_data(fe,nu_field_name2); CHKERRQ(ierr);
 
 
       if(m_field.check_field(mesh_nodals_positions)) {
@@ -467,20 +497,24 @@ struct NormElement {
 
 
 
-  PetscErrorCode setNormFiniteElementRhsOperator(string norm_field_name,string field1_name,
-      string field2_name,Vec &F,bool usel2,
+  PetscErrorCode setNormFiniteElementRhsOperator(string norm_field_name,string an_field_name1,
+      string nu_field_name1,string an_field_name2,
+      string nu_field_name2,Vec &F,bool usel2,
       string nodals_positions = "MESH_NODE_POSITIONS") {
       PetscFunctionBegin;
 
-      fE.getOpPtrVector().push_back(new OpGetValueAndGradAtGaussPts(field1_name,commonData));
-      fE.getOpPtrVector().push_back(new OpGetValueAndGradAtGaussPts(field2_name,commonData));
+      fE.getOpPtrVector().push_back(new OpGetValueAndGradAtGaussPts(an_field_name1,commonData));
+      fE.getOpPtrVector().push_back(new OpGetValueAndGradAtGaussPts(nu_field_name1,commonData));
+      fE.getOpPtrVector().push_back(new OpGetValueAndGradAtGaussPts(an_field_name2,commonData));
+      fE.getOpPtrVector().push_back(new OpGetValueAndGradAtGaussPts(nu_field_name2,commonData));
+
 
       map<int,VolumeData>::iterator sit = volumeData.begin();
 
       for(;sit!=volumeData.end();sit++) {
 
           //Calculate field values at gaussian points for field1 and field2;
-        fE.getOpPtrVector().push_back(new OpRhs(norm_field_name,field1_name,field2_name,F,commonData,eRror,aNaly,usel2));
+        fE.getOpPtrVector().push_back(new OpRhs(norm_field_name,an_field_name1,nu_field_name1,an_field_name2,nu_field_name2,F,commonData,eRror,aNaly,usel2));
 
       }
 
@@ -488,16 +522,14 @@ struct NormElement {
   }
 
 
-  PetscErrorCode setNormFiniteElementLhsOperator(string norm_field_name,string field1_name,
-      string field2_name,Mat A,bool usel2 = false,
+  PetscErrorCode setNormFiniteElementLhsOperator(string norm_field_name,
+      Mat A,bool usel2 = false,
       string nodals_positions = "MESH_NODE_POSITIONS") {
     PetscFunctionBegin;
 
     map<int,VolumeData>::iterator sit = volumeData.begin();
 
     for(;sit!=volumeData.end();sit++) {
-
-      //Calculate field values at gaussian points for field1 and field2;
 
       fE.getOpPtrVector().push_back(new OpLhs(norm_field_name,A));
 
