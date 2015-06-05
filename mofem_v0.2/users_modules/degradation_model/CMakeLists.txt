@@ -85,6 +85,18 @@ target_link_libraries(wt_unsteady_macro
   mofem_cblas
   ${MoFEM_PROJECT_LIBS})
 
+add_executable(wt_unsteady_macro_onlyTemp ${UM_SOURCE_DIR}/degradation_model/wt_unsteady_macro_onlyTemp.cpp)
+target_link_libraries(wt_unsteady_macro_onlyTemp
+mofem_finite_element_library
+mofem_finite_elements
+mofem_interfaces
+mofem_multi_indices
+mofem_petsc
+mofem_approx
+mofem_third_party
+mofem_cblas
+${MoFEM_PROJECT_LIBS})
+
 
 # ======== Mechanical with isomatric materials for RVE (both fibres and matrix) with displacement RVE BCs ======================
 add_executable(mech_macro_iso_Disp ${UM_SOURCE_DIR}/degradation_model/mech_macro_iso_Disp.cpp)

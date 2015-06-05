@@ -35,7 +35,7 @@ make thermal_unsteady_inputDmat && mpirun -np 8 ./thermal_unsteady_inputDmat \
 -my_file ../users_modules/degradation_model/meshes/trans_iso/Macro_Plate_with_hole_New.cub \
   -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor \
   -snes_type newtonls -snes_linesearch_type basic -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 -snes_monitor \
-  -ts_monitor -ts_type beuler -ts_dt 86400 -ts_final_time 9676800 -snes_lag_jacobian -2 \
+  -ts_monitor -ts_type beuler -ts_dt 864000 -ts_final_time 86400000 -snes_lag_jacobian -2 \
   -my_order 1 -my_max_post_proc_ref_level 0
 
 
@@ -46,7 +46,7 @@ make diffusion_unsteady_inputDmat && mpirun -np 8 ./diffusion_unsteady_inputDmat
 -my_file solution.h5m \
   -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor \
   -snes_type newtonls -snes_linesearch_type basic -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 -snes_monitor \
-  -ts_monitor -ts_type beuler -ts_dt 86400 -ts_final_time 9676800 -snes_lag_jacobian -2 \
+  -ts_monitor -ts_type beuler -ts_dt 864000 -ts_final_time 86400000 -snes_lag_jacobian -2 \
   -my_order 1 -my_max_post_proc_ref_level 0
 
 
@@ -56,7 +56,7 @@ make wt_unsteady_macro && mpirun -np 8 ./wt_unsteady_macro \
 -my_file solution_mois.h5m \
   -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor \
   -snes_type newtonls -snes_linesearch_type basic -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 -snes_monitor \
-  -ts_monitor -ts_type beuler -ts_dt 1 -ts_final_time 112 -snes_lag_jacobian -2 \
+  -ts_monitor -ts_type beuler -ts_dt 10 -ts_final_time 1000 -snes_lag_jacobian -2 \
   -my_order 1 -my_max_post_proc_ref_level 0 \
   -my_saturation_conc 1
 
@@ -89,10 +89,10 @@ Mechanical problem with RVE (isotropic matrix and tansverse-isotropic fibres)
 mpirun -np 1 ../homogenisation/TransIso_Potential_Flow_NoInt -my_file ../users_modules/degradation_model/meshes/trans_iso/Textile_RVE_Mechanical.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1
 
 ======= Periodic BCs
-make mech_macro_transIso_Periodic && mpirun -np 32 ./mech_macro_transIso_Periodic \
+make mech_macro_transIso_Periodic && mpirun -np 1 ./mech_macro_transIso_Periodic \
 -my_file_Macro solution_wt.h5m -my_file_RVE solution_RVE.h5m\
   -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist \
-  -my_max_post_proc_ref_level 0 -my_order 1 -my_order_RVE 1\
+  -my_max_post_proc_ref_level 0 -my_order 1 -my_order_RVE 1
 
 
 

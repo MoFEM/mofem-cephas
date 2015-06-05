@@ -16,7 +16,7 @@ Example computational homogenisation for Thermal RVE (Textile RVE)
 make Thermal_Disp_MRhs && mpirun -np 1 ./Thermal_Disp_MRhs -my_file /mnt/home/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/Using_Textile_RVE/Textile_RVE_Thermal.cub  -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_output_file_Dmat thermal_Dmat.out -my_order 1
 
 ---- RVE Periodic BCs
-make Thermal_Periodic_MRhs && mpirun -np 1 ./Thermal_Periodic_MRhs -my_file /mnt/home/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/trans_iso/Textile_RVE_Thermal.cub  -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_output_file_Dmat thermal_Dmat.out -my_order 1
+make Thermal_Periodic_MRhs && mpirun -np 1 ./Thermal_Periodic_MRhs -my_file /mnt/home/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/trans_iso/Textile_RVE_Thermal.cub  -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_output_file_Dmat thermal_Dmat.out -my_order 2
 
 
 Example computational homogenisation for moisture transport RVE (Textile RVE)
@@ -25,7 +25,7 @@ Example computational homogenisation for moisture transport RVE (Textile RVE)
 make MoistureTrans_Disp_MRhs_with_incl && mpirun -np 1 ./MoistureTrans_Disp_MRhs_with_incl -my_file /mnt/home/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/Using_Textile_RVE/Textile_RVE_moisture.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_output_file_Dmat diffusion_Dmat.out -my_order 1
 
 ---- RVE Periodic BCs
-make MoistureTrans_Periodic_MRhs_with_incl && mpirun -np 1 ./MoistureTrans_Periodic_MRhs_with_incl -my_file /mnt/home/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/trans_iso/Textile_RVE_moisture.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_output_file_Dmat diffusion_Dmat.out -my_order 1
+make MoistureTrans_Periodic_MRhs_with_incl && mpirun -np 1 ./MoistureTrans_Periodic_MRhs_with_incl -my_file /mnt/home/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/trans_iso/Textile_RVE_moisture.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_output_file_Dmat diffusion_Dmat.out -my_order 2
 
 
 Unsteady thermal macro problem (run for 112 days=9676800 in sec with step of 1 days=86400) (time here in seconds)
@@ -57,6 +57,16 @@ make wt_unsteady_macro && mpirun -np 1 ./wt_unsteady_macro \
   -ts_monitor -ts_type beuler -ts_dt 1 -ts_final_time 112 -snes_lag_jacobian -2 \
   -my_order 1 -my_max_post_proc_ref_level 0 \
   -my_saturation_conc 1
+
+
+make wt_unsteady_macro_onlyTemp && mpirun -np 1 ./wt_unsteady_macro_onlyTemp \
+-my_file solution_mois.h5m \
+-ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor \
+-snes_type newtonls -snes_linesearch_type basic -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 -snes_monitor \
+-ts_monitor -ts_type beuler -ts_dt 1 -ts_final_time 112 -snes_lag_jacobian -2 \
+-my_order 1 -my_max_post_proc_ref_level 0 \
+-my_saturation_conc 1
+
 
 
 Mechanical problem with RVE (both matrix and fibres are isotropic materials)

@@ -170,8 +170,8 @@ for i in range(0, 6):
 #============================================================= 
   
 cubit.cmd('block 1 attribute count 2')  
-#Em=3.5e3; Enu=0.3;  #gig to mega as we used dimension in mm  
-Em=3.4e3; Enu=0.35;  #gig to mega as we used dimension in mm  
+Em=3.5e3; Enu=0.3;  #gig to mega as we used dimension in mm  
+#Em=3.4e3; Enu=0.35;  #gig to mega as we used dimension in mm  
 
 Elastic=[str(Em), str(Enu)]  
 for i in range(0, 2):  
@@ -186,10 +186,9 @@ for i in range(0, 2):
 #Ep=Em; Ez=Em; nup=Enu; nupz=Enu;  Gzp=Em/(2*(1+Enu));  
 
 cubit.cmd('block 2 attribute count 5')   
-Ep=19.489e3; Ez=160.755e3; nup=0.415; nupz=0.28; Gzp=7.393e3;    
-
+#Ep=19.489e3; Ez=160.755e3; nup=0.415; nupz=0.28; Gzp=7.393e3;    
 #Ep=40e3; Ez=230e3; nup=0.26; nupz=0.26; Gzp=24e3;    
-#Ep=10*Em; Ez=20*Em; nup=0.26; nupz=0.26; Gzp=5*Em;    
+Ep=5*Em; Ez=10*Em; nup=0.26; nupz=0.26; Gzp=2.5*Em;    
 #Ep=2*Em; Ez=5*Em; nup=0.26; nupz=0.26; Gzp=2*Em;    
    
 TransIso=[str(Ep), str(Ez), str(nup), str(nupz), str(Gzp)]   
@@ -271,6 +270,8 @@ for i in range(0, 4):
 #Saving input RVE file  
 #============================================================= 
 cubit.cmd('save as "/Users/zahur/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/trans_iso/Textile_RVE_Mechanical.cub" overwrite') 
+
+
 
 
 

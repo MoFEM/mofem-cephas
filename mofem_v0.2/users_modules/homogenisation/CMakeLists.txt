@@ -159,6 +159,13 @@ target_link_libraries(FE2_Elasticity_Disp
   mofem_finite_element_library mofem_finite_elements mofem_interfaces mofem_multi_indices mofem_petsc users_modules_obsolete user_modules_homogenisation
   mofem_approx mofem_third_party mofem_cblas ${MoFEM_PROJECT_LIBS})
 
+
+add_executable(FE2_Elasticity_Disp_HideRVE ${UM_SOURCE_DIR}/homogenisation/FE2_Elasticity_Disp_HideRVE.cpp)
+target_link_libraries(FE2_Elasticity_Disp_HideRVE
+mofem_finite_element_library mofem_finite_elements mofem_interfaces mofem_multi_indices mofem_petsc users_modules_obsolete user_modules_homogenisation
+mofem_approx mofem_third_party mofem_cblas ${MoFEM_PROJECT_LIBS})
+
+
 add_executable(FE2_Elasticity_Trac ${UM_SOURCE_DIR}/homogenisation/FE2_Elasticity_Trac.cpp)
 target_link_libraries(FE2_Elasticity_Trac
   mofem_finite_element_library mofem_finite_elements mofem_interfaces mofem_multi_indices mofem_petsc users_modules_obsolete user_modules_homogenisation
