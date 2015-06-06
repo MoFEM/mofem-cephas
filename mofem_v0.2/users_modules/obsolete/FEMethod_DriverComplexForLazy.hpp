@@ -29,7 +29,7 @@ struct NonLinearSpatialElasticFEMthod: public FEMethod_ComplexForLazy {
   ArcLengthCtx* arcPtr;
   bool isCoupledProblem;
 
-  NonLinearSpatialElasticFEMthod(FieldInterface& _mField,double _lambda,double _mu,int _verbose = 0): 
+  NonLinearSpatialElasticFEMthod(FieldInterface& _mField,double _lambda,double _mu,int _verbose = 0):
     FEMethod_ComplexForLazy_Data(_mField,_verbose),
     FEMethod_ComplexForLazy(_mField,FEMethod_ComplexForLazy::spatail_analysis,_lambda,_mu,0,_verbose),arcPtr(NULL),
     isCoupledProblem(false) {}
@@ -43,14 +43,14 @@ struct NonLinearSpatialElasticFEMthod: public FEMethod_ComplexForLazy {
   }
   Tag thThermalLoadFactor;
 
-  NonLinearSpatialElasticFEMthod(FieldInterface& _mField,double _lambda,double _mu,ArcLengthCtx* arc_ptr,int _verbose = 0): 
+  NonLinearSpatialElasticFEMthod(FieldInterface& _mField,double _lambda,double _mu,ArcLengthCtx* arc_ptr,int _verbose = 0):
     FEMethod_ComplexForLazy_Data(_mField,_verbose),
     FEMethod_ComplexForLazy(_mField,FEMethod_ComplexForLazy::spatail_analysis,_lambda,_mu,0,_verbose),arcPtr(arc_ptr),
     isCoupledProblem(false) {
 
     double def_t_val = 0;
     const EntityHandle root_meshset = mField.get_moab().get_root_set();
-    rval = mField.get_moab().tag_get_handle("_ThermalExpansionFactor_t_alpha_val",1,MB_TYPE_DOUBLE,thThermalLoadFactor,MB_TAG_CREAT|MB_TAG_EXCL|MB_TAG_MESH,&def_t_val); 
+    rval = mField.get_moab().tag_get_handle("_ThermalExpansionFactor_t_alpha_val",1,MB_TYPE_DOUBLE,thThermalLoadFactor,MB_TAG_CREAT|MB_TAG_EXCL|MB_TAG_MESH,&def_t_val);
     if(rval == MB_ALREADY_ALLOCATED) {
       rval = mField.get_moab().tag_get_by_ptr(thThermalLoadFactor,&root_meshset,1,(const void**)&thermalLoadFactor); CHKERR_THROW(rval);
     } else {
@@ -65,8 +65,8 @@ struct NonLinearSpatialElasticFEMthod: public FEMethod_ComplexForLazy {
     PetscFunctionBegin;
 
     switch(snes_ctx) {
-      case CTX_SNESSETFUNCTION: { 
-	VecSetOption(f,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); 
+      case CTX_SNESSETFUNCTION: {
+	VecSetOption(f,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE);
 	//cerr << "Fint_h " << Fint_h << endl;
 	ierr = VecSetValues(f,RowGlobSpatial[i_nodes].size(),&(RowGlobSpatial[i_nodes][0]),&(Fint_h.data()[0]),ADD_VALUES); CHKERRQ(ierr);
 	for(int ee = 0;ee<6;ee++) {
@@ -92,7 +92,7 @@ struct NonLinearSpatialElasticFEMthod: public FEMethod_ComplexForLazy {
 
       switch(snes_ctx) {
         case CTX_SNESNONE:
-        case CTX_SNESSETFUNCTION: { 
+        case CTX_SNESSETFUNCTION: {
   	  analysis _type_of_analysis = type_of_analysis;
   	  type_of_analysis = scaled_themp_direvative_spatial;
   	  ierr = GetFint(); CHKERRQ(ierr);
@@ -305,7 +305,7 @@ struct NonLinearSpatialElasticFEMthod: public FEMethod_ComplexForLazy {
     ierr = GetIndicesSpatial(); CHKERRQ(ierr);
     switch(snes_ctx) {
       case CTX_SNESNONE:
-      case CTX_SNESSETFUNCTION: { 
+      case CTX_SNESSETFUNCTION: {
         ierr = GetFint(); CHKERRQ(ierr);
 	ierr = AssembleSpatialFint(snes_f); CHKERRQ(ierr);
       }
@@ -327,7 +327,7 @@ struct NonLinearSpatialElasticFEMthod: public FEMethod_ComplexForLazy {
   PetscErrorCode postProcess() {
     PetscFunctionBegin;
     switch(snes_ctx) {
-      case CTX_SNESSETFUNCTION: { 
+      case CTX_SNESSETFUNCTION: {
 	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
 	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
       }
@@ -354,7 +354,7 @@ struct NonLinearSpatialElasticFEMthod: public FEMethod_ComplexForLazy {
 struct EshelbyFEMethod: public NonLinearSpatialElasticFEMthod {
 
   EshelbyFEMethod(FieldInterface& _mField,double _lambda,double _mu,int _verbose = 0):
-    FEMethod_ComplexForLazy_Data(_mField,_verbose), 
+    FEMethod_ComplexForLazy_Data(_mField,_verbose),
     NonLinearSpatialElasticFEMthod(_mField,_lambda,_mu,_verbose) {
     type_of_analysis = material_analysis;
   }
@@ -362,7 +362,7 @@ struct EshelbyFEMethod: public NonLinearSpatialElasticFEMthod {
   EshelbyFEMethod(FieldInterface& _mField,double _lambda,double _mu,ArcLengthCtx* _arc_ptr,int _verbose = 0):
     FEMethod_ComplexForLazy_Data(_mField,_verbose), NonLinearSpatialElasticFEMthod(_mField,_lambda,_mu,_arc_ptr,_verbose) {
     type_of_analysis = material_analysis;
-  } 
+  }
 
   virtual PetscErrorCode AssembleMaterialTangent(Mat B) {
     PetscFunctionBegin;
@@ -422,7 +422,7 @@ struct EshelbyFEMethod: public NonLinearSpatialElasticFEMthod {
     PetscFunctionBegin;
     switch(snes_ctx) {
       case CTX_SNESNONE:
-      case CTX_SNESSETFUNCTION: { 
+      case CTX_SNESSETFUNCTION: {
 	ierr = VecSetOption(f,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE);  CHKERRQ(ierr);
 	ierr = VecSetValues(f,RowGlobMaterial[0].size(),&(RowGlobMaterial[0][0]),&(Fint_H.data()[0]),ADD_VALUES); CHKERRQ(ierr);
       }
@@ -466,7 +466,7 @@ struct EshelbyFEMethod: public NonLinearSpatialElasticFEMthod {
       spatial_field_name); CHKERRQ(ierr);
     switch(snes_ctx) {
       case CTX_SNESNONE:
-      case CTX_SNESSETFUNCTION: { 
+      case CTX_SNESSETFUNCTION: {
         ierr = GetFint(); CHKERRQ(ierr);
 	ierr = AssembleMaterialFint(snes_f); CHKERRQ(ierr);
       }
@@ -491,27 +491,28 @@ struct EshelbyFEMethod: public NonLinearSpatialElasticFEMthod {
 struct MeshSmoothingFEMethod: public EshelbyFEMethod {
 
   MeshSmoothingFEMethod(FieldInterface& _mField,int _verbose = 0):
-    FEMethod_ComplexForLazy_Data(_mField,_verbose),EshelbyFEMethod(_mField,0,0,_verbose) {
-      type_of_analysis = mesh_quality_analysis;
+  FEMethod_ComplexForLazy_Data(_mField,_verbose),EshelbyFEMethod(_mField,0,0,_verbose)
+  {
+    type_of_analysis = mesh_quality_analysis;
 
-      g_NTET.resize(4*1);
-      ShapeMBTET(&g_NTET[0],G_TET_X1,G_TET_Y1,G_TET_Z1,1);
-      g_TET_W = G_TET_W1;
+    g_NTET.resize(4*1);
+    ShapeMBTET(&g_NTET[0],G_TET_X1,G_TET_Y1,G_TET_Z1,1);
+    g_TET_W = G_TET_W1;
 
-    }
+  }
 
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
     switch (ts_ctx) {
       case CTX_TSSETIFUNCTION: {
-	snes_ctx = CTX_SNESSETFUNCTION;
-	snes_f = ts_F;
-	break;
+        snes_ctx = CTX_SNESSETFUNCTION;
+        snes_f = ts_F;
+        break;
       }
       case CTX_TSSETIJACOBIAN: {
-	snes_ctx = CTX_SNESSETJACOBIAN;
-	snes_B = ts_B;
-	break;
+        snes_ctx = CTX_SNESSETJACOBIAN;
+        snes_B = ts_B;
+        break;
       }
       default:
       break;
@@ -528,13 +529,14 @@ struct MeshSmoothingFEMethod: public EshelbyFEMethod {
     PetscFunctionBegin;
     switch(snes_ctx) {
       case CTX_SNESSETJACOBIAN:
-	ierr = MatSetValues(B,
-	  RowGlobMaterial[i_nodes].size(),&*(RowGlobMaterial[i_nodes].begin()),
-	  ColGlobMaterial[i_nodes].size(),&*(ColGlobMaterial[i_nodes].begin()),
-	  &*(KHH.data().begin()),ADD_VALUES); CHKERRQ(ierr);
-	break;
+      ierr = MatSetValues(B,
+        RowGlobMaterial[i_nodes].size(),&*(RowGlobMaterial[i_nodes].begin()),
+        ColGlobMaterial[i_nodes].size(),&*(ColGlobMaterial[i_nodes].begin()),
+        &*(KHH.data().begin()),ADD_VALUES
+      ); CHKERRQ(ierr);
+      break;
       default:
-	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+      SETERRQ(PETSC_COMM_SELF,1,"not implemented");
     }
     PetscFunctionReturn(0);
   }
@@ -542,14 +544,14 @@ struct MeshSmoothingFEMethod: public EshelbyFEMethod {
   virtual PetscErrorCode AssembleMeshSmoothingFint(Vec f) {
     PetscFunctionBegin;
     switch(snes_ctx) {
-      case CTX_SNESSETFUNCTION: { 
-	ierr = VecSetOption(f,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE);  CHKERRQ(ierr);
-	//cerr << "Fint_h " << Fint_h << endl;
-	ierr = VecSetValues(f,RowGlobMaterial[i_nodes].size(),&(RowGlobMaterial[i_nodes][0]),&(Fint_H.data()[0]),ADD_VALUES); CHKERRQ(ierr);
+      case CTX_SNESSETFUNCTION: {
+        ierr = VecSetOption(f,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE);  CHKERRQ(ierr);
+        //cerr << "Fint_h " << Fint_h << endl;
+        ierr = VecSetValues(f,RowGlobMaterial[i_nodes].size(),&(RowGlobMaterial[i_nodes][0]),&(Fint_H.data()[0]),ADD_VALUES); CHKERRQ(ierr);
       }
       break;
       default:
-	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+      SETERRQ(PETSC_COMM_SELF,1,"not implemented");
     }
     PetscFunctionReturn(0);
   }
@@ -559,16 +561,16 @@ struct MeshSmoothingFEMethod: public EshelbyFEMethod {
     ierr = OpComplexForLazyStart(); CHKERRQ(ierr);
     ierr = GetIndicesMaterial(); CHKERRQ(ierr);
     switch(snes_ctx) {
-      case CTX_SNESSETFUNCTION:  
-	ierr = GetFint(); CHKERRQ(ierr);
-	ierr = AssembleMeshSmoothingFint(snes_f); CHKERRQ(ierr);
-	break;
+      case CTX_SNESSETFUNCTION:
+      ierr = GetFint(); CHKERRQ(ierr);
+      ierr = AssembleMeshSmoothingFint(snes_f); CHKERRQ(ierr);
+      break;
       case CTX_SNESSETJACOBIAN:
-	ierr = GetTangent(); CHKERRQ(ierr);
-	ierr = AssembleMeshSmoothingTangent(snes_B); CHKERRQ(ierr);
-	break;
+      ierr = GetTangent(); CHKERRQ(ierr);
+      ierr = AssembleMeshSmoothingTangent(snes_B); CHKERRQ(ierr);
+      break;
       default:
-	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+      SETERRQ(PETSC_COMM_SELF,1,"not implemented");
     }
     PetscFunctionReturn(0);
   }
@@ -580,4 +582,3 @@ struct MeshSmoothingFEMethod: public EshelbyFEMethod {
 }
 
 #endif
-

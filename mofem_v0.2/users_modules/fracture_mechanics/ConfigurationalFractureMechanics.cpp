@@ -68,7 +68,7 @@ extern "C" {
 #include <adolc/adolc.h>
 #include <NonLienarElasticElement.hpp>
 #include <Hooke.hpp>
-#include <VolumeLengthQuality.hpp>
+//#include <VolumeLengthQuality.hpp>
 
 #include <GriffithForceElement.hpp>
 #include <Smoother.hpp>
@@ -125,7 +125,8 @@ struct MyMeshSmoothing: public MeshSmoothingFEMethod,CrackFrontData {
   MyMeshSmoothing(FieldInterface& _m_field,int _verbose = 0):
     FEMethod_ComplexForLazy_Data(_m_field,_verbose),
     MeshSmoothingFEMethod(_m_field,_verbose),
-      frontF(PETSC_NULL),tangentFrontF(PETSC_NULL),
+      frontF(PETSC_NULL),
+      tangentFrontF(PETSC_NULL),
       stabilise(false) {
       type_of_analysis = mesh_quality_analysis;
 
@@ -135,16 +136,7 @@ struct MyMeshSmoothing: public MeshSmoothingFEMethod,CrackFrontData {
 
     }
 
-  ~MyMeshSmoothing() {
-    if(frontF!=PETSC_NULL) {
-      ierr = VecDestroy(&frontF); CHKERRABORT(PETSC_COMM_WORLD,ierr);
-      frontF = PETSC_NULL;
-    }
-    if(tangentFrontF!=PETSC_NULL) {
-      ierr = VecDestroy(&tangentFrontF); CHKERRABORT(PETSC_COMM_WORLD,ierr);
-      tangentFrontF = PETSC_NULL;
-    }
-  }
+  ~MyMeshSmoothing() {}
 
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
@@ -166,12 +158,6 @@ struct MyMeshSmoothing: public MeshSmoothingFEMethod,CrackFrontData {
     }
 
     if(crackFrontEdgeNodes.size()>0) {
-      if(frontF == PETSC_NULL) {
-        ierr = VecDuplicate(snes_f,&frontF); CHKERRQ(ierr);
-        ierr = VecSetOption(frontF,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); CHKERRQ(ierr);
-        ierr = VecDuplicate(snes_f,&tangentFrontF); CHKERRQ(ierr);
-        ierr = VecSetOption(tangentFrontF,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); CHKERRQ(ierr);
-      }
       ierr = VecZeroEntries(frontF); CHKERRQ(ierr);
       ierr = VecGhostUpdateBegin(frontF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
       ierr = VecGhostUpdateEnd(frontF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -286,14 +272,19 @@ struct MyMeshSmoothing: public MeshSmoothingFEMethod,CrackFrontData {
 
 struct TangentWithMeshSmoothingFrontConstrain: public C_CONSTANT_AREA {
 
-  MyMeshSmoothing *meshFEPtr;
+  Vec frontF;
+  Vec tangentFrontF;
   const double eps;
 
-  TangentWithMeshSmoothingFrontConstrain(FieldInterface& _mField,
-    MyMeshSmoothing *_mesh_fe_ptr,
-    string _lambda_field_name,int _verbose = 0):
-    C_CONSTANT_AREA(_mField,PETSC_NULL,PETSC_NULL,_lambda_field_name,_verbose),
-    meshFEPtr(_mesh_fe_ptr),eps(1e-10) {}
+  TangentWithMeshSmoothingFrontConstrain(
+    FieldInterface& _mField,
+    string _lambda_field_name,
+    int _verbose = 0
+  ):
+  C_CONSTANT_AREA(_mField,PETSC_NULL,PETSC_NULL,_lambda_field_name,_verbose),
+  frontF(PETSC_NULL),
+  tangentFrontF(PETSC_NULL),
+  eps(1e-10) {}
 
     Tag thFrontTangent;
     PetscErrorCode preProcess() {
@@ -323,11 +314,11 @@ struct TangentWithMeshSmoothingFrontConstrain: public C_CONSTANT_AREA {
         case CTX_SNESSETFUNCTION: {
           ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
           ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
-          ierr = VecZeroEntries(meshFEPtr->tangentFrontF); CHKERRQ(ierr);
-          ierr = VecGhostUpdateBegin(meshFEPtr->tangentFrontF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-          ierr = VecGhostUpdateEnd(meshFEPtr->tangentFrontF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-          ierr = VecAssemblyBegin(meshFEPtr->tangentFrontF); CHKERRQ(ierr);
-          ierr = VecAssemblyEnd(meshFEPtr->tangentFrontF); CHKERRQ(ierr);
+          ierr = VecZeroEntries(tangentFrontF); CHKERRQ(ierr);
+          ierr = VecGhostUpdateBegin(tangentFrontF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+          ierr = VecGhostUpdateEnd(tangentFrontF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+          ierr = VecAssemblyBegin(tangentFrontF); CHKERRQ(ierr);
+          ierr = VecAssemblyEnd(tangentFrontF); CHKERRQ(ierr);
           /*//resent tags - only for one proc analysis
           for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,lambda_field_name,dit)) {
           EntityHandle ent = dit->get_ent();
@@ -374,14 +365,14 @@ struct TangentWithMeshSmoothingFrontConstrain: public C_CONSTANT_AREA {
       ublas::vector<double,ublas::bounded_array<double,9> > F_FRONT_MESH_SMOOTHING(9);
       ublas::noalias(F_FRONT_MESH_SMOOTHING) = ublas::zero_vector<double>(9);
       double *f_front_mesh_array;
-      ierr = VecGetArray(meshFEPtr->frontF,&f_front_mesh_array); CHKERRQ(ierr);
+      ierr = VecGetArray(frontF,&f_front_mesh_array); CHKERRQ(ierr);
       for(int nn = 0;nn<3;nn++) {
         for(int dd = 0;dd<3;dd++) {
           if(local_disp_dofs_row_idx[3*nn+dd]==-1) continue;
           F_FRONT_MESH_SMOOTHING[3*nn+dd] = f_front_mesh_array[local_disp_dofs_row_idx[3*nn+dd]];
         }
       }
-      ierr = VecRestoreArray(meshFEPtr->frontF,&f_front_mesh_array); CHKERRQ(ierr);
+      ierr = VecRestoreArray(frontF,&f_front_mesh_array); CHKERRQ(ierr);
       //tangent
       if(snes_ctx == CTX_SNESSETJACOBIAN) {
         double center[3];
@@ -446,7 +437,7 @@ struct TangentWithMeshSmoothingFrontConstrain: public C_CONSTANT_AREA {
           }
           //cerr << "g : " << g << endl;
           ierr = VecSetValues(snes_f,3,&*lambda_dofs_row_indx.data().begin(),&*g.data().begin(),ADD_VALUES); CHKERRQ(ierr);
-          ierr = VecSetValues(meshFEPtr->tangentFrontF,9,&disp_dofs_row_idx[0],&*ELEM_CONSTRAIN1.data().begin(),ADD_VALUES); CHKERRQ(ierr);
+          ierr = VecSetValues(tangentFrontF,9,&disp_dofs_row_idx[0],&*ELEM_CONSTRAIN1.data().begin(),ADD_VALUES); CHKERRQ(ierr);
           ublas::vector<double,ublas::bounded_array<double,9> > f(9);
           for(int nn = 0;nn<3;nn++) {
             for(int dd = 0;dd<3;dd++) {
@@ -485,12 +476,12 @@ struct TangentWithMeshSmoothingFrontConstrain: public C_CONSTANT_AREA {
     PetscFunctionBegin;
     switch(snes_ctx) {
       case CTX_SNESSETFUNCTION: {
-        ierr = VecAssemblyBegin(meshFEPtr->tangentFrontF); CHKERRQ(ierr);
-        ierr = VecAssemblyEnd(meshFEPtr->tangentFrontF); CHKERRQ(ierr);
-        ierr = VecGhostUpdateBegin(meshFEPtr->tangentFrontF,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-        ierr = VecGhostUpdateEnd(meshFEPtr->tangentFrontF,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-        ierr = VecGhostUpdateBegin(meshFEPtr->tangentFrontF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-        ierr = VecGhostUpdateEnd(meshFEPtr->tangentFrontF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+        ierr = VecAssemblyBegin(tangentFrontF); CHKERRQ(ierr);
+        ierr = VecAssemblyEnd(tangentFrontF); CHKERRQ(ierr);
+        ierr = VecGhostUpdateBegin(tangentFrontF,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+        ierr = VecGhostUpdateEnd(tangentFrontF,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+        ierr = VecGhostUpdateBegin(tangentFrontF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+        ierr = VecGhostUpdateEnd(tangentFrontF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
       } break;
       case CTX_SNESSETJACOBIAN: {
         ierr = MatAssemblyBegin(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
@@ -2674,7 +2665,6 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   FrontAreaArcLengthControl arc_elem(m_field,this,&arc_ctx);
 
   // Spatial and material forces
-
   NonlinearElasticElement spatial_fe(m_field,-1);
   NonlinearElasticElement material_fe(m_field,-1);
 
@@ -2840,11 +2830,61 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   );
 
   // Meshs smoothing
+
+  Vec front_f,tangent_front_f;
+  ierr = VecDuplicate(F,&front_f); CHKERRQ(ierr);
+  ierr = VecSetOption(front_f,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); CHKERRQ(ierr);
+  ierr = VecDuplicate(F,&tangent_front_f); CHKERRQ(ierr);
+  ierr = VecSetOption(tangent_front_f,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); CHKERRQ(ierr);
+
   MyMeshSmoothing smoother(m_field);
   ierr = smoother.initCrackFrontData(m_field); CHKERRQ(ierr);
   set_qual_ver(3);
-  TangentWithMeshSmoothingFrontConstrain tangent_constrain(m_field,&smoother,"LAMBDA_CRACK_TANGENT_CONSTRAIN");
-  //constrains
+  TangentWithMeshSmoothingFrontConstrain tangent_constrain(m_field,"LAMBDA_CRACK_TANGENT_CONSTRAIN");
+
+  smoother.frontF = front_f;
+  smoother.tangentFrontF = tangent_front_f;
+  tangent_constrain.frontF = front_f;
+  tangent_constrain.tangentFrontF = tangent_front_f;
+
+  PetscBool flg_alpha2,flg_gamma;
+  double alpha2,gamma;
+  ierr = PetscOptionsGetReal("","-my_alpha2",&alpha2,&flg_alpha2); CHKERRQ(ierr);
+  ierr = PetscOptionsGetReal("","-my_gamma",&gamma,&flg_gamma); CHKERRQ(ierr);
+	if(!flg_alpha2) SETERRQ(PETSC_COMM_SELF,1,"-my_alpha2 is not set");
+	if(!flg_gamma) SETERRQ(PETSC_COMM_SELF,1,"-my_gamma is not set");
+
+  /*VolumeLengthQuality<adouble> volume_length_adouble(
+    BARRIER_AND_CHANGE_QUALITY_SCALED_BY_VOLUME,
+    alpha2,
+    gamma
+  );
+  VolumeLengthQuality<double> volume_length_double(
+    BARRIER_AND_CHANGE_QUALITY_SCALED_BY_VOLUME,
+    alpha2,
+    gamma
+  );*/
+
+  /*NonlinearElasticElement smoother_fe(m_field,-1);
+
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,BLOCKSET|MAT_ELASTICSET,it)) {
+    Mat_Elastic mydata;
+    ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+    int id = it->get_msId();
+    EntityHandle meshset = it->get_meshset();
+    rval = m_field.get_moab().get_entities_by_type(
+      meshset,MBTET,spatial_fe.setOfBlocks[id].tEts,true
+    ); CHKERR_PETSC(rval);
+
+    smoother_fe.setOfBlocks[id].iD = id;
+    smoother_fe.setOfBlocks[id].E = mydata.data.Young;
+    smoother_fe.setOfBlocks[id].PoissonRatio = mydata.data.Poisson;
+    smoother_fe.setOfBlocks[id].materialDoublePtr = &volume_length_double;
+    smoother_fe.setOfBlocks[id].materialAdoublePtr = &volume_length_adouble;
+
+  }*/
+
+  // Sourface constrains
   SnesConstrainSurfacGeometry constrain_body_surface(m_field,"LAMBDA_SURFACE");
   constrain_body_surface.nonlinear = true;
   SnesConstrainSurfacGeometry constrain_crack_surface(m_field,"LAMBDA_CRACK_SURFACE");
@@ -2972,8 +3012,8 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
     ss2 << "CandCT_SURFACE_ELEM_msId_" << mit->first;
     loops_to_do_Mat.push_back(SnesCtx::loop_pair_type(ss2.str(),mit->second));
   }
-  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("MESH_SMOOTHER",&smoother));
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("C_TANGENT_ELEM",&tangent_constrain));
+  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("MESH_SMOOTHER",&smoother));
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ELASTIC_COUPLED",&spatial_fe.feLhs));
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("MATERIAL_COUPLED",&material_fe.feLhs));
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("GRIFFITH_FORCE_ELEMENT",&griffith_force_element.feLhs));
@@ -3187,6 +3227,8 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   ierr = MatDestroy(&K); CHKERRQ(ierr);
   ierr = VecDestroy(&D); CHKERRQ(ierr);
   ierr = VecDestroy(&F); CHKERRQ(ierr);
+  ierr = VecDestroy(&front_f); CHKERRQ(ierr);
+  ierr = VecDestroy(&tangent_front_f); CHKERRQ(ierr);
 
   for(map<int,SnesConstrainSurfacGeometry*>::iterator mit = other_body_surface_constrains.begin();
     mit!=other_body_surface_constrains.end();mit++) {

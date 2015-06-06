@@ -302,20 +302,25 @@ struct MonitorUpdateFrezedNodes: public FEMethod {
   FixBcAtEntities &bC;
   MyEshelby &feMaterial;
   ConvectiveMassElement &iNertia;
+  MyMeshSmoothing &sMoother;
   TangentWithMeshSmoothingFrontConstrain &tangentConstrain;
   SnesConstrainSurfacGeometry &surfaceConstrains;
   SnesConstrainSurfacGeometry &crackSurfaceConstrains;
 
-
   MonitorUpdateFrezedNodes(FieldInterface &m_field,
     ConfigurationalFracturDynamics *conf_prob,
     FixBcAtEntities &bc,
-    MyEshelby &fe_material,ConvectiveMassElement &inertia,
+    MyEshelby &fe_material,
+    ConvectiveMassElement &inertia,
+    MyMeshSmoothing &smoother,
     TangentWithMeshSmoothingFrontConstrain &tangent_constrain,
     SnesConstrainSurfacGeometry &surface_constrains,
     SnesConstrainSurfacGeometry &crack_surface_constrains):
     mField(m_field),confProb(conf_prob),
-    bC(bc),feMaterial(fe_material),iNertia(inertia),
+    bC(bc),
+    feMaterial(fe_material),
+    iNertia(inertia),
+    sMoother(smoother),
     tangentConstrain(tangent_constrain),
     surfaceConstrains(surface_constrains),
     crackSurfaceConstrains(crack_surface_constrains) {}
@@ -338,9 +343,9 @@ struct MonitorUpdateFrezedNodes: public FEMethod {
     feMaterial.snes_ctx = FEMethod::CTX_SNESSETFUNCTION;
     feMaterial.snes_f = F_Material;
     ierr = mField.loop_finite_elements("COUPLED_DYNAMIC","MATERIAL_COUPLED",feMaterial); CHKERRQ(ierr);
-    tangentConstrain.meshFEPtr->snes_ctx = FEMethod::CTX_SNESSETFUNCTION;
-    tangentConstrain.meshFEPtr->snes_f = F_Material;
-    ierr = mField.loop_finite_elements("COUPLED_DYNAMIC","MESH_SMOOTHER",*tangentConstrain.meshFEPtr); CHKERRQ(ierr);
+    sMoother.snes_ctx = FEMethod::CTX_SNESSETFUNCTION;
+    sMoother.snes_f = F_Material;
+    ierr = mField.loop_finite_elements("COUPLED_DYNAMIC","MESH_SMOOTHER",sMoother); CHKERRQ(ierr);
     tangentConstrain.snes_ctx = FEMethod::CTX_SNESSETFUNCTION;
     tangentConstrain.snes_f = F_Material;
     ierr = mField.loop_finite_elements("COUPLED_DYNAMIC","C_TANGENT_ELEM",tangentConstrain); CHKERRQ(ierr);
@@ -790,8 +795,22 @@ PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterf
   ierr = fe_material.initCrackFrontData(m_field); CHKERRQ(ierr);
   fe_material.isCoupledProblem = true;
   //meshs moothing
+
+  Vec front_f,tangent_front_f;
+  ierr = VecDuplicate(F,&front_f); CHKERRQ(ierr);
+  ierr = VecSetOption(front_f,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); CHKERRQ(ierr);
+  ierr = VecDuplicate(F,&tangent_front_f); CHKERRQ(ierr);
+  ierr = VecSetOption(tangent_front_f,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); CHKERRQ(ierr);
+
   MyMeshSmoothing smoother(m_field);
   ierr = smoother.initCrackFrontData(m_field); CHKERRQ(ierr);
+  TangentWithMeshSmoothingFrontConstrain tangent_constrain(m_field,"LAMBDA_CRACK_TANGENT_CONSTRAIN");
+
+  smoother.frontF = front_f;
+  smoother.tangentFrontF = tangent_front_f;
+  tangent_constrain.frontF = front_f;
+  tangent_constrain.tangentFrontF = tangent_front_f;
+
   set_qual_ver(0);
   //constrains
   SnesConstrainSurfacGeometry constrain_body_surface(m_field,"LAMBDA_SURFACE");
@@ -800,7 +819,6 @@ PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterf
   constrain_crack_surface.nonlinear = true;
   Snes_CTgc_CONSTANT_AREA ct_gc(m_field,projFrontCtx,"COUPLED_DYNAMIC","LAMBDA_CRACKFRONT_AREA");
   Snes_dCTgc_CONSTANT_AREA dct_gc(m_field,K,"LAMBDA_CRACKFRONT_AREA");
-  TangentWithMeshSmoothingFrontConstrain tangent_constrain(m_field,&smoother,"LAMBDA_CRACK_TANGENT_CONSTRAIN");
   map<int,SnesConstrainSurfacGeometry*> other_body_surface_constrains;
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,SIDESET,it)) {
     int msId = it->get_msId();
@@ -954,8 +972,8 @@ PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterf
     ss2 << "CandCT_SURFACE_ELEM_msId_" << mit->first;
     loops_to_do_Mat.push_back(TsCtx::loop_pair_type(ss2.str(),mit->second));
   }
-  loops_to_do_Mat.push_back(TsCtx::loop_pair_type("MESH_SMOOTHER",&smoother));
   loops_to_do_Mat.push_back(TsCtx::loop_pair_type("C_TANGENT_ELEM",&tangent_constrain));
+  loops_to_do_Mat.push_back(TsCtx::loop_pair_type("MESH_SMOOTHER",&smoother));
   loops_to_do_Mat.push_back(TsCtx::loop_pair_type("ELASTIC_COUPLED",&fe_spatial));
   loops_to_do_Mat.push_back(TsCtx::loop_pair_type("MATERIAL_COUPLED",&fe_material));
   loops_to_do_Mat.push_back(TsCtx::loop_pair_type("NEUAMNN_FE",&fe_forces));
@@ -971,8 +989,15 @@ PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterf
   //monitor
   MonitorRestart monitor_restart(m_field,ts);
   MonitorUpdateFrezedNodes monitor_fix_matrial_nodes(
-    m_field,this,fix_material_pts,fe_material,iNertia,tangent_constrain,
-    constrain_body_surface,constrain_crack_surface);
+    m_field,this,
+    fix_material_pts,
+    fe_material,
+    iNertia,
+    smoother,
+    tangent_constrain,
+    constrain_body_surface,
+    constrain_crack_surface
+  );
   MonitorPostProc post_proc(m_field);
   MonitorLoadPath monitor_load_path(m_field,ts);
 
@@ -1022,11 +1047,11 @@ PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterf
     "steps %D (%D rejected, %D SNES fails), ftime %g, nonlinits %D, linits %D\n",
     steps,rejects,snesfails,ftime,nonlinits,linits);
 
-
-
   ierr = MatDestroy(&K); CHKERRQ(ierr);
   ierr = VecDestroy(&D); CHKERRQ(ierr);
   ierr = VecDestroy(&F); CHKERRQ(ierr);
+  ierr = VecDestroy(&front_f); CHKERRQ(ierr);
+  ierr = VecDestroy(&tangent_front_f); CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }

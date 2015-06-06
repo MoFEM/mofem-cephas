@@ -34,19 +34,19 @@ struct FEMethod_ComplexForLazy_Data: public FEMethod_UpLevelStudent {
 
 /** \brief The user interface for NonLineae FE method (tangent is calculated
  * using complex direvatives)
- * 
+ *
  * This class give user some data structures and methods on those that
  * structures which could be useful. Method of calulating complex direvatives
  * is numerically inefficient, however it is simple to use.
  *
- * 
+ *
 */
 struct FEMethod_ComplexForLazy: public virtual FEMethod_ComplexForLazy_Data {
 
-  enum eRowGlob { i_nodes = 0, i_edge0=1+0, i_edge1=1+1, i_edge2=1+2, i_edge3=1+3, i_edge4=1+4, i_edge5=1+5, 
+  enum eRowGlob { i_nodes = 0, i_edge0=1+0, i_edge1=1+1, i_edge2=1+2, i_edge3=1+3, i_edge4=1+4, i_edge5=1+5,
     i_face0=1+6+0, i_face1=1+6+1, i_face2=1+6+2, i_face3=1+6+3, i_volume=1+6+4, i_last=1+6+4+1 };
-  enum analysis { 
-    spatail_analysis = 1, material_analysis = 1<<1, mesh_quality_analysis = 1<<2, 
+  enum analysis {
+    spatail_analysis = 1, material_analysis = 1<<1, mesh_quality_analysis = 1<<2,
     scaled_themp_direvative_spatial = 1<<3, scaled_themp_direvative_material = 1<<4, analaysis_none = 1<<5 };
   analysis type_of_analysis;
   enum forces { conservative = 1, nonconservative = 2};
@@ -65,15 +65,15 @@ struct FEMethod_ComplexForLazy: public virtual FEMethod_ComplexForLazy_Data {
   double alpha2,alpha22,gamma;
 
   string spatial_field_name;
-  string material_field_name;	
+  string material_field_name;
   string termal_field_name;
   FEMethod_ComplexForLazy(FieldInterface& _mField,analysis _type,double _lambda,double _mu,double _thermal_expansion,int _verbose);
   ~FEMethod_ComplexForLazy();
 
   vector<double> g_NTET;
   const double *g_TET_W;
-    
-  ErrorCode rval;  
+
+  ErrorCode rval;
   PetscErrorCode ierr;
 
   vector<double*> diff_edgeNinvJac;
