@@ -664,7 +664,10 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(vector<string> &switche
     maskPreserv[back] = false;
 
     //delete elements
-    ierr = mField.remove_ents_from_finite_element("C_TANGENT_ELEM",0,MBTRI); CHKERRQ(ierr);
+    ierr = mField.remove_ents_from_finite_element("MATERIAL",0,MBTET); CHKERRQ(ierr);
+    ierr = mField.remove_ents_from_finite_element("MATERIAL_COUPLED",0,MBTET); CHKERRQ(ierr);
+    ierr = mField.remove_ents_from_field("GRIFFITH_FORCE",0,MBTRI); CHKERRQ(ierr);
+    ierr = mField.remove_ents_from_field("GRIFFITH_FORCE_TANGENT",0,MBTRI); CHKERRQ(ierr);
     ierr = mField.remove_ents_from_finite_element("C_CRACKFRONT_AREA_ELEM",0,MBTRI); CHKERRQ(ierr);
     ierr = mField.remove_ents_from_finite_element("CTC_CRACKFRONT_AREA_ELEM",0,MBTRI); CHKERRQ(ierr);
     ierr = mField.remove_ents_from_finite_element("dCT_CRACKFRONT_AREA_ELEM",0,MBTRI); CHKERRQ(ierr);
@@ -679,8 +682,6 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(vector<string> &switche
     ierr = mField.remove_ents_from_field("LAMBDA_CRACKFRONT_AREA",0,MBVERTEX); CHKERRQ(ierr);
     ierr = mField.remove_ents_from_field("LAMBDA_CRACK_SURFACE",0,MBVERTEX); CHKERRQ(ierr);
     ierr = mField.remove_ents_from_field("LAMBDA_BOTH_SIDES",0,MBVERTEX); CHKERRQ(ierr);
-    ierr = mField.remove_ents_from_field("GRIFFITH_FORCE",0,MBVERTEX); CHKERRQ(ierr);
-    ierr = mField.remove_ents_from_field("GRIFFITH_FORCE_TANGENT",0,MBVERTEX); CHKERRQ(ierr);
     ierr = mField.delete_ents_by_bit_ref(maskPreserv,maskPreserv,true,0); CHKERRQ(ierr);
 
     //squash bits
@@ -1118,20 +1119,19 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(vector<string> &switche
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
     if(pcomm->rank()==0) {
 
+      BitRefLevel last_int_ref = BitRefLevel().set(meshIntefaceBitLevels.back());
 
-    BitRefLevel last_int_ref = BitRefLevel().set(meshIntefaceBitLevels.back());
-
-    EntityHandle meshset_out;
-    //3
-    rval = mField.get_moab().create_meshset(MESHSET_SET,meshset_out); CHKERR_PETSC(rval);
-    ierr = mField.get_entities_by_type_and_ref_level(last_int_ref,BitRefLevel().set(),MBTRI,meshset_out); CHKERRQ(ierr);
-    rval = mField.get_moab().write_file("rebuild_with_split_faces_tet_gen_mesh_3.vtk","VTK","",&meshset_out,1); CHKERR_PETSC(rval);
-    rval = mField.get_moab().delete_entities(&meshset_out,1); CHKERR_PETSC(rval);
-    //4
-    rval = mField.get_moab().create_meshset(MESHSET_SET,meshset_out); CHKERR_PETSC(rval);
-    ierr = mField.get_entities_by_type_and_ref_level(last_int_ref,BitRefLevel().set(),MBTET,meshset_out); CHKERRQ(ierr);
-    rval = mField.get_moab().write_file("rebuild_with_split_faces_tet_gen_mesh_4.vtk","VTK","",&meshset_out,1); CHKERR_PETSC(rval);
-    rval = mField.get_moab().delete_entities(&meshset_out,1); CHKERR_PETSC(rval);
+      EntityHandle meshset_out;
+      //3
+      rval = mField.get_moab().create_meshset(MESHSET_SET,meshset_out); CHKERR_PETSC(rval);
+      ierr = mField.get_entities_by_type_and_ref_level(last_int_ref,BitRefLevel().set(),MBTRI,meshset_out); CHKERRQ(ierr);
+      rval = mField.get_moab().write_file("rebuild_with_split_faces_tet_gen_mesh_3.vtk","VTK","",&meshset_out,1); CHKERR_PETSC(rval);
+      rval = mField.get_moab().delete_entities(&meshset_out,1); CHKERR_PETSC(rval);
+      //4
+      rval = mField.get_moab().create_meshset(MESHSET_SET,meshset_out); CHKERR_PETSC(rval);
+      ierr = mField.get_entities_by_type_and_ref_level(last_int_ref,BitRefLevel().set(),MBTET,meshset_out); CHKERRQ(ierr);
+      rval = mField.get_moab().write_file("rebuild_with_split_faces_tet_gen_mesh_4.vtk","VTK","",&meshset_out,1); CHKERR_PETSC(rval);
+      rval = mField.get_moab().delete_entities(&meshset_out,1); CHKERR_PETSC(rval);
 
     }
   }

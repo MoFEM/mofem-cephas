@@ -173,8 +173,8 @@ struct NonlinearElasticElement {
     }
 
     double lambda,mu;
-    ublas::matrix<TYPE> F,C,E,S,invF,P,SiGma;
-    TYPE J,eNergy;
+    ublas::matrix<TYPE> F,C,E,S,invF,P,SiGma,h,H,invH;
+    TYPE J,eNergy,detH;
 
     int gG;	///< Gauss point number
     CommonData *commonDataPtr; ///< common data shared between entities (f.e. field values at Gauss pts.)
@@ -372,10 +372,6 @@ struct NonlinearElasticElement {
     vector<MatrixDouble > *ptrh;
     vector<MatrixDouble > *ptrH;
 
-    adouble detH;
-    ublas::matrix<adouble> h;
-    ublas::matrix<adouble> H;
-    ublas::matrix<adouble> invH;
 
     virtual PetscErrorCode calculateStress();
 
@@ -395,6 +391,10 @@ struct NonlinearElasticElement {
 
     VectorDouble nf;
     PetscErrorCode doWork(
+      int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data
+    );
+
+    virtual PetscErrorCode aSemble(
       int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data
     );
 

@@ -1,6 +1,6 @@
-/** \file NeoHookean.hpp 
+/** \file NeoHookean.hpp
  * \ingroup nonlinear_elastic_elem
- * \brief Implementation of Neo-Hookean elastic material 
+ * \brief Implementation of Neo-Hookean elastic material
  */
 
 /* This file is part of MoFEM.
@@ -30,8 +30,8 @@ struct NeoHookean: public NonlinearElasticElement::FunctionsToCalulatePiolaKirch
 
     TYPE detC;
     ublas::matrix<TYPE> invC;
-    
-    /** \brief calculate second Piola Kirchoff 
+
+    /** \brief calculate second Piola Kirchoff
       *
       * \f$\mathbf{S} = \mu(\mathbf{I}-\mathbf{C}^{-1})+\lambda(\ln{J})\mathbf{C}^{-1}\f$
 
@@ -91,7 +91,7 @@ struct NeoHookean: public NonlinearElasticElement::FunctionsToCalulatePiolaKirch
       ierr = this->dEterminatnt(this->F,this->J); CHKERRQ(ierr);
       this->eNergy = 0;
       for(int ii = 0;ii<3;ii++) {
-	this->eNergy += this->C(ii,ii);
+        this->eNergy += this->C(ii,ii);
       }
       this->eNergy = 0.5*this->mu*(this->eNergy-3);
       logJ = log(this->J);

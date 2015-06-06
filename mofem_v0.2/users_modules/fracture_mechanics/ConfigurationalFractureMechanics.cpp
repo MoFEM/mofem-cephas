@@ -68,6 +68,7 @@ extern "C" {
 #include <adolc/adolc.h>
 #include <NonLienarElasticElement.hpp>
 #include <Hooke.hpp>
+#include <VolumeLengthQuality.hpp>
 
 #include <GriffithForceElement.hpp>
 

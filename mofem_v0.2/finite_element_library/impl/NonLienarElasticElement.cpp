@@ -223,7 +223,8 @@ PetscErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::calculat
     PetscErrorCode ierr;
     ierr = dAta.materialAdoublePtr->calculateP_PiolaKirchhoffI(dAta,getMoFEMFEPtr()); CHKERRQ(ierr);
     if(aLe) {
-      dAta.materialAdoublePtr->P = detH*prod(dAta.materialAdoublePtr->P,trans(invH));
+      dAta.materialAdoublePtr->P =
+        dAta.materialAdoublePtr->detH*prod(dAta.materialAdoublePtr->P,trans(dAta.materialAdoublePtr->invH));
     }
     commonData.sTress[0].resize(3,3,false);
     for(int dd1 = 0;dd1<3;dd1++) {
@@ -301,26 +302,32 @@ PetscErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::doWork(
 
           nb_active_variables = 0;
 
-          h.resize(3,3,false);
+          dAta.materialAdoublePtr->h.resize(3,3,false);
           for(int dd1 = 0;dd1<3;dd1++) {
             for(int dd2 = 0;dd2<3;dd2++) {
-              h(dd1,dd2) <<= (*ptrh)[gg](dd1,dd2);
+              dAta.materialAdoublePtr->h(dd1,dd2) <<= (*ptrh)[gg](dd1,dd2);
               nb_active_variables++;
             }
           }
 
-          H.resize(3,3,false);
+          dAta.materialAdoublePtr->H.resize(3,3,false);
           for(int dd1 = 0;dd1<3;dd1++) {
             for(int dd2 = 0;dd2<3;dd2++) {
-              H(dd1,dd2) <<= (*ptrH)[gg](dd1,dd2);
+              dAta.materialAdoublePtr->H(dd1,dd2) <<= (*ptrH)[gg](dd1,dd2);
               nb_active_variables++;
             }
           }
 
-          ierr = dAta.materialAdoublePtr->dEterminatnt(H,detH); CHKERRQ(ierr);
-          invH.resize(3,3,false);
-          ierr = dAta.materialAdoublePtr->iNvert(detH,H,invH); CHKERRQ(ierr);
-          noalias(dAta.materialAdoublePtr->F) = prod(h,invH);
+          ierr = dAta.materialAdoublePtr->dEterminatnt(
+            dAta.materialAdoublePtr->H,dAta.materialAdoublePtr->detH
+          ); CHKERRQ(ierr);
+          dAta.materialAdoublePtr->invH.resize(3,3,false);
+          ierr = dAta.materialAdoublePtr->iNvert(
+            dAta.materialAdoublePtr->detH,dAta.materialAdoublePtr->H,dAta.materialAdoublePtr->invH
+          ); CHKERRQ(ierr);
+          noalias(dAta.materialAdoublePtr->F) = prod(
+            dAta.materialAdoublePtr->h,dAta.materialAdoublePtr->invH
+          );
 
         }
 
@@ -405,6 +412,38 @@ NonlinearElasticElement::OpRhsPiolaKirchhoff::OpRhsPiolaKirchhoff(const string f
   commonData(common_data),
   aLe(false) {}
 
+PetscErrorCode NonlinearElasticElement::OpRhsPiolaKirchhoff::aSemble(
+  int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data
+) {
+  PetscFunctionBegin;
+  PetscErrorCode ierr;
+
+  int nb_dofs = row_data.getIndices().size();
+
+  int *indices_ptr = &row_data.getIndices()[0];
+  if(!dAta.forcesOnlyOnEntitiesRow.empty()) {
+    iNdices.resize(nb_dofs,false);
+    noalias(iNdices) = row_data.getIndices();
+    indices_ptr = &iNdices[0];
+    ublas::vector<const FEDofMoFEMEntity*>& dofs = row_data.getFieldDofs();
+    ublas::vector<const FEDofMoFEMEntity*>::iterator dit = dofs.begin();
+    for(int ii = 0;dit!=dofs.end();dit++,ii++) {
+      if(dAta.forcesOnlyOnEntitiesRow.find((*dit)->get_ent())==dAta.forcesOnlyOnEntitiesRow.end()) {
+        iNdices[ii] = -1;
+      }
+    }
+  }
+
+  ierr = VecSetValues(
+    getFEMethod()->snes_f,
+    nb_dofs,
+    indices_ptr,&nf[0],
+    ADD_VALUES
+  ); CHKERRQ(ierr);
+
+  PetscFunctionReturn(0);
+}
+
 PetscErrorCode NonlinearElasticElement::OpRhsPiolaKirchhoff::doWork(
   int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data
 ) {
@@ -446,27 +485,7 @@ PetscErrorCode NonlinearElasticElement::OpRhsPiolaKirchhoff::doWork(
       SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
     }
 
-    int *indices_ptr = &row_data.getIndices()[0];
-
-    if(!dAta.forcesOnlyOnEntitiesRow.empty()) {
-      iNdices.resize(nb_dofs,false);
-      noalias(iNdices) = row_data.getIndices();
-      indices_ptr = &iNdices[0];
-      ublas::vector<const FEDofMoFEMEntity*>& dofs = row_data.getFieldDofs();
-      ublas::vector<const FEDofMoFEMEntity*>::iterator dit = dofs.begin();
-      for(int ii = 0;dit!=dofs.end();dit++,ii++) {
-        if(dAta.forcesOnlyOnEntitiesRow.find((*dit)->get_ent())==dAta.forcesOnlyOnEntitiesRow.end()) {
-          iNdices[ii] = -1;
-        }
-      }
-    }
-
-    ierr = VecSetValues(
-      getFEMethod()->snes_f,
-      nb_dofs,
-      indices_ptr,&nf[0],
-      ADD_VALUES
-    ); CHKERRQ(ierr);
+    ierr = aSemble(row_side,row_type,row_data); CHKERRQ(ierr);
 
   } catch (const std::exception& ex) {
     ostringstream ss;
@@ -816,7 +835,8 @@ PetscErrorCode NonlinearElasticElement::OpJacobianEshelbyStress::calculateStress
     PetscErrorCode ierr;
     ierr = dAta.materialAdoublePtr->calculateSiGma_EshelbyStress(dAta,getMoFEMFEPtr()); CHKERRQ(ierr);
     if(aLe) {
-      dAta.materialAdoublePtr->SiGma = detH*prod(dAta.materialAdoublePtr->SiGma,trans(invH));
+      dAta.materialAdoublePtr->SiGma =
+      dAta.materialAdoublePtr->detH*prod(dAta.materialAdoublePtr->SiGma,trans(dAta.materialAdoublePtr->invH));
     }
     commonData.sTress[0].resize(3,3,false);
     for(int dd1 = 0;dd1<3;dd1++) {

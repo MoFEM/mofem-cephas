@@ -193,12 +193,12 @@ int main(int argc, char *argv[]) {
         if(block_data[it->get_msId()].oRder == order) continue;
         PetscPrintf(PETSC_COMM_WORLD,"Set block %d order to %d\n",it->get_msId(),block_data[it->get_msId()].oRder);
         Range block_ents;
-        rval = moab.get_entities_by_handle(it->get_meshset(),block_ents,true); CHKERR(rval);
+        rval = moab.get_entities_by_handle(it->get_meshset(),block_ents,true); CHKERR_PETSC(rval);
         Range ents_to_set_order;
-        ierr = moab.get_adjacencies(block_ents,3,false,ents_to_set_order,Interface::UNION); CHKERRQ(ierr);
+        rval = moab.get_adjacencies(block_ents,3,false,ents_to_set_order,Interface::UNION); CHKERR_PETSC(rval);
         ents_to_set_order = ents_to_set_order.subset_by_type(MBTET);
-        ierr = moab.get_adjacencies(block_ents,2,false,ents_to_set_order,Interface::UNION); CHKERRQ(ierr);
-        ierr = moab.get_adjacencies(block_ents,1,false,ents_to_set_order,Interface::UNION); CHKERRQ(ierr);
+        rval = moab.get_adjacencies(block_ents,2,false,ents_to_set_order,Interface::UNION); CHKERR_PETSC(rval);
+        rval = moab.get_adjacencies(block_ents,1,false,ents_to_set_order,Interface::UNION); CHKERR_PETSC(rval);
         ierr = m_field.synchronise_entities(ents_to_set_order); CHKERRQ(ierr);
         ierr = m_field.set_field_order(ents_to_set_order,"DISPLACEMENT",block_data[it->get_msId()].oRder); CHKERRQ(ierr);
       }
@@ -275,7 +275,7 @@ int main(int argc, char *argv[]) {
         PetscPrintf(PETSC_COMM_WORLD,"Set block %d temperature to %3.2g\n",
         it->get_msId(),block_data[it->get_msId()].initTemp);
         Range block_ents;
-        rval = moab.get_entities_by_handle(it->meshset,block_ents,true); CHKERR(rval);
+        rval = moab.get_entities_by_handle(it->meshset,block_ents,true); CHKERR_PETSC(rval);
         Range vertices;
         rval = moab.get_connectivity(block_ents,vertices,true); CHKERR_PETSC(rval);
         ierr = m_field.set_field(block_data[it->get_msId()].initTemp,MBVERTEX,vertices,"TEMP"); CHKERRQ(ierr);

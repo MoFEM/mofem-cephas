@@ -1,6 +1,6 @@
 /* \file ConfigurationalFractureMechanics.hpp
 
- This implementation which is accumulation research in period of couple of
+ This implementation result of research in period of couple of
 years. It is far for being optimal and efficient.
 
 This need to be reimplemented, using automatic differentiation and by

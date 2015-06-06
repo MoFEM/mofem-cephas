@@ -214,10 +214,19 @@ PetscErrorCode main_arc_length_setup(FieldInterface& m_field,ConfigurationalFrac
 
   //add finite elements entities
   ierr = m_field.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"ELASTIC_COUPLED",MBTET); CHKERRQ(ierr);
-  ierr = m_field.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"MATERIAL_COUPLED",MBTET); CHKERRQ(ierr);
   ierr = m_field.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"MESH_SMOOTHER",MBTET); CHKERRQ(ierr);
-  ierr = m_field.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"MATERIAL",MBTET); CHKERRQ(ierr);
   ierr = m_field.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"ELASTIC",MBTET); CHKERRQ(ierr);
+
+  Range crack_front_edges;
+  ierr = m_field.get_cubit_msId_entities_by_dimension(201,SIDESET,1,crack_front_edges,true); CHKERRQ(ierr);
+  Range crack_front_nodes;
+  rval = m_field.get_moab().get_connectivity(crack_front_edges,crack_front_nodes,true); CHKERR_PETSC(rval);
+  Range crack_front_tets;
+  rval = m_field.get_moab().get_adjacencies(crack_front_nodes,3,false,crack_front_tets,Interface::UNION); CHKERR_PETSC(rval);
+
+  ierr = m_field.seed_finite_elements(crack_front_tets); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_finite_element_by_TETs(crack_front_tets,"MATERIAL"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_finite_element_by_TETs(crack_front_tets,"MATERIAL_COUPLED"); CHKERRQ(ierr);
 
   //set refinment level for problem
   ierr = m_field.modify_problem_ref_level_set_bit("ELASTIC_MECHANICS",bit_level0); CHKERRQ(ierr);

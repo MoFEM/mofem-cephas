@@ -1510,8 +1510,6 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
     }
 
     EntityHandle ent = fePtr->get_ent();
-    int num_nodes;
-    const EntityHandle* conn;
     rval = mField.get_moab().get_connectivity(ent,conn,num_nodes,true); CHKERR_PETSC(rval);
     coords.resize(num_nodes*3,false);
     rval = mField.get_moab().get_coords(conn,num_nodes,&*coords.data().begin()); CHKERR_PETSC(rval);
@@ -1852,8 +1850,6 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
   }
 
   EntityHandle ent = fePtr->get_ent();
-  int num_nodes;
-  const EntityHandle* conn;
   rval = mField.get_moab().get_connectivity(ent,conn,num_nodes,true); CHKERR_PETSC(rval);
   coords.resize(num_nodes*3,false);
   rval = mField.get_moab().get_coords(conn,num_nodes,&*coords.data().begin()); CHKERR_PETSC(rval);
