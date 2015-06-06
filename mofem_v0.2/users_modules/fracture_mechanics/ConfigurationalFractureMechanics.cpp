@@ -71,6 +71,7 @@ extern "C" {
 #include <VolumeLengthQuality.hpp>
 
 #include <GriffithForceElement.hpp>
+#include <Smoother.hpp>
 
 #include <PostProcOnRefMesh.hpp>
 #include <PostProcStresses.hpp>
