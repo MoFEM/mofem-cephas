@@ -204,16 +204,17 @@ PetscErrorCode quality_volume_length_F(double V,double *alpha2,double gamma,doub
     int node = 0;
     for(;node<4;node++) {
       if(F!=NULL) {
-	F[3*node + 0] += G_TET_W4[gg]*alpha2_val*cblas_ddot(3,&diffN[node*3+0],1,&reQ[0],1);
-	F[3*node + 1] += G_TET_W4[gg]*alpha2_val*cblas_ddot(3,&diffN[node*3+0],1,&reQ[3],1);
-	F[3*node + 2] += G_TET_W4[gg]*alpha2_val*cblas_ddot(3,&diffN[node*3+0],1,&reQ[6],1);
+        F[3*node + 0] += G_TET_W4[gg]*alpha2_val*cblas_ddot(3,&diffN[node*3+0],1,&reQ[0],1);
+        F[3*node + 1] += G_TET_W4[gg]*alpha2_val*cblas_ddot(3,&diffN[node*3+0],1,&reQ[3],1);
+        F[3*node + 2] += G_TET_W4[gg]*alpha2_val*cblas_ddot(3,&diffN[node*3+0],1,&reQ[6],1);
       }
       if(iF!=NULL) {
-	iF[3*node + 0] += G_TET_W4[gg]*alpha2_val*cblas_ddot(3,&diffN[node*3+0],1,&imQ[0],1);
-	iF[3*node + 1] += G_TET_W4[gg]*alpha2_val*cblas_ddot(3,&diffN[node*3+0],1,&imQ[3],1);
-	iF[3*node + 2] += G_TET_W4[gg]*alpha2_val*cblas_ddot(3,&diffN[node*3+0],1,&imQ[6],1);
+        iF[3*node + 0] += G_TET_W4[gg]*alpha2_val*cblas_ddot(3,&diffN[node*3+0],1,&imQ[0],1);
+        iF[3*node + 1] += G_TET_W4[gg]*alpha2_val*cblas_ddot(3,&diffN[node*3+0],1,&imQ[3],1);
+        iF[3*node + 2] += G_TET_W4[gg]*alpha2_val*cblas_ddot(3,&diffN[node*3+0],1,&imQ[6],1);
       }
-  }}
+    }
+  }
   PetscFunctionReturn(0);
 }
 int quality_volume_length_K(double eps,double V,double *alpha2,double gamma,double *diffN,double *coords_edges,double *dofs_X,double *dofs_x,double *K,double *Koff) {
@@ -250,9 +251,11 @@ int quality_volume_length_K(double eps,double V,double *alpha2,double gamma,doub
       double alpha2_val = cblas_ddot(4,&N4[4*gg],1,alpha2,1);
       int node = 0;
       for(;node<4;node++) {
-	K[3*12*node + 0*12 + dd] += G_TET_W4[gg]*alpha2_val*cblas_ddot(3,&diffN[node*3+0],1,&imQ[0],1);
-	K[3*12*node + 1*12 + dd] += G_TET_W4[gg]*alpha2_val*cblas_ddot(3,&diffN[node*3+0],1,&imQ[3],1);
-	K[3*12*node + 2*12 + dd] += G_TET_W4[gg]*alpha2_val*cblas_ddot(3,&diffN[node*3+0],1,&imQ[6],1);
-  }}}
+        K[3*12*node + 0*12 + dd] += G_TET_W4[gg]*alpha2_val*cblas_ddot(3,&diffN[node*3+0],1,&imQ[0],1);
+        K[3*12*node + 1*12 + dd] += G_TET_W4[gg]*alpha2_val*cblas_ddot(3,&diffN[node*3+0],1,&imQ[3],1);
+        K[3*12*node + 2*12 + dd] += G_TET_W4[gg]*alpha2_val*cblas_ddot(3,&diffN[node*3+0],1,&imQ[6],1);
+      }
+    }
+  }
   return 0;
 }

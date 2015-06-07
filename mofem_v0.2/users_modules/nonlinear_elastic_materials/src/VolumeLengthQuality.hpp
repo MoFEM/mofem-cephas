@@ -24,32 +24,37 @@
   #error "MoFEM need to be compiled with ADOL-C"
 #endif
 
+enum VolumeLengthQualityType {
+  QUALITY,
+  BARRIER_AND_QUALITY,
+  BARRIER_AND_CHANGE_QUALITY,
+  BARRIER_AND_CHANGE_QUALITY_SCALED_BY_VOLUME
+};
+
 /** \brief Volume Length Quality
-  * \ingroup nonlinear_elastic_elem
+  \ingroup nonlinear_elastic_elem
+
   */
 template<typename TYPE>
 struct VolumeLengthQuality: public NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<TYPE> {
 
-    enum Type {
-      QUALITY,
-      BARRIER_AND_QUALITY,
-      BARRIER_AND_CHANGE_QUALITY,
-      BARRIER_AND_CHANGE_QUALITY_SCALED_BY_VOLUME
-    };
-
-    Type tYpe;
-
-    VolumeLengthQuality():
-      NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<TYPE>(),
-      tYpe(BARRIER_AND_QUALITY) {}
-
+    VolumeLengthQualityType tYpe;
+    double aLpha;
     double gAmma;
-    ublas::vector<double> coordsEdges;
 
-    ublas::vector<TYPE> deltaChi;
+    VolumeLengthQuality(VolumeLengthQualityType type,double alpha,double gamma):
+      NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<TYPE>(),
+      tYpe(type),
+      aLpha(alpha),
+      gAmma(gamma) {}
+
+    ublas::vector<double> coordsEdges;
+    double lrmsSquared0;
+    ublas::vector<double> deltaChi;
+
     ublas::vector<TYPE> deltaX;
     ublas::matrix<TYPE> Q,dXdChiT;
-    TYPE lrmsSquared,q,b,detF;
+    TYPE lrmsSquared,q,b,detF,currentVolume,tMp;
 
     /** Get coordinates of edges using cannonical element numeration
      */
@@ -91,31 +96,32 @@ struct VolumeLengthQuality: public NonlinearElasticElement::FunctionsToCalulateP
      */
      PetscErrorCode calculateLrms() {
        PetscFunctionBegin;
-       if(deltaChi.empty()) {
+       if(deltaChi.size()!=3) {
          deltaChi.resize(3);
          deltaX.resize(3);
          dXdChiT.resize(3,3);
        }
        lrmsSquared = 0;
+       lrmsSquared0 = 0;
        dXdChiT.clear();
        for(int ee = 0;ee<6;ee++) {
          for(int dd = 0;dd<3;dd++) {
-           deltaChi[dd] = coordsEdges[6*ee+dd] - coordsEdges[6*dd+3+dd];
+           deltaChi[dd] = coordsEdges[6*ee+dd] - coordsEdges[6*ee+3+dd];
          }
          noalias(deltaX) = prod(this->F,deltaChi);
-         noalias(dXdChiT) += outer_prod(deltaX,deltaChi);
          for(int dd = 0;dd<3;dd++) {
-           lrmsSquared += deltaX[3*ee+dd]*deltaX[3*ee+dd];
+           lrmsSquared += (1./6.)*deltaX[dd]*deltaX[dd];
+           lrmsSquared0 += (1./6.)*deltaChi[dd]*deltaChi[dd];
          }
+         noalias(dXdChiT) += outer_prod(deltaX,deltaChi);
        }
-       lrmsSquared = (1./6.)*lrmsSquared;
        PetscFunctionReturn(0);
      }
 
      /** \brief Calculate Q
 
      \f[
-     \tilde{\mathbf{Q}} =
+     \mathbf{Q} =
       \mathbf{F}^{-\mathsf{T}}
       -
       \frac{1}{2}
@@ -128,10 +134,10 @@ struct VolumeLengthQuality: public NonlinearElasticElement::FunctionsToCalulateP
      */
      PetscErrorCode calculateQ() {
        PetscFunctionBegin;
-       if(Q.empty()) {
-         Q.resize(3,3,false);
+       if(Q.size1()==0) {
+         Q.resize(3,3);
        }
-       noalias(Q) = trans(this->invH) + (0.5/lrmsSquared)*dXdChiT;
+       noalias(Q) = trans(this->invF)-0.5*dXdChiT/lrmsSquared;
        PetscFunctionReturn(0);
      }
 
@@ -163,33 +169,69 @@ struct VolumeLengthQuality: public NonlinearElasticElement::FunctionsToCalulateP
     ) {
       PetscFunctionBegin;
 
-      PetscErrorCode ierr;
-      ierr = dEterminatnt(this->F,detF); CHKERRQ(ierr);
-      ierr = getEdgesFromElemCoords(); CHKERRQ(ierr);
-      ierr = calculateLrms(); CHKERRQ(ierr);
-      ierr = calculateQ(); CHKERRQ(ierr);
+      try {
 
-      b = this->detF/(lrmsSquared*sqrt(lrmsSquared));
-      q = 6.*sqrt(2.)*this->opPtr->getVolume()*b;
+        PetscErrorCode ierr;
 
-      switch(tYpe) {
-        case QUALITY:
-        noalias(this->P) = q*Q;
-        break;
-        case BARRIER_AND_QUALITY:
-        noalias(this->P) = q/(2*(1-gAmma))-log(q-gAmma)*Q;
-        break;
-        case BARRIER_AND_CHANGE_QUALITY:
-        noalias(this->P) = b/(2*(1-gAmma))-log(b-gAmma)*Q;
-        break;
-        case BARRIER_AND_CHANGE_QUALITY_SCALED_BY_VOLUME:
-        noalias(this->P) = this->opPtr->getVolume()*this->detH*b/(2*(1-gAmma))-log(b-gAmma)*Q;
-        break;
+        ierr = getEdgesFromElemCoords(); CHKERRQ(ierr);
+
+        ierr = this->dEterminatnt(this->F,detF); CHKERRQ(ierr);
+        if(this->invF.size1()!=3) {
+          this->invF.resize(3,3);
+        }
+        ierr = this->iNvert(detF,this->F,this->invF); CHKERRQ(ierr);
+
+        ierr = calculateLrms(); CHKERRQ(ierr);
+        ierr = calculateQ(); CHKERRQ(ierr);
+
+        double lrms03 = lrmsSquared0*sqrt(lrmsSquared0);
+        b = detF/(lrmsSquared*sqrt(lrmsSquared)/lrms03);
+
+        currentVolume = detF*this->opPtr->getVolume();
+        q = 6.*sqrt(2.)*currentVolume/(lrmsSquared*sqrt(lrmsSquared));
+
+        //cerr << "b " << b << endl;
+        //cerr << "q " << q << endl;
+
+        if(this->P.size1()!=3) {
+          this->P.resize(3,3);
+        }
+
+        switch(tYpe) {
+          case QUALITY:
+          // Only use for testing, simple quality gradient
+          noalias(this->P) = q*Q;
+          break;
+          case BARRIER_AND_QUALITY:
+          // This is used form mesh smoothing
+          tMp = q/(1.0-gAmma)-1.0/(q-gAmma);
+          noalias(this->P) = tMp*Q;
+          break;
+          case BARRIER_AND_CHANGE_QUALITY:
+          // Works well with Arbirary Lagrangian Formulation
+          tMp = b/(1.0-gAmma)-1.0/(b-gAmma);
+          noalias(this->P) = tMp*Q;
+          break;
+          case BARRIER_AND_CHANGE_QUALITY_SCALED_BY_VOLUME:
+          // When scaled by volume works well with ALE and face flipping.
+          // Works well with smooth crack propagation
+          tMp = currentVolume;
+          tMp *= b/(1.0-gAmma)-1.0/(b-gAmma);
+          noalias(this->P) = tMp*Q;
+          break;
+        }
+
+        // Divide by volume, to make units as they should be
+        this->P *= aLpha/this->opPtr->getVolume();
+
+      } catch (const std::exception& ex) {
+        ostringstream ss;
+        ss << "throw in method: " << ex.what() << endl;
+        SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
       PetscFunctionReturn(0);
     }
-
 
 };
 

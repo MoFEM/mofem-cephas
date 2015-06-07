@@ -68,7 +68,7 @@ extern "C" {
 #include <adolc/adolc.h>
 #include <NonLienarElasticElement.hpp>
 #include <Hooke.hpp>
-//#include <VolumeLengthQuality.hpp>
+#include <VolumeLengthQuality.hpp>
 
 #include <GriffithForceElement.hpp>
 #include <Smoother.hpp>
@@ -114,159 +114,6 @@ struct CrackFrontData {
     }
     PetscFunctionReturn(0);
   }
-
-};
-
-struct MyMeshSmoothing: public MeshSmoothingFEMethod,CrackFrontData {
-
-  Vec frontF;
-  Vec tangentFrontF;
-
-  MyMeshSmoothing(FieldInterface& _m_field,int _verbose = 0):
-    FEMethod_ComplexForLazy_Data(_m_field,_verbose),
-    MeshSmoothingFEMethod(_m_field,_verbose),
-      frontF(PETSC_NULL),
-      tangentFrontF(PETSC_NULL),
-      stabilise(false) {
-      type_of_analysis = mesh_quality_analysis;
-
-      g_NTET.resize(4*1);
-      ShapeMBTET(&g_NTET[0],G_TET_X1,G_TET_Y1,G_TET_Z1,1);
-      g_TET_W = G_TET_W1;
-
-    }
-
-  ~MyMeshSmoothing() {}
-
-  PetscErrorCode preProcess() {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
-
-    switch (ts_ctx) {
-      case CTX_TSSETIFUNCTION: {
-        snes_ctx = CTX_SNESSETFUNCTION;
-        snes_f = ts_F;
-        break;
-      }
-      case CTX_TSSETIJACOBIAN: {
-        snes_ctx = CTX_SNESSETJACOBIAN;
-        snes_B = ts_B;
-        break;
-      }
-      default:
-      break;
-    }
-
-    if(crackFrontEdgeNodes.size()>0) {
-      ierr = VecZeroEntries(frontF); CHKERRQ(ierr);
-      ierr = VecGhostUpdateBegin(frontF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-      ierr = VecGhostUpdateEnd(frontF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    }
-    PetscFunctionReturn(0);
-  }
-
-  PetscErrorCode postProcess() {
-    PetscFunctionBegin;
-    switch(snes_ctx) {
-      case CTX_SNESSETFUNCTION: {
-        if(!crackFrontEdgeNodes.empty()) {
-          ierr = VecAssemblyBegin(frontF); CHKERRQ(ierr);
-          ierr = VecAssemblyEnd(frontF); CHKERRQ(ierr);
-          ierr = VecGhostUpdateBegin(frontF,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-          ierr = VecGhostUpdateEnd(frontF,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-          ierr = VecGhostUpdateBegin(frontF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-          ierr = VecGhostUpdateEnd(frontF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-        }
-        break;
-        default:
-        break;
-      }
-    }
-    PetscFunctionReturn(0);
-  }
-
-  bool stabilise;
-  PetscErrorCode AssembleMeshSmoothingTangent(Mat B) {
-    PetscFunctionBegin;
-    vector<DofIdx> frontRowGlobMaterial = RowGlobMaterial[i_nodes];
-    ierr = setCrackFrontIndices(this,material_field_name,frontRowGlobMaterial,false); CHKERRQ(ierr);
-    vector<DofIdx> frontRowGlobMaterial_front_only = RowGlobMaterial[i_nodes];
-    ierr = setCrackFrontIndices(this,material_field_name,frontRowGlobMaterial_front_only,true); CHKERRQ(ierr);
-    switch(snes_ctx) {
-      case CTX_SNESSETJACOBIAN:
-      ierr = MatSetValues(B,
-        frontRowGlobMaterial.size(),&*(frontRowGlobMaterial.begin()),
-        ColGlobMaterial[i_nodes].size(),&*(ColGlobMaterial[i_nodes].begin()),
-        &*(KHH.data().begin()),ADD_VALUES); CHKERRQ(ierr);
-        if(stabilise) {
-          ierr = MatSetValues(B,
-            frontRowGlobMaterial_front_only.size(),&*(frontRowGlobMaterial_front_only.begin()),
-            ColGlobMaterial[i_nodes].size(),&*(ColGlobMaterial[i_nodes].begin()),
-            &*(KHH.data().begin()),ADD_VALUES
-          ); CHKERRQ(ierr);
-        }
-        if(!crackFrontEdgeNodes.empty()) {
-          double *f_tangent_front_mesh_array;
-          if(tangentFrontF==PETSC_NULL) SETERRQ(PETSC_COMM_SELF,1,"vector for crack front not created");
-          ierr = VecGetArray(tangentFrontF,&f_tangent_front_mesh_array); CHKERRQ(ierr);
-          for(int nn = 0;nn<4;nn++) {
-            FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator dit,hi_dit;
-            dit = rowPtr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("LAMBDA_CRACK_TANGENT_CONSTRAIN",conn[nn]));
-            hi_dit = rowPtr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("LAMBDA_CRACK_TANGENT_CONSTRAIN",conn[nn]));
-            if(distance(dit,hi_dit)>0) {
-              FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator diit,hi_diit;
-              diit = rowPtr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(material_field_name,conn[nn]));
-              hi_diit = rowPtr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(material_field_name,conn[nn]));
-              for(;diit!=hi_diit;diit++) {
-                for(unsigned int ddd = 0;ddd<ColGlobMaterial[i_nodes].size();ddd++) {
-                  if(frontRowGlobMaterial_front_only[3*nn+diit->get_dof_rank()]!=diit->get_petsc_gloabl_dof_idx()) {
-                    SETERRQ2(PETSC_COMM_SELF,1,"data inconsistency %d != %d",
-                    3*nn+diit->get_dof_rank(),diit->get_petsc_gloabl_dof_idx()
-                  );
-                }
-                if(diit->get_petsc_local_dof_idx()==-1) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-                double g = f_tangent_front_mesh_array[diit->get_petsc_local_dof_idx()]*KHH(3*nn+diit->get_dof_rank(),ddd);
-                DofIdx lambda_idx = dit->get_petsc_gloabl_dof_idx();
-                ierr = MatSetValues(B,1,&lambda_idx,1,&ColGlobMaterial[i_nodes][ddd],&g,ADD_VALUES); CHKERRQ(ierr);
-              }
-            }
-          }
-        }
-        ierr = VecRestoreArray(tangentFrontF,&f_tangent_front_mesh_array); CHKERRQ(ierr);
-      }
-      break;
-      default:
-      SETERRQ(PETSC_COMM_SELF,1,"not implemented");
-    }
-    PetscFunctionReturn(0);
-  }
-
-  PetscErrorCode AssembleMeshSmoothingFint(Vec f) {
-    PetscFunctionBegin;
-    vector<DofIdx> frontRowGlobMaterial = RowGlobMaterial[i_nodes];
-    ierr = setCrackFrontIndices(this,material_field_name,frontRowGlobMaterial,false); CHKERRQ(ierr);
-    vector<DofIdx> frontRowGlobMaterial_front_only = RowGlobMaterial[i_nodes];
-    ierr = setCrackFrontIndices(this,material_field_name,frontRowGlobMaterial_front_only,true); CHKERRQ(ierr);
-    switch(snes_ctx) {
-      case CTX_SNESSETFUNCTION: {
-        ierr = VecSetOption(f,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE);  CHKERRQ(ierr);
-        //cerr << "Fint_h " << Fint_h << endl;
-        ierr = VecSetValues(f,frontRowGlobMaterial.size(),&(frontRowGlobMaterial[0]),&(Fint_H.data()[0]),ADD_VALUES); CHKERRQ(ierr);
-        if(stabilise) {
-          ierr = VecSetValues(
-            f,frontRowGlobMaterial_front_only.size(),&(frontRowGlobMaterial_front_only[0]),&(Fint_H.data()[0]),ADD_VALUES); CHKERRQ(ierr);
-          }
-          if(!crackFrontEdgeNodes.empty()) {
-            if(frontF==PETSC_NULL) SETERRQ(PETSC_COMM_SELF,1,"vector for crack front not created");
-            ierr = VecSetValues(frontF,frontRowGlobMaterial_front_only.size(),&(frontRowGlobMaterial_front_only[0]),&(Fint_H.data()[0]),ADD_VALUES); CHKERRQ(ierr);
-          }
-        }
-        break;
-        default:
-        SETERRQ(PETSC_COMM_SELF,1,"not implemented");
-      }
-      PetscFunctionReturn(0);
-    }
 
 };
 
@@ -2837,13 +2684,15 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   ierr = VecDuplicate(F,&tangent_front_f); CHKERRQ(ierr);
   ierr = VecSetOption(tangent_front_f,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); CHKERRQ(ierr);
 
-  MyMeshSmoothing smoother(m_field);
+  /*MyMeshSmoothing smoother(m_field);
   ierr = smoother.initCrackFrontData(m_field); CHKERRQ(ierr);
   set_qual_ver(3);
-  TangentWithMeshSmoothingFrontConstrain tangent_constrain(m_field,"LAMBDA_CRACK_TANGENT_CONSTRAIN");
-
   smoother.frontF = front_f;
   smoother.tangentFrontF = tangent_front_f;
+  //smoother.stabilise = true;*/
+
+  TangentWithMeshSmoothingFrontConstrain tangent_constrain(m_field,"LAMBDA_CRACK_TANGENT_CONSTRAIN");
+
   tangent_constrain.frontF = front_f;
   tangent_constrain.tangentFrontF = tangent_front_f;
 
@@ -2854,7 +2703,7 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
 	if(!flg_alpha2) SETERRQ(PETSC_COMM_SELF,1,"-my_alpha2 is not set");
 	if(!flg_gamma) SETERRQ(PETSC_COMM_SELF,1,"-my_gamma is not set");
 
-  /*VolumeLengthQuality<adouble> volume_length_adouble(
+  VolumeLengthQuality<adouble> volume_length_adouble(
     BARRIER_AND_CHANGE_QUALITY_SCALED_BY_VOLUME,
     alpha2,
     gamma
@@ -2863,26 +2712,65 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
     BARRIER_AND_CHANGE_QUALITY_SCALED_BY_VOLUME,
     alpha2,
     gamma
-  );*/
+  );
 
-  /*NonlinearElasticElement smoother_fe(m_field,-1);
+  Smoother smoother_fe(m_field);
 
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,BLOCKSET|MAT_ELASTICSET,it)) {
-    Mat_Elastic mydata;
-    ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
     int id = it->get_msId();
     EntityHandle meshset = it->get_meshset();
     rval = m_field.get_moab().get_entities_by_type(
-      meshset,MBTET,spatial_fe.setOfBlocks[id].tEts,true
+      meshset,MBTET,smoother_fe.setOfBlocks[id].tEts,true
     ); CHKERR_PETSC(rval);
-
     smoother_fe.setOfBlocks[id].iD = id;
-    smoother_fe.setOfBlocks[id].E = mydata.data.Young;
-    smoother_fe.setOfBlocks[id].PoissonRatio = mydata.data.Poisson;
     smoother_fe.setOfBlocks[id].materialDoublePtr = &volume_length_double;
     smoother_fe.setOfBlocks[id].materialAdoublePtr = &volume_length_adouble;
+    smoother_fe.setOfBlocks[id].forcesOnlyOnEntitiesRow.merge(crack_front_edges);
+    smoother_fe.setOfBlocks[id].forcesOnlyOnEntitiesRow.merge(crack_front_nodes);
+  }
 
-  }*/
+  smoother_fe.commonData.spatialPositions = "MESH_NODE_POSITIONS";
+  smoother_fe.commonData.meshPositions = "NONE";
+  smoother_fe.smootherData.sTabilised = false;
+  smoother_fe.smootherData.frontF = front_f;
+  smoother_fe.smootherData.tangentFrontF = tangent_front_f;
+
+  smoother_fe.feRhs.meshPositionsFieldName = "NONE";
+  smoother_fe.feLhs.meshPositionsFieldName = "NONE";
+  smoother_fe.feRhs.addToRule = 0;
+  smoother_fe.feLhs.addToRule = 0;
+
+  // Smoother Lhs
+  smoother_fe.feLhs.getOpPtrVector().push_back(
+    new NonlinearElasticElement::OpGetCommonDataAtGaussPts("MESH_NODE_POSITIONS",smoother_fe.commonData)
+  );
+  sit = smoother_fe.setOfBlocks.begin();
+  for(;sit!=smoother_fe.setOfBlocks.end();sit++) {
+    smoother_fe.feLhs.getOpPtrVector().push_back(
+      new Smoother::OpJacobianSmoother("MESH_NODE_POSITIONS",sit->second,smoother_fe.commonData,4,true)
+    );
+    smoother_fe.feLhs.getOpPtrVector().push_back(
+      new Smoother::OpLhsSmoother(
+        "MESH_NODE_POSITIONS","MESH_NODE_POSITIONS",sit->second,smoother_fe.commonData,smoother_fe.smootherData
+      )
+    );
+  }
+
+  // Smoother Rhs
+  smoother_fe.feRhs.getOpPtrVector().push_back(
+    new NonlinearElasticElement::OpGetCommonDataAtGaussPts("MESH_NODE_POSITIONS",smoother_fe.commonData)
+  );
+  sit = smoother_fe.setOfBlocks.begin();
+  for(;sit!=smoother_fe.setOfBlocks.end();sit++) {
+    smoother_fe.feRhs.getOpPtrVector().push_back(
+      new Smoother::OpJacobianSmoother("MESH_NODE_POSITIONS",sit->second,smoother_fe.commonData,4,false)
+    );
+    smoother_fe.feRhs.getOpPtrVector().push_back(
+      new Smoother::OpRhsSmoother(
+        "MESH_NODE_POSITIONS",sit->second,smoother_fe.commonData,smoother_fe.smootherData
+      )
+    );
+  }
 
   // Sourface constrains
   SnesConstrainSurfacGeometry constrain_body_surface(m_field,"LAMBDA_SURFACE");
@@ -2959,7 +2847,8 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
     ss2 << "CandCT_SURFACE_ELEM_msId_" << mit->first;
     loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type(ss2.str(),mit->second));
   }
-  loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("MESH_SMOOTHER",&smoother));
+  //loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("MESH_SMOOTHER",&smoother));
+  loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("MESH_SMOOTHER",&smoother_fe.feRhs));
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("C_TANGENT_ELEM",&tangent_constrain));
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ELASTIC_COUPLED",&spatial_fe.feRhs));
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("MATERIAL_COUPLED",&material_fe.feRhs));
@@ -3013,7 +2902,8 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
     loops_to_do_Mat.push_back(SnesCtx::loop_pair_type(ss2.str(),mit->second));
   }
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("C_TANGENT_ELEM",&tangent_constrain));
-  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("MESH_SMOOTHER",&smoother));
+  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("MESH_SMOOTHER",&smoother_fe.feLhs));
+  //loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("MESH_SMOOTHER",&smoother));
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ELASTIC_COUPLED",&spatial_fe.feLhs));
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("MATERIAL_COUPLED",&material_fe.feLhs));
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("GRIFFITH_FORCE_ELEMENT",&griffith_force_element.feLhs));
@@ -3106,11 +2996,15 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
     if(reason < 0) {
       ierr = m_field.set_global_ghost_vector("COUPLED_PROBLEM",COL,D0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
       ierr = VecCopy(D0,D); CHKERRQ(ierr);
-      smoother.stabilise = true;
+      //smoother.stabilise = true;
+      smoother_fe.smootherData.sTabilised = true;
       ierr = PetscPrintf(PETSC_COMM_WORLD,"Smoother on everyware\n"); CHKERRQ(ierr);
       for(int ii = 1;ii<=3;ii++) {
         ierr = VecCopy(D,D0); CHKERRQ(ierr);
-        smoother.alpha22 = exp(-ii);
+        //smoother.alpha22 = exp(-ii);
+        volume_length_adouble.aLpha = alpha2*exp(-ii);
+        volume_length_double.aLpha = alpha2*exp(-ii);
+
         ierr = SNESLineSearchSetType(linesearch,SNESLINESEARCHL2); CHKERRQ(ierr);
         ierr = SNESSetConvergenceTest(*snes,MySnesConvernceTest_SNESLINESEARCHL2,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
         ierr = SNESSolve(*snes,PETSC_NULL,D); CHKERRQ(ierr);
@@ -3126,7 +3020,8 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
           ierr = set_coordinates_from_material_solution(m_field,false); CHKERRQ(ierr);
         }
       }
-      smoother.stabilise = false;
+      //smoother.stabilise = false;
+      smoother_fe.smootherData.sTabilised = false;
     }
   }
   ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
