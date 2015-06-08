@@ -662,19 +662,21 @@ of boundary conditions could be easily implemented.
     }
 
     Vec p_scatter_wave_real;
-    ierr = VecDuplicate(pSeriesIncidentWave[0](0),&p_scatter_wave_real); CHKERRQ(ierr);
+    ierr = VecDuplicate(pSeriesScatterWave[0](0),&p_scatter_wave_real); CHKERRQ(ierr);
     ierr = postProc.addFieldValuesPostProc("P","P_SCATTER_WAVE_REAL",p_scatter_wave_real); CHKERRQ(ierr);
 
     Vec p_scatter_wave_imag;
-    ierr = VecDuplicate(pSeriesIncidentWave[1](0),&p_scatter_wave_imag); CHKERRQ(ierr);
+    ierr = VecDuplicate(pSeriesScatterWave[1](0),&p_scatter_wave_imag); CHKERRQ(ierr);
     ierr = postProc.addFieldValuesPostProc("P","P_SCATTER_WAVE_IMAG",p_scatter_wave_imag); CHKERRQ(ierr);
 
     int n = sSeries.size();
     for(int k = 0;k<n;k++) {
 
-      ierr = VecCopy(pSeriesIncidentWave[0](k),p_inicent_wave); CHKERRQ(ierr);
-      ierr = VecGhostUpdateBegin(p_inicent_wave,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-      ierr = VecGhostUpdateEnd(p_inicent_wave,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      if(add_incident_wave) {
+        ierr = VecCopy(pSeriesIncidentWave[0](k),p_inicent_wave); CHKERRQ(ierr);
+        ierr = VecGhostUpdateBegin(p_inicent_wave,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+        ierr = VecGhostUpdateEnd(p_inicent_wave,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      }
 
       ierr = VecCopy(pSeriesScatterWave[0](k),p_scatter_wave_real); CHKERRQ(ierr);
       ierr = VecGhostUpdateBegin(p_scatter_wave_real,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
