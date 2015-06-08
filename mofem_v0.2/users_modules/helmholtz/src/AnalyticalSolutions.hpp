@@ -127,6 +127,16 @@ struct IncidentWave: public GenericAnalyticalSolution {
  Incident wave, i.t. is inverse Fourier transform evaluated at arbitrary
  spatial points.
 
+ \f[
+ \left. \left\{ \frac{1}{n}  (A_{0} e^{ik \mathbf{d} \cdot \mathbf{x} + i \phi})
+ \right\}
+ \f]
+ where \f$\phi\f$ is
+ \f[
+
+
+ \f]
+
   */
 struct IncidentWaveDFT: public GenericAnalyticalSolution {
 

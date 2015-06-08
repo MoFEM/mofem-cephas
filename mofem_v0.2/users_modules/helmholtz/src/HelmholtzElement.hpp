@@ -730,7 +730,7 @@ struct HelmholtzElement {
     &T = \frac{1}{f} period or duration in s (second) \\
     &\lambda = \frac{2 \pi}{k} = \frac{c}{f} wavelength in meter \\
 
-    &c = \frac{\lambda}{T} = \frac{\omega}{k} = wavespeed (phase velocity) in m\s \\
+    &c = \lambda f = \frac{\lambda}{T} = \frac{\omega}{k} = wavespeed (phase velocity) in m\s \\
 
     &k = \frac{\omeag}{c} wave number in rad \cdot m^{-1} \\
 
@@ -743,7 +743,7 @@ struct HelmholtzElement {
     \f]
 
     for input signal \f$ x(n) \f$ which n is the number of the data in time domain,
-    through the fast forward transformation (thanks to the package KISS), we can transfer
+    through the fast forward fourier transformation (thanks to the package KISS), we can transfer
     any arbitrary signal from time (or spatial) domain into frequency domain. Since
     the Euler formulation, the combination of sinusoid functions can be expressed in
     complex exponentialform. (this related to the Euler Identity) the reuslts in frequency are
@@ -751,7 +751,7 @@ struct HelmholtzElement {
 
 
     \f[
-    \left. \left\{ \frac{1}{n} \mathbf{n} \cdot  (ik\mathbf{d} A_{0} e^{ik \mathbf{d} \cdot \mathbf{x} + \phi})
+    \left. \left\{ \frac{1}{n} \mathbf{n} \cdot  (ik\mathbf{d} A_{0} e^{ik \mathbf{d} \cdot \mathbf{x} + i \phi})
     \right\}
     \f]
 
