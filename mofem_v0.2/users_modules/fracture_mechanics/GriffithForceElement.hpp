@@ -129,21 +129,23 @@ struct GriffithForceElement {
     template<typename TYPE>
     struct AuxFunctions {
 
-      ublas::vector<TYPE> currentCoords;
+      ublas::matrix<double> Bksi;
+      ublas::matrix<double> Beta;
+
       ublas::vector<TYPE> referenceCoords;
+
+      ublas::vector<TYPE> currentCoords;
       ublas::vector<TYPE> currentXdKsi;
       ublas::vector<TYPE> currentXdEta;
       ublas::matrix<TYPE> currentSpinKsi;
       ublas::matrix<TYPE> currentSpinEta;
-      ublas::matrix<TYPE> Bksi;
-      ublas::matrix<TYPE> Beta;
       ublas::matrix<TYPE> A;
 
       ublas::vector<TYPE> dElta;
-      ublas::vector<TYPE> referenceNormal;
       ublas::vector<TYPE> currentNormal;
-      TYPE referenceArea;
       TYPE currentArea;
+
+
 
       ublas::vector<TYPE> griffithForce;
 
@@ -435,7 +437,7 @@ struct GriffithForceElement {
       }
 
       int r;
-      //play recorder for values
+      //play recorder for jacobian
       r = jacobian(
         tAg,row_nb_dofs,18,
         &activeVariables[0],

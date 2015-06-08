@@ -103,14 +103,14 @@ struct SnesConstrainSurfacGeometryTools: public FEMethod {
     PetscFunctionBegin;
     switch (ts_ctx) {
       case CTX_TSSETIFUNCTION: {
-	snes_ctx = CTX_SNESSETFUNCTION;
-	snes_f = ts_F;
-	break;
+        snes_ctx = CTX_SNESSETFUNCTION;
+        snes_f = ts_F;
+        break;
       }
       case CTX_TSSETIJACOBIAN: {
-	snes_ctx = CTX_SNESSETJACOBIAN;
-	snes_B = ts_B;
-	break;
+        snes_ctx = CTX_SNESSETJACOBIAN;
+        snes_B = ts_B;
+        break;
       }
       default:
       break;
@@ -118,17 +118,17 @@ struct SnesConstrainSurfacGeometryTools: public FEMethod {
     PetscErrorCode ierr;
     switch(snes_ctx) {
       case CTX_SNESSETFUNCTION: {
-	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
-	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+        ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
+        ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
       }
       break;
       case CTX_SNESSETJACOBIAN: {
-	ierr = MatAssemblyBegin(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-	ierr = MatAssemblyEnd(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+        ierr = MatAssemblyBegin(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+        ierr = MatAssemblyEnd(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
       }
       break;
       default:
-	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+      SETERRQ(PETSC_COMM_SELF,1,"not implemented");
     }
     PetscFunctionReturn(0);
   }
@@ -150,53 +150,54 @@ struct SnesConstrainSurfacGeometry: public SnesConstrainSurfacGeometryTools {
     vecMethod(_mField,snes_f),
     nonlinear(false),useProjectionFromCrackFront(false) {}
 
-  SnesConstrainSurfacGeometry(FieldInterface& _mField,string _lambdaFieldName,int _verbose = 0):
-   mField(_mField),
+    SnesConstrainSurfacGeometry(FieldInterface& _mField,string _lambdaFieldName,int _verbose = 0):
+    mField(_mField),
     matMethod(_mField,PETSC_NULL,_lambdaFieldName),
     vecMethod(_mField,snes_f,_lambdaFieldName),
-    nonlinear(false),useProjectionFromCrackFront(false) {}
+    nonlinear(false),useProjectionFromCrackFront(false)
+    {}
 
-  PetscErrorCode operator()() {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
-    matMethod.useProjectionFromCrackFront = useProjectionFromCrackFront;
-    vecMethod.useProjectionFromCrackFront = useProjectionFromCrackFront;
-    switch(snes_ctx) {
-      case CTX_SNESSETFUNCTION: {
-	vecMethod.g = snes_f;
-	ierr = setElemData(vecMethod); CHKERRQ(ierr);
-	ierr = vecMethod.operator()(true,nonlinear); CHKERRQ(ierr);
+    PetscErrorCode operator()() {
+      PetscFunctionBegin;
+      PetscErrorCode ierr;
+      matMethod.useProjectionFromCrackFront = useProjectionFromCrackFront;
+      vecMethod.useProjectionFromCrackFront = useProjectionFromCrackFront;
+      switch(snes_ctx) {
+        case CTX_SNESSETFUNCTION: {
+          vecMethod.g = snes_f;
+          ierr = setElemData(vecMethod); CHKERRQ(ierr);
+          ierr = vecMethod.operator()(true,nonlinear); CHKERRQ(ierr);
+        }
+        break;
+        case CTX_SNESSETJACOBIAN: {
+          matMethod.C = snes_B;
+          ierr = setElemData(matMethod); CHKERRQ(ierr);
+          ierr = matMethod.operator()(true,nonlinear); CHKERRQ(ierr);
+        }
+        break;
+        default:
+        SETERRQ(PETSC_COMM_SELF,1,"not implemented");
       }
-      break;
-      case CTX_SNESSETJACOBIAN: {
-	matMethod.C = snes_B;
-	ierr = setElemData(matMethod); CHKERRQ(ierr);
-	ierr = matMethod.operator()(true,nonlinear); CHKERRQ(ierr);
-      }
-      break;
-      default:
-	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+      PetscFunctionReturn(0);
     }
-    PetscFunctionReturn(0);
-  }
 
   PetscErrorCode postProcess() {
     PetscFunctionBegin;
     PetscErrorCode ierr;
     switch(snes_ctx) {
       case CTX_SNESSETFUNCTION: {
-	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
-	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+        ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
+        ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
       }
       break;
       case CTX_SNESSETJACOBIAN: {
-	ierr = matMethod.postProcess(); CHKERRQ(ierr);
-	ierr = MatAssemblyBegin(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-	ierr = MatAssemblyEnd(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+        ierr = matMethod.postProcess(); CHKERRQ(ierr);
+        ierr = MatAssemblyBegin(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+        ierr = MatAssemblyEnd(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
       }
       break;
       default:
-	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+      SETERRQ(PETSC_COMM_SELF,1,"not implemented");
     }
     PetscFunctionReturn(0);
   }
