@@ -160,12 +160,12 @@ struct IncidentWaveDFT: public GenericAnalyticalSolution {
   virtual vector<ublas::vector<double> >& operator()(double x, double y, double z) {
 
     const complex< double > i( 0.0, 1.0 );
-    complex< double > result = 0.0;
     cOordinate.resize(3);
     cOordinate[0] = x;
     cOordinate[1] = y;
     cOordinate[2] = z;
 
+    complex< double > result = 0.0;
     for(int f = 0;f<sIze;f++) {
       double speed = signalLength/signalDuration;
       double wave_number = 2*M_PI*f/signalLength;
@@ -174,6 +174,7 @@ struct IncidentWaveDFT: public GenericAnalyticalSolution {
       double phase= 2*M_PI*f*(distance/signalLength);
       result += (complexOut[f].r+i*complexOut[f].i)*exp(i*wave_number*inner_prod(dIrection,cOordinate)+i*phase);
     }
+    result /= sIze;
 
     rEsult.resize(2);
     rEsult[REAL].resize(1);
@@ -690,8 +691,8 @@ PetscErrorCode calculate_matrix_and_vector(
   FieldApproximationH1 field_approximation(m_field);
   // This increase rule for numerical integration. In case of 10 node
   // elements jacobian is varying linearly across element, that way to element
-  // rule is added 1.
-  field_approximation.multRule = 2;
+  // rule is add 1.
+  field_approximation.addToRule = 1;
 
   ierr = field_approximation.loopMatrixAndVector(
     problem_name,fe_name,re_field,A,vec_F,fun_evaluator

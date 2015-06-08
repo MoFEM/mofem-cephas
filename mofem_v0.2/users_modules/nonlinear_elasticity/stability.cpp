@@ -1,6 +1,6 @@
 /** \file stability.cpp
  * \ingroup nonlinear_elastic_elem
- * 
+ *
  * Solves stability problem. Currently uses 3d tetrahedral elements.
  */
 
@@ -35,7 +35,7 @@ using namespace MoFEM;
 #include <NodalForce.hpp>
 
 #include <SurfacePressureComplexForLazy.hpp>
-#include <adolc/adolc.h> 
+#include <adolc/adolc.h>
 #include <NonLienarElasticElement.hpp>
 
 #include <PostProcOnRefMesh.hpp>
@@ -52,7 +52,7 @@ PetscErrorCode ierr;
 
 static char help[] = "...\n\n";
 
-template<typename TYPE> 
+template<typename TYPE>
 struct MyMat_double: public NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<TYPE> {
 
   bool doAotherwiseB;
@@ -121,7 +121,7 @@ struct MyMat_double: public NonlinearElasticElement::FunctionsToCalulatePiolaKir
 	CauchyStress(2,2) = sTress[2];
 	CauchyStress(0,1) = CauchyStress(1,0) = sTress[3];
 	CauchyStress(1,2) = CauchyStress(2,1) = sTress[4];
-	CauchyStress(0,2) = CauchyStress(2,0) = sTress[5];   
+	CauchyStress(0,2) = CauchyStress(2,0) = sTress[5];
 	//cerr << D << endl;
 	//cerr << CauchyStress << endl;
 	noalias(this->P) = J*prod(CauchyStress,trans(invF));
@@ -138,15 +138,15 @@ struct MyMat_double: public NonlinearElasticElement::FunctionsToCalulatePiolaKir
 
 };
 
-template<typename TYPE> 
+template<typename TYPE>
 struct MyMat: public MyMat_double<TYPE> {
 
   virtual PetscErrorCode SetUserActiveVariables(
     int &nb_active_variables) {
     PetscFunctionBegin;
-    
+
     try {
-  
+
       this->sTrain0.resize(6);
       ublas::matrix<double> &G0 = (this->commonDataPtr->gradAtGaussPts["D0"][this->gG]);
       this->sTrain0[0] <<= G0(0,0);
@@ -169,7 +169,7 @@ struct MyMat: public MyMat_double<TYPE> {
   virtual PetscErrorCode SetUserActiveVariables(
     ublas::vector<double> &active_varibles) {
     PetscFunctionBegin;
-    
+
     try {
 
       int shift = 9; // is a number of elements in F
@@ -211,23 +211,23 @@ int main(int argc, char *argv[]) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
 
-  // use this if your mesh is partotioned and you run code on parts, 
-  // you can solve very big problems 
+  // use this if your mesh is partotioned and you run code on parts,
+  // you can solve very big problems
   PetscBool is_partitioned = PETSC_FALSE;
   ierr = PetscOptionsGetBool(PETSC_NULL,"-my_is_partitioned",&is_partitioned,&flg); CHKERRQ(ierr);
- 
+
   if(is_partitioned == PETSC_TRUE) {
     //Read mesh to MOAB
     const char *option;
     option = "PARALLEL=BCAST_DELETE;PARALLEL_RESOLVE_SHARED_ENTS;PARTITION=PARALLEL_PARTITION;";
-    rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
+    rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
     rval = pcomm->resolve_shared_ents(0,3,0); CHKERR_PETSC(rval);
     rval = pcomm->resolve_shared_ents(0,3,1); CHKERR_PETSC(rval);
     rval = pcomm->resolve_shared_ents(0,3,2); CHKERR_PETSC(rval);
   } else {
     const char *option;
     option = "";
-    rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
+    rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
   }
 
   MoFEM::Core core(moab);
@@ -290,7 +290,7 @@ int main(int argc, char *argv[]) {
   PetscInt disp_order;
   ierr = PetscOptionsGetInt(PETSC_NULL,"-my_order",&disp_order,&flg); CHKERRQ(ierr);
   if(flg!=PETSC_TRUE) {
-    disp_order = 1;	
+    disp_order = 1;
   }
 
   ierr = m_field.set_field_order(0,MBTET,"SPATIAL_POSITION",disp_order); CHKERRQ(ierr);
@@ -323,7 +323,7 @@ int main(int argc, char *argv[]) {
     ierr = m_field.add_ents_to_finite_element_by_TRIs(tris,"NEUAMNN_FE"); CHKERRQ(ierr);
   }
   //add nodal force element
-  ierr = MetaNodalForces::addNodalForceElement(m_field,"SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = MetaNodalForces::addElement(m_field,"SPATIAL_POSITION"); CHKERRQ(ierr);
   ierr = m_field.modify_problem_add_finite_element("ELASTIC_MECHANICS","FORCE_FE"); CHKERRQ(ierr);
 
   //build field
@@ -397,7 +397,7 @@ int main(int argc, char *argv[]) {
   boost::ptr_map<string,NodalForce> nodal_forces;
   string fe_name_str ="FORCE_FE";
   nodal_forces.insert(fe_name_str,new NodalForce(m_field));
-  ierr = MetaNodalForces::setNodalForceElementOperators(m_field,nodal_forces,F,"SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = MetaNodalForces::setOperators(m_field,nodal_forces,F,"SPATIAL_POSITION"); CHKERRQ(ierr);
   boost::ptr_map<string,NodalForce>::iterator fit = nodal_forces.begin();
   for(;fit!=nodal_forces.end();fit++) {
     ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS",fit->first,fit->second->getLoopFe()); CHKERRQ(ierr);
@@ -407,7 +407,7 @@ int main(int argc, char *argv[]) {
   neumann.snes_x = D;
   neumann.snes_f = F;
   m_field.loop_finite_elements("ELASTIC_MECHANICS","NEUAMNN_FE",neumann);
-  //stiffnes 
+  //stiffnes
   elastic.getLoopFeRhs().snes_ctx = SnesMethod::CTX_SNESSETFUNCTION;
   elastic.getLoopFeRhs().snes_x = D;
   elastic.getLoopFeRhs().snes_f = F;
@@ -424,7 +424,7 @@ int main(int argc, char *argv[]) {
   //neumann.snes_ctx = SnesMethod::CTX_SNESSETJACOBIAN;
   //neumann.snes_B = Aij;
   //ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","NEUAMNN_FE",neumann); CHKERRQ(ierr);
-  //stiffnes 
+  //stiffnes
   elastic.getLoopFeLhs().snes_ctx = SnesMethod::CTX_SNESSETJACOBIAN;
   elastic.getLoopFeLhs().snes_B = Aij;
   ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",elastic.getLoopFeLhs()); CHKERRQ(ierr);
@@ -474,7 +474,7 @@ int main(int argc, char *argv[]) {
   my_dirihlet_bc.snes_ctx = SnesMethod::CTX_SNESSETJACOBIAN;
   my_dirihlet_bc.snes_B = Aij;
   ierr = m_field.problem_basic_method_preProcess("ELASTIC_MECHANICS",my_dirihlet_bc); CHKERRQ(ierr);
-  //stiffnes 
+  //stiffnes
   elastic.getLoopFeLhs().snes_ctx = SnesMethod::CTX_SNESSETJACOBIAN;
   elastic.getLoopFeLhs().snes_B = Aij;
   ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",elastic.getLoopFeLhs()); CHKERRQ(ierr);
@@ -495,7 +495,7 @@ int main(int argc, char *argv[]) {
   if(is_conservative) {
     ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","NEUAMNN_FE",neumann); CHKERRQ(ierr);
   }
-  //stiffnes 
+  //stiffnes
   elastic.getLoopFeLhs().snes_ctx = SnesMethod::CTX_SNESSETJACOBIAN;
   elastic.getLoopFeLhs().snes_B = Bij;
   ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",elastic.getLoopFeLhs()); CHKERRQ(ierr);
@@ -517,7 +517,7 @@ int main(int argc, char *argv[]) {
   EPSType type;
   PetscReal tol;
   PetscInt nev,maxit,its,lits;
-  
+
   /*
     Create eigensolver context
   */
@@ -588,6 +588,3 @@ int main(int argc, char *argv[]) {
 
   return 0;
 }
-
-
-
