@@ -396,7 +396,6 @@ struct AnalyticalDirihletBC {
     ierr = m_field.modify_finite_element_add_field_row(fe,field); CHKERRQ(ierr);
     ierr = m_field.modify_finite_element_add_field_col(fe,field); CHKERRQ(ierr);
     ierr = m_field.modify_finite_element_add_field_data(fe,field); CHKERRQ(ierr);
-    ierr = m_field.modify_finite_element_add_field_data(fe,field); CHKERRQ(ierr);
     if(m_field.check_field(nodals_positions)) {
       ierr = m_field.modify_finite_element_add_field_data(fe,nodals_positions); CHKERRQ(ierr);
     }

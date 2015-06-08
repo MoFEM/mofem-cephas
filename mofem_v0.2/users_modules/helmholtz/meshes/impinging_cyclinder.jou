@@ -61,10 +61,9 @@ block 6 element type tetra10
 
 
 
-save as "/Users/....../Desktop/impinging_cylinder.cub" overwrit
+save as "/Users/xuanmeng/Desktop/U_pan/helmholtz_results/impinging_cylinder.cub" overwrit
 
-
-
+#save as "/Users/xuanmeng/Documents/mofem-cephas/mofem_v0.2/users_modules/helmholtz/meshes/impinging_cylinder.cub" overwrit
 
 
 
