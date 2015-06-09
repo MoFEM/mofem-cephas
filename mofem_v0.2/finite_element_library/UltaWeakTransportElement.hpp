@@ -26,8 +26,13 @@ namespace MoFEM {
 /** \brief Ultra weak transport problem
   \ingroup mofem_ultra_weak_transport_elem
 
-  Note to solve this system you need to use direct solver or propper preconditioner
-  for sadlle problem.
+  Note to solve this system you need to use direct solver or proper pre-conditioner
+  for saddle problem.
+
+  See:
+  DIFFERENTIAL COMPLEXES AND STABILITY OF FINITE ELEMENT METHODS I. THE DE RHAM COMPLEX
+  DOUGLAS N. ARNOLD, RICHARD S. FALK, AND RAGNAR WINTHER
+  <http://www.ima.umn.edu/~arnold//papers/nacomplexes.pdf>
 
 */
 struct UltraWeakTransportElement {
@@ -187,7 +192,7 @@ struct UltraWeakTransportElement {
     PetscFunctionReturn(0);
   }
 
-  /** \brief tau,sigma in Hdiv, calculates Aij = Asemble int sigma_dot_tau dTet
+  /** \brief tau,sigma in Hdiv, calculates Aij = Assemble int sigma_dot_tau dTet
 
   \f[
   A_{ij} = \int_{\Omega^e} \sigma_{i} \mathbf{C} \tau_{j} \textrm{d}V
@@ -332,7 +337,7 @@ struct UltraWeakTransportElement {
 
   };
 
-  /** \brief u in L2 and tau in Hdiv, calculates Aij = Asemble int u * div(tau) dTet
+  /** \brief u in L2 and tau in Hdiv, calculates Aij = Assemble int u * div(tau) dTet
     */
   struct OpDivTauU_HdivL2: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
