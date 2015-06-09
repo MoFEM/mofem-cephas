@@ -72,6 +72,7 @@ extern "C" {
 
 #include <GriffithForceElement.hpp>
 #include <Smoother.hpp>
+#include <SurfaceSlidingConstrains.hpp>
 
 #include <PostProcOnRefMesh.hpp>
 #include <PostProcStresses.hpp>
