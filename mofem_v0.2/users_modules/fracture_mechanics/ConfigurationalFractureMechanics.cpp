@@ -1714,10 +1714,56 @@ PetscErrorCode ConfigurationalFractureMechanics::surface_projection_data(FieldIn
   ierr = m_field.get_entities_by_type_and_ref_level(bit_to_block,BitRefLevel().set(),MBVERTEX,nodes_to_block); CHKERRQ(ierr);
   corners_nodes.merge(nodes_to_block);
 
+  ierr = MatSetOption(projSurfaceCtx->C,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
+  ierr = MatSetOption(projSurfaceCtx->C,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
+  ierr = MatZeroEntries(projSurfaceCtx->C); CHKERRQ(ierr);
+
+  SurfaceSlidingConstrains surface_constrain(m_field);
+  SurfaceSlidingConstrains surface_crack_constrain(m_field);
+  boost::ptr_map<int,SurfaceSlidingConstrains> surface_constrains_map;
+  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,SIDESET,it)) {
+    int msId = it->get_msId();
+    surface_constrains_map.insert(msId,new SurfaceSlidingConstrains(m_field));
+  }
+
+  surface_constrain.setOperatorsCOnly("LAMBDA_SURFACE","MESH_NODE_POSITIONS");
+  surface_crack_constrain.setOperatorsCOnly("LAMBDA_CRACK_SURFACE","MESH_NODE_POSITIONS");
+  for(
+    boost::ptr_map<int,SurfaceSlidingConstrains>::iterator it = surface_constrains_map.begin();
+    it!=surface_constrains_map.end();
+    it++
+  ) {
+    int msId =  it->first;
+    if((msId < 10200)||(msId >= 10300)) continue;
+    ostringstream ss;
+    ss << "LAMBDA_SURFACE_msId_" << msId;
+    ierr = it->second->setOperatorsCOnly(ss.str(),"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+  }
+
+  surface_constrain.feLhs.snes_B = projSurfaceCtx->C;
+  ierr = m_field.loop_finite_elements(
+    "C_ALL_MATRIX","C_SURFACE_ELEM",surface_constrain.feLhs
+  ); CHKERRQ(ierr);
+
+  surface_crack_constrain.feLhs.snes_B = projSurfaceCtx->C;
+  ierr = m_field.loop_finite_elements(
+    "C_ALL_MATRIX","C_CRACK_SURFACE_ELEM",surface_crack_constrain.feLhs
+  );  CHKERRQ(ierr);
+  for(
+    boost::ptr_map<int,SurfaceSlidingConstrains>::iterator it = surface_constrains_map.begin();
+    it!=surface_constrains_map.end();
+    it++
+  ) {
+    ostringstream ss;
+    ss << "C_SURFACE_ELEM_msId_" << it->first;
+    it->second->feLhs.snes_B = projSurfaceCtx->C;
+    ierr = m_field.loop_finite_elements("C_ALL_MATRIX",ss.str(),it->second->feLhs);  CHKERRQ(ierr);
+  }
+
+  /*
   //Loops over body surface (CFE_SURFACE) and crack surface (CFE_CRACK_SURFACE)
   ConstrainSurfacGeometry CFE_SURFACE(m_field,projSurfaceCtx->C);
   ConstrainSurfacGeometry CFE_CRACK_SURFACE(m_field,projSurfaceCtx->C,"LAMBDA_CRACK_SURFACE");
-
   map<int,ConstrainSurfacGeometry*> CFE_SURFACE_msId_ptr;
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,SIDESET,it)) {
     int msId = it->get_msId();
@@ -1727,10 +1773,6 @@ PetscErrorCode ConfigurationalFractureMechanics::surface_projection_data(FieldIn
     CFE_SURFACE_msId_ptr[msId] = new ConstrainSurfacGeometry(m_field,projSurfaceCtx->C,ss.str());
   }
 
-  ierr = MatSetOption(projSurfaceCtx->C,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
-  ierr = MatSetOption(projSurfaceCtx->C,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
-
-  ierr = MatZeroEntries(projSurfaceCtx->C); CHKERRQ(ierr);
   ierr = m_field.loop_finite_elements("C_ALL_MATRIX","C_SURFACE_ELEM",CFE_SURFACE);  CHKERRQ(ierr);
   //ierr = m_field.loop_finite_elements("C_ALL_MATRIX","C_CRACK_SURFACE_ELEM",CFE_CRACK_SURFACE);  CHKERRQ(ierr);
   for(map<int,ConstrainSurfacGeometry*>::iterator mit = CFE_SURFACE_msId_ptr.begin();
@@ -1739,14 +1781,15 @@ PetscErrorCode ConfigurationalFractureMechanics::surface_projection_data(FieldIn
     ss0 << "C_SURFACE_ELEM_msId_" << mit->first;
     ierr = m_field.loop_finite_elements("C_ALL_MATRIX",ss0.str(),*(mit->second));  CHKERRQ(ierr);
   }
+  */
 
   ierr = MatAssemblyBegin(projSurfaceCtx->C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
   ierr = MatAssemblyEnd(projSurfaceCtx->C,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 
-  for(map<int,ConstrainSurfacGeometry*>::iterator mit = CFE_SURFACE_msId_ptr.begin();
+  /*for(map<int,ConstrainSurfacGeometry*>::iterator mit = CFE_SURFACE_msId_ptr.begin();
     mit!=CFE_SURFACE_msId_ptr.end();mit++) {
     delete mit->second;
-  }
+  }*/
 
   /*{
     //Matrix View

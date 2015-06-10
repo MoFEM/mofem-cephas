@@ -202,33 +202,47 @@ struct SurfaceSlidingConstrains {
 
     PetscErrorCode matrixN(int gg,DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
-      int nb_dofs = data.getN().size2();
-      N.resize(3,3*nb_dofs,false);
-      N.clear();
-      for(int ii = 0;ii<nb_dofs;ii++) {
-        for(int jj = 0;jj<3;jj++) {
-          N(jj,ii*3+jj) = data.getN(gg)[ii];
+      try {
+
+        int nb_dofs = data.getN().size2();
+        N.resize(3,3*nb_dofs,false);
+        N.clear();
+        for(int ii = 0;ii<nb_dofs;ii++) {
+          for(int jj = 0;jj<3;jj++) {
+            N(jj,ii*3+jj) = data.getN(gg)[ii];
+          }
         }
+
+      } catch (const std::exception& ex) {
+        ostringstream ss;
+        ss << "throw in method: " << ex.what() << endl;
+        SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
       PetscFunctionReturn(0);
     }
 
     PetscErrorCode matrixB(int gg,DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
-      int nb_dofs = data.getN().size2();
-      Bksi.resize(3,3*nb_dofs,false);
-      Bksi.clear();
-      for(int ii = 0;ii<nb_dofs;ii++) {
-        for(int jj = 0;jj<3;jj++) {
-          Bksi(jj,ii*3+jj) = data.getDiffN(gg)(ii,0);
+      try {
+        int nb_dofs = data.getN().size2();
+        Bksi.resize(3,3*nb_dofs,false);
+        Bksi.clear();
+        for(int ii = 0;ii<nb_dofs;ii++) {
+          for(int jj = 0;jj<3;jj++) {
+            Bksi(jj,ii*3+jj) = data.getDiffN(gg)(ii,0);
+          }
         }
-      }
-      Beta.resize(3,3*nb_dofs);
-      Beta.clear();
-      for(int ii = 0;ii<nb_dofs;ii++) {
-        for(int jj = 0;jj<3;jj++) {
-          Beta(jj,ii*3+jj) = data.getDiffN(gg)(ii,1);
+        Beta.resize(3,3*nb_dofs);
+        Beta.clear();
+        for(int ii = 0;ii<nb_dofs;ii++) {
+          for(int jj = 0;jj<3;jj++) {
+            Beta(jj,ii*3+jj) = data.getDiffN(gg)(ii,1);
+          }
         }
+      } catch (const std::exception& ex) {
+        ostringstream ss;
+        ss << "throw in method: " << ex.what() << endl;
+        SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
       PetscFunctionReturn(0);
     }
@@ -237,17 +251,19 @@ struct SurfaceSlidingConstrains {
     PetscErrorCode calculateNormal() {
       PetscFunctionBegin;
       PetscErrorCode ierr;
-
-      sPin.resize(3,3,false);
-      ierr = calcSpin(sPin,dXdKsi); CHKERRQ(ierr);
-      nOrmal.resize(3,false);
-      noalias(nOrmal) = 0.5*prod(sPin,dXdEta);
-      aRea = norm_2(nOrmal);
+      try {
+        sPin.resize(3,3,false);
+        ierr = calcSpin(sPin,dXdKsi); CHKERRQ(ierr);
+        nOrmal.resize(3,false);
+        noalias(nOrmal) = 0.5*prod(sPin,dXdEta);
+        aRea = norm_2(nOrmal);
+      } catch (const std::exception& ex) {
+        ostringstream ss;
+        ss << "throw in method: " << ex.what() << endl;
+        SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+      }
       PetscFunctionReturn(0);
     }
-
-
-
   };
 
   vector<AuxFunctions> cUrrent,rEference;
@@ -257,7 +273,7 @@ struct SurfaceSlidingConstrains {
     vector<AuxFunctions> &aUx;
 
     OpPositions(const string field_name,vector<AuxFunctions> &aux):
-    FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
+    FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPCOL),
     aUx(aux) {
     }
 
@@ -265,30 +281,40 @@ struct SurfaceSlidingConstrains {
       PetscFunctionBegin;
       PetscErrorCode ierr;
 
-      int nb_dofs = data.getFieldData().size();
-      if(nb_dofs == 0) {
-        PetscFunctionReturn(0);
-      }
-      int nb_gauss_pts = data.getN().size1();
+      try {
 
-      aUx.resize(nb_gauss_pts);
-
-      if(type == MBVERTEX) {
-        for(int gg = 0;gg<nb_gauss_pts;gg++) {
-          aUx[gg].pOsition.resize(3,false);
-          aUx[gg].pOsition.clear();
-          aUx[gg].dXdKsi.resize(3,false);
-          aUx[gg].dXdKsi.clear();
-          aUx[gg].dXdEta.resize(3,false);
+        int nb_dofs = data.getFieldData().size();
+        if(nb_dofs == 0) {
+          PetscFunctionReturn(0);
         }
-      }
+        int nb_gauss_pts = data.getN().size1();
 
-      for(int gg = 0;gg<nb_gauss_pts;gg++) {
-        ierr = aUx[gg].matrixN(gg,data); CHKERRQ(ierr);
-        noalias(aUx[gg].pOsition) += prod(aUx[gg].N,data.getFieldData());
-        ierr = aUx[gg].matrixB(gg,data); CHKERRQ(ierr);
-        noalias(aUx[gg].dXdKsi) += prod(aUx[gg].Bksi,data.getFieldData());
-        noalias(aUx[gg].dXdEta) += prod(aUx[gg].Beta,data.getFieldData());
+        aUx.resize(nb_gauss_pts);
+
+        if(type == MBVERTEX) {
+          for(int gg = 0;gg<nb_gauss_pts;gg++) {
+            aUx[gg].pOsition.resize(3,false);
+            aUx[gg].pOsition.clear();
+            aUx[gg].dXdKsi.resize(3,false);
+            aUx[gg].dXdKsi.clear();
+            aUx[gg].dXdEta.resize(3,false);
+            aUx[gg].dXdEta.clear();
+          }
+        }
+
+        for(int gg = 0;gg<nb_gauss_pts;gg++) {
+          ierr = aUx[gg].matrixN(gg,data); CHKERRQ(ierr);
+          noalias(aUx[gg].pOsition) += prod(aUx[gg].N,data.getFieldData());
+          ierr = aUx[gg].matrixB(gg,data); CHKERRQ(ierr);
+          noalias(aUx[gg].dXdKsi) += prod(aUx[gg].Bksi,data.getFieldData());
+          noalias(aUx[gg].dXdEta) += prod(aUx[gg].Beta,data.getFieldData());
+        }
+
+
+      } catch (const std::exception& ex) {
+        ostringstream ss;
+        ss << "throw in method: " << ex.what() << endl;
+        SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
       PetscFunctionReturn(0);
@@ -310,24 +336,31 @@ struct SurfaceSlidingConstrains {
       PetscFunctionBegin;
       //PetscErrorCode ierr;
 
-      int nb_dofs = data.getFieldData().size();
-      if(nb_dofs == 0) {
-        PetscFunctionReturn(0);
-      }
-      int nb_gauss_pts = data.getN().size1();
+      try {
 
-      aUx.resize(nb_gauss_pts);
-
-      if(type == MBVERTEX) {
-        for(int gg = 0;gg<nb_gauss_pts;gg++) {
-          aUx[gg].lAmbda = 0;
+        int nb_dofs = data.getFieldData().size();
+        if(nb_dofs == 0) {
+          PetscFunctionReturn(0);
         }
-      }
+        int nb_gauss_pts = data.getN().size1();
+        aUx.resize(nb_gauss_pts);
 
-      for(int gg = 0;gg<nb_gauss_pts;gg++) {
+        if(type == MBVERTEX) {
+          for(int gg = 0;gg<nb_gauss_pts;gg++) {
+            aUx[gg].lAmbda = 0;
+          }
+        }
 
-        aUx[gg].lAmbda += inner_prod(data.getN(gg),data.getFieldData());
+        for(int gg = 0;gg<nb_gauss_pts;gg++) {
 
+          aUx[gg].lAmbda += inner_prod(data.getN(gg),data.getFieldData());
+
+        }
+
+      } catch (const std::exception& ex) {
+        ostringstream ss;
+        ss << "throw in method: " << ex.what() << endl;
+        SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
       PetscFunctionReturn(0);
@@ -436,13 +469,76 @@ struct SurfaceSlidingConstrains {
 
   };
 
+  struct OpGFromMeshCoords: FaceElementForcesAndSourcesCore::UserDataOperator {
+
+    vector<AuxFunctions> &aUx;
+    double aLpha;
+
+    OpGFromMeshCoords(const string field_name,vector<AuxFunctions> &aux,double alpha):
+    FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROWCOL),
+    aUx(aux),
+    aLpha(alpha) {}
+
+    ublas::vector<double> g;
+
+    PetscErrorCode doWork(
+      int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data
+    ) {
+
+      PetscErrorCode ierr;
+
+      int nb_dofs = row_data.getFieldData().size();
+      if(nb_dofs == 0) {
+        PetscFunctionReturn(0);
+      }
+      int nb_gauss_pts = row_data.getN().size1();
+
+      g.resize(nb_dofs,false);
+      g.clear();
+
+      for(int gg = 0;gg<nb_gauss_pts;gg++) {
+
+        double val = getGaussPts()(2,gg);
+        double r;
+        for(int dd = 0;dd!=3;dd++) {
+          r = 0.5*getNormal()[dd]*getCoordsAtGaussPts()(gg,dd);
+        }
+        noalias(g) += val*aLpha*row_data.getN(gg)*r;
+
+      }
+
+      int *indices_ptr = &row_data.getIndices()[0];
+
+      ierr = VecSetValues(
+        getFEMethod()->snes_f,
+        nb_dofs,
+        indices_ptr,
+        &g[0],
+        ADD_VALUES
+      ); CHKERRQ(ierr);
+
+      PetscFunctionReturn(0);
+    }
+
+  };
+
   struct OpC: public FaceElementForcesAndSourcesCore::UserDataOperator {
 
     vector<AuxFunctions> &aUx;
+    bool assembleTranspose;
 
-    OpC(const string field_name,vector<AuxFunctions> &aux):
-    FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROWCOL),
-    aUx(aux) {
+    OpC(
+      const string lambda_field_name,
+      const string positions_field_name,
+      vector<AuxFunctions> &aux,
+      bool assemble_transpose):
+    FaceElementForcesAndSourcesCore::UserDataOperator(
+      lambda_field_name,
+      positions_field_name,
+      UserDataOperator::OPROWCOL
+    ),
+    aUx(aux),
+    assembleTranspose(assemble_transpose) {
       sYmm = false;
     }
 
@@ -460,56 +556,66 @@ struct SurfaceSlidingConstrains {
       PetscFunctionBegin;
       PetscErrorCode ierr;
 
+      try {
 
-      int nb_row = row_data.getIndices().size();
-      int nb_col = col_data.getIndices().size();
-      if(!nb_row || !nb_col) {
-        PetscFunctionReturn(0);
-      }
-
-      int nb_gauss_pts = row_data.getN().size1();
-
-      if(row_type == MBVERTEX) {
-        for(int gg = 0;gg<nb_gauss_pts;gg++) {
-          aUx[gg].nOrmal.resize(3,false);
-          aUx[gg].nOrmal.clear();
-          aUx[gg].calculateNormal();
+        int nb_row = row_data.getIndices().size();
+        int nb_col = col_data.getIndices().size();
+        if(!nb_row || !nb_col) {
+          PetscFunctionReturn(0);
         }
+
+        int nb_gauss_pts = row_data.getN().size1();
+
+        if(row_type == MBVERTEX) {
+          for(int gg = 0;gg<nb_gauss_pts;gg++) {
+            aUx[gg].nOrmal.resize(3,false);
+            aUx[gg].nOrmal.clear();
+            aUx[gg].calculateNormal();
+          }
+        }
+
+
+        c.resize(nb_col,false);
+        C.resize(nb_row,nb_col,false);
+        C.clear();
+        for(int gg = 0;gg<nb_gauss_pts;gg++) {
+
+          //ierr = aUx[gg].matrixN(gg,col_data); CHKERRQ(ierr);
+          noalias(c) = prod(aUx[gg].nOrmal,aUx[gg].N);
+          double val = getGaussPts()(2,gg);
+          noalias(C) += val*outer_prod(row_data.getN(gg),c);
+
+        }
+
+        int *row_indices_ptr = &row_data.getIndices()[0];
+        int *col_indices_ptr = &col_data.getIndices()[0];
+
+        ierr = MatSetValues(
+          getFEMethod()->snes_B,
+          nb_row,row_indices_ptr,
+          nb_col,col_indices_ptr,
+          &C(0,0),ADD_VALUES
+        ); CHKERRQ(ierr);
+
+        if(assembleTranspose) {
+
+          transC.resize(nb_col,nb_row);
+          noalias(transC) = trans(C);
+
+          ierr = MatSetValues(
+            getFEMethod()->snes_B,
+            nb_col,col_indices_ptr,
+            nb_row,row_indices_ptr,
+            &transC(0,0),ADD_VALUES
+          ); CHKERRQ(ierr);
+
+        }
+
+      } catch (const std::exception& ex) {
+        ostringstream ss;
+        ss << "throw in method: " << ex.what() << endl;
+        SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
-
-
-      c.resize(nb_row,false);
-      C.resize(nb_row,nb_col,false);
-      C.clear();
-      for(int gg = 0;gg<nb_gauss_pts;gg++) {
-
-        double val = getGaussPts()(2,gg);
-        ierr = aUx[gg].matrixN(gg,col_data); CHKERRQ(ierr);
-        noalias(c) = prod(aUx[gg].nOrmal,aUx[gg].N);
-        noalias(C) += val*outer_prod(row_data.getN(gg),c);
-
-      }
-
-      int *row_indices_ptr = &row_data.getIndices()[0];
-      int *col_indices_ptr = &col_data.getIndices()[0];
-
-      ierr = MatSetValues(
-        getFEMethod()->snes_B,
-        nb_row,row_indices_ptr,
-        nb_col,col_indices_ptr,
-        &C(0,0),ADD_VALUES
-      ); CHKERRQ(ierr);
-
-      transC.resize(nb_col,nb_row);
-      noalias(transC) = trans(C);
-
-      ierr = MatSetValues(
-        getFEMethod()->snes_B,
-        nb_col,col_indices_ptr,
-        nb_row,row_indices_ptr,
-        &transC(0,0),ADD_VALUES
-      ); CHKERRQ(ierr);
-
       PetscFunctionReturn(0);
     }
 
@@ -583,6 +689,67 @@ struct SurfaceSlidingConstrains {
     }
 
   };
+
+  PetscErrorCode setOperatorsCOnly(
+    const string lagrange_multipliers_field_name,
+    const string material_field_name) {
+    PetscFunctionBegin;
+
+    // Adding operators to calculate the left hand side
+    feLhs.getOpPtrVector().push_back(
+      new OpPositions(material_field_name,cUrrent)
+    );
+    feLhs.getOpPtrVector().push_back(
+      new OpLambda(lagrange_multipliers_field_name,cUrrent)
+    );
+    feLhs.getOpPtrVector().push_back(
+      new OpC(lagrange_multipliers_field_name,material_field_name,cUrrent,false)
+    );
+
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode setOperatorsWithLinearGeometry(
+    const string lagrange_multipliers_field_name,
+    const string material_field_name,
+    bool assemble_transpose,
+    bool add_nonlinear_term
+  ) {
+    PetscFunctionBegin;
+
+    // Adding operators to calculate the right hand side
+    feRhs.getOpPtrVector().push_back(
+      new OpPositions(material_field_name,cUrrent)
+    );
+    feRhs.getOpPtrVector().push_back(
+      new OpLambda(lagrange_multipliers_field_name,cUrrent)
+    );
+    feRhs.getOpPtrVector().push_back(
+      new OpF(material_field_name,cUrrent)
+    );
+    feRhs.getOpPtrVector().push_back(
+      new OpG(lagrange_multipliers_field_name,cUrrent,+1)
+    );
+    feRhs.getOpPtrVector().push_back(
+      new OpGFromMeshCoords(lagrange_multipliers_field_name,cUrrent,-1)
+    );
+
+    // Adding operators to calculate the left hand side
+    feLhs.getOpPtrVector().push_back(
+      new OpPositions(material_field_name,cUrrent)
+    );
+    feLhs.getOpPtrVector().push_back(
+      new OpLambda(lagrange_multipliers_field_name,cUrrent)
+    );
+    feLhs.getOpPtrVector().push_back(
+      new OpC(lagrange_multipliers_field_name,material_field_name,cUrrent,assemble_transpose)
+    );
+    feLhs.getOpPtrVector().push_back(
+      new OpDiffC(material_field_name,cUrrent)
+    );
+
+    PetscFunctionReturn(0);
+  }
 
 };
 

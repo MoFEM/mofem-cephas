@@ -42,6 +42,8 @@ struct ForcesAndSurcesCore: public FEMethod {
     mField(_mField) {};
   virtual ~ForcesAndSurcesCore() {}
 
+  PetscErrorCode getNumberOfNodes(int &num_nodes);
+
   PetscErrorCode getSense(EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data);
   PetscErrorCode getOrder(const EntityType type,const FieldSpace space,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data);
   PetscErrorCode getOrder(const string &field_name,const EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data);
