@@ -1,4 +1,4 @@
-/** \file NonLienarElasticElement.hpp
+/** \file NonLinearElasticElement.hpp
  * \ingroup nonlinear_elastic_elem
  * \brief Operators and data structures for non-linear elastic analysis
  *

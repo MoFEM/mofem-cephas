@@ -33,7 +33,7 @@ using namespace MoFEM;
 #include <boost/numeric/ublas/vector.hpp>
 
 #include <adolc/adolc.h> 
-#include <NonLienarElasticElement.hpp>
+#include <NonLinearElasticElement.hpp>
 
 ErrorCode rval;
 PetscErrorCode ierr;

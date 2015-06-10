@@ -25,7 +25,7 @@ improvements.
 
 All Functions should be grouped in structures.
 
-Week constrains using Neitsche method should be used to enforce constrains
+Week constrains using Nitsche method should be used to enforce constrains
 on geometry.
 
 */

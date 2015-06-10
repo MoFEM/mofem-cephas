@@ -67,7 +67,7 @@ extern "C" {
 #include <MainCrackFunction.hpp>
 
 #include <adolc/adolc.h>
-#include <NonLienarElasticElement.hpp>
+#include <NonLinearElasticElement.hpp>
 #include <Hooke.hpp>
 
 #include <PostProcOnRefMesh.hpp>

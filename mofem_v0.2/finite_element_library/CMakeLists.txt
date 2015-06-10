@@ -49,7 +49,7 @@ set(MOFEM_FINITE_ELEMENT_LIBRARY_FILES
 if(ADOL-C_LIBRARY)
   set(MOFEM_FINITE_ELEMENT_LIBRARY_FILES
     ${MOFEM_FINITE_ELEMENT_LIBRARY_FILES}
-    ${PROJECT_SOURCE_DIR}/finite_element_library/impl/NonLienarElasticElement.cpp
+    ${PROJECT_SOURCE_DIR}/finite_element_library/impl/NonLinearElasticElement.cpp
   )
 endif(ADOL-C_LIBRARY)
 

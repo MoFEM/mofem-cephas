@@ -66,7 +66,7 @@ extern "C" {
 #include <ConfigurationalFractureMechanics.hpp>
 
 #include <adolc/adolc.h>
-#include <NonLienarElasticElement.hpp>
+#include <NonLinearElasticElement.hpp>
 #include <Hooke.hpp>
 #include <VolumeLengthQuality.hpp>
 

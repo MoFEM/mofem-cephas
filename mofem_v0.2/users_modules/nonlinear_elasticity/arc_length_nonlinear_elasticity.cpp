@@ -35,7 +35,7 @@ using namespace MoFEM;
 #include <DirichletBC.hpp>
 #include <ArcLengthTools.hpp>
 #include <adolc/adolc.h>
-#include <NonLienarElasticElement.hpp>
+#include <NonLinearElasticElement.hpp>
 #include <NeoHookean.hpp>
 
 #include <PostProcOnRefMesh.hpp>
