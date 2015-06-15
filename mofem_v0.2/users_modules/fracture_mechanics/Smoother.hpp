@@ -217,6 +217,10 @@ struct Smoother {
         }
       }
 
+      ierr = VecSetOption(
+        getFEMethod()->snes_f,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE
+      );  CHKERRQ(ierr);
+
       ierr = VecSetValues(
         getFEMethod()->snes_f,
         nb_dofs,
