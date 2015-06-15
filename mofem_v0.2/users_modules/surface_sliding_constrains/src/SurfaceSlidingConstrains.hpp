@@ -518,12 +518,11 @@ struct SurfaceSlidingConstrains {
   struct OpG: public FaceElementForcesAndSourcesCore::UserDataOperator {
 
     vector<AuxFunctions> &aUx;
-    double aLpha;
 
-    OpG(const string field_name,vector<AuxFunctions> &aux,double alpha):
+    OpG(const string field_name,vector<AuxFunctions> &aux):
     FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
-    aUx(aux),
-    aLpha(alpha) {}
+    aUx(aux)
+    {}
 
     ublas::vector<double> g,dElta;
 
@@ -554,7 +553,7 @@ struct SurfaceSlidingConstrains {
 
           double val = getGaussPts()(2,gg);
           double r = inner_prod(aUx[gg].nOrmal,dElta);
-          noalias(g) += val*aLpha*row_data.getN(gg)*r;
+          noalias(g) += val*row_data.getN(gg)*r;
 
         }
 
@@ -644,7 +643,6 @@ struct SurfaceSlidingConstrains {
         C.clear();
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
 
-          //ierr = aUx[gg].matrixN(gg,col_data); CHKERRQ(ierr);
           noalias(c) = prod(aUx[gg].nOrmal,aUx[gg].N);
           double val = getGaussPts()(2,gg);
           noalias(C) += val*outer_prod(row_data.getN(gg),c);
@@ -905,7 +903,7 @@ struct SurfaceSlidingConstrains {
       new OpF(material_field_name,cUrrent)
     );
     feRhs.getOpPtrVector().push_back(
-      new OpG(lagrange_multipliers_field_name,cUrrent,+1)
+      new OpG(lagrange_multipliers_field_name,cUrrent)
     );
 
     // Adding operators to calculate the left hand side
