@@ -267,6 +267,8 @@ struct SurfaceSlidingConstrains {
     double aRea;
     double lAmbda;
 
+    int elementOrientation;
+
     static PetscErrorCode calcSpin(
       ublas::matrix<double> &spin,ublas::vector<double> &vec
     ) {
@@ -279,6 +281,55 @@ struct SurfaceSlidingConstrains {
       spin(1,2) = -vec[0];
       spin(2,0) = -vec[1];
       spin(2,1) = +vec[0];
+      PetscFunctionReturn(0);
+    }
+
+    PetscErrorCode getElementOrientation(FieldInterface &m_field,const FEMethod *fe_method_ptr) {
+      PetscFunctionBegin;
+      ErrorCode rval;
+      PetscErrorCode ierr;
+      Range adj_side_elems;
+      EntityHandle face = fe_method_ptr->fePtr->get_ent();
+      BitRefLevel bit = fe_method_ptr->problemPtr->get_BitRefLevel();
+      ierr = m_field.get_adjacencies(bit,&face,1,3,adj_side_elems,Interface::INTERSECT,0); CHKERRQ(ierr);
+      adj_side_elems = adj_side_elems.subset_by_type(MBTET);
+      if(adj_side_elems.size()==0) {
+        Range adj_tets_on_surface;
+        BitRefLevel bit_tet_on_surface;
+        bit_tet_on_surface.set(BITREFLEVEL_SIZE-2);
+        ierr = m_field.get_adjacencies(bit_tet_on_surface,&face,1,3,adj_tets_on_surface,Interface::INTERSECT,0); CHKERRQ(ierr);
+        adj_side_elems.insert(*adj_tets_on_surface.begin());
+      }
+      if(adj_side_elems.size()!=1) {
+        adj_side_elems.clear();
+        ierr = m_field.get_adjacencies(bit,&face,1,3,adj_side_elems,Interface::INTERSECT,5); CHKERRQ(ierr);
+        Range::iterator it = adj_side_elems.begin();
+        for(;it!=adj_side_elems.end();it++) {
+          Range nodes;
+          rval = m_field.get_moab().get_connectivity(&*it,1,nodes,true); CHKERR_PETSC(rval);
+          PetscPrintf(PETSC_COMM_WORLD,"Connectivity %lu %lu %lu %lu\n",nodes[0],nodes[1],nodes[2],nodes[3]);
+        }
+        int rank;
+        MPI_Comm_rank(m_field.get_comm(),&rank);
+        if(rank==0) {
+          EntityHandle out_meshset;
+          rval = m_field.get_moab().create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
+          rval = m_field.get_moab().add_entities(out_meshset,adj_side_elems); CHKERR_PETSC(rval);
+          rval = m_field.get_moab().add_entities(out_meshset,&face,1); CHKERR_PETSC(rval);
+          rval = m_field.get_moab().write_file("debug_error.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
+        }
+        SETERRQ1(PETSC_COMM_SELF,1,"Expect 1 tet but is %u",adj_side_elems.size());
+      }
+      EntityHandle side_elem = *adj_side_elems.begin();
+      if(side_elem!=0) {
+        int side_number,sense,offset;
+        rval = m_field.get_moab().side_number(side_elem,face,side_number,sense,offset); CHKERR_PETSC(rval);
+        if(sense == -1) {
+          elementOrientation = -1;
+        } else {
+          elementOrientation = +1;
+        }
+      }
       PetscFunctionReturn(0);
     }
 
@@ -329,7 +380,6 @@ struct SurfaceSlidingConstrains {
       PetscFunctionReturn(0);
     }
 
-
     PetscErrorCode calculateNormal() {
       PetscFunctionBegin;
       PetscErrorCode ierr;
@@ -337,7 +387,7 @@ struct SurfaceSlidingConstrains {
         sPin.resize(3,3,false);
         ierr = calcSpin(sPin,dXdKsi); CHKERRQ(ierr);
         nOrmal.resize(3,false);
-        noalias(nOrmal) = 0.5*prod(sPin,dXdEta);
+        noalias(nOrmal) = elementOrientation*0.5*prod(sPin,dXdEta);
         aRea = norm_2(nOrmal);
       } catch (const std::exception& ex) {
         ostringstream ss;
@@ -350,7 +400,7 @@ struct SurfaceSlidingConstrains {
 
   vector<AuxFunctions> cUrrent,rEference;
 
-  /** \brief Operator calculate matererial positions and tangent vectors to element surface
+  /** \brief Operator calculate material positions and tangent vectors to element surface
    */
   struct OpPositions: public FaceElementForcesAndSourcesCore::UserDataOperator {
 
@@ -440,7 +490,7 @@ struct SurfaceSlidingConstrains {
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
 
           aUx[gg].lAmbda += inner_prod(data.getN(gg),data.getFieldData());
-          
+
           if(aUx[gg].lAmbda!=aUx[gg].lAmbda) {
             SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"NaN value");
           }
@@ -459,7 +509,7 @@ struct SurfaceSlidingConstrains {
 
   };
 
-  /** \brief Operator calulate \f$\overline{\lambda}\mathbf{C}^\mathsf{T}\f$
+  /** \brief Operator calculate \f$\overline{\lambda}\mathbf{C}^\mathsf{T}\f$
   */
   struct OpF: public FaceElementForcesAndSourcesCore::UserDataOperator {
 
@@ -489,6 +539,11 @@ struct SurfaceSlidingConstrains {
           for(int gg = 0;gg<nb_gauss_pts;gg++) {
             aUx[gg].nOrmal.resize(3,false);
             aUx[gg].nOrmal.clear();
+            if(gg == 0) {
+              aUx[gg].getElementOrientation(getTriFE()->mField,getFEMethod());
+            } else {
+              aUx[gg].elementOrientation = aUx[0].elementOrientation;
+            }
             aUx[gg].calculateNormal();
           }
         }
@@ -644,6 +699,11 @@ struct SurfaceSlidingConstrains {
           for(int gg = 0;gg<nb_gauss_pts;gg++) {
             aUx[gg].nOrmal.resize(3,false);
             aUx[gg].nOrmal.clear();
+            if(gg == 0) {
+              aUx[gg].getElementOrientation(getTriFE()->mField,getFEMethod());
+            } else {
+              aUx[gg].elementOrientation = aUx[0].elementOrientation;
+            }
             aUx[gg].calculateNormal();
           }
         }
