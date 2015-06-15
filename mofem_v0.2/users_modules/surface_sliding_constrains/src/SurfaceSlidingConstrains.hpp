@@ -440,13 +440,18 @@ struct SurfaceSlidingConstrains {
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
 
           aUx[gg].lAmbda += inner_prod(data.getN(gg),data.getFieldData());
+          
+          if(aUx[gg].lAmbda!=aUx[gg].lAmbda) {
+            SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"NaN value");
+          }
 
         }
+
 
       } catch (const std::exception& ex) {
         ostringstream ss;
         ss << "throw in method: " << ex.what() << endl;
-        SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+        SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
       }
 
       PetscFunctionReturn(0);
@@ -660,6 +665,14 @@ struct SurfaceSlidingConstrains {
 
         int *row_indices_ptr = &row_data.getIndices()[0];
         int *col_indices_ptr = &col_data.getIndices()[0];
+
+        for(int n1 = 0; n1 != C.size1();n1++) {
+          for(int n2 = 0; n2 != C.size1();n2++) {
+            if(C(n1,n2)!=C(n1,n2)) {
+              SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"NaN value");
+            }
+          }
+        }
 
         ierr = MatSetValues(
           getFEMethod()->snes_B,
