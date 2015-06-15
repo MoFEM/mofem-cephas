@@ -62,16 +62,16 @@
   \mathcal{r} =
   \frac{\mathbf{N}}{\|\mathbf{N}\|}\cdot \mathbf{X}
   -
-  \frac{\mathbf{N_0}}{\|\mathbf{N_0}\|}\cdot \mathbf{X}_0 = 0
+  \frac{\mathbf{N_0}}{\|\mathbf{N_0}\|}\cdot \mathbf{X}_0 =
+  \frac{\mathbf{N}}{\|\mathbf{N}\|}\cdot (\mathbf{X}-\mathbf{X}_0)
   \f]
 
   \f[
   \int_\Gamma \mathbf{N}^\mathsf{T}_\lambda
    \left(
-     \frac{\mathbf{N}}{\|\mathbf{N}\|}\mathbf{N}_\mathbf{X}\cdot\overline{\mathbf{X}}
-     -
-     \frac{\mathbf{N}_0}{\|\mathbf{N}_0\|}\cdot\mathbf{X}_0
-   \right)
+     \frac{\mathbf{N}}{\|\mathbf{N}\|}\mathbf{N}_\mathbf{X}\cdot
+     (\overline{\mathbf{X}}-\overline{\mathbf{X}}_0)
+  \right)
    \|\mathbf{N}\|
   \textrm{d}\Gamma
    =
@@ -84,7 +84,7 @@
     \left\{
     \mathbf{N}\mathbf{N}_\mathbf{X}
     +
-    \left(\mathbf{X}-\frac{\mathbf{N}_0\cdot\mathbf{X}_0}{\|\mathbf{N}_0\|}\frac{\mathbf{N}}{\|\mathbf{N}\|}\right) \cdot
+    \left(\mathbf{X}-\mathbf{X}_0\right) \cdot
     \left(
     \textrm{Spin}\left[\frac{\partial\mathbf{X}}{\partial\xi}\right]\cdot\mathbf{B}_\eta
     -
@@ -97,11 +97,7 @@
     \overline{\mathbf{X}}\\
     =
     &\int_\Gamma \mathbf{N}^\mathsf{T}_\lambda
-    \left(
-    \mathbf{N}\cdot\mathbf{X}
-    -
-    \frac{\|\mathbf{N}\|\mathbf{N}_0}{\|\mathbf{N}_0\|}\cdot\mathbf{X}_0
-    \right)
+    \mathbf{N}\cdot(\mathbf{X}-\mathbf{X}_0)
     \textrm{d}\Gamma
   \end{split}
   \f]
@@ -157,15 +153,15 @@
   \f]
 
   \f[
-  \mathbf{A}=\int_\Gamma
-    \mathbf{N}^\mathsf{T}_\lambda
-    \left(\mathbf{X}-\frac{\mathbf{N}_0\cdot\mathbf{X}_0}{\|\mathbf{N}_0\|}\frac{\mathbf{N}}{\|\mathbf{N}\|}\right) \cdot
-    \left(
-    \textrm{Spin}\left[\frac{\partial\mathbf{X}}{\partial\xi}\right]\cdot\mathbf{B}_\eta
-    -
-    \textrm{Spin}\left[\frac{\partial\mathbf{X}}{\partial\eta}\right]\cdot\mathbf{B}_\xi
-    \right)
-    \textrm{d}\Gamma
+  \mathbf{A}=
+  \int_\Gamma
+  \mathbf{N}^\mathsf{T}_\lambda
+\left(\mathbf{X}-\mathbf{X}_0\right) \cdot
+\left(
+\textrm{Spin}\left[\frac{\partial\mathbf{X}}{\partial\xi}\right]\cdot\mathbf{B}_\eta
+-
+\textrm{Spin}\left[\frac{\partial\mathbf{X}}{\partial\eta}\right]\cdot\mathbf{B}_\xi
+\right)
   \f]
 
   What result in additional terms in global system of equations
@@ -491,7 +487,7 @@ struct SurfaceSlidingConstrains {
 
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
 
-          double val = getGaussPts()(2,gg)*getArea();
+          double val = getGaussPts()(2,gg);
           noalias(c) = prod(aUx[gg].nOrmal,aUx[gg].N);
           noalias(nf) += val*aUx[gg].lAmbda*c;
 
@@ -529,7 +525,7 @@ struct SurfaceSlidingConstrains {
     aUx(aux),
     aLpha(alpha) {}
 
-    ublas::vector<double> g;
+    ublas::vector<double> g,dElta;
 
     PetscErrorCode doWork(
       int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data
@@ -545,13 +541,19 @@ struct SurfaceSlidingConstrains {
         }
         int nb_gauss_pts = row_data.getN().size1();
 
+        dElta.resize(3);
         g.resize(nb_dofs,false);
         g.clear();
 
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
 
+          noalias(dElta) =  aUx[gg].pOsition;
+          for(int dd = 0;dd<3;dd++) {
+            dElta[dd] -= getCoordsAtGaussPts()(gg,dd);
+          }
+
           double val = getGaussPts()(2,gg);
-          double r = inner_prod(aUx[gg].nOrmal,aUx[gg].pOsition);
+          double r = inner_prod(aUx[gg].nOrmal,dElta);
           noalias(g) += val*aLpha*row_data.getN(gg)*r;
 
         }
@@ -561,70 +563,6 @@ struct SurfaceSlidingConstrains {
         ierr = VecSetOption(
           getFEMethod()->snes_f,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE
         );  CHKERRQ(ierr);
-
-        ierr = VecSetValues(
-          getFEMethod()->snes_f,
-          nb_dofs,
-          indices_ptr,
-          &g[0],
-          ADD_VALUES
-        ); CHKERRQ(ierr);
-
-      } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
-        SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
-      }
-
-      PetscFunctionReturn(0);
-    }
-
-  };
-
-  struct OpGFromMeshCoords: FaceElementForcesAndSourcesCore::UserDataOperator {
-
-    vector<AuxFunctions> &aUx;
-    double aLpha;
-
-    OpGFromMeshCoords(const string field_name,vector<AuxFunctions> &aux,double alpha):
-    FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
-    aUx(aux),
-    aLpha(alpha) {}
-
-    ublas::vector<double> g;
-
-    PetscErrorCode doWork(
-      int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data
-    ) {
-
-      PetscErrorCode ierr;
-
-      try {
-
-        int nb_dofs = row_data.getFieldData().size();
-        if(nb_dofs == 0) {
-          PetscFunctionReturn(0);
-        }
-        int nb_gauss_pts = row_data.getN().size1();
-
-        g.resize(nb_dofs,false);
-        g.clear();
-
-        double nrm2 = norm_2(getNormal());
-
-        for(int gg = 0;gg<nb_gauss_pts;gg++) {
-
-          double val = getGaussPts()(2,gg);
-          double r = 0;
-          for(int dd = 0;dd!=3;dd++) {
-            r += getNormal()[dd]*getCoordsAtGaussPts()(gg,dd);
-          }
-          double a = aUx[gg].aRea/nrm2;
-          noalias(g) += val*a*aLpha*row_data.getN(gg)*r;
-
-        }
-
-        int *indices_ptr = &row_data.getIndices()[0];
 
         ierr = VecSetValues(
           getFEMethod()->snes_f,
@@ -832,11 +770,11 @@ struct SurfaceSlidingConstrains {
 
   };
 
-  struct OpA1: public FaceElementForcesAndSourcesCore::UserDataOperator {
+  struct OpA: public FaceElementForcesAndSourcesCore::UserDataOperator {
 
     vector<AuxFunctions> &aUx;
 
-    OpA1(
+    OpA(
       const string lagrange_multipliers_field_name,
       const string field_name,
       vector<AuxFunctions> &aux
@@ -852,6 +790,7 @@ struct SurfaceSlidingConstrains {
     ublas::vector<double> XdNormal;
     ublas::matrix<double> spindXdKsi,spindXdEta;
     ublas::matrix<double> dNormal,NXdNormal;
+    ublas::vector<double> dElta;
 
     ublas::matrix<double> A;
 
@@ -883,119 +822,26 @@ struct SurfaceSlidingConstrains {
         spindXdEta.resize(3,3,false);
         dNormal.resize(3,nb_col,false);
         NXdNormal.resize(nb_row,nb_col,false);
+        dElta.resize(3);
 
         A.resize(nb_row,nb_col,false);
         A.clear();
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
 
-          ierr = AuxFunctions::calcSpin(spindXdKsi,aUx[gg].dXdKsi); CHKERRQ(ierr);
-          ierr = AuxFunctions::calcSpin(spindXdEta,aUx[gg].dXdEta); CHKERRQ(ierr);
-
-          noalias(dNormal) = prod(spindXdKsi,aUx[gg].Beta)-prod(spindXdEta,aUx[gg].Bksi);
-          noalias(XdNormal) = prod(trans(aUx[gg].pOsition),dNormal);
-          noalias(NXdNormal) = outer_prod(row_data.getN(gg),XdNormal);
-
-          double val = getGaussPts()(2,gg);
-          noalias(A) += val*NXdNormal;
-
-        }
-
-        int *row_indices_ptr = &row_data.getIndices()[0];
-        int *col_indices_ptr = &col_data.getIndices()[0];
-
-        ierr = MatSetValues(
-          getFEMethod()->snes_B,
-          nb_row,row_indices_ptr,
-          nb_col,col_indices_ptr,
-          &A(0,0),ADD_VALUES
-        ); CHKERRQ(ierr);
-
-
-      } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
-        SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
-      }
-
-      PetscFunctionReturn(0);
-    }
-
-  };
-
-  struct OpA2FromMeshCoords: public FaceElementForcesAndSourcesCore::UserDataOperator {
-
-    vector<AuxFunctions> &aUx;
-    double aLpha;
-
-    OpA2FromMeshCoords(
-      const string lagrange_multipliers_field_name,
-      const string field_name,
-      vector<AuxFunctions> &aux,
-      double alpha
-    ):
-    FaceElementForcesAndSourcesCore::UserDataOperator(
-      lagrange_multipliers_field_name,field_name,UserDataOperator::OPROWCOL
-    ),
-    aUx(aux),
-    aLpha(alpha) {
-      sYmm = false;
-    }
-
-    ublas::vector<double> NdNormal;
-    ublas::matrix<double> spindXdKsi,spindXdEta;
-    ublas::matrix<double> dNormal,NNdNormal;
-
-    ublas::matrix<double> A;
-
-    PetscErrorCode doWork(
-      int row_side,int col_side,
-      EntityType row_type,EntityType col_type,
-      DataForcesAndSurcesCore::EntData &row_data,
-      DataForcesAndSurcesCore::EntData &col_data
-    ) {
-      PetscFunctionBegin;
-      PetscErrorCode ierr;
-
-      try {
-
-        int nb_row = row_data.getIndices().size();
-        int nb_col = col_data.getIndices().size();
-        if(!nb_row || !nb_col) {
-          PetscFunctionReturn(0);
-        }
-
-        int nb_gauss_pts = row_data.getN().size1();
-
-        for(int gg = 0;gg<nb_gauss_pts;gg++) {
-          ierr = aUx[gg].matrixB(gg,col_data); CHKERRQ(ierr);
-        }
-
-        NdNormal.resize(nb_col,false);
-        spindXdKsi.resize(3,3,false);
-        spindXdEta.resize(3,3,false);
-        dNormal.resize(3,nb_col,false);
-        NNdNormal.resize(nb_row,nb_col,false);
-
-        double nrm2 = norm_2(getNormal());
-
-        A.resize(nb_row,nb_col,false);
-        A.clear();
-        for(int gg = 0;gg<nb_gauss_pts;gg++) {
-
-          double r = 0;
-          for(int dd = 0;dd!=3;dd++) {
-            r += getNormal()[dd]*getCoordsAtGaussPts()(gg,dd)/nrm2;
+          noalias(dElta) =  aUx[gg].pOsition;
+          for(int dd = 0;dd<3;dd++) {
+            dElta[dd] -= getCoordsAtGaussPts()(gg,dd);
           }
 
           ierr = AuxFunctions::calcSpin(spindXdKsi,aUx[gg].dXdKsi); CHKERRQ(ierr);
           ierr = AuxFunctions::calcSpin(spindXdEta,aUx[gg].dXdEta); CHKERRQ(ierr);
 
           noalias(dNormal) = prod(spindXdKsi,aUx[gg].Beta)-prod(spindXdEta,aUx[gg].Bksi);
-          noalias(NdNormal) = prod(trans(aUx[gg].nOrmal),dNormal);
-          noalias(NNdNormal) = r*outer_prod(row_data.getN(gg),NdNormal);
+          noalias(XdNormal) = prod(trans(dElta),dNormal);
+          noalias(NXdNormal) = outer_prod(row_data.getN(gg),XdNormal);
 
           double val = getGaussPts()(2,gg);
-          noalias(A) += val*aLpha*NNdNormal;
+          noalias(A) += val*NXdNormal;
 
         }
 
@@ -1061,9 +907,6 @@ struct SurfaceSlidingConstrains {
     feRhs.getOpPtrVector().push_back(
       new OpG(lagrange_multipliers_field_name,cUrrent,+1)
     );
-    feRhs.getOpPtrVector().push_back(
-      new OpGFromMeshCoords(lagrange_multipliers_field_name,cUrrent,-1)
-    );
 
     // Adding operators to calculate the left hand side
     feLhs.getOpPtrVector().push_back(
@@ -1079,11 +922,8 @@ struct SurfaceSlidingConstrains {
       new OpB(material_field_name,cUrrent)
     );
     feLhs.getOpPtrVector().push_back(
-      new OpA1(lagrange_multipliers_field_name,material_field_name,cUrrent)
+      new OpA(lagrange_multipliers_field_name,material_field_name,cUrrent)
     );
-    //feLhs.getOpPtrVector().push_back(
-      //new OpA2FromMeshCoords(lagrange_multipliers_field_name,material_field_name,cUrrent,-1)
-    //);
 
     PetscFunctionReturn(0);
   }
