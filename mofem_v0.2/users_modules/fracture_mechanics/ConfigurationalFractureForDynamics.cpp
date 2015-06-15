@@ -1,5 +1,9 @@
 using namespace MoFEM;
 
+#include <FEMethod_SurfaceConstrains.hpp>
+#include <PostProcDisplacementAndStrainOnRefindedMesh.hpp>
+#include <PostProcNonLinearElasticityStresseOnRefindedMesh.hpp>
+
 #include <adolc/adolc.h>
 #include <ConvectiveMassElement.hpp>
 #include <TimeForceScale.hpp>

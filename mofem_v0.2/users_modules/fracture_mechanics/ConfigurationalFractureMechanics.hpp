@@ -81,15 +81,9 @@ struct ConfigurationalFractureMechanics {
     const EntityHandle root_meshset = m_field.get_moab().get_root_set();
     rval = m_field.get_moab().tag_get_by_ptr(th_my_ref_level,&root_meshset,1,(const void**)&ptr_bit_level0); CHKERR_THROW(rval);
 
-    fe_post_proc_stresses_method = NULL;
-
   };
 
-  ~ConfigurationalFractureMechanics() {
-    if(fe_post_proc_stresses_method!=NULL) {
-      delete fe_post_proc_stresses_method;
-    }
-  }
+  ~ConfigurationalFractureMechanics() {}
 
   PetscErrorCode set_material_fire_wall(FieldInterface& m_field);
   PetscErrorCode thermal_field(FieldInterface& m_field);
@@ -108,7 +102,6 @@ struct ConfigurationalFractureMechanics {
   PetscErrorCode set_material_positions(FieldInterface& m_field);
   PetscErrorCode set_coordinates_from_material_solution(FieldInterface& m_field,bool only_crack_front = false);
 
-  PostProcStressNonLinearElasticity *fe_post_proc_stresses_method;
   PetscErrorCode solve_spatial_problem(FieldInterface& m_field,SNES *snes,bool postproc = true);
 
   PetscErrorCode fix_all_but_one(FieldInterface& m_field,double da,Range &fix_nodes,const double fraction_treshold);

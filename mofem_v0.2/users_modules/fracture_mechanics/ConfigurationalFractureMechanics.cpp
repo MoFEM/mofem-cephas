@@ -39,10 +39,8 @@ using namespace MoFEM;
 
 #include <FEMethod_LowLevelStudent.hpp>
 #include <FEMethod_UpLevelStudent.hpp>
-#include <FEMethod_SurfaceConstrains.hpp>
 
 #include <PostProcVertexMethod.hpp>
-#include <PostProcDisplacementAndStrainOnRefindedMesh.hpp>
 
 extern "C" {
   #include <complex_for_lazy.h>
@@ -54,7 +52,6 @@ extern "C" {
 #include <FEMethod_DriverComplexForLazy.hpp>
 
 #include <SurfacePressureComplexForLazy.hpp>
-#include <PostProcNonLinearElasticityStresseOnRefindedMesh.hpp>
 
 #include <moab/Skinner.hpp>
 #include <moab/AdaptiveKDTree.hpp>
