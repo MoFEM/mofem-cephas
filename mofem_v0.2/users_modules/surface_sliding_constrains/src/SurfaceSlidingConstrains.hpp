@@ -294,6 +294,7 @@ struct SurfaceSlidingConstrains {
     double aRea;
     double lAmbda;
 
+    vector<bool> nodesWithoutLambda;
 
     static PetscErrorCode calcSpin(
       ublas::matrix<double> &spin,ublas::vector<double> &vec
@@ -481,6 +482,16 @@ struct SurfaceSlidingConstrains {
 
         }
 
+        if(type==MBVERTEX) {
+          aUx[0].nodesWithoutLambda.resize(nb_dofs);
+          for(int dd = 0;dd<nb_dofs;dd++) {
+            if(data.getIndices()[dd]==-1) {
+              aUx[0].nodesWithoutLambda[dd] = true;
+            } else {
+              aUx[0].nodesWithoutLambda[dd] = false;
+            }
+          }
+        }
 
       } catch (const std::exception& ex) {
         ostringstream ss;
@@ -507,7 +518,8 @@ struct SurfaceSlidingConstrains {
     {}
 
     ublas::vector<double> c;
-    ublas::vector<double> nf;
+    ublas::vector<double> nF;
+    ublas::vector<int> rowIndices;
 
     PetscErrorCode doWork(
       int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data
@@ -533,24 +545,42 @@ struct SurfaceSlidingConstrains {
         int eo = oRientation.elementOrientation;
 
         c.resize(nb_dofs,false);
-        nf.resize(nb_dofs,false);
-        nf.clear();
+        nF.resize(nb_dofs,false);
+        nF.clear();
 
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
 
           double val = getGaussPts()(2,gg);
           noalias(c) = prod(aUx[gg].nOrmal,aUx[gg].N);
-          noalias(nf) += val*eo*aUx[gg].lAmbda*c;
+          noalias(nF) += val*eo*aUx[gg].lAmbda*c;
 
         }
 
-        int *indices_ptr = &row_data.getIndices()[0];
 
+        rowIndices.resize(nb_dofs,false);
+        noalias(rowIndices) = row_data.getIndices();
+
+        if(row_type == MBVERTEX) {
+          int nb_dofs = aUx[0].nodesWithoutLambda.size();
+          for(int dd = 0;dd<nb_dofs;dd++) {
+            if(aUx[0].nodesWithoutLambda[dd]) {
+              for(int jj = 0;jj<3;jj++) {
+                rowIndices[dd*3+jj] = -1;
+              }
+            }
+          }
+        }
+
+        int *indices_ptr = &rowIndices[0];
+
+        ierr = VecSetOption(
+          getFEMethod()->snes_f,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE
+        );  CHKERRQ(ierr);
         ierr = VecSetValues(
           getFEMethod()->snes_f,
           nb_dofs,
           indices_ptr,
-          &nf[0],
+          &nF[0],
           ADD_VALUES
         ); CHKERRQ(ierr);
 
@@ -666,6 +696,7 @@ struct SurfaceSlidingConstrains {
     ublas::vector<double> c;
     ublas::matrix<double> C;
     ublas::matrix<double> transC;
+    ublas::vector<int> transRowIndices;
 
     PetscErrorCode doWork(
       int row_side,int col_side,
@@ -734,9 +765,23 @@ struct SurfaceSlidingConstrains {
           transC.resize(nb_col,nb_row);
           noalias(transC) = trans(C);
 
+          transRowIndices.resize(nb_col,false);
+          noalias(transRowIndices) = col_data.getIndices();
+          int *trans_row_indices_ptr = &transRowIndices[0];
+          if(row_type == MBVERTEX) {
+            int nb_dofs = aUx[0].nodesWithoutLambda.size();
+            for(int dd = 0;dd<nb_dofs;dd++) {
+              if(aUx[0].nodesWithoutLambda[dd]) {
+                for(int jj = 0;jj<3;jj++) {
+                  transRowIndices[dd*3+jj] = -1;
+                }
+              }
+            }
+          }
+
           ierr = MatSetValues(
             getFEMethod()->snes_B,
-            nb_col,col_indices_ptr,
+            nb_col,trans_row_indices_ptr,
             nb_row,row_indices_ptr,
             &transC(0,0),ADD_VALUES
           ); CHKERRQ(ierr);
@@ -775,6 +820,7 @@ struct SurfaceSlidingConstrains {
     ublas::matrix<double> dNormal;
 
     ublas::matrix<double> B;
+    ublas::vector<int> rowIndices;
 
     PetscErrorCode doWork(
       int row_side,int col_side,
@@ -822,7 +868,21 @@ struct SurfaceSlidingConstrains {
 
         }
 
-        int *row_indices_ptr = &row_data.getIndices()[0];
+
+        rowIndices.resize(nb_row,false);
+        noalias(rowIndices) = row_data.getIndices();
+        if(row_type == MBVERTEX) {
+          int nb_dofs = aUx[0].nodesWithoutLambda.size();
+          for(int dd = 0;dd<nb_dofs;dd++) {
+            if(aUx[0].nodesWithoutLambda[dd]) {
+              for(int jj = 0;jj<3;jj++) {
+                rowIndices[dd*3+jj] = -1;
+              }
+            }
+          }
+        }
+
+        int *row_indices_ptr = &rowIndices[0];
         int *col_indices_ptr = &col_data.getIndices()[0];
 
         ierr = MatSetValues(
