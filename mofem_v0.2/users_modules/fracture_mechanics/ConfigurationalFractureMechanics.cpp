@@ -68,6 +68,7 @@ extern "C" {
 #include <adolc/adolc.h>
 #include <NonLinearElasticElement.hpp>
 #include <Hooke.hpp>
+//#include <NeoHookean.hpp>
 #include <VolumeLengthQuality.hpp>
 
 #include <GriffithForceElement.hpp>
@@ -1529,6 +1530,8 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_spatial_problem(FieldInte
 
   Hooke<adouble> hooke_adouble;
   Hooke<double> hooke_double;
+  //NeoHookean<adouble> hooke_adouble;
+  //NeoHookean<double> hooke_double;
 
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,BLOCKSET|MAT_ELASTICSET,it)) {
     Mat_Elastic mydata;
@@ -1718,46 +1721,48 @@ PetscErrorCode ConfigurationalFractureMechanics::surface_projection_data(FieldIn
   ierr = MatSetOption(projSurfaceCtx->C,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
   ierr = MatZeroEntries(projSurfaceCtx->C); CHKERRQ(ierr);
 
-  SurfaceSlidingConstrains surface_constrain(m_field);
-  SurfaceSlidingConstrains surface_crack_constrain(m_field);
-  boost::ptr_map<int,SurfaceSlidingConstrains> surface_constrains_map;
-  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,SIDESET,it)) {
-    int msId = it->get_msId();
-    surface_constrains_map.insert(msId,new SurfaceSlidingConstrains(m_field));
-  }
+  {
+    SurfaceSlidingConstrains surface_constrain(m_field);
+    SurfaceSlidingConstrains surface_crack_constrain(m_field);
+    boost::ptr_map<int,SurfaceSlidingConstrains> surface_constrains_map;
+    for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,SIDESET,it)) {
+      int msId = it->get_msId();
+      surface_constrains_map.insert(msId,new SurfaceSlidingConstrains(m_field));
+    }
 
-  surface_constrain.setOperatorsCOnly("LAMBDA_SURFACE","MESH_NODE_POSITIONS");
-  surface_crack_constrain.setOperatorsCOnly("LAMBDA_CRACK_SURFACE","MESH_NODE_POSITIONS");
-  for(
-    boost::ptr_map<int,SurfaceSlidingConstrains>::iterator it = surface_constrains_map.begin();
-    it!=surface_constrains_map.end();
-    it++
-  ) {
-    int msId =  it->first;
-    if((msId < 10200)||(msId >= 10300)) continue;
-    ostringstream ss;
-    ss << "LAMBDA_SURFACE_msId_" << msId;
-    ierr = it->second->setOperatorsCOnly(ss.str(),"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
-  }
+    surface_constrain.setOperatorsCOnly("LAMBDA_SURFACE","MESH_NODE_POSITIONS");
+    surface_crack_constrain.setOperatorsCOnly("LAMBDA_CRACK_SURFACE","MESH_NODE_POSITIONS");
+    for(
+      boost::ptr_map<int,SurfaceSlidingConstrains>::iterator it = surface_constrains_map.begin();
+      it!=surface_constrains_map.end();
+      it++
+    ) {
+      int msId =  it->first;
+      if((msId < 10200)||(msId >= 10300)) continue;
+      ostringstream ss;
+      ss << "LAMBDA_SURFACE_msId_" << msId;
+      ierr = it->second->setOperatorsCOnly(ss.str(),"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+    }
 
-  surface_constrain.feLhs.snes_B = projSurfaceCtx->C;
-  ierr = m_field.loop_finite_elements(
-    "C_ALL_MATRIX","C_SURFACE_ELEM",surface_constrain.feLhs
-  ); CHKERRQ(ierr);
+    surface_constrain.feLhs.snes_B = projSurfaceCtx->C;
+    ierr = m_field.loop_finite_elements(
+      "C_ALL_MATRIX","C_SURFACE_ELEM",surface_constrain.feLhs
+    ); CHKERRQ(ierr);
 
-  surface_crack_constrain.feLhs.snes_B = projSurfaceCtx->C;
-  ierr = m_field.loop_finite_elements(
-    "C_ALL_MATRIX","C_CRACK_SURFACE_ELEM",surface_crack_constrain.feLhs
-  );  CHKERRQ(ierr);
-  for(
-    boost::ptr_map<int,SurfaceSlidingConstrains>::iterator it = surface_constrains_map.begin();
-    it!=surface_constrains_map.end();
-    it++
-  ) {
-    ostringstream ss;
-    ss << "C_SURFACE_ELEM_msId_" << it->first;
-    it->second->feLhs.snes_B = projSurfaceCtx->C;
-    ierr = m_field.loop_finite_elements("C_ALL_MATRIX",ss.str(),it->second->feLhs);  CHKERRQ(ierr);
+    surface_crack_constrain.feLhs.snes_B = projSurfaceCtx->C;
+    ierr = m_field.loop_finite_elements(
+      "C_ALL_MATRIX","C_CRACK_SURFACE_ELEM",surface_crack_constrain.feLhs
+    );  CHKERRQ(ierr);
+    for(
+      boost::ptr_map<int,SurfaceSlidingConstrains>::iterator it = surface_constrains_map.begin();
+      it!=surface_constrains_map.end();
+      it++
+    ) {
+      ostringstream ss;
+      ss << "C_SURFACE_ELEM_msId_" << it->first;
+      it->second->feLhs.snes_B = projSurfaceCtx->C;
+      ierr = m_field.loop_finite_elements("C_ALL_MATRIX",ss.str(),it->second->feLhs);  CHKERRQ(ierr);
+    }
   }
 
   /*
@@ -2506,7 +2511,7 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   ErrorCode rval;
   PetscBool flg;
 
-  set_PhysicalEquationNumber(hooke);
+  //set_PhysicalEquationNumber(hooke);
 
   ierr = front_projection_data(m_field,"COUPLED_PROBLEM"); CHKERRQ(ierr);
 
@@ -2518,6 +2523,8 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   ierr = m_field.VecCreateGhost("COUPLED_PROBLEM",ROW,&F); CHKERRQ(ierr);
   Vec D;
   ierr = m_field.VecCreateGhost("COUPLED_PROBLEM",COL,&D); CHKERRQ(ierr);
+
+  ierr = VecSetOption(F,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE);  CHKERRQ(ierr);
 
   if(material_FirelWall->operator[](FW_arc_lenhghat_definition)) {
   } else {
@@ -2817,7 +2824,7 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   }
 
   // Sourface constrains
-  SnesConstrainSurfacGeometry constrain_body_surface(m_field,"LAMBDA_SURFACE");
+  /*SnesConstrainSurfacGeometry constrain_body_surface(m_field,"LAMBDA_SURFACE");
   constrain_body_surface.nonlinear = true;
   SnesConstrainSurfacGeometry constrain_crack_surface(m_field,"LAMBDA_CRACK_SURFACE");
   constrain_crack_surface.nonlinear = true;
@@ -2829,7 +2836,30 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
     ss << "LAMBDA_SURFACE_msId_" << msId;
     other_body_surface_constrains[msId] = new SnesConstrainSurfacGeometry(m_field,ss.str());
     other_body_surface_constrains[msId]->nonlinear = true;
+  }*/
+
+  SurfaceSlidingConstrains surface_constrain(m_field);
+  SurfaceSlidingConstrains surface_crack_constrain(m_field);
+  boost::ptr_map<int,SurfaceSlidingConstrains> surface_constrains_map;
+  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,SIDESET,it)) {
+    int msId = it->get_msId();
+    surface_constrains_map.insert(msId,new SurfaceSlidingConstrains(m_field));
   }
+
+  surface_constrain.setOperatorsWithLinearGeometry("LAMBDA_SURFACE","MESH_NODE_POSITIONS",true,true);
+  surface_crack_constrain.setOperatorsWithLinearGeometry("LAMBDA_CRACK_SURFACE","MESH_NODE_POSITIONS",true,true);
+  for(
+    boost::ptr_map<int,SurfaceSlidingConstrains>::iterator it = surface_constrains_map.begin();
+    it!=surface_constrains_map.end();
+    it++
+  ) {
+    int msId =  it->first;
+    if((msId < 10200)||(msId >= 10300)) continue;
+    ostringstream ss;
+    ss << "LAMBDA_SURFACE_msId_" << msId;
+    ierr = it->second->setOperatorsWithLinearGeometry(ss.str(),"MESH_NODE_POSITIONS",true,true); CHKERRQ(ierr);
+  }
+
   //bothsieds constrains
   BothSurfaceConstrains  both_sides_constrains(m_field);
   //dirichlet constrains
@@ -2883,14 +2913,28 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   arc_snes_ctx.get_preProcess_to_do_Rhs().push_back(&calculate_C_for_arclength);
   SnesCtx::loops_to_do_type& loops_to_do_Rhs = arc_snes_ctx.get_loops_to_do_Rhs();
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("BOTH_SIDE_OF_CRACK",&both_sides_constrains));
-  loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("CandCT_SURFACE_ELEM",&constrain_body_surface));
+
+  /*loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("CandCT_SURFACE_ELEM",&constrain_body_surface));
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("CandCT_CRACK_SURFACE_ELEM",&constrain_crack_surface));
   for(map<int,SnesConstrainSurfacGeometry*>::iterator mit = other_body_surface_constrains.begin();
     mit!=other_body_surface_constrains.end();mit++) {
     ostringstream ss2;
     ss2 << "CandCT_SURFACE_ELEM_msId_" << mit->first;
     loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type(ss2.str(),mit->second));
+  }*/
+
+  loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("CandCT_SURFACE_ELEM",&surface_constrain.feRhs));
+  loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("CandCT_CRACK_SURFACE_ELEM",&surface_crack_constrain.feRhs));
+  for(
+    boost::ptr_map<int,SurfaceSlidingConstrains>::iterator it = surface_constrains_map.begin();
+    it!=surface_constrains_map.end();
+    it++
+  ) {
+    ostringstream ss;
+    ss << "CandCT_SURFACE_ELEM_msId_" << it->first;
+    loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type(ss.str(),&it->second->feRhs));
   }
+
   //loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("MESH_SMOOTHER",&smoother));
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("MESH_SMOOTHER",&smoother_fe.feRhs));
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("C_TANGENT_ELEM",&tangent_constrain));
@@ -2937,14 +2981,28 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   SnesCtx::loops_to_do_type& loops_to_do_Mat = arc_snes_ctx.get_loops_to_do_Mat();
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("BOTH_SIDE_OF_CRACK",&both_sides_constrains));
   //loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("dCT_CRACKFRONT_AREA_ELEM",&dct_gc));
-  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("CandCT_SURFACE_ELEM",&constrain_body_surface));
+
+  /*loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("CandCT_SURFACE_ELEM",&constrain_body_surface));
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("CandCT_CRACK_SURFACE_ELEM",&constrain_crack_surface));
   for(map<int,SnesConstrainSurfacGeometry*>::iterator mit = other_body_surface_constrains.begin();
     mit!=other_body_surface_constrains.end();mit++) {
     ostringstream ss2;
     ss2 << "CandCT_SURFACE_ELEM_msId_" << mit->first;
     loops_to_do_Mat.push_back(SnesCtx::loop_pair_type(ss2.str(),mit->second));
+  }*/
+
+  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("CandCT_SURFACE_ELEM",&surface_constrain.feLhs));
+  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("CandCT_CRACK_SURFACE_ELEM",&surface_crack_constrain.feLhs));
+  for(
+    boost::ptr_map<int,SurfaceSlidingConstrains>::iterator it = surface_constrains_map.begin();
+    it!=surface_constrains_map.end();
+    it++
+  ) {
+    ostringstream ss;
+    ss << "CandCT_SURFACE_ELEM_msId_" << it->first;
+    loops_to_do_Mat.push_back(SnesCtx::loop_pair_type(ss.str(),&it->second->feLhs));
   }
+
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("C_TANGENT_ELEM",&tangent_constrain));
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("MESH_SMOOTHER",&smoother_fe.feLhs));
   //loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("MESH_SMOOTHER",&smoother));
@@ -3169,10 +3227,10 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   ierr = VecDestroy(&front_f); CHKERRQ(ierr);
   ierr = VecDestroy(&tangent_front_f); CHKERRQ(ierr);
 
-  for(map<int,SnesConstrainSurfacGeometry*>::iterator mit = other_body_surface_constrains.begin();
+  /*for(map<int,SnesConstrainSurfacGeometry*>::iterator mit = other_body_surface_constrains.begin();
     mit!=other_body_surface_constrains.end();mit++) {
     delete mit->second;
-  }
+  }*/
 
   ierr = delete_front_projection_data(m_field); CHKERRQ(ierr);
 
@@ -3216,6 +3274,8 @@ PetscErrorCode ConfigurationalFractureMechanics::calculate_material_forces(Field
 
     Hooke<adouble> hooke_adouble;
     Hooke<double> hooke_double;
+    //NeoHookean<adouble> hooke_adouble;
+    //NeoHookean<double> hooke_double;
 
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,BLOCKSET|MAT_ELASTICSET,it)) {
       Mat_Elastic mydata;

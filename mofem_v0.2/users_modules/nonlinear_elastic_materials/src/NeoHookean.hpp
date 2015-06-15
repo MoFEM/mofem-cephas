@@ -49,9 +49,9 @@ struct NeoHookean: public NonlinearElasticElement::FunctionsToCalulatePiolaKirch
       ierr = this->iNvert(detC,this->C,invC); CHKERRQ(ierr);
       ierr = this->dEterminatnt(this->F,this->J); CHKERRQ(ierr);
       for(int i = 0;i<3;i++) {
-	for(int j = 0;j<3;j++) {
-	  this->S(i,j) = this->mu*( ((i==j) ? 1 : 0) - invC(i,j) ) + this->lambda*log(this->J)*invC(i,j);
-	}
+        for(int j = 0;j<3;j++) {
+          this->S(i,j) = this->mu*( ((i==j) ? 1 : 0) - invC(i,j) ) + this->lambda*log(this->J)*invC(i,j);
+        }
       }
       PetscFunctionReturn(0);
     }

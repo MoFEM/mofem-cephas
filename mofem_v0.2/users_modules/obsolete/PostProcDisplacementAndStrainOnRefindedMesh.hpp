@@ -1,8 +1,3 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
- * FIXME: DESCRIPTION
- */
-
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -37,7 +32,7 @@ struct PostProcOnRefMesh_Base {
     bool init_ref;
     bool do_broadcast;
 
-    PostProcOnRefMesh_Base(): 
+    PostProcOnRefMesh_Base():
       moab_post_proc(mb_instance_post_proc),moab_ref(mb_instance_ref),
       max_level(0),init_ref(false),do_broadcast(true) {
       PetscBool flg = PETSC_TRUE;
@@ -57,7 +52,7 @@ struct PostProcOnRefMesh_Base {
 	1,0,0,
 	0,1,0,
 	0,0,1 };
-      
+
       //
       EntityHandle nodes[4];
       for(int nn = 0;nn<4;nn++) {
@@ -69,7 +64,7 @@ struct PostProcOnRefMesh_Base {
       //
       MoFEM::Core core_ref(moab_ref,PETSC_COMM_SELF,-1);
       FieldInterface& m_field_ref = core_ref;
-      MeshRefinment& m_ref_ref = core_ref; 
+      MeshRefinment& m_ref_ref = core_ref;
       ierr = m_field_ref.seed_ref_level_3D(0,BitRefLevel().set(0)); CHKERRQ(ierr);
 
       for(int ll = 0;ll<max_level;ll++) {
@@ -114,7 +109,7 @@ struct PostProcDisplacementsOnRefMesh: public FEMethod_UpLevelStudent,PostProcOn
     Interface& mOab;
     string field_name;
 
-    PostProcDisplacementsOnRefMesh(Interface& _moab,string _field_name = "DISPLACEMENT"): 
+    PostProcDisplacementsOnRefMesh(Interface& _moab,string _field_name = "DISPLACEMENT"):
       FEMethod_UpLevelStudent(_moab),PostProcOnRefMesh_Base(),mOab(_moab),field_name(_field_name) {
       pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
     }
@@ -125,7 +120,7 @@ struct PostProcDisplacementsOnRefMesh: public FEMethod_UpLevelStudent,PostProcOn
       PetscFunctionBegin;
 
       if(init_ref) PetscFunctionReturn(0);
-      
+
       ierr = do_preprocess(); CHKERRQ(ierr);
 
       double def_VAL[3] = {0,0,0};
@@ -148,9 +143,9 @@ struct PostProcDisplacementsOnRefMesh: public FEMethod_UpLevelStudent,PostProcOn
 
       Tag th_block_id;
       int def_marker = 0;
-      rval = mOab.tag_get_handle("BLOCKID",1,MB_TYPE_INTEGER,th_block_id,MB_TAG_CREAT|MB_TAG_SPARSE,&def_marker); CHKERR_PETSC(rval); 
+      rval = mOab.tag_get_handle("BLOCKID",1,MB_TYPE_INTEGER,th_block_id,MB_TAG_CREAT|MB_TAG_SPARSE,&def_marker); CHKERR_PETSC(rval);
       Tag th_block_id_pp;
-      rval = moab_post_proc.tag_get_handle("BLOCKID",1,MB_TYPE_INTEGER,th_block_id_pp,MB_TAG_CREAT|MB_TAG_SPARSE,&def_marker); CHKERR_PETSC(rval); 
+      rval = moab_post_proc.tag_get_handle("BLOCKID",1,MB_TYPE_INTEGER,th_block_id_pp,MB_TAG_CREAT|MB_TAG_SPARSE,&def_marker); CHKERR_PETSC(rval);
 
       EntityHandle fe_ent = fePtr->get_ent();
       int block_id;
@@ -293,9 +288,9 @@ struct PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh: public Pos
 
   Tag th_stress,th_prin_stress_vect1,th_prin_stress_vect2,th_prin_stress_vect3,th_prin_stress_vals;
   bool propeties_from_BLOCKSET_MAT_ELASTICSET;
-	
+
   PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh(
-    FieldInterface& _mField, string _field_name,double _lambda,double _mu): 
+    FieldInterface& _mField, string _field_name,double _lambda,double _mu):
       PostProcDisplacemenysAndStarinOnRefMesh(_mField.get_moab(),_field_name),mField(_mField),lambda(_lambda),mu(_mu) {
     double def_VAL2[3] = { 0.0, 0.0, 0.0 };
     rval = moab_post_proc.tag_get_handle("PRIN_STRESS_VECT1",3,MB_TYPE_DOUBLE,th_prin_stress_vect1,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL2); CHKERR_THROW(rval);
@@ -318,7 +313,7 @@ struct PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh: public Pos
       D_mu(rr,rr) = rr<3 ? 2 : 1;
     }
     //    D = lambda*D_lambda + mu*D_mu;
-    
+
     propeties_from_BLOCKSET_MAT_ELASTICSET = false;
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_ELASTICSET,it)) {
       propeties_from_BLOCKSET_MAT_ELASTICSET = true;
@@ -329,29 +324,29 @@ struct PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh: public Pos
 
   virtual PetscErrorCode calculateD(double _lambda,double _mu) {
     PetscFunctionBegin;
-    
+
     D = _lambda*D_lambda + _mu*D_mu;
     //cerr << D_lambda << endl;
     //cerr << D_mu << endl;
     //cerr << D << endl;
-    
+
     PetscFunctionReturn(0);
   }
-  
+
   PetscErrorCode GetMatParameters(double *_lambda,double *_mu) {
     PetscFunctionBegin;
-    
+
     *_lambda = lambda;
     *_mu = mu;
-    
-    
+
+
     if(propeties_from_BLOCKSET_MAT_ELASTICSET) {
       EntityHandle ent = fePtr->get_ent();
       for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_ELASTICSET,it)) {
-        
+
         Mat_Elastic mydata;
         ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
-        
+
         Range meshsets;
         rval = mOab.get_entities_by_type(it->meshset,MBENTITYSET,meshsets,true); CHKERR_PETSC(rval);
         meshsets.insert(it->meshset);
@@ -362,14 +357,14 @@ struct PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh: public Pos
             PetscFunctionReturn(0);
           }
         }
-        
+
     }
-      
+
     SETERRQ(PETSC_COMM_SELF,1,"Element is not in elestic block, however you run linear elastic analysis with that element\n"
               "top tip: check if you update block sets after mesh refinments or interface insertion");
-      
+
     }
-    
+
     PetscFunctionReturn(0);
   }
 
@@ -383,7 +378,7 @@ struct PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh: public Pos
 
     //Loop over elements
     ierr = do_operator(); CHKERRQ(ierr);
-    
+
     //Calculated D Matrix
     double _lambda,_mu;
     ierr = GetMatParameters(&_lambda,&_mu); CHKERRQ(ierr);
@@ -405,23 +400,23 @@ struct PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh: public Pos
 
       ublas::matrix< FieldData > GradU = *viit;
       if(!invH.empty()) {
-        //GradU = 
+        //GradU =
         //[ dU/dChi1 dU/dChi2 dU/dChi3 ]
         //[ dV/dChi1 dV/dChi2 dU/dChi3 ]
         //[ dW/dChi1 dW/dChi2 dW/dChi3 ]
-        //H = 
+        //H =
         //[ dX1/dChi1 dX1/dChi2 dX1/dChi3 ]
          //[ dX2/dChi1 dX2/dChi2 dX2/dChi3 ]
-         //[ dX3/dChi1 dX3/dChi2 dX3/dChi3 ]    
-        //invH = 
+         //[ dX3/dChi1 dX3/dChi2 dX3/dChi3 ]
+        //invH =
         //[ dChi1/dX1 dChi1/dX2 dChi1/dX3 ]
         //[ dChi2/dX1 dChi2/dX2 dChi2/dX3 ]
         //[ dChi3/dX1 dChi3/dX2 dChi3/dX3 ]
-        //GradU = 
+        //GradU =
         //[ dU/dX1 dU/dX2 dU/dX3 ]
         //[ dV/dX1 dV/dX2 dV/dX3 ] = GradU * invH
-        //[ dW/dX1 dW/dX2 dW/dX3 ] 
-        GradU = prod( GradU, invH[gg] ); 
+        //[ dW/dX1 dW/dX2 dW/dX3 ]
+        GradU = prod( GradU, invH[gg] );
       }
       ublas::matrix< FieldData > Strain = 0.5*( GradU + trans(GradU) );
       rval = moab_post_proc.tag_set_data(th_strain,&mit->second,1,&(Strain.data()[0])); CHKERR_PETSC(rval);
@@ -441,14 +436,14 @@ struct PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh: public Pos
       Stress(0,1) = Stress(1,0) = Stress_VectorNotation[3];
       Stress(1,2) = Stress(2,1) = Stress_VectorNotation[4];
       Stress(2,0) = Stress(0,2) = Stress_VectorNotation[5];
-      
+
       rval = moab_post_proc.tag_set_data(th_stress,&mit->second,1,&(Stress.data()[0])); CHKERR_PETSC(rval);
-  
+
       //Principal stress vectors
       //Calculated from finding the eigenvalues and eigenvectors
       ublas::matrix< FieldData > eigen_vectors = Stress;
       ublas::vector<double> eigen_values(3);
-      
+
       //LAPACK - eigenvalues and vectors. Applied twice for initial creates memory space
       int n = 3, lda = 3, info, lwork = -1;
       double wkopt;
@@ -458,29 +453,29 @@ struct PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh: public Pos
       double work[lwork];
       info = lapack_dsyev('V','U',n,&(eigen_vectors.data()[0]),lda,&(eigen_values.data()[0]),work,lwork);
       if(info != 0) SETERRQ1(PETSC_COMM_SELF,1,"is something wrong with lapack_dsyev info = %d",info);
-      
+
       //Combine eigenvalues and vectors to create principal stress vector
       ublas::vector<double> prin_stress_vect1(3);
       ublas::vector<double> prin_stress_vect2(3);
       ublas::vector<double> prin_stress_vect3(3);
       ublas::vector<double> prin_vals_vect(3);
-            
+
       //eigen_vectors = trans(eigen_vectors);
       for (int ii=0; ii < 3; ii++) {
-        prin_vals_vect[0] = eigen_values[0]; 
-        prin_vals_vect[1] = eigen_values[1]; 
-        prin_vals_vect[2] = eigen_values[2]; 
-        prin_stress_vect1[ii] = eigen_vectors.data()[ii+3*0]; 
+        prin_vals_vect[0] = eigen_values[0];
+        prin_vals_vect[1] = eigen_values[1];
+        prin_vals_vect[2] = eigen_values[2];
+        prin_stress_vect1[ii] = eigen_vectors.data()[ii+3*0];
         prin_stress_vect2[ii] = eigen_vectors.data()[ii+3*1];
         prin_stress_vect3[ii] = eigen_vectors.data()[ii+3*2];
       }
-  
+
       //Tag principle stress vectors 1, 2, 3
       rval = moab_post_proc.tag_set_data(th_prin_stress_vect1,&mit->second,1,&prin_stress_vect1[0]); CHKERR_PETSC(rval);
       rval = moab_post_proc.tag_set_data(th_prin_stress_vect2,&mit->second,1,&prin_stress_vect2[0]); CHKERR_PETSC(rval);
       rval = moab_post_proc.tag_set_data(th_prin_stress_vect3,&mit->second,1,&prin_stress_vect3[0]); CHKERR_PETSC(rval);
       rval = moab_post_proc.tag_set_data(th_prin_stress_vals,&mit->second,1,&prin_vals_vect[0]); CHKERR_PETSC(rval);
-    
+
     }
 
     } catch (const std::exception& ex) {
@@ -497,7 +492,7 @@ struct PostProcDisplacemenysAndStarinAndElasticLinearStressOnRefMesh: public Pos
 struct PostProcScalarFieldsAndGradientOnRefMesh: public FEMethod_UpLevelStudent,PostProcOnRefMesh_Base {
   ParallelComm* pcomm;
   string field_name;
-  PostProcScalarFieldsAndGradientOnRefMesh(Interface& _moab,string _field_name): 
+  PostProcScalarFieldsAndGradientOnRefMesh(Interface& _moab,string _field_name):
       FEMethod_UpLevelStudent(_moab),PostProcOnRefMesh_Base(), field_name(_field_name) {
       pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
     }
@@ -574,7 +569,7 @@ struct PostProcScalarFieldsAndGradientOnRefMesh: public FEMethod_UpLevelStudent,
     for(;viit!=Grad_at_GaussPt.end();viit++,mit++,gg++) {
       ublas::matrix< FieldData > grad = *viit;
       if(!invH.empty()) {
-	grad = prod( trans( invH[gg] ), trans(grad) ); 
+	grad = prod( trans( invH[gg] ), trans(grad) );
       }
       rval = moab_post_proc.tag_set_data(th_grad_scalar,&mit->second,1,&(grad.data()[0])); CHKERR_PETSC(rval);
     }
@@ -654,4 +649,3 @@ struct PostProcL2VelocitiesFieldsAndGradientOnRefMesh: public PostProcDisplaceme
 }
 
 #endif //__POSTPROCDISPLACEMENTANDSTRAINONREFINDEDMESH_HPP__
-
