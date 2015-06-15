@@ -19,45 +19,44 @@
 #ifndef __SURFACE_SLIDING_CONSTRAINS_HPP__
 #define __SURFACE_SLIDING_CONSTRAINS_HPP__
 
-/** \brief Surface sliding constrains.
+/** \brief Shape preserving constrains, i.e. nodes sliding on body surface.
 
-  Displacements on the body tangential direction are friction less.
-  Displacements in direction normal are restricted.
+  Derivation and implementation of constrains preserving body surface,
+  i.e. body shape and volume.
 
-  Constrains are derived form equation:
+  The idea starts form observation that body shape can be globally characterized
+  by constant calculated as volume over its area
   \f[
   \frac{V}{A} = C
   \f]
-
+  Above equation expressed in integral form is
   \f[
   \int_\Omega \textrm{d}V = C \int_\Gamma \textrm{d}S
   \f]
-
+  where notting that,
   \f[
   \frac{1}{3}
   \int_\Omega \textrm{div}[\mathbf{X}] \textrm{d}\Omega
   =
   C \int_\Gamma  \textrm{d}S
   \f]
-
+  and applying Gauss theorem we get
   \f[
   \int_\Gamma
   \mathbf{X}\cdot \frac{\mathbf{N}}{\|\mathbf{N}\|}
   \textrm{d}\Gamma
   =
-  3C \int_\Gamma  \textrm{d}S
+  3C \int_\Gamma  \textrm{d}S.
   \f]
-
   Drooping integrals on both sides, and linearizing equation, we get
   \f[
-  \frac{\mathbf{n}}{\|\mathbf{n}\|} \cdot \delta \mathbf{X}
+  \frac{\mathbf{N}}{\|\mathbf{N}\|} \cdot \delta \mathbf{X}
   =
-  3c - \frac{\mathbf{n}}{\|\mathbf{n}\|}\cdot \mathbf{x}
+  3C - \frac{\mathbf{N}}{\|\mathbf{N}\|}\cdot \mathbf{X}
   \f]
-  where \f$\delta \mathbf{X}\f$ is displacement sub-inctrement.
-
-  Above equation is a constrain which need to be enforced.
-
+  where \f$\delta \mathbf{X}\f$ is displacement sub-inctrement. Above equation is a
+  constrain if satisfied in body shape and volume is conserved. Final form of constrain equation
+  is
   \f[
   \mathcal{r} =
   \frac{\mathbf{N}}{\|\mathbf{N}\|}\cdot \mathbf{X}
@@ -66,6 +65,8 @@
   \frac{\mathbf{N}}{\|\mathbf{N}\|}\cdot (\mathbf{X}-\mathbf{X}_0)
   \f]
 
+  In the spirit of finite element method the constrain equation is multiplied
+  by shape functions and enforce using Lagrange multiplier method
   \f[
   \int_\Gamma \mathbf{N}^\mathsf{T}_\lambda
    \left(
@@ -75,9 +76,10 @@
    \|\mathbf{N}\|
   \textrm{d}\Gamma
    =
-  \mathbf{0}
+  \mathbf{0}.
   \f]
-
+  Above equation is nonlinear, applying to it Taylor expansion, we can get form which
+  can be used with Newton interactive method
   \f[
   \begin{split}
    &\int_\Gamma \mathbf{N}^\mathsf{T}_\lambda
@@ -99,10 +101,10 @@
     &\int_\Gamma \mathbf{N}^\mathsf{T}_\lambda
     \mathbf{N}\cdot(\mathbf{X}-\mathbf{X}_0)
     \textrm{d}\Gamma
-  \end{split}
+  \end{split}.
   \f]
-
-
+  Equation expressing forces on shape as result of constrains, as result Lagrange multiplier
+  method have following form
   \f[
   \begin{split}
   &\int_\Gamma
@@ -130,41 +132,7 @@
   \end{split}
   \f]
 
-  \f[
-  \mathbf{C}=
-  \int_\Gamma
-  \mathbf{N}_\lambda^\mathsf{T}
-   \mathbf{N} \cdot
-   \mathbf{N}_\mathbf{X}
-  \textrm{d}\Gamma
-  \f]
-
-  \f[
-  \mathbf{B}=
-  \int_\Gamma
-  \lambda
-  \mathbf{N}^\mathsf{T}_\mathbf{X}
-    \left(
-    \textrm{Spin}\left[\frac{\partial\mathbf{X}}{\partial\xi}\right]\cdot\mathbf{B}_\eta
-    -
-    \textrm{Spin}\left[\frac{\partial\mathbf{X}}{\partial\eta}\right]\cdot\mathbf{B}_\xi
-    \right)
-  \textrm{d}\Gamma
-  \f]
-
-  \f[
-  \mathbf{A}=
-  \int_\Gamma
-  \mathbf{N}^\mathsf{T}_\lambda
-\left(\mathbf{X}-\mathbf{X}_0\right) \cdot
-\left(
-\textrm{Spin}\left[\frac{\partial\mathbf{X}}{\partial\xi}\right]\cdot\mathbf{B}_\eta
--
-\textrm{Spin}\left[\frac{\partial\mathbf{X}}{\partial\eta}\right]\cdot\mathbf{B}_\xi
-\right)
-  \f]
-
-  What result in additional terms in global system of equations
+  Above equations are assembled into global system of equations as following
   \f[
   \left[
     \begin{array}{cc}
@@ -184,6 +152,39 @@
       \overline{\mathbf{r}}
     \end{array}
   \right]
+  \f]
+  where
+  \f[
+  \mathbf{C}=
+  \int_\Gamma
+  \mathbf{N}_\lambda^\mathsf{T}
+   \mathbf{N} \cdot
+   \mathbf{N}_\mathbf{X}
+  \textrm{d}\Gamma,
+  \f]
+  \f[
+  \mathbf{B}=
+  \int_\Gamma
+  \lambda
+  \mathbf{N}^\mathsf{T}_\mathbf{X}
+    \left(
+    \textrm{Spin}\left[\frac{\partial\mathbf{X}}{\partial\xi}\right]\cdot\mathbf{B}_\eta
+    -
+    \textrm{Spin}\left[\frac{\partial\mathbf{X}}{\partial\eta}\right]\cdot\mathbf{B}_\xi
+    \right)
+  \textrm{d}\Gamma
+  \f]
+  and
+  \f[
+  \mathbf{A}=
+  \int_\Gamma
+  \mathbf{N}^\mathsf{T}_\lambda
+  \left(\mathbf{X}-\mathbf{X}_0\right) \cdot
+  \left(
+  \textrm{Spin}\left[\frac{\partial\mathbf{X}}{\partial\xi}\right]\cdot\mathbf{B}_\eta
+  -
+  \textrm{Spin}\left[\frac{\partial\mathbf{X}}{\partial\eta}\right]\cdot\mathbf{B}_\xi
+  \right).
   \f]
 
 */
@@ -349,6 +350,8 @@ struct SurfaceSlidingConstrains {
 
   vector<AuxFunctions> cUrrent,rEference;
 
+  /** \brief Operator calculate matererial positions and tangent vectors to element surface
+   */
   struct OpPositions: public FaceElementForcesAndSourcesCore::UserDataOperator {
 
     vector<AuxFunctions> &aUx;
@@ -403,6 +406,8 @@ struct SurfaceSlidingConstrains {
 
   };
 
+  /** \brief Operator calculate Lagrange multiplier values at integration points
+  */
   struct OpLambda: public FaceElementForcesAndSourcesCore::UserDataOperator {
 
     vector<AuxFunctions> &aUx;
@@ -449,6 +454,8 @@ struct SurfaceSlidingConstrains {
 
   };
 
+  /** \brief Operator calulate \f$\overline{\lambda}\mathbf{C}^\mathsf{T}\f$
+  */
   struct OpF: public FaceElementForcesAndSourcesCore::UserDataOperator {
 
     vector<AuxFunctions> &aUx;
@@ -582,6 +589,8 @@ struct SurfaceSlidingConstrains {
 
   };
 
+  /** \brief Operator calculating matrix \b C
+  */
   struct OpC: public FaceElementForcesAndSourcesCore::UserDataOperator {
 
     vector<AuxFunctions> &aUx;
@@ -683,6 +692,8 @@ struct SurfaceSlidingConstrains {
 
   };
 
+  /** \brief Operator calculating matrix \b B
+  */
   struct OpB: public FaceElementForcesAndSourcesCore::UserDataOperator {
 
     vector<AuxFunctions> &aUx;
@@ -768,6 +779,8 @@ struct SurfaceSlidingConstrains {
 
   };
 
+  /** \brief Operator calculating matrix \b A
+  */
   struct OpA: public FaceElementForcesAndSourcesCore::UserDataOperator {
 
     vector<AuxFunctions> &aUx;
@@ -865,6 +878,8 @@ struct SurfaceSlidingConstrains {
 
   };
 
+  /** \brief Driver function setting operators to calculate \b C matrix only
+  */
   PetscErrorCode setOperatorsCOnly(
     const string lagrange_multipliers_field_name,
     const string material_field_name) {
@@ -884,6 +899,9 @@ struct SurfaceSlidingConstrains {
     PetscFunctionReturn(0);
   }
 
+
+  /** \brief Driver function setting operators to calculate nonlinear problems with sliding points on the surface
+  */
   PetscErrorCode setOperatorsWithLinearGeometry(
     const string lagrange_multipliers_field_name,
     const string material_field_name,
