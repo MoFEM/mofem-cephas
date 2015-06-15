@@ -246,12 +246,39 @@ struct SurfaceSlidingConstrains {
   MyTriangleFE feLhs;
   MyTriangleFE& getLoopFeLhs() { return feLhs ; }
 
-  SurfaceSlidingConstrains(FieldInterface &m_field):
+  /** \brief Class implemented by user to detect face orientation
+
+   If mesh generated is with surface mesher, usally you don't have to nathing, all elements
+   on the surface have consistent orientation. In case of inetranl faces or if you do
+   somthing with mesh connectivity which beraks orientation on the face, you have to
+   implement method which will set orinetation to face.
+
+  */
+  struct DriverElementOrientation {
+
+    int elementOrientation;
+
+    virtual PetscErrorCode getElementOrientation(FieldInterface &m_field,const FEMethod *fe_method_ptr) {
+      PetscFunctionBegin;
+      PetscFunctionReturn(0);
+    }
+
+  };
+  DriverElementOrientation &crackFrontOrientation;
+
+  SurfaceSlidingConstrains(FieldInterface &m_field,DriverElementOrientation &orientation):
   mField(m_field),
   feRhs(m_field),
-  feLhs(m_field) {}
+  feLhs(m_field),
+  crackFrontOrientation(orientation)
+  {}
 
   struct AuxFunctions {
+
+    bool useProjectionFromCrackFront;
+    AuxFunctions():
+    useProjectionFromCrackFront(false)
+    {}
 
     ublas::matrix<double> N;
     ublas::matrix<double> Bksi;
@@ -267,7 +294,6 @@ struct SurfaceSlidingConstrains {
     double aRea;
     double lAmbda;
 
-    int elementOrientation;
 
     static PetscErrorCode calcSpin(
       ublas::matrix<double> &spin,ublas::vector<double> &vec
@@ -284,54 +310,6 @@ struct SurfaceSlidingConstrains {
       PetscFunctionReturn(0);
     }
 
-    PetscErrorCode getElementOrientation(FieldInterface &m_field,const FEMethod *fe_method_ptr) {
-      PetscFunctionBegin;
-      ErrorCode rval;
-      PetscErrorCode ierr;
-      Range adj_side_elems;
-      EntityHandle face = fe_method_ptr->fePtr->get_ent();
-      BitRefLevel bit = fe_method_ptr->problemPtr->get_BitRefLevel();
-      ierr = m_field.get_adjacencies(bit,&face,1,3,adj_side_elems,Interface::INTERSECT,0); CHKERRQ(ierr);
-      adj_side_elems = adj_side_elems.subset_by_type(MBTET);
-      if(adj_side_elems.size()==0) {
-        Range adj_tets_on_surface;
-        BitRefLevel bit_tet_on_surface;
-        bit_tet_on_surface.set(BITREFLEVEL_SIZE-2);
-        ierr = m_field.get_adjacencies(bit_tet_on_surface,&face,1,3,adj_tets_on_surface,Interface::INTERSECT,0); CHKERRQ(ierr);
-        adj_side_elems.insert(*adj_tets_on_surface.begin());
-      }
-      if(adj_side_elems.size()!=1) {
-        adj_side_elems.clear();
-        ierr = m_field.get_adjacencies(bit,&face,1,3,adj_side_elems,Interface::INTERSECT,5); CHKERRQ(ierr);
-        Range::iterator it = adj_side_elems.begin();
-        for(;it!=adj_side_elems.end();it++) {
-          Range nodes;
-          rval = m_field.get_moab().get_connectivity(&*it,1,nodes,true); CHKERR_PETSC(rval);
-          PetscPrintf(PETSC_COMM_WORLD,"Connectivity %lu %lu %lu %lu\n",nodes[0],nodes[1],nodes[2],nodes[3]);
-        }
-        int rank;
-        MPI_Comm_rank(m_field.get_comm(),&rank);
-        if(rank==0) {
-          EntityHandle out_meshset;
-          rval = m_field.get_moab().create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
-          rval = m_field.get_moab().add_entities(out_meshset,adj_side_elems); CHKERR_PETSC(rval);
-          rval = m_field.get_moab().add_entities(out_meshset,&face,1); CHKERR_PETSC(rval);
-          rval = m_field.get_moab().write_file("debug_error.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
-        }
-        SETERRQ1(PETSC_COMM_SELF,1,"Expect 1 tet but is %u",adj_side_elems.size());
-      }
-      EntityHandle side_elem = *adj_side_elems.begin();
-      if(side_elem!=0) {
-        int side_number,sense,offset;
-        rval = m_field.get_moab().side_number(side_elem,face,side_number,sense,offset); CHKERR_PETSC(rval);
-        if(sense == -1) {
-          elementOrientation = -1;
-        } else {
-          elementOrientation = +1;
-        }
-      }
-      PetscFunctionReturn(0);
-    }
 
     PetscErrorCode matrixN(int gg,DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
@@ -387,7 +365,7 @@ struct SurfaceSlidingConstrains {
         sPin.resize(3,3,false);
         ierr = calcSpin(sPin,dXdKsi); CHKERRQ(ierr);
         nOrmal.resize(3,false);
-        noalias(nOrmal) = elementOrientation*0.5*prod(sPin,dXdEta);
+        noalias(nOrmal) = 0.5*prod(sPin,dXdEta);
         aRea = norm_2(nOrmal);
       } catch (const std::exception& ex) {
         ostringstream ss;
@@ -398,18 +376,20 @@ struct SurfaceSlidingConstrains {
     }
   };
 
-  vector<AuxFunctions> cUrrent,rEference;
+  vector<AuxFunctions> cUrrent;
 
   /** \brief Operator calculate material positions and tangent vectors to element surface
    */
   struct OpPositions: public FaceElementForcesAndSourcesCore::UserDataOperator {
 
     vector<AuxFunctions> &aUx;
+    DriverElementOrientation &oRientation;
 
-    OpPositions(const string field_name,vector<AuxFunctions> &aux):
+    OpPositions(const string field_name,vector<AuxFunctions> &aux,DriverElementOrientation &orientation):
     FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPCOL),
-    aUx(aux) {
-    }
+    aUx(aux),
+    oRientation(orientation)
+    {}
 
     PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
@@ -424,6 +404,10 @@ struct SurfaceSlidingConstrains {
         int nb_gauss_pts = data.getN().size1();
 
         aUx.resize(nb_gauss_pts);
+
+        if(type == MBVERTEX) {
+          oRientation.getElementOrientation(getTriFE()->mField,getFEMethod());
+        }
 
         if(type == MBVERTEX) {
           for(int gg = 0;gg<nb_gauss_pts;gg++) {
@@ -514,10 +498,13 @@ struct SurfaceSlidingConstrains {
   struct OpF: public FaceElementForcesAndSourcesCore::UserDataOperator {
 
     vector<AuxFunctions> &aUx;
+    DriverElementOrientation &oRientation;
 
-    OpF(const string field_name,vector<AuxFunctions> &aux):
+    OpF(const string field_name,vector<AuxFunctions> &aux,DriverElementOrientation &orientation):
     FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
-    aUx(aux) {}
+    aUx(aux),
+    oRientation(orientation)
+    {}
 
     ublas::vector<double> c;
     ublas::vector<double> nf;
@@ -539,14 +526,11 @@ struct SurfaceSlidingConstrains {
           for(int gg = 0;gg<nb_gauss_pts;gg++) {
             aUx[gg].nOrmal.resize(3,false);
             aUx[gg].nOrmal.clear();
-            if(gg == 0) {
-              aUx[gg].getElementOrientation(getTriFE()->mField,getFEMethod());
-            } else {
-              aUx[gg].elementOrientation = aUx[0].elementOrientation;
-            }
             aUx[gg].calculateNormal();
           }
         }
+
+        int eo = oRientation.elementOrientation;
 
         c.resize(nb_dofs,false);
         nf.resize(nb_dofs,false);
@@ -556,7 +540,7 @@ struct SurfaceSlidingConstrains {
 
           double val = getGaussPts()(2,gg);
           noalias(c) = prod(aUx[gg].nOrmal,aUx[gg].N);
-          noalias(nf) += val*aUx[gg].lAmbda*c;
+          noalias(nf) += val*eo*aUx[gg].lAmbda*c;
 
         }
 
@@ -585,10 +569,12 @@ struct SurfaceSlidingConstrains {
   struct OpG: public FaceElementForcesAndSourcesCore::UserDataOperator {
 
     vector<AuxFunctions> &aUx;
+    DriverElementOrientation &oRientation;
 
-    OpG(const string field_name,vector<AuxFunctions> &aux):
+    OpG(const string field_name,vector<AuxFunctions> &aux,DriverElementOrientation &orientation):
     FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
-    aUx(aux)
+    aUx(aux),
+    oRientation(orientation)
     {}
 
     ublas::vector<double> g,dElta;
@@ -607,6 +593,8 @@ struct SurfaceSlidingConstrains {
         }
         int nb_gauss_pts = row_data.getN().size1();
 
+        int eo = oRientation.elementOrientation;
+
         dElta.resize(3);
         g.resize(nb_dofs,false);
         g.clear();
@@ -620,7 +608,7 @@ struct SurfaceSlidingConstrains {
 
           double val = getGaussPts()(2,gg);
           double r = inner_prod(aUx[gg].nOrmal,dElta);
-          noalias(g) += val*row_data.getN(gg)*r;
+          noalias(g) += val*eo*row_data.getN(gg)*r;
 
         }
 
@@ -654,12 +642,14 @@ struct SurfaceSlidingConstrains {
   struct OpC: public FaceElementForcesAndSourcesCore::UserDataOperator {
 
     vector<AuxFunctions> &aUx;
+    DriverElementOrientation &oRientation;
     bool assembleTranspose;
 
     OpC(
       const string lambda_field_name,
       const string positions_field_name,
       vector<AuxFunctions> &aux,
+      DriverElementOrientation &orientation,
       bool assemble_transpose):
     FaceElementForcesAndSourcesCore::UserDataOperator(
       lambda_field_name,
@@ -667,6 +657,7 @@ struct SurfaceSlidingConstrains {
       UserDataOperator::OPROWCOL
     ),
     aUx(aux),
+    oRientation(orientation),
     assembleTranspose(assemble_transpose) {
       sYmm = false;
     }
@@ -699,11 +690,6 @@ struct SurfaceSlidingConstrains {
           for(int gg = 0;gg<nb_gauss_pts;gg++) {
             aUx[gg].nOrmal.resize(3,false);
             aUx[gg].nOrmal.clear();
-            if(gg == 0) {
-              aUx[gg].getElementOrientation(getTriFE()->mField,getFEMethod());
-            } else {
-              aUx[gg].elementOrientation = aUx[0].elementOrientation;
-            }
             aUx[gg].calculateNormal();
           }
         }
@@ -712,6 +698,8 @@ struct SurfaceSlidingConstrains {
           ierr = aUx[gg].matrixN(gg,col_data); CHKERRQ(ierr);
         }
 
+        int eo = oRientation.elementOrientation;
+
         c.resize(nb_col,false);
         C.resize(nb_row,nb_col,false);
         C.clear();
@@ -719,7 +707,7 @@ struct SurfaceSlidingConstrains {
 
           noalias(c) = prod(aUx[gg].nOrmal,aUx[gg].N);
           double val = getGaussPts()(2,gg);
-          noalias(C) += val*outer_prod(row_data.getN(gg),c);
+          noalias(C) += val*eo*outer_prod(row_data.getN(gg),c);
 
         }
 
@@ -770,12 +758,15 @@ struct SurfaceSlidingConstrains {
   struct OpB: public FaceElementForcesAndSourcesCore::UserDataOperator {
 
     vector<AuxFunctions> &aUx;
+    DriverElementOrientation &oRientation;
 
-    OpB(const string field_name,vector<AuxFunctions> &aux):
+    OpB(const string field_name,vector<AuxFunctions> &aux,DriverElementOrientation &orientation):
     FaceElementForcesAndSourcesCore::UserDataOperator(
       field_name,field_name,UserDataOperator::OPROWCOL
     ),
-    aUx(aux) {
+    aUx(aux),
+    oRientation(orientation)
+    {
       sYmm = false;
     }
 
@@ -804,6 +795,7 @@ struct SurfaceSlidingConstrains {
         }
 
         int nb_gauss_pts = row_data.getN().size1();
+        int eo = oRientation.elementOrientation;
 
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
           ierr = aUx[gg].matrixN(gg,row_data); CHKERRQ(ierr);
@@ -822,7 +814,7 @@ struct SurfaceSlidingConstrains {
           ierr = AuxFunctions::calcSpin(spindXdKsi,aUx[gg].dXdKsi); CHKERRQ(ierr);
           ierr = AuxFunctions::calcSpin(spindXdEta,aUx[gg].dXdEta); CHKERRQ(ierr);
 
-          noalias(dNormal) = prod(spindXdKsi,aUx[gg].Beta)-prod(spindXdEta,aUx[gg].Bksi);
+          noalias(dNormal) = eo*(prod(spindXdKsi,aUx[gg].Beta)-prod(spindXdEta,aUx[gg].Bksi));
           noalias(NdNormal) = prod(trans(aUx[gg].N),dNormal);
 
           double val = getGaussPts()(2,gg);
@@ -857,16 +849,20 @@ struct SurfaceSlidingConstrains {
   struct OpA: public FaceElementForcesAndSourcesCore::UserDataOperator {
 
     vector<AuxFunctions> &aUx;
+    DriverElementOrientation &oRientation;
 
     OpA(
       const string lagrange_multipliers_field_name,
       const string field_name,
-      vector<AuxFunctions> &aux
+      vector<AuxFunctions> &aux,
+      DriverElementOrientation &orientation
     ):
     FaceElementForcesAndSourcesCore::UserDataOperator(
       lagrange_multipliers_field_name,field_name,UserDataOperator::OPROWCOL
     ),
-    aUx(aux) {
+    aUx(aux),
+    oRientation(orientation)
+    {
       sYmm = false;
     }
 
@@ -896,6 +892,7 @@ struct SurfaceSlidingConstrains {
         }
 
         int nb_gauss_pts = row_data.getN().size1();
+        int eo = oRientation.elementOrientation;
 
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
           ierr = aUx[gg].matrixB(gg,col_data); CHKERRQ(ierr);
@@ -920,7 +917,7 @@ struct SurfaceSlidingConstrains {
           ierr = AuxFunctions::calcSpin(spindXdKsi,aUx[gg].dXdKsi); CHKERRQ(ierr);
           ierr = AuxFunctions::calcSpin(spindXdEta,aUx[gg].dXdEta); CHKERRQ(ierr);
 
-          noalias(dNormal) = prod(spindXdKsi,aUx[gg].Beta)-prod(spindXdEta,aUx[gg].Bksi);
+          noalias(dNormal) = eo*(prod(spindXdKsi,aUx[gg].Beta)-prod(spindXdEta,aUx[gg].Bksi));
           noalias(XdNormal) = prod(trans(dElta),dNormal);
           noalias(NXdNormal) = outer_prod(row_data.getN(gg),XdNormal);
 
@@ -960,13 +957,15 @@ struct SurfaceSlidingConstrains {
 
     // Adding operators to calculate the left hand side
     feLhs.getOpPtrVector().push_back(
-      new OpPositions(material_field_name,cUrrent)
+      new OpPositions(material_field_name,cUrrent,crackFrontOrientation)
     );
     feLhs.getOpPtrVector().push_back(
       new OpLambda(lagrange_multipliers_field_name,cUrrent)
     );
     feLhs.getOpPtrVector().push_back(
-      new OpC(lagrange_multipliers_field_name,material_field_name,cUrrent,false)
+      new OpC(
+        lagrange_multipliers_field_name,material_field_name,cUrrent,crackFrontOrientation,false
+      )
     );
 
     PetscFunctionReturn(0);
@@ -985,33 +984,35 @@ struct SurfaceSlidingConstrains {
 
     // Adding operators to calculate the right hand side
     feRhs.getOpPtrVector().push_back(
-      new OpPositions(material_field_name,cUrrent)
+      new OpPositions(material_field_name,cUrrent,crackFrontOrientation)
     );
     feRhs.getOpPtrVector().push_back(
       new OpLambda(lagrange_multipliers_field_name,cUrrent)
     );
     feRhs.getOpPtrVector().push_back(
-      new OpF(material_field_name,cUrrent)
+      new OpF(material_field_name,cUrrent,crackFrontOrientation)
     );
     feRhs.getOpPtrVector().push_back(
-      new OpG(lagrange_multipliers_field_name,cUrrent)
+      new OpG(lagrange_multipliers_field_name,cUrrent,crackFrontOrientation)
     );
 
     // Adding operators to calculate the left hand side
     feLhs.getOpPtrVector().push_back(
-      new OpPositions(material_field_name,cUrrent)
+      new OpPositions(material_field_name,cUrrent,crackFrontOrientation)
     );
     feLhs.getOpPtrVector().push_back(
       new OpLambda(lagrange_multipliers_field_name,cUrrent)
     );
     feLhs.getOpPtrVector().push_back(
-      new OpC(lagrange_multipliers_field_name,material_field_name,cUrrent,assemble_transpose)
+      new OpC(
+        lagrange_multipliers_field_name,material_field_name,cUrrent,crackFrontOrientation,assemble_transpose
+      )
     );
     feLhs.getOpPtrVector().push_back(
-      new OpB(material_field_name,cUrrent)
+      new OpB(material_field_name,cUrrent,crackFrontOrientation)
     );
     feLhs.getOpPtrVector().push_back(
-      new OpA(lagrange_multipliers_field_name,material_field_name,cUrrent)
+      new OpA(lagrange_multipliers_field_name,material_field_name,cUrrent,crackFrontOrientation)
     );
 
     PetscFunctionReturn(0);

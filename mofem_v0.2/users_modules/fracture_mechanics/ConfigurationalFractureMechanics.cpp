@@ -77,6 +77,73 @@ extern "C" {
 
 using namespace ObosleteUsersModules;
 
+struct FaceOrientation: public SurfaceSlidingConstrains::DriverElementOrientation {
+
+  bool useProjectionFromCrackFront;
+  FaceOrientation(bool crack_fornt):
+  useProjectionFromCrackFront(crack_fornt)
+  {}
+
+  PetscErrorCode getElementOrientation(FieldInterface &m_field,const FEMethod *fe_method_ptr) {
+    PetscFunctionBegin;
+    ErrorCode rval;
+    PetscErrorCode ierr;
+    Range adj_side_elems;
+    EntityHandle face = fe_method_ptr->fePtr->get_ent();
+    BitRefLevel bit = fe_method_ptr->problemPtr->get_BitRefLevel();
+    ierr = m_field.get_adjacencies(bit,&face,1,3,adj_side_elems,Interface::INTERSECT,0); CHKERRQ(ierr);
+    adj_side_elems = adj_side_elems.subset_by_type(MBTET);
+    if(adj_side_elems.size()==0) {
+      Range adj_tets_on_surface;
+      BitRefLevel bit_tet_on_surface;
+      bit_tet_on_surface.set(BITREFLEVEL_SIZE-2);
+      ierr = m_field.get_adjacencies(bit_tet_on_surface,&face,1,3,adj_tets_on_surface,Interface::INTERSECT,0); CHKERRQ(ierr);
+      adj_side_elems.insert(*adj_tets_on_surface.begin());
+    }
+    if(adj_side_elems.size()!=1) {
+      adj_side_elems.clear();
+      ierr = m_field.get_adjacencies(bit,&face,1,3,adj_side_elems,Interface::INTERSECT,5); CHKERRQ(ierr);
+      Range::iterator it = adj_side_elems.begin();
+      for(;it!=adj_side_elems.end();it++) {
+        Range nodes;
+        rval = m_field.get_moab().get_connectivity(&*it,1,nodes,true); CHKERR_PETSC(rval);
+        PetscPrintf(PETSC_COMM_WORLD,"Connectivity %lu %lu %lu %lu\n",nodes[0],nodes[1],nodes[2],nodes[3]);
+      }
+      int rank;
+      MPI_Comm_rank(m_field.get_comm(),&rank);
+      if(rank==0) {
+        EntityHandle out_meshset;
+        rval = m_field.get_moab().create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
+        rval = m_field.get_moab().add_entities(out_meshset,adj_side_elems); CHKERR_PETSC(rval);
+        rval = m_field.get_moab().add_entities(out_meshset,&face,1); CHKERR_PETSC(rval);
+        rval = m_field.get_moab().write_file("debug_error.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
+      }
+      SETERRQ1(PETSC_COMM_SELF,1,"Expect 1 tet but is %u",adj_side_elems.size());
+    }
+    EntityHandle side_elem = *adj_side_elems.begin();
+    if(side_elem!=0) {
+      int side_number,sense,offset;
+      rval = m_field.get_moab().side_number(side_elem,face,side_number,sense,offset); CHKERR_PETSC(rval);
+      if(sense == -1) {
+        elementOrientation = -1;
+      } else {
+        elementOrientation = +1;
+      }
+    }
+    if(useProjectionFromCrackFront) {
+      Tag th_interface_side;
+      rval = m_field.get_moab().tag_get_handle("INTERFACE_SIDE",th_interface_side); CHKERR_PETSC(rval);
+      int side;
+      rval = m_field.get_moab().tag_get_data(th_interface_side,&face,1,&side); CHKERR_PETSC(rval);
+      if(side == 1) {
+        elementOrientation = -1;
+      }
+    }
+    PetscFunctionReturn(0);
+  }
+
+};
+
 //phisical_equation_volume eq_solid = hooke; /*stvenant_kirchhoff;*/
 
 struct CrackFrontData {
@@ -1719,12 +1786,13 @@ PetscErrorCode ConfigurationalFractureMechanics::surface_projection_data(FieldIn
   ierr = MatZeroEntries(projSurfaceCtx->C); CHKERRQ(ierr);
 
   {
-    SurfaceSlidingConstrains surface_constrain(m_field);
-    SurfaceSlidingConstrains surface_crack_constrain(m_field);
+    FaceOrientation orientation(false),orientation_crack(true);
+    SurfaceSlidingConstrains surface_constrain(m_field,orientation);
+    SurfaceSlidingConstrains surface_crack_constrain(m_field,orientation_crack);
     boost::ptr_map<int,SurfaceSlidingConstrains> surface_constrains_map;
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,SIDESET,it)) {
       int msId = it->get_msId();
-      surface_constrains_map.insert(msId,new SurfaceSlidingConstrains(m_field));
+      surface_constrains_map.insert(msId,new SurfaceSlidingConstrains(m_field,orientation));
     }
 
     surface_constrain.setOperatorsCOnly("LAMBDA_SURFACE","MESH_NODE_POSITIONS");
@@ -2835,12 +2903,14 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
     other_body_surface_constrains[msId]->nonlinear = true;
   }*/
 
-  SurfaceSlidingConstrains surface_constrain(m_field);
-  SurfaceSlidingConstrains surface_crack_constrain(m_field);
+
+  FaceOrientation orientation(false),orientation_crack(true);
+  SurfaceSlidingConstrains surface_constrain(m_field,orientation);
+  SurfaceSlidingConstrains surface_crack_constrain(m_field,orientation_crack);
   boost::ptr_map<int,SurfaceSlidingConstrains> surface_constrains_map;
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,SIDESET,it)) {
     int msId = it->get_msId();
-    surface_constrains_map.insert(msId,new SurfaceSlidingConstrains(m_field));
+    surface_constrains_map.insert(msId,new SurfaceSlidingConstrains(m_field,orientation));
   }
 
   surface_constrain.setOperatorsWithLinearGeometry("LAMBDA_SURFACE","MESH_NODE_POSITIONS",true,true);
