@@ -324,7 +324,7 @@ struct Smoother {
             upper_bound(boost::make_tuple("MESH_NODE_POSITIONS",getConn()[nn]));
 
             for(;diit!=hi_diit;diit++) {
-              for(unsigned int ddd = 0;ddd<nb_col;ddd++) {
+              for(int ddd = 0;ddd<nb_col;ddd++) {
                 if(rowFrontIndices[3*nn+diit->get_dof_rank()]!=diit->get_petsc_gloabl_dof_idx()) {
                   SETERRQ2(PETSC_COMM_SELF,1,"data inconsistency %d != %d", 3*nn+diit->get_dof_rank(),diit->get_petsc_gloabl_dof_idx());
                 }

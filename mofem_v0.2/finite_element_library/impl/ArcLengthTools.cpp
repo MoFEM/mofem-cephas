@@ -92,7 +92,7 @@ PetscErrorCode ArcLengthMatShell::setLambda(Vec ksp_x,double *lambda,ScatterMode
   const MoFEMProblem *problem_ptr;
   ierr = arcPtr->mField.get_problem(problemName,&problem_ptr); CHKERRQ(ierr);
 
-  unsigned int part = arcPtr->getPart();
+  int part = arcPtr->getPart();
   int rank;
   MPI_Comm_rank(arcPtr->mField.get_comm(),&rank);
 
