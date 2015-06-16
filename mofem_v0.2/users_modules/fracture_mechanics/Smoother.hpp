@@ -292,8 +292,6 @@ struct Smoother {
         }
       }
 
-      //cerr << k << endl;
-
       ierr = MatSetValues(
         getFEMethod()->snes_B,
         nb_row,row_indices_ptr,
@@ -326,7 +324,10 @@ struct Smoother {
             for(;diit!=hi_diit;diit++) {
               for(int ddd = 0;ddd<nb_col;ddd++) {
                 if(rowFrontIndices[3*nn+diit->get_dof_rank()]!=diit->get_petsc_gloabl_dof_idx()) {
-                  SETERRQ2(PETSC_COMM_SELF,1,"data inconsistency %d != %d", 3*nn+diit->get_dof_rank(),diit->get_petsc_gloabl_dof_idx());
+                  SETERRQ2(
+                    PETSC_COMM_SELF,1,"data inconsistency %d != %d",
+                    3*nn+diit->get_dof_rank(),diit->get_petsc_gloabl_dof_idx()
+                  );
                 }
                 if(diit->get_petsc_local_dof_idx()==-1) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
                 double g = f_tangent_front_mesh_array[diit->get_petsc_local_dof_idx()]*k(3*nn+diit->get_dof_rank(),ddd);

@@ -322,7 +322,7 @@ To build the user’s modules run:
 ~~~~~~
 cd $MOFEM_INSTALL_DIR/debug/usr_mods
 
-cmake -DCMAKE_BUILD_TYPE=Debug users_modules
+cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS="-Wall" users_modules
 make -j 4
 ~~~~~~
 
