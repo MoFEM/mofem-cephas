@@ -248,10 +248,10 @@ struct SurfaceSlidingConstrains {
 
   /** \brief Class implemented by user to detect face orientation
 
-   If mesh generated is with surface mesher, usally you don't have to nathing, all elements
+   If mesh generated is with surface mesher, usually you don't have to do nothing, all elements
    on the surface have consistent orientation. In case of inetranl faces or if you do
-   somthing with mesh connectivity which beraks orientation on the face, you have to
-   implement method which will set orinetation to face.
+   something with mesh connectivity which breaks orientation on the face, you have to
+   implement method which will set orientation to face.
 
   */
   struct DriverElementOrientation {
