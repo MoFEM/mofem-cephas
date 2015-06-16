@@ -46,6 +46,7 @@ extern "C" {
 
 #include <FaceSplittingTool.hpp>
 #include <ConfigurationalFractureMechanics.hpp>
+#include <MainCrackFunction.hpp>
 
 using namespace ObosleteUsersModules;
 
@@ -83,7 +84,7 @@ int main(int argc, char *argv[]) {
   int def_set_ref_level = 0;
   Tag th_set_ref_level;
   rval = moab.tag_get_handle("_SET_REF_LEVEL",1,MB_TYPE_INTEGER,
-    th_set_ref_level,MB_TAG_CREAT|MB_TAG_MESH,&def_set_ref_level); 
+    th_set_ref_level,MB_TAG_CREAT|MB_TAG_MESH,&def_set_ref_level);
   rval = moab.tag_set_data(th_set_ref_level,&root_meshset,1,&nb_ref_levels); CHKERR_PETSC(rval);
 
   PetscInt order;
@@ -96,17 +97,17 @@ int main(int argc, char *argv[]) {
   int def_set_order = 1;
   Tag th_set_order;
   rval = moab.tag_get_handle("_SET_ORDER",1,MB_TYPE_INTEGER,
-    th_set_order,MB_TAG_CREAT|MB_TAG_MESH,&def_set_order); 
+    th_set_order,MB_TAG_CREAT|MB_TAG_MESH,&def_set_order);
   rval = moab.tag_set_data(th_set_order,&root_meshset,1,&order); CHKERR_PETSC(rval);
- 
+
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-  BARRIER_RANK_START(pcomm) 
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
-  BARRIER_RANK_END(pcomm) 
+  BARRIER_RANK_START(pcomm)
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
+  BARRIER_RANK_END(pcomm)
 
   PetscLogDouble t1,t2;
   PetscLogDouble v1,v2;
@@ -123,7 +124,7 @@ int main(int argc, char *argv[]) {
   Tag th_my_ref_level;
   BitRefLevel def_bit_level = 0;
   rval = m_field.get_moab().tag_get_handle("_MY_REFINMENT_LEVEL",sizeof(BitRefLevel),MB_TYPE_OPAQUE,
-    th_my_ref_level,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_bit_level); 
+    th_my_ref_level,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_bit_level);
   BitRefLevel *ptr_bit_level0;
   rval = m_field.get_moab().tag_get_by_ptr(th_my_ref_level,&root_meshset,1,(const void**)&ptr_bit_level0); CHKERR_PETSC(rval);
   BitRefLevel& bit_level0 = *ptr_bit_level0;
@@ -185,7 +186,7 @@ int main(int argc, char *argv[]) {
     ierr = face_splitting_tools.rebuildMeshWithTetGen(switches1,0); CHKERRQ(ierr);*/
 
     /*for(int ii = 0;ii<=200;ii++) {
-      
+
       cerr << "Debug step " << ii << endl;
 
       double v[] = { 0.01,0.0,0 };
@@ -194,7 +195,7 @@ int main(int argc, char *argv[]) {
       face_splitting_tools.moabTetGenMap.clear();
       face_splitting_tools.tetGenMoabMap.clear();
       face_splitting_tools.tetGenData.clear();
-      ierr = face_splitting_tools.rebuildMeshWithTetGen(switches1,2); CHKERRQ(ierr);	
+      ierr = face_splitting_tools.rebuildMeshWithTetGen(switches1,2); CHKERRQ(ierr);
 
       BitRefLevel bit_level1 = BitRefLevel().set(face_splitting_tools.meshIntefaceBitLevels.back());
       EntityHandle meshset_level;
@@ -223,7 +224,7 @@ int main(int argc, char *argv[]) {
   double *t_val;
   Tag th_t_val;
   double def_t_val = 0;
-  rval = m_field.get_moab().tag_get_handle("_LoadFactor_Scale_",1,MB_TYPE_DOUBLE,th_t_val,MB_TAG_CREAT|MB_TAG_EXCL|MB_TAG_MESH,&def_t_val); 
+  rval = m_field.get_moab().tag_get_handle("_LoadFactor_Scale_",1,MB_TYPE_DOUBLE,th_t_val,MB_TAG_CREAT|MB_TAG_EXCL|MB_TAG_MESH,&def_t_val);
   if(rval == MB_ALREADY_ALLOCATED) {
     rval = m_field.get_moab().tag_get_by_ptr(th_t_val,&root_meshset,1,(const void**)&t_val); CHKERR_PETSC(rval);
   } else {
@@ -250,7 +251,7 @@ int main(int argc, char *argv[]) {
     rval = moab.write_file("out_spatial.h5m"); CHKERR_PETSC(rval);
   }
 
-  if(pcomm->rank()==0) {
+  /*if(pcomm->rank()==0) {
     EntityHandle out_meshset;
     rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
     ierr = m_field.get_problem_finite_elements_entities("ELASTIC_MECHANICS","ELASTIC",out_meshset); CHKERRQ(ierr);
@@ -261,7 +262,7 @@ int main(int argc, char *argv[]) {
       ierr = PetscPrintf(PETSC_COMM_WORLD,"Save stresses in post-processing mesh out_stresses.vtk\n"); CHKERRQ(ierr);
       rval = conf_prob.fe_post_proc_stresses_method->moab_post_proc.write_file("out_stresses.vtk","VTK",""); CHKERR_PETSC(rval);
     }
-  }
+  }*/
 
   ierr = PetscTime(&v2);CHKERRQ(ierr);
   ierr = PetscGetCPUTime(&t2);CHKERRQ(ierr);
@@ -277,7 +278,3 @@ int main(int argc, char *argv[]) {
 
   return 0;
 }
-
-
-
-

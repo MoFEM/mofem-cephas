@@ -1,8 +1,3 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
- * FIXME: DESCRIPTION
- */
-
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -58,7 +53,7 @@ struct PostProcStressNonLinearElasticity: public PostProcDisplacementsOnRefMesh 
 
     ierr = do_operator(); CHKERRQ(ierr);
 
-    fe_method.problemPtr = problemPtr; 
+    fe_method.problemPtr = problemPtr;
     fe_method.fieldsPtr = fieldsPtr;
     fe_method.refinedEntitiesPtr = refinedEntitiesPtr;
     fe_method.entitiesPtr = entitiesPtr;
@@ -268,4 +263,3 @@ struct PostProcStressNonLinearElasticity: public PostProcDisplacementsOnRefMesh 
 }
 
 #endif //__POSTPROCNONLINEARELASTICITYSTRESSEONREFINDEDMESH_HPP__
-

@@ -1,35 +1,42 @@
 /*! \mainpage Index Page
- 
+
 \section introduction Introduction
 
 MoFEM (Mesh Oriented Finite Element Method) it is C++ library supporting
-solution of finite elements problems. 
+solution of finite elements problems.
 
 MoFEM is a finite element analysis code tailored for the solution of
 multi-physics problems with arbitrary levels of approximation, different levels
 of mesh refinement and optimised for high-performance computing. It is design
 to be able manage complexities related to heterogeneous order of approximations
-for L2,H1,H-div and H-curl spaces. 
+for L2,H1,H-div and H-curl spaces.
 
 MoFEM is the blend of the Boost MultiIndex containers, MOAB (Mesh Oriented
 Database) and PETSc (Portable, Extensible Toolkit for Scientific Computation).
 MoFEM is developed in C++ and it is open-source software under the GNU Lesser
-General Public License (see Legal Stuff). 
+General Public License (see Legal Stuff).
 
 MoFEM can read and write number of mesh file formats using functionality
 provided by MoAB.  The current version of MoFEM has full support for
 CUBIT/TRELIS, TetGEN, NetGEN for pre-processing and ParaView for
-post-processing. 
+post-processing.
 
 \section download_repository MoFEM download and repository
 
 MoFEM is on BitBucket repository <https://bitbucket.org/likask/mofem-cephas>.
-Current is called MoFEM-cephas. 
+Current is called MoFEM-cephas.
+
+\section twitter_and_google_plus Some colorfull examples of MoFEM applications
+
+- Google+ <https://plus.google.com/110439315415517980382/posts>
+- Twitter <https://twitter.com/mofemjoseph>
+
+You don't have to have account on Google+ or Twitter to open above links.
 
 \section Motivation
 
 To provide free and open, inclusive, participation community finite element
-code for engineers, students, academics and software developers. 
+code for engineers, students, academics and software developers.
 
 \section thrid_party Third party libraries
 
@@ -69,5 +76,3 @@ You should have received a copy of the GNU Lesser General Public License
 along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
 */
-
-

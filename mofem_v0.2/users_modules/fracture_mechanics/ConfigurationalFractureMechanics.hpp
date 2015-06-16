@@ -1,3 +1,35 @@
+/* \file ConfigurationalFractureMechanics.hpp
+
+ This implementation result of research in period of couple of
+years. It is far for being optimal and efficient.
+
+This need to be reimplemented, using automatic differentiation and by
+grouping elements in the problem by type of of entity, i.e.
+volume, face and edge rather than by functionality.
+
+Moreover matrix should be filled by blocks, whereas only where fracture
+process takes place should be updated. Moreover multi-grid solver
+implemented in mofem could be used with dynamic tolerance. All this will
+improve scalability and efficiency of the code. It could run in several
+times faster that is running now.
+
+In addition configuration by blocks using boost parsing need to be
+implemented. And connection with CGM functionality to keep information
+relating geometry and mesh.
+
+One matrix should be calculated, where some sub-problems in material and
+spatial space should use projection matrixes and indices scattering to
+create sub-problems. This will reduce size of the code and reduce of
+possibility of implementation errors, enabling faster changes and
+improvements.
+
+All Functions should be grouped in structures.
+
+Week constrains using Nitsche method should be used to enforce constrains
+on geometry.
+
+*/
+
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -18,7 +50,7 @@
 using namespace ObosleteUsersModules;
 
 struct ConfigurationalFractureMechanics {
- 
+
   Tag th_MaterialFireWall;
   typedef bitset<17> Material_FirelWall_def;
   Material_FirelWall_def *material_FirelWall;
@@ -49,19 +81,13 @@ struct ConfigurationalFractureMechanics {
     const EntityHandle root_meshset = m_field.get_moab().get_root_set();
     rval = m_field.get_moab().tag_get_by_ptr(th_my_ref_level,&root_meshset,1,(const void**)&ptr_bit_level0); CHKERR_THROW(rval);
 
-    fe_post_proc_stresses_method = NULL;
-
   };
 
-  ~ConfigurationalFractureMechanics() {
-    if(fe_post_proc_stresses_method!=NULL) {
-      delete fe_post_proc_stresses_method;
-    }
-  }
-  
+  ~ConfigurationalFractureMechanics() {}
+
   PetscErrorCode set_material_fire_wall(FieldInterface& m_field);
   PetscErrorCode thermal_field(FieldInterface& m_field);
-  PetscErrorCode spatial_problem_definition(FieldInterface& m_field); 
+  PetscErrorCode spatial_problem_definition(FieldInterface& m_field);
   PetscErrorCode material_problem_definition(FieldInterface& m_field);
   PetscErrorCode coupled_problem_definition(FieldInterface& m_field);
   PetscErrorCode arclength_problem_definition(FieldInterface& m_field);
@@ -76,11 +102,9 @@ struct ConfigurationalFractureMechanics {
   PetscErrorCode set_material_positions(FieldInterface& m_field);
   PetscErrorCode set_coordinates_from_material_solution(FieldInterface& m_field,bool only_crack_front = false);
 
-  PostProcStressNonLinearElasticity *fe_post_proc_stresses_method;
   PetscErrorCode solve_spatial_problem(FieldInterface& m_field,SNES *snes,bool postproc = true);
-  PetscErrorCode solve_material_problem(FieldInterface& m_field,SNES *snes);
 
-  PetscErrorCode fix_all_but_one(FieldInterface& m_field,Range &fix_nodes,const double fraction_treshold);
+  PetscErrorCode fix_all_but_one(FieldInterface& m_field,double da,Range &fix_nodes,const double fraction_treshold);
 
   double aRea,lambda,energy;
   int nb_un_freez_nodes;
@@ -94,14 +118,14 @@ struct ConfigurationalFractureMechanics {
   PetscErrorCode project_force_vector(FieldInterface& m_field,string problem);
   PetscErrorCode front_projection_data(FieldInterface& m_field,string problem);
   PetscErrorCode delete_front_projection_data(FieldInterface& m_field);
-  PetscErrorCode griffith_force_vector(FieldInterface& m_field,string problem);
+  PetscErrorCode calculate_griffith_foces(FieldInterface& m_field,string problem);
 
   PetscErrorCode project_form_th_projection_tag(FieldInterface& m_field,string problem,bool do_not_project = false);
 
   map<EntityHandle,double> map_ent_g,map_ent_j,map_ent_work;
   PetscScalar ave_g,min_g,max_g;
   PetscScalar ave_j,min_j,max_j;
-  PetscErrorCode griffith_g(FieldInterface& m_field,string problem);
+  PetscErrorCode calculate_griffith_g(FieldInterface& m_field,string problem);
 
  struct FrontAreaArcLengthControl: public FEMethod {
 
@@ -140,20 +164,6 @@ struct ConfigurationalFractureMechanics {
 
 PetscErrorCode SNESMonitorSpatialAndSmoothing_FEMEthod(SNES snes,PetscInt its,PetscReal fgnorm,void *dummy);
 
-
-PetscErrorCode main_spatial_solution(FieldInterface& m_field,ConfigurationalFractureMechanics& conf_prob);
-PetscErrorCode main_material_forces(FieldInterface& m_field,ConfigurationalFractureMechanics& conf_prob);
-
-//crack propagation 
-
-/** \brief rescale load factor, such that maximally stressed crack front node has griffithe energy equal to gc
-  *
-  */
-PetscErrorCode main_rescale_load_factor(FieldInterface& m_field,ConfigurationalFractureMechanics& conf_prob);
-
-PetscErrorCode main_arc_length_setup(FieldInterface& m_field,ConfigurationalFractureMechanics& conf_prob);
-PetscErrorCode main_arc_length_restart(FieldInterface& m_field,ConfigurationalFractureMechanics& conf_prob);
-PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFractureMechanics& conf_prob);
 
 
 #endif //__CONFIGURATIONAL_MECHANICS_HPP__

@@ -36,7 +36,7 @@ using namespace MoFEM;
 
 #include <SurfacePressureComplexForLazy.hpp>
 #include <adolc/adolc.h>
-#include <NonLienarElasticElement.hpp>
+#include <NonLinearElasticElement.hpp>
 
 #include <PostProcOnRefMesh.hpp>
 #include <PostProcStresses.hpp>
@@ -62,7 +62,7 @@ struct MyMat_double: public NonlinearElasticElement::FunctionsToCalulatePiolaKir
   ublas::vector<TYPE> sTrain,sTrain0,sTress;
   ublas::matrix<adouble> invF,CauchyStress;
 
-  virtual PetscErrorCode CalualteP_PiolaKirchhoffI(
+  virtual PetscErrorCode calculateP_PiolaKirchhoffI(
     const NonlinearElasticElement::BlockData block_data,
     const NumeredMoFEMFiniteElement *fe_ptr) {
     PetscFunctionBegin;
@@ -91,40 +91,40 @@ struct MyMat_double: public NonlinearElasticElement::FunctionsToCalulatePiolaKir
       noalias(D) = lambda*D_lambda + mu*D_mu;
 
       if(doAotherwiseB) {
-	sTrain.resize(6);
-	sTrain[0] = this->F(0,0)-1;
-	sTrain[1] = this->F(1,1)-1;
-	sTrain[2] = this->F(2,2)-1;
-	sTrain[3] = this->F(0,1)+this->F(1,0);
-	sTrain[4] = this->F(1,2)+this->F(2,1);
-	sTrain[5] = this->F(0,2)+this->F(2,0);
-	sTress.resize(6);
-	noalias(sTress) = prod(D,sTrain);
-	this->P.resize(3,3);
-	this->P(0,0) = sTress[0];
-	this->P(1,1) = sTress[1];
-	this->P(2,2) = sTress[2];
-	this->P(0,1) = this->P(1,0) = sTress[3];
-	this->P(1,2) = this->P(2,1) = sTress[4];
-	this->P(0,2) = this->P(2,0) = sTress[5];
-	//cerr << this->P << endl;
+        sTrain.resize(6);
+        sTrain[0] = this->F(0,0)-1;
+        sTrain[1] = this->F(1,1)-1;
+        sTrain[2] = this->F(2,2)-1;
+        sTrain[3] = this->F(0,1)+this->F(1,0);
+        sTrain[4] = this->F(1,2)+this->F(2,1);
+        sTrain[5] = this->F(0,2)+this->F(2,0);
+        sTress.resize(6);
+        noalias(sTress) = prod(D,sTrain);
+        this->P.resize(3,3);
+        this->P(0,0) = sTress[0];
+        this->P(1,1) = sTress[1];
+        this->P(2,2) = sTress[2];
+        this->P(0,1) = this->P(1,0) = sTress[3];
+        this->P(1,2) = this->P(2,1) = sTress[4];
+        this->P(0,2) = this->P(2,0) = sTress[5];
+        //cerr << this->P << endl;
       } else {
-	adouble J;
-	ierr = this->dEterminatnt(this->F,J); CHKERRQ(ierr);
-	invF.resize(3,3);
-	ierr = this->iNvert(J,this->F,invF); CHKERRQ(ierr);
-	sTrain0.resize(6,0);
-	noalias(sTress) = prod(D,sTrain0);
-	CauchyStress.resize(3,3);
-	CauchyStress(0,0) = sTress[0];
-	CauchyStress(1,1) = sTress[1];
-	CauchyStress(2,2) = sTress[2];
-	CauchyStress(0,1) = CauchyStress(1,0) = sTress[3];
-	CauchyStress(1,2) = CauchyStress(2,1) = sTress[4];
-	CauchyStress(0,2) = CauchyStress(2,0) = sTress[5];
-	//cerr << D << endl;
-	//cerr << CauchyStress << endl;
-	noalias(this->P) = J*prod(CauchyStress,trans(invF));
+        adouble J;
+        ierr = this->dEterminatnt(this->F,J); CHKERRQ(ierr);
+        invF.resize(3,3);
+        ierr = this->iNvert(J,this->F,invF); CHKERRQ(ierr);
+        sTrain0.resize(6,0);
+        noalias(sTress) = prod(D,sTrain0);
+        CauchyStress.resize(3,3);
+        CauchyStress(0,0) = sTress[0];
+        CauchyStress(1,1) = sTress[1];
+        CauchyStress(2,2) = sTress[2];
+        CauchyStress(0,1) = CauchyStress(1,0) = sTress[3];
+        CauchyStress(1,2) = CauchyStress(2,1) = sTress[4];
+        CauchyStress(0,2) = CauchyStress(2,0) = sTress[5];
+        //cerr << D << endl;
+        //cerr << CauchyStress << endl;
+        noalias(this->P) = J*prod(CauchyStress,trans(invF));
       }
 
     } catch (const std::exception& ex) {
@@ -141,7 +141,7 @@ struct MyMat_double: public NonlinearElasticElement::FunctionsToCalulatePiolaKir
 template<typename TYPE>
 struct MyMat: public MyMat_double<TYPE> {
 
-  virtual PetscErrorCode SetUserActiveVariables(
+  virtual PetscErrorCode setUserActiveVariables(
     int &nb_active_variables) {
     PetscFunctionBegin;
 
@@ -166,7 +166,7 @@ struct MyMat: public MyMat_double<TYPE> {
     PetscFunctionReturn(0);
   }
 
-  virtual PetscErrorCode SetUserActiveVariables(
+  virtual PetscErrorCode setUserActiveVariables(
     ublas::vector<double> &active_varibles) {
     PetscFunctionBegin;
 

@@ -11,17 +11,21 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
+add_subdirectory(examples)
+
+include_directories(${UM_SOURCE_DIR}/nonlinear_elastic_materials/src)
+include_directories(${UM_SOURCE_DIR}/nonlinear_elasticity/src)
 
 include_directories(${UM_SOURCE_DIR}/fracture_mechanics)
 include_directories(${UM_SOURCE_DIR}/elasticity/src)
-include_directories(${UM_SOURCE_DIR}/nonlinear_elasticity/src)
 include_directories(${UM_SOURCE_DIR}/convective_mass_element/src)
+include_directories(${UM_SOURCE_DIR}/surface_sliding_constrains/src)
 
 add_library(fracture_mechanics
   ${UM_SOURCE_DIR}/fracture_mechanics/FaceSplittingTool.cpp
   ${UM_SOURCE_DIR}/fracture_mechanics/ConfigurationalFractureMechanics.cpp
+  ${UM_SOURCE_DIR}/fracture_mechanics/MainCrackFunction.cpp
 )
-
 
 add_executable(spatial_problem
   ${UM_SOURCE_DIR}/fracture_mechanics/spatial_problem.cpp

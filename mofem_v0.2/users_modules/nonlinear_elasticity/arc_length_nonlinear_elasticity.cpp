@@ -35,7 +35,7 @@ using namespace MoFEM;
 #include <DirichletBC.hpp>
 #include <ArcLengthTools.hpp>
 #include <adolc/adolc.h>
-#include <NonLienarElasticElement.hpp>
+#include <NonLinearElasticElement.hpp>
 #include <NeoHookean.hpp>
 
 #include <PostProcOnRefMesh.hpp>
@@ -398,13 +398,13 @@ int main(int argc, char *argv[]) {
       NumeredDofMoFEMEntity_multiIndex &numered_dofs_rows = const_cast<NumeredDofMoFEMEntity_multiIndex&>(problemPtr->numered_dofs_rows);
       Range::iterator nit = nodeSet.begin();
       for(;nit!=nodeSet.end();nit++) {
-	NumeredDofMoFEMEntity_multiIndex::index<Ent_mi_tag>::type::iterator dit,hi_dit;
-	dit = numered_dofs_rows.get<Ent_mi_tag>().lower_bound(*nit);
-	hi_dit = numered_dofs_rows.get<Ent_mi_tag>().upper_bound(*nit);
-	for(;dit!=hi_dit;dit++) {
-	  PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e -> ","LAMBDA",0,arc_ptr->getFieldData());
-	  PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e\n",dit->get_name().c_str(),dit->get_dof_rank(),dit->get_FieldData());
-	}
+        NumeredDofMoFEMEntity_multiIndex::index<Ent_mi_tag>::type::iterator dit,hi_dit;
+        dit = numered_dofs_rows.get<Ent_mi_tag>().lower_bound(*nit);
+        hi_dit = numered_dofs_rows.get<Ent_mi_tag>().upper_bound(*nit);
+        for(;dit!=hi_dit;dit++) {
+          PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e -> ","LAMBDA",0,arc_ptr->getFieldData());
+          PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e\n",dit->get_name().c_str(),dit->get_dof_rank(),dit->get_FieldData());
+        }
       }
       PetscFunctionReturn(0);
     }
@@ -436,25 +436,25 @@ int main(int argc, char *argv[]) {
       PetscFunctionBegin;
       switch(snes_ctx) {
         case CTX_SNESSETFUNCTION: {
-	  //F_lambda
+          //F_lambda
           ierr = VecGhostUpdateBegin(arc_ptr->F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
           ierr = VecGhostUpdateEnd(arc_ptr->F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
           ierr = VecAssemblyBegin(arc_ptr->F_lambda); CHKERRQ(ierr);
           ierr = VecAssemblyEnd(arc_ptr->F_lambda); CHKERRQ(ierr);
-	  for(vector<int>::iterator vit = bC->dofsIndices.begin();vit!=bC->dofsIndices.end();vit++) {
-	    ierr = VecSetValue(arc_ptr->F_lambda,*vit,0,INSERT_VALUES); CHKERRQ(ierr);
-	  }
-	  ierr = VecAssemblyBegin(arc_ptr->F_lambda); CHKERRQ(ierr);
-	  ierr = VecAssemblyEnd(arc_ptr->F_lambda); CHKERRQ(ierr);
-	  ierr = VecDot(arc_ptr->F_lambda,arc_ptr->F_lambda,&arc_ptr->F_lambda2); CHKERRQ(ierr);
-	  PetscPrintf(PETSC_COMM_WORLD,"\tFlambda2 = %6.4e\n",arc_ptr->F_lambda2);
-	  //add F_lambda
-	  ierr = VecAXPY(snes_f,arc_ptr->getFieldData(),arc_ptr->F_lambda); CHKERRQ(ierr);
-	  PetscPrintf(PETSC_COMM_WORLD,"\tlambda = %6.4e\n",arc_ptr->getFieldData());
-	  double fnorm;
-	  ierr = VecNorm(snes_f,NORM_2,&fnorm); CHKERRQ(ierr);
-	  PetscPrintf(PETSC_COMM_WORLD,"\tfnorm = %6.4e\n",fnorm);
-	}
+          for(vector<int>::iterator vit = bC->dofsIndices.begin();vit!=bC->dofsIndices.end();vit++) {
+            ierr = VecSetValue(arc_ptr->F_lambda,*vit,0,INSERT_VALUES); CHKERRQ(ierr);
+          }
+          ierr = VecAssemblyBegin(arc_ptr->F_lambda); CHKERRQ(ierr);
+          ierr = VecAssemblyEnd(arc_ptr->F_lambda); CHKERRQ(ierr);
+          ierr = VecDot(arc_ptr->F_lambda,arc_ptr->F_lambda,&arc_ptr->F_lambda2); CHKERRQ(ierr);
+          PetscPrintf(PETSC_COMM_WORLD,"\tFlambda2 = %6.4e\n",arc_ptr->F_lambda2);
+          //add F_lambda
+          ierr = VecAXPY(snes_f,arc_ptr->getFieldData(),arc_ptr->F_lambda); CHKERRQ(ierr);
+          PetscPrintf(PETSC_COMM_WORLD,"\tlambda = %6.4e\n",arc_ptr->getFieldData());
+          double fnorm;
+          ierr = VecNorm(snes_f,NORM_2,&fnorm); CHKERRQ(ierr);
+          PetscPrintf(PETSC_COMM_WORLD,"\tfnorm = %6.4e\n",fnorm);
+        }
         break;
         default:
           SETERRQ(PETSC_COMM_SELF,1,"not implemented");

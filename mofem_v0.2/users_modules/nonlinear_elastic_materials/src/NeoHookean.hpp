@@ -1,6 +1,6 @@
-/** \file NeoHookean.hpp 
+/** \file NeoHookean.hpp
  * \ingroup nonlinear_elastic_elem
- * \brief Implementation of Neo-Hookean elastic material 
+ * \brief Implementation of Neo-Hookean elastic material
  */
 
 /* This file is part of MoFEM.
@@ -30,8 +30,8 @@ struct NeoHookean: public NonlinearElasticElement::FunctionsToCalulatePiolaKirch
 
     TYPE detC;
     ublas::matrix<TYPE> invC;
-    
-    /** \brief calculate second Piola Kirchoff 
+
+    /** \brief calculate second Piola Kirchoff
       *
       * \f$\mathbf{S} = \mu(\mathbf{I}-\mathbf{C}^{-1})+\lambda(\ln{J})\mathbf{C}^{-1}\f$
 
@@ -49,21 +49,21 @@ struct NeoHookean: public NonlinearElasticElement::FunctionsToCalulatePiolaKirch
       ierr = this->iNvert(detC,this->C,invC); CHKERRQ(ierr);
       ierr = this->dEterminatnt(this->F,this->J); CHKERRQ(ierr);
       for(int i = 0;i<3;i++) {
-	for(int j = 0;j<3;j++) {
-	  this->S(i,j) = this->mu*( ((i==j) ? 1 : 0) - invC(i,j) ) + this->lambda*log(this->J)*invC(i,j);
-	}
+        for(int j = 0;j<3;j++) {
+          this->S(i,j) = this->mu*( ((i==j) ? 1 : 0) - invC(i,j) ) + this->lambda*log(this->J)*invC(i,j);
+        }
       }
       PetscFunctionReturn(0);
     }
 
-    virtual PetscErrorCode CalualteP_PiolaKirchhoffI(
+    virtual PetscErrorCode calculateP_PiolaKirchhoffI(
       const NonlinearElasticElement::BlockData block_data,
       const NumeredMoFEMFiniteElement *fe_ptr) {
       PetscFunctionBegin;
       PetscErrorCode ierr;
       this->lambda = LAMBDA(block_data.E,block_data.PoissonRatio);
       this->mu = MU(block_data.E,block_data.PoissonRatio);
-      ierr = this->CalulateC_CauchyDefromationTensor(); CHKERRQ(ierr);
+      ierr = this->calculateC_CauchyDefromationTensor(); CHKERRQ(ierr);
       ierr = this->NeoHooke_PiolaKirchhoffII(); CHKERRQ(ierr);
       this->P.resize(3,3);
       noalias(this->P) = prod(this->F,this->S);
@@ -81,17 +81,17 @@ struct NeoHookean: public NonlinearElasticElement::FunctionsToCalulatePiolaKirch
     Richard D. Wood
 
     */
-    virtual PetscErrorCode CalulateElasticEnergy(const NonlinearElasticElement::BlockData block_data,
+    virtual PetscErrorCode calculateElasticEnergy(const NonlinearElasticElement::BlockData block_data,
       const NumeredMoFEMFiniteElement *fe_ptr) {
       PetscFunctionBegin;
       PetscErrorCode ierr;
       this->lambda = LAMBDA(block_data.E,block_data.PoissonRatio);
       this->mu = MU(block_data.E,block_data.PoissonRatio);
-      ierr = this->CalulateC_CauchyDefromationTensor(); CHKERRQ(ierr);
+      ierr = this->calculateC_CauchyDefromationTensor(); CHKERRQ(ierr);
       ierr = this->dEterminatnt(this->F,this->J); CHKERRQ(ierr);
       this->eNergy = 0;
       for(int ii = 0;ii<3;ii++) {
-	this->eNergy += this->C(ii,ii);
+        this->eNergy += this->C(ii,ii);
       }
       this->eNergy = 0.5*this->mu*(this->eNergy-3);
       logJ = log(this->J);

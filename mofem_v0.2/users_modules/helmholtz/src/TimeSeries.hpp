@@ -97,7 +97,7 @@ struct TimeSeries {
     }
     double no1 = 0.0, no2 = 0.0;
     series[no1] = no2;
-    while(! feof (time_data)){
+    while(! feof (time_data)){ //check if end-of-file is reached
       int n = fscanf(time_data,"%lf %lf",&no1,&no2);
       if((n <= 0)||((no1==0)&&(no2==0))) {
         fgetc(time_data);
@@ -170,6 +170,7 @@ struct TimeSeries {
     }
 
     complex_out = boost::shared_array<kiss_fft_cpx>(new kiss_fft_cpx[n]);
+    /* forwardCfg returned from kiss_fft_alloc */
     kiss_fft(forwardCfg,complex_in.get(),complex_out.get());
 
     /*const complex< double > i( 0.0, 1.0 );
@@ -322,6 +323,7 @@ struct TimeSeries {
     for(int ss = 0;ss<2;ss++) {
       ierr = mField.VecCreateGhost("PRESSURE_IN_TIME",ROW,&p_series[ss][0]); CHKERRQ(ierr);
       for(int k = 1;k<n;k++) {
+        //Duplicate the ghost format to all the vectors inside real and imaginary containers.
         ierr = VecDuplicate(p_series[ss][0],&p_series[ss][k]); CHKERRQ(ierr);
       }
     }
@@ -660,19 +662,21 @@ of boundary conditions could be easily implemented.
     }
 
     Vec p_scatter_wave_real;
-    ierr = VecDuplicate(pSeriesIncidentWave[0](0),&p_scatter_wave_real); CHKERRQ(ierr);
+    ierr = VecDuplicate(pSeriesScatterWave[0](0),&p_scatter_wave_real); CHKERRQ(ierr);
     ierr = postProc.addFieldValuesPostProc("P","P_SCATTER_WAVE_REAL",p_scatter_wave_real); CHKERRQ(ierr);
 
     Vec p_scatter_wave_imag;
-    ierr = VecDuplicate(pSeriesIncidentWave[1](0),&p_scatter_wave_imag); CHKERRQ(ierr);
+    ierr = VecDuplicate(pSeriesScatterWave[1](0),&p_scatter_wave_imag); CHKERRQ(ierr);
     ierr = postProc.addFieldValuesPostProc("P","P_SCATTER_WAVE_IMAG",p_scatter_wave_imag); CHKERRQ(ierr);
 
     int n = sSeries.size();
     for(int k = 0;k<n;k++) {
 
-      ierr = VecCopy(pSeriesIncidentWave[0](k),p_inicent_wave); CHKERRQ(ierr);
-      ierr = VecGhostUpdateBegin(p_inicent_wave,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-      ierr = VecGhostUpdateEnd(p_inicent_wave,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      if(add_incident_wave) {
+        ierr = VecCopy(pSeriesIncidentWave[0](k),p_inicent_wave); CHKERRQ(ierr);
+        ierr = VecGhostUpdateBegin(p_inicent_wave,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+        ierr = VecGhostUpdateEnd(p_inicent_wave,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      }
 
       ierr = VecCopy(pSeriesScatterWave[0](k),p_scatter_wave_real); CHKERRQ(ierr);
       ierr = VecGhostUpdateBegin(p_scatter_wave_real,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);

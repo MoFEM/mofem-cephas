@@ -33,7 +33,7 @@ using namespace MoFEM;
 #include <boost/numeric/ublas/vector.hpp>
 
 #include <adolc/adolc.h> 
-#include <NonLienarElasticElement.hpp>
+#include <NonLinearElasticElement.hpp>
 
 ErrorCode rval;
 PetscErrorCode ierr;
@@ -102,7 +102,7 @@ int main(int argc, char *argv[]) {
   /*struct MyMat: public FunctionsToCalulatePiolaKirchhoffI {
     Interface& moAB;
     MyMat(Interface& moab): moAB(moab) {};
-    PetscErrorCode CalualteP_PiolaKirchhoffI(
+    PetscErrorCode calculateP_PiolaKirchhoffI(
      const BlockData block_data,
      const NumeredMoFEMFiniteElement *fe_ptr) {
      PetscFunctionBegin;

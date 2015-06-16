@@ -127,6 +127,16 @@ struct IncidentWave: public GenericAnalyticalSolution {
  Incident wave, i.t. is inverse Fourier transform evaluated at arbitrary
  spatial points.
 
+ \f[
+ \left. \left\{ \frac{1}{n}  (A_{0} e^{ik \mathbf{d} \cdot \mathbf{x} + i \phi})
+ \right\}
+ \f]
+ where \f$\phi\f$ is
+ \f[
+
+
+ \f]
+
   */
 struct IncidentWaveDFT: public GenericAnalyticalSolution {
 
@@ -168,13 +178,15 @@ struct IncidentWaveDFT: public GenericAnalyticalSolution {
     complex< double > result = 0.0;
     for(int f = 0;f<sIze;f++) {
       double speed = signalLength/signalDuration;
-      double wave_number = 2*M_PI*f/signalLength;
+      double wave_number = 2*M_PI*f/signalLength; //? K=w/c
       double delta_t = signalDuration/sIze;
       double distance = speed*delta_t*timeStep;
       double phase= 2*M_PI*f*(distance/signalLength);
       result += (complexOut[f].r+i*complexOut[f].i)*exp(i*wave_number*inner_prod(dIrection,cOordinate)+i*phase);
     }
+
     result /= sIze;
+
 
     rEsult.resize(2);
     rEsult[REAL].resize(1);
@@ -214,24 +226,29 @@ struct IncidentWaveDFT: public GenericAnalyticalSolution {
   */
 struct HardSphereScatterWave: public GenericAnalyticalSolution {
 
-  vector<complex<double> > vecAl; ///< this is to calculate constant values of series only once
-  vector<ublas::vector<double> > rEsult;
-  double wAvenumber;
-  double sphereRadius;
+    vector<complex<double> > vecAl; ///< this is to calculate constant values of series only once
+    vector<ublas::vector<double> > rEsult;
+    double wAvenumber;
+    double sphereRadius;
 
-  HardSphereScatterWave(double wavenumber,double sphere_radius):
+
+    HardSphereScatterWave(double wavenumber,double sphere_radius = 0.5):
+
     wAvenumber(wavenumber),sphereRadius(sphere_radius) {}
-  virtual ~HardSphereScatterWave() {}
+    virtual ~HardSphereScatterWave() {}
 
-  virtual vector<ublas::vector<double> >& operator()(double x, double y, double z) {
+    virtual vector<ublas::vector<double> >& operator()(double x, double y, double z) {
 
     const double tol = 1.0e-10;
 
     double x2 = x*x;
     double y2 = y*y;
     double z2 = z*z;
+
     double R = sqrt(x2+y2+z2);
-    double cos_theta = z/R;
+    double cos_theta = z/R; //Incident wave in Z direction, X =>sin_theta*sin_phi, Y =>sin_theta*cos_phi
+    //double cos_theta = cos( atan2(y,x)+2.0*M_PI ); //Incident wave in X direction.
+
 
     const double k = wAvenumber;    //Wave number
     const double a = sphereRadius;      //radius of the sphere,wait to modify by user
@@ -318,7 +335,8 @@ struct SoftSphereScatterWave: public GenericAnalyticalSolution {
   double sphereRadius;
 
 
-  SoftSphereScatterWave(double wavenumber,double sphere_radius):
+  SoftSphereScatterWave(double wavenumber,double sphere_radius = 0.5):
+
     wAvenumber(wavenumber),sphereRadius(sphere_radius) {}
   virtual ~SoftSphereScatterWave() {}
 
@@ -329,8 +347,10 @@ struct SoftSphereScatterWave: public GenericAnalyticalSolution {
     double x2 = x*x;
     double y2 = y*y;
     double z2 = z*z;
+
     double R = sqrt(x2+y2+z2);
-    double cos_theta = z/R;
+    double cos_theta = z/R; //incident wave in Z direction
+    //double cos_theta = cos( atan2(y,x)+2.0*M_PI ); //incident wave in X direction.
 
     const double k = wAvenumber;    //Wave number
     const double a = sphereRadius;      //radius of the sphere,wait to modify by user
@@ -658,7 +678,7 @@ struct SoftCylinderScatterWave: public GenericAnalyticalSolution {
 
     //result *= phi_incident_mag;
 
-    //const complex< double > inc_field = exp( i * k * R * cos( theta ) );  //???? Incident wave
+    //const complex< double > inc_field = exp( i * k * R * cos( theta ) );
     //const complex< double > total_field = inc_field + result;
     //ofs << theta << "\t" << abs( result ) << "\t" << abs( inc_field ) << "\t" << abs( total_field ) <<  "\t" << R << endl; //write the file
 
@@ -777,7 +797,9 @@ PetscErrorCode solve_problem(FieldInterface& m_field,
     ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
+
     ierr = save_data_on_mesh(m_field,problem_name,re_field,im_field,D,ss,mode,is_partitioned); CHKERRQ(ierr);
+
   }
 
   // clean

@@ -16,13 +16,13 @@ while test $# -gt 0; do
                         echo "-f, --file_name=FILE"
 			echo "-l, --load_factor=LOAD_FACTOR"
 			echo "-g, --gc=GRIFFITH_ENERGY"
-			echo "-o, --orders=1,2,3,4,5 (max is 5)\"" 
+			echo "-o, --orders=1,2,3,4,5 (max is 5)\""
 			echo "-r, --ref=0,1,2,3,4 ... (memory and time is your limit)\""
 			echo "-d, --dir=DIR_NAME"
       			echo "-t, --rol=TOLERANCE"
                         exit 0
                         ;;
-		--showme) 
+		--showme)
 			export SHOWME=1
 			shift
 			;;
@@ -126,7 +126,7 @@ while test $# -gt 0; do
                         export NB_PROC=`echo $1 | sed -e 's/^[^=]*=//g'`
                         shift
                         ;;
-		--pc_factor_mat_solver_package*) 
+		--pc_factor_mat_solver_package*)
                         export PCFACTOR=`echo $1 | sed -e 's/^[^=]*=//g'`
                         shift
                         ;;
@@ -157,49 +157,49 @@ if [ -z ${SHOWME+x} ]; then
   echo "Satrt time: "`date` | tee -a log
 fi
 
-if [ -z ${FILE+x} ]; then 
+if [ -z ${FILE+x} ]; then
   echo "Mesh file is unset, convergence_study --help"
 fi
 
-if [ -z ${LOAD_FACTOR+x} ]; then 
+if [ -z ${LOAD_FACTOR+x} ]; then
   echo "Load factor is unset, convergence_study --help"
   exit 1
 fi
 
-if [ -z ${ORDERS+x} ]; then 
+if [ -z ${ORDERS+x} ]; then
   echo "Approximation order is unset, convergence_study --help"
   exit 1
 fi
 
-if [ -z ${REF+x} ]; then 
+if [ -z ${REF+x} ]; then
   echo "Refinement levels is unset, convergence_study --help"
   exit 1
 fi
 
-if [ -z ${NB_PROC+x} ]; then 
+if [ -z ${NB_PROC+x} ]; then
   NB_PROC=4
 fi
 
-if [ -z ${PCFACTOR+x} ]; then 
+if [ -z ${PCFACTOR+x} ]; then
   PCFACTOR=superlu_dist
 fi
 
 OPTIONS_MATERIAL_FORCE="-pc_factor_mat_solver_package $PCFACTOR"
 
-if [ ! -z ${GC+x} ]; then 
+if [ ! -z ${GC+x} ]; then
   OPTIONS_MATERIAL_FORCE="$OPTIONS_MATERIAL_FORCE -my_gc $GC"
 fi
 
-if [ -z ${TOL+x} ]; then 
+if [ -z ${TOL+x} ]; then
   TOL=1e-9
 fi
 
 BIN_PATH="@CMAKE_CURRENT_BINARY_DIR@"
-MPIRUN="@MoFEM_MPI_RUN@ -np $NB_PROC" 
-MPIRUN_ONE_PROC="@MoFEM_MPI_RUN@ -np 1" 
+MPIRUN="@MoFEM_MPI_RUN@ -np $NB_PROC"
+MPIRUN_ONE_PROC="@MoFEM_MPI_RUN@ -np 1"
 
 
-if [ -z ${DIR_NAME+x} ]; then 
+if [ -z ${DIR_NAME+x} ]; then
   DIR_SURFIX=`date "+DATE-%Y-%m-%d_TIME_%H_%M_%S"`
   DIR_PREFIX=`basename $FILE .cub`
   DIR_PREFIX=`basename $DIR_PREFIX .h5m`
@@ -233,32 +233,30 @@ do
     echo "$COMMAND1 2>&1 | tee -a $DIR_NAME/log_solution"
     if [ -z ${SHOWME+x} ]; then
       $COMMAND1 2>&1 | tee -a $DIR_NAME/log_solution
-    fi 
+    fi
 
     COMMAND2="$MPIRUN_ONE_PROC $BIN_PATH/material_force \
       -my_file out_spatial.h5m \
-	-ksp_type gmres -pc_type lu -ksp_atol 1e-14 -ksp_rtol 1e-12 \
-	-ksp_monitor -log_summary \
-	-my_gc $GC -pc_factor_mat_solver_package $PCFACTOR"
+      -ksp_type gmres -pc_type lu -ksp_atol 1e-14 -ksp_rtol 1e-12 \
+      -ksp_monitor -log_summary \
+      -my_gc $GC -pc_factor_mat_solver_package $PCFACTOR"
 
-    echo "$COMMAND2 2>&1 | tee -a $DIR_NAME/log_griffith_forces" 
+    echo "$COMMAND2 2>&1 | tee -a $DIR_NAME/log_griffith_forces"
     if [ -z ${SHOWME+x} ]; then
       $COMMAND2 2>&1 | tee -a $DIR_NAME/log_griffith_forces
-    fi 
+    fi
 
     if [ -z ${SHOWME+x} ]; then
-      mv out.vtk $DIR_NAME/out_"$order"_"$ref_level".vtk 
-      mv out_surface.vtk $DIR_NAME/out_surface_"$order"_"$ref_level".vtk 
-      mv out_crack_surface.vtk $DIR_NAME/out_crack_surface_"$order"_"$ref_level".vtk 
-      mv out_stresses.vtk $DIR_NAME/out_stresses_"$order"_"$ref_level".vtk 
+      mv out_surface.vtk $DIR_NAME/out_surface_"$order"_"$ref_level".vtk
+      mv out_crack_surface.vtk $DIR_NAME/out_crack_surface_"$order"_"$ref_level".vtk
+      mv out_stress.h5m $DIR_NAME/out_stresses_"$order"_"$ref_level".h5m
       mv out_spatial.h5m $DIR_NAME/out_spatial_"$order"_"$ref_level".h5m
     fi
 
     if [ ! -z ${SHOWME+x} ]; then
-      echo mv out.vtk $DIR_NAME/out_"$order"_"$ref_level".vtk 
-      echo mv out_surface.vtk $DIR_NAME/out_surface_"$order"_"$ref_level".vtk 
-      echo mv out_crack_surface.vtk $DIR_NAME/out_crack_surface_"$order"_"$ref_level".vtk 
-      echo mv out_stresses.vtk $DIR_NAME/out_stresses_"$order"_"$ref_level".vtk 
+      echo mv out_surface.vtk $DIR_NAME/out_surface_"$order"_"$ref_level".vtk
+      echo mv out_crack_surface.vtk $DIR_NAME/out_crack_surface_"$order"_"$ref_level".vtk
+      echo mv out_stress.h5m $DIR_NAME/out_stresses_"$order"_"$ref_level".h5m 
       echo mv out_spatial.h5m $DIR_NAME/out_spatial_"$order"_"$ref_level".h5m
     fi
 
@@ -266,4 +264,3 @@ do
   done
 
 done
-
