@@ -38,9 +38,6 @@ namespace MoFEM {
   */
 struct NormElement {
 
-  double& eRror;
-  double& aNaly;
-
   /// \brief  Volume element
   struct MyVolumeFE: public VolumeElementForcesAndSourcesCore {
     FieldInterface& mField;
@@ -54,7 +51,7 @@ struct NormElement {
 
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
-      PetscErrorCode ierr;
+      //PetscErrorCode ierr;
       eRror = 0;
       aNaly = 0;
       PetscFunctionReturn(0);
@@ -103,11 +100,16 @@ struct NormElement {
 
   FieldInterface &m_field;
   int addToRank; ///< default value 1, i.e. assumes that geometry is approx. by quadratic functions.
+  double& eRror;
+  double& aNaly;
 
   NormElement(
      FieldInterface &mField,double &error,double &analy,int add_to_rank = 1):
-     fE(mField,error,analy,add_to_rank),m_field(mField),addToRank(add_to_rank),
-     eRror(error),aNaly(analy) {}
+     fE(mField,error,analy,add_to_rank),
+     m_field(mField),
+     addToRank(add_to_rank),
+     eRror(error),
+     aNaly(analy) {}
 
    /** \brief Common data used by volume and surface elements
    * \ingroup mofem_helmholtz_elem
