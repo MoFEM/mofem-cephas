@@ -25,7 +25,7 @@ block 3 element type tetra10
 
 
 
-save as "/Users/xuanmeng/Documents/mofem-cephas/mofem_v0.2/users_modules/analytical_dirihlet_boundary_conditions/atom_tests/second_sphere.cub" overwrit
+save as "/Users/xuanmeng/Documents/mofem-cephas/mofem_v0.2/users_modules/analytical_Dirichlet_boundary_conditions/atom_tests/second_sphere.cub" overwrit
 
 
 

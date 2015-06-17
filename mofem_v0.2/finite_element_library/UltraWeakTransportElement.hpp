@@ -64,7 +64,7 @@ struct UltraWeakTransportElement {
   ublas::vector<VectorDouble > fluxesAtGaussPts;
 
   set<PetscInt> bcIndices;
-  PetscErrorCode getDirihletBCIndices(IS *is) {
+  PetscErrorCode getDirichletBCIndices(IS *is) {
     PetscFunctionBegin;
     vector<PetscInt> ids;
     ids.insert(ids.begin(),bcIndices.begin(),bcIndices.end());

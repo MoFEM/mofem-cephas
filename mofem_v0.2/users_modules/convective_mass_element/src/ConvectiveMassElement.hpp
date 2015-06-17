@@ -2440,7 +2440,7 @@ struct OpEnergy: public VolumeElementForcesAndSourcesCore::UserDataOperator,Comm
     //variables bellow need to be set by user
     string problemName; 					///< name of shell problem
     MatShellCtx *shellMatCtx; 					///< pointer to shell matrix
-    SpatialPositionsBCFEMethodPreAndPostProc *dirihletBcPtr; 	///< boundary conditions
+    SpatialPositionsBCFEMethodPreAndPostProc *DirichletBcPtr; 	///< boundary conditions
 
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
@@ -2451,12 +2451,12 @@ struct OpEnergy: public VolumeElementForcesAndSourcesCore::UserDataOperator,Comm
       }
 
       shellMatCtx->ts_a = ts_a;
-      dirihletBcPtr->copy_ts(*((TSMethod*)this)); //copy context for TSMethod
+      DirichletBcPtr->copy_ts(*((TSMethod*)this)); //copy context for TSMethod
 
-      dirihletBcPtr->dIag = 1;
-      dirihletBcPtr->ts_B = shellMatCtx->K;
+      DirichletBcPtr->dIag = 1;
+      DirichletBcPtr->ts_B = shellMatCtx->K;
       ierr = MatZeroEntries(shellMatCtx->K); CHKERRQ(ierr);
-      ierr = mField.problem_basic_method_preProcess(problemName,*dirihletBcPtr); CHKERRQ(ierr);
+      ierr = mField.problem_basic_method_preProcess(problemName,*DirichletBcPtr); CHKERRQ(ierr);
       LoopsToDoType::iterator itk = loopK.begin();
       for(;itk!=loopK.end();itk++) {
         itk->second->copy_ts(*((TSMethod*)this));
@@ -2469,21 +2469,21 @@ struct OpEnergy: public VolumeElementForcesAndSourcesCore::UserDataOperator,Comm
         itam->second->ts_B = shellMatCtx->K;
         ierr = mField.loop_finite_elements(problemName,itam->first,*itam->second); CHKERRQ(ierr);
       }
-      ierr = mField.problem_basic_method_postProcess(problemName,*dirihletBcPtr); CHKERRQ(ierr);
+      ierr = mField.problem_basic_method_postProcess(problemName,*DirichletBcPtr); CHKERRQ(ierr);
       ierr = MatAssemblyBegin(shellMatCtx->K,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
       ierr = MatAssemblyEnd(shellMatCtx->K,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 
-      dirihletBcPtr->dIag = 0;
-      dirihletBcPtr->ts_B = shellMatCtx->M;
+      DirichletBcPtr->dIag = 0;
+      DirichletBcPtr->ts_B = shellMatCtx->M;
       ierr = MatZeroEntries(shellMatCtx->M); CHKERRQ(ierr);
-      //ierr = mField.problem_basic_method_preProcess(problemName,*dirihletBcPtr); CHKERRQ(ierr);
+      //ierr = mField.problem_basic_method_preProcess(problemName,*DirichletBcPtr); CHKERRQ(ierr);
       LoopsToDoType::iterator itm = loopM.begin();
       for(;itm!=loopM.end();itm++) {
         itm->second->copy_ts(*((TSMethod*)this));
         itm->second->ts_B = shellMatCtx->M;
         ierr = mField.loop_finite_elements(problemName,itm->first,*itm->second); CHKERRQ(ierr);
       }
-      ierr = mField.problem_basic_method_postProcess(problemName,*dirihletBcPtr); CHKERRQ(ierr);
+      ierr = mField.problem_basic_method_postProcess(problemName,*DirichletBcPtr); CHKERRQ(ierr);
       ierr = MatAssemblyBegin(shellMatCtx->M,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
       ierr = MatAssemblyEnd(shellMatCtx->M,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 

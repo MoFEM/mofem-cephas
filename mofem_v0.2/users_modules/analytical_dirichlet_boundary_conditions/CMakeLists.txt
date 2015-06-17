@@ -12,4 +12,8 @@
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
 include_directories("${UM_SOURCE_DIR}/analytical_dirichlet_boundary_conditions/src")
-add_subdirectory(atom_tests)
+
+set(UM_LIB_SOURCES
+  ${UM_LIB_SOURCES}
+  ${UM_SOURCE_DIR}/analytical_dirichlet_boundary_conditions/src/impl/AnalyticalDirichlet.cpp
+)

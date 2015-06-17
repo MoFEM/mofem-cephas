@@ -236,7 +236,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.set_global_ghost_vector("ULTRAWEAK",COL,D0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
   IS dirchlet_ids;
-  ierr = ufe.getDirihletBCIndices(&dirchlet_ids); CHKERRQ(ierr);
+  ierr = ufe.getDirichletBCIndices(&dirchlet_ids); CHKERRQ(ierr);
 
   ufe.feVol.getOpPtrVector().push_back(new MyUltraWeakFE::OpFluxDivergenceAtGaussPts(ufe,"FLUXES"));
   ufe.feVol.getOpPtrVector().push_back(new MyUltraWeakFE::OpValuesAtGaussPts(ufe,"VALUES"));
