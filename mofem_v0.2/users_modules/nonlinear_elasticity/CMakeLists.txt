@@ -86,6 +86,7 @@ if(ADOL-C_LIBRARY)
   add_executable(nonlinear_dynamics
     ${UM_SOURCE_DIR}/nonlinear_elasticity/nonlinear_dynamics.cpp)
   target_link_libraries(nonlinear_dynamics
+    users_modules
     mofem_finite_element_library
     mofem_finite_elements
     mofem_interfaces

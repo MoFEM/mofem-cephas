@@ -22,7 +22,8 @@ add_library(complex_for_lazy_obsolete
 # is set by users in user modules subdirectories
 set(UM_LIB_SOURCES "")
 
-include(analytical_dirichlet_boundary_conditions/CMakeLists.txt)
+include(analytical_dirichlet_boundary_conditions/AddModule.cmake)
+include(convective_mass_element/AddModule.cmake)
 
 # Users modules library, common for all programs
 add_library(users_modules ${UM_LIB_SOURCES})
@@ -32,11 +33,13 @@ add_subdirectory(atom_tests)
 add_subdirectory(
   analytical_dirichlet_boundary_conditions/atom_tests
 )
+add_subdirectory(
+  convective_mass_element/atom_tests
+)
 
 # Users modules
 add_subdirectory(thermal)
 add_subdirectory(ultraweak)
-add_subdirectory(convective_mass_element)
 add_subdirectory(ground_surface_temperature)
 add_subdirectory(elasticity)
 add_subdirectory(cohesive_interface)

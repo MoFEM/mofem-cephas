@@ -51,8 +51,6 @@ target_link_libraries(fe_approximation
   mofem_cblas
   ${MoFEM_PROJECT_LIBS})
 
-
-
 add_executable(error_norm
   ${UM_SOURCE_DIR}/helmholtz/error_norm.cpp
 )
