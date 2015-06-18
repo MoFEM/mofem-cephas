@@ -33,8 +33,8 @@ if(ADOL-C_LIBRARY)
     ${UM_SOURCE_DIR}/fracture_mechanics/spatial_problem.cpp
   )
   target_link_libraries(spatial_problem
-    users_modules
     fracture_mechanics
+    users_modules
     mofem_finite_element_library
     mofem_finite_elements
     mofem_interfaces
@@ -51,8 +51,8 @@ if(ADOL-C_LIBRARY)
     ${UM_SOURCE_DIR}/fracture_mechanics/material_force.cpp
   )
   target_link_libraries(material_force
-    users_modules
     fracture_mechanics
+    users_modules
     mofem_finite_element_library
     mofem_finite_elements
     mofem_interfaces
@@ -69,8 +69,8 @@ if(ADOL-C_LIBRARY)
     ${UM_SOURCE_DIR}/fracture_mechanics/arc_length_material_coupled.cpp
   )
   target_link_libraries(arc_length_material_coupled
-    users_modules
     fracture_mechanics
+    users_modules
     mofem_finite_element_library
     mofem_finite_elements
     mofem_interfaces
@@ -121,8 +121,8 @@ if(ADOL-C_LIBRARY)
     ${UM_SOURCE_DIR}/fracture_mechanics/dynamic_material_coupled.cpp
   )
   target_link_libraries(dynamic_material_coupled
-    users_modules
     fracture_mechanics
+    users_modules
     mofem_finite_element_library
     mofem_finite_elements
     mofem_interfaces
