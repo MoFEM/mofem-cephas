@@ -20,7 +20,7 @@ add_executable(elasticity
   ${UM_SOURCE_DIR}/elasticity/src/impl/PCMGSetUpViaApproxOrders.cpp
 )
 target_link_libraries(elasticity
-  mofem_finite_element_library
+  users_modules
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices

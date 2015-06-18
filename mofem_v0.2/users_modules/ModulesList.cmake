@@ -1,43 +1,34 @@
-# Obsolete, i.e. implementation is obsolete and need to be changed or replaced
-# by alternative classes or functions. Use of oboslete implementation should be
-# avoided. This code will be removed in futuer versions of MoFEM
+# MoFEM is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Lesser General Public License as published by the
+# Free Software Foundation, either version 3 of the License, or (at your
+# option) any later version.
+#
+# MoFEM is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+# License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
-include_directories(${UM_SOURCE_DIR}/obsolete)
-include_directories(${UM_SOURCE_DIR}/obsolete/c)
-include_directories(${UM_SOURCE_DIR}/obsolete/c_impl)
-
-add_library(users_modules_obsolete
-  ${UM_SOURCE_DIR}/obsolete/impl/FEMethod_SurfaceConstrains.cpp
-  ${UM_SOURCE_DIR}/obsolete/impl/FEMethod_LowLevelStudent.cpp
-  ${UM_SOURCE_DIR}/obsolete/impl/FEMethod_UpLevelStudent.cpp
-)
-
-add_library(complex_for_lazy_obsolete
-  ${UM_SOURCE_DIR}/obsolete/c_impl/complex_for_lazy.c
-  ${UM_SOURCE_DIR}/obsolete/impl/FEMethod_ComplexForLazy.cpp
-  ${UM_SOURCE_DIR}/obsolete/impl/SurfacePressureComplexForLazy.cpp
-)
-
-# List of sources for user_modules libaries. This list
-# is set by users in user modules subdirectories
+# List of sources for user_modules libaries.
 set(UM_LIB_SOURCES "")
 
+include(basic_finite_elements/AddModule.cmake)
 include(analytical_dirichlet_boundary_conditions/AddModule.cmake)
 include(convective_mass_element/AddModule.cmake)
+include(obsolete/AddModule.cmake)
 
 # Users modules library, common for all programs
 add_library(users_modules ${UM_LIB_SOURCES})
 
 # Atom test user modules
-add_subdirectory(atom_tests)
-add_subdirectory(
-  analytical_dirichlet_boundary_conditions/atom_tests
-)
-add_subdirectory(
-  convective_mass_element/atom_tests
-)
+add_subdirectory(basic_finite_elements/atom_tests)
+add_subdirectory(analytical_dirichlet_boundary_conditions/atom_tests)
+add_subdirectory(convective_mass_element/atom_tests)
+add_subdirectory(obsolete/atom_tests)
 
-# Users modules
+# Users Programs
 add_subdirectory(thermal)
 add_subdirectory(ultraweak)
 add_subdirectory(ground_surface_temperature)

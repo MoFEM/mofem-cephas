@@ -22,7 +22,7 @@ include_directories("${MoFEM_PROJECT_SOURCE_DIR}/users_modules/moisture_transpor
 # ===================== Diffusion steady ============================================
 add_executable(diffusion_steady ${UM_SOURCE_DIR}/moisture_transport/diffusion_steady.cpp)
 target_link_libraries(diffusion_steady
-  mofem_finite_element_library
+  users_modules
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
@@ -35,7 +35,7 @@ target_link_libraries(diffusion_steady
 # ===================== Diffusion unsteady ============================================
 add_executable(diffusion_unsteady ${UM_SOURCE_DIR}/moisture_transport/diffusion_unsteady.cpp)
 target_link_libraries(diffusion_unsteady
-  mofem_finite_element_library
+  users_modules
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
@@ -49,7 +49,7 @@ target_link_libraries(diffusion_unsteady
 # ===================== Darceys Flow steady ============================================
 add_executable(darceys_flow_steady ${UM_SOURCE_DIR}/moisture_transport/darceys_flow_steady.cpp)
 target_link_libraries(darceys_flow_steady
-  mofem_finite_element_library
+  users_modules
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices

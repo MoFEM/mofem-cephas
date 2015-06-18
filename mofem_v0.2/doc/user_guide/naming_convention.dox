@@ -4,11 +4,7 @@
 \section mofam_and_user_modules MoFEM and User Modules
 
 All new finite elements or modification or finite elements are implemented in
-users modules (UM). Only "reliable" and "proven" to work finite elements are
-moved to MoFEM finite element library. Implementation to MoFEM library (not UM)
-need to be always discussed, agreed and planed on CMatGU
-<cmatgu@googlegroups.com>.  Work on UM is less controlled and contained to user
-directory. It is planed that it will be single version of MoFEM library but
+users modules (UM). In future it will be always single version of MoFEM library but
 many UM forks. Some UM can be in developed independently from MoFEM library
 repository. How to add user modules see \ref adding_user_module
 

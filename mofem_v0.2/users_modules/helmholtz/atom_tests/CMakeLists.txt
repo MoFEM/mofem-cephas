@@ -24,7 +24,7 @@
 #  ${UM_SOURCE_DIR}/helmholtz/atom_tests/acoustic_sphere.cpp)
 
 #target_link_libraries(acoustic_sphere
-# mofem_finite_element_library
+# users_modules
 # mofem_finite_elements
 # mofem_interfaces
 # mofem_multi_indices
