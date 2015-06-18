@@ -372,7 +372,7 @@ int main(int argc, char *argv[]) {
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,SIDESET|PRESSURESET,it)) {
     ierr = neumann.addPreassure(it->get_msId()); CHKERRQ(ierr);
   }
-  SpatialPositionsBCFEMethodPreAndPostProc my_dirihlet_bc(m_field,"SPATIAL_POSITION",Aij,D,F);
+  SpatialPositionsBCFEMethodPreAndPostProc my_Dirichlet_bc(m_field,"SPATIAL_POSITION",Aij,D,F);
 
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -385,10 +385,10 @@ int main(int argc, char *argv[]) {
 
   //F Vector
   //preproc
-  my_dirihlet_bc.snes_ctx = SnesMethod::CTX_SNESSETFUNCTION;
-  my_dirihlet_bc.snes_x = D;
-  my_dirihlet_bc.snes_f = F;
-  ierr = m_field.problem_basic_method_preProcess("ELASTIC_MECHANICS",my_dirihlet_bc); CHKERRQ(ierr);
+  my_Dirichlet_bc.snes_ctx = SnesMethod::CTX_SNESSETFUNCTION;
+  my_Dirichlet_bc.snes_x = D;
+  my_Dirichlet_bc.snes_f = F;
+  ierr = m_field.problem_basic_method_preProcess("ELASTIC_MECHANICS",my_Dirichlet_bc); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = m_field.set_local_ghost_vector("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
@@ -413,13 +413,13 @@ int main(int argc, char *argv[]) {
   elastic.getLoopFeRhs().snes_f = F;
   ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",elastic.getLoopFeRhs()); CHKERRQ(ierr);
   //postproc
-  ierr = m_field.problem_basic_method_postProcess("ELASTIC_MECHANICS",my_dirihlet_bc); CHKERRQ(ierr);
+  ierr = m_field.problem_basic_method_postProcess("ELASTIC_MECHANICS",my_Dirichlet_bc); CHKERRQ(ierr);
 
   //Aij Matrix
   //preproc
-  my_dirihlet_bc.snes_ctx = SnesMethod::CTX_SNESSETJACOBIAN;
-  my_dirihlet_bc.snes_B = Aij;
-  ierr = m_field.problem_basic_method_preProcess("ELASTIC_MECHANICS",my_dirihlet_bc); CHKERRQ(ierr);
+  my_Dirichlet_bc.snes_ctx = SnesMethod::CTX_SNESSETJACOBIAN;
+  my_Dirichlet_bc.snes_B = Aij;
+  ierr = m_field.problem_basic_method_preProcess("ELASTIC_MECHANICS",my_Dirichlet_bc); CHKERRQ(ierr);
   //surface forces
   //neumann.snes_ctx = SnesMethod::CTX_SNESSETJACOBIAN;
   //neumann.snes_B = Aij;
@@ -429,7 +429,7 @@ int main(int argc, char *argv[]) {
   elastic.getLoopFeLhs().snes_B = Aij;
   ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",elastic.getLoopFeLhs()); CHKERRQ(ierr);
   //postproc
-  ierr = m_field.problem_basic_method_postProcess("ELASTIC_MECHANICS",my_dirihlet_bc); CHKERRQ(ierr);
+  ierr = m_field.problem_basic_method_postProcess("ELASTIC_MECHANICS",my_Dirichlet_bc); CHKERRQ(ierr);
 
   ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
   ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
@@ -471,22 +471,22 @@ int main(int argc, char *argv[]) {
 
   /*//Aij Matrix
   //preproc
-  my_dirihlet_bc.snes_ctx = SnesMethod::CTX_SNESSETJACOBIAN;
-  my_dirihlet_bc.snes_B = Aij;
-  ierr = m_field.problem_basic_method_preProcess("ELASTIC_MECHANICS",my_dirihlet_bc); CHKERRQ(ierr);
+  my_Dirichlet_bc.snes_ctx = SnesMethod::CTX_SNESSETJACOBIAN;
+  my_Dirichlet_bc.snes_B = Aij;
+  ierr = m_field.problem_basic_method_preProcess("ELASTIC_MECHANICS",my_Dirichlet_bc); CHKERRQ(ierr);
   //stiffnes
   elastic.getLoopFeLhs().snes_ctx = SnesMethod::CTX_SNESSETJACOBIAN;
   elastic.getLoopFeLhs().snes_B = Aij;
   ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",elastic.getLoopFeLhs()); CHKERRQ(ierr);
   //postproc
-  ierr = m_field.problem_basic_method_postProcess("ELASTIC_MECHANICS",my_dirihlet_bc); CHKERRQ(ierr);*/
+  ierr = m_field.problem_basic_method_postProcess("ELASTIC_MECHANICS",my_Dirichlet_bc); CHKERRQ(ierr);*/
 
   //Bij Matrix
   mat_adouble.doAotherwiseB = false;
   //preproc
-  my_dirihlet_bc.snes_ctx = SnesMethod::CTX_SNESSETJACOBIAN;
-  my_dirihlet_bc.snes_B = Bij;
-  ierr = m_field.problem_basic_method_preProcess("ELASTIC_MECHANICS",my_dirihlet_bc); CHKERRQ(ierr);
+  my_Dirichlet_bc.snes_ctx = SnesMethod::CTX_SNESSETJACOBIAN;
+  my_Dirichlet_bc.snes_B = Bij;
+  ierr = m_field.problem_basic_method_preProcess("ELASTIC_MECHANICS",my_Dirichlet_bc); CHKERRQ(ierr);
   //surface forces
   neumann.snes_ctx = SnesMethod::CTX_SNESSETJACOBIAN;
   neumann.snes_B = Bij;
@@ -500,7 +500,7 @@ int main(int argc, char *argv[]) {
   elastic.getLoopFeLhs().snes_B = Bij;
   ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",elastic.getLoopFeLhs()); CHKERRQ(ierr);
   //postproc
-  ierr = m_field.problem_basic_method_postProcess("ELASTIC_MECHANICS",my_dirihlet_bc); CHKERRQ(ierr);
+  ierr = m_field.problem_basic_method_postProcess("ELASTIC_MECHANICS",my_Dirichlet_bc); CHKERRQ(ierr);
 
   ierr = MatSetOption(Bij,MAT_SPD,PETSC_TRUE); CHKERRQ(ierr);
   ierr = MatAssemblyBegin(Bij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);

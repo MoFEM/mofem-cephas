@@ -68,7 +68,7 @@ using namespace MoFEM;
 #include <kiss_fft.c>
 
 #include <AnalyticalSolutions.hpp>
-#include <AnalyticalDirihlet.hpp>
+#include <AnalyticalDirichlet.hpp>
 #include <HelmholtzElement.hpp>
 #include <TimeSeries.hpp>
 
@@ -197,15 +197,15 @@ int main(int argc, char *argv[]) {
     ierr = m_field.modify_finite_element_add_field_data("HELMHOLTZ_RERE_FE","imEX"); CHKERRQ(ierr);
   }
 
-  bool dirihlet_bc_set = false;
+  bool Dirichlet_bc_set = false;
   Range bc_dirichlet_tris,analytical_bc_tris;
   for(_IT_CUBITMESHSETS_BY_NAME_FOR_LOOP_(m_field,"ANALYTICAL_BC",it)) {
     rval = moab.get_entities_by_type(it->get_meshset(),MBTRI,analytical_bc_tris,true); CHKERR_PETSC(rval);
-    dirihlet_bc_set = true;
+    Dirichlet_bc_set = true;
   }
   bc_dirichlet_tris.merge(analytical_bc_tris);
-  AnalyticalDirihletBC analytical_bc_real(m_field);
-  AnalyticalDirihletBC analytical_bc_imag(m_field);
+  AnalyticalDirichletBC analytical_bc_real(m_field);
+  AnalyticalDirichletBC analytical_bc_imag(m_field);
   ierr = analytical_bc_real.initializeProblem(m_field,"BCREAL_FE","rePRES",analytical_bc_tris); CHKERRQ(ierr);
   ierr = analytical_bc_imag.initializeProblem(m_field,"BCIMAG_FE","imPRES",analytical_bc_tris); CHKERRQ(ierr);
 
@@ -233,7 +233,7 @@ int main(int argc, char *argv[]) {
     ierr = analytical_bc_imag.initializeProblem(m_field,"BCIMAG_FE","imPRES",planeWaveScatterData[it->get_msId()].tRis); CHKERRQ(ierr);
     bc_dirichlet_tris.merge(planeWaveScatterData[it->get_msId()].tRis);
 
-    dirihlet_bc_set = true;
+    Dirichlet_bc_set = true;
 
   }
 
@@ -272,7 +272,7 @@ int main(int argc, char *argv[]) {
     ierr = m_field.build_partitioned_problem("ACOUSTIC_PROBLEM",true); CHKERRQ(ierr);
     ierr = m_field.partition_finite_elements("ACOUSTIC_PROBLEM",true); CHKERRQ(ierr);
 
-    if(dirihlet_bc_set) {
+    if(Dirichlet_bc_set) {
       ierr = m_field.build_partitioned_problem("BCREAL_PROBLEM",true); CHKERRQ(ierr);
       ierr = m_field.partition_finite_elements("BCREAL_PROBLEM",true); CHKERRQ(ierr);
 
@@ -289,7 +289,7 @@ int main(int argc, char *argv[]) {
     ierr = m_field.partition_problem("ACOUSTIC_PROBLEM"); CHKERRQ(ierr);
     ierr = m_field.partition_finite_elements("ACOUSTIC_PROBLEM"); CHKERRQ(ierr);
 
-    if(dirihlet_bc_set) {
+    if(Dirichlet_bc_set) {
       ierr = m_field.build_problem("BCREAL_PROBLEM"); CHKERRQ(ierr);
       ierr = m_field.partition_problem("BCREAL_PROBLEM"); CHKERRQ(ierr);
       ierr = m_field.partition_finite_elements("BCREAL_PROBLEM"); CHKERRQ(ierr);
@@ -303,7 +303,7 @@ int main(int argc, char *argv[]) {
   }
 
   ierr = m_field.partition_ghost_dofs("ACOUSTIC_PROBLEM"); CHKERRQ(ierr);
-  if(dirihlet_bc_set) {
+  if(Dirichlet_bc_set) {
     ierr = m_field.partition_ghost_dofs("BCREAL_PROBLEM"); CHKERRQ(ierr);
     ierr = m_field.partition_ghost_dofs("BCIMAG_PROBLEM"); CHKERRQ(ierr);
   }
@@ -352,7 +352,7 @@ int main(int argc, char *argv[]) {
       ierr = analytical_bc_imag.setApproxOps(
         m_field,"imPRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::IMAG
       ); CHKERRQ(ierr);
-      dirihlet_bc_set = true;
+      Dirichlet_bc_set = true;
 
     }
 
@@ -369,7 +369,7 @@ int main(int argc, char *argv[]) {
       boost::shared_ptr<SoftSphereScatterWave> function_evaluator = boost::shared_ptr<SoftSphereScatterWave>(new SoftSphereScatterWave(wavenumber,scattering_sphere_radius));
       ierr = analytical_bc_real.setApproxOps(m_field,"rePRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::REAL); CHKERRQ(ierr);
       ierr = analytical_bc_imag.setApproxOps(m_field,"imPRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::IMAG); CHKERRQ(ierr);
-      dirihlet_bc_set = true;
+      Dirichlet_bc_set = true;
 
     }
 
@@ -387,7 +387,7 @@ int main(int argc, char *argv[]) {
       boost::shared_ptr<PlaneWave> function_evaluator = boost::shared_ptr<PlaneWave>(new PlaneWave(wavenumber,angle*M_PI));
       ierr = analytical_bc_real.setApproxOps(m_field,"rePRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::REAL); CHKERRQ(ierr);
       ierr = analytical_bc_imag.setApproxOps(m_field,"imPRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::IMAG); CHKERRQ(ierr);
-      dirihlet_bc_set = true;
+      Dirichlet_bc_set = true;
 
     }
 
@@ -400,7 +400,7 @@ int main(int argc, char *argv[]) {
       boost::shared_ptr<HardCylinderScatterWave> function_evaluator = boost::shared_ptr<HardCylinderScatterWave>(new HardCylinderScatterWave(wavenumber));
       ierr = analytical_bc_real.setApproxOps(m_field,"rePRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::REAL); CHKERRQ(ierr);
       ierr = analytical_bc_imag.setApproxOps(m_field,"imPRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::IMAG); CHKERRQ(ierr);
-      dirihlet_bc_set = true;
+      Dirichlet_bc_set = true;
 
 
     }
@@ -414,7 +414,7 @@ int main(int argc, char *argv[]) {
       boost::shared_ptr<SoftCylinderScatterWave> function_evaluator = boost::shared_ptr<SoftCylinderScatterWave>(new SoftCylinderScatterWave(wavenumber));
       ierr = analytical_bc_real.setApproxOps(m_field,"rePRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::REAL); CHKERRQ(ierr);
       ierr = analytical_bc_imag.setApproxOps(m_field,"imPRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::IMAG); CHKERRQ(ierr);
-      dirihlet_bc_set = true;
+      Dirichlet_bc_set = true;
 
     }
 
@@ -428,7 +428,7 @@ int main(int argc, char *argv[]) {
       boost::shared_ptr<IncidentWave>(new IncidentWave(wavenumber,wave_direction,power_of_incident_wave));
       ierr = analytical_bc_real.setApproxOps(m_field,"rePRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::REAL); CHKERRQ(ierr);
       ierr = analytical_bc_imag.setApproxOps(m_field,"imPRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::IMAG); CHKERRQ(ierr);
-      dirihlet_bc_set = true;
+      Dirichlet_bc_set = true;
 
     }
 
@@ -437,7 +437,7 @@ int main(int argc, char *argv[]) {
     case NO_ANALYTICAL_SOLUTION:
 
     {
-      dirihlet_bc_set = false;
+      Dirichlet_bc_set = false;
     }
 
     break;
@@ -445,10 +445,10 @@ int main(int argc, char *argv[]) {
   }
 
   // Analytical boundary conditions
-  AnalyticalDirihletBC::DirichletBC analytical_ditihlet_bc_real(m_field,"rePRES",A,T,F);
-  AnalyticalDirihletBC::DirichletBC analytical_ditihlet_bc_imag(m_field,"imPRES",A,T,F);
+  AnalyticalDirichletBC::DirichletBC analytical_ditihlet_bc_real(m_field,"rePRES",A,T,F);
+  AnalyticalDirichletBC::DirichletBC analytical_ditihlet_bc_imag(m_field,"imPRES",A,T,F);
 
-  if(dirihlet_bc_set) {
+  if(Dirichlet_bc_set) {
 
     {
 
@@ -530,7 +530,7 @@ int main(int argc, char *argv[]) {
     ierr = MatZeroEntries(A); CHKERRQ(ierr);
 
     // Assemble problem
-    if(dirihlet_bc_set) {
+    if(Dirichlet_bc_set) {
       ierr = m_field.problem_basic_method_preProcess("ACOUSTIC_PROBLEM",analytical_ditihlet_bc_real); CHKERRQ(ierr);
       ierr = m_field.problem_basic_method_preProcess("ACOUSTIC_PROBLEM",analytical_ditihlet_bc_imag); CHKERRQ(ierr);
     }
@@ -538,7 +538,7 @@ int main(int argc, char *argv[]) {
     ierr = helmholtz_element.calculateA("ACOUSTIC_PROBLEM"); CHKERRQ(ierr);
     ierr = helmholtz_element.calculateF("ACOUSTIC_PROBLEM"); CHKERRQ(ierr);
 
-    if(dirihlet_bc_set) {
+    if(Dirichlet_bc_set) {
       ierr = m_field.problem_basic_method_postProcess("ACOUSTIC_PROBLEM",analytical_ditihlet_bc_real); CHKERRQ(ierr);
       ierr = m_field.problem_basic_method_postProcess("ACOUSTIC_PROBLEM",analytical_ditihlet_bc_imag); CHKERRQ(ierr);
     }
@@ -597,7 +597,7 @@ int main(int argc, char *argv[]) {
 
     TimeSeries time_series(m_field,helmholtz_element,
       analytical_ditihlet_bc_real,analytical_ditihlet_bc_imag,
-      dirihlet_bc_set);
+      Dirichlet_bc_set);
 
     ierr = time_series.readData(); CHKERRQ(ierr);
     ierr = time_series.createPressureSeries(T); CHKERRQ(ierr);

@@ -55,8 +55,8 @@ struct TimeSeries {
 
   FieldInterface& mField;
   HelmholtzElement& helmholtzElement;
-  AnalyticalDirihletBC::DirichletBC& analyticalDitihletBcReal;
-  AnalyticalDirihletBC::DirichletBC& analyticalDitihletBcImag;
+  AnalyticalDirichletBC::DirichletBC& analyticalDitihletBcReal;
+  AnalyticalDirichletBC::DirichletBC& analyticalDitihletBcImag;
 
   bool dirichletBcSet;
   int readFile,debug;
@@ -65,13 +65,13 @@ struct TimeSeries {
 
   TimeSeries(FieldInterface &m_field,
     HelmholtzElement& helmholtz_element,
-    AnalyticalDirihletBC::DirichletBC &analytical_ditihlet_bc_real,
-    AnalyticalDirihletBC::DirichletBC &analytical_ditihlet_bc_imag,
-    bool dirihlet_bc_set):
+    AnalyticalDirichletBC::DirichletBC &analytical_ditihlet_bc_real,
+    AnalyticalDirichletBC::DirichletBC &analytical_ditihlet_bc_imag,
+    bool Dirichlet_bc_set):
       mField(m_field),helmholtzElement(helmholtz_element),
       analyticalDitihletBcReal(analytical_ditihlet_bc_real),
       analyticalDitihletBcImag(analytical_ditihlet_bc_imag),
-      dirichletBcSet(dirihlet_bc_set),
+      dirichletBcSet(Dirichlet_bc_set),
       readFile(0),
       debug(1),
       postProc(m_field)

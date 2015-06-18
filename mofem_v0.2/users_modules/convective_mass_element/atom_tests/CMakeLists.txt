@@ -27,6 +27,7 @@ if(ADOL-C_LIBRARY)
     ${UM_SOURCE_DIR}/convective_mass_element/atom_tests/convective_matrix.cpp)
 
   target_link_libraries(convective_matrix
+    users_modules
     mofem_finite_element_library
     mofem_finite_elements
     mofem_interfaces
