@@ -26,7 +26,7 @@ add_executable(best_approximation
 )
 target_link_libraries(best_approximation
   users_modules
-  mofem_finite_element_library
+  users_modules
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
@@ -41,7 +41,7 @@ add_executable(fe_approximation
 )
 target_link_libraries(fe_approximation
   users_modules
-  mofem_finite_element_library
+  users_modules
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
@@ -56,7 +56,7 @@ add_executable(error_norm
 )
 target_link_libraries(error_norm
   users_modules
-  mofem_finite_element_library
+  users_modules
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices

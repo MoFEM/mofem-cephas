@@ -26,7 +26,7 @@ file(COPY
 
 add_executable(transport ${UM_SOURCE_DIR}/ultraweak/transport.cpp)
 target_link_libraries(transport
-  mofem_finite_element_library
+  users_modules
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices

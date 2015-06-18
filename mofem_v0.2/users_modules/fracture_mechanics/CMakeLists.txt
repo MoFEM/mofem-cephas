@@ -35,13 +35,11 @@ if(ADOL-C_LIBRARY)
   target_link_libraries(spatial_problem
     fracture_mechanics
     users_modules
-    mofem_finite_element_library
     mofem_finite_elements
     mofem_interfaces
     mofem_multi_indices
     mofem_petsc
     users_modules_obsolete
-    complex_for_lazy_obsolete
     mofem_approx
     mofem_third_party
     mofem_cblas
@@ -53,13 +51,11 @@ if(ADOL-C_LIBRARY)
   target_link_libraries(material_force
     fracture_mechanics
     users_modules
-    mofem_finite_element_library
     mofem_finite_elements
     mofem_interfaces
     mofem_multi_indices
     mofem_petsc
     users_modules_obsolete
-    complex_for_lazy_obsolete
     mofem_approx
     mofem_third_party
     mofem_cblas
@@ -71,13 +67,11 @@ if(ADOL-C_LIBRARY)
   target_link_libraries(arc_length_material_coupled
     fracture_mechanics
     users_modules
-    mofem_finite_element_library
     mofem_finite_elements
     mofem_interfaces
     mofem_multi_indices
     mofem_petsc
     users_modules_obsolete
-    complex_for_lazy_obsolete
     mofem_approx
     mofem_third_party
     mofem_cblas
@@ -123,13 +117,11 @@ if(ADOL-C_LIBRARY)
   target_link_libraries(dynamic_material_coupled
     fracture_mechanics
     users_modules
-    mofem_finite_element_library
     mofem_finite_elements
     mofem_interfaces
     mofem_multi_indices
     mofem_petsc
     users_modules_obsolete
-    complex_for_lazy_obsolete
     mofem_approx
     mofem_third_party
     mofem_cblas

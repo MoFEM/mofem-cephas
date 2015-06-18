@@ -23,7 +23,7 @@ cm_export_absolut_path_file("${MoFEM_PROJECT_SOURCE_DIR}/users_modules/homogenis
 
 add_executable(homogenisation_disp_atom_test ${UM_SOURCE_DIR}/homogenisation/atom_tests/homogenisation_disp_atom_test.cpp)
 target_link_libraries(homogenisation_disp_atom_test
-  mofem_finite_element_library
+  users_modules
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
@@ -41,7 +41,7 @@ add_test(homogenisation_disp_atom_test ${MoFEM_MPI_RUN} -np 1 ${CMAKE_CURRENT_BI
 
 add_executable(homogenisation_trac_atom_test ${UM_SOURCE_DIR}/homogenisation/atom_tests/homogenisation_trac_atom_test.cpp)
 target_link_libraries(homogenisation_trac_atom_test
-  mofem_finite_element_library
+  users_modules
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
@@ -59,7 +59,7 @@ add_test(homogenisation_trac_atom_test ${MoFEM_MPI_RUN} -np 1 ${CMAKE_CURRENT_BI
 
 add_executable(homogenisation_periodic_atom_test ${UM_SOURCE_DIR}/homogenisation/atom_tests/homogenisation_periodic_atom_test.cpp)
 target_link_libraries(homogenisation_periodic_atom_test
-  mofem_finite_element_library
+  users_modules
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices

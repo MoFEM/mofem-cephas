@@ -231,7 +231,7 @@ int main(int argc, char *argv[]) {
   typedef tee_device<ostream, ofstream> TeeDevice;
   typedef stream<TeeDevice> TeeStream;
 
-  ofstream ofs("forces_and_sources_testing_field_approximation.txt");
+  ofstream ofs("field_approximation.txt");
   TeeDevice tee(cout, ofs);
   TeeStream my_split(tee);
 

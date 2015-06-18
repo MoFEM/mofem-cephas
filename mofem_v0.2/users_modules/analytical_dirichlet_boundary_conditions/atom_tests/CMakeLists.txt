@@ -19,7 +19,6 @@ add_executable(thermal_with_analytical_bc
 
 target_link_libraries(thermal_with_analytical_bc
   users_modules
-  mofem_finite_element_library
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices

@@ -25,12 +25,11 @@ if(ADOL-C_LIBRARY)
   add_executable(arc_length_nonlinear_elasticity
     ${UM_SOURCE_DIR}/nonlinear_elasticity/arc_length_nonlinear_elasticity.cpp)
   target_link_libraries(arc_length_nonlinear_elasticity
-    mofem_finite_element_library
+    users_modules
     mofem_finite_elements
     mofem_interfaces
     mofem_multi_indices
     mofem_petsc
-    complex_for_lazy_obsolete
     users_modules_obsolete
     mofem_approx
     mofem_third_party
@@ -87,12 +86,10 @@ if(ADOL-C_LIBRARY)
     ${UM_SOURCE_DIR}/nonlinear_elasticity/nonlinear_dynamics.cpp)
   target_link_libraries(nonlinear_dynamics
     users_modules
-    mofem_finite_element_library
     mofem_finite_elements
     mofem_interfaces
     mofem_multi_indices
     mofem_petsc
-    complex_for_lazy_obsolete
     users_modules_obsolete
     mofem_approx
     mofem_third_party
@@ -119,12 +116,11 @@ if(ADOL-C_LIBRARY)
     add_executable(stability
       ${UM_SOURCE_DIR}/nonlinear_elasticity/stability.cpp)
     target_link_libraries(stability
-      mofem_finite_element_library
+      users_modules
       mofem_finite_elements
       mofem_interfaces
       mofem_multi_indices
       mofem_petsc
-      complex_for_lazy_obsolete
       users_modules_obsolete
       mofem_approx
       mofem_third_party
