@@ -38,9 +38,6 @@ namespace MoFEM {
   */
 struct NormElement {
 
-  double& eRror;
-  double& aNaly;
-
   /// \brief  Volume element
   struct MyVolumeFE: public VolumeElementForcesAndSourcesCore {
     FieldInterface& mField;
@@ -54,7 +51,7 @@ struct NormElement {
 
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
-      PetscErrorCode ierr;
+      //PetscErrorCode ierr;
       eRror = 0;
       aNaly = 0;
       PetscFunctionReturn(0);
@@ -103,11 +100,16 @@ struct NormElement {
 
   FieldInterface &m_field;
   int addToRank; ///< default value 1, i.e. assumes that geometry is approx. by quadratic functions.
+  double& eRror;
+  double& aNaly;
 
   NormElement(
      FieldInterface &mField,double &error,double &analy,int add_to_rank = 1):
-     fE(mField,error,analy,add_to_rank),m_field(mField),addToRank(add_to_rank),
-     eRror(error),aNaly(analy) {}
+     fE(mField,error,analy,add_to_rank),
+     m_field(mField),
+     addToRank(add_to_rank),
+     eRror(error),
+     aNaly(analy) {}
 
    /** \brief Common data used by volume and surface elements
    * \ingroup mofem_helmholtz_elem
@@ -222,7 +224,7 @@ struct NormElement {
 				int nb_row = row_data.getIndices().size();
 				int nb_col = col_data.getIndices().size();
 
-				if(nb_row != row_data.getIndices().size()) {
+				if(nb_row != (int)row_data.getIndices().size()) {
 					SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,
 							"currently works only for scalar fields, extension to fields with higher rank need to be implemented");
 				}
@@ -287,44 +289,58 @@ struct NormElement {
 	struct OpRhs:public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
 		CommonData &commonData;
-		Vec F;//norm error
+    double& eRror;
+    double& aNaly;
 		bool useL2;
 		bool useTsF;
 		bool useRela;//use relative error
-		ublas::vector<double> Nf;
-		ublas::vector<double> rElative_error;
+
+		Vec F;//norm error
 		const string normfieldName;
 		const string anfieldName1;
     const string anfieldName2;
 		const string nufieldName1;
     const string nufieldName2;
 
-    double& eRror;
-    double& aNaly;
+		ublas::vector<double> Nf;
+		ublas::vector<double> rElative_error;
 
-		OpRhs(const string norm_field_name,const string an_field_name1,const string nu_field_name1,
-           const string an_field_name2,const string nu_field_name2,
-				   CommonData &common_data,double &error,double &analy,bool usel2):
-			VolumeElementForcesAndSourcesCore::UserDataOperator(norm_field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
-			commonData(common_data),eRror(error),aNaly(analy),
-      useL2(usel2),useTsF(true),normfieldName(norm_field_name)
-			,anfieldName1(an_field_name1)
-			,nufieldName1(nu_field_name1)
-      ,anfieldName2(an_field_name2)
-      ,nufieldName2(nu_field_name2) {}
+    OpRhs(
+      const string norm_field_name,const string an_field_name1,const string nu_field_name1,
+      const string an_field_name2,const string nu_field_name2,
+      CommonData &common_data,double &error,double &analy,bool usel2
+    ):
+    VolumeElementForcesAndSourcesCore::UserDataOperator(norm_field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
+    commonData(common_data),
+    eRror(error),
+    aNaly(analy),
+    useL2(usel2),
+    useTsF(true),
+    useRela(false),
+    normfieldName(norm_field_name),
+    anfieldName1(an_field_name1),
+    anfieldName2(an_field_name2),
+    nufieldName1(nu_field_name1),
+    nufieldName2(nu_field_name2) {}
 
-		OpRhs(const string norm_field_name,const string an_field_name1,const string nu_field_name1,
-           const string an_field_name2,const string nu_field_name2,
-			  Vec _F,CommonData &common_data,double &error,double &analy,bool usel2
-			  ):
-			VolumeElementForcesAndSourcesCore::UserDataOperator(norm_field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
-			commonData(common_data),eRror(error),aNaly(analy),
-      useL2(usel2),useTsF(false),F(_F),normfieldName(norm_field_name)
-      ,anfieldName1(an_field_name1)
-			,nufieldName1(nu_field_name1)
-      ,anfieldName2(an_field_name2)
-      ,nufieldName2(nu_field_name2) {}
-
+		OpRhs(
+      const string norm_field_name,const string an_field_name1,const string nu_field_name1,
+      const string an_field_name2,const string nu_field_name2,
+			Vec _F,CommonData &common_data,double &error,double &analy,bool usel2
+    ):
+    VolumeElementForcesAndSourcesCore::UserDataOperator(norm_field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
+    commonData(common_data),
+    eRror(error),
+    aNaly(analy),
+    useL2(usel2),
+    useTsF(false),
+    useRela(false),
+    F(_F),
+    normfieldName(norm_field_name),
+    anfieldName1(an_field_name1),
+    anfieldName2(an_field_name2),
+    nufieldName1(nu_field_name1),
+    nufieldName2(nu_field_name2) {}
 
 		/*
 		Rhs force vector merely with field values

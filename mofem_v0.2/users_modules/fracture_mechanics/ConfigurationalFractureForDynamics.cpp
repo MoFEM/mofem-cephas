@@ -1,10 +1,315 @@
 using namespace MoFEM;
 
-#include <adolc/adolc.h> 
+#include <FEMethod_SurfaceConstrains.hpp>
+#include <PostProcDisplacementAndStrainOnRefindedMesh.hpp>
+#include <PostProcNonLinearElasticityStresseOnRefindedMesh.hpp>
+
+#include <adolc/adolc.h>
 #include <ConvectiveMassElement.hpp>
 #include <TimeForceScale.hpp>
 #include <PostProcOnRefMesh.hpp>
 #include <ConfigurationalFractureForDynamics.hpp>
+
+struct MyMeshSmoothing: public MeshSmoothingFEMethod,CrackFrontData {
+
+  Vec frontF;
+  Vec tangentFrontF;
+
+  MyMeshSmoothing(FieldInterface& _m_field,int _verbose = 0):
+    FEMethod_ComplexForLazy_Data(_m_field,_verbose),
+    MeshSmoothingFEMethod(_m_field,_verbose),
+      frontF(PETSC_NULL),
+      tangentFrontF(PETSC_NULL),
+      stabilise(false) {
+      type_of_analysis = mesh_quality_analysis;
+
+      g_NTET.resize(4*1);
+      ShapeMBTET(&g_NTET[0],G_TET_X1,G_TET_Y1,G_TET_Z1,1);
+      g_TET_W = G_TET_W1;
+
+    }
+
+  ~MyMeshSmoothing() {}
+
+  PetscErrorCode preProcess() {
+    PetscFunctionBegin;
+    PetscErrorCode ierr;
+
+    switch (ts_ctx) {
+      case CTX_TSSETIFUNCTION: {
+        snes_ctx = CTX_SNESSETFUNCTION;
+        snes_f = ts_F;
+        break;
+      }
+      case CTX_TSSETIJACOBIAN: {
+        snes_ctx = CTX_SNESSETJACOBIAN;
+        snes_B = ts_B;
+        break;
+      }
+      default:
+      break;
+    }
+
+    switch(snes_ctx) {
+      case CTX_SNESSETFUNCTION: {
+        if(crackFrontEdgeNodes.size()>0) {
+          ierr = VecZeroEntries(frontF); CHKERRQ(ierr);
+          ierr = VecGhostUpdateBegin(frontF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+          ierr = VecGhostUpdateEnd(frontF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+        }
+        break;
+        default:
+        break;
+      }
+    }
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode postProcess() {
+    PetscFunctionBegin;
+    switch(snes_ctx) {
+      case CTX_SNESSETFUNCTION: {
+        if(!crackFrontEdgeNodes.empty()) {
+          ierr = VecAssemblyBegin(frontF); CHKERRQ(ierr);
+          ierr = VecAssemblyEnd(frontF); CHKERRQ(ierr);
+          ierr = VecGhostUpdateBegin(frontF,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+          ierr = VecGhostUpdateEnd(frontF,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+          ierr = VecGhostUpdateBegin(frontF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+          ierr = VecGhostUpdateEnd(frontF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+        }
+        break;
+        default:
+        break;
+      }
+    }
+    PetscFunctionReturn(0);
+  }
+
+  bool stabilise;
+  PetscErrorCode AssembleMeshSmoothingTangent(Mat B) {
+    PetscFunctionBegin;
+    vector<DofIdx> frontRowGlobMaterial = RowGlobMaterial[i_nodes];
+    ierr = setCrackFrontIndices(this,material_field_name,frontRowGlobMaterial,false); CHKERRQ(ierr);
+    vector<DofIdx> frontRowGlobMaterial_front_only = RowGlobMaterial[i_nodes];
+    ierr = setCrackFrontIndices(this,material_field_name,frontRowGlobMaterial_front_only,true); CHKERRQ(ierr);
+    switch(snes_ctx) {
+      case CTX_SNESSETJACOBIAN:
+      ierr = MatSetValues(B,
+        frontRowGlobMaterial.size(),&*(frontRowGlobMaterial.begin()),
+        ColGlobMaterial[i_nodes].size(),&*(ColGlobMaterial[i_nodes].begin()),
+        &*(KHH.data().begin()),ADD_VALUES); CHKERRQ(ierr);
+        if(stabilise) {
+          ierr = MatSetValues(B,
+            frontRowGlobMaterial_front_only.size(),&*(frontRowGlobMaterial_front_only.begin()),
+            ColGlobMaterial[i_nodes].size(),&*(ColGlobMaterial[i_nodes].begin()),
+            &*(KHH.data().begin()),ADD_VALUES
+          ); CHKERRQ(ierr);
+        }
+        if(!crackFrontEdgeNodes.empty()) {
+          double *f_tangent_front_mesh_array;
+          if(tangentFrontF==PETSC_NULL) SETERRQ(PETSC_COMM_SELF,1,"vector for crack front not created");
+          ierr = VecGetArray(tangentFrontF,&f_tangent_front_mesh_array); CHKERRQ(ierr);
+          for(int nn = 0;nn<4;nn++) {
+            FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator dit,hi_dit;
+            dit = rowPtr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple("LAMBDA_CRACK_TANGENT_CONSTRAIN",conn[nn]));
+            hi_dit = rowPtr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple("LAMBDA_CRACK_TANGENT_CONSTRAIN",conn[nn]));
+            if(distance(dit,hi_dit)>0) {
+              FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator diit,hi_diit;
+              diit = rowPtr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(material_field_name,conn[nn]));
+              hi_diit = rowPtr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(material_field_name,conn[nn]));
+              for(;diit!=hi_diit;diit++) {
+                for(unsigned int ddd = 0;ddd<ColGlobMaterial[i_nodes].size();ddd++) {
+                  if(frontRowGlobMaterial_front_only[3*nn+diit->get_dof_rank()]!=diit->get_petsc_gloabl_dof_idx()) {
+                    SETERRQ2(PETSC_COMM_SELF,1,"data inconsistency %d != %d", 3*nn+diit->get_dof_rank(),diit->get_petsc_gloabl_dof_idx());
+                  }
+                  if(diit->get_petsc_local_dof_idx()==-1) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+                  double g = f_tangent_front_mesh_array[diit->get_petsc_local_dof_idx()]*KHH(3*nn+diit->get_dof_rank(),ddd);
+                  DofIdx lambda_idx = dit->get_petsc_gloabl_dof_idx();
+                  ierr = MatSetValues(B,1,&lambda_idx,1,&ColGlobMaterial[i_nodes][ddd],&g,ADD_VALUES); CHKERRQ(ierr);
+                }
+              }
+            }
+          }
+          ierr = VecRestoreArray(tangentFrontF,&f_tangent_front_mesh_array); CHKERRQ(ierr);
+        }
+        break;
+        default:
+        SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+      }
+      PetscFunctionReturn(0);
+    }
+
+    PetscErrorCode AssembleMeshSmoothingFint(Vec f) {
+      PetscFunctionBegin;
+      vector<DofIdx> frontRowGlobMaterial = RowGlobMaterial[i_nodes];
+      ierr = setCrackFrontIndices(this,material_field_name,frontRowGlobMaterial,false); CHKERRQ(ierr);
+      vector<DofIdx> frontRowGlobMaterial_front_only = RowGlobMaterial[i_nodes];
+      ierr = setCrackFrontIndices(this,material_field_name,frontRowGlobMaterial_front_only,true); CHKERRQ(ierr);
+      switch(snes_ctx) {
+        case CTX_SNESSETFUNCTION: {
+          ierr = VecSetOption(f,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE);  CHKERRQ(ierr);
+          //cerr << "Fint_h " << Fint_h << endl;
+          ierr = VecSetValues(f,frontRowGlobMaterial.size(),&(frontRowGlobMaterial[0]),&(Fint_H.data()[0]),ADD_VALUES); CHKERRQ(ierr);
+          if(stabilise) {
+            ierr = VecSetValues(
+              f,frontRowGlobMaterial_front_only.size(),&(frontRowGlobMaterial_front_only[0]),&(Fint_H.data()[0]),ADD_VALUES); CHKERRQ(ierr);
+            }
+            if(!crackFrontEdgeNodes.empty()) {
+              if(frontF==PETSC_NULL) SETERRQ(PETSC_COMM_SELF,1,"vector for crack front not created");
+              ierr = VecSetValues(frontF,frontRowGlobMaterial_front_only.size(),&(frontRowGlobMaterial_front_only[0]),&(Fint_H.data()[0]),ADD_VALUES); CHKERRQ(ierr);
+            }
+          }
+          break;
+          default:
+          SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+        }
+        PetscFunctionReturn(0);
+      }
+
+};
+
+struct MyNonLinearSpatialElastic: public NonLinearSpatialElasticFEMthod,CrackFrontData {
+
+  MyNonLinearSpatialElastic(FieldInterface& _m_field,double _lambda,double _mu,int _verbose = 0):
+    FEMethod_ComplexForLazy_Data(_m_field,_verbose),
+    NonLinearSpatialElasticFEMthod(_m_field,_lambda,_mu,0,_verbose) {}
+
+    PetscErrorCode AssembleSpatialCoupledTangent(Mat B) {
+      PetscFunctionBegin;
+      vector<DofIdx> frontRowGlobMaterial = RowGlobMaterial[0];
+      ierr = setCrackFrontIndices(this,material_field_name,frontRowGlobMaterial,true); CHKERRQ(ierr);
+      switch(snes_ctx) {
+        case CTX_SNESSETJACOBIAN:
+        if(KHh.size1()!=frontRowGlobMaterial.size()) {
+          SETERRQ(PETSC_COMM_SELF,1,"KHh.size()!=frontRowGlobMaterial.size()");
+        }
+        ierr = MatSetValues(B,
+          frontRowGlobMaterial.size(),&*(frontRowGlobMaterial.begin()),
+          ColGlobSpatial[i_nodes].size(),&*(ColGlobSpatial[i_nodes].begin()),
+          &*(KHh.data().begin()
+        ),ADD_VALUES
+      ); CHKERRQ(ierr);
+      for(int ee = 0;ee<6;ee++) {
+        ierr = MatSetValues(B,
+          frontRowGlobMaterial.size(),&*(frontRowGlobMaterial.begin()),
+          ColGlobSpatial[1+ee].size(),&*(ColGlobSpatial[1+ee].begin()),
+          &*(KHedge_data[ee].data().begin()),ADD_VALUES
+        ); CHKERRQ(ierr);
+      }
+      for(int ff = 0;ff<4;ff++) {
+        ierr = MatSetValues(B,
+          frontRowGlobMaterial.size(),&*(frontRowGlobMaterial.begin()),
+          ColGlobSpatial[1+6+ff].size(),&*(ColGlobSpatial[1+6+ff].begin()),
+          &*(KHface_data[ff].data().begin()),ADD_VALUES
+        ); CHKERRQ(ierr);
+      }
+      ierr = MatSetValues(B,
+        frontRowGlobMaterial.size(),&*(frontRowGlobMaterial.begin()),
+        ColGlobSpatial[i_volume].size(),&*(ColGlobSpatial[i_volume].begin()),
+        &*(KHvolume.data().begin()),ADD_VALUES
+      ); CHKERRQ(ierr);
+      break;
+      default:
+      SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    }
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode operator()() {
+    PetscFunctionBegin;
+    ierr = OpComplexForLazyStart(); CHKERRQ(ierr);
+    ierr = GetIndicesSpatial(); CHKERRQ(ierr);
+    switch(snes_ctx) {
+      case CTX_SNESNONE:
+      case CTX_SNESSETFUNCTION: {
+        ierr = GetFint(); CHKERRQ(ierr);
+        ierr = AssembleSpatialFint(snes_f); CHKERRQ(ierr);
+      }
+      break;
+      case CTX_SNESSETJACOBIAN:
+      ierr = GetTangent(); CHKERRQ(ierr);
+      ierr = AssembleSpatialTangent(snes_B); CHKERRQ(ierr);
+      if(isCoupledProblem) {
+        ierr = GetIndicesRow(RowGlobMaterial,material_field_name); CHKERRQ(ierr);
+        ierr = AssembleSpatialCoupledTangent(snes_B); CHKERRQ(ierr);
+      }
+      break;
+      default:
+      SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    }
+    PetscFunctionReturn(0);
+  }
+
+};
+
+struct MyEshelby: public EshelbyFEMethod,CrackFrontData {
+
+  MyEshelby(FieldInterface& _m_field,double _lambda,double _mu,int _verbose = 0):
+    FEMethod_ComplexForLazy_Data(_m_field,_verbose),
+    EshelbyFEMethod(_m_field,_lambda,_mu,_verbose) {
+    type_of_analysis = material_analysis;
+  }
+
+  PetscErrorCode preProcess() {
+    PetscFunctionBegin;
+    PetscErrorCode ierr;
+    switch (ts_ctx) {
+      case CTX_TSSETIFUNCTION: {
+        snes_ctx = CTX_SNESSETFUNCTION;
+        snes_f = ts_F;
+        break;
+      }
+      case CTX_TSSETIJACOBIAN: {
+        snes_ctx = CTX_SNESSETJACOBIAN;
+        snes_B = ts_B;
+        break;
+      }
+      default:
+      break;
+    }
+    ierr = EshelbyFEMethod::preProcess(); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode AssembleMaterialTangent(Mat B) {
+    PetscFunctionBegin;
+
+    vector<DofIdx> frontRowGlobMaterial = RowGlobMaterial[0];
+    ierr = setCrackFrontIndices(this,material_field_name,frontRowGlobMaterial,true); CHKERRQ(ierr);
+
+    switch(snes_ctx) {
+      case CTX_SNESNONE:
+      case CTX_SNESSETFUNCTION:
+      case CTX_SNESSETJACOBIAN:
+      ierr = MatSetValues(B,
+        frontRowGlobMaterial.size(),&*(frontRowGlobMaterial.begin()),
+        ColGlobMaterial[0].size(),&*(ColGlobMaterial[0].begin()),
+        &*(KHH.data().begin()),ADD_VALUES); CHKERRQ(ierr);
+        break;
+        default:
+        SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+      }
+      PetscFunctionReturn(0);
+    }
+
+    PetscErrorCode AssembleMaterialFint(Vec f) {
+      PetscFunctionBegin;
+      vector<DofIdx> frontRowGlobMaterial = RowGlobMaterial[0];
+      ierr = setCrackFrontIndices(this,material_field_name,frontRowGlobMaterial,true); CHKERRQ(ierr);
+      switch(snes_ctx) {
+        case CTX_SNESNONE:
+        case CTX_SNESSETFUNCTION: {
+          ierr = VecSetOption(f,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE);  CHKERRQ(ierr);
+          ierr = VecSetValues(f,frontRowGlobMaterial.size(),&(frontRowGlobMaterial[0]),&(Fint_H.data()[0]),ADD_VALUES); CHKERRQ(ierr);
+        }
+        break;
+        default:
+        SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+      }
+      PetscFunctionReturn(0);
+    }
+
+};
 
 struct MonitorRestart: public FEMethod {
 
@@ -13,7 +318,7 @@ struct MonitorRestart: public FEMethod {
   FieldInterface &mField;
   int pRT;
 
-  MonitorRestart(FieldInterface &m_field,TS ts): 
+  MonitorRestart(FieldInterface &m_field,TS ts):
     mField(m_field) {
 
     PetscErrorCode ierr;
@@ -23,7 +328,7 @@ struct MonitorRestart: public FEMethod {
     const EntityHandle root_meshset = mField.get_moab().get_root_set();
 
     Tag th_time;
-    rval = m_field.get_moab().tag_get_handle("_TsTime_",1,MB_TYPE_DOUBLE,th_time,MB_TAG_CREAT|MB_TAG_EXCL|MB_TAG_MESH,&def_t_val); 
+    rval = m_field.get_moab().tag_get_handle("_TsTime_",1,MB_TYPE_DOUBLE,th_time,MB_TAG_CREAT|MB_TAG_EXCL|MB_TAG_MESH,&def_t_val);
     if(rval == MB_ALREADY_ALLOCATED) {
       rval = m_field.get_moab().tag_get_by_ptr(th_time,&root_meshset,1,(const void**)&time); CHKERR(rval);
       ierr = TSSetTime(ts,*time); CHKERRABORT(PETSC_COMM_WORLD,ierr);
@@ -33,7 +338,7 @@ struct MonitorRestart: public FEMethod {
     }
     int zero = 0;
     Tag th_step;
-    rval = m_field.get_moab().tag_get_handle("_TsStep_",1,MB_TYPE_INTEGER,th_step,MB_TAG_CREAT|MB_TAG_EXCL|MB_TAG_MESH,&zero); 
+    rval = m_field.get_moab().tag_get_handle("_TsStep_",1,MB_TYPE_INTEGER,th_step,MB_TAG_CREAT|MB_TAG_EXCL|MB_TAG_MESH,&zero);
     if(rval == MB_ALREADY_ALLOCATED) {
       rval = m_field.get_moab().tag_get_by_ptr(th_step,&root_meshset,1,(const void**)&step); CHKERR(rval);
     } else {
@@ -88,9 +393,9 @@ struct MonitorPostProc: public FEMethod {
   int pRT;
   int *step;
 
-  MonitorPostProc(FieldInterface &m_field): 
-    FEMethod(),mField(m_field),postProc(m_field),iNit(false) { 
-    
+  MonitorPostProc(FieldInterface &m_field):
+    FEMethod(),mField(m_field),postProc(m_field),iNit(false) {
+
     ErrorCode rval;
     PetscErrorCode ierr;
     double def_t_val = 0;
@@ -98,7 +403,7 @@ struct MonitorPostProc: public FEMethod {
 
     Tag th_step;
     int zero = 0;
-    rval = m_field.get_moab().tag_get_handle("_TsStep_",1,MB_TYPE_INTEGER,th_step,MB_TAG_CREAT|MB_TAG_EXCL|MB_TAG_MESH,&zero); 
+    rval = m_field.get_moab().tag_get_handle("_TsStep_",1,MB_TYPE_INTEGER,th_step,MB_TAG_CREAT|MB_TAG_EXCL|MB_TAG_MESH,&zero);
     if(rval == MB_ALREADY_ALLOCATED) {
       rval = m_field.get_moab().tag_get_by_ptr(th_step,&root_meshset,1,(const void**)&step); CHKERR(rval);
     } else {
@@ -159,20 +464,25 @@ struct MonitorUpdateFrezedNodes: public FEMethod {
   FixBcAtEntities &bC;
   MyEshelby &feMaterial;
   ConvectiveMassElement &iNertia;
+  MyMeshSmoothing &sMoother;
   TangentWithMeshSmoothingFrontConstrain &tangentConstrain;
   SnesConstrainSurfacGeometry &surfaceConstrains;
   SnesConstrainSurfacGeometry &crackSurfaceConstrains;
 
-
   MonitorUpdateFrezedNodes(FieldInterface &m_field,
     ConfigurationalFracturDynamics *conf_prob,
     FixBcAtEntities &bc,
-    MyEshelby &fe_material,ConvectiveMassElement &inertia,
+    MyEshelby &fe_material,
+    ConvectiveMassElement &inertia,
+    MyMeshSmoothing &smoother,
     TangentWithMeshSmoothingFrontConstrain &tangent_constrain,
     SnesConstrainSurfacGeometry &surface_constrains,
-    SnesConstrainSurfacGeometry &crack_surface_constrains): 
+    SnesConstrainSurfacGeometry &crack_surface_constrains):
     mField(m_field),confProb(conf_prob),
-    bC(bc),feMaterial(fe_material),iNertia(inertia),
+    bC(bc),
+    feMaterial(fe_material),
+    iNertia(inertia),
+    sMoother(smoother),
     tangentConstrain(tangent_constrain),
     surfaceConstrains(surface_constrains),
     crackSurfaceConstrains(crack_surface_constrains) {}
@@ -195,9 +505,9 @@ struct MonitorUpdateFrezedNodes: public FEMethod {
     feMaterial.snes_ctx = FEMethod::CTX_SNESSETFUNCTION;
     feMaterial.snes_f = F_Material;
     ierr = mField.loop_finite_elements("COUPLED_DYNAMIC","MATERIAL_COUPLED",feMaterial); CHKERRQ(ierr);
-    tangentConstrain.meshFEPtr->snes_ctx = FEMethod::CTX_SNESSETFUNCTION;
-    tangentConstrain.meshFEPtr->snes_f = F_Material;
-    ierr = mField.loop_finite_elements("COUPLED_DYNAMIC","MESH_SMOOTHER",*tangentConstrain.meshFEPtr); CHKERRQ(ierr);
+    sMoother.snes_ctx = FEMethod::CTX_SNESSETFUNCTION;
+    sMoother.snes_f = F_Material;
+    ierr = mField.loop_finite_elements("COUPLED_DYNAMIC","MESH_SMOOTHER",sMoother); CHKERRQ(ierr);
     tangentConstrain.snes_ctx = FEMethod::CTX_SNESSETFUNCTION;
     tangentConstrain.snes_f = F_Material;
     ierr = mField.loop_finite_elements("COUPLED_DYNAMIC","C_TANGENT_ELEM",tangentConstrain); CHKERRQ(ierr);
@@ -214,8 +524,8 @@ struct MonitorUpdateFrezedNodes: public FEMethod {
 
     //caculate griffith forces
     ierr = confProb->project_force_vector(mField,"COUPLED_DYNAMIC"); CHKERRQ(ierr);
-    ierr = confProb->griffith_force_vector(mField,"COUPLED_DYNAMIC"); CHKERRQ(ierr);
-    ierr = confProb->griffith_g(mField,"COUPLED_DYNAMIC"); CHKERRQ(ierr);
+    ierr = confProb->calculate_griffith_foces(mField,"COUPLED_DYNAMIC"); CHKERRQ(ierr);
+    ierr = confProb->calculate_griffith_g(mField,"COUPLED_DYNAMIC"); CHKERRQ(ierr);
 
     //fix nodes
     ierr = confProb->rate_of_work_of_fracture(mField); CHKERRQ(ierr);
@@ -265,7 +575,7 @@ struct MonitorLoadPath: public FEMethod {
   FieldInterface &mField;
   TS tS;
 
-  MonitorLoadPath(FieldInterface &m_field,TS ts): 
+  MonitorLoadPath(FieldInterface &m_field,TS ts):
     FEMethod(),mField(m_field),tS(ts) {}
 
   PetscErrorCode preProcess() {
@@ -317,22 +627,22 @@ struct MonitorLoadPath: public FEMethod {
 };
 
 struct MyPrePostProcessDynamics: public FEMethod {
-    
+
   FieldInterface& mField;
   string velocityField,spatialPositionField,meshPositionField;
 
 
-  MyPrePostProcessDynamics(FieldInterface& _m_field): 
+  MyPrePostProcessDynamics(FieldInterface& _m_field):
     mField(_m_field),
     velocityField("SPATIAL_VELOCITY"),
     spatialPositionField("SPATIAL_POSITION"),
     meshPositionField("MESH_NODE_POSITIONS") {}
 
   PetscErrorCode ierr;
-    
+
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
-      
+
     switch (ts_ctx) {
 	case CTX_TSSETIFUNCTION: {
 	  snes_ctx = CTX_SNESSETFUNCTION;
@@ -354,7 +664,7 @@ struct MyPrePostProcessDynamics: public FEMethod {
 
     PetscFunctionReturn(0);
   }
-    
+
   PetscErrorCode postProcess() {
     PetscFunctionBegin;
     switch(snes_ctx) {
@@ -647,8 +957,22 @@ PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterf
   ierr = fe_material.initCrackFrontData(m_field); CHKERRQ(ierr);
   fe_material.isCoupledProblem = true;
   //meshs moothing
+
+  Vec front_f,tangent_front_f;
+  ierr = VecDuplicate(F,&front_f); CHKERRQ(ierr);
+  ierr = VecSetOption(front_f,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); CHKERRQ(ierr);
+  ierr = VecDuplicate(F,&tangent_front_f); CHKERRQ(ierr);
+  ierr = VecSetOption(tangent_front_f,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); CHKERRQ(ierr);
+
   MyMeshSmoothing smoother(m_field);
   ierr = smoother.initCrackFrontData(m_field); CHKERRQ(ierr);
+  TangentWithMeshSmoothingFrontConstrain tangent_constrain(m_field,"LAMBDA_CRACK_TANGENT_CONSTRAIN");
+
+  smoother.frontF = front_f;
+  smoother.tangentFrontF = tangent_front_f;
+  tangent_constrain.frontF = front_f;
+  tangent_constrain.tangentFrontF = tangent_front_f;
+
   set_qual_ver(0);
   //constrains
   SnesConstrainSurfacGeometry constrain_body_surface(m_field,"LAMBDA_SURFACE");
@@ -657,7 +981,6 @@ PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterf
   constrain_crack_surface.nonlinear = true;
   Snes_CTgc_CONSTANT_AREA ct_gc(m_field,projFrontCtx,"COUPLED_DYNAMIC","LAMBDA_CRACKFRONT_AREA");
   Snes_dCTgc_CONSTANT_AREA dct_gc(m_field,K,"LAMBDA_CRACKFRONT_AREA");
-  TangentWithMeshSmoothingFrontConstrain tangent_constrain(m_field,&smoother,"LAMBDA_CRACK_TANGENT_CONSTRAIN");
   map<int,SnesConstrainSurfacGeometry*> other_body_surface_constrains;
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,SIDESET,it)) {
     int msId = it->get_msId();
@@ -811,8 +1134,8 @@ PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterf
     ss2 << "CandCT_SURFACE_ELEM_msId_" << mit->first;
     loops_to_do_Mat.push_back(TsCtx::loop_pair_type(ss2.str(),mit->second));
   }
-  loops_to_do_Mat.push_back(TsCtx::loop_pair_type("MESH_SMOOTHER",&smoother));
   loops_to_do_Mat.push_back(TsCtx::loop_pair_type("C_TANGENT_ELEM",&tangent_constrain));
+  loops_to_do_Mat.push_back(TsCtx::loop_pair_type("MESH_SMOOTHER",&smoother));
   loops_to_do_Mat.push_back(TsCtx::loop_pair_type("ELASTIC_COUPLED",&fe_spatial));
   loops_to_do_Mat.push_back(TsCtx::loop_pair_type("MATERIAL_COUPLED",&fe_material));
   loops_to_do_Mat.push_back(TsCtx::loop_pair_type("NEUAMNN_FE",&fe_forces));
@@ -828,8 +1151,15 @@ PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterf
   //monitor
   MonitorRestart monitor_restart(m_field,ts);
   MonitorUpdateFrezedNodes monitor_fix_matrial_nodes(
-    m_field,this,fix_material_pts,fe_material,iNertia,tangent_constrain,
-    constrain_body_surface,constrain_crack_surface);
+    m_field,this,
+    fix_material_pts,
+    fe_material,
+    iNertia,
+    smoother,
+    tangent_constrain,
+    constrain_body_surface,
+    constrain_crack_surface
+  );
   MonitorPostProc post_proc(m_field);
   MonitorLoadPath monitor_load_path(m_field,ts);
 
@@ -862,7 +1192,7 @@ PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterf
   ierr = TSSetDuration(ts,PETSC_DEFAULT,ftime); CHKERRQ(ierr);
   ierr = TSSetSolution(ts,D); CHKERRQ(ierr);
   ierr = TSSetFromOptions(ts); CHKERRQ(ierr);
-  
+
   ierr = TSSolve(ts,D); CHKERRQ(ierr);
   ierr = TSGetTime(ts,&ftime); CHKERRQ(ierr);
 
@@ -879,12 +1209,11 @@ PetscErrorCode ConfigurationalFracturDynamics::solve_dynmaic_problem(FieldInterf
     "steps %D (%D rejected, %D SNES fails), ftime %g, nonlinits %D, linits %D\n",
     steps,rejects,snesfails,ftime,nonlinits,linits);
 
-
-
   ierr = MatDestroy(&K); CHKERRQ(ierr);
   ierr = VecDestroy(&D); CHKERRQ(ierr);
   ierr = VecDestroy(&F); CHKERRQ(ierr);
+  ierr = VecDestroy(&front_f); CHKERRQ(ierr);
+  ierr = VecDestroy(&tangent_front_f); CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
-

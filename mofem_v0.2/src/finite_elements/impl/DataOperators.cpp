@@ -600,7 +600,7 @@ PetscErrorCode OpSetHoPiolaTransform::doWork(
 }
 
 
-PetscErrorCode OpGetData::doWork(
+PetscErrorCode OpGetDataAndGradient::doWork(
     int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
   PetscFunctionBegin;
 

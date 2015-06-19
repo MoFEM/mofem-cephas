@@ -1,6 +1,6 @@
-/** \file Hooke.hpp 
+/** \file Hooke.hpp
  * \ingroup nonlinear_elastic_elem
- * \brief Implementation of linear elastic material 
+ * \brief Implementation of linear elastic material
  */
 
 /* This file is part of MoFEM.
@@ -22,7 +22,7 @@
 
 #ifndef WITH_ADOL_C
   #error "MoFEM need to be compiled with ADOL-C"
-#endif 
+#endif
 
 /** \brief Hook equation
   * \ingroup nonlinear_elastic_elem
@@ -34,33 +34,34 @@ struct Hooke: public NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI
 
     ublas::matrix<TYPE> Eps;
     TYPE tr;
-    
+
     /** \brief Hooke equation
       *
-      * \f$\sigma = \lambda\textrm{tr}[\varepsilon]+2\mu\varepsilon\f$ 
+      * \f$\sigma = \lambda\textrm{tr}[\varepsilon]+2\mu\varepsilon\f$
       *
       */
-    virtual PetscErrorCode CalualteP_PiolaKirchhoffI(
+    virtual PetscErrorCode calculateP_PiolaKirchhoffI(
       const NonlinearElasticElement::BlockData block_data,
-      const NumeredMoFEMFiniteElement *fe_ptr) {
+      const NumeredMoFEMFiniteElement *fe_ptr
+    ) {
       PetscFunctionBegin;
       //PetscErrorCode ierr;
       this->lambda = LAMBDA(block_data.E,block_data.PoissonRatio);
       this->mu = MU(block_data.E,block_data.PoissonRatio);
-      Eps.resize(3,3);
+      Eps.resize(3,3,false);
       noalias(Eps) = 0.5*(this->F + trans(this->F));
       for(int dd = 0;dd<3;dd++) {
-	Eps(dd,dd) -= 1;
+        Eps(dd,dd) -= 1;
       }
-      this->P.resize(3,3);
+      this->P.resize(3,3,false);
       noalias(this->P) = 2*this->mu*Eps;
       tr = 0;
       for(int dd = 0;dd<3;dd++) {
-	tr += this->lambda*Eps(dd,dd);
+        tr += this->lambda*Eps(dd,dd);
       }
       for(int dd =0;dd<3;dd++) {
-	this->P(dd,dd) += tr;
-      } 
+        this->P(dd,dd) += tr;
+      }
       PetscFunctionReturn(0);
     }
 
@@ -69,24 +70,25 @@ struct Hooke: public NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI
       * \f$\Psi = \frac{1}{2}\lambda(\textrm{tr}[\varepsilon])^2+\mu\varepsilon:\varepsilon\f$
       *
       */
-    virtual PetscErrorCode CalulateElasticEnergy(
+    virtual PetscErrorCode calculateElasticEnergy(
       const NonlinearElasticElement::BlockData block_data,
-      const NumeredMoFEMFiniteElement *fe_ptr) {
+      const NumeredMoFEMFiniteElement *fe_ptr
+    ) {
       PetscFunctionBegin;
       this->lambda = LAMBDA(block_data.E,block_data.PoissonRatio);
       this->mu = MU(block_data.E,block_data.PoissonRatio);
       Eps.resize(3,3);
       noalias(Eps) = 0.5*(this->F + trans(this->F));
       for(int dd = 0;dd<3;dd++) {
-	Eps(dd,dd) -= 1;
+        Eps(dd,dd) -= 1;
       }
       TYPE trace = 0;
       this->eNergy = 0;
       for(int dd = 0;dd<3;dd++) {
-	trace += Eps(dd,dd);
-	for(int jj = 0;jj<3;jj++) {
-	  this->eNergy += this->mu*Eps(dd,jj)*Eps(dd,jj);
-	}
+        trace += Eps(dd,dd);
+        for(int jj = 0;jj<3;jj++) {
+          this->eNergy += this->mu*Eps(dd,jj)*Eps(dd,jj);
+        }
       }
       this->eNergy += 0.5*this->lambda*trace*trace;
       PetscFunctionReturn(0);
