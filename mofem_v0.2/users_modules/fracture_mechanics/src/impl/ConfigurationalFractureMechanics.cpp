@@ -3653,7 +3653,7 @@ PetscErrorCode ConfigurationalFractureMechanics::FrontAreaArcLengthControl::oper
       PetscPrintf(PETSC_COMM_SELF,"\n");
       PetscPrintf(PETSC_COMM_SELF,"\t** Arc-Length residual:\n");
       PetscPrintf(PETSC_COMM_SELF,"\t  residual of arc-length control res_lambda = %6.4e crack area/f_lambda_int = %6.4e ( %6.4e )\n"
-	,arc_ptr->res_lambda,aRea,aRea/aRea0);
+      ,arc_ptr->res_lambda,aRea,aRea/aRea0);
     } break;
     case CTX_SNESSETJACOBIAN: {
       //calculate diagonal therm
@@ -3671,92 +3671,92 @@ PetscErrorCode ConfigurationalFractureMechanics::FrontAreaArcLengthControl::post
   PetscErrorCode ierr;
   switch(snes_ctx) {
     case CTX_SNESSETFUNCTION: {
-	ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
-	double res_nrm2[6];
-	Vec res_nrm2_vec;
-	if(pcomm->rank()==0) {
-	  ierr = VecCreateMPIWithArray(PETSC_COMM_WORLD,1,6,6,res_nrm2,&res_nrm2_vec); CHKERRQ(ierr);
-	} else {
-	  ierr = VecCreateMPIWithArray(PETSC_COMM_WORLD,1,0,6,res_nrm2,&res_nrm2_vec); CHKERRQ(ierr);
-	}
-	//
-	Range CrackFrontEdges;
-	ierr = mField.get_cubit_msId_entities_by_dimension(201,SIDESET,1,CrackFrontEdges,true); CHKERRQ(ierr);
-	Range CrackFrontNodes;
-	ErrorCode rval;
-	rval = mField.get_moab().get_connectivity(CrackFrontEdges,CrackFrontNodes,true); CHKERR_PETSC(rval);
-	//
-	double *array;
-	ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
-	ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
-	ierr = VecGetArray(snes_f,&array); CHKERRQ(ierr);
-	ierr = VecZeroEntries(res_nrm2_vec); CHKERRQ(ierr);
-	for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_LOCIDX_FOR_LOOP_(problemPtr,dof)) {
-	  if(dof->get_part()!=pcomm->rank()) continue;
-	  double val = pow(array[dof->get_petsc_local_dof_idx()],2);
-	  if(dof->get_name() == "SPATIAL_POSITION") {
-	    ierr = VecSetValue(res_nrm2_vec,0,val,ADD_VALUES); CHKERRQ(ierr);
-	  }
-	  if(dof->get_name() == "MESH_NODE_POSITIONS") {
-	    if(find(CrackFrontNodes.begin(),CrackFrontNodes.end(),dof->get_ent())!=CrackFrontNodes.end()) {
-	      ierr = VecSetValue(res_nrm2_vec,1,val,ADD_VALUES); CHKERRQ(ierr);
-	    } else {
-	      ierr = VecSetValue(res_nrm2_vec,2,val,ADD_VALUES); CHKERRQ(ierr);
-	    }
-	  }
-	  if(dof->get_name().compare(0,14,"LAMBDA_SURFACE") == 0) {
-	    ierr = VecSetValue(res_nrm2_vec,3,val,ADD_VALUES); CHKERRQ(ierr);
-	  }
-	  if(dof->get_name() == "LAMBDA_CRACK_SURFACE") {
-	    ierr = VecSetValue(res_nrm2_vec,4,val,ADD_VALUES); CHKERRQ(ierr);
-	  }
-	  if(dof->get_name() == "LAMBDA_CRACK_TANGENT_CONSTRAIN") {
-	    ierr = VecSetValue(res_nrm2_vec,5,val,ADD_VALUES); CHKERRQ(ierr);
-	  }
-	}
-	ierr = VecAssemblyBegin(res_nrm2_vec); CHKERRQ(ierr);
-	ierr = VecAssemblyEnd(res_nrm2_vec); CHKERRQ(ierr);
-	if(pcomm->rank()==0) {
-	  resSpatialNrm2 = sqrt(res_nrm2[0]);
-	  resCrackFrontNrm2 = sqrt(res_nrm2[1]);
-	  PetscPrintf(PETSC_COMM_SELF,"\t** Equilibrium Residuals:\n");
-	  PetscPrintf(PETSC_COMM_SELF,"\t  equilibrium of physical forces res_spatial_nrm2 = %6.4e\n",resSpatialNrm2);
-	  PetscPrintf(PETSC_COMM_SELF,"\t  equilibrium of material forces res_crack_front_nrm2 = %6.4e\n",resCrackFrontNrm2);
-	  PetscPrintf(PETSC_COMM_SELF,"\t** Mesh Quality Residuals:\n");
-	  PetscPrintf(PETSC_COMM_SELF,"\t  residual of mesh smoother res_mesh_smoother_nrm2 = %6.4e\n",sqrt(res_nrm2[2]));
-	  PetscPrintf(PETSC_COMM_SELF,"\t  residual of surface constraint res_surface_constrain_nrm2 = %6.4e\n",sqrt(res_nrm2[3]));
-	  PetscPrintf(PETSC_COMM_SELF,"\t  residual of crack surface constraint res_crack_surface_constrain_nrm2 = %6.4e\n",sqrt(res_nrm2[4]));
-	  PetscPrintf(PETSC_COMM_SELF,"\t  residual of crack front mesh smoother tangential constraint res_crack_front_tangent_constrain_nrm2 = %6.4e\n",sqrt(res_nrm2[5]));
-	  PetscPrintf(PETSC_COMM_SELF,"\n");
-	}
-	ierr = VecRestoreArray(snes_f,&array); CHKERRQ(ierr);
-	ierr = VecDestroy(&res_nrm2_vec); CHKERRQ(ierr);
+      ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
+      double res_nrm2[6];
+      Vec res_nrm2_vec;
+      if(pcomm->rank()==0) {
+        ierr = VecCreateMPIWithArray(PETSC_COMM_WORLD,1,6,6,res_nrm2,&res_nrm2_vec); CHKERRQ(ierr);
+      } else {
+        ierr = VecCreateMPIWithArray(PETSC_COMM_WORLD,1,0,6,res_nrm2,&res_nrm2_vec); CHKERRQ(ierr);
+      }
+      //
+      Range CrackFrontEdges;
+      ierr = mField.get_cubit_msId_entities_by_dimension(201,SIDESET,1,CrackFrontEdges,true); CHKERRQ(ierr);
+      Range CrackFrontNodes;
+      ErrorCode rval;
+      rval = mField.get_moab().get_connectivity(CrackFrontEdges,CrackFrontNodes,true); CHKERR_PETSC(rval);
+      //
+      double *array;
+      ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
+      ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+      ierr = VecGetArray(snes_f,&array); CHKERRQ(ierr);
+      ierr = VecZeroEntries(res_nrm2_vec); CHKERRQ(ierr);
+      for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_LOCIDX_FOR_LOOP_(problemPtr,dof)) {
+        if(dof->get_part()!=pcomm->rank()) continue;
+        double val = pow(array[dof->get_petsc_local_dof_idx()],2);
+        if(dof->get_name() == "SPATIAL_POSITION") {
+          ierr = VecSetValue(res_nrm2_vec,0,val,ADD_VALUES); CHKERRQ(ierr);
+        }
+        if(dof->get_name() == "MESH_NODE_POSITIONS") {
+          if(find(CrackFrontNodes.begin(),CrackFrontNodes.end(),dof->get_ent())!=CrackFrontNodes.end()) {
+            ierr = VecSetValue(res_nrm2_vec,1,val,ADD_VALUES); CHKERRQ(ierr);
+          } else {
+            ierr = VecSetValue(res_nrm2_vec,2,val,ADD_VALUES); CHKERRQ(ierr);
+          }
+        }
+        if(dof->get_name().compare(0,14,"LAMBDA_SURFACE") == 0) {
+          ierr = VecSetValue(res_nrm2_vec,3,val,ADD_VALUES); CHKERRQ(ierr);
+        }
+        if(dof->get_name() == "LAMBDA_CRACK_SURFACE") {
+          ierr = VecSetValue(res_nrm2_vec,4,val,ADD_VALUES); CHKERRQ(ierr);
+        }
+        if(dof->get_name() == "LAMBDA_CRACK_TANGENT_CONSTRAIN") {
+          ierr = VecSetValue(res_nrm2_vec,5,val,ADD_VALUES); CHKERRQ(ierr);
+        }
+      }
+      ierr = VecAssemblyBegin(res_nrm2_vec); CHKERRQ(ierr);
+      ierr = VecAssemblyEnd(res_nrm2_vec); CHKERRQ(ierr);
+      if(pcomm->rank()==0) {
+        resSpatialNrm2 = sqrt(res_nrm2[0]);
+        resCrackFrontNrm2 = sqrt(res_nrm2[1]);
+        PetscPrintf(PETSC_COMM_SELF,"\t** Equilibrium Residuals:\n");
+        PetscPrintf(PETSC_COMM_SELF,"\t  equilibrium of physical forces res_spatial_nrm2 = %6.4e\n",resSpatialNrm2);
+        PetscPrintf(PETSC_COMM_SELF,"\t  equilibrium of material forces res_crack_front_nrm2 = %6.4e\n",resCrackFrontNrm2);
+        PetscPrintf(PETSC_COMM_SELF,"\t** Mesh Quality Residuals:\n");
+        PetscPrintf(PETSC_COMM_SELF,"\t  residual of mesh smoother res_mesh_smoother_nrm2 = %6.4e\n",sqrt(res_nrm2[2]));
+        PetscPrintf(PETSC_COMM_SELF,"\t  residual of surface constraint res_surface_constrain_nrm2 = %6.4e\n",sqrt(res_nrm2[3]));
+        PetscPrintf(PETSC_COMM_SELF,"\t  residual of crack surface constraint res_crack_surface_constrain_nrm2 = %6.4e\n",sqrt(res_nrm2[4]));
+        PetscPrintf(PETSC_COMM_SELF,"\t  residual of crack front mesh smoother tangential constraint res_crack_front_tangent_constrain_nrm2 = %6.4e\n",sqrt(res_nrm2[5]));
+        PetscPrintf(PETSC_COMM_SELF,"\n");
+      }
+      ierr = VecRestoreArray(snes_f,&array); CHKERRQ(ierr);
+      ierr = VecDestroy(&res_nrm2_vec); CHKERRQ(ierr);
     } break;
     case CTX_SNESSETJACOBIAN: {
-	ierr = VecAssemblyBegin(ghostDiag); CHKERRQ(ierr);
-	ierr = VecAssemblyEnd(ghostDiag); CHKERRQ(ierr);
-	ierr = VecGhostUpdateBegin(ghostDiag,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	ierr = VecGhostUpdateEnd(ghostDiag,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	double *diag;
-	ierr = VecGetArray(ghostDiag,&diag); CHKERRQ(ierr);
-	arc_ptr->diag = *diag;
-	ierr = VecRestoreArray(ghostDiag,&diag); CHKERRQ(ierr);
-	//PetscPrintf(PETSC_COMM_WORLD,"\tdiag = %6.4e\n",arc_ptr->diag);
-	/*ierr = MatAssemblyBegin(snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-	ierr = MatAssemblyEnd(snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
- 	//Matrix View
-	MatView(snes_B,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
-	std::string wait;
-	std::cin >> wait;*/
+      ierr = VecAssemblyBegin(ghostDiag); CHKERRQ(ierr);
+      ierr = VecAssemblyEnd(ghostDiag); CHKERRQ(ierr);
+      ierr = VecGhostUpdateBegin(ghostDiag,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      ierr = VecGhostUpdateEnd(ghostDiag,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      double *diag;
+      ierr = VecGetArray(ghostDiag,&diag); CHKERRQ(ierr);
+      arc_ptr->diag = *diag;
+      ierr = VecRestoreArray(ghostDiag,&diag); CHKERRQ(ierr);
+      //PetscPrintf(PETSC_COMM_WORLD,"\tdiag = %6.4e\n",arc_ptr->diag);
+      /*ierr = MatAssemblyBegin(snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+      ierr = MatAssemblyEnd(snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+      //Matrix View
+      MatView(snes_B,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
+      std::string wait;
+      std::cin >> wait;*/
     } break;
     default:
-	break;
+    break;
   }
   PetscFunctionReturn(0);
 }
 
 #ifdef WITH_ADOL_C
 
-#include <ConfigurationalFractureForDynamics.cpp>
+#include <impl/ConfigurationalFractureForDynamics.cpp>
 
 #endif //WITH_ADOL_C
