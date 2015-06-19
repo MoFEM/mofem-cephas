@@ -15,15 +15,15 @@
 # by alternative classes or functions. Use of oboslete implementation should be
 # avoided. This code will be removed in futuer versions of MoFEM
 
-include_directories(${UM_SOURCE_DIR}/obsolete)
-include_directories(${UM_SOURCE_DIR}/obsolete/c)
-include_directories(${UM_SOURCE_DIR}/obsolete/c_impl)
+include_directories(${UM_SOURCE_DIR}/obsolete/src)
+include_directories(${UM_SOURCE_DIR}/obsolete/src/c)
+include_directories(${UM_SOURCE_DIR}/obsolete/src/c_impl)
 
 add_library(users_modules_obsolete
-  ${UM_SOURCE_DIR}/obsolete/impl/FEMethod_SurfaceConstrains.cpp
-  ${UM_SOURCE_DIR}/obsolete/impl/FEMethod_LowLevelStudent.cpp
-  ${UM_SOURCE_DIR}/obsolete/impl/FEMethod_UpLevelStudent.cpp
-  ${UM_SOURCE_DIR}/obsolete/c_impl/complex_for_lazy.c
-  ${UM_SOURCE_DIR}/obsolete/impl/FEMethod_ComplexForLazy.cpp
-  ${UM_SOURCE_DIR}/obsolete/impl/SurfacePressureComplexForLazy.cpp
+  ${UM_SOURCE_DIR}/obsolete/src/impl/FEMethod_SurfaceConstrains.cpp
+  ${UM_SOURCE_DIR}/obsolete/src/impl/FEMethod_LowLevelStudent.cpp
+  ${UM_SOURCE_DIR}/obsolete/src/impl/FEMethod_UpLevelStudent.cpp
+  ${UM_SOURCE_DIR}/obsolete/src/c_impl/complex_for_lazy.c
+  ${UM_SOURCE_DIR}/obsolete/src/impl/FEMethod_ComplexForLazy.cpp
+  ${UM_SOURCE_DIR}/obsolete/src/impl/SurfacePressureComplexForLazy.cpp
 )
