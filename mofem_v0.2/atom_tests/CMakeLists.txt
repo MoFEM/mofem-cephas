@@ -292,7 +292,6 @@ add_test(forces_and_sources_testing_volume_element_test_compare ${CMAKE_COMMAND}
   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_testing_volume_element.txt
 )
 
-
 add_executable(forces_and_sources_getting_higher_order_skin_normals_atom forces_and_sources_getting_higher_order_skin_normals_atom_tets.cpp)
 target_link_libraries(forces_and_sources_getting_higher_order_skin_normals_atom
   mofem_finite_elements
@@ -303,6 +302,8 @@ target_link_libraries(forces_and_sources_getting_higher_order_skin_normals_atom
   mofem_third_party
   ${PROJECT_LIBS}
 )
+
+cm_export_file("../meshes/sphere.h5m" export_atom_tests)
 
 add_test(forces_and_sources_getting_higher_order_skin_normals_atom_test
   ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_getting_higher_order_skin_normals_atom -my_file sphere.h5m
@@ -442,7 +443,9 @@ target_link_libraries(forces_and_sources_hdiv_continuity_check
   ${PROJECT_LIBS}
 )
 
-add_test(forces_and_sources_hdiv_continuity_check_atom ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_hdiv_continuity_check -my_file sphere.h5m)
+add_test(forces_and_sources_hdiv_continuity_check_atom
+  ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_hdiv_continuity_check -my_file sphere.h5m
+)
 add_test(forces_and_sources_hdiv_continuity_check_atom_compare ${CMAKE_COMMAND} -E compare_files
   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_hdiv_continuity_check.txt
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_hdiv_continuity_check.txt
@@ -545,7 +548,9 @@ target_link_libraries(projection_from_10node_tet_atom
   ${PROJECT_LIBS}
 )
 
-add_test(projection_from_10node_tet_atom ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/projection_from_10node_tet_atom -my_file sphere.h5m)
+add_test(
+  projection_from_10node_tet_atom ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/projection_from_10node_tet_atom -my_file sphere.h5m
+)
 add_test(projection_from_10node_tet_atom_compare ${CMAKE_COMMAND} -E compare_files
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/10node_sphere.txt
   ${CMAKE_BINARY_DIR}/atom_tests/10node_sphere.txt
