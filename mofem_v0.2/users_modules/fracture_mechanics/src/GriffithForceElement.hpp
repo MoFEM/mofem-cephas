@@ -88,11 +88,15 @@ struct GriffithForceElement {
     ublas::matrix<double> tangentGriffithForce;
     vector<double*> tangentGriffithForceRowPtr;
 
+    ublas::vector<double> penaltyForce;
+    ublas::matrix<double> tangentPenaltyForce;
+    vector<double*> tangentPenaltyForceRowPtr;
+
   };
   CommonData commonData;
 
   struct BlockData {
-    double gc;
+    double gc,penalty;
     Range frontEdges;
     Range frontNodes;
   };
@@ -129,25 +133,31 @@ struct GriffithForceElement {
     template<typename TYPE>
     struct AuxFunctions {
 
+      ublas::matrix<double> N,NTN;
       ublas::matrix<double> Bksi;
       ublas::matrix<double> Beta;
 
       ublas::vector<TYPE> referenceCoords;
+
+      ublas::vector<TYPE> referenceXdKsi;
+      ublas::vector<TYPE> referenceXdEta;
+      ublas::matrix<TYPE> referenceSpinKsi;
+      ublas::matrix<TYPE> referenceSpinEta;
+      ublas::vector<TYPE> referenceNormal;
+      TYPE referenceArea;
 
       ublas::vector<TYPE> currentCoords;
       ublas::vector<TYPE> currentXdKsi;
       ublas::vector<TYPE> currentXdEta;
       ublas::matrix<TYPE> currentSpinKsi;
       ublas::matrix<TYPE> currentSpinEta;
-      ublas::matrix<TYPE> A;
-
-      ublas::vector<TYPE> dElta;
       ublas::vector<TYPE> currentNormal;
       TYPE currentArea;
 
-
-
+      ublas::matrix<TYPE> A;
       ublas::vector<TYPE> griffithForce;
+      ublas::vector<TYPE> penaltyForce;
+      TYPE dElta;
 
       PetscErrorCode sPin(ublas::matrix<TYPE> &spin,ublas::vector<TYPE> &vec) {
         PetscFunctionBegin;
@@ -159,6 +169,26 @@ struct GriffithForceElement {
         spin(1,2) = -vec[0];
         spin(2,0) = -vec[1];
         spin(2,1) = +vec[0];
+        PetscFunctionReturn(0);
+      }
+
+      PetscErrorCode matrixN(int gg,DataForcesAndSurcesCore::EntData &data) {
+        PetscFunctionBegin;
+        try {
+
+          N.resize(3,9,false);
+          N.clear();
+          for(int ii = 0;ii<3;ii++) {
+            for(int jj = 0;jj<3;jj++) {
+              N(jj,ii*3+jj) = data.getN(gg)[ii];
+            }
+          }
+
+        } catch (const std::exception& ex) {
+          ostringstream ss;
+          ss << "throw in method: " << ex.what() << endl;
+          SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+        }
         PetscFunctionReturn(0);
       }
 
@@ -224,9 +254,47 @@ struct GriffithForceElement {
         PetscFunctionReturn(0);
       }
 
+      PetscErrorCode calculateReferenceNormal() {
+        PetscFunctionBegin;
+
+        PetscErrorCode ierr;
+
+        referenceXdKsi.resize(3,false);
+        referenceXdEta.resize(3,false);
+        noalias(referenceXdKsi) = prod(Bksi,referenceCoords);
+        noalias(referenceXdEta) = prod(Beta,referenceCoords);
+
+        ierr = sPin(referenceSpinKsi,referenceXdKsi); CHKERRQ(ierr);
+        //ierr = sPin(referenceSpinEta,referenceXdEta); CHKERRQ(ierr);
+        referenceNormal.resize(3,false);
+        noalias(referenceNormal) = 0.5*prod(referenceSpinKsi,referenceXdEta);
+        referenceArea = 0;
+        for(int dd = 0;dd!=3;dd++) {
+          referenceArea += referenceNormal[dd]*referenceNormal[dd];
+        }
+        referenceArea = sqrt(referenceArea);
+
+        PetscFunctionReturn(0);
+      }
+
+      PetscErrorCode calculatePenalty(double beta) {
+        PetscFunctionBegin;
+
+        dElta = currentArea-referenceArea;
+        dElta *= dElta*dElta;
+        dElta = -fmin(0,dElta);
+
+        NTN.resize(9,9,false);
+        noalias(NTN) = beta*prod(trans(N),N);
+        noalias(penaltyForce) += dElta*prod(NTN,currentCoords-referenceCoords);
+
+        PetscFunctionReturn(0);
+      }
+
     };
 
     AuxFunctions<adouble> auxFun;
+
     PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
 
@@ -303,21 +371,63 @@ struct GriffithForceElement {
 
   };
 
-  struct OpRhs: public FaceElementForcesAndSourcesCore::UserDataOperator {
+  struct AuxOp {
 
     int tAg;
     BlockData &blockData;
     CommonData &commonData;
+    AuxOp(int tag,BlockData &block_data,CommonData &common_data):
+    tAg(tag),
+    blockData(block_data),
+    commonData(common_data) {
+    };
+
+    ublas::vector<int> rowIndices;
+    ublas::vector<double> activeVariables;
+
+    PetscErrorCode setIndices(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+      PetscFunctionBegin;
+      int nb_dofs = data.getIndices().size();
+      rowIndices.resize(nb_dofs,false);
+      noalias(rowIndices) = data.getIndices();
+      ublas::vector<const FEDofMoFEMEntity*>& dofs = data.getFieldDofs();
+      ublas::vector<const FEDofMoFEMEntity*>::iterator dit,hi_dit;
+      dit = dofs.begin();
+      hi_dit = dofs.end();
+      for(int ii = 0;dit!=hi_dit;dit++,ii++) {
+        if(blockData.frontNodes.find((*dit)->get_ent())==blockData.frontNodes.end()) {
+          rowIndices[ii] = -1;
+        }
+      }
+      PetscFunctionReturn(0);
+    }
+
+    PetscErrorCode setVariables(
+      FaceElementForcesAndSourcesCore::UserDataOperator *fe_ptr,
+      int side,
+      EntityType type,
+      DataForcesAndSurcesCore::EntData &data
+    ) {
+      PetscFunctionBegin;
+      int nb_dofs = data.getIndices().size();
+      activeVariables.resize(18);
+      for(int dd = 0;dd!=nb_dofs;dd++) {
+        activeVariables[dd] = fe_ptr->getCoords()[dd];
+      }
+      for(int dd = 0;dd!=nb_dofs;dd++) {
+        activeVariables[9+dd] = data.getFieldData()[dd];
+      }
+      PetscFunctionReturn(0);
+    }
+
+  };
+
+  struct OpRhs: public FaceElementForcesAndSourcesCore::UserDataOperator,AuxOp {
 
     OpRhs(int tag,BlockData &block_data,CommonData &common_data):
     FaceElementForcesAndSourcesCore::UserDataOperator("MESH_NODE_POSITIONS",UserDataOperator::OPROW),
-    tAg(tag),
-    blockData(block_data),
-    commonData(common_data)
-    {}
-
-    ublas::vector<int> iNdices;
-    ublas::vector<double> activeVariables;
+    AuxOp(tag,block_data,common_data) {
+    }
 
     PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
@@ -327,42 +437,22 @@ struct GriffithForceElement {
 
       PetscErrorCode ierr;
 
+      ierr = setIndices(side,type,data); CHKERRQ(ierr);
+      ierr = setVariables(this,side,type,data); CHKERRQ(ierr);
+
       int nb_dofs = data.getIndices().size();
-      iNdices.resize(nb_dofs,false);
-      noalias(iNdices) = data.getIndices();
-
-      ublas::vector<const FEDofMoFEMEntity*>& dofs = data.getFieldDofs();
-      ublas::vector<const FEDofMoFEMEntity*>::iterator dit,hi_dit;
-      dit = dofs.begin();
-      hi_dit = dofs.end();
-      for(int ii = 0;dit!=hi_dit;dit++,ii++) {
-        if(blockData.frontNodes.find((*dit)->get_ent())==blockData.frontNodes.end()) {
-          iNdices[ii] = -1;
-        }
-      }
-
-      activeVariables.resize(18);
-      for(int dd = 0;dd!=nb_dofs;dd++) {
-        activeVariables[dd] = getCoords()[dd];
-      }
-      for(int dd = 0;dd!=nb_dofs;dd++) {
-        activeVariables[9+dd] = data.getFieldData()[dd];
-      }
-
       commonData.griffithForce.resize(9,false);
       int r;
       //play recorder for values
       r = ::function(tAg,nb_dofs,18,&activeVariables[0],&commonData.griffithForce[0]);
-      if(r<3) { // function is locally analytic
+      if(r<3) {
         SETERRQ1(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"ADOL-C function evaluation with error r = %d",r);
       }
-
-      //cerr << commonData.griffithForce << endl;
 
       ierr = VecSetValues(
         getFEMethod()->snes_f,
         nb_dofs,
-        &iNdices[0],
+        &rowIndices[0],
         &commonData.griffithForce[0],
         ADD_VALUES
       ); CHKERRQ(ierr);
@@ -372,11 +462,7 @@ struct GriffithForceElement {
 
   };
 
-  struct OpLhs: public FaceElementForcesAndSourcesCore::UserDataOperator {
-
-    int tAg;
-    BlockData &blockData;
-    CommonData &commonData;
+  struct OpLhs: public FaceElementForcesAndSourcesCore::UserDataOperator,AuxOp {
 
     OpLhs(int tag,BlockData &block_data,CommonData &common_data):
     FaceElementForcesAndSourcesCore::UserDataOperator(
@@ -384,13 +470,9 @@ struct GriffithForceElement {
       "MESH_NODE_POSITIONS",
       UserDataOperator::OPROWCOL
     ),
-    tAg(tag),
-    blockData(block_data),
-    commonData(common_data)
-    {}
+    AuxOp(tag,block_data,common_data) {
+    }
 
-    ublas::vector<int> rowIndices;
-    ublas::vector<double> activeVariables;
     ublas::matrix<double> k;
 
     PetscErrorCode doWork(
@@ -401,40 +483,22 @@ struct GriffithForceElement {
     ) {
       PetscFunctionBegin;
 
-
       if(row_type != MBVERTEX) {
         PetscFunctionReturn(0);
       }
 
       PetscErrorCode ierr;
 
-      int row_nb_dofs = row_data.getIndices().size();
-      rowIndices.resize(row_nb_dofs,false);
-      noalias(rowIndices) = row_data.getIndices();
-
-      ublas::vector<const FEDofMoFEMEntity*>& dofs = row_data.getFieldDofs();
-      ublas::vector<const FEDofMoFEMEntity*>::iterator dit,hi_dit;
-      dit = dofs.begin();
-      hi_dit = dofs.end();
-      for(int ii = 0;dit!=hi_dit;dit++,ii++) {
-        if(blockData.frontNodes.find((*dit)->get_ent())==blockData.frontNodes.end()) {
-          rowIndices[ii] = -1;
-        }
-      }
-
-      activeVariables.resize(18);
-      for(int dd = 0;dd!=row_nb_dofs;dd++) {
-        activeVariables[dd] = getCoords()[dd];
-      }
-      for(int dd = 0;dd!=row_nb_dofs;dd++) {
-        activeVariables[9+dd] = row_data.getFieldData()[dd];
-      }
+      ierr = setIndices(row_side,row_type,row_data);
+      ierr = setVariables(this,row_side,row_type,row_data);
 
       commonData.tangentGriffithForce.resize(9,18,false);
       commonData.tangentGriffithForceRowPtr.resize(9);
       for(int dd = 0;dd<9;dd++) {
         commonData.tangentGriffithForceRowPtr[dd] = &commonData.tangentGriffithForce(dd,0);
       }
+
+      int row_nb_dofs = row_data.getIndices().size();
 
       int r;
       //play recorder for jacobian
@@ -450,6 +514,180 @@ struct GriffithForceElement {
       for(int dd1 = 0;dd1<9;dd1++) {
         for(int dd2 = 0;dd2<9;dd2++) {
           k(dd1,dd2) = commonData.tangentGriffithForce(dd1,9+dd2);
+        }
+      }
+
+      int col_nb_dofs = row_data.getIndices().size();
+
+      ierr = MatSetValues(
+        getFEMethod()->snes_B,
+        row_nb_dofs,&rowIndices[0],
+        col_nb_dofs,&col_data.getIndices()[0],
+        &k(0,0),ADD_VALUES
+      ); CHKERRQ(ierr);
+
+      PetscFunctionReturn(0);
+    }
+
+  };
+
+
+  struct OpJacobianPenalty: public OpJacobian {
+
+    OpJacobianPenalty(int tag,BlockData &data,CommonData &common_data):
+    OpJacobian(tag,data,common_data) {
+    }
+
+  PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+      PetscFunctionBegin;
+
+      if(isTapeRecorded) {
+        PetscFunctionReturn(0);
+      }
+      if(type != MBVERTEX) {
+        PetscFunctionReturn(0);
+      }
+
+      try {
+
+        PetscErrorCode ierr;
+        int nb_dofs = data.getFieldData().size();
+        int nb_gauss_pts = data.getN().size1();
+
+        auxFun.referenceCoords.resize(9,false);
+        auxFun.currentCoords.resize(9,false);
+
+        trace_on(tAg);
+
+        for(int dd = 0;dd!=nb_dofs;dd++) {
+          auxFun.referenceCoords[dd] <<= getCoords()[dd];
+        }
+        for(int dd = 0;dd!=nb_dofs;dd++) {
+          auxFun.currentCoords[dd] <<= data.getFieldData()[dd];
+        }
+
+        auxFun.penaltyForce.resize(9,false);
+        auxFun.penaltyForce.clear();
+
+        for(int gg = 0;gg!=nb_gauss_pts;gg++) {
+
+          double val = getGaussPts()(2,gg)*0.5;
+
+          ierr = auxFun.matrixB(gg,data); CHKERRQ(ierr);
+          ierr = auxFun.matrixN(gg,data); CHKERRQ(ierr);
+          ierr = auxFun.dIffX(); CHKERRQ(ierr);
+          ierr = auxFun.nOrmal(); CHKERRQ(ierr);
+          ierr = auxFun.matrixA(); CHKERRQ(ierr);
+          ierr = auxFun.calculateReferenceNormal(); CHKERRQ(ierr);
+          ierr = auxFun.calculatePenalty(val*blockData.penalty);
+
+        }
+
+        commonData.penaltyForce.resize(nb_dofs,false);
+        for(int dd = 0;dd!=nb_dofs;dd++) {
+          auxFun.penaltyForce[dd] >>= commonData.penaltyForce[dd];
+        }
+
+        trace_off();
+
+        isTapeRecorded = true;
+
+      } catch (const std::exception& ex) {
+        ostringstream ss;
+        ss << "throw in method: " << ex.what() << endl;
+        SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+      }
+
+      PetscFunctionReturn(0);
+    }
+
+  };
+
+    struct OpPenaltyRhs: public OpRhs {
+
+    OpPenaltyRhs(int tag,BlockData &block_data,CommonData &common_data):
+    OpRhs(tag,block_data,common_data) {
+    }
+
+    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+      PetscFunctionBegin;
+      if(type != MBVERTEX) {
+        PetscFunctionReturn(0);
+      }
+
+      PetscErrorCode ierr;
+
+      ierr = setIndices(side,type,data); CHKERRQ(ierr);
+      ierr = setVariables(this,side,type,data); CHKERRQ(ierr);
+
+      int nb_dofs = data.getIndices().size();
+      commonData.penaltyForce.resize(9,false);
+      int r;
+      //play recorder for values
+      r = ::function(tAg,nb_dofs,18,&activeVariables[0],&commonData.penaltyForce[0]);
+      if(r<1) { // function is locally analytic
+        SETERRQ1(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"ADOL-C function evaluation with error r = %d",r);
+      }
+
+      ierr = VecSetValues(
+        getFEMethod()->snes_f,
+        nb_dofs,
+        &rowIndices[0],
+        &commonData.penaltyForce[0],
+        ADD_VALUES
+      ); CHKERRQ(ierr);
+
+      PetscFunctionReturn(0);
+    }
+
+  };
+
+  struct OpPenaltyLhs: public OpLhs {
+
+    OpPenaltyLhs(int tag,BlockData &block_data,CommonData &common_data):
+    OpLhs(tag,block_data,common_data) {
+
+    }
+
+    PetscErrorCode doWork(
+      int row_side,int col_side,
+      EntityType row_type,EntityType col_type,
+      DataForcesAndSurcesCore::EntData &row_data,
+      DataForcesAndSurcesCore::EntData &col_data
+    ) {
+      PetscFunctionBegin;
+
+      if(row_type != MBVERTEX) {
+        PetscFunctionReturn(0);
+      }
+
+      PetscErrorCode ierr;
+
+      ierr = setIndices(row_side,row_type,row_data);
+      ierr = setVariables(this,row_side,row_type,row_data);
+
+      commonData.tangentPenaltyForce.resize(9,18,false);
+      commonData.tangentPenaltyForceRowPtr.resize(9);
+      for(int dd = 0;dd<9;dd++) {
+        commonData.tangentPenaltyForceRowPtr[dd] = &commonData.tangentPenaltyForce(dd,0);
+      }
+
+      int row_nb_dofs = row_data.getIndices().size();
+
+      int r;
+      //play recorder for jacobian
+      r = jacobian(
+        tAg,row_nb_dofs,18,
+        &activeVariables[0],
+        &commonData.tangentPenaltyForceRowPtr[0]
+      );
+      if(r<1) { // function is locally analytic
+        SETERRQ1(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"ADOL-C function evaluation with error r = %d",r);
+      }
+      k.resize(9,9,false);
+      for(int dd1 = 0;dd1<9;dd1++) {
+        for(int dd2 = 0;dd2<9;dd2++) {
+          k(dd1,dd2) = commonData.tangentPenaltyForce(dd1,9+dd2);
         }
       }
 

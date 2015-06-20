@@ -120,7 +120,7 @@ struct ArcLengthMatShell {
   ArcLengthMatShell(Mat aij,ArcLengthCtx *arc_ptr,string problem_name);
   virtual ~ArcLengthMatShell();
 
-  PetscErrorCode setLambda(Vec ksp_x,double *lambda,ScatterMode scattermode); 
+  PetscErrorCode setLambda(Vec ksp_x,double *lambda,ScatterMode scattermode);
 
   friend PetscErrorCode ArcLengthMatMultShellOp(Mat A,Vec x,Vec f);
 };
