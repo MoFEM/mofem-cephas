@@ -5,149 +5,149 @@ set -e
 ARGS=$@
 
 while test $# -gt 0; do
-        case "$1" in
-                -h|--help)
-                        echo "convergence_study"
-                        echo " "
-                        echo "convergence_study [arguments]"
-                        echo " "
-                        echo "options:"
-                        echo "-h, --help"
-                        echo "-f, --file_name=FILE"
-			echo "-l, --load_factor=LOAD_FACTOR"
-			echo "-g, --gc=GRIFFITH_ENERGY"
-			echo "-o, --orders=1,2,3,4,5 (max is 5)\""
-			echo "-r, --ref=0,1,2,3,4 ... (memory and time is your limit)\""
-			echo "-d, --dir=DIR_NAME"
-      			echo "-t, --rol=TOLERANCE"
-                        exit 0
-                        ;;
-		--showme)
-			export SHOWME=1
-			shift
-			;;
-                -f)
-                        shift
-                        if test $# -gt 0; then
-                                export FILE=$1
-                        else
-                                echo "no file name specified"
-                                exit 1
-                        fi
-                        shift
-                        ;;
-                --file_name*)
-                        export FILE=`echo $1 | sed -e 's/^[^=]*=//g'`
-                        shift
-                        ;;
-                -d)
-                        shift
-                        if test $# -gt 0; then
-                                export DIR_NAME=$1
-                        else
-                                echo "no file name specified"
-                                exit 1
-                        fi
-                        shift
-                        ;;
-                --dir*)
-                        export DIR_NAME=`echo $1 | sed -e 's/^[^=]*=//g'`
-                        shift
-                        ;;
+  case "$1" in
+    -h|--help)
+    echo "convergence_study"
+    echo " "
+    echo "convergence_study [arguments]"
+    echo " "
+    echo "options:"
+    echo "-h, --help"
+    echo "-f, --file_name=FILE"
+    echo "-l, --load_factor=LOAD_FACTOR"
+    echo "-g, --gc=GRIFFITH_ENERGY"
+    echo "-o, --orders=1,2,3,4,5 (max is 5)\""
+    echo "-r, --ref=0,1,2,3,4 ... (memory and time is your limit)\""
+    echo "-d, --dir=DIR_NAME"
+    echo "-t, --rol=TOLERANCE"
+    exit 0
+    ;;
+    --showme)
+    export SHOWME=1
+    shift
+    ;;
+    -f)
+    shift
+    if test $# -gt 0; then
+      export FILE=$1
+    else
+      echo "no file name specified"
+      exit 1
+    fi
+    shift
+    ;;
+    --file_name*)
+    export FILE=`echo $1 | sed -e 's/^[^=]*=//g'`
+    shift
+    ;;
+    -d)
+    shift
+    if test $# -gt 0; then
+      export DIR_NAME=$1
+    else
+      echo "no file name specified"
+      exit 1
+    fi
+    shift
+    ;;
+    --dir*)
+    export DIR_NAME=`echo $1 | sed -e 's/^[^=]*=//g'`
+    shift
+    ;;
 
-                -l)
-                        shift
-                        if test $# -gt 0; then
-                                export LOAD_FACTOR=$1
-                        else
-                                echo "no load factor specified"
-                                exit 1
-                        fi
-                        shift
-                        ;;
-                --load_factor*)
-                        export LOAD_FACTOR=`echo $1 | sed -e 's/^[^=]*=//g'`
-                        shift
-                        ;;
-		-g)
-                        shift
-                        if test $# -gt 0; then
-                                export GC=$1
-                        else
-                                echo "no griffith energy specified"
-                                exit 1
-                        fi
-                        shift
-                        ;;
-                --gc*)
-                        export GC=`echo $1 | sed -e 's/^[^=]*=//g'`
-                        shift
-                        ;;
-		-o)
-                        shift
-                        if test $# -gt 0; then
-                                export ORDERS=$1
-                        else
-                                echo "no griffith energy specified"
-                                exit 1
-                        fi
-                        shift
-                        ;;
-                --orders*)
-                        export ORDERS=`echo $1 | sed -e 's/^[^=]*=//g'`
-                        shift
-                        ;;
-		-r)
-                        shift
-                        if test $# -gt 0; then
-                                export REF=$1
-                        else
-                                echo "no griffith energy specified"
-                                exit 1
-                        fi
-                        shift
-                        ;;
-                --ref*)
-                        export REF=`echo $1 | sed -e 's/^[^=]*=//g'`
-                        shift
-                        ;;
+    -l)
+    shift
+    if test $# -gt 0; then
+      export LOAD_FACTOR=$1
+    else
+      echo "no load factor specified"
+      exit 1
+    fi
+    shift
+    ;;
+    --load_factor*)
+    export LOAD_FACTOR=`echo $1 | sed -e 's/^[^=]*=//g'`
+    shift
+    ;;
+    -g)
+    shift
+    if test $# -gt 0; then
+      export GC=$1
+    else
+      echo "no griffith energy specified"
+      exit 1
+    fi
+    shift
+    ;;
+    --gc*)
+    export GC=`echo $1 | sed -e 's/^[^=]*=//g'`
+    shift
+    ;;
+    -o)
+    shift
+    if test $# -gt 0; then
+      export ORDERS=$1
+    else
+      echo "no griffith energy specified"
+      exit 1
+    fi
+    shift
+    ;;
+    --orders*)
+    export ORDERS=`echo $1 | sed -e 's/^[^=]*=//g'`
+    shift
+    ;;
+    -r)
+    shift
+    if test $# -gt 0; then
+      export REF=$1
+    else
+      echo "no griffith energy specified"
+      exit 1
+    fi
+    shift
+    ;;
+    --ref*)
+    export REF=`echo $1 | sed -e 's/^[^=]*=//g'`
+    shift
+    ;;
 
-		-p)
-                        shift
-                        if test $# -gt 0; then
-                                export NB_PROC=$1
-                        else
-                                echo "no griffith energy specified"
-                                exit 1
-                        fi
-                        shift
-                        ;;
-                --proc*)
-                        export NB_PROC=`echo $1 | sed -e 's/^[^=]*=//g'`
-                        shift
-                        ;;
-		--pc_factor_mat_solver_package*)
-                        export PCFACTOR=`echo $1 | sed -e 's/^[^=]*=//g'`
-                        shift
-                        ;;
-		-t)
-                        shift
-                        if test $# -gt 0; then
-                                export TOL=$1
-                        else
-                                echo "no tolerance specified"
-                                exit 1
-                        fi
-                        shift
-                        ;;
-                --tol*)
-                        export TOL=`echo $1 | sed -e 's/^[^=]*=//g'`
-                        shift
-                        ;;
-                *)
-                        break
-                        ;;
-        esac
+    -p)
+    shift
+    if test $# -gt 0; then
+      export NB_PROC=$1
+    else
+      echo "no griffith energy specified"
+      exit 1
+    fi
+    shift
+    ;;
+    --proc*)
+    export NB_PROC=`echo $1 | sed -e 's/^[^=]*=//g'`
+    shift
+    ;;
+    --pc_factor_mat_solver_package*)
+    export PCFACTOR=`echo $1 | sed -e 's/^[^=]*=//g'`
+    shift
+    ;;
+    -t)
+    shift
+    if test $# -gt 0; then
+      export TOL=$1
+    else
+      echo "no tolerance specified"
+      exit 1
+    fi
+    shift
+    ;;
+    --tol*)
+    export TOL=`echo $1 | sed -e 's/^[^=]*=//g'`
+    shift
+    ;;
+    *)
+    break
+    ;;
+  esac
 done
 
 if [ -z ${SHOWME+x} ]; then
@@ -232,7 +232,10 @@ do
 
     echo "$COMMAND1 2>&1 | tee -a $DIR_NAME/log_solution"
     if [ -z ${SHOWME+x} ]; then
-      $COMMAND1 2>&1 | tee -a $DIR_NAME/log_solution
+      $COMMAND1 2>&1 | tee -a $DIR_NAME/log_solution; test ${PIPESTATUS[0]} -eq 0
+      if [ $? -ne 0 ]; then
+        exit $?
+      fi
     fi
 
     COMMAND2="$MPIRUN_ONE_PROC $BIN_PATH/material_force \
@@ -243,7 +246,10 @@ do
 
     echo "$COMMAND2 2>&1 | tee -a $DIR_NAME/log_griffith_forces"
     if [ -z ${SHOWME+x} ]; then
-      $COMMAND2 2>&1 | tee -a $DIR_NAME/log_griffith_forces
+      $COMMAND2 2>&1 | tee -a $DIR_NAME/log_griffith_forces; test ${PIPESTATUS[0]} -eq 0
+      if [ $? -ne 0 ]; then
+        exit $?
+      fi
     fi
 
     if [ -z ${SHOWME+x} ]; then
@@ -256,7 +262,7 @@ do
     if [ ! -z ${SHOWME+x} ]; then
       echo mv out_surface.vtk $DIR_NAME/out_surface_"$order"_"$ref_level".vtk
       echo mv out_crack_surface.vtk $DIR_NAME/out_crack_surface_"$order"_"$ref_level".vtk
-      echo mv out_stress.h5m $DIR_NAME/out_stresses_"$order"_"$ref_level".h5m 
+      echo mv out_stress.h5m $DIR_NAME/out_stresses_"$order"_"$ref_level".h5m
       echo mv out_spatial.h5m $DIR_NAME/out_spatial_"$order"_"$ref_level".h5m
     fi
 
