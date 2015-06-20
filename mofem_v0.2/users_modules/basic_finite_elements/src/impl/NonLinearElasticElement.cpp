@@ -558,7 +558,7 @@ PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::getJac(DataForce
   int nb_col = col_data.getFieldData().size();
   const DataForcesAndSurcesCore::MatrixAdaptor diffN = col_data.getDiffN(gg,nb_col/3);
   ublas::matrix<double> &jac_stress = commonData.jacStress[gg];
-  // FIXME: this is preformane buttel neck
+  // FIXME: this is efficiency bottle neck
   for(int dd = 0;dd<nb_col/3;dd++) {
     for(int rr = 0;rr<3;rr++) {
       for(int ii = 0;ii<9;ii++) {
