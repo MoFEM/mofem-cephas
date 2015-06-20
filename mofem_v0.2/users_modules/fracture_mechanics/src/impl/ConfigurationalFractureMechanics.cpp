@@ -3352,10 +3352,13 @@ PetscErrorCode ConfigurationalFractureMechanics::calculate_material_forces(Field
   ierr = m_field.get_entities_by_type_and_ref_level(bit_to_block,BitRefLevel().set(),MBVERTEX,nodes_to_block); CHKERRQ(ierr);
   corners_nodes.merge(nodes_to_block);
 
-  Vec F_Material,E_Release;
+  Vec F_Material;
   ierr = m_field.VecCreateGhost(problem,COL,&F_Material); CHKERRQ(ierr);
   ierr = VecSetOption(F_Material,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE);  CHKERRQ(ierr);
-  ierr = VecDuplicate(F_Material,&E_Release); CHKERRQ(ierr);
+
+  ierr = VecZeroEntries(F_Material); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(F_Material,ADD_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(F_Material,ADD_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
   {
     Range crack_front_edges,crack_front_nodes;
