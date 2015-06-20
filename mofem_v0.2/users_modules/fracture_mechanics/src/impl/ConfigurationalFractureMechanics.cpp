@@ -3362,8 +3362,8 @@ PetscErrorCode ConfigurationalFractureMechanics::calculate_material_forces(Field
   ierr = VecSetOption(F_Material,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE);  CHKERRQ(ierr);
 
   ierr = VecZeroEntries(F_Material); CHKERRQ(ierr);
-  ierr = VecGhostUpdateBegin(F_Material,ADD_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(F_Material,ADD_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(F_Material,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(F_Material,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
   {
     Range crack_front_edges,crack_front_nodes;
