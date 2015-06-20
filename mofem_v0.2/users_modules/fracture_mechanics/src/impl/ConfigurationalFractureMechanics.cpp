@@ -2749,9 +2749,15 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   // Griffith force element
   GriffithForceElement griffith_force_element(m_field);
 
-  double gc;
+  double gc,penalty = 0;
   ierr = PetscOptionsGetReal(PETSC_NULL,"-my_gc",&gc,&flg); CHKERRQ(ierr);
   griffith_force_element.blockData[0].gc = gc;
+  if(!flg) {
+    SETERRQ(PETSC_COMM_SELF,1,"-my_gc is not set");
+  }
+  ierr = PetscOptionsGetReal(PETSC_NULL,"-my_front_penalty",&penalty,&flg); CHKERRQ(ierr);
+  griffith_force_element.blockData[0].penalty = penalty;
+
   ierr = m_field.get_cubit_msId_entities_by_dimension(
     201,SIDESET,1,griffith_force_element.blockData[0].frontEdges,true
   ); CHKERRQ(ierr);
@@ -2784,6 +2790,31 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
       3,griffith_force_element.blockData[0],griffith_force_element.commonData
     )
   );
+
+  if(griffith_force_element.blockData[0].penalty!=0) {
+
+    griffith_force_element.feRhs.getOpPtrVector().push_back(
+      new GriffithForceElement::OpJacobianPenalty(
+        6,griffith_force_element.blockData[0],griffith_force_element.commonData
+      )
+    );
+    griffith_force_element.feRhs.getOpPtrVector().push_back(
+      new GriffithForceElement::OpPenaltyRhs(
+        6,griffith_force_element.blockData[0],griffith_force_element.commonData
+      )
+    );
+    griffith_force_element.feLhs.getOpPtrVector().push_back(
+      new GriffithForceElement::OpJacobianPenalty(
+        6,griffith_force_element.blockData[0],griffith_force_element.commonData
+      )
+    );
+    griffith_force_element.feLhs.getOpPtrVector().push_back(
+      new GriffithForceElement::OpPenaltyLhs(
+        6,griffith_force_element.blockData[0],griffith_force_element.commonData
+      )
+    );
+
+  }
 
   // Crack front
   //Snes_CTgc_CONSTANT_AREA ct_gc(m_field,projFrontCtx,"COUPLED_PROBLEM","LAMBDA_CRACKFRONT_AREA");

@@ -96,7 +96,7 @@ struct GriffithForceElement {
   CommonData commonData;
 
   struct BlockData {
-    double gc;
+    double gc,penalty;
     Range frontEdges;
     Range frontNodes;
   };
@@ -178,7 +178,7 @@ struct GriffithForceElement {
 
           N.resize(3,9,false);
           N.clear();
-          for(int ii = 0;ii<9;ii++) {
+          for(int ii = 0;ii<3;ii++) {
             for(int jj = 0;jj<3;jj++) {
               N(jj,ii*3+jj) = data.getN(gg)[ii];
             }
@@ -265,7 +265,7 @@ struct GriffithForceElement {
         noalias(referenceXdEta) = prod(Beta,referenceCoords);
 
         ierr = sPin(referenceSpinKsi,referenceXdKsi); CHKERRQ(ierr);
-        ierr = sPin(referenceSpinEta,referenceXdEta); CHKERRQ(ierr);
+        //ierr = sPin(referenceSpinEta,referenceXdEta); CHKERRQ(ierr);
         referenceNormal.resize(3,false);
         noalias(referenceNormal) = 0.5*prod(referenceSpinKsi,referenceXdEta);
         referenceArea = 0;
@@ -445,7 +445,7 @@ struct GriffithForceElement {
       int r;
       //play recorder for values
       r = ::function(tAg,nb_dofs,18,&activeVariables[0],&commonData.griffithForce[0]);
-      if(r<0) {
+      if(r<3) {
         SETERRQ1(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"ADOL-C function evaluation with error r = %d",r);
       }
 
@@ -579,7 +579,7 @@ struct GriffithForceElement {
           ierr = auxFun.nOrmal(); CHKERRQ(ierr);
           ierr = auxFun.matrixA(); CHKERRQ(ierr);
           ierr = auxFun.calculateReferenceNormal(); CHKERRQ(ierr);
-          ierr = auxFun.calculatePenalty(val);
+          ierr = auxFun.calculatePenalty(val*blockData.penalty);
 
         }
 
@@ -625,7 +625,7 @@ struct GriffithForceElement {
       int r;
       //play recorder for values
       r = ::function(tAg,nb_dofs,18,&activeVariables[0],&commonData.penaltyForce[0]);
-      if(r<3) { // function is locally analytic
+      if(r<1) { // function is locally analytic
         SETERRQ1(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"ADOL-C function evaluation with error r = %d",r);
       }
 
@@ -681,7 +681,7 @@ struct GriffithForceElement {
         &activeVariables[0],
         &commonData.tangentPenaltyForceRowPtr[0]
       );
-      if(r<3) { // function is locally analytic
+      if(r<1) { // function is locally analytic
         SETERRQ1(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"ADOL-C function evaluation with error r = %d",r);
       }
       k.resize(9,9,false);
