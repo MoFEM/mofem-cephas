@@ -321,17 +321,15 @@ if [ -z ${SHOWME+x} ]; then
 fi
 
 if [ -z ${SHOWME+x} ]; then
-  exec $COMMAND 2>&1 | tee -a log
+  exec $COMMAND 2>&1 | tee -a log; test ${PIPESTATUS[0]} -eq 0
+  if [ $? -ne 0 ]; then
+    exit $?
+  fi
 fi
 
 if [ -z ${SHOWME+x} ]; then
   echo | tee -a log
   echo "End time: "`date` | tee -a log
 fi
-
-if [ $? -ne 0 ]; then
-  exit $?
-fi
-
 
 cd ..
