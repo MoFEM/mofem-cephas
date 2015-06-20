@@ -86,6 +86,7 @@ struct FaceOrientation: public SurfaceSlidingConstrains::DriverElementOrientatio
 
   PetscErrorCode getElementOrientation(FieldInterface &m_field,const FEMethod *fe_method_ptr) {
     PetscFunctionBegin;
+    elementOrientation = +1;
     ErrorCode rval;
     PetscErrorCode ierr;
     Range adj_side_elems;
@@ -126,8 +127,6 @@ struct FaceOrientation: public SurfaceSlidingConstrains::DriverElementOrientatio
       rval = m_field.get_moab().side_number(side_elem,face,side_number,sense,offset); CHKERR_PETSC(rval);
       if(sense == -1) {
         elementOrientation = -1;
-      } else {
-        elementOrientation = +1;
       }
     }
     if(useProjectionFromCrackFront) {
@@ -602,18 +601,18 @@ struct AssembleLambda: public FEMethod {
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
     switch (ts_ctx) {
-	case CTX_TSSETIFUNCTION: {
-	  snes_ctx = CTX_SNESSETFUNCTION;
-	  snes_f = ts_F;
-	  break;
-	}
-	case CTX_TSSETIJACOBIAN: {
-	  snes_ctx = CTX_SNESSETJACOBIAN;
-	  snes_B = ts_B;
-	  break;
-	}
-	default:
-	break;
+      case CTX_TSSETIFUNCTION: {
+        snes_ctx = CTX_SNESSETFUNCTION;
+        snes_f = ts_F;
+        break;
+      }
+      case CTX_TSSETIJACOBIAN: {
+        snes_ctx = CTX_SNESSETJACOBIAN;
+        snes_B = ts_B;
+        break;
+      }
+      default:
+      break;
     }
     PetscFunctionReturn(0);
   }
@@ -625,28 +624,28 @@ struct AssembleLambda: public FEMethod {
     PetscFunctionBegin;
     switch(snes_ctx) {
       case CTX_SNESSETFUNCTION: {
-	  //F_lambda
+        //F_lambda
         ierr = VecGhostUpdateBegin(arc_ptr->F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
         ierr = VecGhostUpdateEnd(arc_ptr->F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
         ierr = VecAssemblyBegin(arc_ptr->F_lambda); CHKERRQ(ierr);
         ierr = VecAssemblyEnd(arc_ptr->F_lambda); CHKERRQ(ierr);
-	  for(vector<int>::iterator vit = bC->dofsIndices.begin();vit!=bC->dofsIndices.end();vit++) {
-	    ierr = VecSetValue(arc_ptr->F_lambda,*vit,0,INSERT_VALUES); CHKERRQ(ierr);
-	  }
-	  ierr = VecAssemblyBegin(arc_ptr->F_lambda); CHKERRQ(ierr);
-	  ierr = VecAssemblyEnd(arc_ptr->F_lambda); CHKERRQ(ierr);
-	  ierr = VecDot(arc_ptr->F_lambda,arc_ptr->F_lambda,&arc_ptr->F_lambda2); CHKERRQ(ierr);
-	  PetscPrintf(PETSC_COMM_WORLD,"\tFlambda2 = %6.4e\n",arc_ptr->F_lambda2);
-	  //add F_lambda
-	  ierr = VecAXPY(snes_f,arc_ptr->getFieldData(),arc_ptr->F_lambda); CHKERRQ(ierr);
-	  PetscPrintf(PETSC_COMM_WORLD,"\tlambda = %6.4e\n",arc_ptr->getFieldData());
-	  double fnorm;
-	  ierr = VecNorm(snes_f,NORM_2,&fnorm); CHKERRQ(ierr);
-	  PetscPrintf(PETSC_COMM_WORLD,"\tfnorm = %6.4e\n",fnorm);
-	}
+        for(vector<int>::iterator vit = bC->dofsIndices.begin();vit!=bC->dofsIndices.end();vit++) {
+          ierr = VecSetValue(arc_ptr->F_lambda,*vit,0,INSERT_VALUES); CHKERRQ(ierr);
+        }
+        ierr = VecAssemblyBegin(arc_ptr->F_lambda); CHKERRQ(ierr);
+        ierr = VecAssemblyEnd(arc_ptr->F_lambda); CHKERRQ(ierr);
+        ierr = VecDot(arc_ptr->F_lambda,arc_ptr->F_lambda,&arc_ptr->F_lambda2); CHKERRQ(ierr);
+        PetscPrintf(PETSC_COMM_WORLD,"\tFlambda2 = %6.4e\n",arc_ptr->F_lambda2);
+        //add F_lambda
+        ierr = VecAXPY(snes_f,arc_ptr->getFieldData(),arc_ptr->F_lambda); CHKERRQ(ierr);
+        PetscPrintf(PETSC_COMM_WORLD,"\tlambda = %6.4e\n",arc_ptr->getFieldData());
+        double fnorm;
+        ierr = VecNorm(snes_f,NORM_2,&fnorm); CHKERRQ(ierr);
+        PetscPrintf(PETSC_COMM_WORLD,"\tfnorm = %6.4e\n",fnorm);
+      }
       break;
       default:
-        SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+      SETERRQ(PETSC_COMM_SELF,1,"not implemented");
     }
     PetscFunctionReturn(0);
   }
@@ -2934,7 +2933,6 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
     other_body_surface_constrains[msId]->nonlinear = true;
   }*/
 
-
   FaceOrientation orientation(false),orientation_crack(true);
   SurfaceSlidingConstrains surface_constrain(m_field,orientation);
   SurfaceSlidingConstrains surface_crack_constrain(m_field,orientation_crack);
@@ -3144,6 +3142,7 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
     rtol = atol*1e-2;
     ierr = KSPSetTolerances(ksp,rtol,atol,dtol,maxits); CHKERRQ(ierr);
   }
+
   PC pc;
   ierr = KSPGetPC(ksp,&pc); CHKERRQ(ierr);
   ierr = PCSetType(pc,PCSHELL); CHKERRQ(ierr);
@@ -3152,12 +3151,18 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(FieldInte
   ierr = PCShellSetSetUp(pc,PCSetupArcLength); CHKERRQ(ierr);
 
   ierr = m_field.set_local_ghost_vector("COUPLED_PROBLEM",COL,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecZeroEntries(F); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+
   ierr = m_field.get_problem("COUPLED_PROBLEM",&(arc_elem.problemPtr)); CHKERRQ(ierr);
   ierr = arc_elem.set_dlambda_to_x(D,0); CHKERRQ(ierr);
   ierr = VecCopy(D,arc_ctx.x0); CHKERRQ(ierr);
   ierr = arc_elem.get_dlambda(D); CHKERRQ(ierr);
   //calculate rhs and F_lambda
+  ierr = arc_ctx.setS(0); CHKERRQ(ierr);
   ierr = arc_ctx.setAlphaBeta(0,1); CHKERRQ(ierr);
+  ierr = arc_elem.calculate_lambda_int(); CHKERRQ(ierr);
   ierr = SnesRhs(*snes,D,F,&arc_snes_ctx); CHKERRQ(ierr);
   //set s
   ierr = arc_ctx.setAlphaBeta(1,0); CHKERRQ(ierr);
@@ -3383,7 +3388,9 @@ PetscErrorCode ConfigurationalFractureMechanics::calculate_material_forces(Field
       ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
       int id = it->get_msId();
       EntityHandle meshset = it->get_meshset();
-      rval = m_field.get_moab().get_entities_by_type(meshset,MBTET,material_fe.setOfBlocks[id].tEts,true); CHKERR_PETSC(rval);
+      rval = m_field.get_moab().get_entities_by_type(
+        meshset,MBTET,material_fe.setOfBlocks[id].tEts,true
+      ); CHKERR_PETSC(rval);
       material_fe.setOfBlocks[id].iD = id;
       material_fe.setOfBlocks[id].E = mydata.data.Young;
       material_fe.setOfBlocks[id].PoissonRatio = mydata.data.Poisson;
@@ -3452,7 +3459,11 @@ PetscErrorCode ConfigurationalFractureMechanics::calculate_material_forces(Field
 
 ConfigurationalFractureMechanics::FrontAreaArcLengthControl::FrontAreaArcLengthControl(
   FieldInterface& _mField,ConfigurationalFractureMechanics *_conf_prob,ArcLengthCtx *_arc_ptr):
-    mField(_mField),conf_prob(_conf_prob),arc_ptr(_arc_ptr) {
+  mField(_mField),
+  conf_prob(_conf_prob),
+  arc_ptr(_arc_ptr),
+  aRea(0),
+  aRea0(1) {
     PetscErrorCode ierr;
     ErrorCode rval;
 
@@ -3570,8 +3581,16 @@ PetscErrorCode ConfigurationalFractureMechanics::FrontAreaArcLengthControl::calc
 PetscErrorCode ConfigurationalFractureMechanics::FrontAreaArcLengthControl::calculate_lambda_int() {
   PetscFunctionBegin;
   PetscErrorCode ierr;
-  ierr = calculate_area(); CHKERRQ(ierr);
-  lambda_int = arc_ptr->alpha*aRea/aRea0 + arc_ptr->dlambda*arc_ptr->beta*sqrt(arc_ptr->F_lambda2);
+  lambda_int = 0;
+  aRea = 1;
+  aRea0 = 1;
+  if(arc_ptr->alpha != 0) {
+    ierr = calculate_area(); CHKERRQ(ierr);
+    lambda_int += arc_ptr->alpha*aRea/aRea0;
+  }
+  if(arc_ptr->beta != 0) {
+    lambda_int += arc_ptr->beta*arc_ptr->dlambda*sqrt(arc_ptr->F_lambda2);
+  }
   //PetscPrintf(PETSC_COMM_WORLD,"\tsurface crack area = %6.4e lambda_int = %6.4e\n",aRea,lambda_int);
   PetscFunctionReturn(0);
 }
@@ -3686,8 +3705,9 @@ PetscErrorCode ConfigurationalFractureMechanics::FrontAreaArcLengthControl::oper
       ierr = VecSetValue(snes_f,arc_ptr->getPetscGloablDofIdx(),arc_ptr->res_lambda,INSERT_VALUES); CHKERRQ(ierr);
       PetscPrintf(PETSC_COMM_SELF,"\n");
       PetscPrintf(PETSC_COMM_SELF,"\t** Arc-Length residual:\n");
-      PetscPrintf(PETSC_COMM_SELF,"\t  residual of arc-length control res_lambda = %6.4e crack area/f_lambda_int = %6.4e ( %6.4e )\n"
-      ,arc_ptr->res_lambda,aRea,aRea/aRea0);
+      PetscPrintf(PETSC_COMM_SELF,
+        "\t  residual of arc-length control res_lambda = %6.4e crack area/f_lambda_int = %6.4e ( %6.4e )\n"
+        ,arc_ptr->res_lambda,aRea,aRea/aRea0);
     } break;
     case CTX_SNESSETJACOBIAN: {
       //calculate diagonal therm
@@ -3789,8 +3809,4 @@ PetscErrorCode ConfigurationalFractureMechanics::FrontAreaArcLengthControl::post
   PetscFunctionReturn(0);
 }
 
-#ifdef WITH_ADOL_C
-
 #include <impl/ConfigurationalFractureForDynamics.cpp>
-
-#endif //WITH_ADOL_C

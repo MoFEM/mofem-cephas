@@ -260,25 +260,27 @@ struct SurfaceSlidingConstrains {
 
     virtual PetscErrorCode getElementOrientation(FieldInterface &m_field,const FEMethod *fe_method_ptr) {
       PetscFunctionBegin;
+      elementOrientation = 1;
       PetscFunctionReturn(0);
     }
 
   };
+
   DriverElementOrientation &crackFrontOrientation;
 
   SurfaceSlidingConstrains(FieldInterface &m_field,DriverElementOrientation &orientation):
   mField(m_field),
   feRhs(m_field),
   feLhs(m_field),
-  crackFrontOrientation(orientation)
-  {}
+  crackFrontOrientation(orientation) {
+  }
 
   struct AuxFunctions {
 
     bool useProjectionFromCrackFront;
     AuxFunctions():
-    useProjectionFromCrackFront(false)
-    {}
+    useProjectionFromCrackFront(false) {
+    }
 
     ublas::matrix<double> N;
     ublas::matrix<double> Bksi;
@@ -402,29 +404,25 @@ struct SurfaceSlidingConstrains {
         if(nb_dofs == 0) {
           PetscFunctionReturn(0);
         }
+
         int nb_gauss_pts = data.getN().size1();
-
-        aUx.resize(nb_gauss_pts);
-
         if(type == MBVERTEX) {
+          aUx.resize(nb_gauss_pts);
           oRientation.getElementOrientation(getTriFE()->mField,getFEMethod());
-        }
-
-        if(type == MBVERTEX) {
           for(int gg = 0;gg<nb_gauss_pts;gg++) {
             aUx[gg].pOsition.resize(3,false);
-            aUx[gg].pOsition.clear();
             aUx[gg].dXdKsi.resize(3,false);
-            aUx[gg].dXdKsi.clear();
             aUx[gg].dXdEta.resize(3,false);
+            aUx[gg].pOsition.clear();
+            aUx[gg].dXdKsi.clear();
             aUx[gg].dXdEta.clear();
           }
         }
 
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
           ierr = aUx[gg].matrixN(gg,data); CHKERRQ(ierr);
-          noalias(aUx[gg].pOsition) += prod(aUx[gg].N,data.getFieldData());
           ierr = aUx[gg].matrixB(gg,data); CHKERRQ(ierr);
+          noalias(aUx[gg].pOsition) += prod(aUx[gg].N,data.getFieldData());
           noalias(aUx[gg].dXdKsi) += prod(aUx[gg].Bksi,data.getFieldData());
           noalias(aUx[gg].dXdEta) += prod(aUx[gg].Beta,data.getFieldData());
         }
@@ -459,17 +457,16 @@ struct SurfaceSlidingConstrains {
 
       try {
 
-        int nb_dofs = data.getFieldData().size();
-        if(nb_dofs == 0) {
-          PetscFunctionReturn(0);
-        }
         int nb_gauss_pts = data.getN().size1();
-        aUx.resize(nb_gauss_pts);
-
         if(type == MBVERTEX) {
           for(int gg = 0;gg<nb_gauss_pts;gg++) {
             aUx[gg].lAmbda = 0;
           }
+        }
+
+        int nb_dofs = data.getFieldData().size();
+        if(nb_dofs == 0) {
+          PetscFunctionReturn(0);
         }
 
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
@@ -546,16 +543,17 @@ struct SurfaceSlidingConstrains {
 
         c.resize(nb_dofs,false);
         nF.resize(nb_dofs,false);
+
+        c.clear();
         nF.clear();
 
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
 
           double val = getGaussPts()(2,gg);
           noalias(c) = prod(aUx[gg].nOrmal,aUx[gg].N);
-          noalias(nF) += val*eo*aUx[gg].lAmbda*c;
+          noalias(nF) += val*eo*c*aUx[gg].lAmbda;
 
         }
-
 
         rowIndices.resize(nb_dofs,false);
         noalias(rowIndices) = row_data.getIndices();
@@ -623,15 +621,24 @@ struct SurfaceSlidingConstrains {
         }
         int nb_gauss_pts = row_data.getN().size1();
 
+        if(row_type == MBVERTEX) {
+          for(int gg = 0;gg<nb_gauss_pts;gg++) {
+            aUx[gg].nOrmal.resize(3,false);
+            aUx[gg].nOrmal.clear();
+            aUx[gg].calculateNormal();
+          }
+        }
+
         int eo = oRientation.elementOrientation;
 
         dElta.resize(3);
+        dElta.clear();
         g.resize(nb_dofs,false);
         g.clear();
 
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
 
-          noalias(dElta) =  aUx[gg].pOsition;
+          noalias(dElta) = aUx[gg].pOsition;
           for(int dd = 0;dd<3;dd++) {
             dElta[dd] -= getCoordsAtGaussPts()(gg,dd);
           }
