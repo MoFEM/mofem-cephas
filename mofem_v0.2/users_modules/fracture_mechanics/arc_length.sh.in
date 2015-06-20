@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 set -e
 
@@ -321,7 +321,7 @@ if [ -z ${SHOWME+x} ]; then
 fi
 
 if [ -z ${SHOWME+x} ]; then
-  exec $COMMAND 2>&1 | tee -a log; test ${PIPESTATUS[0]} -eq 0
+  $COMMAND 2>&1 | tee -a log; test ${PIPESTATUS[0]} -eq 0
   if [ $? -ne 0 ]; then
     exit $?
   fi
