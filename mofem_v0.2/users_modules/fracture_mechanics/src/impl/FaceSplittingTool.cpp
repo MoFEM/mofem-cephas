@@ -666,8 +666,6 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(vector<string> &switche
     //delete elements
     ierr = mField.remove_ents_from_finite_element("MATERIAL",0,MBTET); CHKERRQ(ierr);
     ierr = mField.remove_ents_from_finite_element("MATERIAL_COUPLED",0,MBTET); CHKERRQ(ierr);
-    ierr = mField.remove_ents_from_field("GRIFFITH_FORCE",0,MBTRI); CHKERRQ(ierr);
-    ierr = mField.remove_ents_from_field("GRIFFITH_FORCE_TANGENT",0,MBTRI); CHKERRQ(ierr);
     ierr = mField.remove_ents_from_finite_element("C_CRACKFRONT_AREA_ELEM",0,MBTRI); CHKERRQ(ierr);
     ierr = mField.remove_ents_from_finite_element("CTC_CRACKFRONT_AREA_ELEM",0,MBTRI); CHKERRQ(ierr);
     ierr = mField.remove_ents_from_finite_element("dCT_CRACKFRONT_AREA_ELEM",0,MBTRI); CHKERRQ(ierr);
@@ -682,6 +680,8 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(vector<string> &switche
     ierr = mField.remove_ents_from_field("LAMBDA_CRACKFRONT_AREA",0,MBVERTEX); CHKERRQ(ierr);
     ierr = mField.remove_ents_from_field("LAMBDA_CRACK_SURFACE",0,MBVERTEX); CHKERRQ(ierr);
     ierr = mField.remove_ents_from_field("LAMBDA_BOTH_SIDES",0,MBVERTEX); CHKERRQ(ierr);
+    ierr = mField.remove_ents_from_field("GRIFFITH_FORCE",0,MBVERTEX); CHKERRQ(ierr);
+    ierr = mField.remove_ents_from_field("GRIFFITH_FORCE_TANGENT",0,MBVERTEX); CHKERRQ(ierr);
     ierr = mField.delete_ents_by_bit_ref(maskPreserv,maskPreserv,true,0); CHKERRQ(ierr);
 
     //squash bits

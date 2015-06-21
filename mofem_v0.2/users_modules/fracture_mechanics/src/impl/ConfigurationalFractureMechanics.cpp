@@ -2516,7 +2516,7 @@ PetscErrorCode ConfigurationalFractureMechanics::fix_all_but_one(FieldInterface&
       step_work_of_fracture = 0;
     }*/
     bool freez_or_not_to_freez;
-    if( (fraction > fraction_treshold /*|| fraction_gc > fraction_treshold*/ || step_work_of_fracture < 0 )&&(mit!=max_mit)) {
+    if( (fraction > fraction_treshold /*|| fraction_gc > fraction_treshold*/ /*|| step_work_of_fracture < 0*/ )&&(mit!=max_mit)) {
       freez_or_not_to_freez = true;
     } else {
       freez_or_not_to_freez = false;
