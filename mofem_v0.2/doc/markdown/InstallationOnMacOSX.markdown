@@ -50,10 +50,6 @@ wget ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4.3.3.1.tar.gz
 make PETSC_DIR=$PWD PETSC_ARCH=arch-darwin-c-opt all
 ~~~~~~
 
-Note: Version pets3.5.3 is checkout. MoFEM should work with development
-version of PETSc if mofem is configured with ``-DCMAKE_CXX_FLAGS="-Wall
--Wno-bind-to-temporary-copy -Wno-overloaded-virtual"``.
-
 Note: PETSc is compiled with debugging switch off for efficiency. If you
 develop code is recommended that you compile PETSc with debugging flag on in
 addition. You can have two versions of MoFEM compiled, for debugging and
