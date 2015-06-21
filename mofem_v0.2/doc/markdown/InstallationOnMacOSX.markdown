@@ -41,7 +41,7 @@ git clone https://bitbucket.org/petsc/petsc.git
 cd $MOFEM_INSTALL_DIR/petsc
 
 # Fix PETSc vetsion
-# export PETSC_VERSION=3.5.3
+# export PETSC_VERSION=3.5.6
 # git checkout tags/v$PETSC_VERSION
 
 # Configure and compile petsc:
@@ -52,7 +52,7 @@ make PETSC_DIR=$PWD PETSC_ARCH=arch-darwin-c-opt all
 
 Note: Version pets3.5.3 is checkout. MoFEM should work with development
 version of PETSc if mofem is configured with ``-DCMAKE_CXX_FLAGS="-Wall
--Wno-bind-to-temporary-copy -Wno-overloaded-virtual -DPETSC_DEV"``.
+-Wno-bind-to-temporary-copy -Wno-overloaded-virtual"``.
 
 Note: PETSc is compiled with debugging switch off for efficiency. If you
 develop code is recommended that you compile PETSc with debugging flag on in
@@ -112,7 +112,7 @@ mkdir $MOFEM_INSTALL_DIR/lib
 cd $MOFEM_INSTALL_DIR/lib
 
 # Configuring and compiling code:
-cmake -DCMAKE_Fortran_COMPILER=/usr/local/bin/gfortran -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS="-Wall"  -DCMAKE_CXX_FLAGS="-Wall - DPETSC_DEV -Wno-bind-to-temporary-copy -Wno-overloaded-virtual" -DPETSC_DIR=$MOFEM_INSTALL_DIR/petsc/ -DPETSC_ARCH=arch-darwin-c-opt -DMOAB_DIR=$MOFEM_INSTALL_DIR/petsc/arch-darwin-c-opt/ -DADOL-C_DIR=$MOFEM_INSTALL_DIR/local/ -DCMAKE_INSTALL_PREFIX=$MOFEM_INSTALL_DIR/user_modules $MOFEM_INSTALL_DIR/mofem-cephas/mofem_v0.2
+cmake -DCMAKE_Fortran_COMPILER=/usr/local/bin/gfortran -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS="-Wall"  -DCMAKE_CXX_FLAGS="-Wall -Wno-bind-to-temporary-copy -Wno-overloaded-virtual" -DPETSC_DIR=$MOFEM_INSTALL_DIR/petsc/ -DPETSC_ARCH=arch-darwin-c-opt -DMOAB_DIR=$MOFEM_INSTALL_DIR/petsc/arch-darwin-c-opt/ -DADOL-C_DIR=$MOFEM_INSTALL_DIR/local/ -DCMAKE_INSTALL_PREFIX=$MOFEM_INSTALL_DIR/user_modules $MOFEM_INSTALL_DIR/mofem-cephas/mofem_v0.2
 
 # Building code (assuming that you have computer with 4 cores):
 make -j4 install
@@ -128,7 +128,7 @@ ctest -D Experimental
 cd $MOFEM_INSTALL_DIR/user_modules
 
 # Configuration:
-cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS="-Wall"  -DCMAKE_CXX_FLAGS="-Wall -DPETSC_DEV -Wno-bind-to-temporary-copy -Wno-overloaded-virtual -DPETSC_DEV" -DCMAKE_EXE_LINKER_FLAGS="$MOFEM_INSTALL_DIR/local/lib" user_modules
+cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS="-Wall"  -DCMAKE_CXX_FLAGS="-Wall -Wno-bind-to-temporary-copy -Wno-overloaded-virtual" -DCMAKE_EXE_LINKER_FLAGS="$MOFEM_INSTALL_DIR/local/lib" user_modules
 
 # Build:
 make -j4

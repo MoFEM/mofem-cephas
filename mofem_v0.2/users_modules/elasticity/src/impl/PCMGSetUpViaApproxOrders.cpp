@@ -19,7 +19,7 @@
 using namespace MoFEM;
 #include <PCMGSetUpViaApproxOrders.hpp>
 
-#ifdef PETSC_DEV
+#ifdef PETSC_VERSION_GE(3,5,6)
   #include <petsc/private/petscimpl.h>
 #else
   #include <petsc-private/petscimpl.h>

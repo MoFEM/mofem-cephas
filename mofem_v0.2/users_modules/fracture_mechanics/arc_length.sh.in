@@ -253,7 +253,7 @@ if [ -z ${NBSUBSTEPS+x} ]; then
 fi
 
 if [ -z ${PCFACTOR+x} ]; then
-  PCFACTOR=superlu_dist
+  PCFACTOR=mumps
 fi
 
 if [ -z ${FRACTION_TRESHOLD+x} ]; then
