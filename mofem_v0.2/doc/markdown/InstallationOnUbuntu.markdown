@@ -49,9 +49,6 @@ develop code is recommended that you compile PETSc with debugging flag on in
 addition. You can have two versions of MoFEM compiled, for debugging and
 development and other version for larger calculations.
 
-Note: Version pets3.5.3 is checkout. MoFEM should work with development
-version of PETSc if mofem is configured with `` -DCMAKE_C_FLAGS="-Wall" -DCMAKE_CXX_FLAGS="-Wall"``.
-
 ###3. Install TetGen and other libraries
 
 ####3.1 TetGen

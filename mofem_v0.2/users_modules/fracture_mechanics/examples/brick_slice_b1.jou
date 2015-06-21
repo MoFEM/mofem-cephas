@@ -57,7 +57,7 @@ unite volume 2 1
 brick x 0.018 y 0.02 z 0.03
 webcut volume 6  with plane vertex 181  vertex 178  vertex 185 
 delete volume 7 
-brick x 0.018 y 0.01 z 0.1
+brick x 0.018 y 0.005 z 0.1
 move Vertex 193  location vertex 180  include_merged
 unite volume 6 8
 move Vertex 192  location vertex 148  include_merged
@@ -93,6 +93,7 @@ volume 9 10  size auto factor 5
 
 mesh volume all   
     
+
 
 
 
