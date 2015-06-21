@@ -31,9 +31,6 @@ link_directories("${PROJECT_BINARY_DIR}/src/petsc")
 include_directories("${PROJECT_SOURCE_DIR}/src/finite_elements")
 link_directories("${PROJECT_BINARY_DIR}/src/finite_elements")
 
-include_directories("${PROJECT_SOURCE_DIR}/finite_element_library")
-link_directories("${PROJECT_BINARY_DIR}/finite_element_library")
-
 # cubit_bc_test
 cm_export_file("../meshes/disp01.h5m" export_atom_tests)
 cm_export_file("../meshes/force01.h5m" export_atom_tests)

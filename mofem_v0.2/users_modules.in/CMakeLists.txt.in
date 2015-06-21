@@ -51,7 +51,6 @@ include_directories("${MoFEM_PROJECT_SOURCE_DIR}/src/multi_indices")
 include_directories("${MoFEM_PROJECT_SOURCE_DIR}/src/interfaces")
 include_directories("${MoFEM_PROJECT_SOURCE_DIR}/src/petsc")
 include_directories("${MoFEM_PROJECT_SOURCE_DIR}/src/finite_elements")
-include_directories("${MoFEM_PROJECT_SOURCE_DIR}/finite_element_library")
 
 include_directories("${MoFEM_PROJECT_BINARY_DIR}/include")
 
@@ -60,7 +59,6 @@ link_directories("${MoFEM_PROJECT_BINARY_DIR}/src/multi_indices")
 link_directories("${MoFEM_PROJECT_BINARY_DIR}/src/interfaces")
 link_directories("${MoFEM_PROJECT_BINARY_DIR}/src/petsc")
 link_directories("${MoFEM_PROJECT_BINARY_DIR}/src/finite_elements")
-link_directories("${MoFEM_PROJECT_BINARY_DIR}/finite_element_library")
 link_directories("${MoFEM_PROJECT_BINARY_DIR}/third_party")
 link_directories("${MoFEM_PROJECT_BINARY_DIR}/third_party/cblas")
 
