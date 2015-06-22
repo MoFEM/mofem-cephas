@@ -860,6 +860,7 @@ PetscErrorCode ConfigurationalFractureMechanics::coupled_problem_definition(Fiel
 
   //fes definitions
   ierr = m_field.modify_finite_element_add_field_row("ELASTIC_COUPLED","SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_row("ELASTIC_COUPLED","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
   ierr = m_field.modify_finite_element_add_field_col("ELASTIC_COUPLED","SPATIAL_POSITION"); CHKERRQ(ierr);
   ierr = m_field.modify_finite_element_add_field_col("ELASTIC_COUPLED","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
   ierr = m_field.modify_finite_element_add_field_data("ELASTIC_COUPLED","SPATIAL_POSITION"); CHKERRQ(ierr);
@@ -868,7 +869,9 @@ PetscErrorCode ConfigurationalFractureMechanics::coupled_problem_definition(Fiel
     //ierr = m_field.modify_finite_element_add_field_data("ELASTIC_COUPLED","TEMPERATURE"); CHKERRQ(ierr);
   //}
 
+
   //
+  ierr = m_field.modify_finite_element_add_field_row("MATERIAL_COUPLED","SPATIAL_POSITION"); CHKERRQ(ierr);
   ierr = m_field.modify_finite_element_add_field_row("MATERIAL_COUPLED","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
   ierr = m_field.modify_finite_element_add_field_col("MATERIAL_COUPLED","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
   ierr = m_field.modify_finite_element_add_field_col("MATERIAL_COUPLED","SPATIAL_POSITION"); CHKERRQ(ierr);
@@ -931,6 +934,9 @@ PetscErrorCode ConfigurationalFractureMechanics::arclength_problem_definition(Fi
 
   ierr = m_field.modify_finite_element_add_field_row("ELASTIC_COUPLED","LAMBDA"); CHKERRQ(ierr);
   ierr = m_field.modify_finite_element_add_field_col("ELASTIC_COUPLED","LAMBDA"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_data("ELASTIC_COUPLED","LAMBDA"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_row("MATERIAL_COUPLED","LAMBDA"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_col("MATERIAL_COUPLED","LAMBDA"); CHKERRQ(ierr);
   ierr = m_field.modify_finite_element_add_field_data("ELASTIC_COUPLED","LAMBDA"); CHKERRQ(ierr);
   ierr = m_field.modify_finite_element_add_field_row("MESH_SMOOTHER","LAMBDA"); CHKERRQ(ierr);
   ierr = m_field.modify_finite_element_add_field_col("MESH_SMOOTHER","LAMBDA"); CHKERRQ(ierr);
