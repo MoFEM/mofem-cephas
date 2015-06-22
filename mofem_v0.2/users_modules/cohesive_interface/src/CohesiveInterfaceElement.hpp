@@ -461,9 +461,10 @@ struct CohesiveInterfaceElement {
           }
         }
         ierr = MatSetValues(getFEMethod()->snes_B,
-        nb_row,&row_data.getIndices()[0],
-        nb_col,&col_data.getIndices()[0],
-        &K(0,0),ADD_VALUES); CHKERRQ(ierr);
+          nb_row,&row_data.getIndices()[0],
+          nb_col,&col_data.getIndices()[0],
+          &K(0,0),ADD_VALUES
+        ); CHKERRQ(ierr);
       } catch (const std::exception& ex) {
         ostringstream ss;
         ss << "throw in method: " << ex.what() << endl;

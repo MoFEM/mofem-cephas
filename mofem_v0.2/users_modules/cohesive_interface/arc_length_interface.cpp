@@ -405,7 +405,7 @@ int main(int argc, char *argv[]) {
 
     //Elements with boundary conditions
     ierr = MetaNeummanForces::addNeumannBCElements(m_field,"DISPLACEMENT"); CHKERRQ(ierr);
-    ierr = MetaNodalForces::addNodalForceElement(m_field,"DISPLACEMENT");  CHKERRQ(ierr);
+    ierr = MetaNodalForces::addElement(m_field,"DISPLACEMENT");  CHKERRQ(ierr);
     ierr = m_field.modify_problem_add_finite_element("ELASTIC_MECHANICS","FORCE_FE"); CHKERRQ(ierr);
     ierr = m_field.modify_problem_add_finite_element("ELASTIC_MECHANICS","PRESSURE_FE"); CHKERRQ(ierr);
     ierr = m_field.modify_finite_element_add_field_row("FORCE_FE","LAMBDA"); CHKERRQ(ierr);
@@ -677,7 +677,7 @@ int main(int argc, char *argv[]) {
   ierr = SnesRhs(snes,D,F,&snes_ctx); CHKERRQ(ierr);
 
   PostPocOnRefinedMesh post_proc(m_field);
-  ierr = post_proc.generateRefereneElemenMesh(); CHKERRQ(ierr);
+  ierr = post_proc.generateReferenceElementMesh(); CHKERRQ(ierr);
   ierr = post_proc.addFieldValuesPostProc("DISPLACEMENT"); CHKERRQ(ierr);
   ierr = post_proc.addFieldValuesGradientPostProc("DISPLACEMENT"); CHKERRQ(ierr);
   //add postpocessing for sresses

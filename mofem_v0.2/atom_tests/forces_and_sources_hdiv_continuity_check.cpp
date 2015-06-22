@@ -14,8 +14,8 @@
 
 #include <MoFEM.hpp>
 
-#include <DirichletBC.hpp>
-#include <PostProcOnRefMesh.hpp>
+//#include <DirichletBC.hpp>
+//#include <PostProcOnRefMesh.hpp>
 
 #include <Projection10NodeCoordsOnField.hpp>
 

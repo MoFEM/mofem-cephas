@@ -29,7 +29,7 @@ git clone https://bitbucket.org/petsc/petsc.git
 cd $MOFEM_INSTALL_DIR/petsc
 
 # Fix PETSc vetsion
-# export PETSC_VERSION=3.5.3
+# export PETSC_VERSION=3.5.6
 # git checkout tags/v$PETSC_VERSION
 
 # Configure and compile petsc:
@@ -48,10 +48,6 @@ Note: PETSc is compiled with debugging switch off for efficiency. If you
 develop code is recommended that you compile PETSc with debugging flag on in
 addition. You can have two versions of MoFEM compiled, for debugging and
 development and other version for larger calculations.
-
-Note: Version pets3.5.3 is checkout. MoFEM should work with development
-version of PETSc if mofem is configured with `` -DCMAKE_C_FLAGS="-Wall
--DPETSC_DEV" -DCMAKE_CXX_FLAGS="-Wall -DPETSC_DEV"``.
 
 ###3. Install TetGen and other libraries
 

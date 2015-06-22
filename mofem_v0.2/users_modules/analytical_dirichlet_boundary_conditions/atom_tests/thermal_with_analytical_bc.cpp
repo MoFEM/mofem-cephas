@@ -22,7 +22,7 @@
 
 #include <boost/shared_ptr.hpp>
 #include <boost/numeric/ublas/vector_proxy.hpp>
-#include <AnalyticalDirihlet.hpp>
+#include <AnalyticalDirichlet.hpp>
 
 #include <boost/iostreams/tee.hpp>
 #include <boost/iostreams/stream.hpp>
@@ -139,7 +139,7 @@ int main(int argc, char *argv[]) {
     rval = moab.get_entities_by_type(it->get_meshset(),MBTRI,bc_tris,true); CHKERR_PETSC(rval);
   }
 
-  AnalyticalDirihletBC analytical_bc(m_field);
+  AnalyticalDirichletBC analytical_bc(m_field);
   ierr = analytical_bc.initializeProblem(m_field,"BC_FE","TEMP",bc_tris); CHKERRQ(ierr);
   ierr = m_field.modify_problem_add_finite_element("BC_PROBLEM","BC_FE"); CHKERRQ(ierr);
 
@@ -185,8 +185,8 @@ int main(int argc, char *argv[]) {
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
   ierr = MatZeroEntries(A); CHKERRQ(ierr);
 
-  //analytical dirihlet bc
-  AnalyticalDirihletBC::DirichletBC analytical_ditihlet_bc(m_field,"TEMP",A,T,F);
+  //analytical Dirichlet bc
+  AnalyticalDirichletBC::DirichletBC analytical_ditihlet_bc(m_field,"TEMP",A,T,F);
 
   //solve for ditihlet bc dofs
   ierr = analytical_bc.setProblem(m_field,"BC_PROBLEM"); CHKERRQ(ierr);
@@ -255,7 +255,7 @@ int main(int argc, char *argv[]) {
   if(debug) {
     
     PostPocOnRefinedMesh post_proc(m_field);
-    ierr = post_proc.generateRefereneElemenMesh(); CHKERRQ(ierr);
+    ierr = post_proc.generateReferenceElementMesh(); CHKERRQ(ierr);
     ierr = post_proc.addFieldValuesPostProc("TEMP"); CHKERRQ(ierr);
     ierr = post_proc.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
     ierr = post_proc.addFieldValuesGradientPostProc("TEMP"); CHKERRQ(ierr);

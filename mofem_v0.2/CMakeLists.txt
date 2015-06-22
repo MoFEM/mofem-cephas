@@ -58,7 +58,7 @@ include(cmake/ExportFile.cmake)
 
 set(MoFEM_VERSION_MAJOR 0)
 set(MoFEM_VERSION_MINOR 2)
-set(MoFEM_VERSION_BUILD 1)
+set(MoFEM_VERSION_BUILD 2)
 
 #git revision
 include(cmake/GetGitRevisionDescription.cmake)
@@ -164,7 +164,6 @@ add_subdirectory("${PROJECT_SOURCE_DIR}/scripts")
 add_subdirectory("${PROJECT_SOURCE_DIR}/third_party")
 add_subdirectory("${PROJECT_SOURCE_DIR}/include")
 add_subdirectory("${PROJECT_SOURCE_DIR}/src")
-add_subdirectory("${PROJECT_SOURCE_DIR}/finite_element_library")
 add_subdirectory("${PROJECT_SOURCE_DIR}/atom_tests")
 add_subdirectory("${PROJECT_SOURCE_DIR}/users_modules.in")
 add_subdirectory("${PROJECT_SOURCE_DIR}/doc")

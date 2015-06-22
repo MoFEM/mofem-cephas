@@ -36,7 +36,7 @@ using namespace MoFEM;
 #include <SurfacePressureComplexForLazy.hpp>
 #include <adolc/adolc.h>
 #include <ConvectiveMassElement.hpp>
-#include <NonLienarElasticElement.hpp>
+#include <NonLinearElasticElement.hpp>
 
 #include <PostProcOnRefMesh.hpp>
 #include <PostProcStresses.hpp>
@@ -106,7 +106,7 @@ struct MonitorPostProc: public FEMethod {
     ErrorCode rval;
 
     if(!iNit) {
-      ierr = postProc.generateRefereneElemenMesh(); CHKERRQ(ierr);
+      ierr = postProc.generateReferenceElementMesh(); CHKERRQ(ierr);
       ierr = postProc.addFieldValuesPostProc("SPATIAL_POSITION"); CHKERRQ(ierr);
       ierr = postProc.addFieldValuesPostProc("SPATIAL_VELOCITY"); CHKERRQ(ierr);
       ierr = postProc.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
@@ -328,7 +328,7 @@ int main(int argc, char *argv[]) {
     ierr = m_field.add_ents_to_finite_element_by_TRIs(tris, "NEUMANN_FE"); CHKERRQ(ierr);
   }
   // Add nodal force element
-  ierr = MetaNodalForces::addNodalForceElement(m_field,"SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = MetaNodalForces::addElement(m_field,"SPATIAL_POSITION"); CHKERRQ(ierr);
 
   // Velocity
   ierr = m_field.add_field("SPATIAL_VELOCITY",H1,3,MF_ZERO); CHKERRQ(ierr);
@@ -468,15 +468,15 @@ int main(int argc, char *argv[]) {
     ierr = MatShellSetOperation(shell_Aij,MATOP_ZERO_ENTRIES,(void(*)(void))ConvectiveMassElement::ZeroEntriesOp); CHKERRQ(ierr);
     //blocked problem
     ConvectiveMassElement::ShellMatrixElement shell_matrix_element(m_field);
-    SpatialPositionsBCFEMethodPreAndPostProc shell_dirihlet_bc(
+    SpatialPositionsBCFEMethodPreAndPostProc shell_Dirichlet_bc(
       m_field,"SPATIAL_POSITION",shellAij_ctx->barK,PETSC_NULL,PETSC_NULL);
-    //shell_dirihlet_bc.fixFields.push_back("SPATIAL_VELOCITY");
-    SpatialPositionsBCFEMethodPreAndPostProc my_dirihlet_bc(
+    //shell_Dirichlet_bc.fixFields.push_back("SPATIAL_VELOCITY");
+    SpatialPositionsBCFEMethodPreAndPostProc my_Dirichlet_bc(
       m_field,"SPATIAL_POSITION",PETSC_NULL,D,F);
-    //my_dirihlet_bc.fixFields.push_back("SPATIAL_VELOCITY");
+    //my_Dirichlet_bc.fixFields.push_back("SPATIAL_VELOCITY");
     shell_matrix_element.problemName = "Kuu";
     shell_matrix_element.shellMatCtx = shellAij_ctx;
-    shell_matrix_element.dirihletBcPtr = &shell_dirihlet_bc;
+    shell_matrix_element.DirichletBcPtr = &shell_Dirichlet_bc;
     shell_matrix_element.loopK.push_back(ConvectiveMassElement::ShellMatrixElement::LoopPairType("ELASTIC",&elastic.getLoopFeLhs()));
     ConvectiveMassElement::ShellResidualElement shell_matrix_residual(m_field);
     shell_matrix_residual.shellMatCtx = shellAij_ctx;
@@ -505,8 +505,8 @@ int main(int argc, char *argv[]) {
   #else
     Mat Aij;
     ierr = m_field.MatCreateMPIAIJWithArrays("DYNAMICS",&Aij); CHKERRQ(ierr);
-    SpatialPositionsBCFEMethodPreAndPostProc my_dirihlet_bc(m_field,"SPATIAL_POSITION",Aij,D,F);
-    //my_dirihlet_bc.fixFields.push_back("SPATIAL_VELOCITY");
+    SpatialPositionsBCFEMethodPreAndPostProc my_Dirichlet_bc(m_field,"SPATIAL_POSITION",Aij,D,F);
+    //my_Dirichlet_bc.fixFields.push_back("SPATIAL_VELOCITY");
 
     //surface forces
     NeummanForcesSurfaceComplexForLazy neumann_forces(m_field,Aij,F);
@@ -544,7 +544,7 @@ int main(int argc, char *argv[]) {
   //right hand side
   //preprocess
   ts_ctx.get_preProcess_to_do_IFunction().push_back(&update_and_control);
-  ts_ctx.get_preProcess_to_do_IFunction().push_back(&my_dirihlet_bc);
+  ts_ctx.get_preProcess_to_do_IFunction().push_back(&my_Dirichlet_bc);
   //fe looops
   TsCtx::loops_to_do_type& loops_to_do_Rhs = ts_ctx.get_loops_to_do_IFunction();
   loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("ELASTIC",&elastic.getLoopFeRhs()));
@@ -560,7 +560,7 @@ int main(int argc, char *argv[]) {
     loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("VELOCITY_ELEMENT",&inertia.getLoopFeVelRhs()));
   #endif
   //postproc
-  ts_ctx.get_postProcess_to_do_IFunction().push_back(&my_dirihlet_bc);
+  ts_ctx.get_postProcess_to_do_IFunction().push_back(&my_Dirichlet_bc);
   #ifdef BLOCKED_PROBLEM
     ts_ctx.get_postProcess_to_do_IFunction().push_back(&shell_matrix_residual);
   #endif
@@ -572,7 +572,7 @@ int main(int argc, char *argv[]) {
     ts_ctx.get_preProcess_to_do_IJacobian().push_back(&shell_matrix_element);
   #else
     //preprocess
-    ts_ctx.get_preProcess_to_do_IJacobian().push_back(&my_dirihlet_bc);
+    ts_ctx.get_preProcess_to_do_IJacobian().push_back(&my_Dirichlet_bc);
     //fe loops
     TsCtx::loops_to_do_type& loops_to_do_Mat = ts_ctx.get_loops_to_do_IJacobian();
     loops_to_do_Mat.push_back(TsCtx::loop_pair_type("ELASTIC",&elastic.getLoopFeLhs()));
@@ -580,7 +580,7 @@ int main(int argc, char *argv[]) {
     loops_to_do_Mat.push_back(TsCtx::loop_pair_type("VELOCITY_ELEMENT",&inertia.getLoopFeVelLhs()));
     loops_to_do_Mat.push_back(TsCtx::loop_pair_type("MASS_ELEMENT",&inertia.getLoopFeMassLhs()));
     //postrocess
-    ts_ctx.get_postProcess_to_do_IJacobian().push_back(&my_dirihlet_bc);
+    ts_ctx.get_postProcess_to_do_IJacobian().push_back(&my_Dirichlet_bc);
   #endif
   ts_ctx.get_postProcess_to_do_IJacobian().push_back(&update_and_control);
   //monitor

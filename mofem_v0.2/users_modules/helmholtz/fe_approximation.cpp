@@ -62,15 +62,14 @@ using bio::stream;
 
 using namespace MoFEM;
 
-#include <AnalyticalSolutions.hpp>
-#include <AnalyticalDirihlet.hpp>
-
-#include <HelmholtzElement.hpp>
 
 #include <boost/shared_array.hpp>
 #include <kiss_fft.h>
 #include <kiss_fft.c>
 
+#include <AnalyticalSolutions.hpp>
+#include <AnalyticalDirichlet.hpp>
+#include <HelmholtzElement.hpp>
 #include <TimeSeries.hpp>
 
 struct PlaneIncidentWaveSacttrerData {
@@ -169,7 +168,6 @@ int main(int argc, char *argv[]) {
   ierr = m_field.set_field_order(root_set,MBEDGE,"P",order); CHKERRQ(ierr);
   ierr = m_field.set_field_order(root_set,MBVERTEX,"P",1); CHKERRQ(ierr);
 
-
   if(!m_field.check_field("MESH_NODE_POSITIONS")) {
 
     ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,3); CHKERRQ(ierr);
@@ -199,13 +197,15 @@ int main(int argc, char *argv[]) {
     ierr = m_field.modify_finite_element_add_field_data("HELMHOLTZ_RERE_FE","imEX"); CHKERRQ(ierr);
   }
 
+  bool Dirichlet_bc_set = false;
   Range bc_dirichlet_tris,analytical_bc_tris;
   for(_IT_CUBITMESHSETS_BY_NAME_FOR_LOOP_(m_field,"ANALYTICAL_BC",it)) {
     rval = moab.get_entities_by_type(it->get_meshset(),MBTRI,analytical_bc_tris,true); CHKERR_PETSC(rval);
+    Dirichlet_bc_set = true;
   }
   bc_dirichlet_tris.merge(analytical_bc_tris);
-  AnalyticalDirihletBC analytical_bc_real(m_field);
-  AnalyticalDirihletBC analytical_bc_imag(m_field);
+  AnalyticalDirichletBC analytical_bc_real(m_field);
+  AnalyticalDirichletBC analytical_bc_imag(m_field);
   ierr = analytical_bc_real.initializeProblem(m_field,"BCREAL_FE","rePRES",analytical_bc_tris); CHKERRQ(ierr);
   ierr = analytical_bc_imag.initializeProblem(m_field,"BCIMAG_FE","imPRES",analytical_bc_tris); CHKERRQ(ierr);
 
@@ -222,7 +222,7 @@ int main(int argc, char *argv[]) {
   double power_of_incident_wave = 1;
   ierr = PetscOptionsGetScalar(NULL,"-power_of_incident_wave",&power_of_incident_wave,NULL); CHKERRQ(ierr);
 
-  bool dirihlet_bc_set = false;
+
   // This is added for a case than on some surface, defined by the user a
   // incident plane wave is scattered.
   map<int,PlaneIncidentWaveSacttrerData> planeWaveScatterData;
@@ -233,13 +233,13 @@ int main(int argc, char *argv[]) {
     ierr = analytical_bc_imag.initializeProblem(m_field,"BCIMAG_FE","imPRES",planeWaveScatterData[it->get_msId()].tRis); CHKERRQ(ierr);
     bc_dirichlet_tris.merge(planeWaveScatterData[it->get_msId()].tRis);
 
-    dirihlet_bc_set = true;
+    Dirichlet_bc_set = true;
 
   }
 
-  ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
-  // Build adjacencies
-  ierr = m_field.build_adjacencies(bit_level0); CHKERRQ(ierr);
+  //ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
+  //// Build adjacencies
+  //ierr = m_field.build_adjacencies(bit_level0); CHKERRQ(ierr);
 
   // Problem
   ierr = m_field.add_problem("ACOUSTIC_PROBLEM"); CHKERRQ(ierr);
@@ -259,7 +259,11 @@ int main(int argc, char *argv[]) {
   ierr = m_field.modify_problem_add_finite_element("BCREAL_PROBLEM","BCREAL_FE"); CHKERRQ(ierr);
   ierr = m_field.modify_problem_add_finite_element("BCIMAG_PROBLEM","BCIMAG_FE"); CHKERRQ(ierr);
 
+
   // Build problems
+  ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
+  // Build adjacencies
+  ierr = m_field.build_adjacencies(bit_level0); CHKERRQ(ierr);
 
   // build porblems
   if(is_partitioned) {
@@ -268,13 +272,15 @@ int main(int argc, char *argv[]) {
     ierr = m_field.build_partitioned_problem("ACOUSTIC_PROBLEM",true); CHKERRQ(ierr);
     ierr = m_field.partition_finite_elements("ACOUSTIC_PROBLEM",true); CHKERRQ(ierr);
 
-    if(dirihlet_bc_set) {
+    if(Dirichlet_bc_set) {
       ierr = m_field.build_partitioned_problem("BCREAL_PROBLEM",true); CHKERRQ(ierr);
       ierr = m_field.partition_finite_elements("BCREAL_PROBLEM",true); CHKERRQ(ierr);
 
       ierr = m_field.build_partitioned_problem("BCIMAG_PROBLEM",true); CHKERRQ(ierr);
       ierr = m_field.partition_finite_elements("BCIMAG_PROBLEM",true); CHKERRQ(ierr);
+
     }
+
 
   } else {
     // if not partitioned mesh is load to all processes
@@ -283,10 +289,12 @@ int main(int argc, char *argv[]) {
     ierr = m_field.partition_problem("ACOUSTIC_PROBLEM"); CHKERRQ(ierr);
     ierr = m_field.partition_finite_elements("ACOUSTIC_PROBLEM"); CHKERRQ(ierr);
 
-    if(dirihlet_bc_set) {
+    if(Dirichlet_bc_set) {
       ierr = m_field.build_problem("BCREAL_PROBLEM"); CHKERRQ(ierr);
       ierr = m_field.partition_problem("BCREAL_PROBLEM"); CHKERRQ(ierr);
       ierr = m_field.partition_finite_elements("BCREAL_PROBLEM"); CHKERRQ(ierr);
+
+
 
       ierr = m_field.build_problem("BCIMAG_PROBLEM"); CHKERRQ(ierr);
       ierr = m_field.partition_problem("BCIMAG_PROBLEM"); CHKERRQ(ierr);
@@ -295,7 +303,7 @@ int main(int argc, char *argv[]) {
   }
 
   ierr = m_field.partition_ghost_dofs("ACOUSTIC_PROBLEM"); CHKERRQ(ierr);
-  if(dirihlet_bc_set) {
+  if(Dirichlet_bc_set) {
     ierr = m_field.partition_ghost_dofs("BCREAL_PROBLEM"); CHKERRQ(ierr);
     ierr = m_field.partition_ghost_dofs("BCIMAG_PROBLEM"); CHKERRQ(ierr);
   }
@@ -330,9 +338,10 @@ int main(int argc, char *argv[]) {
     case HARD_SPHERE_SCATTER_WAVE:
 
     {
-
-      double scattering_sphere_radius = 1.;
+      double scattering_sphere_radius = 0.5;
       ierr = PetscOptionsGetScalar(NULL,"-scattering_sphere_radius",&scattering_sphere_radius,NULL); CHKERRQ(ierr);
+
+
 
       boost::shared_ptr<HardSphereScatterWave> function_evaluator = boost::shared_ptr<HardSphereScatterWave>(
         new HardSphereScatterWave(wavenumber,scattering_sphere_radius)
@@ -343,7 +352,7 @@ int main(int argc, char *argv[]) {
       ierr = analytical_bc_imag.setApproxOps(
         m_field,"imPRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::IMAG
       ); CHKERRQ(ierr);
-      dirihlet_bc_set = true;
+      Dirichlet_bc_set = true;
 
     }
 
@@ -351,15 +360,16 @@ int main(int argc, char *argv[]) {
 
     case SOFT_SPHERE_SCATTER_WAVE:
 
-    {
+      {
 
-      double scattering_sphere_radius = 1.;
+      double scattering_sphere_radius = 0.5;
       ierr = PetscOptionsGetScalar(NULL,"-scattering_sphere_radius",&scattering_sphere_radius,NULL); CHKERRQ(ierr);
+
 
       boost::shared_ptr<SoftSphereScatterWave> function_evaluator = boost::shared_ptr<SoftSphereScatterWave>(new SoftSphereScatterWave(wavenumber,scattering_sphere_radius));
       ierr = analytical_bc_real.setApproxOps(m_field,"rePRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::REAL); CHKERRQ(ierr);
       ierr = analytical_bc_imag.setApproxOps(m_field,"imPRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::IMAG); CHKERRQ(ierr);
-      dirihlet_bc_set = true;
+      Dirichlet_bc_set = true;
 
     }
 
@@ -377,7 +387,7 @@ int main(int argc, char *argv[]) {
       boost::shared_ptr<PlaneWave> function_evaluator = boost::shared_ptr<PlaneWave>(new PlaneWave(wavenumber,angle*M_PI));
       ierr = analytical_bc_real.setApproxOps(m_field,"rePRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::REAL); CHKERRQ(ierr);
       ierr = analytical_bc_imag.setApproxOps(m_field,"imPRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::IMAG); CHKERRQ(ierr);
-      dirihlet_bc_set = true;
+      Dirichlet_bc_set = true;
 
     }
 
@@ -390,7 +400,7 @@ int main(int argc, char *argv[]) {
       boost::shared_ptr<HardCylinderScatterWave> function_evaluator = boost::shared_ptr<HardCylinderScatterWave>(new HardCylinderScatterWave(wavenumber));
       ierr = analytical_bc_real.setApproxOps(m_field,"rePRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::REAL); CHKERRQ(ierr);
       ierr = analytical_bc_imag.setApproxOps(m_field,"imPRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::IMAG); CHKERRQ(ierr);
-      dirihlet_bc_set = true;
+      Dirichlet_bc_set = true;
 
 
     }
@@ -404,7 +414,7 @@ int main(int argc, char *argv[]) {
       boost::shared_ptr<SoftCylinderScatterWave> function_evaluator = boost::shared_ptr<SoftCylinderScatterWave>(new SoftCylinderScatterWave(wavenumber));
       ierr = analytical_bc_real.setApproxOps(m_field,"rePRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::REAL); CHKERRQ(ierr);
       ierr = analytical_bc_imag.setApproxOps(m_field,"imPRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::IMAG); CHKERRQ(ierr);
-      dirihlet_bc_set = true;
+      Dirichlet_bc_set = true;
 
     }
 
@@ -418,7 +428,7 @@ int main(int argc, char *argv[]) {
       boost::shared_ptr<IncidentWave>(new IncidentWave(wavenumber,wave_direction,power_of_incident_wave));
       ierr = analytical_bc_real.setApproxOps(m_field,"rePRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::REAL); CHKERRQ(ierr);
       ierr = analytical_bc_imag.setApproxOps(m_field,"imPRES",analytical_bc_tris,function_evaluator,GenericAnalyticalSolution::IMAG); CHKERRQ(ierr);
-      dirihlet_bc_set = true;
+      Dirichlet_bc_set = true;
 
     }
 
@@ -427,19 +437,18 @@ int main(int argc, char *argv[]) {
     case NO_ANALYTICAL_SOLUTION:
 
     {
-      dirihlet_bc_set = false;
+      Dirichlet_bc_set = false;
     }
 
     break;
 
   }
 
-
   // Analytical boundary conditions
-  AnalyticalDirihletBC::DirichletBC analytical_ditihlet_bc_real(m_field,"rePRES",A,T,F);
-  AnalyticalDirihletBC::DirichletBC analytical_ditihlet_bc_imag(m_field,"imPRES",A,T,F);
+  AnalyticalDirichletBC::DirichletBC analytical_ditihlet_bc_real(m_field,"rePRES",A,T,F);
+  AnalyticalDirichletBC::DirichletBC analytical_ditihlet_bc_imag(m_field,"imPRES",A,T,F);
 
-  if(dirihlet_bc_set) {
+  if(Dirichlet_bc_set) {
 
     {
 
@@ -460,11 +469,9 @@ int main(int argc, char *argv[]) {
       }
 
     }
-
     // Solve for analytical Dirichlet bc dofs
     ierr = analytical_bc_real.setProblem(m_field,"BCREAL_PROBLEM"); CHKERRQ(ierr);
     ierr = analytical_bc_imag.setProblem(m_field,"BCIMAG_PROBLEM"); CHKERRQ(ierr);
-
     ierr = analytical_bc_real.solveProblem(
       m_field,"BCREAL_PROBLEM","BCREAL_FE",analytical_ditihlet_bc_real,bc_dirichlet_tris
     ); CHKERRQ(ierr);
@@ -477,6 +484,9 @@ int main(int argc, char *argv[]) {
 
   }
 
+
+  PetscBool monochromatic_wave = PETSC_TRUE;
+  ierr = PetscOptionsGetBool(PETSC_NULL,"-monochromatic_wave",&monochromatic_wave,NULL); CHKERRQ(ierr);
 
   PetscBool add_incident_wave = PETSC_FALSE;
   ierr = PetscOptionsGetBool(NULL,"-add_incident_wave",&add_incident_wave,NULL); CHKERRQ(ierr);
@@ -504,12 +514,11 @@ int main(int argc, char *argv[]) {
 
   }
 
+
   KSP solver;
   ierr = KSPCreate(PETSC_COMM_WORLD,&solver); CHKERRQ(ierr);
 
-  PetscBool monohromatic_wave = PETSC_TRUE;
-  ierr = PetscOptionsGetBool(PETSC_NULL,"-monohromatic_wave",&monohromatic_wave,NULL); CHKERRQ(ierr);
-  if(monohromatic_wave) {
+  if(monochromatic_wave) {
 
     // Zero vectors
     ierr = VecZeroEntries(T); CHKERRQ(ierr);
@@ -521,7 +530,7 @@ int main(int argc, char *argv[]) {
     ierr = MatZeroEntries(A); CHKERRQ(ierr);
 
     // Assemble problem
-    if(dirihlet_bc_set) {
+    if(Dirichlet_bc_set) {
       ierr = m_field.problem_basic_method_preProcess("ACOUSTIC_PROBLEM",analytical_ditihlet_bc_real); CHKERRQ(ierr);
       ierr = m_field.problem_basic_method_preProcess("ACOUSTIC_PROBLEM",analytical_ditihlet_bc_imag); CHKERRQ(ierr);
     }
@@ -529,8 +538,7 @@ int main(int argc, char *argv[]) {
     ierr = helmholtz_element.calculateA("ACOUSTIC_PROBLEM"); CHKERRQ(ierr);
     ierr = helmholtz_element.calculateF("ACOUSTIC_PROBLEM"); CHKERRQ(ierr);
 
-
-    if(dirihlet_bc_set) {
+    if(Dirichlet_bc_set) {
       ierr = m_field.problem_basic_method_postProcess("ACOUSTIC_PROBLEM",analytical_ditihlet_bc_real); CHKERRQ(ierr);
       ierr = m_field.problem_basic_method_postProcess("ACOUSTIC_PROBLEM",analytical_ditihlet_bc_imag); CHKERRQ(ierr);
     }
@@ -551,6 +559,7 @@ int main(int argc, char *argv[]) {
     ierr = VecGhostUpdateBegin(T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
+
     //Save data on mesh
     if(is_partitioned) {
 
@@ -564,6 +573,7 @@ int main(int argc, char *argv[]) {
     }
 
   } else {
+
 
     // define problem
     ierr = m_field.add_problem("PRESSURE_IN_TIME"); CHKERRQ(ierr);
@@ -587,24 +597,61 @@ int main(int argc, char *argv[]) {
 
     TimeSeries time_series(m_field,helmholtz_element,
       analytical_ditihlet_bc_real,analytical_ditihlet_bc_imag,
-      dirihlet_bc_set);
-    ierr = time_series.readData();  CHKERRQ(ierr);
-    ierr = time_series.forwardDft(); CHKERRQ(ierr);
-    ierr = time_series.createTimeVectorSeries(T); CHKERRQ(ierr);
-    ierr = time_series.solveForwardDFT(solver,A,F,T); CHKERRQ(ierr);
-    ierr = time_series.pressureInTimeDomainInverseDft(); CHKERRQ(ierr);
-    ierr = time_series.destroyTimeVectorSeries(); CHKERRQ(ierr);
+      Dirichlet_bc_set);
 
+    ierr = time_series.readData(); CHKERRQ(ierr);
+    ierr = time_series.createPressureSeries(T); CHKERRQ(ierr);
+    ierr = time_series.forwardSpaceDft(); CHKERRQ(ierr);
+    ierr = time_series.pressureForwardDft(); CHKERRQ(ierr);
+    ierr = time_series.solveForwardDFT(solver,A,F,T); CHKERRQ(ierr);
+    ierr = time_series.pressureInverseDft(); CHKERRQ(ierr);
+    ierr = time_series.generateReferenceElementMesh(); CHKERRQ(ierr);
+    ierr = time_series.saveResults(); CHKERRQ(ierr);
+    ierr = time_series.destroyPressureSeries(); CHKERRQ(ierr);
 
   }
+
+
+  //Vec P,M;
+  //ierr = m_field.VecCreateGhost("EX1_PROBLEM",COL,&M); CHKERRQ(ierr);
+  //ierr = VecDuplicate(M,&P); CHKERRQ(ierr);
+
+  //ierr = m_field.set_local_ghost_vector("EX1_PROBLEM",COL,M,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  //ierr = m_field.set_other_global_ghost_vector("EX1_PROBLEM","reEX","imEX",COL,P,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+
+  //double nrm2_M;
+  //ierr = VecNorm(M,NORM_2,&nrm2_M);  CHKERRQ(ierr);
+
+  //Vec V;
+  //ierr = m_field.VecCreateGhost("ACOUSTIC_PROBLEM",COL,&V); CHKERRQ(ierr);
+  //ierr = m_field.set_local_ghost_vector("ACOUSTIC_PROBLEM",COL,V,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+
+  //VecScatter scatter_real,scatter_imag;
+
+  //ierr = m_field.VecScatterCreate(V,"ACOUSTIC_PROBLEM","rePRES",COL,M,"EX1_PROBLEM","reEX",COL,&scatter_real); CHKERRQ(ierr);
+
+  //ierr = m_field.VecScatterCreate(V,"ACOUSTIC_PROBLEM","imPRES",COL,P,"EX1_PROBLEM","reEX",COL,&scatter_imag); CHKERRQ(ierr);
+
+  //VecScale(V,-1);
+
+  //ierr = VecScatterBegin(scatter_real,V,M,ADD_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  //ierr = VecScatterEnd(scatter_real,V,M,ADD_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+
+  //double nrm2_ErrM;
+  //ierr = VecNorm(M,NORM_2,&nrm2_ErrM);  CHKERRQ(ierr);
+  //PetscPrintf(PETSC_COMM_WORLD,"L2 relative error on real field of acoustic problem %6.4e\n",(nrm2_ErrM)/(nrm2_M));
+
+
+  //ierr = VecDestroy(&M); CHKERRQ(ierr);
+  //ierr = VecDestroy(&P); CHKERRQ(ierr);
+  //ierr = VecDestroy(&V); CHKERRQ(ierr);
 
   // Destroy the KSP solvers
   ierr = MatDestroy(&A); CHKERRQ(ierr);
   ierr = VecDestroy(&F); CHKERRQ(ierr);
   ierr = VecDestroy(&T); CHKERRQ(ierr);
   ierr = KSPDestroy(&solver); CHKERRQ(ierr);
-
-  if(monohromatic_wave) {
+  if(monochromatic_wave) {
 
     if(add_incident_wave) {
 
@@ -620,7 +667,7 @@ int main(int argc, char *argv[]) {
     if(save_postproc_mesh) {
 
       PostPocOnRefinedMesh post_proc(m_field);
-      ierr = post_proc.generateRefereneElemenMesh(); CHKERRQ(ierr);
+      ierr = post_proc.generateReferenceElementMesh(); CHKERRQ(ierr);
       ierr = post_proc.addFieldValuesPostProc("rePRES"); CHKERRQ(ierr);
       ierr = post_proc.addFieldValuesPostProc("imPRES"); CHKERRQ(ierr);
 
@@ -634,7 +681,6 @@ int main(int argc, char *argv[]) {
       rval = post_proc.postProcMesh.write_file("fe_solution_mesh_post_proc.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
 
     }
-
     if(is_partitioned) {
       rval = moab.write_file("fe_solution.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
     } else {
@@ -646,7 +692,6 @@ int main(int argc, char *argv[]) {
     }
 
   }
-
 
   ierr = PetscTime(&v2);CHKERRQ(ierr);
   ierr = PetscGetCPUTime(&t2);CHKERRQ(ierr);

@@ -1,7 +1,7 @@
 # Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
-# The MoFEM package is copyrighted by Lukasz Kaczmarczyk. 
-# It can be freely used for educational and research purposes 
-# by other institutions. If you use this softwre pleas cite my work. 
+# The MoFEM package is copyrighted by Lukasz Kaczmarczyk.
+# It can be freely used for educational and research purposes
+# by other institutions. If you use this softwre pleas cite my work.
 #
 # MoFEM is free software: you can redistribute it and/or modify it under
 # the terms of the GNU Lesser General Public License as published by the
@@ -20,7 +20,7 @@ project(MoFEM-UserModules C CXX)
 
 cmake_minimum_required(VERSION 2.8)
 
-find_package(MoFEM 0.2.0 
+find_package(MoFEM 0.2.0
   REQUIRED HINTS ${MOFEM_DIR} ../ ../../ $ENV{MOFEM_DIR}
 )
 
@@ -32,7 +32,7 @@ endif(PYTHON_INCLUDE_DIRS)
 
 include(${MoFEM_PROJECT_SOURCE_DIR}/cmake/ExportFile.cmake)
 
-set(CMAKE_C_COMPILER ${MoFEM_CMAKE_C_COMPILER}) 
+set(CMAKE_C_COMPILER ${MoFEM_CMAKE_C_COMPILER})
 set(CMAKE_CXX_COMPILER ${MoFEM_CMAKE_CXX_COMPILER})
 
 
@@ -51,7 +51,6 @@ include_directories("${MoFEM_PROJECT_SOURCE_DIR}/src/multi_indices")
 include_directories("${MoFEM_PROJECT_SOURCE_DIR}/src/interfaces")
 include_directories("${MoFEM_PROJECT_SOURCE_DIR}/src/petsc")
 include_directories("${MoFEM_PROJECT_SOURCE_DIR}/src/finite_elements")
-include_directories("${MoFEM_PROJECT_SOURCE_DIR}/finite_element_library")
 
 include_directories("${MoFEM_PROJECT_BINARY_DIR}/include")
 
@@ -60,7 +59,6 @@ link_directories("${MoFEM_PROJECT_BINARY_DIR}/src/multi_indices")
 link_directories("${MoFEM_PROJECT_BINARY_DIR}/src/interfaces")
 link_directories("${MoFEM_PROJECT_BINARY_DIR}/src/petsc")
 link_directories("${MoFEM_PROJECT_BINARY_DIR}/src/finite_elements")
-link_directories("${MoFEM_PROJECT_BINARY_DIR}/finite_element_library")
 link_directories("${MoFEM_PROJECT_BINARY_DIR}/third_party")
 link_directories("${MoFEM_PROJECT_BINARY_DIR}/third_party/cblas")
 
@@ -71,11 +69,11 @@ enable_testing()
 include(CTest)
 
 #add coverage
-if(WITHCOVERAGE) 
+if(WITHCOVERAGE)
   set(GCC_COVERAGE_COMPILE_FLAGS "-Wall -fprofile-arcs -ftest-coverage")
   add_definitions(${GCC_COVERAGE_COMPILE_FLAGS})
   set(CMAKE_EXE_LINKER_FLAGS "${GCC_COVERAGE_COMPILE_FLAGS}")
-endif(WITHCOVERAGE) 
+endif(WITHCOVERAGE)
 
 # source path
 set(UM_SOURCE_DIR ${MoFEM_PROJECT_SOURCE_DIR}/users_modules)
@@ -84,22 +82,22 @@ if(STAND_ALLONE_USERS_MODULES)
 endif(STAND_ALLONE_USERS_MODULES)
 
 # third party libraries
-if(TETGEN_LIBRARY) 
+if(TETGEN_LIBRARY)
   include_directories("${TETGEN_DIR}/include")
   add_definitions( -DWITH_TETGEN )
   message(STATUS "WITH TETEGEN")
 endif(TETGEN_LIBRARY)
 
-if(NETGEN_LIBRARY) 
+if(NETGEN_LIBRARY)
   include_directories("${NETGEN_DIR}/include")
   include_directories("${NETGEN_SRC_DIR}/libsrc/include")
   add_definitions( -DWITH_NETGEN )
   message(STATUS "WITH NETEGEN")
 endif(NETGEN_LIBRARY)
 
-if(CGAL_DIR) 
+if(CGAL_DIR)
   find_package(CGAL HINTS ${CGAL_DIR}/lib/CGAL)
-  if(CGAL_CONFIG_LOADED) 
+  if(CGAL_CONFIG_LOADED)
     include_directories(${CGAL_INCLUDE_DIRS})
     link_directories(${CGAL_LIBRARIES_DIR})
     add_definitions( -DWITH_CGAL )
@@ -107,13 +105,13 @@ if(CGAL_DIR)
   endif(CGAL_CONFIG_LOADED)
 endif(CGAL_DIR)
 
-if(ADOL-C_LIBRARY) 
+if(ADOL-C_LIBRARY)
   include_directories("${ADOL-C_DIR}/include")
   add_definitions( -DWITH_ADOL_C )
   message(STATUS "WITH ADLOC-C")
 endif(ADOL-C_LIBRARY)
 
-if(SLEPC_LIBRARY) 
+if(SLEPC_LIBRARY)
   include_directories("${SLEPC_DIR}/${PETSC_ARCH}/include")
   include_directories("${SLEPC_DIR}/include")
   add_definitions( -DWITH_SLEPC_DIR )
@@ -122,13 +120,3 @@ endif(SLEPC_LIBRARY)
 
 
 include(ModulesList.cmake)
-
-
-
-
-
-
-
-
-
-

@@ -1,0 +1,153 @@
+/** \file NodalForce.cpp
+  \ingroup mofem_static_boundary_conditions
+*/
+
+/* This file is part of MoFEM.
+ * MoFEM is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
+ *
+ * MoFEM is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+ * License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+
+#ifndef __NODAL_FORCES_HPP__
+#define __NODAL_FORCES_HPP__
+
+namespace MoFEM {
+
+/** \brief Force applied to nodes
+  * \ingroup mofem_static_boundary_conditions
+  */
+struct NodalForce {
+
+  FieldInterface &mField;
+  NodalForce(FieldInterface &m_field): mField(m_field),fe(m_field) {}
+
+  struct MyFE: public VertexElementForcesAndSourcesCore {
+    MyFE(FieldInterface &m_field);
+  };
+
+  MyFE fe;
+  MyFE& getLoopFe() { return fe; }
+
+  struct bCForce {
+    ForceCubitBcData data;
+    Range nOdes;
+  };
+  map<int,bCForce> mapForce;
+
+  boost::ptr_vector<MethodsForOp> methodsOp;
+
+  /// \brief Operator to assemble nodal force into right hand side vector
+  struct OpNodalForce: public VertexElementForcesAndSourcesCore::UserDataOperator {
+
+    Vec &F;
+    bool useSnesF;
+    bCForce &dAta;
+    boost::ptr_vector<MethodsForOp> &methodsOp;
+
+    OpNodalForce(const string field_name,Vec &_F,bCForce &data,
+      boost::ptr_vector<MethodsForOp> &methods_op,
+      bool use_snes_f = false);
+
+    ublas::vector<FieldData> Nf;
+
+    /** Exeuted for each entity on element, i.e. in this case Vertex element
+      has only one entity, that is vertex
+    */
+    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
+
+  };
+
+  PetscErrorCode addForce(const string field_name,Vec &F,int ms_id,bool use_snes_f = false);
+
+};
+
+struct MetaNodalForces {
+
+  /** \brief Scale force based on tag value "_LoadFactor_Scale_"
+
+    This is obsolete, is kept to have back compatibility with fracture code.
+
+  */
+  struct TagForceScale: public MethodsForOp {
+    FieldInterface &mField;
+    double *sCale;
+    Tag thScale;
+
+    TagForceScale(FieldInterface &m_field);
+    PetscErrorCode scaleNf(const FEMethod *fe,ublas::vector<FieldData> &Nf);
+
+  };
+
+  /// Add element taking information from NODESET
+  static PetscErrorCode addElement (FieldInterface &m_field,const string field_name) {
+    PetscFunctionBegin;
+    PetscErrorCode ierr;
+    ErrorCode rval;
+    ierr = m_field.add_finite_element("FORCE_FE",MF_ZERO); CHKERRQ(ierr);
+    ierr = m_field.modify_finite_element_add_field_row("FORCE_FE",field_name); CHKERRQ(ierr);
+    ierr = m_field.modify_finite_element_add_field_col("FORCE_FE",field_name); CHKERRQ(ierr);
+    ierr = m_field.modify_finite_element_add_field_data("FORCE_FE",field_name); CHKERRQ(ierr);
+    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET,it)) {
+      Range tris;
+      rval = m_field.get_moab().get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
+      Range edges;
+      rval = m_field.get_moab().get_entities_by_type(it->meshset,MBEDGE,edges,true); CHKERR_PETSC(rval);
+      Range tris_nodes;
+      rval = m_field.get_moab().get_connectivity(tris,tris_nodes); CHKERR_PETSC(rval);
+      Range edges_nodes;
+      rval = m_field.get_moab().get_connectivity(edges,edges_nodes); CHKERR_PETSC(rval);
+      Range nodes;
+      rval = m_field.get_moab().get_entities_by_type(it->meshset,MBVERTEX,nodes,true); CHKERR_PETSC(rval);
+      nodes = subtract(nodes,tris_nodes);
+      nodes = subtract(nodes,edges_nodes);
+      ierr = m_field.add_ents_to_finite_element_by_VERTICEs(nodes,"FORCE_FE"); CHKERRQ(ierr);
+    }
+    PetscFunctionReturn(0);
+  }
+
+  /// Set integration point operators
+  static PetscErrorCode setOperators(
+    FieldInterface &m_field, boost::ptr_map<string,NodalForce> &nodal_forces, Vec &F,const string field_name
+  ) {
+    PetscFunctionBegin;
+    PetscErrorCode ierr;
+    string fe_name = "FORCE_FE";
+    nodal_forces.insert(fe_name,new NodalForce(m_field));
+    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET,it)) {
+      ierr = nodal_forces.at(fe_name).addForce(field_name,F,it->get_msId());  CHKERRQ(ierr);
+    }
+    PetscFunctionReturn(0);
+  }
+
+  /// Depreciated, changed name to addElement
+  static DEPRECATED PetscErrorCode addNodalForceElement (FieldInterface &mField,const string field_name) {
+    PetscFunctionBegin;
+    PetscErrorCode ierr;
+    ierr = addElement(mField,field_name); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
+  /// Depreciated, changed name to setOperators
+  static DEPRECATED PetscErrorCode setNodalForceElementOperators(
+    FieldInterface &m_field, boost::ptr_map<string,NodalForce> &nodal_forces,Vec &F,const string field_name
+  ) {
+    PetscFunctionBegin;
+    PetscErrorCode ierr;
+    ierr = setOperators(m_field,nodal_forces,F,field_name); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
+
+};
+
+}
+
+#endif //__NODAL_FORCES_HPP__

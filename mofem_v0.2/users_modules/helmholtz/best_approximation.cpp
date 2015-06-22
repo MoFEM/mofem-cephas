@@ -209,8 +209,10 @@ int main(int argc, char *argv[]) {
   }
 
   PetscInt choise_value = 0;
+
   // set type of analytical solution
   ierr = PetscOptionsGetEList(NULL,"-analytical_solution_type",analytical_solution_types,6,&choise_value,&flg); CHKERRQ(ierr);
+
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -analytical_solution_type needed, WARNING!!!!!!.");
   }
@@ -220,8 +222,8 @@ int main(int argc, char *argv[]) {
     case HARD_SPHERE_SCATTER_WAVE:
 
       {
-
-	double scattering_sphere_radius = 1;;
+   
+	double scattering_sphere_radius = 0.5;
 	ierr = PetscOptionsGetScalar(NULL,"-scattering_sphere_radius",&scattering_sphere_radius,NULL); CHKERRQ(ierr);
 
 	HardSphereScatterWave function_evaluator(wavenumber,scattering_sphere_radius);
@@ -234,7 +236,7 @@ int main(int argc, char *argv[]) {
     case SOFT_SPHERE_SCATTER_WAVE:
 
       {
-	double scattering_sphere_radius = 1;;
+	double scattering_sphere_radius = 0.5;
 	ierr = PetscOptionsGetScalar(NULL,"-scattering_sphere_radius",&scattering_sphere_radius,NULL); CHKERRQ(ierr);
 
         SoftSphereScatterWave function_evaluator(wavenumber,scattering_sphere_radius);
@@ -296,7 +298,7 @@ int main(int argc, char *argv[]) {
 
     IncidentWave function_evaluator(wavenumber,wave_direction);
     ierr = solve_problem(m_field,"EX1_PROBLEM","FE1","reEX","imEX",ADD_VALUES,function_evaluator,is_partitioned); CHKERRQ(ierr);
-
+ 
   }
 
   if(is_partitioned) {
@@ -312,7 +314,7 @@ int main(int argc, char *argv[]) {
   if(save_postproc_mesh) {
 
     PostPocOnRefinedMesh post_proc(m_field);
-    ierr = post_proc.generateRefereneElemenMesh(); CHKERRQ(ierr);
+    ierr = post_proc.generateReferenceElementMesh(); CHKERRQ(ierr);
     ierr = post_proc.addFieldValuesPostProc("reEX"); CHKERRQ(ierr);
     ierr = post_proc.addFieldValuesPostProc("imEX"); CHKERRQ(ierr);
 
