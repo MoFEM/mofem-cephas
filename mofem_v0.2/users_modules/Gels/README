@@ -1,0 +1,20 @@
+
+Steady problem,
+============================================================
+make diffusion_steady && mpirun -np 1 ./diffusion_steady -my_file ../users_modules/moisture_transport/meshes/diffusion.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package mumps -ksp_monitor -my_order 1 -my_max_post_proc_ref_level 2
+
+
+Unsteady problem,
+============================================================
+make diffusion_unsteady && mpirun -np 1 ./diffusion_unsteady \
+  -my_file ../users_modules/moisture_transport/meshes/diffusion.cub \
+  -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package mumps -ksp_monitor \
+  -snes_type newtonls -snes_linesearch_type basic -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 -snes_monitor \
+  -ts_monitor -ts_type beuler -ts_dt 0.1 -ts_final_time 5 -snes_lag_jacobian -2 \
+  -my_order 1 -my_max_post_proc_ref_level 1
+
+
+Steady problem,
+============================================================
+make darceys_flow_steady && mpirun -np 1 ./darceys_flow_steady -my_file ../users_modules/moisture_transport/meshes/darceys_flow.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package mumps -ksp_monitor -my_order 1 -my_max_post_proc_ref_level 2
+

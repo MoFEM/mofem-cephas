@@ -1,0 +1,37 @@
+reset
+
+brick x 1 y 1 z 0.5
+
+# Bounary Conditions for Moisture Transport (Diffusion) problem 
+set duplicate block elements on 
+block 1 volume 1
+block 1 name 'MAT_ELASTIC_1' 
+block 1 attribute count 2
+block 1 attribute index 1 5.0e3
+block 1 attribute index 2 0.3
+
+block 2 volume 1
+block 2 name 'MAT_ELASTIC_2' 
+block 2 attribute count 2
+block 2 attribute index 1 6.0e3
+block 2 attribute index 2 0.25
+
+volume all scheme Tetmesh 
+volume all size auto factor 10
+mesh volume all 
+ 
+save as "/Users/zahur/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/Gels/meshes/Gels.cub" overwrite
+
+
+
+
+
+
+
+
+
+
+
+
+
+
