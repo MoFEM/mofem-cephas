@@ -72,15 +72,9 @@ Calculate strain at selected gauss points to see the deformed RVEs
 ===========================================================================
 make Strain_calculation && mpirun -np 1 ./Strain_calculation -my_file FE2_solution_100.h5m -ksp_type fgmres -pc_type asm -sub_pc_type lu -ksp_monitor -my_order 1
 
-mpirun -np 1 ../homogenisation/Cube_With_Inclusion_Disp -my_file ../users_modules/degradation_model/meshes/trans_iso/Textile_RVE_Mechanical.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1 -myapplied_strain 0.00752721,0.0164638,-0.00885303,-0.0265241,0.000197552,-0.000709495
+mpirun -np 1 ../homogenisation/Cube_With_Inclusion_Disp -my_file ../users_modules/degradation_model/meshes/trans_iso/Textile_RVE_Mechanical.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1 -myapplied_strain  -0.0333501,1.01435,-0.387859,0.320827,-0.155921,0.0138397
 
 
-
--0.0018056,0.0160905,-0.00713621,0.00061125,-4.64714e-06,-5.05443e-06
--0.00760946,0.0594774,-0.0181889,-0.00709124,0.005848,0.00232902
--0.00218694,0.0138932,-0.00591834,0.00176301,0.00023224,0.000105632
--0.0406652,0.00217073,0.00540522,-0.0228235,-0.00190902,-0.00396564
-0.00752721,0.0164638,-0.00885303,-0.0265241,0.000197552,-0.000709495
 
 
 Mechanical problem with RVE (isotropic matrix and tansverse-isotropic fibres)
@@ -89,7 +83,7 @@ Mechanical problem with RVE (isotropic matrix and tansverse-isotropic fibres)
 mpirun -np 1 ../homogenisation/TransIso_Potential_Flow_NoInt -my_file ../users_modules/degradation_model/meshes/trans_iso/Textile_RVE_Mechanical.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1
 
 ======= Periodic BCs
-make mech_macro_transIso_Periodic && mpirun -np 1 ./mech_macro_transIso_Periodic \
+make mech_macro_transIso_Periodic && mpirun -np 32 ./mech_macro_transIso_Periodic \
 -my_file_Macro solution_wt.h5m -my_file_RVE solution_RVE.h5m\
   -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist \
   -my_max_post_proc_ref_level 0 -my_order 1 -my_order_RVE 1

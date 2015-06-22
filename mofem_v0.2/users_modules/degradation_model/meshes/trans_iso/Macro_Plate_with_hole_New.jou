@@ -68,10 +68,12 @@ block 5 attribute index 2 0   #Poisson's ratio (This will not be used in the cal
 
 #Mark elements to see the strain for plotting different RVEs 
 set duplicate block elements on
-block 6 tet 816 810 136 1158 1593
+block 6 tet 711 4 52 644 516
 block 6 name "Ele_Strain_RVE"
 
 save as "/Users/zahur/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/trans_iso/Macro_Plate_with_hole_New.cub" overwrite
+
+
 
 
 

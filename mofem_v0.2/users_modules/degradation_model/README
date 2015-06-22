@@ -79,19 +79,27 @@ make mech_macro_iso_Disp && mpirun -np 1 ./mech_macro_iso_Disp \
 
 Calculate strain at selected gauss points to see the deformed RVEs
 ===========================================================================
-make Strain_calculation && mpirun -np 1 ./Strain_calculation -my_file FE2_solution_100.h5m -ksp_type fgmres -pc_type asm -sub_pc_type lu -ksp_monitor -my_order 1
+make Strain_calculation && mpirun -np 1 ./Strain_calculation -my_file FE2_solution_0.h5m -ksp_type fgmres -pc_type asm -sub_pc_type lu -ksp_monitor -my_order 1
 
 mpirun -np 4 ../homogenisation/Cube_With_Inclusion_Disp -my_file /mnt/home/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/Using_Textile_RVE/Textile_RVE_Mechanical.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1 -myapplied_strain -0.0019058,0.128656,-0.0194785,-0.00154818,0.00177996,-0.000416649
 
-Cube_With_Inclusion_Traction
-Cube_With_Inclusion_Disp
-Cube_With_Inclusion_Periodic
+
+mpirun -np 1 ../homogenisation/TransIso_Potential_Flow_NoInt -my_file /mnt/home/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/trans_iso/Textile_RVE_Mechanical.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1
+
+mpirun -np 1 ../homogenisation/TransIso_Disp_NoInt -my_file solution_RVE.h5m -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package mumps -ksp_monitor -my_order 1 -myapplied_strain -0.000849929,0.134455,-0.0509251,-0.00888687,-0.0019944,-0.00285056
+
+1     -0.0309796,0.132075,-0.0427185,0.0261619,-0.0104933,-0.00097949
+2     -0.0146689,0.110147,-0.0519355,0.0353233,-0.030792,-0.00164062
+3     -0.0843905,0.498766,-0.137887,-0.121388,0.00777828,0.0117274
+4     -0.0467561,0.01343,0.0189426,-0.0347325,-0.00452595,0.0145211
+5     -0.000849929,0.134455,-0.0509251,-0.00888687,-0.0019944,-0.00285056
+
 
 
 Mechanical problem with RVE (isotropic matrix and tansverse-isotropic fibres)
 ==========================================================================================
 ==== Potential flow for fibre directions 
-mpirun -np 1 ../homogenisation/TransIso_Potential_Flow_NoInt -my_file /mnt/home/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/trans_iso/Textile_RVE_Mechanical.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1
+mpirun -np 1 ../homogenisation/TransIso_Potential_Flow_NoInt -my_file /mnt/home/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/trans_iso/Textile_RVE_Mechanical.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 2
 
 ======= Displacement BCs
 make mech_macro_transIso_Disp && mpirun -np 1 ./mech_macro_transIso_Disp \
