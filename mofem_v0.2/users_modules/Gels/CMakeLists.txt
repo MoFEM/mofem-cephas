@@ -17,8 +17,6 @@
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
 include_directories("${MoFEM_PROJECT_SOURCE_DIR}/users_modules/Gels/src")
-include_directories(${UM_SOURCE_DIR}/elasticity/src)
-include_directories(${UM_SOURCE_DIR}/nonlinear_elastic_materials/src)
 
 
 # ===================== Darceys Flow steady ============================================
