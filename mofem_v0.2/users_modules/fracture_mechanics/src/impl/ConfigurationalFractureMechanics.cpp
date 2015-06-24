@@ -2488,7 +2488,9 @@ PetscErrorCode ConfigurationalFractureMechanics::fix_all_but_one(FieldInterface&
   ErrorCode rval;
   Tag th_freez;
   const int def_order = 0;
-  rval = m_field.get_moab().tag_get_handle("FROZEN_NODE",1,MB_TYPE_INTEGER,th_freez,MB_TAG_CREAT|MB_TAG_SPARSE,&def_order); CHKERR_PETSC(rval);
+  rval = m_field.get_moab().tag_get_handle(
+    "FROZEN_NODE",1,MB_TYPE_INTEGER,th_freez,MB_TAG_CREAT|MB_TAG_SPARSE,&def_order
+  ); CHKERR_PETSC(rval);
 
   ierr = PetscPrintf(PETSC_COMM_WORLD,"freeze front nodes:\n");
   map<EntityHandle,double>::iterator max_mit = map_ent_j.begin();
@@ -2514,12 +2516,10 @@ PetscErrorCode ConfigurationalFractureMechanics::fix_all_but_one(FieldInterface&
     double g_j = map_ent_g[mit->first]/mit->second;
     ierr = PetscPrintf(PETSC_COMM_WORLD,
       "front node = %ld max_j = %6.4e j = %6.4e (%6.4e) g/j = %4.3f step work of fracture = %2.1g",
-      mit->first,max_j,mit->second,fraction,g_j,step_work_of_fracture); CHKERRQ(ierr);
-    /*if(da == 0) {
-      step_work_of_fracture = 0;
-    }*/
+      mit->first,max_j,mit->second,fraction,g_j,step_work_of_fracture
+    ); CHKERRQ(ierr);
     bool freez_or_not_to_freez;
-    if( (fraction > fraction_treshold /*|| fraction_gc > fraction_treshold*/ /*|| step_work_of_fracture < 0*/ )&&(mit!=max_mit)) {
+    if( (fraction > fraction_treshold) && (mit!=max_mit) ) {
       freez_or_not_to_freez = true;
     } else {
       freez_or_not_to_freez = false;
@@ -2549,15 +2549,20 @@ PetscErrorCode ConfigurationalFractureMechanics::fix_all_but_one(FieldInterface&
       if(freez == 0) {
         ierr = PetscPrintf(PETSC_COMM_WORLD,"\n");
       } else if(freez == 1) {
-        ierr = PetscPrintf(PETSC_COMM_WORLD," unfreeze\n");
-        int freez = 0;
-        rval = m_field.get_moab().tag_set_data(th_freez,&node,1,&freez); CHKERR_PETSC(rval);
+        if((gc<map_ent_g[mit->first])||(mit==max_mit)) {
+          ierr = PetscPrintf(PETSC_COMM_WORLD," unfreeze\n");
+          int freez = 0;
+          rval = m_field.get_moab().tag_set_data(th_freez,&node,1,&freez); CHKERR_PETSC(rval);
+        } else {
+          ierr = PetscPrintf(PETSC_COMM_WORLD," freeze < gc\n");
+          fix_nodes.insert(mit->first);
+        }
       }
     }
   }
   if(freeze_all_but_one) {
     if(max_g_j_ent == 0) {
-      SETERRQ(PETSC_COMM_SELF,1,"imosible case, at least one node shold not break");
+      SETERRQ(PETSC_COMM_SELF,1,"Impossible case, at least one node should not break");
     }
     ierr = PetscPrintf(PETSC_COMM_WORLD,"\nunfreez %ld g/j = %4.3f\n",max_g_j_ent,max_g_j);
     int freez = 0;
@@ -3207,7 +3212,7 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(
     ierr = SNESGetIterationNumber(*snes,&its); CHKERRQ(ierr);
     ierr = PetscPrintf(PETSC_COMM_WORLD,"number of Newton iterations = %D\n",its); CHKERRQ(ierr);
     if(reason0 < 0) {
-      
+
       ierr = m_field.set_global_ghost_vector("COUPLED_PROBLEM",COL,D0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
       ierr = VecCopy(D0,D); CHKERRQ(ierr);
       //smoother.stabilise = true;
