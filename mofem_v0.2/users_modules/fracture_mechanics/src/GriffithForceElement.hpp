@@ -280,9 +280,10 @@ struct GriffithForceElement {
       PetscErrorCode calculatePenalty(double beta) {
         PetscFunctionBegin;
 
-        dElta = currentArea-referenceArea;
+        dElta = (currentArea-referenceArea)/currentArea;
         dElta *= dElta*dElta;
         dElta = -fmin(0,dElta);
+        dElta *= currentArea;
 
         NTN.resize(9,9,false);
         noalias(NTN) = beta*prod(trans(N),N);
@@ -571,15 +572,14 @@ struct GriffithForceElement {
 
         for(int gg = 0;gg!=nb_gauss_pts;gg++) {
 
-          double val = getGaussPts()(2,gg)*0.5;
-
+          double val = blockData.penalty*getGaussPts()(2,gg)*0.5;
           ierr = auxFun.matrixB(gg,data); CHKERRQ(ierr);
           ierr = auxFun.matrixN(gg,data); CHKERRQ(ierr);
           ierr = auxFun.dIffX(); CHKERRQ(ierr);
           ierr = auxFun.nOrmal(); CHKERRQ(ierr);
           ierr = auxFun.matrixA(); CHKERRQ(ierr);
           ierr = auxFun.calculateReferenceNormal(); CHKERRQ(ierr);
-          ierr = auxFun.calculatePenalty(val*blockData.penalty);
+          ierr = auxFun.calculatePenalty(val);
 
         }
 
