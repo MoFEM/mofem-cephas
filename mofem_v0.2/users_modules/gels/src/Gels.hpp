@@ -32,7 +32,7 @@ template<typename TYPE>
 struct Gel {
 
   struct AuxFunctions {
-    
+
     // Input
 
     double vAlpha; ///< Poisson ration spring alpha
@@ -131,7 +131,7 @@ struct Gel {
       PetscFunctionReturn(0);
     }
 
-  }
+  };
 
 };
 
