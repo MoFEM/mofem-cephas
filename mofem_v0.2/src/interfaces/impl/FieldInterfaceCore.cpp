@@ -3230,36 +3230,39 @@ PetscErrorCode Core::remove_ents_from_finite_element_by_bit_ref(const BitRefLeve
     EntityHandle meshset = fe_it->get_meshset();
     Range ents_to_remove;
     rval = moab.get_entities_by_handle(
-      meshset,ents_to_remove,false); CHKERR_PETSC(rval);
+      meshset,ents_to_remove,false
+    ); CHKERR_PETSC(rval);
     Range::iterator eit = ents_to_remove.begin();
     for(;eit!=ents_to_remove.end();) {
       if(moab.type_from_handle(*eit)==MBENTITYSET) {
-	eit = ents_to_remove.erase(eit);
-	continue;
+        eit = ents_to_remove.erase(eit);
+        continue;
       }
       BitRefLevel bit2;
       rval = moab.tag_get_data(th_RefBitLevel,&*eit,1,&bit2); CHKERR_PETSC(rval);
       if((bit2&mask)!=bit2) {
-	eit = ents_to_remove.erase(eit);
-	continue;
+        eit = ents_to_remove.erase(eit);
+        continue;
       }
       if((bit2&bit).none()) {
-	eit = ents_to_remove.erase(eit);
-	continue;
+        eit = ents_to_remove.erase(eit);
+        continue;
       }
       EntMoFEMFiniteElement_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator iit;
       iit = finiteElementsMoFEMEnts.get<Composite_Name_And_Ent_mi_tag>().find(
-	boost::make_tuple(fe_it->get_name(),*eit));
+        boost::make_tuple(fe_it->get_name(),*eit)
+      );
       if(iit != finiteElementsMoFEMEnts.get<Composite_Name_And_Ent_mi_tag>().end()) {
-	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
       }
       eit++;
     }
     rval = moab.remove_entities(meshset,ents_to_remove); CHKERR_PETSC(rval);
     if(verb>0) {
       PetscPrintf(comm,
-	"number of removed entities = %u from finite element %s\n",
-	ents_to_remove.size(),fe_it->get_name().c_str());
+        "number of removed entities = %u from finite element %s\n",
+        ents_to_remove.size(),fe_it->get_name().c_str()
+      );
     }
   }
   PetscFunctionReturn(0);
@@ -3313,18 +3316,18 @@ PetscErrorCode Core::delete_ents_by_bit_ref(const BitRefLevel &bit,const BitRefL
     Range::iterator eit = ents_to_delete.begin();
     for(;eit!=ents_to_delete.end();) {
       if(moab.type_from_handle(*eit)==MBENTITYSET) {
-	eit = ents_to_delete.erase(eit);
-	continue;
+        eit = ents_to_delete.erase(eit);
+        continue;
       }
       BitRefLevel bit2;
       rval = moab.tag_get_data(th_RefBitLevel,&*eit,1,&bit2); CHKERR_PETSC(rval);
       if((bit2&mask)!=bit2) {
-	eit = ents_to_delete.erase(eit);
-	continue;
+        eit = ents_to_delete.erase(eit);
+        continue;
       }
       if((bit2&bit).none()) {
-	eit = ents_to_delete.erase(eit);
-	continue;
+        eit = ents_to_delete.erase(eit);
+        continue;
       }
       eit++;
     }
@@ -3336,28 +3339,29 @@ PetscErrorCode Core::delete_ents_by_bit_ref(const BitRefLevel &bit,const BitRefL
       pit = refinedEntities.get<Ent_Ent_mi_tag>().lower_bound(*eit);
       hi_pit = refinedEntities.get<Ent_Ent_mi_tag>().upper_bound(*eit);
       for(;pit!=hi_pit;pit++) {
-	EntityHandle ent = pit->get_ref_ent();
-	if(ents_to_delete.find(ent) != ents_to_delete.end()) {
-	  continue;
-	}
-	/*if(rAnk==0) {
-	  EntityHandle out_meshset;
-	  rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
-	  rval = moab.add_entities(out_meshset,&ent,1); CHKERR_PETSC(rval);
-	  rval = moab.add_entities(out_meshset,&*eit,1); CHKERR_PETSC(rval);
-	  rval = moab.write_file("error.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
-	  rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
-	}
-	ostringstream ss;
-	ss << "child:\n" << *pit << endl;
-	ss << "parent:\n" << RefMoFEMEntity(moab,*eit) << endl;
-	SETERRQ1(PETSC_COMM_SELF,1,
-	  "entity can not be removed, it is parent for some other entity\n%s",ss.str().c_str());*/
-	bool success = refinedEntities.modify(
-	  refinedEntities.project<0>(pit),RefMoFEMEntity_change_remove_parent(moab));
-	if(!success) {
-	  SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"mofification unsucessfull");
-	}
+        EntityHandle ent = pit->get_ref_ent();
+        if(ents_to_delete.find(ent) != ents_to_delete.end()) {
+          continue;
+        }
+        /*if(rAnk==0) {
+        EntityHandle out_meshset;
+        rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
+        rval = moab.add_entities(out_meshset,&ent,1); CHKERR_PETSC(rval);
+        rval = moab.add_entities(out_meshset,&*eit,1); CHKERR_PETSC(rval);
+        rval = moab.write_file("error.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
+        rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
+        }
+        ostringstream ss;
+        ss << "child:\n" << *pit << endl;
+        ss << "parent:\n" << RefMoFEMEntity(moab,*eit) << endl;
+        SETERRQ1(PETSC_COMM_SELF,1,
+        "entity can not be removed, it is parent for some other entity\n%s",ss.str().c_str());*/
+        bool success = refinedEntities.modify(
+          refinedEntities.project<0>(pit),RefMoFEMEntity_change_remove_parent(moab)
+        );
+        if(!success) {
+          SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"mofification unsucessfull");
+        }
       }
     }
   }
@@ -3370,7 +3374,7 @@ PetscErrorCode Core::delete_ents_by_bit_ref(const BitRefLevel &bit,const BitRefL
       Range meshsets;
       rval = moab.get_entities_by_type(cubit_meshset,MBENTITYSET,meshsets);  CHKERR_PETSC(rval);
       for(Range::iterator mit = meshsets.begin();mit!=meshsets.end();mit++) {
-	rval = moab.remove_entities(*mit,ents_to_delete); CHKERR_PETSC(rval);
+        rval = moab.remove_entities(*mit,ents_to_delete); CHKERR_PETSC(rval);
       }
     }
   }
