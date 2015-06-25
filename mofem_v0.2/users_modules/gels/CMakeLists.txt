@@ -1,8 +1,3 @@
-# Copyright (C) 2013, Zahur Ullah (Zahur.Ullah@glasgow.ac.uk)
-# The MoFEM package is copyrighted by Lukasz Kaczmarczyk. 
-# It can be freely used for educational and research purposes 
-# by other institutions. If you use this softwre pleas cite my work. 
-#
 # MoFEM is free software: you can redistribute it and/or modify it under
 # the terms of the GNU Lesser General Public License as published by the
 # Free Software Foundation, either version 3 of the License, or (at your
@@ -19,8 +14,7 @@
 include_directories("${MoFEM_PROJECT_SOURCE_DIR}/users_modules/Gels/src")
 
 
-# ===================== Darceys Flow steady ============================================
-add_executable(Gels_unsteady ${UM_SOURCE_DIR}/Gels/Gels_unsteady.cpp)
+add_executable(Gels_unsteady ${UM_SOURCE_DIR}/gels/Gels_unsteady.cpp)
 target_link_libraries(Gels_unsteady
   users_modules
   mofem_finite_elements

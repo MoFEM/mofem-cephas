@@ -20,13 +20,13 @@
 #include <MoFEM.hpp>
 using namespace MoFEM;
 
-#include <gels_calculation.hpp>
+#include <Gels.hpp>
 
 int main(int argc, char *argv[]) {
-  
+
   cout<<"from Gel main "<<endl;
   Gel<double> Gel_double;
-  
+
   double vAlpha, gAlpha;
 
   vAlpha=0.3; gAlpha=1;
@@ -35,7 +35,7 @@ int main(int argc, char *argv[]) {
   strainMain(0,0)=0.01;  strainMain(0,1)=0.02;  strainMain(0,2)=0.03;
   strainMain(1,0)=0.04;  strainMain(1,1)=0.05;  strainMain(1,2)=0.06;
   strainMain(2,0)=0.07;  strainMain(2,1)=0.08;  strainMain(2,2)=0.09;
-  
+
   cout<<"strainMain = "<<strainMain<<endl;
   Gel_double.calcualteStressAlpha(strainMain, vAlpha, gAlpha);
 
@@ -47,7 +47,7 @@ int main(int argc, char *argv[]) {
   vBeta=0.3; gBeta=1;
   Gel_double.calcualteStressBeta(strainMain, strainHat, vBeta, gBeta);
 
-  
+
   double vBetaHat, gBetaHat;
   vBetaHat=0.3; gBetaHat=1;
   Gel_double.calcualteStrainHatDot(vBetaHat, gBetaHat);
@@ -56,7 +56,7 @@ int main(int argc, char *argv[]) {
   mu=0.2; omega=3;
   Gel_double.calcualteStressBetaHat(mu, omega);
 
-  
+
   double permeability, viscosity;
   permeability=1;
   viscosity=2;
@@ -66,4 +66,3 @@ int main(int argc, char *argv[]) {
   Gel_double.calcualteFlux(permeability, viscosity, omega, gradientMu);
   return 0;
 }
-
