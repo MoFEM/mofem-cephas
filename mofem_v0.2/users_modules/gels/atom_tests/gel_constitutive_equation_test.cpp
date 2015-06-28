@@ -1,8 +1,3 @@
-/* Copyright (C) 2015, Zahur Ullah (Zahur.Ullah AT glasgow.ac.uk)
- * --------------------------------------------------------------
- * FIXME: DESCRIPTION
- */
-
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -20,11 +15,16 @@
 #include <MoFEM.hpp>
 using namespace MoFEM;
 
+#include <boost/numeric/ublas/vector_proxy.hpp>
+#include <boost/numeric/ublas/matrix.hpp>
+#include <boost/numeric/ublas/matrix_proxy.hpp>
+#include <boost/numeric/ublas/vector.hpp>
+#include <adolc/adolc.h>
 #include <Gels.hpp>
 
 int main(int argc, char *argv[]) {
 
-  cout<<"from Gel main "<<endl;
+  /*cout<<"from Gel main "<<endl;
   Gel<double> Gel_double;
 
   double vAlpha, gAlpha;
@@ -63,6 +63,7 @@ int main(int argc, char *argv[]) {
   ublas::vector<double> gradientMu;
   gradientMu.resize(3);
   gradientMu(0)=0.4;  gradientMu(1)=0.3;  gradientMu(2)=0.5;
-  Gel_double.calcualteFlux(permeability, viscosity, omega, gradientMu);
+  Gel_double.calcualteFlux(permeability, viscosity, omega, gradientMu);*/
+
   return 0;
 }

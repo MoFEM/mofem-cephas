@@ -12,4 +12,19 @@
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
 include_directories(${MoFEM_PROJECT_SOURCE_DIR}/users_modules/gels/src)
-  
+
+add_executable(gel_constitutive_equation_test
+  ${UM_SOURCE_DIR}/gels/atom_tests/gel_constitutive_equation_test.cpp
+)
+
+target_link_libraries(gel_constitutive_equation_test
+  users_modules
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_third_party
+  mofem_cblas
+  ${MoFEM_PROJECT_LIBS}
+)
