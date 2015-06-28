@@ -284,7 +284,7 @@ struct NonLinearInterfaceFEMethod: public ObosleteUsersModules::InterfaceFEMetho
     ierr = CalcR(); CHKERRQ(ierr);
     //Calculate Matrices
     ierr = Matrices();    CHKERRQ(ierr);
-    //Calcualte gap
+    //calculate gap
     ierr = Calc_gap(); CHKERRQ(ierr);
     ierr = Calc_g(); CHKERRQ(ierr);
 

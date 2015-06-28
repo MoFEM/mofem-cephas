@@ -122,48 +122,28 @@ int main(int argc, char *argv[]) {
   ierr = ce.calculateVolumeDot(); CHKERRQ(ierr);
   my_split << "volumeDot\n" << ce.volumeDot << endl << endl;
 
+  ierr = ce.calculateStressAlpha(); CHKERRQ(ierr);
+  my_split << "stressAlpha\n" << ce.stressAlpha << endl << endl;
+
+  ierr = ce.calculateStressBeta(); CHKERRQ(ierr);
+  my_split << "stressBeta\n" << ce.stressBeta << endl << endl;
+
+  ierr = ce.calculateStressBetaHat(); CHKERRQ(ierr);
+  my_split << "stressBeta\n" << ce.stressBetaHat << endl << endl;
+
+  ierr = ce.calculateStressTotal(); CHKERRQ(ierr);
+  my_split << "stressTotal\n" << ce.stressTotal << endl << endl;
+
+  ierr = ce.calculateSolventFlux(); CHKERRQ(ierr);
+  my_split << "solventFlux\n" << ce.solventFlux << endl << endl;
+
+  ierr = ce.calculateStrainHatFlux(); CHKERRQ(ierr);
+  my_split << "strainHatDot\n" << ce.strainHatDot << endl << endl;
+
+  ierr = ce.calculateResidualStrainHat(); CHKERRQ(ierr);
+  my_split << "residualStrainHat\n" << ce.residualStrainHat << endl << endl;
+
   PetscFinalize();
-
-  /*cout<<"from Gel main "<<endl;
-  Gel<double> Gel_double;
-
-  double vAlpha, gAlpha;
-
-  vAlpha=0.3; gAlpha=1;
-   ublas::matrix<double> strainMain;
-  strainMain.resize(3,3); strainMain.clear();
-  strainMain(0,0)=0.01;  strainMain(0,1)=0.02;  strainMain(0,2)=0.03;
-  strainMain(1,0)=0.04;  strainMain(1,1)=0.05;  strainMain(1,2)=0.06;
-  strainMain(2,0)=0.07;  strainMain(2,1)=0.08;  strainMain(2,2)=0.09;
-
-  cout<<"strainMain = "<<strainMain<<endl;
-  Gel_double.calcualteStressAlpha(strainMain, vAlpha, gAlpha);
-
-  ublas::matrix<double> strainHat;
-  strainHat=0.5*strainMain;
-  cout<<"strainHat = "<<strainHat<<endl;
-
-  double vBeta, gBeta;
-  vBeta=0.3; gBeta=1;
-  Gel_double.calcualteStressBeta(strainMain, strainHat, vBeta, gBeta);
-
-
-  double vBetaHat, gBetaHat;
-  vBetaHat=0.3; gBetaHat=1;
-  Gel_double.calcualteStrainHatDot(vBetaHat, gBetaHat);
-
-  double mu, omega;
-  mu=0.2; omega=3;
-  Gel_double.calcualteStressBetaHat(mu, omega);
-
-
-  double permeability, viscosity;
-  permeability=1;
-  viscosity=2;
-  ublas::vector<double> gradientMu;
-  gradientMu.resize(3);
-  gradientMu(0)=0.4;  gradientMu(1)=0.3;  gradientMu(2)=0.5;
-  Gel_double.calcualteFlux(permeability, viscosity, omega, gradientMu);*/
 
   return 0;
 }
