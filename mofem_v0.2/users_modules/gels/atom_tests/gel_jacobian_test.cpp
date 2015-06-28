@@ -1,3 +1,7 @@
+/*s* \file gel_jacobian_test.cpp
+  \brief Atom test testing calculation of element residual vectors and tangent matrices.
+*/
+
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -155,7 +159,7 @@ int main(int argc, char *argv[]) {
   Gel gel(m_field);
   {
 
-    Gel::BlockMaterialData &material_data = gel.BlockMaterialData;
+    Gel::BlockMaterialData &material_data = gel.blockMaterialData;
 
     // Set material parameters
     material_data.gAlpha = 1;
@@ -168,21 +172,21 @@ int main(int argc, char *argv[]) {
     material_data.vIscosity = 1;
     material_data.pErmeability = 2.;
 
-    Gel::CommonData common_data = gel.CommonData;
+    Gel::CommonData common_data = gel.commonData;
     common_data.spatialPositionName = "SPATIAL_POSITION";
     common_data.spatialPositionNameDot = "SPATIAL_POSITION_DOT";
     common_data.muName = "SOLVENT_CONCENTRATION";
     common_data.strainHatName = "HAT_EPS";
     common_data.strainHatNameDot = "HAT_EPS_DOT";
 
-    Gel::GelFE fe_ptr[] = { &gel.feRhs, &gel.feLhs };
+    Gel::GelFE *fe_ptr[] = { &gel.feRhs, &gel.feLhs };
     for(int ss = 0;ss<2;ss++) {
 
       fe_ptr[ss]->getOpPtrVector().push_back(
         new Gel::OpGetDataAtGaussPts(
           "SPATIAL_POSITION",
           NULL,
-          &commn_data.gradientAtGaussPts["SPATIAL_POSITION"]
+          &common_data.gradAtGaussPts["SPATIAL_POSITION"]
         )
       );
 
@@ -190,22 +194,22 @@ int main(int argc, char *argv[]) {
         new Gel::OpGetDataAtGaussPts(
           "SPATIAL_POSITION_DOT",
           NULL,
-          &commn_data.gradientAtGaussPts["SPATIAL_POSITION_DOT"]
+          &common_data.gradAtGaussPts["SPATIAL_POSITION_DOT"]
         )
       );
 
       fe_ptr[ss]->getOpPtrVector().push_back(
         new Gel::OpGetDataAtGaussPts(
           "SPATIAL_POSITION_DOT",
-          &commn_data.dataAtGaussPts["SOLVENT_CONCENTRATION"],
-          &commn_data.gradientAtGaussPts["SOLVENT_CONCENTRATION"]
+          &common_data.dataAtGaussPts["SOLVENT_CONCENTRATION"],
+          &common_data.gradAtGaussPts["SOLVENT_CONCENTRATION"]
         )
       );
 
       fe_ptr[ss]->getOpPtrVector().push_back(
         new Gel::OpGetDataAtGaussPts(
           "HAT_EPS",
-          &commn_data.dataAtGaussPts["HAT_EPS"],
+          &common_data.dataAtGaussPts["HAT_EPS"],
           NULL,
           NULL,
           MBTET
@@ -215,7 +219,7 @@ int main(int argc, char *argv[]) {
       fe_ptr[ss]->getOpPtrVector().push_back(
         new Gel::OpGetDataAtGaussPts(
           "HAT_EPS_DOT",
-          &commn_data.dataAtGaussPts["HAT_EPS_DOT"],
+          &common_data.dataAtGaussPts["HAT_EPS_DOT"],
           NULL,
           NULL,
           MBTET
