@@ -42,6 +42,7 @@ struct Gel {
   enum TagEvaluate {
     STRESSTOTAL,
     SOLVENTFLUX,
+    VOLUMERATE,
     RESIDUALSTRAINHAT
   };
 
@@ -101,6 +102,7 @@ struct Gel {
 
     ublas::matrix<TYPE> stressTotal;              ///< Total stress
     ublas::vector<TYPE> solventFlux;
+    TYPE volumeRate;
     ublas::matrix<TYPE> residualStrainHat;        ///< Residual for calculation epsilon hat
 
     PetscErrorCode calculateCauchyDefromationTensor() {
@@ -224,22 +226,6 @@ struct Gel {
       PetscFunctionReturn(0);
     }
 
-    /** \brief Calculate flux
-
-    \f[
-    J_k =
-    -\left(
-    \frac{\kappa}{\eta\Omega^2}
-    \right)
-    \mu_{,i}
-    \f]
-
-    */
-    PetscErrorCode calcualteFlux() {
-      PetscFunctionBegin;
-      solventFlux=-(dAta.pErmeability/(dAta.vIscosity*dAta.oMega*dAta.oMega))*gradientMu;
-      PetscFunctionReturn(0);
-    }
 
     // Functions calculating output variables
 
@@ -260,6 +246,37 @@ struct Gel {
       PetscFunctionReturn(0);
     }
 
+    /** \brief Calculate flux
+
+    \f[
+    J_k =
+    -\left(
+    \frac{\kappa}{\eta\Omega^2}
+    \right)
+    \mu_{,i}
+    \f]
+
+    */
+    PetscErrorCode calcualteFlux() {
+      PetscFunctionBegin;
+      solventFlux=-(dAta.pErmeability/(dAta.vIscosity*dAta.oMega*dAta.oMega))*gradientMu;
+      PetscFunctionReturn(0);
+    }
+
+
+    /** \brief Volume change at material point
+
+      FIXME: For simplicity as first approximation set volule change
+      as trace of gradient total strain
+
+    */
+    PetscErrorCode calculateVolumeRate() {
+      PetscFunctionBegin;
+      volumeRate = traceStrainTotalDot;
+      PetscFunctionReturn(0);
+    }
+
+
   };
 
   ConstitutiveEquation<adouble> constitutiveEquation;
@@ -277,11 +294,13 @@ struct Gel {
 
     vector<ublas::matrix<double> > stressTotal;
     vector<ublas::vector<double> > solventFlux;
+    vector<double> volumeRate;
     vector<ublas::matrix<double> > residualStrainHat;
 
     vector<double*> jacRowPtr;
     vector<ublas::matrix<double> > jacStressTotal;
-    vector<double> jacSolventFlux;
+    vector<ublas::matrix<double> > jacSolventFlux;
+    vector<ublas::vector<double> > jacVolumeRate;
     vector<ublas::matrix<double> > jacStrainHat;
 
   };
@@ -572,6 +591,48 @@ struct Gel {
       PetscFunctionReturn(0);
     }
 
+    PetscErrorCode recordVolumeRate() {
+      PetscFunctionBegin;
+
+      if(tagS[VOLUMERATE]>0) {
+        PetscFunctionReturn(0);
+      }
+
+      PetscErrorCode ierr;
+
+      ublas::matrix<double> &F = (commonData.gradAtGaussPts[commonData.spatialPositionName])[0];
+      ublas::matrix<double> &F_dot = (commonData.gradAtGaussPts[commonData.spatialPositionNameDot])[0];
+
+      trace_on(tagS[VOLUMERATE]);
+      {
+
+          // Activate rate of gradient of defamation
+          nbActiveVariables[tagS[VOLUMERATE]] = 0;
+          for(int dd1 = 0;dd1<3;dd1++) {
+            for(int dd2 = 0;dd2<3;dd2++) {
+              cE.F(dd1,dd2) <<= F(dd1,dd2);
+              nbActiveVariables[tagS[VOLUMERATE]]++;
+            }
+          }
+          for(int dd1 = 0;dd1<3;dd1++) {
+            for(int dd2 = 0;dd2<3;dd2++) {
+              cE.FDot(dd1,dd2) <<= F_dot(dd1,dd2);
+              nbActiveVariables[tagS[VOLUMERATE]]++;
+            }
+          }
+
+          ierr = cE.calculateVolumeRate(); CHKERRQ(ierr);
+
+          nbActiveResults[tagS[VOLUMERATE]] = 0;
+          commonData.volumeRate.resize(nbGaussPts);
+          cE.volumeRate >>= commonData.volumeRate[0];
+          nbActiveResults[tagS[VOLUMERATE]]++;
+
+      }
+
+      PetscFunctionReturn(0);
+    }
+
     PetscErrorCode recordResidualStrainHat() {
       PetscFunctionBegin;
 
@@ -728,7 +789,10 @@ struct Gel {
             commonData.jacStressTotal.resize(nbGaussPts);
             commonData.jacRowPtr.resize(nbActiveResults[tagS[STRESSTOTAL]]);
           }
-          commonData.jacStressTotal[gg].resize(3,3);
+          commonData.jacStressTotal[gg].resize(
+            nbActiveResults[tagS[STRESSTOTAL]],
+            nbActiveVariables[tagS[STRESSTOTAL]]
+          );
           for(int dd = 0;dd<nbActiveResults[tagS[STRESSTOTAL]];dd++) {
             commonData.jacRowPtr[dd] = &commonData.jacStressTotal[gg](dd,0);
           }
@@ -779,16 +843,77 @@ struct Gel {
 
         if(calculateJacobianBool) {
           if(gg == 0) {
-            commonData.jacSolventFlux.resize(nbGaussPts,false);
+            commonData.jacSolventFlux.resize(nbGaussPts);
             commonData.jacRowPtr.resize(nbActiveResults[tagS[SOLVENTFLUX]]);
           }
+          commonData.jacSolventFlux[gg].resize(
+            nbActiveResults[tagS[SOLVENTFLUX]],
+            nbActiveVariables[tagS[SOLVENTFLUX]],
+            false
+          );
           for(int dd = 0;dd<nbActiveResults[tagS[SOLVENTFLUX]];dd++) {
-            commonData.jacRowPtr[dd] = &commonData.jacSolventFlux[gg];
+            commonData.jacRowPtr[dd] = &(commonData.jacSolventFlux[gg](0,0));
           }
-
           ierr = calculateJacobian(SOLVENTFLUX); CHKERRQ(ierr);
 
         }
+      }
+
+      PetscFunctionReturn(0);
+    }
+
+    PetscErrorCode calculateAtIntPtsVolumeRate() {
+      PetscFunctionBegin;
+
+      if(tagS[VOLUMERATE]>0) {
+        PetscFunctionReturn(0);
+      }
+
+      PetscErrorCode ierr;
+
+      activeVariables.resize(nbActiveVariables[tagS[VOLUMERATE]],false);
+
+      for(int gg = 0;gg<nbGaussPts;gg++) {
+
+        ublas::matrix<double> &F = (commonData.gradAtGaussPts[commonData.spatialPositionName])[gg];
+        ublas::matrix<double> &F_dot = (commonData.gradAtGaussPts[commonData.spatialPositionNameDot])[gg];
+
+        int nb_active_variables = 0;
+        // Activate gradient of defamation
+        for(int dd1 = 0;dd1<3;dd1++) {
+          for(int dd2 = 0;dd2<3;dd2++) {
+            activeVariables[nb_active_variables++] = F(dd1,dd2);
+          }
+        }
+        for(int dd1 = 0;dd1<3;dd1++) {
+          for(int dd2 = 0;dd2<3;dd2++) {
+            activeVariables[nb_active_variables++] = F_dot(dd1,dd2);
+          }
+        }
+
+        if(nb_active_variables!=nbActiveVariables[tagS[VOLUMERATE]]) {
+          SETERRQ(
+            PETSC_COMM_SELF,MOFEM_IMPOSIBLE_CASE,"Number of active variables does not much"
+          );
+        }
+
+        if(calculateResidualBool) {
+          ierr = calculateFunction(VOLUMERATE,&commonData.stressTotal[gg](0,0)); CHKERRQ(ierr);
+        }
+
+        if(calculateJacobianBool) {
+
+          if(gg == 0) {
+            commonData.jacVolumeRate.resize(nbGaussPts);
+            commonData.jacRowPtr.resize(nbActiveResults[tagS[VOLUMERATE]]);
+          }
+          commonData.jacVolumeRate[gg].resize(nbActiveVariables[tagS[VOLUMERATE]]);
+          commonData.jacRowPtr[0] = &commonData.jacVolumeRate[gg][0];
+
+          ierr = calculateJacobian(VOLUMERATE); CHKERRQ(ierr);
+
+        }
+
       }
 
       PetscFunctionReturn(0);
@@ -849,7 +974,11 @@ struct Gel {
             commonData.jacStrainHat.resize(nbGaussPts);
             commonData.jacRowPtr.resize(nbActiveResults[tagS[RESIDUALSTRAINHAT]]);
           }
-          commonData.jacStrainHat[gg].resize(3,3,false);
+          commonData.jacStrainHat[gg].resize(
+            nbActiveResults[tagS[RESIDUALSTRAINHAT]],
+            nbActiveVariables[tagS[RESIDUALSTRAINHAT]],
+            false
+          );
           for(int dd = 0;dd<nbActiveResults[tagS[RESIDUALSTRAINHAT]];dd++) {
             commonData.jacRowPtr[dd] = &commonData.jacStrainHat[gg](dd,0);
           }

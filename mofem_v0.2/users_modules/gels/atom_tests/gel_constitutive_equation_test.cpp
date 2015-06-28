@@ -116,7 +116,6 @@ int main(int argc, char *argv[]) {
   ierr = ce.calculateStrainTotal(); CHKERRQ(ierr);
   my_split << "strainTotal\n" << ce.strainTotal << endl << endl;
 
-  
 
   PetscFinalize();
 
