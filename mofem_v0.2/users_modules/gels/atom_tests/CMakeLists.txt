@@ -28,3 +28,20 @@ target_link_libraries(gel_constitutive_equation_test
   mofem_cblas
   ${MoFEM_PROJECT_LIBS}
 )
+
+
+add_executable(gel_jacobian_test
+  ${UM_SOURCE_DIR}/gels/atom_tests/gel_jacobian_test.cpp
+)
+
+target_link_libraries(gel_jacobian_test
+  users_modules
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_third_party
+  mofem_cblas
+  ${MoFEM_PROJECT_LIBS}
+)

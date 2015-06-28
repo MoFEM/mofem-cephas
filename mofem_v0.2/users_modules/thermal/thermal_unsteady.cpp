@@ -1,6 +1,6 @@
 /** \file thermal_unsteady.cpp
  \ingroup mofem_thermal_elem
- \brief Example of thermal unsteady analyse.
+ \brief Example of thermal unsteady analyze.
 */
 
 /* This file is part of MoFEM.
@@ -36,7 +36,7 @@ namespace po = boost::program_options;
 #include <moab/AdaptiveKDTree.hpp>
 #include <moab/Skinner.hpp>
 
-#include <adolc/adolc.h> 
+#include <adolc/adolc.h>
 
 #include <GenricClimateModel.hpp>
 #include <GroundSurfaceTemerature.hpp>
@@ -51,7 +51,7 @@ extern "C" {
 
 #endif // __GROUNDSURFACETEMERATURE_HPP
 
-static char help[] = 
+static char help[] =
   "-my_file mesh file\n"
   "-order set approx. order to all blocks\n"
   "-my_block_config set block data\n"
@@ -78,8 +78,8 @@ struct MonitorPostProc: public FEMethod {
   bool iNit;
   int pRT;
 
-  MonitorPostProc(FieldInterface &m_field): 
-    FEMethod(),mField(m_field),postProc(m_field),iNit(false) { 
+  MonitorPostProc(FieldInterface &m_field):
+    FEMethod(),mField(m_field),postProc(m_field),iNit(false) {
     PetscErrorCode ierr;
     PetscBool flg = PETSC_TRUE;
     ierr = PetscOptionsGetInt(PETSC_NULL,"-my_output_prt",&pRT,&flg); CHKERRABORT(PETSC_COMM_WORLD,ierr);
@@ -168,7 +168,7 @@ int main(int argc, char *argv[]) {
   Interface& moab = mb_instance;
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
   //create MoFEM (Joseph) database
   MoFEM::Core core(moab);
   FieldInterface& m_field = core;
@@ -188,7 +188,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,3,MF_ZERO); CHKERRQ(ierr);
 
   //meshset consisting all entities in mesh
-  EntityHandle root_set = moab.get_root_set(); 
+  EntityHandle root_set = moab.get_root_set();
   //add entities to field (root_mesh, i.e. on all mesh etities fields are approx.)
   ierr = m_field.add_ents_to_field_by_TETs(root_set,"TEMP"); CHKERRQ(ierr);
   ierr = m_field.add_ents_to_field_by_TETs(root_set,"TEMP_RATE"); CHKERRQ(ierr);
@@ -222,7 +222,7 @@ int main(int argc, char *argv[]) {
   bool solar_radiation = false;
   if(block_config) {
     try {
-      ifstream ini_file(block_config_file);  
+      ifstream ini_file(block_config_file);
       //cerr << block_config_file << endl;
       po::variables_map vm;
       po::options_description config_file_options;
@@ -230,44 +230,44 @@ int main(int argc, char *argv[]) {
         ostringstream str_order;
         str_order << "block_" << it->get_msId() << ".temperature_order";
         config_file_options.add_options()
-	 (str_order.str().c_str(),po::value<int>(&block_data[it->get_msId()].oRder)->default_value(order));
-	ostringstream str_cond;
+        (str_order.str().c_str(),po::value<int>(&block_data[it->get_msId()].oRder)->default_value(order));
+        ostringstream str_cond;
         str_cond << "block_" << it->get_msId() << ".heat_conductivity";
         config_file_options.add_options()
-	 (str_cond.str().c_str(),po::value<double>(&block_data[it->get_msId()].cOnductivity)->default_value(-1));
-	ostringstream str_capa;
+        (str_cond.str().c_str(),po::value<double>(&block_data[it->get_msId()].cOnductivity)->default_value(-1));
+        ostringstream str_capa;
         str_capa << "block_" << it->get_msId() << ".heat_capacity";
         config_file_options.add_options()
-	 (str_capa.str().c_str(),po::value<double>(&block_data[it->get_msId()].cApacity)->default_value(-1));
-	ostringstream str_init_temp;
+        (str_capa.str().c_str(),po::value<double>(&block_data[it->get_msId()].cApacity)->default_value(-1));
+        ostringstream str_init_temp;
         str_init_temp << "block_" << it->get_msId() << ".initail_temperature";
         config_file_options.add_options()
-	 (str_init_temp.str().c_str(),po::value<double>(&block_data[it->get_msId()].initTemp)->default_value(0));
+        (str_init_temp.str().c_str(),po::value<double>(&block_data[it->get_msId()].initTemp)->default_value(0));
       }
       config_file_options.add_options()
-	("climate_model.solar_radiation",po::value<bool>(&solar_radiation)->default_value(false));
+      ("climate_model.solar_radiation",po::value<bool>(&solar_radiation)->default_value(false));
       po::parsed_options parsed = parse_config_file(ini_file,config_file_options,true);
       store(parsed,vm);
-      po::notify(vm); 
+      po::notify(vm);
       for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
-	if(block_data[it->get_msId()].oRder == -1) continue;
+        if(block_data[it->get_msId()].oRder == -1) continue;
         if(block_data[it->get_msId()].oRder == order) continue;
-	PetscPrintf(PETSC_COMM_WORLD,"Set block %d oRder to %d\n",it->get_msId(),block_data[it->get_msId()].oRder);
-	Range block_ents;
-	rval = moab.get_entities_by_handle(it->meshset,block_ents,true); CHKERR(rval);
-	Range ents_to_set_order;
-	ierr = moab.get_adjacencies(block_ents,3,false,ents_to_set_order,Interface::UNION); CHKERRQ(ierr);
-	ents_to_set_order = ents_to_set_order.subset_by_type(MBTET);
-	ierr = moab.get_adjacencies(block_ents,2,false,ents_to_set_order,Interface::UNION); CHKERRQ(ierr);
-	ierr = moab.get_adjacencies(block_ents,1,false,ents_to_set_order,Interface::UNION); CHKERRQ(ierr);
+        PetscPrintf(PETSC_COMM_WORLD,"Set block %d oRder to %d\n",it->get_msId(),block_data[it->get_msId()].oRder);
+        Range block_ents;
+        rval = moab.get_entities_by_handle(it->meshset,block_ents,true); CHKERR(rval);
+        Range ents_to_set_order;
+        ierr = moab.get_adjacencies(block_ents,3,false,ents_to_set_order,Interface::UNION); CHKERRQ(ierr);
+        ents_to_set_order = ents_to_set_order.subset_by_type(MBTET);
+        ierr = moab.get_adjacencies(block_ents,2,false,ents_to_set_order,Interface::UNION); CHKERRQ(ierr);
+        ierr = moab.get_adjacencies(block_ents,1,false,ents_to_set_order,Interface::UNION); CHKERRQ(ierr);
         ierr = m_field.set_field_order(ents_to_set_order,"TEMP",block_data[it->get_msId()].oRder); CHKERRQ(ierr);
         ierr = m_field.set_field_order(ents_to_set_order,"TEMP_RATE",block_data[it->get_msId()].oRder); CHKERRQ(ierr);
       }
       vector<string> additional_parameters;
       additional_parameters = collect_unrecognized(parsed.options,po::include_positional);
       for(vector<string>::iterator vit = additional_parameters.begin();
-	vit!=additional_parameters.end();vit++) {
-	ierr = PetscPrintf(PETSC_COMM_WORLD,"** WARRNING Unrecognised option %s\n",vit->c_str()); CHKERRQ(ierr);
+      vit!=additional_parameters.end();vit++) {
+        ierr = PetscPrintf(PETSC_COMM_WORLD,"** WARRNING Unrecognised option %s\n",vit->c_str()); CHKERRQ(ierr);
       }
     } catch (const std::exception& ex) {
       ostringstream ss;
@@ -295,18 +295,18 @@ int main(int argc, char *argv[]) {
     //cerr << block_data[mit->first].cOnductivity  << " " << block_data[mit->first].cApacity << endl;
     if(block_data[mit->first].cOnductivity != -1) {
       PetscPrintf(PETSC_COMM_WORLD,"Set block %d heat conductivity to %3.2e\n",
-	mit->first,block_data[mit->first].cOnductivity);
+      mit->first,block_data[mit->first].cOnductivity);
       for(int dd = 0;dd<3;dd++) {
-	mit->second.cOnductivity_mat(dd,dd) = block_data[mit->first].cOnductivity;
+        mit->second.cOnductivity_mat(dd,dd) = block_data[mit->first].cOnductivity;
       }
     }
     if(block_data[mit->first].cApacity != -1) {
       PetscPrintf(PETSC_COMM_WORLD,"Set block %d heat capacity to %3.2e\n",
-	mit->first,block_data[mit->first].cApacity);
+      mit->first,block_data[mit->first].cApacity);
       mit->second.cApacity = block_data[mit->first].cApacity;
     }
   }
-  
+
   #ifdef __GROUNDSURFACETEMERATURE_HPP
   GroundSurfaceTemerature ground_surface(m_field);
   CrudeClimateModel time_data(time_data_file_for_ground_surface);
@@ -321,7 +321,7 @@ int main(int argc, char *argv[]) {
 
   //build field
   ierr = m_field.build_fields(); CHKERRQ(ierr);
-  //priject 10 node tet approximation of gemetry on hierarhical basis 
+  //priject 10 node tet approximation of gemetry on hierarhical basis
   Projection10NodeCoordsOnField ent_method_material(m_field,"MESH_NODE_POSITIONS");
   ierr = m_field.loop_dofs("MESH_NODE_POSITIONS",ent_method_material); CHKERRQ(ierr);
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
@@ -361,7 +361,7 @@ int main(int argc, char *argv[]) {
   if(ground_temperature_analys) {
     ierr = DMMoFEMAddElement(dm,"GROUND_SURFACE_FE"); CHKERRQ(ierr);
   }
-  #endif //__GROUNDSURFACETEMERATURE_HPP 
+  #endif //__GROUNDSURFACETEMERATURE_HPP
 
   ierr = DMSetUp(dm); CHKERRQ(ierr);
 
@@ -444,7 +444,7 @@ int main(int argc, char *argv[]) {
   ierr = TSMonitorSet(ts,f_TSMonitorSet,ts_ctx,PETSC_NULL); CHKERRQ(ierr); // !!!
 
   ierr = recorder_ptr->add_series_recorder("THEMP_SERIES"); CHKERRQ(ierr);
-  //start to record 
+  //start to record
   ierr = recorder_ptr->initialize_series_recorder("THEMP_SERIES"); CHKERRQ(ierr);
 
   double ftime = 1;
@@ -468,7 +468,7 @@ int main(int argc, char *argv[]) {
   PetscPrintf(PETSC_COMM_WORLD,
     "steps %D (%D rejected, %D SNES fails), ftime %g, nonlinits %D, linits %D\n",
     steps,rejects,snesfails,ftime,nonlinits,linits);
-  
+
   // save solution, if boundary conditions are defined you can use that file in mechanical problem
   // to calulate thermal stresses
   PetscBool is_partitioned = PETSC_FALSE;
@@ -493,5 +493,3 @@ int main(int argc, char *argv[]) {
   return 0;
 
 }
-
-
