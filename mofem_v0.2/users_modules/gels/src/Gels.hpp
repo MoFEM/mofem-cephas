@@ -27,20 +27,25 @@ VISCOELASTICITY AND POROELASTICITY IN ELASTOMERIC GELS
 Acta Mechanica Solida Sinica, Vol. 25, No. 5,
 Yuhang Hu Zhigang Suo
 
-Note: Following implication is tailored for large strain analysis,
+Note1: Following implication is tailored for large strain analysis,
 however in current version the engineering strain is used, i.e. assuming small deformation.
-Some parts of the code could be simplified for small strain analysis,
-however for make code general those simplifications are not applied.
+Moreover calculation of solvent flux and other physical quantities is with
+assumption that those values are nonlinear.
+
+Note2: Basic implementation is with linear constitutive equations, however
+adding nonlinearities to model should be simple, since all tangent matrices
+are calculated using adloc-c.
 
 */
-template<typename TYPE>
 struct Gel {
 
   enum TagEvaluate {
     STRESSTOTAL,
-    RESIDUALCONCENTRATION,
+    SOLVENTFLUX,
     RESIDUALSTRAINHAT
   };
+
+  FieldInterface &mFiled;
 
   struct BlockMaterialData {
 
@@ -60,6 +65,7 @@ struct Gel {
 
   /** \brief Constitutive model functions
   */
+  template<typename TYPE>
   struct ConstitutiveEquation {
 
     BlockMaterialData &dAta;
@@ -87,8 +93,6 @@ struct Gel {
     ublas::matrix<TYPE> strainHatDotRhs;    ///< Rate of dashpot (beta) strain
     ublas::matrix<TYPE> stressBetaHat;      ///< Stress as result of volume change due to solvent concentration
 
-    ublas::vector<TYPE> fLux;
-
     TYPE traceStrainTotal;
     TYPE traceStrainHat;
     TYPE traceStressBeta;
@@ -97,7 +101,7 @@ struct Gel {
     // Output
 
     ublas::matrix<TYPE> stressTotal;              ///< Total stress
-    ublas::vector<TYPE> residualConcentration;    ///< Residual for calculation concentration
+    ublas::vector<TYPE> solventFlux;
     ublas::matrix<TYPE> residualStrainHat;        ///< Residual for calculation epsilon hat
 
     PetscErrorCode calculateCauchyDefromationTensor() {
@@ -198,7 +202,7 @@ struct Gel {
       strainHatDotRhs = a*stressBeta;
       double b = a*(dAta.vBetaHat/(1.0+dAta.vBetaHat));
       for(int ii = 0;ii<3;ii++) {
-        strainHatDotRhs -= b*traceStressBeta;
+        strainHatDotRhs(ii,ii) -= b*traceStressBeta;
       }
       PetscFunctionReturn(0);
     }
@@ -235,7 +239,7 @@ struct Gel {
     */
     PetscErrorCode calcualteFlux() {
       PetscFunctionBegin;
-      fLux=-(dAta.pErmeability/(dAta.vIscosity*dAta.oMega*dAta.oMega))*gradientMu;
+      solventFlux=-(dAta.pErmeability/(dAta.vIscosity*dAta.oMega*dAta.oMega))*gradientMu;
       PetscFunctionReturn(0);
     }
 
@@ -252,12 +256,6 @@ struct Gel {
       PetscFunctionReturn(0);
     }
 
-    PetscErrorCode calculateResidualConcentration() {
-      PetscFunctionBegin;
-      residualConcentration = traceStrainTotalDot - fLux;
-      PetscFunctionReturn(0);
-    }
-
     PetscErrorCode calculateResidualStrainHat() {
       PetscFunctionBegin;
       residualStrainHat =  strainHatDot - strainHatDotRhs;
@@ -265,7 +263,8 @@ struct Gel {
     }
 
   };
-  ConstitutiveEquation constitutiveEquation;
+
+  ConstitutiveEquation<adouble> constitutiveEquation;
 
   struct CommonData {
 
@@ -274,24 +273,21 @@ struct Gel {
     string strainHatName;
     string strainHatNameDot;
     string muName;
-    string gradientMuName;
 
     map<string,vector<VectorDouble > > dataAtGaussPts;
     map<string,vector<MatrixDouble > > gradAtGaussPts;
 
-    vector<MatrixAdaptor> stressTotal;
-    vector<VectorAdaptor> residualStrainHat;
-    vector<double> residualConcentration;
+    vector<ublas::matrix<double> > stressTotal;
+    vector<ublas::vector<double> > solventFlux;
+    vector<ublas::matrix<double> > residualStrainHat;
 
     vector<double*> jacRowPtr;
     vector<ublas::matrix<double> > jacStressTotal;
-    vector<double> jacConcentration;
+    vector<double> jacSolventFlux;
     vector<ublas::matrix<double> > jacStrainHat;
 
   };
   CommonData commonData;
-
-  FieldInterface &mFiled;
 
   Gel(FieldInterface &m_field):
   mFiled(m_field),
@@ -348,17 +344,19 @@ struct Gel {
 
     vector<VectorDouble > *valuesAtGaussPtsPtr;
     vector<MatrixDouble > *gradientAtGaussPtsPtr;
-    const EntityType zeroAtType;
+    EntityType zeroAtType;
 
     OpGetDataAtGaussPts(
       const string field_name,
       vector<VectorDouble > *values_at_gauss_pts_ptr,
       vector<MatrixDouble > *gardient_at_gauss_pts_ptr,
-      Vec vector = PETSC_NULL
+      Vec vector = PETSC_NULL,
+      EntityType zero_at_type = MBVERTEX
     ):
     AuxDataAtGaussPt(field_name,vector),
     valuesAtGaussPtsPtr(values_at_gauss_pts_ptr),
-    gradientAtGaussPtsPtr(gardient_at_gauss_pts_ptr) {
+    gradientAtGaussPtsPtr(gardient_at_gauss_pts_ptr),
+    zeroAtType(zero_at_type) {
     }
 
     /** \brief Operator field value
@@ -379,7 +377,7 @@ struct Gel {
         int rank = data.getFieldDofs()[0]->get_max_rank();
         int nb_gauss_pts = data.getN().size1();
 
-        ierr = AuxDataAtGaussPt::getDataFromVector(side,type,data); CHKERRQ(ierr);
+        ierr = getDataFromVector(side,type,data); CHKERRQ(ierr);
 
         // Initialize
         if(valuesAtGaussPtsPtr) {
@@ -414,11 +412,11 @@ struct Gel {
           for(int dd = 0;dd<nb_dofs/rank;dd++) {
             for(int rr1 = 0;rr1<rank;rr1++) {
               if(valuesAtGaussPtsPtr) {
-                (*valuesAtGaussPtsPtr)[gg][rr1] += N[dd]*(*AuxDataAtGaussPt::valuesPtr)[rank*dd+rr1];
+                (*valuesAtGaussPtsPtr)[gg][rr1] += N[dd]*(*valuesPtr)[rank*dd+rr1];
               }
               if(gradientAtGaussPtsPtr) {
                 for(int rr2 = 0;rr2<rank;rr2++) {
-                  gradientAtGaussPtsPtr[gg](rr1,rr2) += diffN(dd,rr2)*(*AuxDataAtGaussPt::valuesPtr)[rank*dd+rr1];
+                  (*gradientAtGaussPtsPtr)[gg](rr1,rr2) += diffN(dd,rr2)*(*valuesPtr)[rank*dd+rr1];
                 }
               }
             }
@@ -439,7 +437,7 @@ struct Gel {
   struct OpJacobian: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     vector<int> tagS;
-    ConstitutiveEquation &cE;
+    ConstitutiveEquation<adouble> &cE;
     CommonData &commonData;
 
     bool calculateResidualBool;
@@ -447,14 +445,18 @@ struct Gel {
     bool recordOn;
 
     OpJacobian(
+      const string field_name,
       vector<int> tags,
-      ConstitutiveEquation &constitutive_equation,
+      ConstitutiveEquation<adouble> &ce,
       CommonData &common_data,
       bool calculate_residual,
       bool calculate_jacobian
     ):
-    tagS(tagS),
-    cE(constitutive_equation),
+    VolumeElementForcesAndSourcesCore::UserDataOperator(
+      field_name,UserDataOperator::OPROW
+    ),
+    tagS(tags),
+    cE(ce),
     commonData(common_data),
     calculateResidualBool(calculate_residual),
     calculateJacobianBool(calculate_jacobian),
@@ -466,10 +468,13 @@ struct Gel {
     ublas::vector<double> activeVariables;
     ublas::matrix<double> stressTotal;
     ublas::matrix<double> residualStrainHat;
-    double residualConcentration;
 
     PetscErrorCode recordStressTotal() {
       PetscFunctionBegin;
+
+      if(tagS[STRESSTOTAL]>0) {
+        PetscFunctionReturn(0);
+      }
 
       PetscErrorCode ierr;
 
@@ -478,7 +483,7 @@ struct Gel {
 
       ublas::matrix<double> &F = (commonData.gradAtGaussPts[commonData.spatialPositionName])[0];
       ublas::vector<double> &strain_hat = (commonData.dataAtGaussPts[commonData.strainHatName])[0];
-      double mu = (commonData.dataAtGaussPts[commonData.muName])[0];
+      ublas::vector<double> mu = (commonData.dataAtGaussPts[commonData.muName])[0];
 
       trace_on(tagS[STRESSTOTAL]);
       {
@@ -487,7 +492,7 @@ struct Gel {
         nbActiveVariables[tagS[STRESSTOTAL]] = 0;
         for(int dd1 = 0;dd1<3;dd1++) {
           for(int dd2 = 0;dd2<3;dd2++) {
-            cE->F(dd1,dd2) <<= F(dd1,dd2);
+            cE.F(dd1,dd2) <<= F(dd1,dd2);
             nbActiveVariables[tagS[STRESSTOTAL]]++;
           }
         }
@@ -505,7 +510,7 @@ struct Gel {
         cE.strainHat(2,1) = cE.strainHat(1,2);
         cE.strainHat(2,0) = cE.strainHat(0,2);
 
-        cE.mU <<= mu;
+        cE.mU <<= mu[0];
         nbActiveVariables[tagS[STRESSTOTAL]]++;
 
         // Do calculations
@@ -532,45 +537,36 @@ struct Gel {
       PetscFunctionReturn(0);
     }
 
-    PetscErrorCode recordResidualConcentration() {
+    PetscErrorCode recordSolventFlux() {
       PetscFunctionBegin;
+
+      if(tagS[SOLVENTFLUX]>0) {
+        PetscFunctionReturn(0);
+      }
 
       PetscErrorCode ierr;
 
-      cE.FDot.resize(3,3,false);
       cE.gradientMu.resize(3,false);
 
-      ublas::matrix<double> &F_dot = (commonData.gradAtGaussPts[commonData.spatialPositionNameDot])[0];
-      ublas::vector<double> &gradient_mu = (commonData.dataAtGaussPts[commonData.gradientMuName])[0];
+      ublas::matrix<double> &gradient_mu = (commonData.gradAtGaussPts[commonData.muName])[0];
 
-      trace_on(tagS[RESIDUALCONCENTRATION]);
+      trace_on(tagS[SOLVENTFLUX]);
       {
 
           // Activate rate of gradient of defamation
-          nbActiveVariables[tagS[RESIDUALCONCENTRATION]] = 0;
-          for(int dd1 = 0;dd1<3;dd1++) {
-            for(int dd2 = 0;dd2<3;dd2++) {
-              cE->FDot(dd1,dd2) <<= F_dot(dd1,dd2);
-              nbActiveVariables[tagS[RESIDUALCONCENTRATION]]++;
-            }
-          }
+          nbActiveVariables[tagS[SOLVENTFLUX]] = 0;
           for(int ii = 0;ii<3;ii++) {
-            cE.gardientMu[ii] <<= gradient_mu[ii];
-            nbActiveVariables[tagS[RESIDUALCONCENTRATION]]++;
+            cE.gradientMu[ii] <<= gradient_mu(0,ii);
+            nbActiveVariables[tagS[SOLVENTFLUX]]++;
           }
 
-          ierr = cE.calculateTraceStrainTotalDot(); CHKERRQ(ierr);
           ierr = cE.calcualteFlux(); CHKERRQ(ierr);
 
-          ierr= cE.calculateResidualConcentration(); CHKERRQ(ierr);
-
-          nbActiveResults[tagS[RESIDUALCONCENTRATION]] = 0;
-          commonData.residualConcentration.resize(nbGaussPts);
+          nbActiveResults[tagS[SOLVENTFLUX]] = 0;
+          commonData.solventFlux.resize(nbGaussPts);
           for(int d1 = 0;d1<3;d1++) {
-            for(int d2 = 0;d2<3;d2++) {
-              cE.residualConcentration >>= commonData.residualConcentration[0];
-              nbActiveResults[tagS[RESIDUALCONCENTRATION]]++;
-            }
+            cE.solventFlux[d1] >>= commonData.solventFlux[0][d1];
+            nbActiveResults[tagS[SOLVENTFLUX]]++;
           }
 
       }
@@ -580,6 +576,10 @@ struct Gel {
 
     PetscErrorCode recordResidualStrainHat() {
       PetscFunctionBegin;
+
+      if(tagS[RESIDUALSTRAINHAT]) {
+        PetscFunctionReturn(0);
+      }
 
       PetscErrorCode ierr;
 
@@ -598,7 +598,7 @@ struct Gel {
         nbActiveVariables[tagS[RESIDUALSTRAINHAT]] = 0;
         for(int dd1 = 0;dd1<3;dd1++) {
           for(int dd2 = 0;dd2<3;dd2++) {
-            cE->F(dd1,dd2) <<= F(dd1,dd2);
+            cE.F(dd1,dd2) <<= F(dd1,dd2);
             nbActiveVariables[tagS[RESIDUALSTRAINHAT]]++;
           }
         }
@@ -630,8 +630,7 @@ struct Gel {
 
         ierr = cE.calcualteStressBeta(); CHKERRQ(ierr);
         ierr = cE.calcualteStrainHatDot(); CHKERRQ(ierr);
-
-        ierr = cE.residualStrainHat(); CHKERRQ(ierr);
+        ierr = cE.calculateResidualStrainHat(); CHKERRQ(ierr);
 
         nbActiveResults[tagS[RESIDUALSTRAINHAT]] = 0;
         commonData.residualStrainHat.resize(nbGaussPts);
@@ -687,6 +686,10 @@ struct Gel {
     PetscErrorCode calculateAtIntPtsStressTotal() {
       PetscFunctionBegin;
 
+      if(tagS[STRESSTOTAL]>0) {
+        PetscFunctionReturn(0);
+      }
+
       PetscErrorCode ierr;
 
       activeVariables.resize(nbActiveVariables[tagS[STRESSTOTAL]],false);
@@ -695,7 +698,7 @@ struct Gel {
 
         ublas::matrix<double> &F = (commonData.gradAtGaussPts[commonData.spatialPositionName])[gg];
         ublas::vector<double> &strain_hat = (commonData.dataAtGaussPts[commonData.strainHatName])[gg];
-        double mu = (commonData.dataAtGaussPts[commonData.muName])[gg];
+        double mu = (commonData.dataAtGaussPts[commonData.muName])[gg][0];
 
         int nb_active_variables = 0;
         // Activate gradient of defamation
@@ -724,15 +727,15 @@ struct Gel {
         if(calculateJacobianBool) {
 
           if(gg == 0) {
-            commonData.jacStressTotal.resize(nbGaussPts,false);
-            commonData.jacRowPtr.resize(nbActiveResults[tagS[STRESSTOTAL]],false);
+            commonData.jacStressTotal.resize(nbGaussPts);
+            commonData.jacRowPtr.resize(nbActiveResults[tagS[STRESSTOTAL]]);
           }
           commonData.jacStressTotal[gg].resize(3,3);
-          for(int dd = 0;dd<nbActiveResults;dd++) {
+          for(int dd = 0;dd<nbActiveResults[tagS[STRESSTOTAL]];dd++) {
             commonData.jacRowPtr[dd] = &commonData.jacStressTotal[gg](dd,0);
           }
 
-          ierr = calculateJacobian(); CHKERRQ(ierr);
+          ierr = calculateJacobian(STRESSTOTAL); CHKERRQ(ierr);
 
         }
 
@@ -741,30 +744,29 @@ struct Gel {
       PetscFunctionReturn(0);
     }
 
-    PetscErrorCode calculateAtIntPtsResidualConcentration() {
+    PetscErrorCode calculateAtIntPtsSolventFlux() {
       PetscFunctionBegin;
+
+      if(tagS[SOLVENTFLUX]>0) {
+        PetscFunctionReturn(0);
+      }
+
       PetscErrorCode ierr;
 
-      activeVariables.resize(nbActiveResults[tagS[RESIDUALCONCENTRATION]]);
+      activeVariables.resize(nbActiveResults[tagS[SOLVENTFLUX]]);
 
       for(int gg = 0;gg<nbGaussPts;gg++) {
 
-        ublas::matrix<double> &F_dot = (commonData.gradAtGaussPts[commonData.spatialPositionNameDot])[gg];
-        ublas::vector<double> &gradient_mu = (commonData.dataAtGaussPts[commonData.gradientMuName])[gg];
+        ublas::matrix<double> &gradient_mu = (commonData.gradAtGaussPts[commonData.muName])[gg];
 
         int nb_active_variables = 0;
         // Activate rate of gradient of defamation
-        nbActiveVariables[tagS[RESIDUALCONCENTRATION]] = 0;
-        for(int dd1 = 0;dd1<3;dd1++) {
-          for(int dd2 = 0;dd2<3;dd2++) {
-            activeVariables[nb_active_variables++] = F_dot(dd1,dd2);
-          }
-        }
+        nbActiveVariables[tagS[SOLVENTFLUX]] = 0;
         for(int ii = 0;ii<3;ii++) {
-          activeVariables[nb_active_variables++] = gradient_mu[ii];
+          activeVariables[nb_active_variables++] = gradient_mu(0,ii);
         }
 
-        if(nb_active_variables!=nbActiveVariables[tagS[RESIDUALCONCENTRATION]]) {
+        if(nb_active_variables!=nbActiveVariables[tagS[SOLVENTFLUX]]) {
           SETERRQ(
             PETSC_COMM_SELF,MOFEM_IMPOSIBLE_CASE,"Number of active variables does not much"
           );
@@ -772,20 +774,21 @@ struct Gel {
 
         if(calculateResidualBool) {
           ierr = calculateFunction(
-            RESIDUALCONCENTRATION,&commonData.residualConcentration[gg]
+            SOLVENTFLUX,
+            &(commonData.solventFlux[gg][0])
           ); CHKERRQ(ierr);
         }
 
         if(calculateJacobianBool) {
           if(gg == 0) {
-            commonData.jacConcentration.resize(nbGaussPts,false);
-            commonData.jacRowPtr.resize(nbActiveResults[tagS[RESIDUALCONCENTRATION]],false);
+            commonData.jacSolventFlux.resize(nbGaussPts,false);
+            commonData.jacRowPtr.resize(nbActiveResults[tagS[SOLVENTFLUX]]);
           }
-          for(int dd = 0;dd<nbActiveResults;dd++) {
-            commonData.jacRowPtr[dd] = &commonData.jacConcentration[gg];
+          for(int dd = 0;dd<nbActiveResults[tagS[SOLVENTFLUX]];dd++) {
+            commonData.jacRowPtr[dd] = &commonData.jacSolventFlux[gg];
           }
 
-          ierr = calculateJacobian(RESIDUALCONCENTRATION); CHKERRQ(ierr);
+          ierr = calculateJacobian(SOLVENTFLUX); CHKERRQ(ierr);
 
         }
       }
@@ -795,6 +798,11 @@ struct Gel {
 
     PetscErrorCode calculateAtIntPtrsResidualStrainHat() {
       PetscFunctionBegin;
+
+      if(tagS[RESIDUALSTRAINHAT]) {
+        PetscFunctionReturn(0);
+      }
+
       PetscErrorCode ierr;
 
       activeVariables.resize(nbActiveResults[tagS[RESIDUALSTRAINHAT]]);
@@ -826,7 +834,7 @@ struct Gel {
         }
 
 
-        if(nb_active_variables!=nbActiveVariables[tagS[RESIDUALCONCENTRATION]]) {
+        if(nb_active_variables!=nbActiveVariables[tagS[SOLVENTFLUX]]) {
           SETERRQ(
             PETSC_COMM_SELF,MOFEM_IMPOSIBLE_CASE,"Number of active variables does not much"
           );
@@ -834,7 +842,7 @@ struct Gel {
 
         if(calculateResidualBool) {
           ierr = calculateFunction(
-            RESIDUALSTRAINHAT,&commonData.residualStrainHat[gg]
+            RESIDUALSTRAINHAT,&commonData.residualStrainHat[gg](0,0)
           ); CHKERRQ(ierr);
         }
 
@@ -843,8 +851,9 @@ struct Gel {
             commonData.jacStrainHat.resize(nbGaussPts);
             commonData.jacRowPtr.resize(nbActiveResults[tagS[RESIDUALSTRAINHAT]]);
           }
-          for(int dd = 0;dd<nbActiveResults;dd++) {
-            commonData.jacRowPtr[dd] = &commonData.jacStrainHat[gg];
+          commonData.jacStrainHat[gg].resize(3,3,false);
+          for(int dd = 0;dd<nbActiveResults[tagS[RESIDUALSTRAINHAT]];dd++) {
+            commonData.jacRowPtr[dd] = &commonData.jacStrainHat[gg](dd,0);
           }
           ierr = calculateJacobian(RESIDUALSTRAINHAT); CHKERRQ(ierr);
         }
@@ -866,12 +875,12 @@ struct Gel {
 
         if(recordOn) {
           ierr = recordStressTotal(); CHKERRQ(ierr);
-          ierr = recordResidualConcentration(); CHKERRQ(ierr);
+          ierr = recordSolventFlux(); CHKERRQ(ierr);
           ierr = recordResidualStrainHat(); CHKERRQ(ierr);
         }
 
         ierr = calculateAtIntPtsStressTotal(); CHKERRQ(ierr);
-        ierr = calculateAtIntPtsResidualConcentration(); CHKERRQ(ierr);
+        ierr = calculateAtIntPtsSolventFlux(); CHKERRQ(ierr);
         ierr = calculateAtIntPtrsResidualStrainHat(); CHKERRQ(ierr);
 
       } catch (const std::exception& ex) {
