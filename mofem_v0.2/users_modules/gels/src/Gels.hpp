@@ -49,7 +49,6 @@ struct Gel {
 
   struct BlockMaterialData {
 
-
     double vAlpha;        ///< Poisson ration spring alpha
     double gAlpha;        ///< Sheer modulus spring alpha
     double vBeta;
@@ -137,7 +136,6 @@ struct Gel {
       }
       PetscFunctionReturn(0);
     }
-
 
     /** \brief Calculate stress in spring alpha
 

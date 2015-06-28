@@ -22,6 +22,14 @@ using namespace MoFEM;
 #include <adolc/adolc.h>
 #include <Gels.hpp>
 
+#include <boost/iostreams/tee.hpp>
+#include <boost/iostreams/stream.hpp>
+#include <fstream>
+#include <iostream>
+namespace bio = boost::iostreams;
+using bio::tee_device;
+using bio::stream;
+
 ErrorCode rval;
 PetscErrorCode ierr;
 static char help[] = "...\n\n";
@@ -40,6 +48,75 @@ int main(int argc, char *argv[]) {
   // Create gel instance
   Gel gel(m_field);
 
+  Gel::BlockMaterialData material_data;
+
+  // Set material parameters
+  material_data.gAlpha = 1;
+  material_data.vAlpha = 0.3;
+  material_data.gBeta = 1;
+  material_data.vBeta = 0.3;
+  material_data.gBetaHat = 1;
+  material_data.vBetaHat = 0.3;
+  material_data.oMega = 1;
+  material_data.vIscosity = 1;
+  material_data.pErmeability = 2.;
+
+  Gel::ConstitutiveEquation<double> ce(material_data);
+
+  // Set state variables
+  ublas::matrix<double> &F = ce.F;
+  F.resize(3,3);
+  F.clear();
+  F(0,0) = 0.01;  F(0,1) = 0.02;  F(0,2) = 0.03;
+  F(1,0) = 0.04;  F(1,1) = 0.05;  F(1,2) = 0.06;
+  F(2,0) = 0.07;  F(2,1) = 0.08;  F(2,2) = 0.09;
+
+  ublas::matrix<double> &F_dot = ce.FDot;
+  F_dot.resize(3,3);
+  F_dot.clear();
+  F_dot(0,0) = 0.01;  F_dot(0,1) = 0.02;  F_dot(0,2) = 0.03;
+  F_dot(1,0) = 0.04;  F_dot(1,1) = 0.05;  F_dot(1,2) = 0.06;
+  F_dot(2,0) = 0.07;  F_dot(2,1) = 0.08;  F_dot(2,2) = 0.09;
+
+  ublas::matrix<double> &strainHat = ce.strainHat;
+  strainHat.resize(3,3);
+  strainHat.clear();
+  strainHat(0,0) = 0.01;  strainHat(0,1) = 0.02;  strainHat(0,2) = 0.03;
+  strainHat(1,0) = 0.04;  strainHat(1,1) = 0.05;  strainHat(1,2) = 0.06;
+  strainHat(2,0) = 0.07;  strainHat(2,1) = 0.08;  strainHat(2,2) = 0.09;
+
+  ublas::matrix<double> &strainHatDot = ce.strainHatDot;
+  strainHatDot.resize(3,3);
+  strainHatDot.clear();
+  strainHatDot(0,0) = 0.01;  strainHatDot(0,1) = 0.02;  strainHatDot(0,2) = 0.03;
+  strainHatDot(1,0) = 0.04;  strainHatDot(1,1) = 0.05;  strainHatDot(1,2) = 0.06;
+  strainHatDot(2,0) = 0.07;  strainHatDot(2,1) = 0.08;  strainHatDot(2,2) = 0.09;
+
+  ce.mU = 1;
+  ublas::vector<double> &gradient_mu = ce.gradientMu;
+  gradient_mu.resize(3);
+  gradient_mu.clear();
+  gradient_mu[0] = 1;
+  gradient_mu[1] = 0;
+  gradient_mu[2] = 0;
+
+  // Creeate tee like output, printing results on screen and simultaneously
+  // writing results to file
+  typedef tee_device<ostream, ofstream> TeeDevice;
+  typedef stream<TeeDevice> TeeStream;
+  ofstream ofs("gel_constitutive_model_test.txt");
+  TeeDevice my_tee(cout,ofs);
+  TeeStream my_split(my_tee);
+
+  // Do calculations
+
+  ierr = ce.calculateCauchyDefromationTensor(); CHKERRQ(ierr);
+  my_split << "C\n" << ce.C << endl << endl;
+
+  ierr = ce.calculateStrainTotal(); CHKERRQ(ierr);
+  my_split << "strainTotal\n" << ce.strainTotal << endl << endl;
+
+  
 
   PetscFinalize();
 
