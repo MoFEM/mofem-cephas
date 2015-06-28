@@ -102,7 +102,7 @@ struct Gel {
 
     ublas::matrix<TYPE> stressTotal;              ///< Total stress
     ublas::vector<TYPE> solventFlux;
-    TYPE volumeRate;
+    TYPE volumeDot;
     ublas::matrix<TYPE> residualStrainHat;        ///< Residual for calculation epsilon hat
 
     PetscErrorCode calculateCauchyDefromationTensor() {
@@ -270,9 +270,9 @@ struct Gel {
       as trace of gradient total strain
 
     */
-    PetscErrorCode calculateVolumeRate() {
+    PetscErrorCode calculateVolumeDot() {
       PetscFunctionBegin;
-      volumeRate = traceStrainTotalDot;
+      volumeDot = traceStrainTotalDot;
       PetscFunctionReturn(0);
     }
 
@@ -294,7 +294,7 @@ struct Gel {
 
     vector<ublas::matrix<double> > stressTotal;
     vector<ublas::vector<double> > solventFlux;
-    vector<double> volumeRate;
+    vector<double> volumeDot;
     vector<ublas::matrix<double> > residualStrainHat;
 
     vector<double*> jacRowPtr;
@@ -591,7 +591,7 @@ struct Gel {
       PetscFunctionReturn(0);
     }
 
-    PetscErrorCode recordVolumeRate() {
+    PetscErrorCode recordVolumeDot() {
       PetscFunctionBegin;
 
       if(tagS[VOLUMERATE]>0) {
@@ -621,11 +621,11 @@ struct Gel {
             }
           }
 
-          ierr = cE.calculateVolumeRate(); CHKERRQ(ierr);
+          ierr = cE.calculateVolumeDot(); CHKERRQ(ierr);
 
           nbActiveResults[tagS[VOLUMERATE]] = 0;
-          commonData.volumeRate.resize(nbGaussPts);
-          cE.volumeRate >>= commonData.volumeRate[0];
+          commonData.volumeDot.resize(nbGaussPts);
+          cE.volumeDot >>= commonData.volumeDot[0];
           nbActiveResults[tagS[VOLUMERATE]]++;
 
       }
@@ -862,7 +862,7 @@ struct Gel {
       PetscFunctionReturn(0);
     }
 
-    PetscErrorCode calculateAtIntPtsVolumeRate() {
+    PetscErrorCode calculateAtIntPtsVolumeDot() {
       PetscFunctionBegin;
 
       if(tagS[VOLUMERATE]>0) {
@@ -1003,11 +1003,13 @@ struct Gel {
         if(recordOn) {
           ierr = recordStressTotal(); CHKERRQ(ierr);
           ierr = recordSolventFlux(); CHKERRQ(ierr);
+          ierr = recordVolumeDot(); CHKERRQ(ierr);
           ierr = recordResidualStrainHat(); CHKERRQ(ierr);
         }
 
         ierr = calculateAtIntPtsStressTotal(); CHKERRQ(ierr);
         ierr = calculateAtIntPtsSolventFlux(); CHKERRQ(ierr);
+        ierr = calculateAtIntPtsVolumeDot(); CHKERRQ(ierr);
         ierr = calculateAtIntPtrsResidualStrainHat(); CHKERRQ(ierr);
 
       } catch (const std::exception& ex) {

@@ -116,6 +116,11 @@ int main(int argc, char *argv[]) {
   ierr = ce.calculateStrainTotal(); CHKERRQ(ierr);
   my_split << "strainTotal\n" << ce.strainTotal << endl << endl;
 
+  ierr = ce.calculateTraceStrainTotalDot(); CHKERRQ(ierr);
+  my_split << "traceStrianTotalDot\n" << ce.traceStrainTotalDot << endl << endl;
+
+  ierr = ce.calculateVolumeDot(); CHKERRQ(ierr);
+  my_split << "volumeDot\n" << ce.volumeDot << endl << endl;
 
   PetscFinalize();
 
