@@ -111,11 +111,6 @@ int main(int argc, char *argv[]) {
     ierr = m_field.set_field_order(root_set,MBEDGE,"SOLVENT_CONCENTRATION",order-1); CHKERRQ(ierr);
     ierr = m_field.set_field_order(root_set,MBVERTEX,"SOLVENT_CONCENTRATION",1); CHKERRQ(ierr);
 
-    ierr = m_field.set_field_order(root_set,MBTET,"SOLVENT_CONCENTRATION_DOT",order-1); CHKERRQ(ierr);
-    ierr = m_field.set_field_order(root_set,MBTRI,"SOLVENT_CONCENTRATION_DOT",order-1); CHKERRQ(ierr);
-    ierr = m_field.set_field_order(root_set,MBEDGE,"SOLVENT_CONCENTRATION_DOT",order-1); CHKERRQ(ierr);
-    ierr = m_field.set_field_order(root_set,MBVERTEX,"SOLVENT_CONCENTRATION_DOT",1); CHKERRQ(ierr);
-
     ierr = m_field.set_field_order(root_set,MBTET,"EPS_HAT",order-1); CHKERRQ(ierr);
     ierr = m_field.set_field_order(root_set,MBTET,"EPS_HAT_DOT",order-1); CHKERRQ(ierr);
 
@@ -147,7 +142,6 @@ int main(int argc, char *argv[]) {
     ierr = m_field.modify_finite_element_add_field_row("GEL_FE","SOLVENT_CONCENTRATION"); CHKERRQ(ierr);
     ierr = m_field.modify_finite_element_add_field_col("GEL_FE","SOLVENT_CONCENTRATION"); CHKERRQ(ierr);
     ierr = m_field.modify_finite_element_add_field_data("GEL_FE","SOLVENT_CONCENTRATION"); CHKERRQ(ierr);
-    ierr = m_field.modify_finite_element_add_field_data("GEL_FE","SOLVENT_CONCENTRATION_DOT"); CHKERRQ(ierr);
     ierr = m_field.modify_finite_element_add_field_row("GEL_FE","EPS_HAT"); CHKERRQ(ierr);
     ierr = m_field.modify_finite_element_add_field_col("GEL_FE","EPS_HAT"); CHKERRQ(ierr);
     ierr = m_field.modify_finite_element_add_field_data("GEL_FE","EPS_HAT"); CHKERRQ(ierr);
@@ -159,7 +153,78 @@ int main(int argc, char *argv[]) {
 
   // Create gel instance
   Gel gel(m_field);
+  {
 
+    Gel::BlockMaterialData &material_data = gel.BlockMaterialData;
+
+    // Set material parameters
+    material_data.gAlpha = 1;
+    material_data.vAlpha = 0.3;
+    material_data.gBeta = 1;
+    material_data.vBeta = 0.3;
+    material_data.gBetaHat = 1;
+    material_data.vBetaHat = 0.3;
+    material_data.oMega = 1;
+    material_data.vIscosity = 1;
+    material_data.pErmeability = 2.;
+
+    Gel::CommonData common_data = gel.CommonData;
+    common_data.spatialPositionName = "SPATIAL_POSITION";
+    common_data.spatialPositionNameDot = "SPATIAL_POSITION_DOT";
+    common_data.muName = "SOLVENT_CONCENTRATION";
+    common_data.strainHatName = "HAT_EPS";
+    common_data.strainHatNameDot = "HAT_EPS_DOT";
+
+    Gel::GelFE fe_ptr[] = { &gel.feRhs, &gel.feLhs };
+    for(int ss = 0;ss<2;ss++) {
+
+      fe_ptr[ss]->getOpPtrVector().push_back(
+        new Gel::OpGetDataAtGaussPts(
+          "SPATIAL_POSITION",
+          NULL,
+          &commn_data.gradientAtGaussPts["SPATIAL_POSITION"]
+        )
+      );
+
+      fe_ptr[ss]->getOpPtrVector().push_back(
+        new Gel::OpGetDataAtGaussPts(
+          "SPATIAL_POSITION_DOT",
+          NULL,
+          &commn_data.gradientAtGaussPts["SPATIAL_POSITION_DOT"]
+        )
+      );
+
+      fe_ptr[ss]->getOpPtrVector().push_back(
+        new Gel::OpGetDataAtGaussPts(
+          "SPATIAL_POSITION_DOT",
+          &commn_data.dataAtGaussPts["SOLVENT_CONCENTRATION"],
+          &commn_data.gradientAtGaussPts["SOLVENT_CONCENTRATION"]
+        )
+      );
+
+      fe_ptr[ss]->getOpPtrVector().push_back(
+        new Gel::OpGetDataAtGaussPts(
+          "HAT_EPS",
+          &commn_data.dataAtGaussPts["HAT_EPS"],
+          NULL,
+          NULL,
+          MBTET
+        )
+      );
+
+      fe_ptr[ss]->getOpPtrVector().push_back(
+        new Gel::OpGetDataAtGaussPts(
+          "HAT_EPS_DOT",
+          &commn_data.dataAtGaussPts["HAT_EPS_DOT"],
+          NULL,
+          NULL,
+          MBTET
+        )
+      );
+
+    }
+
+  }
 
   PetscFinalize();
 

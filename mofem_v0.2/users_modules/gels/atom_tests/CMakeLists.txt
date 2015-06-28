@@ -29,7 +29,6 @@ target_link_libraries(gel_constitutive_equation_test
   ${MoFEM_PROJECT_LIBS}
 )
 
-
 add_executable(gel_jacobian_test
   ${UM_SOURCE_DIR}/gels/atom_tests/gel_jacobian_test.cpp
 )

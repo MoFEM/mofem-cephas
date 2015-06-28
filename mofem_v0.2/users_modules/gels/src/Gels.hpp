@@ -305,9 +305,28 @@ struct Gel {
   };
   CommonData commonData;
 
+  /// \brief  definition of volume element
+  struct GelFE: public VolumeElementForcesAndSourcesCore {
+
+    int addToRule; ///< Takes into account HO geometry
+    GelFE(FieldInterface &m_field):
+    VolumeElementForcesAndSourcesCore(m_field),
+    addToRule(1) {
+    }
+
+    int getRule(int order) {
+      return order-1+addToRule;
+    }
+
+  };
+
+  GelFE feRhs,feLhs;
+
   Gel(FieldInterface &m_field):
   mFiled(m_field),
-  constitutiveEquation(blockMaterialData) {
+  constitutiveEquation(blockMaterialData),
+  feRhs(m_field),
+  feLhs(m_field) {
   }
 
   struct AuxDataAtGaussPt: public VolumeElementForcesAndSourcesCore::UserDataOperator {
