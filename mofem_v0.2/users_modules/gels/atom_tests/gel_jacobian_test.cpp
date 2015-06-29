@@ -79,13 +79,13 @@ int main(int argc, char *argv[]) {
     ierr = m_field.add_field("SOLVENT_CONCENTRATION_DOT",H1,1,MF_ZERO); CHKERRQ(ierr);
     ierr = m_field.add_field("HAT_EPS_DOT",L2,6,MF_ZERO); CHKERRQ(ierr);
 
-    //Add field H1 space rank 3 to approximate geometry using heierachical basis
-    //For 10 node tets, before use, gemetry is projected on that field (see below)
+    //Add field H1 space rank 3 to approximate geometry using hierarchical basis
+    //For 10 node tetrahedral, before use, geometry is projected on that field (see below)
     ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,3,MF_ZERO); CHKERRQ(ierr);
 
     //meshset consisting all entities in mesh
     EntityHandle root_set = moab.get_root_set();
-    //add entities to field (root_mesh, i.e. on all mesh etities fields are approx.)
+    //add entities to field (root_mesh, i.e. on all mesh entities fields are approx.)
     ierr = m_field.add_ents_to_field_by_TETs(root_set,"SPATIAL_POSITION"); CHKERRQ(ierr);
     ierr = m_field.add_ents_to_field_by_TETs(root_set,"SOLVENT_CONCENTRATION"); CHKERRQ(ierr);
     ierr = m_field.add_ents_to_field_by_TETs(root_set,"HAT_EPS"); CHKERRQ(ierr);
@@ -97,7 +97,10 @@ int main(int argc, char *argv[]) {
     PetscInt order;
     ierr = PetscOptionsGetInt(PETSC_NULL,"-my_order",&order,&flg); CHKERRQ(ierr);
     if(flg != PETSC_TRUE) {
-      order = 1;
+      order = 2;
+    }
+    if(order < 2) {
+      //SETERRQ()
     }
 
     ierr = m_field.set_field_order(root_set,MBTET,"SPATIAL_POSITION",order); CHKERRQ(ierr);

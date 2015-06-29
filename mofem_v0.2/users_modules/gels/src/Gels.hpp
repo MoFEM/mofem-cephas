@@ -2,7 +2,7 @@
   \brief Implementation of Gel finite element
 */
 
-/* This file is part of MoFEMRhs.
+/* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or (at your
@@ -52,6 +52,8 @@ struct Gel {
 
   FieldInterface &mFiled;
 
+  /** \brief Gel material parameters
+  */
   struct BlockMaterialData {
 
     double vAlpha;        ///< Poisson ration spring alpha
@@ -80,12 +82,12 @@ struct Gel {
 
     // Input
 
-    ublas::matrix<TYPE> F;
-    ublas::matrix<TYPE> FDot;
+    ublas::matrix<TYPE> F;            ///< Gradient of deformation
+    ublas::matrix<TYPE> FDot;         ///< Rate of gradient of deformation
     ublas::matrix<TYPE> strainHat;    ///< Internal variable, strain in dashpot beta
-    ublas::matrix<TYPE> strainHatDot;    ///< Internal variable, strain in dashpot beta
-    TYPE mU;
-    ublas::vector<TYPE> gradientMu;
+    ublas::matrix<TYPE> strainHatDot; ///< Internal variable, strain in dashpot beta
+    TYPE mU;                          ///< Solvent concentration
+    ublas::vector<TYPE> gradientMu;   ///< Gradient of solvent concentration
 
     // Internal use
 
@@ -105,8 +107,8 @@ struct Gel {
     // Output
 
     ublas::matrix<TYPE> stressTotal;              ///< Total stress
-    ublas::vector<TYPE> solventFlux;
-    TYPE volumeDot;
+    ublas::vector<TYPE> solventFlux;              ///< Solvent flux
+    TYPE volumeDot;                               ///< Volume rate change
     ublas::matrix<TYPE> residualStrainHat;        ///< Residual for calculation epsilon hat
 
     PetscErrorCode calculateCauchyDefromationTensor() {
@@ -422,13 +424,13 @@ struct Gel {
         if(valuesAtGaussPtsPtr) {
           (*valuesAtGaussPtsPtr).resize(nb_gauss_pts);
           for(int gg = 0;gg<nb_gauss_pts;gg++) {
-            (*valuesAtGaussPtsPtr)[gg].resize(3,false);
+            (*valuesAtGaussPtsPtr)[gg].resize(rank,false);
           }
         }
         if(gradientAtGaussPtsPtr) {
           (*gradientAtGaussPtsPtr).resize(nb_gauss_pts);
           for(int gg = 0;gg<nb_gauss_pts;gg++) {
-            (*gradientAtGaussPtsPtr)[gg].resize(3,3,false);
+            (*gradientAtGaussPtsPtr)[gg].resize(rank,3,false);
           }
         }
 
@@ -511,7 +513,7 @@ struct Gel {
     PetscErrorCode recordStressTotal() {
       PetscFunctionBegin;
 
-      if(tagS[STRESSTOTAL]>0) {
+      if(tagS[STRESSTOTAL]<0) {
         PetscFunctionReturn(0);
       }
 
@@ -579,7 +581,7 @@ struct Gel {
     PetscErrorCode recordSolventFlux() {
       PetscFunctionBegin;
 
-      if(tagS[SOLVENTFLUX]>0) {
+      if(tagS[SOLVENTFLUX]<0) {
         PetscFunctionReturn(0);
       }
 
@@ -616,7 +618,7 @@ struct Gel {
     PetscErrorCode recordVolumeDot() {
       PetscFunctionBegin;
 
-      if(tagS[VOLUMERATE]>0) {
+      if(tagS[VOLUMERATE]<0) {
         PetscFunctionReturn(0);
       }
 
@@ -658,7 +660,7 @@ struct Gel {
     PetscErrorCode recordResidualStrainHat() {
       PetscFunctionBegin;
 
-      if(tagS[RESIDUALSTRAINHAT]) {
+      if(tagS[RESIDUALSTRAINHAT]<0) {
         PetscFunctionReturn(0);
       }
 
@@ -767,7 +769,7 @@ struct Gel {
     PetscErrorCode calculateAtIntPtsStressTotal() {
       PetscFunctionBegin;
 
-      if(tagS[STRESSTOTAL]>0) {
+      if(tagS[STRESSTOTAL]<0) {
         PetscFunctionReturn(0);
       }
 
@@ -831,7 +833,7 @@ struct Gel {
     PetscErrorCode calculateAtIntPtsSolventFlux() {
       PetscFunctionBegin;
 
-      if(tagS[SOLVENTFLUX]>0) {
+      if(tagS[SOLVENTFLUX]<0) {
         PetscFunctionReturn(0);
       }
 
@@ -887,7 +889,7 @@ struct Gel {
     PetscErrorCode calculateAtIntPtsVolumeDot() {
       PetscFunctionBegin;
 
-      if(tagS[VOLUMERATE]>0) {
+      if(tagS[VOLUMERATE]<0) {
         PetscFunctionReturn(0);
       }
 
@@ -944,7 +946,7 @@ struct Gel {
     PetscErrorCode calculateAtIntPtrsResidualStrainHat() {
       PetscFunctionBegin;
 
-      if(tagS[RESIDUALSTRAINHAT]) {
+      if(tagS[RESIDUALSTRAINHAT]<0) {
         PetscFunctionReturn(0);
       }
 
