@@ -184,7 +184,6 @@ int main(int argc, char *argv[]) {
 
     Gel::GelFE *fe_ptr[] = { &gel.feRhs, &gel.feLhs };
     for(int ss = 0;ss<2;ss++) {
-
       fe_ptr[ss]->getOpPtrVector().push_back(
         new Gel::OpGetDataAtGaussPts(
           "SPATIAL_POSITION",
@@ -192,7 +191,6 @@ int main(int argc, char *argv[]) {
           &common_data.gradAtGaussPts["SPATIAL_POSITION"]
         )
       );
-
       fe_ptr[ss]->getOpPtrVector().push_back(
         new Gel::OpGetDataAtGaussPts(
           "SPATIAL_POSITION_DOT",
@@ -200,7 +198,6 @@ int main(int argc, char *argv[]) {
           &common_data.gradAtGaussPts["SPATIAL_POSITION_DOT"]
         )
       );
-
       fe_ptr[ss]->getOpPtrVector().push_back(
         new Gel::OpGetDataAtGaussPts(
           "SPATIAL_POSITION_DOT",
@@ -208,28 +205,26 @@ int main(int argc, char *argv[]) {
           &common_data.gradAtGaussPts["SOLVENT_CONCENTRATION"]
         )
       );
-
       fe_ptr[ss]->getOpPtrVector().push_back(
         new Gel::OpGetDataAtGaussPts(
           "HAT_EPS",
           &common_data.dataAtGaussPts["HAT_EPS"],
           NULL,
-          NULL,
           MBTET
         )
       );
-
       fe_ptr[ss]->getOpPtrVector().push_back(
         new Gel::OpGetDataAtGaussPts(
           "HAT_EPS_DOT",
           &common_data.dataAtGaussPts["HAT_EPS_DOT"],
-          NULL,
           NULL,
           MBTET
         )
       );
 
     }
+
+
 
   }
 

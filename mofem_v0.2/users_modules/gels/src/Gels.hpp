@@ -335,53 +335,7 @@ struct Gel {
   feLhs(m_field) {
   }
 
-  struct AuxDataAtGaussPt: public VolumeElementForcesAndSourcesCore::UserDataOperator {
-
-  public:
-
-    Vec vEctor;
-    AuxDataAtGaussPt(
-      const string field_name,
-      Vec vector  = PETSC_NULL
-    ):
-    VolumeElementForcesAndSourcesCore::UserDataOperator(
-      field_name,UserDataOperator::OPROW
-    ),
-    vEctor(vector) {
-    }
-
-    ublas::vector<double> vAlues;
-    ublas::vector<double> *valuesPtr;
-
-    PetscErrorCode getDataFromVector(
-      int side,EntityType type,DataForcesAndSurcesCore::EntData &data
-    ) {
-      PetscFunctionBegin;
-      PetscErrorCode ierr;
-
-      if(vEctor) {
-        vAlues.resize(data.getFieldData().size());
-        double *a;
-        ierr = VecGetArray(vEctor,&a); CHKERRQ(ierr);
-        VectorDofs::iterator it,hi_it;
-        it = data.getFieldDofs().begin();
-        hi_it = data.getFieldDofs().end();
-        for(int ii = 0;it!=hi_it;it++,ii++) {
-          int local_idx = getFEMethod()->rowPtr->find((*it)->get_global_unique_id())->get_petsc_local_dof_idx();
-          vAlues[ii] = a[local_idx];
-        }
-        ierr = VecRestoreArray(vEctor,&a); CHKERRQ(ierr);
-        valuesPtr = &vAlues;
-      } else {
-        valuesPtr = &data.getFieldData();
-      }
-
-      PetscFunctionReturn(0);
-    }
-
-  };
-
-  struct OpGetDataAtGaussPts: public AuxDataAtGaussPt {
+  struct OpGetDataAtGaussPts: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     vector<VectorDouble > *valuesAtGaussPtsPtr;
     vector<MatrixDouble > *gradientAtGaussPtsPtr;
@@ -391,10 +345,11 @@ struct Gel {
       const string field_name,
       vector<VectorDouble > *values_at_gauss_pts_ptr,
       vector<MatrixDouble > *gardient_at_gauss_pts_ptr,
-      Vec vector = PETSC_NULL,
       EntityType zero_at_type = MBVERTEX
     ):
-    AuxDataAtGaussPt(field_name,vector),
+    VolumeElementForcesAndSourcesCore::UserDataOperator(
+      field_name,UserDataOperator::OPROW
+    ),
     valuesAtGaussPtsPtr(values_at_gauss_pts_ptr),
     gradientAtGaussPtsPtr(gardient_at_gauss_pts_ptr),
     zeroAtType(zero_at_type) {
@@ -407,7 +362,6 @@ struct Gel {
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data
     ){
       PetscFunctionBegin;
-      PetscErrorCode ierr;
 
       try {
 
@@ -417,8 +371,6 @@ struct Gel {
         }
         int rank = data.getFieldDofs()[0]->get_max_rank();
         int nb_gauss_pts = data.getN().size1();
-
-        ierr = getDataFromVector(side,type,data); CHKERRQ(ierr);
 
         // Initialize
         if(valuesAtGaussPtsPtr) {
@@ -446,6 +398,8 @@ struct Gel {
           }
         }
 
+        ublas::vector<double> &values = data.getFieldData();
+
         // Calculate values at integration points
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
           VectorDouble N = data.getN(gg,nb_dofs/rank);
@@ -453,11 +407,11 @@ struct Gel {
           for(int dd = 0;dd<nb_dofs/rank;dd++) {
             for(int rr1 = 0;rr1<rank;rr1++) {
               if(valuesAtGaussPtsPtr) {
-                (*valuesAtGaussPtsPtr)[gg][rr1] += N[dd]*(*valuesPtr)[rank*dd+rr1];
+                (*valuesAtGaussPtsPtr)[gg][rr1] += N[dd]*values[rank*dd+rr1];
               }
               if(gradientAtGaussPtsPtr) {
                 for(int rr2 = 0;rr2<rank;rr2++) {
-                  (*gradientAtGaussPtsPtr)[gg](rr1,rr2) += diffN(dd,rr2)*(*valuesPtr)[rank*dd+rr1];
+                  (*gradientAtGaussPtsPtr)[gg](rr1,rr2) += diffN(dd,rr2)*values[rank*dd+rr1];
                 }
               }
             }
