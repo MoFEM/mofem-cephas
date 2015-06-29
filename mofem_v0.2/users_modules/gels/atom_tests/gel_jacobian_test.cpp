@@ -62,100 +62,112 @@ int main(int argc, char *argv[]) {
 
   MoFEM::Core core(moab);
   FieldInterface& m_field = core;
+  BitRefLevel bit_level0;
+  bit_level0.set(0);
+  ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
 
-  // Set approximation fields
+  // Define fields and finite elements
   {
-    // Seed all mesh entities to MoFEM database, those entities can be potentially used as finite elements
-    // or as entities which carry some approximation field.
-    BitRefLevel bit_level0;
-    bit_level0.set(0);
-    ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
 
-    bool check_if_spatial_field_exist = m_field.check_field("SPATIAL_POSITION");
-    ierr = m_field.add_field("SPATIAL_POSITION",H1,3,MF_ZERO); CHKERRQ(ierr);
-    ierr = m_field.add_field("SOLVENT_CONCENTRATION",H1,1,MF_ZERO); CHKERRQ(ierr);
-    ierr = m_field.add_field("HAT_EPS",L2,6,MF_ZERO); CHKERRQ(ierr);
-    ierr = m_field.add_field("SPATIAL_POSITION_DOT",H1,3,MF_ZERO); CHKERRQ(ierr);
-    ierr = m_field.add_field("SOLVENT_CONCENTRATION_DOT",H1,1,MF_ZERO); CHKERRQ(ierr);
-    ierr = m_field.add_field("HAT_EPS_DOT",L2,6,MF_ZERO); CHKERRQ(ierr);
+    // Set approximation fields
+    {
+      // Seed all mesh entities to MoFEM database, those entities can be potentially used as finite elements
+      // or as entities which carry some approximation field.
 
-    //Add field H1 space rank 3 to approximate geometry using hierarchical basis
-    //For 10 node tetrahedral, before use, geometry is projected on that field (see below)
-    ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,3,MF_ZERO); CHKERRQ(ierr);
+      bool check_if_spatial_field_exist = m_field.check_field("SPATIAL_POSITION");
+      ierr = m_field.add_field("SPATIAL_POSITION",H1,3,MF_ZERO); CHKERRQ(ierr);
+      ierr = m_field.add_field("SOLVENT_CONCENTRATION",H1,1,MF_ZERO); CHKERRQ(ierr);
+      ierr = m_field.add_field("HAT_EPS",L2,6,MF_ZERO); CHKERRQ(ierr);
+      ierr = m_field.add_field("SPATIAL_POSITION_DOT",H1,3,MF_ZERO); CHKERRQ(ierr);
+      ierr = m_field.add_field("SOLVENT_CONCENTRATION_DOT",H1,1,MF_ZERO); CHKERRQ(ierr);
+      ierr = m_field.add_field("HAT_EPS_DOT",L2,6,MF_ZERO); CHKERRQ(ierr);
 
-    //meshset consisting all entities in mesh
-    EntityHandle root_set = moab.get_root_set();
-    //add entities to field (root_mesh, i.e. on all mesh entities fields are approx.)
-    ierr = m_field.add_ents_to_field_by_TETs(root_set,"SPATIAL_POSITION"); CHKERRQ(ierr);
-    ierr = m_field.add_ents_to_field_by_TETs(root_set,"SOLVENT_CONCENTRATION"); CHKERRQ(ierr);
-    ierr = m_field.add_ents_to_field_by_TETs(root_set,"HAT_EPS"); CHKERRQ(ierr);
-    ierr = m_field.add_ents_to_field_by_TETs(root_set,"SPATIAL_POSITION_DOT"); CHKERRQ(ierr);
-    ierr = m_field.add_ents_to_field_by_TETs(root_set,"SOLVENT_CONCENTRATION_DOT"); CHKERRQ(ierr);
-    ierr = m_field.add_ents_to_field_by_TETs(root_set,"HAT_EPS_DOT"); CHKERRQ(ierr);
+      //Add field H1 space rank 3 to approximate geometry using hierarchical basis
+      //For 10 node tetrahedral, before use, geometry is projected on that field (see below)
+      ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,3,MF_ZERO); CHKERRQ(ierr);
 
-    PetscBool flg;
-    PetscInt order;
-    ierr = PetscOptionsGetInt(PETSC_NULL,"-my_order",&order,&flg); CHKERRQ(ierr);
-    if(flg != PETSC_TRUE) {
-      order = 2;
+      //meshset consisting all entities in mesh
+      EntityHandle root_set = moab.get_root_set();
+      //add entities to field (root_mesh, i.e. on all mesh entities fields are approx.)
+      ierr = m_field.add_ents_to_field_by_TETs(root_set,"SPATIAL_POSITION"); CHKERRQ(ierr);
+      ierr = m_field.add_ents_to_field_by_TETs(root_set,"SOLVENT_CONCENTRATION"); CHKERRQ(ierr);
+      ierr = m_field.add_ents_to_field_by_TETs(root_set,"HAT_EPS"); CHKERRQ(ierr);
+      ierr = m_field.add_ents_to_field_by_TETs(root_set,"SPATIAL_POSITION_DOT"); CHKERRQ(ierr);
+      ierr = m_field.add_ents_to_field_by_TETs(root_set,"SOLVENT_CONCENTRATION_DOT"); CHKERRQ(ierr);
+      ierr = m_field.add_ents_to_field_by_TETs(root_set,"HAT_EPS_DOT"); CHKERRQ(ierr);
+
+      PetscBool flg;
+      PetscInt order;
+      ierr = PetscOptionsGetInt(PETSC_NULL,"-my_order",&order,&flg); CHKERRQ(ierr);
+      if(flg != PETSC_TRUE) {
+        order = 2;
+      }
+      if(order < 2) {
+        //SETERRQ()
+      }
+
+      ierr = m_field.set_field_order(root_set,MBTET,"SPATIAL_POSITION",order); CHKERRQ(ierr);
+      ierr = m_field.set_field_order(root_set,MBTRI,"SPATIAL_POSITION",order); CHKERRQ(ierr);
+      ierr = m_field.set_field_order(root_set,MBEDGE,"SPATIAL_POSITION",order); CHKERRQ(ierr);
+      ierr = m_field.set_field_order(root_set,MBVERTEX,"SPATIAL_POSITION",1); CHKERRQ(ierr);
+
+      ierr = m_field.set_field_order(root_set,MBTET,"SPATIAL_POSITION_DOT",order); CHKERRQ(ierr);
+      ierr = m_field.set_field_order(root_set,MBTRI,"SPATIAL_POSITION_DOT",order); CHKERRQ(ierr);
+      ierr = m_field.set_field_order(root_set,MBEDGE,"SPATIAL_POSITION_DOT",order); CHKERRQ(ierr);
+      ierr = m_field.set_field_order(root_set,MBVERTEX,"SPATIAL_POSITION_DOT",1); CHKERRQ(ierr);
+
+      ierr = m_field.set_field_order(root_set,MBTET,"SOLVENT_CONCENTRATION",order-1); CHKERRQ(ierr);
+      ierr = m_field.set_field_order(root_set,MBTRI,"SOLVENT_CONCENTRATION",order-1); CHKERRQ(ierr);
+      ierr = m_field.set_field_order(root_set,MBEDGE,"SOLVENT_CONCENTRATION",order-1); CHKERRQ(ierr);
+      ierr = m_field.set_field_order(root_set,MBVERTEX,"SOLVENT_CONCENTRATION",1); CHKERRQ(ierr);
+
+      ierr = m_field.set_field_order(root_set,MBTET,"EPS_HAT",order-1); CHKERRQ(ierr);
+      ierr = m_field.set_field_order(root_set,MBTET,"EPS_HAT_DOT",order-1); CHKERRQ(ierr);
+
+      //gemetry approximation is set to 2nd oreder
+      ierr = m_field.add_ents_to_field_by_TETs(root_set,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+      ierr = m_field.set_field_order(0,MBTET,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
+      ierr = m_field.set_field_order(0,MBTRI,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
+      ierr = m_field.set_field_order(0,MBEDGE,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
+      ierr = m_field.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
+
+      ierr = m_field.build_fields(); CHKERRQ(ierr);
+
+      // Sett geometry approximation and initial spatial positions
+      // 10 node tets
+      if (!check_if_spatial_field_exist) {
+        Projection10NodeCoordsOnField ent_method_material(m_field, "MESH_NODE_POSITIONS");
+        ierr = m_field.loop_dofs("MESH_NODE_POSITIONS", ent_method_material); CHKERRQ(ierr);
+        Projection10NodeCoordsOnField ent_method_spatial(m_field, "SPATIAL_POSITION");
+        ierr = m_field.loop_dofs("SPATIAL_POSITION", ent_method_spatial); CHKERRQ(ierr);
+      }
+
     }
-    if(order < 2) {
-      //SETERRQ()
+
+    //Set finite elements
+    {
+      ierr = m_field.add_finite_element("GEL_FE",MF_ZERO); CHKERRQ(ierr);
+      ierr = m_field.modify_finite_element_add_field_row("GEL_FE","SPATIAL_POSITION"); CHKERRQ(ierr);
+      ierr = m_field.modify_finite_element_add_field_col("GEL_FE","SPATIAL_POSITION"); CHKERRQ(ierr);
+      ierr = m_field.modify_finite_element_add_field_data("GEL_FE","SPATIAL_POSITION"); CHKERRQ(ierr);
+      ierr = m_field.modify_finite_element_add_field_data("GEL_FE","SPATIAL_POSITION_DOT"); CHKERRQ(ierr);
+      ierr = m_field.modify_finite_element_add_field_row("GEL_FE","SOLVENT_CONCENTRATION"); CHKERRQ(ierr);
+      ierr = m_field.modify_finite_element_add_field_col("GEL_FE","SOLVENT_CONCENTRATION"); CHKERRQ(ierr);
+      ierr = m_field.modify_finite_element_add_field_data("GEL_FE","SOLVENT_CONCENTRATION"); CHKERRQ(ierr);
+      ierr = m_field.modify_finite_element_add_field_row("GEL_FE","EPS_HAT"); CHKERRQ(ierr);
+      ierr = m_field.modify_finite_element_add_field_col("GEL_FE","EPS_HAT"); CHKERRQ(ierr);
+      ierr = m_field.modify_finite_element_add_field_data("GEL_FE","EPS_HAT"); CHKERRQ(ierr);
+      ierr = m_field.modify_finite_element_add_field_data("GEL_FE","EPS_HAT_DOT"); CHKERRQ(ierr);
+      ierr = m_field.modify_finite_element_add_field_data("GEL_FE","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+      EntityHandle root_set = moab.get_root_set();
+      ierr = m_field.add_ents_to_finite_element_by_TETs(root_set,"GEL_FE"); CHKERRQ(ierr);
+
+      //build finite elemnts
+      ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
+      //build adjacencies
+      ierr = m_field.build_adjacencies(bit_level0); CHKERRQ(ierr);
     }
 
-    ierr = m_field.set_field_order(root_set,MBTET,"SPATIAL_POSITION",order); CHKERRQ(ierr);
-    ierr = m_field.set_field_order(root_set,MBTRI,"SPATIAL_POSITION",order); CHKERRQ(ierr);
-    ierr = m_field.set_field_order(root_set,MBEDGE,"SPATIAL_POSITION",order); CHKERRQ(ierr);
-    ierr = m_field.set_field_order(root_set,MBVERTEX,"SPATIAL_POSITION",1); CHKERRQ(ierr);
-
-    ierr = m_field.set_field_order(root_set,MBTET,"SPATIAL_POSITION_DOT",order); CHKERRQ(ierr);
-    ierr = m_field.set_field_order(root_set,MBTRI,"SPATIAL_POSITION_DOT",order); CHKERRQ(ierr);
-    ierr = m_field.set_field_order(root_set,MBEDGE,"SPATIAL_POSITION_DOT",order); CHKERRQ(ierr);
-    ierr = m_field.set_field_order(root_set,MBVERTEX,"SPATIAL_POSITION_DOT",1); CHKERRQ(ierr);
-
-    ierr = m_field.set_field_order(root_set,MBTET,"SOLVENT_CONCENTRATION",order-1); CHKERRQ(ierr);
-    ierr = m_field.set_field_order(root_set,MBTRI,"SOLVENT_CONCENTRATION",order-1); CHKERRQ(ierr);
-    ierr = m_field.set_field_order(root_set,MBEDGE,"SOLVENT_CONCENTRATION",order-1); CHKERRQ(ierr);
-    ierr = m_field.set_field_order(root_set,MBVERTEX,"SOLVENT_CONCENTRATION",1); CHKERRQ(ierr);
-
-    ierr = m_field.set_field_order(root_set,MBTET,"EPS_HAT",order-1); CHKERRQ(ierr);
-    ierr = m_field.set_field_order(root_set,MBTET,"EPS_HAT_DOT",order-1); CHKERRQ(ierr);
-
-    //gemetry approximation is set to 2nd oreder
-    ierr = m_field.add_ents_to_field_by_TETs(root_set,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
-    ierr = m_field.set_field_order(0,MBTET,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
-    ierr = m_field.set_field_order(0,MBTRI,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
-    ierr = m_field.set_field_order(0,MBEDGE,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
-    ierr = m_field.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
-
-    // Sett geometry approximation and initial spatial positions
-    // 10 node tets
-    if (!check_if_spatial_field_exist) {
-      Projection10NodeCoordsOnField ent_method_material(m_field, "MESH_NODE_POSITIONS");
-      ierr = m_field.loop_dofs("MESH_NODE_POSITIONS", ent_method_material); CHKERRQ(ierr);
-      Projection10NodeCoordsOnField ent_method_spatial(m_field, "SPATIAL_POSITION");
-      ierr = m_field.loop_dofs("SPATIAL_POSITION", ent_method_spatial); CHKERRQ(ierr);
-    }
-
-  }
-
-  //Set finite elements
-  {
-    ierr = m_field.add_finite_element("GEL_FE",MF_ZERO); CHKERRQ(ierr);
-    ierr = m_field.modify_finite_element_add_field_row("GEL_FE","SPATIAL_POSITION"); CHKERRQ(ierr);
-    ierr = m_field.modify_finite_element_add_field_col("GEL_FE","SPATIAL_POSITION"); CHKERRQ(ierr);
-    ierr = m_field.modify_finite_element_add_field_data("GEL_FE","SPATIAL_POSITION"); CHKERRQ(ierr);
-    ierr = m_field.modify_finite_element_add_field_data("GEL_FE","SPATIAL_POSITION_DOT"); CHKERRQ(ierr);
-    ierr = m_field.modify_finite_element_add_field_row("GEL_FE","SOLVENT_CONCENTRATION"); CHKERRQ(ierr);
-    ierr = m_field.modify_finite_element_add_field_col("GEL_FE","SOLVENT_CONCENTRATION"); CHKERRQ(ierr);
-    ierr = m_field.modify_finite_element_add_field_data("GEL_FE","SOLVENT_CONCENTRATION"); CHKERRQ(ierr);
-    ierr = m_field.modify_finite_element_add_field_row("GEL_FE","EPS_HAT"); CHKERRQ(ierr);
-    ierr = m_field.modify_finite_element_add_field_col("GEL_FE","EPS_HAT"); CHKERRQ(ierr);
-    ierr = m_field.modify_finite_element_add_field_data("GEL_FE","EPS_HAT"); CHKERRQ(ierr);
-    ierr = m_field.modify_finite_element_add_field_data("GEL_FE","EPS_HAT_DOT"); CHKERRQ(ierr);
-    ierr = m_field.modify_finite_element_add_field_data("GEL_FE","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
-    EntityHandle root_set = moab.get_root_set();
-    ierr = m_field.add_ents_to_finite_element_by_TETs(root_set,"GEL_FE"); CHKERRQ(ierr);
   }
 
   // Create gel instance
@@ -222,10 +234,62 @@ int main(int argc, char *argv[]) {
         )
       );
 
+
+      // attach tags for each recorder
+      vector<int> tags;
+      tags.push_back(1);
+      tags.push_back(2);
+      tags.push_back(3);
+      tags.push_back(4);
+      gel.feRhs.getOpPtrVector().push_back(
+        new Gel::OpJacobian(
+          "SPATIAL_POSITION",
+          tags,
+          gel.constitutiveEquation,
+          gel.commonData,
+          true,
+          false
+        )
+      );
+      gel.feLhs.getOpPtrVector().push_back(
+        new Gel::OpJacobian(
+          "SPATIAL_POSITION",
+          tags,
+          gel.constitutiveEquation,
+          gel.commonData,
+          false,
+          true
+        )
+      );
     }
+  }
+
+  // Create dm instance
+  DM dm;
+  DMType dm_name = "DMGEL";
+  {
+    ierr = DMRegister_MoFEM(dm_name); CHKERRQ(ierr);
+    ierr = DMCreate(PETSC_COMM_WORLD,&dm);CHKERRQ(ierr);
+    ierr = DMSetType(dm,dm_name);CHKERRQ(ierr);
+
+    ierr = DMMoFEMCreateMoFEM(dm,&m_field,dm_name,bit_level0); CHKERRQ(ierr);
+    ierr = DMSetFromOptions(dm); CHKERRQ(ierr);
+    //add elements to dm
+    ierr = DMMoFEMAddElement(dm,"GEL_FE"); CHKERRQ(ierr);
+
+    ierr = DMSetUp(dm); CHKERRQ(ierr);
+  }
+
+  // Make calculations
+  {
+    ierr = DMoFEMLoopFiniteElements(dm,"GEL_FE",&gel.feRhs); CHKERRQ(ierr);
+    ierr = DMoFEMLoopFiniteElements(dm,"GEL_FE",&gel.feLhs); CHKERRQ(ierr);
+  }
 
 
-
+  // Clean and destroy
+  {
+    ierr = DMDestroy(&dm); CHKERRQ(ierr);
   }
 
   PetscFinalize();

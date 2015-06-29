@@ -308,6 +308,8 @@ struct Gel {
     vector<ublas::vector<double> > jacVolumeRate;
     vector<ublas::matrix<double> > jacStrainHat;
 
+    bool recordOn;
+
   };
   CommonData commonData;
 
@@ -437,7 +439,7 @@ struct Gel {
 
     bool calculateResidualBool;
     bool calculateJacobianBool;
-    bool recordOn;
+    bool &recordOn;
 
     OpJacobian(
       const string field_name,
@@ -455,7 +457,7 @@ struct Gel {
     commonData(common_data),
     calculateResidualBool(calculate_residual),
     calculateJacobianBool(calculate_jacobian),
-    recordOn(true) {
+    recordOn(common_data.recordOn) {
     }
 
     int nbGaussPts;
@@ -1000,6 +1002,7 @@ struct Gel {
     }
 
   };
+
 
 };
 

@@ -349,7 +349,7 @@ int main(int argc, char *argv[]) {
     ierr = recorder_ptr->delete_recorder_series("THEMP_SERIES"); CHKERRQ(ierr);
   }
 
-  //set dm datastruture whict created mofem datastructures
+  //set dm data structure which created mofem data structures
   ierr = DMMoFEMCreateMoFEM(dm,&m_field,dm_name,bit_level0); CHKERRQ(ierr);
   ierr = DMSetFromOptions(dm); CHKERRQ(ierr);
   //add elements to dm
