@@ -104,7 +104,7 @@ int main(int argc, char *argv[]) {
   gradient_mu[1] = 0;
   gradient_mu[2] = 0;
 
-  // Create tee like output, printing results on screen and simultaneously
+  // Creeate tee like output, printing results on screen and simultaneously
   // writing results to file
   typedef tee_device<ostream, ofstream> TeeDevice;
   typedef stream<TeeDevice> TeeStream;

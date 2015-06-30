@@ -310,6 +310,10 @@ struct Gel {
 
     bool recordOn;
 
+    CommonData():
+    recordOn(true) {
+    }
+
   };
   CommonData commonData;
 
@@ -339,21 +343,24 @@ struct Gel {
 
   struct OpGetDataAtGaussPts: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
-    vector<VectorDouble > *valuesAtGaussPtsPtr;
-    vector<MatrixDouble > *gradientAtGaussPtsPtr;
+    CommonData &commonData;
+    bool calcVal;
+    bool calcGrad;
     EntityType zeroAtType;
 
     OpGetDataAtGaussPts(
       const string field_name,
-      vector<VectorDouble > *values_at_gauss_pts_ptr,
-      vector<MatrixDouble > *gardient_at_gauss_pts_ptr,
+      CommonData &common_data,
+      bool calc_val,
+      bool calc_grad,
       EntityType zero_at_type = MBVERTEX
     ):
     VolumeElementForcesAndSourcesCore::UserDataOperator(
       field_name,UserDataOperator::OPROW
     ),
-    valuesAtGaussPtsPtr(values_at_gauss_pts_ptr),
-    gradientAtGaussPtsPtr(gardient_at_gauss_pts_ptr),
+    commonData(common_data),
+    calcVal(calc_val),
+    calcGrad(calc_grad),
     zeroAtType(zero_at_type) {
     }
 
@@ -375,27 +382,27 @@ struct Gel {
         int nb_gauss_pts = data.getN().size1();
 
         // Initialize
-        if(valuesAtGaussPtsPtr) {
-          (*valuesAtGaussPtsPtr).resize(nb_gauss_pts);
+        if(calcVal) {
+          commonData.dataAtGaussPts[rowFieldName].resize(nb_gauss_pts);
           for(int gg = 0;gg<nb_gauss_pts;gg++) {
-            (*valuesAtGaussPtsPtr)[gg].resize(rank,false);
+            commonData.dataAtGaussPts[rowFieldName][gg].resize(rank,false);
           }
         }
-        if(gradientAtGaussPtsPtr) {
-          (*gradientAtGaussPtsPtr).resize(nb_gauss_pts);
+        if(calcGrad) {
+          commonData.gradAtGaussPts[rowFieldName].resize(nb_gauss_pts);
           for(int gg = 0;gg<nb_gauss_pts;gg++) {
-            (*gradientAtGaussPtsPtr)[gg].resize(rank,3,false);
+            commonData.gradAtGaussPts[rowFieldName][gg].resize(rank,3,false);
           }
         }
 
         // Zero values
         if(type == zeroAtType) {
           for(int gg = 0;gg<nb_gauss_pts;gg++) {
-            if(valuesAtGaussPtsPtr) {
-              (*valuesAtGaussPtsPtr)[gg].clear();
+            if(calcVal) {
+              commonData.dataAtGaussPts[rowFieldName][gg].clear();
             }
-            if(gradientAtGaussPtsPtr) {
-              (*gradientAtGaussPtsPtr)[gg].clear();
+            if(calcGrad) {
+              commonData.gradAtGaussPts[rowFieldName][gg].clear();
             }
           }
         }
@@ -408,12 +415,12 @@ struct Gel {
           MatrixDouble diffN = data.getDiffN(gg,nb_dofs/rank);
           for(int dd = 0;dd<nb_dofs/rank;dd++) {
             for(int rr1 = 0;rr1<rank;rr1++) {
-              if(valuesAtGaussPtsPtr) {
-                (*valuesAtGaussPtsPtr)[gg][rr1] += N[dd]*values[rank*dd+rr1];
+              if(calcVal) {
+                commonData.dataAtGaussPts[rowFieldName][gg][rr1] += N[dd]*values[rank*dd+rr1];
               }
-              if(gradientAtGaussPtsPtr) {
-                for(int rr2 = 0;rr2<rank;rr2++) {
-                  (*gradientAtGaussPtsPtr)[gg](rr1,rr2) += diffN(dd,rr2)*values[rank*dd+rr1];
+              if(calcGrad) {
+                for(int rr2 = 0;rr2<3;rr2++) {
+                  commonData.gradAtGaussPts[rowFieldName][gg](rr1,rr2) += diffN(dd,rr2)*values[rank*dd+rr1];
                 }
               }
             }
@@ -469,103 +476,99 @@ struct Gel {
     PetscErrorCode recordStressTotal() {
       PetscFunctionBegin;
 
-      if(tagS[STRESSTOTAL]<0) {
-        PetscFunctionReturn(0);
-      }
-
-      PetscErrorCode ierr;
-
-      cE.F.resize(3,3,false);
-      cE.strainHat.resize(3,3,false);
-
-      ublas::matrix<double> &F = (commonData.gradAtGaussPts[commonData.spatialPositionName])[0];
-      ublas::vector<double> &strain_hat = (commonData.dataAtGaussPts[commonData.strainHatName])[0];
-      ublas::vector<double> mu = (commonData.dataAtGaussPts[commonData.muName])[0];
-
-      trace_on(tagS[STRESSTOTAL]);
-      {
-
-        // Activate gradient of defamation
-        nbActiveVariables[tagS[STRESSTOTAL]] = 0;
-        for(int dd1 = 0;dd1<3;dd1++) {
-          for(int dd2 = 0;dd2<3;dd2++) {
-            cE.F(dd1,dd2) <<= F(dd1,dd2);
-            nbActiveVariables[tagS[STRESSTOTAL]]++;
+      try {
+        if(tagS[STRESSTOTAL]<0) {
+          PetscFunctionReturn(0);
+        }
+        PetscErrorCode ierr;
+        cE.F.resize(3,3,false);
+        cE.strainHat.resize(3,3,false);
+        ublas::matrix<double> &F = (commonData.gradAtGaussPts[commonData.spatialPositionName])[0];
+        ublas::vector<double> &strain_hat = (commonData.dataAtGaussPts[commonData.strainHatName])[0];
+        ublas::vector<double> mu = (commonData.dataAtGaussPts[commonData.muName])[0];
+        trace_on(tagS[STRESSTOTAL]);
+        {
+          // Activate gradient of defamation
+          nbActiveVariables[tagS[STRESSTOTAL]] = 0;
+          for(int dd1 = 0;dd1<3;dd1++) {
+            for(int dd2 = 0;dd2<3;dd2++) {
+              cE.F(dd1,dd2) <<= F(dd1,dd2);
+              nbActiveVariables[tagS[STRESSTOTAL]]++;
+            }
+          }
+          // Using vector notation to store hatStrain
+          // xx,yy,zz,2xy,2yz,2zy
+          cE.strainHat(0,0) <<= strain_hat[0];
+          cE.strainHat(1,1) <<= strain_hat[1];
+          cE.strainHat(2,2) <<= strain_hat[2];
+          cE.strainHat(0,1) <<= strain_hat[3];
+          cE.strainHat(1,2) <<= strain_hat[4];
+          cE.strainHat(0,2) <<= strain_hat[5];
+          nbActiveVariables[tagS[0]] += 6;
+          cE.strainHat(1,0) = cE.strainHat(0,1);
+          cE.strainHat(2,1) = cE.strainHat(1,2);
+          cE.strainHat(2,0) = cE.strainHat(0,2);
+          cE.mU <<= mu[0];
+          nbActiveVariables[tagS[STRESSTOTAL]]++;
+          // Do calculations
+          ierr = cE.calculateStrainTotal(); CHKERRQ(ierr);
+          ierr = cE.calculateStressAlpha(); CHKERRQ(ierr);
+          ierr = cE.calculateStressBeta(); CHKERRQ(ierr);
+          ierr = cE.calculateStressBetaHat(); CHKERRQ(ierr);
+          // Finally calculate result
+          ierr = cE.calculateStressTotal(); CHKERRQ(ierr);
+          // Results
+          nbActiveResults[tagS[STRESSTOTAL]] = 0;
+          commonData.stressTotal.resize(nbGaussPts);
+          commonData.stressTotal[0].resize(3,3,false);
+          for(int d1 = 0;d1<3;d1++) {
+            for(int d2 = 0;d2<3;d2++) {
+              cE.stressTotal(d1,d2) >>= (commonData.stressTotal[0])(d1,d2);
+              nbActiveResults[tagS[STRESSTOTAL]]++;
+            }
           }
         }
-
-        // Using vector notation to store hatStrain
-        // xx,yy,zz,2xy,2yz,2zy
-        cE.strainHat(0,0) <<= strain_hat[0];
-        cE.strainHat(1,1) <<= strain_hat[1];
-        cE.strainHat(2,2) <<= strain_hat[2];
-        cE.strainHat(0,1) <<= strain_hat[3];
-        cE.strainHat(1,2) <<= strain_hat[4];
-        cE.strainHat(0,2) <<= strain_hat[5];
-        nbActiveVariables[tagS[0]] += 6;
-        cE.strainHat(1,0) = cE.strainHat(0,1);
-        cE.strainHat(2,1) = cE.strainHat(1,2);
-        cE.strainHat(2,0) = cE.strainHat(0,2);
-
-        cE.mU <<= mu[0];
-        nbActiveVariables[tagS[STRESSTOTAL]]++;
-
-        // Do calculations
-        ierr = cE.calculateStressAlpha(); CHKERRQ(ierr);
-        ierr = cE.calculateStressBeta(); CHKERRQ(ierr);
-        ierr = cE.calculateStressBetaHat(); CHKERRQ(ierr);
-
-        // Finally calculate result
-        ierr = cE.calculateStressTotal(); CHKERRQ(ierr);
-
-        // Results
-        nbActiveResults[tagS[STRESSTOTAL]] = 0;
-        commonData.stressTotal.resize(nbGaussPts);
-        for(int d1 = 0;d1<3;d1++) {
-          for(int d2 = 0;d2<3;d2++) {
-            cE.stressTotal(d1,d2) >>= (commonData.stressTotal[0])(d1,d2);
-            nbActiveResults[tagS[STRESSTOTAL]]++;
-          }
-        }
-
+        trace_off();
+      } catch (const std::exception& ex) {
+        ostringstream ss;
+        ss << "throw in method: " << ex.what() << endl;
+        SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
-      trace_off();
-
       PetscFunctionReturn(0);
     }
 
     PetscErrorCode recordSolventFlux() {
       PetscFunctionBegin;
 
-      if(tagS[SOLVENTFLUX]<0) {
-        PetscFunctionReturn(0);
-      }
-
-      PetscErrorCode ierr;
-
-      cE.gradientMu.resize(3,false);
-
-      ublas::matrix<double> &gradient_mu = (commonData.gradAtGaussPts[commonData.muName])[0];
-
-      trace_on(tagS[SOLVENTFLUX]);
-      {
-
+      try {
+        if(tagS[SOLVENTFLUX]<0) {
+          PetscFunctionReturn(0);
+        }
+        PetscErrorCode ierr;
+        cE.gradientMu.resize(3,false);
+        ublas::matrix<double> &gradient_mu = (commonData.gradAtGaussPts[commonData.muName])[0];
+        trace_on(tagS[SOLVENTFLUX]);
+        {
           // Activate rate of gradient of defamation
           nbActiveVariables[tagS[SOLVENTFLUX]] = 0;
           for(int ii = 0;ii<3;ii++) {
             cE.gradientMu[ii] <<= gradient_mu(0,ii);
             nbActiveVariables[tagS[SOLVENTFLUX]]++;
           }
-
           ierr = cE.calculateSolventFlux(); CHKERRQ(ierr);
-
           nbActiveResults[tagS[SOLVENTFLUX]] = 0;
           commonData.solventFlux.resize(nbGaussPts);
+          commonData.solventFlux[0].resize(3,false);
           for(int d1 = 0;d1<3;d1++) {
             cE.solventFlux[d1] >>= commonData.solventFlux[0][d1];
             nbActiveResults[tagS[SOLVENTFLUX]]++;
           }
-
+        }
+        trace_off();
+      } catch (const std::exception& ex) {
+        ostringstream ss;
+        ss << "throw in method: " << ex.what() << endl;
+        SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
       PetscFunctionReturn(0);
@@ -585,30 +588,30 @@ struct Gel {
 
       trace_on(tagS[VOLUMERATE]);
       {
-
-          // Activate rate of gradient of defamation
-          nbActiveVariables[tagS[VOLUMERATE]] = 0;
-          for(int dd1 = 0;dd1<3;dd1++) {
-            for(int dd2 = 0;dd2<3;dd2++) {
-              cE.F(dd1,dd2) <<= F(dd1,dd2);
-              nbActiveVariables[tagS[VOLUMERATE]]++;
-            }
+        // Activate rate of gradient of defamation
+        nbActiveVariables[tagS[VOLUMERATE]] = 0;
+        cE.F.resize(3,3,false);
+        for(int dd1 = 0;dd1<3;dd1++) {
+          for(int dd2 = 0;dd2<3;dd2++) {
+            cE.F(dd1,dd2) <<= F(dd1,dd2);
+            nbActiveVariables[tagS[VOLUMERATE]]++;
           }
-          for(int dd1 = 0;dd1<3;dd1++) {
-            for(int dd2 = 0;dd2<3;dd2++) {
-              cE.FDot(dd1,dd2) <<= F_dot(dd1,dd2);
-              nbActiveVariables[tagS[VOLUMERATE]]++;
-            }
+        }
+        cE.FDot.resize(3,3,false);
+        for(int dd1 = 0;dd1<3;dd1++) {
+          for(int dd2 = 0;dd2<3;dd2++) {
+            cE.FDot(dd1,dd2) <<= F_dot(dd1,dd2);
+            nbActiveVariables[tagS[VOLUMERATE]]++;
           }
-
-          ierr = cE.calculateVolumeDot(); CHKERRQ(ierr);
-
-          nbActiveResults[tagS[VOLUMERATE]] = 0;
-          commonData.volumeDot.resize(nbGaussPts);
-          cE.volumeDot >>= commonData.volumeDot[0];
-          nbActiveResults[tagS[VOLUMERATE]]++;
-
+        }
+        ierr = cE.calculateTraceStrainTotalDot(); CHKERRQ(ierr);
+        ierr = cE.calculateVolumeDot(); CHKERRQ(ierr);
+        nbActiveResults[tagS[VOLUMERATE]] = 0;
+        commonData.volumeDot.resize(nbGaussPts);
+        cE.volumeDot >>= commonData.volumeDot[0];
+        nbActiveResults[tagS[VOLUMERATE]]++;
       }
+      trace_off();
 
       PetscFunctionReturn(0);
     }
@@ -625,14 +628,11 @@ struct Gel {
       cE.F.resize(3,3,false);
       cE.strainHat.resize(3,3,false);
       cE.strainHatDot.resize(3,3,false);
-
       ublas::matrix<double> &F = (commonData.gradAtGaussPts[commonData.spatialPositionName])[0];
       ublas::vector<double> &strain_hat = (commonData.dataAtGaussPts[commonData.strainHatName])[0];
       ublas::vector<double> &strain_hat_dot = (commonData.dataAtGaussPts[commonData.strainHatNameDot])[0];
-
       trace_on(tagS[RESIDUALSTRAINHAT]);
       {
-
         // Activate gradient of defamation
         nbActiveVariables[tagS[RESIDUALSTRAINHAT]] = 0;
         for(int dd1 = 0;dd1<3;dd1++) {
@@ -641,7 +641,6 @@ struct Gel {
             nbActiveVariables[tagS[RESIDUALSTRAINHAT]]++;
           }
         }
-
         // Using vector notation to store hatStrain
         // xx,yy,zz,2xy,2yz,2zy
         cE.strainHat(0,0) <<= strain_hat[0];
@@ -654,7 +653,6 @@ struct Gel {
         cE.strainHat(1,0) = cE.strainHat(0,1);
         cE.strainHat(2,1) = cE.strainHat(1,2);
         cE.strainHat(2,0) = cE.strainHat(0,2);
-
         // Activate strain hat dot
         cE.strainHatDot(0,0) <<= strain_hat_dot[0];
         cE.strainHatDot(1,1) <<= strain_hat_dot[1];
@@ -666,21 +664,20 @@ struct Gel {
         cE.strainHatDot(1,0) = cE.strainHatDot(0,1);
         cE.strainHatDot(2,1) = cE.strainHatDot(1,2);
         cE.strainHatDot(2,0) = cE.strainHatDot(0,2);
-
         ierr = cE.calculateStressBeta(); CHKERRQ(ierr);
         ierr = cE.calculateStrainHatFlux(); CHKERRQ(ierr);
         ierr = cE.calculateResidualStrainHat(); CHKERRQ(ierr);
-
         nbActiveResults[tagS[RESIDUALSTRAINHAT]] = 0;
         commonData.residualStrainHat.resize(nbGaussPts);
+        commonData.residualStrainHat[0].resize(3,3,false);
         for(int d1 = 0;d1<3;d1++) {
           for(int d2 = 0;d2<3;d2++) {
             cE.residualStrainHat(d1,d2) >>= commonData.residualStrainHat[0](d1,d2);
             nbActiveResults[tagS[RESIDUALSTRAINHAT]]++;
           }
         }
-
       }
+      trace_off();
 
       PetscFunctionReturn(0);
     }
@@ -725,63 +722,74 @@ struct Gel {
     PetscErrorCode calculateAtIntPtsStressTotal() {
       PetscFunctionBegin;
 
-      if(tagS[STRESSTOTAL]<0) {
-        PetscFunctionReturn(0);
-      }
+      try {
 
-      PetscErrorCode ierr;
+        if(tagS[STRESSTOTAL]<0) {
+          PetscFunctionReturn(0);
+        }
 
-      activeVariables.resize(nbActiveVariables[tagS[STRESSTOTAL]],false);
 
-      for(int gg = 0;gg<nbGaussPts;gg++) {
+        PetscErrorCode ierr;
 
-        ublas::matrix<double> &F = (commonData.gradAtGaussPts[commonData.spatialPositionName])[gg];
-        ublas::vector<double> &strain_hat = (commonData.dataAtGaussPts[commonData.strainHatName])[gg];
-        double mu = (commonData.dataAtGaussPts[commonData.muName])[gg][0];
+        activeVariables.resize(nbActiveVariables[tagS[STRESSTOTAL]],false);
 
-        int nb_active_variables = 0;
-        // Activate gradient of defamation
-        for(int dd1 = 0;dd1<3;dd1++) {
-          for(int dd2 = 0;dd2<3;dd2++) {
-            activeVariables[nb_active_variables++] = F(dd1,dd2);
+        for(int gg = 0;gg<nbGaussPts;gg++) {
+
+          ublas::matrix<double> &F = (commonData.gradAtGaussPts[commonData.spatialPositionName])[gg];
+          ublas::vector<double> &strain_hat = (commonData.dataAtGaussPts[commonData.strainHatName])[gg];
+          double mu = (commonData.dataAtGaussPts[commonData.muName])[gg][0];
+
+          int nb_active_variables = 0;
+          // Activate gradient of defamation
+          for(int dd1 = 0;dd1<3;dd1++) {
+            for(int dd2 = 0;dd2<3;dd2++) {
+              activeVariables[nb_active_variables++] = F(dd1,dd2);
+            }
           }
-        }
-        // Using vector notation to store hatStrain
-        // xx,yy,zz,2xy,2yz,2zy
-        for(int ii = 0;ii<6;ii++) {
-          activeVariables[nb_active_variables++] = strain_hat[ii];
-        }
-        activeVariables[nb_active_variables++] = mu;
-
-        if(nb_active_variables!=nbActiveVariables[tagS[STRESSTOTAL]]) {
-          SETERRQ(
-            PETSC_COMM_SELF,MOFEM_IMPOSIBLE_CASE,"Number of active variables does not much"
-          );
-        }
-
-        if(calculateResidualBool) {
-          ierr = calculateFunction(STRESSTOTAL,&commonData.stressTotal[gg](0,0)); CHKERRQ(ierr);
-        }
-
-        if(calculateJacobianBool) {
-
-          if(gg == 0) {
-            commonData.jacStressTotal.resize(nbGaussPts);
-            commonData.jacRowPtr.resize(nbActiveResults[tagS[STRESSTOTAL]]);
+          // Using vector notation to store hatStrain
+          // xx,yy,zz,2xy,2yz,2zy
+          for(int ii = 0;ii<6;ii++) {
+            activeVariables[nb_active_variables++] = strain_hat[ii];
           }
-          commonData.jacStressTotal[gg].resize(
-            nbActiveResults[tagS[STRESSTOTAL]],
-            nbActiveVariables[tagS[STRESSTOTAL]]
-          );
-          for(int dd = 0;dd<nbActiveResults[tagS[STRESSTOTAL]];dd++) {
-            commonData.jacRowPtr[dd] = &commonData.jacStressTotal[gg](dd,0);
+          activeVariables[nb_active_variables++] = mu;
+
+          if(nb_active_variables!=nbActiveVariables[tagS[STRESSTOTAL]]) {
+            SETERRQ(
+              PETSC_COMM_SELF,MOFEM_IMPOSIBLE_CASE,"Number of active variables does not much"
+            );
           }
 
-          ierr = calculateJacobian(STRESSTOTAL); CHKERRQ(ierr);
+          if(calculateResidualBool) {
+            commonData.stressTotal[gg].resize(3,3,false);
+            ierr = calculateFunction(STRESSTOTAL,&commonData.stressTotal[gg](0,0)); CHKERRQ(ierr);
+          }
+
+          if(calculateJacobianBool) {
+
+            if(gg == 0) {
+              commonData.jacStressTotal.resize(nbGaussPts);
+              commonData.jacRowPtr.resize(nbActiveResults[tagS[STRESSTOTAL]]);
+            }
+            commonData.jacStressTotal[gg].resize(
+              nbActiveResults[tagS[STRESSTOTAL]],
+              nbActiveVariables[tagS[STRESSTOTAL]]
+            );
+            for(int dd = 0;dd<nbActiveResults[tagS[STRESSTOTAL]];dd++) {
+              commonData.jacRowPtr[dd] = &commonData.jacStressTotal[gg](dd,0);
+            }
+
+            ierr = calculateJacobian(STRESSTOTAL); CHKERRQ(ierr);
+
+          }
 
         }
 
-      }
+      } catch (const std::exception& ex) {
+          ostringstream ss;
+          ss << "throw in method: " << ex.what() << endl;
+          SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+        }
+
 
       PetscFunctionReturn(0);
     }
@@ -803,7 +811,6 @@ struct Gel {
 
         int nb_active_variables = 0;
         // Activate rate of gradient of defamation
-        nbActiveVariables[tagS[SOLVENTFLUX]] = 0;
         for(int ii = 0;ii<3;ii++) {
           activeVariables[nb_active_variables++] = gradient_mu(0,ii);
         }
@@ -815,6 +822,7 @@ struct Gel {
         }
 
         if(calculateResidualBool) {
+          commonData.solventFlux[gg].resize(3,false);
           ierr = calculateFunction(
             SOLVENTFLUX,
             &(commonData.solventFlux[gg][0])
@@ -854,10 +862,8 @@ struct Gel {
       activeVariables.resize(nbActiveVariables[tagS[VOLUMERATE]],false);
 
       for(int gg = 0;gg<nbGaussPts;gg++) {
-
         ublas::matrix<double> &F = (commonData.gradAtGaussPts[commonData.spatialPositionName])[gg];
         ublas::matrix<double> &F_dot = (commonData.gradAtGaussPts[commonData.spatialPositionNameDot])[gg];
-
         int nb_active_variables = 0;
         // Activate gradient of defamation
         for(int dd1 = 0;dd1<3;dd1++) {
@@ -870,30 +876,23 @@ struct Gel {
             activeVariables[nb_active_variables++] = F_dot(dd1,dd2);
           }
         }
-
         if(nb_active_variables!=nbActiveVariables[tagS[VOLUMERATE]]) {
           SETERRQ(
             PETSC_COMM_SELF,MOFEM_IMPOSIBLE_CASE,"Number of active variables does not much"
           );
         }
-
         if(calculateResidualBool) {
           ierr = calculateFunction(VOLUMERATE,&commonData.stressTotal[gg](0,0)); CHKERRQ(ierr);
         }
-
         if(calculateJacobianBool) {
-
           if(gg == 0) {
             commonData.jacVolumeRate.resize(nbGaussPts);
             commonData.jacRowPtr.resize(nbActiveResults[tagS[VOLUMERATE]]);
           }
           commonData.jacVolumeRate[gg].resize(nbActiveVariables[tagS[VOLUMERATE]]);
           commonData.jacRowPtr[0] = &commonData.jacVolumeRate[gg][0];
-
           ierr = calculateJacobian(VOLUMERATE); CHKERRQ(ierr);
-
         }
-
       }
 
       PetscFunctionReturn(0);
@@ -902,69 +901,65 @@ struct Gel {
     PetscErrorCode calculateAtIntPtrsResidualStrainHat() {
       PetscFunctionBegin;
 
-      if(tagS[RESIDUALSTRAINHAT]<0) {
-        PetscFunctionReturn(0);
-      }
-
-      PetscErrorCode ierr;
-
-      activeVariables.resize(nbActiveResults[tagS[RESIDUALSTRAINHAT]]);
-
-      for(int gg = 0;gg<nbGaussPts;gg++) {
-
-        ublas::matrix<double> &F = (commonData.gradAtGaussPts[commonData.spatialPositionName])[gg];
-        ublas::vector<double> &strain_hat = (commonData.dataAtGaussPts[commonData.strainHatName])[gg];
-        ublas::vector<double> &strain_hat_dot = (commonData.dataAtGaussPts[commonData.strainHatNameDot])[gg];
-
-        int nb_active_variables = 0;
-
-        // Activate gradient of defamation
-        nbActiveVariables[tagS[RESIDUALSTRAINHAT]] = 0;
-        for(int dd1 = 0;dd1<3;dd1++) {
-          for(int dd2 = 0;dd2<3;dd2++) {
-            activeVariables[nb_active_variables++] = F(dd1,dd2);
+      try {
+        if(tagS[RESIDUALSTRAINHAT]<0) {
+          PetscFunctionReturn(0);
+        }
+        PetscErrorCode ierr;
+        activeVariables.resize(nbActiveVariables[tagS[RESIDUALSTRAINHAT]]);
+        for(int gg = 0;gg<nbGaussPts;gg++) {
+          ublas::matrix<double> &F = (commonData.gradAtGaussPts[commonData.spatialPositionName])[gg];
+          ublas::vector<double> &strain_hat = (commonData.dataAtGaussPts[commonData.strainHatName])[gg];
+          ublas::vector<double> &strain_hat_dot = (commonData.dataAtGaussPts[commonData.strainHatNameDot])[gg];
+          int nb_active_variables = 0;
+          // Activate gradient of defamation
+          for(int dd1 = 0;dd1<3;dd1++) {
+            for(int dd2 = 0;dd2<3;dd2++) {
+              activeVariables[nb_active_variables++] = F(dd1,dd2);
+            }
+          }
+          // Using vector notation to store hatStrain
+          // xx,yy,zz,2xy,2yz,2zy
+          for(int ii = 0;ii<6;ii++) {
+            activeVariables[nb_active_variables++] = strain_hat[ii];
+          }
+          // Using vector notation to store hatStrainDot
+          for(int ii = 0;ii<6;ii++) {
+            activeVariables[nb_active_variables++] = strain_hat_dot[ii];
+          }
+          if(nb_active_variables!=nbActiveVariables[tagS[RESIDUALSTRAINHAT]]) {
+            SETERRQ(
+              PETSC_COMM_SELF,MOFEM_IMPOSIBLE_CASE,"Number of active variables does not much"
+            );
+          }
+          if(calculateResidualBool) {
+            commonData.residualStrainHat[gg].resize(3,3,false);
+            ierr = calculateFunction(
+              RESIDUALSTRAINHAT,&commonData.residualStrainHat[gg](0,0)
+            ); CHKERRQ(ierr);
+          }
+          if(calculateJacobianBool) {
+            if(gg == 0) {
+              commonData.jacStrainHat.resize(nbGaussPts);
+              commonData.jacRowPtr.resize(nbActiveResults[tagS[RESIDUALSTRAINHAT]]);
+            }
+            commonData.jacStrainHat[gg].resize(
+              nbActiveResults[tagS[RESIDUALSTRAINHAT]],
+              nbActiveVariables[tagS[RESIDUALSTRAINHAT]],
+              false
+            );
+            for(int dd = 0;dd<nbActiveResults[tagS[RESIDUALSTRAINHAT]];dd++) {
+              commonData.jacRowPtr[dd] = &commonData.jacStrainHat[gg](dd,0);
+            }
+            ierr = calculateJacobian(RESIDUALSTRAINHAT); CHKERRQ(ierr);
           }
         }
 
-        // Using vector notation to store hatStrain
-        // xx,yy,zz,2xy,2yz,2zy
-        for(int ii = 0;ii<6;ii++) {
-          activeVariables[nb_active_variables++] = strain_hat[ii];
-        }
-        // Using vector notation to store hatStrainDot
-        for(int ii = 0;ii<6;ii++) {
-          activeVariables[nb_active_variables++] = strain_hat_dot[ii];
-        }
 
-
-        if(nb_active_variables!=nbActiveVariables[tagS[SOLVENTFLUX]]) {
-          SETERRQ(
-            PETSC_COMM_SELF,MOFEM_IMPOSIBLE_CASE,"Number of active variables does not much"
-          );
-        }
-
-        if(calculateResidualBool) {
-          ierr = calculateFunction(
-            RESIDUALSTRAINHAT,&commonData.residualStrainHat[gg](0,0)
-          ); CHKERRQ(ierr);
-        }
-
-        if(calculateJacobianBool) {
-          if(gg == 0) {
-            commonData.jacStrainHat.resize(nbGaussPts);
-            commonData.jacRowPtr.resize(nbActiveResults[tagS[RESIDUALSTRAINHAT]]);
-          }
-          commonData.jacStrainHat[gg].resize(
-            nbActiveResults[tagS[RESIDUALSTRAINHAT]],
-            nbActiveVariables[tagS[RESIDUALSTRAINHAT]],
-            false
-          );
-          for(int dd = 0;dd<nbActiveResults[tagS[RESIDUALSTRAINHAT]];dd++) {
-            commonData.jacRowPtr[dd] = &commonData.jacStrainHat[gg](dd,0);
-          }
-          ierr = calculateJacobian(RESIDUALSTRAINHAT); CHKERRQ(ierr);
-        }
-
+      } catch (const std::exception& ex) {
+        ostringstream ss;
+        ss << "throw in method: " << ex.what() << endl;
+        SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
       PetscFunctionReturn(0);
@@ -977,6 +972,7 @@ struct Gel {
       PetscErrorCode ierr;
 
       if(row_type != MBVERTEX) PetscFunctionReturn(0);
+      nbGaussPts = row_data.getN().size1();
 
       try {
 
