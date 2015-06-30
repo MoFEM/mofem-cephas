@@ -1180,6 +1180,50 @@ struct Gel {
     }
   };
 
+  struct OpRhsStrainHat: public AssembleVector {
+    CommonData &commonData;
+    OpRhsStrainHat(CommonData &common_data):
+    AssembleVector(common_data.strainHatName),
+    commonData(common_data) {
+    }
+    PetscErrorCode doWork(
+      int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data
+    ) {
+      PetscFunctionBegin;
+      try {
+        int nb_dofs = row_data.getIndices().size();
+        if(!nb_dofs) {
+          PetscFunctionReturn(0);
+        }
+        nF.resize(nb_dofs,false);
+        nF.clear();
+        int nb_gauss_pts = row_data.getN().size1();
+        for(int gg = 0;gg<nb_gauss_pts;gg++) {
+          const VectorAdaptor &N = row_data.getN(gg,nb_dofs/6);
+          ublas::matrix<double> strain_hat = commonData.residualStrainHat[gg];
+          double val = getVolume()*getGaussPts()(3,gg);
+          if(getHoGaussPtsDetJac().size()>0) {
+            val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
+          }
+          for(int dd = 0;dd<nb_dofs/6;dd++) {
+            nF[dd*6+0] += val*N[dd]*strain_hat(0,0);
+            nF[dd*6+1] += val*N[dd]*strain_hat(1,1);
+            nF[dd*6+2] += val*N[dd]*strain_hat(2,2);
+            nF[dd*6+3] += val*N[dd]*strain_hat(0,1);
+            nF[dd*6+4] += val*N[dd]*strain_hat(1,2);
+            nF[dd*6+5] += val*N[dd]*strain_hat(0,2);
+          }
+        }
+        ierr = aSemble(row_side,row_type,row_data); CHKERRQ(ierr);
+      } catch (const std::exception& ex) {
+        ostringstream ss;
+        ss << "throw in method: " << ex.what() << endl;
+        SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+      }
+      PetscFunctionReturn(0);
+    }
+  };
+
 };
 
 #endif //__GEL_HPP__

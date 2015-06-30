@@ -209,6 +209,7 @@ int main(int argc, char *argv[]) {
       tags.push_back(3);
       tags.push_back(4);
 
+      // Right hand side operators
       gel.feRhs.getOpPtrVector().push_back(
         new Gel::OpJacobian("SPATIAL_POSITION", tags, gel.constitutiveEquation,gel.commonData,true,false)
       );
@@ -221,8 +222,12 @@ int main(int argc, char *argv[]) {
       gel.feRhs.getOpPtrVector().push_back(
         new Gel::OpRhsVolumeDot(gel.commonData)
       );
+      gel.feRhs.getOpPtrVector().push_back(
+        new Gel::OpRhsStrainHat(gel.commonData)
+      );
+      // Left hand side operators
       gel.feLhs.getOpPtrVector().push_back(
-        new Gel::OpJacobian("SPATIAL_POSITION", tags, gel.constitutiveEquation, gel.commonData,false,true)
+        new Gel::OpJacobian("SPATIAL_POSITION",tags,gel.constitutiveEquation,gel.commonData,false,true)
       );
     }
   }
