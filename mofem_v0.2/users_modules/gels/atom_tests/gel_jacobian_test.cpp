@@ -215,6 +215,9 @@ int main(int argc, char *argv[]) {
       gel.feRhs.getOpPtrVector().push_back(
         new Gel::OpRhsAssembleStrainTotal(gel.commonData)
       );
+      gel.feRhs.getOpPtrVector().push_back(
+        new Gel::OpRhsAssembleSolventFlux(gel.commonData)
+      );
       gel.feLhs.getOpPtrVector().push_back(
         new Gel::OpJacobian("SPATIAL_POSITION", tags, gel.constitutiveEquation, gel.commonData,false,true)
       );
