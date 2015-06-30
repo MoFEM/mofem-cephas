@@ -212,7 +212,7 @@ int main(int argc, char *argv[]) {
       gel.feRhs.getOpPtrVector().push_back(
         new Gel::OpJacobian( "SPATIAL_POSITION", tags, gel.constitutiveEquation,gel.commonData,true,false)
       );
-      /*gel.feLhs.getOpPtrVector().push_back(
+      gel.feLhs.getOpPtrVector().push_back(
         new Gel::OpJacobian(
           "SPATIAL_POSITION",
           tags,
@@ -221,7 +221,7 @@ int main(int argc, char *argv[]) {
           false,
           true
         )
-      );*/
+      );
     }
   }
 
