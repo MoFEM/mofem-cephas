@@ -1027,6 +1027,16 @@ struct Gel {
     }
   };
 
+  /** \brief Assemble internal force vector
+
+  \f[
+  \mathbf{f}_x =
+  \int_V
+  \frac{\partial N_i}{\partial X_j} \sigma_{ij}
+  \textrm{d}V
+  \f]
+
+  */
   struct OpRhsAssembleStrainTotal: public AssembleVector {
     CommonData &commonData;
     OpRhsAssembleStrainTotal(CommonData &common_data):
@@ -1071,7 +1081,16 @@ struct Gel {
     }
   };
 
+  /** \berief Calculate internal forces for solvent flux
 
+  \f[
+  \mathbf{f}_{\mu} =
+  \int_V
+  \frac{\partial N}{\partial X_k} J_k
+  \textrm{d}V
+  \f]
+
+  */
   struct OpRhsAssembleSolventFlux: public AssembleVector {
     CommonData &commonData;
     OpRhsAssembleSolventFlux(CommonData &common_data):
@@ -1102,6 +1121,43 @@ struct Gel {
               nF[dd] += val*diffN(dd,nn)*flux(nn);
             }
           }
+        }
+        ierr = aSemble(row_side,row_type,row_data); CHKERRQ(ierr);
+      } catch (const std::exception& ex) {
+        ostringstream ss;
+        ss << "throw in method: " << ex.what() << endl;
+        SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+      }
+      PetscFunctionReturn(0);
+    }
+  };
+
+  struct OpRhsVolumeDot: public AssembleVector {
+    CommonData &commonData;
+    OpRhsVolumeDot(CommonData &common_data):
+    AssembleVector(common_data.muName),
+    commonData(common_data) {
+    }
+    PetscErrorCode doWork(
+      int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data
+    ) {
+      PetscFunctionBegin;
+      try {
+        int nb_dofs = row_data.getIndices().size();
+        if(!nb_dofs) {
+          PetscFunctionReturn(0);
+        }
+        nF.resize(nb_dofs,false);
+        nF.clear();
+        int nb_gauss_pts = row_data.getN().size1();
+        for(int gg = 0;gg<nb_gauss_pts;gg++) {
+          const VectorAdaptor &N = row_data.getN(gg,nb_dofs);
+          double volume_dot = commonData.volumeDot[gg];
+          double val = getVolume()*getGaussPts()(3,gg);
+          if(getHoGaussPtsDetJac().size()>0) {
+            val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
+          }
+          nF += val*N*volume_dot;
         }
         ierr = aSemble(row_side,row_type,row_data); CHKERRQ(ierr);
       } catch (const std::exception& ex) {
