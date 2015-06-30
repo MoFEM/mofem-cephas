@@ -227,5 +227,6 @@ struct SphericalArcLengthControl: public FEMethod {
 #endif // __ARCLEGHTTOOLS_HPP__
 
 /***************************************************************************//**
- * \defgroup arc_length_control Arc-Length control
+ \defgroup arc_length_control Arc-Length control
+ \ingroup user_modules
  ******************************************************************************/

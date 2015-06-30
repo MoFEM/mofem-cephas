@@ -221,6 +221,6 @@ struct MoistureTransportElement: public ThermalElement {
 
 /***************************************************************************//**
 * \defgroup mofem_moisture_elem Moisture element
-* \ingroup mofem_forces_and_sources
+* \ingroup user_modules
 ******************************************************************************/
 

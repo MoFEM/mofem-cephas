@@ -140,5 +140,5 @@ struct BodyFroceConstantField {
 
 /***************************************************************************//**
  * \defgroup mofem_body_forces Body forces elements
- * \ingroup mofem_forces_and_sources
+ * \ingroup user_modules
  ******************************************************************************/

@@ -271,5 +271,5 @@ struct MetaNeummanForces {
 
 /***************************************************************************//**
  * \defgroup mofem_static_boundary_conditions Pressure and force boundary conditions
- * \ingroup mofem_forces_and_sources
+ * \ingroup user_modules
  ******************************************************************************/

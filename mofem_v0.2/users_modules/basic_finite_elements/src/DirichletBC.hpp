@@ -152,4 +152,5 @@ struct DirichletBCFromBlockSetFEMethodPreAndPostProc: public DisplacementBCFEMet
 
 /***************************************************************************//**
  * \defgroup Dirichlet_bc Dirichlet boundary conditions
+ * \ingroup user_modules
  ******************************************************************************/

@@ -1060,6 +1060,7 @@ struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
 /***************************************************************************//**
  * \defgroup mofem_forces_and_sources Forces and sources
+ * \ingroup mofem
  ******************************************************************************/
 
 /***************************************************************************//**

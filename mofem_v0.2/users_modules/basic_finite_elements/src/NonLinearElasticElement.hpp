@@ -544,5 +544,9 @@ struct NonlinearElasticElement {
 
 /***************************************************************************//**
  * \defgroup nonlinear_elastic_elem NonLinear Elastic Element
- * \ingroup mofem_forces_and_sources
+ * \ingroup user_modules
+ ******************************************************************************/
+
+/***************************************************************************//**
+ * \defgroup user_modules User modules
  ******************************************************************************/

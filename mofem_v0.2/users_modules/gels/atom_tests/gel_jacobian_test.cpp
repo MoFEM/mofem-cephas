@@ -1,5 +1,6 @@
-/*s* \file gel_jacobian_test.cpp
-  \brief Atom test testing calculation of element residual vectors and tangent matrices.
+/** \file gel_jacobian_test.cpp
+  \brief Atom test testing calculation of element residual vectors and tangent matrices
+  \ingroup gel
 */
 
 /* This file is part of MoFEM.

@@ -1,5 +1,6 @@
 /** \file gel_constitutive_equation_test.cpp
   \brief Atom test verifying implementation of gel constitutive equations
+  \ingroup gel
 */
 
 /* This file is part of MoFEM.

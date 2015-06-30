@@ -1157,5 +1157,5 @@ struct ThermalElement {
 
 /***************************************************************************//**
  * \defgroup mofem_thermal_elem Thermal element
- * \ingroup mofem_forces_and_sources
+ * \ingroup user_modules
  ******************************************************************************/

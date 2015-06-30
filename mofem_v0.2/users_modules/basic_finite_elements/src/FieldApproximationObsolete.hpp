@@ -31,7 +31,7 @@ using namespace boost::numeric;
 namespace MoFEM {
 
 /** \brief Finite element for approximating analytical filed on the mesh
-  * \ingroup mofem_forces_and_sources
+  * \ingroup user_modules
   */
 template<typename FUNEVAL>
 struct FieldApproximationH1 {

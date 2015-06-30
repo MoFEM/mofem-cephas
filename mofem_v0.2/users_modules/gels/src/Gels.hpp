@@ -24,6 +24,7 @@
 #endif
 
 /** \brief Implementation of Gel constitutive model
+\ingroup gel
 
 Implementation follows constitutive equation from:
 
@@ -53,6 +54,7 @@ struct Gel {
   FieldInterface &mFiled;
 
   /** \brief Gel material parameters
+  \ingroup gel
   */
   struct BlockMaterialData {
 
@@ -70,6 +72,7 @@ struct Gel {
   BlockMaterialData blockMaterialData;
 
   /** \brief Constitutive model functions
+  \ingroup gel
 
   \image html gel_spring_daspot_model.png "Gel model" width=6cm
 
@@ -290,6 +293,9 @@ struct Gel {
 
   ConstitutiveEquation<adouble> constitutiveEquation;
 
+  /** \brief Common data for gel model
+  \ingroup gel
+  */
   struct CommonData {
 
     string spatialPositionName;
@@ -1029,6 +1035,7 @@ struct Gel {
   };
 
   /** \brief Assemble internal force vector
+  \ingroup gel
 
   \f[
   (\mathbf{f}_x)_i =
@@ -1083,6 +1090,7 @@ struct Gel {
   };
 
   /** \berief Calculate internal forces for solvent flux
+  \ingroup gel
 
   \f[
   (\mathbf{f}_{\mu})_j =
@@ -1134,6 +1142,7 @@ struct Gel {
   };
 
   /** \brief Calculating right hand side
+  \ingroup gel
 
   \f[
   (\mathbf{f}_\mu)_j =
@@ -1180,6 +1189,20 @@ struct Gel {
     }
   };
 
+  /** \brief Residual strain hat
+  \ingroup gel
+
+  \f[
+  (\mathbf{f}_{\hat{\varepsilon}})_j =
+  \int_V
+  N_j \left(
+  \frac{\partial \hat{\varepsilon}}{\partial t}-
+  f(\sigma^\beta)
+  \right)
+  \textrm{d}V
+  \f]
+
+  */
   struct OpRhsStrainHat: public AssembleVector {
     CommonData &commonData;
     OpRhsStrainHat(CommonData &common_data):
@@ -1227,3 +1250,8 @@ struct Gel {
 };
 
 #endif //__GEL_HPP__
+
+/***************************************************************************//**
+ * \defgroup gel Gel model
+ * \ingroup user_modules
+ ******************************************************************************/

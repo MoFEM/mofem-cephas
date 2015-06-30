@@ -26,7 +26,7 @@ using namespace boost::numeric;
 namespace MoFEM {
 
 /** \brief Finite element for approximating analytical filed on the mesh
-  * \ingroup mofem_forces_and_sources
+  * \ingroup user_modules
   */
 struct FieldApproximationH1 {
 

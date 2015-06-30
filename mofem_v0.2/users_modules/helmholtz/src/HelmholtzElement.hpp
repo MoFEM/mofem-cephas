@@ -1617,5 +1617,5 @@ struct HelmholtzElement {
 
 /***************************************************************************//**
  * \defgroup mofem_helmholtz_elem Helmholtz element
- * \ingroup mofem_forces_and_sources
+ * \ingroup user_modules
  ******************************************************************************/
