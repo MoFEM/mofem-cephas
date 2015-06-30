@@ -439,7 +439,8 @@ PetscErrorCode NonlinearElasticElement::OpRhsPiolaKirchhoff::aSemble(
   ierr = VecSetValues(
     getFEMethod()->snes_f,
     nb_dofs,
-    indices_ptr,&nf[0],
+    indices_ptr,
+    &nf[0],
     ADD_VALUES
   ); CHKERRQ(ierr);
 

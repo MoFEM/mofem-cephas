@@ -70,6 +70,9 @@ struct Gel {
   BlockMaterialData blockMaterialData;
 
   /** \brief Constitutive model functions
+
+  \image html gel_spring_daspot_model.png "Gel model" width=6cm
+
   */
   template<typename TYPE>
   struct ConstitutiveEquation {
@@ -999,6 +1002,74 @@ struct Gel {
 
   };
 
+  struct AssembleVector: VolumeElementForcesAndSourcesCore::UserDataOperator {
+    AssembleVector(string field_name):
+    VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW) {
+    }
+    PetscErrorCode ierr;
+    ublas::vector<double> nF;
+    PetscErrorCode aSemble(
+      int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data
+    ) {
+      PetscFunctionBegin;
+      try {
+        int nb_dofs = row_data.getIndices().size();
+        int *indices_ptr = &row_data.getIndices()[0];
+        ierr = VecSetValues(
+          getFEMethod()->snes_f,nb_dofs,indices_ptr,&nF[0],ADD_VALUES
+        ); CHKERRQ(ierr);
+      } catch (const std::exception& ex) {
+        ostringstream ss;
+        ss << "throw in method: " << ex.what() << endl;
+        SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+      }
+      PetscFunctionReturn(0);
+    }
+  };
+
+  struct OpRhsAssembleStrainTotal: public AssembleVector {
+    CommonData &commonData;
+    OpRhsAssembleStrainTotal(CommonData &common_data):
+    AssembleVector(common_data.spatialPositionName),
+    commonData(common_data) {
+    }
+
+    PetscErrorCode doWork(
+      int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data
+    ) {
+      PetscFunctionBegin;
+      try {
+        int nb_dofs = row_data.getIndices().size();
+        if(!nb_dofs) {
+          PetscFunctionReturn(0);
+        }
+        nF.resize(nb_dofs,false);
+        nF.clear();
+        int nb_gauss_pts = row_data.getN().size1();
+        for(int gg = 0;gg<nb_gauss_pts;gg++) {
+          const MatrixAdaptor &diffN = row_data.getDiffN(gg,nb_dofs/3);
+          const ublas::matrix<double>& stress = commonData.stressTotal[gg];
+          double val = getVolume()*getGaussPts()(3,gg);
+          if(getHoGaussPtsDetJac().size()>0) {
+            val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
+          }
+          for(int dd = 0;dd<nb_dofs/3;dd++) {
+            for(int rr = 0;rr<3;rr++) {
+              for(int nn = 0;nn<3;nn++) {
+                nF[3*dd+rr] += val*diffN(dd,nn)*stress(rr,nn);
+              }
+            }
+          }
+        }
+        ierr = aSemble(row_side,row_type,row_data); CHKERRQ(ierr);
+      } catch (const std::exception& ex) {
+        ostringstream ss;
+        ss << "throw in method: " << ex.what() << endl;
+        SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+      }
+      PetscFunctionReturn(0);
+    }
+  };
 
 };
 

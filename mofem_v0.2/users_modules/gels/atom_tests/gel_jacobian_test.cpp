@@ -210,17 +210,13 @@ int main(int argc, char *argv[]) {
       tags.push_back(4);
 
       gel.feRhs.getOpPtrVector().push_back(
-        new Gel::OpJacobian( "SPATIAL_POSITION", tags, gel.constitutiveEquation,gel.commonData,true,false)
+        new Gel::OpJacobian("SPATIAL_POSITION", tags, gel.constitutiveEquation,gel.commonData,true,false)
+      );
+      gel.feRhs.getOpPtrVector().push_back(
+        new Gel::OpRhsAssembleStrainTotal(gel.commonData)
       );
       gel.feLhs.getOpPtrVector().push_back(
-        new Gel::OpJacobian(
-          "SPATIAL_POSITION",
-          tags,
-          gel.constitutiveEquation,
-          gel.commonData,
-          false,
-          true
-        )
+        new Gel::OpJacobian("SPATIAL_POSITION", tags, gel.constitutiveEquation, gel.commonData,false,true)
       );
     }
   }
@@ -232,17 +228,18 @@ int main(int argc, char *argv[]) {
     ierr = DMRegister_MoFEM(dm_name); CHKERRQ(ierr);
     ierr = DMCreate(PETSC_COMM_WORLD,&dm);CHKERRQ(ierr);
     ierr = DMSetType(dm,dm_name);CHKERRQ(ierr);
-
     ierr = DMMoFEMCreateMoFEM(dm,&m_field,dm_name,bit_level0); CHKERRQ(ierr);
     ierr = DMSetFromOptions(dm); CHKERRQ(ierr);
     //add elements to dm
     ierr = DMMoFEMAddElement(dm,"GEL_FE"); CHKERRQ(ierr);
-
     ierr = DMSetUp(dm); CHKERRQ(ierr);
   }
 
   // Make calculations
+  Vec F;
   {
+    ierr = DMCreateGlobalVector_MoFEM(dm,&F); CHKERRQ(ierr);
+    gel.feRhs.snes_f = F; // Set right hand side vector manually
     ierr = DMoFEMLoopFiniteElements(dm,"GEL_FE",&gel.feRhs); CHKERRQ(ierr);
     ierr = DMoFEMLoopFiniteElements(dm,"GEL_FE",&gel.feLhs); CHKERRQ(ierr);
   }
@@ -250,6 +247,7 @@ int main(int argc, char *argv[]) {
 
   // Clean and destroy
   {
+    ierr = VecDestroy(&F); CHKERRQ(ierr);
     ierr = DMDestroy(&dm); CHKERRQ(ierr);
   }
 
