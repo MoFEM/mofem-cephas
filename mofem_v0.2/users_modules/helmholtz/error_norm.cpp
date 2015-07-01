@@ -23,25 +23,17 @@
  *
  */
 
-
 #include <MoFEM.hpp>
+using namespace MoFEM;
 #include <PostProcOnRefMesh.hpp>
 #include <NormElement.hpp>
 
 #include <Projection10NodeCoordsOnField.hpp>
 #include <boost/numeric/ublas/vector_proxy.hpp>
 #include <petsctime.h>
-#include <boost/iostreams/tee.hpp>
-#include <boost/iostreams/stream.hpp>
 #include <fstream>
 #include <iostream>
 #include <stdexcept>
-
-namespace bio = boost::iostreams;
-using bio::tee_device;
-using bio::stream;
-
-using namespace MoFEM;
 
 static char help[] = "...\n\n";
 

@@ -1270,9 +1270,9 @@ struct Gel {
     }
   };
 
-  /*struct OpLhs_dXdX: public AssembleVector {
+  /*struct OpLhsdXdX: public AssembleVector {
     CommonData &commonData;
-    OpLhsStrainTotal(CommonData &common_data):
+    OpLhsdXdX(CommonData &common_data):
     AssembleVector(common_data.spatialPositionName),
     commonData(common_data) {
       sYmm = true;
@@ -1307,7 +1307,6 @@ struct Gel {
       PetscFunctionReturn(0);
     }
   };*/
-
 
 };
 

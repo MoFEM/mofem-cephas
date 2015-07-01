@@ -20,10 +20,8 @@
 #ifndef __PROJECTIONMATRIXCTX_HPP__
 #define __PROJECTIONMATRIXCTX_HPP__
 
-namespace MoFEM {
-
 /**
-  * \brief structure for projection matries
+  * \brief structure for projection matrices
   * \ingroup projection_matrix
   *
   */
@@ -186,8 +184,6 @@ PetscErrorCode ConstrainMatrixDestroyOpPorQ(Mat Q);
   * \endcode
   */
 PetscErrorCode ConstrainMatrixDestroyOpQTKQ(Mat QTKQ);
-
-}
 
 #endif //__PROJECTIONMATRIXCTX_HPP__
 

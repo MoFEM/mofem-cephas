@@ -27,8 +27,6 @@
 #ifndef __BODY_FORCE_HPP
 #define __BODY_FORCE_HPP
 
-namespace MoFEM {
-
 /** \brief Body forces elements
   * \ingroup mofem_body_forces
   */
@@ -133,8 +131,6 @@ struct BodyFroceConstantField {
   map<int,Block_BodyForces> mapData;
 
 };
-
-}
 
 #endif //__BODY_FORCE_HPP
 

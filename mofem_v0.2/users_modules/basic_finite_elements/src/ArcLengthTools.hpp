@@ -23,8 +23,6 @@
 #ifndef __ARCLEGHTTOOLS_HPP__
 #define __ARCLEGHTTOOLS_HPP__
 
-namespace MoFEM {
-
 /**
  * \brief Store variables for ArcLength analysis
  * \ingroup arc_length_control
@@ -221,8 +219,6 @@ struct SphericalArcLengthControl: public FEMethod {
   PetscErrorCode setDlambdaToX(Vec x,double dlambda);
 
 };
-
-}
 
 #endif // __ARCLEGHTTOOLS_HPP__
 

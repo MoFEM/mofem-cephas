@@ -30,6 +30,7 @@
  */
 
 #include <MoFEM.hpp>
+using namespace MoFEM;
 
 #include <boost/numeric/ublas/vector_proxy.hpp>
 #include <boost/numeric/ublas/symmetric.hpp>
@@ -40,8 +41,6 @@
 #include <PostProcOnRefMesh.hpp>
 
 #include <Projection10NodeCoordsOnField.hpp>
-#include <boost/iostreams/tee.hpp>
-#include <boost/iostreams/stream.hpp>
 #include <petsctime.h>
 #include <fstream>
 #include <iostream>
@@ -55,13 +54,6 @@
 
 using namespace std;
 using namespace boost::math;
-
-namespace bio = boost::iostreams;
-using bio::tee_device;
-using bio::stream;
-
-using namespace MoFEM;
-
 
 #include <boost/shared_array.hpp>
 #include <kiss_fft.h>

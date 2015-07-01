@@ -12,7 +12,17 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
+#include <boost/iostreams/tee.hpp>
+#include <boost/iostreams/stream.hpp>
+#include <fstream>
+#include <iostream>
+
+namespace bio = boost::iostreams;
+using bio::tee_device;
+using bio::stream;
+
 #include <MoFEM.hpp>
+using namespace MoFEM;
 
 #include <DirichletBC.hpp>
 #include <PostProcOnRefMesh.hpp>
@@ -29,19 +39,7 @@
 #include <fstream>
 #include <iostream>
 
-#include <boost/iostreams/tee.hpp>
-#include <boost/iostreams/stream.hpp>
-#include <fstream>
-#include <iostream>
-
 static int debug = 1;
-
-namespace bio = boost::iostreams;
-using bio::tee_device;
-using bio::stream;
-
-using namespace MoFEM;
-
 static char help[] = "...\n\n";
 
 struct AnaliticalFunction {
@@ -80,9 +78,9 @@ int main(int argc, char *argv[]) {
 
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-  BARRIER_RANK_START(pcomm) 
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
-  BARRIER_RANK_END(pcomm) 
+  BARRIER_RANK_START(pcomm)
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
+  BARRIER_RANK_END(pcomm)
 
   //Create MoFEM (Joseph) database
   MoFEM::Core core(moab);
@@ -107,7 +105,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.modify_problem_ref_level_add_bit("BC_PROBLEM",bit_level0); CHKERRQ(ierr);
 
   //meshset consisting all entities in mesh
-  EntityHandle root_set = moab.get_root_set(); 
+  EntityHandle root_set = moab.get_root_set();
   ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,3); CHKERRQ(ierr);
   ierr = m_field.add_ents_to_field_by_TETs(root_set,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0,MBTET,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
@@ -117,7 +115,7 @@ int main(int argc, char *argv[]) {
 
   //add entities to field
   ierr = m_field.add_ents_to_field_by_TETs(root_set,"TEMP"); CHKERRQ(ierr);
- 
+
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
   PetscInt order;
@@ -158,7 +156,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.loop_dofs("MESH_NODE_POSITIONS",ent_method_material); CHKERRQ(ierr);
 
   /****/
-  //mesh partitioning 
+  //mesh partitioning
   //partition
   ierr = m_field.partition_simple_problem("TEST_PROBLEM"); CHKERRQ(ierr);
   ierr = m_field.partition_finite_elements("TEST_PROBLEM"); CHKERRQ(ierr);
@@ -190,14 +188,14 @@ int main(int argc, char *argv[]) {
 
   //solve for ditihlet bc dofs
   ierr = analytical_bc.setProblem(m_field,"BC_PROBLEM"); CHKERRQ(ierr);
-  
+
   boost::shared_ptr<AnaliticalFunction> testing_function = boost::shared_ptr<AnaliticalFunction>(new AnaliticalFunction);
 
   ierr = analytical_bc.setApproxOps(m_field,"TEMP",bc_tris,testing_function,0); CHKERRQ(ierr);
   ierr = analytical_bc.solveProblem(m_field,"BC_PROBLEM","BC_FE",analytical_ditihlet_bc,bc_tris); CHKERRQ(ierr);
 
   ierr = analytical_bc.destroyProblem(); CHKERRQ(ierr);
-  
+
   //preproc
   ierr = m_field.problem_basic_method_preProcess("TEST_PROBLEM",analytical_ditihlet_bc); CHKERRQ(ierr);
   //ierr = m_field.set_global_ghost_vector("TEST_PROBLEM",ROW,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
@@ -221,7 +219,7 @@ int main(int argc, char *argv[]) {
   //std::cout << "\n matrix is coming = \n" << std::endl;
   //ierr = MatView(A,PETSC_VIEWER_DRAW_WORLD);
   //std::cin >> wait;
-  
+
   //Solver
   KSP solver;
   ierr = KSPCreate(PETSC_COMM_WORLD,&solver); CHKERRQ(ierr);
@@ -241,19 +239,19 @@ int main(int argc, char *argv[]) {
   //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
   //ierr = VecView(T,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-  
+
   PetscReal pointwisenorm;
   ierr = VecMax(T,NULL,&pointwisenorm);
   std::cout << "\n The Global Pointwise Norm of error for this problem is : " << pointwisenorm << std::endl;
-  
+
   PetscViewer viewer;
   PetscViewerASCIIOpen(PETSC_COMM_WORLD,"thermal_with_analytical_bc.txt",&viewer);
   ierr = VecChop(T,1e-4); CHKERRQ(ierr);
   ierr = VecView(T,viewer); CHKERRQ(ierr);
   ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
-  
+
   if(debug) {
-    
+
     PostPocOnRefinedMesh post_proc(m_field);
     ierr = post_proc.generateReferenceElementMesh(); CHKERRQ(ierr);
     ierr = post_proc.addFieldValuesPostProc("TEMP"); CHKERRQ(ierr);
@@ -263,7 +261,7 @@ int main(int argc, char *argv[]) {
     rval = post_proc.postProcMesh.write_file("out.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
 
   }
-  
+
   ierr = MatDestroy(&A); CHKERRQ(ierr);
   ierr = VecDestroy(&F); CHKERRQ(ierr);
   ierr = VecDestroy(&T); CHKERRQ(ierr);
@@ -274,5 +272,3 @@ int main(int argc, char *argv[]) {
   return 0;
 
 }
-
-

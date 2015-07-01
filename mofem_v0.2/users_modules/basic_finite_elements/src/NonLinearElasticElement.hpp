@@ -27,8 +27,6 @@
   #error "MoFEM need to be compiled with ADOL-C"
 #endif
 
-namespace MoFEM {
-
 /** \brief structure grouping operators and data used for calculation of nonlinear elastic element
   * \ingroup nonlinear_elastic_elem
   *
@@ -537,8 +535,6 @@ struct NonlinearElasticElement {
     bool ale = false,bool field_disp = false);
 
 };
-
-}
 
 #endif //__NONLINEAR_ELASTIC_HPP
 

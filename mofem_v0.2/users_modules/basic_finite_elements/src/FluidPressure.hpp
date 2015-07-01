@@ -29,8 +29,6 @@
 
 #include<moab/Skinner.hpp>
 
-namespace MoFEM {
-
 struct FluidPressure {
 
   FieldInterface &mField;
@@ -191,8 +189,6 @@ ostream& operator<<(ostream& os,const FluidPressure::FluidData &e) {
   os << "aCCeleration " << e.aCCeleration << endl;
   os << "zEroPressure " << e.zEroPressure << endl;
   return os;
-}
-
 }
 
 #endif //__FLUID_PRESSSURE_HPP

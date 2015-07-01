@@ -21,13 +21,12 @@
 */
 
 #include <MoFEM.hpp>
+using namespace MoFEM;
 #include <Projection10NodeCoordsOnField.hpp>
 
 #include <boost/numeric/ublas/vector_proxy.hpp>
 #include <FieldApproximation.hpp>
 #include <PostProcOnRefMesh.hpp>
-#include <boost/iostreams/tee.hpp>
-#include <boost/iostreams/stream.hpp>
 #include <petsctime.h>
 #include <fstream>
 #include <iostream>
@@ -39,10 +38,6 @@
 
 using namespace std;
 using namespace boost::math;
-namespace bio = boost::iostreams;
-using bio::tee_device;
-using bio::stream;
-using namespace MoFEM;
 
 #include <AnalyticalSolutions.hpp>
 
@@ -222,7 +217,7 @@ int main(int argc, char *argv[]) {
     case HARD_SPHERE_SCATTER_WAVE:
 
       {
-   
+
 	double scattering_sphere_radius = 0.5;
 	ierr = PetscOptionsGetScalar(NULL,"-scattering_sphere_radius",&scattering_sphere_radius,NULL); CHKERRQ(ierr);
 
@@ -298,7 +293,7 @@ int main(int argc, char *argv[]) {
 
     IncidentWave function_evaluator(wavenumber,wave_direction);
     ierr = solve_problem(m_field,"EX1_PROBLEM","FE1","reEX","imEX",ADD_VALUES,function_evaluator,is_partitioned); CHKERRQ(ierr);
- 
+
   }
 
   if(is_partitioned) {

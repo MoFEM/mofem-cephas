@@ -34,8 +34,6 @@
 
 using namespace boost::numeric;
 
-namespace MoFEM {
-
 /** \brief Set Dirichlet boundary conditions on displacements
   * \ingroup Dirichlet_bc
   */
@@ -146,8 +144,6 @@ struct DirichletBCFromBlockSetFEMethodPreAndPostProc: public DisplacementBCFEMet
 
 };
 
-
-}
 #endif //__DIRICHLETBC_HPP__
 
 /***************************************************************************//**

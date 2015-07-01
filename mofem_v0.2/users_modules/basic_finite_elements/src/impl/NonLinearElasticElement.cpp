@@ -18,7 +18,7 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 #include <MoFEM.hpp>
-
+using namespace MoFEM;
 #include <Projection10NodeCoordsOnField.hpp>
 
 #include <boost/numeric/ublas/vector_proxy.hpp>
@@ -28,8 +28,6 @@
 
 #include <adolc/adolc.h>
 #include <NonLinearElasticElement.hpp>
-
-namespace MoFEM {
 
 NonlinearElasticElement::MyVolumeFE::MyVolumeFE(FieldInterface &m_field):
   VolumeElementForcesAndSourcesCore(m_field),
@@ -1006,6 +1004,4 @@ PetscErrorCode NonlinearElasticElement::setOperators(
   }
 
   PetscFunctionReturn(0);
-}
-
 }

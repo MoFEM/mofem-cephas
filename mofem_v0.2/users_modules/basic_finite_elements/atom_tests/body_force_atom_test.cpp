@@ -20,6 +20,7 @@
 
 
 #include <MoFEM.hpp>
+using namespace MoFEM;
 #include <Projection10NodeCoordsOnField.hpp>
 
 #include <boost/numeric/ublas/vector_proxy.hpp>
@@ -33,8 +34,6 @@
 namespace bio = boost::iostreams;
 using bio::tee_device;
 using bio::stream;
-
-using namespace MoFEM;
 
 static char help[] = "...\n\n";
 
