@@ -1,4 +1,4 @@
-/** \file TsCtx.hpp 
+/** \file TsCtx.hpp
  * \brief Context for PETSc Time Stepping
  */
 
@@ -21,6 +21,9 @@
 
 namespace MoFEM {
 
+/** \brief Interface for KSP solver
+  * \ingroup petsc_context_struture
+  */
 struct TsCtx {
 
   ErrorCode rval;

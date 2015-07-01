@@ -347,7 +347,7 @@ struct NonlinearElasticElement {
     bool fieldDisp;
 
     /**
-      \brief Construct operator to calculate Pilo Kirchhoff stress or its derivatives over gradient deformation
+      \brief Construct operator to calculate Piola-Kirchhoff stress or its derivatives over gradient deformation
 
       \param field_name approximation field name of spatial positions or displacements
       \param data reference to block data (what is Young modulus, Poisson ratio or what elements are part of the block)
@@ -544,5 +544,9 @@ struct NonlinearElasticElement {
 
 /***************************************************************************//**
  * \defgroup nonlinear_elastic_elem NonLinear Elastic Element
- * \ingroup mofem_forces_and_sources
+ * \ingroup user_modules
+ ******************************************************************************/
+
+/***************************************************************************//**
+ * \defgroup user_modules User modules
  ******************************************************************************/

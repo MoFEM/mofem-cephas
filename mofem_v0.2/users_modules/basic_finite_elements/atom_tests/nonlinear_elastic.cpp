@@ -1,11 +1,11 @@
 /** \file nonlinear_elastic.cpp
 
  \brief Atom test for linear elastic dynamics.
- 
+
  This is not exactly procedure for linear elatic dynamics, since jacobian is
  evaluated at every time step and snes procedure is involved. However it is
  implemented like that, to test methodology for general nonlinear problem.
- 
+
 */
 
 /* This file is part of MoFEM.
@@ -32,7 +32,7 @@ using namespace MoFEM;
 #include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <boost/numeric/ublas/vector.hpp>
 
-#include <adolc/adolc.h> 
+#include <adolc/adolc.h>
 #include <NonLinearElasticElement.hpp>
 
 ErrorCode rval;
@@ -55,10 +55,10 @@ int main(int argc, char *argv[]) {
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
- 
+
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
@@ -124,7 +124,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.build_fields(); CHKERRQ(ierr);
 
   //use this to apply some strain field to the body (testing only)
-  double scale_positions = 2; 
+  double scale_positions = 2;
   {
     EntityHandle node = 0;
     double coords[3];
@@ -180,7 +180,7 @@ int main(int argc, char *argv[]) {
   ierr = VecChop(F,1e-4); CHKERRQ(ierr);
   //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
   ierr = VecView(F,viewer); CHKERRQ(ierr);
-  
+
   //MatView(Aij,PETSC_VIEWER_DRAW_WORLD);
   MatChop(Aij,1e-4);
   //MatView(Aij,PETSC_VIEWER_STDOUT_WORLD);
@@ -193,13 +193,10 @@ int main(int argc, char *argv[]) {
   ierr = VecDestroy(&F); CHKERRQ(ierr);
   //ierr = VecDestroy(&D); CHKERRQ(ierr);
   ierr = MatDestroy(&Aij); CHKERRQ(ierr);
- 
+
   PetscFinalize();
 
   return 0;
 
 
 }
-
-
-

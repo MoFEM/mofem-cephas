@@ -1,8 +1,3 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
- * FIXME: DESCRIPTION
- */
-
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -79,8 +74,8 @@ static int debug = 1;
 
 struct NL_ElasticFEMethod: public NonLinearSpatialElasticFEMthod {
 
-  NL_ElasticFEMethod(FieldInterface& _m_field,double _lambda,double _mu,int _verbose = 0): 
-      FEMethod_ComplexForLazy_Data(_m_field,_verbose), 
+  NL_ElasticFEMethod(FieldInterface& _m_field,double _lambda,double _mu,int _verbose = 0):
+      FEMethod_ComplexForLazy_Data(_m_field,_verbose),
       NonLinearSpatialElasticFEMthod(_m_field,_lambda,_mu,_verbose)  {
     set_PhysicalEquationNumber(hooke);
   }
@@ -102,10 +97,10 @@ int main(int argc, char *argv[]) {
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
- 
+
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
@@ -268,7 +263,7 @@ int main(int argc, char *argv[]) {
   SpatialPositionsBCFEMethodPreAndPostProc MyDirichletBC(m_field,"SPATIAL_POSITION",Aij,D,F);
 
   SnesCtx snes_ctx(m_field,"ELASTIC_MECHANICS");
-  
+
   SNES snes;
   ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);
   ierr = SNESSetApplicationContext(snes,&snes_ctx); CHKERRQ(ierr);
@@ -310,19 +305,19 @@ int main(int argc, char *argv[]) {
     #else
     myfile.open(("nonlinear_"+string(mesh_file_name)+".txt").c_str());
     #endif
-    
+
     //Output displacements
     cout << "<<<< Displacements (X-Translation, Y-Translation, Z-Translation) >>>>>" << endl;
     myfile << "<<<< Displacements (X-Translation, Y-Translation, Z-Translation) >>>>>" << endl;
-    
+
     for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(m_field,"SPATIAL_POSITION",dof_ptr))
     {
         if(dof_ptr->get_ent_type()!=MBVERTEX) continue;
-  
+
 	double coords[3];
 	EntityHandle ent = dof_ptr->get_ent();
 	rval = moab.get_coords(&ent,1,coords); CHKERR_PETSC(rval);
-        
+
         if(dof_ptr->get_dof_rank()==0)
         {
             //Round and truncate to 3 decimal places
@@ -344,7 +339,7 @@ int main(int argc, char *argv[]) {
             cout << boost::format("%.3lf") % roundn(fval) << endl;
             myfile << boost::format("%.3lf") % roundn(fval) << endl;
         }
-        
+
     }
 
   }
@@ -383,6 +378,3 @@ int main(int argc, char *argv[]) {
 
   return 0;
 }
-
-
-

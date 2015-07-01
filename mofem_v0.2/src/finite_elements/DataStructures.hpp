@@ -39,6 +39,9 @@ namespace MoFEM {
   typedef ublas::vector<double,DoubleAllacator > VectorDouble;
   typedef ublas::matrix<double,ublas::row_major, DoubleMatrixAllacator > MatrixDouble;
 
+  // shallow adaptor classes
+  typedef ublas::vector<double,ublas::shallow_array_adaptor<double> > VectorAdaptor;
+  typedef ublas::matrix<double,ublas::row_major,ublas::shallow_array_adaptor<double> > MatrixAdaptor;
 
 /** \brief data structure for finite element entity
   * \ingroup mofem_forces_and_sources
@@ -48,10 +51,6 @@ namespace MoFEM {
   *
   */
 struct DataForcesAndSurcesCore {
-
-  // shallow adaptor classes
-  typedef ublas::vector<double,ublas::shallow_array_adaptor<double> > VectorAdaptor;
-  typedef ublas::matrix<double,ublas::row_major,ublas::shallow_array_adaptor<double> > MatrixAdaptor;
 
   /** \brief data on single entity
     */

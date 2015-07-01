@@ -133,11 +133,13 @@ NonlinearElasticElement::OpGetDataAtGaussPts::OpGetDataAtGaussPts(const string f
   vector<VectorDouble > &values_at_gauss_pts,
   vector<MatrixDouble > &gardient_at_gauss_pts):
   VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
-  valuesAtGaussPts(values_at_gauss_pts),gradientAtGaussPts(gardient_at_gauss_pts),
+  valuesAtGaussPts(values_at_gauss_pts),
+  gradientAtGaussPts(gardient_at_gauss_pts),
   zeroAtType(MBVERTEX) {}
 
 PetscErrorCode NonlinearElasticElement::OpGetDataAtGaussPts::doWork(
-  int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+  int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+) {
   PetscFunctionBegin;
   try {
 
@@ -437,7 +439,8 @@ PetscErrorCode NonlinearElasticElement::OpRhsPiolaKirchhoff::aSemble(
   ierr = VecSetValues(
     getFEMethod()->snes_f,
     nb_dofs,
-    indices_ptr,&nf[0],
+    indices_ptr,
+    &nf[0],
     ADD_VALUES
   ); CHKERRQ(ierr);
 
@@ -464,7 +467,7 @@ PetscErrorCode NonlinearElasticElement::OpRhsPiolaKirchhoff::doWork(
     for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
       //diffN - on rows has degrees of freedom
       //diffN - on columns has rerevatives direvatives of shape functin
-      const DataForcesAndSurcesCore::MatrixAdaptor &diffN = row_data.getDiffN(gg,nb_dofs/3);
+      const MatrixAdaptor &diffN = row_data.getDiffN(gg,nb_dofs/3);
       const MatrixDouble& stress = commonData.sTress[gg];
 
       double val = getVolume()*getGaussPts()(3,gg);
@@ -556,7 +559,7 @@ PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::getJac(DataForce
   jac.clear();
 
   int nb_col = col_data.getFieldData().size();
-  const DataForcesAndSurcesCore::MatrixAdaptor diffN = col_data.getDiffN(gg,nb_col/3);
+  const MatrixAdaptor diffN = col_data.getDiffN(gg,nb_col/3);
   ublas::matrix<double> &jac_stress = commonData.jacStress[gg];
   // FIXME: this is efficiency bottle neck
   for(int dd = 0;dd<nb_col/3;dd++) {
@@ -707,7 +710,7 @@ PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::doWork(
       }
       jac *= val;
 
-      const DataForcesAndSurcesCore::MatrixAdaptor &diffN = row_data.getDiffN(gg,nb_row/3);
+      const MatrixAdaptor &diffN = row_data.getDiffN(gg,nb_row/3);
 
       { //integrate element stiffness matrix
         for(int dd1 = 0;dd1<nb_row/3;dd1++) {
@@ -746,7 +749,7 @@ PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dX::getJac(DataForce
   PetscFunctionBegin;
   jac.clear();
   int nb_col = col_data.getFieldData().size();
-  const DataForcesAndSurcesCore::MatrixAdaptor diffN = col_data.getDiffN(gg,nb_col/3);
+  const MatrixAdaptor diffN = col_data.getDiffN(gg,nb_col/3);
   for(int dd = 0;dd<nb_col/3;dd++) {
     for(int rr = 0;rr<3;rr++) {
       for(int ii = 0;ii<9;ii++) {
@@ -869,7 +872,7 @@ PetscErrorCode NonlinearElasticElement::OpLhsEshelby_dx::getJac(DataForcesAndSur
   PetscFunctionBegin;
   jac.clear();
   int nb_col = col_data.getFieldData().size();
-  const DataForcesAndSurcesCore::MatrixAdaptor diffN = col_data.getDiffN(gg,nb_col/3);
+  const MatrixAdaptor diffN = col_data.getDiffN(gg,nb_col/3);
   for(int dd = 0;dd<nb_col/3;dd++) {
     for(int rr = 0;rr<3;rr++) {
       for(int ii = 0;ii<9;ii++) {
@@ -892,7 +895,7 @@ PetscErrorCode NonlinearElasticElement::OpLhsEshelby_dX::getJac(DataForcesAndSur
   PetscFunctionBegin;
   jac.clear();
   int nb_col = col_data.getFieldData().size();
-  const DataForcesAndSurcesCore::MatrixAdaptor diffN = col_data.getDiffN(gg,nb_col/3);
+  const MatrixAdaptor diffN = col_data.getDiffN(gg,nb_col/3);
   for(int dd = 0;dd<nb_col/3;dd++) {
     for(int rr = 0;rr<3;rr++) {
       for(int ii = 0;ii<9;ii++) {

@@ -21,6 +21,9 @@
 
 namespace MoFEM {
 
+/** \brief Interface for KSP solver
+  * \ingroup petsc_context_struture
+  */
 struct SnesCtx {
 
   ErrorCode rval;

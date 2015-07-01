@@ -102,7 +102,7 @@ struct ConvectiveMassElement {
   ConvectiveMassElement(FieldInterface &m_field,short int tag);
 
   /** \brief data for calculation inertia forces
-    * \ingroup mofem_forces_and_sources
+    * \ingroup user_modules
     */
   struct BlockData {
     double rho0; ///< reference density
@@ -112,7 +112,7 @@ struct ConvectiveMassElement {
   map<int,BlockData> setOfBlocks; ///< maps block set id with appropriate BlockData
 
   /** \brief common data used by volume elements
-    * \ingroup mofem_forces_and_sources
+    * \ingroup user_modules
     */
   struct CommonData {
     map<string,vector<ublas::vector<double> > > dataAtGaussPts;
@@ -744,5 +744,5 @@ struct ConvectiveMassElement {
 
 /***************************************************************************//**
  * \defgroup convective_mass_elem Mass Element
- * \ingroup mofem_forces_and_sources
+ * \ingroup user_modules
  ******************************************************************************/

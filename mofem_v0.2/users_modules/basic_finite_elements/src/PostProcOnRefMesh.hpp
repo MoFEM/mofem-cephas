@@ -672,5 +672,5 @@ struct PostPocOnRefinedMesh: public VolumeElementForcesAndSourcesCore {
 
 /***************************************************************************//**
  * \defgroup mofem_fs_post_proc Post Process
- * \ingroup mofem_forces_and_sources
+ * \ingroup user_modules
  ******************************************************************************/

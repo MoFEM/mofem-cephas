@@ -23,7 +23,7 @@
   * To manage different complexities related to field, finite elements mesh
   * refinements, etc. a appropriate interfaces related to each complexities are
   * created. Interfaces by itself could vary by functionality or the same function
-  * can me manged with two interfaces with waring level of abstraction.
+  * can me managed with two interfaces with waring level of abstraction.
   *
   */
 enum MoFEMInterfaces {

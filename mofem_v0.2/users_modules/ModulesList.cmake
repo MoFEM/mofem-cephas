@@ -26,6 +26,7 @@ add_library(users_modules ${UM_LIB_SOURCES})
 add_subdirectory(basic_finite_elements/atom_tests)
 add_subdirectory(analytical_dirichlet_boundary_conditions/atom_tests)
 add_subdirectory(convective_mass_element/atom_tests)
+add_subdirectory(gels/atom_tests)
 add_subdirectory(obsolete/atom_tests)
 
 # Users Programs
@@ -39,3 +40,4 @@ add_subdirectory(fracture_mechanics)
 add_subdirectory(helmholtz)
 add_subdirectory(homogenisation)
 add_subdirectory(moisture_transport)
+add_subdirectory(gels)

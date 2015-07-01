@@ -1004,5 +1004,5 @@ struct UltraWeakTransportElement {
 
 /***************************************************************************//**
  * \defgroup mofem_ultra_weak_transport_elem Ultra weak transport element
- * \ingroup mofem_forces_and_sources
+ * \ingroup user_modules
  ******************************************************************************/
