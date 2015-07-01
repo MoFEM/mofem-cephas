@@ -546,16 +546,19 @@ PetscErrorCode NonlinearElasticElement::OpEnergy::doWork(
 
 
 NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::OpLhsPiolaKirchhoff_dx(
-  const string vel_field,const string field_name,BlockData &data,CommonData &common_data):
-  VolumeElementForcesAndSourcesCore::UserDataOperator(vel_field,field_name,UserDataOperator::OPROWCOL),
-  dAta(data),
-  commonData(common_data),
-  aLe(false) { }
+  const string vel_field,const string field_name,BlockData &data,CommonData &common_data
+):
+VolumeElementForcesAndSourcesCore::UserDataOperator(vel_field,field_name,UserDataOperator::OPROWCOL),
+dAta(data),
+commonData(common_data),
+aLe(false) {
+}
 
-PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::getJac(DataForcesAndSurcesCore::EntData &col_data,int gg) {
+PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::getJac(
+  DataForcesAndSurcesCore::EntData &col_data,int gg
+) {
   PetscFunctionBegin;
   jac.clear();
-
   int nb_col = col_data.getFieldData().size();
   const MatrixAdaptor diffN = col_data.getDiffN(gg,nb_col/3);
   ublas::matrix<double> &jac_stress = commonData.jacStress[gg];
@@ -569,10 +572,8 @@ PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::getJac(DataForce
       }
     }
   }
-
   PetscFunctionReturn(0);
 }
-
 
 PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::aSemble(
   int row_side,int col_side,
