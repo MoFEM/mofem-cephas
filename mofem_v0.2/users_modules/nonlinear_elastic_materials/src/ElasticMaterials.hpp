@@ -1,4 +1,4 @@
-/** \file ElasticMaterials.hpp 
+/** \file ElasticMaterials.hpp
  * \ingroup nonlinear_elastic_elem
  * \brief Elastic materials
  */
@@ -97,14 +97,14 @@ struct ElasticMaterials {
     if(def_mat_set) {
       defMaterial = default_material;
       if(aDoubleMaterialModel.find(defMaterial)==aDoubleMaterialModel.end()) {
-	SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"material <%s> not implemented",default_material);
+        SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"material <%s> not implemented",default_material);
       }
     }
     char config_file[255];
     ierr = PetscOptionsString("-elastic_material_configuration","elastic materials configure file name","",configFile.c_str(),config_file,255,&isConfigFileSet); CHKERRQ(ierr);
     if(isConfigFileSet) {
       configFile = config_file;
-      
+
     }
     ierr = PetscOptionsEnd(); CHKERRQ(ierr);
     PetscFunctionReturn(0);
@@ -113,16 +113,16 @@ struct ElasticMaterials {
   /** \brief read Elastic materials declaration for blocks and meshsets
 
     User has to include in file header:
-    \code 
+    \code
     #include <boost/program_options.hpp>
     using namespace std;
     namespace po = boost::program_options;
     \endcode
 
     File parameters:
-    \code 
+    \code
     [block_1]
-    displacemet_order = 1/2 .. N 
+    displacemet_order = 1/2 .. N
     material = KIRCHOFF/HOOKE/NEOHOOKEAN
     young_modulus = 1
     poisson_ratio = 0.25
@@ -181,7 +181,7 @@ struct ElasticMaterials {
         config_file_options.add_options()
 	  (str_az.str().c_str(),po::value<double>(&blockData[it->get_msId()].aZ)->default_value(0));
       }
-      ifstream file(configFile.c_str());  
+      ifstream file(configFile.c_str());
       if(isConfigFileSet) {
         if(!file.good()) {
 	  SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"file < %s > not found",configFile.c_str());
@@ -189,7 +189,7 @@ struct ElasticMaterials {
       }
       po::parsed_options parsed = parse_config_file(file,config_file_options,true);
       store(parsed,vM);
-      po::notify(vM); 
+      po::notify(vM);
       vector<string> additional_parameters;
       additional_parameters = collect_unrecognized(parsed.options,po::include_positional);
       for(vector<string>::iterator vit = additional_parameters.begin();
@@ -212,7 +212,7 @@ struct ElasticMaterials {
     PetscInt disp_order;
     ierr = PetscOptionsGetInt(PETSC_NULL,"-order",&disp_order,&flg); CHKERRQ(ierr);
     if(flg!=PETSC_TRUE) {
-      disp_order = 1;	
+      disp_order = 1;
     }
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
       if(blockData[it->get_msId()].oRder == -1) continue;
@@ -241,7 +241,7 @@ struct ElasticMaterials {
     PetscFunctionReturn(0);
   }
 
-  #ifdef __NONLINEAR_ELASTIC_HPP 
+  #ifdef __NONLINEAR_ELASTIC_HPP
 
   PetscErrorCode setBlocks(map<int,NonlinearElasticElement::BlockData> &set_of_blocks) {
     PetscFunctionBegin;
@@ -269,10 +269,10 @@ struct ElasticMaterials {
 	set_of_blocks[id].materialDoublePtr = &doubleMaterialModel.at(MAT_KIRCHOFF);
 	set_of_blocks[id].materialAdoublePtr = &aDoubleMaterialModel.at(MAT_KIRCHOFF);
       } else
-      if(blockData[id].mAterial.compare(MAT_HOOKE)==0) { 
+      if(blockData[id].mAterial.compare(MAT_HOOKE)==0) {
 	set_of_blocks[id].materialDoublePtr = &doubleMaterialModel.at(MAT_HOOKE);
 	set_of_blocks[id].materialAdoublePtr = &aDoubleMaterialModel.at(MAT_HOOKE);
-      } else 
+      } else
       if(blockData[id].mAterial.compare(MAT_NEOHOOKEAN)==0) {
 	set_of_blocks[id].materialDoublePtr = &doubleMaterialModel.at(MAT_NEOHOOKEAN);
 	set_of_blocks[id].materialAdoublePtr = &aDoubleMaterialModel.at(MAT_NEOHOOKEAN);
@@ -327,7 +327,7 @@ struct ElasticMaterials {
 	}
       }
       PetscPrintf(mField.get_comm(),"Block Id %d Density %3.2g a_x = %3.2g a_y = %3.2g a_z = %3.2g\n",
-	id,set_of_blocks[id].rho0,set_of_blocks[id].a0[0],set_of_blocks[id].a0[1],set_of_blocks[id].a0[2]); 
+	id,set_of_blocks[id].rho0,set_of_blocks[id].a0[0],set_of_blocks[id].a0[1],set_of_blocks[id].a0[2]);
     }
 
     PetscFunctionReturn(0);
@@ -339,5 +339,3 @@ struct ElasticMaterials {
 };
 
 #endif //__ELASTICMATERIALS_HPP__
-
-

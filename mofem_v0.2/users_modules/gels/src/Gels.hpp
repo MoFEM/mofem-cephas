@@ -1045,13 +1045,12 @@ struct Gel {
   \f]
 
   */
-  struct OpRhsAssembleStrainTotal: public AssembleVector {
+  struct OpRhsStressTotal: public AssembleVector {
     CommonData &commonData;
-    OpRhsAssembleStrainTotal(CommonData &common_data):
+    OpRhsStressTotal(CommonData &common_data):
     AssembleVector(common_data.spatialPositionName),
     commonData(common_data) {
     }
-
     PetscErrorCode doWork(
       int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data
     ) {
@@ -1100,9 +1099,9 @@ struct Gel {
   \f]
 
   */
-  struct OpRhsAssembleSolventFlux: public AssembleVector {
+  struct OpRhsSolventFlux: public AssembleVector {
     CommonData &commonData;
-    OpRhsAssembleSolventFlux(CommonData &common_data):
+    OpRhsSolventFlux(CommonData &common_data):
     AssembleVector(common_data.muName),
     commonData(common_data) {
     }
@@ -1246,6 +1245,69 @@ struct Gel {
       PetscFunctionReturn(0);
     }
   };
+
+  struct AssembleMatrix: VolumeElementForcesAndSourcesCore::UserDataOperator {
+    AssembleMatrix(string row_name,string col_name):
+    VolumeElementForcesAndSourcesCore::UserDataOperator(
+      row_name,col_name,UserDataOperator::OPROWCOL) {
+    }
+    PetscErrorCode ierr;
+    ublas::matrix<double> K;
+    PetscErrorCode aSemble(
+      int row_side,int col_side,
+      EntityType row_type,EntityType col_type,
+      DataForcesAndSurcesCore::EntData &row_data,
+      DataForcesAndSurcesCore::EntData &col_data
+    ) {
+      PetscFunctionBegin;
+      try {
+      } catch (const std::exception& ex) {
+        ostringstream ss;
+        ss << "throw in method: " << ex.what() << endl;
+        SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+      }
+      PetscFunctionReturn(0);
+    }
+  };
+
+  /*struct OpLhs_dXdX: public AssembleVector {
+    CommonData &commonData;
+    OpLhsStrainTotal(CommonData &common_data):
+    AssembleVector(common_data.spatialPositionName),
+    commonData(common_data) {
+      sYmm = true;
+    }
+    ublas::matrix<double> dStress_dX;
+    PetscErrorCode GetdStress_dX(
+      int col_side,EntityType col_type,DataForcesAndSurcesCore::EntData &col_data
+    ) {
+      PetscFunctionBegin;
+      int nb_col = col_data.getIndices().size();
+
+      PetscFunctionReturn(0);
+    }
+    PetscErrorCode doWork(
+      int row_side,int col_side,
+      EntityType row_type,EntityType col_type,
+      DataForcesAndSurcesCore::EntData &row_data,
+      DataForcesAndSurcesCore::EntData &col_data
+    ) {
+      PetscFunctionBegin;
+      int nb_row = row_data.getIndices().size();
+      int nb_col = col_data.getIndices().size();
+      if(nb_row == 0) PetscFunctionReturn(0);
+      if(nb_col == 0) PetscFunctionReturn(0);
+      try {
+
+      } catch (const std::exception& ex) {
+        ostringstream ss;
+        ss << "throw in method: " << ex.what() << endl;
+        SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+      }
+      PetscFunctionReturn(0);
+    }
+  };*/
+
 
 };
 

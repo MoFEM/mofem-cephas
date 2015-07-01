@@ -215,10 +215,10 @@ int main(int argc, char *argv[]) {
         new Gel::OpJacobian("SPATIAL_POSITION", tags, gel.constitutiveEquation,gel.commonData,true,false)
       );
       gel.feRhs.getOpPtrVector().push_back(
-        new Gel::OpRhsAssembleStrainTotal(gel.commonData)
+        new Gel::OpRhsStressTotal(gel.commonData)
       );
       gel.feRhs.getOpPtrVector().push_back(
-        new Gel::OpRhsAssembleSolventFlux(gel.commonData)
+        new Gel::OpRhsSolventFlux(gel.commonData)
       );
       gel.feRhs.getOpPtrVector().push_back(
         new Gel::OpRhsVolumeDot(gel.commonData)

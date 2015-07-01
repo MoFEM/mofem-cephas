@@ -1,5 +1,5 @@
-/** \file SnesCtx.hpp 
- * \brief Context for PETSc SNES, i.e. nonlinear spolver
+/** \file KspCtx.hpp
+ * \brief Context for PETSc KSP, i.e. nonlinear solver
  */
 
 /* This file is part of MoFEM.
@@ -21,6 +21,9 @@
 
 namespace MoFEM {
 
+/** \brief Interface for KSP solver
+  * \ingroup petsc_context_struture
+  */
 struct KspCtx {
 
   ErrorCode rval;
@@ -70,5 +73,13 @@ PetscErrorCode KspRhs(KSP ksp,Vec f,void *ctx);
 PetscErrorCode KspMat(KSP ksp,Mat A,Mat B,void *ctx);
 
 }
+
+/***************************************************************************//**
+ * \defgroup petsc_context_struture Solver context structures
+ * \ingroup mofem
+ ******************************************************************************/
+
+
+
 
 #endif // __MOABKSP_HPP__
