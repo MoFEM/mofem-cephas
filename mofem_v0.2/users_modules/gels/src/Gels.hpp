@@ -1320,6 +1320,8 @@ struct Gel {
     }
   };
 
+  /** \brief Assemble matrix \f$\mathbf{K}_{xx}\f$
+  */
   struct OpLhsdXdX: public AssembleMatrix {
     CommonData &commonData;
     OpLhsdXdX(CommonData &common_data):
@@ -1405,6 +1407,9 @@ struct Gel {
     }
   };
 
+
+  /** \brief Assemble matrix \f$\mathbf{K}_{x\mu}\f$
+  */
   struct OpLhsdXdMu: public AssembleMatrix {
     CommonData &commonData;
     OpLhsdXdMu(CommonData &common_data):
