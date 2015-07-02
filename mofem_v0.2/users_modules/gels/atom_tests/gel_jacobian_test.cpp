@@ -230,6 +230,10 @@ int main(int argc, char *argv[]) {
       gel.feLhs.getOpPtrVector().push_back(
         new Gel::OpJacobian("SPATIAL_POSITION",tags,gel.constitutiveEquation,gel.commonData,false,true)
       );
+      gel.feLhs.getOpPtrVector().push_back(
+        new Gel::OpLhsdXdX(gel.commonData)
+      );
+
     }
   }
 
@@ -248,11 +252,14 @@ int main(int argc, char *argv[]) {
   }
 
   // Make calculations
+  Mat M;
   Vec F;
   {
     ierr = DMCreateGlobalVector_MoFEM(dm,&F); CHKERRQ(ierr);
+    ierr = DMCreateMatrix_MoFEM(dm,&M); CHKERRQ(ierr);
     gel.feRhs.snes_f = F; // Set right hand side vector manually
     ierr = DMoFEMLoopFiniteElements(dm,"GEL_FE",&gel.feRhs); CHKERRQ(ierr);
+    gel.feLhs.snes_B = M; // Set matrix M
     ierr = DMoFEMLoopFiniteElements(dm,"GEL_FE",&gel.feLhs); CHKERRQ(ierr);
   }
 
@@ -260,6 +267,7 @@ int main(int argc, char *argv[]) {
   // Clean and destroy
   {
     ierr = VecDestroy(&F); CHKERRQ(ierr);
+    ierr = MatDestroy(&M); CHKERRQ(ierr);
     ierr = DMDestroy(&dm); CHKERRQ(ierr);
   }
 
