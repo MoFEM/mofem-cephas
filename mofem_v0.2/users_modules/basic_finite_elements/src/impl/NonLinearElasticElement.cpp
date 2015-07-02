@@ -825,9 +825,10 @@ NonlinearElasticElement::OpJacobianEshelbyStress::OpJacobianEshelbyStress(
   CommonData &common_data,
   int tag,
   bool jacobian,
-  bool ale):
-  OpJacobianPiolaKirchhoffStress(field_name,data,common_data,tag,jacobian,ale,false)
-  {}
+  bool ale
+):
+OpJacobianPiolaKirchhoffStress(field_name,data,common_data,tag,jacobian,ale,false) {
+}
 
 PetscErrorCode NonlinearElasticElement::OpJacobianEshelbyStress::calculateStress() {
   PetscFunctionBegin;

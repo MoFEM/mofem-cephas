@@ -1499,7 +1499,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
 
 
 
-    PetscErrorCode ConvectiveMassElement::setBlocks(bool get_density_form_elastic_block_set) {
+    PetscErrorCode ConvectiveMassElement::setBlocks() {
       PetscFunctionBegin;
       ErrorCode rval;
       PetscErrorCode ierr;
@@ -1562,9 +1562,9 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     ierr = mField.modify_finite_element_add_field_data(element_name,spatial_position_field_name); CHKERRQ(ierr);
     if(mField.check_field(material_position_field_name)) {
       if(ale) {
-	ierr = mField.modify_finite_element_add_field_row(element_name,material_position_field_name); CHKERRQ(ierr);
-	ierr = mField.modify_finite_element_add_field_col(element_name,material_position_field_name); CHKERRQ(ierr);
-	ierr = mField.modify_finite_element_add_field_data(element_name,"DOT_"+material_position_field_name); CHKERRQ(ierr);
+        ierr = mField.modify_finite_element_add_field_row(element_name,material_position_field_name); CHKERRQ(ierr);
+        ierr = mField.modify_finite_element_add_field_col(element_name,material_position_field_name); CHKERRQ(ierr);
+        ierr = mField.modify_finite_element_add_field_data(element_name,"DOT_"+material_position_field_name); CHKERRQ(ierr);
       }
       ierr = mField.modify_finite_element_add_field_data(element_name,material_position_field_name); CHKERRQ(ierr);
     }
@@ -1580,11 +1580,11 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     for(;sit!=setOfBlocks.end();sit++) {
       Range add_tets = sit->second.tEts;
       if(!tets.empty()) {
-	add_tets = intersect(add_tets,tets);
+        add_tets = intersect(add_tets,tets);
       }
       ierr = mField.add_ents_to_finite_element_by_TETs(add_tets,element_name); CHKERRQ(ierr);
     }
-
+    
     PetscFunctionReturn(0);
   }
 
