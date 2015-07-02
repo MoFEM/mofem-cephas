@@ -41,6 +41,32 @@ Note2: Basic implementation is with linear constitutive equations, however
 adding nonlinearities to model should be simple, since all tangent matrices
 are calculated using adloc-c.
 
+System of equations of equations in the form is assembled:
+\f[
+\left[
+\begin{array}{ccc}
+\mathbf{K}_{xx} & \mathbf{K}_{x\mu} & \mathbf{K}_{x\hat{\varepsilon}} \\
+\mathbf{K}_{\mu x} & \mathbf{K}_{\mu \mu} & \mathbf{K}_{\mu \hat{\varepsilon}} \\
+\mathbf{K}_{\hat{\varepsilon} x} & \mathbf{K}_{\hat{\varepsilon} \mu} & \mathbf{K}_{\hat{\varepsilon} \hat{\varepsilon}}
+\end{array}
+\right]
+\left[
+\begin{array}{c}
+\mathbf{q}_{x}\\
+\mathbf{q}_{\mu}\\
+\mathbf{q}_{\hat{\varepsilon}}
+\end{array}
+\right]
+=
+\left[
+\begin{array}{l}
+\mathbf{f}^\textrm{internal}_{x}\\
+\mathbf{f}^V_{\mu}+\mathbf{f}^J_{\mu}\\
+\mathbf{r}_{\hat{\varepsilon}}
+\end{array}
+\right]
+\f]
+
 */
 struct Gel {
 
@@ -1039,7 +1065,7 @@ struct Gel {
   \ingroup gel
 
   \f[
-  (\mathbf{f}_x)_i =
+  (\mathbf{f}^\textrm{internal}_x)_i =
   \int_V
   \frac{\partial N_i}{\partial X_j} \sigma_{ij}
   \textrm{d}V
@@ -1089,11 +1115,11 @@ struct Gel {
     }
   };
 
-  /** \berief Calculate internal forces for solvent flux
+  /** \brief Calculate internal forces for solvent flux
   \ingroup gel
 
   \f[
-  (\mathbf{f}_{\mu})_j =
+  (\mathbf{f}^J_{\mu})_j =
   \int_V
   \frac{\partial N_j}{\partial X_k} J_k
   \textrm{d}V
@@ -1145,7 +1171,7 @@ struct Gel {
   \ingroup gel
 
   \f[
-  (\mathbf{f}_\mu)_j =
+  (\mathbf{f}^V_\mu)_j =
   \int_V
   N_j \frac{\partial V}{\partial t}
   \textrm{d}V
@@ -1193,7 +1219,7 @@ struct Gel {
   \ingroup gel
 
   \f[
-  (\mathbf{f}_{\hat{\varepsilon}})_j =
+  (\mathbf{r}_{\hat{\varepsilon}})_j =
   \int_V
   N_j \left(
   \frac{\partial \hat{\varepsilon}}{\partial t}-
