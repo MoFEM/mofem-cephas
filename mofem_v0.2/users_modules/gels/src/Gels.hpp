@@ -707,7 +707,7 @@ struct Gel {
         commonData.residualStrainHat.resize(nbGaussPts);
         commonData.residualStrainHat[0].resize(3,3,false);
         for(int d1 = 0;d1<3;d1++) {
-          for(int d2 = 0;d2<3;d2++) {
+          for(int d2 = d1;d2<3;d2++) {
             cE.residualStrainHat(d1,d2) >>= commonData.residualStrainHat[0](d1,d2);
             nbActiveResults[tagS[RESIDUALSTRAINHAT]]++;
           }
@@ -1564,6 +1564,87 @@ struct Gel {
                     diffN(dd1,1)*dStress_dStrainHat(3*rr1+1,6*dd2+rr2)+
                     diffN(dd1,2)*dStress_dStrainHat(3*rr1+2,6*dd2+rr2);
                   }
+                }
+              }
+            }
+          }
+          ierr = aSemble(
+            row_side,col_side,row_type,col_type,row_data,col_data
+          ); CHKERRQ(ierr);
+        }
+      } catch (const std::exception& ex) {
+        ostringstream ss;
+        ss << "throw in method: " << ex.what() << endl;
+        SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+      }
+      PetscFunctionReturn(0);
+    }
+  };
+
+  /** \brief Assemble matrix \f$\mathbf{K}_{\hat{\varepsilon}\hat{\varepsilon}}\f$
+  */
+  struct OpLhsdStrainHatdStrainHat: public AssembleMatrix {
+    CommonData &commonData;
+    OpLhsdStrainHatdStrainHat(CommonData &common_data):
+    AssembleMatrix(
+      common_data.strainHatName,common_data.strainHatName
+    ),
+    commonData(common_data) {
+    }
+    ublas::matrix<double> dStrainHat_dStrainHat;
+    PetscErrorCode get_dStrainHat_dStrainHat(
+      DataForcesAndSurcesCore::EntData &col_data,int gg
+    ) {
+      PetscFunctionBegin;
+      try {
+        int nb_col = col_data.getIndices().size();
+        dStrainHat_dStrainHat.resize(6,nb_col,false);
+        dStrainHat_dStrainHat.clear();
+        const VectorAdaptor N = col_data.getN(gg);
+        ublas::matrix<double> &jac_res_strain_hat = commonData.jacStrainHat[gg];
+        for(int dd = 0;dd<nb_col/6;dd++) {  /// DoFS in column
+          double a = N[dd];
+          for(int ii = 0;ii<6;ii++) {   // ii for elements in stress matrix
+            for(int rr = 0;rr<6;rr++) {
+              dStrainHat_dStrainHat(ii,6*dd+rr) += jac_res_strain_hat(ii,9+rr)*a;
+              dStrainHat_dStrainHat(ii,6*dd+rr) += jac_res_strain_hat(ii,9+6+rr)*a*getFEMethod()->ts_a; // Time dependent element
+            }
+          }
+        }
+      } catch (const std::exception& ex) {
+        ostringstream ss;
+        ss << "throw in method: " << ex.what() << endl;
+        SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+      }
+      PetscFunctionReturn(0);
+    }
+    PetscErrorCode doWork(
+      int row_side,int col_side,
+      EntityType row_type,EntityType col_type,
+      DataForcesAndSurcesCore::EntData &row_data,
+      DataForcesAndSurcesCore::EntData &col_data
+    ) {
+      PetscFunctionBegin;
+      int nb_row = row_data.getIndices().size();
+      int nb_col = col_data.getIndices().size();
+      if(nb_row == 0) PetscFunctionReturn(0);
+      if(nb_col == 0) PetscFunctionReturn(0);
+      try {
+        K.resize(nb_row,nb_col,false);
+        K.clear();
+        for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
+          ierr = get_dStrainHat_dStrainHat(col_data,gg); CHKERRQ(ierr);
+          double val = getVolume()*getGaussPts()(3,gg);
+          if(getHoGaussPtsDetJac().size()>0) {
+            val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
+          }
+          dStrainHat_dStrainHat *= val;
+          const VectorAdaptor &N = row_data.getN(gg);
+          { //integrate element stiffness matrix
+            for(int dd1 = 0;dd1<nb_row/6;dd1++) {
+              for(int rr1 = 0;rr1<6;rr1++) {
+                for(int dd2 = 0;dd2<nb_col;dd2++) {
+                  K(6*dd1+rr1,dd2) += N[dd1]*dStrainHat_dStrainHat(rr1,dd2);
                 }
               }
             }

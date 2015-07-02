@@ -239,6 +239,9 @@ int main(int argc, char *argv[]) {
       gel.feLhs.getOpPtrVector().push_back(
         new Gel::OpLhsdXdStrainHat(gel.commonData)
       );
+      gel.feLhs.getOpPtrVector().push_back(
+        new Gel::OpLhsdStrainHatdStrainHat(gel.commonData)
+      );
 
     }
   }
@@ -266,6 +269,7 @@ int main(int argc, char *argv[]) {
     gel.feRhs.snes_f = F; // Set right hand side vector manually
     ierr = DMoFEMLoopFiniteElements(dm,"GEL_FE",&gel.feRhs); CHKERRQ(ierr);
     gel.feLhs.snes_B = M; // Set matrix M
+    gel.feLhs.ts_a = 1.0; // Set time step parameter
     ierr = DMoFEMLoopFiniteElements(dm,"GEL_FE",&gel.feLhs); CHKERRQ(ierr);
     ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
     ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
