@@ -1663,7 +1663,7 @@ struct Gel {
     }
   };
 
-  /** \brief Assemble matrix \f$\mathbf{K}_{\hat{\varepsilon}\hat{\varepsilon}}\f$
+  /** \brief Assemble matrix \f$\mathbf{K}_{\hat{\varepsilon}x}\f$
   */
   struct OpLhsdStrainHatdx: public AssembleMatrix {
     CommonData &commonData;
