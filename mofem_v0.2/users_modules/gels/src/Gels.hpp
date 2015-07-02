@@ -213,7 +213,7 @@ struct Gel {
     PetscErrorCode calculateStressBeta() {
       PetscFunctionBegin;
       traceStrainHat = strainHat(0,0)+strainHat(1,1)+strainHat(2,2);
-      traceStrainTotal = strainTotal(0,0)+strainTotal(0,0)+strainTotal(0,0);
+      traceStrainTotal = strainTotal(0,0)+strainTotal(1,1)+strainTotal(2,2);
       stressBeta.resize(3,3,false);
       double a = 2.0*dAta.gBeta;
       noalias(stressBeta) = a*(strainTotal-strainHat);
@@ -700,6 +700,7 @@ struct Gel {
         cE.strainHatDot(1,0) = cE.strainHatDot(0,1);
         cE.strainHatDot(2,1) = cE.strainHatDot(1,2);
         cE.strainHatDot(2,0) = cE.strainHatDot(0,2);
+        ierr = cE.calculateStrainTotal(); CHKERRQ(ierr);
         ierr = cE.calculateStressBeta(); CHKERRQ(ierr);
         ierr = cE.calculateStrainHatFlux(); CHKERRQ(ierr);
         ierr = cE.calculateResidualStrainHat(); CHKERRQ(ierr);
@@ -1322,23 +1323,23 @@ struct Gel {
 
   /** \brief Assemble matrix \f$\mathbf{K}_{xx}\f$
   */
-  struct OpLhsdXdX: public AssembleMatrix {
+  struct OpLhsdxdx: public AssembleMatrix {
     CommonData &commonData;
-    OpLhsdXdX(CommonData &common_data):
+    OpLhsdxdx(CommonData &common_data):
     AssembleMatrix(
       common_data.spatialPositionName,common_data.spatialPositionName
     ),
     commonData(common_data) {
     }
-    ublas::matrix<double> dStress_dX;
-    PetscErrorCode get_dStress_dX(
+    ublas::matrix<double> dStress_dx;
+    PetscErrorCode get_dStress_dx(
       DataForcesAndSurcesCore::EntData &col_data,int gg
     ) {
       PetscFunctionBegin;
       try {
         int nb_col = col_data.getIndices().size();
-        dStress_dX.resize(9,nb_col,false);
-        dStress_dX.clear();
+        dStress_dx.resize(9,nb_col,false);
+        dStress_dx.clear();
         const MatrixAdaptor diffN = col_data.getDiffN(gg,nb_col/3);
         ublas::matrix<double> &jac_stress = commonData.jacStressTotal[gg];
         // FIXME: This can be implemented more efficiently. At this stage is
@@ -1348,7 +1349,7 @@ struct Gel {
             double a = diffN(dd,jj);
             for(int rr = 0;rr<3;rr++) {     // Loop over dsigma_ii/dX_rr
               for(int ii = 0;ii<9;ii++) {   // ii represents components of stress tensor
-                dStress_dX(ii,3*dd+rr) += jac_stress(ii,3*rr+jj)*a;
+                dStress_dx(ii,3*dd+rr) += jac_stress(ii,3*rr+jj)*a;
               }
             }
           }
@@ -1375,12 +1376,12 @@ struct Gel {
         K.resize(nb_row,nb_col,false);
         K.clear();
         for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
-          ierr = get_dStress_dX(col_data,gg); CHKERRQ(ierr);
+          ierr = get_dStress_dx(col_data,gg); CHKERRQ(ierr);
           double val = getVolume()*getGaussPts()(3,gg);
           if(getHoGaussPtsDetJac().size()>0) {
             val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
           }
-          dStress_dX *= val;
+          dStress_dx *= val;
           const MatrixAdaptor &diffN = row_data.getDiffN(gg,nb_row/3);
           { //integrate element stiffness matrix
             for(int dd1 = 0;dd1<nb_row/3;dd1++) {
@@ -1388,9 +1389,9 @@ struct Gel {
                 for(int dd2 = 0;dd2<nb_col/3;dd2++) {
                   for(int rr2 = 0;rr2<3;rr2++) {
                     K(3*dd1+rr1,3*dd2+rr2) +=
-                    diffN(dd1,0)*dStress_dX(3*rr1+0,3*dd2+rr2)+
-                    diffN(dd1,1)*dStress_dX(3*rr1+1,3*dd2+rr2)+
-                    diffN(dd1,2)*dStress_dX(3*rr1+2,3*dd2+rr2);
+                    diffN(dd1,0)*dStress_dx(3*rr1+0,3*dd2+rr2)+
+                    diffN(dd1,1)*dStress_dx(3*rr1+1,3*dd2+rr2)+
+                    diffN(dd1,2)*dStress_dx(3*rr1+2,3*dd2+rr2);
                   }
                 }
               }
@@ -1411,9 +1412,9 @@ struct Gel {
 
   /** \brief Assemble matrix \f$\mathbf{K}_{x\mu}\f$
   */
-  struct OpLhsdXdMu: public AssembleMatrix {
+  struct OpLhsdxdMu: public AssembleMatrix {
     CommonData &commonData;
-    OpLhsdXdMu(CommonData &common_data):
+    OpLhsdxdMu(CommonData &common_data):
     AssembleMatrix(
       common_data.spatialPositionName,common_data.muName
     ),
@@ -1421,7 +1422,7 @@ struct Gel {
       sYmm = false;
     }
     ublas::matrix<double> dStress_dMu;
-    PetscErrorCode get_dStress_dX(
+    PetscErrorCode get_dStress_dx(
       DataForcesAndSurcesCore::EntData &col_data,int gg
     ) {
       PetscFunctionBegin;
@@ -1459,7 +1460,7 @@ struct Gel {
         K.resize(nb_row,nb_col,false);
         K.clear();
         for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
-          ierr = get_dStress_dX(col_data,gg); CHKERRQ(ierr);
+          ierr = get_dStress_dx(col_data,gg); CHKERRQ(ierr);
           double val = getVolume()*getGaussPts()(3,gg);
           if(getHoGaussPtsDetJac().size()>0) {
             val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
@@ -1493,9 +1494,9 @@ struct Gel {
 
   /** \brief Assemble matrix \f$\mathbf{K}_{x\hat{\varepsilon}}\f$
   */
-  struct OpLhsdXdStrainHat: public AssembleMatrix {
+  struct OpLhsdxdStrainHat: public AssembleMatrix {
     CommonData &commonData;
-    OpLhsdXdStrainHat(CommonData &common_data):
+    OpLhsdxdStrainHat(CommonData &common_data):
     AssembleMatrix(
       common_data.spatialPositionName,common_data.strainHatName
     ),
@@ -1645,6 +1646,94 @@ struct Gel {
               for(int rr1 = 0;rr1<6;rr1++) {
                 for(int dd2 = 0;dd2<nb_col;dd2++) {
                   K(6*dd1+rr1,dd2) += N[dd1]*dStrainHat_dStrainHat(rr1,dd2);
+                }
+              }
+            }
+          }
+          ierr = aSemble(
+            row_side,col_side,row_type,col_type,row_data,col_data
+          ); CHKERRQ(ierr);
+        }
+      } catch (const std::exception& ex) {
+        ostringstream ss;
+        ss << "throw in method: " << ex.what() << endl;
+        SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+      }
+      PetscFunctionReturn(0);
+    }
+  };
+
+  /** \brief Assemble matrix \f$\mathbf{K}_{\hat{\varepsilon}\hat{\varepsilon}}\f$
+  */
+  struct OpLhsdStrainHatdx: public AssembleMatrix {
+    CommonData &commonData;
+    OpLhsdStrainHatdx(CommonData &common_data):
+    AssembleMatrix(
+      common_data.strainHatName,common_data.spatialPositionName
+    ),
+    commonData(common_data) {
+      sYmm = false;
+    }
+    ublas::matrix<double> dStrainHat_dx;
+    PetscErrorCode get_dStrainHat_dx(
+      DataForcesAndSurcesCore::EntData &col_data,int gg
+    ) {
+      PetscFunctionBegin;
+      try {
+        int nb_col = col_data.getIndices().size();
+        dStrainHat_dx.resize(6,nb_col,false);
+        dStrainHat_dx.clear();
+        const MatrixAdaptor diffN = col_data.getDiffN(gg,nb_col/3);
+        ublas::matrix<double> &jac_res_strain_hat = commonData.jacStrainHat[gg];
+        //cerr << "a\n" << diffN << endl;
+        //cerr << "b\n" << jac_res_strain_hat << endl;
+        for(int dd = 0;dd<nb_col/3;dd++) {    // DoFs in column
+          for(int rr1 = 0;rr1<3;rr1++) {      // cont. DoFs in column
+            double a = diffN(dd,rr1);
+            for(int ii = 0;ii<6;ii++) {       // ii for elements in strain hat
+              for(int rr2 = 0;rr2<3;rr2++) {
+                dStrainHat_dx(ii,3*dd+rr2) += jac_res_strain_hat(ii,3*rr2+rr1)*a;
+              }
+            }
+          }
+        }
+      } catch (const std::exception& ex) {
+        ostringstream ss;
+        ss << "throw in method: " << ex.what() << endl;
+        SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+      }
+      PetscFunctionReturn(0);
+    }
+    PetscErrorCode doWork(
+      int row_side,int col_side,
+      EntityType row_type,EntityType col_type,
+      DataForcesAndSurcesCore::EntData &row_data,
+      DataForcesAndSurcesCore::EntData &col_data
+    ) {
+      PetscFunctionBegin;
+      int nb_row = row_data.getIndices().size();
+      int nb_col = col_data.getIndices().size();
+      if(nb_row == 0) PetscFunctionReturn(0);
+      if(nb_col == 0) PetscFunctionReturn(0);
+      try {
+        K.resize(nb_row,nb_col,false);
+        K.clear();
+        for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
+          ierr = get_dStrainHat_dx(col_data,gg); CHKERRQ(ierr);
+          double val = getVolume()*getGaussPts()(3,gg);
+          if(getHoGaussPtsDetJac().size()>0) {
+            val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
+          }
+          dStrainHat_dx *= val;
+          //cerr << dStrainHat_dx << endl;
+          const VectorAdaptor &N = row_data.getN(gg);
+          { //integrate element stiffness matrix
+            for(int dd1 = 0;dd1<nb_row/6;dd1++) {
+              for(int rr1 = 0;rr1<6;rr1++) {
+                for(int dd2 = 0;dd2<nb_col/3;dd2++) {
+                  for(int rr2 = 0;rr2<3;rr2++) {
+                    K(6*dd1+rr1,3*dd2+rr2) += N[dd1]*dStrainHat_dx(rr1,3*dd2+rr2);
+                  }
                 }
               }
             }

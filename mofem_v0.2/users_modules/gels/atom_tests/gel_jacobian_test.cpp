@@ -231,16 +231,19 @@ int main(int argc, char *argv[]) {
         new Gel::OpJacobian("SPATIAL_POSITION",tags,gel.constitutiveEquation,gel.commonData,false,true)
       );
       gel.feLhs.getOpPtrVector().push_back(
-        new Gel::OpLhsdXdX(gel.commonData)
+        new Gel::OpLhsdxdx(gel.commonData)
       );
       gel.feLhs.getOpPtrVector().push_back(
-        new Gel::OpLhsdXdMu(gel.commonData)
+        new Gel::OpLhsdxdMu(gel.commonData)
       );
       gel.feLhs.getOpPtrVector().push_back(
-        new Gel::OpLhsdXdStrainHat(gel.commonData)
+        new Gel::OpLhsdxdStrainHat(gel.commonData)
       );
       gel.feLhs.getOpPtrVector().push_back(
         new Gel::OpLhsdStrainHatdStrainHat(gel.commonData)
+      );
+      gel.feLhs.getOpPtrVector().push_back(
+        new Gel::OpLhsdStrainHatdx(gel.commonData)
       );
 
     }
