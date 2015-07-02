@@ -1491,7 +1491,9 @@ struct Gel {
     }
   };
 
-    struct OpLhsdXdStrainHat: public AssembleMatrix {
+  /** \brief Assemble matrix \f$\mathbf{K}_{x\hat{\varepsilon}}\f$
+  */
+  struct OpLhsdXdStrainHat: public AssembleMatrix {
     CommonData &commonData;
     OpLhsdXdStrainHat(CommonData &common_data):
     AssembleMatrix(
