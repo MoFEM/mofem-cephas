@@ -314,25 +314,27 @@ struct ElasticMaterials {
       set_of_blocks[id].a0[1] = mydata.data.acceleration_y;
       set_of_blocks[id].a0[2] = mydata.data.acceleration_z;
       if(blockData[id].dEnsity>=0) {
-	set_of_blocks[id].rho0 = blockData[id].dEnsity;
-	ostringstream str_ax;
+        set_of_blocks[id].rho0 = blockData[id].dEnsity;
+        ostringstream str_ax;
         str_ax << "block_" << it->get_msId() << ".a_x";
-	ostringstream str_ay;
+        ostringstream str_ay;
         str_ay << "block_" << it->get_msId() << ".a_y";
-	ostringstream str_az;
+        ostringstream str_az;
         str_az << "block_" << it->get_msId() << ".a_z";
-	if(vM.count(str_ax.str().c_str())) {
-	  set_of_blocks[id].a0[0] = blockData[id].aX;
-	}
-	if(vM.count(str_ay.str().c_str())) {
-	  set_of_blocks[id].a0[1] = blockData[id].aY;
-	}
-	if(vM.count(str_az.str().c_str())) {
-	  set_of_blocks[id].a0[2] = blockData[id].aZ;
-	}
+        if(vM.count(str_ax.str().c_str())) {
+          set_of_blocks[id].a0[0] = blockData[id].aX;
+        }
+        if(vM.count(str_ay.str().c_str())) {
+          set_of_blocks[id].a0[1] = blockData[id].aY;
+        }
+        if(vM.count(str_az.str().c_str())) {
+          set_of_blocks[id].a0[2] = blockData[id].aZ;
+        }
       }
-      PetscPrintf(mField.get_comm(),"Block Id %d Density %3.2g a_x = %3.2g a_y = %3.2g a_z = %3.2g\n",
-	id,set_of_blocks[id].rho0,set_of_blocks[id].a0[0],set_of_blocks[id].a0[1],set_of_blocks[id].a0[2]);
+      PetscPrintf(
+        mField.get_comm(),"Block Id %d Density %3.2g a_x = %3.2g a_y = %3.2g a_z = %3.2g\n",
+        id,set_of_blocks[id].rho0,set_of_blocks[id].a0[0],set_of_blocks[id].a0[1],set_of_blocks[id].a0[2]
+      );
     }
 
     PetscFunctionReturn(0);
