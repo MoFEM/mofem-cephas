@@ -236,6 +236,9 @@ int main(int argc, char *argv[]) {
       gel.feLhs.getOpPtrVector().push_back(
         new Gel::OpLhsdXdMu(gel.commonData)
       );
+      gel.feLhs.getOpPtrVector().push_back(
+        new Gel::OpLhsdXdStrainHat(gel.commonData)
+      );
 
     }
   }
@@ -264,6 +267,22 @@ int main(int argc, char *argv[]) {
     ierr = DMoFEMLoopFiniteElements(dm,"GEL_FE",&gel.feRhs); CHKERRQ(ierr);
     gel.feLhs.snes_B = M; // Set matrix M
     ierr = DMoFEMLoopFiniteElements(dm,"GEL_FE",&gel.feLhs); CHKERRQ(ierr);
+    ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
+    ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
+    ierr = MatAssemblyBegin(M,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+    ierr = MatAssemblyEnd(M,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+  }
+
+  // See results
+  {
+
+    //PetscViewer viewer;
+    //ierr = PetscViewerASCIIOpen(PETSC_COMM_WORLD,"build_composite_problem.txt",&viewer); CHKERRQ(ierr);
+    //ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
+    MatView(M,PETSC_VIEWER_DRAW_WORLD);
+    std::string wait;
+    std::cin >> wait;
+
   }
 
 
