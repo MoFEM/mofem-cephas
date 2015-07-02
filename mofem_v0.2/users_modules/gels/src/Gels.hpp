@@ -1379,6 +1379,86 @@ struct Gel {
     }
   };
 
+  struct OpLhsdXdMu: public AssembleMatrix {
+    CommonData &commonData;
+    OpLhsdXdMu(CommonData &common_data):
+    AssembleMatrix(
+      common_data.spatialPositionName,common_data.muName
+    ),
+    commonData(common_data) {
+      sYmm = false;
+    }
+    ublas::matrix<double> dStress_dMu;
+    PetscErrorCode get_dStress_dX(
+      DataForcesAndSurcesCore::EntData &col_data,int gg
+    ) {
+      PetscFunctionBegin;
+      try {
+        int nb_col = col_data.getIndices().size();
+        dStress_dMu.resize(9,nb_col,false);
+        dStress_dMu.clear();
+        const VectorAdaptor N = col_data.getN(gg);
+        ublas::matrix<double> &jac_stress = commonData.jacStressTotal[gg];
+        for(int dd = 0;dd<nb_col;dd++) {
+          double a = N[dd];
+          for(int ii = 0;ii<9;ii++) {
+            dStress_dMu(ii,dd) += jac_stress(ii,9+6+0)*a;
+          }
+        }
+      } catch (const std::exception& ex) {
+        ostringstream ss;
+        ss << "throw in method: " << ex.what() << endl;
+        SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+      }
+      PetscFunctionReturn(0);
+    }
+    PetscErrorCode doWork(
+      int row_side,int col_side,
+      EntityType row_type,EntityType col_type,
+      DataForcesAndSurcesCore::EntData &row_data,
+      DataForcesAndSurcesCore::EntData &col_data
+    ) {
+      PetscFunctionBegin;
+      int nb_row = row_data.getIndices().size();
+      int nb_col = col_data.getIndices().size();
+      if(nb_row == 0) PetscFunctionReturn(0);
+      if(nb_col == 0) PetscFunctionReturn(0);
+      try {
+        K.resize(nb_row,nb_col,false);
+        K.clear();
+        for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
+          ierr = get_dStress_dX(col_data,gg); CHKERRQ(ierr);
+          double val = getVolume()*getGaussPts()(3,gg);
+          if(getHoGaussPtsDetJac().size()>0) {
+            val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
+          }
+          dStress_dMu *= val;
+          const MatrixAdaptor &diffN = row_data.getDiffN(gg,nb_row/3);
+          { //integrate element stiffness matrix
+            for(int dd1 = 0;dd1<nb_row/3;dd1++) {
+              for(int rr1 = 0;rr1<3;rr1++) {
+                for(int dd2 = 0;dd2<nb_col;dd2++) {
+                  K(3*dd1+rr1,dd2) +=
+                  diffN(dd1,0)*dStress_dMu(3*rr1+0,dd2)+
+                  diffN(dd1,1)*dStress_dMu(3*rr1+1,dd2)+
+                  diffN(dd1,2)*dStress_dMu(3*rr1+2,dd2);
+                }
+              }
+            }
+          }
+          ierr = aSemble(
+            row_side,col_side,row_type,col_type,row_data,col_data
+          ); CHKERRQ(ierr);
+        }
+      } catch (const std::exception& ex) {
+        ostringstream ss;
+        ss << "throw in method: " << ex.what() << endl;
+        SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+      }
+      PetscFunctionReturn(0);
+    }
+  };
+
 };
 
 #endif //__GEL_HPP__
