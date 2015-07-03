@@ -176,6 +176,9 @@ int main(int argc, char *argv[]) {
   {
 
     Gel::BlockMaterialData &material_data = gel.blockMaterialData;
+    gel.constitutiveEquationPtr = boost::shared_ptr<Gel::ConstitutiveEquation<adouble> >(
+      new Gel::ConstitutiveEquation<adouble>(gel.blockMaterialData)
+    );
 
     // Set material parameters
     material_data.gAlpha = 1;
@@ -212,7 +215,7 @@ int main(int argc, char *argv[]) {
 
       // Right hand side operators
       gel.feRhs.getOpPtrVector().push_back(
-        new Gel::OpJacobian("SPATIAL_POSITION", tags, gel.constitutiveEquation,gel.commonData,true,false)
+        new Gel::OpJacobian("SPATIAL_POSITION", tags,gel.constitutiveEquationPtr,gel.commonData,true,false)
       );
       gel.feRhs.getOpPtrVector().push_back(
         new Gel::OpRhsStressTotal(gel.commonData)
@@ -228,7 +231,7 @@ int main(int argc, char *argv[]) {
       );
       // Left hand side operators
       gel.feLhs.getOpPtrVector().push_back(
-        new Gel::OpJacobian("SPATIAL_POSITION",tags,gel.constitutiveEquation,gel.commonData,false,true)
+        new Gel::OpJacobian("SPATIAL_POSITION",tags,gel.constitutiveEquationPtr,gel.commonData,false,true)
       );
       gel.feLhs.getOpPtrVector().push_back(
         new Gel::OpLhsdxdx(gel.commonData)

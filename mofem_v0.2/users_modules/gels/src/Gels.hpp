@@ -144,7 +144,7 @@ struct Gel {
     TYPE volumeDot;                               ///< Volume rate change
     ublas::matrix<TYPE> residualStrainHat;        ///< Residual for calculation epsilon hat
 
-    PetscErrorCode calculateCauchyDefromationTensor() {
+    virtual PetscErrorCode calculateCauchyDefromationTensor() {
       PetscFunctionBegin;
       C.resize(3,3);
       noalias(C) = prod(trans(F),F);
@@ -154,7 +154,7 @@ struct Gel {
     /** \brief Calculate total strain
 
     */
-    PetscErrorCode calculateStrainTotal() {
+    virtual PetscErrorCode calculateStrainTotal() {
       PetscFunctionBegin;
       gradientU.resize(3,3,false);
       for(int ii = 0;ii<3;ii++) {
@@ -169,7 +169,7 @@ struct Gel {
 
     /** \berief Calculate trace of rate of gradient of deformation
     */
-    PetscErrorCode calculateTraceStrainTotalDot() {
+    virtual PetscErrorCode calculateTraceStrainTotalDot() {
       PetscFunctionBegin;
       traceStrainTotalDot = 0;
       for(int ii = 0;ii<3;ii++) {
@@ -188,7 +188,7 @@ struct Gel {
     Piola-Kirchhoff Stress I.
 
     */
-    PetscErrorCode calculateStressAlpha() {
+    virtual PetscErrorCode calculateStressAlpha() {
       PetscFunctionBegin;
       traceStrainTotal = strainTotal(0,0)+strainTotal(1,1)+strainTotal(2,2);
       stressAlpha.resize(3,3);
@@ -210,7 +210,7 @@ struct Gel {
     \f]
 
     */
-    PetscErrorCode calculateStressBeta() {
+    virtual PetscErrorCode calculateStressBeta() {
       PetscFunctionBegin;
       traceStrainHat = strainHat(0,0)+strainHat(1,1)+strainHat(2,2);
       traceStrainTotal = strainTotal(0,0)+strainTotal(1,1)+strainTotal(2,2);
@@ -234,7 +234,7 @@ struct Gel {
     \f]
 
     */
-    PetscErrorCode calculateStrainHatFlux() {
+    virtual PetscErrorCode calculateStrainHatFlux() {
       PetscFunctionBegin;
       traceStressBeta = stressBeta(0,0)+stressBeta(1,1)+stressBeta(2,2);
       strainHatFlux.resize(3,3,false);
@@ -256,7 +256,7 @@ struct Gel {
     value of \f$\Delta\mu\f$ is approximated.
 
     */
-    PetscErrorCode calculateStressBetaHat() {
+    virtual PetscErrorCode calculateStressBetaHat() {
       PetscFunctionBegin;
       stressBetaHat.resize(3,3,false);
       stressBetaHat.clear();
@@ -268,7 +268,7 @@ struct Gel {
 
     // Functions calculating output variables
 
-    PetscErrorCode calculateStressTotal() {
+    virtual PetscErrorCode calculateStressTotal() {
       PetscFunctionBegin;
       stressTotal.resize(3,3,false);
       noalias(stressTotal) = stressAlpha;
@@ -278,7 +278,7 @@ struct Gel {
       PetscFunctionReturn(0);
     }
 
-    PetscErrorCode calculateResidualStrainHat() {
+    virtual PetscErrorCode calculateResidualStrainHat() {
       PetscFunctionBegin;
       residualStrainHat.resize(3,3,false);
       noalias(residualStrainHat) =  strainHatDot + strainHatFlux;
@@ -296,7 +296,7 @@ struct Gel {
     \f]
 
     */
-    PetscErrorCode calculateSolventFlux() {
+    virtual PetscErrorCode calculateSolventFlux() {
       PetscFunctionBegin;
       solventFlux=-(dAta.pErmeability/(dAta.vIscosity*dAta.oMega*dAta.oMega))*gradientMu;
       PetscFunctionReturn(0);
@@ -304,20 +304,19 @@ struct Gel {
 
     /** \brief Volume change at material point
 
-      FIXME: For simplicity as first approximation set volule change
+      FIXME: For simplicity as first approximation set volume change
       as trace of gradient total strain
 
     */
-    PetscErrorCode calculateVolumeDot() {
+    virtual PetscErrorCode calculateVolumeDot() {
       PetscFunctionBegin;
       volumeDot = traceStrainTotalDot;
       PetscFunctionReturn(0);
     }
 
-
   };
 
-  ConstitutiveEquation<adouble> constitutiveEquation;
+  boost::shared_ptr<Gel::ConstitutiveEquation<adouble> > constitutiveEquationPtr;
 
   /** \brief Common data for gel model
   \ingroup gel
@@ -372,7 +371,6 @@ struct Gel {
 
   Gel(FieldInterface &m_field):
   mFiled(m_field),
-  constitutiveEquation(blockMaterialData),
   feRhs(m_field),
   feLhs(m_field) {
   }
@@ -477,7 +475,7 @@ struct Gel {
   struct OpJacobian: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     vector<int> tagS;
-    ConstitutiveEquation<adouble> &cE;
+    boost::shared_ptr<Gel::ConstitutiveEquation<adouble> > cE;
     CommonData &commonData;
 
     bool calculateResidualBool;
@@ -487,7 +485,7 @@ struct Gel {
     OpJacobian(
       const string field_name,
       vector<int> tags,
-      ConstitutiveEquation<adouble> &ce,
+      boost::shared_ptr<Gel::ConstitutiveEquation<adouble> > ce,
       CommonData &common_data,
       bool calculate_residual,
       bool calculate_jacobian
@@ -517,8 +515,8 @@ struct Gel {
           PetscFunctionReturn(0);
         }
         PetscErrorCode ierr;
-        cE.F.resize(3,3,false);
-        cE.strainHat.resize(3,3,false);
+        cE->F.resize(3,3,false);
+        cE->strainHat.resize(3,3,false);
         ublas::matrix<double> &F = (commonData.gradAtGaussPts[commonData.spatialPositionName])[0];
         ublas::vector<double> &strain_hat = (commonData.dataAtGaussPts[commonData.strainHatName])[0];
         ublas::vector<double> mu = (commonData.dataAtGaussPts[commonData.muName])[0];
@@ -528,38 +526,38 @@ struct Gel {
           nbActiveVariables[tagS[STRESSTOTAL]] = 0;
           for(int dd1 = 0;dd1<3;dd1++) {
             for(int dd2 = 0;dd2<3;dd2++) {
-              cE.F(dd1,dd2) <<= F(dd1,dd2);
+              cE->F(dd1,dd2) <<= F(dd1,dd2);
               nbActiveVariables[tagS[STRESSTOTAL]]++;
             }
           }
           // Using vector notation to store hatStrain
           // xx,yy,zz,2xy,2yz,2zy
-          cE.strainHat(0,0) <<= strain_hat[0];
-          cE.strainHat(1,1) <<= strain_hat[1];
-          cE.strainHat(2,2) <<= strain_hat[2];
-          cE.strainHat(0,1) <<= strain_hat[3];
-          cE.strainHat(1,2) <<= strain_hat[4];
-          cE.strainHat(0,2) <<= strain_hat[5];
+          cE->strainHat(0,0) <<= strain_hat[0];
+          cE->strainHat(1,1) <<= strain_hat[1];
+          cE->strainHat(2,2) <<= strain_hat[2];
+          cE->strainHat(0,1) <<= strain_hat[3];
+          cE->strainHat(1,2) <<= strain_hat[4];
+          cE->strainHat(0,2) <<= strain_hat[5];
           nbActiveVariables[tagS[0]] += 6;
-          cE.strainHat(1,0) = cE.strainHat(0,1);
-          cE.strainHat(2,1) = cE.strainHat(1,2);
-          cE.strainHat(2,0) = cE.strainHat(0,2);
-          cE.mU <<= mu[0];
+          cE->strainHat(1,0) = cE->strainHat(0,1);
+          cE->strainHat(2,1) = cE->strainHat(1,2);
+          cE->strainHat(2,0) = cE->strainHat(0,2);
+          cE->mU <<= mu[0];
           nbActiveVariables[tagS[STRESSTOTAL]]++;
           // Do calculations
-          ierr = cE.calculateStrainTotal(); CHKERRQ(ierr);
-          ierr = cE.calculateStressAlpha(); CHKERRQ(ierr);
-          ierr = cE.calculateStressBeta(); CHKERRQ(ierr);
-          ierr = cE.calculateStressBetaHat(); CHKERRQ(ierr);
+          ierr = cE->calculateStrainTotal(); CHKERRQ(ierr);
+          ierr = cE->calculateStressAlpha(); CHKERRQ(ierr);
+          ierr = cE->calculateStressBeta(); CHKERRQ(ierr);
+          ierr = cE->calculateStressBetaHat(); CHKERRQ(ierr);
           // Finally calculate result
-          ierr = cE.calculateStressTotal(); CHKERRQ(ierr);
+          ierr = cE->calculateStressTotal(); CHKERRQ(ierr);
           // Results
           nbActiveResults[tagS[STRESSTOTAL]] = 0;
           commonData.stressTotal.resize(nbGaussPts);
           commonData.stressTotal[0].resize(3,3,false);
           for(int d1 = 0;d1<3;d1++) {
             for(int d2 = 0;d2<3;d2++) {
-              cE.stressTotal(d1,d2) >>= (commonData.stressTotal[0])(d1,d2);
+              cE->stressTotal(d1,d2) >>= (commonData.stressTotal[0])(d1,d2);
               nbActiveResults[tagS[STRESSTOTAL]]++;
             }
           }
@@ -581,22 +579,22 @@ struct Gel {
           PetscFunctionReturn(0);
         }
         PetscErrorCode ierr;
-        cE.gradientMu.resize(3,false);
+        cE->gradientMu.resize(3,false);
         ublas::matrix<double> &gradient_mu = (commonData.gradAtGaussPts[commonData.muName])[0];
         trace_on(tagS[SOLVENTFLUX]);
         {
           // Activate rate of gradient of defamation
           nbActiveVariables[tagS[SOLVENTFLUX]] = 0;
           for(int ii = 0;ii<3;ii++) {
-            cE.gradientMu[ii] <<= gradient_mu(0,ii);
+            cE->gradientMu[ii] <<= gradient_mu(0,ii);
             nbActiveVariables[tagS[SOLVENTFLUX]]++;
           }
-          ierr = cE.calculateSolventFlux(); CHKERRQ(ierr);
+          ierr = cE->calculateSolventFlux(); CHKERRQ(ierr);
           nbActiveResults[tagS[SOLVENTFLUX]] = 0;
           commonData.solventFlux.resize(nbGaussPts);
           commonData.solventFlux[0].resize(3,false);
           for(int d1 = 0;d1<3;d1++) {
-            cE.solventFlux[d1] >>= commonData.solventFlux[0][d1];
+            cE->solventFlux[d1] >>= commonData.solventFlux[0][d1];
             nbActiveResults[tagS[SOLVENTFLUX]]++;
           }
         }
@@ -626,25 +624,25 @@ struct Gel {
       {
         // Activate rate of gradient of defamation
         nbActiveVariables[tagS[VOLUMERATE]] = 0;
-        cE.F.resize(3,3,false);
+        cE->F.resize(3,3,false);
         for(int dd1 = 0;dd1<3;dd1++) {
           for(int dd2 = 0;dd2<3;dd2++) {
-            cE.F(dd1,dd2) <<= F(dd1,dd2);
+            cE->F(dd1,dd2) <<= F(dd1,dd2);
             nbActiveVariables[tagS[VOLUMERATE]]++;
           }
         }
-        cE.FDot.resize(3,3,false);
+        cE->FDot.resize(3,3,false);
         for(int dd1 = 0;dd1<3;dd1++) {
           for(int dd2 = 0;dd2<3;dd2++) {
-            cE.FDot(dd1,dd2) <<= F_dot(dd1,dd2);
+            cE->FDot(dd1,dd2) <<= F_dot(dd1,dd2);
             nbActiveVariables[tagS[VOLUMERATE]]++;
           }
         }
-        ierr = cE.calculateTraceStrainTotalDot(); CHKERRQ(ierr);
-        ierr = cE.calculateVolumeDot(); CHKERRQ(ierr);
+        ierr = cE->calculateTraceStrainTotalDot(); CHKERRQ(ierr);
+        ierr = cE->calculateVolumeDot(); CHKERRQ(ierr);
         nbActiveResults[tagS[VOLUMERATE]] = 0;
         commonData.volumeDot.resize(nbGaussPts);
-        cE.volumeDot >>= commonData.volumeDot[0];
+        cE->volumeDot >>= commonData.volumeDot[0];
         nbActiveResults[tagS[VOLUMERATE]]++;
       }
       trace_off();
@@ -661,9 +659,9 @@ struct Gel {
 
       PetscErrorCode ierr;
 
-      cE.F.resize(3,3,false);
-      cE.strainHat.resize(3,3,false);
-      cE.strainHatDot.resize(3,3,false);
+      cE->F.resize(3,3,false);
+      cE->strainHat.resize(3,3,false);
+      cE->strainHatDot.resize(3,3,false);
       ublas::matrix<double> &F = (commonData.gradAtGaussPts[commonData.spatialPositionName])[0];
       ublas::vector<double> &strain_hat = (commonData.dataAtGaussPts[commonData.strainHatName])[0];
       ublas::vector<double> &strain_hat_dot = (commonData.dataAtGaussPts[commonData.strainHatNameDot])[0];
@@ -673,43 +671,43 @@ struct Gel {
         nbActiveVariables[tagS[RESIDUALSTRAINHAT]] = 0;
         for(int dd1 = 0;dd1<3;dd1++) {
           for(int dd2 = 0;dd2<3;dd2++) {
-            cE.F(dd1,dd2) <<= F(dd1,dd2);
+            cE->F(dd1,dd2) <<= F(dd1,dd2);
             nbActiveVariables[tagS[RESIDUALSTRAINHAT]]++;
           }
         }
         // Using vector notation to store hatStrain
         // xx,yy,zz,2xy,2yz,2zy
-        cE.strainHat(0,0) <<= strain_hat[0];
-        cE.strainHat(1,1) <<= strain_hat[1];
-        cE.strainHat(2,2) <<= strain_hat[2];
-        cE.strainHat(0,1) <<= strain_hat[3];
-        cE.strainHat(1,2) <<= strain_hat[4];
-        cE.strainHat(0,2) <<= strain_hat[5];
+        cE->strainHat(0,0) <<= strain_hat[0];
+        cE->strainHat(1,1) <<= strain_hat[1];
+        cE->strainHat(2,2) <<= strain_hat[2];
+        cE->strainHat(0,1) <<= strain_hat[3];
+        cE->strainHat(1,2) <<= strain_hat[4];
+        cE->strainHat(0,2) <<= strain_hat[5];
         nbActiveVariables[tagS[RESIDUALSTRAINHAT]] += 6;
-        cE.strainHat(1,0) = cE.strainHat(0,1);
-        cE.strainHat(2,1) = cE.strainHat(1,2);
-        cE.strainHat(2,0) = cE.strainHat(0,2);
+        cE->strainHat(1,0) = cE->strainHat(0,1);
+        cE->strainHat(2,1) = cE->strainHat(1,2);
+        cE->strainHat(2,0) = cE->strainHat(0,2);
         // Activate strain hat dot
-        cE.strainHatDot(0,0) <<= strain_hat_dot[0];
-        cE.strainHatDot(1,1) <<= strain_hat_dot[1];
-        cE.strainHatDot(2,2) <<= strain_hat_dot[2];
-        cE.strainHatDot(0,1) <<= strain_hat_dot[3];
-        cE.strainHatDot(1,2) <<= strain_hat_dot[4];
-        cE.strainHatDot(0,2) <<= strain_hat_dot[5];
+        cE->strainHatDot(0,0) <<= strain_hat_dot[0];
+        cE->strainHatDot(1,1) <<= strain_hat_dot[1];
+        cE->strainHatDot(2,2) <<= strain_hat_dot[2];
+        cE->strainHatDot(0,1) <<= strain_hat_dot[3];
+        cE->strainHatDot(1,2) <<= strain_hat_dot[4];
+        cE->strainHatDot(0,2) <<= strain_hat_dot[5];
         nbActiveVariables[tagS[RESIDUALSTRAINHAT]] += 6;
-        cE.strainHatDot(1,0) = cE.strainHatDot(0,1);
-        cE.strainHatDot(2,1) = cE.strainHatDot(1,2);
-        cE.strainHatDot(2,0) = cE.strainHatDot(0,2);
-        ierr = cE.calculateStrainTotal(); CHKERRQ(ierr);
-        ierr = cE.calculateStressBeta(); CHKERRQ(ierr);
-        ierr = cE.calculateStrainHatFlux(); CHKERRQ(ierr);
-        ierr = cE.calculateResidualStrainHat(); CHKERRQ(ierr);
+        cE->strainHatDot(1,0) = cE->strainHatDot(0,1);
+        cE->strainHatDot(2,1) = cE->strainHatDot(1,2);
+        cE->strainHatDot(2,0) = cE->strainHatDot(0,2);
+        ierr = cE->calculateStrainTotal(); CHKERRQ(ierr);
+        ierr = cE->calculateStressBeta(); CHKERRQ(ierr);
+        ierr = cE->calculateStrainHatFlux(); CHKERRQ(ierr);
+        ierr = cE->calculateResidualStrainHat(); CHKERRQ(ierr);
         nbActiveResults[tagS[RESIDUALSTRAINHAT]] = 0;
         commonData.residualStrainHat.resize(nbGaussPts);
         commonData.residualStrainHat[0].resize(3,3,false);
         for(int d1 = 0;d1<3;d1++) {
           for(int d2 = d1;d2<3;d2++) {
-            cE.residualStrainHat(d1,d2) >>= commonData.residualStrainHat[0](d1,d2);
+            cE->residualStrainHat(d1,d2) >>= commonData.residualStrainHat[0](d1,d2);
             nbActiveResults[tagS[RESIDUALSTRAINHAT]]++;
           }
         }
