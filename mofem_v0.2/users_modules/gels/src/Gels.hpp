@@ -32,7 +32,7 @@ VISCOELASTICITY AND POROELASTICITY IN ELASTOMERIC GELS
 Acta Mechanica Solida Sinica, Vol. 25, No. 5,
 Yuhang Hu Zhigang Suo
 
-Note1: Following implication is tailored for large strain analysis,
+Note1: Following implementation is tailored for large strain analysis,
 however in current version the engineering strain is used, i.e. assuming small deformation.
 Moreover calculation of solvent flux and other physical quantities is with
 assumption that those values are nonlinear.
@@ -1751,7 +1751,7 @@ struct Gel {
     }
   };
 
-  /** \brief Assemble matrix \f$\mathbf{K}_{\mu\mu}\f$
+  /** \brief Assemble matrix \f$\mathbf{K}_{\mu \mu}\f$
   */
   struct OpLhsdMudMu: public AssembleMatrix {
     CommonData &commonData;
@@ -1768,7 +1768,7 @@ struct Gel {
       PetscFunctionBegin;
       try {
         int nb_col = col_data.getIndices().size();
-        dSolventFlux_dmu.resize(6,nb_col,false);
+        dSolventFlux_dmu.resize(3,nb_col,false);
         dSolventFlux_dmu.clear();
         const MatrixAdaptor diffN = col_data.getDiffN(gg);
         ublas::matrix<double> &jac_solvent_flux = commonData.jacSolventFlux[gg];
@@ -1816,6 +1816,90 @@ struct Gel {
                 for(int rr = 0;rr<3;rr++) {
                   K(dd1,dd2) += diffN(dd1,rr)*dSolventFlux_dmu(rr,dd2);
                 }
+              }
+            }
+          }
+          ierr = aSemble(
+            row_side,col_side,row_type,col_type,row_data,col_data
+          ); CHKERRQ(ierr);
+        }
+      } catch (const std::exception& ex) {
+        ostringstream ss;
+        ss << "throw in method: " << ex.what() << endl;
+        SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+      }
+      PetscFunctionReturn(0);
+    }
+  };
+
+
+  /** \brief Assemble matrix \f$\mathbf{K}_{\mu x}\f$
+  */
+  struct OpLhsdMudx: public AssembleMatrix {
+    CommonData &commonData;
+    OpLhsdMudx(CommonData &common_data):
+    AssembleMatrix(
+      common_data.muName,common_data.spatialPositionName
+    ),
+    commonData(common_data) {
+      sYmm = false;
+    }
+    ublas::vector<double> dSolventFlux_dx;
+    PetscErrorCode get_dSolventFlux_dx(
+      DataForcesAndSurcesCore::EntData &col_data,int gg
+    ) {
+      PetscFunctionBegin;
+      try {
+        int nb_col = col_data.getIndices().size();
+        dSolventFlux_dx.resize(nb_col,false);
+        dSolventFlux_dx.clear();
+        const MatrixAdaptor diffN = col_data.getDiffN(gg);
+        ublas::vector<double> &jac_volume_rate = commonData.jacVolumeRate[gg];
+        //cerr << jac_volume_rate << endl;
+        for(int dd = 0;dd<nb_col/3;dd++) {    // DoFs in column
+          for(int rr1 = 0;rr1<3;rr1++) {
+            double a = diffN(dd,rr1);
+            for(int rr2 = 0;rr2<3;rr2++) {
+              dSolventFlux_dx[3*dd+rr2] += jac_volume_rate(3*rr2+rr1)*a;
+              dSolventFlux_dx[3*dd+rr2] += jac_volume_rate(9+3*rr2+rr1)*a*getFEMethod()->ts_a;
+            }
+          }
+        }
+        //cerr << dSolventFlux_dx << endl;
+      } catch (const std::exception& ex) {
+        ostringstream ss;
+        ss << "throw in method: " << ex.what() << endl;
+        SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+      }
+      PetscFunctionReturn(0);
+    }
+    PetscErrorCode doWork(
+      int row_side,int col_side,
+      EntityType row_type,EntityType col_type,
+      DataForcesAndSurcesCore::EntData &row_data,
+      DataForcesAndSurcesCore::EntData &col_data
+    ) {
+      PetscFunctionBegin;
+      int nb_row = row_data.getIndices().size();
+      int nb_col = col_data.getIndices().size();
+      if(nb_row == 0) PetscFunctionReturn(0);
+      if(nb_col == 0) PetscFunctionReturn(0);
+      try {
+        K.resize(nb_row,nb_col,false);
+        K.clear();
+        for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
+          ierr = get_dSolventFlux_dx(col_data,gg); CHKERRQ(ierr);
+          double val = getVolume()*getGaussPts()(3,gg);
+          if(getHoGaussPtsDetJac().size()>0) {
+            val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
+          }
+          dSolventFlux_dx *= val;
+          //cerr << dSolventFlux_dx << endl;
+          const VectorAdaptor &N = row_data.getN(gg);
+          { //integrate element stiffness matrix
+            for(int dd1 = 0;dd1<nb_row;dd1++) {
+              for(int dd2 = 0;dd2<nb_col;dd2++) {
+                K(dd1,dd2) += N[dd1]*dSolventFlux_dx[dd2];
               }
             }
           }

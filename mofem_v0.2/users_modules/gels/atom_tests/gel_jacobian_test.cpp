@@ -248,6 +248,9 @@ int main(int argc, char *argv[]) {
       gel.feLhs.getOpPtrVector().push_back(
         new Gel::OpLhsdMudMu(gel.commonData)
       );
+      gel.feLhs.getOpPtrVector().push_back(
+        new Gel::OpLhsdMudx(gel.commonData)
+      );
 
     }
   }
