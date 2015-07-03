@@ -2858,10 +2858,10 @@ PetscErrorCode Core::get_finite_elements(const MoFEMFiniteElement_multiIndex **f
   *finiteElements_ptr = &finiteElements;
   PetscFunctionReturn(0);
 }
-EntMoFEMFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator Core::get_fes_moabfield_by_name_begin(const string &fe_name) {
+EntMoFEMFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator Core::get_fe_by_name_begin(const string &fe_name) {
   return finiteElementsMoFEMEnts.get<FiniteElement_name_mi_tag>().lower_bound(fe_name);
 }
-EntMoFEMFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator Core::get_fes_moabfield_by_name_end(const string &fe_name) {
+EntMoFEMFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator Core::get_fe_by_name_end(const string &fe_name) {
   return finiteElementsMoFEMEnts.get<FiniteElement_name_mi_tag>().upper_bound(fe_name);
 }
 PetscErrorCode Core::check_number_of_ents_in_ents_field(const string& name) {

@@ -20,12 +20,11 @@
 
 
 #include <MoFEM.hpp>
+using namespace MoFEM;
 #include <DirichletBC.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/numeric/ublas/vector_proxy.hpp>
 #include <AnalyticalDirichlet.hpp>
-
-using namespace MoFEM;
 
 AnalyticalDirichletBC::ApproxField::OpHoCoord::OpHoCoord(const string field_name,ublas::matrix<double> &ho_coords):
 FaceElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),

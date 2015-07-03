@@ -176,6 +176,9 @@ int main(int argc, char *argv[]) {
   {
 
     Gel::BlockMaterialData &material_data = gel.blockMaterialData;
+    gel.constitutiveEquationPtr = boost::shared_ptr<Gel::ConstitutiveEquation<adouble> >(
+      new Gel::ConstitutiveEquation<adouble>(gel.blockMaterialData)
+    );
 
     // Set material parameters
     material_data.gAlpha = 1;
@@ -212,7 +215,7 @@ int main(int argc, char *argv[]) {
 
       // Right hand side operators
       gel.feRhs.getOpPtrVector().push_back(
-        new Gel::OpJacobian("SPATIAL_POSITION", tags, gel.constitutiveEquation,gel.commonData,true,false)
+        new Gel::OpJacobian("SPATIAL_POSITION", tags,gel.constitutiveEquationPtr,gel.commonData,true,false)
       );
       gel.feRhs.getOpPtrVector().push_back(
         new Gel::OpRhsStressTotal(gel.commonData)
@@ -228,8 +231,30 @@ int main(int argc, char *argv[]) {
       );
       // Left hand side operators
       gel.feLhs.getOpPtrVector().push_back(
-        new Gel::OpJacobian("SPATIAL_POSITION",tags,gel.constitutiveEquation,gel.commonData,false,true)
+        new Gel::OpJacobian("SPATIAL_POSITION",tags,gel.constitutiveEquationPtr,gel.commonData,false,true)
       );
+      gel.feLhs.getOpPtrVector().push_back(
+        new Gel::OpLhsdxdx(gel.commonData)
+      );
+      gel.feLhs.getOpPtrVector().push_back(
+        new Gel::OpLhsdxdMu(gel.commonData)
+      );
+      gel.feLhs.getOpPtrVector().push_back(
+        new Gel::OpLhsdxdStrainHat(gel.commonData)
+      );
+      gel.feLhs.getOpPtrVector().push_back(
+        new Gel::OpLhsdStrainHatdStrainHat(gel.commonData)
+      );
+      gel.feLhs.getOpPtrVector().push_back(
+        new Gel::OpLhsdStrainHatdx(gel.commonData)
+      );
+      gel.feLhs.getOpPtrVector().push_back(
+        new Gel::OpLhsdMudMu(gel.commonData)
+      );
+      gel.feLhs.getOpPtrVector().push_back(
+        new Gel::OpLhsdMudx(gel.commonData)
+      );
+
     }
   }
 
@@ -248,18 +273,39 @@ int main(int argc, char *argv[]) {
   }
 
   // Make calculations
+  Mat M;
   Vec F;
   {
     ierr = DMCreateGlobalVector_MoFEM(dm,&F); CHKERRQ(ierr);
+    ierr = DMCreateMatrix_MoFEM(dm,&M); CHKERRQ(ierr);
     gel.feRhs.snes_f = F; // Set right hand side vector manually
     ierr = DMoFEMLoopFiniteElements(dm,"GEL_FE",&gel.feRhs); CHKERRQ(ierr);
+    gel.feLhs.snes_B = M; // Set matrix M
+    gel.feLhs.ts_a = 1.0; // Set time step parameter
     ierr = DMoFEMLoopFiniteElements(dm,"GEL_FE",&gel.feLhs); CHKERRQ(ierr);
+    ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
+    ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
+    ierr = MatAssemblyBegin(M,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+    ierr = MatAssemblyEnd(M,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+  }
+
+  // See results
+  {
+
+    //PetscViewer viewer;
+    //ierr = PetscViewerASCIIOpen(PETSC_COMM_WORLD,"build_composite_problem.txt",&viewer); CHKERRQ(ierr);
+    //ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
+    MatView(M,PETSC_VIEWER_DRAW_WORLD);
+    std::string wait;
+    std::cin >> wait;
+
   }
 
 
   // Clean and destroy
   {
     ierr = VecDestroy(&F); CHKERRQ(ierr);
+    ierr = MatDestroy(&M); CHKERRQ(ierr);
     ierr = DMDestroy(&dm); CHKERRQ(ierr);
   }
 

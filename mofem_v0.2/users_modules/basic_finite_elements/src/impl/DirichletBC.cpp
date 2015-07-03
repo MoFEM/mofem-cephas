@@ -38,11 +38,10 @@
 #include <LoopMethods.hpp>
 #include <FieldInterface.hpp>
 
+using namespace MoFEM;
 #include <DirichletBC.hpp>
 
 using namespace boost::numeric;
-
-namespace MoFEM {
 
 DisplacementBCFEMethodPreAndPostProc::DisplacementBCFEMethodPreAndPostProc(
   FieldInterface& _mField,const string &_field_name,
@@ -492,6 +491,4 @@ PetscErrorCode DirichletBCFromBlockSetFEMethodPreAndPostProc::iNitalize() {
 
   }
   PetscFunctionReturn(0);
-}
-
 }

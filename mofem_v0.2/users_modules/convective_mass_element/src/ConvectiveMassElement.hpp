@@ -447,7 +447,7 @@ struct ConvectiveMassElement {
 
   };
 
-  PetscErrorCode setBlocks(bool get_density_form_elastic_block_set = true);
+  PetscErrorCode setBlocks();
 
   PetscErrorCode addConvectiveMassElement(string element_name,
     string velocity_field_name,

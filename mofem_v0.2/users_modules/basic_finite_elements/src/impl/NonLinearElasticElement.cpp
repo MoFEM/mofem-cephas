@@ -18,7 +18,7 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 #include <MoFEM.hpp>
-
+using namespace MoFEM;
 #include <Projection10NodeCoordsOnField.hpp>
 
 #include <boost/numeric/ublas/vector_proxy.hpp>
@@ -28,8 +28,6 @@
 
 #include <adolc/adolc.h>
 #include <NonLinearElasticElement.hpp>
-
-namespace MoFEM {
 
 NonlinearElasticElement::MyVolumeFE::MyVolumeFE(FieldInterface &m_field):
   VolumeElementForcesAndSourcesCore(m_field),
@@ -548,16 +546,19 @@ PetscErrorCode NonlinearElasticElement::OpEnergy::doWork(
 
 
 NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::OpLhsPiolaKirchhoff_dx(
-  const string vel_field,const string field_name,BlockData &data,CommonData &common_data):
-  VolumeElementForcesAndSourcesCore::UserDataOperator(vel_field,field_name,UserDataOperator::OPROWCOL),
-  dAta(data),
-  commonData(common_data),
-  aLe(false) { }
+  const string vel_field,const string field_name,BlockData &data,CommonData &common_data
+):
+VolumeElementForcesAndSourcesCore::UserDataOperator(vel_field,field_name,UserDataOperator::OPROWCOL),
+dAta(data),
+commonData(common_data),
+aLe(false) {
+}
 
-PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::getJac(DataForcesAndSurcesCore::EntData &col_data,int gg) {
+PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::getJac(
+  DataForcesAndSurcesCore::EntData &col_data,int gg
+) {
   PetscFunctionBegin;
   jac.clear();
-
   int nb_col = col_data.getFieldData().size();
   const MatrixAdaptor diffN = col_data.getDiffN(gg,nb_col/3);
   ublas::matrix<double> &jac_stress = commonData.jacStress[gg];
@@ -571,10 +572,8 @@ PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::getJac(DataForce
       }
     }
   }
-
   PetscFunctionReturn(0);
 }
-
 
 PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::aSemble(
   int row_side,int col_side,
@@ -826,9 +825,10 @@ NonlinearElasticElement::OpJacobianEshelbyStress::OpJacobianEshelbyStress(
   CommonData &common_data,
   int tag,
   bool jacobian,
-  bool ale):
-  OpJacobianPiolaKirchhoffStress(field_name,data,common_data,tag,jacobian,ale,false)
-  {}
+  bool ale
+):
+OpJacobianPiolaKirchhoffStress(field_name,data,common_data,tag,jacobian,ale,false) {
+}
 
 PetscErrorCode NonlinearElasticElement::OpJacobianEshelbyStress::calculateStress() {
   PetscFunctionBegin;
@@ -1006,6 +1006,4 @@ PetscErrorCode NonlinearElasticElement::setOperators(
   }
 
   PetscFunctionReturn(0);
-}
-
 }

@@ -26,8 +26,6 @@
 #ifndef __THERMAL_ELEMENT_HPP
 #define __THERMAL_ELEMENT_HPP
 
-namespace MoFEM {
-
 /** \brief structure grouping operators and data used for thermal problems
   * \ingroup mofem_thermal_elem
   *
@@ -1150,8 +1148,6 @@ struct ThermalElement {
   PetscErrorCode setTimeSteppingProblem(TsCtx &ts_ctx,string field_name,string rate_name,const string mesh_nodals_positions = "MESH_NODE_POSITIONS");
 
 };
-
-}
 
 #endif //__THERMAL_ELEMENT_HPP
 

@@ -20,21 +20,19 @@
 #ifndef __EDGE_FORCE_HPP__
 #define __EDGE_FORCE_HPP__
 
-namespace MoFEM {
+/** \brief Force on edges and lines
+*/
+struct EdgeForce {
 
-  /** \brief Force on edges and lines
-  */
-  struct EdgeForce {
+  FieldInterface &mField;
+  EdgeForce(FieldInterface &m_field): mField(m_field),fe(m_field,1){}
 
-    FieldInterface &mField;
-    EdgeForce(FieldInterface &m_field): mField(m_field),fe(m_field,1){}
-
-    struct MyFE: public EdgeElementForcesAndSurcesCore {
-      int addToRule;
-      MyFE(FieldInterface &m_field,int add_to_rule):
-      EdgeElementForcesAndSurcesCore(m_field),
-      addToRule(add_to_rule)
-      {}
+  struct MyFE: public EdgeElementForcesAndSurcesCore {
+    int addToRule;
+    MyFE(FieldInterface &m_field,int add_to_rule):
+    EdgeElementForcesAndSurcesCore(m_field),
+    addToRule(add_to_rule)
+    {}
       int getRule(int order) { return order+addToRule; };
     };
 
@@ -120,6 +118,5 @@ namespace MoFEM {
 
   };
 
-}
 
 #endif //__EDGE_FORCE_HPP__

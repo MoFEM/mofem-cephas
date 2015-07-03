@@ -1,6 +1,6 @@
-/** \file SeriesMultiIndices.hpp 
- * \brief Myltindex containes, for mofem fields data structures and other low-level functions 
- * 
+/** \file SeriesMultiIndices.hpp
+ * \brief Myltindex containes, for mofem fields data structures and other low-level functions
+ *
 
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -41,7 +41,7 @@ struct MoFEMSeries {
   inline boost::string_ref get_name_ref() const { return boost::string_ref((char *)tag_name_data,tag_name_size); }
   /// get series name
   inline string get_name() const { return string((char *)tag_name_data,tag_name_size); }
-  
+
   Tag th_SeriesData;
   Tag th_SeriesDataUIDs;
   Tag th_SeriesDataHandles;
@@ -57,7 +57,7 @@ struct MoFEMSeries {
 
   PetscErrorCode set_time(double time);
   PetscErrorCode push_dofs(const EntityHandle ent,const ShortId uid,const FieldData val);
- 
+
   template<typename IT>
   PetscErrorCode push_dofs(IT it,IT hi_it) {
     PetscFunctionBegin;
@@ -106,7 +106,7 @@ struct MoFEMSeriesStep: public interface_MoFEMSeries<MoFEMSeries> {
 
   inline int get_step_number() const { return step_number; };
   PetscErrorCode get(Interface &moab,DofMoFEMEntity_multiIndex &dofsMoabField) const;
- 
+
   double time;
   PetscErrorCode get_time_init(Interface &moab);
   inline double get_time() const { return time; }
@@ -128,27 +128,27 @@ typedef multi_index_container<
   MoFEMSeriesStep,
   indexed_by<
    ordered_unique<
-      tag<Composite_SeriesID_And_Step_mi_tag>, 
+      tag<Composite_SeriesID_And_Step_mi_tag>,
       composite_key<
-	MoFEMSeriesStep,
-	const_mem_fun<MoFEMSeriesStep::interface_type_MoFEMSeries,EntityID,&MoFEMSeriesStep::get_meshset_id>,
-	member<MoFEMSeriesStep,int,&MoFEMSeriesStep::step_number>
+	     MoFEMSeriesStep,
+	    const_mem_fun<MoFEMSeriesStep::interface_type_MoFEMSeries,EntityID,&MoFEMSeriesStep::get_meshset_id>,
+	    member<MoFEMSeriesStep,int,&MoFEMSeriesStep::step_number>
       > >,
    ordered_unique<
-      tag<Composite_SeriesName_And_Step_mi_tag>, 
+      tag<Composite_SeriesName_And_Step_mi_tag>,
       composite_key<
-	MoFEMSeriesStep,
-	const_mem_fun<MoFEMSeriesStep::interface_type_MoFEMSeries,boost::string_ref,&MoFEMSeriesStep::get_name_ref>,
-	member<MoFEMSeriesStep,int,&MoFEMSeriesStep::step_number>
+	     MoFEMSeriesStep,
+	     const_mem_fun<MoFEMSeriesStep::interface_type_MoFEMSeries,boost::string_ref,&MoFEMSeriesStep::get_name_ref>,
+	     member<MoFEMSeriesStep,int,&MoFEMSeriesStep::step_number>
       > >,
     ordered_non_unique<
       tag<SeriesName_mi_tag>, const_mem_fun<MoFEMSeriesStep::interface_type_MoFEMSeries,boost::string_ref,&MoFEMSeriesStep::get_name_ref> >,
-   ordered_non_unique<
-      tag<Composite_SeriesName_And_Time_mi_tag>, 
+        ordered_non_unique<
+        tag<Composite_SeriesName_And_Time_mi_tag>,
       composite_key<
-	MoFEMSeriesStep,
-	const_mem_fun<MoFEMSeriesStep::interface_type_MoFEMSeries,boost::string_ref,&MoFEMSeriesStep::get_name_ref>,
-	const_mem_fun<MoFEMSeriesStep,double,&MoFEMSeriesStep::get_time>
+	     MoFEMSeriesStep,
+	     const_mem_fun<MoFEMSeriesStep::interface_type_MoFEMSeries,boost::string_ref,&MoFEMSeriesStep::get_name_ref>,
+	     const_mem_fun<MoFEMSeriesStep,double,&MoFEMSeriesStep::get_time>
       > >
   > > SeriesStep_multiIndex;
 

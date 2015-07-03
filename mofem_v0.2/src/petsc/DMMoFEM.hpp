@@ -182,7 +182,7 @@ PetscErrorCode DMCreate_MoFEM(DM dm);
   * \brief Destroys dm with MoFEM data structure
   * \ingroup dm
   */
-PetscErrorCode DMDestroym_MoFEM(DM dm);
+PetscErrorCode DMDestroy_MoFEM(DM dm);
 
 /**
  * \brief DMShellSetCreateGlobalVector

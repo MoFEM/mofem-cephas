@@ -21,13 +21,11 @@
 #ifndef __ULTRAWEAK_TARNSPORT_ELEMENT_HPP
 #define __ULTRAWEAK_TARNSPORT_ELEMENT_HPP
 
-namespace MoFEM {
-
 /** \brief Ultra weak transport problem
   \ingroup mofem_ultra_weak_transport_elem
 
   Note to solve this system you need to use direct solver or propper preconditioner
-  for sadlle problem.
+  for saddle problem.
 
 */
 struct UltraWeakTransportElement {
@@ -996,9 +994,6 @@ struct UltraWeakTransportElement {
   };
 
 };
-
-
-}
 
 #endif //__ULTRAWEAK_TARNSPORT_ELEMENT_HPP
 

@@ -28,8 +28,6 @@
 
 using namespace boost::numeric;
 
-namespace MoFEM {
-
 /** \brief Finite element for approximating analytical filed on the mesh
   * \ingroup user_modules
   */
@@ -72,10 +70,10 @@ struct FieldApproximationH1 {
       DataForcesAndSurcesCore::EntData &col_data) {
       PetscFunctionBegin;
 
-	  
+
 	  //std::string wait;
 	  //std::cout << "\n I am here !!!!!!! rank = \n" << std::endl;
-	  
+
       if(row_data.getIndices().size()==0) PetscFunctionReturn(0);
       if(col_data.getIndices().size()==0) PetscFunctionReturn(0);
 
@@ -90,11 +88,11 @@ struct FieldApproximationH1 {
 
       NN.resize(nb_row_dofs,nb_col_dofs);
       bzero(&*NN.data().begin(),nb_row_dofs*nb_col_dofs*sizeof(FieldData));
-      
-	  
 
-	  
-	  
+
+
+
+
       unsigned int nb_gauss_pts = row_data.getN().size1();
       for(unsigned int gg = 0;gg<nb_gauss_pts;gg++) {
 	double w = getVolume()*getGaussPts()(3,gg);
@@ -106,7 +104,7 @@ struct FieldApproximationH1 {
 	    w,&row_data.getN()(gg,0),1,&col_data.getN()(gg,0),1,
 	    &*NN.data().begin(),nb_col_dofs);
       }
-      
+
       if( (row_type != col_type) || (row_side != col_side) ) {
 	transNN.resize(nb_col_dofs,nb_row_dofs);
 	ublas::noalias(transNN) = trans(NN);
@@ -119,7 +117,7 @@ struct FieldApproximationH1 {
       col_indices.resize(nb_col_dofs);
 
       for(int rr = 0;rr < rank; rr++) {
-      
+
 	if((row_data.getIndices().size()%rank)!=0) {
 	  SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	}
@@ -157,25 +155,25 @@ struct FieldApproximationH1 {
 
 	if(nb_rows != NN.size1()) {
 	  SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-	} 
+	}
 	if(nb_cols != NN.size2()) {
 	  SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-	} 
+	}
 
 	ierr = MatSetValues(A,nb_rows,rows,nb_cols,cols,data,ADD_VALUES); CHKERRQ(ierr);
 	if( (row_type != col_type) || (row_side != col_side) ) {
 	  if(nb_rows != transNN.size2()) {
 	    SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-	  } 
+	  }
 	  if(nb_cols != transNN.size1()) {
 	    SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-	  } 
+	  }
 	  ierr = MatSetValues(A,nb_cols,cols,nb_rows,rows,trans_data,ADD_VALUES); CHKERRQ(ierr);
 	}
 
       }
 
-      PetscFunctionReturn(0);	
+      PetscFunctionReturn(0);
     }
 
     /** \brief caclulate vector
@@ -195,7 +193,7 @@ struct FieldApproximationH1 {
       unsigned int rank = dof_ptr->get_max_rank();
 
       int nb_row_dofs = data.getIndices().size()/rank;
-      
+
       Nf.resize(data.getIndices().size());
       bzero(&*Nf.data().begin(),data.getIndices().size()*sizeof(FieldData));
 
@@ -206,7 +204,7 @@ struct FieldApproximationH1 {
 	SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
       }
 
-      // itegration 
+      // itegration
       unsigned int nb_gauss_pts = data.getN().size1();
       for(unsigned int gg = 0;gg<nb_gauss_pts;gg++) {
 
@@ -229,7 +227,7 @@ struct FieldApproximationH1 {
 	//cerr << x << " " << y << " " << z << " " << w << " " << getHoGaussPtsDetJac()[gg] << endl;
 
 	ublas::vector<FieldData> fun_val = functionEvaluator(x,y,z);
-		
+
 	if(fun_val.size() != rank) {
 	  SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	}
@@ -249,19 +247,19 @@ struct FieldApproximationH1 {
 
   };
 
-  /** \brief assemble matrix and vector 
+  /** \brief assemble matrix and vector
     */
   PetscErrorCode loopMatrixAndVector(
     const string &problem_name,const string &fe_name,const string &field_name,Mat A,Vec F,
     FUNEVAL &function_evaluator) {
     PetscFunctionBegin;
     PetscErrorCode ierr;
-	
+
     //add operator to calulate F vector
     fe.get_op_to_do_Rhs().push_back(new OpApprox(field_name,A,F,function_evaluator));
     //add operator to calulate A matrix
     fe.get_op_to_do_Lhs().push_back(new OpApprox(field_name,A,F,function_evaluator));
-	
+
     MatZeroEntries(A);
     VecZeroEntries(F);
     ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -277,8 +275,4 @@ struct FieldApproximationH1 {
 
 };
 
-
-}
-
 #endif //__FILEDAPPROXIMATION_HPP
-

@@ -19,13 +19,10 @@
 
 #include <MoFEM.hpp>
 using namespace MoFEM;
-
 #include <ArcLengthTools.hpp>
 
 //static ErrorCode rval;
 static PetscErrorCode ierr;
-
-namespace MoFEM {
 
 PetscErrorCode ArcLengthCtx::setS(double s) {
   PetscFunctionBegin;
@@ -412,8 +409,4 @@ PetscErrorCode SphericalArcLengthControl::setDlambdaToX(Vec x,double dlambda) {
     ierr = VecRestoreArray(x,&array); CHKERRQ(ierr);
   }
   PetscFunctionReturn(0);
-}
-
-
-
 }

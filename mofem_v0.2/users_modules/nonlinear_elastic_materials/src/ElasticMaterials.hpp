@@ -132,6 +132,11 @@ struct ElasticMaterials {
     a_z = 10
     \endcode
 
+    To read material configuration file you need to use option:
+    \code
+    -elastic_material_configuration name_of_config_file
+    \endcode
+
     */
   PetscErrorCode readConfigFile() {
     PetscFunctionBegin;
@@ -144,47 +149,47 @@ struct ElasticMaterials {
         ostringstream str_order;
         str_order << "block_" << it->get_msId() << ".displacemet_order";
         config_file_options.add_options()
-	  (str_order.str().c_str(),po::value<int>(&blockData[it->get_msId()].oRder)->default_value(-1));
+        (str_order.str().c_str(),po::value<int>(&blockData[it->get_msId()].oRder)->default_value(-1));
 
         ostringstream str_material;
         str_material << "block_" << it->get_msId() << ".material";
         config_file_options.add_options()
-	  (str_material.str().c_str(),po::value<string>(&blockData[it->get_msId()].mAterial)->default_value(defMaterial));
+        (str_material.str().c_str(),po::value<string>(&blockData[it->get_msId()].mAterial)->default_value(defMaterial));
 
         ostringstream str_ym;
         str_ym << "block_" << it->get_msId() << ".young_modulus";
         config_file_options.add_options()
-	  (str_ym.str().c_str(),po::value<double>(&blockData[it->get_msId()].yOung)->default_value(-1));
+        (str_ym.str().c_str(),po::value<double>(&blockData[it->get_msId()].yOung)->default_value(-1));
 
         ostringstream str_pr;
         str_pr << "block_" << it->get_msId() << ".poisson_ratio";
         config_file_options.add_options()
-	  (str_pr.str().c_str(),po::value<double>(&blockData[it->get_msId()].pOisson)->default_value(-2));
+        (str_pr.str().c_str(),po::value<double>(&blockData[it->get_msId()].pOisson)->default_value(-2));
 
-	ostringstream str_density;
+        ostringstream str_density;
         str_density << "block_" << it->get_msId() << ".density";
         config_file_options.add_options()
-	  (str_density.str().c_str(),po::value<double>(&blockData[it->get_msId()].dEnsity)->default_value(-1));
+        (str_density.str().c_str(),po::value<double>(&blockData[it->get_msId()].dEnsity)->default_value(-1));
 
-	ostringstream str_ax;
+        ostringstream str_ax;
         str_ax << "block_" << it->get_msId() << ".a_x";
         config_file_options.add_options()
-	  (str_ax.str().c_str(),po::value<double>(&blockData[it->get_msId()].aX)->default_value(0));
+        (str_ax.str().c_str(),po::value<double>(&blockData[it->get_msId()].aX)->default_value(0));
 
-	ostringstream str_ay;
+        ostringstream str_ay;
         str_ay << "block_" << it->get_msId() << ".a_y";
         config_file_options.add_options()
-	  (str_ay.str().c_str(),po::value<double>(&blockData[it->get_msId()].aY)->default_value(0));
+        (str_ay.str().c_str(),po::value<double>(&blockData[it->get_msId()].aY)->default_value(0));
 
-	ostringstream str_az;
+        ostringstream str_az;
         str_az << "block_" << it->get_msId() << ".a_z";
         config_file_options.add_options()
-	  (str_az.str().c_str(),po::value<double>(&blockData[it->get_msId()].aZ)->default_value(0));
+        (str_az.str().c_str(),po::value<double>(&blockData[it->get_msId()].aZ)->default_value(0));
       }
       ifstream file(configFile.c_str());
       if(isConfigFileSet) {
         if(!file.good()) {
-	  SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"file < %s > not found",configFile.c_str());
+          SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"file < %s > not found",configFile.c_str());
         }
       }
       po::parsed_options parsed = parse_config_file(file,config_file_options,true);
@@ -193,7 +198,7 @@ struct ElasticMaterials {
       vector<string> additional_parameters;
       additional_parameters = collect_unrecognized(parsed.options,po::include_positional);
       for(vector<string>::iterator vit = additional_parameters.begin();
-        vit!=additional_parameters.end();vit++) {
+      vit!=additional_parameters.end();vit++) {
         ierr = PetscPrintf(PETSC_COMM_WORLD,"** WARRNING Unrecognised option %s\n",vit->c_str()); CHKERRQ(ierr);
       }
     } catch (exception& ex) {
@@ -226,16 +231,16 @@ struct ElasticMaterials {
       ierr = mField.get_moab().get_adjacencies(block_ents,2,false,ents_to_set_order,Interface::UNION); CHKERRQ(ierr);
       ierr = mField.get_moab().get_adjacencies(block_ents,1,false,ents_to_set_order,Interface::UNION); CHKERRQ(ierr);
       if(mField.check_field("DISPLACEMENT")) {
-	ierr = mField.set_field_order(ents_to_set_order,"DISPLACEMENT",blockData[it->get_msId()].oRder); CHKERRQ(ierr);
+        ierr = mField.set_field_order(ents_to_set_order,"DISPLACEMENT",blockData[it->get_msId()].oRder); CHKERRQ(ierr);
       }
       if(mField.check_field("SPATIAL_POSITION")) {
-	ierr = mField.set_field_order(ents_to_set_order,"SPATIAL_POSITION",blockData[it->get_msId()].oRder); CHKERRQ(ierr);
+        ierr = mField.set_field_order(ents_to_set_order,"SPATIAL_POSITION",blockData[it->get_msId()].oRder); CHKERRQ(ierr);
       }
       if(mField.check_field("DOT_SPATIAL_POSITION")) {
-	ierr = mField.set_field_order(ents_to_set_order,"DOT_SPATIAL_POSITION",blockData[it->get_msId()].oRder); CHKERRQ(ierr);
+        ierr = mField.set_field_order(ents_to_set_order,"DOT_SPATIAL_POSITION",blockData[it->get_msId()].oRder); CHKERRQ(ierr);
       }
       if(mField.check_field("SPATIAL_VELOCITY")) {
-	ierr = mField.set_field_order(ents_to_set_order,"SPATIAL_VELOCITY",blockData[it->get_msId()].oRder); CHKERRQ(ierr);
+        ierr = mField.set_field_order(ents_to_set_order,"SPATIAL_VELOCITY",blockData[it->get_msId()].oRder); CHKERRQ(ierr);
       }
     }
     PetscFunctionReturn(0);
@@ -264,20 +269,20 @@ struct ElasticMaterials {
       if(blockData[id].yOung >= 0) set_of_blocks[id].E = blockData[id].yOung;
       if(blockData[id].pOisson >= -1) set_of_blocks[id].PoissonRatio = blockData[id].pOisson;
       PetscPrintf(mField.get_comm(),"Block Id %d Young Modulus %3.2g Poisson Ration %3.2f Material model %s\n",
-	id,set_of_blocks[id].E,set_of_blocks[id].PoissonRatio,blockData[id].mAterial.c_str());
+      id,set_of_blocks[id].E,set_of_blocks[id].PoissonRatio,blockData[id].mAterial.c_str());
       if(blockData[id].mAterial.compare(MAT_KIRCHOFF)==0) {
-	set_of_blocks[id].materialDoublePtr = &doubleMaterialModel.at(MAT_KIRCHOFF);
-	set_of_blocks[id].materialAdoublePtr = &aDoubleMaterialModel.at(MAT_KIRCHOFF);
+        set_of_blocks[id].materialDoublePtr = &doubleMaterialModel.at(MAT_KIRCHOFF);
+        set_of_blocks[id].materialAdoublePtr = &aDoubleMaterialModel.at(MAT_KIRCHOFF);
       } else
       if(blockData[id].mAterial.compare(MAT_HOOKE)==0) {
-	set_of_blocks[id].materialDoublePtr = &doubleMaterialModel.at(MAT_HOOKE);
-	set_of_blocks[id].materialAdoublePtr = &aDoubleMaterialModel.at(MAT_HOOKE);
+        set_of_blocks[id].materialDoublePtr = &doubleMaterialModel.at(MAT_HOOKE);
+        set_of_blocks[id].materialAdoublePtr = &aDoubleMaterialModel.at(MAT_HOOKE);
       } else
       if(blockData[id].mAterial.compare(MAT_NEOHOOKEAN)==0) {
-	set_of_blocks[id].materialDoublePtr = &doubleMaterialModel.at(MAT_NEOHOOKEAN);
-	set_of_blocks[id].materialAdoublePtr = &aDoubleMaterialModel.at(MAT_NEOHOOKEAN);
+        set_of_blocks[id].materialDoublePtr = &doubleMaterialModel.at(MAT_NEOHOOKEAN);
+        set_of_blocks[id].materialAdoublePtr = &aDoubleMaterialModel.at(MAT_NEOHOOKEAN);
       } else {
-	SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"field with that space is not implemented");
+        SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"field with that space is not implemented");
       }
     }
     PetscFunctionReturn(0);
@@ -309,25 +314,27 @@ struct ElasticMaterials {
       set_of_blocks[id].a0[1] = mydata.data.acceleration_y;
       set_of_blocks[id].a0[2] = mydata.data.acceleration_z;
       if(blockData[id].dEnsity>=0) {
-	set_of_blocks[id].rho0 = blockData[id].dEnsity;
-	ostringstream str_ax;
+        set_of_blocks[id].rho0 = blockData[id].dEnsity;
+        ostringstream str_ax;
         str_ax << "block_" << it->get_msId() << ".a_x";
-	ostringstream str_ay;
+        ostringstream str_ay;
         str_ay << "block_" << it->get_msId() << ".a_y";
-	ostringstream str_az;
+        ostringstream str_az;
         str_az << "block_" << it->get_msId() << ".a_z";
-	if(vM.count(str_ax.str().c_str())) {
-	  set_of_blocks[id].a0[0] = blockData[id].aX;
-	}
-	if(vM.count(str_ay.str().c_str())) {
-	  set_of_blocks[id].a0[1] = blockData[id].aY;
-	}
-	if(vM.count(str_az.str().c_str())) {
-	  set_of_blocks[id].a0[2] = blockData[id].aZ;
-	}
+        if(vM.count(str_ax.str().c_str())) {
+          set_of_blocks[id].a0[0] = blockData[id].aX;
+        }
+        if(vM.count(str_ay.str().c_str())) {
+          set_of_blocks[id].a0[1] = blockData[id].aY;
+        }
+        if(vM.count(str_az.str().c_str())) {
+          set_of_blocks[id].a0[2] = blockData[id].aZ;
+        }
       }
-      PetscPrintf(mField.get_comm(),"Block Id %d Density %3.2g a_x = %3.2g a_y = %3.2g a_z = %3.2g\n",
-	id,set_of_blocks[id].rho0,set_of_blocks[id].a0[0],set_of_blocks[id].a0[1],set_of_blocks[id].a0[2]);
+      PetscPrintf(
+        mField.get_comm(),"Block Id %d Density %3.2g a_x = %3.2g a_y = %3.2g a_z = %3.2g\n",
+        id,set_of_blocks[id].rho0,set_of_blocks[id].a0[0],set_of_blocks[id].a0[1],set_of_blocks[id].a0[2]
+      );
     }
 
     PetscFunctionReturn(0);

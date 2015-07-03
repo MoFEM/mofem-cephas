@@ -17,11 +17,10 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 #include <MoFEM.hpp>
+using namespace MoFEM;
 #include <ThermalElement.hpp>
 
 using namespace boost::numeric;
-
-namespace MoFEM {
 
 PetscErrorCode ThermalElement::addThermalElements(const string field_name,const string mesh_nodals_positions) {
   PetscFunctionBegin;
@@ -332,6 +331,4 @@ PetscErrorCode ThermalElement::setTimeSteppingProblem(TsCtx &ts_ctx,string field
   //TsCtx::loops_to_do_type& loops_to_do_Monitor = ts_ctx.get_loops_to_do_Monitor();
 
   PetscFunctionReturn(0);
-}
-
 }

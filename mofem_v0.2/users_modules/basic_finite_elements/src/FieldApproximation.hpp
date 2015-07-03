@@ -23,8 +23,6 @@
 
 using namespace boost::numeric;
 
-namespace MoFEM {
-
 /** \brief Finite element for approximating analytical filed on the mesh
   * \ingroup user_modules
   */
@@ -308,8 +306,5 @@ struct FieldApproximationH1 {
   }
 
 };
-
-
-}
 
 #endif //__FILEDAPPROXIMATION_HPP
