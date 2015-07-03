@@ -355,14 +355,48 @@ struct Gel {
   /// \brief  definition of volume element
   struct GelFE: public VolumeElementForcesAndSourcesCore {
 
+    CommonData &commonData;
     int addToRule; ///< Takes into account HO geometry
-    GelFE(FieldInterface &m_field):
+
+    GelFE(FieldInterface &m_field,CommonData &common_data):
     VolumeElementForcesAndSourcesCore(m_field),
+    commonData(common_data),
     addToRule(1) {
     }
 
     int getRule(int order) {
       return order-1+addToRule;
+    }
+
+    PetscErrorCode preProcess() {
+      PetscFunctionBegin;
+      ierr = VolumeElementForcesAndSourcesCore::preProcess(); CHKERRQ(ierr);
+
+      if(ts_ctx == CTX_TSSETIFUNCTION) {
+
+        ierr = mField.set_other_local_ghost_vector(
+          problemPtr,
+          commonData.spatialPositionName,
+          commonData.spatialPositionNameDot,
+          ROW,
+          ts_u_t,
+          INSERT_VALUES,
+          SCATTER_REVERSE
+        ); CHKERRQ(ierr);
+
+        ierr = mField.set_other_local_ghost_vector(
+          problemPtr,
+          commonData.strainHatName,
+          commonData.strainHatNameDot,
+          ROW,
+          ts_u_t,
+          INSERT_VALUES,
+          SCATTER_REVERSE
+        ); CHKERRQ(ierr);
+
+      }
+
+      PetscFunctionReturn(0);
     }
 
   };
@@ -371,8 +405,8 @@ struct Gel {
 
   Gel(FieldInterface &m_field):
   mFiled(m_field),
-  feRhs(m_field),
-  feLhs(m_field) {
+  feRhs(m_field,commonData),
+  feLhs(m_field,commonData) {
   }
 
   struct OpGetDataAtGaussPts: public VolumeElementForcesAndSourcesCore::UserDataOperator {
@@ -1049,7 +1083,7 @@ struct Gel {
         int nb_dofs = row_data.getIndices().size();
         int *indices_ptr = &row_data.getIndices()[0];
         ierr = VecSetValues(
-          getFEMethod()->snes_f,nb_dofs,indices_ptr,&nF[0],ADD_VALUES
+          getFEMethod()->ts_F,nb_dofs,indices_ptr,&nF[0],ADD_VALUES
         ); CHKERRQ(ierr);
       } catch (const std::exception& ex) {
         ostringstream ss;
@@ -1292,7 +1326,7 @@ struct Gel {
         int *row_indices_ptr = &row_data.getIndices()[0];
         int *col_indices_ptr = &col_data.getIndices()[0];
         ierr = MatSetValues(
-          getFEMethod()->snes_B,
+          getFEMethod()->ts_B,
           nb_row,row_indices_ptr,
           nb_col,col_indices_ptr,
           &K(0,0),ADD_VALUES
@@ -1303,7 +1337,7 @@ struct Gel {
             transK.resize(nb_col,nb_row,false);
             noalias(transK) = trans(K);
             ierr = MatSetValues(
-              getFEMethod()->snes_B,
+              getFEMethod()->ts_B,
               nb_col,col_indices_ptr,
               nb_row,row_indices_ptr,
               &K(0,0),ADD_VALUES
