@@ -878,7 +878,7 @@ struct Gel {
             false
           );
           for(int dd = 0;dd<nbActiveResults[tagS[SOLVENTFLUX]];dd++) {
-            commonData.jacRowPtr[dd] = &(commonData.jacSolventFlux[gg](0,0));
+            commonData.jacRowPtr[dd] = &(commonData.jacSolventFlux[gg](dd,0));
           }
           ierr = calculateJacobian(SOLVENTFLUX); CHKERRQ(ierr);
 
@@ -1734,6 +1734,87 @@ struct Gel {
                   for(int rr2 = 0;rr2<3;rr2++) {
                     K(6*dd1+rr1,3*dd2+rr2) += N[dd1]*dStrainHat_dx(rr1,3*dd2+rr2);
                   }
+                }
+              }
+            }
+          }
+          ierr = aSemble(
+            row_side,col_side,row_type,col_type,row_data,col_data
+          ); CHKERRQ(ierr);
+        }
+      } catch (const std::exception& ex) {
+        ostringstream ss;
+        ss << "throw in method: " << ex.what() << endl;
+        SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+      }
+      PetscFunctionReturn(0);
+    }
+  };
+
+  /** \brief Assemble matrix \f$\mathbf{K}_{\mu\mu}\f$
+  */
+  struct OpLhsdMudMu: public AssembleMatrix {
+    CommonData &commonData;
+    OpLhsdMudMu(CommonData &common_data):
+    AssembleMatrix(
+      common_data.muName,common_data.muName
+    ),
+    commonData(common_data) {
+    }
+    ublas::matrix<double> dSolventFlux_dmu;
+    PetscErrorCode get_dSolventFlux_dmu(
+      DataForcesAndSurcesCore::EntData &col_data,int gg
+    ) {
+      PetscFunctionBegin;
+      try {
+        int nb_col = col_data.getIndices().size();
+        dSolventFlux_dmu.resize(6,nb_col,false);
+        dSolventFlux_dmu.clear();
+        const MatrixAdaptor diffN = col_data.getDiffN(gg);
+        ublas::matrix<double> &jac_solvent_flux = commonData.jacSolventFlux[gg];
+        for(int dd = 0;dd<nb_col;dd++) {    // DoFs in column
+          for(int rr1 = 0;rr1<3;rr1++) {
+            double a = diffN(dd,rr1);
+            for(int rr2 = 0;rr2<3;rr2++) {
+              dSolventFlux_dmu(rr2,dd) += jac_solvent_flux(rr2,rr1)*a;
+            }
+          }
+        }
+      } catch (const std::exception& ex) {
+        ostringstream ss;
+        ss << "throw in method: " << ex.what() << endl;
+        SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+      }
+      PetscFunctionReturn(0);
+    }
+    PetscErrorCode doWork(
+      int row_side,int col_side,
+      EntityType row_type,EntityType col_type,
+      DataForcesAndSurcesCore::EntData &row_data,
+      DataForcesAndSurcesCore::EntData &col_data
+    ) {
+      PetscFunctionBegin;
+      int nb_row = row_data.getIndices().size();
+      int nb_col = col_data.getIndices().size();
+      if(nb_row == 0) PetscFunctionReturn(0);
+      if(nb_col == 0) PetscFunctionReturn(0);
+      try {
+        K.resize(nb_row,nb_col,false);
+        K.clear();
+        for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
+          ierr = get_dSolventFlux_dmu(col_data,gg); CHKERRQ(ierr);
+          double val = getVolume()*getGaussPts()(3,gg);
+          if(getHoGaussPtsDetJac().size()>0) {
+            val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
+          }
+          dSolventFlux_dmu *= val;
+          //cerr << dSolventFlux_dmu << endl;
+          const MatrixAdaptor &diffN = row_data.getDiffN(gg);
+          { //integrate element stiffness matrix
+            for(int dd1 = 0;dd1<nb_row;dd1++) {
+              for(int dd2 = 0;dd2<nb_col;dd2++) {
+                for(int rr = 0;rr<3;rr++) {
+                  K(dd1,dd2) += diffN(dd1,rr)*dSolventFlux_dmu(rr,dd2);
                 }
               }
             }
