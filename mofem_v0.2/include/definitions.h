@@ -76,6 +76,15 @@ enum FieldSpace {
   LASTSPACE 	///< FieldSpace in [ 0, LASTSPACE )
 };
 
+static const char *FieldSpaceNames[] = {
+  "", // empty space
+  "NOFIELD",
+  "H1",
+  "HDIV",
+  "HCURL",
+  "L2",
+  "LASTSPACE"
+};
 
 /// \brief Those types control how functions respond on arguments, f.e. error handling
 enum MoFEMTypes {

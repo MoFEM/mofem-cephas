@@ -1,6 +1,6 @@
 /** \file CoreDataStructures.cpp
- * \brief Myltindex containes, data structures and other low-level functions 
- * 
+ * \brief Myltindex containes, data structures and other low-level functions
+ *
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or (at your
@@ -31,9 +31,9 @@ const bool PetscGlobalIdx_mi_tag::IamNotPartitioned = false;
 const bool PetscLocalIdx_mi_tag::IamNotPartitioned = false;
 const bool Part_mi_tag::IamNotPartitioned = false;
 
-//fields 
+//fields
 MoFEMField::MoFEMField(Interface &moab,const EntityHandle _meshset): meshset(_meshset),
-  tag_id_data(NULL),tag_space_data(NULL),tag_rank_data(NULL),tag_name_data(NULL),tag_name_size(0) { 
+  tag_id_data(NULL),tag_space_data(NULL),tag_rank_data(NULL),tag_name_data(NULL),tag_name_size(0) {
   //Change those tags only by modifiers
   ErrorCode rval;
   //id
@@ -104,8 +104,8 @@ MoFEMField::MoFEMField(Interface &moab,const EntityHandle _meshset): meshset(_me
   }
 }
 ostream& operator<<(ostream& os,const MoFEMField& e) {
-  os << "name "<<e.get_name_ref()<<" BitFieldId "<< e.get_id().to_ulong() << " bit number " << e.get_bit_number() 
-    << " space " << e.get_space() << " rank " << e.get_max_rank() << " meshset " << e.meshset;
+  os << "name "<<e.get_name_ref()<<" BitFieldId "<< e.get_id().to_ulong() << " bit number " << e.get_bit_number()
+    << " space " << FieldSpaceNames[e.get_space()] << " rank " << e.get_max_rank() << " meshset " << e.meshset;
   return os;
 }
 
