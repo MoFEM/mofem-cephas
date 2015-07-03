@@ -26,6 +26,16 @@
 
 namespace MoFEM {
 
+const char *FieldSpaceNames[] = {
+  "", // empty space
+  "NOFIELD",
+  "H1",
+  "HDIV",
+  "HCURL",
+  "L2",
+  "LASTSPACE"
+};
+
 const bool Idx_mi_tag::IamNotPartitioned = true;
 const bool PetscGlobalIdx_mi_tag::IamNotPartitioned = false;
 const bool PetscLocalIdx_mi_tag::IamNotPartitioned = false;
@@ -97,7 +107,7 @@ MoFEMField::MoFEMField(Interface &moab,const EntityHandle _meshset): meshset(_me
       forder_table[MBTET] = fNBVOLUME_L2;
       break;
     case NOFIELD:
-      forder_table[MBENTITYSET] = fNBENTITYSET_nofield;
+      forder_table[MBENTITYSET] = fNBENTITYSET_NOFIELD;
       break;
     default:
       THROW_AT_LINE("not implemented");
