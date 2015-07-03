@@ -272,54 +272,6 @@ int main(int argc, char *argv[]) {
     ierr = DMSetUp(dm); CHKERRQ(ierr);
   }
 
-  // Make calculations
-  Mat M;
-  Vec F,U_t;
-  {
-    ierr = DMCreateGlobalVector_MoFEM(dm,&F); CHKERRQ(ierr);
-    ierr = DMCreateGlobalVector_MoFEM(dm,&U_t); CHKERRQ(ierr);
-    ierr = DMCreateMatrix_MoFEM(dm,&M); CHKERRQ(ierr);
-    ierr = VecZeroEntries(F); CHKERRQ(ierr);
-    ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = VecZeroEntries(U_t); CHKERRQ(ierr);
-    ierr = VecGhostUpdateBegin(U_t,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = VecGhostUpdateEnd(U_t,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = MatZeroEntries(M); CHKERRQ(ierr);
-    gel.feRhs.ts_F = F; // Set right hand side vector manually
-    gel.feRhs.ts_u_t = U_t;
-    gel.feRhs.ts_ctx = TSMethod::CTX_TSSETIFUNCTION;
-    ierr = DMoFEMLoopFiniteElements(dm,"GEL_FE",&gel.feRhs); CHKERRQ(ierr);
-    gel.feLhs.ts_B = M; // Set matrix M
-    gel.feLhs.ts_a = 1.0; // Set time step parameter
-    ierr = DMoFEMLoopFiniteElements(dm,"GEL_FE",&gel.feLhs); CHKERRQ(ierr);
-    ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
-    ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
-    ierr = MatAssemblyBegin(M,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-    ierr = MatAssemblyEnd(M,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-  }
-
-  // See results
-  {
-
-    //PetscViewer viewer;
-    //ierr = PetscViewerASCIIOpen(PETSC_COMM_WORLD,"build_composite_problem.txt",&viewer); CHKERRQ(ierr);
-    //ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
-    MatView(M,PETSC_VIEWER_DRAW_WORLD);
-    std::string wait;
-    std::cin >> wait;
-
-  }
-
-
-  // Clean and destroy
-  {
-    ierr = VecDestroy(&F); CHKERRQ(ierr);
-    ierr = VecDestroy(&U_t); CHKERRQ(ierr);
-    ierr = MatDestroy(&M); CHKERRQ(ierr);
-    ierr = DMDestroy(&dm); CHKERRQ(ierr);
-  }
-
   PetscFinalize();
 
   return 0;
