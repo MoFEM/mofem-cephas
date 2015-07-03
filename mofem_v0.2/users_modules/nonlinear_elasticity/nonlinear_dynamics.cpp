@@ -248,11 +248,12 @@ int main(int argc, char *argv[]) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
 
-  // use this if your mesh is partotioned and you run code on parts,
+  // use this if your mesh is partitioned and you run code on parts,
   // you can solve very big problems
   PetscBool is_partitioned = PETSC_FALSE;
   ierr = PetscOptionsGetBool(
-    PETSC_NULL, "-my_is_partitioned", &is_partitioned, &flg); CHKERRQ(ierr);
+    PETSC_NULL, "-my_is_partitioned", &is_partitioned, &flg
+  ); CHKERRQ(ierr);
 
   if (is_partitioned == PETSC_TRUE) {
     //Read mesh to MOAB

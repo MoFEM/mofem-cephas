@@ -389,13 +389,13 @@ int main(int argc, char *argv[]) {
   ierr = DMMoFEMTSSetIJacobian(dm,DM_NO_ELEMENT,NULL,&dirichlet_bc,NULL); CHKERRQ(ierr);
   #ifdef __GROUNDSURFACETEMERATURE_HPP
   ierr = DMMoFEMTSSetIFunction(dm,DM_NO_ELEMENT,NULL,&exectuteGenericClimateModel,NULL); CHKERRQ(ierr);
-  { // add preporcessor, calulating angle on which sun ray on the surface
+  { // add preporcessor, calculating angle on which sun ray on the surface
     if(solar_radiation) {
       boost::ptr_vector<GroundSurfaceTemerature::SolarRadiationPreProcessor>::iterator it,hi_it;
       it = ground_surface.preProcessShade.begin();
       hi_it = ground_surface.preProcessShade.end();
       for(;it!=hi_it;it++) {
-	ierr = DMMoFEMTSSetIFunction(dm,DM_NO_ELEMENT,NULL,&*it,NULL); CHKERRQ(ierr);
+        ierr = DMMoFEMTSSetIFunction(dm,DM_NO_ELEMENT,NULL,&*it,NULL); CHKERRQ(ierr);
       }
     }
   }
