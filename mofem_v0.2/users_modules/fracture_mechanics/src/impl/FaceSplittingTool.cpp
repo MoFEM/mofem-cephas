@@ -1641,7 +1641,7 @@ PetscErrorCode FaceSplittingTools::propagateBySplit(Range &new_nodes,Range &edge
 
   rval = mField.get_moab().delete_entities(&kdTree_rootMeshset,1); CHKERR_PETSC(rval);
 
-  // Calulate distances,
+  // calculate distances,
   // mode nodes near to crack surface
   map<EntityHandle,vector<double> > nodes_to_move_map;
   map<EntityHandle,vector<double> >::iterator mit = normal_nodes_map.begin();

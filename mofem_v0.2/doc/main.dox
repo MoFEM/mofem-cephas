@@ -60,19 +60,27 @@ List of third party libraries and packages used by MoFEM:
 
 \section License
 
-MoFEM is free software: you can redistribute it and/or modify it under the
-terms of the GNU Lesser General Public License as published by the Free
-Software Foundation, either version 3 of the License, or (at your option)
-any later version.
+MoFEM is copyright by Lukasz Kaczmarczyk (Lukasz.Kaczmarczyk at glasgow.ac.uk) and has received contributions by several people. MoFEM can be used freely for
+educational and research purposes by other institutions. If you use this software please cite our work.
 
+MoFEM is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later
+version.
 
-MoFEM is distributed in the hope that it will be useful, but WITHOUT ANY
-WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for
-more details.
+MoFEM is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for more details.
 
+You should have received a copy of the GNU Lesser General Public License along with MoFEM. If not, see
+<http://www.gnu.org/licenses/>
 
-You should have received a copy of the GNU Lesser General Public License
-along with MoFEM. If not, see <http://www.gnu.org/licenses/>
+\section contributors Contributors list
+
+Generating contributors list
+\code
+git shortlog -s -e -n
+\endcode
+
+List:
+\verbinclude doc/contributors_list
 
 */

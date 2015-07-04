@@ -3316,7 +3316,7 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(
     "COUPLED_PROBLEM","MESH_NODE_POSITIONS","GRIFFITH_FORCE",ROW,F,INSERT_VALUES,SCATTER_REVERSE
   ); CHKERRQ(ierr);
 
-  //calulate work of fracture
+  //calculate work of fracture
   const MoFEMProblem *problem_ptr;
   ierr = m_field.get_problem("C_CRACKFRONT_MATRIX",&problem_ptr); CHKERRQ(ierr);
   map_ent_work.clear();

@@ -909,8 +909,8 @@ PetscErrorCode NonlinearElasticElement::OpLhsEshelby_dX::getJac(DataForcesAndSur
 }
 
 PetscErrorCode NonlinearElasticElement::setBlocks(
-  FunctionsToCalulatePiolaKirchhoffI<double> *materialDoublePtr,
-  FunctionsToCalulatePiolaKirchhoffI<adouble> *materialAdoublePtr) {
+  FunctionsToCalculatePiolaKirchhoffI<double> *materialDoublePtr,
+  FunctionsToCalculatePiolaKirchhoffI<adouble> *materialAdoublePtr) {
   PetscFunctionBegin;
   ErrorCode rval;
   PetscErrorCode ierr;

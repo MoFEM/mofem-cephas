@@ -44,8 +44,8 @@ struct ElasticMaterials {
     iNitialized(false) {}
 
 
-  boost::ptr_map<string,NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<adouble> > aDoubleMaterialModel;
-  boost::ptr_map<string,NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<double> > doubleMaterialModel;
+  boost::ptr_map<string,NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoffI<adouble> > aDoubleMaterialModel;
+  boost::ptr_map<string,NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoffI<double> > doubleMaterialModel;
 
   struct BlockOptionData {
     string mAterial;
@@ -73,8 +73,8 @@ struct ElasticMaterials {
     //add new material below
     string mat_name;
     mat_name = MAT_KIRCHOFF;
-    aDoubleMaterialModel.insert(mat_name,new NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<adouble>());
-    doubleMaterialModel.insert(mat_name,new NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<double>());
+    aDoubleMaterialModel.insert(mat_name,new NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoffI<adouble>());
+    doubleMaterialModel.insert(mat_name,new NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoffI<double>());
     mat_name = MAT_HOOKE;
     aDoubleMaterialModel.insert(mat_name,new Hooke<adouble>());
     doubleMaterialModel.insert(mat_name,new Hooke<double>());
@@ -83,7 +83,7 @@ struct ElasticMaterials {
     doubleMaterialModel.insert(mat_name,new NeoHookean<double>());
     ostringstream avilable_materials;
     avilable_materials << "set elastic material < ";
-    boost::ptr_map<string,NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<double> >::iterator mit;
+    boost::ptr_map<string,NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoffI<double> >::iterator mit;
     mit = doubleMaterialModel.begin();
     for(;mit!=doubleMaterialModel.end();mit++) {
       avilable_materials << mit->first << " ";

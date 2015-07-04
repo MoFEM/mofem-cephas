@@ -276,7 +276,7 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  //this defuault class to calulate thermal elements
+  //this default class to calculate thermal elements
   ThermalElement thermal_elements(m_field);
   ierr = thermal_elements.addThermalElements("TEMP"); CHKERRQ(ierr);
   ierr = thermal_elements.addThermalFluxElement("TEMP"); CHKERRQ(ierr);
@@ -389,13 +389,13 @@ int main(int argc, char *argv[]) {
   ierr = DMMoFEMTSSetIJacobian(dm,DM_NO_ELEMENT,NULL,&dirichlet_bc,NULL); CHKERRQ(ierr);
   #ifdef __GROUNDSURFACETEMERATURE_HPP
   ierr = DMMoFEMTSSetIFunction(dm,DM_NO_ELEMENT,NULL,&exectuteGenericClimateModel,NULL); CHKERRQ(ierr);
-  { // add preporcessor, calulating angle on which sun ray on the surface
+  { // add preporcessor, calculating angle on which sun ray on the surface
     if(solar_radiation) {
       boost::ptr_vector<GroundSurfaceTemerature::SolarRadiationPreProcessor>::iterator it,hi_it;
       it = ground_surface.preProcessShade.begin();
       hi_it = ground_surface.preProcessShade.end();
       for(;it!=hi_it;it++) {
-	ierr = DMMoFEMTSSetIFunction(dm,DM_NO_ELEMENT,NULL,&*it,NULL); CHKERRQ(ierr);
+        ierr = DMMoFEMTSSetIFunction(dm,DM_NO_ELEMENT,NULL,&*it,NULL); CHKERRQ(ierr);
       }
     }
   }
@@ -470,7 +470,7 @@ int main(int argc, char *argv[]) {
     steps,rejects,snesfails,ftime,nonlinits,linits);
 
   // save solution, if boundary conditions are defined you can use that file in mechanical problem
-  // to calulate thermal stresses
+  // to calculate thermal stresses
   PetscBool is_partitioned = PETSC_FALSE;
   ierr = PetscOptionsGetBool(PETSC_NULL,"-dm_is_partitioned",&is_partitioned,PETSC_NULL); CHKERRQ(ierr);
   if(is_partitioned) {

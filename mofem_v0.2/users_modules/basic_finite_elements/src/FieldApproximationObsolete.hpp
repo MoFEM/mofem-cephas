@@ -61,7 +61,7 @@ struct FieldApproximationH1 {
     ublas::matrix<FieldData> transNN;
     ublas::vector<FieldData> Nf;
 
-    /** \brief calulate matrix
+    /** \brief calculate matrix
       */
     PetscErrorCode doWork(
       int row_side,int col_side,
@@ -255,16 +255,16 @@ struct FieldApproximationH1 {
     PetscFunctionBegin;
     PetscErrorCode ierr;
 
-    //add operator to calulate F vector
+    //add operator to calculate F vector
     fe.get_op_to_do_Rhs().push_back(new OpApprox(field_name,A,F,function_evaluator));
-    //add operator to calulate A matrix
+    //add operator to calculate A matrix
     fe.get_op_to_do_Lhs().push_back(new OpApprox(field_name,A,F,function_evaluator));
 
     MatZeroEntries(A);
     VecZeroEntries(F);
     ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    //calulate and assembe
+    //calculate and assembe
     ierr = mField.loop_finite_elements(problem_name,fe_name,fe);  CHKERRQ(ierr);
     ierr = MatAssemblyBegin(A,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
     ierr = MatAssemblyEnd(A,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);

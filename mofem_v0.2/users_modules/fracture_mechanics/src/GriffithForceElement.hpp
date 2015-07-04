@@ -242,7 +242,7 @@ struct GriffithForceElement {
         PetscFunctionReturn(0);
       }
 
-      PetscErrorCode calulateGrifthForce(
+      PetscErrorCode calculateGrifthForce(
         double gc,double beta
       ) {
         PetscFunctionBegin;
@@ -335,7 +335,7 @@ struct GriffithForceElement {
           ierr = auxFun.dIffX(); CHKERRQ(ierr);
           ierr = auxFun.nOrmal(); CHKERRQ(ierr);
           ierr = auxFun.matrixA(); CHKERRQ(ierr);
-          ierr = auxFun.calulateGrifthForce(blockData.gc,val); CHKERRQ(ierr);
+          ierr = auxFun.calculateGrifthForce(blockData.gc,val); CHKERRQ(ierr);
 
           /*cerr << "gg: " << gg << endl;
           cerr << auxFun.Bksi << endl;
