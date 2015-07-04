@@ -22,6 +22,592 @@ using namespace MoFEM;
 
 using namespace boost::numeric;
 
+PetscErrorCode ThermalElement::OpGetGradAtGaussPts::doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+  PetscFunctionBegin;
+  try {
+
+    if(data.getIndices().size()==0) PetscFunctionReturn(0);
+    int nb_dofs = data.getFieldData().size();
+    int nb_gauss_pts = data.getN().size1();
+
+    //initialize
+    commonData.gradAtGaussPts.resize(nb_gauss_pts,3);
+    if(type == MBVERTEX) {
+      fill(commonData.gradAtGaussPts.data().begin(),commonData.gradAtGaussPts.data().end(),0);
+    }
+
+    for(int gg = 0;gg<nb_gauss_pts;gg++) {
+      ublas::noalias(commonData.getGradAtGaussPts(gg)) += prod( trans(data.getDiffN(gg,nb_dofs)), data.getFieldData() );
+    }
+
+  } catch (const std::exception& ex) {
+    ostringstream ss;
+    ss << "throw in method: " << ex.what() << endl;
+    SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+  }
+
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode ThermalElement::OpThermalRhs::doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+  PetscFunctionBegin;
+
+  if(dAta.tEts.find(getMoFEMFEPtr()->get_ent()) == dAta.tEts.end()) {
+    PetscFunctionReturn(0);
+  }
+
+  try {
+
+    if(data.getIndices().size()==0) PetscFunctionReturn(0);
+    if(dAta.tEts.find(getMoFEMFEPtr()->get_ent())==dAta.tEts.end()) PetscFunctionReturn(0);
+
+    PetscErrorCode ierr;
+
+    int nb_row_dofs = data.getIndices().size();
+    Nf.resize(nb_row_dofs);
+    Nf.clear();
+    //cerr << data.getIndices() << endl;
+    //cerr << data.getDiffN() << endl;
+
+    for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
+
+      ublas::matrix<double>  val = dAta.cOnductivity_mat*getVolume()*getGaussPts()(3,gg);
+
+      if(getHoGaussPtsDetJac().size()>0) {
+        val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
+      }
+
+      //cerr << val << endl;
+      //cerr << data.getDiffN() << endl;
+      //cerr << data.getIndices() << endl;
+      //cerr << commonData.gradAtGaussPts << endl;
+      //cblas
+      //cblas_dgemv(CblasRowMajor,CblasNoTrans,nb_row_dofs,3,val,
+      //&data.getDiffN()(gg,0),3,&commonData.gradAtGaussPts(gg,0),1,
+      //1.,&Nf[0],1);
+
+      //ublas
+      ublas::noalias(Nf) += prod(prod(data.getDiffN(gg,nb_row_dofs),val), commonData.getGradAtGaussPts(gg));
+
+    }
+
+    //cerr << Nf << endl;
+    if(useTsF) {
+      ierr = VecSetValues(getFEMethod()->ts_F,data.getIndices().size(),&data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
+    } else {
+      ierr = VecSetValues(F,data.getIndices().size(),&data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
+
+    }
+
+  } catch (const std::exception& ex) {
+    ostringstream ss;
+    ss << "throw in method: " << ex.what() << endl;
+    SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+  }
+
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode ThermalElement::OpThermalLhs::doWork(
+  int row_side,int col_side,
+  EntityType row_type,EntityType col_type,
+  DataForcesAndSurcesCore::EntData &row_data,
+  DataForcesAndSurcesCore::EntData &col_data
+) {
+  PetscFunctionBegin;
+
+  if(dAta.tEts.find(getMoFEMFEPtr()->get_ent()) == dAta.tEts.end()) {
+    PetscFunctionReturn(0);
+  }
+
+  try {
+
+    if(row_data.getIndices().size()==0) PetscFunctionReturn(0);
+    if(col_data.getIndices().size()==0) PetscFunctionReturn(0);
+
+    int nb_row = row_data.getN().size2();
+    int nb_col = col_data.getN().size2();
+    K.resize(nb_row,nb_col);
+    K.clear();
+    for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
+
+      ublas::matrix<double>  val = dAta.cOnductivity_mat*getVolume()*getGaussPts()(3,gg);
+      if(getHoGaussPtsDetJac().size()>0) {
+        val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
+      }
+
+      //cblas
+      //double *diff_N_row,*diff_N_col;
+      //diff_N_row = &row_data.getDiffN()(gg,0);
+      //diff_N_col = &col_data.getDiffN()(gg,0);
+      //cblas_dgemm(CblasRowMajor,CblasNoTrans,CblasTrans,
+      //nb_row,nb_col,3,
+      //val,diff_N_row,3,diff_N_col,3,1.,&K(0,0),nb_col);
+
+      //ublas
+      ublas::matrix<double> K1=prod(row_data.getDiffN(gg,nb_row),val);
+      noalias(K) += prod(K1,trans(col_data.getDiffN(gg,nb_col)));
+    }
+
+    PetscErrorCode ierr;
+    if(!useTsB) {
+      const_cast<FEMethod*>(getFEMethod())->ts_B = A;
+    }
+    ierr = MatSetValues(
+      (getFEMethod()->ts_B),
+      nb_row,&row_data.getIndices()[0],
+      nb_col,&col_data.getIndices()[0],
+      &K(0,0),ADD_VALUES
+    ); CHKERRQ(ierr);
+    if(row_side != col_side || row_type != col_type) {
+      transK.resize(nb_col,nb_row);
+      noalias(transK) = trans( K );
+      ierr = MatSetValues(
+        (getFEMethod()->ts_B),
+        nb_col,&col_data.getIndices()[0],
+        nb_row,&row_data.getIndices()[0],
+        &transK(0,0),ADD_VALUES
+      ); CHKERRQ(ierr);
+    }
+
+
+  } catch (const std::exception& ex) {
+    ostringstream ss;
+    ss << "throw in method: " << ex.what() << endl;
+    SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+  }
+
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode ThermalElement::OpHeatCapacityRhs::doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+  PetscFunctionBegin;
+
+  try {
+
+    if(data.getIndices().size()==0) PetscFunctionReturn(0);
+    int nb_row = data.getN().size2();
+    Nf.resize(nb_row);
+    Nf.clear();
+    for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
+      double val = getGaussPts()(3,gg);
+      if(getHoGaussPtsDetJac().size()>0) {
+        val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
+      }
+      val *= commonData.temperatureRateAtGaussPts[gg];
+      ////////////
+      //cblas
+      //cblas_daxpy(nb_row,val,&data.getN()(gg,0),1,&*Nf.data().begin(),1);
+      //ublas
+      ublas::noalias(Nf) += val*data.getN(gg);
+    }
+    Nf *= getVolume()*dAta.cApacity;
+    PetscErrorCode ierr;
+    ierr = VecSetValues(getFEMethod()->ts_F,data.getIndices().size(),
+    &data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
+
+
+  } catch (const std::exception& ex) {
+    ostringstream ss;
+    ss << "throw in method: " << ex.what() << endl;
+    SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+  }
+
+
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode ThermalElement::OpHeatCapacityLhs::doWork(
+  int row_side,int col_side,
+  EntityType row_type,EntityType col_type,
+  DataForcesAndSurcesCore::EntData &row_data,
+  DataForcesAndSurcesCore::EntData &col_data
+) {
+  PetscFunctionBegin;
+
+  try {
+
+    if(row_data.getIndices().size()==0) PetscFunctionReturn(0);
+    if(col_data.getIndices().size()==0) PetscFunctionReturn(0);
+
+    int nb_row = row_data.getN().size2();
+    int nb_col = col_data.getN().size2();
+    M.resize(nb_row,nb_col);
+    M.clear();
+
+    for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
+
+      double val = getGaussPts()(3,gg);
+      if(getHoGaussPtsDetJac().size()>0) {
+        val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
+      }
+
+      //cblas
+      //double *N_row,*N_col;
+      //N_row = &row_data.getN()(gg,0);
+      //N_col = &col_data.getN()(gg,0);
+      //cblas_dger(CblasRowMajor,
+      //  nb_row,nb_col,val,N_row,1,N_col,1,&M(0,0),nb_col);
+      //ublas
+      noalias(M) += val*outer_prod( row_data.getN(gg,nb_row),col_data.getN(gg,nb_col) );
+
+    }
+
+    M *= getVolume()*dAta.cApacity*getFEMethod()->ts_a;
+
+    PetscErrorCode ierr;
+    ierr = MatSetValues(
+      (getFEMethod()->ts_B),
+      nb_row,&row_data.getIndices()[0],
+      nb_col,&col_data.getIndices()[0],
+      &M(0,0),ADD_VALUES
+    ); CHKERRQ(ierr);
+    if(row_side != col_side || row_type != col_type) {
+      transM.resize(nb_col,nb_row);
+      noalias(transM) = trans(M);
+      ierr = MatSetValues(
+        (getFEMethod()->ts_B),
+        nb_col,&col_data.getIndices()[0],
+        nb_row,&row_data.getIndices()[0],
+        &transM(0,0),ADD_VALUES
+      ); CHKERRQ(ierr);
+    }
+
+
+  } catch (const std::exception& ex) {
+    ostringstream ss;
+    ss << "throw in method: " << ex.what() << endl;
+    SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+  }
+
+
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode ThermalElement::OpHeatFlux::doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+  PetscFunctionBegin;
+
+  if(data.getIndices().size()==0) PetscFunctionReturn(0);
+  if(dAta.tRis.find(getMoFEMFEPtr()->get_ent())==dAta.tRis.end()) PetscFunctionReturn(0);
+
+  PetscErrorCode ierr;
+
+  const FENumeredDofMoFEMEntity *dof_ptr;
+  ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
+  int rank = dof_ptr->get_max_rank();
+
+  int nb_dofs = data.getIndices().size()/rank;
+
+  Nf.resize(data.getIndices().size());
+  Nf.clear();
+  //cerr << getNormal() << endl;
+  //cerr << getNormals_at_GaussPt() << endl;
+
+  for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
+
+    double val = getGaussPts()(2,gg);
+    double flux;
+    if(hoGeometry) {
+      double area = norm_2(getNormals_at_GaussPt(gg))*0.5; //cblas_dnrm2(3,&getNormals_at_GaussPt()(gg,0),1);
+      flux = dAta.dAta.data.value1*area;  //FluxData.HeatfluxCubitBcData.data.value1 * area
+    } else {
+      flux = dAta.dAta.data.value1*getArea();
+    }
+    //cblas_daxpy(nb_row_dofs,val*flux,&data.getN()(gg,0),1,&*Nf.data().begin(),1);
+    ublas::noalias(Nf) += val*flux*data.getN(gg,nb_dofs);
+
+  }
+
+  //cerr << "VecSetValues\n";
+  //cerr << Nf << endl;
+  //cerr << data.getIndices() << endl;
+
+  if(useTsF) {
+    ierr = VecSetValues(getFEMethod()->ts_F,data.getIndices().size(),
+    &data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
+  } else {
+    ierr = VecSetValues(F,data.getIndices().size(),
+    &data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
+  }
+
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode ThermalElement::OpRadiationLhs::doWork(
+  int row_side,int col_side,
+  EntityType row_type,EntityType col_type,
+  DataForcesAndSurcesCore::EntData &row_data,
+  DataForcesAndSurcesCore::EntData &col_data
+) {
+  PetscFunctionBegin;
+
+  PetscErrorCode ierr;
+
+  try {
+
+    if(row_data.getIndices().size()==0) PetscFunctionReturn(0);
+    if(col_data.getIndices().size()==0) PetscFunctionReturn(0);
+
+    int nb_row = row_data.getN().size2();
+    int nb_col = col_data.getN().size2();
+
+    N.resize(nb_row,nb_col);
+    N.clear();
+
+    for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
+      double T3_at_Gauss_pt = pow(commonData.temperatureAtGaussPts[gg],3.0);
+
+      double radiationConst;
+      if(hoGeometry) {
+        double area = norm_2(getNormals_at_GaussPt(gg))*0.5;
+        radiationConst = dAta.sIgma*dAta.eMissivity*area;
+      } else {
+        radiationConst = dAta.sIgma*dAta.eMissivity*getArea();
+      }
+      const double fOur = 4.0;
+      double val = fOur*getGaussPts()(2,gg)*radiationConst*T3_at_Gauss_pt;
+      noalias(N) += val*outer_prod( row_data.getN(gg,nb_row),col_data.getN(gg,nb_col) );
+    }
+
+    if(!useTsB) {
+      const_cast<FEMethod*>(getFEMethod())->ts_B = A;
+    }
+    ierr = MatSetValues(
+      (getFEMethod()->ts_B),
+      nb_row,&row_data.getIndices()[0],
+      nb_col,&col_data.getIndices()[0],
+      &N(0,0),ADD_VALUES
+    ); CHKERRQ(ierr);
+    if(row_side != col_side || row_type != col_type) {
+      transN.resize(nb_col,nb_row);
+      noalias(transN) = trans( N );
+      ierr = MatSetValues(
+        (getFEMethod()->ts_B),
+        nb_col,&col_data.getIndices()[0],
+        nb_row,&row_data.getIndices()[0],
+        &transN(0,0),ADD_VALUES
+      ); CHKERRQ(ierr);
+    }
+
+  } catch (const std::exception& ex) {
+    ostringstream ss;
+    ss << "throw in method: " << ex.what() << endl;
+    SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+  }
+
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode ThermalElement::OpRadiationRhs::doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+  PetscFunctionBegin;
+
+  if(data.getIndices().size()==0) PetscFunctionReturn(0);
+  if(dAta.tRis.find(getMoFEMFEPtr()->get_ent())==dAta.tRis.end()) PetscFunctionReturn(0);
+
+  PetscErrorCode ierr;
+
+  const FENumeredDofMoFEMEntity *dof_ptr;
+  ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
+  int rank = dof_ptr->get_max_rank();
+  int nb_row_dofs = data.getIndices().size()/rank;
+
+  Nf.resize(data.getIndices().size());
+  Nf.clear();
+  //cerr << getNormal() << endl;
+  //cerr << getNormals_at_GaussPt() << endl;
+
+  for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
+
+    double T4_at_Gauss_pt = pow(commonData.temperatureAtGaussPts[gg],4.0);
+    double ambientTemp = pow(dAta.aMbienttEmp,4.0);
+    double tEmp = 0;
+
+    if(ambientTemp > 0) {
+      tEmp = -ambientTemp + T4_at_Gauss_pt;
+    }
+
+    double val = getGaussPts()(2,gg);
+    double radiationConst;
+
+    if(hoGeometry) {
+      double area = norm_2(getNormals_at_GaussPt(gg))*0.5;
+      radiationConst = dAta.sIgma*dAta.eMissivity*tEmp*area;
+    } else {
+      radiationConst = dAta.sIgma*dAta.eMissivity*tEmp*getArea();
+    }
+    ublas::noalias(Nf) += val*radiationConst*data.getN(gg,nb_row_dofs);
+
+  }
+
+  //cerr << "VecSetValues\n";
+  //cerr << Nf << endl;
+  //cerr << data.getIndices() << endl;
+
+  if(useTsF) {
+    ierr = VecSetValues(getFEMethod()->ts_F,data.getIndices().size(),&data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
+  } else {
+    ierr = VecSetValues(F,data.getIndices().size(),&data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
+  }
+
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode ThermalElement::OpConvectionRhs::doWork(
+  int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+) {
+  PetscFunctionBegin;
+
+  if(data.getIndices().size()==0) PetscFunctionReturn(0);
+  if(dAta.tRis.find(getMoFEMFEPtr()->get_ent())==dAta.tRis.end()) PetscFunctionReturn(0);
+
+  PetscErrorCode ierr;
+
+  const FENumeredDofMoFEMEntity *dof_ptr;
+  ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
+  int rank = dof_ptr->get_max_rank();
+
+  int nb_row_dofs = data.getIndices().size()/rank;
+
+  Nf.resize(data.getIndices().size());
+  Nf.clear();
+  //fill(Nf.begin(),Nf.end(),0);
+  //cerr << getNormal() << endl;
+  //cerr << getNormals_at_GaussPt() << endl;
+
+  for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
+
+    double T_at_Gauss_pt = commonData.temperatureAtGaussPts[gg];
+    double convectionConst;
+    if(hoGeometry) {
+      double area = norm_2(getNormals_at_GaussPt(gg))*0.5;
+      convectionConst = dAta.cOnvection*area*(T_at_Gauss_pt-dAta.tEmperature);
+    } else {
+      convectionConst = dAta.cOnvection*getArea()*(T_at_Gauss_pt-dAta.tEmperature);
+    }
+    double val = getGaussPts()(2,gg)*convectionConst;
+    ublas::noalias(Nf) += val*data.getN(gg,nb_row_dofs);
+
+  }
+
+  //cerr << "VecSetValues\n";
+  //cerr << Nf << endl;
+  //cerr << data.getIndices() << endl;
+
+  if(useTsF) {
+    ierr = VecSetValues(
+      getFEMethod()->ts_F,
+      data.getIndices().size(),
+      &data.getIndices()[0],&Nf[0],ADD_VALUES
+    ); CHKERRQ(ierr);
+  } else {
+    ierr = VecSetValues(
+      F,
+      data.getIndices().size(),
+      &data.getIndices()[0],
+      &Nf[0],
+      ADD_VALUES
+    ); CHKERRQ(ierr);
+  }
+
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode ThermalElement::OpConvectionLhs::doWork(
+  int row_side,int col_side,
+  EntityType row_type,EntityType col_type,
+  DataForcesAndSurcesCore::EntData &row_data,
+  DataForcesAndSurcesCore::EntData &col_data
+) {
+  PetscFunctionBegin;
+
+  try {
+
+    if(row_data.getIndices().size()==0) PetscFunctionReturn(0);
+    if(col_data.getIndices().size()==0) PetscFunctionReturn(0);
+
+    int nb_row = row_data.getN().size2();
+    int nb_col = col_data.getN().size2();
+    K.resize(nb_row,nb_col);
+    K.clear();
+
+    for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
+
+      double convectionConst;
+      if(hoGeometry) {
+        double area = norm_2(getNormals_at_GaussPt(gg))*0.5;
+        convectionConst = dAta.cOnvection*area;
+      }   else {
+        convectionConst = dAta.cOnvection*getArea();
+      }
+      double val = getGaussPts()(2,gg)*convectionConst;
+      noalias(K) += val*outer_prod( row_data.getN(gg,nb_row),col_data.getN(gg,nb_col) );
+
+    }
+
+    PetscErrorCode ierr;
+    if(!useTsB) {
+      const_cast<FEMethod*>(getFEMethod())->ts_B = A;
+    }
+    ierr = MatSetValues(
+      (getFEMethod()->ts_B),
+      nb_row,&row_data.getIndices()[0],
+      nb_col,&col_data.getIndices()[0],
+      &K(0,0),ADD_VALUES
+    ); CHKERRQ(ierr);
+    if(row_side != col_side || row_type != col_type) {
+      transK.resize(nb_col,nb_row);
+      noalias(transK) = trans( K );
+      ierr = MatSetValues(
+        (getFEMethod()->ts_B),
+        nb_col,&col_data.getIndices()[0],
+        nb_row,&row_data.getIndices()[0],
+        &transK(0,0),ADD_VALUES
+      ); CHKERRQ(ierr);
+    }
+
+
+  } catch (const std::exception& ex) {
+    ostringstream ss;
+    ss << "throw in method: " << ex.what() << endl;
+    SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+  }
+
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode ThermalElement::UpdateAndControl::preProcess() {
+  PetscFunctionBegin;
+  PetscErrorCode ierr;
+  ierr = mField.set_other_local_ghost_vector(
+    problemPtr,tempName,rateName,ROW,ts_u_t,INSERT_VALUES,SCATTER_REVERSE
+  ); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode ThermalElement::UpdateAndControl::postProcess() {
+  PetscFunctionBegin;
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode ThermalElement::TimeSeriesMonitor::postProcess() {
+  PetscFunctionBegin;
+  PetscErrorCode ierr;
+
+  ierr = mField.set_global_ghost_vector(
+    problemPtr,ROW,ts_u,INSERT_VALUES,SCATTER_REVERSE
+  ); CHKERRQ(ierr);
+
+  BitRefLevel proble_bit_level = problemPtr->get_BitRefLevel();
+
+  SeriesRecorder *recorder_ptr = NULL;
+  ierr = mField.query_interface(recorder_ptr); CHKERRQ(ierr);
+  ierr = recorder_ptr->record_begin(seriesName); CHKERRQ(ierr);
+  ierr = recorder_ptr->record_field(seriesName,tempName,proble_bit_level,mask); CHKERRQ(ierr);
+  ierr = recorder_ptr->record_end(seriesName,ts_t); CHKERRQ(ierr);
+
+  PetscFunctionReturn(0);
+}
+
 PetscErrorCode ThermalElement::addThermalElements(const string field_name,const string mesh_nodals_positions) {
   PetscFunctionBegin;
 
@@ -199,43 +785,43 @@ PetscErrorCode ThermalElement::setThermalFiniteElementLhsOperators(string field_
 
 PetscErrorCode ThermalElement::setThermalFluxFiniteElementRhsOperators(string field_name,Vec &F,const string mesh_nodals_positions) {
   PetscFunctionBegin;
-  bool ho_geometry = false;
+  bool hoGeometry = false;
   if(mField.check_field(mesh_nodals_positions)) {
-    ho_geometry = true;
+    hoGeometry = true;
   }
   map<int,FluxData>::iterator sit = setOfFluxes.begin();
   for(;sit!=setOfFluxes.end();sit++) {
     //add finite element
-    feFlux.getOpPtrVector().push_back(new OpHeatFlux(field_name,F,sit->second,ho_geometry));
+    feFlux.getOpPtrVector().push_back(new OpHeatFlux(field_name,F,sit->second,hoGeometry));
   }
   PetscFunctionReturn(0);
 }
 
 PetscErrorCode ThermalElement::setThermalConvectionFiniteElementRhsOperators(string field_name,Vec &F,const string mesh_nodals_positions) {
   PetscFunctionBegin;
-  bool ho_geometry = false;
+  bool hoGeometry = false;
   if(mField.check_field(mesh_nodals_positions)) {
-    ho_geometry = true;
+    hoGeometry = true;
   }
   map<int,ConvectionData>::iterator sit = setOfConvection.begin();
   for(;sit!=setOfConvection.end();sit++) {
     //add finite element
     feConvectionRhs.getOpPtrVector().push_back(new OpGetTriTemperatureAtGaussPts(field_name,commonData));
-    feConvectionRhs.getOpPtrVector().push_back(new OpConvectionRhs(field_name,F,sit->second,commonData,ho_geometry));
+    feConvectionRhs.getOpPtrVector().push_back(new OpConvectionRhs(field_name,F,sit->second,commonData,hoGeometry));
   }
   PetscFunctionReturn(0);
 }
 
 PetscErrorCode ThermalElement::setThermalConvectionFiniteElementLhsOperators(string field_name,Mat A,const string mesh_nodals_positions) {
   PetscFunctionBegin;
-  bool ho_geometry = false;
+  bool hoGeometry = false;
   if(mField.check_field(mesh_nodals_positions)) {
-    ho_geometry = true;
+    hoGeometry = true;
   }
   map<int,ConvectionData>::iterator sit = setOfConvection.begin();
   for(;sit!=setOfConvection.end();sit++) {
     //add finite element
-    feConvectionLhs.getOpPtrVector().push_back(new OpConvectionLhs(field_name,A,sit->second,ho_geometry));
+    feConvectionLhs.getOpPtrVector().push_back(new OpConvectionLhs(field_name,A,sit->second,hoGeometry));
   }
   PetscFunctionReturn(0);
 }
@@ -243,9 +829,9 @@ PetscErrorCode ThermalElement::setThermalConvectionFiniteElementLhsOperators(str
 PetscErrorCode ThermalElement::setTimeSteppingProblem(string field_name,string rate_name,const string mesh_nodals_positions) {
   PetscFunctionBegin;
 
-  bool ho_geometry = false;
+  bool hoGeometry = false;
   if(mField.check_field(mesh_nodals_positions)) {
-    ho_geometry = true;
+    hoGeometry = true;
   }
 
   {
@@ -255,7 +841,7 @@ PetscErrorCode ThermalElement::setTimeSteppingProblem(string field_name,string r
       //those methods are to calulate matrices on Lhs
       //  feLhs.getOpPtrVector().push_back(new OpGetTetTemperatureAtGaussPts(field_name,commonData));
       feLhs.getOpPtrVector().push_back(new OpThermalLhs(field_name,sit->second,commonData));
-      feLhs.getOpPtrVector().push_back(new OpHeatCapacityLsh(field_name,sit->second,commonData));
+      feLhs.getOpPtrVector().push_back(new OpHeatCapacityLhs(field_name,sit->second,commonData));
       //those methods are to calulate vectors on Rhs
       feRhs.getOpPtrVector().push_back(new OpGetTetTemperatureAtGaussPts(field_name,commonData));
       feRhs.getOpPtrVector().push_back(new OpGetTetRateAtGaussPts(rate_name,commonData));
@@ -269,7 +855,7 @@ PetscErrorCode ThermalElement::setTimeSteppingProblem(string field_name,string r
   {
     map<int,FluxData>::iterator sit = setOfFluxes.begin();
     for(;sit!=setOfFluxes.end();sit++) {
-      feFlux.getOpPtrVector().push_back(new OpHeatFlux(field_name,sit->second,ho_geometry));
+      feFlux.getOpPtrVector().push_back(new OpHeatFlux(field_name,sit->second,hoGeometry));
     }
   }
 
@@ -278,13 +864,13 @@ PetscErrorCode ThermalElement::setTimeSteppingProblem(string field_name,string r
     map<int,ConvectionData>::iterator sit = setOfConvection.begin();
     for(;sit!=setOfConvection.end();sit++) {
       feConvectionRhs.getOpPtrVector().push_back(new OpGetTriTemperatureAtGaussPts(field_name,commonData));
-      feConvectionRhs.getOpPtrVector().push_back(new OpConvectionRhs(field_name,sit->second,commonData,ho_geometry));
+      feConvectionRhs.getOpPtrVector().push_back(new OpConvectionRhs(field_name,sit->second,commonData,hoGeometry));
     }
   }
   {
     map<int,ConvectionData>::iterator sit = setOfConvection.begin();
     for(;sit!=setOfConvection.end();sit++) {
-      feConvectionLhs.getOpPtrVector().push_back(new OpConvectionLhs(field_name,sit->second,ho_geometry));
+      feConvectionLhs.getOpPtrVector().push_back(new OpConvectionLhs(field_name,sit->second,hoGeometry));
     }
   }
 
@@ -293,14 +879,14 @@ PetscErrorCode ThermalElement::setTimeSteppingProblem(string field_name,string r
     map<int,RadiationData>::iterator sit = setOfRadiation.begin();
     for(;sit!=setOfRadiation.end();sit++) {
       feRadiationRhs.getOpPtrVector().push_back(new OpGetTriTemperatureAtGaussPts(field_name,commonData));
-      feRadiationRhs.getOpPtrVector().push_back(new OpRadiationRhs(field_name,sit->second,commonData,ho_geometry));
+      feRadiationRhs.getOpPtrVector().push_back(new OpRadiationRhs(field_name,sit->second,commonData,hoGeometry));
     }
   }
   {
     map<int,RadiationData>::iterator sit = setOfRadiation.begin();
     for(;sit!=setOfRadiation.end();sit++) {
       feRadiationLhs.getOpPtrVector().push_back(new OpGetTriTemperatureAtGaussPts(field_name,commonData));
-      feRadiationLhs.getOpPtrVector().push_back(new OpRadiationLhs(field_name,sit->second,commonData,ho_geometry));
+      feRadiationLhs.getOpPtrVector().push_back(new OpRadiationLhs(field_name,sit->second,commonData,hoGeometry));
     }
   }
 
