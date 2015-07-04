@@ -309,7 +309,7 @@ PetscErrorCode ThermalElement::OpHeatFlux::doWork(int side,EntityType type,DataF
     double flux;
     if(hoGeometry) {
       double area = norm_2(getNormals_at_GaussPt(gg))*0.5; //cblas_dnrm2(3,&getNormals_at_GaussPt()(gg,0),1);
-      flux = dAta.dAta.data.value1*area;  //FluxData.HeatfluxCubitBcData.data.value1 * area
+      flux = dAta.dAta.data.value1*area;  //FluxData.HeatFluxCubitBcData.data.value1 * area
     } else {
       flux = dAta.dAta.data.value1*getArea();
     }
@@ -680,7 +680,7 @@ PetscErrorCode ThermalElement::addThermalFluxElement(const string field_name,con
       setOfFluxes[it->get_msId()].dAta.data.value1 = data[0];
       //cerr << setOfFluxes[it->get_msId()].dAta << endl;
       rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,setOfFluxes[it->get_msId()].tRis,true); CHKERR_PETSC(rval);
-      ierr = mField.add_ents_to_finite_element_by_TRIs(setOfFluxes[it->get_msId()].tRis,"THERMAL_FLUX_FE"); CHKERRQ(ierr);
+      ierr = mField.add_ents_to_finite_element_by_TRIs(setOfFluxes[it->get_msId()].tRis,"SOLVENT_FLUX_FE"); CHKERRQ(ierr);
 
     }
   }
@@ -838,11 +838,11 @@ PetscErrorCode ThermalElement::setTimeSteppingProblem(string field_name,string r
     map<int,BlockData>::iterator sit = setOfBlocks.begin();
     for(;sit!=setOfBlocks.end();sit++) {
       //add finite element
-      //those methods are to calulate matrices on Lhs
+      //those methods are to calculate matrices on Lhs
       //  feLhs.getOpPtrVector().push_back(new OpGetTetTemperatureAtGaussPts(field_name,commonData));
       feLhs.getOpPtrVector().push_back(new OpThermalLhs(field_name,sit->second,commonData));
       feLhs.getOpPtrVector().push_back(new OpHeatCapacityLhs(field_name,sit->second,commonData));
-      //those methods are to calulate vectors on Rhs
+      //those methods are to calculate vectors on Rhs
       feRhs.getOpPtrVector().push_back(new OpGetTetTemperatureAtGaussPts(field_name,commonData));
       feRhs.getOpPtrVector().push_back(new OpGetTetRateAtGaussPts(rate_name,commonData));
       feRhs.getOpPtrVector().push_back(new OpGetGradAtGaussPts(field_name,commonData));

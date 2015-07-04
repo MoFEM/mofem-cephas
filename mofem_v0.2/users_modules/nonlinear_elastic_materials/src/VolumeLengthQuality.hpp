@@ -36,14 +36,14 @@ enum VolumeLengthQualityType {
 
   */
 template<typename TYPE>
-struct VolumeLengthQuality: public NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<TYPE> {
+struct VolumeLengthQuality: public NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoffI<TYPE> {
 
     VolumeLengthQualityType tYpe;
     double aLpha;
     double gAmma;
 
     VolumeLengthQuality(VolumeLengthQualityType type,double alpha,double gamma):
-      NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<TYPE>(),
+      NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoffI<TYPE>(),
       tYpe(type),
       aLpha(alpha),
       gAmma(gamma) {}

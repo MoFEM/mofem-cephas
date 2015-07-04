@@ -146,7 +146,7 @@ int main(int argc, char *argv[]) {
       //Heat Flux
       else if (strcmp (&bc_data[0],"HeatFlux") == 0)
       {
-          HeatfluxCubitBcData mydata;
+          HeatFluxCubitBcData mydata;
           ierr = it->get_bc_data_structure(mydata); CHKERRQ(ierr);
           //Print data
           cout << mydata;

@@ -276,7 +276,7 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  //this defuault class to calulate thermal elements
+  //this default class to calculate thermal elements
   ThermalElement thermal_elements(m_field);
   ierr = thermal_elements.addThermalElements("TEMP"); CHKERRQ(ierr);
   ierr = thermal_elements.addThermalFluxElement("TEMP"); CHKERRQ(ierr);
@@ -470,7 +470,7 @@ int main(int argc, char *argv[]) {
     steps,rejects,snesfails,ftime,nonlinits,linits);
 
   // save solution, if boundary conditions are defined you can use that file in mechanical problem
-  // to calulate thermal stresses
+  // to calculate thermal stresses
   PetscBool is_partitioned = PETSC_FALSE;
   ierr = PetscOptionsGetBool(PETSC_NULL,"-dm_is_partitioned",&is_partitioned,PETSC_NULL); CHKERRQ(ierr);
   if(is_partitioned) {

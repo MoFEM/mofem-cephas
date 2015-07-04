@@ -28,9 +28,9 @@
   * \ingroup nonlinear_elastic_elem
   */
 template<typename TYPE>
-struct Hooke: public NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<TYPE> {
+struct Hooke: public NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoffI<TYPE> {
 
-    Hooke(): NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<TYPE>() {}
+    Hooke(): NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoffI<TYPE>() {}
 
     ublas::matrix<TYPE> Eps;
     TYPE tr;

@@ -111,7 +111,7 @@ struct ThermalElement {
     * \infroup mofem_thermal_elem
     */
   struct FluxData {
-    HeatfluxCubitBcData dAta; ///< for more details look to BCMultiIndices.hpp to see details of HeatfluxCubitBcData
+    HeatFluxCubitBcData dAta; ///< for more details look to BCMultiIndices.hpp to see details of HeatFluxCubitBcData
     Range tRis; ///< surface triangles where hate flux is applied
   };
   map<int,FluxData> setOfFluxes; ///< maps side set id with appropriate FluxData

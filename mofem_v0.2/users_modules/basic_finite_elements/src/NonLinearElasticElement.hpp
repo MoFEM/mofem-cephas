@@ -90,7 +90,7 @@ struct NonlinearElasticElement {
     FieldInterface &m_field,short int tag);
 
   template<typename TYPE>
-  struct FunctionsToCalulatePiolaKirchhoffI;
+  struct FunctionsToCalculatePiolaKirchhoffI;
 
   /** \brief data for calculation het conductivity and heat capacity elements
     * \ingroup nonlinear_elastic_elem
@@ -100,8 +100,8 @@ struct NonlinearElasticElement {
     double E;
     double PoissonRatio;
     Range tEts; ///< constatins elements in block set
-    FunctionsToCalulatePiolaKirchhoffI<adouble> *materialAdoublePtr;
-    FunctionsToCalulatePiolaKirchhoffI<double> *materialDoublePtr;
+    FunctionsToCalculatePiolaKirchhoffI<adouble> *materialAdoublePtr;
+    FunctionsToCalculatePiolaKirchhoffI<double> *materialDoublePtr;
     Range forcesOnlyOnEntitiesRow;
     Range forcesOnlyOnEntitiesCol;
   };
@@ -125,7 +125,7 @@ struct NonlinearElasticElement {
     * \ingroup nonlinear_elastic_elem
     */
   template<typename TYPE>
-  struct FunctionsToCalulatePiolaKirchhoffI {
+  struct FunctionsToCalculatePiolaKirchhoffI {
 
     /** \brief Calculate determinant of 3x3 matrix
       */
@@ -514,8 +514,8 @@ struct NonlinearElasticElement {
   };
 
   PetscErrorCode setBlocks(
-    FunctionsToCalulatePiolaKirchhoffI<double> *materialDoublePtr,
-    FunctionsToCalulatePiolaKirchhoffI<adouble> *materialAdoublePtr);
+    FunctionsToCalculatePiolaKirchhoffI<double> *materialDoublePtr,
+    FunctionsToCalculatePiolaKirchhoffI<adouble> *materialAdoublePtr);
 
   PetscErrorCode addElement(string element_name,
     string spatial_position_field_name,

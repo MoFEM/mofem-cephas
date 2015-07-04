@@ -357,8 +357,8 @@ int main(int argc, char *argv[]) {
   NonlinearElasticElement elastic(m_field, 2);
   ElasticMaterials elastic_materials(m_field);
   ierr = elastic_materials.setBlocks(elastic.setOfBlocks); CHKERRQ(ierr);
-  //NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<adouble> st_venant_kirchhoff_material_adouble;
-  //NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<double> st_venant_kirchhoff_material_double;
+  //NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoffI<adouble> st_venant_kirchhoff_material_adouble;
+  //NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoffI<double> st_venant_kirchhoff_material_double;
   //ierr = elastic.setBlocks(&st_venant_kirchhoff_material_double,&st_venant_kirchhoff_material_adouble); CHKERRQ(ierr);
   ierr = elastic.addElement("ELASTIC","SPATIAL_POSITION"); CHKERRQ(ierr);
   ierr = elastic.setOperators("SPATIAL_POSITION"); CHKERRQ(ierr);

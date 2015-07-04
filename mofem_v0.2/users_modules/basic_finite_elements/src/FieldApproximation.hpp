@@ -287,7 +287,7 @@ struct FieldApproximationH1 {
       ierr = MatZeroEntries(A); CHKERRQ(ierr);
     }
 
-    //calulate and assemble
+    //calculate and assemble
     ierr = mField.loop_finite_elements(problem_name,fe_name,fe);  CHKERRQ(ierr);
 
     if(A) {

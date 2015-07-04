@@ -312,7 +312,7 @@ int main(int argc, char *argv[]) {
   ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
-  //calulate residuals
+  //calculate residuals
   ufe.feVol.getOpPtrVector().clear();
 
   ufe.feVol.getOpPtrVector().push_back(new MyUltraWeakFE::OpFluxDivergenceAtGaussPts(ufe,"FLUXES"));

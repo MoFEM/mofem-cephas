@@ -308,7 +308,7 @@ PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
           noalias(F) = prod(h,invH);
           adouble detF;
           ierr = dEterminatnt(F,detF); CHKERRQ(ierr);
-          //calulate current density
+          //calculate current density
           adouble rho = rho0*detF;
           //momentum rate
           noalias(dp_dt) = rho*(a0 + a + prod(G,dot_W));

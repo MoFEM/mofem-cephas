@@ -272,7 +272,7 @@ struct Core:
 
   PetscErrorCode print_cubit_heat_flux_set() {
     PetscFunctionBegin;
-    HeatfluxCubitBcData mydata;
+    HeatFluxCubitBcData mydata;
     ierr = printCubitSet(mydata,SIDESET|mydata.type.to_ulong()); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
