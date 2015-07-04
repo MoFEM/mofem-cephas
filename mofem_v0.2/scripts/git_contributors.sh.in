@@ -1,0 +1,7 @@
+#!/bin/sh
+
+GIT=@GIT_EXECUTABLE@
+PROJECT_SOURCE_DIR=@PROJECT_SOURCE_DIR@
+
+$GIT shortlog -s -e -n  | \
+  tee $PROJECT_SOURCE_DIR/doc/contributors_list
