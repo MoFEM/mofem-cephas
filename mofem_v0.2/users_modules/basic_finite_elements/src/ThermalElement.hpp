@@ -41,7 +41,7 @@ struct ThermalElement {
 
   /// \brief  definition of volume element
   struct MyVolumeFE: public VolumeElementForcesAndSourcesCore {
-    MyVolumeFE(FieldInterface &_mField): VolumeElementForcesAndSourcesCore(_mField) {}
+    MyVolumeFE(FieldInterface &m_field): VolumeElementForcesAndSourcesCore(m_field) {}
 
     /** \brief it is used to calculate nb. of Gauss integration points
      *
@@ -71,7 +71,7 @@ struct ThermalElement {
     * This element is used to integrate heat fluxes; convection and radiation
     */
   struct MyTriFE: public FaceElementForcesAndSourcesCore {
-    MyTriFE(FieldInterface &_mField): FaceElementForcesAndSourcesCore(_mField) {}
+    MyTriFE(FieldInterface &m_field): FaceElementForcesAndSourcesCore(m_field) {}
     int getRule(int order) { return order; };
   };
 
@@ -1016,9 +1016,9 @@ struct ThermalElement {
     const string tempName;
     const string rateName;
 
-    UpdateAndControl(FieldInterface& _mField,
+    UpdateAndControl(FieldInterface& m_field,
       const string temp_name,const string rate_name):
-      mField(_mField),tempName(temp_name),rateName(rate_name) {}
+      mField(m_field),tempName(temp_name),rateName(rate_name) {}
 
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
