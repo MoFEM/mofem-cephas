@@ -75,7 +75,7 @@ You should have received a copy of the GNU Lesser General Public License along w
 
 \section contributors Contributors list
 
-Contributor list form git repository contributors
+Generating contributors list
 \code
 git shortlog -s -e -n
 \endcode
