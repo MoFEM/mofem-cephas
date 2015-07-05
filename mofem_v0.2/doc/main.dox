@@ -23,25 +23,62 @@ provided by MoAB.  The current version of MoFEM has full support for
 CUBIT/TRELIS, TetGEN, NetGEN for pre-processing and ParaView for
 post-processing.
 
+\subsection Motivation
+
+Building a scientific simulation environment for finite element methods is a
+complicated task. The greatest part of finite element code development is often
+expended in dealing with technical problems related to software implementation,
+rather than resolving the underlying physics that the code is intended to
+tackle.
+
+The demand for accurate solution of increasingly complicated real-world problems
+means that the underlying data structures also become increasingly complicated.
+This is particularly evident with multi-physics, hp-adaptivity, and/or evolving
+geometries (e.g. crack propagation). Established commercial software is often
+limited in this respect, or can be relatively slow to adopt new technologies.
+This is the problem that MoFEM attempts to work around, recognising that it is
+increasingly necessary for engineers, scientists and mathematicians to carry out
+calculations using several mesh refinements, different approximation orders,
+multiple degrees of freedom and/or different scales.
+
 \subsection download_repository Repository and testing
 
 - Current version repository <https://bitbucket.org/likask/mofem-cephas>
 - Testing webpage using powered by CDash <http://cdash.eng.gla.ac.uk/cdash/>
 
-\section twitter_and_google_plus Recent developments and news
+\subsection contact Contact us and get involved
+
+Contributions are welcome and is an important part of the open spirit of the
+project. It's hoped a community will develop around the project whose
+contributions will improve it further.
+
+Contact: <cmatgu@googlegroups.com>
+
+\subsection twitter_and_google_plus Recent developments and news
 
 \htmlinclude doc/twitter_widged.html
 
 See as well Google+ <https://plus.google.com/110439315415517980382/posts>
 
-\section License
+\subsection thrid_party Third party libraries
+
+List of third party libraries and packages used by MoFEM:
+
+- MOAB <http://www.mcs.anl.gov/~fathom/moab-docs/html/userguide.html>.
+- PETSc <http://www.mcs.anl.gov/petsc/documentation/index.html>
+- BOOST <http://www.boost.org>
+	- uBlas <http://www.boost.org/doc/libs/release/libs/numeric/>
+
+\subsection License
 
 MoFEM is copyright by Lukasz Kaczmarczyk (Lukasz.Kaczmarczyk at glasgow.ac.uk)
 and has received contributions by several people. MoFEM can be used freely for
-educational and research purposes by other institutions. Users modules are not
-part of MoFEM library and may follow different license agreement and copyrights.
-However all users modules created at Glasgow University are under the same
-license agreement like main MoFEM library.
+educational and research purposes by other institutions.
+
+Users modules are not part of MoFEM library and can be created privately,
+independently form MoFEM develpers. User modules may follow different license
+agreement and copyrights. However all users modules which are created at Glasgow
+University are under the same license agreement as main MoFEM library.
 
 MoFEM is free software: you can redistribute it and/or modify it under the terms
 of the GNU Lesser General Public License as published by the Free Software
@@ -65,14 +102,5 @@ List is generated with command,
 \code
 git shortlog -s -e -n
 \endcode
-
-\section thrid_party Third party libraries
-
-List of third party libraries and packages used by MoFEM:
-
-- MOAB <http://www.mcs.anl.gov/~fathom/moab-docs/html/userguide.html>.
-- PETSc <http://www.mcs.anl.gov/petsc/documentation/index.html>
-- BOOST <http://www.boost.org>
-	- uBlas <http://www.boost.org/doc/libs/release/libs/numeric/>
 
 */
