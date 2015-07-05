@@ -19,6 +19,8 @@
 
 #include <MoFEM.hpp>
 using namespace MoFEM;
+
+#include <PostProcOnRefMesh.hpp>
 #include <Projection10NodeCoordsOnField.hpp>
 
 #include <boost/numeric/ublas/vector_proxy.hpp>
@@ -27,6 +29,15 @@ using namespace MoFEM;
 #include <boost/numeric/ublas/vector.hpp>
 #include <adolc/adolc.h>
 #include <Gels.hpp>
+
+#include <DirichletBC.hpp>
+#include <SurfacePressure.hpp>
+#include <NodalForce.hpp>
+#include <EdgeForce.hpp>
+
+// Elements for applying fluxes, convection or radiation
+// are used to apply solvent concentration.
+#include <ThermalElement.hpp>
 
 #include <boost/iostreams/tee.hpp>
 #include <boost/iostreams/stream.hpp>
@@ -54,9 +65,24 @@ int main(int argc, char *argv[]) {
     if(flg != PETSC_TRUE) {
       SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
     }
-    const char *option;
-    option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-    rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
+    PetscBool is_partitioned = PETSC_FALSE;
+    ierr = PetscOptionsGetBool(
+      PETSC_NULL, "-my_is_partitioned", &is_partitioned, &flg
+    ); CHKERRQ(ierr);
+
+    if (is_partitioned == PETSC_TRUE) {
+      //Read mesh to MOAB
+      const char *option;
+      option =
+      "PARALLEL=BCAST_DELETE;"
+      "PARALLEL_RESOLVE_SHARED_ENTS;"
+      "PARTITION=PARALLEL_PARTITION;";
+      rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
+    } else {
+      const char *option;
+      option = "";
+      rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
+    }
     ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
     if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
   }
@@ -68,6 +94,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
 
   // Define fields and finite elements
+  map<int,ThermalElement::FluxData> set_of_solvent_fluxes;
   {
 
     // Set approximation fields
@@ -163,7 +190,37 @@ int main(int argc, char *argv[]) {
       EntityHandle root_set = moab.get_root_set();
       ierr = m_field.add_ents_to_finite_element_by_TETs(root_set,"GEL_FE"); CHKERRQ(ierr);
 
-      //build finite elemnts
+      // Add Neumann forces
+      ierr = MetaNeummanForces::addNeumannBCElements(m_field,"SPATIAL_POSITION"); CHKERRQ(ierr);
+      ierr = MetaNodalForces::addElement(m_field,"SPATIAL_POSITION"); CHKERRQ(ierr);
+      ierr = MetaEdgeForces::addElement(m_field,"SPATIAL_POSITION"); CHKERRQ(ierr);
+
+      // Add solvent flux element
+      {
+
+        ierr = m_field.add_finite_element("SOLVENT_FLUX_FE",MF_ZERO); CHKERRQ(ierr);
+        ierr = m_field.modify_finite_element_add_field_row("SOLVENT_FLUX_FE","SOLVENT_CONCENTRATION"); CHKERRQ(ierr);
+        ierr = m_field.modify_finite_element_add_field_col("SOLVENT_FLUX_FE","SOLVENT_CONCENTRATION"); CHKERRQ(ierr);
+        ierr = m_field.modify_finite_element_add_field_data("SOLVENT_FLUX_FE","SOLVENT_CONCENTRATION"); CHKERRQ(ierr);
+        ierr = m_field.modify_finite_element_add_field_data("SOLVENT_FLUX_FE","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+        for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
+          if(it->get_name().compare(0,9,"SOLVENT_FLUX") == 0) {
+            vector<double> data;
+            ierr = it->get_attributes(data); CHKERRQ(ierr);
+            if(data.size()!=1) {
+              SETERRQ(PETSC_COMM_SELF,1,"Data inconsistency");
+            }
+            strcpy(set_of_solvent_fluxes[it->get_msId()].dAta.data.name,"HeatFlu");
+            set_of_solvent_fluxes[it->get_msId()].dAta.data.flag1 = 1;
+            set_of_solvent_fluxes[it->get_msId()].dAta.data.value1 = data[0];
+            //cerr << set_of_solvent_fluxes[it->get_msId()].dAta << endl;
+            rval = m_field.get_moab().get_entities_by_type(it->meshset,MBTRI,set_of_solvent_fluxes[it->get_msId()].tRis,true); CHKERR_PETSC(rval);
+            ierr = m_field.add_ents_to_finite_element_by_TRIs(set_of_solvent_fluxes[it->get_msId()].tRis,"SOLVENT_FLUX_FE"); CHKERRQ(ierr);
+          }
+        }
+      }
+
+      //build finite elements
       ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
       //build adjacencies
       ierr = m_field.build_adjacencies(bit_level0); CHKERRQ(ierr);
@@ -173,6 +230,7 @@ int main(int argc, char *argv[]) {
 
   // Create gel instance
   Gel gel(m_field);
+  Gel::MonitorPostProc post_proc(m_field,"DMGEL","GEL_FE",gel.commonData);
   {
 
     Gel::BlockMaterialData &material_data = gel.blockMaterialData;
@@ -270,6 +328,127 @@ int main(int argc, char *argv[]) {
     //add elements to dm
     ierr = DMMoFEMAddElement(dm,"GEL_FE"); CHKERRQ(ierr);
     ierr = DMSetUp(dm); CHKERRQ(ierr);
+
+  }
+
+  //create matrices
+  Vec T,F;
+  Mat A;
+  {
+    ierr = DMCreateGlobalVector_MoFEM(dm,&T); CHKERRQ(ierr);
+    ierr = VecDuplicate(T,&F); CHKERRQ(ierr);
+    ierr = DMCreateMatrix_MoFEM(dm,&A); CHKERRQ(ierr);
+  }
+
+  // Dirichelt boundary conditions
+  SpatialPositionsBCFEMethodPreAndPostProc spatial_position_bc(m_field,"SPATIAL_POSITION");
+  TemperatureBCFEMethodPreAndPostProc concentration_bc(m_field,"SOLVENT_CONCENTRATION",A,T,F);
+
+  boost::ptr_map<string,NeummanForcesSurface> neumann_forces;
+  boost::ptr_map<string,NodalForce> nodal_forces;
+  boost::ptr_map<string,EdgeForce> edge_forces;
+  {
+    //forces and pressures on surface
+    ierr = MetaNeummanForces::setNeumannFiniteElementOperators(m_field,neumann_forces,F,"SPATIAL_POSITION"); CHKERRQ(ierr);
+    //noadl forces
+    ierr = MetaNodalForces::setOperators(m_field,nodal_forces,F,"SPATIAL_POSITION"); CHKERRQ(ierr);
+    //edge forces
+    ierr = MetaEdgeForces::setOperators(m_field,edge_forces,F,"SPATIAL_POSITION"); CHKERRQ(ierr);
+  }
+
+  // Solvent surface element, flux, convection radiation
+  // TODO: add radiation and convection
+  ThermalElement::MyTriFE solvent_surface_fe(m_field);
+  {
+    map<int,ThermalElement::FluxData>::iterator sit = set_of_solvent_fluxes.begin();
+    for(;sit!=set_of_solvent_fluxes.end();sit++) {
+      // add flux operator
+      solvent_surface_fe.getOpPtrVector().push_back(
+        new ThermalElement::OpHeatFlux("SOLVENT_CONCENTRATION",F,sit->second,true)
+      );
+    }
+  }
+
+  {
+    //Rhs
+    ierr = DMMoFEMTSSetIFunction(dm,DM_NO_ELEMENT,NULL,&spatial_position_bc,NULL); CHKERRQ(ierr);
+    ierr = DMMoFEMTSSetIFunction(dm,DM_NO_ELEMENT,NULL,&concentration_bc,NULL); CHKERRQ(ierr);
+    ierr = DMMoFEMTSSetIFunction(dm,"GEL_FE",&gel.feLhs,NULL,NULL); CHKERRQ(ierr);
+    {
+      boost::ptr_map<string,NeummanForcesSurface>::iterator mit = neumann_forces.begin();
+      for(;mit!=neumann_forces.end();mit++) {
+        ierr = DMMoFEMTSSetIFunction(dm,mit->first.c_str(),&mit->second->getLoopFe(),NULL,NULL); CHKERRQ(ierr);
+      }
+    }
+    {
+      boost::ptr_map<string,NodalForce>::iterator fit = nodal_forces.begin();
+      for(;fit!=nodal_forces.end();fit++) {
+        ierr = DMMoFEMTSSetIFunction(dm,fit->first.c_str(),&fit->second->getLoopFe(),NULL,NULL); CHKERRQ(ierr);
+      }
+    }
+    {
+      boost::ptr_map<string,EdgeForce>::iterator fit = edge_forces.begin();
+      for(;fit!=edge_forces.end();fit++) {
+        ierr = DMMoFEMTSSetIFunction(dm,fit->first.c_str(),&fit->second->getLoopFe(),NULL,NULL); CHKERRQ(ierr);
+      }
+    }
+    ierr = DMMoFEMTSSetIFunction(dm,DM_NO_ELEMENT,NULL,NULL,&spatial_position_bc); CHKERRQ(ierr);
+    ierr = DMMoFEMTSSetIFunction(dm,DM_NO_ELEMENT,NULL,NULL,&concentration_bc); CHKERRQ(ierr);
+
+    //Lhs
+    ierr = DMMoFEMTSSetIJacobian(dm,DM_NO_ELEMENT,NULL,&spatial_position_bc,NULL); CHKERRQ(ierr);
+    ierr = DMMoFEMTSSetIJacobian(dm,DM_NO_ELEMENT,NULL,&concentration_bc,NULL); CHKERRQ(ierr);
+    ierr = DMMoFEMTSSetIJacobian(dm,"GEL_FE",&gel.feLhs,NULL,NULL); CHKERRQ(ierr);
+    ierr = DMMoFEMTSSetIJacobian(dm,DM_NO_ELEMENT,NULL,NULL,&spatial_position_bc); CHKERRQ(ierr);
+    ierr = DMMoFEMTSSetIJacobian(dm,DM_NO_ELEMENT,NULL,NULL,&concentration_bc); CHKERRQ(ierr);
+  }
+
+  //create tS
+  TS ts;
+  {
+    ierr = TSCreate(PETSC_COMM_WORLD,&ts); CHKERRQ(ierr);
+    ierr = TSSetType(ts,TSBEULER); CHKERRQ(ierr);
+  }
+
+  {
+    ierr = DMoFEMMeshToLocalVector(dm,T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = DMoFEMPreProcessFiniteElements(dm,&spatial_position_bc); CHKERRQ(ierr);
+    ierr = DMoFEMPreProcessFiniteElements(dm,&concentration_bc); CHKERRQ(ierr);
+    ierr = DMoFEMMeshToGlobalVector(dm,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  }
+
+  {
+    ierr = TSSetIFunction(ts,F,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
+    ierr = TSSetIJacobian(ts,A,A,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
+    TsCtx *ts_ctx;
+    DMMoFEMGetTsCtx(dm,&ts_ctx);
+    //add monitor operator
+    ts_ctx->get_postProcess_to_do_Monitor().push_back(&post_proc);
+    double ftime = 1;
+    ierr = TSSetDuration(ts,PETSC_DEFAULT,ftime); CHKERRQ(ierr);
+    ierr = TSSetFromOptions(ts); CHKERRQ(ierr);
+    ierr = TSSetDM(ts,dm); CHKERRQ(ierr);
+    ierr = TSSolve(ts,T); CHKERRQ(ierr);
+    ierr = TSGetTime(ts,&ftime); CHKERRQ(ierr);
+    PetscInt steps,snesfails,rejects,nonlinits,linits;
+    ierr = TSGetTimeStepNumber(ts,&steps); CHKERRQ(ierr);
+    ierr = TSGetSNESFailures(ts,&snesfails); CHKERRQ(ierr);
+    ierr = TSGetStepRejections(ts,&rejects); CHKERRQ(ierr);
+    ierr = TSGetSNESIterations(ts,&nonlinits); CHKERRQ(ierr);
+    ierr = TSGetKSPIterations(ts,&linits); CHKERRQ(ierr);
+    PetscPrintf(PETSC_COMM_WORLD,
+      "steps %D (%D rejected, %D SNES fails), ftime %g, nonlinits %D, linits %D\n",
+      steps,rejects,snesfails,ftime,nonlinits,linits
+    );
+  }
+
+  // Clean and destroy
+  {
+    ierr = DMDestroy(&dm); CHKERRQ(ierr);
+    ierr = VecDestroy(&T); CHKERRQ(ierr);
+    ierr = VecDestroy(&F); CHKERRQ(ierr);
+    ierr = MatDestroy(&A); CHKERRQ(ierr);
+    ierr = TSDestroy(&ts); CHKERRQ(ierr);
   }
 
   PetscFinalize();

@@ -26,7 +26,6 @@ using namespace MoFEM;
 
 #include <Projection10NodeCoordsOnField.hpp>
 
-
 #include <boost/shared_ptr.hpp>
 #include <boost/program_options.hpp>
 
@@ -429,7 +428,7 @@ int main(int argc, char *argv[]) {
 
   TsCtx *ts_ctx;
   DMMoFEMGetTsCtx(dm,&ts_ctx);
-  //add monitor opetator
+  //add monitor operator
   ts_ctx->get_postProcess_to_do_Monitor().push_back(&monitor);
   ts_ctx->get_postProcess_to_do_Monitor().push_back(&post_proc);
 

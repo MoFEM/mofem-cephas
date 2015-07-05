@@ -3,7 +3,9 @@
 \section introduction Introduction
 
 MoFEM (Mesh Oriented Finite Element Method) it is C++ library supporting
-solution of finite elements problems.
+solution of finite elements problems. Is developed to o provide free and open,
+inclusive, participation community finite element code for engineers, students
+and academics.
 
 MoFEM is a finite element analysis code tailored for the solution of
 multi-physics problems with arbitrary levels of approximation, different levels
@@ -21,66 +23,85 @@ provided by MoAB.  The current version of MoFEM has full support for
 CUBIT/TRELIS, TetGEN, NetGEN for pre-processing and ParaView for
 post-processing.
 
-\section download_repository MoFEM download and repository
+\subsection Motivation
 
-MoFEM is on BitBucket repository <https://bitbucket.org/likask/mofem-cephas>.
-Current is called MoFEM-cephas.
+Building a scientific simulation environment for finite element methods is a
+complicated task. The greatest part of finite element code development is often
+expended in dealing with technical problems related to software implementation,
+rather than resolving the underlying physics that the code is intended to
+tackle.
 
-\section twitter_and_google_plus Some colorfull examples of MoFEM applications
+The demand for accurate solution of increasingly complicated real-world problems
+means that the underlying data structures also become increasingly complicated.
+This is particularly evident with multi-physics, hp-adaptivity, and/or evolving
+geometries (e.g. crack propagation). Established commercial software is often
+limited in this respect, or can be relatively slow to adopt new technologies.
+This is the problem that MoFEM attempts to work around, recognising that it is
+increasingly necessary for engineers, scientists and mathematicians to carry out
+calculations using several mesh refinements, different approximation orders,
+multiple degrees of freedom and/or different scales.
 
-- Google+ <https://plus.google.com/110439315415517980382/posts>
-- Twitter <https://twitter.com/mofemjoseph>
+\subsection download_repository Repository and testing
 
-You don't have to have account on Google+ or Twitter to open above links.
+- Current version repository <https://bitbucket.org/likask/mofem-cephas>
+- Testing webpage using powered by CDash <http://cdash.eng.gla.ac.uk/cdash/>
 
-\section Motivation
+\subsection contact Contact us and get involved
 
-To provide free and open, inclusive, participation community finite element
-code for engineers, students, academics and software developers.
+Contributions are welcome and is an important part of the open spirit of the
+project. It's hoped a community will develop around the project whose
+contributions will improve it further.
 
-\section thrid_party Third party libraries
+Contact: <cmatgu@googlegroups.com>
+
+\subsection twitter_and_google_plus Recent developments and news
+
+\htmlinclude doc/twitter_widged.html
+
+See as well Google+ <https://plus.google.com/110439315415517980382/posts>
+
+\subsection thrid_party Third party libraries
 
 List of third party libraries and packages used by MoFEM:
-
 
 - MOAB <http://www.mcs.anl.gov/~fathom/moab-docs/html/userguide.html>.
 - PETSc <http://www.mcs.anl.gov/petsc/documentation/index.html>
 - BOOST <http://www.boost.org>
 	- uBlas <http://www.boost.org/doc/libs/release/libs/numeric/>
 
-\section related_pages Related pages
+\subsection License
 
-- \ref coding_practice
+MoFEM is copyright by Lukasz Kaczmarczyk (Lukasz.Kaczmarczyk at glasgow.ac.uk)
+and has received contributions by several people. MoFEM can be used freely for
+educational and research purposes by other institutions.
 
-- \ref guidelines_bug_reporting
+Users modules are not part of MoFEM library and can be created privately,
+independently form MoFEM develpers. User modules may follow different license
+agreement and copyrights. However all users modules which are created at Glasgow
+University are under the same license agreement as main MoFEM library.
 
-- \ref faqs
-
-- CDashTesting <http://cdash.eng.gla.ac.uk/cdash/>
-
-\section License
-
-MoFEM is copyright by Lukasz Kaczmarczyk (Lukasz.Kaczmarczyk at glasgow.ac.uk) and has received contributions by several people. MoFEM can be used freely for
-educational and research purposes by other institutions. If you use this software please cite our work.
-
-MoFEM is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public
-License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later
+MoFEM is free software: you can redistribute it and/or modify it under the terms
+of the GNU Lesser General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
 version.
 
-MoFEM is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for more details.
+MoFEM is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE.  See the GNU Lesser General Public License for more details.
 
-You should have received a copy of the GNU Lesser General Public License along with MoFEM. If not, see
-<http://www.gnu.org/licenses/>
+You should have received a copy of the GNU Lesser General Public License along
+with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
-\section contributors Contributors list
+\subsection contributors Contributors list
 
-Generating contributors list
+List is generated automatically whene documentation is build. If one author uses
+more than one name the same person can appear more than one.
+
+\verbinclude doc/contributors_list
+
+List is generated with command,
 \code
 git shortlog -s -e -n
 \endcode
-
-List:
-\verbinclude doc/contributors_list
 
 */
