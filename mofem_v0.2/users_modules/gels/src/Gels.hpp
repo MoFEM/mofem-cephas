@@ -1,5 +1,6 @@
-/** \file Gel.hpp
+/** \file Gels.hpp
   \brief Implementation of Gel finite element
+  \ingroup gel
 */
 
 /* This file is part of MoFEM.
@@ -402,6 +403,7 @@ struct Gel {
   };
 
   GelFE feRhs,feLhs;
+
 
   Gel(FieldInterface &m_field):
   mFiled(m_field),
@@ -1946,6 +1948,72 @@ struct Gel {
       }
       PetscFunctionReturn(0);
     }
+  };
+
+
+  struct MonitorPostProc: public FEMethod {
+
+    FieldInterface &mField;
+    string pRoblem;
+    string fE;
+    CommonData &commonData;
+    PostPocOnRefinedMesh postProc;
+
+    bool iNit;
+    int pRT;
+
+    MonitorPostProc(
+      FieldInterface &m_field,string problem,string fe,CommonData &common_data
+    ):
+    FEMethod(),
+    mField(m_field),
+    pRoblem(problem),
+    fE(fe),
+    commonData(common_data),
+    postProc(m_field),
+    iNit(false) {
+      PetscErrorCode ierr;
+      PetscBool flg = PETSC_TRUE;
+      ierr = PetscOptionsGetInt(
+        PETSC_NULL,"-my_output_prt",&pRT,&flg
+      ); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+      if(flg!=PETSC_TRUE) {
+        pRT = 1;
+      }
+    }
+
+    PetscErrorCode preProcess() {
+      PetscFunctionBegin;
+      PetscFunctionReturn(0);
+    }
+
+    PetscErrorCode operator()() {
+      PetscFunctionBegin;
+      PetscFunctionReturn(0);
+    }
+
+    PetscErrorCode postProcess() {
+      PetscFunctionBegin;
+      PetscErrorCode ierr;
+      if(!iNit) {
+        ierr = postProc.generateReferenceElementMesh(); CHKERRQ(ierr);
+        ierr = postProc.addFieldValuesPostProc(commonData.spatialPositionName); CHKERRQ(ierr);
+        ierr = postProc.addFieldValuesPostProc(commonData.muName); CHKERRQ(ierr);
+        ierr = postProc.addFieldValuesPostProc(commonData.strainHatName); CHKERRQ(ierr);
+        iNit = true;
+      }
+      int step;
+      ierr = TSGetTimeStepNumber(ts,&step); CHKERRQ(ierr);
+      ErrorCode rval;
+      if((step)%pRT==0) {
+        ierr = mField.loop_finite_elements(pRoblem,fE,postProc); CHKERRQ(ierr);
+        ostringstream sss;
+        sss << "out_" << step << ".h5m";
+        rval = postProc.postProcMesh.write_file(sss.str().c_str(),"MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
+      }
+      PetscFunctionReturn(0);
+    }
+
   };
 
 };
