@@ -94,8 +94,9 @@ with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
 \subsection contributors Contributors list
 
-List is generated automatically whene documentation is build. If user use author
-nick names or email adresses the same person can appear more than one.
+List is generated automatically whene documentation is build. If one author uses
+more than one name the same person can appear more than one.
+
 \verbinclude doc/contributors_list
 
 List is generated with command,
