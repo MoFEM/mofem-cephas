@@ -1,6 +1,16 @@
-/** \file gel_jacobian_test.cpp
-  \brief Atom test testing calculation of element residual vectors and tangent matrices
+/** \file gel_analysis.cpp
+  \brief Reads cubit file and solves problem with gel material
   \ingroup gel
+
+  1) TODO: Current version is limited only to one material. If one like to have
+  general problem for nonlinear elasticity should implement general time
+  dependent problem. If inertia terms need to be considered, this material
+  should be add to nonlinear dynamics problem.
+
+  2) TODO: Internal history state variables need to be statically condensed. It
+  can  be done  by implementing static condensation on finite element level or
+  by implementing pre-conditioner.
+
 */
 
 /* This file is part of MoFEM.
@@ -89,6 +99,9 @@ int main(int argc, char *argv[]) {
 
   MoFEM::Core core(moab);
   FieldInterface& m_field = core;
+
+  // Seed all mesh entities to MoFEM database, those entities can be potentially used as finite elements
+  // or as entities which carry some approximation field.
   BitRefLevel bit_level0;
   bit_level0.set(0);
   ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
@@ -99,9 +112,8 @@ int main(int argc, char *argv[]) {
 
     // Set approximation fields
     {
-      // Seed all mesh entities to MoFEM database, those entities can be potentially used as finite elements
-      // or as entities which carry some approximation field.
 
+      // Add fields
       bool check_if_spatial_field_exist = m_field.check_field("SPATIAL_POSITION");
       ierr = m_field.add_field("SPATIAL_POSITION",H1,3,MF_ZERO); CHKERRQ(ierr);
       ierr = m_field.add_field("SOLVENT_CONCENTRATION",H1,1,MF_ZERO); CHKERRQ(ierr);
@@ -116,7 +128,7 @@ int main(int argc, char *argv[]) {
 
       //meshset consisting all entities in mesh
       EntityHandle root_set = moab.get_root_set();
-      //add entities to field (root_mesh, i.e. on all mesh entities fields are approx.)
+      //Add entities to field (root_mesh, i.e. on all mesh entities fields are approx.)
       ierr = m_field.add_ents_to_field_by_TETs(root_set,"SPATIAL_POSITION"); CHKERRQ(ierr);
       ierr = m_field.add_ents_to_field_by_TETs(root_set,"SOLVENT_CONCENTRATION"); CHKERRQ(ierr);
       ierr = m_field.add_ents_to_field_by_TETs(root_set,"HAT_EPS"); CHKERRQ(ierr);
@@ -133,6 +145,12 @@ int main(int argc, char *argv[]) {
       if(order < 2) {
         //SETERRQ()
       }
+
+      // Set approximation order. Solvent concentration has one order less than
+      // order of of spatial position field. Tests need to be maid if that is
+      // good enough to have stability for this type of problem. If not bubble
+      // functions could be easily added by increasing approximate order for
+      // volume.
 
       ierr = m_field.set_field_order(root_set,MBTET,"SPATIAL_POSITION",order); CHKERRQ(ierr);
       ierr = m_field.set_field_order(root_set,MBTRI,"SPATIAL_POSITION",order); CHKERRQ(ierr);
@@ -172,7 +190,8 @@ int main(int argc, char *argv[]) {
 
     }
 
-    //Set finite elements
+    //Set finite elements. The primary element is GEL_FE in addition elements
+    //for applying tractions and fluxes are added.
     {
       ierr = m_field.add_finite_element("GEL_FE",MF_ZERO); CHKERRQ(ierr);
       ierr = m_field.modify_finite_element_add_field_row("GEL_FE","SPATIAL_POSITION"); CHKERRQ(ierr);
@@ -190,7 +209,7 @@ int main(int argc, char *argv[]) {
       EntityHandle root_set = moab.get_root_set();
       ierr = m_field.add_ents_to_finite_element_by_TETs(root_set,"GEL_FE"); CHKERRQ(ierr);
 
-      // Add Neumann forces
+      // Add Neumann forces, i.e. on triangles, edges and nodes.
       ierr = MetaNeummanForces::addNeumannBCElements(m_field,"SPATIAL_POSITION"); CHKERRQ(ierr);
       ierr = MetaNodalForces::addElement(m_field,"SPATIAL_POSITION"); CHKERRQ(ierr);
       ierr = MetaEdgeForces::addElement(m_field,"SPATIAL_POSITION"); CHKERRQ(ierr);
@@ -203,6 +222,9 @@ int main(int argc, char *argv[]) {
         ierr = m_field.modify_finite_element_add_field_col("SOLVENT_FLUX_FE","SOLVENT_CONCENTRATION"); CHKERRQ(ierr);
         ierr = m_field.modify_finite_element_add_field_data("SOLVENT_FLUX_FE","SOLVENT_CONCENTRATION"); CHKERRQ(ierr);
         ierr = m_field.modify_finite_element_add_field_data("SOLVENT_FLUX_FE","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+
+        // Assume that boundary conditions are set in block containing surface
+        // triangle elements and block name is "SOLVENT_FLUX"
         for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
           if(it->get_name().compare(0,9,"SOLVENT_FLUX") == 0) {
             vector<double> data;
@@ -210,12 +232,19 @@ int main(int argc, char *argv[]) {
             if(data.size()!=1) {
               SETERRQ(PETSC_COMM_SELF,1,"Data inconsistency");
             }
+            // Here it set how block of for heat flux is set.  This is because
+            // implementation from thermal element is used to enforce this
+            // boundary condition.
             strcpy(set_of_solvent_fluxes[it->get_msId()].dAta.data.name,"HeatFlu");
             set_of_solvent_fluxes[it->get_msId()].dAta.data.flag1 = 1;
             set_of_solvent_fluxes[it->get_msId()].dAta.data.value1 = data[0];
             //cerr << set_of_solvent_fluxes[it->get_msId()].dAta << endl;
-            rval = m_field.get_moab().get_entities_by_type(it->meshset,MBTRI,set_of_solvent_fluxes[it->get_msId()].tRis,true); CHKERR_PETSC(rval);
-            ierr = m_field.add_ents_to_finite_element_by_TRIs(set_of_solvent_fluxes[it->get_msId()].tRis,"SOLVENT_FLUX_FE"); CHKERRQ(ierr);
+            rval = m_field.get_moab().get_entities_by_type(
+              it->meshset,MBTRI,set_of_solvent_fluxes[it->get_msId()].tRis,true
+            ); CHKERR_PETSC(rval);
+            ierr = m_field.add_ents_to_finite_element_by_TRIs(
+              set_of_solvent_fluxes[it->get_msId()].tRis,"SOLVENT_FLUX_FE"
+            ); CHKERRQ(ierr);
           }
         }
       }
@@ -228,7 +257,7 @@ int main(int argc, char *argv[]) {
 
   }
 
-  // Create gel instance
+  // Create gel instance and set operators.
   Gel gel(m_field);
   Gel::MonitorPostProc post_proc(m_field,"DMGEL","GEL_FE",gel.commonData);
   {
