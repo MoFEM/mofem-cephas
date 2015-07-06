@@ -19,6 +19,7 @@
 
 #include <MoFEM.hpp>
 using namespace MoFEM;
+#include <PostProcOnRefMesh.hpp>
 
 #include <boost/numeric/ublas/vector_proxy.hpp>
 #include <boost/numeric/ublas/matrix.hpp>
