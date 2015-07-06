@@ -1,9 +1,3 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * DirichletBCFromBlockSetFEMethodPreAndPostProc::iNitalize() implmented by Zahur Ullah (Zahur.Ullah@glasgow.ac.uk)
- * --------------------------------------------------------------
- * FIXME: DESCRIPTION
- */
-
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -44,8 +38,8 @@ using namespace MoFEM;
 using namespace boost::numeric;
 
 DisplacementBCFEMethodPreAndPostProc::DisplacementBCFEMethodPreAndPostProc(
-  FieldInterface& _mField,const string &_field_name,
-  Mat _Aij,Vec _X,Vec _F): mField(_mField),fieldName(_field_name),
+  FieldInterface& m_field,const string &_field_name,
+  Mat _Aij,Vec _X,Vec _F): mField(m_field),fieldName(_field_name),
   dIag(1) {
   snes_B = _Aij;
   snes_x = _X;
@@ -55,8 +49,8 @@ DisplacementBCFEMethodPreAndPostProc::DisplacementBCFEMethodPreAndPostProc(
   ts_F = _F;
 };
 
-DisplacementBCFEMethodPreAndPostProc::DisplacementBCFEMethodPreAndPostProc(FieldInterface& _mField,const string &_field_name):
-  mField(_mField),fieldName(_field_name),dIag(1) {
+DisplacementBCFEMethodPreAndPostProc::DisplacementBCFEMethodPreAndPostProc(FieldInterface& m_field,const string &_field_name):
+  mField(m_field),fieldName(_field_name),dIag(1) {
   snes_B = PETSC_NULL;
   snes_x = PETSC_NULL;
   snes_f = PETSC_NULL;
@@ -70,48 +64,48 @@ PetscErrorCode DisplacementBCFEMethodPreAndPostProc::iNitalize() {
   if(map_zero_rows.empty()) {
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET|DISPLACEMENTSET,it)) {
-	DisplacementCubitBcData mydata;
-	ierr = it->get_bc_data_structure(mydata); CHKERRQ(ierr);
-	for(int dim = 0;dim<3;dim++) {
-	  Range ents;
-	  ierr = it->get_cubit_msId_entities_by_dimension(mField.get_moab(),dim,ents,true); CHKERRQ(ierr);
-	  if(dim>1) {
+      DisplacementCubitBcData mydata;
+      ierr = it->get_bc_data_structure(mydata); CHKERRQ(ierr);
+      for(int dim = 0;dim<3;dim++) {
+        Range ents;
+        ierr = it->get_cubit_msId_entities_by_dimension(mField.get_moab(),dim,ents,true); CHKERRQ(ierr);
+        if(dim>1) {
           Range _edges;
           ierr = mField.get_moab().get_adjacencies(ents,1,false,_edges,Interface::UNION); CHKERRQ(ierr);
           ents.insert(_edges.begin(),_edges.end());
-	  }
+        }
         if(dim>0) {
           Range _nodes;
           rval = mField.get_moab().get_connectivity(ents,_nodes,true); CHKERR_PETSC(rval);
           ents.insert(_nodes.begin(),_nodes.end());
         }
-	for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
-	  for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,fieldName,*eit,pcomm->rank(),dof)) {
-	    bitset<8> pstatus(dof->get_pstatus());
-	    if(pstatus.test(0)) continue; //only local
-	    if(dof->get_ent_type() == MBVERTEX) {
-	      if(dof->get_dof_rank() == 0 && mydata.data.flag1) {
-		map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = mydata.data.value1;
-	      }
-	      if(dof->get_dof_rank() == 1 && mydata.data.flag2) {
-		map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = mydata.data.value2;
-	      }
-	      if(dof->get_dof_rank() == 2 && mydata.data.flag3) {
-		map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = mydata.data.value3;
-	      }
-	    } else {
-	      if(dof->get_dof_rank() == 0 && mydata.data.flag1) {
-		map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = 0;
-	      }
-	      if(dof->get_dof_rank() == 1 && mydata.data.flag2) {
-		map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = 0;
-	      }
-	      if(dof->get_dof_rank() == 2 && mydata.data.flag3) {
-		map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = 0;
-	      }
-	    }
-	  }
-	}
+        for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
+          for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,fieldName,*eit,pcomm->rank(),dof)) {
+            bitset<8> pstatus(dof->get_pstatus());
+            if(pstatus.test(0)) continue; //only local
+            if(dof->get_ent_type() == MBVERTEX) {
+              if(dof->get_dof_rank() == 0 && mydata.data.flag1) {
+                map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = mydata.data.value1;
+              }
+              if(dof->get_dof_rank() == 1 && mydata.data.flag2) {
+                map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = mydata.data.value2;
+              }
+              if(dof->get_dof_rank() == 2 && mydata.data.flag3) {
+                map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = mydata.data.value3;
+              }
+            } else {
+              if(dof->get_dof_rank() == 0 && mydata.data.flag1) {
+                map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = 0;
+              }
+              if(dof->get_dof_rank() == 1 && mydata.data.flag2) {
+                map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = 0;
+              }
+              if(dof->get_dof_rank() == 2 && mydata.data.flag3) {
+                map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = 0;
+              }
+            }
+          }
+        }
       }
     }
     dofsIndices.resize(map_zero_rows.size());
@@ -122,7 +116,6 @@ PetscErrorCode DisplacementBCFEMethodPreAndPostProc::iNitalize() {
       dofsIndices[ii] = mit->first;
       dofsValues[ii] = mit->second;
     }
-
   }
   PetscFunctionReturn(0);
 }

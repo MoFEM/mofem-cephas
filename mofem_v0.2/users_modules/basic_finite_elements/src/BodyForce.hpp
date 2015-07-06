@@ -35,7 +35,7 @@ struct BodyFroceConstantField {
   FieldInterface &mField;
 
   struct MyVolumeFE: public VolumeElementForcesAndSourcesCore {
-    MyVolumeFE(FieldInterface &_mField): VolumeElementForcesAndSourcesCore(_mField) {}
+    MyVolumeFE(FieldInterface &m_field): VolumeElementForcesAndSourcesCore(m_field) {}
     int getRule(int order) { return ceil(order/2); };
   };
 

@@ -21,8 +21,8 @@ struct FaceSplittingTools {
   MeshRefinment* rEfiner;
   PrismInterface* prismInterface;
 
-  FaceSplittingTools(FieldInterface& _mField):
-    mField(_mField) {
+  FaceSplittingTools(FieldInterface& m_field):
+    mField(m_field) {
 
     ErrorCode rval;
 

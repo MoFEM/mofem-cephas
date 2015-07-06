@@ -38,8 +38,8 @@ struct ForcesAndSurcesCore: public FEMethod {
   PetscErrorCode ierr;
 
   FieldInterface& mField;
-  ForcesAndSurcesCore(FieldInterface& _mField):
-    mField(_mField) {};
+  ForcesAndSurcesCore(FieldInterface& m_field):
+    mField(m_field) {};
   virtual ~ForcesAndSurcesCore() {}
 
   PetscErrorCode getNumberOfNodes(int &num_nodes);
@@ -933,8 +933,8 @@ struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
   MatrixDouble tAngent2_at_GaussPtF4;
   OpGetNormalsOnPrism opHONormals;
 
-  FlatPrismElementForcesAndSurcesCore(FieldInterface &_mField):
-    ForcesAndSurcesCore(_mField),
+  FlatPrismElementForcesAndSurcesCore(FieldInterface &m_field):
+    ForcesAndSurcesCore(m_field),
     dataH1(MBPRISM),derivedDataH1(dataH1),
     dataHdiv(MBPRISM),derivedDataHdiv(dataHdiv),
     dataNoField(MBPRISM),dataNoFieldCol(MBPRISM),

@@ -149,7 +149,7 @@ struct ConfigurationalFractureMechanics {
     Vec lambdaVec;
 
     FrontAreaArcLengthControl(
-      FieldInterface& _mField,ConfigurationalFractureMechanics *_conf_prob,ArcLengthCtx *_arc_ptr
+      FieldInterface& m_field,ConfigurationalFractureMechanics *_conf_prob,ArcLengthCtx *_arc_ptr
     );
     ~FrontAreaArcLengthControl();
 

@@ -58,10 +58,10 @@ struct NonLinearInterfaceFEMethod: public ObosleteUsersModules::InterfaceFEMetho
   Tag thDamagedPrism;
 
   NonLinearInterfaceFEMethod(
-      FieldInterface& _mField,Mat _Aij,Vec _X,Vec _F,
+      FieldInterface& m_field,Mat _Aij,Vec _X,Vec _F,
       double _young_modulus, double _h,double _beta,double _ft,double _Gf, string _field_name,
       interface_materials_context _intMatCtx = CTX_INTLINEARSOFTENING): 
-      InterfaceFEMethod(_mField,_Aij,_X,_F,_young_modulus,_field_name),
+      InterfaceFEMethod(m_field,_Aij,_X,_F,_young_modulus,_field_name),
       intMatCtx(_intMatCtx),h(_h),beta(_beta),ft(_ft),Gf(_Gf),ctxInt(CTX_INTERFACENONE) {
 
     E0 = youngModulus/h;
