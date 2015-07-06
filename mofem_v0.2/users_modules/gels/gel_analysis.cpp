@@ -278,6 +278,8 @@ int main(int argc, char *argv[]) {
     material_data.vIscosity = 1;
     material_data.pErmeability = 2.;
 
+    // Set name of fields which has been choose to approximate spatial
+    // displacements, solvent concentration and internal state variables.
     Gel::CommonData &common_data = gel.commonData;
     common_data.spatialPositionName = "SPATIAL_POSITION";
     common_data.spatialPositionNameDot = "SPATIAL_POSITION_DOT";
@@ -285,20 +287,32 @@ int main(int argc, char *argv[]) {
     common_data.strainHatName = "HAT_EPS";
     common_data.strainHatNameDot = "HAT_EPS_DOT";
 
+    // Set operators to calculate field values at integration points, both for
+    // left and right hand side elements.
     Gel::GelFE *fe_ptr[] = { &gel.feRhs, &gel.feLhs };
     for(int ss = 0;ss<2;ss++) {
-      fe_ptr[ss]->getOpPtrVector().push_back(new Gel::OpGetDataAtGaussPts("SPATIAL_POSITION",common_data,false,true));
-      fe_ptr[ss]->getOpPtrVector().push_back(new Gel::OpGetDataAtGaussPts("SPATIAL_POSITION_DOT",common_data,false,true));
-      fe_ptr[ss]->getOpPtrVector().push_back(new Gel::OpGetDataAtGaussPts("SOLVENT_CONCENTRATION",common_data,true,true));
-      fe_ptr[ss]->getOpPtrVector().push_back(new Gel::OpGetDataAtGaussPts("HAT_EPS",common_data,true,false,MBTET));
-      fe_ptr[ss]->getOpPtrVector().push_back(new Gel::OpGetDataAtGaussPts("HAT_EPS_DOT",common_data,true,false,MBTET));
+      fe_ptr[ss]->getOpPtrVector().push_back(
+        new Gel::OpGetDataAtGaussPts("SPATIAL_POSITION",common_data,false,true)
+      );
+      fe_ptr[ss]->getOpPtrVector().push_back(
+        new Gel::OpGetDataAtGaussPts("SPATIAL_POSITION_DOT",common_data,false,true)
+      );
+      fe_ptr[ss]->getOpPtrVector().push_back(
+        new Gel::OpGetDataAtGaussPts("SOLVENT_CONCENTRATION",common_data,true,true)
+      );
+      fe_ptr[ss]->getOpPtrVector().push_back(
+        new Gel::OpGetDataAtGaussPts("HAT_EPS",common_data,true,false,MBTET)
+      );
+      fe_ptr[ss]->getOpPtrVector().push_back(
+        new Gel::OpGetDataAtGaussPts("HAT_EPS_DOT",common_data,true,false,MBTET)
+      );
 
       // attach tags for each recorder
       vector<int> tags;
-      tags.push_back(1);
-      tags.push_back(2);
-      tags.push_back(3);
-      tags.push_back(4);
+      tags.push_back(Gel::STRESSTOTAL); // ADOL-C tag used to caluculate total stress
+      tags.push_back(Gel::SOLVENTFLUX);
+      tags.push_back(Gel::VOLUMERATE);
+      tags.push_back(Gel::RESIDUALSTRAINHAT);
 
       // Right hand side operators
       gel.feRhs.getOpPtrVector().push_back(
@@ -311,11 +325,12 @@ int main(int argc, char *argv[]) {
         new Gel::OpRhsSolventFlux(gel.commonData)
       );
       gel.feRhs.getOpPtrVector().push_back(
-        new Gel::OpRhsVolumeDot(gel.commonData)
+          new Gel::OpRhsVolumeDot(gel.commonData)
       );
       gel.feRhs.getOpPtrVector().push_back(
         new Gel::OpRhsStrainHat(gel.commonData)
       );
+
       // Left hand side operators
       gel.feLhs.getOpPtrVector().push_back(
         new Gel::OpJacobian("SPATIAL_POSITION",tags,gel.constitutiveEquationPtr,gel.commonData,false,true)
@@ -345,7 +360,7 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  // Create dm instance
+  // Create discrete manager instance
   DM dm;
   DMType dm_name = "DMGEL";
   {
@@ -360,7 +375,7 @@ int main(int argc, char *argv[]) {
 
   }
 
-  //create matrices
+  // Create matrices and vectors used for analysis
   Vec T,F;
   Mat A;
   {
@@ -369,10 +384,11 @@ int main(int argc, char *argv[]) {
     ierr = DMCreateMatrix_MoFEM(dm,&A); CHKERRQ(ierr);
   }
 
-  // Dirichelt boundary conditions
+  // Setting finite element methods for Dirichelt boundary conditions
   SpatialPositionsBCFEMethodPreAndPostProc spatial_position_bc(m_field,"SPATIAL_POSITION");
   TemperatureBCFEMethodPreAndPostProc concentration_bc(m_field,"SOLVENT_CONCENTRATION",A,T,F);
 
+  // Setting finite element method for applying tractions
   boost::ptr_map<string,NeummanForcesSurface> neumann_forces;
   boost::ptr_map<string,NodalForce> nodal_forces;
   boost::ptr_map<string,EdgeForce> edge_forces;
@@ -398,6 +414,7 @@ int main(int argc, char *argv[]) {
     }
   }
 
+  // Add finite elements to Time Stepping Solver, using Discrete Manager Interface
   {
     //Rhs
     ierr = DMMoFEMTSSetIFunction(dm,DM_NO_ELEMENT,NULL,&spatial_position_bc,NULL); CHKERRQ(ierr);
@@ -432,7 +449,7 @@ int main(int argc, char *argv[]) {
     ierr = DMMoFEMTSSetIJacobian(dm,DM_NO_ELEMENT,NULL,NULL,&concentration_bc); CHKERRQ(ierr);
   }
 
-  //create tS
+  // Create Time Stepping solver
   TS ts;
   {
     ierr = TSCreate(PETSC_COMM_WORLD,&ts); CHKERRQ(ierr);
@@ -446,12 +463,15 @@ int main(int argc, char *argv[]) {
     ierr = DMoFEMMeshToGlobalVector(dm,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   }
 
+  // Solve problem
   {
+
     ierr = TSSetIFunction(ts,F,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
     ierr = TSSetIJacobian(ts,A,A,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
     TsCtx *ts_ctx;
     DMMoFEMGetTsCtx(dm,&ts_ctx);
-    //add monitor operator
+
+    // Add monitor operator which dump data on hard drive
     ts_ctx->get_postProcess_to_do_Monitor().push_back(&post_proc);
     double ftime = 1;
     ierr = TSSetDuration(ts,PETSC_DEFAULT,ftime); CHKERRQ(ierr);
