@@ -19,6 +19,7 @@
 
 #include <MoFEM.hpp>
 using namespace MoFEM;
+#include <PostProcOnRefMesh.hpp>
 #include <Projection10NodeCoordsOnField.hpp>
 
 #include <boost/numeric/ublas/vector_proxy.hpp>
