@@ -12,7 +12,17 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
+#include <boost/iostreams/tee.hpp>
+#include <boost/iostreams/stream.hpp>
+#include <fstream>
+#include <iostream>
+
+namespace bio = boost::iostreams;
+using bio::tee_device;
+using bio::stream;
+
 #include <MoFEM.hpp>
+using namespace MoFEM;
 #include <Projection10NodeCoordsOnField.hpp>
 
 #include <moab/Skinner.hpp>
@@ -23,17 +33,6 @@
 #include <iostream>
 
 #include <SurfacePressure.hpp>
-
-#include <boost/iostreams/tee.hpp>
-#include <boost/iostreams/stream.hpp>
-#include <fstream>
-#include <iostream>
-
-namespace bio = boost::iostreams;
-using bio::tee_device;
-using bio::stream;
-
-using namespace MoFEM;
 
 static char help[] = "...\n\n";
 

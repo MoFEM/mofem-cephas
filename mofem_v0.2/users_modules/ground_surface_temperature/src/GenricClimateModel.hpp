@@ -35,52 +35,52 @@ struct GenricClimateModel {
 
   /** \brief Clausius-Clapeyron equation
     */
-  double calulateVapourPressureClausiusClapeyron(double T) { 
+  double calculateVapourPressureClausiusClapeyron(double T) { 
     return e0*exp((Lv/Rv)*((1./T0)-(1./(T+T0))));
   }
 
-  double calulateVapourPressureTetenFormula(double T) {
+  double calculateVapourPressureTetenFormula(double T) {
     const double b = 17.2694;
     const double T2 = 35.86;
     return e0*exp(b*T/(T+T0-T2));
   }
 
-  double calulateVapourPressureTetenFormula_dT(double T) {
+  double calculateVapourPressureTetenFormula_dT(double T) {
     const double b = 17.2694;
     const double T2 = 35.86;
     return e0*exp(b*T/(T+T0-T2))*(b/(T+T0-T2) - b*T/pow(T+T0-T2,2));
   }
 
-  double calulateVapourPressure(double T) {
+  double calculateVapourPressure(double T) {
     //This use Tetent's formula by default
-    return calulateVapourPressureTetenFormula(T);
+    return calculateVapourPressureTetenFormula(T);
   }
 
-  double calulateVapourPressure_dT(double T) {
+  double calculateVapourPressure_dT(double T) {
     //This use Tetent's formula by default
-    return calulateVapourPressureTetenFormula_dT(T);
+    return calculateVapourPressureTetenFormula_dT(T);
   }
 
-  double calulateMixingRatio(double T,double P) {
+  double calculateMixingRatio(double T,double P) {
     const double eps = 0.622;
-    double e = calulateVapourPressure(T);
+    double e = calculateVapourPressure(T);
     return eps*e/(P-e);
   }
 
-  double calulateMixingRatio_dT(double T,double P) {
+  double calculateMixingRatio_dT(double T,double P) {
     const double eps = 0.622;
-    double e = calulateVapourPressure(T);
-    double e_dT = calulateVapourPressure_dT(T);
+    double e = calculateVapourPressure(T);
+    double e_dT = calculateVapourPressure_dT(T);
     return eps*e_dT/(P-e) + eps*e*e_dT/pow(P-e,2);
   }
 
   double calculateAbsoluteVirtualTempertaure(double T,double Td,double P) {
-    double r = calulateMixingRatio(Td,P);
+    double r = calculateMixingRatio(Td,P);
     return T*(0.61+r);
   }
 
   double calculateAbsoluteVirtualTempertaure_dT(double T,double Td,double P) {
-    double r = calulateMixingRatio(Td,P);
+    double r = calculateMixingRatio(Td,P);
     return (0.61+r);
   }
 

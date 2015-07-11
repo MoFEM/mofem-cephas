@@ -17,11 +17,8 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-
 #ifndef __SURFACE_PERSSURE_HPP__
 #define __SURFACE_PERSSURE_HPP__
-
-namespace MoFEM {
 
 /// Class used to scale loads, f.e. in arc-length control
 struct MethodsForOp {
@@ -264,12 +261,10 @@ struct MetaNeummanForces {
 
 };
 
-}
-
 #endif //__SURFACE_PERSSURE_HPP__
 
 
 /***************************************************************************//**
  * \defgroup mofem_static_boundary_conditions Pressure and force boundary conditions
- * \ingroup mofem_forces_and_sources
+ * \ingroup user_modules
  ******************************************************************************/

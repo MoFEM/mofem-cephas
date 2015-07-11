@@ -50,7 +50,7 @@ struct GroundSurfaceTemerature {
     * This element is used to integrate heat fluxes; convection and radiation
     */
   struct MyTriFE: public FaceElementForcesAndSourcesCore {
-    MyTriFE(FieldInterface &_mField): FaceElementForcesAndSourcesCore(_mField) {}
+    MyTriFE(FieldInterface &m_field): FaceElementForcesAndSourcesCore(m_field) {}
     int getRule(int order) { return order; };
   };
   MyTriFE feGroundSurfaceRhs; //< radiation element
@@ -171,7 +171,7 @@ struct GroundSurfaceTemerature {
   static double incomingLongWaveRadiation(double eps,GenricClimateModel *time_data_ptr) {
     const double sigma = 5.67037321e-8;
     double sigma_eps = eps*sigma;
-    double ea = time_data_ptr->calulateVapourPressure(time_data_ptr->calulateVapourPressure(time_data_ptr->Td));
+    double ea = time_data_ptr->calculateVapourPressure(time_data_ptr->calculateVapourPressure(time_data_ptr->Td));
     ea *= 1e-3; // this need to be expressed in kPa
     // equation taken from William R. Herb but need too look as well at, Klok and Oerlemans, 2002
     // incoming longwave radiation (W/m2)

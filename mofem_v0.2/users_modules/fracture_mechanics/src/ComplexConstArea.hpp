@@ -49,8 +49,8 @@ struct C_CONSTANT_AREA: public FEMethod {
   string lambda_field_name;
   int verbose;
 
-  C_CONSTANT_AREA(FieldInterface& _mField,Mat _C,Mat _Q,string _lambda_field_name,int _verbose = 0):
-    mField(_mField),moab(_mField.get_moab()),C(_C),Q(_Q),lambda_field_name(_lambda_field_name),verbose(_verbose) {
+  C_CONSTANT_AREA(FieldInterface& m_field,Mat _C,Mat _Q,string _lambda_field_name,int _verbose = 0):
+    mField(m_field),moab(m_field.get_moab()),C(_C),Q(_Q),lambda_field_name(_lambda_field_name),verbose(_verbose) {
     //calculate face shape functions direvatives
     diffNTRI.resize(3,2);
     ShapeDiffMBTRI(&*diffNTRI.data().begin());
@@ -489,8 +489,8 @@ struct C_CONSTANT_AREA: public FEMethod {
 
 struct C_FRONT_TANGENT: public C_CONSTANT_AREA {
 
-  C_FRONT_TANGENT(FieldInterface& _mField,Mat _C,Mat _Q,string _lambda_field_name,int _verbose = 0):
-  C_CONSTANT_AREA(_mField,_C,_Q,_lambda_field_name,_verbose) {}
+  C_FRONT_TANGENT(FieldInterface& m_field,Mat _C,Mat _Q,string _lambda_field_name,int _verbose = 0):
+  C_CONSTANT_AREA(m_field,_C,_Q,_lambda_field_name,_verbose) {}
 
   PetscErrorCode operator()() {
     PetscFunctionBegin;
@@ -555,8 +555,8 @@ struct dCTgc_CONSTANT_AREA: public C_CONSTANT_AREA {
   double gc;
   const double eps;
 
-  dCTgc_CONSTANT_AREA(FieldInterface& _mField,Mat _dCT,string _lambda_field_name,int _verbose = 0):
-    C_CONSTANT_AREA(_mField,PETSC_NULL,PETSC_NULL,_lambda_field_name,_verbose),dCT(_dCT),eps(1e-10) {}
+  dCTgc_CONSTANT_AREA(FieldInterface& m_field,Mat _dCT,string _lambda_field_name,int _verbose = 0):
+    C_CONSTANT_AREA(m_field,PETSC_NULL,PETSC_NULL,_lambda_field_name,_verbose),dCT(_dCT),eps(1e-10) {}
 
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
@@ -635,9 +635,9 @@ struct Snes_CTgc_CONSTANT_AREA: public FEMethod {
   int verbose;
 
   Snes_CTgc_CONSTANT_AREA(
-    FieldInterface& _mField,ConstrainMatrixCtx *_proj_all_ctx,
+    FieldInterface& m_field,ConstrainMatrixCtx *_proj_all_ctx,
     string _problem,string _lambda_field_name,int _verbose = 0):
-    mField(_mField),proj_ctx(_proj_all_ctx),
+    mField(m_field),proj_ctx(_proj_all_ctx),
     problem(_problem),lambda_field_name(_lambda_field_name),verbose(_verbose) {}
 
   ErrorCode rval;
@@ -747,9 +747,9 @@ struct Snes_CalculateC_NeededForCrackAreaArcLengthControl: public FEMethod {
   int verbose;
 
   Snes_CalculateC_NeededForCrackAreaArcLengthControl(
-    FieldInterface& _mField,ConstrainMatrixCtx *_proj_all_ctx,
+    FieldInterface& m_field,ConstrainMatrixCtx *_proj_all_ctx,
     string _problem,string _lambda_field_name,int _verbose = 0):
-    mField(_mField),proj_ctx(_proj_all_ctx),
+    mField(m_field),proj_ctx(_proj_all_ctx),
     problem(_problem),lambda_field_name(_lambda_field_name),verbose(_verbose) {}
 
   ErrorCode rval;
@@ -819,13 +819,13 @@ struct Snes_dCTgc_CONSTANT_AREA: public dCTgc_CONSTANT_AREA {
   ConstrainMatrixCtx *proj_ctx;
   Mat K;
 
-  Snes_dCTgc_CONSTANT_AREA(FieldInterface& _mField,
+  Snes_dCTgc_CONSTANT_AREA(FieldInterface& m_field,
     ConstrainMatrixCtx &_proj_all_ctx,string _lambda_field_name,int _verbose = 0):
-    dCTgc_CONSTANT_AREA(_mField,_proj_all_ctx.K,_lambda_field_name,_verbose),
+    dCTgc_CONSTANT_AREA(m_field,_proj_all_ctx.K,_lambda_field_name,_verbose),
     proj_ctx(&_proj_all_ctx),K(_proj_all_ctx.K) {}
 
-  Snes_dCTgc_CONSTANT_AREA(FieldInterface& _mField,Mat _K,string _lambda_field_name,int _verbose = 0):
-    dCTgc_CONSTANT_AREA(_mField,_K,_lambda_field_name,_verbose),proj_ctx(NULL),K(_K) {}
+  Snes_dCTgc_CONSTANT_AREA(FieldInterface& m_field,Mat _K,string _lambda_field_name,int _verbose = 0):
+    dCTgc_CONSTANT_AREA(m_field,_K,_lambda_field_name,_verbose),proj_ctx(NULL),K(_K) {}
 
 
   PetscErrorCode preProcess() {

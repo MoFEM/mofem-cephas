@@ -111,4 +111,21 @@ VTK files can be generated using script located in \em users_modules/nonlinear_e
 ../../do_vtk.sh out_values_*h5m
 \endcode
 
+\subsection time_stepping_method Selecting method for time stepping solver
+
+In PETSc user can choose from range of implicit time stepping solvers, by setting option
+\code
+-ts_type type
+\endcode
+where avilavle types are
+- \em -ts_type beuler <http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/TS/TSBEULER.html>
+- \em -ts_type theta <http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/TS/TSTHETA.html>
+- \em -ts_type alpha <http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/TS/TSALPHA.html>
+
+For Alpha method user can set spectral radius following petsc documentation
+<http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/TS/TSAlphaSetRadius.html>, for example
+\code
+-ts_alpha_radius 0.5
+\endcode
+
 */

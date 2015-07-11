@@ -18,18 +18,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#include <MoFEM.hpp>
-#include <Projection10NodeCoordsOnField.hpp>
-
-#include <moab/Skinner.hpp>
-
-#include <boost/iostreams/tee.hpp>
-#include <boost/iostreams/stream.hpp>
-#include <fstream>
-#include <iostream>
-
-#include <FluidPressure.hpp>
-
 #include <boost/iostreams/tee.hpp>
 #include <boost/iostreams/stream.hpp>
 #include <fstream>
@@ -39,7 +27,19 @@ namespace bio = boost::iostreams;
 using bio::tee_device;
 using bio::stream;
 
+#include <MoFEM.hpp>
+#include <Projection10NodeCoordsOnField.hpp>
 using namespace MoFEM;
+
+
+#include <moab/Skinner.hpp>
+
+#include <boost/iostreams/tee.hpp>
+#include <boost/iostreams/stream.hpp>
+#include <fstream>
+#include <iostream>
+
+#include <FluidPressure.hpp>
 
 static char help[] = "...\n\n";
 
@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
 
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
 
   //Create MoFEM (Joseph) database
   MoFEM::Core core(moab);
@@ -104,10 +104,10 @@ int main(int argc, char *argv[]) {
   ///add probelem which will be solved, could be more than one problem
   //operating on some subset of defined approximatons spces
   ierr = m_field.add_problem("TEST_PROBLEM"); CHKERRQ(ierr);
-  //mesh could have several refinment levels which share some subset of entities between them. 
+  //mesh could have several refinment levels which share some subset of entities between them.
   //below defines on which set of entities (on refinment level 0) build approximation spaces for TEST_PROBLEM
   ierr = m_field.modify_problem_ref_level_add_bit("TEST_PROBLEM",bit_level0); CHKERRQ(ierr);
-  
+
   //add finite element to test problem
   ierr = m_field.modify_problem_add_finite_element("TEST_PROBLEM","FLUID_PRESSURE_FE"); CHKERRQ(ierr);
 
@@ -163,10 +163,10 @@ int main(int argc, char *argv[]) {
     mit!=tags_vals.end();mit++,idx++) {
     ents[idx] = mit->first;
     vals[3*idx + 0] = mit->second[0];
-    vals[3*idx + 1] = mit->second[1];   
+    vals[3*idx + 1] = mit->second[1];
     vals[3*idx + 2] = mit->second[2];
   }
-  
+
   double def_VAL[3] = {0,0,0};
   Tag th_vals;
   rval = moab.tag_get_handle("FLUID_PRESURE_FORCES",3,MB_TYPE_DOUBLE,th_vals,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_PETSC(rval);
@@ -177,7 +177,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.get_problem_finite_elements_entities("TEST_PROBLEM","FLUID_PRESSURE_FE",out_meshset); CHKERRQ(ierr);
   rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
   rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);*/
-  
+
   //destroy vector
   ierr = VecDestroy(&F); CHKERRQ(ierr);
 
@@ -186,5 +186,3 @@ int main(int argc, char *argv[]) {
   return 0;
 
 }
-
-

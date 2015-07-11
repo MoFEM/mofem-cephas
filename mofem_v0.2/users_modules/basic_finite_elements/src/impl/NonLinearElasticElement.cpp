@@ -18,7 +18,7 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 #include <MoFEM.hpp>
-
+using namespace MoFEM;
 #include <Projection10NodeCoordsOnField.hpp>
 
 #include <boost/numeric/ublas/vector_proxy.hpp>
@@ -28,8 +28,6 @@
 
 #include <adolc/adolc.h>
 #include <NonLinearElasticElement.hpp>
-
-namespace MoFEM {
 
 NonlinearElasticElement::MyVolumeFE::MyVolumeFE(FieldInterface &m_field):
   VolumeElementForcesAndSourcesCore(m_field),
@@ -133,11 +131,13 @@ NonlinearElasticElement::OpGetDataAtGaussPts::OpGetDataAtGaussPts(const string f
   vector<VectorDouble > &values_at_gauss_pts,
   vector<MatrixDouble > &gardient_at_gauss_pts):
   VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
-  valuesAtGaussPts(values_at_gauss_pts),gradientAtGaussPts(gardient_at_gauss_pts),
+  valuesAtGaussPts(values_at_gauss_pts),
+  gradientAtGaussPts(gardient_at_gauss_pts),
   zeroAtType(MBVERTEX) {}
 
 PetscErrorCode NonlinearElasticElement::OpGetDataAtGaussPts::doWork(
-  int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+  int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+) {
   PetscFunctionBegin;
   try {
 
@@ -232,7 +232,7 @@ PetscErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::calculat
         dAta.materialAdoublePtr->P(dd1,dd2) >>= (commonData.sTress[0])(dd1,dd2);
       }
     }
-
+    //cerr << "P " << dAta.materialAdoublePtr->P << endl;
   } catch (const std::exception& ex) {
     ostringstream ss;
     ss << "throw in method: " << ex.what() << endl;
@@ -297,6 +297,7 @@ PetscErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::doWork(
             }
           }
 
+          //cerr << dAta.materialAdoublePtr->F << endl;
 
         } else {
 
@@ -344,13 +345,9 @@ PetscErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::doWork(
         for(int dd1 = 0;dd1<3;dd1++) {
           for(int dd2 = 0;dd2<3;dd2++) {
             activeVariables(dd1*3+dd2) = (*ptrh)[gg](dd1,dd2);
-            if(fieldDisp) {
-              if(dd1 == dd2) {
-                activeVariables(dd1*3+dd2) += 1;
-              }
-            }
           }
         }
+        //cerr << activeVariables << endl;
       } else {
         for(int dd1 = 0;dd1<3;dd1++) {
           for(int dd2 = 0;dd2<3;dd2++) {
@@ -395,7 +392,7 @@ PetscErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::doWork(
         }
       }
 
-      }
+    }
 
     } catch (const std::exception& ex) {
       ostringstream ss;
@@ -437,7 +434,8 @@ PetscErrorCode NonlinearElasticElement::OpRhsPiolaKirchhoff::aSemble(
   ierr = VecSetValues(
     getFEMethod()->snes_f,
     nb_dofs,
-    indices_ptr,&nf[0],
+    indices_ptr,
+    &nf[0],
     ADD_VALUES
   ); CHKERRQ(ierr);
 
@@ -464,7 +462,7 @@ PetscErrorCode NonlinearElasticElement::OpRhsPiolaKirchhoff::doWork(
     for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
       //diffN - on rows has degrees of freedom
       //diffN - on columns has rerevatives direvatives of shape functin
-      const DataForcesAndSurcesCore::MatrixAdaptor &diffN = row_data.getDiffN(gg,nb_dofs/3);
+      const MatrixAdaptor &diffN = row_data.getDiffN(gg,nb_dofs/3);
       const MatrixDouble& stress = commonData.sTress[gg];
 
       double val = getVolume()*getGaussPts()(3,gg);
@@ -474,6 +472,7 @@ PetscErrorCode NonlinearElasticElement::OpRhsPiolaKirchhoff::doWork(
       for(int dd = 0;dd<nb_dofs/3;dd++) {
         for(int rr = 0;rr<3;rr++) {
           for(int nn = 0;nn<3;nn++) {
+            //cerr << "stress : " << stress << endl;
             nf[3*dd+rr] += val*diffN(dd,nn)*stress(rr,nn);
           }
         }
@@ -485,6 +484,7 @@ PetscErrorCode NonlinearElasticElement::OpRhsPiolaKirchhoff::doWork(
       SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
     }
 
+    //cerr << "nf : " << nf << endl;
     ierr = aSemble(row_side,row_type,row_data); CHKERRQ(ierr);
 
   } catch (const std::exception& ex) {
@@ -545,18 +545,21 @@ PetscErrorCode NonlinearElasticElement::OpEnergy::doWork(
 
 
 NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::OpLhsPiolaKirchhoff_dx(
-  const string vel_field,const string field_name,BlockData &data,CommonData &common_data):
-  VolumeElementForcesAndSourcesCore::UserDataOperator(vel_field,field_name,UserDataOperator::OPROWCOL),
-  dAta(data),
-  commonData(common_data),
-  aLe(false) { }
+  const string vel_field,const string field_name,BlockData &data,CommonData &common_data
+):
+VolumeElementForcesAndSourcesCore::UserDataOperator(vel_field,field_name,UserDataOperator::OPROWCOL),
+dAta(data),
+commonData(common_data),
+aLe(false) {
+}
 
-PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::getJac(DataForcesAndSurcesCore::EntData &col_data,int gg) {
+PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::getJac(
+  DataForcesAndSurcesCore::EntData &col_data,int gg
+) {
   PetscFunctionBegin;
   jac.clear();
-
   int nb_col = col_data.getFieldData().size();
-  const DataForcesAndSurcesCore::MatrixAdaptor diffN = col_data.getDiffN(gg,nb_col/3);
+  const MatrixAdaptor diffN = col_data.getDiffN(gg,nb_col/3);
   ublas::matrix<double> &jac_stress = commonData.jacStress[gg];
   // FIXME: this is efficiency bottle neck
   for(int dd = 0;dd<nb_col/3;dd++) {
@@ -568,10 +571,8 @@ PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::getJac(DataForce
       }
     }
   }
-
   PetscFunctionReturn(0);
 }
-
 
 PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::aSemble(
   int row_side,int col_side,
@@ -707,7 +708,7 @@ PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::doWork(
       }
       jac *= val;
 
-      const DataForcesAndSurcesCore::MatrixAdaptor &diffN = row_data.getDiffN(gg,nb_row/3);
+      const MatrixAdaptor &diffN = row_data.getDiffN(gg,nb_row/3);
 
       { //integrate element stiffness matrix
         for(int dd1 = 0;dd1<nb_row/3;dd1++) {
@@ -746,7 +747,7 @@ PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dX::getJac(DataForce
   PetscFunctionBegin;
   jac.clear();
   int nb_col = col_data.getFieldData().size();
-  const DataForcesAndSurcesCore::MatrixAdaptor diffN = col_data.getDiffN(gg,nb_col/3);
+  const MatrixAdaptor diffN = col_data.getDiffN(gg,nb_col/3);
   for(int dd = 0;dd<nb_col/3;dd++) {
     for(int rr = 0;rr<3;rr++) {
       for(int ii = 0;ii<9;ii++) {
@@ -823,9 +824,10 @@ NonlinearElasticElement::OpJacobianEshelbyStress::OpJacobianEshelbyStress(
   CommonData &common_data,
   int tag,
   bool jacobian,
-  bool ale):
-  OpJacobianPiolaKirchhoffStress(field_name,data,common_data,tag,jacobian,ale,false)
-  {}
+  bool ale
+):
+OpJacobianPiolaKirchhoffStress(field_name,data,common_data,tag,jacobian,ale,false) {
+}
 
 PetscErrorCode NonlinearElasticElement::OpJacobianEshelbyStress::calculateStress() {
   PetscFunctionBegin;
@@ -869,7 +871,7 @@ PetscErrorCode NonlinearElasticElement::OpLhsEshelby_dx::getJac(DataForcesAndSur
   PetscFunctionBegin;
   jac.clear();
   int nb_col = col_data.getFieldData().size();
-  const DataForcesAndSurcesCore::MatrixAdaptor diffN = col_data.getDiffN(gg,nb_col/3);
+  const MatrixAdaptor diffN = col_data.getDiffN(gg,nb_col/3);
   for(int dd = 0;dd<nb_col/3;dd++) {
     for(int rr = 0;rr<3;rr++) {
       for(int ii = 0;ii<9;ii++) {
@@ -892,7 +894,7 @@ PetscErrorCode NonlinearElasticElement::OpLhsEshelby_dX::getJac(DataForcesAndSur
   PetscFunctionBegin;
   jac.clear();
   int nb_col = col_data.getFieldData().size();
-  const DataForcesAndSurcesCore::MatrixAdaptor diffN = col_data.getDiffN(gg,nb_col/3);
+  const MatrixAdaptor diffN = col_data.getDiffN(gg,nb_col/3);
   for(int dd = 0;dd<nb_col/3;dd++) {
     for(int rr = 0;rr<3;rr++) {
       for(int ii = 0;ii<9;ii++) {
@@ -906,8 +908,8 @@ PetscErrorCode NonlinearElasticElement::OpLhsEshelby_dX::getJac(DataForcesAndSur
 }
 
 PetscErrorCode NonlinearElasticElement::setBlocks(
-  FunctionsToCalulatePiolaKirchhoffI<double> *materialDoublePtr,
-  FunctionsToCalulatePiolaKirchhoffI<adouble> *materialAdoublePtr) {
+  FunctionsToCalculatePiolaKirchhoffI<double> *materialDoublePtr,
+  FunctionsToCalculatePiolaKirchhoffI<adouble> *materialAdoublePtr) {
   PetscFunctionBegin;
   ErrorCode rval;
   PetscErrorCode ierr;
@@ -960,7 +962,8 @@ PetscErrorCode NonlinearElasticElement::addElement(string element_name,
 PetscErrorCode NonlinearElasticElement::setOperators(
   string spatial_position_field_name,
   string material_position_field_name,
-  bool ale,bool field_disp) {
+  bool ale,bool field_disp
+) {
   PetscFunctionBegin;
 
   commonData.spatialPositions = spatial_position_field_name;
@@ -1003,6 +1006,4 @@ PetscErrorCode NonlinearElasticElement::setOperators(
   }
 
   PetscFunctionReturn(0);
-}
-
 }

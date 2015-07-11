@@ -23,10 +23,8 @@
 
 using namespace boost::numeric;
 
-namespace MoFEM {
-
 /** \brief Finite element for approximating analytical filed on the mesh
-  * \ingroup mofem_forces_and_sources
+  * \ingroup user_modules
   */
 struct FieldApproximationH1 {
 
@@ -289,7 +287,7 @@ struct FieldApproximationH1 {
       ierr = MatZeroEntries(A); CHKERRQ(ierr);
     }
 
-    //calulate and assemble
+    //calculate and assemble
     ierr = mField.loop_finite_elements(problem_name,fe_name,fe);  CHKERRQ(ierr);
 
     if(A) {
@@ -308,8 +306,5 @@ struct FieldApproximationH1 {
   }
 
 };
-
-
-}
 
 #endif //__FILEDAPPROXIMATION_HPP

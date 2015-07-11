@@ -27,8 +27,6 @@
   #error "MoFEM need to be compiled with ADOL-C"
 #endif
 
-namespace MoFEM {
-
 /** \brief structure grouping operators and data used for calculation of nonlinear elastic element
   * \ingroup nonlinear_elastic_elem
   *
@@ -92,7 +90,7 @@ struct NonlinearElasticElement {
     FieldInterface &m_field,short int tag);
 
   template<typename TYPE>
-  struct FunctionsToCalulatePiolaKirchhoffI;
+  struct FunctionsToCalculatePiolaKirchhoffI;
 
   /** \brief data for calculation het conductivity and heat capacity elements
     * \ingroup nonlinear_elastic_elem
@@ -101,9 +99,9 @@ struct NonlinearElasticElement {
     int iD;
     double E;
     double PoissonRatio;
-    Range tEts; ///< constatins elements in block set
-    FunctionsToCalulatePiolaKirchhoffI<adouble> *materialAdoublePtr;
-    FunctionsToCalulatePiolaKirchhoffI<double> *materialDoublePtr;
+    Range tEts; ///< constrains elements in block set
+    FunctionsToCalculatePiolaKirchhoffI<adouble> *materialAdoublePtr;
+    FunctionsToCalculatePiolaKirchhoffI<double> *materialDoublePtr;
     Range forcesOnlyOnEntitiesRow;
     Range forcesOnlyOnEntitiesCol;
   };
@@ -127,7 +125,7 @@ struct NonlinearElasticElement {
     * \ingroup nonlinear_elastic_elem
     */
   template<typename TYPE>
-  struct FunctionsToCalulatePiolaKirchhoffI {
+  struct FunctionsToCalculatePiolaKirchhoffI {
 
     /** \brief Calculate determinant of 3x3 matrix
       */
@@ -347,7 +345,7 @@ struct NonlinearElasticElement {
     bool fieldDisp;
 
     /**
-      \brief Construct operator to calculate Pilo Kirchhoff stress or its derivatives over gradient deformation
+      \brief Construct operator to calculate Piola-Kirchhoff stress or its derivatives over gradient deformation
 
       \param field_name approximation field name of spatial positions or displacements
       \param data reference to block data (what is Young modulus, Poisson ratio or what elements are part of the block)
@@ -516,8 +514,8 @@ struct NonlinearElasticElement {
   };
 
   PetscErrorCode setBlocks(
-    FunctionsToCalulatePiolaKirchhoffI<double> *materialDoublePtr,
-    FunctionsToCalulatePiolaKirchhoffI<adouble> *materialAdoublePtr);
+    FunctionsToCalculatePiolaKirchhoffI<double> *materialDoublePtr,
+    FunctionsToCalculatePiolaKirchhoffI<adouble> *materialAdoublePtr);
 
   PetscErrorCode addElement(string element_name,
     string spatial_position_field_name,
@@ -538,11 +536,13 @@ struct NonlinearElasticElement {
 
 };
 
-}
-
 #endif //__NONLINEAR_ELASTIC_HPP
 
 /***************************************************************************//**
  * \defgroup nonlinear_elastic_elem NonLinear Elastic Element
- * \ingroup mofem_forces_and_sources
+ * \ingroup user_modules
+ ******************************************************************************/
+
+/***************************************************************************//**
+ * \defgroup user_modules User modules
  ******************************************************************************/

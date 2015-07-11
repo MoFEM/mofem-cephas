@@ -21,8 +21,6 @@
 #ifndef __ULTRAWEAK_TARNSPORT_ELEMENT_HPP
 #define __ULTRAWEAK_TARNSPORT_ELEMENT_HPP
 
-namespace MoFEM {
-
 /** \brief Ultra weak transport problem
   \ingroup mofem_ultra_weak_transport_elem
 
@@ -998,11 +996,9 @@ struct UltraWeakTransportElement {
 };
 
 
-}
-
 #endif //__ULTRAWEAK_TARNSPORT_ELEMENT_HPP
 
 /***************************************************************************//**
  * \defgroup mofem_ultra_weak_transport_elem Ultra weak transport element
- * \ingroup mofem_forces_and_sources
+ * \ingroup user_modules
  ******************************************************************************/

@@ -541,7 +541,7 @@ struct MonitorUpdateFrezedNodes: public FEMethod {
     corners_nodes.insert(corners_edges_nodes.begin(),corners_edges_nodes.end());
     corners_nodes.insert(fix_nodes.begin(),fix_nodes.end());
 
-    bC.map_zero_rows.clear();
+    bC.mapZeroRows.clear();
     bC.dofsIndices.clear();
     bC.dofsValues.clear();
     bC.eNts = corners_nodes;

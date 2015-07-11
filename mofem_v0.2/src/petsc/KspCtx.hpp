@@ -1,5 +1,5 @@
-/** \file SnesCtx.hpp 
- * \brief Context for PETSc SNES, i.e. nonlinear spolver
+/** \file KspCtx.hpp
+ * \brief Context for PETSc KSP, i.e. nonlinear solver
  */
 
 /* This file is part of MoFEM.
@@ -21,6 +21,9 @@
 
 namespace MoFEM {
 
+/** \brief Interface for KSP solver
+  * \ingroup petsc_context_struture
+  */
 struct KspCtx {
 
   ErrorCode rval;
@@ -45,13 +48,13 @@ struct KspCtx {
   PetscLogEvent USER_EVENT_KspRhs;
   PetscLogEvent USER_EVENT_KspMat;
 
-  KspCtx(FieldInterface &_mField,const string &_problem_name):
-    mField(_mField),moab(_mField.get_moab()),problemName(_problem_name) {
+  KspCtx(FieldInterface &m_field,const string &_problem_name):
+    mField(m_field),moab(m_field.get_moab()),problemName(_problem_name) {
     PetscLogEventRegister("LoopKSPRhs",0,&USER_EVENT_KspRhs);
     PetscLogEventRegister("LoopKSPMat",0,&USER_EVENT_KspMat);
   }
 
-  const FieldInterface& get_mField() const { return mField; }
+  const FieldInterface& getm_field() const { return mField; }
   const Interface& get_moab() const { return moab; }
 
   loops_to_do_type& get_loops_to_do_Mat() { return loops_to_do_Mat; }
@@ -70,5 +73,13 @@ PetscErrorCode KspRhs(KSP ksp,Vec f,void *ctx);
 PetscErrorCode KspMat(KSP ksp,Mat A,Mat B,void *ctx);
 
 }
+
+/***************************************************************************//**
+ * \defgroup petsc_context_struture Solver context structures
+ * \ingroup mofem
+ ******************************************************************************/
+
+
+
 
 #endif // __MOABKSP_HPP__

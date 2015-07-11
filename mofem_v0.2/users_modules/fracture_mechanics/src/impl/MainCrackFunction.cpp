@@ -437,6 +437,8 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
 
     int its_d;
     ierr = PetscOptionsGetInt("","-my_its_d",&its_d,&flg); CHKERRQ(ierr);
+    double penalty0 = 0;
+    ierr = PetscOptionsGetReal(PETSC_NULL,"-my_front_penalty",&penalty0,&flg); CHKERRQ(ierr);
 
     double *load_factor_ptr;
     rval = m_field.get_moab().tag_get_by_ptr(th_t_val,&root_meshset,1,(const void**)&load_factor_ptr); CHKERR_THROW(rval);
@@ -445,14 +447,21 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
     double fraction_treshold = fraction_treshold0;
     bool at_least_one_step_converged = false;
     conf_prob.freeze_all_but_one = false;
+    double penalty = (aa == 0) ? 0 : penalty0;
     double _da_ = (aa == 0) ? 0 : da;
+
     int ii = 0;
     for(;ii<nb_sub_steps;ii++) {
       ierr = PetscPrintf(PETSC_COMM_WORLD,"\n* number of substeps = %D _da_ = %6.4e\n\n",ii,_da_); CHKERRQ(ierr);
-      ierr = conf_prob.solve_coupled_problem(m_field,&snes,_da_,fraction_treshold); CHKERRQ(ierr);
-      if(conf_prob.total_its == 0) break;
+      
+      SNESConvergedReason reason0;
+      ierr = conf_prob.solve_coupled_problem(m_field,&snes,_da_,penalty,fraction_treshold,reason0); CHKERRQ(ierr);
+      if(reason0 < 0) {
+        fraction_treshold *= 0.25;
+      }
       SNESConvergedReason reason;
       ierr = SNESGetConvergedReason(snes,&reason); CHKERRQ(ierr);
+      if(conf_prob.total_its == 0) break;
       if(reason > 0) {
         if(da > 0) {
           if(aa > 0 && ii == 0) {
@@ -482,7 +491,6 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
         ierr = conf_prob.delete_front_projection_data(m_field); CHKERRQ(ierr);
         _da_ = 0;
       } else {
-        fraction_treshold *= 0.25;
         ierr = PetscPrintf(PETSC_COMM_WORLD,"* reset unknowns vector\n"); CHKERRQ(ierr);
         ierr = m_field.set_global_ghost_vector("COUPLED_PROBLEM",COL,D0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
         load_factor = load_factor0;
@@ -524,9 +532,12 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
     ierr = VecDestroy(&D0); CHKERRQ(ierr);
     ierr = SNESDestroy(&snes); CHKERRQ(ierr);
 
-    double reduction = pow(2./(fmax(ii+1,3)-1),0.5);
+    // Reduce step size, if many time need to freeze and unfreeze nodes
+    double reduction = pow(2./(fmax(ii+1,3)-1),0.25);
     ierr = PetscPrintf(PETSC_COMM_WORLD,"\n* change of da = %6.4e (nb. sub-steps %d) \n\n",reduction,ii); CHKERRQ(ierr);
     da *= reduction;
+
+    // Set max reduction to 0.1 of original value of da
     da = fmax(da,1e-1*da_0);
 
     ierr = conf_prob.set_coordinates_from_material_solution(m_field,false); CHKERRQ(ierr);

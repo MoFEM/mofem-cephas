@@ -36,7 +36,7 @@ struct FEMethod_ComplexForLazy_Data: public FEMethod_UpLevelStudent {
  * using complex direvatives)
  *
  * This class give user some data structures and methods on those that
- * structures which could be useful. Method of calulating complex direvatives
+ * structures which could be useful. Method of calculating complex direvatives
  * is numerically inefficient, however it is simple to use.
  *
  *

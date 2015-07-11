@@ -19,9 +19,8 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 #include <MoFEM.hpp>
+using namespace MoFEM;
 #include <ConstrainMatrixCtx.hpp>
-
-namespace MoFEM {
 
 const static bool debug = false;
 
@@ -285,7 +284,4 @@ PetscErrorCode ConstrainMatrixDestroyOpQTKQ(Mat QTKQ) {
   ConstrainMatrixCtx *ctx = (ConstrainMatrixCtx*)void_ctx;
   ierr = ctx->destroyQTKQ(); CHKERRQ(ierr);
   PetscFunctionReturn(0);
-}
-
-
 }

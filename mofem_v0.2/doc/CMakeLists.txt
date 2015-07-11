@@ -11,9 +11,51 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
+find_package(Git)
+find_package(Doxygen)
+
 if(DOXYGEN_FOUND)
 
-  # copy dox/figures to html direcyory created by doxygen
+  if(GIT_FOUND)
+
+    # Get list of contributors
+
+    configure_file(
+      ${PROJECT_SOURCE_DIR}/scripts/git_contributors.sh.in
+      ${PROJECT_SOURCE_DIR}/scripts/git_contributors.sh
+      @ONLY
+    )
+    file(COPY ${PROJECT_SOURCE_DIR}/scripts/git_contributors.sh
+      DESTINATION ${PROJECT_BINARY_DIR}/scripts/
+      FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE
+    )
+    add_custom_target(doc_get_contributors
+      ${PROJECT_BINARY_DIR}/scripts/git_contributors.sh
+      WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+      COMMENT "Publish (likask) doxygen documentation" VERBATIM
+    )
+
+  endif(GIT_FOUND)
+
+  configure_file(
+    ${PROJECT_SOURCE_DIR}/Doxyfile.in
+    ${PROJECT_BINARY_DIR}/Doxyfile
+  )
+  set(DOXYGEN_LINE_COMMAND
+    ${DOXYGEN_EXECUTABLE} ${PROJECT_BINARY_DIR}/Doxyfile
+  )
+  add_custom_target(doxygen_generating_documenation
+    ${DOXYGEN_LINE_COMMAND}
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+    COMMENT "Generating documentation with Doxygen" VERBATIM
+    DEPENDS doc_get_contributors
+  )
+  add_custom_target(doc
+    DEPENDS doxygen_generating_documenation
+    COMMENT "Making documentation" VERBATIM
+  )
+
+  # copy dox/figures to html directory created by doxygen
   add_custom_target(doxygen_copy_figures
     ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/doc/figures ${PROJECT_BINARY_DIR}/html
     DEPENDS doxygen_generating_documenation

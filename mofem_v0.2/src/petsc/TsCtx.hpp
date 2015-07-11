@@ -1,4 +1,4 @@
-/** \file TsCtx.hpp 
+/** \file TsCtx.hpp
  * \brief Context for PETSc Time Stepping
  */
 
@@ -21,6 +21,9 @@
 
 namespace MoFEM {
 
+/** \brief Interface for KSP solver
+  * \ingroup petsc_context_struture
+  */
 struct TsCtx {
 
   ErrorCode rval;
@@ -52,8 +55,8 @@ struct TsCtx {
   PetscLogEvent USER_EVENT_TsCtxMonitor;
 
   bool zero_matrix;
-  TsCtx(FieldInterface &_mField,const string &_problem_name):
-    mField(_mField),moab(_mField.get_moab()),problemName(_problem_name),zero_matrix(true) {
+  TsCtx(FieldInterface &m_field,const string &_problem_name):
+    mField(m_field),moab(m_field.get_moab()),problemName(_problem_name),zero_matrix(true) {
     PetscLogEventRegister("LoopTsIFunction",0,&USER_EVENT_TsCtxIFunction);
     PetscLogEventRegister("LoopTsIJacobian",0,&USER_EVENT_TsCtxIJacobian);
     PetscLogEventRegister("LoopTsRHSFunction",0,&USER_EVENT_TsCtxRHSFunction);
@@ -61,7 +64,7 @@ struct TsCtx {
     PetscLogEventRegister("LoopTsMonitor",0,&USER_EVENT_TsCtxMonitor);
   }
 
-  const FieldInterface& get_mField() const { return mField; }
+  const FieldInterface& getm_field() const { return mField; }
   const Interface& get_moab() const { return moab; }
   loops_to_do_type& get_loops_to_do_IFunction() { return loops_to_do_IFunction; }
   loops_to_do_type& get_loops_to_do_IJacobian() { return loops_to_do_IJacobian; }

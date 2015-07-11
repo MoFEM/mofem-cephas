@@ -48,7 +48,7 @@ struct ConvectiveMassElement {
     Vec F;
     bool initV; ///< check if ghost vector used to accumalte Kinetin energy is created
 
-    MyVolumeFE(FieldInterface &_mField);
+    MyVolumeFE(FieldInterface &m_field);
 
     /** \brief it is used to calculate nb. of Gauss integration points
      *
@@ -102,7 +102,7 @@ struct ConvectiveMassElement {
   ConvectiveMassElement(FieldInterface &m_field,short int tag);
 
   /** \brief data for calculation inertia forces
-    * \ingroup mofem_forces_and_sources
+    * \ingroup user_modules
     */
   struct BlockData {
     double rho0; ///< reference density
@@ -112,7 +112,7 @@ struct ConvectiveMassElement {
   map<int,BlockData> setOfBlocks; ///< maps block set id with appropriate BlockData
 
   /** \brief common data used by volume elements
-    * \ingroup mofem_forces_and_sources
+    * \ingroup user_modules
     */
   struct CommonData {
     map<string,vector<ublas::vector<double> > > dataAtGaussPts;
@@ -437,7 +437,7 @@ struct ConvectiveMassElement {
     const string spatialPositionField;
 
     int jacobianLag;
-    UpdateAndControl(FieldInterface& _mField,TS _ts,
+    UpdateAndControl(FieldInterface& m_field,TS _ts,
       const string velocity_field,
       const string spatial_position_field
     );
@@ -447,7 +447,7 @@ struct ConvectiveMassElement {
 
   };
 
-  PetscErrorCode setBlocks(bool get_density_form_elastic_block_set = true);
+  PetscErrorCode setBlocks();
 
   PetscErrorCode addConvectiveMassElement(string element_name,
     string velocity_field_name,
@@ -744,5 +744,5 @@ struct ConvectiveMassElement {
 
 /***************************************************************************//**
  * \defgroup convective_mass_elem Mass Element
- * \ingroup mofem_forces_and_sources
+ * \ingroup user_modules
  ******************************************************************************/

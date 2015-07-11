@@ -53,7 +53,7 @@ PetscErrorCode ierr;
 static char help[] = "...\n\n";
 
 template<typename TYPE>
-struct MyMat_double: public NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<TYPE> {
+struct MyMat_double: public NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoffI<TYPE> {
 
   bool doAotherwiseB;
   MyMat_double(): doAotherwiseB(true) {};

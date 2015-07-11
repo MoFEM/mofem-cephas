@@ -1,4 +1,4 @@
-/** \file NodalForce.cpp
+/** \file NodalForce.hpp
   \ingroup mofem_static_boundary_conditions
 */
 
@@ -18,8 +18,6 @@
 
 #ifndef __NODAL_FORCES_HPP__
 #define __NODAL_FORCES_HPP__
-
-namespace MoFEM {
 
 /** \brief Force applied to nodes
   * \ingroup mofem_static_boundary_conditions
@@ -145,9 +143,6 @@ struct MetaNodalForces {
     PetscFunctionReturn(0);
   }
 
-
 };
-
-}
 
 #endif //__NODAL_FORCES_HPP__

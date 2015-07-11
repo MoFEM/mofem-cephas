@@ -21,8 +21,8 @@ struct FaceSplittingTools {
   MeshRefinment* rEfiner;
   PrismInterface* prismInterface;
 
-  FaceSplittingTools(FieldInterface& _mField):
-    mField(_mField) {
+  FaceSplittingTools(FieldInterface& m_field):
+    mField(m_field) {
 
     ErrorCode rval;
 
@@ -82,7 +82,7 @@ struct FaceSplittingTools {
   PetscErrorCode addCrackFront_to_Cubit201(int verb = 0);
   PetscErrorCode roundCornersFillGaps_in_Cubit200(int nb,int verb = 0);
 
-  //calculate lebghth of edges adjacent to crack front
+  //calculate length of edges adjacent to crack front
   PetscErrorCode crackFrontEdgeLengths(BitRefLevel bit_mesh,Range &to_split,Range &to_remove,int verb = 0);
 
   //move front nodes
