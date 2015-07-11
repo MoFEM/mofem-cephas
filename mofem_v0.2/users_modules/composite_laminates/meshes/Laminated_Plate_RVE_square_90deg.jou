@@ -1,0 +1,104 @@
+#!python
+cubit.cmd('new')
+
+autofactor=7; 
+#============================================================= 
+#Geometry
+#============================================================= 
+cubit.cmd('brick x 2 y 2 z 2')
+cubit.cmd('brick x 1 y 1 z 2')
+cubit.cmd('rotate volume 2 angle 90 about y include_merged')
+cubit.cmd('rotate volume 2 angle 90 about z include_merged')
+
+cubit.cmd('subtract volume 2 from volume 1 keep')
+cubit.cmd('delete volume 1') 
+cubit.cmd('imprint volume 2 3')   
+cubit.cmd('merge volume 2 3') 
+
+#============================================================= 
+#Periodic mesh  
+#============================================================= 
+cubit.cmd('surface 8 scheme trimesh') 
+str1='surface 8  size auto factor '+str(autofactor); cubit.cmd(str1)
+cubit.cmd('mesh surface 8') 
+cubit.cmd('surface 7 scheme mirror source surface 8 source vertex 13 target vertex 10 nosmoothing')
+cubit.cmd('mesh surface 7') 
+
+cubit.cmd('surface 19 scheme trimesh') 
+str1='surface 19  size auto factor '+str(autofactor); cubit.cmd(str1)
+cubit.cmd('mesh surface 19') 
+cubit.cmd('surface 21 scheme mirror source surface 19 source vertex 28 target vertex 27 nosmoothing')
+cubit.cmd('mesh surface 21') 
+
+cubit.cmd('surface 20 scheme trimesh') 
+str1='surface 20 size auto factor '+str(autofactor); cubit.cmd(str1)
+cubit.cmd('mesh surface 20') 
+cubit.cmd('surface 22 scheme mirror source surface 20  source vertex 27 target vertex 26 nosmoothing')
+cubit.cmd('mesh surface 22') 
+
+cubit.cmd('surface 17 scheme trimesh') 
+str1='surface 17  size auto factor '+str(autofactor); cubit.cmd(str1)
+cubit.cmd('mesh surface 17') 
+cubit.cmd('surface 18 scheme mirror source surface 17  source vertex 26 target vertex 29 nosmoothing')
+cubit.cmd('mesh surface 18') 
+
+str1='volume all size auto factor '+str(autofactor); cubit.cmd(str1)
+cubit.cmd('volume all scheme tetmesh')  
+cubit.cmd('mesh volume all')  
+
+#============================================================= 
+#Defining material blocks for fibres and marix 
+#============================================================= 
+vol=['3', '2']  
+mat=['MAT_ELASTIC_Matrix','MAT_ELASTIC_Fibres']  
+for i in range(0, 2):  
+    cubit.cmd('set duplicate block elements on')  
+    str1='block  ' + str(i+1) +' volume '+vol[i]; cubit.cmd(str1)  
+    str1='block  ' + str(i+1) +' name "'+mat[i] + '"'; cubit.cmd(str1)  
+
+#============================================================= 
+#Material properties for matrix part  
+#============================================================= 
+cubit.cmd('block 1 attribute count 2')  
+E_m=3.5e3; nu_m=0.3;  #giga to mega as we used dimension in mm  
+#E_m=200; nu_m=0.3;  #giga to mega as we used dimension in mm  
+Elastic=[str(E_m), str(nu_m)]  
+for i in range(0, 2):  
+    str1='block 1 attribute index ' + str(i+1) +' '+Elastic[i]; cubit.cmd(str1)  
+
+
+#============================================================= 
+#Material properties for fibres  
+#============================================================= 
+cubit.cmd('block 2 attribute count 2')  
+E_f=72.5e3; nu_f=0.22;  #giga to mega as we used dimension in mm  
+#E_f=200; nu_f=0.3;  #giga to mega as we used dimension in mm  
+Elastic=[str(E_f), str(nu_f)]  
+for i in range(0, 2):  
+    str1='block 2 attribute index ' + str(i+1) +' '+Elastic[i]; cubit.cmd(str1)  
+
+#============================================================= 
+#High-order geometry setup  
+#============================================================= 
+cubit.cmd('set duplicate block elements on')    
+cubit.cmd('block 3 tet all')    
+cubit.cmd('block 3 element type tetra10')     
+
+#============================================================= 
+#Defining surfaces for dispacement, traction and periodic boundary conditions  
+#============================================================= 
+cubit.cmd('sideset 101 surface 8 18 19 20')  # all -ve boundary surfaces  
+cubit.cmd('sideset 101 name "NegBoundSurf"')
+cubit.cmd('sideset 102 surface 7 17 21 22')  # all +ve boundary surfaces  
+cubit.cmd('sideset 102 name "PosBoundSurf"')
+cubit.cmd('sideset 103 surface  8 18 19 20 7 17 21 22')  # all boundary surfaces  
+cubit.cmd('sideset 103 name "AllBoundSurf"')
+
+cubit.cmd('save as "/Users/zahur/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/composite_laminates/meshes/Laminated_Plate_RVE_square_90deg.cub" overwrite')  
+
+
+
+
+
+
+

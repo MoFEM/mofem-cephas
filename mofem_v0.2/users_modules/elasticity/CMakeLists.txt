@@ -30,7 +30,28 @@ target_link_libraries(elasticity
   mofem_cblas
   boost_program_options
   ${MoFEM_PROJECT_LIBS})
-  
+
+
+add_executable(elasticity1
+${UM_SOURCE_DIR}/elasticity/elasticity1.cpp
+${UM_SOURCE_DIR}/elasticity/src/impl/PCMGSetUpViaApproxOrders.cpp
+)
+target_link_libraries(elasticity1
+users_modules_obsolete
+users_modules
+mofem_finite_elements
+mofem_interfaces
+mofem_multi_indices
+mofem_petsc
+mofem_approx
+mofem_third_party
+mofem_cblas
+boost_program_options
+${MoFEM_PROJECT_LIBS})
+
+
+
+
 cm_export_file("LShape.h5m" export_files_elasticity)
 cm_export_file("LShape2Parts.h5m" export_files_elasticity)
 

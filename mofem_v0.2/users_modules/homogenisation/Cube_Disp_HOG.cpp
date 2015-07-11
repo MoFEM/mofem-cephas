@@ -443,10 +443,23 @@ int main(int argc, char *argv[]) {
       cout<<endl;
     }
   }
+  
+  //====================================================================================================
+  //Writing Dmat in to binary file for use in the unsteady diffusion problem
+  //  cout <<"Dmat ="<< Dmat<< endl; //Dmat here in [kg mm/s^3 C]
+  if(pcomm->rank()==0){
+    int fd;
+    PetscViewer view_out;
+    PetscViewerBinaryOpen(PETSC_COMM_WORLD,"Mechanical_Dmat.out",FILE_MODE_WRITE,&view_out);
+    PetscViewerBinaryGetDescriptor(view_out,&fd);
+    PetscBinaryWrite(fd,&Dmat(0,0),36,PETSC_DOUBLE,PETSC_FALSE);
+    PetscViewerDestroy(&view_out);
+  }
+  //====================================================================================================
 
   
   PostPocOnRefinedMesh post_proc(mField);
-  ierr = post_proc.generateRefereneElemenMesh(); CHKERRQ(ierr);
+  ierr = post_proc.generateReferenceElementMesh(); CHKERRQ(ierr);
   ierr = post_proc.addFieldValuesPostProc("DISPLACEMENT"); CHKERRQ(ierr);
   ierr = post_proc.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
   ierr = post_proc.addFieldValuesGradientPostProc("DISPLACEMENT"); CHKERRQ(ierr);

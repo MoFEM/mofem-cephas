@@ -463,7 +463,7 @@ int main(int argc, char *argv[]) {
   //=======================================================================================================================================================
 
   PostPocOnRefinedMesh post_proc(mField);
-  ierr = post_proc.generateRefereneElemenMesh(); CHKERRQ(ierr);
+  ierr = post_proc.generateReferenceElementMesh(); CHKERRQ(ierr);
   ierr = post_proc.addFieldValuesPostProc("DISPLACEMENT"); CHKERRQ(ierr);
   ierr = post_proc.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
   ierr = post_proc.addFieldValuesGradientPostProc("DISPLACEMENT"); CHKERRQ(ierr);

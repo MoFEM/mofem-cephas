@@ -54,26 +54,31 @@ namespace MoFEM {
                             DataForcesAndSurcesCore::EntData &row_data,
                             DataForcesAndSurcesCore::EntData &col_data) {
         PetscFunctionBegin;
+        if(dAta.tEts.find(getMoFEMFEPtr()->get_ent()) == dAta.tEts.end()) {
+          PetscFunctionReturn(0);
+        }
         
         //      cout<<"Hi from OpVolumeCal "<<endl;
         if(row_type == MBVERTEX && col_type==MBVERTEX) {
-          //        cout<<"Hi from MBVERTEX "<<endl;
+//        cout<<"Hi from MBVERTEX "<<endl;
           ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
           int Indices[1];  Indices[0]=pcomm->rank();
           double Vol_elm[1];  Vol_elm[0]=0;
           for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
             if(getHoGaussPtsDetJac().size()>0) {
 //              cout<<"getHoGaussPtsDetJac()[gg] "<<getHoGaussPtsDetJac()[gg]<<endl;
+//              cout<<"High order geometry "<<endl;
               Vol_elm[0]+=getVolume()*getGaussPts()(3,gg)*getHoGaussPtsDetJac()[gg];
             }else{
+//              cout<<"Low order geometry "<<endl;
               Vol_elm[0]+=getVolume()*getGaussPts()(3,gg);
             }
           }
           PetscErrorCode ierr;
           ierr = VecSetValues(RVE_volume_Vec,1,Indices,Vol_elm,ADD_VALUES); CHKERRQ(ierr);
+//          cout<<"Indices[0] "<<Indices[0] << endl;
+//          cout<<"Vol_elm[0] "<<Vol_elm[0] << endl;
         }
-        //        cout<<"Indices[0] "<<Indices[0] << endl;
-        //        cout<<"Vol_elm[0] "<<Vol_elm[0] << endl;
         PetscFunctionReturn(0);
       }
     };
@@ -81,10 +86,12 @@ namespace MoFEM {
   
     PetscErrorCode setRVEVolumeOperators(FieldInterface &mField, string field_name, Vec _RVE_volume_Vec, map<int,NonlinearElasticElement::BlockData> &setOfBlocks) {
       PetscFunctionBegin;
+      
       ////    cout<<"Hi from setRVEVolumeOperators "<<endl;
       map<int,NonlinearElasticElement::BlockData>::iterator sit = setOfBlocks.begin();
       for(;sit!=setOfBlocks.end();sit++) {
 //        cout<<"Hi from loop "<<endl;
+//        cout<<"sit->second.tEts ===   "<<sit->second.tEts<<endl;
         feLhs.getOpPtrVector().push_back(new OpVolumeCal(mField, field_name, _RVE_volume_Vec, sit->second));
       }
     }

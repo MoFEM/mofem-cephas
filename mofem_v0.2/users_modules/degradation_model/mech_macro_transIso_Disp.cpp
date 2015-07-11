@@ -441,7 +441,7 @@ int main(int argc, char *argv[]) {
   
 
   PostPocOnRefinedMesh post_proc(m_field_Macro);
-  ierr = post_proc.generateRefereneElemenMesh(); CHKERRQ(ierr);
+  ierr = post_proc.generateReferenceElementMesh(); CHKERRQ(ierr);
   ierr = post_proc.addFieldValuesPostProc("DISP_MACRO"); CHKERRQ(ierr);
 
   //read time series and do thermo elastci analysis

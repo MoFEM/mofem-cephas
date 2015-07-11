@@ -26,3 +26,8 @@ All files conversion using script
 cp *.vtk /mnt/home/Desktop/results/
 
 rm *.vtk *.info *.h5m *.out
+
+
+
+
+make elasticity1 && mpirun -np 1 ./elasticity1 -my_file /mnt/home/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/elasticity/LShape.cub -ksp_type gmres -pc_type lu -pc_factor_mat_solver_package mumps -ksp_monitor -my_order 1

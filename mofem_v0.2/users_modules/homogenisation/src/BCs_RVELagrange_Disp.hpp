@@ -345,6 +345,7 @@ namespace MoFEM {
       
       bool ho_geometry = false;
       if(mField.check_field(mesh_nodals_positions)) {
+//        cout<<"ho_geometry checking "<<endl;
         ho_geometry = true;
       }
       //      cout<<"Hi 1 from setRVEBCsOperators "<<endl;
