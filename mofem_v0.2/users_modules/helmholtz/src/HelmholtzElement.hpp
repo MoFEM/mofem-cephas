@@ -5,10 +5,9 @@
 
  Implementation of Helmholtz element for wave propagation problem
 
- */
+ Note:
+ This work is part of PhD thesis by on Micro-fluids: Thomas Felix Xuan Meng
 
-/*
-  This work is part of PhD thesis by on Micro-fluids: Thomas Felix Xuan Meng
  */
 
 /*

@@ -67,8 +67,8 @@ PetscErrorCode ierr;
 
 static char help[] = "...\n\n";
 
-const double young_modulus = 1;
-const double poisson_ratio = 0.0;
+//const double young_modulus = 1;
+//const double poisson_ratio = 0.0;
 
 #define DATAFILENAME "load_disp.txt"
 

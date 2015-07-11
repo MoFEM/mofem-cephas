@@ -54,8 +54,8 @@ static char help[] =
   "-my_block_config set block data\n"
   "\n";
 
-const double young_modulus = 1;
-const double poisson_ratio = 0.0;
+//const double young_modulus = 1;
+//const double poisson_ratio = 0.0;
 
 struct BlockOptionData {
   int oRder;
@@ -321,9 +321,10 @@ int main(int argc, char *argv[]) {
   //ierr = m_field.partition_check_matrix_fill_in("ELASTIC_PROB",-1,-1,1); CHKERRQ(ierr);
 
   //create matrices
-  Vec F,D;
+  Vec F,D,D0;
   ierr = DMCreateGlobalVector_MoFEM(dm,&F); CHKERRQ(ierr);
   ierr = VecDuplicate(F,&D); CHKERRQ(ierr);
+  ierr = VecDuplicate(F,&D0); CHKERRQ(ierr);
   Mat Aij;
   ierr = DMCreateMatrix_MoFEM(dm,&Aij); CHKERRQ(ierr);
   ierr = MatSetOption(Aij,MAT_SPD,PETSC_TRUE); CHKERRQ(ierr);
@@ -331,19 +332,34 @@ int main(int argc, char *argv[]) {
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecZeroEntries(D); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = DMoFEMMeshToLocalVector(dm,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = MatZeroEntries(Aij); CHKERRQ(ierr);
 
   //assemble Aij and F
+  DisplacementBCFEMethodPreAndPostProc dirichlet_bc(m_field,"DISPLACEMENT",Aij,D0,F);
+  dirichlet_bc.snes_ctx = FEMethod::CTX_SNESNONE;
+  dirichlet_bc.ts_ctx = FEMethod::CTX_TSNONE;
 
-  DisplacementBCFEMethodPreAndPostProc my_dirichlet_bc(m_field,"DISPLACEMENT",Aij,D,F);
-  //set kinematic boundary conditions
-  ierr = DMoFEMPreProcessFiniteElements(dm,&my_dirichlet_bc); CHKERRQ(ierr);
+  ierr = VecZeroEntries(D0); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(D0,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(D0,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = DMoFEMMeshToLocalVector(dm,D0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = DMoFEMPreProcessFiniteElements(dm,&dirichlet_bc); CHKERRQ(ierr);
+  ierr = DMoFEMMeshToLocalVector(dm,D0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  //ierr = VecView(D0,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
+  //internal force vector (to take into account Dirchelt boundary conditions)
+  elastic.getLoopFeRhs().snes_f = F;
+  ierr = DMoFEMLoopFiniteElements(dm,"ELASTIC",&elastic.getLoopFeRhs()); CHKERRQ(ierr);
+  //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
   //elastic element matrix
   elastic.getLoopFeLhs().snes_B = Aij;
   ierr = DMoFEMLoopFiniteElements(dm,"ELASTIC",&elastic.getLoopFeLhs()); CHKERRQ(ierr);
 
-  //forces and preassures on surface
+  //forces and pressures on surface
   boost::ptr_map<string,NeummanForcesSurface> neumann_forces;
   ierr = MetaNeummanForces::setNeumannFiniteElementOperators(m_field,neumann_forces,F,"DISPLACEMENT"); CHKERRQ(ierr);
   {
@@ -381,7 +397,7 @@ int main(int argc, char *argv[]) {
   ierr = DMoFEMLoopFiniteElements(dm,"FLUID_PRESSURE_FE",&fluid_pressure_fe.getLoopFe()); CHKERRQ(ierr);
 
   //postproc
-  ierr = DMoFEMPostProcessFiniteElements(dm,&my_dirichlet_bc); CHKERRQ(ierr);
+  ierr = DMoFEMPostProcessFiniteElements(dm,&dirichlet_bc); CHKERRQ(ierr);
 
   //Matrix View
   //MatView(Aij,PETSC_VIEWER_STDOUT_WORLD);
@@ -389,7 +405,7 @@ int main(int argc, char *argv[]) {
   //std::string wait;
   //std::cin >> wait;
 
-  //set matrix possitives define and symetric for cholesky and icc preceonditionser
+  //set matrix positive defined and symmetric for Cholesky and icc pre-conditioner
   ierr = MatSetOption(Aij,MAT_SPD,PETSC_TRUE); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
@@ -416,7 +432,6 @@ int main(int argc, char *argv[]) {
   }
   ierr = KSPSetUp(solver); CHKERRQ(ierr);
 
-
   PostPocOnRefinedMesh post_proc(m_field);
   ierr = post_proc.generateReferenceElementMesh(); CHKERRQ(ierr);
   ierr = post_proc.addFieldValuesPostProc("DISPLACEMENT"); CHKERRQ(ierr);
@@ -429,10 +444,12 @@ int main(int argc, char *argv[]) {
 	    post_proc.postProcMesh,
 	    post_proc.mapGaussPts,
 	    "DISPLACEMENT",
-	    post_proc.commonData));
+	    post_proc.commonData
+    )
+  );
 
   if(m_field.check_field("TEMP")) {
-    //read time series and do thermo elastci analysis
+    //read time series and do thermo elastic analysis
     Vec F_thermal;
     ierr = VecDuplicate(F,&F_thermal); CHKERRQ(ierr);
     ierr = thermal_stress_elem.setThermalStressRhsOperators("DISPLACEMENT","TEMP",F_thermal); CHKERRQ(ierr);
@@ -460,15 +477,19 @@ int main(int argc, char *argv[]) {
         PetscPrintf(PETSC_COMM_WORLD,"norm2 F_thernal = %6.4e\n",nrm_F_thremal);
         ierr = VecScale(F_thermal,-1); CHKERRQ(ierr); //check this !!!
         ierr = VecAXPY(F_thermal,1,F); CHKERRQ(ierr);
-        my_dirichlet_bc.snes_x = D;
-        my_dirichlet_bc.snes_f = F_thermal;
-        ierr = DMoFEMPostProcessFiniteElements(dm,&my_dirichlet_bc); CHKERRQ(ierr);
+
+        dirichlet_bc.snes_x = D;
+        dirichlet_bc.snes_f = F_thermal;
+        ierr = DMoFEMPostProcessFiniteElements(dm,&dirichlet_bc); CHKERRQ(ierr);
+
         ierr = KSPSolve(solver,F_thermal,D); CHKERRQ(ierr);
+        ierr = VecAXPY(D,1.,D0); CHKERRQ(ierr);
         ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
         ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
         //Save data on mesh
         ierr = DMoFEMMeshToLocalVector(dm,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+        ierr = DMoFEMPreProcessFiniteElements(dm,&dirichlet_bc); CHKERRQ(ierr);
         ierr = DMoFEMLoopFiniteElements(dm,"ELASTIC",&post_proc); CHKERRQ(ierr);
         ostringstream o1;
         o1 << "out_" << sit->step_number << ".h5m";
@@ -492,11 +513,13 @@ int main(int argc, char *argv[]) {
       PetscPrintf(PETSC_COMM_WORLD,"norm2 F_thernal = %6.4e\n",nrm_F_thremal);
       ierr = VecScale(F_thermal,-1); CHKERRQ(ierr);  // check this !!!
       ierr = VecAXPY(F_thermal,1,F); CHKERRQ(ierr);
-      my_dirichlet_bc.snes_x = D;
-      my_dirichlet_bc.snes_f = F_thermal;
-      ierr = DMoFEMPostProcessFiniteElements(dm,&my_dirichlet_bc); CHKERRQ(ierr);
+
+      dirichlet_bc.snes_x = D;
+      dirichlet_bc.snes_f = F_thermal;
+      ierr = DMoFEMPostProcessFiniteElements(dm,&dirichlet_bc); CHKERRQ(ierr);
 
       ierr = KSPSolve(solver,F_thermal,D); CHKERRQ(ierr);
+      ierr = VecAXPY(D,1.,D0); CHKERRQ(ierr);
       ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
       ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
@@ -507,8 +530,9 @@ int main(int argc, char *argv[]) {
     }
     ierr = VecDestroy(&F_thermal); CHKERRQ(ierr);
   } else {
-    // elastic analys
+    // elastic analysis
     ierr = KSPSolve(solver,F,D); CHKERRQ(ierr);
+    ierr = VecAXPY(D,1.,D0); CHKERRQ(ierr);
     ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
@@ -525,6 +549,7 @@ int main(int argc, char *argv[]) {
   //Destroy matrices
   ierr = VecDestroy(&F); CHKERRQ(ierr);
   ierr = VecDestroy(&D); CHKERRQ(ierr);
+  ierr = VecDestroy(&D0); CHKERRQ(ierr);
   ierr = MatDestroy(&Aij); CHKERRQ(ierr);
   ierr = KSPDestroy(&solver); CHKERRQ(ierr);
 

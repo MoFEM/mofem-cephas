@@ -99,7 +99,7 @@ struct NonlinearElasticElement {
     int iD;
     double E;
     double PoissonRatio;
-    Range tEts; ///< constatins elements in block set
+    Range tEts; ///< constrains elements in block set
     FunctionsToCalculatePiolaKirchhoffI<adouble> *materialAdoublePtr;
     FunctionsToCalculatePiolaKirchhoffI<double> *materialDoublePtr;
     Range forcesOnlyOnEntitiesRow;
