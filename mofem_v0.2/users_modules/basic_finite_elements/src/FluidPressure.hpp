@@ -33,7 +33,7 @@ struct FluidPressure {
 
   FieldInterface &mField;
   struct MyTriangleFE: public FaceElementForcesAndSourcesCore {
-    MyTriangleFE(FieldInterface &_mField): FaceElementForcesAndSourcesCore(_mField) {}
+    MyTriangleFE(FieldInterface &m_field): FaceElementForcesAndSourcesCore(m_field) {}
     int getRule(int order) { return order; };
   };
   MyTriangleFE fe;

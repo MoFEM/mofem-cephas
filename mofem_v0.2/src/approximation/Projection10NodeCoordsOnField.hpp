@@ -25,8 +25,8 @@ struct Projection10NodeCoordsOnField: public EntMethod {
   string field_name;
   int vErbose;
 
-  Projection10NodeCoordsOnField(FieldInterface& _mField,string _field_name,int verb = 0):
-    mField(_mField),field_name(_field_name),vErbose(verb) {
+  Projection10NodeCoordsOnField(FieldInterface& m_field,string _field_name,int verb = 0):
+    mField(m_field),field_name(_field_name),vErbose(verb) {
   }
 
   PetscErrorCode ierr;
@@ -117,9 +117,9 @@ struct ProjectionFieldOn10NodeTet: public Projection10NodeCoordsOnField {
   bool set_nodes;
   bool on_coords;
   string on_tag;
-  ProjectionFieldOn10NodeTet(FieldInterface& _mField,string _field_name,
+  ProjectionFieldOn10NodeTet(FieldInterface& m_field,string _field_name,
     bool _set_nodes,bool _on_coords,string _on_tag = "NoNE"):
-    Projection10NodeCoordsOnField(_mField,_field_name),
+    Projection10NodeCoordsOnField(m_field,_field_name),
     set_nodes(_set_nodes),on_coords(_on_coords),on_tag(_on_tag) {}
 
   Tag th;

@@ -232,7 +232,7 @@ PetscErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::calculat
         dAta.materialAdoublePtr->P(dd1,dd2) >>= (commonData.sTress[0])(dd1,dd2);
       }
     }
-
+    //cerr << "P " << dAta.materialAdoublePtr->P << endl;
   } catch (const std::exception& ex) {
     ostringstream ss;
     ss << "throw in method: " << ex.what() << endl;
@@ -297,6 +297,7 @@ PetscErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::doWork(
             }
           }
 
+          //cerr << dAta.materialAdoublePtr->F << endl;
 
         } else {
 
@@ -344,13 +345,9 @@ PetscErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::doWork(
         for(int dd1 = 0;dd1<3;dd1++) {
           for(int dd2 = 0;dd2<3;dd2++) {
             activeVariables(dd1*3+dd2) = (*ptrh)[gg](dd1,dd2);
-            if(fieldDisp) {
-              if(dd1 == dd2) {
-                activeVariables(dd1*3+dd2) += 1;
-              }
-            }
           }
         }
+        //cerr << activeVariables << endl;
       } else {
         for(int dd1 = 0;dd1<3;dd1++) {
           for(int dd2 = 0;dd2<3;dd2++) {
@@ -395,7 +392,7 @@ PetscErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::doWork(
         }
       }
 
-      }
+    }
 
     } catch (const std::exception& ex) {
       ostringstream ss;
@@ -475,6 +472,7 @@ PetscErrorCode NonlinearElasticElement::OpRhsPiolaKirchhoff::doWork(
       for(int dd = 0;dd<nb_dofs/3;dd++) {
         for(int rr = 0;rr<3;rr++) {
           for(int nn = 0;nn<3;nn++) {
+            //cerr << "stress : " << stress << endl;
             nf[3*dd+rr] += val*diffN(dd,nn)*stress(rr,nn);
           }
         }
@@ -486,6 +484,7 @@ PetscErrorCode NonlinearElasticElement::OpRhsPiolaKirchhoff::doWork(
       SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
     }
 
+    //cerr << "nf : " << nf << endl;
     ierr = aSemble(row_side,row_type,row_data); CHKERRQ(ierr);
 
   } catch (const std::exception& ex) {
@@ -963,7 +962,8 @@ PetscErrorCode NonlinearElasticElement::addElement(string element_name,
 PetscErrorCode NonlinearElasticElement::setOperators(
   string spatial_position_field_name,
   string material_position_field_name,
-  bool ale,bool field_disp) {
+  bool ale,bool field_disp
+) {
   PetscFunctionBegin;
 
   commonData.spatialPositions = spatial_position_field_name;

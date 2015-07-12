@@ -377,7 +377,7 @@ int main(int argc, char *argv[]) {
   MonitorPostProc post_proc(m_field);
 
   //Initialize data with values save of on the field
-  //ierr = VecZeroEntries(T); CHKERRQ(ierr);
+  ierr = VecZeroEntries(T); CHKERRQ(ierr);
   ierr = DMoFEMMeshToLocalVector(dm,T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = DMoFEMPreProcessFiniteElements(dm,&dirichlet_bc); CHKERRQ(ierr);
   ierr = DMoFEMMeshToGlobalVector(dm,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);

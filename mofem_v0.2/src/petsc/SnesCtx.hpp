@@ -48,13 +48,13 @@ struct SnesCtx {
   PetscLogEvent USER_EVENT_SnesRhs;
   PetscLogEvent USER_EVENT_SnesMat;
 
-  SnesCtx(FieldInterface &_mField,const string &_problem_name):
-    mField(_mField),moab(_mField.get_moab()),problemName(_problem_name) {
+  SnesCtx(FieldInterface &m_field,const string &_problem_name):
+    mField(m_field),moab(m_field.get_moab()),problemName(_problem_name) {
     PetscLogEventRegister("LoopSNESRhs",0,&USER_EVENT_SnesRhs);
     PetscLogEventRegister("LoopSNESMat",0,&USER_EVENT_SnesMat);
   }
 
-  const FieldInterface& get_mField() const { return mField; }
+  const FieldInterface& getm_field() const { return mField; }
   const Interface& get_moab() const { return moab; }
 
   loops_to_do_type& get_loops_to_do_Mat() { return loops_to_do_Mat; }

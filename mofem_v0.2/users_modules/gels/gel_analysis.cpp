@@ -1,6 +1,16 @@
-/** \file gel_jacobian_test.cpp
-  \brief Atom test testing calculation of element residual vectors and tangent matrices
+/** \file gel_analysis.cpp
+  \brief Reads cubit file and solves problem with gel material
   \ingroup gel
+
+  1) TODO: Current version is limited only to one material. If one like to have
+  general problem for nonlinear elasticity should implement general time
+  dependent problem. If inertia terms need to be considered, this material
+  should be add to nonlinear dynamics problem.
+
+  2) TODO: Internal history state variables need to be statically condensed. It
+  can  be done  by implementing static condensation on finite element level or
+  by implementing pre-conditioner.
+
 */
 
 /* This file is part of MoFEM.
@@ -89,6 +99,9 @@ int main(int argc, char *argv[]) {
 
   MoFEM::Core core(moab);
   FieldInterface& m_field = core;
+
+  // Seed all mesh entities to MoFEM database, those entities can be potentially used as finite elements
+  // or as entities which carry some approximation field.
   BitRefLevel bit_level0;
   bit_level0.set(0);
   ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
@@ -99,9 +112,8 @@ int main(int argc, char *argv[]) {
 
     // Set approximation fields
     {
-      // Seed all mesh entities to MoFEM database, those entities can be potentially used as finite elements
-      // or as entities which carry some approximation field.
 
+      // Add fields
       bool check_if_spatial_field_exist = m_field.check_field("SPATIAL_POSITION");
       ierr = m_field.add_field("SPATIAL_POSITION",H1,3,MF_ZERO); CHKERRQ(ierr);
       ierr = m_field.add_field("SOLVENT_CONCENTRATION",H1,1,MF_ZERO); CHKERRQ(ierr);
@@ -116,7 +128,7 @@ int main(int argc, char *argv[]) {
 
       //meshset consisting all entities in mesh
       EntityHandle root_set = moab.get_root_set();
-      //add entities to field (root_mesh, i.e. on all mesh entities fields are approx.)
+      //Add entities to field (root_mesh, i.e. on all mesh entities fields are approx.)
       ierr = m_field.add_ents_to_field_by_TETs(root_set,"SPATIAL_POSITION"); CHKERRQ(ierr);
       ierr = m_field.add_ents_to_field_by_TETs(root_set,"SOLVENT_CONCENTRATION"); CHKERRQ(ierr);
       ierr = m_field.add_ents_to_field_by_TETs(root_set,"HAT_EPS"); CHKERRQ(ierr);
@@ -133,6 +145,12 @@ int main(int argc, char *argv[]) {
       if(order < 2) {
         //SETERRQ()
       }
+
+      // Set approximation order. Solvent concentration has one order less than
+      // order of of spatial position field. Tests need to be maid if that is
+      // good enough to have stability for this type of problem. If not bubble
+      // functions could be easily added by increasing approximate order for
+      // volume.
 
       ierr = m_field.set_field_order(root_set,MBTET,"SPATIAL_POSITION",order); CHKERRQ(ierr);
       ierr = m_field.set_field_order(root_set,MBTRI,"SPATIAL_POSITION",order); CHKERRQ(ierr);
@@ -172,7 +190,8 @@ int main(int argc, char *argv[]) {
 
     }
 
-    //Set finite elements
+    //Set finite elements. The primary element is GEL_FE in addition elements
+    //for applying tractions and fluxes are added.
     {
       ierr = m_field.add_finite_element("GEL_FE",MF_ZERO); CHKERRQ(ierr);
       ierr = m_field.modify_finite_element_add_field_row("GEL_FE","SPATIAL_POSITION"); CHKERRQ(ierr);
@@ -190,7 +209,7 @@ int main(int argc, char *argv[]) {
       EntityHandle root_set = moab.get_root_set();
       ierr = m_field.add_ents_to_finite_element_by_TETs(root_set,"GEL_FE"); CHKERRQ(ierr);
 
-      // Add Neumann forces
+      // Add Neumann forces, i.e. on triangles, edges and nodes.
       ierr = MetaNeummanForces::addNeumannBCElements(m_field,"SPATIAL_POSITION"); CHKERRQ(ierr);
       ierr = MetaNodalForces::addElement(m_field,"SPATIAL_POSITION"); CHKERRQ(ierr);
       ierr = MetaEdgeForces::addElement(m_field,"SPATIAL_POSITION"); CHKERRQ(ierr);
@@ -203,6 +222,9 @@ int main(int argc, char *argv[]) {
         ierr = m_field.modify_finite_element_add_field_col("SOLVENT_FLUX_FE","SOLVENT_CONCENTRATION"); CHKERRQ(ierr);
         ierr = m_field.modify_finite_element_add_field_data("SOLVENT_FLUX_FE","SOLVENT_CONCENTRATION"); CHKERRQ(ierr);
         ierr = m_field.modify_finite_element_add_field_data("SOLVENT_FLUX_FE","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+
+        // Assume that boundary conditions are set in block containing surface
+        // triangle elements and block name is "SOLVENT_FLUX"
         for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
           if(it->get_name().compare(0,9,"SOLVENT_FLUX") == 0) {
             vector<double> data;
@@ -210,12 +232,19 @@ int main(int argc, char *argv[]) {
             if(data.size()!=1) {
               SETERRQ(PETSC_COMM_SELF,1,"Data inconsistency");
             }
+            // Here it set how block of for heat flux is set.  This is because
+            // implementation from thermal element is used to enforce this
+            // boundary condition.
             strcpy(set_of_solvent_fluxes[it->get_msId()].dAta.data.name,"HeatFlu");
             set_of_solvent_fluxes[it->get_msId()].dAta.data.flag1 = 1;
             set_of_solvent_fluxes[it->get_msId()].dAta.data.value1 = data[0];
             //cerr << set_of_solvent_fluxes[it->get_msId()].dAta << endl;
-            rval = m_field.get_moab().get_entities_by_type(it->meshset,MBTRI,set_of_solvent_fluxes[it->get_msId()].tRis,true); CHKERR_PETSC(rval);
-            ierr = m_field.add_ents_to_finite_element_by_TRIs(set_of_solvent_fluxes[it->get_msId()].tRis,"SOLVENT_FLUX_FE"); CHKERRQ(ierr);
+            rval = m_field.get_moab().get_entities_by_type(
+              it->meshset,MBTRI,set_of_solvent_fluxes[it->get_msId()].tRis,true
+            ); CHKERR_PETSC(rval);
+            ierr = m_field.add_ents_to_finite_element_by_TRIs(
+              set_of_solvent_fluxes[it->get_msId()].tRis,"SOLVENT_FLUX_FE"
+            ); CHKERRQ(ierr);
           }
         }
       }
@@ -228,7 +257,7 @@ int main(int argc, char *argv[]) {
 
   }
 
-  // Create gel instance
+  // Create gel instance and set operators.
   Gel gel(m_field);
   Gel::MonitorPostProc post_proc(m_field,"DMGEL","GEL_FE",gel.commonData);
   {
@@ -249,6 +278,8 @@ int main(int argc, char *argv[]) {
     material_data.vIscosity = 1;
     material_data.pErmeability = 2.;
 
+    // Set name of fields which has been choose to approximate spatial
+    // displacements, solvent concentration and internal state variables.
     Gel::CommonData &common_data = gel.commonData;
     common_data.spatialPositionName = "SPATIAL_POSITION";
     common_data.spatialPositionNameDot = "SPATIAL_POSITION_DOT";
@@ -256,20 +287,32 @@ int main(int argc, char *argv[]) {
     common_data.strainHatName = "HAT_EPS";
     common_data.strainHatNameDot = "HAT_EPS_DOT";
 
+    // Set operators to calculate field values at integration points, both for
+    // left and right hand side elements.
     Gel::GelFE *fe_ptr[] = { &gel.feRhs, &gel.feLhs };
     for(int ss = 0;ss<2;ss++) {
-      fe_ptr[ss]->getOpPtrVector().push_back(new Gel::OpGetDataAtGaussPts("SPATIAL_POSITION",common_data,false,true));
-      fe_ptr[ss]->getOpPtrVector().push_back(new Gel::OpGetDataAtGaussPts("SPATIAL_POSITION_DOT",common_data,false,true));
-      fe_ptr[ss]->getOpPtrVector().push_back(new Gel::OpGetDataAtGaussPts("SOLVENT_CONCENTRATION",common_data,true,true));
-      fe_ptr[ss]->getOpPtrVector().push_back(new Gel::OpGetDataAtGaussPts("HAT_EPS",common_data,true,false,MBTET));
-      fe_ptr[ss]->getOpPtrVector().push_back(new Gel::OpGetDataAtGaussPts("HAT_EPS_DOT",common_data,true,false,MBTET));
+      fe_ptr[ss]->getOpPtrVector().push_back(
+        new Gel::OpGetDataAtGaussPts("SPATIAL_POSITION",common_data,false,true)
+      );
+      fe_ptr[ss]->getOpPtrVector().push_back(
+        new Gel::OpGetDataAtGaussPts("SPATIAL_POSITION_DOT",common_data,false,true)
+      );
+      fe_ptr[ss]->getOpPtrVector().push_back(
+        new Gel::OpGetDataAtGaussPts("SOLVENT_CONCENTRATION",common_data,true,true)
+      );
+      fe_ptr[ss]->getOpPtrVector().push_back(
+        new Gel::OpGetDataAtGaussPts("HAT_EPS",common_data,true,false,MBTET)
+      );
+      fe_ptr[ss]->getOpPtrVector().push_back(
+        new Gel::OpGetDataAtGaussPts("HAT_EPS_DOT",common_data,true,false,MBTET)
+      );
 
       // attach tags for each recorder
       vector<int> tags;
-      tags.push_back(1);
-      tags.push_back(2);
-      tags.push_back(3);
-      tags.push_back(4);
+      tags.push_back(Gel::STRESSTOTAL); // ADOL-C tag used to caluculate total stress
+      tags.push_back(Gel::SOLVENTFLUX);
+      tags.push_back(Gel::VOLUMERATE);
+      tags.push_back(Gel::RESIDUALSTRAINHAT);
 
       // Right hand side operators
       gel.feRhs.getOpPtrVector().push_back(
@@ -282,11 +325,12 @@ int main(int argc, char *argv[]) {
         new Gel::OpRhsSolventFlux(gel.commonData)
       );
       gel.feRhs.getOpPtrVector().push_back(
-        new Gel::OpRhsVolumeDot(gel.commonData)
+          new Gel::OpRhsVolumeDot(gel.commonData)
       );
       gel.feRhs.getOpPtrVector().push_back(
         new Gel::OpRhsStrainHat(gel.commonData)
       );
+
       // Left hand side operators
       gel.feLhs.getOpPtrVector().push_back(
         new Gel::OpJacobian("SPATIAL_POSITION",tags,gel.constitutiveEquationPtr,gel.commonData,false,true)
@@ -316,7 +360,7 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  // Create dm instance
+  // Create discrete manager instance
   DM dm;
   DMType dm_name = "DMGEL";
   {
@@ -331,7 +375,7 @@ int main(int argc, char *argv[]) {
 
   }
 
-  //create matrices
+  // Create matrices and vectors used for analysis
   Vec T,F;
   Mat A;
   {
@@ -340,10 +384,11 @@ int main(int argc, char *argv[]) {
     ierr = DMCreateMatrix_MoFEM(dm,&A); CHKERRQ(ierr);
   }
 
-  // Dirichelt boundary conditions
+  // Setting finite element methods for Dirichelt boundary conditions
   SpatialPositionsBCFEMethodPreAndPostProc spatial_position_bc(m_field,"SPATIAL_POSITION");
   TemperatureBCFEMethodPreAndPostProc concentration_bc(m_field,"SOLVENT_CONCENTRATION",A,T,F);
 
+  // Setting finite element method for applying tractions
   boost::ptr_map<string,NeummanForcesSurface> neumann_forces;
   boost::ptr_map<string,NodalForce> nodal_forces;
   boost::ptr_map<string,EdgeForce> edge_forces;
@@ -369,6 +414,7 @@ int main(int argc, char *argv[]) {
     }
   }
 
+  // Add finite elements to Time Stepping Solver, using Discrete Manager Interface
   {
     //Rhs
     ierr = DMMoFEMTSSetIFunction(dm,DM_NO_ELEMENT,NULL,&spatial_position_bc,NULL); CHKERRQ(ierr);
@@ -403,7 +449,7 @@ int main(int argc, char *argv[]) {
     ierr = DMMoFEMTSSetIJacobian(dm,DM_NO_ELEMENT,NULL,NULL,&concentration_bc); CHKERRQ(ierr);
   }
 
-  //create tS
+  // Create Time Stepping solver
   TS ts;
   {
     ierr = TSCreate(PETSC_COMM_WORLD,&ts); CHKERRQ(ierr);
@@ -417,12 +463,15 @@ int main(int argc, char *argv[]) {
     ierr = DMoFEMMeshToGlobalVector(dm,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   }
 
+  // Solve problem
   {
+
     ierr = TSSetIFunction(ts,F,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
     ierr = TSSetIJacobian(ts,A,A,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
     TsCtx *ts_ctx;
     DMMoFEMGetTsCtx(dm,&ts_ctx);
-    //add monitor operator
+
+    // Add monitor operator which dump data on hard drive
     ts_ctx->get_postProcess_to_do_Monitor().push_back(&post_proc);
     double ftime = 1;
     ierr = TSSetDuration(ts,PETSC_DEFAULT,ftime); CHKERRQ(ierr);

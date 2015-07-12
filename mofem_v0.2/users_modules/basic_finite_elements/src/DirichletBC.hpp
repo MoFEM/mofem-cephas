@@ -41,18 +41,20 @@ struct DisplacementBCFEMethodPreAndPostProc: public FEMethod {
 
   FieldInterface& mField;
   const string fieldName;			///< field name to set Dirichlet BC
-  double dIag;					///< diagonal value set on zeroed column and rows
+  double dIag;					      ///< diagonal value set on zeroed column and rows
 
   DisplacementBCFEMethodPreAndPostProc(
-    FieldInterface& _mField,const string &_field_name,
-    Mat _Aij,Vec _X,Vec _F);
+    FieldInterface& m_field,const string &field_name,
+    Mat Aij,Vec X,Vec F
+  );
   DisplacementBCFEMethodPreAndPostProc(
-    FieldInterface& _mField,const string &_field_name);
+    FieldInterface& m_field,const string &field_name
+  );
 
   PetscErrorCode ierr;
   ErrorCode rval;
 
-  map<DofIdx,FieldData> map_zero_rows;
+  map<DofIdx,FieldData> mapZeroRows;
   vector<int> dofsIndices;
   vector<double> dofsValues;
   vector<double> dofsXValues;
@@ -69,12 +71,12 @@ struct DisplacementBCFEMethodPreAndPostProc: public FEMethod {
 struct SpatialPositionsBCFEMethodPreAndPostProc: public DisplacementBCFEMethodPreAndPostProc {
 
   SpatialPositionsBCFEMethodPreAndPostProc(
-    FieldInterface& _mField,const string &_field_name,Mat _Aij,Vec _X,Vec _F):
-    DisplacementBCFEMethodPreAndPostProc(_mField,_field_name,_Aij,_X,_F) {}
+    FieldInterface& m_field,const string &field_name,Mat _Aij,Vec _X,Vec _F):
+    DisplacementBCFEMethodPreAndPostProc(m_field,field_name,_Aij,_X,_F) {}
 
   SpatialPositionsBCFEMethodPreAndPostProc(
-    FieldInterface& _mField,const string &_field_name):
-    DisplacementBCFEMethodPreAndPostProc(_mField,_field_name) {}
+    FieldInterface& m_field,const string &field_name):
+    DisplacementBCFEMethodPreAndPostProc(m_field,field_name) {}
 
   vector<string> fixFields;
 
@@ -86,12 +88,12 @@ struct SpatialPositionsBCFEMethodPreAndPostProc: public DisplacementBCFEMethodPr
 struct TemperatureBCFEMethodPreAndPostProc: public DisplacementBCFEMethodPreAndPostProc {
 
   TemperatureBCFEMethodPreAndPostProc(
-    FieldInterface& _mField,const string &_field_name,Mat _Aij,Vec _X,Vec _F):
-    DisplacementBCFEMethodPreAndPostProc(_mField,_field_name,_Aij,_X,_F) {}
+    FieldInterface& m_field,const string &field_name,Mat _Aij,Vec _X,Vec _F):
+    DisplacementBCFEMethodPreAndPostProc(m_field,field_name,_Aij,_X,_F) {}
 
   TemperatureBCFEMethodPreAndPostProc(
-    FieldInterface& _mField,const string &_field_name):
-    DisplacementBCFEMethodPreAndPostProc(_mField,_field_name) {}
+    FieldInterface& m_field,const string &field_name):
+    DisplacementBCFEMethodPreAndPostProc(m_field,field_name) {}
 
   PetscErrorCode iNitalize();
 
@@ -105,14 +107,14 @@ struct FixBcAtEntities: public DisplacementBCFEMethodPreAndPostProc {
   Range &eNts;
   vector<string> fieldNames;
   FixBcAtEntities(
-    FieldInterface& _mField,const string &_field_name,Mat _Aij,Vec _X,Vec _F,Range &ents):
-    DisplacementBCFEMethodPreAndPostProc(_mField,_field_name,_Aij,_X,_F),eNts(ents) {
+    FieldInterface& m_field,const string &field_name,Mat _Aij,Vec _X,Vec _F,Range &ents):
+    DisplacementBCFEMethodPreAndPostProc(m_field,field_name,_Aij,_X,_F),eNts(ents) {
     fieldNames.push_back(fieldName);
   }
 
   FixBcAtEntities(
-    FieldInterface& _mField,const string &_field_name,Range &ents):
-    DisplacementBCFEMethodPreAndPostProc(_mField,_field_name),eNts(ents) {
+    FieldInterface& m_field,const string &field_name,Range &ents):
+    DisplacementBCFEMethodPreAndPostProc(m_field,field_name),eNts(ents) {
     fieldNames.push_back(fieldName);
   }
 
@@ -124,21 +126,29 @@ struct FixBcAtEntities: public DisplacementBCFEMethodPreAndPostProc {
 };
 
 
-/** \brief blockset boundary conditions
+/** \brief Blockset boundary conditions
   * \ingroup Dirichlet_bc
   *
-  * Implementation of generalised Dirichlet Boundary Conditions from CUBIT Blockset
+  * Implementation of generalized Dirichlet Boundary Conditions from CUBIT Blockset
   * (or not using CUBIT building boundary conditions, e.g. Temperature or Displacements etc).
   * It can work for any Problem rank (1,2,3)
 **/
 struct DirichletBCFromBlockSetFEMethodPreAndPostProc: public DisplacementBCFEMethodPreAndPostProc {
-  const string _blockset_name;
-  const string blocksetName;
-  DirichletBCFromBlockSetFEMethodPreAndPostProc(FieldInterface& _mField,const string &_field_name,const string &_blockset_name,Mat _Aij,Vec _X,Vec _F):
-  DisplacementBCFEMethodPreAndPostProc(_mField,_field_name,_Aij,_X,_F),blocksetName(_blockset_name) {}
 
-  DirichletBCFromBlockSetFEMethodPreAndPostProc(FieldInterface& _mField,const string &_field_name):
-  DisplacementBCFEMethodPreAndPostProc(_mField,_field_name),blocksetName(_blockset_name) {}
+  const string blocksetName;
+  DirichletBCFromBlockSetFEMethodPreAndPostProc(
+    FieldInterface& m_field,const string &field_name,const string &blockset_name,Mat Aij,Vec X,Vec F
+  ):
+  DisplacementBCFEMethodPreAndPostProc(m_field,field_name,Aij,X,F),
+  blocksetName(blockset_name) {
+  }
+
+  DirichletBCFromBlockSetFEMethodPreAndPostProc(
+    FieldInterface& m_field,const string &field_name,const string &blockset_name
+  ):
+  DisplacementBCFEMethodPreAndPostProc(m_field,field_name),
+  blocksetName(blockset_name) {
+  }
 
   PetscErrorCode iNitalize();
 

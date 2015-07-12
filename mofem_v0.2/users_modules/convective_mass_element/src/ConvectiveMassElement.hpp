@@ -48,7 +48,7 @@ struct ConvectiveMassElement {
     Vec F;
     bool initV; ///< check if ghost vector used to accumalte Kinetin energy is created
 
-    MyVolumeFE(FieldInterface &_mField);
+    MyVolumeFE(FieldInterface &m_field);
 
     /** \brief it is used to calculate nb. of Gauss integration points
      *
@@ -437,7 +437,7 @@ struct ConvectiveMassElement {
     const string spatialPositionField;
 
     int jacobianLag;
-    UpdateAndControl(FieldInterface& _mField,TS _ts,
+    UpdateAndControl(FieldInterface& m_field,TS _ts,
       const string velocity_field,
       const string spatial_position_field
     );

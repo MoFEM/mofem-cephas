@@ -50,7 +50,7 @@ struct GroundSurfaceTemerature {
     * This element is used to integrate heat fluxes; convection and radiation
     */
   struct MyTriFE: public FaceElementForcesAndSourcesCore {
-    MyTriFE(FieldInterface &_mField): FaceElementForcesAndSourcesCore(_mField) {}
+    MyTriFE(FieldInterface &m_field): FaceElementForcesAndSourcesCore(m_field) {}
     int getRule(int order) { return order; };
   };
   MyTriFE feGroundSurfaceRhs; //< radiation element

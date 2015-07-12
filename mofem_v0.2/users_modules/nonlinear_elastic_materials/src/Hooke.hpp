@@ -48,20 +48,24 @@ struct Hooke: public NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoff
       //PetscErrorCode ierr;
       this->lambda = LAMBDA(block_data.E,block_data.PoissonRatio);
       this->mu = MU(block_data.E,block_data.PoissonRatio);
+      //cerr << block_data.E << " " << block_data.PoissonRatio << endl;
       Eps.resize(3,3,false);
-      noalias(Eps) = 0.5*(this->F + trans(this->F));
+      noalias(Eps) = this->F;
       for(int dd = 0;dd<3;dd++) {
         Eps(dd,dd) -= 1;
       }
+      Eps += trans(Eps);
+      Eps *= 0.5;
       this->P.resize(3,3,false);
       noalias(this->P) = 2*this->mu*Eps;
       tr = 0;
       for(int dd = 0;dd<3;dd++) {
-        tr += this->lambda*Eps(dd,dd);
+        tr += Eps(dd,dd);
       }
       for(int dd =0;dd<3;dd++) {
-        this->P(dd,dd) += tr;
+        this->P(dd,dd) += this->lambda*tr;
       }
+      //cerr << Eps << " : " << this->P << endl;
       PetscFunctionReturn(0);
     }
 
@@ -78,10 +82,13 @@ struct Hooke: public NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoff
       this->lambda = LAMBDA(block_data.E,block_data.PoissonRatio);
       this->mu = MU(block_data.E,block_data.PoissonRatio);
       Eps.resize(3,3);
-      noalias(Eps) = 0.5*(this->F + trans(this->F));
+      noalias(Eps) = this->F;
       for(int dd = 0;dd<3;dd++) {
         Eps(dd,dd) -= 1;
       }
+      Eps += trans(Eps);
+      Eps *= 0.5;
+      //cerr << Eps << endl;
       TYPE trace = 0;
       this->eNergy = 0;
       for(int dd = 0;dd<3;dd++) {

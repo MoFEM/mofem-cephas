@@ -38,8 +38,8 @@ using namespace MoFEM;
   #error "MoFEM need to be compiled with ADOL-C"
 #endif
 
-ConvectiveMassElement::MyVolumeFE::MyVolumeFE(FieldInterface &_mField):
-VolumeElementForcesAndSourcesCore(_mField),
+ConvectiveMassElement::MyVolumeFE::MyVolumeFE(FieldInterface &m_field):
+VolumeElementForcesAndSourcesCore(m_field),
 A(PETSC_NULL),
 F(PETSC_NULL),
 initV(false) {
@@ -1445,11 +1445,11 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
 
 
     ConvectiveMassElement::UpdateAndControl::UpdateAndControl(
-      FieldInterface& _mField,TS _ts,
+      FieldInterface& m_field,TS _ts,
       const string velocity_field,
       const string spatial_position_field
     ):
-    mField(_mField),tS(_ts),
+    mField(m_field),tS(_ts),
     velocityField(velocity_field),
     spatialPositionField(spatial_position_field),
     jacobianLag(-1) {

@@ -189,11 +189,11 @@ struct TangentWithMeshSmoothingFrontConstrain: public C_CONSTANT_AREA {
   const double eps;
 
   TangentWithMeshSmoothingFrontConstrain(
-    FieldInterface& _mField,
+    FieldInterface& m_field,
     string _lambda_field_name,
     int _verbose = 0
   ):
-  C_CONSTANT_AREA(_mField,PETSC_NULL,PETSC_NULL,_lambda_field_name,_verbose),
+  C_CONSTANT_AREA(m_field,PETSC_NULL,PETSC_NULL,_lambda_field_name,_verbose),
   frontF(PETSC_NULL),
   tangentFrontF(PETSC_NULL),
   eps(1e-10) {}
@@ -3474,8 +3474,8 @@ PetscErrorCode ConfigurationalFractureMechanics::calculate_material_forces(Field
 }
 
 ConfigurationalFractureMechanics::FrontAreaArcLengthControl::FrontAreaArcLengthControl(
-  FieldInterface& _mField,ConfigurationalFractureMechanics *_conf_prob,ArcLengthCtx *_arc_ptr):
-  mField(_mField),
+  FieldInterface& m_field,ConfigurationalFractureMechanics *_conf_prob,ArcLengthCtx *_arc_ptr):
+  mField(m_field),
   conf_prob(_conf_prob),
   arc_ptr(_arc_ptr),
   aRea(0),
