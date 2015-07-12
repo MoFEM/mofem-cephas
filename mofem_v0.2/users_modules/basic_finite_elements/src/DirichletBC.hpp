@@ -12,7 +12,10 @@
  */
 
 /* Notes:
- * DirichletBCFromBlockSetFEMethodPreAndPostProc implemented by Zahur Ullah (Zahur.Ullah@glasgow.ac.uk)
+
+ DirichletBCFromBlockSetFEMethodPreAndPostProc implemented by Zahur Ullah
+ (Zahur.Ullah@glasgow.ac.uk)
+
  */
 
 /* This file is part of MoFEM.
