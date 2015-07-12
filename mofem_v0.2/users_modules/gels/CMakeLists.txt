@@ -13,6 +13,8 @@
 
 include_directories(${MoFEM_PROJECT_SOURCE_DIR}/users_modules/gels/src)
 
+cm_export_file("meshes/brick_of_gel.cub" export_files_gels)
+
 add_executable(gel_analysis
   ${UM_SOURCE_DIR}/gels/gel_analysis.cpp
 )

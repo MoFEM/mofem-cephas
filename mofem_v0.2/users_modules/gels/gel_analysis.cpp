@@ -167,6 +167,11 @@ int main(int argc, char *argv[]) {
       ierr = m_field.set_field_order(root_set,MBEDGE,"SOLVENT_CONCENTRATION",order-1); CHKERRQ(ierr);
       ierr = m_field.set_field_order(root_set,MBVERTEX,"SOLVENT_CONCENTRATION",1); CHKERRQ(ierr);
 
+      ierr = m_field.set_field_order(root_set,MBTET,"SOLVENT_CONCENTRATION_DOT",order-1); CHKERRQ(ierr);
+      ierr = m_field.set_field_order(root_set,MBTRI,"SOLVENT_CONCENTRATION_DOT",order-1); CHKERRQ(ierr);
+      ierr = m_field.set_field_order(root_set,MBEDGE,"SOLVENT_CONCENTRATION_DOT",order-1); CHKERRQ(ierr);
+      ierr = m_field.set_field_order(root_set,MBVERTEX,"SOLVENT_CONCENTRATION_DOT",1); CHKERRQ(ierr);
+
       ierr = m_field.set_field_order(root_set,MBTET,"HAT_EPS",order-1); CHKERRQ(ierr);
       ierr = m_field.set_field_order(root_set,MBTET,"HAT_EPS_DOT",order-1); CHKERRQ(ierr);
 
@@ -196,13 +201,14 @@ int main(int argc, char *argv[]) {
       ierr = m_field.add_finite_element("GEL_FE",MF_ZERO); CHKERRQ(ierr);
       ierr = m_field.modify_finite_element_add_field_row("GEL_FE","SPATIAL_POSITION"); CHKERRQ(ierr);
       ierr = m_field.modify_finite_element_add_field_col("GEL_FE","SPATIAL_POSITION"); CHKERRQ(ierr);
-      ierr = m_field.modify_finite_element_add_field_data("GEL_FE","SPATIAL_POSITION"); CHKERRQ(ierr);
-      ierr = m_field.modify_finite_element_add_field_data("GEL_FE","SPATIAL_POSITION_DOT"); CHKERRQ(ierr);
       ierr = m_field.modify_finite_element_add_field_row("GEL_FE","SOLVENT_CONCENTRATION"); CHKERRQ(ierr);
       ierr = m_field.modify_finite_element_add_field_col("GEL_FE","SOLVENT_CONCENTRATION"); CHKERRQ(ierr);
-      ierr = m_field.modify_finite_element_add_field_data("GEL_FE","SOLVENT_CONCENTRATION"); CHKERRQ(ierr);
       ierr = m_field.modify_finite_element_add_field_row("GEL_FE","HAT_EPS"); CHKERRQ(ierr);
       ierr = m_field.modify_finite_element_add_field_col("GEL_FE","HAT_EPS"); CHKERRQ(ierr);
+      ierr = m_field.modify_finite_element_add_field_data("GEL_FE","SPATIAL_POSITION"); CHKERRQ(ierr);
+      ierr = m_field.modify_finite_element_add_field_data("GEL_FE","SPATIAL_POSITION_DOT"); CHKERRQ(ierr);
+      ierr = m_field.modify_finite_element_add_field_data("GEL_FE","SOLVENT_CONCENTRATION"); CHKERRQ(ierr);
+      ierr = m_field.modify_finite_element_add_field_data("GEL_FE","SOLVENT_CONCENTRATION_DOT"); CHKERRQ(ierr);
       ierr = m_field.modify_finite_element_add_field_data("GEL_FE","HAT_EPS"); CHKERRQ(ierr);
       ierr = m_field.modify_finite_element_add_field_data("GEL_FE","HAT_EPS_DOT"); CHKERRQ(ierr);
       ierr = m_field.modify_finite_element_add_field_data("GEL_FE","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
@@ -226,7 +232,7 @@ int main(int argc, char *argv[]) {
         // Assume that boundary conditions are set in block containing surface
         // triangle elements and block name is "SOLVENT_FLUX"
         for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
-          if(it->get_name().compare(0,9,"SOLVENT_FLUX") == 0) {
+          if(it->get_name().compare(0,12,"SOLVENT_FLUX") == 0) {
             vector<double> data;
             ierr = it->get_attributes(data); CHKERRQ(ierr);
             if(data.size()!=1) {
@@ -306,58 +312,58 @@ int main(int argc, char *argv[]) {
       fe_ptr[ss]->getOpPtrVector().push_back(
         new Gel::OpGetDataAtGaussPts("HAT_EPS_DOT",common_data,true,false,MBTET)
       );
-
-      // attach tags for each recorder
-      vector<int> tags;
-      tags.push_back(Gel::STRESSTOTAL); // ADOL-C tag used to caluculate total stress
-      tags.push_back(Gel::SOLVENTFLUX);
-      tags.push_back(Gel::VOLUMERATE);
-      tags.push_back(Gel::RESIDUALSTRAINHAT);
-
-      // Right hand side operators
-      gel.feRhs.getOpPtrVector().push_back(
-        new Gel::OpJacobian("SPATIAL_POSITION", tags,gel.constitutiveEquationPtr,gel.commonData,true,false)
-      );
-      gel.feRhs.getOpPtrVector().push_back(
-        new Gel::OpRhsStressTotal(gel.commonData)
-      );
-      gel.feRhs.getOpPtrVector().push_back(
-        new Gel::OpRhsSolventFlux(gel.commonData)
-      );
-      gel.feRhs.getOpPtrVector().push_back(
-          new Gel::OpRhsVolumeDot(gel.commonData)
-      );
-      gel.feRhs.getOpPtrVector().push_back(
-        new Gel::OpRhsStrainHat(gel.commonData)
-      );
-
-      // Left hand side operators
-      gel.feLhs.getOpPtrVector().push_back(
-        new Gel::OpJacobian("SPATIAL_POSITION",tags,gel.constitutiveEquationPtr,gel.commonData,false,true)
-      );
-      gel.feLhs.getOpPtrVector().push_back(
-        new Gel::OpLhsdxdx(gel.commonData)
-      );
-      gel.feLhs.getOpPtrVector().push_back(
-        new Gel::OpLhsdxdMu(gel.commonData)
-      );
-      gel.feLhs.getOpPtrVector().push_back(
-        new Gel::OpLhsdxdStrainHat(gel.commonData)
-      );
-      gel.feLhs.getOpPtrVector().push_back(
-        new Gel::OpLhsdStrainHatdStrainHat(gel.commonData)
-      );
-      gel.feLhs.getOpPtrVector().push_back(
-        new Gel::OpLhsdStrainHatdx(gel.commonData)
-      );
-      gel.feLhs.getOpPtrVector().push_back(
-        new Gel::OpLhsdMudMu(gel.commonData)
-      );
-      gel.feLhs.getOpPtrVector().push_back(
-        new Gel::OpLhsdMudx(gel.commonData)
-      );
-
     }
+
+    // attach tags for each recorder
+    vector<int> tags;
+    tags.push_back(Gel::STRESSTOTAL); // ADOL-C tag used to calculate total stress
+    tags.push_back(Gel::SOLVENTFLUX);
+    tags.push_back(Gel::VOLUMERATE);
+    tags.push_back(Gel::RESIDUALSTRAINHAT);
+
+    // Right hand side operators
+    gel.feRhs.getOpPtrVector().push_back(
+      new Gel::OpJacobian("SPATIAL_POSITION", tags,gel.constitutiveEquationPtr,gel.commonData,true,false)
+    );
+    gel.feRhs.getOpPtrVector().push_back(
+      new Gel::OpRhsStressTotal(gel.commonData)
+    );
+    gel.feRhs.getOpPtrVector().push_back(
+      new Gel::OpRhsSolventFlux(gel.commonData)
+    );
+    gel.feRhs.getOpPtrVector().push_back(
+        new Gel::OpRhsVolumeDot(gel.commonData)
+    );
+    gel.feRhs.getOpPtrVector().push_back(
+      new Gel::OpRhsStrainHat(gel.commonData)
+    );
+
+    // Left hand side operators
+    gel.feLhs.getOpPtrVector().push_back(
+      new Gel::OpJacobian("SPATIAL_POSITION",tags,gel.constitutiveEquationPtr,gel.commonData,false,true)
+    );
+    gel.feLhs.getOpPtrVector().push_back(
+      new Gel::OpLhsdxdx(gel.commonData)
+    );
+    gel.feLhs.getOpPtrVector().push_back(
+      new Gel::OpLhsdxdMu(gel.commonData)
+    );
+    gel.feLhs.getOpPtrVector().push_back(
+      new Gel::OpLhsdxdStrainHat(gel.commonData)
+    );
+    gel.feLhs.getOpPtrVector().push_back(
+      new Gel::OpLhsdStrainHatdStrainHat(gel.commonData)
+    );
+    gel.feLhs.getOpPtrVector().push_back(
+      new Gel::OpLhsdStrainHatdx(gel.commonData)
+    );
+    gel.feLhs.getOpPtrVector().push_back(
+      new Gel::OpLhsdMudMu(gel.commonData)
+    );
+    gel.feLhs.getOpPtrVector().push_back(
+      new Gel::OpLhsdMudx(gel.commonData)
+    );
+
   }
 
   // Create discrete manager instance
@@ -385,8 +391,8 @@ int main(int argc, char *argv[]) {
   }
 
   // Setting finite element methods for Dirichelt boundary conditions
-  SpatialPositionsBCFEMethodPreAndPostProc spatial_position_bc(m_field,"SPATIAL_POSITION");
-  TemperatureBCFEMethodPreAndPostProc concentration_bc(m_field,"SOLVENT_CONCENTRATION",A,T,F);
+  SpatialPositionsBCFEMethodPreAndPostProc spatial_position_bc(m_field,"SPATIAL_POSITION",A,T,F);
+  DirichletBCFromBlockSetFEMethodPreAndPostProc concentration_bc(m_field,"SOLVENT_CONCENTRATION","CONCENTRATION",A,T,F);
 
   // Setting finite element method for applying tractions
   boost::ptr_map<string,NeummanForcesSurface> neumann_forces;
