@@ -290,6 +290,7 @@ int main(int argc, char *argv[]) {
     common_data.spatialPositionName = "SPATIAL_POSITION";
     common_data.spatialPositionNameDot = "SPATIAL_POSITION_DOT";
     common_data.muName = "SOLVENT_CONCENTRATION";
+    common_data.muNameDot = "SOLVENT_CONCENTRATION_DOT";
     common_data.strainHatName = "HAT_EPS";
     common_data.strainHatNameDot = "HAT_EPS_DOT";
 
@@ -323,7 +324,9 @@ int main(int argc, char *argv[]) {
 
     // Right hand side operators
     gel.feRhs.getOpPtrVector().push_back(
-      new Gel::OpJacobian("SPATIAL_POSITION", tags,gel.constitutiveEquationPtr,gel.commonData,true,false)
+      new Gel::OpJacobian(
+        "SPATIAL_POSITION",tags,gel.constitutiveEquationPtr,gel.commonData,true,false
+      )
     );
     gel.feRhs.getOpPtrVector().push_back(
       new Gel::OpRhsStressTotal(gel.commonData)
@@ -340,7 +343,9 @@ int main(int argc, char *argv[]) {
 
     // Left hand side operators
     gel.feLhs.getOpPtrVector().push_back(
-      new Gel::OpJacobian("SPATIAL_POSITION",tags,gel.constitutiveEquationPtr,gel.commonData,false,true)
+      new Gel::OpJacobian(
+        "SPATIAL_POSITION",tags,gel.constitutiveEquationPtr,gel.commonData,false,true
+      )
     );
     gel.feLhs.getOpPtrVector().push_back(
       new Gel::OpLhsdxdx(gel.commonData)
@@ -453,6 +458,12 @@ int main(int argc, char *argv[]) {
     ierr = DMMoFEMTSSetIJacobian(dm,"GEL_FE",&gel.feLhs,NULL,NULL); CHKERRQ(ierr);
     ierr = DMMoFEMTSSetIJacobian(dm,DM_NO_ELEMENT,NULL,NULL,&spatial_position_bc); CHKERRQ(ierr);
     ierr = DMMoFEMTSSetIJacobian(dm,DM_NO_ELEMENT,NULL,NULL,&concentration_bc); CHKERRQ(ierr);
+
+    //Monitor
+    TsCtx *ts_ctx;
+    DMMoFEMGetTsCtx(dm,&ts_ctx);
+    ts_ctx->get_postProcess_to_do_Monitor().push_back(&post_proc);
+
   }
 
   // Create Time Stepping solver
@@ -474,11 +485,7 @@ int main(int argc, char *argv[]) {
 
     ierr = TSSetIFunction(ts,F,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
     ierr = TSSetIJacobian(ts,A,A,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
-    TsCtx *ts_ctx;
-    DMMoFEMGetTsCtx(dm,&ts_ctx);
 
-    // Add monitor operator which dump data on hard drive
-    ts_ctx->get_postProcess_to_do_Monitor().push_back(&post_proc);
     double ftime = 1;
     ierr = TSSetDuration(ts,PETSC_DEFAULT,ftime); CHKERRQ(ierr);
     ierr = TSSetFromOptions(ts); CHKERRQ(ierr);

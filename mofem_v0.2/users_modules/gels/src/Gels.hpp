@@ -329,6 +329,7 @@ struct Gel {
     string strainHatName;
     string strainHatNameDot;
     string muName;
+    string muNameDot;
 
     map<string,vector<VectorDouble > > dataAtGaussPts;
     map<string,vector<MatrixDouble > > gradAtGaussPts;
@@ -1994,7 +1995,18 @@ struct Gel {
 
     PetscErrorCode postProcess() {
       PetscFunctionBegin;
+
       PetscErrorCode ierr;
+      ierr = mField.set_other_local_ghost_vector(
+        problemPtr,commonData.spatialPositionName,commonData.spatialPositionNameDot,ROW,ts_u_t,INSERT_VALUES,SCATTER_REVERSE
+      ); CHKERRQ(ierr);
+      ierr = mField.set_other_local_ghost_vector(
+        problemPtr,commonData.muName,commonData.muNameDot,ROW,ts_u_t,INSERT_VALUES,SCATTER_REVERSE
+      ); CHKERRQ(ierr);
+      ierr = mField.set_other_local_ghost_vector(
+        problemPtr,commonData.strainHatName,commonData.strainHatNameDot,ROW,ts_u_t,INSERT_VALUES,SCATTER_REVERSE
+      ); CHKERRQ(ierr);
+
       if(!iNit) {
         ierr = postProc.generateReferenceElementMesh(); CHKERRQ(ierr);
         ierr = postProc.addFieldValuesPostProc(commonData.spatialPositionName); CHKERRQ(ierr);
