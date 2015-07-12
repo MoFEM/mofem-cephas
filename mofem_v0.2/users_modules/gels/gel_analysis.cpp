@@ -425,7 +425,7 @@ int main(int argc, char *argv[]) {
     //Rhs
     ierr = DMMoFEMTSSetIFunction(dm,DM_NO_ELEMENT,NULL,&spatial_position_bc,NULL); CHKERRQ(ierr);
     ierr = DMMoFEMTSSetIFunction(dm,DM_NO_ELEMENT,NULL,&concentration_bc,NULL); CHKERRQ(ierr);
-    ierr = DMMoFEMTSSetIFunction(dm,"GEL_FE",&gel.feLhs,NULL,NULL); CHKERRQ(ierr);
+    ierr = DMMoFEMTSSetIFunction(dm,"GEL_FE",&gel.feRhs,NULL,NULL); CHKERRQ(ierr);
     {
       boost::ptr_map<string,NeummanForcesSurface>::iterator mit = neumann_forces.begin();
       for(;mit!=neumann_forces.end();mit++) {
