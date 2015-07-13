@@ -100,7 +100,7 @@ PetscErrorCode f_TSSetIJacobian(TS ts,PetscReal t,Vec u,Vec u_t,PetscReal a,Mat 
   ierr = VecGhostUpdateBegin(u_t,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(u_t,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = ts_ctx->mField.set_local_ghost_vector(ts_ctx->problemName,COL,u,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-  if(ts_ctx->zero_matrix) {
+  if(ts_ctx->zeroMatrix) {
     ierr = MatZeroEntries(B); CHKERRQ(ierr);
   }
   int step;
@@ -149,7 +149,7 @@ PetscErrorCode f_TSSetIJacobian(TS ts,PetscReal t,Vec u,Vec u_t,PetscReal a,Mat 
     ierr = ts_ctx->mField.problem_basic_method_postProcess(ts_ctx->problemName,*(*(bit))); CHKERRQ(ierr);
     ierr = (*bit)->set_ts_ctx(TSMethod::CTX_TSNONE); CHKERRQ(ierr);
   }
-  if(ts_ctx->zero_matrix) {
+  if(ts_ctx->zeroMatrix) {
     ierr = MatAssemblyBegin(B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
     ierr = MatAssemblyEnd(B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
   }
