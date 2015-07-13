@@ -680,8 +680,7 @@ PetscErrorCode ThermalElement::addThermalFluxElement(const string field_name,con
       setOfFluxes[it->get_msId()].dAta.data.value1 = data[0];
       //cerr << setOfFluxes[it->get_msId()].dAta << endl;
       rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,setOfFluxes[it->get_msId()].tRis,true); CHKERR_PETSC(rval);
-      ierr = mField.add_ents_to_finite_element_by_TRIs(setOfFluxes[it->get_msId()].tRis,"SOLVENT_FLUX_FE"); CHKERRQ(ierr);
-
+      ierr = mField.add_ents_to_finite_element_by_TRIs(setOfFluxes[it->get_msId()].tRis,"THERMAL_FLUX_FE"); CHKERRQ(ierr);
     }
   }
 
