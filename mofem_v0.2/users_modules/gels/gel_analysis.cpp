@@ -40,11 +40,9 @@ using namespace MoFEM;
 #include <adolc/adolc.h>
 #include <Gels.hpp>
 
-#include <NonLinearElasticElement.hpp>
 #include <boost/program_options.hpp>
 using namespace std;
 namespace po = boost::program_options;
-#include <ElasticMaterials.hpp>
 
 #include <DirichletBC.hpp>
 #include <SurfacePressure.hpp>
@@ -111,10 +109,6 @@ int main(int argc, char *argv[]) {
   BitRefLevel bit_level0;
   bit_level0.set(0);
   ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
-
-
-  NonlinearElasticElement elastic(m_field, 2);
-  ElasticMaterials elastic_materials(m_field);
 
   // Define fields and finite elements
   map<int,ThermalElement::FluxData> set_of_solvent_fluxes;
@@ -211,9 +205,9 @@ int main(int argc, char *argv[]) {
       ierr = m_field.add_finite_element("GEL_FE",MF_ZERO); CHKERRQ(ierr);
       ierr = m_field.modify_finite_element_add_field_row("GEL_FE","SPATIAL_POSITION"); CHKERRQ(ierr);
       ierr = m_field.modify_finite_element_add_field_col("GEL_FE","SPATIAL_POSITION"); CHKERRQ(ierr);
-      /*ierr = m_field.modify_finite_element_add_field_row("GEL_FE","SOLVENT_CONCENTRATION"); CHKERRQ(ierr);
+      ierr = m_field.modify_finite_element_add_field_row("GEL_FE","SOLVENT_CONCENTRATION"); CHKERRQ(ierr);
       ierr = m_field.modify_finite_element_add_field_col("GEL_FE","SOLVENT_CONCENTRATION"); CHKERRQ(ierr);
-      ierr = m_field.modify_finite_element_add_field_row("GEL_FE","HAT_EPS"); CHKERRQ(ierr);
+      /*ierr = m_field.modify_finite_element_add_field_row("GEL_FE","HAT_EPS"); CHKERRQ(ierr);
       ierr = m_field.modify_finite_element_add_field_col("GEL_FE","HAT_EPS"); CHKERRQ(ierr);*/
       ierr = m_field.modify_finite_element_add_field_data("GEL_FE","SPATIAL_POSITION"); CHKERRQ(ierr);
       ierr = m_field.modify_finite_element_add_field_data("GEL_FE","SPATIAL_POSITION_DOT"); CHKERRQ(ierr);
@@ -224,12 +218,6 @@ int main(int argc, char *argv[]) {
       ierr = m_field.modify_finite_element_add_field_data("GEL_FE","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
       EntityHandle root_set = moab.get_root_set();
       ierr = m_field.add_ents_to_finite_element_by_TETs(root_set,"GEL_FE"); CHKERRQ(ierr);
-
-      {
-        ierr = elastic_materials.setBlocks(elastic.setOfBlocks); CHKERRQ(ierr);
-        ierr = elastic.addElement("ELASTIC","SPATIAL_POSITION"); CHKERRQ(ierr);
-        ierr = elastic.setOperators("SPATIAL_POSITION"); CHKERRQ(ierr);
-      }
 
       // Add Neumann forces, i.e. on triangles, edges and nodes.
       ierr = MetaNeummanForces::addNeumannBCElements(m_field,"SPATIAL_POSITION"); CHKERRQ(ierr);
@@ -281,7 +269,6 @@ int main(int argc, char *argv[]) {
 
   // Create gel instance and set operators.
   Gel gel(m_field);
-  Gel::MonitorPostProc post_proc(m_field,"DMGEL","GEL_FE",gel.commonData);
   {
 
     Gel::BlockMaterialData &material_data = gel.blockMaterialData;
@@ -347,13 +334,13 @@ int main(int argc, char *argv[]) {
     gel.feRhs.getOpPtrVector().push_back(
       new Gel::OpRhsStressTotal(gel.commonData)
     );
-    /*gel.feRhs.getOpPtrVector().push_back(
+    gel.feRhs.getOpPtrVector().push_back(
       new Gel::OpRhsSolventFlux(gel.commonData)
     );
     gel.feRhs.getOpPtrVector().push_back(
-        new Gel::OpRhsVolumeDot(gel.commonData)
+      new Gel::OpRhsVolumeDot(gel.commonData)
     );
-    gel.feRhs.getOpPtrVector().push_back(
+    /*gel.feRhs.getOpPtrVector().push_back(
       new Gel::OpRhsStrainHat(gel.commonData)
     );*/
 
@@ -366,10 +353,10 @@ int main(int argc, char *argv[]) {
     gel.feLhs.getOpPtrVector().push_back(
       new Gel::OpLhsdxdx(gel.commonData)
     );
-    /*gel.feLhs.getOpPtrVector().push_back(
+    gel.feLhs.getOpPtrVector().push_back(
       new Gel::OpLhsdxdMu(gel.commonData)
     );
-    gel.feLhs.getOpPtrVector().push_back(
+    /*gel.feLhs.getOpPtrVector().push_back(
       new Gel::OpLhsdxdStrainHat(gel.commonData)
     );
     gel.feLhs.getOpPtrVector().push_back(
@@ -377,13 +364,13 @@ int main(int argc, char *argv[]) {
     );
     gel.feLhs.getOpPtrVector().push_back(
       new Gel::OpLhsdStrainHatdx(gel.commonData)
-    );
+    );*/
     gel.feLhs.getOpPtrVector().push_back(
       new Gel::OpLhsdMudMu(gel.commonData)
     );
     gel.feLhs.getOpPtrVector().push_back(
       new Gel::OpLhsdMudx(gel.commonData)
-    );*/
+    );
 
   }
 
@@ -400,7 +387,7 @@ int main(int argc, char *argv[]) {
     ierr = DMMoFEMAddElement(dm,"GEL_FE"); CHKERRQ(ierr);
     ierr = DMMoFEMAddElement(dm,"FORCE_FE"); CHKERRQ(ierr);
     ierr = DMMoFEMAddElement(dm,"PRESSURE_FE"); CHKERRQ(ierr);
-    //ierr = DMMoFEMAddElement(dm,"SOLVENT_FLUX_FE"); CHKERRQ(ierr);
+    ierr = DMMoFEMAddElement(dm,"SOLVENT_FLUX_FE"); CHKERRQ(ierr);
     ierr = DMSetUp(dm); CHKERRQ(ierr);
 
   }
@@ -415,8 +402,12 @@ int main(int argc, char *argv[]) {
   }
 
   // Setting finite element methods for Dirichelt boundary conditions
-  SpatialPositionsBCFEMethodPreAndPostProc spatial_position_bc(m_field,"SPATIAL_POSITION",A,T,F);
-  DirichletBCFromBlockSetFEMethodPreAndPostProc concentration_bc(m_field,"SOLVENT_CONCENTRATION","CONCENTRATION",A,T,F);
+  SpatialPositionsBCFEMethodPreAndPostProc spatial_position_bc(
+    m_field,"SPATIAL_POSITION",A,T,F
+  );
+  DirichletBCFromBlockSetFEMethodPreAndPostProc concentration_bc(
+    m_field,"SOLVENT_CONCENTRATION","CONCENTRATION",A,T,F
+  );
 
   // Setting finite element method for applying tractions
   boost::ptr_map<string,NeummanForcesSurface> neumann_forces;
@@ -448,16 +439,16 @@ int main(int argc, char *argv[]) {
   {
     //Rhs
     ierr = DMMoFEMTSSetIFunction(dm,DM_NO_ELEMENT,NULL,&spatial_position_bc,NULL); CHKERRQ(ierr);
-    //ierr = DMMoFEMTSSetIFunction(dm,DM_NO_ELEMENT,NULL,&concentration_bc,NULL); CHKERRQ(ierr);
+    ierr = DMMoFEMTSSetIFunction(dm,DM_NO_ELEMENT,NULL,&concentration_bc,NULL); CHKERRQ(ierr);
     ierr = DMMoFEMTSSetIFunction(dm,"GEL_FE",&gel.feRhs,NULL,NULL); CHKERRQ(ierr);
-    //ierr = DMMoFEMTSSetIFunction(dm,"GEL_FE",&elastic.getLoopFeRhs(),NULL,NULL); CHKERRQ(ierr);
+    ierr = DMMoFEMTSSetIFunction(dm,"SOLVENT_FLUX_FE",&solvent_surface_fe,NULL,NULL); CHKERRQ(ierr);
     {
       boost::ptr_map<string,NeummanForcesSurface>::iterator mit = neumann_forces.begin();
       for(;mit!=neumann_forces.end();mit++) {
         ierr = DMMoFEMTSSetIFunction(dm,mit->first.c_str(),&mit->second->getLoopFe(),NULL,NULL); CHKERRQ(ierr);
       }
     }
-    /*{
+    {
       boost::ptr_map<string,NodalForce>::iterator fit = nodal_forces.begin();
       for(;fit!=nodal_forces.end();fit++) {
         ierr = DMMoFEMTSSetIFunction(dm,fit->first.c_str(),&fit->second->getLoopFe(),NULL,NULL); CHKERRQ(ierr);
@@ -468,22 +459,16 @@ int main(int argc, char *argv[]) {
       for(;fit!=edge_forces.end();fit++) {
         ierr = DMMoFEMTSSetIFunction(dm,fit->first.c_str(),&fit->second->getLoopFe(),NULL,NULL); CHKERRQ(ierr);
       }
-    }*/
+    }
     ierr = DMMoFEMTSSetIFunction(dm,DM_NO_ELEMENT,NULL,NULL,&spatial_position_bc); CHKERRQ(ierr);
-    //ierr = DMMoFEMTSSetIFunction(dm,DM_NO_ELEMENT,NULL,NULL,&concentration_bc); CHKERRQ(ierr);
+    ierr = DMMoFEMTSSetIFunction(dm,DM_NO_ELEMENT,NULL,NULL,&concentration_bc); CHKERRQ(ierr);
 
     //Lhs
     ierr = DMMoFEMTSSetIJacobian(dm,DM_NO_ELEMENT,NULL,&spatial_position_bc,NULL); CHKERRQ(ierr);
-    //ierr = DMMoFEMTSSetIJacobian(dm,DM_NO_ELEMENT,NULL,&concentration_bc,NULL); CHKERRQ(ierr);
+    ierr = DMMoFEMTSSetIJacobian(dm,DM_NO_ELEMENT,NULL,&concentration_bc,NULL); CHKERRQ(ierr);
     ierr = DMMoFEMTSSetIJacobian(dm,"GEL_FE",&gel.feLhs,NULL,NULL); CHKERRQ(ierr);
-    //ierr = DMMoFEMTSSetIJacobian(dm,"GEL_FE",&elastic.getLoopFeLhs(),NULL,NULL); CHKERRQ(ierr);
     ierr = DMMoFEMTSSetIJacobian(dm,DM_NO_ELEMENT,NULL,NULL,&spatial_position_bc); CHKERRQ(ierr);
-    //ierr = DMMoFEMTSSetIJacobian(dm,DM_NO_ELEMENT,NULL,NULL,&concentration_bc); CHKERRQ(ierr);
-
-    //Monitor
-    TsCtx *ts_ctx;
-    DMMoFEMGetTsCtx(dm,&ts_ctx);
-    ts_ctx->get_postProcess_to_do_Monitor().push_back(&post_proc);
+    ierr = DMMoFEMTSSetIJacobian(dm,DM_NO_ELEMENT,NULL,NULL,&concentration_bc); CHKERRQ(ierr);
 
   }
 
@@ -497,7 +482,7 @@ int main(int argc, char *argv[]) {
   {
     ierr = DMoFEMMeshToLocalVector(dm,T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = DMoFEMPreProcessFiniteElements(dm,&spatial_position_bc); CHKERRQ(ierr);
-    //ierr = DMoFEMPreProcessFiniteElements(dm,&concentration_bc); CHKERRQ(ierr);
+    ierr = DMoFEMPreProcessFiniteElements(dm,&concentration_bc); CHKERRQ(ierr);
     ierr = DMoFEMMeshToGlobalVector(dm,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   }
 
@@ -506,6 +491,15 @@ int main(int argc, char *argv[]) {
 
     ierr = TSSetIFunction(ts,F,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
     ierr = TSSetIJacobian(ts,A,A,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
+
+    //Monitor
+    Gel::MonitorPostProc post_proc(m_field,"DMGEL","GEL_FE",gel.commonData);
+    TsCtx *ts_ctx;
+    DMMoFEMGetTsCtx(dm,&ts_ctx);
+    {
+      ts_ctx->get_postProcess_to_do_Monitor().push_back(&post_proc);
+      ierr = TSMonitorSet(ts,f_TSMonitorSet,ts_ctx,PETSC_NULL); CHKERRQ(ierr);
+    }
 
     double ftime = 1;
     ierr = TSSetDuration(ts,PETSC_DEFAULT,ftime); CHKERRQ(ierr);
