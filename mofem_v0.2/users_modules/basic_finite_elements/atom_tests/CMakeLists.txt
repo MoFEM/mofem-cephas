@@ -163,6 +163,7 @@ add_test(thermal_stress_elem_atom_test_compare ${CMAKE_COMMAND} -E compare_files
 # add test for ultra weak finite element
 add_executable(ultra_weak_transport ${UM_CURRENT_SOURCE_DIR}/ultra_weak_transport.cpp)
 target_link_libraries(ultra_weak_transport
+  users_modules
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
