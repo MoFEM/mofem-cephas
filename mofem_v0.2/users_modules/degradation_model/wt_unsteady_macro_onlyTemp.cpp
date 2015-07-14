@@ -18,6 +18,7 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 #include <MoFEM.hpp>
+using namespace MoFEM;
 
 #include <DirichletBC.hpp>
 #include <PostProcOnRefMesh.hpp>
@@ -34,7 +35,6 @@ namespace bio = boost::iostreams;
 using bio::tee_device;
 using bio::stream;
 
-using namespace MoFEM;
 
 static char help[] = "...\n\n";
 

@@ -18,6 +18,7 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 #include <MoFEM.hpp>
+using namespace MoFEM;
 
 #include <DirichletBC.hpp>
 #include <PostProcOnRefMesh.hpp>
@@ -25,7 +26,6 @@
 
 #include <Projection10NodeCoordsOnField.hpp>
 
-using namespace MoFEM;
 #include <RVE_Diffusion_BlockSets.hpp>
 #include <MoistureTransportElement.hpp>
 
