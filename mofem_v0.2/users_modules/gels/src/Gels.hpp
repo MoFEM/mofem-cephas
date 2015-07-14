@@ -273,7 +273,7 @@ struct Gel {
       PetscFunctionBegin;
       stressTotal.resize(3,3,false);
       noalias(stressTotal) = stressAlpha;
-      //noalias(stressTotal) += stressBeta;
+      noalias(stressTotal) += stressBeta;
       noalias(stressTotal) += stressBetaHat;
 
       PetscFunctionReturn(0);
@@ -337,7 +337,7 @@ struct Gel {
     vector<ublas::matrix<double> > stressTotal;
     vector<ublas::vector<double> > solventFlux;
     vector<double> volumeDot;
-    vector<ublas::matrix<double> > residualStrainHat;
+    vector<ublas::vector<double> > residualStrainHat;
 
     vector<double*> jacRowPtr;
     vector<ublas::matrix<double> > jacStressTotal;
@@ -378,14 +378,14 @@ struct Gel {
       if(ts_ctx == CTX_TSSETIFUNCTION) {
 
         ierr = mField.set_other_local_ghost_vector(
-          problemPtr,commonData.spatialPositionName,commonData.spatialPositionNameDot,ROW,ts_u_t,INSERT_VALUES,SCATTER_REVERSE
+          problemPtr,commonData.spatialPositionName,commonData.spatialPositionNameDot,COL,ts_u_t,INSERT_VALUES,SCATTER_REVERSE
         ); CHKERRQ(ierr);
         ierr = mField.set_other_local_ghost_vector(
-          problemPtr,commonData.muName,commonData.muNameDot,ROW,ts_u_t,INSERT_VALUES,SCATTER_REVERSE
+          problemPtr,commonData.muName,commonData.muNameDot,COL,ts_u_t,INSERT_VALUES,SCATTER_REVERSE
         ); CHKERRQ(ierr);
-        /*ierr = mField.set_other_local_ghost_vector(
-          problemPtr,commonData.strainHatName,commonData.strainHatNameDot,ROW,ts_u_t,INSERT_VALUES,SCATTER_REVERSE
-        ); CHKERRQ(ierr);*/
+        ierr = mField.set_other_local_ghost_vector(
+          problemPtr,commonData.strainHatName,commonData.strainHatNameDot,COL,ts_u_t,INSERT_VALUES,SCATTER_REVERSE
+        ); CHKERRQ(ierr);
 
       }
 
@@ -434,7 +434,7 @@ struct Gel {
       EntityType zero_at_type = MBVERTEX
     ):
     VolumeElementForcesAndSourcesCore::UserDataOperator(
-      field_name,UserDataOperator::OPROW
+      field_name,UserDataOperator::OPCOL
     ),
     commonData(common_data),
     calcVal(calc_val),
@@ -551,8 +551,6 @@ struct Gel {
 
     int nbGaussPts;
     ublas::vector<double> activeVariables;
-    ublas::matrix<double> stressTotal;
-    ublas::matrix<double> residualStrainHat;
 
     PetscErrorCode recordStressTotal() {
       PetscFunctionBegin;
@@ -750,13 +748,13 @@ struct Gel {
         ierr = cE->calculateResidualStrainHat(); CHKERRQ(ierr);
         nbActiveResults[tagS[RESIDUALSTRAINHAT]] = 0;
         commonData.residualStrainHat.resize(nbGaussPts);
-        commonData.residualStrainHat[0].resize(3,3,false);
-        for(int d1 = 0;d1<3;d1++) {
-          for(int d2 = d1;d2<3;d2++) {
-            cE->residualStrainHat(d1,d2) >>= commonData.residualStrainHat[0](d1,d2);
-            nbActiveResults[tagS[RESIDUALSTRAINHAT]]++;
-          }
-        }
+        commonData.residualStrainHat[0].resize(6,false);
+        cE->residualStrainHat(0,0) >>= commonData.residualStrainHat[0][nbActiveResults[tagS[RESIDUALSTRAINHAT]]++];
+        cE->residualStrainHat(1,1) >>= commonData.residualStrainHat[0][nbActiveResults[tagS[RESIDUALSTRAINHAT]]++];
+        cE->residualStrainHat(2,2) >>= commonData.residualStrainHat[0][nbActiveResults[tagS[RESIDUALSTRAINHAT]]++];
+        cE->residualStrainHat(0,1) >>= commonData.residualStrainHat[0][nbActiveResults[tagS[RESIDUALSTRAINHAT]]++];
+        cE->residualStrainHat(1,2) >>= commonData.residualStrainHat[0][nbActiveResults[tagS[RESIDUALSTRAINHAT]]++];
+        cE->residualStrainHat(0,2) >>= commonData.residualStrainHat[0][nbActiveResults[tagS[RESIDUALSTRAINHAT]]++];
       }
       trace_off();
 
@@ -1010,9 +1008,12 @@ struct Gel {
             );
           }
           if(calculateResidualBool) {
-            commonData.residualStrainHat[gg].resize(3,3,false);
+            if(gg == 0) {
+              commonData.residualStrainHat.resize(nbGaussPts);
+            }
+            commonData.residualStrainHat[gg].resize(6,false);
             ierr = calculateFunction(
-              RESIDUALSTRAINHAT,&commonData.residualStrainHat[gg](0,0)
+              RESIDUALSTRAINHAT,&commonData.residualStrainHat[gg][0]
             ); CHKERRQ(ierr);
           }
           if(calculateJacobianBool) {
@@ -1057,13 +1058,13 @@ struct Gel {
           ierr = recordStressTotal(); CHKERRQ(ierr);
           ierr = recordSolventFlux(); CHKERRQ(ierr);
           ierr = recordVolumeDot(); CHKERRQ(ierr);
-          //ierr = recordResidualStrainHat(); CHKERRQ(ierr);
+          ierr = recordResidualStrainHat(); CHKERRQ(ierr);
         }
 
         ierr = calculateAtIntPtsStressTotal(); CHKERRQ(ierr);
         ierr = calculateAtIntPtsSolventFlux(); CHKERRQ(ierr);
         ierr = calculateAtIntPtsVolumeDot(); CHKERRQ(ierr);
-        //ierr = calculateAtIntPtrsResidualStrainHat(); CHKERRQ(ierr);
+        ierr = calculateAtIntPtrsResidualStrainHat(); CHKERRQ(ierr);
 
       } catch (const std::exception& ex) {
         ostringstream ss;
@@ -1289,18 +1290,15 @@ struct Gel {
         int nb_gauss_pts = row_data.getN().size1();
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
           const VectorAdaptor &N = row_data.getN(gg,nb_dofs/6);
-          ublas::matrix<double> strain_hat = commonData.residualStrainHat[gg];
+          ublas::vector<double> &strain_hat = commonData.residualStrainHat[gg];
           double val = getVolume()*getGaussPts()(3,gg);
           if(getHoGaussPtsDetJac().size()>0) {
             val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
           }
           for(int dd = 0;dd<nb_dofs/6;dd++) {
-            nF[dd*6+0] += val*N[dd]*strain_hat(0,0);
-            nF[dd*6+1] += val*N[dd]*strain_hat(1,1);
-            nF[dd*6+2] += val*N[dd]*strain_hat(2,2);
-            nF[dd*6+3] += val*N[dd]*strain_hat(0,1);
-            nF[dd*6+4] += val*N[dd]*strain_hat(1,2);
-            nF[dd*6+5] += val*N[dd]*strain_hat(0,2);
+            for(int rr = 0;rr<6;rr++) {
+              nF[dd*6+rr] += val*N[dd]*strain_hat[rr];
+            }
           }
         }
         ierr = aSemble(row_side,row_type,row_data); CHKERRQ(ierr);
@@ -1614,10 +1612,10 @@ struct Gel {
               }
             }
           }
-          ierr = aSemble(
-            row_side,col_side,row_type,col_type,row_data,col_data
-          ); CHKERRQ(ierr);
         }
+        ierr = aSemble(
+          row_side,col_side,row_type,col_type,row_data,col_data
+        ); CHKERRQ(ierr);
       } catch (const std::exception& ex) {
         ostringstream ss;
         ss << "throw in method: " << ex.what() << endl;
@@ -1695,10 +1693,10 @@ struct Gel {
               }
             }
           }
-          ierr = aSemble(
-            row_side,col_side,row_type,col_type,row_data,col_data
-          ); CHKERRQ(ierr);
         }
+        ierr = aSemble(
+          row_side,col_side,row_type,col_type,row_data,col_data
+        ); CHKERRQ(ierr);
       } catch (const std::exception& ex) {
         ostringstream ss;
         ss << "throw in method: " << ex.what() << endl;
@@ -1733,11 +1731,11 @@ struct Gel {
         //cerr << "a\n" << diffN << endl;
         //cerr << "b\n" << jac_res_strain_hat << endl;
         for(int dd = 0;dd<nb_col/3;dd++) {    // DoFs in column
-          for(int rr1 = 0;rr1<3;rr1++) {      // cont. DoFs in column
-            double a = diffN(dd,rr1);
+          for(int jj = 0;jj<3;jj++) {      // cont. DoFs in column
+            double a = diffN(dd,jj);
             for(int ii = 0;ii<6;ii++) {       // ii for elements in strain hat
               for(int rr2 = 0;rr2<3;rr2++) {
-                dStrainHat_dx(ii,3*dd+rr2) += jac_res_strain_hat(ii,3*rr2+rr1)*a;
+                dStrainHat_dx(ii,3*dd+rr2) += jac_res_strain_hat(ii,3*rr2+jj)*a;
               }
             }
           }
@@ -1783,10 +1781,10 @@ struct Gel {
               }
             }
           }
-          ierr = aSemble(
-            row_side,col_side,row_type,col_type,row_data,col_data
-          ); CHKERRQ(ierr);
         }
+        ierr = aSemble(
+          row_side,col_side,row_type,col_type,row_data,col_data
+        ); CHKERRQ(ierr);
       } catch (const std::exception& ex) {
         ostringstream ss;
         ss << "throw in method: " << ex.what() << endl;

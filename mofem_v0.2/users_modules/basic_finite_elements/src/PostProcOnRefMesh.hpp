@@ -96,7 +96,7 @@ struct PostPocOnRefinedMesh: public VolumeElementForcesAndSourcesCore {
       Interface &post_proc_mesh,
       vector<EntityHandle> &map_gauss_pts,
       const string field_name):
-      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
+      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPCOL),
       postProcMesh(post_proc_mesh),
       mapGaussPts(map_gauss_pts) {
     }
@@ -125,7 +125,7 @@ struct PostPocOnRefinedMesh: public VolumeElementForcesAndSourcesCore {
       CommonData &common_data,
       Vec v = PETSC_NULL
     ):
-    VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
+    VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPCOL),
     postProcMesh(post_proc_mesh),mapGaussPts(map_gauss_pts),
     commonData(common_data),
     tagName(tag_name),
@@ -157,7 +157,7 @@ struct PostPocOnRefinedMesh: public VolumeElementForcesAndSourcesCore {
       const string tag_name,
       CommonData &common_data,
       Vec v = PETSC_NULL):
-      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
+      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPCOL),
       postProcMesh(post_proc_mesh),
       mapGaussPts(map_gauss_pts),
       commonData(common_data),

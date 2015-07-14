@@ -17,7 +17,7 @@ block 4 attribute count 1
 block 4 attribute index 1 1
 
 create displacement on surface 4 dof 1 dof 2 dof 3 fix 0
-create pressure  on surface 6 magnitude 1 
+create pressure  on surface 6 magnitude -1 
 
 volume all scheme Tetmesh
 volume all size auto factor 8

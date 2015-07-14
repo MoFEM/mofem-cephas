@@ -207,8 +207,8 @@ int main(int argc, char *argv[]) {
       ierr = m_field.modify_finite_element_add_field_col("GEL_FE","SPATIAL_POSITION"); CHKERRQ(ierr);
       ierr = m_field.modify_finite_element_add_field_row("GEL_FE","SOLVENT_CONCENTRATION"); CHKERRQ(ierr);
       ierr = m_field.modify_finite_element_add_field_col("GEL_FE","SOLVENT_CONCENTRATION"); CHKERRQ(ierr);
-      /*ierr = m_field.modify_finite_element_add_field_row("GEL_FE","HAT_EPS"); CHKERRQ(ierr);
-      ierr = m_field.modify_finite_element_add_field_col("GEL_FE","HAT_EPS"); CHKERRQ(ierr);*/
+      ierr = m_field.modify_finite_element_add_field_row("GEL_FE","HAT_EPS"); CHKERRQ(ierr);
+      ierr = m_field.modify_finite_element_add_field_col("GEL_FE","HAT_EPS"); CHKERRQ(ierr);
       ierr = m_field.modify_finite_element_add_field_data("GEL_FE","SPATIAL_POSITION"); CHKERRQ(ierr);
       ierr = m_field.modify_finite_element_add_field_data("GEL_FE","SPATIAL_POSITION_DOT"); CHKERRQ(ierr);
       ierr = m_field.modify_finite_element_add_field_data("GEL_FE","SOLVENT_CONCENTRATION"); CHKERRQ(ierr);
@@ -340,9 +340,9 @@ int main(int argc, char *argv[]) {
     gel.feRhs.getOpPtrVector().push_back(
       new Gel::OpRhsVolumeDot(gel.commonData)
     );
-    /*gel.feRhs.getOpPtrVector().push_back(
+    gel.feRhs.getOpPtrVector().push_back(
       new Gel::OpRhsStrainHat(gel.commonData)
-    );*/
+    );
 
     // Left hand side operators
     gel.feLhs.getOpPtrVector().push_back(
@@ -356,7 +356,7 @@ int main(int argc, char *argv[]) {
     gel.feLhs.getOpPtrVector().push_back(
       new Gel::OpLhsdxdMu(gel.commonData)
     );
-    /*gel.feLhs.getOpPtrVector().push_back(
+    gel.feLhs.getOpPtrVector().push_back(
       new Gel::OpLhsdxdStrainHat(gel.commonData)
     );
     gel.feLhs.getOpPtrVector().push_back(
@@ -364,7 +364,7 @@ int main(int argc, char *argv[]) {
     );
     gel.feLhs.getOpPtrVector().push_back(
       new Gel::OpLhsdStrainHatdx(gel.commonData)
-    );*/
+    );
     gel.feLhs.getOpPtrVector().push_back(
       new Gel::OpLhsdMudMu(gel.commonData)
     );
