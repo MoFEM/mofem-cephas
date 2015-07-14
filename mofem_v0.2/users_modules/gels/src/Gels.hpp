@@ -158,10 +158,10 @@ struct Gel {
     virtual PetscErrorCode calculateStrainTotal() {
       PetscFunctionBegin;
       gradientU.resize(3,3,false);
+      noalias(gradientU) = F;
       for(int ii = 0;ii<3;ii++) {
         gradientU(ii,ii) -= 1;
       }
-      noalias(gradientU) = F;
       strainTotal.resize(3,3,false);
       noalias(strainTotal) = gradientU + trans(gradientU);
       strainTotal *= 0.5;
@@ -192,7 +192,7 @@ struct Gel {
     virtual PetscErrorCode calculateStressAlpha() {
       PetscFunctionBegin;
       traceStrainTotal = strainTotal(0,0)+strainTotal(1,1)+strainTotal(2,2);
-      stressAlpha.resize(3,3);
+      stressAlpha.resize(3,3,false);
       double a = 2.0*dAta.gAlpha;
       noalias(stressAlpha) = a*strainTotal;
       for(int ii=1; ii<3; ii++){
@@ -329,6 +329,7 @@ struct Gel {
     string strainHatName;
     string strainHatNameDot;
     string muName;
+    string muNameDot;
 
     map<string,vector<VectorDouble > > dataAtGaussPts;
     map<string,vector<MatrixDouble > > gradAtGaussPts;
@@ -336,15 +337,16 @@ struct Gel {
     vector<ublas::matrix<double> > stressTotal;
     vector<ublas::vector<double> > solventFlux;
     vector<double> volumeDot;
-    vector<ublas::matrix<double> > residualStrainHat;
+    vector<ublas::vector<double> > residualStrainHat;
 
     vector<double*> jacRowPtr;
     vector<ublas::matrix<double> > jacStressTotal;
     vector<ublas::matrix<double> > jacSolventFlux;
-    vector<ublas::vector<double> > jacVolumeRate;
+    vector<ublas::vector<double> > jacVolumeDot;
     vector<ublas::matrix<double> > jacStrainHat;
 
     bool recordOn;
+    map<int,int> nbActiveVariables,nbActiveResults;
 
     CommonData():
     recordOn(true) {
@@ -366,7 +368,7 @@ struct Gel {
     }
 
     int getRule(int order) {
-      return order-1+addToRule;
+      return order+addToRule;
     }
 
     PetscErrorCode preProcess() {
@@ -376,25 +378,32 @@ struct Gel {
       if(ts_ctx == CTX_TSSETIFUNCTION) {
 
         ierr = mField.set_other_local_ghost_vector(
-          problemPtr,
-          commonData.spatialPositionName,
-          commonData.spatialPositionNameDot,
-          ROW,
-          ts_u_t,
-          INSERT_VALUES,
-          SCATTER_REVERSE
+          problemPtr,commonData.spatialPositionName,commonData.spatialPositionNameDot,COL,ts_u_t,INSERT_VALUES,SCATTER_REVERSE
         ); CHKERRQ(ierr);
-
         ierr = mField.set_other_local_ghost_vector(
-          problemPtr,
-          commonData.strainHatName,
-          commonData.strainHatNameDot,
-          ROW,
-          ts_u_t,
-          INSERT_VALUES,
-          SCATTER_REVERSE
+          problemPtr,commonData.muName,commonData.muNameDot,COL,ts_u_t,INSERT_VALUES,SCATTER_REVERSE
+        ); CHKERRQ(ierr);
+        ierr = mField.set_other_local_ghost_vector(
+          problemPtr,commonData.strainHatName,commonData.strainHatNameDot,COL,ts_u_t,INSERT_VALUES,SCATTER_REVERSE
         ); CHKERRQ(ierr);
 
+      }
+
+      PetscFunctionReturn(0);
+    }
+
+    PetscErrorCode postProcess() {
+      PetscFunctionBegin;
+
+      ierr = VolumeElementForcesAndSourcesCore::postProcess(); CHKERRQ(ierr);
+
+      if(ts_ctx == CTX_TSSETIFUNCTION) {
+        ierr = VecAssemblyBegin(ts_F); CHKERRQ(ierr);
+        ierr = VecAssemblyEnd(ts_F); CHKERRQ(ierr);
+      }
+      if(ts_ctx == CTX_TSSETIJACOBIAN) {
+        ierr = MatAssemblyBegin(ts_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+        ierr = MatAssemblyEnd(ts_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
       }
 
       PetscFunctionReturn(0);
@@ -403,7 +412,6 @@ struct Gel {
   };
 
   GelFE feRhs,feLhs;
-
 
   Gel(FieldInterface &m_field):
   mFiled(m_field),
@@ -426,7 +434,7 @@ struct Gel {
       EntityType zero_at_type = MBVERTEX
     ):
     VolumeElementForcesAndSourcesCore::UserDataOperator(
-      field_name,UserDataOperator::OPROW
+      field_name,UserDataOperator::OPCOL
     ),
     commonData(common_data),
     calcVal(calc_val),
@@ -517,6 +525,8 @@ struct Gel {
     bool calculateResidualBool;
     bool calculateJacobianBool;
     bool &recordOn;
+    map<int,int> &nbActiveVariables;
+    map<int,int> &nbActiveResults;
 
     OpJacobian(
       const string field_name,
@@ -534,14 +544,13 @@ struct Gel {
     commonData(common_data),
     calculateResidualBool(calculate_residual),
     calculateJacobianBool(calculate_jacobian),
-    recordOn(common_data.recordOn) {
+    recordOn(common_data.recordOn),
+    nbActiveVariables(common_data.nbActiveVariables),
+    nbActiveResults(common_data.nbActiveResults) {
     }
 
     int nbGaussPts;
-    map<int,int> nbActiveVariables,nbActiveResults;
     ublas::vector<double> activeVariables;
-    ublas::matrix<double> stressTotal;
-    ublas::matrix<double> residualStrainHat;
 
     PetscErrorCode recordStressTotal() {
       PetscFunctionBegin;
@@ -574,7 +583,7 @@ struct Gel {
           cE->strainHat(0,1) <<= strain_hat[3];
           cE->strainHat(1,2) <<= strain_hat[4];
           cE->strainHat(0,2) <<= strain_hat[5];
-          nbActiveVariables[tagS[0]] += 6;
+          nbActiveVariables[tagS[STRESSTOTAL]] += 6;
           cE->strainHat(1,0) = cE->strainHat(0,1);
           cE->strainHat(2,1) = cE->strainHat(1,2);
           cE->strainHat(2,0) = cE->strainHat(0,2);
@@ -609,7 +618,6 @@ struct Gel {
 
     PetscErrorCode recordSolventFlux() {
       PetscFunctionBegin;
-
       try {
         if(tagS[SOLVENTFLUX]<0) {
           PetscFunctionReturn(0);
@@ -740,13 +748,13 @@ struct Gel {
         ierr = cE->calculateResidualStrainHat(); CHKERRQ(ierr);
         nbActiveResults[tagS[RESIDUALSTRAINHAT]] = 0;
         commonData.residualStrainHat.resize(nbGaussPts);
-        commonData.residualStrainHat[0].resize(3,3,false);
-        for(int d1 = 0;d1<3;d1++) {
-          for(int d2 = d1;d2<3;d2++) {
-            cE->residualStrainHat(d1,d2) >>= commonData.residualStrainHat[0](d1,d2);
-            nbActiveResults[tagS[RESIDUALSTRAINHAT]]++;
-          }
-        }
+        commonData.residualStrainHat[0].resize(6,false);
+        cE->residualStrainHat(0,0) >>= commonData.residualStrainHat[0][nbActiveResults[tagS[RESIDUALSTRAINHAT]]++];
+        cE->residualStrainHat(1,1) >>= commonData.residualStrainHat[0][nbActiveResults[tagS[RESIDUALSTRAINHAT]]++];
+        cE->residualStrainHat(2,2) >>= commonData.residualStrainHat[0][nbActiveResults[tagS[RESIDUALSTRAINHAT]]++];
+        cE->residualStrainHat(0,1) >>= commonData.residualStrainHat[0][nbActiveResults[tagS[RESIDUALSTRAINHAT]]++];
+        cE->residualStrainHat(1,2) >>= commonData.residualStrainHat[0][nbActiveResults[tagS[RESIDUALSTRAINHAT]]++];
+        cE->residualStrainHat(0,2) >>= commonData.residualStrainHat[0][nbActiveResults[tagS[RESIDUALSTRAINHAT]]++];
       }
       trace_off();
 
@@ -774,19 +782,23 @@ struct Gel {
 
     PetscErrorCode calculateJacobian(TagEvaluate te) {
       PetscFunctionBegin;
-
-      int r;
-      r = jacobian(
-        tagS[te],
-        nbActiveResults[tagS[te]],
-        nbActiveVariables[tagS[te]],
-        &activeVariables[0],
-        &(commonData.jacRowPtr[0])
-      );
-      if(r<3) {
-        SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"ADOL-C function evaluation with error");
+      try {
+        int r;
+        r = jacobian(
+          tagS[te],
+          nbActiveResults[tagS[te]],
+          nbActiveVariables[tagS[te]],
+          &activeVariables[0],
+          &(commonData.jacRowPtr[0])
+        );
+        if(r<3) {
+          SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"ADOL-C function evaluation with error");
+        }
+      } catch (const std::exception& ex) {
+        ostringstream ss;
+        ss << "throw in method: " << ex.what() << endl;
+        SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
-
       PetscFunctionReturn(0);
     }
 
@@ -801,7 +813,6 @@ struct Gel {
 
 
         PetscErrorCode ierr;
-
         activeVariables.resize(nbActiveVariables[tagS[STRESSTOTAL]],false);
 
         for(int gg = 0;gg<nbGaussPts;gg++) {
@@ -809,7 +820,6 @@ struct Gel {
           ublas::matrix<double> &F = (commonData.gradAtGaussPts[commonData.spatialPositionName])[gg];
           ublas::vector<double> &strain_hat = (commonData.dataAtGaussPts[commonData.strainHatName])[gg];
           double mu = (commonData.dataAtGaussPts[commonData.muName])[gg][0];
-
           int nb_active_variables = 0;
           // Activate gradient of defamation
           for(int dd1 = 0;dd1<3;dd1++) {
@@ -822,8 +832,8 @@ struct Gel {
           for(int ii = 0;ii<6;ii++) {
             activeVariables[nb_active_variables++] = strain_hat[ii];
           }
-          activeVariables[nb_active_variables++] = mu;
 
+          activeVariables[nb_active_variables++] = mu;
           if(nb_active_variables!=nbActiveVariables[tagS[STRESSTOTAL]]) {
             SETERRQ(
               PETSC_COMM_SELF,MOFEM_IMPOSIBLE_CASE,"Number of active variables does not much"
@@ -831,12 +841,14 @@ struct Gel {
           }
 
           if(calculateResidualBool) {
+            if(gg == 0) {
+              commonData.stressTotal.resize(nbGaussPts);
+            }
             commonData.stressTotal[gg].resize(3,3,false);
             ierr = calculateFunction(STRESSTOTAL,&commonData.stressTotal[gg](0,0)); CHKERRQ(ierr);
           }
 
           if(calculateJacobianBool) {
-
             if(gg == 0) {
               commonData.jacStressTotal.resize(nbGaussPts);
               commonData.jacRowPtr.resize(nbActiveResults[tagS[STRESSTOTAL]]);
@@ -849,19 +861,16 @@ struct Gel {
             for(int dd = 0;dd<nbActiveResults[tagS[STRESSTOTAL]];dd++) {
               commonData.jacRowPtr[dd] = &commonData.jacStressTotal[gg](dd,0);
             }
-
             ierr = calculateJacobian(STRESSTOTAL); CHKERRQ(ierr);
-
           }
 
         }
 
       } catch (const std::exception& ex) {
-          ostringstream ss;
-          ss << "throw in method: " << ex.what() << endl;
-          SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
-        }
-
+        ostringstream ss;
+        ss << "throw in method: " << ex.what() << endl;
+        SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+      }
 
       PetscFunctionReturn(0);
     }
@@ -878,21 +887,17 @@ struct Gel {
       activeVariables.resize(nbActiveResults[tagS[SOLVENTFLUX]]);
 
       for(int gg = 0;gg<nbGaussPts;gg++) {
-
         ublas::matrix<double> &gradient_mu = (commonData.gradAtGaussPts[commonData.muName])[gg];
-
         int nb_active_variables = 0;
         // Activate rate of gradient of defamation
         for(int ii = 0;ii<3;ii++) {
           activeVariables[nb_active_variables++] = gradient_mu(0,ii);
         }
-
         if(nb_active_variables!=nbActiveVariables[tagS[SOLVENTFLUX]]) {
           SETERRQ(
             PETSC_COMM_SELF,MOFEM_IMPOSIBLE_CASE,"Number of active variables does not much"
           );
         }
-
         if(calculateResidualBool) {
           commonData.solventFlux[gg].resize(3,false);
           ierr = calculateFunction(
@@ -900,7 +905,6 @@ struct Gel {
             &(commonData.solventFlux[gg][0])
           ); CHKERRQ(ierr);
         }
-
         if(calculateJacobianBool) {
           if(gg == 0) {
             commonData.jacSolventFlux.resize(nbGaussPts);
@@ -915,7 +919,6 @@ struct Gel {
             commonData.jacRowPtr[dd] = &(commonData.jacSolventFlux[gg](dd,0));
           }
           ierr = calculateJacobian(SOLVENTFLUX); CHKERRQ(ierr);
-
         }
       }
 
@@ -954,15 +957,15 @@ struct Gel {
           );
         }
         if(calculateResidualBool) {
-          ierr = calculateFunction(VOLUMERATE,&commonData.stressTotal[gg](0,0)); CHKERRQ(ierr);
+          ierr = calculateFunction(VOLUMERATE,&commonData.volumeDot[gg]); CHKERRQ(ierr);
         }
         if(calculateJacobianBool) {
           if(gg == 0) {
-            commonData.jacVolumeRate.resize(nbGaussPts);
+            commonData.jacVolumeDot.resize(nbGaussPts);
             commonData.jacRowPtr.resize(nbActiveResults[tagS[VOLUMERATE]]);
           }
-          commonData.jacVolumeRate[gg].resize(nbActiveVariables[tagS[VOLUMERATE]]);
-          commonData.jacRowPtr[0] = &commonData.jacVolumeRate[gg][0];
+          commonData.jacVolumeDot[gg].resize(nbActiveVariables[tagS[VOLUMERATE]]);
+          commonData.jacRowPtr[0] = &commonData.jacVolumeDot[gg][0];
           ierr = calculateJacobian(VOLUMERATE); CHKERRQ(ierr);
         }
       }
@@ -1005,9 +1008,12 @@ struct Gel {
             );
           }
           if(calculateResidualBool) {
-            commonData.residualStrainHat[gg].resize(3,3,false);
+            if(gg == 0) {
+              commonData.residualStrainHat.resize(nbGaussPts);
+            }
+            commonData.residualStrainHat[gg].resize(6,false);
             ierr = calculateFunction(
-              RESIDUALSTRAINHAT,&commonData.residualStrainHat[gg](0,0)
+              RESIDUALSTRAINHAT,&commonData.residualStrainHat[gg][0]
             ); CHKERRQ(ierr);
           }
           if(calculateJacobianBool) {
@@ -1187,8 +1193,8 @@ struct Gel {
             val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
           }
           for(int dd = 0;dd<nb_dofs;dd++) {
-            for(int nn = 0;nn<3;nn++) {
-              nF[dd] += val*diffN(dd,nn)*flux(nn);
+            for(int jj = 0;jj<3;jj++) {
+              nF[dd] += val*diffN(dd,jj)*flux(jj);
             }
           }
         }
@@ -1284,18 +1290,15 @@ struct Gel {
         int nb_gauss_pts = row_data.getN().size1();
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
           const VectorAdaptor &N = row_data.getN(gg,nb_dofs/6);
-          ublas::matrix<double> strain_hat = commonData.residualStrainHat[gg];
+          ublas::vector<double> &strain_hat = commonData.residualStrainHat[gg];
           double val = getVolume()*getGaussPts()(3,gg);
           if(getHoGaussPtsDetJac().size()>0) {
             val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
           }
           for(int dd = 0;dd<nb_dofs/6;dd++) {
-            nF[dd*6+0] += val*N[dd]*strain_hat(0,0);
-            nF[dd*6+1] += val*N[dd]*strain_hat(1,1);
-            nF[dd*6+2] += val*N[dd]*strain_hat(2,2);
-            nF[dd*6+3] += val*N[dd]*strain_hat(0,1);
-            nF[dd*6+4] += val*N[dd]*strain_hat(1,2);
-            nF[dd*6+5] += val*N[dd]*strain_hat(0,2);
+            for(int rr = 0;rr<6;rr++) {
+              nF[dd*6+rr] += val*N[dd]*strain_hat[rr];
+            }
           }
         }
         ierr = aSemble(row_side,row_type,row_data); CHKERRQ(ierr);
@@ -1342,7 +1345,7 @@ struct Gel {
               getFEMethod()->ts_B,
               nb_col,col_indices_ptr,
               nb_row,row_indices_ptr,
-              &K(0,0),ADD_VALUES
+              &transK(0,0),ADD_VALUES
             ); CHKERRQ(ierr);
           }
         }
@@ -1361,7 +1364,8 @@ struct Gel {
     CommonData &commonData;
     OpLhsdxdx(CommonData &common_data):
     AssembleMatrix(
-      common_data.spatialPositionName,common_data.spatialPositionName
+      common_data.spatialPositionName,
+      common_data.spatialPositionName
     ),
     commonData(common_data) {
     }
@@ -1409,12 +1413,14 @@ struct Gel {
       try {
         K.resize(nb_row,nb_col,false);
         K.clear();
-        for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
+        int nb_gauss_pts = row_data.getN().size1();
+        for(unsigned int gg = 0;gg!=nb_gauss_pts;gg++) {
           ierr = get_dStress_dx(col_data,gg); CHKERRQ(ierr);
           double val = getVolume()*getGaussPts()(3,gg);
           if(getHoGaussPtsDetJac().size()>0) {
             val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
           }
+          //cerr << dStress_dx << endl;
           dStress_dx *= val;
           const MatrixAdaptor &diffN = row_data.getDiffN(gg,nb_row/3);
           { //integrate element stiffness matrix
@@ -1422,19 +1428,22 @@ struct Gel {
               for(int rr1 = 0;rr1<3;rr1++) {
                 for(int dd2 = 0;dd2<nb_col/3;dd2++) {
                   for(int rr2 = 0;rr2<3;rr2++) {
-                    K(3*dd1+rr1,3*dd2+rr2) +=
-                    diffN(dd1,0)*dStress_dx(3*rr1+0,3*dd2+rr2)+
-                    diffN(dd1,1)*dStress_dx(3*rr1+1,3*dd2+rr2)+
-                    diffN(dd1,2)*dStress_dx(3*rr1+2,3*dd2+rr2);
+                    K(3*dd1+rr1,3*dd2+rr2) += (
+                      diffN(dd1,0)*dStress_dx(3*rr1+0,3*dd2+rr2)+
+                      diffN(dd1,1)*dStress_dx(3*rr1+1,3*dd2+rr2)+
+                      diffN(dd1,2)*dStress_dx(3*rr1+2,3*dd2+rr2)
+                    );
                   }
                 }
               }
             }
           }
-          ierr = aSemble(
-            row_side,col_side,row_type,col_type,row_data,col_data
-          ); CHKERRQ(ierr);
         }
+        //cerr << "G " << getMoFEMFEPtr()->get_ref_ent() << endl << K << endl;
+        ierr = aSemble(
+          row_side,col_side,row_type,col_type,row_data,col_data
+        ); CHKERRQ(ierr);
+
       } catch (const std::exception& ex) {
         ostringstream ss;
         ss << "throw in method: " << ex.what() << endl;
@@ -1513,10 +1522,10 @@ struct Gel {
               }
             }
           }
-          ierr = aSemble(
-            row_side,col_side,row_type,col_type,row_data,col_data
-          ); CHKERRQ(ierr);
         }
+        ierr = aSemble(
+          row_side,col_side,row_type,col_type,row_data,col_data
+        ); CHKERRQ(ierr);
       } catch (const std::exception& ex) {
         ostringstream ss;
         ss << "throw in method: " << ex.what() << endl;
@@ -1603,10 +1612,10 @@ struct Gel {
               }
             }
           }
-          ierr = aSemble(
-            row_side,col_side,row_type,col_type,row_data,col_data
-          ); CHKERRQ(ierr);
         }
+        ierr = aSemble(
+          row_side,col_side,row_type,col_type,row_data,col_data
+        ); CHKERRQ(ierr);
       } catch (const std::exception& ex) {
         ostringstream ss;
         ss << "throw in method: " << ex.what() << endl;
@@ -1684,10 +1693,10 @@ struct Gel {
               }
             }
           }
-          ierr = aSemble(
-            row_side,col_side,row_type,col_type,row_data,col_data
-          ); CHKERRQ(ierr);
         }
+        ierr = aSemble(
+          row_side,col_side,row_type,col_type,row_data,col_data
+        ); CHKERRQ(ierr);
       } catch (const std::exception& ex) {
         ostringstream ss;
         ss << "throw in method: " << ex.what() << endl;
@@ -1722,11 +1731,11 @@ struct Gel {
         //cerr << "a\n" << diffN << endl;
         //cerr << "b\n" << jac_res_strain_hat << endl;
         for(int dd = 0;dd<nb_col/3;dd++) {    // DoFs in column
-          for(int rr1 = 0;rr1<3;rr1++) {      // cont. DoFs in column
-            double a = diffN(dd,rr1);
+          for(int jj = 0;jj<3;jj++) {      // cont. DoFs in column
+            double a = diffN(dd,jj);
             for(int ii = 0;ii<6;ii++) {       // ii for elements in strain hat
               for(int rr2 = 0;rr2<3;rr2++) {
-                dStrainHat_dx(ii,3*dd+rr2) += jac_res_strain_hat(ii,3*rr2+rr1)*a;
+                dStrainHat_dx(ii,3*dd+rr2) += jac_res_strain_hat(ii,3*rr2+jj)*a;
               }
             }
           }
@@ -1772,10 +1781,10 @@ struct Gel {
               }
             }
           }
-          ierr = aSemble(
-            row_side,col_side,row_type,col_type,row_data,col_data
-          ); CHKERRQ(ierr);
         }
+        ierr = aSemble(
+          row_side,col_side,row_type,col_type,row_data,col_data
+        ); CHKERRQ(ierr);
       } catch (const std::exception& ex) {
         ostringstream ss;
         ss << "throw in method: " << ex.what() << endl;
@@ -1806,11 +1815,11 @@ struct Gel {
         dSolventFlux_dmu.clear();
         const MatrixAdaptor diffN = col_data.getDiffN(gg);
         ublas::matrix<double> &jac_solvent_flux = commonData.jacSolventFlux[gg];
-        for(int dd = 0;dd<nb_col;dd++) {    // DoFs in column
-          for(int rr1 = 0;rr1<3;rr1++) {
-            double a = diffN(dd,rr1);
+        for(int dd = 0;dd<nb_col;dd++) {  // DoFs in column
+          for(int jj = 0;jj<3;jj++) {
+            double a = diffN(dd,jj);
             for(int rr2 = 0;rr2<3;rr2++) {
-              dSolventFlux_dmu(rr2,dd) += jac_solvent_flux(rr2,rr1)*a;
+              dSolventFlux_dmu(rr2,dd) += jac_solvent_flux(rr2,jj)*a;
             }
           }
         }
@@ -1835,7 +1844,8 @@ struct Gel {
       try {
         K.resize(nb_row,nb_col,false);
         K.clear();
-        for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
+        int nb_gauss_pts = row_data.getN().size1();
+        for(unsigned int gg = 0;gg!=nb_gauss_pts;gg++) {
           ierr = get_dSolventFlux_dmu(col_data,gg); CHKERRQ(ierr);
           double val = getVolume()*getGaussPts()(3,gg);
           if(getHoGaussPtsDetJac().size()>0) {
@@ -1847,16 +1857,16 @@ struct Gel {
           { //integrate element stiffness matrix
             for(int dd1 = 0;dd1<nb_row;dd1++) {
               for(int dd2 = 0;dd2<nb_col;dd2++) {
-                for(int rr = 0;rr<3;rr++) {
-                  K(dd1,dd2) += diffN(dd1,rr)*dSolventFlux_dmu(rr,dd2);
+                for(int jj = 0;jj<3;jj++) {
+                  K(dd1,dd2) += diffN(dd1,jj)*dSolventFlux_dmu(jj,dd2);
                 }
               }
             }
           }
-          ierr = aSemble(
-            row_side,col_side,row_type,col_type,row_data,col_data
-          ); CHKERRQ(ierr);
         }
+        ierr = aSemble(
+          row_side,col_side,row_type,col_type,row_data,col_data
+        ); CHKERRQ(ierr);
       } catch (const std::exception& ex) {
         ostringstream ss;
         ss << "throw in method: " << ex.what() << endl;
@@ -1878,28 +1888,29 @@ struct Gel {
     commonData(common_data) {
       sYmm = false;
     }
-    ublas::vector<double> dSolventFlux_dx;
-    PetscErrorCode get_dSolventFlux_dx(
+    ublas::vector<double> dVolumeDot_dx;
+    PetscErrorCode get_dVolumeDot_dx(
       DataForcesAndSurcesCore::EntData &col_data,int gg
     ) {
       PetscFunctionBegin;
       try {
         int nb_col = col_data.getIndices().size();
-        dSolventFlux_dx.resize(nb_col,false);
-        dSolventFlux_dx.clear();
+        dVolumeDot_dx.resize(nb_col,false);
+        dVolumeDot_dx.clear();
         const MatrixAdaptor diffN = col_data.getDiffN(gg);
-        ublas::vector<double> &jac_volume_rate = commonData.jacVolumeRate[gg];
+        ublas::vector<double> &jac_volume_rate = commonData.jacVolumeDot[gg];
+        //cerr << dVolumeDot_dx << endl;
         //cerr << jac_volume_rate << endl;
         for(int dd = 0;dd<nb_col/3;dd++) {    // DoFs in column
-          for(int rr1 = 0;rr1<3;rr1++) {
-            double a = diffN(dd,rr1);
+          for(int jj = 0;jj<3;jj++) {
+            double a = diffN(dd,jj);
             for(int rr2 = 0;rr2<3;rr2++) {
-              dSolventFlux_dx[3*dd+rr2] += jac_volume_rate(3*rr2+rr1)*a;
-              dSolventFlux_dx[3*dd+rr2] += jac_volume_rate(9+3*rr2+rr1)*a*getFEMethod()->ts_a;
+              dVolumeDot_dx[3*dd+rr2] += jac_volume_rate(3*rr2+jj)*a;
+              dVolumeDot_dx[3*dd+rr2] += jac_volume_rate(9+3*rr2+jj)*a*getFEMethod()->ts_a;
             }
           }
         }
-        //cerr << dSolventFlux_dx << endl;
+        //cerr << dVolumeDot_dx << endl;
       } catch (const std::exception& ex) {
         ostringstream ss;
         ss << "throw in method: " << ex.what() << endl;
@@ -1922,25 +1933,25 @@ struct Gel {
         K.resize(nb_row,nb_col,false);
         K.clear();
         for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
-          ierr = get_dSolventFlux_dx(col_data,gg); CHKERRQ(ierr);
+          ierr = get_dVolumeDot_dx(col_data,gg); CHKERRQ(ierr);
           double val = getVolume()*getGaussPts()(3,gg);
           if(getHoGaussPtsDetJac().size()>0) {
             val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
           }
-          dSolventFlux_dx *= val;
-          //cerr << dSolventFlux_dx << endl;
+          dVolumeDot_dx *= val;
+          //cerr << dVolumeDot_dx << endl;
           const VectorAdaptor &N = row_data.getN(gg);
           { //integrate element stiffness matrix
             for(int dd1 = 0;dd1<nb_row;dd1++) {
               for(int dd2 = 0;dd2<nb_col;dd2++) {
-                K(dd1,dd2) += N[dd1]*dSolventFlux_dx[dd2];
+                K(dd1,dd2) += N[dd1]*dVolumeDot_dx[dd2];
               }
             }
           }
-          ierr = aSemble(
-            row_side,col_side,row_type,col_type,row_data,col_data
-          ); CHKERRQ(ierr);
         }
+        ierr = aSemble(
+          row_side,col_side,row_type,col_type,row_data,col_data
+        ); CHKERRQ(ierr);
       } catch (const std::exception& ex) {
         ostringstream ss;
         ss << "throw in method: " << ex.what() << endl;

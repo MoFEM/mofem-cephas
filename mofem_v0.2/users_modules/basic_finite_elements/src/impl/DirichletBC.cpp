@@ -408,7 +408,7 @@ PetscErrorCode FixBcAtEntities::postProcess() {
       ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
       ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
       for(vector<int>::iterator vit = dofsIndices.begin();vit!=dofsIndices.end();vit++) {
-	ierr = VecSetValue(snes_f,*vit,0,INSERT_VALUES); CHKERRQ(ierr);
+        ierr = VecSetValue(snes_f,*vit,0,INSERT_VALUES); CHKERRQ(ierr);
       }
       ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
       ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
@@ -432,7 +432,6 @@ PetscErrorCode DirichletBCFromBlockSetFEMethodPreAndPostProc::iNitalize() {
   PetscFunctionBegin;
   if(mapZeroRows.empty()) {
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
-
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
       if(it->get_name().compare(0,blocksetName.length(),blocksetName) == 0) {
         vector<double> mydata;
@@ -441,16 +440,15 @@ PetscErrorCode DirichletBCFromBlockSetFEMethodPreAndPostProc::iNitalize() {
           Range ents;
           ierr = it->get_cubit_msId_entities_by_dimension(mField.get_moab(),dim,ents,true); CHKERRQ(ierr);
           if(dim>1) {
-            Range _edges;
-            ierr = mField.get_moab().get_adjacencies(ents,1,false,_edges,Interface::UNION); CHKERRQ(ierr);
-            ents.insert(_edges.begin(),_edges.end());
+            Range edges;
+            ierr = mField.get_moab().get_adjacencies(ents,1,false,edges,Interface::UNION); CHKERRQ(ierr);
+            ents.insert(edges.begin(),edges.end());
           }
           if(dim>0) {
-            Range _nodes;
-            rval = mField.get_moab().get_connectivity(ents,_nodes,true); CHKERR_PETSC(rval);
-            ents.insert(_nodes.begin(),_nodes.end());
+            Range nodes;
+            rval = mField.get_moab().get_connectivity(ents,nodes,true); CHKERR_PETSC(rval);
+            ents.insert(nodes.begin(),nodes.end());
           }
-
           for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
             for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,fieldName,*eit,pcomm->rank(),dof)) {
               if(dof->get_ent_type() == MBVERTEX) {

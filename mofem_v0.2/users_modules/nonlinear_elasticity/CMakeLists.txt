@@ -12,11 +12,11 @@
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
 #include subdirectory
-include_directories("${UM_SOURCE_DIR}/nonlinear_elasticity")
-include_directories("${UM_SOURCE_DIR}/nonlinear_elasticity/src")
-include_directories("${UM_SOURCE_DIR}/nonlinear_elastic_materials/src")
-include_directories("${UM_SOURCE_DIR}/convective_mass_element/src")
-include_directories("${UM_SOURCE_DIR}/elasticity/src")
+include_directories(${UM_SOURCE_DIR}/nonlinear_elasticity)
+include_directories(${UM_SOURCE_DIR}/nonlinear_elasticity/src)
+include_directories(${UM_SOURCE_DIR}/nonlinear_elastic_materials/src)
+include_directories(${UM_SOURCE_DIR}/convective_mass_element/src)
+include_directories(${UM_SOURCE_DIR}/elasticity/src)
 
 add_subdirectory(atom_tests)
 

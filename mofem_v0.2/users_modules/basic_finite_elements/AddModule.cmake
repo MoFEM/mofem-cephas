@@ -22,6 +22,7 @@ set(UM_LIB_SOURCES
   ${UM_SOURCE_DIR}/basic_finite_elements/src/impl/NodeForce.cpp
   ${UM_SOURCE_DIR}/basic_finite_elements/src/impl/EdgeForce.cpp
   ${UM_SOURCE_DIR}/basic_finite_elements/src/impl/SurfacePressure.cpp
+  ${UM_SOURCE_DIR}/basic_finite_elements/src/impl/PostProcOnRefMesh.cpp
 )
 
 if(ADOL-C_LIBRARY)

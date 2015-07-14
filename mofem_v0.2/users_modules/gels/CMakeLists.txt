@@ -11,7 +11,11 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
-include_directories(${MoFEM_PROJECT_SOURCE_DIR}/users_modules/gels/src)
+include_directories(${UM_SOURCE_DIR}/gels/src)
+include_directories(${UM_SOURCE_DIR}/nonlinear_elasticity/src)
+include_directories(${UM_SOURCE_DIR}/nonlinear_elastic_materials/src)
+
+cm_export_file("meshes/brick_of_gel.cub" export_files_gels)
 
 add_executable(gel_analysis
   ${UM_SOURCE_DIR}/gels/gel_analysis.cpp
@@ -26,5 +30,6 @@ target_link_libraries(gel_analysis
   mofem_approx
   mofem_third_party
   mofem_cblas
+  boost_program_options
   ${MoFEM_PROJECT_LIBS}
 )
