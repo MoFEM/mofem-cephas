@@ -387,7 +387,8 @@ struct ThermalElement {
     FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
     dAta(data),
     hoGeometry(ho_geometry),
-    useTsF(false),F(_F) {
+    useTsF(false),
+    F(_F) {
     }
 
     ublas::vector<FieldData> Nf;

@@ -54,9 +54,11 @@ struct TsCtx {
   PetscLogEvent USER_EVENT_TsCtxIJacobian;
   PetscLogEvent USER_EVENT_TsCtxMonitor;
 
-  bool zero_matrix;
+  bool zeroMatrix;
   TsCtx(FieldInterface &m_field,const string &_problem_name):
-    mField(m_field),moab(m_field.get_moab()),problemName(_problem_name),zero_matrix(true) {
+    mField(m_field),moab(m_field.get_moab()),
+    problemName(_problem_name),
+    zeroMatrix(true) {
     PetscLogEventRegister("LoopTsIFunction",0,&USER_EVENT_TsCtxIFunction);
     PetscLogEventRegister("LoopTsIJacobian",0,&USER_EVENT_TsCtxIJacobian);
     PetscLogEventRegister("LoopTsRHSFunction",0,&USER_EVENT_TsCtxRHSFunction);
