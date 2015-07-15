@@ -44,3 +44,14 @@ target_link_libraries(gel_jacobian_test
   mofem_cblas
   ${MoFEM_PROJECT_LIBS}
 )
+
+add_test(gel_constitutive_equation_atom_test
+  ${MoFEM_MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/gel_constitutive_equation_test
+)
+
+cm_export_file("../../basic_finite_elements/atom_tests/fluid_presssure_cub_test.h5m" export_atom_gel_tests)
+
+add_test(gel_jacobian_atom_test
+  ${MoFEM_MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/gel_jacobian_test
+  -my_file fluid_presssure_cub_test.h5m
+)
