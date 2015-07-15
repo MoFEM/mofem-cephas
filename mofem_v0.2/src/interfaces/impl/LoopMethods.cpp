@@ -98,15 +98,30 @@ PetscErrorCode TSMethod::copy_ts(const TSMethod &ts) {
 
 //BasicMethod
 BasicMethod::BasicMethod():
-  nInTheLoop(0),loopSize(0),
-  refinedEntitiesPtr(NULL),refinedFiniteElementsPtr(NULL),
-  problemPtr(NULL),fieldsPtr(NULL),entitiesPtr(NULL),dofsPtr(NULL),
-  finiteElementsPtr(NULL),finiteElementsEntitiesPtr(NULL),adjacenciesPtr(NULL) {}
+KspMethod(),
+SnesMethod(),
+TSMethod(),
+nInTheLoop(0),
+loopSize(0),
+refinedEntitiesPtr(NULL),
+refinedFiniteElementsPtr(NULL),
+problemPtr(NULL),
+fieldsPtr(NULL),
+entitiesPtr(NULL),
+dofsPtr(NULL),
+finiteElementsPtr(NULL),
+finiteElementsEntitiesPtr(NULL),
+adjacenciesPtr(NULL) {
+}
 
 //FEMethod
-FEMethod::FEMethod(): BasicMethod(),
-  fePtr(NULL),dataPtr(NULL),
-  rowPtr(NULL),colPtr(NULL) {}
+FEMethod::FEMethod():
+BasicMethod(),
+fePtr(NULL),
+dataPtr(NULL),
+rowPtr(NULL),
+colPtr(NULL) {
+}
 
 PetscErrorCode FEMethod::preProcess() {
   PetscFunctionBegin;
