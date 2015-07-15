@@ -123,6 +123,11 @@ int main(int argc, char *argv[]) {
       ierr = m_field.set_field_order(root_set,MBEDGE,"SOLVENT_CONCENTRATION",order-1); CHKERRQ(ierr);
       ierr = m_field.set_field_order(root_set,MBVERTEX,"SOLVENT_CONCENTRATION",1); CHKERRQ(ierr);
 
+      ierr = m_field.set_field_order(root_set,MBTET,"SOLVENT_CONCENTRATION_DOT",order-1); CHKERRQ(ierr);
+      ierr = m_field.set_field_order(root_set,MBTRI,"SOLVENT_CONCENTRATION_DOT",order-1); CHKERRQ(ierr);
+      ierr = m_field.set_field_order(root_set,MBEDGE,"SOLVENT_CONCENTRATION_DOT",order-1); CHKERRQ(ierr);
+      ierr = m_field.set_field_order(root_set,MBVERTEX,"SOLVENT_CONCENTRATION_DOT",1); CHKERRQ(ierr);
+
       ierr = m_field.set_field_order(root_set,MBTET,"HAT_EPS",order-1); CHKERRQ(ierr);
       ierr = m_field.set_field_order(root_set,MBTET,"HAT_EPS_DOT",order-1); CHKERRQ(ierr);
 
@@ -151,13 +156,15 @@ int main(int argc, char *argv[]) {
       ierr = m_field.add_finite_element("GEL_FE",MF_ZERO); CHKERRQ(ierr);
       ierr = m_field.modify_finite_element_add_field_row("GEL_FE","SPATIAL_POSITION"); CHKERRQ(ierr);
       ierr = m_field.modify_finite_element_add_field_col("GEL_FE","SPATIAL_POSITION"); CHKERRQ(ierr);
-      ierr = m_field.modify_finite_element_add_field_data("GEL_FE","SPATIAL_POSITION"); CHKERRQ(ierr);
-      ierr = m_field.modify_finite_element_add_field_data("GEL_FE","SPATIAL_POSITION_DOT"); CHKERRQ(ierr);
       ierr = m_field.modify_finite_element_add_field_row("GEL_FE","SOLVENT_CONCENTRATION"); CHKERRQ(ierr);
       ierr = m_field.modify_finite_element_add_field_col("GEL_FE","SOLVENT_CONCENTRATION"); CHKERRQ(ierr);
-      ierr = m_field.modify_finite_element_add_field_data("GEL_FE","SOLVENT_CONCENTRATION"); CHKERRQ(ierr);
       ierr = m_field.modify_finite_element_add_field_row("GEL_FE","HAT_EPS"); CHKERRQ(ierr);
       ierr = m_field.modify_finite_element_add_field_col("GEL_FE","HAT_EPS"); CHKERRQ(ierr);
+
+      ierr = m_field.modify_finite_element_add_field_data("GEL_FE","SPATIAL_POSITION"); CHKERRQ(ierr);
+      ierr = m_field.modify_finite_element_add_field_data("GEL_FE","SPATIAL_POSITION_DOT"); CHKERRQ(ierr);
+      ierr = m_field.modify_finite_element_add_field_data("GEL_FE","SOLVENT_CONCENTRATION"); CHKERRQ(ierr);
+      ierr = m_field.modify_finite_element_add_field_data("GEL_FE","SOLVENT_CONCENTRATION_DOT"); CHKERRQ(ierr);
       ierr = m_field.modify_finite_element_add_field_data("GEL_FE","HAT_EPS"); CHKERRQ(ierr);
       ierr = m_field.modify_finite_element_add_field_data("GEL_FE","HAT_EPS_DOT"); CHKERRQ(ierr);
       ierr = m_field.modify_finite_element_add_field_data("GEL_FE","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
@@ -196,6 +203,7 @@ int main(int argc, char *argv[]) {
     common_data.spatialPositionName = "SPATIAL_POSITION";
     common_data.spatialPositionNameDot = "SPATIAL_POSITION_DOT";
     common_data.muName = "SOLVENT_CONCENTRATION";
+    common_data.muNameDot = "SOLVENT_CONCENTRATION_DOT";
     common_data.strainHatName = "HAT_EPS";
     common_data.strainHatNameDot = "HAT_EPS_DOT";
 
@@ -303,12 +311,12 @@ int main(int argc, char *argv[]) {
   // See results
   {
 
-    //PetscViewer viewer;
-    //ierr = PetscViewerASCIIOpen(PETSC_COMM_WORLD,"build_composite_problem.txt",&viewer); CHKERRQ(ierr);
-    //ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
-    MatView(M,PETSC_VIEWER_DRAW_WORLD);
-    std::string wait;
-    std::cin >> wait;
+    PetscViewer viewer;
+    ierr = PetscViewerASCIIOpen(PETSC_COMM_WORLD,"gel_jacobian_test.txt",&viewer); CHKERRQ(ierr);
+    ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
+    //MatView(M,PETSC_VIEWER_DRAW_WORLD);
+    //std::string wait;
+    //std::cin >> wait;
 
   }
 

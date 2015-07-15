@@ -84,7 +84,15 @@ struct SnesMethod {
  * Structure stores context data which are set in functions run by PETSc Time Stepping functions.
  */
 struct TSMethod {
-  enum TSContext { CTX_TSSETRHSFUNCTION, CTX_TSSETRHSJACOBIAN, CTX_TSSETIFUNCTION, CTX_TSSETIJACOBIAN, CTX_TSTSMONITORSET, CTX_TSNONE };
+
+  enum TSContext {
+    CTX_TSSETRHSFUNCTION,
+    CTX_TSSETRHSJACOBIAN,
+    CTX_TSSETIFUNCTION,
+    CTX_TSSETIJACOBIAN,
+    CTX_TSTSMONITORSET,
+    CTX_TSNONE
+  };
 
   TSContext ts_ctx;
   TSMethod(): ts_ctx(CTX_TSNONE),ts_a(0),ts_t(0) {};
