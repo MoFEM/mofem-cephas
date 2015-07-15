@@ -1,4 +1,4 @@
-/** \file Gels.hpp
+/** \file UserGelModel.hpp
   \brief Implementation of Gel finite element
   \ingroup gel
 */
@@ -25,6 +25,14 @@
   #error "MoFEM need to be compiled with ADOL-C"
 #endif
 
+/** \brief User (hackable) Gel model
+
+  Member functions of \ref Gel::ConstitutiveEquation can be overloaded and
+  user constitutive equation can be implemented. Since ADOL-C is used all
+  tangent matrices are automatically calculated and physical nonlinearities easily
+  added to the model.
+
+*/
 template<typename TYPE>
 struct UserGelConstitutiveEquation: public Gel::ConstitutiveEquation<TYPE>  {
 

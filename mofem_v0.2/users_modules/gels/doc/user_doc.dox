@@ -62,7 +62,7 @@ block 3 element type TETRA10
 \subsubsection gel_material_file Defining material properties
 
 Material properties file (gel_config.in). For more details about model
-parameters look here \ref ConstitutiveEquation
+parameters look here \ref Gel::ConstitutiveEquation
 
 Native constitutive model is implemented after
 Yuhang Hu and Zhigang Suo. Viscoelasticity and poroelasticity in elastomeric
@@ -111,33 +111,66 @@ where first column represents time and second column represent force multiplier.
 
 \subsection execution Executing code
 
-Example how to execute example problem
+Example how to execute example problem:
+
 \code
-mpirun -np 1 ./gel_analysis \
-  -my_file brick_of_gel.cub -ksp_type fgmres -ksp_final_residual \
+mpirun -np 4 ./gel_analysis \
+  -my_file brick_of_gel.cub \
+  -my_gel_config gel_config.in \
+  -ksp_type fgmres -ksp_final_residual \
+  -ksp_atol 1e-10 -ksp_rtol 1e-10 \
   -ksp_monitor -ksp_converged_reason \
   -pc_type lu -pc_factor_mat_solver_package mumps \
-  -snes_monitor  \
-  -ts_type beuler -ts_dt 0.1 -ts_final_time 10  -snes_linesearch_type basic  -ts_monitor -my_gel_config gel_config.in
-
-mpirun -np 4  ../../nonlinear_dynamics \
-  -my_file rod.cub \
-  -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package mumps -ksp_atol 1e-12 -ksp_rtol 1e-12 \
-  -snes_monitor -snes_type newtonls -snes_linesearch_type basic -snes_max_it 10 -snes_atol 1e-8 -snes_rtol 1e-8 \
-  -ts_monitor -ts_type alpha -ts_dt 0.01 -ts_final_time 4 -ts_max_snes_failures -1  \
-  -my_output_prt -1 -my_max_post_proc_ref_level 0  \
-  -my_disp_order 2 -my_time_data_file rod_history.in -default_material NEOHOOKEAN 2>&1 | tee log
+  -snes_atol 1e-8 -snes_rtol 1e-8 \
+  -snes_type newtonls -snes_linesearch_type basic \
+  -snes_linesearch_monitor -snes_monitor \
+  -ts_type beuler -ts_dt 0.1 -ts_final_time 10  \
+  -ts_monitor
 \endcode
+
+Notes:
+
+  - Option \em -my_file gives name of mesh file
+
+  - Option \em -my_gel_config give name of material config file
+
+  - Time integration scheme is controlled by \em -ts_type, look to PETSc manual
+  for more details.
+
+  - Resolution of post-processing mesh is set by \em -my_max_post_proc_ref_level
+  0. If more than 0, i.e. 1,2,... a denser post-processing mesh is generated.
+  This results in biger size of post processing files and compromise overall
+  efficiency.
+
+  - Option \em -snes_atol control absolute tolerance of nonlinear solver, should be bigger
+  than ksp_atol 1e-10
+
+  - Option \em -snes_rtol control relative tolerance of nonlinear solver
+
+  - Using \em -my_output_prt 1, each time step is post-processed.
 
 \subsection paraview VTK files for paraview
 
-Running dynamic analysis out_values_1.h5m, out_values_2.h5m, ... are created
-for each time step. Post-processing mesh in output fails is stored in native MoAB data format
-using standard h5m.
+Running dynamic analysis out_values_1.h5m, out_values_2.h5m, ... are created for
+each time step. Post-processing mesh in output fails is stored in native MoAB
+data format using standard h5m.
 
-VTK files can be generated using script located in \em users_modules/nonlinear_elasticity/do_vtk.sh. For example
+VTK files can be generated using script located in \em
+users_modules/nonlinear_elasticity/do_vtk.sh. For example
 \code
 ../nonlinear_elasticity/do_vtk.sh out_*h5m
 \endcode
+
+\subsection user_gel_constitutive_equation User (hackable) constitutive equation
+
+In file \ref UserGelModel.hpp user can implement own constitutive equation, for
+details see \ref UserGelConstitutiveEquation. After any change in \ref
+UserGelModel.hpp have to follow rebuiling the code
+\code
+$um_debug/gels make
+\endcode
+
+Similiar (not exact) method is used to implement general nonlinear elastic
+materials, see for example \ref NeoHookean.hpp or \ref Hooke.hpp
 
 */
