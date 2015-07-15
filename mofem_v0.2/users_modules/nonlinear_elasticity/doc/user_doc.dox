@@ -1,4 +1,5 @@
 /*! \page elastic_dynamics Nonlinear Elasticity (Usage example)
+\ingroup nonlinear_elastic_elem
 
 This is simple example how to run a simple problem for linear and non-linear dynamics. Is is
 directed for beginners starting work with MoFEM.

@@ -39,6 +39,7 @@ using namespace MoFEM;
 #include <boost/numeric/ublas/vector.hpp>
 #include <adolc/adolc.h>
 #include <Gels.hpp>
+#include <UserGelModel.hpp>
 
 #include <boost/program_options.hpp>
 using namespace std;
@@ -65,6 +66,13 @@ ErrorCode rval;
 PetscErrorCode ierr;
 static char help[] = "...\n\n";
 
+struct BlockData {
+  int oRder;
+  BlockData():
+  oRder(-1) {
+  }
+};
+
 int main(int argc, char *argv[]) {
 
   PetscInitialize(&argc,&argv,(char *)0,help);
@@ -72,19 +80,43 @@ int main(int argc, char *argv[]) {
   moab::Core mb_instance;
   Interface& moab = mb_instance;
 
+  PetscBool flg_gel_config,flg_file;
+  char mesh_file_name[255];
+  char gel_config_file[255];
+  PetscInt order = 2;
+  PetscBool is_partitioned = PETSC_FALSE;
+
   {
-    PetscBool flg = PETSC_TRUE;
-    char mesh_file_name[255];
-    ierr = PetscOptionsGetString(PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
-    if(flg != PETSC_TRUE) {
+
+    ierr = PetscOptionsBegin(PETSC_COMM_WORLD,"","Elastic Config","none"); CHKERRQ(ierr);
+    ierr = PetscOptionsString(
+      "-my_file",
+      "mesh file name","",
+      "mesh.h5m",mesh_file_name,255,&flg_file
+    ); CHKERRQ(ierr);
+    ierr = PetscOptionsInt(
+      "-my_order",
+      "default approximation order","",
+      2,&order,PETSC_NULL
+    ); CHKERRQ(ierr);
+    ierr = PetscOptionsBool(
+      "-my_is_partitioned",
+      "set if mesh is partitioned (this result that each process keeps only part of the mes","",
+      PETSC_FALSE,&is_partitioned,PETSC_NULL
+    ); CHKERRQ(ierr);
+    ierr = PetscOptionsString(
+      "-my_gel_config",
+      "gel configuration file name","",
+      "gel_config.in",gel_config_file,255,&flg_gel_config
+    ); CHKERRQ(ierr);
+    ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+
+    //Reade parameters from line command
+    if(flg_file != PETSC_TRUE) {
       SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
     }
-    PetscBool is_partitioned = PETSC_FALSE;
-    ierr = PetscOptionsGetBool(
-      PETSC_NULL, "-my_is_partitioned", &is_partitioned, &flg
-    ); CHKERRQ(ierr);
 
-    if (is_partitioned == PETSC_TRUE) {
+    if(is_partitioned == PETSC_TRUE) {
       //Read mesh to MOAB
       const char *option;
       option =
@@ -111,6 +143,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
 
   // Define fields and finite elements
+  Gel gel(m_field);
   map<int,ThermalElement::FluxData> set_of_solvent_fluxes;
   {
 
@@ -139,16 +172,6 @@ int main(int argc, char *argv[]) {
       ierr = m_field.add_ents_to_field_by_TETs(root_set,"SPATIAL_POSITION_DOT"); CHKERRQ(ierr);
       ierr = m_field.add_ents_to_field_by_TETs(root_set,"SOLVENT_CONCENTRATION_DOT"); CHKERRQ(ierr);
       ierr = m_field.add_ents_to_field_by_TETs(root_set,"HAT_EPS_DOT"); CHKERRQ(ierr);
-
-      PetscBool flg;
-      PetscInt order;
-      ierr = PetscOptionsGetInt(PETSC_NULL,"-my_order",&order,&flg); CHKERRQ(ierr);
-      if(flg != PETSC_TRUE) {
-        order = 2;
-      }
-      if(order < 2) {
-        //SETERRQ()
-      }
 
       // Set approximation order. Solvent concentration has one order less than
       // order of of spatial position field. Tests need to be maid if that is
@@ -185,6 +208,75 @@ int main(int argc, char *argv[]) {
       ierr = m_field.set_field_order(0,MBTRI,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
       ierr = m_field.set_field_order(0,MBEDGE,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
       ierr = m_field.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
+
+      try {
+
+        map<int,BlockData> block_data;
+        Gel::BlockMaterialData &material_data = gel.blockMaterialData;
+
+        ifstream ini_file(gel_config_file);
+        po::variables_map vm;
+        po::options_description config_file_options;
+
+        for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
+          ostringstream str_order;
+          str_order << "block_" << it->get_msId() << ".oRder";
+          config_file_options.add_options()
+          (str_order.str().c_str(),po::value<int>(&block_data[it->get_msId()].oRder)->default_value(order));
+        }
+
+        config_file_options.add_options()
+        ("gAlpha",po::value<double>(&material_data.gAlpha)->default_value(1));
+        config_file_options.add_options()
+        ("vAlpha",po::value<double>(&material_data.vAlpha)->default_value(0));
+        config_file_options.add_options()
+        ("gBeta",po::value<double>(&material_data.gBeta)->default_value(1));
+        config_file_options.add_options()
+        ("vBeta",po::value<double>(&material_data.vBeta)->default_value(0));
+        config_file_options.add_options()
+        ("gBetaHat",po::value<double>(&material_data.gBetaHat)->default_value(1));
+        config_file_options.add_options()
+        ("vBetaHat",po::value<double>(&material_data.vBetaHat)->default_value(0));
+        config_file_options.add_options()
+        ("oMega",po::value<double>(&material_data.oMega)->default_value(1));
+        config_file_options.add_options()
+        ("vIscosity",po::value<double>(&material_data.vIscosity)->default_value(1));
+        config_file_options.add_options()
+        ("pErmeability",po::value<double>(&material_data.pErmeability)->default_value(1));
+
+        po::parsed_options parsed = parse_config_file(ini_file,config_file_options,true);
+        store(parsed,vm);
+        po::notify(vm);
+        for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
+          if(block_data[it->get_msId()].oRder == -1) continue;
+          if(block_data[it->get_msId()].oRder == order) continue;
+          PetscPrintf(PETSC_COMM_WORLD,"Set block %d order to %d\n",it->get_msId(),block_data[it->get_msId()].oRder);
+          Range block_ents;
+          rval = moab.get_entities_by_handle(it->get_meshset(),block_ents,true); CHKERR_PETSC(rval);
+          Range ents_to_set_order;
+          rval = moab.get_adjacencies(block_ents,3,false,ents_to_set_order,Interface::UNION); CHKERR_PETSC(rval);
+          ents_to_set_order = ents_to_set_order.subset_by_type(MBTET);
+          rval = moab.get_adjacencies(block_ents,2,false,ents_to_set_order,Interface::UNION); CHKERR_PETSC(rval);
+          rval = moab.get_adjacencies(block_ents,1,false,ents_to_set_order,Interface::UNION); CHKERR_PETSC(rval);
+          ierr = m_field.synchronise_entities(ents_to_set_order); CHKERRQ(ierr);
+          ierr = m_field.set_field_order(ents_to_set_order,"SPATIAL_POSITION",block_data[it->get_msId()].oRder); CHKERRQ(ierr);
+          ierr = m_field.set_field_order(ents_to_set_order,"SOLVENT_CONCENTRATION",block_data[it->get_msId()].oRder-1); CHKERRQ(ierr);
+          ierr = m_field.set_field_order(ents_to_set_order,"HAT_EPS",block_data[it->get_msId()].oRder-1); CHKERRQ(ierr);
+          ierr = m_field.set_field_order(ents_to_set_order,"SPATIAL_POSITION_DOT",block_data[it->get_msId()].oRder); CHKERRQ(ierr);
+          ierr = m_field.set_field_order(ents_to_set_order,"SOLVENT_CONCENTRATION_DOT",block_data[it->get_msId()].oRder-1); CHKERRQ(ierr);
+          ierr = m_field.set_field_order(ents_to_set_order,"HAT_EPS_DOT",block_data[it->get_msId()].oRder-1); CHKERRQ(ierr);
+        }
+        vector<string> additional_parameters;
+        additional_parameters = collect_unrecognized(parsed.options,po::include_positional);
+        for(vector<string>::iterator vit = additional_parameters.begin();
+        vit!=additional_parameters.end();vit++) {
+          ierr = PetscPrintf(PETSC_COMM_WORLD,"** WARNING Unrecognised option %s\n",vit->c_str()); CHKERRQ(ierr);
+        }
+      } catch (const std::exception& ex) {
+        ostringstream ss;
+        ss << ex.what() << endl;
+        SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+      }
 
       ierr = m_field.build_fields(); CHKERRQ(ierr);
 
@@ -268,24 +360,11 @@ int main(int argc, char *argv[]) {
   }
 
   // Create gel instance and set operators.
-  Gel gel(m_field);
   {
 
-    Gel::BlockMaterialData &material_data = gel.blockMaterialData;
-    gel.constitutiveEquationPtr = boost::shared_ptr<Gel::ConstitutiveEquation<adouble> >(
-      new Gel::ConstitutiveEquation<adouble>(gel.blockMaterialData)
+    gel.constitutiveEquationPtr = boost::shared_ptr<UserGelConstitutiveEquation<adouble> >(
+      new UserGelConstitutiveEquation<adouble>(gel.blockMaterialData)
     );
-
-    // Set material parameters
-    material_data.gAlpha = 0.5;
-    material_data.vAlpha = 0.;
-    material_data.gBeta = 1;
-    material_data.vBeta = 0.3;
-    material_data.gBetaHat = 1;
-    material_data.vBetaHat = 0.;
-    material_data.oMega = 1;
-    material_data.vIscosity = 1;
-    material_data.pErmeability = 2.;
 
     // Set name of fields which has been choose to approximate spatial
     // displacements, solvent concentration and internal state variables.
@@ -389,7 +468,6 @@ int main(int argc, char *argv[]) {
     ierr = DMMoFEMAddElement(dm,"PRESSURE_FE"); CHKERRQ(ierr);
     ierr = DMMoFEMAddElement(dm,"SOLVENT_FLUX_FE"); CHKERRQ(ierr);
     ierr = DMSetUp(dm); CHKERRQ(ierr);
-
   }
 
   // Create matrices and vectors used for analysis
