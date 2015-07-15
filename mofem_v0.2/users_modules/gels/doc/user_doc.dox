@@ -1,5 +1,4 @@
-/*! \page gel_model Gel Model (Usage example)
-\ingroup gel
+/*! \page gel_model_example Gel Model (Usage example)
 
 This is simple example how to run a simple problem for gel model with
 visocus-relaxation. Is is directed for beginners starting work with MoFEM.
@@ -148,6 +147,13 @@ Notes:
   - Option \em -snes_rtol control relative tolerance of nonlinear solver
 
   - Using \em -my_output_prt 1, each time step is post-processed.
+
+Result:
+
+Example of animation obtained from this example for approximation order 4
+
+\image html gel_simple_anim.gif "Gel brick" width=6cm
+
 
 \subsection paraview VTK files for paraview
 
