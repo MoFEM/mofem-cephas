@@ -16,6 +16,8 @@ include_directories(${UM_SOURCE_DIR}/nonlinear_elasticity/src)
 include_directories(${UM_SOURCE_DIR}/nonlinear_elastic_materials/src)
 
 cm_export_file("meshes/brick_of_gel.cub" export_files_gels)
+cm_export_file("meshes/brick_of_gel.jou" export_files_gels)
+cm_export_file("gel_config.in" export_files_gels)
 
 add_executable(gel_analysis
   ${UM_SOURCE_DIR}/gels/gel_analysis.cpp

@@ -285,9 +285,8 @@ struct Gel {
       PetscFunctionBegin;
       stressTotal.resize(3,3,false);
       noalias(stressTotal) = stressAlpha;
-      //noalias(stressTotal) += stressBeta;
-      //noalias(stressTotal) += stressBetaHat;
-
+      noalias(stressTotal) += stressBeta;
+      noalias(stressTotal) += stressBetaHat;
       PetscFunctionReturn(0);
     }
 

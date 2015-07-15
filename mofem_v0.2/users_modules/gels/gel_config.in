@@ -1,0 +1,27 @@
+# Material parameters for Gel material model
+
+# Spring Alpha
+gAlpha = 1
+vAlpha = 0
+
+# Spring Beta
+gBeta = 1
+vBeta = 0
+
+# Daspot
+gBetaHat = 1
+vBetaHat = 0
+
+# Volume per solvent molecule
+oMega = 1
+
+# Solvent transport material parameters
+vIscosity = 1
+pErmeability = 1
+
+# User can set approximation order for each blocks independently
+# Set approximation order of block 1 as quadratic function.
+
+[block_1]
+
+oRder = 2
