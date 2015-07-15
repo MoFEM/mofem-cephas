@@ -1,6 +1,5 @@
 
-Steady problem,
-============================================================
-make Gels_unsteady && mpirun -np 1 ./Gels_unsteady
+mpirun -np 4 ./gel_analysis -my_file brick_of_gel.cub -ksp_type fgmres -ksp_final_residual -ksp_monitor -ksp_converged_reason -pc_type lu -pc_factor_mat_solver_package mumps -my_order 3 -snes_monitor  -ts_type beuler -ts_dt 0.1 -ts_final_time 10  -snes_linesearch_type basic  -ts_monitor
 
-
+../degradation_model/do_vtk1.sh out_*.h5m
+cp *.vtk /mnt/home/Desktop/Results/

@@ -9,7 +9,7 @@ Steps:
 =========== Run RVE -mechanical for calculation of homogenised Dmat in global coordinate system for both 0 and 90 deg lamia ===================
 ===============================================================================================================================================
 
-mpirun -np 1 ../homogenisation/Cube_Disp_HOG -my_file /mnt/home/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/composite_laminates/meshes/Laminated_Plate_RVE_0deg.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 2
+mpirun -np 1 ../homogenisation/Cube_Disp_HOG -my_file /mnt/home/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/composite_laminates/meshes/Laminated_Plate_RVE_0deg.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1
 
 mpirun -np 1 ../homogenisation/Cube_Disp_HOG -my_file /mnt/home/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/composite_laminates/meshes/Laminated_Plate_RVE_90deg.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1
 
@@ -21,11 +21,14 @@ mpirun -np 1 ../homogenisation/Cube_Disp_HOG -my_file /mnt/home/Documents/moFEM/
 
 make FE2_composite_laminate && mpirun -np 1 ./FE2_composite_laminate -my_file /mnt/home/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/composite_laminates/meshes/Laminated_Plate.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1
 
+make FE2_composite_laminate && mpirun -np 1 ./FE2_composite_laminate -my_file /mnt/home/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/composite_laminates/meshes/Laminated_Plate_only0Try.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1
 
 
-../degradation_model/do_vtk1.sh out.h5m
+
+../degradation_model/do_vtk1.sh out_*.h5m
 cp *.vtk /mnt/home/Desktop/Results/
-rm *.info *.out *.h5m
+
+rm *.info *.out *.h5m *.vtk
 
 
 

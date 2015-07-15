@@ -142,7 +142,8 @@ int main(int argc, char *argv[]) {
   
   //FE
   ierr = mField.add_finite_element("ELASTIC_0deg",MF_ZERO); CHKERRQ(ierr);
-  ierr = mField.add_finite_element("ELASTIC_90deg",MF_ZERO); CHKERRQ(ierr);
+//  ierr = mField.add_finite_element("ELASTIC_90deg",MF_ZERO); CHKERRQ(ierr);
+//  ierr = mField.add_finite_element("ELASTIC_0_90_post_process",MF_ZERO); CHKERRQ(ierr);
 
   //Define rows/cols and element data
   ierr = mField.modify_finite_element_add_field_row("ELASTIC_0deg","DISP"); CHKERRQ(ierr);
@@ -151,18 +152,25 @@ int main(int argc, char *argv[]) {
   ierr = mField.modify_finite_element_add_field_data("ELASTIC_0deg","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
   
   //Define rows/cols and element data
-  ierr = mField.modify_finite_element_add_field_row("ELASTIC_90deg","DISP"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_col("ELASTIC_90deg","DISP"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_data("ELASTIC_90deg","DISP"); CHKERRQ(ierr);
-  ierr = mField.modify_finite_element_add_field_data("ELASTIC_90deg","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+//  ierr = mField.modify_finite_element_add_field_row("ELASTIC_90deg","DISP"); CHKERRQ(ierr);
+//  ierr = mField.modify_finite_element_add_field_col("ELASTIC_90deg","DISP"); CHKERRQ(ierr);
+//  ierr = mField.modify_finite_element_add_field_data("ELASTIC_90deg","DISP"); CHKERRQ(ierr);
+//  ierr = mField.modify_finite_element_add_field_data("ELASTIC_90deg","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+
+  //Define rows/cols and element data
+//  ierr = mField.modify_finite_element_add_field_row("ELASTIC_0_90_post_process","DISP"); CHKERRQ(ierr);
+//  ierr = mField.modify_finite_element_add_field_col("ELASTIC_0_90_post_process","DISP"); CHKERRQ(ierr);
+//  ierr = mField.modify_finite_element_add_field_data("ELASTIC_0_90_post_process","DISP"); CHKERRQ(ierr);
+//  ierr = mField.modify_finite_element_add_field_data("ELASTIC_0_90_post_process","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
 
   //define problems
   ierr = mField.add_problem("ELASTIC_PROB"); CHKERRQ(ierr);
   
   //set finite elements for problem
   ierr = mField.modify_problem_add_finite_element("ELASTIC_PROB","ELASTIC_0deg"); CHKERRQ(ierr);
-  ierr = mField.modify_problem_add_finite_element("ELASTIC_PROB","ELASTIC_90deg"); CHKERRQ(ierr);
-  
+//  ierr = mField.modify_problem_add_finite_element("ELASTIC_PROB","ELASTIC_90deg"); CHKERRQ(ierr);
+//  ierr = mField.modify_problem_add_finite_element("ELASTIC_PROB","ELASTIC_0_90_post_process"); CHKERRQ(ierr);
+
   //set refinment level for problem
   ierr = mField.modify_problem_ref_level_add_bit("ELASTIC_PROB",bit_level0); CHKERRQ(ierr);
   
@@ -182,16 +190,17 @@ int main(int argc, char *argv[]) {
     if(it->get_name() == "MAT_ELASTIC_0deg") {
       rval = moab.get_entities_by_type(it->meshset, MBTET,TetsInBlock_0deg,true); CHKERR_PETSC(rval);
     }
-    if(it->get_name() == "MAT_ELASTIC_90deg") {
-      rval = moab.get_entities_by_type(it->meshset, MBTET,TetsInBlock_90deg,true); CHKERR_PETSC(rval);
-    }
+//    if(it->get_name() == "MAT_ELASTIC_90deg") {
+//      rval = moab.get_entities_by_type(it->meshset, MBTET,TetsInBlock_90deg,true); CHKERR_PETSC(rval);
+//    }
   }
   cout<<"===============================   TetsInBlock_0deg "<<TetsInBlock_0deg<<endl;
   cout<<"===============================   TetsInBlock_90deg "<<TetsInBlock_90deg<<endl;
   
   
   ierr = mField.add_ents_to_finite_element_by_TETs(TetsInBlock_0deg, "ELASTIC_0deg"); CHKERRQ(ierr);
-  ierr = mField.add_ents_to_finite_element_by_TETs(TetsInBlock_90deg,"ELASTIC_90deg"); CHKERRQ(ierr);
+//  ierr = mField.add_ents_to_finite_element_by_TETs(TetsInBlock_90deg,"ELASTIC_90deg"); CHKERRQ(ierr);
+//  ierr = mField.add_ents_to_finite_element_by_TETs(0, "ELASTIC_0_90_post_process"); CHKERRQ(ierr);
 
 
   //set app. order
@@ -274,20 +283,24 @@ int main(int argc, char *argv[]) {
   
   //Assemble F and A
   DisplacementBCFEMethodPreAndPostProc my_dirichlet_bc(mField,"DISP",A,D,F);
+  //preproc
+  ierr = mField.problem_basic_method_preProcess("ELASTIC_PROB",my_dirichlet_bc); CHKERRQ(ierr);
+  ierr = mField.set_global_ghost_vector("ELASTIC_PROB",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+//  ierr = VecView(D,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+ 
+  
   MyElasticFEMethod my_fe_0deg(mField,A,D,F,Dmat_0deg,"DISP");
-  MyElasticFEMethod my_fe_90deg(mField,A,D,F,Dmat_90deg,"DISP");
+//  MyElasticFEMethod my_fe_90deg(mField,A,D,F,Dmat_90deg,"DISP");
 
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = MatZeroEntries(A); CHKERRQ(ierr);
   
-  //preproc
-  ierr = mField.problem_basic_method_preProcess("ELASTIC_PROB",my_dirichlet_bc); CHKERRQ(ierr);
   //loop elems
   //PetscBarrier(PETSC_NULL);
   ierr = mField.loop_finite_elements("ELASTIC_PROB","ELASTIC_0deg",my_fe_0deg);  CHKERRQ(ierr);
-  ierr = mField.loop_finite_elements("ELASTIC_PROB","ELASTIC_90deg",my_fe_90deg);  CHKERRQ(ierr);
+//  ierr = mField.loop_finite_elements("ELASTIC_PROB","ELASTIC_90deg",my_fe_90deg);  CHKERRQ(ierr);
 
   //forces and preassures on surface
   boost::ptr_map<string,NeummanForcesSurface> neumann_forces;
@@ -299,6 +312,7 @@ int main(int argc, char *argv[]) {
   
   //postproc
   ierr = mField.problem_basic_method_postProcess("ELASTIC_PROB",my_dirichlet_bc); CHKERRQ(ierr);
+  
   
   //set matrix possitives define and symetric for cholesky and icc preceonditionser
   ierr = MatSetOption(A,MAT_SPD,PETSC_TRUE); CHKERRQ(ierr);
@@ -325,6 +339,7 @@ int main(int argc, char *argv[]) {
   ierr = KSPSolve(solver,F,D); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = mField.problem_basic_method_preProcess("ELASTIC_PROB",my_dirichlet_bc); CHKERRQ(ierr);
 //  ierr = VecView(D,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
   //Save data on mesh
@@ -346,9 +361,19 @@ int main(int argc, char *argv[]) {
 
   
   ierr = mField.loop_finite_elements("ELASTIC_PROB","ELASTIC_0deg",post_proc); CHKERRQ(ierr);
-  ierr = mField.loop_finite_elements("ELASTIC_PROB","ELASTIC_90deg",post_proc); CHKERRQ(ierr);
+  rval = post_proc.postProcMesh.write_file("out_macro.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
 
-  rval = post_proc.postProcMesh.write_file("out.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
+  
+  
+  
+
+//  PostPocOnRefinedMesh post_proc1(mField);
+//  ierr = post_proc1.generateReferenceElementMesh(); CHKERRQ(ierr);
+//  ierr = post_proc1.addFieldValuesPostProc("DISP"); CHKERRQ(ierr);
+//  ierr = post_proc1.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+//  ierr = post_proc1.addFieldValuesGradientPostProc("DISP"); CHKERRQ(ierr);
+//   ierr = mField.loop_finite_elements("ELASTIC_PROB","ELASTIC_0deg",post_proc1); CHKERRQ(ierr);
+//  rval = post_proc1.postProcMesh.write_file("out_90deg.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
 
   
   //Destroy matrices
