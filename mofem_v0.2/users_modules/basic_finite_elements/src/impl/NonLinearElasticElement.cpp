@@ -461,7 +461,7 @@ PetscErrorCode NonlinearElasticElement::OpRhsPiolaKirchhoff::doWork(
 
     for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
       //diffN - on rows has degrees of freedom
-      //diffN - on columns has rerevatives direvatives of shape functin
+      //diffN - on columns has derivatives of shape function
       const MatrixAdaptor &diffN = row_data.getDiffN(gg,nb_dofs/3);
       const MatrixDouble& stress = commonData.sTress[gg];
 
