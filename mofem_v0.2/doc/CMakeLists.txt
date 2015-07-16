@@ -41,6 +41,20 @@ if(DOXYGEN_FOUND)
     ${PROJECT_SOURCE_DIR}/Doxyfile.in
     ${PROJECT_BINARY_DIR}/Doxyfile
   )
+  set(DOXYGEN_GENERATE_HEADER
+    ${DOXYGEN_EXECUTABLE} -w html
+    ${PROJECT_SOURCE_DIR}/doc/header.html
+    ${PROJECT_SOURCE_DIR}/doc/footer.html
+    ${PROJECT_SOURCE_DIR}/doc/style.html
+    ${PROJECT_BINARY_DIR}/Doxyfile
+  )
+  add_custom_target(doxygen_generating_header
+    ${DOXYGEN_GENERATE_HEADER}
+    COMMAND cat ${PROJECT_SOURCE_DIR}/doc/google_analytics.html | tee -a ${PROJECT_SOURCE_DIR}/doc/header.html
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+    COMMENT "Generating doxygen header" VERBATIM
+    DEPENDS doc_get_contributors
+  )
   set(DOXYGEN_LINE_COMMAND
     ${DOXYGEN_EXECUTABLE} ${PROJECT_BINARY_DIR}/Doxyfile
   )
@@ -48,7 +62,7 @@ if(DOXYGEN_FOUND)
     ${DOXYGEN_LINE_COMMAND}
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
     COMMENT "Generating documentation with Doxygen" VERBATIM
-    DEPENDS doc_get_contributors
+    DEPENDS doxygen_generating_header
   )
   add_custom_target(doc
     DEPENDS doxygen_generating_documenation
