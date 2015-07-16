@@ -153,12 +153,14 @@ int main(int argc, char *argv[]) {
   KelvinVoigtDamper damper(m_field);
   {
 
-    KelvinVoigtDamper::BlockMaterialData &material_data = damper.blockMaterialData;
-    damper.constitutiveEquationPtr = boost::shared_ptr<KelvinVoigtDamper::ConstitutiveEquation<adouble> >(
-      new KelvinVoigtDamper::ConstitutiveEquation<adouble>(damper.blockMaterialData)
+    int id = 0;
+    KelvinVoigtDamper::BlockMaterialData &material_data = damper.blockMaterialDataMap[id];
+    damper.constitutiveEquationMap.insert(
+      id,new KelvinVoigtDamper::ConstitutiveEquation<adouble>(material_data)
     );
 
     // Set material parameters
+    rval = moab.get_entities_by_type(0,MBTET,material_data.tEts); CHKERR_PETSC(rval);
     material_data.gBeta = 1;
     material_data.vBeta = 0.3;
 
@@ -179,10 +181,12 @@ int main(int argc, char *argv[]) {
       vector<int> tags;
       tags.push_back(1);
 
+      KelvinVoigtDamper::ConstitutiveEquation<adouble> ce = damper.constitutiveEquationMap.at(id);
+
       // Right hand side operators
       damper.feRhs.getOpPtrVector().push_back(
         new KelvinVoigtDamper::OpJacobian(
-          "SPATIAL_POSITION",tags,damper.constitutiveEquationPtr,damper.commonData,true,false
+          "SPATIAL_POSITION",tags,ce,damper.commonData,true,false
         )
       );
       damper.feRhs.getOpPtrVector().push_back(
@@ -191,7 +195,7 @@ int main(int argc, char *argv[]) {
 
       // Left hand side operators
       damper.feLhs.getOpPtrVector().push_back(
-        new KelvinVoigtDamper::OpJacobian("SPATIAL_POSITION",tags,damper.constitutiveEquationPtr,damper.commonData,false,true)
+        new KelvinVoigtDamper::OpJacobian("SPATIAL_POSITION",tags,ce,damper.commonData,false,true)
       );
       damper.feLhs.getOpPtrVector().push_back(
         new KelvinVoigtDamper::OpLhsdxdx(damper.commonData)

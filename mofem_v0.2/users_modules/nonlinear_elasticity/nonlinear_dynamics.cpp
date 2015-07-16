@@ -37,6 +37,7 @@ using namespace MoFEM;
 #include <adolc/adolc.h>
 #include <ConvectiveMassElement.hpp>
 #include <NonLinearElasticElement.hpp>
+#include <KelvinVoigtDamper.hpp>
 
 #include <PostProcOnRefMesh.hpp>
 #include <PostProcStresses.hpp>
@@ -369,6 +370,12 @@ int main(int argc, char *argv[]) {
   ierr = elastic_materials.setBlocks(inertia.setOfBlocks); CHKERRQ(ierr);
   ierr = inertia.addConvectiveMassElement("MASS_ELEMENT","SPATIAL_VELOCITY","SPATIAL_POSITION"); CHKERRQ(ierr);
   ierr = inertia.addVelocityElement("VELOCITY_ELEMENT","SPATIAL_VELOCITY","SPATIAL_POSITION"); CHKERRQ(ierr);
+
+  //damper element
+  KelvinVoigtDamper damper(m_field);
+  ierr = elastic_materials.setBlocks(damper.blockMaterialDataMap); CHKERRQ(ierr);
+
+
 
   MonitorPostProc post_proc(m_field,elastic.setOfBlocks,elastic.getLoopFeEnergy(),inertia.getLoopFeEnergy());
 

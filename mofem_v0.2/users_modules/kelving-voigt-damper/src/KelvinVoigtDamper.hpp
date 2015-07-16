@@ -39,6 +39,7 @@ struct KelvinVoigtDamper {
   \ingroup nonlinear_elastic_elem
   */
   struct BlockMaterialData {
+    Range tEts;
     double vBeta;        ///< Poisson ration spring alpha
     double gBeta;        ///< Sheer modulus spring alpha
     bool lInear;
@@ -49,9 +50,10 @@ struct KelvinVoigtDamper {
     }
 
   };
-  BlockMaterialData blockMaterialData;
 
-    /** \brief Constitutive model functions
+  map<int,BlockMaterialData> blockMaterialDataMap;
+
+  /** \brief Constitutive model functions
   \ingroup nonlinear_elastic_elem
 
   \image html gel_spring_daspot_model.png "Gel model" width=6cm
@@ -78,7 +80,7 @@ struct KelvinVoigtDamper {
     ublas::matrix<TYPE> invF;               ///< Inverse of gradient of deformation
 
     /** \brief Calculate determinant of 3x3 matrix
-      */
+    */
     PetscErrorCode dEterminatnt(ublas::matrix<TYPE> a,TYPE &det) {
       PetscFunctionBegin;
       // a11a22a33
@@ -90,17 +92,17 @@ struct KelvinVoigtDamper {
       //http://www.cg.info.hiroshima-cu.ac.jp/~miyazaki/knowledge/teche23.html
       //http://mathworld.wolfram.com/MatrixInverse.html
       det = a(0,0)*a(1,1)*a(2,2)
-        +a(1,0)*a(2,1)*a(0,2)
-        +a(2,0)*a(0,1)*a(1,2)
-        -a(0,0)*a(2,1)*a(1,2)
-        -a(2,0)*a(1,1)*a(0,2)
-        -a(1,0)*a(0,1)*a(2,2);
+      +a(1,0)*a(2,1)*a(0,2)
+      +a(2,0)*a(0,1)*a(1,2)
+      -a(0,0)*a(2,1)*a(1,2)
+      -a(2,0)*a(1,1)*a(0,2)
+      -a(1,0)*a(0,1)*a(2,2);
       PetscFunctionReturn(0);
     }
 
 
     /** \brief Calculate inverse of 3x3 matrix
-      */
+    */
     PetscErrorCode iNvert(TYPE det,ublas::matrix<TYPE> a,ublas::matrix<TYPE> &inv_a) {
       PetscFunctionBegin;
       //PetscErrorCode ierr;
@@ -184,7 +186,7 @@ struct KelvinVoigtDamper {
 
   };
 
-  boost::shared_ptr<ConstitutiveEquation<adouble> > constitutiveEquationPtr;
+  boost::ptr_map<int,KelvinVoigtDamper::ConstitutiveEquation<adouble> > constitutiveEquationMap;
 
   /** \brief Common data for nonlinear_elastic_elem model
   \ingroup nonlinear_elastic_elem
@@ -203,10 +205,12 @@ struct KelvinVoigtDamper {
     vector<ublas::matrix<double> > jacStress;
 
     bool recordOn;
+    bool skipThis;
     map<int,int> nbActiveVariables,nbActiveResults;
 
     CommonData():
-    recordOn(true) {
+    recordOn(true),
+    skipThis(true) {
     }
 
   };
@@ -370,7 +374,7 @@ struct KelvinVoigtDamper {
   struct OpJacobian: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     vector<int> tagS;
-    boost::shared_ptr<KelvinVoigtDamper::ConstitutiveEquation<adouble> > cE;
+    KelvinVoigtDamper::ConstitutiveEquation<adouble> &cE;
     CommonData &commonData;
 
     bool calculateResidualBool;
@@ -382,7 +386,7 @@ struct KelvinVoigtDamper {
     OpJacobian(
       const string field_name,
       vector<int> tags,
-      boost::shared_ptr<KelvinVoigtDamper::ConstitutiveEquation<adouble> > ce,
+      KelvinVoigtDamper::ConstitutiveEquation<adouble> &ce,
       CommonData &common_data,
       bool calculate_residual,
       bool calculate_jacobian
@@ -411,8 +415,8 @@ struct KelvinVoigtDamper {
           PetscFunctionReturn(0);
         }
         PetscErrorCode ierr;
-        cE->F.resize(3,3,false);
-        cE->FDot.resize(3,3,false);
+        cE.F.resize(3,3,false);
+        cE.FDot.resize(3,3,false);
         ublas::matrix<double> &F = (commonData.gradAtGaussPts[commonData.spatialPositionName])[0];
         ublas::matrix<double> &F_dot = (commonData.gradAtGaussPts[commonData.spatialPositionNameDot])[0];
         trace_on(tagS[DAMPERSTRESS]);
@@ -421,21 +425,21 @@ struct KelvinVoigtDamper {
           nbActiveVariables[tagS[DAMPERSTRESS]] = 0;
           for(int dd1 = 0;dd1<3;dd1++) {
             for(int dd2 = 0;dd2<3;dd2++) {
-              cE->F(dd1,dd2) <<= F(dd1,dd2);
+              cE.F(dd1,dd2) <<= F(dd1,dd2);
               nbActiveVariables[tagS[DAMPERSTRESS]]++;
             }
           }
           for(int dd1 = 0;dd1<3;dd1++) {
             for(int dd2 = 0;dd2<3;dd2++) {
-              cE->FDot(dd1,dd2) <<= F_dot(dd1,dd2);
+              cE.FDot(dd1,dd2) <<= F_dot(dd1,dd2);
               nbActiveVariables[tagS[DAMPERSTRESS]]++;
             }
           }
 
           // Do calculations
-          ierr = cE->calculateEngineeringStrainDot(); CHKERRQ(ierr);
-          ierr = cE->calculateDashpotCauchyStress(); CHKERRQ(ierr);
-          ierr = cE->calculateFirstPiolaKirchhoffStress(); CHKERRQ(ierr);
+          ierr = cE.calculateEngineeringStrainDot(); CHKERRQ(ierr);
+          ierr = cE.calculateDashpotCauchyStress(); CHKERRQ(ierr);
+          ierr = cE.calculateFirstPiolaKirchhoffStress(); CHKERRQ(ierr);
 
           // Results
           nbActiveResults[tagS[DAMPERSTRESS]] = 0;
@@ -443,7 +447,7 @@ struct KelvinVoigtDamper {
           commonData.dashpotFirstPiolaKirchhoffStress[0].resize(3,3,false);
           for(int d1 = 0;d1<3;d1++) {
             for(int d2 = 0;d2<3;d2++) {
-              cE->dashpotFirstPiolaKirchhoffStress(d1,d2) >>= (commonData.dashpotFirstPiolaKirchhoffStress[0])(d1,d2);
+              cE.dashpotFirstPiolaKirchhoffStress(d1,d2) >>= (commonData.dashpotFirstPiolaKirchhoffStress[0])(d1,d2);
               nbActiveResults[tagS[DAMPERSTRESS]]++;
             }
           }
@@ -478,6 +482,7 @@ struct KelvinVoigtDamper {
 
     PetscErrorCode calculateJacobian(TagEvaluate te) {
       PetscFunctionBegin;
+
       try {
         int r;
         r = jacobian(
@@ -497,6 +502,7 @@ struct KelvinVoigtDamper {
       }
       PetscFunctionReturn(0);
     }
+
     PetscErrorCode calculateAtIntPtsDamperStress() {
       PetscFunctionBegin;
 
@@ -579,6 +585,12 @@ struct KelvinVoigtDamper {
       if(row_type != MBVERTEX) PetscFunctionReturn(0);
       nbGaussPts = row_data.getN().size1();
 
+      commonData.skipThis = false;
+      if(cE.dAta.tEts.find(getMoFEMFEPtr()->get_ent())==cE.dAta.tEts.end()) {
+        commonData.skipThis =true;
+        PetscFunctionReturn(0);
+      }
+
       try {
 
         if(recordOn) {
@@ -643,6 +655,11 @@ struct KelvinVoigtDamper {
       int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data
     ) {
       PetscFunctionBegin;
+
+      if(commonData.skipThis) {
+        PetscFunctionReturn(0);
+      }
+
       try {
         int nb_dofs = row_data.getIndices().size();
         if(!nb_dofs) {
@@ -770,6 +787,11 @@ struct KelvinVoigtDamper {
       DataForcesAndSurcesCore::EntData &col_data
     ) {
       PetscFunctionBegin;
+
+      if(commonData.skipThis) {
+        PetscFunctionReturn(0);
+      }
+
       int nb_row = row_data.getIndices().size();
       int nb_col = col_data.getIndices().size();
       if(nb_row == 0) PetscFunctionReturn(0);
@@ -816,6 +838,35 @@ struct KelvinVoigtDamper {
       PetscFunctionReturn(0);
     }
   };
+
+  PetscErrorCode setBlockDataMap() {
+    PetscFunctionBegin;
+    ErrorCode rval;
+    PetscErrorCode ierr;
+    for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
+      if(it->get_name().compare(0,6,"DAMPER") == 0) {
+        vector<double> data;
+        ierr = it->get_attributes(data); CHKERRQ(ierr);
+        if(data.size()!=2) {
+          SETERRQ(PETSC_COMM_SELF,1,"Data inconsistency");
+        }
+        rval = mField.get_moab().get_entities_by_type(
+          it->meshset,MBTET,blockMaterialDataMap[it->get_msId()].tEts,true
+        ); CHKERR_PETSC(rval);
+        blockMaterialDataMap[it->get_msId()].gBeta = data[0];
+        blockMaterialDataMap[it->get_msId()].vBeta = data[1];
+      }
+    }
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode setOperators(VolumeElementForcesAndSourcesCore &fe) {
+    PetscFunctionBegin;
+
+
+
+    PetscFunctionReturn(0);
+  }
 
 };
 
