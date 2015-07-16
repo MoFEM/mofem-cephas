@@ -29,3 +29,5 @@ _Store
 
 
 convective_matrix.sh
+arc_length_nonlinear_elasticity.sh
+do_vtk.sh
