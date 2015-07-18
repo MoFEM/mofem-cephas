@@ -874,10 +874,10 @@ struct KelvinVoigtDamper {
     DamperFE *fe_ptr[] = { &feRhs, &feLhs };
     for(int ss = 0;ss<2;ss++) {
       fe_ptr[ss]->getOpPtrVector().push_back(
-        new OpGetDataAtGaussPts("SPATIAL_POSITION",commonData,false,true)
+        new OpGetDataAtGaussPts(commonData.spatialPositionName,commonData,false,true)
       );
       fe_ptr[ss]->getOpPtrVector().push_back(
-        new OpGetDataAtGaussPts("SPATIAL_POSITION_DOT",commonData,false,true)
+        new OpGetDataAtGaussPts(commonData.spatialPositionNameDot,commonData,false,true)
       );
     }
 
