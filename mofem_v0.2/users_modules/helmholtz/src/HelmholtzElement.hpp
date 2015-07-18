@@ -5,10 +5,9 @@
 
  Implementation of Helmholtz element for wave propagation problem
 
- */
+ Note:
+ This work is part of PhD thesis by on Micro-fluids: Thomas Felix Xuan Meng
 
-/*
-  This work is part of PhD thesis by on Micro-fluids: Thomas Felix Xuan Meng
  */
 
 /*
@@ -1508,7 +1507,7 @@ struct HelmholtzElement {
     for(;miit!=surfaceIncidentWaveBcData.end();miit++) {
 
       if(miit->second.aDmittance_imag!=0) {
-        feRhs.at("HELMHOLTZ_REIM_FE").getOpPtrVector().push_back(
+        feLhs.at("HELMHOLTZ_REIM_FE").getOpPtrVector().push_back(
           new OpHelmholtzMixBCLhs<ZeroFunVal>(re_field_name,im_field_name,A,miit->second,commonData, zero_function)
         );
       }
@@ -1617,5 +1616,5 @@ struct HelmholtzElement {
 
 /***************************************************************************//**
  * \defgroup mofem_helmholtz_elem Helmholtz element
- * \ingroup mofem_forces_and_sources
+ * \ingroup user_modules
  ******************************************************************************/

@@ -110,7 +110,13 @@ struct ConfigurationalFractureMechanics {
   int nb_un_freez_nodes;
   bool freeze_all_but_one;
   int total_its;
-  PetscErrorCode solve_coupled_problem(FieldInterface& m_field,SNES *snes,double da,const double fraction_treshold = 1e-1);
+  PetscErrorCode solve_coupled_problem(
+    FieldInterface& m_field,SNES *snes,
+    double da,
+    const double penalty,
+    const double fraction_treshold,
+    SNESConvergedReason &reason
+  );
 
   PetscErrorCode calculate_material_forces(FieldInterface& m_field,string problem,string fe);
   PetscErrorCode surface_projection_data(FieldInterface& m_field,string problem);
@@ -143,7 +149,7 @@ struct ConfigurationalFractureMechanics {
     Vec lambdaVec;
 
     FrontAreaArcLengthControl(
-      FieldInterface& _mField,ConfigurationalFractureMechanics *_conf_prob,ArcLengthCtx *_arc_ptr
+      FieldInterface& m_field,ConfigurationalFractureMechanics *_conf_prob,ArcLengthCtx *_arc_ptr
     );
     ~FrontAreaArcLengthControl();
 

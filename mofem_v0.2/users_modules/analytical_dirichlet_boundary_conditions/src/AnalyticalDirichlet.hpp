@@ -25,7 +25,7 @@ using namespace boost::numeric;
 using namespace MoFEM;
 
 /** \brief Analytical Dirichlet boundary conditions
-  \ingroup mofem_forces_and_sources
+  \ingroup user_modules
   */
 struct AnalyticalDirichletBC {
 

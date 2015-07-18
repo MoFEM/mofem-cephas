@@ -14,28 +14,82 @@
 # List of sources for user_modules libaries.
 set(UM_LIB_SOURCES "")
 
-include(basic_finite_elements/AddModule.cmake)
-include(analytical_dirichlet_boundary_conditions/AddModule.cmake)
-include(convective_mass_element/AddModule.cmake)
-include(obsolete/AddModule.cmake)
+include(${UM_SOURCE_DIR}/basic_finite_elements/AddModule.cmake)
+include(${UM_SOURCE_DIR}/analytical_dirichlet_boundary_conditions/AddModule.cmake)
+include(${UM_SOURCE_DIR}/convective_mass_element/AddModule.cmake)
+include(${UM_SOURCE_DIR}/obsolete/AddModule.cmake)
 
 # Users modules library, common for all programs
 add_library(users_modules ${UM_LIB_SOURCES})
 
 # Atom test user modules
-add_subdirectory(basic_finite_elements/atom_tests)
-add_subdirectory(analytical_dirichlet_boundary_conditions/atom_tests)
-add_subdirectory(convective_mass_element/atom_tests)
-add_subdirectory(obsolete/atom_tests)
+add_subdirectory(
+  ${UM_SOURCE_DIR}/basic_finite_elements/atom_tests
+  ${PROJECT_BINARY_DIR}/basic_finite_elements/atom_tests
+)
+add_subdirectory(
+  ${UM_SOURCE_DIR}/analytical_dirichlet_boundary_conditions/atom_tests
+  ${PROJECT_BINARY_DIR}/analytical_dirichlet_boundary_conditions/atom_tests
+)
+add_subdirectory(
+  ${UM_SOURCE_DIR}/convective_mass_element/atom_tests
+  ${PROJECT_BINARY_DIR}/convective_mass_element/atom_tests
+)
+add_subdirectory(
+  ${UM_SOURCE_DIR}/gels/atom_tests
+  ${PROJECT_BINARY_DIR}/gels/atom_tests
+)
+add_subdirectory(
+  ${UM_SOURCE_DIR}/kelving-voigt-damper/atom_tests
+  ${PROJECT_BINARY_DIR}/kelving-voigt-damper/atom_tests
+)
+add_subdirectory(
+  ${UM_SOURCE_DIR}/obsolete/atom_tests
+  ${PROJECT_BINARY_DIR}/obsolete/atom_tests
+)
 
 # Users Programs
-add_subdirectory(thermal)
-add_subdirectory(ultraweak)
-add_subdirectory(ground_surface_temperature)
-add_subdirectory(elasticity)
-add_subdirectory(cohesive_interface)
-add_subdirectory(nonlinear_elasticity)
-add_subdirectory(fracture_mechanics)
-add_subdirectory(helmholtz)
-add_subdirectory(homogenisation)
-add_subdirectory(moisture_transport)
+add_subdirectory(
+  ${UM_SOURCE_DIR}/thermal
+  ${PROJECT_BINARY_DIR}/thermal
+)
+add_subdirectory(
+  ${UM_SOURCE_DIR}/ultraweak
+  ${PROJECT_BINARY_DIR}/ultraweak
+)
+add_subdirectory(
+  ${UM_SOURCE_DIR}/ground_surface_temperature
+  ${PROJECT_BINARY_DIR}/ground_surface_temperature
+)
+add_subdirectory(
+  ${UM_SOURCE_DIR}/elasticity
+  ${PROJECT_BINARY_DIR}/elasticity
+)
+add_subdirectory(
+  ${UM_SOURCE_DIR}/cohesive_interface
+  ${PROJECT_BINARY_DIR}/cohesive_interface
+)
+add_subdirectory(
+  ${UM_SOURCE_DIR}/nonlinear_elasticity
+  ${PROJECT_BINARY_DIR}/nonlinear_elasticity
+)
+add_subdirectory(
+  ${UM_SOURCE_DIR}/fracture_mechanics
+  ${PROJECT_BINARY_DIR}/fracture_mechanics
+)
+add_subdirectory(
+  ${UM_SOURCE_DIR}/helmholtz
+  ${PROJECT_BINARY_DIR}/helmholtz
+)
+add_subdirectory(
+  ${UM_SOURCE_DIR}/homogenisation
+  ${PROJECT_BINARY_DIR}/homogenisation
+)
+add_subdirectory(
+  ${UM_SOURCE_DIR}/moisture_transport
+  ${PROJECT_BINARY_DIR}/moisture_transport
+)
+add_subdirectory(
+  ${UM_SOURCE_DIR}/gels
+  ${PROJECT_BINARY_DIR}/gels
+)

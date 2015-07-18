@@ -20,12 +20,11 @@
 
 
 #include <MoFEM.hpp>
+using namespace MoFEM;
 #include <DirichletBC.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/numeric/ublas/vector_proxy.hpp>
 #include <AnalyticalDirichlet.hpp>
-
-using namespace MoFEM;
 
 AnalyticalDirichletBC::ApproxField::OpHoCoord::OpHoCoord(const string field_name,ublas::matrix<double> &ho_coords):
 FaceElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
@@ -206,7 +205,7 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
 
   PetscErrorCode AnalyticalDirichletBC::DirichletBC::iNitalize() {
     PetscFunctionBegin;
-    if(map_zero_rows.empty()) {
+    if(mapZeroRows.empty()) {
       if(tRis_ptr == NULL) {
         SETERRQ(PETSC_COMM_SELF,1,"need to initialised from AnalyticalDirichletBC::solveProblem");
       }
@@ -224,14 +223,14 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
     ents.merge(tris);
     for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
       for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,fieldName,*eit,pcomm->rank(),dof)) {
-        map_zero_rows[dof->get_petsc_gloabl_dof_idx()] = dof->get_FieldData();
+        mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = dof->get_FieldData();
       }
     }
-    dofsIndices.resize(map_zero_rows.size());
-    dofsValues.resize(map_zero_rows.size());
+    dofsIndices.resize(mapZeroRows.size());
+    dofsValues.resize(mapZeroRows.size());
     int ii = 0;
-    map<DofIdx,FieldData>::iterator mit = map_zero_rows.begin();
-    for(;mit!=map_zero_rows.end();mit++,ii++) {
+    map<DofIdx,FieldData>::iterator mit = mapZeroRows.begin();
+    for(;mit!=mapZeroRows.end();mit++,ii++) {
       dofsIndices[ii] = mit->first;
       dofsValues[ii] = mit->second;
     }
@@ -305,7 +304,7 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
     ierr = m_field.set_global_ghost_vector(problem,ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
     bc.tRis_ptr = &tris;
-    bc.map_zero_rows.clear();
+    bc.mapZeroRows.clear();
     bc.dofsIndices.clear();
     bc.dofsValues.clear();
 

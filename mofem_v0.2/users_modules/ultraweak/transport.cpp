@@ -1,8 +1,3 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
- * FIXME: DESCRIPTION
- */
-
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -17,16 +12,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#include <MoFEM.hpp>
-
-#include <DirichletBC.hpp>
-#include <PostProcOnRefMesh.hpp>
-
-#include <cholesky.hpp>
-#include <UltraWeakTransportElement.hpp>
-
-#include <Projection10NodeCoordsOnField.hpp>
-
 #include <boost/iostreams/tee.hpp>
 #include <boost/iostreams/stream.hpp>
 #include <fstream>
@@ -38,7 +23,16 @@ namespace bio = boost::iostreams;
 using bio::tee_device;
 using bio::stream;
 
+#include <MoFEM.hpp>
 using namespace MoFEM;
+
+#include <DirichletBC.hpp>
+#include <PostProcOnRefMesh.hpp>
+
+#include <cholesky.hpp>
+#include <UltraWeakTransportElement.hpp>
+
+#include <Projection10NodeCoordsOnField.hpp>
 
 static char help[] = "...\n\n";
 
@@ -320,7 +314,7 @@ int main(int argc, char *argv[]) {
   ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
-  //calulate residuals 
+  //calculate residuals
   ufe.feVol.getOpPtrVector().clear();
   ufe.feVol.getOpPtrVector().clear();
 

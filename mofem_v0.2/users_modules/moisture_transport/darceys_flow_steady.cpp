@@ -1,8 +1,3 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
- * FIXME: DESCRIPTION
- */
-
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -17,15 +12,14 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 #include <MoFEM.hpp>
+using namespace MoFEM;
 
 #include <DirichletBC.hpp>
 #include <PostProcOnRefMesh.hpp>
 #include <ThermalElement.hpp>
 #include <Projection10NodeCoordsOnField.hpp>
 
-using namespace MoFEM;
 #include <MoistureTransportElement.hpp>
-
 
 static char help[] = "...\n\n";
 
@@ -53,9 +47,9 @@ int main(int argc, char *argv[]) {
 
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-  BARRIER_RANK_START(pcomm) 
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
-  BARRIER_RANK_END(pcomm) 
+  BARRIER_RANK_START(pcomm)
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
+  BARRIER_RANK_END(pcomm)
 
   //Create MoFEM (Joseph) database
   MoFEM::Core core(moab);
@@ -78,7 +72,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.modify_problem_ref_level_add_bit("DARCEYS_PROBLEM",bit_level0); CHKERRQ(ierr);
 
   //meshset consisting all entities in mesh
-  EntityHandle root_set = moab.get_root_set(); 
+  EntityHandle root_set = moab.get_root_set();
   //add entities to field
   ierr = mField.add_ents_to_field_by_TETs(root_set,"PRESSURE"); CHKERRQ(ierr);
 
@@ -120,20 +114,20 @@ int main(int argc, char *argv[]) {
   ierr = mField.loop_dofs("MESH_NODE_POSITIONS",ent_method_material); CHKERRQ(ierr);
 
   /****/
-  //mesh partitioning 
+  //mesh partitioning
   //partition
   ierr = mField.partition_problem("DARCEYS_PROBLEM"); CHKERRQ(ierr);
   ierr = mField.partition_finite_elements("DARCEYS_PROBLEM"); CHKERRQ(ierr);
   //what are ghost nodes, see Petsc Manual
   ierr = mField.partition_ghost_dofs("DARCEYS_PROBLEM"); CHKERRQ(ierr);
-  
+
   Vec F;
   ierr = mField.VecCreateGhost("DARCEYS_PROBLEM",ROW,&F); CHKERRQ(ierr);
   Vec T;
   ierr = VecDuplicate(F,&T); CHKERRQ(ierr);
   Mat A;
   ierr = mField.MatCreateMPIAIJWithArrays("DARCEYS_PROBLEM",&A); CHKERRQ(ierr);
-  
+
   //New way to implement the dirichlet BCs from CUBIT Blockset (MASS_CONC)
   DirichletBCFromBlockSetFEMethodPreAndPostProc my_dirichlet_bc(mField,"PRESSURE","APP_PRESSURE",A,T,F);
 //  DirichletBCFromBlockSetFEMethodPreAndPostProc my_dirichlet_bc(mField,"CONC"     ,"MASS_CONC"  ,A,C,F);
@@ -148,7 +142,7 @@ int main(int argc, char *argv[]) {
   ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = MatZeroEntries(A); CHKERRQ(ierr);
-  
+
   //preproc
   ierr = mField.problem_basic_method_preProcess("DARCEYS_PROBLEM",my_dirichlet_bc); CHKERRQ(ierr);
   ierr = mField.set_global_ghost_vector("DARCEYS_PROBLEM",ROW,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
@@ -170,7 +164,7 @@ int main(int argc, char *argv[]) {
 //  ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 //  std::string wait;
 //  std::cin >> wait;
-  
+
   //Solver
   KSP solver;
   ierr = KSPCreate(PETSC_COMM_WORLD,&solver); CHKERRQ(ierr);
@@ -231,5 +225,3 @@ int main(int argc, char *argv[]) {
   return 0;
 
 }
-
-

@@ -276,11 +276,11 @@ struct PressureCubitBcData: public GenericCubitBcData {
     
 };
 
-/*! \struct HeatfluxCubitBcData
+/*! \struct HeatFluxCubitBcData
  * \brief Definition of the heat flux bc data structure
  * \ingroup mofem_bc 
  */
-struct HeatfluxCubitBcData: public GenericCubitBcData {
+struct HeatFluxCubitBcData: public GenericCubitBcData {
     struct __attribute__ ((packed)) _data_{
     char name[8]; // 8 characters for "HeatFlux" (no space)
     char pre1; // This is always zero
@@ -295,7 +295,7 @@ struct HeatfluxCubitBcData: public GenericCubitBcData {
     
     _data_ data;
     const CubitBCType type;
-    HeatfluxCubitBcData(): type(HEATFLUXSET) {};
+    HeatFluxCubitBcData(): type(HEATFLUXSET) {};
 
     virtual PetscErrorCode fill_data(const vector<char>& bc_data) {
         PetscFunctionBegin;
@@ -307,7 +307,7 @@ struct HeatfluxCubitBcData: public GenericCubitBcData {
  
     /*! \brief Print heat flux bc data
     */
-    friend ostream& operator<<(ostream& os,const HeatfluxCubitBcData& e);
+    friend ostream& operator<<(ostream& os,const HeatFluxCubitBcData& e);
     
 };
 

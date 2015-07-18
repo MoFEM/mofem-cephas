@@ -20,10 +20,8 @@
 #ifndef __PROJECTIONMATRIXCTX_HPP__
 #define __PROJECTIONMATRIXCTX_HPP__
 
-namespace MoFEM {
-
 /**
-  * \brief structure for projection matries
+  * \brief structure for projection matrices
   * \ingroup projection_matrix
   *
   */
@@ -46,7 +44,7 @@ struct ConstrainMatrixCtx {
   PetscLogEvent USER_EVENT_projRT;
   PetscLogEvent USER_EVENT_projCTC_QTKQ;
 
-  ConstrainMatrixCtx(FieldInterface& m_field,string x_problem,string y_problem,bool create_ksp = true); 
+  ConstrainMatrixCtx(FieldInterface& m_field,string x_problem,string y_problem,bool create_ksp = true);
 
   PetscReal rTol,absTol,dTol;
   PetscInt maxIts;
@@ -92,10 +90,10 @@ struct ConstrainMatrixCtx {
 
 };
 
-/** 
+/**
   * \brief Multiplication operator for Q = I-CTC(CCT)^-1C
-  * 
-  * \code 
+  *
+  * \code
   * Mat Q; //for poroblem
   * ConstrainMatrixCtx projection_matrix_ctx(m_fiel,problem_name,contrains_porblem_name);
   * ierr = MatCreateShell(PETSC_COMM_WORLD,m,m,M,M,&projection_matrix_ctx,&Q); CHKERRQ(ierr);
@@ -106,10 +104,10 @@ struct ConstrainMatrixCtx {
   */
 PetscErrorCode PorjectionMatrixMultOpQ(Mat Q,Vec x,Vec f);
 
-/** 
+/**
   * \brief Multiplication operator for P = CT(CCT)^-1C
-  * 
-  * \code 
+  *
+  * \code
   * Mat P; //for poroblem
   * ConstrainMatrixCtx projection_matrix_ctx(m_fiel,problem_name,contrains_porblem_name);
   * ierr = MatCreateShell(PETSC_COMM_WORLD,m,m,M,M,&projection_matrix_ctx,&P); CHKERRQ(ierr);
@@ -119,10 +117,10 @@ PetscErrorCode PorjectionMatrixMultOpQ(Mat Q,Vec x,Vec f);
   */
 PetscErrorCode ConstrainMatrixMultOpP(Mat P,Vec x,Vec f);
 
-/** 
+/**
   * \brief Multiplication operator for R = CT(CCT)^-1
-  * 
-  * \code 
+  *
+  * \code
   * Mat R; //for poroblem
   * ConstrainMatrixCtx projection_matrix_ctx(m_fiel,problem_name,contrains_porblem_name);
   * ierr = MatCreateShell(PETSC_COMM_WORLD,m,m,M,M,&projection_matrix_ctx,&R); CHKERRQ(ierr);
@@ -132,10 +130,10 @@ PetscErrorCode ConstrainMatrixMultOpP(Mat P,Vec x,Vec f);
   */
 PetscErrorCode ConstrainMatrixMultOpR(Mat R,Vec x,Vec f);
 
-/** 
+/**
   * \brief Multiplication operator for RT = (CCT)^-TC
-  * 
-  * \code 
+  *
+  * \code
   * Mat RT; //for poroblem
   * ConstrainMatrixCtx projection_matrix_ctx(m_fiel,problem_name,contrains_porblem_name);
   * ierr = MatCreateShell(PETSC_COMM_WORLD,m,m,M,M,&projection_matrix_ctx,&RT); CHKERRQ(ierr);
@@ -145,10 +143,10 @@ PetscErrorCode ConstrainMatrixMultOpR(Mat R,Vec x,Vec f);
   */
 PetscErrorCode ConstrainMatrixMultOpRT(Mat RT,Vec x,Vec f);
 
-/** 
+/**
   * \brief Multiplication operator for RT = (CCT)^-TC
-  * 
-  * \code 
+  *
+  * \code
   * Mat CTC_QTKQ; //for poroblem
   * ConstrainMatrixCtx projection_matrix_ctx(m_fiel,problem_name,contrains_porblem_name);
   * ierr = MatCreateShell(PETSC_COMM_WORLD,m,m,M,M,&projection_matrix_ctx,&CTC_QTKQ); CHKERRQ(ierr);
@@ -159,10 +157,10 @@ PetscErrorCode ConstrainMatrixMultOpRT(Mat RT,Vec x,Vec f);
   */
 PetscErrorCode ConstrainMatrixMultOpCTC_QTKQ(Mat CTC_QTKQ,Vec x,Vec f);
 
-/** 
+/**
   * \brief Destroy shell matrix Q
-  * 
-  * \code 
+  *
+  * \code
   * Mat Q; //for poroblem
   * ConstrainMatrixCtx projection_matrix_ctx(m_fiel,problem_name,contrains_porblem_name);
   * ierr = MatCreateShell(PETSC_COMM_WORLD,m,m,M,M,&projection_matrix_ctx,&Q); CHKERRQ(ierr);
@@ -173,10 +171,10 @@ PetscErrorCode ConstrainMatrixMultOpCTC_QTKQ(Mat CTC_QTKQ,Vec x,Vec f);
   */
 PetscErrorCode ConstrainMatrixDestroyOpPorQ(Mat Q);
 
-/** 
+/**
   * \brief Destroy shell matrix
-  * 
-  * \code 
+  *
+  * \code
   * Mat CTC_QTKQ; //for poroblem
   * ConstrainMatrixCtx projection_matrix_ctx(m_fiel,problem_name,contrains_porblem_name);
   * ierr = MatCreateShell(PETSC_COMM_WORLD,m,m,M,M,&projection_matrix_ctx,&Q); CHKERRQ(ierr);
@@ -187,12 +185,10 @@ PetscErrorCode ConstrainMatrixDestroyOpPorQ(Mat Q);
   */
 PetscErrorCode ConstrainMatrixDestroyOpQTKQ(Mat QTKQ);
 
-}
-
 #endif //__PROJECTIONMATRIXCTX_HPP__
 
 
 /***************************************************************************//**
- * \defgroup projection_matrix Constrain Projection Matrix
+ \defgroup projection_matrix Constrain Projection Matrix
+ \ingroup user_modules
  ******************************************************************************/
-

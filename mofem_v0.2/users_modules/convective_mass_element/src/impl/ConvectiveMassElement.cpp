@@ -38,8 +38,8 @@ using namespace MoFEM;
   #error "MoFEM need to be compiled with ADOL-C"
 #endif
 
-ConvectiveMassElement::MyVolumeFE::MyVolumeFE(FieldInterface &_mField):
-VolumeElementForcesAndSourcesCore(_mField),
+ConvectiveMassElement::MyVolumeFE::MyVolumeFE(FieldInterface &m_field):
+VolumeElementForcesAndSourcesCore(m_field),
 A(PETSC_NULL),
 F(PETSC_NULL),
 initV(false) {
@@ -308,7 +308,7 @@ PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
           noalias(F) = prod(h,invH);
           adouble detF;
           ierr = dEterminatnt(F,detF); CHKERRQ(ierr);
-          //calulate current density
+          //calculate current density
           adouble rho = rho0*detF;
           //momentum rate
           noalias(dp_dt) = rho*(a0 + a + prod(G,dot_W));
@@ -1445,11 +1445,11 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
 
 
     ConvectiveMassElement::UpdateAndControl::UpdateAndControl(
-      FieldInterface& _mField,TS _ts,
+      FieldInterface& m_field,TS _ts,
       const string velocity_field,
       const string spatial_position_field
     ):
-    mField(_mField),tS(_ts),
+    mField(m_field),tS(_ts),
     velocityField(velocity_field),
     spatialPositionField(spatial_position_field),
     jacobianLag(-1) {
@@ -1499,7 +1499,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
 
 
 
-    PetscErrorCode ConvectiveMassElement::setBlocks(bool get_density_form_elastic_block_set) {
+    PetscErrorCode ConvectiveMassElement::setBlocks() {
       PetscFunctionBegin;
       ErrorCode rval;
       PetscErrorCode ierr;
@@ -1562,9 +1562,9 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     ierr = mField.modify_finite_element_add_field_data(element_name,spatial_position_field_name); CHKERRQ(ierr);
     if(mField.check_field(material_position_field_name)) {
       if(ale) {
-	ierr = mField.modify_finite_element_add_field_row(element_name,material_position_field_name); CHKERRQ(ierr);
-	ierr = mField.modify_finite_element_add_field_col(element_name,material_position_field_name); CHKERRQ(ierr);
-	ierr = mField.modify_finite_element_add_field_data(element_name,"DOT_"+material_position_field_name); CHKERRQ(ierr);
+        ierr = mField.modify_finite_element_add_field_row(element_name,material_position_field_name); CHKERRQ(ierr);
+        ierr = mField.modify_finite_element_add_field_col(element_name,material_position_field_name); CHKERRQ(ierr);
+        ierr = mField.modify_finite_element_add_field_data(element_name,"DOT_"+material_position_field_name); CHKERRQ(ierr);
       }
       ierr = mField.modify_finite_element_add_field_data(element_name,material_position_field_name); CHKERRQ(ierr);
     }
@@ -1580,11 +1580,11 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     for(;sit!=setOfBlocks.end();sit++) {
       Range add_tets = sit->second.tEts;
       if(!tets.empty()) {
-	add_tets = intersect(add_tets,tets);
+        add_tets = intersect(add_tets,tets);
       }
       ierr = mField.add_ents_to_finite_element_by_TETs(add_tets,element_name); CHKERRQ(ierr);
     }
-
+    
     PetscFunctionReturn(0);
   }
 

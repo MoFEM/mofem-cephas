@@ -27,8 +27,6 @@
 #ifndef __BODY_FORCE_HPP
 #define __BODY_FORCE_HPP
 
-namespace MoFEM {
-
 /** \brief Body forces elements
   * \ingroup mofem_body_forces
   */
@@ -37,7 +35,7 @@ struct BodyFroceConstantField {
   FieldInterface &mField;
 
   struct MyVolumeFE: public VolumeElementForcesAndSourcesCore {
-    MyVolumeFE(FieldInterface &_mField): VolumeElementForcesAndSourcesCore(_mField) {}
+    MyVolumeFE(FieldInterface &m_field): VolumeElementForcesAndSourcesCore(m_field) {}
     int getRule(int order) { return ceil(order/2); };
   };
 
@@ -134,11 +132,9 @@ struct BodyFroceConstantField {
 
 };
 
-}
-
 #endif //__BODY_FORCE_HPP
 
 /***************************************************************************//**
  * \defgroup mofem_body_forces Body forces elements
- * \ingroup mofem_forces_and_sources
+ * \ingroup user_modules
  ******************************************************************************/

@@ -24,9 +24,9 @@
   * \ingroup nonlinear_elastic_elem
   */
 template<typename TYPE>
-struct NeoHookean: public NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<TYPE> {
+struct NeoHookean: public NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoffI<TYPE> {
 
-    NeoHookean(): NonlinearElasticElement::FunctionsToCalulatePiolaKirchhoffI<TYPE>() {}
+    NeoHookean(): NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoffI<TYPE>() {}
 
     TYPE detC;
     ublas::matrix<TYPE> invC;

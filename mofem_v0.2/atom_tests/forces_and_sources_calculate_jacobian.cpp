@@ -163,12 +163,15 @@ int main(int argc, char *argv[]) {
     OpGetDataAndGradient opGetData_FIELD1;
 
     ForcesAndSurcesCore_TestFE(FieldInterface &_m_field):
-      ForcesAndSurcesCore(_m_field),
-      ofs("forces_and_sources_calculate_jacobian.txt"),
-      my_tee(cout, ofs),my_split(my_tee),
-      opPrintJac(my_split),
-      opSetInvJac(invJac),
-      opGetData_FIELD1(dataFIELD1,dataDiffFIELD1,1),data(MBTET) {};
+    ForcesAndSurcesCore(_m_field),
+    ofs("forces_and_sources_calculate_jacobian.txt"),
+    my_tee(cout, ofs),
+    my_split(my_tee),
+    opPrintJac(my_split),
+    opSetInvJac(invJac),
+    opGetData_FIELD1(dataFIELD1,dataDiffFIELD1,1),
+    data(MBTET) {
+    }
 
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
@@ -212,13 +215,13 @@ int main(int argc, char *argv[]) {
       ierr = ShapeInvJacMBTET(&*invJac.data().begin()); CHKERRQ(ierr);
 
       try {
-	ierr = opSetInvJac.opRhs(data); CHKERRQ(ierr);
-	ierr = opPrintJac.opRhs(data); CHKERRQ(ierr);
-	ierr = opGetData_FIELD1.opRhs(data); CHKERRQ(ierr);
+        ierr = opSetInvJac.opRhs(data); CHKERRQ(ierr);
+        ierr = opPrintJac.opRhs(data); CHKERRQ(ierr);
+        ierr = opGetData_FIELD1.opRhs(data); CHKERRQ(ierr);
       } catch (exception& ex) {
-	ostringstream ss;
-	ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
-	SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+        ostringstream ss;
+        ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
+        SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
       my_split << "data FIELD1:" << endl;

@@ -1,6 +1,6 @@
 /** \file Vectors.cpp
- * \brief Myltindex containes, data structures and other low-level functions 
- * 
+ * \brief Myltindex containes, data structures and other low-level functions
+ *
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or (at your
@@ -18,10 +18,10 @@
 #include <moab/ParallelComm.hpp>
 
 #include <petscsys.h>
-#include <petscvec.h> 
-#include <petscmat.h> 
-#include <petscsnes.h> 
-#include <petscts.h> 
+#include <petscvec.h>
+#include <petscmat.h>
+#include <petscsnes.h>
+#include <petscts.h>
 
 #include <definitions.h>
 #include <h1_hdiv_hcurl_l2.h>
@@ -117,7 +117,6 @@ PetscErrorCode Core::ISCreateProblemOrder(const string &problem,RowColData rc,in
     default:
      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
   }
-
   NumeredDofMoFEMEntity_multiIndex_petsc_local_dof_view_ordered_non_unique dof_loc_idx_view;
   for(;it!=hi_it;it++) {
     pair<NumeredDofMoFEMEntity_multiIndex_petsc_local_dof_view_ordered_non_unique::iterator,bool> p;
@@ -127,21 +126,17 @@ PetscErrorCode Core::ISCreateProblemOrder(const string &problem,RowColData rc,in
   NumeredDofMoFEMEntity_multiIndex_petsc_local_dof_view_ordered_non_unique::iterator vit,hi_vit;
   vit = dof_loc_idx_view.begin();
   hi_vit = dof_loc_idx_view.end();
-
   int size = distance(vit,hi_vit);
   int *id;
   ierr = PetscMalloc(size*sizeof(int),&id); CHKERRQ(ierr);
   for(int ii = 0;vit!=hi_vit;vit++) {
     id[ii++] = (*vit)->get_petsc_gloabl_dof_idx();
   }
-
   ierr = ISCreateGeneral(comm,size,id,PETSC_OWN_POINTER,is); CHKERRQ(ierr);
-
   PetscFunctionReturn(0);
 }
 PetscErrorCode Core::ISCreateProblemFieldAndRank(const string &problem,RowColData rc,const string &field,int min_rank,int max_rank,IS *is,int verb) {
   PetscFunctionBegin;
-
   if(verb==-1) verb = verbose;
   typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type moFEMProblems_by_name;
   moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<Problem_mi_tag>();
@@ -240,7 +235,7 @@ PetscErrorCode Core::ISCreateFromProblemFieldToOtherProblemField(
   IS *ix,IS *iy,int verb) {
   PetscFunctionBegin;
   vector<int> idx(0),idy(0);
-  ierr = ISCreateFromProblemFieldToOtherProblemField( 
+  ierr = ISCreateFromProblemFieldToOtherProblemField(
     x_problem,x_field_name,x_rc,y_problem,y_field_name,y_rc,
     idx,idy,verb); CHKERRQ(ierr);
   ierr = ISCreateGeneral(comm,idx.size(),&idx[0],PETSC_COPY_VALUES,ix); CHKERRQ(ierr);
@@ -256,7 +251,7 @@ PetscErrorCode Core::VecScatterCreate(Vec xin,const string &x_problem,const stri
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   vector<int> idx(0),idy(0);
-  ierr = ISCreateFromProblemFieldToOtherProblemField( 
+  ierr = ISCreateFromProblemFieldToOtherProblemField(
     x_problem,x_field_name,x_rc,y_problem,y_field_name,y_rc,
     idx,idy,verb); CHKERRQ(ierr);
   IS ix,iy;
@@ -381,7 +376,7 @@ PetscErrorCode Core::set_local_ghost_vector(const MoFEMProblem *problem_ptr,RowC
 	  for(;miit!=hi_miit;miit++,ii++) array[ii] = miit->get_FieldData();
 	  break;
 	case ADD_VALUES:
-	  for(;miit!=hi_miit;miit++,ii++) array[ii] += miit->get_FieldData();	  
+	  for(;miit!=hi_miit;miit++,ii++) array[ii] += miit->get_FieldData();
 	  break;
 	default:
 	  SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
@@ -397,7 +392,7 @@ PetscErrorCode Core::set_local_ghost_vector(const MoFEMProblem *problem_ptr,RowC
 	  }
 	  break;
 	case ADD_VALUES:
-	  for(;miit!=hi_miit;miit++,ii++) miit->get_FieldData() += array[ii];	  
+	  for(;miit!=hi_miit;miit++,ii++) miit->get_FieldData() += array[ii];
 	  break;
 	default:
 	  SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
@@ -415,7 +410,7 @@ PetscErrorCode Core::set_local_ghost_vector(const string &name,RowColData rc,Vec
   typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type moFEMProblems_by_name;
   moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<Problem_mi_tag>();
   moFEMProblems_by_name::iterator p_miit = moFEMProblems_set.find(name);
-  if(p_miit==moFEMProblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem < %s > not found (top tip: check spelling)",name.c_str()); 
+  if(p_miit==moFEMProblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem < %s > not found (top tip: check spelling)",name.c_str());
   ierr = set_local_ghost_vector(&*p_miit,rc,V,mode,scatter_mode); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
@@ -448,27 +443,27 @@ PetscErrorCode Core::set_global_ghost_vector(const MoFEMProblem *problem_ptr,Row
       int size;
       ierr = VecGetSize(V_glob,&size); CHKERRQ(ierr);
       if(size!=nb_dofs) {
-	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency: nb. of dofs and declared nb. dofs in database");
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency: nb. of dofs and declared nb. dofs in database");
       }
       PetscScalar *array;
       ierr = VecGetArray(V_glob,&array); CHKERRQ(ierr);
       switch (mode) {
-	case INSERT_VALUES:
-	  for(;miit!=hi_miit;miit++) miit->get_FieldData() = array[miit->get_petsc_gloabl_dof_idx()];
-	  break;
-	case ADD_VALUES:
-	  for(;miit!=hi_miit;miit++) miit->get_FieldData() += array[miit->get_petsc_gloabl_dof_idx()];	  
-	  break;
-	default:
-	  SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
+        case INSERT_VALUES:
+        for(;miit!=hi_miit;miit++) miit->get_FieldData() = array[miit->get_petsc_gloabl_dof_idx()];
+        break;
+        case ADD_VALUES:
+        for(;miit!=hi_miit;miit++) miit->get_FieldData() += array[miit->get_petsc_gloabl_dof_idx()];
+        break;
+        default:
+        SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
       }
       ierr = VecRestoreArray(V_glob,&array); CHKERRQ(ierr);
       ierr = VecScatterDestroy(&ctx); CHKERRQ(ierr);
       ierr = VecDestroy(&V_glob); CHKERRQ(ierr);
-    break;
+      break;
     }
     default:
-     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
   }
   PetscFunctionReturn(0);
 }
@@ -484,19 +479,14 @@ PetscErrorCode Core::set_global_ghost_vector(const string &name,RowColData rc,Ve
 PetscErrorCode Core::set_other_local_ghost_vector(
   const MoFEMProblem *problem_ptr,const string& field_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb) {
   PetscFunctionBegin;
-  typedef NumeredDofMoFEMEntity_multiIndex::index<PetscLocalIdx_mi_tag>::type dofs_by_loc_petsc_index;
-  dofs_by_loc_petsc_index *dofs;
-  int nb_local_dofs,nb_ghost_dofs;
+  typedef NumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_HasLocalIdx_mi_tag>::type DofsByNameAndLocalIdx;
+  DofsByNameAndLocalIdx *dofs;
   switch (rc) {
     case ROW:
-      nb_local_dofs = problem_ptr->get_nb_local_dofs_row();
-      nb_ghost_dofs = problem_ptr->get_nb_ghost_dofs_row();
-      dofs = const_cast<dofs_by_loc_petsc_index*>(&problem_ptr->numered_dofs_rows.get<PetscLocalIdx_mi_tag>());
+      dofs = const_cast<DofsByNameAndLocalIdx*>(&problem_ptr->numered_dofs_rows.get<Composite_Name_And_HasLocalIdx_mi_tag>());
       break;
     case COL:
-      nb_local_dofs = problem_ptr->get_nb_local_dofs_col();
-      nb_ghost_dofs = problem_ptr->get_nb_ghost_dofs_col();
-      dofs = const_cast<dofs_by_loc_petsc_index*>(&problem_ptr->numered_dofs_cols.get<PetscLocalIdx_mi_tag>());
+      dofs = const_cast<DofsByNameAndLocalIdx*>(&problem_ptr->numered_dofs_cols.get<Composite_Name_And_HasLocalIdx_mi_tag>());
       break;
     default:
      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
@@ -505,67 +495,87 @@ PetscErrorCode Core::set_other_local_ghost_vector(
   if(cpy_fit==moabFields.get<FieldName_mi_tag>().end()) {
     SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"cpy field < %s > not found, (top tip: check spelling)",cpy_field_name.c_str());
   }
-  dofs_by_loc_petsc_index::iterator miit = dofs->lower_bound(0);
+  DofsByNameAndLocalIdx::iterator miit = dofs->lower_bound(boost::make_tuple(field_name,1));
   if(miit==dofs->end()) {
     SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"cpy field < %s > not found, (top tip: check spelling)",field_name.c_str());
   }
-  dofs_by_loc_petsc_index::iterator hi_miit = dofs->upper_bound(nb_local_dofs+nb_ghost_dofs);
+  DofsByNameAndLocalIdx::iterator hi_miit = dofs->upper_bound(boost::make_tuple(field_name,1));
   if(miit->get_space() != cpy_fit->get_space()) {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"fiedls has to have same space");
+    SETERRQ4(
+      PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,
+      "fields have to have same space (%s) %s != (%s) %s",
+      miit->get_name().c_str(),
+      FieldSpaceNames[miit->get_space()],
+      cpy_field_name.c_str(),
+      FieldSpaceNames[cpy_fit->get_space()]
+    );
   }
   if(miit->get_max_rank() != cpy_fit->get_max_rank()) {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"fiedls has to have same rank");
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"fields have to have same rank");
   }
   switch(scatter_mode) {
     case SCATTER_REVERSE: {
       bool alpha = true;
       switch (mode) {
-	case INSERT_VALUES:
-	  break;
-	case ADD_VALUES:
-	  alpha = false;
-	  break;
-	default:
-	  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"not implemented");
+        case INSERT_VALUES:
+        break;
+        case ADD_VALUES:
+        alpha = false;
+        break;
+        default:
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"not implemented");
       }
       PetscScalar *array;
       VecGetArray(V,&array);
       for(;miit!=hi_miit;miit++) {
-	if(miit->get_name_ref()!=field_name) continue;
-	DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>::type::iterator diiiit;
-	diiiit = dofsMoabField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().find(boost::make_tuple(cpy_field_name,miit->get_ent(),miit->get_EntDofIdx()));
-	if(diiiit==dofsMoabField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().end()) {
-	  SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"equivalent dof does not exist, dof has to be creates, use set_other_global_ghost_vector to create dofs entries");
-	}
-	if(alpha) diiiit->get_FieldData() = 0;
-	diiiit->get_FieldData() += array[miit->get_petsc_local_dof_idx()];
+        //if(miit->get_name_ref()!=field_name) continue;
+        DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>::type::iterator diiiit;
+        diiiit = dofsMoabField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().find(
+          boost::make_tuple(cpy_field_name,miit->get_ent(),miit->get_EntDofIdx())
+        );
+        if(diiiit==dofsMoabField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().end()) {
+          SETERRQ(
+            PETSC_COMM_SELF,MOFEM_NOT_FOUND,
+            "equivalent dof does not exist, use set_other_global_ghost_vector to create dofs entries"
+          );
+        }
+        if(alpha) {
+          diiiit->get_FieldData() = array[miit->get_petsc_local_dof_idx()];
+        } else {
+          diiiit->get_FieldData() += array[miit->get_petsc_local_dof_idx()];
+        }
       }
       ierr = VecRestoreArray(V,&array); CHKERRQ(ierr);
     }
     break;
     case SCATTER_FORWARD: {
-	for(;miit!=hi_miit;miit++) {
-	  if(miit->get_name_ref()!=field_name) continue;
-	  DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>::type::iterator diiiit;
-	  diiiit = dofsMoabField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().find(boost::make_tuple(cpy_field_name,miit->get_ent(),miit->get_EntDofIdx()));
-	  if(diiiit==dofsMoabField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().end()) {
-	    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"no data to fill the vector (top tip: you want scatter forward or scatter reverse?)");
-	  }
-	  ierr = VecSetValue(V,miit->get_petsc_gloabl_dof_idx(),diiiit->get_FieldData(),mode); CHKERRQ(ierr);
-	}
-	ierr = VecAssemblyBegin(V); CHKERRQ(ierr);
-	ierr = VecAssemblyEnd(V); CHKERRQ(ierr);
-      } 
-      break;  
+      for(;miit!=hi_miit;miit++) {
+        //if(miit->get_name_ref()!=field_name) continue;
+        DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>::type::iterator diiiit;
+        diiiit = dofsMoabField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().find(
+          boost::make_tuple(cpy_field_name,miit->get_ent(),miit->get_EntDofIdx())
+        );
+        if(diiiit==dofsMoabField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().end()) {
+          SETERRQ(
+            PETSC_COMM_SELF,
+            MOFEM_DATA_INCONSISTENCT,
+            "no data to fill the vector (top tip: you want scatter forward or scatter reverse?)"
+          );
+        }
+        ierr = VecSetValue(V,miit->get_petsc_gloabl_dof_idx(),diiiit->get_FieldData(),mode); CHKERRQ(ierr);
+      }
+      ierr = VecAssemblyBegin(V); CHKERRQ(ierr);
+      ierr = VecAssemblyEnd(V); CHKERRQ(ierr);
+    }
+    break;
     default:
-     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"not implemented");
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"not implemented");
   }
-
-
   PetscFunctionReturn(0);
 }
 PetscErrorCode Core::set_other_local_ghost_vector(
-  const string &name,const string& field_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb) {
+  const string &name,const string& field_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb
+) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type moFEMProblems_by_name;
@@ -605,10 +615,10 @@ PetscErrorCode Core::set_other_global_ghost_vector(
   }
   dofs_by_name::iterator hi_miit = dofs->upper_bound(field_name);
   if(miit->get_space() != cpy_fit->get_space()) {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"fiedls has to have same space");
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"fields have to have same space");
   }
   if(miit->get_max_rank() != cpy_fit->get_max_rank()) {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"fiedls has to have same rank");
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"fields have to have same rank");
   }
   switch (scatter_mode) {
     case SCATTER_REVERSE: {
@@ -645,29 +655,29 @@ PetscErrorCode Core::set_other_global_ghost_vector(
           ApproximationOrder order = miit->get_max_order();
           pair<MoFEMEntity_multiIndex::iterator,bool> p_e_miit;
           try {
-	    MoFEMEntity moabent(moab,cpy_fit->get_MoFEMField_ptr(),miit->get_RefMoFEMEntity_ptr());
-	    p_e_miit = entsMoabField.insert(moabent);
+            MoFEMEntity moabent(moab,cpy_fit->get_MoFEMField_ptr(),miit->get_RefMoFEMEntity_ptr());
+            p_e_miit = entsMoabField.insert(moabent);
           } catch (const std::exception& ex) {
-	    ostringstream ss;
-	    ss << "throw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
-	    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,ss.str().c_str());
+            ostringstream ss;
+            ss << "throw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
+            SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,ss.str().c_str());
           }
           if(p_e_miit.first->get_max_order()<order) {
-    	bool success = entsMoabField.modify(p_e_miit.first,MoFEMEntity_change_order(moab,order));
-    	if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+            bool success = entsMoabField.modify(p_e_miit.first,MoFEMEntity_change_order(moab,order));
+            if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
           }
           //create field moabdof
           DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator hi_diit,diit;
           diit = dofsMoabField.get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(field_name,miit->get_ent()));
           hi_diit = dofsMoabField.get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(field_name,miit->get_ent()));
           for(;diit!=hi_diit;diit++) {
-	    DofMoFEMEntity mdof(&*(p_e_miit.first),diit->get_dof_order(),diit->get_dof_rank(),diit->get_EntDofIdx());
-	    pair<DofMoFEMEntity_multiIndex::iterator,bool> cpy_p_diit;
-	    cpy_p_diit = dofsMoabField.insert(mdof);
-	    if(cpy_p_diit.second) {
-	      bool success = dofsMoabField.modify(cpy_p_diit.first,DofMoFEMEntity_active_change(true));
-	      if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-	    }
+            DofMoFEMEntity mdof(&*(p_e_miit.first),diit->get_dof_order(),diit->get_dof_rank(),diit->get_EntDofIdx());
+            pair<DofMoFEMEntity_multiIndex::iterator,bool> cpy_p_diit;
+            cpy_p_diit = dofsMoabField.insert(mdof);
+            if(cpy_p_diit.second) {
+              bool success = dofsMoabField.modify(cpy_p_diit.first,DofMoFEMEntity_active_change(true));
+              if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+            }
           }
           diiiit = dofsMoabField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().find(boost::make_tuple(cpy_field_name,miit->get_ent(),miit->get_EntDofIdx()));
           if(diiiit==dofsMoabField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
@@ -686,20 +696,20 @@ PetscErrorCode Core::set_other_global_ghost_vector(
     }
     break;
     case SCATTER_FORWARD: {
-	for(;miit!=hi_miit;miit++) {
-	  DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>::type::iterator diiiit;
-	  diiiit = dofsMoabField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().find(boost::make_tuple(cpy_field_name,miit->get_ent(),miit->get_EntDofIdx()));
-	  if(diiiit==dofsMoabField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().end()) {
-	    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"no data to fill the vector (top tip: you want scatter forward or scatter reverse?)");
-	  }
-	  ierr = VecSetValue(V,miit->get_petsc_gloabl_dof_idx(),diiiit->get_FieldData(),mode); CHKERRQ(ierr);
-	}
-	ierr = VecAssemblyBegin(V); CHKERRQ(ierr);
-	ierr = VecAssemblyEnd(V); CHKERRQ(ierr);
-      } 
-      break;  
+      for(;miit!=hi_miit;miit++) {
+        DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>::type::iterator diiiit;
+        diiiit = dofsMoabField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().find(boost::make_tuple(cpy_field_name,miit->get_ent(),miit->get_EntDofIdx()));
+        if(diiiit==dofsMoabField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().end()) {
+          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"no data to fill the vector (top tip: you want scatter forward or scatter reverse?)");
+        }
+        ierr = VecSetValue(V,miit->get_petsc_gloabl_dof_idx(),diiiit->get_FieldData(),mode); CHKERRQ(ierr);
+      }
+      ierr = VecAssemblyBegin(V); CHKERRQ(ierr);
+      ierr = VecAssemblyEnd(V); CHKERRQ(ierr);
+    }
+    break;
     default:
-     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
 
   }
   PetscFunctionReturn(0);
@@ -719,4 +729,3 @@ PetscErrorCode Core::set_other_global_ghost_vector(
 
 
 }
-

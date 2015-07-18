@@ -54,11 +54,11 @@ int main(int argc, char *argv[]) {
   //read mesh and create moab and mofem datastrutures
   moab::Core mb_instance;
   Interface& moab = mb_instance;
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
   MoFEM::Core core(moab);
   FieldInterface& m_field = core;
 
-  EntityHandle root_set = moab.get_root_set(); 
+  EntityHandle root_set = moab.get_root_set();
   //add all entities to database, all of them will be used
   BitRefLevel bit_level0;
   bit_level0.set(0);
@@ -103,7 +103,7 @@ int main(int argc, char *argv[]) {
   ierr = DMCreateLocalVector(dm,&l); CHKERRQ(ierr);
   ierr = DMCreateMatrix(dm,&m); CHKERRQ(ierr);
 
-  //glob loc 
+  //glob loc
   ierr = VecSet(g,1); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(g,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(g,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -134,5 +134,3 @@ int main(int argc, char *argv[]) {
   return 0;
 
 }
-
-
