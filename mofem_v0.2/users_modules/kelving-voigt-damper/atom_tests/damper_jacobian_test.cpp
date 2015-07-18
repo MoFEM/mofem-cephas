@@ -176,32 +176,32 @@ int main(int argc, char *argv[]) {
       fe_ptr[ss]->getOpPtrVector().push_back(
         new KelvinVoigtDamper::OpGetDataAtGaussPts("SPATIAL_POSITION_DOT",common_data,false,true)
       );
-
-      // attach tags for each recorder
-      vector<int> tags;
-      tags.push_back(1);
-
-      KelvinVoigtDamper::ConstitutiveEquation<adouble> ce = damper.constitutiveEquationMap.at(id);
-
-      // Right hand side operators
-      damper.feRhs.getOpPtrVector().push_back(
-        new KelvinVoigtDamper::OpJacobian(
-          "SPATIAL_POSITION",tags,ce,damper.commonData,true,false
-        )
-      );
-      damper.feRhs.getOpPtrVector().push_back(
-        new KelvinVoigtDamper::OpRhsStress(damper.commonData)
-      );
-
-      // Left hand side operators
-      damper.feLhs.getOpPtrVector().push_back(
-        new KelvinVoigtDamper::OpJacobian("SPATIAL_POSITION",tags,ce,damper.commonData,false,true)
-      );
-      damper.feLhs.getOpPtrVector().push_back(
-        new KelvinVoigtDamper::OpLhsdxdx(damper.commonData)
-      );
-
     }
+
+    // attach tags for each recorder
+    vector<int> tags;
+    tags.push_back(1);
+
+    KelvinVoigtDamper::ConstitutiveEquation<adouble> &ce = damper.constitutiveEquationMap.at(id);
+
+    // Right hand side operators
+    damper.feRhs.getOpPtrVector().push_back(
+      new KelvinVoigtDamper::OpJacobian(
+        "SPATIAL_POSITION",tags,ce,damper.commonData,true,false
+      )
+    );
+    damper.feRhs.getOpPtrVector().push_back(
+      new KelvinVoigtDamper::OpRhsStress(damper.commonData)
+    );
+
+    // Left hand side operators
+    damper.feLhs.getOpPtrVector().push_back(
+      new KelvinVoigtDamper::OpJacobian("SPATIAL_POSITION",tags,ce,damper.commonData,false,true)
+    );
+    damper.feLhs.getOpPtrVector().push_back(
+      new KelvinVoigtDamper::OpLhsdxdx(damper.commonData)
+    );
+
   }
 
   // Create dm instance

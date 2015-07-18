@@ -214,57 +214,57 @@ int main(int argc, char *argv[]) {
       fe_ptr[ss]->getOpPtrVector().push_back(new Gel::OpGetDataAtGaussPts("SOLVENT_CONCENTRATION",common_data,true,true));
       fe_ptr[ss]->getOpPtrVector().push_back(new Gel::OpGetDataAtGaussPts("HAT_EPS",common_data,true,false,MBTET));
       fe_ptr[ss]->getOpPtrVector().push_back(new Gel::OpGetDataAtGaussPts("HAT_EPS_DOT",common_data,true,false,MBTET));
-
-      // attach tags for each recorder
-      vector<int> tags;
-      tags.push_back(1);
-      tags.push_back(2);
-      tags.push_back(3);
-      tags.push_back(4);
-
-      // Right hand side operators
-      gel.feRhs.getOpPtrVector().push_back(
-        new Gel::OpJacobian("SPATIAL_POSITION", tags,gel.constitutiveEquationPtr,gel.commonData,true,false)
-      );
-      gel.feRhs.getOpPtrVector().push_back(
-        new Gel::OpRhsStressTotal(gel.commonData)
-      );
-      gel.feRhs.getOpPtrVector().push_back(
-        new Gel::OpRhsSolventFlux(gel.commonData)
-      );
-      gel.feRhs.getOpPtrVector().push_back(
-        new Gel::OpRhsVolumeDot(gel.commonData)
-      );
-      gel.feRhs.getOpPtrVector().push_back(
-        new Gel::OpRhsStrainHat(gel.commonData)
-      );
-      // Left hand side operators
-      gel.feLhs.getOpPtrVector().push_back(
-        new Gel::OpJacobian("SPATIAL_POSITION",tags,gel.constitutiveEquationPtr,gel.commonData,false,true)
-      );
-      gel.feLhs.getOpPtrVector().push_back(
-        new Gel::OpLhsdxdx(gel.commonData)
-      );
-      gel.feLhs.getOpPtrVector().push_back(
-        new Gel::OpLhsdxdMu(gel.commonData)
-      );
-      gel.feLhs.getOpPtrVector().push_back(
-        new Gel::OpLhsdxdStrainHat(gel.commonData)
-      );
-      gel.feLhs.getOpPtrVector().push_back(
-        new Gel::OpLhsdStrainHatdStrainHat(gel.commonData)
-      );
-      gel.feLhs.getOpPtrVector().push_back(
-        new Gel::OpLhsdStrainHatdx(gel.commonData)
-      );
-      gel.feLhs.getOpPtrVector().push_back(
-        new Gel::OpLhsdMudMu(gel.commonData)
-      );
-      gel.feLhs.getOpPtrVector().push_back(
-        new Gel::OpLhsdMudx(gel.commonData)
-      );
-
     }
+    
+    // attach tags for each recorder
+    vector<int> tags;
+    tags.push_back(1);
+    tags.push_back(2);
+    tags.push_back(3);
+    tags.push_back(4);
+
+    // Right hand side operators
+    gel.feRhs.getOpPtrVector().push_back(
+      new Gel::OpJacobian("SPATIAL_POSITION", tags,gel.constitutiveEquationPtr,gel.commonData,true,false)
+    );
+    gel.feRhs.getOpPtrVector().push_back(
+      new Gel::OpRhsStressTotal(gel.commonData)
+    );
+    gel.feRhs.getOpPtrVector().push_back(
+      new Gel::OpRhsSolventFlux(gel.commonData)
+    );
+    gel.feRhs.getOpPtrVector().push_back(
+      new Gel::OpRhsVolumeDot(gel.commonData)
+    );
+    gel.feRhs.getOpPtrVector().push_back(
+      new Gel::OpRhsStrainHat(gel.commonData)
+    );
+    // Left hand side operators
+    gel.feLhs.getOpPtrVector().push_back(
+      new Gel::OpJacobian("SPATIAL_POSITION",tags,gel.constitutiveEquationPtr,gel.commonData,false,true)
+    );
+    gel.feLhs.getOpPtrVector().push_back(
+      new Gel::OpLhsdxdx(gel.commonData)
+    );
+    gel.feLhs.getOpPtrVector().push_back(
+      new Gel::OpLhsdxdMu(gel.commonData)
+    );
+    gel.feLhs.getOpPtrVector().push_back(
+      new Gel::OpLhsdxdStrainHat(gel.commonData)
+    );
+    gel.feLhs.getOpPtrVector().push_back(
+      new Gel::OpLhsdStrainHatdStrainHat(gel.commonData)
+    );
+    gel.feLhs.getOpPtrVector().push_back(
+      new Gel::OpLhsdStrainHatdx(gel.commonData)
+    );
+    gel.feLhs.getOpPtrVector().push_back(
+      new Gel::OpLhsdMudMu(gel.commonData)
+    );
+    gel.feLhs.getOpPtrVector().push_back(
+      new Gel::OpLhsdMudx(gel.commonData)
+    );
+
   }
 
   // Create dm instance

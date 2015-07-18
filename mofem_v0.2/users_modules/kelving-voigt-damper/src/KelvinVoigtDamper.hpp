@@ -186,7 +186,8 @@ struct KelvinVoigtDamper {
 
   };
 
-  boost::ptr_map<int,KelvinVoigtDamper::ConstitutiveEquation<adouble> > constitutiveEquationMap;
+  typedef boost::ptr_map<int,KelvinVoigtDamper::ConstitutiveEquation<adouble> > ConstitutiveEquationMap;
+  ConstitutiveEquationMap constitutiveEquationMap;
 
   /** \brief Common data for nonlinear_elastic_elem model
   \ingroup nonlinear_elastic_elem
@@ -747,7 +748,14 @@ struct KelvinVoigtDamper {
     OpLhsdxdx(CommonData &common_data):
     AssembleMatrix(
       common_data.spatialPositionName,
-      common_data.spatialPositionName
+      common_data.spatialPositionNameDot
+    ),
+    commonData(common_data) {
+    }
+    OpLhsdxdx(CommonData &common_data,string col_field_name):
+    AssembleMatrix(
+      common_data.spatialPositionName,
+      col_field_name
     ),
     commonData(common_data) {
     }
@@ -860,10 +868,44 @@ struct KelvinVoigtDamper {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode setOperators(VolumeElementForcesAndSourcesCore &fe) {
+  PetscErrorCode setOperators(const int tag,string col_field_name) {
     PetscFunctionBegin;
 
+    DamperFE *fe_ptr[] = { &feRhs, &feLhs };
+    for(int ss = 0;ss<2;ss++) {
+      fe_ptr[ss]->getOpPtrVector().push_back(
+        new OpGetDataAtGaussPts("SPATIAL_POSITION",commonData,false,true)
+      );
+      fe_ptr[ss]->getOpPtrVector().push_back(
+        new OpGetDataAtGaussPts("SPATIAL_POSITION_DOT",commonData,false,true)
+      );
+    }
 
+    // attach tags for each recorder
+    vector<int> tags;
+    tags.push_back(tag);
+
+    ConstitutiveEquationMap::iterator mit = constitutiveEquationMap.begin();
+    for(;mit!=constitutiveEquationMap.end();mit++) {
+      ConstitutiveEquation<adouble> &ce = constitutiveEquationMap.at(mit->first);
+      // Right hand side operators
+      feRhs.getOpPtrVector().push_back(
+        new OpJacobian(
+          "SPATIAL_POSITION",tags,ce,commonData,true,false
+        )
+      );
+      feRhs.getOpPtrVector().push_back(
+        new OpRhsStress(commonData)
+      );
+
+      // Left hand side operators
+      feLhs.getOpPtrVector().push_back(
+        new OpJacobian("SPATIAL_POSITION",tags,ce,commonData,false,true)
+      );
+      feLhs.getOpPtrVector().push_back(
+        new OpLhsdxdx(commonData,col_field_name)
+      );
+    }
 
     PetscFunctionReturn(0);
   }
