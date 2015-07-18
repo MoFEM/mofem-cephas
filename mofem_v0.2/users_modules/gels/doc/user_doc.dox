@@ -1,6 +1,6 @@
 /*! \page gel_model_example Gel Model (Usage example)
 
-This is simple example how to run a simple problem for gel model with
+This is example how to run a simple problem for gel model with
 visocus-relaxation. Is is directed for beginners starting work with MoFEM.
 
 In this model mechanical and solvent concentration field is modeled. In addition
@@ -12,9 +12,8 @@ implementation and equations can be found in structure \ref Gel
 
 \subsection gel_input_file Input files
 
-Following description and line commands are in presumption that user parent
-working directory is \em users_modules/gel in build directory. All input files
-used in this example can be found in build directory.
+It is assumed that user parent working directory is \em users_modules/gel in
+build directory.
 
 \subsubsection journal Journal file
 
@@ -69,7 +68,7 @@ gels. Acta Mechanica Solida Sinica, Vol. 25, No. 5
 
 \image html gel_spring_daspot_model.png "Gel model" width=6cm
 
-In basic implementations all springs and dashpot are implemented like Hook'e
+In basic implementations all springs and dashpot are implemented using Hook'e
 equation. However generalization to large deformations and displacements is
 straightforward, code uses automatic differentiation (ADOL-C), and user need
 only implement stress-strain physical equation and all tangent matrices are
@@ -170,7 +169,7 @@ users_modules/nonlinear_elasticity/do_vtk.sh. For example
 \subsection user_gel_constitutive_equation User (hackable) constitutive equation
 
 In file \ref UserGelModel.hpp user can implement own constitutive equation, for
-details see \ref UserGelConstitutiveEquation. After any change in \ref
+details see \ref UserGelConstitutiveEquation. Any change in \ref
 UserGelModel.hpp have to follow rebuiling the code
 \code
 $um_debug/gels make

@@ -53,14 +53,21 @@ struct ElasticMaterials {
     double yOung;
     double pOisson;
     double dEnsity;
+    double dashG;
+    double dashPoisson;
     double aX,aY,aZ;
     BlockOptionData():
-      mAterial(MAT_KIRCHOFF),
-      oRder(-1),
-      yOung(-1),
-      pOisson(-2),
-      dEnsity(-1),
-      aX(0),aY(0),aZ(0) {}
+    mAterial(MAT_KIRCHOFF),
+    oRder(-1),
+    yOung(-1),
+    pOisson(-2),
+    dEnsity(-1),
+    dashG(-1),
+    dashPoisson(-1),
+    aX(0),
+    aY(0),
+    aZ(0) {
+    }
   };
   map<int,BlockOptionData> blockData;
 
@@ -170,6 +177,16 @@ struct ElasticMaterials {
         str_density << "block_" << it->get_msId() << ".density";
         config_file_options.add_options()
         (str_density.str().c_str(),po::value<double>(&blockData[it->get_msId()].dEnsity)->default_value(-1));
+
+        ostringstream str_dashG;
+        str_dashG << "block_" << it->get_msId() << ".dashG";
+        config_file_options.add_options()
+        (str_dashG.str().c_str(),po::value<double>(&blockData[it->get_msId()].dashG)->default_value(-1));
+
+        ostringstream str_dashPoisson;
+        str_dashPoisson << "block_" << it->get_msId() << ".dashG";
+        config_file_options.add_options()
+        (str_dashPoisson.str().c_str(),po::value<double>(&blockData[it->get_msId()].dashPoisson)->default_value(-2));
 
         ostringstream str_ax;
         str_ax << "block_" << it->get_msId() << ".a_x";
@@ -342,6 +359,59 @@ struct ElasticMaterials {
 
   #endif //__CONVECTIVE_MASS_ELEMENT_HPP
 
+  #ifdef __KELVIN_VOIGT_DAMPER_HPP__
+
+  PetscErrorCode setBlocks(map<int,KelvinVoigtDamper::BlockMaterialData> &set_of_blocks) {
+    PetscFunctionBegin;
+    ErrorCode rval;
+    PetscErrorCode ierr;
+
+    if(!iNitialized) {
+      ierr = iNit(); CHKERRQ(ierr);
+      ierr = readConfigFile(); CHKERRQ(ierr);
+      ierr = setBlocksOrder(); CHKERRQ(ierr);
+      iNitialized = true;
+    }
+
+    for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
+      bool set = false;
+      int id = it->get_msId();
+      EntityHandle meshset = it->get_meshset();
+      if(it->get_name().compare(0,6,"DAMPER") == 0) {
+        set = true;
+        vector<double> data;
+        ierr = it->get_attributes(data); CHKERRQ(ierr);
+        if(data.size()!=2) {
+          SETERRQ(PETSC_COMM_SELF,1,"Data inconsistency");
+        }
+        rval = mField.get_moab().get_entities_by_type(
+          it->meshset,MBTET,set_of_blocks[it->get_msId()].tEts,true
+        ); CHKERR_PETSC(rval);
+        set_of_blocks[it->get_msId()].gBeta = data[0];
+        set_of_blocks[it->get_msId()].vBeta = data[1];
+      }
+      if(blockData[id].dashG > 0) {
+        set = true;
+        Range tEts;
+        rval = mField.get_moab().get_entities_by_type(meshset,MBTET,tEts,true); CHKERR_PETSC(rval);
+        if(tEts.empty()) continue;
+        set_of_blocks[it->get_msId()].tEts = tEts;
+        set_of_blocks[it->get_msId()].gBeta = blockData[id].dashG;
+        set_of_blocks[it->get_msId()].vBeta = blockData[id].dashPoisson;
+      }
+      if(set) {
+        PetscPrintf(
+          mField.get_comm(),
+          "Block Id %d Damper Shear Modulus = %3.2g Poisson ratio = %3.2g\n",
+          id,set_of_blocks[id].gBeta,set_of_blocks[id].vBeta
+        );
+      }
+    }
+
+    PetscFunctionReturn(0);
+  }
+
+  #endif //__KELVIN_VOIGT_DAMPER_HPP__
 
 };
 

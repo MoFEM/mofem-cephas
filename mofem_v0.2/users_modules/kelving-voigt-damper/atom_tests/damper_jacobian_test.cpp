@@ -1,6 +1,6 @@
-/** \file gel_jacobian_test.cpp
+/** \file damper_jacobian_test.cpp
   \brief Atom test testing calculation of element residual vectors and tangent matrices
-  \ingroup gel
+  \ingroup damper
 */
 
 /* This file is part of MoFEM.
@@ -27,7 +27,7 @@ using namespace MoFEM;
 #include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <boost/numeric/ublas/vector.hpp>
 #include <adolc/adolc.h>
-#include <Gels.hpp>
+#include <KelvinVoigtDamper.hpp>
 
 #include <boost/iostreams/tee.hpp>
 #include <boost/iostreams/stream.hpp>
@@ -78,11 +78,7 @@ int main(int argc, char *argv[]) {
 
       bool check_if_spatial_field_exist = m_field.check_field("SPATIAL_POSITION");
       ierr = m_field.add_field("SPATIAL_POSITION",H1,3,MF_ZERO); CHKERRQ(ierr);
-      ierr = m_field.add_field("SOLVENT_CONCENTRATION",H1,1,MF_ZERO); CHKERRQ(ierr);
-      ierr = m_field.add_field("HAT_EPS",L2,6,MF_ZERO); CHKERRQ(ierr);
       ierr = m_field.add_field("SPATIAL_POSITION_DOT",H1,3,MF_ZERO); CHKERRQ(ierr);
-      ierr = m_field.add_field("SOLVENT_CONCENTRATION_DOT",H1,1,MF_ZERO); CHKERRQ(ierr);
-      ierr = m_field.add_field("HAT_EPS_DOT",L2,6,MF_ZERO); CHKERRQ(ierr);
 
       //Add field H1 space rank 3 to approximate geometry using hierarchical basis
       //For 10 node tetrahedral, before use, geometry is projected on that field (see below)
@@ -92,11 +88,7 @@ int main(int argc, char *argv[]) {
       EntityHandle root_set = moab.get_root_set();
       //add entities to field (root_mesh, i.e. on all mesh entities fields are approx.)
       ierr = m_field.add_ents_to_field_by_TETs(root_set,"SPATIAL_POSITION"); CHKERRQ(ierr);
-      ierr = m_field.add_ents_to_field_by_TETs(root_set,"SOLVENT_CONCENTRATION"); CHKERRQ(ierr);
-      ierr = m_field.add_ents_to_field_by_TETs(root_set,"HAT_EPS"); CHKERRQ(ierr);
       ierr = m_field.add_ents_to_field_by_TETs(root_set,"SPATIAL_POSITION_DOT"); CHKERRQ(ierr);
-      ierr = m_field.add_ents_to_field_by_TETs(root_set,"SOLVENT_CONCENTRATION_DOT"); CHKERRQ(ierr);
-      ierr = m_field.add_ents_to_field_by_TETs(root_set,"HAT_EPS_DOT"); CHKERRQ(ierr);
 
       PetscBool flg;
       PetscInt order;
@@ -117,19 +109,6 @@ int main(int argc, char *argv[]) {
       ierr = m_field.set_field_order(root_set,MBTRI,"SPATIAL_POSITION_DOT",order); CHKERRQ(ierr);
       ierr = m_field.set_field_order(root_set,MBEDGE,"SPATIAL_POSITION_DOT",order); CHKERRQ(ierr);
       ierr = m_field.set_field_order(root_set,MBVERTEX,"SPATIAL_POSITION_DOT",1); CHKERRQ(ierr);
-
-      ierr = m_field.set_field_order(root_set,MBTET,"SOLVENT_CONCENTRATION",order-1); CHKERRQ(ierr);
-      ierr = m_field.set_field_order(root_set,MBTRI,"SOLVENT_CONCENTRATION",order-1); CHKERRQ(ierr);
-      ierr = m_field.set_field_order(root_set,MBEDGE,"SOLVENT_CONCENTRATION",order-1); CHKERRQ(ierr);
-      ierr = m_field.set_field_order(root_set,MBVERTEX,"SOLVENT_CONCENTRATION",1); CHKERRQ(ierr);
-
-      ierr = m_field.set_field_order(root_set,MBTET,"SOLVENT_CONCENTRATION_DOT",order-1); CHKERRQ(ierr);
-      ierr = m_field.set_field_order(root_set,MBTRI,"SOLVENT_CONCENTRATION_DOT",order-1); CHKERRQ(ierr);
-      ierr = m_field.set_field_order(root_set,MBEDGE,"SOLVENT_CONCENTRATION_DOT",order-1); CHKERRQ(ierr);
-      ierr = m_field.set_field_order(root_set,MBVERTEX,"SOLVENT_CONCENTRATION_DOT",1); CHKERRQ(ierr);
-
-      ierr = m_field.set_field_order(root_set,MBTET,"HAT_EPS",order-1); CHKERRQ(ierr);
-      ierr = m_field.set_field_order(root_set,MBTET,"HAT_EPS_DOT",order-1); CHKERRQ(ierr);
 
       //gemetry approximation is set to 2nd oreder
       ierr = m_field.add_ents_to_field_by_TETs(root_set,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
@@ -153,23 +132,14 @@ int main(int argc, char *argv[]) {
 
     //Set finite elements
     {
-      ierr = m_field.add_finite_element("GEL_FE",MF_ZERO); CHKERRQ(ierr);
-      ierr = m_field.modify_finite_element_add_field_row("GEL_FE","SPATIAL_POSITION"); CHKERRQ(ierr);
-      ierr = m_field.modify_finite_element_add_field_col("GEL_FE","SPATIAL_POSITION"); CHKERRQ(ierr);
-      ierr = m_field.modify_finite_element_add_field_row("GEL_FE","SOLVENT_CONCENTRATION"); CHKERRQ(ierr);
-      ierr = m_field.modify_finite_element_add_field_col("GEL_FE","SOLVENT_CONCENTRATION"); CHKERRQ(ierr);
-      ierr = m_field.modify_finite_element_add_field_row("GEL_FE","HAT_EPS"); CHKERRQ(ierr);
-      ierr = m_field.modify_finite_element_add_field_col("GEL_FE","HAT_EPS"); CHKERRQ(ierr);
+      ierr = m_field.add_finite_element("DAMPER_FE",MF_ZERO); CHKERRQ(ierr);
+      ierr = m_field.modify_finite_element_add_field_row("DAMPER_FE","SPATIAL_POSITION"); CHKERRQ(ierr);
+      ierr = m_field.modify_finite_element_add_field_col("DAMPER_FE","SPATIAL_POSITION"); CHKERRQ(ierr);
 
-      ierr = m_field.modify_finite_element_add_field_data("GEL_FE","SPATIAL_POSITION"); CHKERRQ(ierr);
-      ierr = m_field.modify_finite_element_add_field_data("GEL_FE","SPATIAL_POSITION_DOT"); CHKERRQ(ierr);
-      ierr = m_field.modify_finite_element_add_field_data("GEL_FE","SOLVENT_CONCENTRATION"); CHKERRQ(ierr);
-      ierr = m_field.modify_finite_element_add_field_data("GEL_FE","SOLVENT_CONCENTRATION_DOT"); CHKERRQ(ierr);
-      ierr = m_field.modify_finite_element_add_field_data("GEL_FE","HAT_EPS"); CHKERRQ(ierr);
-      ierr = m_field.modify_finite_element_add_field_data("GEL_FE","HAT_EPS_DOT"); CHKERRQ(ierr);
-      ierr = m_field.modify_finite_element_add_field_data("GEL_FE","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+      ierr = m_field.modify_finite_element_add_field_data("DAMPER_FE","SPATIAL_POSITION"); CHKERRQ(ierr);
+      ierr = m_field.modify_finite_element_add_field_data("DAMPER_FE","SPATIAL_POSITION_DOT"); CHKERRQ(ierr);
       EntityHandle root_set = moab.get_root_set();
-      ierr = m_field.add_ents_to_finite_element_by_TETs(root_set,"GEL_FE"); CHKERRQ(ierr);
+      ierr = m_field.add_ents_to_finite_element_by_TETs(root_set,"DAMPER_FE"); CHKERRQ(ierr);
 
       //build finite elemnts
       ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
@@ -179,97 +149,64 @@ int main(int argc, char *argv[]) {
 
   }
 
-  // Create gel instance
-  Gel gel(m_field);
+  // Create damper instance
+  KelvinVoigtDamper damper(m_field);
   {
 
-    Gel::BlockMaterialData &material_data = gel.blockMaterialData;
-    gel.constitutiveEquationPtr = boost::shared_ptr<Gel::ConstitutiveEquation<adouble> >(
-      new Gel::ConstitutiveEquation<adouble>(gel.blockMaterialData)
+    int id = 0;
+    KelvinVoigtDamper::BlockMaterialData &material_data = damper.blockMaterialDataMap[id];
+    damper.constitutiveEquationMap.insert(
+      id,new KelvinVoigtDamper::ConstitutiveEquation<adouble>(material_data)
     );
 
     // Set material parameters
-    material_data.gAlpha = 1;
-    material_data.vAlpha = 0.3;
+    rval = moab.get_entities_by_type(0,MBTET,material_data.tEts); CHKERR_PETSC(rval);
     material_data.gBeta = 1;
     material_data.vBeta = 0.3;
-    material_data.gBetaHat = 1;
-    material_data.vBetaHat = 0.3;
-    material_data.oMega = 1;
-    material_data.vIscosity = 1;
-    material_data.pErmeability = 2.;
 
-    Gel::CommonData &common_data = gel.commonData;
+    KelvinVoigtDamper::CommonData &common_data = damper.commonData;
     common_data.spatialPositionName = "SPATIAL_POSITION";
     common_data.spatialPositionNameDot = "SPATIAL_POSITION_DOT";
-    common_data.muName = "SOLVENT_CONCENTRATION";
-    common_data.muNameDot = "SOLVENT_CONCENTRATION_DOT";
-    common_data.strainHatName = "HAT_EPS";
-    common_data.strainHatNameDot = "HAT_EPS_DOT";
 
-    Gel::GelFE *fe_ptr[] = { &gel.feRhs, &gel.feLhs };
+    KelvinVoigtDamper::DamperFE *fe_ptr[] = { &damper.feRhs, &damper.feLhs };
     for(int ss = 0;ss<2;ss++) {
-      fe_ptr[ss]->getOpPtrVector().push_back(new Gel::OpGetDataAtGaussPts("SPATIAL_POSITION",common_data,false,true));
-      fe_ptr[ss]->getOpPtrVector().push_back(new Gel::OpGetDataAtGaussPts("SPATIAL_POSITION_DOT",common_data,false,true));
-      fe_ptr[ss]->getOpPtrVector().push_back(new Gel::OpGetDataAtGaussPts("SOLVENT_CONCENTRATION",common_data,true,true));
-      fe_ptr[ss]->getOpPtrVector().push_back(new Gel::OpGetDataAtGaussPts("HAT_EPS",common_data,true,false,MBTET));
-      fe_ptr[ss]->getOpPtrVector().push_back(new Gel::OpGetDataAtGaussPts("HAT_EPS_DOT",common_data,true,false,MBTET));
+      fe_ptr[ss]->getOpPtrVector().push_back(
+        new KelvinVoigtDamper::OpGetDataAtGaussPts("SPATIAL_POSITION",common_data,false,true)
+      );
+      fe_ptr[ss]->getOpPtrVector().push_back(
+        new KelvinVoigtDamper::OpGetDataAtGaussPts("SPATIAL_POSITION_DOT",common_data,false,true)
+      );
     }
-    
+
     // attach tags for each recorder
     vector<int> tags;
     tags.push_back(1);
-    tags.push_back(2);
-    tags.push_back(3);
-    tags.push_back(4);
+
+    KelvinVoigtDamper::ConstitutiveEquation<adouble> &ce = damper.constitutiveEquationMap.at(id);
 
     // Right hand side operators
-    gel.feRhs.getOpPtrVector().push_back(
-      new Gel::OpJacobian("SPATIAL_POSITION", tags,gel.constitutiveEquationPtr,gel.commonData,true,false)
+    damper.feRhs.getOpPtrVector().push_back(
+      new KelvinVoigtDamper::OpJacobian(
+        "SPATIAL_POSITION",tags,ce,damper.commonData,true,false
+      )
     );
-    gel.feRhs.getOpPtrVector().push_back(
-      new Gel::OpRhsStressTotal(gel.commonData)
+    damper.feRhs.getOpPtrVector().push_back(
+      new KelvinVoigtDamper::OpRhsStress(damper.commonData)
     );
-    gel.feRhs.getOpPtrVector().push_back(
-      new Gel::OpRhsSolventFlux(gel.commonData)
-    );
-    gel.feRhs.getOpPtrVector().push_back(
-      new Gel::OpRhsVolumeDot(gel.commonData)
-    );
-    gel.feRhs.getOpPtrVector().push_back(
-      new Gel::OpRhsStrainHat(gel.commonData)
-    );
+
     // Left hand side operators
-    gel.feLhs.getOpPtrVector().push_back(
-      new Gel::OpJacobian("SPATIAL_POSITION",tags,gel.constitutiveEquationPtr,gel.commonData,false,true)
+    damper.feLhs.getOpPtrVector().push_back(
+      new KelvinVoigtDamper::OpJacobian("SPATIAL_POSITION",tags,ce,damper.commonData,false,true)
     );
-    gel.feLhs.getOpPtrVector().push_back(
-      new Gel::OpLhsdxdx(gel.commonData)
-    );
-    gel.feLhs.getOpPtrVector().push_back(
-      new Gel::OpLhsdxdMu(gel.commonData)
-    );
-    gel.feLhs.getOpPtrVector().push_back(
-      new Gel::OpLhsdxdStrainHat(gel.commonData)
-    );
-    gel.feLhs.getOpPtrVector().push_back(
-      new Gel::OpLhsdStrainHatdStrainHat(gel.commonData)
-    );
-    gel.feLhs.getOpPtrVector().push_back(
-      new Gel::OpLhsdStrainHatdx(gel.commonData)
-    );
-    gel.feLhs.getOpPtrVector().push_back(
-      new Gel::OpLhsdMudMu(gel.commonData)
-    );
-    gel.feLhs.getOpPtrVector().push_back(
-      new Gel::OpLhsdMudx(gel.commonData)
+    damper.feLhs.getOpPtrVector().push_back(
+      new KelvinVoigtDamper::OpLhsdxdx(damper.commonData)
     );
 
   }
 
   // Create dm instance
   DM dm;
-  DMType dm_name = "DMGEL";
+  DMType dm_name = "DMDAMPER";
   {
     ierr = DMRegister_MoFEM(dm_name); CHKERRQ(ierr);
     ierr = DMCreate(PETSC_COMM_WORLD,&dm);CHKERRQ(ierr);
@@ -277,7 +214,7 @@ int main(int argc, char *argv[]) {
     ierr = DMMoFEMCreateMoFEM(dm,&m_field,dm_name,bit_level0); CHKERRQ(ierr);
     ierr = DMSetFromOptions(dm); CHKERRQ(ierr);
     //add elements to dm
-    ierr = DMMoFEMAddElement(dm,"GEL_FE"); CHKERRQ(ierr);
+    ierr = DMMoFEMAddElement(dm,"DAMPER_FE"); CHKERRQ(ierr);
     ierr = DMSetUp(dm); CHKERRQ(ierr);
   }
 
@@ -295,13 +232,13 @@ int main(int argc, char *argv[]) {
     ierr = VecGhostUpdateBegin(U_t,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(U_t,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = MatZeroEntries(M); CHKERRQ(ierr);
-    gel.feRhs.ts_F = F; // Set right hand side vector manually
-    gel.feRhs.ts_u_t = U_t;
-    gel.feRhs.ts_ctx = TSMethod::CTX_TSSETIFUNCTION;
-    ierr = DMoFEMLoopFiniteElements(dm,"GEL_FE",&gel.feRhs); CHKERRQ(ierr);
-    gel.feLhs.ts_B = M; // Set matrix M
-    gel.feLhs.ts_a = 1.0; // Set time step parameter
-    ierr = DMoFEMLoopFiniteElements(dm,"GEL_FE",&gel.feLhs); CHKERRQ(ierr);
+    damper.feRhs.ts_F = F; // Set right hand side vector manually
+    damper.feRhs.ts_u_t = U_t;
+    damper.feRhs.ts_ctx = TSMethod::CTX_TSSETIFUNCTION;
+    ierr = DMoFEMLoopFiniteElements(dm,"DAMPER_FE",&damper.feRhs); CHKERRQ(ierr);
+    damper.feLhs.ts_B = M; // Set matrix M
+    damper.feLhs.ts_a = 1.0; // Set time step parameter
+    ierr = DMoFEMLoopFiniteElements(dm,"DAMPER_FE",&damper.feLhs); CHKERRQ(ierr);
     ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
     ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
     ierr = MatAssemblyBegin(M,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
@@ -312,7 +249,7 @@ int main(int argc, char *argv[]) {
   {
 
     PetscViewer viewer;
-    ierr = PetscViewerASCIIOpen(PETSC_COMM_WORLD,"gel_jacobian_test.txt",&viewer); CHKERRQ(ierr);
+    ierr = PetscViewerASCIIOpen(PETSC_COMM_WORLD,"damper_jacobian_test.txt",&viewer); CHKERRQ(ierr);
     ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
     //MatView(M,PETSC_VIEWER_DRAW_WORLD);
     //std::string wait;

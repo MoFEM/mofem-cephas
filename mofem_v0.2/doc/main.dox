@@ -1,5 +1,7 @@
 /*! \mainpage Index Page
 
+\htmlinclude doc/search_tags.html
+
 \section introduction Introduction
 
 MoFEM (Mesh Oriented Finite Element Method) it is C++ library supporting

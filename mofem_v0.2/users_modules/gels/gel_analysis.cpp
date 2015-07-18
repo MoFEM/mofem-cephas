@@ -2,14 +2,14 @@
   \brief Reads cubit file and solves problem with gel material
   \ingroup gel
 
-  1) TODO: Current version is limited only to one material. If one like to have
+  \todo {Current version is limited only to one material. If one like to have
   general problem for nonlinear elasticity should implement general time
   dependent problem. If inertia terms need to be considered, this material
-  should be add to nonlinear dynamics problem.
+  should be add to nonlinear dynamics problem.}
 
-  2) TODO: Internal history state variables need to be statically condensed. It
+  \todo {Internal history state variables need to be statically condensed. It
   can  be done  by implementing static condensation on finite element level or
-  by implementing pre-conditioner.
+  by implementing pre-conditioner.}
 
 */
 

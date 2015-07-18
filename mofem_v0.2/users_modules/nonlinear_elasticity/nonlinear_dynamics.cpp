@@ -37,6 +37,7 @@ using namespace MoFEM;
 #include <adolc/adolc.h>
 #include <ConvectiveMassElement.hpp>
 #include <NonLinearElasticElement.hpp>
+#include <KelvinVoigtDamper.hpp>
 
 #include <PostProcOnRefMesh.hpp>
 #include <PostProcStresses.hpp>
@@ -370,7 +371,47 @@ int main(int argc, char *argv[]) {
   ierr = inertia.addConvectiveMassElement("MASS_ELEMENT","SPATIAL_VELOCITY","SPATIAL_POSITION"); CHKERRQ(ierr);
   ierr = inertia.addVelocityElement("VELOCITY_ELEMENT","SPATIAL_VELOCITY","SPATIAL_POSITION"); CHKERRQ(ierr);
 
-  MonitorPostProc post_proc(m_field,elastic.setOfBlocks,elastic.getLoopFeEnergy(),inertia.getLoopFeEnergy());
+  //damper element
+  KelvinVoigtDamper damper(m_field);
+  ierr = elastic_materials.setBlocks(damper.blockMaterialDataMap); CHKERRQ(ierr);
+  {
+    KelvinVoigtDamper::CommonData &common_data = damper.commonData;
+    common_data.spatialPositionName = "SPATIAL_POSITION";
+    common_data.spatialPositionNameDot = "SPATIAL_VELOCITY";
+    ierr = m_field.add_finite_element("DAMPER",MF_ZERO); CHKERRQ(ierr);
+    ierr = m_field.modify_finite_element_add_field_row("DAMPER","SPATIAL_POSITION"); CHKERRQ(ierr);
+    ierr = m_field.modify_finite_element_add_field_data("DAMPER","SPATIAL_POSITION"); CHKERRQ(ierr);
+    ierr = m_field.modify_finite_element_add_field_data("DAMPER","SPATIAL_VELOCITY"); CHKERRQ(ierr);
+    if(m_field.check_field("MESH_NODE_POSITIONS")) {
+      ierr = m_field.modify_finite_element_add_field_data("DAMPER","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+    }
+    #ifdef BLOCKED_PROBLEM
+    ierr = m_field.modify_finite_element_add_field_col("DAMPER","SPATIAL_POSITION"); CHKERRQ(ierr);
+    #else
+    ierr = m_field.modify_finite_element_add_field_col("DAMPER","SPATIAL_VELOCITY"); CHKERRQ(ierr);
+    #endif
+    map<int,KelvinVoigtDamper::BlockMaterialData>::iterator bit = damper.blockMaterialDataMap.begin();
+    for(;bit!=damper.blockMaterialDataMap.end();bit++) {
+      int id = bit->first;
+      KelvinVoigtDamper::BlockMaterialData &material_data = bit->second;
+      damper.constitutiveEquationMap.insert(
+        id,new KelvinVoigtDamper::ConstitutiveEquation<adouble>(material_data)
+      );
+      ierr = m_field.add_ents_to_finite_element_by_TETs(bit->second.tEts,"DAMPER"); CHKERRQ(ierr);
+    }
+    #ifdef BLOCKED_PROBLEM
+    ierr = damper.setOperators(3,"SPATIAL_POSITION"); CHKERRQ(ierr);
+    #else
+    ierr = damper.setOperators(3,"SPATIAL_VELOCITY"); CHKERRQ(ierr);
+    #endif
+  }
+
+  MonitorPostProc post_proc(
+    m_field,
+    elastic.setOfBlocks,
+    elastic.getLoopFeEnergy(),
+    inertia.getLoopFeEnergy()
+  );
 
   #ifdef BLOCKED_PROBLEM
     // elastic and mass element calculated in Kuu shell matrix problem. To
@@ -401,6 +442,7 @@ int main(int argc, char *argv[]) {
   {
     ierr = m_field.add_problem("Kuu", MF_ZERO); CHKERRQ(ierr);
     ierr = m_field.modify_problem_add_finite_element("Kuu", "ELASTIC"); CHKERRQ(ierr);
+    ierr = m_field.modify_problem_add_finite_element("Kuu", "DAMPER"); CHKERRQ(ierr);
     ierr = m_field.modify_problem_add_finite_element("Kuu", "NEUMANN_FE"); CHKERRQ(ierr);
     ierr = m_field.modify_problem_add_finite_element("Kuu", "FORCE_FE"); CHKERRQ(ierr);
     ierr = m_field.modify_problem_ref_level_add_bit("Kuu", bit_level0); CHKERRQ(ierr);
@@ -420,6 +462,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.add_problem("DYNAMICS",MF_ZERO); CHKERRQ(ierr);
   //set finite elements for problems
   ierr = m_field.modify_problem_add_finite_element("DYNAMICS","ELASTIC"); CHKERRQ(ierr);
+  ierr = m_field.modify_problem_add_finite_element("DYNAMICS","DAMPER"); CHKERRQ(ierr);
   ierr = m_field.modify_problem_add_finite_element("DYNAMICS","NEUMANN_FE"); CHKERRQ(ierr);
   ierr = m_field.modify_problem_add_finite_element("DYNAMICS","FORCE_FE"); CHKERRQ(ierr);
   ierr = m_field.modify_problem_add_finite_element("DYNAMICS","MASS_ELEMENT"); CHKERRQ(ierr);
@@ -503,6 +546,10 @@ int main(int argc, char *argv[]) {
     shell_matrix_element.loopM.push_back(ConvectiveMassElement::ShellMatrixElement::LoopPairType("ELASTIC",&inertia.getLoopFeMassLhs()));
     //this calculate derivatives of inertia forces over spatial positions and add this to shell K matrix
     shell_matrix_element.loopAuxM.push_back(ConvectiveMassElement::ShellMatrixElement::LoopPairType("ELASTIC",&inertia.getLoopFeMassAuxLhs()));
+
+    //damper
+    shell_matrix_element.loopM.push_back(ConvectiveMassElement::ShellMatrixElement::LoopPairType("DAMPER",&damper.feLhs));
+
   #else
     Mat Aij;
     ierr = m_field.MatCreateMPIAIJWithArrays("DYNAMICS",&Aij); CHKERRQ(ierr);
@@ -549,6 +596,7 @@ int main(int argc, char *argv[]) {
   //fe looops
   TsCtx::loops_to_do_type& loops_to_do_Rhs = ts_ctx.get_loops_to_do_IFunction();
   loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("ELASTIC",&elastic.getLoopFeRhs()));
+  loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("DAMPER",&damper.feRhs));
   loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("NEUMANN_FE",&fe_spatial));
   boost::ptr_map<string,NodalForce>::iterator fit = nodal_forces.begin();
   for(;fit!=nodal_forces.end();fit++) {
@@ -577,6 +625,7 @@ int main(int argc, char *argv[]) {
     //fe loops
     TsCtx::loops_to_do_type& loops_to_do_Mat = ts_ctx.get_loops_to_do_IJacobian();
     loops_to_do_Mat.push_back(TsCtx::loop_pair_type("ELASTIC",&elastic.getLoopFeLhs()));
+    loops_to_do_Mat.push_back(TsCtx::loop_pair_type("DAMPER",&damper.feLhs));
     loops_to_do_Mat.push_back(TsCtx::loop_pair_type("NEUMANN_FE",&fe_spatial));
     loops_to_do_Mat.push_back(TsCtx::loop_pair_type("VELOCITY_ELEMENT",&inertia.getLoopFeVelLhs()));
     loops_to_do_Mat.push_back(TsCtx::loop_pair_type("MASS_ELEMENT",&inertia.getLoopFeMassLhs()));
