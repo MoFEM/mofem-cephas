@@ -1,4 +1,4 @@
-/** \file nonlinear_dynamics.cpp
+/** \file nonlinear_gs.cpp
  * \ingroup nonlinear_elastic_elem
  *
  * \brief Non-linear elastic dynamics.
@@ -256,6 +256,9 @@ int main(int argc, char *argv[]) {
     PETSC_NULL, "-my_is_partitioned", &is_partitioned, &flg
   ); CHKERRQ(ierr);
 
+  PetscBool linear;
+  ierr = PetscOptionsGetBool(PETSC_NULL,"-is_linear",&linear,&linear); CHKERRQ(ierr);
+
   if (is_partitioned == PETSC_TRUE) {
     //Read mesh to MOAB
     const char *option;
@@ -377,21 +380,18 @@ int main(int argc, char *argv[]) {
   {
     KelvinVoigtDamper::CommonData &common_data = damper.commonData;
     common_data.spatialPositionName = "SPATIAL_POSITION";
-    common_data.spatialPositionNameDot = "SPATIAL_VELOCITY";
+    common_data.spatialPositionNameDot = "DOT_SPATIAL_POSITION";
     ierr = m_field.add_finite_element("DAMPER",MF_ZERO); CHKERRQ(ierr);
     ierr = m_field.modify_finite_element_add_field_row("DAMPER","SPATIAL_POSITION"); CHKERRQ(ierr);
+    ierr = m_field.modify_finite_element_add_field_col("DAMPER","SPATIAL_POSITION"); CHKERRQ(ierr);
     ierr = m_field.modify_finite_element_add_field_data("DAMPER","SPATIAL_POSITION"); CHKERRQ(ierr);
-    ierr = m_field.modify_finite_element_add_field_data("DAMPER","SPATIAL_VELOCITY"); CHKERRQ(ierr);
+    ierr = m_field.modify_finite_element_add_field_data("DAMPER","DOT_SPATIAL_POSITION"); CHKERRQ(ierr);
     if(m_field.check_field("MESH_NODE_POSITIONS")) {
       ierr = m_field.modify_finite_element_add_field_data("DAMPER","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
     }
-    #ifdef BLOCKED_PROBLEM
-    ierr = m_field.modify_finite_element_add_field_col("DAMPER","SPATIAL_POSITION"); CHKERRQ(ierr);
-    #else
-    ierr = m_field.modify_finite_element_add_field_col("DAMPER","SPATIAL_VELOCITY"); CHKERRQ(ierr);
-    #endif
     map<int,KelvinVoigtDamper::BlockMaterialData>::iterator bit = damper.blockMaterialDataMap.begin();
     for(;bit!=damper.blockMaterialDataMap.end();bit++) {
+      bit->second.lInear = linear;
       int id = bit->first;
       KelvinVoigtDamper::BlockMaterialData &material_data = bit->second;
       damper.constitutiveEquationMap.insert(
@@ -399,11 +399,7 @@ int main(int argc, char *argv[]) {
       );
       ierr = m_field.add_ents_to_finite_element_by_TETs(bit->second.tEts,"DAMPER"); CHKERRQ(ierr);
     }
-    #ifdef BLOCKED_PROBLEM
-    ierr = damper.setOperators(3,"SPATIAL_POSITION"); CHKERRQ(ierr);
-    #else
-    ierr = damper.setOperators(3,"SPATIAL_VELOCITY"); CHKERRQ(ierr);
-    #endif
+    ierr = damper.setOperators(3); CHKERRQ(ierr);
   }
 
   MonitorPostProc post_proc(
@@ -417,6 +413,7 @@ int main(int argc, char *argv[]) {
     // elastic and mass element calculated in Kuu shell matrix problem. To
     // calculate Mass element, velocity field is needed.
     ierr = m_field.modify_finite_element_add_field_data("ELASTIC", "SPATIAL_VELOCITY"); CHKERRQ(ierr);
+    ierr = m_field.modify_finite_element_add_field_data("ELASTIC", "DOT_SPATIAL_POSITION"); CHKERRQ(ierr);
     ierr = m_field.modify_finite_element_add_field_data("ELASTIC", "DOT_SPATIAL_VELOCITY"); CHKERRQ(ierr);
   #endif
 
@@ -442,7 +439,7 @@ int main(int argc, char *argv[]) {
   {
     ierr = m_field.add_problem("Kuu", MF_ZERO); CHKERRQ(ierr);
     ierr = m_field.modify_problem_add_finite_element("Kuu", "ELASTIC"); CHKERRQ(ierr);
-    ierr = m_field.modify_problem_add_finite_element("Kuu", "DAMPER"); CHKERRQ(ierr);
+    //ierr = m_field.modify_problem_add_finite_element("Kuu", "DAMPER"); CHKERRQ(ierr);
     ierr = m_field.modify_problem_add_finite_element("Kuu", "NEUMANN_FE"); CHKERRQ(ierr);
     ierr = m_field.modify_problem_add_finite_element("Kuu", "FORCE_FE"); CHKERRQ(ierr);
     ierr = m_field.modify_problem_ref_level_add_bit("Kuu", bit_level0); CHKERRQ(ierr);
@@ -490,9 +487,6 @@ int main(int argc, char *argv[]) {
   Vec D;
   ierr = VecDuplicate(F,&D); CHKERRQ(ierr);
 
-  PetscBool linear;
-  ierr = PetscOptionsGetBool(PETSC_NULL,"-is_linear",&linear,&linear); CHKERRQ(ierr);
-
   #ifdef BLOCKED_PROBLEM
     //shell matrix
     ConvectiveMassElement::MatShellCtx *shellAij_ctx = new ConvectiveMassElement::MatShellCtx();
@@ -500,30 +494,37 @@ int main(int argc, char *argv[]) {
     ierr = MatDuplicate(shellAij_ctx->K,MAT_DO_NOT_COPY_VALUES,&shellAij_ctx->M); CHKERRQ(ierr);
     ierr = shellAij_ctx->iNit(); CHKERRQ(ierr);
     ierr = m_field.VecScatterCreate(D,"DYNAMICS",COL,shellAij_ctx->u,"Kuu",COL,&shellAij_ctx->scatterU); CHKERRQ(ierr);
-    ierr = m_field.VecScatterCreate(D,"DYNAMICS","SPATIAL_VELOCITY",COL,shellAij_ctx->v,"Kuu","SPATIAL_POSITION",COL,&shellAij_ctx->scatterV); CHKERRQ(ierr);
+    ierr = m_field.VecScatterCreate(
+      D,"DYNAMICS","SPATIAL_VELOCITY",COL,shellAij_ctx->v,"Kuu","SPATIAL_POSITION",COL,&shellAij_ctx->scatterV
+    ); CHKERRQ(ierr);
     Mat shell_Aij;
     const MoFEMProblem *problem_ptr;
     ierr = m_field.get_problem("DYNAMICS",&problem_ptr); CHKERRQ(ierr);
-    ierr = MatCreateShell(PETSC_COMM_WORLD,
-      problem_ptr->get_nb_local_dofs_row(),problem_ptr->get_nb_local_dofs_col(),
-      problem_ptr->get_nb_dofs_row(),problem_ptr->get_nb_dofs_row(),
-      (void*)shellAij_ctx,&shell_Aij); CHKERRQ(ierr);
+    ierr = MatCreateShell(
+      PETSC_COMM_WORLD,
+      problem_ptr->get_nb_local_dofs_row(),
+      problem_ptr->get_nb_local_dofs_col(),
+      problem_ptr->get_nb_dofs_row(),
+      problem_ptr->get_nb_dofs_row(),
+      (void*)shellAij_ctx,&shell_Aij
+    ); CHKERRQ(ierr);
     ierr = MatShellSetOperation(shell_Aij,MATOP_MULT,(void(*)(void))ConvectiveMassElement::MultOpA); CHKERRQ(ierr);
     ierr = MatShellSetOperation(shell_Aij,MATOP_ZERO_ENTRIES,(void(*)(void))ConvectiveMassElement::ZeroEntriesOp); CHKERRQ(ierr);
     //blocked problem
     ConvectiveMassElement::ShellMatrixElement shell_matrix_element(m_field);
     SpatialPositionsBCFEMethodPreAndPostProc shell_Dirichlet_bc(
-      m_field,"SPATIAL_POSITION",shellAij_ctx->barK,PETSC_NULL,PETSC_NULL);
-    //shell_Dirichlet_bc.fixFields.push_back("SPATIAL_VELOCITY");
+      m_field,"SPATIAL_POSITION",shellAij_ctx->barK,PETSC_NULL,PETSC_NULL
+    );
     SpatialPositionsBCFEMethodPreAndPostProc my_Dirichlet_bc(
-      m_field,"SPATIAL_POSITION",PETSC_NULL,D,F);
-    //my_Dirichlet_bc.fixFields.push_back("SPATIAL_VELOCITY");
+      m_field,"SPATIAL_POSITION",PETSC_NULL,D,F
+    );
     shell_matrix_element.problemName = "Kuu";
     shell_matrix_element.shellMatCtx = shellAij_ctx;
     shell_matrix_element.DirichletBcPtr = &shell_Dirichlet_bc;
     shell_matrix_element.loopK.push_back(ConvectiveMassElement::ShellMatrixElement::LoopPairType("ELASTIC",&elastic.getLoopFeLhs()));
-    ConvectiveMassElement::ShellResidualElement shell_matrix_residual(m_field);
-    shell_matrix_residual.shellMatCtx = shellAij_ctx;
+    //damper
+    shell_matrix_element.loopK.push_back(ConvectiveMassElement::ShellMatrixElement::LoopPairType("ELASTIC",&damper.feLhs));
+
     //surface forces
     NeummanForcesSurfaceComplexForLazy neumann_forces(m_field,shellAij_ctx->barK,F);
     NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE &fe_spatial = neumann_forces.getLoopSpatialFe();
@@ -547,8 +548,9 @@ int main(int argc, char *argv[]) {
     //this calculate derivatives of inertia forces over spatial positions and add this to shell K matrix
     shell_matrix_element.loopAuxM.push_back(ConvectiveMassElement::ShellMatrixElement::LoopPairType("ELASTIC",&inertia.getLoopFeMassAuxLhs()));
 
-    //damper
-    shell_matrix_element.loopM.push_back(ConvectiveMassElement::ShellMatrixElement::LoopPairType("DAMPER",&damper.feLhs));
+    //Element to calualte shell matrix residual
+    ConvectiveMassElement::ShellResidualElement shell_matrix_residual(m_field);
+    shell_matrix_residual.shellMatCtx = shellAij_ctx;
 
   #else
     Mat Aij;
