@@ -122,7 +122,16 @@ struct KelvinVoigtDamper {
       PetscFunctionReturn(0);
     }
 
-    /** \brief Calculate total strain
+    /** \brief Calculate strain rate
+
+    \f[
+    \dot{\varepsilon}_{ij} = \frac{1}{2}
+    \left(
+    \frac{\partial v_i}{\partial X_j}
+    +
+    \frac{\partial v_j}{\partial X_i}
+    \right)
+    \f]
 
     */
     virtual PetscErrorCode calculateEngineeringStrainDot() {
@@ -143,6 +152,9 @@ struct KelvinVoigtDamper {
     }
 
     /** \brief Calculate Cauchy dashpot stress
+
+    Calculate dashpot Cauchy stress. It has to be pull back  to reference
+    configuration before use in total Lagrangian formulation.
 
     \f[
     \sigma^\beta_{ij} = 2G^\beta\left[
