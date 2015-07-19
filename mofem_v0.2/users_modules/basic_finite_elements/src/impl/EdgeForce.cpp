@@ -24,7 +24,7 @@ using namespace MoFEM;
 
 EdgeForce::OpEdgeForce::OpEdgeForce(
   const string field_name,Vec &f,bCForce &data,
-  boost::ptr_vector<MethodsForOp> &methods_op,
+  boost::ptr_vector<MethodForForceScaling> &methods_op,
   bool use_snes_f
 ):
 EdgeElementForcesAndSurcesCore::UserDataOperator(field_name,OPROW),
@@ -100,7 +100,7 @@ PetscErrorCode EdgeForce::OpEdgeForce::doWork(int side,EntityType type,DataForce
 
   // I time/step varying force or calculate in arc-length control. This hack
   // scale force appropriately, and is controlled for user
-  ierr = MethodsForOp::applyScale(getFEMethod(),methodsOp,Nf); CHKERRQ(ierr);
+  ierr = MethodForForceScaling::applyScale(getFEMethod(),methodsOp,Nf); CHKERRQ(ierr);
 
   // Assemble force into right-hand vector
   Vec myF = F;

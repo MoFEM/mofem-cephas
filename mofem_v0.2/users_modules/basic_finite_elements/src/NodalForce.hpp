@@ -40,7 +40,7 @@ struct NodalForce {
   };
   map<int,bCForce> mapForce;
 
-  boost::ptr_vector<MethodsForOp> methodsOp;
+  boost::ptr_vector<MethodForForceScaling> methodsOp;
 
   /// \brief Operator to assemble nodal force into right hand side vector
   struct OpNodalForce: public VertexElementForcesAndSourcesCore::UserDataOperator {
@@ -48,10 +48,10 @@ struct NodalForce {
     Vec &F;
     bool useSnesF;
     bCForce &dAta;
-    boost::ptr_vector<MethodsForOp> &methodsOp;
+    boost::ptr_vector<MethodForForceScaling> &methodsOp;
 
     OpNodalForce(const string field_name,Vec &_F,bCForce &data,
-      boost::ptr_vector<MethodsForOp> &methods_op,
+      boost::ptr_vector<MethodForForceScaling> &methods_op,
       bool use_snes_f = false);
 
     ublas::vector<FieldData> Nf;
@@ -74,7 +74,7 @@ struct MetaNodalForces {
     This is obsolete, is kept to have back compatibility with fracture code.
 
   */
-  struct TagForceScale: public MethodsForOp {
+  struct TagForceScale: public MethodForForceScaling {
     FieldInterface &mField;
     double *sCale;
     Tag thScale;

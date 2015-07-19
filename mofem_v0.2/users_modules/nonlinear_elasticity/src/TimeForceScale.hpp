@@ -22,7 +22,7 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-struct TimeForceScale: public MethodsForOp {
+struct TimeForceScale: public MethodForForceScaling {
 //Hassan: This function to read data file (once) and save it in a pair vector ts
    
     map<double,double> tSeries;

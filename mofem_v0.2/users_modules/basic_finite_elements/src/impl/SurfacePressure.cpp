@@ -31,7 +31,7 @@ FaceElementForcesAndSourcesCore(m_field) {
 
 NeummanForcesSurface::OpNeumannForce::OpNeumannForce(
   const string field_name,Vec &_F,bCForce &data,
-  boost::ptr_vector<MethodsForOp> &methods_op
+  boost::ptr_vector<MethodForForceScaling> &methods_op
 ):
 FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
 F(_F),
@@ -81,14 +81,14 @@ PetscErrorCode NeummanForcesSurface::OpNeumannForce::doWork(
 
   }
 
-  ierr = MethodsForOp::applyScale(getFEMethod(), methodsOp, Nf); CHKERRQ(ierr);
+  ierr = MethodForForceScaling::applyScale(getFEMethod(), methodsOp, Nf); CHKERRQ(ierr);
   ierr = VecSetValues(F,data.getIndices().size(), &data.getIndices()[0], &Nf[0], ADD_VALUES); CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
 
 NeummanForcesSurface::OpNeumannPreassure::OpNeumannPreassure(
-  const string field_name, Vec &_F,bCPreassure &data,boost::ptr_vector<MethodsForOp> &methods_op,bool ho_geometry
+  const string field_name, Vec &_F,bCPreassure &data,boost::ptr_vector<MethodForForceScaling> &methods_op,bool ho_geometry
 ):
 FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
 F(_F),
@@ -138,7 +138,7 @@ PetscErrorCode NeummanForcesSurface::OpNeumannPreassure::doWork(
   /*cerr << "VecSetValues\n";
   cerr << Nf << endl;
   cerr << data.getIndices() << endl;*/
-  ierr = MethodsForOp::applyScale(getFEMethod(),methodsOp,Nf); CHKERRQ(ierr);
+  ierr = MethodForForceScaling::applyScale(getFEMethod(),methodsOp,Nf); CHKERRQ(ierr);
   ierr = VecSetValues(F,data.getIndices().size(),
   &data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
 
@@ -147,7 +147,7 @@ PetscErrorCode NeummanForcesSurface::OpNeumannPreassure::doWork(
 
 NeummanForcesSurface::OpNeumannFlux::OpNeumannFlux(
   const string field_name,Vec &_F,
-  bCPreassure &data,boost::ptr_vector<MethodsForOp> &methods_op,
+  bCPreassure &data,boost::ptr_vector<MethodForForceScaling> &methods_op,
   bool ho_geometry
 ):
 FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
@@ -194,7 +194,7 @@ PetscErrorCode NeummanForcesSurface::OpNeumannFlux::doWork(
   //cerr << "VecSetValues\n";
   //cerr << Nf << endl;
   //cerr << data.getIndices() << endl;
-  ierr = MethodsForOp::applyScale(getFEMethod(), methodsOp, Nf); CHKERRQ(ierr);
+  ierr = MethodForForceScaling::applyScale(getFEMethod(), methodsOp, Nf); CHKERRQ(ierr);
   ierr = VecSetValues(F, data.getIndices().size(), &data.getIndices()[0], &Nf[0], ADD_VALUES); CHKERRQ(ierr);
 
   PetscFunctionReturn(0);

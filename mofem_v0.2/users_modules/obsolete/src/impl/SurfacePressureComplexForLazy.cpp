@@ -478,7 +478,7 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::calcTrac
 
   ublas::vector<double> scale(1,1);
   //cerr << methodsOp.size() << endl;
-  ierr = MethodsForOp::applyScale(this,methodsOp,scale); CHKERRQ(ierr);
+  ierr = MethodForForceScaling::applyScale(this,methodsOp,scale); CHKERRQ(ierr);
   tLocNodal *= scale[0];
 
   //cerr << tLocNodal << endl;

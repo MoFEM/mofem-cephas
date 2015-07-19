@@ -28,7 +28,7 @@ NodalForce::MyFE::MyFE(FieldInterface &m_field): VertexElementForcesAndSourcesCo
 }
 
 NodalForce::OpNodalForce::OpNodalForce(const string field_name,Vec &_F,bCForce &data,
-  boost::ptr_vector<MethodsForOp> &methods_op,bool use_snes_f):
+  boost::ptr_vector<MethodForForceScaling> &methods_op,bool use_snes_f):
   VertexElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
   F(_F),
   useSnesF(use_snes_f),
@@ -65,7 +65,7 @@ NodalForce::OpNodalForce::OpNodalForce(const string field_name,Vec &_F,bCForce &
       }
     }
 
-    ierr = MethodsForOp::applyScale(getFEMethod(),methodsOp,Nf); CHKERRQ(ierr);
+    ierr = MethodForForceScaling::applyScale(getFEMethod(),methodsOp,Nf); CHKERRQ(ierr);
     Vec myF = F;
     if(useSnesF) {
       myF = getFEMethod()->snes_f;
