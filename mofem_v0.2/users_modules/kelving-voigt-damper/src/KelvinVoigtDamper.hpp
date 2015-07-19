@@ -129,9 +129,11 @@ struct KelvinVoigtDamper {
       PetscFunctionBegin;
       gradientUDot.resize(3,3,false);
       noalias(gradientUDot) = FDot;
-      traceEngineeringStrainDot = 0;
       for(int ii = 0;ii<3;ii++) {
         gradientUDot(ii,ii) -= 1;
+      }
+      traceEngineeringStrainDot = 0;
+      for(int ii = 0;ii<3;ii++) {
         traceEngineeringStrainDot += gradientUDot(ii,ii);
       }
       engineringStrainDot.resize(3,3,false);
@@ -513,10 +515,8 @@ struct KelvinVoigtDamper {
           PetscFunctionReturn(0);
         }
 
-
         PetscErrorCode ierr;
         activeVariables.resize(nbActiveVariables[tagS[DAMPERSTRESS]],false);
-
         for(int gg = 0;gg<nbGaussPts;gg++) {
 
           ublas::matrix<double> &F = (commonData.gradAtGaussPts[commonData.spatialPositionName])[gg];
@@ -638,13 +638,6 @@ struct KelvinVoigtDamper {
   /** \brief Assemble internal force vector
   \ingroup nonlinear_elastic_elem
 
-  \f[
-  (\mathbf{f}^\textrm{internal}_x)_i =
-  \int_V
-  \frac{\partial N_i}{\partial X_j} \sigma_{ij}
-  \textrm{d}V
-  \f]
-
   */
   struct OpRhsStress: public AssembleVector {
     CommonData &commonData;
@@ -741,21 +734,14 @@ struct KelvinVoigtDamper {
     }
   };
 
-  /** \brief Assemble matrix \f$\mathbf{K}_{xx}\f$
+  /** \brief Assemble matrix
   */
   struct OpLhsdxdx: public AssembleMatrix {
     CommonData &commonData;
     OpLhsdxdx(CommonData &common_data):
     AssembleMatrix(
       common_data.spatialPositionName,
-      common_data.spatialPositionNameDot
-    ),
-    commonData(common_data) {
-    }
-    OpLhsdxdx(CommonData &common_data,string col_field_name):
-    AssembleMatrix(
-      common_data.spatialPositionName,
-      col_field_name
+      common_data.spatialPositionName
     ),
     commonData(common_data) {
     }
@@ -776,7 +762,6 @@ struct KelvinVoigtDamper {
             for(int rr = 0;rr<3;rr++) {     // Loop over dsigma_ii/dX_rr
               for(int ii = 0;ii<9;ii++) {   // ii represents components of stress tensor
                 dStress_dx(ii,3*dd+rr) += jac_stress(ii,3*rr+jj)*a;
-                dStress_dx(ii,3*dd+rr) += jac_stress(ii,9+3*rr+jj)*a*getFEMethod()->ts_a;
               }
             }
           }
@@ -847,6 +832,104 @@ struct KelvinVoigtDamper {
     }
   };
 
+    /** \brief Assemble matrix
+  */
+  struct OpLhsdxdot: public AssembleMatrix {
+    CommonData &commonData;
+    OpLhsdxdot(CommonData &common_data):
+    AssembleMatrix(
+      common_data.spatialPositionName,
+      common_data.spatialPositionName
+    ),
+    commonData(common_data) {
+    }
+    ublas::matrix<double> dStress_dot;
+    PetscErrorCode get_dStress_dot(
+      DataForcesAndSurcesCore::EntData &col_data,int gg
+    ) {
+      PetscFunctionBegin;
+      try {
+        int nb_col = col_data.getIndices().size();
+        dStress_dot.resize(9,nb_col,false);
+        dStress_dot.clear();
+        const MatrixAdaptor diffN = col_data.getDiffN(gg,nb_col/3);
+        ublas::matrix<double> &jac_stress = commonData.jacStress[gg];
+        for(int dd = 0;dd<nb_col/3;dd++) {  // DoFs in column
+          for(int jj = 0;jj<3;jj++) {       // cont. DoFs in column
+            double a = diffN(dd,jj);
+            for(int rr = 0;rr<3;rr++) {     // Loop over dsigma_ii/dX_rr
+              for(int ii = 0;ii<9;ii++) {   // ii represents components of stress tensor
+                dStress_dot(ii,3*dd+rr) += jac_stress(ii,9+3*rr+jj)*a*getFEMethod()->ts_a;
+              }
+            }
+          }
+        }
+      } catch (const std::exception& ex) {
+        ostringstream ss;
+        ss << "throw in method: " << ex.what() << endl;
+        SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+      }
+      PetscFunctionReturn(0);
+    }
+    PetscErrorCode doWork(
+      int row_side,int col_side,
+      EntityType row_type,EntityType col_type,
+      DataForcesAndSurcesCore::EntData &row_data,
+      DataForcesAndSurcesCore::EntData &col_data
+    ) {
+      PetscFunctionBegin;
+
+      if(commonData.skipThis) {
+        PetscFunctionReturn(0);
+      }
+
+      int nb_row = row_data.getIndices().size();
+      int nb_col = col_data.getIndices().size();
+      if(nb_row == 0) PetscFunctionReturn(0);
+      if(nb_col == 0) PetscFunctionReturn(0);
+      try {
+        K.resize(nb_row,nb_col,false);
+        K.clear();
+        int nb_gauss_pts = row_data.getN().size1();
+        for(int gg = 0;gg!=nb_gauss_pts;gg++) {
+          ierr = get_dStress_dot(col_data,gg); CHKERRQ(ierr);
+          double val = getVolume()*getGaussPts()(3,gg);
+          if(getHoGaussPtsDetJac().size()>0) {
+            val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
+          }
+          //cerr << dStress_dot << endl;
+          dStress_dot *= val;
+          const MatrixAdaptor &diffN = row_data.getDiffN(gg,nb_row/3);
+          { //integrate element stiffness matrix
+            for(int dd1 = 0;dd1<nb_row/3;dd1++) {
+              for(int rr1 = 0;rr1<3;rr1++) {
+                for(int dd2 = 0;dd2<nb_col/3;dd2++) {
+                  for(int rr2 = 0;rr2<3;rr2++) {
+                    K(3*dd1+rr1,3*dd2+rr2) += (
+                      diffN(dd1,0)*dStress_dot(3*rr1+0,3*dd2+rr2)+
+                      diffN(dd1,1)*dStress_dot(3*rr1+1,3*dd2+rr2)+
+                      diffN(dd1,2)*dStress_dot(3*rr1+2,3*dd2+rr2)
+                    );
+                  }
+                }
+              }
+            }
+          }
+        }
+        //cerr << "G " << getMoFEMFEPtr()->get_ref_ent() << endl << K << endl;
+        ierr = aSemble(
+          row_side,col_side,row_type,col_type,row_data,col_data
+        ); CHKERRQ(ierr);
+
+      } catch (const std::exception& ex) {
+        ostringstream ss;
+        ss << "throw in method: " << ex.what() << endl;
+        SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+      }
+      PetscFunctionReturn(0);
+    }
+  };
+
   PetscErrorCode setBlockDataMap() {
     PetscFunctionBegin;
     ErrorCode rval;
@@ -855,7 +938,7 @@ struct KelvinVoigtDamper {
       if(it->get_name().compare(0,6,"DAMPER") == 0) {
         vector<double> data;
         ierr = it->get_attributes(data); CHKERRQ(ierr);
-        if(data.size()!=2) {
+        if(data.size()<2) {
           SETERRQ(PETSC_COMM_SELF,1,"Data inconsistency");
         }
         rval = mField.get_moab().get_entities_by_type(
@@ -868,16 +951,16 @@ struct KelvinVoigtDamper {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode setOperators(const int tag,string col_field_name) {
+  PetscErrorCode setOperators(const int tag) {
     PetscFunctionBegin;
 
     DamperFE *fe_ptr[] = { &feRhs, &feLhs };
     for(int ss = 0;ss<2;ss++) {
       fe_ptr[ss]->getOpPtrVector().push_back(
-        new OpGetDataAtGaussPts("SPATIAL_POSITION",commonData,false,true)
+        new OpGetDataAtGaussPts(commonData.spatialPositionName,commonData,false,true)
       );
       fe_ptr[ss]->getOpPtrVector().push_back(
-        new OpGetDataAtGaussPts("SPATIAL_POSITION_DOT",commonData,false,true)
+        new OpGetDataAtGaussPts(commonData.spatialPositionNameDot,commonData,false,true)
       );
     }
 
@@ -891,7 +974,7 @@ struct KelvinVoigtDamper {
       // Right hand side operators
       feRhs.getOpPtrVector().push_back(
         new OpJacobian(
-          "SPATIAL_POSITION",tags,ce,commonData,true,false
+          commonData.spatialPositionName,tags,ce,commonData,true,false
         )
       );
       feRhs.getOpPtrVector().push_back(
@@ -900,10 +983,13 @@ struct KelvinVoigtDamper {
 
       // Left hand side operators
       feLhs.getOpPtrVector().push_back(
-        new OpJacobian("SPATIAL_POSITION",tags,ce,commonData,false,true)
+        new OpJacobian(commonData.spatialPositionName,tags,ce,commonData,false,true)
       );
       feLhs.getOpPtrVector().push_back(
-        new OpLhsdxdx(commonData,col_field_name)
+        new OpLhsdxdx(commonData)
+      );
+      feLhs.getOpPtrVector().push_back(
+        new OpLhsdxdot(commonData)
       );
     }
 
