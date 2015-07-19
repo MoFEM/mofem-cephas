@@ -381,7 +381,7 @@ struct ElasticMaterials {
         set = true;
         vector<double> data;
         ierr = it->get_attributes(data); CHKERRQ(ierr);
-        if(data.size()!=2) {
+        if(data.size()<2) {
           SETERRQ(PETSC_COMM_SELF,1,"Data inconsistency");
         }
         rval = mField.get_moab().get_entities_by_type(

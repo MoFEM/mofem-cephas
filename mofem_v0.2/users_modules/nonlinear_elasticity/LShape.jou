@@ -17,11 +17,10 @@ Sideset 102  surface all
 block 1 volume all 
 block 1 name 'MAT_ELASTIC'
 block 1 attribute count 4
-block 1 attribute index 1 1
+block 1 attribute index 1 100
 block 1 attribute index 2 0 
 block 1 attribute index 3 0 
 block 1 attribute index 4 0
-
 
 create Displacement  on surface 3 dof 1 dof 2 dof 3 fix 0
 #create force  on surface 12  vector 1 0 0 0 0 0 
@@ -38,11 +37,18 @@ block 2 attribute index 2 0.
 block 2 attribute index 3 0.
 block 2 attribute index 4 0.
 
+block 3 volume 1
+block 3 name "DAMPER")
+block 3 attribute count 2
+block 3 attribute index 1 0.1
+block 3 attribute index 2 -1
+
 volume all scheme Tetmesh
 volume all size auto factor 9
 mesh volume all
 
 #save as "/Users/likask/MyBuild/mofem-bitbucket/mofem_v0.2/meshes/LShapeCoarseBodyForce.cub" overwrite
+
 
 
 
