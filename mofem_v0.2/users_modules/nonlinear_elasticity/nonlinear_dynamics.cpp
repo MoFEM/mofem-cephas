@@ -3,7 +3,7 @@
  *
  * \brief Non-linear elastic dynamics.
 
- NOTE: No block solver is only for settings, some features are not implemented
+ NOTE: For block solver is only for settings, some features are not implemented
  for this part.
 
  */
@@ -39,6 +39,7 @@ using namespace MoFEM;
 #include <SurfacePressure.hpp>
 #include <NodalForce.hpp>
 #include <SurfacePressureComplexForLazy.hpp>
+#include <FluidPressure.hpp>
 #include <adolc/adolc.h>
 #include <ConvectiveMassElement.hpp>
 #include <NonLinearElasticElement.hpp>
@@ -340,6 +341,9 @@ int main(int argc, char *argv[]) {
   }
   // Add nodal force element
   ierr = MetaNodalForces::addElement(m_field,"SPATIAL_POSITION"); CHKERRQ(ierr);
+  // Add fluid pressure finite elements
+  FluidPressure fluid_pressure_fe(m_field);
+  fluid_pressure_fe.addNeumannFluidPressureBCElements("SPATIAL_POSITION");
 
   // Velocity
   ierr = m_field.add_field("SPATIAL_VELOCITY",H1,3,MF_ZERO); CHKERRQ(ierr);
@@ -458,6 +462,7 @@ int main(int argc, char *argv[]) {
     ierr = m_field.modify_problem_add_finite_element("Kuu","ELASTIC"); CHKERRQ(ierr);
     ierr = m_field.modify_problem_add_finite_element("Kuu","NEUMANN_FE"); CHKERRQ(ierr);
     ierr = m_field.modify_problem_add_finite_element("Kuu","FORCE_FE"); CHKERRQ(ierr);
+    ierr = m_field.modify_problem_add_finite_element("Kuu","FLUID_PRESSURE_FE"); CHKERRQ(ierr);
     ierr = m_field.modify_problem_ref_level_add_bit("Kuu",bit_level0); CHKERRQ(ierr);
     if(is_partitioned) {
       ierr = m_field.build_partitioned_problem("Kuu"); CHKERRQ(ierr);
@@ -478,6 +483,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.modify_problem_add_finite_element("DYNAMICS","DAMPER"); CHKERRQ(ierr);
   ierr = m_field.modify_problem_add_finite_element("DYNAMICS","NEUMANN_FE"); CHKERRQ(ierr);
   ierr = m_field.modify_problem_add_finite_element("DYNAMICS","FORCE_FE"); CHKERRQ(ierr);
+  ierr = m_field.modify_problem_add_finite_element("DYNAMICS","FLUID_PRESSURE_FE"); CHKERRQ(ierr);
   ierr = m_field.modify_problem_add_finite_element("DYNAMICS","MASS_ELEMENT"); CHKERRQ(ierr);
   ierr = m_field.modify_problem_add_finite_element("DYNAMICS","VELOCITY_ELEMENT"); CHKERRQ(ierr);
   //set refinment level for problem
@@ -620,6 +626,7 @@ int main(int argc, char *argv[]) {
   for(;fit!=nodal_forces.end();fit++) {
     loops_to_do_Rhs.push_back(TsCtx::loop_pair_type(fit->first,&fit->second->getLoopFe()));
   }
+  loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("FLUID_PRESSURE_FE",&fluid_pressure_fe.getLoopFe()));
   loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("MASS_ELEMENT",&inertia.getLoopFeMassRhs()));
   #ifdef BLOCKED_PROBLEM
     ts_ctx.get_preProcess_to_do_IFunction().push_back(&shell_matrix_residual);
@@ -729,6 +736,7 @@ int main(int argc, char *argv[]) {
       loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type(fit->first,&fit->second->getLoopFe()));
     }
     inertia.getLoopFeMassRhs().ts_t = 0;
+    loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("FLUID_PRESSURE_FE",&fluid_pressure_fe.getLoopFe()));
     loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ELASTIC",&inertia.getLoopFeMassRhs()));
     snes_ctx.get_postProcess_to_do_Rhs().push_back(&my_dirichlet_bc);
 
