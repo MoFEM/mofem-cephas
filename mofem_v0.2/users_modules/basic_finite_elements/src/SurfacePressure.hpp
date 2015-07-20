@@ -20,27 +20,6 @@
 #ifndef __SURFACE_PERSSURE_HPP__
 #define __SURFACE_PERSSURE_HPP__
 
-/// Class used to scale loads, f.e. in arc-length control
-struct MethodForForceScaling {
-
-  virtual PetscErrorCode scaleNf(const FEMethod *fe,ublas::vector<FieldData> &Nf) = 0;
-
-  static PetscErrorCode applyScale(
-    const FEMethod *fe,
-    boost::ptr_vector<MethodForForceScaling> &methodsOp,ublas::vector<FieldData> &Nf) {
-    PetscErrorCode ierr;
-    PetscFunctionBegin;
-    boost::ptr_vector<MethodForForceScaling>::iterator vit = methodsOp.begin();
-    for(;vit!=methodsOp.end();vit++) {
-      ierr = vit->scaleNf(fe,Nf); CHKERRQ(ierr);
-    }
-    PetscFunctionReturn(0);
-  }
-
-  virtual ~MethodForForceScaling() {}
-
-};
-
 /** \brief Force and pressures applied to surfaces
   * \ingroup mofem_static_boundary_conditions
   */

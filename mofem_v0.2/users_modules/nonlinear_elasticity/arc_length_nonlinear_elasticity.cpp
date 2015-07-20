@@ -42,6 +42,7 @@ using namespace MoFEM;
 #include <PostProcStresses.hpp>
 #include <Projection10NodeCoordsOnField.hpp>
 
+#include <MethodForForceScaling.hpp>
 #include <SurfacePressure.hpp>
 #include <NodalForce.hpp>
 

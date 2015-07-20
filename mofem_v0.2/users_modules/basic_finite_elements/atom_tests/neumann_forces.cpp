@@ -32,6 +32,7 @@ using namespace MoFEM;
 #include <fstream>
 #include <iostream>
 
+#include <MethodForForceScaling.hpp>
 #include <SurfacePressure.hpp>
 
 static char help[] = "...\n\n";

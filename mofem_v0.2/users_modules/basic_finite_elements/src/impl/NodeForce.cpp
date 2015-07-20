@@ -18,6 +18,7 @@
 
 #include <MoFEM.hpp>
 using namespace MoFEM;
+#include <MethodForForceScaling.hpp>
 #include <SurfacePressure.hpp>
 #include <NodalForce.hpp>
 
