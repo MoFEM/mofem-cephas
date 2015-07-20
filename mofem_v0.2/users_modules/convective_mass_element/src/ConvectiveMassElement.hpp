@@ -133,6 +133,8 @@ struct ConvectiveMassElement {
   };
   CommonData commonData;
 
+  boost::ptr_vector<MethodForForceScaling> methodsOp;
+
   struct OpGetDataAtGaussPts: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     vector<ublas::vector<double> > &valuesAtGaussPts;
@@ -210,12 +212,21 @@ struct ConvectiveMassElement {
     bool lInear;
     bool fieldDisp;
 
+    boost::ptr_vector<MethodForForceScaling> &methodsOp;
+
+    OpMassJacobian(
+      const string field_name,
+      BlockData &data,
+      CommonData &common_data,
+      boost::ptr_vector<MethodForForceScaling> &methods_op,
+      int tag,
+      bool jacobian = true,
+      bool linear = false
+    );
+
     ublas::vector<adouble> a,dot_W,dp_dt,a_res;
     ublas::matrix<adouble> h,H,invH,F,g,G;
     vector<double> active;
-    OpMassJacobian(
-      const string field_name,BlockData &data,CommonData &common_data,int tag,bool jacobian = true,bool linear = false
-    );
 
     PetscErrorCode doWork(
       int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data

@@ -32,6 +32,7 @@ using namespace MoFEM;
 
 #include <adolc/adolc.h>
 #include <DirichletBC.hpp>
+#include <MethodForForceScaling.hpp>
 #include <ConvectiveMassElement.hpp>
 
 #ifndef WITH_ADOL_C
@@ -45,7 +46,6 @@ F(PETSC_NULL),
 initV(false) {
   meshPositionsFieldName = "NoNE";
 }
-
 
 int ConvectiveMassElement::MyVolumeFE::getRule(int order) { return order; };
 
@@ -203,7 +203,13 @@ OpGetDataAtGaussPts(field_name,
 }
 
 ConvectiveMassElement::OpMassJacobian::OpMassJacobian(
-  const string field_name,BlockData &data,CommonData &common_data,int tag,bool jacobian,bool linear
+  const string field_name,
+  BlockData &data,
+  CommonData &common_data,
+  boost::ptr_vector<MethodForForceScaling> &methods_op,
+  int tag,
+  bool jacobian,
+  bool linear
 ):
 VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
 dAta(data),
@@ -211,7 +217,8 @@ commonData(common_data),
 tAg(tag),
 jAcobian(jacobian),
 lInear(linear),
-fieldDisp(false) {
+fieldDisp(false),
+methodsOp(methods_op) {
 }
 
 PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
@@ -304,6 +311,7 @@ PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
         noalias(G) = prod(g,invH);
         double rho0 = dAta.rho0;
         ublas::vector<double>& a0 = dAta.a0;
+        ierr = MethodForForceScaling::applyScale(getFEMethod(),methodsOp,a0); CHKERRQ(ierr);
         if(!lInear) {
           noalias(F) = prod(h,invH);
           adouble detF;
@@ -1584,7 +1592,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
       }
       ierr = mField.add_ents_to_finite_element_by_TETs(add_tets,element_name); CHKERRQ(ierr);
     }
-    
+
     PetscFunctionReturn(0);
   }
 
@@ -1712,7 +1720,9 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     }
     map<int,BlockData>::iterator sit = setOfBlocks.begin();
     for(;sit!=setOfBlocks.end();sit++) {
-      feMassRhs.getOpPtrVector().push_back(new OpMassJacobian(spatial_position_field_name,sit->second,commonData,tAg,false,linear));
+      feMassRhs.getOpPtrVector().push_back(new OpMassJacobian(
+        spatial_position_field_name,sit->second,commonData,methodsOp,tAg,false,linear
+      ));
       feMassRhs.getOpPtrVector().push_back(new OpMassRhs(spatial_position_field_name,sit->second,commonData));
     }
 
@@ -1731,7 +1741,9 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     }
     sit = setOfBlocks.begin();
     for(;sit!=setOfBlocks.end();sit++) {
-      feMassLhs.getOpPtrVector().push_back(new OpMassJacobian(spatial_position_field_name,sit->second,commonData,tAg,true,linear));
+      feMassLhs.getOpPtrVector().push_back(new OpMassJacobian(
+        spatial_position_field_name,sit->second,commonData,methodsOp,tAg,true,linear
+      ));
       feMassLhs.getOpPtrVector().push_back(new OpMassLhs_dM_dv(spatial_position_field_name,velocity_field_name,sit->second,commonData));
       feMassLhs.getOpPtrVector().push_back(new OpMassLhs_dM_dx(spatial_position_field_name,spatial_position_field_name,sit->second,commonData));
       if(mField.check_field(material_position_field_name)) {
@@ -1890,7 +1902,9 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     }
     map<int,BlockData>::iterator sit = setOfBlocks.begin();
     for(;sit!=setOfBlocks.end();sit++) {
-      feMassRhs.getOpPtrVector().push_back(new OpMassJacobian(spatial_position_field_name,sit->second,commonData,tAg,false,linear));
+      feMassRhs.getOpPtrVector().push_back(new OpMassJacobian(
+        spatial_position_field_name,sit->second,commonData,methodsOp,tAg,false,linear
+      ));
       feMassRhs.getOpPtrVector().push_back(new OpMassRhs(spatial_position_field_name,sit->second,commonData));
     }
 
@@ -1904,7 +1918,9 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     }
     sit = setOfBlocks.begin();
     for(;sit!=setOfBlocks.end();sit++) {
-      feMassLhs.getOpPtrVector().push_back(new OpMassJacobian(spatial_position_field_name,sit->second,commonData,tAg,true,linear));
+      feMassLhs.getOpPtrVector().push_back(new OpMassJacobian(
+        spatial_position_field_name,sit->second,commonData,methodsOp,tAg,true,linear
+      ));
       feMassLhs.getOpPtrVector().push_back(new OpMassLhs_dM_dv(spatial_position_field_name,spatial_position_field_name,sit->second,commonData));
       if(mField.check_field(material_position_field_name)) {
         feMassLhs.meshPositionsFieldName = material_position_field_name;
@@ -1921,7 +1937,9 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     }
     sit = setOfBlocks.begin();
     for(;sit!=setOfBlocks.end();sit++) {
-      feMassAuxLhs.getOpPtrVector().push_back(new OpMassJacobian(spatial_position_field_name,sit->second,commonData,tAg,true,linear));
+      feMassAuxLhs.getOpPtrVector().push_back(new OpMassJacobian(
+        spatial_position_field_name,sit->second,commonData,methodsOp,tAg,true,linear
+      ));
       feMassAuxLhs.getOpPtrVector().push_back(new OpMassLhs_dM_dx(spatial_position_field_name,spatial_position_field_name,sit->second,commonData));
       if(mField.check_field(material_position_field_name)) {
         feMassAuxLhs.meshPositionsFieldName = material_position_field_name;
