@@ -1,8 +1,3 @@
-/* Copyright (C) 2009, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
- * FIXME: DESCRIPTION
- */
-
 /* This file is part of mofem.
  * mofem is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -34,8 +29,8 @@ PetscErrorCode CauchyGreenDeformation(__CLPK_doublecomplex *xF,__CLPK_doublecomp
   int ii=0,jj;
   for(;ii<3;ii++) {
     for(jj=0;jj<ii;jj++) {
-      xC[ii*3+jj].r = xC[jj*3+ii].r; 
-      xC[ii*3+jj].i = xC[jj*3+ii].i; 
+      xC[ii*3+jj].r = xC[jj*3+ii].r;
+      xC[ii*3+jj].i = xC[jj*3+ii].i;
   }}
   PetscFunctionReturn(0);
 }
@@ -45,7 +40,7 @@ PetscErrorCode TakeIm(__CLPK_doublecomplex *xA,double *imA) {
   for(;ii<3;ii++) {
     for(jj=0;jj<3;jj++) {
       imA[ii*3+jj] = xA[ii*3+jj].i;
-    } } 
+    } }
   PetscFunctionReturn(0);
 }
 PetscErrorCode TakeRe(__CLPK_doublecomplex *xA,double *reA) {
@@ -53,9 +48,9 @@ PetscErrorCode TakeRe(__CLPK_doublecomplex *xA,double *reA) {
   int jj,ii = 0;
   for(;ii<3;ii++) {
     for(jj=0;jj<3;jj++) {
-      reA[ii*3+jj] = xA[ii*3+jj].r; 
-    } 
-  } 
+      reA[ii*3+jj] = xA[ii*3+jj].r;
+    }
+  }
   PetscFunctionReturn(0);
 }
 PetscErrorCode PiolaKrihoff1_PullBack(__CLPK_doublecomplex *det_xH,__CLPK_doublecomplex *inv_xH,__CLPK_doublecomplex *xP,__CLPK_doublecomplex *xP_PullBack) {
@@ -107,26 +102,26 @@ PetscErrorCode HierarhicalDeformationGradient(
   PetscFunctionBegin;
   int ee = 0;
   for(;ee<6;ee++) {
-    if(NBEDGE_H1(order_edge[ee])==0) continue; 
-    double edge_grad[9]; 
-    bzero(edge_grad,9*sizeof(double)); 
-    double *diff = &((diffN_edge[ee])[gg*3*NBEDGE_H1(order_max_edge[ee])]); 
-    ierr = H1_EdgeGradientOfDeformation_hierachical(order_edge[ee],diff,dofs_edge[ee],edge_grad); CHKERRQ(ierr); 
-    cblas_daxpy(9,1,edge_grad,1,GRAD,1); } 
-  int ff = 0; 
-  for(;ff<4;ff++) { 
-    if(NBFACE_H1(order_face[ff])==0) continue; 
-    double face_grad[9]; 
-    bzero(face_grad,9*sizeof(double)); 
-    double *diff = &((diffN_face[ff])[gg*3*NBFACE_H1(order_max_face[ff])]); 
-    ierr = H1_FaceGradientOfDeformation_hierachical(order_face[ff],diff,dofs_face[ff],face_grad); CHKERRQ(ierr); 
-    cblas_daxpy(9,1,face_grad,1,GRAD,1); } 
-  if(NBVOLUME_H1(order_volume)>0) { 
-    double volume_grad[9]; 
-    bzero(volume_grad,9*sizeof(double)); 
-    double *diff = &((diffN_volume)[gg*3*NBVOLUME_H1(order_max_volume)]); 
-    ierr = H1_VolumeGradientOfDeformation_hierachical(order_volume,diff,dofs_volume,volume_grad); CHKERRQ(ierr); 
-    cblas_daxpy(9,1,volume_grad,1,GRAD,1); } 
+    if(NBEDGE_H1(order_edge[ee])==0) continue;
+    double edge_grad[9];
+    bzero(edge_grad,9*sizeof(double));
+    double *diff = &((diffN_edge[ee])[gg*3*NBEDGE_H1(order_max_edge[ee])]);
+    ierr = H1_EdgeGradientOfDeformation_hierachical(order_edge[ee],diff,dofs_edge[ee],edge_grad); CHKERRQ(ierr);
+    cblas_daxpy(9,1,edge_grad,1,GRAD,1); }
+  int ff = 0;
+  for(;ff<4;ff++) {
+    if(NBFACE_H1(order_face[ff])==0) continue;
+    double face_grad[9];
+    bzero(face_grad,9*sizeof(double));
+    double *diff = &((diffN_face[ff])[gg*3*NBFACE_H1(order_max_face[ff])]);
+    ierr = H1_FaceGradientOfDeformation_hierachical(order_face[ff],diff,dofs_face[ff],face_grad); CHKERRQ(ierr);
+    cblas_daxpy(9,1,face_grad,1,GRAD,1); }
+  if(NBVOLUME_H1(order_volume)>0) {
+    double volume_grad[9];
+    bzero(volume_grad,9*sizeof(double));
+    double *diff = &((diffN_volume)[gg*3*NBVOLUME_H1(order_max_volume)]);
+    ierr = H1_VolumeGradientOfDeformation_hierachical(order_volume,diff,dofs_volume,volume_grad); CHKERRQ(ierr);
+    cblas_daxpy(9,1,volume_grad,1,GRAD,1); }
   PetscFunctionReturn(0);
 }
 
@@ -152,7 +147,7 @@ PetscErrorCode Calculate_Stresses_at_GaussPoint(
   bzero(ZERO,sizeof(double)*9);
 
   __CLPK_doublecomplex xh[9],xH[9],inv_xH[9],xF[9],xF_tmp[9],xC[9],xS[9],xP[9],xSigma[9],xCauchyStress[9],xPsi,det_xF,det_xH;
-  
+
   double H[9];
   ierr = GradientOfDeformation(diffN,dofs_X_node,H);  CHKERRQ(ierr);
   ierr = HierarhicalDeformationGradient(
@@ -160,10 +155,10 @@ PetscErrorCode Calculate_Stresses_at_GaussPoint(
     order_X_edge,order_X_face,order_X_volume,
     diffN,diffN_edge,diffN_face,diffN_volume,
     dofs_X_edge,dofs_X_face,dofs_X_volume,
-    gg,H); CHKERRQ(ierr); 
+    gg,H); CHKERRQ(ierr);
   ierr = MakeComplexTensor(H,ZERO,xH); CHKERRQ(ierr);
   cblas_zcopy(9,xH,1,inv_xH,1);
-  //print_mat_complex(xH,3,3); fprintf(stdout,"xH\n"); 
+  //print_mat_complex(xH,3,3); fprintf(stdout,"xH\n");
   ierr = DeterminantComplexGradient(xH,&det_xH); CHKERRQ(ierr);
   ierr = InvertComplexGradient(inv_xH); CHKERRQ(ierr);
 
@@ -174,11 +169,11 @@ PetscErrorCode Calculate_Stresses_at_GaussPoint(
     order_x_edge,order_x_face,order_x_volume,
     diffN,diffN_edge,diffN_face,diffN_volume,
     dofs_x_edge,dofs_x_face,dofs_x_volume,
-    gg,h); CHKERRQ(ierr); 
+    gg,h); CHKERRQ(ierr);
   ierr = MakeComplexTensor(h,ZERO,xh); CHKERRQ(ierr);
-  //print_mat_complex(xh,3,3); fprintf(stdout,"xh\n"); 
-  ierr = SpatialGradientOfDeformation(xh,inv_xH,xF); CHKERRQ(ierr); 
-  //print_mat_complex(xF,3,3); fprintf(stdout,"xF\n"); 
+  //print_mat_complex(xh,3,3); fprintf(stdout,"xh\n");
+  ierr = SpatialGradientOfDeformation(xh,inv_xH,xF); CHKERRQ(ierr);
+  //print_mat_complex(xF,3,3); fprintf(stdout,"xF\n");
 
   //temperature
   *themp = 0;
@@ -193,19 +188,19 @@ PetscErrorCode Calculate_Stresses_at_GaussPoint(
     cblas_zgemm(CblasRowMajor,CblasNoTrans,CblasNoTrans,3,3,3,&tmp1,xF_tmp,3,inv_xF_themp,3,&tmp2,xF,3);
   }
 
-  //print_mat_complex(xF,3,3); fprintf(stdout,"xF themp\n"); 
+  //print_mat_complex(xF,3,3); fprintf(stdout,"xF themp\n");
   cblas_zcopy(9,xF,1,xF_tmp,1);
-  //print_mat_complex(xF,3,3); fprintf(stdout,"xF tmp\n"); 
-  ierr = DeterminantComplexGradient(xF_tmp,&det_xF); CHKERRQ(ierr); 
+  //print_mat_complex(xF,3,3); fprintf(stdout,"xF tmp\n");
+  ierr = DeterminantComplexGradient(xF_tmp,&det_xF); CHKERRQ(ierr);
   //printf("det_xF %6.4e+%6.4ei\n", det_xF.r,det_xF.i);
   //printf("\n\n\n");
 
-  ierr = CauchyGreenDeformation(xF,xC); CHKERRQ(ierr); 
-  ierr = StrainEnergy(lambda,mu,xF,xC,&det_xF,&xPsi,matctx); CHKERRQ(ierr); 
+  ierr = CauchyGreenDeformation(xF,xC); CHKERRQ(ierr);
+  ierr = StrainEnergy(lambda,mu,xF,xC,&det_xF,&xPsi,matctx); CHKERRQ(ierr);
 
-  ierr = PiolaKirhoiff2(lambda,mu,xF,xC,&det_xF,xS,matctx); CHKERRQ(ierr); 
-  ierr = PiolaKirhoiff1(lambda,mu,xF,xS,xP); CHKERRQ(ierr); 
-  ierr = ElshebyStress(&xPsi,xF,xP,xSigma); 
+  ierr = PiolaKirhoiff2(lambda,mu,xF,xC,&det_xF,xS,matctx); CHKERRQ(ierr);
+  ierr = PiolaKirhoiff1(lambda,mu,xF,xS,xP); CHKERRQ(ierr);
+  ierr = ElshebyStress(&xPsi,xF,xP,xSigma);
   ierr = CauchyStress(xF,&det_xF,xP,xCauchyStress); CHKERRQ(ierr);
 
   *Psi = xPsi.r;
@@ -239,7 +234,7 @@ PetscErrorCode bzero_Fint(
   }
   if(Fint_volume!=NULL) {
     bzero(Fint_volume,3*NBVOLUME_H1(order_volume)*sizeof(double));
-  }  
+  }
   PetscFunctionReturn(0);
 }
 PetscErrorCode Fint_Hh_hierarchical(
@@ -293,7 +288,7 @@ PetscErrorCode Fint_Hh_hierarchical(
       ierr = MakeComplexTensor(H,iH,xH); CHKERRQ(ierr);
     }
     cblas_zcopy(9,xH,1,inv_xH,1);
-    //print_mat_complex(xH,3,3); fprintf(stdout,"xH\n"); 
+    //print_mat_complex(xH,3,3); fprintf(stdout,"xH\n");
     ierr = DeterminantComplexGradient(xH,&det_xH); CHKERRQ(ierr);
     ierr = InvertComplexGradient(inv_xH); CHKERRQ(ierr);
     //spatial
@@ -309,11 +304,11 @@ PetscErrorCode Fint_Hh_hierarchical(
       order_x_edge,order_x_face,order_x_volume,
       diffN,diffN_edge,diffN_face,diffN_volume,
       dofs_x_edge,dofs_x_face,dofs_x_volume,
-      gg,h); CHKERRQ(ierr); 
+      gg,h); CHKERRQ(ierr);
     ierr = MakeComplexTensor(h,ih,xh); CHKERRQ(ierr);
-    //print_mat_complex(xh,3,3); fprintf(stdout,"xh\n"); 
+    //print_mat_complex(xh,3,3); fprintf(stdout,"xh\n");
     COMP_STRESSES
-    //print_mat_complex(xF,3,3); fprintf(stdout,"xF\n"); 
+    //print_mat_complex(xF,3,3); fprintf(stdout,"xF\n");
     TakeRe(xP_PullBack,reP);
     TakeRe(xSigma_PullBack,reSigma);
     TakeIm(xP_PullBack,imP);
@@ -366,18 +361,18 @@ PetscErrorCode Fint_Hh_hierarchical(
 	  (Fint_iH_edge[ee])[3*pp + 1] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imSigma[3],1);
 	  (Fint_iH_edge[ee])[3*pp + 2] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imSigma[6],1); }
       }
-    } 
+    }
     int ff = 0;
     for(;ff<4;ff++) {
       int pp = 0;
       for(;pp<NBFACE_H1(order_x_face[ff]);pp++) {
 	double *diff = &((diffN_face[ff])[gg*3*NBFACE_H1(order_max_face[ff])+3*pp]);
-	if(Fint_h_face!=NULL) 
+	if(Fint_h_face!=NULL)
 	if(Fint_h_face[ff]!=NULL) {
 	  (Fint_h_face[ff])[3*pp + 0] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&reP[0],1);
 	  (Fint_h_face[ff])[3*pp + 1] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&reP[3],1);
 	  (Fint_h_face[ff])[3*pp + 2] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&reP[6],1); }
-	if(Fint_ih_face!=NULL) 
+	if(Fint_ih_face!=NULL)
 	if(Fint_ih_face[ff]!=NULL) {
 	  (Fint_ih_face[ff])[3*pp + 0] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[0],1);
 	  (Fint_ih_face[ff])[3*pp + 1] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[3],1);
@@ -385,12 +380,12 @@ PetscErrorCode Fint_Hh_hierarchical(
       }
       for(;pp<NBFACE_H1(order_X_face[ff]);pp++) {
 	double *diff = &((diffN_face[ff])[gg*3*NBFACE_H1(order_max_face[ff])+3*pp]);
-	if(Fint_H_face!=NULL) 
+	if(Fint_H_face!=NULL)
 	if(Fint_H_face[ff]!=NULL) {
 	  (Fint_H_face[ff])[3*pp + 0] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&reSigma[0],1);
 	  (Fint_H_face[ff])[3*pp + 1] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&reSigma[3],1);
 	  (Fint_H_face[ff])[3*pp + 2] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&reSigma[6],1); }
-	if(Fint_iH_face!=NULL) 
+	if(Fint_iH_face!=NULL)
 	if(Fint_iH_face[ff]!=NULL) {
 	  (Fint_iH_face[ff])[3*pp + 0] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imSigma[0],1);
 	  (Fint_iH_face[ff])[3*pp + 1] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imSigma[3],1);
@@ -447,28 +442,28 @@ PetscErrorCode Tangent_HH_hierachical(
   if(K!=NULL) bzero(K,12*12*sizeof(double));
   if(Koff!=NULL) bzero(Koff,12*12*sizeof(double));
   //zero edges
-  int ee = 0;	
+  int ee = 0;
   if(Koff_edge!=NULL) {
     for(;ee<6;ee++) {
       if(NBEDGE_H1(order_x_edge[ee])==0) continue;
       int nb = 3*NBEDGE_H1(order_x_edge[ee]);
-      if(Koff_edge[ee]!=NULL) bzero(Koff_edge[ee],nb*12*sizeof(double)); 
+      if(Koff_edge[ee]!=NULL) bzero(Koff_edge[ee],nb*12*sizeof(double));
     }
   }
   //zero faces
-  int ff = 0;	
+  int ff = 0;
   if(Koff_face!=NULL) {
     for(;ff<4;ff++) {
       if(NBFACE_H1(order_x_face[ff])==0) continue;
       int nb = 3*NBFACE_H1(order_x_face[ff]);
-      if(Koff_face[ff]!=NULL) bzero(Koff_face[ff],nb*12*sizeof(double)); 
+      if(Koff_face[ff]!=NULL) bzero(Koff_face[ff],nb*12*sizeof(double));
     }
   }
   //zero volume
   if(Koff_volume!=NULL) {
     if(NBVOLUME_H1(order_x_volume)!=0) {
       int nb = 3*NBVOLUME_H1(order_x_volume);
-      if(Koff_volume!=NULL) bzero(Koff_volume,nb*12*sizeof(double)); 
+      if(Koff_volume!=NULL) bzero(Koff_volume,nb*12*sizeof(double));
     }
   }
   int dd = 0;
@@ -497,7 +492,7 @@ PetscErrorCode Tangent_HH_hierachical(
 	order_x_edge,order_x_face,order_x_volume,
 	diffN,diffN_edge,diffN_face,diffN_volume,
 	dofs_x_edge,dofs_x_face,dofs_x_volume,
-	gg,h); CHKERRQ(ierr); 
+	gg,h); CHKERRQ(ierr);
       ierr = MakeComplexTensor(h,ZERO,xh);  CHKERRQ(ierr);
       COMP_STRESSES
       TakeIm(xP_PullBack,imP);
@@ -516,7 +511,7 @@ PetscErrorCode Tangent_HH_hierachical(
 	  Koff[3*12*node + 2*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,&diffN[node*3+0],1,&imP[6],1); }}
       ee = 0;
       if(Koff_edge!=NULL) {
-	for(;ee<6;ee++) {		
+	for(;ee<6;ee++) {
 	  int pp = 0;
 	  for(;pp<NBEDGE_H1(order_x_edge[ee]);pp++) {
 	    double *diff = &((diffN_edge[ee])[gg*3*NBEDGE_H1(order_max_edge[ee])+3*pp]);
@@ -527,7 +522,7 @@ PetscErrorCode Tangent_HH_hierachical(
       }
       ff = 0;
       if(Koff_face!=NULL) {
-	for(;ff<4;ff++) {		
+	for(;ff<4;ff++) {
 	  int pp = 0;
 	  for(;pp<NBFACE_H1(order_x_face[ff]);pp++) {
 	    double *diff = &((diffN_face[ff])[gg*3*NBFACE_H1(order_max_face[ff])+3*pp]);
@@ -572,13 +567,13 @@ PetscErrorCode Tangent_hh_hierachical(
   if(K!=NULL) bzero(K,12*12*sizeof(double));
   if(Koff!=NULL) bzero(Koff,12*12*sizeof(double));
   //zero edges
-  int ee = 0;	
+  int ee = 0;
   for(;ee<6;ee++) {
     if(NBEDGE_H1(order_x_edge[ee])==0) continue;
     int nb = 3*NBEDGE_H1(order_x_edge[ee]);
     if(K_edge[ee]!=NULL) bzero(K_edge[ee],12*nb*sizeof(double)); }
   //zero faces
-  int ff = 0;	
+  int ff = 0;
   for(;ff<4;ff++) {
     if(NBFACE_H1(order_x_face[ff])==0) continue;
     int nb = 3*NBFACE_H1(order_x_face[ff]);
@@ -586,7 +581,7 @@ PetscErrorCode Tangent_hh_hierachical(
   //zero volume
   if(NBVOLUME_H1(order_x_volume)!=0) {
     int nb = 3*NBVOLUME_H1(order_x_volume);
-    if(K_volume!=NULL) bzero(K_volume,nb*12*sizeof(double)); 
+    if(K_volume!=NULL) bzero(K_volume,nb*12*sizeof(double));
   }
   int gg = 0;
   for(;gg<G_DIM;gg++) {
@@ -597,7 +592,7 @@ PetscErrorCode Tangent_hh_hierachical(
 	order_X_edge,order_X_face,order_X_volume,
 	diffN,diffN_edge,diffN_face,diffN_volume,
 	dofs_X_edge,dofs_X_face,dofs_X_volume,
-	gg,H); CHKERRQ(ierr); 
+	gg,H); CHKERRQ(ierr);
     ierr = MakeComplexTensor(H,ZERO,xH);  CHKERRQ(ierr);
     cblas_zcopy(9,xH,1,inv_xH,1);
     ierr = DeterminantComplexGradient(xH,&det_xH); CHKERRQ(ierr);
@@ -609,7 +604,7 @@ PetscErrorCode Tangent_hh_hierachical(
 	order_x_edge,order_x_face,order_x_volume,
 	diffN,diffN_edge,diffN_face,diffN_volume,
 	dofs_x_edge,dofs_x_face,dofs_x_volume,
-	gg,h); CHKERRQ(ierr); 
+	gg,h); CHKERRQ(ierr);
     int dd = 0;
     for(;dd<12;dd++) {
       bzero(_idofs_x,sizeof(double)*12);
@@ -682,7 +677,7 @@ PetscErrorCode Tangent_hh_hierachical_edge(
   bzero(ZERO,sizeof(double)*9);
   __CLPK_doublecomplex xh[9],xH[9],inv_xH[9],xF[9],xF_tmp[9],xC[9],xS[9],xP[9],xP_PullBack[9],xSigma[9],xSigma_PullBack[9],det_xF,det_xH,xPsi;
   double _ih[9],imP[9],imSigma[9];
-  int ee = 0;	
+  int ee = 0;
   for(;ee<6;ee++) {
     if(NBEDGE_H1(order_x_edge[ee])==0) continue;
     int nb = 3*NBEDGE_H1(order_x_edge[ee]);
@@ -695,10 +690,10 @@ PetscErrorCode Tangent_hh_hierachical_edge(
     int FF = 0;
     for(;FF<4;FF++) {
       int nb2 = 3*NBFACE_H1(order_x_face[FF]);
-      if(K_face[FF][ee]!=NULL) bzero(K_face[FF][ee],nb2*nb*sizeof(double)); 
+      if(K_face[FF][ee]!=NULL) bzero(K_face[FF][ee],nb2*nb*sizeof(double));
     }
     int nb2 = 3*NBVOLUME_H1(order_x_volume);
-    if(K_volume[ee]!=NULL) bzero(K_volume[ee],nb*nb2*sizeof(double)); 
+    if(K_volume[ee]!=NULL) bzero(K_volume[ee],nb*nb2*sizeof(double));
   }
   int EE = 0;
   for(;EE<6;EE++) {
@@ -714,7 +709,7 @@ PetscErrorCode Tangent_hh_hierachical_edge(
 	order_X_edge,order_X_face,order_X_volume,
 	diffN,diffN_edge,diffN_face,diffN_volume,
 	dofs_X_edge,dofs_X_face,dofs_X_volume,
-	gg,H); CHKERRQ(ierr); 
+	gg,H); CHKERRQ(ierr);
       ierr = MakeComplexTensor(H,ZERO,xH);  CHKERRQ(ierr);
       cblas_zcopy(9,xH,1,inv_xH,1);
       ierr = DeterminantComplexGradient(xH,&det_xH); CHKERRQ(ierr);
@@ -726,13 +721,13 @@ PetscErrorCode Tangent_hh_hierachical_edge(
 	order_x_edge,order_x_face,order_x_volume,
 	diffN,diffN_edge,diffN_face,diffN_volume,
 	dofs_x_edge,dofs_x_face,dofs_x_volume,
-	gg,h); CHKERRQ(ierr); 
+	gg,h); CHKERRQ(ierr);
       int dd = 0;
       for(;dd<nb_edge_dofs;dd++) {
 	bzero(_idofs_x,sizeof(double)*nb_edge_dofs);
-	_idofs_x[dd] = eps;   
+	_idofs_x[dd] = eps;
 	double *diff_edge = &(diffN_edge[EE])[gg*3*NBEDGE_H1(order_x_edge[EE])];
-	H1_EdgeGradientOfDeformation_hierachical(order_x_edge[EE],diff_edge,_idofs_x,_ih); 
+	H1_EdgeGradientOfDeformation_hierachical(order_x_edge[EE],diff_edge,_idofs_x,_ih);
         ierr = MakeComplexTensor(h,_ih,xh);  CHKERRQ(ierr);
         COMP_STRESSES
         TakeIm(xP_PullBack,imP);
@@ -756,7 +751,7 @@ PetscErrorCode Tangent_hh_hierachical_edge(
 	    double *diff = &((diffN_edge[ee])[gg*3*NBEDGE_H1(order_max_edge[ee])+3*pp]);
 	    if(K_edge[ee][EE]!=NULL) {
 	      (K_edge[ee][EE])[3*pp*nb_edge_dofs + 0*nb_edge_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[0],1);
-	      (K_edge[ee][EE])[3*pp*nb_edge_dofs + 1*nb_edge_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[3],1); 
+	      (K_edge[ee][EE])[3*pp*nb_edge_dofs + 1*nb_edge_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[3],1);
 	      (K_edge[ee][EE])[3*pp*nb_edge_dofs + 2*nb_edge_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[6],1); } }}
         int ff = 0;
         for(;ff<4;ff++) {
@@ -765,7 +760,7 @@ PetscErrorCode Tangent_hh_hierachical_edge(
 	    double *diff = &((diffN_face[ff])[gg*3*NBFACE_H1(order_max_face[ff])+3*pp]);
 	    if(K_face[ff][EE]!=NULL) {
 	      (K_face[ff][EE])[3*pp*nb_edge_dofs + 0*nb_edge_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[0],1);
-	      (K_face[ff][EE])[3*pp*nb_edge_dofs + 1*nb_edge_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[3],1); 
+	      (K_face[ff][EE])[3*pp*nb_edge_dofs + 1*nb_edge_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[3],1);
 	      (K_face[ff][EE])[3*pp*nb_edge_dofs + 2*nb_edge_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[6],1); } }}
 	int pp = 0;
 	for(;pp<NBVOLUME_H1(order_x_volume);pp++) {
@@ -800,7 +795,7 @@ PetscErrorCode Tangent_hh_hierachical_face(
   bzero(ZERO,sizeof(double)*9);
   __CLPK_doublecomplex xh[9],xH[9],inv_xH[9],xF[9],xF_tmp[9],xC[9],xS[9],xP[9],xP_PullBack[9],xSigma[9],xSigma_PullBack[9],det_xF,det_xH,xPsi;
   double _ih[9],imP[9],imSigma[9];
-  int ff = 0;	
+  int ff = 0;
   for(;ff<4;ff++) {
     if(NBFACE_H1(order_x_face[ff])==0) continue;
     int nb = 3*NBFACE_H1(order_x_face[ff]);
@@ -815,10 +810,10 @@ PetscErrorCode Tangent_hh_hierachical_face(
     int FF = 0;
     for(;FF<4;FF++) {
       int nb2 = 3*NBFACE_H1(order_x_face[FF]);
-      if(K_face[FF][ff]!=NULL) bzero(K_face[FF][ff],nb2*nb*sizeof(double)); 
+      if(K_face[FF][ff]!=NULL) bzero(K_face[FF][ff],nb2*nb*sizeof(double));
     }
     int nb2 = 3*NBVOLUME_H1(order_x_volume);
-    if(K_volume[ff]!=NULL) bzero(K_volume[ff],nb*nb2*sizeof(double)); 
+    if(K_volume[ff]!=NULL) bzero(K_volume[ff],nb*nb2*sizeof(double));
   }
   int FF = 0;
   for(;FF<4;FF++) {
@@ -828,7 +823,7 @@ PetscErrorCode Tangent_hh_hierachical_face(
     int dd = 0;
     for(;dd<nb_face_dofs;dd++) {
       bzero(_idofs_x,sizeof(double)*nb_face_dofs);
-      _idofs_x[dd] = eps;   
+      _idofs_x[dd] = eps;
       int gg = 0;
       for(;gg<G_DIM;gg++) {
 	double H[9];
@@ -838,7 +833,7 @@ PetscErrorCode Tangent_hh_hierachical_face(
 	  order_X_edge,order_X_face,order_X_volume,
 	  diffN,diffN_edge,diffN_face,diffN_volume,
 	  dofs_X_edge,dofs_X_face,dofs_X_volume,
-	  gg,H); CHKERRQ(ierr); 
+	  gg,H); CHKERRQ(ierr);
 	ierr = MakeComplexTensor(H,ZERO,xH);  CHKERRQ(ierr);
 	cblas_zcopy(9,xH,1,inv_xH,1);
 	ierr = DeterminantComplexGradient(xH,&det_xH); CHKERRQ(ierr);
@@ -850,9 +845,9 @@ PetscErrorCode Tangent_hh_hierachical_face(
 	  order_x_edge,order_x_face,order_x_volume,
 	  diffN,diffN_edge,diffN_face,diffN_volume,
 	  dofs_x_edge,dofs_x_face,dofs_x_volume,
-	  gg,h); CHKERRQ(ierr); 
+	  gg,h); CHKERRQ(ierr);
 	double *diff_face = &(diffN_face[FF])[gg*3*NBFACE_H1(order_x_face[FF])];
-	H1_FaceGradientOfDeformation_hierachical(order_x_face[FF],diff_face,_idofs_x,_ih); 
+	H1_FaceGradientOfDeformation_hierachical(order_x_face[FF],diff_face,_idofs_x,_ih);
         ierr = MakeComplexTensor(h,_ih,xh);  CHKERRQ(ierr);
         COMP_STRESSES
         TakeIm(xP_PullBack,imP);
@@ -878,7 +873,7 @@ PetscErrorCode Tangent_hh_hierachical_face(
 	    double *diff = &((diffN_edge[ee])[gg*3*NBEDGE_H1(order_max_edge[ee])+3*pp+0]);
 	    if(K_edge[ee][FF]!=NULL) {
 	      (K_edge[ee][FF])[3*pp*nb_face_dofs + 0*nb_face_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[0],1);
-	      (K_edge[ee][FF])[3*pp*nb_face_dofs + 1*nb_face_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[3],1); 
+	      (K_edge[ee][FF])[3*pp*nb_face_dofs + 1*nb_face_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[3],1);
 	      (K_edge[ee][FF])[3*pp*nb_face_dofs + 2*nb_face_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[6],1); } }}
         ff = 0;
         for(;ff<4;ff++) {
@@ -887,7 +882,7 @@ PetscErrorCode Tangent_hh_hierachical_face(
 	    double *diff = &((diffN_face[ff])[gg*3*NBFACE_H1(order_max_face[ff])+3*pp+0]);
 	    if(K_face[ff][FF]!=NULL) {
 	      (K_face[ff][FF])[3*pp*nb_face_dofs + 0*nb_face_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[0],1);
-	      (K_face[ff][FF])[3*pp*nb_face_dofs + 1*nb_face_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[3],1); 
+	      (K_face[ff][FF])[3*pp*nb_face_dofs + 1*nb_face_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[3],1);
 	      (K_face[ff][FF])[3*pp*nb_face_dofs + 2*nb_face_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[6],1); } }}
 	int pp = 0;
 	for(;pp<NBVOLUME_H1(order_x_volume);pp++) {
@@ -924,22 +919,22 @@ PetscErrorCode Tangent_hh_hierachical_volume(
   if(K!=NULL) bzero(K,nb_dofs_volume*12*sizeof(double));
   if(Koff!=NULL) bzero(Koff,nb_dofs_volume*12*sizeof(double));
   //zero edges
-  int ee = 0;	
+  int ee = 0;
   for(;ee<6;ee++) {
     if(NBEDGE_H1(order_x_edge[ee])==0) continue;
     int nb2 = 3*NBEDGE_H1(order_x_edge[ee]);
-    if(K_edge[ee]!=NULL) bzero(K_edge[ee],nb_dofs_volume*nb2*sizeof(double)); 
+    if(K_edge[ee]!=NULL) bzero(K_edge[ee],nb_dofs_volume*nb2*sizeof(double));
   }
   //zero faces
-  int ff = 0;	
+  int ff = 0;
   for(;ff<4;ff++) {
     if(NBFACE_H1(order_x_face[ff])==0) continue;
     int nb2 = 3*NBFACE_H1(order_x_face[ff]);
-    if(K_face[ff]!=NULL) bzero(K_face[ff],nb_dofs_volume*nb2*sizeof(double)); 
+    if(K_face[ff]!=NULL) bzero(K_face[ff],nb_dofs_volume*nb2*sizeof(double));
   }
   //zero volume
   if(NBVOLUME_H1(order_x_volume)!=0) {
-    if(K_volume!=NULL) bzero(K_volume,nb_dofs_volume*nb_dofs_volume*sizeof(double)); 
+    if(K_volume!=NULL) bzero(K_volume,nb_dofs_volume*nb_dofs_volume*sizeof(double));
   }
   double _idofs_x[nb_dofs_volume];
   int gg = 0;
@@ -951,7 +946,7 @@ PetscErrorCode Tangent_hh_hierachical_volume(
 	order_X_edge,order_X_face,order_X_volume,
 	diffN,diffN_edge,diffN_face,diffN_volume,
 	dofs_X_edge,dofs_X_face,dofs_X_volume,
-	gg,H); CHKERRQ(ierr); 
+	gg,H); CHKERRQ(ierr);
     ierr = MakeComplexTensor(H,ZERO,xH);  CHKERRQ(ierr);
     cblas_zcopy(9,xH,1,inv_xH,1);
     ierr = DeterminantComplexGradient(xH,&det_xH); CHKERRQ(ierr);
@@ -963,13 +958,13 @@ PetscErrorCode Tangent_hh_hierachical_volume(
 	order_x_edge,order_x_face,order_x_volume,
 	diffN,diffN_edge,diffN_face,diffN_volume,
 	dofs_x_edge,dofs_x_face,dofs_x_volume,
-	gg,h); CHKERRQ(ierr); 
+	gg,h); CHKERRQ(ierr);
     int dd = 0;
     for(;dd<nb_dofs_volume;dd++) {
       bzero(_idofs_x,sizeof(double)*nb_dofs_volume);
       _idofs_x[dd] = eps;
       double *diff_volume = &((diffN_volume)[gg*3*NBVOLUME_H1(order_x_volume)]);
-      H1_VolumeGradientOfDeformation_hierachical(order_x_volume,diff_volume,_idofs_x,_ih); 
+      H1_VolumeGradientOfDeformation_hierachical(order_x_volume,diff_volume,_idofs_x,_ih);
       ierr = MakeComplexTensor(h,_ih,xh);  CHKERRQ(ierr);
       COMP_STRESSES
       TakeIm(xP_PullBack,imP);
@@ -1061,7 +1056,7 @@ PetscErrorCode Fext_h_hierarchical(int order,int *order_edge,
     if(nb_dofs_edge==0) continue;
     if(Fext_edge!=NULL) bzero(Fext_edge[ee],3*nb_dofs_edge*sizeof(double));
     if(iFext_edge!=NULL) bzero(iFext_edge[ee],3*nb_dofs_edge*sizeof(double));
-  } 
+  }
   int nb_dofs_face = NBFACE_H1(order);
   if(nb_dofs_face!=0) {
     if(Fext_face!=NULL) bzero(Fext_face,3*nb_dofs_face*sizeof(double));
@@ -1073,13 +1068,14 @@ PetscErrorCode Fext_h_hierarchical(int order,int *order_edge,
     ierr = Traction_hierarchical(order,order_edge,N,N_face,N_edge,t,t_edge,t_face,traction,gg); CHKERRQ(ierr);
     __CLPK_doublecomplex xnormal[3],xs1[3],xs2[3];
     ierr = Normal_hierarchical(
-      //FIXME: order of triacions approximation could be diffrernt for field approx
-      order,order_edge, 
+      //FIXME: order of tractions approximation could be different for field approx.
+      order,order_edge,
       order,order_edge,
       diffN,diffN_face,diffN_edge,
       dofs_x,dofs_x_edge,dofs_x_face,idofs_x,
       idofs_x_edge,idofs_x_face,
-      xnormal,xs1,xs2,gg); CHKERRQ(ierr);
+      xnormal,xs1,xs2,gg
+    ); CHKERRQ(ierr);
     ierr = Base_scale(xnormal,xs1,xs2); CHKERRQ(ierr);
     double normal_real[3],s1_real[3],s2_real[3];
     double normal_imag[3],s1_imag[3],s2_imag[3];
@@ -1093,21 +1089,21 @@ PetscErrorCode Fext_h_hierarchical(int order,int *order_edge,
     }
     nn = 0;
     for(;nn<3;nn++) {
-      if(Fext!=NULL) 
-	for(dd = 0;dd<3;dd++) {
-	  /*fprintf(stderr,"%d %f %f %f %f %f %f\n",
-	    gg,g_w[gg],N[3*gg+nn],normal_real[dd],
-	    traction[0],traction[1],traction[2]);*/
-	  Fext[3*nn+dd] += g_w[gg]*N[3*gg+nn]*normal_real[dd]*traction[2];
-	  Fext[3*nn+dd] += g_w[gg]*N[3*gg+nn]*s1_real[dd]*traction[0];
-	  Fext[3*nn+dd] += g_w[gg]*N[3*gg+nn]*s2_real[dd]*traction[1];
-	}
-      if(iFext!=NULL) 
-	for(dd = 0;dd<3;dd++) {
-	  iFext[3*nn+dd] += g_w[gg]*N[3*gg+nn]*normal_imag[dd]*traction[2];
-	  iFext[3*nn+dd] += g_w[gg]*N[3*gg+nn]*s1_imag[dd]*traction[0];
-	  iFext[3*nn+dd] += g_w[gg]*N[3*gg+nn]*s2_imag[dd]*traction[1];
-	}
+      if(Fext!=NULL)
+      for(dd = 0;dd<3;dd++) {
+        //fprintf(stderr,"%d %f %f %f %f %f %f\n",
+        //gg,g_w[gg],N[3*gg+nn],normal_real[dd],
+        //traction[0],traction[1],traction[2]);
+        Fext[3*nn+dd] += g_w[gg]*N[3*gg+nn]*normal_real[dd]*traction[2];
+        Fext[3*nn+dd] += g_w[gg]*N[3*gg+nn]*s1_real[dd]*traction[0];
+        Fext[3*nn+dd] += g_w[gg]*N[3*gg+nn]*s2_real[dd]*traction[1];
+      }
+      if(iFext!=NULL)
+      for(dd = 0;dd<3;dd++) {
+        iFext[3*nn+dd] += g_w[gg]*N[3*gg+nn]*normal_imag[dd]*traction[2];
+        iFext[3*nn+dd] += g_w[gg]*N[3*gg+nn]*s1_imag[dd]*traction[0];
+        iFext[3*nn+dd] += g_w[gg]*N[3*gg+nn]*s2_imag[dd]*traction[1];
+      }
     }
     ee = 0;
     for(;ee<3;ee++) {
@@ -1115,36 +1111,36 @@ PetscErrorCode Fext_h_hierarchical(int order,int *order_edge,
       if(nb_dofs_edge == 0) continue;
       int nn = 0;
       for(;nn<nb_dofs_edge;nn++) {
-	if(Fext_edge!=NULL) 
-	  for(dd = 0;dd<3;dd++) {
-	    Fext_edge[ee][3*nn+dd] += g_w[gg]*N_edge[ee][gg*nb_dofs_edge+nn]*normal_real[dd]*traction[2];
-	    Fext_edge[ee][3*nn+dd] += g_w[gg]*N_edge[ee][gg*nb_dofs_edge+nn]*s1_real[dd]*traction[0];
-	    Fext_edge[ee][3*nn+dd] += g_w[gg]*N_edge[ee][gg*nb_dofs_edge+nn]*s2_real[dd]*traction[1];
-	  }
-	if(iFext_edge!=NULL) {
-	  for(dd = 0;dd<3;dd++) {
-	    iFext_edge[ee][3*nn+dd] += g_w[gg]*N_edge[ee][gg*nb_dofs_edge+nn]*normal_imag[dd]*traction[2];
-	    iFext_edge[ee][3*nn+dd] += g_w[gg]*N_edge[ee][gg*nb_dofs_edge+nn]*s1_imag[dd]*traction[0];
-	    iFext_edge[ee][3*nn+dd] += g_w[gg]*N_edge[ee][gg*nb_dofs_edge+nn]*s2_imag[dd]*traction[1];
-	  }
-	}
+        if(Fext_edge!=NULL)
+        for(dd = 0;dd<3;dd++) {
+          Fext_edge[ee][3*nn+dd] += g_w[gg]*N_edge[ee][gg*nb_dofs_edge+nn]*normal_real[dd]*traction[2];
+          Fext_edge[ee][3*nn+dd] += g_w[gg]*N_edge[ee][gg*nb_dofs_edge+nn]*s1_real[dd]*traction[0];
+          Fext_edge[ee][3*nn+dd] += g_w[gg]*N_edge[ee][gg*nb_dofs_edge+nn]*s2_real[dd]*traction[1];
+        }
+        if(iFext_edge!=NULL) {
+          for(dd = 0;dd<3;dd++) {
+            iFext_edge[ee][3*nn+dd] += g_w[gg]*N_edge[ee][gg*nb_dofs_edge+nn]*normal_imag[dd]*traction[2];
+            iFext_edge[ee][3*nn+dd] += g_w[gg]*N_edge[ee][gg*nb_dofs_edge+nn]*s1_imag[dd]*traction[0];
+            iFext_edge[ee][3*nn+dd] += g_w[gg]*N_edge[ee][gg*nb_dofs_edge+nn]*s2_imag[dd]*traction[1];
+          }
+        }
       }
     }
     if(nb_dofs_face!=0) {
       nn = 0;
       for(;nn<nb_dofs_face;nn++) {
-	if(Fext_face!=NULL) 
-	  for(dd = 0;dd<3;dd++) {
-	    Fext_face[3*nn+dd] += g_w[gg]*N_face[gg*nb_dofs_face+nn]*normal_real[dd]*traction[2];
-	    Fext_face[3*nn+dd] += g_w[gg]*N_face[gg*nb_dofs_face+nn]*s1_real[dd]*traction[0];
-	    Fext_face[3*nn+dd] += g_w[gg]*N_face[gg*nb_dofs_face+nn]*s2_real[dd]*traction[1];
-	  }
-	if(iFext_face!=NULL) 
-	  for(dd = 0;dd<3;dd++) {
-	    iFext_face[3*nn+dd] += g_w[gg]*N_face[gg*nb_dofs_face+nn]*normal_imag[dd]*traction[2];
-	    iFext_face[3*nn+dd] += g_w[gg]*N_face[gg*nb_dofs_face+nn]*s1_imag[dd]*traction[0];
-	    iFext_face[3*nn+dd] += g_w[gg]*N_face[gg*nb_dofs_face+nn]*s2_imag[dd]*traction[1];
-	  }
+        if(Fext_face!=NULL)
+        for(dd = 0;dd<3;dd++) {
+          Fext_face[3*nn+dd] += g_w[gg]*N_face[gg*nb_dofs_face+nn]*normal_real[dd]*traction[2];
+          Fext_face[3*nn+dd] += g_w[gg]*N_face[gg*nb_dofs_face+nn]*s1_real[dd]*traction[0];
+          Fext_face[3*nn+dd] += g_w[gg]*N_face[gg*nb_dofs_face+nn]*s2_real[dd]*traction[1];
+        }
+        if(iFext_face!=NULL)
+        for(dd = 0;dd<3;dd++) {
+          iFext_face[3*nn+dd] += g_w[gg]*N_face[gg*nb_dofs_face+nn]*normal_imag[dd]*traction[2];
+          iFext_face[3*nn+dd] += g_w[gg]*N_face[gg*nb_dofs_face+nn]*s1_imag[dd]*traction[0];
+          iFext_face[3*nn+dd] += g_w[gg]*N_face[gg*nb_dofs_face+nn]*s2_imag[dd]*traction[1];
+        }
       }
     }
   }
@@ -1318,7 +1314,7 @@ PetscErrorCode KExt_hh_hierarchical_face(double eps,int order,int *order_edge,
   int gg,dd,ii,nn,ee;
   int nb_dofs_face = NBFACE_H1(order);
   bzero(KExt_hface,9*3*nb_dofs_face*sizeof(double));
-  if(KExt_edgeface!=NULL) {	
+  if(KExt_edgeface!=NULL) {
     for(ee = 0;ee<3;ee++) {
       int nb_dofs_edge = NBEDGE_H1(order_edge[ee]);
       bzero(KExt_edgeface[ee],3*nb_dofs_face*3*nb_dofs_edge*sizeof(double));
@@ -1328,7 +1324,7 @@ PetscErrorCode KExt_hh_hierarchical_face(double eps,int order,int *order_edge,
     bzero(KExt_faceface,3*nb_dofs_face*3*nb_dofs_face*sizeof(double));
   }
   for(gg = 0;gg<g_dim;gg++) {
-    double traction[3] = {0,0,0}; 
+    double traction[3] = {0,0,0};
     ierr = Traction_hierarchical(order,order_edge,N,N_face,N_edge,t,t_edge,t_face,traction,gg); CHKERRQ(ierr);
     double idofs_x_face[3*nb_dofs_face];
     for(ii = 0;ii<3*nb_dofs_face;ii++) {
@@ -1418,13 +1414,13 @@ PetscErrorCode Fext_H_hierarchical(
     }
     nn = 0;
     for(;nn<3;nn++) {
-      if(Fext!=NULL) 
+      if(Fext!=NULL)
 	for(dd = 0;dd<3;dd++) {
 	  Fext[3*nn+dd] += g_w[gg]*N[3*gg+nn]*normal_real[dd]*traction[2];
 	  Fext[3*nn+dd] += g_w[gg]*N[3*gg+nn]*s1_real[dd]*traction[0];
 	  Fext[3*nn+dd] += g_w[gg]*N[3*gg+nn]*s2_real[dd]*traction[1];
 	}
-      if(iFext!=NULL) 
+      if(iFext!=NULL)
 	for(dd = 0;dd<3;dd++) {
 	  iFext[3*nn+dd] += g_w[gg]*N[3*gg+nn]*normal_imag[dd]*traction[2];
 	  iFext[3*nn+dd] += g_w[gg]*N[3*gg+nn]*s1_imag[dd]*traction[0];
@@ -1479,4 +1475,3 @@ PetscErrorCode KExt_HH_hierarchical(
   }
   PetscFunctionReturn(0);
 }
-

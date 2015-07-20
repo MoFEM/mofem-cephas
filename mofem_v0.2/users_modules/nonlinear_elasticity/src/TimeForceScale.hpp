@@ -24,11 +24,15 @@
 
 struct TimeForceScale: public MethodForForceScaling {
 //Hassan: This function to read data file (once) and save it in a pair vector ts
-   
+
     map<double,double> tSeries;
     int readFile,debug;
+    string nAme;
 
-    TimeForceScale(): readFile(0),debug(1) {
+    TimeForceScale(string name = "-my_time_data_file"):
+    readFile(0),
+    debug(1),
+    nAme(name) {
       PetscErrorCode ierr;
       ierr = timeData(); CHKERRABORT(PETSC_COMM_WORLD,ierr);
     }
@@ -40,13 +44,13 @@ struct TimeForceScale: public MethodForForceScaling {
       PetscFunctionBegin;
       char time_file_name[255];
       PetscBool flg = PETSC_TRUE;
-      ierr = PetscOptionsGetString(PETSC_NULL,"-my_time_data_file",time_file_name,255,&flg); CHKERRQ(ierr);
+      ierr = PetscOptionsGetString(PETSC_NULL,nAme.c_str(),time_file_name,255,&flg); CHKERRQ(ierr);
       if(flg != PETSC_TRUE) {
-	SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_time_data_file (time_data FILE NEEDED)");
+        SETERRQ1(PETSC_COMM_SELF,1,"*** ERROR %s (time_data FILE NEEDED)",nAme.c_str());
       }
       FILE *time_data = fopen(time_file_name,"r");
       if(time_data == NULL) {
-	SETERRQ1(PETSC_COMM_SELF,1,"*** ERROR data file < %s > open unsucessfull",time_file_name);
+        SETERRQ1(PETSC_COMM_SELF,1,"*** ERROR data file < %s > open unsuccessful",time_file_name);
       }
       double no1 = 0.0, no2 = 0.0;
       tSeries[no1] = no2;
@@ -54,57 +58,51 @@ struct TimeForceScale: public MethodForForceScaling {
         int n = fscanf(time_data,"%lf %lf",&no1,&no2);
         if((n <= 0)||((no1==0)&&(no2==0))) {
           fgetc(time_data);
-	  continue;
-	}
-	if(n != 2){
-	  SETERRQ1(PETSC_COMM_SELF,1,"*** ERROR read data file error (check input time data file) { n = %d }",n);
-	}
-	tSeries[no1] = no2;
+          continue;
+        }
+        if(n != 2){
+          SETERRQ1(PETSC_COMM_SELF,1,"*** ERROR read data file error (check input time data file) { n = %d }",n);
+        }
+        tSeries[no1] = no2;
       }
-      int r = fclose(time_data);      
+      int r = fclose(time_data);
       if(debug) {
-	map<double, double>::iterator tit = tSeries.begin();
-	for(;tit!=tSeries.end();tit++) {
-	  PetscPrintf(PETSC_COMM_WORLD,"** read time series %3.2e time %3.2e\n",tit->first,tit->second);
-	}
+        map<double, double>::iterator tit = tSeries.begin();
+        for(;tit!=tSeries.end();tit++) {
+          PetscPrintf(PETSC_COMM_WORLD,"** read time series %3.2e time %3.2e\n",tit->first,tit->second);
+        }
       }
       if(r!=0) {
-	SETERRQ(PETSC_COMM_SELF,1,"*** ERROR file cloase unsucessfull");
+        SETERRQ(PETSC_COMM_SELF,1,"*** ERROR file cloase unsucessfull");
       }
       readFile=1;
       PetscFunctionReturn(0);
     }
 
     //Hassan: this fuction will loop over data in pair vector ts to find load scale based on ts_t
-    PetscErrorCode scaleNf(const FEMethod *fe,ublas::vector<FieldData> &Nf) {
+    PetscErrorCode scaleNf(const FEMethod *fe,ublas::vector<double> &Nf) {
       PetscFunctionBegin;
       if(readFile==0) {
-	SETERRQ(PETSC_COMM_SELF,1,"data file not readed");
+        SETERRQ(PETSC_COMM_SELF,1,"data file not readed");
       }
       double ts_t = fe->ts_t;
       double scale = 0;
-      double t0 = 0,t1,s0 = 0,s1,dt;
+      double t0 = 0,t1,s0 = tSeries[0],s1,dt;
       map<double, double>::iterator tit = tSeries.begin();
       for(;tit!=tSeries.end();tit++) {
-	if(tit->first > ts_t) {
-	  t1 = tit->first;
-	  s1 = tit->second;
-	  dt = ts_t - t0;
-	  scale = s0 + ( (s1-s0)/(t1-t0) )*dt;
-	  break;
-	}
-	t0 = tit->first;
-	s0 = tit->second;
-	scale = s0;
+        if(tit->first > ts_t) {
+          t1 = tit->first;
+          s1 = tit->second;
+          dt = ts_t - t0;
+          scale = s0 + ( (s1-s0)/(t1-t0) )*dt;
+          break;
+        }
+        t0 = tit->first;
+        s0 = tit->second;
+        scale = s0;
       }
-      //Hassan : Here you can define time function rather than read from a file
-      //Triangular loading over 10s (maximum at 5)
-      /*double scale = 0;
-      if(ts_t < 3.) scale = ts_t/5.;
-      if(ts_t > 5.) scale = 1.+(5.-ts_t)/5.;
-      if(ts_t > 10.) scale = 0;*/
+      //cerr << "AAA " << Nf << " " << scale << endl;
       Nf *= scale;
       PetscFunctionReturn(0);
     }
 };
-

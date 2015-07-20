@@ -115,6 +115,15 @@ struct ConvectiveMassElement {
     * \ingroup user_modules
     */
   struct CommonData {
+
+    bool lInear;
+    bool staticOnly;
+    CommonData():
+    lInear(false),
+    staticOnly(false) {
+    }
+
+
     map<string,vector<ublas::vector<double> > > dataAtGaussPts;
     map<string,vector<ublas::matrix<double> > > gradAtGaussPts;
     string spatialPositions;
@@ -129,6 +138,7 @@ struct ConvectiveMassElement {
     vector<ublas::vector<double> > valT;
     vector<vector<double*> > jacTRowPtr;
     vector<ublas::matrix<double> > jacT;
+
 
   };
   CommonData commonData;
@@ -209,7 +219,7 @@ struct ConvectiveMassElement {
     CommonData &commonData;
     int tAg;
     bool jAcobian;
-    bool lInear;
+    bool &lInear;
     bool fieldDisp;
 
     boost::ptr_vector<MethodForForceScaling> &methodsOp;
@@ -220,7 +230,6 @@ struct ConvectiveMassElement {
       CommonData &common_data,
       boost::ptr_vector<MethodForForceScaling> &methods_op,
       int tag,
-      bool jacobian = true,
       bool linear = false
     );
 
@@ -294,9 +303,9 @@ struct ConvectiveMassElement {
     BlockData &dAta;
     CommonData &commonData;
     Vec *Vptr;
-    bool lInear;
+    bool &lInear;
 
-    OpEnergy(const string field_name,BlockData &data,CommonData &common_data,Vec *v_ptr,bool linear = false);
+    OpEnergy(const string field_name,BlockData &data,CommonData &common_data,Vec *v_ptr);
 
     ublas::matrix<double> h,H,invH,F;
     ublas::vector<double> v;

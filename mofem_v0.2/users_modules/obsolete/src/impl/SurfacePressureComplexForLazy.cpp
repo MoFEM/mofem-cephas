@@ -116,42 +116,42 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::
 
   try {
 
-  switch (type) {
-    case MBVERTEX: {
-      if(data.getFieldData().size()!=9) {
-	SETERRQ(PETSC_COMM_SELF,1,"it should be 9 dofs on vertices");
+    switch (type) {
+      case MBVERTEX: {
+        if(data.getFieldData().size()!=9) {
+          SETERRQ(PETSC_COMM_SELF,1,"it should be 9 dofs on vertices");
+        }
+        if(data.getN().size2()!=3) {
+          SETERRQ(PETSC_COMM_SELF,1,"it should 3 shape functions for 3 nodes");
+        }
+        myPtr->N = &*data.getN().data().begin();
+        myPtr->diffN = &*data.getDiffN().data().begin();
+        myPtr->dOfs_X_indices.resize(data.getIndices().size());
+        ublas::noalias(myPtr->dOfs_X_indices) = data.getIndices();
+        myPtr->dofs_X_indices = &*myPtr->dOfs_X_indices.data().begin();
+        myPtr->dOfs_X.resize(data.getFieldData().size());
+        ublas::noalias(myPtr->dOfs_X) = data.getFieldData();
+        myPtr->dofs_X = &*myPtr->dOfs_X.data().begin();
       }
-      if(data.getN().size2()!=3) {
-	SETERRQ(PETSC_COMM_SELF,1,"it should 3 shape functions for 3 nodes");
+      break;
+      case MBEDGE: {
+        myPtr->order_edge_material[side] = data.getOrder();
+        myPtr->dOfs_X_edge.resize(3);
+        myPtr->dOfs_X_edge[side].resize(data.getFieldData().size());
+        ublas::noalias(myPtr->dOfs_X_edge[side]) = data.getFieldData();
+        myPtr->dofs_X_edge[side] = &*myPtr->dOfs_X_edge[side].data().begin();
       }
-      myPtr->N = &*data.getN().data().begin();
-      myPtr->diffN = &*data.getDiffN().data().begin();
-      myPtr->dOfs_X_indices.resize(data.getIndices().size());
-      ublas::noalias(myPtr->dOfs_X_indices) = data.getIndices();
-      myPtr->dofs_X_indices = &*myPtr->dOfs_X_indices.data().begin();
-      myPtr->dOfs_X.resize(data.getFieldData().size());
-      ublas::noalias(myPtr->dOfs_X) = data.getFieldData();
-      myPtr->dofs_X = &*myPtr->dOfs_X.data().begin();
-    }
-    break;
-    case MBEDGE: {
-      myPtr->order_edge_material[side] = data.getOrder();
-      myPtr->dOfs_X_edge.resize(3);
-      myPtr->dOfs_X_edge[side].resize(data.getFieldData().size());
-      ublas::noalias(myPtr->dOfs_X_edge[side]) = data.getFieldData();
-      myPtr->dofs_X_edge[side] = &*myPtr->dOfs_X_edge[side].data().begin();
-    }
-    break;
-    case MBTRI: {
-      myPtr->order_face_material = data.getOrder();
-      myPtr->dOfs_X_face.resize(data.getFieldData().size());
-      ublas::noalias(myPtr->dOfs_X_face) = data.getFieldData();
-      myPtr->dofs_X_face = &*myPtr->dOfs_X_face.data().begin();
-    }
-    break;
-    default:
+      break;
+      case MBTRI: {
+        myPtr->order_face_material = data.getOrder();
+        myPtr->dOfs_X_face.resize(data.getFieldData().size());
+        ublas::noalias(myPtr->dOfs_X_face) = data.getFieldData();
+        myPtr->dofs_X_face = &*myPtr->dOfs_X_face.data().begin();
+      }
+      break;
+      default:
       SETERRQ(PETSC_COMM_SELF,1,"unknown entity type");
-  }
+    }
 
   } catch (exception& ex) {
     ostringstream ss;
@@ -190,61 +190,63 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::rHs() {
 
   try {
 
-  fExtNode.resize(9);
-  fExtFace.resize(dataH1.dataOnEntities[MBTRI][0].getFieldData().size());
-  fExtEdge.resize(3);
-  for(int ee = 0;ee<3;ee++) {
-    int nb_edge_dofs = dOfs_x_edge_indices[ee].size();
-    if(nb_edge_dofs > 0) {
-      fExtEdge[ee].resize(nb_edge_dofs);
-      Fext_edge[ee] = &*fExtEdge[ee].data().begin();
-    } else {
-      Fext_edge[ee] = NULL;
+    //cerr << t_loc[0] << " " << t_loc[1] << " " << t_loc[2] << endl;
+
+    fExtNode.resize(9);
+    fExtFace.resize(dataH1.dataOnEntities[MBTRI][0].getFieldData().size());
+    fExtEdge.resize(3);
+    for(int ee = 0;ee<3;ee++) {
+      int nb_edge_dofs = dOfs_x_edge_indices[ee].size();
+      if(nb_edge_dofs > 0) {
+        fExtEdge[ee].resize(nb_edge_dofs);
+        Fext_edge[ee] = &*fExtEdge[ee].data().begin();
+      } else {
+        Fext_edge[ee] = NULL;
+      }
     }
-  }
 
-  switch(typeOfForces) {
-    case CONSERVATIVE:
-
+    switch(typeOfForces) {
+      case CONSERVATIVE:
       ierr = Fext_h_hierarchical(
-	order_face,order_edge,//2
-	N,N_face,N_edge,diffN,diffN_face,diffN_edge,//8
-	t_loc,NULL,NULL,//11
-	dofs_x,dofs_x_edge,dofs_x_face,//14
-	NULL,NULL,NULL,//17
-	&*fExtNode.data().begin(),Fext_edge,&*fExtFace.data().begin(),//20
-	NULL,NULL,NULL,//23
-	gaussPts.size2(),&gaussPts(2,0)); CHKERRQ(ierr);
+        order_face,order_edge,//2
+        N,N_face,N_edge,diffN,diffN_face,diffN_edge,//8
+        t_loc,NULL,NULL,//11
+        dofs_x,dofs_x_edge,dofs_x_face,//14
+        NULL,NULL,NULL,//17
+        &*fExtNode.data().begin(),Fext_edge,&*fExtFace.data().begin(),//20
+        NULL,NULL,NULL,//23
+        gaussPts.size2(),&gaussPts(2,0)
+      ); CHKERRQ(ierr);
       break;
-    case NONCONSERVATIVE:
-
+      case NONCONSERVATIVE:
       for(int ee = 0;ee<3;ee++) {
-	dOfs_X_edge.resize(3);
-	unsigned int s = dOfs_X_edge[ee].size();
-	dOfs_X_edge[ee].resize(dOfs_x_edge[ee].size(),true);
-	for(;s<dOfs_X_edge[ee].size();s++) {
-	  dOfs_X_edge[ee][s] = 0;
-	}
-	dofs_X_edge[ee] = &*dOfs_X_edge[ee].data().begin();
+        dOfs_X_edge.resize(3);
+        unsigned int s = dOfs_X_edge[ee].size();
+        dOfs_X_edge[ee].resize(dOfs_x_edge[ee].size(),true);
+        for(;s<dOfs_X_edge[ee].size();s++) {
+          dOfs_X_edge[ee][s] = 0;
+        }
+        dofs_X_edge[ee] = &*dOfs_X_edge[ee].data().begin();
       }
       unsigned int s = dOfs_X_face.size();
       dOfs_X_face.resize(dOfs_x_face.size(),true);
       for(;s<dOfs_X_face.size();s++) {
-	dOfs_X_face[s] = 0;
+        dOfs_X_face[s] = 0;
       }
       dofs_X_face = &*dOfs_X_face.data().begin();
 
       ierr = Fext_h_hierarchical(
-	order_face,order_edge,//2
-	N,N_face,N_edge,diffN,diffN_face,diffN_edge,//8
-	t_loc,NULL,NULL,//11
-	dofs_X,dofs_X_edge,dofs_X_face,//14
-	NULL,NULL,NULL,//17
-	&*fExtNode.data().begin(),Fext_edge,&*fExtFace.data().begin(),//20
-	NULL,NULL,NULL,//23
-	gaussPts.size2(),&gaussPts(2,0)); CHKERRQ(ierr);
+        order_face,order_edge,//2
+        N,N_face,N_edge,diffN,diffN_face,diffN_edge,//8
+        t_loc,NULL,NULL,//11
+        dofs_X,dofs_X_edge,dofs_X_face,//14
+        NULL,NULL,NULL,//17
+        &*fExtNode.data().begin(),Fext_edge,&*fExtFace.data().begin(),//20
+        NULL,NULL,NULL,//23
+        gaussPts.size2(),&gaussPts(2,0)
+      ); CHKERRQ(ierr);
       break;
-  }
+    }
 
   } catch (exception& ex) {
     ostringstream ss;
@@ -252,32 +254,35 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::rHs() {
     SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   }
 
-  //cerr << "fExtNode: " << fExtNode << endl;
-  //cerr << "fExtFace: " << fExtFace << endl;
-  //for(int ee = 0;ee<3;ee++) {
-    //cerr << "fExtEdge " << ee << " " << fExtEdge[ee] << endl;
-  //}
+  /*cerr << "fExtNode: " << fExtNode << endl;
+  cerr << "fExtFace: " << fExtFace << endl;
+  for(int ee = 0;ee<3;ee++) {
+    cerr << "fExtEdge " << ee << " " << fExtEdge[ee] << endl;
+  }*/
 
   try {
 
-  Vec f = snes_f;
-  if(uSeF) f = F;
+    Vec f = snes_f;
+    if(uSeF) f = F;
 
-  ierr = VecSetValues(f,
-    9,dofs_x_indices,
-    &*fExtNode.data().begin(),ADD_VALUES); CHKERRQ(ierr);
-  if(dOfs_x_face_indices.size()>0) {
     ierr = VecSetValues(f,
-      dOfs_x_face_indices.size(),dofs_x_face_indices,
-      &*fExtFace.data().begin(),ADD_VALUES); CHKERRQ(ierr);
-  }
-  for(int ee = 0;ee<3;ee++) {
-    if(dOfs_x_edge_indices[ee].size()>0) {
+      9,dofs_x_indices,
+      &*fExtNode.data().begin(),ADD_VALUES
+    ); CHKERRQ(ierr);
+    if(dOfs_x_face_indices.size()>0) {
       ierr = VecSetValues(f,
-	dOfs_x_edge_indices[ee].size(),dofs_x_edge_indices[ee],
-	Fext_edge[ee],ADD_VALUES); CHKERRQ(ierr);
+        dOfs_x_face_indices.size(),dofs_x_face_indices,
+        &*fExtFace.data().begin(),ADD_VALUES
+      ); CHKERRQ(ierr);
     }
-  }
+    for(int ee = 0;ee<3;ee++) {
+      if(dOfs_x_edge_indices[ee].size()>0) {
+        ierr = VecSetValues(f,
+          dOfs_x_edge_indices[ee].size(),dofs_x_edge_indices[ee],
+          Fext_edge[ee],ADD_VALUES
+        ); CHKERRQ(ierr);
+      }
+    }
 
   } catch (exception& ex) {
     ostringstream ss;
@@ -297,117 +302,129 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::lHs() {
 
   try {
 
-  double center[3];
-  tricircumcenter3d_tp(&coords.data()[0],&coords.data()[3],&coords.data()[6],center,NULL,NULL);
-  cblas_daxpy(3,-1,&coords.data()[0],1,center,1);
-  double r = cblas_dnrm2(3,center,1);
+    double center[3];
+    tricircumcenter3d_tp(&coords.data()[0],&coords.data()[3],&coords.data()[6],center,NULL,NULL);
+    cblas_daxpy(3,-1,&coords.data()[0],1,center,1);
+    double r = cblas_dnrm2(3,center,1);
 
-  kExtNodeNode.resize(9,9);
-  kExtEdgeNode.resize(3);
-  for(int ee = 0;ee<3;ee++) {
-    kExtEdgeNode[ee].resize(dOfs_x_edge_indices[ee].size(),9);
-    Kext_edge_node[ee] = &*kExtEdgeNode[ee].data().begin();
-  }
-  kExtFaceNode.resize(dOfs_x_face_indices.size(),9);
-  ierr = KExt_hh_hierarchical(
-    r*eps,order_face,order_edge,
-    N,N_face,N_edge,diffN,diffN_face,diffN_edge,
-    t_loc,NULL,NULL,
-    dofs_x,dofs_x_edge,dofs_x_face,
-    &*kExtNodeNode.data().begin(),Kext_edge_node,&*kExtFaceNode.data().begin(),
-    gaussPts.size2(),&gaussPts(2,0)); CHKERRQ(ierr);
-  //cerr << kExtNodeNode << endl;
-  ierr = MatSetValues(snes_B,
-    9,dofs_x_indices,
-    9,dofs_x_indices,
-    &*kExtNodeNode.data().begin(),ADD_VALUES); CHKERRQ(ierr);
-  ierr = MatSetValues(snes_B,
-    kExtFaceNode.size1(),dofs_x_face_indices,
-    9,dofs_x_indices,
-    &*kExtFaceNode.data().begin(),ADD_VALUES); CHKERRQ(ierr);
-  //cerr << kExtFaceNode << endl;
-  for(int ee = 0;ee<3;ee++) {
-    //cerr << kExtEdgeNode[ee] << endl;
-    ierr = MatSetValues(snes_B,
-      kExtEdgeNode[ee].size1(),dofs_x_edge_indices[ee],
-      9,dofs_x_indices,
-      Kext_edge_node[ee],ADD_VALUES); CHKERRQ(ierr);
-  }
-
-  kExtNodeFace.resize(9,dOfs_x_face_indices.size());
-  kExtEdgeFace.resize(3);
-  for(int ee = 0;ee<3;ee++) {
-    kExtEdgeFace[ee].resize(dOfs_x_edge_indices[ee].size(),dataH1.dataOnEntities[MBTRI][0].getIndices().size());
-    Kext_edge_face[ee] = &*kExtEdgeFace[ee].data().begin();
-  }
-  kExtFaceFace.resize(dOfs_x_face_indices.size(),dOfs_x_face_indices.size());
-  ierr = KExt_hh_hierarchical_face(
-    r*eps,order_face,order_edge,
-    N,N_face,N_edge,diffN,diffN_face,diffN_edge,
-    t_loc,NULL,NULL,
-    dofs_x,dofs_x_edge,dofs_x_face,
-    &*kExtNodeFace.data().begin(),Kext_edge_face,&*kExtFaceFace.data().begin(),
-    gaussPts.size2(),&gaussPts(2,0)); CHKERRQ(ierr);
-  //cerr << "kExtNodeFace " << kExtNodeFace << endl;
-  //cerr << "kExtFaceFace " << kExtFaceFace << endl;
-  ierr = MatSetValues(snes_B,
-    9,dofs_x_indices,
-    kExtNodeFace.size2(),dofs_x_face_indices,
-    &*kExtNodeFace.data().begin(),ADD_VALUES); CHKERRQ(ierr);
-  ierr = MatSetValues(snes_B,
-    kExtFaceFace.size1(),dofs_x_face_indices,
-    kExtFaceFace.size2(),dofs_x_face_indices,
-    &*kExtFaceFace.data().begin(),ADD_VALUES); CHKERRQ(ierr);
-  for(int ee = 0;ee<3;ee++) {
-    //cerr << "kExtEdgeFace " << kExtEdgeFace[ee] << endl;
-    ierr = MatSetValues(snes_B,
-      kExtEdgeFace[ee].size1(),dofs_x_edge_indices[ee],
-      kExtFaceFace.size2(),dofs_x_face_indices,
-      Kext_edge_face[ee],ADD_VALUES); CHKERRQ(ierr);
-  }
-
-  kExtFaceEdge.resize(3);
-  kExtNodeEdge.resize(3);
-  kExtEdgeEdge.resize(3,3);
-  for(int ee = 0;ee<3;ee++) {
-    if(dOfs_x_edge_indices[ee].size()!=(unsigned int)(3*NBEDGE_H1(order_edge[ee]))) {
-      SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+    kExtNodeNode.resize(9,9);
+    kExtEdgeNode.resize(3);
+    for(int ee = 0;ee<3;ee++) {
+      kExtEdgeNode[ee].resize(dOfs_x_edge_indices[ee].size(),9);
+      Kext_edge_node[ee] = &*kExtEdgeNode[ee].data().begin();
     }
-    kExtFaceEdge[ee].resize(dOfs_x_face_indices.size(),dOfs_x_edge_indices[ee].size());
-    kExtNodeEdge[ee].resize(9,dOfs_x_edge_indices[ee].size());
-    Kext_node_edge[ee] = &*kExtNodeEdge[ee].data().begin();
-    Kext_face_edge[ee] = &*kExtFaceEdge[ee].data().begin();
-    for(int EE = 0;EE<3;EE++) {
-      kExtEdgeEdge(EE,ee).resize(dOfs_x_edge_indices[EE].size(),dOfs_x_edge_indices[ee].size());
-      Kext_edge_edge[EE][ee] = &*kExtEdgeEdge(EE,ee).data().begin();
-    }
-  }
-  ierr = KExt_hh_hierarchical_edge(
-    r*eps,order_face,order_edge,
-    N,N_face,N_edge,diffN,diffN_face,diffN_edge,
-    t_loc,NULL,NULL,
-    dofs_x,dofs_x_edge,dofs_x_face,
-    Kext_node_edge,Kext_edge_edge,Kext_face_edge,
-    gaussPts.size2(),&gaussPts(2,0)); CHKERRQ(ierr);
-  for(int ee = 0;ee<3;ee++) {
-    //cerr << "kExtFaceEdge: " << kExtFaceEdge[ee] << endl;
-    //cerr << "kExtFaceEdge: " << kExtNodeEdge[ee] << endl;
-    ierr = MatSetValues(snes_B,
-      kExtFaceEdge[ee].size1(),dofs_x_face_indices,
-      kExtFaceEdge[ee].size2(),dofs_x_edge_indices[ee],
-      &*kExtFaceEdge[ee].data().begin(),ADD_VALUES); CHKERRQ(ierr);
+    kExtFaceNode.resize(dOfs_x_face_indices.size(),9);
+    ierr = KExt_hh_hierarchical(
+      r*eps,order_face,order_edge,
+      N,N_face,N_edge,diffN,diffN_face,diffN_edge,
+      t_loc,NULL,NULL,
+      dofs_x,dofs_x_edge,dofs_x_face,
+      &*kExtNodeNode.data().begin(),Kext_edge_node,&*kExtFaceNode.data().begin(),
+      gaussPts.size2(),&gaussPts(2,0)
+    ); CHKERRQ(ierr);
+    //cerr << kExtNodeNode << endl;
     ierr = MatSetValues(snes_B,
       9,dofs_x_indices,
-      kExtNodeEdge[ee].size2(),dofs_x_edge_indices[ee],
-      &*kExtNodeEdge[ee].data().begin(),ADD_VALUES); CHKERRQ(ierr);
-    for(int EE = 0;EE<3;EE++) {
-      //cerr << kExtEdgeEdge(EE,ee) << endl;
+      9,dofs_x_indices,
+      &*kExtNodeNode.data().begin(),ADD_VALUES
+    ); CHKERRQ(ierr);
+    ierr = MatSetValues(snes_B,
+      kExtFaceNode.size1(),dofs_x_face_indices,
+      9,dofs_x_indices,
+      &*kExtFaceNode.data().begin(),ADD_VALUES
+    ); CHKERRQ(ierr);
+    //cerr << kExtFaceNode << endl;
+    for(int ee = 0;ee<3;ee++) {
+      //cerr << kExtEdgeNode[ee] << endl;
       ierr = MatSetValues(snes_B,
-	kExtEdgeEdge(EE,ee).size1(),dofs_x_edge_indices[EE],
-	kExtEdgeEdge(EE,ee).size2(),dofs_x_edge_indices[ee],
-	Kext_edge_edge[EE][ee],ADD_VALUES); CHKERRQ(ierr);
+        kExtEdgeNode[ee].size1(),dofs_x_edge_indices[ee],
+        9,dofs_x_indices,
+        Kext_edge_node[ee],ADD_VALUES
+      ); CHKERRQ(ierr);
     }
-  }
+
+    kExtNodeFace.resize(9,dOfs_x_face_indices.size());
+    kExtEdgeFace.resize(3);
+    for(int ee = 0;ee<3;ee++) {
+      kExtEdgeFace[ee].resize(dOfs_x_edge_indices[ee].size(),dataH1.dataOnEntities[MBTRI][0].getIndices().size());
+      Kext_edge_face[ee] = &*kExtEdgeFace[ee].data().begin();
+    }
+    kExtFaceFace.resize(dOfs_x_face_indices.size(),dOfs_x_face_indices.size());
+    ierr = KExt_hh_hierarchical_face(
+      r*eps,order_face,order_edge,
+      N,N_face,N_edge,diffN,diffN_face,diffN_edge,
+      t_loc,NULL,NULL,
+      dofs_x,dofs_x_edge,dofs_x_face,
+      &*kExtNodeFace.data().begin(),Kext_edge_face,&*kExtFaceFace.data().begin(),
+      gaussPts.size2(),&gaussPts(2,0)
+    ); CHKERRQ(ierr);
+    //cerr << "kExtNodeFace " << kExtNodeFace << endl;
+    //cerr << "kExtFaceFace " << kExtFaceFace << endl;
+    ierr = MatSetValues(snes_B,
+      9,dofs_x_indices,
+      kExtNodeFace.size2(),dofs_x_face_indices,
+      &*kExtNodeFace.data().begin(),ADD_VALUES
+    ); CHKERRQ(ierr);
+    ierr = MatSetValues(snes_B,
+      kExtFaceFace.size1(),dofs_x_face_indices,
+      kExtFaceFace.size2(),dofs_x_face_indices,
+      &*kExtFaceFace.data().begin(),ADD_VALUES
+    ); CHKERRQ(ierr);
+    for(int ee = 0;ee<3;ee++) {
+      //cerr << "kExtEdgeFace " << kExtEdgeFace[ee] << endl;
+      ierr = MatSetValues(snes_B,
+        kExtEdgeFace[ee].size1(),dofs_x_edge_indices[ee],
+        kExtFaceFace.size2(),dofs_x_face_indices,
+        Kext_edge_face[ee],ADD_VALUES
+      ); CHKERRQ(ierr);
+    }
+
+    kExtFaceEdge.resize(3);
+    kExtNodeEdge.resize(3);
+    kExtEdgeEdge.resize(3,3);
+    for(int ee = 0;ee<3;ee++) {
+      if(dOfs_x_edge_indices[ee].size()!=(unsigned int)(3*NBEDGE_H1(order_edge[ee]))) {
+        SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+      }
+      kExtFaceEdge[ee].resize(dOfs_x_face_indices.size(),dOfs_x_edge_indices[ee].size());
+      kExtNodeEdge[ee].resize(9,dOfs_x_edge_indices[ee].size());
+      Kext_node_edge[ee] = &*kExtNodeEdge[ee].data().begin();
+      Kext_face_edge[ee] = &*kExtFaceEdge[ee].data().begin();
+      for(int EE = 0;EE<3;EE++) {
+        kExtEdgeEdge(EE,ee).resize(dOfs_x_edge_indices[EE].size(),dOfs_x_edge_indices[ee].size());
+        Kext_edge_edge[EE][ee] = &*kExtEdgeEdge(EE,ee).data().begin();
+      }
+    }
+    ierr = KExt_hh_hierarchical_edge(
+      r*eps,order_face,order_edge,
+      N,N_face,N_edge,diffN,diffN_face,diffN_edge,
+      t_loc,NULL,NULL,
+      dofs_x,dofs_x_edge,dofs_x_face,
+      Kext_node_edge,Kext_edge_edge,Kext_face_edge,
+      gaussPts.size2(),&gaussPts(2,0)
+    ); CHKERRQ(ierr);
+    for(int ee = 0;ee<3;ee++) {
+      //cerr << "kExtFaceEdge: " << kExtFaceEdge[ee] << endl;
+      //cerr << "kExtFaceEdge: " << kExtNodeEdge[ee] << endl;
+      ierr = MatSetValues(snes_B,
+        kExtFaceEdge[ee].size1(),dofs_x_face_indices,
+        kExtFaceEdge[ee].size2(),dofs_x_edge_indices[ee],
+        &*kExtFaceEdge[ee].data().begin(),ADD_VALUES
+      ); CHKERRQ(ierr);
+      ierr = MatSetValues(snes_B,
+        9,dofs_x_indices,
+        kExtNodeEdge[ee].size2(),dofs_x_edge_indices[ee],
+        &*kExtNodeEdge[ee].data().begin(),ADD_VALUES
+      ); CHKERRQ(ierr);
+      for(int EE = 0;EE<3;EE++) {
+        //cerr << kExtEdgeEdge(EE,ee) << endl;
+        ierr = MatSetValues(snes_B,
+          kExtEdgeEdge(EE,ee).size1(),dofs_x_edge_indices[EE],
+          kExtEdgeEdge(EE,ee).size2(),dofs_x_edge_indices[ee],
+          Kext_edge_edge[EE][ee],ADD_VALUES
+        ); CHKERRQ(ierr);
+      }
+    }
 
   } catch (exception& ex) {
     ostringstream ss;
@@ -417,7 +434,6 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::lHs() {
 
   PetscFunctionReturn(0);
 }
-
 
 PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::reBaseToFaceLoocalCoordSystem(ublas::matrix<double> &t_glob_nodal) {
   PetscFunctionBegin;
@@ -468,9 +484,9 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::calcTrac
       tGlob *= mif->second.data.data.value1;
       tGlobNodal.resize(3,3);
       for(int nn = 0;nn<3;nn++) {
-	for(int dd = 0;dd<3;dd++) {
-	  tGlobNodal(nn,dd) = tGlob[dd];
-	}
+        for(int dd = 0;dd<3;dd++) {
+          tGlobNodal(nn,dd) = tGlob[dd];
+        }
       }
       ierr = reBaseToFaceLoocalCoordSystem(tGlobNodal); CHKERRQ(ierr);
       tLocNodal += tGlobNodal;
@@ -649,7 +665,8 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleMaterialFE::rHs() {
   if(uSeF) f = F;
   ierr = VecSetValues(f,
     9,dofs_X_indices,
-    &*fExtNode.data().begin(),ADD_VALUES); CHKERRQ(ierr);
+    &*fExtNode.data().begin(),ADD_VALUES
+  ); CHKERRQ(ierr);
 
   } catch (exception& ex) {
     ostringstream ss;
