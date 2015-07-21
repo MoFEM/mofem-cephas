@@ -332,9 +332,9 @@ PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
           //calculate current density
           adouble rho = rho0*detF;
           //momentum rate
-          noalias(dp_dt) = rho*(a0 + a + prod(G,dot_W));
+          noalias(dp_dt) = rho*(-a0 + a + prod(G,dot_W));
         } else {
-          noalias(dp_dt) = rho0*(a0 + a + prod(G,dot_W));
+          noalias(dp_dt) = rho0*(-a0 + a + prod(G,dot_W));
         }
         noalias(a_res) = dp_dt*detH;
         //dependant

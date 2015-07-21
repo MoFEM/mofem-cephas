@@ -1,0 +1,28 @@
+#block 1 represents dam as in cubit file
+[block_1]
+
+# arbitrary order of approx. for blockset
+displacemet_order = 2
+
+# Elastic material properties. Possible materials are NEOHOOKEAN, HOOKE,
+# KIRCHOFF or any other added by user.
+material = HOOKE
+young_modulus = 2.6e+10
+poisson_ratio = 0.2
+density = 2300
+
+#block 2 represents valley as in cubit file
+[block_2]
+
+# Valley is less important, set approx. order to 1
+displacemet_order = 1
+
+material = HOOKE
+
+[block_3]
+
+# eta = 0.4, value eta*G=eta*E/2*(1+nu)
+dashG = 3.8400e+09
+
+# only shear damping, damping bulk modulus = 0 when dashpot poison ratio is -1
+dashPoisson = -1

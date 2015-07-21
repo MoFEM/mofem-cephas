@@ -744,9 +744,14 @@ int main(int argc, char *argv[]) {
     snes_ctx.get_preProcess_to_do_Mat().push_back(&my_dirichlet_bc);
     loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ELASTIC",&elastic.getLoopFeLhs()));
     loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("NEUMANN_FE",&surface_force));
+    inertia.getLoopFeMassAuxLhs().ts_t = 0;
+    inertia.getLoopFeMassAuxLhs().ts_a = 0;
     loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ELASTIC",&inertia.getLoopFeMassAuxLhs()));
     snes_ctx.get_postProcess_to_do_Mat().push_back(&my_dirichlet_bc);
 
+    ierr = m_field.field_scale(0,"SPATIAL_VELOCITY"); CHKERRQ(ierr);
+    ierr = m_field.field_scale(0,"DOT_SPATIAL_POSITION"); CHKERRQ(ierr);
+    ierr = m_field.field_scale(0,"DOT_SPATIAL_VELOCITY"); CHKERRQ(ierr);
     ierr = m_field.set_local_ghost_vector("Kuu",COL,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
     ierr = SNESSolve(snes,PETSC_NULL,D); CHKERRQ(ierr);
