@@ -26,6 +26,11 @@
 
 #include<moab/Skinner.hpp>
 
+/** \brief Fluid pressure forces
+
+\todo Implementation for large displacements
+
+*/
 struct FluidPressure {
 
   FieldInterface &mField;

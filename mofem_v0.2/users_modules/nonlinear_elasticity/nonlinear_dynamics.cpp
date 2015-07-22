@@ -346,6 +346,9 @@ int main(int argc, char *argv[]) {
   // Add fluid pressure finite elements
   FluidPressure fluid_pressure_fe(m_field);
   fluid_pressure_fe.addNeumannFluidPressureBCElements("SPATIAL_POSITION");
+  fluid_pressure_fe.setNeumannFluidPressureFiniteElementOperators(
+    "SPATIAL_POSITION",PETSC_NULL,false,true
+  );
 
   // Velocity
   ierr = m_field.add_field("SPATIAL_VELOCITY",H1,3,MF_ZERO); CHKERRQ(ierr);
@@ -393,7 +396,7 @@ int main(int argc, char *argv[]) {
     PetscBool flg;
     ierr = PetscOptionsGetString(PETSC_NULL,name.c_str(),time_file_name,255,&flg); CHKERRQ(ierr);
     if(flg == PETSC_TRUE) {
-      inertia.methodsOp.push_back(new TimeForceScale(name));
+      inertia.methodsOp.push_back(new TimeAccelerogram(name));
     }
   }
 
@@ -730,6 +733,8 @@ int main(int argc, char *argv[]) {
     SnesCtx::loops_to_do_type& loops_to_do_Rhs = snes_ctx.get_loops_to_do_Rhs();
     snes_ctx.get_preProcess_to_do_Rhs().push_back(&my_dirichlet_bc);
     loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ELASTIC",&elastic.getLoopFeRhs()));
+    fluid_pressure_fe.getLoopFe().ts_t = 0;
+    loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("FLUID_PRESSURE_FE",&fluid_pressure_fe.getLoopFe()));
     surface_force.ts_t = 0;
     loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("NEUMANN_FE",&surface_force));
     boost::ptr_map<string,NodalForce>::iterator fit = nodal_forces.begin();
@@ -738,7 +743,6 @@ int main(int argc, char *argv[]) {
       loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type(fit->first,&fit->second->getLoopFe()));
     }
     inertia.getLoopFeMassRhs().ts_t = 0;
-    loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("FLUID_PRESSURE_FE",&fluid_pressure_fe.getLoopFe()));
     loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ELASTIC",&inertia.getLoopFeMassRhs()));
     snes_ctx.get_postProcess_to_do_Rhs().push_back(&my_dirichlet_bc);
 
@@ -754,6 +758,7 @@ int main(int argc, char *argv[]) {
     ierr = m_field.field_scale(0,"SPATIAL_VELOCITY"); CHKERRQ(ierr);
     ierr = m_field.field_scale(0,"DOT_SPATIAL_POSITION"); CHKERRQ(ierr);
     ierr = m_field.field_scale(0,"DOT_SPATIAL_VELOCITY"); CHKERRQ(ierr);
+
     ierr = m_field.set_local_ghost_vector("Kuu",COL,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
     ierr = SNESSolve(snes,PETSC_NULL,D); CHKERRQ(ierr);

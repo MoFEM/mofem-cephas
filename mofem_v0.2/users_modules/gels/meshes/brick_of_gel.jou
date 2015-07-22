@@ -34,14 +34,3 @@ mesh volume all
 block 3 tet all
 block 3 element type TETRA10
 
-
-
-
-
-
-
-
-
-
-
-

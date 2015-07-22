@@ -412,6 +412,42 @@ color Volume 215 grey
 imprint volume all
 merge volume all 
 
+#Valey 
+delete volume 218
+
+##Valley elastic properties
+#block 2 volume 218
+#block 2 name "MAT_ELASTIC_VAL"
+#block 2 attribute count 2
+##Unit MPa
+#block 2 attribute index 1 6.0e+4
+#block 2 attribute index 2 0.2
+#
+##Damping 
+#block 4 volume 218
+#block 4 name "DAMPER_VAL")
+#block 4 attribute count 2
+#block 4 attribute index 1  3.8400e+03 # eta = 0.4, value eta*G=eta*E/2*(1+nu)
+#block 4 attribute index 2 -1 # only shear damping, no volumetric
+#
+##displacement constrain on bottom surface
+#create Displacement 1 on surface 743  dof 3 fix 0
+#create Displacement 2 on surface 747 750  dof 1 fix 0
+#create Displacement 2 on surface 749 744  dof 2 fix 0
+#
+##Apply Water Pressure inside 
+#block 5 surface 751 753 756 758 760 762 764 766 768 770 772 774 776 778 780 697  
+#block 5 name 'FLUID_PRESSURE'  
+#block 5 attribute count 7   
+#block 5 attribute index 1 0.001	#density of Water [1kg/m^3  = N*(m/s^2) / m^3 =  1e-6 M]   
+#block 5 attribute index 2 0 		#acceleration x-direction  
+#block 5 attribute index 3 0 		#acceleration y-direction  
+#block 5 attribute index 4 -9.81 	#acceleration z-direction  
+##zero pressure point - water level at which water pressure is zero  
+#block 5 attribute index 5 0 		#pressure point x-direction  
+#block 5 attribute index 6 0 		#pressure point y-direction  
+#block 5 attribute index 7 -530 	#pressure point z-direction  
+
 #DAM CREATED
 
 ##Applying Boundary Conditions
@@ -419,66 +455,45 @@ merge volume all
 block 1 volume 215
 block 1 name "MAT_ELASTIC_DAM"
 block 1 attribute count 2
-block 1 attribute index 1 2.6e+10
+# Note that base init is Mega Pascal  MPa
+block 1 attribute index 1 2.6e+4 
 block 1 attribute index 2 0.2
 
-#Valley elastic properties
-block 2 volume 218
-block 2 name "MAT_ELASTIC_VAL"
-block 2 attribute count 2
-block 2 attribute index 1 6.0e+10
-block 2 attribute index 2 0.2
+#Damping  
+block 3 volume 215 
+block 3 name "DAMPER_DAM") 
+block 3 attribute count 2 
+block 3 attribute index 1 312 # eta = 0.04, value eta*G=eta*E/2*(1+nu) 
+block 3 attribute index 2 -1 # only shear damping, no volumetric 
 
-#Damping 
-block 3 volume 215
-block 3 name "DAMPER_DAM")
-block 3 attribute count 2
-block 3 attribute index 1 9.6000e+09 # eta = 0.4, value eta*G=eta*E/2*(1+nu)
-block 3 attribute index 2 -1 # only shear damping, no volumetric
-
-#Damping 
-block 4 volume 218
-block 4 name "DAMPER_VAL")
-block 4 attribute count 2
-block 4 attribute index 1  3.8400e+09 # eta = 0.4, value eta*G=eta*E/2*(1+nu)
-block 4 attribute index 2 -1 # only shear damping, no volumetric
-
-##Apply Water Pressure inside
-#block 5 surface 751 753 756 758 760 762 764 766 768 770 772 774 776 778 780 697 
-#block 5 name 'FLUID_PRESSURE' 
-#block 5 attribute count 7  
-#block 5 attribute index 1 1000 #density of Water 
-#block 5 attribute index 2 0 #acceleration x-direction 
-#block 5 attribute index 3 0 #acceleration y-direction 
-#block 5 attribute index 4 -9.81 #acceleration z-direction 
-#zero pressure point - water level at which water pressure is zero 
-#block 5 attribute index 5 0 #pressure point x-direction 
-#block 5 attribute index 6 0 #pressure point y-direction 
-#block 5 attribute index 7 -530 #pressure point z-direction 
+###Apply Water Pressure inside 
+#block 5 surface  697   
+#block 5 name 'FLUID_PRESSURE'   
+#block 5 attribute count 7    
+#block 5 attribute index 1 0.001	#density of Water [1kg/m^3  = N*(m/s^2) / m^3 =  1e-6 M]    
+#block 5 attribute index 2 0 		#acceleration x-direction   
+#block 5 attribute index 3 0 		#acceleration y-direction   
+#block 5 attribute index 4 -9.81 	#acceleration z-direction   
+##zero pressure point - water level at which water pressure is zero   
+#block 5 attribute index 5 0 		#pressure point x-direction   
+#block 5 attribute index 6 0 		#pressure point y-direction   
+#block 5 attribute index 7 -530 	#pressure point z-direction   
 
 block 6 volume all
 block 6 name "BODY_FORCES")
 block 6 attribute count 4
-block 6 attribute index 1 2300
+block 6 attribute index 1 0.00230	
 block 6 attribute index 2 0.
 block 6 attribute index 3 0.
-block 6 attribute index 4 -9.81
+block 6 attribute index 4 0
 
-#displacement constrain on bottom surface
-create Displacement 1 on surface 743  dof 3 fix 0
-create Displacement 2 on surface 747 750  dof 1 fix 0
-create Displacement 2 on surface 749 744  dof 2 fix 0
+create Displacement 1 on surface 692 691 628 627 624 698 693 615 625 630 626  dof 1 2 3 fix 0
 
 ##mesh the geometry
 volume all scheme Tetmesh
-volume all size auto factor 5
-volume 215 size auto factor 5
+volume all size auto factor 6
+#volume 215 size auto factor 7
 mesh volume all
 
-block 7 tet all        
-block 7 element type tetra10  
-
-
-
-
-
+#block 7 tet all        
+#block 7 element type tetra10  
