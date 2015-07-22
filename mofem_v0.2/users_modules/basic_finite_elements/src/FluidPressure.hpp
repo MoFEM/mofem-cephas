@@ -30,8 +30,17 @@ struct FluidPressure {
 
   FieldInterface &mField;
   struct MyTriangleFE: public FaceElementForcesAndSourcesCore {
-    MyTriangleFE(FieldInterface &m_field): FaceElementForcesAndSourcesCore(m_field) {}
-    int getRule(int order) { return order; };
+
+    MyTriangleFE(FieldInterface &m_field):
+    FaceElementForcesAndSourcesCore(m_field) {
+    }
+    int getRule(int order) { return order+1; };
+
+    PetscErrorCode preProcess() {
+      PetscFunctionBegin;
+      PetscFunctionReturn(0);
+    }
+
   };
   MyTriangleFE fe;
   MyTriangleFE& getLoopFe() { return fe; }
@@ -92,13 +101,13 @@ struct FluidPressure {
       int nb_row_dofs = data.getIndices().size()/rank;
 
       Nf.resize(data.getIndices().size());
-      bzero(&*Nf.data().begin(),data.getIndices().size()*sizeof(FieldData));
+      Nf.clear();
 
       for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
 
         VectorDouble dist;
         VectorDouble zero_pressure = dAta.zEroPressure;
-        VectorDouble fluctuation;
+        /*VectorDouble fluctuation;
         fluctuation.resize(3);
         fluctuation.clear();
         if(methodsOp.size()>0) {
@@ -108,7 +117,7 @@ struct FluidPressure {
           }
           ierr = MethodForForceScaling::applyScale(getFEMethod(),methodsOp,fluctuation); CHKERRQ(ierr);
         }
-        noalias(zero_pressure) += fluctuation;
+        noalias(zero_pressure) += fluctuation;*/
         dist = ublas::matrix_row<MatrixDouble >(getCoordsAtGaussPts(),gg);
         dist -= zero_pressure;
         double dot = cblas_ddot(3,&dist[0],1,&dAta.aCCeleration[0],1);
@@ -122,27 +131,42 @@ struct FluidPressure {
           } else {
             force = pressure*getNormal()[rr];
           }
-          cblas_daxpy(nb_row_dofs,getGaussPts()(2,gg)*force,&data.getN()(gg,0),1,&Nf[rr],rank);
+          cblas_daxpy(
+            nb_row_dofs,getGaussPts()(2,gg)*force,&data.getN()(gg,0),1,&Nf[rr],rank
+          );
         }
 
+      }
+
+      bool set = false;
+      switch(getFEMethod()->ts_ctx) {
+        case FEMethod::CTX_TSSETIFUNCTION:
+        F = getFEMethod()->ts_F;
+        set = true;
+        break;
+        default:
+        break;
+      }
+      if(!set) {
+        switch(getFEMethod()->snes_ctx) {
+          case FEMethod::CTX_SNESSETFUNCTION:
+          F = getFEMethod()->snes_f;
+          set = true;
+          default:
+          break;
+        }
       }
 
       if(F==PETSC_NULL) {
-        switch(getFEMethod()->ts_ctx) {
-          case FEMethod::CTX_TSSETIFUNCTION:
-          F = getFEMethod()->ts_F;
-          break;
-          default:
-          F = getFEMethod()->snes_f;
-          break;
-        }
+        SETERRQ(PETSC_COMM_SELF,MOFEM_IMPOSIBLE_CASE,"impossible case");
       }
 
-      //cerr << Nf << endl;
-      //cerr << data.getIndices() << endl;
       ierr = VecSetValues(
-        F,data.getIndices().size(),
-        &data.getIndices()[0],&Nf[0],ADD_VALUES
+        F,
+        data.getIndices().size(),
+        &data.getIndices()[0],
+        &Nf[0],
+        ADD_VALUES
       ); CHKERRQ(ierr);
 
 
@@ -185,7 +209,7 @@ struct FluidPressure {
         setOfFluids[bit->get_msId()].zEroPressure[0] = attributes[4];
         setOfFluids[bit->get_msId()].zEroPressure[1] = attributes[5];
         setOfFluids[bit->get_msId()].zEroPressure[2] = attributes[6];
-        //get blok tetrahedrals and triangles
+        //get blok tetrahedrons and triangles
         Range tets;
         rval = mField.get_moab().get_entities_by_type(bit->meshset,MBTET,tets,true); CHKERR_PETSC(rval);
         Range tris;

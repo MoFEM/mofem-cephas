@@ -32,8 +32,8 @@ struct Hooke: public NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoff
 
     Hooke(): NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoffI<TYPE>() {}
 
-    ublas::matrix<TYPE> Eps;
-    TYPE tr;
+    ublas::matrix<TYPE> ePs;
+    TYPE tR;
 
     /** \brief Hooke equation
       *
@@ -49,23 +49,23 @@ struct Hooke: public NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoff
       this->lambda = LAMBDA(block_data.E,block_data.PoissonRatio);
       this->mu = MU(block_data.E,block_data.PoissonRatio);
       //cerr << block_data.E << " " << block_data.PoissonRatio << endl;
-      Eps.resize(3,3,false);
-      noalias(Eps) = this->F;
+      ePs.resize(3,3,false);
+      noalias(ePs) = this->F;
       for(int dd = 0;dd<3;dd++) {
-        Eps(dd,dd) -= 1;
+        ePs(dd,dd) -= 1;
       }
-      Eps += trans(Eps);
-      Eps *= 0.5;
+      ePs += trans(ePs);
+      ePs *= 0.5;
       this->P.resize(3,3,false);
-      noalias(this->P) = 2*this->mu*Eps;
-      tr = 0;
+      noalias(this->P) = 2*this->mu*ePs;
+      tR = 0;
       for(int dd = 0;dd<3;dd++) {
-        tr += Eps(dd,dd);
+        tR += ePs(dd,dd);
       }
       for(int dd =0;dd<3;dd++) {
-        this->P(dd,dd) += this->lambda*tr;
+        this->P(dd,dd) += this->lambda*tR;
       }
-      //cerr << Eps << " : " << this->P << endl;
+      //cerr << ePs << " : " << this->P << endl << endl;
       PetscFunctionReturn(0);
     }
 
@@ -81,23 +81,23 @@ struct Hooke: public NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoff
       PetscFunctionBegin;
       this->lambda = LAMBDA(block_data.E,block_data.PoissonRatio);
       this->mu = MU(block_data.E,block_data.PoissonRatio);
-      Eps.resize(3,3);
-      noalias(Eps) = this->F;
+      ePs.resize(3,3);
+      noalias(ePs) = this->F;
       for(int dd = 0;dd<3;dd++) {
-        Eps(dd,dd) -= 1;
+        ePs(dd,dd) -= 1;
       }
-      Eps += trans(Eps);
-      Eps *= 0.5;
-      //cerr << Eps << endl;
-      TYPE trace = 0;
+      ePs += trans(ePs);
+      ePs *= 0.5;
+      //cerr << ePs << endl;
       this->eNergy = 0;
+      tR = 0;
       for(int dd = 0;dd<3;dd++) {
-        trace += Eps(dd,dd);
+        tR += ePs(dd,dd);
         for(int jj = 0;jj<3;jj++) {
-          this->eNergy += this->mu*Eps(dd,jj)*Eps(dd,jj);
+          this->eNergy += this->mu*ePs(dd,jj)*ePs(dd,jj);
         }
       }
-      this->eNergy += 0.5*this->lambda*trace*trace;
+      this->eNergy += 0.5*this->lambda*tR*tR;
       PetscFunctionReturn(0);
     }
 

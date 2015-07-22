@@ -27,6 +27,10 @@
   #error "MoFEM need to be compiled with ADOL-C"
 #endif
 
+/** \brief Implementation of Kelvin Voigt Damper
+\ingroup nonlinear_elastic_elem
+
+*/
 struct KelvinVoigtDamper {
 
   enum TagEvaluate {
