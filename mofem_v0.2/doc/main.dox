@@ -96,7 +96,7 @@ independently form MoFEM developers. User modules may follow different license
 agreement and copyrights. However, all users modules which are created at Glasgow
 University are under the same license agreement as main MoFEM library.
 
-List is generated automatically whene documentation is build. If one author uses
+List is generated automatically where documentation is build. If one author uses
 more than one name the same person can appear more than one.
 
 \verbinclude doc/contributors_list
