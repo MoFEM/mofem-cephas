@@ -21,13 +21,12 @@
 */
 
 #include <MoFEM.hpp>
+using namespace MoFEM;
 #include <Projection10NodeCoordsOnField.hpp>
 
 #include <boost/numeric/ublas/vector_proxy.hpp>
 #include <FieldApproximation.hpp>
 #include <PostProcOnRefMesh.hpp>
-#include <boost/iostreams/tee.hpp>
-#include <boost/iostreams/stream.hpp>
 #include <petsctime.h>
 #include <fstream>
 #include <iostream>
@@ -39,10 +38,6 @@
 
 using namespace std;
 using namespace boost::math;
-namespace bio = boost::iostreams;
-using bio::tee_device;
-using bio::stream;
-using namespace MoFEM;
 
 #include <AnalyticalSolutions.hpp>
 
@@ -209,8 +204,10 @@ int main(int argc, char *argv[]) {
   }
 
   PetscInt choise_value = 0;
+
   // set type of analytical solution
   ierr = PetscOptionsGetEList(NULL,"-analytical_solution_type",analytical_solution_types,6,&choise_value,&flg); CHKERRQ(ierr);
+
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -analytical_solution_type needed, WARNING!!!!!!.");
   }
@@ -221,7 +218,7 @@ int main(int argc, char *argv[]) {
 
       {
 
-	double scattering_sphere_radius = 1;;
+	double scattering_sphere_radius = 0.5;
 	ierr = PetscOptionsGetScalar(NULL,"-scattering_sphere_radius",&scattering_sphere_radius,NULL); CHKERRQ(ierr);
 
 	HardSphereScatterWave function_evaluator(wavenumber,scattering_sphere_radius);
@@ -234,7 +231,7 @@ int main(int argc, char *argv[]) {
     case SOFT_SPHERE_SCATTER_WAVE:
 
       {
-	double scattering_sphere_radius = 1;;
+	double scattering_sphere_radius = 0.5;
 	ierr = PetscOptionsGetScalar(NULL,"-scattering_sphere_radius",&scattering_sphere_radius,NULL); CHKERRQ(ierr);
 
         SoftSphereScatterWave function_evaluator(wavenumber,scattering_sphere_radius);
@@ -327,7 +324,7 @@ int main(int argc, char *argv[]) {
 
   }
 
-  // calulate total time
+  // calculate total time
   ierr = PetscTime(&v2);CHKERRQ(ierr);
   ierr = PetscGetCPUTime(&t2);CHKERRQ(ierr);
   PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Total Rank %d Time = %f S CPU Time = %f S \n",pcomm->rank(),v2-v1,t2-t1);

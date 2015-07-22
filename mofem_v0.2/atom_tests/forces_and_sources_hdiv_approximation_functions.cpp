@@ -14,8 +14,8 @@
 
 #include <MoFEM.hpp>
 
-#include <DirichletBC.hpp>
-#include <PostProcOnRefMesh.hpp>
+//#include <DirichletBC.hpp>
+//#include <PostProcOnRefMesh.hpp>
 
 #include <Projection10NodeCoordsOnField.hpp>
 
@@ -157,7 +157,7 @@ int main(int argc, char *argv[]) {
       int dd = 0;
       int size = data.getHdivN().data().size();
       for(;dd<size;dd++) {
-	if(fabs(data.getHdivN().data()[dd])<eps) data.getHdivN().data()[dd] = 0;
+        if(fabs(data.getHdivN().data()[dd])<eps) data.getHdivN().data()[dd] = 0;
       }
 
       mySplit << std::fixed << data.getHdivN() << endl;
@@ -180,12 +180,11 @@ int main(int argc, char *argv[]) {
 
   ierr = m_field.loop_finite_elements("TEST_PROBLEM","TEST_FE",tet_fe);  CHKERRQ(ierr);
 
-  PostPocOnRefinedMesh post_proc(m_field);
+  /*PostPocOnRefinedMesh post_proc(m_field);
   ierr = post_proc.generateReferenceElementMesh(); CHKERRQ(ierr);
   ierr = post_proc.addHdivFunctionsPostProc("HDIV");  CHKERRQ(ierr);
   ierr = m_field.loop_finite_elements("TEST_PROBLEM","TEST_FE",post_proc);  CHKERRQ(ierr);
-
-  rval = post_proc.postProcMesh.write_file("out.vtk","VTK",""); CHKERR_PETSC(rval);
+  rval = post_proc.postProcMesh.write_file("out.vtk","VTK",""); CHKERR_PETSC(rval);*/
 
 
   ierr = PetscFinalize(); CHKERRQ(ierr);

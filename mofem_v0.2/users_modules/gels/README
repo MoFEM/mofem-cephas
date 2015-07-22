@@ -1,0 +1,6 @@
+
+Steady problem,
+============================================================
+make Gels_unsteady && mpirun -np 1 ./Gels_unsteady
+
+

@@ -24,7 +24,7 @@
 #  ${UM_SOURCE_DIR}/helmholtz/atom_tests/acoustic_sphere.cpp)
 
 #target_link_libraries(acoustic_sphere
-# mofem_finite_element_library
+# users_modules
 # mofem_finite_elements
 # mofem_interfaces
 # mofem_multi_indices
@@ -38,5 +38,5 @@
 # ${CMAKE_CURRENT_BINARY_DIR}/thermal_with_analytical_bc•
 # -my_file sphere.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package mumps -ksp_monitor)
 #add_test(thermal_with_analytical_bc_atom_compare ${CMAKE_COMMAND} -E compare_files•
-#  ${CMAKE_SOURCE_DIR}/analytical_dirihlet_boundary_conditions/atom_tests/blessed_files/thermal_with_analytical_bc.txt
-#  ${CMAKE_BINARY_DIR}/analytical_dirihlet_boundary_conditions/atom_tests/thermal_with_analytical_bc.txt)
+#  ${CMAKE_SOURCE_DIR}/analytical_Dirichlet_boundary_conditions/atom_tests/blessed_files/thermal_with_analytical_bc.txt
+#  ${CMAKE_BINARY_DIR}/analytical_Dirichlet_boundary_conditions/atom_tests/thermal_with_analytical_bc.txt)

@@ -35,13 +35,14 @@ using namespace MoFEM;
 #include <DirichletBC.hpp>
 #include <ArcLengthTools.hpp>
 #include <adolc/adolc.h>
-#include <NonLienarElasticElement.hpp>
+#include <NonLinearElasticElement.hpp>
 #include <NeoHookean.hpp>
 
 #include <PostProcOnRefMesh.hpp>
 #include <PostProcStresses.hpp>
 #include <Projection10NodeCoordsOnField.hpp>
 
+#include <MethodForForceScaling.hpp>
 #include <SurfacePressure.hpp>
 #include <NodalForce.hpp>
 
@@ -78,7 +79,7 @@ int main(int argc, char *argv[]) {
     order = 3;
   }
 
-  // use this if your mesh is partotioned and you run code on parts,
+  // use this if your mesh is partitioned and you run code on parts,
   // you can solve very big problems
   PetscBool is_partitioned = PETSC_FALSE;
   ierr = PetscOptionsGetBool(PETSC_NULL,"-my_is_partitioned",&is_partitioned,&flg); CHKERRQ(ierr);
@@ -198,7 +199,7 @@ int main(int argc, char *argv[]) {
     ierr = m_field.set_field_order(0,MBEDGE,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
     ierr = m_field.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
 
-    //add neumman finite elemnets to add static boundary conditions
+    //add Neumman finite elements to add static boundary conditions
     ierr = m_field.add_finite_element("NEUAMNN_FE"); CHKERRQ(ierr);
     ierr = m_field.modify_finite_element_add_field_row("NEUAMNN_FE","SPATIAL_POSITION"); CHKERRQ(ierr);
     ierr = m_field.modify_finite_element_add_field_col("NEUAMNN_FE","SPATIAL_POSITION"); CHKERRQ(ierr);
@@ -216,7 +217,7 @@ int main(int argc, char *argv[]) {
       ierr = m_field.add_ents_to_finite_element_by_TRIs(tris,"NEUAMNN_FE"); CHKERRQ(ierr);
     }
     //add nodal force element
-    ierr = MetaNodalForces::addNodalForceElement(m_field,"SPATIAL_POSITION"); CHKERRQ(ierr);
+    ierr = MetaNodalForces::addElement(m_field,"SPATIAL_POSITION"); CHKERRQ(ierr);
     ierr = m_field.modify_problem_add_finite_element("ELASTIC_MECHANICS","FORCE_FE"); CHKERRQ(ierr);
   }
 
@@ -263,7 +264,7 @@ int main(int argc, char *argv[]) {
     ierr = m_field.set_field(0,MBTET,"SPATIAL_POSITION"); CHKERRQ(ierr);
   }
 
-  //build finite elemnts
+  //build finite elements
   ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
 
   //build adjacencies
@@ -398,13 +399,13 @@ int main(int argc, char *argv[]) {
       NumeredDofMoFEMEntity_multiIndex &numered_dofs_rows = const_cast<NumeredDofMoFEMEntity_multiIndex&>(problemPtr->numered_dofs_rows);
       Range::iterator nit = nodeSet.begin();
       for(;nit!=nodeSet.end();nit++) {
-	NumeredDofMoFEMEntity_multiIndex::index<Ent_mi_tag>::type::iterator dit,hi_dit;
-	dit = numered_dofs_rows.get<Ent_mi_tag>().lower_bound(*nit);
-	hi_dit = numered_dofs_rows.get<Ent_mi_tag>().upper_bound(*nit);
-	for(;dit!=hi_dit;dit++) {
-	  PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e -> ","LAMBDA",0,arc_ptr->getFieldData());
-	  PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e\n",dit->get_name().c_str(),dit->get_dof_rank(),dit->get_FieldData());
-	}
+        NumeredDofMoFEMEntity_multiIndex::index<Ent_mi_tag>::type::iterator dit,hi_dit;
+        dit = numered_dofs_rows.get<Ent_mi_tag>().lower_bound(*nit);
+        hi_dit = numered_dofs_rows.get<Ent_mi_tag>().upper_bound(*nit);
+        for(;dit!=hi_dit;dit++) {
+          PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e -> ","LAMBDA",0,arc_ptr->getFieldData());
+          PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e\n",dit->get_name().c_str(),dit->get_dof_rank(),dit->get_FieldData());
+        }
       }
       PetscFunctionReturn(0);
     }
@@ -436,25 +437,25 @@ int main(int argc, char *argv[]) {
       PetscFunctionBegin;
       switch(snes_ctx) {
         case CTX_SNESSETFUNCTION: {
-	  //F_lambda
+          //F_lambda
           ierr = VecGhostUpdateBegin(arc_ptr->F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
           ierr = VecGhostUpdateEnd(arc_ptr->F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
           ierr = VecAssemblyBegin(arc_ptr->F_lambda); CHKERRQ(ierr);
           ierr = VecAssemblyEnd(arc_ptr->F_lambda); CHKERRQ(ierr);
-	  for(vector<int>::iterator vit = bC->dofsIndices.begin();vit!=bC->dofsIndices.end();vit++) {
-	    ierr = VecSetValue(arc_ptr->F_lambda,*vit,0,INSERT_VALUES); CHKERRQ(ierr);
-	  }
-	  ierr = VecAssemblyBegin(arc_ptr->F_lambda); CHKERRQ(ierr);
-	  ierr = VecAssemblyEnd(arc_ptr->F_lambda); CHKERRQ(ierr);
-	  ierr = VecDot(arc_ptr->F_lambda,arc_ptr->F_lambda,&arc_ptr->F_lambda2); CHKERRQ(ierr);
-	  PetscPrintf(PETSC_COMM_WORLD,"\tFlambda2 = %6.4e\n",arc_ptr->F_lambda2);
-	  //add F_lambda
-	  ierr = VecAXPY(snes_f,arc_ptr->getFieldData(),arc_ptr->F_lambda); CHKERRQ(ierr);
-	  PetscPrintf(PETSC_COMM_WORLD,"\tlambda = %6.4e\n",arc_ptr->getFieldData());
-	  double fnorm;
-	  ierr = VecNorm(snes_f,NORM_2,&fnorm); CHKERRQ(ierr);
-	  PetscPrintf(PETSC_COMM_WORLD,"\tfnorm = %6.4e\n",fnorm);
-	}
+          for(vector<int>::iterator vit = bC->dofsIndices.begin();vit!=bC->dofsIndices.end();vit++) {
+            ierr = VecSetValue(arc_ptr->F_lambda,*vit,0,INSERT_VALUES); CHKERRQ(ierr);
+          }
+          ierr = VecAssemblyBegin(arc_ptr->F_lambda); CHKERRQ(ierr);
+          ierr = VecAssemblyEnd(arc_ptr->F_lambda); CHKERRQ(ierr);
+          ierr = VecDot(arc_ptr->F_lambda,arc_ptr->F_lambda,&arc_ptr->F_lambda2); CHKERRQ(ierr);
+          PetscPrintf(PETSC_COMM_WORLD,"\tFlambda2 = %6.4e\n",arc_ptr->F_lambda2);
+          //add F_lambda
+          ierr = VecAXPY(snes_f,arc_ptr->getFieldData(),arc_ptr->F_lambda); CHKERRQ(ierr);
+          PetscPrintf(PETSC_COMM_WORLD,"\tlambda = %6.4e\n",arc_ptr->getFieldData());
+          double fnorm;
+          ierr = VecNorm(snes_f,NORM_2,&fnorm); CHKERRQ(ierr);
+          PetscPrintf(PETSC_COMM_WORLD,"\tfnorm = %6.4e\n",fnorm);
+        }
         break;
         default:
           SETERRQ(PETSC_COMM_SELF,1,"not implemented");
@@ -515,7 +516,7 @@ int main(int argc, char *argv[]) {
   snes_ctx.get_preProcess_to_do_Rhs().push_back(&my_dirichlet_bc);
   snes_ctx.get_preProcess_to_do_Rhs().push_back(&pre_post_method);
   loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("ELASTIC",&elastic.getLoopFeRhs()));
-  //surface focres and preassures
+  //surface forces and pressures
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("NEUAMNN_FE",&fe_neumann));
   //nodal forces
   boost::ptr_map<string,NodalForce> nodal_forces;

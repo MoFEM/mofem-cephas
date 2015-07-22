@@ -4,11 +4,7 @@
 \section mofam_and_user_modules MoFEM and User Modules
 
 All new finite elements or modification or finite elements are implemented in
-users modules (UM). Only "reliable" and "proven" to work finite elements are
-moved to MoFEM finite element library. Implementation to MoFEM library (not UM)
-need to be always discussed, agreed and planed on CMatGU
-<cmatgu@googlegroups.com>.  Work on UM is less controlled and contained to user
-directory. It is planed that it will be single version of MoFEM library but
+users modules (UM). In future it will be always single version of MoFEM library but
 many UM forks. Some UM can be in developed independently from MoFEM library
 repository. How to add user modules see \ref adding_user_module
 
@@ -153,7 +149,7 @@ double *val_ptr; ///< local variable
 
   - If you commit your code remove are depreciated functions names. Use of OLD function name (or old functions
     arguments) generate compilation warring, f.e. \code
-In file included from mofem_v0.2/finite_element_library/impl/DirichletBC.cpp:39:0:
+In file included from mofem_v0.2/users_modules/basic_finite_elements/src/impl/DirichletBC.cpp:39:0:
 mofem_v0.2/src/interfaces/FieldInterface.hpp: In member function 'PetscErrorCode MoFEM::FieldInterface::set_other_local_VecCreateGhost(const MoFEM::MoFEMProblem*, const string&, const string&, RowColData, Vec, InsertMode, ScatterMode, int)':
 mofem_v0.2/src/interfaces/FieldInterface.hpp:1300:107: warning: 'PetscErrorCode MoFEM::FieldInterface::set_other_local_VecCreateGhost(const MoFEM::MoFEMProblem*, const string&, const string&, RowColData, Vec, InsertMode, ScatterMode, int)' is deprecated (declared at mofem_v0.2/src/interfaces/FieldInterface.hpp:1296) [-Wdeprecated-declarations]
      ierr = set_other_local_VecCreateGhost(problem_ptr,fiel_name,cpy_field_name,rc,V,mode,scatter_mode,verb); CHKERRQ(ierr);

@@ -48,9 +48,11 @@ extern "C" {
 #include <FaceSplittingTool.hpp>
 #include <ConfigurationalFractureMechanics.hpp>
 
-#include <adolc/adolc.h> 
+#include <adolc/adolc.h>
+#include <MethodForForceScaling.hpp>
 #include <ConvectiveMassElement.hpp>
 #include <ConfigurationalFractureForDynamics.hpp>
+#include <MainCrackFunction.hpp>
 
 ErrorCode rval;
 PetscErrorCode ierr;
@@ -74,15 +76,15 @@ int main(int argc, char *argv[]) {
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
- 
+
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-  BARRIER_RANK_START(pcomm) 
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
-  BARRIER_RANK_END(pcomm) 
+  BARRIER_RANK_START(pcomm)
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
+  BARRIER_RANK_END(pcomm)
 
   PetscLogDouble t1,t2;
   PetscLogDouble v1,v2;
@@ -93,16 +95,16 @@ int main(int argc, char *argv[]) {
   FieldInterface& m_field = core;
 
   ConfigurationalFracturDynamics conf_prob(m_field);
-  
+
   { //definitions
     ierr = conf_prob.set_material_fire_wall(m_field); CHKERRQ(ierr);
     ierr = conf_prob.constrains_problem_definition(m_field); CHKERRQ(ierr);
     ierr = conf_prob.coupled_dynamic_problem_definition(m_field); CHKERRQ(ierr);
     ierr = conf_prob.constrains_crack_front_problem_definition(m_field,"COUPLED_DYNAMIC"); CHKERRQ(ierr);
   }
-  
+
   { //build
-  
+
     //ref meshset ref level 0
     Tag th_my_ref_level;
     rval = m_field.get_moab().tag_get_handle("_MY_REFINMENT_LEVEL",th_my_ref_level); CHKERR_PETSC(rval);
@@ -139,10 +141,10 @@ int main(int argc, char *argv[]) {
     ierr = conf_prob.crackfront_partition_problems(m_field,"COUPLED_DYNAMIC"); CHKERRQ(ierr);
   }
 
-  { 
+  {
     int zero = 0;
     Tag th_step;
-    rval = m_field.get_moab().tag_get_handle("_TsStep_",1,MB_TYPE_INTEGER,th_step,MB_TAG_CREAT|MB_TAG_EXCL|MB_TAG_MESH,&zero); 
+    rval = m_field.get_moab().tag_get_handle("_TsStep_",1,MB_TYPE_INTEGER,th_step,MB_TAG_CREAT|MB_TAG_EXCL|MB_TAG_MESH,&zero);
     if(rval != MB_ALREADY_ALLOCATED) {
       //init data
       //conf_prob.material_FirelWall->operator[](ConfigurationalFractureMechanics::FW_set_spatial_positions) = 0;

@@ -30,6 +30,7 @@ using namespace MoFEM;
 #include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <boost/numeric/ublas/vector.hpp>
 
+#include <MethodForForceScaling.hpp>
 #include <SurfacePressure.hpp>
 #include <NodalForce.hpp>
 #include <FluidPressure.hpp>
@@ -67,8 +68,8 @@ PetscErrorCode ierr;
 
 static char help[] = "...\n\n";
 
-const double young_modulus = 1;
-const double poisson_ratio = 0.0;
+//const double young_modulus = 1;
+//const double poisson_ratio = 0.0;
 
 #define DATAFILENAME "load_disp.txt"
 
@@ -405,7 +406,7 @@ int main(int argc, char *argv[]) {
 
     //Elements with boundary conditions
     ierr = MetaNeummanForces::addNeumannBCElements(m_field,"DISPLACEMENT"); CHKERRQ(ierr);
-    ierr = MetaNodalForces::addNodalForceElement(m_field,"DISPLACEMENT");  CHKERRQ(ierr);
+    ierr = MetaNodalForces::addElement(m_field,"DISPLACEMENT");  CHKERRQ(ierr);
     ierr = m_field.modify_problem_add_finite_element("ELASTIC_MECHANICS","FORCE_FE"); CHKERRQ(ierr);
     ierr = m_field.modify_problem_add_finite_element("ELASTIC_MECHANICS","PRESSURE_FE"); CHKERRQ(ierr);
     ierr = m_field.modify_finite_element_add_field_row("FORCE_FE","LAMBDA"); CHKERRQ(ierr);

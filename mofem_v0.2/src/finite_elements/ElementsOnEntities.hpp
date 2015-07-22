@@ -38,9 +38,11 @@ struct ForcesAndSurcesCore: public FEMethod {
   PetscErrorCode ierr;
 
   FieldInterface& mField;
-  ForcesAndSurcesCore(FieldInterface& _mField):
-    mField(_mField) {};
+  ForcesAndSurcesCore(FieldInterface& m_field):
+    mField(m_field) {};
   virtual ~ForcesAndSurcesCore() {}
+
+  PetscErrorCode getNumberOfNodes(int &num_nodes);
 
   PetscErrorCode getSense(EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data);
   PetscErrorCode getOrder(const EntityType type,const FieldSpace space,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data);
@@ -366,7 +368,7 @@ struct ForcesAndSurcesCore: public FEMethod {
       ptrFE(NULL) {}
       virtual ~UserDataOperator() {}
 
-    /** \bried return pointer to NumeredMoFEMFiniteElement
+    /** \brief return pointer to NumeredMoFEMFiniteElement
      */
     inline const NumeredMoFEMFiniteElement* getMoFEMFEPtr() { return ptrFE->fePtr; };
 
@@ -404,7 +406,7 @@ struct ForcesAndSurcesCore: public FEMethod {
       PetscFunctionReturn(0);
     }
 
-    /** \bried return pointer to Generic Finite Element object
+    /** \brief return pointer to Generic Finite Element object
      */
     inline const FEMethod* getFEMethod() { return ptrFE; }
 
@@ -497,7 +499,7 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
   MatrixDouble hoGaussPtsInvJac;
   VectorDouble hoGaussPtsDetJac;
 
-  OpGetData opHOatGaussPoints; ///< higher order geometry data at Gauss pts
+  OpGetDataAndGradient opHOatGaussPoints; ///< higher order geometry data at Gauss pts
   OpSetHoInvJacH1 opSetHoInvJacH1;
   OpSetHoPiolaTransform opSetHoPiolaTransform;
   OpSetHoInvJacHdiv opSetHoInvJacHdiv;
@@ -520,6 +522,9 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 
   ErrorCode rval;
   double vOlume;
+
+  int num_nodes;
+  const EntityHandle* conn;
   VectorDouble coords;
 
   MatrixDouble Jac;;
@@ -537,10 +542,17 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
       const string &field_name,const char type):
       ForcesAndSurcesCore::UserDataOperator(field_name,type) {}
 
-
     UserDataOperator(
       const string &row_field_name,const string &col_field_name,const char type):
       ForcesAndSurcesCore::UserDataOperator(row_field_name,col_field_name,type) {};
+
+    /** \brief get element number of nodes
+    */
+    inline int getNumNodes() { return ptrFE->num_nodes; }
+
+    /** \brief get element connectivity
+     */
+    inline const EntityHandle* getConn() { return ptrFE->conn; }
 
     /** \brief element volume (linear geometry)
       */
@@ -568,7 +580,7 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
     inline MatrixDouble& getHoGaussPtsInvJac() { return ptrFE->hoGaussPtsInvJac; }
     inline VectorDouble& getHoGaussPtsDetJac() { return ptrFE->hoGaussPtsDetJac; }
 
-    /** \bried return pointer to Generic Tetrahedral Finite Element object
+    /** \brief return pointer to Generic Tetrahedral Finite Element object
      */
     inline const VolumeElementForcesAndSourcesCore* getTetFE() { return ptrFE; }
 
@@ -619,6 +631,8 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 
   ErrorCode rval;
   double aRea;;
+  int num_nodes;
+  const EntityHandle* conn;
   VectorDouble normal;
   VectorDouble coords;
   MatrixDouble gaussPts;
@@ -662,27 +676,35 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 
     inline double getArea() { return ptrFE->aRea; }
 
-    /** \bried get triangle normal
+    /** \brief get triangle normal
      */
     inline VectorDouble& getNormal() { return ptrFE->normal; }
 
-    /** \bried get triangle coordinates
+    /** \brief get element number of nodes
+    */
+    inline int getNumNodes() { return ptrFE->num_nodes; }
+
+    /** \brief get element connectivity
+     */
+    inline const EntityHandle* getConn() { return ptrFE->conn; }
+
+    /** \brief get triangle coordinates
      */
     inline VectorDouble& getCoords() { return ptrFE->coords; }
 
-    /** \bried get triangle Gauss pts.
+    /** \brief get triangle Gauss pts.
      */
     inline MatrixDouble& getGaussPts() { return ptrFE->gaussPts; }
 
-    /** \bried get coordinates at Gauss pts.
+    /** \brief get coordinates at Gauss pts.
      */
     inline MatrixDouble& getCoordsAtGaussPts() { return ptrFE->coordsAtGaussPts; }
 
-    /** \bried if higher order geometry return normals at Gauss pts.
+    /** \brief if higher order geometry return normals at Gauss pts.
      */
     inline MatrixDouble& getNormals_at_GaussPt() { return ptrFE->nOrmals_at_GaussPt; }
 
-    /** \bried if higher order geometry return normals at Gauss pts.
+    /** \brief if higher order geometry return normals at Gauss pts.
       *
       * \param gg gauss point number
       */
@@ -690,19 +712,19 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
       return ublas::matrix_row<MatrixDouble >(ptrFE->nOrmals_at_GaussPt,gg);
     }
 
-    /** \bried if higher order geometry return tangent vector to triangle at Gauss pts.
+    /** \brief if higher order geometry return tangent vector to triangle at Gauss pts.
      */
     inline MatrixDouble& getTangent1_at_GaussPt() { return ptrFE->tAngent1_at_GaussPt; }
 
-    /** \bried if higher order geometry return tangent vector to triangle at Gauss pts.
+    /** \brief if higher order geometry return tangent vector to triangle at Gauss pts.
      */
     inline MatrixDouble& getTangent2_at_GaussPt() { return ptrFE->tAngent2_at_GaussPt; }
 
-    /** \bried return pointer to triangle finite element object
+    /** \brief return pointer to triangle finite element object
      */
     inline const FaceElementForcesAndSourcesCore* getFaceElementForcesAndSourcesCore() { return ptrFE; }
 
-    /** \bried return pointer to Generic Triangle Finite Element object
+    /** \brief return pointer to Generic Triangle Finite Element object
      */
     inline const FaceElementForcesAndSourcesCore* getTriFE() { return ptrFE; }
 
@@ -747,19 +769,25 @@ struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
   DataForcesAndSurcesCore dataH1;
   DerivedDataForcesAndSurcesCore derivedDataH1;
   DataForcesAndSurcesCore dataNoField,dataNoFieldCol;
+  string meshPositionsFieldName;
+
+  MatrixDouble tAngent_at_GaussPt;
+  OpGetHoTangentOnEdge opGetHoTangentOnEdge;
 
   EdgeElementForcesAndSurcesCore(FieldInterface &m_field):
     ForcesAndSurcesCore(m_field),
     dataH1(MBEDGE),
     derivedDataH1(dataH1),
     dataNoField(MBEDGE),
-    dataNoFieldCol(MBEDGE)
+    dataNoFieldCol(MBEDGE),
+    meshPositionsFieldName("MESH_NODE_POSITIONS"),
+    opGetHoTangentOnEdge(tAngent_at_GaussPt)
   {};
 
   ErrorCode rval;
   double lEngth;;
   VectorDouble dIrection;
-  VectorDouble coords;
+  VectorDouble cOords;
   MatrixDouble gaussPts;
   MatrixDouble coordsAtGaussPts;
 
@@ -777,9 +805,10 @@ struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
     inline double getLength() { return ptrFE->lEngth; }
     inline VectorDouble& getDirection() { return ptrFE->dIrection; }
-    inline VectorDouble& getCoords() { return ptrFE->coords; }
+    inline VectorDouble& getCoords() { return ptrFE->cOords; }
     inline MatrixDouble& getGaussPts() { return ptrFE->gaussPts; }
     inline MatrixDouble& getCoordsAtGaussPts() { return ptrFE->coordsAtGaussPts; }
+    inline MatrixDouble& getTangetAtGaussPtrs() { return ptrFE->tAngent_at_GaussPt; }
     inline const EdgeElementForcesAndSurcesCore* getEdgeFE() { return ptrFE; }
 
     PetscErrorCode setPtrFE(ForcesAndSurcesCore *ptr) {
@@ -904,8 +933,8 @@ struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
   MatrixDouble tAngent2_at_GaussPtF4;
   OpGetNormalsOnPrism opHONormals;
 
-  FlatPrismElementForcesAndSurcesCore(FieldInterface &_mField):
-    ForcesAndSurcesCore(_mField),
+  FlatPrismElementForcesAndSurcesCore(FieldInterface &m_field):
+    ForcesAndSurcesCore(m_field),
     dataH1(MBPRISM),derivedDataH1(dataH1),
     dataHdiv(MBPRISM),derivedDataHdiv(dataHdiv),
     dataNoField(MBPRISM),dataNoFieldCol(MBPRISM),
@@ -929,37 +958,37 @@ struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
     inline double getArea() { return ptrFE->aRea; }
 
-    /** \bried get triangle normal
+    /** \brief get triangle normal
      */
     inline VectorDouble& getNormal() { return ptrFE->normal; }
 
-    /** \bried get triangle coordinates
+    /** \brief get triangle coordinates
      */
     inline VectorDouble& getCoords() { return ptrFE->coords; }
 
-    /** \bried get triangle Gauss pts.
+    /** \brief get triangle Gauss pts.
      */
     inline MatrixDouble& getGaussPts() { return ptrFE->gaussPts; }
 
-    /** \bried get coordinates at Gauss pts.
+    /** \brief get coordinates at Gauss pts.
      */
     inline MatrixDouble& getCoordsAtGaussPts() { return ptrFE->coordsAtGaussPts; }
 
-    /** \bried if higher order geometry return normals at face F3 at Gauss pts.
+    /** \brief if higher order geometry return normals at face F3 at Gauss pts.
      *
      * Face 3 is top face in canonical triangle numeration, see
      * Canonical numbering systems for finite-element codes Timothy J. Tautges
      */
     inline MatrixDouble& getNormals_at_GaussPtF3() { return ptrFE->nOrmals_at_GaussPtF3; }
 
-    /** \bried if higher order geometry return normals at face F4 at Gauss pts.
+    /** \brief if higher order geometry return normals at face F4 at Gauss pts.
      *
      * Face 4 is top face in canonical triangle numeration, see
      * Canonical numbering systems for finite-element codes Timothy J. Tautges
      */
     inline MatrixDouble& getNormals_at_GaussPtF4() { return ptrFE->nOrmals_at_GaussPtF4; }
 
-    /** \bried if higher order geometry return normals at Gauss pts.
+    /** \brief if higher order geometry return normals at Gauss pts.
       *
       * Face 3 is top face in canonical triangle numeration, see
       * Canonical numbering systems for finite-element codes Timothy J. Tautges
@@ -970,7 +999,7 @@ struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
       return ublas::matrix_row<MatrixDouble >(ptrFE->nOrmals_at_GaussPtF3,gg);
     }
 
-    /** \bried if higher order geometry return normals at Gauss pts.
+    /** \brief if higher order geometry return normals at Gauss pts.
       *
       * Face 3 is top face in canonical triangle numeration, see
       * Canonical numbering systems for finite-element codes Timothy J. Tautges
@@ -981,23 +1010,23 @@ struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
       return ublas::matrix_row<MatrixDouble >(ptrFE->nOrmals_at_GaussPtF4,gg);
     }
 
-    /** \bried if higher order geometry return tangent vector to triangle at Gauss pts.
+    /** \brief if higher order geometry return tangent vector to triangle at Gauss pts.
      */
     inline MatrixDouble& getTangent1_at_GaussPtF3() { return ptrFE->tAngent1_at_GaussPtF3; }
 
-    /** \bried if higher order geometry return tangent vector to triangle at Gauss pts.
+    /** \brief if higher order geometry return tangent vector to triangle at Gauss pts.
      */
     inline MatrixDouble& getTangent2_at_GaussPtF3() { return ptrFE->tAngent2_at_GaussPtF3; }
 
-    /** \bried if higher order geometry return tangent vector to triangle at Gauss pts.
+    /** \brief if higher order geometry return tangent vector to triangle at Gauss pts.
      */
     inline MatrixDouble& getTangent1_at_GaussPtF4() { return ptrFE->tAngent1_at_GaussPtF4; }
 
-    /** \bried if higher order geometry return tangent vector to triangle at Gauss pts.
+    /** \brief if higher order geometry return tangent vector to triangle at Gauss pts.
      */
     inline MatrixDouble& getTangent2_at_GaussPtF4() { return ptrFE->tAngent2_at_GaussPtF4; }
 
-    /** \bried return pointer to triangle finite element object
+    /** \brief return pointer to triangle finite element object
      */
     inline const FlatPrismElementForcesAndSurcesCore* getFlatPrismElementForcesAndSurcesCore() { return ptrFE; }
 
@@ -1031,15 +1060,16 @@ struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
 /***************************************************************************//**
  * \defgroup mofem_forces_and_sources Forces and sources
+ * \ingroup mofem
  ******************************************************************************/
 
 /***************************************************************************//**
- * \defgroup mofem_forces_and_sources_tet_element Tetrahedral Element
+ * \defgroup mofem_forces_and_sources_tet_element Volume Element
  * \ingroup mofem_forces_and_sources
  ******************************************************************************/
 
 /***************************************************************************//**
- * \defgroup mofem_forces_and_sources_tri_element Triangular Element
+ * \defgroup mofem_forces_and_sources_tri_element Face Element
  * \ingroup mofem_forces_and_sources
  ******************************************************************************/
 

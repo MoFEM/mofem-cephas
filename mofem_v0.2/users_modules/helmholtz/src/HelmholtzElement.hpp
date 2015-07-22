@@ -5,10 +5,9 @@
 
  Implementation of Helmholtz element for wave propagation problem
 
- */
+ Note:
+ This work is part of PhD thesis by on Micro-fluids: Thomas Felix Xuan Meng
 
-/*
-  This work is part of PhD thesis by on Micro-fluids: Thomas Felix Xuan Meng
  */
 
 /*
@@ -39,23 +38,23 @@ struct HelmholtzElement {
 
   /// \brief  Volume element
   struct MyVolumeFE: public VolumeElementForcesAndSourcesCore {
-    int multRank; ///< default value 1, i.e. assumes that geometry is approx. by quadratic functions.
+    int addToRank; ///< default value 1, i.e. assumes that geometry is approx. by quadratic functions.
 
     MyVolumeFE(FieldInterface &m_field,int add_to_rank):
     VolumeElementForcesAndSourcesCore(m_field),
-    multRank(add_to_rank) {}
+    addToRank(add_to_rank) {}
 
-    int getRule(int order) { return order*multRank; };
+    int getRule(int order) { return order+addToRank; };
   };
 
   /// \brief Surface element
   struct MySurfaceFE: public FaceElementForcesAndSourcesCore {
-    int multRank; ///< default value 1, i.e. assumes that geometry is approx. by quadratic functions.
-    MySurfaceFE(FieldInterface &m_field,int mult_rank):
+    int addToRank; ///< default value 1, i.e. assumes that geometry is approx. by quadratic functions.
+    MySurfaceFE(FieldInterface &m_field,int add_to_rank):
     FaceElementForcesAndSourcesCore(m_field),
-    multRank(mult_rank) {}
+    addToRank(add_to_rank) {}
 
-    int getRule(int order) { return order*multRank; };
+    int getRule(int order) { return order+addToRank; };
   };
 
   boost::ptr_map<string,ForcesAndSurcesCore> feRhs; // surface element for LHS
@@ -128,14 +127,15 @@ struct HelmholtzElement {
       &globalParameters.amplitudeOfIncidentWaveReal.second
     ); CHKERRQ(ierr);
 
-    globalParameters.isMonochromaticWave.first = PETSC_FALSE;
+    globalParameters.isMonochromaticWave.first = PETSC_TRUE;
     ierr = PetscOptionsBool(
       "-monochromatic_wave",
       "If true analysis is for monochromatic wave","",
-      PETSC_FALSE,
+      PETSC_TRUE,
       &globalParameters.isMonochromaticWave.first,
       &globalParameters.isMonochromaticWave.second
     ); CHKERRQ(ierr);
+
 
     globalParameters.signalLength.first = 1;
     ierr = PetscOptionsReal("-signal_length",
@@ -188,12 +188,12 @@ struct HelmholtzElement {
   CommonData commonData;
 
   FieldInterface &mField;
-  int multRank; ///< default value 1, i.e. assumes that geometry is approx. by quadratic functions.
+  int addToRank; ///< default value 1, i.e. assumes that geometry is approx. by quadratic functions.
 
   HelmholtzElement(
     FieldInterface &m_field):
     mField(m_field),
-    multRank(2) {}
+    addToRank(1) {}
 
   struct OpGetImIndices: public ForcesAndSurcesCore::UserDataOperator  {
 
@@ -251,6 +251,12 @@ struct HelmholtzElement {
     }
 
   };
+
+  /** \brief Calculate the value of the particle velocity at the
+       vertex in volume
+       FIX ME how to retrieve the field data and shape functions on vertex.
+    */
+
 
   /** \brief Calculate pressure and gradient of pressure in volume
     */
@@ -468,6 +474,7 @@ struct HelmholtzElement {
 
         }
 
+
         ierr = VecSetValues(F,data.getIndices().size(),
         &data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
 
@@ -561,6 +568,7 @@ struct HelmholtzElement {
           );
           //noalias(K) -= val*k_pow2*outer_prod( row_data.getN(gg,nb_rows),col_data.getN(gg,nb_cols) );
           //noalias(K) += val*prod(row_data.getDiffN(gg,nb_rows),trans(col_data.getDiffN(gg,nb_cols)));
+
         }
 
         PetscErrorCode ierr;
@@ -647,6 +655,21 @@ struct HelmholtzElement {
   };
 
   /** \brief Calculate incident wave scattered on hard surface
+      \ingroup mofem_helmholtz_elem
+
+    This part shows the Neumann boundary condition of the exterior boundary
+    value problem for the rigid scatterer.
+
+    \f]
+    \left. \left\{ \mathbf{n} \cdot  (ik\mathbf{d} A_{0} e^{ik \mathbf{d} \cdot \mathbf{x}})
+    \right\}
+    \f[
+
+    where \f$\mathbf{n})\f$ is the normal vector point outward of the surface of scatterer.
+      \f$\mathbf{x})\f$ is the cartesian coordinates and \f$d\f$ is the unit vector represents the
+      direction of the incident wave. Further more
+
+
 
     \bug Assumes that normal sf surface pointing outward.
     */
@@ -697,6 +720,45 @@ struct HelmholtzElement {
 
     It is inverse Fourier transform evaluated at arbitrary Gauss points.
 
+    This part shows the Neumann boundary condition of the exterior boundary
+    value problem for the rigid scatterer.
+
+    The following parameters are used in the calculation of plane incident wave
+    \f[
+    &f = \frac{1}{T} frequency in hertz of s^{-1} \\
+    &T = \frac{1}{f} period or duration in s (second) \\
+    &\lambda = \frac{2 \pi}{k} = \frac{c}{f} wavelength in meter \\
+
+    &c = \lambda f = \frac{\lambda}{T} = \frac{\omega}{k} = wavespeed (phase velocity) in m\s \\
+
+    &k = \frac{\omeag}{c} wave number in rad \cdot m^{-1} \\
+
+    &\omega = 2 \pi f = \frac{2 \pi}{T} angular frequency in rad/s \\
+
+    &\delta t = T/n is the stride of the signal length between each time steps \\
+    &\delta n is the stride of time step for there is n time steps. \\
+    &\phi = 2 \pi f ( (c \delta t \delta n)/lambda ) is the phase \\
+
+    \f]
+
+    for input signal \f$ x(n) \f$ which n is the number of the data in time domain,
+    through the fast forward fourier transformation (thanks to the package KISS), we can transfer
+    any arbitrary signal from time (or spatial) domain into frequency domain. Since
+    the Euler formulation, the combination of sinusoid functions can be expressed in
+    complex exponentialform. (this related to the Euler Identity) the reuslts in frequency are
+    put as boundary condition of the helmholtz problem.
+
+
+    \f[
+    \left. \left\{ \frac{1}{n} \mathbf{n} \cdot  (ik\mathbf{d} A_{0} e^{ik \mathbf{d} \cdot \mathbf{x} + i \phi})
+    \right\}
+    \f]
+
+    where \f$\mathbf{n})\f$ is the normal vector point outward of the surface of scatterer.
+      \f$\mathbf{x})\f$ is the cartesian coordinates and \f$d\f$ is the unit vector represents the
+      direction of the incident wave.
+
+
     \bug Assumes that normal sf surface pointing outward.
 
     */
@@ -728,11 +790,11 @@ struct HelmholtzElement {
       complex<double> p_inc_frequency = 0;
       ublas::vector<complex<double > > grad(3);
       grad.clear();
-
+      //manually apply the IFFT.
       for(int f = 0;f<size;f++) {
         double speed = signal_length/signal_duration;
-        double wave_number = 2*M_PI*f/signal_length;
-        double delta_t = signal_duration/size;
+        double wave_number = 2*M_PI*f/signal_length; //2pi f / lambda
+        double delta_t = signal_duration/size; //time step
         double distance = speed*delta_t*time_step;
         double phase= 2*M_PI*f*(distance/signal_length);
         p_inc_frequency = (complex_out[f].r+i*complex_out[f].i)*exp(i*wave_number*inner_prod(direction,cOordinate)+i*phase);
@@ -740,6 +802,7 @@ struct HelmholtzElement {
           grad[ii] += i*wave_number*direction[ii]*p_inc_frequency;
         }
       }
+      grad /= size;
 
       complex<double > grad_n = inner_prod(grad,normal);
 
@@ -1356,7 +1419,9 @@ struct HelmholtzElement {
       if(it->get_name().compare(0,13,"SOMMERFELD_BC") == 0) {
 
         sommerfeldBcData[it->get_msId()].aDmittance_real = 0;
+
         sommerfeldBcData[it->get_msId()].aDmittance_imag = -globalParameters.waveNumber.first;
+
 
         rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,sommerfeldBcData[it->get_msId()].tRis,true); CHKERR_PETSC(rval);
         ierr = mField.add_ents_to_finite_element_by_TRIs(sommerfeldBcData[it->get_msId()].tRis,"HELMHOLTZ_REIM_FE"); CHKERRQ(ierr);
@@ -1367,7 +1432,6 @@ struct HelmholtzElement {
 
         baylissTurkelBcData[it->get_msId()].aDmittance_real = 0;
         baylissTurkelBcData[it->get_msId()].aDmittance_imag = -globalParameters.waveNumber.first;
-
 
         rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,baylissTurkelBcData[it->get_msId()].tRis,true); CHKERR_PETSC(rval);
         ierr = mField.add_ents_to_finite_element_by_TRIs(baylissTurkelBcData[it->get_msId()].tRis,"HELMHOLTZ_REIM_FE"); CHKERRQ(ierr);
@@ -1387,9 +1451,9 @@ struct HelmholtzElement {
 
     string fe_name;
 
-    fe_name = "HELMHOLTZ_RERE_FE"; feLhs.insert(fe_name,new MyVolumeFE(mField,multRank));
-    fe_name = "HELMHOLTZ_RERE_FE"; feRhs.insert(fe_name,new MyVolumeFE(mField,multRank));
-    fe_name = "HELMHOLTZ_IMIM_FE"; feRhs.insert(fe_name,new MyVolumeFE(mField,multRank));
+    fe_name = "HELMHOLTZ_RERE_FE"; feLhs.insert(fe_name,new MyVolumeFE(mField,addToRank));
+    fe_name = "HELMHOLTZ_RERE_FE"; feRhs.insert(fe_name,new MyVolumeFE(mField,addToRank));
+    fe_name = "HELMHOLTZ_IMIM_FE"; feRhs.insert(fe_name,new MyVolumeFE(mField,addToRank));
 
     feLhs.at("HELMHOLTZ_RERE_FE").getOpPtrVector().push_back(
       new OpGetImIndices(re_field_name,im_field_name,commonData));
@@ -1414,8 +1478,8 @@ struct HelmholtzElement {
     }
 
     fe_name = "HELMHOLTZ_REIM_FE";
-    feLhs.insert(fe_name,new MySurfaceFE(mField,multRank));
-    feRhs.insert(fe_name,new MySurfaceFE(mField,multRank));
+    feLhs.insert(fe_name,new MySurfaceFE(mField,addToRank));
+    feRhs.insert(fe_name,new MySurfaceFE(mField,addToRank));
 
     if(mField.check_field(mesh_nodals_positions)) {
 
@@ -1443,12 +1507,12 @@ struct HelmholtzElement {
     for(;miit!=surfaceIncidentWaveBcData.end();miit++) {
 
       if(miit->second.aDmittance_imag!=0) {
-        feRhs.at("HELMHOLTZ_REIM_FE").getOpPtrVector().push_back(
+        feLhs.at("HELMHOLTZ_REIM_FE").getOpPtrVector().push_back(
           new OpHelmholtzMixBCLhs<ZeroFunVal>(re_field_name,im_field_name,A,miit->second,commonData, zero_function)
         );
       }
 
-      if(globalParameters.isMonochromaticWave.first) {
+      if(!globalParameters.isMonochromaticWave.first) {
         boost::shared_ptr<IncidentWaveNeumannDFT_F2> incident_wave_neumann_bc;
         incident_wave_neumann_bc = boost::shared_ptr<IncidentWaveNeumannDFT_F2>(new IncidentWaveNeumannDFT_F2(globalParameters));
         // assembled to the right hand vector
@@ -1552,5 +1616,5 @@ struct HelmholtzElement {
 
 /***************************************************************************//**
  * \defgroup mofem_helmholtz_elem Helmholtz element
- * \ingroup mofem_forces_and_sources
+ * \ingroup user_modules
  ******************************************************************************/

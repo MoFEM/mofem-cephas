@@ -1,8 +1,8 @@
 /** \file EntsMultiIndices.hpp
- * \brief Myltindex containes, for mofem enitities data structures and other low-level functions 
+ * \brief Myltindex containes, for mofem enitities data structures and other low-level functions
  */
 
-/* 
+/*
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or (at your
@@ -24,7 +24,7 @@ namespace MoFEM {
 
 /**
  * \brief keeps information about side number for the finite element
- * \ingroup ent_multi_indices 
+ * \ingroup ent_multi_indices
  */
 struct SideNumber {
   EntityHandle ent;
@@ -37,11 +37,11 @@ struct SideNumber {
     ent(_ent),side_number(_side_number),sense(_sense),offset(_offset),brother_side_number(-1) {};
 };
 
-/** 
+/**
  * @relates multi_index_container
  * \brief SideNumber_multiIndex for SideNumber
- * \ingroup ent_multi_indices 
- * 
+ * \ingroup ent_multi_indices
+ *
  */
 typedef multi_index_container<
   SideNumber,
@@ -55,15 +55,15 @@ typedef multi_index_container<
 	member<SideNumber,int,&SideNumber::side_number> > >,
     ordered_non_unique<
       const_mem_fun<SideNumber,EntityType,&SideNumber::get_ent_type> >
-  > > SideNumber_multiIndex; 
+  > > SideNumber_multiIndex;
 
-/** 
+/**
  * \brief this struct keeps basic methods for moab entity
- * \ingroup ent_multi_indices 
+ * \ingroup ent_multi_indices
 
-  \bug BasicMoFEMEntity in should be linked to directly to MoAB data structures such
-  that connectivity and nodal coordinates could be quickly accessed, without
-  need of using native MoAB functions.
+  \todo BasicMoFEMEntity in should be linked to directly to MoAB data structures
+  such that connectivity and nodal coordinates could be quickly accessed,
+  without need of using native MoAB functions.
 
  */
 struct BasicMoFEMEntity {
@@ -90,8 +90,8 @@ struct BasicMoFEMEntity {
     */
   inline EntityHandle get_owner_proc() const { return owner_proc; }
 
-  /** \brief get pstatus 
-    * This tag stores various aspects of parallel status in bits; see also 
+  /** \brief get pstatus
+    * This tag stores various aspects of parallel status in bits; see also
     * #define's following, to be used in bit mask operations.  If an entity is
     * not shared with any other processors, the pstatus is 0, otherwise it's > 0
     *
@@ -109,7 +109,7 @@ struct BasicMoFEMEntity {
   Returning list to shared processors. Lists end with -1. Returns NULL if not
   sharing processors.
 
-  DO NOT MODIFY LIST. 
+  DO NOT MODIFY LIST.
 
 \code
   BasicMoFEMEntity *ent_ptr = BasicMoFEMEntity(moan,entity_handle);
@@ -133,7 +133,7 @@ struct BasicMoFEMEntity {
 
   Returning list to shared entity hanlders. Use it with get_sharing_procs_ptr()
 
-  DO NOT MODIFY LIST. 
+  DO NOT MODIFY LIST.
 
 \code
   BasicMoFEMEntity *ent_ptr = BasicMoFEMEntity(moan,entity_handle);
@@ -155,11 +155,12 @@ struct BasicMoFEMEntity {
 
 };
 
-/** 
+/**
  * \brief struct keeps handle to refined handle.
- * \ingroup ent_multi_indices 
+ * \ingroup ent_multi_indices
 
-  \bug th_RefType "_RefType" is set as two integers, need to be fixed, it is waset of space.
+  \todo th_RefType "_RefType" is set as two integers, need to be fixed, it is
+  waste of space.
 
  */
 struct RefMoFEMEntity: public BasicMoFEMEntity {
@@ -170,26 +171,26 @@ struct RefMoFEMEntity: public BasicMoFEMEntity {
   /// get entity
   inline EntityHandle get_ref_ent() const { return ent; }
   /// get patent entity
-  inline EntityType get_parent_ent_type() const { 
+  inline EntityType get_parent_ent_type() const {
     if(tag_parent_ent == NULL) return MBMAXTYPE;
     if(*tag_parent_ent == 0)  return MBMAXTYPE;
-    return (EntityType)((*tag_parent_ent&MB_TYPE_MASK)>>MB_ID_WIDTH); 
+    return (EntityType)((*tag_parent_ent&MB_TYPE_MASK)>>MB_ID_WIDTH);
   }
   /// get entity ref bit refinment signature
   inline const BitRefLevel& get_BitRefLevel() const { return *tag_BitRefLevel; }
   /// get parent entity, i.e. entity form one refinment level up
-  inline EntityHandle get_parent_ent() const { 
+  inline EntityHandle get_parent_ent() const {
     if(tag_parent_ent == NULL) return 0;
-    return *tag_parent_ent; 
+    return *tag_parent_ent;
   }
   const RefMoFEMEntity* get_RefMoFEMEntity_ptr() { return this; }
   friend ostream& operator<<(ostream& os,const RefMoFEMEntity& e);
 };
 
 
-/** 
+/**
  * \brief interface to RefMoFEMEntity
- * \ingroup ent_multi_indices 
+ * \ingroup ent_multi_indices
  */
 template <typename T>
 struct interface_RefMoFEMEntity {
@@ -213,10 +214,10 @@ struct interface_RefMoFEMEntity {
 /**
  * \typedef RefMoFEMEntity_multiIndex
  * type multiIndex container for RefMoFEMEntity
- * \ingroup ent_multi_indices 
+ * \ingroup ent_multi_indices
  *
- * \param hashed_unique Ent_mi_tag 
- * \param ordered_non_unique Meshset_mi_tag 
+ * \param hashed_unique Ent_mi_tag
+ * \param ordered_non_unique Meshset_mi_tag
  * \param ordered_non_unique Ent_Ent_mi_tag
  * \param ordered_non_unique EntType_mi_tag
  * \param ordered_non_unique ParentEntType_mi_tag
@@ -241,13 +242,13 @@ typedef multi_index_container<
     ordered_non_unique<
       tag<ParentEntType_mi_tag>, const_mem_fun<RefMoFEMEntity,EntityType,&RefMoFEMEntity::get_parent_ent_type> >,
     ordered_non_unique<
-      tag<Composite_EntType_and_ParentEntType_mi_tag>, 
+      tag<Composite_EntType_and_ParentEntType_mi_tag>,
       composite_key<
 	RefMoFEMEntity,
 	const_mem_fun<RefMoFEMEntity::BasicMoFEMEntity,EntityType,&RefMoFEMEntity::get_ent_type>,
 	const_mem_fun<RefMoFEMEntity,EntityType,&RefMoFEMEntity::get_parent_ent_type> > >,
     ordered_non_unique<
-      tag<Composite_Ent_And_ParentEntType_mi_tag>, 
+      tag<Composite_Ent_And_ParentEntType_mi_tag>,
       composite_key<
 	RefMoFEMEntity,
 	const_mem_fun<RefMoFEMEntity,EntityHandle,&RefMoFEMEntity::get_parent_ent>,
@@ -271,7 +272,7 @@ typedef multi_index_container<
   > > RefMoFEMEntity_multiIndex_view_by_parent_entity;
 
 /** \brief ref mofem entity, remove parent
- * \ingroup ent_multi_indices 
+ * \ingroup ent_multi_indices
  */
 struct RefMoFEMEntity_change_remove_parent {
   Interface &mOab;
@@ -280,18 +281,18 @@ struct RefMoFEMEntity_change_remove_parent {
   RefMoFEMEntity_change_remove_parent(Interface &moab): mOab(moab) {
     rval = mOab.tag_get_handle("_RefParentHandle",th_RefParentHandle); CHKERR_THROW(rval);
   }
-  void operator()(RefMoFEMEntity &e) { 
+  void operator()(RefMoFEMEntity &e) {
     rval = mOab.tag_delete_data(th_RefParentHandle,&e.ent,1); CHKERR_THROW(rval);
     rval = mOab.tag_get_by_ptr(th_RefParentHandle,&e.ent,1,(const void **)&(e.tag_parent_ent)); CHKERR_THROW(rval);
   }
 };
 
 /** \brief change parent
-  * \ingroup ent_multi_indices 
+  * \ingroup ent_multi_indices
   *
   * Use this function with care. Some other multi-indices can deponent on this.
 
-  Known dependent multi-indices (verify if that list is full): 
+  Known dependent multi-indices (verify if that list is full):
   - RefMoFEMEntity_multiIndex
   - RefMoFEMElement_multiIndex
 
@@ -304,14 +305,14 @@ struct RefMoFEMEntity_change_parent {
   RefMoFEMEntity_change_parent(Interface &moab,EntityHandle parent): mOab(moab),pArent(parent) {
     rval = mOab.tag_get_handle("_RefParentHandle",th_RefParentHandle); CHKERR_THROW(rval);
   }
-  void operator()(RefMoFEMEntity &e) { 
+  void operator()(RefMoFEMEntity &e) {
     rval = mOab.tag_get_by_ptr(th_RefParentHandle,&e.ent,1,(const void **)&(e.tag_parent_ent)); CHKERR_THROW(rval);
     *(e.tag_parent_ent) = pArent;
   }
 };
 
 /** \brief ref mofem entity, left shift
-  * \ingroup ent_multi_indices 
+  * \ingroup ent_multi_indices
   */
 struct RefMoFEMEntity_change_left_shift {
   int shift;
@@ -320,7 +321,7 @@ struct RefMoFEMEntity_change_left_shift {
 };
 
 /** \brief ref mofem entity, right shift
- * \ingroup ent_multi_indices 
+ * \ingroup ent_multi_indices
   */
 struct RefMoFEMEntity_change_right_shift {
   int shift;
@@ -329,67 +330,67 @@ struct RefMoFEMEntity_change_right_shift {
 };
 
 /** \brief ref mofem entity, change bit
-  * \ingroup ent_multi_indices 
+  * \ingroup ent_multi_indices
   */
 struct RefMoFEMEntity_change_add_bit {
   BitRefLevel bit;
   RefMoFEMEntity_change_add_bit(const BitRefLevel &_bit): bit(_bit) {};
-  void operator()(RefMoFEMEntity &e) { 
-    bit |= *(e.tag_BitRefLevel); 
+  void operator()(RefMoFEMEntity &e) {
+    bit |= *(e.tag_BitRefLevel);
     *e.tag_BitRefLevel = bit;
   }
 };
 
 /** \brief ref mofem entity, change bit
-  * \ingroup ent_multi_indices 
+  * \ingroup ent_multi_indices
   */
 struct RefMoFEMEntity_change_and_bit {
   BitRefLevel bit;
   RefMoFEMEntity_change_and_bit(const BitRefLevel &_bit): bit(_bit) {};
-  void operator()(RefMoFEMEntity &e) { 
-    bit &= *(e.tag_BitRefLevel); 
+  void operator()(RefMoFEMEntity &e) {
+    bit &= *(e.tag_BitRefLevel);
     *e.tag_BitRefLevel = bit;
   }
 };
 
 /** \brief ref mofem entity, change bit
-  * \ingroup ent_multi_indices 
+  * \ingroup ent_multi_indices
   */
 struct RefMoFEMEntity_change_xor_bit {
   BitRefLevel bit;
   RefMoFEMEntity_change_xor_bit(const BitRefLevel &_bit): bit(_bit) {};
-  void operator()(RefMoFEMEntity &e) { 
-    bit ^= *(e.tag_BitRefLevel); 
+  void operator()(RefMoFEMEntity &e) {
+    bit ^= *(e.tag_BitRefLevel);
     *e.tag_BitRefLevel = bit;
   }
 };
 
 /** \brief ref mofem entity, change bit
-  * \ingroup ent_multi_indices 
+  * \ingroup ent_multi_indices
   */
 struct RefMoFEMEntity_change_set_bit {
   BitRefLevel bit;
   RefMoFEMEntity_change_set_bit(const BitRefLevel &_bit): bit(_bit) {};
-  void operator()(RefMoFEMEntity &e) { 
+  void operator()(RefMoFEMEntity &e) {
     *e.tag_BitRefLevel = bit;
   }
 };
 
 /** \brief ref mofem entity, change bit
-  * \ingroup ent_multi_indices 
+  * \ingroup ent_multi_indices
   */
 struct RefMoFEMEntity_change_set_nth_bit {
   int n;
   bool b;
   RefMoFEMEntity_change_set_nth_bit(const int _n,bool _b): n(_n),b(_b) {};
-  void operator()(RefMoFEMEntity &e) { 
+  void operator()(RefMoFEMEntity &e) {
     (*e.tag_BitRefLevel)[n] = b;
   }
 };
 
 /**
   * \brief struct keeps handle to entity in the field.
-  * \ingroup ent_multi_indices 
+  * \ingroup ent_multi_indices
   */
 struct MoFEMEntity: public interface_MoFEMField<MoFEMField>, interface_RefMoFEMEntity<RefMoFEMEntity> {
   typedef interface_MoFEMField<MoFEMField> interface_type_MoFEMField;
@@ -437,7 +438,7 @@ struct MoFEMEntity: public interface_MoFEMField<MoFEMField>, interface_RefMoFEME
 
 /**
  * \brief interface to MoFEMEntity
- * \ingroup ent_multi_indices 
+ * \ingroup ent_multi_indices
  *
  * interface to MoFEMEntity
  */
@@ -458,7 +459,7 @@ struct interface_MoFEMEntity: public interface_MoFEMField<T>,interface_RefMoFEME
 
 /**
  * \brief structure to chane MoFEMEntity order
- * \ingroup ent_multi_indices 
+ * \ingroup ent_multi_indices
  */
 struct MoFEMEntity_change_order {
   Interface& moab;
@@ -470,10 +471,10 @@ struct MoFEMEntity_change_order {
   void operator()(MoFEMEntity &e);
 };
 
-/** 
+/**
  * @relates multi_index_container
  * \brief MultiIndex container keeps MoFEMEntity
- * \ingroup ent_multi_indices 
+ * \ingroup ent_multi_indices
  *
  */
 typedef multi_index_container<
@@ -490,7 +491,7 @@ typedef multi_index_container<
     hashed_non_unique<
       tag<Ent_mi_tag>, const_mem_fun<MoFEMEntity,EntityHandle,&MoFEMEntity::get_ent> >,
     ordered_non_unique<
-      tag<Composite_Name_And_Ent_mi_tag>, 
+      tag<Composite_Name_And_Ent_mi_tag>,
       composite_key<
 	MoFEMEntity,
 	const_mem_fun<MoFEMEntity::interface_type_MoFEMField,boost::string_ref,&MoFEMEntity::get_name_ref>,
@@ -506,5 +507,3 @@ typedef multi_index_container<
  * \defgroup ent_multi_indices Entities structures and multi-indices
  * \ingroup mofem
  ******************************************************************************/
-
-

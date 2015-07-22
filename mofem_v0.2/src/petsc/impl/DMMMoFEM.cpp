@@ -19,7 +19,10 @@
 #include <petscsnes.h>
 #include <petscts.h>
 
-#ifdef PETSC_DEV
+#undef PETSC_VERSION_RELEASE
+#define PETSC_VERSION_RELEASE 1
+
+#if PETSC_VERSION_GE(3,6,0)
   #include <petsc/private/dmimpl.h> /*I  "petscdm.h"   I*/
   #include <petsc/private/vecimpl.h> /*I  "petscdm.h"   I*/
 #else

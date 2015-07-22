@@ -58,7 +58,7 @@ include(cmake/ExportFile.cmake)
 
 set(MoFEM_VERSION_MAJOR 0)
 set(MoFEM_VERSION_MINOR 2)
-set(MoFEM_VERSION_BUILD 1)
+set(MoFEM_VERSION_BUILD 2)
 
 #git revision
 include(cmake/GetGitRevisionDescription.cmake)
@@ -137,34 +137,10 @@ configure_file(
 install(FILES ${PROJECT_BINARY_DIR}/MoFEMConfig.cmake DESTINATION ${CMAKE_INSTALL_PREFIX})
 install(FILES ${PROJECT_BINARY_DIR}/MoFEMConfig-version.cmake DESTINATION ${CMAKE_INSTALL_PREFIX})
 
-#add a target to generate API documentation with Doxyge
-find_package(Doxygen)
-if(DOXYGEN_FOUND)
-
-  configure_file(
-    ${PROJECT_SOURCE_DIR}/Doxyfile.in
-    ${PROJECT_BINARY_DIR}/Doxyfile
-  )
-  set(DOXYGEN_LINE_COMMAND
-    ${DOXYGEN_EXECUTABLE} ${PROJECT_BINARY_DIR}/Doxyfile
-  )
-  add_custom_target(doxygen_generating_documenation
-    ${DOXYGEN_LINE_COMMAND}
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-    COMMENT "Generating documentation with Doxygen" VERBATIM
-  )
-  add_custom_target(doc
-    DEPENDS doxygen_generating_documenation
-    COMMENT "Making documentation" VERBATIM
-  )
-
-endif(DOXYGEN_FOUND)
-
 add_subdirectory("${PROJECT_SOURCE_DIR}/scripts")
 add_subdirectory("${PROJECT_SOURCE_DIR}/third_party")
 add_subdirectory("${PROJECT_SOURCE_DIR}/include")
 add_subdirectory("${PROJECT_SOURCE_DIR}/src")
-add_subdirectory("${PROJECT_SOURCE_DIR}/finite_element_library")
 add_subdirectory("${PROJECT_SOURCE_DIR}/atom_tests")
 add_subdirectory("${PROJECT_SOURCE_DIR}/users_modules.in")
 add_subdirectory("${PROJECT_SOURCE_DIR}/doc")

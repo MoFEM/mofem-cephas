@@ -1,8 +1,3 @@
-/* Copyright (C) 2015, Zahur Ullah (Zahur.Ullah AT glasgow.ac.uk)
- * --------------------------------------------------------------
- * FIXME: DESCRIPTION
- */
-
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -18,16 +13,14 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 #include <MoFEM.hpp>
+using namespace MoFEM;
 
 #include <DirichletBC.hpp>
 #include <PostProcOnRefMesh.hpp>
 #include <ThermalElement.hpp>
 
 #include <Projection10NodeCoordsOnField.hpp>
-
-using namespace MoFEM;
 #include <MoistureTransportElement.hpp>
-
 
 static char help[] = "...\n\n";
 
@@ -55,7 +48,7 @@ int main(int argc, char *argv[]) {
 
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
 
   //Create MoFEM (Joseph) database
   MoFEM::Core core(moab);
@@ -79,7 +72,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.modify_problem_ref_level_add_bit("MOISTURE_PROBLEM",bit_level0); CHKERRQ(ierr);
 
   //meshset consisting all entities in mesh
-  EntityHandle root_set = moab.get_root_set(); 
+  EntityHandle root_set = moab.get_root_set();
   //add entities to field
   ierr = m_field.add_ents_to_field_by_TETs(root_set,"CONC"); CHKERRQ(ierr);
   ierr = m_field.add_ents_to_field_by_TETs(root_set,"CONC_RATE"); CHKERRQ(ierr);
@@ -101,7 +94,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.set_field_order(root_set,MBEDGE,"CONC_RATE",order); CHKERRQ(ierr);
   ierr = m_field.set_field_order(root_set,MBVERTEX,"CONC_RATE",1); CHKERRQ(ierr);
 
-  
+
   //if the MESH_NODE_POSITIONS not exisits (this check is neccesary because if input of diffusion is output of thermal)
   if(!(m_field.check_field("MESH_NODE_POSITIONS"))){
     ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,3); CHKERRQ(ierr);
@@ -133,7 +126,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.loop_dofs("MESH_NODE_POSITIONS",ent_method_material); CHKERRQ(ierr);
 
   /****/
-  //mesh partitioning 
+  //mesh partitioning
   //partition
   ierr = m_field.partition_problem("MOISTURE_PROBLEM"); CHKERRQ(ierr);
   ierr = m_field.partition_finite_elements("MOISTURE_PROBLEM"); CHKERRQ(ierr);
@@ -211,7 +204,7 @@ int main(int argc, char *argv[]) {
     "steps %D (%D rejected, %D SNES fails), ftime %g, nonlinits %D, linits %D\n",
     steps,rejects,snesfails,ftime,nonlinits,linits);
 
-  
+
   //m_field.list_dofs_by_field_name("TEMP");
   if(pcomm->rank()==0) {
     rval = moab.write_file("solution_mois.h5m"); CHKERR_PETSC(rval);
@@ -252,5 +245,3 @@ int main(int argc, char *argv[]) {
   return 0;
 
 }
-
-
