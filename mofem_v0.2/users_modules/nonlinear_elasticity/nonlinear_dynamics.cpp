@@ -75,15 +75,17 @@ struct MonitorPostProc: public FEMethod {
   int pRT;
   int *step;
 
-  MonitorPostProc(FieldInterface &m_field,
+  MonitorPostProc(
+    FieldInterface &m_field,
     map<int,NonlinearElasticElement::BlockData> &set_of_blocks,
     NonlinearElasticElement::MyVolumeFE &fe_elastic_energy,
-    ConvectiveMassElement::MyVolumeFE &fe_kinetic_energy):
-    FEMethod(),mField(m_field),postProc(m_field),
-    setOfBlocks(set_of_blocks),
-    feElasticEnergy(fe_elastic_energy),
-    feKineticEnergy(fe_kinetic_energy),
-    iNit(false) {
+    ConvectiveMassElement::MyVolumeFE &fe_kinetic_energy
+  ):
+  FEMethod(),mField(m_field),postProc(m_field),
+  setOfBlocks(set_of_blocks),
+  feElasticEnergy(fe_elastic_energy),
+  feKineticEnergy(fe_kinetic_energy),
+  iNit(false) {
 
     ErrorCode rval;
     PetscErrorCode ierr;

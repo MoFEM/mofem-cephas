@@ -323,7 +323,7 @@ PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
         ierr = iNvert(detH,H,invH); CHKERRQ(ierr);
         noalias(G) = prod(g,invH);
         double rho0 = dAta.rho0;
-        ublas::vector<double>& a0 = dAta.a0;
+        ublas::vector<double> a0 = dAta.a0;
         ierr = MethodForForceScaling::applyScale(getFEMethod(),methodsOp,a0); CHKERRQ(ierr);
         if(!lInear) {
           noalias(F) = prod(h,invH);
