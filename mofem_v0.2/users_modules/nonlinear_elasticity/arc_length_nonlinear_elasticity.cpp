@@ -42,6 +42,7 @@ using namespace MoFEM;
 #include <PostProcStresses.hpp>
 #include <Projection10NodeCoordsOnField.hpp>
 
+#include <MethodForForceScaling.hpp>
 #include <SurfacePressure.hpp>
 #include <NodalForce.hpp>
 
@@ -78,7 +79,7 @@ int main(int argc, char *argv[]) {
     order = 3;
   }
 
-  // use this if your mesh is partotioned and you run code on parts,
+  // use this if your mesh is partitioned and you run code on parts,
   // you can solve very big problems
   PetscBool is_partitioned = PETSC_FALSE;
   ierr = PetscOptionsGetBool(PETSC_NULL,"-my_is_partitioned",&is_partitioned,&flg); CHKERRQ(ierr);
@@ -198,7 +199,7 @@ int main(int argc, char *argv[]) {
     ierr = m_field.set_field_order(0,MBEDGE,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
     ierr = m_field.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
 
-    //add neumman finite elemnets to add static boundary conditions
+    //add Neumman finite elements to add static boundary conditions
     ierr = m_field.add_finite_element("NEUAMNN_FE"); CHKERRQ(ierr);
     ierr = m_field.modify_finite_element_add_field_row("NEUAMNN_FE","SPATIAL_POSITION"); CHKERRQ(ierr);
     ierr = m_field.modify_finite_element_add_field_col("NEUAMNN_FE","SPATIAL_POSITION"); CHKERRQ(ierr);
@@ -263,7 +264,7 @@ int main(int argc, char *argv[]) {
     ierr = m_field.set_field(0,MBTET,"SPATIAL_POSITION"); CHKERRQ(ierr);
   }
 
-  //build finite elemnts
+  //build finite elements
   ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
 
   //build adjacencies
@@ -515,7 +516,7 @@ int main(int argc, char *argv[]) {
   snes_ctx.get_preProcess_to_do_Rhs().push_back(&my_dirichlet_bc);
   snes_ctx.get_preProcess_to_do_Rhs().push_back(&pre_post_method);
   loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("ELASTIC",&elastic.getLoopFeRhs()));
-  //surface focres and preassures
+  //surface forces and pressures
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("NEUAMNN_FE",&fe_neumann));
   //nodal forces
   boost::ptr_map<string,NodalForce> nodal_forces;

@@ -20,27 +20,6 @@
 #ifndef __SURFACE_PERSSURE_HPP__
 #define __SURFACE_PERSSURE_HPP__
 
-/// Class used to scale loads, f.e. in arc-length control
-struct MethodsForOp {
-
-  virtual PetscErrorCode scaleNf(const FEMethod *fe,ublas::vector<FieldData> &Nf) = 0;
-
-  static PetscErrorCode applyScale(
-    const FEMethod *fe,
-    boost::ptr_vector<MethodsForOp> &methodsOp,ublas::vector<FieldData> &Nf) {
-    PetscErrorCode ierr;
-    PetscFunctionBegin;
-    boost::ptr_vector<MethodsForOp>::iterator vit = methodsOp.begin();
-    for(;vit!=methodsOp.end();vit++) {
-      ierr = vit->scaleNf(fe,Nf); CHKERRQ(ierr);
-    }
-    PetscFunctionReturn(0);
-  }
-
-  virtual ~MethodsForOp() {}
-
-};
-
 /** \brief Force and pressures applied to surfaces
   * \ingroup mofem_static_boundary_conditions
   */
@@ -71,18 +50,18 @@ struct NeummanForcesSurface {
   };
   map<int,bCPreassure> mapPreassure;
 
-  boost::ptr_vector<MethodsForOp> methodsOp;
+  boost::ptr_vector<MethodForForceScaling> methodsOp;
 
   /// Operator for force element
   struct OpNeumannForce: public FaceElementForcesAndSourcesCore::UserDataOperator {
 
     Vec &F;
     bCForce &dAta;
-    boost::ptr_vector<MethodsForOp> &methodsOp;
+    boost::ptr_vector<MethodForForceScaling> &methodsOp;
 
     OpNeumannForce(
       const string field_name,Vec &_F,bCForce &data,
-      boost::ptr_vector<MethodsForOp> &methods_op);
+      boost::ptr_vector<MethodForForceScaling> &methods_op);
 
     ublas::vector<FieldData> Nf;
 
@@ -95,12 +74,12 @@ struct NeummanForcesSurface {
 
     Vec &F;
     bCPreassure &dAta;
-    boost::ptr_vector<MethodsForOp> &methodsOp;
+    boost::ptr_vector<MethodForForceScaling> &methodsOp;
     bool hoGeometry;
 
     OpNeumannPreassure(
       const string field_name,Vec &_F,
-      bCPreassure &data,boost::ptr_vector<MethodsForOp> &methods_op,
+      bCPreassure &data,boost::ptr_vector<MethodForForceScaling> &methods_op,
       bool ho_geometry = false);
 
     ublas::vector<FieldData> Nf;
@@ -116,12 +95,12 @@ struct NeummanForcesSurface {
 
     Vec &F;
     bCPreassure &dAta;
-    boost::ptr_vector<MethodsForOp> &methodsOp;
+    boost::ptr_vector<MethodForForceScaling> &methodsOp;
     bool hoGeometry;
 
     OpNeumannFlux(
       const string field_name,Vec &_F,
-      bCPreassure &data,boost::ptr_vector<MethodsForOp> &methods_op,
+      bCPreassure &data,boost::ptr_vector<MethodForForceScaling> &methods_op,
       bool ho_geometry);
 
     ublas::vector<FieldData> Nf;

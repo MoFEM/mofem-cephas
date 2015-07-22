@@ -46,6 +46,7 @@ using namespace std;
 namespace po = boost::program_options;
 
 #include <DirichletBC.hpp>
+#include <MethodForForceScaling.hpp>
 #include <SurfacePressure.hpp>
 #include <NodalForce.hpp>
 #include <EdgeForce.hpp>

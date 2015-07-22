@@ -39,6 +39,7 @@ using namespace MoFEM;
 #include <fstream>
 #include <iostream>
 
+#include <MethodForForceScaling.hpp>
 #include <FluidPressure.hpp>
 
 static char help[] = "...\n\n";

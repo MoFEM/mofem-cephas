@@ -64,9 +64,19 @@ struct PostPorcStress: public VolumeElementForcesAndSourcesCore::UserDataOperato
     const FENumeredDofMoFEMEntity *dof_ptr;
     ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
 
+    int id  = dAta.iD;
+
+    Tag th_id;
+    int def_block_id = -1;
+    rval = postProcMesh.tag_get_handle(
+      "BLOCK_ID",1,MB_TYPE_INTEGER,th_id,MB_TAG_CREAT|MB_TAG_SPARSE,&def_block_id); CHKERR_PETSC(rval);
+    Range::iterator tit = commonData.tEts.begin();
+    for(;tit!=commonData.tEts.end();tit++) {
+      rval = postProcMesh.tag_set_data(th_id,&*tit,1,&id);  CHKERR_PETSC(rval);
+    }
+
     string tag_name_piola1 = dof_ptr->get_name()+"_PIOLA1_STRESS";
     string tag_name_energy = dof_ptr->get_name()+"_ENERGY_DENSITY";
-
 
     int tag_length = 9;
     double def_VAL[tag_length];

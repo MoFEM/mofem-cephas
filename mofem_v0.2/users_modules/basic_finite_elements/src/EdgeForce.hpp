@@ -45,18 +45,18 @@ struct EdgeForce {
     };
     map<int,bCForce> mapForce;
 
-    boost::ptr_vector<MethodsForOp> methodsOp;
+    boost::ptr_vector<MethodForForceScaling> methodsOp;
 
     struct OpEdgeForce: public EdgeElementForcesAndSurcesCore::UserDataOperator {
 
       Vec &F;
       bCForce &dAta;
-      boost::ptr_vector<MethodsForOp> &methodsOp;
+      boost::ptr_vector<MethodForForceScaling> &methodsOp;
       bool useSnesF;
 
       OpEdgeForce(
         const string field_name,Vec &f,bCForce &data,
-        boost::ptr_vector<MethodsForOp> &methods_op,
+        boost::ptr_vector<MethodForForceScaling> &methods_op,
         bool use_snes_f = false
       );
 

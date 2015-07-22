@@ -52,16 +52,16 @@ struct PostPorcStress: public VolumeElementForcesAndSourcesCore::UserDataOperato
       meshsets.insert(it->meshset);
       for(Range::iterator mit = meshsets.begin();mit != meshsets.end(); mit++) {
         if( mField.get_moab().contains_entities(*mit,&ent,1) ) {
-	  *_lambda = LAMBDA(mydata.data.Young,mydata.data.Poisson);
-	  *_mu = MU(mydata.data.Young,mydata.data.Poisson);
-	  *_block_id = it->get_msId();
-	  PetscFunctionReturn(0);
-	}
+          *_lambda = LAMBDA(mydata.data.Young,mydata.data.Poisson);
+          *_mu = MU(mydata.data.Young,mydata.data.Poisson);
+          *_block_id = it->get_msId();
+          PetscFunctionReturn(0);
+        }
       }
     }
 
     SETERRQ(PETSC_COMM_SELF,1,
-      "Element is not in elestic block, however you run linear elastic analysis with that element\n"
+      "Element is not in elastic block, however you run linear elastic analysis with that element\n"
       "top tip: check if you update block sets after mesh refinments or interface insertion");
 
     PetscFunctionReturn(0);
@@ -91,7 +91,7 @@ struct PostPorcStress: public VolumeElementForcesAndSourcesCore::UserDataOperato
     D_lambda.clear();
     for(int rr = 0;rr<3;rr++) {
       for(int cc = 0;cc<3;cc++) {
-	D_lambda(rr,cc) = 1;
+        D_lambda(rr,cc) = 1;
       }
     }
     D_mu.resize(6,6);

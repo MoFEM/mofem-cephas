@@ -20,6 +20,7 @@ using namespace MoFEM;
 #include <Projection10NodeCoordsOnField.hpp>
 #include <petsctime.h>
 
+#include <MethodForForceScaling.hpp>
 #include <SurfacePressure.hpp>
 
 #include <FEMethod_LowLevelStudent.hpp>

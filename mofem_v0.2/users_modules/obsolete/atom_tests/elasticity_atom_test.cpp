@@ -29,6 +29,7 @@ using namespace MoFEM;
 #include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <boost/numeric/ublas/vector.hpp>
 
+#include <MethodForForceScaling.hpp>
 #include <SurfacePressure.hpp>
 #include <NodalForce.hpp>
 #include <FluidPressure.hpp>
@@ -59,7 +60,7 @@ double roundn(double n)
 	//break n into fractional part (fract) and integral part (intp)
     double fract, intp;
     fract = modf(n,&intp);
-    
+
 //    //round up
 //    if (fract>=.5)
 //    {
@@ -106,12 +107,12 @@ int main(int argc, char *argv[]) {
   if(flg != PETSC_TRUE) {
     order = 5;
   }
-    
+
 
   //Read mesh to MOAB
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
@@ -190,7 +191,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.build_problems(); CHKERRQ(ierr);
 
   /****/
-  //mesh partitioning 
+  //mesh partitioning
 
   //partition
   ierr = m_field.partition_problem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
@@ -207,7 +208,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.MatCreateMPIAIJWithArrays("ELASTIC_MECHANICS",&Aij); CHKERRQ(ierr);
 
   struct MyElasticFEMethod: public ElasticFEMethod {
-    MyElasticFEMethod(FieldInterface& _m_field,Mat &_Aij,Vec &_D,Vec& _F,double _lambda,double _mu): 
+    MyElasticFEMethod(FieldInterface& _m_field,Mat &_Aij,Vec &_D,Vec& _F,double _lambda,double _mu):
       ElasticFEMethod(_m_field,_Aij,_D,_F,_lambda,_mu) {};
 
     PetscErrorCode Fint(Vec F_int) {
@@ -300,15 +301,15 @@ int main(int argc, char *argv[]) {
     //Open mesh_file_name.txt for writing
     ofstream myfile;
     myfile.open ((string(mesh_file_name)+".txt").c_str());
-    
+
     //Output displacements
     cout << "<<<< Displacements (X-Translation, Y-Translation, Z-Translation) >>>>>" << endl;
     myfile << "<<<< Displacements (X-Translation, Y-Translation, Z-Translation) >>>>>" << endl;
-    
+
     for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(m_field,"DISPLACEMENT",dof_ptr))
     {
         if(dof_ptr->get_ent_type()!=MBVERTEX) continue;
-        
+
         if(dof_ptr->get_dof_rank()==0)
         {
             //Round and truncate to 3 decimal places
@@ -330,9 +331,9 @@ int main(int argc, char *argv[]) {
             cout << boost::format("%.3lf") % roundn(fval) << endl;
             myfile << boost::format("%.3lf") % roundn(fval) << endl;
         }
-        
+
     }
-    
+
     //Close mesh_file_name.txt
     myfile.close();
 
@@ -346,4 +347,3 @@ int main(int argc, char *argv[]) {
   return 0;
 
 }
-

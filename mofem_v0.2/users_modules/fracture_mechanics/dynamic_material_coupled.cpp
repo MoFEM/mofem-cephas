@@ -49,6 +49,7 @@ extern "C" {
 #include <ConfigurationalFractureMechanics.hpp>
 
 #include <adolc/adolc.h>
+#include <MethodForForceScaling.hpp>
 #include <ConvectiveMassElement.hpp>
 #include <ConfigurationalFractureForDynamics.hpp>
 #include <MainCrackFunction.hpp>
