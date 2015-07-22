@@ -60,8 +60,6 @@ struct KelvinVoigtDamper {
   /** \brief Constitutive model functions
   \ingroup nonlinear_elastic_elem
 
-  \image html gel_spring_daspot_model.png "Gel model" width=6cm
-
   */
   template<typename TYPE>
   struct ConstitutiveEquation {
