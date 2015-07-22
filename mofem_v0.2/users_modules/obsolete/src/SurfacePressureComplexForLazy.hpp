@@ -144,7 +144,7 @@ struct NeummanForcesSurfaceComplexForLazy {
     map<int,bCPreassure> mapPreassure;
     PetscErrorCode reBaseToFaceLoocalCoordSystem(ublas::matrix<double> &t_glob_nodal);
 
-    boost::ptr_vector<MethodsForOp> methodsOp;
+    boost::ptr_vector<MethodForForceScaling> methodsOp;
 
   };
 

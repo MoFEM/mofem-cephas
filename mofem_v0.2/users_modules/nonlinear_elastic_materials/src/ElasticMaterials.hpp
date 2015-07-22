@@ -184,7 +184,7 @@ struct ElasticMaterials {
         (str_dashG.str().c_str(),po::value<double>(&blockData[it->get_msId()].dashG)->default_value(-1));
 
         ostringstream str_dashPoisson;
-        str_dashPoisson << "block_" << it->get_msId() << ".dashG";
+        str_dashPoisson << "block_" << it->get_msId() << ".dashPoisson";
         config_file_options.add_options()
         (str_dashPoisson.str().c_str(),po::value<double>(&blockData[it->get_msId()].dashPoisson)->default_value(-2));
 

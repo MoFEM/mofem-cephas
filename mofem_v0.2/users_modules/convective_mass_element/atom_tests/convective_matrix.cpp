@@ -33,6 +33,7 @@ using namespace MoFEM;
 
 #include <adolc/adolc.h>
 #include <DirichletBC.hpp>
+#include <MethodForForceScaling.hpp>
 #include <ConvectiveMassElement.hpp>
 
 ErrorCode rval;

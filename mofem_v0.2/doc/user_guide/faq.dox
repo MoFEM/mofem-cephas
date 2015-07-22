@@ -41,7 +41,7 @@ mpirun -np 4 ./elasticity \
 \endcode a direct solver for coarse mesh is set.
 
 
-\section update_on_memory_stick Ho to update MoFEM on Live USB Stick?
+\section update_on_memory_stick How to update MoFEM on Live USB Stick?
 
 MoFEM update on Live USB stick:
 \code

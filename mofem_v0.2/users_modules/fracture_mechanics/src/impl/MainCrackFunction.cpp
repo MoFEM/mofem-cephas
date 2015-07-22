@@ -33,6 +33,7 @@ using namespace MoFEM;
 #include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <boost/numeric/ublas/vector.hpp>
 
+#include <MethodForForceScaling.hpp>
 #include <SurfacePressure.hpp>
 #include <NodalForce.hpp>
 #include <EdgeForce.hpp>
@@ -453,7 +454,7 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
     int ii = 0;
     for(;ii<nb_sub_steps;ii++) {
       ierr = PetscPrintf(PETSC_COMM_WORLD,"\n* number of substeps = %D _da_ = %6.4e\n\n",ii,_da_); CHKERRQ(ierr);
-      
+
       SNESConvergedReason reason0;
       ierr = conf_prob.solve_coupled_problem(m_field,&snes,_da_,penalty,fraction_treshold,reason0); CHKERRQ(ierr);
       if(reason0 < 0) {

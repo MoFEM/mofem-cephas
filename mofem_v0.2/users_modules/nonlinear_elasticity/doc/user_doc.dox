@@ -3,6 +3,15 @@
 This is simple example how to run a simple problem for linear and non-linear dynamics. Is is
 directed for beginners starting work with MoFEM.
 
+Implementation of following examples can be found in module \ref
+nonlinear_elastic_elem. Stiffness matrix and internal force vector is calulated
+in \ref NonlinearElasticElement, damping matrix is implemented in \ref KelvinVoigtDamper
+and mass matrix is implemented in \ref ConvectiveMassElement.
+
+\image html dam_dynamics.gif "Arch dam - erthquace load" width=6cm
+
+\tableofcontents
+
 \section dynamic_elastic_bar Dynamic analysis of prismatic 3d bar
 
 \subsection dynamic_elastic_bar_input_file Input files
@@ -12,53 +21,16 @@ working directory is \em
 users_modules/nonlinear_elasticity/examples/prismatic_bar in build directory.
 All input files used in this example can be found in the example directory.
 
-\subsubsection journal Journal file
+\subsection journal Journal file
 
 Mesh file with boundary conditions, material properties can be created with Cubit journal file with prismatic bar (rod.jou),
-\code
-reset
-set duplicate block elements on
+\include users_modules/nonlinear_elasticity/examples/prismatic_bar/rod.jou
 
-brick x 1 y 1 z 10
-
-create Displacement  on surface 1 dof 3 fix 0
-create Displacement  on vertex 1  dof 3 dof 2 fix 0
-create Displacement  on vertex 3  dof 3 dof 1 fix 0
-create Displacement  on vertex 4  dof 1 dof 2 dof 3 fix 0
-
-create pressure  on surface 2 magnitude 2
-#create force  on surface 2 force value 1 direction   y
-
-block 1 volume all
-block 1 name 'MAT_ELASTIC'
-block 1 attribute count 2
-block 1 attribute index 1 1e1 	#young modulus
-block 1 attribute index 2 0.25  #poisson ratio
-
-block 2 volume 1
-block 2 name "BODY_FORCES")
-block 2 attribute count 4
-block 2 attribute index 1 0.01		#material density
-block 2 attribute index 2 0.		#constant acceleration in x-direction
-block 2 attribute index 3 0.		#constant acceleration in y-direction
-block 2 attribute index 4 0.		#constant acceleration in z-direction
-
-volume all scheme Tetmesh
-volume all size auto factor 9
-mesh volume all
-\endcode
-
-\subsubsection time_history Time history data
+\subsection time_history Time history data
 
 Time data history file (rod_history.in),
-\code
-0.0             0.0
-1.0             1.0
-1.1001          0.0
-100000          0.0
-\endcode
-
-where first column represents time and second column represent force multiplier.
+\include users_modules/nonlinear_elasticity/examples/prismatic_bar/rod_history.in
+where first column represents time and second column represent time force scaling.
 
 \subsection execution Executing code
 
@@ -85,11 +57,20 @@ mpirun -np 4  ../../nonlinear_dynamics \
 \endcode
 
 Notes:
-  - Approximation order can be set using \em -my_disp_order.
-  - Time integration scheme is controlled by \em -ts_type, look to PETSc manual for more details.
-  - If linear analysis i.e. \em -is_linear, then Jacobian can be calculated only once at 1st time step. To speed up calculations set \em -snes_lag_jacobian -2
-  - Resolution of post-processing mesh is set by \em -my_max_post_proc_ref_level 0. If more than 0, i.e. 1,2,... a denser post-processing mesh is generated. This results in biger size of post processing files and compromise overall efficiency.
-  - Using -my_output_prt -1, each time step is post-processed. In some cases every n-th step can be save on hard-drive, then set -my_output_prt -2, if every \em even you like to save. If option number is positive in addition restart file is saved, this allow to kick-start calculations from last converged step.
+
+- Approximation order can be set using \em -my_disp_order.
+
+- Time integration scheme is controlled by \em -ts_type, look to PETSc manual for more details.
+
+- If linear analysis i.e. \em -is_linear, then Jacobian can be calculated only once at 1st time step. To speed up calculations set \em -snes_lag_jacobian -2
+
+- Resolution of post-processing mesh is set by \em -my_max_post_proc_ref_level 0. If more than 0, i.e. 1,2,... a denser post-processing mesh is generated. This results in biger size of post processing files and compromise overall efficiency.
+
+- Using -my_output_prt -1, each time step is post-processed. In some cases
+every n-th step can be save on hard-drive, then set -my_output_prt -2, if
+every \em even you like to save. If option number is positive in addition
+restart file is saved, this allow to kick-start calculations from last
+converged step.
 
 \subsection gnuplot Generating data for plots
 
@@ -127,5 +108,77 @@ For Alpha method user can set spectral radius following petsc documentation
 \code
 -ts_alpha_radius 0.5
 \endcode
+
+\section dynamic_dam Dynamic analysis of Arch Dam
+
+\subsection dam_input_file Input files
+
+Following description and line commands are in presumption that user parent
+working directory is \em
+users_modules/nonlinear_elasticity/examples/dam in build directory.
+All input files used in this example can be found in the example directory.
+
+\subsection accelerogram Accelerogram
+
+This is simplified analysis of dam structure subjected to earthquake. Dynamic
+loads given in accelerogram are given in
+\em users_modules/nonlinear_elasticity/examples/dam/accelerogram.in
+\include users_modules/nonlinear_elasticity/examples/dam/accelerogram.in
+where first columb represents time, second acceleretaion in \em x-direction,
+third column acceleration in \em y-direction and last column is acceleration in
+\em y-direction.
+
+\subsection time_history_dam Time history data
+
+For simplicity are other loads are constant in time, and time depenent laad
+scaling function is in
+\em users_modules/nonlinear_elasticity/examples/dam/dam_history.in
+\include users_modules/nonlinear_elasticity/examples/dam/dam_history.in
+
+\subsection execution_dam Executing code
+
+Line command executing model should be run from
+users_modules/nonlinear_elasticity/examples/dam in build directory
+\code
+mpirun -np 4 ../../nonlinear_dynamics \
+-my_file dam.h5m \
+-ksp_type fgmres \
+-pc_type lu -pc_factor_mat_solver_package mumps \
+-ksp_atol 1e-10 -ksp_rtol 1e-12 -ksp_monitor \
+-snes_type newtonls -snes_linesearch_type basic \
+-snes_max_it 10 -snes_atol 1e-4 -snes_rtol 1e-8 -snes_monitor \
+-ts_monitor -ts_type alpha -ts_dt 0.002 \
+-ts_final_time 8 -ts_max_snes_failures -1 \
+-my_time_data_file dam_history.in \
+-my_accelerogram accelerogram.in \
+-my_solve_at_time_zero 1 \
+-my_output_prt -1 -my_max_post_proc_ref_level 0 \
+-my_disp_order 2 \
+-default_material HOOKE -is_linear \
+-elastic_material_configuration block_data.in 2>&1 | tee log
+\endcode
+
+Options discussed in prismatic bar (\ref execution) apply to this case as well, in
+ addition more options are introduce in this example:
+
+- \em -my_accelerogram accelerogram file
+
+- \em -my_time_data_file force time scaling function
+
+- \em -my_solve_at_time_zero 1, indicate that initial static analysis is run to
+calculate initial displacements.
+
+- \em -elastic_material_configuration block_data.in, material configuration file. This
+ file overwrite material parameters set in Cubit journal file
+
+User cam set material parameters or approximation order to each block defined in cubit. Note
+that to each block user can set unique approximation order and material model.
+\include users_modules/nonlinear_elasticity/examples/dam/block_data.in
+
+\subsection journal_dam Journal file
+
+Mesh journal mesh file is shown bellow. Pleas note end of the file were bondary conditions,
+blocks with elstic matrix, damping model and body forces are defined.
+\include users_modules/nonlinear_elasticity/examples/dam/dam.jou
 
 */
