@@ -1,7 +1,7 @@
 /*! \page gel_model_example Gel Model (Usage example)
 
 This is example how to run a simple problem for gel model with
-visocus-relaxation. Is is directed for beginners starting work with MoFEM.
+visocus-relaxation. Is is dedicated for beginners starting work with MoFEM.
 
 In this model mechanical and solvent concentration field is modeled. In addition
 viscous relaxation is taken into account by considering model with two springs
@@ -23,8 +23,8 @@ prismatic bar (brick_of_gel.jou),
 
 \subsubsection gel_material_file Defining material properties
 
-Material properties file (gel_config.in). For more details about model
-parameters look here \ref Gel::ConstitutiveEquation
+Material properties file (gel_config.in).
+\include users_modules/gels/gel_config.in
 
 Native constitutive model is implemented after
 Yuhang Hu and Zhigang Suo. Viscoelasticity and poroelasticity in elastomeric
@@ -37,8 +37,9 @@ equation. However generalization to large deformations and displacements is
 straightforward, code uses automatic differentiation (ADOL-C), and user need
 only implement stress-strain physical equation and all tangent matrices are
 calculated automatically.
-\include users_modules/gels/gel_config.in
-where first column represents time and second column represent force multiplier.
+
+For more details about model implementation, equations and physical constants
+look here \ref Gel::ConstitutiveEquation
 
 \subsection execution Executing code
 
