@@ -171,8 +171,7 @@ calculate initial displacements.
 - \em -elastic_material_configuration block_data.in, material configuration file. This
  file overwrite material parameters set in Cubit journal file
 
-User cam set material parameters or approximation order to each block defined in cubit. Note
-that to each block user can set unique approximation order and material model.
+User can set material parameters or approximation order to each block defined in cubit.
 \include users_modules/nonlinear_elasticity/examples/dam/block_data.in
 
 \subsection journal_dam Journal file
