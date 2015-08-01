@@ -71,6 +71,7 @@ List of third party libraries and packages used by MoFEM:
 - PETSc <http://www.mcs.anl.gov/petsc/documentation/index.html>
 - BOOST <http://www.boost.org>
 	- uBlas <http://www.boost.org/doc/libs/release/libs/numeric/>
+- ADOL-C <https://projects.coin-or.org/ADOL-C>
 - CMake <http://www.cmake.org>
 - ParaView <http://www.paraview.org>
 
