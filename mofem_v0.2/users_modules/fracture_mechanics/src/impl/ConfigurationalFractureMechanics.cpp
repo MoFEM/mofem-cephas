@@ -417,31 +417,31 @@ struct BothSurfaceConstrains: public FEMethod {
     PetscFunctionBegin;
     PetscErrorCode ierr;
     switch (ts_ctx) {
-	case CTX_TSSETIFUNCTION: {
-	  snes_ctx = CTX_SNESSETFUNCTION;
-	  snes_f = ts_F;
-	  break;
-	}
-	case CTX_TSSETIJACOBIAN: {
-	  snes_ctx = CTX_SNESSETJACOBIAN;
-	  snes_B = ts_B;
-	  break;
-	}
-	default:
-	break;
+      case CTX_TSSETIFUNCTION: {
+        snes_ctx = CTX_SNESSETFUNCTION;
+        snes_f = ts_F;
+        break;
+      }
+      case CTX_TSSETIJACOBIAN: {
+        snes_ctx = CTX_SNESSETJACOBIAN;
+        snes_B = ts_B;
+        break;
+      }
+      default:
+      break;
     }
     switch(snes_ctx) {
-	case CTX_SNESSETFUNCTION: {
-	  ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
-	  ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
-	}
-	break;
-	case CTX_SNESSETJACOBIAN:
-	  ierr = MatAssemblyBegin(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-	  ierr = MatAssemblyEnd(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-	break;
-	default:
-	break;
+      case CTX_SNESSETFUNCTION: {
+        ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
+        ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+      }
+      break;
+      case CTX_SNESSETJACOBIAN:
+      ierr = MatAssemblyBegin(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+      ierr = MatAssemblyEnd(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+      break;
+      default:
+      break;
     }
     PetscFunctionReturn(0);
   }
@@ -508,9 +508,10 @@ struct BothSurfaceConstrains: public FEMethod {
         ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
       }
       break;
-      case CTX_SNESSETJACOBIAN:
-      ierr = MatAssemblyBegin(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-      ierr = MatAssemblyEnd(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+      case CTX_SNESSETJACOBIAN: {
+        ierr = MatAssemblyBegin(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+        ierr = MatAssemblyEnd(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+      }
       break;
       default:
       break;
@@ -1337,7 +1338,8 @@ PetscErrorCode ConfigurationalFractureMechanics::constrains_crack_front_problem_
 
     Range crack_surfaces_edge_faces;
     rval = m_field.get_moab().get_adjacencies(
-      crack_front_nodes,2,false,crack_surfaces_edge_faces,Interface::UNION); CHKERR_PETSC(rval);
+      crack_front_nodes,2,false,crack_surfaces_edge_faces,Interface::UNION
+    ); CHKERR_PETSC(rval);
     crack_surfaces_edge_faces = crack_surfaces_edge_faces.subset_by_type(MBTRI);
     crack_surfaces_edge_faces = intersect(crack_surfaces_edge_faces,crack_surfaces_faces);
     ierr = PetscPrintf(PETSC_COMM_WORLD,"number of Front Faces = %d\n",crack_surfaces_edge_faces.size()); CHKERRQ(ierr);
@@ -2968,7 +2970,7 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(
   }
 
   // Bothsieds constrains
-  BothSurfaceConstrains  both_sides_constrains(m_field);
+  BothSurfaceConstrains both_sides_constrains(m_field);
   // Dirichlet constrains
   FixBcAtEntities fix_material_pts(m_field,"MESH_NODE_POSITIONS",corners_nodes);
   fix_material_pts.fieldNames.push_back("LAMBDA_SURFACE");
