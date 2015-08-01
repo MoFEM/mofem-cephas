@@ -1152,13 +1152,10 @@ PetscErrorCode ConfigurationalFractureMechanics::constrains_problem_definition(F
       one_side_crack_surface_faces.insert(*fit);
     }
   }
-  Range one_side_crack_surface_faces_nodes;
-  rval = m_field.get_moab().get_connectivity(one_side_crack_surface_faces,one_side_crack_surface_faces_nodes,true); CHKERR_PETSC(rval);
-  one_side_crack_surface_faces_nodes = subtract(one_side_crack_surface_faces_nodes,corners_nodes);
-  Range one_side_crack_surface_faces_nodes_without_crack_front;
-  one_side_crack_surface_faces_nodes_without_crack_front = subtract(one_side_crack_surface_faces_nodes,crack_front_nodes);
   ierr = PetscPrintf(PETSC_COMM_WORLD,"number of Crack Surfaces Faces = %d\n",crack_surfaces_faces.size()); CHKERRQ(ierr);
-  ierr = PetscPrintf(PETSC_COMM_WORLD,"number of Crack Surfaces Faces On One Side = %d\n",one_side_crack_surface_faces.size()); CHKERRQ(ierr);
+  ierr = PetscPrintf(
+    PETSC_COMM_WORLD,"number of Crack Surfaces Faces On One Side = %d\n",one_side_crack_surface_faces.size()
+  ); CHKERRQ(ierr);
   ierr = PetscPrintf(PETSC_COMM_WORLD,"number of Crack Front Edges = %d\n",crack_front_edges.size()); CHKERRQ(ierr);
 
   Interface& moab = m_field.get_moab();
@@ -1219,6 +1216,25 @@ PetscErrorCode ConfigurationalFractureMechanics::constrains_problem_definition(F
   //CRCAK
   if(cs) {
 
+    Range one_side_crack_surface_faces_nodes;
+    rval = m_field.get_moab().get_connectivity(
+      one_side_crack_surface_faces,one_side_crack_surface_faces_nodes,true
+    ); CHKERR_PETSC(rval);
+    one_side_crack_surface_faces_nodes = subtract(one_side_crack_surface_faces_nodes,corners_nodes);
+    Range one_side_crack_surface_faces_nodes_without_crack_front;
+    one_side_crack_surface_faces_nodes_without_crack_front = subtract(one_side_crack_surface_faces_nodes,crack_front_nodes);
+
+    Range other_side_nodes = one_side_crack_surface_faces_nodes_without_crack_front;
+    PetscBool flg_other_side = PETSC_FALSE;
+    ierr = PetscOptionsGetBool(
+      PETSC_NULL,"-my_other_side_constrain",&flg_other_side,PETSC_NULL
+    ); CHKERRQ(ierr);
+    if(flg_other_side) {
+      rval = m_field.get_moab().get_connectivity(
+        subtract(crack_surfaces_faces,one_side_crack_surface_faces),other_side_nodes,true
+      ); CHKERRQ(ierr);
+    }
+
     ierr = m_field.remove_ents_from_field("LAMBDA_SURFACE",one_side_crack_surface_faces_nodes_without_crack_front); CHKERRQ(ierr);
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,SIDESET,it)) {
       int msId = it->get_msId();
@@ -1228,9 +1244,14 @@ PetscErrorCode ConfigurationalFractureMechanics::constrains_problem_definition(F
       ierr = m_field.remove_ents_from_field(ss.str(),one_side_crack_surface_faces_nodes_without_crack_front); CHKERRQ(ierr);
     }
 
-    ierr = m_field.add_ents_to_field_by_VERTICEs(one_side_crack_surface_faces_nodes_without_crack_front,"LAMBDA_CRACK_SURFACE"); CHKERRQ(ierr);
+    ierr = m_field.add_ents_to_field_by_VERTICEs(
+      one_side_crack_surface_faces_nodes_without_crack_front,"LAMBDA_CRACK_SURFACE"
+    ); CHKERRQ(ierr);
     ierr = m_field.set_field_order(0,MBVERTEX,"LAMBDA_CRACK_SURFACE",1); CHKERRQ(ierr);
-    ierr = m_field.add_ents_to_field_by_VERTICEs(one_side_crack_surface_faces_nodes_without_crack_front,"LAMBDA_BOTH_SIDES"); CHKERRQ(ierr);
+
+    ierr = m_field.add_ents_to_field_by_VERTICEs(
+      one_side_crack_surface_faces_nodes_without_crack_front,"LAMBDA_BOTH_SIDES"
+    ); CHKERRQ(ierr);
     ierr = m_field.set_field_order(0,MBVERTEX,"LAMBDA_BOTH_SIDES",1); CHKERRQ(ierr);
 
     Tag th_my_ref_level;
