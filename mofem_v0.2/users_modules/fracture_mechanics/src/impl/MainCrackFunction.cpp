@@ -678,7 +678,7 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
       if(edges_to_cat.size()>0) {
         Range new_nodes;
         ierr = face_splitting_tools.propagateBySplit(new_nodes,edges_to_cat,0); CHKERRQ(ierr);
-        ierr = face_splitting_tools.conerProblem(new_nodes,0); CHKERRQ(ierr);
+        ierr = face_splitting_tools.cornerProblem(new_nodes,0); CHKERRQ(ierr);
       }
     }
 

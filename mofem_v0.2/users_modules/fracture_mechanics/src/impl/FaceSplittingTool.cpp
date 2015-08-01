@@ -1296,8 +1296,10 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(vector<string> &switche
 
 #endif //WITH_TETGEN
 
-PetscErrorCode FaceSplittingTools::conerProblem(Range &new_nodes,int verb) {
+PetscErrorCode FaceSplittingTools::cornerProblem(Range &new_nodes,int verb) {
   PetscFunctionBegin;
+
+  if(new_nodes.empty()) PetscFunctionReturn(0);
 
   PetscErrorCode ierr;
   ErrorCode rval;
