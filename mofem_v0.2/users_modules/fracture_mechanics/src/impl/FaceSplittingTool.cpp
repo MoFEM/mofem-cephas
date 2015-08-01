@@ -1383,7 +1383,7 @@ PetscErrorCode FaceSplittingTools::getCornerEdges(Range &edges_to_cat,int verb) 
     surfaces = intersect(surfaces,mesh_level_tris);
     rval = skin.find_skin(0,surfaces,false,surfaces_edges_map[msId]); CHKERR_PETSC(rval);
   }
-  /*Range free_edges;
+  Range free_edges;
   for(map<int,Range>::iterator mit = surfaces_edges_map.begin();mit!=surfaces_edges_map.end();mit++) {
     for(map<int,Range>::iterator miit = surfaces_edges_map.begin();miit!=surfaces_edges_map.end();miit++) {
       free_edges.merge(intersect(mit->second,miit->second));
@@ -1392,7 +1392,7 @@ PetscErrorCode FaceSplittingTools::getCornerEdges(Range &edges_to_cat,int verb) 
   for(map<int,Range>::iterator mit = surfaces_edges_map.begin();mit!=surfaces_edges_map.end();mit++) {
     corners_edges.merge(mit->second);
   }
-  //corners_edges = subtract(corners_edges,free_edges);
+  corners_edges = subtract(corners_edges,free_edges);
   corners_edges = subtract(corners_edges,crack_surface_skin);
   Range corners_edges_nodes;
   rval = mField.get_moab().get_connectivity(corners_edges,corners_edges_nodes,true); CHKERR_PETSC(rval);
