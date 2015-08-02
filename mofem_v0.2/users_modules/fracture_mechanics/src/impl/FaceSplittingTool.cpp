@@ -1493,7 +1493,8 @@ PetscErrorCode FaceSplittingTools::getCornerEdges(Range &edges_to_cat,int verb) 
   crack_surface_tris_nodes = subtract(crack_surface_tris_nodes,crack_edges_nodes);
   Range crack_surface_tris_nodes_tets;
   rval = mField.get_moab().get_adjacencies(
-    crack_surface_tris_nodes,3,false,crack_surface_tris_nodes_tets,Interface::UNION); CHKERR_PETSC(rval);
+    crack_surface_tris_nodes,3,false,crack_surface_tris_nodes_tets,Interface::UNION
+  ); CHKERR_PETSC(rval);
 
   //corner edges and nodes
   Range corners_edges;
