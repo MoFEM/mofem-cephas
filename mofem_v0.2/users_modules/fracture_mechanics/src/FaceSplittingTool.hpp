@@ -100,7 +100,8 @@ struct FaceSplittingTools {
 
   boost::ptr_vector<tetgenio> tetGenData;
   PetscErrorCode rebuildMeshWithTetGen(
-    vector<string> &switches,const int verb = -1);
+    vector<string> &switches,const int verb = -1
+  );
 
 
   #endif

@@ -767,11 +767,27 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(vector<string> &switche
     // remove nodes on skin
     {
 
+      Range mesh_level_edges;
+      ierr = mField.get_entities_by_type_and_ref_level(
+        bit_mesh,BitRefLevel().set(),MBEDGE,mesh_level_edges
+      ); CHKERRQ(ierr);
+
+      Range sideset_corners_edges;
+      ierr = mField.get_cubit_msId_entities_by_dimension(
+        100,SIDESET,1,sideset_corners_edges,true
+      ); CHKERRQ(ierr);
+      Range sideset_corners_nodes;
+      rval = mField.get_moab().get_connectivity(
+        sideset_corners_edges,sideset_corners_nodes,true
+      ); CHKERR_PETSC(rval);
+      sideset_corners_nodes = intersect(to_remove,sideset_corners_nodes);
+
       // get corners edges, between surface side-sets
       map<int,Range> surfaces_edges_map;
       Range surfaces;
       ierr = mField.get_cubit_msId_entities_by_dimension(102,SIDESET,2,surfaces,true); CHKERRQ(ierr);
       rval = skin.find_skin(0,surfaces,false,surfaces_edges_map[102]); CHKERR_PETSC(rval);
+      surfaces_edges_map[102] = intersect(surfaces_edges_map[102],mesh_level_edges);
       for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SIDESET,it)) {
         int msId = it->get_msId();
         if((msId < 10200)||(msId >= 10300)) continue;
@@ -779,6 +795,7 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(vector<string> &switche
         surfaces.clear();
         rval = mField.get_moab().get_entities_by_type(meshset,MBTRI,surfaces,true); CHKERR_PETSC(rval);
         rval = skin.find_skin(0,surfaces,false,surfaces_edges_map[msId]); CHKERR_PETSC(rval);
+        surfaces_edges_map[msId] = intersect(surfaces_edges_map[msId],mesh_level_edges);
       }
       Range corners_edges;
       for(
@@ -789,7 +806,9 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(vector<string> &switche
           map<int,Range>::iterator miit = surfaces_edges_map.begin();
           miit!=surfaces_edges_map.end();miit++
         ) {
-          corners_edges.merge(intersect(mit->second,miit->second));
+          Range edges;
+          edges = intersect(mit->second,miit->second);
+          corners_edges.merge(edges);
         }
       }
       Range corners_nodes;
@@ -800,14 +819,11 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(vector<string> &switche
 
       if(!corners_nodes.empty()) {
 
-        Range mesh_level_edges;
-        ierr = mField.get_entities_by_type_and_ref_level(
-          bit_mesh,BitRefLevel().set(),MBEDGE,mesh_level_edges
-        ); CHKERRQ(ierr);
-
         // get nodes on crack front
         Range crack_edges;
-        ierr = mField.get_cubit_msId_entities_by_dimension(201,SIDESET,1,crack_edges,true); CHKERRQ(ierr);
+        ierr = mField.get_cubit_msId_entities_by_dimension(
+          201,SIDESET,1,crack_edges,true
+        ); CHKERRQ(ierr);
 
         Range crack_edges_nodes;
         rval = skin.find_skin(0,crack_edges,false,crack_edges_nodes); CHKERR(rval);
@@ -830,7 +846,7 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(vector<string> &switche
           EntityHandle front_node = intersect(crack_edges_nodes,nodes)[0];
           Range node_to_merge = intersect(corners_nodes,nodes);
           if(!node_to_merge.empty()) {
-            map_nodes_to_merge[front_node] = node_to_merge[0];
+            map_nodes_to_merge[node_to_merge[0]] = front_node;
           }
         }
         NodeMergerInterface *node_merger_iface;
@@ -844,9 +860,15 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(vector<string> &switche
           meshRefineBitLevels.push_back(last_ref_bit);
           BitRefLevel last_ref = BitRefLevel().set(meshRefineBitLevels.back());
           to_remove.erase(mit->first);
-          ierr = node_merger_iface->mergeNodes(
-            mit->first,mit->second,last_ref,bit_mesh
-          ); CHKERRQ(ierr);
+          if(sideset_corners_nodes.find(mit->first)!=sideset_corners_nodes.end()) {
+            ierr = node_merger_iface->mergeNodes(
+              mit->first,mit->second,last_ref,bit_mesh
+            ); CHKERRQ(ierr);
+          } else {
+            ierr = node_merger_iface->mergeNodes(
+              mit->second,mit->first,last_ref,bit_mesh
+            ); CHKERRQ(ierr);
+          }
           for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,cubit_it)) {
             EntityHandle meshset = cubit_it->meshset;
             ierr = mField.update_meshset_by_entities_children(meshset,last_ref,meshset,MBVERTEX,true); CHKERRQ(ierr);
