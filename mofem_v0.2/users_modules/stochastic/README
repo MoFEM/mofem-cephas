@@ -41,3 +41,107 @@ mpirun -np 1 ./trans_iso_RVE_Geom_disp \
 -ksp_type fgmres -pc_type lu \
 -pc_factor_mat_solver_package mumps -ksp_monitor -my_order 1 \
 -myapplied_strain 0.0,0.0,0.0,0.0,0.0,1.0
+
+******************************************************************************************
+*                                                                                        *
+* Example run FE2 analysis for composite structures with RVE consisting of matrix with   *
+*  isotropic material and fibre inclusion of transversely isotropic material             *
+*  (1) use the potential flow to calculate the fibres directions                         *
+*  (2) use the computational homogenisation method to predict/estimate the effective     * 
+*      stiffness matrix                                                                  *
+*  (3) run standard finite element method to compute structural response with the        *
+*      estimated effective stiffness matrix                                              *
+*                                                                                        *
+******************************************************************************************
+
+# Step 1: potential flow calculation to identify fibre direction
+
+make ../homogenisation/TransIso_Potential_Flow_NoInt && \
+mpirun -np 1 ../homogenisation/TransIso_Potential_Flow_NoInt \
+-my_file /mnt/home/Dropbox/DURACOMP_Cal/009_MOFEM/Meshes/RVE_TISO/RVE_UD.cub \
+-ksp_type fgmres -ksp_gmres_restart 1000 \
+-pc_type asm -sub_pc_type lu -ksp_monitor -my_order 1
+
+# Step 2: RVE homogenisation calculation & structural level FE
+
+make FE2_TransIso_Disp_REL && \
+mpirun -np 1 ./FE2_TransIso_Disp_REL \
+-my_file_macro /mnt/home/MyBuild/mofem-cephas/mofem_v0.2/users_modules/stochastic/meshes/LShape.cub \
+-my_file_RVE solution_RVE.h5m \
+-ksp_type fgmres -pc_type lu \
+-pc_factor_mat_solver_package mumps -ksp_monitor -my_order 1
+
+
+******************************************************************************************
+*                                                                                        *
+* Example run PSFEM (perturbation method based SFE) based FE2 analysis for composites    *
+*  structures with RVE consisting of matrix with isotropic material and fibre inclusion  *
+*  with transversely isotropic material                                                  *
+*  (1) use the potential flow to calculate the fibres directions                         *
+*  (2) use the perturbation method based -stochastic-homogenisation to calculate the     *
+*      average macroscopic stress induced by the given macroscopic strain                *
+*                                                                                        *
+******************************************************************************************
+
+# Step 1: potential flow calculation to identify fibre direction
+
+make ../homogenisation/TransIso_Potential_Flow_NoInt && \
+mpirun -np 1 ../homogenisation/TransIso_Potential_Flow_NoInt \
+-my_file /mnt/home/MyBuild/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/trans_iso/Textile_RVE_Mechanical.cub \
+-ksp_type fgmres -ksp_gmres_restart 1000 \
+-pc_type asm -sub_pc_type lu -ksp_monitor -my_order 1
+
+make ../homogenisation/TransIso_Potential_Flow_NoInt && \
+mpirun -np 1 ../homogenisation/TransIso_Potential_Flow_NoInt \
+-my_file /mnt/home/Dropbox/DURACOMP_Cal/009_MOFEM/Meshes/RVE_TISO/RVE_UD.cub \
+-ksp_type fgmres -ksp_gmres_restart 1000 \
+-pc_type asm -sub_pc_type lu -ksp_monitor -my_order 1
+
+make ../homogenisation/TransIso_Potential_Flow_NoInt && \
+mpirun -np 1 ../homogenisation/TransIso_Potential_Flow_NoInt \
+-my_file /mnt/home/MyBuild/mofem-cephas/mofem_v0.2/users_modules/stochastic/meshes/RVE_UD.cub \
+-ksp_type fgmres -ksp_gmres_restart 1000 \
+-pc_type asm -sub_pc_type lu -ksp_monitor -my_order 1
+
+# Step 2: RVE homogenisation calculation & structural level FE
+
+make PSFE2_TransIso_Disp && \
+mpirun -np 1 ./PSFE2_TransIso_Disp \
+-my_file_macro /mnt/home/MyBuild/mofem-cephas/mofem_v0.2/users_modules/homogenisation/meshes/LShape.cub \
+-my_file_RVE solution_RVE.h5m \
+-ksp_type fgmres -pc_type lu \
+-pc_factor_mat_solver_package mumps -ksp_monitor -my_order 1
+
+copy out put files from build folder to specific folder
+-------------------------------------------------------------
+cp input.dat /mnt/home/Desktop/
+
+******************************************************************************************
+*                                                                                        *
+* Example run CompStruct_Rel for performing reliability analysis                         *
+*  (1) First-Order Reliability Method with improved Hasofer Lind - Rackwitz Fiessler     *
+*      (iHL-RLF) algorithm                                                               *
+*                                                                                        *
+******************************************************************************************
+
+make CompStruct_Rel && mpirun -np 1 ./CompStruct_Rel
+
+
+
+make MsFE_Reliability_Disp && \
+mpirun -np 1 ./MsFE_Reliability_Disp \
+-my_file_macro /mnt/home/MyBuild/mofem-cephas/mofem_v0.2/users_modules/stochastic/meshes/LShape_REL99.cub \
+-my_prob_data_file //mnt//home//Dropbox//DURACOMP_Cal//009_MoFEM//04_ReliabilityAnalysis//Input_probdata_UD_Ply.txt \
+-my_file_RVE solution_RVE.h5m \
+-ksp_type fgmres -pc_type lu \
+-pc_factor_mat_solver_package mumps -ksp_monitor -my_order 1
+
+
+
+make MsFE_Reliability_Disp && \
+mpirun -np 1 ./MsFE_Reliability_Disp \
+-my_file_macro /mnt/home/MyBuild/mofem-cephas/mofem_v0.2/users_modules/stochastic/meshes/Quad_Ply_REL11.cub \
+-my_prob_data_file //mnt//home//Dropbox//DURACOMP_Cal//009_MoFEM//04_ReliabilityAnalysis//Input_probdata_UD_Ply.txt \
+-my_file_RVE solution_RVE.h5m \
+-ksp_type fgmres -pc_type lu \
+-pc_factor_mat_solver_package mumps -ksp_monitor -my_order 1

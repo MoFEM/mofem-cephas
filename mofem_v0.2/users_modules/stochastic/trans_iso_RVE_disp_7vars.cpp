@@ -782,60 +782,60 @@ int main(int argc, char *argv[]) {
     ierr = VecGhostUpdateEnd(ddF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     //
     if (ii == 0){ // due to Young's modulus of matrix - isotropic
-      Trans_Iso_Rhs_r_PSFEM my_fe_k_r_Em(mField,Aij,D,dF,"Young","isotropic","matrix");
+      Trans_Iso_Rhs_r_PSFEM my_fe_k_r_Em(mField,Aij,D,dF,"DISPLACEMENT","Young","isotropic","matrix");
       ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","ELASTIC",my_fe_k_r_Em);  CHKERRQ(ierr);
       }
     else if (ii == 1){ // due to Poisson's ratio in p-direction of fibre
       cout<<"Poisson \t";
-      Trans_Iso_Rhs_r_PSFEM my_fe_k_r_Pm(mField,Aij,D,dF,"Poisson","isotropic","matrix");
+      Trans_Iso_Rhs_r_PSFEM my_fe_k_r_Pm(mField,Aij,D,dF,"DISPLACEMENT","Poisson","isotropic","matrix");
       ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","ELASTIC",my_fe_k_r_Pm);  CHKERRQ(ierr);
       }
     else if (ii == 2){ // due to Poisson's ratio in p-direction of fibre
-      Trans_Iso_Rhs_r_PSFEM my_fe_k_r_NUp(mField,Aij,D,dF,"PoissonP", "transversely_isotropic", "reinforcement");
+      Trans_Iso_Rhs_r_PSFEM my_fe_k_r_NUp(mField,Aij,D,dF,"DISPLACEMENT","PoissonP", "transversely_isotropic", "reinforcement");
       ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","TRAN_ISOTROPIC_ELASTIC",my_fe_k_r_NUp);  CHKERRQ(ierr);
       }
     else if (ii == 3){ // due to Poisson's ratio in z-direction of fibre
-      Trans_Iso_Rhs_r_PSFEM my_fe_k_r_NUpz(mField,Aij,D,dF,"PoissonZ", "transversely_isotropic", "reinforcement");
+      Trans_Iso_Rhs_r_PSFEM my_fe_k_r_NUpz(mField,Aij,D,dF,"DISPLACEMENT","PoissonZ", "transversely_isotropic", "reinforcement");
       ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","TRAN_ISOTROPIC_ELASTIC",my_fe_k_r_NUpz);  CHKERRQ(ierr);
       }
     else if (ii == 4){ // due to Young's modulus in p-direction of fibre
-      Trans_Iso_Rhs_r_PSFEM my_fe_k_r_Ep(mField,Aij,D,dF,"YoungP", "transversely_isotropic", "reinforcement");
+      Trans_Iso_Rhs_r_PSFEM my_fe_k_r_Ep(mField,Aij,D,dF,"DISPLACEMENT","YoungP", "transversely_isotropic", "reinforcement");
       ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","TRAN_ISOTROPIC_ELASTIC",my_fe_k_r_Ep);  CHKERRQ(ierr);
       }
     else if (ii == 5){ // due to Young's modulus in z-direction of fibre
-      Trans_Iso_Rhs_r_PSFEM my_fe_k_r_Ez(mField,Aij,D,dF,"YoungZ", "transversely_isotropic", "reinforcement");
+      Trans_Iso_Rhs_r_PSFEM my_fe_k_r_Ez(mField,Aij,D,dF,"DISPLACEMENT","YoungZ", "transversely_isotropic", "reinforcement");
       ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","TRAN_ISOTROPIC_ELASTIC",my_fe_k_r_Ez);  CHKERRQ(ierr);
       }
     else if (ii == 6){ // due to shear modulus in z-direction of fibre
-      Trans_Iso_Rhs_r_PSFEM my_fe_k_r_Gzp(mField,Aij,D,dF,"ShearZP", "transversely_isotropic", "reinforcement");
+      Trans_Iso_Rhs_r_PSFEM my_fe_k_r_Gzp(mField,Aij,D,dF,"DISPLACEMENT","ShearZP", "transversely_isotropic", "reinforcement");
       ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","TRAN_ISOTROPIC_ELASTIC",my_fe_k_r_Gzp);  CHKERRQ(ierr);
       }
     else if (ii == 7){ // 2nd order derivative due to Young's modulus of matrix - isotropic
-      Trans_Iso_Rhs_rs_PSFEM my_fe_k_rs_EmEm(mField,Aij,D,ddF,"DISP_r_Em","Young","Young", "isotropic", "matrix");
+      Trans_Iso_Rhs_rs_PSFEM my_fe_k_rs_EmEm(mField,Aij,D,ddF,"DISPLACEMENT","DISP_r_Em","Young","Young", "isotropic", "matrix");
       ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","ELASTIC",my_fe_k_rs_EmEm);  CHKERRQ(ierr);
       }
     else if (ii == 8){ // 2nd order derivative due to Poisson's ratio of matrix - isotropic
-      Trans_Iso_Rhs_rs_PSFEM my_fe_k_rs_PmPm(mField,Aij,D,ddF,"DISP_r_Pm","Poisson","Poisson", "isotropic", "matrix");
+      Trans_Iso_Rhs_rs_PSFEM my_fe_k_rs_PmPm(mField,Aij,D,ddF,"DISPLACEMENT","DISP_r_Pm","Poisson","Poisson", "isotropic", "matrix");
       ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","ELASTIC",my_fe_k_rs_PmPm);  CHKERRQ(ierr);
       }
     else if (ii == 9){ // 2nd order derivative due to Poisson's ratio in p-direction of fibre
-      Trans_Iso_Rhs_rs_PSFEM my_fe_k_rs_NUpNUp(mField,Aij,D,ddF,"DISP_r_NUp","PoissonP","PoissonP", "transversely_isotropic", "reinforcement");
+      Trans_Iso_Rhs_rs_PSFEM my_fe_k_rs_NUpNUp(mField,Aij,D,ddF,"DISPLACEMENT","DISP_r_NUp","PoissonP","PoissonP", "transversely_isotropic", "reinforcement");
       ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","TRAN_ISOTROPIC_ELASTIC",my_fe_k_rs_NUpNUp);  CHKERRQ(ierr);
       }
     else if (ii == 10){ // 2nd order derivative due to Poisson's ratio in z-direction of fibre
-      Trans_Iso_Rhs_rs_PSFEM my_fe_k_rs_NUpzNUpz(mField,Aij,D,ddF,"DISP_r_NUpz","PoissonZ","PoissonZ", "transversely_isotropic", "reinforcement");
+      Trans_Iso_Rhs_rs_PSFEM my_fe_k_rs_NUpzNUpz(mField,Aij,D,ddF,"DISPLACEMENT","DISP_r_NUpz","PoissonZ","PoissonZ", "transversely_isotropic", "reinforcement");
       ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM", "TRAN_ISOTROPIC_ELASTIC", my_fe_k_rs_NUpzNUpz);  CHKERRQ(ierr);
       }
     else if (ii == 11){ // 2nd order derivative due to Young's modulus in p-direction of fibre
-      Trans_Iso_Rhs_rs_PSFEM my_fe_k_rs_EpEp(mField,Aij,D,ddF,"DISP_r_Ep","YoungP","YoungP", "transversely_isotropic", "reinforcement");
+      Trans_Iso_Rhs_rs_PSFEM my_fe_k_rs_EpEp(mField,Aij,D,ddF,"DISPLACEMENT","DISP_r_Ep","YoungP","YoungP", "transversely_isotropic", "reinforcement");
       ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","TRAN_ISOTROPIC_ELASTIC",my_fe_k_rs_EpEp);  CHKERRQ(ierr);
       }
     else if (ii == 12){ // 2nd order derivative due to Young's modulus in z-direction of fibre
-      Trans_Iso_Rhs_rs_PSFEM my_fe_k_rs_EzEz(mField,Aij,D,ddF,"DISP_r_Ez","YoungZ","YoungZ", "transversely_isotropic", "reinforcement");
+      Trans_Iso_Rhs_rs_PSFEM my_fe_k_rs_EzEz(mField,Aij,D,ddF,"DISPLACEMENT","DISP_r_Ez","YoungZ","YoungZ", "transversely_isotropic", "reinforcement");
       ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","TRAN_ISOTROPIC_ELASTIC",my_fe_k_rs_EzEz);  CHKERRQ(ierr);
       }
     else if (ii == 13){ // 2nd order derivative due to shear modulus in z-direction of fibre
-      Trans_Iso_Rhs_rs_PSFEM my_fe_k_rs_GzpGzp(mField,Aij,D,ddF,"DISP_r_Gzp","ShearZP","ShearZP", "transversely_isotropic", "reinforcement");
+      Trans_Iso_Rhs_rs_PSFEM my_fe_k_rs_GzpGzp(mField,Aij,D,ddF,"DISPLACEMENT","DISP_r_Gzp","ShearZP","ShearZP", "transversely_isotropic", "reinforcement");
       ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","TRAN_ISOTROPIC_ELASTIC",my_fe_k_rs_GzpGzp);  CHKERRQ(ierr);
       }
 

@@ -50,12 +50,21 @@ namespace MoFEM {
  
     double young, pois; // young's modulus and poisson's ratio for isotropic material
     Vec dF;
-    const string ixrandvar; // index for considered random variable 
-    const string material_type;     // Type of material: isotropic or transversly isotropic
-    const string material_function; // Function of material: matrix or reinforcement/inclusion/fibre
+    string ixrandvar; // index for considered random variable
+    string material_type;     // Type of material: isotropic or transversly isotropic
+    string material_function; // Function of material: matrix or reinforcement/inclusion/fibre
+    string zeroth_field;
 
-    Trans_Iso_Rhs_r_PSFEM(FieldInterface& _mField,Mat &_Aij,Vec _D,Vec _F, const string& _ixrandvar, const string& _material_type, const string& _material_function):
-    TranIsotropicFibreDirRotElasticFEMethod(_mField,_Aij,_D,_F),dF(_F), ixrandvar(_ixrandvar), material_type(_material_type), material_function(_material_function){};
+    Trans_Iso_Rhs_r_PSFEM(FieldInterface& _mField,
+                          Mat _Aij,
+                          Vec _D,
+                          Vec _F,
+                          string _zeroth_field,
+                          string _ixrandvar,
+                          string _material_type,
+                          string _material_function):
+    TranIsotropicFibreDirRotElasticFEMethod(_mField,_Aij,_D,_F,_zeroth_field),
+    dF(_F),zeroth_field(_zeroth_field),ixrandvar(_ixrandvar), material_type(_material_type), material_function(_material_function){};
 
 // =============================================================================
 //
@@ -394,14 +403,14 @@ namespace MoFEM {
       
       D_elm.resize(col_mat);
       int col_mat1 = 0;  //nodes
-      ierr = GetDataVector("DISPLACEMENT",D_elm[col_mat1]); CHKERRQ(ierr);
+      ierr = GetDataVector(zeroth_field,D_elm[col_mat1]); CHKERRQ(ierr);
 //       cout<<"D_elm[col_mat1] = "<< D_elm[col_mat1] << endl;
       col_mat1++;
       
       
       for(int ee=0; ee<6; ee++) { //edges
         if(ColGlob[col_mat1].size()!=0) {
-          ierr = GetDataVector("DISPLACEMENT",MBEDGE,D_elm[col_mat1],ee); CHKERRQ(ierr);
+          ierr = GetDataVector(zeroth_field,MBEDGE,D_elm[col_mat1],ee); CHKERRQ(ierr);
 //          cout<<"Edges D_elm[col_mat1] = "<< D_elm[col_mat1] << endl;
           col_mat1++;
         }
@@ -409,14 +418,14 @@ namespace MoFEM {
       
       for(int ff=0; ff<4; ff++) { //faces
         if(ColGlob[col_mat1].size()!=0) {
-          ierr = GetDataVector("DISPLACEMENT",MBTRI,D_elm[col_mat1],ff); CHKERRQ(ierr);
+          ierr = GetDataVector(zeroth_field,MBTRI,D_elm[col_mat1],ff); CHKERRQ(ierr);
 //          cout<<"Faces D_elm[col_mat1] = "<< D_elm[col_mat1] << endl;
           col_mat1++;
         }
       }
       
       if(ColGlob[col_mat1].size()!=0) {
-        ierr = GetDataVector("DISPLACEMENT",MBTET,D_elm[col_mat1]); CHKERRQ(ierr);
+        ierr = GetDataVector(zeroth_field,MBTET,D_elm[col_mat1]); CHKERRQ(ierr);
 //        cout<<"Faces D_elm[col_mat] = "<< D_elm[col_mat1] << endl;
       }
       
@@ -501,12 +510,18 @@ namespace MoFEM {
 		const string ixrandvar; // index for considered random variable 
     const string material_type;     // Type of material: isotropic or transversly isotropic
     const string material_function; // Function of material: matrix or reinforcement/inclusion/fibre
+    string zeroth_field;
 	
-    Trans_Iso_Geom_Rhs_r_PSFEM(FieldInterface& _mField, Mat &_Aij, Vec _D,
-                                      Vec _F, const string& _ixrandvar,
-                                      const string& _material_type,
-                                      const string& _material_function ):
-    TranIso_FibreWavinessElasticFEMethod(_mField,_Aij,_D,_F),dF(_F), 
+    Trans_Iso_Geom_Rhs_r_PSFEM(FieldInterface& _mField,
+                               Mat &_Aij,
+                               Vec _D,
+                               Vec _F,
+                               string _zeroth_field,
+                               const string& _ixrandvar,
+                               const string& _material_type,
+                               const string& _material_function ):
+    TranIso_FibreWavinessElasticFEMethod(_mField,_Aij,_D,_F,_zeroth_field),dF(_F),
+                         zeroth_field(_zeroth_field),
 										     ixrandvar(_ixrandvar), 
 											 material_type(_material_type), 
 											 material_function(_material_function){}
@@ -1483,14 +1498,14 @@ namespace MoFEM {
       
       D_elm.resize(col_mat);
       int col_mat1 = 0;  //nodes
-      ierr = GetDataVector("DISPLACEMENT",D_elm[col_mat1]); CHKERRQ(ierr);
+      ierr = GetDataVector(zeroth_field,D_elm[col_mat1]); CHKERRQ(ierr);
 //       cout<<"D_elm[col_mat1] = "<< D_elm[col_mat1] << endl;
       col_mat1++;
       
       
       for(int ee=0; ee<6; ee++) { //edges
         if(ColGlob[col_mat1].size()!=0) {
-          ierr = GetDataVector("DISPLACEMENT",MBEDGE,D_elm[col_mat1],ee); CHKERRQ(ierr);
+          ierr = GetDataVector(zeroth_field,MBEDGE,D_elm[col_mat1],ee); CHKERRQ(ierr);
 //          cout<<"Edges D_elm[col_mat1] = "<< D_elm[col_mat1] << endl;
           col_mat1++;
         }
@@ -1498,14 +1513,14 @@ namespace MoFEM {
       
       for(int ff=0; ff<4; ff++) { //faces
         if(ColGlob[col_mat1].size()!=0) {
-          ierr = GetDataVector("DISPLACEMENT",MBTRI,D_elm[col_mat1],ff); CHKERRQ(ierr);
+          ierr = GetDataVector(zeroth_field,MBTRI,D_elm[col_mat1],ff); CHKERRQ(ierr);
 //          cout<<"Faces D_elm[col_mat1] = "<< D_elm[col_mat1] << endl;
           col_mat1++;
         }
       }
       
       if(ColGlob[col_mat1].size()!=0) {
-        ierr = GetDataVector("DISPLACEMENT",MBTET,D_elm[col_mat1]); CHKERRQ(ierr);
+        ierr = GetDataVector(zeroth_field,MBTET,D_elm[col_mat1]); CHKERRQ(ierr);
 //        cout<<"Faces D_elm[col_mat] = "<< D_elm[col_mat1] << endl;
       }
       

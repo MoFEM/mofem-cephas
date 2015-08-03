@@ -50,13 +50,23 @@ namespace MoFEM {
     
     double young, pois; // young's modulus and poisson's ratio for isotropic material 
     Vec ddF;
-    const string second_field;
+    const string zeroth_field;
+    const string first_field;
     const string ix_first_randvar, ix_second_randvar; // index for considered random variables 
     const string material_type;     // Type of material: isotropic or transversly isotropic
     const string material_function; // Function of material: matrix or reinforcement/inclusion/fibre
     
-    Trans_Iso_Rhs_rs_PSFEM(FieldInterface& _mField,Mat &_Aij,Vec _D,Vec _F,const string& _second_field,const string& _ix_first_randvar, const string& _ix_second_randvar, const string& _material_type, const string& _material_function):
-    TranIsotropicFibreDirRotElasticFEMethod(_mField,_Aij,_D,_F),ddF(_F),second_field(_second_field),ix_first_randvar(_ix_first_randvar),ix_second_randvar(_ix_second_randvar),material_type(_material_type),material_function(_material_function){};
+    Trans_Iso_Rhs_rs_PSFEM(FieldInterface& _mField,
+                           Mat &_Aij,
+                           Vec _D,
+                           Vec _F,
+                           const string & _zeroth_field,
+                           const string& _first_field,
+                           const string& _ix_first_randvar,
+                           const string& _ix_second_randvar,
+                           const string& _material_type,
+                           const string& _material_function):
+    TranIsotropicFibreDirRotElasticFEMethod(_mField,_Aij,_D,_F,_zeroth_field),ddF(_F),zeroth_field(_zeroth_field),first_field(_first_field),ix_first_randvar(_ix_first_randvar),ix_second_randvar(_ix_second_randvar),material_type(_material_type),material_function(_material_function){};
 
     
     
@@ -746,15 +756,15 @@ namespace MoFEM {
     D_elm_r.resize(col_mat);
     
     int col_mat1 = 0;  //only nodes (1st order)
-    ierr = GetDataVector("DISPLACEMENT",D_elm[col_mat1]); CHKERRQ(ierr);
-    ierr = GetDataVector(second_field,D_elm_r[col_mat1]); CHKERRQ(ierr);
+    ierr = GetDataVector(zeroth_field,D_elm[col_mat1]); CHKERRQ(ierr);
+    ierr = GetDataVector(first_field,D_elm_r[col_mat1]); CHKERRQ(ierr);
 //    cout<<"D_elm[col_mat] = "<< D_elm[col_mat1] << endl;
     col_mat1++;
     
     for(int ee=0; ee<6; ee++) { //edges
       if(ColGlob[col_mat1].size()!=0) {
-        ierr = GetDataVector("DISPLACEMENT",MBEDGE,D_elm[col_mat1],ee); CHKERRQ(ierr);
-        ierr = GetDataVector(second_field,MBEDGE,D_elm_r[col_mat1],ee); CHKERRQ(ierr);
+        ierr = GetDataVector(zeroth_field,MBEDGE,D_elm[col_mat1],ee); CHKERRQ(ierr);
+        ierr = GetDataVector(first_field,MBEDGE,D_elm_r[col_mat1],ee); CHKERRQ(ierr);
 //          cout<<"Edges D_elm[col_mat1] = "<< D_elm[col_mat1] << endl;
         col_mat1++;
       }
@@ -762,16 +772,16 @@ namespace MoFEM {
     
     for(int ff=0; ff<4; ff++) { //faces
       if(ColGlob[col_mat1].size()!=0) {
-        ierr = GetDataVector("DISPLACEMENT",MBTRI,D_elm[col_mat1],ff); CHKERRQ(ierr);
-        ierr = GetDataVector(second_field,MBTRI,D_elm_r[col_mat1],ff); CHKERRQ(ierr);
+        ierr = GetDataVector(zeroth_field,MBTRI,D_elm[col_mat1],ff); CHKERRQ(ierr);
+        ierr = GetDataVector(first_field,MBTRI,D_elm_r[col_mat1],ff); CHKERRQ(ierr);
 //          cout<<"Faces D_elm[col_mat1] = "<< D_elm[col_mat1] << endl;
         col_mat1++;
       }
     }
     
     if(ColGlob[col_mat1].size()!=0) { // volumes
-      ierr = GetDataVector("DISPLACEMENT",MBTET,D_elm[col_mat1]); CHKERRQ(ierr);
-      ierr = GetDataVector(second_field,MBTET,D_elm_r[col_mat1]); CHKERRQ(ierr);
+      ierr = GetDataVector(zeroth_field,MBTET,D_elm[col_mat1]); CHKERRQ(ierr);
+      ierr = GetDataVector(first_field,MBTET,D_elm_r[col_mat1]); CHKERRQ(ierr);
 //    cout<<"Faces D_elm[col_mat] = "<< D_elm[col_mat1] << endl;
     }
     
@@ -856,23 +866,29 @@ namespace MoFEM {
   struct Trans_Iso_Geom_Rhs_rs_PSFEM: public TranIso_FibreWavinessElasticFEMethod {
     
     Vec ddF;
-    const string second_field;
+    string zeroth_field;
+    const string first_field;
     const string ix_first_randvar, ix_second_randvar; // index for considered random variables 
     const string material_type;     // Type of material: isotropic or transversly isotropic
     const string material_function; // Function of material: matrix or reinforcement/inclusion/fibre
     
-    Trans_Iso_Geom_Rhs_rs_PSFEM(FieldInterface& _mField, Mat &_Aij, Vec _D, Vec _F,
-	                            const string& _second_field,
-								 const string& _ix_first_randvar,
-								 const string& _ix_second_randvar, 
-								 const string& _material_type, 
-								 const string& _material_function):
-    TranIso_FibreWavinessElasticFEMethod(_mField,_Aij,_D,_F),ddF(_F),
-	                                        second_field(_second_field),
-										     ix_first_randvar(_ix_first_randvar),
-											 ix_second_randvar(_ix_second_randvar),
-											 material_type(_material_type),
-											 material_function(_material_function){};
+    Trans_Iso_Geom_Rhs_rs_PSFEM(FieldInterface& _mField,
+                                Mat &_Aij,
+                                Vec _D,
+                                Vec _F,
+                                const string& _zeroth_field,
+                                const string& _first_field,
+                                const string& _ix_first_randvar,
+                                const string& _ix_second_randvar,
+                                const string& _material_type,
+                                const string& _material_function):
+    TranIso_FibreWavinessElasticFEMethod(_mField,_Aij,_D,_F,_zeroth_field),ddF(_F),
+                                         zeroth_field(_zeroth_field),
+                                         first_field(_first_field),
+				                                 ix_first_randvar(_ix_first_randvar),
+                                         ix_second_randvar(_ix_second_randvar),
+                                         material_type(_material_type),
+											                   material_function(_material_function){};
 
 // =============================================================================
 //
@@ -3226,15 +3242,15 @@ namespace MoFEM {
 	  D_elm_r.resize(col_mat);
     
 	  int col_mat1 = 0;  //only nodes (1st order)
-	  ierr = GetDataVector("DISPLACEMENT",D_elm[col_mat1]); CHKERRQ(ierr);
-	  ierr = GetDataVector(second_field,D_elm_r[col_mat1]); CHKERRQ(ierr);
+	  ierr = GetDataVector(zeroth_field,D_elm[col_mat1]); CHKERRQ(ierr);
+	  ierr = GetDataVector(first_field,D_elm_r[col_mat1]); CHKERRQ(ierr);
 	  //    cout<<"D_elm[col_mat] = "<< D_elm[col_mat1] << endl;
 	  col_mat1++;
     
 	  for(int ee=0; ee<6; ee++) { //edges
 		if(ColGlob[col_mat1].size()!=0) {
-		  ierr = GetDataVector("DISPLACEMENT",MBEDGE,D_elm[col_mat1],ee); CHKERRQ(ierr);
-		  ierr = GetDataVector(second_field,MBEDGE,D_elm_r[col_mat1],ee); CHKERRQ(ierr);
+		  ierr = GetDataVector(zeroth_field,MBEDGE,D_elm[col_mat1],ee); CHKERRQ(ierr);
+		  ierr = GetDataVector(first_field,MBEDGE,D_elm_r[col_mat1],ee); CHKERRQ(ierr);
 //          cout<<"Edges D_elm[col_mat1] = "<< D_elm[col_mat1] << endl;
 		  col_mat1++;
 		}
@@ -3242,16 +3258,16 @@ namespace MoFEM {
     
 	  for(int ff=0; ff<4; ff++) { //faces
 		if(ColGlob[col_mat1].size()!=0) {
-		  ierr = GetDataVector("DISPLACEMENT",MBTRI,D_elm[col_mat1],ff); CHKERRQ(ierr);
-		  ierr = GetDataVector(second_field,MBTRI,D_elm_r[col_mat1],ff); CHKERRQ(ierr);
+		  ierr = GetDataVector(zeroth_field,MBTRI,D_elm[col_mat1],ff); CHKERRQ(ierr);
+		  ierr = GetDataVector(first_field,MBTRI,D_elm_r[col_mat1],ff); CHKERRQ(ierr);
 //          cout<<"Faces D_elm[col_mat1] = "<< D_elm[col_mat1] << endl;
 		  col_mat1++;
 		}
 	  }
     
 	  if(ColGlob[col_mat1].size()!=0) { // volumes
-		ierr = GetDataVector("DISPLACEMENT",MBTET,D_elm[col_mat1]); CHKERRQ(ierr);
-		ierr = GetDataVector(second_field,MBTET,D_elm_r[col_mat1]); CHKERRQ(ierr);
+		ierr = GetDataVector(zeroth_field,MBTET,D_elm[col_mat1]); CHKERRQ(ierr);
+		ierr = GetDataVector(first_field,MBTET,D_elm_r[col_mat1]); CHKERRQ(ierr);
   //    cout<<"Faces D_elm[col_mat] = "<< D_elm[col_mat1] << endl;
 	  }
     

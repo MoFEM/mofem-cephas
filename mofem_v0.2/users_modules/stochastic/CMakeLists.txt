@@ -21,6 +21,12 @@
 include_directories("${MoFEM_PROJECT_SOURCE_DIR}/users_modules/homogenisation/src")
 include_directories("${MoFEM_PROJECT_SOURCE_DIR}/users_modules/obsolete/src")
 include_directories("${MoFEM_PROJECT_SOURCE_DIR}/users_modules/stochastic/src")
+include_directories("${MoFEM_PROJECT_SOURCE_DIR}/users_modules/stochastic/third_party")
+
+
+add_library(user_modules_reliability
+  ${UM_SOURCE_DIR}/stochastic/third_party/ltqnorm.c
+)
 
 # ===================== Transversely isotropic RVE ============================================
 
@@ -58,3 +64,100 @@ target_link_libraries(trans_iso_RVE_Traction_7vars
 target_link_libraries(trans_iso_RVE_Geom_disp
   mofem_finite_element_library mofem_finite_elements mofem_interfaces mofem_multi_indices mofem_petsc users_modules_obsolete user_modules_homogenisation
   mofem_approx mofem_third_party mofem_cblas ${MoFEM_PROJECT_LIBS})   
+
+# =======================================================================================#
+#                                                                                        #
+#                                     FE2 & PSFE2                                        #
+#  Perturbation-based Stochastic Finite Element 2                                        #
+#                                                                                        #
+# ========================================================================================
+
+add_executable(FE2_TransIso_Disp_REL 
+               ${UM_SOURCE_DIR}/stochastic/FE2_TransIso_Disp_REL.cpp
+               )
+target_link_libraries(
+  FE2_TransIso_Disp_REL
+  mofem_finite_element_library 
+  mofem_finite_elements 
+  mofem_interfaces 
+  mofem_multi_indices 
+  mofem_petsc 
+  users_modules_obsolete 
+  user_modules_homogenisation
+  mofem_approx 
+  mofem_third_party 
+  mofem_cblas 
+  ${MoFEM_PROJECT_LIBS}
+  ) 
+
+add_executable(PSFE2_TransIso_Disp 
+               ${UM_SOURCE_DIR}/stochastic/PSFE2_TransIso_Disp.cpp
+               )
+target_link_libraries(
+  PSFE2_TransIso_Disp
+  mofem_finite_element_library 
+  mofem_finite_elements 
+  mofem_interfaces 
+  mofem_multi_indices 
+  mofem_petsc 
+  users_modules_obsolete 
+  user_modules_homogenisation
+  mofem_approx 
+  mofem_third_party 
+  mofem_cblas 
+  ${MoFEM_PROJECT_LIBS}
+  ) 
+
+# =======================================================================================#
+#                                                                                        #
+#                            MsFE_Reliability_xxx                                        #
+#  Multi-scale finite element (MsFE) based reliability analysis                          #
+#  (0) CompStruct_Rel: reliability analysis with analytical limit-state function         #
+#  (1) MsFE_Reliability_Disp: MsFE based reliability analysis for RVE with linear        #
+#      displacement BC                                                                   #
+#                                                                                        #
+# ========================================================================================
+
+#------------------------------ 
+# Case 0: Reliability analysis 
+#------------------------------  
+add_executable(CompStruct_Rel 
+    ${UM_SOURCE_DIR}/stochastic/CompStruct_Rel.cpp
+    )
+target_link_libraries(CompStruct_Rel
+  mofem_finite_element_library
+  mofem_finite_elements
+  mofem_interfaces 
+  mofem_multi_indices 
+  mofem_petsc 
+  users_modules_obsolete 
+  user_modules_homogenisation
+  user_modules_reliability 
+  mofem_approx 
+  mofem_third_party 
+  mofem_cblas 
+  ${MoFEM_PROJECT_LIBS}
+)
+
+#------------------------------ 
+# Case 1: Reliability analysis 
+#------------------------------ 
+add_executable(MsFE_Reliability_Disp 
+               ${UM_SOURCE_DIR}/stochastic/MsFE_Reliability_Disp.cpp
+               )
+target_link_libraries(
+  MsFE_Reliability_Disp
+  mofem_finite_element_library 
+  mofem_finite_elements 
+  mofem_interfaces 
+  mofem_multi_indices 
+  mofem_petsc 
+  users_modules_obsolete 
+  user_modules_homogenisation
+  user_modules_reliability
+  mofem_approx 
+  mofem_third_party 
+  mofem_cblas 
+  ${MoFEM_PROJECT_LIBS}
+  )
+  
