@@ -1,7 +1,7 @@
 #!python
 cubit.cmd('new')
 
-autofactor=6; 
+autofactor=8; 
 #============================================================= 
 #Geometry
 #============================================================= 
@@ -59,8 +59,8 @@ for i in range(0, 2):
 #Material properties for matrix part  
 #============================================================= 
 cubit.cmd('block 1 attribute count 2')  
-#E_m=3.5e3; nu_m=0.3;  #giga to mega as we used dimension in mm  
-E_m=200; nu_m=0.3;  #giga to mega as we used dimension in mm  
+E_m=3.5e3; nu_m=0.3;  #giga to mega as we used dimension in mm  
+#E_m=200; nu_m=0.3;  #giga to mega as we used dimension in mm  
 Elastic=[str(E_m), str(nu_m)]  
 for i in range(0, 2):  
     str1='block 1 attribute index ' + str(i+1) +' '+Elastic[i]; cubit.cmd(str1)  
@@ -70,8 +70,8 @@ for i in range(0, 2):
 #Material properties for fibres  
 #============================================================= 
 cubit.cmd('block 2 attribute count 2')  
-#E_f=72.5e3; nu_f=0.22;  #giga to mega as we used dimension in mm  
-E_f=200; nu_f=0.3;  #giga to mega as we used dimension in mm  
+E_f=72.5e3; nu_f=0.22;  #giga to mega as we used dimension in mm  
+#E_f=200; nu_f=0.3;  #giga to mega as we used dimension in mm  
 Elastic=[str(E_f), str(nu_f)]  
 for i in range(0, 2):  
     str1='block 2 attribute index ' + str(i+1) +' '+Elastic[i]; cubit.cmd(str1)  
@@ -95,6 +95,7 @@ cubit.cmd('sideset 103 surface 8 14 12 13 11 15 16 9')  # all boundary surfaces
 cubit.cmd('sideset 103 name "AllBoundSurf"')
 
 cubit.cmd('save as "/Users/zahur/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/composite_laminates/meshes/Laminated_Plate_RVE_0deg.cub" overwrite')  
+
 
 
 

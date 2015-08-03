@@ -61,22 +61,22 @@ namespace MoFEM {
           {
             H_mat_1Node.resize(6,3);  H_mat_1Node.clear(); //for one node
             if(getNormals_at_GaussPt(0)>0){     //+X face of the RVE
-              H_mat_1Node(0,0)=1.0;  H_mat_1Node(3,1)=1.0;  H_mat_1Node(4,2)=1.0;
+              H_mat_1Node(0,0)=1.0;  H_mat_1Node(3,1)=1.0;  H_mat_1Node(5,2)=1.0;
             }
             if(getNormals_at_GaussPt(0)<0){    //-X face of the RVE
-              H_mat_1Node(0,0)=-1.0;  H_mat_1Node(3,1)=-1.0;  H_mat_1Node(4,2)=-1.0;
+              H_mat_1Node(0,0)=-1.0;  H_mat_1Node(3,1)=-1.0;  H_mat_1Node(5,2)=-1.0;
             }
             if(getNormals_at_GaussPt(1)>0){     //+Y face of the RVE
-              H_mat_1Node(1,1)=1.0;  H_mat_1Node(3,0)=1.0;  H_mat_1Node(5,2)=1.0;
+              H_mat_1Node(1,1)=1.0;  H_mat_1Node(3,0)=1.0;  H_mat_1Node(4,2)=1.0;
             }
             if(getNormals_at_GaussPt(1)<0){    //-Y face of the RVE
-              H_mat_1Node(1,1)=-1.0;  H_mat_1Node(3,0)=-1.0;  H_mat_1Node(5,2)=-1.0;
+              H_mat_1Node(1,1)=-1.0;  H_mat_1Node(3,0)=-1.0;  H_mat_1Node(4,2)=-1.0;
             }
             if(getNormals_at_GaussPt(2)>0){    //+Z face of the RVE
-              H_mat_1Node(2,2)=1.0;  H_mat_1Node(4,0)=1.0;  H_mat_1Node(5,1)=1.0;
+              H_mat_1Node(2,2)=1.0;  H_mat_1Node(4,1)=1.0;  H_mat_1Node(5,0)=1.0;
             }
             if(getNormals_at_GaussPt(2)<0){    //-Z face of the RVE
-              H_mat_1Node(2,2)=-1.0;  H_mat_1Node(4,0)=-1.0;  H_mat_1Node(5,1)=-1.0;
+              H_mat_1Node(2,2)=-1.0;  H_mat_1Node(4,1)=-1.0;  H_mat_1Node(5,0)=-1.0;
             }
             
             int num_col=N_mat.size2(); H_mat.resize(6,num_col);
@@ -291,9 +291,9 @@ namespace MoFEM {
 //          cout<<"Gauss point coordinates "<< "  x=    "<< x << "   y=   "<< y << "  z=    "<<z<<endl;
           switch(rank) {
             case 3: //mech problem
-              X_mat(0,0)=2.0*x;  X_mat(0,3)=y;  X_mat(0,4)=z;
-              X_mat(1,1)=2.0*y;  X_mat(1,3)=x;  X_mat(1,5)=z;
-              X_mat(2,2)=2.0*z;  X_mat(2,4)=x;  X_mat(2,5)=y;
+              X_mat(0,0)=2.0*x;  X_mat(0,3)=y;  X_mat(0,5)=z;
+              X_mat(1,1)=2.0*y;  X_mat(1,3)=x;  X_mat(1,4)=z;
+              X_mat(2,2)=2.0*z;  X_mat(2,4)=y;  X_mat(2,5)=x;
               X_mat=0.5*X_mat;
               break;
             case 1:  //moisture transport or thermal problem

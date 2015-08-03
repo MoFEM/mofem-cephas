@@ -191,12 +191,16 @@ struct Gel {
     */
     virtual PetscErrorCode calculateStressAlpha() {
       PetscFunctionBegin;
-      traceStrainTotal = strainTotal(0,0)+strainTotal(1,1)+strainTotal(2,2);
+      traceStrainTotal = 0;
+      for(int ii = 0;ii<3;ii++) {
+        traceStrainTotal += strainTotal(ii,ii);
+      }
       stressAlpha.resize(3,3,false);
       double a = 2.0*dAta.gAlpha;
+      double b = a*(dAta.vAlpha/(1.0-2.0*dAta.vAlpha));
       noalias(stressAlpha) = a*strainTotal;
-      for(int ii=1; ii<3; ii++){
-        stressAlpha(ii,ii) += (a*(dAta.vAlpha/(1.0-2.0*dAta.vAlpha)))*traceStrainTotal;
+      for(int ii = 0; ii<3; ii++){
+        stressAlpha(ii,ii) += b*traceStrainTotal;
       }
       PetscFunctionReturn(0);
     }
@@ -213,13 +217,18 @@ struct Gel {
     */
     virtual PetscErrorCode calculateStressBeta() {
       PetscFunctionBegin;
-      traceStrainHat = strainHat(0,0)+strainHat(1,1)+strainHat(2,2);
-      traceStrainTotal = strainTotal(0,0)+strainTotal(1,1)+strainTotal(2,2);
+      traceStrainTotal = 0;
+      traceStrainHat = 0;
+      for(int ii = 0;ii<3;ii++) {
+        traceStrainHat += strainHat(ii,ii);
+        traceStrainTotal += strainTotal(ii,ii);
+      }
       stressBeta.resize(3,3,false);
       double a = 2.0*dAta.gBeta;
+      double b = a*(dAta.vBeta/(1.0-2.0*dAta.vBeta));
       noalias(stressBeta) = a*(strainTotal-strainHat);
       for(int ii = 0;ii<3;ii++) {
-        stressBeta(ii,ii) += (a*(dAta.vBeta/(1.0-2.0*dAta.vBeta)))*(traceStrainTotal-traceStrainHat);
+        stressBeta(ii,ii) += b*(traceStrainTotal-traceStrainHat);
       }
       PetscFunctionReturn(0);
     }
@@ -237,7 +246,10 @@ struct Gel {
     */
     virtual PetscErrorCode calculateStrainHatFlux() {
       PetscFunctionBegin;
-      traceStressBeta = stressBeta(0,0)+stressBeta(1,1)+stressBeta(2,2);
+      traceStressBeta = 0;
+      for(int ii = 0;ii<3;ii++) {
+        traceStrainHat = stressBeta(ii,ii);
+      }
       strainHatFlux.resize(3,3,false);
       double a = -(1.0/(2.0*dAta.gBetaHat));
       noalias(strainHatFlux) = a*stressBeta;
@@ -275,7 +287,6 @@ struct Gel {
       noalias(stressTotal) = stressAlpha;
       noalias(stressTotal) += stressBeta;
       noalias(stressTotal) += stressBetaHat;
-
       PetscFunctionReturn(0);
     }
 
@@ -1131,7 +1142,7 @@ struct Gel {
         nF.resize(nb_dofs,false);
         nF.clear();
         int nb_gauss_pts = row_data.getN().size1();
-        for(int gg = 0;gg<nb_gauss_pts;gg++) {
+        for(int gg = 0;gg!=nb_gauss_pts;gg++) {
           const MatrixAdaptor &diffN = row_data.getDiffN(gg,nb_dofs/3);
           const ublas::matrix<double>& stress = commonData.stressTotal[gg];
           double val = getVolume()*getGaussPts()(3,gg);
@@ -1185,7 +1196,7 @@ struct Gel {
         nF.resize(nb_dofs,false);
         nF.clear();
         int nb_gauss_pts = row_data.getN().size1();
-        for(int gg = 0;gg<nb_gauss_pts;gg++) {
+        for(int gg = 0;gg!=nb_gauss_pts;gg++) {
           const MatrixAdaptor &diffN = row_data.getDiffN(gg,nb_dofs);
           const ublas::vector<double>& flux = commonData.solventFlux[gg];
           double val = getVolume()*getGaussPts()(3,gg);
@@ -1237,7 +1248,7 @@ struct Gel {
         nF.resize(nb_dofs,false);
         nF.clear();
         int nb_gauss_pts = row_data.getN().size1();
-        for(int gg = 0;gg<nb_gauss_pts;gg++) {
+        for(int gg = 0;gg!=nb_gauss_pts;gg++) {
           const VectorAdaptor &N = row_data.getN(gg,nb_dofs);
           double volume_dot = commonData.volumeDot[gg];
           double val = getVolume()*getGaussPts()(3,gg);
@@ -1288,7 +1299,7 @@ struct Gel {
         nF.resize(nb_dofs,false);
         nF.clear();
         int nb_gauss_pts = row_data.getN().size1();
-        for(int gg = 0;gg<nb_gauss_pts;gg++) {
+        for(int gg = 0;gg!=nb_gauss_pts;gg++) {
           const VectorAdaptor &N = row_data.getN(gg,nb_dofs/6);
           ublas::vector<double> &strain_hat = commonData.residualStrainHat[gg];
           double val = getVolume()*getGaussPts()(3,gg);
@@ -1414,7 +1425,7 @@ struct Gel {
         K.resize(nb_row,nb_col,false);
         K.clear();
         int nb_gauss_pts = row_data.getN().size1();
-        for(unsigned int gg = 0;gg!=nb_gauss_pts;gg++) {
+        for(int gg = 0;gg!=nb_gauss_pts;gg++) {
           ierr = get_dStress_dx(col_data,gg); CHKERRQ(ierr);
           double val = getVolume()*getGaussPts()(3,gg);
           if(getHoGaussPtsDetJac().size()>0) {
@@ -1502,7 +1513,8 @@ struct Gel {
       try {
         K.resize(nb_row,nb_col,false);
         K.clear();
-        for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
+        int nb_gauss_pts = row_data.getN().size1();
+        for(int gg = 0;gg!=nb_gauss_pts;gg++) {
           ierr = get_dStress_dx(col_data,gg); CHKERRQ(ierr);
           double val = getVolume()*getGaussPts()(3,gg);
           if(getHoGaussPtsDetJac().size()>0) {
@@ -1590,7 +1602,8 @@ struct Gel {
       try {
         K.resize(nb_row,nb_col,false);
         K.clear();
-        for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
+        int nb_gauss_pts = row_data.getN().size1();
+        for(int gg = 0;gg!=nb_gauss_pts;gg++) {
           ierr = get_dStress_dStrainHat(col_data,gg); CHKERRQ(ierr);
           double val = getVolume()*getGaussPts()(3,gg);
           if(getHoGaussPtsDetJac().size()>0) {
@@ -1676,7 +1689,8 @@ struct Gel {
       try {
         K.resize(nb_row,nb_col,false);
         K.clear();
-        for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
+        int nb_gauss_pts = row_data.getN().size1();
+        for(int gg = 0;gg!=nb_gauss_pts;gg++) {
           ierr = get_dStrainHat_dStrainHat(col_data,gg); CHKERRQ(ierr);
           double val = getVolume()*getGaussPts()(3,gg);
           if(getHoGaussPtsDetJac().size()>0) {
@@ -1761,7 +1775,8 @@ struct Gel {
       try {
         K.resize(nb_row,nb_col,false);
         K.clear();
-        for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
+        int nb_gauss_pts = row_data.getN().size1();
+        for(int gg = 0;gg!=nb_gauss_pts;gg++) {
           ierr = get_dStrainHat_dx(col_data,gg); CHKERRQ(ierr);
           double val = getVolume()*getGaussPts()(3,gg);
           if(getHoGaussPtsDetJac().size()>0) {
@@ -1845,7 +1860,7 @@ struct Gel {
         K.resize(nb_row,nb_col,false);
         K.clear();
         int nb_gauss_pts = row_data.getN().size1();
-        for(unsigned int gg = 0;gg!=nb_gauss_pts;gg++) {
+        for(int gg = 0;gg!=nb_gauss_pts;gg++) {
           ierr = get_dSolventFlux_dmu(col_data,gg); CHKERRQ(ierr);
           double val = getVolume()*getGaussPts()(3,gg);
           if(getHoGaussPtsDetJac().size()>0) {
@@ -1932,7 +1947,8 @@ struct Gel {
       try {
         K.resize(nb_row,nb_col,false);
         K.clear();
-        for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
+        int nb_gauss_pts = row_data.getN().size1();
+        for(int gg = 0;gg!=nb_gauss_pts;gg++) {
           ierr = get_dVolumeDot_dx(col_data,gg); CHKERRQ(ierr);
           double val = getVolume()*getGaussPts()(3,gg);
           if(getHoGaussPtsDetJac().size()>0) {

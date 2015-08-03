@@ -117,7 +117,6 @@ PetscErrorCode Core::ISCreateProblemOrder(const string &problem,RowColData rc,in
     default:
      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
   }
-
   NumeredDofMoFEMEntity_multiIndex_petsc_local_dof_view_ordered_non_unique dof_loc_idx_view;
   for(;it!=hi_it;it++) {
     pair<NumeredDofMoFEMEntity_multiIndex_petsc_local_dof_view_ordered_non_unique::iterator,bool> p;
@@ -127,21 +126,17 @@ PetscErrorCode Core::ISCreateProblemOrder(const string &problem,RowColData rc,in
   NumeredDofMoFEMEntity_multiIndex_petsc_local_dof_view_ordered_non_unique::iterator vit,hi_vit;
   vit = dof_loc_idx_view.begin();
   hi_vit = dof_loc_idx_view.end();
-
   int size = distance(vit,hi_vit);
   int *id;
   ierr = PetscMalloc(size*sizeof(int),&id); CHKERRQ(ierr);
   for(int ii = 0;vit!=hi_vit;vit++) {
     id[ii++] = (*vit)->get_petsc_gloabl_dof_idx();
   }
-
   ierr = ISCreateGeneral(comm,size,id,PETSC_OWN_POINTER,is); CHKERRQ(ierr);
-
   PetscFunctionReturn(0);
 }
 PetscErrorCode Core::ISCreateProblemFieldAndRank(const string &problem,RowColData rc,const string &field,int min_rank,int max_rank,IS *is,int verb) {
   PetscFunctionBegin;
-
   if(verb==-1) verb = verbose;
   typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type moFEMProblems_by_name;
   moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<Problem_mi_tag>();

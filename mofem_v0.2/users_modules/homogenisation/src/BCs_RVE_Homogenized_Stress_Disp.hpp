@@ -76,9 +76,9 @@ namespace MoFEM {
           
           switch(rank) {
             case 3: //mech problem
-              X_mat(0,0)=2.0*x;  X_mat(0,3)=y;  X_mat(0,4)=z;
-              X_mat(1,1)=2.0*y;  X_mat(1,3)=x;  X_mat(1,5)=z;
-              X_mat(2,2)=2.0*z;  X_mat(2,4)=x;  X_mat(2,5)=y;
+              X_mat(0,0)=2.0*x;  X_mat(0,3)=y;  X_mat(0,5)=z;
+              X_mat(1,1)=2.0*y;  X_mat(1,3)=x;  X_mat(1,4)=z;
+              X_mat(2,2)=2.0*z;  X_mat(2,4)=y;  X_mat(2,5)=x;
               X_mat=0.5*X_mat;
               break;
             case 1:  //moisture transport or thermal problem

@@ -20,6 +20,7 @@
 include_directories(${UM_SOURCE_DIR}/elasticity/src)
 include_directories(${UM_SOURCE_DIR}/nonlinear_elastic_materials/src)
 include_directories("${MoFEM_PROJECT_SOURCE_DIR}/users_modules/homogenisation/src")
+include_directories("${MoFEM_PROJECT_SOURCE_DIR}/users_modules/composite_laminates/src")
 
 
 # ===================== Linear elasticity with input Dmat from RVE ============================================

@@ -3,15 +3,15 @@ cubit.cmd('reset')
 
 # Geometry (all dimension for macro is in meter [mm])'
 h=0.132 ; L=16*h
-str1='brick x ' + str(L) + ' y ' + str(L) +' z ' + str(h);   cubit.cmd(str1)
-str1='brick x ' + str(L) + ' y ' + str(L) +' z ' + str(h);   cubit.cmd(str1)
+str1='brick x ' + str(L/2) + ' y ' + str(L/2) +' z ' + str(h);   cubit.cmd(str1)
+str1='brick x ' + str(L/2) + ' y ' + str(L/2) +' z ' + str(h);   cubit.cmd(str1)
 str1='move volume 2 x 0 y 0 z '+str(h)+'include_merged';   cubit.cmd(str1)
 str1='move volume all x '+str(0) +' y '+ str(0) + ' z '+str(h/2)+'include_merged';   cubit.cmd(str1)
 
 cubit.cmd('imprint volume all ')
 cubit.cmd('merge volume all ')
 
-cubit.cmd('volume all size auto factor 8')
+cubit.cmd('volume all size auto factor 7')
 cubit.cmd('volume all scheme tetmesh')
 cubit.cmd('mesh volume all ')
 
@@ -31,17 +31,12 @@ cubit.cmd('block 2 attribute index 1 1')   #Young's modulus  (This will not be u
 cubit.cmd('block 2 attribute index 2 0')   #Poisson's ratio (This will not be used in the calculation)
 
 #Applied displacement
-#str1='create displacement on surface 6  12 dof 1 fix ' + str(L*1e-6);  cubit.cmd(str1)
-#str1='create displacement on surface 4 10 dof 1 fix ' + str(-L*1e-6);  cubit.cmd(str1)
-
 str1='create displacement on surface 6  12 dof 1 fix ' + str(1);  cubit.cmd(str1)
-str1='create displacement on surface 4 10 dof 1 fix ' + str(-1);  cubit.cmd(str1)
-
-#cubit.cmd('create force on surface 6 vector 1 0 0 0 0 0')  
-#cubit.cmd('create force on surface 12 vector 1 0 0 0 0 0')  
-#cubit.cmd('create force on surface 4 vector -1 0 0 0 0 0')  
-#cubit.cmd('create force on surface 10 vector -1 0 0 0 0 0')  
+str1='create displacement on surface 4 10 dof 1 fix ' + str(0);  cubit.cmd(str1)
+str1='create displacement on surface 2 dof 3 fix ' + str(0);  cubit.cmd(str1)
+str1='create displacement on surface 5 11 dof 2 fix ' + str(0);  cubit.cmd(str1)
 
 cubit.cmd('save as "/Users/zahur/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/composite_laminates/meshes/Laminated_Plate.cub" overwrite')  
+
 
 
