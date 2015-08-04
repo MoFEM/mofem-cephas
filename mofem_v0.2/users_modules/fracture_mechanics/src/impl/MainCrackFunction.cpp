@@ -672,6 +672,7 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
 
     #ifdef WITH_TETGEN
 
+    bool do_tetgen = true;
     {
       Range edges_to_cat;
       ierr = face_splitting_tools.getCornerEdges(edges_to_cat,10); CHKERRQ(ierr);
@@ -679,10 +680,11 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
         Range new_nodes;
         ierr = face_splitting_tools.propagateBySplit(new_nodes,edges_to_cat,10); CHKERRQ(ierr);
         ierr = face_splitting_tools.cornerProblem(new_nodes,10); CHKERRQ(ierr);
+        //if(!new_nodes.empty()) do_tetgen = false;
       }
     }
 
-    {
+    if(do_tetgen) {
       face_splitting_tools.moabTetGenMap.clear();
       face_splitting_tools.tetGenMoabMap.clear();
       face_splitting_tools.tetGenData.clear();

@@ -1251,13 +1251,15 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(vector<string> &switche
   map<int,Range> face_markers_map;
   ierr = tetgen_iface->getTriangleMarkers(tetGenMoabMap,out,&tetgen_faces,&face_markers_map); CHKERRQ(ierr);
 
-  for(map<int,Range>::iterator mit = face_markers_map.begin();
-    mit!=face_markers_map.end();mit++) {
+  for(
+    map<int,Range>::iterator mit = face_markers_map.begin();
+    mit!=face_markers_map.end();mit++
+  ) {
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SIDESET,it)) {
       int msId = it->get_msId();
       if(id_shift_map[msId]&mit->first) {
-	EntityHandle meshset = it->get_meshset();
-	ierr = mField.get_moab().add_entities(meshset,mit->second.subset_by_type(MBTRI)); CHKERRQ(ierr);
+        EntityHandle meshset = it->get_meshset();
+        ierr = mField.get_moab().add_entities(meshset,mit->second.subset_by_type(MBTRI)); CHKERRQ(ierr);
       }
     }
   }
@@ -1284,7 +1286,8 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(vector<string> &switche
   }
 
   ierr = mField.seed_ref_level(
-    subtract(mesh_level_tets,region_tets),last_ref); CHKERRQ(ierr);
+    subtract(mesh_level_tets,region_tets),last_ref
+  ); CHKERRQ(ierr);
   //add rest of elements to last bit level
   ierr = addCrackFront_to_Cubit201(verb); CHKERRQ(ierr);
   ierr = roundCornersFillGaps_in_Cubit200(2,2); CHKERRQ(ierr);
@@ -1773,6 +1776,7 @@ PetscErrorCode FaceSplittingTools::propagateBySplit(Range &new_nodes,Range &edge
     ); CHKERR_PETSC(rval);
   }
 
+  // calculate distance from crack surface
   signedDistanceMap.clear();
   map<EntityHandle,vector<double> > normal_nodes_map;
   for(Range::iterator nit = nodes_to_check.begin();nit!=nodes_to_check.end();nit++) {
@@ -1800,7 +1804,6 @@ PetscErrorCode FaceSplittingTools::propagateBySplit(Range &new_nodes,Range &edge
   rval = mField.get_moab().delete_entities(&kdTree_rootMeshset,1); CHKERR_PETSC(rval);
   //cerr << "normal_nodes_map.size() " << normal_nodes_map.size() << endl;
 
-  // calculate distances,
   // mode nodes near to crack surface
   nodesToMoveMap.clear();
   map<EntityHandle,vector<double> >::iterator mit = normal_nodes_map.begin();
