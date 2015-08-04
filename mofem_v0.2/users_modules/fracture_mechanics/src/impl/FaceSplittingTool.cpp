@@ -805,14 +805,7 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(vector<string> &switche
         map<int,Range>::iterator mit = surfaces_edges_map.begin();
         mit!=surfaces_edges_map.end();mit++
       ) {
-        for(
-          map<int,Range>::iterator miit = surfaces_edges_map.begin();
-          miit!=surfaces_edges_map.end();miit++
-        ) {
-          Range edges;
-          edges = intersect(mit->second,miit->second);
-          corners_edges.merge(edges);
-        }
+        corners_edges.merge(mit->second);
       }
       Range corners_nodes;
       rval = mField.get_moab().get_connectivity(
