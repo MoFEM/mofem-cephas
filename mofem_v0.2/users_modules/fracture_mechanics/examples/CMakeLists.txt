@@ -18,3 +18,5 @@ cm_export_file("brick_slice_b2.cub" export_files_material_mechanics_examples)
 
 cm_export_file("brick_b1.jou" export_files_material_mechanics_examples)
 cm_export_file("brick_b1.cub" export_files_material_mechanics_examples)
+cm_export_file("brick_b2.jou" export_files_material_mechanics_examples)
+cm_export_file("brick_b2.cub" export_files_material_mechanics_examples)
