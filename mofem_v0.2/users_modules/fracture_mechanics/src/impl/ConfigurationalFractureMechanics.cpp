@@ -1229,24 +1229,71 @@ PetscErrorCode ConfigurationalFractureMechanics::constrains_problem_definition(F
     ierr = PetscOptionsGetBool(
       PETSC_NULL,"-my_other_side_constrain",&flg_other_side,PETSC_NULL
     ); CHKERRQ(ierr);
-    if(flg_other_side) {
+
+    if(!flg_other_side) {
+      ierr = m_field.remove_ents_from_field(
+        "LAMBDA_SURFACE",one_side_crack_surface_faces_nodes_without_crack_front
+      ); CHKERRQ(ierr);
+      for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,SIDESET,it)) {
+        int msId = it->get_msId();
+        if((msId < 10200)||(msId >= 10300)) continue;
+        ostringstream ss;
+        ss << "LAMBDA_SURFACE_msId_" << msId;
+        ierr = m_field.remove_ents_from_field(
+          ss.str(),one_side_crack_surface_faces_nodes_without_crack_front
+        ); CHKERRQ(ierr);
+      }
+      ierr = m_field.add_ents_to_field_by_VERTICEs(
+        one_side_crack_surface_faces_nodes_without_crack_front,"LAMBDA_CRACK_SURFACE"
+      ); CHKERRQ(ierr);
+    } else {
+      Skinner skin(&m_field.get_moab());
+      Range surfaces;
+      Range surfaces_edges;
+      ierr = m_field.get_cubit_msId_entities_by_dimension(102,SIDESET,2,surfaces,true); CHKERRQ(ierr);
+      rval = skin.find_skin(0,surfaces,false,surfaces_edges); CHKERR_PETSC(rval);
+      Range surfaces_edges_nodes;
       rval = m_field.get_moab().get_connectivity(
-        subtract(crack_surfaces_faces,one_side_crack_surface_faces),other_side_nodes,true
+        surfaces_edges,surfaces_edges_nodes,true
+      ); CHKERR_PETSC(rval);
+      Range crack_surface_nodes = one_side_crack_surface_faces_nodes_without_crack_front;
+      crack_surface_nodes = subtract(
+        crack_surface_nodes,surfaces_edges_nodes
+      );
+      ierr = m_field.remove_ents_from_field(
+        "LAMBDA_SURFACE",
+        subtract(
+          one_side_crack_surface_faces_nodes_without_crack_front,surfaces_edges_nodes
+        )
+      ); CHKERRQ(ierr);
+      for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,SIDESET,it)) {
+        int msId = it->get_msId();
+        if((msId < 10200)||(msId >= 10300)) continue;
+        ostringstream ss;
+        ss << "LAMBDA_SURFACE_msId_" << msId;
+        EntityHandle meshset = it->get_meshset();
+        surfaces.clear();
+        rval = m_field.get_moab().get_entities_by_type(meshset,MBTRI,surfaces,true); CHKERR_PETSC(rval);
+        surfaces_edges.clear();
+        rval = skin.find_skin(0,surfaces,false,surfaces_edges); CHKERR_PETSC(rval);
+        surfaces_edges_nodes.clear();
+        rval = m_field.get_moab().get_connectivity(
+          surfaces_edges,surfaces_edges_nodes,true
+        ); CHKERR_PETSC(rval);
+        crack_surface_nodes = subtract(
+          crack_surface_nodes,surfaces_edges_nodes
+        );
+        ierr = m_field.remove_ents_from_field(
+          ss.str(),
+          subtract(
+            one_side_crack_surface_faces_nodes_without_crack_front,surfaces_edges_nodes
+          )
+        ); CHKERRQ(ierr);
+      }
+      ierr = m_field.add_ents_to_field_by_VERTICEs(
+        crack_surface_nodes,"LAMBDA_CRACK_SURFACE"
       ); CHKERRQ(ierr);
     }
-
-    ierr = m_field.remove_ents_from_field("LAMBDA_SURFACE",one_side_crack_surface_faces_nodes_without_crack_front); CHKERRQ(ierr);
-    for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,SIDESET,it)) {
-      int msId = it->get_msId();
-      if((msId < 10200)||(msId >= 10300)) continue;
-      ostringstream ss;
-      ss << "LAMBDA_SURFACE_msId_" << msId;
-      ierr = m_field.remove_ents_from_field(ss.str(),one_side_crack_surface_faces_nodes_without_crack_front); CHKERRQ(ierr);
-    }
-
-    ierr = m_field.add_ents_to_field_by_VERTICEs(
-      one_side_crack_surface_faces_nodes_without_crack_front,"LAMBDA_CRACK_SURFACE"
-    ); CHKERRQ(ierr);
     ierr = m_field.set_field_order(0,MBVERTEX,"LAMBDA_CRACK_SURFACE",1); CHKERRQ(ierr);
 
     ierr = m_field.add_ents_to_field_by_VERTICEs(
