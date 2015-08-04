@@ -489,8 +489,10 @@ PetscErrorCode FaceSplittingTools::crackFrontEdgeLengths(
   rval = mField.get_moab().delete_entities(&kdTree_rootMeshset,0); CHKERR_PETSC(rval);
 
   double ave_l1 = 0,max_l1 = 0,min_l1 = length_map1.begin()->second;
-  for(map<EntityHandle,double>::iterator mit = length_map1.begin();
-    mit!=length_map1.end();mit++) {
+  for(
+    map<EntityHandle,double>::iterator mit = length_map1.begin();
+    mit!=length_map1.end();mit++
+  ) {
     ave_l1 += mit->second;
     max_l1 = fmax(max_l1,mit->second);
     min_l1 = fmin(min_l1,mit->second);
@@ -506,8 +508,10 @@ PetscErrorCode FaceSplittingTools::crackFrontEdgeLengths(
   sdev_l1 = sqrt(sdev_l1);
 
   double ave_l2 = 0,max_l2 = 0,min_l2 = length_map2.begin()->second;
-  for(map<EntityHandle,double>::iterator mit = length_map2.begin();
-    mit!=length_map2.end();mit++) {
+  for(
+    map<EntityHandle,double>::iterator mit = length_map2.begin();
+    mit!=length_map2.end();mit++
+  ) {
     ave_l2 += mit->second;
     max_l2 = fmax(max_l2,mit->second);
     min_l2 = fmin(min_l2,mit->second);
@@ -543,7 +547,7 @@ PetscErrorCode FaceSplittingTools::crackFrontEdgeLengths(
       rval = mField.get_moab().get_coords(conn,num_nodes,coords); CHKERR_PETSC(rval);
       double coords_edges[2*3*6];
       ierr = get_edges_from_elem_coords(coords,coords_edges); CHKERRQ(ierr);
-      double V =  ShapeVolumeMBTET(diffNTET,&*coords);
+      double V = ShapeVolumeMBTET(diffNTET,&*coords);
       double alpha[4] = {1,1,1,1};
       double quality0,quality,b;
       ierr = quality_volume_length_F(
@@ -554,9 +558,9 @@ PetscErrorCode FaceSplittingTools::crackFrontEdgeLengths(
         NULL,NULL
       );
       if(quality<0.1) {
-        rval = mField.get_moab().get_adjacencies(
+        /*rval = mField.get_moab().get_adjacencies(
           &*tit,1,1,false,bad_quality_edges_nodes,Interface::UNION
-        ); CHKERR_PETSC(rval);
+        ); CHKERR_PETSC(rval);*/
         Range bad_quality_nodes;
         rval = mField.get_moab().get_adjacencies(
           &*tit,1,0,false,bad_quality_nodes,Interface::UNION
@@ -578,10 +582,9 @@ PetscErrorCode FaceSplittingTools::crackFrontEdgeLengths(
     for(;eiit != adj_edges_nodes.end();eiit++) {
       if(length_map2.find(*eiit)==length_map2.end()) {
         continue;
-        //SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
       }
       double l = length_map2[*eiit];
-      if(l<(ave_l2-sdev_l2)) {
+      if(l<fmax(ave_l2-sdev_l2,min_l2)*0.75) {
         eit_to_remove.insert(*eiit);
       }
     }
@@ -594,7 +597,7 @@ PetscErrorCode FaceSplittingTools::crackFrontEdgeLengths(
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
       }
       double l = length_map1[*eiit];
-      if(l>(ave_l1+sdev_l1)) {
+      if(l>ave_l1+sdev_l1) {
         to_split.insert(*eiit);
       }
     }
