@@ -82,9 +82,9 @@ typedef uint128_t UId;
 //typedef checked_uint128_tUId;
 typedef int ShortId;
 
-/** \brief loacl unique id
+/** \brief local unique id
   *
-  * It is based on local entitu handle
+  * It is based on local entity handle
   */
 struct LocalUId: public UId {
   LocalUId(): UId() {}

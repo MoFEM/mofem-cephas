@@ -136,8 +136,8 @@ struct ConfigurationalFractureMechanics {
  struct FrontAreaArcLengthControl: public FEMethod {
 
     FieldInterface& mField;
-    ConfigurationalFractureMechanics *conf_prob;
-    ArcLengthCtx* arc_ptr;
+    ConfigurationalFractureMechanics *confProb;
+    ArcLengthCtx* arcPtr;
 
     Vec ghostDiag;
     Range crackSurfacesFaces;
@@ -149,7 +149,9 @@ struct ConfigurationalFractureMechanics {
     Vec lambdaVec;
 
     FrontAreaArcLengthControl(
-      FieldInterface& m_field,ConfigurationalFractureMechanics *_conf_prob,ArcLengthCtx *_arc_ptr
+      FieldInterface& m_field,
+      ConfigurationalFractureMechanics *conf_prob,
+      ArcLengthCtx *arc_ptr
     );
     ~FrontAreaArcLengthControl();
 

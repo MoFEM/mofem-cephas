@@ -281,7 +281,7 @@ struct GriffithForceElement {
         PetscFunctionBegin;
 
         dElta = (currentArea-referenceArea)/currentArea;
-        dElta = -fmin(0,dElta);
+        dElta = -fmin(dElta,0.0);
         //dElta *= dElta*dElta;
         dElta *= currentArea;
 
