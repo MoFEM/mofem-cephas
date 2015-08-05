@@ -41,13 +41,19 @@
 
 namespace MoFEM {
 
+#ifndef __INTEL_COMPILER
+  #define SIZEOFUID 16
+#else
+  #define SIZEOFUID 24
+#endif
+
 struct __attribute__ ((__packed__)) IdxDataType {
   int globalDof;
-  char uId[16];
+  char uId[SIZEOFUID];
   IdxDataType() {}
   IdxDataType(const GlobalUId &uid,int global_dof):
     globalDof(global_dof) {
-    bcopy(&uid,uId,16);
+    bcopy(&uid,uId,SIZEOFUID);
   }
 };
 
@@ -156,7 +162,7 @@ PetscErrorCode Core::build_partitioned_problem(MoFEMProblem *problem_ptr,bool sq
     ierr = PetscLayoutDestroy(&layout); CHKERRQ(ierr);
   }
 
-  if(sizeof(UId) != 16) {
+  if(sizeof(UId) != SIZEOFUID) {
     SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"check size of UId, size of UId is %u",sizeof(UId));
   }
 

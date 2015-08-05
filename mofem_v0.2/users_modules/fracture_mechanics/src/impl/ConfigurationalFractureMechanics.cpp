@@ -2702,7 +2702,8 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(
 
   Range fix_nodes;
   ierr = fix_all_but_one(m_field,da,fix_nodes,fraction_treshold); CHKERRQ(ierr);
-  da *= fabs(crack_front_nodes.size()-fix_nodes.size())/(double)crack_front_nodes.size();
+  //da *= fabs(crack_front_nodes.size()-fix_nodes.size())/(double)crack_front_nodes.size();
+  da *= fabs(crack_front_nodes.size()-fix_nodes.size());///(double)crack_front_nodes.size();
   corners_nodes.merge(fix_nodes);
 
   // Arc elem
