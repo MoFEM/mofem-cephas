@@ -3253,7 +3253,7 @@ PetscErrorCode ConfigurationalFractureMechanics::solve_coupled_problem(
   // Set s
   ierr = arc_ctx.setAlphaBeta(alpha,0); CHKERRQ(ierr);
   ierr = arc_elem.calculate_lambda_int(); CHKERRQ(ierr);
-  ierr = arc_ctx.setS(arc_elem.lambda_int+da/arc_elem.aRea0); CHKERRQ(ierr);
+  ierr = arc_ctx.setS(arc_elem.lambda_int+alpha*da/arc_elem.aRea0); CHKERRQ(ierr);
 
   SNESLineSearch linesearch;
   ierr = SNESGetLineSearch(*snes,&linesearch); CHKERRQ(ierr);
