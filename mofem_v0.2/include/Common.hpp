@@ -1,11 +1,5 @@
 /** \file common.hpp
- * \brief Myltindex containes, data structures and other low-level functions 
- * 
- * Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl) <br>
- *
- * The MoFEM package is copyrighted by Lukasz Kaczmarczyk. 
- * It can be freely used for educational and research purposes 
- * by other institutions. If you use this softwre pleas cite my work. 
+ * \brief Myltindex containes, data structures and other low-level functions
  *
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -84,7 +78,7 @@ const int max_ApproximationOrder = 10;
 
 //typedefs
 const EntityHandle no_handle = (EntityHandle)-1;
-typedef uint128_t UId;  
+typedef uint128_t UId;
 //typedef checked_uint128_tUId;
 typedef int ShortId;
 
@@ -107,11 +101,11 @@ inline bool operator==(const LocalUId& lhs, const LocalUId& rhs) { return (UId)l
 inline bool operator!=(const LocalUId& lhs, const LocalUId& rhs) { return !(lhs == rhs); }
 
 
-/** \brief loacl unique id
+/** \brief local unique id
   *
-  * It is based on owner entity handle. Eeach entity is own by some
+  * It is based on owner entity handle. Each entity is own by some
   * proc/partition, which own set entity handles, which are not unique across
-  * mesh on diffrent processors.
+  * mesh on different processors.
   *
   */
 struct GlobalUId: public UId {
@@ -138,7 +132,7 @@ typedef bitset<BITINTERFACEUID_SIZE> BitIntefaceId;
 //AUX STRUCTURES
 
 /* This small utility that cascades two key extractors will be
- * used throughout the boost example 
+ * used throughout the boost example
  * http://www.boost.org/doc/libs/1_53_0/libs/multi_index/example/complex_structs.cpp
  */
 template<class KeyExtractor1,class KeyExtractor2>
@@ -164,31 +158,31 @@ private:
   KeyExtractor2 key2;
 };
 
-template <typename id_type> 
-struct LtBit 
+template <typename id_type>
+struct LtBit
 { inline bool operator()(const id_type& valueA,const id_type& valueB) const {
   return valueA.to_ulong()<valueB.to_ulong(); } };
 
 template <typename id_type>
-struct EqBit { 
+struct EqBit {
   inline bool operator()(const id_type& valueA,const id_type& valueB) const {
     return valueA.to_ulong() == valueB.to_ulong();
   }
 };
 
-template <typename id_type> 
-struct HashBit 
+template <typename id_type>
+struct HashBit
 { inline unsigned int operator()(const id_type& value) const {
   return value.to_ulong(); } };
 
 struct MofemException: public std::exception {
   MoFEMErrorCode errorCode;
   char errorMessage[255];
-  MofemException(MoFEMErrorCode error_code): 
+  MofemException(MoFEMErrorCode error_code):
     errorCode(error_code) {
     strcpy(errorMessage,"Huston we have a problem, somthing is wrong");
   }
-  MofemException(MoFEMErrorCode error_code,const char error_message[]): 
+  MofemException(MoFEMErrorCode error_code,const char error_message[]):
     errorCode(error_code) {
     strcpy(errorMessage,error_message);
   }
@@ -197,7 +191,7 @@ struct MofemException: public std::exception {
   }
 };
 
-/** 
+/**
  * \typedef CubitBCType
  * bc & material meshsets
  *
@@ -251,7 +245,5 @@ enum CubitBC {
 #endif //__COMMON_HPP__
 
 /***************************************************************************//**
- * \defgroup mofem MoFEM 
+ * \defgroup mofem MoFEM
  ******************************************************************************/
-
-
