@@ -672,8 +672,18 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
 
     #ifdef WITH_TETGEN
 
+
+    PetscBool flg_do_split = PETSC_TRUE;
+    ierr = PetscOptionsGetBool(
+      PETSC_NULL,"-my_do_split",&flg_do_split,PETSC_NULL
+    ); CHKERRQ(ierr);
+    PetscBool flg_do_tetgen = PETSC_TRUE;
+    ierr = PetscOptionsGetBool(
+      PETSC_NULL,"-my_do_tetgen",&flg_do_tetgen,PETSC_NULL
+    ); CHKERRQ(ierr);
+
     bool do_tetgen = true;
-    {
+    if(flg_do_split) {
       Range edges_to_cat;
       ierr = face_splitting_tools.getCornerEdges(edges_to_cat,10); CHKERRQ(ierr);
       if(edges_to_cat.size()>0) {
@@ -685,16 +695,18 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
     }
 
     if(do_tetgen) {
-      face_splitting_tools.moabTetGenMap.clear();
-      face_splitting_tools.tetGenMoabMap.clear();
-      face_splitting_tools.tetGenData.clear();
-      vector<string> switches1;
-      if(pcomm->rank() == 0) {
-        switches1.push_back("rp178sqRS0JVV");
-        ierr = face_splitting_tools.rebuildMeshWithTetGen(switches1,0); CHKERRQ(ierr);
-      } else {
-        switches1.push_back("rp178sqRS0JQ");
-        ierr = face_splitting_tools.rebuildMeshWithTetGen(switches1,0); CHKERRQ(ierr);
+      if(flg_do_tetgen) {
+        face_splitting_tools.moabTetGenMap.clear();
+        face_splitting_tools.tetGenMoabMap.clear();
+        face_splitting_tools.tetGenData.clear();
+        vector<string> switches1;
+        if(pcomm->rank() == 0) {
+          switches1.push_back("rp178sqRS0JVV");
+          ierr = face_splitting_tools.rebuildMeshWithTetGen(switches1,0); CHKERRQ(ierr);
+        } else {
+          switches1.push_back("rp178sqRS0JQ");
+          ierr = face_splitting_tools.rebuildMeshWithTetGen(switches1,0); CHKERRQ(ierr);
+        }
       }
     }
 
