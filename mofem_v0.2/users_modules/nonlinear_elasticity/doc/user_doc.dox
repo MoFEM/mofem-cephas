@@ -154,7 +154,7 @@ mpirun -np 4 ../../nonlinear_dynamics \
 -my_solve_at_time_zero 1 \
 -my_output_prt -1 -my_max_post_proc_ref_level 0 \
 -my_disp_order 2 \
--default_material HOOKE -is_linear \
+-default_material HOOKE -is_linear -snes_lag_jacobian -2 \
 -elastic_material_configuration block_data.in 2>&1 | tee log
 \endcode
 
