@@ -2025,6 +2025,7 @@ struct Gel {
       if(!iNit) {
         ierr = postProc.generateReferenceElementMesh(); CHKERRQ(ierr);
         ierr = postProc.addFieldValuesPostProc(commonData.spatialPositionName); CHKERRQ(ierr);
+        ierr = postProc.addFieldValuesGradientPostProc(commonData.spatialPositionName); CHKERRQ(ierr);
         ierr = postProc.addFieldValuesPostProc(commonData.muName); CHKERRQ(ierr);
         ierr = postProc.addFieldValuesPostProc(commonData.strainHatName); CHKERRQ(ierr);
         iNit = true;
