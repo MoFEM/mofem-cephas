@@ -2651,8 +2651,9 @@ PetscErrorCode ConfigurationalFractureMechanics::fix_all_but_one(FieldInterface&
       Range edges;
       ierr = m_field.get_moab().get_adjacencies(nodes_in_set,1,false,edges,Interface::UNION); CHKERRQ(ierr);
       edges = intersect(edges,crack_front_edges);
-      rval = m_field.get_moab().get_connectivity(edges,nodes_in_set,true); CHKERR_PETSC(rval);
-      nodes_in_set = subtract(nodes_in_set,fix_nodes);
+      Range nodes;
+      rval = m_field.get_moab().get_connectivity(edges,nodes,true); CHKERR_PETSC(rval);
+      nodes_in_set.merge(subtract(nodes,fix_nodes));
       nb_nodes = nodes_in_set.size();
     }
     fix_nodes.merge(subtract(crack_front_nodes,nodes_in_set));
