@@ -1558,7 +1558,7 @@ PetscErrorCode FaceSplittingTools::getCornerEdges(Range &edges_to_cut,int verb) 
     rval = mField.get_moab().get_adjacencies(
       nit_tets,1,false,nit_tets_edges,Interface::UNION
     ); CHKERR_PETSC(rval);
-    if(corners_edges_nodes.find(*nit)==corners_edges_nodes.end()) {
+    /*if(corners_edges_nodes.find(*nit)==corners_edges_nodes.end()) {
       // check if any node is on corner
       Range nit_tets_nodes;
       rval = mField.get_moab().get_connectivity(
@@ -1568,8 +1568,8 @@ PetscErrorCode FaceSplittingTools::getCornerEdges(Range &edges_to_cut,int verb) 
       intersecting_corners = intersect(nit_tets_nodes,unite(corners_edges_nodes,free_edges_nodes));
       if(intersecting_corners.empty()) continue;
       nodes_on_corners.merge(intersecting_corners);
-      //if(intersect(nit_tets_edges,unite(corners_edges,free_edges)).empty()) continue;
-    }
+    }*/
+    if(intersect(nit_tets_edges,unite(corners_edges,free_edges)).empty()) continue;
     // check if any edge is on the corner
     if(intersect(nit_tets_edges,unite(corners_edges,free_edges)).empty()) continue;
     nit_tets_edges = subtract(nit_tets_edges,crack_edges);
