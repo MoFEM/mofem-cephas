@@ -894,7 +894,7 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(vector<string> &switche
         }*/
       }
 
-      if(node_merged) PetscFunctionReturn(0);
+      if(node_merged) to_remove.clear();
 
     }
 
