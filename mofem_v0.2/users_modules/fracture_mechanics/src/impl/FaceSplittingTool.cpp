@@ -813,6 +813,7 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(vector<string> &switche
       ); CHKERR_PETSC(rval);
       corners_nodes = intersect(to_remove,corners_nodes);
 
+      bool node_merged = false;
       if(!corners_nodes.empty()) {
 
         // get nodes on crack front
@@ -860,10 +861,12 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(vector<string> &switche
             ierr = node_merger_iface->mergeNodes(
               mit->first,mit->second,last_ref,bit_mesh
             ); CHKERRQ(ierr);
+            node_merged = true;
           } else {
             ierr = node_merger_iface->mergeNodes(
               mit->second,mit->first,last_ref,bit_mesh
             ); CHKERRQ(ierr);
+            node_merged = true;
           }
           for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,cubit_it)) {
             EntityHandle meshset = cubit_it->meshset;
@@ -890,6 +893,8 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(vector<string> &switche
           rval = mField.get_moab().delete_entities(&meshset_out,1); CHKERR_PETSC(rval);
         }*/
       }
+
+      if(node_merged) PetscFunctionReturn(0);
 
     }
 
@@ -2357,8 +2362,21 @@ PetscErrorCode FaceSplittingTools::propagateBySplit(Range &new_nodes,Range &edge
     rval = mField.get_moab().get_adjacencies(
       crack_edges_tris_edges,1,false,crack_edges_tris_edges_tris,Interface::UNION
     ); CHKERR_PETSC(rval);
-    crack_edges_tris_edges.merge(intersect(nodes_to_move_tris,crack_edges_tris_edges_tris));
+    crack_edges_tris_edges_tris.merge(intersect(nodes_to_move_tris,crack_edges_tris_edges_tris));
 
+    {
+      vector<Range> new_crack(crack_edges_tris.size());
+      for(
+        int ii = 0,Range::interator eit = crack_edges_tris.begin();
+        eit!=crack_edges_tris.end();
+        eit++,ii++
+      ) {
+        new_crack[ii].insert(*eit);
+
+
+      }
+
+    }
 
 
   }
