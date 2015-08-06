@@ -2640,7 +2640,6 @@ PetscErrorCode ConfigurationalFractureMechanics::fix_all_but_one(FieldInterface&
     rval = m_field.get_moab().tag_set_data(th_freez,&max_g_j_ent,1,&freez); CHKERR_PETSC(rval);
     fix_nodes.erase(max_g_j_ent);
   } else {
-
     Range crack_front_edges,crack_front_nodes;
     ierr = m_field.get_cubit_msId_entities_by_dimension(201,SIDESET,1,crack_front_edges,true); CHKERRQ(ierr);
     rval = m_field.get_moab().get_connectivity(crack_front_edges,crack_front_nodes,true); CHKERR_PETSC(rval);
@@ -2657,6 +2656,8 @@ PetscErrorCode ConfigurationalFractureMechanics::fix_all_but_one(FieldInterface&
       nodes_in_set.merge(subtract(nodes,fix_nodes));
     } while (nb_nodes!=nodes_in_set.size());
     fix_nodes.merge(subtract(crack_front_nodes,nodes_in_set));
+    vector<int> fix_nodes_vec(fix_nodes.size(),1);
+    rval = m_field.get_moab().tag_set_data(th_freez,fix_nodes,&fix_nodes_vec[0]); CHKERR_PETSC(rval);
     ierr = PetscPrintf(PETSC_COMM_WORLD,"final number of fixed nodes %u\n",fix_nodes.size());
   }
 

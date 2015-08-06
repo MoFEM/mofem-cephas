@@ -584,7 +584,7 @@ PetscErrorCode FaceSplittingTools::crackFrontEdgeLengths(
         continue;
       }
       double l = length_map2[*eiit];
-      if(l<fmax(ave_l2-sdev_l2,min_l2)*0.75) {
+      if(l<=fmax(ave_l2-sdev_l2,min_l2)*0.8) {
         eit_to_remove.insert(*eiit);
       }
     }
