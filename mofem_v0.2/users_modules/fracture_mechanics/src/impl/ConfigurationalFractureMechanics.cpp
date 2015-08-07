@@ -1573,8 +1573,8 @@ PetscErrorCode ConfigurationalFractureMechanics::set_material_positions(FieldInt
     int dof_rank = dof_ptr->get_dof_rank();
     double &fval = dof_ptr->get_FieldData();
     if(node!=ent) {
-	rval = m_field.get_moab().get_coords(&ent,1,coords); CHKERR_PETSC(rval);
-	node = ent;
+      rval = m_field.get_moab().get_coords(&ent,1,coords); CHKERR_PETSC(rval);
+      node = ent;
     }
     fval = coords[dof_rank];
   }
