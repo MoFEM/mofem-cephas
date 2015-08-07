@@ -356,7 +356,7 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
       edges100 = subtract(edges100,edges);
       ierr = m_field.get_cubit_msId_meshset(100,SIDESET,meshset); CHKERRQ(ierr);
       rval = m_field.get_moab().clear_meshset(&meshset,1); CHKERR_PETSC(rval);
-      ierr = m_field.get_moab().add_entities(meshset,edges); CHKERRQ(ierr);
+      ierr = m_field.get_moab().add_entities(meshset,edges100); CHKERRQ(ierr);
     }
 
   }
