@@ -338,6 +338,29 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
 
   ParallelComm* pcomm = ParallelComm::get_pcomm(&m_field.get_moab(),MYPCOMM_INDEX);
 
+  {  //quick dirty fix
+
+    Skinner skin(&m_field.get_moab());
+    for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,SIDESET,it)) {
+      int msId = it->get_msId();
+      if(msId != 10200) continue;
+      EntityHandle meshset = it->get_meshset();
+      Range surfaces;
+      rval = m_field.get_moab().get_entities_by_type(meshset,MBTRI,surfaces,true); CHKERR_PETSC(rval);
+      Range edges;
+      rval = skin.find_skin(0,surfaces,false,edges); CHKERR_PETSC(rval);
+      Range edges100;
+      ierr = m_field.get_cubit_msId_entities_by_dimension(
+        100,SIDESET,1,edges100,true
+      ); CHKERRQ(ierr);
+      edges100 = subtract(edges100,edges);
+      ierr = m_field.get_cubit_msId_meshset(100,SIDESET,meshset); CHKERRQ(ierr);
+      rval = m_field.get_moab().clear_meshset(&meshset,1); CHKERR_PETSC(rval);
+      ierr = m_field.get_moab().add_entities(meshset,edges); CHKERRQ(ierr);
+    }
+
+  }
+
   //ref meshset ref level 0
   Tag th_my_ref_level;
   rval = m_field.get_moab().tag_get_handle("_MY_REFINMENT_LEVEL",th_my_ref_level); CHKERR_PETSC(rval);
