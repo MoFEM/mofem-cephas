@@ -27,6 +27,8 @@ while test $# -gt 0; do
     echo "--fraction_treshold=[0.1]"
     echo "--pc_factor_mat_solver_package=[superlu_dist,mumps]"
     echo "--my_other_side_constrain=[0,1]"
+    echo "--my_do_split=[0,1]"
+    echo "--my_do_tetgen=[0,1]"
     echo "--my_arc_alpha=[>0]"
     echo "--showme"
     exit 0
@@ -201,6 +203,14 @@ while test $# -gt 0; do
     export OTHERSIDECONSTRAIN=`echo $1 | sed -e 's/^[^=]*=//g'`
     shift
     ;;
+    --my_do_split*)
+    export DOSPLIT=`echo $1 | sed -e 's/^[^=]*=//g'`
+    shift
+    ;;
+    --my_do_tetgen*)
+    export DOTETGEN=`echo $1 | sed -e 's/^[^=]*=//g'`
+    shift
+    ;;
     --my_arc_alpha*)
     export ARCALPHA=`echo $1 | sed -e 's/^[^=]*=//g'`
     shift
@@ -286,6 +296,14 @@ if [ -z ${OTHERSIDECONSTRAIN} ]; then
   OTHERSIDECONSTRAIN=0
 fi
 
+if [ -z ${DOSPLIT} ]; then
+  DOSPLIT=1
+fi
+
+if [ -z ${DOTETGEN} ]; then
+  DOTETGEN=1
+fi
+
 if [ -z ${ARCALPHA} ]; then
   ARCALPHA=1
 fi
@@ -326,6 +344,8 @@ COMMAND="$MPIRUN $BIN_PATH/arc_length_material_coupled \
   -my_da $DA -my_load_steps $NBSTEPS \
   -my_nb_sub_steps $NBSUBSTEPS \
   -my_other_side_constrain $OTHERSIDECONSTRAIN \
+  -my_do_split $DOSPLIT \
+  -my_do_tetgen $DOTETGEN \
   -my_arc_alpha $ARCALPHA \
   -log_summary"
 
