@@ -338,7 +338,7 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
 
   ParallelComm* pcomm = ParallelComm::get_pcomm(&m_field.get_moab(),MYPCOMM_INDEX);
 
-  {  //quick dirty fix
+  /*{  //quick dirty fix
 
     Skinner skin(&m_field.get_moab());
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,SIDESET,it)) {
@@ -359,7 +359,7 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
       ierr = m_field.get_moab().add_entities(meshset,edges100); CHKERRQ(ierr);
     }
 
-  }
+  }*/
 
   //ref meshset ref level 0
   Tag th_my_ref_level;
