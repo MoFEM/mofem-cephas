@@ -682,6 +682,7 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
       PETSC_NULL,"-my_do_tetgen",&flg_do_tetgen,PETSC_NULL
     ); CHKERRQ(ierr);
 
+    bool split_is_done = false;
     bool do_tetgen = true;
     if(flg_do_split) {
       Range edges_to_cat;
@@ -690,6 +691,7 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
         Range new_nodes;
         ierr = face_splitting_tools.propagateBySplit(new_nodes,edges_to_cat,10); CHKERRQ(ierr);
         ierr = face_splitting_tools.cornerProblem(new_nodes,10); CHKERRQ(ierr);
+        split_is_done = true;
         //if(!new_nodes.empty()) do_tetgen = false;
       }
     }
@@ -711,13 +713,13 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
     }
 
     bit_level0 = BitRefLevel().set(face_splitting_tools.meshIntefaceBitLevels.back());
-    //retart analysis
-    ierr = main_arc_length_restart(m_field,conf_prob); CHKERRQ(ierr);
     //project and set coords
     conf_prob.material_FirelWall->operator[](ConfigurationalFractureMechanics::FW_set_spatial_positions) = 0;
     conf_prob.material_FirelWall->operator[](ConfigurationalFractureMechanics::FW_set_material_positions) = 0;
-    ierr = conf_prob.set_spatial_positions(m_field); CHKERRQ(ierr);
+    //retart analysis
+    ierr = main_arc_length_restart(m_field,conf_prob); CHKERRQ(ierr);
     ierr = conf_prob.set_material_positions(m_field); CHKERRQ(ierr);
+    ierr = conf_prob.set_spatial_positions(m_field); CHKERRQ(ierr);
     //solve spatial problem
     ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);
     ierr = SNESSetFromOptions(snes); CHKERRQ(ierr);
@@ -732,6 +734,9 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
     ierr = conf_prob.calculate_griffith_g(m_field,"COUPLED_PROBLEM"); CHKERRQ(ierr);
     ierr = conf_prob.delete_surface_projection_data(m_field); CHKERRQ(ierr);
     ierr = conf_prob.delete_front_projection_data(m_field); CHKERRQ(ierr);
+    if(split_is_done) {
+      ierr = main_rescale_load_factor(m_field,conf_prob); CHKERRQ(ierr);
+    }
     #endif
 
 
