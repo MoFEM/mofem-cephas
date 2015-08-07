@@ -248,15 +248,16 @@ struct Gel {
       PetscFunctionBegin;
       traceStressBeta = 0;
       for(int ii = 0;ii<3;ii++) {
-        traceStrainHat = stressBeta(ii,ii);
+        traceStressBeta = stressBeta(ii,ii);
       }
       strainHatFlux.resize(3,3,false);
-      double a = -(1.0/(2.0*dAta.gBetaHat));
+      double a = (1.0/(2.0*dAta.gBetaHat));
       noalias(strainHatFlux) = a*stressBeta;
       double b = a*(dAta.vBetaHat/(1.0+dAta.vBetaHat));
       for(int ii = 0;ii<3;ii++) {
         strainHatFlux(ii,ii) -= b*traceStressBeta;
       }
+      strainHatFlux *= -1;
       PetscFunctionReturn(0);
     }
 
