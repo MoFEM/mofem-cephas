@@ -1248,10 +1248,13 @@ PetscErrorCode ConfigurationalFractureMechanics::constrains_problem_definition(F
       ); CHKERRQ(ierr);
     } else {
       Skinner skin(&m_field.get_moab());
+      Range crack_surface_skin_edges;
+      rval = skin.find_skin(0,crack_surfaces_faces,false,crack_surface_skin_edges); CHKERR_PETSC(rval);
       Range surfaces;
       Range surfaces_edges;
       ierr = m_field.get_cubit_msId_entities_by_dimension(102,SIDESET,2,surfaces,true); CHKERRQ(ierr);
       rval = skin.find_skin(0,surfaces,false,surfaces_edges); CHKERR_PETSC(rval);
+      surfaces_edges = intersect(surfaces_edges,crack_surface_skin_edges);
       Range surfaces_edges_nodes;
       rval = m_field.get_moab().get_connectivity(
         surfaces_edges,surfaces_edges_nodes,true
@@ -1276,6 +1279,7 @@ PetscErrorCode ConfigurationalFractureMechanics::constrains_problem_definition(F
         rval = m_field.get_moab().get_entities_by_type(meshset,MBTRI,surfaces,true); CHKERR_PETSC(rval);
         surfaces_edges.clear();
         rval = skin.find_skin(0,surfaces,false,surfaces_edges); CHKERR_PETSC(rval);
+        surfaces_edges = intersect(surfaces_edges,crack_surface_skin_edges);
         surfaces_edges_nodes.clear();
         rval = m_field.get_moab().get_connectivity(
           surfaces_edges,surfaces_edges_nodes,true
