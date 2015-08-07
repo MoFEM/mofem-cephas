@@ -274,7 +274,7 @@ struct Gel {
       stressBetaHat.resize(3,3,false);
       stressBetaHat.clear();
       for(int ii=0; ii<3; ii++){
-        stressBetaHat(ii,ii) = mU/dAta.oMega;
+        stressBetaHat(ii,ii) = -mU/dAta.oMega;
       }
       PetscFunctionReturn(0);
     }
