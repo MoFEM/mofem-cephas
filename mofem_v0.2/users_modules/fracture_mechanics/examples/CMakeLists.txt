@@ -11,12 +11,11 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
-cm_export_file("brick_slice_b1.jou" export_files_material_mechanics_examples)
-cm_export_file("brick_slice_b1.cub" export_files_material_mechanics_examples)
 cm_export_file("brick_slice_b2.jou" export_files_material_mechanics_examples)
 cm_export_file("brick_slice_b2.cub" export_files_material_mechanics_examples)
 
-cm_export_file("brick_b1.jou" export_files_material_mechanics_examples)
-cm_export_file("brick_b1.cub" export_files_material_mechanics_examples)
 cm_export_file("brick_b2.jou" export_files_material_mechanics_examples)
 cm_export_file("brick_b2.cub" export_files_material_mechanics_examples)
+
+cm_export_file("long_brick.jou" export_files_material_mechanics_examples)
+cm_export_file("long_brick.cub" export_files_material_mechanics_examples)

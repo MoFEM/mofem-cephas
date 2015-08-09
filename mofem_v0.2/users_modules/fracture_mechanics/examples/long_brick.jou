@@ -1,0 +1,101 @@
+reset 
+ 
+brick x 0.03815 y 0.03810 z 0.36891 
+create Cylinder height 0.03810 radius 0.019075 
+rotate Volume 2 angle 90  about X include_merged  
+move Volume 2 location surface 1  include_merged  
+unite volume 1 2 
+ 
+brick x 0.03815 y 0.03810 z  0.27896 
+create Cylinder height 0.03810 radius 0.019075 
+rotate Volume 4 angle 90  about X include_merged  
+move Volume 4 location surface 13  include_merged  
+unite volume 3 4 
+ 
+create Cylinder height 0.944921 radius 0.227455  
+create Cylinder height 0.944921 radius 0.135 
+subtract volume 6 from volume 5 
+ 
+align Volume 3  surface 24  with surface 25  
+move Curve 24 midpoint location curve 33  except x y include_merged  
+Volume 3  copy rotate 90 about z repeat 3  
+subtract volume 3 7 8 9 from volume 5  
+ 
+align Volume 1  surface 12  with surface 56  
+rotate Volume 5  angle 45  about Z include_merged  
+move Curve 8 midpoint location curve 87  except x y include_merged  
+Volume 1  copy rotate 90 about z repeat 3  
+subtract volume 1 10 11 12 from volume 5  
+ 
+#color Volume 5 pink 
+ 
+brick x 0.018 y 0.02 z 0.03 
+webcut volume 13  with plane vertex 150  vertex 151  vertex 147  
+delete volume 14 
+move Vertex 153  location vertex 138  include_merged  
+chop volume 5  with volume 13 
+imprint volume all   
+merge volume all   
+ 
+brick x 0.1 y 0.5 z 1.0 
+chop volume 16  with volume 17   
+imprint volume all   
+merge volume all  
+ 
+split body 18 
+split body 19 
+unite volume 20 19 
+unite volume 20 21   
+imprint volume all   
+merge volume all  
+ 
+brick x 0.019075 y 0.03810 z 0.38799 
+move Vertex 223  location vertex 138  include_merged  
+subtract volume 22  from volume 18   
+modify curve 342 blend radius 0.02 
+rotate Volume all angle 180  about X include_merged 
+rotate Volume all angle -135  about Z include_merged  
+imprint volume all   
+merge volume all  
+
+Nodeset 101 vertex 125 124 126 
+ 
+split curve 347  distance 0.36891
+
+Sideset 100  curve all  
+Sideset 100 curve 240 252 350 341  remove  
+Sideset 100 curve 237 239 231 242 232 238 241 remove 
+Sideset 100 curve 351 355 remove 
+Sideset 100 curve 268 272 275 273 271 270 274 269 remove    
+Sideset 100 curve 299 280 322 279 remove 
+ 
+Sideset 102 surface all   
+Sideset 102 surface  112 114  133 132 remove
+
+Sideset 102 surface 169 170 165 119  remove     
+Sideset 10200 surface 169 170 165 119
+Sideset 102 surface  149 136  remove 
+Sideset 10201 surface 149 136 
+  
+Sideset 200 surface 113 
+Sideset 201 curve 231 
+ 
+create Displacement  on surface 89 88 91 102 101 104 100 97 98  dof 1 dof 2 dof 3 fix 0 
+create force  on curve 359  force value 1 direction   3.2 2.8 0  
+create force  on curve 198  force value 1 direction   -1.1 -1.4 0  
+
+block 1 volume all          
+block 1 name 'MAT_ELASTIC'         
+block 1 attribute count 2         
+block 1 attribute index 1 9.6          
+block 1 attribute index 2 0.2 
+
+#delete mesh volume all propagate  
+volume all scheme Tetmesh 
+volume 18 15  size auto factor 4       
+volume 20 sizing function type skeleton scale 15 time_accuracy_level 1 
+volume 20 sizing function type skeleton 
+mesh volume all 
+
+
+
