@@ -166,7 +166,7 @@ PetscErrorCode FaceSplittingTools::splitFaces(const int verb) {
     int last_ref_bit = meshRefineBitLevels.back();
     if(!meshIntefaceBitLevels.empty()) {
       if(last_ref_bit<meshIntefaceBitLevels.back()) {
-	last_ref_bit = meshIntefaceBitLevels.back();
+        last_ref_bit = meshIntefaceBitLevels.back();
       }
     }
     last_ref_bit++;
