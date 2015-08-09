@@ -2569,19 +2569,23 @@ PetscErrorCode ConfigurationalFractureMechanics::fix_all_but_one(FieldInterface&
 
   ierr = PetscPrintf(PETSC_COMM_WORLD,"freeze front nodes:\n");
   map<EntityHandle,double>::iterator max_mit = map_ent_j.begin();
+  //cout << "A " << max_mit->second << endl;
   for(
-    map<EntityHandle,double>::iterator mit = ++max_mit;
-    mit!=map_ent_j.end();mit++) {
-    if(max_mit->second!=max_mit->second) continue;
+    map<EntityHandle,double>::iterator mit = max_mit;
+    mit!=map_ent_j.end();mit++
+  ) {
+    if(max_mit->second!=max_mit->second) continue; // its not a number
     if(max_mit->second<mit->second) {
       max_mit = mit;
+      //cout << "A " << max_mit->second << endl;
     }
   }
   double max_g_j = 0;
   EntityHandle max_g_j_ent = 0;
   for(
     map<EntityHandle,double>::iterator mit = map_ent_j.begin();
-    mit!=map_ent_j.end();mit++) {
+    mit!=map_ent_j.end();mit++
+  ) {
     double fraction = (max_j-mit->second)/max_j;
     //double fraction_gc = (gc-map_ent_g[mit->first])/gc;
     double step_work_of_fracture = 0;
@@ -2593,6 +2597,9 @@ PetscErrorCode ConfigurationalFractureMechanics::fix_all_but_one(FieldInterface&
       "front node = %ld max_j = %6.4e j = %6.4e (%6.4e) g/j = %4.3f step work of fracture = %2.1g",
       mit->first,max_j,mit->second,fraction,g_j,step_work_of_fracture
     ); CHKERRQ(ierr);
+    //cout << endl;
+    //cout << fraction <<  " " << (fraction > fraction_treshold) << " " << (mit!=max_mit) << " " << max_j << " " << max_mit->second <<  endl;
+    //cout << endl;
     bool freez_or_not_to_freez;
     if( (fraction > fraction_treshold) && (mit!=max_mit) ) {
       freez_or_not_to_freez = true;
