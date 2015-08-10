@@ -29,7 +29,7 @@ subtract volume 1 10 11 12 from volume 5
  
 #color Volume 5 pink 
  
-brick x 0.018 y 0.03 z 0.04 
+brick x 0.018 y 0.03 z 0.04
 webcut volume 13  with plane vertex 150  vertex 151  vertex 147  
 delete volume 14 
 move Vertex 153  location vertex 138  include_merged  
@@ -77,6 +77,7 @@ Sideset 10200 surface 169 170 165 119
 Sideset 102 surface  149 136  remove 
 Sideset 10201 surface 149 136 
   
+Sideset 102 surface  113 remove
 Sideset 200 surface 113 
 Sideset 201 curve 231 
  
@@ -96,6 +97,7 @@ volume 18 15  size auto factor 4
 volume 20 sizing function type skeleton scale 15 time_accuracy_level 1 
 volume 20 sizing function type skeleton 
 mesh volume all 
+
 
 
 
