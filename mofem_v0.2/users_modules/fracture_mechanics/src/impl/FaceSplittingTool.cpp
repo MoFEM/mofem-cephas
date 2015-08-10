@@ -905,24 +905,39 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(vector<string> &switche
       ); CHKERR_PETSC(rval);
       corners_nodes = intersect(to_remove,corners_nodes);
 
+      // get nodes on crack front
+      Range crack_edges;
+      ierr = mField.get_cubit_msId_entities_by_dimension(
+        201,SIDESET,1,crack_edges,true
+      ); CHKERRQ(ierr);
+      Range crack_edges_nodes;
+      rval = skin.find_skin(0,crack_edges,false,crack_edges_nodes); CHKERR(rval);
+      // get edges from skin of crack front
+      Range crack_edges_nodes_edges;
+      rval = mField.get_moab().get_adjacencies(
+        crack_edges_nodes,1,true,crack_edges_nodes_edges,Interface::UNION
+      ); CHKERR_PETSC(rval);
+      crack_edges_nodes_edges = intersect(crack_edges_nodes_edges,mesh_level_edges);
+
+      {
+        Range corners_nodes_edges;
+        rval = mField.get_moab().get_adjacencies(
+          corners_nodes,1,true,corners_nodes_edges,Interface::UNION
+        ); CHKERR_PETSC(rval);
+        // edge has to be connected to crack front skin
+        corners_nodes_edges = intersect(corners_nodes_edges,crack_edges_nodes_edges);
+        // edge has to be on the corner
+        corners_nodes_edges = intersect(corners_nodes_edges,corners_edges);
+        Range corners_nodes_edges_nodes;
+        rval = mField.get_moab().get_connectivity(
+          corners_nodes_edges,corners_nodes_edges_nodes,true
+        ); CHKERR_PETSC(rval);
+        corners_nodes = intersect(corners_nodes,corners_nodes_edges_nodes);
+      }
+
       bool node_merged = false;
       if(!corners_nodes.empty()) {
 
-        // get nodes on crack front
-        Range crack_edges;
-        ierr = mField.get_cubit_msId_entities_by_dimension(
-          201,SIDESET,1,crack_edges,true
-        ); CHKERRQ(ierr);
-
-        Range crack_edges_nodes;
-        rval = skin.find_skin(0,crack_edges,false,crack_edges_nodes); CHKERR(rval);
-
-        // get edges from side of skin of crack front
-        Range crack_edges_nodes_edges;
-        rval = mField.get_moab().get_adjacencies(
-          crack_edges_nodes,1,true,crack_edges_nodes_edges,Interface::UNION
-        ); CHKERR_PETSC(rval);
-        crack_edges_nodes_edges = intersect(crack_edges_nodes_edges,mesh_level_edges);
 
         map<EntityHandle,EntityHandle> map_nodes_to_merge;
         for(
