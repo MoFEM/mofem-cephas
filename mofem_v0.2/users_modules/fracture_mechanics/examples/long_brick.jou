@@ -29,7 +29,7 @@ subtract volume 1 10 11 12 from volume 5
  
 #color Volume 5 pink 
  
-brick x 0.018 y 0.02 z 0.03 
+brick x 0.018 y 0.03 z 0.04 
 webcut volume 13  with plane vertex 150  vertex 151  vertex 147  
 delete volume 14 
 move Vertex 153  location vertex 138  include_merged  
