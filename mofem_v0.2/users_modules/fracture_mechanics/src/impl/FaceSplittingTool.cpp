@@ -803,7 +803,7 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(vector<string> &switche
     EntityHandle node_to_merge = 0;
     EntityHandle father = 0;
     ave_l /= lengths.size();
-    if(lengths[min_edge]<0.25*ave_l) {
+    if(lengths[min_edge]<0.4*ave_l) {
       int num_nodes;
       const EntityHandle* conn;
       rval = mField.get_moab().get_connectivity(min_edge,conn,num_nodes,true); CHKERR_PETSC(rval);
