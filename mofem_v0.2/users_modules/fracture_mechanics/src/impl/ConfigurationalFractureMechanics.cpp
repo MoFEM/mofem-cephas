@@ -2669,7 +2669,11 @@ PetscErrorCode ConfigurationalFractureMechanics::fix_all_but_one(FieldInterface&
     fix_nodes.merge(subtract(crack_front_nodes,nodes_in_set));
     vector<int> fix_nodes_vec(fix_nodes.size(),1);
     rval = m_field.get_moab().tag_set_data(th_freez,fix_nodes,&fix_nodes_vec[0]); CHKERR_PETSC(rval);
-    ierr = PetscPrintf(PETSC_COMM_WORLD,"final number of fixed nodes %u\n",fix_nodes.size());
+    ierr = PetscPrintf(
+      PETSC_COMM_WORLD,
+      "final number of fixed nodes %u out of %u\n",
+      fix_nodes.size(),crack_front_nodes.size()
+    );
   }
 
   ierr = PetscPrintf(PETSC_COMM_WORLD,"\n");
