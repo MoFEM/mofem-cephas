@@ -941,6 +941,8 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(vector<string> &switche
       bool node_merged = false;
       if(!corners_nodes.empty()) {
 
+        PetscBool remove_and_extend = PETSC_FALSE;
+        ierr = PetscOptionsGetBool(PETSC_NULL,"-my_remove_and_extend",&remove_and_extend,PETSC_NULL); CHKERRQ(ierr);
 
         map<EntityHandle,EntityHandle> map_nodes_to_merge;
         for(
@@ -967,7 +969,7 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(vector<string> &switche
           meshRefineBitLevels.push_back(last_ref_bit);
           BitRefLevel last_ref = BitRefLevel().set(meshRefineBitLevels.back());
           to_remove.erase(mit->first);
-          if(sideset_corners_nodes.find(mit->first)!=sideset_corners_nodes.end()) {
+          if(sideset_corners_nodes.find(mit->first)!=sideset_corners_nodes.end() && !remove_and_extend ) {
             ierr = node_merger_iface->mergeNodes(
               mit->first,mit->second,last_ref,bit_mesh
             ); CHKERRQ(ierr);
