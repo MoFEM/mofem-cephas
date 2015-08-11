@@ -859,8 +859,11 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(vector<string> &switche
   {
     ierr = crackFrontEdgeLengths(bit_mesh,to_split,to_remove,verb); CHKERRQ(ierr);
 
+    PetscBool remove_at_edge = PETSC_TRUE;
+    ierr = PetscOptionsGetBool(PETSC_NULL,"-my_remove_at_edge",&remove_at_edge,PETSC_NULL); CHKERRQ(ierr);
+
     // remove nodes on skin
-    {
+    if(remove_at_edge) {
 
       Range mesh_level_edges;
       ierr = mField.get_entities_by_type_and_ref_level(
