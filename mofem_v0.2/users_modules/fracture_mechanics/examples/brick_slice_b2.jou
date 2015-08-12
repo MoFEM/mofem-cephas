@@ -57,25 +57,23 @@ unite volume 2 1
 brick x 0.018 y 0.02 z 0.03
 webcut volume 6  with plane vertex 181  vertex 178  vertex 185 
 delete volume 7 
-brick x 0.018 y 0.005 z 0.1
-move Vertex 193  location vertex 180  include_merged
-unite volume 6 8
-move Vertex 192  location vertex 148  include_merged
+move Vertex 180  location vertex 148  include_merged
 chop volume 5  with volume 6
 imprint volume all  
 merge volume all  
 
 Sideset 100  curve all 
-Sideset 100 curve 170 169 151 150 223 222 198 193 217 220 221 216 199 224 219 218 171 149  remove 
+Sideset 100 curve 159 181 164 170 151 205 207 208 199 198 206 204 209 218 169 150 171 149 158 161 184  remove 
  
-Nodeset 101 vertex 1 108 109 2     
+Nodeset 101 vertex 153 152 100 99 108 1 2 109 
  
 Sideset 102 surface all 
-Sideset 102 surface  63 50 93 81 82 57 59 73 83  remove 
+Sideset 102 surface 57 73 59 50 93 82 81 83 63  remove 
 Sideset 10200 surface 59 73 57 
+Sideset 10201 surface 93
  
 Sideset 200  surface 83
-Sideset 201  curve 199 216  
+Sideset 201  curve 199 
  
 create Displacement  on surface 2  dof all fix 0   
 create force  on curve 142  force value 1 direction   -0.766 0.643 0   
@@ -89,10 +87,12 @@ block 1 attribute index 2 0.2
     
 volume all scheme Tetmesh      
 volume 3 2  size auto factor 8  
-volume 9 10  size auto factor 5 
+volume 9 8 size auto factor 5
 
 mesh volume all   
     
+
+
 
 
 

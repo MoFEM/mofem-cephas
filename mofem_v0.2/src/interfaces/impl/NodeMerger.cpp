@@ -1,6 +1,6 @@
 /** \file NodeMerger.cpp
- * \brief Interface for merging nodes 
- * 
+ * \brief Interface for merging nodes
+ *
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or (at your
@@ -16,10 +16,10 @@
 */
 
 #include <petscsys.h>
-#include <petscvec.h> 
-#include <petscmat.h> 
-#include <petscsnes.h> 
-#include <petscts.h> 
+#include <petscvec.h>
+#include <petscmat.h>
+#include <petscsnes.h>
+#include <petscts.h>
 
 #include <moab/ParallelComm.hpp>
 #include <boost/ptr_container/ptr_map.hpp>
@@ -66,7 +66,9 @@ PetscErrorCode NodeMergerInterface::mergeNodes(EntityHandle father,EntityHandle 
   common_edge = intersect(father_edges,mother_edges);
   if(tets_ptr != NULL) {
     Range tets_edges;
-    rval = m_field.get_moab().get_adjacencies(*tets_ptr,1,false,tets_edges,Interface::UNION); CHKERR_PETSC(rval);
+    rval = m_field.get_moab().get_adjacencies(
+      *tets_ptr,1,false,tets_edges,Interface::UNION
+    ); CHKERR_PETSC(rval);
     common_edge = intersect(common_edge,tets_edges);
     father_edges = intersect(father_edges,tets_edges);
     mother_edges = intersect(mother_edges,tets_edges);
@@ -89,17 +91,19 @@ PetscErrorCode NodeMergerInterface::mergeNodes(EntityHandle father,EntityHandle 
   }
 
   Range created_tets;
-  for(Range::iterator tit = mother_tets.begin();
-    tit!=mother_tets.end();tit++) {
-    const EntityHandle* conn; 
-    int num_nodes; 
+  for(
+    Range::iterator tit = mother_tets.begin();
+    tit!=mother_tets.end();tit++
+  ) {
+    const EntityHandle* conn;
+    int num_nodes;
     rval = m_field.get_moab().get_connectivity(*tit,conn,num_nodes,true); CHKERR_PETSC(rval);
     EntityHandle new_conn[4];
     for(int nn = 0;nn<4;nn++) {
       if(conn[nn] == mother) {
-	new_conn[nn] = father;
+        new_conn[nn] = father;
       } else {
-	new_conn[nn] = conn[nn];
+        new_conn[nn] = conn[nn];
       }
     }
     EntityHandle tet;
@@ -112,21 +116,21 @@ PetscErrorCode NodeMergerInterface::mergeNodes(EntityHandle father,EntityHandle 
   rval = m_field.get_moab().get_adjacencies(father_tets,1,false,adj_ents,Interface::UNION); CHKERR_PETSC(rval);
   rval = m_field.get_moab().get_adjacencies(father_tets,2,false,adj_ents,Interface::UNION); CHKERR_PETSC(rval);
   for(Range::iterator eit = adj_ents.begin();eit!=adj_ents.end();eit++) {
-    const EntityHandle* conn; 
-    int num_nodes; 
+    const EntityHandle* conn;
+    int num_nodes;
     rval = m_field.get_moab().get_connectivity(*eit,conn,num_nodes,true); CHKERR_PETSC(rval);
     EntityHandle new_conn[num_nodes];
     int nb_new_node = 0;
     int nn = 0;
     for(;nn<num_nodes;nn++) {
       if(conn[nn] == mother) {
-	nb_new_node = 0;
-	break;
+        nb_new_node = 0;
+        break;
       } else if(conn[nn] == father) {
-	new_conn[nn] = mother;
-	nb_new_node++;
+        new_conn[nn] = mother;
+        nb_new_node++;
       } else {
-	new_conn[nn] = conn[nn];
+        new_conn[nn] = conn[nn];
       }
     }
     if(nb_new_node > 0) {
@@ -135,7 +139,7 @@ PetscErrorCode NodeMergerInterface::mergeNodes(EntityHandle father,EntityHandle 
       rval = m_field.get_moab().get_adjacencies(new_conn,num_nodes,dim,true,new_ent); CHKERR_PETSC(rval);
       if(new_ent.empty()) continue;
       if(new_ent.size()!=1) {
-	SETERRQ1(PETSC_COMM_SELF,1,"data inconsistency %u",new_ent.size());
+        SETERRQ1(PETSC_COMM_SELF,1,"data inconsistency %u",new_ent.size());
       }
       rval = m_field.get_moab().tag_set_data(cOre.get_th_RefParentHandle(),&*eit,1,&*new_ent.begin()); CHKERR_PETSC(rval);
     }
@@ -146,21 +150,21 @@ PetscErrorCode NodeMergerInterface::mergeNodes(EntityHandle father,EntityHandle 
   rval = m_field.get_moab().get_adjacencies(edge_tets,1,false,adj_ents,Interface::UNION); CHKERR_PETSC(rval);
   rval = m_field.get_moab().get_adjacencies(edge_tets,2,false,adj_ents,Interface::UNION); CHKERR_PETSC(rval);
   for(Range::iterator eit = adj_ents.begin();eit!=adj_ents.end();eit++) {
-    const EntityHandle* conn; 
-    int num_nodes; 
+    const EntityHandle* conn;
+    int num_nodes;
     rval = m_field.get_moab().get_connectivity(*eit,conn,num_nodes,true); CHKERR_PETSC(rval);
     EntityHandle new_conn[num_nodes];
     int nb_new_node = 0;
     int nn = 0;
     for(;nn<num_nodes;nn++) {
       if(conn[nn] == father) {
-	nb_new_node = 0;
-	break;
+        nb_new_node = 0;
+        break;
       } else if(conn[nn] == mother) {
-	new_conn[nn] = father;
-	nb_new_node++;
+        new_conn[nn] = father;
+        nb_new_node++;
       } else {
-	new_conn[nn] = conn[nn];
+        new_conn[nn] = conn[nn];
       }
     }
     if(nb_new_node > 0) {
@@ -169,7 +173,7 @@ PetscErrorCode NodeMergerInterface::mergeNodes(EntityHandle father,EntityHandle 
       rval = m_field.get_moab().get_adjacencies(new_conn,num_nodes,dim,true,new_ent); CHKERR_PETSC(rval);
       if(new_ent.empty()) continue;
       if(new_ent.size()!=1) {
-	SETERRQ1(PETSC_COMM_SELF,1,"data inconsistency %u",new_ent.size());
+        SETERRQ1(PETSC_COMM_SELF,1,"data inconsistency %u",new_ent.size());
       }
       rval = m_field.get_moab().tag_set_data(cOre.get_th_RefParentHandle(),&*new_ent.begin(),1,&*eit); CHKERR_PETSC(rval);
     }
@@ -200,4 +204,3 @@ PetscErrorCode NodeMergerInterface::mergeNodes(EntityHandle father,EntityHandle 
 }
 
 }
-

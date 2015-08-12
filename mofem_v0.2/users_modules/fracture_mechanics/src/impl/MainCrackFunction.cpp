@@ -338,6 +338,29 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
 
   ParallelComm* pcomm = ParallelComm::get_pcomm(&m_field.get_moab(),MYPCOMM_INDEX);
 
+  /*{  //quick dirty fix
+
+    Skinner skin(&m_field.get_moab());
+    for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,SIDESET,it)) {
+      int msId = it->get_msId();
+      if(msId != 10200) continue;
+      EntityHandle meshset = it->get_meshset();
+      Range surfaces;
+      rval = m_field.get_moab().get_entities_by_type(meshset,MBTRI,surfaces,true); CHKERR_PETSC(rval);
+      Range edges;
+      rval = skin.find_skin(0,surfaces,false,edges); CHKERR_PETSC(rval);
+      Range edges100;
+      ierr = m_field.get_cubit_msId_entities_by_dimension(
+        100,SIDESET,1,edges100,true
+      ); CHKERRQ(ierr);
+      edges100 = subtract(edges100,edges);
+      ierr = m_field.get_cubit_msId_meshset(100,SIDESET,meshset); CHKERRQ(ierr);
+      rval = m_field.get_moab().clear_meshset(&meshset,1); CHKERR_PETSC(rval);
+      ierr = m_field.get_moab().add_entities(meshset,edges100); CHKERRQ(ierr);
+    }
+
+  }*/
+
   //ref meshset ref level 0
   Tag th_my_ref_level;
   rval = m_field.get_moab().tag_get_handle("_MY_REFINMENT_LEVEL",th_my_ref_level); CHKERR_PETSC(rval);
@@ -672,38 +695,54 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
 
     #ifdef WITH_TETGEN
 
-    {
+
+    PetscBool flg_do_split = PETSC_TRUE;
+    ierr = PetscOptionsGetBool(
+      PETSC_NULL,"-my_do_split",&flg_do_split,PETSC_NULL
+    ); CHKERRQ(ierr);
+    PetscBool flg_do_tetgen = PETSC_TRUE;
+    ierr = PetscOptionsGetBool(
+      PETSC_NULL,"-my_do_tetgen",&flg_do_tetgen,PETSC_NULL
+    ); CHKERRQ(ierr);
+
+    bool split_is_done = false;
+    bool do_tetgen = true;
+    if(flg_do_split) {
       Range edges_to_cat;
-      ierr = face_splitting_tools.getCornerEdges(edges_to_cat,0); CHKERRQ(ierr);
+      ierr = face_splitting_tools.getCornerEdges(edges_to_cat,10); CHKERRQ(ierr);
       if(edges_to_cat.size()>0) {
         Range new_nodes;
-        ierr = face_splitting_tools.propagateBySplit(new_nodes,edges_to_cat,0); CHKERRQ(ierr);
-        ierr = face_splitting_tools.conerProblem(new_nodes,0); CHKERRQ(ierr);
+        ierr = face_splitting_tools.propagateBySplit(new_nodes,edges_to_cat,10); CHKERRQ(ierr);
+        ierr = face_splitting_tools.cornerProblem(new_nodes,10); CHKERRQ(ierr);
+        split_is_done = true;
+        //if(!new_nodes.empty()) do_tetgen = false;
       }
     }
 
-    {
-      face_splitting_tools.moabTetGenMap.clear();
-      face_splitting_tools.tetGenMoabMap.clear();
-      face_splitting_tools.tetGenData.clear();
-      vector<string> switches1;
-      if(pcomm->rank() == 0) {
-        switches1.push_back("rp178sqRS0JVV");
-        ierr = face_splitting_tools.rebuildMeshWithTetGen(switches1,0); CHKERRQ(ierr);
-      } else {
-        switches1.push_back("rp178sqRS0JQ");
-        ierr = face_splitting_tools.rebuildMeshWithTetGen(switches1,0); CHKERRQ(ierr);
+    if(do_tetgen) {
+      if(flg_do_tetgen) {
+        face_splitting_tools.moabTetGenMap.clear();
+        face_splitting_tools.tetGenMoabMap.clear();
+        face_splitting_tools.tetGenData.clear();
+        vector<string> switches1;
+        if(pcomm->rank() == 0) {
+          switches1.push_back("rp170sqRS0JVV");
+          ierr = face_splitting_tools.rebuildMeshWithTetGen(switches1,0); CHKERRQ(ierr);
+        } else {
+          switches1.push_back("rp170sqRS0JQ");
+          ierr = face_splitting_tools.rebuildMeshWithTetGen(switches1,0); CHKERRQ(ierr);
+        }
       }
     }
 
     bit_level0 = BitRefLevel().set(face_splitting_tools.meshIntefaceBitLevels.back());
-    //retart analysis
-    ierr = main_arc_length_restart(m_field,conf_prob); CHKERRQ(ierr);
     //project and set coords
     conf_prob.material_FirelWall->operator[](ConfigurationalFractureMechanics::FW_set_spatial_positions) = 0;
     conf_prob.material_FirelWall->operator[](ConfigurationalFractureMechanics::FW_set_material_positions) = 0;
-    ierr = conf_prob.set_spatial_positions(m_field); CHKERRQ(ierr);
+    //retart analysis
+    ierr = main_arc_length_restart(m_field,conf_prob); CHKERRQ(ierr);
     ierr = conf_prob.set_material_positions(m_field); CHKERRQ(ierr);
+    ierr = conf_prob.set_spatial_positions(m_field); CHKERRQ(ierr);
     //solve spatial problem
     ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);
     ierr = SNESSetFromOptions(snes); CHKERRQ(ierr);
@@ -718,6 +757,9 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
     ierr = conf_prob.calculate_griffith_g(m_field,"COUPLED_PROBLEM"); CHKERRQ(ierr);
     ierr = conf_prob.delete_surface_projection_data(m_field); CHKERRQ(ierr);
     ierr = conf_prob.delete_front_projection_data(m_field); CHKERRQ(ierr);
+    if(split_is_done) {
+      ierr = main_rescale_load_factor(m_field,conf_prob); CHKERRQ(ierr);
+    }
     #endif
 
 

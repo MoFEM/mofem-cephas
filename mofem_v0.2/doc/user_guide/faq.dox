@@ -4,7 +4,7 @@
 
 In you library directory execute
 \code
-$ make doc
+make doc
 \endcode
 This create directory \em html. Open file \em html/index.html to see results in your browser.
 
@@ -45,20 +45,20 @@ mpirun -np 4 ./elasticity \
 
 MoFEM update on Live USB stick:
 \code
-$ mofem_update.sh
-$ mofem_build.sh
+mofem_update.sh
+mofem_build.sh
 \endcode
 
 Following command run test verifying updated code:
 \code
-$ mofem_fast_check.sh
+mofem_fast_check.sh
 \endcode
 
 If you run MoFEM update at University of Glasgow behind proxy server, set proxy
 servers as follows:
 \code
-$ export http_proxy=http://wwwcache.gla.ac.uk:8080
-$ export https_proxy=http://wwwcache.gla.ac.uk:8080
+export http_proxy=http://wwwcache.gla.ac.uk:8080
+export https_proxy=http://wwwcache.gla.ac.uk:8080
 \endcode
 
 \section ctest How to run ctest?
@@ -75,8 +75,8 @@ If you run test behind proxy server you can have to set \em http_proxy and \em
 http_proxy environmental variables. For example if you run mofem at Glasgow
 University, please do:
 \code
-$ export http_proxy=http://wwwcache.gla.ac.uk:8080
-$ export https_proxy=http://wwwcache.gla.ac.uk:8080
+export http_proxy=http://wwwcache.gla.ac.uk:8080
+export https_proxy=http://wwwcache.gla.ac.uk:8080
 \endcode
 
 You can as well run ctest directly by simply executing command line:

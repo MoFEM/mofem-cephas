@@ -83,7 +83,9 @@ struct FaceSplittingTools {
   PetscErrorCode roundCornersFillGaps_in_Cubit200(int nb,int verb = 0);
 
   //calculate length of edges adjacent to crack front
-  PetscErrorCode crackFrontEdgeLengths(BitRefLevel bit_mesh,Range &to_split,Range &to_remove,int verb = 0);
+  PetscErrorCode crackFrontEdgeLengths(
+    BitRefLevel bit_mesh,Range &to_split,Range &to_remove,int verb = 0
+  );
 
   //move front nodes
   PetscErrorCode moveFrontNodesByVec(double v[]);
@@ -98,14 +100,19 @@ struct FaceSplittingTools {
 
   boost::ptr_vector<tetgenio> tetGenData;
   PetscErrorCode rebuildMeshWithTetGen(
-    vector<string> &switches,const int verb = -1);
+    vector<string> &switches,const int verb = -1
+  );
 
 
   #endif
 
+  map<EntityHandle,double> signedDistanceMap;
+  map<EntityHandle,vector<double> > nodesToMoveMap;
+  map<EntityHandle,vector<double> > normalNodesMap;
+  map<EntityHandle,vector<double> > edgesToSplitMap;
   PetscErrorCode getCornerEdges(Range &edges_to_cat,int verb = 0);
   PetscErrorCode propagateBySplit(Range &new_nodes,Range &edges_to_cat,int verb = 0);
-  PetscErrorCode conerProblem(Range &new_nodes,int verb = 0);
+  PetscErrorCode cornerProblem(Range &new_nodes,int verb = 0);
 
 };
 

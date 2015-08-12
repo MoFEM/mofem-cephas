@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-/** \brief Cohesive element implemnentation
+/** \brief Cohesive element implementation
 
   \bug Interface element not working with HO geometry.
 */
@@ -45,7 +45,14 @@ struct CohesiveInterfaceElement {
   MyPrism& getFeLhs() { return feLhs; }
   MyPrism& getFeHistory() { return feHistory; }
 
-  /** \brief constritutive (physical) equation for interface
+  /** \brief Constitutive (physical) equation for interface
+
+    This is linear degradation model. Material parameters are: strength
+    \f$f_t\f$, interface fracture energy \f$G_f\f$, elastic material stiffness
+    \f$E\f$. Parameter \f$\beta\f$ controls how interface opening is calculated.
+
+    Model parameter is interface penalty thickness \f$h\f$.
+
     */
   struct PhysicalEquation {
 
@@ -59,46 +66,76 @@ struct CohesiveInterfaceElement {
     Tag thKappa,thDamagedPrism;
 
     double E0,g0,kappa1;
+
+    /** \brief Initialize history variable data
+
+    Create tag on the prism/interface to store damage history variable
+
+    */
     PetscErrorCode iNitailise(const FEMethod *fe_method) {
       PetscFunctionBegin;
       ErrorCode rval;
       double def_damaged = 0;
       rval = mField.get_moab().tag_get_handle(
-	"DAMAGED_PRISM",1,MB_TYPE_INTEGER,thDamagedPrism,MB_TAG_CREAT|MB_TAG_SPARSE,&def_damaged); CHKERR_THROW(rval);
+        "DAMAGED_PRISM",1,MB_TYPE_INTEGER,thDamagedPrism,MB_TAG_CREAT|MB_TAG_SPARSE,&def_damaged
+      ); CHKERR_THROW(rval);
       const int def_len = 0;
       rval = mField.get_moab().tag_get_handle("_KAPPA",def_len,MB_TYPE_DOUBLE,
-	thKappa,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_VARLEN,NULL); CHKERR_PETSC(rval);
+      thKappa,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_VARLEN,NULL); CHKERR_PETSC(rval);
       E0 = youngModulus/h;
       g0 = ft/E0;
       kappa1 = 2*Gf/ft;
       PetscFunctionReturn(0);
     }
 
+    /** \brief Calculate gap opening
+
+    \f[
+    g = \sqrt{ g_n^2 + \beta(g_{s1}^2 + g_{s2}^2)}
+    \f]
+
+    */
     double calcG(int gg,ublas::matrix<double> gap_loc) {
       return sqrt(pow(gap_loc(gg,0),2)+beta*(pow(gap_loc(gg,1),2)+pow(gap_loc(gg,2),2)));
     }
 
     double *kappaPtr;
     int kappaSize;
+
+    /** \brief Get pointer from the mesh to histoy variables \f$\kappa\f$
+    */
     PetscErrorCode getKappa(int nb_gauss_pts,const FEMethod *fe_method) {
       PetscFunctionBegin;
       EntityHandle ent = fe_method->fePtr->get_ent();
       ErrorCode rval;
       rval = mField.get_moab().tag_get_by_ptr(thKappa,&ent,1,(const void **)&kappaPtr,&kappaSize);
       if(rval != MB_SUCCESS || kappaSize != nb_gauss_pts) {
-	ublas::vector<double> kappa;
-	kappa.resize(nb_gauss_pts);
-	kappa.clear();
-	int tag_size[1];
-	tag_size[0] = nb_gauss_pts;
-	void const* tag_data[] = { &kappa[0] };
-	rval = mField.get_moab().tag_set_by_ptr(thKappa,&ent,1,tag_data,tag_size);  CHKERR_PETSC(rval);
-	rval = mField.get_moab().tag_get_by_ptr(thKappa,&ent,1,(const void **)&kappaPtr,&kappaSize);  CHKERR_PETSC(rval);
+        ublas::vector<double> kappa;
+        kappa.resize(nb_gauss_pts);
+        kappa.clear();
+        int tag_size[1];
+        tag_size[0] = nb_gauss_pts;
+        void const* tag_data[] = { &kappa[0] };
+        rval = mField.get_moab().tag_set_by_ptr(thKappa,&ent,1,tag_data,tag_size);  CHKERR_PETSC(rval);
+        rval = mField.get_moab().tag_get_by_ptr(thKappa,&ent,1,(const void **)&kappaPtr,&kappaSize);  CHKERR_PETSC(rval);
       }
       PetscFunctionReturn(0);
     }
 
     ublas::matrix<double> Dglob,Dloc;
+
+    /** \brief Calculate stiffness material matrix
+
+    \f[
+    \mathbf{D}_\textrm{loc} = (1-\Omega) \mathbf{I} E_0
+    \f]
+    where \f$E_0\f$ is initial interface penalty stiffness
+
+    \f[
+    \mathbf{D}_\textrm{glob} = \mathbf{R}^\textrm{T} \mathbf{D}_\textrm{loc}\mathbf{R}
+    \f]
+
+    */
     PetscErrorCode calcDglob(const double omega,ublas::matrix<double> &R) {
       PetscFunctionBegin;
       Dglob.resize(3,3);
@@ -113,20 +150,29 @@ struct CohesiveInterfaceElement {
       PetscFunctionReturn(0);
     }
 
+    /** \brief Calculate damage
+
+    \f[
+    \Omega = \frac{1}{2} \frac{(2 G_f E_0+f_t^2)\kappa}{(ft+E_0 \kappa)G_f}
+    \f]
+
+    */
     PetscErrorCode calcOmega(const double kappa,double& omega) {
       PetscFunctionBegin;
       omega = 0;
       if(kappa>=kappa1) {
-	omega = 1;
-	PetscFunctionReturn(0);
+        omega = 1;
+        PetscFunctionReturn(0);
       } else if(kappa>0) {
-	double a = (2.0*Gf*E0+ft*ft)*kappa;
-	double b = (ft+E0*kappa)*Gf;
-	omega = 0.5*a/b;
+        double a = (2.0*Gf*E0+ft*ft)*kappa;
+        double b = (ft+E0*kappa)*Gf;
+        omega = 0.5*a/b;
       }
       PetscFunctionReturn(0);
     }
 
+    /** \brief Calculate tangent material stiffness
+    */
     PetscErrorCode calcTangetDglob(const double omega,double g,const ublas::vector<double>& gap_loc,ublas::matrix<double> &R) {
       PetscFunctionBegin;
       Dglob.resize(3,3);
@@ -150,18 +196,26 @@ struct CohesiveInterfaceElement {
       PetscFunctionReturn(0);
     }
 
+    /** \brief Calculate tractions
+
+    \f[
+    \mathbf{t} = \mathbf{D}_\textrm{glob}\mathbf{g}
+    \f]
+
+    */
     virtual PetscErrorCode calculateTraction(
       ublas::vector<double> &traction,
       int gg,CommonData &common_data,
-      const FEMethod *fe_method) {
+      const FEMethod *fe_method
+    ) {
       PetscFunctionBegin;
       PetscErrorCode ierr;
       if(!isInitialised) {
-	ierr = iNitailise(fe_method); CHKERRQ(ierr);
-	isInitialised = true;
+        ierr = iNitailise(fe_method); CHKERRQ(ierr);
+        isInitialised = true;
       }
       if(gg==0) {
-	ierr = getKappa(common_data.gapGlob.size1(),fe_method); CHKERRQ(ierr);
+        ierr = getKappa(common_data.gapGlob.size1(),fe_method); CHKERRQ(ierr);
       }
       double g = calcG(gg,common_data.gapLoc);
       double kappa = fmax(g-g0,kappaPtr[gg]);
@@ -175,69 +229,75 @@ struct CohesiveInterfaceElement {
       PetscFunctionReturn(0);
     }
 
+    /** \brief Calculate tangent stiffness
+    */
     virtual PetscErrorCode calculateTangentStiffeness(
       ublas::matrix<double> &tangent_matrix,
       int gg,CommonData &common_data,
-      const FEMethod *fe_method) {
+      const FEMethod *fe_method
+    ) {
       PetscFunctionBegin;
       PetscErrorCode ierr;
       try {
-      if(!isInitialised) {
-	ierr = iNitailise(fe_method); CHKERRQ(ierr);
-	isInitialised = true;
-      }
-      if(gg==0) {
-	ierr = getKappa(common_data.gapGlob.size1(),fe_method); CHKERRQ(ierr);
-      }
-      double g = calcG(gg,common_data.gapLoc);
-      double kappa = fmax(g-g0,kappaPtr[gg]);
-      double omega = 0;
-      ierr = calcOmega(kappa,omega); CHKERRQ(ierr);
-      //cerr << gg << " " << omega << endl;
-      int iter;
-      ierr = SNESGetIterationNumber(fe_method->snes,&iter); CHKERRQ(ierr);
-      if((kappa <= kappaPtr[gg])||(kappa>=kappa1)||(iter <= 1)) {
-	ierr = calcDglob(omega,common_data.R[gg]); CHKERRQ(ierr);
-      } else {
-	ublas::matrix_row<ublas::matrix<double> > g_loc(common_data.gapLoc,gg);
-	ierr = calcTangetDglob(omega,g,g_loc,common_data.R[gg]);
-      }
-      tangent_matrix.resize(3,3);
-      noalias(tangent_matrix) = Dglob;
-      //cerr << "t " << tangent_matrix << endl;
+        if(!isInitialised) {
+          ierr = iNitailise(fe_method); CHKERRQ(ierr);
+          isInitialised = true;
+        }
+        if(gg==0) {
+          ierr = getKappa(common_data.gapGlob.size1(),fe_method); CHKERRQ(ierr);
+        }
+        double g = calcG(gg,common_data.gapLoc);
+        double kappa = fmax(g-g0,kappaPtr[gg]);
+        double omega = 0;
+        ierr = calcOmega(kappa,omega); CHKERRQ(ierr);
+        //cerr << gg << " " << omega << endl;
+        int iter;
+        ierr = SNESGetIterationNumber(fe_method->snes,&iter); CHKERRQ(ierr);
+        if((kappa <= kappaPtr[gg])||(kappa>=kappa1)||(iter <= 1)) {
+          ierr = calcDglob(omega,common_data.R[gg]); CHKERRQ(ierr);
+        } else {
+          ublas::matrix_row<ublas::matrix<double> > g_loc(common_data.gapLoc,gg);
+          ierr = calcTangetDglob(omega,g,g_loc,common_data.R[gg]);
+        }
+        tangent_matrix.resize(3,3);
+        noalias(tangent_matrix) = Dglob;
+        //cerr << "t " << tangent_matrix << endl;
       } catch (const std::exception& ex) {
-	ostringstream ss;
-	ss << "throw in method: " << ex.what() << endl;
-	SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+        ostringstream ss;
+        ss << "throw in method: " << ex.what() << endl;
+        SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
       PetscFunctionReturn(0);
     }
 
+    /** \brief Update history variables when converged
+    */
     virtual PetscErrorCode updateHistory(
-      CommonData &common_data,const FEMethod *fe_method) {
+      CommonData &common_data,const FEMethod *fe_method
+    ) {
       PetscFunctionBegin;
       ErrorCode rval;
       PetscErrorCode ierr;
       if(!isInitialised) {
-	ierr = iNitailise(fe_method); CHKERRQ(ierr);
-	isInitialised = true;
+        ierr = iNitailise(fe_method); CHKERRQ(ierr);
+        isInitialised = true;
       }
       ierr = getKappa(common_data.gapGlob.size1(),fe_method); CHKERRQ(ierr);
       bool all_gauss_pts_damaged = true;
       for(unsigned int gg = 0;gg<common_data.gapGlob.size1();gg++) {
-	double omega = 0;
-	double g = calcG(gg,common_data.gapLoc);
-	double kappa = fmax(g-g0,kappaPtr[gg]);
-	kappaPtr[gg] = kappa;
-	ierr = calcOmega(kappa,omega); CHKERRQ(ierr);
-	//if(omega < 1.) {
-	  all_gauss_pts_damaged = false;
-	//}
+        double omega = 0;
+        double g = calcG(gg,common_data.gapLoc);
+        double kappa = fmax(g-g0,kappaPtr[gg]);
+        kappaPtr[gg] = kappa;
+        ierr = calcOmega(kappa,omega); CHKERRQ(ierr);
+        //if(omega < 1.) {
+        all_gauss_pts_damaged = false;
+        //}
       }
       if(all_gauss_pts_damaged) {
-	EntityHandle ent = fe_method->fePtr->get_ent();
-	int set_prism_as_demaged = 1;
-	rval = mField.get_moab().tag_set_data(thDamagedPrism,&ent,1,&set_prism_as_demaged); CHKERR_PETSC(rval);
+        EntityHandle ent = fe_method->fePtr->get_ent();
+        int set_prism_as_demaged = 1;
+        rval = mField.get_moab().tag_set_data(thDamagedPrism,&ent,1,&set_prism_as_demaged); CHKERR_PETSC(rval);
       }
       PetscFunctionReturn(0);
     }
@@ -280,6 +340,8 @@ struct CohesiveInterfaceElement {
 
   };
 
+  /** \brief Operator calculate gap, normal vector and rotation matrix
+  */
   struct OpCalculateGapGlobal: public FlatPrismElementForcesAndSurcesCore::UserDataOperator {
 
     CommonData &commonData;
@@ -336,6 +398,8 @@ struct CohesiveInterfaceElement {
 
   };
 
+  /** \brief Operator calculate gap in local coordinate system
+  */
   struct OpCalculateGapLocal: public FlatPrismElementForcesAndSurcesCore::UserDataOperator {
 
     CommonData &commonData;
@@ -365,6 +429,8 @@ struct CohesiveInterfaceElement {
 
   };
 
+  /** \brief Operator calculate right hand side vector
+  */
   struct OpRhs: public FlatPrismElementForcesAndSurcesCore::UserDataOperator {
 
     CommonData &commonData;
@@ -407,6 +473,8 @@ struct CohesiveInterfaceElement {
 
   };
 
+  /** \brief Operator calculate element stiffens matrix
+  */
   struct OpLhs: public FlatPrismElementForcesAndSurcesCore::UserDataOperator {
 
     CommonData &commonData;
@@ -475,6 +543,8 @@ struct CohesiveInterfaceElement {
 
   };
 
+  /** \brief Operator update history variables
+  */
   struct OpHistory: public FlatPrismElementForcesAndSurcesCore::UserDataOperator {
 
     CommonData &commonData;
@@ -496,6 +566,8 @@ struct CohesiveInterfaceElement {
 
   };
 
+  /** \brief Driver function settting all operators needed for interface element
+  */
   PetscErrorCode addOps(const string field_name,boost::ptr_vector<CohesiveInterfaceElement::PhysicalEquation> &interfaces) {
     PetscFunctionBegin;
 
@@ -512,7 +584,7 @@ struct CohesiveInterfaceElement {
     feHistory.getOpPtrVector().push_back(new OpCalculateGapGlobal(field_name,commonData));
     feHistory.getOpPtrVector().push_back(new OpCalculateGapLocal(field_name,commonData));
 
-    //add equations/data for physical inerfaces
+    //add equations/data for physical interfaces
     boost::ptr_vector<CohesiveInterfaceElement::PhysicalEquation>::iterator pit;
     for(pit = interfaces.begin();pit!=interfaces.end();pit++) {
       feRhs.getOpPtrVector().push_back(new OpRhs(field_name,commonData,*pit));

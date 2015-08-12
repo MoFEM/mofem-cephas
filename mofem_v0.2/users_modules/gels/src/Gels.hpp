@@ -248,15 +248,16 @@ struct Gel {
       PetscFunctionBegin;
       traceStressBeta = 0;
       for(int ii = 0;ii<3;ii++) {
-        traceStrainHat = stressBeta(ii,ii);
+        traceStressBeta = stressBeta(ii,ii);
       }
       strainHatFlux.resize(3,3,false);
-      double a = -(1.0/(2.0*dAta.gBetaHat));
+      double a = (1.0/(2.0*dAta.gBetaHat));
       noalias(strainHatFlux) = a*stressBeta;
       double b = a*(dAta.vBetaHat/(1.0+dAta.vBetaHat));
       for(int ii = 0;ii<3;ii++) {
         strainHatFlux(ii,ii) -= b*traceStressBeta;
       }
+      strainHatFlux *= -1;
       PetscFunctionReturn(0);
     }
 
@@ -274,7 +275,7 @@ struct Gel {
       stressBetaHat.resize(3,3,false);
       stressBetaHat.clear();
       for(int ii=0; ii<3; ii++){
-        stressBetaHat(ii,ii) = mU/dAta.oMega;
+        stressBetaHat(ii,ii) = -mU/dAta.oMega;
       }
       PetscFunctionReturn(0);
     }
@@ -2025,6 +2026,7 @@ struct Gel {
       if(!iNit) {
         ierr = postProc.generateReferenceElementMesh(); CHKERRQ(ierr);
         ierr = postProc.addFieldValuesPostProc(commonData.spatialPositionName); CHKERRQ(ierr);
+        ierr = postProc.addFieldValuesGradientPostProc(commonData.spatialPositionName); CHKERRQ(ierr);
         ierr = postProc.addFieldValuesPostProc(commonData.muName); CHKERRQ(ierr);
         ierr = postProc.addFieldValuesPostProc(commonData.strainHatName); CHKERRQ(ierr);
         iNit = true;

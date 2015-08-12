@@ -33,7 +33,7 @@ struct GriffithForceElement {
     B(PETSC_NULL),
     F(PETSC_NULL)
     {}
-    int getRule(int order) { return order-1; };
+    int getRule(int order) { return order; };
 
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
@@ -281,8 +281,8 @@ struct GriffithForceElement {
         PetscFunctionBegin;
 
         dElta = (currentArea-referenceArea)/currentArea;
-        dElta *= dElta*dElta;
-        dElta = -fmin(0,dElta);
+        dElta = -fmin(dElta,0.0);
+        //dElta *= dElta*dElta;
         dElta *= currentArea;
 
         NTN.resize(9,9,false);
@@ -603,7 +603,7 @@ struct GriffithForceElement {
 
   };
 
-    struct OpPenaltyRhs: public OpRhs {
+  struct OpPenaltyRhs: public OpRhs {
 
     OpPenaltyRhs(int tag,BlockData &block_data,CommonData &common_data):
     OpRhs(tag,block_data,common_data) {

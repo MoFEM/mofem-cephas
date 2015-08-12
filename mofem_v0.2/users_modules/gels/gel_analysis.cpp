@@ -154,10 +154,10 @@ int main(int argc, char *argv[]) {
       // Add fields
       bool check_if_spatial_field_exist = m_field.check_field("SPATIAL_POSITION");
       ierr = m_field.add_field("SPATIAL_POSITION",H1,3,MF_ZERO); CHKERRQ(ierr);
-      ierr = m_field.add_field("SOLVENT_CONCENTRATION",H1,1,MF_ZERO); CHKERRQ(ierr);
+      ierr = m_field.add_field("CHEMICAL_LOAD",H1,1,MF_ZERO); CHKERRQ(ierr);
       ierr = m_field.add_field("HAT_EPS",L2,6,MF_ZERO); CHKERRQ(ierr);
       ierr = m_field.add_field("SPATIAL_POSITION_DOT",H1,3,MF_ZERO); CHKERRQ(ierr);
-      ierr = m_field.add_field("SOLVENT_CONCENTRATION_DOT",H1,1,MF_ZERO); CHKERRQ(ierr);
+      ierr = m_field.add_field("CHEMICAL_LOAD_DOT",H1,1,MF_ZERO); CHKERRQ(ierr);
       ierr = m_field.add_field("HAT_EPS_DOT",L2,6,MF_ZERO); CHKERRQ(ierr);
 
       //Add field H1 space rank 3 to approximate geometry using hierarchical basis
@@ -168,10 +168,10 @@ int main(int argc, char *argv[]) {
       EntityHandle root_set = moab.get_root_set();
       //Add entities to field (root_mesh, i.e. on all mesh entities fields are approx.)
       ierr = m_field.add_ents_to_field_by_TETs(root_set,"SPATIAL_POSITION"); CHKERRQ(ierr);
-      ierr = m_field.add_ents_to_field_by_TETs(root_set,"SOLVENT_CONCENTRATION"); CHKERRQ(ierr);
+      ierr = m_field.add_ents_to_field_by_TETs(root_set,"CHEMICAL_LOAD"); CHKERRQ(ierr);
       ierr = m_field.add_ents_to_field_by_TETs(root_set,"HAT_EPS"); CHKERRQ(ierr);
       ierr = m_field.add_ents_to_field_by_TETs(root_set,"SPATIAL_POSITION_DOT"); CHKERRQ(ierr);
-      ierr = m_field.add_ents_to_field_by_TETs(root_set,"SOLVENT_CONCENTRATION_DOT"); CHKERRQ(ierr);
+      ierr = m_field.add_ents_to_field_by_TETs(root_set,"CHEMICAL_LOAD_DOT"); CHKERRQ(ierr);
       ierr = m_field.add_ents_to_field_by_TETs(root_set,"HAT_EPS_DOT"); CHKERRQ(ierr);
 
       // Set approximation order. Solvent concentration has one order less than
@@ -190,15 +190,15 @@ int main(int argc, char *argv[]) {
       ierr = m_field.set_field_order(root_set,MBEDGE,"SPATIAL_POSITION_DOT",order); CHKERRQ(ierr);
       ierr = m_field.set_field_order(root_set,MBVERTEX,"SPATIAL_POSITION_DOT",1); CHKERRQ(ierr);
 
-      ierr = m_field.set_field_order(root_set,MBTET,"SOLVENT_CONCENTRATION",order-1); CHKERRQ(ierr);
-      ierr = m_field.set_field_order(root_set,MBTRI,"SOLVENT_CONCENTRATION",order-1); CHKERRQ(ierr);
-      ierr = m_field.set_field_order(root_set,MBEDGE,"SOLVENT_CONCENTRATION",order-1); CHKERRQ(ierr);
-      ierr = m_field.set_field_order(root_set,MBVERTEX,"SOLVENT_CONCENTRATION",1); CHKERRQ(ierr);
+      ierr = m_field.set_field_order(root_set,MBTET,"CHEMICAL_LOAD",order-1); CHKERRQ(ierr);
+      ierr = m_field.set_field_order(root_set,MBTRI,"CHEMICAL_LOAD",order-1); CHKERRQ(ierr);
+      ierr = m_field.set_field_order(root_set,MBEDGE,"CHEMICAL_LOAD",order-1); CHKERRQ(ierr);
+      ierr = m_field.set_field_order(root_set,MBVERTEX,"CHEMICAL_LOAD",1); CHKERRQ(ierr);
 
-      ierr = m_field.set_field_order(root_set,MBTET,"SOLVENT_CONCENTRATION_DOT",order-1); CHKERRQ(ierr);
-      ierr = m_field.set_field_order(root_set,MBTRI,"SOLVENT_CONCENTRATION_DOT",order-1); CHKERRQ(ierr);
-      ierr = m_field.set_field_order(root_set,MBEDGE,"SOLVENT_CONCENTRATION_DOT",order-1); CHKERRQ(ierr);
-      ierr = m_field.set_field_order(root_set,MBVERTEX,"SOLVENT_CONCENTRATION_DOT",1); CHKERRQ(ierr);
+      ierr = m_field.set_field_order(root_set,MBTET,"CHEMICAL_LOAD_DOT",order-1); CHKERRQ(ierr);
+      ierr = m_field.set_field_order(root_set,MBTRI,"CHEMICAL_LOAD_DOT",order-1); CHKERRQ(ierr);
+      ierr = m_field.set_field_order(root_set,MBEDGE,"CHEMICAL_LOAD_DOT",order-1); CHKERRQ(ierr);
+      ierr = m_field.set_field_order(root_set,MBVERTEX,"CHEMICAL_LOAD_DOT",1); CHKERRQ(ierr);
 
       ierr = m_field.set_field_order(root_set,MBTET,"HAT_EPS",order-1); CHKERRQ(ierr);
       ierr = m_field.set_field_order(root_set,MBTET,"HAT_EPS_DOT",order-1); CHKERRQ(ierr);
@@ -261,10 +261,10 @@ int main(int argc, char *argv[]) {
           rval = moab.get_adjacencies(block_ents,1,false,ents_to_set_order,Interface::UNION); CHKERR_PETSC(rval);
           ierr = m_field.synchronise_entities(ents_to_set_order); CHKERRQ(ierr);
           ierr = m_field.set_field_order(ents_to_set_order,"SPATIAL_POSITION",block_data[it->get_msId()].oRder); CHKERRQ(ierr);
-          ierr = m_field.set_field_order(ents_to_set_order,"SOLVENT_CONCENTRATION",block_data[it->get_msId()].oRder-1); CHKERRQ(ierr);
+          ierr = m_field.set_field_order(ents_to_set_order,"CHEMICAL_LOAD",block_data[it->get_msId()].oRder-1); CHKERRQ(ierr);
           ierr = m_field.set_field_order(ents_to_set_order,"HAT_EPS",block_data[it->get_msId()].oRder-1); CHKERRQ(ierr);
           ierr = m_field.set_field_order(ents_to_set_order,"SPATIAL_POSITION_DOT",block_data[it->get_msId()].oRder); CHKERRQ(ierr);
-          ierr = m_field.set_field_order(ents_to_set_order,"SOLVENT_CONCENTRATION_DOT",block_data[it->get_msId()].oRder-1); CHKERRQ(ierr);
+          ierr = m_field.set_field_order(ents_to_set_order,"CHEMICAL_LOAD_DOT",block_data[it->get_msId()].oRder-1); CHKERRQ(ierr);
           ierr = m_field.set_field_order(ents_to_set_order,"HAT_EPS_DOT",block_data[it->get_msId()].oRder-1); CHKERRQ(ierr);
         }
         vector<string> additional_parameters;
@@ -298,14 +298,14 @@ int main(int argc, char *argv[]) {
       ierr = m_field.add_finite_element("GEL_FE",MF_ZERO); CHKERRQ(ierr);
       ierr = m_field.modify_finite_element_add_field_row("GEL_FE","SPATIAL_POSITION"); CHKERRQ(ierr);
       ierr = m_field.modify_finite_element_add_field_col("GEL_FE","SPATIAL_POSITION"); CHKERRQ(ierr);
-      ierr = m_field.modify_finite_element_add_field_row("GEL_FE","SOLVENT_CONCENTRATION"); CHKERRQ(ierr);
-      ierr = m_field.modify_finite_element_add_field_col("GEL_FE","SOLVENT_CONCENTRATION"); CHKERRQ(ierr);
+      ierr = m_field.modify_finite_element_add_field_row("GEL_FE","CHEMICAL_LOAD"); CHKERRQ(ierr);
+      ierr = m_field.modify_finite_element_add_field_col("GEL_FE","CHEMICAL_LOAD"); CHKERRQ(ierr);
       ierr = m_field.modify_finite_element_add_field_row("GEL_FE","HAT_EPS"); CHKERRQ(ierr);
       ierr = m_field.modify_finite_element_add_field_col("GEL_FE","HAT_EPS"); CHKERRQ(ierr);
       ierr = m_field.modify_finite_element_add_field_data("GEL_FE","SPATIAL_POSITION"); CHKERRQ(ierr);
       ierr = m_field.modify_finite_element_add_field_data("GEL_FE","SPATIAL_POSITION_DOT"); CHKERRQ(ierr);
-      ierr = m_field.modify_finite_element_add_field_data("GEL_FE","SOLVENT_CONCENTRATION"); CHKERRQ(ierr);
-      ierr = m_field.modify_finite_element_add_field_data("GEL_FE","SOLVENT_CONCENTRATION_DOT"); CHKERRQ(ierr);
+      ierr = m_field.modify_finite_element_add_field_data("GEL_FE","CHEMICAL_LOAD"); CHKERRQ(ierr);
+      ierr = m_field.modify_finite_element_add_field_data("GEL_FE","CHEMICAL_LOAD_DOT"); CHKERRQ(ierr);
       ierr = m_field.modify_finite_element_add_field_data("GEL_FE","HAT_EPS"); CHKERRQ(ierr);
       ierr = m_field.modify_finite_element_add_field_data("GEL_FE","HAT_EPS_DOT"); CHKERRQ(ierr);
       ierr = m_field.modify_finite_element_add_field_data("GEL_FE","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
@@ -321,9 +321,9 @@ int main(int argc, char *argv[]) {
       {
 
         ierr = m_field.add_finite_element("SOLVENT_FLUX_FE",MF_ZERO); CHKERRQ(ierr);
-        ierr = m_field.modify_finite_element_add_field_row("SOLVENT_FLUX_FE","SOLVENT_CONCENTRATION"); CHKERRQ(ierr);
-        ierr = m_field.modify_finite_element_add_field_col("SOLVENT_FLUX_FE","SOLVENT_CONCENTRATION"); CHKERRQ(ierr);
-        ierr = m_field.modify_finite_element_add_field_data("SOLVENT_FLUX_FE","SOLVENT_CONCENTRATION"); CHKERRQ(ierr);
+        ierr = m_field.modify_finite_element_add_field_row("SOLVENT_FLUX_FE","CHEMICAL_LOAD"); CHKERRQ(ierr);
+        ierr = m_field.modify_finite_element_add_field_col("SOLVENT_FLUX_FE","CHEMICAL_LOAD"); CHKERRQ(ierr);
+        ierr = m_field.modify_finite_element_add_field_data("SOLVENT_FLUX_FE","CHEMICAL_LOAD"); CHKERRQ(ierr);
         ierr = m_field.modify_finite_element_add_field_data("SOLVENT_FLUX_FE","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
 
         // Assume that boundary conditions are set in block containing surface
@@ -372,8 +372,8 @@ int main(int argc, char *argv[]) {
     Gel::CommonData &common_data = gel.commonData;
     common_data.spatialPositionName = "SPATIAL_POSITION";
     common_data.spatialPositionNameDot = "SPATIAL_POSITION_DOT";
-    common_data.muName = "SOLVENT_CONCENTRATION";
-    common_data.muNameDot = "SOLVENT_CONCENTRATION_DOT";
+    common_data.muName = "CHEMICAL_LOAD";
+    common_data.muNameDot = "CHEMICAL_LOAD_DOT";
     common_data.strainHatName = "HAT_EPS";
     common_data.strainHatNameDot = "HAT_EPS_DOT";
 
@@ -388,7 +388,7 @@ int main(int argc, char *argv[]) {
         new Gel::OpGetDataAtGaussPts("SPATIAL_POSITION_DOT",common_data,false,true)
       );
       fe_ptr[ss]->getOpPtrVector().push_back(
-        new Gel::OpGetDataAtGaussPts("SOLVENT_CONCENTRATION",common_data,true,true)
+        new Gel::OpGetDataAtGaussPts("CHEMICAL_LOAD",common_data,true,true)
       );
       fe_ptr[ss]->getOpPtrVector().push_back(
         new Gel::OpGetDataAtGaussPts("HAT_EPS",common_data,true,false,MBTET)
@@ -485,7 +485,7 @@ int main(int argc, char *argv[]) {
     m_field,"SPATIAL_POSITION",A,T,F
   );
   DirichletBCFromBlockSetFEMethodPreAndPostProc concentration_bc(
-    m_field,"SOLVENT_CONCENTRATION","CONCENTRATION",A,T,F
+    m_field,"CHEMICAL_LOAD","CONCENTRATION",A,T,F
   );
 
   // Setting finite element method for applying tractions
@@ -509,7 +509,7 @@ int main(int argc, char *argv[]) {
     for(;sit!=set_of_solvent_fluxes.end();sit++) {
       // add flux operator
       solvent_surface_fe.getOpPtrVector().push_back(
-        new ThermalElement::OpHeatFlux("SOLVENT_CONCENTRATION",F,sit->second,true)
+        new ThermalElement::OpHeatFlux("CHEMICAL_LOAD",F,sit->second,true)
       );
     }
   }

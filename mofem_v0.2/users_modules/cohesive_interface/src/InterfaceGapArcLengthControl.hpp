@@ -1,7 +1,7 @@
 /** \file InterfaceGapArcLengthControl.hpp
   \brief Implementation of arc-lebgth control for cohesive elements
 
-  Arc-length in that version controls gap oppening
+  Arc-length in that version controls gap opening
 
 */ 
 
@@ -33,7 +33,7 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
   Tag thDamagedPrism;
 
   ArcLengthIntElemFEMethod(Interface& moab,
-    ArcLengthCtx *arcptr): 
+    ArcLengthCtx *arcptr):
     FEMethod(),mOab(moab),arcPtr(arcptr) {
     PetscInt ghosts[1] = { 0 };
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mOab,MYPCOMM_INDEX);
@@ -75,7 +75,7 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
 
 
   /** \brief remove nodes of prims which are fully damaged
-    * 
+    *
     */
   PetscErrorCode remove_damaged_prisms_nodes() {
     PetscFunctionBegin;
@@ -102,7 +102,7 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
     switch(snes_ctx) {
-      case CTX_SNESSETFUNCTION: { 
+      case CTX_SNESSETFUNCTION: {
 	ierr = calculate_dx_and_dlambda(snes_x); CHKERRQ(ierr);
 	ierr = calculate_db(); CHKERRQ(ierr);
 	ierr = calculate_lambda_int(lambda_int); CHKERRQ(ierr);
@@ -193,7 +193,7 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
 	PetscPrintf(PETSC_COMM_SELF,"\tres_lambda = %6.4e lambda_int = %6.4e s = %6.4e\n",
 	  arcPtr->res_lambda,lambda_int,arcPtr->s);
       }
-      break; 
+      break;
       case CTX_SNESSETJACOBIAN: {
 	//calculate diagonal therm
 	double diag = arcPtr->beta*sqrt(arcPtr->F_lambda2);
@@ -203,8 +203,8 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
       break;
       default:
       break;
-    }	
-    
+    }
+
     PetscFunctionReturn(0);
   }
 
