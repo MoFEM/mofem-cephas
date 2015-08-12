@@ -3145,9 +3145,9 @@ PetscErrorCode Core::clear_adjacencies_entities(const string &name,const Range &
     hi_ait = entFEAdjacencies.get<Ent_mi_tag>().upper_bound(*eit);
     for(;ait!=hi_ait;) {
       if(ait->MoFEMEntity_ptr->get_name() == name) {
-	ait = entFEAdjacencies.get<Ent_mi_tag>().erase(ait);
+        ait = entFEAdjacencies.get<Ent_mi_tag>().erase(ait);
       } else {
-	ait++;
+        ait++;
       }
     }
   }
@@ -3166,38 +3166,38 @@ PetscErrorCode Core::remove_ents_from_field_by_bit_ref(const BitRefLevel &bit,co
     Range::iterator eit = ents_to_remove.begin();
     for(;eit!=ents_to_remove.end();) {
       if(moab.type_from_handle(*eit)==MBENTITYSET) {
-	eit = ents_to_remove.erase(eit);
-	continue;
+        eit = ents_to_remove.erase(eit);
+        continue;
       }
       BitRefLevel bit2;
       rval = moab.tag_get_data(th_RefBitLevel,&*eit,1,&bit2); CHKERR_PETSC(rval);
       if((bit2&mask)!=bit2) {
-	eit = ents_to_remove.erase(eit);
-	continue;
+        eit = ents_to_remove.erase(eit);
+        continue;
       }
       if((bit2&bit).none()) {
-	eit = ents_to_remove.erase(eit);
-	continue;
+        eit = ents_to_remove.erase(eit);
+        continue;
       }
       MoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator iit;
       iit = entsMoabField.get<Composite_Name_And_Ent_mi_tag>().find(boost::make_tuple(f_it->get_name(),*eit));
       if(iit != entsMoabField.get<Composite_Name_And_Ent_mi_tag>().end()) {
-	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
       }
       eit++;
     }
     rval = moab.remove_entities(meshset,ents_to_remove); CHKERR_PETSC(rval);
     if(verb>0) {
       PetscPrintf(comm,
-	"number of removed entities = %u from field %s\n",ents_to_remove.size(),f_it->get_name().c_str());
-      if(verb>1) {
-	int num_entities;
-	rval = moab.get_number_entities_by_handle(meshset,num_entities); CHKERR_PETSC(rval);
-	PetscPrintf(comm,"\tnumber of entities in database = %u and meshset = %u\n",
-	    entsMoabField.get<BitFieldId_mi_tag>().count(f_it->get_id()),num_entities);
+        "number of removed entities = %u from field %s\n",ents_to_remove.size(),f_it->get_name().c_str());
+        if(verb>1) {
+          int num_entities;
+          rval = moab.get_number_entities_by_handle(meshset,num_entities); CHKERR_PETSC(rval);
+          PetscPrintf(comm,"\tnumber of entities in database = %u and meshset = %u\n",
+          entsMoabField.get<BitFieldId_mi_tag>().count(f_it->get_id()),num_entities);
+        }
       }
     }
-  }
   PetscFunctionReturn(0);
 }
 PetscErrorCode Core::remove_ents_from_field(const string& name,const EntityHandle meshset,const EntityType type,int verb) {
