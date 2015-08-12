@@ -148,7 +148,7 @@ struct PostPorcStress: public VolumeElementForcesAndSourcesCore::UserDataOperato
       strain.resize(6);
       strain[0] = (commonData.gradMap[rowFieldName][gg])(0,0);
       strain[1] = (commonData.gradMap[rowFieldName][gg])(1,1);
-      strain[3] = (commonData.gradMap[rowFieldName][gg])(2,2);
+      strain[2] = (commonData.gradMap[rowFieldName][gg])(2,2);
       strain[3] = (commonData.gradMap[rowFieldName][gg])(0,1)+(commonData.gradMap[rowFieldName][gg])(1,0);
       strain[4] = (commonData.gradMap[rowFieldName][gg])(1,2)+(commonData.gradMap[rowFieldName][gg])(2,1);
       strain[5] = (commonData.gradMap[rowFieldName][gg])(0,2)+(commonData.gradMap[rowFieldName][gg])(2,0);
