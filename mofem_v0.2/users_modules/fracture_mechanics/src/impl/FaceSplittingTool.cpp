@@ -720,6 +720,7 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(vector<string> &switche
     }
 
     ierr = mField.delete_ents_by_bit_ref(maskPreserv,maskPreserv,true,0); CHKERRQ(ierr);
+    ierr = mField.clear_adjacencies_entities(BitRefLevel().set(),BitRefLevel().set(),0); CHKERRQ(ierr);
 
     //squash bits
     const RefMoFEMEntity_multiIndex *refinedEntitiesPtr_ptr;
@@ -942,8 +943,12 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(vector<string> &switche
       if(!corners_nodes.empty()) {
 
         PetscBool remove_and_extend = PETSC_FALSE;
-        ierr = PetscOptionsGetBool(PETSC_NULL,"-my_remove_and_extend",&remove_and_extend,PETSC_NULL); CHKERRQ(ierr);
+        ierr = PetscOptionsGetBool(
+          PETSC_NULL,"-my_remove_and_extend",&remove_and_extend,PETSC_NULL
+        ); CHKERRQ(ierr);
 
+        // first argument is node which going to be merged on corners edges,
+        // second argument is node on crack front
         map<EntityHandle,EntityHandle> map_nodes_to_merge;
         for(
           Range::iterator eit = crack_edges_nodes_edges.begin();
@@ -969,17 +974,27 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(vector<string> &switche
           meshRefineBitLevels.push_back(last_ref_bit);
           BitRefLevel last_ref = BitRefLevel().set(meshRefineBitLevels.back());
           to_remove.erase(mit->first);
-          if(sideset_corners_nodes.find(mit->first)!=sideset_corners_nodes.end() && !remove_and_extend ) {
-            ierr = node_merger_iface->mergeNodes(
-              mit->first,mit->second,last_ref,bit_mesh
-            ); CHKERRQ(ierr);
-            node_merged = true;
+          EntityHandle merged_node, node_to_merge_into;
+          if(
+            sideset_corners_nodes.find(mit->first)!=sideset_corners_nodes.end()
+          ) {
+            // crack front is merged to node on corner
+            node_to_merge_into = mit->first;
+            merged_node = mit->second;
+          } if(remove_and_extend) {
+            // crack front is merged to node on corner
+            node_to_merge_into = mit->first;
+            merged_node = mit->second;
           } else {
-            ierr = node_merger_iface->mergeNodes(
-              mit->second,mit->first,last_ref,bit_mesh
-            ); CHKERRQ(ierr);
-            node_merged = true;
+            node_to_merge_into = mit->second;
+            merged_node = mit->first;
           }
+          // node is merged to node at crack front
+          ierr = node_merger_iface->mergeNodes(
+            node_to_merge_into,merged_node,last_ref,bit_mesh
+          ); CHKERRQ(ierr);
+          node_merged = true;
+
           for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,cubit_it)) {
             EntityHandle meshset = cubit_it->meshset;
             ierr = mField.update_meshset_by_entities_children(meshset,last_ref,meshset,MBVERTEX,true); CHKERRQ(ierr);
