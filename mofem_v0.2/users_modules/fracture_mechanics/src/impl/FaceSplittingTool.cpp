@@ -1037,7 +1037,6 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(vector<string> &switche
       rval = mField.get_moab().get_connectivity(
         sideset_corners_edges,sideset_corners_nodes,true
       ); CHKERR_PETSC(rval);
-      sideset_corners_nodes = intersect(to_remove,sideset_corners_nodes);
 
       // get corners edges, between surface side-sets
       map<int,Range> surfaces_skin_edges_map;
@@ -1050,6 +1049,7 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(vector<string> &switche
         surfaces,1,true,surfaces_edges_map[102],Interface::UNION
       ); CHKERR_PETSC(rval);
       surfaces_edges_map[102] = subtract(surfaces_edges_map[102],surfaces_skin_edges_map[102]);
+      surfaces_edges_map[102] = subtract(surfaces_edges_map[102],sideset_corners_nodes);
       for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SIDESET,it)) {
         int msId = it->get_msId();
         if((msId < 10200)||(msId >= 10300)) continue;
@@ -1062,6 +1062,7 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(vector<string> &switche
           surfaces,1,true,surfaces_edges_map[msId],Interface::UNION
         ); CHKERR_PETSC(rval);
         surfaces_edges_map[msId] = subtract(surfaces_edges_map[msId],surfaces_skin_edges_map[msId]);
+        surfaces_edges_map[msId] = subtract(surfaces_edges_map[msId],sideset_corners_nodes);
       }
       Range corners_edges;
       for(
@@ -1146,6 +1147,8 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(vector<string> &switche
             }
           }
         }
+
+        sideset_corners_nodes = intersect(to_remove,sideset_corners_nodes);
 
         NodeMergerInterface *node_merger_iface;
         ierr = mField.query_interface(node_merger_iface); CHKERRQ(ierr);
