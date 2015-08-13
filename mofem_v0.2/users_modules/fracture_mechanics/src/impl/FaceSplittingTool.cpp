@@ -857,7 +857,8 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(vector<string> &switche
     }
   }
 
-  //remove nodes on surface connected to front node on skin
+  //Remove nodes on surface connected to front node on skin which has only two
+  //edges connected. That make problems.
   {
 
 
@@ -899,6 +900,7 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(vector<string> &switche
     rval = mField.get_moab().get_adjacencies(
       surfaces,1,true,surfaces_edges_map[102],Interface::UNION
     ); CHKERR_PETSC(rval);
+    surfaces_edges_map[102] = intersect(surfaces_edges_map[102],mesh_level_edges);
     surfaces_edges_map[102] = subtract(surfaces_edges_map[102],surfaces_skin_edges_map[102]);
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SIDESET,it)) {
       int msId = it->get_msId();
@@ -911,6 +913,7 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(vector<string> &switche
       rval = mField.get_moab().get_adjacencies(
         surfaces,1,true,surfaces_edges_map[msId],Interface::UNION
       ); CHKERR_PETSC(rval);
+      surfaces_edges_map[msId] = intersect(surfaces_edges_map[msId],mesh_level_edges);
       surfaces_edges_map[msId] = subtract(surfaces_edges_map[msId],surfaces_skin_edges_map[msId]);
     }
     Range corners_edges;
@@ -933,7 +936,7 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(vector<string> &switche
       nit!=crack_front_adj_edges.end();
       nit++
     ) {
-      if(crack_edges_nodes.find(nit->first)!=crack_edges_nodes.end()) {
+      if(corners_edges_nodes.find(nit->first)!=corners_edges_nodes.end()) {
         continue;
       }
       Range edges;
