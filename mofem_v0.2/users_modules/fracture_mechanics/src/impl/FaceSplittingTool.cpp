@@ -1132,7 +1132,6 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(vector<string> &switche
           mit!=surfaces_edges_map.end(); mit++
         ) {
           Range edges = intersect(crack_edges_nodes_edges,mit->second);
-          cerr << edges << "  " << endl;
           for(
             Range::iterator eit = edges.begin();
             eit != edges.end();
