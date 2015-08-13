@@ -726,12 +726,22 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
         face_splitting_tools.moabTetGenMap.clear();
         face_splitting_tools.tetGenMoabMap.clear();
         face_splitting_tools.tetGenData.clear();
+
+        int tetgen_face_angle = 170;
+        ierr = PetscOptionsGetInt(PETSC_NULL,"-my_tetgen_face_angle",&tetgen_face_angle,PETSC_NULL); CHKERRQ(ierr);
+
         vector<string> switches1;
         if(pcomm->rank() == 0) {
-          switches1.push_back("rp170sqRS0JVV");
+          ostringstream ss;
+          ss << "rp" << tetgen_face_angle << "sqRS0JVV";
+          switches1.push_back(ss.str());
+          //switches1.push_back("rp170sqRS0JVV");
           ierr = face_splitting_tools.rebuildMeshWithTetGen(switches1,0); CHKERRQ(ierr);
         } else {
-          switches1.push_back("rp170sqRS0JQ");
+          ostringstream ss;
+          ss << "rp" << tetgen_face_angle << "sqRS0JQ";
+          switches1.push_back(ss.str());
+          //switches1.push_back("rp170sqRS0JQ");
           ierr = face_splitting_tools.rebuildMeshWithTetGen(switches1,0); CHKERRQ(ierr);
         }
       }
