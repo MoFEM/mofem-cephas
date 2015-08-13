@@ -711,11 +711,11 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
     bool do_tetgen = true;
     if(flg_do_split) {
       Range edges_to_cat;
-      ierr = face_splitting_tools.getCornerEdges(edges_to_cat,10); CHKERRQ(ierr);
+      ierr = face_splitting_tools.getCornerEdges(edges_to_cat,0); CHKERRQ(ierr);
       if(edges_to_cat.size()>0) {
         Range new_nodes;
-        ierr = face_splitting_tools.propagateBySplit(new_nodes,edges_to_cat,10); CHKERRQ(ierr);
-        ierr = face_splitting_tools.cornerProblem(new_nodes,10); CHKERRQ(ierr);
+        ierr = face_splitting_tools.propagateBySplit(new_nodes,edges_to_cat,0); CHKERRQ(ierr);
+        ierr = face_splitting_tools.cornerProblem(new_nodes,0); CHKERRQ(ierr);
         split_is_done = true;
         //if(!new_nodes.empty()) do_tetgen = false;
       }
