@@ -1049,7 +1049,7 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(vector<string> &switche
         surfaces,1,true,surfaces_edges_map[102],Interface::UNION
       ); CHKERR_PETSC(rval);
       surfaces_edges_map[102] = subtract(surfaces_edges_map[102],surfaces_skin_edges_map[102]);
-      surfaces_edges_map[102] = subtract(surfaces_edges_map[102],sideset_corners_nodes);
+      surfaces_edges_map[102] = subtract(surfaces_edges_map[102],sideset_corners_edges);
       for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SIDESET,it)) {
         int msId = it->get_msId();
         if((msId < 10200)||(msId >= 10300)) continue;
@@ -1062,7 +1062,7 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(vector<string> &switche
           surfaces,1,true,surfaces_edges_map[msId],Interface::UNION
         ); CHKERR_PETSC(rval);
         surfaces_edges_map[msId] = subtract(surfaces_edges_map[msId],surfaces_skin_edges_map[msId]);
-        surfaces_edges_map[msId] = subtract(surfaces_edges_map[msId],sideset_corners_nodes);
+        surfaces_edges_map[msId] = subtract(surfaces_edges_map[msId],sideset_corners_edges);
       }
       Range corners_edges;
       for(
