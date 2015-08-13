@@ -981,7 +981,7 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(vector<string> &switche
             if(vit == edges_nodes.begin()) {
               min_l = nrm2;
               min_ent = *vit;
-            } else if(min_l < nrm2) {
+            } else if(min_l > nrm2) {
               min_l = nrm2;
               min_ent = *vit;
             }
