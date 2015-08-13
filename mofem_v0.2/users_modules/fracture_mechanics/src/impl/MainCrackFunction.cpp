@@ -571,7 +571,7 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
       step,conf_prob.aRea,conf_prob.lambda,conf_prob.energy
     ); CHKERRQ(ierr);
 
-    {
+    /*{
 
       Hooke<adouble> hooke_adouble;
       Hooke<double> hooke_double;
@@ -615,9 +615,10 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
       ss << "out_load_step_" << step << ".h5m";
       rval = post_proc.postProcMesh.write_file(ss.str().c_str(),"MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
 
-    }
+    }*/
 
     if(pcomm->rank()==0) {
+
       /*EntityHandle out_meshset;
       rval = m_field.get_moab().create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
       ierr = m_field.get_problem_finite_elements_entities("COUPLED_PROBLEM","MATERIAL_COUPLED",out_meshset); CHKERRQ(ierr);
@@ -681,12 +682,13 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
               dof->get_ent(),dof->get_dof_rank(),
               coords[0],coords[1],coords[2],
               dof->get_FieldData()-coords[dof->get_dof_rank()],
-              conf_prob.lambda); CHKERRQ(ierr);
-            }
+              conf_prob.lambda
+            ); CHKERRQ(ierr);
           }
-
         }
+
       }
+    }
 
     ierr = PetscTime(&v2);CHKERRQ(ierr);
     ierr = PetscGetCPUTime(&t2);CHKERRQ(ierr);
