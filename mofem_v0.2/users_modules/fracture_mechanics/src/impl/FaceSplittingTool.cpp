@@ -862,9 +862,13 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(vector<string> &switche
   {
 
 
-    Range mesh_level_edges;
+    Range mesh_level_edges,mesh_level_tris;
+    bit_mesh = BitRefLevel().set(meshRefineBitLevels.back());
     ierr = mField.get_entities_by_type_and_ref_level(
       bit_mesh,BitRefLevel().set(),MBEDGE,mesh_level_edges
+    ); CHKERRQ(ierr);
+    ierr = mField.get_entities_by_type_and_ref_level(
+      bit_mesh,BitRefLevel().set(),MBTRI,mesh_level_tris
     ); CHKERRQ(ierr);
 
     // get nodes on crack front
@@ -890,17 +894,22 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(vector<string> &switche
       crack_front_adj_edges[*nit] = intersect(crack_front_adj_edges[*nit],mesh_level_edges);
     }
 
+    Range crack_surface_tris;
+    ierr = mField.get_cubit_msId_entities_by_dimension(200,SIDESET,2,crack_surface_tris,true); CHKERRQ(ierr);
+    crack_surface_tris = intersect(crack_surface_tris,mesh_level_tris);
+    Range crack_surface_skin_edges;
+    rval = skin.find_skin(0,crack_surface_tris,false,crack_surface_skin_edges); CHKERR_PETSC(rval);
+
     // get corners edges, between surface side-sets
     map<int,Range> surfaces_skin_edges_map;
     map<int,Range> surfaces_edges_map;
     Range surfaces;
     ierr = mField.get_cubit_msId_entities_by_dimension(102,SIDESET,2,surfaces,true); CHKERRQ(ierr);
+    surfaces = intersect(surfaces,mesh_level_tris);
     rval = skin.find_skin(0,surfaces,false,surfaces_skin_edges_map[102]); CHKERR_PETSC(rval);
-    surfaces_skin_edges_map[102] = intersect(surfaces_skin_edges_map[102],mesh_level_edges);
     rval = mField.get_moab().get_adjacencies(
       surfaces,1,true,surfaces_edges_map[102],Interface::UNION
     ); CHKERR_PETSC(rval);
-    surfaces_edges_map[102] = intersect(surfaces_edges_map[102],mesh_level_edges);
     surfaces_edges_map[102] = subtract(surfaces_edges_map[102],surfaces_skin_edges_map[102]);
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,SIDESET,it)) {
       int msId = it->get_msId();
@@ -908,12 +917,11 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(vector<string> &switche
       EntityHandle meshset = it->get_meshset();
       surfaces.clear();
       rval = mField.get_moab().get_entities_by_type(meshset,MBTRI,surfaces,true); CHKERR_PETSC(rval);
+      surfaces = intersect(surfaces,mesh_level_tris);
       rval = skin.find_skin(0,surfaces,false,surfaces_skin_edges_map[msId]); CHKERR_PETSC(rval);
-      surfaces_skin_edges_map[msId] = intersect(surfaces_skin_edges_map[msId],mesh_level_edges);
       rval = mField.get_moab().get_adjacencies(
         surfaces,1,true,surfaces_edges_map[msId],Interface::UNION
       ); CHKERR_PETSC(rval);
-      surfaces_edges_map[msId] = intersect(surfaces_edges_map[msId],mesh_level_edges);
       surfaces_edges_map[msId] = subtract(surfaces_edges_map[msId],surfaces_skin_edges_map[msId]);
     }
     Range corners_edges;
@@ -944,9 +952,9 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(vector<string> &switche
         map<int,Range>::iterator mit = surfaces_edges_map.begin();
         mit!=surfaces_edges_map.end();mit++
       ) {
-        edges = intersect(nit->second,mit->second);
+        edges.merge(intersect(nit->second,mit->second));
       }
-      edges = subtract(edges,crack_edges);
+      edges = subtract(edges,crack_surface_skin_edges);
       if(edges.size()<=2) {
         Range edges_nodes;
         rval = mField.get_moab().get_connectivity(
