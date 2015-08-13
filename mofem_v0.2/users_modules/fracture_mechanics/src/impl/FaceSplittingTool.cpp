@@ -1127,7 +1127,7 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(vector<string> &switche
           }
         }
 
-        for(
+        /*for(
           map<int,Range>::iterator mit = surfaces_edges_map.begin();
           mit!=surfaces_edges_map.end(); mit++
         ) {
@@ -1145,7 +1145,7 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(vector<string> &switche
               map_nodes_to_merge[node_to_merge[0]] = front_node;
             }
           }
-        }
+        }*/
 
         sideset_corners_nodes = intersect(to_remove,sideset_corners_nodes);
 
