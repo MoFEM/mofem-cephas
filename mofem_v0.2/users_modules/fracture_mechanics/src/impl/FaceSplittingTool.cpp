@@ -584,7 +584,7 @@ PetscErrorCode FaceSplittingTools::crackFrontEdgeLengths(
         continue;
       }
       double l = length_map2[*eiit];
-      if(l<=fmax(ave_l2-sdev_l2,min_l2)*0.8) {
+      if(l<=fmax(ave_l2-sdev_l2,min_l2)*1.0) {
         eit_to_remove.insert(*eiit);
       }
     }
@@ -1127,7 +1127,7 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(vector<string> &switche
           }
         }
 
-        /*for(
+        for(
           map<int,Range>::iterator mit = surfaces_edges_map.begin();
           mit!=surfaces_edges_map.end(); mit++
         ) {
@@ -1145,7 +1145,7 @@ PetscErrorCode FaceSplittingTools::rebuildMeshWithTetGen(vector<string> &switche
               map_nodes_to_merge[node_to_merge[0]] = front_node;
             }
           }
-        }*/
+        }
 
         sideset_corners_nodes = intersect(to_remove,sideset_corners_nodes);
 
