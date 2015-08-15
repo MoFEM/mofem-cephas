@@ -727,7 +727,7 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
         face_splitting_tools.tetGenMoabMap.clear();
         face_splitting_tools.tetGenData.clear();
 
-        int tetgen_face_angle = 170;
+        int tetgen_face_angle = 178;
         ierr = PetscOptionsGetInt(PETSC_NULL,"-my_tetgen_face_angle",&tetgen_face_angle,PETSC_NULL); CHKERRQ(ierr);
 
         vector<string> switches1;
