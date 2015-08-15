@@ -94,6 +94,7 @@ struct Gel {
     double pErmeability;
     double vIscosity;
     double oMega;         ///< Volume per solvent molecule
+    double mU0;           ///< equilibrated chemical potential/load
 
   };
   BlockMaterialData blockMaterialData;
@@ -142,7 +143,7 @@ struct Gel {
 
     ublas::matrix<TYPE> stressTotal;              ///< Total stress
     ublas::vector<TYPE> solventFlux;              ///< Solvent flux
-    TYPE volumeDot;                               ///< Volume rate change
+    TYPE solventConcentrationDot;                               ///< Volume rate change
     ublas::matrix<TYPE> residualStrainHat;        ///< Residual for calculation epsilon hat
 
     virtual PetscErrorCode calculateCauchyDefromationTensor() {
@@ -174,7 +175,7 @@ struct Gel {
       PetscFunctionBegin;
       traceStrainTotalDot = 0;
       for(int ii = 0;ii<3;ii++) {
-        traceStrainTotalDot += FDot(ii,ii) - 1.0;
+        traceStrainTotalDot += FDot(ii,ii);
       }
       PetscFunctionReturn(0);
     }
@@ -257,7 +258,6 @@ struct Gel {
       for(int ii = 0;ii<3;ii++) {
         strainHatFlux(ii,ii) -= b*traceStressBeta;
       }
-      strainHatFlux *= -1;
       PetscFunctionReturn(0);
     }
 
@@ -275,7 +275,7 @@ struct Gel {
       stressBetaHat.resize(3,3,false);
       stressBetaHat.clear();
       for(int ii=0; ii<3; ii++){
-        stressBetaHat(ii,ii) = -mU/dAta.oMega;
+        stressBetaHat(ii,ii) = -(mU-dAta.mU0)/dAta.oMega;
       }
       PetscFunctionReturn(0);
     }
@@ -294,7 +294,7 @@ struct Gel {
     virtual PetscErrorCode calculateResidualStrainHat() {
       PetscFunctionBegin;
       residualStrainHat.resize(3,3,false);
-      noalias(residualStrainHat) =  strainHatDot + strainHatFlux;
+      noalias(residualStrainHat) =  strainHatDot - strainHatFlux;
       PetscFunctionReturn(0);
     }
 
@@ -311,19 +311,20 @@ struct Gel {
     */
     virtual PetscErrorCode calculateSolventFlux() {
       PetscFunctionBegin;
-      solventFlux=-(dAta.pErmeability/(dAta.vIscosity*dAta.oMega*dAta.oMega))*gradientMu;
+      double a = dAta.pErmeability/(dAta.vIscosity*dAta.oMega/**dAta.oMega*/);
+      solventFlux=-a*gradientMu;
       PetscFunctionReturn(0);
     }
 
-    /** \brief Volume change at material point
+    /** \brief Calculate solvent concentration rate
 
       FIXME: For simplicity as first approximation set volume change
       as trace of gradient total strain
 
     */
-    virtual PetscErrorCode calculateVolumeDot() {
+    virtual PetscErrorCode calculateSolventConcentrationDot() {
       PetscFunctionBegin;
-      volumeDot = traceStrainTotalDot;
+      solventConcentrationDot = traceStrainTotalDot/*/dAta.oMega*/;
       PetscFunctionReturn(0);
     }
 
@@ -348,7 +349,7 @@ struct Gel {
 
     vector<ublas::matrix<double> > stressTotal;
     vector<ublas::vector<double> > solventFlux;
-    vector<double> volumeDot;
+    vector<double> solventConcentrationDot;
     vector<ublas::vector<double> > residualStrainHat;
 
     vector<double*> jacRowPtr;
@@ -664,7 +665,7 @@ struct Gel {
       PetscFunctionReturn(0);
     }
 
-    PetscErrorCode recordVolumeDot() {
+    PetscErrorCode recordSolventConcentrationDot() {
       PetscFunctionBegin;
 
       if(tagS[VOLUMERATE]<0) {
@@ -695,10 +696,10 @@ struct Gel {
           }
         }
         ierr = cE->calculateTraceStrainTotalDot(); CHKERRQ(ierr);
-        ierr = cE->calculateVolumeDot(); CHKERRQ(ierr);
+        ierr = cE->calculateSolventConcentrationDot(); CHKERRQ(ierr);
         nbActiveResults[tagS[VOLUMERATE]] = 0;
-        commonData.volumeDot.resize(nbGaussPts);
-        cE->volumeDot >>= commonData.volumeDot[0];
+        commonData.solventConcentrationDot.resize(nbGaussPts);
+        cE->solventConcentrationDot >>= commonData.solventConcentrationDot[0];
         nbActiveResults[tagS[VOLUMERATE]]++;
       }
       trace_off();
@@ -969,7 +970,7 @@ struct Gel {
           );
         }
         if(calculateResidualBool) {
-          ierr = calculateFunction(VOLUMERATE,&commonData.volumeDot[gg]); CHKERRQ(ierr);
+          ierr = calculateFunction(VOLUMERATE,&commonData.solventConcentrationDot[gg]); CHKERRQ(ierr);
         }
         if(calculateJacobianBool) {
           if(gg == 0) {
@@ -1069,7 +1070,7 @@ struct Gel {
         if(recordOn) {
           ierr = recordStressTotal(); CHKERRQ(ierr);
           ierr = recordSolventFlux(); CHKERRQ(ierr);
-          ierr = recordVolumeDot(); CHKERRQ(ierr);
+          ierr = recordSolventConcentrationDot(); CHKERRQ(ierr);
           ierr = recordResidualStrainHat(); CHKERRQ(ierr);
         }
 
@@ -1231,9 +1232,9 @@ struct Gel {
   \f]
 
   */
-  struct OpRhsVolumeDot: public AssembleVector {
+  struct OpSolventConcetrationDot: public AssembleVector {
     CommonData &commonData;
-    OpRhsVolumeDot(CommonData &common_data):
+    OpSolventConcetrationDot(CommonData &common_data):
     AssembleVector(common_data.muName),
     commonData(common_data) {
     }
@@ -1251,12 +1252,12 @@ struct Gel {
         int nb_gauss_pts = row_data.getN().size1();
         for(int gg = 0;gg!=nb_gauss_pts;gg++) {
           const VectorAdaptor &N = row_data.getN(gg,nb_dofs);
-          double volume_dot = commonData.volumeDot[gg];
+          double solvent_dot_dot = commonData.solventConcentrationDot[gg];
           double val = getVolume()*getGaussPts()(3,gg);
           if(getHoGaussPtsDetJac().size()>0) {
             val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
           }
-          nF += val*N*volume_dot;
+          nF += val*N*solvent_dot_dot;
         }
         ierr = aSemble(row_side,row_type,row_data); CHKERRQ(ierr);
       } catch (const std::exception& ex) {
@@ -1904,29 +1905,29 @@ struct Gel {
     commonData(common_data) {
       sYmm = false;
     }
-    ublas::vector<double> dVolumeDot_dx;
-    PetscErrorCode get_dVolumeDot_dx(
+    ublas::vector<double> dSolventDot_dx;
+    PetscErrorCode get_dSolventDot_dx(
       DataForcesAndSurcesCore::EntData &col_data,int gg
     ) {
       PetscFunctionBegin;
       try {
         int nb_col = col_data.getIndices().size();
-        dVolumeDot_dx.resize(nb_col,false);
-        dVolumeDot_dx.clear();
+        dSolventDot_dx.resize(nb_col,false);
+        dSolventDot_dx.clear();
         const MatrixAdaptor diffN = col_data.getDiffN(gg);
-        ublas::vector<double> &jac_volume_rate = commonData.jacVolumeDot[gg];
-        //cerr << dVolumeDot_dx << endl;
-        //cerr << jac_volume_rate << endl;
+        ublas::vector<double> &jac_solvent_rate = commonData.jacVolumeDot[gg];
+        //cerr << dSolventDot_dx << endl;
+        //cerr << jac_solvent_rate << endl;
         for(int dd = 0;dd<nb_col/3;dd++) {    // DoFs in column
           for(int jj = 0;jj<3;jj++) {
             double a = diffN(dd,jj);
             for(int rr2 = 0;rr2<3;rr2++) {
-              dVolumeDot_dx[3*dd+rr2] += jac_volume_rate(3*rr2+jj)*a;
-              dVolumeDot_dx[3*dd+rr2] += jac_volume_rate(9+3*rr2+jj)*a*getFEMethod()->ts_a;
+              dSolventDot_dx[3*dd+rr2] += jac_solvent_rate(3*rr2+jj)*a;
+              dSolventDot_dx[3*dd+rr2] += jac_solvent_rate(9+3*rr2+jj)*a*getFEMethod()->ts_a;
             }
           }
         }
-        //cerr << dVolumeDot_dx << endl;
+        //cerr << dSolventDot_dx << endl;
       } catch (const std::exception& ex) {
         ostringstream ss;
         ss << "throw in method: " << ex.what() << endl;
@@ -1950,18 +1951,18 @@ struct Gel {
         K.clear();
         int nb_gauss_pts = row_data.getN().size1();
         for(int gg = 0;gg!=nb_gauss_pts;gg++) {
-          ierr = get_dVolumeDot_dx(col_data,gg); CHKERRQ(ierr);
+          ierr = get_dSolventDot_dx(col_data,gg); CHKERRQ(ierr);
           double val = getVolume()*getGaussPts()(3,gg);
           if(getHoGaussPtsDetJac().size()>0) {
             val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
           }
-          dVolumeDot_dx *= val;
-          //cerr << dVolumeDot_dx << endl;
+          dSolventDot_dx *= val;
+          //cerr << dSolventDot_dx << endl;
           const VectorAdaptor &N = row_data.getN(gg);
           { //integrate element stiffness matrix
             for(int dd1 = 0;dd1<nb_row;dd1++) {
               for(int dd2 = 0;dd2<nb_col;dd2++) {
-                K(dd1,dd2) += N[dd1]*dVolumeDot_dx[dd2];
+                K(dd1,dd2) += N[dd1]*dSolventDot_dx[dd2];
               }
             }
           }
