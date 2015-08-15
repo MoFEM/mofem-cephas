@@ -346,9 +346,9 @@ PetscErrorCode FixBcAtEntities::iNitalize() {
   if(mapZeroRows.empty()) {
     for(vector<string>::iterator fit = fieldNames.begin();fit!=fieldNames.end();fit++) {
       for(Range::iterator eit = eNts.begin();eit!=eNts.end();eit++) {
-	for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,*fit,*eit,pcomm->rank(),dof)) {
-	 mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = 0;
-	}
+        for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,*fit,*eit,pcomm->rank(),dof)) {
+          mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = 0;
+        }
       }
     }
     dofsIndices.resize(mapZeroRows.size());
