@@ -55,6 +55,9 @@ namespace po = boost::program_options;
 // are used to apply solvent concentration.
 #include <ThermalElement.hpp>
 
+//See file users_modules/elasticity/TimeForceScale.hpp
+#include <TimeForceScale.hpp>
+
 #include <boost/iostreams/tee.hpp>
 #include <boost/iostreams/stream.hpp>
 #include <fstream>
@@ -423,7 +426,7 @@ int main(int argc, char *argv[]) {
       new Gel::OpRhsSolventFlux(gel.commonData)
     );
     gel.feRhs.getOpPtrVector().push_back(
-      new Gel::OpSolventConcetrationDot(gel.commonData)
+      new Gel::OpRhsSolventConcetrationDot(gel.commonData)
     );
     gel.feRhs.getOpPtrVector().push_back(
       new Gel::OpRhsStrainHat(gel.commonData)
@@ -492,6 +495,7 @@ int main(int argc, char *argv[]) {
   DirichletBCFromBlockSetFEMethodPreAndPostProc concentration_bc(
     m_field,"CHEMICAL_LOAD","CHEMICAL_LOAD",A,T,F
   );
+  concentration_bc.methodsOp.push_back(new TimeForceScale("-my_chemical_load_history",false));
 
   // Setting finite element method for applying tractions
   boost::ptr_map<string,NeummanForcesSurface> neumann_forces;
@@ -504,6 +508,24 @@ int main(int argc, char *argv[]) {
     ierr = MetaNodalForces::setOperators(m_field,nodal_forces,F,"SPATIAL_POSITION"); CHKERRQ(ierr);
     //edge forces
     ierr = MetaEdgeForces::setOperators(m_field,edge_forces,F,"SPATIAL_POSITION"); CHKERRQ(ierr);
+    for(
+      boost::ptr_map<string,NeummanForcesSurface>::iterator mit = neumann_forces.begin();
+      mit!=neumann_forces.end();mit++
+    ) {
+      mit->second->methodsOp.push_back(new TimeForceScale("-my_load_history",false));
+    }
+    for(
+      boost::ptr_map<string,NodalForce>::iterator mit = nodal_forces.begin();
+      mit!=nodal_forces.end();mit++
+    ) {
+      mit->second->methodsOp.push_back(new TimeForceScale("-my_load_history",false));
+    }
+    for(
+      boost::ptr_map<string,NodalForce>::iterator mit = edge_forces.begin();
+      mit!=edge_forces.end();mit++
+    ) {
+      mit->second->methodsOp.push_back(new TimeForceScale("-my_load_history",false));
+    }
   }
 
   // Solvent surface element, flux, convection radiation
