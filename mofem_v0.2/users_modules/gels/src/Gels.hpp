@@ -143,7 +143,7 @@ struct Gel {
 
     ublas::matrix<TYPE> stressTotal;              ///< Total stress
     ublas::vector<TYPE> solventFlux;              ///< Solvent flux
-    TYPE solventConcentrationDot;                               ///< Volume rate change
+    TYPE solventConcentrationDot;                 ///< Volume rate change
     ublas::matrix<TYPE> residualStrainHat;        ///< Residual for calculation epsilon hat
 
     virtual PetscErrorCode calculateCauchyDefromationTensor() {
@@ -1232,9 +1232,9 @@ struct Gel {
   \f]
 
   */
-  struct OpSolventConcetrationDot: public AssembleVector {
+  struct OpRhsSolventConcetrationDot: public AssembleVector {
     CommonData &commonData;
-    OpSolventConcetrationDot(CommonData &common_data):
+    OpRhsSolventConcetrationDot(CommonData &common_data):
     AssembleVector(common_data.muName),
     commonData(common_data) {
     }

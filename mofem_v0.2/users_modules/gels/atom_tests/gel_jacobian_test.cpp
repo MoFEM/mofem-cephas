@@ -215,7 +215,7 @@ int main(int argc, char *argv[]) {
       fe_ptr[ss]->getOpPtrVector().push_back(new Gel::OpGetDataAtGaussPts("HAT_EPS",common_data,true,false,MBTET));
       fe_ptr[ss]->getOpPtrVector().push_back(new Gel::OpGetDataAtGaussPts("HAT_EPS_DOT",common_data,true,false,MBTET));
     }
-    
+
     // attach tags for each recorder
     vector<int> tags;
     tags.push_back(1);
@@ -234,7 +234,7 @@ int main(int argc, char *argv[]) {
       new Gel::OpRhsSolventFlux(gel.commonData)
     );
     gel.feRhs.getOpPtrVector().push_back(
-      new Gel::OpRhsVolumeDot(gel.commonData)
+      new Gel::OpRhsSolventConcetrationDot(gel.commonData)
     );
     gel.feRhs.getOpPtrVector().push_back(
       new Gel::OpRhsStrainHat(gel.commonData)
