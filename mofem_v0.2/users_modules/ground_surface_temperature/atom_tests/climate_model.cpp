@@ -15,6 +15,7 @@
 #include <MoFEM.hpp>
 using namespace MoFEM;
 
+#include <MethodForForceScaling.hpp>
 #include <DirichletBC.hpp>
 
 #include <Projection10NodeCoordsOnField.hpp>
@@ -55,7 +56,7 @@ using bio::stream;
 ErrorCode rval;
 PetscErrorCode ierr;
 
-static char help[] = 
+static char help[] =
   "-nb_days [days]\n"
   "-my_step_size [days]\n\n";
 
@@ -72,7 +73,7 @@ int main(int argc, char *argv[]) {
   PetscScalar time_step;
   ierr = PetscOptionsGetScalar(PETSC_NULL,"-my_step_size",&time_step,&flg); CHKERRQ(ierr);
   if(flg != PETSC_TRUE) {
-    time_step = 0.2; // 5th part of day 
+    time_step = 0.2; // 5th part of day
   }
 
   CrudeClimateModel time_data("parameters.in");
@@ -81,6 +82,3 @@ int main(int argc, char *argv[]) {
   PetscFinalize();
   return 0;
 }
-
-
-
