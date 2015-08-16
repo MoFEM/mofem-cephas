@@ -410,7 +410,7 @@ int main(int argc, char *argv[]) {
     vector<int> tags;
     tags.push_back(Gel::STRESSTOTAL); // ADOL-C tag used to calculate total stress
     tags.push_back(Gel::SOLVENTFLUX);
-    tags.push_back(Gel::VOLUMERATE);
+    tags.push_back(Gel::SOLVENTRATE);
     tags.push_back(Gel::RESIDUALSTRAINHAT);
 
     // Right hand side operators
@@ -492,6 +492,7 @@ int main(int argc, char *argv[]) {
   SpatialPositionsBCFEMethodPreAndPostProc spatial_position_bc(
     m_field,"SPATIAL_POSITION",A,T,F
   );
+  spatial_position_bc.methodsOp.push_back(new TimeForceScale("-my_displacements_history",false));
   DirichletBCFromBlockSetFEMethodPreAndPostProc concentration_bc(
     m_field,"CHEMICAL_LOAD","CHEMICAL_LOAD",A,T,F
   );
@@ -521,7 +522,7 @@ int main(int argc, char *argv[]) {
       mit->second->methodsOp.push_back(new TimeForceScale("-my_load_history",false));
     }
     for(
-      boost::ptr_map<string,NodalForce>::iterator mit = edge_forces.begin();
+      boost::ptr_map<string,EdgeForce>::iterator mit = edge_forces.begin();
       mit!=edge_forces.end();mit++
     ) {
       mit->second->methodsOp.push_back(new TimeForceScale("-my_load_history",false));
