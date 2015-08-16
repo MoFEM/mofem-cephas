@@ -74,7 +74,7 @@ struct Gel {
   enum TagEvaluate {
     STRESSTOTAL,
     SOLVENTFLUX,
-    VOLUMERATE,
+    SOLVENTRATE,
     RESIDUALSTRAINHAT
   };
 
@@ -312,7 +312,7 @@ struct Gel {
     virtual PetscErrorCode calculateSolventFlux() {
       PetscFunctionBegin;
       double a = dAta.pErmeability/(dAta.vIscosity*dAta.oMega/**dAta.oMega*/);
-      solventFlux=-a*gradientMu;
+      solventFlux=a*gradientMu;
       PetscFunctionReturn(0);
     }
 
@@ -355,7 +355,7 @@ struct Gel {
     vector<double*> jacRowPtr;
     vector<ublas::matrix<double> > jacStressTotal;
     vector<ublas::matrix<double> > jacSolventFlux;
-    vector<ublas::vector<double> > jacVolumeDot;
+    vector<ublas::vector<double> > jacSolventDot;
     vector<ublas::matrix<double> > jacStrainHat;
 
     bool recordOn;
@@ -668,7 +668,7 @@ struct Gel {
     PetscErrorCode recordSolventConcentrationDot() {
       PetscFunctionBegin;
 
-      if(tagS[VOLUMERATE]<0) {
+      if(tagS[SOLVENTRATE]<0) {
         PetscFunctionReturn(0);
       }
 
@@ -677,30 +677,30 @@ struct Gel {
       ublas::matrix<double> &F = (commonData.gradAtGaussPts[commonData.spatialPositionName])[0];
       ublas::matrix<double> &F_dot = (commonData.gradAtGaussPts[commonData.spatialPositionNameDot])[0];
 
-      trace_on(tagS[VOLUMERATE]);
+      trace_on(tagS[SOLVENTRATE]);
       {
         // Activate rate of gradient of defamation
-        nbActiveVariables[tagS[VOLUMERATE]] = 0;
+        nbActiveVariables[tagS[SOLVENTRATE]] = 0;
         cE->F.resize(3,3,false);
         for(int dd1 = 0;dd1<3;dd1++) {
           for(int dd2 = 0;dd2<3;dd2++) {
             cE->F(dd1,dd2) <<= F(dd1,dd2);
-            nbActiveVariables[tagS[VOLUMERATE]]++;
+            nbActiveVariables[tagS[SOLVENTRATE]]++;
           }
         }
         cE->FDot.resize(3,3,false);
         for(int dd1 = 0;dd1<3;dd1++) {
           for(int dd2 = 0;dd2<3;dd2++) {
             cE->FDot(dd1,dd2) <<= F_dot(dd1,dd2);
-            nbActiveVariables[tagS[VOLUMERATE]]++;
+            nbActiveVariables[tagS[SOLVENTRATE]]++;
           }
         }
         ierr = cE->calculateTraceStrainTotalDot(); CHKERRQ(ierr);
         ierr = cE->calculateSolventConcentrationDot(); CHKERRQ(ierr);
-        nbActiveResults[tagS[VOLUMERATE]] = 0;
+        nbActiveResults[tagS[SOLVENTRATE]] = 0;
         commonData.solventConcentrationDot.resize(nbGaussPts);
         cE->solventConcentrationDot >>= commonData.solventConcentrationDot[0];
-        nbActiveResults[tagS[VOLUMERATE]]++;
+        nbActiveResults[tagS[SOLVENTRATE]]++;
       }
       trace_off();
 
@@ -787,7 +787,10 @@ struct Gel {
         ptr
       );
       if(r<3) { // function is locally analytic
-        SETERRQ1(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"ADOL-C function evaluation with error r = %d",r);
+        SETERRQ1(
+          PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,
+          "ADOL-C function evaluation with error r = %d",r
+        );
       }
 
       PetscFunctionReturn(0);
@@ -805,7 +808,10 @@ struct Gel {
           &(commonData.jacRowPtr[0])
         );
         if(r<3) {
-          SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"ADOL-C function evaluation with error");
+          SETERRQ(
+            PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,
+            "ADOL-C function evaluation with error"
+          );
         }
       } catch (const std::exception& ex) {
         ostringstream ss;
@@ -845,11 +851,13 @@ struct Gel {
           for(int ii = 0;ii<6;ii++) {
             activeVariables[nb_active_variables++] = strain_hat[ii];
           }
-
+          // chemical load
           activeVariables[nb_active_variables++] = mu;
+
           if(nb_active_variables!=nbActiveVariables[tagS[STRESSTOTAL]]) {
             SETERRQ(
-              PETSC_COMM_SELF,MOFEM_IMPOSIBLE_CASE,"Number of active variables does not much"
+              PETSC_COMM_SELF,MOFEM_IMPOSIBLE_CASE,
+              "Number of active variables does not much"
             );
           }
 
@@ -938,16 +946,16 @@ struct Gel {
       PetscFunctionReturn(0);
     }
 
-    PetscErrorCode calculateAtIntPtsVolumeDot() {
+    PetscErrorCode calculateAtIntPtsSolventDot() {
       PetscFunctionBegin;
 
-      if(tagS[VOLUMERATE]<0) {
+      if(tagS[SOLVENTRATE]<0) {
         PetscFunctionReturn(0);
       }
 
       PetscErrorCode ierr;
 
-      activeVariables.resize(nbActiveVariables[tagS[VOLUMERATE]],false);
+      activeVariables.resize(nbActiveVariables[tagS[SOLVENTRATE]],false);
 
       for(int gg = 0;gg<nbGaussPts;gg++) {
         ublas::matrix<double> &F = (commonData.gradAtGaussPts[commonData.spatialPositionName])[gg];
@@ -964,22 +972,22 @@ struct Gel {
             activeVariables[nb_active_variables++] = F_dot(dd1,dd2);
           }
         }
-        if(nb_active_variables!=nbActiveVariables[tagS[VOLUMERATE]]) {
+        if(nb_active_variables!=nbActiveVariables[tagS[SOLVENTRATE]]) {
           SETERRQ(
             PETSC_COMM_SELF,MOFEM_IMPOSIBLE_CASE,"Number of active variables does not much"
           );
         }
         if(calculateResidualBool) {
-          ierr = calculateFunction(VOLUMERATE,&commonData.solventConcentrationDot[gg]); CHKERRQ(ierr);
+          ierr = calculateFunction(SOLVENTRATE,&commonData.solventConcentrationDot[gg]); CHKERRQ(ierr);
         }
         if(calculateJacobianBool) {
           if(gg == 0) {
-            commonData.jacVolumeDot.resize(nbGaussPts);
-            commonData.jacRowPtr.resize(nbActiveResults[tagS[VOLUMERATE]]);
+            commonData.jacSolventDot.resize(nbGaussPts);
+            commonData.jacRowPtr.resize(nbActiveResults[tagS[SOLVENTRATE]]);
           }
-          commonData.jacVolumeDot[gg].resize(nbActiveVariables[tagS[VOLUMERATE]]);
-          commonData.jacRowPtr[0] = &commonData.jacVolumeDot[gg][0];
-          ierr = calculateJacobian(VOLUMERATE); CHKERRQ(ierr);
+          commonData.jacSolventDot[gg].resize(nbActiveVariables[tagS[SOLVENTRATE]]);
+          commonData.jacRowPtr[0] = &commonData.jacSolventDot[gg][0];
+          ierr = calculateJacobian(SOLVENTRATE); CHKERRQ(ierr);
         }
       }
 
@@ -1076,7 +1084,7 @@ struct Gel {
 
         ierr = calculateAtIntPtsStressTotal(); CHKERRQ(ierr);
         ierr = calculateAtIntPtsSolventFlux(); CHKERRQ(ierr);
-        ierr = calculateAtIntPtsVolumeDot(); CHKERRQ(ierr);
+        ierr = calculateAtIntPtsSolventDot(); CHKERRQ(ierr);
         ierr = calculateAtIntPtrsResidualStrainHat(); CHKERRQ(ierr);
 
       } catch (const std::exception& ex) {
@@ -1915,14 +1923,14 @@ struct Gel {
         dSolventDot_dx.resize(nb_col,false);
         dSolventDot_dx.clear();
         const MatrixAdaptor diffN = col_data.getDiffN(gg);
-        ublas::vector<double> &jac_solvent_rate = commonData.jacVolumeDot[gg];
+        ublas::vector<double> &jac_solvent_rate = commonData.jacSolventDot[gg];
         //cerr << dSolventDot_dx << endl;
         //cerr << jac_solvent_rate << endl;
         for(int dd = 0;dd<nb_col/3;dd++) {    // DoFs in column
           for(int jj = 0;jj<3;jj++) {
             double a = diffN(dd,jj);
             for(int rr2 = 0;rr2<3;rr2++) {
-              dSolventDot_dx[3*dd+rr2] += jac_solvent_rate(3*rr2+jj)*a;
+              dSolventDot_dx[3*dd+rr2] += jac_solvent_rate(0+3*rr2+jj)*a;
               dSolventDot_dx[3*dd+rr2] += jac_solvent_rate(9+3*rr2+jj)*a*getFEMethod()->ts_a;
             }
           }
