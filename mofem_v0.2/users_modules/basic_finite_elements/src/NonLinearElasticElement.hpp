@@ -532,7 +532,8 @@ struct NonlinearElasticElement {
   PetscErrorCode setOperators(
     string spatial_position_field_name,
     string material_position_field_name = "MESH_NODE_POSITIONS",
-    bool ale = false,bool field_disp = false);
+    bool ale = false,bool field_disp = false
+  );
 
 };
 

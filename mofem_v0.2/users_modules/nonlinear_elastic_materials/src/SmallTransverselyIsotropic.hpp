@@ -32,38 +32,46 @@ struct SmallStrainTranverslyIsotropic: public NonlinearElasticElement::Functions
 
     SmallStrainTranverslyIsotropic(): NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoffI<TYPE>() {}
 
-    ublas::matrix<TYPE> ePs;
+    ublas::matrix<TYPE> sTrain;
+    ublas::vector<TYPE> voightStrain;
     TYPE tR;
 
     PetscErrorCode calculateStrain()
       PetscFunctionBegin;
-      ePs.resize(3,3,false);
-      noalias(ePs) = this->F;
+      sTrain.resize(3,3,false);
+      noalias(sTrain) = this->F;
       for(int dd = 0;dd<3;dd++) {
-        ePs(dd,dd) -= 1;
+        sTrain(dd,dd) -= 1;
       }
-      ePs += trans(ePs);
-      ePs *= 0.5;
+      sTrain += trans(sTrain);
+      sTrain *= 0.5;
+      voightStrain.resize(6,false);
+      voightStrain[0] = Strain(0,0);
+      voightStrain[1] = Strain(1,1);
+      voightStrain[2] = Strain(2,2);
+      voightStrain[3] = 2*Strain(0,1);
+      voightStrain[4] = 2*Strain(1,2);
+      voightStrain[5] = 2*Strain(2,0);
       PetscFunctionReturn(0);
     )
 
     double nu_p, nu_pz, E_p, E_z, G_zp;
-    ublas::symmetric_matrix<FieldData,ublas::upper> stiffnessMatrix;
-    PetscErrorCode calculateMaterialStiffnesMatrix() {
+    ublas::symmetric_matrix<TYPE,ublas::upper> localStiffnessMatrix;
+    PetscErrorCode calculateLocalStiffnesMatrix() {
       PetscFunctionBegin;
       double nu_zp=(nu_pz*E_z)/E_p;
       double delta=((1+nu_p)*(1-nu_p-(2*nu_pz*nu_zp)))/(E_p*E_p*E_z);
 
-      stiffnessMatrix.resize(6);
-      stiffnessMatrix.clear();
-      stiffnessMatrix(0,0)=stiffnessMatrix(1,1)=(1-nu_pz*nu_zp)/(E_p*E_z*delta);
-      stiffnessMatrix(2,2)=(1-nu_p*nu_p)/(E_p*E_p*delta);
+      localStiffnessMatrix.resize(6);
+      localStiffnessMatrix.clear();
+      localStiffnessMatrix(0,0)=localStiffnessMatrix(1,1)=(1-nu_pz*nu_zp)/(E_p*E_z*delta);
+      localStiffnessMatrix(2,2)=(1-nu_p*nu_p)/(E_p*E_p*delta);
 
-      stiffnessMatrix(0,1)=stiffnessMatrix(1,0)=(nu_p+nu_zp*nu_pz)/(E_p*E_z*delta);
-      stiffnessMatrix(0,2)=stiffnessMatrix(2,0)=stiffnessMatrix(1,2)=stiffnessMatrix(2,1)=(nu_zp+nu_p*nu_zp)/(E_p*E_z*delta);
+      localStiffnessMatrix(0,1)=localStiffnessMatrix(1,0)=(nu_p+nu_zp*nu_pz)/(E_p*E_z*delta);
+      localStiffnessMatrix(0,2)=localStiffnessMatrix(2,0)=localStiffnessMatrix(1,2)=localStiffnessMatrix(2,1)=(nu_zp+nu_p*nu_zp)/(E_p*E_z*delta);
 
-      stiffnessMatrix(3,3)=E_p/(2*(1+nu_p));
-      stiffnessMatrix(4,4)=stiffnessMatrix(5,5)=G_zp;
+      localStiffnessMatrix(3,3)=E_p/(2*(1+nu_p));
+      localStiffnessMatrix(4,4)=localStiffnessMatrix(5,5)=G_zp;
 
       PetscFunctionReturn(0);
     }
@@ -223,9 +231,21 @@ struct SmallStrainTranverslyIsotropic: public NonlinearElasticElement::Functions
   };
 
 
-  /** \brief Hooke equation
-  *
-  * \f$\sigma = \lambda\textrm{tr}[\varepsilon]+2\mu\varepsilon\f$
+  ublas::matrix<TYPE> globalStiffnessMatrix;
+
+  PetscErrorCode calculateGlobalStiffnesMatrix() {
+    PetscFunctionBegin;
+
+    globalStiffnessMatrix.resize(6,6,false);
+    noalias(globalStiffnessMatrix) = prod(stressRotMat,prod(localStiffnessMatrix,strainRotMat));
+
+    PetscFunctionReturn(0);
+  }
+
+
+  ublas::vector<TYPE> voigtStress;
+
+  /** \brief Calculate global stress
   *
   */
   virtual PetscErrorCode calculateP_PiolaKirchhoffI(
@@ -234,16 +254,29 @@ struct SmallStrainTranverslyIsotropic: public NonlinearElasticElement::Functions
   ) {
     PetscFunctionBegin;
     ierr = calculateStrain(); CHKERRQ(ierr);
-    ierr = calculateMaterialStiffnesMatrix(); CHKERRQ(ierr);
+    ierr = calculateLocalStiffnesMatrix(); CHKERRQ(ierr);
     ierr = calculateAxisAngleRotationalMatrix(); CHKERRQ(ierr);
     ierr = stressTransformation(); CHKERRQ(ierr);
     ierr = strainTransformation(); CHKERRQ(ierr);
+    ierr = calculateGlobalStiffnesMatrix(); CHKERRQ(ierr);
+
+    voigtStress.resize(6,false);
+    noalias(voigtStress) = prod(globalStiffnessMatrix,voightStrain);
+    this->P.resize(3,3,false);
+    P(0,0) = voigtStress[0];
+    P(1,1) = voigtStress[1];
+    P(2,2) = voigtStress[2];
+    P(0,1) = voigtStress[3];
+    P(1,2) = voigtStress[4];
+    P(0,2) = voigtStress[5];
+    P(1,0) = P(0,1);
+    P(2,1) = P(1,2);
+    P(2,0) = P(0,2);
+
     PetscFunctionReturn(0);
   }
 
   /** \brief calculate density of strain energy
-  *
-  * \f$\Psi = \frac{1}{2}\lambda(\textrm{tr}[\varepsilon])^2+\mu\varepsilon:\varepsilon\f$
   *
   */
   virtual PetscErrorCode calculateElasticEnergy(
@@ -251,6 +284,16 @@ struct SmallStrainTranverslyIsotropic: public NonlinearElasticElement::Functions
     const NumeredMoFEMFiniteElement *fe_ptr
   ) {
     PetscFunctionBegin;
+    ierr = calculateStrain(); CHKERRQ(ierr);
+    ierr = calculateLocalStiffnesMatrix(); CHKERRQ(ierr);
+    ierr = calculateAxisAngleRotationalMatrix(); CHKERRQ(ierr);
+    ierr = stressTransformation(); CHKERRQ(ierr);
+    ierr = strainTransformation(); CHKERRQ(ierr);
+    ierr = calculateGlobalStiffnesMatrix(); CHKERRQ(ierr);
+
+    voigtStress.resize(6,false);
+    noalias(voigtStress) = prod(globalStiffnessMatrix,voightStrain);
+    this->eNergy += 0.5*(voigtStress,voightStrain);
     PetscFunctionReturn(0);
   }
 
