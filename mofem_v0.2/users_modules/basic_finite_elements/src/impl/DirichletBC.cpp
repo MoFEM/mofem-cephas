@@ -203,26 +203,28 @@ PetscErrorCode DisplacementBCFEMethodPreAndPostProc::postProcess() {
     case CTX_SNESNONE:
     break;
     case CTX_SNESSETFUNCTION: {
-      dofsXValues.resize(dofsIndices.size());
-      ierr = VecGetValues(
-        snes_x,dofsIndices.size(),&dofsIndices[0],&dofsXValues[0]
-      ); CHKERRQ(ierr);
-      ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
-      ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
-      int ii = 0;
-      for(vector<int>::iterator vit = dofsIndices.begin();vit!=dofsIndices.end();vit++,ii++) {
-        double val = 0;
-        if(!dofsXValues.empty()) {
-          val += dofsXValues[ii];
-          val += -mapZeroRows[*vit]; // in snes it is on the left hand side, that way -1
-          dofsXValues[ii] = val;
+      if(!dofsIndices.empty()) {
+        dofsXValues.resize(dofsIndices.size());
+        ierr = VecGetValues(
+          snes_x,dofsIndices.size(),&dofsIndices[0],&dofsXValues[0]
+        ); CHKERRQ(ierr);
+        ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
+        ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+        int ii = 0;
+        for(vector<int>::iterator vit = dofsIndices.begin();vit!=dofsIndices.end();vit++,ii++) {
+          double val = 0;
+          if(!dofsXValues.empty()) {
+            val += dofsXValues[ii];
+            val += -mapZeroRows[*vit]; // in snes it is on the left hand side, that way -1
+            dofsXValues[ii] = val;
+          }
         }
+        ierr = VecSetValues(
+          snes_f,dofsIndices.size(),&dofsIndices[0],&dofsXValues[0],INSERT_VALUES
+        ); CHKERRQ(ierr);
+        ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
+        ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
       }
-      ierr = VecSetValues(
-        snes_f,dofsIndices.size(),&dofsIndices[0],&dofsXValues[0],INSERT_VALUES
-      ); CHKERRQ(ierr);
-      ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
-      ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
     }
     break;
     case CTX_SNESSETJACOBIAN: {
@@ -453,7 +455,7 @@ PetscErrorCode DirichletBCFromBlockSetFEMethodPreAndPostProc::iNitalize() {
         vector<double> mydata;
         ierr = it->get_attributes(mydata); CHKERRQ(ierr);
         ublas::vector<double> scaled_values(mydata.size());
-        for(int ii = 0;ii<mydata.size();ii++) {
+        for(unsigned int ii = 0;ii<mydata.size();ii++) {
           scaled_values[ii] = mydata[ii];
         }
         ierr = MethodForForceScaling::applyScale(this,methodsOp,scaled_values); CHKERRQ(ierr);
