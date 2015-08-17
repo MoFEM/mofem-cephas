@@ -99,27 +99,21 @@ int main(int argc, char *argv[]) {
   Tag th_phi;
   //    double def_val  = 0;
   rval = moab.tag_get_handle("PHI",1,MB_TYPE_DOUBLE,th_phi); CHKERR_PETSC(rval);
-
   Tag th_meshset_info;
   int def_meshset_info[2] = {0,0};
-  rval = moab.tag_get_handle("MESHSET_INFO",2,MB_TYPE_INTEGER,th_meshset_info,MB_TAG_CREAT|MB_TAG_SPARSE,&def_meshset_info);
-
+  rval = moab.tag_get_handle(
+    "MESHSET_INFO",2,MB_TYPE_INTEGER,th_meshset_info,MB_TAG_CREAT|MB_TAG_SPARSE,&def_meshset_info
+  );
   int meshset_data[2];
   EntityHandle root = moab.get_root_set();
   rval = moab.tag_get_data(th_meshset_info,&root,1,meshset_data); CHKERR_PETSC(rval);
-
   vector<BitRefLevel> bit_levels;
   bit_levels.push_back(BitRefLevel().set(meshset_data[0]-1));
+  BitRefLevel problem_bit_level = bit_levels.back();
 
   //    const clock_t begin_time = clock();
   ierr = m_field.build_fields(); CHKERRQ(ierr);
   ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
-  ierr = m_field.build_adjacencies(bit_levels.back()); CHKERRQ(ierr);
-  ierr = m_field.build_problems(); CHKERRQ(ierr);
-
-  //    std::cout << float( clock () - begin_time ) /  CLOCKS_PER_SEC<<endl;
-
-	//Build FE
 
   EntityHandle out_meshset;
   rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
@@ -127,13 +121,10 @@ int main(int argc, char *argv[]) {
   ierr = m_field.get_entities_by_ref_level(bit_levels.back(),BitRefLevel().set(),out_meshset); CHKERRQ(ierr);
   Range LatestRefinedTets;
   rval = moab.get_entities_by_type(out_meshset, MBTET,LatestRefinedTets,true); CHKERR_PETSC(rval);
-
   Range LatestRefinedPrisms;
   rval = moab.get_entities_by_type(out_meshset, MBPRISM,LatestRefinedPrisms,true); CHKERR_PETSC(rval);
-
   cout<<"No of Prisms/Interfaces = "<<LatestRefinedPrisms.size()<<endl;
 
-  BitRefLevel problem_bit_level = bit_levels.back();
 
   EntityHandle meshset_Elastic, meshset_Trans_ISO;
   rval = moab.create_meshset(MESHSET_SET,meshset_Elastic); CHKERR_PETSC(rval);
@@ -156,7 +147,6 @@ int main(int argc, char *argv[]) {
 
 	vector<Range> RangeFibre(noOfFibres);
 	vector<EntityHandle> fibre_meshset(noOfFibres);
-
 	for (int ii=0; ii<noOfFibres; ii++) {
 		ostringstream sss;
 		sss << "POTENTIAL_ELEM" << ii+1;
@@ -167,7 +157,6 @@ int main(int argc, char *argv[]) {
 			rval = moab.unite_meshset(meshset_Trans_ISO,fibre_meshset[ii]); CHKERR_PETSC(rval);
 		}
 	}
-
   rval = moab.write_file("meshset_Trans_ISO.vtk","VTK","",&meshset_Trans_ISO,1); CHKERR_PETSC(rval);
 
 	for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)){
@@ -185,8 +174,6 @@ int main(int argc, char *argv[]) {
 	}
   ierr = m_field.seed_finite_elements(meshset_Elastic); CHKERRQ(ierr);
 
-
-
 	Range prims_on_problem_bit_level;
 	ierr = m_field.get_entities_by_type_and_ref_level(problem_bit_level,BitRefLevel().set(),MBPRISM,prims_on_problem_bit_level); CHKERRQ(ierr);
   //to create meshset from range
@@ -194,9 +181,6 @@ int main(int argc, char *argv[]) {
   rval = moab.create_meshset(MESHSET_SET,meshset_prims_on_problem_bit_level); CHKERR_PETSC(rval);
 	rval = moab.add_entities(meshset_prims_on_problem_bit_level,prims_on_problem_bit_level); CHKERR_PETSC(rval);
   ierr = m_field.seed_ref_level_MESHSET(meshset_prims_on_problem_bit_level,BitRefLevel().set()); CHKERRQ(ierr);
-
-  /***/
-  //Define problem
 
   //Fields
   int field_rank=3;
@@ -226,7 +210,9 @@ int main(int argc, char *argv[]) {
   ierr = m_field.set_field_order(0,MBEDGE,"Lagrange_mul_disp",order); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0,MBVERTEX,"Lagrange_mul_disp",1); CHKERRQ(ierr);
 
-  //FE
+  //build field
+  ierr = m_field.build_fields(); CHKERRQ(ierr);
+
   ierr = m_field.add_finite_element("ELASTIC"); CHKERRQ(ierr);
   ierr = m_field.add_finite_element("TRAN_ISOTROPIC_ELASTIC"); CHKERRQ(ierr);
   ierr = m_field.add_finite_element("Lagrange_elem"); CHKERRQ(ierr);
@@ -254,24 +240,10 @@ int main(int argc, char *argv[]) {
   ierr = m_field.modify_finite_element_add_field_data("Lagrange_elem","Lagrange_mul_disp"); CHKERRQ(ierr);
   ierr = m_field.modify_finite_element_add_field_data("Lagrange_elem","DISPLACEMENT"); CHKERRQ(ierr);
 
-
-  /***/
-  //Declare problem
-
-
   //add finite elements entities
   ierr = m_field.add_ents_to_finite_element_by_TETs(meshset_Elastic,"ELASTIC",true); CHKERRQ(ierr);
   ierr = m_field.add_ents_to_finite_element_by_TETs(meshset_Trans_ISO,"TRAN_ISOTROPIC_ELASTIC",true); CHKERRQ(ierr);
-
   ierr = m_field.add_ents_to_finite_element_by_TRIs(SurfacesFaces,"Lagrange_elem"); CHKERRQ(ierr);
-
-
-
-  /****/
-  //build database
-
-  //build field
-  ierr = m_field.build_fields(); CHKERRQ(ierr);
 
   //build finite elemnts
   ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
