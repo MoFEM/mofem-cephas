@@ -203,6 +203,21 @@ int main(int argc, char *argv[]) {
   ierr = m_field.add_field("DISPLACEMENT",H1,field_rank); CHKERRQ(ierr);
   ierr = m_field.add_field("Lagrange_mul_disp",H1,field_rank); CHKERRQ(ierr);
 
+  //add entitities (by tets) to the field
+  ierr = m_field.add_ents_to_field_by_TETs(0,"DISPLACEMENT"); CHKERRQ(ierr);
+  Range SurfacesFaces;
+  ierr = m_field.get_cubit_msId_entities_by_dimension(103,SIDESET,2,SurfacesFaces,true); CHKERRQ(ierr);
+  ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SIDESET 103 = %d\n",SurfacesFaces.size()); CHKERRQ(ierr);
+  //to create meshset from range
+  EntityHandle BoundFacesMeshset;
+  rval = moab.create_meshset(MESHSET_SET,BoundFacesMeshset); CHKERR_PETSC(rval);
+  rval = moab.add_entities(BoundFacesMeshset,SurfacesFaces); CHKERR_PETSC(rval);
+  ierr = m_field.seed_ref_level_MESHSET(BoundFacesMeshset,BitRefLevel().set()); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_TRIs(BoundFacesMeshset,"Lagrange_mul_disp",2); CHKERRQ(ierr);
+
+
+
+
   //FE
   ierr = m_field.add_finite_element("ELASTIC"); CHKERRQ(ierr);
   ierr = m_field.add_finite_element("TRAN_ISOTROPIC_ELASTIC"); CHKERRQ(ierr);
@@ -235,25 +250,13 @@ int main(int argc, char *argv[]) {
   /***/
   //Declare problem
 
-  //add entitities (by tets) to the field
-  ierr = m_field.add_ents_to_field_by_TETs(0,"DISPLACEMENT"); CHKERRQ(ierr);
 
   //add finite elements entities
   ierr = m_field.add_ents_to_finite_element_by_TETs(meshset_Elastic,"ELASTIC",true); CHKERRQ(ierr);
   ierr = m_field.add_ents_to_finite_element_by_TETs(meshset_Trans_ISO,"TRAN_ISOTROPIC_ELASTIC",true); CHKERRQ(ierr);
 
-  Range SurfacesFaces;
-  ierr = m_field.get_cubit_msId_entities_by_dimension(103,SIDESET,2,SurfacesFaces,true); CHKERRQ(ierr);
-  ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SIDESET 103 = %d\n",SurfacesFaces.size()); CHKERRQ(ierr);
   ierr = m_field.add_ents_to_finite_element_by_TRIs(SurfacesFaces,"Lagrange_elem"); CHKERRQ(ierr);
 
-  //to create meshset from range
-  EntityHandle BoundFacesMeshset;
-  rval = moab.create_meshset(MESHSET_SET,BoundFacesMeshset); CHKERR_PETSC(rval);
-	rval = moab.add_entities(BoundFacesMeshset,SurfacesFaces); CHKERR_PETSC(rval);
-  ierr = m_field.seed_ref_level_MESHSET(BoundFacesMeshset,BitRefLevel().set()); CHKERRQ(ierr);
-
-  ierr = m_field.add_ents_to_field_by_TRIs(BoundFacesMeshset,"Lagrange_mul_disp",2); CHKERRQ(ierr);
 
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
