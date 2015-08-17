@@ -1,8 +1,3 @@
-/* Copyright (C) 2014, Zahur Ullah (Zahur.Ullah AT glasgow.ac.uk)
- * --------------------------------------------------------------
- * FIXME: DESCRIPTION
- */
-
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -35,6 +30,14 @@ using namespace MoFEM;
 #include <ElasticFE_RVELagrange_Disp.hpp>
 #include <ElasticFE_RVELagrange_Homogenized_Stress_Disp.hpp>
 #include <RVEVolume.hpp>
+
+#ifndef WITH_ADOL_C
+  #error "MoFEM need to be compiled with ADOL-C"
+#endif
+
+#include <adolc/adolc.h>
+#include <NonLinearElasticElement.hpp>
+#include <Hooke.hpp>
 
 ErrorCode rval;
 PetscErrorCode ierr;
@@ -126,8 +129,7 @@ int main(int argc, char *argv[]) {
   cout<<"No of Prisms/Interfaces = "<<LatestRefinedPrisms.size()<<endl;
 
 
-  EntityHandle meshset_Elastic, meshset_Trans_ISO;
-  rval = moab.create_meshset(MESHSET_SET,meshset_Elastic); CHKERR_PETSC(rval);
+  EntityHandle meshset_Trans_ISO;
   rval = moab.create_meshset(MESHSET_SET,meshset_Trans_ISO); CHKERR_PETSC(rval);
 
 	///Getting No. of Fibres to be used for Potential Flow Problem
@@ -159,20 +161,6 @@ int main(int argc, char *argv[]) {
 	}
   rval = moab.write_file("meshset_Trans_ISO.vtk","VTK","",&meshset_Trans_ISO,1); CHKERR_PETSC(rval);
 
-	for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)){
-
-		if(it->get_name() == "MAT_ELASTIC_1") {
-			Range TetsInBlock;
-			rval = moab.get_entities_by_type(it->meshset, MBTET,TetsInBlock,true); CHKERR_PETSC(rval);
-			Range block_rope_bit_level = intersect(LatestRefinedTets,TetsInBlock);
-
-      cout<<"=============  TetsInBlock  "<< TetsInBlock.size() <<endl;
-
-			rval = moab.add_entities(meshset_Elastic,block_rope_bit_level);CHKERR_PETSC(rval);
-
-		}
-	}
-  ierr = m_field.seed_finite_elements(meshset_Elastic); CHKERRQ(ierr);
 
 	Range prims_on_problem_bit_level;
 	ierr = m_field.get_entities_by_type_and_ref_level(problem_bit_level,BitRefLevel().set(),MBPRISM,prims_on_problem_bit_level); CHKERRQ(ierr);
@@ -213,14 +201,37 @@ int main(int argc, char *argv[]) {
   //build field
   ierr = m_field.build_fields(); CHKERRQ(ierr);
 
-  ierr = m_field.add_finite_element("ELASTIC"); CHKERRQ(ierr);
+  Hooke<adouble> hooke_adouble;
+  Hooke<double> hooke_double;
+  NonlinearElasticElement elastic(m_field,1);
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,BLOCKSET|MAT_ELASTICSET,it)) {
+		if(it->get_name() != "MAT_ELASTIC_1") continue;
+    Mat_Elastic mydata;
+    ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+    int id = it->get_msId();
+    EntityHandle meshset = it->get_meshset();
+    rval = m_field.get_moab().get_entities_by_type(
+      meshset,MBTET,elastic.setOfBlocks[id].tEts,true
+    ); CHKERR_PETSC(rval);
+    elastic.setOfBlocks[id].iD = id;
+    elastic.setOfBlocks[id].E = mydata.data.Young;
+    elastic.setOfBlocks[id].PoissonRatio = mydata.data.Poisson;
+    elastic.setOfBlocks[id].materialDoublePtr = &hooke_double;
+    elastic.setOfBlocks[id].materialAdoublePtr = &hooke_adouble;
+    ierr = m_field.seed_finite_elements(elastic.setOfBlocks[id].tEts); CHKERRQ(ierr);
+  }
+  ierr = elastic.addElement("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = elastic.setOperators("DISPLACEMENT","MESH_NODE_POSITIONS",false,true); CHKERRQ(ierr);
+
   ierr = m_field.add_finite_element("TRAN_ISOTROPIC_ELASTIC"); CHKERRQ(ierr);
   ierr = m_field.add_finite_element("Lagrange_elem"); CHKERRQ(ierr);
+
 
   //Define rows/cols and element data
   ierr = m_field.modify_finite_element_add_field_row("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
   ierr = m_field.modify_finite_element_add_field_col("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
   ierr = m_field.modify_finite_element_add_field_data("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
+
   //FE Transverse Isotropic
   ierr = m_field.modify_finite_element_add_field_row("TRAN_ISOTROPIC_ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
   ierr = m_field.modify_finite_element_add_field_col("TRAN_ISOTROPIC_ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
@@ -241,7 +252,6 @@ int main(int argc, char *argv[]) {
   ierr = m_field.modify_finite_element_add_field_data("Lagrange_elem","DISPLACEMENT"); CHKERRQ(ierr);
 
   //add finite elements entities
-  ierr = m_field.add_ents_to_finite_element_by_TETs(meshset_Elastic,"ELASTIC",true); CHKERRQ(ierr);
   ierr = m_field.add_ents_to_finite_element_by_TETs(meshset_Trans_ISO,"TRAN_ISOTROPIC_ELASTIC",true); CHKERRQ(ierr);
   ierr = m_field.add_ents_to_finite_element_by_TRIs(SurfacesFaces,"Lagrange_elem"); CHKERRQ(ierr);
 
@@ -277,25 +287,6 @@ int main(int argc, char *argv[]) {
 
   Mat Aij;
   ierr = m_field.MatCreateMPIAIJWithArrays("ELASTIC_MECHANICS",&Aij); CHKERRQ(ierr);
-
-  struct MyElasticFEMethod: public ElasticFEMethod {
-    MyElasticFEMethod(FieldInterface& _m_field,
-                      Mat &_Aij,Vec &_D,Vec& _F,double _lambda,double _mu):
-    ElasticFEMethod(_m_field,_Aij,_D,_F,_lambda,_mu) {};
-
-    PetscErrorCode Fint(Vec F_int) {
-      PetscFunctionBegin;
-      ierr = ElasticFEMethod::Fint(); CHKERRQ(ierr);
-      for(int rr = 0;rr<row_mat;rr++) {
-        if(RowGlob[rr].size()!=f_int[rr].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-        if(RowGlob[rr].size()==0) continue;
-        f_int[rr] *= -1; //This is not SNES we solve K*D = -RES
-        ierr = VecSetValues(F_int,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f_int[rr].data()[0]),ADD_VALUES); CHKERRQ(ierr);
-      }
-      PetscFunctionReturn(0);
-    }
-  };
-
 
   for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(m_field,"POTENTIAL_FIELD",dof_ptr)) {
     if(dof_ptr->get_ent_type()!=MBVERTEX) continue;
@@ -356,17 +347,30 @@ int main(int argc, char *argv[]) {
 
   //alpha = 1e8;
   cout<<"alpha   = "<<alpha<<endl;
-  MyElasticFEMethod MyFE(m_field,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
   TranIsotropicFibreDirRotElasticFEMethod MyTIsotFE(m_field,Aij,D,F);
   ElasticFE_RVELagrange_Disp MyFE_RVELagrange(m_field,Aij,D,F,applied_strain,"DISPLACEMENT","Lagrange_mul_disp",field_rank);
-
 
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = MatZeroEntries(Aij); CHKERRQ(ierr);
 
-  ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyFE);  CHKERRQ(ierr);
+  //internal force vector (to take into account Dirchelt boundary conditions
+  elastic.getLoopFeRhs().snes_x = D;
+  elastic.getLoopFeRhs().snes_f = F;
+  ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",elastic.getLoopFeRhs());  CHKERRQ(ierr);
+  ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
+  ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
+  ierr = VecScale(F,-1); CHKERRQ(ierr);
+  ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
+  ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
+  //elastic element matrix
+  elastic.getLoopFeLhs().snes_x = D;
+  elastic.getLoopFeLhs().snes_B = Aij;
+  ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",elastic.getLoopFeLhs());  CHKERRQ(ierr);
+
+
+
 	ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","TRAN_ISOTROPIC_ELASTIC",MyTIsotFE);  CHKERRQ(ierr);
   ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","Lagrange_elem",MyFE_RVELagrange);  CHKERRQ(ierr);
 
@@ -445,24 +449,6 @@ int main(int argc, char *argv[]) {
     rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
   }
 
-  //    TranIso_PostProc_FibreDirRot_OnRefMesh fe_post_proc_method( m_field, LAMBDA(YoungModulusP,PoissonRatioP),MU(YoungModulusP,PoissonRatioP), YoungModulusP,YoungModulusZ,PoissonRatioP,PoissonRatioPZ,ShearModulusZP);
-  //
-  //    ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",fe_post_proc_method);  CHKERRQ(ierr);
-  //    ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","TRAN_ISOTROPIC_ELASTIC",fe_post_proc_method);  CHKERRQ(ierr);
-  //
-  //    PetscSynchronizedFlush(PETSC_COMM_WORLD);
-  //    if(pcomm->rank()==0) {
-  //        rval = fe_post_proc_method.moab_post_proc.write_file(outName2,"VTK",""); CHKERR_PETSC(rval);
-  //    }
-  //
-  //    PostProcCohesiveForces fe_post_proc_prisms(m_field,YoungModulus*alpha);
-  //    ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","INTERFACE",fe_post_proc_prisms);  CHKERRQ(ierr);
-  //    PetscSynchronizedFlush(PETSC_COMM_WORLD);
-  //    if(pcomm->rank()==0) {
-  //        rval = fe_post_proc_prisms.moab_post_proc.write_file("out_post_proc_prisms.vtk","VTK",""); CHKERR_PETSC(rval);
-  //    }
-
-
   //detroy matrices
   ierr = VecDestroy(&F); CHKERRQ(ierr);
   ierr = VecDestroy(&D); CHKERRQ(ierr);
@@ -471,12 +457,10 @@ int main(int argc, char *argv[]) {
   ierr = VecDestroy(&RVE_volume_Vec); CHKERRQ(ierr);
   ierr = VecDestroy(&Stress_Homo); CHKERRQ(ierr);
 
-
   ierr = PetscTime(&v2);CHKERRQ(ierr);
   ierr = PetscGetCPUTime(&t2);CHKERRQ(ierr);
 
   PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Total Rank %d Time = %f CPU Time = %f\n",pcomm->rank(),v2-v1,t2-t1);
 
   PetscFinalize();
-
 }
