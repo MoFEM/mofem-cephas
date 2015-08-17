@@ -19,6 +19,9 @@
 
 include_directories("${MoFEM_PROJECT_SOURCE_DIR}/users_modules/homogenisation/src")
 include_directories("${MoFEM_PROJECT_SOURCE_DIR}/users_modules/moisture_transport/src")
+include_directories("${MoFEM_PROJECT_SOURCE_DIR}/users_modules/elasticity/src")
+include_directories(${UM_SOURCE_DIR}/nonlinear_elastic_materials/src)
+
 
 add_library(user_modules_homogenisation
   ${UM_SOURCE_DIR}/homogenisation/src/impl/ElasticFE_RVELagrange_Disp.cpp
@@ -30,6 +33,8 @@ add_library(user_modules_homogenisation
   ${UM_SOURCE_DIR}/homogenisation/src/impl/ElasticFE_RVELagrange_Periodic.cpp
   ${UM_SOURCE_DIR}/homogenisation/src/impl/ElasticFE_RVELagrange_Homogenized_Stress_Periodic.cpp
   ${UM_SOURCE_DIR}/homogenisation/src/impl/ElasticFE_RVELagrange_Disp_Multi_Rhs.cpp
+  ${UM_SOURCE_DIR}/homogenisation/src/impl/ElasticFE_RVELagrange_Traction_Multi_Rhs.cpp
+  ${UM_SOURCE_DIR}/homogenisation/src/impl/ElasticFE_RVELagrange_Periodic_Multi_Rhs.cpp
 )
 
 add_subdirectory(atom_tests)
@@ -78,6 +83,37 @@ target_link_libraries(Cube_Periodic
   mofem_cblas
   ${MoFEM_PROJECT_LIBS}
 )
+
+# ===================== Simple cube with high-order geometry============================================
+
+add_executable(Cube_Disp_HOG ${UM_SOURCE_DIR}/homogenisation/Cube_Disp_HOG.cpp)
+target_link_libraries(Cube_Disp_HOG
+user_modules_homogenisation
+users_modules_obsolete
+users_modules
+mofem_finite_elements
+mofem_interfaces
+mofem_multi_indices
+mofem_petsc
+mofem_approx
+mofem_third_party
+mofem_cblas ${MoFEM_PROJECT_LIBS}
+)
+
+add_executable(Cube_Trac_HOG ${UM_SOURCE_DIR}/homogenisation/Cube_Trac_HOG.cpp)
+target_link_libraries(Cube_Trac_HOG
+user_modules_homogenisation
+users_modules_obsolete
+users_modules
+mofem_finite_elements
+mofem_interfaces
+mofem_multi_indices
+mofem_petsc
+mofem_approx
+mofem_third_party
+mofem_cblas ${MoFEM_PROJECT_LIBS}
+)
+
 
 # =================== Simple cube with reinforcement ================================
 
@@ -187,66 +223,6 @@ target_link_libraries(TransIso_Periodic_NoInt
   ${MoFEM_PROJECT_LIBS}
 )
 
-# =================== Adding textile RVE homogenisation (with interface elements)================================
-add_executable(TransIso_Potential_Flow ${UM_SOURCE_DIR}/homogenisation/TransIso_Potential_Flow.cpp)
-target_link_libraries(TransIso_Potential_Flow
-  user_modules_homogenisation
-  users_modules_obsolete
-  users_modules
-  mofem_finite_elements
-  mofem_interfaces
-  mofem_multi_indices
-  mofem_petsc
-  mofem_approx
-  mofem_third_party
-  mofem_cblas
-  ${MoFEM_PROJECT_LIBS}
-)
-
-add_executable(TransIso_Disp ${UM_SOURCE_DIR}/homogenisation/TransIso_Disp.cpp)
-target_link_libraries(TransIso_Disp
-  user_modules_homogenisation
-  users_modules_obsolete
-  users_modules
-  mofem_finite_elements
-  mofem_interfaces
-  mofem_multi_indices
-  mofem_petsc
-  mofem_approx
-  mofem_third_party
-  mofem_cblas
-  ${MoFEM_PROJECT_LIBS}
-)
-
-add_executable(TransIso_Periodic ${UM_SOURCE_DIR}/homogenisation/TransIso_Periodic.cpp)
-target_link_libraries(TransIso_Periodic
-  user_modules_homogenisation
-  users_modules_obsolete
-  users_modules
-  mofem_finite_elements
-  mofem_interfaces
-  mofem_multi_indices
-  mofem_petsc
-  mofem_approx
-  mofem_third_party
-  mofem_cblas
-  ${MoFEM_PROJECT_LIBS}
-)
-
-add_executable(TransIso_Trac ${UM_SOURCE_DIR}/homogenisation/TransIso_Trac.cpp)
-target_link_libraries(TransIso_Trac
-  user_modules_homogenisation
-  users_modules_obsolete
-  users_modules
-  mofem_finite_elements
-  mofem_interfaces
-  mofem_multi_indices
-  mofem_petsc
-  mofem_approx
-  mofem_third_party
-  mofem_cblas
-  ${MoFEM_PROJECT_LIBS}
-)
 
 # ===================== Simple cube or cube with reinformenct for moisture transport ============================================
 add_executable(MoistureTrans_Disp ${UM_SOURCE_DIR}/homogenisation/MoistureTrans_Disp.cpp)
@@ -295,8 +271,8 @@ target_link_libraries(MoistureTrans_Periodic
 )
 
 # ===================== FE2 elasticity  ============================================
-add_executable(FE2_Elasticity ${UM_SOURCE_DIR}/homogenisation/FE2_Elasticity.cpp)
-target_link_libraries(FE2_Elasticity
+add_executable(FE2_Elasticity_Disp ${UM_SOURCE_DIR}/homogenisation/FE2_Elasticity_Disp.cpp)
+target_link_libraries(FE2_Elasticity_Disp
   user_modules_homogenisation
   users_modules_obsolete
   users_modules
@@ -307,5 +283,35 @@ target_link_libraries(FE2_Elasticity
   mofem_approx
   mofem_third_party
   mofem_cblas
-  ${MoFEM_PROJECT_LIBS}
+  ${MoFEM_PROJECT_LIBS})
+
+add_executable(FE2_Elasticity_Trac ${UM_SOURCE_DIR}/homogenisation/FE2_Elasticity_Trac.cpp)
+target_link_libraries(FE2_Elasticity_Trac
+user_modules_homogenisation
+users_modules_obsolete
+users_modules
+mofem_finite_elements
+mofem_interfaces
+mofem_multi_indices
+mofem_petsc
+mofem_approx
+mofem_third_party
+mofem_cblas
+${MoFEM_PROJECT_LIBS}
 )
+
+add_executable(FE2_Elasticity_Periodic ${UM_SOURCE_DIR}/homogenisation/FE2_Elasticity_Periodic.cpp)
+target_link_libraries(FE2_Elasticity_Periodic
+user_modules_homogenisation
+users_modules_obsolete
+users_modules
+mofem_finite_elements
+mofem_interfaces
+mofem_multi_indices
+mofem_petsc
+mofem_approx
+mofem_third_party
+mofem_cblas
+${MoFEM_PROJECT_LIBS}
+)
+

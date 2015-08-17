@@ -262,30 +262,25 @@ namespace MoFEM {
       
       switch(rank_field) {
         case 3:
-          H_mat_1Node.resize(6,3);  H_mat_1Node.clear();
           
+          H_mat_1Node.resize(6,3);  H_mat_1Node.clear(); //for one node
           if(normal(0)>0){     //+X face of the RVE
-            H_mat_1Node(0,0)=1.0;  H_mat_1Node(3,1)=1.0;  H_mat_1Node(4,2)=1.0;
+            H_mat_1Node(0,0)=1.0;  H_mat_1Node(3,1)=1.0;  H_mat_1Node(5,2)=1.0;
           }
-          
           if(normal(0)<0){    //-X face of the RVE
-            H_mat_1Node(0,0)=-1.0;  H_mat_1Node(3,1)=-1.0;  H_mat_1Node(4,2)=-1.0;
+            H_mat_1Node(0,0)=-1.0;  H_mat_1Node(3,1)=-1.0;  H_mat_1Node(5,2)=-1.0;
           }
-          
           if(normal(1)>0){     //+Y face of the RVE
-            H_mat_1Node(1,1)=1.0;  H_mat_1Node(3,0)=1.0;  H_mat_1Node(5,2)=1.0;
+            H_mat_1Node(1,1)=1.0;  H_mat_1Node(3,0)=1.0;  H_mat_1Node(4,2)=1.0;
           }
-          
           if(normal(1)<0){    //-Y face of the RVE
-            H_mat_1Node(1,1)=-1.0;  H_mat_1Node(3,0)=-1.0;  H_mat_1Node(5,2)=-1.0;
+            H_mat_1Node(1,1)=-1.0;  H_mat_1Node(3,0)=-1.0;  H_mat_1Node(4,2)=-1.0;
           }
-          
           if(normal(2)>0){    //+Z face of the RVE
-            H_mat_1Node(2,2)=1.0;  H_mat_1Node(4,0)=1.0;  H_mat_1Node(5,1)=1.0;
+            H_mat_1Node(2,2)=1.0;  H_mat_1Node(4,1)=1.0;  H_mat_1Node(5,0)=1.0;
           }
-          
           if(normal(2)<0){    //-Z face of the RVE
-            H_mat_1Node(2,2)=-1.0;  H_mat_1Node(4,0)=-1.0;  H_mat_1Node(5,1)=-1.0;
+            H_mat_1Node(2,2)=-1.0;  H_mat_1Node(4,1)=-1.0;  H_mat_1Node(5,0)=-1.0;
           }
           
           H_mat.resize(row_mat);
@@ -481,9 +476,9 @@ namespace MoFEM {
           
           switch(rank_field) {
             case 3:
-              X_mat(0,0)=2.0*gauss_coord(0,gg);  X_mat(0,3)=gauss_coord(1,gg);  X_mat(0,4)=gauss_coord(2,gg);
-              X_mat(1,1)=2.0*gauss_coord(1,gg);  X_mat(1,3)=gauss_coord(0,gg);  X_mat(1,5)=gauss_coord(2,gg);
-              X_mat(2,2)=2.0*gauss_coord(2,gg);  X_mat(2,4)=gauss_coord(0,gg);  X_mat(2,5)=gauss_coord(1,gg);
+              X_mat(0,0)=2.0*gauss_coord(0,gg);  X_mat(0,3)=gauss_coord(1,gg);  X_mat(0,5)=gauss_coord(2,gg);
+              X_mat(1,1)=2.0*gauss_coord(1,gg);  X_mat(1,3)=gauss_coord(0,gg);  X_mat(1,4)=gauss_coord(2,gg);
+              X_mat(2,2)=2.0*gauss_coord(2,gg);  X_mat(2,4)=gauss_coord(1,gg);  X_mat(2,5)=gauss_coord(0,gg);
               X_mat=0.5*X_mat;
               break;
             case 1:
