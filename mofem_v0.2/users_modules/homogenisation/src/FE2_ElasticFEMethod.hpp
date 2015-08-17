@@ -35,6 +35,11 @@ namespace MoFEM {
       PetscFunctionBegin;
 //      cout<<"Hello from Stiffness "<<endl;
       
+      
+//      cout<<"Dmat from Stiffness "<<Dmat<<endl;
+//      string wait;
+//      cin>>wait;
+      
       K.resize(row_mat,col_mat);
       int g_dim = g_NTET.size()/4;
       for(int rr = 0;rr<row_mat;rr++) {
@@ -81,6 +86,11 @@ namespace MoFEM {
     virtual PetscErrorCode Fint() {
       PetscFunctionBegin;
 //      cout<<"Fint "<<endl;
+//      cout<<"Dmat from Fint "<<Dmat<<endl;
+//      string wait;
+//      cin>>wait;
+
+
       try {
         
         //Higher order approximation of geometry
@@ -90,6 +100,7 @@ namespace MoFEM {
         vector< ublas::matrix< FieldData > > GradU_at_GaussPt;
         ierr = GetGaussDiffDataVector(fieldName,GradU_at_GaussPt); CHKERRQ(ierr);
         unsigned int g_dim = g_NTET.size()/4;
+//        cout<<"g_dim = "<<g_dim<<endl;
         assert(GradU_at_GaussPt.size() == g_dim);
         NOT_USED(g_dim);
         vector< ublas::matrix< FieldData > >::iterator viit = GradU_at_GaussPt.begin();
@@ -116,6 +127,7 @@ namespace MoFEM {
               //[ dW/dX1 dW/dX2 dW/dX3 ]
               GradU = prod( GradU, invH[gg] );
             }
+
             ublas::matrix< FieldData > Strain = 0.5*( GradU + trans(GradU) );
             ublas::vector< FieldData > VoightStrain(6);
             VoightStrain[0] = Strain(0,0);
@@ -152,6 +164,39 @@ namespace MoFEM {
       
       PetscFunctionReturn(0);
     }
+    
+    
+    
+    
+    PetscErrorCode operator()() {
+      PetscFunctionBegin;
+      
+      ierr = Get_g_NTET(); CHKERRQ(ierr);
+      ierr = OpStudentStart_TET(g_NTET); CHKERRQ(ierr);
+      ierr = GetMatrices(); CHKERRQ(ierr);
+      
+//      switch(snes_ctx) {
+//        case CTX_SNESNONE: {
+          ierr = RhsAndLhs(); CHKERRQ(ierr);
+//        }
+//        case CTX_SNESSETFUNCTION: {
+//          ierr = Rhs(); CHKERRQ(ierr);
+//        }
+//          break;
+//        case CTX_SNESSETJACOBIAN: {
+//          ierr = Lhs(); CHKERRQ(ierr);
+//        }
+//          break;
+//        default:
+//          SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+//      }
+      
+      ierr = OpStudentEnd(); CHKERRQ(ierr);
+      PetscFunctionReturn(0);
+    }
+
+    
+    
     
   };
   

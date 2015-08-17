@@ -1,3 +1,8 @@
+/* Copyright (C) 2014, Zahur Ullah (Zahur.Ullah AT glasgow.ac.uk)
+ * --------------------------------------------------------------
+ * FIXME: DESCRIPTION
+ */
+
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -31,12 +36,13 @@ using namespace MoFEM;
 #include <PostProcDisplacementAndStrainOnRefindedMesh.hpp>
 
 #include <ElasticFEMethod.hpp>
-#include "ElasticFE_RVELagrange_Disp.hpp"
 #include <FE2_ElasticFEMethod.hpp>
+#include "ElasticFE_RVELagrange_Traction.hpp"
 
-
-#include "ElasticFE_RVELagrange_Disp_Multi_Rhs.hpp"
-#include "ElasticFE_RVELagrange_Homogenized_Stress_Disp.hpp"
+#include "ElasticFE_RVELagrange_Traction_Multi_Rhs.hpp"
+#include "ElasticFE_RVELagrange_Homogenized_Stress_Traction.hpp"
+#include "ElasticFE_RVELagrange_RigidBodyTranslation.hpp"
+#include "ElasticFE_RVELagrange_RigidBodyRotation.hpp"
 #include "RVEVolume.hpp"
 
 
@@ -48,12 +54,13 @@ PetscErrorCode ierr;
 
 static char help[] = "...\n\n";
 
-//const double young_modulus = 1;
-//const double poisson_ratio = 0.0;
+const double young_modulus = 1;
+const double poisson_ratio = 0.0;
+
 
 int main(int argc, char *argv[]) {
-
-
+  
+  
   //=============================================================================================================
   //  Micro (RVE) Problme
   //=============================================================================================================
@@ -64,7 +71,7 @@ int main(int argc, char *argv[]) {
   Interface& moab_RVE = mb_instance_RVE;
   int rank;
   MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
-
+  
   //Reade parameters from line command
   PetscBool flg = PETSC_TRUE;
   char mesh_file_name[255];
@@ -85,14 +92,14 @@ int main(int argc, char *argv[]) {
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab_RVE,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab_RVE,PETSC_COMM_WORLD);
 
-
+  
   //Create MoFEM (Joseph) database
   MoFEM::Core core_RVE(moab_RVE);
   FieldInterface& mField_RVE = core_RVE;
-
+  
   //ref meshset ref level 0
   ierr = mField_RVE.seed_ref_level_3D(0,0); CHKERRQ(ierr);
-
+  
   // stl::bitset see for more details
   BitRefLevel bit_level0;
   bit_level0.set(0);
@@ -100,75 +107,117 @@ int main(int argc, char *argv[]) {
   rval = moab_RVE.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
   ierr = mField_RVE.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
   ierr = mField_RVE.get_entities_by_ref_level(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
-
+  
 
   /***/
   //Define problem
-
+  
   //Fields
   int field_rank=3;
   ierr = mField_RVE.add_field("DISPLACEMENT",H1,field_rank); CHKERRQ(ierr);
-  ierr = mField_RVE.add_field("Lagrange_mul_disp",H1,field_rank); CHKERRQ(ierr);
-
+  ierr = mField_RVE.add_field("Lagrange_mul_disp",NOFIELD,6); CHKERRQ(ierr);
+  ierr = mField_RVE.add_field("Lagrange_mul_disp_rigid_trans",NOFIELD,3); CHKERRQ(ierr);   //Control 3 rigid body translations in x, y and z axis
+  ierr = mField_RVE.add_field("Lagrange_mul_disp_rigid_rotation",NOFIELD,3); CHKERRQ(ierr); //Controla 3 rigid body rotations about x, y and z axis
+  
   //FE
   ierr = mField_RVE.add_finite_element("ELASTIC"); CHKERRQ(ierr);
   ierr = mField_RVE.add_finite_element("Lagrange_elem"); CHKERRQ(ierr);
+  ierr = mField_RVE.add_finite_element("Lagrange_elem_rigid_trans"); CHKERRQ(ierr);
+  ierr = mField_RVE.add_finite_element("Lagrange_elem_rigid_rotation"); CHKERRQ(ierr);
 
   //Define rows/cols and element data
   ierr = mField_RVE.modify_finite_element_add_field_row("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
   ierr = mField_RVE.modify_finite_element_add_field_col("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
   ierr = mField_RVE.modify_finite_element_add_field_data("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
-
+  
   //C and CT
   //======================================================================================================
   //C row as Lagrange_mul_disp and col as DISPLACEMENT
   ierr = mField_RVE.modify_finite_element_add_field_row("Lagrange_elem","Lagrange_mul_disp"); CHKERRQ(ierr);
   ierr = mField_RVE.modify_finite_element_add_field_col("Lagrange_elem","DISPLACEMENT"); CHKERRQ(ierr);
-
+  
   //CT col as Lagrange_mul_disp and row as DISPLACEMENT
   ierr = mField_RVE.modify_finite_element_add_field_col("Lagrange_elem","Lagrange_mul_disp"); CHKERRQ(ierr);
   ierr = mField_RVE.modify_finite_element_add_field_row("Lagrange_elem","DISPLACEMENT"); CHKERRQ(ierr);
-
+  
   //data
   ierr = mField_RVE.modify_finite_element_add_field_data("Lagrange_elem","Lagrange_mul_disp"); CHKERRQ(ierr);
   ierr = mField_RVE.modify_finite_element_add_field_data("Lagrange_elem","DISPLACEMENT"); CHKERRQ(ierr);
   //======================================================================================================
 
+  
+  //Define rows/cols and element data for C1 and C1T (for lagrange multipliers to contol the rigid body translations)
+  //============================================================================================================
+  //C1 row as Lagrange_elem_rigid_trans and col as DISPLACEMENT
+  ierr = mField_RVE.modify_finite_element_add_field_row("Lagrange_elem_rigid_trans","Lagrange_mul_disp_rigid_trans"); CHKERRQ(ierr);
+  ierr = mField_RVE.modify_finite_element_add_field_col("Lagrange_elem_rigid_trans","DISPLACEMENT"); CHKERRQ(ierr);
+  
+  //C1T col as Lagrange_elem_rigid_trans and row as DISPLACEMENT
+  ierr = mField_RVE.modify_finite_element_add_field_col("Lagrange_elem_rigid_trans","Lagrange_mul_disp_rigid_trans"); CHKERRQ(ierr);
+  ierr = mField_RVE.modify_finite_element_add_field_row("Lagrange_elem_rigid_trans","DISPLACEMENT"); CHKERRQ(ierr);
+  
+  //As for stress we need both displacement and temprature (Lukasz)
+  ierr = mField_RVE.modify_finite_element_add_field_data("Lagrange_elem_rigid_trans","Lagrange_mul_disp_rigid_trans"); CHKERRQ(ierr);
+  ierr = mField_RVE.modify_finite_element_add_field_data("Lagrange_elem_rigid_trans","DISPLACEMENT"); CHKERRQ(ierr);
+  //============================================================================================================
+  
+  
+  
+  //Define rows/cols and element data for C2 and C2T (for lagrange multipliers to contol the rigid body rotations)
+  //============================================================================================================
+  //C2 row as Lagrange_elem_rigid_trans and col as DISPLACEMENT
+  ierr = mField_RVE.modify_finite_element_add_field_row("Lagrange_elem_rigid_rotation","Lagrange_mul_disp_rigid_rotation"); CHKERRQ(ierr);
+  ierr = mField_RVE.modify_finite_element_add_field_col("Lagrange_elem_rigid_rotation","DISPLACEMENT"); CHKERRQ(ierr);
+  
+  //C2T col as Lagrange_elem_rigid_trans and row as DISPLACEMENT
+  ierr = mField_RVE.modify_finite_element_add_field_col("Lagrange_elem_rigid_rotation","Lagrange_mul_disp_rigid_rotation"); CHKERRQ(ierr);
+  ierr = mField_RVE.modify_finite_element_add_field_row("Lagrange_elem_rigid_rotation","DISPLACEMENT"); CHKERRQ(ierr);
+  
+  //As for stress we need both displacement and temprature (Lukasz)
+  ierr = mField_RVE.modify_finite_element_add_field_data("Lagrange_elem_rigid_rotation","Lagrange_mul_disp_rigid_rotation"); CHKERRQ(ierr);
+  ierr = mField_RVE.modify_finite_element_add_field_data("Lagrange_elem_rigid_rotation","DISPLACEMENT"); CHKERRQ(ierr);
+  //============================================================================================================
 
+  
   //define problems
   ierr = mField_RVE.add_problem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
-
-
+  
+  
   //set finite elements for problem
   ierr = mField_RVE.modify_problem_add_finite_element("ELASTIC_MECHANICS","ELASTIC"); CHKERRQ(ierr);
   ierr = mField_RVE.modify_problem_add_finite_element("ELASTIC_MECHANICS","Lagrange_elem"); CHKERRQ(ierr);
-
-
+  ierr = mField_RVE.modify_problem_add_finite_element("ELASTIC_MECHANICS","Lagrange_elem_rigid_trans"); CHKERRQ(ierr);
+  ierr = mField_RVE.modify_problem_add_finite_element("ELASTIC_MECHANICS","Lagrange_elem_rigid_rotation"); CHKERRQ(ierr);
+  
+  
   //set refinment level for problem
   ierr = mField_RVE.modify_problem_ref_level_add_bit("ELASTIC_MECHANICS",bit_level0); CHKERRQ(ierr);
-
+  
   /***/
   //Declare problem
-
+  
   //add entitities (by tets) to the field
   ierr = mField_RVE.add_ents_to_field_by_TETs(0,"DISPLACEMENT"); CHKERRQ(ierr);
 
-
+  
   //add finite elements entities
   ierr = mField_RVE.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,"ELASTIC",MBTET); CHKERRQ(ierr);
   Range SurfacesFaces;
   ierr = mField_RVE.get_cubit_msId_entities_by_dimension(103,SIDESET,2,SurfacesFaces,true); CHKERRQ(ierr);
   ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SideSet 103 = %d\n",SurfacesFaces.size()); CHKERRQ(ierr);
   ierr = mField_RVE.add_ents_to_finite_element_by_TRIs(SurfacesFaces,"Lagrange_elem"); CHKERRQ(ierr);
-
+  
 
   //to create meshset from range
   EntityHandle BoundFacesMeshset;
   rval = moab_RVE.create_meshset(MESHSET_SET,BoundFacesMeshset); CHKERR_PETSC(rval);
 	rval = moab_RVE.add_entities(BoundFacesMeshset,SurfacesFaces); CHKERR_PETSC(rval);
   ierr = mField_RVE.seed_ref_level_MESHSET(BoundFacesMeshset,BitRefLevel().set()); CHKERRQ(ierr);
-  ierr = mField_RVE.add_ents_to_field_by_TRIs(BoundFacesMeshset,"Lagrange_mul_disp",2); CHKERRQ(ierr);
-
+  
+  ierr = mField_RVE.add_ents_to_finite_element_by_TRIs(SurfacesFaces,"Lagrange_elem"); CHKERRQ(ierr);
+  ierr = mField_RVE.add_ents_to_finite_element_by_TRIs(SurfacesFaces,"Lagrange_elem_rigid_trans"); CHKERRQ(ierr);
+  ierr = mField_RVE.add_ents_to_finite_element_by_TRIs(SurfacesFaces,"Lagrange_elem_rigid_rotation"); CHKERRQ(ierr);
+  
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
   //int order = 5;
@@ -176,44 +225,40 @@ int main(int argc, char *argv[]) {
   ierr = mField_RVE.set_field_order(0,MBTRI,"DISPLACEMENT",order); CHKERRQ(ierr);
   ierr = mField_RVE.set_field_order(0,MBEDGE,"DISPLACEMENT",order); CHKERRQ(ierr);
   ierr = mField_RVE.set_field_order(0,MBVERTEX,"DISPLACEMENT",1); CHKERRQ(ierr);
-
-  ierr = mField_RVE.set_field_order(0,MBTRI,"Lagrange_mul_disp",order); CHKERRQ(ierr);
-  ierr = mField_RVE.set_field_order(0,MBEDGE,"Lagrange_mul_disp",order); CHKERRQ(ierr);
-  ierr = mField_RVE.set_field_order(0,MBVERTEX,"Lagrange_mul_disp",1); CHKERRQ(ierr);
-
-  /****/
+  
+   /****/
   //build database
-
+  
   //build field
   ierr = mField_RVE.build_fields(); CHKERRQ(ierr);
-
+  
   //build finite elemnts
   ierr = mField_RVE.build_finite_elements(); CHKERRQ(ierr);
-
+  
   //build adjacencies
   ierr = mField_RVE.build_adjacencies(bit_level0); CHKERRQ(ierr);
-
+  
   //build problem
   ierr = mField_RVE.build_problems(); CHKERRQ(ierr);
 
-
+  
   /****/
   //mesh partitioning
-
+  
   //partition
   ierr = mField_RVE.partition_problem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
   ierr = mField_RVE.partition_finite_elements("ELASTIC_MECHANICS"); CHKERRQ(ierr);
   //what are ghost nodes, see Petsc Manual
   ierr = mField_RVE.partition_ghost_dofs("ELASTIC_MECHANICS"); CHKERRQ(ierr);
-
+  
   //print bcs
   ierr = mField_RVE.print_cubit_displacement_set(); CHKERRQ(ierr);
   ierr = mField_RVE.print_cubit_force_set(); CHKERRQ(ierr);
   //print block sets with materials
   ierr = mField_RVE.print_cubit_materials_set(); CHKERRQ(ierr);
 
-
-
+  
+  
   //create matrices (here F, D and Aij are matrices for the full problem)
   Vec F1,F2,F3,F4,F5,F6,D1,D2,D3,D4,D5,D6;
   ierr = mField_RVE.VecCreateGhost("ELASTIC_MECHANICS",ROW,&F1); CHKERRQ(ierr);
@@ -222,7 +267,7 @@ int main(int argc, char *argv[]) {
   ierr = mField_RVE.VecCreateGhost("ELASTIC_MECHANICS",ROW,&F4); CHKERRQ(ierr);
   ierr = mField_RVE.VecCreateGhost("ELASTIC_MECHANICS",ROW,&F5); CHKERRQ(ierr);
   ierr = mField_RVE.VecCreateGhost("ELASTIC_MECHANICS",ROW,&F6); CHKERRQ(ierr);
-
+  
   ierr = mField_RVE.VecCreateGhost("ELASTIC_MECHANICS",COL,&D1); CHKERRQ(ierr);
   ierr = mField_RVE.VecCreateGhost("ELASTIC_MECHANICS",COL,&D2); CHKERRQ(ierr);
   ierr = mField_RVE.VecCreateGhost("ELASTIC_MECHANICS",COL,&D3); CHKERRQ(ierr);
@@ -232,11 +277,11 @@ int main(int argc, char *argv[]) {
 
   Mat Aij;
   ierr = mField_RVE.MatCreateMPIAIJWithArrays("ELASTIC_MECHANICS",&Aij); CHKERRQ(ierr);
-
+  
   struct MyElasticFEMethod: public ElasticFEMethod {
     MyElasticFEMethod(FieldInterface& _m_field,Mat _Aij,Vec _D,Vec& _F,double _lambda,double _mu):
     ElasticFEMethod(_m_field,_Aij,_D,_F,_lambda,_mu) {};
-
+    
     PetscErrorCode Fint(Vec F_int) {
       PetscFunctionBegin;
       ierr = ElasticFEMethod::Fint(); CHKERRQ(ierr);
@@ -248,26 +293,29 @@ int main(int argc, char *argv[]) {
       }
       PetscFunctionReturn(0);
     }
-
+    
   };
 
-
+  
   //Assemble F and Aij
   const double young_modulus = 1;
   const double poisson_ratio = 0.0;
-
+  
   ublas::vector<FieldData> applied_strain;  //it is not used in the calculation, it is required by ElasticFE_RVELagrange_Disp as input
   applied_strain.resize(1.5*field_rank+1.5); applied_strain.clear();
 
   MyElasticFEMethod my_fe(mField_RVE,Aij,D1,F1,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio));
-  ElasticFE_RVELagrange_Disp_Multi_Rhs MyFE_RVELagrange(mField_RVE,Aij,D1,F1,F2,F3,F4,F5,F6,applied_strain,"DISPLACEMENT","Lagrange_mul_disp",field_rank);
+  ElasticFE_RVELagrange_Traction_Multi_Rhs MyFE_RVELagrange(mField_RVE,Aij,D1,F1,F2,F3,F4,F5,F6,applied_strain,"DISPLACEMENT","Lagrange_mul_disp",field_rank);
+
+  ElasticFE_RVELagrange_RigidBodyTranslation MyFE_RVELagrangeRigidBodyTrans(mField_RVE,Aij,D1,F1,applied_strain,"DISPLACEMENT","Lagrange_mul_disp",field_rank,"Lagrange_mul_disp_rigid_trans");
+  ElasticFE_RVELagrange_RigidBodyRotation MyFE_RVELagrangeRigidBodyRotation(mField_RVE,Aij,D1,F1,applied_strain,"DISPLACEMENT","Lagrange_mul_disp",field_rank);
 
   cout<<"After ElasticFE_RVELagrange_Disp_Multi_Rhs = "<<endl;
 
   ierr = VecZeroEntries(F1); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(F1,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(F1,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-
+  
   ierr = VecZeroEntries(F2); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(F2,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(F2,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -289,13 +337,21 @@ int main(int argc, char *argv[]) {
   ierr = VecGhostUpdateEnd(F6,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
   ierr = MatZeroEntries(Aij); CHKERRQ(ierr);
-
+  
 //  cout<<"Before  my_fe = "<<endl;
   ierr = mField_RVE.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",my_fe);  CHKERRQ(ierr);
 //  cout<<"Before  MyFE_RVELagrange = "<<endl;
   ierr = mField_RVE.loop_finite_elements("ELASTIC_MECHANICS","Lagrange_elem",MyFE_RVELagrange);  CHKERRQ(ierr);
 //  cout<<"After  MyFE_RVELagrange = "<<endl;
+  ierr = mField_RVE.loop_finite_elements("ELASTIC_MECHANICS","Lagrange_elem_rigid_trans",MyFE_RVELagrangeRigidBodyTrans);  CHKERRQ(ierr);
+  ierr = mField_RVE.loop_finite_elements("ELASTIC_MECHANICS","Lagrange_elem_rigid_rotation",MyFE_RVELagrangeRigidBodyRotation);  CHKERRQ(ierr);
 
+//  //Matrix View
+//  MatView(Aij,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
+//  std::string wait1;
+//  std::cin >> wait1;
+  
+  
   ierr = MatAssemblyBegin(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
   ierr = MatAssemblyEnd(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 
@@ -336,7 +392,7 @@ int main(int argc, char *argv[]) {
   Vec RVE_volume_Vec;
   ierr = VecCreateMPI(PETSC_COMM_WORLD, 1, pcomm->size(), &RVE_volume_Vec);  CHKERRQ(ierr);
   ierr = VecZeroEntries(RVE_volume_Vec); CHKERRQ(ierr);
-
+  
   RVEVolume MyRVEVol(mField_RVE,Aij,D1,F1,LAMBDA(young_modulus,poisson_ratio),MU(young_modulus,poisson_ratio), RVE_volume_Vec);
   ierr = mField_RVE.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",MyRVEVol);  CHKERRQ(ierr);
   //    ierr = VecView(RVE_volume_Vec,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
@@ -350,10 +406,8 @@ int main(int argc, char *argv[]) {
   ierr = KSPSetOperators(solver,Aij,Aij); CHKERRQ(ierr);
   ierr = KSPSetFromOptions(solver); CHKERRQ(ierr);
   ierr = KSPSetUp(solver); CHKERRQ(ierr);
-
-
-
-
+  
+  
   //solve for F1 and D1
   ierr = KSPSolve(solver,F1,D1); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(D1,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -363,10 +417,10 @@ int main(int argc, char *argv[]) {
   //=============================================================================================================
   // homogenised stress for strian [1 0 0 0 0 0]^T
   //=============================================================================================================
-
+  
   ublas::matrix<FieldData> Dmat;
   Dmat.resize(6,6); Dmat.clear();
-
+  
   //create a vector for 6 components of homogenized stress
   Vec Stress_Homo;
   if(pcomm->rank()==0) {
@@ -374,37 +428,37 @@ int main(int argc, char *argv[]) {
   } else {
     int ghost[] = {0,1,2,3,4,5};
     VecCreateGhost(PETSC_COMM_WORLD,0,6,6,ghost,&Stress_Homo);
-
+    
   }
 
-
+  
   {
     ierr = VecZeroEntries(Stress_Homo); CHKERRQ(ierr);
 
-    ElasticFE_RVELagrange_Homogenized_Stress_Disp MyFE_RVEHomoStressDisp(mField_RVE,Aij,D1,F1,&RVE_volume, applied_strain, Stress_Homo,"DISPLACEMENT","Lagrange_mul_disp",field_rank);
+    ElasticFE_RVELagrange_Homogenized_Stress_Traction MyFE_RVEHomoStressTrac(mField_RVE,Aij,D1,F1,&RVE_volume, applied_strain, Stress_Homo,"DISPLACEMENT","Lagrange_mul_disp",field_rank);
 
-
-    ierr = mField_RVE.loop_finite_elements("ELASTIC_MECHANICS","Lagrange_elem",MyFE_RVEHomoStressDisp);  CHKERRQ(ierr);
+    
+    ierr = mField_RVE.loop_finite_elements("ELASTIC_MECHANICS","Lagrange_elem",MyFE_RVEHomoStressTrac);  CHKERRQ(ierr);
     VecGhostUpdateBegin(Stress_Homo,INSERT_VALUES,SCATTER_FORWARD);
     VecGhostUpdateEnd(Stress_Homo,INSERT_VALUES,SCATTER_FORWARD);
-
+    
 //    if(pcomm->rank() == 0) cout<< " Stress_Homo =  "<<endl;
 //    ierr = VecView(Stress_Homo,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-
+    
     PetscScalar *avec;
     VecGetArray(Stress_Homo, &avec);
     for(int ii=0; ii<6; ii++){
       Dmat(ii,0)=*avec;
       avec++;
     }
-
+    
     if(pcomm->rank()==0){
       cout<< "\nStress_Homo = \n\n";
       for(int ii=0; ii<6; ii++){
         cout <<Dmat(ii,0)<<endl;
       }
     }
-
+    
   }
   //=============================================================================================================
 
@@ -423,9 +477,9 @@ int main(int argc, char *argv[]) {
     ierr = VecZeroEntries(Stress_Homo); CHKERRQ(ierr);
 //    ierr = VecView(Stress_Homo,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
-    ElasticFE_RVELagrange_Homogenized_Stress_Disp MyFE_RVEHomoStressDisp(mField_RVE,Aij,D1,F1,&RVE_volume, applied_strain, Stress_Homo,"DISPLACEMENT","Lagrange_mul_disp",field_rank);
-    ierr = mField_RVE.loop_finite_elements("ELASTIC_MECHANICS","Lagrange_elem",MyFE_RVEHomoStressDisp);  CHKERRQ(ierr);
-
+    ElasticFE_RVELagrange_Homogenized_Stress_Traction MyFE_RVEHomoStressTrac(mField_RVE,Aij,D1,F1,&RVE_volume, applied_strain, Stress_Homo,"DISPLACEMENT","Lagrange_mul_disp",field_rank);
+    ierr = mField_RVE.loop_finite_elements("ELASTIC_MECHANICS","Lagrange_elem",MyFE_RVEHomoStressTrac);  CHKERRQ(ierr);
+    
     VecGhostUpdateBegin(Stress_Homo,INSERT_VALUES,SCATTER_FORWARD);
     VecGhostUpdateEnd(Stress_Homo,INSERT_VALUES,SCATTER_FORWARD);
 //    ierr = VecView(Stress_Homo,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
@@ -438,7 +492,7 @@ int main(int argc, char *argv[]) {
       Dmat(ii,1)=*avec;
       avec++;
     }
-
+    
     if(pcomm->rank()==0){
       cout<< "\nStress_Homo = \n\n";
       for(int ii=0; ii<6; ii++){
@@ -457,22 +511,22 @@ int main(int argc, char *argv[]) {
   //=============================================================================================================
   {
     ierr = VecZeroEntries(Stress_Homo); CHKERRQ(ierr);
-    ElasticFE_RVELagrange_Homogenized_Stress_Disp MyFE_RVEHomoStressDisp(mField_RVE,Aij,D1,F1,&RVE_volume, applied_strain, Stress_Homo,"DISPLACEMENT","Lagrange_mul_disp",field_rank);
-    ierr = mField_RVE.loop_finite_elements("ELASTIC_MECHANICS","Lagrange_elem",MyFE_RVEHomoStressDisp);  CHKERRQ(ierr);
-
+    ElasticFE_RVELagrange_Homogenized_Stress_Traction MyFE_RVEHomoStressTrac(mField_RVE,Aij,D1,F1,&RVE_volume, applied_strain, Stress_Homo,"DISPLACEMENT","Lagrange_mul_disp",field_rank);
+    ierr = mField_RVE.loop_finite_elements("ELASTIC_MECHANICS","Lagrange_elem",MyFE_RVEHomoStressTrac);  CHKERRQ(ierr);
+    
     VecGhostUpdateBegin(Stress_Homo,INSERT_VALUES,SCATTER_FORWARD);
     VecGhostUpdateEnd(Stress_Homo,INSERT_VALUES,SCATTER_FORWARD);
     PetscScalar *avec;
     VecGetArray(Stress_Homo, &avec);
     for(int ii=0; ii<6; ii++){
-      Dmat(ii,3)=*avec;
+      Dmat(ii,2)=*avec;
       avec++;
     }
-
+    
     if(pcomm->rank()==0){
       cout<< "\nStress_Homo = \n\n";
       for(int ii=0; ii<6; ii++){
-        cout <<Dmat(ii,3)<<endl;
+        cout <<Dmat(ii,2)<<endl;
       }
     }
   }
@@ -487,9 +541,9 @@ int main(int argc, char *argv[]) {
   //=============================================================================================================
   {
     ierr = VecZeroEntries(Stress_Homo); CHKERRQ(ierr);
-    ElasticFE_RVELagrange_Homogenized_Stress_Disp MyFE_RVEHomoStressDisp(mField_RVE,Aij,D1,F1,&RVE_volume, applied_strain, Stress_Homo,"DISPLACEMENT","Lagrange_mul_disp",field_rank);
-    ierr = mField_RVE.loop_finite_elements("ELASTIC_MECHANICS","Lagrange_elem",MyFE_RVEHomoStressDisp);  CHKERRQ(ierr);
-
+    ElasticFE_RVELagrange_Homogenized_Stress_Traction MyFE_RVEHomoStressTrac(mField_RVE,Aij,D1,F1,&RVE_volume, applied_strain, Stress_Homo,"DISPLACEMENT","Lagrange_mul_disp",field_rank);
+    ierr = mField_RVE.loop_finite_elements("ELASTIC_MECHANICS","Lagrange_elem",MyFE_RVEHomoStressTrac);  CHKERRQ(ierr);
+    
     VecGhostUpdateBegin(Stress_Homo,INSERT_VALUES,SCATTER_FORWARD);
     VecGhostUpdateEnd(Stress_Homo,INSERT_VALUES,SCATTER_FORWARD);
     PetscScalar *avec;
@@ -498,7 +552,7 @@ int main(int argc, char *argv[]) {
       Dmat(ii,3)=*avec;
       avec++;
     }
-
+    
     if(pcomm->rank()==0){
       cout<< "\nStress_Homo = \n\n";
       for(int ii=0; ii<6; ii++){
@@ -519,9 +573,9 @@ int main(int argc, char *argv[]) {
 
   {
     ierr = VecZeroEntries(Stress_Homo); CHKERRQ(ierr);
-    ElasticFE_RVELagrange_Homogenized_Stress_Disp MyFE_RVEHomoStressDisp(mField_RVE,Aij,D1,F1,&RVE_volume, applied_strain, Stress_Homo,"DISPLACEMENT","Lagrange_mul_disp",field_rank);
-    ierr = mField_RVE.loop_finite_elements("ELASTIC_MECHANICS","Lagrange_elem",MyFE_RVEHomoStressDisp);  CHKERRQ(ierr);
-
+    ElasticFE_RVELagrange_Homogenized_Stress_Traction MyFE_RVEHomoStressTrac(mField_RVE,Aij,D1,F1,&RVE_volume, applied_strain, Stress_Homo,"DISPLACEMENT","Lagrange_mul_disp",field_rank);
+    ierr = mField_RVE.loop_finite_elements("ELASTIC_MECHANICS","Lagrange_elem",MyFE_RVEHomoStressTrac);  CHKERRQ(ierr);
+    
     VecGhostUpdateBegin(Stress_Homo,INSERT_VALUES,SCATTER_FORWARD);
     VecGhostUpdateEnd(Stress_Homo,INSERT_VALUES,SCATTER_FORWARD);
     PetscScalar *avec;
@@ -530,7 +584,7 @@ int main(int argc, char *argv[]) {
       Dmat(ii,4)=*avec;
       avec++;
     }
-
+    
     if(pcomm->rank()==0){
       cout<< "\nStress_Homo = \n\n";
       for(int ii=0; ii<6; ii++){
@@ -550,9 +604,9 @@ int main(int argc, char *argv[]) {
   //=============================================================================================================
   {
     ierr = VecZeroEntries(Stress_Homo); CHKERRQ(ierr);
-    ElasticFE_RVELagrange_Homogenized_Stress_Disp MyFE_RVEHomoStressDisp(mField_RVE,Aij,D1,F1,&RVE_volume, applied_strain, Stress_Homo,"DISPLACEMENT","Lagrange_mul_disp",field_rank);
-    ierr = mField_RVE.loop_finite_elements("ELASTIC_MECHANICS","Lagrange_elem",MyFE_RVEHomoStressDisp);  CHKERRQ(ierr);
-
+    ElasticFE_RVELagrange_Homogenized_Stress_Traction MyFE_RVEHomoStressTrac(mField_RVE,Aij,D1,F1,&RVE_volume, applied_strain, Stress_Homo,"DISPLACEMENT","Lagrange_mul_disp",field_rank);
+    ierr = mField_RVE.loop_finite_elements("ELASTIC_MECHANICS","Lagrange_elem",MyFE_RVEHomoStressTrac);  CHKERRQ(ierr);
+    
     VecGhostUpdateBegin(Stress_Homo,INSERT_VALUES,SCATTER_FORWARD);
     VecGhostUpdateEnd(Stress_Homo,INSERT_VALUES,SCATTER_FORWARD);
     PetscScalar *avec;
@@ -561,7 +615,7 @@ int main(int argc, char *argv[]) {
       Dmat(ii,5)=*avec;
       avec++;
     }
-
+    
     if(pcomm->rank()==0){
       cout<< "\nStress_Homo = \n\n";
       for(int ii=0; ii<6; ii++){
@@ -571,8 +625,8 @@ int main(int argc, char *argv[]) {
       cout<< "Dmat = "<<Dmat<<endl;
     }
   }
-
-
+  
+  
 //Reading and writing binary files
   if(pcomm->rank()==0){
     int fd;
@@ -584,7 +638,7 @@ int main(int argc, char *argv[]) {
   }
 //  Vec F1,F2,F3,F4,F5,F6,D1,D2,D3,D4,D5,D6;
 
-
+  
   ublas::matrix<FieldData> Dmat1;
   Dmat1.resize(6,6); Dmat1.clear();
   cout<< "Dmat1 Before Reading= "<<Dmat1<<endl;
@@ -606,7 +660,7 @@ int main(int argc, char *argv[]) {
   ierr = VecDestroy(&F4); CHKERRQ(ierr);
   ierr = VecDestroy(&F5); CHKERRQ(ierr);
   ierr = VecDestroy(&F6); CHKERRQ(ierr);
-
+  
   ierr = VecDestroy(&D1); CHKERRQ(ierr);
   ierr = VecDestroy(&D2); CHKERRQ(ierr);
   ierr = VecDestroy(&D3); CHKERRQ(ierr);
@@ -617,22 +671,22 @@ int main(int argc, char *argv[]) {
   ierr = MatDestroy(&Aij); CHKERRQ(ierr);
   ierr = KSPDestroy(&solver); CHKERRQ(ierr);
 
-
+  
 //=============================================================================================================
 //  Macro Problme
 //=============================================================================================================
 
   moab::Core mb_instance_Macro;
   Interface& moab_Macro = mb_instance_Macro;
-  //ParallelComm* pcomm_Macro = ParallelComm::get_pcomm(&moab_Macro,MYPCOMM_INDEX);
-  //if(pcomm == NULL) pcomm_Macro =  new ParallelComm(&moab_Macro,PETSC_COMM_WORLD);
+  ParallelComm* pcomm_Macro = ParallelComm::get_pcomm(&moab_Macro,MYPCOMM_INDEX);
+  if(pcomm == NULL) pcomm_Macro =  new ParallelComm(&moab_Macro,PETSC_COMM_WORLD);
 
   //Reade parameters from line command
   ierr = PetscOptionsGetString(PETSC_NULL,"-my_file_macro",mesh_file_name,255,&flg); CHKERRQ(ierr);
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file_macro (MESH FILE NEEDED)");
   }
-
+  
   //Read mesh to MOAB
   //option = "PARALLEL=BCAST_DELETE;"
       //"PARTITION=GEOM_DIMENSION,PARTITION_VAL=3,PARTITION_DISTRIBUTE";//;DEBUG_IO";
@@ -699,8 +753,10 @@ int main(int argc, char *argv[]) {
   ierr = mField_Macro.set_field_order(0,MBEDGE,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
   ierr = mField_Macro.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
 
-  ierr = MetaNeummanForces::addNeumannBCElements(mField_Macro,"ELASTIC_PROB","DISP_MACORO"); CHKERRQ(ierr);
+  ierr = MetaNeummanForces::addNeumannBCElements(mField_Macro,"DISP_MACORO"); CHKERRQ(ierr);
+  ierr = mField_Macro.modify_problem_add_finite_element("ELASTIC_PROB","FORCE_FE"); CHKERRQ(ierr);
 
+  
   //build database
 
   //build field
@@ -715,7 +771,7 @@ int main(int argc, char *argv[]) {
   //build problem
   ierr = mField_Macro.build_problems(); CHKERRQ(ierr);
 
-  //mesh partitioning
+  //mesh partitioning 
 
   //partition
   ierr = mField_Macro.partition_problem("ELASTIC_PROB"); CHKERRQ(ierr);
@@ -749,7 +805,7 @@ int main(int argc, char *argv[]) {
   struct MyElasticFEMethod_Macro: public FE2_ElasticFEMethod {
     MyElasticFEMethod_Macro(FieldInterface& _mField_Macro,Mat _A,Vec _D,Vec& _F, ublas::matrix<FieldData> _Dmat,string _field_name):
     FE2_ElasticFEMethod(_mField_Macro,_A,_D,_F, _Dmat, _field_name) {};
-
+    
     PetscErrorCode Fint(Vec F_int) {
       PetscFunctionBegin;
       ierr = FE2_ElasticFEMethod::Fint(); CHKERRQ(ierr);
@@ -761,10 +817,10 @@ int main(int argc, char *argv[]) {
       }
       PetscFunctionReturn(0);
     }
-
+    
   };
-
-
+  
+  
   Projection10NodeCoordsOnField ent_method_material_Macro(mField_Macro,"MESH_NODE_POSITIONS");
   ierr = mField_Macro.loop_dofs("MESH_NODE_POSITIONS",ent_method_material_Macro); CHKERRQ(ierr);
 
@@ -776,7 +832,7 @@ int main(int argc, char *argv[]) {
   ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = MatZeroEntries(A); CHKERRQ(ierr);
-
+  
   //preproc
   ierr = mField_Macro.problem_basic_method_preProcess("ELASTIC_PROB",my_dirichlet_bc); CHKERRQ(ierr);
   //loop elems
@@ -817,17 +873,17 @@ int main(int argc, char *argv[]) {
   ierr = KSPSolve(solver_Macro,F,D); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-
+  
 //  ierr = VecView(D,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
   //Save data on mesh
   ierr = mField_Macro.set_global_ghost_vector("ELASTIC_PROB",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-
+  
   ProjectionFieldOn10NodeTet ent_method_on_10nodeTet(mField_Macro,"DISP_MACORO",true,false,"DISP_MACORO");
   ierr = mField_Macro.loop_dofs("DISP_MACORO",ent_method_on_10nodeTet); CHKERRQ(ierr);
   ent_method_on_10nodeTet.set_nodes = false;
   ierr = mField_Macro.loop_dofs("DISP_MACORO",ent_method_on_10nodeTet); CHKERRQ(ierr);
-
+  
   if(pcomm->rank()==0) {
     EntityHandle out_meshset;
     rval = moab_Macro.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
@@ -836,7 +892,7 @@ int main(int argc, char *argv[]) {
     rval = moab_Macro.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
   }
 
-
+  
   //Destroy matrices
   ierr = VecDestroy(&F); CHKERRQ(ierr);
   ierr = VecDestroy(&D); CHKERRQ(ierr);
@@ -845,3 +901,4 @@ int main(int argc, char *argv[]) {
   PetscFinalize();
 
 }
+
