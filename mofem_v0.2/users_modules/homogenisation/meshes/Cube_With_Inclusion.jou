@@ -4,7 +4,7 @@
 cubit.cmd('new')
 cubit.cmd('brick x 1 y 1 z 1')
 
-interval=10; 
+interval=5; 
 
 cubit.cmd('brick x 0.5 y 0.5 z 0.5')
 
@@ -60,10 +60,7 @@ cubit.cmd('sideset 101 surface 14 15 16')  # all -ve boundary surfaces
 cubit.cmd('sideset 102 surface 13 17 18')  # all +ve boundary surfaces 
 cubit.cmd('sideset 103 surface 14 15 16 13 17 18')  # all boundary surfaces 
 
-cubit.cmd('save as "/Users/zahur/Documents/Post-Doc Data/Analysis/Meshes/RVE_Cube_with_inclusion/RVE_Cube_with_inclusion.cub" overwrite')
-
-
-
+cubit.cmd('save as "/Users/zahur/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/homogenisation/meshes/RVE_Cube_with_inclusion.cub" overwrite')
 
 
 

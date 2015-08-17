@@ -157,9 +157,8 @@ for i in range(0, 2):
 cubit.cmd('sideset 101 surface 41 31 34 40 42 27 24')  # all -ve boundary surfaces for periodic boundary conditions         
 cubit.cmd('sideset 102 surface 43 30 33 39 25 44 28')  # all +ve boundary surfaces  for periodic boundary conditions            
 cubit.cmd('sideset 103 surface 41 31 34 40 42 27 24 43 30 33 39 25 44 28')  # all boundary surfaces         
-   
-cubit.cmd('save as "/Users/zahur/Documents/Post-Doc Data/Analysis/Meshes/Coupled_RVE_MC/Textile_RVE.cub" overwrite')  
  
+cubit.cmd('save as "/Users/zahur/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/homogenisation/meshes/Textile_RVE.cub" overwrite')
 
 
 

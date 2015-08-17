@@ -16,77 +16,54 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
-
-
 #include <MoFEM.hpp>
 using namespace MoFEM;
+
 #include <FEMethod_LowLevelStudent.hpp>
 #include <FEMethod_UpLevelStudent.hpp>
-#include <ElasticFEMethod.hpp>
 
-#include <ElasticFE_RVELagrange_Disp.hpp>
-#include <ElasticFE_RVELagrange_Disp_Multi_Rhs.hpp>
-
+#include <boost/numeric/ublas/symmetric.hpp>
+#include "ElasticFE_RVELagrange_Traction.hpp"
+#include "ElasticFE_RVELagrange_Traction_Multi_Rhs.hpp"
 using namespace ObosleteUsersModules;
 
 namespace MoFEM {
   
+  
   //********************************************************************************
-  //Post-process Force vectors and stiffness matrix 
-  PetscErrorCode ElasticFE_RVELagrange_Disp_Multi_Rhs::postProcess() {
+  //Post-process Force vectors and stiffness matrix
+  PetscErrorCode ElasticFE_RVELagrange_Traction_Multi_Rhs::postProcess() {
     PetscFunctionBegin;
     
-//    cout<<"Hi from  ElasticFE_RVELagrange_Disp_Multi_Rhs::postProcess "<<endl;
-    switch(snes_ctx) {
-      case CTX_SNESNONE: {
-        ierr = MatAssemblyBegin(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-        ierr = MatAssemblyEnd(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-        ierr = VecAssemblyBegin(F1); CHKERRQ(ierr);
-        ierr = VecAssemblyEnd(F1); CHKERRQ(ierr);
-        
-        ierr = VecAssemblyBegin(F2); CHKERRQ(ierr);
-        ierr = VecAssemblyEnd(F2); CHKERRQ(ierr);
-        
-        ierr = VecAssemblyBegin(F3); CHKERRQ(ierr);
-        ierr = VecAssemblyEnd(F3); CHKERRQ(ierr);
-
-        if(rank_field==3){ //This poriton will execute for mechanical problem (rank=3) only
-          ierr = VecAssemblyBegin(F4); CHKERRQ(ierr);
-          ierr = VecAssemblyEnd(F4); CHKERRQ(ierr);
-          
-          ierr = VecAssemblyBegin(F5); CHKERRQ(ierr);
-          ierr = VecAssemblyEnd(F5); CHKERRQ(ierr);
-          
-          ierr = VecAssemblyBegin(F6); CHKERRQ(ierr);
-          ierr = VecAssemblyEnd(F6); CHKERRQ(ierr);
-        }
-
-      }
-        break;
-      case CTX_SNESSETFUNCTION: {
-        ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
-        ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
-      }
-        break;
-      case CTX_SNESSETJACOBIAN: {
-        // Note MAT_FLUSH_ASSEMBLY
-        ierr = MatAssemblyBegin(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-        ierr = MatAssemblyEnd(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-      }
-        break;
-      default:
-        SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+    //    cout<<"Hi from  ElasticFE_RVELagrange_Disp_Multi_Rhs::postProcess "<<endl;
+    ierr = MatAssemblyBegin(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+    ierr = MatAssemblyEnd(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+    ierr = VecAssemblyBegin(F1); CHKERRQ(ierr);
+    ierr = VecAssemblyEnd(F1); CHKERRQ(ierr);
+    
+    ierr = VecAssemblyBegin(F2); CHKERRQ(ierr);
+    ierr = VecAssemblyEnd(F2); CHKERRQ(ierr);
+    
+    ierr = VecAssemblyBegin(F3); CHKERRQ(ierr);
+    ierr = VecAssemblyEnd(F3); CHKERRQ(ierr);
+    
+    if(rank_field==3){ //This poriton will execute for mechanical problem (rank=3) only
+      ierr = VecAssemblyBegin(F4); CHKERRQ(ierr);
+      ierr = VecAssemblyEnd(F4); CHKERRQ(ierr);
+      
+      ierr = VecAssemblyBegin(F5); CHKERRQ(ierr);
+      ierr = VecAssemblyEnd(F5); CHKERRQ(ierr);
+      
+      ierr = VecAssemblyBegin(F6); CHKERRQ(ierr);
+      ierr = VecAssemblyEnd(F6); CHKERRQ(ierr);
     }
-//    cout<<"End of  ElasticFE_RVELagrange_Disp_Multi_Rhs::postProcess "<<endl;
-
+    
     PetscFunctionReturn(0);
   }
   
   //********************************************************************************
-  //Calculate the right hand side vector, i.e. f=D_max * applied_strain and assemble it into the global force vector F
-  PetscErrorCode ElasticFE_RVELagrange_Disp_Multi_Rhs::Rhs() {
-//    cout<<"Hi from  ElasticFE_RVELagrange_Disp_Multi_Rhs::Rhs "<<endl;
-
+  //Calculate the right hand side vector, i.e. f=D_mat * applied_strain and assemble it into the global force vector F
+  PetscErrorCode ElasticFE_RVELagrange_Traction_Multi_Rhs::Rhs() {
     PetscFunctionBegin;
     X_mat.resize(rank_field,1.5*rank_field+1.5);    X_mat.clear();
     nodes_coord.resize(3,3);
@@ -103,9 +80,13 @@ namespace MoFEM {
     
     //        cout<<"g_NTRI_mat "<<g_NTRI_mat<<endl<<endl;
     //        cout<<"nodes_coord "<<nodes_coord<<endl<<endl;
-    
+    //        cout<<"gauss_coord "<<gauss_coord<<endl<<endl;
+    //        std::string wait;
+    //        std::cin >> wait;
     //cout<<"area "<<area << endl;
-    for(int rr=0; rr<row_mat; rr++){
+    
+    
+    for(int rr=0; rr<1; rr++){
       for(int gg = 0;gg<g_TRI_dim;gg++) {
         double w = area*G_W_TRI[gg];
         
@@ -123,7 +104,6 @@ namespace MoFEM {
             SETERRQ(PETSC_COMM_SELF,1,"not implemented");
         }
         
-        
         ublas::matrix<FieldData> &row_Mat = (rowNMatrices[rr])[gg];
         ublas::matrix<FieldData> &col_Mat = X_mat;
         
@@ -132,63 +112,55 @@ namespace MoFEM {
         
         //Integrate D_mat
         if(gg == 0) {
-          D_mat[rr].resize(row_Mat.size2(),col_Mat.size2());
+          D_mat[rr].resize(H_mat[rr].size1(),D_mat1.size2());
           
           //calculate (D_mat1= w * NT * X_mat)
-          cblas_dgemm(CblasRowMajor,CblasTrans,CblasNoTrans,
-                      row_Mat.size2(),col_Mat.size2(),row_Mat.size1(),
-                      w,&*row_Mat.data().begin(),row_Mat.size2(),
-                      &*col_Mat.data().begin(),col_Mat.size2(),
-                      0.,&*D_mat1.data().begin(),D_mat1.size2());
+          //                    cout<<"\n row_Mat "<<row_Mat<<endl;
+          //                    cout<<"\n col_Mat "<<rr<<col_Mat;
+          //                    cout<<"\n w "<<w<<col_Mat;
           
+          D_mat1=prod(w*trans(row_Mat), col_Mat);
           //calculate (D_mat = H_mat * D_mat1)
-          cblas_dgemm(CblasRowMajor,CblasNoTrans,CblasNoTrans,
-                      H_mat[rr].size2(),D_mat1.size2(),H_mat[rr].size1(),
-                      1.0,&*H_mat[rr].data().begin(),H_mat[rr].size2(),
-                      &*D_mat1.data().begin(),D_mat1.size2(),
-                      0.,&*D_mat[rr].data().begin(),D_mat[rr].size2());
-          
+          //                    cout<<"\n rr "<<rr<<endl;
+          //                    cout<<"\n D_mat[rr] "<<D_mat[rr]<<endl;
+          D_mat[rr]=prod(H_mat[rr], D_mat1);
         } else {
-          
           //calculate (D_mat1= w * NT * X_mat)
-          cblas_dgemm(CblasRowMajor,CblasTrans,CblasNoTrans,
-                      row_Mat.size2(),col_Mat.size2(),row_Mat.size1(),
-                      w,&*row_Mat.data().begin(),row_Mat.size2(),
-                      &*col_Mat.data().begin(),col_Mat.size2(),
-                      0.,&*D_mat1.data().begin(),D_mat1.size2());
+          D_mat1=prod(w*trans(row_Mat), col_Mat);
           
           //calculate (D_mat = H_mat * D_mat1)
-          cblas_dgemm(CblasRowMajor,CblasNoTrans,CblasNoTrans,
-                      H_mat[rr].size2(),D_mat1.size2(),H_mat[rr].size1(),
-                      1.0,&*H_mat[rr].data().begin(),H_mat[rr].size2(),
-                      &*D_mat1.data().begin(),D_mat1.size2(),
-                      1.,&*D_mat[rr].data().begin(),D_mat[rr].size2());
+          D_mat[rr]+=prod(H_mat[rr], D_mat1);
         }
       }
-      //cout<< " D_mat[rr] =  "<<D_mat[rr]<<endl<<endl;
+      //            cout<<"\n rr "<<rr<<endl;
+      //            cout<<"\n RowGlob[0].size() "<<RowGlob[0].size()<<endl;
+      //            for(int ii=0; ii<RowGlob[0].size(); ii++) cout<<RowGlob[0][ii]<<" ";
+      //            cout<< "\nD_mat[rr] =  "<<D_mat[rr]<<endl<<endl;
+      //Assemble D_mat into global force vector F
+      //            cout<<"\n D_mat[rr] "<<D_mat[rr]<<endl;
       
       applied_strain.clear();
       applied_strain(0)=1.0;
-//      cout<<"applied_strain = "<<applied_strain<<endl;
+      //      cout<<"applied_strain = "<<applied_strain<<endl;
       f=prod(D_mat[rr], applied_strain);
       ierr = VecSetValues(F1,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f.data())[0],ADD_VALUES); CHKERRQ(ierr);
-//      cout<<"Hello "<<endl;
-//      std::string wait;
-//      std::cin >> wait;
+      //      cout<<"Hello "<<endl;
+      //      std::string wait;
+      //      std::cin >> wait;
       applied_strain.clear();
       applied_strain(1)=1.0;
-//      cout<<"applied_strain = "<<applied_strain<<endl;
+      //      cout<<"applied_strain = "<<applied_strain<<endl;
       f=prod(D_mat[rr], applied_strain);
-//      cout<<"f = "<<f<<endl;
+      //      cout<<"f = "<<f<<endl;
       ierr = VecSetValues(F2,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f.data())[0],ADD_VALUES); CHKERRQ(ierr);
-
+      
       applied_strain.clear();
       applied_strain(2)=1.0;
-//      cout<<"applied_strain = "<<applied_strain<<endl;
+      //      cout<<"applied_strain = "<<applied_strain<<endl;
       f=prod(D_mat[rr], applied_strain);
-//      cout<<"f = "<<f<<endl;
+      //      cout<<"f = "<<f<<endl;
       ierr = VecSetValues(F3,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f.data())[0],ADD_VALUES); CHKERRQ(ierr);
-
+      
       if(rank_field==3){ //This poriton will execute for mechanical problem (rank=3) only
         applied_strain.clear();
         applied_strain(3)=1.0;
@@ -211,11 +183,8 @@ namespace MoFEM {
         //      cout<<"f = "<<f<<endl;
         ierr = VecSetValues(F6,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f.data())[0],ADD_VALUES); CHKERRQ(ierr);
       }
-
+      
+      PetscFunctionReturn(0);
     }
-//    cout<<"end of  ElasticFE_RVELagrange_Disp_Multi_Rhs::Rhs "<<endl;
-    PetscFunctionReturn(0);
   }
-  
 }
-
