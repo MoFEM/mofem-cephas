@@ -66,6 +66,8 @@ struct DisplacementBCFEMethodPreAndPostProc: public FEMethod {
   PetscErrorCode preProcess();
   PetscErrorCode postProcess();
 
+  boost::ptr_vector<MethodForForceScaling> methodsOp;
+
 };
 
 /** \brief Set Dirichlet boundary conditions on spatial displacements

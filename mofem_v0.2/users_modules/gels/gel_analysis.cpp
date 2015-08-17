@@ -45,8 +45,8 @@ using namespace MoFEM;
 using namespace std;
 namespace po = boost::program_options;
 
-#include <DirichletBC.hpp>
 #include <MethodForForceScaling.hpp>
+#include <DirichletBC.hpp>
 #include <SurfacePressure.hpp>
 #include <NodalForce.hpp>
 #include <EdgeForce.hpp>
@@ -54,6 +54,9 @@ namespace po = boost::program_options;
 // Elements for applying fluxes, convection or radiation
 // are used to apply solvent concentration.
 #include <ThermalElement.hpp>
+
+//See file users_modules/elasticity/TimeForceScale.hpp
+#include <TimeForceScale.hpp>
 
 #include <boost/iostreams/tee.hpp>
 #include <boost/iostreams/stream.hpp>
@@ -244,6 +247,8 @@ int main(int argc, char *argv[]) {
         ("vIscosity",po::value<double>(&material_data.vIscosity)->default_value(1));
         config_file_options.add_options()
         ("pErmeability",po::value<double>(&material_data.pErmeability)->default_value(1));
+        config_file_options.add_options()
+        ("mU0",po::value<double>(&material_data.mU0)->default_value(1));
 
         po::parsed_options parsed = parse_config_file(ini_file,config_file_options,true);
         store(parsed,vm);
@@ -288,6 +293,9 @@ int main(int argc, char *argv[]) {
         ierr = m_field.loop_dofs("MESH_NODE_POSITIONS", ent_method_material); CHKERRQ(ierr);
         Projection10NodeCoordsOnField ent_method_spatial(m_field, "SPATIAL_POSITION");
         ierr = m_field.loop_dofs("SPATIAL_POSITION", ent_method_spatial); CHKERRQ(ierr);
+        // Set value to chemical load
+        Gel::BlockMaterialData &material_data = gel.blockMaterialData;
+        ierr = m_field.set_field(material_data.mU0,MBVERTEX,"CHEMICAL_LOAD"); CHKERRQ(ierr);
       }
 
     }
@@ -320,16 +328,16 @@ int main(int argc, char *argv[]) {
       // Add solvent flux element
       {
 
-        ierr = m_field.add_finite_element("SOLVENT_FLUX_FE",MF_ZERO); CHKERRQ(ierr);
-        ierr = m_field.modify_finite_element_add_field_row("SOLVENT_FLUX_FE","CHEMICAL_LOAD"); CHKERRQ(ierr);
-        ierr = m_field.modify_finite_element_add_field_col("SOLVENT_FLUX_FE","CHEMICAL_LOAD"); CHKERRQ(ierr);
-        ierr = m_field.modify_finite_element_add_field_data("SOLVENT_FLUX_FE","CHEMICAL_LOAD"); CHKERRQ(ierr);
-        ierr = m_field.modify_finite_element_add_field_data("SOLVENT_FLUX_FE","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+        ierr = m_field.add_finite_element("CHEMICAL_LOAD_FLUX_FE",MF_ZERO); CHKERRQ(ierr);
+        ierr = m_field.modify_finite_element_add_field_row("CHEMICAL_LOAD_FLUX_FE","CHEMICAL_LOAD"); CHKERRQ(ierr);
+        ierr = m_field.modify_finite_element_add_field_col("CHEMICAL_LOAD_FLUX_FE","CHEMICAL_LOAD"); CHKERRQ(ierr);
+        ierr = m_field.modify_finite_element_add_field_data("CHEMICAL_LOAD_FLUX_FE","CHEMICAL_LOAD"); CHKERRQ(ierr);
+        ierr = m_field.modify_finite_element_add_field_data("CHEMICAL_LOAD_FLUX_FE","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
 
         // Assume that boundary conditions are set in block containing surface
-        // triangle elements and block name is "SOLVENT_FLUX"
+        // triangle elements and block name is "CHEMICAL_LOAD_FLUX"
         for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
-          if(it->get_name().compare(0,12,"SOLVENT_FLUX") == 0) {
+          if(it->get_name().compare(0,18,"FLUX_CHEMICAL_LOAD") == 0) {
             vector<double> data;
             ierr = it->get_attributes(data); CHKERRQ(ierr);
             if(data.size()!=1) {
@@ -346,7 +354,7 @@ int main(int argc, char *argv[]) {
               it->meshset,MBTRI,set_of_solvent_fluxes[it->get_msId()].tRis,true
             ); CHKERR_PETSC(rval);
             ierr = m_field.add_ents_to_finite_element_by_TRIs(
-              set_of_solvent_fluxes[it->get_msId()].tRis,"SOLVENT_FLUX_FE"
+              set_of_solvent_fluxes[it->get_msId()].tRis,"CHEMICAL_LOAD_FLUX_FE"
             ); CHKERRQ(ierr);
           }
         }
@@ -402,7 +410,7 @@ int main(int argc, char *argv[]) {
     vector<int> tags;
     tags.push_back(Gel::STRESSTOTAL); // ADOL-C tag used to calculate total stress
     tags.push_back(Gel::SOLVENTFLUX);
-    tags.push_back(Gel::VOLUMERATE);
+    tags.push_back(Gel::SOLVENTRATE);
     tags.push_back(Gel::RESIDUALSTRAINHAT);
 
     // Right hand side operators
@@ -418,7 +426,7 @@ int main(int argc, char *argv[]) {
       new Gel::OpRhsSolventFlux(gel.commonData)
     );
     gel.feRhs.getOpPtrVector().push_back(
-      new Gel::OpRhsVolumeDot(gel.commonData)
+      new Gel::OpRhsSolventConcetrationDot(gel.commonData)
     );
     gel.feRhs.getOpPtrVector().push_back(
       new Gel::OpRhsStrainHat(gel.commonData)
@@ -467,7 +475,7 @@ int main(int argc, char *argv[]) {
     ierr = DMMoFEMAddElement(dm,"GEL_FE"); CHKERRQ(ierr);
     ierr = DMMoFEMAddElement(dm,"FORCE_FE"); CHKERRQ(ierr);
     ierr = DMMoFEMAddElement(dm,"PRESSURE_FE"); CHKERRQ(ierr);
-    ierr = DMMoFEMAddElement(dm,"SOLVENT_FLUX_FE"); CHKERRQ(ierr);
+    ierr = DMMoFEMAddElement(dm,"CHEMICAL_LOAD_FLUX_FE"); CHKERRQ(ierr);
     ierr = DMSetUp(dm); CHKERRQ(ierr);
   }
 
@@ -484,9 +492,11 @@ int main(int argc, char *argv[]) {
   SpatialPositionsBCFEMethodPreAndPostProc spatial_position_bc(
     m_field,"SPATIAL_POSITION",A,T,F
   );
+  spatial_position_bc.methodsOp.push_back(new TimeForceScale("-my_displacements_history",false));
   DirichletBCFromBlockSetFEMethodPreAndPostProc concentration_bc(
-    m_field,"CHEMICAL_LOAD","CONCENTRATION",A,T,F
+    m_field,"CHEMICAL_LOAD","CHEMICAL_LOAD",A,T,F
   );
+  concentration_bc.methodsOp.push_back(new TimeForceScale("-my_chemical_load_history",false));
 
   // Setting finite element method for applying tractions
   boost::ptr_map<string,NeummanForcesSurface> neumann_forces;
@@ -499,6 +509,24 @@ int main(int argc, char *argv[]) {
     ierr = MetaNodalForces::setOperators(m_field,nodal_forces,F,"SPATIAL_POSITION"); CHKERRQ(ierr);
     //edge forces
     ierr = MetaEdgeForces::setOperators(m_field,edge_forces,F,"SPATIAL_POSITION"); CHKERRQ(ierr);
+    for(
+      boost::ptr_map<string,NeummanForcesSurface>::iterator mit = neumann_forces.begin();
+      mit!=neumann_forces.end();mit++
+    ) {
+      mit->second->methodsOp.push_back(new TimeForceScale("-my_load_history",false));
+    }
+    for(
+      boost::ptr_map<string,NodalForce>::iterator mit = nodal_forces.begin();
+      mit!=nodal_forces.end();mit++
+    ) {
+      mit->second->methodsOp.push_back(new TimeForceScale("-my_load_history",false));
+    }
+    for(
+      boost::ptr_map<string,EdgeForce>::iterator mit = edge_forces.begin();
+      mit!=edge_forces.end();mit++
+    ) {
+      mit->second->methodsOp.push_back(new TimeForceScale("-my_load_history",false));
+    }
   }
 
   // Solvent surface element, flux, convection radiation
@@ -520,7 +548,7 @@ int main(int argc, char *argv[]) {
     ierr = DMMoFEMTSSetIFunction(dm,DM_NO_ELEMENT,NULL,&spatial_position_bc,NULL); CHKERRQ(ierr);
     ierr = DMMoFEMTSSetIFunction(dm,DM_NO_ELEMENT,NULL,&concentration_bc,NULL); CHKERRQ(ierr);
     ierr = DMMoFEMTSSetIFunction(dm,"GEL_FE",&gel.feRhs,NULL,NULL); CHKERRQ(ierr);
-    ierr = DMMoFEMTSSetIFunction(dm,"SOLVENT_FLUX_FE",&solvent_surface_fe,NULL,NULL); CHKERRQ(ierr);
+    ierr = DMMoFEMTSSetIFunction(dm,"CHEMICAL_LOAD_FLUX_FE",&solvent_surface_fe,NULL,NULL); CHKERRQ(ierr);
     {
       boost::ptr_map<string,NeummanForcesSurface>::iterator mit = neumann_forces.begin();
       for(;mit!=neumann_forces.end();mit++) {

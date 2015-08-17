@@ -125,8 +125,8 @@ int main(int argc, char *argv[]) {
   ierr = ce.calculateTraceStrainTotalDot(); CHKERRQ(ierr);
   my_split << "traceStrianTotalDot\n" << ce.traceStrainTotalDot << endl << endl;
 
-  ierr = ce.calculateVolumeDot(); CHKERRQ(ierr);
-  my_split << "volumeDot\n" << ce.volumeDot << endl << endl;
+  ierr = ce.calculateSolventConcentrationDot(); CHKERRQ(ierr);
+  my_split << "solventConcentrationDot\n" << ce.solventConcentrationDot << endl << endl;
 
   ierr = ce.calculateStressAlpha(); CHKERRQ(ierr);
   my_split << "stressAlpha\n" << ce.stressAlpha << endl << endl;

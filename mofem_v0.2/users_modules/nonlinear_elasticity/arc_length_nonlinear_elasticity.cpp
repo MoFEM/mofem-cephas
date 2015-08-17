@@ -32,6 +32,7 @@ using namespace MoFEM;
 #include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <boost/numeric/ublas/vector.hpp>
 
+#include <MethodForForceScaling.hpp>
 #include <DirichletBC.hpp>
 #include <ArcLengthTools.hpp>
 #include <adolc/adolc.h>

@@ -24,6 +24,7 @@
 #include <MoFEM.hpp>
 using namespace MoFEM;
 
+#include <MethodForForceScaling.hpp>
 #include <DirichletBC.hpp>
 
 #include <Projection10NodeCoordsOnField.hpp>
@@ -711,11 +712,11 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
     bool do_tetgen = true;
     if(flg_do_split) {
       Range edges_to_cat;
-      ierr = face_splitting_tools.getCornerEdges(edges_to_cat,10); CHKERRQ(ierr);
+      ierr = face_splitting_tools.getCornerEdges(edges_to_cat,0); CHKERRQ(ierr);
       if(edges_to_cat.size()>0) {
         Range new_nodes;
-        ierr = face_splitting_tools.propagateBySplit(new_nodes,edges_to_cat,10); CHKERRQ(ierr);
-        ierr = face_splitting_tools.cornerProblem(new_nodes,10); CHKERRQ(ierr);
+        ierr = face_splitting_tools.propagateBySplit(new_nodes,edges_to_cat,0); CHKERRQ(ierr);
+        ierr = face_splitting_tools.cornerProblem(new_nodes,0); CHKERRQ(ierr);
         split_is_done = true;
         //if(!new_nodes.empty()) do_tetgen = false;
       }
@@ -726,12 +727,22 @@ PetscErrorCode main_arc_length_solve(FieldInterface& m_field,ConfigurationalFrac
         face_splitting_tools.moabTetGenMap.clear();
         face_splitting_tools.tetGenMoabMap.clear();
         face_splitting_tools.tetGenData.clear();
+
+        int tetgen_face_angle = 178;
+        ierr = PetscOptionsGetInt(PETSC_NULL,"-my_tetgen_face_angle",&tetgen_face_angle,PETSC_NULL); CHKERRQ(ierr);
+
         vector<string> switches1;
         if(pcomm->rank() == 0) {
-          switches1.push_back("rp170sqRS0JVV");
+          ostringstream ss;
+          ss << "rp" << tetgen_face_angle << "sqRS0JVV";
+          switches1.push_back(ss.str());
+          //switches1.push_back("rp170sqRS0JVV");
           ierr = face_splitting_tools.rebuildMeshWithTetGen(switches1,0); CHKERRQ(ierr);
         } else {
-          switches1.push_back("rp170sqRS0JQ");
+          ostringstream ss;
+          ss << "rp" << tetgen_face_angle << "sqRS0JQ";
+          switches1.push_back(ss.str());
+          //switches1.push_back("rp170sqRS0JQ");
           ierr = face_splitting_tools.rebuildMeshWithTetGen(switches1,0); CHKERRQ(ierr);
         }
       }

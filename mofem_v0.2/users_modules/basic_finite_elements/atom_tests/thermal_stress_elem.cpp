@@ -24,6 +24,7 @@ using bio::stream;
 #include <MoFEM.hpp>
 using namespace MoFEM;
 
+#include <MethodForForceScaling.hpp>
 #include <DirichletBC.hpp>
 #include <ThermalStressElement.hpp>
 static char help[] = "...\n\n";
