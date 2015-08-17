@@ -22,6 +22,7 @@
 #include <MoFEM.hpp>
 using namespace MoFEM;
 
+#include <MethodForForceScaling.hpp>
 #include <DirichletBC.hpp>
 
 #include <Projection10NodeCoordsOnField.hpp>
@@ -31,7 +32,6 @@ using namespace MoFEM;
 #include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <boost/numeric/ublas/vector.hpp>
 
-#include <MethodForForceScaling.hpp>
 #include <SurfacePressure.hpp>
 #include <NodalForce.hpp>
 #include <SurfacePressureComplexForLazy.hpp>
@@ -72,20 +72,20 @@ struct MyMat_double: public NonlinearElasticElement::FunctionsToCalculatePiolaKi
       double lambda = LAMBDA(block_data.E,block_data.PoissonRatio);
       double mu = MU(block_data.E,block_data.PoissonRatio);
       if(D_lambda.size1()==0) {
-	D_lambda.resize(6,6);
-	D_lambda.clear();
-	for(int rr = 0;rr<3;rr++) {
-	  for(int cc = 0;cc<3;cc++) {
-	    D_lambda(rr,cc) = 1;
-	  }
-	}
+        D_lambda.resize(6,6);
+        D_lambda.clear();
+        for(int rr = 0;rr<3;rr++) {
+          for(int cc = 0;cc<3;cc++) {
+            D_lambda(rr,cc) = 1;
+          }
+        }
       }
       if(D_mu.size1()==0) {
-	D_mu.resize(6,6);
-	D_mu.clear();
-	for(int rr = 0;rr<6;rr++) {
-	  D_mu(rr,rr) = rr<3 ? 2 : 1;
-	}
+        D_mu.resize(6,6);
+        D_mu.clear();
+        for(int rr = 0;rr<6;rr++) {
+          D_mu(rr,rr) = rr<3 ? 2 : 1;
+        }
       }
       D.resize(6,6);
       noalias(D) = lambda*D_lambda + mu*D_mu;
