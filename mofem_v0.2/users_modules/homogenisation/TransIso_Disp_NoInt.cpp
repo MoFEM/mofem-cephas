@@ -96,7 +96,6 @@ int main(int argc, char *argv[]) {
   MoFEM::Core core(moab);
   FieldInterface& m_field = core;
 
-
   Tag th_phi;
   //    double def_val  = 0;
   rval = moab.tag_get_handle("PHI",1,MB_TYPE_DOUBLE,th_phi); CHKERR_PETSC(rval);
@@ -232,17 +231,6 @@ int main(int argc, char *argv[]) {
   ierr = m_field.modify_finite_element_add_field_data("Lagrange_elem","Lagrange_mul_disp"); CHKERRQ(ierr);
   ierr = m_field.modify_finite_element_add_field_data("Lagrange_elem","DISPLACEMENT"); CHKERRQ(ierr);
 
-  //define problems
-  ierr = m_field.add_problem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
-
-  //set finite elements for problem
-  ierr = m_field.modify_problem_add_finite_element("ELASTIC_MECHANICS","ELASTIC"); CHKERRQ(ierr);
-  ierr = m_field.modify_problem_add_finite_element("ELASTIC_MECHANICS","TRAN_ISOTROPIC_ELASTIC"); CHKERRQ(ierr);
-  ierr = m_field.modify_problem_add_finite_element("ELASTIC_MECHANICS","Lagrange_elem"); CHKERRQ(ierr);
-
-
-  //set refinment level for problem
-  ierr = m_field.modify_problem_ref_level_add_bit("ELASTIC_MECHANICS",problem_bit_level); CHKERRQ(ierr);
 
   /***/
   //Declare problem
@@ -286,10 +274,17 @@ int main(int argc, char *argv[]) {
 
   //build finite elemnts
   ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
-
   //build adjacencies
   ierr = m_field.build_adjacencies(problem_bit_level); CHKERRQ(ierr);
 
+  //define problems
+  ierr = m_field.add_problem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
+  //set finite elements for problem
+  ierr = m_field.modify_problem_add_finite_element("ELASTIC_MECHANICS","ELASTIC"); CHKERRQ(ierr);
+  ierr = m_field.modify_problem_add_finite_element("ELASTIC_MECHANICS","TRAN_ISOTROPIC_ELASTIC"); CHKERRQ(ierr);
+  ierr = m_field.modify_problem_add_finite_element("ELASTIC_MECHANICS","Lagrange_elem"); CHKERRQ(ierr);
+  //set refinment level for problem
+  ierr = m_field.modify_problem_ref_level_add_bit("ELASTIC_MECHANICS",problem_bit_level); CHKERRQ(ierr);
   //build problem
   ierr = m_field.build_problems(); CHKERRQ(ierr);
 
