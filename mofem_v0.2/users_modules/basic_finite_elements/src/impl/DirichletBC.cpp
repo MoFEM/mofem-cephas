@@ -203,24 +203,28 @@ PetscErrorCode DisplacementBCFEMethodPreAndPostProc::postProcess() {
     case CTX_SNESNONE:
     break;
     case CTX_SNESSETFUNCTION: {
-      dofsXValues.resize(dofsIndices.size());
-      ierr = VecGetValues(
-        snes_x,dofsIndices.size(),&*dofsIndices.begin(),&*dofsXValues.begin()
-      ); CHKERRQ(ierr);
+      if(!dofsIndices.empty()) {
+        dofsXValues.resize(dofsIndices.size());
+        ierr = VecGetValues(
+          snes_x,dofsIndices.size(),&*dofsIndices.begin(),&*dofsXValues.begin()
+        ); CHKERRQ(ierr);
+      }
       ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
       ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
-      int ii = 0;
-      for(vector<int>::iterator vit = dofsIndices.begin();vit!=dofsIndices.end();vit++,ii++) {
-        double val = 0;
-        if(!dofsXValues.empty()) {
-          val += dofsXValues[ii];
-          val += -mapZeroRows[*vit]; // in snes it is on the left hand side, that way -1
-          dofsXValues[ii] = val;
+      if(!dofsIndices.empty()) {
+        int ii = 0;
+        for(vector<int>::iterator vit = dofsIndices.begin();vit!=dofsIndices.end();vit++,ii++) {
+          double val = 0;
+          if(!dofsXValues.empty()) {
+            val += dofsXValues[ii];
+            val += -mapZeroRows[*vit]; // in snes it is on the left hand side, that way -1
+            dofsXValues[ii] = val;
+          }
         }
+        ierr = VecSetValues(
+          snes_f,dofsIndices.size(),&*dofsIndices.begin(),&*dofsXValues.begin(),INSERT_VALUES
+        ); CHKERRQ(ierr);
       }
-      ierr = VecSetValues(
-        snes_f,dofsIndices.size(),&*dofsIndices.begin(),&*dofsXValues.begin(),INSERT_VALUES
-      ); CHKERRQ(ierr);
       ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
       ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
     }
