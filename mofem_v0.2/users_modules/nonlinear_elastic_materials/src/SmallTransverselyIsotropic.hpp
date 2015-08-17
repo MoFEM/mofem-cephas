@@ -74,7 +74,9 @@ struct SmallStrainTranverslyIsotropic: public NonlinearElasticElement::Functions
 
     /**
     * \brief Function to Calculate the Rotation Matrix at a given axis and angle of rotation
-    * This function computes the rotational matrix for a given axis of rotation and angle of rotation about that angle <br>
+
+    * This function computes the rotational matrix for a given axis of rotation
+    * and angle of rotation about that angle <br>
 
     *\param axVector A vector representing the axis of rotation
     *\param axAngle Angle of rotation along the axis (in radians)
@@ -233,7 +235,9 @@ struct SmallStrainTranverslyIsotropic: public NonlinearElasticElement::Functions
     PetscFunctionBegin;
     ierr = calculateStrain(); CHKERRQ(ierr);
     ierr = calculateMaterialStiffnesMatrix(); CHKERRQ(ierr);
-
+    ierr = calculateAxisAngleRotationalMatrix(); CHKERRQ(ierr);
+    ierr = stressTransformation(); CHKERRQ(ierr);
+    ierr = strainTransformation(); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
