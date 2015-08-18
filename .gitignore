@@ -3,6 +3,8 @@ mofem_v0.2/users_modules/CMakeLists.txt
 mofem_v0.2/include/config.h
 mofem_v0.2/include/version.h
 
+mofem_v0.2/scripts/publish_doc.sh
+mofem_v0.2/scripts/git_contributors.sh
 mofem_v0.2/doc/publish_doc.sh
 mofem_v0.2/doc/git_contributors.sh
 mofem_v0.2/doc/contributors_list
