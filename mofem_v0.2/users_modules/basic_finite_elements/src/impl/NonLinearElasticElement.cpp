@@ -146,14 +146,15 @@ PetscErrorCode NonlinearElasticElement::OpGetDataAtGaussPts::doWork(
       PetscFunctionReturn(0);
     }
     int nb_gauss_pts = data.getN().size1();
+    int rank = data.getFieldDofs()[0]->get_max_rank();
 
     //initialize
     VectorDouble& values = data.getFieldData();
     valuesAtGaussPts.resize(nb_gauss_pts);
     gradientAtGaussPts.resize(nb_gauss_pts);
     for(int gg = 0;gg<nb_gauss_pts;gg++) {
-      valuesAtGaussPts[gg].resize(3,false);
-      gradientAtGaussPts[gg].resize(3,3,false);
+      valuesAtGaussPts[gg].resize(rank,false);
+      gradientAtGaussPts[gg].resize(rank,3,false);
     }
 
     if(type == zeroAtType) {
@@ -165,13 +166,13 @@ PetscErrorCode NonlinearElasticElement::OpGetDataAtGaussPts::doWork(
 
     //cerr << valuesAtGaussPts[0] << " : ";
     for(int gg = 0;gg<nb_gauss_pts;gg++) {
-      VectorDouble N = data.getN(gg,nb_dofs/3);
-      MatrixDouble diffN = data.getDiffN(gg,nb_dofs/3);
-      for(int dd = 0;dd<nb_dofs/3;dd++) {
-        for(int rr1 = 0;rr1<3;rr1++) {
-          valuesAtGaussPts[gg][rr1] += N[dd]*values[3*dd+rr1];
+      VectorAdaptor N = data.getN(gg,nb_dofs/rank);
+      MatrixAdaptor diffN = data.getDiffN(gg,nb_dofs/rank);
+      for(int dd = 0;dd<nb_dofs/rank;dd++) {
+        for(int rr1 = 0;rr1<rank;rr1++) {
+          valuesAtGaussPts[gg][rr1] += N[dd]*values[rank*dd+rr1];
           for(int rr2 = 0;rr2<3;rr2++) {
-            gradientAtGaussPts[gg](rr1,rr2) += diffN(dd,rr2)*values[3*dd+rr1];
+            gradientAtGaussPts[gg](rr1,rr2) += diffN(dd,rr2)*values[rank*dd+rr1];
           }
         }
       }
@@ -296,8 +297,6 @@ PetscErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::doWork(
               nb_active_variables++;
             }
           }
-
-          //cerr << dAta.materialAdoublePtr->F << endl;
 
         } else {
 

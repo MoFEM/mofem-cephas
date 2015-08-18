@@ -314,19 +314,29 @@ struct SmallStrainTranverslyIsotropic: public NonlinearElasticElement::Functions
   PetscErrorCode calculateFibreAngles() {
     PetscFunctionBegin;
 
-    int gg = this->gG; // number of integration point
-    ublas::matrix<double> &phi = (this->commonDataPtr->gradAtGaussPts["POTENTIAL_FIELD"][gg]);
-    for(int ii = 0;ii<3;ii++) {
-      normalizedPhi[ii] = -phi(0,ii)/sqrt(pow(phi(0,0),2)+pow(phi(0,1),2)+pow(phi(0,2),2));
-    }
+    try {
 
-    axVectorDouble.resize(3,false);
-    const double zVec[3]={ 0.0,0.0,1.0 };
-    axVectorDouble[0] = normalizedPhi[1]*zVec[2]-normalizedPhi[2]*zVec[1];
-    axVectorDouble[1] = normalizedPhi[2]*zVec[0]-normalizedPhi[0]*zVec[2];
-    axVectorDouble[2] = normalizedPhi[0]*zVec[1]-normalizedPhi[1]*zVec[0];
-    double nrm2_ax_vector = norm_2(axVectorDouble);
-    axAngleDouble = asin(nrm2_ax_vector);
+      int gg = this->gG; // number of integration point
+      ublas::matrix<double> &phi = (this->commonDataPtr->gradAtGaussPts["POTENTIAL_FIELD"][gg]);
+      normalizedPhi.resize(3,false);
+      double nrm2_phi = sqrt(pow(phi(0,0),2)+pow(phi(0,1),2)+pow(phi(0,2),2));
+      for(int ii = 0;ii<3;ii++) {
+        normalizedPhi[ii] = -phi(0,ii)/nrm2_phi;
+      }
+
+      axVectorDouble.resize(3,false);
+      const double zVec[3]={ 0.0,0.0,1.0 };
+      axVectorDouble[0] = normalizedPhi[1]*zVec[2]-normalizedPhi[2]*zVec[1];
+      axVectorDouble[1] = normalizedPhi[2]*zVec[0]-normalizedPhi[0]*zVec[2];
+      axVectorDouble[2] = normalizedPhi[0]*zVec[1]-normalizedPhi[1]*zVec[0];
+      double nrm2_ax_vector = norm_2(axVectorDouble);
+      axAngleDouble = asin(nrm2_ax_vector);
+
+    } catch (const std::exception& ex) {
+      ostringstream ss;
+      ss << "throw in method: " << ex.what() << endl;
+      SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+    }
 
     PetscFunctionReturn(0);
   }
@@ -364,8 +374,11 @@ struct SmallStrainTranverslyIsotropicADouble: public SmallStrainTranverslyIsotro
 
   SmallStrainTranverslyIsotropicADouble(): SmallStrainTranverslyIsotropic<adouble>() {}
 
+  int nbActiveVariables0;
+
   virtual PetscErrorCode setUserActiveVariables(
-    int &nb_active_variables) {
+    int &nb_active_variables
+  ) {
     PetscFunctionBegin;
 
     try {
@@ -376,6 +389,7 @@ struct SmallStrainTranverslyIsotropicADouble: public SmallStrainTranverslyIsotro
       axVector[1] <<= axVectorDouble[1];
       axVector[2] <<= axVectorDouble[2];
       axAngle <<= axAngleDouble;
+      nbActiveVariables0 = nb_active_variables;
       nb_active_variables += 4;
 
     } catch (const std::exception& ex) {
@@ -393,7 +407,7 @@ struct SmallStrainTranverslyIsotropicADouble: public SmallStrainTranverslyIsotro
 
     try {
 
-      int shift = 9; // is a number of elements in F
+      int shift = nbActiveVariables0; // is a number of elements in F
       ierr = calculateFibreAngles(); CHKERRQ(ierr);
       active_varibles[shift+0] = axVectorDouble[0];
       active_varibles[shift+1] = axVectorDouble[1];

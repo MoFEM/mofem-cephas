@@ -228,25 +228,28 @@ int main(int argc, char *argv[]) {
   ierr = iso_elastic.setOperators("DISPLACEMENT","MESH_NODE_POSITIONS",false,true); CHKERRQ(ierr);
 
   NonlinearElasticElement trans_elastic(m_field,2);
+  trans_elastic.commonData.spatialPositions = "DISPLACEMENT";
+  trans_elastic.commonData.meshPositions = "MESH_NODE_POSITIONS";
   boost::ptr_map<int,SmallStrainTranverslyIsotropicADouble *> tranversly_isotropic_adouble_ptr_map;
   boost::ptr_map<int,SmallStrainTranverslyIsotropicDouble *> tranversly_isotropic_double_ptr_map;
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
     //Get block name
     string name = it->get_name();
     if (name.compare(0,20,"MAT_ELASTIC_TRANSISO") == 0) {
+      int id = it->get_msId();
       Mat_Elastic_TransIso mydata;
       ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
-      tranversly_isotropic_adouble_ptr_map[it->get_msId()] = new SmallStrainTranverslyIsotropicADouble();
-      tranversly_isotropic_double_ptr_map[it->get_msId()] = new SmallStrainTranverslyIsotropicDouble();
+      tranversly_isotropic_adouble_ptr_map[id] = new SmallStrainTranverslyIsotropicADouble();
+      tranversly_isotropic_double_ptr_map[id] = new SmallStrainTranverslyIsotropicDouble();
       //nu_p, nu_pz, E_p, E_z, G_zp
-      tranversly_isotropic_adouble_ptr_map.at(it->get_msId())->E_p = mydata.data.Youngp;
-      tranversly_isotropic_double_ptr_map.at(it->get_msId())->E_p = mydata.data.Youngp;
-      tranversly_isotropic_adouble_ptr_map.at(it->get_msId())->E_z = mydata.data.Youngz;
-      tranversly_isotropic_double_ptr_map.at(it->get_msId())->E_z = mydata.data.Youngz;
-      tranversly_isotropic_adouble_ptr_map.at(it->get_msId())->nu_p = mydata.data.Poissonp;
-      tranversly_isotropic_double_ptr_map.at(it->get_msId())->nu_p = mydata.data.Poissonp;
-      tranversly_isotropic_adouble_ptr_map.at(it->get_msId())->nu_pz = mydata.data.Poissonpz;
-      tranversly_isotropic_double_ptr_map.at(it->get_msId())->nu_pz = mydata.data.Poissonpz;
+      tranversly_isotropic_adouble_ptr_map.at(id)->E_p = mydata.data.Youngp;
+      tranversly_isotropic_double_ptr_map.at(id)->E_p = mydata.data.Youngp;
+      tranversly_isotropic_adouble_ptr_map.at(id)->E_z = mydata.data.Youngz;
+      tranversly_isotropic_double_ptr_map.at(id)->E_z = mydata.data.Youngz;
+      tranversly_isotropic_adouble_ptr_map.at(id)->nu_p = mydata.data.Poissonp;
+      tranversly_isotropic_double_ptr_map.at(id)->nu_p = mydata.data.Poissonp;
+      tranversly_isotropic_adouble_ptr_map.at(id)->nu_pz = mydata.data.Poissonpz;
+      tranversly_isotropic_double_ptr_map.at(id)->nu_pz = mydata.data.Poissonpz;
       double shear_zp;
       if(mydata.data.Shearzp!=0) {
         shear_zp = mydata.data.Shearzp;
@@ -256,7 +259,6 @@ int main(int argc, char *argv[]) {
       tranversly_isotropic_adouble_ptr_map.at(it->get_msId())->G_zp = shear_zp;
       tranversly_isotropic_double_ptr_map.at(it->get_msId())->G_zp = shear_zp;
       //get tets from block where material is defined
-      int id = it->get_msId();
       EntityHandle meshset = it->get_meshset();
       rval = m_field.get_moab().get_entities_by_type(
         meshset,MBTET,trans_elastic.setOfBlocks[id].tEts,true
@@ -266,8 +268,8 @@ int main(int argc, char *argv[]) {
       //note that material parameters are defined internally in material model
       trans_elastic.setOfBlocks[id].E = 0; // this is not working for this material
       trans_elastic.setOfBlocks[id].PoissonRatio = 0; // this is not working for this material
-      trans_elastic.setOfBlocks[id].materialDoublePtr = tranversly_isotropic_double_ptr_map.at(it->get_msId());
-      trans_elastic.setOfBlocks[id].materialAdoublePtr = tranversly_isotropic_adouble_ptr_map.at(it->get_msId());
+      trans_elastic.setOfBlocks[id].materialDoublePtr = tranversly_isotropic_double_ptr_map.at(id);
+      trans_elastic.setOfBlocks[id].materialAdoublePtr = tranversly_isotropic_adouble_ptr_map.at(id);
       ierr = m_field.seed_finite_elements(trans_elastic.setOfBlocks[id].tEts); CHKERRQ(ierr);
     }
   }
