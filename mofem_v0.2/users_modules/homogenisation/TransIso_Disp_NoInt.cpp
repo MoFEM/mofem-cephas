@@ -207,7 +207,7 @@ int main(int argc, char *argv[]) {
   Hooke<adouble> hooke_adouble;
   Hooke<double> hooke_double;
 
-  NonlinearElasticElement elastic(m_field,1);
+  NonlinearElasticElement iso_elastic(m_field,1);
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,BLOCKSET|MAT_ELASTICSET,it)) {
 		if(it->get_name() != "MAT_ELASTIC_1") continue;
     Mat_Elastic mydata;
@@ -215,26 +215,29 @@ int main(int argc, char *argv[]) {
     int id = it->get_msId();
     EntityHandle meshset = it->get_meshset();
     rval = m_field.get_moab().get_entities_by_type(
-      meshset,MBTET,elastic.setOfBlocks[id].tEts,true
+      meshset,MBTET,iso_elastic.setOfBlocks[id].tEts,true
     ); CHKERR_PETSC(rval);
-    elastic.setOfBlocks[id].iD = id;
-    elastic.setOfBlocks[id].E = mydata.data.Young;
-    elastic.setOfBlocks[id].PoissonRatio = mydata.data.Poisson;
-    elastic.setOfBlocks[id].materialDoublePtr = &hooke_double;
-    elastic.setOfBlocks[id].materialAdoublePtr = &hooke_adouble;
-    ierr = m_field.seed_finite_elements(elastic.setOfBlocks[id].tEts); CHKERRQ(ierr);
+    iso_elastic.setOfBlocks[id].iD = id;
+    iso_elastic.setOfBlocks[id].E = mydata.data.Young;
+    iso_elastic.setOfBlocks[id].PoissonRatio = mydata.data.Poisson;
+    iso_elastic.setOfBlocks[id].materialDoublePtr = &hooke_double;
+    iso_elastic.setOfBlocks[id].materialAdoublePtr = &hooke_adouble;
+    ierr = m_field.seed_finite_elements(iso_elastic.setOfBlocks[id].tEts); CHKERRQ(ierr);
   }
+  ierr = iso_elastic.addElement("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = iso_elastic.setOperators("DISPLACEMENT","MESH_NODE_POSITIONS",false,true); CHKERRQ(ierr);
 
-  boost::ptr_map<int,SmallStrainTranverslyIsotropic<adouble> *> tranversly_isotropic_adouble_ptr_map;
-  boost::ptr_map<int,SmallStrainTranverslyIsotropic<double> *> tranversly_isotropic_double_ptr_map;
+  NonlinearElasticElement trans_elastic(m_field,2);
+  boost::ptr_map<int,SmallStrainTranverslyIsotropicADouble *> tranversly_isotropic_adouble_ptr_map;
+  boost::ptr_map<int,SmallStrainTranverslyIsotropicDouble *> tranversly_isotropic_double_ptr_map;
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
     //Get block name
     string name = it->get_name();
     if (name.compare(0,20,"MAT_ELASTIC_TRANSISO") == 0) {
       Mat_Elastic_TransIso mydata;
       ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
-      tranversly_isotropic_adouble_ptr_map[it->get_msId()] = new SmallStrainTranverslyIsotropic<adouble>();
-      tranversly_isotropic_double_ptr_map[it->get_msId()] = new SmallStrainTranverslyIsotropic<double>();
+      tranversly_isotropic_adouble_ptr_map[it->get_msId()] = new SmallStrainTranverslyIsotropicADouble();
+      tranversly_isotropic_double_ptr_map[it->get_msId()] = new SmallStrainTranverslyIsotropicDouble();
       //nu_p, nu_pz, E_p, E_z, G_zp
       tranversly_isotropic_adouble_ptr_map.at(it->get_msId())->E_p = mydata.data.Youngp;
       tranversly_isotropic_double_ptr_map.at(it->get_msId())->E_p = mydata.data.Youngp;
@@ -252,27 +255,94 @@ int main(int argc, char *argv[]) {
       }
       tranversly_isotropic_adouble_ptr_map.at(it->get_msId())->G_zp = shear_zp;
       tranversly_isotropic_double_ptr_map.at(it->get_msId())->G_zp = shear_zp;
+      //get tets from block where material is defined
+      int id = it->get_msId();
+      EntityHandle meshset = it->get_meshset();
+      rval = m_field.get_moab().get_entities_by_type(
+        meshset,MBTET,trans_elastic.setOfBlocks[id].tEts,true
+      ); CHKERR_PETSC(rval);
+      //adding material to nonlinear class
+      trans_elastic.setOfBlocks[id].iD = id;
+      //note that material parameters are defined internally in material model
+      trans_elastic.setOfBlocks[id].E = 0; // this is not working for this material
+      trans_elastic.setOfBlocks[id].PoissonRatio = 0; // this is not working for this material
+      trans_elastic.setOfBlocks[id].materialDoublePtr = tranversly_isotropic_double_ptr_map.at(it->get_msId());
+      trans_elastic.setOfBlocks[id].materialAdoublePtr = tranversly_isotropic_adouble_ptr_map.at(it->get_msId());
+      ierr = m_field.seed_finite_elements(trans_elastic.setOfBlocks[id].tEts); CHKERRQ(ierr);
+    }
+  }
+  {
+    ierr = m_field.add_finite_element("TRAN_ISOTROPIC_ELASTIC"); CHKERRQ(ierr);
+    ierr = m_field.add_finite_element("TRAN_ISOTROPIC_ELASTIC",MF_ZERO); CHKERRQ(ierr);
+    ierr = m_field.modify_finite_element_add_field_row("TRAN_ISOTROPIC_ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
+    ierr = m_field.modify_finite_element_add_field_col("TRAN_ISOTROPIC_ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
+    ierr = m_field.modify_finite_element_add_field_data("TRAN_ISOTROPIC_ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
+    ierr = m_field.modify_finite_element_add_field_data("TRAN_ISOTROPIC_ELASTIC","POTENTIAL_FIELD"); CHKERRQ(ierr);
+    if(m_field.check_field("MESH_NODE_POSITIONS")) {
+      ierr = m_field.modify_finite_element_add_field_data("TRAN_ISOTROPIC_ELASTIC","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+    }
+    for(
+      map<int,NonlinearElasticElement::BlockData>::iterator sit = trans_elastic.setOfBlocks.begin();
+      sit!=trans_elastic.setOfBlocks.end();sit++
+    ) {
+      ierr = m_field.add_ents_to_finite_element_by_TETs(sit->second.tEts,"TRAN_ISOTROPIC_ELASTIC"); CHKERRQ(ierr);
+    }
+  }
+  {
+    //Rhs
+    trans_elastic.feRhs.getOpPtrVector().push_back(
+      new NonlinearElasticElement::OpGetCommonDataAtGaussPts("DISPLACEMENT",trans_elastic.commonData)
+    );
+    trans_elastic.feRhs.getOpPtrVector().push_back(
+      new NonlinearElasticElement::OpGetCommonDataAtGaussPts("POTENTIAL_FIELD",trans_elastic.commonData)
+    );
+    if(m_field.check_field("MESH_NODE_POSITIONS")) {
+      trans_elastic.feRhs.getOpPtrVector().push_back(
+        new NonlinearElasticElement::OpGetCommonDataAtGaussPts("MESH_NODE_POSITIONS",trans_elastic.commonData)
+      );
+    }
+    map<int,NonlinearElasticElement::BlockData>::iterator sit = trans_elastic.setOfBlocks.begin();
+    for(;sit!=trans_elastic.setOfBlocks.end();sit++) {
+      trans_elastic.feRhs.getOpPtrVector().push_back(
+        new NonlinearElasticElement::OpJacobianPiolaKirchhoffStress(
+          "DISPLACEMENT",sit->second,trans_elastic.commonData,2,false,false,true
+        )
+      );
+      trans_elastic.feRhs.getOpPtrVector().push_back(
+        new NonlinearElasticElement::OpRhsPiolaKirchhoff(
+          "DISPLACEMENT",sit->second,trans_elastic.commonData
+        )
+      );
+    }
+
+    //Lhs
+    trans_elastic.feLhs.getOpPtrVector().push_back(
+      new NonlinearElasticElement::OpGetCommonDataAtGaussPts("DISPLACEMENT",trans_elastic.commonData)
+    );
+    trans_elastic.feLhs.getOpPtrVector().push_back(
+      new NonlinearElasticElement::OpGetCommonDataAtGaussPts("POTENTIAL_FIELD",trans_elastic.commonData)
+    );
+    if(m_field.check_field("MESH_NODE_POSITIONS")) {
+      trans_elastic.feLhs.getOpPtrVector().push_back(
+        new NonlinearElasticElement::OpGetCommonDataAtGaussPts("MESH_NODE_POSITIONS",trans_elastic.commonData)
+      );
+    }
+    sit = trans_elastic.setOfBlocks.begin();
+    for(;sit!=trans_elastic.setOfBlocks.end();sit++) {
+      trans_elastic.feLhs.getOpPtrVector().push_back(
+        new NonlinearElasticElement::OpJacobianPiolaKirchhoffStress(
+          "DISPLACEMENT",sit->second,trans_elastic.commonData,2,true,false,true
+        )
+      );
+      trans_elastic.feLhs.getOpPtrVector().push_back(
+        new NonlinearElasticElement::OpLhsPiolaKirchhoff_dx(
+          "DISPLACEMENT","DISPLACEMENT",sit->second,trans_elastic.commonData
+        )
+      );
     }
   }
 
-  ierr = elastic.addElement("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
-  ierr = elastic.setOperators("DISPLACEMENT","MESH_NODE_POSITIONS",false,true); CHKERRQ(ierr);
-
-  ierr = m_field.add_finite_element("TRAN_ISOTROPIC_ELASTIC"); CHKERRQ(ierr);
   ierr = m_field.add_finite_element("Lagrange_elem"); CHKERRQ(ierr);
-
-
-  //Define rows/cols and element data
-  ierr = m_field.modify_finite_element_add_field_row("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
-  ierr = m_field.modify_finite_element_add_field_col("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
-  ierr = m_field.modify_finite_element_add_field_data("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
-
-  //FE Transverse Isotropic
-  ierr = m_field.modify_finite_element_add_field_row("TRAN_ISOTROPIC_ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
-  ierr = m_field.modify_finite_element_add_field_col("TRAN_ISOTROPIC_ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
-  ierr = m_field.modify_finite_element_add_field_data("TRAN_ISOTROPIC_ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
-  ierr = m_field.modify_finite_element_add_field_data("TRAN_ISOTROPIC_ELASTIC","POTENTIAL_FIELD"); CHKERRQ(ierr);
-
 
   //C row as Lagrange_mul_disp and col as DISPLACEMENT
   ierr = m_field.modify_finite_element_add_field_row("Lagrange_elem","Lagrange_mul_disp"); CHKERRQ(ierr);
@@ -287,7 +357,6 @@ int main(int argc, char *argv[]) {
   ierr = m_field.modify_finite_element_add_field_data("Lagrange_elem","DISPLACEMENT"); CHKERRQ(ierr);
 
   //add finite elements entities
-  ierr = m_field.add_ents_to_finite_element_by_TETs(meshset_Trans_ISO,"TRAN_ISOTROPIC_ELASTIC",true); CHKERRQ(ierr);
   ierr = m_field.add_ents_to_finite_element_by_TRIs(SurfacesFaces,"Lagrange_elem"); CHKERRQ(ierr);
 
   //build finite elemnts
@@ -386,18 +455,18 @@ int main(int argc, char *argv[]) {
   ierr = MatZeroEntries(Aij); CHKERRQ(ierr);
 
   //internal force vector (to take into account Dirchelt boundary conditions
-  elastic.getLoopFeRhs().snes_x = D;
-  elastic.getLoopFeRhs().snes_f = F;
-  ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",elastic.getLoopFeRhs());  CHKERRQ(ierr);
+  iso_elastic.getLoopFeRhs().snes_x = D;
+  iso_elastic.getLoopFeRhs().snes_f = F;
+  ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",iso_elastic.getLoopFeRhs());  CHKERRQ(ierr);
   ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
   ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
   ierr = VecScale(F,-1); CHKERRQ(ierr);
   ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
   ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
-  //elastic element matrix
-  elastic.getLoopFeLhs().snes_x = D;
-  elastic.getLoopFeLhs().snes_B = Aij;
-  ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",elastic.getLoopFeLhs());  CHKERRQ(ierr);
+  //iso_elastic element matrix
+  iso_elastic.getLoopFeLhs().snes_x = D;
+  iso_elastic.getLoopFeLhs().snes_B = Aij;
+  ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",iso_elastic.getLoopFeLhs());  CHKERRQ(ierr);
 
 
 

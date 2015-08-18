@@ -245,6 +245,11 @@ struct SmallStrainTranverslyIsotropic: public NonlinearElasticElement::Functions
     PetscFunctionReturn(0);
   }
 
+  virtual PetscErrorCode calculateAngles() {
+    PetscFunctionBegin;
+    PetscFunctionReturn(0);
+  }
+
   ublas::vector<TYPE> voigtStress;
 
   /** \brief Calculate global stress
@@ -255,6 +260,7 @@ struct SmallStrainTranverslyIsotropic: public NonlinearElasticElement::Functions
     const NumeredMoFEMFiniteElement *fe_ptr
   ) {
     PetscFunctionBegin;
+    ierr = calculateAngles(); CHKERRQ(ierr);
     ierr = calculateStrain(); CHKERRQ(ierr);
     ierr = calculateLocalStiffnesMatrix(); CHKERRQ(ierr);
     ierr = calculateAxisAngleRotationalMatrix(); CHKERRQ(ierr);
@@ -281,11 +287,13 @@ struct SmallStrainTranverslyIsotropic: public NonlinearElasticElement::Functions
   /** \brief calculate density of strain energy
   *
   */
-  /*virtual PetscErrorCode calculateElasticEnergy(
+  virtual PetscErrorCode calculateElasticEnergy(
   const NonlinearElasticElement::BlockData block_data,
   const NumeredMoFEMFiniteElement *fe_ptr
 ) {
     PetscFunctionBegin;
+
+    ierr = calculateAngles(); CHKERRQ(ierr);
     ierr = calculateStrain(); CHKERRQ(ierr);
     ierr = calculateLocalStiffnesMatrix(); CHKERRQ(ierr);
     ierr = calculateAxisAngleRotationalMatrix(); CHKERRQ(ierr);
@@ -297,7 +305,107 @@ struct SmallStrainTranverslyIsotropic: public NonlinearElasticElement::Functions
     noalias(voigtStress) = prod(globalStiffnessMatrix,voightStrain);
     this->eNergy += 0.5*inner_prod(voigtStress,voightStrain);
     PetscFunctionReturn(0);
-  }*/
+  }
+
+  ublas::vector<double> normalizedPhi;
+  ublas::vector<double> axVectorDouble;
+  double axAngleDouble;
+
+  PetscErrorCode calculateFibreAngles() {
+    PetscFunctionBegin;
+
+    int gg = this->gG; // number of integration point
+    ublas::matrix<double> &phi = (this->commonDataPtr->gradAtGaussPts["POTENTIAL_FIELD"][gg]);
+    for(int ii = 0;ii<3;ii++) {
+      normalizedPhi[ii] = -phi(0,ii)/sqrt(pow(phi(0,0),2)+pow(phi(0,1),2)+pow(phi(0,2),2));
+    }
+
+    axVectorDouble.resize(3,false);
+    const double zVec[3]={ 0.0,0.0,1.0 };
+    axVectorDouble[0] = normalizedPhi[1]*zVec[2]-normalizedPhi[2]*zVec[1];
+    axVectorDouble[1] = normalizedPhi[2]*zVec[0]-normalizedPhi[0]*zVec[2];
+    axVectorDouble[2] = normalizedPhi[0]*zVec[1]-normalizedPhi[1]*zVec[0];
+    double nrm2_ax_vector = norm_2(axVectorDouble);
+    axAngleDouble = asin(nrm2_ax_vector);
+
+    PetscFunctionReturn(0);
+  }
+
+};
+
+
+struct SmallStrainTranverslyIsotropicDouble: public SmallStrainTranverslyIsotropic<double> {
+
+  SmallStrainTranverslyIsotropicDouble(): SmallStrainTranverslyIsotropic<double>() {}
+
+  virtual PetscErrorCode calculateAngles() {
+    PetscFunctionBegin;
+
+    try {
+
+      ierr = calculateFibreAngles(); CHKERRQ(ierr);
+      axVector[0] = axVectorDouble[0];
+      axVector[1] = axVectorDouble[1];
+      axVector[2] = axVectorDouble[2];
+      axAngle = axAngleDouble;
+
+    } catch (const std::exception& ex) {
+      ostringstream ss;
+      ss << "throw in method: " << ex.what() << endl;
+      SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+    }
+    PetscFunctionReturn(0);
+  }
+
+};
+
+struct SmallStrainTranverslyIsotropicADouble: public SmallStrainTranverslyIsotropic<adouble> {
+
+  SmallStrainTranverslyIsotropicADouble(): SmallStrainTranverslyIsotropic<adouble>() {}
+
+  virtual PetscErrorCode setUserActiveVariables(
+    int &nb_active_variables) {
+    PetscFunctionBegin;
+
+    try {
+
+      ierr = calculateFibreAngles(); CHKERRQ(ierr);
+      axVector[0] <<= axVectorDouble[0];
+      axVector[1] <<= axVectorDouble[1];
+      axVector[2] <<= axVectorDouble[2];
+      axAngle <<= axAngleDouble;
+      nb_active_variables += 4;
+
+    } catch (const std::exception& ex) {
+      ostringstream ss;
+      ss << "throw in method: " << ex.what() << endl;
+      SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+    }
+
+    PetscFunctionReturn(0);
+  }
+
+  virtual PetscErrorCode setUserActiveVariables(
+    ublas::vector<double> &active_varibles) {
+    PetscFunctionBegin;
+
+    try {
+
+      int shift = 9; // is a number of elements in F
+      ierr = calculateFibreAngles(); CHKERRQ(ierr);
+      active_varibles[shift+0] = axVectorDouble[0];
+      active_varibles[shift+1] = axVectorDouble[1];
+      active_varibles[shift+2] = axVectorDouble[2];
+      active_varibles[shift+3] = axAngleDouble;
+
+    } catch (const std::exception& ex) {
+      ostringstream ss;
+      ss << "throw in method: " << ex.what() << endl;
+      SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+    }
+
+    PetscFunctionReturn(0);
+  }
 
 };
 
