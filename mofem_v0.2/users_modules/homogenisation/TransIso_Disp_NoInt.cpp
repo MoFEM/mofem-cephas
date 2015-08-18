@@ -40,6 +40,8 @@ using namespace MoFEM;
 #include <Hooke.hpp>
 #include <SmallTransverselyIsotropic.hpp>
 
+#include <boost/ptr_container/ptr_map.hpp>
+
 ErrorCode rval;
 PetscErrorCode ierr;
 
@@ -204,8 +206,6 @@ int main(int argc, char *argv[]) {
 
   Hooke<adouble> hooke_adouble;
   Hooke<double> hooke_double;
-  SmallStrainTranverslyIsotropic<adouble> tranversly_isotropic_adouble;
-  SmallStrainTranverslyIsotropic<double> tranversly_isotropic_double;
 
   NonlinearElasticElement elastic(m_field,1);
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,BLOCKSET|MAT_ELASTICSET,it)) {
@@ -224,6 +224,37 @@ int main(int argc, char *argv[]) {
     elastic.setOfBlocks[id].materialAdoublePtr = &hooke_adouble;
     ierr = m_field.seed_finite_elements(elastic.setOfBlocks[id].tEts); CHKERRQ(ierr);
   }
+
+  boost::ptr_map<int,SmallStrainTranverslyIsotropic<adouble> *> tranversly_isotropic_adouble_ptr_map;
+  boost::ptr_map<int,SmallStrainTranverslyIsotropic<double> *> tranversly_isotropic_double_ptr_map;
+  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
+    //Get block name
+    string name = it->get_name();
+    if (name.compare(0,20,"MAT_ELASTIC_TRANSISO") == 0) {
+      Mat_Elastic_TransIso mydata;
+      ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+      tranversly_isotropic_adouble_ptr_map[it->get_msId()] = new SmallStrainTranverslyIsotropic<adouble>();
+      tranversly_isotropic_double_ptr_map[it->get_msId()] = new SmallStrainTranverslyIsotropic<double>();
+      //nu_p, nu_pz, E_p, E_z, G_zp
+      tranversly_isotropic_adouble_ptr_map.at(it->get_msId())->E_p = mydata.data.Youngp;
+      tranversly_isotropic_double_ptr_map.at(it->get_msId())->E_p = mydata.data.Youngp;
+      tranversly_isotropic_adouble_ptr_map.at(it->get_msId())->E_z = mydata.data.Youngz;
+      tranversly_isotropic_double_ptr_map.at(it->get_msId())->E_z = mydata.data.Youngz;
+      tranversly_isotropic_adouble_ptr_map.at(it->get_msId())->nu_p = mydata.data.Poissonp;
+      tranversly_isotropic_double_ptr_map.at(it->get_msId())->nu_p = mydata.data.Poissonp;
+      tranversly_isotropic_adouble_ptr_map.at(it->get_msId())->nu_pz = mydata.data.Poissonpz;
+      tranversly_isotropic_double_ptr_map.at(it->get_msId())->nu_pz = mydata.data.Poissonpz;
+      double shear_zp;
+      if(mydata.data.Shearzp!=0) {
+        shear_zp = mydata.data.Shearzp;
+      } else {
+        shear_zp = mydata.data.Youngz/(2*(1+mydata.data.Poissonpz));
+      }
+      tranversly_isotropic_adouble_ptr_map.at(it->get_msId())->G_zp = shear_zp;
+      tranversly_isotropic_double_ptr_map.at(it->get_msId())->G_zp = shear_zp;
+    }
+  }
+
   ierr = elastic.addElement("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
   ierr = elastic.setOperators("DISPLACEMENT","MESH_NODE_POSITIONS",false,true); CHKERRQ(ierr);
 
@@ -302,11 +333,6 @@ int main(int argc, char *argv[]) {
   }
 
   //Assemble F and Aij
-//  double YoungModulusP;
-//  double PoissonRatioP;
-//  double YoungModulusZ;
-//  double PoissonRatioPZ;
-//  double ShearModulusZP;
   double YoungModulus;
   double PoissonRatio;
   double alpha;
