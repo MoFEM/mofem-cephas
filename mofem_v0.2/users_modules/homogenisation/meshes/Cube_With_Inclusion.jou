@@ -1,0 +1,107 @@
+#!python
+#To create RVE for all the three type of boundary conditions, i.e. (Linear dispacemet, traction and periodic)
+
+cubit.cmd('new')
+cubit.cmd('brick x 1 y 1 z 1')
+
+interval=5; 
+
+cubit.cmd('brick x 0.5 y 0.5 z 0.5')
+
+cubit.cmd('subtract volume 2 from volume 1 keep')
+cubit.cmd('delete volume 1') 
+cubit.cmd('imprint volume 2 3')   
+cubit.cmd('merge volume 2 3') 
+
+str1='surface 13 interval '+str(interval); cubit.cmd(str1)
+cubit.cmd('surface 13 scheme trimesh')
+cubit.cmd('mesh surface 13')
+cubit.cmd('surface 14 scheme copy source surface 13 source vertex 17 target vertex 22 source curve 28 target curve 30 nosmoothing')
+cubit.cmd('mesh surface 14')
+
+str1='surface 18 interval '+str(interval); cubit.cmd(str1)  
+cubit.cmd('surface 18 scheme trimesh')  
+cubit.cmd('mesh surface 18')  
+cubit.cmd('surface 16 scheme copy source surface 18 source vertex 18 target vertex 19 source curve 36 target curve 35 nosmoothing')  
+cubit.cmd('mesh surface 16')  
+  
+str1='surface 17 interval '+str(interval); cubit.cmd(str1)  
+cubit.cmd('surface 17 scheme trimesh')  
+cubit.cmd('mesh surface 17')  
+cubit.cmd('surface 15 scheme copy source surface 17 source vertex 24 target vertex 23 source curve 35 target curve 33 nosmoothing')  
+cubit.cmd('mesh surface 15')  
+ 
+interval_inner=interval/2
+str1='surface 7 8 9 10 11 12 interval '+str(interval_inner); cubit.cmd(str1)  
+cubit.cmd('surface  7 8 9 10 11 12 scheme trimesh')  
+cubit.cmd('mesh surface  7 8 9 10 11 12')  
+
+cubit.cmd('volume all scheme tetmesh')  
+cubit.cmd('mesh volume all')  
+ 
+#Outer part 
+str1='block 1 ' +' volume 3'; cubit.cmd(str1)  
+str1='block 1 ' +' name "MAT_ELASTIC"'; cubit.cmd(str1)  
+cubit.cmd('block 1 attribute count 2')  
+Elastic=['200', '0.3']  
+for i in range(0, 2):  
+    str1='block 1 attribute index ' + str(i+1) +' '+Elastic[i]; cubit.cmd(str1)  
+  
+#Inclusion  
+str1='block 2 ' +' volume 2'; cubit.cmd(str1)  
+str1='block 2 ' +' name "MAT_ELASTIC_Stiff_Inclusion"'; cubit.cmd(str1)  
+cubit.cmd('block 2 attribute count 2')  
+Elastic=['2000', '0.3']  
+for i in range(0, 2):  
+    str1='block 2 attribute index ' + str(i+1) +' '+Elastic[i]; cubit.cmd(str1)  
+
+ 
+cubit.cmd('sideset 101 surface 14 15 16')  # all -ve boundary surfaces 
+cubit.cmd('sideset 102 surface 13 17 18')  # all +ve boundary surfaces 
+cubit.cmd('sideset 103 surface 14 15 16 13 17 18')  # all boundary surfaces 
+
+cubit.cmd('save as "/Users/zahur/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/homogenisation/meshes/RVE_Cube_with_inclusion.cub" overwrite')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
