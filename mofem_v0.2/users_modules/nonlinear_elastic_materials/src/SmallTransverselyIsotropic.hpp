@@ -17,8 +17,8 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef __HOOKE_HPP__
-#define __HOOKE_HPP__
+#ifndef __SMALLSTRAINTRANVERSLYISOTROPIC_HPP__
+#define __SMALLSTRAINTRANVERSLYISOTROPIC_HPP__
 
 #ifndef WITH_ADOL_C
   #error "MoFEM need to be compiled with ADOL-C"
@@ -30,218 +30,220 @@
 template<typename TYPE>
 struct SmallStrainTranverslyIsotropic: public NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoffI<TYPE> {
 
-    SmallStrainTranverslyIsotropic(): NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoffI<TYPE>() {}
+  SmallStrainTranverslyIsotropic(): NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoffI<TYPE>() {}
 
-    ublas::matrix<TYPE> sTrain;
-    ublas::vector<TYPE> voightStrain;
-    TYPE tR;
+  PetscErrorCode ierr;
 
-    PetscErrorCode calculateStrain()
-      PetscFunctionBegin;
-      sTrain.resize(3,3,false);
-      noalias(sTrain) = this->F;
-      for(int dd = 0;dd<3;dd++) {
-        sTrain(dd,dd) -= 1;
-      }
-      sTrain += trans(sTrain);
-      sTrain *= 0.5;
-      voightStrain.resize(6,false);
-      voightStrain[0] = Strain(0,0);
-      voightStrain[1] = Strain(1,1);
-      voightStrain[2] = Strain(2,2);
-      voightStrain[3] = 2*Strain(0,1);
-      voightStrain[4] = 2*Strain(1,2);
-      voightStrain[5] = 2*Strain(2,0);
-      PetscFunctionReturn(0);
-    )
+  ublas::matrix<TYPE> sTrain;
+  ublas::vector<TYPE> voightStrain;
+  TYPE tR;
 
-    double nu_p, nu_pz, E_p, E_z, G_zp;
-    ublas::symmetric_matrix<TYPE,ublas::upper> localStiffnessMatrix;
-    PetscErrorCode calculateLocalStiffnesMatrix() {
-      PetscFunctionBegin;
-      double nu_zp=(nu_pz*E_z)/E_p;
-      double delta=((1+nu_p)*(1-nu_p-(2*nu_pz*nu_zp)))/(E_p*E_p*E_z);
-
-      localStiffnessMatrix.resize(6);
-      localStiffnessMatrix.clear();
-      localStiffnessMatrix(0,0)=localStiffnessMatrix(1,1)=(1-nu_pz*nu_zp)/(E_p*E_z*delta);
-      localStiffnessMatrix(2,2)=(1-nu_p*nu_p)/(E_p*E_p*delta);
-
-      localStiffnessMatrix(0,1)=localStiffnessMatrix(1,0)=(nu_p+nu_zp*nu_pz)/(E_p*E_z*delta);
-      localStiffnessMatrix(0,2)=localStiffnessMatrix(2,0)=localStiffnessMatrix(1,2)=localStiffnessMatrix(2,1)=(nu_zp+nu_p*nu_zp)/(E_p*E_z*delta);
-
-      localStiffnessMatrix(3,3)=E_p/(2*(1+nu_p));
-      localStiffnessMatrix(4,4)=localStiffnessMatrix(5,5)=G_zp;
-
-      PetscFunctionReturn(0);
+  PetscErrorCode calculateStrain() {
+    PetscFunctionBegin;
+    sTrain.resize(3,3,false);
+    noalias(sTrain) = this->F;
+    for(int dd = 0;dd<3;dd++) {
+      sTrain(dd,dd) -= 1;
     }
+    sTrain += trans(sTrain);
+    sTrain *= 0.5;
+    voightStrain.resize(6,false);
+    voightStrain[0] = sTrain(0,0);
+    voightStrain[1] = sTrain(1,1);
+    voightStrain[2] = sTrain(2,2);
+    voightStrain[3] = 2*sTrain(0,1);
+    voightStrain[4] = 2*sTrain(1,2);
+    voightStrain[5] = 2*sTrain(2,0);
+    PetscFunctionReturn(0);
+  }
 
-    ublas::matrix<TYPE> aARotMat;
-    ublas::vector<TYPE> axVector;
-    TYPE axAngle;
+  double nu_p, nu_pz, E_p, E_z, G_zp;
+  ublas::symmetric_matrix<TYPE,ublas::upper> localStiffnessMatrix;
+  PetscErrorCode calculateLocalStiffnesMatrix() {
+    PetscFunctionBegin;
+    double nu_zp=(nu_pz*E_z)/E_p;
+    double delta=((1+nu_p)*(1-nu_p-(2*nu_pz*nu_zp)))/(E_p*E_p*E_z);
 
-    /**
-    * \brief Function to Calculate the Rotation Matrix at a given axis and angle of rotation
+    localStiffnessMatrix.resize(6);
+    localStiffnessMatrix.clear();
+    localStiffnessMatrix(0,0)=localStiffnessMatrix(1,1)=(1-nu_pz*nu_zp)/(E_p*E_z*delta);
+    localStiffnessMatrix(2,2)=(1-nu_p*nu_p)/(E_p*E_p*delta);
 
-    * This function computes the rotational matrix for a given axis of rotation
-    * and angle of rotation about that angle <br>
+    localStiffnessMatrix(0,1)=localStiffnessMatrix(1,0)=(nu_p+nu_zp*nu_pz)/(E_p*E_z*delta);
+    localStiffnessMatrix(0,2)=localStiffnessMatrix(2,0)=localStiffnessMatrix(1,2)=localStiffnessMatrix(2,1)=(nu_zp+nu_p*nu_zp)/(E_p*E_z*delta);
 
-    *\param axVector A vector representing the axis of rotation
-    *\param axAngle Angle of rotation along the axis (in radians)
-    */
-    PetscErrorCode calculateAxisAngleRotationalMatrix(ublas::matrix<TYPE> &axVector,TYPE axAngle){
-      PetscFunctionBegin;
+    localStiffnessMatrix(3,3)=E_p/(2*(1+nu_p));
+    localStiffnessMatrix(4,4)=localStiffnessMatrix(5,5)=G_zp;
 
-      aARotMat.resize(3,3,false);
-      aARotMat.clear();
+    PetscFunctionReturn(0);
+  }
 
-      aARotMat(0,0) = 1-((1-cos(axAngle))*(pow(axVector[1],2)+pow(axVector[2],2))/pow(norm_axVector,2));
-      aARotMat(1,1) = 1-((1-cos(axAngle))*(pow(axVector[0],2)+pow(axVector[2],2))/pow(norm_axVector,2));
-      aARotMat(2,2) = 1-((1-cos(axAngle))*(pow(axVector[0],2)+pow(axVector[1],2))/pow(norm_axVector,2));
+  ublas::matrix<TYPE> aARotMat;
+  ublas::vector<TYPE> axVector;
+  TYPE axAngle;
 
-      aARotMat(0,1) = ((1-cos(axAngle))*axVector[0]*axVector[1]-norm_axVector*axVector[2]*sin(axAngle))/pow(norm_axVector,2);
-      aARotMat(1,0) = ((1-cos(axAngle))*axVector[0]*axVector[1]+norm_axVector*axVector[2]*sin(axAngle))/pow(norm_axVector,2);
+  /**
+  * \brief Function to Calculate the Rotation Matrix at a given axis and angle of rotation
 
-      aARotMat(0,2) = ((1-cos(axAngle))*axVector[0]*axVector[2]+norm_axVector*axVector[1]*sin(axAngle))/pow(norm_axVector,2);
-      aARotMat(2,0) = ((1-cos(axAngle))*axVector[0]*axVector[2]-norm_axVector*axVector[1]*sin(axAngle))/pow(norm_axVector,2);
+  * This function computes the rotational matrix for a given axis of rotation
+  * and angle of rotation about that angle <br>
 
-      aARotMat(1,2) = ((1-cos(axAngle))*axVector[1]*axVector[2]-norm_axVector*axVector[0]*sin(axAngle))/pow(norm_axVector,2);
-      aARotMat(2,1) = ((1-cos(axAngle))*axVector[1]*axVector[2]+norm_axVector*axVector[0]*sin(axAngle))/pow(norm_axVector,2);
+  *\param axVector A vector representing the axis of rotation
+  *\param axAngle Angle of rotation along the axis (in radians)
+  */
+  PetscErrorCode calculateAxisAngleRotationalMatrix() {
+    PetscFunctionBegin;
 
-      PetscFunctionReturn(0);
-    }
+    aARotMat.resize(3,3,false);
+    aARotMat.clear();
 
+    TYPE norm = sqrt(pow(axVector[0],2) + pow(axVector[1],2) + pow(axVector[2],2));
 
-    ublas::matrix<TYPE> stressRotMat;
+    aARotMat(0,0) = 1-((1-cos(axAngle))*(pow(axVector[1],2)+pow(axVector[2],2))/pow(norm,2));
+    aARotMat(1,1) = 1-((1-cos(axAngle))*(pow(axVector[0],2)+pow(axVector[2],2))/pow(norm,2));
+    aARotMat(2,2) = 1-((1-cos(axAngle))*(pow(axVector[0],2)+pow(axVector[1],2))/pow(norm,2));
 
-    /**
-    * \brief Function to Calculate Stress Transformation Matrix
-    * This function computes the stress transformation Matrix at a give axis and angle of rotation <br>
-    * One can also output the axis/angle rotational Matrix
-    */
-    PetscFunctionBegin stressTransformation() {
-      PetscFunctionBegin;
+    aARotMat(0,1) = ((1-cos(axAngle))*axVector[0]*axVector[1]-norm*axVector[2]*sin(axAngle))/pow(norm,2);
+    aARotMat(1,0) = ((1-cos(axAngle))*axVector[0]*axVector[1]+norm*axVector[2]*sin(axAngle))/pow(norm,2);
 
-      stressRotMat.resize(6,6,false);
-      stressRotMat.clear();
+    aARotMat(0,2) = ((1-cos(axAngle))*axVector[0]*axVector[2]+norm*axVector[1]*sin(axAngle))/pow(norm,2);
+    aARotMat(2,0) = ((1-cos(axAngle))*axVector[0]*axVector[2]-norm*axVector[1]*sin(axAngle))/pow(norm,2);
 
-      stressRotMat(0, 0) =       aARotMat(0,0) * aARotMat(0,0);
-      stressRotMat(0, 1) =       aARotMat(1,0) * aARotMat(1,0);
-      stressRotMat(0, 2) =       aARotMat(2,0) * aARotMat(2,0);
-      stressRotMat(0, 3) = 2.0 * aARotMat(1,0) * aARotMat(0,0);
-      stressRotMat(0, 4) = 2.0 * aARotMat(2,0) * aARotMat(1,0);
-      stressRotMat(0, 5) = 2.0 * aARotMat(0,0) * aARotMat(2,0);
+    aARotMat(1,2) = ((1-cos(axAngle))*axVector[1]*axVector[2]-norm*axVector[0]*sin(axAngle))/pow(norm,2);
+    aARotMat(2,1) = ((1-cos(axAngle))*axVector[1]*axVector[2]+norm*axVector[0]*sin(axAngle))/pow(norm,2);
 
-      stressRotMat(1, 0) =       aARotMat(0,1) * aARotMat(0,1);
-      stressRotMat(1, 1) =       aARotMat(1,1) * aARotMat(1,1);
-      stressRotMat(1, 2) =       aARotMat(2,1) * aARotMat(2,1);
-      stressRotMat(1, 3) = 2.0 * aARotMat(1,1) * aARotMat(0,1);
-      stressRotMat(1, 4) = 2.0 * aARotMat(2,1) * aARotMat(1,1);
-      stressRotMat(1, 5) = 2.0 * aARotMat(0,1) * aARotMat(2,1);
+    PetscFunctionReturn(0);
+  }
 
-      stressRotMat(2, 0) =       aARotMat(0,2) * aARotMat(0,2);
-      stressRotMat(2, 1) =       aARotMat(1,2) * aARotMat(1,2);
-      stressRotMat(2, 2) =       aARotMat(2,2) * aARotMat(2,2);
-      stressRotMat(2, 3) = 2.0 * aARotMat(1,2) * aARotMat(0,2);
-      stressRotMat(2, 4) = 2.0 * aARotMat(2,2) * aARotMat(1,2);
-      stressRotMat(2, 5) = 2.0 * aARotMat(0,2) * aARotMat(2,2);
+  ublas::matrix<TYPE> stressRotMat;
 
-      stressRotMat(3, 0) =   aARotMat(0,1) * aARotMat(0,0);
-      stressRotMat(3, 1) =   aARotMat(1,1) * aARotMat(1,0);
-      stressRotMat(3, 2) =   aARotMat(2,1) * aARotMat(2,0);
-      stressRotMat(3, 3) = ( aARotMat(1,1) * aARotMat(0,0) + aARotMat(0,1) * aARotMat(1,0) );
-      stressRotMat(3, 4) = ( aARotMat(2,1) * aARotMat(1,0) + aARotMat(1,1) * aARotMat(2,0) );
-      stressRotMat(3, 5) = ( aARotMat(0,1) * aARotMat(2,0) + aARotMat(2,1) * aARotMat(0,0) );
+  /**
+  * \brief Function to Calculate Stress Transformation Matrix
+  * This function computes the stress transformation Matrix at a give axis and angle of rotation <br>
+  * One can also output the axis/angle rotational Matrix
+  */
+  PetscErrorCode stressTransformation() {
+    PetscFunctionBegin;
 
-      stressRotMat(4, 0) =   aARotMat(0,2) * aARotMat(0,1);
-      stressRotMat(4, 1) =   aARotMat(1,2) * aARotMat(1,1);
-      stressRotMat(4, 2) =   aARotMat(2,2) * aARotMat(2,1);
-      stressRotMat(4, 3) = ( aARotMat(1,2) * aARotMat(0,1) + aARotMat(0,2) * aARotMat(1,1) );
-      stressRotMat(4, 4) = ( aARotMat(2,2) * aARotMat(1,1) + aARotMat(1,2) * aARotMat(2,1) );
-      stressRotMat(4, 5) = ( aARotMat(0,2) * aARotMat(2,1) + aARotMat(2,2) * aARotMat(0,1) );
+    stressRotMat.resize(6,6,false);
+    stressRotMat.clear();
 
-      stressRotMat(5, 0) =   aARotMat(0,0) * aARotMat(0,2);
-      stressRotMat(5, 1) =   aARotMat(1,0) * aARotMat(1,2);
-      stressRotMat(5, 2) =   aARotMat(2,0) * aARotMat(2,2);
-      stressRotMat(5, 3) = ( aARotMat(1,0) * aARotMat(0,2) + aARotMat(0,0) * aARotMat(1,2) );
-      stressRotMat(5, 4) = ( aARotMat(2,0) * aARotMat(1,2) + aARotMat(1,0) * aARotMat(2,2) );
-      stressRotMat(5, 5) = ( aARotMat(0,0) * aARotMat(2,2) + aARotMat(2,0) * aARotMat(0,2) );
+    stressRotMat(0, 0) =       aARotMat(0,0) * aARotMat(0,0);
+    stressRotMat(0, 1) =       aARotMat(1,0) * aARotMat(1,0);
+    stressRotMat(0, 2) =       aARotMat(2,0) * aARotMat(2,0);
+    stressRotMat(0, 3) = 2.0 * aARotMat(1,0) * aARotMat(0,0);
+    stressRotMat(0, 4) = 2.0 * aARotMat(2,0) * aARotMat(1,0);
+    stressRotMat(0, 5) = 2.0 * aARotMat(0,0) * aARotMat(2,0);
 
-      PetscFunctionReturn(0);
-    }
+    stressRotMat(1, 0) =       aARotMat(0,1) * aARotMat(0,1);
+    stressRotMat(1, 1) =       aARotMat(1,1) * aARotMat(1,1);
+    stressRotMat(1, 2) =       aARotMat(2,1) * aARotMat(2,1);
+    stressRotMat(1, 3) = 2.0 * aARotMat(1,1) * aARotMat(0,1);
+    stressRotMat(1, 4) = 2.0 * aARotMat(2,1) * aARotMat(1,1);
+    stressRotMat(1, 5) = 2.0 * aARotMat(0,1) * aARotMat(2,1);
 
-    ublas::matrix<TYPE> strainRotMat;
+    stressRotMat(2, 0) =       aARotMat(0,2) * aARotMat(0,2);
+    stressRotMat(2, 1) =       aARotMat(1,2) * aARotMat(1,2);
+    stressRotMat(2, 2) =       aARotMat(2,2) * aARotMat(2,2);
+    stressRotMat(2, 3) = 2.0 * aARotMat(1,2) * aARotMat(0,2);
+    stressRotMat(2, 4) = 2.0 * aARotMat(2,2) * aARotMat(1,2);
+    stressRotMat(2, 5) = 2.0 * aARotMat(0,2) * aARotMat(2,2);
 
-    /**
-    * \brief Function to Calculate Strain Transformation Matrix<br>
-    * This function computes the strain transformation Matrix at a give axis and angle of rotation <br>
-    * One can also output the axis/angle rotational Matrix
-    */
-    PetscFunctionBegin strainTransformation() {
-      PetscFunctionBegin;
+    stressRotMat(3, 0) =   aARotMat(0,1) * aARotMat(0,0);
+    stressRotMat(3, 1) =   aARotMat(1,1) * aARotMat(1,0);
+    stressRotMat(3, 2) =   aARotMat(2,1) * aARotMat(2,0);
+    stressRotMat(3, 3) = ( aARotMat(1,1) * aARotMat(0,0) + aARotMat(0,1) * aARotMat(1,0) );
+    stressRotMat(3, 4) = ( aARotMat(2,1) * aARotMat(1,0) + aARotMat(1,1) * aARotMat(2,0) );
+    stressRotMat(3, 5) = ( aARotMat(0,1) * aARotMat(2,0) + aARotMat(2,1) * aARotMat(0,0) );
 
-      strainRotMat.resize(6,6,false);
-      strainRotMat.clear();
+    stressRotMat(4, 0) =   aARotMat(0,2) * aARotMat(0,1);
+    stressRotMat(4, 1) =   aARotMat(1,2) * aARotMat(1,1);
+    stressRotMat(4, 2) =   aARotMat(2,2) * aARotMat(2,1);
+    stressRotMat(4, 3) = ( aARotMat(1,2) * aARotMat(0,1) + aARotMat(0,2) * aARotMat(1,1) );
+    stressRotMat(4, 4) = ( aARotMat(2,2) * aARotMat(1,1) + aARotMat(1,2) * aARotMat(2,1) );
+    stressRotMat(4, 5) = ( aARotMat(0,2) * aARotMat(2,1) + aARotMat(2,2) * aARotMat(0,1) );
 
-      strainRotMat(0, 0) = aARotMat(0,0) * aARotMat(0,0);
-      strainRotMat(0, 1) = aARotMat(1,0) * aARotMat(1,0);
-      strainRotMat(0, 2) = aARotMat(2,0) * aARotMat(2,0);
-      strainRotMat(0, 3) = aARotMat(1,0) * aARotMat(0,0);
-      strainRotMat(0, 4) = aARotMat(2,0) * aARotMat(1,0);
-      strainRotMat(0, 5) = aARotMat(0,0) * aARotMat(2,0);
+    stressRotMat(5, 0) =   aARotMat(0,0) * aARotMat(0,2);
+    stressRotMat(5, 1) =   aARotMat(1,0) * aARotMat(1,2);
+    stressRotMat(5, 2) =   aARotMat(2,0) * aARotMat(2,2);
+    stressRotMat(5, 3) = ( aARotMat(1,0) * aARotMat(0,2) + aARotMat(0,0) * aARotMat(1,2) );
+    stressRotMat(5, 4) = ( aARotMat(2,0) * aARotMat(1,2) + aARotMat(1,0) * aARotMat(2,2) );
+    stressRotMat(5, 5) = ( aARotMat(0,0) * aARotMat(2,2) + aARotMat(2,0) * aARotMat(0,2) );
 
-      strainRotMat(1, 0) = aARotMat(0,1) * aARotMat(0,1);
-      strainRotMat(1, 1) = aARotMat(1,1) * aARotMat(1,1);
-      strainRotMat(1, 2) = aARotMat(2,1) * aARotMat(2,1);
-      strainRotMat(1, 3) = aARotMat(1,1) * aARotMat(0,1);
-      strainRotMat(1, 4) = aARotMat(2,1) * aARotMat(1,1);
-      strainRotMat(1, 5) = aARotMat(0,1) * aARotMat(2,1);
+    PetscFunctionReturn(0);
+  }
 
-      strainRotMat(2, 0) = aARotMat(0,2) * aARotMat(0,2);
-      strainRotMat(2, 1) = aARotMat(1,2) * aARotMat(1,2);
-      strainRotMat(2, 2) = aARotMat(2,2) * aARotMat(2,2);
-      strainRotMat(2, 3) = aARotMat(1,2) * aARotMat(0,2);
-      strainRotMat(2, 4) = aARotMat(2,2) * aARotMat(1,2);
-      strainRotMat(2, 5) = aARotMat(0,2) * aARotMat(2,2);
+  ublas::matrix<TYPE> strainRotMat;
 
-      strainRotMat(3, 0) = 2.0 * aARotMat(0,1) * aARotMat(0,0);
-      strainRotMat(3, 1) = 2.0 * aARotMat(1,1) * aARotMat(1,0);
-      strainRotMat(3, 2) = 2.0 * aARotMat(2,1) * aARotMat(2,0);
-      strainRotMat(3, 3) =     ( aARotMat(1,1) * aARotMat(0,0) + aARotMat(0,1) * aARotMat(1,0) );
-      strainRotMat(3, 4) =     ( aARotMat(2,1) * aARotMat(1,0) + aARotMat(1,1) * aARotMat(2,0) );
-      strainRotMat(3, 5) =     ( aARotMat(0,1) * aARotMat(2,0) + aARotMat(2,1) * aARotMat(0,0) );
+  /**
+  * \brief Function to Calculate Strain Transformation Matrix<br>
+  * This function computes the strain transformation Matrix at a give axis and angle of rotation <br>
+  * One can also output the axis/angle rotational Matrix
+  */
+  PetscErrorCode strainTransformation() {
+    PetscFunctionBegin;
 
-      strainRotMat(4, 0) = 2.0 * aARotMat(0,2) * aARotMat(0,1);
-      strainRotMat(4, 1) = 2.0 * aARotMat(1,2) * aARotMat(1,1);
-      strainRotMat(4, 2) = 2.0 * aARotMat(2,2) * aARotMat(2,1);
-      strainRotMat(4, 3) =     ( aARotMat(1,2) * aARotMat(0,1) + aARotMat(0,2) * aARotMat(1,1) );
-      strainRotMat(4, 4) =     ( aARotMat(2,2) * aARotMat(1,1) + aARotMat(1,2) * aARotMat(2,1) );
-      strainRotMat(4, 5) =     ( aARotMat(0,2) * aARotMat(2,1) + aARotMat(2,2) * aARotMat(0,1) );
+    strainRotMat.resize(6,6,false);
+    strainRotMat.clear();
 
-      strainRotMat(5, 0) = 2.0 * aARotMat(0,0) * aARotMat(0,2);
-      strainRotMat(5, 1) = 2.0 * aARotMat(1,0) * aARotMat(1,2);
-      strainRotMat(5, 2) = 2.0 * aARotMat(2,0) * aARotMat(2,2);
-      strainRotMat(5, 3) =     ( aARotMat(1,0) * aARotMat(0,2) + aARotMat(0,0) * aARotMat(1,2) );
-      strainRotMat(5, 4) =     ( aARotMat(2,0) * aARotMat(1,2) + aARotMat(1,0) * aARotMat(2,2) );
-      strainRotMat(5, 5) =     ( aARotMat(0,0) * aARotMat(2,2) + aARotMat(2,0) * aARotMat(0,2) );
+    strainRotMat(0, 0) = aARotMat(0,0) * aARotMat(0,0);
+    strainRotMat(0, 1) = aARotMat(1,0) * aARotMat(1,0);
+    strainRotMat(0, 2) = aARotMat(2,0) * aARotMat(2,0);
+    strainRotMat(0, 3) = aARotMat(1,0) * aARotMat(0,0);
+    strainRotMat(0, 4) = aARotMat(2,0) * aARotMat(1,0);
+    strainRotMat(0, 5) = aARotMat(0,0) * aARotMat(2,0);
 
-      PetscFunctionReturn(0);
-    }
+    strainRotMat(1, 0) = aARotMat(0,1) * aARotMat(0,1);
+    strainRotMat(1, 1) = aARotMat(1,1) * aARotMat(1,1);
+    strainRotMat(1, 2) = aARotMat(2,1) * aARotMat(2,1);
+    strainRotMat(1, 3) = aARotMat(1,1) * aARotMat(0,1);
+    strainRotMat(1, 4) = aARotMat(2,1) * aARotMat(1,1);
+    strainRotMat(1, 5) = aARotMat(0,1) * aARotMat(2,1);
 
-  };
+    strainRotMat(2, 0) = aARotMat(0,2) * aARotMat(0,2);
+    strainRotMat(2, 1) = aARotMat(1,2) * aARotMat(1,2);
+    strainRotMat(2, 2) = aARotMat(2,2) * aARotMat(2,2);
+    strainRotMat(2, 3) = aARotMat(1,2) * aARotMat(0,2);
+    strainRotMat(2, 4) = aARotMat(2,2) * aARotMat(1,2);
+    strainRotMat(2, 5) = aARotMat(0,2) * aARotMat(2,2);
 
+    strainRotMat(3, 0) = 2.0 * aARotMat(0,1) * aARotMat(0,0);
+    strainRotMat(3, 1) = 2.0 * aARotMat(1,1) * aARotMat(1,0);
+    strainRotMat(3, 2) = 2.0 * aARotMat(2,1) * aARotMat(2,0);
+    strainRotMat(3, 3) =     ( aARotMat(1,1) * aARotMat(0,0) + aARotMat(0,1) * aARotMat(1,0) );
+    strainRotMat(3, 4) =     ( aARotMat(2,1) * aARotMat(1,0) + aARotMat(1,1) * aARotMat(2,0) );
+    strainRotMat(3, 5) =     ( aARotMat(0,1) * aARotMat(2,0) + aARotMat(2,1) * aARotMat(0,0) );
 
+    strainRotMat(4, 0) = 2.0 * aARotMat(0,2) * aARotMat(0,1);
+    strainRotMat(4, 1) = 2.0 * aARotMat(1,2) * aARotMat(1,1);
+    strainRotMat(4, 2) = 2.0 * aARotMat(2,2) * aARotMat(2,1);
+    strainRotMat(4, 3) =     ( aARotMat(1,2) * aARotMat(0,1) + aARotMat(0,2) * aARotMat(1,1) );
+    strainRotMat(4, 4) =     ( aARotMat(2,2) * aARotMat(1,1) + aARotMat(1,2) * aARotMat(2,1) );
+    strainRotMat(4, 5) =     ( aARotMat(0,2) * aARotMat(2,1) + aARotMat(2,2) * aARotMat(0,1) );
+
+    strainRotMat(5, 0) = 2.0 * aARotMat(0,0) * aARotMat(0,2);
+    strainRotMat(5, 1) = 2.0 * aARotMat(1,0) * aARotMat(1,2);
+    strainRotMat(5, 2) = 2.0 * aARotMat(2,0) * aARotMat(2,2);
+    strainRotMat(5, 3) =     ( aARotMat(1,0) * aARotMat(0,2) + aARotMat(0,0) * aARotMat(1,2) );
+    strainRotMat(5, 4) =     ( aARotMat(2,0) * aARotMat(1,2) + aARotMat(1,0) * aARotMat(2,2) );
+    strainRotMat(5, 5) =     ( aARotMat(0,0) * aARotMat(2,2) + aARotMat(2,0) * aARotMat(0,2) );
+
+    PetscFunctionReturn(0);
+  }
+
+  ublas::matrix<TYPE> dR;
   ublas::matrix<TYPE> globalStiffnessMatrix;
 
   PetscErrorCode calculateGlobalStiffnesMatrix() {
     PetscFunctionBegin;
 
+    dR.resize(6,6,false);
+    noalias(dR) = prod(localStiffnessMatrix,strainRotMat);
     globalStiffnessMatrix.resize(6,6,false);
-    noalias(globalStiffnessMatrix) = prod(stressRotMat,prod(localStiffnessMatrix,strainRotMat));
+    noalias(globalStiffnessMatrix) = prod(stressRotMat,dR);
 
     PetscFunctionReturn(0);
   }
-
 
   ublas::vector<TYPE> voigtStress;
 
@@ -263,15 +265,15 @@ struct SmallStrainTranverslyIsotropic: public NonlinearElasticElement::Functions
     voigtStress.resize(6,false);
     noalias(voigtStress) = prod(globalStiffnessMatrix,voightStrain);
     this->P.resize(3,3,false);
-    P(0,0) = voigtStress[0];
-    P(1,1) = voigtStress[1];
-    P(2,2) = voigtStress[2];
-    P(0,1) = voigtStress[3];
-    P(1,2) = voigtStress[4];
-    P(0,2) = voigtStress[5];
-    P(1,0) = P(0,1);
-    P(2,1) = P(1,2);
-    P(2,0) = P(0,2);
+    this->P(0,0) = voigtStress[0];
+    this->P(1,1) = voigtStress[1];
+    this->P(2,2) = voigtStress[2];
+    this->P(0,1) = voigtStress[3];
+    this->P(1,2) = voigtStress[4];
+    this->P(0,2) = voigtStress[5];
+    this->P(1,0) = this->P(0,1);
+    this->P(2,1) = this->P(1,2);
+    this->P(2,0) = this->P(0,2);
 
     PetscFunctionReturn(0);
   }
@@ -279,10 +281,10 @@ struct SmallStrainTranverslyIsotropic: public NonlinearElasticElement::Functions
   /** \brief calculate density of strain energy
   *
   */
-  virtual PetscErrorCode calculateElasticEnergy(
-    const NonlinearElasticElement::BlockData block_data,
-    const NumeredMoFEMFiniteElement *fe_ptr
-  ) {
+  /*virtual PetscErrorCode calculateElasticEnergy(
+  const NonlinearElasticElement::BlockData block_data,
+  const NumeredMoFEMFiniteElement *fe_ptr
+) {
     PetscFunctionBegin;
     ierr = calculateStrain(); CHKERRQ(ierr);
     ierr = calculateLocalStiffnesMatrix(); CHKERRQ(ierr);
@@ -293,10 +295,10 @@ struct SmallStrainTranverslyIsotropic: public NonlinearElasticElement::Functions
 
     voigtStress.resize(6,false);
     noalias(voigtStress) = prod(globalStiffnessMatrix,voightStrain);
-    this->eNergy += 0.5*(voigtStress,voightStrain);
+    this->eNergy += 0.5*inner_prod(voigtStress,voightStrain);
     PetscFunctionReturn(0);
-  }
+  }*/
 
 };
 
-#endif //__HOOKE_HPP__
+#endif //__SMALLSTRAINTRANVERSLYISOTROPIC_HPP__

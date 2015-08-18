@@ -38,6 +38,7 @@ using namespace MoFEM;
 #include <adolc/adolc.h>
 #include <NonLinearElasticElement.hpp>
 #include <Hooke.hpp>
+#include <SmallTransverselyIsotropic.hpp>
 
 ErrorCode rval;
 PetscErrorCode ierr;
@@ -203,6 +204,9 @@ int main(int argc, char *argv[]) {
 
   Hooke<adouble> hooke_adouble;
   Hooke<double> hooke_double;
+  SmallStrainTranverslyIsotropic<adouble> tranversly_isotropic_adouble;
+  SmallStrainTranverslyIsotropic<double> tranversly_isotropic_double;
+
   NonlinearElasticElement elastic(m_field,1);
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,BLOCKSET|MAT_ELASTICSET,it)) {
 		if(it->get_name() != "MAT_ELASTIC_1") continue;
