@@ -632,7 +632,7 @@ int main(int argc, char *argv[]) {
     ierr = VecDestroy(&T); CHKERRQ(ierr);
     ierr = VecDestroy(&F); CHKERRQ(ierr);
     ierr = MatDestroy(&A); CHKERRQ(ierr);
-    ierr = TSDestroy(&ts); CHKERRQ(ierr);
+    //ierr = TSDestroy(&ts); CHKERRQ(ierr);
   }
 
   PetscFinalize();
