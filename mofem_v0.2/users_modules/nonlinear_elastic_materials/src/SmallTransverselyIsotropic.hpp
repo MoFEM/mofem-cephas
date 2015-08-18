@@ -265,6 +265,8 @@ struct SmallStrainTranverslyIsotropic: public NonlinearElasticElement::Functions
     ierr = calculateLocalStiffnesMatrix(); CHKERRQ(ierr);
     ierr = calculateAxisAngleRotationalMatrix(); CHKERRQ(ierr);
     ierr = stressTransformation(); CHKERRQ(ierr);
+    axAngle = -axAngle;
+    ierr = calculateAxisAngleRotationalMatrix(); CHKERRQ(ierr);
     ierr = strainTransformation(); CHKERRQ(ierr);
     ierr = calculateGlobalStiffnesMatrix(); CHKERRQ(ierr);
 
@@ -298,6 +300,8 @@ struct SmallStrainTranverslyIsotropic: public NonlinearElasticElement::Functions
     ierr = calculateLocalStiffnesMatrix(); CHKERRQ(ierr);
     ierr = calculateAxisAngleRotationalMatrix(); CHKERRQ(ierr);
     ierr = stressTransformation(); CHKERRQ(ierr);
+    axAngle = -axAngle;
+    ierr = calculateAxisAngleRotationalMatrix(); CHKERRQ(ierr);
     ierr = strainTransformation(); CHKERRQ(ierr);
     ierr = calculateGlobalStiffnesMatrix(); CHKERRQ(ierr);
 
