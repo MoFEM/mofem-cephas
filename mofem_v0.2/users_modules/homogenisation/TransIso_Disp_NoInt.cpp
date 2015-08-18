@@ -457,7 +457,10 @@ int main(int argc, char *argv[]) {
   //internal force vector (to take into account Dirchelt boundary conditions
   iso_elastic.getLoopFeRhs().snes_x = D;
   iso_elastic.getLoopFeRhs().snes_f = F;
+  trans_elastic.getLoopFeRhs().snes_x = D;
+  trans_elastic.getLoopFeRhs().snes_f = F;
   ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",iso_elastic.getLoopFeRhs());  CHKERRQ(ierr);
+  ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","TRAN_ISOTROPIC_ELASTIC",trans_elastic.getLoopFeRhs());  CHKERRQ(ierr);
   ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
   ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
   ierr = VecScale(F,-1); CHKERRQ(ierr);
@@ -466,11 +469,12 @@ int main(int argc, char *argv[]) {
   //iso_elastic element matrix
   iso_elastic.getLoopFeLhs().snes_x = D;
   iso_elastic.getLoopFeLhs().snes_B = Aij;
+  trans_elastic.getLoopFeLhs().snes_x = D;
+  trans_elastic.getLoopFeLhs().snes_B = Aij;
   ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",iso_elastic.getLoopFeLhs());  CHKERRQ(ierr);
+  ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","TRAN_ISOTROPIC_ELASTIC",trans_elastic.getLoopFeLhs());  CHKERRQ(ierr);
 
-
-
-	ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","TRAN_ISOTROPIC_ELASTIC",MyTIsotFE);  CHKERRQ(ierr);
+	//ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","TRAN_ISOTROPIC_ELASTIC",MyTIsotFE);  CHKERRQ(ierr);
   ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","Lagrange_elem",MyFE_RVELagrange);  CHKERRQ(ierr);
 
   ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);

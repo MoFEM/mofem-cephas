@@ -344,6 +344,7 @@ struct SmallStrainTranverslyIsotropicDouble: public SmallStrainTranverslyIsotrop
     try {
 
       ierr = calculateFibreAngles(); CHKERRQ(ierr);
+      axVector.resize(3,false);
       axVector[0] = axVectorDouble[0];
       axVector[1] = axVectorDouble[1];
       axVector[2] = axVectorDouble[2];
@@ -370,6 +371,7 @@ struct SmallStrainTranverslyIsotropicADouble: public SmallStrainTranverslyIsotro
     try {
 
       ierr = calculateFibreAngles(); CHKERRQ(ierr);
+      axVector.resize(3,false);
       axVector[0] <<= axVectorDouble[0];
       axVector[1] <<= axVectorDouble[1];
       axVector[2] <<= axVectorDouble[2];
