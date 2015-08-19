@@ -1,6 +1,13 @@
 /*! \page comp_homo Computational homogenisation (Usage example)
 
-These are simple examples, which explains how to run simple problems for the computational homogenisation of representative volume element (RVE). The RVE boundary conditions (including linear displacement, uniform traction and periodic) are implemented in a generalized manner using the procedure given in [1]. The homogenised or effective stiffness matrices are calculated, which gives the relation between macro-strain and macro-stress.
+These are simple examples, which explains how to run simple problems for the
+computational homogenisation of representative volume element (RVE). The RVE
+boundary conditions (including linear displacement, uniform traction and
+periodic) are implemented in a generalized manner using the procedure given in
+[1]. The homogenised or effective stiffness matrices are calculated, which gives
+the relation between macro-strain and macro-stress.
+
+\tableofcontents
 
 \section comp_homo_theory Theoretical background
 

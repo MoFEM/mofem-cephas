@@ -1,5 +1,7 @@
 /*! \page benchmarks_edf_tets Benchmarks EDF Test
 
+\tableofcontents
+
 In the following document test are based on theoretical developments presented
 in paper by Kaczmarczy & Perace \cite kaczmarczyk2014three. In paper \cite
 kaczmarczyk2014three a derivation of equations for equilibrium of crack front
