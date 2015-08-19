@@ -83,6 +83,13 @@ if(DOXYGEN_FOUND)
   )
   add_dependencies(doc doxygen_copy_figures_from_user_modules)
 
+  #copy pdfs form users UM documentation
+  add_custom_target(doxygen_copy_pdfs_from_user_modules
+    ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/users_modules/doc/pdfs ${PROJECT_BINARY_DIR}/html
+    DEPENDS doxygen_generating_documenation
+  )
+  add_dependencies(doc doxygen_copy_pdfs_from_user_modules)
+
   find_program(SFTP NAMES sftp)
   if(SFTP)
 
