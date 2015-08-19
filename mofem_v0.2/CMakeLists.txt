@@ -57,8 +57,8 @@ include(cmake/FindSLEPC.cmake)
 include(cmake/ExportFile.cmake)
 
 set(MoFEM_VERSION_MAJOR 0)
-set(MoFEM_VERSION_MINOR 2)
-set(MoFEM_VERSION_BUILD 2)
+set(MoFEM_VERSION_MINOR 3)
+set(MoFEM_VERSION_BUILD 0)
 
 #git revision
 include(cmake/GetGitRevisionDescription.cmake)

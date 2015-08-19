@@ -51,7 +51,7 @@ PROJECT_BRIEF          =
 # pixels and the maximum width should not exceed 200 pixels. Doxygen will copy
 # the logo to the output directory.
 
-PROJECT_LOGO           = @PROJECT_SOURCE_DIR@/doc/figures/MoFEMLogo.png
+PROJECT_LOGO           = @MoFEM_PROJECT_SOURCE_DIR@/doc/figures/MoFEMLogo.png
 
 # The OUTPUT_DIRECTORY tag is used to specify the (relative or absolute) path
 # into which the generated documentation will be written. If a relative path is
@@ -872,8 +872,7 @@ EXCLUDE_SYMBOLS        =
 # that contain example code fragments that are included (see the \include
 # command).
 
-EXAMPLE_PATH           = @PROJECT_SOURCE_DIR@/doc \
-                         @PROJECT_SOURCE_DIR@/users_modules
+EXAMPLE_PATH           = @PROJECT_SOURCE_DIR@/doc
 
 # If the value of the EXAMPLE_PATH tag contains directories, you can use the
 # EXAMPLE_PATTERNS tag to specify one or more wildcard pattern (like *.cpp and
@@ -1097,7 +1096,7 @@ HTML_FILE_EXTENSION    = .html
 # of the possible markers and block names see the documentation.
 # This tag requires that the tag GENERATE_HTML is set to YES.
 
-HTML_HEADER            =  doc/header.html
+HTML_HEADER            =  @MoFEM_PROJECT_SOURCE_DIR@/doc/header.html
 #HTML_HEADER            =
 
 # The HTML_FOOTER tag can be used to specify a user-defined HTML footer for each
@@ -1133,7 +1132,7 @@ HTML_STYLESHEET        =
 # list). For an example see the documentation.
 # This tag requires that the tag GENERATE_HTML is set to YES.
 
-HTML_EXTRA_STYLESHEET  = doc/extra_style.css
+HTML_EXTRA_STYLESHEET  = @MoFEM_PROJECT_SOURCE_DIR@/doc/extra_style.css
 
 # The HTML_EXTRA_FILES tag can be used to specify one or more extra images or
 # other source files which should be copied to the HTML output directory. Note
@@ -2066,13 +2065,13 @@ SKIP_FUNCTION_MACROS   = YES
 # the path). If a tag file is not located in the directory in which doxygen is
 # run, you must also specify the path to the tagfile here.
 
-TAGFILES               =
+TAGFILES               = @PROJECT_SOURCE_DIR@/link_to_mofem_documentation.tag
 
 # When a file name is specified after GENERATE_TAGFILE, doxygen will create a
 # tag file that is based on the input files it reads. See section "Linking to
 # external documentation" for more information about the usage of tag files.
 
-GENERATE_TAGFILE       = @CMAKE_INSTALL_PREFIX@/link_to_mofem_documentation.tag
+GENERATE_TAGFILE       = @PROJECT_BINARY_DIR@/link_to_user_modules_documentation.tag
 
 # If the ALLEXTERNALS tag is set to YES, all external class will be listed in
 # the class index. If set to NO, only the inherited external classes will be
