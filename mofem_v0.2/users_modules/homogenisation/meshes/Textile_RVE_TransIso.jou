@@ -261,13 +261,3 @@ for i in range(0, 4):
 #============================================================= 
  
 cubit.cmd('save as "/Users/zahur/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/homogenisation/meshes/Textile_RVE_TransIso.cub" overwrite')    
- 
-
-
-
-
-
-
-
-
-
