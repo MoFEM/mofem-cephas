@@ -19,6 +19,8 @@
   #error "MoFEM need to be compiled with ADOL-C"
 #endif
 
+/** \brief Implementation of Griffith element
+*/
 struct GriffithForceElement {
 
   FieldInterface &mField;

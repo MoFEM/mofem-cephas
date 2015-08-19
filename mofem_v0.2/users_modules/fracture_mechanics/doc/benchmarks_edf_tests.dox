@@ -1,0 +1,70 @@
+/*! \page benchmarks_edf_tets Benchmarks EDF Test
+
+In the following document test are based on theoretical developments presented
+in paper by Kaczmarczy & Perace \cite kaczmarczyk2014three. In paper \cite
+kaczmarczyk2014three a derivation of equations for equilibrium of crack front
+from first principles is shown, i.e. the first law of thermodynamics and
+principle of maximal dissipation of energy (particular case of second low of
+thermodynamics). Crack front is subjected to a constrain emerging form Griffith
+fracture criterion.
+
+Independently from theoretical development a method based on face splitting is
+proposed to propagate crack. In this test alternative, improved approach is
+proposed, leading to implicit, smooth and consistent crack propagation. In
+following tests crack is  propagated by directly displacing crack front nodes in
+material reference configuration. This ultimately results in mesh distortion, to
+resolve that issue a efficient mesh smoothing technique is implemented  \ref
+VolumeLengthQuality (see \cite kaczmarczyk2014three and implemented in
+constrains \ref SurfaceSlidingConstrains). This result in problem tailored
+variant of Total Arbitrary Lagrangian Formulation (T-ALE), in such a way that mesh
+smoothing not influencing crack propagation.
+
+Mesh smoothing is not sufficient to fully propagate crack over whole thickness
+of the body. A face flipping, node merger and edge splitting algorithm is
+further added to algorithm. After each converged load step a mesh topological
+changes are introduced to improve mesh quality in neighborhood of crack front.
+
+A finite element in T-ALE setting is implemented in \ref nonlinear_elastic_elem.
+Finite element calculate spatial and material forces, which drives body
+deformation in physical space and crack front displacements in material space.
+Material  forces acting at crack front are equilibrated by Griffith forces
+(material resistant forces). Griffith force element is implanted in \ref
+GriffithForceElement.
+
+
+
+\section tests Tests
+
+\subsection brick_slice Brick slice with slot (Loading with pure bending applied to slot edges)
+
+\image html slice_anim.gif "Brick slice (animation)"
+\image html crack_surface_slice.png "Brick slice (crack snapshots)"
+\image html crack_surface_slice_side_view.png "Brick slice (crack snapshots - side view)"
+\image html deformed_slice.png "Brick slice"
+\image html load_path_fracture_slice.png "Load-diaplcement path (Brick slice)"
+\image html area_vs_energy_slice.png "Crack area vs Elastic Energy (Brick slice)"
+
+\subsection brick_slice Full size brick with slot (Loading with pure bending applied to slot edge)
+
+\image html brick_full_anim1.gif "Full brick (animation)"
+\image html brick_full_anim2.gif "Full brick (animation)"
+\image html crack_surface_full_1.png "Full brick (crack snapshots 1)"
+\image html crack_surface_full_2.png "Full brick (crack snapshots 2)"
+\image html crack_surface_full_3.png "Full brick (crack snapshots 3)"
+\image html deformed_full.png "Full brick (deformed shape)"
+\image html load_path_fracture_full.png "Load-displacement path (Full brick)"
+\image html crack_area_vs_energy_full.png "Crack area vs Elastic Energy (Full brick)"
+
+\subsection long_brick Loading full brick with partial length keyways
+
+\image html bick_long_anim.gif "Long brick (animation)"
+\image html crack_surface_long.png "Long brick (crack surface)"
+\image html carck_surface_side_view_long.png "Long brick (crack surface - side view)"
+\image html deformation_long.png "Long brick (deformation)"
+\image html load_path_fracture_long.png "Load-displacement (Long brick)"
+\image html crack_area_vs_energy_long.png "Crack area vs Elastic Energy (Long Brick)"
+
+
+
+
+*/

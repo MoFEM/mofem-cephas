@@ -26,10 +26,7 @@ prismatic bar (brick_of_gel.jou),
 Material properties file (gel_config.in).
 \include users_modules/gels/gel_config.in
 
-Native constitutive model is implemented after
-Yuhang Hu and Zhigang Suo. Viscoelasticity and poroelasticity in elastomeric
-gels. Acta Mechanica Solida Sinica, Vol. 25, No. 5
-
+Native constitutive model is implemented after Yuhang Hu and Zhigang Suo \cite hu2012viscoelasticity.
 \image html gel_spring_daspot_model.png "Gel model" width=6cm
 
 In basic implementations all springs and dashpot are implemented using Hook'e
