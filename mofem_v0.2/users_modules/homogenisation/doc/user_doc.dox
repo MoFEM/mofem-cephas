@@ -4,19 +4,26 @@ These are simple examples, which explains how to run simple problems for the com
 
 \section comp_homo_theory Theoretical background
 
-Detailed theoretical background and implementation of the RVE boundary condition, while using hierarchic finite element [2] can be found in the attached pdf file and can be downloaded from
-
-\image HTML_EXTRA_FILES homo_final_document.pdf "Theory manual" width=6cm
-
-
+Detailed theoretical background and implementation of the RVE boundary
+condition, while using hierarchic finite element [2] can be found in the
+attached pdf file and can be downloaded from <a href="homo_final_document.pdf"
+target="_blank"><b>this link.</b></a>
 
 \section comp_homo_exp Numerical examples
 The following numerical examples are considered for the computational homogensation.
 
 \subsection comp_homo_val homogeneous linear elastic material
-Before applying the RVE boundary conditions to the actual two-phase composite materials. The implementation is validated by an RVE consisting of linear-elastic homogeneous cube with unit dimensions. Mesh file for the RVE with boundary conditions and material properties is created with the following CUBIT journal file. Same mesh file is used for all three types of boundary conditions including linear displacement, traction and periodic.
+
+Before applying the RVE boundary conditions to the actual two-phase composite
+materials. The implementation is validated by an RVE consisting of
+linear-elastic homogeneous cube with unit dimensions. Mesh file for the RVE with
+boundary conditions and material properties is created with the following CUBIT
+journal file. Same mesh file is used for all three types of boundary conditions
+including linear displacement, traction and periodic.
+
 \include users_modules/homogenisation/meshes/Cube.jou
 The following material properties are used in this case
+
 - Young’s modulus = 200
 - Poisson's ratio = 0.3
 
