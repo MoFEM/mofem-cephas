@@ -1,14 +1,34 @@
-/*! \page benchmarks_edf_tets Benchmarks EDF Test
+/*! \page benchmarks_edf_tets Benchmarks crack propagation tests (EDF Tests)
+
+In following results for benchmark of Code_Aster and MoFEM are presented, however
+this document focus only on result obtained form MoFEM. Benchmark are design to
+check capabilities and robustness of crack propagation tools.
+
+Three test are investigated,
+- test case 1: loading of a brick slice
+- test case 2: loading on a full-size brick
+- test case 3: loading on a full-size with partial length keyways
+
+Full test specification and geometrical description is available under following
+<a href="edf_test_specification.pdf" target="_blank"><b>link.</b></a>
+
+This work is motivated by inability of commercial finite element codes to
+simulate crack propagation in brittle materials in elements with nontrivial
+geometry. Open source codes like MoFEM (or Code_Aster) are developed to fill
+that gap and deliver open tool which can be used by industry.
 
 \tableofcontents
+
+\section theory Solution scheme and theoretical context
 
 In the following document test are based on theoretical developments presented
 in paper by Kaczmarczy & Perace \cite kaczmarczyk2014three. In paper \cite
 kaczmarczyk2014three a derivation of equations for equilibrium of crack front
 from first principles is shown, i.e. the first law of thermodynamics and
 principle of maximal dissipation of energy (particular case of second low of
-thermodynamics). Crack front is subjected to a constrain emerging form Griffith
-fracture criterion.
+thermodynamics). Problem is formulated in context of configurational (Elshebian)
+mechanics for convenience. Crack front is subjected to a constrain emerging form
+Griffith fracture criterion.
 
 Independently from theoretical development a method based on face splitting is
 proposed to propagate crack. In this test alternative, improved approach is
@@ -33,31 +53,234 @@ Material  forces acting at crack front are equilibrated by Griffith forces
 (material resistant forces). Griffith force element is implanted in \ref
 GriffithForceElement.
 
+\section quasi_static Quasi static crack propagation
 
+In all tests is assumed that crack is propagating quasi-statically. This
+assumption is satisfied by controlling force such that material displacements of
+crack front lead to crack area increase by given area. As result calculated
+velocity of crack front is small and inertia forces can be neglected.
+
+Numerically in presented approach a problem tailored arc-length technique is
+adopted, see \cite kaczmarczyk2014three for details. Since crack propagation
+could be understand as a evolution of body topology which is strongly non-linear
+a increment of crack area is automatically adapted to obtain desired number
+of Newton-Raphson iteration at each load step.
+
+\section algorithm Algorithm
+
+- get crack area increment
+
+- calculate system of equations for displacements, crack front position and load factor
+
+- solve system of equations implicitly using Newton-Raphson method (note that
+displacements on crack front are not directly controlled, only overall displacement of
+crack front need to lead to set crack area increment).
+- record results
+
+- adapt next crack area increment to get desired number of iterations (4-5
+iterations) in next step
+
+- update mesh for next step (merge nodes, split edges, flip faces such that mesh
+quality in font neighborhood is improved)
 
 \section tests Tests
 
 \subsection brick_slice Brick slice with slot (Loading with pure bending applied to slot edges)
 
+\subsubsection statistic_slice Statistics
+
+- 33565, Degrees of Freedom (this is number of nodes at being of analysis, this
+number can change insignificantly during analysis)
+- 133, Load Steps
+- 57 seconds, Approximate step time (Laptop, 2.3 GHz Intel Core i7, 4 cores)
+
+\subsubsection results_slice Results
+
 \image html slice_anim.gif "Brick slice (animation)"
+
+A brick slice is subjected to forces at opposite slot edges, generating pure
+bending moment. See <a href="edf_test_specification.pdf"
+target="_blank"><b>link</b></a> for details.
+
+Initial crack is initialised at the at keyway corner. Size if initial notch is
+constrained by mesh size. Initial analysis showed that size or shape of initial
+notch  don't influence final crack propagation significantly.
+
+Note that at crack cross-section, material is subjected to pure bending, i.e. no
+net axial force is present and at crack front material is subjected to tension
+whereas in opposite side next to the bore material is compressed. This prevent
+crack to propagate fully through the sample to the bore and elastic hinge is
+created trough the analysis. As results is shown crack first propagate along
+corner to opposite side and then to the bore.
+
+It have been noted that any partial crack propagation through the bore would
+lead to self penetration of crack surfaces, since compressible stresses are
+acting always next to the bore in order to transfer externally apply bending
+moment. From other hand this test is difficult to reproduce experimentally,
+since always some axial force will be present next to moment which ultimately
+will break elastic hinge and make crack propagate through the bore.
+
 \image html crack_surface_slice.png "Brick slice (crack snapshots)"
 \image html crack_surface_slice_side_view.png "Brick slice (crack snapshots - side view)"
 \image html deformed_slice.png "Brick slice"
+
+On above figures are shown subsequent snapshots of crack propagation, where read
+triangle represent initial crack notch. Note that crack propagation is not planar
+and is slightly bending toward the slot.
+
 \image html load_path_fracture_slice.png "Load-diaplcement path (Brick slice)"
+
+In above figure load-displacement path is shown. A generalised displacement and
+force load factor, on x-axis and y-axis, respectively is shown. The displacement
+not represent particular point on structure, but it is value work conjugated to
+applied forces, and calculated from formula,
+\f[
+u  = 2 \frac{\Psi}{\lambda f}
+\f]
+where \f$f=1\f$[N] is reference force, \f$\Psi\f$ is elastic energy, \f$\lambda\f$ is
+load factor and \f$u\f$ is generalised displacement. Such calculated generalized
+displacement is choose to present objectively results, since it not depend on
+subjectively picked reference point and plot under the curve represents energy
+accumulated in the body.
+
 \image html area_vs_energy_slice.png "Crack area vs Elastic Energy (Brick slice)"
 
-\subsection brick_slice Full size brick with slot (Loading with pure bending applied to slot edge)
+In above figures it is shown that crack propagation is unconditionally unstable,
+i.e. crack will propagate for kinematically constrained problem once crack
+propagation is initiated. At the very end analysis effect of elastic hinge is observed,
+note that toward the of analysis force approach zero and load displacements reach
+plateau, i.e. is possible very big rotation with small change of acting forces.
+
+The jump on both of the plots is outcome of numerical artifact. In current
+algorithm by default once crack front approach corner, crack is automatically
+extended to pass the corner. However in following test this algorithm feather
+should be switched off to avoid this behavior. It can be noted that cracking corner
+not influences results significantly and results for this test are still valid.
+
+\subsubsection input_data_slice Input data and running the code
+
+\include users_modules/fracture_mechanics/examples/brick_slice_b2.jou
+
+Following program calculates griffith forces for initial crack configuration,
+allowing user to define refinement level at the crack front. It generates
+starting file \em out_spatial_2_0.h5m for crack propagation program.
+\code
+convergence_study.sh -f brick_slice_b2.cub -l 1 -g 1.4e-7 -o 2 -r 0 -d BrickSlice -p 4
+\endcode
+where:
+
+- -f brick_slice_b2.cub mesh file
+- -l 1, initial load factor
+- -g 1.4-7, material parameter, strain energy release rate (Note that unit is [J/m^2 10^(-9)])
+- -o 2, set approximation order to quadratic functions
+- -r 0, set mesh refinement level at crack front, 0 no refinementt
+- -d BrickSlice, directory where results are stored
+
+This program do crack propagation,
+\code
+arc_length.sh \
+  -f BrickSlice/out_spatial_2_0.h5m -a 1e-6 -g 1.4e-7 \
+  -n 2000 -i 6 -t 5e-10 \
+  --my_arc_alpha=1e-4 \
+  --my_other_side_constrain=1 \
+  -d BrickSlice \
+  -p 4
+\endcode
+where additional parameters are,
+
+- -a initial crack area increment, over analysis step size is adapted to achieved
+desired number of iterations. It control arc-legth method.
+
+- -i 6, desired number of iterations for load step.
+
+- -t 5e-10, tolerance for Newton-Raphson method
+
+- -my_arc_alpha 1e-4, it scale residual for arc-length method, i.e. what is
+tolerance for residual of controlling function in respect to residual of
+global system of equations.
+
+- --my_other_side_constrain=1, indicate that initially some nodes of crack front are at
+corner edge, defined by to intersection body (skin) surface.
+
+\subsection brick_full Full size brick with slot (Loading with pure bending applied to slot edge)
+
+\subsubsection statistics_full Statistics
+
+- 119588, Degrees of Freedom (this is number of nodes at being of analysis, this
+number can change insignificantly during analysis)
+- 550, Load Steps
+- 57 seconds, Approximate step time (<a href="http://www.archie-west.ac.uk/information/archie-specification/">ARCHI-WEST</a>, 24 cores)
+
+\subsubsection results_full Results
 
 \image html brick_full_anim1.gif "Full brick (animation)"
 \image html brick_full_anim2.gif "Full brick (animation)"
+
+The crack propagation for full brick is similar to previous example, crack
+propagate along the corner. Initiated form corner notch on one of the brick
+sided moves to opposite side and then trough the bore. Since pure bending
+moment is applied by edge forces on brick slot no axial force force is present
+at brick correction, preventing full break. In real brick loading, resulting from
+keyway load or internal stress it can be expected that pattern of crack propagation
+would be different, like is shown in next example. However this test validating code and
+its robustness, in the sense that results show expected results for given load scenario.
+
 \image html crack_surface_full_1.png "Full brick (crack snapshots 1)"
 \image html crack_surface_full_2.png "Full brick (crack snapshots 2)"
 \image html crack_surface_full_3.png "Full brick (crack snapshots 3)"
 \image html deformed_full.png "Full brick (deformed shape)"
+
+In above figures it is shown how crack propagate in subsequent snapshots. Crack is
+insignificantly bending over analysis, however it approach surface of the bore ob
+the angle what can be observed in figure presenting brick deformation.
+
 \image html load_path_fracture_full.png "Load-displacement path (Full brick)"
 \image html crack_area_vs_energy_full.png "Crack area vs Elastic Energy (Full brick)"
 
+In above plots load-displacemnt path and strain energy against crack area is
+shown. It is more complex that for brick slice, and three stages of crack
+propagation  can be identified, i.e. propagation crack  to the opposite brick
+surface, propagation to the bore and creation of elastic hinge (where load-disp
+path achieve quasi plateau).
+
+Analysis of load path enables better understanding of component safety, notting that if
+
+- \f$\delta u_i > 0\f$ and \f$\delta \lambda_i > 0\f$ crack propagation is unconditionally stabile,
+
+- \f$\delta u_i > 0\f$ and \f$\delta \lambda_i < 0\f$ crack propagation is
+stabile if kinematic loading is applied, unstable if static loading is applied,
+
+- \f$\delta u_i < 0\f$ and \f$\delta \lambda_i < 0\f$ crack is unconditionally unstable, unless both
+displacements and loads are controlled,
+
+where \f$\delta u_i\f$ and \f$\delta \lambda_i\f$ are increments of
+displacements and forces at load step \f$i\f$.
+
+It can be noted that for brick slice and full brick, crack propagation is
+unconditionally unstable, until snap-back point at the end of analysis where
+elastic hinge is created. After that point crack propagation is conditionally stabile,
+if kinematic control is applied (brick is kinematically restrain, for example loaded by
+constrained key on keyway).
+
+\subsubsection input_data_full Input data and running the code
+
+Full brick model is very similar to brick slice, only difference is brick length
+which is set according to specification in <a href="edf_test_specification.pdf" target="_blank"><b>link.</b></a>
+Code was expected as in previous example, only difference is that number of processors was increased to 24 and
+calculations were executed on <a href="http://www.archie-west.ac.uk/information/archie-specification/">ARCHI-WEST.</a>
+
+\include users_modules/fracture_mechanics/examples/brick_b2.jou
+
 \subsection long_brick Loading full brick with partial length keyways
+
+\subsubsection statistics_long Statistics
+
+- 117209, Degrees of Freedom (this is number of nodes at being of analysis, this
+number can change insignificantly during analysis)
+- 1639, Load Steps
+- 47 seconds, Approximate step time (<a href="http://www.archie-west.ac.uk/information/archie-specification/">ARCHI-WEST</a>, 24 cores)
+
+\subsubsection results_long Results
 
 \image html bick_long_anim.gif "Long brick (animation)"
 \image html crack_surface_long.png "Long brick (crack surface)"

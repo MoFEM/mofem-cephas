@@ -8,6 +8,8 @@ viscous relaxation is taken into account by considering model with two springs
 and dashpot, with additional internal state variable. Detail about
 implementation and equations can be found in structure \ref Gel
 
+\tableofcontents
+
 \section gel_brick Analysis of simple gel brick
 
 \subsection gel_input_file Input files
@@ -101,7 +103,7 @@ users_modules/nonlinear_elasticity/do_vtk.sh. For example
 
 In file \ref UserGelModel.hpp user can implement own constitutive equation, for
 details see \ref UserGelConstitutiveEquation. Any change in \ref
-UserGelModel.hpp have to follow rebuiling the code
+UserGelModel.hpp have to follow rebuilding the code
 \code
 $um_debug/gels make
 \endcode
