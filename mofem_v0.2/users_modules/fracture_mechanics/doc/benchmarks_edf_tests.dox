@@ -72,6 +72,14 @@ Since crack evolution is strongly nonlinear this could result in mixed mode
 stress mode when crack is extended and demand appropriate calculation of crack
 direction for mixed mode, leading to explicit calculation of crack path.
 
+It is important to stress that propagating mode-II cracks are usually not
+observed experimentally in homogeneous isotropic solids. A crack subjected to
+mode-II or mixed mode loading, curves or kinks and propagates in a direction
+that maintains locally pure mode-I conditions at the tip \cite CotterellAndRice
+\cite hutchinson1992mixed. This is consistent with the approach we have adopted,
+achieving maximum dissipation of energy in the generation of new crack area and
+crack front equilibrium.
+
 
 \section quasi_static Quasi static crack propagation
 
@@ -86,17 +94,16 @@ iteration at each load step.
 
 \section algorithm Algorithm
 
-- get crack area increment
+- build problem for given body geometry, crack surface, applied loads and given crack area increment
 
-- calculate system of equations for displacements, crack front position and load factor
+- solve system on nonlinear algebraic equations for displacements, crack front position and load
+factor. Note that crack front positions are not directly controlled, a
+force factor is implicitly calculated to increase total crack are by desired quantity.
 
-- solve system of equations implicitly using Newton-Raphson method (note that
-displacements on crack front are not directly controlled, only overall displacement of
-crack front need to lead to set crack area increment).
-- record results
+- post-process results and record at given step
 
 - adapt next crack area increment to get desired number of iterations (4-5
-iterations) in next step
+iterations) for next step
 
 - update mesh for next step (merge nodes, split edges, flip faces such that mesh
 quality in crack front neighborhood is improved)
@@ -116,70 +123,103 @@ number can change insignificantly during analysis)
 
 \image html slice_anim.gif "Brick slice (animation)"
 
-A brick slice is subjected to forces at opposite slot edges, generating pure
-bending moment. See <a href="edf_test_specification.pdf"
+A brick slice is subjected to forces applied on top and bottom slot edges. Edge
+forces have the same magnitude but opposite directions, that make couple of forces
+and pure bending moment is applied, see <a href="edf_test_specification.pdf"
 target="_blank"><b>link</b></a> for details.
 
-Initial crack is initialised at the at keyway corner. Size if initial notch is
+Crack is initialised at the keyway corner. Size if initial notch is
 constrained by mesh size. Initial analysis showed that size or shape of initial
-notch  don't influence final crack propagation significantly.
+notch do not influence final crack propagation significantly.
 
-Note that at crack cross-section, material is subjected to pure bending, i.e. no
-net axial force is present and at crack front material is subjected to tension
-whereas in opposite side next to the bore material is compressed. This prevent
-crack to propagate fully through the sample to the bore and elastic hinge is
-created trough the analysis. As results is shown crack first propagate along
-corner to opposite side and then to the bore.
+Since element is subjected to pure bending, at any arbitrary cros-section of
+brick, no net axial force is present. As result material points in vicinity of
+crack front are subjected to tension, wheres near the bore surface material  is
+in compression. This prevent crack to propagate fully through the brick and
+elastic hinge is created at the end of analysis.
 
-It have been noted that any partial crack propagation through the bore would
-lead to self penetration of crack surfaces, since compressible stresses are
-acting always next to the bore in order to transfer externally apply bending
-moment. From other hand this test is difficult to reproduce experimentally,
-since always some axial force will be present next to moment which ultimately
-will break elastic hinge and make crack propagate through the bore.
+It can noted that any partial crack propagation through the bore would lead to
+self penetration of crack surfaces, since compressible stresses are acting next
+to the bore, to transfer externally apply bending moment. This indirectly
+validate crack front equilibrium equations derived in \cite
+kaczmarczyk2014three. Note that from Griffith criterion itself, or any other
+criterion (f.e. stress based) can not be calculated how far crack would
+propagate. Therefore in this and following test can be shown that odes at crack
+front approaching the bore surface such that calculated griffith force is equal
+to material resistance, i.e. \f$g = g_c\f$, however displacements at those nodes
+are approaching zero, since crack can propagate to the neutral axis (in
+extreme), which is is in the limit always in half the distance between crack
+front and bore surface, therefore in next step crack can propagate half of its
+previous distance an so on for following steps. As results crack will reach the
+bore in infinite number of steps (this justification is valid for ideal
+structure and assumption of small trains and displacements).
 
 \image html crack_surface_slice.png "Brick slice (crack snapshots)"
 \image html crack_surface_slice_side_view.png "Brick slice (crack snapshots - side view)"
 \image html deformed_slice.png "Brick slice"
 
-On above figures are shown subsequent snapshots of crack propagation, where read
+On above figures are shown subsequent snapshots of crack propagation, where red
 triangle represent initial crack notch. Note that crack propagation is not planar
 and is slightly bending toward the slot.
 
 \image html load_path_fracture_slice.png "Load-diaplcement path (Brick slice)"
 
-In above figure load-displacement path is shown. A generalised displacement and
-force load factor, on x-axis and y-axis, respectively is shown. The displacement
-not represent particular point on structure, but it is value work conjugated to
-applied forces, and calculated from formula,
+Figure above shows load-displacement path, with generalised displacement and
+force load factor, on x-axis and y-axis, respectively. The generalised displacement
+not represent particular point on structure, but its value is work conjugated to
+applied forces and is calculated from formula,
 \f[
+\Psi = \frac{1}{2} u (\lambda f),\; \textrm{thus}\quad
 u  = 2 \frac{\Psi}{\lambda f}
 \f]
-where \f$f=1\f$[N] is reference force, \f$\Psi\f$ is elastic energy, \f$\lambda\f$ is
-load factor and \f$u\f$ is generalised displacement. Such calculated generalized
-displacement is choose to present objectively results, since it not depend on
-subjectively picked reference point and plot under the curve represents energy
-accumulated in the body.
+where \f$f=1\f$[N] is reference force, \f$\Psi\f$ is elastic energy,
+\f$\lambda\f$ is load factor and \f$u\f$ is generalised displacement. The
+generalized displacement is used to present objectively results,
+since it not depend on subjectively picked reference point. Load-displacement
+plot is obtained using arc-length control, such that external force is
+controlled to get crack area grow at each step. This results in unique
+\em maximal \em dissipative \em loading \em path. Since maximal dissipation of energy drives
+crack propagation direction, this plot represents equilibrium path and crack surface which
+result with maximal possible crack release of energy, therfore any other shape
+of crack front or crack surface would release less strain energy. However for
+further verification those calculations should be repeated for denser meshes and
+higher order of approximation order, to verify of quality of finite element
+approximation itself.
 
 \image html area_vs_energy_slice.png "Crack area vs Elastic Energy (Brick slice)"
 
-In above figures it is shown that crack propagation is unconditionally unstable,
-i.e. crack will propagate for kinematically constrained problem once crack
-propagation is initiated. At the very end analysis effect of elastic hinge is observed,
-note that toward the of analysis force approach zero and load displacements reach
-plateau, i.e. is possible very big rotation with small change of acting forces.
+One can note that energy release rate is assumed constant (\f$g_c\f$) and it is
+material parameter. However on structural level, the crack area vs strain energy
+plot shows that slope of curve is not constant over the analysis. The explanation for
+varying slop of curve is explained by two factors;
 
-The jump on both of the plots is outcome of numerical artifact. In current
-algorithm by default once crack front approach corner, crack is automatically
-extended to pass the corner. However in following test this algorithm feather
-should be switched off to avoid this behavior. It can be noted that cracking corner
-not influences results significantly and results for this test are still valid.
+- Length of crack front at which energy is released is not constant. It getting
+longer up to the point where opposite side of the bore is reached. After that
+getting shorter, ultimately to get fixed length equal to brick length. Look at
+snapshots with crack surface.
+
+- Topology of the body is evolving as result displacement vector, at points were
+external force is applied, is changing. Thus work of external forces is varying
+from one step to another.
+
+Note, that can be easily shown (both analytically and numerically), that for
+long (infinite) plate with the notch, slope on crack area vs strain energy plot
+is constant. Since crack front length is constant and forces are applied in far distance
+from crack itself.
+
+One can note the jump on both of the plots above. This is outcome of numerical
+artifact. In current algorithm by default once crack front approach corner,
+crack is automatically extended to pass the corner. Increasing mesh density will
+reduce that effect. In practice for such test this algorithm feature can be switched off
+to avoid this behavior, because of nature of loading. However it can be noted
+that cracking corner not influences results significantly and results for this
+test are still valid.
 
 \subsubsection input_data_slice Input data and running the code
 
 \include users_modules/fracture_mechanics/examples/brick_slice_b2.jou
 
-Following program calculates griffith forces for initial crack configuration,
+Following program calculates Griffith forces for initial crack configuration,
 allowing user to define refinement level at the crack front. It generates
 starting file \em out_spatial_2_0.h5m for crack propagation program.
 \code
