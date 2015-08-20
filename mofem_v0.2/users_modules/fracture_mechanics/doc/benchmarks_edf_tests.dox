@@ -12,16 +12,16 @@ Full test specification and geometrical description is available under following
 <a href="edf_test_specification.pdf" target="_blank"><b>link.</b></a>
 
 This work is motivated by inability of commercial finite element codes to
-simulate crack propagation in brittle materials in elements with nontrivial
-geometry. Open source codes like MoFEM (or Code_Aster) are developed to fill
-that gap and deliver open tool which can be used by industry.
+simulate crack propagation in brittle materials in structural elements with
+nontrivial geometry. Open source codes like MoFEM (or Code_Aster) are developed
+to fill that gap and deliver open tool which can be used by industry.
 
 \tableofcontents
 
 \section theory Solution scheme and theoretical context
 
-In the following document test are based on theoretical developments presented
-in paper by Kaczmarczy & Perace \cite kaczmarczyk2014three. In paper \cite
+In the following document calculations are based on theoretical developments presented
+in paper by Kaczmarczy & Pearce \cite kaczmarczyk2014three. In paper \cite
 kaczmarczyk2014three a derivation of equations for equilibrium of crack front
 from first principles is shown, i.e. the first law of thermodynamics and
 principle of maximal dissipation of energy (particular case of second low of
@@ -30,40 +30,59 @@ mechanics for convenience. Crack front is subjected to a constrain emerging form
 Griffith fracture criterion.
 
 Independently from theoretical development a method based on face splitting is
-proposed to propagate crack. In this test alternative, improved approach is
-proposed, leading to implicit, smooth and consistent crack propagation. In
-following tests crack is  propagated by directly displacing crack front nodes in
-material reference configuration. This ultimately results in mesh distortion, to
-resolve that issue a efficient mesh smoothing technique is implemented  \ref
-VolumeLengthQuality (see \cite kaczmarczyk2014three and implemented in
-constrains \ref SurfaceSlidingConstrains). This result in problem tailored
-variant of Total Arbitrary Lagrangian Formulation (T-ALE), in such a way that mesh
-smoothing not influencing crack propagation.
+proposed to propagate crack in \cite kaczmarczyk2014three. However in this work
+alternative, novel approach is proposed, leading to implicit, smooth and
+consistent crack propagation. In following tests crack is  propagated by
+directly displacing crack front nodes in material reference configuration. This
+approach is distinct to well know methods, where crack propagation is realized
+by enriching nodes (X-FEM), re-meshing or face splitting. It enables to move
+crack front continuously by arbitrary implicitly calculated distance, based on
+crack front equilibrium condition subjected to Griffith constrain, where as in
+alternative approaches crack is extended in some discrete predefined distances.
+
+In presented approach, smooth evolution of crack geometry  results in mesh
+distortion, to resolve that issue a efficient mesh smoothing technique is
+implemented  \ref VolumeLengthQuality (see \cite kaczmarczyk2014three and
+implemented in constrains \ref SurfaceSlidingConstrains). This result in problem
+tailored variant of Total Arbitrary Lagrangian Formulation (T-ALE), in such a
+way that mesh smoothing not influencing crack propagation.
 
 Mesh smoothing is not sufficient to fully propagate crack over whole thickness
 of the body. A face flipping, node merger and edge splitting algorithm is
 further added to algorithm. After each converged load step a mesh topological
 changes are introduced to improve mesh quality in neighborhood of crack front.
+Note that at that point, crack geometry is fixed, mesh topological changes don't change
+crack geometry itself, but improve mesh quality in neighborhood of crack front. In other
+words, re-meshing or mesh flipping is not used here to propagate crack but to maintain
+mesh quality.
 
 A finite element in T-ALE setting is implemented in \ref nonlinear_elastic_elem.
 Finite element calculate spatial and material forces, which drives body
 deformation in physical space and crack front displacements in material space.
 Material  forces acting at crack front are equilibrated by Griffith forces
-(material resistant forces). Griffith force element is implanted in \ref
+(material resistant forces). Griffith force element is implemented in \ref
 GriffithForceElement.
+
+In this approach crack propagates only in mode I, since crack front position
+and direction are calculated implicitly at once, in such a way that maintain
+equilibrium at crack front at the end of load step. In classical approach
+equilibrium is condition is not used, only Griffith criterion  (or any other) is
+applied, and crack is extended based on the stress state at beginning of step.
+Since crack evolution is strongly nonlinear this could result in mixed mode
+stress mode when crack is extended and demand appropriate calculation of crack
+direction for mixed mode, leading to explicit calculation of crack path.
+
 
 \section quasi_static Quasi static crack propagation
 
 In all tests is assumed that crack is propagating quasi-statically. This
 assumption is satisfied by controlling force such that material displacements of
-crack front lead to crack area increase by given area. As result calculated
-velocity of crack front is small and inertia forces can be neglected.
-
-Numerically in presented approach a problem tailored arc-length technique is
-adopted, see \cite kaczmarczyk2014three for details. Since crack propagation
-could be understand as a evolution of body topology which is strongly non-linear
-a increment of crack area is automatically adapted to obtain desired number
-of Newton-Raphson iteration at each load step.
+crack front lead to slow total crack area increase. In presented approach a
+problem tailored arc-length technique is adopted, see \cite kaczmarczyk2014three
+for details. Since crack propagation is understood here as a evolution of body
+topology, a strongly non-linear process, a increment of crack area is controlled
+and size of it is automatically adapted to obtain desired number of Newton-Raphson
+iteration at each load step.
 
 \section algorithm Algorithm
 
@@ -80,7 +99,7 @@ crack front need to lead to set crack area increment).
 iterations) in next step
 
 - update mesh for next step (merge nodes, split edges, flip faces such that mesh
-quality in font neighborhood is improved)
+quality in crack front neighborhood is improved)
 
 \section tests Tests
 
