@@ -338,11 +338,57 @@ is not expected to change final crack path, however in future alternative option
 could be considered, both by different model with denser mesh and dedicated
 algorithm for resolving such geometrical singularities.
 
-\section issues General comments and issues
+\section issues Efficiency & robustness
 
-\subsection issues_efficiency Efficiency
+Overall MoFEM pass tests successfully, however with some difficulties. It is key
+to note that results showed sensitivity to applied boundary conditions, showing
+differences between tests, in particular when type of loading is changed. This
+shows quality if obtain results and predictive potential of presented
+methodology. MoFEM is able to deliver information about  crack surface, front
+propagation and load displacements path, this enables engineers for greater interpretation,
+safety and risk assessment.
 
-\subsection issues_robustness Robustness
+Current version of code is build progressively along research in the field and
+better understanding of configurational mechanics in context of crack
+propagation. Such development led to some inefficient (but correct) performance
+bottlenecks. As results code runs slower than expected.
+
+- Mesh is smoothed in whole domain of the body, in future version this will be restricted
+to close vicinity of the crack, as result number of DoFS can be significantly reduced and
+some non-linerities removed form system of equations.
+
+- Above as well will remove some mesh distortion in regions in some distance from crack front, which
+lead to difficulties experienced on long brick problem.
+
+- Algorithms maintaining mesh quality, such as face flipping or local re-meshing
+could be improved by meter integration with
+<a href="http://press3.mcs.anl.gov/sigma/meshkit-library/">MeshKit Library</a>
+tools available through
+<a href="http://press3.mcs.anl.gov/sigma/moab-library/">MoAB Library</a>
+library. This could significantly increase robustness of the code.
+
+- Above at hand could better resolve issues with complex geometrical fetchers
+like end of keyway in long brick problem.
+
+- Doing analysis, in particular for last problems a convergence issues where
+occurring. This demanded manual adjustment of load step size. It is a need for better
+algorithms for step reduction and automatized action in case of difficulties.
+
+- In current input user need to specify body surface edges, crack surface and
+crack front edges. In addition is needed to define corner edges, where two faces
+are meeting and corners nodes when three surfaces are meeting. This could be
+automatised such that user will not need to specify those manually, removing
+potential source of mistakes.
+
+- Surface constrain maintained body geometry are enforced using Lagrange
+multipliers. It is undergoing work to use Nitche's method, that will reduce
+system of equations and improve matrix quality.
+
+- In order to improve efficient elements and matrix associated with elements with
+some distance from crack front coords_at_Gauss_nodes be build and factored only
+once at beginning of analysis. Only nodes in near the crack, where mesh
+smoothing and face flipping can be recalculated. That could significantly
+increase speed of calculations allowing for much denser problems.
 
 
 
