@@ -1,5 +1,7 @@
 /*! \page benchmarks_edf_tets Benchmarks crack propagation tests (EDF Tests)
 
+\image html stress_long.png 
+
 The following tests have been designed to check capabilities and robustness of
 crack propagation tools in MoFEM.
 
@@ -15,6 +17,7 @@ This work is motivated by inability of commercial finite element codes to
 simulate crack propagation in brittle materials in structural elements with
 nontrivial geometry. Open source codes like MoFEM (or Code_Aster) are developed
 to fill that gap and deliver open tool which can be used by industry.
+
 
 \tableofcontents
 
