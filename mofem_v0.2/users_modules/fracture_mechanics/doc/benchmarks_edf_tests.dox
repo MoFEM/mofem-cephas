@@ -1,8 +1,6 @@
 /*! \page benchmarks_edf_tets Benchmarks crack propagation tests (EDF Tests)
 
-In following results for benchmark of Code_Aster and MoFEM are presented, however
-this document focus only on result obtained form MoFEM. Benchmark are design to
-check capabilities and robustness of crack propagation tools.
+The following tests have been designed to check capabilities and robustness of crack propagation tools in MoFEM.
 
 Three test are investigated,
 - test case 1: loading of a brick slice
