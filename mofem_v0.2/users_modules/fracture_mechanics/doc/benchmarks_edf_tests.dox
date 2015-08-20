@@ -1,6 +1,6 @@
 /*! \page benchmarks_edf_tets Benchmarks crack propagation tests (EDF Tests)
 
-\image html stress_long.png 
+\image html stress_long.png
 
 The following tests have been designed to check capabilities and robustness of
 crack propagation tools in MoFEM.
@@ -135,7 +135,7 @@ Crack is initialised at the keyway corner. Size if initial notch is
 constrained by mesh size. Initial analysis showed that size or shape of initial
 notch do not influence final crack propagation significantly.
 
-Since element is subjected to pure bending, at any arbitrary cros-section of
+Since element is subjected to pure bending, at any arbitrary cross section of
 brick, no net axial force is present. As result material points in vicinity of
 crack front are subjected to tension, wheres near the bore surface material  is
 in compression. This prevent crack to propagate fully through the brick and
@@ -342,35 +342,35 @@ number can change insignificantly during analysis)
 
 \image html bick_long_anim.gif "Long brick (animation)"
 
-This test has complex geometry and crack propagation path comparing to test
-1 and test 2. As results of different loading scenario, defined here
-<a href="edf_test_specification.pdf" target="_blank"><b>link.</b></a>, where ripping
-loads are applied at key way, crack initially propagate along edge, and next to the bore. Next
-it propagates along the brick to its opposite side. This loading scenario is more realistic
-to real brick, where applied forces in the test mimicking loading from key.
+This test has complex geometry and crack propagation path comparing to test 1
+and test 2, as results of different loading scenario, see details about loading
+and geometry here <a href="edf_test_specification.pdf"
+target="_blank"><b>link</b></a>. A ripping loads are applied at key way edges,
+mimicking loading from interstitial key. In this example crack initially
+propagate along edge and then to the bore. Next it propagates along the brick
+to its opposite side across the brick cross section.
 
 \image html crack_surface_long.png "Long brick (crack surface)"
 \image html carck_surface_side_view_long.png "Long brick (crack surface - side view)"
 \image html deformation_long.png "Long brick (deformation)"
 
 On above figures can be seen that crack propagation has several stages, and
-initially is planar, however it approach the bore surface on some angle. Once
-crack front pass trough keyway is no longer planar for some distance.
+initially is slightly curved and it approach the bore surface on some angle. Once
+crack front pass trough the end of the keyway is distinctly bended for some distance.
 
 In that test during simulation code encountered some difficulties emerging from
 coarse mesh. Calculations have been stopped just before crack front reach
 opposite side due to deteriorated mesh quality. This difficulty will be removed
-in next mofem release.
+in next MoFEM release.
 
 \image html load_path_fracture_long.png "Load-displacement (Long brick)"
 \image html crack_area_vs_energy_long.png "Crack area vs Elastic Energy (Long Brick)"
 
-Analysing load displacement path, can be noted that it reflect complex
-path propagation, where initially crack is unconditionally unstable. Next on the
-graphs it can be seen snap-bakc point, before crack front reach the end of the
-keyway. From that point crack propagation is conditionally stabile, i.e. if
-brick is physically loaded by key way, cack propagating in stabile banner, other
-bricks need to be displacement to evolve crack geometry. At point where crack
+Analysing load displacement path, can be noted that it reflect complex path
+propagation, where initially crack is unconditionally unstable. Next on the
+graphs it can be seen snap-back point, before crack front reach the end of the
+keyway. From that point crack propagation is conditionally stabile, i.e. crack
+propagating in stabile manner if kinematic load is applied. At point where crack
 front passing through end of key way, a clear jump is shown on load displacement
 path. It can be noted that before and after that point, the tangent operator is
 positive and further increase of crack area demands increase of loading force, i.e. crack
@@ -379,10 +379,11 @@ which can be interpreted that such loaded brick will partially break, and crack
 propagation will freeze if constant ultimate load is applied (this assuming that
 inertia effects could be neglected).
 
-Above comments shows great advantage from crack modeling technique implemented
-here, allowing for better understating of crack propagation, delivering not only crack
-topology but in addition insight in stability of crack propagation. This enables
-better judgment about safety of component under considered loading.
+Above analysis based on presented figures, shows great advantage from crack
+modeling technique implemented here, allowing for better understanding of crack
+propagation, delivering not only crack topology but in addition insight in
+stability of crack propagation. This enables better judgment about safety of
+component under considered loading.
 
 \subsubsection input_data_long Input data and running the code
 
@@ -392,49 +393,54 @@ generated form journal file shown below.
 
 \image html gemetry_of_keyway_long.png "Geometry of keyway for long brick"
 
-Following model is geometry of keyway is modified to enable smooth transfer form
-edge propagating crack to crack propagation on free surface. This simplification
-is not expected to change final crack path, however in future alternative options
-could be considered, both by different model with denser mesh and dedicated
-algorithm for resolving such geometrical singularities.
+Long brick model has modified geometry at the end of loaded keyway, to enable
+smooth transfer form edge propagating crack to crack propagation on free outer
+surface. This simplification is not expected to change final crack path, however
+in future alternative options could be considered, both by different model with
+denser mesh and dedicated algorithm for resolving such geometrical
+singularities.
 
 \section issues Efficiency & robustness
 
 Overall MoFEM pass tests successfully, however with some difficulties. It is key
 to note that results showed sensitivity to applied boundary conditions, showing
 differences between tests, in particular when type of loading is changed. This
-shows quality if obtain results and predictive potential of presented
+shows quality of obtained results and predictive potential of presented
 methodology. MoFEM is able to deliver information about  crack surface, front
 propagation and load displacements path, this enables engineers for greater interpretation,
 safety and risk assessment.
 
-Current version of code is build progressively along research in the field and
-better understanding of configurational mechanics in context of crack
-propagation. Such development led to some inefficient (but correct) performance
-bottlenecks. As results code runs slower than expected.
+Current version of code is build progressively along research on configurational
+mechanics in context of crack propagation. In that process novel algorithm was
+developed. Such development led to some efficiency bottlenecks. As results code
+runs slower than can with presented methodology. Once methodology is
+established, taking adventage from code modular structure, is constantly
+improved. Some of key future developments in context of presented results are
+listed below;
 
 - Mesh is smoothed in whole domain of the body, in future version this will be restricted
 to close vicinity of the crack, as result number of DoFS can be significantly reduced and
-some non-linerities removed form system of equations.
+some non-linearities removed form system of equations.
 
 - Above as well will remove some mesh distortion in regions in some distance from crack front, which
 lead to difficulties experienced on long brick problem.
 
 - Algorithms maintaining mesh quality, such as face flipping or local re-meshing
-could be improved by meter integration with
-<a href="http://press3.mcs.anl.gov/sigma/meshkit-library/">MeshKit Library</a>
+could be improved by beter integration with
+<a href="http://press3.mcs.anl.gov/sigma/meshkit-library/">MeshKit</a> library
 tools available through
-<a href="http://press3.mcs.anl.gov/sigma/moab-library/">MoAB Library</a>
+<a href="http://press3.mcs.anl.gov/sigma/moab-library/">MoAB</a>
 library. This could significantly increase robustness of the code.
 
-- Above at hand could better resolve issues with complex geometrical fetchers
+- Above development at hand could better resolve issues with complex geometrical fetchers
 like end of keyway in long brick problem.
 
-- Doing analysis, in particular for last problems a convergence issues where
-occurring. This demanded manual adjustment of load step size. It is a need for better
-algorithms for step reduction and automatized action in case of difficulties.
+- A strongly nonlinear analysis, in particular for last problems can experience
+convergence issues. This demanded manual adjustment of load step size. It is a
+need for better algorithms for step reduction and automatized action in case of
+difficulties.
 
-- In current input user need to specify body surface edges, crack surface and
+- At the moment user need to specify body surface edges, crack surface and
 crack front edges. In addition is needed to define corner edges, where two faces
 are meeting and corners nodes when three surfaces are meeting. This could be
 automatised such that user will not need to specify those manually, removing
@@ -445,11 +451,20 @@ multipliers. It is undergoing work to use Nitche's method, that will reduce
 system of equations and improve matrix quality.
 
 - In order to improve efficient elements and matrix associated with elements with
-some distance from crack front coords_at_Gauss_nodes be build and factored only
-once at beginning of analysis. Only nodes in near the crack, where mesh
-smoothing and face flipping can be recalculated. That could significantly
-increase speed of calculations allowing for much denser problems.
+some distance from crack front can be build and factored only once at beginning of
+analysis. Only nodes in near the crack, where mesh smoothing and face flipping
+can be recalculated. That could significantly increase speed of calculations
+allowing for much denser problems.
 
+In principle undergoing development are implemented to improve code robustness
+and reduce direct user time needed by end user to set up and run the problem.
+Total computing/CPU time is has smaller priority, however code need to deliver
+results in reasonable time.
 
+\section Acknowledgements
+
+This work was supported by the EDF Energy Nuclear Generation Ltd. The views
+expressed in this paper those of the authors and not necessarily those of the
+EDF Ener gy Nuclear Generation Ltd.
 
 */
