@@ -1,6 +1,7 @@
 /*! \page benchmarks_edf_tets Benchmarks crack propagation tests (EDF Tests)
 
-The following tests have been designed to check capabilities and robustness of crack propagation tools in MoFEM.
+The following tests have been designed to check capabilities and robustness of
+crack propagation tools in MoFEM.
 
 Three test are investigated,
 - test case 1: loading of a brick slice
@@ -281,12 +282,67 @@ number can change insignificantly during analysis)
 \subsubsection results_long Results
 
 \image html bick_long_anim.gif "Long brick (animation)"
+
+This test has complex geometry and crack propagation path comparing to two test
+1 and test 2. As results of different loading scenario, defined here
+<a href="edf_test_specification.pdf" target="_blank"><b>link.</b></a>, where ripping
+loads are applied at key way, crack initially propagate along edge, and next to the bore. Next
+it propagates along the brick to its opposite side. This loading scenario is more realistic
+to real brick, where applied forces mimics loading from key.
+
 \image html crack_surface_long.png "Long brick (crack surface)"
 \image html carck_surface_side_view_long.png "Long brick (crack surface - side view)"
 \image html deformation_long.png "Long brick (deformation)"
+
+On above figures can be seen that crack propagation has several stages, and
+initially is planar, however it approach bore on some angle. Once crack front
+passes keyway is no longer planar for some distance. In that test during
+simulation code encountered some difficulties emerging from coarse mesh.
+Calculations have been stopped at just before crack front reach opposite side
+due to deteriorated mesh quality. This difficulty will be removed in next mofem
+release.
+
 \image html load_path_fracture_long.png "Load-displacement (Long brick)"
 \image html crack_area_vs_energy_long.png "Crack area vs Elastic Energy (Long Brick)"
 
+Analysing load displacement path, can be noted that it plots reflect complex
+path propagation, where initially crack is unconditionally unstable. Next on the
+graphs it can be seen snap-bakc point, before crack front reach end of the
+keyway. From that point crack propagation is conditionally stabile, i.e. if
+brick is physically loaded by key way, cack propagating in stabile banner, other
+bricks need to be displacement to evolve crack geometry. At point where crack
+front passing through end of key way, a clear jump is shown on load displacement
+path. It can be noted that before and after that point tangent operator is
+positive and further increase  of crack area demands loading force, i.e. crack
+propagation is unconditionally stabile. As result snap-through is possible,
+which can be interpreted that such loaded brick will partially break, and crack
+propagation will freeze if constant ultimate load is applied (this assuming that
+inertia effects could be neglected).
+
+Above comments shows great advantage from crack modeling technique implemented
+here, allowing for better understating of crack propagation, delivering not only crack
+topology but in addition insight in stability of crack propagation. This enables
+better judgment about safety of component under considered loading.
+
+\subsubsection input_data_long Input data and running the code
+
+This test were run with the same command like in previous examples. Input mesh model is
+generated form journal file shown below.
+\include users_modules/fracture_mechanics/examples/long_brick.jou
+
+\image html gemetry_of_keyway_long.png "Geometry of keyway for long brick"
+
+Following model is geometry of keyway is modified to enable smooth transfer form
+edge propagating crack to crack propagation on free surface. This simplification
+is not expected to change final crack path, however in future alternative options
+could be considered, both by different model with denser mesh and dedicated
+algorithm for resolving such geometrical singularities.
+
+\section issues General comments and issues
+
+\subsection issues_efficiency Efficiency
+
+\subsection issues_robustness Robustness
 
 
 
