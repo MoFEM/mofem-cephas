@@ -274,14 +274,11 @@ number can change insignificantly during analysis)
 \image html brick_full_anim1.gif "Full brick (animation)"
 \image html brick_full_anim2.gif "Full brick (animation)"
 
-The crack propagation for full brick is similar to previous example, crack
-propagate along the corner. Initiated form corner notch on one of the brick
-sided moves to opposite side and then trough the bore. Since pure bending
-moment is applied by edge forces on brick slot no axial force force is present
-at brick correction, preventing full break. In real brick loading, resulting from
-keyway load or internal stress it can be expected that pattern of crack propagation
-would be different, like is shown in next example. However this test validating code and
-its robustness, in the sense that results show expected results for given load scenario.
+The crack propagation for full brick is similar to previous example. Crack is
+initiated form corner triangular notch on one of the brick sides, propagates to
+opposite side and then towards to bore. Since pure bending moment is applied and
+no axial force is present, elastic hinge is created and brick is not
+exhibiting a full brake.
 
 \image html crack_surface_full_1.png "Full brick (crack snapshots 1)"
 \image html crack_surface_full_2.png "Full brick (crack snapshots 2)"
@@ -289,16 +286,16 @@ its robustness, in the sense that results show expected results for given load s
 \image html deformed_full.png "Full brick (deformed shape)"
 
 In above figures it is shown how crack propagate in subsequent snapshots. Crack is
-insignificantly bending over analysis, however it approach surface of the bore ob
+insignificantly bending over analysis, however it approach surface of the bore on
 the angle what can be observed in figure presenting brick deformation.
 
 \image html load_path_fracture_full.png "Load-displacement path (Full brick)"
 \image html crack_area_vs_energy_full.png "Crack area vs Elastic Energy (Full brick)"
 
-In above plots load-displacemnt path and strain energy against crack area is
-shown. It is more complex that for brick slice, and three stages of crack
-propagation  can be identified, i.e. propagation crack  to the opposite brick
-surface, propagation to the bore and creation of elastic hinge (where load-disp
+In above plots load-displacement path and strain energy against crack area is
+shown. It is more complex that for brick slice. Three stages of crack
+propagation can be identified; propagation crack to the opposite brick surface,
+propagation to the bore and finally creation of elastic hinge (where equilibrium
 path achieve quasi plateau).
 
 Analysis of load path enables better understanding of component safety, notting that if
