@@ -241,7 +241,7 @@ int main(int argc, char *argv[]) {
       ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
       tranversly_isotropic_adouble_ptr_map[id] = new SmallStrainTranverslyIsotropicADouble();
       tranversly_isotropic_double_ptr_map[id] = new SmallStrainTranverslyIsotropicDouble();
-      nu_p, nu_pz, E_p, E_z, G_zp
+      //nu_p, nu_pz, E_p, E_z, G_zp
       tranversly_isotropic_adouble_ptr_map.at(id)->E_p = mydata.data.Youngp;
       tranversly_isotropic_double_ptr_map.at(id)->E_p = mydata.data.Youngp;
       tranversly_isotropic_adouble_ptr_map.at(id)->E_z = mydata.data.Youngz;
