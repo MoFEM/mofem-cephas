@@ -75,13 +75,13 @@ Since crack evolution is strongly nonlinear this could result in mixed mode
 stress mode when crack is extended and demand appropriate calculation of crack
 direction for mixed mode, leading to explicit calculation of crack path.
 
-It is important to stress that propagating mode-II or mode-II cracks are usually not
-observed experimentally in homogeneous isotropic solids. A crack subjected to
-mode-II or mixed mode loading, curves or kinks and propagates in a direction
-that maintains locally pure mode-I conditions at the tip \cite CotterellAndRice
-\cite hutchinson1992mixed. This is consistent with the approach we have adopted,
-achieving maximum dissipation of energy in the generation of new crack area and
-crack front equilibrium.
+It is important to stress that propagating cracks in mode-II or mode-III are
+usually not observed experimentally in homogeneous isotropic solids. A crack
+subjected to mode-II or mixed mode loading, curves or kinks and propagates in a
+direction that maintains locally pure mode-I conditions at the tip \cite
+CotterellAndRice \cite hutchinson1992mixed. This is consistent with the approach
+we have adopted, achieving maximum dissipation of energy in the generation of
+new crack area and crack front equilibrium.
 
 
 \section quasi_static Quasi static crack propagation
