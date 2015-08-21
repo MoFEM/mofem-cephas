@@ -38,7 +38,7 @@ alternative, novel approach is proposed, leading to implicit, smooth and
 consistent crack propagation. In following tests crack is  propagated by
 directly displacing crack front nodes in material reference configuration. This
 approach is distinct to well know methods, where crack propagation is realized
-by enriching nodes (X-FEM), re-meshing or face splitting. It enables to move
+by enriching nodes (X-FEM), re-meshing or face splitting. Our method enables to move
 crack front continuously by arbitrary implicitly calculated distance, based on
 crack front equilibrium condition subjected to Griffith constrain, where as in
 alternative approaches crack is extended in some discrete predefined distances.
