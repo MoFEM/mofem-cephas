@@ -66,7 +66,7 @@ Material  forces acting at crack front are equilibrated by Griffith forces
 (material resistant forces). Griffith force element is implemented in \ref
 GriffithForceElement.
 
-In this approach crack propagates only in mode I, since crack front position
+In this approach crack propagates only in mode-I, since crack front position
 and direction are calculated implicitly at once, in such a way that maintain
 equilibrium at crack front at the end of load step. In classical approach
 equilibrium is condition is not used, only Griffith criterion  (or any other) is
@@ -75,7 +75,7 @@ Since crack evolution is strongly nonlinear this could result in mixed mode
 stress mode when crack is extended and demand appropriate calculation of crack
 direction for mixed mode, leading to explicit calculation of crack path.
 
-It is important to stress that propagating mode-II cracks are usually not
+It is important to stress that propagating mode-II or mode-II cracks are usually not
 observed experimentally in homogeneous isotropic solids. A crack subjected to
 mode-II or mixed mode loading, curves or kinks and propagates in a direction
 that maintains locally pure mode-I conditions at the tip \cite CotterellAndRice
