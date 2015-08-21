@@ -452,10 +452,10 @@ multipliers. It is undergoing work to use Nitche's method, that will reduce
 system of equations and improve matrix quality.
 
 - In order to improve efficiency, the  elements with some distance from crack
-front can be assembled and factored only once at beginning of analysis. Only nodes
-in near the crack, where mesh smoothing and face flipping can be recalculated.
-That could significantly increase speed of calculations allowing for much denser
-problems.
+front can be assembled and factored only once at beginning of analysis. Only
+elements near the crack, where mesh smoothing and face flipping takes place, can
+be recalculated. That could significantly increase speed of calculations
+allowing for large computationaly intensive problems.
 
 In principle undergoing development are implemented to improve code robustness
 and reduce direct user time needed by end user to set up and run the problem.
