@@ -25,7 +25,7 @@ to fill that gap and deliver open tool which can be used by industry.
 
 In the following document calculations are based on theoretical developments presented
 in paper by Kaczmarczyk & Pearce \cite kaczmarczyk2014three. In paper \cite
-kaczmarczyk2014three a derivation of equations for equilibrium of crack front
+kaczmarczyk2014three the derivation of equations for equilibrium of crack front
 from first principles is shown, i.e. the first law of thermodynamics and
 principle of maximal dissipation of energy (particular case of second low of
 thermodynamics). Problem is formulated in context of configurational (Elshebian)
