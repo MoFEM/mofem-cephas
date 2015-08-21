@@ -415,7 +415,7 @@ Current version of code is build progressively along research on configurational
 mechanics in context of crack propagation. In that process novel algorithm was
 developed. Such development led to some efficiency bottlenecks. As results code
 runs slower than can with presented methodology. Once methodology is
-established, taking adventage from code modular structure, is constantly
+established, taking advantage from code modular structure, is constantly
 improved. Some of key future developments in context of presented results are
 listed below;
 
