@@ -101,7 +101,7 @@ iteration at each load step.
 
 - solve system on nonlinear algebraic equations for displacements, crack front position and load
 factor. Note that crack front positions are not directly controlled, a
-force factor is implicitly calculated to increase total crack are by desired quantity.
+force factor is implicitly calculated to increase total crack area by desired quantity.
 
 - post-process results and record at given step
 
