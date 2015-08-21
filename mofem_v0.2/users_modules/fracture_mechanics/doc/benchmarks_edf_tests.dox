@@ -24,7 +24,7 @@ to fill that gap and deliver open tool which can be used by industry.
 \section theory Solution scheme and theoretical context
 
 In the following document calculations are based on theoretical developments presented
-in paper by Kaczmarczy & Pearce \cite kaczmarczyk2014three. In paper \cite
+in paper by Kaczmarczyk & Pearce \cite kaczmarczyk2014three. In paper \cite
 kaczmarczyk2014three a derivation of equations for equilibrium of crack front
 from first principles is shown, i.e. the first law of thermodynamics and
 principle of maximal dissipation of energy (particular case of second low of
@@ -45,10 +45,10 @@ alternative approaches crack is extended in some discrete predefined distances.
 
 In presented approach, smooth evolution of crack geometry  results in mesh
 distortion, to resolve that issue a efficient mesh smoothing technique is
-implemented  \ref VolumeLengthQuality (see \cite kaczmarczyk2014three and
-implemented in constrains \ref SurfaceSlidingConstrains). This result in problem
-tailored variant of Total Arbitrary Lagrangian Formulation (T-ALE), in such a
-way that mesh smoothing not influencing crack propagation.
+implemented in \ref VolumeLengthQuality (see \cite kaczmarczyk2014three) and
+surface constrains are implemented in \ref SurfaceSlidingConstrains. This result
+in problem tailored variant of Total Arbitrary Lagrangian Formulation (T-ALE),
+in such a way that mesh smoothing not influencing crack propagation.
 
 Mesh smoothing is not sufficient to fully propagate crack over whole thickness
 of the body. A face flipping, node merger and edge splitting algorithm is
