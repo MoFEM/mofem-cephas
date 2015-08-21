@@ -141,7 +141,7 @@ crack front are subjected to tension, wheres near the bore surface material  is
 in compression. This prevent crack to propagate fully through the brick and
 elastic hinge is created at the end of analysis.
 
-It can noted that any partial crack propagation through the bore would lead to
+It can be noted that any partial crack propagation through the bore would lead to
 self penetration of crack surfaces, since compressible stresses are acting next
 to the bore, to transfer externally apply bending moment. Inability of presented
 method to propagate crack to the bore indirectly validate crack front equilibrium
