@@ -195,7 +195,7 @@ approximation itself.
 One can note that energy release rate is assumed constant (\f$g_c\f$) and it is
 material parameter. However on structural level, the crack area vs strain energy
 plot shows that slope of curve is not constant over the analysis. The explanation for
-varying slop of curve is explained by two factors;
+varying slope of curve is explained by two factors;
 
 - Length of crack front at which energy is released is not constant. It getting
 longer up to the point where opposite side of the bore is reached. After that
@@ -209,7 +209,7 @@ from one step to another.
 Note, that can be easily shown (both analytically and numerically), that for
 long (infinite) plate with the notch, slope on crack area vs strain energy plot
 is constant. Since crack front length is constant and forces are applied in far distance
-from crack itself.
+from fracture process.
 
 One can note the jump on both of the plots above. This is outcome of numerical
 artifact. In current algorithm by default once crack front approach corner,
