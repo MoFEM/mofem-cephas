@@ -96,6 +96,7 @@ file(
   ?*/InstalledAddModule.cmake
 )
 
-foreach(LOOP_VAR ${INSTLLED_MODULES})
-  message(STATUS "Add module ... ${LOOP_VAR}")
-endforeach(LOOP_VAR)
+foreach(LOOP_MODULE ${INSTLLED_MODULES})
+  message(STATUS "Add module ... ${LOOP_MODULE}")
+  include(${LOOP_MODULE})
+endforeach(LOOP_MODULE)

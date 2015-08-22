@@ -1,8 +1,3 @@
-# Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
-# The MoFEM package is copyrighted by Lukasz Kaczmarczyk.
-# It can be freely used for educational and research purposes
-# by other institutions. If you use this softwre pleas cite my work.
-#
 # MoFEM is free software: you can redistribute it and/or modify it under
 # the terms of the GNU Lesser General Public License as published by the
 # Free Software Foundation, either version 3 of the License, or (at your
@@ -16,16 +11,17 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
-if(CMAKE_HOST_UNIX)
-  install(CODE
-    "
-    EXECUTE_PROCESS(
-      COMMAND ln -sF
-      ${PROJECT_SOURCE_DIR}/users_modules
-      ${CMAKE_INSTALL_PREFIX}/
-    )
-    "
-  )
-else(CMAKE_HOST_UNIX)
-  install(DIRECTORY ${PROJECT_SOURCE_DIR}/users_modules DESTINATION ${CMAKE_INSTALL_PREFIX})
-endif(CMAKE_HOST_UNIX)
+
+#copy figures form users UM documentation
+add_custom_target(doxygen_copy_figures_from_user_modules
+  ${CMAKE_COMMAND} -E copy_directory
+  ${PROJECT_SOURCE_DIR}/users_modules/doc/figures ${PROJECT_BINARY_DIR}/html
+)
+add_dependencies(doc doxygen_copy_figures_from_user_modules)
+
+#copy pdfs form users UM documentation
+add_custom_target(doxygen_copy_pdfs_from_user_modules
+  ${CMAKE_COMMAND} -E copy_directory
+  ${PROJECT_SOURCE_DIR}/users_modules/doc/pdfs ${PROJECT_BINARY_DIR}/html
+)
+add_dependencies(doc doxygen_copy_pdfs_from_user_modules)

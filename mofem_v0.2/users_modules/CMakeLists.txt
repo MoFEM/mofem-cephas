@@ -13,7 +13,7 @@
 
 project(MoFEM-UserModules C CXX)
 
-cmake_minimum_required(VERSION 3.2)
+cmake_minimum_required(VERSION 3.0.2)
 
 find_package(MoFEM 0.3.0
   REQUIRED HINTS ${MOFEM_DIR} ../ ../../ $ENV{MOFEM_DIR}
@@ -112,5 +112,4 @@ if(SLEPC_LIBRARY)
   message(STATUS "WITH SLEPC")
 endif(SLEPC_LIBRARY)
 
-add_subdirectory("${PROJECT_SOURCE_DIR}/doc")
 include(ModulesList.cmake)
