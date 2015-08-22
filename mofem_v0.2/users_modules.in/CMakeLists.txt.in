@@ -113,5 +113,7 @@ if(SLEPC_LIBRARY)
   message(STATUS "WITH SLEPC")
 endif(SLEPC_LIBRARY)
 
+add_subdirectory("${PROJECT_SOURCE_DIR}/doc")
 
 include(ModulesList.cmake)
+include(InstalledModulesList.cmake)
