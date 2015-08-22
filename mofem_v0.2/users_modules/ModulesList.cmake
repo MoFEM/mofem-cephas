@@ -89,3 +89,13 @@ add_subdirectory(
   ${UM_SOURCE_DIR}/gels
   ${PROJECT_BINARY_DIR}/gels
 )
+
+file(
+  GLOB_RECURSE INSTLLED_MODULES
+  FOLLOW_SYMLINKS
+  ?*/InstalledAddModule.cmake
+)
+
+foreach(LOOP_VAR ${INSTLLED_MODULES})
+  message(STATUS "Add module ... ${LOOP_VAR}")
+endforeach(LOOP_VAR)

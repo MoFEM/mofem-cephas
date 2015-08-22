@@ -13,9 +13,9 @@
 
 project(MoFEM-UserModules C CXX)
 
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.2)
 
-find_package(MoFEM 0.2.0
+find_package(MoFEM 0.3.0
   REQUIRED HINTS ${MOFEM_DIR} ../ ../../ $ENV{MOFEM_DIR}
 )
 
@@ -30,12 +30,11 @@ include(${MoFEM_PROJECT_SOURCE_DIR}/cmake/ExportFile.cmake)
 set(CMAKE_C_COMPILER ${MoFEM_CMAKE_C_COMPILER})
 set(CMAKE_CXX_COMPILER ${MoFEM_CMAKE_CXX_COMPILER})
 
-
 include_directories(
   ${MoFEM_PROJECT_INCLUDE_DIRECTORIES}
   ${MoFEM_PETSC_DIR}/${MoFEM_PETSC_ARCH}/include
   ${MoFEM_PETSCVAR_DIR}/include
-  )
+)
 
 include_directories("${MoFEM_PROJECT_SOURCE_DIR}/include")
 include_directories("${MoFEM_PROJECT_SOURCE_DIR}/third_party")
@@ -114,6 +113,4 @@ if(SLEPC_LIBRARY)
 endif(SLEPC_LIBRARY)
 
 add_subdirectory("${PROJECT_SOURCE_DIR}/doc")
-
 include(ModulesList.cmake)
-include(InstalledModulesList.cmake)
