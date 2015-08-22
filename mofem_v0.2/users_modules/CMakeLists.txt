@@ -13,7 +13,7 @@
 
 project(MoFEM-UserModules C CXX)
 
-cmake_minimum_required(VERSION 3.0.2)
+cmake_minimum_required(VERSION 2.8.7)
 
 find_package(MoFEM 0.3.0
   REQUIRED HINTS ${MOFEM_DIR} ../ ../../ $ENV{MOFEM_DIR}
