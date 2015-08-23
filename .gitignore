@@ -20,6 +20,7 @@ do_vtk.sh
 
 homogenisation
 fracture_mechanics
+moisture_transport
 
 _Store
 *.swp

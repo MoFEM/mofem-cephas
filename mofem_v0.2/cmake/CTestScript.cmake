@@ -36,6 +36,22 @@ ctest_start(${DASHBOARDTEST})
 
 ctest_update(SOURCE "${GID_SOURCE_REPO}" RETURN_VALUE DOTEST)
 
+# modules - moisture_transport
+if(NOT EXISTS "${CTEST_SOURCE_DIRECTORY}/users_modules/moisture_transport")
+  exec_program(
+    ${CTEST_GIT_COMMAND}
+    "${CTEST_SOURCE_DIRECTORY}/users_modules"
+    ARGS clone https://likask@bitbucket.org/likask/mofem_um_moisture_transport.git
+    "${CTEST_SOURCE_DIRECTORY}/users_modules/moisture_transport"
+  )
+else(EXISTS "${CTEST_SOURCE_DIRECTORY}/users_modules/moisture_transport")
+  exec_program(
+    ${CTEST_GIT_COMMAND}
+    "${CTEST_SOURCE_DIRECTORY}/users_modules/moisture_transport"
+    ARGS pull
+  )
+endif()
+
 # modules - homogenisation
 if(NOT EXISTS "${CTEST_SOURCE_DIRECTORY}/users_modules/homogenisation")
   exec_program(

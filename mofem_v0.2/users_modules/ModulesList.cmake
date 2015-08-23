@@ -78,10 +78,6 @@ add_subdirectory(
   ${PROJECT_BINARY_DIR}/helmholtz
 )
 add_subdirectory(
-  ${UM_SOURCE_DIR}/moisture_transport
-  ${PROJECT_BINARY_DIR}/moisture_transport
-)
-add_subdirectory(
   ${UM_SOURCE_DIR}/gels
   ${PROJECT_BINARY_DIR}/gels
 )
