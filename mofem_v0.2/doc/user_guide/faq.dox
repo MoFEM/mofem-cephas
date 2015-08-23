@@ -122,6 +122,27 @@ Look at examples of use to user modules, for example elasticity.cpp.
 
 \section adding_user_module How to add user module?
 
+User module can be independent repository, private or public and independently
+managed and owned form MoFEM library. If user module is part of MoFEM repository
+can be simply added by adding it to \em ModulesLists.cmake in users modules
+directory. However if user module is project/respository by its own, repository
+should be cloned to users modules directory, f.e. in
+mofem-cephas/mofem_v0.2/users_modules
+\code
+git clone https://likask@bitbucket.org/likask/mofem_um_homogenisation.git homogenisation
+\endcode
+
+In user module directory directory should be file file, \em
+InstalledAddModule.cmake, with content,
+\code
+add_subdirectory(${PROJECT_SOURCE_DIR}/homogenisation)
+\endcode
+
+If user module has documentation (in principle all user modules should have
+documentation), if file \em AddDocumentation.cmake, it is executed by cmake
+when documentation is build. This cmake script is usually used to copy images and
+other files which are linked in documentation.
+
 In each module you can have two type directory data,
   -# Simple
   -# Extended

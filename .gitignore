@@ -1,35 +1,31 @@
-mofem_v0.2/users_modules/CMakeLists.txt
-
 mofem_v0.2/include/config.h
 mofem_v0.2/include/version.h
-
 mofem_v0.2/scripts/publish_doc.sh
 mofem_v0.2/scripts/git_contributors.sh
-mofem_v0.2/doc/publish_doc.sh
-mofem_v0.2/doc/git_contributors.sh
 mofem_v0.2/doc/contributors_list
 mofem_v0.2/doc/footer.html
-mofem_v0.2/doc/footer.html.bak
 mofem_v0.2/doc/header.html
-mofem_v0.2/doc/header.html.bak
 mofem_v0.2/doc/style.html
-mofem_v0.2/doc/style.html.bak
-
-arc_length.sh
-convergence_study.sh
 
 mofem_build.sh
 mofem_live_cd_check.sh
 mofem_update.sh
 mofem_fast_check.sh
 
+arc_length.sh
+convergence_study.sh
+convective_matrix.sh
+arc_length_nonlinear_elasticity.sh
+do_vtk.sh
+
+homogenisation
+fracture_mechanics
+
 _Store
 *.swp
 *.swo
 *.swn
+*.bak
 .atom-build.json
 
 
-convective_matrix.sh
-arc_length_nonlinear_elasticity.sh
-do_vtk.sh

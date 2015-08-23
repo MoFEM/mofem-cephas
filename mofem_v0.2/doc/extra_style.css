@@ -25,3 +25,70 @@ hr.footer {
 .footer {
         background-color: #AAA;
 }
+
+
+div.image img[src="slice_anim.gif"]{
+    width:500px;
+}
+div.image img[src="crack_surface_slice.png"]{
+    width:500px;
+}
+div.image img[src="crack_surface_slice_side_view.png"]{
+    width:500px;
+}
+div.image img[src="deformed_slice.png"]{
+    width:500px;
+}
+div.image img[src="load_path_fracture_slice.png"]{
+    width:500px;
+}
+div.image img[src="area_vs_energy_slice.png"]{
+    width:500px;
+}
+
+div.image img[src="brick_full_anim1.gif"]{
+    width:500px;
+}
+div.image img[src="brick_full_anim2.gif"]{
+    width:500px;
+}
+div.image img[src="crack_surface_full_1.png"]{
+    width:500px;
+}
+div.image img[src="crack_surface_full_2.png"]{
+    width:500px;
+}
+div.image img[src="crack_surface_full_3.png"]{
+    width:500px;
+}
+div.image img[src="deformed_full.png"]{
+    width:500px;
+}
+div.image img[src="load_path_fracture_full.png"]{
+    width:500px;
+}
+div.image img[src="crack_area_vs_energy_full.png"]{
+    width:500px;
+}
+
+div.image img[src="bick_long_anim.gif"]{
+    width:500px;
+}
+div.image img[src="carck_surface_side_view_long.png"]{
+    width:500px;
+}
+div.image img[src="crack_surface_long.png"]{
+    width:500px;
+}
+div.image img[src="deformation_long.png"]{
+    width:500px;
+}
+div.image img[src="load_path_fracture_long.png"]{
+    width:500px;
+}
+div.image img[src="gemetry_of_keyway_long.png"]{
+    width:500px;
+}
+div.image img[src="stress_long.png"]{
+    width:500px;
+}

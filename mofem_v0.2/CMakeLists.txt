@@ -11,7 +11,7 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
-cmake_minimum_required (VERSION 2.8)
+cmake_minimum_required (VERSION 2.8.7)
 
 #petsc and moab configuration are used to confiugre mofem
 include(cmake/FindPETSC.cmake)
@@ -57,8 +57,8 @@ include(cmake/FindSLEPC.cmake)
 include(cmake/ExportFile.cmake)
 
 set(MoFEM_VERSION_MAJOR 0)
-set(MoFEM_VERSION_MINOR 2)
-set(MoFEM_VERSION_BUILD 2)
+set(MoFEM_VERSION_MINOR 3)
+set(MoFEM_VERSION_BUILD 0)
 
 #git revision
 include(cmake/GetGitRevisionDescription.cmake)
@@ -128,12 +128,12 @@ include(CTest)
 configure_file(
   ${PROJECT_SOURCE_DIR}/MoFEMConfig.cmake.in
   ${PROJECT_BINARY_DIR}/MoFEMConfig.cmake
-  )
+)
 
 configure_file(
   ${PROJECT_SOURCE_DIR}/MoFEMConfig-version.cmake.in
   ${PROJECT_BINARY_DIR}/MoFEMConfig-version.cmake
-  )
+)
 install(FILES ${PROJECT_BINARY_DIR}/MoFEMConfig.cmake DESTINATION ${CMAKE_INSTALL_PREFIX})
 install(FILES ${PROJECT_BINARY_DIR}/MoFEMConfig-version.cmake DESTINATION ${CMAKE_INSTALL_PREFIX})
 

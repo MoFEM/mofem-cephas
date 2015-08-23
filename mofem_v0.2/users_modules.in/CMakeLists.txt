@@ -1,7 +1,7 @@
 # Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
-# The MoFEM package is copyrighted by Lukasz Kaczmarczyk. 
-# It can be freely used for educational and research purposes 
-# by other institutions. If you use this softwre pleas cite my work. 
+# The MoFEM package is copyrighted by Lukasz Kaczmarczyk.
+# It can be freely used for educational and research purposes
+# by other institutions. If you use this softwre pleas cite my work.
 #
 # MoFEM is free software: you can redistribute it and/or modify it under
 # the terms of the GNU Lesser General Public License as published by the
@@ -16,12 +16,16 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
-configure_file(
-  ${PROJECT_SOURCE_DIR}/users_modules.in/CMakeLists.txt.in
-  ${PROJECT_SOURCE_DIR}/users_modules/CMakeLists.txt
-  @ONLY
-)
-
-install(DIRECTORY ${PROJECT_SOURCE_DIR}/users_modules DESTINATION ${CMAKE_INSTALL_PREFIX})
-
-
+if(CMAKE_HOST_UNIX)
+  install(CODE
+    "
+    EXECUTE_PROCESS(
+      COMMAND ln -sf
+      ${PROJECT_SOURCE_DIR}/users_modules
+      ${CMAKE_INSTALL_PREFIX}/
+    )
+    "
+  )
+else(CMAKE_HOST_UNIX)
+  install(DIRECTORY ${PROJECT_SOURCE_DIR}/users_modules DESTINATION ${CMAKE_INSTALL_PREFIX})
+endif(CMAKE_HOST_UNIX)

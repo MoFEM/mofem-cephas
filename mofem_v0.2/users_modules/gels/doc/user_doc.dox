@@ -8,6 +8,8 @@ viscous relaxation is taken into account by considering model with two springs
 and dashpot, with additional internal state variable. Detail about
 implementation and equations can be found in structure \ref Gel
 
+\tableofcontents
+
 \section gel_brick Analysis of simple gel brick
 
 \subsection gel_input_file Input files
@@ -26,10 +28,7 @@ prismatic bar (brick_of_gel.jou),
 Material properties file (gel_config.in).
 \include users_modules/gels/gel_config.in
 
-Native constitutive model is implemented after
-Yuhang Hu and Zhigang Suo. Viscoelasticity and poroelasticity in elastomeric
-gels. Acta Mechanica Solida Sinica, Vol. 25, No. 5
-
+Native constitutive model is implemented after Yuhang Hu and Zhigang Suo \cite hu2012viscoelasticity.
 \image html gel_spring_daspot_model.png "Gel model" width=6cm
 
 In basic implementations all springs and dashpot are implemented using Hook'e
@@ -104,7 +103,7 @@ users_modules/nonlinear_elasticity/do_vtk.sh. For example
 
 In file \ref UserGelModel.hpp user can implement own constitutive equation, for
 details see \ref UserGelConstitutiveEquation. Any change in \ref
-UserGelModel.hpp have to follow rebuiling the code
+UserGelModel.hpp have to follow rebuilding the code
 \code
 $um_debug/gels make
 \endcode

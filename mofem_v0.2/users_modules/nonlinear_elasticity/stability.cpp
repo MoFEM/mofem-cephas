@@ -141,6 +141,8 @@ struct MyMat_double: public NonlinearElasticElement::FunctionsToCalculatePiolaKi
 template<typename TYPE>
 struct MyMat: public MyMat_double<TYPE> {
 
+  int nbActiveVariables0;
+
   virtual PetscErrorCode setUserActiveVariables(
     int &nb_active_variables) {
     PetscFunctionBegin;
@@ -155,6 +157,7 @@ struct MyMat: public MyMat_double<TYPE> {
       this->sTrain0[3] <<= (G0(1,0) + G0(0,1));
       this->sTrain0[4] <<= (G0(2,1) + G0(1,2));
       this->sTrain0[5] <<= (G0(2,0) + G0(0,2));
+      nbActiveVariables0 = nb_active_variables;
       nb_active_variables += 6;
 
     } catch (const std::exception& ex) {
@@ -172,7 +175,7 @@ struct MyMat: public MyMat_double<TYPE> {
 
     try {
 
-      int shift = 9; // is a number of elements in F
+      int shift = nbActiveVariables0; // is a number of elements in F
       ublas::matrix<double> &G0 = (this->commonDataPtr->gradAtGaussPts["D0"][this->gG]);
       active_varibles[shift+0] = G0(0,0);
       active_varibles[shift+1] = G0(1,1);

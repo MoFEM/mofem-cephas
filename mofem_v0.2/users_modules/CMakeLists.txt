@@ -1,8 +1,3 @@
-# Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
-# The MoFEM package is copyrighted by Lukasz Kaczmarczyk.
-# It can be freely used for educational and research purposes
-# by other institutions. If you use this softwre pleas cite my work.
-#
 # MoFEM is free software: you can redistribute it and/or modify it under
 # the terms of the GNU Lesser General Public License as published by the
 # Free Software Foundation, either version 3 of the License, or (at your
@@ -18,9 +13,9 @@
 
 project(MoFEM-UserModules C CXX)
 
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 2.8.7)
 
-find_package(MoFEM 0.2.0
+find_package(MoFEM 0.3.0
   REQUIRED HINTS ${MOFEM_DIR} ../ ../../ $ENV{MOFEM_DIR}
 )
 
@@ -35,12 +30,11 @@ include(${MoFEM_PROJECT_SOURCE_DIR}/cmake/ExportFile.cmake)
 set(CMAKE_C_COMPILER ${MoFEM_CMAKE_C_COMPILER})
 set(CMAKE_CXX_COMPILER ${MoFEM_CMAKE_CXX_COMPILER})
 
-
 include_directories(
   ${MoFEM_PROJECT_INCLUDE_DIRECTORIES}
   ${MoFEM_PETSC_DIR}/${MoFEM_PETSC_ARCH}/include
   ${MoFEM_PETSCVAR_DIR}/include
-  )
+)
 
 include_directories("${MoFEM_PROJECT_SOURCE_DIR}/include")
 include_directories("${MoFEM_PROJECT_SOURCE_DIR}/third_party")
@@ -117,6 +111,5 @@ if(SLEPC_LIBRARY)
   add_definitions( -DWITH_SLEPC_DIR )
   message(STATUS "WITH SLEPC")
 endif(SLEPC_LIBRARY)
-
 
 include(ModulesList.cmake)

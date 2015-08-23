@@ -43,10 +43,26 @@ increasingly necessary for engineers, scientists and mathematicians to carry out
 calculations using several mesh refinements, different approximation orders,
 multiple degrees of freedom and/or different scales.
 
-\subsection download_repository Repository and testing
+MoFEM library itself is designed to be small, modular and extendable. Itself it
+is not library of finite elements solving particular problems of continuum
+mechanics, f.e. problem of thermal conduction. That is implemented in \em users
+\em modules using MoFEM. \em User \em module in principle is independent
+project, located in its own repository, which can be public or private. Can have
+is own copyright and license. Such flexibility, allowing for privacy and
+different licensing parts of the code, is designed for needs both of academics
+add industry. Since each \em user \em module is implemented with MoFEM, using
+its internal database, data between modules can be exchanged without prior
+knowledge how each module is developed.
+
+
+\subsection download_repository MoFEM repository, user modules and testing
 
 - Current version repository <https://bitbucket.org/likask/mofem-cephas>
 - Testing webpage using powered by CDash <http://cdash.eng.gla.ac.uk/cdash/>
+
+List of some user modules,
+- Homogenistaion <https://bitbucket.org/likask/mofem_um_homogenisation>
+- Fracture Mechanics <https://bitbucket.org/likask/mofem_um_fracture_mechanics>
 
 \subsection contact Contact us and get involved
 
