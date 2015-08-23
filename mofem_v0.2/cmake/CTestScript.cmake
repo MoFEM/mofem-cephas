@@ -28,22 +28,6 @@ set(CTEST_CONFIGURE_COMMAND "${CTEST_CONFIGURE_COMMAND} ${CTEST_BUILD_OPTIONS} -
 set(CTEST_CONFIGURE_COMMAND "${CTEST_CONFIGURE_COMMAND} \"-G${CTEST_CMAKE_GENERATOR}\"")
 set(CTEST_CONFIGURE_COMMAND "${CTEST_CONFIGURE_COMMAND} \"${CTEST_SOURCE_DIRECTORY}\"")
 
-# modules - homogenisation
-if(NOT EXIST "${CTEST_SOURCE_DIRECTORY}/users_modules/homogenisation")
-  exec_program(
-    ${CTEST_GIT_COMMAND}
-    "${CTEST_SOURCE_DIRECTORY}/users_modules"
-    ARGS clone https://bitbucket.org/likask/mofem_um_homogenisation.git
-    "${CTEST_SOURCE_DIRECTORY}/users_modules/homogenisation"
-  )
-else(EXIST "${CTEST_SOURCE_DIRECTORY}/users_modules/homogenisation")
-  exec_program(
-    ${CTEST_GIT_COMMAND}
-    "${CTEST_SOURCE_DIRECTORY}/users_modules/homogenisation"
-    ARGS pull
-  )
-endif()
-
 #Ctest time outr
 set(CTEST_TEST_TIMEOUT 1200)
 
@@ -51,6 +35,23 @@ set(CTEST_TEST_TIMEOUT 1200)
 ctest_start(${DASHBOARDTEST})
 
 ctest_update(SOURCE "${GID_SOURCE_REPO}" RETURN_VALUE DOTEST)
+
+# modules - homogenisation
+if(NOT EXISTS "${CTEST_SOURCE_DIRECTORY}/users_modules/homogenisation")
+  exec_program(
+    ${CTEST_GIT_COMMAND}
+    "${CTEST_SOURCE_DIRECTORY}/users_modules"
+    ARGS clone https://bitbucket.org/likask/mofem_um_homogenisation.git
+    "${CTEST_SOURCE_DIRECTORY}/users_modules/homogenisation"
+  )
+else(EXISTS "${CTEST_SOURCE_DIRECTORY}/users_modules/homogenisation")
+  exec_program(
+    ${CTEST_GIT_COMMAND}
+    "${CTEST_SOURCE_DIRECTORY}/users_modules/homogenisation"
+    ARGS pull
+  )
+endif()
+
 if(INIT_REPOSITORY)
   set(DOTEST 1)
   message("Force Init Build")
