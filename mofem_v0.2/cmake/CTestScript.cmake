@@ -52,6 +52,22 @@ else(EXISTS "${CTEST_SOURCE_DIRECTORY}/users_modules/homogenisation")
   )
 endif()
 
+# modules - fracture_mechanics
+if(NOT EXISTS "${CTEST_SOURCE_DIRECTORY}/users_modules/fracture_mechanics")
+  exec_program(
+    ${CTEST_GIT_COMMAND}
+    "${CTEST_SOURCE_DIRECTORY}/users_modules"
+    ARGS clone https://bitbucket.org/likask/mofem_um_fracture_mechanics.git
+    "${CTEST_SOURCE_DIRECTORY}/users_modules/fracture_mechanics"
+  )
+else(EXISTS "${CTEST_SOURCE_DIRECTORY}/users_modules/fracture_mechanics")
+  exec_program(
+    ${CTEST_GIT_COMMAND}
+    "${CTEST_SOURCE_DIRECTORY}/users_modules/fracture_mechanics"
+    ARGS pull
+  )
+endif()
+
 if(INIT_REPOSITORY)
   set(DOTEST 1)
   message("Force Init Build")

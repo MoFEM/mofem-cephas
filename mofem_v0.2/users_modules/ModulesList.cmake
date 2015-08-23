@@ -74,10 +74,6 @@ add_subdirectory(
   ${PROJECT_BINARY_DIR}/nonlinear_elasticity
 )
 add_subdirectory(
-  ${UM_SOURCE_DIR}/fracture_mechanics
-  ${PROJECT_BINARY_DIR}/fracture_mechanics
-)
-add_subdirectory(
   ${UM_SOURCE_DIR}/helmholtz
   ${PROJECT_BINARY_DIR}/helmholtz
 )
