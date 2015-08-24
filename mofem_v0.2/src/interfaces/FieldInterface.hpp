@@ -52,6 +52,12 @@ struct FieldInterface: public FieldUnknownInterface {
   /// get communicator
   virtual MPI_Comm get_comm() = 0;
 
+  /// get communicator size
+  virtual int getCommSize() = 0;
+
+  /// get communicator rank
+  virtual int getCommRank() = 0;
+
   /**
     * \brief check data consistency in entitiesPtr
     *
