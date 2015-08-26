@@ -1683,6 +1683,7 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode problem_basic_method_preProcess(const string &problem_name,BasicMethod &method,int verb = -1) = 0;
 
   /** \brief Set data for BasicMethod
+    * \ingroup mofem_loops
     *
     * This function set data about problem, adjacencies and other MultIindices
     * in database. This function can be used a special case when user need to
@@ -1699,6 +1700,7 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode problem_basic_method_postProcess(const MoFEMProblem *problem_ptr,BasicMethod &method,int verb = -1) = 0;
 
   /** \brief Set data for BasicMethod
+    * \ingroup mofem_loops
     *
     * This function set data about problem, adjacencies and other MultIindices
     * in database. This function can be used a special case when user need to

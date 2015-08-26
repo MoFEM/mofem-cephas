@@ -308,6 +308,16 @@ struct NonlinearElasticElement {
       PetscFunctionReturn(0);
     }
 
+    /** \brief Do operations when pre-process
+    */
+    virtual PetscErrorCode getDataOnPostProcessor(
+      map<string,vector<ublas::vector<double> > > &field_map,
+      map<string,vector<ublas::matrix<double> > > &grad_map
+    ) {
+      PetscFunctionBegin;
+      PetscFunctionReturn(0);
+    }
+
   };
 
   struct OpGetDataAtGaussPts: public VolumeElementForcesAndSourcesCore::UserDataOperator {

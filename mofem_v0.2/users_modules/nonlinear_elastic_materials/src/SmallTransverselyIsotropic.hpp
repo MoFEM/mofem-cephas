@@ -307,7 +307,7 @@ struct SmallStrainTranverslyIsotropic: public NonlinearElasticElement::Functions
 
     voigtStress.resize(6,false);
     noalias(voigtStress) = prod(globalStiffnessMatrix,voightStrain);
-    this->eNergy += 0.5*inner_prod(voigtStress,voightStrain);
+    this->eNergy = 0.5*inner_prod(voigtStress,voightStrain);
     PetscFunctionReturn(0);
   }
 
@@ -368,6 +368,23 @@ struct SmallStrainTranverslyIsotropicDouble: public SmallStrainTranverslyIsotrop
       ostringstream ss;
       ss << "throw in method: " << ex.what() << endl;
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+    }
+    PetscFunctionReturn(0);
+  }
+
+  virtual PetscErrorCode getDataOnPostProcessor(
+    map<string,vector<ublas::vector<double> > > &field_map,
+    map<string,vector<ublas::matrix<double> > > &grad_map
+  ) {
+    PetscFunctionBegin;
+    int nb_gauss_pts = grad_map["POTENTIAL_FIELD"].size();
+    this->commonDataPtr->gradAtGaussPts["POTENTIAL_FIELD"].resize(nb_gauss_pts);
+    for(int gg = 0;gg<nb_gauss_pts;gg++) {
+      this->commonDataPtr->gradAtGaussPts["POTENTIAL_FIELD"][gg].resize(1,3,false);
+      for(int ii = 0;ii<3;ii++) {
+        this->commonDataPtr->gradAtGaussPts["POTENTIAL_FIELD"][gg](0,ii) =
+        ((grad_map["POTENTIAL_FIELD"])[gg])(0,ii);
+      }
     }
     PetscFunctionReturn(0);
   }
