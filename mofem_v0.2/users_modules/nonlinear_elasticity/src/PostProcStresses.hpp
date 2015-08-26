@@ -34,17 +34,24 @@ struct PostPorcStress: public VolumeElementForcesAndSourcesCore::UserDataOperato
 
   NonlinearElasticElement::BlockData &dAta;
   PostPocOnRefinedMesh::CommonData &commonData;
+  bool fieldDisp;
 
   PostPorcStress(
     Interface &post_proc_mesh,
     vector<EntityHandle> &map_gauss_pts,
     const string field_name,
     NonlinearElasticElement::BlockData &data,
-    PostPocOnRefinedMesh::CommonData &common_data
+    PostPocOnRefinedMesh::CommonData &common_data,
+    bool field_disp = false
   ):
   VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
-  postProcMesh(post_proc_mesh),mapGaussPts(map_gauss_pts),
-  dAta(data),commonData(common_data) {}
+  postProcMesh(post_proc_mesh),
+  mapGaussPts(map_gauss_pts),
+  dAta(data),
+  commonData(common_data),
+  fieldDisp(field_disp) {}
+
+  NonlinearElasticElement::CommonData nonLinearElementCommonData;
 
   PetscErrorCode doWork(
     int side,
@@ -92,16 +99,28 @@ struct PostPorcStress: public VolumeElementForcesAndSourcesCore::UserDataOperato
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
     }
     if(commonData.gradMap[rowFieldName].size()!=(unsigned int)nb_gauss_pts) {
-      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+      SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency, filed <%s> not found",rowFieldName.c_str());
     }
 
     ublas::matrix<double> H,invH;
     double detH;
 
+    dAta.materialDoublePtr->commonDataPtr = &nonLinearElementCommonData;
+    dAta.materialDoublePtr->opPtr = this;
+    ierr = dAta.materialDoublePtr->getDataOnPostProcessor(
+      commonData.fieldMap,commonData.gradMap
+    ); CHKERRQ(ierr);
+
     for(int gg = 0;gg<nb_gauss_pts;gg++) {
 
+      dAta.materialDoublePtr->gG = gg;
       dAta.materialDoublePtr->F.resize(3,3);
       noalias(dAta.materialDoublePtr->F) = (commonData.gradMap[rowFieldName])[gg];
+      if(fieldDisp) {
+        for(int dd = 0;dd<3;dd++) {
+          dAta.materialDoublePtr->F(dd,dd) += 1;
+        }
+      }
       if(commonData.gradMap["MESH_NODE_POSITIONS"].size()==(unsigned int)nb_gauss_pts) {
         H.resize(3,3);
         invH.resize(3,3);

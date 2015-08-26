@@ -123,7 +123,8 @@ struct PostPorcStress: public VolumeElementForcesAndSourcesCore::UserDataOperato
     Tag th_id;
     int def_block_id = -1;
     rval = postProcMesh.tag_get_handle(
-      "BLOCK_ID",1,MB_TYPE_INTEGER,th_id,MB_TAG_CREAT|MB_TAG_SPARSE,&def_block_id); CHKERR_PETSC(rval);
+      "BLOCK_ID",1,MB_TYPE_INTEGER,th_id,MB_TAG_CREAT|MB_TAG_SPARSE,&def_block_id
+    ); CHKERR_PETSC(rval);
     Range::iterator tit = commonData.tEts.begin();
     for(;tit!=commonData.tEts.end();tit++) {
       rval = postProcMesh.tag_set_data(th_id,&*tit,1,&id);  CHKERR_PETSC(rval);
