@@ -1017,7 +1017,7 @@ struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
     /** \brief coordinate at Gauss points on face 4 (if hierarchical approximation of element geometry)
       */
-    inline MatrixDouble& getHoCoordsAtGaussPtsF4() { return ptrFE->hoCoordsAtGaussPtsF3; }
+    inline MatrixDouble& getHoCoordsAtGaussPtsF4() { return ptrFE->hoCoordsAtGaussPtsF4; }
 
     /** \brief if higher order geometry return normals at face F3 at Gauss pts.
      *
