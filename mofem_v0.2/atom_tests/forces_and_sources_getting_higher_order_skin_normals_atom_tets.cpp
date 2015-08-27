@@ -139,11 +139,12 @@ int main(int argc, char *argv[]) {
     ErrorCode rval;
     PetscErrorCode ierr;
 
+    MatrixDouble hoCoords_at_GaussPt;
     MatrixDouble nOrmals_at_GaussPt;
     MatrixDouble tAngent1_at_GaussPt;
     MatrixDouble tAngent2_at_GaussPt;
     DataForcesAndSurcesCore data;
-    OpGetNormals op;
+    OpGetCoordsAndNormalsOnFace op;
 
     typedef tee_device<ostream, ofstream> TeeDevice;
     typedef stream<TeeDevice> TeeStream;
@@ -153,7 +154,9 @@ int main(int argc, char *argv[]) {
 
     ForcesAndSurcesCore_TestFE(FieldInterface &_m_field):
       ForcesAndSurcesCore(_m_field),data(MBTRI),
-      op(nOrmals_at_GaussPt,tAngent1_at_GaussPt,tAngent2_at_GaussPt),
+      op(
+        hoCoords_at_GaussPt,nOrmals_at_GaussPt,tAngent1_at_GaussPt,tAngent2_at_GaussPt
+      ),
       ofs("forces_and_sources_getting_higher_order_skin_normals_atom.txt"),
       my_tee(cout,ofs),my_split(my_tee) {};
 
@@ -193,6 +196,7 @@ int main(int argc, char *argv[]) {
       }
 
       my_split.precision(3);
+      my_split << "coords: " << hoCoords_at_GaussPt << endl;
       my_split << "normals: " << nOrmals_at_GaussPt << endl;
       my_split << "tangent1: " << tAngent1_at_GaussPt << endl;
       my_split << "tangent2: " << tAngent2_at_GaussPt << endl;

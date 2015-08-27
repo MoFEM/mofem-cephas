@@ -646,10 +646,11 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 
   string meshPositionsFieldName;
 
+  MatrixDouble hoCoordsAtGaussPts;
   MatrixDouble nOrmals_at_GaussPt;
   MatrixDouble tAngent1_at_GaussPt;
   MatrixDouble tAngent2_at_GaussPt;
-  OpGetNormals opHONormals;
+  OpGetCoordsAndNormalsOnFace opHOCoordsAndNormals;
   OpSetPiolaTransoformOnTriangle opSetPiolaTransoformOnTriangle;
 
   FaceElementForcesAndSourcesCore(FieldInterface &m_field):
@@ -658,7 +659,9 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
     dataHdiv(MBTRI),derivedDataHdiv(dataHdiv),
     dataNoField(MBTRI),dataNoFieldCol(MBTRI),
     meshPositionsFieldName("MESH_NODE_POSITIONS"),
-    opHONormals(nOrmals_at_GaussPt,tAngent1_at_GaussPt,tAngent2_at_GaussPt),
+    opHOCoordsAndNormals(
+      hoCoordsAtGaussPts,nOrmals_at_GaussPt,tAngent1_at_GaussPt,tAngent2_at_GaussPt
+    ),
     opSetPiolaTransoformOnTriangle(normal,nOrmals_at_GaussPt) {};
 
   /** \brief default operator for TRI element
@@ -699,6 +702,10 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
     /** \brief get coordinates at Gauss pts.
      */
     inline MatrixDouble& getCoordsAtGaussPts() { return ptrFE->coordsAtGaussPts; }
+
+    /** \brief coordinate at Gauss points (if hierarchical approximation of element geometry)
+      */
+    inline MatrixDouble& getHoCoordsAtGaussPts() { return ptrFE->hoCoordsAtGaussPts; }
 
     /** \brief if higher order geometry return normals at Gauss pts.
      */
@@ -756,7 +763,7 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 DEPRECATED typedef FaceElementForcesAndSourcesCore TriElementForcesAndSurcesCore;
 
 /** \brief Edge finite element
- * \ingroup mofem_forces_and_sources
+ * \ingroup mofem_forces_and_sources_edge_element
  *
  * User is implementing own operator at Gauss points level, by own object
  * derived from EdgeElementForcesAndSurcesCoreL::UserDataOperator.  Arbitrary
@@ -792,6 +799,7 @@ struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
   MatrixDouble coordsAtGaussPts;
 
   /** \brief default operator for EDGE element
+    \ingroup mofem_forces_and_sources_edge_element
     */
   struct UserDataOperator: public ForcesAndSurcesCore::UserDataOperator {
 
@@ -835,7 +843,7 @@ struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 };
 
 /** \brief Vertex finite element
- * \ingroup mofem_forces_and_sources
+ * \ingroup mofem_forces_and_sources_vertex_element
 
  User is implementing own operator at Gauss points level, by own object
  derived from VertexElementForcesAndSourcesCoreL::UserDataOperator.  Arbitrary
@@ -862,6 +870,7 @@ struct VertexElementForcesAndSourcesCore: public ForcesAndSurcesCore {
   VectorDouble coords;
 
   /** \brief default operator for VERTEX element
+    \ingroup mofem_forces_and_sources_vertex_element
     */
   struct UserDataOperator: public ForcesAndSurcesCore::UserDataOperator {
 
@@ -911,7 +920,7 @@ struct VertexElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
   ErrorCode rval;
-  double aRea;;
+  double aRea[2];
   VectorDouble normal;
   VectorDouble coords;
   MatrixDouble gaussPts;
@@ -925,13 +934,15 @@ struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
   string meshPositionsFieldName;
 
+  MatrixDouble hoCoordsAtGaussPtsF3;
   MatrixDouble nOrmals_at_GaussPtF3;
   MatrixDouble tAngent1_at_GaussPtF3;
   MatrixDouble tAngent2_at_GaussPtF3;
+  MatrixDouble hoCoordsAtGaussPtsF4;
   MatrixDouble nOrmals_at_GaussPtF4;
   MatrixDouble tAngent1_at_GaussPtF4;
   MatrixDouble tAngent2_at_GaussPtF4;
-  OpGetNormalsOnPrism opHONormals;
+  OpGetCoordsAndNormalsOnPrism opHOCoordsAndNormals;
 
   FlatPrismElementForcesAndSurcesCore(FieldInterface &m_field):
     ForcesAndSurcesCore(m_field),
@@ -939,9 +950,10 @@ struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
     dataHdiv(MBPRISM),derivedDataHdiv(dataHdiv),
     dataNoField(MBPRISM),dataNoFieldCol(MBPRISM),
     meshPositionsFieldName("MESH_NODE_POSITIONS"),
-    opHONormals(
-    nOrmals_at_GaussPtF3,tAngent1_at_GaussPtF3,tAngent2_at_GaussPtF3,
-    nOrmals_at_GaussPtF4,tAngent1_at_GaussPtF4,tAngent2_at_GaussPtF4) {};
+    opHOCoordsAndNormals(
+      hoCoordsAtGaussPtsF3,nOrmals_at_GaussPtF3,tAngent1_at_GaussPtF3,tAngent2_at_GaussPtF3,
+      hoCoordsAtGaussPtsF4,nOrmals_at_GaussPtF4,tAngent1_at_GaussPtF4,tAngent2_at_GaussPtF4
+    ) {};
 
   /** \brief default operator for TRI element
     * \ingroup mofem_forces_and_sources_prism_element
@@ -956,13 +968,35 @@ struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
       const string &row_field_name,const string &col_field_name,const char type):
       ForcesAndSurcesCore::UserDataOperator(row_field_name,col_field_name,type) {}
 
-    inline double getArea() { return ptrFE->aRea; }
+    /** \brief get face aRea
+    \param dd if dd == 0 it is for face F3 if dd == 1 is for face F4
+    */
+    inline double getArea(const int dd) { return ptrFE->aRea[0]; }
+
+    inline double getAreaF3() { return ptrFE->aRea[0]; }
+    inline double getAreaF4() { return ptrFE->aRea[1]; }
 
     /** \brief get triangle normal
+
+    Normal has 6 elements, first 3 are for face F3 another three for face F4
+
      */
     inline VectorDouble& getNormal() { return ptrFE->normal; }
 
+    inline VectorAdaptor getNormalF3() {
+      double *data  = &(ptrFE->normal[0]);
+      return VectorAdaptor(3,ublas::shallow_array_adaptor<double>(3,data));
+    }
+
+    inline VectorAdaptor getNormalF4() {
+      double *data  = &(ptrFE->normal[3]);
+      return VectorAdaptor(3,ublas::shallow_array_adaptor<double>(3,data));
+    }
+
     /** \brief get triangle coordinates
+
+      Vector has 6 elements, i.e. coordinates on face F3 and F4
+
      */
     inline VectorDouble& getCoords() { return ptrFE->coords; }
 
@@ -971,8 +1005,19 @@ struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
     inline MatrixDouble& getGaussPts() { return ptrFE->gaussPts; }
 
     /** \brief get coordinates at Gauss pts.
+
+      Matrix has size (nb integration points)x(coordinates on F3 and F4 = 6), i.e. coordinates on face F3 and F4
+
      */
     inline MatrixDouble& getCoordsAtGaussPts() { return ptrFE->coordsAtGaussPts; }
+
+    /** \brief coordinate at Gauss points on face 3 (if hierarchical approximation of element geometry)
+      */
+    inline MatrixDouble& getHoCoordsAtGaussPtsF3() { return ptrFE->hoCoordsAtGaussPtsF3; }
+
+    /** \brief coordinate at Gauss points on face 4 (if hierarchical approximation of element geometry)
+      */
+    inline MatrixDouble& getHoCoordsAtGaussPtsF4() { return ptrFE->hoCoordsAtGaussPtsF3; }
 
     /** \brief if higher order geometry return normals at face F3 at Gauss pts.
      *
@@ -1075,5 +1120,16 @@ struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
 /***************************************************************************//**
  * \defgroup mofem_forces_and_sources_prism_element Prism Element
+ * \ingroup mofem_forces_and_sources
+ ******************************************************************************/
+
+
+/***************************************************************************//**
+ * \defgroup mofem_forces_and_sources_edge_element Edge Element
+ * \ingroup mofem_forces_and_sources
+ ******************************************************************************/
+
+/***************************************************************************//**
+ * \defgroup mofem_forces_and_sources_vertex_element Vertex Element
  * \ingroup mofem_forces_and_sources
  ******************************************************************************/
