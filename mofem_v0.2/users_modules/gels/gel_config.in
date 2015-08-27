@@ -13,7 +13,10 @@ gBetaHat = 1
 vBetaHat = 0
 
 # Volume per solvent molecule
-oMega = 1
+oMega = 10
+
+# Initial chemical potential
+mU0 = 1
 
 # Solvent transport material parameters
 vIscosity = 1

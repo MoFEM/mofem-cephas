@@ -37,6 +37,7 @@ if(DOXYGEN_FOUND)
 
   endif(GIT_FOUND)
 
+  # running doxygen
   configure_file(
     ${PROJECT_SOURCE_DIR}/Doxyfile.in
     ${PROJECT_BINARY_DIR}/Doxyfile
@@ -71,17 +72,22 @@ if(DOXYGEN_FOUND)
 
   # copy dox/figures to html directory created by doxygen
   add_custom_target(doxygen_copy_figures
-    ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/doc/figures ${PROJECT_BINARY_DIR}/html
-    DEPENDS doxygen_generating_documenation
+    ${CMAKE_COMMAND} -E copy_directory
+    ${PROJECT_SOURCE_DIR}/doc/figures ${PROJECT_BINARY_DIR}/html
   )
   add_dependencies(doc doxygen_copy_figures)
 
-  #copy figures form users UM documentation
-  add_custom_target(doxygen_copy_figures_from_user_modules
-    ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/users_modules/doc/figures ${PROJECT_BINARY_DIR}/html
-    DEPENDS doxygen_generating_documenation
+  # users modules docs
+  file(
+    GLOB_RECURSE INSTLLED_DOC_MODULES
+    FOLLOW_SYMLINKS
+    ${PROJECT_SOURCE_DIR}/users_modules/*AddDocumentation.cmake
   )
-  add_dependencies(doc doxygen_copy_figures_from_user_modules)
+
+  foreach(LOOP_MODULE ${INSTLLED_DOC_MODULES})
+    message(STATUS "Add module doucmentation ... ${LOOP_MODULE}")
+    include(${LOOP_MODULE})
+  endforeach(LOOP_MODULE)
 
   find_program(SFTP NAMES sftp)
   if(SFTP)

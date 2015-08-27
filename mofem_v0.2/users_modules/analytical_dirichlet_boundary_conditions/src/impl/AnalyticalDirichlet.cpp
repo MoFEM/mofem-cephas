@@ -21,6 +21,7 @@
 
 #include <MoFEM.hpp>
 using namespace MoFEM;
+#include <MethodForForceScaling.hpp>
 #include <DirichletBC.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/numeric/ublas/vector_proxy.hpp>

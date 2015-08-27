@@ -52,6 +52,12 @@ struct FieldInterface: public FieldUnknownInterface {
   /// get communicator
   virtual MPI_Comm get_comm() = 0;
 
+  /// get communicator size
+  virtual int getCommSize() = 0;
+
+  /// get communicator rank
+  virtual int getCommRank() = 0;
+
   /**
     * \brief check data consistency in entitiesPtr
     *
@@ -1677,6 +1683,7 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode problem_basic_method_preProcess(const string &problem_name,BasicMethod &method,int verb = -1) = 0;
 
   /** \brief Set data for BasicMethod
+    * \ingroup mofem_loops
     *
     * This function set data about problem, adjacencies and other MultIindices
     * in database. This function can be used a special case when user need to
@@ -1693,6 +1700,7 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode problem_basic_method_postProcess(const MoFEMProblem *problem_ptr,BasicMethod &method,int verb = -1) = 0;
 
   /** \brief Set data for BasicMethod
+    * \ingroup mofem_loops
     *
     * This function set data about problem, adjacencies and other MultIindices
     * in database. This function can be used a special case when user need to

@@ -179,25 +179,29 @@ struct OpGetDataAndGradient: public DataOperator {
 /** \brief Calculate normals at Gauss points of triangle element
   * \ingroup mofem_forces_and_sources
   */
-struct OpGetNormals: public DataOperator {
+struct OpGetCoordsAndNormalsOnFace: public DataOperator {
 
+  MatrixDouble &cOords_at_GaussPt;
   MatrixDouble &nOrmals_at_GaussPt;
   MatrixDouble &tAngent1_at_GaussPt;
   MatrixDouble &tAngent2_at_GaussPt;
 
-  OpGetNormals(
-    MatrixDouble &_nOrmals_at_GaussPt,
-    MatrixDouble &_tAngent1_at_GaussPt,
-    MatrixDouble &_tAngent2_at_GaussPt):
-    nOrmals_at_GaussPt(_nOrmals_at_GaussPt),
-    tAngent1_at_GaussPt(_tAngent1_at_GaussPt),
-    tAngent2_at_GaussPt(_tAngent2_at_GaussPt) {}
+  OpGetCoordsAndNormalsOnFace(
+    MatrixDouble &coords_at_gausspt,
+    MatrixDouble &normals_at_gausspt,
+    MatrixDouble &tangent1_at_gausspt,
+    MatrixDouble &tangent2_at_gausspt):
+    cOords_at_GaussPt(coords_at_gausspt),
+    nOrmals_at_GaussPt(normals_at_gausspt),
+    tAngent1_at_GaussPt(tangent1_at_gausspt),
+    tAngent2_at_GaussPt(tangent2_at_gausspt) {}
 
   MatrixDouble sPin;
   PetscErrorCode doWork(
     int side,
     EntityType type,
-    DataForcesAndSurcesCore::EntData &data);
+    DataForcesAndSurcesCore::EntData &data
+  );
 
   PetscErrorCode calculateNormals();
 
@@ -206,34 +210,41 @@ struct OpGetNormals: public DataOperator {
 /** \brief calculate normals at Gauss points of triangle element
   * \ingroup mofem_forces_and_sources
   */
-struct OpGetNormalsOnPrism: public DataOperator {
+struct OpGetCoordsAndNormalsOnPrism: public DataOperator {
 
+  MatrixDouble &cOords_at_GaussPtF3;
   MatrixDouble &nOrmals_at_GaussPtF3;
   MatrixDouble &tAngent1_at_GaussPtF3;
   MatrixDouble &tAngent2_at_GaussPtF3;
+  MatrixDouble &cOords_at_GaussPtF4;
   MatrixDouble &nOrmals_at_GaussPtF4;
   MatrixDouble &tAngent1_at_GaussPtF4;
   MatrixDouble &tAngent2_at_GaussPtF4;
 
-  OpGetNormalsOnPrism(
-    MatrixDouble &_nOrmals_at_GaussPtF3,
-    MatrixDouble &_tAngent1_at_GaussPtF3,
-    MatrixDouble &_tAngent2_at_GaussPtF3,
-    MatrixDouble &_nOrmals_at_GaussPtF4,
-    MatrixDouble &_tAngent1_at_GaussPtF4,
-    MatrixDouble &_tAngent2_at_GaussPtF4):
-    nOrmals_at_GaussPtF3(_nOrmals_at_GaussPtF3),
-    tAngent1_at_GaussPtF3(_tAngent1_at_GaussPtF3),
-    tAngent2_at_GaussPtF3(_tAngent2_at_GaussPtF3),
-    nOrmals_at_GaussPtF4(_nOrmals_at_GaussPtF4),
-    tAngent1_at_GaussPtF4(_tAngent1_at_GaussPtF4),
-    tAngent2_at_GaussPtF4(_tAngent2_at_GaussPtF4) {}
+  OpGetCoordsAndNormalsOnPrism(
+    MatrixDouble &coords_at_gaussptf3,
+    MatrixDouble &normals_at_gaussptf3,
+    MatrixDouble &tangent1_at_gaussptf3,
+    MatrixDouble &tangent2_at_gaussptf3,
+    MatrixDouble &coords_at_gaussptf4,
+    MatrixDouble &normals_at_gaussptf4,
+    MatrixDouble &tangent1_at_gaussptf4,
+    MatrixDouble &tangent2_at_gaussptf4):
+    cOords_at_GaussPtF3(coords_at_gaussptf3),
+    nOrmals_at_GaussPtF3(normals_at_gaussptf3),
+    tAngent1_at_GaussPtF3(tangent1_at_gaussptf3),
+    tAngent2_at_GaussPtF3(tangent2_at_gaussptf3),
+    cOords_at_GaussPtF4(coords_at_gaussptf4),
+    nOrmals_at_GaussPtF4(normals_at_gaussptf4),
+    tAngent1_at_GaussPtF4(tangent1_at_gaussptf4),
+    tAngent2_at_GaussPtF4(tangent2_at_gaussptf4) {}
 
   MatrixDouble sPin;
   PetscErrorCode doWork(
     int side,
     EntityType type,
-    DataForcesAndSurcesCore::EntData &data);
+    DataForcesAndSurcesCore::EntData &data
+  );
 
   PetscErrorCode calculateNormals();
 

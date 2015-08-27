@@ -173,6 +173,7 @@ int main(int argc, char *argv[]) {
       my_split << setprecision(3) << getCoordsAtGaussPts() << endl;
       my_split << setprecision(3) << getArea() << endl;
       my_split << setprecision(3) << getNormal() << endl;
+      my_split << setprecision(3) << getHoCoordsAtGaussPts() << endl;
       my_split << setprecision(3) << getNormals_at_GaussPt() << endl;
       my_split << setprecision(3) << getTangent1_at_GaussPt() << endl;
       my_split << setprecision(3) << getTangent2_at_GaussPt() << endl;

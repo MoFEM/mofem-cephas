@@ -4,7 +4,7 @@
 
 In you library directory execute
 \code
-$ make doc
+make doc
 \endcode
 This create directory \em html. Open file \em html/index.html to see results in your browser.
 
@@ -45,20 +45,20 @@ mpirun -np 4 ./elasticity \
 
 MoFEM update on Live USB stick:
 \code
-$ mofem_update.sh
-$ mofem_build.sh
+mofem_update.sh
+mofem_build.sh
 \endcode
 
 Following command run test verifying updated code:
 \code
-$ mofem_fast_check.sh
+mofem_fast_check.sh
 \endcode
 
 If you run MoFEM update at University of Glasgow behind proxy server, set proxy
 servers as follows:
 \code
-$ export http_proxy=http://wwwcache.gla.ac.uk:8080
-$ export https_proxy=http://wwwcache.gla.ac.uk:8080
+export http_proxy=http://wwwcache.gla.ac.uk:8080
+export https_proxy=http://wwwcache.gla.ac.uk:8080
 \endcode
 
 \section ctest How to run ctest?
@@ -75,8 +75,8 @@ If you run test behind proxy server you can have to set \em http_proxy and \em
 http_proxy environmental variables. For example if you run mofem at Glasgow
 University, please do:
 \code
-$ export http_proxy=http://wwwcache.gla.ac.uk:8080
-$ export https_proxy=http://wwwcache.gla.ac.uk:8080
+export http_proxy=http://wwwcache.gla.ac.uk:8080
+export https_proxy=http://wwwcache.gla.ac.uk:8080
 \endcode
 
 You can as well run ctest directly by simply executing command line:
@@ -121,6 +121,27 @@ ierr = m_field.loop_dofs("MESH_NODE_POSITIONS",ent_method_material); CHKERRQ(ier
 Look at examples of use to user modules, for example elasticity.cpp.
 
 \section adding_user_module How to add user module?
+
+User module can be independent repository, private or public and independently
+managed and owned form MoFEM library. If user module is part of MoFEM repository
+can be simply added by adding it to \em ModulesLists.cmake in users modules
+directory. However if user module is project/respository by its own, repository
+should be cloned to users modules directory, f.e. in
+mofem-cephas/mofem_v0.2/users_modules
+\code
+git clone https://likask@bitbucket.org/likask/mofem_um_homogenisation.git homogenisation
+\endcode
+
+In user module directory directory should be file file, \em
+InstalledAddModule.cmake, with content,
+\code
+add_subdirectory(${PROJECT_SOURCE_DIR}/homogenisation)
+\endcode
+
+If user module has documentation (in principle all user modules should have
+documentation), if file \em AddDocumentation.cmake, it is executed by cmake
+when documentation is build. This cmake script is usually used to copy images and
+other files which are linked in documentation.
 
 In each module you can have two type directory data,
   -# Simple

@@ -247,8 +247,10 @@ int main(int argc, char *argv[]) {
       mySplit << data << endl;
       mySplit << setprecision(3) << getCoords() << endl;
       mySplit << setprecision(3) << getCoordsAtGaussPts() << endl;
-      mySplit << setprecision(3) << getArea() << endl;
-      mySplit << setprecision(3) << "nornal " << getNormal() << endl;
+      mySplit << setprecision(3) << getArea(0) << endl;
+      mySplit << setprecision(3) << getArea(1) << endl;
+      mySplit << setprecision(3) << "normal F3 " << getNormalF3() << endl;
+      mySplit << setprecision(3) << "normal F4 " << getNormalF4() << endl;
       mySplit << setprecision(3) << "normal at Gauss pt F3 " << getNormals_at_GaussPtF3() << endl;
       mySplit << setprecision(3) << getTangent1_at_GaussPtF3() << endl;
       mySplit << setprecision(3) << getTangent2_at_GaussPtF3() << endl;

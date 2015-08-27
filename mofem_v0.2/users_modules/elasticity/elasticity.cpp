@@ -21,6 +21,7 @@ using namespace MoFEM;
 using namespace std;
 namespace po = boost::program_options;
 
+#include <MethodForForceScaling.hpp>
 #include <DirichletBC.hpp>
 #include <Projection10NodeCoordsOnField.hpp>
 
