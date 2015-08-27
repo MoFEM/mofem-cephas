@@ -1871,7 +1871,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::UserDataOperator::getDivergenc
     PetscFunctionReturn(0);
   }
 
-// **** Triangle ****
+// **** Face ****
 
 PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
   PetscFunctionBegin;
@@ -1970,8 +1970,8 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
     ierr = getEdgesFieldDofs(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
     ierr = getTrisFieldDofs(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
     try {
-      ierr = opHONormals.opRhs(dataH1); CHKERRQ(ierr);
-      ierr = opHONormals.calculateNormals(); CHKERRQ(ierr);
+      ierr = opHOCoordsAndNormals.opRhs(dataH1); CHKERRQ(ierr);
+      ierr = opHOCoordsAndNormals.calculateNormals(); CHKERRQ(ierr);
     } catch (exception& ex) {
       ostringstream ss;
       ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
@@ -1979,6 +1979,7 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
     }
   } else {
 
+    hoCoordsAtGaussPts.resize(0,0,false);
     nOrmals_at_GaussPt.resize(0,0,false);
     tAngent1_at_GaussPt.resize(0,0,false);
     tAngent2_at_GaussPt.resize(0,0,false);
@@ -2522,17 +2523,23 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
     coords.resize(num_nodes*3,false);
     rval = mField.get_moab().get_coords(conn,num_nodes,&*coords.data().begin()); CHKERR_PETSC(rval);
 
-    normal.resize(3,false);
+    normal.resize(6,false);
     ierr = ShapeFaceNormalMBTRI(
       &*dataH1.dataOnEntities[MBVERTEX][0].getDiffN().data().begin(),
-      &*coords.data().begin(),&*normal.data().begin()
+      &coords[0],&normal[0]
     ); CHKERRQ(ierr);
-    aRea = cblas_dnrm2(3,&*normal.data().begin(),1)*0.5;
+    ierr = ShapeFaceNormalMBTRI(
+      &*dataH1.dataOnEntities[MBVERTEX][0].getDiffN().data().begin(),
+      &coords[9],&normal[3]
+    ); CHKERRQ(ierr);
+    aRea[0] = cblas_dnrm2(3,&normal[0],1)*0.5;
+    aRea[1] = cblas_dnrm2(3,&normal[3],1)*0.5;
 
-    coordsAtGaussPts.resize(nb_gauss_pts,3,false);
+    coordsAtGaussPts.resize(nb_gauss_pts,6,false);
     for(int gg = 0;gg<nb_gauss_pts;gg++) {
       for(int dd = 0;dd<3;dd++) {
         coordsAtGaussPts(gg,dd) = cblas_ddot(3,&dataH1.dataOnEntities[MBVERTEX][0].getN()(gg,0),1,&coords[dd],3);
+        coordsAtGaussPts(gg,3+dd) = cblas_ddot(3,&dataH1.dataOnEntities[MBVERTEX][0].getN()(gg,0),1,&coords[9+dd],3);
       }
     }
 
@@ -2542,9 +2549,11 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
         dataPtr->get<FieldName_mi_tag>().find(meshPositionsFieldName)!=
         dataPtr->get<FieldName_mi_tag>().end()
       ) {
+        hoCoordsAtGaussPtsF3.resize(nb_gauss_pts,3,false);
         nOrmals_at_GaussPtF3.resize(nb_gauss_pts,3,false);
         tAngent1_at_GaussPtF3.resize(nb_gauss_pts,3,false);
         tAngent2_at_GaussPtF3.resize(nb_gauss_pts,3,false);
+        hoCoordsAtGaussPtsF4.resize(nb_gauss_pts,3,false);
         nOrmals_at_GaussPtF4.resize(nb_gauss_pts,3,false);
         tAngent1_at_GaussPtF4.resize(nb_gauss_pts,3,false);
         tAngent2_at_GaussPtF4.resize(nb_gauss_pts,3,false);
@@ -2557,20 +2566,22 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
         ierr = getEdgesFieldDofs(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
         ierr = getTrisFieldDofs(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
         try {
-          ierr = opHONormals.opRhs(dataH1); CHKERRQ(ierr);
-          ierr = opHONormals.calculateNormals(); CHKERRQ(ierr);
+          ierr = opHOCoordsAndNormals.opRhs(dataH1); CHKERRQ(ierr);
+          ierr = opHOCoordsAndNormals.calculateNormals(); CHKERRQ(ierr);
         } catch (exception& ex) {
           ostringstream ss;
           ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
           SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
         }
       } else {
-        nOrmals_at_GaussPtF3.resize(0,3,false);
-        tAngent1_at_GaussPtF3.resize(0,3,false);
-        tAngent2_at_GaussPtF3.resize(0,3,false);
-        nOrmals_at_GaussPtF4.resize(0,3,false);
-        tAngent1_at_GaussPtF4.resize(0,3,false);
-        tAngent2_at_GaussPtF4.resize(0,3,false);
+        hoCoordsAtGaussPtsF3.resize(0,0,false);
+        nOrmals_at_GaussPtF3.resize(0,0,false);
+        tAngent1_at_GaussPtF3.resize(0,0,false);
+        tAngent2_at_GaussPtF3.resize(0,0,false);
+        hoCoordsAtGaussPtsF4.resize(0,0,false);
+        nOrmals_at_GaussPtF4.resize(0,0,false);
+        tAngent1_at_GaussPtF4.resize(0,0,false);
+        tAngent2_at_GaussPtF4.resize(0,0,false);
       }
     } catch (exception& ex) {
       ostringstream ss;

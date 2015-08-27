@@ -20,6 +20,7 @@
 #include <MoFEM.hpp>
 using namespace MoFEM;
 
+#include <MethodForForceScaling.hpp>
 #include <DirichletBC.hpp>
 #include <PostProcOnRefMesh.hpp>
 #include <ThermalElement.hpp>

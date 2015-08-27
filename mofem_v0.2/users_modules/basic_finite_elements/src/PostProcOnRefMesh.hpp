@@ -34,11 +34,12 @@ struct PostPocOnRefinedMesh: public VolumeElementForcesAndSourcesCore {
 
   PostPocOnRefinedMesh(FieldInterface &m_field,
     bool ten_nodes_post_proc_tets = true,
-    int nb_ref_levels = -1):
-    VolumeElementForcesAndSourcesCore(m_field),
-    postProcMesh(coreMesh),
-    tenNodesPostProcTets(ten_nodes_post_proc_tets),
-    nbOfRefLevels(nb_ref_levels) {
+    int nb_ref_levels = -1
+  ):
+  VolumeElementForcesAndSourcesCore(m_field),
+  postProcMesh(coreMesh),
+  tenNodesPostProcTets(ten_nodes_post_proc_tets),
+  nbOfRefLevels(nb_ref_levels) {
   }
 
   virtual ~PostPocOnRefinedMesh() {

@@ -11,9 +11,13 @@ ctest_empty_binary_directory(${CTEST_BINARY_DIRECTORY})
 find_program(CTEST_COVERAGE_COMMAND NAMES gcov)
 find_program(CTEST_GIT_COMMAND NAMES git)
 
+# MoFEM lib
 if(NOT EXISTS "${CTEST_SOURCE_DIRECTORY}")
   set(INIT_REPOSITORY "YES")
-  set(CTEST_CHECKOUT_COMMAND "${CTEST_GIT_COMMAND} clone --branch ${CTEST_BRANCH} https://bitbucket.org/likask/mofem-cephas.git ${GID_SOURCE_REPO}")
+  set(
+    CTEST_CHECKOUT_COMMAND
+    "${CTEST_GIT_COMMAND} clone --branch ${CTEST_BRANCH} https://bitbucket.org/likask/mofem-cephas.git ${GID_SOURCE_REPO}"
+  )
 else(EXISTS "${CTEST_SOURCE_DIRECTORY}")
   set(CTEST_CHECKOUT_COMMAND "${CTEST_GIT_COMMAND} submodule update")
 endif()
@@ -31,13 +35,62 @@ set(CTEST_TEST_TIMEOUT 1200)
 ctest_start(${DASHBOARDTEST})
 
 ctest_update(SOURCE "${GID_SOURCE_REPO}" RETURN_VALUE DOTEST)
-if(INIT_REPOSITORY) 
+
+# modules - moisture_transport
+if(NOT EXISTS "${CTEST_SOURCE_DIRECTORY}/users_modules/moisture_transport")
+  exec_program(
+    ${CTEST_GIT_COMMAND}
+    "${CTEST_SOURCE_DIRECTORY}/users_modules"
+    ARGS clone https://likask@bitbucket.org/likask/mofem_um_moisture_transport.git
+    "${CTEST_SOURCE_DIRECTORY}/users_modules/moisture_transport"
+  )
+else(EXISTS "${CTEST_SOURCE_DIRECTORY}/users_modules/moisture_transport")
+  exec_program(
+    ${CTEST_GIT_COMMAND}
+    "${CTEST_SOURCE_DIRECTORY}/users_modules/moisture_transport"
+    ARGS pull
+  )
+endif()
+
+# modules - homogenisation
+if(NOT EXISTS "${CTEST_SOURCE_DIRECTORY}/users_modules/homogenisation")
+  exec_program(
+    ${CTEST_GIT_COMMAND}
+    "${CTEST_SOURCE_DIRECTORY}/users_modules"
+    ARGS clone https://bitbucket.org/likask/mofem_um_homogenisation.git
+    "${CTEST_SOURCE_DIRECTORY}/users_modules/homogenisation"
+  )
+else(EXISTS "${CTEST_SOURCE_DIRECTORY}/users_modules/homogenisation")
+  exec_program(
+    ${CTEST_GIT_COMMAND}
+    "${CTEST_SOURCE_DIRECTORY}/users_modules/homogenisation"
+    ARGS pull
+  )
+endif()
+
+# modules - fracture_mechanics
+if(NOT EXISTS "${CTEST_SOURCE_DIRECTORY}/users_modules/fracture_mechanics")
+  exec_program(
+    ${CTEST_GIT_COMMAND}
+    "${CTEST_SOURCE_DIRECTORY}/users_modules"
+    ARGS clone https://bitbucket.org/likask/mofem_um_fracture_mechanics.git
+    "${CTEST_SOURCE_DIRECTORY}/users_modules/fracture_mechanics"
+  )
+else(EXISTS "${CTEST_SOURCE_DIRECTORY}/users_modules/fracture_mechanics")
+  exec_program(
+    ${CTEST_GIT_COMMAND}
+    "${CTEST_SOURCE_DIRECTORY}/users_modules/fracture_mechanics"
+    ARGS pull
+  )
+endif()
+
+if(INIT_REPOSITORY)
   set(DOTEST 1)
   message("Force Init Build")
 else(NOT INIT_REPOSITORY)
   message ( "Found ${DOTEST} updated files." )
 endif()
-if(FORCETESTING) 
+if(FORCETESTING)
   set(DOTEST 1)
   message ("Force build")
 endif(FORCETESTING)
@@ -105,5 +158,3 @@ if(${DOTEST} GREATER 0)
   endif(CTEST_COVERAGE_COMMAND)
   ctest_submit()
 endif(${DOTEST} GREATER 0)
-
-

@@ -671,13 +671,14 @@ PetscErrorCode OpGetDataAndGradient::doWork(
 }
 
 
-PetscErrorCode OpGetNormals::doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+PetscErrorCode OpGetCoordsAndNormalsOnFace::doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
   PetscFunctionBegin;
 
   unsigned int nb_dofs = data.getFieldData().size();
   if(nb_dofs==0)  PetscFunctionReturn(0);
 
   int nb_gauss_pts = data.getN().size1();
+  cOords_at_GaussPt.resize(nb_gauss_pts,3,false);
   nOrmals_at_GaussPt.resize(nb_gauss_pts,3,false);
   tAngent1_at_GaussPt.resize(nb_gauss_pts,3,false);
   tAngent2_at_GaussPt.resize(nb_gauss_pts,3,false);
@@ -686,6 +687,7 @@ PetscErrorCode OpGetNormals::doWork(int side,EntityType type,DataForcesAndSurces
     case MBVERTEX: {
       for(int gg = 0;gg<nb_gauss_pts;gg++) {
         for(int nn = 0;nn<3;nn++) {
+          cOords_at_GaussPt(gg,nn) = cblas_ddot(3,&data.getN(gg)[0],1,&data.getFieldData()[nn],3);
           tAngent1_at_GaussPt(gg,nn) = cblas_ddot(3,&data.getDiffN()(0,0),2,&data.getFieldData()[nn],3);
           tAngent2_at_GaussPt(gg,nn) = cblas_ddot(3,&data.getDiffN()(0,1),2,&data.getFieldData()[nn],3);
         }
@@ -705,6 +707,7 @@ PetscErrorCode OpGetNormals::doWork(int side,EntityType type,DataForcesAndSurces
       }
       for(int gg = 0;gg<nb_gauss_pts;gg++) {
         for(int dd = 0;dd<3;dd++) {
+          cOords_at_GaussPt(gg,dd) += cblas_ddot(nb_dofs/3,&data.getN(gg)[0],1,&data.getFieldData()[dd],3);
           tAngent1_at_GaussPt(gg,dd) += cblas_ddot(nb_dofs/3,&data.getDiffN()(gg,0),2,&data.getFieldData()[dd],3);
           tAngent2_at_GaussPt(gg,dd) += cblas_ddot(nb_dofs/3,&data.getDiffN()(gg,1),2,&data.getFieldData()[dd],3);
         }
@@ -718,7 +721,7 @@ PetscErrorCode OpGetNormals::doWork(int side,EntityType type,DataForcesAndSurces
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OpGetNormals::calculateNormals() {
+PetscErrorCode OpGetCoordsAndNormalsOnFace::calculateNormals() {
   PetscFunctionBegin;
   PetscErrorCode ierr;
 
@@ -736,7 +739,7 @@ PetscErrorCode OpGetNormals::calculateNormals() {
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OpGetNormalsOnPrism::doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+PetscErrorCode OpGetCoordsAndNormalsOnPrism::doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
   PetscFunctionBegin;
 
   if(data.getFieldData().size()==0)  PetscFunctionReturn(0);
@@ -751,8 +754,10 @@ PetscErrorCode OpGetNormalsOnPrism::doWork(int side,EntityType type,DataForcesAn
       case MBVERTEX: {
         for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
           for(int dd = 0;dd<3;dd++) {
+            cOords_at_GaussPtF3(gg,dd) = cblas_ddot(3,&data.getN(gg)[0],1,&data.getFieldData()[dd],3);
             tAngent1_at_GaussPtF3(gg,dd) = cblas_ddot(3,&data.getDiffN()(gg,0),2,&data.getFieldData()[dd],3);
             tAngent2_at_GaussPtF3(gg,dd) = cblas_ddot(3,&data.getDiffN()(gg,1),2,&data.getFieldData()[dd],3);
+            cOords_at_GaussPtF4(gg,dd) = cblas_ddot(3,&data.getN(gg)[0],1,&data.getFieldData()[9+dd],3);
             tAngent1_at_GaussPtF4(gg,dd) = cblas_ddot(3,&data.getDiffN()(gg,6+0),2,&data.getFieldData()[9+dd],3);
             tAngent2_at_GaussPtF4(gg,dd) = cblas_ddot(3,&data.getDiffN()(gg,6+1),2,&data.getFieldData()[9+dd],3);
           }
@@ -774,9 +779,11 @@ PetscErrorCode OpGetNormalsOnPrism::doWork(int side,EntityType type,DataForcesAn
         for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
           for(int dd = 0;dd<3;dd++) {
             if ((type == MBTRI && valid_faces3[side]) || (type == MBEDGE && valid_edges3[side]))  {
+              cOords_at_GaussPtF3(gg,dd) += cblas_ddot(nb_dofs/3,&data.getN(gg)[0],1,&data.getFieldData()[dd],3);
               tAngent1_at_GaussPtF3(gg,dd) += cblas_ddot(nb_dofs/3,&data.getDiffN()(gg,0),2,&data.getFieldData()[dd],3);
               tAngent2_at_GaussPtF3(gg,dd) += cblas_ddot(nb_dofs/3,&data.getDiffN()(gg,1),2,&data.getFieldData()[dd],3);
             } else if((type == MBTRI && valid_faces4[side]) || (type == MBEDGE && valid_edges4[side])) {
+              cOords_at_GaussPtF4(gg,dd) = cblas_ddot(nb_dofs/3,&data.getN(gg)[0],1,&data.getFieldData()[dd],3);
               tAngent1_at_GaussPtF4(gg,dd) += cblas_ddot(nb_dofs/3,&data.getDiffN()(gg,0),2,&data.getFieldData()[dd],3);
               tAngent2_at_GaussPtF4(gg,dd) += cblas_ddot(nb_dofs/3,&data.getDiffN()(gg,1),2,&data.getFieldData()[dd],3);
             }
@@ -797,7 +804,7 @@ PetscErrorCode OpGetNormalsOnPrism::doWork(int side,EntityType type,DataForcesAn
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OpGetNormalsOnPrism::calculateNormals() {
+PetscErrorCode OpGetCoordsAndNormalsOnPrism::calculateNormals() {
   PetscFunctionBegin;
   PetscErrorCode ierr;
 

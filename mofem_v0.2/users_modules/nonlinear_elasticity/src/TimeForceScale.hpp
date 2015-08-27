@@ -30,25 +30,33 @@ struct TimeForceScale: public MethodForForceScaling {
   map<double,double> tSeries;
   int readFile,debug;
   string nAme;
+  bool errorIfFileNotGiven;
 
-  TimeForceScale(string name = "-my_time_data_file"):
+  TimeForceScale(
+    string name = "-my_time_data_file",
+    bool error_if_file_not_given = true
+  ):
   readFile(0),
   debug(1),
-  nAme(name) {
+  nAme(name),
+  errorIfFileNotGiven(error_if_file_not_given) {
     PetscErrorCode ierr;
     ierr = timeData(); CHKERRABORT(PETSC_COMM_WORLD,ierr);
   }
 
   ErrorCode rval;
   PetscErrorCode ierr;
+  PetscBool fLg;
 
   PetscErrorCode timeData() {
     PetscFunctionBegin;
     char time_file_name[255];
-    PetscBool flg = PETSC_TRUE;
-    ierr = PetscOptionsGetString(PETSC_NULL,nAme.c_str(),time_file_name,255,&flg); CHKERRQ(ierr);
-    if(flg != PETSC_TRUE) {
+    ierr = PetscOptionsGetString(PETSC_NULL,nAme.c_str(),time_file_name,255,&fLg); CHKERRQ(ierr);
+    if(!fLg && errorIfFileNotGiven) {
       SETERRQ1(PETSC_COMM_SELF,1,"*** ERROR %s (time_data FILE NEEDED)",nAme.c_str());
+    }
+    if(!fLg) {
+      PetscFunctionReturn(0);
     }
     FILE *time_data = fopen(time_file_name,"r");
     if(time_data == NULL) {
@@ -56,7 +64,7 @@ struct TimeForceScale: public MethodForForceScaling {
     }
     double no1 = 0.0, no2 = 0.0;
     tSeries[no1] = no2;
-    while(! feof (time_data)){
+    while(!feof(time_data)){
       int n = fscanf(time_data,"%lf %lf",&no1,&no2);
       if((n <= 0)||((no1==0)&&(no2==0))) {
         fgetc(time_data);
@@ -81,9 +89,13 @@ struct TimeForceScale: public MethodForForceScaling {
     PetscFunctionReturn(0);
   }
 
-  //Hassan: this fuction will loop over data in pair vector ts to find load scale based on ts_t
+  //Hassan: this function will loop over data in pair vector ts to find load
+  //scale based on ts_t
   PetscErrorCode scaleNf(const FEMethod *fe,ublas::vector<double> &Nf) {
     PetscFunctionBegin;
+    if(!fLg) {
+      PetscFunctionReturn(0);
+    }
     if(readFile==0) {
       SETERRQ(PETSC_COMM_SELF,1,"data file not read");
     }

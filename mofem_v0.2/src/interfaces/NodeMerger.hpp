@@ -1,6 +1,6 @@
 /** \file NodeMerger.hpp
- * \brief NodeMerger interface 
- * 
+ * \brief NodeMerger interface
+ *
  * Node merger interface
  */
 
@@ -33,7 +33,7 @@ struct NodeMergerInterface: public FieldUnknownInterface {
 
   /** \brief merge nodes which sharing edge
 
-    I apologise that it could be traditional her. Father is sties, mother is merged.
+    Father is sties, mother is merged.
 
     \param father node to which mother is merged to.
     \param mother merged node
@@ -44,11 +44,11 @@ struct NodeMergerInterface: public FieldUnknownInterface {
 
   /** \brief merge nodes which sharing edge
 
-    I apologise that it could be traditional her. Father is sties, mother is merged.
+    Father is sties, mother is merged.
 
     \param father node to which mother is merged to.
     \param mother merged node
-    \param tets_from_bit_ref_level only tets from bit level are changed
+    \param tets_from_bit_ref_level only tetrahedrons from bit level are changed
 
     */
   PetscErrorCode mergeNodes(EntityHandle father,EntityHandle mother,BitRefLevel bit,BitRefLevel tets_from_bit_ref_level);

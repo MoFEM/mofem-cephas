@@ -303,7 +303,9 @@ PetscErrorCode PostPocOnRefinedMesh::OpGetFieldValues::doWork(
   double def_VAL[tag_length];
   bzero(def_VAL,tag_length*sizeof(double));
   Tag th;
-  rval = postProcMesh.tag_get_handle(tagName.c_str(),tag_length,MB_TYPE_DOUBLE,th,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_PETSC(rval);
+  rval = postProcMesh.tag_get_handle(
+    tagName.c_str(),tag_length,MB_TYPE_DOUBLE,th,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL
+  ); CHKERR_PETSC(rval);
 
   // zero tags, this for Vertex if H1 and TRI if Hdiv, EDGE for Hcurl
   // no need for L2
@@ -334,8 +336,11 @@ PetscErrorCode PostPocOnRefinedMesh::OpGetFieldValues::doWork(
     }
     break;
     case L2:
-    rval = postProcMesh.tag_get_by_ptr(th,&mapGaussPts[0],mapGaussPts.size(),tags_ptr); CHKERR_PETSC(rval);
+    rval = postProcMesh.tag_get_by_ptr(
+      th,&mapGaussPts[0],mapGaussPts.size(),tags_ptr
+    ); CHKERR_PETSC(rval);
     for(int gg = 0;gg<nb_gauss_pts;gg++) {
+      bzero((double*)tags_ptr[gg],sizeof(double)*tag_length);
       for(int rr = 0;rr<rank;rr++) {
         ((double*)tags_ptr[gg])[rr] = cblas_ddot(
           (vAluesPtr->size()/rank),&(data.getN(gg)[0]),1,&((*vAluesPtr)[rr]),rank

@@ -308,6 +308,16 @@ struct NonlinearElasticElement {
       PetscFunctionReturn(0);
     }
 
+    /** \brief Do operations when pre-process
+    */
+    virtual PetscErrorCode getDataOnPostProcessor(
+      map<string,vector<ublas::vector<double> > > &field_map,
+      map<string,vector<ublas::matrix<double> > > &grad_map
+    ) {
+      PetscFunctionBegin;
+      PetscFunctionReturn(0);
+    }
+
   };
 
   struct OpGetDataAtGaussPts: public VolumeElementForcesAndSourcesCore::UserDataOperator {
@@ -532,7 +542,8 @@ struct NonlinearElasticElement {
   PetscErrorCode setOperators(
     string spatial_position_field_name,
     string material_position_field_name = "MESH_NODE_POSITIONS",
-    bool ale = false,bool field_disp = false);
+    bool ale = false,bool field_disp = false
+  );
 
 };
 

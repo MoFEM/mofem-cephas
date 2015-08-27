@@ -583,11 +583,22 @@ struct Core:
   PetscErrorCode get_adjacencies_any(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities);
   PetscErrorCode get_adjacencies(
     const MoFEMProblem *problem_ptr,
-    const EntityHandle *from_entities,const int num_netities,const int to_dimension,Range &adj_entities,const int operation_type = Interface::INTERSECT,const int verb = 0);
+    const EntityHandle *from_entities,
+    const int num_netities,
+    const int to_dimension,
+    Range &adj_entities,
+    const int operation_type = Interface::INTERSECT,
+    const int verb = 0
+  );
   PetscErrorCode get_adjacencies(
     const BitRefLevel &bit,
-    const EntityHandle *from_entities,const int num_netities,const int to_dimension,Range &adj_entities,const int operation_type = Interface::INTERSECT,const int verb = 0);
-
+    const EntityHandle *from_entities,
+    const int num_netities,
+    const int to_dimension,
+    Range &adj_entities,
+    const int operation_type = Interface::INTERSECT,
+    const int verb = 0
+  );
 
   //Petsc Logs
   PetscLogEvent USER_EVENT_preProcess;
@@ -595,8 +606,10 @@ struct Core:
   PetscLogEvent USER_EVENT_postProcess;
   PetscLogEvent USER_EVENT_createMat;
 
-  //
+  // size and rank of communicator
   int sIze,rAnk;
+  int getCommSize() { return sIze; }
+  int getCommRank() { return rAnk; }
 
   private:
 

@@ -32,7 +32,10 @@
 #include <LoopMethods.hpp>
 #include <FieldInterface.hpp>
 
+#include <boost/ptr_container/ptr_vector.hpp>
+
 using namespace MoFEM;
+#include <MethodForForceScaling.hpp>
 #include <DirichletBC.hpp>
 
 using namespace boost::numeric;
@@ -67,11 +70,16 @@ dIag(1) {
 
 PetscErrorCode DisplacementBCFEMethodPreAndPostProc::iNitalize() {
   PetscFunctionBegin;
-  if(mapZeroRows.empty()) {
+  if(mapZeroRows.empty() || !methodsOp.empty()) {
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET|DISPLACEMENTSET,it)) {
       DisplacementCubitBcData mydata;
       ierr = it->get_bc_data_structure(mydata); CHKERRQ(ierr);
+      ublas::vector<double> scaled_values(3);
+      scaled_values[0] = mydata.data.value1;
+      scaled_values[1] = mydata.data.value2;
+      scaled_values[2] = mydata.data.value3;
+      ierr = MethodForForceScaling::applyScale(this,methodsOp,scaled_values); CHKERRQ(ierr);
       for(int dim = 0;dim<3;dim++) {
         Range ents;
         ierr = it->get_cubit_msId_entities_by_dimension(mField.get_moab(),dim,ents,true); CHKERRQ(ierr);
@@ -91,13 +99,13 @@ PetscErrorCode DisplacementBCFEMethodPreAndPostProc::iNitalize() {
             if(pstatus.test(0)) continue; //only local
             if(dof->get_ent_type() == MBVERTEX) {
               if(dof->get_dof_rank() == 0 && mydata.data.flag1) {
-                mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = mydata.data.value1;
+                mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = scaled_values[0];
               }
               if(dof->get_dof_rank() == 1 && mydata.data.flag2) {
-                mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = mydata.data.value2;
+                mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = scaled_values[1];
               }
               if(dof->get_dof_rank() == 2 && mydata.data.flag3) {
-                mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = mydata.data.value3;
+                mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = scaled_values[2];
               }
             } else {
               if(dof->get_dof_rank() == 0 && mydata.data.flag1) {
@@ -195,23 +203,27 @@ PetscErrorCode DisplacementBCFEMethodPreAndPostProc::postProcess() {
     case CTX_SNESNONE:
     break;
     case CTX_SNESSETFUNCTION: {
-      if(snes_x != PETSC_NULL) {
-        if(dofsIndices.size()>0) {
-          dofsXValues.resize(dofsIndices.size());
-          dofsXValues.clear();
-          ierr = VecGetValues(snes_x,dofsIndices.size(),&dofsIndices[0],&dofsXValues[0]); CHKERRQ(ierr);
-        }
-        ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
-        ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+      if(!dofsIndices.empty()) {
+        dofsXValues.resize(dofsIndices.size());
+        ierr = VecGetValues(
+          snes_x,dofsIndices.size(),&*dofsIndices.begin(),&*dofsXValues.begin()
+        ); CHKERRQ(ierr);
       }
-      int ii = 0;
-      for(vector<int>::iterator vit = dofsIndices.begin();vit!=dofsIndices.end();vit++,ii++) {
-        double val = 0;
-        if(!dofsXValues.empty()) {
-          val += dofsXValues[ii];
-          val += -mapZeroRows[*vit]; // in snes it is on the left hand side, that way -1
+      ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
+      ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+      if(!dofsIndices.empty()) {
+        int ii = 0;
+        for(vector<int>::iterator vit = dofsIndices.begin();vit!=dofsIndices.end();vit++,ii++) {
+          double val = 0;
+          if(!dofsXValues.empty()) {
+            val += dofsXValues[ii];
+            val += -mapZeroRows[*vit]; // in snes it is on the left hand side, that way -1
+            dofsXValues[ii] = val;
+          }
         }
-        ierr = VecSetValue(snes_f,*vit,val,INSERT_VALUES); CHKERRQ(ierr);
+        ierr = VecSetValues(
+          snes_f,dofsIndices.size(),&*dofsIndices.begin(),&*dofsXValues.begin(),INSERT_VALUES
+        ); CHKERRQ(ierr);
       }
       ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
       ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
@@ -232,11 +244,16 @@ PetscErrorCode DisplacementBCFEMethodPreAndPostProc::postProcess() {
 
 PetscErrorCode SpatialPositionsBCFEMethodPreAndPostProc::iNitalize() {
   PetscFunctionBegin;
-  if(mapZeroRows.empty()) {
+  if(mapZeroRows.empty() || !methodsOp.empty()) {
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET|DISPLACEMENTSET,it)) {
       DisplacementCubitBcData mydata;
       ierr = it->get_bc_data_structure(mydata); CHKERRQ(ierr);
+      ublas::vector<double> scaled_values(3);
+      scaled_values[0] = mydata.data.value1;
+      scaled_values[1] = mydata.data.value2;
+      scaled_values[2] = mydata.data.value3;
+      ierr = MethodForForceScaling::applyScale(this,methodsOp,scaled_values); CHKERRQ(ierr);
       for(int dim = 0;dim<3;dim++) {
         Range ents;
         ierr = it->get_cubit_msId_entities_by_dimension(mField.get_moab(),dim,ents,true); CHKERRQ(ierr);
@@ -257,13 +274,13 @@ PetscErrorCode SpatialPositionsBCFEMethodPreAndPostProc::iNitalize() {
               cOords.resize(3);
               rval = mField.get_moab().get_coords(&node,1,&*cOords.data().begin()); CHKERR_PETSC(rval);
               if(dof->get_dof_rank() == 0 && mydata.data.flag1) {
-                mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = cOords[0]+mydata.data.value1;
+                mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = cOords[0]+scaled_values[0];
               }
               if(dof->get_dof_rank() == 1 && mydata.data.flag2) {
-                mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = cOords[1]+mydata.data.value2;
+                mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = cOords[1]+scaled_values[1];
               }
               if(dof->get_dof_rank() == 2 && mydata.data.flag3) {
-                mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = cOords[2]+mydata.data.value3;
+                mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = cOords[2]+scaled_values[2];
               }
             } else {
               if(dof->get_dof_rank() == 0 && mydata.data.flag1) {
@@ -299,17 +316,20 @@ PetscErrorCode SpatialPositionsBCFEMethodPreAndPostProc::iNitalize() {
 
 PetscErrorCode TemperatureBCFEMethodPreAndPostProc::iNitalize() {
   PetscFunctionBegin;
-  if(mapZeroRows.empty()) {
+  if(mapZeroRows.empty() || !methodsOp.empty()) {
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET|TEMPERATURESET,it)) {
       TemperatureCubitBcData mydata;
       ierr = it->get_bc_data_structure(mydata); CHKERRQ(ierr);
+      ublas::vector<double> scaled_values(1);
+      scaled_values[0] = mydata.data.value1;
+      ierr = MethodForForceScaling::applyScale(this,methodsOp,scaled_values); CHKERRQ(ierr);
       for(int dim = 0;dim<3;dim++) {
         Range ents;
         ierr = it->get_cubit_msId_entities_by_dimension(mField.get_moab(),dim,ents,true); CHKERRQ(ierr);
         if(dim>1) {
           Range _edges;
-          ierr = mField.get_moab().get_adjacencies(ents,1,false,_edges,Interface::UNION); CHKERRQ(ierr);
+          ierr = mField.get_moab()  .get_adjacencies(ents,1,false,_edges,Interface::UNION); CHKERRQ(ierr);
           ents.insert(_edges.begin(),_edges.end());
         }
         if(dim>0) {
@@ -320,7 +340,7 @@ PetscErrorCode TemperatureBCFEMethodPreAndPostProc::iNitalize() {
         for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
           for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,fieldName,*eit,pcomm->rank(),dof)) {
             if(dof->get_ent_type() == MBVERTEX) {
-              mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = mydata.data.value1;
+              mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = scaled_values[0];
             } else {
               mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = 0;
             }
@@ -346,9 +366,9 @@ PetscErrorCode FixBcAtEntities::iNitalize() {
   if(mapZeroRows.empty()) {
     for(vector<string>::iterator fit = fieldNames.begin();fit!=fieldNames.end();fit++) {
       for(Range::iterator eit = eNts.begin();eit!=eNts.end();eit++) {
-	for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,*fit,*eit,pcomm->rank(),dof)) {
-	 mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = 0;
-	}
+        for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,*fit,*eit,pcomm->rank(),dof)) {
+          mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = 0;
+        }
       }
     }
     dofsIndices.resize(mapZeroRows.size());
@@ -430,12 +450,17 @@ PetscErrorCode FixBcAtEntities::postProcess() {
 
 PetscErrorCode DirichletBCFromBlockSetFEMethodPreAndPostProc::iNitalize() {
   PetscFunctionBegin;
-  if(mapZeroRows.empty()) {
+  if(mapZeroRows.empty() || !methodsOp.empty()) {
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
       if(it->get_name().compare(0,blocksetName.length(),blocksetName) == 0) {
         vector<double> mydata;
         ierr = it->get_attributes(mydata); CHKERRQ(ierr);
+        ublas::vector<double> scaled_values(mydata.size());
+        for(unsigned int ii = 0;ii<mydata.size();ii++) {
+          scaled_values[ii] = mydata[ii];
+        }
+        ierr = MethodForForceScaling::applyScale(this,methodsOp,scaled_values); CHKERRQ(ierr);
         for(int dim = 0;dim<3;dim++) {
           Range ents;
           ierr = it->get_cubit_msId_entities_by_dimension(mField.get_moab(),dim,ents,true); CHKERRQ(ierr);
@@ -453,13 +478,13 @@ PetscErrorCode DirichletBCFromBlockSetFEMethodPreAndPostProc::iNitalize() {
             for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,fieldName,*eit,pcomm->rank(),dof)) {
               if(dof->get_ent_type() == MBVERTEX) {
                 if(dof->get_dof_rank() == 0) {
-                  mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = mydata[0];
+                  mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = scaled_values[0];
                 }
                 if(dof->get_dof_rank() == 1) {
-                  mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = mydata[1];
+                  mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = scaled_values[1];
                 }
                 if(dof->get_dof_rank() == 2) {
-                  mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = mydata[2];
+                  mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = scaled_values[2];
                 }
               } else {
                 if(dof->get_dof_rank() == 0) {
@@ -485,7 +510,6 @@ PetscErrorCode DirichletBCFromBlockSetFEMethodPreAndPostProc::iNitalize() {
       dofsIndices[ii] = mit->first;
       dofsValues[ii] = mit->second;
     }
-
   }
   PetscFunctionReturn(0);
 }

@@ -37,6 +37,7 @@ using namespace MoFEM;
 #include <boost/shared_ptr.hpp>
 #include <boost/ptr_container/ptr_map.hpp>
 
+#include <MethodForForceScaling.hpp>
 #include <DirichletBC.hpp>
 #include <PostProcOnRefMesh.hpp>
 

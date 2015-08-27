@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
   //Read mesh to MOAB
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
@@ -61,7 +61,6 @@ int main(int argc, char *argv[]) {
   NodeMergerInterface *node_merger_iface;
   ierr = m_field.query_interface(node_merger_iface); CHKERRQ(ierr);
 
-
   int ii = 1;
   for(;ii<2;ii++) {
 
@@ -71,10 +70,10 @@ int main(int argc, char *argv[]) {
     Range edges;
     //rval = moab.get_entities_by_type(0,MBEDGE,edges,false); CHKERR_PETSC(rval);
     ierr = m_field.get_entities_by_type_and_ref_level(bit_level0,BitRefLevel().set(),MBEDGE,edges); CHKERRQ(ierr);
-    Range::iterator eit = edges.begin();    
+    Range::iterator eit = edges.begin();
 
-    const EntityHandle* conn; 
-    int num_nodes; 
+    const EntityHandle* conn;
+    int num_nodes;
     rval = moab.get_connectivity(*eit,conn,num_nodes,true); CHKERR_PETSC(rval);
     ierr = node_merger_iface->mergeNodes(conn[0],conn[1],bit_level1,bit_level0); CHKERRQ(ierr);
 
@@ -99,7 +98,7 @@ int main(int argc, char *argv[]) {
     SETERRQ1(PETSC_COMM_SELF,MOFEM_ATOM_TEST_INVALID,"diffrent number of tets than expected = %u",tets.size());
   }
 
-        
+
   } catch (const char* msg) {
     SETERRQ(PETSC_COMM_SELF,1,msg);
   }
@@ -108,4 +107,3 @@ int main(int argc, char *argv[]) {
   return 0;
 
 }
-

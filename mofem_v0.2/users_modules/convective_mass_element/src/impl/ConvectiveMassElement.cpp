@@ -31,6 +31,7 @@ using namespace MoFEM;
 #include <boost/numeric/ublas/vector.hpp>
 
 #include <adolc/adolc.h>
+#include <MethodForForceScaling.hpp>
 #include <DirichletBC.hpp>
 #include <MethodForForceScaling.hpp>
 #include <ConvectiveMassElement.hpp>
