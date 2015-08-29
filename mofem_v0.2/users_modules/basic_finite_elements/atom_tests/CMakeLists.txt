@@ -232,3 +232,29 @@ if(ADOL-C_LIBRARY)
   )
 
 endif(ADOL-C_LIBRARY)
+
+# kelving voigt damper
+if(ADOL-C_LIBRARY)
+
+  add_executable(damper_jacobian_test
+    ${UM_CURRENT_SOURCE_DIR}/damper_jacobian_test.cpp
+  )
+
+  target_link_libraries(damper_jacobian_test
+    users_modules
+    mofem_finite_elements
+    mofem_interfaces
+    mofem_multi_indices
+    mofem_petsc
+    mofem_approx
+    mofem_third_party
+    mofem_cblas
+    ${MoFEM_PROJECT_LIBS}
+  )
+
+  add_test(damper_jacobian_atom_test
+    ${MoFEM_MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/damper_jacobian_test
+    -my_file fluid_presssure_cub_test.h5m
+  )
+
+endif(ADOL-C_LIBRARY)

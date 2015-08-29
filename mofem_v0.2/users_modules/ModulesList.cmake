@@ -40,10 +40,6 @@ add_subdirectory(
   ${PROJECT_BINARY_DIR}/gels/atom_tests
 )
 add_subdirectory(
-  ${UM_SOURCE_DIR}/kelving-voigt-damper/atom_tests
-  ${PROJECT_BINARY_DIR}/kelving-voigt-damper/atom_tests
-)
-add_subdirectory(
   ${UM_SOURCE_DIR}/obsolete/atom_tests
   ${PROJECT_BINARY_DIR}/obsolete/atom_tests
 )
