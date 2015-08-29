@@ -63,7 +63,8 @@ knowledge how each module is developed.
 List of some user modules,
 - Homogenistaion <https://bitbucket.org/likask/mofem_um_homogenisation>
 - Fracture Mechanics <https://bitbucket.org/likask/mofem_um_fracture_mechanics>
-- Moisture Transport <https://likask@bitbucket.org/likask/mofem_um_moisture_transport.git>
+- Moisture Transport <https://bitbucket.org/likask/mofem_um_moisture_transport.git>
+- Ground Surface Temperature <https://bitbucket.org/likask/mofem_um_ground_surface_temperature.git>
 
 \subsection contact Contact us and get involved
 
