@@ -12,12 +12,10 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
-include_directories(${UM_SOURCE_DIR}/elasticity/src)
 include_directories(${UM_SOURCE_DIR}/nonlinear_elastic_materials/src)
 
 add_executable(elasticity
   ${UM_SOURCE_DIR}/elasticity/elasticity.cpp
-  ${UM_SOURCE_DIR}/elasticity/src/impl/PCMGSetUpViaApproxOrders.cpp
 )
 target_link_libraries(elasticity
   users_modules
@@ -29,7 +27,8 @@ target_link_libraries(elasticity
   mofem_third_party
   mofem_cblas
   boost_program_options
-  ${MoFEM_PROJECT_LIBS})
+  ${MoFEM_PROJECT_LIBS}
+)
 
 cm_export_file("LShape.h5m" export_files_elasticity)
 cm_export_file("LShape2Parts.h5m" export_files_elasticity)
@@ -45,7 +44,8 @@ add_test(ElasticityTest
   -ksp_type fgmres
   -pc_type lu
   -pc_factor_mat_solver_package mumps
-  -ksp_monitor -log_summary)
+  -ksp_monitor -log_summary
+)
 
 add_test(MultiGridViaOrderSolver
   ${MoFEM_MPI_RUN} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/elasticity
@@ -57,4 +57,5 @@ add_test(MultiGridViaOrderSolver
   -mg_coarse_ksp_type preonly -mg_coarse_pc_type lu -mg_coarse_pc_factor_mat_solver_package mumps
   -pc_mg_smoothup 10 -pc_mg_smoothdown 10
   -pc_mg_galerkin true -pc_mg_type multiplicative
-  -log_summary)
+  -log_summary
+)
