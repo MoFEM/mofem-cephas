@@ -58,10 +58,6 @@ add_subdirectory(
   ${PROJECT_BINARY_DIR}/ultraweak
 )
 add_subdirectory(
-  ${UM_SOURCE_DIR}/ground_surface_temperature
-  ${PROJECT_BINARY_DIR}/ground_surface_temperature
-)
-add_subdirectory(
   ${UM_SOURCE_DIR}/elasticity
   ${PROJECT_BINARY_DIR}/elasticity
 )
