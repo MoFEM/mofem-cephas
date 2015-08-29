@@ -84,6 +84,22 @@ else(EXISTS "${CTEST_SOURCE_DIRECTORY}/users_modules/fracture_mechanics")
   )
 endif()
 
+# modules - ground_surface_temperature
+if(NOT EXISTS "${CTEST_SOURCE_DIRECTORY}/users_modules/ground_surface_temperature")
+  exec_program(
+    ${CTEST_GIT_COMMAND}
+    "${CTEST_SOURCE_DIRECTORY}/users_modules"
+    ARGS clone https://likask@bitbucket.org/likask/mofem_um_ground_surface_temperature.git
+    "${CTEST_SOURCE_DIRECTORY}/users_modules/ground_surface_temperature"
+  )
+else(EXISTS "${CTEST_SOURCE_DIRECTORY}/users_modules/ground_surface_temperature")
+  exec_program(
+    ${CTEST_GIT_COMMAND}
+    "${CTEST_SOURCE_DIRECTORY}/users_modules/ground_surface_temperature"
+    ARGS pull
+  )
+endif()
+
 if(INIT_REPOSITORY)
   set(DOTEST 1)
   message("Force Init Build")
