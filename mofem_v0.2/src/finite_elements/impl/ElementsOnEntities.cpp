@@ -1983,12 +1983,10 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
     }
   } else {
-
     hoCoordsAtGaussPts.resize(0,0,false);
     nOrmals_at_GaussPt.resize(0,0,false);
     tAngent1_at_GaussPt.resize(0,0,false);
     tAngent2_at_GaussPt.resize(0,0,false);
-
   }
 
   if(dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
@@ -2016,7 +2014,8 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
       BitFieldId data_id = mField.get_field_structure(field_name)->get_id();
       if((oit->getMoFEMFEPtr()->get_BitFieldId_data()&data_id).none()) {
         SETERRQ2(
-          PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"no data field < %s > on finite element < %s >",
+          PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,
+          "no data field < %s > on finite element < %s >",
           field_name.c_str(),feName.c_str()
         );
       }
