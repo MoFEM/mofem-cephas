@@ -34,12 +34,12 @@ target_link_libraries(thermal_steady
   mofem_cblas
   ${MoFEM_PROJECT_LIBS})
 
-  if(GROUND_SURFACE_TEMPERATURE)
+  if(${GROUND_SURFACE_TEMPERATURE})
     add_executable(thermal_unseady
       ${UM_SOURCE_DIR}/thermal/thermal_unsteady.cpp
       ${UM_SOURCE_DIR}/ground_surface_temperature/third_party/spa.c
     )
-  else(GROUND_SURFACE_TEMPERATURE)
+  else(${GROUND_SURFACE_TEMPERATURE})
     add_executable(thermal_unseady
       ${UM_SOURCE_DIR}/thermal/thermal_unsteady.cpp
     )

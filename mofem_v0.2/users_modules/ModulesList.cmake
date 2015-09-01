@@ -44,6 +44,17 @@ add_subdirectory(
   ${PROJECT_BINARY_DIR}/obsolete/atom_tests
 )
 
+file(
+  GLOB_RECURSE INSTLLED_MODULES
+  FOLLOW_SYMLINKS
+  ?*/InstalledAddModule.cmake
+)
+
+foreach(LOOP_MODULE ${INSTLLED_MODULES})
+  message(STATUS "Add module ... ${LOOP_MODULE}")
+  include(${LOOP_MODULE})
+endforeach(LOOP_MODULE)
+
 # Users Programs
 add_subdirectory(
   ${UM_SOURCE_DIR}/thermal
@@ -73,14 +84,3 @@ add_subdirectory(
   ${UM_SOURCE_DIR}/gels
   ${PROJECT_BINARY_DIR}/gels
 )
-
-file(
-  GLOB_RECURSE INSTLLED_MODULES
-  FOLLOW_SYMLINKS
-  ?*/InstalledAddModule.cmake
-)
-
-foreach(LOOP_MODULE ${INSTLLED_MODULES})
-  message(STATUS "Add module ... ${LOOP_MODULE}")
-  include(${LOOP_MODULE})
-endforeach(LOOP_MODULE)
