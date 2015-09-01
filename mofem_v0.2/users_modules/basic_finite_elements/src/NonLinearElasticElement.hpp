@@ -468,7 +468,7 @@ struct NonlinearElasticElement {
 
     OpLhsPiolaKirchhoff_dX(const string vel_field,const string field_name,BlockData &data,CommonData &common_data);
 
-    /// \berief Derivative of Piola Kirchhoff stress over material DOFs
+    /// \brief Derivative of Piola Kirchhoff stress over material DOFs
     PetscErrorCode getJac(DataForcesAndSurcesCore::EntData &col_data,int gg);
 
     PetscErrorCode aSemble(
