@@ -1,8 +1,3 @@
-# Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
-# The MoFEM package is copyrighted by Lukasz Kaczmarczyk. 
-# It can be freely used for educational and research purposes 
-# by other institutions. If you use this softwre pleas cite my work. 
-#
 # MoFEM is free software: you can redistribute it and/or modify it under
 # the terms of the GNU Lesser General Public License as published by the
 # Free Software Foundation, either version 3 of the License, or (at your
@@ -28,7 +23,7 @@ include_directories("${UM_SOURCE_DIR}/ground_surface_temperature/third_party")
 # directories.
 
 add_executable(thermal_steady ${UM_SOURCE_DIR}/thermal/thermal_steady.cpp)
-target_link_libraries(thermal_steady 
+target_link_libraries(thermal_steady
   users_modules
   mofem_finite_elements
   mofem_interfaces
@@ -39,11 +34,18 @@ target_link_libraries(thermal_steady
   mofem_cblas
   ${MoFEM_PROJECT_LIBS})
 
-add_executable(thermal_unseady 
-  ${UM_SOURCE_DIR}/thermal/thermal_unsteady.cpp
-  ${UM_SOURCE_DIR}/ground_surface_temperature/third_party/spa.c)
+  if(GROUND_SURFACE_TEMPERATURE)
+    add_executable(thermal_unseady
+      ${UM_SOURCE_DIR}/thermal/thermal_unsteady.cpp
+      ${UM_SOURCE_DIR}/ground_surface_temperature/third_party/spa.c
+    )
+  else(GROUND_SURFACE_TEMPERATURE)
+    add_executable(thermal_unseady
+      ${UM_SOURCE_DIR}/thermal/thermal_unsteady.cpp
+    )
+  endif()
 
-target_link_libraries(thermal_unseady 
+target_link_libraries(thermal_unseady
   users_modules
   mofem_finite_elements
   mofem_interfaces
@@ -54,5 +56,3 @@ target_link_libraries(thermal_unseady
   mofem_cblas
   boost_program_options
   ${MoFEM_PROJECT_LIBS})
-
-
