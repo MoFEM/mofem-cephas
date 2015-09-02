@@ -28,13 +28,11 @@
 #define __NORM_ELEMENT_HPP
 
 using namespace boost::numeric;
-using namespace MoFEM;
 #include<moab/Skinner.hpp>
-namespace MoFEM {
 
 //calculate the norm of error for scalar field
 
-/** \brief finite element to appeximate analytical solution on surface
+/** \brief finite element to approximate analytical solution on surface
   */
 struct NormElement {
 
@@ -556,8 +554,6 @@ struct NormElement {
 
 
   };
-
-  }
 
 
 #endif //__NORM_ELEMENT_HPP
