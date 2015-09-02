@@ -57,8 +57,8 @@ knowledge how each module is developed.
 
 \subsection download_repository MoFEM repository, user modules and testing
 
-- Current version repository <https://bitbucket.org/likask/mofem-cephas>
-- Testing webpage using powered by CDash <http://cdash.eng.gla.ac.uk/cdash/>
+- Version repository <https://bitbucket.org/likask/mofem-cephas>
+- Testing webpage (CDash) <http://cdash.eng.gla.ac.uk/cdash/>
 
 List of some user modules,
 - Homogenistaion <https://bitbucket.org/likask/mofem_um_homogenisation>
@@ -118,8 +118,10 @@ independently form MoFEM developers. User modules may follow different license
 agreement and copyrights. However, all users modules which are created at Glasgow
 University are under the same license agreement as main MoFEM library.
 
-List is generated automatically where documentation is build. If one author uses
-more than one name the same person can appear more than one.
+List is generated automatically at time when documentation is build based on
+contributions to main git repository. Note that particular module can have
+spearte contributors list. If one author uses more than one name the same person
+can appear more than one.
 
 \verbinclude doc/contributors_list
 
