@@ -114,6 +114,26 @@ finiteElementsEntitiesPtr(NULL),
 adjacenciesPtr(NULL) {
 }
 
+PetscErrorCode BasicMethod::copy_basic_method(const BasicMethod &basic) {
+  PetscFunctionBegin;
+
+  this->nInTheLoop = basic.nInTheLoop;
+  this->loopSize = basic.loopSize;
+  this->rAnk = basic.rAnk;
+  this->sIze = basic.sIze;
+  this->refinedEntitiesPtr = basic.refinedEntitiesPtr;
+  this->refinedFiniteElementsPtr = basic.refinedFiniteElementsPtr;
+  this->problemPtr = basic.problemPtr;
+  this->fieldsPtr = basic.fieldsPtr;
+  this->entitiesPtr = basic.entitiesPtr;
+  this->dofsPtr = basic.dofsPtr;
+  this->finiteElementsPtr = basic.finiteElementsPtr;
+  this->finiteElementsEntitiesPtr = basic.finiteElementsEntitiesPtr;
+  this->adjacenciesPtr = basic.adjacenciesPtr;
+
+  PetscFunctionReturn(0);
+}
+
 //FEMethod
 FEMethod::FEMethod():
 BasicMethod(),

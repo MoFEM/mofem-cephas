@@ -542,7 +542,7 @@ PetscErrorCode OpSetHoInvJacHdiv::doWork(
       double *diff_hdiv_inv_jac = &diffHdiv_invJac(gg,9*dd);
       int kk = 0;
       for(;kk<3;kk++) {
-	cblas_dgemv(CblasRowMajor,CblasTrans,3,3,1.,inv_h,3,&diff_hdiv[kk],3,0.,&diff_hdiv_inv_jac[kk],3);
+        cblas_dgemv(CblasRowMajor,CblasTrans,3,3,1.,inv_h,3,&diff_hdiv[kk],3,0.,&diff_hdiv_inv_jac[kk],3);
       }
     }
   }
@@ -900,7 +900,9 @@ PetscErrorCode OpGetHoTangentOnEdge::doWork(int side,EntityType type,DataForcesA
       break;
       case MBEDGE:
         if(nb_dofs%3) {
-          SETERRQ(PETSC_COMM_SELF,MOFEM_IMPOSIBLE_CASE,"Approximated field should be rank 3, i.e. vector in 3d space");
+          SETERRQ(
+            PETSC_COMM_SELF,MOFEM_IMPOSIBLE_CASE,"Approximated field should be rank 3, i.e. vector in 3d space"
+          );
         }
         for(int dd = 0;dd!=3;dd++) {
           for(int gg = 0;gg!=nb_gauss_pts;gg++) {
@@ -909,7 +911,9 @@ PetscErrorCode OpGetHoTangentOnEdge::doWork(int side,EntityType type,DataForcesA
         }
       break;
       default:
-      SETERRQ(PETSC_COMM_SELF,MOFEM_IMPOSIBLE_CASE,"This operator can calculate tangent vector only on edge");
+      SETERRQ(
+        PETSC_COMM_SELF,MOFEM_IMPOSIBLE_CASE,"This operator can calculate tangent vector only on edge"
+      );
     }
 
 

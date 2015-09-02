@@ -38,10 +38,10 @@ namespace po = boost::program_options;
 
 #include <adolc/adolc.h>
 
+#ifdef __GROUNDSURFACETEMERATURE_HPP
+
 #include <GenricClimateModel.hpp>
 #include <GroundSurfaceTemerature.hpp>
-
-#ifdef __GROUNDSURFACETEMERATURE_HPP
 
 #include <time.h>
 extern "C" {

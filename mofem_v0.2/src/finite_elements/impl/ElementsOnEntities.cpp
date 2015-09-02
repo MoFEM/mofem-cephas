@@ -842,9 +842,12 @@ PetscErrorCode ForcesAndSurcesCore::getFaceNodes(DataForcesAndSurcesCore &data) 
       const EntityHandle *conn_face;
       rval = mField.get_moab().get_connectivity(side->ent,conn_face,num_nodes_face,true); CHKERR_PETSC(rval);
       if(num_nodes_face != 3) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-      if(conn_face[0] != conn_tet[data.facesNodes(side->side_number,0)]) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
-      if(conn_face[1] != conn_tet[data.facesNodes(side->side_number,1)]) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
-      if(conn_face[2] != conn_tet[data.facesNodes(side->side_number,2)]) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+      if(conn_face[0] != conn_tet[data.facesNodes(side->side_number,0)])
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+      if(conn_face[1] != conn_tet[data.facesNodes(side->side_number,1)])
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+      if(conn_face[2] != conn_tet[data.facesNodes(side->side_number,2)])
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
     }
   }
   PetscFunctionReturn(0);
@@ -931,8 +934,10 @@ PetscErrorCode ForcesAndSurcesCore::shapeTETFunctions_H1(
     }
     ierr = H1_FaceShapeFunctions_MBTET(
       &*data.facesNodes.data().begin(),_order_,
-      &*data.dataOnEntities[MBVERTEX][0].getN().data().begin(),&*data.dataOnEntities[MBVERTEX][0].getDiffN().data().begin(),
-      _H1faceN_,_diffH1faceN_,G_DIM); CHKERRQ(ierr);
+      &*data.dataOnEntities[MBVERTEX][0].getN().data().begin(),
+      &*data.dataOnEntities[MBVERTEX][0].getDiffN().data().begin(),
+      _H1faceN_,_diffH1faceN_,G_DIM
+    ); CHKERRQ(ierr);
 
     //volume
     int nb_vol_dofs = NBVOLUME_H1(data.dataOnEntities[MBTET][0].getOrder());
@@ -1573,6 +1578,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
       ierr = setGaussPts(order); CHKERRQ(ierr);
       nb_gauss_pts = gaussPts.size2();
     }
+    if(nb_gauss_pts == 0) PetscFunctionReturn(0);
 
     ierr = shapeTETFunctions_H1(dataH1,&gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0),nb_gauss_pts); CHKERRQ(ierr);
 
@@ -1917,6 +1923,7 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
     ierr = setGaussPts(order); CHKERRQ(ierr);
     nb_gauss_pts = gaussPts.size2();
   }
+  if(nb_gauss_pts == 0) PetscFunctionReturn(0);
 
   ierr = shapeTRIFunctions_H1(dataH1,&gaussPts(0,0),&gaussPts(1,0),nb_gauss_pts); CHKERRQ(ierr);
 
@@ -1978,12 +1985,10 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
     }
   } else {
-
     hoCoordsAtGaussPts.resize(0,0,false);
     nOrmals_at_GaussPt.resize(0,0,false);
     tAngent1_at_GaussPt.resize(0,0,false);
     tAngent2_at_GaussPt.resize(0,0,false);
-
   }
 
   if(dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
@@ -2011,7 +2016,8 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
       BitFieldId data_id = mField.get_field_structure(field_name)->get_id();
       if((oit->getMoFEMFEPtr()->get_BitFieldId_data()&data_id).none()) {
         SETERRQ2(
-          PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"no data field < %s > on finite element < %s >",
+          PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,
+          "no data field < %s > on finite element < %s >",
           field_name.c_str(),feName.c_str()
         );
       }
@@ -2510,6 +2516,8 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
       ierr = setGaussPts(order); CHKERRQ(ierr);
       nb_gauss_pts = gaussPts.size2();
     }
+    if(nb_gauss_pts == 0) PetscFunctionReturn(0);
+
 
     ierr = shapeFlatPRISMFunctions_H1(dataH1,&gaussPts(0,0),&gaussPts(1,0),nb_gauss_pts); CHKERRQ(ierr);
     if(dataH1.spacesOnEntities[MBTRI].test(HDIV)) {

@@ -2183,41 +2183,41 @@ PetscErrorCode Core::seed_ref_level(const Range &ents,const BitRefLevel &bit,int
       ent_pstat.flip(0);
       pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ent = refinedEntities.insert(ref_ent);
       if(debug > 0) {
-	ierr = test_moab(moab,*tit); CHKERRQ(ierr);
+        ierr = test_moab(moab,*tit); CHKERRQ(ierr);
       }
       bool success = refinedEntities.modify(p_ent.first,RefMoFEMEntity_change_add_bit(bit));
       if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
       if(verb>2) {
-	ostringstream ss;
-	ss << *(p_ent.first);
-	PetscSynchronizedPrintf(comm,"%s\n",ss.str().c_str());
+        ostringstream ss;
+        ss << *(p_ent.first);
+        PetscSynchronizedPrintf(comm,"%s\n",ss.str().c_str());
       }
       pair<RefMoFEMElement_multiIndex::iterator,bool> p_MoFEMFiniteElement;
       switch (p_ent.first->get_ent_type()) {
-	case MBVERTEX:
-	  p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_VERTEX(moab,&*p_ent.first)));
-	  seeded_ents.insert(*tit);
-	  break;
-	case MBEDGE:
-	  p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_EDGE(moab,&*p_ent.first)));
-	  seeded_ents.insert(*tit);
-	  break;
-	case MBTRI:
-	  p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_TRI(moab,&*p_ent.first)));
-	  seeded_ents.insert(*tit);
-	  break;
+        case MBVERTEX:
+        p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_VERTEX(moab,&*p_ent.first)));
+        seeded_ents.insert(*tit);
+        break;
+        case MBEDGE:
+        p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_EDGE(moab,&*p_ent.first)));
+        seeded_ents.insert(*tit);
+        break;
+        case MBTRI:
+        p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_TRI(moab,&*p_ent.first)));
+        seeded_ents.insert(*tit);
+        break;
         case MBTET:
-	 p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_TET(moab,&*p_ent.first)));
-	  seeded_ents.insert(*tit);
-	 break;
-	case MBPRISM:
-	  p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_PRISM(moab,&*p_ent.first)));
-	  break;
+        p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_TET(moab,&*p_ent.first)));
+        seeded_ents.insert(*tit);
+        break;
+        case MBPRISM:
+        p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_PRISM(moab,&*p_ent.first)));
+        break;
         case MBENTITYSET:
-	  p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_MESHSET(moab,&*p_ent.first)));
-	  break;
-	default:
-	  SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
+        p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_MESHSET(moab,&*p_ent.first)));
+        break;
+        default:
+        SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
       }
       if(verb>3) {
         ostringstream ss;
@@ -2228,23 +2228,23 @@ PetscErrorCode Core::seed_ref_level(const Range &ents,const BitRefLevel &bit,int
     if(!seeded_ents.empty()) {
       int dim = moab.dimension_from_handle(seeded_ents[0]);
       for(int dd = 0;dd<dim;dd++) {
-	Range ents;
-	rval = moab.get_adjacencies(seeded_ents,dd,true,ents,Interface::UNION); CHKERR_PETSC(rval);
-	if(dd == 2) {
-	  // currently only works with triangles
-	  ents = ents.subset_by_type(MBTRI);
-	}
-	Range::iterator eit = ents.begin();
-	for(;eit!=ents.end();eit++) {
-	  pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ent = refinedEntities.insert(RefMoFEMEntity(moab,*eit));
-	  bool success = refinedEntities.modify(p_ent.first,RefMoFEMEntity_change_add_bit(bit));
-	  if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-	  if(verb>2) {
-	    ostringstream ss;
-	    ss << *(p_ent.first);
-	    PetscSynchronizedPrintf(comm,"%s\n",ss.str().c_str());
-	  }
-	}
+        Range ents;
+        rval = moab.get_adjacencies(seeded_ents,dd,true,ents,Interface::UNION); CHKERR_PETSC(rval);
+        if(dd == 2) {
+          // currently only works with triangles
+          ents = ents.subset_by_type(MBTRI);
+        }
+        Range::iterator eit = ents.begin();
+        for(;eit!=ents.end();eit++) {
+          pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ent = refinedEntities.insert(RefMoFEMEntity(moab,*eit));
+          bool success = refinedEntities.modify(p_ent.first,RefMoFEMEntity_change_add_bit(bit));
+          if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+          if(verb>2) {
+            ostringstream ss;
+            ss << *(p_ent.first);
+            PetscSynchronizedPrintf(comm,"%s\n",ss.str().c_str());
+          }
+        }
       }
     }
     if(verb>2) {

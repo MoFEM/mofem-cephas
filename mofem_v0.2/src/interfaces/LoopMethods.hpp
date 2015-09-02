@@ -157,6 +157,8 @@ struct BasicMethod: public FieldUnknownInterface,KspMethod,SnesMethod,TSMethod {
   const MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_multiIndex *adjacenciesPtr;
   virtual ~BasicMethod() {};
 
+  PetscErrorCode copy_basic_method(const BasicMethod &basic);
+
   private:
   void iNit();
 
@@ -209,6 +211,7 @@ struct FEMethod: public BasicMethod {
    *
    */
   PetscErrorCode postProcess();
+
   string feName;
   const NumeredMoFEMFiniteElement *fePtr;
   const FEDofMoFEMEntity_multiIndex *dataPtr;
