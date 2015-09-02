@@ -1578,6 +1578,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
       ierr = setGaussPts(order); CHKERRQ(ierr);
       nb_gauss_pts = gaussPts.size2();
     }
+    if(nb_gauss_pts == 0) PetscFunctionReturn(0);
 
     ierr = shapeTETFunctions_H1(dataH1,&gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0),nb_gauss_pts); CHKERRQ(ierr);
 
@@ -1922,6 +1923,7 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
     ierr = setGaussPts(order); CHKERRQ(ierr);
     nb_gauss_pts = gaussPts.size2();
   }
+  if(nb_gauss_pts == 0) PetscFunctionReturn(0);
 
   ierr = shapeTRIFunctions_H1(dataH1,&gaussPts(0,0),&gaussPts(1,0),nb_gauss_pts); CHKERRQ(ierr);
 
@@ -2514,6 +2516,8 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
       ierr = setGaussPts(order); CHKERRQ(ierr);
       nb_gauss_pts = gaussPts.size2();
     }
+    if(nb_gauss_pts == 0) PetscFunctionReturn(0);
+
 
     ierr = shapeFlatPRISMFunctions_H1(dataH1,&gaussPts(0,0),&gaussPts(1,0),nb_gauss_pts); CHKERRQ(ierr);
     if(dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
