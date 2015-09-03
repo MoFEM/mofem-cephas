@@ -110,6 +110,8 @@ struct NitscheMethod {
     PetscErrorCode setGaussPts(int order) {
       PetscFunctionBegin;
 
+      gaussPts.resize(4,0,false);
+
       try {
         commonData.nbActiveFaces = 0;
         commonData.fAces.resize(4);
@@ -196,6 +198,7 @@ struct NitscheMethod {
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
+      //cerr << gaussPts << endl;
       PetscFunctionReturn(0);
     }
 
@@ -342,8 +345,8 @@ struct NitscheMethod {
             const MatrixDouble& stress = commonData.sTress[gg];
             double val = getGaussPts()(3,gg);
             ierr = getJac(row_data,gg,jAc_row); CHKERRQ(ierr);
-            //ierr = getTractionVariance(row_data,gg,fgg,ff,jAc_row,tRac_v); CHKERRQ(ierr);
-            /*VectorAdaptor normal = VectorAdaptor(
+            ierr = getTractionVariance(row_data,gg,fgg,ff,jAc_row,tRac_v); CHKERRQ(ierr);
+            VectorAdaptor normal = VectorAdaptor(
               3,ublas::shallow_array_adaptor<double>(
                 3,&nitscheCommonData.faceNormals[ff](fgg,0
                 )
@@ -356,22 +359,22 @@ struct NitscheMethod {
             noalias(dIsp) = commonData.dataAtGaussPts[rowFieldName][gg];
             if(!fieldDisp) {
               dIsp -= commonData.dataAtGaussPts["MESH_NODE_POSITIONS"][gg];
-            }*/
-            /*cerr << dIsp << endl;
+            }
+            cerr << dIsp << endl;
             cerr << row_data.getN(gg) << endl;
             cerr << nF << endl;
             cerr << gg << endl;
-            cerr << fgg << endl;*/
-            /*for(int dd1 = 0;dd1<nb_dofs/3;dd1++) {
+            cerr << fgg << endl;
+            for(int dd1 = 0;dd1<nb_dofs/3;dd1++) {
               double n_val = row_data.getN(gg)[dd1];
               for(int dd2 = 0;dd2<3;dd2++) {
-                nF[3*dd1+dd2] += (1./gamma)*dIsp[dd2]*val*area;
-                nF[3*dd1+dd2] += tRaction[dd2]*row_data.getN(gg)[dd1]*val;
+                nF[3*dd1+dd2] += (1./gamma)*dIsp[dd2]*n_val*val*area;
+                nF[3*dd1+dd2] += tRaction[dd2]*n_val*val;
               }
-            }*/
-            //for(int dd = 0;dd<nb_dofs;dd++) {
-              //nF[dd] += val*phi*(dIsp[0]*tRac_v(0,dd)+dIsp[1]*tRac_v(1,dd)+dIsp[2]*tRac_v(2,dd));
-            //}
+            }
+            for(int dd = 0;dd<nb_dofs;dd++) {
+              nF[dd] += val*phi*(dIsp[0]*tRac_v(0,dd)+dIsp[1]*tRac_v(1,dd)+dIsp[2]*tRac_v(2,dd));
+            }
 
           }
         }
@@ -464,7 +467,7 @@ struct NitscheMethod {
               for(int dd2 = 0;dd2<nb_dofs_col/3;dd2++) {
                 double n_col = col_data.getN()(gg,dd2);
                 for(int dd3 = 0;dd3<3;dd3++) {
-                  kMatrix(dd1,3*dd2+dd3) += phi*val*tRac_v(dd1,dd3)*n_col;
+                  kMatrix(dd1,3*dd2+dd3) += phi*val*tRac_v(dd3,dd1)*n_col;
                 }
               }
             }
@@ -518,7 +521,8 @@ struct NitscheMethod {
     PetscErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
-      DataForcesAndSurcesCore::EntData &row_data,DataForcesAndSurcesCore::EntData &col_data
+      DataForcesAndSurcesCore::EntData &row_data,
+      DataForcesAndSurcesCore::EntData &col_data
     ) {
       PetscFunctionBegin;
 
