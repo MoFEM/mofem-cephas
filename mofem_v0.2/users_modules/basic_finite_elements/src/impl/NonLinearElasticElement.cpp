@@ -372,13 +372,13 @@ PetscErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::doWork(
       }
 
       if(jAcobian){
-        if(commonData.jacStressRowPtr[gg].size()!=9) {
+        //if(commonData.jacStressRowPtr[gg].size()!=9) {
           commonData.jacStressRowPtr[gg].resize(9);
           commonData.jacStress[gg].resize(9,nb_active_variables,false);
           for(int dd = 0;dd<9;dd++) {
             (commonData.jacStressRowPtr[gg])[dd] = &(commonData.jacStress[gg](dd,0));
           }
-        }
+        //}
         int r;
         //play recorder for jacobians
         r = jacobian(
