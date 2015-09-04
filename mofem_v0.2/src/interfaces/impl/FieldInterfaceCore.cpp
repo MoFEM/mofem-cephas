@@ -142,7 +142,9 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
       CubitMeshSets base_meshset(moab,*mit);
       if((base_meshset.cubit_bc_type&CubitBCType(NODESET|SIDESET|BLOCKSET)).any()) {
         pair<CubitMeshSet_multiIndex::iterator,bool> p = cubitMeshsets.insert(base_meshset);
-        if(!p.second) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"meshset not inserted");
+        if(!p.second) {
+          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"meshset not inserted");
+        }
         if(verb > 0) {
           ostringstream ss;
           ss << "read cubit" << base_meshset << endl;
