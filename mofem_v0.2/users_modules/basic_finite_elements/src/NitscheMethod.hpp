@@ -20,13 +20,18 @@
   #error "MoFEM need to be compiled with ADOL-C"
 #endif
 
+/** \brief Basic implementation of Nitsche method
+
+  For theretical basis of method see \cite nitsche_method_hal.
+
+*/
 struct NitscheMethod {
 
   struct MyFace: FaceElementForcesAndSourcesCore {
     int addToRule;
     MyFace(FieldInterface &m_field):
     FaceElementForcesAndSourcesCore(m_field),
-    addToRule(1) {}
+    addToRule(0) {}
      int getRule(int order) { return order+addToRule; }
   };
 
@@ -39,18 +44,14 @@ struct NitscheMethod {
 
   struct CommonData {
 
-    MyFace faceFE;
-    CommonData(FieldInterface &m_field):
-    faceFE(m_field) {
-    }
-
     int nbActiveFaces;
     vector<EntityHandle> fAces;
     vector<const NumeredMoFEMFiniteElement *> facesFePtr;
     vector<ublas::matrix<double> > faceNormals;
     vector<ublas::matrix<double> > faceVertexShapeFunctions;
     vector<ublas::matrix<double> > faceGaussPts;
-
+    vector<ublas::matrix<double> > coordsAtGaussPts;
+    vector<ublas::vector<double> > rAy;
   };
 
   struct OpGetFaceData: FaceElementForcesAndSourcesCore::UserDataOperator {
@@ -74,6 +75,11 @@ struct NitscheMethod {
           commonData.faceVertexShapeFunctions[faceInRespectToTet] = data.getN();
           commonData.faceGaussPts.resize(4);
           commonData.faceGaussPts[faceInRespectToTet] = getGaussPts();
+          commonData.coordsAtGaussPts.resize(4);
+          commonData.coordsAtGaussPts[faceInRespectToTet] = getCoordsAtGaussPts();
+          commonData.rAy.resize(4);
+          commonData.rAy[faceInRespectToTet] = -getNormal();
+          commonData.rAy[faceInRespectToTet] /= norm_2(getNormal());
         }
       } catch (const std::exception& ex) {
         ostringstream ss;
@@ -91,7 +97,13 @@ struct NitscheMethod {
 
     BlockData &blockData;
     CommonData &commonData;
+    MyFace faceFE;
     int addToRule;
+
+    virtual PetscErrorCode doAdditionalJobWhenGuassPtsAreCalulated() {
+      PetscFunctionBegin;
+      PetscFunctionReturn(0);
+    }
 
     MyVolumeFE(
       FieldInterface &m_field,
@@ -101,8 +113,9 @@ struct NitscheMethod {
     VolumeElementForcesAndSourcesCore(m_field),
     blockData(block_data),
     commonData(common_data),
+    faceFE(m_field),
     addToRule(1) {
-      commonData.faceFE.getOpPtrVector().push_back(new OpGetFaceData(commonData));
+      faceFE.getOpPtrVector().push_back(new OpGetFaceData(commonData));
     }
 
     int getRule(int order) { return -1; };
@@ -153,15 +166,15 @@ struct NitscheMethod {
         for(int ff = 0;ff<4;ff++) {
           if(commonData.facesFePtr[ff]!=NULL) {
             const NumeredMoFEMFiniteElement *faceFEPtr = commonData.facesFePtr[ff];
-            commonData.faceFE.copy_basic_method(*this);
-            commonData.faceFE.feName = blockData.faceElemName;
-            commonData.faceFE.nInTheLoop = ff;
-            commonData.faceFE.fePtr = faceFEPtr;
-            commonData.faceFE.dataPtr = const_cast<FEDofMoFEMEntity_multiIndex*>(&faceFEPtr->fe_ptr->data_dofs);
-            commonData.faceFE.rowPtr = const_cast<FENumeredDofMoFEMEntity_multiIndex*>(&faceFEPtr->rows_dofs);
-            commonData.faceFE.colPtr = const_cast<FENumeredDofMoFEMEntity_multiIndex*>(&faceFEPtr->cols_dofs);
-            commonData.faceFE.addToRule = addToRule;
-            ierr = commonData.faceFE(); CHKERRQ(ierr);
+            faceFE.copy_basic_method(*this);
+            faceFE.feName = blockData.faceElemName;
+            faceFE.nInTheLoop = ff;
+            faceFE.fePtr = faceFEPtr;
+            faceFE.dataPtr = const_cast<FEDofMoFEMEntity_multiIndex*>(&faceFEPtr->fe_ptr->data_dofs);
+            faceFE.rowPtr = const_cast<FENumeredDofMoFEMEntity_multiIndex*>(&faceFEPtr->rows_dofs);
+            faceFE.colPtr = const_cast<FENumeredDofMoFEMEntity_multiIndex*>(&faceFEPtr->cols_dofs);
+            faceFE.addToRule = 0;//addToRule;
+            ierr = faceFE(); CHKERRQ(ierr);
           }
         }
       } catch (const std::exception& ex) {
@@ -197,6 +210,8 @@ struct NitscheMethod {
         ss << "throw in method: " << ex.what() << endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
+
+      ierr = doAdditionalJobWhenGuassPtsAreCalulated(); CHKERRQ(ierr);
 
       //cerr << gaussPts << endl;
       PetscFunctionReturn(0);
@@ -360,11 +375,11 @@ struct NitscheMethod {
             if(!fieldDisp) {
               dIsp -= commonData.dataAtGaussPts["MESH_NODE_POSITIONS"][gg];
             }
-            cerr << dIsp << endl;
+            /*cerr << dIsp << endl;
             cerr << row_data.getN(gg) << endl;
             cerr << nF << endl;
             cerr << gg << endl;
-            cerr << fgg << endl;
+            cerr << fgg << endl;*/
             for(int dd1 = 0;dd1<nb_dofs/3;dd1++) {
               double n_val = row_data.getN(gg)[dd1];
               for(int dd2 = 0;dd2<3;dd2++) {
@@ -393,7 +408,7 @@ struct NitscheMethod {
   struct OpLhsNormal: public OpCommon {
 
     OpLhsNormal(
-      const string field_name,
+        const string field_name,
       BlockData &nitsche_block_data,
       CommonData &nitsche_common_data,
       NonlinearElasticElement::BlockData &data,
@@ -477,101 +492,6 @@ struct NitscheMethod {
               for(int dd2 = 0;dd2<3;dd2++) {
                 for(int dd3 = 0;dd3<nb_dofs_col;dd3++) {
                   kMatrix(3*dd1+dd2,dd3) += val*n_row*tRac_u(dd2,dd3);
-                }
-              }
-            }
-
-          }
-        }
-
-      } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
-        SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
-      }
-
-      PetscFunctionReturn(0);
-    }
-
-  };
-
-  struct OpRhsGMatrixNormal: public OpCommon {
-
-    OpRhsGMatrixNormal(
-      const string field_name,
-      BlockData &nitsche_block_data,
-      CommonData &nitsche_common_data,
-      NonlinearElasticElement::BlockData &data,
-      NonlinearElasticElement::CommonData &common_data,
-      bool field_disp
-    ):
-    OpCommon(
-      field_name,
-      nitsche_block_data,
-      nitsche_common_data,
-      data,
-      common_data,
-      field_disp,
-      UserDataOperator::OPROWCOL
-    ) {
-    }
-
-    MatrixDouble gMatrix;
-
-    PetscErrorCode doWork(
-      int row_side,int col_side,
-      EntityType row_type,EntityType col_type,
-      DataForcesAndSurcesCore::EntData &row_data,
-      DataForcesAndSurcesCore::EntData &col_data
-    ) {
-      PetscFunctionBegin;
-
-      PetscErrorCode ierr;
-      if(dAta.tEts.find(getMoFEMFEPtr()->get_ent()) == dAta.tEts.end()) {
-        PetscFunctionReturn(0);
-      }
-      if(row_data.getIndices().size()==0) PetscFunctionReturn(0);
-      if(col_data.getIndices().size()==0) PetscFunctionReturn(0);
-      int nb_dofs_row = row_data.getIndices().size();
-      int nb_dofs_col = col_data.getIndices().size();
-      double gamma = nitscheBlockData.gamma;
-      double phi = nitscheBlockData.phi;
-
-      gMatrix.resize(nb_dofs_row,nb_dofs_col,false);
-      gMatrix.clear();
-
-      try {
-
-        int gg = 0;
-        for(int ff = 0;ff<4;ff++) {
-          if(nitscheCommonData.facesFePtr[ff]==NULL) continue;
-          int nb_face_gauss_pts = nitscheCommonData.faceGaussPts[ff].size2();
-          for(int fgg = 0;fgg<nb_face_gauss_pts;fgg++,gg++) {
-            double val = getGaussPts()(3,gg);
-            ierr = getJac(row_data,gg,jAc_row); CHKERRQ(ierr);
-            ierr = getTractionVariance(row_data,gg,fgg,ff,jAc_row,tRac_v); CHKERRQ(ierr);
-            VectorAdaptor normal = VectorAdaptor(
-              3,ublas::shallow_array_adaptor<double>(3,&nitscheCommonData.faceNormals[ff](fgg,0))
-            );
-            double area = cblas_dnrm2(3,&normal[0],1);
-
-            for(int dd1 = 0;dd1<nb_dofs_row/3;dd1++) {
-              double n_row = row_data.getN()(gg,dd1);
-              for(int dd2 = 0;dd2<nb_dofs_col/3;dd2++) {
-                double n_col = col_data.getN()(gg,dd2);
-                for(int dd3 = 0;dd3<3;dd3++) {
-                  for(int dd4 = 0;dd4<3;dd4++) {
-                    gMatrix(3*dd1+dd3,3*dd2+dd4) += (1./gamma)*val*n_row*n_col*area;
-                  }
-                }
-              }
-            }
-
-            for(int dd1 = 0;dd1<nb_dofs_row;dd1++) {
-              for(int dd2 = 0;dd2<nb_dofs_col/3;dd2++) {
-                double n_col = col_data.getN()(gg,dd2);
-                for(int dd3 = 0;dd3<3;dd3++) {
-                  gMatrix(dd1,3*dd2+dd3) += phi*val*tRac_v(dd1,dd3)*n_col;
                 }
               }
             }
