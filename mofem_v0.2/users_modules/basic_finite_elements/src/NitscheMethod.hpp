@@ -22,7 +22,7 @@
 
 /** \brief Basic implementation of Nitsche method
 
-  For theretical basis of method see \cite nitsche_method_hal.
+  For theoretical basis of method see \cite nitsche_method_hal.
 
 */
 struct NitscheMethod {
@@ -219,13 +219,44 @@ struct NitscheMethod {
 
   };
 
-  struct OpCommon: public VolumeElementForcesAndSourcesCore::UserDataOperator {
+  struct OpBasicCommon: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     BlockData &nitscheBlockData;
     CommonData &nitscheCommonData;
+    bool fieldDisp;
+
+    OpBasicCommon(
+      const string field_name,
+      BlockData &nitsche_block_data,
+      CommonData &nitsche_common_data,
+      bool field_disp,
+      const char type
+    ):
+    VolumeElementForcesAndSourcesCore::UserDataOperator(
+      field_name,type
+    ),
+    nitscheBlockData(nitsche_block_data),
+    nitscheCommonData(nitsche_common_data),
+    fieldDisp(field_disp) {
+    }
+
+    double faceRadius;
+    PetscErrorCode getFaceRadius() {
+      PetscFunctionBegin;
+      double center[3];
+      VectorDouble &coords = getCoords();
+      tricircumcenter3d_tp(&coords[0],&coords[3],&coords[6],center,NULL,NULL);
+      cblas_daxpy(3,-1,&coords[0],1,center,1);
+      faceRadius = cblas_dnrm2(3,center,1);
+      PetscFunctionReturn(0);
+    }
+
+  };
+
+  struct OpCommon: public OpBasicCommon {
+
     NonlinearElasticElement::BlockData &dAta;
     NonlinearElasticElement::CommonData &commonData;
-    bool fieldDisp;
 
     OpCommon(
       const string field_name,
@@ -236,14 +267,11 @@ struct NitscheMethod {
       bool field_disp,
       const char type
     ):
-    VolumeElementForcesAndSourcesCore::UserDataOperator(
-      field_name,type
+    OpBasicCommon(
+      field_name,nitsche_block_data,nitsche_common_data,field_disp,type
     ),
-    nitscheBlockData(nitsche_block_data),
-    nitscheCommonData(nitsche_common_data),
     dAta(data),
-    commonData(common_data),
-    fieldDisp(field_disp) {
+    commonData(common_data) {
     }
 
     VectorDouble dIsp;
@@ -305,17 +333,6 @@ struct NitscheMethod {
         ss << "throw in method: " << ex.what() << endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
-      PetscFunctionReturn(0);
-    }
-
-    double faceRadius;
-    PetscErrorCode getFaceRadius() {
-      PetscFunctionBegin;
-      double center[3];
-      VectorDouble &coords = getCoords();
-      tricircumcenter3d_tp(&coords[0],&coords[3],&coords[6],center,NULL,NULL);
-      cblas_daxpy(3,-1,&coords[0],1,center,1);
-      faceRadius = cblas_dnrm2(3,center,1);
       PetscFunctionReturn(0);
     }
 
@@ -400,11 +417,14 @@ struct NitscheMethod {
               double n_val = row_data.getN(gg)[dd1];
               for(int dd2 = 0;dd2<3;dd2++) {
                 nF[3*dd1+dd2] += (1./gamma)*dIsp[dd2]*n_val*val*area;
-                nF[3*dd1+dd2] += tRaction[dd2]*n_val*val;
+                nF[3*dd1+dd2] -= tRaction[dd2]*n_val*val;
               }
             }
             for(int dd = 0;dd<nb_dofs;dd++) {
-              nF[dd] += val*phi*(dIsp[0]*tRac_v(0,dd)+dIsp[1]*tRac_v(1,dd)+dIsp[2]*tRac_v(2,dd));
+              double dot = cblas_ddot(
+                3,&dIsp[0],1,&tRac_v(0,dd),tRac_v.size2()
+              );
+              nF[dd] -= val*phi*dot;
             }
 
           }
@@ -499,23 +519,24 @@ struct NitscheMethod {
               }
             }
 
-            for(int dd1 = 0;dd1<nb_dofs_row;dd1++) {
-              for(int dd2 = 0;dd2<nb_dofs_col/3;dd2++) {
-                double n_col = col_data.getN()(gg,dd2);
-                for(int dd3 = 0;dd3<3;dd3++) {
-                  kMatrix(dd1,3*dd2+dd3) += phi*val*tRac_v(dd3,dd1)*n_col;
-                }
-              }
-            }
-
             for(int dd1 = 0;dd1<nb_dofs_row/3;dd1++) {
               double n_row = row_data.getN()(gg,dd1);
               for(int dd2 = 0;dd2<3;dd2++) {
                 for(int dd3 = 0;dd3<nb_dofs_col;dd3++) {
-                  kMatrix(3*dd1+dd2,dd3) += val*n_row*tRac_u(dd2,dd3);
+                  kMatrix(3*dd1+dd2,dd3) -= val*n_row*tRac_u(dd2,dd3);
                 }
               }
             }
+
+            for(int dd1 = 0;dd1<nb_dofs_row;dd1++) {
+              for(int dd2 = 0;dd2<nb_dofs_col/3;dd2++) {
+                double n_col = col_data.getN()(gg,dd2);
+                for(int dd3 = 0;dd3<3;dd3++) {
+                  kMatrix(dd1,3*dd2+dd3) -= phi*val*tRac_v(dd3,dd1)*n_col;
+                }
+              }
+            }
+
 
           }
         }
