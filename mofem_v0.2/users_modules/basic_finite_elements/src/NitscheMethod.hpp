@@ -308,6 +308,17 @@ struct NitscheMethod {
       PetscFunctionReturn(0);
     }
 
+    double faceRadius;
+    PetscErrorCode getFaceRadius() {
+      PetscFunctionBegin;
+      double center[3];
+      VectorDouble &coords = getCoords();
+      tricircumcenter3d_tp(&coords[0],&coords[3],&coords[6],center,NULL,NULL);
+      cblas_daxpy(3,-1,&coords[0],1,center,1);
+      faceRadius = cblas_dnrm2(3,center,1);
+      PetscFunctionReturn(0);
+    }
+
   };
 
   struct OpRhsNormal: public OpCommon {
@@ -346,6 +357,11 @@ struct NitscheMethod {
       int nb_dofs = row_data.getIndices().size();
       double gamma = nitscheBlockData.gamma;
       double phi = nitscheBlockData.phi;
+
+      if(row_type == MBVERTEX) {
+        ierr = getFaceRadius(); CHKERRQ(ierr);
+      }
+      gamma *= faceRadius;
 
       try {
 
@@ -445,6 +461,11 @@ struct NitscheMethod {
       int nb_dofs_col = col_data.getIndices().size();
       double gamma = nitscheBlockData.gamma;
       double phi = nitscheBlockData.phi;
+
+      if(row_type == MBVERTEX) {
+        ierr = getFaceRadius(); CHKERRQ(ierr);
+      }
+      gamma *= faceRadius;
 
       kMatrix.resize(nb_dofs_row,nb_dofs_col,false);
       kMatrix.clear();
