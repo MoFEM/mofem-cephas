@@ -1,8 +1,3 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
- * FIXME: DESCRIPTION
- */
-
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -249,7 +244,7 @@ PetscErrorCode FEMethod_LowLevelStudent::InitDataStructures() {
   rval = moab.get_coords(conn,num_nodes,&*coords.data().begin()); CHKERR_PETSC(rval);
 
   switch(fe_ent_ptr->get_ent_type()) {
-    case MBTET: 
+    case MBTET:
       // edge
       maxOrderEdgeH1.resize(6);
       maxOrderEdgeHcurl.resize(6);
@@ -310,7 +305,7 @@ PetscErrorCode FEMethod_LowLevelStudent::GlobIndices() {
 	  }
 	  //PetscGlobIndices
 	  ierr = MapDataTET<
-	    FENumeredDofMoFEMEntity_multiIndex::iterator, 
+	    FENumeredDofMoFEMEntity_multiIndex::iterator,
 	    Indices_Type,Indices_EntType,
 	    UnaryOP_PetscGlobalIdx<FENumeredDofMoFEMEntity> >(
 	      miit, row_nodesGlobIndices, row_edgesGlobIndices,
@@ -336,7 +331,7 @@ PetscErrorCode FEMethod_LowLevelStudent::GlobIndices() {
 	  }
 	  //PetscGlobIndices
 	  ierr = MapDataTET<
-	    FENumeredDofMoFEMEntity_multiIndex::iterator, 
+	    FENumeredDofMoFEMEntity_multiIndex::iterator,
 	    Indices_Type,Indices_EntType,
 	    UnaryOP_PetscGlobalIdx<FENumeredDofMoFEMEntity> >(
 	      miit, col_nodesGlobIndices, col_edgesGlobIndices,
@@ -376,7 +371,7 @@ PetscErrorCode FEMethod_LowLevelStudent::GlobIndices() {
 	    SETERRQ(PETSC_COMM_SELF,1,"not implemented");
 	  }
 	  MapDataPRISM<
-	    FENumeredDofMoFEMEntity_multiIndex::iterator, 
+	    FENumeredDofMoFEMEntity_multiIndex::iterator,
 	    Indices_Type,Indices_EntType,
 	    UnaryOP_PetscGlobalIdx<FENumeredDofMoFEMEntity> >(
 	      miit, row_nodesGlobIndices, row_edgesGlobIndices,
@@ -394,7 +389,7 @@ PetscErrorCode FEMethod_LowLevelStudent::GlobIndices() {
 	    SETERRQ(PETSC_COMM_SELF,1,"not implemented");
 	  }
 	  MapDataPRISM<
-	    FENumeredDofMoFEMEntity_multiIndex::iterator, 
+	    FENumeredDofMoFEMEntity_multiIndex::iterator,
 	    Indices_Type,Indices_EntType,
 	    UnaryOP_PetscGlobalIdx<FENumeredDofMoFEMEntity> >(
 	      miit, col_nodesGlobIndices, col_edgesGlobIndices,
@@ -419,7 +414,7 @@ PetscErrorCode FEMethod_LowLevelStudent::LocalIndices() {
 	for(;miit!=rows_dofs.end();miit++) {
 	  //PetscGlobIndices
 	  ierr = MapDataTET<
-	    FENumeredDofMoFEMEntity_multiIndex::iterator, 
+	    FENumeredDofMoFEMEntity_multiIndex::iterator,
 	    Indices_Type,Indices_EntType,
 	    UnaryOP_PetscLocallIdx<FENumeredDofMoFEMEntity> >(
 	      miit, row_nodesLocalIndices, row_edgesLocalIndices,
@@ -430,7 +425,7 @@ PetscErrorCode FEMethod_LowLevelStudent::LocalIndices() {
 	for(;miit!=cols_dofs.end();miit++) {
 	  //PetscGlobIndices
 	  ierr = MapDataTET<
-	    FENumeredDofMoFEMEntity_multiIndex::iterator, 
+	    FENumeredDofMoFEMEntity_multiIndex::iterator,
 	    Indices_Type,Indices_EntType,
 	    UnaryOP_PetscLocallIdx<FENumeredDofMoFEMEntity> >(
 	      miit, col_nodesLocalIndices, col_edgesLocalIndices,
@@ -462,14 +457,14 @@ PetscErrorCode FEMethod_LowLevelStudent::DataOp() {
 	      isL2 = true;
 	    }
 	    break;
-	    case NOFIELD: 
+	    case NOFIELD:
 	    break;
 	    default:
 	    SETERRQ(PETSC_COMM_SELF,1,"not implemented");
 	  }
 	  //Data
 	  ierr = MapDataTET<
-	    FEDofMoFEMEntity_multiIndex::iterator, 
+	    FEDofMoFEMEntity_multiIndex::iterator,
 	    Data_Type,Data_EntType,
 	    UnaryOP_FieldData<FEDofMoFEMEntity> >(
 	      miit2, data_nodes, data_edges, data_faces, data_elem); CHKERRQ(ierr);
@@ -491,7 +486,7 @@ PetscErrorCode FEMethod_LowLevelStudent::DataOp() {
 	  }
 	  //Data
 	  ierr = MapDataPRISM<
-	    FEDofMoFEMEntity_multiIndex::iterator, 
+	    FEDofMoFEMEntity_multiIndex::iterator,
 	    Data_Type,Data_EntType,
 	    UnaryOP_FieldData<FEDofMoFEMEntity> >(
 	      miit2, data_nodes, data_edges, data_faces, data_elem); CHKERRQ(ierr);
@@ -509,7 +504,7 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_TET(vector<double>& _gNT
   const int cannonical_face_sense_m1[4][3] = { {0,3,1}, {1,3,2}, {0,2,3}, {0,1,2} }; //second index is offset (negative sense)
   gNTET = _gNTET;
   switch (fe_ent_ptr->get_ent_type()) {
-    case MBTET: 
+    case MBTET:
       {
 	double invJac[9];
 	ierr = ShapeJacMBTET(diffNTET,&*_coords_.begin(),invJac); CHKERRQ(ierr);
@@ -549,7 +544,7 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_TET(vector<double>& _gNT
 	      face_conn[1] = side->sense == 1 ? cannonical_face_sense_p1[side->side_number][0] : cannonical_face_sense_m1[side->side_number][2];
 	      face_conn[2] = side->sense == 1 ? cannonical_face_sense_p1[side->side_number][1] : cannonical_face_sense_m1[side->side_number][0];
 	    }
-	    for(int nn = 0;nn<3;nn++) _faces_nodes_[side->side_number*3+nn] = face_conn[nn]; 
+	    for(int nn = 0;nn<3;nn++) _faces_nodes_[side->side_number*3+nn] = face_conn[nn];
   	    if(debug) {
 	      const EntityHandle *conn_face;
 	      int num_nodes;
@@ -576,9 +571,9 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_TET(vector<double>& _gNT
 	    H1edgeN[ee].resize(gNTET_dim*NBEDGE_H1(maxOrderEdgeH1[ee]));
 	    diffH1edgeN[ee].resize(3*gNTET_dim*NBEDGE_H1(maxOrderEdgeH1[ee]));
 	    diffH1edgeNinvJac[ee].resize(3*gNTET_dim*NBEDGE_H1(maxOrderEdgeH1[ee]));
-	    _H1edgeN_[ee] = &(H1edgeN[ee])[0];
-	    _diffH1edgeN_[ee] = &(diffH1edgeN[ee])[0];
-	    _diffH1edgeNinvJac_[ee] = &(diffH1edgeNinvJac[ee])[0]; 
+	    _H1edgeN_[ee] = H1edgeN[ee].empty()?NULL:&(H1edgeN[ee])[0];
+	    _diffH1edgeN_[ee] = diffH1edgeN[ee].empty()?NULL:&(diffH1edgeN[ee])[0];
+	    _diffH1edgeNinvJac_[ee] = diffH1edgeNinvJac[ee].empty()?NULL:&(diffH1edgeNinvJac[ee])[0];
 	  }
 	  ierr = H1_EdgeShapeFunctions_MBTET(_sense_edges_,_edges_order_,&gNTET[0],diffNTET,_H1edgeN_,_diffH1edgeN_,gNTET_dim); CHKERRQ(ierr);
 	  ierr = H1_EdgeShapeDiffMBTETinvJ(_edges_order_,_edges_order_,_diffH1edgeN_,invJac,_diffH1edgeNinvJac_,gNTET_dim); CHKERRQ(ierr);
@@ -592,9 +587,9 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_TET(vector<double>& _gNT
 	    H1faceN[ff].resize(gNTET_dim*NBFACE_H1(maxOrderFaceH1[ff]));
 	    diffH1faceN[ff].resize(3*gNTET_dim*NBFACE_H1(maxOrderFaceH1[ff]));
 	    diffH1faceNinvJac[ff].resize(3*gNTET_dim*NBFACE_H1(maxOrderFaceH1[ff]));
-	    _H1faceN_[ff] = &(H1faceN[ff])[0];
-	    _diffH1faceN_[ff] = &(diffH1faceN[ff])[0];
-	    _diffH1faceNinvJac_[ff] = &(diffH1faceNinvJac[ff])[0];
+	    _H1faceN_[ff] = H1faceN[ff].empty()?NULL:&(H1faceN[ff])[0];
+	    _diffH1faceN_[ff] = diffH1faceN[ff].empty()?NULL:&(diffH1faceN[ff])[0];
+	    _diffH1faceNinvJac_[ff] = diffH1faceNinvJac[ff].empty()?NULL:&(diffH1faceNinvJac[ff])[0];
 	  }
 	  ierr = H1_FaceShapeFunctions_MBTET(_faces_nodes_,_faces_order_,&gNTET[0],diffNTET,_H1faceN_,_diffH1faceN_,gNTET_dim); CHKERRQ(ierr);
 	  ierr = H1_FaceShapeDiffMBTETinvJ(_faces_order_,_faces_order_,_diffH1faceN_,invJac,_diffH1faceNinvJac_,gNTET_dim); CHKERRQ(ierr);
@@ -602,8 +597,12 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_TET(vector<double>& _gNT
 	  H1elemN.resize(gNTET_dim*NBVOLUME_H1(maxOrderElemH1));
 	  diffH1elemN.resize(3*gNTET_dim*NBVOLUME_H1(maxOrderElemH1));
 	  diffH1elemNinvJac.resize(3*gNTET_dim*NBVOLUME_H1(maxOrderElemH1));
-	  ierr = H1_VolumeShapeFunctions_MBTET(maxOrderElemH1,&gNTET[0],diffNTET,&H1elemN[0],&diffH1elemN[0],gNTET_dim);  CHKERRQ(ierr);
-	  ierr = H1_VolumeShapeDiffMBTETinvJ(maxOrderElemH1,maxOrderElemH1,&diffH1elemN[0],invJac,&diffH1elemNinvJac[0],gNTET_dim); CHKERRQ(ierr);
+	  ierr = H1_VolumeShapeFunctions_MBTET(
+      maxOrderElemH1,&gNTET[0],diffNTET,H1elemN.empty()?NULL:&H1elemN[0],diffH1elemN.empty()?NULL:&diffH1elemN[0],gNTET_dim
+    );  CHKERRQ(ierr);
+	  ierr = H1_VolumeShapeDiffMBTETinvJ(
+      maxOrderElemH1,maxOrderElemH1,diffH1elemN.empty()?NULL:&diffH1elemN[0],invJac,diffH1elemNinvJac.empty()?NULL:&diffH1elemNinvJac[0],gNTET_dim
+    ); CHKERRQ(ierr);
 	}
 	if(isHcurl) {
 	  SETERRQ(PETSC_COMM_SELF,1,"not implemented");
@@ -619,11 +618,11 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_TET(vector<double>& _gNT
 	  ierr = L2_ShapeFunctions_MBTET(maxOrderElemL2,&gNTET[0],diffNTET,&L2elemN[0],&diffL2elemN[0],gNTET_dim); CHKERRQ(ierr);
 	  ierr = L2_VolumeShapeDiffMBTETinvJ(maxOrderElemL2,maxOrderElemL2,&diffL2elemN[0],invJac,&diffL2elemNinvJac[0],gNTET_dim); CHKERRQ(ierr);
 	}
-      } 
+      }
       break;
       case MBPRISM: {
 	SETERRQ(PETSC_COMM_SELF,1,"Aaaa... make no sense");
-      } 
+      }
       break;
      default:
       SETERRQ(PETSC_COMM_SELF,1,"shoul be exectued for TET");
@@ -663,16 +662,16 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_PRISM(vector<double>& _g
 	    assert(side_number4 >= 3);
 	    for(int gg = 0;gg<gNTRI_dim;gg++) {
 	      double val3 = gNTRI[gg*3+side_number3];
-	      gNTRIonPRISM[gg*6+side_number3] = +val3; 
+	      gNTRIonPRISM[gg*6+side_number3] = +val3;
 	      double val4 = gNTRI[gg*3+side_number4-3];
-	      gNTRIonPRISM[gg*6+side_number4] = -val4; 
+	      gNTRIonPRISM[gg*6+side_number4] = -val4;
 	      _face_nodes3_[nn] = side_number3;
 	      _face_nodes4_[nn] = side_number4-3;
 	    }
 	  }
 	} catch (const char* msg) {
 	  SETERRQ(PETSC_COMM_SELF,1,msg);
-	} 
+	}
 	H1edgeN.resize(9);
 	//face 3, edges
 	int _face_edge_sense3_[3];
@@ -812,7 +811,7 @@ PetscErrorCode FEMethod_LowLevelStudent::get_ShapeFunction(
 		}
 	      }
 	    }
-	    break;  
+	    break;
 	    default:
 	      SETERRQ(PETSC_COMM_SELF,1,"not implemented");
 	  }
@@ -940,7 +939,7 @@ PetscErrorCode FEMethod_LowLevelStudent::Data_at_GaussPoints() {
 	case L2: {
 	  if(ent_ptr->get_ent_type()!=MBTET) {
 	    SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-	  } 
+	  }
 	}
 	case H1: {
 	  const string &field_name = field_ptr->get_name();
@@ -1170,7 +1169,7 @@ PetscErrorCode FEMethod_LowLevelStudent::GetNMatrix_at_GaussPoint(
 	  data.resize(g_dim);
 	  int rank = field_ptr->get_max_rank();
 	  int order = ent_ptr->get_max_order();
-	  unsigned int nb_dofs = rank*ent_ptr->get_order_nb_dofs(order); 
+	  unsigned int nb_dofs = rank*ent_ptr->get_order_nb_dofs(order);
 	  if(nb_dofs!=dit->second.size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
 	  unsigned int gg = 0;
 	  for(;gg<g_dim;gg++) {
@@ -1258,14 +1257,14 @@ PetscErrorCode FEMethod_LowLevelStudent::GetDiffNMatrix_at_GaussPoint(
       mat.resize(nb_rows,rank*nb_Ns);
       mat = ublas::zero_matrix<FieldData>(nb_rows,rank*nb_Ns);
       //NOTE:
-      //diffN_Matrix_nodes = 
+      //diffN_Matrix_nodes =
       // f.e. displacement on tetrahedral
       // [ 0(rr)*3 + 0(dd) 	] dN_rr/dX_dd
-      // [ 0(rr)*3 + 1(dd) 	] 
-      // [ 0(rr)*3 + 2(dd) 	] 
-      // [ 1(rr)*3 + 0(dd) 	] 
-      // [ 1(rr)*3 + 1(dd) 	] 
-      // [ ...			] 
+      // [ 0(rr)*3 + 1(dd) 	]
+      // [ 0(rr)*3 + 2(dd) 	]
+      // [ 1(rr)*3 + 0(dd) 	]
+      // [ 1(rr)*3 + 1(dd) 	]
+      // [ ...			]
       // =
       // [ dN1_X/dX	0	0 dN2_X/dX	0	0 dN3_X/dX	0	...	]
       // [ dN1_X/dY	0	0 dN2_X/dY	0	0 dN3_X/dY	0	...	]
@@ -1329,7 +1328,7 @@ PetscErrorCode FEMethod_LowLevelStudent::GetDiffNMatrix_at_GaussPoint(
       }
       vector<ublas::matrix<FieldData> > &data = (*FF[ss])[ent_ptr];
       data.resize(g_dim);
-      unsigned int nb_dofs = rank*ent_ptr->get_order_nb_dofs(order); 
+      unsigned int nb_dofs = rank*ent_ptr->get_order_nb_dofs(order);
       if(nb_dofs!=dit->second.size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
       unsigned int gg = 0;
       for(;gg<g_dim;gg++) {
@@ -1341,7 +1340,7 @@ PetscErrorCode FEMethod_LowLevelStudent::GetDiffNMatrix_at_GaussPoint(
 	  for(unsigned int dd = 0;dd<dim;dd++) {
 	    ublas::matrix_row<ublas::matrix<FieldData> > mr(mat,rr*dim+dd);
 	    for(int jj = 0;jj<ent_ptr->get_order_nb_dofs(order);jj++) {
-	      mr(jj*rank + rr) =  (diff_base_functions_by_gauss_pt[gg])[dim*jj + dd];     
+	      mr(jj*rank + rr) =  (diff_base_functions_by_gauss_pt[gg])[dim*jj + dd];
 	    }
 	  }
 	}
@@ -1371,7 +1370,7 @@ PetscErrorCode FEMethod_LowLevelStudent::GetColDiffNMatrix_at_GaussPoint() {
   PetscFunctionReturn(0);
 }
 //TRI
-PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_TRI(EntityHandle ent,vector<double> &_gNTRI_) {  
+PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_TRI(EntityHandle ent,vector<double> &_gNTRI_) {
   PetscFunctionBegin;
   typedef SideNumber_multiIndex::nth_index<1>::type SideNumber_multiIndex_by_CompositeTag;
   SideNumber_multiIndex_by_CompositeTag& side_table = const_cast<SideNumber_multiIndex_by_CompositeTag&>(fe_ent_ptr->get_side_number_table().get<1>());
@@ -1411,7 +1410,7 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_TRI(EntityHandle ent,vec
 	      side->side_number,_face_edge_side_number_[ee],ee,_face_edge_offse_[ee]);
 	  }*/
 	  _face_edge_order_H1[_face_edge_side_number_[ee]] = maxOrderEdgeH1[_elem_face_edge_side_number_[ee]];
-	} 
+	}
 	//topology
 	const int cannonical_face_sense_p1[4][3] = { {0,1,3}, {1,2,3}, {0,3,2}/**/, {0,2,1}/**/ }; //secon index is offset (positive sense)
 	const int cannonical_face_sense_m1[4][3] = { {0,3,1}, {1,3,2}, {0,2,3}, {0,1,2} }; //second index is offset (negative sense)
@@ -1465,7 +1464,7 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_TRI(EntityHandle ent,vec
 	_edgeN_[0] = &((H1edgeN_TRI_face[_face_edges_[0]])[0]);
 	_edgeN_[1] = &((H1edgeN_TRI_face[_face_edges_[1]])[0]);
 	_edgeN_[2] = &((H1edgeN_TRI_face[_face_edges_[2]])[0]);
-	double *_diff_edgeN_[3]; 
+	double *_diff_edgeN_[3];
 	_diff_edgeN_[0] = &((diffH1edgeN_TRI_face[_face_edges_[0]])[0]);
 	_diff_edgeN_[1] = &((diffH1edgeN_TRI_face[_face_edges_[1]])[0]);
   	_diff_edgeN_[2] = &((diffH1edgeN_TRI_face[_face_edges_[2]])[0]);
@@ -1493,7 +1492,7 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_TRI(EntityHandle ent,vec
 }
 PetscErrorCode FEMethod_LowLevelStudent::GetNMatrix_at_FaceGaussPoint(
     EntityHandle ent,const string& field_name,
-    Indices_Type& nodesGlobIndices, 
+    Indices_Type& nodesGlobIndices,
     Indices_EntType& edgesGlobIndices,
     Indices_EntType& facesGlobIndices,
     N_Matrix_Type& N_Matrix_nodes,
@@ -1555,9 +1554,9 @@ PetscErrorCode FEMethod_LowLevelStudent::GetNMatrix_at_FaceGaussPoint(
       data.resize(g_dim);
       int rank = field_ptr->get_max_rank();
       int order = ent_ptr->get_max_order();
-      unsigned int nb_dofs = rank*ent_ptr->get_order_nb_dofs(order); 
+      unsigned int nb_dofs = rank*ent_ptr->get_order_nb_dofs(order);
       if(mit!=H1edgeN_TRI_face.end()) {
-	if(ent_ptr->get_order_nb_dofs(order)*g_dim != mit->second.size()) 
+	if(ent_ptr->get_order_nb_dofs(order)*g_dim != mit->second.size())
 	  SETERRQ3(PETSC_COMM_SELF,1,"data inconsitency %u * %u != %u",ent_ptr->get_order_nb_dofs(order),g_dim,mit->second.size());
       }
       if(nb_dofs!=eiit->second.size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsitency");
@@ -1588,9 +1587,9 @@ PetscErrorCode FEMethod_LowLevelStudent::GetNMatrix_at_FaceGaussPoint(
       data.resize(g_dim);
       int rank = field_ptr->get_max_rank();
       int order = ent_ptr->get_max_order();
-      unsigned int nb_dofs = rank*ent_ptr->get_order_nb_dofs(order); 
+      unsigned int nb_dofs = rank*ent_ptr->get_order_nb_dofs(order);
       if(ent==face) {
-	if(ent_ptr->get_order_nb_dofs(order)*g_dim > H1faceN_TRI_face.size()) 
+	if(ent_ptr->get_order_nb_dofs(order)*g_dim > H1faceN_TRI_face.size())
 	  SETERRQ1(PETSC_COMM_SELF,1,"data inconsitency (side_number = %u)",side->side_number);
       }
       if(nb_dofs*g_dim > rank*H1faceN_TRI_face.size()) SETERRQ1(PETSC_COMM_SELF,1,"data inconsitency (side_number = %u)",side->side_number);

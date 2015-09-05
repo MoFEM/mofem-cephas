@@ -68,7 +68,9 @@ struct UltraWeakTransportElement {
     ids.insert(ids.begin(),bcIndices.begin(),bcIndices.end());
     PetscErrorCode ierr;
     IS is_local;
-    ierr = ISCreateGeneral(mField.get_comm(),ids.size(),&ids[0],PETSC_COPY_VALUES,&is_local); CHKERRQ(ierr);
+    ierr = ISCreateGeneral(
+      mField.get_comm(),ids.size(),ids.empty()?PETSC_NULL:&ids[0],PETSC_COPY_VALUES,&is_local
+    ); CHKERRQ(ierr);
     ierr = ISAllGather(is_local,is); CHKERRQ(ierr);
     ierr = ISDestroy(&is_local); CHKERRQ(ierr);
     PetscFunctionReturn(0);
