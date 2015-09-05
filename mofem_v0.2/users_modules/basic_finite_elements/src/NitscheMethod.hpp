@@ -430,6 +430,14 @@ struct NitscheMethod {
           }
         }
 
+        ierr = VecSetValues(
+          getFEMethod()->snes_f,
+          nb_dofs,
+          &row_data.getIndices()[0],
+          &nF[0],
+          ADD_VALUES
+        ); CHKERRQ(ierr);
+
       } catch (const std::exception& ex) {
         ostringstream ss;
         ss << "throw in method: " << ex.what() << endl;
@@ -537,9 +545,18 @@ struct NitscheMethod {
               }
             }
 
-
           }
         }
+
+        ierr = MatSetValues(
+          getFEMethod()->snes_B,
+          nb_dofs_row,
+          &row_data.getIndices()[0],
+          nb_dofs_col,
+          &col_data.getIndices()[0],
+          &kMatrix(0,0),
+          ADD_VALUES
+        ); CHKERRQ(ierr);
 
       } catch (const std::exception& ex) {
         ostringstream ss;
