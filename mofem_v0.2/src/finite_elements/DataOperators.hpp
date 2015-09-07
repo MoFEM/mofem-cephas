@@ -37,7 +37,7 @@ struct DataOperator {
 
   virtual ~DataOperator() {}
 
-  /** \brief operator for linear form, usually to calculate values on right hand side
+  /** \brief Operator for bi-linear form, usually to calculate values on right hand side
     */
   virtual PetscErrorCode doWork(
     int row_side,int col_side,
@@ -52,7 +52,7 @@ struct DataOperator {
   virtual PetscErrorCode opLhs(DataForcesAndSurcesCore &row_data,DataForcesAndSurcesCore &col_data,bool symm = true);
 
 
-  /** \brief operator for linear form, usually to calculate values on left hand side
+  /** \brief Operator for linear form, usually to calculate values on left hand side
     */
   virtual PetscErrorCode doWork(
     int side,
@@ -67,7 +67,7 @@ struct DataOperator {
 
 };
 
-/// \brief transform local reference derivatives of shape function to global derivatives
+/// \brief Transform local reference derivatives of shape function to global derivatives
 struct OpSetInvJacH1: public DataOperator {
 
   MatrixDouble &invJac;
@@ -79,7 +79,7 @@ struct OpSetInvJacH1: public DataOperator {
 
 };
 
-/// \brief transform local reference derivatives of shape function to global derivatives
+/// \brief Transform local reference derivatives of shape function to global derivatives
 struct OpSetInvJacHdiv: public DataOperator {
 
   MatrixDouble &invJac;
@@ -132,7 +132,7 @@ struct OpSetPiolaTransform: public DataOperator {
 
 };
 
-/** \brief apply covariant (Piola) transfer for Hdiv space for HO geometry
+/** \brief Apply covariant (Piola) transfer for Hdiv space for HO geometry
 */
 struct OpSetHoPiolaTransform: public DataOperator {
 
@@ -148,10 +148,10 @@ struct OpSetHoPiolaTransform: public DataOperator {
   };
 
 
-/** \brief operator to calculate function values and its gradients at Gauss points
+/** \brief Get field values and gradients at Gauss points
   * \ingroup mofem_forces_and_sources
   */
-struct OpGetData: public DataOperator {
+struct OpGetDataAndGradient: public DataOperator {
 
   MatrixDouble &data_at_GaussPt;
   MatrixDouble &dataGrad_at_GaussPt;
@@ -159,13 +159,15 @@ struct OpGetData: public DataOperator {
   const unsigned int dim;
   const ApproximationRank rank;
 
-  OpGetData(
-    MatrixDouble &_data_at_GaussPt,
-    MatrixDouble &_dataGrad_at_GaussPt,
-    ApproximationRank _rank,unsigned int _dim = 3):
-      data_at_GaussPt(_data_at_GaussPt),
-      dataGrad_at_GaussPt(_dataGrad_at_GaussPt),
-      dim(_dim),rank(_rank) {}
+  OpGetDataAndGradient(
+    MatrixDouble &data_at_gauss_pt,
+    MatrixDouble &data_grad_at_gauss_pt,
+    ApproximationRank _rank,
+    unsigned int _dim = 3):
+      data_at_GaussPt(data_at_gauss_pt),
+      dataGrad_at_GaussPt(data_grad_at_gauss_pt),
+      dim(_dim),
+      rank(_rank) {}
 
   PetscErrorCode doWork(
     int side,
@@ -174,7 +176,7 @@ struct OpGetData: public DataOperator {
 
 };
 
-/** \brief calculate normals at Gauss points of triangle element
+/** \brief Calculate normals at Gauss points of triangle element
   * \ingroup mofem_forces_and_sources
   */
 struct OpGetNormals: public DataOperator {
@@ -257,6 +259,18 @@ struct OpSetPiolaTransoformOnTriangle: public DataOperator {
 
 };
 
+/** \brief Calculate tangent vector on edge form HO geometry approximation
+ */
+struct OpGetHoTangentOnEdge: public DataOperator {
+
+  MatrixDouble &tAngent;
+
+  OpGetHoTangentOnEdge(MatrixDouble &tangent):
+    tAngent(tangent) {}
+
+  PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
+
+};
 
 
 }

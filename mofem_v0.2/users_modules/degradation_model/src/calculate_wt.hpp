@@ -31,8 +31,8 @@ namespace MoFEM {
   
   struct Calculate_wt {
     
-    struct MyVolumeFE: public TetElementForcesAndSourcesCore {
-      MyVolumeFE(FieldInterface &_mField): TetElementForcesAndSourcesCore(_mField) {}
+    struct MyVolumeFE: public VolumeElementForcesAndSourcesCore {
+      MyVolumeFE(FieldInterface &_mField): VolumeElementForcesAndSourcesCore(_mField) {}
       int getRule(int order) { return order-1; };
     };
     
@@ -106,7 +106,7 @@ namespace MoFEM {
       PetscErrorCode preProcess() {
         PetscFunctionBegin;
         PetscErrorCode ierr;
-        ierr = mField.set_other_local_VecCreateGhost(
+        ierr = mField.set_other_local_ghost_vector(
                                                      problemPtr,tempName,rateName,ROW,ts_u_t,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
         PetscFunctionReturn(0);
       }
@@ -142,7 +142,7 @@ namespace MoFEM {
         PetscFunctionBegin;
         PetscErrorCode ierr;
         
-        ierr = mField.set_global_VecCreateGhost(
+        ierr = mField.set_global_ghost_vector(
                                                 problemPtr,ROW,ts_u,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
         
         BitRefLevel proble_bit_level = problemPtr->get_BitRefLevel();
@@ -167,7 +167,7 @@ namespace MoFEM {
       
       ublas::vector<double> &fieldAtGaussPts;
       OpGetFieldAtGaussPts(const string field_name,ublas::vector<double> &field_at_gauss_pts):
-      OP::UserDataOperator(field_name),
+      OP::UserDataOperator(field_name,OP::UserDataOperator::OPROW),
       fieldAtGaussPts(field_at_gauss_pts) {}
       
       /** \brief operator calculating temperature and rate of temperature
@@ -212,35 +212,35 @@ namespace MoFEM {
     /** \brief operator to calculate tempereature at Gauss pts
      * \infroup mofem_Calculate_wt
      */
-    struct OpGetTempAtGaussPts: public OpGetFieldAtGaussPts<TetElementForcesAndSourcesCore> {
+    struct OpGetTempAtGaussPts: public OpGetFieldAtGaussPts<VolumeElementForcesAndSourcesCore> {
       OpGetTempAtGaussPts(const string thermal_field_name,CommonData &common_data):
-      OpGetFieldAtGaussPts<TetElementForcesAndSourcesCore>(thermal_field_name,common_data.temperatureAtGaussPts) {}
+      OpGetFieldAtGaussPts<VolumeElementForcesAndSourcesCore>(thermal_field_name,common_data.temperatureAtGaussPts) {}
     };
     
     /** \brief operator to calculate moisture concentration at Gauss pts
      * \infroup mofem_Calculate_wt
      */
-    struct OpGetConcAtGaussPts: public OpGetFieldAtGaussPts<TetElementForcesAndSourcesCore> {
+    struct OpGetConcAtGaussPts: public OpGetFieldAtGaussPts<VolumeElementForcesAndSourcesCore> {
       OpGetConcAtGaussPts(const string conc_field_name,CommonData &common_data):
-      OpGetFieldAtGaussPts<TetElementForcesAndSourcesCore>(conc_field_name,common_data.concentrationAtGaussPts) {}
+      OpGetFieldAtGaussPts<VolumeElementForcesAndSourcesCore>(conc_field_name,common_data.concentrationAtGaussPts) {}
     };
 
     
     /** \brief operator to calculate Wt at Gauss pts
      * \infroup mofem_Calculate_wt
      */
-    struct OpGetTetWtAtGaussPts: public OpGetFieldAtGaussPts<TetElementForcesAndSourcesCore> {
+    struct OpGetTetWtAtGaussPts: public OpGetFieldAtGaussPts<VolumeElementForcesAndSourcesCore> {
       OpGetTetWtAtGaussPts(const string field_name,CommonData &common_data):
-      OpGetFieldAtGaussPts<TetElementForcesAndSourcesCore>(field_name,common_data.fieldAtGaussPts) {}
+      OpGetFieldAtGaussPts<VolumeElementForcesAndSourcesCore>(field_name,common_data.fieldAtGaussPts) {}
     };
    
     
     /** \brief operator to calculate Wt rate at Gauss pts
      * \infroup mofem_Calculate_wt
      */
-    struct OpGetTetWtRateAtGaussPts: public OpGetFieldAtGaussPts<TetElementForcesAndSourcesCore> {
+    struct OpGetTetWtRateAtGaussPts: public OpGetFieldAtGaussPts<VolumeElementForcesAndSourcesCore> {
       OpGetTetWtRateAtGaussPts(const string rate_name,CommonData &common_data):
-      OpGetFieldAtGaussPts<TetElementForcesAndSourcesCore>(rate_name,common_data.fieldRateAtGaussPts) {}
+      OpGetFieldAtGaussPts<VolumeElementForcesAndSourcesCore>(rate_name,common_data.fieldRateAtGaussPts) {}
     };
     
     
@@ -248,13 +248,13 @@ namespace MoFEM {
     /** \biref operator to calculate right hand side of heat conductivity terms
      * \infroup mofem_thermal_elem
      */
-    struct OpGetDegradationRhs: public TetElementForcesAndSourcesCore::UserDataOperator {
+    struct OpGetDegradationRhs: public VolumeElementForcesAndSourcesCore::UserDataOperator {
       
       BlockData &dAta;
       CommonData &commonData;
       bool useTsF;
       OpGetDegradationRhs(const string field_name,BlockData &data,CommonData &common_data):
-      TetElementForcesAndSourcesCore::UserDataOperator(field_name),
+      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name, UserDataOperator::OPROW),
       dAta(data),commonData(common_data),useTsF(true) {}
       
       ublas::vector<double> Nf;
@@ -333,12 +333,12 @@ namespace MoFEM {
     /** \biref operator to calculate left hand side of miisture capacity terms
      * \infroup mofem_thermal_elem
      */
-    struct OpGetDegradationLhs: public TetElementForcesAndSourcesCore::UserDataOperator {
+    struct OpGetDegradationLhs: public VolumeElementForcesAndSourcesCore::UserDataOperator {
       
       BlockData &dAta;
       CommonData &commonData;
       OpGetDegradationLhs(const string field_name,BlockData &data,CommonData &common_data):
-      TetElementForcesAndSourcesCore::UserDataOperator(field_name),
+      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name, UserDataOperator::OPROWCOL),
       dAta(data),commonData(common_data) {}
       
       ublas::matrix<double> M,transM;
@@ -489,13 +489,13 @@ namespace MoFEM {
         for(;sit!=setOfBlocks.end();sit++) {
 //           cout<<"HI before setTimeSteppingProblem() "<<endl;
           //add finite element
-          feLhsDegradation.get_op_to_do_Lhs().push_back(new OpGetDegradationLhs(field_name,sit->second,commonData));
+          feLhsDegradation.getOpPtrVector().push_back(new OpGetDegradationLhs(field_name,sit->second,commonData));
           
-          feRhsDegradation.get_op_to_do_Rhs().push_back(new OpGetTempAtGaussPts(thermal_field_name, commonData));
-          feRhsDegradation.get_op_to_do_Rhs().push_back(new OpGetConcAtGaussPts(conc_field_name,    commonData));
-          feRhsDegradation.get_op_to_do_Rhs().push_back(new OpGetTetWtAtGaussPts(field_name,commonData));
-          feRhsDegradation.get_op_to_do_Rhs().push_back(new OpGetTetWtRateAtGaussPts(rate_name,commonData));
-          feRhsDegradation.get_op_to_do_Rhs().push_back(new OpGetDegradationRhs(field_name, sit->second,  commonData));
+          feRhsDegradation.getOpPtrVector().push_back(new OpGetTempAtGaussPts(thermal_field_name, commonData));
+          feRhsDegradation.getOpPtrVector().push_back(new OpGetConcAtGaussPts(conc_field_name,    commonData));
+          feRhsDegradation.getOpPtrVector().push_back(new OpGetTetWtAtGaussPts(field_name,commonData));
+          feRhsDegradation.getOpPtrVector().push_back(new OpGetTetWtRateAtGaussPts(rate_name,commonData));
+          feRhsDegradation.getOpPtrVector().push_back(new OpGetDegradationRhs(field_name, sit->second,  commonData));
 
 //          cout<<"HI After setTimeSteppingProblem() "<<endl;
         }

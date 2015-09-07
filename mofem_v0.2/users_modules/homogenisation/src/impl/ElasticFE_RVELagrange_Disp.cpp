@@ -44,15 +44,15 @@ namespace MoFEM {
     rowNMatrices.resize(1+3+1);
     ColGlob.resize(1+3+1);
     
-    //      g_TRI_dim = 13;
-    //      g_NTRI.resize(3*g_TRI_dim);
-    //      ShapeMBTRI(&g_NTRI[0],G_TRI_X13,G_TRI_Y13,g_TRI_dim);
-    //      G_W_TRI = G_TRI_W13;
+      g_TRI_dim = 13;
+      g_NTRI.resize(3*g_TRI_dim);
+      ShapeMBTRI(&g_NTRI[0],G_TRI_X13,G_TRI_Y13,g_TRI_dim);
+      G_W_TRI = G_TRI_W13;
     
-    g_TRI_dim = 28;
-    g_NTRI.resize(3*g_TRI_dim);
-    ShapeMBTRI(&g_NTRI[0],G_TRI_X28,G_TRI_Y28,g_TRI_dim);
-    G_W_TRI = G_TRI_W28;
+//    g_TRI_dim = 28;
+//    g_NTRI.resize(3*g_TRI_dim);
+//    ShapeMBTRI(&g_NTRI[0],G_TRI_X28,G_TRI_Y28,g_TRI_dim);
+//    G_W_TRI = G_TRI_W28;
     
     
     row_mat=0;  //row_mat=0 for nodes   [1,2,3] for edges, 4 for face (for triangle)
@@ -502,9 +502,9 @@ namespace MoFEM {
         
         switch(rank_field) {
           case 3:
-            X_mat(0,0)=2.0*gauss_coord(0,gg);  X_mat(0,3)=gauss_coord(1,gg);  X_mat(0,4)=gauss_coord(2,gg);
-            X_mat(1,1)=2.0*gauss_coord(1,gg);  X_mat(1,3)=gauss_coord(0,gg);  X_mat(1,5)=gauss_coord(2,gg);
-            X_mat(2,2)=2.0*gauss_coord(2,gg);  X_mat(2,4)=gauss_coord(0,gg);  X_mat(2,5)=gauss_coord(1,gg);
+            X_mat(0,0)=2.0*gauss_coord(0,gg);  X_mat(0,3)=gauss_coord(1,gg);  X_mat(0,5)=gauss_coord(2,gg);
+            X_mat(1,1)=2.0*gauss_coord(1,gg);  X_mat(1,3)=gauss_coord(0,gg);  X_mat(1,4)=gauss_coord(2,gg);
+            X_mat(2,2)=2.0*gauss_coord(2,gg);  X_mat(2,4)=gauss_coord(1,gg);  X_mat(2,5)=gauss_coord(0,gg);
             X_mat=0.5*X_mat;
             break;
           case 1:

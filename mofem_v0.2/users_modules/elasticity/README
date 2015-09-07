@@ -10,6 +10,7 @@ Example Static (elastcity)
 mpirun -np 2 ./elasticity -my_file LShape.cub -ksp_type gmres -pc_type lu -pc_factor_mat_solver_package mumps -ksp_monitor -my_order 2
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 make && mpirun -np 1 ./elasticity_old -my_file LShape.cub -ksp_type fgmres -pc_type asm -sub_pc_type lu -ksp_monitor -my_order 1
 
 Example dynamic (dynamic)
@@ -22,6 +23,9 @@ mpirun -np 2 ./dynamics -my_file LShape.cub -ksp_type fgmres -pc_type lu -pc_fac
 -my_max_post_proc_ref_level 2 - sets order of refinment for postporocessing mesh
 -my_time_data - a txt file of two column to set time line and load scale 
 -my_output_prt  specify how often (per step) to print output files
+=======
+mpirun -np 2 ./elasticity -my_file /mnt/home/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/Elastic_HOG/Plate_with_hole_HOG.cub -ksp_type gmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1 -my_max_post_proc_ref_level 0
+>>>>>>> 701254cd4abf095202f502944f2e58fab2ced723
 
 =======
 >>>>>>> 4c71115df9398c45357ea59be27c041fd194b5e2
@@ -34,4 +38,14 @@ mpirun -np 2 ./elasticity "-my_file" ../thermal/solution.h5m "-ksp_type" "fgmres
 
 
 
+All files conversion using script
+../degradation_model/do_vtk1.sh  out.h5m
 
+cp *.vtk /mnt/home/Desktop/results/
+
+rm *.vtk *.info *.h5m *.out
+
+
+
+
+make elasticity1 && mpirun -np 1 ./elasticity1 -my_file /mnt/home/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/elasticity/LShape.cub -ksp_type gmres -pc_type lu -pc_factor_mat_solver_package mumps -ksp_monitor -my_order 1

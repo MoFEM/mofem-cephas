@@ -366,7 +366,7 @@ int main(int argc, char *argv[]) {
   ierr = VecDestroy(&F); CHKERRQ(ierr);
   ierr = VecDestroy(&Stress_Homo); CHKERRQ(ierr);
   ierr = VecDestroy(&RVE_volume_Vec); CHKERRQ(ierr);
-  
+
   ierr = VecDestroy(&D); CHKERRQ(ierr);
   ierr = MatDestroy(&Aij); CHKERRQ(ierr);
   ierr = KSPDestroy(&solver); CHKERRQ(ierr);

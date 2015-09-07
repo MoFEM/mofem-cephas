@@ -174,9 +174,9 @@ static char help[] = "...\n\n";
 
 const char* args[] = {
   "_r_Em", "_r_NUm",
-  "_r_NUp",     "_r_NUpz",      "_r_Ep",    "_r_Ez",    "_r_Gzp",     // 1st order
-  "_rs_EmEm", "_rs_NUmNUm",                                             // 2nd order
-  "_rs_NUpNUp", "_rs_NUpzNUpz", "_rs_EpEp", "_rs_EzEz", "_rs_GzpGzp",
+  "_r_NUp",     "_r_NUpz",      "_r_Ep",    "_r_Ez",    "_r_Gzp",    // 1st order
+  "_rs_EmEm", "_rs_NUmNUm",
+  "_rs_NUpNUp", "_rs_NUpzNUpz", "_rs_EpEp", "_rs_EzEz", "_rs_GzpGzp",// 2nd order
 };
 
 int nvars = 7;    // number of variables
@@ -686,6 +686,8 @@ int main(int argc, char *argv[]) {
     //cout<<ss_field.str().c_str()<<endl;
     ierr = m_field_Macro.add_field(ss_field.str().c_str(),H1,field_rank,MF_ZERO); CHKERRQ(ierr);
   }
+  ierr = m_field_Macro.add_field("DISP_MACRO_r_F",H1,field_rank,MF_ZERO); CHKERRQ(ierr);
+  
 
   
   /*****************************************************************************
@@ -716,6 +718,10 @@ int main(int argc, char *argv[]) {
     ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_FE_MACRO",ss_field.str().c_str()); CHKERRQ(ierr);
   }
   
+  //ierr = m_field_Macro.modify_finite_element_add_field_row("ELASTIC_FE_MACRO","DISP_MACRO_r_F"); CHKERRQ(ierr);
+  //ierr = m_field_Macro.modify_finite_element_add_field_col("ELASTIC_FE_MACRO","DISP_MACRO_r_F"); CHKERRQ(ierr);
+  ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_FE_MACRO","DISP_MACRO_r_F"); CHKERRQ(ierr);
+  
   
   //Define rows/cols and element data
   ierr = m_field_Macro.modify_finite_element_add_field_row("ELASTIC_FE_MACRO_REL","DISP_MACRO"); CHKERRQ(ierr);
@@ -729,6 +735,10 @@ int main(int argc, char *argv[]) {
     //    cout<<ss_field.str().c_str()<<endl;
     ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_FE_MACRO_REL",ss_field.str().c_str()); CHKERRQ(ierr);
   }
+  
+  //ierr = m_field_Macro.modify_finite_element_add_field_row("ELASTIC_FE_MACRO_REL","DISP_MACRO_r_F"); CHKERRQ(ierr);
+  //ierr = m_field_Macro.modify_finite_element_add_field_col("ELASTIC_FE_MACRO_REL","DISP_MACRO_r_F"); CHKERRQ(ierr);
+  ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_FE_MACRO_REL","DISP_MACRO_r_F"); CHKERRQ(ierr);
   
   //define problems
   ierr = m_field_Macro.add_problem("ELASTIC_PROBLEM_MACRO"); CHKERRQ(ierr);
@@ -760,6 +770,7 @@ int main(int argc, char *argv[]) {
     ss_field << "DISP_MACRO" << stochastic_fields[ii];
     ierr = m_field_Macro.add_ents_to_field_by_TETs(0,ss_field.str().c_str()); CHKERRQ(ierr);
   }
+  ierr = m_field_Macro.add_ents_to_field_by_TETs(0,"DISP_MACRO_r_F"); CHKERRQ(ierr);
   
 
   /*****************************************************************************
@@ -793,6 +804,10 @@ int main(int argc, char *argv[]) {
     ierr = m_field_Macro.set_field_order(0,MBEDGE,ss_field.str().c_str(),order_st); CHKERRQ(ierr);
     ierr = m_field_Macro.set_field_order(0,MBVERTEX,ss_field.str().c_str(),1); CHKERRQ(ierr);
   }
+  ierr = m_field_Macro.set_field_order(0,MBTET,"DISP_MACRO_r_F",order_st); CHKERRQ(ierr);
+  ierr = m_field_Macro.set_field_order(0,MBTRI,"DISP_MACRO_r_F",order_st); CHKERRQ(ierr);
+  ierr = m_field_Macro.set_field_order(0,MBEDGE,"DISP_MACRO_r_F",order_st); CHKERRQ(ierr);
+  ierr = m_field_Macro.set_field_order(0,MBVERTEX,"DISP_MACRO_r_F",1); CHKERRQ(ierr);
   
   //
   ierr = m_field_Macro.set_field_order(0,MBTET,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
@@ -809,8 +824,8 @@ int main(int argc, char *argv[]) {
   //ierr = m_field_Macro.modify_problem_add_finite_element("ELASTIC_PROBLEM_MACRO","ELASTIC_FE_MACRO"); CHKERRQ(ierr);
  //***************************************************************************
 
-  //ierr = MetaNeummanForces::addNeumannBCElements(m_field_Macro,"ELASTIC_PROB","DISP_MACORO"); CHKERRQ(ierr);
   ierr = MetaNeummanForces::addNeumannBCElements(m_field_Macro,"DISP_MACRO"); CHKERRQ(ierr);
+  //ierr = MyMetaNeummanForces_r_PSFEM::addNeumannBCElements(m_field_Macro,"DISP_MACRO_r_F"); CHKERRQ(ierr);
   ierr = m_field_Macro.modify_problem_add_finite_element("ELASTIC_PROBLEM_MACRO","FORCE_FE"); CHKERRQ(ierr);
   
 
@@ -892,7 +907,7 @@ int main(int argc, char *argv[]) {
   ReliabOpt.istep_max     = 2000;    // Maximum number of interation allowed in the search algorithm
   ReliabOpt.e1            = 0.001;   // Tolerance on how close design point is to limit-state surface
   ReliabOpt.e2            = 0.001;   // Tolerance on how accurately the gradient points towards the origin
-  ReliabOpt.step_code     = 0.025;       // 0: step size by Armijo rule, otherwise: given value is the step size
+  ReliabOpt.step_code     = 1;       // 0: step size by Armijo rule, otherwise: given value is the step size
   ReliabOpt.Recorded_u    = 1;       // 0: u-vector not recorded at all iterations, 1: u-vector recorded at all iterations
   ReliabOpt.Recorded_x    = 1;       // 0: x-vector not recorded at all iterations, 1: x-vector recorded at all iterations
   ReliabOpt.Recorded_beta = 1;
@@ -918,6 +933,11 @@ int main(int argc, char *argv[]) {
   probdata.num_vars    = readprobdata.NumVars;
   probdata.MatStrength = readprobdata.MatStrength;
   probdata.NameVars    = readprobdata.NameVars;
+  
+  
+  int FailureCriterion; // 1: Tsai-Wu, 2: Tsai-Hill
+  string NameOfFailureCriterion;
+  FailureCriterion = readprobdata.FailureCriterion;
   
   
   //////////////////////////////////////////////////////////////////////////////
@@ -974,6 +994,7 @@ int main(int argc, char *argv[]) {
   ublas::matrix<double> Dmat;
   ublas::matrix<double> Dmat_r_Em, Dmat_r_NUm, Dmat_r_Ep, Dmat_r_Ez;
   ublas::matrix<double> Dmat_r_NUp, Dmat_r_NUpz, Dmat_r_Gzp;
+  ublas::matrix<double> Dmat_r_F;
   
   ublas::matrix<double> Dmat_rs_EmEm, Dmat_rs_NUmNUm, Dmat_rs_EpEp, Dmat_rs_EzEz;
   ublas::matrix<double> Dmat_rs_NUpNUp, Dmat_rs_NUpzNUpz, Dmat_rs_GzpGzp;
@@ -1058,6 +1079,7 @@ int main(int argc, char *argv[]) {
   ublas::matrix<double> StressGP_r_NUp;
   ublas::matrix<double> StressGP_r_NUpz;
   ublas::matrix<double> StressGP_r_Gzp;
+  ublas::matrix<double> StressGP_r_F;
   
   /*
    *  Start iteration
@@ -1114,16 +1136,17 @@ int main(int argc, char *argv[]) {
      */
     
     ierr = Solve_FE2_Problem.Calculate_RVEDmat(m_field_RVE, nvars, nders, stochastic_fields,x,probdata.num_vars,probdata.NameVars); CHKERRQ(ierr);
-    ierr = Solve_FE2_Problem.Macro_FE_Solver(m_field_Macro, nvars, nders, stochastic_fields); CHKERRQ(ierr);
+    ierr = Solve_FE2_Problem.Macro_FE_Solver(m_field_Macro, nvars, nders, stochastic_fields,x,probdata.num_vars,probdata.NameVars); CHKERRQ(ierr);
     
     Dmat             = Solve_FE2_Problem.Dmat; cout<<"Dmat: "<<Dmat<<"\n\n";
     Dmat_r_Em        = Solve_FE2_Problem.Dmat_r_Em; //cout<<"Dmat_r_Em: "<<Dmat_r_Em<<"\n\n";
     Dmat_r_NUm       = Solve_FE2_Problem.Dmat_r_NUm;
     Dmat_r_Ep        = Solve_FE2_Problem.Dmat_r_Ep;
-    Dmat_r_Ez        = Solve_FE2_Problem.Dmat_r_Ez;
+    Dmat_r_Ez        = Solve_FE2_Problem.Dmat_r_Ez; //cout<<"Dmat_r_Ez: "<<Dmat_r_Ez<<"\n\n";
     Dmat_r_NUp       = Solve_FE2_Problem.Dmat_r_NUp;
     Dmat_r_NUpz      = Solve_FE2_Problem.Dmat_r_NUpz;
     Dmat_r_Gzp       = Solve_FE2_Problem.Dmat_r_Gzp;
+    Dmat_r_F.resize(6,6); Dmat_r_F.clear();
     
     Dmat_rs_EmEm     = Solve_FE2_Problem.Dmat_rs_EmEm;
     Dmat_rs_NUmNUm   = Solve_FE2_Problem.Dmat_rs_NUmNUm;
@@ -1142,13 +1165,12 @@ int main(int argc, char *argv[]) {
     // with respect to Em
     FE2_PostProcStressForReliability_First Calc_Stress_Em(m_field_Macro,"DISP_MACRO","DISP_MACRO_r_Em",Dmat,Dmat_r_Em);
     ierr = m_field_Macro.loop_finite_elements("ELASTIC_PROBLEM_MACRO","ELASTIC_FE_MACRO_REL",Calc_Stress_Em);  CHKERRQ(ierr);
-    StressGP_r_Em.clear(); StressGP_r_Em = Calc_Stress_Em.StressGP_r;
+    StressGP_r_Em.clear(); StressGP_r_Em = Calc_Stress_Em.StressGP_r; //cout<<"Stress at GP wrt Em: "<<StressGP_r_Em<<endl;
     
     // with respect to NUm
     FE2_PostProcStressForReliability_First Calc_Stress_NUm(m_field_Macro,"DISP_MACRO","DISP_MACRO_r_NUm",Dmat,Dmat_r_NUm);
     ierr = m_field_Macro.loop_finite_elements("ELASTIC_PROBLEM_MACRO","ELASTIC_FE_MACRO_REL",Calc_Stress_NUm);  CHKERRQ(ierr);
     StressGP_r_NUm.clear(); StressGP_r_NUm = Calc_Stress_NUm.StressGP_r;
-    
     
     // with respect to NUp
     FE2_PostProcStressForReliability_First Calc_Stress_NUp(m_field_Macro,"DISP_MACRO","DISP_MACRO_r_NUp",Dmat,Dmat_r_NUp);
@@ -1168,22 +1190,54 @@ int main(int argc, char *argv[]) {
     // with respect to Ez
     FE2_PostProcStressForReliability_First Calc_Stress_Ez(m_field_Macro,"DISP_MACRO","DISP_MACRO_r_Ez",Dmat,Dmat_r_Ez);
     ierr = m_field_Macro.loop_finite_elements("ELASTIC_PROBLEM_MACRO","ELASTIC_FE_MACRO_REL",Calc_Stress_Ez);  CHKERRQ(ierr);
-    StressGP_r_Ez.clear(); StressGP_r_Ez = Calc_Stress_Ez.StressGP_r;
+    StressGP_r_Ez.clear(); StressGP_r_Ez = Calc_Stress_Ez.StressGP_r;  //cout<<"StressGP_r_Ez: "<<StressGP_r_Ez<<endl;
     
     // with respect to Gzp
     FE2_PostProcStressForReliability_First Calc_Stress_Gzp(m_field_Macro,"DISP_MACRO","DISP_MACRO_r_Gzp",Dmat,Dmat_r_Gzp);
     ierr = m_field_Macro.loop_finite_elements("ELASTIC_PROBLEM_MACRO","ELASTIC_FE_MACRO_REL",Calc_Stress_Gzp);  CHKERRQ(ierr);
     StressGP_r_Gzp.clear(); StressGP_r_Gzp = Calc_Stress_Gzp.StressGP_r;
     
+    // with respect to Gzp
+    FE2_PostProcStressForReliability_First Calc_Stress_F(m_field_Macro,"DISP_MACRO","DISP_MACRO_r_F",Dmat,Dmat_r_F);
+    ierr = m_field_Macro.loop_finite_elements("ELASTIC_PROBLEM_MACRO","ELASTIC_FE_MACRO_REL",Calc_Stress_F);  CHKERRQ(ierr);
+    StressGP_r_F.clear(); StressGP_r_F = Calc_Stress_F.StressGP_r; //ccout<<"Stress at GP wrt F: "<<StressGP_r_F<<endl;
+    
     // Evaluate LSF and its gradient
     grad_g.resize(probdata.num_vars); grad_g.clear();
     //ierr = TheLSF.gfun(x,val_G,grad_g); CHKERRQ(ierr);
-    ierr = TheLSF.gfun_ply_TW(x,probdata.NameVars,probdata.MatStrength,
-                              StressGP,//probdata.MatStrength,StressGP,
-                              StressGP_r_Em,StressGP_r_NUm,
-                              StressGP_r_NUp,StressGP_r_NUpz,
-                              StressGP_r_Ep,StressGP_r_Ez,StressGP_r_Gzp,
-                              val_G,grad_g); CHKERRQ(ierr);
+    
+    switch (FailureCriterion) {
+      case 1:
+        //
+        // Tsai-Wu failure criteria
+        //
+        NameOfFailureCriterion = "Tsai-Wu";
+        ierr = TheLSF.gfun_ply_TW(x,probdata.NameVars,probdata.MatStrength,
+                                  StressGP,
+                                  StressGP_r_Em,StressGP_r_NUm,
+                                  StressGP_r_NUp,StressGP_r_NUpz,
+                                  StressGP_r_Ep,StressGP_r_Ez,StressGP_r_Gzp,
+                                  StressGP_r_F,
+                                  val_G,grad_g); CHKERRQ(ierr);
+        break;
+      case 2:
+        //
+        // Tsai-Hill failure criteria
+        //
+        NameOfFailureCriterion = "Tsai-Hill";
+        ierr = TheLSF.gfun_ply_Tsai_Hill(x,probdata.NameVars,probdata.MatStrength,
+                                         StressGP,//probdata.MatStrength,StressGP,
+                                         StressGP_r_Em,StressGP_r_NUm,
+                                         StressGP_r_NUp,StressGP_r_NUpz,
+                                         StressGP_r_Ep,StressGP_r_Ez,StressGP_r_Gzp,
+                                         StressGP_r_F,
+                                         val_G,grad_g); CHKERRQ(ierr);
+        break;
+    }
+    
+    
+    
+    
     
     grad_G.resize(probdata.num_vars); grad_G.clear();
     grad_G = prod(grad_g,inv_dudx);
@@ -1220,7 +1274,7 @@ int main(int argc, char *argv[]) {
     /*
      * Check convergence
      */
-    if (((abs(val_G/val_G0)<e1) && (norm_2(u-inner_prod(alpha,u)*alpha))) || (istep == istep_max)) {
+    if (((abs(val_G/val_G0)<e1) && (norm_2(u-inner_prod(alpha,u)*alpha)<e2)) || (istep == istep_max)) {
       conv_flag = 1;
     }
     
@@ -1256,12 +1310,16 @@ int main(int argc, char *argv[]) {
       }
       
       cout<<"\n\nReliability index estimate at "<<istep<<" is: "<<((val_G/norm_2(grad_G)) + inner_prod(alpha, u));
-      cout<<"\t"<<norm_2(u)<<endl;
+      cout<<"\t"<<norm_2(u)<<"\t"<<inner_prod(alpha,u)<<endl;
       //cout<<"design point: "<<u<<endl;
       
       // Write reliability index in file
       if (beta_flag == 1) {
-        BetaFile<<setprecision(15)<<inner_prod(alpha,u)<<"\t"<<val_G<<"\n";
+        BetaFile<<setprecision(15)<<inner_prod(alpha,u)<<"\t"<<val_G;
+        for (int i=0;i<probdata.num_vars;i++) {
+          BetaFile<<"\t"<<x(i);
+        }
+        BetaFile<<"\n";
       }
       
       
@@ -1308,9 +1366,13 @@ int main(int argc, char *argv[]) {
   
   if (istep == istep_max) {
     cout<<"*  The maximum number of iteration is reached.\n";
+  } else {
+    cout<<"*  The number of iterations is: "<<istep<<".\n";
   }
   
+  
   cout<<"*  Optimal reliability index (beta) is: "<<beta<<endl;
+  cout<<"*  The failure criterion used is: "<<NameOfFailureCriterion<<endl;
   cout<<"*  Elapsed time is "<<total_time<<" seconds.\n";
   cout<<"*  The program finishes !!! \n*\n";
   cout<<"*************************************************"<<endl;

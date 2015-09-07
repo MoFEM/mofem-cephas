@@ -40,30 +40,70 @@ add_library(user_modules_reliability
 # 2. Linear displacement boundary condition
 
   add_executable(trans_iso_RVE_disp_7vars ${UM_SOURCE_DIR}/stochastic/trans_iso_RVE_disp_7vars.cpp)
-target_link_libraries(trans_iso_RVE_disp_7vars
-  mofem_finite_element_library mofem_finite_elements mofem_interfaces mofem_multi_indices mofem_petsc users_modules_obsolete user_modules_homogenisation
-  mofem_approx mofem_third_party mofem_cblas ${MoFEM_PROJECT_LIBS})
+target_link_libraries(
+  trans_iso_RVE_disp_7vars
+  user_modules_homogenisation 
+  users_modules_obsolete
+  users_modules
+  mofem_finite_elements 
+  mofem_interfaces 
+  mofem_multi_indices 
+  mofem_petsc 
+  mofem_approx 
+  mofem_third_party 
+  mofem_cblas  
+  ${MoFEM_PROJECT_LIBS})
 
 # 3. Periodic boundary condition
 
   add_executable(trans_iso_RVE_Periodic_7vars ${UM_SOURCE_DIR}/stochastic/trans_iso_RVE_Periodic_7vars.cpp)
-target_link_libraries(trans_iso_RVE_Periodic_7vars
-  mofem_finite_element_library mofem_finite_elements mofem_interfaces mofem_multi_indices mofem_petsc users_modules_obsolete user_modules_homogenisation
-  mofem_approx mofem_third_party mofem_cblas ${MoFEM_PROJECT_LIBS})  
+target_link_libraries(
+  trans_iso_RVE_Periodic_7vars
+  user_modules_homogenisation 
+  users_modules_obsolete
+  users_modules
+  mofem_finite_elements 
+  mofem_interfaces 
+  mofem_multi_indices 
+  mofem_petsc 
+  mofem_approx 
+  mofem_third_party 
+  mofem_cblas 
+  ${MoFEM_PROJECT_LIBS})  
 
 # 4. Constant traction boundary condition
   
   add_executable(trans_iso_RVE_Traction_7vars ${UM_SOURCE_DIR}/stochastic/trans_iso_RVE_Traction_7vars.cpp)
-target_link_libraries(trans_iso_RVE_Traction_7vars
-  mofem_finite_element_library mofem_finite_elements mofem_interfaces mofem_multi_indices mofem_petsc users_modules_obsolete user_modules_homogenisation
-  mofem_approx mofem_third_party mofem_cblas ${MoFEM_PROJECT_LIBS})  
+target_link_libraries(
+  trans_iso_RVE_Traction_7vars
+  user_modules_homogenisation 
+  users_modules_obsolete
+  users_modules
+  mofem_finite_elements 
+  mofem_interfaces 
+  mofem_multi_indices 
+  mofem_petsc 
+  mofem_approx 
+  mofem_third_party 
+  mofem_cblas 
+  ${MoFEM_PROJECT_LIBS})  
   
 # 5. Waviness - Linear displacement boundary condition
 
   add_executable(trans_iso_RVE_Geom_disp ${UM_SOURCE_DIR}/stochastic/trans_iso_RVE_Geom_disp.cpp)
-target_link_libraries(trans_iso_RVE_Geom_disp
-  mofem_finite_element_library mofem_finite_elements mofem_interfaces mofem_multi_indices mofem_petsc users_modules_obsolete user_modules_homogenisation
-  mofem_approx mofem_third_party mofem_cblas ${MoFEM_PROJECT_LIBS})   
+target_link_libraries(
+  trans_iso_RVE_Geom_disp
+  user_modules_homogenisation 
+  users_modules_obsolete
+  users_modules
+  mofem_finite_elements 
+  mofem_interfaces 
+  mofem_multi_indices 
+  mofem_petsc 
+  mofem_approx 
+  mofem_third_party 
+  mofem_cblas 
+  ${MoFEM_PROJECT_LIBS})   
 
 # =======================================================================================#
 #                                                                                        #
@@ -77,13 +117,13 @@ add_executable(FE2_TransIso_Disp_REL
                )
 target_link_libraries(
   FE2_TransIso_Disp_REL
-  mofem_finite_element_library 
+  user_modules_homogenisation
+  users_modules_obsolete 
+  users_modules
   mofem_finite_elements 
   mofem_interfaces 
   mofem_multi_indices 
   mofem_petsc 
-  users_modules_obsolete 
-  user_modules_homogenisation
   mofem_approx 
   mofem_third_party 
   mofem_cblas 
@@ -95,23 +135,42 @@ add_executable(PSFE2_TransIso_Disp
                )
 target_link_libraries(
   PSFE2_TransIso_Disp
-  mofem_finite_element_library 
+  user_modules_homogenisation
+  users_modules_obsolete
+  users_modules
   mofem_finite_elements 
   mofem_interfaces 
   mofem_multi_indices 
   mofem_petsc 
-  users_modules_obsolete 
-  user_modules_homogenisation
   mofem_approx 
   mofem_third_party 
   mofem_cblas 
   ${MoFEM_PROJECT_LIBS}
-  ) 
+  )
+  
+add_executable(PSFE2_Composite_Laminate
+${UM_SOURCE_DIR}/stochastic/PSFE2_Composite_Laminate.cpp
+${UM_SOURCE_DIR}/elasticity/src/impl/PCMGSetUpViaApproxOrders.cpp
+)
+target_link_libraries(
+	PSFE2_Composite_Laminate
+	users_modules_obsolete
+	users_modules
+	mofem_finite_elements
+	mofem_interfaces
+	mofem_multi_indices
+	mofem_petsc
+	mofem_approx
+	mofem_third_party
+	mofem_cblas
+	boost_program_options
+	${MoFEM_PROJECT_LIBS}
+	)   
 
 # =======================================================================================#
 #                                                                                        #
 #                            MsFE_Reliability_xxx                                        #
-#  Multi-scale finite element (MsFE) based reliability analysis                          #
+#  Multi-scale finite element (MsFE) based reliability analysis for single layer         #
 #  (0) CompStruct_Rel: reliability analysis with analytical limit-state function         #
 #  (1) MsFE_Reliability_Disp: MsFE based reliability analysis for RVE with linear        #
 #      displacement BC                                                                   #
@@ -124,15 +183,16 @@ target_link_libraries(
 add_executable(CompStruct_Rel 
     ${UM_SOURCE_DIR}/stochastic/CompStruct_Rel.cpp
     )
-target_link_libraries(CompStruct_Rel
-  mofem_finite_element_library
+target_link_libraries(
+  CompStruct_Rel
+  user_modules_reliability
+  user_modules_homogenisation
+  users_modules_obsolete
+  users_modules
   mofem_finite_elements
   mofem_interfaces 
   mofem_multi_indices 
-  mofem_petsc 
-  users_modules_obsolete 
-  user_modules_homogenisation
-  user_modules_reliability 
+  mofem_petsc  
   mofem_approx 
   mofem_third_party 
   mofem_cblas 
@@ -147,17 +207,48 @@ add_executable(MsFE_Reliability_Disp
                )
 target_link_libraries(
   MsFE_Reliability_Disp
-  mofem_finite_element_library 
+  user_modules_reliability
+  user_modules_homogenisation
+  users_modules_obsolete 
+  users_modules
   mofem_finite_elements 
   mofem_interfaces 
   mofem_multi_indices 
-  mofem_petsc 
-  users_modules_obsolete 
-  user_modules_homogenisation
-  user_modules_reliability
+  mofem_petsc  
   mofem_approx 
   mofem_third_party 
   mofem_cblas 
   ${MoFEM_PROJECT_LIBS}
   )
   
+#------------------------------ 
+# Case 1: Reliability analysis - MCS 
+#------------------------------ 
+add_executable(FE2_TransIso_Reliability_MCS_Disp 
+               ${UM_SOURCE_DIR}/stochastic/FE2_TransIso_Reliability_MCS_Disp.cpp
+               )
+target_link_libraries(
+  FE2_TransIso_Reliability_MCS_Disp
+  user_modules_reliability
+  user_modules_homogenisation
+  users_modules_obsolete 
+  users_modules
+  mofem_finite_elements 
+  mofem_interfaces 
+  mofem_multi_indices 
+  mofem_petsc  
+  mofem_approx 
+  mofem_third_party 
+  mofem_cblas 
+  ${MoFEM_PROJECT_LIBS}
+  )  
+  
+# =======================================================================================#
+#                                                                                        #
+#                            MsFE_Reliability_xxx                                        #
+#  Multi-scale finite element (MsFE) based reliability analysis for multi-layer laminate #
+#  (0) CompStruct_Rel: reliability analysis with analytical limit-state function         #
+#  (1) MsFE_Reliability_Disp: MsFE based reliability analysis for RVE with linear        #
+#      displacement BC                                                                   #
+#                                                                                        #
+# ========================================================================================

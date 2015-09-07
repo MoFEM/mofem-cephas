@@ -217,8 +217,8 @@ struct Core:
   PetscErrorCode printCubitSet(_CUBIT_BC_DATA_TYPE_& data,unsigned long int type) {
     PetscFunctionBegin;
     try {
-      FieldInterface& this_mField = *this;
-      for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(this_mField,type,it)) {
+      FieldInterface& thism_field = *this;
+      for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(thism_field,type,it)) {
 	ierr = it->get_bc_data_structure(data); CHKERRQ(ierr);
 	ostringstream ss;
 	ss << *it << endl;
@@ -272,15 +272,15 @@ struct Core:
 
   PetscErrorCode print_cubit_heat_flux_set() {
     PetscFunctionBegin;
-    HeatfluxCubitBcData mydata;
+    HeatFluxCubitBcData mydata;
     ierr = printCubitSet(mydata,SIDESET|mydata.type.to_ulong()); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
   PetscErrorCode print_cubit_materials_set() {
     PetscFunctionBegin;
-    FieldInterface& this_mField = *this;
-    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(this_mField,BLOCKSET|MAT_ELASTICSET,it)) {
+    FieldInterface& thism_field = *this;
+    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(thism_field,BLOCKSET|MAT_ELASTICSET,it)) {
       Mat_Elastic data;
       ierr = it->get_attribute_data_structure(data); CHKERRQ(ierr);
       ostringstream ss;
@@ -293,7 +293,7 @@ struct Core:
       PetscPrintf(comm,ss.str().c_str());
     }
 
-    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(this_mField,BLOCKSET|MAT_THERMALSET,it)) {
+    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(thism_field,BLOCKSET|MAT_THERMALSET,it)) {
         Mat_Thermal data;
         ierr = it->get_attribute_data_structure(data); CHKERRQ(ierr);
         ostringstream ss;
@@ -302,7 +302,7 @@ struct Core:
         PetscPrintf(comm,ss.str().c_str());
     }
 
-	/*for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(this_mField,BLOCKSET|MAT_HELMHOLTZSET,it)) {
+	/*for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(thism_field,BLOCKSET|MAT_HELMHOLTZSET,it)) {
         Mat_Helmholtz data;
         ierr = it->get_attribute_data_structure(data); CHKERRQ(ierr);
         ostringstream ss;
@@ -311,7 +311,7 @@ struct Core:
         PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
     }*/
 
-    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(this_mField,BLOCKSET|MAT_MOISTURESET,it)) {
+    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(thism_field,BLOCKSET|MAT_MOISTURESET,it)) {
       Mat_Moisture data;
       ierr = it->get_attribute_data_structure(data); CHKERRQ(ierr);
       ostringstream ss;
@@ -569,8 +569,8 @@ struct Core:
   DofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator get_dofs_by_name_and_type_begin(const string &field_name,const EntityType type);
   DofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator get_dofs_by_name_and_type_end(const string &field_name,const EntityType ent);
 
-  EntMoFEMFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator get_fes_moabfield_by_name_begin(const string &fe_name);
-  EntMoFEMFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator get_fes_moabfield_by_name_end(const string &fe_name);
+  EntMoFEMFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator get_fe_by_name_begin(const string &fe_name);
+  EntMoFEMFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator get_fe_by_name_end(const string &fe_name);
 
   //Copy field values to another field
   PetscErrorCode field_axpy(const double alpha,const string& fiel_name_x,const string& field_name_y,bool error_if_missing = false,bool creat_if_missing = false);

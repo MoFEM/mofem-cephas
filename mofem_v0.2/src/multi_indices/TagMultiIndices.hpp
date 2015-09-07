@@ -1,10 +1,10 @@
 /** \file TagMultiIndices.hpp
  * \brief Tags for Myltindex containers
  */
- 
-/* The MoFEM package is copyrighted by Lukasz Kaczmarczyk. 
- * It can be freely used for educational and research purposes 
- * by other institutions. If you use this softwre pleas cite my work. 
+
+/* The MoFEM package is copyrighted by Lukasz Kaczmarczyk.
+ * It can be freely used for educational and research purposes
+ * by other institutions. If you use this softwre pleas cite my work.
  *
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -25,7 +25,7 @@
 
 namespace MoFEM {
 
-  /// MultiIndex Tag for field id 
+  /// MultiIndex Tag for field id
   struct CubitMeshSets_mi_tag {};
   struct CubitMeshSets_mask_meshset_mi_tag {};
   struct CubitMeshSets_bc_data_mi_tag {};
@@ -42,27 +42,27 @@ namespace MoFEM {
   struct FiniteElement_name_mi_tag {};
   struct SideNumber_mi_tag{};
 
-  struct Idx_mi_tag { 
+  struct Idx_mi_tag {
     static const bool IamNotPartitioned;
-    /// extract dof index from iterator 
+    /// extract dof index from iterator
     template<class IT>
     static DofIdx get_index(const IT &it) { return it->dof_idx; }
   };
   struct PetscGlobalIdx_mi_tag {
     static const bool IamNotPartitioned;
-    /// extract global dof index from iterator 
+    /// extract global dof index from iterator
     template<class IT>
     static DofIdx get_index(const IT &it) { return it->petsc_gloabl_dof_idx; }
   };
   struct PetscLocalIdx_mi_tag {
     static const bool IamNotPartitioned;
-    /// extract global dof index from iterator 
+    /// extract global dof index from iterator
     template<class IT>
     static DofIdx get_index(const IT &it) { return it->petsc_local_dof_idx; }
   };
   struct Part_mi_tag {
     static const bool IamNotPartitioned;
-    /// extract global dof index from iterator 
+    /// extract global dof index from iterator
     template<class IT>
     static DofIdx get_index(const IT &it) { return it->petsc_gloabl_dof_idx; }
   };
@@ -108,6 +108,7 @@ namespace MoFEM {
   struct Composite_EntType_and_Space_mi_tag {};
   struct Composite_Part_And_Ent_mi_tag {};
   struct Composite_Name_Part_And_Rank_mi_tag {};
+  struct Composite_Name_And_HasLocalIdx_mi_tag {};
 
   struct SeriesID_mi_tag {};
   struct SeriesName_mi_tag {};

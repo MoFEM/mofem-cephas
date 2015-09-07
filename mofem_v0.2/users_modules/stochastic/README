@@ -1,26 +1,53 @@
-# ===================== Transversely isotropic RVE ======================================= 
+******************************************************************************************
+*                                                                                        *
+* Example for running PSMFE for randomnesses in material properties of two-phase UD RVE  *
+*   or textile RVE with trans-isotropic fibres (with no interface elements)              *
+*  (1) use the potential flow to calculate the fibres directions                         *
+*  (2) use the perturbation method based -stochastic-homogenisation to calculate the     *
+*      average macroscopic stress induced by the given macroscopic strain                *
+*                                                                                        *
+******************************************************************************************
 
-make trans_iso_potential_flow && mpirun -np 1 ./trans_iso_potential_flow -my_file /mnt/home/Dropbox/DURACOMP_Cal/009_MOFEM/Meshes/RVE_TISO/RVE.cub  -ksp_type fgmres -ksp_gmres_restart 1000 -pc_type asm -sub_pc_type lu -ksp_monitor -my_order 1
+# Step 1: potential flow calculation to identify fibre direction
 
-# 2. Linear displacement boundary condition
+make ../homogenisation/TransIso_Potential_Flow_NoInt && \
+mpirun -np 1 ../homogenisation/TransIso_Potential_Flow_NoInt \
+-my_file /mnt/home/Dropbox/DURACOMP_Cal/009_MOFEM/Meshes/RVE_TISO/RVE_UD.cub \
+-ksp_type fgmres -ksp_gmres_restart 1000 \
+-pc_type asm -sub_pc_type lu -ksp_monitor -my_order 1
 
-make trans_iso_RVE_disp_7vars && mpirun -np 1 ./trans_iso_RVE_disp_7vars -my_file solution1.h5m -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0
+# Step 2.1. Linear displacement boundary condition
 
-# 3. Periodic boundary condition
+make trans_iso_RVE_disp_7vars && \
+mpirun -np 1 ./trans_iso_RVE_disp_7vars \
+-my_file solution_RVE.h5m \
+-ksp_type fgmres -pc_type lu \
+-pc_factor_mat_solver_package mumps -ksp_monitor -my_order 1 \
+-myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0
 
-make trans_iso_RVE_Periodic_7vars && mpirun -np 1 ./trans_iso_RVE_Periodic_7vars -my_file solution1.h5m -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0
+# Step 2.2. Periodic boundary condition
 
-# 4. Constant traction boundary condition
+make trans_iso_RVE_Periodic_7vars && \
+mpirun -np 1 ./trans_iso_RVE_Periodic_7vars \
+-my_file solution_RVE.h5m \
+-ksp_type fgmres -pc_type lu \
+-pc_factor_mat_solver_package mumps -ksp_monitor -my_order 1 \ 
+-myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0
 
-make trans_iso_RVE_Traction_7vars && mpirun -np 1 ./trans_iso_RVE_Traction_7vars -my_file solution1.h5m -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0
+# Step 2.3. Constant traction boundary condition
 
-
-mpirun -np 1 ../homogenisation/TransIso_Potential_Flow -my_file /mnt/home/Dropbox/DURACOMP_Cal/009_MOFEM/Meshes/RVE_TISO/RVE.cub  -ksp_type fgmres -ksp_gmres_restart 1000 -pc_type asm -sub_pc_type lu -ksp_monitor -my_order 1
+make trans_iso_RVE_Traction_7vars && \
+mpirun -np 1 ./trans_iso_RVE_Traction_7vars \
+-my_file solution_RVE.h5m \
+-ksp_type fgmres -pc_type lu \
+-pc_factor_mat_solver_package mumps -ksp_monitor -my_order 1 \
+-myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0
 
 
 ******************************************************************************************
 *                                                                                        *
-* Example run textile RVE with trans-isotropic fibres (with no interface elements)       *
+* Example for running PSMFE for randomnesses in both material properties and geometrical *
+*   parameters: textile RVE with trans-isotropic fibres (with no interface elements)     *
 *  (1) use the potential flow to calculate the fibres directions                         *
 *  (2) use the perturbation method based -stochastic-homogenisation to calculate the     *
 *      average macroscopic stress induced by the given macroscopic strain                *
@@ -107,7 +134,7 @@ mpirun -np 1 ../homogenisation/TransIso_Potential_Flow_NoInt \
 
 make PSFE2_TransIso_Disp && \
 mpirun -np 1 ./PSFE2_TransIso_Disp \
--my_file_macro /mnt/home/MyBuild/mofem-cephas/mofem_v0.2/users_modules/homogenisation/meshes/LShape.cub \
+-my_file_macro /mnt/home/MyBuild/mofem-cephas/mofem_v0.2/users_modules/homogenisation/meshes/Plate_SFSF_REL16.cub \
 -my_file_RVE solution_RVE.h5m \
 -ksp_type fgmres -pc_type lu \
 -pc_factor_mat_solver_package mumps -ksp_monitor -my_order 1
@@ -140,8 +167,19 @@ mpirun -np 1 ./MsFE_Reliability_Disp \
 
 make MsFE_Reliability_Disp && \
 mpirun -np 1 ./MsFE_Reliability_Disp \
--my_file_macro /mnt/home/MyBuild/mofem-cephas/mofem_v0.2/users_modules/stochastic/meshes/Quad_Ply_REL11.cub \
--my_prob_data_file //mnt//home//Dropbox//DURACOMP_Cal//009_MoFEM//04_ReliabilityAnalysis//Input_probdata_UD_Ply.txt \
+-my_file_macro /mnt/home/MyBuild/mofem-cephas/mofem_v0.2/users_modules/stochastic/meshes/Plate_SFSF_REL16.cub \
+-my_prob_data_file //mnt//home//Dropbox//DURACOMP_Cal//009_MoFEM//04_ReliabilityAnalysis//Input_probdata_UD_Ply01.txt \
 -my_file_RVE solution_RVE.h5m \
 -ksp_type fgmres -pc_type lu \
 -pc_factor_mat_solver_package mumps -ksp_monitor -my_order 1
+
+
+make FE2_TransIso_Reliability_MCS_Disp && \
+mpirun -np 1 ./FE2_TransIso_Reliability_MCS_Disp \
+-my_file_macro /mnt/home/MyBuild/mofem-cephas/mofem_v0.2/users_modules/stochastic/meshes/Plate_SFSF_REL16.cub \
+-my_prob_data_file //mnt//home//Dropbox//DURACOMP_Cal//009_MoFEM//04_ReliabilityAnalysis//Input_probdata_UD_Ply01.txt \
+-my_file_RVE solution_RVE.h5m \
+-ksp_type fgmres -pc_type lu \
+-pc_factor_mat_solver_package mumps -ksp_monitor -my_order 1
+
+

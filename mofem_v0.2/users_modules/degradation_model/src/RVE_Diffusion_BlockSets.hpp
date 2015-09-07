@@ -91,7 +91,7 @@ namespace MoFEM {
           cout<< "setOfBlocks[it->get_msId()].cOnductivity_mat After Reading= "<<setOfBlocks[it->get_msId()].cOnductivity_mat<<endl;
           
           vector<double> RVE_diffusion_data;
-          ierr = it->get_Cubit_attributes(RVE_diffusion_data); CHKERRQ(ierr);
+          ierr = it->get_attributes(RVE_diffusion_data); CHKERRQ(ierr);
           setOfBlocks[it->get_msId()].cApacity = 1.0;
           cout<< "setOfBlocks[it->get_msId()].cApacity= "<<setOfBlocks[it->get_msId()].cApacity<<endl;
 

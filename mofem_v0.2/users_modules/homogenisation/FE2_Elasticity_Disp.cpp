@@ -51,9 +51,8 @@ PetscErrorCode ierr;
 
 static char help[] = "...\n\n";
 
-const double young_modulus = 1;
-const double poisson_ratio = 0.0;
-
+//const double young_modulus = 1;
+//const double poisson_ratio = 0.0;
 
 int main(int argc, char *argv[]) {
   
@@ -418,7 +417,7 @@ int main(int argc, char *argv[]) {
   ierr = VecGhostUpdateBegin(D2,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D2,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = mField_RVE.set_global_ghost_vector("ELASTIC_MECHANICS",ROW,D2,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-  
+
   //=============================================================================================================
   // homogenised stress for strian [0 1 0 0 0 0]^T
   //=============================================================================================================
@@ -702,8 +701,14 @@ int main(int argc, char *argv[]) {
   ierr = mField_Macro.set_field_order(0,MBTRI,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
   ierr = mField_Macro.set_field_order(0,MBEDGE,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
   ierr = mField_Macro.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
+
   
   ierr = MetaNeummanForces::addNeumannBCElements(mField_Macro,"ELASTIC_PROB","DISP_MACORO"); CHKERRQ(ierr);
+
+
+  ierr = MetaNeummanForces::addNeumannBCElements(mField_Macro,"DISP_MACORO"); CHKERRQ(ierr);
+  ierr = mField_Macro.modify_problem_add_finite_element("ELASTIC_PROB","FORCE_FE"); CHKERRQ(ierr);
+
   
   //build database
   

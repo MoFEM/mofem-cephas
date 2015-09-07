@@ -1,0 +1,31 @@
+#!python
+cubit.cmd('reset')
+
+# Geometry (all dimension for macro is in meter [mm])'
+h=1 ; L=1
+str1='brick x ' + str(L) + ' y ' + str(L) +' z ' + str(h);   cubit.cmd(str1)
+
+cubit.cmd('curve all interval 6')
+cubit.cmd('curve all scheme equal')
+cubit.cmd('mesh curve all')
+cubit.cmd('volume all scheme tetmesh')
+cubit.cmd('mesh volume all ')
+
+#Material Blocks 1 for 0 deg
+cubit.cmd('set duplicate block elements on')
+cubit.cmd('block 1 volume 1')  
+cubit.cmd('block 1 name "MAT_ELASTIC_0deg"')
+cubit.cmd('block 1 attribute count 2')
+cubit.cmd('block 1 attribute index 1 1')   #Young's modulus  (This will not be used in the calculation)
+cubit.cmd('block 1 attribute index 2 0')   #Poisson's ratio (This will not be used in the calculation)
+
+#Applied displacement
+str1='create displacement on surface 6 dof 1 fix ' + str(1);  cubit.cmd(str1)
+
+str1='create displacement on surface 4 dof 1 fix ' + str(-1);  cubit.cmd(str1)
+
+
+cubit.cmd('save as "/Users/zahur/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/composite_laminates/meshes/Laminated_Plate_only0Try.cub" overwrite')  
+
+
+

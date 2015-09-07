@@ -646,11 +646,11 @@ int main(int argc, char *argv[]) {
   ierr = MatZeroEntries(Aij); CHKERRQ(ierr);
 
   ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","ELASTIC",MyFE);  CHKERRQ(ierr);
-  PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT);
+  //PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT);
 	ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","TRAN_ISOTROPIC_ELASTIC",MyTIsotFE);  CHKERRQ(ierr);
-	PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT);
+	//PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT);
   ierr = mField.loop_finite_elements("STOCHASIC_PROBLEM","Lagrange_elem",MyFE_RVELagrange);  CHKERRQ(ierr);
-  PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT);
+  //PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT);
 
   ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);

@@ -28,6 +28,7 @@ struct ImportProbData {
   ublas::matrix<double> MatStrength; // Material strength
   vector<string> NameVars;           // Name of random variables
   int NumVars;                       // Number of variables
+  int FailureCriterion;              // Type of failure criterion
   
   
   //------------------------------------------------------------------------------
@@ -119,6 +120,10 @@ struct ImportProbData {
             // cout<<"Next lines are data for names of variables"<<endl;
             datatype = "NAME";
           }
+          else if (stringbuf.compare(0,6,"CHOICE") == 0) {
+            // cout<<"Next lines are data for names of variables"<<endl;
+            datatype = "FAILURE";
+          }
           stringbuf.clear();
         }
         else {
@@ -198,6 +203,10 @@ struct ImportProbData {
               NameVars.push_back(substringbuf);
               substringbuf.clear();
             }
+          }
+          else if (datatype.compare(0,7,"FAILURE") == 0) {
+            substringbuf = stringbuf.substr(0,pos(1));
+            FailureCriterion = atoi(substringbuf.c_str());
           }
           // free dynamically allocated memory
           //delete [] pos;

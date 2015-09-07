@@ -31,9 +31,6 @@ link_directories("${PROJECT_BINARY_DIR}/src/petsc")
 include_directories("${PROJECT_SOURCE_DIR}/src/finite_elements")
 link_directories("${PROJECT_BINARY_DIR}/src/finite_elements")
 
-include_directories("${PROJECT_SOURCE_DIR}/finite_element_library")
-link_directories("${PROJECT_BINARY_DIR}/finite_element_library")
-
 # cubit_bc_test
 cm_export_file("../meshes/disp01.h5m" export_atom_tests)
 cm_export_file("../meshes/force01.h5m" export_atom_tests)
@@ -168,27 +165,6 @@ add_test(field_axpy_compare ${CMAKE_COMMAND} -E compare_files
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/field_axpy_test.txt
   ${CMAKE_BINARY_DIR}/atom_tests/field_axpy_test.txt)
 
-#10 node TET projection
-cm_export_file("../meshes/sphere.h5m" export_atom_tests)
-
-add_executable(projection_from_10node_tet_atom projection_from_10node_tet.cpp)
-target_link_libraries(projection_from_10node_tet_atom
-  mofem_finite_element_library
-  mofem_finite_elements
-  mofem_interfaces
-  mofem_multi_indices
-  mofem_approx
-  mofem_cblas
-  mofem_third_party
-  ${PROJECT_LIBS}
-)
-
-add_test(projection_from_10node_tet_atom ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/projection_from_10node_tet_atom -my_file sphere.h5m)
-add_test(projection_from_10node_tet_atom_compare ${CMAKE_COMMAND} -E compare_files
-  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/10node_sphere.txt
-  ${CMAKE_BINARY_DIR}/atom_tests/10node_sphere.txt
-)
-
 #mesh refine
 cm_export_file("../meshes/templar.h5m" export_atom_tests)
 
@@ -313,47 +289,6 @@ add_test(forces_and_sources_testing_volume_element_test_compare ${CMAKE_COMMAND}
   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_testing_volume_element.txt
 )
 
-add_executable(forces_and_sources_testing_field_approximation forces_and_sources_testing_field_approximation.cpp)
-target_link_libraries(forces_and_sources_testing_field_approximation
-  mofem_finite_elements
-  mofem_interfaces
-  mofem_multi_indices
-  mofem_approx
-  mofem_cblas
-  mofem_third_party
-  ${PROJECT_LIBS}
-)
-
-add_test(forces_and_sources_testing_field_approximation_test
-  ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_testing_field_approximation -my_file elasticity_atom_test_01X_pressure.h5m
-  -ksp_monitor -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package mumps
-)
-add_test(forces_and_sources_testing_field_approximation_test_compare ${CMAKE_COMMAND} -E compare_files
-  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_testing_field_approximation.txt
-  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_testing_field_approximation.txt
-)
-
-# body forces test
-add_executable(body_force_atom body_force_atom_test.cpp)
-target_link_libraries(body_force_atom
-  mofem_finite_elements
-  mofem_interfaces
-  mofem_multi_indices
-  mofem_petsc
-  mofem_approx
-  mofem_cblas
-  mofem_third_party
-  ${PROJECT_LIBS}
-)
-
-cm_export_file("../meshes/elasticity_atom_test_body_force.h5m" export_atom_tests)
-add_test(body_force_atom_test
-  ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/body_force_atom -my_file elasticity_atom_test_body_force.h5m)
-add_test(forces_and_sources_body_force_atom_test_compare ${CMAKE_COMMAND} -E compare_files
-  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/body_force_atom_test.txt
-  ${CMAKE_BINARY_DIR}/atom_tests/body_force_atom_test.txt
-)
-
 add_executable(forces_and_sources_getting_higher_order_skin_normals_atom forces_and_sources_getting_higher_order_skin_normals_atom_tets.cpp)
 target_link_libraries(forces_and_sources_getting_higher_order_skin_normals_atom
   mofem_finite_elements
@@ -364,6 +299,8 @@ target_link_libraries(forces_and_sources_getting_higher_order_skin_normals_atom
   mofem_third_party
   ${PROJECT_LIBS}
 )
+
+cm_export_file("../meshes/sphere.h5m" export_atom_tests)
 
 add_test(forces_and_sources_getting_higher_order_skin_normals_atom_test
   ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_getting_higher_order_skin_normals_atom -my_file sphere.h5m
@@ -455,128 +392,6 @@ add_test(forces_and_sources_testing_flat_prism_element_test_compare ${CMAKE_COMM
   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_testing_flat_prism_element.txt
 )
 
-# neumann forces
-add_executable(neumann_forces_atom neumann_forces.cpp)
-target_link_libraries(neumann_forces_atom
-  mofem_finite_elements
-  mofem_interfaces
-  mofem_multi_indices
-  mofem_approx
-  mofem_cblas
-  mofem_third_party
-  ${PROJECT_LIBS})
-
-cm_export_file("../meshes/elasticity_atom_test_01X.h5m" export_atom_tests)
-
-add_test(neumann_elasticity_atom_test_01X_pressure
-  ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/neumann_forces_atom -my_file elasticity_atom_test_01X_pressure.h5m
-)
-add_test(neumann_elasticity_atom_test_01X_pressure_compare ${CMAKE_COMMAND} -E compare_files
-  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_elasticity_atom_test_01X_pressure.cub.txt
-  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_elasticity_atom_test_01X_pressure.h5m.txt
-)
-add_test(neumann_elasticity_atom_test_01X
-  ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/neumann_forces_atom -my_file elasticity_atom_test_01X.h5m
-)
-add_test(neumann_elasticity_atom_test_01X_compare ${CMAKE_COMMAND} -E compare_files
-  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_elasticity_atom_test_01X.cub.txt
-  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_elasticity_atom_test_01X.h5m.txt
-)
-add_test(neumann_sphre_pressure_test
-  ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/neumann_forces_atom -my_file sphere.h5m
-)
-add_test(neumann_sphre_pressure_test_compare ${CMAKE_COMMAND} -E compare_files
-  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_sphere.cub.txt
-  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_sphere.h5m.txt
-)
-
-# add example test for forces_and_sources_fluid_pressure_element_atom
-cm_export_file("../meshes/fluid_presssure_cub_test.h5m" export_atom_tests)
-add_executable(fluid_pressure_element_atom fluid_pressure_element.cpp)
-target_link_libraries(fluid_pressure_element_atom
-  mofem_finite_elements
-  mofem_interfaces
-  mofem_multi_indices
-  mofem_approx
-  mofem_cblas
-  mofem_third_party
-  ${PROJECT_LIBS}
-)
-
-add_test(fluid_pressure_element_atom_test
-  ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/fluid_pressure_element_atom -my_file fluid_presssure_cub_test.h5m)
-add_test(fluid_pressure_element_atom_test_compare ${CMAKE_COMMAND} -E compare_files
-  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/fluid_pressure_element.txt
-  ${CMAKE_BINARY_DIR}/atom_tests/fluid_pressure_element.txt
-)
-
-# add example test for temperature element
-cm_export_file("../meshes/simple_thermal_problem.h5m" export_atom_tests)
-add_executable(thermal_elem_atom thermal_elem.cpp)
-target_link_libraries(thermal_elem_atom
-  mofem_finite_element_library
-  mofem_finite_elements
-  mofem_interfaces
-  mofem_multi_indices
-  mofem_approx
-  mofem_cblas
-  mofem_third_party
-  ${PROJECT_LIBS}
-)
-
-add_test(thermal_elem_atom_test ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/thermal_elem_atom
-  -my_file simple_thermal_problem.h5m -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package mumps -ksp_monitor)
-add_test(forces_and_sources_thermal_elem_atom_test_compare ${CMAKE_COMMAND} -E compare_files
-  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/thermal_elem.txt
-  ${CMAKE_BINARY_DIR}/atom_tests/thermal_elem.txt
-)
-
-# add test test for temerature unsteady element
-add_executable(thermal_elem_unsteady_atom thermal_elem_unsteady.cpp)
-target_link_libraries(thermal_elem_unsteady_atom
-  mofem_finite_element_library
-  mofem_finite_elements
-  mofem_interfaces
-  mofem_multi_indices
-  mofem_petsc
-  mofem_approx
-  mofem_cblas
-  mofem_third_party
-  ${PROJECT_LIBS})
-
-add_test(thermal_elem_unsteady_atom_test ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/thermal_elem_unsteady_atom
-  -my_file simple_thermal_problem.h5m
-  -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package mumps
-  -snes_type newtonls -snes_linesearch_type basic
-  -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8
-  -ts_monitor -ts_type beuler -ts_dt 1 -ts_final_time 2  -ksp_monitor -snes_max_it 3 -snes_monitor
-)
-add_test(thermal_elem_unsteady_atom_test_compare ${CMAKE_COMMAND} -E compare_files
-  ${CMAKE_BINARY_DIR}/atom_tests/thermal_elem_unsteady.txt
-  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/thermal_elem_unsteady.txt
-)
-
-# add theraml stress eleme
-cm_export_file("../meshes/elasticity_atom_test_thermal_expansion.h5m" export_atom_tests)
-add_executable(thermal_stress_elem thermal_stress_elem.cpp)
-target_link_libraries(thermal_stress_elem
-  mofem_finite_elements
-  mofem_interfaces
-  mofem_multi_indices
-  mofem_approx
-  mofem_cblas
-  mofem_third_party
-  ${PROJECT_LIBS}
-)
-
-add_test(thermal_stress_elem_atom_test ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/thermal_stress_elem
-  -my_file elasticity_atom_test_thermal_expansion.h5m
-)
-add_test(thermal_stress_elem_atom_test_compare ${CMAKE_COMMAND} -E compare_files
-  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_thermal_stress_elem.txt
-  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/thermal_stress_elem.txt
-)
-
 # add test for recording series
 add_executable(record_series_atom record_series_atom.cpp)
 target_link_libraries(record_series_atom
@@ -625,7 +440,9 @@ target_link_libraries(forces_and_sources_hdiv_continuity_check
   ${PROJECT_LIBS}
 )
 
-add_test(forces_and_sources_hdiv_continuity_check_atom ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_hdiv_continuity_check -my_file sphere.h5m)
+add_test(forces_and_sources_hdiv_continuity_check_atom
+  ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_hdiv_continuity_check -my_file sphere.h5m
+)
 add_test(forces_and_sources_hdiv_continuity_check_atom_compare ${CMAKE_COMMAND} -E compare_files
   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_hdiv_continuity_check.txt
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_hdiv_continuity_check.txt
@@ -645,28 +462,6 @@ target_link_libraries(forces_and_sources_hdiv_divergence_operator
 
 add_test(forces_and_sources_hdiv_divergence_operator_atom
   ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_hdiv_divergence_operator
-)
-
-# add test for ultra weak finite element
-add_executable(ultra_weak_transport ultra_weak_transport.cpp)
-target_link_libraries(ultra_weak_transport
-  mofem_finite_elements
-  mofem_interfaces
-  mofem_multi_indices
-  mofem_petsc
-  mofem_approx
-  mofem_cblas
-  mofem_third_party
-  ${PROJECT_LIBS})
-
-add_test(ultra_weak_transport_atom ${MPI_RUN} -np 2
-  ${CMAKE_CURRENT_BINARY_DIR}/ultra_weak_transport -my_file simple_thermal_problem.h5m
-  -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package mumps -ksp_monitor
-  -my_max_post_proc_ref_level 1 -my_order 0
-)
-add_test(ultra_weak_transport_atom_compare ${CMAKE_COMMAND} -E compare_files
-  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_ultra_weak_transport.txt
-  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/ultra_weak_transport.txt
 )
 
 #dm
@@ -738,6 +533,26 @@ target_link_libraries(build_problems
   ${PROJECT_LIBS})
 add_test(build_problems_atom ${MPI_RUN} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/build_problems -my_file disp01.h5m)
 
+# Projection form and to 10 node tets
+add_executable(projection_from_10node_tet_atom projection_from_10node_tet.cpp)
+target_link_libraries(projection_from_10node_tet_atom
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+
+add_test(
+  projection_from_10node_tet_atom ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/projection_from_10node_tet_atom -my_file sphere.h5m
+)
+add_test(projection_from_10node_tet_atom_compare ${CMAKE_COMMAND} -E compare_files
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/10node_sphere.txt
+  ${CMAKE_BINARY_DIR}/atom_tests/10node_sphere.txt
+)
+
 if(TETGEN_LIBRARY)
 
   cm_export_file("../meshes/Tinterface.h5m" export_atom_tests)
@@ -772,36 +587,6 @@ if(NETGEN_LIBRARY)
 
 endif(NETGEN_LIBRARY)
 
-if(ADOL-C_LIBRARY)
-
-  add_executable(adol-c_atom adol-c_atom.cpp)
-  target_link_libraries(adol-c_atom ${PROJECT_LIBS})
-
-  add_test(adol-c_atom_test ${MPI_RUN} -np 1
-    ${CMAKE_CURRENT_BINARY_DIR}/adol-c_atom)
-
-  cm_export_file("../meshes/LShape.h5m" export_atom_tests)
-
-  add_executable(nonlinear_elastic nonlinear_elastic.cpp)
-  target_link_libraries(nonlinear_elastic
-    mofem_finite_element_library
-    mofem_finite_elements
-    mofem_interfaces
-    mofem_multi_indices
-    mofem_petsc
-    mofem_approx
-    mofem_cblas
-    mofem_third_party
-    ${PROJECT_LIBS})
-
-  add_test(nonlinear_elastic ${MPI_RUN} -np 1
-    ${CMAKE_CURRENT_BINARY_DIR}/nonlinear_elastic -my_file LShape.h5m)
-  add_test(nonlinear_elastic_compare ${CMAKE_COMMAND} -E compare_files
-    ${CMAKE_BINARY_DIR}/atom_tests/nonlinear_elastic.txt
-    ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/nonlinear_elastic.txt)
-
-endif(ADOL-C_LIBRARY)
-
 add_executable(node_merge node_merge.cpp)
 target_link_libraries(node_merge
     mofem_interfaces
@@ -815,3 +600,14 @@ target_link_libraries(node_merge
 cm_export_file("../meshes/node_merge_test.h5m" export_atom_tests)
 add_test(node_merge ${MPI_RUN} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/node_merge -my_file node_merge_test.h5m)
+
+
+if(ADOL-C_LIBRARY)
+
+  add_executable(adol-c_atom adol-c_atom.cpp)
+  target_link_libraries(adol-c_atom ${PROJECT_LIBS})
+
+  add_test(adol-c_atom_test ${MPI_RUN} -np 1
+    ${CMAKE_CURRENT_BINARY_DIR}/adol-c_atom)
+
+endif(ADOL-C_LIBRARY)

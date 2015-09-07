@@ -65,11 +65,15 @@ struct MoistureTransportElement: public ThermalElement {
     
     // loop over all blocksets
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_MOISTURESET,it)) {
+
       if(it->get_name().compare(0,12,"MAT_MOISTURE") == 0) {
+
+      if(it->get_name().compare(0,12,"MAT_MOISTURE") == 0){
+
         Mat_Moisture diffusion_data;
         ierr = it->get_attribute_data_structure(diffusion_data); CHKERRQ(ierr);
-          cout<<"====diffusion_data.data.Diffusivity = "<<diffusion_data.data.Diffusivity<<endl;
-          cout<<"====it->get_msId() = "<<it->get_msId()<<endl;
+        //          cout<<"diffusion_data.data.Diffusivity = "<<diffusion_data.data.Diffusivity<<endl;
+        //          cout<<"it->get_msId() = "<<it->get_msId()<<endl;
         //It is moisture conductivity acting the same as heat conductivity in thermal problem
         
         setOfBlocks[it->get_msId()].cOnductivity_mat.resize(3,3); //(3X3) conductivity matrix
@@ -222,6 +226,6 @@ struct MoistureTransportElement: public ThermalElement {
 
 /***************************************************************************//**
 * \defgroup mofem_moisture_elem Moisture element
-* \ingroup mofem_forces_and_sources
+* \ingroup user_modules
 ******************************************************************************/
 

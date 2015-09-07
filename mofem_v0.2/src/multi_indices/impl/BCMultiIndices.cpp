@@ -493,7 +493,7 @@ ostream& operator<<(ostream& os,const PressureCubitBcData& e) {
     return os;
 }
 
-ostream& operator<<(ostream& os,const HeatfluxCubitBcData& e) {
+ostream& operator<<(ostream& os,const HeatFluxCubitBcData& e) {
     os << "\n";
     os << "H e a t  F l u x \n \n";
     if (e.data.flag1 == 1)

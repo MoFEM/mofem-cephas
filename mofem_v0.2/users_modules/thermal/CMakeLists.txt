@@ -29,7 +29,7 @@ include_directories("${UM_SOURCE_DIR}/ground_surface_temperature/third_party")
 
 add_executable(thermal_steady ${UM_SOURCE_DIR}/thermal/thermal_steady.cpp)
 target_link_libraries(thermal_steady 
-  mofem_finite_element_library
+  users_modules
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
@@ -44,7 +44,7 @@ add_executable(thermal_unseady
   ${UM_SOURCE_DIR}/ground_surface_temperature/third_party/spa.c)
 
 target_link_libraries(thermal_unseady 
-  mofem_finite_element_library
+  users_modules
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices

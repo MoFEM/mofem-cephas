@@ -1,0 +1,35 @@
+reset
+set duplicate block elements on
+
+brick x 10 y 1 z 1
+
+block 1 volume all 
+block 1 name 'MAT_ELASTIC'
+block 1 attribute count 4
+block 1 attribute index 1 1
+block 1 attribute index 2 0.3 
+block 1 attribute index 3 0 
+block 1 attribute index 4 1
+
+create displacement on surface 4 dof 1 dof 2 dof 3 fix
+#create displacement on surface 6 dof 1 fix 0.1
+
+volume all scheme Tetmesh
+volume all size auto factor 6
+mesh volume all
+
+save as "/Users/zahur/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/elasticity/LShape_disp.cub" overwrite
+
+
+
+
+
+
+
+
+
+
+
+
+
+

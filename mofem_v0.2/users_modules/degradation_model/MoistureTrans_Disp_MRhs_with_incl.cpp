@@ -147,7 +147,7 @@ int main(int argc, char *argv[]) {
   
   //add finite elements entities
   Range SurfacesFaces;
-  ierr = mField.get_Cubit_msId_entities_by_dimension(103,SIDESET,2,SurfacesFaces,true); CHKERRQ(ierr);
+  ierr = mField.get_cubit_msId_entities_by_dimension(103,SIDESET,2,SurfacesFaces,true); CHKERRQ(ierr);
   ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SideSet 103 = %d\n",SurfacesFaces.size()); CHKERRQ(ierr);
   ierr = mField.add_ents_to_finite_element_by_TRIs(SurfacesFaces,"LAGRANGE_FE"); CHKERRQ(ierr);
   
@@ -322,8 +322,8 @@ int main(int argc, char *argv[]) {
 //  MatView(A,PETSC_VIEWER_DRAW_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
 //  std::string wait;
 //  std::cin >> wait;
-
-  
+//
+//  
 //Calculation of Homogenized stress
 //=========================================================================================================================
   const double young_modulus = 1; //dummy values
@@ -370,7 +370,7 @@ int main(int argc, char *argv[]) {
   ierr = KSPSolve(solver,F1,C1); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(C1,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(C1,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = mField.set_global_VecCreateGhost("MOISTURE_PROBLEM",ROW,C1,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = mField.set_global_ghost_vector("MOISTURE_PROBLEM",ROW,C1,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   
   ublas::matrix<FieldData> Dmat;
   Dmat.resize(3,3); Dmat.clear();
@@ -414,7 +414,7 @@ int main(int argc, char *argv[]) {
   ierr = KSPSolve(solver,F2,C2); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(C2,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(C2,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = mField.set_global_VecCreateGhost("MOISTURE_PROBLEM",ROW,C2,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = mField.set_global_ghost_vector("MOISTURE_PROBLEM",ROW,C2,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   {
     ierr = VecZeroEntries(Stress_Homo); CHKERRQ(ierr);
     ElasticFE_RVELagrange_Homogenized_Stress_Disp MyFE_RVEHomoStressDisp(mField,A,C2,F2,&RVE_volume, applied_strain, Stress_Homo,"CONC","LAGRANGE_MUL_FIELD",field_rank);
@@ -443,7 +443,7 @@ int main(int argc, char *argv[]) {
   ierr = KSPSolve(solver,F3,C3); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(C3,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(C3,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = mField.set_global_VecCreateGhost("MOISTURE_PROBLEM",ROW,C3,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = mField.set_global_ghost_vector("MOISTURE_PROBLEM",ROW,C3,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
   {
     ierr = VecZeroEntries(Stress_Homo); CHKERRQ(ierr);
@@ -493,7 +493,7 @@ int main(int argc, char *argv[]) {
   if(pcomm->rank()==0) {
     EntityHandle out_meshset;
     rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
-    ierr = mField.problem_get_FE("MOISTURE_PROBLEM","DIFFUSION_FE",out_meshset); CHKERRQ(ierr);
+    ierr = mField.get_problem_finite_elements_entities("MOISTURE_PROBLEM","DIFFUSION_FE",out_meshset); CHKERRQ(ierr);
     rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
     rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
   }

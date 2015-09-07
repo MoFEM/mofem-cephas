@@ -18,9 +18,10 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 #include <MoFEM.hpp>
+using namespace MoFEM;
 
 #include <DirichletBC.hpp>
-#include <PotsProcOnRefMesh.hpp>
+#include <PostProcOnRefMesh.hpp>
 #include <ThermalElement.hpp>
 #include <RVE_Thermal_BlockSets.hpp>
 
@@ -35,7 +36,6 @@ namespace bio = boost::iostreams;
 using bio::tee_device;
 using bio::stream;
 
-using namespace MoFEM;
 
 static char help[] = "...\n\n";
 
@@ -181,7 +181,7 @@ int main(int argc, char *argv[]) {
   ThermalElement::TimeSeriesMonitor monitor(m_field,"THEMP_SERIES","TEMP");
 
   ierr = m_field.problem_basic_method_preProcess("THERMAL_PROBLEM",my_dirichlet_bc); CHKERRQ(ierr);
-  ierr = m_field.set_global_VecCreateGhost("THERMAL_PROBLEM",ROW,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = m_field.set_global_ghost_vector("THERMAL_PROBLEM",ROW,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
   //preprocess
   ts_ctx.get_preProcess_to_do_IFunction().push_back(&update_velocities);
@@ -236,7 +236,7 @@ int main(int argc, char *argv[]) {
     PetscPrintf(PETSC_COMM_WORLD,"Process step %d\n",sit->get_step_number());
 
     ierr = recorder_ptr->load_series_data("THEMP_SERIES",sit->get_step_number()); CHKERRQ(ierr);
-    ierr = m_field.set_local_VecCreateGhost("THERMAL_PROBLEM",ROW,T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = m_field.set_local_ghost_vector("THERMAL_PROBLEM",ROW,T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
     ProjectionFieldOn10NodeTet ent_method_on_10nodeTet(m_field,"TEMP",true,false,"TEMP");
     ent_method_on_10nodeTet.set_nodes = true;
@@ -247,7 +247,7 @@ int main(int argc, char *argv[]) {
     if(pcomm->rank()==0) {
       EntityHandle out_meshset;
       rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
-      ierr = m_field.problem_get_FE("THERMAL_PROBLEM","THERMAL_FE",out_meshset); CHKERRQ(ierr);
+      ierr = m_field.get_problem_finite_elements_entities("THERMAL_PROBLEM","THERMAL_FE",out_meshset); CHKERRQ(ierr);
       ostringstream ss;
       ss << "out_" << sit->step_number << ".vtk";
       rval = moab.write_file(ss.str().c_str(),"VTK","",&out_meshset,1); CHKERR_PETSC(rval);

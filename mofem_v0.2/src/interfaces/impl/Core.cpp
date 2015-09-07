@@ -499,8 +499,8 @@ PetscErrorCode Core::synchronise_entities(Range &ents,int verb) {
     if(meit == refinedEntities.get<Ent_mi_tag>().end()) {
       continue;
       SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,
-	"rank %d entity %lu not exist on database, local entity can not be found for this owner",
-	rAnk,*eit);
+        "rank %d entity %lu not exist on database, local entity can not be found for this owner",
+        rAnk,*eit);
     }
 
     unsigned char pstatus = meit->get_pstatus();
@@ -515,10 +515,10 @@ PetscErrorCode Core::synchronise_entities(Range &ents,int verb) {
 
     for(int proc = 0; proc<MAX_SHARING_PROCS && -1 != meit->get_sharing_procs_ptr()[proc]; proc++) {
       if(meit->get_sharing_procs_ptr()[proc] == -1) {
-	SETERRQ(PETSC_COMM_SELF,MOFEM_IMPOSIBLE_CASE,"sharing processor not set");
+        SETERRQ(PETSC_COMM_SELF,MOFEM_IMPOSIBLE_CASE,"sharing processor not set");
       }
       if(meit->get_sharing_procs_ptr()[proc] == rAnk) {
-	continue;
+        continue;
       }
       EntityHandle handle_on_sharing_proc = meit->get_sharing_handlers_ptr()[proc];
       sbuffer[meit->get_sharing_procs_ptr()[proc]].push_back(handle_on_sharing_proc);

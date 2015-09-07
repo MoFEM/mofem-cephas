@@ -12,11 +12,11 @@
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
 #include subdirectory
-include_directories("${UM_SOURCE_DIR}/nonlinear_elasticity")
-include_directories("${UM_SOURCE_DIR}/nonlinear_elasticity/src")
-include_directories("${UM_SOURCE_DIR}/nonlinear_elastic_materials/src")
-include_directories("${UM_SOURCE_DIR}/convective_mass_element/src")
-include_directories("${UM_SOURCE_DIR}/elasticity/src")
+include_directories(${UM_SOURCE_DIR}/nonlinear_elasticity)
+include_directories(${UM_SOURCE_DIR}/nonlinear_elasticity/src)
+include_directories(${UM_SOURCE_DIR}/nonlinear_elastic_materials/src)
+include_directories(${UM_SOURCE_DIR}/convective_mass_element/src)
+include_directories(${UM_SOURCE_DIR}/elasticity/src)
 
 add_subdirectory(atom_tests)
 
@@ -25,12 +25,11 @@ if(ADOL-C_LIBRARY)
   add_executable(arc_length_nonlinear_elasticity
     ${UM_SOURCE_DIR}/nonlinear_elasticity/arc_length_nonlinear_elasticity.cpp)
   target_link_libraries(arc_length_nonlinear_elasticity
-    mofem_finite_element_library
+    users_modules
     mofem_finite_elements
     mofem_interfaces
     mofem_multi_indices
     mofem_petsc
-    complex_for_lazy_obsolete
     users_modules_obsolete
     mofem_approx
     mofem_third_party
@@ -86,12 +85,11 @@ if(ADOL-C_LIBRARY)
   add_executable(nonlinear_dynamics
     ${UM_SOURCE_DIR}/nonlinear_elasticity/nonlinear_dynamics.cpp)
   target_link_libraries(nonlinear_dynamics
-    mofem_finite_element_library
+    users_modules
     mofem_finite_elements
     mofem_interfaces
     mofem_multi_indices
     mofem_petsc
-    complex_for_lazy_obsolete
     users_modules_obsolete
     mofem_approx
     mofem_third_party
@@ -118,12 +116,11 @@ if(ADOL-C_LIBRARY)
     add_executable(stability
       ${UM_SOURCE_DIR}/nonlinear_elasticity/stability.cpp)
     target_link_libraries(stability
-      mofem_finite_element_library
+      users_modules
       mofem_finite_elements
       mofem_interfaces
       mofem_multi_indices
       mofem_petsc
-      complex_for_lazy_obsolete
       users_modules_obsolete
       mofem_approx
       mofem_third_party

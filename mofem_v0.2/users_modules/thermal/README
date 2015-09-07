@@ -20,7 +20,7 @@ Example thermo-elasticity
 NOTE:
 
 Add option -snes_lag_jacobian -2 if no radiation (or other nonlinear terms) is
-present and problem is linear. It is no need to recalulate jacobian at each
+present and problem is linear. It is no need to recalculate jacobian at each
 step.
 
 mpirun -np 2 ./thermal_unseady \

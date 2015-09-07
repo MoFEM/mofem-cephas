@@ -69,7 +69,7 @@ int main(int argc, char *argv[]) {
 
   //Fields
   ierr = m_field.add_field("FIELD1",H1,3); CHKERRQ(ierr);
-
+  ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,3); CHKERRQ(ierr);
   //FE
   ierr = m_field.add_finite_element("TEST_FE"); CHKERRQ(ierr);
 
@@ -77,6 +77,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.modify_finite_element_add_field_row("TEST_FE","FIELD1"); CHKERRQ(ierr);
   ierr = m_field.modify_finite_element_add_field_col("TEST_FE","FIELD1"); CHKERRQ(ierr);
   ierr = m_field.modify_finite_element_add_field_data("TEST_FE","FIELD1"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_data("TEST_FE","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
 
   //Problem
   ierr = m_field.add_problem("TEST_PROBLEM"); CHKERRQ(ierr);
@@ -90,6 +91,13 @@ int main(int argc, char *argv[]) {
   EntityHandle root_set = moab.get_root_set();
   //add entities to field
   ierr = m_field.add_ents_to_field_by_TETs(root_set,"FIELD1"); CHKERRQ(ierr);
+
+  ierr = m_field.add_ents_to_field_by_TETs(root_set,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(root_set,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(root_set,MBEDGE,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(root_set,MBTRI,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(root_set,MBTET,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
+
   //add entities to finite element
   Range tets;
   rval = moab.get_entities_by_type(0,MBTET,tets,false); CHKERR_PETSC(rval);
@@ -113,8 +121,14 @@ int main(int argc, char *argv[]) {
   //build field
   ierr = m_field.build_fields(); CHKERRQ(ierr);
   //set FIELD1 from positions of 10 node tets
-  Projection10NodeCoordsOnField ent_method(m_field,"FIELD1");
-  ierr = m_field.loop_dofs("FIELD1",ent_method); CHKERRQ(ierr);
+  {
+    Projection10NodeCoordsOnField ent_method(m_field,"FIELD1");
+    ierr = m_field.loop_dofs("FIELD1",ent_method); CHKERRQ(ierr);
+  }
+  {
+    Projection10NodeCoordsOnField ent_method(m_field,"MESH_NODE_POSITIONS");
+    ierr = m_field.loop_dofs("MESH_NODE_POSITIONS",ent_method); CHKERRQ(ierr);
+  }
   //build finite elemnts
   ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
   //build adjacencies
@@ -159,6 +173,11 @@ int main(int argc, char *argv[]) {
       my_split << "getCoordsAtGaussPts: " << setprecision(3) << getCoordsAtGaussPts() << endl;
       my_split << "length: " << setprecision(3) << getLength() << endl;
       my_split << "direction: " << setprecision(3) << getDirection() << endl;
+
+      int nb_gauss_pts = data.getN().size1();
+      for(int gg = 0;gg<nb_gauss_pts;gg++) {
+        my_split << "tangent " << gg << " " << getTangetAtGaussPtrs() << endl;
+      }
 
       PetscFunctionReturn(0);
     }

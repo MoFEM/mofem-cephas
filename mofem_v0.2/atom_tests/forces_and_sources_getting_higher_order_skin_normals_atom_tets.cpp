@@ -184,12 +184,12 @@ int main(int argc, char *argv[]) {
       tAngent2_at_GaussPt.resize(4,3);
 
       try {
-	ierr = op.opRhs(data); CHKERRQ(ierr);
-	ierr = op.calculateNormals(); CHKERRQ(ierr);
+        ierr = op.opRhs(data); CHKERRQ(ierr);
+        ierr = op.calculateNormals(); CHKERRQ(ierr);
       } catch (exception& ex) {
-	ostringstream ss;
-	ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
-	SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+        ostringstream ss;
+        ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
+        SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
       my_split.precision(3);

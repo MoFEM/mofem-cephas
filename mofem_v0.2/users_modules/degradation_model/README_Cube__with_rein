@@ -1,0 +1,95 @@
+Steps
+==================================================================
+1. homogenisation of thermal RVE            (save output to thermal_Dmat.out binary file)
+2. homogenisation of moisture diffusion RVE (save output to diffusion_Dmat.out binary file)
+
+1. Run thermal_unsteady save output as solution.h5m and out_.vtk (conductivity for this is read from thermal_Dmat.out)
+2. Run moisture_unsteady save output as solution_mois.h5m and and Conc_.vtk (conductivity/density for this is read from diffusion_Dmat.out )
+3. Run calculate_wt (with input solution_mois.h5m)
+4. Run mech_macro_iso_Disp which is FE2 problem with two input meshes (micro RVE and macro) here macro-mesh = solution_wt.h5m
+                                                                                   and  RVE-mesh = RVE_Cube_mech.cub
+
+
+Example computational homogenisation for Thermal RVE (Textile RVE)
+============================================================
+---- RVE displacement BCs
+make Thermal_Disp_MRhs && mpirun -np 1 ./Thermal_Disp_MRhs -my_file /mnt/home/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/Cube_with_reinforcement/Cube_RVE_with_reinf_thermal.cub  -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_output_file_Dmat thermal_Dmat.out -my_order 1  -log_summary
+
+
+Example computational homogenisation for moisture transport RVE (Textile RVE)
+============================================================
+---- RVE displacement BCs
+make MoistureTrans_Disp_MRhs_with_incl && mpirun -np 1 ./MoistureTrans_Disp_MRhs_with_incl -my_file /mnt/home/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/Cube_with_reinforcement/Cube_RVE_with_reinf_moist.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_output_file_Dmat diffusion_Dmat.out -my_order 1  -log_summary
+
+Unsteady thermal macro problem (run for 1000 days=86400000 in sec with step of 10 days=864000) (time here in seconds)
+============================================================
+make thermal_unsteady_inputDmat && mpirun -np 1 ./thermal_unsteady_inputDmat \
+-my_file /mnt/home/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/Cube_with_reinforcement/macro.cub \
+  -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor \
+  -snes_type newtonls -snes_linesearch_type basic -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 -snes_monitor \
+  -ts_monitor -ts_type beuler -ts_dt 864000 -ts_final_time 86400000 -snes_lag_jacobian -2 \
+  -my_order 1 -my_max_post_proc_ref_level 0 -log_summary
+
+
+Unsteady moisture macro problem
+============================================================
+make diffusion_unsteady_inputDmat && mpirun -np 1 ./diffusion_unsteady_inputDmat \
+-my_file solution.h5m \
+  -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor \
+  -snes_type newtonls -snes_linesearch_type basic -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 -snes_monitor \
+  -ts_monitor -ts_type beuler -ts_dt 864000 -ts_final_time 86400000 -snes_lag_jacobian -2 \
+  -my_order 1 -my_max_post_proc_ref_level 0 -log_summary
+
+
+calculate_wt used to calculate degredaiton (1-wt) (time here in days)
+============================================================
+make wt_unsteady_macro && mpirun -np 1 ./wt_unsteady_macro \
+-my_file solution_mois.h5m \
+  -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor \
+  -snes_type newtonls -snes_linesearch_type basic -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 -snes_monitor \
+  -ts_monitor -ts_type beuler -ts_dt 10 -ts_final_time 1000 -snes_lag_jacobian -2 \
+  -my_order 1 -my_max_post_proc_ref_level 0 \
+  -my_saturation_conc 1  -log_summary
+
+
+Mechanical problem with RVE (both matrix and fibres are isotropic materials)
+============================================================
+make mech_macro_iso_Disp && mpirun -np 1 ./mech_macro_iso_Disp \
+-my_file_Macro solution_wt.h5m -my_file_RVE /mnt/home/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/Cube_with_reinforcement/Cube_RVE_with_reinf_mechanical.cub\
+  -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist \
+  -my_max_post_proc_ref_level 0 -my_order 1 -my_order_RVE 1 -log_summary\
+
+
+
+Mechanical problem with RVE (isotropic matrix and tansverse-isotropic fibres)
+==========================================================================================
+==== Potential flow for fibre directions 
+mpirun -np 1 ../homogenisation/TransIso_Potential_Flow_NoInt -my_file /mnt/home/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes//Cube_with_reinforcement/Cube_RVE_with_reinf_Mech_TransIso.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1 -log_summary
+
+======= Displacement BCs
+make mech_macro_transIso_Disp && mpirun -np 1 ./mech_macro_transIso_Disp \
+-my_file_Macro solution_wt.h5m -my_file_RVE solution_RVE.h5m\
+  -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist\
+  -my_max_post_proc_ref_level 0 -my_order 1 -log_summary\
+
+======= Periodic BCs
+make mech_macro_transIso_Periodic && mpirun -np 1 ./mech_macro_transIso_Periodic \
+-my_file_Macro solution_wt.h5m -my_file_RVE solution_RVE.h5m\
+  -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist \
+  -my_max_post_proc_ref_level 0 -my_order 2 -my_order_RVE 1 -log_summary\
+
+
+
+Conversion from .h5m to vtk
+============================================================
+One file conversion
+/opt/petsc/arch-linux2-c-opt/bin/mbconvert out.h5m out.vtk
+
+All files conversion using script
+./do_vtk1.sh FE2_out_*.h5m
+
+cp *.vtk /mnt/home/Desktop/results/
+
+rm *.vtk *.info *.h5m *.out
+
+

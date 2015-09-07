@@ -1,13 +1,13 @@
 /** \file CoreDataStructures.hpp
- * \brief Myltindex containes, data structures and other low-level functions 
- * 
+ * \brief Myltindex containes, data structures and other low-level functions
+ *
  * Low level data structures not used directly by user
  *
  * Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl) <br>
  *
- * The MoFEM package is copyrighted by Lukasz Kaczmarczyk. 
- * It can be freely used for educational and research purposes 
- * by other institutions. If you use this softwre pleas cite my work. 
+ * The MoFEM package is copyrighted by Lukasz Kaczmarczyk.
+ * It can be freely used for educational and research purposes
+ * by other institutions. If you use this softwre pleas cite my work.
  *
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -28,10 +28,12 @@
 
 namespace MoFEM {
 
+extern const char *FieldSpaceNames[];
+
 const int prism_adj_edges[] = { 6,7,8, -1,-1,-1, 0,1,2 };
 const int prism_edges_conn[6][2] = { {0,1},{1,2},{2,0}, {3,4}, {4,5}, {5,3} };
 
-inline int fNBENTITYSET_nofield(int P) { (void)P; return 1; }
+inline int fNBENTITYSET_NOFIELD(int P) { (void)P; return 1; }
 //
 inline int fNBVERTEX_L2(int P) { (void)P; return 0; }
 inline int fNBVOLUME_L2(int P) { return NBVOLUME_L2(P); }
@@ -72,7 +74,7 @@ struct ltstr
 struct CubitMeshSets_change_add_bit_to_cubit_bc_type {
   CubitBCType bit;
   CubitMeshSets_change_add_bit_to_cubit_bc_type(const CubitBCType &_bit): bit(_bit) {};
-  void operator()(CubitMeshSets &e) { 
+  void operator()(CubitMeshSets &e) {
     e.cubit_bc_type |= bit;
   }
 };
@@ -87,8 +89,8 @@ typedef multi_index_container<
 typedef multi_index_container<
   const NumeredDofMoFEMEntity*,
   indexed_by<
-    ordered_unique< 
-      member<NumeredDofMoFEMEntity,const DofIdx,&NumeredDofMoFEMEntity::petsc_gloabl_dof_idx> > 
+    ordered_unique<
+      member<NumeredDofMoFEMEntity,const DofIdx,&NumeredDofMoFEMEntity::petsc_gloabl_dof_idx> >
  > > NumeredDofMoFEMEntity_multiIndex_global_index_view;
 
 struct MoFEMFiniteElement_col_change_bit_add {
@@ -129,7 +131,7 @@ struct MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_change_ByWhat {
   void operator()(MoFEMEntityEntMoFEMFiniteElementAdjacencyMap &e) { e.by_other |= by; }
 };
 
-template<typename Tag> 
+template<typename Tag>
 void get_vector_by_multi_index_tag(vector<DofMoFEMEntity> &vec_dof,const DofMoFEMEntity_multiIndex &dofs,Tag* = 0) {
   const typename boost::multi_index::index<DofMoFEMEntity_multiIndex,Tag>::type& i = get<Tag>(dofs);
   vec_dof.insert(vec_dof.end(),i.begin(),i.end());
@@ -142,4 +144,3 @@ PetscErrorCode test_moab(Interface &moab,const EntityHandle ent);
 }
 
 #endif //__DATASTRUCTURES_HPP__
-

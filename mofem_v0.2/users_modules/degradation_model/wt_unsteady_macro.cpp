@@ -18,9 +18,10 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 #include <MoFEM.hpp>
+using namespace MoFEM;
 
 #include <DirichletBC.hpp>
-#include <PotsProcOnRefMesh.hpp>
+#include <PostProcOnRefMesh.hpp>
 #include <calculate_wt.hpp>
 
 #include <Projection10NodeCoordsOnField.hpp>
@@ -34,7 +35,6 @@ namespace bio = boost::iostreams;
 using bio::tee_device;
 using bio::stream;
 
-using namespace MoFEM;
 
 static char help[] = "...\n\n";
 
@@ -165,7 +165,7 @@ int main(int argc, char *argv[]) {
 //    cout<<"coords "<<coords<<endl;
     dof->get_FieldData() = 1;
   }
-  ierr = m_field.set_local_VecCreateGhost("Wt_PROBLEM",COL,T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = m_field.set_local_ghost_vector("Wt_PROBLEM",COL,T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
 //  ierr = VecView(T,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 //  std::string wait;
@@ -236,7 +236,7 @@ int main(int argc, char *argv[]) {
     PetscPrintf(PETSC_COMM_WORLD,"Process step %d\n",sit->get_step_number());
 
     ierr = recorder_ptr->load_series_data("Wt_SERIES",sit->get_step_number()); CHKERRQ(ierr);
-    ierr = m_field.set_local_VecCreateGhost("Wt_PROBLEM",ROW,T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = m_field.set_local_ghost_vector("Wt_PROBLEM",ROW,T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
     ProjectionFieldOn10NodeTet ent_method_on_10nodeTet(m_field,"Wt",true,false,"Wt");
     ent_method_on_10nodeTet.set_nodes = true;
@@ -247,7 +247,7 @@ int main(int argc, char *argv[]) {
     if(pcomm->rank()==0) {
       EntityHandle out_meshset;
       rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
-      ierr = m_field.problem_get_FE("Wt_PROBLEM","Wt_FE",out_meshset); CHKERRQ(ierr);
+      ierr = m_field.get_problem_finite_elements_entities("Wt_PROBLEM","Wt_FE",out_meshset); CHKERRQ(ierr);
       ostringstream ss;
       ss << "Wt_" << sit->step_number << ".vtk";
       rval = moab.write_file(ss.str().c_str(),"VTK","",&out_meshset,1); CHKERR_PETSC(rval);

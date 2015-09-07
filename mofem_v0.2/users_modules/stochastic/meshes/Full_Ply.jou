@@ -1,0 +1,42 @@
+reset
+set duplicate block elements on
+
+brick x 0.5 y 0.5 z 0.03
+
+# simply-supported plate
+# Edge -y
+# create Displacement on surface 3 dof 2 3 4 fix 0
+# Edge +y
+# create Displacement on surface 5 dof 3 5 fix 0
+# Edge -x
+create Displacement on surface 4 dof 3  fix 0
+# Edge +x
+create Displacement on surface 6 dof 3 fix 0
+
+create force 1 on surface 6 vector  400 0 0 0 0 0 
+create force 2 on surface 4 vector -400 0 0 0 0 0 
+
+volume all scheme Tetmesh
+volume all size auto factor 9
+mesh volume all
+
+#block 1 tet 1 to 421 and 423 to 559 
+#block 1 tet 1 to 269 and 271 to 342 
+#block 1 tet 1 to 10 and 12 to 68 
+block 1 tet 1 to 15 and 17 to 126 
+block 1 name 'MAT_ELASTIC'
+block 1 attribute count 2
+block 1 attribute index 1 1000
+block 1 attribute index 2 0.3 
+
+block 2 tet 16
+block 2 name 'RELIABILITY'
+block 2 attribute count 2
+block 2 attribute index 1 1000
+block 2 attribute index 2 0.3 
+
+# save as "/Users/nxz6/MyBuild/mofem-cephas/mofem_v0.2/users_modules/stochastic/meshes/Quad_Ply_REL422.cub" overwrite
+# save as "/Users/nxz6/MyBuild/mofem-cephas/mofem_v0.2/users_modules/stochastic/meshes/Quad_Ply_REL270.cub" overwrite
+# save as "/Users/nxz6/MyBuild/mofem-cephas/mofem_v0.2/users_modules/stochastic/meshes/Quad_Ply_REL11.cub" overwrite
+# save as "/Users/nxz6/MyBuild/mofem-cephas/mofem_v0.2/users_modules/stochastic/meshes/Quad_Ply_REL16.cub" overwrite
+save as "/Users/nxz6/MyBuild/mofem-cephas/mofem_v0.2/users_modules/stochastic/meshes/Plate_SFSF_REL16.cub" overwrite

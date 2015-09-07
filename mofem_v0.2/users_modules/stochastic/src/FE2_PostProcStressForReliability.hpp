@@ -92,7 +92,7 @@ namespace ObosleteUsersModules {
             //[ dW/dX1 dW/dX2 dW/dX3 ]
             GradU = prod( GradU, invH[gg] );
           }
-          ublas::matrix< FieldData > Strain = 0.5*( GradU + trans(GradU) );
+          ublas::matrix< FieldData > Strain; Strain.resize(3,3); Strain = 0.5*( GradU + trans(GradU) );
           rval = moab_post_proc.tag_set_data(th_strain,&mit->second,1,&(Strain.data()[0])); CHKERR_PETSC(rval);
           //caluate stress and save it into tag
           ublas::vector<FieldData> Strain_VectorNotation(6);
@@ -101,9 +101,12 @@ namespace ObosleteUsersModules {
           Strain_VectorNotation[2] = Strain(2,2);
           Strain_VectorNotation[3] = 2*Strain(0,1);
           Strain_VectorNotation[4] = 2*Strain(1,2);
-          Strain_VectorNotation[5] = 2*Strain(2,0);cout<<"Strain: "<<Strain_VectorNotation<<endl;
+          Strain_VectorNotation[5] = 2*Strain(2,0);//cout<<"Strain: "<<Strain_VectorNotation<<endl;
+          
+          //double w = V*G_TET_W[gg];
           ublas::vector< FieldData > Stress_VectorNotation = prod( Dmat, Strain_VectorNotation );
-          ublas::matrix< FieldData > Stress = ublas::zero_matrix<FieldData>(3,3);cout<<"Stress: "<<Stress_VectorNotation<<endl;
+          
+          ublas::matrix< FieldData > Stress = ublas::zero_matrix<FieldData>(3,3);//cout<<"Stress: "<<Stress_VectorNotation<<endl;
           Stress(0,0) = Stress_VectorNotation[0];
           Stress(1,1) = Stress_VectorNotation[1];
           Stress(2,2) = Stress_VectorNotation[2];
@@ -148,8 +151,9 @@ namespace ObosleteUsersModules {
           //cout<<"Principal stress at GP "<<gg<<" : \t"<<prin_vals_vect<<endl;
           if (gg==0) {
             cout.precision(15);
+            StressGP.resize(3,3); StressGP.clear();
             StressGP = Stress;
-            cout<<"Cauchy stress at GP "<<gg<<" : \t"<<Stress<<endl;
+            //cout<<"Cauchy stress at GP "<<gg<<" : \t"<<Stress<<endl;
           }
           //Tag principle stress vectors 1, 2, 3
           rval = moab_post_proc.tag_set_data(th_prin_stress_vect1,&mit->second,1,&prin_stress_vect1[0]); CHKERR_PETSC(rval);
@@ -255,13 +259,13 @@ namespace ObosleteUsersModules {
             //[ dU/dX1 dU/dX2 dU/dX3 ]
             //[ dV/dX1 dV/dX2 dV/dX3 ] = GradU * invH
             //[ dW/dX1 dW/dX2 dW/dX3 ]
-            GradU = prod( GradU, invH[gg] );
+            GradU   = prod( GradU,   invH[gg] );
             Grad_dU = prod( Grad_dU, invH[gg] );
           }
-          ublas::matrix< FieldData > Strain = 0.5*( GradU + trans(GradU) );
-          ublas::matrix< FieldData > Strain_du = 0.5*( Grad_dU + trans(Grad_dU) );
+          ublas::matrix< FieldData > Strain; Strain.resize(3,3); Strain = 0.5*( GradU   + trans(GradU)   );
+          ublas::matrix< FieldData > Strain_du; Strain_du.resize(3,3); Strain_du = 0.5*( Grad_dU + trans(Grad_dU) );
           
-          rval = moab_post_proc.tag_set_data(th_strain,&mit->second,1,&(Strain.data()[0])); CHKERR_PETSC(rval);
+          //rval = moab_post_proc.tag_set_data(th_strain,&mit->second,1,&(Strain.data()[0])); CHKERR_PETSC(rval);
           //rval = moab_post_proc.tag_set_data(th_strain,&mit->second,1,&(Strain.data()[0])); CHKERR_PETSC(rval);
           
           //caluate stress and save it into tag
@@ -282,7 +286,7 @@ namespace ObosleteUsersModules {
           Strain_du_VectorNotation[5] = 2*Strain_du(2,0);
           
           // dS/dx = [dD/dx] u + D [du/dx]
-          ublas::vector< FieldData > dStress_dx_VectorNotation(6);
+          ublas::vector< FieldData > dStress_dx_VectorNotation(6); dStress_dx_VectorNotation.clear();
           dStress_dx_VectorNotation = prod( Dmat, Strain_du_VectorNotation ) + prod( Dmat_r, Strain_VectorNotation );
           
           ublas::matrix< FieldData > dStress_dx = ublas::zero_matrix<FieldData>(3,3);
@@ -292,6 +296,7 @@ namespace ObosleteUsersModules {
           dStress_dx(0,1) = dStress_dx(1,0) = dStress_dx_VectorNotation[3];
           dStress_dx(1,2) = dStress_dx(2,1) = dStress_dx_VectorNotation[4];
           dStress_dx(2,0) = dStress_dx(0,2) = dStress_dx_VectorNotation[5];
+          //cout<<"The d stress: "<<dStress_dx<<"\n"<<prod( Dmat, Strain_du_VectorNotation ) << "\n"<< prod( Dmat_r, Strain_VectorNotation )<<endl;
           
           rval = moab_post_proc.tag_set_data(th_stress,&mit->second,1,&(dStress_dx.data()[0])); CHKERR_PETSC(rval);
           
@@ -328,7 +333,7 @@ namespace ObosleteUsersModules {
           //cout.precision(15);
           //cout<<"1st order derivative of Cauchy stress at GP "<<gg<<" : \t"<<dStress_dx<<endl;
           //cout<<"1st order derivative of principa stress at GP "<<gg<<" :\t"<<dprin_vals_vect<<endl;
-          if (gg==0) {StressGP_r = dStress_dx;}
+          if (gg==0) {StressGP_r.resize(3,3); StressGP_r.clear(); StressGP_r = dStress_dx;}
           //Tag principle stress vectors 1, 2, 3
           rval = moab_post_proc.tag_set_data(th_prin_stress_vect1,&mit->second,1,&dprin_stress_dx_vect1[0]); CHKERR_PETSC(rval);
           rval = moab_post_proc.tag_set_data(th_prin_stress_vect2,&mit->second,1,&dprin_stress_dx_vect2[0]); CHKERR_PETSC(rval);
