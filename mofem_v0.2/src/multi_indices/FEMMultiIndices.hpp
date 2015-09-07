@@ -1,5 +1,5 @@
 /** \file FEMMultiIndices.hpp
- * \brief Myltindex containes, data structures for mofem finite elements and other low-level functions
+ * \brief Myltindex contains, data structures for mofem finite elements and other low-level functions
  */
 
 /* MoFEM is free software: you can redistribute it and/or modify it under
@@ -353,7 +353,9 @@ struct EntMoFEMFiniteElement: public interface_MoFEMFiniteElement<MoFEMFiniteEle
     if(get_MoFEMFiniteElementPtr()->element_adjacency_table[get_ent_type()] == NULL) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
     }
-    ierr = (get_MoFEMFiniteElementPtr()->element_adjacency_table[get_ent_type()])(moab,field_ptr,this_fe_ptr,adjacency); CHKERRQ(ierr);
+    ierr = (get_MoFEMFiniteElementPtr()->element_adjacency_table[get_ent_type()])(
+      moab,field_ptr,this_fe_ptr,adjacency
+    ); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 

@@ -2269,9 +2269,7 @@ PetscErrorCode Core::seed_ref_level_MESHSET(const EntityHandle meshset,const Bit
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ent = refinedEntities.insert(RefMoFEMEntity(moab,meshset));
-  if(!((p_ent.first->get_BitRefLevel()&bit)==bit)) {
-    refinedEntities.modify(p_ent.first,RefMoFEMEntity_change_add_bit(bit));
-  }
+  refinedEntities.modify(p_ent.first,RefMoFEMEntity_change_add_bit(bit));
   ptrWrapperRefMoFEMElement pack_fe(new RefMoFEMElement_MESHSET(moab,&*p_ent.first));
   pair<RefMoFEMElement_multiIndex::iterator,bool> p_MoFEMFiniteElement = refinedFiniteElements.insert(pack_fe);
   if(verbose > 0) {
@@ -2347,7 +2345,10 @@ PetscErrorCode Core::get_entities_by_ref_level(const BitRefLevel &bit,const BitR
 }
 PetscErrorCode Core::get_entities_by_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,Range &ents) {
   PetscFunctionBegin;
+  Range meshset_ents;
+  ierr = moab.get_entities_by_type(0,MBENTITYSET,meshset_ents,false); CHKERRQ(ierr);
   ierr = moab.get_entities_by_handle(0,ents,false); CHKERRQ(ierr);
+  ents.merge(meshset_ents);
   Range::iterator eit = ents.begin();
   for(;eit!=ents.end();) {
     switch (moab.type_from_handle(*eit)) {
@@ -2358,9 +2359,10 @@ PetscErrorCode Core::get_entities_by_ref_level(const BitRefLevel &bit,const BitR
       case MBPRISM:
       break;
       case MBENTITYSET:
+      break;
       default:
-	eit = ents.erase(eit);
-	continue;
+      eit = ents.erase(eit);
+      continue;
     }
     BitRefLevel bit2;
     rval = moab.tag_get_data(th_RefBitLevel,&*eit,1,&bit2); CHKERR_PETSC(rval);

@@ -1097,6 +1097,21 @@ struct FieldInterface: public FieldUnknownInterface {
 
   /** \brief build adjacencies
     *
+    * \param list of entities
+    *
+    * This function will get information of adjacent finite elements and fields
+    * of all entities. If this is not executed, partitioning the problem is not
+    * possible. Adjacency map is based on degrees of freedom adjacent to
+    * elements. This linked to geometric element connectivity.
+    *
+    * If new degrees of freedom or new finite elements are added to the
+    * database, adjacency map has to be rebuild.
+    *
+    */
+  virtual PetscErrorCode build_adjacencies(const Range &ents,int verb = -1) = 0;
+
+  /** \brief build adjacencies
+    *
     * \param bit adjacencies for refine level
     *
     * This function will get information of adjacent finite elements and fields
@@ -1109,6 +1124,22 @@ struct FieldInterface: public FieldUnknownInterface {
     *
     */
   virtual PetscErrorCode build_adjacencies(const BitRefLevel &bit,int verb = -1) = 0;
+
+  /** \brief build adjacencies
+    *
+    * \param bit adjacencies for refine level
+    * \param mask mask for bit level
+    *
+    * This function will get information of adjacent finite elements and fields
+    * of all entities. If this is not executed, partitioning the problem is not
+    * possible. Adjacency map is based on degrees of freedom adjacent to
+    * elements. This linked to geometric element connectivity.
+    *
+    * If new degrees of freedom or new finite elements are added to the
+    * database, adjacency map has to be rebuild.
+    *
+    */
+  virtual PetscErrorCode build_adjacencies(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1) = 0;
 
   /** \brief clear adjacency map for finite elements on given bit level
     *
