@@ -194,7 +194,7 @@ struct NitscheMethod {
         int gg = 0;
         for(int ff = 0;ff<4;ff++) {
           if(commonData.facesFePtr[ff]==NULL) continue;
-          for(int fgg = 0;fgg<commonData.faceGaussPts[ff].size2();fgg++) {
+          for(int fgg = 0;fgg<commonData.faceGaussPts[ff].size2();fgg++,gg++) {
             for(int dd = 0;dd<3;dd++) {
               gaussPts(dd,gg) =
               commonData.faceVertexShapeFunctions[ff](fgg,0)*coords_tet[3*dataH1.facesNodes(ff,0)+dd] +
@@ -202,7 +202,6 @@ struct NitscheMethod {
               commonData.faceVertexShapeFunctions[ff](fgg,2)*coords_tet[3*dataH1.facesNodes(ff,2)+dd];
             }
             gaussPts(3,gg) = commonData.faceGaussPts[ff](2,fgg);
-            gg++;
           }
         }
       } catch (const std::exception& ex) {
@@ -322,12 +321,13 @@ struct NitscheMethod {
         trac.resize(3,jac.size2());
         trac.clear();
         for(unsigned int dd2 = 0;dd2<jac.size2();dd2++) {
-          for(unsigned int dd1 = 0;dd1<9;dd1++) {
-            trac(0,dd2) = 0.5*jac(0,dd2)*normal[0]+jac(1,dd2)*normal[1]+jac(2,dd2)*normal[2];
-            trac(1,dd2) = 0.5*jac(3,dd2)*normal[0]+jac(4,dd2)*normal[1]+jac(5,dd2)*normal[2];
-            trac(2,dd2) = 0.5*jac(6,dd2)*normal[0]+jac(7,dd2)*normal[1]+jac(8,dd2)*normal[2];
+          for(int dd1 = 0;dd1<9;dd1++) {
+            for(int nn = 0;nn<3;nn++) {
+              trac(nn,dd2) = cblas_ddot(3,&jac(3*nn,dd2),1,&normal[0],1);
+            }
           }
         }
+        trac *= 0.5;
       } catch (const std::exception& ex) {
         ostringstream ss;
         ss << "throw in method: " << ex.what() << endl;
@@ -468,6 +468,7 @@ struct NitscheMethod {
       field_disp,
       UserDataOperator::OPROWCOL
     ) {
+      sYmm = false;
     }
 
     MatrixDouble kMatrix;
@@ -520,21 +521,19 @@ struct NitscheMethod {
               for(int dd2 = 0;dd2<nb_dofs_col/3;dd2++) {
                 double n_col = col_data.getN()(gg,dd2);
                 for(int dd3 = 0;dd3<3;dd3++) {
-                  for(int dd4 = 0;dd4<3;dd4++) {
-                    kMatrix(3*dd1+dd3,3*dd2+dd4) += (1./gamma)*val*n_row*n_col*area;
-                  }
+                  kMatrix(3*dd1+dd3,3*dd2+dd3) += (1./gamma)*val*n_row*n_col*area;
                 }
               }
             }
 
-            for(int dd1 = 0;dd1<nb_dofs_row/3;dd1++) {
+            /*for(int dd1 = 0;dd1<nb_dofs_row/3;dd1++) {
               double n_row = row_data.getN()(gg,dd1);
               for(int dd2 = 0;dd2<3;dd2++) {
                 for(int dd3 = 0;dd3<nb_dofs_col;dd3++) {
                   kMatrix(3*dd1+dd2,dd3) -= val*n_row*tRac_u(dd2,dd3);
                 }
               }
-            }
+            }*/
 
             for(int dd1 = 0;dd1<nb_dofs_row;dd1++) {
               for(int dd2 = 0;dd2<nb_dofs_col/3;dd2++) {
