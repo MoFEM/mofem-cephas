@@ -48,16 +48,6 @@ Glasgow, Rankine Building, Glasgow G12 8LT, U.K.
 \mathcal{P} = \mathcal{P}\mathcal{P}
 \end{equation}
 
-5
-\begin{equation}
-\lambda = \mathcal{R}^\textrm{T}(\mathbf{K}\mathbf{u})
-\end{equation}
-
-6
-\begin{equation}
-\mathbf{t}^\textrm{T}\mathbf{u} = {\boldsymbol\lambda}^\textrm{T}\mathcal{C}\mathbf{u}
-\end{equation}
-
 \section{Problem formulation}
 
 7
@@ -442,6 +432,149 @@ a(\mathbf{u},\mathbf{v})
 \mathbf{t}_+(\mathbf{v})\\ \mathbf{t}_-(\mathbf{v})
 \end{array}
 \right\}
+\textrm{d}\Gamma
+\\=
+0
+\end{split}
+\end{equation}
+
+21
+\begin{equation}
+\begin{split}
+a(\mathbf{u},\mathbf{v})
+-
+\int_\Gamma
+\mathbf{t}^\textrm{T}(\mathbf{u})\mathbf{v}
+\textrm{d}\Gamma
+\\+
+\int_{\Gamma_+}
+\frac{1}{\gamma}
+(\mathbf{u}_+^\textrm{T} - \mathbf{u}_-^\textrm{T})
+\mathbf{v}_+
+\textrm{d}\Gamma
++
+\int_{\Gamma_-}
+\frac{1}{\gamma}
+(\mathbf{u}_-^\textrm{T} - \mathbf{u}_+^\textrm{T})
+\mathbf{v}_-
+\textrm{d}\Gamma
+\\-
+\int_{\Gamma_+}
+\phi
+(\mathbf{u}_+^\textrm{T} - \mathbf{u}_-^\textrm{T})
+\mathbf{t}_+(\mathbf{v})
+\textrm{d}\Gamma
+-
+\int_{\Gamma_-}
+\phi
+(\mathbf{u}_-^\textrm{T} - \mathbf{u}_+^\textrm{T})
+\mathbf{t}_-(\mathbf{v})
+\textrm{d}\Gamma
+\\-
+\int_{\Gamma_+}
+\frac{1}{\gamma}
+\mathbf{g}^\textrm{T}
+\mathbf{v}_+
+\textrm{d}\Gamma
++
+\int_{\Gamma_-}
+\frac{1}{\gamma}
+\mathbf{g}^\textrm{T}
+\mathbf{v}_-
+\textrm{d}\Gamma
+\\+
+\int_{\Gamma_+}
+\phi\mathbf{g}^\textrm{T}
+\mathbf{t}_+(\mathbf{v})
+\textrm{d}\Gamma
+-
+\int_{\Gamma_-}
+\phi\mathbf{g}^\textrm{T}
+\mathbf{t}_-(\mathbf{v})
+\textrm{d}\Gamma
+\\=
+0
+\end{split}
+\end{equation}
+
+\begin{equation}
+\mathbf{D}
+=
+\frac{1}{2}
+\left[
+\begin{array}{cccccc}
+2x & 0 & 0 & y & 0 & z \\
+0 & 2y & 0 & x & z & 0 \\
+0 & 0 & 2z & z & 0 & x
+\end{array}
+\right]
+\end{equation}
+
+\begin{equation}
+\mathbf{g}
+=
+\mathcal{P}\mathbf{D}{\boldsymbol\varepsilon}
+=
+(\mathbf{D}_{+}-\mathbf{D}_{-}){\boldsymbol\varepsilon}
+\end{equation}
+
+21
+\begin{equation}
+\begin{split}
+a(\mathbf{u},\mathbf{v})
+-
+\int_\Gamma
+\mathbf{t}^\textrm{T}(\mathbf{u})\mathbf{v}
+\textrm{d}\Gamma
+\\+
+\int_{\Gamma_+}
+\frac{1}{\gamma}
+(\mathbf{u}_+^\textrm{T} - \mathbf{u}_-^\textrm{T})
+\mathbf{v}_+
+\textrm{d}\Gamma
++
+\int_{\Gamma_-}
+\frac{1}{\gamma}
+(\mathbf{u}_-^\textrm{T} - \mathbf{u}_+^\textrm{T})
+\mathbf{v}_-
+\textrm{d}\Gamma
+\\-
+\int_{\Gamma_+}
+\phi
+(\mathbf{u}_+^\textrm{T} - \mathbf{u}_-^\textrm{T})
+\mathbf{t}_+(\mathbf{v})
+\textrm{d}\Gamma
+-
+\int_{\Gamma_-}
+\phi
+(\mathbf{u}_-^\textrm{T} - \mathbf{u}_+^\textrm{T})
+\mathbf{t}_-(\mathbf{v})
+\textrm{d}\Gamma
+\\-
+{\boldsymbol\varepsilon}^\textrm{T}
+\int_{\Gamma_+}
+\frac{1}{\gamma}
+\mathbf{D}^\textrm{T}
+\mathbf{v}_+
+\textrm{d}\Gamma
+-
+{\boldsymbol\varepsilon}^\textrm{T}
+\int_{\Gamma_-}
+\frac{1}{\gamma}
+\mathbf{D}^\textrm{T}
+\mathbf{v}_-
+\textrm{d}\Gamma
+\\+
+{\boldsymbol\varepsilon}^\textrm{T}
+\int_{\Gamma_+}
+\phi\mathbf{D}^\textrm{T}
+\mathbf{t}_+(\mathbf{v})
+\textrm{d}\Gamma
++
+{\boldsymbol\varepsilon}^\textrm{T}
+\int_{\Gamma_-}
+\phi\mathbf{D}^\textrm{T}
+\mathbf{t}_-(\mathbf{v})
 \textrm{d}\Gamma
 \\=
 0
