@@ -1,11 +1,5 @@
 /** \file CoreDataStructures.cpp
- * \brief Myltindex containes, data structures and other low-level functions
- *
- * Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl) <br>
- *
- * The MoFEM package is copyrighted by Lukasz Kaczmarczyk.
- * It can be freely used for educational and research purposes
- * by other institutions. If you use this softwre pleas cite my work.
+ * \brief Myltindex contains data structures and other low-level functions
  *
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -600,26 +594,33 @@ PetscErrorCode DefaultElementAdjacency::defaultPrism(Interface &moab,const MoFEM
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode DefaultElementAdjacency::defaultMeshset(Interface &moab,const MoFEMField *field_ptr,const EntMoFEMFiniteElement *fe_ptr,Range &adjacency) {
+PetscErrorCode DefaultElementAdjacency::defaultMeshset(
+  Interface &moab,const MoFEMField *field_ptr,const EntMoFEMFiniteElement *fe_ptr,Range &adjacency
+) {
   PetscFunctionBegin;
   ErrorCode rval;
-  Range ent_ents;
   EntityHandle fe_ent = fe_ptr->get_ent();
   //get all meshsets in finite element meshset
-  rval = moab.get_entities_by_type(fe_ent,MBENTITYSET,ent_ents,false); CHKERR_PETSC(rval);
-  //resolve recusively all ents in the meshset
+  Range ent_ents_meshset;
+  rval = moab.get_entities_by_type(fe_ent,MBENTITYSET,ent_ents_meshset,false); CHKERR_PETSC(rval);
+  //resolve recursively all ents in the meshset
+  Range ent_ents;
   rval = moab.get_entities_by_handle(fe_ent,ent_ents,true); CHKERR_PETSC(rval);
-  Range::iterator eit_eit = ent_ents.begin();
-  for(;eit_eit!=ent_ents.end();eit_eit++) {
-    switch (field_ptr->get_space()) {
-      case NOFIELD:
-	if(moab.type_from_handle(*eit_eit)==MBENTITYSET) {
-	adjacency.insert(*eit_eit);
-      }
-      break;
-      default:
-	SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
-    }
+  switch (field_ptr->get_space()) {
+    case H1:
+    adjacency.merge(ent_ents.subset_by_type(MBVERTEX));
+    case HCURL:
+    adjacency.merge(ent_ents.subset_by_type(MBEDGE));
+    case HDIV:
+    adjacency.merge(ent_ents.subset_by_type(MBTRI));
+    case L2:
+    adjacency.merge(ent_ents.subset_by_type(MBTET));
+    break;
+    case NOFIELD:
+    adjacency.merge(ent_ents_meshset.subset_by_type(MBENTITYSET));
+    break;
+    default:
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
   }
   PetscFunctionReturn(0);
 }
