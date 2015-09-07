@@ -356,4 +356,96 @@ a(\mathbf{u},\mathbf{v})
 \end{split}
 \end{equation}
 
+\section{Periodic BC}
+
+\begin{equation}
+\mathcal{C} = [1,-1]
+\end{equation}
+
+\begin{equation}
+\mathcal{R} = \frac{1}{2}
+\left\{
+\begin{array}{c}
+1\\
+-1
+\end{array}
+\right\}
+\end{equation}
+
+\begin{equation}
+\mathcal{P} = \frac{1}{2}
+\left[
+\begin{array}{cc}
+1 & -1\\
+-1 & 1
+\end{array}
+\right]
+\end{equation}
+
+20
+\begin{equation}
+\begin{split}
+a(\mathbf{u},\mathbf{v})
+-
+\int_\Gamma
+\mathbf{t}^\textrm{T}(\mathbf{u})\mathbf{v}
+\textrm{d}\Gamma
+\\+
+\int_\Gamma
+\frac{1}{\gamma}
+[ \mathbf{u}_+^\textrm{T}\, \mathbf{u}_-^\textrm{T} ]
+\left[
+\begin{array}{cc}
+1/2 & -1/2\\
+-1/2 & 1/2
+\end{array}
+\right]
+\left\{
+\begin{array}{c}
+\mathbf{v}_+ \\ \mathbf{v}_-
+\end{array}
+\right\}
+\textrm{d}\Gamma
+\\-
+\int_\Gamma
+\phi
+[\mathbf{u}_+^\textrm{T}\, \mathbf{u}_-^\textrm{T}]
+\left[
+\begin{array}{cc}
+1/2 & -1/2\\
+-1/2 & 1/2
+\end{array}
+\right]
+\left\{
+\begin{array}{c}
+\mathbf{t}_+(\mathbf{v})\\ \mathbf{t}_-(\mathbf{v})
+\end{array}
+\right\}
+\textrm{d}\Gamma
+\\-
+\int_\Gamma
+\frac{1}{\gamma}
+\mathbf{g}^\textrm{T}
+[ 1/2\, -1/2]
+\left\{
+\begin{array}{c}
+\mathbf{v}_+ \\ \mathbf{v}_-
+\end{array}
+\right\}
+\textrm{d}\Gamma
+\\+
+\int_\Gamma
+\phi\mathbf{g}^\textrm{T}
+[ 1/2\, -1/2]
+\left\{
+\begin{array}{c}
+\mathbf{t}_+(\mathbf{v})\\ \mathbf{t}_-(\mathbf{v})
+\end{array}
+\right\}
+\textrm{d}\Gamma
+\\=
+0
+\end{split}
+\end{equation}
+
 \end{document}
