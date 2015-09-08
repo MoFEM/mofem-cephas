@@ -59,7 +59,9 @@ Glasgow, Rankine Building, Glasgow G12 8LT, U.K.
 
 8
 \begin{equation}
-a(\mathbf{u},\mathbf{v}) - \int_\Gamma \mathbf{t}(\mathbf{u})\mathbf{v} \textrm{d}\Gamma = 0
+a(\mathbf{u},\mathbf{v})
+-
+\int_\Gamma \mathbf{t}^\textrm{T}(\mathbf{u})\mathbf{P}\mathbf{v} \textrm{d}\Gamma = 0
 \end{equation}
 
 9
@@ -76,11 +78,7 @@ a(\mathbf{u},\mathbf{v})
 \\-
 \int_\Gamma
 \mathbf{t}^{\textrm{T}}(\mathbf{u})
-(
 \phi\gamma\mathcal{P}\mathbf{t}(\mathbf{v})
-+
-\mathcal{Q}\mathbf{v}
-)
 \textrm{d}\Gamma
 \\-
 \int_\Gamma
@@ -99,7 +97,7 @@ a(\mathbf{u},\mathbf{v})
 \\-
 \int_\Gamma
 \mathbf{t}^{\textrm{T}}(\mathbf{u})
-(\phi\gamma\mathcal{P}\mathbf{t}(\mathbf{v})+\mathcal{Q}\mathbf{v})
+\phi\gamma\mathcal{P}\mathbf{t}(\mathbf{v})
 \textrm{d}\Gamma
 \\+
 \int_\Gamma
@@ -121,8 +119,6 @@ a(\mathbf{u},\mathbf{v})
 \\-
 \int_\Gamma
 \phi\gamma\mathbf{t}^{\textrm{T}}(\mathbf{u})\mathcal{P}\mathbf{t}(\mathbf{v})
-+
-\mathbf{t}^\textrm{T}(\mathbf{u})\mathcal{Q}\mathbf{v}
 \textrm{d}\Gamma
 \\+
 \int_\Gamma
@@ -144,8 +140,6 @@ a(\mathbf{u},\mathbf{v})
 \\-
 \int_\Gamma
 \phi\gamma\mathbf{t}^{\textrm{T}}(\mathbf{u})\mathcal{P}\mathbf{t}(\mathbf{v})
-+
-\mathbf{t}^\textrm{T}(\mathbf{u})\mathcal{Q}\mathbf{v}
 \textrm{d}\Gamma
 \\+
 \int_\Gamma
@@ -171,8 +165,6 @@ a(\mathbf{u},\mathbf{v})
 \\-
 \int_\Gamma
 \phi\gamma\mathbf{t}^{\textrm{T}}(\mathbf{u})\mathcal{P}\mathbf{t}(\mathbf{v})
-+
-\mathbf{t}^\textrm{T}(\mathbf{u})\mathcal{Q}\mathbf{v}
 \textrm{d}\Gamma
 \\+
 \int_\Gamma
@@ -202,39 +194,7 @@ a(\mathbf{u},\mathbf{v})
 a(\mathbf{u},\mathbf{v})
 \\-
 \int_\Gamma
-\mathbf{t}^\textrm{T}(\mathbf{u})(\mathcal{Q}+\mathcal{P})\mathbf{v}
-\textrm{d}\Gamma
-\\-
-\int_\Gamma
-\phi\gamma\mathbf{t}^{\textrm{T}}(\mathbf{u})\mathcal{P}\mathbf{t}(\mathbf{v})
-\textrm{d}\Gamma
-\\+
-\int_\Gamma
-\frac{1}{\gamma}
-\mathbf{u}^\textrm{T}\mathcal{P}\mathbf{v}
--
-\phi\mathbf{u}^\textrm{T}\mathcal{P}\mathbf{t}(\mathbf{v})
-+
-\phi\gamma\mathbf{t}^\textrm{T}(\mathbf{u})\mathcal{P}\mathbf{t}(\mathbf{v})
-\textrm{d}\Gamma
-\\-
-\int_\Gamma
-\frac{1}{\gamma}
-\mathbf{g}^\textrm{T}\mathcal{R}^\textrm{T}
-(\mathbf{v}-\phi\gamma\mathbf{t}(\mathbf{v}))
-\textrm{d}\Gamma
-\\=
-0
-\end{split}
-\end{equation}
-
-16
-\begin{equation}
-\begin{split}
-a(\mathbf{u},\mathbf{v})
-\\-
-\int_\Gamma
-\mathbf{t}^\textrm{T}(\mathbf{u})\mathbf{v}
+\mathbf{t}^\textrm{T}(\mathbf{u})\mathcal{P}\mathbf{v}
 \textrm{d}\Gamma
 \\-
 \int_\Gamma
@@ -266,7 +226,7 @@ a(\mathbf{u},\mathbf{v})
 a(\mathbf{u},\mathbf{v})
 \\-
 \int_\Gamma
-\mathbf{t}^\textrm{T}(\mathbf{u})\mathbf{v}
+\mathbf{t}^\textrm{T}(\mathbf{u})\mathcal{P}\mathbf{v}
 \textrm{d}\Gamma
 \\+
 \int_\Gamma
@@ -292,7 +252,7 @@ a(\mathbf{u},\mathbf{v})
 a(\mathbf{u},\mathbf{v})
 \\-
 \int_\Gamma
-\mathbf{t}^\textrm{T}(\mathbf{u})\mathbf{v}
+\mathbf{t}^\textrm{T}(\mathbf{u})\mathcal{P}\mathbf{v}
 \textrm{d}\Gamma
 \\+
 \int_\Gamma
@@ -320,7 +280,7 @@ a(\mathbf{u},\mathbf{v})
 a(\mathbf{u},\mathbf{v})
 -
 \int_\Gamma
-\mathbf{t}^\textrm{T}(\mathbf{u})\mathbf{v}
+\mathbf{t}^\textrm{T}(\mathbf{u})\mathcal{P}\mathbf{v}
 \textrm{d}\Gamma
 +
 \int_\Gamma
@@ -378,7 +338,18 @@ a(\mathbf{u},\mathbf{v})
 a(\mathbf{u},\mathbf{v})
 -
 \int_\Gamma
-\mathbf{t}^\textrm{T}(\mathbf{u})\mathbf{v}
+[\mathbf{t}_+^\textrm{T}(\mathbf{u})\,\mathbf{t}_-^\textrm{T}(\mathbf{u}]
+\left[
+\begin{array}{cc}
+1/2 & -1/2\\
+-1/2 & 1/2
+\end{array}
+\right]
+\left\{
+\begin{array}{c}
+\mathbf{v}_+ \\ \mathbf{v}_-
+\end{array}
+\right\}
 \textrm{d}\Gamma
 \\+
 \int_\Gamma
@@ -442,9 +413,13 @@ a(\mathbf{u},\mathbf{v})
 \begin{equation}
 \begin{split}
 a(\mathbf{u},\mathbf{v})
+\\-
+\int_{\Gamma_+}
+(\mathbf{t}_+^\textrm{T}(\mathbf{u})-\mathbf{t}_-^\textrm{T}(\mathbf{u}))\mathbf{v}_+
+\textrm{d}\Gamma
 -
-\int_\Gamma
-\mathbf{t}^\textrm{T}(\mathbf{u})\mathbf{v}
+\int_{\Gamma_-}
+(\mathbf{t}_-^\textrm{T}(\mathbf{u})-\mathbf{t}_+^\textrm{T}(\mathbf{u}))\mathbf{v}_-
 \textrm{d}\Gamma
 \\+
 \int_{\Gamma_+}
@@ -522,9 +497,13 @@ a(\mathbf{u},\mathbf{v})
 \begin{equation}
 \begin{split}
 a(\mathbf{u},\mathbf{v})
+\\-
+\int_{\Gamma_+}
+(\mathbf{t}_+^\textrm{T}(\mathbf{u})-\mathbf{t}_-^\textrm{T}(\mathbf{u}))\mathbf{v}_+
+\textrm{d}\Gamma
 -
-\int_\Gamma
-\mathbf{t}^\textrm{T}(\mathbf{u})\mathbf{v}
+\int_{\Gamma_-}
+(\mathbf{t}_-^\textrm{T}(\mathbf{u})-\mathbf{t}_+^\textrm{T}(\mathbf{u}))\mathbf{v}_-
 \textrm{d}\Gamma
 \\+
 \int_{\Gamma_+}
@@ -580,5 +559,74 @@ a(\mathbf{u},\mathbf{v})
 0
 \end{split}
 \end{equation}
+
+22
+\begin{equation}
+\begin{split}
+a(\mathbf{u},\mathbf{v})
+\\-
+\int_{\Gamma_+}
+\mathbf{t}_+^\textrm{T}(\mathbf{v}_+ - \mathbf{v}_-)
+\textrm{d}\Gamma
+-
+\int_{\Gamma_-}
+\mathbf{t}_-^\textrm{T}(\mathbf{v}_- - \mathbf{v}_+)
+\textrm{d}\Gamma
+\\+
+\int_{\Gamma_+}
+\frac{1}{\gamma}
+(\mathbf{u}_+^\textrm{T} - \mathbf{u}_-^\textrm{T})
+\mathbf{v}_+
+\textrm{d}\Gamma
++
+\int_{\Gamma_-}
+\frac{1}{\gamma}
+(\mathbf{u}_-^\textrm{T} - \mathbf{u}_+^\textrm{T})
+\mathbf{v}_-
+\textrm{d}\Gamma
+\\-
+\int_{\Gamma_+}
+\phi
+(\mathbf{u}_+^\textrm{T} - \mathbf{u}_-^\textrm{T})
+\mathbf{t}_+(\mathbf{v})
+\textrm{d}\Gamma
+-
+\int_{\Gamma_-}
+\phi
+(\mathbf{u}_-^\textrm{T} - \mathbf{u}_+^\textrm{T})
+\mathbf{t}_-(\mathbf{v})
+\textrm{d}\Gamma
+\\-
+{\boldsymbol\varepsilon}^\textrm{T}
+\int_{\Gamma_+}
+\frac{1}{\gamma}
+\mathbf{D}^\textrm{T}
+\mathbf{v}_+
+\textrm{d}\Gamma
+-
+{\boldsymbol\varepsilon}^\textrm{T}
+\int_{\Gamma_-}
+\frac{1}{\gamma}
+\mathbf{D}^\textrm{T}
+\mathbf{v}_-
+\textrm{d}\Gamma
+\\+
+{\boldsymbol\varepsilon}^\textrm{T}
+\int_{\Gamma_+}
+\phi\mathbf{D}^\textrm{T}
+\mathbf{t}_+(\mathbf{v})
+\textrm{d}\Gamma
++
+{\boldsymbol\varepsilon}^\textrm{T}
+\int_{\Gamma_-}
+\phi\mathbf{D}^\textrm{T}
+\mathbf{t}_-(\mathbf{v})
+\textrm{d}\Gamma
+\\=
+0
+\end{split}
+\end{equation}
+
+
 
 \end{document}
