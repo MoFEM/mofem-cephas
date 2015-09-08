@@ -1944,8 +1944,13 @@ PetscErrorCode Core::partition_finite_elements(
   //find p_miit
   moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<Problem_mi_tag>();
   moFEMProblems_by_name::iterator p_miit = moFEMProblems_set.find(name);
-  if(p_miit == moFEMProblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem < %s > not found (top tip: check spelling)",name.c_str());
-  NumeredMoFEMFiniteElement_multiIndex& numeredFiniteElements = const_cast<NumeredMoFEMFiniteElement_multiIndex&>(p_miit->numeredFiniteElements);
+  if(p_miit == moFEMProblems_set.end()) {
+    SETERRQ1(
+      PETSC_COMM_SELF,1,"problem < %s > not found (top tip: check spelling)",name.c_str()
+    );
+  }
+  NumeredMoFEMFiniteElement_multiIndex& numeredFiniteElements
+  = const_cast<NumeredMoFEMFiniteElement_multiIndex&>(p_miit->numeredFiniteElements);
   numeredFiniteElements.clear();
   //MoFEMFiniteElement set
   EntMoFEMFiniteElement_multiIndex::iterator miit2 = finiteElementsMoFEMEnts.begin();
@@ -1976,7 +1981,10 @@ PetscErrorCode Core::partition_finite_elements(
         unsigned int max_part = distance(parts.begin(),pos);
         NumeredMoFEMFiniteElement_change_part(max_part).operator()(numered_fe);
       }
-      if( (numered_fe.get_part()>=(unsigned int)low_proc)&&(numered_fe.get_part()<=(unsigned int)hi_proc) ) {
+      if(
+        (numered_fe.get_part()>=(unsigned int)low_proc)&&
+        (numered_fe.get_part()<=(unsigned int)hi_proc)
+      ) {
         //rows element dof multiindices
         viit_rows = rows_view.begin();
         for(;viit_rows!=rows_view.end();viit_rows++) {
@@ -1989,7 +1997,9 @@ PetscErrorCode Core::partition_finite_elements(
         }
         //cols_views
         NumeredDofMoFEMEntity_multiIndex_uid_view_ordered cols_view;
-        ierr = miit2->get_MoFEMFiniteElement_col_dof_view(p_miit->numered_dofs_cols,cols_view,Interface::UNION); CHKERRQ(ierr);
+        ierr = miit2->get_MoFEMFiniteElement_col_dof_view(
+          p_miit->numered_dofs_cols,cols_view,Interface::UNION
+        ); CHKERRQ(ierr);
         //cols elmeny dof multiindices
         NumeredDofMoFEMEntity_multiIndex_uid_view_ordered::iterator viit_cols;;
         viit_cols = cols_view.begin();
