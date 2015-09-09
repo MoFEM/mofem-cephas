@@ -1,3 +1,8 @@
+/** \file NitschePeriodicMethod.hpp
+ * \ingroup nitsche_method
+ * \brief Basic implementation of Nitsche method
+ */
+
 /*
  * This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
@@ -16,14 +21,66 @@
 #ifndef __NITCHE_BOUNDARY_CONDITIONS_HPP__
 #define __NITCHE_BOUNDARY_CONDITIONS_HPP__
 
-#ifndef WITH_ADOL_C
-  #error "MoFEM need to be compiled with ADOL-C"
-#endif
-
 /** \brief Basic implementation of Nitsche method
+ * \ingroup nitsche_method
 
-  For theoretical basis of method see \cite nitsche_method_hal and \cite
-  juntunen2009nitsche.
+  For theoretical basis of method see \cite nitsche_method_hal and
+  \cite juntunen2009nitsche.
+
+  \f[
+  \mathcal{R} = \mathcal{C}^\textrm{T}(\mathcal{C}\mathcal{C}^\textrm{T})^{-1}\;
+  \mathcal{P} = \mathcal{R}\mathcal{C}\;
+  \mathcal{Q} = \mathcal{I}-\mathcal{P}
+  \f]
+
+  \f[
+  \mathbf{t}(\mathbf{u}) =
+  -\frac{1}{\gamma}
+  \mathcal{R}(\mathcal{C}\mathbf{u}-\mathbf{g}-\gamma\mathcal{C}\mathbf{t}(\mathbf{u}))
+  \f]
+
+  \f[
+  a(\mathbf{u},\mathbf{v})
+  -
+  \int_\Gamma \mathbf{t}^\textrm{T}(\mathbf{u})\mathbf{P}\mathbf{v} \textrm{d}\Gamma = 0
+  \f]
+
+  \f[
+  \mathbf{v} =
+  \mathcal{R}(\mathcal{C}\mathbf{v}-\phi\gamma\mathcal{C}\mathbf{t}(\mathbf{v}))
+  +\phi\gamma\mathcal{P}\mathbf{t}(\mathbf{v}) + \mathcal{Q}\mathbf{v}
+  \f]
+
+  \f[
+  \begin{split}
+  a(\mathbf{u},\mathbf{v})
+  -
+  \int_\Gamma
+  \mathbf{t}^\textrm{T}(\mathbf{u})\mathcal{P}\mathbf{v}
+  \textrm{d}\Gamma
+  +
+  \int_\Gamma
+  \frac{1}{\gamma}
+  \mathbf{u}^\textrm{T}\mathcal{P}\mathbf{v}
+  \textrm{d}\Gamma
+  -
+  \int_\Gamma
+  \phi\mathbf{u}^\textrm{T}\mathcal{P}\mathbf{t}(\mathbf{v})
+  \textrm{d}\Gamma
+  \\-
+  \int_\Gamma
+  \frac{1}{\gamma}
+  \mathbf{g}^\textrm{T}\mathcal{R}^\textrm{T}
+  \mathbf{v}
+  \textrm{d}\Gamma
+  +
+  \int_\Gamma
+  \phi\mathbf{g}^\textrm{T}\mathcal{R}^\textrm{T}\gamma\mathbf{t}(\mathbf{v}))
+  \textrm{d}\Gamma
+  \\=
+  0
+  \end{split}
+  \f]
 
 */
 struct NitscheMethod {
@@ -36,13 +93,18 @@ struct NitscheMethod {
     int getRule(int order) { return order+addToRule; }
   };
 
+  /** \brief Block data for Nitsche method
+  * \ingroup nitsche_method
+  */
   struct BlockData {
-    double gamma;
-    double phi;
-    string faceElemName;
-    Range fAces;
+    double gamma;         ///< Penalty term, see \cite nitsche_method_hal
+    double phi;           ///< Nitsche method parameter, see \cite nitsche_method_hal
+    string faceElemName;  ///< name of element face
+    Range fAces;          ///< faces on which constrain is appleid
   };
 
+  /** \brief Common data shared between finite element opetators
+  */
   struct CommonData {
     int nbActiveFaces;
     vector<EntityHandle> fAces;
@@ -53,8 +115,20 @@ struct NitscheMethod {
     vector<ublas::matrix<double> > faceGaussPts;
     vector<ublas::matrix<double> > coordsAtGaussPts;
     vector<ublas::vector<double> > rAy;
+
+    MatrixDouble P;       ///< projection matrix
+    CommonData() {
+      P.resize(3,3,false);
+      P.clear();
+      P(0,0) = 1;
+      P(1,1) = 1;
+      P(2,2) = 1;
+    }
+
   };
 
+  /** \brief Get integration pts data on face
+  */
   struct OpGetFaceData: FaceElementForcesAndSourcesCore::UserDataOperator {
 
     CommonData &commonData;
@@ -95,7 +169,7 @@ struct NitscheMethod {
 
   };
 
-  /// \brief  definition of volume element
+  /// \brief Definition of volume element
   struct MyVolumeFE: public VolumeElementForcesAndSourcesCore {
 
     BlockData &blockData;
@@ -117,7 +191,7 @@ struct NitscheMethod {
     blockData(block_data),
     commonData(common_data),
     faceFE(m_field),
-    addToRule(0) {
+    addToRule(1) {
       faceFE.getOpPtrVector().push_back(new OpGetFaceData(commonData));
     }
 
@@ -199,7 +273,8 @@ struct NitscheMethod {
         int gg = 0;
         for(int ff = 0;ff<4;ff++) {
           if(commonData.facesFePtr[ff]==NULL) continue;
-          for(int fgg = 0;fgg<commonData.faceGaussPts[ff].size2();fgg++,gg++) {
+          int nb_gauss_face_pts = commonData.faceGaussPts[ff].size2();
+          for(int fgg = 0;fgg<nb_gauss_face_pts;fgg++,gg++) {
             for(int dd = 0;dd<3;dd++) {
               gaussPts(dd,gg) =
               commonData.faceVertexShapeFunctions[ff](fgg,0)*coords_tet[3*dataH1.facesNodes(ff,0)+dd] +
@@ -217,12 +292,13 @@ struct NitscheMethod {
 
       ierr = doAdditionalJobWhenGuassPtsAreCalulated(); CHKERRQ(ierr);
 
-      //cerr << gaussPts << endl;
       PetscFunctionReturn(0);
     }
 
   };
 
+  /** \brief Basic operated shared between all Nitsche operators
+  */
   struct OpBasicCommon: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     BlockData &nitscheBlockData;
@@ -261,6 +337,8 @@ struct NitscheMethod {
 
   };
 
+  /** \brief Calculate jacobian and variation of tractions
+  */
   struct OpCommon: public OpBasicCommon {
 
     NonlinearElasticElement::BlockData &dAta;
@@ -343,6 +421,9 @@ struct NitscheMethod {
 
   };
 
+  /** \brief Calculate Nitsche method terms on left hand side
+  * \ingroup nitsche_method
+  */
   struct OpLhsNormal: public OpCommon {
 
     OpLhsNormal(
@@ -364,7 +445,7 @@ struct NitscheMethod {
     ) {
     }
 
-    MatrixDouble kMatrix;
+    MatrixDouble kMatrix,kMatrix0,kMatrix1;
 
     PetscErrorCode doWork(
       int row_side,int col_side,
@@ -384,6 +465,8 @@ struct NitscheMethod {
       double gamma = nitscheBlockData.gamma;
       double phi = nitscheBlockData.phi;
 
+      kMatrix0.resize(nb_dofs_row,nb_dofs_col,false);
+      kMatrix1.resize(nb_dofs_row,nb_dofs_col,false);
       kMatrix.resize(nb_dofs_row,nb_dofs_col,false);
       kMatrix.clear();
 
@@ -396,6 +479,8 @@ struct NitscheMethod {
           //ierr = getFaceRadius(ff); CHKERRQ(ierr);
           //double gamma_h = gamma*faceRadius;
           double gamma_h = gamma;
+          kMatrix0.clear();
+          kMatrix1.clear();
           for(int fgg = 0;fgg<nb_face_gauss_pts;fgg++,gg++) {
             double val = getGaussPts()(3,gg);
             ierr = getJac(row_data,gg,jAc_row); CHKERRQ(ierr);
@@ -409,20 +494,26 @@ struct NitscheMethod {
             );
             double area = cblas_dnrm2(3,&normal[0],1);
 
+            MatrixDouble &P = nitscheCommonData.P;
             for(int dd1 = 0;dd1<nb_dofs_row/3;dd1++) {
               double n_row = row_data.getN()(gg,dd1);
               for(int dd2 = 0;dd2<nb_dofs_col/3;dd2++) {
                 double n_col = col_data.getN()(gg,dd2);
                 for(int dd3 = 0;dd3<3;dd3++) {
-                  kMatrix(3*dd1+dd3,3*dd2+dd3) += (1./gamma_h)*val*n_row*n_col*area;
+                  for(int dd4 = 0;dd4<3;dd4++) {
+                    kMatrix0(3*dd1+dd3,3*dd2+dd4) += val*n_row*P(dd3,dd4)*n_col*area;
+                  }
                 }
               }
             }
             for(int dd1 = 0;dd1<nb_dofs_row/3;dd1++) {
               double n_row = row_data.getN()(gg,dd1);
-              for(int dd2 = 0;dd2<3;dd2++) {
-                for(int dd3 = 0;dd3<nb_dofs_col;dd3++) {
-                  kMatrix(3*dd1+dd2,dd3) -= val*n_row*tRac_u(dd2,dd3);
+              for(int dd2 = 0;dd2<nb_dofs_col;dd2++) {
+                for(int dd3 = 0;dd3<3;dd3++) {
+                  double t = cblas_ddot(
+                    3,&P(dd3,0),1,&tRac_u(0,dd2),tRac_u.size2()
+                  );
+                  kMatrix1(3*dd1+dd3,dd2) -= val*n_row*t;
                 }
               }
             }
@@ -430,13 +521,20 @@ struct NitscheMethod {
               for(int dd2 = 0;dd2<nb_dofs_col/3;dd2++) {
                 double n_col = col_data.getN()(gg,dd2);
                 for(int dd3 = 0;dd3<3;dd3++) {
-                  kMatrix(dd1,3*dd2+dd3) -= phi*val*tRac_v(dd3,dd1)*n_col;
+                  double t = cblas_ddot(
+                    3,&P(0,dd3),3,&tRac_v(0,dd1),tRac_v.size2()
+                  );
+                  kMatrix1(dd1,3*dd2+dd3) -= phi*val*t*n_col;
                 }
               }
             }
-
           }
+
+          kMatrix0 /= gamma_h;
+          noalias(kMatrix) += kMatrix0+kMatrix1;
+
         }
+
 
         if(gg != getGaussPts().size2()) {
           SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"wrong number of gauss pts");
@@ -466,3 +564,8 @@ struct NitscheMethod {
 };
 
 #endif // __NITCHE_BOUNDARY_CONDITIONS_HPP__
+
+/***************************************************************************//**
+ * \defgroup nitsche_method Nitsche Method
+ * \ingroup user_modules
+ ******************************************************************************/

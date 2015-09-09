@@ -326,7 +326,7 @@ a(\mathbf{u},\mathbf{v})
 \mathcal{P} = \frac{1}{2}
 \left[
 \begin{array}{cc}
-1 & -1\\
+1 & 1\\
 -1 & 1
 \end{array}
 \right]
@@ -341,8 +341,8 @@ a(\mathbf{u},\mathbf{v})
 [\mathbf{t}_+^\textrm{T}(\mathbf{u})\,\mathbf{t}_-^\textrm{T}(\mathbf{u}]
 \left[
 \begin{array}{cc}
-1/2 & -1/2\\
--1/2 & 1/2
+1 & -1\\
+-1 & 1
 \end{array}
 \right]
 \left\{
@@ -357,8 +357,8 @@ a(\mathbf{u},\mathbf{v})
 [ \mathbf{u}_+^\textrm{T}\, \mathbf{u}_-^\textrm{T} ]
 \left[
 \begin{array}{cc}
-1/2 & -1/2\\
--1/2 & 1/2
+1 & -1\\
+-1 & 1
 \end{array}
 \right]
 \left\{
@@ -373,8 +373,8 @@ a(\mathbf{u},\mathbf{v})
 [\mathbf{u}_+^\textrm{T}\, \mathbf{u}_-^\textrm{T}]
 \left[
 \begin{array}{cc}
-1/2 & -1/2\\
--1/2 & 1/2
+1 & -1\\
+-1 & 1
 \end{array}
 \right]
 \left\{
@@ -387,7 +387,7 @@ a(\mathbf{u},\mathbf{v})
 \int_\Gamma
 \frac{1}{\gamma}
 \mathbf{g}^\textrm{T}
-[ 1/2\, -1/2]
+[ 1\, -1]
 \left\{
 \begin{array}{c}
 \mathbf{v}_+ \\ \mathbf{v}_-
@@ -397,7 +397,7 @@ a(\mathbf{u},\mathbf{v})
 \\+
 \int_\Gamma
 \phi\mathbf{g}^\textrm{T}
-[ 1/2\, -1/2]
+[ 1\, -1]
 \left\{
 \begin{array}{c}
 \mathbf{t}_+(\mathbf{v})\\ \mathbf{t}_-(\mathbf{v})
@@ -628,5 +628,78 @@ a(\mathbf{u},\mathbf{v})
 \end{equation}
 
 
+23
+\begin{equation}
+\begin{split}
+a(\mathbf{u},\mathbf{v})
+\\-
+\int_{\Gamma_+}
+\mathbf{t}_+^\textrm{T}(\mathbf{v}_+ - (1-\epsilon)\mathbf{v}_-)
+\textrm{d}\Gamma
+-
+\int_{\Gamma_-}
+\mathbf{t}_-^\textrm{T}(\mathbf{v}_- - (1-\epsilon)\mathbf{v}_+)
+\textrm{d}\Gamma
+\\+
+\int_{\Gamma_+}
+\frac{1}{\gamma}
+(\mathbf{u}_+^\textrm{T} - (1-\epsilon)\mathbf{u}_-^\textrm{T})
+\mathbf{v}_+
+\textrm{d}\Gamma
++
+\int_{\Gamma_-}
+\frac{1}{\gamma}
+(\mathbf{u}_-^\textrm{T} - (1-\epsilon)\mathbf{u}_+^\textrm{T})
+\mathbf{v}_-
+\textrm{d}\Gamma
+\\-
+\int_{\Gamma_+}
+\phi
+(\mathbf{u}_+^\textrm{T} - (1-\epsilon)\mathbf{u}_-^\textrm{T})
+\mathbf{t}_+(\mathbf{v})
+\textrm{d}\Gamma
+-
+\int_{\Gamma_-}
+\phi
+(\mathbf{u}_-^\textrm{T} - (1-\epsilon)\mathbf{u}_+^\textrm{T})
+\mathbf{t}_-(\mathbf{v})
+\textrm{d}\Gamma
+\\-
+{\boldsymbol\varepsilon}^\textrm{T}
+\int_{\Gamma_+}
+\frac{1}{\gamma}
+\mathbf{D}^\textrm{T}
+\mathbf{v}_+
+\textrm{d}\Gamma
+-
+{\boldsymbol\varepsilon}^\textrm{T}
+\int_{\Gamma_-}
+\frac{1}{\gamma}
+\mathbf{D}^\textrm{T}
+\mathbf{v}_-
+\textrm{d}\Gamma
+\\+
+{\boldsymbol\varepsilon}^\textrm{T}
+\int_{\Gamma_+}
+\phi\mathbf{D}^\textrm{T}
+\mathbf{t}_+(\mathbf{v})
+\textrm{d}\Gamma
++
+{\boldsymbol\varepsilon}^\textrm{T}
+\int_{\Gamma_-}
+\phi\mathbf{D}^\textrm{T}
+\mathbf{t}_-(\mathbf{v})
+\textrm{d}\Gamma
+\\=
+0
+\end{split}
+\end{equation}
+
+
+\begin{equation}
+\mathbf{g}
+=
+(\mathbf{D}_{+}-(1-\epsilon)\mathbf{D}_{-}){\boldsymbol\varepsilon}
+\end{equation}
 
 \end{document}
