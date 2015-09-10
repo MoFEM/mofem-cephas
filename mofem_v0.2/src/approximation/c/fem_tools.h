@@ -64,6 +64,26 @@ extern "C" {
 #define diffN_MBEDGE0 ( -1. )		///< derivative of edge shape function
 #define diffN_MBEDGE1 ( 1. ) 		///< derivative of edge shape function
 
+//MBTRIQ
+#define N_MBTRIQ0(x, y) ( (1.-x-y)*(2*(1.-x-y)-1.) )
+#define N_MBTRIQ1(x, y) ( x*(2.*x-1.) )
+#define N_MBTRIQ2(x, y) ( y*(2.*y-1.) )
+#define N_MBTRIQ3(x, y) ( 4.*(1.-x-y)*x )
+#define N_MBTRIQ4(x, y) ( 4.*x*y )
+#define N_MBTRIQ5(x, y) ( 4.*(1.-x-y)*y )
+#define diffN_MBTRIQ0x(x, y) ( x+y-3.*(1.-x-y) )
+#define diffN_MBTRIQ0y(x, y) ( x+y-3.*(1.-x-y) )
+#define diffN_MBTRIQ1x(x, y) ( -1.+4.*x )
+#define diffN_MBTRIQ1y(x, y) ( 0. )
+#define diffN_MBTRIQ2x(x, y) ( 0. )
+#define diffN_MBTRIQ2y(x, y) ( -1.+4.*y )
+#define diffN_MBTRIQ3x(x, y) ( 4.*((1.-x-y)-x) )
+#define diffN_MBTRIQ3y(x, y) ( -4.*x )
+#define diffN_MBTRIQ4x(x, y) ( 4.*y )
+#define diffN_MBTRIQ4y(x, y) ( 4.*x )
+#define diffN_MBTRIQ5x(x, y) ( -4.*y )
+#define diffN_MBTRIQ5y(x, y) ( 4.*((1.-x-y)-y) )
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -84,23 +104,24 @@ PetscErrorCode ShapeMBTRI(double *N,const double *X,const double *Y,const int G_
 /// calculate direvatives of shape functions
 PetscErrorCode ShapeDiffMBTRI(double *diffN);
 
-/// calculate face nornam
-/// \param diffN direvatives of shape functions
+/// calculate face normal
+/// \param diffN derivatives of shape functions
 /// \param coords is position of the nodes
 /// \param normal vector
 PetscErrorCode ShapeFaceNormalMBTRI(double *diffN,const double *coords,double *normal);
 PetscErrorCode ShapeFaceBaseMBTRI(
   double *diffN,const double *coords,
   double *normal,double *s1,double *s2);
-/// calculate direvative of normal in respect to nodal positions
+
+/// calculate derivative of normal in respect to nodal positions
 PetscErrorCode ShapeFaceDiffNormalMBTRI(double *diffN,const double *coords,double *diff_normal);
 /// calculate jacobioan
 void ShapeJacMBTRI(double *diffN,const double *coords,double *Jac);
-/// calculate direvatives of shape functions in space
+/// calculate derivatives of shape functions in space
 void ShapeDiffMBTRIinvJ(double *diffN,double *invJac,double *diffNinvJac);
 /// caluate shape functions
 PetscErrorCode ShapeMBTET(double *N,const double *G_X,const double *G_Y,const double *G_Z,int DIM);
-/// calulare direvatives of shape functions
+/// calulare derivatives of shape functions
 PetscErrorCode ShapeDiffMBTET(double *diffN);
 /// determinad of jacobian
 double ShapeDetJacMBTET(double *Jac);
@@ -110,11 +131,11 @@ PetscErrorCode ShapeJacMBTET(double *diffN,const double *coords,double *Jac);
 PetscErrorCode ShapeInvJacMBTET(double *Jac);
 /// calculate TET volume
 double ShapeVolumeMBTET(double *diffN,const double *coords);
-/// calculate shape functions direvatives in space
+/// calculate shape functions derivatives in space
 PetscErrorCode ShapeDiffMBTETinvJ(double *diffN,double *invJac,double *diffNinvJac);
 
 /// calculate spin matrix from vector
-// \param spinOmega is a spin matrxi
+// \param spinOmega is a spin matrix
 // \param vecOmega is a spin vector
 PetscErrorCode Spin(double *spinOmega,double *vecOmega);
 
@@ -139,7 +160,9 @@ PetscErrorCode Base_scale(
  *
  * new version for multiple points need to be implemented
  */
-PetscErrorCode ShapeMBTET_inverse(double *N,double *diffN,const double *elem_coords,const double *glob_coords,double *loc_coords);
+PetscErrorCode ShapeMBTET_inverse(
+  double *N,double *diffN,const double *elem_coords,const double *glob_coords,double *loc_coords
+);
 
 /// calculate gradient of deformation
 PetscErrorCode GradientOfDeformation(double *diffN,double *dofs,double *F);
@@ -169,7 +192,9 @@ PetscErrorCode GradientOfDeformation(double *diffN,double *dofs,double *F);
  \retval diffL derivatives, i.e. \f$\frac{\partial L}{\partial \xi_i}\f$
  \param dim dimension
  */
-PetscErrorCode Legendre_polynomials(int p,double s,double *diff_s,double *L,double *diffL,const int dim);
+PetscErrorCode Legendre_polynomials(
+  int p,double s,double *diff_s,double *L,double *diffL,const int dim
+);
 
 /**
  * \brief Calculate Gegenbauer Polynomials and their derivatives
@@ -182,16 +207,17 @@ PetscErrorCode Legendre_polynomials(int p,double s,double *diff_s,double *L,doub
  * \param diffL derivatives
  * \param dim dimension
  */
-PetscErrorCode Gegenbauer_polynomials(int p,double alpha, double s,double *diff_s,double *L,double *diffL,const int dim);
+PetscErrorCode Gegenbauer_polynomials(
+  int p,double alpha, double s,double *diff_s,double *L,double *diffL,const int dim
+);
 
 //2 Node edge
 PetscErrorCode ShapeMBEDGE(double *N,const double *G_X,int DIM);
 PetscErrorCode ShapeDiffMBEDGE(double *diffN);
 
 //10 Node Tet
-PetscErrorCode ShapeMBTRIQ_GAUSS(double *N,const double *X,const double *Y,const int G_DIM);
-PetscErrorCode ShapeMBTRIQ(double *N,const double x,const double y);
-PetscErrorCode ShapeDiffMBTRIQ(double *diffN,const double x,const double y);
+PetscErrorCode ShapeMBTRIQ(double *N,const double *X,const double *Y,const int G_DIM);
+PetscErrorCode ShapeDiffMBTRIQ(double *diffN,const double *X,const double *Y,const int G_DIM);
 PetscErrorCode ShapeMBTETQ(double *N,const double x,const double y,const double z);
 PetscErrorCode ShapeDiffMBTETQ(double *diffN,const double x,const double y,const double z);
 PetscErrorCode ShapeMBTETQ_GAUSS(double *N,const double *X,const double *Y,const double *Z,const int G_DIM);
@@ -199,6 +225,9 @@ PetscErrorCode ShapeDiffMBTETQ_GAUSS(double *diffN,const double *X,const double 
 PetscErrorCode ShapeJacMBTETQ(const double *diffN,const double *coords,double *Jac);
 PetscErrorCode ShapeMBTETQ_detJac_at_Gauss_Points(double *detJac_at_Gauss_Points,const double *diffN,const double *coords,int G_DIM);
 double ShapeVolumeMBTETQ(const double *diffN,const double *coords,int G_DIM,double *G_TET_W);
+PetscErrorCode ShapeMBTETQ_inverse(
+  double *N,double *diffN,const double *elem_coords,const double *glob_coords,double *loc_coords,const double eps
+);
 
 //complex part
 void ShapeDiffMBTETinvJ_complex(double *diffN,__CLPK_doublecomplex *invJac,__CLPK_doublecomplex *diffNinvJac,const enum CBLAS_TRANSPOSE Trans);
@@ -624,7 +653,6 @@ static const double NC_TET_W84[] = {
   0.0145502645502645, 0.0145502645502645, 0.0145502645502645, 0.0145502645502645, 1.0165343915343916, 1.0165343915343916, 1.0165343915343916,
   1.0165343915343916, -0.0251322751322751, -0.0251322751322751, -0.0251322751322751, -0.0251322751322751, -0.0251322751322751, -0.0251322751322751
 };
-
 
 #ifdef __cplusplus
 }

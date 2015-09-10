@@ -299,7 +299,9 @@ PetscErrorCode ShapeDiffMBTET(double *diffN) {
   diffN[9] = diffN_MBTET3x; diffN[10] = diffN_MBTET3y; diffN[11] = diffN_MBTET3z;
   PetscFunctionReturn(0);
 }
-PetscErrorCode ShapeMBTET_inverse(double *N,double *diffN,const double *elem_coords,const double *glob_coords,double *loc_coords) {
+PetscErrorCode ShapeMBTET_inverse(
+  double *N,double *diffN,const double *elem_coords,const double *glob_coords,double *loc_coords
+) {
   PetscFunctionBegin;
   double A[3*3];
   int IPIV[3];
@@ -575,20 +577,20 @@ PetscErrorCode Normal_hierarchical(
     nn = 0;
     for(; nn<3; nn++) {
       if(dofs!=NULL) {
-	diffX_x_node += dofs[3*nn + 0]*diffN[2*nn+0];
-	diffX_y_node += dofs[3*nn + 1]*diffN[2*nn+0];
-	diffX_z_node += dofs[3*nn + 2]*diffN[2*nn+0];
-	diffY_x_node += dofs[3*nn + 0]*diffN[2*nn+1];
-	diffY_y_node += dofs[3*nn + 1]*diffN[2*nn+1];
-	diffY_z_node += dofs[3*nn + 2]*diffN[2*nn+1];
+        diffX_x_node += dofs[3*nn + 0]*diffN[2*nn+0];
+        diffX_y_node += dofs[3*nn + 1]*diffN[2*nn+0];
+        diffX_z_node += dofs[3*nn + 2]*diffN[2*nn+0];
+        diffY_x_node += dofs[3*nn + 0]*diffN[2*nn+1];
+        diffY_y_node += dofs[3*nn + 1]*diffN[2*nn+1];
+        diffY_z_node += dofs[3*nn + 2]*diffN[2*nn+1];
       }
       if(idofs!=NULL) {
-	diffX_x_node += I*idofs[3*nn + 0]*diffN[2*nn+0];
-	diffX_y_node += I*idofs[3*nn + 1]*diffN[2*nn+0];
-	diffX_z_node += I*idofs[3*nn + 2]*diffN[2*nn+0];
-	diffY_x_node += I*idofs[3*nn + 0]*diffN[2*nn+1];
-	diffY_y_node += I*idofs[3*nn + 1]*diffN[2*nn+1];
-	diffY_z_node += I*idofs[3*nn + 2]*diffN[2*nn+1];
+        diffX_x_node += I*idofs[3*nn + 0]*diffN[2*nn+0];
+        diffX_y_node += I*idofs[3*nn + 1]*diffN[2*nn+0];
+        diffX_z_node += I*idofs[3*nn + 2]*diffN[2*nn+0];
+        diffY_x_node += I*idofs[3*nn + 0]*diffN[2*nn+1];
+        diffY_y_node += I*idofs[3*nn + 1]*diffN[2*nn+1];
+        diffY_z_node += I*idofs[3*nn + 2]*diffN[2*nn+1];
       }
     }
   }
@@ -601,20 +603,20 @@ PetscErrorCode Normal_hierarchical(
     int nb_dofs_approx_face = NBFACE_H1(order_approx);
     if(nb_dofs_face>0) {
       if(dofs_face!=NULL) {
-	diffX_x += cblas_ddot(nb_dofs_face,&dofs_face[0],3,&diffN_face[gg*2*nb_dofs_approx_face+0],2);
-	diffX_y += cblas_ddot(nb_dofs_face,&dofs_face[1],3,&diffN_face[gg*2*nb_dofs_approx_face+0],2);
-	diffX_z += cblas_ddot(nb_dofs_face,&dofs_face[2],3,&diffN_face[gg*2*nb_dofs_approx_face+0],2);
-	diffY_x += cblas_ddot(nb_dofs_face,&dofs_face[0],3,&diffN_face[gg*2*nb_dofs_approx_face+1],2);
-	diffY_y += cblas_ddot(nb_dofs_face,&dofs_face[1],3,&diffN_face[gg*2*nb_dofs_approx_face+1],2);
-	diffY_z += cblas_ddot(nb_dofs_face,&dofs_face[2],3,&diffN_face[gg*2*nb_dofs_approx_face+1],2);
+        diffX_x += cblas_ddot(nb_dofs_face,&dofs_face[0],3,&diffN_face[gg*2*nb_dofs_approx_face+0],2);
+        diffX_y += cblas_ddot(nb_dofs_face,&dofs_face[1],3,&diffN_face[gg*2*nb_dofs_approx_face+0],2);
+        diffX_z += cblas_ddot(nb_dofs_face,&dofs_face[2],3,&diffN_face[gg*2*nb_dofs_approx_face+0],2);
+        diffY_x += cblas_ddot(nb_dofs_face,&dofs_face[0],3,&diffN_face[gg*2*nb_dofs_approx_face+1],2);
+        diffY_y += cblas_ddot(nb_dofs_face,&dofs_face[1],3,&diffN_face[gg*2*nb_dofs_approx_face+1],2);
+        diffY_z += cblas_ddot(nb_dofs_face,&dofs_face[2],3,&diffN_face[gg*2*nb_dofs_approx_face+1],2);
       }
       if(idofs_face!=NULL) {
-	diffX_x += I*cblas_ddot(nb_dofs_face,&idofs_face[0],3,&diffN_face[gg*2*nb_dofs_approx_face+0],2);
-	diffX_y += I*cblas_ddot(nb_dofs_face,&idofs_face[1],3,&diffN_face[gg*2*nb_dofs_approx_face+0],2);
-	diffX_z += I*cblas_ddot(nb_dofs_face,&idofs_face[2],3,&diffN_face[gg*2*nb_dofs_approx_face+0],2);
-	diffY_x += I*cblas_ddot(nb_dofs_face,&idofs_face[0],3,&diffN_face[gg*2*nb_dofs_approx_face+1],2);
-	diffY_y += I*cblas_ddot(nb_dofs_face,&idofs_face[1],3,&diffN_face[gg*2*nb_dofs_approx_face+1],2);
-	diffY_z += I*cblas_ddot(nb_dofs_face,&idofs_face[2],3,&diffN_face[gg*2*nb_dofs_approx_face+1],2);
+        diffX_x += I*cblas_ddot(nb_dofs_face,&idofs_face[0],3,&diffN_face[gg*2*nb_dofs_approx_face+0],2);
+        diffX_y += I*cblas_ddot(nb_dofs_face,&idofs_face[1],3,&diffN_face[gg*2*nb_dofs_approx_face+0],2);
+        diffX_z += I*cblas_ddot(nb_dofs_face,&idofs_face[2],3,&diffN_face[gg*2*nb_dofs_approx_face+0],2);
+        diffY_x += I*cblas_ddot(nb_dofs_face,&idofs_face[0],3,&diffN_face[gg*2*nb_dofs_approx_face+1],2);
+        diffY_y += I*cblas_ddot(nb_dofs_face,&idofs_face[1],3,&diffN_face[gg*2*nb_dofs_approx_face+1],2);
+        diffY_z += I*cblas_ddot(nb_dofs_face,&idofs_face[2],3,&diffN_face[gg*2*nb_dofs_approx_face+1],2);
       }
     }
   }
@@ -624,25 +626,25 @@ PetscErrorCode Normal_hierarchical(
       int nb_dofs_edge = NBEDGE_H1(order_edge[ee]);
       int nb_dofs_approx_edge = NBEDGE_H1(order_edge_approx[ee]);
       if(nb_dofs_edge>0) {
-	if(dofs_edge!=NULL) {
-	  if(dofs_edge[ee]!=NULL) {
-	    diffX_x += cblas_ddot(nb_dofs_edge,&(dofs_edge[ee])[0],3,&(diffN_edge[ee])[gg*2*nb_dofs_approx_edge+0],2);
-	    diffX_y += cblas_ddot(nb_dofs_edge,&(dofs_edge[ee])[1],3,&(diffN_edge[ee])[gg*2*nb_dofs_approx_edge+0],2);
-	    diffX_z += cblas_ddot(nb_dofs_edge,&(dofs_edge[ee])[2],3,&(diffN_edge[ee])[gg*2*nb_dofs_approx_edge+0],2);
-	    diffY_x += cblas_ddot(nb_dofs_edge,&(dofs_edge[ee])[0],3,&(diffN_edge[ee])[gg*2*nb_dofs_approx_edge+1],2);
-	    diffY_y += cblas_ddot(nb_dofs_edge,&(dofs_edge[ee])[1],3,&(diffN_edge[ee])[gg*2*nb_dofs_approx_edge+1],2);
-	    diffY_z += cblas_ddot(nb_dofs_edge,&(dofs_edge[ee])[2],3,&(diffN_edge[ee])[gg*2*nb_dofs_approx_edge+1],2);
-	  }
-	}
-	if(idofs_edge!=NULL) {
-	  if(idofs_edge[ee]==NULL) continue;
-	  diffX_x += I*cblas_ddot(nb_dofs_edge,&(idofs_edge[ee])[0],3,&(diffN_edge[ee])[gg*2*nb_dofs_approx_edge+0],2);
-	  diffX_y += I*cblas_ddot(nb_dofs_edge,&(idofs_edge[ee])[1],3,&(diffN_edge[ee])[gg*2*nb_dofs_approx_edge+0],2);
-	  diffX_z += I*cblas_ddot(nb_dofs_edge,&(idofs_edge[ee])[2],3,&(diffN_edge[ee])[gg*2*nb_dofs_approx_edge+0],2);
-	  diffY_x += I*cblas_ddot(nb_dofs_edge,&(idofs_edge[ee])[0],3,&(diffN_edge[ee])[gg*2*nb_dofs_approx_edge+1],2);
-	  diffY_y += I*cblas_ddot(nb_dofs_edge,&(idofs_edge[ee])[1],3,&(diffN_edge[ee])[gg*2*nb_dofs_approx_edge+1],2);
-	  diffY_z += I*cblas_ddot(nb_dofs_edge,&(idofs_edge[ee])[2],3,&(diffN_edge[ee])[gg*2*nb_dofs_approx_edge+1],2);
-	}
+        if(dofs_edge!=NULL) {
+          if(dofs_edge[ee]!=NULL) {
+            diffX_x += cblas_ddot(nb_dofs_edge,&(dofs_edge[ee])[0],3,&(diffN_edge[ee])[gg*2*nb_dofs_approx_edge+0],2);
+            diffX_y += cblas_ddot(nb_dofs_edge,&(dofs_edge[ee])[1],3,&(diffN_edge[ee])[gg*2*nb_dofs_approx_edge+0],2);
+            diffX_z += cblas_ddot(nb_dofs_edge,&(dofs_edge[ee])[2],3,&(diffN_edge[ee])[gg*2*nb_dofs_approx_edge+0],2);
+            diffY_x += cblas_ddot(nb_dofs_edge,&(dofs_edge[ee])[0],3,&(diffN_edge[ee])[gg*2*nb_dofs_approx_edge+1],2);
+            diffY_y += cblas_ddot(nb_dofs_edge,&(dofs_edge[ee])[1],3,&(diffN_edge[ee])[gg*2*nb_dofs_approx_edge+1],2);
+            diffY_z += cblas_ddot(nb_dofs_edge,&(dofs_edge[ee])[2],3,&(diffN_edge[ee])[gg*2*nb_dofs_approx_edge+1],2);
+          }
+        }
+        if(idofs_edge!=NULL) {
+          if(idofs_edge[ee]==NULL) continue;
+          diffX_x += I*cblas_ddot(nb_dofs_edge,&(idofs_edge[ee])[0],3,&(diffN_edge[ee])[gg*2*nb_dofs_approx_edge+0],2);
+          diffX_y += I*cblas_ddot(nb_dofs_edge,&(idofs_edge[ee])[1],3,&(diffN_edge[ee])[gg*2*nb_dofs_approx_edge+0],2);
+          diffX_z += I*cblas_ddot(nb_dofs_edge,&(idofs_edge[ee])[2],3,&(diffN_edge[ee])[gg*2*nb_dofs_approx_edge+0],2);
+          diffY_x += I*cblas_ddot(nb_dofs_edge,&(idofs_edge[ee])[0],3,&(diffN_edge[ee])[gg*2*nb_dofs_approx_edge+1],2);
+          diffY_y += I*cblas_ddot(nb_dofs_edge,&(idofs_edge[ee])[1],3,&(diffN_edge[ee])[gg*2*nb_dofs_approx_edge+1],2);
+          diffY_z += I*cblas_ddot(nb_dofs_edge,&(idofs_edge[ee])[2],3,&(diffN_edge[ee])[gg*2*nb_dofs_approx_edge+1],2);
+        }
       }
     }
   }
@@ -706,26 +708,7 @@ PetscErrorCode ShapeDiffMBEDGE(double *diffN) {
 
 //FIXME: NOT PROPERLY TESTED YET
 //HO
-//MBTRIQ
-#define N_MBTRIQ0(x, y) ( (1.-x-y)*(2*(1.-x-y)-1.) )
-#define N_MBTRIQ1(x, y) ( x*(2.*x-1.) )
-#define N_MBTRIQ2(x, y) ( y*(2.*y-1.) )
-#define N_MBTRIQ3(x, y) ( 4.*(1.-x-y)*x )
-#define N_MBTRIQ4(x, y) ( 4.*x*y )
-#define N_MBTRIQ5(x, y) ( 4.*(1.-x-y)*y )
-#define diffN_MBTRIQ0x(x, y) ( x+y-3.*(1.-x-y) )
-#define diffN_MBTRIQ0y(x, y) ( x+y-3.*(1.-x-y) )
-#define diffN_MBTRIQ1x(x, y) ( -1.+4.*x )
-#define diffN_MBTRIQ1y(x, y) ( 0. )
-#define diffN_MBTRIQ2x(x, y) ( 0. )
-#define diffN_MBTRIQ2y(x, y) ( -1.+4.*y )
-#define diffN_MBTRIQ3x(x, y) ( 4.*((1.-x-y)-x) )
-#define diffN_MBTRIQ3y(x, y) ( -4.*x )
-#define diffN_MBTRIQ4x(x, y) ( 4.*y )
-#define diffN_MBTRIQ4y(x, y) ( 4.*x )
-#define diffN_MBTRIQ5x(x, y) ( -4.*y )
-#define diffN_MBTRIQ5y(x, y) ( 4.*((1.-x-y)-y) )
-PetscErrorCode ShapeMBTRIQ_GAUSS(double *N,const double *X,const double *Y,const int G_DIM) {
+PetscErrorCode ShapeMBTRIQ(double *N,const double *X,const double *Y,const int G_DIM) {
   PetscFunctionBegin;
   int ii = 0;
   for(; ii<G_DIM; ii++) {
@@ -739,30 +722,24 @@ PetscErrorCode ShapeMBTRIQ_GAUSS(double *N,const double *X,const double *Y,const
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode ShapeMBTRIQ(double *N,const double x,const double y) {
+PetscErrorCode ShapeDiffMBTRIQ(double *diffN,const double *X,const double *Y,const int G_DIM) {
   PetscFunctionBegin;
-  N[0] = N_MBTRIQ0(x,y);
-  N[1] = N_MBTRIQ1(x,y);
-  N[2] = N_MBTRIQ2(x,y);
-  N[3] = N_MBTRIQ3(x,y);
-  N[4] = N_MBTRIQ4(x,y);
-  N[5] = N_MBTRIQ5(x,y);
-  PetscFunctionReturn(0);
-}
-PetscErrorCode ShapeDiffMBTRIQ(double *diffN,const double x,const double y) {
-  PetscFunctionBegin;
-  diffN[0] = diffN_MBTRIQ0x(x,y);
-  diffN[1] = diffN_MBTRIQ0y(x,y);
-  diffN[2] = diffN_MBTRIQ1x(x,y);
-  diffN[3] = diffN_MBTRIQ1y(x,y);
-  diffN[4] = diffN_MBTRIQ2x(x,y);
-  diffN[5] = diffN_MBTRIQ2y(x,y);
-  diffN[6] = diffN_MBTRIQ3x(x,y);
-  diffN[7] = diffN_MBTRIQ3y(x,y);
-  diffN[8] = diffN_MBTRIQ4x(x,y);
-  diffN[9] = diffN_MBTRIQ4y(x,y);
-  diffN[10] = diffN_MBTRIQ5x(x,y);
-  diffN[11] = diffN_MBTRIQ5y(x,y);
+  int ii = 0;
+  for(;ii<G_DIM;ii++) {
+    double x = X[ii],y = Y[ii];
+    diffN[12*ii+0] = diffN_MBTRIQ0x(x,y);
+    diffN[12*ii+1] = diffN_MBTRIQ0y(x,y);
+    diffN[12*ii+2] = diffN_MBTRIQ1x(x,y);
+    diffN[12*ii+3] = diffN_MBTRIQ1y(x,y);
+    diffN[12*ii+4] = diffN_MBTRIQ2x(x,y);
+    diffN[12*ii+5] = diffN_MBTRIQ2y(x,y);
+    diffN[12*ii+6] = diffN_MBTRIQ3x(x,y);
+    diffN[12*ii+7] = diffN_MBTRIQ3y(x,y);
+    diffN[12*ii+8] = diffN_MBTRIQ4x(x,y);
+    diffN[12*ii+9] = diffN_MBTRIQ4y(x,y);
+    diffN[12*ii+10] = diffN_MBTRIQ5x(x,y);
+    diffN[12*ii+11] = diffN_MBTRIQ5y(x,y);
+  }
   PetscFunctionReturn(0);
 }
 
@@ -924,17 +901,22 @@ double ShapeVolumeMBTETQ(const double *diffN,const double *coords,int G_DIM,doub
   }
   return vol;
 }
-/*PetscErrorCode ShapeMBTETQ_inverse(ShapeData *data,const double *elem_coords,const double *glob_coords,double *loc_coords,const double eps) {
+PetscErrorCode ShapeMBTETQ_inverse(
+  double *N,
+  double *diffN,
+  const double *elem_coords,
+  const double *glob_coords,
+  double *loc_coords,
+  const double eps
+) {
   PetscFunctionBegin;
   double A[3*3];
   double R[3];
-  double *N = (*data).N;
-  double *diffN = (*data).diffN;
   int IPIV[3];
   float NORM_dR = 1000.;
   float NORM_R0;
-  ShapeMBTETQ(data,0.1,0.1,0.1);
-  ShapeDiffMBTETQ(data,0.1,0.1,0.1);
+  ShapeMBTETQ(N,0.1,0.1,0.1);
+  ShapeDiffMBTETQ(diffN,0.1,0.1,0.1);
   R[0] = glob_coords[0] - cblas_ddot(10,&N[0],1,&elem_coords[0],3);
   R[1] = glob_coords[1] - cblas_ddot(10,&N[0],1,&elem_coords[1],3);
   R[2] = glob_coords[2] - cblas_ddot(10,&N[0],1,&elem_coords[2],3);
@@ -959,9 +941,8 @@ double ShapeVolumeMBTETQ(const double *diffN,const double *coords,int G_DIM,doub
     assert( lapack_dgesv(3,1,&A[0],3,(__CLPK_integer*)IPIV,R,3) == 0 );
     cblas_daxpy(3,1.,R,1,loc_coords,1);
     NORM_dR = cblas_dnrm2(3,&R[0],1);
-    ShapeMBTETQ(data,loc_coords[0],loc_coords[1],loc_coords[2]);
-    ShapeDiffMBTETQ(data,loc_coords[0],loc_coords[1],loc_coords[2]);
+    ShapeMBTETQ(N,loc_coords[0],loc_coords[1],loc_coords[2]);
+    ShapeDiffMBTETQ(diffN,loc_coords[0],loc_coords[1],loc_coords[2]);
  }
  PetscFunctionReturn(0);
 }
-*/
