@@ -114,6 +114,7 @@ struct NitscheMethod {
     vector<ublas::matrix<double> > faceVertexShapeFunctions;
     vector<ublas::matrix<double> > faceGaussPts;
     vector<ublas::matrix<double> > coordsAtGaussPts;
+    vector<ublas::matrix<double> > hoCoordsAtGaussPts;
     vector<ublas::vector<double> > rAy;
 
     MatrixDouble P;       ///< projection matrix
@@ -154,6 +155,8 @@ struct NitscheMethod {
           commonData.faceGaussPts[faceInRespectToTet] = getGaussPts();
           commonData.coordsAtGaussPts.resize(4);
           commonData.coordsAtGaussPts[faceInRespectToTet] = getCoordsAtGaussPts();
+          commonData.hoCoordsAtGaussPts.resize(4);
+          commonData.hoCoordsAtGaussPts[faceInRespectToTet] = getHoCoordsAtGaussPts();
           commonData.rAy.resize(4);
           commonData.rAy[faceInRespectToTet] = -getNormal();
           commonData.rAy[faceInRespectToTet] /= norm_2(getNormal());
