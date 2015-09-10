@@ -142,7 +142,9 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
       CubitMeshSets base_meshset(moab,*mit);
       if((base_meshset.cubit_bc_type&CubitBCType(NODESET|SIDESET|BLOCKSET)).any()) {
         pair<CubitMeshSet_multiIndex::iterator,bool> p = cubitMeshsets.insert(base_meshset);
-        if(!p.second) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"meshset not inserted");
+        if(!p.second) {
+          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"meshset not inserted");
+        }
         if(verb > 0) {
           ostringstream ss;
           ss << "read cubit" << base_meshset << endl;
@@ -1942,8 +1944,13 @@ PetscErrorCode Core::partition_finite_elements(
   //find p_miit
   moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<Problem_mi_tag>();
   moFEMProblems_by_name::iterator p_miit = moFEMProblems_set.find(name);
-  if(p_miit == moFEMProblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem < %s > not found (top tip: check spelling)",name.c_str());
-  NumeredMoFEMFiniteElement_multiIndex& numeredFiniteElements = const_cast<NumeredMoFEMFiniteElement_multiIndex&>(p_miit->numeredFiniteElements);
+  if(p_miit == moFEMProblems_set.end()) {
+    SETERRQ1(
+      PETSC_COMM_SELF,1,"problem < %s > not found (top tip: check spelling)",name.c_str()
+    );
+  }
+  NumeredMoFEMFiniteElement_multiIndex& numeredFiniteElements
+  = const_cast<NumeredMoFEMFiniteElement_multiIndex&>(p_miit->numeredFiniteElements);
   numeredFiniteElements.clear();
   //MoFEMFiniteElement set
   EntMoFEMFiniteElement_multiIndex::iterator miit2 = finiteElementsMoFEMEnts.begin();
@@ -1974,7 +1981,10 @@ PetscErrorCode Core::partition_finite_elements(
         unsigned int max_part = distance(parts.begin(),pos);
         NumeredMoFEMFiniteElement_change_part(max_part).operator()(numered_fe);
       }
-      if( (numered_fe.get_part()>=(unsigned int)low_proc)&&(numered_fe.get_part()<=(unsigned int)hi_proc) ) {
+      if(
+        (numered_fe.get_part()>=(unsigned int)low_proc)&&
+        (numered_fe.get_part()<=(unsigned int)hi_proc)
+      ) {
         //rows element dof multiindices
         viit_rows = rows_view.begin();
         for(;viit_rows!=rows_view.end();viit_rows++) {
@@ -1987,7 +1997,9 @@ PetscErrorCode Core::partition_finite_elements(
         }
         //cols_views
         NumeredDofMoFEMEntity_multiIndex_uid_view_ordered cols_view;
-        ierr = miit2->get_MoFEMFiniteElement_col_dof_view(p_miit->numered_dofs_cols,cols_view,Interface::UNION); CHKERRQ(ierr);
+        ierr = miit2->get_MoFEMFiniteElement_col_dof_view(
+          p_miit->numered_dofs_cols,cols_view,Interface::UNION
+        ); CHKERRQ(ierr);
         //cols elmeny dof multiindices
         NumeredDofMoFEMEntity_multiIndex_uid_view_ordered::iterator viit_cols;;
         viit_cols = cols_view.begin();
@@ -2267,9 +2279,7 @@ PetscErrorCode Core::seed_ref_level_MESHSET(const EntityHandle meshset,const Bit
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ent = refinedEntities.insert(RefMoFEMEntity(moab,meshset));
-  if(!((p_ent.first->get_BitRefLevel()&bit)==bit)) {
-    refinedEntities.modify(p_ent.first,RefMoFEMEntity_change_add_bit(bit));
-  }
+  refinedEntities.modify(p_ent.first,RefMoFEMEntity_change_add_bit(bit));
   ptrWrapperRefMoFEMElement pack_fe(new RefMoFEMElement_MESHSET(moab,&*p_ent.first));
   pair<RefMoFEMElement_multiIndex::iterator,bool> p_MoFEMFiniteElement = refinedFiniteElements.insert(pack_fe);
   if(verbose > 0) {
@@ -2345,7 +2355,10 @@ PetscErrorCode Core::get_entities_by_ref_level(const BitRefLevel &bit,const BitR
 }
 PetscErrorCode Core::get_entities_by_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,Range &ents) {
   PetscFunctionBegin;
+  Range meshset_ents;
+  ierr = moab.get_entities_by_type(0,MBENTITYSET,meshset_ents,false); CHKERRQ(ierr);
   ierr = moab.get_entities_by_handle(0,ents,false); CHKERRQ(ierr);
+  ents.merge(meshset_ents);
   Range::iterator eit = ents.begin();
   for(;eit!=ents.end();) {
     switch (moab.type_from_handle(*eit)) {
@@ -2356,9 +2369,10 @@ PetscErrorCode Core::get_entities_by_ref_level(const BitRefLevel &bit,const BitR
       case MBPRISM:
       break;
       case MBENTITYSET:
+      break;
       default:
-	eit = ents.erase(eit);
-	continue;
+      eit = ents.erase(eit);
+      continue;
     }
     BitRefLevel bit2;
     rval = moab.tag_get_data(th_RefBitLevel,&*eit,1,&bit2); CHKERR_PETSC(rval);

@@ -70,7 +70,7 @@ int main(int argc, char *argv[]) {
   MoFEM::Core core(moab);
   FieldInterface& m_field = core;
 
-  //set entitities bit level
+  //set entities bit level
   BitRefLevel bit_level0;
   bit_level0.set(0);
   EntityHandle meshset_level0;
@@ -108,14 +108,14 @@ int main(int argc, char *argv[]) {
 
   //finite elements
 
-  /** thefine sources and other stuff
+  /** define sources and other stuff
     *
-    * UltraWeakTransportElement is a class collecting functons, opertors and
+    * UltraWeakTransportElement is a class collecting functions, operators and
     * data for ultra week implementation of transport element. See there to
     * learn how elements are created or how operators look like.
     *
     * Some methods in UltraWeakTransportElement are abstract, f.e. user need to
-    * implement own surce therm.
+    * implement own source therm.
     *
     */
   struct MyUltraWeakFE: public UltraWeakTransportElement {

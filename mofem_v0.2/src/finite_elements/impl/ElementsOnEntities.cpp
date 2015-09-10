@@ -1338,7 +1338,8 @@ PetscErrorCode ForcesAndSurcesCore::shapeEDGEFunctions_H1(DataForcesAndSurcesCor
 
 PetscErrorCode ForcesAndSurcesCore::shapeFlatPRISMFunctions_H1(
   DataForcesAndSurcesCore &data,
-  const double *G_X,const double *G_Y,const int G_DIM) {
+  const double *G_X,const double *G_Y,const int G_DIM
+) {
   PetscFunctionBegin;
 
   try {
@@ -1402,27 +1403,31 @@ PetscErrorCode ForcesAndSurcesCore::shapeFlatPRISMFunctions_H1(
   int valid_edges[] = { 1,1,1, 0,0,0, 1,1,1 };
   int sense[9],order[9];
   double *H1edgeN[9],*diffH1edgeN[9];
-  for(int ee = 0;ee<9;ee++) {
-    if(!valid_edges[ee]) continue;
-    if(data.dataOnEntities[MBEDGE][ee].getSense() == 0) {
-	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+  if((data.spacesOnEntities[MBEDGE]).test(H1)) {
+    for(int ee = 0;ee<9;ee++) {
+      if(!valid_edges[ee]) continue;
+      if(data.dataOnEntities[MBEDGE][ee].getSense() == 0) {
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+      }
+      sense[ee] = data.dataOnEntities[MBEDGE][ee].getSense();
+      order[ee] = data.dataOnEntities[MBEDGE][ee].getOrder();
+      int nb_dofs = NBEDGE_H1(data.dataOnEntities[MBEDGE][ee].getOrder());
+      data.dataOnEntities[MBEDGE][ee].getN().resize(G_DIM,nb_dofs,false);
+      data.dataOnEntities[MBEDGE][ee].getDiffN().resize(G_DIM,2*nb_dofs,false);
+      H1edgeN[ee] = &*data.dataOnEntities[MBEDGE][ee].getN().data().begin();
+      diffH1edgeN[ee] = &*data.dataOnEntities[MBEDGE][ee].getDiffN().data().begin();
     }
-    sense[ee] = data.dataOnEntities[MBEDGE][ee].getSense();
-    order[ee] = data.dataOnEntities[MBEDGE][ee].getOrder();
-    int nb_dofs = NBEDGE_H1(data.dataOnEntities[MBEDGE][ee].getOrder());
-    data.dataOnEntities[MBEDGE][ee].getN().resize(G_DIM,nb_dofs,false);
-    data.dataOnEntities[MBEDGE][ee].getDiffN().resize(G_DIM,2*nb_dofs,false);
-    H1edgeN[ee] = &*data.dataOnEntities[MBEDGE][ee].getN().data().begin();
-    diffH1edgeN[ee] = &*data.dataOnEntities[MBEDGE][ee].getDiffN().data().begin();
+    //shape functions on face 3
+    ierr = H1_EdgeShapeFunctions_MBTRI(&sense[0],&order[0],
+      &*N.data().begin(),&*diffN.data().begin(),
+      &H1edgeN[0],&diffH1edgeN[0],G_DIM
+    ); CHKERRQ(ierr);
+    //shape functions on face 4
+    ierr = H1_EdgeShapeFunctions_MBTRI(&sense[6],&order[6],
+      &*N.data().begin(),&*diffN.data().begin(),
+      &H1edgeN[6],&diffH1edgeN[6],G_DIM
+    ); CHKERRQ(ierr);
   }
-  //shape functions on face 3
-  ierr = H1_EdgeShapeFunctions_MBTRI(&sense[0],&order[0],
-    &*N.data().begin(),&*diffN.data().begin(),
-    &H1edgeN[0],&diffH1edgeN[0],G_DIM); CHKERRQ(ierr);
-  //shape functions on face 4
-  ierr = H1_EdgeShapeFunctions_MBTRI(&sense[6],&order[6],
-    &*N.data().begin(),&*diffN.data().begin(),
-    &H1edgeN[6],&diffH1edgeN[6],G_DIM); CHKERRQ(ierr);
 
   //face
   if(data.dataOnEntities[MBTRI].size()!=5) {
@@ -1532,13 +1537,13 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
     ierr = getSpacesOnEntities(dataH1); CHKERRQ(ierr);
 
     //H1
+    ierr = getFaceNodes(dataH1); CHKERRQ(ierr);
     if((dataH1.spacesOnEntities[MBEDGE]).test(H1)) {
       ierr = getEdgesSense(dataH1); CHKERRQ(ierr);
       ierr = getTrisSense(dataH1); CHKERRQ(ierr);
       ierr = getEdgesOrder(dataH1,H1); CHKERRQ(ierr);
       ierr = getTrisOrder(dataH1,H1); CHKERRQ(ierr);
       ierr = getTetsOrder(dataH1,H1); CHKERRQ(ierr);
-      ierr = getFaceNodes(dataH1); CHKERRQ(ierr);
     }
 
     //Hdiv
