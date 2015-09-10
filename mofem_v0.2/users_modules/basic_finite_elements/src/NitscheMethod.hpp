@@ -539,7 +539,7 @@ struct NitscheMethod {
         }
 
 
-        if(gg != getGaussPts().size2()) {
+        if(gg != (int)getGaussPts().size2()) {
           SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"wrong number of gauss pts");
         }
 
