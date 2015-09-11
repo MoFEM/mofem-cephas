@@ -1,8 +1,3 @@
-# Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
-# The MoFEM package is copyrighted by Lukasz Kaczmarczyk. 
-# It can be freely used for educational and research purposes 
-# by other institutions. If you use this softwre pleas cite my work. 
-#
 # MoFEM is free software: you can redistribute it and/or modify it under
 # the terms of the GNU Lesser General Public License as published by the
 # Free Software Foundation, either version 3 of the License, or (at your
@@ -23,11 +18,12 @@ include_directories("${PROJECT_SOURCE_DIR}/third_party/cblas")
 
 add_library(mofem_third_party
   gm_rule.c
+  triangle_ncc_rule.c
+  triangle_nco_rule.c
+  triangle_felippa_rule.c
   tetcircumcenter.c
   tricircumcenter.c
 )
 
 add_subdirectory("${PROJECT_SOURCE_DIR}/third_party/cblas")
-
-#install(FILES gm_rule.h lapack_wrap.h DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
-
+install(TARGETS mofem_third_party DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
