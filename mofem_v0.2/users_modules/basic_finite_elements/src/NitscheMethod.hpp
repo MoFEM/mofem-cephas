@@ -110,10 +110,10 @@ struct NitscheMethod {
     double gamma;         ///< Penalty term, see \cite nitsche_method_hal
     double phi;           ///< Nitsche method parameter, see \cite nitsche_method_hal
     string faceElemName;  ///< name of element face
-    Range fAces;          ///< faces on which constrain is appleid
+    Range fAces;          ///< faces on which constrain is applied
   };
 
-  /** \brief Common data shared between finite element opetators
+  /** \brief Common data shared between finite element operators
   */
   struct CommonData {
     int nbActiveFaces;
