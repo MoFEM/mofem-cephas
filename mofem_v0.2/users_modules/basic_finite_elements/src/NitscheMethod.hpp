@@ -210,7 +210,7 @@ struct NitscheMethod {
     blockData(block_data),
     commonData(common_data),
     faceFE(m_field),
-    addToRule(1) {
+    addToRule(0) {
       faceFE.getOpPtrVector().push_back(new OpGetFaceData(commonData));
     }
 
