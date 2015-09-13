@@ -82,6 +82,9 @@
   \end{split}
   \f]
 
+  <a href="nitsche_bc_for_ch.pdf"
+  target="_blank"><b>Link</b></a> to pdf file with derivation,
+
 */
 struct NitscheMethod {
 
@@ -91,6 +94,16 @@ struct NitscheMethod {
     FaceElementForcesAndSourcesCore(m_field),
     addToRule(0) {}
     int getRule(int order) { return order+addToRule; }
+    /*int getRule(int order) { return -1; }
+    PetscErrorCode setGaussPts(int order) {
+      PetscFunctionBegin;
+      int rule = order+addToRule+1;
+      int nb_gauss_pts = triangle_ncc_order_num(rule);
+      gaussPts.resize(3,nb_gauss_pts,false);
+      triangle_ncc_rule(rule,nb_gauss_pts,&gaussPts(0,0),&gaussPts(2,0));
+      PetscFunctionReturn(0);
+    }*/
+
   };
 
   /** \brief Block data for Nitsche method
@@ -100,10 +113,10 @@ struct NitscheMethod {
     double gamma;         ///< Penalty term, see \cite nitsche_method_hal
     double phi;           ///< Nitsche method parameter, see \cite nitsche_method_hal
     string faceElemName;  ///< name of element face
-    Range fAces;          ///< faces on which constrain is appleid
+    Range fAces;          ///< faces on which constrain is applied
   };
 
-  /** \brief Common data shared between finite element opetators
+  /** \brief Common data shared between finite element operators
   */
   struct CommonData {
     int nbActiveFaces;
@@ -117,13 +130,16 @@ struct NitscheMethod {
     vector<ublas::matrix<double> > hoCoordsAtGaussPts;
     vector<ublas::vector<double> > rAy;
 
-    MatrixDouble P;       ///< projection matrix
+    vector<MatrixDouble> P;       ///< projection matrix
     CommonData() {
-      P.resize(3,3,false);
-      P.clear();
-      P(0,0) = 1;
-      P(1,1) = 1;
-      P(2,2) = 1;
+      P.resize(4);
+      for(int ff = 0;ff<4;ff++) {
+        P[ff].resize(3,3,false);
+        P[ff].clear();
+        for(int dd = 0;dd<3;dd++) {
+          P[ff](dd,dd) = 1;
+        }
+      }
     }
 
   };
@@ -194,7 +210,7 @@ struct NitscheMethod {
     blockData(block_data),
     commonData(common_data),
     faceFE(m_field),
-    addToRule(1) {
+    addToRule(0) {
       faceFE.getOpPtrVector().push_back(new OpGetFaceData(commonData));
     }
 
@@ -448,6 +464,11 @@ struct NitscheMethod {
     ) {
     }
 
+    virtual PetscErrorCode calculateP(int gg,int fgg,int ff) {
+      PetscFunctionBegin;
+      PetscFunctionReturn(0);
+    }
+
     MatrixDouble kMatrix,kMatrix0,kMatrix1;
 
     PetscErrorCode doWork(
@@ -497,7 +518,9 @@ struct NitscheMethod {
             );
             double area = cblas_dnrm2(3,&normal[0],1);
 
-            MatrixDouble &P = nitscheCommonData.P;
+            ierr = calculateP(gg,fgg,ff); CHKERRQ(ierr);
+            MatrixDouble &P = nitscheCommonData.P[ff];
+
             for(int dd1 = 0;dd1<nb_dofs_row/3;dd1++) {
               double n_row = row_data.getN()(gg,dd1);
               for(int dd2 = 0;dd2<nb_dofs_col/3;dd2++) {
@@ -539,7 +562,7 @@ struct NitscheMethod {
         }
 
 
-        if(gg != getGaussPts().size2()) {
+        if(gg != (int)getGaussPts().size2()) {
           SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"wrong number of gauss pts");
         }
 

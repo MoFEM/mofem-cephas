@@ -101,7 +101,7 @@ void print_mat_complex(__CLPK_doublecomplex *M,int m,int n);
 /// \param Y array of Guass Y coordinates
 /// \param G_DIM number of Gauss points
 PetscErrorCode ShapeMBTRI(double *N,const double *X,const double *Y,const int G_DIM);
-/// calculate direvatives of shape functions
+/// calculate derivatives of shape functions
 PetscErrorCode ShapeDiffMBTRI(double *diffN);
 
 /// calculate face normal
