@@ -82,6 +82,9 @@
   \end{split}
   \f]
 
+  <a href="nitsche_bc_for_ch.pdf"
+  target="_blank"><b>Link</b></a> to pdf file with derivation,
+
 */
 struct NitscheMethod {
 
@@ -207,7 +210,7 @@ struct NitscheMethod {
     blockData(block_data),
     commonData(common_data),
     faceFE(m_field),
-    addToRule(0) {
+    addToRule(1) {
       faceFE.getOpPtrVector().push_back(new OpGetFaceData(commonData));
     }
 
