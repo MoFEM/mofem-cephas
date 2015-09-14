@@ -500,9 +500,9 @@ struct NitscheMethod {
         for(int ff = 0;ff<4;ff++) {
           if(nitscheCommonData.facesFePtr[ff]==NULL) continue;
           int nb_face_gauss_pts = nitscheCommonData.faceGaussPts[ff].size2();
-          //ierr = getFaceRadius(ff); CHKERRQ(ierr);
-          //double gamma_h = gamma*faceRadius;
-          double gamma_h = gamma;
+          ierr = getFaceRadius(ff); CHKERRQ(ierr);
+          double gamma_h = gamma*faceRadius;
+          //double gamma_h = gamma;
           kMatrix0.clear();
           kMatrix1.clear();
           for(int fgg = 0;fgg<nb_face_gauss_pts;fgg++,gg++) {
