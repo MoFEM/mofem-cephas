@@ -80,7 +80,20 @@ struct NeoHookean: public NonlinearElasticElement::FunctionsToCalculatePiolaKirc
     NONLINEAR CONTINUUM MECHANICS FOR FINITE ELEMENT ANALYSIS, Javier Bonet,
     Richard D. Wood
 
-    */
+*/
+    PetscErrorCode NeoHookean_ElasticEnergy(){
+        PetscFunctionBegin;
+        PetscErrorCode ierr;
+        this->eNergy = 0;
+        for(int ii = 0;ii<3;ii++) {
+            this->eNergy += this->C(ii,ii);
+        }
+        this->eNergy = 0.5*this->mu*(this->eNergy-3);
+        logJ = log(this->J);
+        this->eNergy += -this->mu*logJ + 0.5*this->lambda*pow(logJ,2);
+        PetscFunctionReturn(0);
+    }
+
     virtual PetscErrorCode calculateElasticEnergy(const NonlinearElasticElement::BlockData block_data,
       const NumeredMoFEMFiniteElement *fe_ptr) {
       PetscFunctionBegin;
@@ -89,13 +102,7 @@ struct NeoHookean: public NonlinearElasticElement::FunctionsToCalculatePiolaKirc
       this->mu = MU(block_data.E,block_data.PoissonRatio);
       ierr = this->calculateC_CauchyDefromationTensor(); CHKERRQ(ierr);
       ierr = this->dEterminatnt(this->F,this->J); CHKERRQ(ierr);
-      this->eNergy = 0;
-      for(int ii = 0;ii<3;ii++) {
-        this->eNergy += this->C(ii,ii);
-      }
-      this->eNergy = 0.5*this->mu*(this->eNergy-3);
-      logJ = log(this->J);
-      this->eNergy += -this->mu*logJ + 0.5*this->lambda*pow(logJ,2);
+      ierr = this->NeoHookean_ElasticEnergy(); CHKERRQ(ierr);
       PetscFunctionReturn(0);
     }
 
