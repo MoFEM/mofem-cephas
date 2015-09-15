@@ -353,6 +353,12 @@ struct NitscheMethod {
       faceRadius = cblas_dnrm2(3,center,1);
       PetscFunctionReturn(0);
     }
+    double gammaH;
+    PetscErrorCode getGammaH(double gamma,int ff,int gg) {
+      PetscFunctionBegin;
+      gammaH = gamma*faceRadius;
+      PetscFunctionReturn(0);
+    }
 
   };
 
@@ -501,11 +507,10 @@ struct NitscheMethod {
           if(nitscheCommonData.facesFePtr[ff]==NULL) continue;
           int nb_face_gauss_pts = nitscheCommonData.faceGaussPts[ff].size2();
           ierr = getFaceRadius(ff); CHKERRQ(ierr);
-          double gamma_h = gamma*faceRadius;
-          //double gamma_h = gamma;
           kMatrix0.clear();
           kMatrix1.clear();
           for(int fgg = 0;fgg<nb_face_gauss_pts;fgg++,gg++) {
+            ierr = getGammaH(gamma,ff,gg); CHKERRQ(ierr);
             double val = getGaussPts()(3,gg);
             ierr = getJac(row_data,gg,jAc_row); CHKERRQ(ierr);
             ierr = getTractionVariance(gg,fgg,ff,jAc_row,tRac_v); CHKERRQ(ierr);
@@ -556,7 +561,7 @@ struct NitscheMethod {
             }
           }
 
-          kMatrix0 /= gamma_h;
+          kMatrix0 /= gammaH;
           noalias(kMatrix) += kMatrix0+kMatrix1;
 
         }
