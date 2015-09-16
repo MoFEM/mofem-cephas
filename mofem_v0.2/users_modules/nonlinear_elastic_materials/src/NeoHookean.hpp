@@ -83,7 +83,6 @@ struct NeoHookean: public NonlinearElasticElement::FunctionsToCalculatePiolaKirc
 */
     PetscErrorCode NeoHookean_ElasticEnergy(){
         PetscFunctionBegin;
-        PetscErrorCode ierr;
         this->eNergy = 0;
         for(int ii = 0;ii<3;ii++) {
             this->eNergy += this->C(ii,ii);

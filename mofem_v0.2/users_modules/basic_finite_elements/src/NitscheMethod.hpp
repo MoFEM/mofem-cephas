@@ -122,13 +122,13 @@ struct NitscheMethod {
     int nbActiveFaces;
     vector<EntityHandle> fAces;
     vector<const NumeredMoFEMFiniteElement *> facesFePtr;
-    vector<ublas::vector<double> > cOords;
-    vector<ublas::matrix<double> > faceNormals;
-    vector<ublas::matrix<double> > faceVertexShapeFunctions;
-    vector<ublas::matrix<double> > faceGaussPts;
-    vector<ublas::matrix<double> > coordsAtGaussPts;
-    vector<ublas::matrix<double> > hoCoordsAtGaussPts;
-    vector<ublas::vector<double> > rAy;
+    vector<VectorDouble> cOords;
+    vector<MatrixDouble> faceNormals;
+    vector<MatrixDouble> faceVertexShapeFunctions;
+    vector<MatrixDouble> faceGaussPts;
+    vector<MatrixDouble> coordsAtGaussPts;
+    vector<MatrixDouble> hoCoordsAtGaussPts;
+    vector<VectorDouble> rAy;
 
     vector<MatrixDouble> P;       ///< projection matrix
     CommonData() {
@@ -353,6 +353,14 @@ struct NitscheMethod {
       faceRadius = cblas_dnrm2(3,center,1);
       PetscFunctionReturn(0);
     }
+    double gammaH;
+    PetscErrorCode getGammaH(double gamma,int gg) {
+      PetscFunctionBegin;
+      gammaH = gamma;
+      gammaH*= faceRadius;
+      //gammaH/= abs_shape_fun[gg];
+      PetscFunctionReturn(0);
+    }
 
   };
 
@@ -500,12 +508,11 @@ struct NitscheMethod {
         for(int ff = 0;ff<4;ff++) {
           if(nitscheCommonData.facesFePtr[ff]==NULL) continue;
           int nb_face_gauss_pts = nitscheCommonData.faceGaussPts[ff].size2();
-          //ierr = getFaceRadius(ff); CHKERRQ(ierr);
-          //double gamma_h = gamma*faceRadius;
-          double gamma_h = gamma;
+          ierr = getFaceRadius(ff); CHKERRQ(ierr);
           kMatrix0.clear();
           kMatrix1.clear();
           for(int fgg = 0;fgg<nb_face_gauss_pts;fgg++,gg++) {
+            ierr = getGammaH(gamma,gg); CHKERRQ(ierr);
             double val = getGaussPts()(3,gg);
             ierr = getJac(row_data,gg,jAc_row); CHKERRQ(ierr);
             ierr = getTractionVariance(gg,fgg,ff,jAc_row,tRac_v); CHKERRQ(ierr);
@@ -556,7 +563,7 @@ struct NitscheMethod {
             }
           }
 
-          kMatrix0 /= gamma_h;
+          kMatrix0 /= gammaH;
           noalias(kMatrix) += kMatrix0+kMatrix1;
 
         }
