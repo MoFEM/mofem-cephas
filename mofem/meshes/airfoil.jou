@@ -1,0 +1,58 @@
+reset
+
+#import step "/Users/likask/MyBuild/mofem-bitbucket/mofem/meshes/HSNLF-0213.stp" heal
+
+create sphere radius 2000
+#move Volume 1 location volume 2 include_merged
+
+create sphere radius 500
+#subtract volume 2 from volume 1 
+webcut volume 1 tool volume 2 
+#block 1 volume all 
+#block 1 name 'PotentialFlow' 
+#sideset 1 surface 1 
+#sideset 1 name 'NormalVelocity' 
+#sideset 2 surface 2 
+#sideset 2 name 'BodySurface' 
+
+
+#chop volume 2 with volume 1 
+#delete volume 3
+#
+##split curve 7 fraction 0.5
+##split curve 9 fraction 0.5
+##split surface 9  across location vertex 9  location vertex 10
+#
+##move Vertex 6  location vertex 5  include_merged 
+##move Vertex 8  location vertex 7  include_merged
+#
+#block 1 volume 4  
+#block 1 name 'PotentialFlow' 
+#   
+##sideset 2 surface 4 5 7 8 9 10 
+#sideset 2 surface 5 
+#sideset 2 name 'NormalVelocity' 
+# 
+#sideset 3 surface 9 
+#sideset 3 name 'BodySurface' 
+# 
+#volume all scheme Tetmesh
+#volume all size auto factor 8
+#surface 9  sizing function type skeleton scale 10 time_accuracy_level 1 
+#surface 9  sizing function type skeleton 
+#mesh surface 9  
+#mesh volume all 
+#
+##refine surface 9 numsplit 1 bias 1.0 depth 1 smooth
+#
+#nodeset 1 node 587
+#nodeset 1 name 'ZeroPressure'  
+# 
+#set duplicate block elements on
+#block 2 tet all    
+#block 2 element type tetra10 
+# 
+#save as "/Users/likask/MyBuild/mofem-bitbucket/mofem/meshes/airfoil.cub" overwrite 
+ 
+
+
