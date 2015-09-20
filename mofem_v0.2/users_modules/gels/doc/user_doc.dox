@@ -40,7 +40,7 @@ calculated automatically.
 For more details about model implementation, equations and physical constants
 look here \ref Gel::ConstitutiveEquation
 
-\subsection execution Executing code
+\subsection execution_gel Executing code
 
 Example how to execute example problem:
 
@@ -86,8 +86,7 @@ Example of animation obtained from this example for approximation order 4
 
 \image html gel_simple_anim.gif "Gel brick" width=6cm
 
-
-\subsection paraview VTK files for paraview
+\subsection paraview_gel VTK files for paraview
 
 Running dynamic analysis out_values_1.h5m, out_values_2.h5m, ... are created for
 each time step. Post-processing mesh in output fails is stored in native MoAB

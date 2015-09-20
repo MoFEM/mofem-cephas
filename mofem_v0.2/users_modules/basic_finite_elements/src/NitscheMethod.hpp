@@ -24,66 +24,10 @@
 /** \brief Basic implementation of Nitsche method
  * \ingroup nitsche_method
 
-  For theoretical basis of method see \cite nitsche_method_hal and
-  \cite juntunen2009nitsche.
-
-  \f[
-  \mathcal{R} = \mathcal{C}^\textrm{T}(\mathcal{C}\mathcal{C}^\textrm{T})^{-1}\;
-  \mathcal{P} = \mathcal{R}\mathcal{C}\;
-  \mathcal{Q} = \mathcal{I}-\mathcal{P}
-  \f]
-
-  \f[
-  \mathbf{t}(\mathbf{u}) =
-  -\frac{1}{\gamma}
-  \mathcal{R}(\mathcal{C}\mathbf{u}-\mathbf{g}-\gamma\mathcal{C}\mathbf{t}(\mathbf{u}))
-  \f]
-
-  \f[
-  a(\mathbf{u},\mathbf{v})
-  -
-  \int_\Gamma \mathbf{t}^\textrm{T}(\mathbf{u})\mathbf{P}\mathbf{v} \textrm{d}\Gamma = 0
-  \f]
-
-  \f[
-  \mathbf{v} =
-  \mathcal{R}(\mathcal{C}\mathbf{v}-\phi\gamma\mathcal{C}\mathbf{t}(\mathbf{v}))
-  +\phi\gamma\mathcal{P}\mathbf{t}(\mathbf{v}) + \mathcal{Q}\mathbf{v}
-  \f]
-
-  \f[
-  \begin{split}
-  a(\mathbf{u},\mathbf{v})
-  -
-  \int_\Gamma
-  \mathbf{t}^\textrm{T}(\mathbf{u})\mathcal{P}\mathbf{v}
-  \textrm{d}\Gamma
-  +
-  \int_\Gamma
-  \frac{1}{\gamma}
-  \mathbf{u}^\textrm{T}\mathcal{P}\mathbf{v}
-  \textrm{d}\Gamma
-  -
-  \int_\Gamma
-  \phi\mathbf{u}^\textrm{T}\mathcal{P}\mathbf{t}(\mathbf{v})
-  \textrm{d}\Gamma
-  \\-
-  \int_\Gamma
-  \frac{1}{\gamma}
-  \mathbf{g}^\textrm{T}\mathcal{R}^\textrm{T}
-  \mathbf{v}
-  \textrm{d}\Gamma
-  +
-  \int_\Gamma
-  \phi\mathbf{g}^\textrm{T}\mathcal{R}^\textrm{T}\gamma\mathbf{t}(\mathbf{v}))
-  \textrm{d}\Gamma
-  \\=
-  0
-  \end{split}
-  \f]
-
-  <a href="nitsche_bc_for_ch.pdf"
-  target="_blank"><b>Link</b></a> to pdf file with derivation,
+  This implementation have been used to enforce periodic constrains, see \ref
+  nitsche_periodic. For theoretical founding of the method explanations see
+  \cite nitsche_method_hal and \cite juntunen2009nitsche. For scratch book derivations
+  see <a href="nitsche_bc_for_ch.pdf" target="_blank"><b>link</b></a>.
 
 */
 struct NitscheMethod {
@@ -93,7 +37,7 @@ struct NitscheMethod {
     MyFace(FieldInterface &m_field):
     FaceElementForcesAndSourcesCore(m_field),
     addToRule(0) {}
-    int getRule(int order) { return order+addToRule; }
+    int getRule(int order) { return 2*order+addToRule; }
     /*int getRule(int order) { return -1; }
     PetscErrorCode setGaussPts(int order) {
       PetscFunctionBegin;
@@ -161,18 +105,18 @@ struct NitscheMethod {
       try {
         int faceInRespectToTet = getFEMethod()->nInTheLoop;
         if(type == MBVERTEX) {
-          commonData.faceNormals.resize(4);
-          commonData.faceNormals[faceInRespectToTet] = 0.5*getNormals_at_GaussPt();
-          commonData.cOords.resize(4);
-          commonData.cOords[faceInRespectToTet] = getCoords();
-          commonData.faceVertexShapeFunctions.resize(4);
-          commonData.faceVertexShapeFunctions[faceInRespectToTet] = data.getN();
           commonData.faceGaussPts.resize(4);
           commonData.faceGaussPts[faceInRespectToTet] = getGaussPts();
-          commonData.coordsAtGaussPts.resize(4);
-          commonData.coordsAtGaussPts[faceInRespectToTet] = getCoordsAtGaussPts();
+          commonData.faceVertexShapeFunctions.resize(4);
+          commonData.faceVertexShapeFunctions[faceInRespectToTet] = data.getN();
+          commonData.faceNormals.resize(4);
+          commonData.faceNormals[faceInRespectToTet] = 0.5*getNormals_at_GaussPt();
           commonData.hoCoordsAtGaussPts.resize(4);
           commonData.hoCoordsAtGaussPts[faceInRespectToTet] = getHoCoordsAtGaussPts();
+          commonData.cOords.resize(4);
+          commonData.cOords[faceInRespectToTet] = getCoords();
+          commonData.coordsAtGaussPts.resize(4);
+          commonData.coordsAtGaussPts[faceInRespectToTet] = getCoordsAtGaussPts();
           commonData.rAy.resize(4);
           commonData.rAy[faceInRespectToTet] = -getNormal();
           commonData.rAy[faceInRespectToTet] /= norm_2(getNormal());
@@ -435,7 +379,9 @@ struct NitscheMethod {
         trac.clear();
         for(unsigned int dd2 = 0;dd2<jac.size2();dd2++) {
           for(int nn = 0;nn<3;nn++) {
-            trac(nn,dd2) = cblas_ddot(3,&jac(3*nn,dd2),jac.size2(),&normal[0],1);
+            trac(nn,dd2) = cblas_ddot(
+              3,&jac(3*nn,dd2),jac.size2(),&normal[0],1
+            );
           }
         }
       } catch (const std::exception& ex) {
@@ -534,6 +480,7 @@ struct NitscheMethod {
                 double n_col = col_data.getN()(gg,dd2);
                 for(int dd3 = 0;dd3<3;dd3++) {
                   for(int dd4 = 0;dd4<3;dd4++) {
+                    if(!P(dd3,dd4)) continue;
                     kMatrix0(3*dd1+dd3,3*dd2+dd4) += val*n_row*P(dd3,dd4)*n_col*area;
                   }
                 }
