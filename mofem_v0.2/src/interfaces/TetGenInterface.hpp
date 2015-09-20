@@ -177,7 +177,7 @@ struct TetGenInterface: public FieldUnknownInterface {
   PetscErrorCode checkPlanar_Trinagle(double coords[],bool *result,const double eps = 1e-9);
   PetscErrorCode groupPlanar_Triangle(Range &tris,vector<Range> &sorted,const double eps = 1e-9);
 
-  /** \brief Group surface strangles in planar regions
+  /** \brief Group surface triangles in planar regions
 
     \param tris input triangles
     \param sorted output sorted planar faces
