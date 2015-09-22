@@ -77,6 +77,14 @@ if(DOXYGEN_FOUND)
   )
   add_dependencies(doc doxygen_copy_figures)
 
+  # copy google site verification file
+  add_custom_target(doxygen_google_site_verification
+    ${CMAKE_COMMAND} -E copy
+    ${PROJECT_SOURCE_DIR}/doc/google94051b0650bf905b.html ${PROJECT_BINARY_DIR}/html
+  )
+  add_dependencies(doc doxygen_google_site_verification)
+
+
   # users modules docs
   file(
     GLOB_RECURSE INSTLLED_DOC_MODULES

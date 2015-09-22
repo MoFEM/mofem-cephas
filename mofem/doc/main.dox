@@ -1,5 +1,8 @@
 /*! \mainpage Index Page
 
+Search for any phrase in documentation:
+\htmlinclude doc/google_search_widget.html
+
 \htmlinclude doc/search_tags.html
 
 \section introduction Introduction
