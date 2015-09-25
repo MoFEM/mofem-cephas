@@ -24,6 +24,7 @@ homogenisation
 fracture_mechanics
 moisture_transport
 ground_surface_temperature
+gels
 
 _Store
 *.swp
