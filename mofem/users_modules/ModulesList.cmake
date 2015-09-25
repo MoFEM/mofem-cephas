@@ -36,10 +36,6 @@ add_subdirectory(
   ${PROJECT_BINARY_DIR}/convective_mass_element/atom_tests
 )
 add_subdirectory(
-  ${UM_SOURCE_DIR}/gels/atom_tests
-  ${PROJECT_BINARY_DIR}/gels/atom_tests
-)
-add_subdirectory(
   ${UM_SOURCE_DIR}/obsolete/atom_tests
   ${PROJECT_BINARY_DIR}/obsolete/atom_tests
 )
@@ -80,7 +76,4 @@ add_subdirectory(
   ${UM_SOURCE_DIR}/helmholtz
   ${PROJECT_BINARY_DIR}/helmholtz
 )
-add_subdirectory(
-  ${UM_SOURCE_DIR}/gels
-  ${PROJECT_BINARY_DIR}/gels
-)
+

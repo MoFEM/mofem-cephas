@@ -7,8 +7,6 @@ mofem/doc/footer.html
 mofem/doc/header.html
 mofem/doc/style.html
 
-version.h
-
 mofem_build.sh
 mofem_live_cd_check.sh
 mofem_update.sh
@@ -24,6 +22,7 @@ homogenisation
 fracture_mechanics
 moisture_transport
 ground_surface_temperature
+gels
 
 _Store
 *.swp
