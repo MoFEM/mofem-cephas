@@ -1,0 +1,40 @@
+#!python
+cubit.cmd('reset')
+cubit.cmd('create brick x 1 y 1 z 1')
+cubit.cmd('create brick x 1 y 1 z 1')
+cubit.cmd('move volume 1 x 1')
+cubit.cmd('imprint volume all')
+cubit.cmd('merge volume all')
+cubit.cmd('compress all')
+
+cubit.cmd('volume all size auto factor 10')
+cubit.cmd('volume all scheme tetmesh')
+cubit.cmd('mesh volume all')
+
+#apply BLOCKSETs, SIDESETs, NODESETs 
+cubit.cmd('set duplicate block elements on') 
+cubit.cmd('block 1 volume 1') 
+cubit.cmd('block 2 volume 2') 
+cubit.cmd('block 2 name "Sun"') 
+cubit.cmd('block 3 volume 1') 
+cubit.cmd('block 3 name "Moon"') 
+cubit.cmd('block 4 volume 2') 
+cubit.cmd('block 4 name "Comet"') 
+ 
+sideNames = ['" "','" "','" "','"InterfaceA"','" "','"Europe"','" "','"Africa"','" "','"Asia"','" "'] 
+ 
+a = 1 
+while a<=11: 
+    cubit.cmd('sideset ' + str(a) + ' surface ' + str(a)) 
+    cubit.cmd('sideset ' + str(a) + ' name ' + str(sideNames[a-1])) 
+    a = a + 1 
+ 
+vertexNames = ['" "','"UK"','" "','"France"','"Spain"','"Portugal"','" "','"Germany"','"Belguim"','" "','"Holland"'] 
+ 
+a = 1 
+while a<=11: 
+    cubit.cmd('nodeset ' + str(a) + ' vertex ' + str(a)) 
+    cubit.cmd('nodeset ' + str(a) + ' name ' + str(sideNames[a-1])) 
+    a = a + 1 
+
+cubit.cmd('save as "/Users/michaelcortis/Documents/PhD/moFEM/mofem/meshes/loop_atom.cub" overwrite')

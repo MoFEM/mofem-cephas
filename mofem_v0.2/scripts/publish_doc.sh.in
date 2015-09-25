@@ -1,6 +1,0 @@
-#!/bin/sh
-
-SFTP=@SFTP@
-PROJECT_SOURCE_DIR=@PROJECT_SOURCE_DIR@
-
-$SFTP -C -b $PROJECT_SOURCE_DIR/scripts/publish_doc "campus\lk58p"@userweb.eng.gla.ac.uk

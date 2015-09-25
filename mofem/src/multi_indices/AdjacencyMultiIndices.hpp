@@ -1,0 +1,68 @@
+/** \file AdjacencyMultiIndices.hpp
+ * \brief Myltindex containes, data structures for mofem adjacencies and other low-level functions 
+ * 
+ * MoFEM is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
+ *
+ * MoFEM is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+ * License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
+*/
+
+#ifndef __ADJACENCYMULTIINDICES_HPP__
+#define __ADJACENCYMULTIINDICES_HPP__
+
+
+namespace MoFEM {
+
+/**
+  * \brief MoFEMEntityEntMoFEMFiniteElementAdjacencyMap of mofem finite element and entities
+  *
+  */
+struct MoFEMEntityEntMoFEMFiniteElementAdjacencyMap {
+  unsigned int by_other;
+  const MoFEMEntity *MoFEMEntity_ptr; ///< field entity
+  const EntMoFEMFiniteElement *EntMoFEMFiniteElement_ptr; ///< finite element entity
+  MoFEMEntityEntMoFEMFiniteElementAdjacencyMap(const MoFEMEntity *_MoFEMEntity_ptr,const EntMoFEMFiniteElement *_EntMoFEMFiniteElement_ptr);
+  inline GlobalUId get_MoFEMFiniteElement_unique_id() const { return EntMoFEMFiniteElement_ptr->get_global_unique_id(); }
+  inline EntityHandle get_MoFEMFiniteElement_meshset() const { return EntMoFEMFiniteElement_ptr->get_meshset(); }
+  inline EntityHandle get_MoFEMFiniteElement_entity_handle() const { return EntMoFEMFiniteElement_ptr->get_ent(); }
+  inline GlobalUId get_ent_unique_id() const { return MoFEMEntity_ptr->get_global_unique_id(); };
+  inline EntityHandle get_ent_meshset() const { return MoFEMEntity_ptr->get_meshset(); };
+  inline EntityHandle get_ent_entity_handle() const { return MoFEMEntity_ptr->get_ent(); };
+  BitFieldId get_ent_id() const { return MoFEMEntity_ptr->get_id(); }
+  BitFEId get_BitFEId() const { return EntMoFEMFiniteElement_ptr->get_id(); }
+  friend ostream& operator<<(ostream& os,const MoFEMEntityEntMoFEMFiniteElementAdjacencyMap &e);
+};
+
+/** 
+ * @relates multi_index_container
+ * \brief MultiIndex container keeps Adjacencies Element and dof entities adjacencies and vice veras.
+
+ */
+typedef multi_index_container<
+  MoFEMEntityEntMoFEMFiniteElementAdjacencyMap,
+  indexed_by<
+    ordered_unique<
+      tag<Composite_Unique_mi_tag>,       
+      composite_key<
+	MoFEMEntityEntMoFEMFiniteElementAdjacencyMap,
+	const_mem_fun<MoFEMEntityEntMoFEMFiniteElementAdjacencyMap,GlobalUId,&MoFEMEntityEntMoFEMFiniteElementAdjacencyMap::get_ent_unique_id>,
+	const_mem_fun<MoFEMEntityEntMoFEMFiniteElementAdjacencyMap,GlobalUId,&MoFEMEntityEntMoFEMFiniteElementAdjacencyMap::get_MoFEMFiniteElement_unique_id> > >,
+    ordered_non_unique<
+      tag<Unique_mi_tag>, const_mem_fun<MoFEMEntityEntMoFEMFiniteElementAdjacencyMap,GlobalUId,&MoFEMEntityEntMoFEMFiniteElementAdjacencyMap::get_ent_unique_id> >,
+    ordered_non_unique<
+      tag<FEEnt_mi_tag>, const_mem_fun<MoFEMEntityEntMoFEMFiniteElementAdjacencyMap,EntityHandle,&MoFEMEntityEntMoFEMFiniteElementAdjacencyMap::get_MoFEMFiniteElement_entity_handle> >,
+    ordered_non_unique<
+      tag<Ent_mi_tag>, const_mem_fun<MoFEMEntityEntMoFEMFiniteElementAdjacencyMap,EntityHandle,&MoFEMEntityEntMoFEMFiniteElementAdjacencyMap::get_ent_entity_handle> >
+  > > MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_multiIndex;
+
+}
+
+#endif // __ADJACENCYMULTIINDICES_HPP__

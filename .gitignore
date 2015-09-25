@@ -1,11 +1,13 @@
-mofem_v0.2/include/config.h
-mofem_v0.2/include/version.h
-mofem_v0.2/scripts/publish_doc.sh
-mofem_v0.2/scripts/git_contributors.sh
-mofem_v0.2/doc/contributors_list
-mofem_v0.2/doc/footer.html
-mofem_v0.2/doc/header.html
-mofem_v0.2/doc/style.html
+mofem/include/config.h
+mofem/include/version.h
+mofem/scripts/publish_doc.sh
+mofem/scripts/git_contributors.sh
+mofem/doc/contributors_list
+mofem/doc/footer.html
+mofem/doc/header.html
+mofem/doc/style.html
+
+version.h
 
 mofem_build.sh
 mofem_live_cd_check.sh
@@ -21,6 +23,7 @@ do_vtk.sh
 homogenisation
 fracture_mechanics
 moisture_transport
+ground_surface_temperature
 
 _Store
 *.swp
