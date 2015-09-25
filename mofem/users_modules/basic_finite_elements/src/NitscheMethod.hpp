@@ -1,4 +1,4 @@
-/** \file NitschePeriodicMethod.hpp
+/** \file NitscheMethod.hpp
  * \ingroup nitsche_method
  * \brief Basic implementation of Nitsche method
  */
@@ -285,24 +285,20 @@ struct NitscheMethod {
     }
 
     double faceRadius;
-    PetscErrorCode getFaceRadius(int ff) {
+    virtual PetscErrorCode getFaceRadius(int ff) {
       PetscFunctionBegin;
       VectorDouble &coords = nitscheCommonData.cOords[ff];
       double center[3];
-      //tetcircumcenter_tp(
-        //&coords[0],&coords[3],&coords[6],&coords[9],center,NULL,NULL,NULL
-      //);
       tricircumcenter3d_tp(&coords[0],&coords[3],&coords[6],center,NULL,NULL);
       cblas_daxpy(3,-1,&coords[0],1,center,1);
       faceRadius = cblas_dnrm2(3,center,1);
       PetscFunctionReturn(0);
     }
     double gammaH;
-    PetscErrorCode getGammaH(double gamma,int gg) {
+    virtual PetscErrorCode getGammaH(double gamma,int gg) {
       PetscFunctionBegin;
       gammaH = gamma;
-      gammaH*= faceRadius;
-      //gammaH/= abs_shape_fun[gg];
+      //gammaH*= faceRadius;
       PetscFunctionReturn(0);
     }
 

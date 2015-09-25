@@ -6,7 +6,7 @@
 Following lines install minimum number of packages need to work with MoFEM:
 ~~~~~~
 apt-get update
-apt-get install -y wget valgrind git g++ gdb m4 automake libsigsegv2 build-essential libibverbs-dev libblas-dev gfortran libatlas-dev libatlas-base-dev libhdf5-openmpi-dev libjpeg-dev graphviz doxygen cmake gnuplot pstack ca-certificates python libadolc-dev bison flex libx11-dev libboost-all-dev xauth xterm
+apt-get install -y wget valgrind git g++ gdb m4 automake libsigsegv2 build-essential libibverbs-dev libblas-dev gfortran libatlas-dev libatlas-base-dev libhdf5-openmpi-dev libjpeg-dev graphviz doxygen cmake gnuplot pstack ca-certificates python libadolc-dev bison flex libx11-dev libboost-all-dev xauth xterm libtool
 ~~~~~~
 
 ###1. Open a terminal
