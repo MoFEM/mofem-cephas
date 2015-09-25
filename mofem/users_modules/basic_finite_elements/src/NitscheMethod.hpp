@@ -1,4 +1,4 @@
-/** \file NitschePeriodicMethod.hpp
+/** \file NitscheMethod.hpp
  * \ingroup nitsche_method
  * \brief Basic implementation of Nitsche method
  */

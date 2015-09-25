@@ -7,6 +7,8 @@ mofem/doc/footer.html
 mofem/doc/header.html
 mofem/doc/style.html
 
+version.h
+
 mofem_build.sh
 mofem_live_cd_check.sh
 mofem_update.sh
