@@ -1,0 +1,19 @@
+#!python
+cubit.cmd('brick x 1 y 1 z 1')
+cubit.cmd('volume 1  size 1')
+cubit.cmd('volume 1 scheme Tetmesh')
+cubit.cmd('mesh volume 1')
+cubit.cmd('set duplicate block elements off')
+cubit.cmd('block 1 volume 1  ')
+
+#!Define block attributes
+cubit.cmd('block 1 attribute count 5')
+cubit.cmd('block 1 attribute index 1 1000')
+cubit.cmd('block 1 attribute index 2 2000')
+cubit.cmd('block 1 attribute index 3 0.1')
+cubit.cmd('block 1 attribute index 4 0.2')
+cubit.cmd('block 1 attribute index 5 300')
+
+#!Add material name and description
+cubit.cmd('block 1 name "MAT_ELASTIC_TRANSISO_1" ')
+cubit.cmd('block 1 description 'Transverse Isotropic material properties' ')

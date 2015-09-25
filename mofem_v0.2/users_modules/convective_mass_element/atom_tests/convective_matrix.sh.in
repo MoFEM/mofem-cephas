@@ -1,4 +1,0 @@
-#!/bin/sh
-
-@MoFEM_MPI_RUN@ -np 1 @CMAKE_CURRENT_BINARY_DIR@/convective_matrix -my_file LShape.cub
-@GSED@ -i '/Mat/d' convective_matrix.txt
