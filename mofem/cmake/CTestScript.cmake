@@ -68,6 +68,23 @@ else(EXISTS "${CTEST_SOURCE_DIRECTORY}/users_modules/homogenisation")
   )
 endif()
 
+
+# modules - gels
+if(NOT EXISTS "${CTEST_SOURCE_DIRECTORY}/users_modules/gels")
+  exec_program(
+    ${CTEST_GIT_COMMAND}
+    "${CTEST_SOURCE_DIRECTORY}/users_modules"
+    ARGS clone https://bitbucket.org/likask/mofem_um_gels.git
+    "${CTEST_SOURCE_DIRECTORY}/users_modules/gels"
+  )
+else(EXISTS "${CTEST_SOURCE_DIRECTORY}/users_modules/gels")
+  exec_program(
+    ${CTEST_GIT_COMMAND}
+    "${CTEST_SOURCE_DIRECTORY}/users_modules/gels"
+    ARGS pull
+  )
+endif()
+
 # modules - fracture_mechanics
 if(NOT EXISTS "${CTEST_SOURCE_DIRECTORY}/users_modules/fracture_mechanics")
   exec_program(
