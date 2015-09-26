@@ -8,13 +8,6 @@ users modules (UM). In future it will be always single version of MoFEM library 
 many UM forks. Some UM can be in developed independently from MoFEM library
 repository. How to add user modules see \ref adding_user_module
 
-In default UM are build as a part of MoFEM library, i.e. source files from
-MoFEM source directory are used in compilation process. UM can be created as
-"stand alone" source, when out of source build is created as follows
-\code
-cmake -DSTAND_ALLONE_USERS_MODULES ../user_modules
-\endcode
-
 \section Making Repository Commits
 
 As a general rule, developers should update frequently, and commit changes
@@ -22,8 +15,7 @@ often. However, the repository should always remain in a state where the code
 can be compiled. Most of the time, the code should also successfully execute
 "ctest" run from the top-level directory. If you commit code that violates this
 principal, it should be your first priority to return the repository code to a
-compilable state, and your second priority to make sure that all tests
-(ctest) runs without
+compilable state and next to make sure that all tests (ctest) runs without
 errors.
 
 Finished proration of work should be committed by pull-request to CDashTesting
