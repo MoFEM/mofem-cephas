@@ -79,8 +79,22 @@ linked in your documentation have to be copied with documentation directory crea
 copy your figures to \em doc/figures. CMake will do a job for you, and copy
 files with figures to appropriate directory.
 
-- If you write user module documentation, you do it like above, only
-difference, you place you figure in directory user_modules/doc/figures.
+- If you write user module documentation, you do it like above, only difference,
+you place you figure in directory user_modules/my_user_module/doc/figures. Note
+that each documentation directory should consist file \em AddDocumentation.cmake:
+\code
+# copy dox/figures to html directory created by doxygen
+add_custom_target(doxygen_copy_MY_USER_MODULE_figures
+  ${CMAKE_COMMAND} -E copy_directory
+  ${PROJECT_SOURCE_DIR}/users_modules/homogenisation/doc/figures ${PROJECT_BINARY_DIR}/html
+)
+add_dependencies(doc doxygen_copy_MY_USER_MODUL_figures)
+\endcode
+where \em MY_USER_MODUL you substitute is substitute by name of the module. This
+cmake script copy files from module doc/figures directory to main documentation
+directory. Look to existing modules for examples.
+
+\todo Each module can copy figures to directory with unique name for USER_MODULE_figures.
 
 - It is very important that name of your figure file is unique. All figures
 (or any other linked files) are copied to same directory
