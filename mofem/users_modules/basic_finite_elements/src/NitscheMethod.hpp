@@ -21,7 +21,7 @@
 #ifndef __NITCHE_BOUNDARY_CONDITIONS_HPP__
 #define __NITCHE_BOUNDARY_CONDITIONS_HPP__
 
-/** \brief Basic implementation of Nitsche method
+/** \brief Basic implementation of Nitsche's method
  * \ingroup nitsche_method
 
   This implementation have been used to enforce periodic constrains, see \ref
@@ -37,7 +37,7 @@ struct NitscheMethod {
     MyFace(FieldInterface &m_field):
     FaceElementForcesAndSourcesCore(m_field),
     addToRule(0) {}
-    int getRule(int order) { return 2*order+addToRule; }
+    int getRule(int order) { return order+addToRule; }
     /*int getRule(int order) { return -1; }
     PetscErrorCode setGaussPts(int order) {
       PetscFunctionBegin;
@@ -75,6 +75,7 @@ struct NitscheMethod {
     vector<VectorDouble> rAy;
 
     vector<MatrixDouble> P;       ///< projection matrix
+    vector<MatrixDouble> dP;      ///< derivative of projection matrix in respect DoFs
     CommonData() {
       P.resize(4);
       for(int ff = 0;ff<4;ff++) {
@@ -83,6 +84,10 @@ struct NitscheMethod {
         for(int dd = 0;dd<3;dd++) {
           P[ff](dd,dd) = 1;
         }
+      }
+      dP.resize(4);
+      for(int ff = 0;ff<4;ff++) {
+        dP[ff].resize(0,0,false);
       }
     }
 
