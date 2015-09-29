@@ -74,21 +74,22 @@ struct NitscheMethod {
     vector<MatrixDouble> hoCoordsAtGaussPts;
     vector<VectorDouble> rAy;
 
-    vector<MatrixDouble> P;       ///< projection matrix
-    vector<MatrixDouble> dP;      ///< derivative of projection matrix in respect DoFs
+    /** \brief projection matrix
+
+      First index is face index, then integration point and
+      projection matrix 3x3
+
+    */
+    vector<vector<MatrixDouble > > P;
+
+    /** \brief derivative of projection matrix in respect DoFs
+     This is EntityType, face, gauss point at face.
+     Matrix has 3 rows (components of displacements)
+     Matrix has columns equal to number of DoFs on entity
+    */
+    map<EntityType,vector<vector<MatrixDouble> > > dP;
+
     CommonData() {
-      P.resize(4);
-      for(int ff = 0;ff<4;ff++) {
-        P[ff].resize(3,3,false);
-        P[ff].clear();
-        for(int dd = 0;dd<3;dd++) {
-          P[ff](dd,dd) = 1;
-        }
-      }
-      dP.resize(4);
-      for(int ff = 0;ff<4;ff++) {
-        dP[ff].resize(0,0,false);
-      }
     }
 
   };
@@ -473,8 +474,9 @@ struct NitscheMethod {
             double area = cblas_dnrm2(3,&normal[0],1);
 
             ierr = calculateP(gg,fgg,ff); CHKERRQ(ierr);
-            MatrixDouble &P = nitscheCommonData.P[ff];
+            MatrixDouble &P = nitscheCommonData.P[ff][fgg];
 
+            //P
             for(int dd1 = 0;dd1<nb_dofs_row/3;dd1++) {
               double n_row = row_data.getN()(gg,dd1);
               for(int dd2 = 0;dd2<nb_dofs_col/3;dd2++) {
@@ -506,6 +508,38 @@ struct NitscheMethod {
                     3,&P(0,dd3),3,&tRac_v(0,dd1),tRac_v.size2()
                   );
                   kMatrix1(dd1,3*dd2+dd3) -= phi*val*t*n_col;
+                }
+              }
+            }
+            //dP
+            if(nitscheCommonData.dP[col_type].empty()!=0) {
+              if(nitscheCommonData.dP.size()==4) {
+                if(nitscheCommonData.dP[col_type][ff].size()==nb_face_gauss_pts) {
+                  MatrixDouble &dP = nitscheCommonData.dP[col_type][ff][fgg];
+                  if(dP.size1()==3 && dP.size2()==nb_dofs_col) {
+                    VectorDouble &u = (commonData.dataAtGaussPts[commonData.spatialPositions])[gg];
+                    for(int dd1 = 0;dd1<nb_dofs_row/3;dd1++) {
+                      double n_row = row_data.getN()(gg,dd1);
+                      for(int dd2 = 0;dd2<nb_dofs_col/3;dd2++) {
+                        for(int dd3 = 0;dd3<3;dd3++) {
+                          for(int dd4 = 0;dd4<3;dd4++) {
+                            kMatrix0(3*dd1+dd3,3*dd2+dd4) += val*n_row*u[dd4]*dP(dd4,3*dd2+dd4);
+                          }
+                        }
+                      }
+                    }
+                    VectorDouble t = prod(trans(commonData.sTress[gg]),normal); // this is Piola-Kirchhoff I stress
+                    for(int dd1 = 0;dd1<nb_dofs_row/3;dd1++) {
+                      double n_row = row_data.getN()(gg,dd1);
+                      for(int dd2 = 0;dd2<nb_dofs_col/3;dd2++) {
+                        for(int dd3 = 0;dd3<3;dd3++) {
+                          for(int dd4 = 0;dd4<3;dd4++) {
+                            kMatrix1(3*dd1+dd3,3*dd2+dd4) += val*n_row*t[dd4]*dP(dd4,3*dd2+dd4);
+                          }
+                        }
+                      }
+                    }
+                  }
                 }
               }
             }
