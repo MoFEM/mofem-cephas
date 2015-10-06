@@ -64,6 +64,8 @@ using namespace boost::numeric;
 
 namespace MoFEM {
 
+typedef ErrorCode MoABErrorCode;
+
 //typedefs
 typedef PetscInt DofIdx;
 typedef int FEIdx;
