@@ -218,9 +218,7 @@ NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::OpJacobianPiolaKirchhof
 
 PetscErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::calculateStress() {
   PetscFunctionBegin;
-
   try {
-
     PetscErrorCode ierr;
     ierr = dAta.materialAdoublePtr->calculateP_PiolaKirchhoffI(dAta,getMoFEMFEPtr()); CHKERRQ(ierr);
     if(aLe) {
@@ -239,7 +237,6 @@ PetscErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::calculat
     ss << "throw in method: " << ex.what() << endl;
     SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   }
-
   PetscFunctionReturn(0);
 }
 
