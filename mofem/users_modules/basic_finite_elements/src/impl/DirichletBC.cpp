@@ -162,9 +162,6 @@ PetscErrorCode DisplacementBCFEMethodPreAndPostProc::preProcess() {
     }
     ierr = VecAssemblyBegin(snes_x); CHKERRQ(ierr);
     ierr = VecAssemblyEnd(snes_x); CHKERRQ(ierr);
-  } {
-    ierr = VecAssemblyBegin(snes_x); CHKERRQ(ierr);
-    ierr = VecAssemblyEnd(snes_x); CHKERRQ(ierr);
   }
 
   PetscFunctionReturn(0);
