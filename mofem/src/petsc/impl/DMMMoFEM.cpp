@@ -323,13 +323,13 @@ PetscErrorCode DMMoFEMSNESSetJacobian(DM dm,const char fe_name[],MoFEM::FEMethod
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;
   if(pre_only!=NULL) {
-    dm_field->snesCtx->get_preProcess_to_do_Rhs().push_back(pre_only);
+    dm_field->snesCtx->get_preProcess_to_do_Mat().push_back(pre_only);
   }
   if(method!=NULL) {
-    dm_field->snesCtx->get_loops_to_do_Rhs().push_back(KspCtx::loop_pair_type(fe_name,method));
+    dm_field->snesCtx->get_loops_to_do_Mat().push_back(KspCtx::loop_pair_type(fe_name,method));
   }
   if(post_only!=NULL) {
-    dm_field->snesCtx->get_postProcess_to_do_Rhs().push_back(post_only);
+    dm_field->snesCtx->get_postProcess_to_do_Mat().push_back(post_only);
   }
   ierr = DMSNESSetJacobian(dm,SnesMat,dm_field->snesCtx); CHKERRQ(ierr);
   PetscFunctionReturn(0);

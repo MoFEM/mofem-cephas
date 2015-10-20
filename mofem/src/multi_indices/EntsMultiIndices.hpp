@@ -1,5 +1,5 @@
 /** \file EntsMultiIndices.hpp
- * \brief Myltindex containes, for mofem enitities data structures and other low-level functions
+ * \brief Myltindex contains, for mofem entities data structures and other low-level functions
  */
 
 /*

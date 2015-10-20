@@ -584,9 +584,9 @@ struct NitscheMethod {
             //dP
             if(nitscheCommonData.dP[col_type].empty()!=0) {
               if(nitscheCommonData.dP.size()==4) {
-                if(nitscheCommonData.dP[col_type][ff].size()==nb_face_gauss_pts) {
+                if(nitscheCommonData.dP[col_type][ff].size()==(unsigned int)nb_face_gauss_pts) {
                   MatrixDouble &dP = nitscheCommonData.dP[col_type][ff][fgg];
-                  if(dP.size1()==3 && dP.size2()==nb_dofs_col) {
+                  if(dP.size1()==3 && dP.size2()==(unsigned int)nb_dofs_col) {
                     VectorDouble &u = (commonData.dataAtGaussPts[commonData.spatialPositions])[gg];
                     for(int dd1 = 0;dd1<nb_dofs_row/3;dd1++) {
                       double n_row = row_data.getN()(gg,dd1);

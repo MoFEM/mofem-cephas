@@ -23,6 +23,7 @@ fracture_mechanics
 moisture_transport
 ground_surface_temperature
 gels
+small_strain_plasticity
 
 _Store
 *.swp
