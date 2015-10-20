@@ -88,8 +88,6 @@ struct NeummanForcesSurface {
 
   };
 
-
-
   /// Operator for flux element
   struct OpNeumannFlux:public FaceElementForcesAndSourcesCore::UserDataOperator {
 
@@ -110,7 +108,6 @@ struct NeummanForcesSurface {
   };
 
   DEPRECATED typedef OpNeumannFlux OpNeumannPreassureFlux;
-
 
   /// Add force element operator  (integration on face)
   PetscErrorCode addForce(const string field_name,Vec &F,int ms_id);
