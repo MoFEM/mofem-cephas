@@ -75,7 +75,7 @@ struct ElasticMaterials {
   po::variables_map vM;
 
 
-  PetscErrorCode iNit() {
+  virtual PetscErrorCode iNit() {
     PetscFunctionBegin;
     //add new material below
     string mat_name;
@@ -145,7 +145,7 @@ struct ElasticMaterials {
     \endcode
 
     */
-  PetscErrorCode readConfigFile() {
+  virtual PetscErrorCode readConfigFile() {
     PetscFunctionBegin;
     PetscErrorCode ierr;
     try {
@@ -265,7 +265,7 @@ struct ElasticMaterials {
 
   #ifdef __NONLINEAR_ELASTIC_HPP
 
-  PetscErrorCode setBlocks(map<int,NonlinearElasticElement::BlockData> &set_of_blocks) {
+  virtual PetscErrorCode setBlocks(map<int,NonlinearElasticElement::BlockData> &set_of_blocks) {
     PetscFunctionBegin;
     ErrorCode rval;
     PetscErrorCode ierr;

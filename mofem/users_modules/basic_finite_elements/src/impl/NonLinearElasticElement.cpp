@@ -1,5 +1,5 @@
 /**
- * \brief Operators and data structures for thermal analyse
+ * \brief Operators and data structures for nonlinear elastic material
  *
  * Implementation of nonlinear elastic element.
  *
@@ -218,9 +218,7 @@ NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::OpJacobianPiolaKirchhof
 
 PetscErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::calculateStress() {
   PetscFunctionBegin;
-
   try {
-
     PetscErrorCode ierr;
     ierr = dAta.materialAdoublePtr->calculateP_PiolaKirchhoffI(dAta,getMoFEMFEPtr()); CHKERRQ(ierr);
     if(aLe) {
@@ -239,7 +237,6 @@ PetscErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::calculat
     ss << "throw in method: " << ex.what() << endl;
     SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   }
-
   PetscFunctionReturn(0);
 }
 
@@ -373,11 +370,11 @@ PetscErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::doWork(
 
       if(jAcobian){
         //if(commonData.jacStressRowPtr[gg].size()!=9) {
-          commonData.jacStressRowPtr[gg].resize(9);
-          commonData.jacStress[gg].resize(9,nb_active_variables,false);
-          for(int dd = 0;dd<9;dd++) {
-            (commonData.jacStressRowPtr[gg])[dd] = &(commonData.jacStress[gg](dd,0));
-          }
+        commonData.jacStressRowPtr[gg].resize(9);
+        commonData.jacStress[gg].resize(9,nb_active_variables,false);
+        for(int dd = 0;dd<9;dd++) {
+          (commonData.jacStressRowPtr[gg])[dd] = &(commonData.jacStress[gg](dd,0));
+        }
         //}
         int r;
         //play recorder for jacobians
@@ -393,11 +390,11 @@ PetscErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::doWork(
 
     }
 
-    } catch (const std::exception& ex) {
-      ostringstream ss;
-      ss << "throw in method: " << ex.what() << endl;
-      SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
-    }
+  } catch (const std::exception& ex) {
+    ostringstream ss;
+    ss << "throw in method: " << ex.what() << endl;
+    SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+  }
 
   PetscFunctionReturn(0);
 }
@@ -502,7 +499,8 @@ NonlinearElasticElement::OpEnergy::OpEnergy(const string field_name,BlockData &d
   fieldDisp(field_disp) { }
 
 PetscErrorCode NonlinearElasticElement::OpEnergy::doWork(
-  int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data) {
+  int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data
+) {
   PetscFunctionBegin;
 
   PetscErrorCode ierr;
@@ -622,7 +620,8 @@ PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::aSemble(
     }
   }
 
-  ierr = MatSetValues(getFEMethod()->snes_B,
+  ierr = MatSetValues(
+    getFEMethod()->snes_B,
     nb_row,row_indices_ptr,
     nb_col,col_indices_ptr,
     &k(0,0),ADD_VALUES

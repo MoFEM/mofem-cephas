@@ -124,13 +124,36 @@ ctest -D Experimental
 cd $MOFEM_INSTALL_DIR/user_modules
 
 # Configuration:
-cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS="-Wall"  -DCMAKE_CXX_FLAGS="-Wall -Wno-bind-to-temporary-copy -Wno-overloaded-virtual" -DCMAKE_EXE_LINKER_FLAGS="$MOFEM_INSTALL_DIR/local/lib" user_modules
+cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS="-Wall"  -DCMAKE_CXX_FLAGS="-Wall -Wno-bind-to-temporary-copy -Wno-overloaded-virtual" -DCMAKE_EXE_LINKER_FLAGS="-L$MOFEM_INSTALL_DIR/local/lib" user_modules
 
 # Build:
 make -j4
+~~~~~~
 
-# Testing:
+###8. Dynamic Linked Shared Libraries
+
+When executing a binary there may be a `dyld` related error. This is because the required dynamic libraries haven not been linked to the executable.
+
+There are two ways of solving this problem:
+
+1. Hack
+
+  Add this to your ~/.bashrc: `DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:$MOFEM_INSTALL_DIR/local/lib64`
+
+  Note: you'll need to reload the current session for this to take effect
+
+2. Linking
+
+  If you don't want to-do the above hack you can instead link the required dylib files to your executable. This requires `install_name_tool` and `otool`, which should come as part of Xcode.
+
+  `otool` can check a binary for dynamicallly linked libraries e.g. `otool -L arc_length_nonlinear_elasticity`. Check the printout to see which libraries are not linked correctly. That can be a case when two or more version of the same library is installed
+  in the system.
+
+  Then change the libraries that are not linked correclty e.g. `install_name_tool -change libboost_program_options.dylib $MOFEM_INSTALL_DIR/local/lib/libboost_program_options.dylib arc_length_nonlinear_elasticity`
+
+###9. Testing:
+~~~~~~
 ctest -D Experimental
 ~~~~~~
 
-Note that results of the test are publish on MoFEM CDashTesting web page. If you do not like publish results pleas remove option ``-D Experimental``
+Note that results of the tests are publish on MoFEM CDashTesting web page. If you do not wish to publish results remove option ``-D Experimental``

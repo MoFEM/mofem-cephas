@@ -21,7 +21,7 @@
 #ifndef __NITCHE_BOUNDARY_CONDITIONS_HPP__
 #define __NITCHE_BOUNDARY_CONDITIONS_HPP__
 
-/** \brief Basic implementation of Nitsche method
+/** \brief Basic implementation of Nitsche's method
  * \ingroup nitsche_method
 
   This implementation have been used to enforce periodic constrains, see \ref
@@ -37,7 +37,7 @@ struct NitscheMethod {
     MyFace(FieldInterface &m_field):
     FaceElementForcesAndSourcesCore(m_field),
     addToRule(0) {}
-    int getRule(int order) { return 2*order+addToRule; }
+    int getRule(int order) { return order+addToRule; }
     /*int getRule(int order) { return -1; }
     PetscErrorCode setGaussPts(int order) {
       PetscFunctionBegin;
@@ -68,23 +68,65 @@ struct NitscheMethod {
     vector<const NumeredMoFEMFiniteElement *> facesFePtr;
     vector<VectorDouble> cOords;
     vector<MatrixDouble> faceNormals;
-    vector<MatrixDouble> faceVertexShapeFunctions;
     vector<MatrixDouble> faceGaussPts;
+    vector<vector<int> > inTetFaceGaussPtsNumber;
     vector<MatrixDouble> coordsAtGaussPts;
     vector<MatrixDouble> hoCoordsAtGaussPts;
     vector<VectorDouble> rAy;
+    int nbTetGaussPts;
 
-    vector<MatrixDouble> P;       ///< projection matrix
+    /** \brief projection matrix
+
+      First index is face index, then integration point and
+      projection matrix 3x3
+
+    */
+    vector<vector<MatrixDouble > > P;
+
+    /** \brief derivative of projection matrix in respect DoFs
+     This is EntityType, face, gauss point at face.
+     Matrix has 3 rows (components of displacements)
+     Matrix has columns equal to number of DoFs on entity
+    */
+    map<EntityType,vector<vector<MatrixDouble> > > dP;
+
     CommonData() {
-      P.resize(4);
-      for(int ff = 0;ff<4;ff++) {
-        P[ff].resize(3,3,false);
-        P[ff].clear();
-        for(int dd = 0;dd<3;dd++) {
-          P[ff](dd,dd) = 1;
-        }
-      }
     }
+
+    struct MultiIndexData {
+      int gG;
+      int sIde;
+      EntityType tYpe;
+      ublas::vector<int> iNdices;
+      ublas::vector<int> dofOrders;
+      VectorDouble shapeFunctions;
+      MatrixDouble diffShapeFunctions;
+      MultiIndexData(
+        int gg,int side,EntityType type
+      ):
+      gG(gg),
+      sIde(side),
+      tYpe(type) {
+      }
+    };
+
+    typedef multi_index_container<
+      MultiIndexData,
+      indexed_by<
+        ordered_non_unique< BOOST_MULTI_INDEX_MEMBER(MultiIndexData,int,MultiIndexData::gG) >,
+        ordered_non_unique< BOOST_MULTI_INDEX_MEMBER(MultiIndexData,int,MultiIndexData::sIde) >,
+        ordered_non_unique< BOOST_MULTI_INDEX_MEMBER(MultiIndexData,EntityType,MultiIndexData::tYpe) >,
+        ordered_unique<
+        composite_key<
+          MultiIndexData,
+          member<MultiIndexData,int,&MultiIndexData::gG>,
+          member<MultiIndexData,int,&MultiIndexData::sIde>,
+          member<MultiIndexData,EntityType,&MultiIndexData::tYpe>
+        > >
+      >
+    > Container;
+    Container facesContainer;
+
 
   };
 
@@ -104,11 +146,15 @@ struct NitscheMethod {
 
       try {
         int faceInRespectToTet = getFEMethod()->nInTheLoop;
+        int nb_face_gauss_pts = getGaussPts().size2();
         if(type == MBVERTEX) {
           commonData.faceGaussPts.resize(4);
           commonData.faceGaussPts[faceInRespectToTet] = getGaussPts();
-          commonData.faceVertexShapeFunctions.resize(4);
-          commonData.faceVertexShapeFunctions[faceInRespectToTet] = data.getN();
+          for(int fgg = 0;fgg<nb_face_gauss_pts;fgg++) {
+            int gg = commonData.nbTetGaussPts;
+            commonData.inTetFaceGaussPtsNumber[faceInRespectToTet].push_back(gg);
+            commonData.nbTetGaussPts++;
+          }
           commonData.faceNormals.resize(4);
           commonData.faceNormals[faceInRespectToTet] = 0.5*getNormals_at_GaussPt();
           commonData.hoCoordsAtGaussPts.resize(4);
@@ -121,12 +167,31 @@ struct NitscheMethod {
           commonData.rAy[faceInRespectToTet] = -getNormal();
           commonData.rAy[faceInRespectToTet] /= norm_2(getNormal());
         }
+        for(int fgg = 0;fgg<nb_face_gauss_pts;fgg++) {
+          int gg = commonData.inTetFaceGaussPtsNumber[faceInRespectToTet][fgg];
+          //cerr << fgg << " " << gg << " " << side << " " << type << endl;
+          CommonData::MultiIndexData gauss_pt_data(gg,side,type);
+          pair<CommonData::Container::iterator,bool> p;
+          p = commonData.facesContainer.insert(gauss_pt_data);
+          if(!p.second) {
+            SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data not inserted");
+          }
+          CommonData::MultiIndexData &p_data = const_cast<CommonData::MultiIndexData&>(*p.first);
+          VectorDouble &shape_fun = p_data.shapeFunctions;
+          int nb_shape_fun = data.getN().size2();
+          shape_fun.resize(nb_shape_fun);
+          cblas_dcopy(nb_shape_fun,&data.getN()(fgg,0),1,&shape_fun[0],1);
+          p_data.iNdices = data.getIndices();
+          p_data.dofOrders.resize(data.getFieldDofs().size(),false);
+          for(unsigned int dd = 0;dd<data.getFieldDofs().size();dd++) {
+            p_data.dofOrders[dd] = data.getFieldDofs()[dd]->get_dof_order();
+          }
+        }
       } catch (const std::exception& ex) {
         ostringstream ss;
         ss << "throw in method: " << ex.what() << endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
-
       PetscFunctionReturn(0);
     }
 
@@ -205,6 +270,10 @@ struct NitscheMethod {
             commonData.facesFePtr[ff] = NULL;
           }
         }
+        commonData.nbTetGaussPts = 0;
+        commonData.facesContainer.clear();
+        commonData.inTetFaceGaussPtsNumber.clear();
+        commonData.inTetFaceGaussPtsNumber.resize(4);
         for(int ff = 0;ff<4;ff++) {
           if(commonData.facesFePtr[ff]!=NULL) {
             const NumeredMoFEMFiniteElement *faceFEPtr = commonData.facesFePtr[ff];
@@ -237,12 +306,18 @@ struct NitscheMethod {
         for(int ff = 0;ff<4;ff++) {
           if(commonData.facesFePtr[ff]==NULL) continue;
           int nb_gauss_face_pts = commonData.faceGaussPts[ff].size2();
+          //cerr << "nb_gauss_face_pts " << nb_gauss_face_pts << endl;
           for(int fgg = 0;fgg<nb_gauss_face_pts;fgg++,gg++) {
+            //cerr << ff << " gg " << gg << " fgg " << fgg << endl;
+            CommonData::Container::nth_index<3>::type::iterator sit;
+            sit = commonData.facesContainer.get<3>().find(boost::make_tuple(gg,0,MBVERTEX));
+            const VectorDouble &shape_fun = sit->shapeFunctions;
+            //cerr << shape_fun << endl;
             for(int dd = 0;dd<3;dd++) {
               gaussPts(dd,gg) =
-              commonData.faceVertexShapeFunctions[ff](fgg,0)*coords_tet[3*dataH1.facesNodes(ff,0)+dd] +
-              commonData.faceVertexShapeFunctions[ff](fgg,1)*coords_tet[3*dataH1.facesNodes(ff,1)+dd] +
-              commonData.faceVertexShapeFunctions[ff](fgg,2)*coords_tet[3*dataH1.facesNodes(ff,2)+dd];
+              shape_fun[0]*coords_tet[3*dataH1.facesNodes(ff,0)+dd]+
+              shape_fun[1]*coords_tet[3*dataH1.facesNodes(ff,1)+dd]+
+              shape_fun[2]*coords_tet[3*dataH1.facesNodes(ff,2)+dd];
             }
             gaussPts(3,gg) = commonData.faceGaussPts[ff](2,fgg);
           }
@@ -334,6 +409,11 @@ struct NitscheMethod {
     MatrixDouble tRac_v;
     MatrixDouble tRac_u;
 
+    virtual PetscErrorCode calculateP(int gg,int fgg,int ff) {
+      PetscFunctionBegin;
+      PetscFunctionReturn(0);
+    }
+
     PetscErrorCode getJac(
       DataForcesAndSurcesCore::EntData &data,int gg,MatrixDouble &jac
     ) {
@@ -414,12 +494,8 @@ struct NitscheMethod {
     ) {
     }
 
-    virtual PetscErrorCode calculateP(int gg,int fgg,int ff) {
-      PetscFunctionBegin;
-      PetscFunctionReturn(0);
-    }
-
     MatrixDouble kMatrix,kMatrix0,kMatrix1;
+    vector<MatrixDouble> kMatrixFace,kMatrixFace0,kMatrixFace1;
 
     PetscErrorCode doWork(
       int row_side,int col_side,
@@ -468,8 +544,9 @@ struct NitscheMethod {
             double area = cblas_dnrm2(3,&normal[0],1);
 
             ierr = calculateP(gg,fgg,ff); CHKERRQ(ierr);
-            MatrixDouble &P = nitscheCommonData.P[ff];
+            MatrixDouble &P = nitscheCommonData.P[ff][fgg];
 
+            //P
             for(int dd1 = 0;dd1<nb_dofs_row/3;dd1++) {
               double n_row = row_data.getN()(gg,dd1);
               for(int dd2 = 0;dd2<nb_dofs_col/3;dd2++) {
@@ -504,6 +581,38 @@ struct NitscheMethod {
                 }
               }
             }
+            //dP
+            if(nitscheCommonData.dP[col_type].empty()!=0) {
+              if(nitscheCommonData.dP.size()==4) {
+                if(nitscheCommonData.dP[col_type][ff].size()==(unsigned int)nb_face_gauss_pts) {
+                  MatrixDouble &dP = nitscheCommonData.dP[col_type][ff][fgg];
+                  if(dP.size1()==3 && dP.size2()==(unsigned int)nb_dofs_col) {
+                    VectorDouble &u = (commonData.dataAtGaussPts[commonData.spatialPositions])[gg];
+                    for(int dd1 = 0;dd1<nb_dofs_row/3;dd1++) {
+                      double n_row = row_data.getN()(gg,dd1);
+                      for(int dd2 = 0;dd2<nb_dofs_col/3;dd2++) {
+                        for(int dd3 = 0;dd3<3;dd3++) {
+                          for(int dd4 = 0;dd4<3;dd4++) {
+                            kMatrix0(3*dd1+dd3,3*dd2+dd4) += val*n_row*u[dd4]*dP(dd4,3*dd2+dd4);
+                          }
+                        }
+                      }
+                    }
+                    VectorDouble t = prod(trans(commonData.sTress[gg]),normal); // this is Piola-Kirchhoff I stress
+                    for(int dd1 = 0;dd1<nb_dofs_row/3;dd1++) {
+                      double n_row = row_data.getN()(gg,dd1);
+                      for(int dd2 = 0;dd2<nb_dofs_col/3;dd2++) {
+                        for(int dd3 = 0;dd3<3;dd3++) {
+                          for(int dd4 = 0;dd4<3;dd4++) {
+                            kMatrix1(3*dd1+dd3,3*dd2+dd4) += val*n_row*t[dd4]*dP(dd4,3*dd2+dd4);
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
           }
 
           kMatrix0 /= gammaH;
@@ -533,6 +642,104 @@ struct NitscheMethod {
       }
 
       PetscFunctionReturn(0);
+    }
+
+  };
+
+
+  /** \brief Calculate Nitsche method terms on right hand side
+  * \ingroup nitsche_method
+  */
+  struct OpRhsNormal: public OpCommon {
+
+    OpRhsNormal(
+        const string field_name,
+      BlockData &nitsche_block_data,
+      CommonData &nitsche_common_data,
+      NonlinearElasticElement::BlockData &data,
+      NonlinearElasticElement::CommonData &common_data,
+      bool field_disp
+    ):
+    OpCommon(
+      field_name,
+      nitsche_block_data,
+      nitsche_common_data,
+      data,
+      common_data,
+      field_disp,
+      UserDataOperator::OPROW
+    ) {
+    }
+
+    VectorDouble nF;
+
+    PetscErrorCode doWork(
+      int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data
+    ) {
+      PetscFunctionBegin;
+
+      PetscErrorCode ierr;
+      if(dAta.tEts.find(getMoFEMFEPtr()->get_ent()) == dAta.tEts.end()) {
+        PetscFunctionReturn(0);
+      }
+      if(row_data.getIndices().size()==0) PetscFunctionReturn(0);
+      int nb_dofs_row = row_data.getIndices().size();
+      double gamma = nitscheBlockData.gamma;
+      double phi = nitscheBlockData.phi;
+
+      try {
+
+        nF.resize(nb_dofs_row,false);
+        nF.clear();
+
+        int gg = 0;
+        for(int ff = 0;ff<4;ff++) {
+          if(nitscheCommonData.facesFePtr[ff]==NULL) continue;
+          int nb_face_gauss_pts = nitscheCommonData.faceGaussPts[ff].size2();
+          ierr = getFaceRadius(ff); CHKERRQ(ierr);
+          for(int fgg = 0;fgg<nb_face_gauss_pts;fgg++,gg++) {
+
+            ierr = getGammaH(gamma,gg); CHKERRQ(ierr);
+            double val = getGaussPts()(3,gg);
+            ierr = getJac(row_data,gg,jAc_row); CHKERRQ(ierr);
+            ierr = getTractionVariance(gg,fgg,ff,jAc_row,tRac_v); CHKERRQ(ierr);
+            VectorAdaptor normal = VectorAdaptor(
+              3,ublas::shallow_array_adaptor<double>(
+                3,&nitscheCommonData.faceNormals[ff](fgg,0)
+              )
+            );
+            double area = cblas_dnrm2(3,&normal[0],1);
+
+            ierr = calculateP(gg,fgg,ff); CHKERRQ(ierr);
+            MatrixDouble &P = nitscheCommonData.P[ff][fgg];
+
+            VectorDouble &u = (commonData.dataAtGaussPts[commonData.spatialPositions])[gg];
+            VectorDouble t = prod(trans(commonData.sTress[gg]),normal); // this is Piola-Kirchhoff I stress
+
+            for(int dd1 = 0;dd1<nb_dofs_row/3;dd1++) {
+              double n_row = row_data.getN()(gg,dd1);
+              for(int dd2 = 0;dd2<3;dd2++) {
+                nF[3*dd1+dd2] += gammaH*(val*area*n_row*(P(dd2,0)*u[0]+P(dd2,1)*u[1]+P(dd2,2)*u[2]));
+                nF[3*dd1+dd2] += val*n_row*(P(dd2,0)*t[0]+P(dd2,1)*t[1]+P(dd2,2)*t[2]);
+                nF[3*dd1+dd2] += phi*tRac_v(dd2,3*dd1+dd2)*(P(dd2,0)*u[0]+P(dd2,1)*u[1]+P(dd2,2)*u[2]);
+              }
+            }
+
+          }
+        }
+
+        ierr = VecSetValues(
+          getFEMethod()->snes_f,nb_dofs_row,&row_data.getIndices()[0],&nF[0],ADD_VALUES
+        ); CHKERRQ(ierr);
+
+      } catch (const std::exception& ex) {
+        ostringstream ss;
+        ss << "throw in method: " << ex.what() << endl;
+        SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+      }
+
+      PetscFunctionReturn(0);
+
     }
 
   };

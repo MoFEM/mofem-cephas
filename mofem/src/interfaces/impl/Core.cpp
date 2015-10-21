@@ -347,20 +347,26 @@ Core::Core(Interface& _moab,MPI_Comm _comm,int _verbose):
     bhTag,MB_TAG_SPARSE|MB_TAG_CREAT,&default_val); CHKERR_THROW(rval);
   std::vector<unsigned int> def_uint_zero(3,0);
   rval= moab.tag_get_handle(BLOCK_HEADER,3*sizeof(unsigned int),MB_TYPE_INTEGER,
-    bhTag_header,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_uint_zero[0]); CHKERR_THROW(rval);
+    bhTag_header,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_uint_zero[0]
+  ); CHKERR_THROW(rval);
   Tag block_attribs;
   int def_Block_Attributes_length = 0;
   rval = moab.tag_get_handle(BLOCK_ATTRIBUTES,def_Block_Attributes_length,MB_TYPE_DOUBLE,
-    block_attribs,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_VARLEN,NULL); CHKERR_THROW(rval);
+    block_attribs,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_VARLEN,NULL
+  ); CHKERR_THROW(rval);
   Tag entity_name_tag;
   rval = moab.tag_get_handle(
-    NAME_TAG_NAME,NAME_TAG_SIZE,MB_TYPE_OPAQUE,entity_name_tag,MB_TAG_SPARSE|MB_TAG_CREAT); CHKERR_THROW(rval);
+    NAME_TAG_NAME,NAME_TAG_SIZE,MB_TYPE_OPAQUE,entity_name_tag,MB_TAG_SPARSE|MB_TAG_CREAT
+  ); CHKERR_THROW(rval);
   //Series
   rval = moab.tag_get_handle("_SeriesName",def_val_len,MB_TYPE_OPAQUE,
-    th_SeriesName,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES|MB_TAG_VARLEN,NULL); CHKERR_THROW(rval);
+    th_SeriesName,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES|MB_TAG_VARLEN,NULL
+  ); CHKERR_THROW(rval);
   //For VTK files
   int def_elem_type = MBMAXTYPE;
-  rval = moab.tag_get_handle("ElemType",1,MB_TYPE_INTEGER,th_ElemType,MB_TAG_CREAT|MB_TAG_SPARSE,&def_elem_type); CHKERR_THROW(rval);
+  rval = moab.tag_get_handle(
+    "ElemType",1,MB_TYPE_INTEGER,th_ElemType,MB_TAG_CREAT|MB_TAG_SPARSE,&def_elem_type
+  ); CHKERR_THROW(rval);
   //
   clearMap();
   initialiseDatabseInformationFromMesh(verbose);
@@ -369,7 +375,6 @@ Core::Core(Interface& _moab,MPI_Comm _comm,int _verbose):
   PetscLogEventRegister("FE_operator",0,&USER_EVENT_operator);
   PetscLogEventRegister("FE_postProcess",0,&USER_EVENT_postProcess);
   PetscLogEventRegister("FielCore_createMat",0,&USER_EVENT_createMat);
-
 }
 Core::~Core() {
 }

@@ -198,8 +198,8 @@ int main(int argc, char *argv[]) {
       int dof_rank = dof_ptr->get_dof_rank();
       double &fval = dof_ptr->get_FieldData();
       if(node!=ent) {
-	rval = moab.get_coords(&ent,1,coords); CHKERR_PETSC(rval);
-	node = ent;
+        rval = moab.get_coords(&ent,1,coords); CHKERR_PETSC(rval);
+        node = ent;
       }
       fval = coords[dof_rank];
     }
@@ -214,8 +214,8 @@ int main(int argc, char *argv[]) {
       if(dof_ptr->get_ent_type()!=MBVERTEX) continue;
       EntityHandle ent = dof_ptr->get_ent();
       if(node!=ent) {
-	rval = moab.get_coords(&ent,1,coords); CHKERR_PETSC(rval);
-	node = ent;
+        rval = moab.get_coords(&ent,1,coords); CHKERR_PETSC(rval);
+        node = ent;
       }
       double &fval = dof_ptr->get_FieldData();
       fval = coords[0];

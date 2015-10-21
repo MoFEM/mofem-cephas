@@ -31,7 +31,7 @@ FaceElementForcesAndSourcesCore(m_field) {
 }
 
 NeummanForcesSurface::OpNeumannForce::OpNeumannForce(
-  const string field_name,Vec &_F,bCForce &data,
+  const string field_name,Vec _F,bCForce &data,
   boost::ptr_vector<MethodForForceScaling> &methods_op
 ):
 FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
@@ -83,13 +83,21 @@ PetscErrorCode NeummanForcesSurface::OpNeumannForce::doWork(
   }
 
   ierr = MethodForForceScaling::applyScale(getFEMethod(), methodsOp, Nf); CHKERRQ(ierr);
-  ierr = VecSetValues(F,data.getIndices().size(), &data.getIndices()[0], &Nf[0], ADD_VALUES); CHKERRQ(ierr);
+  {
+    Vec my_f;
+    if(F == PETSC_NULL) {
+      my_f = getFEMethod()->snes_f;
+    } else {
+      my_f = F;
+    }
+    ierr = VecSetValues(my_f,data.getIndices().size(), &data.getIndices()[0], &Nf[0], ADD_VALUES); CHKERRQ(ierr);
+  }
 
   PetscFunctionReturn(0);
 }
 
 NeummanForcesSurface::OpNeumannPreassure::OpNeumannPreassure(
-  const string field_name, Vec &_F,bCPreassure &data,boost::ptr_vector<MethodForForceScaling> &methods_op,bool ho_geometry
+  const string field_name, Vec _F,bCPreassure &data,boost::ptr_vector<MethodForForceScaling> &methods_op,bool ho_geometry
 ):
 FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
 F(_F),
@@ -140,14 +148,23 @@ PetscErrorCode NeummanForcesSurface::OpNeumannPreassure::doWork(
   cerr << Nf << endl;
   cerr << data.getIndices() << endl;*/
   ierr = MethodForForceScaling::applyScale(getFEMethod(),methodsOp,Nf); CHKERRQ(ierr);
-  ierr = VecSetValues(F,data.getIndices().size(),
-  &data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
+  {
+    Vec my_f;
+    if(F == PETSC_NULL) {
+      my_f = getFEMethod()->snes_f;
+    } else {
+      my_f = F;
+    }
+    ierr = VecSetValues(
+      my_f,data.getIndices().size(),&data.getIndices()[0],&Nf[0],ADD_VALUES
+    ); CHKERRQ(ierr);
+  }
 
   PetscFunctionReturn(0);
 }
 
 NeummanForcesSurface::OpNeumannFlux::OpNeumannFlux(
-  const string field_name,Vec &_F,
+  const string field_name,Vec _F,
   bCPreassure &data,boost::ptr_vector<MethodForForceScaling> &methods_op,
   bool ho_geometry
 ):
@@ -196,13 +213,21 @@ PetscErrorCode NeummanForcesSurface::OpNeumannFlux::doWork(
   //cerr << Nf << endl;
   //cerr << data.getIndices() << endl;
   ierr = MethodForForceScaling::applyScale(getFEMethod(), methodsOp, Nf); CHKERRQ(ierr);
-  ierr = VecSetValues(F, data.getIndices().size(), &data.getIndices()[0], &Nf[0], ADD_VALUES); CHKERRQ(ierr);
+  {
+    Vec my_f;
+    if(F == PETSC_NULL) {
+      my_f = getFEMethod()->snes_f;
+    } else {
+      my_f = F;
+    }
+    ierr = VecSetValues(my_f,data.getIndices().size(),&data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
+  }
 
   PetscFunctionReturn(0);
 }
 
 
-PetscErrorCode NeummanForcesSurface::addForce(const string field_name,Vec &F,int ms_id) {
+PetscErrorCode NeummanForcesSurface::addForce(const string field_name,Vec F,int ms_id) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
   ErrorCode rval;
@@ -214,7 +239,7 @@ PetscErrorCode NeummanForcesSurface::addForce(const string field_name,Vec &F,int
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode NeummanForcesSurface::addPreassure(const string field_name,Vec &F,int ms_id,bool ho_geometry) {
+PetscErrorCode NeummanForcesSurface::addPreassure(const string field_name,Vec F,int ms_id,bool ho_geometry) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
   ErrorCode rval;
@@ -226,7 +251,7 @@ PetscErrorCode NeummanForcesSurface::addPreassure(const string field_name,Vec &F
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode NeummanForcesSurface::addFlux(const string field_name,Vec &F,int ms_id,bool ho_geometry) {
+PetscErrorCode NeummanForcesSurface::addFlux(const string field_name,Vec F,int ms_id,bool ho_geometry) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
   ErrorCode rval;
