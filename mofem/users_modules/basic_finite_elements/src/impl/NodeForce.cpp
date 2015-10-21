@@ -28,7 +28,7 @@ NodalForce::MyFE::MyFE(FieldInterface &m_field): VertexElementForcesAndSourcesCo
 
 }
 
-NodalForce::OpNodalForce::OpNodalForce(const string field_name,Vec &_F,bCForce &data,
+NodalForce::OpNodalForce::OpNodalForce(const string field_name,Vec _F,bCForce &data,
   boost::ptr_vector<MethodForForceScaling> &methods_op,bool use_snes_f):
   VertexElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
   F(_F),
@@ -68,7 +68,7 @@ NodalForce::OpNodalForce::OpNodalForce(const string field_name,Vec &_F,bCForce &
 
     ierr = MethodForForceScaling::applyScale(getFEMethod(),methodsOp,Nf); CHKERRQ(ierr);
     Vec myF = F;
-    if(useSnesF) {
+    if(useSnesF || F == PETSC_NULL) {
       myF = getFEMethod()->snes_f;
     }
     ierr = VecSetValues(
@@ -79,7 +79,7 @@ NodalForce::OpNodalForce::OpNodalForce(const string field_name,Vec &_F,bCForce &
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode NodalForce::addForce(const string field_name,Vec &F,int ms_id,bool use_snes_f) {
+  PetscErrorCode NodalForce::addForce(const string field_name,Vec F,int ms_id,bool use_snes_f) {
     PetscFunctionBegin;
     PetscErrorCode ierr;
     ErrorCode rval;

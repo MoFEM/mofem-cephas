@@ -2,7 +2,7 @@
 
  \brief Atom test for linear elastic dynamics.
 
- This is not exactly procedure for linear elatic dynamics, since jacobian is
+ This is not exactly procedure for linear elastic dynamics, since jacobian is
  evaluated at every time step and snes procedure is involved. However it is
  implemented like that, to test methodology for general nonlinear problem.
 
@@ -134,8 +134,8 @@ int main(int argc, char *argv[]) {
       int dof_rank = dof_ptr->get_dof_rank();
       double &fval = dof_ptr->get_FieldData();
       if(node!=ent) {
-	rval = moab.get_coords(&ent,1,coords); CHKERR_PETSC(rval);
-	node = ent;
+        rval = moab.get_coords(&ent,1,coords); CHKERR_PETSC(rval);
+        node = ent;
       }
       fval = scale_positions*coords[dof_rank];
     }
