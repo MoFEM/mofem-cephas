@@ -45,12 +45,12 @@ struct NodalForce {
   /// \brief Operator to assemble nodal force into right hand side vector
   struct OpNodalForce: public VertexElementForcesAndSourcesCore::UserDataOperator {
 
-    Vec &F;
+    Vec F;
     bool useSnesF;
     bCForce &dAta;
     boost::ptr_vector<MethodForForceScaling> &methodsOp;
 
-    OpNodalForce(const string field_name,Vec &_F,bCForce &data,
+    OpNodalForce(const string field_name,Vec _F,bCForce &data,
       boost::ptr_vector<MethodForForceScaling> &methods_op,
       bool use_snes_f = false);
 
@@ -63,7 +63,7 @@ struct NodalForce {
 
   };
 
-  PetscErrorCode addForce(const string field_name,Vec &F,int ms_id,bool use_snes_f = false);
+  PetscErrorCode addForce(const string field_name,Vec F,int ms_id,bool use_snes_f = false);
 
 };
 
@@ -113,7 +113,7 @@ struct MetaNodalForces {
 
   /// Set integration point operators
   static PetscErrorCode setOperators(
-    FieldInterface &m_field, boost::ptr_map<string,NodalForce> &nodal_forces, Vec &F,const string field_name
+    FieldInterface &m_field, boost::ptr_map<string,NodalForce> &nodal_forces, Vec F,const string field_name
   ) {
     PetscFunctionBegin;
     PetscErrorCode ierr;

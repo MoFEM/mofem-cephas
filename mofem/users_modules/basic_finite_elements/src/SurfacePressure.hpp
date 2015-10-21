@@ -55,12 +55,12 @@ struct NeummanForcesSurface {
   /// Operator for force element
   struct OpNeumannForce: public FaceElementForcesAndSourcesCore::UserDataOperator {
 
-    Vec &F;
+    Vec F;
     bCForce &dAta;
     boost::ptr_vector<MethodForForceScaling> &methodsOp;
 
     OpNeumannForce(
-      const string field_name,Vec &_F,bCForce &data,
+      const string field_name,Vec _F,bCForce &data,
       boost::ptr_vector<MethodForForceScaling> &methods_op);
 
     ublas::vector<FieldData> Nf;
@@ -72,13 +72,13 @@ struct NeummanForcesSurface {
   /// Operator for pressure element
   struct OpNeumannPreassure:public FaceElementForcesAndSourcesCore::UserDataOperator {
 
-    Vec &F;
+    Vec F;
     bCPreassure &dAta;
     boost::ptr_vector<MethodForForceScaling> &methodsOp;
     bool hoGeometry;
 
     OpNeumannPreassure(
-      const string field_name,Vec &_F,
+      const string field_name,Vec _F,
       bCPreassure &data,boost::ptr_vector<MethodForForceScaling> &methods_op,
       bool ho_geometry = false);
 
@@ -91,13 +91,13 @@ struct NeummanForcesSurface {
   /// Operator for flux element
   struct OpNeumannFlux:public FaceElementForcesAndSourcesCore::UserDataOperator {
 
-    Vec &F;
+    Vec F;
     bCPreassure &dAta;
     boost::ptr_vector<MethodForForceScaling> &methodsOp;
     bool hoGeometry;
 
     OpNeumannFlux(
-      const string field_name,Vec &_F,
+      const string field_name,Vec _F,
       bCPreassure &data,boost::ptr_vector<MethodForForceScaling> &methods_op,
       bool ho_geometry);
 
@@ -110,13 +110,13 @@ struct NeummanForcesSurface {
   DEPRECATED typedef OpNeumannFlux OpNeumannPreassureFlux;
 
   /// Add force element operator  (integration on face)
-  PetscErrorCode addForce(const string field_name,Vec &F,int ms_id);
+  PetscErrorCode addForce(const string field_name,Vec F,int ms_id);
 
   /// Add pressure element operator (integration on face)
-  PetscErrorCode addPreassure(const string field_name,Vec &F,int ms_id,bool ho_geometry = false);
+  PetscErrorCode addPreassure(const string field_name,Vec F,int ms_id,bool ho_geometry = false);
 
   /// Add flux element operator (integration on face)
-  PetscErrorCode addFlux(const string field_name,Vec &F,int ms_id,bool ho_geometry = false);
+  PetscErrorCode addFlux(const string field_name,Vec F,int ms_id,bool ho_geometry = false);
 
 };
 
@@ -164,7 +164,7 @@ struct MetaNeummanForces {
   static PetscErrorCode setNeumannFiniteElementOperators(
     FieldInterface &mField,
     boost::ptr_map<string,NeummanForcesSurface> &neumann_forces,
-    Vec &F,const string field_name,const string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
+    Vec F,const string field_name,const string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
     PetscFunctionBegin;
     PetscErrorCode ierr;
     string fe_name;
@@ -218,7 +218,7 @@ struct MetaNeummanForces {
   static PetscErrorCode setNeumannFluxFiniteElementOperators(
     FieldInterface &mField,
     boost::ptr_map<string,NeummanForcesSurface> &neumann_forces,
-    Vec &F,const string field_name,const string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
+    Vec F,const string field_name,const string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
     PetscFunctionBegin;
     PetscErrorCode ierr;
     string fe_name;

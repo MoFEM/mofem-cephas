@@ -49,13 +49,13 @@ struct EdgeForce {
 
     struct OpEdgeForce: public EdgeElementForcesAndSurcesCore::UserDataOperator {
 
-      Vec &F;
+      Vec F;
       bCForce &dAta;
       boost::ptr_vector<MethodForForceScaling> &methodsOp;
       bool useSnesF;
 
       OpEdgeForce(
-        const string field_name,Vec &f,bCForce &data,
+        const string field_name,Vec f,bCForce &data,
         boost::ptr_vector<MethodForForceScaling> &methods_op,
         bool use_snes_f = false
       );
@@ -69,7 +69,7 @@ struct EdgeForce {
 
     };
 
-    PetscErrorCode addForce(const string field_name,Vec &F,int ms_id,bool use_snes_f = false);
+    PetscErrorCode addForce(const string field_name,Vec F,int ms_id,bool use_snes_f = false);
 
   };
 
@@ -104,7 +104,7 @@ struct EdgeForce {
     static PetscErrorCode setOperators(
       FieldInterface &m_field,
       boost::ptr_map<string,EdgeForce> &edge_forces,
-      Vec &F,const string field_name
+      Vec F,const string field_name
     ) {
       PetscFunctionBegin;
       PetscErrorCode ierr;
