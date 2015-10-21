@@ -419,51 +419,51 @@ PetscErrorCode Core::add_ents_to_field_by_TRIs(const Range &tris,const BitFieldI
   FieldSpace space;
   rval = moab.tag_get_data(th_FieldSpace,&idm,1,&space); CHKERR_PETSC(rval);
   Range nodes,edges;
-  switch (space) {
+  switch(space) {
     case L2:
-      rval = moab.add_entities(idm,tris); CHKERR_PETSC(rval);
-      if(verb>1) {
-        ostringstream ss;
-        ss << "add entities to field " << get_BitFieldId_name(id);
-        ss << " nb. add tris " << tris.size();
-        ss << endl;
-        PetscPrintf(comm,ss.str().c_str());
-      }
-      break;
+    rval = moab.add_entities(idm,tris); CHKERR_PETSC(rval);
+    if(verb>1) {
+      ostringstream ss;
+      ss << "add entities to field " << get_BitFieldId_name(id);
+      ss << " nb. add tris " << tris.size();
+      ss << endl;
+      PetscPrintf(comm,ss.str().c_str());
+    }
+    break;
     case H1:
-      rval = moab.add_entities(idm,tris); CHKERR_PETSC(rval);
-      //rval = moab.get_connectivity(tris,nodes,true); CHKERR_PETSC(rval);
-      //use get adjacencies, this will allow take in account adjacencies set user
-      rval = moab.get_adjacencies(tris,0,false,nodes,Interface::UNION); CHKERR_PETSC(rval);
-      {
-        Range topo_nodes;
-        rval = moab.get_connectivity(tris,topo_nodes,true); CHKERR_PETSC(rval);
-        Range mid_nodes;
-        rval = moab.get_connectivity(tris,mid_nodes,false); CHKERR_PETSC(rval);
-        mid_nodes = subtract(mid_nodes,topo_nodes);
-        nodes = subtract(nodes,mid_nodes);
-      }
-      rval = moab.add_entities(idm,nodes); CHKERR_PETSC(rval);
-      rval = moab.get_adjacencies(tris,1,false,edges,Interface::UNION); CHKERR_PETSC(rval);
-      rval = moab.add_entities(idm,edges); CHKERR_PETSC(rval);
-      if(verb>1) {
-        ostringstream ss;
-        ss << "add entities to field " << get_BitFieldId_name(id);
-        ss << " nb. add tris " << tris.size();
-        ss << " nb. add edges " << edges.size();
-        ss << " nb. add nodes " << nodes.size();
-        ss << endl;
-        PetscPrintf(comm,ss.str().c_str());
-      }
-      break;
+    rval = moab.add_entities(idm,tris); CHKERR_PETSC(rval);
+    //rval = moab.get_connectivity(tris,nodes,true); CHKERR_PETSC(rval);
+    //use get adjacencies, this will allow take in account adjacencies set user
+    rval = moab.get_adjacencies(tris,0,false,nodes,Interface::UNION); CHKERR_PETSC(rval);
+    {
+      Range topo_nodes;
+      rval = moab.get_connectivity(tris,topo_nodes,true); CHKERR_PETSC(rval);
+      Range mid_nodes;
+      rval = moab.get_connectivity(tris,mid_nodes,false); CHKERR_PETSC(rval);
+      mid_nodes = subtract(mid_nodes,topo_nodes);
+      nodes = subtract(nodes,mid_nodes);
+    }
+    rval = moab.add_entities(idm,nodes); CHKERR_PETSC(rval);
+    rval = moab.get_adjacencies(tris,1,false,edges,Interface::UNION); CHKERR_PETSC(rval);
+    rval = moab.add_entities(idm,edges); CHKERR_PETSC(rval);
+    if(verb>1) {
+      ostringstream ss;
+      ss << "add entities to field " << get_BitFieldId_name(id);
+      ss << " nb. add tris " << tris.size();
+      ss << " nb. add edges " << edges.size();
+      ss << " nb. add nodes " << nodes.size();
+      ss << endl;
+      PetscPrintf(comm,ss.str().c_str());
+    }
+    break;
     case HCURL:
-      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"sorry, not implemented, HCURL not implented for TRI");
-      break;
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"sorry, not implemented, HCURL not implented for TRI");
+    break;
     case HDIV:
-      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"sorry, not implemented, HDIV not implemented for TRI");
-      break;
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"sorry, not implemented, HDIV not implemented for TRI");
+    break;
     default:
-      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"add_ents_to_field_by_TRIs this field not work for TRIs");
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"add_ents_to_field_by_TRIs this field not work for TRIs");
   }
   PetscFunctionReturn(0);
 }
@@ -503,17 +503,17 @@ PetscErrorCode Core::add_ents_to_field_by_VERTICEs(const Range &nodes,const BitF
   rval = moab.tag_get_data(th_FieldSpace,&idm,1,&space); CHKERR_PETSC(rval);
   switch (space) {
     case H1:
-      rval = moab.add_entities(idm,nodes); CHKERR_PETSC(rval);
-      if(verb>1) {
-	ostringstream ss;
-	ss << "add entities to field " << get_BitFieldId_name(id);
-	ss << " nb. add nodes " << nodes.size();
-	ss << endl;
-	PetscPrintf(comm,ss.str().c_str());
-      }
-      break;
+    rval = moab.add_entities(idm,nodes); CHKERR_PETSC(rval);
+    if(verb>1) {
+      ostringstream ss;
+      ss << "add entities to field " << get_BitFieldId_name(id);
+      ss << " nb. add nodes " << nodes.size();
+      ss << endl;
+      PetscPrintf(comm,ss.str().c_str());
+    }
+    break;
     default:
-      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"add_ents_to_field_by_TRIs this field not work for TRIs");
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"add_ents_to_field_by_TRIs this field not work for TRIs");
   }
   PetscFunctionReturn(0);
 }
@@ -585,77 +585,77 @@ PetscErrorCode Core::add_ents_to_field_by_TETs(const Range &tets,const BitFieldI
   FieldSpace space;
   rval = moab.tag_get_data(th_FieldSpace,&idm,1,&space); CHKERR_PETSC(rval);
   Range nodes,tris,edges;
-  switch (space) {
+  switch(space) {
     case L2:
-      rval = moab.add_entities(idm,tets); CHKERR_PETSC(rval);
-      if(verb>1) {
-        ostringstream ss;
-        ss << "add entities to field " << get_BitFieldId_name(id);
-        ss << " nb. add tets " << tets.size();
-        ss << endl;
-        PetscSynchronizedPrintf(comm,ss.str().c_str());
-      }
-      break;
+    rval = moab.add_entities(idm,tets); CHKERR_PETSC(rval);
+    if(verb>1) {
+      ostringstream ss;
+      ss << "add entities to field " << get_BitFieldId_name(id);
+      ss << " nb. add tets " << tets.size();
+      ss << endl;
+      PetscSynchronizedPrintf(comm,ss.str().c_str());
+    }
+    break;
     case H1:
-      rval = moab.add_entities(idm,tets); CHKERR_PETSC(rval);
-      //rval = moab.get_connectivity(tets,nodes,true); CHKERR_PETSC(rval);
-      //use get adjacencies, this will allow take in account adjacencies set user
-      rval = moab.get_adjacencies(tets,0,false,nodes,Interface::UNION); CHKERR_PETSC(rval);
-      {
-        Range topo_nodes;
-        rval = moab.get_connectivity(tets,topo_nodes,true); CHKERR_PETSC(rval);
-        Range mid_nodes;
-        rval = moab.get_connectivity(tets,mid_nodes,false); CHKERR_PETSC(rval);
-        mid_nodes = subtract(mid_nodes,topo_nodes);
-        nodes = subtract(nodes,mid_nodes);
-      }
-      rval = moab.add_entities(idm,nodes); CHKERR_PETSC(rval);
-      rval = moab.get_adjacencies(tets,2,false,tris,Interface::UNION); CHKERR_PETSC(rval);
-      rval = moab.add_entities(idm,tris); CHKERR_PETSC(rval);
-      rval = moab.get_adjacencies(tets,1,false,edges,Interface::UNION); CHKERR_PETSC(rval);
-      rval = moab.add_entities(idm,edges); CHKERR_PETSC(rval);
-      if(verb>1) {
-        ostringstream ss;
-        ss << "add entities to field " << get_BitFieldId_name(id);
-        ss << " nb. add tets " << tets.size();
-        ss << " nb. add tris " << tris.size();
-        ss << " nb. add edges " << edges.size();
-        ss << " nb. add nodes " << nodes.size();
-        ss << endl;
-        PetscSynchronizedPrintf(comm,ss.str().c_str());
-      }
-      break;
+    rval = moab.add_entities(idm,tets); CHKERR_PETSC(rval);
+    //rval = moab.get_connectivity(tets,nodes,true); CHKERR_PETSC(rval);
+    //use get adjacencies, this will allow take in account adjacencies set user
+    rval = moab.get_adjacencies(tets,0,false,nodes,Interface::UNION); CHKERR_PETSC(rval);
+    {
+      Range topo_nodes;
+      rval = moab.get_connectivity(tets,topo_nodes,true); CHKERR_PETSC(rval);
+      Range mid_nodes;
+      rval = moab.get_connectivity(tets,mid_nodes,false); CHKERR_PETSC(rval);
+      mid_nodes = subtract(mid_nodes,topo_nodes);
+      nodes = subtract(nodes,mid_nodes);
+    }
+    rval = moab.add_entities(idm,nodes); CHKERR_PETSC(rval);
+    rval = moab.get_adjacencies(tets,2,false,tris,Interface::UNION); CHKERR_PETSC(rval);
+    rval = moab.add_entities(idm,tris); CHKERR_PETSC(rval);
+    rval = moab.get_adjacencies(tets,1,false,edges,Interface::UNION); CHKERR_PETSC(rval);
+    rval = moab.add_entities(idm,edges); CHKERR_PETSC(rval);
+    if(verb>1) {
+      ostringstream ss;
+      ss << "add entities to field " << get_BitFieldId_name(id);
+      ss << " nb. add tets " << tets.size();
+      ss << " nb. add tris " << tris.size();
+      ss << " nb. add edges " << edges.size();
+      ss << " nb. add nodes " << nodes.size();
+      ss << endl;
+      PetscSynchronizedPrintf(comm,ss.str().c_str());
+    }
+    break;
     case HCURL:
-      rval = moab.add_entities(idm,tets); CHKERR_PETSC(rval);
-      rval = moab.get_adjacencies(tets,2,false,tris,Interface::UNION); CHKERR_PETSC(rval);
-      rval = moab.add_entities(idm,tris); CHKERR_PETSC(rval);
-      rval = moab.get_adjacencies(tets,1,false,edges,Interface::UNION); CHKERR_PETSC(rval);
-      rval = moab.add_entities(idm,edges); CHKERR_PETSC(rval);
-      if(verb>1) {
-        ostringstream ss;
-        ss << "add entities to field " << get_BitFieldId_name(id);
-        ss << " nb. add tets " << tets.size();
-        ss << " nb. add tris " << tris.size();
-        ss << " nb. add edges " << edges.size();
-        ss << endl;
-        PetscSynchronizedPrintf(comm,ss.str().c_str());
-      }
-      break;
+    rval = moab.add_entities(idm,tets); CHKERR_PETSC(rval);
+    rval = moab.get_adjacencies(tets,2,false,tris,Interface::UNION); CHKERR_PETSC(rval);
+    rval = moab.add_entities(idm,tris); CHKERR_PETSC(rval);
+    rval = moab.get_adjacencies(tets,1,false,edges,Interface::UNION); CHKERR_PETSC(rval);
+    rval = moab.add_entities(idm,edges); CHKERR_PETSC(rval);
+    if(verb>1) {
+      ostringstream ss;
+      ss << "add entities to field " << get_BitFieldId_name(id);
+      ss << " nb. add tets " << tets.size();
+      ss << " nb. add tris " << tris.size();
+      ss << " nb. add edges " << edges.size();
+      ss << endl;
+      PetscSynchronizedPrintf(comm,ss.str().c_str());
+    }
+    break;
     case HDIV:
-      rval = moab.add_entities(idm,tets); CHKERR_PETSC(rval);
-      rval = moab.get_adjacencies(tets,2,false,tris,Interface::UNION); CHKERR_PETSC(rval);
-      rval = moab.add_entities(idm,tris); CHKERR_PETSC(rval);
-      if(verb>1) {
-        ostringstream ss;
-        ss << "add entities to field " << get_BitFieldId_name(id);
-        ss << " nb. add tets " << tets.size();
-        ss << " nb. add tris " << tris.size();
-        ss << endl;
-        PetscSynchronizedPrintf(comm,ss.str().c_str());
-      }
-      break;
+    rval = moab.add_entities(idm,tets); CHKERR_PETSC(rval);
+    rval = moab.get_adjacencies(tets,2,false,tris,Interface::UNION); CHKERR_PETSC(rval);
+    rval = moab.add_entities(idm,tris); CHKERR_PETSC(rval);
+    if(verb>1) {
+      ostringstream ss;
+      ss << "add entities to field " << get_BitFieldId_name(id);
+      ss << " nb. add tets " << tets.size();
+      ss << " nb. add tris " << tris.size();
+      ss << endl;
+      PetscSynchronizedPrintf(comm,ss.str().c_str());
+    }
+    break;
     default:
-      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"add_ents_to_field_by_TETs this field not work for TETs");
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"add_ents_to_field_by_TETs this field not work for TETs");
   }
   if(verb>1) {
     PetscSynchronizedFlush(comm,PETSC_STDOUT);
