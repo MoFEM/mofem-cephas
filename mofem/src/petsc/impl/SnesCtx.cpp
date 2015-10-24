@@ -80,7 +80,9 @@ PetscErrorCode SnesMat(SNES snes,Vec x,Mat A,Mat B,void *ctx) {
   PetscErrorCode ierr;
   SnesCtx* snes_ctx = (SnesCtx*)ctx;
   PetscLogEventBegin(snes_ctx->USER_EVENT_SnesMat,0,0,0,0);
-  ierr = MatZeroEntries(B); CHKERRQ(ierr);
+  if(snes_ctx->zeroPreCondMatrixB) {
+    ierr = MatZeroEntries(B); CHKERRQ(ierr);
+  }
   SnesCtx::basic_method_to_do::iterator bit = snes_ctx->preProcess_Mat.begin();
   for(;bit!=snes_ctx->preProcess_Mat.end();bit++) {
     ierr = (*bit)->set_snes(snes); CHKERRQ(ierr);

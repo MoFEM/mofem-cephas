@@ -219,22 +219,22 @@ struct Core:
     try {
       FieldInterface& thism_field = *this;
       for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(thism_field,type,it)) {
-	ierr = it->get_bc_data_structure(data); CHKERRQ(ierr);
-	ostringstream ss;
-	ss << *it << endl;
-	ss << data << endl;
-	Range tets,tris,edges,nodes;
-	rval = moab.get_entities_by_type(it->meshset,MBTET,tets,true); CHKERR_PETSC(rval);
-	rval = moab.get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
-	rval = moab.get_entities_by_type(it->meshset,MBEDGE,edges,true); CHKERR_PETSC(rval);
-	rval = moab.get_entities_by_type(it->meshset,MBVERTEX,nodes,true); CHKERR_PETSC(rval);
-	ss << "name "<< it->get_name() << endl;
-	ss << "msId "<< it->get_msId() << " nb. tets " << tets.size() << endl;
-	ss << "msId "<< it->get_msId() << " nb. tris " << tris.size() << endl;
-	ss << "msId "<< it->get_msId() << " nb. edges " << edges.size() << endl;
-	ss << "msId "<< it->get_msId() << " nb. nodes " << nodes.size() << endl;
-	ss << endl;
-	PetscPrintf(comm,ss.str().c_str());
+        ierr = it->get_bc_data_structure(data); CHKERRQ(ierr);
+        ostringstream ss;
+        ss << *it << endl;
+        ss << data << endl;
+        Range tets,tris,edges,nodes;
+        rval = moab.get_entities_by_type(it->meshset,MBTET,tets,true); CHKERR_PETSC(rval);
+        rval = moab.get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
+        rval = moab.get_entities_by_type(it->meshset,MBEDGE,edges,true); CHKERR_PETSC(rval);
+        rval = moab.get_entities_by_type(it->meshset,MBVERTEX,nodes,true); CHKERR_PETSC(rval);
+        ss << "name "<< it->get_name() << endl;
+        ss << "msId "<< it->get_msId() << " nb. tets " << tets.size() << endl;
+        ss << "msId "<< it->get_msId() << " nb. tris " << tris.size() << endl;
+        ss << "msId "<< it->get_msId() << " nb. edges " << edges.size() << endl;
+        ss << "msId "<< it->get_msId() << " nb. nodes " << nodes.size() << endl;
+        ss << endl;
+        PetscPrintf(comm,ss.str().c_str());
       }
     } catch (const char* msg) {
       SETERRQ(PETSC_COMM_SELF,1,msg);
@@ -358,7 +358,8 @@ struct Core:
 
   //field
   PetscErrorCode add_field(
-    const string& name,const FieldSpace space,const ApproximationRank rank,enum MoFEMTypes bh = MF_EXCL,int verb = -1);
+    const string& name,const FieldSpace space,const ApproximationRank rank,enum MoFEMTypes bh = MF_EXCL,int verb = -1
+  );
   PetscErrorCode add_ents_to_field_by_VERTICEs(const Range &nodes,const BitFieldId id,int verb = -1);
   PetscErrorCode add_ents_to_field_by_VERTICEs(const Range &nodes,const string& name,int verb = -1);
   PetscErrorCode add_ents_to_field_by_VERTICEs(const EntityHandle meshset,const BitFieldId id,int verb = -1);
@@ -373,6 +374,7 @@ struct Core:
   PetscErrorCode add_ents_to_field_by_TETs(const EntityHandle meshset,const BitFieldId id,int verb = -1);
   PetscErrorCode add_ents_to_field_by_TETs(const Range &tets,const string& name,int verb = -1);
   PetscErrorCode add_ents_to_field_by_TETs(const EntityHandle meshset,const string& name,int verb = -1);
+  PetscErrorCode add_ents_to_field_by_PRISMs(const Range &prisms,const BitFieldId id,int verb);
   PetscErrorCode remove_ents_from_field_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
   PetscErrorCode remove_ents_from_field(const string& name,const EntityHandle meshset,const EntityType type,int verb = -1);
   PetscErrorCode remove_ents_from_field(const string& name,const Range &ents,int verb = -1);

@@ -79,8 +79,10 @@ struct NeummanForcesSurface {
 
     OpNeumannPreassure(
       const string field_name,Vec _F,
-      bCPreassure &data,boost::ptr_vector<MethodForForceScaling> &methods_op,
-      bool ho_geometry = false);
+      bCPreassure &data,
+      boost::ptr_vector<MethodForForceScaling> &methods_op,
+      bool ho_geometry = false
+    );
 
     ublas::vector<FieldData> Nf;
 
@@ -98,8 +100,10 @@ struct NeummanForcesSurface {
 
     OpNeumannFlux(
       const string field_name,Vec _F,
-      bCPreassure &data,boost::ptr_vector<MethodForForceScaling> &methods_op,
-      bool ho_geometry);
+      bCPreassure &data,
+      boost::ptr_vector<MethodForForceScaling> &methods_op,
+      bool ho_geometry
+    );
 
     ublas::vector<FieldData> Nf;
 

@@ -149,21 +149,20 @@ PetscErrorCode NonlinearElasticElement::OpGetDataAtGaussPts::doWork(
     int rank = data.getFieldDofs()[0]->get_max_rank();
 
     //initialize
-    VectorDouble& values = data.getFieldData();
-    valuesAtGaussPts.resize(nb_gauss_pts);
-    gradientAtGaussPts.resize(nb_gauss_pts);
-    for(int gg = 0;gg<nb_gauss_pts;gg++) {
-      valuesAtGaussPts[gg].resize(rank,false);
-      gradientAtGaussPts[gg].resize(rank,3,false);
-    }
-
     if(type == zeroAtType) {
+      valuesAtGaussPts.resize(nb_gauss_pts);
+      gradientAtGaussPts.resize(nb_gauss_pts);
+      for(int gg = 0;gg<nb_gauss_pts;gg++) {
+        valuesAtGaussPts[gg].resize(rank,false);
+        gradientAtGaussPts[gg].resize(rank,3,false);
+      }
       for(int gg = 0;gg<nb_gauss_pts;gg++) {
         valuesAtGaussPts[gg].clear();
         gradientAtGaussPts[gg].clear();
       }
     }
 
+    VectorDouble& values = data.getFieldData();
     //cerr << valuesAtGaussPts[0] << " : ";
     for(int gg = 0;gg<nb_gauss_pts;gg++) {
       VectorAdaptor N = data.getN(gg,nb_dofs/rank);
