@@ -33,6 +33,7 @@ struct SnesCtx {
   Interface &moab;
 
   string problemName;
+  bool zeroPreCondMatrixB;
 
   typedef pair<string,FEMethod*> loop_pair_type;
   typedef vector<loop_pair_type > loops_to_do_type;
@@ -48,8 +49,11 @@ struct SnesCtx {
   PetscLogEvent USER_EVENT_SnesRhs;
   PetscLogEvent USER_EVENT_SnesMat;
 
-  SnesCtx(FieldInterface &m_field,const string &_problem_name):
-    mField(m_field),moab(m_field.get_moab()),problemName(_problem_name) {
+  SnesCtx(FieldInterface &m_field,const string &problem_name):
+    mField(m_field),
+    moab(m_field.get_moab()),
+    problemName(problem_name),
+    zeroPreCondMatrixB(true) {
     PetscLogEventRegister("LoopSNESRhs",0,&USER_EVENT_SnesRhs);
     PetscLogEventRegister("LoopSNESMat",0,&USER_EVENT_SnesMat);
   }

@@ -698,6 +698,73 @@ PetscErrorCode Core::add_ents_to_field_by_TETs(const EntityHandle meshset,const 
   }
   PetscFunctionReturn(0);
 }
+PetscErrorCode Core::add_ents_to_field_by_PRISMs(const Range &prisms,const BitFieldId id,int verb) {
+  PetscFunctionBegin;
+  if(verb==-1) verb = verbose;
+  *build_MoFEM = 0;
+  EntityHandle idm = no_handle;
+  try {
+    idm = get_field_meshset(id);
+  } catch (const char* msg) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_CHAR_THROW,msg);
+  }
+  FieldSpace space;
+  rval = moab.tag_get_data(th_FieldSpace,&idm,1,&space); CHKERR_PETSC(rval);
+  Range nodes,faces,quads,edges;
+  switch(space) {
+    case L2:
+    rval = moab.add_entities(idm,prisms); CHKERR_PETSC(rval);
+    if(verb>1) {
+      ostringstream ss;
+      ss << "add entities to field " << get_BitFieldId_name(id);
+      ss << " nb. add prisms " << prisms.size();
+      ss << endl;
+      PetscSynchronizedPrintf(comm,ss.str().c_str());
+    }
+    break;
+    case H1:
+    rval = moab.add_entities(idm,prisms); CHKERR_PETSC(rval);
+    //rval = moab.get_connectivity(prisms,nodes,true); CHKERR_PETSC(rval);
+    //use get adjacencies, this will allow take in account adjacencies set user
+    rval = moab.get_adjacencies(prisms,0,false,nodes,Interface::UNION); CHKERR_PETSC(rval);
+    {
+      Range topo_nodes;
+      rval = moab.get_connectivity(prisms,topo_nodes,true); CHKERR_PETSC(rval);
+      Range mid_nodes;
+      rval = moab.get_connectivity(prisms,mid_nodes,false); CHKERR_PETSC(rval);
+      mid_nodes = subtract(mid_nodes,topo_nodes);
+      nodes = subtract(nodes,mid_nodes);
+    }
+    rval = moab.add_entities(idm,nodes); CHKERR_PETSC(rval);
+    rval = moab.get_adjacencies(prisms,2,false,faces,Interface::UNION); CHKERR_PETSC(rval);
+    rval = moab.add_entities(idm,faces); CHKERR_PETSC(rval);
+    rval = moab.get_adjacencies(prisms,1,false,edges,Interface::UNION); CHKERR_PETSC(rval);
+    rval = moab.add_entities(idm,edges); CHKERR_PETSC(rval);
+    if(verb>1) {
+      ostringstream ss;
+      ss << "add entities to field " << get_BitFieldId_name(id);
+      ss << " nb. add prisms " << prisms.size();
+      ss << " nb. add faces " << faces.size();
+      ss << " nb. add edges " << edges.size();
+      ss << " nb. add nodes " << nodes.size();
+      ss << endl;
+      PetscSynchronizedPrintf(comm,ss.str().c_str());
+    }
+    break;
+    case HCURL:
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
+    break;
+    case HDIV:
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
+    break;
+    default:
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"add_ents_to_field_by_TETs this field not work for TETs");
+  }
+  if(verb>1) {
+    PetscSynchronizedFlush(comm,PETSC_STDOUT);
+  }
+  PetscFunctionReturn(0);
+}
 PetscErrorCode Core::set_field_order(const Range &ents,const BitFieldId id,const ApproximationOrder order,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
