@@ -89,9 +89,7 @@ struct TimeForceScale: public MethodForForceScaling {
     PetscFunctionReturn(0);
   }
 
-  //Hassan: this function will loop over data in pair vector ts to find load
-  //scale based on ts_t
-  PetscErrorCode scaleNf(const FEMethod *fe,ublas::vector<double> &Nf) {
+  PetscErrorCode getForceScale(const double ts_t,double &scale) {
     PetscFunctionBegin;
     if(!fLg) {
       PetscFunctionReturn(0);
@@ -99,8 +97,7 @@ struct TimeForceScale: public MethodForForceScaling {
     if(readFile==0) {
       SETERRQ(PETSC_COMM_SELF,1,"data file not read");
     }
-    double ts_t = fe->ts_t;
-    double scale = 0;
+    scale = 0;
     double t0 = 0,t1,s0 = tSeries[0],s1,dt;
     map<double, double>::iterator tit = tSeries.begin();
     for(;tit!=tSeries.end();tit++) {
@@ -115,7 +112,16 @@ struct TimeForceScale: public MethodForForceScaling {
       s0 = tit->second;
       scale = s0;
     }
-    //cerr << "AAA " << Nf << " " << scale << endl;
+    PetscFunctionReturn(0);
+  }
+
+  //Hassan: this function will loop over data in pair vector ts to find load
+  //scale based on ts_t
+  PetscErrorCode scaleNf(const FEMethod *fe,ublas::vector<double> &Nf) {
+    PetscFunctionBegin;
+    double scale;
+    const double ts_t = fe->ts_t;
+    ierr = getForceScale(ts_t,scale); CHKERRQ(ierr);
     Nf *= scale;
     PetscFunctionReturn(0);
   }
