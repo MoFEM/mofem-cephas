@@ -584,9 +584,9 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_TET(vector<double>& _gNT
 	  diffH1faceNinvJac.resize(4);
 	  double *_H1faceN_[4],*_diffH1faceN_[4],*_diffH1faceNinvJac_[4];
 	  for(int ff = 0;ff<4;ff++) {
-	    H1faceN[ff].resize(gNTET_dim*NBFACE_H1(maxOrderFaceH1[ff]));
-	    diffH1faceN[ff].resize(3*gNTET_dim*NBFACE_H1(maxOrderFaceH1[ff]));
-	    diffH1faceNinvJac[ff].resize(3*gNTET_dim*NBFACE_H1(maxOrderFaceH1[ff]));
+	    H1faceN[ff].resize(gNTET_dim*NBFACETRI_H1(maxOrderFaceH1[ff]));
+	    diffH1faceN[ff].resize(3*gNTET_dim*NBFACETRI_H1(maxOrderFaceH1[ff]));
+	    diffH1faceNinvJac[ff].resize(3*gNTET_dim*NBFACETRI_H1(maxOrderFaceH1[ff]));
 	    _H1faceN_[ff] = H1faceN[ff].empty()?NULL:&(H1faceN[ff])[0];
 	    _diffH1faceN_[ff] = diffH1faceN[ff].empty()?NULL:&(diffH1faceN[ff])[0];
 	    _diffH1faceNinvJac_[ff] = diffH1faceNinvJac[ff].empty()?NULL:&(diffH1faceNinvJac[ff])[0];
@@ -594,9 +594,9 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_TET(vector<double>& _gNT
 	  ierr = H1_FaceShapeFunctions_MBTET(_faces_nodes_,_faces_order_,&gNTET[0],diffNTET,_H1faceN_,_diffH1faceN_,gNTET_dim); CHKERRQ(ierr);
 	  ierr = H1_FaceShapeDiffMBTETinvJ(_faces_order_,_faces_order_,_diffH1faceN_,invJac,_diffH1faceNinvJac_,gNTET_dim); CHKERRQ(ierr);
 	  // vol H1
-	  H1elemN.resize(gNTET_dim*NBVOLUME_H1(maxOrderElemH1));
-	  diffH1elemN.resize(3*gNTET_dim*NBVOLUME_H1(maxOrderElemH1));
-	  diffH1elemNinvJac.resize(3*gNTET_dim*NBVOLUME_H1(maxOrderElemH1));
+	  H1elemN.resize(gNTET_dim*NBVOLUMETET_H1(maxOrderElemH1));
+	  diffH1elemN.resize(3*gNTET_dim*NBVOLUMETET_H1(maxOrderElemH1));
+	  diffH1elemNinvJac.resize(3*gNTET_dim*NBVOLUMETET_H1(maxOrderElemH1));
 	  ierr = H1_VolumeShapeFunctions_MBTET(
       maxOrderElemH1,&gNTET[0],diffNTET,H1elemN.empty()?NULL:&H1elemN[0],diffH1elemN.empty()?NULL:&diffH1elemN[0],gNTET_dim
     );  CHKERRQ(ierr);
@@ -612,9 +612,9 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_TET(vector<double>& _gNT
 	}
 	if(isL2) {
 	  // vol L2
-	  L2elemN.resize(gNTET_dim*NBVOLUME_L2(maxOrderElemL2));
-	  diffL2elemN.resize(3*gNTET_dim*NBVOLUME_L2(maxOrderElemL2));
-	  diffL2elemNinvJac.resize(3*gNTET_dim*NBVOLUME_L2(maxOrderElemL2));
+	  L2elemN.resize(gNTET_dim*NBVOLUMETET_L2(maxOrderElemL2));
+	  diffL2elemN.resize(3*gNTET_dim*NBVOLUMETET_L2(maxOrderElemL2));
+	  diffL2elemNinvJac.resize(3*gNTET_dim*NBVOLUMETET_L2(maxOrderElemL2));
 	  ierr = L2_ShapeFunctions_MBTET(maxOrderElemL2,&gNTET[0],diffNTET,&L2elemN[0],&diffL2elemN[0],gNTET_dim); CHKERRQ(ierr);
 	  ierr = L2_VolumeShapeDiffMBTETinvJ(maxOrderElemL2,maxOrderElemL2,&diffL2elemN[0],invJac,&diffL2elemNinvJac[0],gNTET_dim); CHKERRQ(ierr);
 	}
@@ -717,15 +717,15 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_PRISM(vector<double>& _g
 	H1faceN.resize(5);
 	//face 3
 	int _face_order3_ = maxOrderFaceH1[3];
-	H1faceN[3].resize(NBFACE_H1(_face_order3_)*gNTRI_dim);
+	H1faceN[3].resize(NBFACETRI_H1(_face_order3_)*gNTRI_dim);
 	double *_faceN3_ = &*H1faceN[3].begin();
 	ierr = H1_FaceShapeFunctions_MBTRI(_face_nodes3_,_face_order3_,&gNTRI[0],NULL,_faceN3_,NULL,gNTRI_dim); CHKERRQ(ierr);
 	//face4
 	int _face_order4_ = maxOrderFaceH1[4];
-	H1faceN[4].resize(NBFACE_H1(_face_order4_)*gNTRI_dim);
+	H1faceN[4].resize(NBFACETRI_H1(_face_order4_)*gNTRI_dim);
 	double *_faceN4_ = &*H1faceN[4].begin();
 	ierr = H1_FaceShapeFunctions_MBTRI(_face_nodes4_,_face_order4_,&gNTRI[0],NULL,_faceN4_,NULL,gNTRI_dim); CHKERRQ(ierr);
-	cblas_dscal(gNTRI_dim*NBFACE_H1(_face_order4_),-1,_faceN4_,1);
+	cblas_dscal(gNTRI_dim*NBFACETRI_H1(_face_order4_),-1,_faceN4_,1);
       }
       if(isHdiv) {
 	SETERRQ(PETSC_COMM_SELF,1,"not implemented");
@@ -792,10 +792,10 @@ PetscErrorCode FEMethod_LowLevelStudent::get_ShapeFunction(
 	      if(side_number > 4) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	      for(;gg<gNTET_dim;gg++) {
 		if(base_functions_by_gauss_pt!=NULL) {
-		  (*base_functions_by_gauss_pt)[gg] = &((H1faceN[side_number])[gg*NBFACE_H1(maxOrderFaceH1[side_number])]);
+		  (*base_functions_by_gauss_pt)[gg] = &((H1faceN[side_number])[gg*NBFACETRI_H1(maxOrderFaceH1[side_number])]);
 		}
   		if(diff_base_functions_by_gauss_pt!=NULL) {
-		  (*diff_base_functions_by_gauss_pt)[gg] = &((diffH1faceNinvJac[side_number])[3*gg*NBFACE_H1(maxOrderFaceH1[side_number])]);
+		  (*diff_base_functions_by_gauss_pt)[gg] = &((diffH1faceNinvJac[side_number])[3*gg*NBFACETRI_H1(maxOrderFaceH1[side_number])]);
 		}
 	      }
 	    }
@@ -804,10 +804,10 @@ PetscErrorCode FEMethod_LowLevelStudent::get_ShapeFunction(
 	      if(side_number != -1) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	      for(;gg<gNTET_dim;gg++) {
 		if(base_functions_by_gauss_pt!=NULL) {
-		  (*base_functions_by_gauss_pt)[gg] = &((H1elemN)[gg*NBVOLUME_H1(maxOrderElemH1)]);
+		  (*base_functions_by_gauss_pt)[gg] = &((H1elemN)[gg*NBVOLUMETET_H1(maxOrderElemH1)]);
 		}
   		if(diff_base_functions_by_gauss_pt!=NULL) {
-		  (*diff_base_functions_by_gauss_pt)[gg] = &(diffH1elemNinvJac[3*gg*NBVOLUME_H1(maxOrderElemH1)]);
+		  (*diff_base_functions_by_gauss_pt)[gg] = &(diffH1elemNinvJac[3*gg*NBVOLUMETET_H1(maxOrderElemH1)]);
 		}
 	      }
 	    }
@@ -821,10 +821,10 @@ PetscErrorCode FEMethod_LowLevelStudent::get_ShapeFunction(
 	  if(type != MBTET) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
       	  for(;gg<gNTET_dim;gg++) {
     	    if(base_functions_by_gauss_pt!=NULL) {
-	      (*base_functions_by_gauss_pt)[gg] = &((L2elemN)[gg*NBVOLUME_L2(maxOrderElemL2)]);
+	      (*base_functions_by_gauss_pt)[gg] = &((L2elemN)[gg*NBVOLUMETET_L2(maxOrderElemL2)]);
 	    }
 	    if(diff_base_functions_by_gauss_pt!=NULL) {
-	      (*diff_base_functions_by_gauss_pt)[gg] = &(diffL2elemNinvJac[3*gg*NBVOLUME_L2(maxOrderElemL2)]);
+	      (*diff_base_functions_by_gauss_pt)[gg] = &(diffL2elemNinvJac[3*gg*NBVOLUMETET_L2(maxOrderElemL2)]);
 	    }
 	  }
 	}
@@ -870,7 +870,7 @@ PetscErrorCode FEMethod_LowLevelStudent::get_ShapeFunction(
 	      if(side_number != 3 && side_number != 4) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
 	      for(;gg<gNTRI_dim;gg++) {
 		if(base_functions_by_gauss_pt!=NULL) {
-		  (*base_functions_by_gauss_pt)[gg] = &((H1faceN[side_number])[gg*NBFACE_H1(maxOrderFaceH1[side_number])]);
+		  (*base_functions_by_gauss_pt)[gg] = &((H1faceN[side_number])[gg*NBFACETRI_H1(maxOrderFaceH1[side_number])]);
 		}
 	      }
 	    }
@@ -1476,8 +1476,8 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_TRI(EntityHandle ent,vec
 	//face
 	H1faceN_TRI.clear();
 	int _face_order_ = maxOrderFaceH1[side->side_number];
-	H1faceN_TRI[ent].resize(NBFACE_H1(_face_order_)*gNTRI_dim);
-	diffH1faceN_TRI[ent].resize(2*NBFACE_H1(_face_order_)*gNTRI_dim);
+	H1faceN_TRI[ent].resize(NBFACETRI_H1(_face_order_)*gNTRI_dim);
+	diffH1faceN_TRI[ent].resize(2*NBFACETRI_H1(_face_order_)*gNTRI_dim);
 	double *_faceN_ = &(H1faceN_TRI[ent][0]);
 	double *_diff_faceN_ = &(diffH1faceN_TRI[ent][0]);
 	int _face_nodes_[] = { 0,1,2 };

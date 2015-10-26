@@ -20,28 +20,28 @@ extern "C" {
 #endif
 
 /// number of dofs for L2 space
-#define NBVOLUME_L2(P) ((P+1)*(P+2)*(P+3)/6)
-#define NBFACE_L2(P) ((P+1)*(P+2)/2)
+#define NBVOLUMETET_L2(P) ((P+1)*(P+2)*(P+3)/6)
+#define NBFACETRI_L2(P) ((P+1)*(P+2)/2)
 #define NBEDGE_L2(P) (P+1)
 /// number of dofs on edge for H1 space
 #define NBEDGE_H1(P) ((P>0) ? (P-1) : 0)
 /// number of dofs on face for H1 space
-#define NBFACE_H1(P) ((P>1) ? ((P-2)*(P-1)/2) : 0)
+#define NBFACETRI_H1(P) ((P>1) ? ((P-2)*(P-1)/2) : 0)
 /// number of dofs on volume for H1 space
-#define NBVOLUME_H1(P) ((P>2) ? ((P-3)*(P-2)*(P-1)/6) : 0)
+#define NBVOLUMETET_H1(P) ((P>2) ? ((P-3)*(P-2)*(P-1)/6) : 0)
 //HCURL
 #define NBEDGE_HCURL(P) (P+1)
-#define NBFACE_HCURL(P) ((P>0) ? (P-1)*(P+1) : 0)
-#define NBVOLUME_HCURL(P) ((P>1) ? (P-2)*(P-1)*(P+1)/2 : 0)
+#define NBFACETRI_HCURL(P) ((P>0) ? (P-1)*(P+1) : 0)
+#define NBVOLUMETET_HCURL(P) ((P>1) ? (P-2)*(P-1)*(P+1)/2 : 0)
 //HDIV
 #define NBEDGE_HDIV(P) (0)
-#define NBFACE_HDIV(P) ((P>0) ? (P+1)*(P+2)/2 : 0)
-#define NBVOLUME_HDIV(P) ((P>1) ? (P-1)*(P+1)*(P+2)/2 : 0)
-#define NBFACE_EDGE_HDIV(P) ((P>0) ? P : 0)
-#define NBFACE_FACE_HDIV(P) ((P>2) ? ((P-2)*(P-2)+(P-2))/2 : 0)
-#define NBVOLUME_EDGE_HDIV(P) ((P>1) ? P-1 : 0)
-#define NBVOLUME_FACE_HDIV(P) ((P>2) ? ((P-2)*(P-2)+(P-2)) : 0)
-#define NBVOLUME_VOLUME_HDIV(P) ((P>3) ? ((P-3)*(P-2)*(P-1)/2) : 0)
+#define NBFACETRI_HDIV(P) ((P>0) ? (P+1)*(P+2)/2 : 0)
+#define NBVOLUMETET_HDIV(P) ((P>1) ? (P-1)*(P+1)*(P+2)/2 : 0)
+#define NBFACETRI_EDGE_HDIV(P) ((P>0) ? P : 0)
+#define NBFACETRI_FACE_HDIV(P) ((P>2) ? ((P-2)*(P-2)+(P-2))/2 : 0)
+#define NBVOLUMETET_EDGE_HDIV(P) ((P>1) ? P-1 : 0)
+#define NBVOLUMETET_FACE_HDIV(P) ((P>2) ? ((P-2)*(P-2)+(P-2)) : 0)
+#define NBVOLUMETET_VOLUME_HDIV(P) ((P>3) ? ((P-3)*(P-2)*(P-1)/2) : 0)
 
 /**
  * \brief Calculate Lagrange approximation basis

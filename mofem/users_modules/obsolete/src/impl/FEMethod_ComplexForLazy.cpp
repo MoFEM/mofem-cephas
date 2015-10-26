@@ -322,9 +322,9 @@ PetscErrorCode FEMethod_ComplexForLazy::GetData(
 	  dofs_face_data[ff].resize(distance(fiit,hi_fiit));
 	  order_faces[ff] = fiit->get_max_order();
 	  dofs_face[ff] = &dofs_face_data[ff].data()[0];
-	  assert(dofs_face_data[ff].size() == 3*(unsigned int)NBFACE_H1(order_faces[ff]));
+	  assert(dofs_face_data[ff].size() == 3*(unsigned int)NBFACETRI_H1(order_faces[ff]));
 	  for(;fiit!=hi_fiit;fiit++) dofs_face_data[ff][fiit->get_EntDofIdx()] = fiit->get_FieldData();
-	  if(diffH1faceNinvJac[ff].size() < (unsigned int)NBFACE_H1(order_faces[ff])) {
+	  if(diffH1faceNinvJac[ff].size() < (unsigned int)NBFACETRI_H1(order_faces[ff])) {
 	    SETERRQ(PETSC_COMM_SELF,1,"not enugh shape functions calculated");
 	  }
 	} else {
@@ -339,9 +339,9 @@ PetscErrorCode FEMethod_ComplexForLazy::GetData(
       if(viit!=hi_viit) {
 	order_volume = viit->get_max_order();
 	dofs_volume.resize(distance(viit,hi_viit));
-	assert(dofs_volume.size() == (unsigned int)3*NBVOLUME_H1(order_volume));
+	assert(dofs_volume.size() == (unsigned int)3*NBVOLUMETET_H1(order_volume));
 	for(;viit!=hi_viit;viit++) dofs_volume[viit->get_EntDofIdx()] = viit->get_FieldData();
-	if(diffH1elemNinvJac.size() < (unsigned int)NBVOLUME_H1(order_volume)) {
+	if(diffH1elemNinvJac.size() < (unsigned int)NBVOLUMETET_H1(order_volume)) {
 	  SETERRQ(PETSC_COMM_SELF,1,"not enugh shape functions calculated");
 	}
       } else {
@@ -512,7 +512,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
 	}
 	ff = 0;
 	for(;ff<4;ff++) {
-	  assert(3*(unsigned int)NBFACE_H1(order_x_faces[ff]) == RowGlobSpatial[1+6+ff].size());
+	  assert(3*(unsigned int)NBFACETRI_H1(order_x_faces[ff]) == RowGlobSpatial[1+6+ff].size());
 	  Kfaceh_data[ff].resize(RowGlobSpatial[1+6+ff].size(),12);
 	  Kfaceh[ff] = &*Kfaceh_data[ff].data().begin();
 	  Khface_data[ff].resize(12,ColGlobSpatial[1+6+ff].size());
@@ -532,7 +532,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
 	  Khh_facevolume_data[ff].resize(RowGlobSpatial[1+6+ff].size(),ColGlobSpatial[i_volume].size());
 	  Khh_facevolume[ff] = &*Khh_facevolume_data[ff].data().begin();
 	}
-	assert(3*(unsigned int)NBVOLUME_H1(order_x_volume) == RowGlobSpatial[i_volume].size());
+	assert(3*(unsigned int)NBVOLUMETET_H1(order_x_volume) == RowGlobSpatial[i_volume].size());
 	Kvolumeh.resize(RowGlobSpatial[i_volume].size(),12);
 	KHvolume.resize(12,ColGlobSpatial[i_volume].size());
 	Khvolume.resize(12,ColGlobSpatial[i_volume].size());
@@ -567,7 +567,7 @@ PetscErrorCode FEMethod_ComplexForLazy::GetTangent() {
         } else {
           order_x_faces[ff] = fiit->get_max_order();
         }
-        assert(3*(unsigned int)NBFACE_H1(order_x_faces[ff]) == dofs_x_face_data[ff].size());
+        assert(3*(unsigned int)NBFACETRI_H1(order_x_faces[ff]) == dofs_x_face_data[ff].size());
         KfaceH_data[ff].resize(dofs_x_face_data[ff].size(),12);
         KfaceH[ff] = &*KfaceH_data[ff].data().begin();
       }

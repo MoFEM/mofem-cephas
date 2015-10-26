@@ -36,8 +36,8 @@ const int prism_edges_conn[6][2] = { {0,1},{1,2},{2,0}, {3,4}, {4,5}, {5,3} };
 inline int fNBENTITYSET_NOFIELD(int P) { (void)P; return 1; }
 //
 inline int fNBVERTEX_L2(int P) { (void)P; return 0; }
-inline int fNBVOLUME_L2(int P) { return NBVOLUME_L2(P); }
-inline int fNBFACE_L2(int P) { return NBFACE_L2(P); }
+inline int fNBVOLUMETET_L2(int P) { return NBVOLUMETET_L2(P); }
+inline int fNBFACETRI_L2(int P) { return NBFACETRI_L2(P); }
 inline int fNBEDGE_L2(int P) { return NBEDGE_L2(P); }
 
 //
@@ -46,15 +46,15 @@ inline int fNBVERTEX_H1(int P) { return (P==1) ? 1 : 0; }
 /// number of approx. functions for H1 space on edge
 inline int fNBEDGE_H1(int P) { return NBEDGE_H1(P); }
 /// number of approx. functions for H1 space on face
-inline int fNBFACE_H1(int P) { return NBFACE_H1(P); }
+inline int fNBFACETRI_H1(int P) { return NBFACETRI_H1(P); }
 /// number of approx. functions for H1 space on volume
-inline int fNBVOLUME_H1(int P) { return NBVOLUME_H1(P); }
+inline int fNBVOLUMETET_H1(int P) { return NBVOLUMETET_H1(P); }
 //
 /// number of approx. functions for HCURL space on vertex
 inline int fNBVERTEX_HCURL(int P) { (void)P; return 0; }
 inline int fNBEDGE_HCURL(int P) { return NBEDGE_HCURL(P); }
-inline int fNBFACE_HCURL(int P) { return NBFACE_HCURL(P); }
-inline int fNBVOLUME_HCURL(int P) { return NBVOLUME_HCURL(P); }
+inline int fNBFACETRI_HCURL(int P) { return NBFACETRI_HCURL(P); }
+inline int fNBVOLUMETET_HCURL(int P) { return NBVOLUMETET_HCURL(P); }
 //
 /// \brief number of approx. functions for HDIV space on vertex
 ///
@@ -63,9 +63,9 @@ inline int fNBVERTEX_HDIV(int P) { (void)P; return 0; }
 /// number of approx. functions for HDIV space on edge
 inline int fNBEDGE_HDIV(int P) { assert(P==P); (void)P; return NBEDGE_HDIV(P); }
 /// number of approx. functions for HDIV space on face
-inline int fNBFACE_HDIV(int P) { return NBFACE_HDIV(P); }
+inline int fNBFACETRI_HDIV(int P) { return NBFACETRI_HDIV(P); }
 /// number of approx. functions for HDIV space on voulem
-inline int fNBVOLUME_HDIV(int P) { return NBVOLUME_HDIV(P); }
+inline int fNBVOLUMETET_HDIV(int P) { return NBVOLUMETET_HDIV(P); }
 
 struct ltstr
 { inline bool operator()(const string &s1, const string& s2) const

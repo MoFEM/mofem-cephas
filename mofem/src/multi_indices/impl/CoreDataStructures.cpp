@@ -85,26 +85,26 @@ MoFEMField::MoFEMField(Interface &moab,const EntityHandle _meshset): meshset(_me
     case H1:
       forder_table[MBVERTEX] = fNBVERTEX_H1;
       forder_table[MBEDGE] = fNBEDGE_H1;
-      forder_table[MBTRI] = fNBFACE_H1;
-      forder_table[MBTET] = fNBVOLUME_H1;
+      forder_table[MBTRI] = fNBFACETRI_H1;
+      forder_table[MBTET] = fNBVOLUMETET_H1;
       break;
     case HDIV:
       forder_table[MBVERTEX] = fNBVERTEX_HDIV;
       forder_table[MBEDGE] = fNBEDGE_HDIV;
-      forder_table[MBTRI] = fNBFACE_HDIV;
-      forder_table[MBTET] = fNBVOLUME_HDIV;
+      forder_table[MBTRI] = fNBFACETRI_HDIV;
+      forder_table[MBTET] = fNBVOLUMETET_HDIV;
       break;
     case HCURL:
       forder_table[MBVERTEX] = fNBVERTEX_HCURL;
       forder_table[MBEDGE] = fNBEDGE_HCURL;
-      forder_table[MBTRI] = fNBFACE_HCURL;
-      forder_table[MBTET] = fNBVOLUME_HCURL;
+      forder_table[MBTRI] = fNBFACETRI_HCURL;
+      forder_table[MBTET] = fNBVOLUMETET_HCURL;
       break;
     case L2:
       forder_table[MBVERTEX] = fNBVERTEX_L2;
       forder_table[MBEDGE] = fNBEDGE_L2;
-      forder_table[MBTRI] = fNBFACE_L2;
-      forder_table[MBTET] = fNBVOLUME_L2;
+      forder_table[MBTRI] = fNBFACETRI_L2;
+      forder_table[MBTET] = fNBVOLUMETET_L2;
       break;
     case NOFIELD:
       forder_table[MBENTITYSET] = fNBENTITYSET_NOFIELD;

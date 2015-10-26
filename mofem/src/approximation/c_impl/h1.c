@@ -116,7 +116,7 @@ PetscErrorCode H1_EdgeShapeFunctions_MBTRI(int *sense,int *p,double *N,double *d
 PetscErrorCode H1_FaceShapeFunctions_MBTRI(const int *face_nodes,int p,double *N,double *diffN,double *faceN,double *diff_faceN,int GDIM) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
-  int P = NBFACE_H1(p);
+  int P = NBFACETRI_H1(p);
   if(P == 0) PetscFunctionReturn(0);
   double diff_ksiL0[2],diff_ksiL1[2];
   double *diff_ksi_faces[] = { diff_ksiL0, diff_ksiL1 };
@@ -225,7 +225,7 @@ PetscErrorCode H1_FaceShapeFunctions_MBTET(int *faces_nodes,int *p,double *N,dou
   PetscErrorCode ierr;
   int P[4];
   int ff = 0;
-  for(;ff<4; ff++) P[ff] = NBFACE_H1(p[ff]);
+  for(;ff<4; ff++) P[ff] = NBFACETRI_H1(p[ff]);
   double diff_ksiL0F0[3],diff_ksiL1F0[3];
   double diff_ksiL0F1[3],diff_ksiL1F1[3];
   double diff_ksiL0F2[3],diff_ksiL1F2[3];
@@ -294,7 +294,7 @@ PetscErrorCode H1_FaceShapeFunctions_MBTET(int *faces_nodes,int *p,double *N,dou
 PetscErrorCode H1_VolumeShapeFunctions_MBTET(int p,double *N,double *diffN,double *volumeN,double *diff_volumeN,int GDIM) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
-  int P = NBVOLUME_H1(p);
+  int P = NBVOLUMETET_H1(p);
   if(P==0) PetscFunctionReturn(0);
   double diff_ksiL0[3],diff_ksiL1[3],diff_ksiL2[3];
   int dd = 0;
@@ -370,10 +370,10 @@ PetscErrorCode H1_FaceShapeDiffMBTETinvJ(int *base_p,int *p,double *face_diffN[]
   PetscFunctionBegin;
   int ff = 0,ii,gg;
   for(;ff<4; ff++) {
-   for(ii = 0;ii<NBFACE_H1(p[ff]);ii++) {
+   for(ii = 0;ii<NBFACETRI_H1(p[ff]);ii++) {
     for(gg = 0;gg<GDIM;gg++) {
-      int shift1 = NBFACE_H1(base_p[ff])*gg;
-      int shift2 = NBFACE_H1(p[ff])*gg;
+      int shift1 = NBFACETRI_H1(base_p[ff])*gg;
+      int shift2 = NBFACETRI_H1(p[ff])*gg;
       cblas_dgemv(CblasRowMajor,CblasTrans,3,3,1.,
         invJac,3,&(face_diffN[ff])[3*shift1+3*ii],1,0.,&(face_diffNinvJac[ff])[3*shift2+3*ii],1);
   }}}
@@ -382,10 +382,10 @@ PetscErrorCode H1_FaceShapeDiffMBTETinvJ(int *base_p,int *p,double *face_diffN[]
 PetscErrorCode H1_VolumeShapeDiffMBTETinvJ(int base_p,int p,double *volume_diffN,double *invJac,double *volume_diffNinvJac,int GDIM) {
   PetscFunctionBegin;
   int ii,gg;
-  for(ii = 0;ii<NBVOLUME_H1(p);ii++) {
+  for(ii = 0;ii<NBVOLUMETET_H1(p);ii++) {
     for(gg = 0;gg<GDIM;gg++) {
-      int shift1 = NBVOLUME_H1(base_p)*gg;
-      int shift2 = NBVOLUME_H1(p)*gg;
+      int shift1 = NBVOLUMETET_H1(base_p)*gg;
+      int shift2 = NBVOLUMETET_H1(p)*gg;
       cblas_dgemv(CblasRowMajor,CblasTrans,3,3,1.,
         invJac,3,&(volume_diffN)[3*shift1+3*ii],1,0.,&(volume_diffNinvJac)[3*shift2+3*ii],1);
   }}
@@ -404,7 +404,7 @@ PetscErrorCode H1_FaceGradientOfDeformation_hierachical(int p,double *diffN,doub
   int col,row = 0;
   for(;row<3;row++)
     for(col = 0;col<3;col++)
-      F[3*row+col] = cblas_ddot(NBFACE_H1(p),&diffN[col],3,&dofs[row],3);
+      F[3*row+col] = cblas_ddot(NBFACETRI_H1(p),&diffN[col],3,&dofs[row],3);
   PetscFunctionReturn(0);
 }
 PetscErrorCode H1_VolumeGradientOfDeformation_hierachical(int p,double *diffN,double *dofs,double *F) {
@@ -412,6 +412,6 @@ PetscErrorCode H1_VolumeGradientOfDeformation_hierachical(int p,double *diffN,do
   int col,row = 0;
   for(;row<3;row++)
     for(col = 0;col<3;col++)
-      F[3*row+col] = cblas_ddot(NBVOLUME_H1(p),&diffN[col],3,&dofs[row],3);
+      F[3*row+col] = cblas_ddot(NBVOLUMETET_H1(p),&diffN[col],3,&dofs[row],3);
   PetscFunctionReturn(0);
 }

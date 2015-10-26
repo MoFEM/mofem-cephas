@@ -110,16 +110,16 @@ PetscErrorCode HierarhicalDeformationGradient(
     cblas_daxpy(9,1,edge_grad,1,GRAD,1); }
   int ff = 0;
   for(;ff<4;ff++) {
-    if(NBFACE_H1(order_face[ff])==0) continue;
+    if(NBFACETRI_H1(order_face[ff])==0) continue;
     double face_grad[9];
     bzero(face_grad,9*sizeof(double));
-    double *diff = &((diffN_face[ff])[gg*3*NBFACE_H1(order_max_face[ff])]);
+    double *diff = &((diffN_face[ff])[gg*3*NBFACETRI_H1(order_max_face[ff])]);
     ierr = H1_FaceGradientOfDeformation_hierachical(order_face[ff],diff,dofs_face[ff],face_grad); CHKERRQ(ierr);
     cblas_daxpy(9,1,face_grad,1,GRAD,1); }
-  if(NBVOLUME_H1(order_volume)>0) {
+  if(NBVOLUMETET_H1(order_volume)>0) {
     double volume_grad[9];
     bzero(volume_grad,9*sizeof(double));
-    double *diff = &((diffN_volume)[gg*3*NBVOLUME_H1(order_max_volume)]);
+    double *diff = &((diffN_volume)[gg*3*NBVOLUMETET_H1(order_max_volume)]);
     ierr = H1_VolumeGradientOfDeformation_hierachical(order_volume,diff,dofs_volume,volume_grad); CHKERRQ(ierr);
     cblas_daxpy(9,1,volume_grad,1,GRAD,1); }
   PetscFunctionReturn(0);
@@ -229,11 +229,11 @@ PetscErrorCode bzero_Fint(
     int ff = 0;
     for(;ff<4;ff++) {
       if(Fint_face[ff]==NULL) continue;
-      bzero(Fint_face[ff],3*NBFACE_H1(order_face[ff])*sizeof(double));
+      bzero(Fint_face[ff],3*NBFACETRI_H1(order_face[ff])*sizeof(double));
     }
   }
   if(Fint_volume!=NULL) {
-    bzero(Fint_volume,3*NBVOLUME_H1(order_volume)*sizeof(double));
+    bzero(Fint_volume,3*NBVOLUMETET_H1(order_volume)*sizeof(double));
   }
   PetscFunctionReturn(0);
 }
@@ -365,8 +365,8 @@ PetscErrorCode Fint_Hh_hierarchical(
     int ff = 0;
     for(;ff<4;ff++) {
       int pp = 0;
-      for(;pp<NBFACE_H1(order_x_face[ff]);pp++) {
-	double *diff = &((diffN_face[ff])[gg*3*NBFACE_H1(order_max_face[ff])+3*pp]);
+      for(;pp<NBFACETRI_H1(order_x_face[ff]);pp++) {
+	double *diff = &((diffN_face[ff])[gg*3*NBFACETRI_H1(order_max_face[ff])+3*pp]);
 	if(Fint_h_face!=NULL)
 	if(Fint_h_face[ff]!=NULL) {
 	  (Fint_h_face[ff])[3*pp + 0] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&reP[0],1);
@@ -378,8 +378,8 @@ PetscErrorCode Fint_Hh_hierarchical(
 	  (Fint_ih_face[ff])[3*pp + 1] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[3],1);
 	  (Fint_ih_face[ff])[3*pp + 2] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[6],1); }
       }
-      for(;pp<NBFACE_H1(order_X_face[ff]);pp++) {
-	double *diff = &((diffN_face[ff])[gg*3*NBFACE_H1(order_max_face[ff])+3*pp]);
+      for(;pp<NBFACETRI_H1(order_X_face[ff]);pp++) {
+	double *diff = &((diffN_face[ff])[gg*3*NBFACETRI_H1(order_max_face[ff])+3*pp]);
 	if(Fint_H_face!=NULL)
 	if(Fint_H_face[ff]!=NULL) {
 	  (Fint_H_face[ff])[3*pp + 0] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&reSigma[0],1);
@@ -393,8 +393,8 @@ PetscErrorCode Fint_Hh_hierarchical(
       }
     }
     int pp = 0;
-    for(;pp<NBVOLUME_H1(order_x_volume);pp++) {
-      double *diff = &((diffN_volume)[gg*3*NBVOLUME_H1(order_max_volume)+3*pp]);
+    for(;pp<NBVOLUMETET_H1(order_x_volume);pp++) {
+      double *diff = &((diffN_volume)[gg*3*NBVOLUMETET_H1(order_max_volume)+3*pp]);
       if(Fint_h_volume!=NULL) {
 	(Fint_h_volume)[3*pp + 0] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&reP[0],1);
 	(Fint_h_volume)[3*pp + 1] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&reP[3],1);
@@ -404,8 +404,8 @@ PetscErrorCode Fint_Hh_hierarchical(
 	(Fint_ih_volume)[3*pp + 1] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[3],1);
 	(Fint_ih_volume)[3*pp + 2] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[6],1); }
     }
-    for(;pp<NBVOLUME_H1(order_X_volume);pp++) {
-      double *diff = &((diffN_volume)[gg*3*NBVOLUME_H1(order_max_volume)+3*pp]);
+    for(;pp<NBVOLUMETET_H1(order_X_volume);pp++) {
+      double *diff = &((diffN_volume)[gg*3*NBVOLUMETET_H1(order_max_volume)+3*pp]);
       if(Fint_H_volume!=NULL) {
 	(Fint_H_volume)[3*pp + 0] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&reSigma[0],1);
 	(Fint_H_volume)[3*pp + 1] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&reSigma[3],1);
@@ -454,15 +454,15 @@ PetscErrorCode Tangent_HH_hierachical(
   int ff = 0;
   if(Koff_face!=NULL) {
     for(;ff<4;ff++) {
-      if(NBFACE_H1(order_x_face[ff])==0) continue;
-      int nb = 3*NBFACE_H1(order_x_face[ff]);
+      if(NBFACETRI_H1(order_x_face[ff])==0) continue;
+      int nb = 3*NBFACETRI_H1(order_x_face[ff]);
       if(Koff_face[ff]!=NULL) bzero(Koff_face[ff],nb*12*sizeof(double));
     }
   }
   //zero volume
   if(Koff_volume!=NULL) {
-    if(NBVOLUME_H1(order_x_volume)!=0) {
-      int nb = 3*NBVOLUME_H1(order_x_volume);
+    if(NBVOLUMETET_H1(order_x_volume)!=0) {
+      int nb = 3*NBVOLUMETET_H1(order_x_volume);
       if(Koff_volume!=NULL) bzero(Koff_volume,nb*12*sizeof(double));
     }
   }
@@ -524,8 +524,8 @@ PetscErrorCode Tangent_HH_hierachical(
       if(Koff_face!=NULL) {
 	for(;ff<4;ff++) {
 	  int pp = 0;
-	  for(;pp<NBFACE_H1(order_x_face[ff]);pp++) {
-	    double *diff = &((diffN_face[ff])[gg*3*NBFACE_H1(order_max_face[ff])+3*pp]);
+	  for(;pp<NBFACETRI_H1(order_x_face[ff]);pp++) {
+	    double *diff = &((diffN_face[ff])[gg*3*NBFACETRI_H1(order_max_face[ff])+3*pp]);
 	    if(Koff_face[ff]!=NULL) {
 	      (Koff_face[ff])[3*pp*12 + 0*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[0],1);
 	      (Koff_face[ff])[3*pp*12 + 1*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[3],1);
@@ -533,8 +533,8 @@ PetscErrorCode Tangent_HH_hierachical(
       }
       if(Koff_volume!=NULL) {
 	int pp = 0;
-	for(;pp<NBVOLUME_H1(order_x_volume);pp++) {
-	  double *diff = &((diffN_volume)[gg*3*NBVOLUME_H1(order_max_volume)+3*pp]);
+	for(;pp<NBVOLUMETET_H1(order_x_volume);pp++) {
+	  double *diff = &((diffN_volume)[gg*3*NBVOLUMETET_H1(order_max_volume)+3*pp]);
 	  if(Koff_volume!=NULL) {
 	    (Koff_volume)[3*pp*12 + 0*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[0],1);
 	    (Koff_volume)[3*pp*12 + 1*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[3],1);
@@ -575,12 +575,12 @@ PetscErrorCode Tangent_hh_hierachical(
   //zero faces
   int ff = 0;
   for(;ff<4;ff++) {
-    if(NBFACE_H1(order_x_face[ff])==0) continue;
-    int nb = 3*NBFACE_H1(order_x_face[ff]);
+    if(NBFACETRI_H1(order_x_face[ff])==0) continue;
+    int nb = 3*NBFACETRI_H1(order_x_face[ff]);
     if(K_face[ff]!=NULL) bzero(K_face[ff],nb*12*sizeof(double)); }
   //zero volume
-  if(NBVOLUME_H1(order_x_volume)!=0) {
-    int nb = 3*NBVOLUME_H1(order_x_volume);
+  if(NBVOLUMETET_H1(order_x_volume)!=0) {
+    int nb = 3*NBVOLUMETET_H1(order_x_volume);
     if(K_volume!=NULL) bzero(K_volume,nb*12*sizeof(double));
   }
   int gg = 0;
@@ -638,15 +638,15 @@ PetscErrorCode Tangent_hh_hierachical(
       ff = 0;
       for(;ff<4;ff++) {
         int pp = 0;
-        for(;pp<NBFACE_H1(order_x_face[ff]);pp++) {
-	  double *diff = &((diffN_face[ff])[gg*3*NBFACE_H1(order_max_face[ff])+3*pp]);
+        for(;pp<NBFACETRI_H1(order_x_face[ff]);pp++) {
+	  double *diff = &((diffN_face[ff])[gg*3*NBFACETRI_H1(order_max_face[ff])+3*pp]);
 	  if(K_face[ff]!=NULL) {
 	    (K_face[ff])[3*pp*12 + 0*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[0],1);
 	    (K_face[ff])[3*pp*12 + 1*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[3],1);
 	    (K_face[ff])[3*pp*12 + 2*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[6],1); }}}
       int pp = 0;
-      for(;pp<NBVOLUME_H1(order_x_volume);pp++) {
-	double *diff = &((diffN_volume)[gg*3*NBVOLUME_H1(order_max_volume)+3*pp]);
+      for(;pp<NBVOLUMETET_H1(order_x_volume);pp++) {
+	double *diff = &((diffN_volume)[gg*3*NBVOLUMETET_H1(order_max_volume)+3*pp]);
 	if(K_volume!=NULL) {
 	  (K_volume)[3*pp*12 + 0*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[0],1);
   	  (K_volume)[3*pp*12 + 1*12 + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[3],1);
@@ -689,10 +689,10 @@ PetscErrorCode Tangent_hh_hierachical_edge(
       if(K_edge[EE][ee]!=NULL) bzero(K_edge[EE][ee],nb2*nb*sizeof(double)); }
     int FF = 0;
     for(;FF<4;FF++) {
-      int nb2 = 3*NBFACE_H1(order_x_face[FF]);
+      int nb2 = 3*NBFACETRI_H1(order_x_face[FF]);
       if(K_face[FF][ee]!=NULL) bzero(K_face[FF][ee],nb2*nb*sizeof(double));
     }
-    int nb2 = 3*NBVOLUME_H1(order_x_volume);
+    int nb2 = 3*NBVOLUMETET_H1(order_x_volume);
     if(K_volume[ee]!=NULL) bzero(K_volume[ee],nb*nb2*sizeof(double));
   }
   int EE = 0;
@@ -756,15 +756,15 @@ PetscErrorCode Tangent_hh_hierachical_edge(
         int ff = 0;
         for(;ff<4;ff++) {
           int pp = 0;
-          for(;pp<NBFACE_H1(order_x_face[ff]);pp++) {
-	    double *diff = &((diffN_face[ff])[gg*3*NBFACE_H1(order_max_face[ff])+3*pp]);
+          for(;pp<NBFACETRI_H1(order_x_face[ff]);pp++) {
+	    double *diff = &((diffN_face[ff])[gg*3*NBFACETRI_H1(order_max_face[ff])+3*pp]);
 	    if(K_face[ff][EE]!=NULL) {
 	      (K_face[ff][EE])[3*pp*nb_edge_dofs + 0*nb_edge_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[0],1);
 	      (K_face[ff][EE])[3*pp*nb_edge_dofs + 1*nb_edge_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[3],1);
 	      (K_face[ff][EE])[3*pp*nb_edge_dofs + 2*nb_edge_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[6],1); } }}
 	int pp = 0;
-	for(;pp<NBVOLUME_H1(order_x_volume);pp++) {
-	  double *diff = &((diffN_volume)[gg*3*NBVOLUME_H1(order_max_volume)+3*pp]);
+	for(;pp<NBVOLUMETET_H1(order_x_volume);pp++) {
+	  double *diff = &((diffN_volume)[gg*3*NBVOLUMETET_H1(order_max_volume)+3*pp]);
 	  if(K_volume!=NULL) {
 	    (K_volume[EE])[3*pp*nb_edge_dofs + 0*nb_edge_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[0],1);
 	    (K_volume[EE])[3*pp*nb_edge_dofs + 1*nb_edge_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[3],1);
@@ -797,8 +797,8 @@ PetscErrorCode Tangent_hh_hierachical_face(
   double _ih[9],imP[9],imSigma[9];
   int ff = 0;
   for(;ff<4;ff++) {
-    if(NBFACE_H1(order_x_face[ff])==0) continue;
-    int nb = 3*NBFACE_H1(order_x_face[ff]);
+    if(NBFACETRI_H1(order_x_face[ff])==0) continue;
+    int nb = 3*NBFACETRI_H1(order_x_face[ff]);
     if(K[ff]!=NULL) bzero(K[ff],12*nb*sizeof(double));
     if(Koff!=NULL) {
       if(Koff[ff]!=NULL) bzero(Koff[ff],12*nb*sizeof(double));
@@ -809,15 +809,15 @@ PetscErrorCode Tangent_hh_hierachical_face(
       if(K_edge[EE][ff]!=NULL) bzero(K_edge[EE][ff],nb2*nb*sizeof(double)); }
     int FF = 0;
     for(;FF<4;FF++) {
-      int nb2 = 3*NBFACE_H1(order_x_face[FF]);
+      int nb2 = 3*NBFACETRI_H1(order_x_face[FF]);
       if(K_face[FF][ff]!=NULL) bzero(K_face[FF][ff],nb2*nb*sizeof(double));
     }
-    int nb2 = 3*NBVOLUME_H1(order_x_volume);
+    int nb2 = 3*NBVOLUMETET_H1(order_x_volume);
     if(K_volume[ff]!=NULL) bzero(K_volume[ff],nb*nb2*sizeof(double));
   }
   int FF = 0;
   for(;FF<4;FF++) {
-    int nb_face_dofs = 3*NBFACE_H1(order_x_face[FF]);
+    int nb_face_dofs = 3*NBFACETRI_H1(order_x_face[FF]);
     if(nb_face_dofs == 0) continue;
     double _idofs_x[nb_face_dofs];
     int dd = 0;
@@ -846,7 +846,7 @@ PetscErrorCode Tangent_hh_hierachical_face(
 	  diffN,diffN_edge,diffN_face,diffN_volume,
 	  dofs_x_edge,dofs_x_face,dofs_x_volume,
 	  gg,h); CHKERRQ(ierr);
-	double *diff_face = &(diffN_face[FF])[gg*3*NBFACE_H1(order_x_face[FF])];
+	double *diff_face = &(diffN_face[FF])[gg*3*NBFACETRI_H1(order_x_face[FF])];
 	H1_FaceGradientOfDeformation_hierachical(order_x_face[FF],diff_face,_idofs_x,_ih);
         ierr = MakeComplexTensor(h,_ih,xh);  CHKERRQ(ierr);
         COMP_STRESSES
@@ -878,15 +878,15 @@ PetscErrorCode Tangent_hh_hierachical_face(
         ff = 0;
         for(;ff<4;ff++) {
           int pp = 0;
-          for(;pp<NBFACE_H1(order_x_face[ff]);pp++) {
-	    double *diff = &((diffN_face[ff])[gg*3*NBFACE_H1(order_max_face[ff])+3*pp+0]);
+          for(;pp<NBFACETRI_H1(order_x_face[ff]);pp++) {
+	    double *diff = &((diffN_face[ff])[gg*3*NBFACETRI_H1(order_max_face[ff])+3*pp+0]);
 	    if(K_face[ff][FF]!=NULL) {
 	      (K_face[ff][FF])[3*pp*nb_face_dofs + 0*nb_face_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[0],1);
 	      (K_face[ff][FF])[3*pp*nb_face_dofs + 1*nb_face_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[3],1);
 	      (K_face[ff][FF])[3*pp*nb_face_dofs + 2*nb_face_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[6],1); } }}
 	int pp = 0;
-	for(;pp<NBVOLUME_H1(order_x_volume);pp++) {
-	  double *diff = &((diffN_volume)[gg*3*NBVOLUME_H1(order_max_volume)+3*pp]);
+	for(;pp<NBVOLUMETET_H1(order_x_volume);pp++) {
+	  double *diff = &((diffN_volume)[gg*3*NBVOLUMETET_H1(order_max_volume)+3*pp]);
 	  if(K_volume!=NULL) {
 	    (K_volume[FF])[3*pp*nb_face_dofs + 0*nb_face_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[0],1);
 	    (K_volume[FF])[3*pp*nb_face_dofs + 1*nb_face_dofs + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[3],1);
@@ -915,7 +915,7 @@ PetscErrorCode Tangent_hh_hierachical_volume(
   bzero(ZERO,sizeof(double)*9);
   __CLPK_doublecomplex xh[9],xH[9],inv_xH[9],xF[9],xF_tmp[9],xC[9],xS[9],xP[9],xP_PullBack[9],xSigma[9],xSigma_PullBack[9],det_xF,det_xH,xPsi;
   double _ih[9],imP[9],imSigma[9];
-  int nb_dofs_volume = 3*NBVOLUME_H1(order_x_volume);
+  int nb_dofs_volume = 3*NBVOLUMETET_H1(order_x_volume);
   if(K!=NULL) bzero(K,nb_dofs_volume*12*sizeof(double));
   if(Koff!=NULL) bzero(Koff,nb_dofs_volume*12*sizeof(double));
   //zero edges
@@ -928,12 +928,12 @@ PetscErrorCode Tangent_hh_hierachical_volume(
   //zero faces
   int ff = 0;
   for(;ff<4;ff++) {
-    if(NBFACE_H1(order_x_face[ff])==0) continue;
-    int nb2 = 3*NBFACE_H1(order_x_face[ff]);
+    if(NBFACETRI_H1(order_x_face[ff])==0) continue;
+    int nb2 = 3*NBFACETRI_H1(order_x_face[ff]);
     if(K_face[ff]!=NULL) bzero(K_face[ff],nb_dofs_volume*nb2*sizeof(double));
   }
   //zero volume
-  if(NBVOLUME_H1(order_x_volume)!=0) {
+  if(NBVOLUMETET_H1(order_x_volume)!=0) {
     if(K_volume!=NULL) bzero(K_volume,nb_dofs_volume*nb_dofs_volume*sizeof(double));
   }
   double _idofs_x[nb_dofs_volume];
@@ -963,7 +963,7 @@ PetscErrorCode Tangent_hh_hierachical_volume(
     for(;dd<nb_dofs_volume;dd++) {
       bzero(_idofs_x,sizeof(double)*nb_dofs_volume);
       _idofs_x[dd] = eps;
-      double *diff_volume = &((diffN_volume)[gg*3*NBVOLUME_H1(order_x_volume)]);
+      double *diff_volume = &((diffN_volume)[gg*3*NBVOLUMETET_H1(order_x_volume)]);
       H1_VolumeGradientOfDeformation_hierachical(order_x_volume,diff_volume,_idofs_x,_ih);
       ierr = MakeComplexTensor(h,_ih,xh);  CHKERRQ(ierr);
       COMP_STRESSES
@@ -993,15 +993,15 @@ PetscErrorCode Tangent_hh_hierachical_volume(
       ff = 0;
       for(;ff<4;ff++) {
         int pp = 0;
-        for(;pp<NBFACE_H1(order_x_face[ff]);pp++) {
-	  double *diff = &((diffN_face[ff])[gg*3*NBFACE_H1(order_max_face[ff])+3*pp]);
+        for(;pp<NBFACETRI_H1(order_x_face[ff]);pp++) {
+	  double *diff = &((diffN_face[ff])[gg*3*NBFACETRI_H1(order_max_face[ff])+3*pp]);
 	  if(K_face[ff]!=NULL) {
 	    (K_face[ff])[3*pp*nb_dofs_volume + 0*nb_dofs_volume + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[0],1);
 	    (K_face[ff])[3*pp*nb_dofs_volume + 1*nb_dofs_volume + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[3],1);
 	    (K_face[ff])[3*pp*nb_dofs_volume + 2*nb_dofs_volume + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[6],1); }}}
       int pp = 0;
-      for(;pp<NBVOLUME_H1(order_x_volume);pp++) {
-	double *diff = &((diffN_volume)[gg*3*NBVOLUME_H1(order_max_volume)+3*pp]);
+      for(;pp<NBVOLUMETET_H1(order_x_volume);pp++) {
+	double *diff = &((diffN_volume)[gg*3*NBVOLUMETET_H1(order_max_volume)+3*pp]);
 	if(K_volume!=NULL) {
 	  (K_volume)[3*pp*nb_dofs_volume + 0*nb_dofs_volume + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[0],1);
   	  (K_volume)[3*pp*nb_dofs_volume + 1*nb_dofs_volume + dd] += alpha*G_W[gg]*cblas_ddot(3,diff,1,&imP[3],1);
@@ -1018,7 +1018,7 @@ PetscErrorCode Traction_hierarchical(int order,int *order_edge,
   int dd,ee;
   for(dd = 0;dd<3;dd++) traction[dd] = cblas_ddot(3,&N[gg*3],1,&t[dd],3);
   if(t_face!=NULL) {
-    int nb_dofs_face = NBFACE_H1(order);
+    int nb_dofs_face = NBFACETRI_H1(order);
     if(nb_dofs_face>0) {
       for(dd = 0;dd<3;dd++) traction[dd] += cblas_ddot(nb_dofs_face,&N_face[gg*nb_dofs_face],1,&t_face[dd],3);
     }
@@ -1057,7 +1057,7 @@ PetscErrorCode Fext_h_hierarchical(int order,int *order_edge,
     if(Fext_edge!=NULL) bzero(Fext_edge[ee],3*nb_dofs_edge*sizeof(double));
     if(iFext_edge!=NULL) bzero(iFext_edge[ee],3*nb_dofs_edge*sizeof(double));
   }
-  int nb_dofs_face = NBFACE_H1(order);
+  int nb_dofs_face = NBFACETRI_H1(order);
   if(nb_dofs_face!=0) {
     if(Fext_face!=NULL) bzero(Fext_face,3*nb_dofs_face*sizeof(double));
     if(iFext_face!=NULL) bzero(iFext_face,3*nb_dofs_face*sizeof(double));
@@ -1162,7 +1162,7 @@ PetscErrorCode KExt_hh_hierarchical(double eps,int order,int *order_edge,
       bzero(KExt_edgeh[ee],9*3*nb_dofs_edge*sizeof(double));
     }
   }
-  int nb_dofs_face = NBFACE_H1(order);
+  int nb_dofs_face = NBFACETRI_H1(order);
   if(KExt_faceh!=NULL) {
     bzero(KExt_faceh,9*3*nb_dofs_face*sizeof(double));
   }
@@ -1231,7 +1231,7 @@ PetscErrorCode KExt_hh_hierarchical_edge(double eps,int order,int *order_edge,
   int g_dim,const double *g_w) {
   PetscFunctionBegin;
   int gg,dd,ii,nn,ee,EE;
-  int nb_dofs_face = NBFACE_H1(order);
+  int nb_dofs_face = NBFACETRI_H1(order);
   for(EE=0;EE<3;EE++) {
     int nb_dofs_edge_EE = NBEDGE_H1(order_edge[EE]);
     bzero(KExt_hedge[EE],9*3*nb_dofs_edge_EE*sizeof(double));
@@ -1312,7 +1312,7 @@ PetscErrorCode KExt_hh_hierarchical_face(double eps,int order,int *order_edge,
   int g_dim,const double *g_w) {
   PetscFunctionBegin;
   int gg,dd,ii,nn,ee;
-  int nb_dofs_face = NBFACE_H1(order);
+  int nb_dofs_face = NBFACETRI_H1(order);
   bzero(KExt_hface,9*3*nb_dofs_face*sizeof(double));
   if(KExt_edgeface!=NULL) {
     for(ee = 0;ee<3;ee++) {
