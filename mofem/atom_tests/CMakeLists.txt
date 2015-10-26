@@ -614,7 +614,9 @@ target_link_libraries(prisms_elements_from_surface
   ${PROJECT_LIBS}
 )
 cm_export_file("../meshes/rectangle_surface_mesh.cub" export_atom_tests)
-
+add_test(prisms_elements_from_surface ${MPI_RUN} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/prisms_elements_from_surface -my_file rectangle_surface_mesh.cub
+)
 
 if(ADOL-C_LIBRARY)
 
