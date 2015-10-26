@@ -39,7 +39,7 @@ namespace MoFEM {
 PetscErrorCode NodeMergerInterface::queryInterface(const MOFEMuuid& uuid, FieldUnknownInterface** iface) {
   PetscFunctionBegin;
   *iface = NULL;
-  if(uuid == IDD_MOFENNodeMerger) {
+  if(uuid == IDD_MOFEMNodeMerger) {
     *iface = dynamic_cast<NodeMergerInterface*>(this);
     PetscFunctionReturn(0);
   }
@@ -47,7 +47,7 @@ PetscErrorCode NodeMergerInterface::queryInterface(const MOFEMuuid& uuid, FieldU
     *iface = dynamic_cast<FieldUnknownInterface*>(this);
     PetscFunctionReturn(0);
   }
-  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"unknown inteface");
+  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"unknown interface");
   PetscFunctionReturn(0);
 }
 

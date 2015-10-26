@@ -1,0 +1,118 @@
+/** \file PrismsFromSurfaceInterface.cpp
+ * \brief Interface for creating prisms from surface elements
+ *
+ * MoFEM is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
+ *
+ * MoFEM is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+ * License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
+*/
+
+#include <petscsys.h>
+#include <petscvec.h>
+#include <petscmat.h>
+#include <petscsnes.h>
+#include <petscts.h>
+
+#include <moab/ParallelComm.hpp>
+#include <boost/ptr_container/ptr_map.hpp>
+
+//#include <version.h>
+#include <definitions.h>
+
+#include <Common.hpp>
+#include <LoopMethods.hpp>
+#include <Core.hpp>
+
+#include <FieldInterface.hpp>
+#include <PrismsFromSurfaceInterface.hpp>
+
+namespace MoFEM {
+
+PetscErrorCode PrismsFromSurfaceInterface::queryInterface(const MOFEMuuid& uuid, FieldUnknownInterface** iface) {
+  PetscFunctionBegin;
+  *iface = NULL;
+  if(uuid == IDD_MOFEMPrismsFromSurface) {
+    *iface = dynamic_cast<PrismsFromSurfaceInterface*>(this);
+    PetscFunctionReturn(0);
+  }
+  if(uuid == IDD_MOFEMUnknown) {
+    *iface = dynamic_cast<FieldUnknownInterface*>(this);
+    PetscFunctionReturn(0);
+  }
+  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"unknown interface");
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode PrismsFromSurfaceInterface::createPrisms(const Range &ents,Range &prisms,int verb) {
+  PetscFunctionBegin;
+  MoABErrorCode rval;
+  FieldInterface& m_field = cOre;
+  Range tris = ents.subset_by_type(MBTRI);
+  double coords[9];
+  for(Range::iterator tit = tris.begin();tit!=tris.end();tit++) {
+    const EntityHandle* conn;
+    int number_nodes = 0;
+    rval = m_field.get_moab().get_connectivity(*tit,conn,number_nodes,true); CHKERR_PETSC(rval);
+    rval = m_field.get_moab().get_coords(conn,number_nodes,coords); CHKERR_PETSC(rval);
+    EntityHandle prism_nodes[6];
+    for(int nn = 0;nn<3;nn++) {
+      prism_nodes[nn] = conn[nn];
+      if(createdVertices.find(conn[nn])!=createdVertices.end()) {
+        prism_nodes[3+nn] = createdVertices[prism_nodes[nn]];
+      } else {
+        rval = m_field.get_moab().create_vertex(&coords[3*nn],prism_nodes[3+nn]); CHKERR_PETSC(rval);
+        createdVertices[conn[nn]] = prism_nodes[3+nn];
+      }
+    }
+    EntityHandle prism;
+    rval = m_field.get_moab().create_element(MBPRISM,prism_nodes,6,prism); CHKERRQ(rval);
+    prisms.insert(prism);
+  }
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode PrismsFromSurfaceInterface::seedPrismsEntities(Range &prisms,const BitRefLevel &bit,int verb) {
+  PetscFunctionBegin;
+  PetscErrorCode ierr;
+  MoABErrorCode rval;
+  FieldInterface& m_field = cOre;
+  const RefMoFEMEntity_multiIndex *const_refined_entities_ptr;
+  ierr = m_field.get_ref_ents(&const_refined_entities_ptr); CHKERRQ(ierr);
+  MPI_Comm comm = m_field.get_comm();
+  RefMoFEMEntity_multiIndex *refined_entities_ptr;
+  refined_entities_ptr = const_cast<RefMoFEMEntity_multiIndex *>(const_refined_entities_ptr);
+  if(!prisms.empty()) {
+    int dim = m_field.get_moab().dimension_from_handle(prisms[0]);
+    for(int dd = 0;dd<=dim;dd++) {
+      Range ents;
+      rval = m_field.get_moab().get_adjacencies(prisms,dd,true,ents,Interface::UNION); CHKERR_PETSC(rval);
+      Range::iterator eit = ents.begin();
+      for(;eit!=ents.end();eit++) {
+        pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ent = refined_entities_ptr->insert(
+          RefMoFEMEntity(m_field.get_moab(),*eit)
+        );
+        bool success = refined_entities_ptr->modify(p_ent.first,RefMoFEMEntity_change_add_bit(bit));
+        if(!success) {
+          SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+        }
+        if(verb>2) {
+          ostringstream ss;
+          ss << *(p_ent.first);
+          PetscSynchronizedPrintf(comm,"%s\n",ss.str().c_str());
+        }
+      }
+    }
+  }
+  PetscFunctionReturn(0);
+}
+
+
+}

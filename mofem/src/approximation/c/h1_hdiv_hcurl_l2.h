@@ -27,8 +27,10 @@ extern "C" {
 #define NBEDGE_H1(P) ((P>0) ? (P-1) : 0)
 /// number of dofs on face for H1 space
 #define NBFACETRI_H1(P) ((P>1) ? ((P-2)*(P-1)/2) : 0)
+#define NBFACEQUAD_H1(P)((P>2) ? ((P-3)*(P-2)/2) : 0)
 /// number of dofs on volume for H1 space
 #define NBVOLUMETET_H1(P) ((P>2) ? ((P-3)*(P-2)*(P-1)/6) : 0)
+#define NBVOLUMEPRISM_H1(P) ((P>4) ? ((P-5)*(P-4)*(P-3)/6) : 0)
 //HCURL
 #define NBEDGE_HCURL(P) (P+1)
 #define NBFACETRI_HCURL(P) ((P>0) ? (P-1)*(P+1) : 0)
@@ -48,8 +50,8 @@ extern "C" {
  *
  * \param p is approximation order
  * \param s is is position [-1,1]
- * \parem L appeoximation functions
- * \param diffL direvatives
+ * \parem L approximation functions
+ * \param diffL derivatives
  * \param dim dimension
  */
 PetscErrorCode Legendre_polynomials(int p,double s,double *diff_s,double *L,double *diffL,const int dim);
@@ -61,7 +63,7 @@ PetscErrorCode L2_VolumeShapeDiffMBTETinvJ(int base_p,int p,double *volume_diffN
 /**
  * \brief H1_EdgeShapeFunctions_MBTRI
  *
- * \param sense of edges, it is array of inegers dim 3 (3-egdes of triangle)
+ * \param sense of edges, it is array of integers dim 3 (3-egdes of triangle)
  * \param p of edges
  */
 PetscErrorCode H1_EdgeShapeFunctions_MBTRI(int *sense,int *p,double *N,double *diffN,double *edgeN[3],double *diff_edgeN[3],int GDIM);

@@ -47,8 +47,11 @@ inline int fNBVERTEX_H1(int P) { return (P==1) ? 1 : 0; }
 inline int fNBEDGE_H1(int P) { return NBEDGE_H1(P); }
 /// number of approx. functions for H1 space on face
 inline int fNBFACETRI_H1(int P) { return NBFACETRI_H1(P); }
+inline int fNBFACEQUAD_H1(int P) { return NBFACEQUAD_H1(P); }
 /// number of approx. functions for H1 space on volume
 inline int fNBVOLUMETET_H1(int P) { return NBVOLUMETET_H1(P); }
+inline int fNBVOLUMEPRISM_H1(int P) { return NBVOLUMEPRISM_H1(P); }
+
 //
 /// number of approx. functions for HCURL space on vertex
 inline int fNBVERTEX_HCURL(int P) { (void)P; return 0; }

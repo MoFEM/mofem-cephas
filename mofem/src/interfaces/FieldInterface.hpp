@@ -705,6 +705,36 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode add_ents_to_field_by_TETs(const Range &tets,const string& name,int verb = -1) = 0;
 
   /**
+    * \brief set field entities from adjacencies of prisms
+    * \ingroup mofem_field
+    *
+    * The lower dimension entities are added depending on the space type
+    * \param prisms range of prisms
+    * \param id field id
+    */
+  virtual PetscErrorCode add_ents_to_field_by_PRISMs(const Range &prisms,const BitFieldId id,int verb = -1) = 0;
+
+  /**
+    * \brief set field entities from adjacencies of prisms
+    * \ingroup mofem_field
+    *
+    * The lower dimension entities are added depending on the space type
+    * \param prisms range contains set prisms
+    * \param name of the field
+    */
+  virtual PetscErrorCode add_ents_to_field_by_PRISMs(const Range &prisms,const string& name,int verb = -1) = 0;
+
+  /**
+    * \brief set field entities from adjacencies of prisms
+    * \ingroup mofem_field
+    *
+    * The lower dimension entities are added depending on the space type
+    * \param meshset contains set prisms
+    * \param name of the field
+    */
+  virtual PetscErrorCode add_ents_to_field_by_PRISMs(EntityHandle meshset,const string& name,int verb = -1) = 0;
+
+  /**
     * \brief remove entities from field
     * \ingroup mofem_field
     *

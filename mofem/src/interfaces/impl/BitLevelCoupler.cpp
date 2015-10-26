@@ -50,7 +50,7 @@ namespace MoFEM {
 PetscErrorCode BitLevelCouplerInterface::queryInterface(const MOFEMuuid& uuid, FieldUnknownInterface** iface) {
   PetscFunctionBegin;
   *iface = NULL;
-  if(uuid == IDD_MOFENBitLevelCoupler) {
+  if(uuid == IDD_MOFEMBitLevelCoupler) {
     *iface = dynamic_cast<BitLevelCouplerInterface*>(this);
     PetscFunctionReturn(0);
   }

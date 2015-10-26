@@ -86,7 +86,9 @@ MoFEMField::MoFEMField(Interface &moab,const EntityHandle _meshset): meshset(_me
       forder_table[MBVERTEX] = fNBVERTEX_H1;
       forder_table[MBEDGE] = fNBEDGE_H1;
       forder_table[MBTRI] = fNBFACETRI_H1;
+      forder_table[MBQUAD] = fNBFACEQUAD_H1;
       forder_table[MBTET] = fNBVOLUMETET_H1;
+      forder_table[MBPRISM] = fNBVOLUMEPRISM_H1;
       break;
     case HDIV:
       forder_table[MBVERTEX] = fNBVERTEX_HDIV;

@@ -41,7 +41,8 @@ enum MoFEMInterfaces {
   TETGEN_INTERFACE = 1<<3|1<<4,		///< used to generate mesh using TetGen
   NETGEN_INTERFACE = 1<<3|1<<5,		///< used to generate mesh using NetGen
   NODEMERGER_INTERFACE = 1<<3|1<<6,	///< used to merge nodes
-  BITLEVELCOUPLER_INTERFACE = 1<<3|1<<7 ///< used to couple bit levels by finding parent children relation
+  BITLEVELCOUPLER_INTERFACE = 1<<3|1<<7, ///< used to couple bit levels by finding parent children relation
+  PRISMSFROMSURFACE_INTERFACE = 1<<3|1<<8 ///< create prisms from surface elements
 };
 
 /** \brief Error handling
@@ -49,7 +50,7 @@ enum MoFEMInterfaces {
   * This is complementary to PETSC error codes. The numerical values for
   * these are defined in include/petscerror.h. The names are defined in err.c
   *
-  * MoAB error messeges are defined in naob/Types.hpp
+  * MoAB error messages are defined in naob/Types.hpp
   *
   */
 enum MoFEMErrorCode {
@@ -165,7 +166,9 @@ enum ByWhat {
     std::ostringstream ss; \
     ss << "Error code  " << val << " at " << __FILE__ << ":" << __LINE__ << std::endl; \
     std::string str(ss.str()); \
-    throw str.c_str(); \
+    char msg[255]; \
+    bcopy(&str.c_str()[0],msg,sizeof(char)*str.size()); \
+    throw msg; \
   } \
 } while (false)
 
@@ -173,7 +176,9 @@ enum ByWhat {
   std::ostringstream ss; \
   ss << a << " " << " at " << __FILE__ << ":" << __LINE__ << std::endl; \
   std::string str(ss.str()); \
-  throw str.c_str(); \
+  char msg[255]; \
+  bcopy(&str.c_str()[0],msg,sizeof(char)*str.size()); \
+  throw msg; \
 }
 
 #endif //__DEFINITONS_H__

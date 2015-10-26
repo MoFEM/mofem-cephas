@@ -49,6 +49,7 @@
 #endif
 
 #include <NodeMerger.hpp>
+#include <PrismsFromSurfaceInterface.hpp>
 
 #include <boost/scoped_ptr.hpp>
 #include <moab/AdaptiveKDTree.hpp>
@@ -95,6 +96,7 @@ PetscErrorCode Core::queryInterface(const MOFEMuuid& uuid,FieldUnknownInterface*
 PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr) {
   PetscFunctionBegin;
 
+  // TetGen
   #ifdef WITH_TETGEN
   if(type == typeid(TetGenInterface)) {
     if(iFaces.find(IDD_MOFEMTetGegInterface.uUId.to_ulong()) == iFaces.end()) {
@@ -105,6 +107,7 @@ PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr)
   }
   #endif
 
+  // NetGen
   #ifdef WITH_NETGEN
   if(type == typeid(NetGenInterface)) {
     if(iFaces.find(IDD_MOFEMNetGegInterface.uUId.to_ulong()) == iFaces.end()) {
@@ -117,19 +120,28 @@ PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr)
 
   //Node merger
   if(type == typeid(NodeMergerInterface)) {
-    if(iFaces.find(IDD_MOFENNodeMerger.uUId.to_ulong()) == iFaces.end()) {
-      iFaces[IDD_MOFENNodeMerger.uUId.to_ulong()] = new NodeMergerInterface(*this);
+    if(iFaces.find(IDD_MOFEMNodeMerger.uUId.to_ulong()) == iFaces.end()) {
+      iFaces[IDD_MOFEMNodeMerger.uUId.to_ulong()] = new NodeMergerInterface(*this);
     }
-    ptr = iFaces.at(IDD_MOFENNodeMerger.uUId.to_ulong());
+    ptr = iFaces.at(IDD_MOFEMNodeMerger.uUId.to_ulong());
     PetscFunctionReturn(0);
   }
 
   //BitLevelCoupler
   if(type == typeid(BitLevelCouplerInterface)) {
-    if(iFaces.find(IDD_MOFENBitLevelCoupler.uUId.to_ulong()) == iFaces.end()) {
-      iFaces[IDD_MOFENNodeMerger.uUId.to_ulong()] = new BitLevelCouplerInterface(*this);
+    if(iFaces.find(IDD_MOFEMBitLevelCoupler.uUId.to_ulong()) == iFaces.end()) {
+      iFaces[IDD_MOFEMBitLevelCoupler.uUId.to_ulong()] = new BitLevelCouplerInterface(*this);
     }
-    ptr = iFaces.at(IDD_MOFENNodeMerger.uUId.to_ulong());
+    ptr = iFaces.at(IDD_MOFEMBitLevelCoupler.uUId.to_ulong());
+    PetscFunctionReturn(0);
+  }
+
+  //Create prism elements from surface Elements
+  if(type == typeid(PrismsFromSurfaceInterface)) {
+    if(iFaces.find(IDD_MOFEMPrismsFromSurface.uUId.to_ulong()) == iFaces.end()) {
+      iFaces[IDD_MOFEMPrismsFromSurface.uUId.to_ulong()] = new PrismsFromSurfaceInterface(*this);
+    }
+    ptr = iFaces.at(IDD_MOFEMPrismsFromSurface.uUId.to_ulong());
     PetscFunctionReturn(0);
   }
 
@@ -388,7 +400,9 @@ BitFieldId Core::get_BitFieldId(const string& name) const {
   typedef MoFEMField_multiIndex::index<FieldName_mi_tag>::type field_set_by_name;
   const field_set_by_name &set = moabFields.get<FieldName_mi_tag>();
   field_set_by_name::iterator miit = set.find(name);
-  if(miit==set.end()) THROW_AT_LINE("field < "+name+" > not in databse (top tip: check spelling)");
+  if(miit==set.end()) {
+    THROW_AT_LINE("field < "+name+" > not in database (top tip: check spelling)");
+  }
   return miit->get_id();
 }
 string Core::get_BitFieldId_name(const BitFieldId id) const {
@@ -401,7 +415,7 @@ EntityHandle Core::get_field_meshset(const BitFieldId id) const {
   typedef MoFEMField_multiIndex::index<BitFieldId_mi_tag>::type field_set_by_id;
   const field_set_by_id &set = moabFields.get<BitFieldId_mi_tag>();
   field_set_by_id::iterator miit = set.find(id);
-  if(miit==set.end()) THROW_AT_LINE("field not in databse (top tip: check spelling)");
+  if(miit==set.end()) THROW_AT_LINE("field not in database (top tip: check spelling)");
   return miit->meshset;
 }
 EntityHandle Core::get_field_meshset(const string& name) const {

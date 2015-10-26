@@ -1,0 +1,8 @@
+reset
+
+create surface rectangle width 1 zplane 
+
+surface all scheme TriMesh
+surface all size auto factor 6
+
+mesh surface all

@@ -736,9 +736,9 @@ PetscErrorCode Core::add_ents_to_field_by_PRISMs(const Range &prisms,const BitFi
       nodes = subtract(nodes,mid_nodes);
     }
     rval = moab.add_entities(idm,nodes); CHKERR_PETSC(rval);
-    rval = moab.get_adjacencies(prisms,2,false,faces,Interface::UNION); CHKERR_PETSC(rval);
+    rval = moab.get_adjacencies(prisms,2,true,faces,Interface::UNION); CHKERR_PETSC(rval);
     rval = moab.add_entities(idm,faces); CHKERR_PETSC(rval);
-    rval = moab.get_adjacencies(prisms,1,false,edges,Interface::UNION); CHKERR_PETSC(rval);
+    rval = moab.get_adjacencies(prisms,1,true,edges,Interface::UNION); CHKERR_PETSC(rval);
     rval = moab.add_entities(idm,edges); CHKERR_PETSC(rval);
     if(verb>1) {
       ostringstream ss;
@@ -762,6 +762,36 @@ PetscErrorCode Core::add_ents_to_field_by_PRISMs(const Range &prisms,const BitFi
   }
   if(verb>1) {
     PetscSynchronizedFlush(comm,PETSC_STDOUT);
+  }
+  PetscFunctionReturn(0);
+}
+PetscErrorCode Core::add_ents_to_field_by_PRISMs(const Range &prisms,const string& name,int verb) {
+  PetscFunctionBegin;
+  if(verb==-1) verb = verbose;
+  *build_MoFEM = 0;
+  try {
+    ierr = add_ents_to_field_by_PRISMs(prisms,get_BitFieldId(name),verb);  CHKERRQ(ierr);
+  } catch  (const char* msg) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_CHAR_THROW,msg);
+  }
+  PetscFunctionReturn(0);
+}
+PetscErrorCode Core::add_ents_to_field_by_PRISMs(EntityHandle meshset,const string& name,int verb) {
+  PetscFunctionBegin;
+  if(verb==-1) verb = verbose;
+  *build_MoFEM = 0;
+  try {
+    Range prisms;
+    rval = moab.get_entities_by_type(meshset,MBPRISM,prisms,true); CHKERR_PETSC(rval);
+    if(verb>3) {
+      PetscSynchronizedPrintf(comm,"nb. of prisms %d\n",prisms.size());
+    }
+    ierr = add_ents_to_field_by_PRISMs(prisms,name,verb);  CHKERRQ(ierr);
+    if(verb>3) {
+      PetscSynchronizedFlush(comm,PETSC_STDOUT);
+    }
+  } catch  (const char* msg) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_CHAR_THROW,msg);
   }
   PetscFunctionReturn(0);
 }
@@ -1056,18 +1086,28 @@ PetscErrorCode Core::dofs_L2H1HcurlHdiv(const BitFieldId id,map<EntityType,int> 
   //find field
   const field_set_by_id &set_id = moabFields.get<BitFieldId_mi_tag>();
   field_set_by_id::iterator miit = set_id.find(id);
-  if(miit == set_id.end()) SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"field not found");
+  if(miit == set_id.end()) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"field not found");
+  }
   //ents in the field meshset
   Range ents_of_id_meshset;
   rval = moab.get_entities_by_handle(miit->meshset,ents_of_id_meshset,false); CHKERR_PETSC(rval);
+  if(verb>5) {
+    PetscSynchronizedPrintf(
+      comm,"ents in field %s meshset %d\n",miit->get_name().c_str(),ents_of_id_meshset.size()
+    );
+  }
   //create dofsMoabField
   Range::iterator eit = ents_of_id_meshset.begin();
   for(;eit!=ents_of_id_meshset.end();eit++) {
     // check if ent is in ref meshset
-    RefMoFEMEntity_multiIndex::index<Ent_mi_tag>::type::iterator miit_ref_ent = refinedEntities.get<Ent_mi_tag>().find(*eit);
+    RefMoFEMEntity_multiIndex::index<Ent_mi_tag>::type::iterator miit_ref_ent;
+    miit_ref_ent = refinedEntities.get<Ent_mi_tag>().find(*eit);
     if(miit_ref_ent==refinedEntities.get<Ent_mi_tag>().end()) {
       RefMoFEMEntity ref_ent(moab,*eit);
-      if(ref_ent.get_BitRefLevel().none()) continue; // not on any mesh and not in database
+      if(ref_ent.get_BitRefLevel().none()) {
+        continue; // not on any mesh and not in database
+      }
       cerr << ref_ent << endl;
       cerr << "bit level " << ref_ent.get_BitRefLevel() << endl;
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"database inconsistency");
@@ -1179,7 +1219,7 @@ PetscErrorCode Core::build_fields(int verb) {
     }
     if (verb > 0) {
       int _dof_counter_ = 0;
-      for (map<EntityType, int>::iterator it = dof_counter.begin(); it != dof_counter.end(); it++) {
+      for (map<EntityType,int>::iterator it = dof_counter.begin();it!=dof_counter.end();it++) {
         switch (it->first) {
           case MBVERTEX:
           PetscSynchronizedPrintf(comm,"nb added dofs (vertices) %d\n",it->second);
@@ -1190,8 +1230,14 @@ PetscErrorCode Core::build_fields(int verb) {
           case MBTRI:
           PetscSynchronizedPrintf(comm,"nb added dofs (triangles) %d\n",it->second);
           break;
+          case MBQUAD:
+          PetscSynchronizedPrintf(comm,"nb added dofs (quads) %d\n",it->second);
+          break;
           case MBTET:
           PetscSynchronizedPrintf(comm,"nb added dofs (tets) %d\n",it->second);
+          break;
+          case MBPRISM:
+          PetscSynchronizedPrintf(comm,"nb added dofs (prisms) %d\n",it->second);
           break;
           case MBENTITYSET:
           PetscSynchronizedPrintf(comm,"nb added dofs (meshsets) %d\n",it->second);

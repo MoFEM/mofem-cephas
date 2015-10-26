@@ -35,6 +35,7 @@ BasicMoFEMEntity::BasicMoFEMEntity(Interface &moab,const EntityHandle _ent):
     case MBVERTEX:
     case MBEDGE:
     case MBTRI:
+    case MBQUAD:
     case MBTET:
     case MBPRISM:
     case MBENTITYSET:

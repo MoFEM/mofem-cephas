@@ -19,7 +19,7 @@
 namespace MoFEM {
 
 
-static const MOFEMuuid IDD_MOFENNodeMerger = MOFEMuuid( BitIntefaceId(NODEMERGER_INTERFACE) );
+static const MOFEMuuid IDD_MOFEMNodeMerger = MOFEMuuid( BitIntefaceId(NODEMERGER_INTERFACE) );
 
 /** \brief merge node from two bit levels
   * \ingroup mofem
