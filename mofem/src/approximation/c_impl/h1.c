@@ -16,7 +16,6 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 */
 
-
 #include <petscsys.h>
 #include <cblas.h>
 

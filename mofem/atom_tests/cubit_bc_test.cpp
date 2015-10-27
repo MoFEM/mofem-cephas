@@ -249,8 +249,8 @@ int main(int argc, char *argv[]) {
   myfile.close();
 
 
-  } catch (const char* msg) {
-    SETERRQ(PETSC_COMM_SELF,1,msg);
+  } catch (MoFEMException const &e) {
+    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
   }
 
   PetscFinalize();

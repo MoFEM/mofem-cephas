@@ -240,8 +240,8 @@ int main(int argc, char *argv[]) {
   ierr = bit_ref_copuler_ptr->buidlAdjacenciesVerticesOnTets(bit_level0,children,true,1e-10,1e-6,true,2); CHKERRQ(ierr);
   ierr = bit_ref_copuler_ptr->buidlAdjacenciesEdgesFacesVolumes(bit_level0,children,true,2); CHKERRQ(ierr);
 
-  } catch (const char* msg) {
-    SETERRQ(PETSC_COMM_SELF,1,msg);
+  } catch (MoFEMException const &e) {
+    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
   }
 
   PetscFinalize();

@@ -669,8 +669,8 @@ PetscErrorCode FEMethod_LowLevelStudent::ShapeFunctions_PRISM(vector<double>& _g
 	      _face_nodes4_[nn] = side_number4-3;
 	    }
 	  }
-	} catch (const char* msg) {
-	  SETERRQ(PETSC_COMM_SELF,1,msg);
+	} catch (MoFEMException const &e) {
+	  SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
 	}
 	H1edgeN.resize(9);
 	//face 3, edges
@@ -949,8 +949,8 @@ PetscErrorCode FEMethod_LowLevelStudent::Data_at_GaussPoints() {
 	    try {
 	      int side_number = fe_ent_ptr->get_side_number_ptr(moab,ent_ptr->get_ent())->side_number;
 	      ierr = get_ShapeFunction(&base_functions_by_gauss_pt,NULL,field_ptr,ent_ptr->get_ent_type(),side_number); CHKERRQ(ierr);
-	    } catch (const char* msg) {
-	      SETERRQ(PETSC_COMM_SELF,1,msg);
+	    } catch (MoFEMException const &e) {
+	      SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
 	    }
 	  } else {
 	    ierr = get_ShapeFunction(&base_functions_by_gauss_pt,NULL,field_ptr,ent_ptr->get_ent_type()); CHKERRQ(ierr);
@@ -1052,8 +1052,8 @@ PetscErrorCode FEMethod_LowLevelStudent::DiffData_at_GaussPoints() {
 	    try {
 	      int side_number = fe_ent_ptr->get_side_number_ptr(moab,ent_ptr->get_ent())->side_number;
 	      ierr = get_ShapeFunction(NULL,&diff_base_functions_by_gauss_pt,field_ptr,ent_ptr->get_ent_type(),side_number); CHKERRQ(ierr);
-	    } catch (const char* msg) {
-	      SETERRQ(PETSC_COMM_SELF,1,msg);
+	    } catch (MoFEMException const &e) {
+	      SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
 	    }
 	  } else {
 	    ierr = get_ShapeFunction(NULL,&diff_base_functions_by_gauss_pt,field_ptr,ent_ptr->get_ent_type()); CHKERRQ(ierr);
@@ -1159,8 +1159,8 @@ PetscErrorCode FEMethod_LowLevelStudent::GetNMatrix_at_GaussPoint(
 	    try {
 	      int side_number = fe_ent_ptr->get_side_number_ptr(moab,ent_ptr->get_ent())->side_number;
 	      ierr = get_ShapeFunction(&base_functions_by_gauss_pt,NULL,field_ptr,ent_ptr->get_ent_type(),side_number); CHKERRQ(ierr);
-	    } catch (const char* msg) {
-	      SETERRQ(PETSC_COMM_SELF,1,msg);
+	    } catch (MoFEMException const &e) {
+	      SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
 	    }
 	  } else {
 	    ierr = get_ShapeFunction(&base_functions_by_gauss_pt,NULL,field_ptr,ent_ptr->get_ent_type()); CHKERRQ(ierr);
@@ -1313,8 +1313,8 @@ PetscErrorCode FEMethod_LowLevelStudent::GetDiffNMatrix_at_GaussPoint(
 	try {
 	  int side_number = fe_ent_ptr->get_side_number_ptr(moab,ent_ptr->get_ent())->side_number;
 	  ierr = get_ShapeFunction(NULL,&diff_base_functions_by_gauss_pt,field_ptr,ent_ptr->get_ent_type(),side_number); CHKERRQ(ierr);
-	} catch (const char* msg) {
-	  SETERRQ(PETSC_COMM_SELF,1,msg);
+	} catch (MoFEMException const &e) {
+	  SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
 	}
       } else {
 	switch (ent_ptr->get_ent_type()) {

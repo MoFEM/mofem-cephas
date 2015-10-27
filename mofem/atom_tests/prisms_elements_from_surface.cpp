@@ -15,6 +15,15 @@
 #include <MoFEM.hpp>
 #include <PrismsFromSurfaceInterface.hpp>
 
+#include <boost/iostreams/tee.hpp>
+#include <boost/iostreams/stream.hpp>
+#include <fstream>
+#include <iostream>
+
+namespace bio = boost::iostreams;
+using bio::tee_device;
+using bio::stream;
+
 using namespace MoFEM;
 
 MoABErrorCode rval;
@@ -71,41 +80,58 @@ int main(int argc, char *argv[]) {
     ierr = prisms_from_surface_interface->seedPrismsEntities(prisms,bit_level0); CHKERRQ(ierr);
 
     //Fields
-    ierr = m_field.add_field("H1",H1,1); CHKERRQ(ierr);
-    ierr = m_field.add_ents_to_field_by_PRISMs(meshset,"H1",10); CHKERRQ(ierr);
+    ierr = m_field.add_field("FIELD1",H1,1); CHKERRQ(ierr);
+    ierr = m_field.add_ents_to_field_by_PRISMs(meshset,"FIELD1",10); CHKERRQ(ierr);
 
-    // ierr = m_field.set_field_order(0,MBVERTEX,"H1",1,10); CHKERRQ(ierr);
-    // ierr = m_field.set_field_order(0,MBEDGE,"H1",2,10); CHKERRQ(ierr);
-    // ierr = m_field.set_field_order(0,MBTRI,"H1",3,10); CHKERRQ(ierr);
-    ierr = m_field.set_field_order(0,MBQUAD,"H1",4,10); CHKERRQ(ierr);
-    ierr = m_field.set_field_order(0,MBPRISM,"H1",6,10); CHKERRQ(ierr);
+    // ierr = m_field.set_field_order(0,MBVERTEX,"FIELD1",1,10); CHKERRQ(ierr);
+    ierr = m_field.set_field_order(0,MBEDGE,"FIELD1",2,10); CHKERRQ(ierr);
+    // ierr = m_field.set_field_order(0,MBTRI,"FIELD1",3,10); CHKERRQ(ierr);
+    ierr = m_field.set_field_order(0,MBQUAD,"FIELD1",4,10); CHKERRQ(ierr);
+    ierr = m_field.set_field_order(0,MBPRISM,"FIELD1",6,10); CHKERRQ(ierr);
     ierr = m_field.build_fields(10); CHKERRQ(ierr);
 
-    // ierr = m_field.list_dofs_by_field_name("H1"); CHKERRQ(ierr);
+    // ierr = m_field.list_dofs_by_field_name("FIELD1"); CHKERRQ(ierr);
 
     const DofMoFEMEntity_multiIndex *dofs_ptr;
     ierr = m_field.get_dofs(&dofs_ptr); CHKERRQ(ierr);
     PetscPrintf(PETSC_COMM_WORLD,"dofs_ptr.size() = %d\n",dofs_ptr->size());
-    if(dofs_ptr->size()!=160) {
-      SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsitency 160!=%d",dofs_ptr->size());
+    if(dofs_ptr->size()!=401) {
+      SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency 401!=%d",dofs_ptr->size());
     }
 
-    ierr = m_field.set_field_order(0,MBQUAD,"H1",5,10); CHKERRQ(ierr);
-    ierr = m_field.set_field_order(0,MBPRISM,"H1",7,10); CHKERRQ(ierr);
+    ierr = m_field.set_field_order(0,MBQUAD,"FIELD1",5,10); CHKERRQ(ierr);
+    ierr = m_field.set_field_order(0,MBPRISM,"FIELD1",7,10); CHKERRQ(ierr);
     ierr = m_field.build_fields(10); CHKERRQ(ierr);
 
     PetscPrintf(PETSC_COMM_WORLD,"dofs_ptr.size() = %d\n",dofs_ptr->size());
-    if(dofs_ptr->size()!=540) {
-      SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsitency 160!=%d",dofs_ptr->size());
+    if(dofs_ptr->size()!=781) {
+      SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency 781!=%d",dofs_ptr->size());
     }
-
 
     if(debug) {
       rval = moab.write_file("prism_mesh.vtk","VTK","",&meshset,1); CHKERR_PETSC(rval);
     }
 
-  } catch (const char* msg) {
-    SETERRQ(PETSC_COMM_SELF,1,msg);
+    //FE
+    ierr = m_field.add_finite_element("TEST_FE1"); CHKERRQ(ierr);
+
+    //Define rows/cols and element data
+    ierr = m_field.modify_finite_element_add_field_row("TEST_FE1","FIELD1"); CHKERRQ(ierr);
+    ierr = m_field.modify_finite_element_add_field_col("TEST_FE1","FIELD1"); CHKERRQ(ierr);
+    ierr = m_field.modify_finite_element_add_field_data("TEST_FE1","FIELD1"); CHKERRQ(ierr);
+
+    ierr = m_field.add_ents_to_finite_element_by_PRISMs(prisms,"TEST_FE1"); CHKERRQ(ierr);
+
+    //build finite elemnts
+    ierr = m_field.build_finite_elements(10); CHKERRQ(ierr);
+    //build adjacencies
+    ierr = m_field.build_adjacencies(bit_level0); CHKERRQ(ierr);
+
+    //list elements
+    // ierr = m_field.list_adjacencies(); CHKERRQ(ierr);
+
+  } catch (MoFEMException const &e) {
+    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
   }
 
   PetscFinalize();

@@ -50,13 +50,19 @@ struct ForcesAndSurcesCore: public FEMethod {
 
   PetscErrorCode getEdgesSense(DataForcesAndSurcesCore &data);
   PetscErrorCode getTrisSense(DataForcesAndSurcesCore &data);
+  PetscErrorCode getQuadSense(DataForcesAndSurcesCore &data);
 
   PetscErrorCode getEdgesOrder(DataForcesAndSurcesCore &data,const FieldSpace space);
   PetscErrorCode getTrisOrder(DataForcesAndSurcesCore &data,const FieldSpace space);
+  PetscErrorCode getQuadOrder(DataForcesAndSurcesCore &data,const FieldSpace space);
   PetscErrorCode getTetsOrder(DataForcesAndSurcesCore &data,const FieldSpace space);
+  PetscErrorCode getPrismOrder(DataForcesAndSurcesCore &data,const FieldSpace space);
+
   PetscErrorCode getEdgesOrder(DataForcesAndSurcesCore &data,const string &field_name);
   PetscErrorCode getTrisOrder(DataForcesAndSurcesCore &data,const string &field_name);
+  PetscErrorCode getQuadOrder(DataForcesAndSurcesCore &data,const string &field_name);
   PetscErrorCode getTetsOrder(DataForcesAndSurcesCore &data,const string &field_name);
+  PetscErrorCode getPrismOrder(DataForcesAndSurcesCore &data,const string &field_name);
 
   // ** Indices **
 
@@ -75,7 +81,8 @@ struct ForcesAndSurcesCore: public FEMethod {
   /// \brief get indices by type (generic function)
   PetscErrorCode getTypeIndices(
     const string &field_name,FENumeredDofMoFEMEntity_multiIndex &dofs,
-    EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data);
+    EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data
+  );
 
   /// \brief get row node indices from FENumeredDofMoFEMEntity_multiIndex
   PetscErrorCode getRowNodesIndices(DataForcesAndSurcesCore &data,const string &field_name);
@@ -139,7 +146,9 @@ struct ForcesAndSurcesCore: public FEMethod {
   PetscErrorCode getNodesFieldData(DataForcesAndSurcesCore &data,const string &field_name);
   PetscErrorCode getEdgesFieldData(DataForcesAndSurcesCore &data,const string &field_name);
   PetscErrorCode getTrisFieldData(DataForcesAndSurcesCore &data,const string &field_name);
+  PetscErrorCode getQuadFieldData(DataForcesAndSurcesCore &data,const string &field_name);
   PetscErrorCode getTetsFieldData(DataForcesAndSurcesCore &data,const string &field_name);
+  PetscErrorCode getPrismFieldData(DataForcesAndSurcesCore &data,const string &field_name);
 
   // ** DoFS **
 
@@ -166,9 +175,11 @@ struct ForcesAndSurcesCore: public FEMethod {
   PetscErrorCode getNodesFieldDofs(DataForcesAndSurcesCore &data,const string &field_name);
   PetscErrorCode getEdgesFieldDofs(DataForcesAndSurcesCore &data,const string &field_name);
   PetscErrorCode getTrisFieldDofs(DataForcesAndSurcesCore &data,const string &field_name);
+  PetscErrorCode getQuadFieldDofs(DataForcesAndSurcesCore &data,const string &field_name);
   PetscErrorCode getTetsFieldDofs(DataForcesAndSurcesCore &data,const string &field_name);
+  PetscErrorCode getPrismFieldDofs(DataForcesAndSurcesCore &data,const string &field_name);
 
-  PetscErrorCode getFaceNodes(DataForcesAndSurcesCore &data);
+  PetscErrorCode getFaceTriNodes(DataForcesAndSurcesCore &data);
   PetscErrorCode getSpacesOnEntities(DataForcesAndSurcesCore &data);
 
   // ** Data form NumeredDofMoFEMEntity_multiIndex **
@@ -189,14 +200,14 @@ struct ForcesAndSurcesCore: public FEMethod {
   /** \brief computes approximation functions for tetrahedral and H1 space
     */
   PetscErrorCode shapeTETFunctions_H1(
-    DataForcesAndSurcesCore &data,
-    const double *G_X,const double *G_Y,const double *G_Z,const int G_DIM);
+    DataForcesAndSurcesCore &data,const double *G_X,const double *G_Y,const double *G_Z,const int G_DIM
+  );
 
   /** \brief computes approximation functions for tetrahedral and L2 space
     */
   PetscErrorCode shapeTETFunctions_L2(
-    DataForcesAndSurcesCore &data,
-    const double *G_X,const double *G_Y,const double *G_Z,const int G_DIM);
+    DataForcesAndSurcesCore &data,const double *G_X,const double *G_Y,const double *G_Z,const int G_DIM
+  );
 
   ublas::matrix<MatrixDouble > N_face_edge;
   ublas::vector<MatrixDouble > N_face_bubble;
@@ -214,40 +225,38 @@ struct ForcesAndSurcesCore: public FEMethod {
   /** \brief computes approximation functions for tetrahedral and H1 space
     */
   PetscErrorCode shapeTETFunctions_Hdiv(
-    DataForcesAndSurcesCore &data,
-    const double *G_X,const double *G_Y,const double *G_Z,const int G_DIM);
-
+    DataForcesAndSurcesCore &data,const double *G_X,const double *G_Y,const double *G_Z,const int G_DIM
+  );
 
   /** \brief computes approximation functions for triangle and H1 space
     */
   PetscErrorCode shapeTRIFunctions_H1(
-    DataForcesAndSurcesCore &data,
-    const double *G_X,const double *G_Y,const int G_DIM);
-
+    DataForcesAndSurcesCore &data,const double *G_X,const double *G_Y,const int G_DIM
+  );
 
   /** \brief computes approximation functions for triangle and H1 space
     */
   PetscErrorCode shapeTRIFunctions_Hdiv(
-    DataForcesAndSurcesCore &data,
-    const double *G_X,const double *G_Y,const int G_DIM);
+    DataForcesAndSurcesCore &data,const double *G_X,const double *G_Y,const int G_DIM
+  );
 
   /** \brief computes approximation functions for edge and H1 space
     */
   PetscErrorCode shapeEDGEFunctions_H1(
-    DataForcesAndSurcesCore &data,const double *G_X,const int G_DIM);
+    DataForcesAndSurcesCore &data,const double *G_X,const int G_DIM
+  );
 
   /** \brief computes approximation functions for prism and H1 space
     */
   PetscErrorCode shapeFlatPRISMFunctions_H1(
-    DataForcesAndSurcesCore &data,
-    const double *G_X,const double *G_Y,const int G_DIM);
-
+    DataForcesAndSurcesCore &data,const double *G_X,const double *G_Y,const int G_DIM
+  );
 
   /** \brief computes approximation functions for prism and H1 space
     */
   PetscErrorCode shapeFlatPRISMFunctions_Hdiv(
-    DataForcesAndSurcesCore &data,
-    const double *G_X,const double *G_Y,const int G_DIM);
+    DataForcesAndSurcesCore &data,const double *G_X,const double *G_Y,const int G_DIM
+  );
 
   /** \brief it is used to calculate nb. of Gauss integration points
 
@@ -259,8 +268,8 @@ struct ForcesAndSurcesCore: public FEMethod {
    \code
    int getRule(int order) { return -1; };
    \endcode
-   then, fuction \codes setGaussPts(order) \endcode is called. In setGaussPts
-   user can implement own intergartion rule for specific approx. ordrr.
+   then, function \codes setGaussPts(order) \endcode is called. In setGaussPts
+   user can implement own integration rule for specific approx. order.
 
    At this stage of development integration points are weight are calculated following this paper:
    Albert Nijenhuis, Herbert Wilf, Combinatorial Algorithms for Computers and
@@ -374,7 +383,7 @@ struct ForcesAndSurcesCore: public FEMethod {
 
     /** \brief Get row indices
 
-    Field could be or not declared for this element but is declared for porblem
+    Field could be or not declared for this element but is declared for problem
 
     \param field_name
     \param type entity type
@@ -388,7 +397,7 @@ struct ForcesAndSurcesCore: public FEMethod {
 
     /** \brief Get col indices
 
-    Field could be or not declared for this element but is declared for porblem
+    Field could be or not declared for this element but is declared for problem
 
     \param field_name
     \param type entity type
@@ -953,20 +962,22 @@ struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
     opHOCoordsAndNormals(
       hoCoordsAtGaussPtsF3,nOrmals_at_GaussPtF3,tAngent1_at_GaussPtF3,tAngent2_at_GaussPtF3,
       hoCoordsAtGaussPtsF4,nOrmals_at_GaussPtF4,tAngent1_at_GaussPtF4,tAngent2_at_GaussPtF4
-    ) {};
+    ) {
+    }
 
-  /** \brief default operator for TRI element
+  /** \brief default operator for Flat Prism element
     * \ingroup mofem_forces_and_sources_prism_element
     */
   struct UserDataOperator: public ForcesAndSurcesCore::UserDataOperator {
 
-    UserDataOperator(
-      const string &field_name,const char type):
-      ForcesAndSurcesCore::UserDataOperator(field_name,type) {}
+    UserDataOperator(const string &field_name,const char type):
+    ForcesAndSurcesCore::UserDataOperator(field_name,type) {}
 
     UserDataOperator(
-      const string &row_field_name,const string &col_field_name,const char type):
-      ForcesAndSurcesCore::UserDataOperator(row_field_name,col_field_name,type) {}
+      const string &row_field_name,const string &col_field_name,const char type
+    ):
+    ForcesAndSurcesCore::UserDataOperator(row_field_name,col_field_name,type) {
+    }
 
     /** \brief get face aRea
     \param dd if dd == 0 it is for face F3 if dd == 1 is for face F4
@@ -1082,8 +1093,53 @@ struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
       PetscFunctionReturn(0);
     }
 
-    private:
+    protected:
     FlatPrismElementForcesAndSurcesCore *ptrFE;
+
+  };
+
+  PetscErrorCode preProcess() {
+    PetscFunctionBegin;
+    PetscFunctionReturn(0);
+  }
+  PetscErrorCode operator()();
+  PetscErrorCode postProcess() {
+    PetscFunctionBegin;
+    PetscFunctionReturn(0);
+  }
+
+};
+
+
+/** \brief FatPrism finite element
+ \ingroup mofem_forces_and_sources_prism_element
+
+ User is implementing own operator at Gauss points level, by own object
+ derived from FatPrismElementForcesAndSurcesCoreL::UserDataOperator.  Arbitrary
+ number of operator added pushing objects to rowOpPtrVector and
+ rowColOpPtrVector.
+
+ */
+struct FatPrismElementForcesAndSurcesCore: public FlatPrismElementForcesAndSurcesCore {
+
+  FatPrismElementForcesAndSurcesCore(FieldInterface &m_field):
+  FlatPrismElementForcesAndSurcesCore(m_field) {
+  }
+
+  /** \brief default operator for Flat Prism element
+    * \ingroup mofem_forces_and_sources_prism_element
+    */
+  struct UserDataOperator: public FlatPrismElementForcesAndSurcesCore::UserDataOperator {
+
+    UserDataOperator(const string &field_name,const char type):
+    FlatPrismElementForcesAndSurcesCore::UserDataOperator(field_name,type) {
+    }
+
+    UserDataOperator(
+      const string &row_field_name,const string &col_field_name,const char type
+    ):
+    FlatPrismElementForcesAndSurcesCore::UserDataOperator(row_field_name,col_field_name,type) {
+    }
 
   };
 
@@ -1122,7 +1178,6 @@ struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
  * \defgroup mofem_forces_and_sources_prism_element Prism Element
  * \ingroup mofem_forces_and_sources
  ******************************************************************************/
-
 
 /***************************************************************************//**
  * \defgroup mofem_forces_and_sources_edge_element Edge Element

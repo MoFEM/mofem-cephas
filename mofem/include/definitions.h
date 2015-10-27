@@ -60,7 +60,7 @@ enum MoFEMErrorCode {
   MOFEM_NOT_FOUND = 102,
   MOFEM_OPERATION_UNSUCCESSFUL = 103,
   MOFEM_IMPOSIBLE_CASE = 104,
-  MOFEM_CHAR_THROW = 105,
+  MOFEM_MOFEMEXCEPTION_THROW = 105,
   MOFEM_STD_EXCEPTION_THROW = 106,
   MOFEM_INVALID_DATA = 107,
   MOFEM_ATOM_TEST_INVALID = 108,
@@ -144,10 +144,11 @@ enum ByWhat {
 #define CHKERR(a) do { \
   ErrorCode val = (a); \
   if (MB_SUCCESS != val) { \
-    std::cerr << "Error code  " << val << " at " << __FILE__ << ":" << __LINE__ << std::endl; \
+    cerr << "Error code  " << val << " at " << __FILE__ << ":" << __LINE__ << std::endl; \
     assert(1); \
   } \
 } while (false)
+
 
 /// check moab error and communicate it using petsc interface
 #define CHKERR_PETSC(a) do { \
@@ -165,20 +166,14 @@ enum ByWhat {
   if (MB_SUCCESS != val) { \
     std::ostringstream ss; \
     ss << "Error code  " << val << " at " << __FILE__ << ":" << __LINE__ << std::endl; \
-    std::string str(ss.str()); \
-    char msg[255]; \
-    bcopy(&str.c_str()[0],msg,sizeof(char)*str.size()); \
-    throw msg; \
+    throw MoFEMException(MOFEM_MOAB_ERROR,ss.str().c_str() ); \
   } \
 } while (false)
 
 #define THROW_AT_LINE(a) { \
   std::ostringstream ss; \
   ss << a << " " << " at " << __FILE__ << ":" << __LINE__ << std::endl; \
-  std::string str(ss.str()); \
-  char msg[255]; \
-  bcopy(&str.c_str()[0],msg,sizeof(char)*str.size()); \
-  throw msg; \
+  throw MoFEMException( MOFEM_MOFEMEXCEPTION_THROW,ss.str().c_str() ); \
 }
 
 #endif //__DEFINITONS_H__

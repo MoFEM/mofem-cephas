@@ -212,8 +212,8 @@ PetscErrorCode FEMethod_ComplexForLazy::GetIndicesRow(
       assert(ff == 4);
       //volumes
       ierr = GetRowGlobalIndices(field_name,MBTET,RowGlob[1+ee+ff]); CHKERRQ(ierr);
-      } catch (const char* msg) {
-	SETERRQ(PETSC_COMM_SELF,1,msg);
+      } catch (MoFEMException const &e) {
+	SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
       }
     }
     break;
@@ -251,8 +251,8 @@ PetscErrorCode FEMethod_ComplexForLazy::GetIndicesCol(
       assert(ff == 4);
       //volumes
       ierr = GetColGlobalIndices(field_name,MBTET,ColGlob[1+ee+ff]); CHKERRQ(ierr);
-      } catch (const char* msg) {
-	SETERRQ(PETSC_COMM_SELF,1,msg);
+      } catch (MoFEMException const &e) {
+	SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
       }
     }
     break;
@@ -414,8 +414,8 @@ PetscErrorCode FEMethod_ComplexForLazy::GetData(
       for(int dd = 0;niit!=hi_niit;niit++,dd++) {
 	dofs_nodes[3*niit->side_number_ptr->side_number+niit->get_EntDofIdx()] = niit->get_FieldData();
       }
-      } catch (const char* msg) {
-	SETERRQ(PETSC_COMM_SELF,1,msg);
+      } catch (MoFEMException const &e) {
+	SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
       }
     }  break;
     default:

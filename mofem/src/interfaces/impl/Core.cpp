@@ -434,8 +434,10 @@ const MoFEMField* Core::get_field_structure(const string& name) {
   const field_set_by_name &set = moabFields.get<FieldName_mi_tag>();
   field_set_by_name::iterator miit = set.find(name);
   if(miit==set.end()) {
-    throw MofemException(MOFEM_NOT_FOUND,
-      string("field < "+name+" > not in databse (top tip: check spelling)").c_str());
+    throw MoFEMException(
+      MOFEM_NOT_FOUND,
+      string("field < "+name+" > not in databse (top tip: check spelling)").c_str()
+    );
   }
   return &*miit;
 }
@@ -495,8 +497,8 @@ PetscErrorCode Core::addPrismToDatabase(const EntityHandle prism,int verb) {
       p_MoFEMFiniteElement.first->get_side_number_ptr(moab,*face_side3.begin());
       p_MoFEMFiniteElement.first->get_side_number_ptr(moab,*face_side4.begin());
     }
-  } catch (const char* msg) {
-    SETERRQ(PETSC_COMM_SELF,1,msg);
+  } catch (MoFEMException const &e) {
+    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
   }
   PetscFunctionReturn(0);
 }

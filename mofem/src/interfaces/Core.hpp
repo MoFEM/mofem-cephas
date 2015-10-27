@@ -236,8 +236,8 @@ struct Core:
         ss << endl;
         PetscPrintf(comm,ss.str().c_str());
       }
-    } catch (const char* msg) {
-      SETERRQ(PETSC_COMM_SELF,1,msg);
+    } catch (MoFEMException const &e) {
+      SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
     }
     PetscFunctionReturn(0);
   }

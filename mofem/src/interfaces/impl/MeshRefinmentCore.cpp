@@ -462,8 +462,8 @@ PetscErrorCode Core::refine_TET(const Range &_tets,const BitRefLevel &bit,const 
 	  pair<RefMoFEMElement_multiIndex::iterator,bool> p_MoFEMFiniteElement;
 	  try {
 	    p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_TET(moab,&*p_MoFEMEntity.first)));
-	  } catch (const char* msg) {
-	    SETERRQ(PETSC_COMM_SELF,1,msg);
+	  } catch (MoFEMException const &e) {
+	    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
 	  }
 	  //set bit that this element is now in databse
 	  ref_tets_bit.set(tt);
@@ -798,8 +798,8 @@ PetscErrorCode Core::refine_PRISM(const EntityHandle meshset,const BitRefLevel &
 	  pair<RefMoFEMElement_multiIndex::iterator,bool> p_MoFEMFiniteElement;
 	  try {
 	    p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_PRISM(moab,&*p_ent.first)));
-	  } catch (const char* msg) {
-	    SETERRQ(PETSC_COMM_SELF,1,msg);
+	  } catch (MoFEMException const &e) {
+	    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
 	  }
 	  ref_prism_bit.set(pp);
 	  ierr = addPrismToDatabase(ref_prisms[pp]); CHKERRQ(ierr);

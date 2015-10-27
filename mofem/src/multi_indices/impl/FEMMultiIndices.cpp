@@ -72,21 +72,29 @@ RefMoFEMElement_PRISM::RefMoFEMElement_PRISM(Interface &moab,const RefMoFEMEntit
   }
 }
 SideNumber* RefMoFEMElement_PRISM::get_side_number_ptr(Interface &moab,EntityHandle ent) const {
+
   SideNumber_multiIndex::iterator miit = side_number_table.find(ent);
+  // this int is in table then return pointer
   if(miit!=side_number_table.end()) return const_cast<SideNumber*>(&*miit);
+
+  // if ent is a this prism
   if(ref_ptr->ent == ent) {
     miit = const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,0,0,0)).first;
     return const_cast<SideNumber*>(&*miit);
   }
+
+  // if ent is meshset
   if(moab.type_from_handle(ent)==MBENTITYSET) {
     miit = const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,0,0,0)).first;
     return const_cast<SideNumber*>(&*miit);
   }
 
-  ErrorCode rval;
+  // use moab to get sense, side and offset
+  MoABErrorCode rval;
   int side_number,sense,offset;
   rval = moab.side_number(ref_ptr->ent,ent,side_number,sense,offset); CHKERR_THROW(rval);
 
+  // it has to be degenerated prism, get sense from nodes topology
   if(side_number==-1) {
 
     if(moab.type_from_handle(ent)==MBVERTEX) {
@@ -101,16 +109,16 @@ SideNumber* RefMoFEMElement_PRISM::get_side_number_ptr(Interface &moab,EntityHan
     //get ent connectivity
     const EntityHandle* conn_ent;
     rval = moab.get_connectivity(ent,conn_ent,num_nodes,true); CHKERR_THROW(rval);
-    /*
-    for(int nn = 0; nn<6;nn++) {
-      cerr << conn[nn] << " ";
-    };
-    cerr << endl;
-    for(int nn = 0; nn<num_nodes;nn++) {
-      cerr << conn_ent[nn] << " ";
-    }
-    cerr << endl;
-    */
+
+    // for(int nn = 0; nn<6;nn++) {
+    //   cerr << conn[nn] << " ";
+    // };
+    // cerr << endl;
+    // for(int nn = 0; nn<num_nodes;nn++) {
+    //   cerr << conn_ent[nn] << " ";
+    // }
+    // cerr << endl;
+
     //buttom face
     EntityHandle face3[3] = { conn[0], conn[1], conn[2] };
     //top face
@@ -167,6 +175,7 @@ SideNumber* RefMoFEMElement_PRISM::get_side_number_ptr(Interface &moab,EntityHan
     }
 
     if(num_nodes == 2) {
+      // Triangle edges
       EntityHandle edges[6][2] = {
         { conn[0], conn[1] } /*0*/, { conn[1], conn[2] } /*1*/, { conn[2], conn[0] } /*2*/,
         { conn[3], conn[4] } /*3+3*/, { conn[4], conn[5] } /*3+4*/, { conn[5], conn[3] } /*3+5*/
@@ -509,7 +518,9 @@ PetscErrorCode DefaultElementAdjacency::defaultTet(Interface &moab,const MoFEMFi
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode DefaultElementAdjacency::defaultPrism(Interface &moab,const MoFEMField *field_ptr,const EntMoFEMFiniteElement *fe_ptr,Range &adjacency) {
+PetscErrorCode DefaultElementAdjacency::defaultPrism(
+  Interface &moab,const MoFEMField *field_ptr,const EntMoFEMFiniteElement *fe_ptr,Range &adjacency
+) {
   PetscFunctionBegin;
   ErrorCode rval;
   EntityHandle fe_ent = fe_ptr->get_ent();
@@ -527,15 +538,28 @@ PetscErrorCode DefaultElementAdjacency::defaultPrism(Interface &moab,const MoFEM
       EntityHandle edge;
       rval = moab.side_element(prism,1,ee,edge); CHKERR_PETSC(rval);
       SideNumber *side_ptr = fe_ptr->get_RefMoFEMElement()->get_side_number_ptr(moab,edge);
-      if(side_ptr->side_number!=ee) SETERRQ1(PETSC_COMM_SELF,1,"data insonsitency for edge %d",ee);
+      if(side_ptr->side_number!=ee) {
+        SETERRQ1(PETSC_COMM_SELF,1,"data insistency for edge %d",ee);
+      }
       rval = moab.side_element(prism,1,6+ee,edge); CHKERR_PETSC(rval);
       side_ptr = fe_ptr->get_RefMoFEMElement()->get_side_number_ptr(moab,edge);
       if(side_ptr->side_number!=ee+6) {
         if(side_ptr->side_number!=ee) {
-          SETERRQ1(PETSC_COMM_SELF,1,"data insonsitency for edge %d",ee);
+          SETERRQ1(PETSC_COMM_SELF,1,"data insistency for edge %d",ee);
         } else {
           side_ptr->brother_side_number = ee+6;
         }
+      }
+    }
+    for(;ee<6;ee++) {
+      EntityHandle edge;
+      rval = moab.side_element(prism,1,ee,edge); CHKERR_PETSC(rval);
+      if(moab.type_from_handle(edge)==MBVERTEX) {
+        continue;
+      }
+      SideNumber *side_ptr = fe_ptr->get_RefMoFEMElement()->get_side_number_ptr(moab,edge);
+      if(side_ptr->side_number!=ee) {
+        SETERRQ1(PETSC_COMM_SELF,1,"data insistency for edge %d",ee);
       }
     }
     int nn = 0;
@@ -543,19 +567,21 @@ PetscErrorCode DefaultElementAdjacency::defaultPrism(Interface &moab,const MoFEM
       EntityHandle node;
       rval = moab.side_element(prism,0,nn,node); CHKERR_PETSC(rval);
       SideNumber *side_ptr = fe_ptr->get_RefMoFEMElement()->get_side_number_ptr(moab,node);
-      if(side_ptr->side_number!=nn) SETERRQ1(PETSC_COMM_SELF,1,"data insonsitency for node %d",nn);
+      if(side_ptr->side_number!=nn) {
+        SETERRQ1(PETSC_COMM_SELF,1,"data insistency for node %d",nn);
+      }
       rval = moab.side_element(prism,0,nn+3,node); CHKERR_PETSC(rval);
       side_ptr = fe_ptr->get_RefMoFEMElement()->get_side_number_ptr(moab,node);
       if(side_ptr->side_number!=nn+3) {
         if(side_ptr->side_number!=nn) {
-          SETERRQ1(PETSC_COMM_SELF,1,"data insonsitency for node %d",nn);
+          SETERRQ1(PETSC_COMM_SELF,1,"data insistency for node %d",nn);
         } else {
           side_ptr->brother_side_number = nn+3;
         }
       }
     }
-  } catch (const char* msg) {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_CHAR_THROW ,msg);
+  } catch (MoFEMException const &e) {
+    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
   }
   //get adjacencies
   SideNumber_multiIndex &side_table = fe_ptr->get_RefMoFEMElement()->get_side_number_table();

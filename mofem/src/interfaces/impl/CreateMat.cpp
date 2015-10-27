@@ -586,8 +586,8 @@ PetscErrorCode Core::partition_problem(const string &name,int verb) {
   try {
     CreateRowComressedADJMatrix *core_ptr = static_cast<CreateRowComressedADJMatrix*>(const_cast<Core*>(this));
     ierr = core_ptr->createMat<Idx_mi_tag>(name,&Adj,MATMPIADJ,&i,&j,PETSC_NULL,true,verb); CHKERRQ(ierr);
-  } catch (const char* msg) {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_CHAR_THROW,msg);
+  } catch (MoFEMException const &e) {
+    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
   } catch (const std::exception& ex) {
     ostringstream ss;
     ss << "throw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
@@ -696,8 +696,8 @@ PetscErrorCode Core::partition_problem(const string &name,int verb) {
       }
     }
 
-  } catch (const char* msg) {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_CHAR_THROW,msg);
+  } catch (MoFEMException const &e) {
+    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
   } catch (const std::exception& ex) {
     ostringstream ss;
     ss << "throw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;

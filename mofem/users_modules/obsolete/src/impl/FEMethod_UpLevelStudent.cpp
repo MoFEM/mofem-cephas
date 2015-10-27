@@ -708,8 +708,8 @@ PetscErrorCode FEMethod_UpLevelStudent::GetGaussRowFaceNMatrix(
       int side_number;
       try {
 	side_number = fe_ent_ptr->get_side_number_ptr(moab,ent)->side_number;
-      } catch (const char* msg) {
-	  SETERRQ(PETSC_COMM_SELF,1,msg);
+      } catch (MoFEMException const &e) {
+	  SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
       }
       FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_Type_And_Side_Number_mi_tag>::type::iterator fiiit;
       fiiit = rowPtr->get<Composite_Name_Type_And_Side_Number_mi_tag>().find(boost::make_tuple(field_name,MBTRI,side_number));
@@ -725,8 +725,8 @@ PetscErrorCode FEMethod_UpLevelStudent::GetGaussRowFaceNMatrix(
       int side_number;
       try {
 	side_number = fe_ent_ptr->get_side_number_ptr(moab,edge_handle)->side_number;
-      } catch (const char* msg) {
-	  SETERRQ(PETSC_COMM_SELF,1,msg);
+      } catch (MoFEMException const &e) {
+	  SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
       }
       FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_Type_And_Side_Number_mi_tag>::type::iterator eiiit;
       eiiit = rowPtr->get<Composite_Name_Type_And_Side_Number_mi_tag>().find(boost::make_tuple(field_name,MBEDGE,side_number));
