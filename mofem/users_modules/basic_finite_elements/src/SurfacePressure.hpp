@@ -111,8 +111,6 @@ struct NeummanForcesSurface {
 
   };
 
-  DEPRECATED typedef OpNeumannFlux OpNeumannPreassureFlux;
-
   /// Add force element operator  (integration on face)
   PetscErrorCode addForce(const string field_name,Vec F,int ms_id);
 

@@ -445,37 +445,6 @@ struct ForcesAndSurcesCore: public FEMethod {
    */
   boost::ptr_vector<UserDataOperator>& getOpPtrVector() { return opPtrVector; }
 
-  /** \brief Use to push back operator for row operator
-
-   It can be used to calculate nodal forces or other quantities on the mesh.
-
-   This function is DEPRECATED: use getOpPtrVector instead.
-
-   */
-  DEPRECATED boost::ptr_vector<UserDataOperator>& getRowOpPtrVector() { return opPtrVector; }
-
-  /** \brief Use to push back operator for col operator
-
-   It can be used to calculate nodal forces or other quantities on the mesh.
-
-   This function is DEPRECATED: use getOpPtrVector instead.
-
-   */
-  DEPRECATED boost::ptr_vector<UserDataOperator>& getColOpPtrVector() { return opPtrVector; }
-
-
-  /** \brief use to push back operator for row-col operator
-
-   It can be used to calculate matrices or other quantities on mesh.
-
-   This function is DEPRECATED: use getOpPtrVector instead.
-
-   */
-  DEPRECATED boost::ptr_vector<UserDataOperator>& getRowColOpPtrVector() { return opPtrVector; }
-
-  DEPRECATED boost::ptr_vector<UserDataOperator>& get_op_to_do_Rhs() { return getOpPtrVector(); }
-  DEPRECATED boost::ptr_vector<UserDataOperator>& get_op_to_do_Lhs() { return getOpPtrVector(); }
-
   virtual PetscErrorCode preProcess() {
     PetscFunctionBegin;
     PetscFunctionReturn(0);
@@ -636,9 +605,6 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 
 };
 
-DEPRECATED typedef VolumeElementForcesAndSourcesCore TetElementForcesAndSourcesCore;
-
-
 /** \brief Face finite element
  \ingroup mofem_forces_and_sources_tri_element
 
@@ -780,8 +746,6 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
   }
 
 };
-
-DEPRECATED typedef FaceElementForcesAndSourcesCore TriElementForcesAndSurcesCore;
 
 /** \brief Edge finite element
  * \ingroup mofem_forces_and_sources_edge_element
