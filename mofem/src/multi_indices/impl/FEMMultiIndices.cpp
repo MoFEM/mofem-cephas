@@ -175,31 +175,57 @@ SideNumber* RefMoFEMElement_PRISM::get_side_number_ptr(Interface &moab,EntityHan
     }
 
     if(num_nodes == 2) {
-      // Triangle edges
-      EntityHandle edges[6][2] = {
-        { conn[0], conn[1] } /*0*/, { conn[1], conn[2] } /*1*/, { conn[2], conn[0] } /*2*/,
-        { conn[3], conn[4] } /*3+3*/, { conn[4], conn[5] } /*3+4*/, { conn[5], conn[3] } /*3+5*/
-      };
-      for(int ee = 0;ee<6;ee++) {
-        if(
-          (( conn_ent[0] == edges[ee][0] )&&( conn_ent[1] == edges[ee][1] ))||
-          (( conn_ent[0] == edges[ee][1] )&&( conn_ent[1] == edges[ee][0] ))
-        ) {
-          side_number = ee;
-          if(ee>=3) {
-            side_number += 3;
-            EntityHandle* conn0_4_ptr = find( face4, &face4[3], conn_ent[0] );
-            offset = distance( face4, conn0_4_ptr ) + 3;
-          } else {
-            EntityHandle* conn0_3_ptr = find( face3, &face3[3], conn_ent[0] );
-            offset = distance( face3, conn0_3_ptr );
+      {
+        // Triangle edges
+        EntityHandle edges[6][2] = {
+          { conn[0], conn[1] } /*0*/, { conn[1], conn[2] } /*1*/, { conn[2], conn[0] } /*2*/,
+          { conn[3], conn[4] } /*3+3*/, { conn[4], conn[5] } /*3+4*/, { conn[5], conn[3] } /*3+5*/
+        };
+        for(int ee = 0;ee<6;ee++) {
+          if(
+            (( conn_ent[0] == edges[ee][0] )&&( conn_ent[1] == edges[ee][1] ))||
+            (( conn_ent[0] == edges[ee][1] )&&( conn_ent[1] == edges[ee][0] ))
+          ) {
+            side_number = ee;
+            if(ee>=3) {
+              side_number += 3;
+              EntityHandle* conn0_4_ptr = find( face4, &face4[3], conn_ent[0] );
+              offset = distance( face4, conn0_4_ptr ) + 3;
+            } else {
+              EntityHandle* conn0_3_ptr = find( face3, &face3[3], conn_ent[0] );
+              offset = distance( face3, conn0_3_ptr );
+            }
+            sense = 1;
+            if(( conn_ent[0] == edges[ee][1] )&&( conn_ent[1] == edges[ee][0] ))  sense = -1;
+            miit = const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,side_number,sense,offset)).first;
+            return const_cast<SideNumber*>(&*miit);
           }
-          sense = 1;
-          if(( conn_ent[0] == edges[ee][1] )&&( conn_ent[1] == edges[ee][0] ))  sense = -1;
-          miit = const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,side_number,sense,offset)).first;
-          return const_cast<SideNumber*>(&*miit);
         }
       }
+      // {
+      //   // Edges through thickness
+      //   EntityHandle edges[3][2] = {
+      //     { conn[0], conn[3] }, { conn[1], conn[4] }, { conn[2], conn[5] }
+      //   };
+      //   for(int ee = 0;ee<3;ee++) {
+      //     if(
+      //       (( conn_ent[0] == edges[ee][0] )&&( conn_ent[1] == edges[ee][1] ))||
+      //       (( conn_ent[0] == edges[ee][1] )&&( conn_ent[1] == edges[ee][0] ))
+      //     ) {
+      //       side_number = 3+ee;
+      //       offset = distance(conn,find(conn,&conn[6],conn_ent[0]));
+      //       sense = 1;
+      //       if(( conn_ent[0] == edges[ee][1] )&&( conn_ent[1] == edges[ee][0] ))  sense = -1;
+      //       miit = const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,side_number,sense,offset)).first;
+      //       return const_cast<SideNumber*>(&*miit);
+      //     }
+      //   }
+      // }
+      // for(int nn = 0; nn<6;nn++) {
+      //   cerr << conn[nn] << " ";
+      // };
+      // cerr << endl;
+      // cerr << conn_ent[0] << " " << conn_ent[1] << endl;
       THROW_AT_LINE("Huston we have problem");
     }
     ostringstream sss;
@@ -225,7 +251,7 @@ RefMoFEMElement(moab,_RefMoFEMEntity_ptr),tag_BitRefEdges(NULL) {
     PetscTraceBackErrorHandler(
       PETSC_COMM_WORLD,
       __LINE__,PETSC_FUNCTION_NAME,__FILE__,
-      MOFEM_DATA_INCONSISTENCT,PETSC_ERROR_INITIAL,
+      MOFEM_DATA_INCONSISTENCY,PETSC_ERROR_INITIAL,
       "this work only for TETs",PETSC_NULL
     );
     THROW_AT_LINE("this work only for TETs");
@@ -248,18 +274,14 @@ SideNumber* RefMoFEMElement_TET::get_side_number_ptr(Interface &moab,EntityHandl
   ErrorCode rval;
   int side_number,sense,offset;
   rval = moab.side_number(ref_ptr->ent,ent,side_number,sense,offset); CHKERR_THROW(rval);
-  if(side_number==-1) THROW_AT_LINE("this not working");
+  if(side_number==-1) {
+    THROW_AT_LINE("this not working");
+  }
   pair<SideNumber_multiIndex::iterator,bool> p_miit;
   p_miit = const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,side_number,sense,offset));
   miit = p_miit.first;
   if(miit->ent != ent) {
-    PetscTraceBackErrorHandler(
-      PETSC_COMM_WORLD,
-      __LINE__,PETSC_FUNCTION_NAME,__FILE__,
-      MOFEM_DATA_INCONSISTENCT,PETSC_ERROR_INITIAL,"data inconstency",PETSC_NULL);
-    PetscMPIAbortErrorHandler(PETSC_COMM_WORLD,
-      __LINE__,PETSC_FUNCTION_NAME,__FILE__,
-      MOFEM_DATA_INCONSISTENCT,PETSC_ERROR_INITIAL,"data inconstency",PETSC_NULL);
+    THROW_AT_LINE("this not working");
   }
   //cerr << side_number << " " << sense << " " << offset << endl;
   return const_cast<SideNumber*>(&*miit);
@@ -275,7 +297,7 @@ RefMoFEMElement_TRI::RefMoFEMElement_TRI(Interface &moab,const RefMoFEMEntity *_
     case MBTRI:
     break;
     default:
-      THROW_AT_LINE("this work only for TRIs");
+    THROW_AT_LINE("this work only for TRIs");
   }
   ErrorCode rval;
   int side_number,sense,offset;
@@ -291,15 +313,7 @@ RefMoFEMElement_TRI::RefMoFEMElement_TRI(Interface &moab,const RefMoFEMEntity *_
     rval = moab.side_element(tri,1,ee,edge); CHKERR_THROW(rval);
     rval = moab.side_number(tri,edge,side_number,sense,offset); CHKERR_THROW(rval);
     if(ee != side_number) {
-      PetscTraceBackErrorHandler(
-        PETSC_COMM_WORLD,
-        __LINE__,PETSC_FUNCTION_NAME,__FILE__,
-        MOFEM_DATA_INCONSISTENCT,PETSC_ERROR_INITIAL,"data inconstency",PETSC_NULL
-      );
-      PetscMPIAbortErrorHandler(PETSC_COMM_WORLD,
-        __LINE__,PETSC_FUNCTION_NAME,__FILE__,
-        MOFEM_DATA_INCONSISTENCT,PETSC_ERROR_INITIAL,"data inconstency",PETSC_NULL
-      );
+      THROW_AT_LINE("data inconstency");
     }
     const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(edge,ee,sense,offset));
   }
@@ -492,7 +506,7 @@ PetscErrorCode DefaultElementAdjacency::defaultTet(Interface &moab,const MoFEMFi
       nodes = subtract(nodes,mid_nodes);
     }
     if(nodes.size()<4) {
-      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"TET has at least 4 adjacent nodes; it can has more if user add more adjacencies");
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"TET has at least 4 adjacent nodes; it can has more if user add more adjacencies");
     }
     adjacency.insert(nodes.begin(),nodes.end());
     case HCURL:
@@ -533,6 +547,17 @@ PetscErrorCode DefaultElementAdjacency::defaultPrism(
     rval = moab.side_element(prism,2,4,face_side4); CHKERR_PETSC(rval);
     fe_ptr->get_RefMoFEMElement()->get_side_number_ptr(moab,face_side3);
     fe_ptr->get_RefMoFEMElement()->get_side_number_ptr(moab,face_side4);
+    for(int qq = 0;qq<3;qq++) {
+      EntityHandle quad;
+      rval = moab.side_element(prism,2,qq,quad);
+      if(rval != MB_SUCCESS) continue;
+      int side_number,sense,offset;
+      rval = moab.side_number(prism,quad,side_number,sense,offset);
+      if(side_number==-1 || rval != MB_SUCCESS) continue;
+      const_cast<SideNumber_multiIndex&>(fe_ptr->get_side_number_table()).insert(
+        SideNumber(quad,side_number,sense,offset)
+      );
+    }
     int ee = 0;
     for(;ee<3;ee++) {
       EntityHandle edge;
@@ -553,14 +578,14 @@ PetscErrorCode DefaultElementAdjacency::defaultPrism(
     }
     for(;ee<6;ee++) {
       EntityHandle edge;
-      rval = moab.side_element(prism,1,ee,edge); CHKERR_PETSC(rval);
-      if(moab.type_from_handle(edge)==MBVERTEX) {
-        continue;
-      }
-      SideNumber *side_ptr = fe_ptr->get_RefMoFEMElement()->get_side_number_ptr(moab,edge);
-      if(side_ptr->side_number!=ee) {
-        SETERRQ1(PETSC_COMM_SELF,1,"data insistency for edge %d",ee);
-      }
+      rval = moab.side_element(prism,1,ee,edge);
+      if(rval != MB_SUCCESS) continue;
+      int side_number,sense,offset;
+      rval = moab.side_number(prism,edge,side_number,sense,offset);
+      if(side_number==-1 || rval != MB_SUCCESS) continue;
+      const_cast<SideNumber_multiIndex&>(fe_ptr->get_side_number_table()).insert(
+        SideNumber(edge,side_number,sense,offset)
+      );
     }
     int nn = 0;
     for(;nn<3;nn++) {
@@ -568,13 +593,13 @@ PetscErrorCode DefaultElementAdjacency::defaultPrism(
       rval = moab.side_element(prism,0,nn,node); CHKERR_PETSC(rval);
       SideNumber *side_ptr = fe_ptr->get_RefMoFEMElement()->get_side_number_ptr(moab,node);
       if(side_ptr->side_number!=nn) {
-        SETERRQ1(PETSC_COMM_SELF,1,"data insistency for node %d",nn);
+        SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data insistency for node %d",nn);
       }
       rval = moab.side_element(prism,0,nn+3,node); CHKERR_PETSC(rval);
       side_ptr = fe_ptr->get_RefMoFEMElement()->get_side_number_ptr(moab,node);
       if(side_ptr->side_number!=nn+3) {
         if(side_ptr->side_number!=nn) {
-          SETERRQ1(PETSC_COMM_SELF,1,"data insistency for node %d",nn);
+          SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data insistency for node %d",nn);
         } else {
           side_ptr->brother_side_number = nn+3;
         }
@@ -600,13 +625,18 @@ PetscErrorCode DefaultElementAdjacency::defaultPrism(
     }
     adjacency.insert(nodes.begin(),nodes.end());
     case HCURL: {
-      SideNumber_multiIndex::nth_index<2>::type::iterator
-      siit = side_table.get<2>().lower_bound(MBEDGE), hi_siit = side_table.get<2>().upper_bound(MBEDGE);
+      SideNumber_multiIndex::nth_index<2>::type::iterator siit,hi_siit;
+      siit = side_table.get<2>().lower_bound(MBEDGE);
+      hi_siit = side_table.get<2>().upper_bound(MBEDGE);
       for(;siit!=hi_siit;siit++) adjacency.insert(siit->ent);
     }
     case HDIV: {
-      SideNumber_multiIndex::nth_index<2>::type::iterator
-      siit = side_table.get<2>().lower_bound(MBTRI), hi_siit = side_table.get<2>().upper_bound(MBTRI);
+      SideNumber_multiIndex::nth_index<2>::type::iterator siit,hi_siit;
+      siit = side_table.get<2>().lower_bound(MBTRI);
+      hi_siit = side_table.get<2>().upper_bound(MBTRI);
+      for(;siit!=hi_siit;siit++) adjacency.insert(siit->ent);
+      siit = side_table.get<2>().lower_bound(MBQUAD);
+      hi_siit = side_table.get<2>().upper_bound(MBQUAD);
       for(;siit!=hi_siit;siit++) adjacency.insert(siit->ent);
     }
     case L2:

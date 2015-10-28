@@ -348,7 +348,7 @@ PetscErrorCode OpSetInvJacH1::doWork(
     unsigned int nb_dofs = data.getN().size2();
     if(type!=MBVERTEX) {
       if(nb_dofs != data.getDiffN().size2()/3) {
-        SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,
+        SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
           "data inconsistency nb_dofs != data.diffN.size2()/3 ( %u != %u/3 )",
           nb_dofs,data.getDiffN().size2()
         );
@@ -612,13 +612,13 @@ PetscErrorCode OpGetDataAndGradient::doWork(
 
     unsigned int nb_dofs = data.getFieldData().size();
     if(nb_dofs % rank != 0) {
-      SETERRQ4(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,
+      SETERRQ4(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
         "data inconsistency, type %d, side %d, nb_dofs %d, rank %d",
         type,side,nb_dofs,rank
       );
     }
     if(nb_dofs/rank > data.getN().size2()) {
-      SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,
+      SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
         "data inconsistency nb_dofs >= data.N.size2() %u >= %u",nb_dofs,data.getN().size2()
       );
     }
@@ -697,13 +697,13 @@ PetscErrorCode OpGetCoordsAndNormalsOnFace::doWork(int side,EntityType type,Data
     case MBEDGE:
     case MBTRI: {
       if(2*data.getN().size2() != data.getDiffN().size2()) {
-        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
       }
       if(nb_dofs%3!=0) {
-        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
       }
       if(nb_dofs > 3*data.getN().size2()) {
-        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
       }
       for(int gg = 0;gg<nb_gauss_pts;gg++) {
         for(int dd = 0;dd<3;dd++) {
@@ -767,14 +767,14 @@ PetscErrorCode OpGetCoordsAndNormalsOnPrism::doWork(int side,EntityType type,Dat
       case MBEDGE:
       case MBTRI: {
         if(2*data.getN().size2() != data.getDiffN().size2()) {
-          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
         }
         unsigned int nb_dofs = data.getFieldData().size();
         if(nb_dofs%3!=0) {
-          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
         }
         if(nb_dofs > 3*data.getN().size2()) {
-          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
         }
         for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
           for(int dd = 0;dd<3;dd++) {

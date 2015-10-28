@@ -89,7 +89,7 @@ PetscErrorCode Core::VecCreateGhost(const string &name,RowColData rc,Vec *V) {
   dofs_by_local_idx::iterator miit = dofs->lower_bound(nb_local_dofs);
   dofs_by_local_idx::iterator hi_miit = dofs->upper_bound(nb_local_dofs+nb_ghost_dofs);
   int count = distance(miit,hi_miit);
-  if(count != nb_ghost_dofs) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+  if(count != nb_ghost_dofs) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
   vector<DofIdx> ghost_idx(count);
   vector<DofIdx>::iterator vit = ghost_idx.begin();
   for(;miit!=hi_miit;miit++,vit++) *vit = miit->petsc_gloabl_dof_idx;
@@ -219,7 +219,7 @@ PetscErrorCode Core::ISCreateFromProblemFieldToOtherProblemField(
      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
   }
   for(;y_dit!=hi_y_dit;y_dit++) {
-    if(y_dit->get_part()!=(unsigned int)rAnk) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+    if(y_dit->get_part()!=(unsigned int)rAnk) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
     if(y_dit->get_name()!=y_field_name) continue;
     dofs_by_name_ent_dof::iterator x_dit;
     x_dit = x_numered_dofs_by_ent_name_dof->find(boost::make_tuple(x_field_name,y_dit->get_ent(),y_dit->get_EntDofIdx()));
@@ -299,7 +299,7 @@ PetscErrorCode Core::ISCreateFromProblemToOtherProblem(
      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
   }
   for(;y_dit!=hi_y_dit;y_dit++) {
-    if(y_dit->get_part()!=(unsigned int)rAnk) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+    if(y_dit->get_part()!=(unsigned int)rAnk) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
     dofs_by_uid::iterator x_dit;
     x_dit = x_numered_dofs_by_uid->find(y_dit->get_global_unique_id());
     if(x_dit==x_numered_dofs_by_uid->end()) continue;
@@ -361,9 +361,9 @@ PetscErrorCode Core::set_local_ghost_vector(const MoFEMProblem *problem_ptr,RowC
   ierr = VecGhostGetLocalForm(V,&Vlocal); CHKERRQ(ierr);
   int size;
   ierr = VecGetLocalSize(V,&size); CHKERRQ(ierr);
-  if(size!=nb_local_dofs) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency: check ghost vector, problem with nb. of local nodes");
+  if(size!=nb_local_dofs) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency: check ghost vector, problem with nb. of local nodes");
   ierr = VecGetLocalSize(Vlocal,&size); CHKERRQ(ierr);
-  if(size!=nb_local_dofs+nb_ghost_dofs) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency: check ghost vector, problem with nb. of ghost nodes");
+  if(size!=nb_local_dofs+nb_ghost_dofs) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency: check ghost vector, problem with nb. of ghost nodes");
   dofs_by_local_idx::iterator miit = dofs->lower_bound(0);
   dofs_by_local_idx::iterator hi_miit = dofs->upper_bound(nb_local_dofs+nb_ghost_dofs);
   PetscScalar *array;
@@ -443,7 +443,7 @@ PetscErrorCode Core::set_global_ghost_vector(const MoFEMProblem *problem_ptr,Row
       int size;
       ierr = VecGetSize(V_glob,&size); CHKERRQ(ierr);
       if(size!=nb_dofs) {
-        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency: nb. of dofs and declared nb. dofs in database");
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency: nb. of dofs and declared nb. dofs in database");
       }
       PetscScalar *array;
       ierr = VecGetArray(V_glob,&array); CHKERRQ(ierr);
@@ -502,7 +502,7 @@ PetscErrorCode Core::set_other_local_ghost_vector(
   DofsByNameAndLocalIdx::iterator hi_miit = dofs->upper_bound(boost::make_tuple(field_name,1));
   if(miit->get_space() != cpy_fit->get_space()) {
     SETERRQ4(
-      PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,
+      PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
       "fields have to have same space (%s) %s != (%s) %s",
       miit->get_name().c_str(),
       FieldSpaceNames[miit->get_space()],
@@ -511,7 +511,7 @@ PetscErrorCode Core::set_other_local_ghost_vector(
     );
   }
   if(miit->get_max_rank() != cpy_fit->get_max_rank()) {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"fields have to have same rank");
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"fields have to have same rank");
   }
   switch(scatter_mode) {
     case SCATTER_REVERSE: {
@@ -523,7 +523,7 @@ PetscErrorCode Core::set_other_local_ghost_vector(
         alpha = false;
         break;
         default:
-        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"not implemented");
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"not implemented");
       }
       PetscScalar *array;
       VecGetArray(V,&array);
@@ -558,7 +558,7 @@ PetscErrorCode Core::set_other_local_ghost_vector(
         if(diiiit==dofsMoabField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().end()) {
           SETERRQ(
             PETSC_COMM_SELF,
-            MOFEM_DATA_INCONSISTENCT,
+            MOFEM_DATA_INCONSISTENCY,
             "no data to fill the vector (top tip: you want scatter forward or scatter reverse?)"
           );
         }
@@ -569,7 +569,7 @@ PetscErrorCode Core::set_other_local_ghost_vector(
     }
     break;
     default:
-    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"not implemented");
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"not implemented");
   }
   PetscFunctionReturn(0);
 }
@@ -603,7 +603,7 @@ PetscErrorCode Core::set_other_global_ghost_vector(
       dofs = const_cast<dofs_by_name*>(&problem_ptr->numered_dofs_cols.get<FieldName_mi_tag>());
       break;
     default:
-     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"not implemented");
+     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"not implemented");
   }
   MoFEMField_multiIndex::index<FieldName_mi_tag>::type::iterator cpy_fit = moabFields.get<FieldName_mi_tag>().find(cpy_field_name);
   if(cpy_fit==moabFields.get<FieldName_mi_tag>().end()) {
@@ -615,10 +615,10 @@ PetscErrorCode Core::set_other_global_ghost_vector(
   }
   dofs_by_name::iterator hi_miit = dofs->upper_bound(field_name);
   if(miit->get_space() != cpy_fit->get_space()) {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"fields have to have same space");
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"fields have to have same space");
   }
   if(miit->get_max_rank() != cpy_fit->get_max_rank()) {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"fields have to have same rank");
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"fields have to have same rank");
   }
   switch (scatter_mode) {
     case SCATTER_REVERSE: {
@@ -629,7 +629,7 @@ PetscErrorCode Core::set_other_global_ghost_vector(
       ierr = VecScatterEnd(ctx,V,V_glob,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
       int size;
       ierr = VecGetSize(V_glob,&size); CHKERRQ(ierr);
-      if(size!=nb_dofs) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency: nb. of dofs and declared nb. dofs in database");
+      if(size!=nb_dofs) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency: nb. of dofs and declared nb. dofs in database");
       PetscScalar *array;
       VecGetArray(V_glob,&array);
       bool alpha = true;
@@ -640,11 +640,11 @@ PetscErrorCode Core::set_other_global_ghost_vector(
 	  alpha = false;
 	  break;
 	default:
-	  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"not implemented");
+	  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"not implemented");
       }
       for(;miit!=hi_miit;miit++) {
         if(miit->get_petsc_gloabl_dof_idx()>=size) {
-          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency: nb. of dofs and declared nb. dofs in database");
+          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency: nb. of dofs and declared nb. dofs in database");
         }
         DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>::type::iterator diiiit;
         diiiit = dofsMoabField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().find(boost::make_tuple(cpy_field_name,miit->get_ent(),miit->get_EntDofIdx()));
@@ -660,7 +660,7 @@ PetscErrorCode Core::set_other_global_ghost_vector(
           } catch (const std::exception& ex) {
             ostringstream ss;
             ss << "throw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
-            SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,ss.str().c_str());
+            SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,ss.str().c_str());
           }
           if(p_e_miit.first->get_max_order()<order) {
             bool success = entsMoabField.modify(p_e_miit.first,MoFEMEntity_change_order(moab,order));
@@ -680,7 +680,7 @@ PetscErrorCode Core::set_other_global_ghost_vector(
             }
           }
           diiiit = dofsMoabField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().find(boost::make_tuple(cpy_field_name,miit->get_ent(),miit->get_EntDofIdx()));
-          if(diiiit==dofsMoabField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+          if(diiiit==dofsMoabField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
         }
         if(alpha) diiiit->get_FieldData() = 0;
         diiiit->get_FieldData() += array[miit->get_petsc_gloabl_dof_idx()];
@@ -700,7 +700,7 @@ PetscErrorCode Core::set_other_global_ghost_vector(
         DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>::type::iterator diiiit;
         diiiit = dofsMoabField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().find(boost::make_tuple(cpy_field_name,miit->get_ent(),miit->get_EntDofIdx()));
         if(diiiit==dofsMoabField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().end()) {
-          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"no data to fill the vector (top tip: you want scatter forward or scatter reverse?)");
+          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"no data to fill the vector (top tip: you want scatter forward or scatter reverse?)");
         }
         ierr = VecSetValue(V,miit->get_petsc_gloabl_dof_idx(),diiiit->get_FieldData(),mode); CHKERRQ(ierr);
       }

@@ -47,7 +47,7 @@ PetscErrorCode PrismsFromSurfaceInterface::queryInterface(const MOFEMuuid& uuid,
     *iface = dynamic_cast<FieldUnknownInterface*>(this);
     PetscFunctionReturn(0);
   }
-  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"unknown interface");
+  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown interface");
   PetscFunctionReturn(0);
 }
 

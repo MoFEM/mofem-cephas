@@ -58,7 +58,7 @@ PetscErrorCode BitLevelCouplerInterface::queryInterface(const MOFEMuuid& uuid, F
     *iface = dynamic_cast<FieldUnknownInterface*>(this);
     PetscFunctionReturn(0);
   }
-  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"unknown interface");
+  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown interface");
   PetscFunctionReturn(0);
 }
 
@@ -243,7 +243,7 @@ PetscErrorCode BitLevelCouplerInterface::buidlAdjacenciesVerticesOnTets(const Bi
     ierr = getParent(coords,parent,false,iter_tol,inside_tol,verb); CHKERRQ(ierr);
     ierr = chanegParent(refined_ptr->project<0>(it),parent,vertex_elements); CHKERRQ(ierr);
     if(throw_error && parent == 0) {
-      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
   	  "tets or any other entity for node not found");
     }
 
@@ -322,7 +322,7 @@ PetscErrorCode BitLevelCouplerInterface::buidlAdjacenciesEdgesFacesVolumes(
 	cit = refined_ptr->get<Ent_mi_tag>().find(conn_parents[nn]);
       }
       if((cit->get_BitRefLevel()&parent_level).none()) {
-	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"parent of vertex is not on parent bit level");
+	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"parent of vertex is not on parent bit level");
       }
       int ent_dim = m_field.get_moab().dimension_from_handle(conn_parents[nn]);
       max_dim = ent_dim > max_dim ? ent_dim : max_dim;
@@ -433,7 +433,7 @@ PetscErrorCode BitLevelCouplerInterface::verifyParent(RefMoFEMEntity_multiIndex:
   PetscFunctionBegin;
 
   if(parent != it->get_parent_ent()) {
-    SETERRQ3(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency %lu != %lu for ent %lu",
+    SETERRQ3(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency %lu != %lu for ent %lu",
       parent,it->get_parent_ent(),it->get_ref_ent());
   }
 

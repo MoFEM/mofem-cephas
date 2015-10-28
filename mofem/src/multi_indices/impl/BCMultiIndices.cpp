@@ -152,10 +152,10 @@ CubitMeshSets::CubitMeshSets(Interface &moab,const CubitBCType _cubit_bc_type,co
       PetscTraceBackErrorHandler(
 	PETSC_COMM_WORLD,
 	__LINE__,PETSC_FUNCTION_NAME,__FILE__,
-	MOFEM_DATA_INCONSISTENCT,PETSC_ERROR_INITIAL,"data inconstency",PETSC_NULL);
+	MOFEM_DATA_INCONSISTENCY,PETSC_ERROR_INITIAL,"data inconstency",PETSC_NULL);
       PetscMPIAbortErrorHandler(PETSC_COMM_WORLD,
 	__LINE__,PETSC_FUNCTION_NAME,__FILE__,
-	MOFEM_DATA_INCONSISTENCT,PETSC_ERROR_INITIAL,"data inconstency",PETSC_NULL);
+	MOFEM_DATA_INCONSISTENCY,PETSC_ERROR_INITIAL,"data inconstency",PETSC_NULL);
     }
   }
 

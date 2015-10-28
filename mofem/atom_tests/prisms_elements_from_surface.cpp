@@ -83,11 +83,8 @@ int main(int argc, char *argv[]) {
     ierr = m_field.add_field("FIELD1",H1,1); CHKERRQ(ierr);
     ierr = m_field.add_ents_to_field_by_PRISMs(meshset,"FIELD1",10); CHKERRQ(ierr);
 
-    // ierr = m_field.set_field_order(0,MBVERTEX,"FIELD1",1,10); CHKERRQ(ierr);
+    ierr = m_field.set_field_order(0,MBVERTEX,"FIELD1",1); CHKERRQ(ierr);
     ierr = m_field.set_field_order(0,MBEDGE,"FIELD1",2,10); CHKERRQ(ierr);
-    // ierr = m_field.set_field_order(0,MBTRI,"FIELD1",3,10); CHKERRQ(ierr);
-    ierr = m_field.set_field_order(0,MBQUAD,"FIELD1",4,10); CHKERRQ(ierr);
-    ierr = m_field.set_field_order(0,MBPRISM,"FIELD1",6,10); CHKERRQ(ierr);
     ierr = m_field.build_fields(10); CHKERRQ(ierr);
 
     // ierr = m_field.list_dofs_by_field_name("FIELD1"); CHKERRQ(ierr);
@@ -95,18 +92,21 @@ int main(int argc, char *argv[]) {
     const DofMoFEMEntity_multiIndex *dofs_ptr;
     ierr = m_field.get_dofs(&dofs_ptr); CHKERRQ(ierr);
     PetscPrintf(PETSC_COMM_WORLD,"dofs_ptr.size() = %d\n",dofs_ptr->size());
-    if(dofs_ptr->size()!=401) {
-      SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency 401!=%d",dofs_ptr->size());
+    if(dofs_ptr->size()!=323) {
+      SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency 323!=%d",dofs_ptr->size());
     }
 
-    ierr = m_field.set_field_order(0,MBQUAD,"FIELD1",5,10); CHKERRQ(ierr);
-    ierr = m_field.set_field_order(0,MBPRISM,"FIELD1",7,10); CHKERRQ(ierr);
+    ierr = m_field.set_field_order(0,MBQUAD,"FIELD1",4,10); CHKERRQ(ierr);
+    ierr = m_field.set_field_order(0,MBPRISM,"FIELD1",6,10); CHKERRQ(ierr);
     ierr = m_field.build_fields(10); CHKERRQ(ierr);
 
     PetscPrintf(PETSC_COMM_WORLD,"dofs_ptr.size() = %d\n",dofs_ptr->size());
-    if(dofs_ptr->size()!=781) {
-      SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency 781!=%d",dofs_ptr->size());
+    if(dofs_ptr->size()!=483) {
+      SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency 483!=%d",dofs_ptr->size());
     }
+
+    ierr = m_field.set_field_order(0,MBTRI,"FIELD1",3); CHKERRQ(ierr);
+    ierr = m_field.build_fields(); CHKERRQ(ierr);
 
     if(debug) {
       rval = moab.write_file("prism_mesh.vtk","VTK","",&meshset,1); CHKERR_PETSC(rval);
@@ -123,12 +123,28 @@ int main(int argc, char *argv[]) {
     ierr = m_field.add_ents_to_finite_element_by_PRISMs(prisms,"TEST_FE1"); CHKERRQ(ierr);
 
     //build finite elemnts
-    ierr = m_field.build_finite_elements(10); CHKERRQ(ierr);
-    //build adjacencies
+    ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
+    // //build adjacencies
     ierr = m_field.build_adjacencies(bit_level0); CHKERRQ(ierr);
-
     //list elements
     // ierr = m_field.list_adjacencies(); CHKERRQ(ierr);
+
+    //Problem
+    ierr = m_field.add_problem("TEST_PROBLEM"); CHKERRQ(ierr);
+
+    //set finite elements for problem
+    ierr = m_field.modify_problem_add_finite_element("TEST_PROBLEM","TEST_FE1"); CHKERRQ(ierr);
+    //set refinment level for problem
+    ierr = m_field.modify_problem_ref_level_add_bit("TEST_PROBLEM",bit_level0); CHKERRQ(ierr);
+
+    //build problem
+    ierr = m_field.build_problems(); CHKERRQ(ierr);
+    //partition
+    ierr = m_field.partition_simple_problem("TEST_PROBLEM"); CHKERRQ(ierr);
+    ierr = m_field.partition_finite_elements("TEST_PROBLEM"); CHKERRQ(ierr);
+    //what are ghost nodes, see Petsc Manual
+    ierr = m_field.partition_ghost_dofs("TEST_PROBLEM"); CHKERRQ(ierr);
+
 
   } catch (MoFEMException const &e) {
     SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);

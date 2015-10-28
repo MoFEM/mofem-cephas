@@ -62,7 +62,7 @@ NodalForce::OpNodalForce::OpNodalForce(const string field_name,Vec _F,bCForce &d
       } else if(rr == 2) {
         Nf[2] = dAta.data.data.value5*dAta.data.data.value1;
       } else {
-        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
       }
     }
 

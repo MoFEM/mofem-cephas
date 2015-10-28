@@ -1100,11 +1100,11 @@ struct HelmholtzElement {
         }
 
         if(row_data.getIndices().size()!=(commonData.imIndices[row_type][row_side]).size()) {
-          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
         }
 
         if(col_data.getIndices().size()!=(commonData.imIndices[col_type][col_side]).size()) {
-          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
         }
 
         K1.resize(nb_rows,nb_cols,false);

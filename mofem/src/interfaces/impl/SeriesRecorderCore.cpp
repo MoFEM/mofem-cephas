@@ -99,7 +99,7 @@ PetscErrorCode Core::record_problem(const string& serie_name,const MoFEMProblem 
       ierr = const_cast<MoFEMSeries*>(&*sit)->push_dofs(problemPtr->numered_dofs_cols.begin(),problemPtr->numered_dofs_cols.end()); CHKERRQ(ierr);
       break;
     default:
-      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
   }
   PetscFunctionReturn(0);
 }

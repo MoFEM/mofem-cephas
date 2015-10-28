@@ -89,7 +89,7 @@ PetscErrorCode Core::queryInterface(const MOFEMuuid& uuid,FieldUnknownInterface*
     *iface = dynamic_cast<FieldInterface*>(this);
     PetscFunctionReturn(0);
   }
-  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"unknown inteface");
+  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown inteface");
   PetscFunctionReturn(0);
 }
 
@@ -152,7 +152,7 @@ PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr)
   } else if(type == typeid(PrismInterface)) {
     ptr = static_cast<PrismInterface*>(this);
   } else {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"unknown inteface");
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown inteface");
   }
   PetscFunctionReturn(0);
 }
@@ -447,10 +447,10 @@ BitFieldId Core::getFieldShift() {
     PetscTraceBackErrorHandler(
       comm,
       __LINE__,PETSC_FUNCTION_NAME,__FILE__,
-      MOFEM_DATA_INCONSISTENCT,PETSC_ERROR_INITIAL,msg,PETSC_NULL);
+      MOFEM_DATA_INCONSISTENCY,PETSC_ERROR_INITIAL,msg,PETSC_NULL);
     PetscMPIAbortErrorHandler(comm,
       __LINE__,PETSC_FUNCTION_NAME,__FILE__,
-      MOFEM_DATA_INCONSISTENCT,PETSC_ERROR_INITIAL,msg,PETSC_NULL);
+      MOFEM_DATA_INCONSISTENCY,PETSC_ERROR_INITIAL,msg,PETSC_NULL);
   }
   return BitFieldId().set(((*fShift)++)-1);
 }
@@ -519,7 +519,7 @@ PetscErrorCode Core::synchronise_entities(Range &ents,int verb) {
     meit = refinedEntities.get<Ent_mi_tag>().find(*eit);
     if(meit == refinedEntities.get<Ent_mi_tag>().end()) {
       continue;
-      SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,
+      SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
         "rank %d entity %lu not exist on database, local entity can not be found for this owner",
         rAnk,*eit);
     }
@@ -643,7 +643,7 @@ PetscErrorCode Core::synchronise_entities(Range &ents,int verb) {
       RefMoFEMEntity_multiIndex::index<Ent_mi_tag>::type::iterator meit;
       meit = refinedEntities.get<Ent_mi_tag>().find(ent);
       if(meit == refinedEntities.get<Ent_mi_tag>().end()) {
-	SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,
+	SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
 	  "rank %d entity %lu not exist on database, local entity can not be found for this owner",rAnk,ent);
       }
       if(verb>2) {
