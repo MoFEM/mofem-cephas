@@ -145,6 +145,122 @@ int main(int argc, char *argv[]) {
     //what are ghost nodes, see Petsc Manual
     ierr = m_field.partition_ghost_dofs("TEST_PROBLEM"); CHKERRQ(ierr);
 
+    typedef tee_device<ostream, ofstream> TeeDevice;
+    typedef stream<TeeDevice> TeeStream;
+
+    ofstream ofs("prisms_elements_from_surface.txt");
+    TeeDevice my_tee(cout, ofs);
+    TeeStream my_split(my_tee);
+
+    struct MyOp: public FatPrismElementForcesAndSurcesCore::UserDataOperator {
+
+      TeeStream &mySplit;
+      MyOp(TeeStream &mySplit,const char type):
+        FatPrismElementForcesAndSurcesCore::UserDataOperator("FIELD1","FIELD1",type),
+        mySplit(mySplit)
+      {}
+
+      PetscErrorCode doWork(
+        int side,
+        EntityType type,
+        DataForcesAndSurcesCore::EntData &data
+      ) {
+        PetscFunctionBegin;
+
+        // if(data.getFieldData().empty()) PetscFunctionReturn(0);
+
+
+
+        // const double eps = 1e-4;
+        // for(
+        //   ublas::unbounded_array<double>::iterator it = getNormal().data().begin();
+        //   it!=getNormal().data().end();it++
+        // ) {
+        //   *it = fabs(*it)<eps ? 0.0 : *it;
+        // }
+        // for(
+        //   ublas::unbounded_array<double>::iterator it = getNormals_at_GaussPtF3().data().begin();
+        //   it!=getNormals_at_GaussPtF3().data().end();it++
+        // ) {
+        //   *it = fabs(*it)<eps ? 0.0 : *it;
+        // }
+        // for(
+        //   ublas::unbounded_array<double>::iterator it = getTangent1_at_GaussPtF3().data().begin();
+        //   it!=getTangent1_at_GaussPtF3().data().end();it++
+        // ) {
+        //   *it = fabs(*it)<eps ? 0.0 : *it;
+        // }
+        // for(
+        //   ublas::unbounded_array<double>::iterator it = getTangent2_at_GaussPtF3().data().begin();
+        //   it!=getTangent2_at_GaussPtF3().data().end();it++
+        // ) {
+        //   *it = fabs(*it)<eps ? 0.0 : *it;
+        // }
+        // for(
+        //   ublas::unbounded_array<double>::iterator it = getNormals_at_GaussPtF4().data().begin();
+        //   it!=getNormals_at_GaussPtF4().data().end();it++
+        // ) {
+        //   *it = fabs(*it)<eps ? 0.0 : *it;
+        // }
+        // for(
+        //   ublas::unbounded_array<double>::iterator it = getTangent1_at_GaussPtF4().data().begin();
+        //   it!=getTangent1_at_GaussPtF4().data().end();it++
+        // ) {
+        //   *it = fabs(*it)<eps ? 0.0 : *it;
+        // }
+        // for(
+        //   ublas::unbounded_array<double>::iterator it = getTangent2_at_GaussPtF4().data().begin();
+        //   it!=getTangent2_at_GaussPtF4().data().end();it++
+        // ) {
+        //   *it = fabs(*it)<eps ? 0.0 : *it;
+        // }
+        //
+        mySplit << "NH1" << endl;
+        mySplit << "side: " << side << " type: " << type << endl;
+        mySplit << data << endl;
+
+        // mySplit << setprecision(3) << getCoords() << endl;
+        // mySplit << setprecision(3) << getCoordsAtGaussPts() << endl;
+        // mySplit << setprecision(3) << getArea(0) << endl;
+        // mySplit << setprecision(3) << getArea(1) << endl;
+        // mySplit << setprecision(3) << "normal F3 " << getNormalF3() << endl;
+        // mySplit << setprecision(3) << "normal F4 " << getNormalF4() << endl;
+        // mySplit << setprecision(3) << "normal at Gauss pt F3 " << getNormals_at_GaussPtF3() << endl;
+        // mySplit << setprecision(3) << getTangent1_at_GaussPtF3() << endl;
+        // mySplit << setprecision(3) << getTangent2_at_GaussPtF3() << endl;
+        // mySplit << setprecision(3) << "normal at Gauss pt F4 " << getNormals_at_GaussPtF4() << endl;
+        // mySplit << setprecision(3) << getTangent1_at_GaussPtF4() << endl;
+        // mySplit << setprecision(3) << getTangent2_at_GaussPtF4() << endl;
+        PetscFunctionReturn(0);
+      }
+
+      PetscErrorCode doWork(
+        int row_side,int col_side,
+        EntityType row_type,EntityType col_type,
+        DataForcesAndSurcesCore::EntData &row_data,
+        DataForcesAndSurcesCore::EntData &col_data
+      ) {
+        PetscFunctionBegin;
+
+        // if(row_data.getFieldData().empty()) PetscFunctionReturn(0);
+        //
+        // mySplit << "NH1NH1" << endl;
+        // mySplit << "row side: " << row_side << " row_type: " << row_type << endl;
+        // mySplit << row_data << endl;
+        // mySplit << "NH1NH1" << endl;
+        // mySplit << "col side: " << col_side << " col_type: " << col_type << endl;
+        // mySplit << row_data << endl;
+
+        PetscFunctionReturn(0);
+      }
+
+    };
+
+    FatPrismElementForcesAndSurcesCore fe1(m_field);
+    fe1.getOpPtrVector().push_back(new MyOp(my_split,ForcesAndSurcesCore::UserDataOperator::OPROW));
+    //fe1.getOpPtrVector().push_back(new MyOp(my_split,ForcesAndSurcesCore::UserDataOperator::OPROWCOL));
+    ierr = m_field.loop_finite_elements("TEST_PROBLEM","TEST_FE1",fe1);  CHKERRQ(ierr);
+
 
   } catch (MoFEMException const &e) {
     SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);

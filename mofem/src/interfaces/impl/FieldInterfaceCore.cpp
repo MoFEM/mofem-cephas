@@ -1834,9 +1834,10 @@ PetscErrorCode Core::build_finite_element_uids_view(EntMoFEMFiniteElement &ent_f
     //find in database data associated with the field (ii)
     field_by_id::iterator miit = moabFields_by_id.find(BitFieldId().set(ii));
     if(miit==moabFields_by_id.end()) {
-      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data incosistency");
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
     }
-    //resolve entities on element, those entities are used to build tag with dof uids on finite element tag
+    //resolve entities on element, those entities are used to build tag with dof
+    //uids on finite element tag
     ierr = ent_fe.get_element_adjacency(moab,&*miit,adj_ents); CHKERRQ(ierr);
     //loop over adjacent to finite entities, and find dofs on those entities
     //this part is to build MoFEMFiniteElement_dof_uid_view
@@ -1844,10 +1845,13 @@ PetscErrorCode Core::build_finite_element_uids_view(EntMoFEMFiniteElement &ent_f
     for(;eit2!=adj_ents.end();eit2++) {
       ref_ent_by_ent::iterator ref_ent_miit = refinedEntities.get<Ent_mi_tag>().find(*eit2);
       if(ref_ent_miit==refinedEntities.get<Ent_mi_tag>().end()) {
+        RefMoFEMEntity ref_ent(moab,*eit2);
+        if(!ref_ent.get_BitRefLevel().any()) {
+          continue;
+        }
         cerr << adj_ents << endl;
         cerr << ent_fe << endl;
         cerr << "bit level " << ent_fe.get_BitRefLevel() << endl;
-        RefMoFEMEntity ref_ent(moab,*eit2);
         cerr << ref_ent << endl;
         cerr << "bit level " << ref_ent.get_BitRefLevel() << endl;
         SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"ref ent not in database");

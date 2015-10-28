@@ -605,6 +605,7 @@ add_test(node_merge ${MPI_RUN} -np 1
 
 add_executable(prisms_elements_from_surface prisms_elements_from_surface.cpp)
 target_link_libraries(prisms_elements_from_surface
+  mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
   mofem_petsc

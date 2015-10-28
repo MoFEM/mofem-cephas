@@ -416,6 +416,42 @@ PetscErrorCode ForcesAndSurcesCore::getTetsColIndices(DataForcesAndSurcesCore &d
   PetscFunctionReturn(0);
 }
 
+PetscErrorCode ForcesAndSurcesCore::getQuadRowIndices(
+  DataForcesAndSurcesCore &data,const string &field_name
+) {
+  PetscFunctionBegin;
+  ierr = getTypeIndices(
+    field_name,const_cast<FENumeredDofMoFEMEntity_multiIndex&>(fePtr->get_rows_dofs()),MBQUAD,data.dataOnEntities[MBQUAD]
+  ); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode ForcesAndSurcesCore::getQuadColIndices(DataForcesAndSurcesCore &data,const string &field_name) {
+  PetscFunctionBegin;
+  ierr = getTypeIndices(
+    field_name,const_cast<FENumeredDofMoFEMEntity_multiIndex&>(fePtr->get_cols_dofs()),MBQUAD,data.dataOnEntities[MBQUAD]
+  ); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode ForcesAndSurcesCore::getPrismRowIndices(
+  DataForcesAndSurcesCore &data,const string &field_name
+) {
+  PetscFunctionBegin;
+  ierr = getTypeIndices(
+    field_name,const_cast<FENumeredDofMoFEMEntity_multiIndex&>(fePtr->get_rows_dofs()),MBPRISM,data.dataOnEntities[MBPRISM]
+  ); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode ForcesAndSurcesCore::getPrismColIndices(DataForcesAndSurcesCore &data,const string &field_name) {
+  PetscFunctionBegin;
+  ierr = getTypeIndices(
+    field_name,const_cast<FENumeredDofMoFEMEntity_multiIndex&>(fePtr->get_cols_dofs()),MBPRISM,data.dataOnEntities[MBPRISM]
+  ); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
 PetscErrorCode ForcesAndSurcesCore::getNoFieldIndices(
   const string &field_name,FENumeredDofMoFEMEntity_multiIndex &dofs,VectorInt &indices
 ) {
@@ -1900,7 +1936,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
               break;
               case NOFIELD:
               if(!getNinTheLoop()) {
-                // NOFIELD data are the same for each element, can be retreived only once
+                // NOFIELD data are the same for each element, can be retrieved only once
                 if(!ss) {
                   ierr = getNoFieldRowIndices(*op_data[ss],field_name); CHKERRQ(ierr);
                 } else {
@@ -2870,6 +2906,7 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
 PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
   PetscFunctionBegin;
 
+
   if(fePtr->get_ent_type() != MBPRISM) PetscFunctionReturn(0);
 
   try {
@@ -2898,7 +2935,7 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
     }
 
     //L2
-    if((dataH1.spacesOnEntities[MBPRISM]).test(MBPRISM)) {
+    if((dataH1.spacesOnEntities[MBPRISM]).test(L2)) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented yet");
     }
 
@@ -3083,13 +3120,27 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
               ierr = getTrisOrder(*op_data[ss],field_name); CHKERRQ(ierr);
               ierr = getTrisFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
               ierr = getTrisFieldDofs(*op_data[ss],field_name); CHKERRQ(ierr);
-              break;
+              if(!ss) {
+                ierr = getQuadRowIndices(*op_data[ss],field_name); CHKERRQ(ierr);
+              } else {
+                ierr = getQuadColIndices(*op_data[ss],field_name); CHKERRQ(ierr);
+              }
+              ierr = getQuadOrder(*op_data[ss],field_name); CHKERRQ(ierr);
+              ierr = getQuadFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
+              ierr = getQuadFieldDofs(*op_data[ss],field_name); CHKERRQ(ierr);
               case L2:
-              SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not make sanes on face");
+              if(!ss) {
+                ierr = getPrismRowIndices(*op_data[ss],field_name); CHKERRQ(ierr);
+              } else {
+                ierr = getPrismColIndices(*op_data[ss],field_name); CHKERRQ(ierr);
+              }
+              ierr = getPrismOrder(*op_data[ss],field_name); CHKERRQ(ierr);
+              ierr = getPrismFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
+              ierr = getPrismFieldDofs(*op_data[ss],field_name); CHKERRQ(ierr);
               break;
               case NOFIELD:
               if(!getNinTheLoop()) {
-                // NOFIELD data are the same for each element, can be retreived only once
+                // NOFIELD data are the same for each element, can be retrieved only once
                 if(!ss) {
                   ierr = getNoFieldRowIndices(*op_data[ss],field_name); CHKERRQ(ierr);
                 } else {
@@ -3142,6 +3193,8 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
 
     }
 
+  } catch (MoFEMException const &e) {
+    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
   } catch (exception& ex) {
     ostringstream ss;
     ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;

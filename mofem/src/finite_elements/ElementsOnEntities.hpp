@@ -108,6 +108,18 @@ struct ForcesAndSurcesCore: public FEMethod {
   /// \brief get Tets col indices from FENumeredDofMoFEMEntity_multiIndex
   PetscErrorCode getTetsColIndices(DataForcesAndSurcesCore &data,const string &field_name);
 
+  /// \brief get Quad row indices from FENumeredDofMoFEMEntity_multiIndex
+  PetscErrorCode getQuadRowIndices(DataForcesAndSurcesCore &data,const string &field_name);
+
+  /// \brief get Quad col indices from FENumeredDofMoFEMEntity_multiIndex
+  PetscErrorCode getQuadColIndices(DataForcesAndSurcesCore &data,const string &field_name);
+
+  /// \brief get Prism row indices from FENumeredDofMoFEMEntity_multiIndex
+  PetscErrorCode getPrismRowIndices(DataForcesAndSurcesCore &data,const string &field_name);
+
+  /// \brief get Prism col indices from FENumeredDofMoFEMEntity_multiIndex
+  PetscErrorCode getPrismColIndices(DataForcesAndSurcesCore &data,const string &field_name);
+
   /// \brief get NoField indices
   PetscErrorCode getNoFieldIndices(
     const string &field_name,FENumeredDofMoFEMEntity_multiIndex &dofs,VectorInt &nodes_indices
