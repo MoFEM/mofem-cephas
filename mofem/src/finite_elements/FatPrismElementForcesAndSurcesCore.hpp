@@ -48,11 +48,14 @@ struct FatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
   MatrixDouble coordsAtGaussPts;
   MatrixDouble gaussPtsTrianglesOnly;
   MatrixDouble coordsAtGaussPtsTrianglesOnly;
+  MatrixDouble gaussPtsThroughThickness;
 
   DataForcesAndSurcesCore dataH1;
   DerivedDataForcesAndSurcesCore derivedDataH1;
-  DataForcesAndSurcesCore dataH1TrianglesOnly;
   DataForcesAndSurcesCore dataNoField,dataNoFieldCol;
+
+  DataForcesAndSurcesCore dataH1TrianglesOnly;
+  DataForcesAndSurcesCore dataH1TroughThickness;
 
   string meshPositionsFieldName;
 
@@ -70,15 +73,20 @@ struct FatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
   ForcesAndSurcesCore(m_field),
   dataH1(MBPRISM),
   derivedDataH1(dataH1),
-  dataH1TrianglesOnly(MBPRISM),
   dataNoField(MBPRISM),
   dataNoFieldCol(MBPRISM),
+  dataH1TrianglesOnly(MBPRISM),
+  dataH1TroughThickness(MBPRISM),
   meshPositionsFieldName("MESH_NODE_POSITIONS"),
   opHOCoordsAndNormals(
     hoCoordsAtGaussPtsF3,nOrmals_at_GaussPtF3,tAngent1_at_GaussPtF3,tAngent2_at_GaussPtF3,
     hoCoordsAtGaussPtsF4,nOrmals_at_GaussPtF4,tAngent1_at_GaussPtF4,tAngent2_at_GaussPtF4
   ) {
   }
+
+  virtual int getRuleTrianglesOnly(int order) { return order-1; };
+  virtual int getRuleThroughThickness(int order) { return order-1; };
+
 
   /** \brief default operator for Flat Prism element
     * \ingroup mofem_forces_and_sources_prism_element
@@ -209,7 +217,9 @@ struct FatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
     /** \brief return pointer to triangle finite element object
      */
-    inline const FatPrismElementForcesAndSurcesCore* getFlatPrismElementForcesAndSurcesCore() { return ptrFE; }
+    inline const FatPrismElementForcesAndSurcesCore* getFlatPrismElementForcesAndSurcesCore() {
+      return ptrFE;
+    }
 
     PetscErrorCode setPtrFE(ForcesAndSurcesCore *ptr) {
       PetscFunctionBegin;

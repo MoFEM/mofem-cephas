@@ -85,8 +85,15 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
     }
 
     int order = 1;
-    for(unsigned int ee = 0;ee<dataH1.dataOnEntities[MBEDGE].size();ee++) {
-      order = max(order,dataH1.dataOnEntities[MBEDGE][ee].getOrder());
+    for(unsigned int ee = 0;ee<3;ee++) {
+      order = max(
+        order,dataH1.dataOnEntities[MBEDGE][ee].getOrder()
+      );
+    }
+    for(unsigned int ee = 6;ee<dataH1.dataOnEntities[MBEDGE].size();ee++) {
+      order = max(
+        order,dataH1.dataOnEntities[MBEDGE][ee].getOrder()
+      );
     }
     for(unsigned int ff = 0;ff<dataHdiv.dataOnEntities[MBTRI].size();ff++) {
       order = max(order,dataHdiv.dataOnEntities[MBTRI][ff].getOrder());

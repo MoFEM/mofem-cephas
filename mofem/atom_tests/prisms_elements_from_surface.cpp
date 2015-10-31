@@ -218,6 +218,7 @@ int main(int argc, char *argv[]) {
         mySplit << "NH1" << endl;
         mySplit << "side: " << side << " type: " << type << endl;
         mySplit << data << endl;
+        mySplit << endl << endl;
 
         // mySplit << setprecision(3) << getCoords() << endl;
         // mySplit << setprecision(3) << getCoordsAtGaussPts() << endl;

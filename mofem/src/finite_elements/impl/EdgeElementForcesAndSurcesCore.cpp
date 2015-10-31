@@ -69,13 +69,16 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
 
   ierr = getEdgesOrder(dataH1,H1); CHKERRQ(ierr);
 
+  dataH1.dataOnEntities[MBEDGE][0].getSense() = 1; // set sense to 1, this is this entity
   int order = dataH1.dataOnEntities[MBEDGE][0].getOrder();
   int rule = getRule(order);
   int nb_gauss_pts = gm_rule_size(rule,1);
   gaussPts.resize(2,nb_gauss_pts,false);
 
-  ierr = Grundmann_Moeller_integration_points_1D_EDGE(rule,&gaussPts(0,0),&gaussPts(1,0)); CHKERRQ(ierr);
-  ierr = shapeEDGEFunctions_H1(dataH1,&gaussPts(0,0),nb_gauss_pts); CHKERRQ(ierr);
+  ierr = Grundmann_Moeller_integration_points_1D_EDGE(
+    rule,&gaussPts(0,0),&gaussPts(1,0)
+  ); CHKERRQ(ierr);
+  ierr = shapeEDGEFunctions_H1(dataH1,0,&gaussPts(0,0),nb_gauss_pts); CHKERRQ(ierr);
 
   EntityHandle ent = fePtr->get_ent();
   int num_nodes;

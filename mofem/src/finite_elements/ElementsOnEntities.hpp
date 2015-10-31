@@ -255,7 +255,7 @@ struct ForcesAndSurcesCore: public FEMethod {
   /** \brief computes approximation functions for edge and H1 space
     */
   PetscErrorCode shapeEDGEFunctions_H1(
-    DataForcesAndSurcesCore &data,const double *G_X,const int G_DIM
+    DataForcesAndSurcesCore &data,int side_number,const double *G_X,const int G_DIM
   );
 
   /** \brief computes approximation functions for prism and H1 space
