@@ -1,0 +1,177 @@
+/** \file VolumeElementForcesAndSourcesCore.hpp
+
+  \brief Volume element.
+
+  Those element are inherited by user to implement specific implementation of
+  particular problem.
+
+*/
+
+/* This file is part of MoFEM.
+* MoFEM is free software: you can redistribute it and/or modify it under
+* the terms of the GNU Lesser General Public License as published by the
+* Free Software Foundation, either version 3 of the License, or (at your
+* option) any later version.
+*
+* MoFEM is distributed in the hope that it will be useful, but WITHOUT
+* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+* License for more details.
+*
+* You should have received a copy of the GNU Lesser General Public
+* License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+
+#ifndef __VOLUMEELEMENTFORCESANDSOURCESCORE_HPP__
+#define __VOLUMEELEMENTFORCESANDSOURCESCORE_HPP__
+
+using namespace boost::numeric;
+
+namespace MoFEM {
+
+/** \brief Volume finite element
+ \ingroup mofem_forces_and_sources_tet_element
+
+ User is implementing own operator at Gauss point level, by own object
+ derived from VolumeElementForcesAndSourcesCoreL::UserDataOperator.  Arbitrary
+ number of operator added pushing objects to rowOpPtrVector and
+ rowColOpPtrVector.
+
+ */
+struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
+
+  DataForcesAndSurcesCore dataH1;
+  DerivedDataForcesAndSurcesCore derivedDataH1;
+  DataForcesAndSurcesCore dataL2;
+  DerivedDataForcesAndSurcesCore derivedDataL2;
+  DataForcesAndSurcesCore dataHdiv;
+  DerivedDataForcesAndSurcesCore derivedDataHdiv;
+  DataForcesAndSurcesCore dataNoField,dataNoFieldCol;
+
+  OpSetInvJacH1 opSetInvJacH1;
+  OpSetPiolaTransform opPiolaTransform;
+  OpSetInvJacHdiv opSetInvJacHdiv;
+
+  string meshPositionsFieldName;
+  MatrixDouble hoCoordsAtGaussPts;
+  MatrixDouble hoGaussPtsJac;
+  MatrixDouble hoGaussPtsInvJac;
+  VectorDouble hoGaussPtsDetJac;
+
+  OpGetDataAndGradient opHOatGaussPoints; ///< higher order geometry data at Gauss pts
+  OpSetHoInvJacH1 opSetHoInvJacH1;
+  OpSetHoPiolaTransform opSetHoPiolaTransform;
+  OpSetHoInvJacHdiv opSetHoInvJacHdiv;
+
+  VolumeElementForcesAndSourcesCore(FieldInterface &m_field):
+    ForcesAndSurcesCore(m_field),
+    dataH1(MBTET),derivedDataH1(dataH1),
+    dataL2(MBTET),derivedDataL2(dataL2),
+    dataHdiv(MBTET),derivedDataHdiv(dataHdiv),
+    dataNoField(MBTET),dataNoFieldCol(MBTET),
+    opSetInvJacH1(invJac),
+    opPiolaTransform(vOlume,Jac),opSetInvJacHdiv(invJac),
+    meshPositionsFieldName("MESH_NODE_POSITIONS"),
+    opHOatGaussPoints(hoCoordsAtGaussPts,hoGaussPtsJac,3,3),
+    opSetHoInvJacH1(hoGaussPtsInvJac),
+    opSetHoPiolaTransform(hoGaussPtsDetJac,hoGaussPtsJac),
+    opSetHoInvJacHdiv(hoGaussPtsInvJac) {};
+
+  virtual ~VolumeElementForcesAndSourcesCore() {}
+
+  MoABErrorCode rval;
+  double vOlume;
+
+  int num_nodes;
+  const EntityHandle* conn;
+  VectorDouble coords;
+
+  MatrixDouble Jac;;
+  MatrixDouble invJac;
+
+  MatrixDouble gaussPts;
+  MatrixDouble coordsAtGaussPts;
+
+  /** \brief default operator for TET element
+    * \ingroup mofem_forces_and_sources_tet_element
+    */
+  struct UserDataOperator: public ForcesAndSurcesCore::UserDataOperator {
+
+    UserDataOperator(
+      const string &field_name,const char type):
+      ForcesAndSurcesCore::UserDataOperator(field_name,type) {}
+
+    UserDataOperator(
+      const string &row_field_name,const string &col_field_name,const char type):
+      ForcesAndSurcesCore::UserDataOperator(row_field_name,col_field_name,type) {};
+
+    /** \brief get element number of nodes
+    */
+    inline int getNumNodes() { return ptrFE->num_nodes; }
+
+    /** \brief get element connectivity
+     */
+    inline const EntityHandle* getConn() { return ptrFE->conn; }
+
+    /** \brief element volume (linear geometry)
+      */
+    inline double getVolume() { return ptrFE->vOlume; }
+
+    /** \brief nodal coordinates
+      */
+    inline VectorDouble& getCoords() { return ptrFE->coords; }
+
+    /** \brief matrix of Gauss pts
+      */
+    inline MatrixDouble& getGaussPts() { return ptrFE->gaussPts; }
+
+    /** \brief Gauss points and weight, matrix (nb. of points x 4)
+
+      Column 0-3 and 4 represents Gauss pts coordinate and weight, respectively.
+
+      */
+    inline MatrixDouble& getCoordsAtGaussPts() { return ptrFE->coordsAtGaussPts; }
+
+    /** \brief coordinate at Gauss points (if hierarchical approximation of element geometry)
+      */
+    inline MatrixDouble& getHoCoordsAtGaussPts() { return ptrFE->hoCoordsAtGaussPts; }
+
+    inline MatrixDouble& getHoGaussPtsInvJac() { return ptrFE->hoGaussPtsInvJac; }
+    inline VectorDouble& getHoGaussPtsDetJac() { return ptrFE->hoGaussPtsDetJac; }
+
+    /** \brief return pointer to Generic Tetrahedral Finite Element object
+     */
+    inline const VolumeElementForcesAndSourcesCore* getTetFE() { return ptrFE; }
+
+    //differential operators
+    PetscErrorCode getDivergenceMatrixOperato_Hdiv(
+      int side,EntityType type,DataForcesAndSurcesCore::EntData &data,
+      int gg,VectorDouble &div);
+
+    PetscErrorCode setPtrFE(ForcesAndSurcesCore *ptr) {
+      PetscFunctionBegin;
+      ptrFE = dynamic_cast<VolumeElementForcesAndSourcesCore*>(ptr);
+      ForcesAndSurcesCore::UserDataOperator::setPtrFE(ptr);
+      PetscFunctionReturn(0);
+    }
+
+    private:
+    VolumeElementForcesAndSourcesCore *ptrFE;
+
+  };
+
+
+  PetscErrorCode preProcess() {
+    PetscFunctionBegin;
+    PetscFunctionReturn(0);
+  }
+  PetscErrorCode operator()();
+  PetscErrorCode postProcess() {
+    PetscFunctionBegin;
+    PetscFunctionReturn(0);
+  }
+
+};
+
+}
+
+#endif //__VOLUMEELEMENTFORCESANDSOURCESCORE_HPP__

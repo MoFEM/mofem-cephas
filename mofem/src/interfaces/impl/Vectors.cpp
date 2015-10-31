@@ -36,7 +36,7 @@
 
 namespace MoFEM {
 
-const static int debug = 1;
+// const static int debug = 1;
 
 PetscErrorCode Core::VecCreateSeq(const string &name,RowColData rc,Vec *V) {
   PetscFunctionBegin;

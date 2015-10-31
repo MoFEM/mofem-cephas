@@ -1,11 +1,11 @@
 /** \file FieldBlas.cpp
- * \brief Myltindex containes, data structures and other low-level functions 
- * 
+ * \brief Myltindex containes, data structures and other low-level functions
+ *
  * Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl) <br>
  *
- * The MoFEM package is copyrighted by Lukasz Kaczmarczyk. 
- * It can be freely used for educational and research purposes 
- * by other institutions. If you use this softwre pleas cite my work. 
+ * The MoFEM package is copyrighted by Lukasz Kaczmarczyk.
+ * It can be freely used for educational and research purposes
+ * by other institutions. If you use this softwre pleas cite my work.
  *
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -24,10 +24,10 @@
 #include <moab/ParallelComm.hpp>
 
 #include <petscsys.h>
-#include <petscvec.h> 
-#include <petscmat.h> 
-#include <petscsnes.h> 
-#include <petscts.h> 
+#include <petscvec.h>
+#include <petscmat.h>
+#include <petscsnes.h>
+#include <petscts.h>
 
 #include <definitions.h>
 #include <h1_hdiv_hcurl_l2.h>
@@ -42,7 +42,7 @@
 
 namespace MoFEM {
 
-const static int debug = 1;
+// const static int debug = 1;
 
 PetscErrorCode Core::field_axpy(const double alpha,const string& field_name_x,const string& field_name_y,
   bool error_if_missing,bool creat_if_missing) {
