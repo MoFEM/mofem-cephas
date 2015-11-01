@@ -922,10 +922,10 @@ PetscErrorCode ForcesAndSurcesCore::getFaceTriNodes(DataForcesAndSurcesCore &dat
   //PetscAttachDebugger();
   data.facesNodes.resize(4,3);
   SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fePtr->get_side_number_table());
-  const int cannonical_face_sense_p1[4][3] = { {0,1,3}, {1,2,3}, {0,3,2}/**/, {0,2,1}/**/ }; //secon index is offset (positive sense)
-  const int cannonical_face_sense_m1[4][3] = { {0,3,1}, {1,3,2}, {0,2,3}, {0,1,2} }; //second index is offset (negative sense)
   SideNumber_multiIndex::nth_index<1>::type::iterator siit = side_table.get<1>().lower_bound(boost::make_tuple(MBTRI,0));
   SideNumber_multiIndex::nth_index<1>::type::iterator hi_siit = side_table.get<1>().upper_bound(boost::make_tuple(MBTRI,4));
+  const int cannonical_face_sense_p1[4][3] = { {0,1,3}, {1,2,3}, {0,3,2}/**/, {0,2,1}/**/ }; //secon index is offset (positive sense)
+  const int cannonical_face_sense_m1[4][3] = { {0,3,1}, {1,3,2}, {0,2,3}, {0,1,2} }; //second index is offset (negative sense
   for(;siit!=hi_siit;siit++) {
     const SideNumber* side = &*siit;
     int face_conn[3] = {-1,-1,-1};
@@ -1430,7 +1430,6 @@ PetscErrorCode ForcesAndSurcesCore::shapeEDGEFunctions_H1(
   PetscFunctionBegin;
 
   data.dataOnEntities[MBVERTEX][0].getN().resize(G_DIM,2,false);
-  int edge_nodes[] = { 0, 1 }; // sense 1
   ierr = ShapeMBEDGE(
     &*data.dataOnEntities[MBVERTEX][0].getN().data().begin(),
     G_X,
@@ -1497,111 +1496,113 @@ PetscErrorCode ForcesAndSurcesCore::shapeFlatPRISMFunctions_H1(
 
   try {
 
-  SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fePtr->get_side_number_table());
-  SideNumber_multiIndex::nth_index<1>::type::iterator siit3 = side_table.get<1>().find(boost::make_tuple(MBTRI,3));
-  SideNumber_multiIndex::nth_index<1>::type::iterator siit4 = side_table.get<1>().find(boost::make_tuple(MBTRI,4));
-  if(siit3==side_table.get<1>().end()) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
-  if(siit4==side_table.get<1>().end()) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
-  int num_nodes;
-  const EntityHandle *conn_face3;
-  const EntityHandle *conn_face4;
-  rval = mField.get_moab().get_connectivity(siit3->ent,conn_face3,num_nodes,true); CHKERR_PETSC(rval);
-  rval = mField.get_moab().get_connectivity(siit4->ent,conn_face4,num_nodes,true); CHKERR_PETSC(rval);
+    SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fePtr->get_side_number_table());
+    SideNumber_multiIndex::nth_index<1>::type::iterator siit3 = side_table.get<1>().find(boost::make_tuple(MBTRI,3));
+    SideNumber_multiIndex::nth_index<1>::type::iterator siit4 = side_table.get<1>().find(boost::make_tuple(MBTRI,4));
+    if(siit3==side_table.get<1>().end()) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
+    if(siit4==side_table.get<1>().end()) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
+    int num_nodes;
+    const EntityHandle *conn_face3;
+    const EntityHandle *conn_face4;
+    rval = mField.get_moab().get_connectivity(siit3->ent,conn_face3,num_nodes,true); CHKERR_PETSC(rval);
+    rval = mField.get_moab().get_connectivity(siit4->ent,conn_face4,num_nodes,true); CHKERR_PETSC(rval);
 
-  MatrixDouble N(G_DIM,3),diffN(3,2);
-  ierr = ShapeMBTRI(&*N.data().begin(),G_X,G_Y,G_DIM); CHKERRQ(ierr);
-  ierr = ShapeDiffMBTRI(&*diffN.data().begin()); CHKERRQ(ierr);
-  data.dataOnEntities[MBVERTEX][0].getN().resize(G_DIM,6,false);
-  data.dataOnEntities[MBVERTEX][0].getDiffN().resize(G_DIM,6*2,false);
+    MatrixDouble N(G_DIM,3),diffN(3,2);
+    ierr = ShapeMBTRI(&*N.data().begin(),G_X,G_Y,G_DIM); CHKERRQ(ierr);
+    ierr = ShapeDiffMBTRI(&*diffN.data().begin()); CHKERRQ(ierr);
+    data.dataOnEntities[MBVERTEX][0].getN().resize(G_DIM,6,false);
+    data.dataOnEntities[MBVERTEX][0].getDiffN().resize(G_DIM,12,false);
 
-  int face_nodes[2][3];
-  for(int nn = 0;nn<3;nn++) {
-    int side_number3 = fePtr->get_side_number_ptr(mField.get_moab(),conn_face3[nn])->side_number;
-    int side_number4 = fePtr->get_side_number_ptr(mField.get_moab(),conn_face4[nn])->side_number;
-    if(side_number3>2) {
-      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
-    }
-    if(side_number4 < 3) {
-      side_number4 = fePtr->get_side_number_ptr(mField.get_moab(),conn_face4[nn])->brother_side_number;
-      if(side_number4 == -1) {
+    int face_nodes[2][3];
+    for(int nn = 0;nn<3;nn++) {
+      int side_number3 = fePtr->get_side_number_ptr(mField.get_moab(),conn_face3[nn])->side_number;
+      int side_number4 = fePtr->get_side_number_ptr(mField.get_moab(),conn_face4[nn])->side_number;
+      if(side_number3>2) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
       }
-    }
-    if(side_number4<3) {
-      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
-    }
-    face_nodes[0][nn] = side_number3;
-    face_nodes[1][nn] = side_number4-3;
-    for(int gg = 0;gg<G_DIM;gg++) {
-      double val3 = N(gg,side_number3);
-      double val3_x = diffN(side_number3,0);
-      double val3_y = diffN(side_number3,1);
-      data.dataOnEntities[MBVERTEX][0].getN()(gg,side_number3) = val3;
-      data.dataOnEntities[MBVERTEX][0].getDiffN()(gg,2*side_number3+0) = val3_x;
-      data.dataOnEntities[MBVERTEX][0].getDiffN()(gg,2*side_number3+1) = val3_y;
-      double val4 = N(gg,side_number4-3);
-      double val4_x = diffN(side_number4-3,0);
-      double val4_y = diffN(side_number4-3,1);
-      data.dataOnEntities[MBVERTEX][0].getN()(gg,side_number4) = val4;
-      data.dataOnEntities[MBVERTEX][0].getDiffN()(gg,2*side_number4+0) = val4_x;
-      data.dataOnEntities[MBVERTEX][0].getDiffN()(gg,2*side_number4+1) = val4_y;
-    }
-  }
-
-  //edges
-  if(data.dataOnEntities[MBEDGE].size()!=9) {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
-  }
-
-  int valid_edges[] = { 1,1,1, 0,0,0, 1,1,1 };
-  int sense[9],order[9];
-  double *H1edgeN[9],*diffH1edgeN[9];
-  if((data.spacesOnEntities[MBEDGE]).test(H1)) {
-    for(int ee = 0;ee<9;ee++) {
-      if(!valid_edges[ee]) continue;
-      if(data.dataOnEntities[MBEDGE][ee].getSense() == 0) {
+      if(side_number4 < 3) {
+        side_number4 = fePtr->get_side_number_ptr(mField.get_moab(),conn_face4[nn])->brother_side_number;
+        if(side_number4 == -1) {
+          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
+        }
+      }
+      if(side_number4<3) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
       }
-      sense[ee] = data.dataOnEntities[MBEDGE][ee].getSense();
-      order[ee] = data.dataOnEntities[MBEDGE][ee].getOrder();
-      int nb_dofs = NBEDGE_H1(data.dataOnEntities[MBEDGE][ee].getOrder());
-      data.dataOnEntities[MBEDGE][ee].getN().resize(G_DIM,nb_dofs,false);
-      data.dataOnEntities[MBEDGE][ee].getDiffN().resize(G_DIM,2*nb_dofs,false);
-      H1edgeN[ee] = &*data.dataOnEntities[MBEDGE][ee].getN().data().begin();
-      diffH1edgeN[ee] = &*data.dataOnEntities[MBEDGE][ee].getDiffN().data().begin();
+      face_nodes[0][nn] = side_number3;
+      face_nodes[1][nn] = side_number4-3;
+      for(int gg = 0;gg<G_DIM;gg++) {
+        double val3 = N(gg,side_number3);
+        double val3_x = diffN(side_number3,0);
+        double val3_y = diffN(side_number3,1);
+        data.dataOnEntities[MBVERTEX][0].getN()(gg,side_number3) = val3;
+        data.dataOnEntities[MBVERTEX][0].getDiffN()(gg,2*side_number3+0) = val3_x;
+        data.dataOnEntities[MBVERTEX][0].getDiffN()(gg,2*side_number3+1) = val3_y;
+        double val4 = N(gg,side_number4-3);
+        double val4_x = diffN(side_number4-3,0);
+        double val4_y = diffN(side_number4-3,1);
+        data.dataOnEntities[MBVERTEX][0].getN()(gg,side_number4) = val4;
+        data.dataOnEntities[MBVERTEX][0].getDiffN()(gg,2*side_number4+0) = val4_x;
+        data.dataOnEntities[MBVERTEX][0].getDiffN()(gg,2*side_number4+1) = val4_y;
+      }
     }
-    //shape functions on face 3
-    ierr = H1_EdgeShapeFunctions_MBTRI(&sense[0],&order[0],
-      &*N.data().begin(),&*diffN.data().begin(),
-      &H1edgeN[0],&diffH1edgeN[0],G_DIM
-    ); CHKERRQ(ierr);
-    //shape functions on face 4
-    ierr = H1_EdgeShapeFunctions_MBTRI(&sense[6],&order[6],
-      &*N.data().begin(),&*diffN.data().begin(),
-      &H1edgeN[6],&diffH1edgeN[6],G_DIM
-    ); CHKERRQ(ierr);
-  }
 
-  //face
-  if(data.dataOnEntities[MBTRI].size()!=5) {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
-  }
-  for(int ff = 3;ff<5;ff++) {
-    int nb_dofs = NBFACETRI_H1(data.dataOnEntities[MBTRI][ff].getOrder());
-    data.dataOnEntities[MBTRI][ff].getN().resize(G_DIM,nb_dofs,false);
-    data.dataOnEntities[MBTRI][ff].getDiffN().resize(G_DIM,2*nb_dofs,false);
-    ierr = H1_FaceShapeFunctions_MBTRI(
-      face_nodes[ff-3],data.dataOnEntities[MBTRI][ff].getOrder(),
-      &*N.data().begin(),&*diffN.data().begin(),
-      &*data.dataOnEntities[MBTRI][ff].getN().data().begin(),&*data.dataOnEntities[MBTRI][ff].getDiffN().data().begin(),
-      G_DIM); CHKERRQ(ierr);
-  }
+    //edges
+    if(data.dataOnEntities[MBEDGE].size()!=9) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
+    }
 
-  } catch (exception& ex) {
-    ostringstream ss;
-    ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
-    SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
-  }
+    int valid_edges[] = { 1,1,1, 0,0,0, 1,1,1 };
+    int sense[9],order[9];
+    double *H1edgeN[9],*diffH1edgeN[9];
+    if((data.spacesOnEntities[MBEDGE]).test(H1)) {
+      for(int ee = 0;ee<9;ee++) {
+        if(!valid_edges[ee]) continue;
+        if(data.dataOnEntities[MBEDGE][ee].getSense() == 0) {
+          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
+        }
+        sense[ee] = data.dataOnEntities[MBEDGE][ee].getSense();
+        order[ee] = data.dataOnEntities[MBEDGE][ee].getOrder();
+        int nb_dofs = NBEDGE_H1(data.dataOnEntities[MBEDGE][ee].getOrder());
+        data.dataOnEntities[MBEDGE][ee].getN().resize(G_DIM,nb_dofs,false);
+        data.dataOnEntities[MBEDGE][ee].getDiffN().resize(G_DIM,2*nb_dofs,false);
+        H1edgeN[ee] = &*data.dataOnEntities[MBEDGE][ee].getN().data().begin();
+        diffH1edgeN[ee] = &*data.dataOnEntities[MBEDGE][ee].getDiffN().data().begin();
+      }
+      //shape functions on face 3
+      ierr = H1_EdgeShapeFunctions_MBTRI(&sense[0],&order[0],
+        &*N.data().begin(),&*diffN.data().begin(),
+        &H1edgeN[0],&diffH1edgeN[0],G_DIM
+      ); CHKERRQ(ierr);
+      //shape functions on face 4
+      ierr = H1_EdgeShapeFunctions_MBTRI(&sense[6],&order[6],
+        &*N.data().begin(),&*diffN.data().begin(),
+        &H1edgeN[6],&diffH1edgeN[6],G_DIM
+      ); CHKERRQ(ierr);
+    }
+
+    //face
+    if(data.dataOnEntities[MBTRI].size()!=5) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
+    }
+    for(int ff = 3;ff<5;ff++) {
+      int nb_dofs = NBFACETRI_H1(data.dataOnEntities[MBTRI][ff].getOrder());
+      data.dataOnEntities[MBTRI][ff].getN().resize(G_DIM,nb_dofs,false);
+      data.dataOnEntities[MBTRI][ff].getDiffN().resize(G_DIM,2*nb_dofs,false);
+      ierr = H1_FaceShapeFunctions_MBTRI(
+        face_nodes[ff-3],data.dataOnEntities[MBTRI][ff].getOrder(),
+        &*N.data().begin(),&*diffN.data().begin(),
+        &*data.dataOnEntities[MBTRI][ff].getN().data().begin(),&*data.dataOnEntities[MBTRI][ff].getDiffN().data().begin(),
+        G_DIM); CHKERRQ(ierr);
+      }
+
+    } catch (MoFEMException const &e) {
+      SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+    } catch (exception& ex) {
+      ostringstream ss;
+      ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+      SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+    }
 
   PetscFunctionReturn(0);
 }

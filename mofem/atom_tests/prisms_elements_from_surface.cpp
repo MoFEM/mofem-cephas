@@ -217,6 +217,8 @@ int main(int argc, char *argv[]) {
         //
         mySplit << "NH1" << endl;
         mySplit << "side: " << side << " type: " << type << endl;
+        data.getN() *= 1e4;
+        data.getDiffN() *= 1e4;
         mySplit << data << endl;
         mySplit << endl << endl;
 
