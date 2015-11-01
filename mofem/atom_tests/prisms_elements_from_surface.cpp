@@ -220,6 +220,8 @@ int main(int argc, char *argv[]) {
         data.getN() *= 1e4;
         data.getDiffN() *= 1e4;
         mySplit << data << endl;
+        mySplit << "integration pts " << getGaussPts() << endl;
+        mySplit << "coords at integration pts " << getCoordsAtGaussPts() << endl;
         mySplit << endl << endl;
 
         // mySplit << setprecision(3) << getCoords() << endl;

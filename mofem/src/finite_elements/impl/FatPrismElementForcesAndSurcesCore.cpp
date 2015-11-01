@@ -261,9 +261,6 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
         for(int ee = 0;ee<9;ee++) {
           if(ee>2&&ee<6) {
             // through thickness ho approx.
-            // cerr << ee << " "
-            // << dataH1TroughThickness.dataOnEntities[MBEDGE][ee].getOrder() << " "
-            // << dataH1TroughThickness.dataOnEntities[MBEDGE][ee].getN() << endl;
             if(dataH1TroughThickness.dataOnEntities[MBEDGE][ee].getOrder()<2) {
               dataH1.dataOnEntities[MBEDGE][ee].getN().resize(nb_gauss_pts,0,false);
               dataH1.dataOnEntities[MBEDGE][ee].getDiffN().resize(nb_gauss_pts,0,false);
@@ -475,6 +472,15 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
         );
         coordsAtGaussPtsTrianglesOnly(gg,3+dd) = cblas_ddot(
           3,&dataH1TrianglesOnly.dataOnEntities[MBVERTEX][0].getN()(gg,0),1,&coords[9+dd],3
+        );
+      }
+    }
+
+    coordsAtGaussPts.resize(nb_gauss_pts,3,false);
+    for(int gg = 0;gg<nb_gauss_pts;gg++) {
+      for(int dd = 0;dd<3;dd++) {
+        coordsAtGaussPts(gg,dd) = cblas_ddot(
+          6,&dataH1.dataOnEntities[MBVERTEX][0].getN()(gg,0),1,&coords[dd],3
         );
       }
     }
