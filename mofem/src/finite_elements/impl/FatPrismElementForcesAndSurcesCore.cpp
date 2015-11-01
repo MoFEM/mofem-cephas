@@ -274,7 +274,7 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
             dataH1.dataOnEntities[MBEDGE][ee].getDiffN().resize(nb_gauss_pts,3*nb_dofs,false);
             for(int dd = 0;dd<nb_dofs;dd++) {
               int gg = 0;
-              for(int ggf = 0;ggf<nb_gauss_pts_on_faces;ggf++,gg++) {
+              for(int ggf = 0;ggf<nb_gauss_pts_on_faces;ggf++) {
                 double tri_n =
                 dataH1TrianglesOnly.dataOnEntities[MBVERTEX][0].getN()(ggf,prism_edge_map[ee][0])*
                 dataH1TrianglesOnly.dataOnEntities[MBVERTEX][0].getN()(ggf,prism_edge_map[ee][1]);
@@ -290,7 +290,7 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
                 +
                 dataH1TrianglesOnly.dataOnEntities[MBVERTEX][0].getN()(ggf,prism_edge_map[ee][0])*
                 dataH1TrianglesOnly.dataOnEntities[MBVERTEX][0].getDiffN()(ggf,2*prism_edge_map[ee][1]+1);
-                for(int ggt = 0;ggt<nb_gauss_pts_through_thickness;ggt++) {
+                for(int ggt = 0;ggt<nb_gauss_pts_through_thickness;ggt++,gg++) {
                   double tri_m = dataH1TroughThickness.dataOnEntities[MBEDGE][ee].getN()(ggt,dd);
                   double dzeta_tri_m = dataH1TroughThickness.dataOnEntities[MBEDGE][ee].getDiffN()(ggt,dd);
                   dataH1.dataOnEntities[MBEDGE][ee].getN()(gg,dd) = tri_n*tri_m;
