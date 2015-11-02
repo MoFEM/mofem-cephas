@@ -133,16 +133,16 @@ PetscErrorCode ShapeFaceDiffNormalMBTRI(double *diffN,const double *coords,doubl
 void ShapeJacMBTRI(double *diffN,const double *coords,double *Jac);
 /// calculate derivatives of shape functions in space
 void ShapeDiffMBTRIinvJ(double *diffN,double *invJac,double *diffNinvJac);
-/// caluate shape functions
+/// calculate shape functions
 PetscErrorCode ShapeMBTET(double *N,const double *G_X,const double *G_Y,const double *G_Z,int DIM);
-/// calulare derivatives of shape functions
+/// calculate derivatives of shape functions
 PetscErrorCode ShapeDiffMBTET(double *diffN);
-/// determinad of jacobian
-double ShapeDetJacMBTET(double *Jac);
+/// determined of jacobian
+double ShapeDetJacVolume(double *jac);
 /// calculate jacobian
-PetscErrorCode ShapeJacMBTET(double *diffN,const double *coords,double *Jac);
+PetscErrorCode ShapeJacMBTET(double *diffN,const double *coords,double *jac);
 // calculate inverse of jacobian
-PetscErrorCode ShapeInvJacMBTET(double *Jac);
+PetscErrorCode ShapeInvJacVolume(double *jac);
 /// calculate TET volume
 double ShapeVolumeMBTET(double *diffN,const double *coords);
 /// calculate shape functions derivatives in space

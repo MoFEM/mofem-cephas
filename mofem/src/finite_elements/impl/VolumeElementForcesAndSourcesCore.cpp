@@ -147,7 +147,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
       &*dataH1.dataOnEntities[MBVERTEX][0].getDiffN().data().begin(),&*coords.begin(),&*Jac.data().begin()
     ); CHKERRQ(ierr);
     noalias(invJac) = Jac;
-    ierr = ShapeInvJacMBTET(&*invJac.data().begin()); CHKERRQ(ierr);
+    ierr = ShapeInvJacVolume(&*invJac.data().begin()); CHKERRQ(ierr);
 
     coordsAtGaussPts.resize(nb_gauss_pts,3,false);
     for(int gg = 0;gg<nb_gauss_pts;gg++) {
@@ -202,8 +202,8 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
         hoGaussPtsDetJac.resize(nb_gauss_pts,false);
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
           cblas_dcopy(9,&hoGaussPtsJac(gg,0),1,&jac(0,0),1);
-          hoGaussPtsDetJac[gg] = ShapeDetJacMBTET(&jac(0,0));
-          ierr = ShapeInvJacMBTET(&hoGaussPtsInvJac(gg,0)); CHKERRQ(ierr);
+          hoGaussPtsDetJac[gg] = ShapeDetJacVolume(&jac(0,0));
+          ierr = ShapeInvJacVolume(&hoGaussPtsInvJac(gg,0)); CHKERRQ(ierr);
         }
         ierr = opSetHoInvJacH1.opRhs(dataH1); CHKERRQ(ierr);
         if((dataH1.spacesOnEntities[MBTET]).test(L2)) {

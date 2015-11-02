@@ -212,7 +212,7 @@ int main(int argc, char *argv[]) {
 
       invJac.resize(3,3);
       ierr = ShapeJacMBTET(&*data.dataOnEntities[MBVERTEX][0].getDiffN().data().begin(),&*coords.begin(),&*invJac.data().begin()); CHKERRQ(ierr);
-      ierr = ShapeInvJacMBTET(&*invJac.data().begin()); CHKERRQ(ierr);
+      ierr = ShapeInvJacVolume(&*invJac.data().begin()); CHKERRQ(ierr);
 
       try {
         ierr = opSetInvJac.opRhs(data); CHKERRQ(ierr);
