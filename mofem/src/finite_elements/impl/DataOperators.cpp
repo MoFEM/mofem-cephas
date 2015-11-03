@@ -963,7 +963,7 @@ PetscErrorCode OpGetCoordsAndNormalsOnPrism::doWork(int side,EntityType type,Dat
           SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
         }
         if(nb_dofs > 3*data.getN().size2()) {
-          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
+          SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency, side %d type %d",side,type);
         }
         for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
           for(int dd = 0;dd<3;dd++) {
