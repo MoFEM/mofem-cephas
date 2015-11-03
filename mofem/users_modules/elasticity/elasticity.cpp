@@ -265,7 +265,6 @@ int main(int argc, char *argv[]) {
     ierr = thermal_stress_elem.addThermalSterssElement("ELASTIC","DISPLACEMENT","TEMP"); CHKERRQ(ierr);
   }
 
-  //build database
   //build field
   ierr = m_field.build_fields(); CHKERRQ(ierr);
   //get HO gemetry for 10 node tets
