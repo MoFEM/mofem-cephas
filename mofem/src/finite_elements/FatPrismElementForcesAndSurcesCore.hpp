@@ -84,8 +84,8 @@ struct FatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
   ) {
   }
 
-  virtual int getRuleTrianglesOnly(int order) { return order-1; };
-  virtual int getRuleThroughThickness(int order) { return order-1; };
+  virtual int getRuleTrianglesOnly(int order) { return order; };
+  virtual int getRuleThroughThickness(int order) { return order; };
 
 
   /** \brief default operator for Flat Prism element

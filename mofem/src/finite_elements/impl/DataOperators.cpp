@@ -280,13 +280,6 @@ PetscErrorCode DataOperator::opLhs(
         row_data.dataOnEntities[MBQUAD][qq],col_data.dataOnEntities[MBQUAD][QQ]
       ); CHKERRQ(ierr);
     }
-    for(unsigned int VV = 0;VV<col_data.dataOnEntities[MBTET].size();VV++) {
-      if(col_data.dataOnEntities[MBTET][VV].getN().size1()==0) continue;
-      ierr = doWork(
-        qq,VV,MBTRI,MBTET,
-        row_data.dataOnEntities[MBQUAD][qq],col_data.dataOnEntities[MBTET][VV]
-      ); CHKERRQ(ierr);
-    }
     for(unsigned int PP = 0;PP<col_data.dataOnEntities[MBPRISM].size();PP++) {
       if(col_data.dataOnEntities[MBPRISM][PP].getN().size1()==0) continue;
       ierr = doWork(
@@ -331,14 +324,6 @@ PetscErrorCode DataOperator::opLhs(
         ierr = doWork(
           vv,FF,MBTET,MBTRI,
           row_data.dataOnEntities[MBTET][vv],col_data.dataOnEntities[MBTRI][FF]
-        ); CHKERRQ(ierr);
-      }
-      //quads
-      for(unsigned int QQ = 0;QQ<col_data.dataOnEntities[MBQUAD].size();QQ++) {
-        if(col_data.dataOnEntities[MBQUAD][QQ].getN().size1()==0) continue;
-        ierr = doWork(
-          vv,QQ,MBTET,MBQUAD,
-          row_data.dataOnEntities[MBTET][vv],col_data.dataOnEntities[MBQUAD][QQ]
         ); CHKERRQ(ierr);
       }
     }

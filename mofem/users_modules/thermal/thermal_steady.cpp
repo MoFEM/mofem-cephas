@@ -225,7 +225,7 @@ int main(int argc, char *argv[]) {
 
   ProjectionFieldOn10NodeTet ent_method_on_10nodeTet(m_field,"TEMP",true,false,"TEMP");
   ierr = m_field.loop_dofs("TEMP",ent_method_on_10nodeTet); CHKERRQ(ierr);
-  ent_method_on_10nodeTet.set_nodes = false;
+  ent_method_on_10nodeTet.setNodes = false;
   ierr = m_field.loop_dofs("TEMP",ent_method_on_10nodeTet); CHKERRQ(ierr);
 
   if(pcomm->rank()==0) {

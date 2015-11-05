@@ -56,7 +56,7 @@ PetscErrorCode H1_EdgeShapeFunctions_MBTRI(int *sense,int *p,double *N,double *d
     double ksi20 = (N[node_shift+0] - N[node_shift+2])*sense[2];
     double L01[p[0]+1],L12[p[1]+1],L20[p[2]+1];
     double diffL01[2*(p[0]+1)],diffL12[2*(p[1]+1)],diffL20[2*(p[2]+1)];
-    ierr = Legendre_polynomials(p[0],ksi01,diff_ksi01,L01,diffL01,2);  CHKERRQ(ierr);
+    ierr = Legendre_polynomials(p[0],ksi01,diff_ksi01,L01,diffL01,2); CHKERRQ(ierr);
     ierr = Legendre_polynomials(p[1],ksi12,diff_ksi12,L12,diffL12,2); CHKERRQ(ierr);
     ierr = Legendre_polynomials(p[2],ksi20,diff_ksi20,L20,diffL20,2); CHKERRQ(ierr);
     int shift;
@@ -112,7 +112,9 @@ PetscErrorCode H1_EdgeShapeFunctions_MBTRI(int *sense,int *p,double *N,double *d
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode H1_FaceShapeFunctions_MBTRI(const int *face_nodes,int p,double *N,double *diffN,double *faceN,double *diff_faceN,int GDIM) {
+PetscErrorCode H1_FaceShapeFunctions_MBTRI(
+  const int *face_nodes,int p,double *N,double *diffN,double *faceN,double *diff_faceN,int GDIM
+) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
   int P = NBFACETRI_H1(p);
@@ -134,16 +136,17 @@ PetscErrorCode H1_FaceShapeFunctions_MBTRI(const int *face_nodes,int p,double *N
     ksi_faces[1] = N[ node_shift+face_nodes[2] ] - N[ node_shift+face_nodes[0] ];
     double L0[ p+1 ],L1[ p+1 ];
     double diffL0[ 2*(p+1) ],diffL1[ 2*(p+1) ];
-    ierr = Legendre_polynomials(p,ksi_faces[0],diff_ksi_faces[0],L0,diffL0,2);  CHKERRQ(ierr);
-    ierr = Legendre_polynomials(p,ksi_faces[1],diff_ksi_faces[1],L1,diffL1,2);  CHKERRQ(ierr);
+    ierr = Legendre_polynomials(p,ksi_faces[0],diff_ksi_faces[0],L0,diffL0,2); CHKERRQ(ierr);
+    ierr = Legendre_polynomials(p,ksi_faces[1],diff_ksi_faces[1],L1,diffL1,2); CHKERRQ(ierr);
     double v = N[node_shift+0]*N[node_shift+1]*N[node_shift+2];
     double v2[2];
     if(diff_faceN!=NULL) {
       dd = 0;
       for(;dd<2;dd++) {
-        v2[dd] = diffN[0*2+dd]*N[node_shift+1]*N[node_shift+2]+
-        N[node_shift+0]*diffN[1*2+dd]*N[node_shift+2]+
-        N[node_shift+0]*N[node_shift+1]*diffN[2*2+dd];
+        v2[dd] =
+        diffN[face_nodes[0]*2+dd]*N[node_shift+face_nodes[1]]*N[node_shift+face_nodes[2]]+
+        N[node_shift+face_nodes[0]]*diffN[face_nodes[1]*2+dd]*N[node_shift+face_nodes[2]]+
+        N[node_shift+face_nodes[0]]*N[node_shift+face_nodes[1]]*diffN[face_nodes[2]*2+dd];
       }
     }
     int shift = ii*P;
@@ -154,7 +157,6 @@ PetscErrorCode H1_FaceShapeFunctions_MBTRI(const int *face_nodes,int p,double *N
       for(;pp0<=oo;pp0++) {
         int pp1 = oo-pp0;
         if(pp1>=0) {
-
           if(faceN!=NULL) {
             faceN[shift+jj] = v*L0[pp0]*L1[pp1];
           }
@@ -166,7 +168,6 @@ PetscErrorCode H1_FaceShapeFunctions_MBTRI(const int *face_nodes,int p,double *N
             }
           }
           jj++;
-
         }
       }
     }
@@ -188,7 +189,8 @@ PetscErrorCode H1_EdgeShapeFunctions_MBTET(int *sense,int *p,double *N,double *d
     int dd = 0;
     for(;dd<3;dd++) {
       edges_diff_ksi[ee][dd] = (diffN[edges_nodes[2*ee+1]*3+dd] - diffN[edges_nodes[2*ee+0]*3+dd])*sense[ee];
-  }}
+    }
+  }
   int ii = 0;
   for(;ii<GDIM;ii++) {
     int node_shift = ii*4;
@@ -212,13 +214,18 @@ PetscErrorCode H1_EdgeShapeFunctions_MBTET(int *sense,int *p,double *N,double *d
         bzero(&diff_edgeN[ee][3*shift],sizeof(double)*3*P[ee]);
         int dd = 0;
         for(; dd<3; dd++) {
-          cblas_daxpy(P[ee],N[node_shift+edges_nodes[2*ee+0]]*N[node_shift+edges_nodes[2*ee+1]],&diffL[dd*(p[ee]+1)],1,&diff_edgeN[ee][3*shift+dd],3);
+          cblas_daxpy(
+            P[ee],N[node_shift+edges_nodes[2*ee+0]]*N[node_shift+edges_nodes[2*ee+1]],&diffL[dd*(p[ee]+1)],1,&diff_edgeN[ee][3*shift+dd],3
+          );
           cblas_daxpy(P[ee],diffN[3*edges_nodes[2*ee+0]+dd]*N[node_shift+edges_nodes[2*ee+1]]
-            +N[node_shift+edges_nodes[2*ee+0]]*diffN[3*edges_nodes[2*ee+1]+dd],L,1,&diff_edgeN[ee][3*shift+dd],3); }}
-          }
+            +N[node_shift+edges_nodes[2*ee+0]]*diffN[3*edges_nodes[2*ee+1]+dd],L,1,&diff_edgeN[ee][3*shift+dd],3
+          );
         }
-        PetscFunctionReturn(0);
       }
+    }
+  }
+  PetscFunctionReturn(0);
+}
 PetscErrorCode H1_FaceShapeFunctions_MBTET(int *faces_nodes,int *p,double *N,double *diffN,double *faceN[],double *diff_faceN[],int GDIM) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
@@ -243,49 +250,49 @@ PetscErrorCode H1_FaceShapeFunctions_MBTET(int *faces_nodes,int *p,double *N,dou
     double ksi_faces[8];
     for(ff = 0;ff<4;ff++) {
       ksi_faces[2*ff+0] = N[ node_shift+faces_nodes[3*ff+1] ] - N[ node_shift+faces_nodes[3*ff+0] ];
-      ksi_faces[2*ff+1] = N[ node_shift+faces_nodes[3*ff+2] ] - N[ node_shift+faces_nodes[3*ff+0] ]; }
-      int shift;
-      for(ff = 0; ff<4;ff++) {
-        if(P[ff]==0) continue;
-        double L0[ p[ff]+1 ],L1[ p[ff]+1 ];
-        double diffL0[ 3*(p[ff]+1) ],diffL1[ 3*(p[ff]+1) ];
-        ierr = Legendre_polynomials(p[ff],ksi_faces[ff*2+0],diff_ksi_faces[ff*2+0],L0,diffL0,3);  CHKERRQ(ierr);
-        ierr = Legendre_polynomials(p[ff],ksi_faces[ff*2+1],diff_ksi_faces[ff*2+1],L1,diffL1,3);  CHKERRQ(ierr);
-        double v = N[node_shift+faces_nodes[3*ff+0]]*N[node_shift+faces_nodes[3*ff+1]]*N[node_shift+faces_nodes[3*ff+2]];
-        double v2[3];
-        dd = 0;
-        for(;dd<3;dd++) {
-          v2[dd] = diffN[3*faces_nodes[3*ff+0]+dd]*N[node_shift+faces_nodes[3*ff+1]]*N[node_shift+faces_nodes[3*ff+2]]+
-          N[node_shift+faces_nodes[3*ff+0]]*diffN[3*faces_nodes[3*ff+1]+dd]*N[node_shift+faces_nodes[3*ff+2]]+
-          N[node_shift+faces_nodes[3*ff+0]]*N[node_shift+faces_nodes[3*ff+1]]*diffN[3*faces_nodes[3*ff+2]+dd];
-        }
-        shift = ii*P[ff];
-        int jj = 0;
-        int oo = 0;
-        for(;oo<=(p[ff]-3);oo++) {
-          int pp0 = 0;
-          for(;pp0<=oo;pp0++) {
-            int pp1 = oo-pp0;
-            if(pp1>=0) {
-              if(faceN!=NULL)
-              if(faceN[ff]!=NULL) {
-                faceN[ff][shift+jj] = v*L0[pp0]*L1[pp1];
-              }
-              if(diff_faceN!=NULL)
-              if(diff_faceN[ff]!=NULL) {
-                dd = 0;
-                for(;dd<3;dd++) {
-                  diff_faceN[ff][3*shift+3*jj+dd] =
-                  ( L0[pp0]*diffL1[dd*(p[ff]+1)+pp1] + diffL0[dd*(p[ff]+1)+pp0]*L1[pp1] )*v + L0[pp0]*L1[pp1]*v2[dd];
-                }
-              }
-              jj++;
-
+      ksi_faces[2*ff+1] = N[ node_shift+faces_nodes[3*ff+2] ] - N[ node_shift+faces_nodes[3*ff+0] ];
+    }
+    int shift;
+    for(ff = 0; ff<4;ff++) {
+      if(P[ff]==0) continue;
+      double L0[ p[ff]+1 ],L1[ p[ff]+1 ];
+      double diffL0[ 3*(p[ff]+1) ],diffL1[ 3*(p[ff]+1) ];
+      ierr = Legendre_polynomials(p[ff],ksi_faces[ff*2+0],diff_ksi_faces[ff*2+0],L0,diffL0,3);  CHKERRQ(ierr);
+      ierr = Legendre_polynomials(p[ff],ksi_faces[ff*2+1],diff_ksi_faces[ff*2+1],L1,diffL1,3);  CHKERRQ(ierr);
+      double v = N[node_shift+faces_nodes[3*ff+0]]*N[node_shift+faces_nodes[3*ff+1]]*N[node_shift+faces_nodes[3*ff+2]];
+      double v2[3];
+      dd = 0;
+      for(;dd<3;dd++) {
+        v2[dd] =
+        diffN[3*faces_nodes[3*ff+0]+dd]*N[node_shift+faces_nodes[3*ff+1]]*N[node_shift+faces_nodes[3*ff+2]]+
+        N[node_shift+faces_nodes[3*ff+0]]*diffN[3*faces_nodes[3*ff+1]+dd]*N[node_shift+faces_nodes[3*ff+2]]+
+        N[node_shift+faces_nodes[3*ff+0]]*N[node_shift+faces_nodes[3*ff+1]]*diffN[3*faces_nodes[3*ff+2]+dd];
+      }
+      shift = ii*P[ff];
+      int jj = 0;
+      int oo = 0;
+      for(;oo<=(p[ff]-3);oo++) {
+        int pp0 = 0;
+        for(;pp0<=oo;pp0++) {
+          int pp1 = oo-pp0;
+          if(pp1>=0) {
+            if(faceN!=NULL)
+            if(faceN[ff]!=NULL) {
+              faceN[ff][shift+jj] = v*L0[pp0]*L1[pp1];
             }
+            if(diff_faceN!=NULL)
+            if(diff_faceN[ff]!=NULL) {
+              dd = 0;
+              for(;dd<3;dd++) {
+                diff_faceN[ff][3*shift+3*jj+dd] =
+                ( L0[pp0]*diffL1[dd*(p[ff]+1)+pp1] + diffL0[dd*(p[ff]+1)+pp0]*L1[pp1] )*v + L0[pp0]*L1[pp1]*v2[dd];
+              }
+            }
+            jj++;
           }
-
         }
-        if(jj!=P[ff]) SETERRQ2(PETSC_COMM_SELF,1,"wrong order %d != %d",jj,P[ff]);
+      }
+      if(jj!=P[ff]) SETERRQ2(PETSC_COMM_SELF,1,"wrong order %d != %d",jj,P[ff]);
     }
   }
   PetscFunctionReturn(0);
@@ -326,26 +333,24 @@ PetscErrorCode H1_VolumeShapeFunctions_MBTET(int p,double *N,double *diffN,doubl
     for(;oo<=(p-4);oo++) {
       int pp0 = 0;
       for(;pp0<=oo;pp0++) {
-	int pp1 = 0;
-	for(;(pp0+pp1)<=oo;pp1++) {
-	  int pp2 = oo-pp0-pp1;
-	  if(pp2>=0) {
-
-	    if(volumeN!=NULL) {
-	      volumeN[shift+jj] = L0[pp0]*L1[pp1]*L2[pp2]*v;
-	    }
-	    if(diff_volumeN!=NULL) {
-	      dd = 0;
-        for(;dd<3;dd++) {
-          diff_volumeN[3*shift+3*jj+dd] =
-          ( diffL0[dd*(p+1)+pp0]*L1[pp1]*L2[pp2] + L0[pp0]*diffL1[dd*(p+1)+pp1]*L2[pp2] + L0[pp0]*L1[pp1]*diffL2[dd*(p+1)+pp2] )*v +
-          L0[pp0]*L1[pp1]*L2[pp2]*v2[dd];
+        int pp1 = 0;
+        for(;(pp0+pp1)<=oo;pp1++) {
+          int pp2 = oo-pp0-pp1;
+          if(pp2>=0) {
+            if(volumeN!=NULL) {
+              volumeN[shift+jj] = L0[pp0]*L1[pp1]*L2[pp2]*v;
+            }
+            if(diff_volumeN!=NULL) {
+              dd = 0;
+              for(;dd<3;dd++) {
+                diff_volumeN[3*shift+3*jj+dd] =
+                ( diffL0[dd*(p+1)+pp0]*L1[pp1]*L2[pp2] + L0[pp0]*diffL1[dd*(p+1)+pp1]*L2[pp2] + L0[pp0]*L1[pp1]*diffL2[dd*(p+1)+pp2] )*v +
+                L0[pp0]*L1[pp1]*L2[pp2]*v2[dd];
+              }
+            }
+            jj++;
+          }
         }
-	    }
-	    jj++;
-
-	  }
-	}
       }
     }
     if(jj!=P) SETERRQ1(PETSC_COMM_SELF,1,"wrong order %d",jj);
@@ -433,15 +438,17 @@ PetscErrorCode H1_QuadShapeFunctions_MBPRISM(
   int ii = 0;
   for(;ii<GDIM;ii++) {
     int node_shift = ii*6;
-    int node_diff_shift = ii*12;
+    int node_diff_shift = ii*18;
     double ksi_faces[6];
     for(ff = 0;ff<3;ff++) {
       ksi_faces[2*ff+0] = N[ node_shift+faces_nodes[4*ff+1] ] - N[ node_shift+faces_nodes[4*ff+0] ];
       ksi_faces[2*ff+1] = N[ node_shift+faces_nodes[4*ff+3] ] - N[ node_shift+faces_nodes[4*ff+0] ]; }
       for(int dd = 0;dd<3; dd++) {
         for(ff = 0;ff<3;ff++) {
-          diff_ksi_faces[ff*2+0][dd] = (diffN[node_diff_shift+faces_nodes[4*ff+1]*3+dd]-diffN[node_diff_shift+faces_nodes[4*ff+0]*3+dd]);
-          diff_ksi_faces[ff*2+1][dd] = (diffN[node_diff_shift+faces_nodes[4*ff+3]*3+dd]-diffN[node_diff_shift+faces_nodes[4*ff+0]*3+dd]);
+          diff_ksi_faces[ff*2+0][dd] =
+          (diffN[node_diff_shift+faces_nodes[4*ff+1]*3+dd]-diffN[node_diff_shift+faces_nodes[4*ff+0]*3+dd]);
+          diff_ksi_faces[ff*2+1][dd] =
+          (diffN[node_diff_shift+faces_nodes[4*ff+3]*3+dd]-diffN[node_diff_shift+faces_nodes[4*ff+0]*3+dd]);
         }
       }
       int shift;
