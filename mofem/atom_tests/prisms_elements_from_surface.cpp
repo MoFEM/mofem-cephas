@@ -84,7 +84,7 @@ int main(int argc, char *argv[]) {
     ierr = m_field.add_ents_to_field_by_PRISMs(meshset,"FIELD1",10); CHKERRQ(ierr);
 
     ierr = m_field.set_field_order(0,MBVERTEX,"FIELD1",1); CHKERRQ(ierr);
-    ierr = m_field.set_field_order(0,MBEDGE,"FIELD1",2,10); CHKERRQ(ierr);
+    ierr = m_field.set_field_order(0,MBEDGE,"FIELD1",3,10); CHKERRQ(ierr);
     ierr = m_field.build_fields(10); CHKERRQ(ierr);
 
     // ierr = m_field.list_dofs_by_field_name("FIELD1"); CHKERRQ(ierr);
@@ -92,7 +92,7 @@ int main(int argc, char *argv[]) {
     const DofMoFEMEntity_multiIndex *dofs_ptr;
     ierr = m_field.get_dofs(&dofs_ptr); CHKERRQ(ierr);
     PetscPrintf(PETSC_COMM_WORLD,"dofs_ptr.size() = %d\n",dofs_ptr->size());
-    if(dofs_ptr->size()!=323) {
+    if(dofs_ptr->size()!=564) {
       SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency 323!=%d",dofs_ptr->size());
     }
 
@@ -101,7 +101,7 @@ int main(int argc, char *argv[]) {
     ierr = m_field.build_fields(10); CHKERRQ(ierr);
 
     PetscPrintf(PETSC_COMM_WORLD,"dofs_ptr.size() = %d\n",dofs_ptr->size());
-    if(dofs_ptr->size()!=483) {
+    if(dofs_ptr->size()!=724) {
       SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency 483!=%d",dofs_ptr->size());
     }
 
@@ -220,8 +220,11 @@ int main(int argc, char *argv[]) {
         data.getN() *= 1e4;
         data.getDiffN() *= 1e4;
         mySplit << data << endl;
-        mySplit << "integration pts " << getGaussPts() << endl;
-        mySplit << "coords at integration pts " << getCoordsAtGaussPts() << endl;
+        mySplit << "getTroughThicknessDataStructure" << endl;
+        mySplit << getTroughThicknessDataStructure().dataOnEntities[type][side] << endl;
+
+        // mySplit << "integration pts " << getGaussPts() << endl;
+        // mySplit << "coords at integration pts " << getCoordsAtGaussPts() << endl;
         mySplit << endl << endl;
 
         // mySplit << setprecision(3) << getCoords() << endl;

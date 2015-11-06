@@ -124,8 +124,8 @@ PetscErrorCode H1_FaceShapeFunctions_MBTRI(
   int dd = 0;
   if(diff_faceN!=NULL) {
     for(;dd<2; dd++) {
-      diff_ksi_faces[0][dd] = ( diffN[ face_nodes[1]*2+dd ] - diffN[ face_nodes[0]*2+dd ] );
-      diff_ksi_faces[1][dd] = ( diffN[ face_nodes[2]*2+dd ] - diffN[ face_nodes[0]*2+dd ] );
+      diff_ksi_faces[0][dd] = diffN[ face_nodes[1]*2+dd ] - diffN[ face_nodes[0]*2+dd ];
+      diff_ksi_faces[1][dd] = diffN[ face_nodes[2]*2+dd ] - diffN[ face_nodes[0]*2+dd ];
     }
   }
   int ii = 0;
@@ -138,7 +138,7 @@ PetscErrorCode H1_FaceShapeFunctions_MBTRI(
     double diffL0[ 2*(p+1) ],diffL1[ 2*(p+1) ];
     ierr = Legendre_polynomials(p,ksi_faces[0],diff_ksi_faces[0],L0,diffL0,2); CHKERRQ(ierr);
     ierr = Legendre_polynomials(p,ksi_faces[1],diff_ksi_faces[1],L1,diffL1,2); CHKERRQ(ierr);
-    double v = N[node_shift+0]*N[node_shift+1]*N[node_shift+2];
+    double v = N[node_shift+face_nodes[0]]*N[node_shift+face_nodes[1]]*N[node_shift+face_nodes[2]];
     double v2[2];
     if(diff_faceN!=NULL) {
       dd = 0;

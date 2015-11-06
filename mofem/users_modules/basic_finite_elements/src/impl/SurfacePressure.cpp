@@ -152,6 +152,12 @@ PetscErrorCode NeummanForcesSurface::OpNeumannPreassure::doWork(
 
   }
 
+  // if(type == MBTRI) {
+  //   cerr << "Tri " << getMoFEMFEPtr()->get_ent() << " getN " << data.getN() << endl;
+  //   cerr << "Tri " << getMoFEMFEPtr()->get_ent() << " getDiffN " << data.getDiffN() << endl;
+  //   cerr << "Tri " << getMoFEMFEPtr()->get_ent() << " Indices " << data.getIndices() << endl;
+  // }
+
   /*cerr << "VecSetValues\n";
   cerr << Nf << endl;
   cerr << data.getIndices() << endl;*/

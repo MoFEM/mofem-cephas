@@ -87,6 +87,9 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
   for(unsigned int ee = 0;ee<dataH1.dataOnEntities[MBEDGE].size();ee++) {
     order = max(order,dataH1.dataOnEntities[MBEDGE][ee].getOrder());
   }
+  for(unsigned int ff = 0;ff<dataH1.dataOnEntities[MBTRI].size();ff++) {
+    order = max(order,dataH1.dataOnEntities[MBTRI][ff].getOrder());
+  }
   for(unsigned int ff = 0;ff<dataHdiv.dataOnEntities[MBTRI].size();ff++) {
     order = max(order,dataHdiv.dataOnEntities[MBTRI][ff].getOrder());
   }
@@ -109,9 +112,10 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
   if(nb_gauss_pts == 0) PetscFunctionReturn(0);
 
   ierr = shapeTRIFunctions_H1(dataH1,&gaussPts(0,0),&gaussPts(1,0),nb_gauss_pts); CHKERRQ(ierr);
-
   if(dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
-    ierr = shapeTRIFunctions_Hdiv(dataHdiv,&gaussPts(0,0),&gaussPts(1,0),nb_gauss_pts); CHKERRQ(ierr); CHKERRQ(ierr);
+    ierr = shapeTRIFunctions_Hdiv(
+      dataHdiv,&gaussPts(0,0),&gaussPts(1,0),nb_gauss_pts); CHKERRQ(ierr
+      ); CHKERRQ(ierr);
   }
 
   EntityHandle ent = fePtr->get_ent();

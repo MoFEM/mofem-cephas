@@ -215,6 +215,10 @@ struct FatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
      */
     inline MatrixDouble& getTangent2_at_GaussPtF4() { return ptrFE->tAngent2_at_GaussPtF4; }
 
+    inline DataForcesAndSurcesCore& getTrianglesOnlyDataStructure() { return ptrFE->dataH1TrianglesOnly; }
+
+    inline DataForcesAndSurcesCore& getTroughThicknessDataStructure() { return ptrFE->dataH1TroughThickness; }
+
     /** \brief return pointer to triangle finite element object
      */
     inline const FatPrismElementForcesAndSurcesCore* getFlatPrismElementForcesAndSurcesCore() {

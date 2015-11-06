@@ -140,6 +140,7 @@ PetscErrorCode DataOperator::opLhs(
         row_data.dataOnEntities[MBEDGE][ee],col_data.dataOnEntities[MBEDGE][EE]
       ); CHKERRQ(ierr);
     }
+    //tris
     for(unsigned int FF = 0;FF<col_data.dataOnEntities[MBTRI].size();FF++) {
       if(col_data.dataOnEntities[MBTRI][FF].getN().size1()==0) continue;
       ierr = doWork(
