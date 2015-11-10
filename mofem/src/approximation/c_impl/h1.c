@@ -425,7 +425,8 @@ PetscErrorCode H1_QuadShapeFunctions_MBPRISM(
   PetscFunctionBegin;
   PetscErrorCode ierr;
   int P[3];
-  for(int ff = 0;ff<3; ff++) {
+  int ff = 0;
+  for(;ff<3; ff++) {
     P[ff] = NBFACEQUAD_H1(p[ff]);
   }
   double ksi_faces[6];
@@ -435,10 +436,12 @@ PetscErrorCode H1_QuadShapeFunctions_MBPRISM(
   double *diff_ksi_faces[] = {
     diff_ksiL0F0,diff_ksiL3F0,diff_ksiL0F1,diff_ksiL3F1,diff_ksiL0F2,diff_ksiL3F2
   };
-  for(int ii = 0;ii<GDIM;ii++) {
+  int ii = 0;
+  for(;ii<GDIM;ii++) {
     int node_shift = ii*6;
     int node_diff_shift = 3*node_shift;
-    for(int ff = 0;ff<3;ff++) {
+    int ff = 0;
+    for(;ff<3;ff++) {
       if(P[ff]==0) continue;
       int n0 = faces_nodes[4*ff+0];
       int n1 = faces_nodes[4*ff+1];
@@ -456,7 +459,8 @@ PetscErrorCode H1_QuadShapeFunctions_MBPRISM(
       // if(ksi_faces[e1]<-1 || ksi_faces[e1]>1) {
       //   SETERRQ(PETSC_COMM_SELF,1,"Data inconsistency");
       // }
-      for(int dd = 0;dd<3;dd++) {
+      int dd = 0;
+      for(;dd<3;dd++) {
         diff_ksi_faces[e0][dd] =
         2.*(diffN[node_diff_shift+3*n1+dd]+diffN[node_diff_shift+3*n2+dd]-diffN[node_diff_shift+3*n0+dd]-diffN[node_diff_shift+3*n3+dd]);
         diff_ksi_faces[e1][dd] =
@@ -475,7 +479,8 @@ PetscErrorCode H1_QuadShapeFunctions_MBPRISM(
       +
       N[node_shift+n1]*N[node_shift+n3];
       double v2[3];
-      for(int dd = 0;dd<3;dd++) {
+      dd = 0;
+      for(;dd<3;dd++) {
         v2[dd] =
         diffN[node_diff_shift+3*n0+dd]*N[node_shift+n2]+
         N[node_shift+n0]*diffN[node_diff_shift+3*n2+dd]
@@ -499,7 +504,8 @@ PetscErrorCode H1_QuadShapeFunctions_MBPRISM(
             }
             if(diff_faceN!=NULL) {
               if(diff_faceN[ff]!=NULL) {
-                for(int dd = 0;dd<3;dd++) {
+		dd = 0;
+                for(;dd<3;dd++) {
                   diff_faceN[ff][3*shift+3*jj+dd] =
                   (
                     L0[pp0]*diffL1[dd*(p[ff]+1)+pp1]+
@@ -533,7 +539,8 @@ PetscErrorCode H1_VolumeShapeFunctions_MBPRISM(
     double ksiL0 = N[ node_shift+1 ] - N[ node_shift + 0];
     double ksiL1 = N[ node_shift+2 ] - N[ node_shift + 0];
     double ksiL2 = 2*gauss_pts[2*GDIM+ii]-1.;
-    for(int dd = 0;dd<3;dd++) {
+    int dd = 0;
+    for(0;dd<3;dd++) {
       diff_ksiL0[dd] = (diffN[node_diff_shift+1*3+dd]-diffN[node_diff_shift+0*3+dd]);
       diff_ksiL1[dd] = (diffN[node_diff_shift+2*3+dd]-diffN[node_diff_shift+0*3+dd]);
       diff_ksiL2[dd] = 2;
@@ -548,7 +555,8 @@ PetscErrorCode H1_VolumeShapeFunctions_MBPRISM(
     +
     N[node_shift+1]*N[node_shift+3]*N[node_shift+5];
     double v2[3];
-    for(int dd = 0;dd<3;dd++) {
+    dd = 0;
+    for(;dd<3;dd++) {
       v2[dd] =
       diffN[node_diff_shift+3*0+dd]*N[node_shift+4]*N[node_shift+2]+
       N[node_shift+0]*diffN[node_diff_shift+3*4+dd]*N[node_shift+2]+
@@ -572,7 +580,8 @@ PetscErrorCode H1_VolumeShapeFunctions_MBPRISM(
               volumeN[shift+jj] = L0[pp0]*L1[pp1]*L2[pp2]*v;
             }
             if(diff_volumeN!=NULL) {
-              for(int dd = 0;dd<3;dd++) {
+	      dd = 0;
+              for(;dd<3;dd++) {
                 diff_volumeN[3*shift+3*jj+dd] =
                 (diffL0[dd*(p+1)+pp0]*L1[pp1]*L2[pp2]+L0[pp0]*diffL1[dd*(p+1)+pp1]*L2[pp2]+L0[pp0]*L1[pp1]*diffL2[dd*(p+1)+pp2])*v+
                 L0[pp0]*L1[pp1]*L2[pp2]*v2[dd];
