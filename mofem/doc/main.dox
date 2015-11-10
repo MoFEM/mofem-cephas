@@ -65,7 +65,7 @@ knowledge how each module is developed.
 
 List of some user modules,
 - Obsolete (Elements and methods used by some modules no longer developed, not recommend
-to use in new developments) <https://bitbucket.org/likask/mofem_um_obsolte>
+to use in new developments) <https://bitbucket.org/likask/mofem_um_obsolete>
 - Homogenistaion <https://bitbucket.org/likask/mofem_um_homogenisation>
 - Fracture Mechanics <https://bitbucket.org/likask/mofem_um_fracture_mechanics>
 - Gel Models <https://bitbucket.org/likask/mofem_um_gels>
