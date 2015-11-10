@@ -697,19 +697,16 @@ MoFEMFiniteElement::MoFEMFiniteElement(Interface &moab,const EntityHandle _meshs
   rval = moab.tag_get_by_ptr(th_FEIdRow,&meshset,1,(const void **)&tag_BitFieldId_row_data); CHKERR(rval);
   rval = moab.tag_get_handle("_FEIdData",th_FEIdData); CHKERR(rval);
   rval = moab.tag_get_by_ptr(th_FEIdData,&meshset,1,(const void **)&tag_BitFieldId_data); CHKERR(rval);
-
   //custom adjacency map
   for(int tt = 0;tt<MBMAXTYPE;tt++) {
     element_adjacency_table[tt] = NULL;
   }
-
   element_adjacency_table[MBVERTEX] = DefaultElementAdjacency::defaultVertex;
   element_adjacency_table[MBEDGE] = DefaultElementAdjacency::defaultEdge;
   element_adjacency_table[MBTRI] = DefaultElementAdjacency::defaultTri;
   element_adjacency_table[MBTET] = DefaultElementAdjacency::defaultTet;
   element_adjacency_table[MBPRISM] = DefaultElementAdjacency::defaultPrism;
   element_adjacency_table[MBENTITYSET] = DefaultElementAdjacency::defaultMeshset;
-
 }
 
 ostream& operator<<(ostream& os,const MoFEMFiniteElement& e) {

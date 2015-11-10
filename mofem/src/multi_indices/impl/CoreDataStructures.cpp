@@ -135,10 +135,10 @@ PetscErrorCode test_moab(Interface &moab,const EntityHandle ent) {
   PetscFunctionBegin;
   //tets type
   EntityType type = (EntityType)((ent&MB_TYPE_MASK)>>MB_ID_WIDTH);
-  if(type != moab.type_from_handle(ent)) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"incosistencies with type_from_handle");
+  if(type != moab.type_from_handle(ent)) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"inconsistencies with type_from_handle");
   //tets id
   EntityID id = (EntityType)(ent&MB_ID_MASK);
-  if(id != moab.id_from_handle(ent)) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"incosistencies with id_from_handle");
+  if(id != moab.id_from_handle(ent)) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"inconsistencies with id_from_handle");
   PetscFunctionReturn(0);
 }
 

@@ -1,11 +1,5 @@
 /** \file CoreDataStructures.cpp
- * \brief Myltindex containes, data structures and other low-level functions 
- * 
- * Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl) <br>
- *
- * The MoFEM package is copyrighted by Lukasz Kaczmarczyk. 
- * It can be freely used for educational and research purposes 
- * by other institutions. If you use this softwre pleas cite my work. 
+ * \brief Myltindex contains, data structures and other low-level functions
  *
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -71,7 +65,7 @@ MoFEMProblem::MoFEMProblem(Interface &moab,const EntityHandle _meshset): meshset
 }
 ostream& operator<<(ostream& os,const MoFEMProblem& e) {
   os << "problem id " << e.get_id()
-    << " MoFEMFiniteElement id " << e.get_BitFEId() 
+    << " MoFEMFiniteElement id " << e.get_BitFEId()
     << " name "<<e.get_name();
   return os;
 }
@@ -104,32 +98,32 @@ void problem_MoFEMFiniteElement_change_bit_add::operator()(MoFEMProblem &p) {
 problem_add_row_dof::problem_add_row_dof(const DofMoFEMEntity *_dof_ptr): dof_ptr(_dof_ptr) {
   assert(dof_ptr->active);
 }
-void problem_add_row_dof::operator()(MoFEMProblem &e) { 
-  p = e.numered_dofs_rows.insert(NumeredDofMoFEMEntity(dof_ptr)); 
+void problem_add_row_dof::operator()(MoFEMProblem &e) {
+  p = e.numered_dofs_rows.insert(NumeredDofMoFEMEntity(dof_ptr));
   if(p.second) {
     (*(DofIdx*)e.tag_nbdof_data_row)++;
   }
 }
 problem_add_col_dof::problem_add_col_dof(const DofMoFEMEntity *_dof_ptr): dof_ptr(_dof_ptr) {}
-void problem_add_col_dof::operator()(MoFEMProblem &e) { 
-  p = e.numered_dofs_cols.insert(NumeredDofMoFEMEntity(dof_ptr)); 
+void problem_add_col_dof::operator()(MoFEMProblem &e) {
+  p = e.numered_dofs_cols.insert(NumeredDofMoFEMEntity(dof_ptr));
   if(p.second) {
     (*(DofIdx*)e.tag_nbdof_data_col)++;
   }
 }
-void problem_zero_nb_rows_change::operator()(MoFEMProblem &e) { 
+void problem_zero_nb_rows_change::operator()(MoFEMProblem &e) {
   (*(DofIdx*)e.tag_nbdof_data_row) = 0;
   (*(DofIdx*)e.tag_local_nbdof_data_row) = 0;
   (*(DofIdx*)e.tag_ghost_nbdof_data_row) = 0;
   e.numered_dofs_rows.clear();
 }
-void problem_zero_nb_cols_change::operator()(MoFEMProblem &e) { 
+void problem_zero_nb_cols_change::operator()(MoFEMProblem &e) {
   (*(DofIdx*)e.tag_nbdof_data_col) = 0;
   (*(DofIdx*)e.tag_local_nbdof_data_col) = 0;
   (*(DofIdx*)e.tag_ghost_nbdof_data_col) = 0;
   e.numered_dofs_cols.clear();
 }
-void problem_clear_numered_finiteElementsPtr_change::operator()(MoFEMProblem &e) { 
+void problem_clear_numered_finiteElementsPtr_change::operator()(MoFEMProblem &e) {
   e.numeredFiniteElements.clear();
 }
 void problem_row_number_change::operator()(MoFEMProblem &e) {
@@ -140,7 +134,7 @@ void problem_row_number_change::operator()(MoFEMProblem &e) {
     bool success =
       e.numered_dofs_rows.modify(dit,NumeredDofMoFEMEntity_mofem_index_change(idx));
     if(!success) {
-      throw "modification unsucessfull";
+      throw "modification unsuccessful";
     }
   }
 }
@@ -152,7 +146,7 @@ void problem_col_number_change::operator()(MoFEMProblem &e) {
     bool success =
       e.numered_dofs_cols.modify(dit,NumeredDofMoFEMEntity_mofem_index_change(idx));
     if(!success) {
-      throw "modification unsucessfull";
+      throw "modification unsuccessful";
     }
   }
 }

@@ -710,7 +710,7 @@ PetscErrorCode Core::add_ents_to_field_by_PRISMs(const Range &prisms,const BitFi
   }
   FieldSpace space;
   rval = moab.tag_get_data(th_FieldSpace,&idm,1,&space); CHKERR_PETSC(rval);
-  Range nodes,faces,quads,edges;
+  Range nodes,faces,edges;
   switch(space) {
     case L2:
     rval = moab.add_entities(idm,prisms); CHKERR_PETSC(rval);
@@ -2862,7 +2862,9 @@ PetscErrorCode Core::loop_finite_elements(
 
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::loop_dofs(const MoFEMProblem *problem_ptr,const string &field_name,RowColData rc,EntMethod &method,int lower_rank,int upper_rank,int verb) {
+PetscErrorCode Core::loop_dofs(
+  const MoFEMProblem *problem_ptr,const string &field_name,RowColData rc,EntMethod &method,int lower_rank,int upper_rank,int verb
+) {
   PetscFunctionBegin;
   SET_BASIC_METHOD(method,&*problem_ptr);
   typedef NumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Part_mi_tag>::type numerd_dofs;
@@ -2894,7 +2896,9 @@ PetscErrorCode Core::loop_dofs(const MoFEMProblem *problem_ptr,const string &fie
   ierr = method.postProcess(); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::loop_dofs(const string &problem_name,const string &field_name,RowColData rc,EntMethod &method,int lower_rank,int upper_rank,int verb) {
+PetscErrorCode Core::loop_dofs(
+  const string &problem_name,const string &field_name,RowColData rc,EntMethod &method,int lower_rank,int upper_rank,int verb
+) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type moFEMProblems_by_name;
