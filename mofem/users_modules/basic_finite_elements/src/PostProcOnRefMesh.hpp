@@ -63,12 +63,6 @@ struct PostPocOnRefinedMesh: public VolumeElementForcesAndSourcesCore {
   };
   CommonData commonData;
 
-  DEPRECATED PetscErrorCode generateRefereneElemenMesh() {
-    PetscFunctionBegin;
-    ierr = generateReferenceElementMesh(); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
-
   /** \brief Generate reference mesh on single element
 
   Each element is subdivided on smaller elements, i.e. a reference mesh on

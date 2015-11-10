@@ -43,7 +43,8 @@
 #include <boost/ptr_container/ptr_vector.hpp>
 #include <boost/ptr_container/ptr_map.hpp>
 
-#include <ForcesAndSurcesCore.hpp>
+#include <DataStructures.hpp>
+#include <DataOperators.hpp>
 
 #ifdef __cplusplus
 extern "C" {
@@ -87,12 +88,26 @@ PetscErrorCode DataOperator::opLhs(
           row_data.dataOnEntities[MBVERTEX][0],col_data.dataOnEntities[MBTRI][FF]
         ); CHKERRQ(ierr);
       }
+      for(unsigned int QQ = 0;QQ<col_data.dataOnEntities[MBQUAD].size();QQ++) {
+        if(col_data.dataOnEntities[MBQUAD][QQ].getN().size1()==0) continue;
+        ierr = doWork(
+          nn,QQ,MBVERTEX,MBQUAD,
+          row_data.dataOnEntities[MBVERTEX][0],col_data.dataOnEntities[MBQUAD][QQ]
+        ); CHKERRQ(ierr);
+      }
     }
     for(unsigned int VV = 0;VV<col_data.dataOnEntities[MBTET].size();VV++) {
       if(col_data.dataOnEntities[MBTET][VV].getN().size1()==0) continue;
       ierr = doWork(
         nn,VV,MBVERTEX,MBTET,
         row_data.dataOnEntities[MBVERTEX][0],col_data.dataOnEntities[MBTET][VV]
+      ); CHKERRQ(ierr);
+    }
+    for(unsigned int PP = 0;PP<col_data.dataOnEntities[MBPRISM].size();PP++) {
+      if(col_data.dataOnEntities[MBPRISM][PP].getN().size1()==0) continue;
+      ierr = doWork(
+        nn,PP,MBVERTEX,MBPRISM,
+        row_data.dataOnEntities[MBVERTEX][0],col_data.dataOnEntities[MBPRISM][PP]
       ); CHKERRQ(ierr);
     }
     for(unsigned int MM = 0;MM<col_data.dataOnEntities[MBENTITYSET].size();MM++) {
@@ -125,6 +140,7 @@ PetscErrorCode DataOperator::opLhs(
         row_data.dataOnEntities[MBEDGE][ee],col_data.dataOnEntities[MBEDGE][EE]
       ); CHKERRQ(ierr);
     }
+    //tris
     for(unsigned int FF = 0;FF<col_data.dataOnEntities[MBTRI].size();FF++) {
       if(col_data.dataOnEntities[MBTRI][FF].getN().size1()==0) continue;
       ierr = doWork(
@@ -132,11 +148,28 @@ PetscErrorCode DataOperator::opLhs(
         row_data.dataOnEntities[MBEDGE][ee],col_data.dataOnEntities[MBTRI][FF]
       ); CHKERRQ(ierr);
     }
+    //quad
+    for(unsigned int QQ = 0;QQ<col_data.dataOnEntities[MBQUAD].size();QQ++) {
+      if(col_data.dataOnEntities[MBQUAD][QQ].getN().size1()==0) continue;
+      ierr = doWork(
+        ee,QQ,MBEDGE,MBQUAD,
+        row_data.dataOnEntities[MBEDGE][ee],col_data.dataOnEntities[MBQUAD][QQ]
+      ); CHKERRQ(ierr);
+    }
+    //tet
     for(unsigned int VV = 0;VV<col_data.dataOnEntities[MBTET].size();VV++) {
       if(col_data.dataOnEntities[MBTET][VV].getN().size1()==0) continue;
       ierr = doWork(
         ee,VV,MBEDGE,MBTET,
         row_data.dataOnEntities[MBEDGE][ee],col_data.dataOnEntities[MBTET][VV]
+      ); CHKERRQ(ierr);
+    }
+    //prism
+    for(unsigned int PP = 0;PP<col_data.dataOnEntities[MBPRISM].size();PP++) {
+      if(col_data.dataOnEntities[MBPRISM][PP].getN().size1()==0) continue;
+      ierr = doWork(
+        ee,PP,MBEDGE,MBPRISM,
+        row_data.dataOnEntities[MBEDGE][ee],col_data.dataOnEntities[MBPRISM][PP]
       ); CHKERRQ(ierr);
     }
     for(unsigned int MM = 0;MM<col_data.dataOnEntities[MBENTITYSET].size();MM++) {
@@ -179,11 +212,25 @@ PetscErrorCode DataOperator::opLhs(
         row_data.dataOnEntities[MBTRI][ff],col_data.dataOnEntities[MBTRI][FF]
       ); CHKERRQ(ierr);
     }
+    for(unsigned int QQ = 0;QQ<col_data.dataOnEntities[MBQUAD].size();QQ++) {
+      if(col_data.dataOnEntities[MBQUAD][QQ].getN().size1()==0) continue;
+      ierr = doWork(
+        ff,QQ,MBTRI,MBQUAD,
+        row_data.dataOnEntities[MBTRI][ff],col_data.dataOnEntities[MBQUAD][QQ]
+      ); CHKERRQ(ierr);
+    }
     for(unsigned int VV = 0;VV<col_data.dataOnEntities[MBTET].size();VV++) {
       if(col_data.dataOnEntities[MBTET][VV].getN().size1()==0) continue;
       ierr = doWork(
         ff,VV,MBTRI,MBTET,
         row_data.dataOnEntities[MBTRI][ff],col_data.dataOnEntities[MBTET][VV]
+      ); CHKERRQ(ierr);
+    }
+    for(unsigned int PP = 0;PP<col_data.dataOnEntities[MBPRISM].size();PP++) {
+      if(col_data.dataOnEntities[MBPRISM][PP].getN().size1()==0) continue;
+      ierr = doWork(
+        ff,PP,MBTRI,MBPRISM,
+        row_data.dataOnEntities[MBTRI][ff],col_data.dataOnEntities[MBPRISM][PP]
       ); CHKERRQ(ierr);
     }
     for(unsigned int MM = 0;MM<col_data.dataOnEntities[MBENTITYSET].size();MM++) {
@@ -194,6 +241,61 @@ PetscErrorCode DataOperator::opLhs(
       ierr = doWork(
         ff,MM,MBTRI,MBENTITYSET,
         row_data.dataOnEntities[MBTRI][ff],col_data.dataOnEntities[MBENTITYSET][MM]
+      ); CHKERRQ(ierr);
+    }
+  }
+
+  //quads
+  for(unsigned int qq = 0;qq<row_data.dataOnEntities[MBQUAD].size();qq++) {
+    if(row_data.dataOnEntities[MBQUAD][qq].getN().size1()==0) continue;
+    for(unsigned int NN = 0;NN!=col_data.dataOnEntities[MBVERTEX].size();NN++) {
+      ierr = doWork(
+        qq,NN,MBQUAD,MBVERTEX,
+        row_data.dataOnEntities[MBQUAD][qq],col_data.dataOnEntities[MBVERTEX][0]
+      ); CHKERRQ(ierr);
+    }
+    if(!symm) {
+      unsigned int EE = 0;
+      for(;EE<col_data.dataOnEntities[MBEDGE].size();EE++) {
+        if(col_data.dataOnEntities[MBEDGE][EE].getN().size1()==0) continue;
+        ierr = doWork(
+          qq,EE,MBQUAD,MBEDGE,
+          row_data.dataOnEntities[MBQUAD][qq],col_data.dataOnEntities[MBEDGE][EE]
+        ); CHKERRQ(ierr);
+      }
+      unsigned int FF = 0;
+      for(;FF<col_data.dataOnEntities[MBTRI].size();FF++) {
+        if(col_data.dataOnEntities[MBTRI][FF].getN().size1()==0) continue;
+        ierr = doWork(
+          qq,FF,MBQUAD,MBTRI,
+          row_data.dataOnEntities[MBQUAD][qq],col_data.dataOnEntities[MBTRI][FF]
+        ); CHKERRQ(ierr);
+      }
+    }
+    unsigned int QQ = 0;
+    if(symm) QQ = qq;
+    for(;QQ<col_data.dataOnEntities[MBQUAD].size();QQ++) {
+      if(col_data.dataOnEntities[MBQUAD][QQ].getN().size1()==0) continue;
+      ierr = doWork(
+        qq,QQ,MBQUAD,MBQUAD,
+        row_data.dataOnEntities[MBQUAD][qq],col_data.dataOnEntities[MBQUAD][QQ]
+      ); CHKERRQ(ierr);
+    }
+    for(unsigned int PP = 0;PP<col_data.dataOnEntities[MBPRISM].size();PP++) {
+      if(col_data.dataOnEntities[MBPRISM][PP].getN().size1()==0) continue;
+      ierr = doWork(
+        qq,PP,MBTRI,MBPRISM,
+        row_data.dataOnEntities[MBQUAD][qq],col_data.dataOnEntities[MBPRISM][PP]
+      ); CHKERRQ(ierr);
+    }
+    for(unsigned int MM = 0;MM<col_data.dataOnEntities[MBENTITYSET].size();MM++) {
+      if(
+        col_data.dataOnEntities[MBENTITYSET][MM].getIndices().empty()&&
+        col_data.dataOnEntities[MBENTITYSET][MM].getFieldData().empty()
+      ) continue;
+      ierr = doWork(
+        qq,MM,MBQUAD,MBENTITYSET,
+        row_data.dataOnEntities[MBQUAD][qq],col_data.dataOnEntities[MBENTITYSET][MM]
       ); CHKERRQ(ierr);
     }
   }
@@ -247,6 +349,62 @@ PetscErrorCode DataOperator::opLhs(
     }
   }
 
+  for(unsigned int pp = 0;pp<row_data.dataOnEntities[MBPRISM].size();pp++) {
+    if(row_data.dataOnEntities[MBPRISM][pp].getN().size1()==0) continue;
+    if(!symm) {
+      //vertex
+      for(unsigned int NN = 0;NN!=col_data.dataOnEntities[MBVERTEX].size();NN++) {
+        ierr = doWork(
+          pp,NN,MBPRISM,MBVERTEX,
+          row_data.dataOnEntities[MBPRISM][pp],col_data.dataOnEntities[MBVERTEX][0]
+        ); CHKERRQ(ierr);
+      }
+      //edges
+      for(unsigned int EE = 0;EE<col_data.dataOnEntities[MBEDGE].size();EE++) {
+        if(col_data.dataOnEntities[MBEDGE][EE].getN().size1()==0) continue;
+        ierr = doWork(
+          pp,EE,MBPRISM,MBEDGE,
+          row_data.dataOnEntities[MBPRISM][pp],col_data.dataOnEntities[MBEDGE][EE]
+        ); CHKERRQ(ierr);
+      }
+      //faces
+      for(unsigned int FF = 0;FF<col_data.dataOnEntities[MBTRI].size();FF++) {
+        if(col_data.dataOnEntities[MBTRI][FF].getN().size1()==0) continue;
+        ierr = doWork(
+          pp,FF,MBPRISM,MBTRI,
+          row_data.dataOnEntities[MBPRISM][pp],col_data.dataOnEntities[MBTRI][FF]
+        ); CHKERRQ(ierr);
+      }
+      //quads
+      for(unsigned int QQ = 0;QQ<col_data.dataOnEntities[MBQUAD].size();QQ++) {
+        if(col_data.dataOnEntities[MBQUAD][QQ].getN().size1()==0) continue;
+        ierr = doWork(
+          pp,QQ,MBPRISM,MBQUAD,
+          row_data.dataOnEntities[MBPRISM][pp],col_data.dataOnEntities[MBQUAD][QQ]
+        ); CHKERRQ(ierr);
+      }
+    }
+    unsigned int PP = 0;
+    if(symm) PP = pp;
+    for(;PP<col_data.dataOnEntities[MBPRISM].size();PP++) {
+      if(col_data.dataOnEntities[MBPRISM][PP].getN().size1()==0) continue;
+      ierr = doWork(
+        pp,PP,MBPRISM,MBPRISM,
+        row_data.dataOnEntities[MBPRISM][pp],col_data.dataOnEntities[MBPRISM][PP]
+      ); CHKERRQ(ierr);
+    }
+    for(unsigned int MM = 0;MM<col_data.dataOnEntities[MBENTITYSET].size();MM++) {
+      if(
+        col_data.dataOnEntities[MBENTITYSET][MM].getIndices().empty()&&
+        col_data.dataOnEntities[MBENTITYSET][MM].getFieldData().empty()
+      ) continue;
+      ierr = doWork(
+        pp,MM,MBPRISM,MBENTITYSET,
+        row_data.dataOnEntities[MBPRISM][pp],col_data.dataOnEntities[MBENTITYSET][MM]
+      ); CHKERRQ(ierr);
+    }
+  }
+
   //meshsets
   for(unsigned int mm = 0;mm<row_data.dataOnEntities[MBENTITYSET].size();mm++) {
     if(
@@ -277,11 +435,25 @@ PetscErrorCode DataOperator::opLhs(
           row_data.dataOnEntities[MBENTITYSET][mm],col_data.dataOnEntities[MBTRI][FF]
         ); CHKERRQ(ierr);
       }
+      //quad
+      for(unsigned int QQ = 0;QQ<col_data.dataOnEntities[MBQUAD].size();QQ++) {
+        if(col_data.dataOnEntities[MBQUAD][QQ].getN().size1()==0) continue;
+        ierr = doWork(
+          mm,QQ,MBENTITYSET,MBQUAD,
+          row_data.dataOnEntities[MBENTITYSET][mm],col_data.dataOnEntities[MBQUAD][QQ]
+        ); CHKERRQ(ierr);
+      }
       //volume
       for(unsigned int VV = 0;VV<col_data.dataOnEntities[MBTET].size();VV++) {
         ierr = doWork(
           mm,VV,MBENTITYSET,MBTET,
           row_data.dataOnEntities[MBENTITYSET][mm],col_data.dataOnEntities[MBTET][VV]
+        ); CHKERRQ(ierr);
+      }
+      for(unsigned int PP = 0;PP<col_data.dataOnEntities[MBPRISM].size();PP++) {
+        ierr = doWork(
+          mm,PP,MBENTITYSET,MBPRISM,
+          row_data.dataOnEntities[MBENTITYSET][mm],col_data.dataOnEntities[MBPRISM][PP]
         ); CHKERRQ(ierr);
       }
     }
@@ -310,16 +482,19 @@ PetscErrorCode DataOperator::opRhs(DataForcesAndSurcesCore &data) {
     ierr = doWork(nn,MBVERTEX,data.dataOnEntities[MBVERTEX][nn]); CHKERRQ(ierr);
   }
   for(unsigned int ee = 0;ee<data.dataOnEntities[MBEDGE].size();ee++) {
-    //if(data.dataOnEntities[MBEDGE][ee].getN().size1()==0) continue;
     ierr = doWork(ee,MBEDGE,data.dataOnEntities[MBEDGE][ee]); CHKERRQ(ierr);
   }
   for(unsigned int ff = 0;ff<data.dataOnEntities[MBTRI].size();ff++) {
-    //if(data.dataOnEntities[MBTRI][ff].getN().size1()==0) continue;
     ierr = doWork(ff,MBTRI,data.dataOnEntities[MBTRI][ff]); CHKERRQ(ierr);
   }
+  for(unsigned int qq = 0;qq<data.dataOnEntities[MBQUAD].size();qq++) {
+    ierr = doWork(qq,MBQUAD,data.dataOnEntities[MBQUAD][qq]); CHKERRQ(ierr);
+  }
   for(unsigned int vv = 0;vv<data.dataOnEntities[MBTET].size();vv++) {
-    //if(data.dataOnEntities[MBTET][vv].getN().size1()==0) continue;
     ierr = doWork(vv,MBTET,data.dataOnEntities[MBTET][vv]); CHKERRQ(ierr);
+  }
+  for(unsigned int pp = 0;pp<data.dataOnEntities[MBPRISM].size();pp++) {
+    ierr = doWork(pp,MBPRISM,data.dataOnEntities[MBPRISM][pp]); CHKERRQ(ierr);
   }
   for(unsigned int mm = 0;mm<data.dataOnEntities[MBENTITYSET].size();mm++) {
     if(
@@ -348,7 +523,7 @@ PetscErrorCode OpSetInvJacH1::doWork(
     unsigned int nb_dofs = data.getN().size2();
     if(type!=MBVERTEX) {
       if(nb_dofs != data.getDiffN().size2()/3) {
-        SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,
+        SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
           "data inconsistency nb_dofs != data.diffN.size2()/3 ( %u != %u/3 )",
           nb_dofs,data.getDiffN().size2()
         );
@@ -612,13 +787,13 @@ PetscErrorCode OpGetDataAndGradient::doWork(
 
     unsigned int nb_dofs = data.getFieldData().size();
     if(nb_dofs % rank != 0) {
-      SETERRQ4(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,
+      SETERRQ4(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
         "data inconsistency, type %d, side %d, nb_dofs %d, rank %d",
         type,side,nb_dofs,rank
       );
     }
     if(nb_dofs/rank > data.getN().size2()) {
-      SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,
+      SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
         "data inconsistency nb_dofs >= data.N.size2() %u >= %u",nb_dofs,data.getN().size2()
       );
     }
@@ -697,13 +872,13 @@ PetscErrorCode OpGetCoordsAndNormalsOnFace::doWork(int side,EntityType type,Data
     case MBEDGE:
     case MBTRI: {
       if(2*data.getN().size2() != data.getDiffN().size2()) {
-        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
       }
       if(nb_dofs%3!=0) {
-        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
       }
       if(nb_dofs > 3*data.getN().size2()) {
-        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
       }
       for(int gg = 0;gg<nb_gauss_pts;gg++) {
         for(int dd = 0;dd<3;dd++) {
@@ -750,6 +925,12 @@ PetscErrorCode OpGetCoordsAndNormalsOnPrism::doWork(int side,EntityType type,Dat
 
   try {
 
+    if(type == MBEDGE) {
+      if(!valid_edges3[side]||valid_edges4[side]) PetscFunctionReturn(0);
+    } else if(type == MBTRI) {
+      if(!valid_faces3[side]||valid_faces4[side]) PetscFunctionReturn(0);
+    }
+
     switch (type) {
       case MBVERTEX: {
         for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
@@ -767,14 +948,14 @@ PetscErrorCode OpGetCoordsAndNormalsOnPrism::doWork(int side,EntityType type,Dat
       case MBEDGE:
       case MBTRI: {
         if(2*data.getN().size2() != data.getDiffN().size2()) {
-          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
         }
         unsigned int nb_dofs = data.getFieldData().size();
         if(nb_dofs%3!=0) {
-          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
         }
         if(nb_dofs > 3*data.getN().size2()) {
-          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+          SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency, side %d type %d",side,type);
         }
         for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
           for(int dd = 0;dd<3;dd++) {

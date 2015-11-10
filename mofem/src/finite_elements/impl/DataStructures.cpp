@@ -43,7 +43,7 @@
 #include <boost/ptr_container/ptr_vector.hpp>
 #include <boost/ptr_container/ptr_map.hpp>
 
-#include <ForcesAndSurcesCore.hpp>
+#include <DataStructures.hpp>
 
 #ifdef __cplusplus
 extern "C" {
@@ -93,11 +93,15 @@ void cOnstructor(DataForcesAndSurcesCore *data,EntityType type,T) {
       data->dataOnEntities[MBEDGE].push_back(new T());
     }
     for(int ff = 0;ff<5;ff++) {
+      data->dataOnEntities[MBQUAD].push_back(new T());
+    }
+    for(int ff = 0;ff<5;ff++) {
       data->dataOnEntities[MBTRI].push_back(new T());
     }
+    data->dataOnEntities[MBPRISM].push_back(new T());
     break;
     default:
-    throw("not implemenyed");
+    throw MoFEMException(MOFEM_NOT_IMPLEMENTED);
   }
 
 }
@@ -121,8 +125,14 @@ DerivedDataForcesAndSurcesCore::DerivedDataForcesAndSurcesCore(DataForcesAndSurc
   for(it = data.dataOnEntities[MBTRI].begin();it!=data.dataOnEntities[MBTRI].end();it++) {
     dataOnEntities[MBTRI].push_back(new DerivedEntData(*it));
   }
+  for(it = data.dataOnEntities[MBQUAD].begin();it!=data.dataOnEntities[MBQUAD].end();it++) {
+    dataOnEntities[MBQUAD].push_back(new DerivedEntData(*it));
+  }
   for(it = data.dataOnEntities[MBTET].begin();it!=data.dataOnEntities[MBTET].end();it++) {
     dataOnEntities[MBTET].push_back(new DerivedEntData(*it));
+  }
+  for(it = data.dataOnEntities[MBPRISM].begin();it!=data.dataOnEntities[MBPRISM].end();it++) {
+    dataOnEntities[MBPRISM].push_back(new DerivedEntData(*it));
   }
 }
 

@@ -36,7 +36,7 @@
 
 namespace MoFEM {
 
-const static int debug = 1;
+// const static int debug = 1;
 
 
 PetscErrorCode Core::get_adjacencies_equality(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities) {

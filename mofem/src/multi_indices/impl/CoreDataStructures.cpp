@@ -85,26 +85,28 @@ MoFEMField::MoFEMField(Interface &moab,const EntityHandle _meshset): meshset(_me
     case H1:
       forder_table[MBVERTEX] = fNBVERTEX_H1;
       forder_table[MBEDGE] = fNBEDGE_H1;
-      forder_table[MBTRI] = fNBFACE_H1;
-      forder_table[MBTET] = fNBVOLUME_H1;
+      forder_table[MBTRI] = fNBFACETRI_H1;
+      forder_table[MBQUAD] = fNBFACEQUAD_H1;
+      forder_table[MBTET] = fNBVOLUMETET_H1;
+      forder_table[MBPRISM] = fNBVOLUMEPRISM_H1;
       break;
     case HDIV:
       forder_table[MBVERTEX] = fNBVERTEX_HDIV;
       forder_table[MBEDGE] = fNBEDGE_HDIV;
-      forder_table[MBTRI] = fNBFACE_HDIV;
-      forder_table[MBTET] = fNBVOLUME_HDIV;
+      forder_table[MBTRI] = fNBFACETRI_HDIV;
+      forder_table[MBTET] = fNBVOLUMETET_HDIV;
       break;
     case HCURL:
       forder_table[MBVERTEX] = fNBVERTEX_HCURL;
       forder_table[MBEDGE] = fNBEDGE_HCURL;
-      forder_table[MBTRI] = fNBFACE_HCURL;
-      forder_table[MBTET] = fNBVOLUME_HCURL;
+      forder_table[MBTRI] = fNBFACETRI_HCURL;
+      forder_table[MBTET] = fNBVOLUMETET_HCURL;
       break;
     case L2:
       forder_table[MBVERTEX] = fNBVERTEX_L2;
       forder_table[MBEDGE] = fNBEDGE_L2;
-      forder_table[MBTRI] = fNBFACE_L2;
-      forder_table[MBTET] = fNBVOLUME_L2;
+      forder_table[MBTRI] = fNBFACETRI_L2;
+      forder_table[MBTET] = fNBVOLUMETET_L2;
       break;
     case NOFIELD:
       forder_table[MBENTITYSET] = fNBENTITYSET_NOFIELD;
@@ -133,10 +135,10 @@ PetscErrorCode test_moab(Interface &moab,const EntityHandle ent) {
   PetscFunctionBegin;
   //tets type
   EntityType type = (EntityType)((ent&MB_TYPE_MASK)>>MB_ID_WIDTH);
-  if(type != moab.type_from_handle(ent)) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"incosistencies with type_from_handle");
+  if(type != moab.type_from_handle(ent)) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"inconsistencies with type_from_handle");
   //tets id
   EntityID id = (EntityType)(ent&MB_ID_MASK);
-  if(id != moab.id_from_handle(ent)) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"incosistencies with id_from_handle");
+  if(id != moab.id_from_handle(ent)) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"inconsistencies with id_from_handle");
   PetscFunctionReturn(0);
 }
 

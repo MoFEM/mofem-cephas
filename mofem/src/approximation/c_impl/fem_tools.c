@@ -24,30 +24,30 @@
 
 #include <h1_hdiv_hcurl_l2.h>
 
-double ShapeDetJacMBTET(double *Jac) {
-  double detJac;
-  __CLPK_integer IPIV[4];
-  __CLPK_integer info = lapack_dgetrf(3,3,Jac,3,IPIV);
+double ShapeDetJacVolume(double *jac) {
+  double det_jac;
+  __CLPK_integer ipiv[4];
+  __CLPK_integer info = lapack_dgetrf(3,3,jac,3,ipiv);
   if(info !=0) return -1;
   int i = 0,j = 0;
-  detJac = 1.;
+  det_jac = 1.;
   for(; i<3; i++) {
-    detJac *= Jac[3*i+i];
-    if( IPIV[i] != i+1 ) j++;
+    det_jac *= jac[3*i+i];
+    if( ipiv[i] != i+1 ) j++;
   }
   if ( (j - ( j/2 )*2) != 0 )
-    detJac = - detJac;
-  return detJac;
+    det_jac = - det_jac;
+  return det_jac;
 }
-PetscErrorCode ShapeInvJacMBTET(double *Jac) {
+PetscErrorCode ShapeInvJacVolume(double *jac) {
   PetscFunctionBegin;
-  __CLPK_integer IPIV[4];
-  __CLPK_doublereal WORK[3];
-  __CLPK_integer LWORK = 3;
+  __CLPK_integer ipiv[4];
+  __CLPK_doublereal work[3];
+  __CLPK_integer lwork = 3;
   __CLPK_integer info;
-  info = lapack_dgetrf(3,3,Jac,3,IPIV);
+  info = lapack_dgetrf(3,3,jac,3,ipiv);
   if(info != 0) SETERRQ1(PETSC_COMM_SELF,1,"info = %d",info);
-  info = lapack_dgetri(3,Jac,3,IPIV,WORK,LWORK);
+  info = lapack_dgetri(3,jac,3,ipiv,work,lwork);
   if(info != 0) SETERRQ1(PETSC_COMM_SELF,1,"info = %d",info);
   PetscFunctionReturn(0);
 }
@@ -260,21 +260,21 @@ PetscErrorCode ShapeFaceDiffNormalMBTRI(double *diffN,const double *coords,doubl
 }
 
 //MBTET
-PetscErrorCode ShapeJacMBTET(double *diffN,const double *coords,double *Jac) {
+PetscErrorCode ShapeJacMBTET(double *diffN,const double *coords,double *jac) {
   PetscFunctionBegin;
   int ii,jj,kk;
-  bzero(Jac,sizeof(double)*9);
+  bzero(jac,sizeof(double)*9);
   for(ii = 0; ii<4; ii++) 	//shape func.
     for(jj = 0; jj<3; jj++) 	//space
       for(kk = 0; kk<3; kk++) 	//direvative of shape func.
-	Jac[ jj*3+kk ] +=
+	jac[ jj*3+kk ] +=
 	diffN[ ii*3+kk ]*coords[ ii*3+jj ];
   PetscFunctionReturn(0);
 }
 double ShapeVolumeMBTET(double *diffN,const double *coords) {
   double Jac[9];
   ShapeJacMBTET(diffN,coords,Jac);
-  double detJac = ShapeDetJacMBTET(Jac);
+  double detJac = ShapeDetJacVolume(Jac);
   //printf("detJac = +%6.4e\n",detJac);
   //print_mat(Jac,3,3);
   return detJac*G_TET_W1[0]/6.;
@@ -347,7 +347,9 @@ PetscErrorCode GradientOfDeformation(double *diffN,double *dofs,double *F) {
 }
 
 // Approximation
-PetscErrorCode Legendre_polynomials(int p,double s,double *diff_s,double *L,double *diffL,const int dim) {
+PetscErrorCode Legendre_polynomials(
+  int p,double s,double *diff_s,double *L,double *diffL,const int dim
+) {
   PetscFunctionBegin;
   if(dim < 1) SETERRQ(PETSC_COMM_SELF,1,"dim < 1");
   if(dim > 3) SETERRQ(PETSC_COMM_SELF,1,"dim > 3");
@@ -599,8 +601,8 @@ PetscErrorCode Normal_hierarchical(
   diffX_x = diffX_x_node;diffX_y = diffX_y_node;diffX_z = diffX_z_node;
   diffY_x = diffY_x_node;diffY_y = diffY_y_node;diffY_z = diffY_z_node;
   if(dofs_face!=NULL ||idofs_face!=NULL) {
-    int nb_dofs_face = NBFACE_H1(order);
-    int nb_dofs_approx_face = NBFACE_H1(order_approx);
+    int nb_dofs_face = NBFACETRI_H1(order);
+    int nb_dofs_approx_face = NBFACETRI_H1(order_approx);
     if(nb_dofs_face>0) {
       if(dofs_face!=NULL) {
         diffX_x += cblas_ddot(nb_dofs_face,&dofs_face[0],3,&diffN_face[gg*2*nb_dofs_approx_face+0],2);
@@ -886,7 +888,7 @@ PetscErrorCode ShapeMBTETQ_detJac_at_Gauss_Points(double *detJac_at_Gauss_Points
   int ii = 0;
   for(; ii<G_DIM; ii++) {
     ierr = ShapeJacMBTETQ(&diffN[30*ii],coords,Jac); CHKERRQ(ierr);
-    detJac_at_Gauss_Points[ii] = ShapeDetJacMBTET(Jac);
+    detJac_at_Gauss_Points[ii] = ShapeDetJacVolume(Jac);
   }
   PetscFunctionReturn(0);
 }

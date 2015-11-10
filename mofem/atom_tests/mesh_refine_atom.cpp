@@ -110,7 +110,7 @@ int main(int argc, char *argv[]) {
   Range children;
   ierr = m_field.get_entities_by_ref_level(bit_level1,BitRefLevel().set(),children); CHKERRQ(ierr);
   if(children.empty()) {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"it should not be empty");
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"it should not be empty");
   }
   bit_ref_copuler_ptr->vErify = true;
   ierr = bit_ref_copuler_ptr->buidlAdjacenciesEdgesFacesVolumes(bit_level0,children,true,2); CHKERRQ(ierr);

@@ -27,5 +27,11 @@
 #include <DataStructures.hpp>
 #include <DataOperators.hpp>
 #include <ElementsOnEntities.hpp>
+#include <VolumeElementForcesAndSourcesCore.hpp>
+#include <FaceElementForcesAndSourcesCore.hpp>
+#include <EdgeElementForcesAndSurcesCore.hpp>
+#include <VertexElementForcesAndSourcesCore.hpp>
+#include <FlatPrismElementForcesAndSurcesCore.hpp>
+#include <FatPrismElementForcesAndSurcesCore.hpp>
 
 #endif //__FORCESANDSURCESCORE_HPP

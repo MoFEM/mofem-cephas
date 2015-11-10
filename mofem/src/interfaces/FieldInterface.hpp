@@ -105,14 +105,6 @@ struct FieldInterface: public FieldUnknownInterface {
     */
   virtual PetscErrorCode add_cubit_msId(const CubitBCType cubit_bc_tyep,const int msId) = 0;
 
-  /// DEPRECATED use add_cubit_msId instead
-  DEPRECATED PetscErrorCode add_Cubit_msId(const CubitBCType cubit_bc_type,const int msId) {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
-    ierr = add_cubit_msId(cubit_bc_type,msId); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
-
   /**
     * \brief delete cubit meshset
     * \ingroup mopfem_bc
@@ -124,28 +116,12 @@ struct FieldInterface: public FieldUnknownInterface {
     */
   virtual PetscErrorCode delete_cubit_msId(const CubitBCType cubit_bc_type,const int msId) = 0;
 
-  /// DEPRECATED use add_cubit_msId instead
-  DEPRECATED PetscErrorCode delete_Cubit_msId(const CubitBCType cubit_bc_type,const int msId) {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
-    ierr = delete_cubit_msId(cubit_bc_type,msId); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
-
   /**
     * \brief get cubit meshset
     * \ingroup mofem_bc
 
     */
   virtual PetscErrorCode get_cubit_msId(const int msId,const CubitBCType cubit_bc_type,const CubitMeshSets **cubit_meshset_ptr) = 0;
-
-  /// DEPRECATED use get_cubit_msId
-  DEPRECATED PetscErrorCode get_Cubit_msId(const int msId,const CubitBCType cubit_bc_type,const CubitMeshSets **cubit_meshset_ptr) {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
-    ierr = get_cubit_msId(msId,cubit_bc_type,cubit_meshset_ptr); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
 
   /**
     * \brief get entities from CUBIT/meshset of a particular entity dimension
@@ -165,14 +141,6 @@ struct FieldInterface: public FieldUnknownInterface {
     */
   virtual PetscErrorCode get_cubit_msId_entities_by_dimension(const int msId,const unsigned int cubit_bc_type, const int dimension,Range &entities,const bool recursive = false) = 0;
 
-  /// DEPRECATED use get_cubit_msId_entities_by_dimension
-  DEPRECATED PetscErrorCode get_Cubit_msId_entities_by_dimension(const int msId,const unsigned int cubit_bc_type, const int dimension,Range &entities,const bool recursive = false) {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
-    ierr = get_cubit_msId_entities_by_dimension(msId,cubit_bc_type,dimension,entities,recursive); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
-
   /**
     * \brief get entities related to CUBIT/meshset,
     * \ingroup mofem_bc
@@ -187,14 +155,6 @@ struct FieldInterface: public FieldUnknownInterface {
     */
   virtual PetscErrorCode get_cubit_msId_entities_by_dimension(const int msId,const unsigned int cubit_bc_type, Range &entities,const bool recursive = false) = 0;
 
-  /// DEPRECATED use get_cubit_msId_entities_by_dimension
-  DEPRECATED PetscErrorCode get_Cubit_msId_entities_by_dimension(const int msId,const unsigned int cubit_bc_type, Range &entities,const bool recursive = false) {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
-    ierr = get_cubit_msId_entities_by_dimension(msId,cubit_bc_type,entities,recursive); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
-
   /**
     * \ingroup mofem_bc
     * \brief get meshset from CUBIT Id and CUBIT type
@@ -205,14 +165,6 @@ struct FieldInterface: public FieldUnknownInterface {
     */
   virtual PetscErrorCode get_cubit_msId_meshset(const int msId,const unsigned int cubit_bc_type,EntityHandle &meshset) = 0;
 
-  /// DEPRECATED use get_cubit_msId_meshset
-  DEPRECATED PetscErrorCode get_Cubit_msId_meshset(const int msId,const unsigned int cubit_bc_type,EntityHandle &meshset) {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
-    ierr = get_cubit_msId_meshset(msId,cubit_bc_type,meshset); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
-
   /**
     * \ingroup mofem_bc
     * \brief get all CUBIT meshsets by CUBIT type
@@ -221,14 +173,6 @@ struct FieldInterface: public FieldUnknownInterface {
     * \param meshsets is range of meshsets
     */
   virtual PetscErrorCode get_cubit_meshsets(const unsigned int cubit_bc_type,Range &meshsets) = 0;
-
-  /// DEPRECATED use get_cubit_meshsets
-  DEPRECATED PetscErrorCode get_Cubit_meshsets(const unsigned int cubit_bc_type,Range &meshsets) {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
-    ierr = get_cubit_meshsets(cubit_bc_type,meshsets); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
 
    /**
     * \ingroup mofem_bc
@@ -371,25 +315,6 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode print_cubit_displacement_set() = 0;
   virtual PetscErrorCode print_cubit_pressure_set() = 0;
   virtual PetscErrorCode print_cubit_force_set() = 0;
-
-  virtual PetscErrorCode print_cubit_temperature() = 0;
-  // DEPRECATED use printCubitTEMPERATURESET
-  DEPRECATED PetscErrorCode printCubitTEMPERATURESET() {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
-    ierr = print_cubit_temperature(); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
-
-  virtual PetscErrorCode print_cubit_heat_flux_set() = 0;
-  // DEPRECATED use get_cubit_meshsets
-  DEPRECATED PetscErrorCode printCubitHeatFluxSet() {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
-    ierr = print_cubit_heat_flux_set(); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
-
   virtual PetscErrorCode print_cubit_materials_set() = 0;
 
   virtual PetscErrorCode rebuild_database(int verb = -1) = 0;
@@ -703,6 +628,36 @@ struct FieldInterface: public FieldUnknownInterface {
     * \param name of the field
     */
   virtual PetscErrorCode add_ents_to_field_by_TETs(const Range &tets,const string& name,int verb = -1) = 0;
+
+  /**
+    * \brief set field entities from adjacencies of prisms
+    * \ingroup mofem_field
+    *
+    * The lower dimension entities are added depending on the space type
+    * \param prisms range of prisms
+    * \param id field id
+    */
+  virtual PetscErrorCode add_ents_to_field_by_PRISMs(const Range &prisms,const BitFieldId id,int verb = -1) = 0;
+
+  /**
+    * \brief set field entities from adjacencies of prisms
+    * \ingroup mofem_field
+    *
+    * The lower dimension entities are added depending on the space type
+    * \param prisms range contains set prisms
+    * \param name of the field
+    */
+  virtual PetscErrorCode add_ents_to_field_by_PRISMs(const Range &prisms,const string& name,int verb = -1) = 0;
+
+  /**
+    * \brief set field entities from adjacencies of prisms
+    * \ingroup mofem_field
+    *
+    * The lower dimension entities are added depending on the space type
+    * \param meshset contains set prisms
+    * \param name of the field
+    */
+  virtual PetscErrorCode add_ents_to_field_by_PRISMs(EntityHandle meshset,const string& name,int verb = -1) = 0;
 
   /**
     * \brief remove entities from field
@@ -1206,13 +1161,6 @@ struct FieldInterface: public FieldUnknownInterface {
    */
   virtual PetscErrorCode partition_simple_problem(const string &name,int verb = -1) = 0;
 
-  DEPRECATED PetscErrorCode simple_partition_problem(const string &name,int verb = -1) {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
-    ierr = partition_simple_problem(name,verb); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
-
   /** \brief partition problem dofs (collective)
    * \ingroup mofem_problems
    *
@@ -1238,15 +1186,6 @@ struct FieldInterface: public FieldUnknownInterface {
     const string &name,const string &problem_for_rows,bool copy_rows,const string &problem_for_cols,bool copy_cols,int verb = -1
   ) = 0;
 
-
-  DEPRECATED PetscErrorCode compose_problem(
-    const string &name,const string &problem_for_rows,bool copy_rows,const string &problem_for_cols,bool copy_cols,int verb = -1
-  ) {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
-    ierr = partition_compose_problem(name,problem_for_rows,copy_rows,problem_for_cols,copy_cols,verb); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
 
   /** \brief determine ghost nodes
    * \ingroup mofem_field
@@ -1442,14 +1381,6 @@ struct FieldInterface: public FieldUnknownInterface {
     */
   virtual PetscErrorCode set_local_ghost_vector(const MoFEMProblem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) = 0;
 
-  /// DEPRECATED use set_local_ghost_vector instead
-  DEPRECATED PetscErrorCode set_local_VecCreateGhost(const MoFEMProblem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
-    ierr = set_local_ghost_vector(problem_ptr,rc,V,mode,scatter_mode); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
-
   /**
     * \brief set values of vector from/to meshdatabase
     * \ingroup mofem_vectors
@@ -1466,14 +1397,6 @@ struct FieldInterface: public FieldUnknownInterface {
     *
     */
   virtual PetscErrorCode set_local_ghost_vector(const string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) = 0;
-
-  /// DEPRECATED use set_local_ghost_vector instead
-  DEPRECATED PetscErrorCode set_local_VecCreateGhost(const string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
-    ierr = set_local_ghost_vector(name,rc,V,mode,scatter_mode); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
 
   /**
     * \brief set values of vector from/to mesh database (collective)
@@ -1492,14 +1415,6 @@ struct FieldInterface: public FieldUnknownInterface {
     */
   virtual PetscErrorCode set_global_ghost_vector(const MoFEMProblem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) = 0;
 
-  /// DEPRECATED use set_global_ghost_vector instead
-  DEPRECATED PetscErrorCode set_global_VecCreateGhost(const MoFEMProblem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
-    ierr = set_global_ghost_vector(problem_ptr,rc,V,mode,scatter_mode); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
-
   /**
     * \brief set values of vector from/to mesh database (collective)
     * \ingroup mofem_vectors
@@ -1516,14 +1431,6 @@ struct FieldInterface: public FieldUnknownInterface {
     *
     */
   virtual PetscErrorCode set_global_ghost_vector(const string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) = 0;
-
-  /// DEPRECATED use set_global_ghost_vector instead
-  PetscErrorCode set_global_VecCreateGhost(const string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
-    ierr = set_global_ghost_vector(name,rc,V,mode,scatter_mode); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
 
   /** \brief Copy vector to field which is not part of the problem
     * \ingroup mofem_vectors
@@ -1542,15 +1449,6 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode set_other_local_ghost_vector(
     const MoFEMProblem *problem_ptr,const string& fiel_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1) = 0;
 
-  /// DEPRECATED use set_other_local_ghost_vector instead
-  DEPRECATED PetscErrorCode set_other_local_VecCreateGhost(
-    const MoFEMProblem *problem_ptr,const string& fiel_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1) {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
-    ierr = set_other_local_ghost_vector(problem_ptr,fiel_name,cpy_field_name,rc,V,mode,scatter_mode,verb); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
-
   /** \brief Copy vector to field which is not part of the problem
     * \ingroup mofem_vectors
     *
@@ -1567,15 +1465,6 @@ struct FieldInterface: public FieldUnknownInterface {
     */
   virtual PetscErrorCode set_other_local_ghost_vector(
     const string &name,const string& field_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1) = 0;
-
-  /// DEPRECATED use set_other_local_ghost_vector instead
-  DEPRECATED PetscErrorCode set_other_local_VecCreateGhost(
-    const string &name,const string& field_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1) {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
-    ierr = set_other_local_ghost_vector(name,field_name,cpy_field_name,rc,V,mode,scatter_mode,verb); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
 
   /** \brief Copy vector to field which is not part of the problem (collective)
     * \ingroup mofem_vectors
@@ -1596,15 +1485,6 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode set_other_global_ghost_vector(
     const MoFEMProblem *problem_ptr,const string& field_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1) = 0;
 
-  /// DEPRECATED use set_other_global_ghost_vector instead
-  DEPRECATED PetscErrorCode set_other_global_VecCreateGhost(
-    const MoFEMProblem *problem_ptr,const string& field_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1) {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
-    ierr = set_other_global_ghost_vector(problem_ptr,field_name,cpy_field_name,rc,V,mode,scatter_mode,verb); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
-
   /** \brief Copy vector to field which is not part of the problem (collective)
     * \ingroup mofem_vectors
 
@@ -1623,15 +1503,6 @@ struct FieldInterface: public FieldUnknownInterface {
     */
   virtual PetscErrorCode set_other_global_ghost_vector(
     const string &name,const string& field_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1) = 0;
-
-  /// DEPRECATED use set_other_global_ghost_vector instead
-  DEPRECATED PetscErrorCode set_other_global_VecCreateGhost(
-    const string &name,const string& field_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1) {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
-    ierr = set_other_global_ghost_vector(name,field_name,cpy_field_name,rc,V,mode,scatter_mode,verb); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
 
   /** \brief axpy fields
     * \ingroup mofem_field_algebra

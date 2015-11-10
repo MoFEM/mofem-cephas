@@ -36,6 +36,38 @@ ctest_start(${DASHBOARDTEST})
 
 ctest_update(SOURCE "${GID_SOURCE_REPO}" RETURN_VALUE DOTEST)
 
+# modules - obsolete
+if(NOT EXISTS "${CTEST_SOURCE_DIRECTORY}/users_modules/obsolete")
+  exec_program(
+    ${CTEST_GIT_COMMAND}
+    "${CTEST_SOURCE_DIRECTORY}/users_modules"
+    ARGS clone https://likask@bitbucket.org/likask/mofem_um_obsolete.git
+    "${CTEST_SOURCE_DIRECTORY}/users_modules/obsolete"
+  )
+else(EXISTS "${CTEST_SOURCE_DIRECTORY}/users_modules/obsolete")
+  exec_program(
+    ${CTEST_GIT_COMMAND}
+    "${CTEST_SOURCE_DIRECTORY}/users_modules/obsolete"
+    ARGS pull
+  )
+endif()
+
+# modules - small strain plasticty
+if(NOT EXISTS "${CTEST_SOURCE_DIRECTORY}/users_modules/small_strain_plasticity")
+  exec_program(
+    ${CTEST_GIT_COMMAND}
+    "${CTEST_SOURCE_DIRECTORY}/users_modules"
+    ARGS clone https://likask@bitbucket.org/likask/mofem_um_small_strain_plasticity.git
+    "${CTEST_SOURCE_DIRECTORY}/users_modules/small_strain_plasticity"
+  )
+else(EXISTS "${CTEST_SOURCE_DIRECTORY}/users_modules/small_strain_plasticity")
+  exec_program(
+    ${CTEST_GIT_COMMAND}
+    "${CTEST_SOURCE_DIRECTORY}/users_modules/small_strain_plasticity"
+    ARGS pull
+  )
+endif()
+
 # modules - moisture_transport
 if(NOT EXISTS "${CTEST_SOURCE_DIRECTORY}/users_modules/moisture_transport")
   exec_program(

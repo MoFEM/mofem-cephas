@@ -142,7 +142,7 @@ struct PostPorcStress: public VolumeElementForcesAndSourcesCore::UserDataOperato
 
     int nb_gauss_pts = data.getN().size1();
     if(mapGaussPts.size()!=(unsigned int)nb_gauss_pts) {
-      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
     }
     for(int gg = 0;gg<nb_gauss_pts;gg++) {
 

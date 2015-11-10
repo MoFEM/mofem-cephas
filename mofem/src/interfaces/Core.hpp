@@ -236,8 +236,8 @@ struct Core:
         ss << endl;
         PetscPrintf(comm,ss.str().c_str());
       }
-    } catch (const char* msg) {
-      SETERRQ(PETSC_COMM_SELF,1,msg);
+    } catch (MoFEMException const &e) {
+      SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
     }
     PetscFunctionReturn(0);
   }
@@ -374,7 +374,9 @@ struct Core:
   PetscErrorCode add_ents_to_field_by_TETs(const EntityHandle meshset,const BitFieldId id,int verb = -1);
   PetscErrorCode add_ents_to_field_by_TETs(const Range &tets,const string& name,int verb = -1);
   PetscErrorCode add_ents_to_field_by_TETs(const EntityHandle meshset,const string& name,int verb = -1);
-  PetscErrorCode add_ents_to_field_by_PRISMs(const Range &prisms,const BitFieldId id,int verb);
+  PetscErrorCode add_ents_to_field_by_PRISMs(const Range &prisms,const BitFieldId id,int verb = -1);
+  PetscErrorCode add_ents_to_field_by_PRISMs(const Range &prisms,const string& name,int verb = -1);
+  PetscErrorCode add_ents_to_field_by_PRISMs(EntityHandle meshset,const string& name,int verb = -1);
   PetscErrorCode remove_ents_from_field_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
   PetscErrorCode remove_ents_from_field(const string& name,const EntityHandle meshset,const EntityType type,int verb = -1);
   PetscErrorCode remove_ents_from_field(const string& name,const Range &ents,int verb = -1);

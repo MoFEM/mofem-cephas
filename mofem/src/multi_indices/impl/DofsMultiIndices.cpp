@@ -45,10 +45,10 @@ DofMoFEMEntity::DofMoFEMEntity(const MoFEMEntity *_MoFEMEntity_ptr,const Approxi
     PetscTraceBackErrorHandler(
 	PETSC_COMM_WORLD,
 	__LINE__,PETSC_FUNCTION_NAME,__FILE__,
-	MOFEM_DATA_INCONSISTENCT,PETSC_ERROR_INITIAL,ss.str().c_str(),PETSC_NULL);
+	MOFEM_DATA_INCONSISTENCY,PETSC_ERROR_INITIAL,ss.str().c_str(),PETSC_NULL);
     PetscMPIAbortErrorHandler(PETSC_COMM_WORLD,
 	__LINE__,PETSC_FUNCTION_NAME,__FILE__,
-	MOFEM_DATA_INCONSISTENCT,PETSC_ERROR_INITIAL,ss.str().c_str(),PETSC_NULL);
+	MOFEM_DATA_INCONSISTENCY,PETSC_ERROR_INITIAL,ss.str().c_str(),PETSC_NULL);
   }
   assert(field_ptr->tag_dof_rank_data!=NULL);
   ((ApproximationOrder*)field_ptr->tag_dof_order_data)[dof] = _dof_order;

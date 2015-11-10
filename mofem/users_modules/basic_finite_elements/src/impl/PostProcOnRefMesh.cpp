@@ -236,7 +236,7 @@ PetscErrorCode PostPocOnRefinedMesh::OpHdivFunctions::doWork(
     }
     break;
     default:
-    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
   }
 
   for(unsigned int gg = 0;gg<data.getHdivN().size1();gg++) {
@@ -312,7 +312,7 @@ PetscErrorCode PostPocOnRefinedMesh::OpGetFieldValues::doWork(
   const void* tags_ptr[mapGaussPts.size()];
   int nb_gauss_pts = data.getN().size1();
   if(mapGaussPts.size()!=(unsigned int)nb_gauss_pts) {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
   }
 
   switch(space) {
@@ -429,7 +429,7 @@ PetscErrorCode PostPocOnRefinedMesh::OpGetFieldGradientValues::doWork(
   const void* tags_ptr[mapGaussPts.size()];
   int nb_gauss_pts = data.getN().size1();
   if(mapGaussPts.size()!=(unsigned int)nb_gauss_pts) {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
   }
 
   try {

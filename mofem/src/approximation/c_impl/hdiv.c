@@ -67,7 +67,7 @@ PetscErrorCode Hdiv_EdgeBasedVolumeShapeFunctions_MBTET(
   int ii = 0;
   for(;ii<GDIM;ii++) {
     int node_shift = ii*4;
-    int shift = ii*NBVOLUME_EDGE_HDIV(p);
+    int shift = ii*NBVOLUMETET_EDGE_HDIV(p);
     ee = 0;
     for(;ee<6;ee++) {
       double Beta_e = N[ node_shift+edges_nodes[2*ee+1] ]*N[ node_shift+edges_nodes[2*ee+0] ];
@@ -77,7 +77,7 @@ PetscErrorCode Hdiv_EdgeBasedVolumeShapeFunctions_MBTET(
       double Psi_l[p+1],diff_Psi_l[3*(p+1)];
       if(diffPHI_v_e!=NULL) {
 	if(diffN == NULL) {
-	  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+	  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
 	}
 	int dd = 0;
 	for(;dd<3;dd++) {
@@ -104,7 +104,7 @@ PetscErrorCode Hdiv_EdgeBasedVolumeShapeFunctions_MBTET(
 	  }
 	}
       }
-      if(l!=NBVOLUME_EDGE_HDIV(p)) SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"wrong order %d != %d",l,NBVOLUME_FACE_HDIV(p));
+      if(l!=NBVOLUMETET_EDGE_HDIV(p)) SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong order %d != %d",l,NBVOLUMETET_FACE_HDIV(p));
     }
   }
   PetscFunctionReturn(0);
@@ -140,7 +140,7 @@ PetscErrorCode Hdiv_FaceBasedVolumeShapeFunctions_MBTET(
       double diff_ksi_0i[3],diff_ksi_0j[3];
       if(diffPHI_v_f!=NULL) {
 	if(diffN == NULL) {
-	  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+	  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
 	}
 	int dd = 0;
 	for(;dd<3;dd++) {
@@ -169,7 +169,7 @@ PetscErrorCode Hdiv_FaceBasedVolumeShapeFunctions_MBTET(
 	    N[node_shift+faces_nodes[3*ff+0]]*N[node_shift+faces_nodes[3*ff+1]]*diffN[3*faces_nodes[3*ff+2]+dd];
 	}
       }
-      int shift = ii*NBVOLUME_FACE_HDIV(p);
+      int shift = ii*NBVOLUMETET_FACE_HDIV(p);
       int jj = 0;
       int oo = 0;
       for(;oo<=p-3;oo++) {
@@ -206,7 +206,7 @@ PetscErrorCode Hdiv_FaceBasedVolumeShapeFunctions_MBTET(
 	  }
 	}
       }
-      if(jj!=NBVOLUME_FACE_HDIV(p)) SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"wrong order %d != %d",jj,NBVOLUME_FACE_HDIV(p));
+      if(jj!=NBVOLUMETET_FACE_HDIV(p)) SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong order %d != %d",jj,NBVOLUMETET_FACE_HDIV(p));
     }
   }
   PetscFunctionReturn(0);
@@ -255,7 +255,7 @@ PetscErrorCode Hdiv_VolumeBubbleShapeFunctions_MBTET(
       ierr = Legendre_polynomials(p,ksi_0j,NULL,Psi_m,NULL,3); CHKERRQ(ierr);
       ierr = Legendre_polynomials(p,ksi_0k,NULL,Psi_n,NULL,3); CHKERRQ(ierr);
     }
-    int shift = ii*NBVOLUME_VOLUME_HDIV(p);
+    int shift = ii*NBVOLUMETET_VOLUME_HDIV(p);
     int jj = 0;
     int oo = 0;
     for(;oo<=p-4;oo++) {
@@ -293,7 +293,7 @@ PetscErrorCode Hdiv_VolumeBubbleShapeFunctions_MBTET(
 	}
       }
     }
-    if(3*jj!=NBVOLUME_VOLUME_HDIV(p)) SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"wrong order %d != %d",jj,NBVOLUME_VOLUME_HDIV(p));
+    if(3*jj!=NBVOLUMETET_VOLUME_HDIV(p)) SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong order %d != %d",jj,NBVOLUMETET_VOLUME_HDIV(p));
   }
   PetscFunctionReturn(0);
 }
@@ -327,7 +327,7 @@ PetscErrorCode Hdiv_EdgeFaceShapeFunctions_MBTET_ON_FACE(
   int ii = 0;
   for(;ii<GDIM;ii++) {
     int node_shift = ii*NB;
-    int shift = ii*NBFACE_EDGE_HDIV(p); 
+    int shift = ii*NBFACETRI_EDGE_HDIV(p); 
     int ee = 0;
     for(;ee<3;ee++) {
       int n0_idx = faces_nodes[face_edges_nodes[2*ee+0]];
@@ -337,7 +337,7 @@ PetscErrorCode Hdiv_EdgeFaceShapeFunctions_MBTET_ON_FACE(
       double diff_ksi_0i[3];
       if(diffPHI_f_e != 0) {
 	if(diffN == NULL) {
-	  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+	  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
 	}
 	int dd = 0;
 	for(;dd<3;dd++) {
@@ -372,7 +372,7 @@ PetscErrorCode Hdiv_EdgeFaceShapeFunctions_MBTET_ON_FACE(
 	  }
 	}
       }
-      if(l!=NBFACE_EDGE_HDIV(p)) SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"wrong order %d != %d",l,NBFACE_EDGE_HDIV(p));
+      if(l!=NBFACETRI_EDGE_HDIV(p)) SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong order %d != %d",l,NBFACETRI_EDGE_HDIV(p));
     }
   }
   PetscFunctionReturn(0);
@@ -403,7 +403,7 @@ PetscErrorCode Hdiv_FaceBubbleShapeFunctions_MBTET_ON_FACE(
     double diff_Psi_l[3*(p+1)],diff_Psi_m[3*(p+1)];
     if(diffPHI_f!=NULL) {
       if(diffN == NULL) {
-	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
       }
       double diff_ksi_0i[3];
       double diff_ksi_0j[3];
@@ -430,7 +430,7 @@ PetscErrorCode Hdiv_FaceBubbleShapeFunctions_MBTET_ON_FACE(
 	  N[node_shift+faces_nodes[0]]*N[node_shift+faces_nodes[1]]*diffN[3*faces_nodes[2]+dd];
       }
     }
-    int shift = ii*NBFACE_FACE_HDIV(p); 
+    int shift = ii*NBFACETRI_FACE_HDIV(p); 
     int jj = 0;
     int oo = 0;
     for(;oo<=p-3;oo++) {
@@ -458,7 +458,7 @@ PetscErrorCode Hdiv_FaceBubbleShapeFunctions_MBTET_ON_FACE(
 	} 
       }
     }
-    if(jj!=NBFACE_FACE_HDIV(p)) SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"wrong order %d != %d",jj,NBFACE_FACE_HDIV(p));
+    if(jj!=NBFACETRI_FACE_HDIV(p)) SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong order %d != %d",jj,NBFACETRI_FACE_HDIV(p));
   }
   PetscFunctionReturn(0);
 }

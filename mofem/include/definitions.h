@@ -41,7 +41,8 @@ enum MoFEMInterfaces {
   TETGEN_INTERFACE = 1<<3|1<<4,		///< used to generate mesh using TetGen
   NETGEN_INTERFACE = 1<<3|1<<5,		///< used to generate mesh using NetGen
   NODEMERGER_INTERFACE = 1<<3|1<<6,	///< used to merge nodes
-  BITLEVELCOUPLER_INTERFACE = 1<<3|1<<7 ///< used to couple bit levels by finding parent children relation
+  BITLEVELCOUPLER_INTERFACE = 1<<3|1<<7, ///< used to couple bit levels by finding parent children relation
+  PRISMSFROMSURFACE_INTERFACE = 1<<3|1<<8 ///< create prisms from surface elements
 };
 
 /** \brief Error handling
@@ -49,17 +50,17 @@ enum MoFEMInterfaces {
   * This is complementary to PETSC error codes. The numerical values for
   * these are defined in include/petscerror.h. The names are defined in err.c
   *
-  * MoAB error messeges are defined in naob/Types.hpp
+  * MoAB error messages are defined in naob/Types.hpp
   *
   */
 enum MoFEMErrorCode {
   MOFEM_SUCESS = 0,
-  MOFEM_DATA_INCONSISTENCT = 100,
+  MOFEM_DATA_INCONSISTENCY = 100,
   MOFEM_NOT_IMPLEMENTED = 101,
   MOFEM_NOT_FOUND = 102,
   MOFEM_OPERATION_UNSUCCESSFUL = 103,
   MOFEM_IMPOSIBLE_CASE = 104,
-  MOFEM_CHAR_THROW = 105,
+  MOFEM_MOFEMEXCEPTION_THROW = 105,
   MOFEM_STD_EXCEPTION_THROW = 106,
   MOFEM_INVALID_DATA = 107,
   MOFEM_ATOM_TEST_INVALID = 108,
@@ -143,10 +144,11 @@ enum ByWhat {
 #define CHKERR(a) do { \
   ErrorCode val = (a); \
   if (MB_SUCCESS != val) { \
-    std::cerr << "Error code  " << val << " at " << __FILE__ << ":" << __LINE__ << std::endl; \
+    cerr << "Error code  " << val << " at " << __FILE__ << ":" << __LINE__ << std::endl; \
     assert(1); \
   } \
 } while (false)
+
 
 /// check moab error and communicate it using petsc interface
 #define CHKERR_PETSC(a) do { \
@@ -164,16 +166,14 @@ enum ByWhat {
   if (MB_SUCCESS != val) { \
     std::ostringstream ss; \
     ss << "Error code  " << val << " at " << __FILE__ << ":" << __LINE__ << std::endl; \
-    std::string str(ss.str()); \
-    throw str.c_str(); \
+    throw MoFEMException(MOFEM_MOAB_ERROR,ss.str().c_str() ); \
   } \
 } while (false)
 
 #define THROW_AT_LINE(a) { \
   std::ostringstream ss; \
   ss << a << " " << " at " << __FILE__ << ":" << __LINE__ << std::endl; \
-  std::string str(ss.str()); \
-  throw str.c_str(); \
+  throw MoFEMException( MOFEM_MOFEMEXCEPTION_THROW,ss.str().c_str() ); \
 }
 
 #endif //__DEFINITONS_H__

@@ -177,7 +177,7 @@ struct OpGetDataAndGradient: public DataOperator {
 };
 
 /** \brief Calculate normals at Gauss points of triangle element
-  * \ingroup mofem_forces_and_sources
+  * \ingroup mofem_forces_and_source
   */
 struct OpGetCoordsAndNormalsOnFace: public DataOperator {
 

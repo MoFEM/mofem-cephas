@@ -49,6 +49,7 @@
 #endif
 
 #include <NodeMerger.hpp>
+#include <PrismsFromSurfaceInterface.hpp>
 
 #include <boost/scoped_ptr.hpp>
 #include <moab/AdaptiveKDTree.hpp>
@@ -88,13 +89,14 @@ PetscErrorCode Core::queryInterface(const MOFEMuuid& uuid,FieldUnknownInterface*
     *iface = dynamic_cast<FieldInterface*>(this);
     PetscFunctionReturn(0);
   }
-  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"unknown inteface");
+  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown inteface");
   PetscFunctionReturn(0);
 }
 
 PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr) {
   PetscFunctionBegin;
 
+  // TetGen
   #ifdef WITH_TETGEN
   if(type == typeid(TetGenInterface)) {
     if(iFaces.find(IDD_MOFEMTetGegInterface.uUId.to_ulong()) == iFaces.end()) {
@@ -105,6 +107,7 @@ PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr)
   }
   #endif
 
+  // NetGen
   #ifdef WITH_NETGEN
   if(type == typeid(NetGenInterface)) {
     if(iFaces.find(IDD_MOFEMNetGegInterface.uUId.to_ulong()) == iFaces.end()) {
@@ -117,19 +120,28 @@ PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr)
 
   //Node merger
   if(type == typeid(NodeMergerInterface)) {
-    if(iFaces.find(IDD_MOFENNodeMerger.uUId.to_ulong()) == iFaces.end()) {
-      iFaces[IDD_MOFENNodeMerger.uUId.to_ulong()] = new NodeMergerInterface(*this);
+    if(iFaces.find(IDD_MOFEMNodeMerger.uUId.to_ulong()) == iFaces.end()) {
+      iFaces[IDD_MOFEMNodeMerger.uUId.to_ulong()] = new NodeMergerInterface(*this);
     }
-    ptr = iFaces.at(IDD_MOFENNodeMerger.uUId.to_ulong());
+    ptr = iFaces.at(IDD_MOFEMNodeMerger.uUId.to_ulong());
     PetscFunctionReturn(0);
   }
 
   //BitLevelCoupler
   if(type == typeid(BitLevelCouplerInterface)) {
-    if(iFaces.find(IDD_MOFENBitLevelCoupler.uUId.to_ulong()) == iFaces.end()) {
-      iFaces[IDD_MOFENNodeMerger.uUId.to_ulong()] = new BitLevelCouplerInterface(*this);
+    if(iFaces.find(IDD_MOFEMBitLevelCoupler.uUId.to_ulong()) == iFaces.end()) {
+      iFaces[IDD_MOFEMBitLevelCoupler.uUId.to_ulong()] = new BitLevelCouplerInterface(*this);
     }
-    ptr = iFaces.at(IDD_MOFENNodeMerger.uUId.to_ulong());
+    ptr = iFaces.at(IDD_MOFEMBitLevelCoupler.uUId.to_ulong());
+    PetscFunctionReturn(0);
+  }
+
+  //Create prism elements from surface Elements
+  if(type == typeid(PrismsFromSurfaceInterface)) {
+    if(iFaces.find(IDD_MOFEMPrismsFromSurface.uUId.to_ulong()) == iFaces.end()) {
+      iFaces[IDD_MOFEMPrismsFromSurface.uUId.to_ulong()] = new PrismsFromSurfaceInterface(*this);
+    }
+    ptr = iFaces.at(IDD_MOFEMPrismsFromSurface.uUId.to_ulong());
     PetscFunctionReturn(0);
   }
 
@@ -140,7 +152,7 @@ PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr)
   } else if(type == typeid(PrismInterface)) {
     ptr = static_cast<PrismInterface*>(this);
   } else {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"unknown inteface");
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown inteface");
   }
   PetscFunctionReturn(0);
 }
@@ -388,7 +400,9 @@ BitFieldId Core::get_BitFieldId(const string& name) const {
   typedef MoFEMField_multiIndex::index<FieldName_mi_tag>::type field_set_by_name;
   const field_set_by_name &set = moabFields.get<FieldName_mi_tag>();
   field_set_by_name::iterator miit = set.find(name);
-  if(miit==set.end()) THROW_AT_LINE("field < "+name+" > not in databse (top tip: check spelling)");
+  if(miit==set.end()) {
+    THROW_AT_LINE("field < "+name+" > not in database (top tip: check spelling)");
+  }
   return miit->get_id();
 }
 string Core::get_BitFieldId_name(const BitFieldId id) const {
@@ -401,7 +415,7 @@ EntityHandle Core::get_field_meshset(const BitFieldId id) const {
   typedef MoFEMField_multiIndex::index<BitFieldId_mi_tag>::type field_set_by_id;
   const field_set_by_id &set = moabFields.get<BitFieldId_mi_tag>();
   field_set_by_id::iterator miit = set.find(id);
-  if(miit==set.end()) THROW_AT_LINE("field not in databse (top tip: check spelling)");
+  if(miit==set.end()) THROW_AT_LINE("field not in database (top tip: check spelling)");
   return miit->meshset;
 }
 EntityHandle Core::get_field_meshset(const string& name) const {
@@ -420,8 +434,10 @@ const MoFEMField* Core::get_field_structure(const string& name) {
   const field_set_by_name &set = moabFields.get<FieldName_mi_tag>();
   field_set_by_name::iterator miit = set.find(name);
   if(miit==set.end()) {
-    throw MofemException(MOFEM_NOT_FOUND,
-      string("field < "+name+" > not in databse (top tip: check spelling)").c_str());
+    throw MoFEMException(
+      MOFEM_NOT_FOUND,
+      string("field < "+name+" > not in databse (top tip: check spelling)").c_str()
+    );
   }
   return &*miit;
 }
@@ -431,10 +447,10 @@ BitFieldId Core::getFieldShift() {
     PetscTraceBackErrorHandler(
       comm,
       __LINE__,PETSC_FUNCTION_NAME,__FILE__,
-      MOFEM_DATA_INCONSISTENCT,PETSC_ERROR_INITIAL,msg,PETSC_NULL);
+      MOFEM_DATA_INCONSISTENCY,PETSC_ERROR_INITIAL,msg,PETSC_NULL);
     PetscMPIAbortErrorHandler(comm,
       __LINE__,PETSC_FUNCTION_NAME,__FILE__,
-      MOFEM_DATA_INCONSISTENCT,PETSC_ERROR_INITIAL,msg,PETSC_NULL);
+      MOFEM_DATA_INCONSISTENCY,PETSC_ERROR_INITIAL,msg,PETSC_NULL);
   }
   return BitFieldId().set(((*fShift)++)-1);
 }
@@ -481,8 +497,8 @@ PetscErrorCode Core::addPrismToDatabase(const EntityHandle prism,int verb) {
       p_MoFEMFiniteElement.first->get_side_number_ptr(moab,*face_side3.begin());
       p_MoFEMFiniteElement.first->get_side_number_ptr(moab,*face_side4.begin());
     }
-  } catch (const char* msg) {
-    SETERRQ(PETSC_COMM_SELF,1,msg);
+  } catch (MoFEMException const &e) {
+    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
   }
   PetscFunctionReturn(0);
 }
@@ -503,7 +519,7 @@ PetscErrorCode Core::synchronise_entities(Range &ents,int verb) {
     meit = refinedEntities.get<Ent_mi_tag>().find(*eit);
     if(meit == refinedEntities.get<Ent_mi_tag>().end()) {
       continue;
-      SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,
+      SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
         "rank %d entity %lu not exist on database, local entity can not be found for this owner",
         rAnk,*eit);
     }
@@ -627,7 +643,7 @@ PetscErrorCode Core::synchronise_entities(Range &ents,int verb) {
       RefMoFEMEntity_multiIndex::index<Ent_mi_tag>::type::iterator meit;
       meit = refinedEntities.get<Ent_mi_tag>().find(ent);
       if(meit == refinedEntities.get<Ent_mi_tag>().end()) {
-	SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,
+	SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
 	  "rank %d entity %lu not exist on database, local entity can not be found for this owner",rAnk,ent);
       }
       if(verb>2) {

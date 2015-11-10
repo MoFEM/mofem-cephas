@@ -177,14 +177,14 @@ struct HashBit
 { inline unsigned int operator()(const id_type& value) const {
   return value.to_ulong(); } };
 
-struct MofemException: public std::exception {
+struct MoFEMException: public std::exception {
   MoFEMErrorCode errorCode;
   char errorMessage[255];
-  MofemException(MoFEMErrorCode error_code):
+  MoFEMException(MoFEMErrorCode error_code):
     errorCode(error_code) {
-    strcpy(errorMessage,"Huston we have a problem, somthing is wrong");
+    strcpy(errorMessage,"Huston we have a problem, something is wrong");
   }
-  MofemException(MoFEMErrorCode error_code,const char error_message[]):
+  MoFEMException(MoFEMErrorCode error_code,const char error_message[]):
     errorCode(error_code) {
     strcpy(errorMessage,error_message);
   }

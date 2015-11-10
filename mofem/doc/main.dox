@@ -58,19 +58,21 @@ add industry. Since each \em user \em module is implemented with MoFEM, using
 its internal database, data between modules can be exchanged without prior
 knowledge how each module is developed.
 
-
 \subsection download_repository MoFEM repository, user modules and testing
 
 - Version repository <https://bitbucket.org/likask/mofem-cephas>
 - Testing webpage (CDash) <http://cdash.eng.gla.ac.uk/cdash/>
 
 List of some user modules,
+- Obsolete (Elements and methods used by some modules no longer developed, not recommend
+to use in new developments) <https://bitbucket.org/likask/mofem_um_obsolte>
 - Homogenistaion <https://bitbucket.org/likask/mofem_um_homogenisation>
 - Fracture Mechanics <https://bitbucket.org/likask/mofem_um_fracture_mechanics>
 - Gel Models <https://bitbucket.org/likask/mofem_um_gels>
 - Moisture Transport <https://bitbucket.org/likask/mofem_um_moisture_transport>
 - Ground Surface Temperature <https://bitbucket.org/likask/mofem_um_ground_surface_temperature>
 - Small strain plasticity <https://bitbucket.org/likask/mofem_um_small_strain_plasticity>
+- Solid Shell Prism Element <https://bitbucket.org/likask/mofem_um_solid_shell_prism_element>
 
 \subsection contact Contact us and get involved
 

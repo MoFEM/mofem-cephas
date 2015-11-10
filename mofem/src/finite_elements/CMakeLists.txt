@@ -16,12 +16,17 @@ add_library(mofem_finite_elements
   impl/DataStructures.cpp
   impl/DataOperators.cpp
   impl/ElementsOnEntities.cpp
+  impl/VolumeElementForcesAndSourcesCore.cpp
+  impl/FaceElementForcesAndSourcesCore.cpp
+  impl/EdgeElementForcesAndSurcesCore.cpp
+  impl/VertexElementForcesAndSourcesCore.cpp
+  impl/FlatPrismElementForcesAndSurcesCore.cpp
+  impl/FatPrismElementForcesAndSurcesCore.cpp
 )
 
-#install(FILES 
-#  ForcesAndSurcesCore.hpp 
+#install(FILES
+#  ForcesAndSurcesCore.hpp
 #  PostProcOnRefMesh.hpp
 #  DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
 
 install(TARGETS mofem_finite_elements DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
-

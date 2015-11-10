@@ -27,13 +27,14 @@ set(MOFEM_INTERFACES_SRC
   impl/SeriesRecorderCore.cpp
   impl/NodeMerger.cpp
   impl/BitLevelCoupler.cpp
+  impl/PrismsFromSurfaceInterface.cpp
 )
 
-if(TETGEN_LIBRARY) 
+if(TETGEN_LIBRARY)
   set(MOFEM_INTERFACES_SRC ${MOFEM_INTERFACES_SRC} impl/TetGenInterface.cpp)
 endif(TETGEN_LIBRARY)
 
-if(NETGEN_LIBRARY) 
+if(NETGEN_LIBRARY)
   set(MOFEM_INTERFACES_SRC ${MOFEM_INTERFACES_SRC} impl/NetGenInterface.cpp)
 endif(NETGEN_LIBRARY)
 
@@ -42,4 +43,3 @@ add_library(mofem_interfaces
 )
 
 install(TARGETS mofem_interfaces DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
-
