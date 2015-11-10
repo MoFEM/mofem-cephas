@@ -125,6 +125,14 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
         order_triangles_only,dataH1TrianglesOnly.dataOnEntities[MBTRI][ff].getOrder()
       );
     }
+    for(unsigned int qq = 0;qq<3;qq++) {
+      order_triangles_only = max(
+        order_triangles_only,dataH1TroughThickness.dataOnEntities[MBQUAD][qq].getOrder()
+      );
+    }
+    order_triangles_only = max(
+      order_triangles_only,dataH1TroughThickness.dataOnEntities[MBPRISM][0].getOrder()
+    );
     // integration pts on the triangles surfaces
     int rule = getRuleTrianglesOnly(order_triangles_only);
     if(rule >= 0) {
@@ -171,6 +179,9 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
         order_thickness,dataH1TroughThickness.dataOnEntities[MBQUAD][qq].getOrder()
       );
     }
+    order_thickness = max(
+      order_thickness,dataH1TroughThickness.dataOnEntities[MBPRISM][0].getOrder()
+    );
     // integration points
     int rule = getRuleThroughThickness(order_thickness);
     if(rule >= 0) {
@@ -200,7 +211,7 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
         nb_gauss_pts_through_thickness,order<0?0:1+order,false
       );
       if(order<0) continue;
-      double diff_s = 0.5; // s = s(xi), ds/dxi = 0.5, because change of basis
+      double diff_s = 2.; // s = s(xi), ds/dxi = 2., because change of basis
       for(int gg = 0;gg<nb_gauss_pts_through_thickness;gg++) {
         double s = 2*gaussPtsThroughThickness(0,gg)-1; // makes form -1..1
         if(!sense) {
@@ -240,6 +251,7 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
       }
     }
     // nodes
+    // linear for xi,eta and zeta
     dataH1.dataOnEntities[MBVERTEX][0].getN().resize(nb_gauss_pts,6,false);
     dataH1.dataOnEntities[MBVERTEX][0].getDiffN().resize(nb_gauss_pts,18);
     for(int dd = 0;dd<6;dd++) {
@@ -265,13 +277,11 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
         }
       }
     }
-    const int prism_edge_map[9][2] = {
-      {0,1}, {1,2}, {2,0}, {0,3}, {1,4}, {2,5}, {3,4}, {4,5}, {5,3}
-    };
     // edges on triangles
     for(int ee = 0;ee<9;ee++) {
       if(ee>=3&&ee<=5) {
-        // through thickness ho approx.
+        // through thickness ho approximation
+        // linear xi,eta, ho terms for eta
         int order = dataH1TroughThickness.dataOnEntities[MBEDGE][ee].getOrder();
         int nb_dofs = NBEDGE_H1(order);
         if(nb_dofs!=dataH1TroughThickness.dataOnEntities[MBEDGE][ee].getN().size2()) {
@@ -283,6 +293,9 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
         dataH1.dataOnEntities[MBEDGE][ee].getN().resize(nb_gauss_pts,nb_dofs,false);
         dataH1.dataOnEntities[MBEDGE][ee].getDiffN().resize(nb_gauss_pts,3*nb_dofs,false);
         if(nb_dofs == 0) continue;
+        const int prism_edge_map[9][2] = {
+          {0,1}, {1,2}, {2,0}, {0,3}, {1,4}, {2,5}, {3,4}, {4,5}, {5,3}
+        };
         int gg = 0;
         for(int ggf = 0;ggf<nb_gauss_pts_on_faces;ggf++) {
           double tri_n = dataH1TrianglesOnly.dataOnEntities[MBVERTEX][0].getN()(ggf,prism_edge_map[ee][0]);
@@ -309,7 +322,8 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
           }
         }
       } else {
-        // on triangles ho approx.
+        // on triangles ho approximation
+        // ho terms on edges, linear zeta
         int nb_dofs = dataH1TrianglesOnly.dataOnEntities[MBEDGE][ee].getN().size2();
         dataH1.dataOnEntities[MBEDGE][ee].getN().resize(nb_gauss_pts,nb_dofs,false);
         dataH1.dataOnEntities[MBEDGE][ee].getDiffN().resize(nb_gauss_pts,3*nb_dofs,false);
@@ -339,6 +353,7 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
       }
     }
     // triangles
+    // ho on triangles, linear zeta
     for(int ff = 3;ff<=4;ff++) {
       int nb_dofs;
       nb_dofs = dataH1TrianglesOnly.dataOnEntities[MBTRI][ff].getN().size2();
@@ -372,6 +387,7 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
       }
     }
     // quads
+    // higher order edges and zeta
     {
       int quads_nodes[3*4];
       int quad_order[3];
@@ -380,21 +396,30 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
       SideNumber_multiIndex::nth_index<1>::type::iterator siit;
       siit = side_table.get<1>().lower_bound(boost::make_tuple(MBQUAD,0));
       SideNumber_multiIndex::nth_index<1>::type::iterator hi_siit;
-      hi_siit = side_table.get<1>().upper_bound(boost::make_tuple(MBQUAD,4));
+      hi_siit = side_table.get<1>().upper_bound(boost::make_tuple(MBQUAD,3));
       const EntityHandle *conn_prism;
       int num_nodes_prism;
       EntityHandle ent = fePtr->get_ent();
       rval = mField.get_moab().get_connectivity(ent,conn_prism,num_nodes_prism,true); CHKERR_PETSC(rval);
+      // cerr << "\n\n" << endl;
+      // const int quad_nodes[3][4] = { {0,1,4,3}, {1,2,5,4}, {0,2,5,3} };
       for(;siit!=hi_siit;siit++) {
-        // cerr << "sn " << siit->side_number << endl;
-        EntityHandle quad = siit->ent;
+        //  cerr << "sn " << siit->side_number << endl;
         int num_nodes_quad;
         const EntityHandle *conn_quad;
+        EntityHandle quad = siit->ent;
         rval = mField.get_moab().get_connectivity(
           quad,conn_quad,num_nodes_quad,true
         ); CHKERR_PETSC(rval);
         for(int nn = 0;nn<num_nodes_quad;nn++) {
-          quads_nodes[4*siit->side_number+nn] = distance(conn_prism,find(conn_prism,&conn_prism[6],conn_quad[nn]));
+          quads_nodes[4*siit->side_number+nn] = distance(conn_prism,find(conn_prism,conn_prism+6,conn_quad[nn]));
+          // cerr
+          // << "quad " << quad
+          // << " side number " << siit->side_number
+          // << " " << quads_nodes[4*siit->side_number+nn]
+          // << " " << conn_prism[quads_nodes[4*siit->side_number+nn]]
+          // << " " << conn_quad[nn]
+          // << endl;
         }
         int order = dataH1.dataOnEntities[MBQUAD][siit->side_number].getOrder();
         quad_order[siit->side_number] = order;
@@ -403,32 +428,34 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
         if(dataH1.dataOnEntities[MBQUAD][siit->side_number].getN().size2()>0) {
           quad_n[siit->side_number] = &*dataH1.dataOnEntities[MBQUAD][siit->side_number].getN().data().begin();
           diff_quad_n[siit->side_number] = &*dataH1.dataOnEntities[MBQUAD][siit->side_number].getDiffN().data().begin();
+        } else {
+          quad_n[siit->side_number] = NULL;
+          diff_quad_n[siit->side_number] = NULL;
         }
       }
-      ierr = H1_QuadShapeFunctions_MBPRISM(
-        quads_nodes,
-        quad_order,
-        &dataH1.dataOnEntities[MBVERTEX][0].getN()(0,0),
-        &dataH1.dataOnEntities[MBVERTEX][0].getDiffN()(0,0),
-        quad_n,
-        diff_quad_n,
-        nb_gauss_pts
-      ); CHKERRQ(ierr);
+      {
+        double *vertex_n = &*dataH1.dataOnEntities[MBVERTEX][0].getN().data().begin();
+        double *diff_vertex_n = &*dataH1.dataOnEntities[MBVERTEX][0].getDiffN().data().begin();
+        ierr = H1_QuadShapeFunctions_MBPRISM(
+          quads_nodes,quad_order,vertex_n,diff_vertex_n,quad_n,diff_quad_n,&gaussPts(0,0),nb_gauss_pts
+        ); CHKERRQ(ierr);
+      }
     }
     // prism
     {
       int order = dataH1.dataOnEntities[MBPRISM][0].getOrder();
-      double *n  = &dataH1.dataOnEntities[MBVERTEX][0].getN()(0,0);
-      double *diff_n = &dataH1.dataOnEntities[MBVERTEX][0].getDiffN()(0,0);
+      double *vertex_n  = &dataH1.dataOnEntities[MBVERTEX][0].getN()(0,0);
+      double *diff_vertex_n = &dataH1.dataOnEntities[MBVERTEX][0].getDiffN()(0,0);
       dataH1.dataOnEntities[MBPRISM][0].getN().resize(nb_gauss_pts,NBVOLUMEPRISM_H1(order),false);
       dataH1.dataOnEntities[MBPRISM][0].getDiffN().resize(nb_gauss_pts,3*NBVOLUMEPRISM_H1(order),false);
       if(NBVOLUMEPRISM_H1(order)>0) {
         ierr = H1_VolumeShapeFunctions_MBPRISM(
           order,
-          n,
-          diff_n,
+          vertex_n,
+          diff_vertex_n,
           &dataH1.dataOnEntities[MBPRISM][0].getN()(0,0),
           &dataH1.dataOnEntities[MBPRISM][0].getDiffN()(0,0),
+          &gaussPts(0,0),
           nb_gauss_pts
         ); CHKERRQ(ierr);
       }

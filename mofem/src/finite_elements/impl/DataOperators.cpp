@@ -925,6 +925,12 @@ PetscErrorCode OpGetCoordsAndNormalsOnPrism::doWork(int side,EntityType type,Dat
 
   try {
 
+    if(type == MBEDGE) {
+      if(!valid_edges3[side]||valid_edges4[side]) PetscFunctionReturn(0);
+    } else if(type == MBTRI) {
+      if(!valid_faces3[side]||valid_faces4[side]) PetscFunctionReturn(0);
+    }
+
     switch (type) {
       case MBVERTEX: {
         for(unsigned int gg = 0;gg<data.getN().size1();gg++) {

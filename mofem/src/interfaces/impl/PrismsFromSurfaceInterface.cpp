@@ -70,11 +70,33 @@ PetscErrorCode PrismsFromSurfaceInterface::createPrisms(const Range &ents,Range 
       } else {
         rval = m_field.get_moab().create_vertex(&coords[3*nn],prism_nodes[3+nn]); CHKERR_PETSC(rval);
         createdVertices[conn[nn]] = prism_nodes[3+nn];
+        rval = m_field.get_moab().tag_set_data(
+          cOre.get_th_RefParentHandle(),&prism_nodes[3+nn],1,&prism_nodes[nn]
+        ); CHKERR_PETSC(rval);
       }
     }
     EntityHandle prism;
     rval = m_field.get_moab().create_element(MBPRISM,prism_nodes,6,prism); CHKERRQ(rval);
+    Range edges;
+    rval = m_field.get_moab().get_adjacencies(&prism,1,1,true,edges,Interface::UNION); CHKERR_PETSC(rval);
+    Range faces;
+    rval = m_field.get_moab().get_adjacencies(&prism,1,2,true,faces,Interface::UNION); CHKERR_PETSC(rval);
     prisms.insert(prism);
+    for(int ee = 0;ee<=2;ee++) {
+      EntityHandle e1;
+      rval = m_field.get_moab().side_element(prism,1,ee,e1);
+      EntityHandle e2;
+      rval = m_field.get_moab().side_element(prism,1,ee+6,e2); CHKERR_PETSC(rval);
+      rval = m_field.get_moab().tag_set_data(cOre.get_th_RefParentHandle(),&e2,1,&e1); CHKERR_PETSC(rval);
+    }
+    {
+      EntityHandle f1;
+      rval = m_field.get_moab().side_element(prism,2,3,f1);
+      EntityHandle f2;
+      rval = m_field.get_moab().side_element(prism,2,4,f2);
+      rval = m_field.get_moab().tag_set_data(cOre.get_th_RefParentHandle(),&f2,1,&f1); CHKERR_PETSC(rval);
+
+    }
   }
   PetscFunctionReturn(0);
 }

@@ -1566,9 +1566,8 @@ PetscErrorCode ForcesAndSurcesCore::shapeEDGEFunctions_H1(
   data.dataOnEntities[MBEDGE][side_number].getN().resize(G_DIM,NBEDGE_H1(order),false);
   data.dataOnEntities[MBEDGE][side_number].getDiffN().resize(G_DIM,NBEDGE_H1(order),false);
   if(data.dataOnEntities[MBEDGE][side_number].getOrder()>1) {
-    double diff_s = 0.5; // s = s(xi), ds/dxi = 0.5, because change of basis
+    double diff_s = 2.; // s = s(xi), ds/dxi = 2., because change of basis
     for(int gg = 0;gg<G_DIM;gg++) {
-
       double s = 2*G_X[gg]-1; // makes form -1..1
       if(!sense) {
         s *= -1;

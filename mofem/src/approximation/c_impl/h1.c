@@ -420,87 +420,107 @@ PetscErrorCode H1_VolumeGradientOfDeformation_hierachical(int p,double *diffN,do
   PetscFunctionReturn(0);
 }
 PetscErrorCode H1_QuadShapeFunctions_MBPRISM(
-  int *faces_nodes,int *p,double *N,double *diffN,double *faceN[],double *diff_faceN[],int GDIM
+  int *faces_nodes,int *p,double *N,double *diffN,double *faceN[],double *diff_faceN[],double *gauss_pts,int GDIM
 ) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
   int P[3];
-  int ff = 0;
-  for(;ff<3; ff++) {
+  for(int ff = 0;ff<3; ff++) {
     P[ff] = NBFACEQUAD_H1(p[ff]);
   }
-  double diff_ksiL0F0[3],diff_ksiL1F0[3];
-  double diff_ksiL0F1[3],diff_ksiL1F1[3];
-  double diff_ksiL0F2[3],diff_ksiL1F2[3];
+  double ksi_faces[6];
+  double diff_ksiL0F0[3],diff_ksiL3F0[3];
+  double diff_ksiL0F1[3],diff_ksiL3F1[3];
+  double diff_ksiL0F2[3],diff_ksiL3F2[3];
   double *diff_ksi_faces[] = {
-    diff_ksiL0F0, diff_ksiL1F0, diff_ksiL0F1, diff_ksiL1F1, diff_ksiL0F2, diff_ksiL1F2
+    diff_ksiL0F0,diff_ksiL3F0,diff_ksiL0F1,diff_ksiL3F1,diff_ksiL0F2,diff_ksiL3F2
   };
-  int ii = 0;
-  for(;ii<GDIM;ii++) {
+  for(int ii = 0;ii<GDIM;ii++) {
     int node_shift = ii*6;
-    int node_diff_shift = ii*18;
-    double ksi_faces[6];
-    for(ff = 0;ff<3;ff++) {
-      ksi_faces[2*ff+0] = N[ node_shift+faces_nodes[4*ff+1] ] - N[ node_shift+faces_nodes[4*ff+0] ];
-      ksi_faces[2*ff+1] = N[ node_shift+faces_nodes[4*ff+3] ] - N[ node_shift+faces_nodes[4*ff+0] ]; }
-      for(int dd = 0;dd<3; dd++) {
-        for(ff = 0;ff<3;ff++) {
-          diff_ksi_faces[ff*2+0][dd] =
-          (diffN[node_diff_shift+faces_nodes[4*ff+1]*3+dd]-diffN[node_diff_shift+faces_nodes[4*ff+0]*3+dd]);
-          diff_ksi_faces[ff*2+1][dd] =
-          (diffN[node_diff_shift+faces_nodes[4*ff+3]*3+dd]-diffN[node_diff_shift+faces_nodes[4*ff+0]*3+dd]);
-        }
+    int node_diff_shift = 3*node_shift;
+    for(int ff = 0;ff<3;ff++) {
+      if(P[ff]==0) continue;
+      int n0 = faces_nodes[4*ff+0];
+      int n1 = faces_nodes[4*ff+1];
+      int n2 = faces_nodes[4*ff+2];
+      int n3 = faces_nodes[4*ff+3];
+      int e0 = 2*ff+0;
+      int e1 = 2*ff+1;
+      {
+        ksi_faces[e0] = 2.*(N[node_shift+n1]+N[node_shift+n2]-N[node_shift+n0]-N[node_shift+n3])-1.;
+        ksi_faces[e1] = 2.*(N[node_shift+n2]+N[node_shift+n3]-N[node_shift+n0]-N[node_shift+n1])-1.;
+      }
+      // if(ksi_faces[e0]<-1 || ksi_faces[e0]>1) {
+      //   SETERRQ(PETSC_COMM_SELF,1,"Data inconsistency");
+      // }
+      // if(ksi_faces[e1]<-1 || ksi_faces[e1]>1) {
+      //   SETERRQ(PETSC_COMM_SELF,1,"Data inconsistency");
+      // }
+      for(int dd = 0;dd<3;dd++) {
+        diff_ksi_faces[e0][dd] =
+        2.*(diffN[node_diff_shift+3*n1+dd]+diffN[node_diff_shift+3*n2+dd]-diffN[node_diff_shift+3*n0+dd]-diffN[node_diff_shift+3*n3+dd]);
+        diff_ksi_faces[e1][dd] =
+        2.*(diffN[node_diff_shift+3*n2+dd]+diffN[node_diff_shift+3*n3+dd]-diffN[node_diff_shift+3*n0+dd]-diffN[node_diff_shift+3*n1+dd]);
+      }
+      double L0[p[ff]+1],L1[p[ff]+1];
+      double diffL0[3*(p[ff]+1)],diffL1[3*(p[ff]+1)];
+      ierr = Legendre_polynomials(
+        p[ff],ksi_faces[e0],diff_ksi_faces[e0],L0,diffL0,3
+      ); CHKERRQ(ierr);
+      ierr = Legendre_polynomials(
+        p[ff],ksi_faces[e1],diff_ksi_faces[e1],L1,diffL1,3
+      ); CHKERRQ(ierr);
+      double v =
+      N[node_shift+n0]*N[node_shift+n2]
+      +
+      N[node_shift+n1]*N[node_shift+n3];
+      double v2[3];
+      for(int dd = 0;dd<3;dd++) {
+        v2[dd] =
+        diffN[node_diff_shift+3*n0+dd]*N[node_shift+n2]+
+        N[node_shift+n0]*diffN[node_diff_shift+3*n2+dd]
+        +
+        diffN[node_diff_shift+3*n1+dd]*N[node_shift+n3]+
+        N[node_shift+n1]*diffN[node_diff_shift+3*n3+dd];
       }
       int shift;
-      for(ff = 0; ff<3;ff++) {
-        if(P[ff]==0) continue;
-        double L0[ p[ff]+1 ],L1[ p[ff]+1 ];
-        double diffL0[ 3*(p[ff]+1) ],diffL1[ 3*(p[ff]+1) ];
-        ierr = Legendre_polynomials(p[ff],ksi_faces[ff*2+0],diff_ksi_faces[ff*2+0],L0,diffL0,3); CHKERRQ(ierr);
-        ierr = Legendre_polynomials(p[ff],ksi_faces[ff*2+1],diff_ksi_faces[ff*2+1],L1,diffL1,3); CHKERRQ(ierr);
-        double v =
-        N[node_shift+faces_nodes[4*ff+0]]*
-        N[node_shift+faces_nodes[4*ff+1]]*
-        N[node_shift+faces_nodes[4*ff+2]]*
-        N[node_shift+faces_nodes[4*ff+3]];
-        double v2[3];
-        for(int dd = 0;dd<3;dd++) {
-          v2[dd] =
-          diffN[node_diff_shift+3*faces_nodes[4*ff+0]+dd]*N[node_shift+faces_nodes[4*ff+1]]*N[node_shift+faces_nodes[4*ff+2]]*N[node_shift+faces_nodes[4*ff+3]]+
-          N[node_shift+faces_nodes[4*ff+0]]*diffN[node_diff_shift+4*faces_nodes[3*ff+1]+dd]*N[node_shift+faces_nodes[3*ff+2]]*N[node_shift+faces_nodes[4*ff+3]]+
-          N[node_shift+faces_nodes[4*ff+0]]*N[node_shift+faces_nodes[4*ff+1]]*diffN[node_diff_shift+3*faces_nodes[4*ff+2]+dd]*N[node_shift+faces_nodes[4*ff+3]]+
-          N[node_shift+faces_nodes[4*ff+0]]*N[node_shift+faces_nodes[4*ff+1]]*N[node_shift+faces_nodes[4*ff+2]]*diffN[node_diff_shift+3*faces_nodes[4*ff+3]+dd];
-        }
-        shift = ii*P[ff];
-        int jj = 0;
-        int oo = 0;
-        for(;oo<=(p[ff]-4);oo++) {
-          int pp0 = 0;
-          for(;pp0<=oo;pp0++) {
-            int pp1 = oo-pp0;
-            if(pp1>=0) {
-              if(faceN!=NULL)
+      shift = ii*P[ff];
+      int jj = 0;
+      int oo = 0;
+      for(;oo<=(p[ff]-4);oo++) {
+        int pp0 = 0;
+        for(;pp0<=oo;pp0++) {
+          int pp1 = oo-pp0;
+          if(pp1>=0) {
+            if(faceN!=NULL) {
               if(faceN[ff]!=NULL) {
                 faceN[ff][shift+jj] = v*L0[pp0]*L1[pp1];
               }
-              if(diff_faceN!=NULL)
+            }
+            if(diff_faceN!=NULL) {
               if(diff_faceN[ff]!=NULL) {
                 for(int dd = 0;dd<3;dd++) {
                   diff_faceN[ff][3*shift+3*jj+dd] =
-                  (L0[pp0]*diffL1[dd*(p[ff]+1)+pp1]+diffL0[dd*(p[ff]+1)+pp0]*L1[pp1])*v+
+                  (
+                    L0[pp0]*diffL1[dd*(p[ff]+1)+pp1]+
+                    diffL0[dd*(p[ff]+1)+pp0]*L1[pp1]
+                  )*v+
                   L0[pp0]*L1[pp1]*v2[dd];
                 }
               }
-              jj++;
             }
+            jj++;
           }
         }
-        if(jj!=P[ff]) SETERRQ2(PETSC_COMM_SELF,1,"wrong order %d != %d",jj,P[ff]);
+      }
+      if(jj!=P[ff]) SETERRQ2(PETSC_COMM_SELF,1,"wrong order %d != %d",jj,P[ff]);
     }
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode H1_VolumeShapeFunctions_MBPRISM(int p,double *N,double *diffN,double *volumeN,double *diff_volumeN,int GDIM) {
+PetscErrorCode H1_VolumeShapeFunctions_MBPRISM(
+  int p,double *N,double *diffN,double *volumeN,double *diff_volumeN,double *gauss_pts,int GDIM
+) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
   int P = NBVOLUMEPRISM_H1(p);
@@ -509,37 +529,34 @@ PetscErrorCode H1_VolumeShapeFunctions_MBPRISM(int p,double *N,double *diffN,dou
   int ii = 0;
   for(;ii<GDIM;ii++) {
     int node_shift = ii*6;
-    int diff_node_shift = ii*12;
+    int node_diff_shift = ii*18;
     double ksiL0 = N[ node_shift+1 ] - N[ node_shift + 0];
     double ksiL1 = N[ node_shift+2 ] - N[ node_shift + 0];
-    double ksiL2 = N[ node_shift+3 ] - N[ node_shift + 0];
+    double ksiL2 = 2*gauss_pts[2*GDIM+ii]-1.;
     for(int dd = 0;dd<3;dd++) {
-      diff_ksiL0[dd] = (diffN[diff_node_shift+1*3+dd]-diffN[diff_node_shift+0*3+dd]);
-      diff_ksiL1[dd] = (diffN[diff_node_shift+2*3+dd]-diffN[diff_node_shift+0*3+dd]);
-      diff_ksiL2[dd] = (diffN[diff_node_shift+3*3+dd]-diffN[diff_node_shift+0*3+dd]);
+      diff_ksiL0[dd] = (diffN[node_diff_shift+1*3+dd]-diffN[node_diff_shift+0*3+dd]);
+      diff_ksiL1[dd] = (diffN[node_diff_shift+2*3+dd]-diffN[node_diff_shift+0*3+dd]);
+      diff_ksiL2[dd] = 2;
     }
     double L0[ p+1 ],L1[ p+1 ],L2[ p+1 ];
     double diffL0[ 3*(p+1) ],diffL1[ 3*(p+1) ],diffL2[ 3*(p+1) ];
     ierr = Legendre_polynomials(p,ksiL0,diff_ksiL0,L0,diffL0,3); CHKERRQ(ierr);
     ierr = Legendre_polynomials(p,ksiL1,diff_ksiL1,L1,diffL1,3); CHKERRQ(ierr);
     ierr = Legendre_polynomials(p,ksiL2,diff_ksiL2,L2,diffL2,3); CHKERRQ(ierr);
-    double v = N[node_shift+0];
-    for(int ww = 1;ww<6;ww++) {
-      v *= N[node_shift+ww];
-    }
+    double v =
+    N[node_shift+0]*N[node_shift+4]*N[node_shift+2]
+    +
+    N[node_shift+1]*N[node_shift+3]*N[node_shift+5];
     double v2[3];
     for(int dd = 0;dd<3;dd++) {
-      v2[dd] = 0;
-      double v3;
-      for(int ww = 0;ww<6;ww++) {
-        v3 = diffN[diff_node_shift+3*ww+dd];
-        for(int yy = 0;yy<6;yy++) {
-          if(ww != yy) {
-            v3 *= N[node_shift+yy];
-          }
-        }
-      }
-      v2[dd] += v3;
+      v2[dd] =
+      diffN[node_diff_shift+3*0+dd]*N[node_shift+4]*N[node_shift+2]+
+      N[node_shift+0]*diffN[node_diff_shift+3*4+dd]*N[node_shift+2]+
+      N[node_shift+0]*N[node_shift+4]*diffN[node_diff_shift+3*2+dd]
+      +
+      diffN[node_diff_shift+3*1+dd]*N[node_shift+3]*N[node_shift+5]+
+      N[node_shift+1]*diffN[node_diff_shift+3*3+dd]*N[node_shift+5]+
+      N[node_shift+1]*N[node_shift+3]*diffN[node_diff_shift+3*5+dd];
     }
     int shift = ii*P;
     int jj = 0;
