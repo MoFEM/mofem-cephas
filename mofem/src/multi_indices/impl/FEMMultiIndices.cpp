@@ -548,9 +548,9 @@ PetscErrorCode DefaultElementAdjacency::defaultPrism(
     fe_ptr->get_RefMoFEMElement()->get_side_number_ptr(moab,face_side3);
     fe_ptr->get_RefMoFEMElement()->get_side_number_ptr(moab,face_side4);
     for(int qq = 0;qq<3;qq++) {
-      EntityHandle quad;
+      EntityHandle quad = 0;
       rval = moab.side_element(prism,2,qq,quad);
-      if(rval != MB_SUCCESS) continue;
+      if(rval != MB_SUCCESS || quad == 0) continue;
       int side_number,sense,offset;
       rval = moab.side_number(prism,quad,side_number,sense,offset);
       if(side_number==-1 || rval != MB_SUCCESS) continue;
@@ -560,7 +560,7 @@ PetscErrorCode DefaultElementAdjacency::defaultPrism(
     }
     int ee = 0;
     for(;ee<3;ee++) {
-      EntityHandle edge;
+      EntityHandle edge = 0;
       rval = moab.side_element(prism,1,ee,edge); CHKERR_PETSC(rval);
       SideNumber *side_ptr = fe_ptr->get_RefMoFEMElement()->get_side_number_ptr(moab,edge);
       if(side_ptr->side_number!=ee) {
@@ -577,9 +577,9 @@ PetscErrorCode DefaultElementAdjacency::defaultPrism(
       }
     }
     for(;ee<6;ee++) {
-      EntityHandle edge;
+      EntityHandle edge = 0;
       rval = moab.side_element(prism,1,ee,edge);
-      if(rval != MB_SUCCESS) continue;
+      if(rval != MB_SUCCESS || edge == 0) continue;
       int side_number,sense,offset;
       rval = moab.side_number(prism,edge,side_number,sense,offset);
       if(side_number==-1 || rval != MB_SUCCESS) continue;
