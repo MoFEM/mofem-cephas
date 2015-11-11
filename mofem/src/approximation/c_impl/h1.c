@@ -504,7 +504,7 @@ PetscErrorCode H1_QuadShapeFunctions_MBPRISM(
             }
             if(diff_faceN!=NULL) {
               if(diff_faceN[ff]!=NULL) {
-		dd = 0;
+                dd = 0;
                 for(;dd<3;dd++) {
                   diff_faceN[ff][3*shift+3*jj+dd] =
                   (
@@ -540,7 +540,7 @@ PetscErrorCode H1_VolumeShapeFunctions_MBPRISM(
     double ksiL1 = N[ node_shift+2 ] - N[ node_shift + 0];
     double ksiL2 = 2*gauss_pts[2*GDIM+ii]-1.;
     int dd = 0;
-    for(0;dd<3;dd++) {
+    for(;dd<3;dd++) {
       diff_ksiL0[dd] = (diffN[node_diff_shift+1*3+dd]-diffN[node_diff_shift+0*3+dd]);
       diff_ksiL1[dd] = (diffN[node_diff_shift+2*3+dd]-diffN[node_diff_shift+0*3+dd]);
       diff_ksiL2[dd] = 2;
@@ -580,7 +580,7 @@ PetscErrorCode H1_VolumeShapeFunctions_MBPRISM(
               volumeN[shift+jj] = L0[pp0]*L1[pp1]*L2[pp2]*v;
             }
             if(diff_volumeN!=NULL) {
-	      dd = 0;
+              dd = 0;
               for(;dd<3;dd++) {
                 diff_volumeN[3*shift+3*jj+dd] =
                 (diffL0[dd*(p+1)+pp0]*L1[pp1]*L2[pp2]+L0[pp0]*diffL1[dd*(p+1)+pp1]*L2[pp2]+L0[pp0]*L1[pp1]*diffL2[dd*(p+1)+pp2])*v+
