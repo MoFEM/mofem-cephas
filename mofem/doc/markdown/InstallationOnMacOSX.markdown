@@ -10,7 +10,7 @@ Had to run XCode standalone to say OK to license agreement.
 
 ###1. Open a terminal
 
-Create mofem install director:
+Create mofem install directory:
 ~~~~~~
 export MOFEM_INSTALL_DIR=$HOME/mofem_installation
 mkdir $MOFEM_INSTALL_DIR
@@ -41,8 +41,8 @@ git clone https://bitbucket.org/petsc/petsc.git
 cd $MOFEM_INSTALL_DIR/petsc
 
 # Fix PETSc vetsion
-# export PETSC_VERSION=3.5.6
-# git checkout tags/v$PETSC_VERSION
+export PETSC_VERSION=3.5.4
+git checkout tags/v$PETSC_VERSION
 
 # Configure and compile petsc:
 wget ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4.3.3.1.tar.gz
@@ -151,7 +151,8 @@ There are two ways of solving this problem:
 
   Then change the libraries that are not linked correclty e.g. `install_name_tool -change libboost_program_options.dylib $MOFEM_INSTALL_DIR/local/lib/libboost_program_options.dylib arc_length_nonlinear_elasticity`
 
-###9. Testing:
+###9. Testing
+
 ~~~~~~
 ctest -D Experimental
 ~~~~~~
