@@ -308,7 +308,7 @@ int main(int argc, char *argv[]) {
   ierr = PetscOptionsGetBool(NULL,"-save_postproc_mesh",&save_postproc_mesh,NULL); CHKERRQ(ierr);
   if(save_postproc_mesh) {
 
-    PostPocOnRefinedMesh post_proc(m_field);
+    PostProcVolumeOnRefinedMesh post_proc(m_field);
     ierr = post_proc.generateReferenceElementMesh(); CHKERRQ(ierr);
     ierr = post_proc.addFieldValuesPostProc("reEX"); CHKERRQ(ierr);
     ierr = post_proc.addFieldValuesPostProc("imEX"); CHKERRQ(ierr);

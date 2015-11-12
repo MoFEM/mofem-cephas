@@ -236,7 +236,7 @@ int main(int argc, char *argv[]) {
   ierr = elastic.setOperators("SPATIAL_POSITION"); CHKERRQ(ierr);
 
   //post_processing
-  PostPocOnRefinedMesh post_proc(m_field);
+  PostProcVolumeOnRefinedMesh post_proc(m_field);
   ierr = post_proc.generateReferenceElementMesh(); CHKERRQ(ierr);
   ierr = post_proc.addFieldValuesPostProc("SPATIAL_POSITION"); CHKERRQ(ierr);
   ierr = post_proc.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);

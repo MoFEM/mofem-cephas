@@ -148,9 +148,8 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
         &gaussPtsTrianglesOnly(2,0)
       ); CHKERRQ(ierr);
     } else {
-      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented yet");
-      // ierr = setGaussPtsTrianglesOnly(order_triangles_only); CHKERRQ(ierr);
-      // nb_gauss_pts_on_faces = gaussPtsTrianglesOnly.size2();
+      ierr = setGaussPtsTrianglesOnly(order_triangles_only); CHKERRQ(ierr);
+      nb_gauss_pts_on_faces = gaussPtsTrianglesOnly.size2();
     }
     if(nb_gauss_pts_on_faces == 0) PetscFunctionReturn(0);
     // calculate shape functions
@@ -197,9 +196,8 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
       ); CHKERRQ(ierr);
       // cerr << gaussPtsThroughThickness << endl;
     } else {
-      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented yet");
-      // ierr = setGaussPtsThroughThickness(order_thickness); CHKERRQ(ierr);
-      // nb_gauss_pts_through_thickness = gaussPtsThroughThickness.size2();
+      ierr = setGaussPtsThroughThickness(order_thickness); CHKERRQ(ierr);
+      nb_gauss_pts_through_thickness = gaussPtsThroughThickness.size2();
     }
     if(nb_gauss_pts_through_thickness == 0) PetscFunctionReturn(0);
     // calculate Legendre approx. on edges

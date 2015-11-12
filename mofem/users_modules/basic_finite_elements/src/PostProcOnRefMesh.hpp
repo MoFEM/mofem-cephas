@@ -3,8 +3,9 @@
  *
  * Create refined mesh, without enforcing continuity between element. Calculate
  * field values on nodes of that mesh.
- *
- * This file is part of MoFEM.
+ */
+
+/* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or (at your
@@ -24,7 +25,7 @@
 /** \brief Post processing
   * \ingroup mofem_fs_post_proc
   */
-struct PostPocOnRefinedMesh: public VolumeElementForcesAndSourcesCore {
+struct PostProcVolumeOnRefinedMesh: public VolumeElementForcesAndSourcesCore {
 
   moab::Core coreMesh;
   Interface &postProcMesh;
@@ -32,7 +33,7 @@ struct PostPocOnRefinedMesh: public VolumeElementForcesAndSourcesCore {
   bool tenNodesPostProcTets;
   int nbOfRefLevels;
 
-  PostPocOnRefinedMesh(FieldInterface &m_field,
+  PostProcVolumeOnRefinedMesh(FieldInterface &m_field,
     bool ten_nodes_post_proc_tets = true,
     int nb_ref_levels = -1
   ):
@@ -42,7 +43,7 @@ struct PostPocOnRefinedMesh: public VolumeElementForcesAndSourcesCore {
   nbOfRefLevels(nb_ref_levels) {
   }
 
-  virtual ~PostPocOnRefinedMesh() {
+  virtual ~PostProcVolumeOnRefinedMesh() {
     ParallelComm* pcomm_post_proc_mesh = ParallelComm::get_pcomm(&postProcMesh,MYPCOMM_INDEX);
     if(pcomm_post_proc_mesh != NULL) {
       delete pcomm_post_proc_mesh;
@@ -231,6 +232,8 @@ struct PostPocOnRefinedMesh: public VolumeElementForcesAndSourcesCore {
 
 
 };
+
+DEPRECATED typedef PostProcVolumeOnRefinedMesh PostPocOnRefinedMesh;
 
 #endif //__POSTPROC_ON_REF_MESH_HPP
 

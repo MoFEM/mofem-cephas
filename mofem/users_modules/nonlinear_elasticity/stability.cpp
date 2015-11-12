@@ -554,7 +554,7 @@ int main(int argc, char *argv[]) {
   PetscPrintf(PETSC_COMM_WORLD," Stopping condition: tol=%.4g, maxit=%D\n",(double)tol,maxit);
 
   //get solutions
-  PostPocOnRefinedMesh post_proc(m_field);
+  PostProcVolumeOnRefinedMesh post_proc(m_field);
   ierr = post_proc.generateReferenceElementMesh(); CHKERRQ(ierr);
   ierr = post_proc.addFieldValuesGradientPostProc("SPATIAL_POSITION"); CHKERRQ(ierr);
   ierr = post_proc.addFieldValuesPostProc("SPATIAL_POSITION"); CHKERRQ(ierr);

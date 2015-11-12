@@ -87,6 +87,17 @@ struct FatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
   virtual int getRuleTrianglesOnly(int order) { return order; };
   virtual int getRuleThroughThickness(int order) { return order; };
 
+  virtual PetscErrorCode setGaussPtsTrianglesOnly(int order_triangles_only)  {
+    PetscFunctionBegin;
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
+    PetscFunctionReturn(0);
+  }
+
+  virtual PetscErrorCode setGaussPtsThroughThickness(int order_thickness) {
+    PetscFunctionBegin;
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
+    PetscFunctionReturn(0);
+  }
 
   /** \brief default operator for Flat Prism element
     * \ingroup mofem_forces_and_sources_prism_element

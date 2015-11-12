@@ -66,7 +66,7 @@ static char help[] = "...\n\n";
 struct MonitorPostProc: public FEMethod {
 
   FieldInterface &mField;
-  PostPocOnRefinedMesh postProc;
+  PostProcVolumeOnRefinedMesh postProc;
   map<int, NonlinearElasticElement::BlockData> &setOfBlocks;
   NonlinearElasticElement::MyVolumeFE &feElasticEnergy;   ///< calculate elastic energy
   ConvectiveMassElement::MyVolumeFE &feKineticEnergy;     ///< calculate elastic energy

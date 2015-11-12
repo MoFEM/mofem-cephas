@@ -433,7 +433,7 @@ int main(int argc, char *argv[]) {
   }
   ierr = KSPSetUp(solver); CHKERRQ(ierr);
 
-  PostPocOnRefinedMesh post_proc(m_field);
+  PostProcVolumeOnRefinedMesh post_proc(m_field);
   ierr = post_proc.generateReferenceElementMesh(); CHKERRQ(ierr);
   ierr = post_proc.addFieldValuesPostProc("DISPLACEMENT"); CHKERRQ(ierr);
   ierr = post_proc.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);

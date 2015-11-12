@@ -23,7 +23,7 @@ using namespace MoFEM;
 using namespace boost::numeric;
 #include <PostProcOnRefMesh.hpp>
 
-PetscErrorCode PostPocOnRefinedMesh::generateReferenceElementMesh() {
+PetscErrorCode PostProcVolumeOnRefinedMesh::generateReferenceElementMesh() {
   PetscFunctionBegin;
 
   ErrorCode rval;
@@ -102,7 +102,7 @@ PetscErrorCode PostPocOnRefinedMesh::generateReferenceElementMesh() {
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode PostPocOnRefinedMesh::setGaussPts(int order) {
+PetscErrorCode PostProcVolumeOnRefinedMesh::setGaussPts(int order) {
   PetscFunctionBegin;
 
   try {
@@ -203,7 +203,7 @@ PetscErrorCode PostPocOnRefinedMesh::setGaussPts(int order) {
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode PostPocOnRefinedMesh::OpHdivFunctions::doWork(
+PetscErrorCode PostProcVolumeOnRefinedMesh::OpHdivFunctions::doWork(
   int side,
   EntityType type,
   DataForcesAndSurcesCore::EntData &data
@@ -248,7 +248,7 @@ PetscErrorCode PostPocOnRefinedMesh::OpHdivFunctions::doWork(
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode PostPocOnRefinedMesh::OpGetFieldValues::doWork(
+PetscErrorCode PostProcVolumeOnRefinedMesh::OpGetFieldValues::doWork(
   int side,
   EntityType type,
   DataForcesAndSurcesCore::EntData &data
@@ -374,7 +374,7 @@ PetscErrorCode PostPocOnRefinedMesh::OpGetFieldValues::doWork(
 
 }
 
-PetscErrorCode PostPocOnRefinedMesh::OpGetFieldGradientValues::doWork(
+PetscErrorCode PostProcVolumeOnRefinedMesh::OpGetFieldGradientValues::doWork(
   int side,
   EntityType type,
   DataForcesAndSurcesCore::EntData &data
@@ -469,13 +469,13 @@ PetscErrorCode PostPocOnRefinedMesh::OpGetFieldGradientValues::doWork(
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode PostPocOnRefinedMesh::addHdivFunctionsPostProc(const string field_name) {
+PetscErrorCode PostProcVolumeOnRefinedMesh::addHdivFunctionsPostProc(const string field_name) {
   PetscFunctionBegin;
   getOpPtrVector().push_back(new OpHdivFunctions(postProcMesh,mapGaussPts,field_name));
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode PostPocOnRefinedMesh::addFieldValuesPostProc(const string field_name,Vec v) {
+PetscErrorCode PostProcVolumeOnRefinedMesh::addFieldValuesPostProc(const string field_name,Vec v) {
   PetscFunctionBegin;
   getOpPtrVector().push_back(
     new OpGetFieldValues(postProcMesh,mapGaussPts,field_name,field_name,commonData,v)
@@ -483,7 +483,7 @@ PetscErrorCode PostPocOnRefinedMesh::addFieldValuesPostProc(const string field_n
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode PostPocOnRefinedMesh::addFieldValuesPostProc(const string field_name,const string tag_name,Vec v) {
+PetscErrorCode PostProcVolumeOnRefinedMesh::addFieldValuesPostProc(const string field_name,const string tag_name,Vec v) {
   PetscFunctionBegin;
   getOpPtrVector().push_back(
     new OpGetFieldValues(postProcMesh,mapGaussPts,field_name,tag_name,commonData,v)
@@ -491,7 +491,7 @@ PetscErrorCode PostPocOnRefinedMesh::addFieldValuesPostProc(const string field_n
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode PostPocOnRefinedMesh::addFieldValuesGradientPostProc(const string field_name,Vec v) {
+PetscErrorCode PostProcVolumeOnRefinedMesh::addFieldValuesGradientPostProc(const string field_name,Vec v) {
   PetscFunctionBegin;
   getOpPtrVector().push_back(
     new OpGetFieldGradientValues(postProcMesh,mapGaussPts,field_name,field_name+"_GRAD",commonData,v)
@@ -499,7 +499,7 @@ PetscErrorCode PostPocOnRefinedMesh::addFieldValuesGradientPostProc(const string
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode PostPocOnRefinedMesh::addFieldValuesGradientPostProc(const string field_name,const string tag_name,Vec v) {
+PetscErrorCode PostProcVolumeOnRefinedMesh::addFieldValuesGradientPostProc(const string field_name,const string tag_name,Vec v) {
   PetscFunctionBegin;
   getOpPtrVector().push_back(
     new OpGetFieldGradientValues(postProcMesh,mapGaussPts,field_name,tag_name,commonData,v)
@@ -507,13 +507,13 @@ PetscErrorCode PostPocOnRefinedMesh::addFieldValuesGradientPostProc(const string
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode PostPocOnRefinedMesh::clearOperators() {
+PetscErrorCode PostProcVolumeOnRefinedMesh::clearOperators() {
   PetscFunctionBegin;
   getOpPtrVector().clear();
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode PostPocOnRefinedMesh::preProcess() {
+PetscErrorCode PostProcVolumeOnRefinedMesh::preProcess() {
   PetscFunctionBegin;
   ErrorCode rval;
   ParallelComm* pcomm_post_proc_mesh = ParallelComm::get_pcomm(&postProcMesh,MYPCOMM_INDEX);
@@ -524,7 +524,7 @@ PetscErrorCode PostPocOnRefinedMesh::preProcess() {
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode PostPocOnRefinedMesh::postProcess() {
+PetscErrorCode PostProcVolumeOnRefinedMesh::postProcess() {
   PetscFunctionBegin;
 
   ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
