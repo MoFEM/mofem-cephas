@@ -1,13 +1,8 @@
 /** \file CoreDataStructures.cpp
- * \brief Myltindex containes, data structures and other low-level functions 
- * 
- * Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl) <br>
- *
- * The MoFEM package is copyrighted by Lukasz Kaczmarczyk. 
- * It can be freely used for educational and research purposes 
- * by other institutions. If you use this softwre pleas cite my work. 
- *
- * MoFEM is free software: you can redistribute it and/or modify it under
+ * \brief Mylti-index containers, data structures and other low-level functions
+ */
+
+/* MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or (at your
  * option) any later version.
@@ -21,14 +16,25 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 */
 
-#include <petscsys.h>
-#include <cblas.h>
-
+#include <Includes.hpp>
 #include <definitions.h>
+#include <Common.hpp>
+
 #include <h1_hdiv_hcurl_l2.h>
 
-#include <Common.hpp>
+#include <MaterialBlocks.hpp>
+#include <CubitBCData.hpp>
+#include <TagMultiIndices.hpp>
+#include <FieldMultiIndices.hpp>
+#include <EntsMultiIndices.hpp>
+#include <DofsMultiIndices.hpp>
+#include <FEMMultiIndices.hpp>
+#include <ProblemsMultiIndices.hpp>
+#include <AdjacencyMultiIndices.hpp>
+#include <BCMultiIndices.hpp>
 #include <CoreDataStructures.hpp>
+#include <SeriesMultiIndices.hpp>
+
 
 namespace MoFEM {
 
@@ -46,7 +52,7 @@ PetscErrorCode CubitMeshSets::get_tags_hanlders(Interface &moab) {
   rval = moab.tag_get_handle(NAME_TAG_NAME,entityNameTag); CHKERR(rval);CHKERR_THROW(rval);
   PetscFunctionReturn(0);
 }
-CubitMeshSets::CubitMeshSets(Interface &moab,const EntityHandle _meshset): 
+CubitMeshSets::CubitMeshSets(Interface &moab,const EntityHandle _meshset):
   meshset(_meshset),cubit_bc_type(UNKNOWNSET),msId(NULL),tag_bc_data(NULL),tag_bc_size(0),
   tag_block_header_data(NULL),tag_block_attributes(NULL),tag_block_attributes_size(0),tag_name_data(NULL),
   meshsets_mask(NODESET|SIDESET|BLOCKSET) {
@@ -106,7 +112,7 @@ CubitMeshSets::CubitMeshSets(Interface &moab,const EntityHandle _meshset):
   }
 
   //If BC set has name, unset UNKNOWNCUBITNAME
-  if(cubit_bc_type.to_ulong() & (	  
+  if(cubit_bc_type.to_ulong() & (
       DISPLACEMENTSET|
       FORCESET|
       PRESSURESET|
@@ -115,14 +121,14 @@ CubitMeshSets::CubitMeshSets(Interface &moab,const EntityHandle _meshset):
       TEMPERATURESET|
       HEATFLUXSET|
       INTERFACESET) ) {
-     
+
       if( (cubit_bc_type & CubitBCType(UNKNOWNCUBITNAME)).any() ) {
-	cubit_bc_type = cubit_bc_type & (~CubitBCType(UNKNOWNCUBITNAME));  
+	cubit_bc_type = cubit_bc_type & (~CubitBCType(UNKNOWNCUBITNAME));
       }
   }
 
 }
-CubitMeshSets::CubitMeshSets(Interface &moab,const CubitBCType _cubit_bc_type,const int _msId): 
+CubitMeshSets::CubitMeshSets(Interface &moab,const CubitBCType _cubit_bc_type,const int _msId):
   cubit_bc_type(_cubit_bc_type),msId(NULL),
   tag_bc_data(NULL),tag_bc_size(0),
   tag_block_header_data(NULL),
@@ -165,7 +171,7 @@ PetscErrorCode CubitMeshSets::get_cubit_msId_entities_by_dimension(Interface &mo
   PetscFunctionBegin;
   ErrorCode rval;
   //rval = moab.list_entity(meshset); CHKERR_PETSC(rval);
-  rval = moab.get_entities_by_dimension(meshset,dimension,entities,recursive); 
+  rval = moab.get_entities_by_dimension(meshset,dimension,entities,recursive);
   if(rval !=  MB_SUCCESS) {
     ostringstream ss;
     ss << "bc set " << *this << endl;
@@ -192,7 +198,7 @@ PetscErrorCode CubitMeshSets::get_cubit_msId_entities_by_type(Interface &moab,co
   PetscFunctionBegin;
   ErrorCode rval;
   //rval = moab.list_entity(meshset); CHKERR_PETSC(rval);
-  rval = moab.get_entities_by_type(meshset,type,entities,recursive); 
+  rval = moab.get_entities_by_type(meshset,type,entities,recursive);
   if(rval !=  MB_SUCCESS) {
     ostringstream ss;
     ss << "bc set " << *this << endl;
@@ -241,7 +247,7 @@ string CubitMeshSets::get_name() const {
     return "NoNameSet";
   }
 }
-    
+
 PetscErrorCode CubitMeshSets::print_name(ostream& os) const {
     PetscFunctionBegin;
     string name = get_name();
@@ -249,15 +255,15 @@ PetscErrorCode CubitMeshSets::print_name(ostream& os) const {
     os << "Block name:  " << name << endl;
     PetscFunctionReturn(0);
 }
-           
+
 PetscErrorCode CubitMeshSets::get_type_from_bc_data(const vector<char> &bc_data,CubitBCType &type) const {
     PetscFunctionBegin;
-    
+
     //See CubitBCType in common.hpp
     if(bc_data.size()==0) {
       PetscFunctionReturn(0);
     }
-    
+
     if (strcmp (&bc_data[0],"Displacement") == 0)
         type |= DISPLACEMENTSET;
     else if (strcmp (&bc_data[0],"Force") == 0)
@@ -275,7 +281,7 @@ PetscErrorCode CubitMeshSets::get_type_from_bc_data(const vector<char> &bc_data,
     else if (strcmp (&bc_data[0],"cfd_bc") == 0)
         type |= INTERFACESET;
     else SETERRQ(PETSC_COMM_SELF,1,"this bc_data is unknown");
-    
+
     PetscFunctionReturn(0);
 }
 PetscErrorCode CubitMeshSets::get_type_from_bc_data(CubitBCType &type) const {
@@ -311,7 +317,7 @@ PetscErrorCode CubitMeshSets::get_attributes(vector<double>& attributes) const {
   }
   PetscFunctionReturn(0);
 }
-    
+
 PetscErrorCode CubitMeshSets::print_attributes(ostream& os) const {
     PetscFunctionBegin;
     vector<double> attributes;
@@ -341,9 +347,9 @@ PetscErrorCode CubitMeshSets::get_type_from_name(const string &name,CubitBCType 
         type |= MAT_INTERFSET; }
     else if (name.compare(0,11,"BODY_FORCES") == 0) {
 	type |= BODYFORCESSET; }
-    
+
         //To be extended as appropriate
-    
+
     else { type |= UNKNOWNCUBITNAME; }
 
     PetscFunctionReturn(0);
@@ -356,7 +362,7 @@ PetscErrorCode CubitMeshSets::get_type_from_name(CubitBCType &type) const {
     ierr = get_type_from_name(name,type); CHKERRQ(ierr);
     PetscFunctionReturn(0);
 }
-    
+
 ostream& operator<<(ostream& os,const CubitMeshSets& e) {
   os << "meshset " << e.meshset << " type " << e.cubit_bc_type;
   if(e.msId != NULL) os << " msId " << *(e.msId);
@@ -381,7 +387,7 @@ ostream& operator<<(ostream& os,const DisplacementCubitBcData& e) {
     os << "Flag for X-Rotation (0/1): " << (int)e.data.flag4 << "\n";
     os << "Flag for Y-Rotation (0/1): " << (int)e.data.flag5 << "\n";
     os << "Flag for Z-Rotation (0/1): " << (int)e.data.flag6 << "\n \n";
-    
+
     if (e.data.flag1 == 1)
         os << "Displacement magnitude (X-Translation): " << e.data.value1 << "\n";
     else os << "Displacement magnitude (X-Translation): N/A" << "\n";
@@ -440,7 +446,7 @@ ostream& operator<<(ostream& os,const VelocityCubitBcData& e) {
     else os << "Velocity magnitude (Z-Rotation): N/A" << "\n \n";
     return os;
 }
- 
+
 ostream& operator<<(ostream& os,const AccelerationCubitBcData& e) {
     os << "\n";
     os << "A c c e l e r a t i o n \n \n";
@@ -505,15 +511,15 @@ ostream& operator<<(ostream& os,const HeatFluxCubitBcData& e) {
     if (e.data.flag3 == 1)
         os << "Heat flux value (thin shell bottom): " << e.data.value3 << "\n \n";
     else os << "Heat flux value (thin shell bottom): N/A" << "\n \n";
-    return os;   
+    return os;
 }
 
 ostream& operator<<(ostream& os,const CfgCubitBcData& e) {
     os << "\n";
     os << "CFD BC \n \n";
-    return os;   
+    return os;
 }
- 
+
 ostream& operator<<(ostream& os,const BlockSetAttributes& e)
   {
     os << endl << "Blcok attributes" << endl;
@@ -530,7 +536,7 @@ ostream& operator<<(ostream& os,const BlockSetAttributes& e)
     os << "User attribute 10 = " << e.data.User10 << endl << endl;
     return os;
   }
-       
+
 ostream& operator<<(ostream& os,const Mat_Elastic& e)
     {
         os << endl << "Material Properties" << endl;
@@ -565,7 +571,7 @@ ostream& operator<<(ostream& os,const Mat_Elastic_EberleinHolzapfel1& e)
         return os;
     }
 
-    
+
 ostream& operator<<(ostream& os,const Mat_Thermal& e)
     {
         os << endl << "Material Properties" << endl;
@@ -581,9 +587,9 @@ ostream& operator<<(ostream& os,const Mat_Thermal& e)
         os << "User attribute 8 = " << e.data.User8 << endl << endl;
         return os;
     }
-  
-  
-  
+
+
+
 ostream& operator<<(ostream& os,const Mat_Moisture& e) {
   os << endl << "Material Properties" << endl;
   os << "-------------------" << endl;
@@ -600,7 +606,7 @@ ostream& operator<<(ostream& os,const Mat_Moisture& e) {
 }
 
 
-  
+
 ostream& operator<<(ostream& os,const Block_BodyForces& e) {
   os << endl << "Block Body Forces" << endl;
   os << "-------------------" << endl;
@@ -616,7 +622,7 @@ ostream& operator<<(ostream& os,const Block_BodyForces& e) {
   return os;
 }
 
-    
+
 ostream& operator<<(ostream& os,const Mat_Elastic_TransIso& e) {
     os << endl << "Material Properties" << endl;
     os << "-------------------" << endl;
@@ -627,7 +633,7 @@ ostream& operator<<(ostream& os,const Mat_Elastic_TransIso& e) {
     os << "Shear modulus in z-direction (Gzp)   = " << e.data.Shearzp << endl << endl;
     return os;
 }
-    
+
 ostream& operator<<(ostream& os,const Mat_Interf& e) {
     os << endl << "Material Properties" << endl;
     os << "-------------------" << endl;
@@ -638,5 +644,5 @@ ostream& operator<<(ostream& os,const Mat_Interf& e) {
 
     return os;
 }
-    
+
 }

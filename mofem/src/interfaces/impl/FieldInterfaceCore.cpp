@@ -1,10 +1,10 @@
 /** \file FieldInterfaceCore.cpp
- * \brief Myltindex containes, data structures and other low-level functions
+ * \brief Mylti-index containers, data structures and other low-level functions
  */
 
 /* The MoFEM package is copyrighted by Lukasz Kaczmarczyk.
  * It can be freely used for educational and research purposes
- * by other institutions. If you use this softwre pleas cite my work.
+ * by other institutions. If you use this software pleas cite my work.
  *
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -20,24 +20,32 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 */
 
-#include <moab/ParallelComm.hpp>
-
-#include <petscsys.h>
-#include <petscvec.h>
-#include <petscmat.h>
-#include <petscsnes.h>
-#include <petscts.h>
-
+#include <Includes.hpp>
+#include <version.h>
 #include <definitions.h>
+#include <Common.hpp>
+
 #include <h1_hdiv_hcurl_l2.h>
 
-#include <Common.hpp>
-#include <LoopMethods.hpp>
-
-#include <boost/ptr_container/ptr_map.hpp>
-#include <Core.hpp>
-
+#include <MaterialBlocks.hpp>
+#include <CubitBCData.hpp>
+#include <TagMultiIndices.hpp>
+#include <FieldMultiIndices.hpp>
+#include <EntsMultiIndices.hpp>
+#include <DofsMultiIndices.hpp>
+#include <FEMMultiIndices.hpp>
+#include <ProblemsMultiIndices.hpp>
+#include <AdjacencyMultiIndices.hpp>
+#include <BCMultiIndices.hpp>
 #include <CoreDataStructures.hpp>
+#include <SeriesMultiIndices.hpp>
+
+#include <LoopMethods.hpp>
+#include <FieldInterface.hpp>
+#include <MeshRefinment.hpp>
+#include <PrismInterface.hpp>
+#include <SeriesRecorder.hpp>
+#include <Core.hpp>
 
 namespace MoFEM {
 

@@ -17,10 +17,6 @@
 #ifndef __MOABFIELD_CORE_HPP__
 #define __MOABFIELD_CORE_HPP__
 
-#include "FieldInterface.hpp"
-#include "MeshRefinment.hpp"
-#include "PrismInterface.hpp"
-#include "SeriesRecorder.hpp"
 
 namespace MoFEM {
 

@@ -15,37 +15,34 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 */
 
-#include <moab/Skinner.hpp>
-#include <moab/ParallelComm.hpp>
-
-#include <petscsys.h>
-#include <petscvec.h>
-#include <petscmat.h>
-#include <petscsnes.h>
-#include <petscts.h>
-
+#include <Includes.hpp>
+#include <version.h>
 #include <definitions.h>
-#include <h1_hdiv_hcurl_l2.h>
-
 #include <Common.hpp>
 
-#include <LoopMethods.hpp>
+#include <h1_hdiv_hcurl_l2.h>
 
-#include <boost/ptr_container/ptr_map.hpp>
+#include <MaterialBlocks.hpp>
+#include <CubitBCData.hpp>
+#include <TagMultiIndices.hpp>
+#include <FieldMultiIndices.hpp>
+#include <EntsMultiIndices.hpp>
+#include <DofsMultiIndices.hpp>
+#include <FEMMultiIndices.hpp>
+#include <ProblemsMultiIndices.hpp>
+#include <AdjacencyMultiIndices.hpp>
+#include <BCMultiIndices.hpp>
+#include <CoreDataStructures.hpp>
+#include <SeriesMultiIndices.hpp>
+
+#include <LoopMethods.hpp>
+#include <FieldInterface.hpp>
+#include <MeshRefinment.hpp>
+#include <PrismInterface.hpp>
+#include <SeriesRecorder.hpp>
 #include <Core.hpp>
 
-#include <CoreDataStructures.hpp>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-  #include <cblas.h>
-  #include <lapack_wrap.h>
-#ifdef __cplusplus
-}
-#endif
-
-#include "TETRefine.cpp"
+#include <EntityRefine.hpp>
 
 namespace MoFEM {
 

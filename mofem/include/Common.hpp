@@ -1,5 +1,5 @@
 /** \file common.hpp
- * \brief Myltindex containes, data structures and other low-level functions
+ * \brief Mylti-index containers, data structures and other low-level functions
  *
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -18,50 +18,6 @@
 #ifndef __COMMON_HPP__
 #define __COMMON_HPP__
 
-#include "config.h"
-#include "definitions.h"
-
-//STL
-#include<string>
-#include<ostream>
-#include<sstream>
-#include<algorithm>
-#include<vector>
-#include<set>
-#include<map>
-#include<float.h>
-#include<limits.h>
-#include<bitset>
-#include<exception>
-
-//BOOST
-#include <boost/multi_index_container.hpp>
-#include <boost/multi_index/ordered_index.hpp>
-#include <boost/multi_index/hashed_index.hpp>
-#include <boost/multi_index/sequenced_index.hpp>
-#include <boost/multi_index/identity.hpp>
-#include <boost/multi_index/member.hpp>
-#include <boost/multi_index/mem_fun.hpp>
-#include <boost/multi_index/global_fun.hpp>
-#include <boost/multi_index/composite_key.hpp>
-#include <boost/iterator/transform_iterator.hpp>
-#include <boost/multiprecision/cpp_int.hpp>
-#include <boost/utility/string_ref.hpp>
-
-//MOAB
-#include<moab/Core.hpp>
-#include<moab/Interface.hpp>
-#include<moab/Range.hpp>
-#include<MBTagConventions.hpp>
-
-using namespace moab;
-using namespace std;
-
-using boost::multi_index_container;
-using namespace boost::multi_index;
-using namespace boost::multiprecision;
-using namespace boost::numeric;
-
 namespace MoFEM {
 
 typedef ErrorCode MoABErrorCode;
@@ -79,7 +35,7 @@ typedef int ApproximationRank;
 const int max_ApproximationOrder = 10;
 
 //typedefs
-const EntityHandle no_handle = (EntityHandle)-1;
+const EntityHandle no_handle = 0;
 typedef uint128_t UId;
 //typedef checked_uint128_tUId;
 typedef int ShortId;
@@ -200,49 +156,8 @@ struct MoFEMException: public std::exception {
  */
 typedef bitset<32> CubitBCType;
 
-/**
-  * Tyeps of sets and boundary conditions
-  *
-  */
-enum CubitBC {
-  UNKNOWNSET = 0,
-  NODESET = 1<<0,
-  SIDESET = 1<<1,
-  BLOCKSET = 1<<2,
-  MATERIALSET = 1<<3,
-  DISPLACEMENTSET = 1<<4,
-  FORCESET = 1<<5,
-  PRESSURESET = 1<<6,
-  VELOCITYSET = 1<<7,
-  ACCELERATIONSET = 1<<8,
-  TEMPERATURESET = 1<<9,
-  HEATFLUXSET = 1<<10,
-  INTERFACESET = 1<<11,
-  UNKNOWNCUBITNAME = 1<< 12,
-  MAT_ELASTICSET = 1<<13,	///< block name is "MAT_ELASTIC"
-  MAT_INTERFSET = 1 <<14,
-  MAT_THERMALSET = 1<<15,	///< block name is "MAT_THERMAL"
-  BODYFORCESSET = 1<<16,	///< block name is "BODY_FORCES"
-  MAT_MOISTURESET = 1<<17, 	///< block name is "MAT_MOISTURE"
-  LASTCUBITSET
-};
 
 }
-
-//BLOCK/MESHET ATTRIBUTES
-#include "MaterialBlocks.hpp"
-#include "CubitBCData.hpp"
-
-//MULTIINDICES
-#include "TagMultiIndices.hpp"
-#include "FieldMultiIndices.hpp"
-#include "EntsMultiIndices.hpp"
-#include "DofsMultiIndices.hpp"
-#include "FEMMultiIndices.hpp"
-#include "ProblemsMultiIndices.hpp"
-#include "AdjacencyMultiIndices.hpp"
-#include "BCMultiIndices.hpp"
-#include "SeriesMultiIndices.hpp"
 
 #endif //__COMMON_HPP__
 
