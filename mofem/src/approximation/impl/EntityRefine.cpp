@@ -1082,27 +1082,27 @@ PetscErrorCode tri_type_3(
 ) {
   PetscFunctionBegin;
   int ee = 0;
-  for(;ee<6;ee++) {
+  for(;ee<3;ee++) {
     if(!split_edges.test(ee)) {
       SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
     }
   }
   //TRI0
-  new_tris_conn[0*6 + 0] = edge_new_nodes[0];
-  new_tris_conn[0*6 + 1] = edge_new_nodes[2];
-  new_tris_conn[0*6 + 2] = conn[0];
+  new_tris_conn[0*3 + 0] = edge_new_nodes[0];
+  new_tris_conn[0*3 + 1] = edge_new_nodes[2];
+  new_tris_conn[0*3 + 2] = conn[0];
   //TRI1
-  new_tris_conn[1*6 + 0] = edge_new_nodes[0];
-  new_tris_conn[1*6 + 1] = edge_new_nodes[1];
-  new_tris_conn[1*6 + 2] = conn[1];
+  new_tris_conn[1*3 + 0] = edge_new_nodes[0];
+  new_tris_conn[1*3 + 1] = edge_new_nodes[1];
+  new_tris_conn[1*3 + 2] = conn[1];
   //TRI2
-  new_tris_conn[2*6 + 0] = edge_new_nodes[1];
-  new_tris_conn[2*6 + 1] = edge_new_nodes[2];
-  new_tris_conn[2*6 + 2] = conn[2];
+  new_tris_conn[2*3 + 0] = edge_new_nodes[1];
+  new_tris_conn[2*3 + 1] = edge_new_nodes[2];
+  new_tris_conn[2*3 + 2] = conn[2];
   //TRI3
-  new_tris_conn[3*6 + 0] = edge_new_nodes[0];
-  new_tris_conn[3*6 + 1] = edge_new_nodes[1];
-  new_tris_conn[3*6 + 2] = edge_new_nodes[2];
+  new_tris_conn[3*3 + 0] = edge_new_nodes[0];
+  new_tris_conn[3*3 + 1] = edge_new_nodes[1];
+  new_tris_conn[3*3 + 2] = edge_new_nodes[2];
   PetscFunctionReturn(0);
 }
 
