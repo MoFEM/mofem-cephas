@@ -1,7 +1,7 @@
 /** \file FieldBlas.cpp
  * \brief Mylti-index containers, data structures and other low-level functions
  */
- 
+
 /* MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or (at your
@@ -17,7 +17,6 @@
 */
 
 #include <Includes.hpp>
-#include <version.h>
 #include <definitions.h>
 #include <Common.hpp>
 

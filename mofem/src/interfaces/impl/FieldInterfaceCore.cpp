@@ -21,7 +21,6 @@
 */
 
 #include <Includes.hpp>
-#include <version.h>
 #include <definitions.h>
 #include <Common.hpp>
 
