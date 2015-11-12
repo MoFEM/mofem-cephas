@@ -23,6 +23,225 @@ using namespace MoFEM;
 using namespace boost::numeric;
 #include <PostProcOnRefMesh.hpp>
 
+PetscErrorCode PostProcCommonOnRefMesh::OpGetFieldValues::doWork(
+  int side,
+  EntityType type,
+  DataForcesAndSurcesCore::EntData &data
+) {
+  PetscFunctionBegin;
+
+  ErrorCode rval;
+  PetscErrorCode ierr;
+
+  if(data.getFieldData().size()==0) PetscFunctionReturn(0);
+  if(V) {
+    vAlues.resize(data.getFieldData().size());
+    double *a;
+    ierr = VecGetArray(V,&a); CHKERRQ(ierr);
+    VectorDofs::iterator it,hi_it;
+    it = data.getFieldDofs().begin();
+    hi_it = data.getFieldDofs().end();
+    for(int ii = 0;it!=hi_it;it++,ii++) {
+      int local_idx = getFEMethod()->rowPtr->find((*it)->get_global_unique_id())->get_petsc_local_dof_idx();
+      vAlues[ii] = a[local_idx];
+    }
+    ierr = VecRestoreArray(V,&a); CHKERRQ(ierr);
+    vAluesPtr = &vAlues;
+  } else {
+    vAluesPtr = &data.getFieldData();
+  }
+
+  const MoFEM::FEDofMoFEMEntity *dof_ptr = data.getFieldDofs()[0];
+  int rank = dof_ptr->get_max_rank();
+
+  int tag_length = rank;
+  FieldSpace space = dof_ptr->get_space();
+  switch(space) {
+    case L2:
+    case H1:
+    break;
+    case HCURL:
+    case HDIV:
+    tag_length *= 3;
+    break;
+    default:
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"field with that space is not implemented");
+  }
+
+  if(tag_length>1 && tag_length < 3) {
+    tag_length = 3;
+  } else if(tag_length > 3 && tag_length < 9) {
+    tag_length = 9;
+  }
+
+  double def_VAL[tag_length];
+  bzero(def_VAL,tag_length*sizeof(double));
+  Tag th;
+  rval = postProcMesh.tag_get_handle(
+    tagName.c_str(),tag_length,MB_TYPE_DOUBLE,th,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL
+  ); CHKERR_PETSC(rval);
+
+  // zero tags, this for Vertex if H1 and TRI if Hdiv, EDGE for Hcurl
+  // no need for L2
+  const void* tags_ptr[mapGaussPts.size()];
+  int nb_gauss_pts = data.getN().size1();
+  if(mapGaussPts.size()!=(unsigned int)nb_gauss_pts) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
+  }
+
+  switch(space) {
+    case H1:
+    commonData.fieldMap[rowFieldName].resize(nb_gauss_pts);
+    if(type == MBVERTEX) {
+      for(int gg = 0;gg<nb_gauss_pts;gg++) {
+        rval = postProcMesh.tag_set_data(th,&mapGaussPts[gg],1,def_VAL); CHKERR_PETSC(rval);
+        (commonData.fieldMap[rowFieldName])[gg].resize(rank);
+        (commonData.fieldMap[rowFieldName])[gg].clear();
+      }
+    }
+    rval = postProcMesh.tag_get_by_ptr(th,&mapGaussPts[0],mapGaussPts.size(),tags_ptr); CHKERR_PETSC(rval);
+    for(int gg = 0;gg<nb_gauss_pts;gg++) {
+      for(int rr = 0;rr<rank;rr++) {
+        ((double*)tags_ptr[gg])[rr] += cblas_ddot(
+          (vAluesPtr->size()/rank),&(data.getN(gg)[0]),1,&((*vAluesPtr)[rr]),rank
+        );
+        (commonData.fieldMap[rowFieldName])[gg][rr] += (*vAluesPtr)[rr];
+      }
+    }
+    break;
+    case L2:
+    rval = postProcMesh.tag_get_by_ptr(
+      th,&mapGaussPts[0],mapGaussPts.size(),tags_ptr
+    ); CHKERR_PETSC(rval);
+    for(int gg = 0;gg<nb_gauss_pts;gg++) {
+      bzero((double*)tags_ptr[gg],sizeof(double)*tag_length);
+      for(int rr = 0;rr<rank;rr++) {
+        ((double*)tags_ptr[gg])[rr] = cblas_ddot(
+          (vAluesPtr->size()/rank),&(data.getN(gg)[0]),1,&((*vAluesPtr)[rr]),rank
+        );
+      }
+    }
+    break;
+    case HDIV:
+    if(type == MBTRI && side == 0) {
+      for(int gg = 0;gg<nb_gauss_pts;gg++) {
+        rval = postProcMesh.tag_set_data(th,&mapGaussPts[gg],1,def_VAL); CHKERR_PETSC(rval);
+      }
+    }
+    rval = postProcMesh.tag_get_by_ptr(th,&mapGaussPts[0],mapGaussPts.size(),tags_ptr); CHKERR_PETSC(rval);
+    for(int gg = 0;gg<nb_gauss_pts;gg++) {
+      for(int rr = 0;rr<rank;rr++) {
+        for(int dd = 0;dd<3;dd++) {
+          ((double*)tags_ptr[gg])[3*rr+dd] += cblas_ddot(
+            (vAluesPtr->size()/rank),&(data.getHdivN(gg)(0,dd)),3,&((*vAluesPtr)[rr]),rank
+          );
+
+        }
+      }
+    }
+    break;
+    default:
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"field with that space is not implemented");
+  }
+
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode PostProcCommonOnRefMesh::OpGetFieldGradientValues::doWork(
+  int side,
+  EntityType type,
+  DataForcesAndSurcesCore::EntData &data
+) {
+  PetscFunctionBegin;
+
+  ErrorCode rval;
+  PetscErrorCode ierr;
+
+  if(data.getFieldData().size()==0) PetscFunctionReturn(0);
+  if(V) {
+    vAlues.resize(data.getFieldData().size());
+    double *a;
+    ierr = VecGetArray(V,&a); CHKERRQ(ierr);
+    VectorDofs::iterator it,hi_it;
+    it = data.getFieldDofs().begin();
+    hi_it = data.getFieldDofs().end();
+    for(int ii = 0;it!=hi_it;it++,ii++) {
+      int local_idx = getFEMethod()->rowPtr->find((*it)->get_global_unique_id())->get_petsc_local_dof_idx();
+      vAlues[ii] = a[local_idx];
+    }
+    ierr = VecRestoreArray(V,&a); CHKERRQ(ierr);
+    vAluesPtr = &vAlues;
+  } else {
+    vAluesPtr = &data.getFieldData();
+  }
+
+  const MoFEM::FEDofMoFEMEntity *dof_ptr = data.getFieldDofs()[0];
+  int rank = dof_ptr->get_max_rank();
+
+  int tag_length = rank*3;
+  FieldSpace space = dof_ptr->get_space();
+  switch(space) {
+    case L2:
+    case H1:
+    break;
+    case HCURL:
+    case HDIV:
+    tag_length *= 3;
+    break;
+    default:
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"field with that space is not implemented");
+  }
+
+  double def_VAL[tag_length];
+  bzero(def_VAL,tag_length*sizeof(double));
+  Tag th;
+  rval = postProcMesh.tag_get_handle(tagName.c_str(),tag_length,MB_TYPE_DOUBLE,th,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_PETSC(rval);
+
+  // zero tags, this for Vertex if H1 and TRI if Hdiv, EDGE for Hcurl
+  // no need for L2
+  const void* tags_ptr[mapGaussPts.size()];
+  int nb_gauss_pts = data.getN().size1();
+  if(mapGaussPts.size()!=(unsigned int)nb_gauss_pts) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
+  }
+
+  try {
+
+    switch(space) {
+      case H1:
+      commonData.gradMap[rowFieldName].resize(nb_gauss_pts);
+      if(type == MBVERTEX) {
+        for(int gg = 0;gg<nb_gauss_pts;gg++) {
+          rval = postProcMesh.tag_set_data(th,&mapGaussPts[gg],1,def_VAL); CHKERR_PETSC(rval);
+          (commonData.gradMap[rowFieldName])[gg].resize(rank,3);
+          (commonData.gradMap[rowFieldName])[gg].clear();
+        }
+      }
+      rval = postProcMesh.tag_get_by_ptr(th,&mapGaussPts[0],mapGaussPts.size(),tags_ptr); CHKERR_PETSC(rval);
+      for(int gg = 0;gg<nb_gauss_pts;gg++) {
+        for(int rr = 0;rr<rank;rr++) {
+          for(int dd = 0;dd<3;dd++) {
+            for(unsigned int dof = 0;dof<(vAluesPtr->size()/rank);dof++) {
+              ((double*)tags_ptr[gg])[rank*rr+dd] += data.getDiffN(gg)(dof,dd)*(*vAluesPtr)[rank*dof+rr];
+              (commonData.gradMap[rowFieldName])[gg](rr,dd) += data.getDiffN(gg)(dof,dd)*(*vAluesPtr)[rank*dof+rr];
+            }
+          }
+        }
+      }
+      break;
+      default:
+      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"field with that space is not implemented");
+    }
+
+  } catch (exception& ex) {
+    ostringstream ss;
+    ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+    SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+  }
+
+  PetscFunctionReturn(0);
+}
+
 PetscErrorCode PostProcVolumeOnRefinedMesh::generateReferenceElementMesh() {
   PetscFunctionBegin;
 
@@ -203,310 +422,6 @@ PetscErrorCode PostProcVolumeOnRefinedMesh::setGaussPts(int order) {
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode PostProcVolumeOnRefinedMesh::OpHdivFunctions::doWork(
-  int side,
-  EntityType type,
-  DataForcesAndSurcesCore::EntData &data
-) {
-  PetscFunctionBegin;
-
-  if(data.getIndices().size()==0) PetscFunctionReturn(0);
-
-  ErrorCode rval;
-  PetscErrorCode ierr;
-
-  vector<Tag> th;
-  th.resize(data.getFieldData().size());
-
-  double def_VAL[9] = { 0,0,0 };
-
-  switch(type) {
-    case MBTRI:
-    for(unsigned int dd = 0;dd<data.getHdivN().size2()/3;dd++) {
-      ostringstream ss;
-      ss << "HDIV_FACE_" << side << "_" << dd;
-      rval = postProcMesh.tag_get_handle(ss.str().c_str(),3,MB_TYPE_DOUBLE,th[dd],MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_PETSC(rval);
-    }
-    break;
-    case MBTET:
-    for(unsigned int dd = 0;dd<data.getHdivN().size2()/3;dd++) {
-      ostringstream ss;
-      ss << "HDIV_TET_" << dd;
-      rval = postProcMesh.tag_get_handle(ss.str().c_str(),3,MB_TYPE_DOUBLE,th[dd],MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_PETSC(rval);
-    }
-    break;
-    default:
-    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
-  }
-
-  for(unsigned int gg = 0;gg<data.getHdivN().size1();gg++) {
-    for(unsigned int dd = 0;dd<data.getHdivN().size2()/3;dd++) {
-      ierr = postProcMesh.tag_set_data(th[dd],&mapGaussPts[gg],1,&data.getHdivN(gg)(dd,0)); CHKERRQ(ierr);
-    }
-  }
-
-  PetscFunctionReturn(0);
-}
-
-PetscErrorCode PostProcVolumeOnRefinedMesh::OpGetFieldValues::doWork(
-  int side,
-  EntityType type,
-  DataForcesAndSurcesCore::EntData &data
-) {
-  PetscFunctionBegin;
-
-  ErrorCode rval;
-  PetscErrorCode ierr;
-
-  if(data.getFieldData().size()==0) PetscFunctionReturn(0);
-  if(V) {
-    vAlues.resize(data.getFieldData().size());
-    double *a;
-    ierr = VecGetArray(V,&a); CHKERRQ(ierr);
-    VectorDofs::iterator it,hi_it;
-    it = data.getFieldDofs().begin();
-    hi_it = data.getFieldDofs().end();
-    for(int ii = 0;it!=hi_it;it++,ii++) {
-      int local_idx = getFEMethod()->rowPtr->find((*it)->get_global_unique_id())->get_petsc_local_dof_idx();
-      vAlues[ii] = a[local_idx];
-    }
-    ierr = VecRestoreArray(V,&a); CHKERRQ(ierr);
-    vAluesPtr = &vAlues;
-  } else {
-    vAluesPtr = &data.getFieldData();
-  }
-
-
-  const MoFEM::FEDofMoFEMEntity *dof_ptr = data.getFieldDofs()[0];
-  int rank = dof_ptr->get_max_rank();
-
-  int tag_length = rank;
-  FieldSpace space = dof_ptr->get_space();
-  switch(space) {
-    case L2:
-    case H1:
-    break;
-    case HCURL:
-    case HDIV:
-    tag_length *= 3;
-    break;
-    default:
-    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"field with that space is not implemented");
-  }
-
-  if(tag_length>1 && tag_length < 3) {
-    tag_length = 3;
-  } else if(tag_length > 3 && tag_length < 9) {
-    tag_length = 9;
-  }
-
-  double def_VAL[tag_length];
-  bzero(def_VAL,tag_length*sizeof(double));
-  Tag th;
-  rval = postProcMesh.tag_get_handle(
-    tagName.c_str(),tag_length,MB_TYPE_DOUBLE,th,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL
-  ); CHKERR_PETSC(rval);
-
-  // zero tags, this for Vertex if H1 and TRI if Hdiv, EDGE for Hcurl
-  // no need for L2
-  const void* tags_ptr[mapGaussPts.size()];
-  int nb_gauss_pts = data.getN().size1();
-  if(mapGaussPts.size()!=(unsigned int)nb_gauss_pts) {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
-  }
-
-  switch(space) {
-    case H1:
-    commonData.fieldMap[rowFieldName].resize(nb_gauss_pts);
-    if(type == MBVERTEX) {
-      for(int gg = 0;gg<nb_gauss_pts;gg++) {
-        rval = postProcMesh.tag_set_data(th,&mapGaussPts[gg],1,def_VAL); CHKERR_PETSC(rval);
-        (commonData.fieldMap[rowFieldName])[gg].resize(rank);
-        (commonData.fieldMap[rowFieldName])[gg].clear();
-      }
-    }
-    rval = postProcMesh.tag_get_by_ptr(th,&mapGaussPts[0],mapGaussPts.size(),tags_ptr); CHKERR_PETSC(rval);
-    for(int gg = 0;gg<nb_gauss_pts;gg++) {
-      for(int rr = 0;rr<rank;rr++) {
-        ((double*)tags_ptr[gg])[rr] += cblas_ddot(
-          (vAluesPtr->size()/rank),&(data.getN(gg)[0]),1,&((*vAluesPtr)[rr]),rank
-        );
-        (commonData.fieldMap[rowFieldName])[gg][rr] += (*vAluesPtr)[rr];
-      }
-    }
-    break;
-    case L2:
-    rval = postProcMesh.tag_get_by_ptr(
-      th,&mapGaussPts[0],mapGaussPts.size(),tags_ptr
-    ); CHKERR_PETSC(rval);
-    for(int gg = 0;gg<nb_gauss_pts;gg++) {
-      bzero((double*)tags_ptr[gg],sizeof(double)*tag_length);
-      for(int rr = 0;rr<rank;rr++) {
-        ((double*)tags_ptr[gg])[rr] = cblas_ddot(
-          (vAluesPtr->size()/rank),&(data.getN(gg)[0]),1,&((*vAluesPtr)[rr]),rank
-        );
-      }
-    }
-    break;
-    case HDIV:
-    if(type == MBTRI && side == 0) {
-      for(int gg = 0;gg<nb_gauss_pts;gg++) {
-        rval = postProcMesh.tag_set_data(th,&mapGaussPts[gg],1,def_VAL); CHKERR_PETSC(rval);
-      }
-    }
-    rval = postProcMesh.tag_get_by_ptr(th,&mapGaussPts[0],mapGaussPts.size(),tags_ptr); CHKERR_PETSC(rval);
-    for(int gg = 0;gg<nb_gauss_pts;gg++) {
-      for(int rr = 0;rr<rank;rr++) {
-        for(int dd = 0;dd<3;dd++) {
-          ((double*)tags_ptr[gg])[3*rr+dd] += cblas_ddot(
-            (vAluesPtr->size()/rank),&(data.getHdivN(gg)(0,dd)),3,&((*vAluesPtr)[rr]),rank
-          );
-
-        }
-      }
-    }
-    break;
-    default:
-    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"field with that space is not implemented");
-  }
-
-  PetscFunctionReturn(0);
-
-}
-
-PetscErrorCode PostProcVolumeOnRefinedMesh::OpGetFieldGradientValues::doWork(
-  int side,
-  EntityType type,
-  DataForcesAndSurcesCore::EntData &data
-) {
-  PetscFunctionBegin;
-
-  ErrorCode rval;
-  PetscErrorCode ierr;
-
-  if(data.getFieldData().size()==0) PetscFunctionReturn(0);
-  if(V) {
-    vAlues.resize(data.getFieldData().size());
-    double *a;
-    ierr = VecGetArray(V,&a); CHKERRQ(ierr);
-    VectorDofs::iterator it,hi_it;
-    it = data.getFieldDofs().begin();
-    hi_it = data.getFieldDofs().end();
-    for(int ii = 0;it!=hi_it;it++,ii++) {
-      int local_idx = getFEMethod()->rowPtr->find((*it)->get_global_unique_id())->get_petsc_local_dof_idx();
-      vAlues[ii] = a[local_idx];
-    }
-    ierr = VecRestoreArray(V,&a); CHKERRQ(ierr);
-    vAluesPtr = &vAlues;
-  } else {
-    vAluesPtr = &data.getFieldData();
-  }
-
-  const MoFEM::FEDofMoFEMEntity *dof_ptr = data.getFieldDofs()[0];
-  int rank = dof_ptr->get_max_rank();
-
-  int tag_length = rank*3;
-  FieldSpace space = dof_ptr->get_space();
-  switch(space) {
-    case L2:
-    case H1:
-    break;
-    case HCURL:
-    case HDIV:
-    tag_length *= 3;
-    break;
-    default:
-    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"field with that space is not implemented");
-  }
-
-  double def_VAL[tag_length];
-  bzero(def_VAL,tag_length*sizeof(double));
-  Tag th;
-  rval = postProcMesh.tag_get_handle(tagName.c_str(),tag_length,MB_TYPE_DOUBLE,th,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_PETSC(rval);
-
-  // zero tags, this for Vertex if H1 and TRI if Hdiv, EDGE for Hcurl
-  // no need for L2
-  const void* tags_ptr[mapGaussPts.size()];
-  int nb_gauss_pts = data.getN().size1();
-  if(mapGaussPts.size()!=(unsigned int)nb_gauss_pts) {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
-  }
-
-  try {
-
-    switch(space) {
-      case H1:
-      commonData.gradMap[rowFieldName].resize(nb_gauss_pts);
-      if(type == MBVERTEX) {
-        for(int gg = 0;gg<nb_gauss_pts;gg++) {
-          rval = postProcMesh.tag_set_data(th,&mapGaussPts[gg],1,def_VAL); CHKERR_PETSC(rval);
-          (commonData.gradMap[rowFieldName])[gg].resize(rank,3);
-          (commonData.gradMap[rowFieldName])[gg].clear();
-        }
-      }
-      rval = postProcMesh.tag_get_by_ptr(th,&mapGaussPts[0],mapGaussPts.size(),tags_ptr); CHKERR_PETSC(rval);
-      for(int gg = 0;gg<nb_gauss_pts;gg++) {
-        for(int rr = 0;rr<rank;rr++) {
-          for(int dd = 0;dd<3;dd++) {
-            for(unsigned int dof = 0;dof<(vAluesPtr->size()/rank);dof++) {
-              ((double*)tags_ptr[gg])[rank*rr+dd] += data.getDiffN(gg)(dof,dd)*(*vAluesPtr)[rank*dof+rr];
-              (commonData.gradMap[rowFieldName])[gg](rr,dd) += data.getDiffN(gg)(dof,dd)*(*vAluesPtr)[rank*dof+rr];
-            }
-          }
-        }
-      }
-      break;
-      default:
-      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"field with that space is not implemented");
-    }
-
-  } catch (exception& ex) {
-    ostringstream ss;
-    ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
-    SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
-  }
-
-  PetscFunctionReturn(0);
-}
-
-PetscErrorCode PostProcVolumeOnRefinedMesh::addHdivFunctionsPostProc(const string field_name) {
-  PetscFunctionBegin;
-  getOpPtrVector().push_back(new OpHdivFunctions(postProcMesh,mapGaussPts,field_name));
-  PetscFunctionReturn(0);
-}
-
-PetscErrorCode PostProcVolumeOnRefinedMesh::addFieldValuesPostProc(const string field_name,Vec v) {
-  PetscFunctionBegin;
-  getOpPtrVector().push_back(
-    new OpGetFieldValues(postProcMesh,mapGaussPts,field_name,field_name,commonData,v)
-  );
-  PetscFunctionReturn(0);
-}
-
-PetscErrorCode PostProcVolumeOnRefinedMesh::addFieldValuesPostProc(const string field_name,const string tag_name,Vec v) {
-  PetscFunctionBegin;
-  getOpPtrVector().push_back(
-    new OpGetFieldValues(postProcMesh,mapGaussPts,field_name,tag_name,commonData,v)
-  );
-  PetscFunctionReturn(0);
-}
-
-PetscErrorCode PostProcVolumeOnRefinedMesh::addFieldValuesGradientPostProc(const string field_name,Vec v) {
-  PetscFunctionBegin;
-  getOpPtrVector().push_back(
-    new OpGetFieldGradientValues(postProcMesh,mapGaussPts,field_name,field_name+"_GRAD",commonData,v)
-  );
-  PetscFunctionReturn(0);
-}
-
-PetscErrorCode PostProcVolumeOnRefinedMesh::addFieldValuesGradientPostProc(const string field_name,const string tag_name,Vec v) {
-  PetscFunctionBegin;
-  getOpPtrVector().push_back(
-    new OpGetFieldGradientValues(postProcMesh,mapGaussPts,field_name,tag_name,commonData,v)
-  );
-  PetscFunctionReturn(0);
-}
-
 PetscErrorCode PostProcVolumeOnRefinedMesh::clearOperators() {
   PetscFunctionBegin;
   getOpPtrVector().clear();
@@ -553,5 +468,147 @@ PetscErrorCode PostProcVolumeOnRefinedMesh::postProcess() {
 
   rval = pcomm->resolve_shared_ents(0); CHKERR_PETSC(rval);
 
+  PetscFunctionReturn(0);
+}
+
+
+PetscErrorCode PostProcVolumeOnRefinedMesh::OpHdivFunctions::doWork(
+  int side,
+  EntityType type,
+  DataForcesAndSurcesCore::EntData &data
+) {
+  PetscFunctionBegin;
+
+  if(data.getIndices().size()==0) PetscFunctionReturn(0);
+
+  ErrorCode rval;
+  PetscErrorCode ierr;
+
+  vector<Tag> th;
+  th.resize(data.getFieldData().size());
+
+  double def_VAL[9] = { 0,0,0 };
+
+  switch(type) {
+    case MBTRI:
+    for(unsigned int dd = 0;dd<data.getHdivN().size2()/3;dd++) {
+      ostringstream ss;
+      ss << "HDIV_FACE_" << side << "_" << dd;
+      rval = postProcMesh.tag_get_handle(ss.str().c_str(),3,MB_TYPE_DOUBLE,th[dd],MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_PETSC(rval);
+    }
+    break;
+    case MBTET:
+    for(unsigned int dd = 0;dd<data.getHdivN().size2()/3;dd++) {
+      ostringstream ss;
+      ss << "HDIV_TET_" << dd;
+      rval = postProcMesh.tag_get_handle(ss.str().c_str(),3,MB_TYPE_DOUBLE,th[dd],MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_PETSC(rval);
+    }
+    break;
+    default:
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
+  }
+
+  for(unsigned int gg = 0;gg<data.getHdivN().size1();gg++) {
+    for(unsigned int dd = 0;dd<data.getHdivN().size2()/3;dd++) {
+      ierr = postProcMesh.tag_set_data(th[dd],&mapGaussPts[gg],1,&data.getHdivN(gg)(dd,0)); CHKERRQ(ierr);
+    }
+  }
+
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode PostProcVolumeOnRefinedMesh::addHdivFunctionsPostProc(const string field_name) {
+  PetscFunctionBegin;
+  getOpPtrVector().push_back(new OpHdivFunctions(postProcMesh,mapGaussPts,field_name));
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode PostProcFatPrismOnRefinedMesh::generateReferenceElementMesh() {
+  PetscFunctionBegin;
+
+  gaussPtsTrianglesOnly.resize(3,3,false);
+  gaussPtsTrianglesOnly.clear();
+  gaussPtsTrianglesOnly(0,0) = 0;
+  gaussPtsTrianglesOnly(1,0) = 0;
+  gaussPtsTrianglesOnly(0,1) = 1;
+  gaussPtsTrianglesOnly(1,1) = 0;
+  gaussPtsTrianglesOnly(0,2) = 0;
+  gaussPtsTrianglesOnly(1,2) = 1;
+  gaussPtsThroughThickness.resize(2,2,false);
+  gaussPtsThroughThickness(0,0) = 0;
+  gaussPtsThroughThickness(0,1) = 1;
+
+
+  PetscFunctionReturn(0);
+}
+PetscErrorCode PostProcFatPrismOnRefinedMesh::setGaussPtsTrianglesOnly(int order_triangles_only) {
+  PetscFunctionBegin;
+  if(gaussPtsTrianglesOnly.size1()!=3 || gaussPtsTrianglesOnly.size2()!=3) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"postprocess mesh not generated");
+  }
+  PetscFunctionReturn(0);
+}
+PetscErrorCode PostProcFatPrismOnRefinedMesh::setGaussPtsThroughThickness(int order_thickness) {
+  PetscFunctionBegin;
+  if(gaussPtsThroughThickness.size1()!=2 || gaussPtsThroughThickness.size2()!=2) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"postprocess mesh not generated");
+  }
+
+  if(elementsMap.find(fePtr->get_ent())!=elementsMap.end()) {
+    PetscFunctionReturn(0);
+  }
+
+  // PetscErrorCode ierr;
+  MoABErrorCode rval;
+
+  EntityHandle prism_conn[6];
+  ublas::vector<double> coords(3);
+  int ggp = 0;
+  for(int ggt = 0;ggt!=2;ggt++) {
+    for(int ggf = 0;ggf!=3;ggf++,ggp++) {
+      coords[0] = gaussPtsTrianglesOnly(0,ggf);
+      coords[1] = gaussPtsTrianglesOnly(1,ggf);
+      coords[2] = gaussPtsThroughThickness(0,ggt);
+      rval = postProcMesh.create_vertex(&coords[0],prism_conn[ggp]); CHKERR_PETSC(rval);
+      mapGaussPts[ggf*2+ggt] = prism_conn[ggp];
+    }
+  }
+
+  EntityHandle prism;
+  rval = postProcMesh.create_element(MBPRISM,prism_conn,6,prism); CHKERR_PETSC(rval);
+  elementsMap[fePtr->get_ent()] = prism;
+
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode PostProcFatPrismOnRefinedMesh::preProcess() {
+  PetscFunctionBegin;
+  // MoABErrorCode rval;
+  ParallelComm* pcomm_post_proc_mesh = ParallelComm::get_pcomm(&postProcMesh,MYPCOMM_INDEX);
+  if(pcomm_post_proc_mesh != NULL) {
+    delete pcomm_post_proc_mesh;
+  }
+  // rval = postProcMesh.delete_mesh(); CHKERR_PETSC(rval);
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode PostProcFatPrismOnRefinedMesh::postProcess() {
+  PetscFunctionBegin;
+  ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
+  ParallelComm* pcomm_post_proc_mesh = ParallelComm::get_pcomm(&postProcMesh,MYPCOMM_INDEX);
+  if(pcomm_post_proc_mesh == NULL) {
+    pcomm_post_proc_mesh = new ParallelComm(&postProcMesh,mField.get_comm());
+  }
+  Range prims;
+  rval = postProcMesh.get_entities_by_type(0,MBPRISM,prims,false);  CHKERR_PETSC(rval);
+  //cerr << "total prims size " << prims.size() << endl;
+  int rank = pcomm->rank();
+  Range::iterator pit = prims.begin();
+  for(;pit!=prims.end();pit++) {
+    rval = postProcMesh.tag_set_data(
+      pcomm_post_proc_mesh->part_tag(),&*pit,1,&rank
+    ); CHKERR_PETSC(rval);
+  }
+  rval = pcomm->resolve_shared_ents(0); CHKERR_PETSC(rval);
   PetscFunctionReturn(0);
 }
