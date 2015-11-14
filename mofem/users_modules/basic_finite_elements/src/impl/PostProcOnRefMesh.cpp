@@ -86,7 +86,12 @@ PetscErrorCode PostProcCommonOnRefMesh::OpGetFieldValues::doWork(
   const void* tags_ptr[mapGaussPts.size()];
   int nb_gauss_pts = data.getN().size1();
   if(mapGaussPts.size()!=(unsigned int)nb_gauss_pts) {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
+    SETERRQ2(
+      PETSC_COMM_SELF,
+      MOFEM_DATA_INCONSISTENCY,
+      "data inconsistency %d!=%d",
+      mapGaussPts.size(),nb_gauss_pts
+    );
   }
 
   switch(space) {
@@ -356,7 +361,6 @@ PetscErrorCode PostProcVolumeOnRefinedMesh::setGaussPts(int order) {
     if(tenNodesPostProcTets) {
       rval = postProcMesh.convert_entities(meshset,true,false,false); CHKERR_PETSC(rval);
     }
-
     commonData.tEts.clear();
     rval = postProcMesh.get_entities_by_type(meshset,MBTET,commonData.tEts,true); CHKERR_PETSC(rval);
 
@@ -374,9 +378,11 @@ PetscErrorCode PostProcVolumeOnRefinedMesh::setGaussPts(int order) {
 
     //cerr << gaussPts << endl;
 
-    ublas::matrix<FieldData> N;
+    ublas::matrix<double> N;
     N.resize(nodes.size(),4);
-    ierr = ShapeMBTET(&*N.data().begin(),&gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0),nodes.size()); CHKERRQ(ierr);
+    ierr = ShapeMBTET(
+      &*N.data().begin(),&gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0),nodes.size()
+    ); CHKERRQ(ierr);
     //cerr << N << endl;
 
     ublas::matrix<double> coords_at_gauss_pts;
@@ -411,7 +417,7 @@ PetscErrorCode PostProcVolumeOnRefinedMesh::setGaussPts(int order) {
 
     //tEts.clear();
     //rval = postProcMesh.get_entities_by_type(0,MBTET,tEts,true); CHKERR_PETSC(rval);
-    //cerr << "<--- <--- " << tEts.size() << endl;
+    //ce  rr << "<--- <--- " << tEts.size() << endl;
 
   } catch (exception& ex) {
     ostringstream ss;
@@ -526,58 +532,174 @@ PetscErrorCode PostProcVolumeOnRefinedMesh::addHdivFunctionsPostProc(const strin
 PetscErrorCode PostProcFatPrismOnRefinedMesh::generateReferenceElementMesh() {
   PetscFunctionBegin;
 
-  gaussPtsTrianglesOnly.resize(3,3,false);
-  gaussPtsTrianglesOnly.clear();
-  gaussPtsTrianglesOnly(0,0) = 0;
-  gaussPtsTrianglesOnly(1,0) = 0;
-  gaussPtsTrianglesOnly(0,1) = 1;
-  gaussPtsTrianglesOnly(1,1) = 0;
-  gaussPtsTrianglesOnly(0,2) = 0;
-  gaussPtsTrianglesOnly(1,2) = 1;
-  gaussPtsThroughThickness.resize(2,2,false);
-  gaussPtsThroughThickness(0,0) = 0;
-  gaussPtsThroughThickness(0,1) = 1;
+  {
+    gaussPtsTrianglesOnly.resize(3,3,false);
+    gaussPtsTrianglesOnly.clear();
+    gaussPtsTrianglesOnly(0,0) = 0;
+    gaussPtsTrianglesOnly(1,0) = 0;
+    gaussPtsTrianglesOnly(0,1) = 1;
+    gaussPtsTrianglesOnly(1,1) = 0;
+    gaussPtsTrianglesOnly(0,2) = 0;
+    gaussPtsTrianglesOnly(1,2) = 1;
+    gaussPtsThroughThickness.resize(2,2,false);
+    gaussPtsThroughThickness(0,0) = 0;
+    gaussPtsThroughThickness(0,1) = 1;
+    mapGaussPts.resize(
+      gaussPtsTrianglesOnly.size2()*gaussPtsThroughThickness.size2()
+    );
+  }
 
-
+  MoABErrorCode rval;
+  {
+    moab::Core core_ref;
+    Interface& moab_ref = core_ref;
+    const EntityHandle *conn;
+    int num_nodes;
+    EntityHandle prism_conn[6];
+    ublas::matrix<double> coords(1,3);
+    int ggp = 0;
+    for(int ggt = 0;ggt!=2;ggt++) {
+      for(int ggf = 0;ggf!=3;ggf++,ggp++) {
+        coords(0,0) = gaussPtsTrianglesOnly(0,ggf);
+        coords(0,1) = gaussPtsTrianglesOnly(1,ggf);
+        coords(0,2) = gaussPtsThroughThickness(0,ggt);
+        rval = moab_ref.create_vertex(&coords(0,0),prism_conn[ggp]); CHKERR_PETSC(rval);
+      }
+    }
+    EntityHandle prism;
+    rval = moab_ref.create_element(MBPRISM,prism_conn,6,prism); CHKERR_PETSC(rval);
+    Range faces;
+    rval = moab_ref.get_adjacencies(&prism,1,2,true,faces); CHKERR_PETSC(rval);
+    Range edges;
+    rval = moab_ref.get_adjacencies(&prism,1,1,true,edges); CHKERR_PETSC(rval);
+    EntityHandle meshset;
+    rval = moab_ref.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERR_PETSC(rval);
+    rval = moab_ref.add_entities(meshset,&prism,1); CHKERR_PETSC(rval);
+    rval = moab_ref.add_entities(meshset,faces); CHKERR_PETSC(rval);
+    rval = moab_ref.add_entities(meshset,edges); CHKERR_PETSC(rval);
+    if(tenNodesPostProcTets) {
+      rval = moab_ref.convert_entities(meshset,true,false,false); CHKERR_PETSC(rval);
+    }
+    rval = moab_ref.get_connectivity(prism,conn,num_nodes,false); CHKERR_PETSC(rval);
+    coords.resize(num_nodes,3,false);
+    rval = moab_ref.get_coords(conn,num_nodes,&coords(0,0));
+    cerr << coords << endl;
+    {
+      for(int nn = 0;nn<num_nodes;nn++) {
+        cerr << conn[nn] << " ";
+      }
+      cerr << endl;
+    }
+    gaussPtsTrianglesOnly.resize(3,6,false);
+    gaussPtsTrianglesOnly.clear();
+    for(int nn = 0;nn<3;nn++) {
+      gaussPtsTrianglesOnly(0,nn) = coords(nn,0);
+      gaussPtsTrianglesOnly(1,nn) = coords(nn,1);
+      gaussPtsTrianglesOnly(0,3+nn) = coords(6+nn,0);
+      gaussPtsTrianglesOnly(1,3+nn) = coords(6+nn,1);
+    }
+    gaussPtsThroughThickness.resize(2,3,false);
+    gaussPtsThroughThickness.clear();
+    gaussPtsThroughThickness(0,0) = coords(0,2);
+    gaussPtsThroughThickness(0,1) = coords(3,2);
+    gaussPtsThroughThickness(0,2) = coords(9,2);
+    {
+      int ggp = 0;
+      for(int ggf = 0;ggf!=gaussPtsTrianglesOnly.size2();ggf++) {
+        for(int ggt = 0;ggt!=gaussPtsThroughThickness.size2();ggt++,ggp++) {
+          cerr << "ggp " << ggp << " " << ggf << " " << ggt;
+          cerr << " : " << gaussPtsTrianglesOnly(0,ggf) << " " << gaussPtsTrianglesOnly(1,ggf);
+          cerr << " " << gaussPtsThroughThickness(0,ggt) << endl;
+        }
+      }
+    }
+  }
   PetscFunctionReturn(0);
 }
 PetscErrorCode PostProcFatPrismOnRefinedMesh::setGaussPtsTrianglesOnly(int order_triangles_only) {
   PetscFunctionBegin;
-  if(gaussPtsTrianglesOnly.size1()!=3 || gaussPtsTrianglesOnly.size2()!=3) {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"postprocess mesh not generated");
+  if(gaussPtsTrianglesOnly.size1()==0 || gaussPtsTrianglesOnly.size2()==0) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"post-process mesh not generated");
   }
+  if(elementsMap.find(fePtr->get_ent())!=elementsMap.end()) {
+    PetscFunctionReturn(0);
+  }
+  // if(elementsMap.size()>0) {
+  //   PetscFunctionReturn(0);
+  // }
+
+  // PetscErrorCode ierr;
+  MoABErrorCode rval;
+  const EntityHandle *conn;
+  int num_nodes;
+  EntityHandle prism;
+
+  {
+    ublas::vector<EntityHandle> prism_conn(6);
+    ublas::matrix<double> coords_prism(6,3);
+    ublas::vector<double> coords(3);
+    rval = mField.get_moab().get_connectivity(fePtr->get_ent(),conn,num_nodes,true); CHKERR_PETSC(rval);
+    rval = mField.get_moab().get_coords(conn,num_nodes,&coords_prism(0,0));
+    int ggp = 0;
+    for(int ggf = 0;ggf!=3;ggf++) {
+      double ksi = gaussPtsTrianglesOnly(0,ggf);
+      double eta = gaussPtsTrianglesOnly(1,ggf);
+      double n0 = N_MBTRI0(ksi,eta);
+      double n1 = N_MBTRI1(ksi,eta);
+      double n2 = N_MBTRI2(ksi,eta);
+      double x = n0*coords_prism(0,0)+n1*coords_prism(1,0)+n2*coords_prism(2,0);
+      double y = n0*coords_prism(0,1)+n1*coords_prism(1,1)+n2*coords_prism(2,1);
+      for(int ggt = 0;ggt!=2;ggt++,ggp++) {
+        coords[0] = x;
+        coords[1] = y;
+        double zeta = gaussPtsThroughThickness(0,ggt);
+        coords[2] = N_MBEDGE0(zeta)*coords_prism(0,2)+N_MBEDGE1(zeta)*coords_prism(3,2);
+        int side = ggt*3+ggf;
+        rval = postProcMesh.create_vertex(
+          &coords[0],prism_conn[side]
+        ); CHKERR_PETSC(rval);
+      }
+    }
+    rval = postProcMesh.create_element(MBPRISM,&prism_conn[0],6,prism); CHKERR_PETSC(rval);
+  }
+  elementsMap[fePtr->get_ent()] = prism;
+  {
+    Range faces;
+    rval = postProcMesh.get_adjacencies(&prism,1,2,true,faces); CHKERR_PETSC(rval);
+    Range edges;
+    rval = postProcMesh.get_adjacencies(&prism,1,1,true,edges); CHKERR_PETSC(rval);
+    EntityHandle meshset;
+    rval = postProcMesh.create_meshset(MESHSET_SET,meshset); CHKERR_PETSC(rval);
+    rval = postProcMesh.add_entities(meshset,&prism,1); CHKERR_PETSC(rval);
+    rval = postProcMesh.add_entities(meshset,faces); CHKERR_PETSC(rval);
+    rval = postProcMesh.add_entities(meshset,edges); CHKERR_PETSC(rval);
+    if(tenNodesPostProcTets) {
+      rval = postProcMesh.convert_entities(meshset,true,false,false); CHKERR_PETSC(rval);
+    }
+    rval = postProcMesh.delete_entities(&meshset,1); CHKERR_PETSC(rval);
+    rval = postProcMesh.delete_entities(edges); CHKERR_PETSC(rval);
+    rval = postProcMesh.delete_entities(faces); CHKERR_PETSC(rval);
+  }
+  {
+    const int conn_gauss_pts_map[] = { 0,3,6, 1,4,7, 9,12,15, 2,5,8, 10,13,16 };
+    rval = postProcMesh.get_connectivity(prism,conn,num_nodes,false); CHKERR_PETSC(rval);
+    mapGaussPts.resize(gaussPtsTrianglesOnly.size2()*gaussPtsThroughThickness.size2());
+    for(int nn = 0;nn<num_nodes;nn++) {
+      mapGaussPts[conn_gauss_pts_map[nn]] = conn[nn];
+    }
+    const int no_conn_gauss_pts_map[] = { 11,14,17 };
+    for(int nn = 0;nn<3;nn++) {
+      mapGaussPts[no_conn_gauss_pts_map[nn]] = 0;
+    }
+  }
+  // rval = postProcMesh.delete_entities(&prism,1); CHKERR_PETSC(rval);
   PetscFunctionReturn(0);
 }
 PetscErrorCode PostProcFatPrismOnRefinedMesh::setGaussPtsThroughThickness(int order_thickness) {
   PetscFunctionBegin;
-  if(gaussPtsThroughThickness.size1()!=2 || gaussPtsThroughThickness.size2()!=2) {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"postprocess mesh not generated");
+  if(gaussPtsThroughThickness.size1()==0 || gaussPtsThroughThickness.size2()==0) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"post-process mesh not generated");
   }
-
-  if(elementsMap.find(fePtr->get_ent())!=elementsMap.end()) {
-    PetscFunctionReturn(0);
-  }
-
-  // PetscErrorCode ierr;
-  MoABErrorCode rval;
-
-  EntityHandle prism_conn[6];
-  ublas::vector<double> coords(3);
-  int ggp = 0;
-  for(int ggt = 0;ggt!=2;ggt++) {
-    for(int ggf = 0;ggf!=3;ggf++,ggp++) {
-      coords[0] = gaussPtsTrianglesOnly(0,ggf);
-      coords[1] = gaussPtsTrianglesOnly(1,ggf);
-      coords[2] = gaussPtsThroughThickness(0,ggt);
-      rval = postProcMesh.create_vertex(&coords[0],prism_conn[ggp]); CHKERR_PETSC(rval);
-      mapGaussPts[ggf*2+ggt] = prism_conn[ggp];
-    }
-  }
-
-  EntityHandle prism;
-  rval = postProcMesh.create_element(MBPRISM,prism_conn,6,prism); CHKERR_PETSC(rval);
-  elementsMap[fePtr->get_ent()] = prism;
-
   PetscFunctionReturn(0);
 }
 

@@ -1,5 +1,5 @@
 /** \file PostProcOnRefMesh.hpp
- * \brief Post-process fields on refined mesh made for 10 Node tets
+ * \brief Post-process fields on refined mesh
  *
  * Create refined mesh, without enforcing continuity between element. Calculate
  * field values on nodes of that mesh.
