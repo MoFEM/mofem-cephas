@@ -583,13 +583,13 @@ PetscErrorCode PostProcFatPrismOnRefinedMesh::generateReferenceElementMesh() {
     rval = moab_ref.get_connectivity(prism,conn,num_nodes,false); CHKERR_PETSC(rval);
     coords.resize(num_nodes,3,false);
     rval = moab_ref.get_coords(conn,num_nodes,&coords(0,0));
-    cerr << coords << endl;
-    {
-      for(int nn = 0;nn<num_nodes;nn++) {
-        cerr << conn[nn] << " ";
-      }
-      cerr << endl;
-    }
+    // cerr << coords << endl;
+    // {
+    //   for(int nn = 0;nn<num_nodes;nn++) {
+    //     cerr << conn[nn] << " ";
+    //   }
+    //   cerr << endl;
+    // }
     gaussPtsTrianglesOnly.resize(3,6,false);
     gaussPtsTrianglesOnly.clear();
     for(int nn = 0;nn<3;nn++) {
@@ -603,16 +603,16 @@ PetscErrorCode PostProcFatPrismOnRefinedMesh::generateReferenceElementMesh() {
     gaussPtsThroughThickness(0,0) = coords(0,2);
     gaussPtsThroughThickness(0,1) = coords(3,2);
     gaussPtsThroughThickness(0,2) = coords(9,2);
-    {
-      int ggp = 0;
-      for(int ggf = 0;ggf!=gaussPtsTrianglesOnly.size2();ggf++) {
-        for(int ggt = 0;ggt!=gaussPtsThroughThickness.size2();ggt++,ggp++) {
-          cerr << "ggp " << ggp << " " << ggf << " " << ggt;
-          cerr << " : " << gaussPtsTrianglesOnly(0,ggf) << " " << gaussPtsTrianglesOnly(1,ggf);
-          cerr << " " << gaussPtsThroughThickness(0,ggt) << endl;
-        }
-      }
-    }
+    // {
+    //   int ggp = 0;
+    //   for(int ggf = 0;ggf!=gaussPtsTrianglesOnly.size2();ggf++) {
+    //     for(int ggt = 0;ggt!=gaussPtsThroughThickness.size2();ggt++,ggp++) {
+    //       cerr << "ggp " << ggp << " " << ggf << " " << ggt;
+    //       cerr << " : " << gaussPtsTrianglesOnly(0,ggf) << " " << gaussPtsTrianglesOnly(1,ggf);
+    //       cerr << " " << gaussPtsThroughThickness(0,ggt) << endl;
+    //     }
+    //   }
+    // }
   }
   PetscFunctionReturn(0);
 }
