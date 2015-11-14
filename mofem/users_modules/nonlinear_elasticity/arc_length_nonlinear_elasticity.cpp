@@ -249,7 +249,8 @@ int main(int argc, char *argv[]) {
 	    post_proc.mapGaussPts,
 	    "SPATIAL_POSITION",
 	    sit->second,
-	    post_proc.commonData));
+	    post_proc.commonData)
+    );
   }
 
   //build field
