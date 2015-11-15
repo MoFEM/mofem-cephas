@@ -149,6 +149,22 @@ else(EXISTS "${CTEST_SOURCE_DIRECTORY}/users_modules/ground_surface_temperature"
   )
 endif()
 
+# modules - ground_surface_temperature
+if(NOT EXISTS "${CTEST_SOURCE_DIRECTORY}/users_modules/solid_shell_prism_element")
+  exec_program(
+    ${CTEST_GIT_COMMAND}
+    "${CTEST_SOURCE_DIRECTORY}/users_modules"
+    ARGS clone https://likask@bitbucket.org/likask/mofem_um_solid_shell_prism_element.git
+    "${CTEST_SOURCE_DIRECTORY}/users_modules/solid_shell_prism_element"
+  )
+else(EXISTS "${CTEST_SOURCE_DIRECTORY}/users_modules/solid_shell_prism_element")
+  exec_program(
+    ${CTEST_GIT_COMMAND}
+    "${CTEST_SOURCE_DIRECTORY}/users_modules/solid_shell_prism_element"
+    ARGS pull
+  )
+endif()
+
 if(INIT_REPOSITORY)
   set(DOTEST 1)
   message("Force Init Build")
