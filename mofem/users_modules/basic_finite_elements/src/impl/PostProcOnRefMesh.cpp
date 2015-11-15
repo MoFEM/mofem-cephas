@@ -23,6 +23,15 @@ using namespace MoFEM;
 using namespace boost::numeric;
 #include <PostProcOnRefMesh.hpp>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+  #include <gm_rule.h>
+#ifdef __cplusplus
+}
+#endif
+
+
 PetscErrorCode PostProcCommonOnRefMesh::OpGetFieldValues::doWork(
   int side,
   EntityType type,

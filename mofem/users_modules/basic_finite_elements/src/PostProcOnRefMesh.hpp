@@ -301,8 +301,7 @@ struct PostProcFatPrismOnRefinedMesh: public PostProcTemplateOnRefineMesh<FatPri
 
   PostProcFatPrismOnRefinedMesh(
     FieldInterface &m_field,
-    bool ten_nodes_post_proc_tets = true,
-    int nb_ref_levels = -1
+    bool ten_nodes_post_proc_tets = true
   ):
   PostProcTemplateOnRefineMesh<FatPrismElementForcesAndSurcesCore>(m_field),
   tenNodesPostProcTets(ten_nodes_post_proc_tets) {
