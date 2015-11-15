@@ -150,8 +150,12 @@ struct FatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
     inline MatrixDouble& getGaussPts() { return ptrFE->gaussPts; }
 
     /** \brief get Gauss pts. on triangles
-     */
+    */
     inline MatrixDouble& getGaussPtsTrianglesOnly() { return ptrFE->gaussPtsTrianglesOnly; }
+
+    /** \brief get Gauss pts. through thickness
+    */
+    inline MatrixDouble& getGaussPtsThroughThickness() { return ptrFE->gaussPtsThroughThickness; }
 
     /** \brief get coordinates at Gauss pts.
 
