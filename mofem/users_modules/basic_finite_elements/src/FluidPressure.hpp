@@ -126,8 +126,10 @@ struct FluidPressure {
         dist = ublas::matrix_row<MatrixDouble >(getCoordsAtGaussPts(),gg);
         dist -= zero_pressure;
         double dot = cblas_ddot(3,&dist[0],1,&dAta.aCCeleration[0],1);
+        // cerr << dot << " " << dAta.aCCeleration << " " << dist << endl;
         if(!allowNegativePressure) dot = fmax(0,dot);
         double pressure = dot*dAta.dEnsity;
+        // cerr << dot << " " << dAta.dEnsity << " " << pressure << endl;
 
         for(int rr = 0;rr<rank;rr++) {
           double force;
@@ -142,6 +144,9 @@ struct FluidPressure {
         }
 
       }
+
+      // cerr << Nf << endl;
+      // cerr << endl;
 
       bool set = false;
       switch(getFEMethod()->ts_ctx) {
