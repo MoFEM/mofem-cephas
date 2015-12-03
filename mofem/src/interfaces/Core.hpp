@@ -370,6 +370,9 @@ struct Core:
   PetscErrorCode add_ents_to_field_by_TETs(const EntityHandle meshset,const BitFieldId id,int verb = -1);
   PetscErrorCode add_ents_to_field_by_TETs(const Range &tets,const string& name,int verb = -1);
   PetscErrorCode add_ents_to_field_by_TETs(const EntityHandle meshset,const string& name,int verb = -1);
+  PetscErrorCode add_ents_to_field_by_QUADs(const Range &prisms,const BitFieldId id,int verb = -1);
+  PetscErrorCode add_ents_to_field_by_QUADs(const Range &prisms,const string& name,int verb = -1);
+  PetscErrorCode add_ents_to_field_by_QUADs(EntityHandle meshset,const string& name,int verb = -1);
   PetscErrorCode add_ents_to_field_by_PRISMs(const Range &prisms,const BitFieldId id,int verb = -1);
   PetscErrorCode add_ents_to_field_by_PRISMs(const Range &prisms,const string& name,int verb = -1);
   PetscErrorCode add_ents_to_field_by_PRISMs(EntityHandle meshset,const string& name,int verb = -1);
@@ -445,6 +448,7 @@ struct Core:
   //problem
   PetscErrorCode add_problem(const BitProblemId id,const string& name);
   PetscErrorCode add_problem(const string& name,enum MoFEMTypes bh = MF_EXCL,int verb = -1);
+  PetscErrorCode delete_problem(const string& name);
   PetscErrorCode modify_problem_add_finite_element(const string &name_problem,const string &MoFEMFiniteElement_name);
   PetscErrorCode modify_problem_ref_level_add_bit(const string &name_problem,const BitRefLevel &bit);
   PetscErrorCode modify_problem_ref_level_set_bit(const string &name_problem,const BitRefLevel &bit);

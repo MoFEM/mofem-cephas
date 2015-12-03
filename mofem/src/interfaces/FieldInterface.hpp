@@ -630,6 +630,36 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode add_ents_to_field_by_TETs(const Range &tets,const string& name,int verb = -1) = 0;
 
   /**
+    * \brief set field entities from adjacencies of quads
+    * \ingroup mofem_field
+    *
+    * The lower dimension entities are added depending on the space type
+    * \param quads range of quads
+    * \param id field id
+    */
+  virtual PetscErrorCode add_ents_to_field_by_QUADs(const Range &quads,const BitFieldId id,int verb = -1) = 0;
+
+  /**
+    * \brief set field entities from adjacencies of quads
+    * \ingroup mofem_field
+    *
+    * The lower dimension entities are added depending on the space type
+    * \param quads range contains set quads
+    * \param name of the field
+    */
+  virtual PetscErrorCode add_ents_to_field_by_QUADs(const Range &quads,const string& name,int verb = -1) = 0;
+
+  /**
+    * \brief set field entities from adjacencies of quads
+    * \ingroup mofem_field
+    *
+    * The lower dimension entities are added depending on the space type
+    * \param meshset contains set quads
+    * \param name of the field
+    */
+  virtual PetscErrorCode add_ents_to_field_by_QUADs(EntityHandle meshset,const string& name,int verb = -1) = 0;
+
+  /**
     * \brief set field entities from adjacencies of prisms
     * \ingroup mofem_field
     *
@@ -944,10 +974,15 @@ struct FieldInterface: public FieldUnknownInterface {
   /// list adjacencies
   virtual PetscErrorCode list_adjacencies() const = 0;
 
-  /** \brief add Finite Element Problem
+  /** \brief Add problem
    * \ingroup mofem_problems
    */
   virtual PetscErrorCode add_problem(const string& name,enum MoFEMTypes bh = MF_EXCL,int verb = -1) = 0;
+
+  /** \brief Delete problem
+  * \ingroup mofem_problems
+  */
+  virtual PetscErrorCode delete_problem(const string& name) = 0;
 
   /** \brief add finite element to problem, this add entities assigned to finite element to a particular problem
    * \ingroup mofem_problems
