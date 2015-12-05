@@ -124,12 +124,12 @@ enum CubitBC {
 
 //taken from http://stackoverflow.com/questions/295120/c-mark-as-deprecated
 #ifdef __GNUC__
-#define DEPRECATED __attribute__((deprecated))
+  #define DEPRECATED __attribute__((deprecated))
 #elif defined(_MSC_VER)
-#define DEPRECATED __declspec(deprecated)
+  #define DEPRECATED __declspec(deprecated)
 #else
-#pragma message("WARNING: You need to implement DEPRECATED for this compiler")
-#define DEPRECATED
+  #pragma message("WARNING: You need to implement DEPRECATED for this compiler")
+  #define DEPRECATED
 #endif
 
 #define BITREFEDGES_SIZE 6 /*number of edges on tetrahedral*/
@@ -203,5 +203,8 @@ enum CubitBC {
   ss << a << " " << " at " << __FILE__ << ":" << __LINE__ << std::endl; \
   throw MoFEMException( MOFEM_MOFEMEXCEPTION_THROW,ss.str().c_str() ); \
 }
+
+#define SSTR( x ) dynamic_cast< std::ostringstream & >( \
+  ( std::ostringstream() << std::dec << x ) ).str()
 
 #endif //__DEFINITONS_H__
