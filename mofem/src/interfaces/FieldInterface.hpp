@@ -941,7 +941,7 @@ struct FieldInterface: public FieldUnknownInterface {
    */
   virtual PetscErrorCode remove_ents_from_finite_element(const string &name,const EntityHandle meshset,const EntityType type,int verb = -1) = 0;
 
-  /** \brief remove elements from given refinement level to finite element database
+  /** \brief remove elements from finite element database
    * \ingroup mofem_fe
    *
    */
@@ -982,7 +982,7 @@ struct FieldInterface: public FieldUnknownInterface {
   /** \brief Delete problem
   * \ingroup mofem_problems
   */
-  virtual PetscErrorCode delete_problem(const string& name) = 0;
+  virtual PetscErrorCode delete_problem(const string name) = 0;
 
   /** \brief add finite element to problem, this add entities assigned to finite element to a particular problem
    * \ingroup mofem_problems
@@ -991,6 +991,17 @@ struct FieldInterface: public FieldUnknownInterface {
    * \param name Finite Element name
    */
   virtual PetscErrorCode modify_problem_add_finite_element(const string &name_problem,const string &MoFEMFiniteElement_name) = 0;
+
+  /** \brief unset finite element from problem, this remove entities assigned to finite element to a particular problem
+   * \ingroup mofem_problems
+   *
+   *  Note: If problem is build, it need to be cleaned to make this effective
+   *
+   * \param name Problem name
+   * \param name Finite Element name
+   */
+  virtual PetscErrorCode modify_problem_unset_finite_element(const string &name_problem,const string &MoFEMFiniteElement_name) = 0;
+
 
   /** \brief add ref level to problem
    * \ingroup mofem_problems
@@ -1008,7 +1019,6 @@ struct FieldInterface: public FieldUnknownInterface {
    *\endcode
    * Two Problems exist and solved independently, both are elastic, but solved using different mesh refinement <br>
   */
-
   virtual PetscErrorCode modify_problem_ref_level_add_bit(const string &name_problem,const BitRefLevel &bit) = 0;
 
   /** \brief set ref level for problem
@@ -1154,6 +1164,11 @@ struct FieldInterface: public FieldUnknownInterface {
    * \ingroup mofem_problems
    */
   virtual PetscErrorCode build_problem(MoFEMProblem *problem_ptr,int verb = -1) = 0;
+
+  /** \brief clear problem
+   * \ingroup mofem_problems
+   */
+  virtual PetscErrorCode clear_problem(const string &name,int verb = -1) = 0;
 
   /** \brief build problem data structures
    * \ingroup mofem_problems

@@ -58,7 +58,7 @@ PetscErrorCode Core::add_field(const string& name,const FieldSpace space,const A
   fit = moabFields.get<FieldName_mi_tag>().find(name);
   if(fit != moabFields.get<FieldName_mi_tag>().end() ) {
     if(bh == MF_EXCL) {
-      SETERRQ1(PETSC_COMM_SELF,1,"field is <%s> in database",name.c_str());
+      SETERRQ1(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"field is <%s> in database",name.c_str());
     }
   } else {
     EntityHandle meshset;
@@ -113,9 +113,11 @@ PetscErrorCode Core::add_field(const string& name,const FieldSpace space,const A
     try {
       p = moabFields.insert(MoFEMField(moab,meshset));
       if(bh == MF_EXCL) {
-        if(!p.second) SETERRQ1(PETSC_COMM_SELF,1,
-  	"field not inserted %s (top tip, it could be already there)",
-  	MoFEMField(moab,meshset).get_name().c_str());
+        if(!p.second) SETERRQ1(
+          PETSC_COMM_SELF,1,
+          "field not inserted %s (top tip, it could be already there)",
+          MoFEMField(moab,meshset).get_name().c_str()
+        );
       }
     } catch (MoFEMException const &e) {
       SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
@@ -1589,7 +1591,7 @@ PetscErrorCode Core::add_problem(const string& name,enum MoFEMTypes bh,int verb)
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::delete_problem(const string& name) {
+PetscErrorCode Core::delete_problem(const string name) {
   PetscFunctionBegin;
   typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type mofem_problems_by_name;
   mofem_problems_by_name &mofem_problems_set = moFEMProblems.get<Problem_mi_tag>();
@@ -1819,11 +1821,28 @@ PetscErrorCode Core::modify_problem_add_finite_element(const string &name_proble
     typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type mofem_problems_by_name;
     mofem_problems_by_name& set = moFEMProblems.get<Problem_mi_tag>();
     mofem_problems_by_name::iterator miit = set.find(name_problem);
-    ostringstream ss;
-    ss << name_problem;
-    if(miit==set.end()) SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"this problem <%s> is not there",ss.str().c_str());
+    if(miit==set.end()) {
+      SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"this problem <%s> is not there",name_problem.c_str());
+    }
     BitFEId f_id = get_BitFEId(MoFEMFiniteElement_name);
-    bool success = set.modify(miit,problem_MoFEMFiniteElement_change_bit_add(f_id));
+    bool success = set.modify(miit,ProblemFiniteElementChangeBitAdd(f_id));
+    if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+  } catch (MoFEMException const &e) {
+    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+  }
+  PetscFunctionReturn(0);
+}
+PetscErrorCode Core::modify_problem_unset_finite_element(const string &name_problem,const string &MoFEMFiniteElement_name) {
+  PetscFunctionBegin;
+  try {
+    typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type mofem_problems_by_name;
+    mofem_problems_by_name& set = moFEMProblems.get<Problem_mi_tag>();
+    mofem_problems_by_name::iterator miit = set.find(name_problem);
+    if(miit==set.end()) {
+      SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"this problem <%s> is not there",name_problem.c_str());
+    }
+    BitFEId f_id = get_BitFEId(MoFEMFiniteElement_name);
+    bool success = set.modify(miit,ProblemFiniteElementChangeBitUnSet(f_id));
     if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
   } catch (MoFEMException const &e) {
     SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
@@ -1838,7 +1857,7 @@ PetscErrorCode Core::modify_problem_ref_level_add_bit(const string &name_problem
   ostringstream ss;
   ss << name_problem;
   if(miit==set.end()) SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"this problem <%s> is there",ss.str().c_str());
-  bool success = set.modify(miit,problem_change_ref_level_bit_add(bit));
+  bool success = set.modify(miit,ProblemChangeRefLevelBitAdd(bit));
   if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsuccessful");
   PetscFunctionReturn(0);
 }
@@ -1850,7 +1869,7 @@ PetscErrorCode Core::modify_problem_ref_level_set_bit(const string &name_problem
   ostringstream ss;
   ss << name_problem;
   if(miit==set.end()) SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"this problem <%s> is there",ss.str().c_str());
-  bool success = set.modify(miit,problem_change_ref_level_bit_set(bit));
+  bool success = set.modify(miit,ProblemChangeRefLevelBitSet(bit));
   if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
   PetscFunctionReturn(0);
 }
@@ -1862,7 +1881,7 @@ PetscErrorCode Core::modify_problem_dof_mask_ref_level_set_bit(const string &nam
   ostringstream ss;
   ss << name_problem;
   if(miit==set.end()) SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"this problem <%s> is there",ss.str().c_str());
-  bool success = set.modify(miit,problem_change_ref_level_bit_dof_mask_set(bit));
+  bool success = set.modify(miit,ProblemChangeRefLevelBitDofMaskSet(bit));
   if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
   PetscFunctionReturn(0);
 }
@@ -3069,7 +3088,12 @@ PetscErrorCode Core::get_problem(const string &problem_name,const MoFEMProblem *
   typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type mofem_problems_by_name;
   mofem_problems_by_name &moFEMProblems_set = moFEMProblems.get<Problem_mi_tag>();
   mofem_problems_by_name::iterator p_miit = moFEMProblems_set.find(problem_name);
-  if(p_miit == moFEMProblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem < %s > not found, (top tip: check spelling)",problem_name.c_str());
+  if(p_miit == moFEMProblems_set.end()) {
+    SETERRQ1(
+      PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,
+      "problem < %s > not found, (top tip: check spelling)",problem_name.c_str()
+    );
+  }
   *problem_ptr = &*p_miit;
   PetscFunctionReturn(0);
 }
@@ -3557,7 +3581,9 @@ PetscErrorCode Core::remove_ents_by_bit_ref(const BitRefLevel &bit,const BitRefL
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::delete_ents_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,const bool remove_parent,int verb) {
+PetscErrorCode Core::delete_ents_by_bit_ref(
+  const BitRefLevel &bit,const BitRefLevel &mask,const bool remove_parent,int verb
+) {
   PetscFunctionBegin;
   Range ents_to_delete;
   rval = moab.get_entities_by_handle(0,ents_to_delete,false); CHKERR_PETSC(rval);
@@ -3644,7 +3670,9 @@ PetscErrorCode Core::delete_ents_by_bit_ref(const BitRefLevel &bit,const BitRefL
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::delete_finite_elements_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb) {
+PetscErrorCode Core::delete_finite_elements_by_bit_ref(
+  const BitRefLevel &bit,const BitRefLevel &mask,int verb
+) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   ierr = remove_ents_from_finite_element_by_bit_ref(bit,mask,verb); CHKERRQ(ierr);
@@ -3665,6 +3693,25 @@ PetscErrorCode Core::delete_finite_elements_by_bit_ref(const BitRefLevel &bit,co
     }
     fe_it = refinedFiniteElements.erase(fe_it);
   }
+  PetscFunctionReturn(0);
+}
+PetscErrorCode Core::delete_finite_element(const string name,int verb) {
+  PetscFunctionBegin;
+  typedef MoFEMFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type finiteElements_by_name;
+  finiteElements_by_name& fe = finiteElements.get<FiniteElement_name_mi_tag>();
+  finiteElements_by_name::iterator miit = fe.find(name);
+  if(miit==fe.end()) {
+    SETERRQ1(
+      PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,
+      "finite element <%s> not found",name.c_str()
+    );
+  }
+  EntityHandle meshset = miit->get_meshset();
+  Range ents;
+  rval = moab.get_entities_by_handle(meshset,ents,false); CHKERR_PETSC(rval);
+  ierr = remove_ents_from_finite_element(name,ents,verb); CHKERRQ(ierr);
+  fe.erase(miit);
+  rval = moab.delete_entities(&meshset,1); CHKERR_PETSC(rval);
   PetscFunctionReturn(0);
 }
 

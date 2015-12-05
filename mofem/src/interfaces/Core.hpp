@@ -437,6 +437,7 @@ struct Core:
   PetscErrorCode remove_ents_from_finite_element_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
   PetscErrorCode remove_ents_from_finite_element(const string &name,const EntityHandle meshset,const EntityType type,int verb = -1);
   PetscErrorCode remove_ents_from_finite_element(const string &name,const Range &ents,int verb = -1);
+  PetscErrorCode delete_finite_element(const string name,int verb = -1);
 
   //other auxiliary functions for finite element
   BitFEId get_BitFEId(const string& name) const;
@@ -448,8 +449,9 @@ struct Core:
   //problem
   PetscErrorCode add_problem(const BitProblemId id,const string& name);
   PetscErrorCode add_problem(const string& name,enum MoFEMTypes bh = MF_EXCL,int verb = -1);
-  PetscErrorCode delete_problem(const string& name);
+  PetscErrorCode delete_problem(const string name);
   PetscErrorCode modify_problem_add_finite_element(const string &name_problem,const string &MoFEMFiniteElement_name);
+  PetscErrorCode modify_problem_unset_finite_element(const string &name_problem,const string &MoFEMFiniteElement_name);
   PetscErrorCode modify_problem_ref_level_add_bit(const string &name_problem,const BitRefLevel &bit);
   PetscErrorCode modify_problem_ref_level_set_bit(const string &name_problem,const BitRefLevel &bit);
   PetscErrorCode modify_problem_dof_mask_ref_level_set_bit(const string &name_problem,const BitRefLevel &bit);
@@ -477,6 +479,7 @@ struct Core:
 
   //problem building
   PetscErrorCode build_problem(const string &name,int verb = -1);
+  PetscErrorCode clear_problem(const string &name,int verb = -1);
   PetscErrorCode build_problem(MoFEMProblem *problem_ptr,int verb = -1);
   PetscErrorCode build_problems(int verb = -1);
   PetscErrorCode clear_problems(int verb = -1);

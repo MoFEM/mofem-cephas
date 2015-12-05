@@ -1,7 +1,7 @@
 /** \file CoreDataStructures.cpp
  * \brief Myltindex contains, data structures and other low-level functions
  */
- 
+
 /* MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or (at your
@@ -102,41 +102,44 @@ PetscErrorCode MoFEMProblem::get_col_dofs_by_petsc_gloabl_dof_idx(DofIdx idx,con
   *dof_ptr = &*dit;
   PetscFunctionReturn(0);
 }
-void problem_MoFEMFiniteElement_change_bit_add::operator()(MoFEMProblem &p) {
+void ProblemFiniteElementChangeBitAdd::operator()(MoFEMProblem &p) {
   *(p.tag_BitFEId_data) |= f_id;
 }
-problem_add_row_dof::problem_add_row_dof(const DofMoFEMEntity *_dof_ptr): dof_ptr(_dof_ptr) {
+void ProblemFiniteElementChangeBitUnSet::operator()(MoFEMProblem &p) {
+  *(p.tag_BitFEId_data) &= ~f_id;
+}
+ProblemAddRowDof::ProblemAddRowDof(const DofMoFEMEntity *_dof_ptr): dof_ptr(_dof_ptr) {
   assert(dof_ptr->active);
 }
-void problem_add_row_dof::operator()(MoFEMProblem &e) {
+void ProblemAddRowDof::operator()(MoFEMProblem &e) {
   p = e.numered_dofs_rows.insert(NumeredDofMoFEMEntity(dof_ptr));
   if(p.second) {
     (*(DofIdx*)e.tag_nbdof_data_row)++;
   }
 }
-problem_add_col_dof::problem_add_col_dof(const DofMoFEMEntity *_dof_ptr): dof_ptr(_dof_ptr) {}
-void problem_add_col_dof::operator()(MoFEMProblem &e) {
+ProblemAddColDof::ProblemAddColDof(const DofMoFEMEntity *_dof_ptr): dof_ptr(_dof_ptr) {}
+void ProblemAddColDof::operator()(MoFEMProblem &e) {
   p = e.numered_dofs_cols.insert(NumeredDofMoFEMEntity(dof_ptr));
   if(p.second) {
     (*(DofIdx*)e.tag_nbdof_data_col)++;
   }
 }
-void problem_zero_nb_rows_change::operator()(MoFEMProblem &e) {
+void ProblemZeroNbRowsChange::operator()(MoFEMProblem &e) {
   (*(DofIdx*)e.tag_nbdof_data_row) = 0;
   (*(DofIdx*)e.tag_local_nbdof_data_row) = 0;
   (*(DofIdx*)e.tag_ghost_nbdof_data_row) = 0;
   e.numered_dofs_rows.clear();
 }
-void problem_zero_nb_cols_change::operator()(MoFEMProblem &e) {
+void ProblemZeroNbColsChange::operator()(MoFEMProblem &e) {
   (*(DofIdx*)e.tag_nbdof_data_col) = 0;
   (*(DofIdx*)e.tag_local_nbdof_data_col) = 0;
   (*(DofIdx*)e.tag_ghost_nbdof_data_col) = 0;
   e.numered_dofs_cols.clear();
 }
-void problem_clear_numered_finiteElementsPtr_change::operator()(MoFEMProblem &e) {
+void ProblemClearNumeredFiniteElementsChange::operator()(MoFEMProblem &e) {
   e.numeredFiniteElements.clear();
 }
-void problem_row_number_change::operator()(MoFEMProblem &e) {
+void ProblemRowNumberChange::operator()(MoFEMProblem &e) {
   NumeredDofMoFEMEntity_multiIndex::index<Unique_mi_tag>::type::iterator dit;
   dit = e.numered_dofs_rows.get<Unique_mi_tag>().begin();
   int idx = 0;
@@ -148,7 +151,7 @@ void problem_row_number_change::operator()(MoFEMProblem &e) {
     }
   }
 }
-void problem_col_number_change::operator()(MoFEMProblem &e) {
+void ProblemColNumberChange::operator()(MoFEMProblem &e) {
   NumeredDofMoFEMEntity_multiIndex::index<Unique_mi_tag>::type::iterator dit;
   dit = e.numered_dofs_cols.get<Unique_mi_tag>().begin();
   int idx = 0;

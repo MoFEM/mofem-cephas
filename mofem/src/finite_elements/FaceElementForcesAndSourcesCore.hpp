@@ -114,10 +114,18 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
     inline MatrixDouble& getCoordsAtGaussPts() { return ptrFE->coordsAtGaussPts; }
 
     /** \brief coordinate at Gauss points (if hierarchical approximation of element geometry)
+
+    Note: Returenet matrix has size 0 in rows and columns if no HO approxmiation
+    of geometry is avaliable.
+
       */
     inline MatrixDouble& getHoCoordsAtGaussPts() { return ptrFE->hoCoordsAtGaussPts; }
 
     /** \brief if higher order geometry return normals at Gauss pts.
+
+    Note: Returenet matrix has size 0 in rows and columns if no HO approxmiation
+    of geometry is avaliable.
+
      */
     inline MatrixDouble& getNormals_at_GaussPt() { return ptrFE->nOrmals_at_GaussPt; }
 
@@ -130,10 +138,18 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
     }
 
     /** \brief if higher order geometry return tangent vector to triangle at Gauss pts.
+
+    Note: Returenet matrix has size 0 in rows and columns if no HO approxmiation
+    of geometry is avaliable.
+
      */
     inline MatrixDouble& getTangent1_at_GaussPt() { return ptrFE->tAngent1_at_GaussPt; }
 
     /** \brief if higher order geometry return tangent vector to triangle at Gauss pts.
+
+    Note: Returenet matrix has size 0 in rows and columns if no HO approxmiation
+    of geometry is avaliable.
+
      */
     inline MatrixDouble& getTangent2_at_GaussPt() { return ptrFE->tAngent2_at_GaussPt; }
 

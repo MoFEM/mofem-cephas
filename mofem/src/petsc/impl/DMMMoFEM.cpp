@@ -217,6 +217,15 @@ PetscErrorCode DMMoFEMAddElement(DM dm,const char fe_name[]) {
   PetscFunctionReturn(0);
 }
 
+PetscErrorCode DMMoFEMUnSetElement(DM dm,const char fe_name[]) {
+  PetscErrorCode ierr;
+  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
+  PetscFunctionBegin;
+  DMCtx *dm_field = (DMCtx*)dm->data;
+  ierr = dm_field->mField_ptr->modify_problem_unset_finite_element(dm_field->problemName,fe_name); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
 PetscErrorCode DMoFEMMeshToLocalVector(DM dm,Vec l,InsertMode mode,ScatterMode scatter_mode) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
@@ -483,7 +492,7 @@ PetscErrorCode DMSetUp_MoFEM(DM dm) {
     ierr = dm_field->mField_ptr->partition_finite_elements(dm_field->problemName,true,0,dm_field->sIze,1); CHKERRQ(ierr);
     dm_field->isProblemsBuild = PETSC_TRUE;
   } else {
-    ierr = dm_field->mField_ptr->build_problems(); CHKERRQ(ierr);
+    ierr = dm_field->mField_ptr->build_problem(dm_field->problemName); CHKERRQ(ierr);
     ierr = dm_field->mField_ptr->partition_problem(dm_field->problemName); CHKERRQ(ierr);
     ierr = dm_field->mField_ptr->partition_finite_elements(dm_field->problemName); CHKERRQ(ierr);
     dm_field->isProblemsBuild = PETSC_TRUE;

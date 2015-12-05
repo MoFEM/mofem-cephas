@@ -84,8 +84,8 @@ PetscErrorCode Core::build_partitioned_problem(MoFEMProblem *problem_ptr,bool sq
     SETERRQ1(PETSC_COMM_SELF,1,"problem <%s> refinement level not set",problem_ptr->get_name().c_str());
   }
   //zero finite elements
-  problem_clear_numered_finiteElementsPtr_change().operator()(*problem_ptr);
-  //bool success = moFEMProblems.modify(p_miit,problem_clear_numered_finiteElementsPtr_change());
+  ProblemClearNumeredFiniteElementsChange().operator()(*problem_ptr);
+  //bool success = moFEMProblems.modify(p_miit,ProblemClearNumeredFiniteElementsChange());
   //if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
 
   //get rows and cols dofs view
@@ -448,12 +448,12 @@ PetscErrorCode Core::build_problem(MoFEMProblem *problem_ptr,int verb) {
   for(;miit3!=hi_miit2;miit3++) {
     //if element is in problem
     if((miit3->get_id()&problem_ptr->get_BitFEId()).any()) {
-	//if finite element bit level has all refined bits sets
-	if((miit3->get_BitRefLevel()&problem_ptr->get_BitRefLevel())==problem_ptr->get_BitRefLevel()) {
-	  //get dof uids for rows and columns
-	  ierr = miit3->get_MoFEMFiniteElement_row_dof_view(dofsMoabField,dofs_rows); CHKERRQ(ierr);
-	  ierr = miit3->get_MoFEMFiniteElement_col_dof_view(dofsMoabField,dofs_cols); CHKERRQ(ierr);
-	}
+      //if finite element bit level has all refined bits sets
+      if((miit3->get_BitRefLevel()&problem_ptr->get_BitRefLevel())==problem_ptr->get_BitRefLevel()) {
+        //get dof uids for rows and columns
+        ierr = miit3->get_MoFEMFiniteElement_row_dof_view(dofsMoabField,dofs_rows); CHKERRQ(ierr);
+        ierr = miit3->get_MoFEMFiniteElement_col_dof_view(dofsMoabField,dofs_cols); CHKERRQ(ierr);
+      }
     }
   }
 
@@ -476,7 +476,7 @@ PetscErrorCode Core::build_problem(MoFEMProblem *problem_ptr,int verb) {
     if(((*miit4)->get_BitRefLevel()&problem_ptr->get_DofMask_BitRefLevel())!=(*miit4)->get_BitRefLevel()) {
       continue;
     }
-    problem_add_row_dof(&**miit4).operator()(*problem_ptr);
+    ProblemAddRowDof(&**miit4).operator()(*problem_ptr);
   }
 
   //add dofs for cols
@@ -487,12 +487,12 @@ PetscErrorCode Core::build_problem(MoFEMProblem *problem_ptr,int verb) {
     if(((*miit5)->get_BitRefLevel()&problem_ptr->get_DofMask_BitRefLevel())!=(*miit5)->get_BitRefLevel()) {
       continue;
     }
-    problem_add_col_dof(&**miit5).operator()(*problem_ptr);
+    ProblemAddColDof(&**miit5).operator()(*problem_ptr);
   }
 
   //number dofs on rows and columns
-  problem_row_number_change().operator()(*problem_ptr);
-  problem_col_number_change().operator()(*problem_ptr);
+  ProblemRowNumberChange().operator()(*problem_ptr);
+  ProblemColNumberChange().operator()(*problem_ptr);
 
   //job done, some debugging and postprocessing
   if(verbose>0) {
@@ -506,22 +506,22 @@ PetscErrorCode Core::build_problem(MoFEMProblem *problem_ptr,int verb) {
     ss << "rank " << rAnk << " ";
     ss << "FEs data for problem " << *problem_ptr << endl;
     for(;miit_ss!=hi_miit2;miit_ss++) {
-	ss << "rank " << rAnk << " ";
-	ss << *miit_ss << endl;
+      ss << "rank " << rAnk << " ";
+      ss << *miit_ss << endl;
     }
     ss << "rank " << rAnk << " ";
     ss << "FEs row dofs "<< *problem_ptr << " Nb. row dof " << problem_ptr->get_nb_dofs_row() << endl;
     NumeredDofMoFEMEntity_multiIndex::iterator miit_dd_row = problem_ptr->numered_dofs_rows.begin();
     for(;miit_dd_row!=problem_ptr->numered_dofs_rows.end();miit_dd_row++) {
-	ss << "rank " << rAnk << " ";
-	ss<<*miit_dd_row<<endl;
+      ss << "rank " << rAnk << " ";
+      ss<<*miit_dd_row<<endl;
     }
     ss << "rank " << rAnk << " ";
     ss << "FEs col dofs "<< *problem_ptr << " Nb. col dof " << problem_ptr->get_nb_dofs_col() << endl;
     NumeredDofMoFEMEntity_multiIndex::iterator miit_dd_col = problem_ptr->numered_dofs_cols.begin();
     for(;miit_dd_col!=problem_ptr->numered_dofs_cols.end();miit_dd_col++) {
-	ss << "rank " << rAnk << " ";
-	ss<<*miit_dd_col<<endl;
+      ss << "rank " << rAnk << " ";
+      ss<<*miit_dd_col<<endl;
     }
     PetscSynchronizedPrintf(comm,ss.str().c_str());
   }
@@ -542,6 +542,29 @@ PetscErrorCode Core::build_problem(const string &problem_name,int verb) {
   ierr = get_problem(problem_name,&problem_ptr); CHKERRQ(ierr);
   ierr = build_problem(const_cast<MoFEMProblem*>(problem_ptr),verb); CHKERRQ(ierr);
   *build_MoFEM |= 1<<3; // It is assumed that user who uses this function knows what he is doing
+  PetscFunctionReturn(0);
+}
+PetscErrorCode Core::clear_problem(const string &problem_name,int verb) {
+  PetscFunctionBegin;
+  if(verb==-1) verb = verbose;
+  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type MoFemProblemsByName;
+  MoFemProblemsByName &prob_by_name = moFEMProblems.get<Problem_mi_tag>();
+  MoFemProblemsByName::iterator p_miit = prob_by_name.find(problem_name);
+  if(p_miit == prob_by_name.end()) {
+    SETERRQ1(
+      PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,
+      "problem < %s > not found, (top tip: check spelling)",problem_name.c_str()
+    );
+  }
+  //zero rows
+  bool success = prob_by_name.modify(p_miit,ProblemZeroNbRowsChange());
+  if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+  //zero cols
+  success = prob_by_name.modify(p_miit,ProblemZeroNbColsChange());
+  if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+  //clear finite elements
+  success = prob_by_name.modify(p_miit,ProblemClearNumeredFiniteElementsChange());
+  if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
   PetscFunctionReturn(0);
 }
 PetscErrorCode Core::build_problems(int verb) {
@@ -566,13 +589,13 @@ PetscErrorCode Core::clear_problems(int verb) {
   //iterate problems
   for(;p_miit!=moFEMProblems.end();p_miit++) {
     //zero rows
-    bool success = moFEMProblems.modify(p_miit,problem_zero_nb_rows_change());
+    bool success = moFEMProblems.modify(p_miit,ProblemZeroNbRowsChange());
     if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
     //zero cols
-    success = moFEMProblems.modify(p_miit,problem_zero_nb_cols_change());
+    success = moFEMProblems.modify(p_miit,ProblemZeroNbColsChange());
     if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
     //clear finite elements
-    success = moFEMProblems.modify(p_miit,problem_clear_numered_finiteElementsPtr_change());
+    success = moFEMProblems.modify(p_miit,ProblemClearNumeredFiniteElementsChange());
     if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
   }
   PetscFunctionReturn(0);

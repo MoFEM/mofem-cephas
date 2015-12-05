@@ -176,7 +176,7 @@ int main(int argc, char *argv[]) {
   {
     MyFunApprox function_evaluator;
     FieldApproximationH1 field_approximation(m_field);
-    field_approximation.loopMatrixAndVector(
+    field_approximation.loopMatrixAndVectorVolume(
       "TEST_PROBLEM","TEST_FE","FIELD1",A,vec_F,function_evaluator);
   }
 
