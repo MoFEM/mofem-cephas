@@ -402,6 +402,10 @@ struct FieldApproximationH1 {
       }
 
       VectorDouble normal(3);
+      VectorDouble tangent1(3);
+      VectorDouble tangent2(3);
+      tangent1.clear();
+      tangent2.clear();
 
       // integration
       unsigned int nb_gauss_pts = data.getN().size1();
@@ -428,13 +432,18 @@ struct FieldApproximationH1 {
 
         if(getNormals_at_GaussPt().size1()) {
          noalias(normal) = getNormals_at_GaussPt(gg);
+         for(int dd = 0;dd<3;dd++) {
+          tangent1[dd] = getTangent1_at_GaussPt()(gg,dd);
+          tangent2[dd] = getTangent2_at_GaussPt()(gg,dd);
+        }
        } else {
          noalias(normal) = getNormal();
        }
 
         vector<ublas::vector<double> > fun_val;
         try {
-          fun_val = functionEvaluator(x,y,z,normal);
+          EntityHandle ent = getFEMethod()->fePtr->get_ent();
+          fun_val = functionEvaluator(ent,x,y,z,normal,tangent1,tangent2);
         } catch (exception& ex) {
           ostringstream ss;
           ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
