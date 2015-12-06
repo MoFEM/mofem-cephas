@@ -709,12 +709,8 @@ PetscErrorCode calculate_matrix_and_vector(
 
   PetscErrorCode ierr;
   FieldApproximationH1 field_approximation(m_field);
-  // This increase rule for numerical integration. In case of 10 node
-  // elements jacobian is varying linearly across element, that way to element
-  // rule is add 1.
-  field_approximation.addToRule = 1;
 
-  ierr = field_approximation.loopMatrixAndVector(
+  ierr = field_approximation.loopMatrixAndVectorVolume(
     problem_name,fe_name,re_field,A,vec_F,fun_evaluator
   ); CHKERRQ(ierr);
 

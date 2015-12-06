@@ -15,53 +15,43 @@
 #ifndef __MOFEM_HPP__
 #define __MOFEM_HPP__
 
-#include <moab/ParallelComm.hpp>
+#include <Includes.hpp>
 
-#include <petscsys.h>
-#include <petscvec.h>
-#include <petscmat.h>
-#include <petscsnes.h>
-#include <petscts.h>
-#include <petscdm.h>
-
+//SRC APPROXIMATION
+#include <config.h>
 #include <definitions.h>
 #include <h1_hdiv_hcurl_l2.h>
 #include <fem_tools.h>
 
 #include <Common.hpp>
 
+//SRC/MULTI-INDICES
+#include <MaterialBlocks.hpp>
+#include <CubitBCData.hpp>
+#include <TagMultiIndices.hpp>
+#include <FieldMultiIndices.hpp>
+#include <EntsMultiIndices.hpp>
+#include <DofsMultiIndices.hpp>
+#include <FEMMultiIndices.hpp>
+#include <ProblemsMultiIndices.hpp>
+#include <AdjacencyMultiIndices.hpp>
+#include <BCMultiIndices.hpp>
+#include <SeriesMultiIndices.hpp>
+
+//SRC/INTERFACES
 #include <LoopMethods.hpp>
 #include <FieldInterface.hpp>
 #include <MeshRefinment.hpp>
 #include <PrismInterface.hpp>
 #include <SeriesRecorder.hpp>
-
-#include <boost/ptr_container/ptr_vector.hpp>
-#include <boost/ptr_container/ptr_map.hpp>
-
 #include <Core.hpp>
 
+//SRC/PETSC
 #include <SnesCtx.hpp>
 #include <TsCtx.hpp>
 #include <DMMoFEM.hpp>
 
-#define BOOST_UBLAS_SHALLOW_ARRAY_ADAPTOR
-
-#include <boost/numeric/ublas/storage.hpp>
-#include <boost/numeric/ublas/matrix.hpp>
-#include <boost/numeric/ublas/matrix_proxy.hpp>
-#include <boost/numeric/ublas/io.hpp>
-
+//SRC/FINITE_ELEMENTS
 #include <ForcesAndSurcesCore.hpp>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-  #include <cblas.h>
-  #include <lapack_wrap.h>
-  #include <gm_rule.h>
-#ifdef __cplusplus
-}
-#endif
 
 #endif //MOFEM_HPP__

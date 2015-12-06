@@ -15,23 +15,33 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 */
 
-#include <petscsys.h>
-#include <petscvec.h>
-#include <petscmat.h>
-#include <petscsnes.h>
-#include <petscts.h>
-
-#include <moab/ParallelComm.hpp>
-#include <boost/ptr_container/ptr_map.hpp>
-
-//#include <version.h>
+#include <Includes.hpp>
+// #include <version.h>
 #include <definitions.h>
-
 #include <Common.hpp>
+
+#include <h1_hdiv_hcurl_l2.h>
+
+#include <MaterialBlocks.hpp>
+#include <CubitBCData.hpp>
+#include <TagMultiIndices.hpp>
+#include <FieldMultiIndices.hpp>
+#include <EntsMultiIndices.hpp>
+#include <DofsMultiIndices.hpp>
+#include <FEMMultiIndices.hpp>
+#include <ProblemsMultiIndices.hpp>
+#include <AdjacencyMultiIndices.hpp>
+#include <BCMultiIndices.hpp>
+#include <CoreDataStructures.hpp>
+#include <SeriesMultiIndices.hpp>
+
 #include <LoopMethods.hpp>
+#include <FieldInterface.hpp>
+#include <MeshRefinment.hpp>
+#include <PrismInterface.hpp>
+#include <SeriesRecorder.hpp>
 #include <Core.hpp>
 
-#include <FieldInterface.hpp>
 #include <PrismsFromSurfaceInterface.hpp>
 
 namespace MoFEM {
@@ -56,11 +66,11 @@ PetscErrorCode PrismsFromSurfaceInterface::createPrisms(const Range &ents,Range 
   MoABErrorCode rval;
   FieldInterface& m_field = cOre;
   Range tris = ents.subset_by_type(MBTRI);
-  double coords[9];
   for(Range::iterator tit = tris.begin();tit!=tris.end();tit++) {
     const EntityHandle* conn;
     int number_nodes = 0;
-    rval = m_field.get_moab().get_connectivity(*tit,conn,number_nodes,true); CHKERR_PETSC(rval);
+    rval = m_field.get_moab().get_connectivity(*tit,conn,number_nodes,false); CHKERR_PETSC(rval);
+    double coords[3*number_nodes];
     rval = m_field.get_moab().get_coords(conn,number_nodes,coords); CHKERR_PETSC(rval);
     EntityHandle prism_nodes[6];
     for(int nn = 0;nn<3;nn++) {
@@ -89,13 +99,30 @@ PetscErrorCode PrismsFromSurfaceInterface::createPrisms(const Range &ents,Range 
       rval = m_field.get_moab().side_element(prism,1,ee+6,e2); CHKERR_PETSC(rval);
       rval = m_field.get_moab().tag_set_data(cOre.get_th_RefParentHandle(),&e2,1,&e1); CHKERR_PETSC(rval);
     }
+    EntityHandle f3,f4;
     {
-      EntityHandle f1;
-      rval = m_field.get_moab().side_element(prism,2,3,f1);
-      EntityHandle f2;
-      rval = m_field.get_moab().side_element(prism,2,4,f2);
-      rval = m_field.get_moab().tag_set_data(cOre.get_th_RefParentHandle(),&f2,1,&f1); CHKERR_PETSC(rval);
-
+      rval = m_field.get_moab().side_element(prism,2,3,f3);
+      rval = m_field.get_moab().side_element(prism,2,4,f4);
+      rval = m_field.get_moab().tag_set_data(cOre.get_th_RefParentHandle(),&f4,1,&f3); CHKERR_PETSC(rval);
+    }
+    if(number_nodes>3) {
+      EntityHandle meshset;
+      rval = m_field.get_moab().create_meshset(MESHSET_SET,meshset); CHKERR_PETSC(rval);
+      rval = m_field.get_moab().add_entities(meshset,&f4,1); CHKERR_PETSC(rval);
+      for(int ee = 0;ee<=2;ee++) {
+        EntityHandle e2;
+        rval = m_field.get_moab().side_element(prism,1,ee+6,e2); CHKERR_PETSC(rval);
+        rval = m_field.get_moab().add_entities(meshset,&e2,1); CHKERR_PETSC(rval);
+      }
+      rval = m_field.get_moab().convert_entities(meshset,true,false,false); CHKERR_PETSC(rval);
+      rval = m_field.get_moab().delete_entities(&meshset,1); CHKERR_PETSC(rval);
+      const EntityHandle* conn_f4;
+      int number_nodes_f4 = 0;
+      rval = m_field.get_moab().get_connectivity(f4,conn_f4,number_nodes_f4,false); CHKERR_PETSC(rval);
+      if(number_nodes_f4 != number_nodes) {
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
+      }
+      rval = m_field.get_moab().set_coords(&conn_f4[3],3,&coords[9]); CHKERR_PETSC(rval);
     }
   }
   PetscFunctionReturn(0);

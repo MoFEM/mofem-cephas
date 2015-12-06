@@ -252,10 +252,12 @@ PetscErrorCode ShapeFaceDiffNormalMBTRI(double *diffN,const double *coords,doubl
   }
   cblas_dgemm(
     CblasRowMajor,CblasNoTrans,CblasNoTrans,3,9,3,
-      +1.,Spin_diffX_ksi,3,B_eta,9,0.,diff_normal,9);
+    +1.,Spin_diffX_ksi,3,B_eta,9,0.,diff_normal,9
+  );
   cblas_dgemm(
     CblasRowMajor,CblasNoTrans,CblasNoTrans,3,9,3,
-      -1.,Spin_diffX_eta,3,B_ksi,9,1.,diff_normal,9);
+    -1.,Spin_diffX_eta,3,B_ksi,9,1.,diff_normal,9
+  );
   PetscFunctionReturn(0);
 }
 

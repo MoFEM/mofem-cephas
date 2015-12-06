@@ -19,14 +19,14 @@ struct PostPorcStress: public VolumeElementForcesAndSourcesCore::UserDataOperato
   Interface &postProcMesh;
   vector<EntityHandle> &mapGaussPts;
 
-  PostPocOnRefinedMesh::CommonData &commonData;
+  PostProcVolumeOnRefinedMesh::CommonData &commonData;
 
   PostPorcStress(
     FieldInterface& m_field,
     Interface &post_proc_mesh,
     vector<EntityHandle> &map_gauss_pts,
     const string field_name,
-    PostPocOnRefinedMesh::CommonData &common_data):
+    PostProcVolumeOnRefinedMesh::CommonData &common_data):
     VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
     mField(m_field),
     postProcMesh(post_proc_mesh),

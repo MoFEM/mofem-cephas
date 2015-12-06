@@ -12,12 +12,36 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-//petsc
-#include <petscsys.h>
-#include <petscvec.h>
-#include <petscmat.h>
-#include <petscsnes.h>
-#include <petscts.h>
+#include <Includes.hpp>
+// #include <version.h>
+#include <definitions.h>
+#include <Common.hpp>
+
+#include <h1_hdiv_hcurl_l2.h>
+
+#include <MaterialBlocks.hpp>
+#include <CubitBCData.hpp>
+#include <TagMultiIndices.hpp>
+#include <FieldMultiIndices.hpp>
+#include <EntsMultiIndices.hpp>
+#include <DofsMultiIndices.hpp>
+#include <FEMMultiIndices.hpp>
+#include <ProblemsMultiIndices.hpp>
+#include <AdjacencyMultiIndices.hpp>
+#include <BCMultiIndices.hpp>
+#include <CoreDataStructures.hpp>
+#include <SeriesMultiIndices.hpp>
+
+#include <LoopMethods.hpp>
+#include <FieldInterface.hpp>
+#include <MeshRefinment.hpp>
+#include <PrismInterface.hpp>
+#include <SeriesRecorder.hpp>
+#include <Core.hpp>
+
+#include <KspCtx.hpp>
+#include <SnesCtx.hpp>
+#include <TsCtx.hpp>
 
 #undef PETSC_VERSION_RELEASE
 #define PETSC_VERSION_RELEASE 1
@@ -30,23 +54,7 @@
   #include <petsc-private/vecimpl.h> /*I  "petscdm.h"   I*/
 #endif
 
-//moab
-#include <moab/ParallelComm.hpp>
-
-//mofem
-#include <definitions.h>
-#include <Common.hpp>
-
-#include <LoopMethods.hpp>
-#include <FieldInterface.hpp>
-
 #include <DMMoFEM.hpp>
-
-#include <KspCtx.hpp>
-#include <SnesCtx.hpp>
-#include <TsCtx.hpp>
-
-#include <cblas.h>
 
 namespace MoFEM {
 
@@ -206,6 +214,15 @@ PetscErrorCode DMMoFEMAddElement(DM dm,const char fe_name[]) {
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;
   ierr = dm_field->mField_ptr->modify_problem_add_finite_element(dm_field->problemName,fe_name); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode DMMoFEMUnSetElement(DM dm,const char fe_name[]) {
+  PetscErrorCode ierr;
+  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
+  PetscFunctionBegin;
+  DMCtx *dm_field = (DMCtx*)dm->data;
+  ierr = dm_field->mField_ptr->modify_problem_unset_finite_element(dm_field->problemName,fe_name); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -475,7 +492,7 @@ PetscErrorCode DMSetUp_MoFEM(DM dm) {
     ierr = dm_field->mField_ptr->partition_finite_elements(dm_field->problemName,true,0,dm_field->sIze,1); CHKERRQ(ierr);
     dm_field->isProblemsBuild = PETSC_TRUE;
   } else {
-    ierr = dm_field->mField_ptr->build_problems(); CHKERRQ(ierr);
+    ierr = dm_field->mField_ptr->build_problem(dm_field->problemName); CHKERRQ(ierr);
     ierr = dm_field->mField_ptr->partition_problem(dm_field->problemName); CHKERRQ(ierr);
     ierr = dm_field->mField_ptr->partition_finite_elements(dm_field->problemName); CHKERRQ(ierr);
     dm_field->isProblemsBuild = PETSC_TRUE;

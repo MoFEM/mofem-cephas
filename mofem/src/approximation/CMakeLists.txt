@@ -13,13 +13,13 @@
 
 #approximation
 add_library(mofem_approx
+  impl/EntityRefine.cpp
   c_impl/fem_tools.c
   c_impl/h1.c
   c_impl/hdiv.c
-  c_impl/l2.c 
+  c_impl/l2.c
 )
 
 install(TARGETS mofem_approx DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
 
 #install(FILES c/fem_tools.h c/h1_hdiv_hcurl_l2.h DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
-

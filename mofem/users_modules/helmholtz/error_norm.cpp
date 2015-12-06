@@ -264,7 +264,7 @@ int main(int argc, char *argv[]) {
   ierr = PetscOptionsGetBool(NULL,"-save_postproc_mesh",&save_postproc_mesh,NULL); CHKERRQ(ierr);
   if(save_postproc_mesh) {
 
-    PostPocOnRefinedMesh post_proc1(m_field);
+    PostProcVolumeOnRefinedMesh post_proc1(m_field);
 		ierr = post_proc1.generateReferenceElementMesh(); CHKERRQ(ierr);
     ierr = post_proc1.addFieldValuesPostProc("erorNORM"); CHKERRQ(ierr);
     ierr = post_proc1.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);

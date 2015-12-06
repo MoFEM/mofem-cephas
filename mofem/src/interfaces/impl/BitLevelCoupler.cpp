@@ -11,25 +11,31 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 */
 
-#include <petscsys.h>
-#include <petscvec.h> 
-#include <petscmat.h> 
-#include <petscsnes.h> 
-#include <petscts.h> 
-
-#include <moab/ParallelComm.hpp>
-
+#include <Includes.hpp>
+// #include <version.h>
 #include <definitions.h>
-#include <h1_hdiv_hcurl_l2.h>
-#include <fem_tools.h>
-
 #include <Common.hpp>
+
+#include <h1_hdiv_hcurl_l2.h>
+
+#include <MaterialBlocks.hpp>
+#include <CubitBCData.hpp>
+#include <TagMultiIndices.hpp>
+#include <FieldMultiIndices.hpp>
+#include <EntsMultiIndices.hpp>
+#include <DofsMultiIndices.hpp>
+#include <FEMMultiIndices.hpp>
+#include <ProblemsMultiIndices.hpp>
+#include <AdjacencyMultiIndices.hpp>
+#include <BCMultiIndices.hpp>
+#include <CoreDataStructures.hpp>
+#include <SeriesMultiIndices.hpp>
 
 #include <LoopMethods.hpp>
 #include <FieldInterface.hpp>
-
-#include <boost/ptr_container/ptr_vector.hpp>
-#include <boost/ptr_container/ptr_map.hpp>
+#include <MeshRefinment.hpp>
+#include <PrismInterface.hpp>
+#include <SeriesRecorder.hpp>
 #include <Core.hpp>
 
 //Tree
@@ -198,7 +204,7 @@ PetscErrorCode BitLevelCouplerInterface::buidlAdjacenciesVerticesOnTets(const Bi
   FieldInterface& m_field = cOre;
   //build Tree
   bool init_tree = false;
-  
+
   //find parents of all nodes, if node has no parent then tetrahedral containing that node is searched
   //node on tetrahedra my by part of face or edge on that tetrahedral, this need to be verified
   const RefMoFEMEntity_multiIndex *refined_ptr;
@@ -350,7 +356,7 @@ PetscErrorCode BitLevelCouplerInterface::buidlAdjacenciesEdgesFacesVolumes(
 	ierr = chanegParent(refined_ptr->project<0>(it),0,elements); CHKERRQ(ierr);
 	if(verb > 1) {
 	  cout << "parent not found\n";
-	}	
+	}
       }
 
     }
@@ -388,7 +394,7 @@ PetscErrorCode BitLevelCouplerInterface::chanegParent(RefMoFEMEntity_multiIndex:
       }
       parent_is_set = true;
     }
-  } 
+  }
 
   if(!parent_is_set) {
     RefMoFEMEntity_change_parent modifier(m_field.get_moab(),parent);

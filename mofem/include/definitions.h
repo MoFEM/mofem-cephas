@@ -1,7 +1,8 @@
 /** \file definitions.h
  * \brief useful compiler directives and definitions
- *
- * MoFEM is free software: you can redistribute it and/or modify it under
+ */
+
+/* MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or (at your
  * option) any later version.
@@ -94,14 +95,41 @@ enum ByWhat {
   BYALL = 1<<0|1<<1|1<<2
 };
 
+/**
+  * Types of sets and boundary conditions
+  *
+  */
+enum CubitBC {
+  UNKNOWNSET = 0,
+  NODESET = 1<<0,
+  SIDESET = 1<<1,
+  BLOCKSET = 1<<2,
+  MATERIALSET = 1<<3,
+  DISPLACEMENTSET = 1<<4,
+  FORCESET = 1<<5,
+  PRESSURESET = 1<<6,
+  VELOCITYSET = 1<<7,
+  ACCELERATIONSET = 1<<8,
+  TEMPERATURESET = 1<<9,
+  HEATFLUXSET = 1<<10,
+  INTERFACESET = 1<<11,
+  UNKNOWNCUBITNAME = 1<< 12,
+  MAT_ELASTICSET = 1<<13,	///< block name is "MAT_ELASTIC"
+  MAT_INTERFSET = 1 <<14,
+  MAT_THERMALSET = 1<<15,	///< block name is "MAT_THERMAL"
+  BODYFORCESSET = 1<<16,	///< block name is "BODY_FORCES"
+  MAT_MOISTURESET = 1<<17, 	///< block name is "MAT_MOISTURE"
+  LASTCUBITSET
+};
+
 //taken from http://stackoverflow.com/questions/295120/c-mark-as-deprecated
 #ifdef __GNUC__
-#define DEPRECATED __attribute__((deprecated))
+  #define DEPRECATED __attribute__((deprecated))
 #elif defined(_MSC_VER)
-#define DEPRECATED __declspec(deprecated)
+  #define DEPRECATED __declspec(deprecated)
 #else
-#pragma message("WARNING: You need to implement DEPRECATED for this compiler")
-#define DEPRECATED
+  #pragma message("WARNING: You need to implement DEPRECATED for this compiler")
+  #define DEPRECATED
 #endif
 
 #define BITREFEDGES_SIZE 6 /*number of edges on tetrahedral*/
@@ -175,5 +203,8 @@ enum ByWhat {
   ss << a << " " << " at " << __FILE__ << ":" << __LINE__ << std::endl; \
   throw MoFEMException( MOFEM_MOFEMEXCEPTION_THROW,ss.str().c_str() ); \
 }
+
+#define SSTR( x ) dynamic_cast< std::ostringstream & >( \
+  ( std::ostringstream() << std::dec << x ) ).str()
 
 #endif //__DEFINITONS_H__

@@ -15,15 +15,22 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 */
 
-#include <moab/ParallelComm.hpp>
-
-#include <petscsys.h>
-#include <cblas.h>
-
+#include <Includes.hpp>
 #include <definitions.h>
+#include <Common.hpp>
+
 #include <h1_hdiv_hcurl_l2.h>
 
-#include <Common.hpp>
+#include <MaterialBlocks.hpp>
+#include <CubitBCData.hpp>
+#include <TagMultiIndices.hpp>
+#include <FieldMultiIndices.hpp>
+#include <EntsMultiIndices.hpp>
+#include <DofsMultiIndices.hpp>
+#include <FEMMultiIndices.hpp>
+#include <ProblemsMultiIndices.hpp>
+#include <AdjacencyMultiIndices.hpp>
+#include <BCMultiIndices.hpp>
 #include <CoreDataStructures.hpp>
 
 namespace MoFEM {

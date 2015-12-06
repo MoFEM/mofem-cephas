@@ -112,17 +112,17 @@ int main(int argc, char *argv[]) {
   //add finite element to test problem
   ierr = m_field.modify_problem_add_finite_element("TEST_PROBLEM","FLUID_PRESSURE_FE"); CHKERRQ(ierr);
 
-  //construct data structrures for fields and finite elements. at that points
-  //entities, finite elements or dofs have unque uid, but are not partitioned
-  //or numbered. user can add entities to mesh, add dofs or elenents if
+  //construct data structures for fields and finite elements. at that points
+  //entities, finite elements or dofs have unique uid, but are not partitioned
+  //or numbered. user can add entities to mesh, add dofs or elements if
   //necessaery. in case of modifications data structures are updated.
   ierr = m_field.build_fields(); CHKERRQ(ierr);
   ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
   ierr = m_field.build_adjacencies(bit_level0); CHKERRQ(ierr);
   ierr = m_field.build_problems(); CHKERRQ(ierr);
 
-  //to solve problem it needt to be respresented in matrix vector form. this
-  //demand numbertion of dofs and proble  partitioning.
+  //to solve problem it need to be represented in matrix vector form. this
+  //demand numeration of dofs and problem  partitioning.
   ierr = m_field.partition_simple_problem("TEST_PROBLEM"); CHKERRQ(ierr);
   ierr = m_field.partition_finite_elements("TEST_PROBLEM"); CHKERRQ(ierr);
   //what are ghost nodes, see Petsc Manual
@@ -147,37 +147,37 @@ int main(int argc, char *argv[]) {
   ierr = VecView(F,viewer); CHKERRQ(ierr);
   ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
 
-  /*double sum = 0;
+  double sum = 0;
   ierr = VecSum(F,&sum); CHKERRQ(ierr);
   ierr = PetscPrintf(PETSC_COMM_WORLD,"sum  = %4.3f\n",sum); CHKERRQ(ierr);
 
-  map<EntityHandle,ublas::vector<double> > tags_vals;
-  for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(m_field,"DISPLACEMENT",dof)) {
-    tags_vals[dof->get_ent()].resize(3);
-    tags_vals[dof->get_ent()][dof->get_dof_rank()] = dof->get_FieldData();
-  }
-  vector<EntityHandle> ents;
-  ents.resize(tags_vals.size());
-  vector<double> vals(3*tags_vals.size());
-  int idx = 0;
-  for(map<EntityHandle,ublas::vector<double> >::iterator mit = tags_vals.begin();
-    mit!=tags_vals.end();mit++,idx++) {
-    ents[idx] = mit->first;
-    vals[3*idx + 0] = mit->second[0];
-    vals[3*idx + 1] = mit->second[1];
-    vals[3*idx + 2] = mit->second[2];
-  }
-
-  double def_VAL[3] = {0,0,0};
-  Tag th_vals;
-  rval = moab.tag_get_handle("FLUID_PRESURE_FORCES",3,MB_TYPE_DOUBLE,th_vals,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_PETSC(rval);
-  rval = moab.tag_set_data(th_vals,&ents[0],ents.size(),&vals[0]); CHKERR_PETSC(rval);
-
-  EntityHandle out_meshset;
-  rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
-  ierr = m_field.get_problem_finite_elements_entities("TEST_PROBLEM","FLUID_PRESSURE_FE",out_meshset); CHKERRQ(ierr);
-  rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
-  rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);*/
+  // map<EntityHandle,ublas::vector<double> > tags_vals;
+  // for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(m_field,"DISPLACEMENT",dof)) {
+  //   tags_vals[dof->get_ent()].resize(3);
+  //   tags_vals[dof->get_ent()][dof->get_dof_rank()] = dof->get_FieldData();
+  // }
+  // vector<EntityHandle> ents;
+  // ents.resize(tags_vals.size());
+  // vector<double> vals(3*tags_vals.size());
+  // int idx = 0;
+  // for(map<EntityHandle,ublas::vector<double> >::iterator mit = tags_vals.begin();
+  //   mit!=tags_vals.end();mit++,idx++) {
+  //   ents[idx] = mit->first;
+  //   vals[3*idx + 0] = mit->second[0];
+  //   vals[3*idx + 1] = mit->second[1];
+  //   vals[3*idx + 2] = mit->second[2];
+  // }
+  //
+  // double def_VAL[3] = {0,0,0};
+  // Tag th_vals;
+  // rval = moab.tag_get_handle("FLUID_PRESURE_FORCES",3,MB_TYPE_DOUBLE,th_vals,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_PETSC(rval);
+  // rval = moab.tag_set_data(th_vals,&ents[0],ents.size(),&vals[0]); CHKERR_PETSC(rval);
+  //
+  // EntityHandle out_meshset;
+  // rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
+  // ierr = m_field.get_problem_finite_elements_entities("TEST_PROBLEM","FLUID_PRESSURE_FE",out_meshset); CHKERRQ(ierr);
+  // rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
+  // rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
 
   //destroy vector
   ierr = VecDestroy(&F); CHKERRQ(ierr);

@@ -1,4 +1,5 @@
 /** \file DofsMultiIndices.hpp
+ * \ingroup dof_multi_indices
  * \brief Multi-Index contains, data structures for mofem dofs and other low-level functions
  */
 

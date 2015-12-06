@@ -18,30 +18,33 @@
 * You should have received a copy of the GNU Lesser General Public
 * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#include <petscsys.h>
-#include <petscvec.h>
-#include <petscmat.h>
-#include <petscsnes.h>
-#include <petscts.h>
-
+#include <Includes.hpp>
+// #include <version.h>
 #include <definitions.h>
+#include <Common.hpp>
+
 #include <h1_hdiv_hcurl_l2.h>
 #include <fem_tools.h>
 
-#include <Common.hpp>
+#include <MaterialBlocks.hpp>
+#include <CubitBCData.hpp>
+#include <TagMultiIndices.hpp>
+#include <FieldMultiIndices.hpp>
+#include <EntsMultiIndices.hpp>
+#include <DofsMultiIndices.hpp>
+#include <FEMMultiIndices.hpp>
+#include <ProblemsMultiIndices.hpp>
+#include <AdjacencyMultiIndices.hpp>
+#include <BCMultiIndices.hpp>
+#include <CoreDataStructures.hpp>
+#include <SeriesMultiIndices.hpp>
 
 #include <LoopMethods.hpp>
 #include <FieldInterface.hpp>
-
-#define BOOST_UBLAS_SHALLOW_ARRAY_ADAPTOR
-
-#include <boost/numeric/ublas/storage.hpp>
-#include <boost/numeric/ublas/matrix.hpp>
-#include <boost/numeric/ublas/matrix_proxy.hpp>
-#include <boost/numeric/ublas/io.hpp>
-
-#include <boost/ptr_container/ptr_vector.hpp>
-#include <boost/ptr_container/ptr_map.hpp>
+#include <MeshRefinment.hpp>
+#include <PrismInterface.hpp>
+#include <SeriesRecorder.hpp>
+#include <Core.hpp>
 
 #include <DataStructures.hpp>
 #include <DataOperators.hpp>
@@ -145,9 +148,8 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
         &gaussPtsTrianglesOnly(2,0)
       ); CHKERRQ(ierr);
     } else {
-      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented yet");
-      // ierr = setGaussPtsTrianglesOnly(order_triangles_only); CHKERRQ(ierr);
-      // nb_gauss_pts_on_faces = gaussPtsTrianglesOnly.size2();
+      ierr = setGaussPtsTrianglesOnly(order_triangles_only); CHKERRQ(ierr);
+      nb_gauss_pts_on_faces = gaussPtsTrianglesOnly.size2();
     }
     if(nb_gauss_pts_on_faces == 0) PetscFunctionReturn(0);
     // calculate shape functions
@@ -194,9 +196,8 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
       ); CHKERRQ(ierr);
       // cerr << gaussPtsThroughThickness << endl;
     } else {
-      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented yet");
-      // ierr = setGaussPtsThroughThickness(order_thickness); CHKERRQ(ierr);
-      // nb_gauss_pts_through_thickness = gaussPtsThroughThickness.size2();
+      ierr = setGaussPtsThroughThickness(order_thickness); CHKERRQ(ierr);
+      nb_gauss_pts_through_thickness = gaussPtsThroughThickness.size2();
     }
     if(nb_gauss_pts_through_thickness == 0) PetscFunctionReturn(0);
     // calculate Legendre approx. on edges

@@ -630,6 +630,36 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode add_ents_to_field_by_TETs(const Range &tets,const string& name,int verb = -1) = 0;
 
   /**
+    * \brief set field entities from adjacencies of quads
+    * \ingroup mofem_field
+    *
+    * The lower dimension entities are added depending on the space type
+    * \param quads range of quads
+    * \param id field id
+    */
+  virtual PetscErrorCode add_ents_to_field_by_QUADs(const Range &quads,const BitFieldId id,int verb = -1) = 0;
+
+  /**
+    * \brief set field entities from adjacencies of quads
+    * \ingroup mofem_field
+    *
+    * The lower dimension entities are added depending on the space type
+    * \param quads range contains set quads
+    * \param name of the field
+    */
+  virtual PetscErrorCode add_ents_to_field_by_QUADs(const Range &quads,const string& name,int verb = -1) = 0;
+
+  /**
+    * \brief set field entities from adjacencies of quads
+    * \ingroup mofem_field
+    *
+    * The lower dimension entities are added depending on the space type
+    * \param meshset contains set quads
+    * \param name of the field
+    */
+  virtual PetscErrorCode add_ents_to_field_by_QUADs(EntityHandle meshset,const string& name,int verb = -1) = 0;
+
+  /**
     * \brief set field entities from adjacencies of prisms
     * \ingroup mofem_field
     *
@@ -911,7 +941,7 @@ struct FieldInterface: public FieldUnknownInterface {
    */
   virtual PetscErrorCode remove_ents_from_finite_element(const string &name,const EntityHandle meshset,const EntityType type,int verb = -1) = 0;
 
-  /** \brief remove elements from given refinement level to finite element database
+  /** \brief remove elements from finite element database
    * \ingroup mofem_fe
    *
    */
@@ -944,10 +974,15 @@ struct FieldInterface: public FieldUnknownInterface {
   /// list adjacencies
   virtual PetscErrorCode list_adjacencies() const = 0;
 
-  /** \brief add Finite Element Problem
+  /** \brief Add problem
    * \ingroup mofem_problems
    */
   virtual PetscErrorCode add_problem(const string& name,enum MoFEMTypes bh = MF_EXCL,int verb = -1) = 0;
+
+  /** \brief Delete problem
+  * \ingroup mofem_problems
+  */
+  virtual PetscErrorCode delete_problem(const string name) = 0;
 
   /** \brief add finite element to problem, this add entities assigned to finite element to a particular problem
    * \ingroup mofem_problems
@@ -956,6 +991,17 @@ struct FieldInterface: public FieldUnknownInterface {
    * \param name Finite Element name
    */
   virtual PetscErrorCode modify_problem_add_finite_element(const string &name_problem,const string &MoFEMFiniteElement_name) = 0;
+
+  /** \brief unset finite element from problem, this remove entities assigned to finite element to a particular problem
+   * \ingroup mofem_problems
+   *
+   *  Note: If problem is build, it need to be cleaned to make this effective
+   *
+   * \param name Problem name
+   * \param name Finite Element name
+   */
+  virtual PetscErrorCode modify_problem_unset_finite_element(const string &name_problem,const string &MoFEMFiniteElement_name) = 0;
+
 
   /** \brief add ref level to problem
    * \ingroup mofem_problems
@@ -973,7 +1019,6 @@ struct FieldInterface: public FieldUnknownInterface {
    *\endcode
    * Two Problems exist and solved independently, both are elastic, but solved using different mesh refinement <br>
   */
-
   virtual PetscErrorCode modify_problem_ref_level_add_bit(const string &name_problem,const BitRefLevel &bit) = 0;
 
   /** \brief set ref level for problem
@@ -1119,6 +1164,11 @@ struct FieldInterface: public FieldUnknownInterface {
    * \ingroup mofem_problems
    */
   virtual PetscErrorCode build_problem(MoFEMProblem *problem_ptr,int verb = -1) = 0;
+
+  /** \brief clear problem
+   * \ingroup mofem_problems
+   */
+  virtual PetscErrorCode clear_problem(const string &name,int verb = -1) = 0;
 
   /** \brief build problem data structures
    * \ingroup mofem_problems

@@ -12,27 +12,7 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#include <boost/numeric/ublas/storage.hpp>
-#include <boost/numeric/ublas/matrix.hpp>
-#include <boost/numeric/ublas/matrix_proxy.hpp>
-#include <boost/numeric/ublas/io.hpp>
-
-#include <moab/ParallelComm.hpp>
-
-#include <petscsys.h>
-#include <petscvec.h>
-#include <petscmat.h>
-#include <petscsnes.h>
-#include <petscts.h>
-
-#include <definitions.h>
-#include <h1_hdiv_hcurl_l2.h>
-
-#include <Common.hpp>
-#include <LoopMethods.hpp>
-#include <FieldInterface.hpp>
-
-#include <boost/ptr_container/ptr_vector.hpp>
+#include <MoFEM.hpp>
 
 using namespace MoFEM;
 #include <MethodForForceScaling.hpp>
