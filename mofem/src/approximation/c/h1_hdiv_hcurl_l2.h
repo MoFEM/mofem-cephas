@@ -78,10 +78,10 @@ PetscErrorCode H1_EdgeGradientOfDeformation_hierachical(int p,double *diffN,doub
 PetscErrorCode H1_FaceGradientOfDeformation_hierachical(int p,double *diffN,double *dofs,double *F);
 PetscErrorCode H1_VolumeGradientOfDeformation_hierachical(int p,double *diffN,double *dofs,double *F);
 PetscErrorCode H1_QuadShapeFunctions_MBPRISM(
-  int *faces_nodes,int *p,double *N,double *diffN,double *faceN[],double *diff_faceN[],double *gauss_pts,int GDIM
+  int *faces_nodes,int *p,double *N,double *diffN,double *faceN[],double *diff_faceN[],int GDIM
 );
 PetscErrorCode H1_VolumeShapeFunctions_MBPRISM(
-  int p,double *N,double *diffN,double *volumeN,double *diff_volumeN,double *gauss_pts,int GDIM
+  int p,double *N,double *diffN,double *volumeN,double *diff_volumeN,int GDIM
 );
 
 // Hdiv shape functions

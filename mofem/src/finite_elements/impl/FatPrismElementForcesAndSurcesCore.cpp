@@ -438,7 +438,7 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
         double *vertex_n = &*dataH1.dataOnEntities[MBVERTEX][0].getN().data().begin();
         double *diff_vertex_n = &*dataH1.dataOnEntities[MBVERTEX][0].getDiffN().data().begin();
         ierr = H1_QuadShapeFunctions_MBPRISM(
-          quads_nodes,quad_order,vertex_n,diff_vertex_n,quad_n,diff_quad_n,&gaussPts(0,0),nb_gauss_pts
+          quads_nodes,quad_order,vertex_n,diff_vertex_n,quad_n,diff_quad_n,nb_gauss_pts
         ); CHKERRQ(ierr);
       }
     }
@@ -456,7 +456,6 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
           diff_vertex_n,
           &dataH1.dataOnEntities[MBPRISM][0].getN()(0,0),
           &dataH1.dataOnEntities[MBPRISM][0].getDiffN()(0,0),
-          &gaussPts(0,0),
           nb_gauss_pts
         ); CHKERRQ(ierr);
       }
