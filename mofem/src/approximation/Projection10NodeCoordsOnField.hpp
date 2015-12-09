@@ -19,6 +19,8 @@ using namespace boost::numeric;
 
 namespace MoFEM {
 
+/** \brief Projection of edge entities with one mid-node on hierarchical basis
+*/
 struct Projection10NodeCoordsOnField: public EntMethod {
 
   FieldInterface& mField;
