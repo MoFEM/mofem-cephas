@@ -1,4 +1,4 @@
-/** \file h1_hdiv_hcurl_l2.h
+  /** \file h1_hdiv_hcurl_l2.h
   \brief Functions to approximate hierarchical spaces
 */
 

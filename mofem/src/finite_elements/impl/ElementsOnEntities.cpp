@@ -806,25 +806,27 @@ PetscErrorCode ForcesAndSurcesCore::getNodesFieldDofs(
 }
 
 PetscErrorCode ForcesAndSurcesCore::getNodesFieldDofs(DataForcesAndSurcesCore &data,const string &field_name) {
-    PetscFunctionBegin;
-    ierr = getNodesFieldDofs(
-      field_name,const_cast<FEDofMoFEMEntity_multiIndex&>(fePtr->get_data_dofs()),data.dataOnEntities[MBVERTEX][0].getFieldDofs()); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
+  PetscFunctionBegin;
+  ierr = getNodesFieldDofs(
+    field_name,const_cast<FEDofMoFEMEntity_multiIndex&>(fePtr->get_data_dofs()),data.dataOnEntities[MBVERTEX][0].getFieldDofs()
+  ); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
 
 PetscErrorCode ForcesAndSurcesCore::getTypeFieldDofs(
-  const string &field_name,FEDofMoFEMEntity_multiIndex &dofs,EntityType type,int side_number,VectorDofs &ent_field_dofs) {
-    PetscFunctionBegin;
-    FEDofMoFEMEntity_multiIndex::index<Composite_Name_Type_And_Side_Number_mi_tag>::type::iterator dit,hi_dit;
-    dit = dofs.get<Composite_Name_Type_And_Side_Number_mi_tag>().lower_bound(boost::make_tuple(field_name,type,side_number));
-    hi_dit = dofs.get<Composite_Name_Type_And_Side_Number_mi_tag>().upper_bound(boost::make_tuple(field_name,type,side_number));
-    ent_field_dofs.resize(0);
-    for(;dit!=hi_dit;dit++) {
-      ent_field_dofs.resize(dit->get_nb_dofs_on_ent());
-      ent_field_dofs[dit->get_EntDofIdx()] = &*dit;
-    }
-    PetscFunctionReturn(0);
+  const string &field_name,FEDofMoFEMEntity_multiIndex &dofs,EntityType type,int side_number,VectorDofs &ent_field_dofs
+) {
+  PetscFunctionBegin;
+  FEDofMoFEMEntity_multiIndex::index<Composite_Name_Type_And_Side_Number_mi_tag>::type::iterator dit,hi_dit;
+  dit = dofs.get<Composite_Name_Type_And_Side_Number_mi_tag>().lower_bound(boost::make_tuple(field_name,type,side_number));
+  hi_dit = dofs.get<Composite_Name_Type_And_Side_Number_mi_tag>().upper_bound(boost::make_tuple(field_name,type,side_number));
+  ent_field_dofs.resize(0);
+  for(;dit!=hi_dit;dit++) {
+    ent_field_dofs.resize(dit->get_nb_dofs_on_ent());
+    ent_field_dofs[dit->get_EntDofIdx()] = &*dit;
   }
+  PetscFunctionReturn(0);
+}
 
 PetscErrorCode ForcesAndSurcesCore::getTypeFieldDofs(
   const string &field_name,FEDofMoFEMEntity_multiIndex &dofs,EntityType type,

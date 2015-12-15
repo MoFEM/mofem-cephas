@@ -464,7 +464,9 @@ struct FieldApproximationH1 {
             SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
           }
           for(unsigned int rr = 0;rr != rank;rr++) {
-            cblas_daxpy(nb_row_dofs,w*(fun_val[lhs])[rr],&data.getN()(gg,0),1,&(Nf[lhs])[rr],rank);
+            cblas_daxpy(
+              nb_row_dofs,w*(fun_val[lhs])[rr],&data.getN()(gg,0),1,&(Nf[lhs])[rr],rank
+            );
           }
         }
 
