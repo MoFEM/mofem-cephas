@@ -477,27 +477,47 @@ PetscErrorCode DataOperator::opLhs(
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode DataOperator::opRhs(DataForcesAndSurcesCore &data) {
+PetscErrorCode DataOperator::opRhs(
+  DataForcesAndSurcesCore &data,
+  const bool doVertices,
+  const bool doEdges,
+  const bool doQuads,
+  const bool doTris,
+  const bool doTets,
+  const bool doPrisms
+) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
 
-  for(unsigned int nn = 0;nn<data.dataOnEntities[MBVERTEX].size();nn++) {
-    ierr = doWork(nn,MBVERTEX,data.dataOnEntities[MBVERTEX][nn]); CHKERRQ(ierr);
+  if(doVertices) {
+    for(unsigned int nn = 0;nn<data.dataOnEntities[MBVERTEX].size();nn++) {
+      ierr = doWork(nn,MBVERTEX,data.dataOnEntities[MBVERTEX][nn]); CHKERRQ(ierr);
+    }
   }
-  for(unsigned int ee = 0;ee<data.dataOnEntities[MBEDGE].size();ee++) {
-    ierr = doWork(ee,MBEDGE,data.dataOnEntities[MBEDGE][ee]); CHKERRQ(ierr);
+  if(doEdges) {
+    for(unsigned int ee = 0;ee<data.dataOnEntities[MBEDGE].size();ee++) {
+      ierr = doWork(ee,MBEDGE,data.dataOnEntities[MBEDGE][ee]); CHKERRQ(ierr);
+    }
   }
-  for(unsigned int ff = 0;ff<data.dataOnEntities[MBTRI].size();ff++) {
-    ierr = doWork(ff,MBTRI,data.dataOnEntities[MBTRI][ff]); CHKERRQ(ierr);
+  if(doTris) {
+    for(unsigned int ff = 0;ff<data.dataOnEntities[MBTRI].size();ff++) {
+      ierr = doWork(ff,MBTRI,data.dataOnEntities[MBTRI][ff]); CHKERRQ(ierr);
+    }
   }
-  for(unsigned int qq = 0;qq<data.dataOnEntities[MBQUAD].size();qq++) {
-    ierr = doWork(qq,MBQUAD,data.dataOnEntities[MBQUAD][qq]); CHKERRQ(ierr);
+  if(doQuads) {
+    for(unsigned int qq = 0;qq<data.dataOnEntities[MBQUAD].size();qq++) {
+      ierr = doWork(qq,MBQUAD,data.dataOnEntities[MBQUAD][qq]); CHKERRQ(ierr);
+    }
   }
-  for(unsigned int vv = 0;vv<data.dataOnEntities[MBTET].size();vv++) {
-    ierr = doWork(vv,MBTET,data.dataOnEntities[MBTET][vv]); CHKERRQ(ierr);
+  if(doTets) {
+    for(unsigned int vv = 0;vv<data.dataOnEntities[MBTET].size();vv++) {
+      ierr = doWork(vv,MBTET,data.dataOnEntities[MBTET][vv]); CHKERRQ(ierr);
+    }
   }
-  for(unsigned int pp = 0;pp<data.dataOnEntities[MBPRISM].size();pp++) {
-    ierr = doWork(pp,MBPRISM,data.dataOnEntities[MBPRISM][pp]); CHKERRQ(ierr);
+  if(doPrisms) {
+    for(unsigned int pp = 0;pp<data.dataOnEntities[MBPRISM].size();pp++) {
+      ierr = doWork(pp,MBPRISM,data.dataOnEntities[MBPRISM][pp]); CHKERRQ(ierr);
+    }
   }
   for(unsigned int mm = 0;mm<data.dataOnEntities[MBENTITYSET].size();mm++) {
     if(

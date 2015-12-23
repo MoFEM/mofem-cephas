@@ -353,6 +353,18 @@ struct ForcesAndSurcesCore: public FEMethod {
 
     string rowFieldName;
     string colFieldName;
+    bool doVerticesRow;
+    bool doEdgesRow;
+    bool doQuadsRow;
+    bool doTrisRow;
+    bool doTetsRow;
+    bool doPrismsRow;
+    bool doVerticesCol;
+    bool doEdgesCol;
+    bool doQuadsCol;
+    bool doTrisCol;
+    bool doTetsCol;
+    bool doPrismsCol;
     bool sYmm;
 
     /// set if operator is executed taking in account symmetry
@@ -375,6 +387,18 @@ struct ForcesAndSurcesCore: public FEMethod {
     UserDataOperator(const string &_field_name,const char type):
       rowFieldName(_field_name),
       colFieldName(_field_name),
+      doVerticesRow(true),
+      doEdgesRow(true),
+      doQuadsRow(true),
+      doTrisRow(true),
+      doTetsRow(true),
+      doPrismsRow(true),
+      doVerticesCol(true),
+      doEdgesCol(true),
+      doQuadsCol(true),
+      doTrisCol(true),
+      doTetsCol(true),
+      doPrismsCol(true),
       sYmm(true),
       opType(type),
       ptrFE(NULL) {};
