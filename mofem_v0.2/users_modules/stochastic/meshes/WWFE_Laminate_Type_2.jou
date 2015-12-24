@@ -1,0 +1,87 @@
+#!python
+cubit.cmd('reset')
+
+# Geometry (all dimension for macro is in meter [mm])'
+h1 = 0.172; Lx = 10; Ly = 10; 
+h2 = 0.414;
+
+str1='brick x ' + str(Lx) + ' y ' + str(Ly) +' z ' + str(h1);   cubit.cmd(str1)
+str1='brick x ' + str(Lx) + ' y ' + str(Ly) +' z ' + str(h2);   cubit.cmd(str1)
+str1='brick x ' + str(Lx) + ' y ' + str(Ly) +' z ' + str(h2);   cubit.cmd(str1)
+
+str1='move volume 3 x 0 y 0 z '+str(h2/2)+'include_merged';   cubit.cmd(str1)
+str1='move volume 2 x 0 y 0 z '+str(3*h2/2)+'include_merged';   cubit.cmd(str1)
+str1='move volume 1 x 0 y 0 z '+str(2*h2+h1/2)+'include_merged';   cubit.cmd(str1)
+
+cubit.cmd('imprint volume all ')  
+cubit.cmd('merge volume all ')  
+  
+cubit.cmd('volume all size auto factor 6') 
+cubit.cmd('volume all scheme tetmesh') 
+cubit.cmd('mesh volume all ') 
+
+# Material Blocks 1 for the 1st layer (90 deg)
+cubit.cmd('set duplicate block elements on')
+cubit.cmd('block 1 volume 1')   
+cubit.cmd('block 1 name "MAT_ELASTIC_First"') 
+cubit.cmd('block 1 attribute count 2') 
+cubit.cmd('block 1 attribute index 1 1')   #Young's modulus  (This will not be used in the calculation) 
+cubit.cmd('block 1 attribute index 2 0')   #Poisson's ratio (This will not be used in the calculation) 
+ 
+# Material Blocks 2 for the 2nd Layer (+ 30 deg)  
+cubit.cmd('block 2 volume 2')   
+cubit.cmd('block 2 name "MAT_ELASTIC_Second"') 
+cubit.cmd('block 2 attribute count 2') 
+cubit.cmd('block 2 attribute index 1 1')   #Young's modulus  (This will not be used in the calculation) 
+cubit.cmd('block 2 attribute index 2 0')   #Poisson's ratio (This will not be used in the calculation) 
+ 
+# Material Blocks 3 for the 3rd layer ( - 30 deg)
+cubit.cmd('block 3 volume 3')   
+cubit.cmd('block 3 name "MAT_ELASTIC_Third"') 
+cubit.cmd('block 3 attribute count 2') 
+cubit.cmd('block 3 attribute index 1 1')   #Young's modulus  (This will not be used in the calculation) 
+cubit.cmd('block 3 attribute index 2 0')   #Poisson's ratio (This will not be used in the calculation) 
+
+# Reliability
+#cubit.cmd('block 4 tet 2707')              # element at the third layer  
+#cubit.cmd('block 4 tet 4352')              # element at the second layer
+cubit.cmd('block 4 tet 7430')              # element at the third layer
+cubit.cmd('block 4 name "RELIABILITY"') 
+cubit.cmd('block 4 attribute count 2') 
+cubit.cmd('block 4 attribute index 1 1')   #Young's modulus  (This will not be used in the calculation) 
+cubit.cmd('block 4 attribute index 2 0')   #Poisson's ratio (This will not be used in the calculation) 
+
+
+# Applied displacement 
+#str1='create displacement on surface 4 10 16 dof 1 fix ' + str(0);  cubit.cmd(str1) 
+#str1='create displacement on surface 3  9 15 dof 2 fix ' + str(0);  cubit.cmd(str1) 
+str1='create displacement on surface 14 dof 3 fix ' + str(0);  cubit.cmd(str1) 
+
+#Applied force
+Force = 40;
+# Case 1. uniaxial tension (x direction)
+#str1 = 'create force 1 on surface 6 12 18 vector ' + str(Force) +' 0 0 0 0 0'; 
+#str2 = 'create force 2 on surface 4 10 16 vector ' + str(-Force) +' 0 0 0 0 0';
+#cubit.cmd(str1); cubit.cmd(str2);
+
+# Case 2. uniaxial compression (x direction)
+#str1 = 'create force 1 on surface 6 12 18 vector ' + str(-Force) +' 0 0 0 0 0'; 
+#str2 = 'create force 2 on surface 4 10 16 vector ' + str(Force) +' 0 0 0 0 0';
+
+# Case 3. biaxial tension
+str1 = 'create force 1 on surface 6 12 18 vector ' + str(Force) +' 0 0 0 0 0'; 
+str2 = 'create force 2 on surface 4 10 16 vector ' + str(-Force) +' 0 0 0 0 0';
+str3 = 'create force 3 on surface 5 11 17 vector 0 ' + str(Force) +' 0 0 0 0';
+str4 = 'create force 4 on surface 3 9  15 vector 0 ' + str(-Force) +' 0 0 0 0';
+cubit.cmd(str1); cubit.cmd(str2); cubit.cmd(str3); cubit.cmd(str4)
+
+#cubit.cmd('create force 1 on surface 6 12 18 vector 90 0 0 0 0 0') 
+#cubit.cmd('create force 2 on surface 5 11 17 vector 0 -900 0 0 0 0') 
+#cubit.cmd('create force 3 on surface 1      vector 90 0 0 0 0 0') 
+
+cubit.cmd('save as "/Users/nxz6/MyBuild/mofem-cephas/mofem_v0.2/users_modules/stochastic/meshes/WWFE_Laminate_Type_2.cub" overwrite')  
+
+
+
+
+

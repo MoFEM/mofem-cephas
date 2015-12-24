@@ -5,60 +5,46 @@ cubit.cmd('new')
 autofactor=6; 
 cubit.cmd('brick x 1 y 1 z 1')
 
-cubit.cmd('cylinder height 1 rad 0.3')
-cubit.cmd('move volume 2 x 0.5 y 0.5 z 0')
+cubit.cmd('cylinder height 1 rad 0.437')
 
-cubit.cmd('cylinder height 1 rad 0.3')
-cubit.cmd('move volume 3 x 0.5 y -0.5 z 0')
-
-cubit.cmd('cylinder height 1 rad 0.3')
-cubit.cmd('move volume 4 x -0.5 y 0.5 z 0')
-
-cubit.cmd('cylinder height 1 rad 0.3')
-cubit.cmd('move volume 5 x -0.5 y -0.5 z 0')
-
-cubit.cmd('cylinder height 1 rad 0.3')
-
-cubit.cmd('subtract volume 2 3 4 5 6 from volume 1 keep')
-cubit.cmd('delete volume 2 3 4 5 6')
-cubit.cmd('subtract volume 7 from volume 1 keep')
+cubit.cmd('subtract volume 2 from volume 1 keep')
+cubit.cmd('delete volume 2')
+cubit.cmd('subtract volume 3 from volume 1 keep')
 cubit.cmd('delete volume 1')
 
+cubit.cmd('rotate volume 3 to 4 about y angle 90')
 
-cubit.cmd('rotate volume 7 to 12 about y angle 90')
-#cubit.cmd('rotate volume 7 to 12 about x angle 90')
-
-cubit.cmd('imprint volume 7 8 9 10 11 12')   
-cubit.cmd('merge volume 7 8 9 10 11 12') 
+cubit.cmd('imprint volume 3 4')   
+cubit.cmd('merge volume 3 4') 
 
 #=============================================================
 #Meshing negative x, y and z face of the RVE and coping the same to its positive faces
 #=============================================================
 
-cubit.cmd('group "g1" add surface 29 34 39 43 49 53') 
-cubit.cmd('group "g2" add surface 24 35 40 42 50 52')  
-cubit.cmd('group "g3" add surface 44 25 47') 
-cubit.cmd('group "g4" add surface 51 30 38')
-cubit.cmd('group "g5" add surface 48 32 37') 
-cubit.cmd('group "g6" add surface 41 27 54') 
+cubit.cmd('group "g1" add surface 11 18') 
+cubit.cmd('group "g2" add surface 15')  
+cubit.cmd('group "g3" add surface 14') 
+cubit.cmd('group "g4" add surface 12 19')
+cubit.cmd('group "g5" add surface 13') 
+cubit.cmd('group "g6" add surface 16') 
 
-cubit.cmd('surface 29 34 39 43 49 53 size auto factor 6')       
-cubit.cmd('surface 29 34 39 43 49 53 scheme trimesh')      
-cubit.cmd('mesh surface 29 34 39 43 49 53')      
-cubit.cmd('surface 24 35 40 42 50 52 scheme mirror source surface 29 34 39 43 49 53 source vertex 60 target vertex 59 nosmoothing')  
-cubit.cmd('mesh surface 24 35 40 42 50 52')  
+cubit.cmd('surface 11 18 size auto factor 6')       
+cubit.cmd('surface 11 18 scheme trimesh')      
+cubit.cmd('mesh surface 11 18')      
+cubit.cmd('surface 12 19 scheme mirror source surface 11 18 source vertex 15 target vertex 20 nosmoothing')  
+cubit.cmd('mesh surface 12 19')  
  
-cubit.cmd('surface 51 30 38 size auto factor 5')     
-cubit.cmd('surface 51 30 38 scheme trimesh')     
-cubit.cmd('mesh surface 51 30 38')     
-cubit.cmd('surface 44 25 47 scheme mirror source surface 51 30 38 source vertex 60 target vertex 48 nosmoothing') 
-cubit.cmd('mesh surface 44 25 47') 
+cubit.cmd('surface 15 size auto factor 5')     
+cubit.cmd('surface 15 scheme trimesh')     
+cubit.cmd('mesh surface 15')     
+cubit.cmd('surface 13 scheme mirror source surface 15 source vertex 15 target vertex 16 nosmoothing') 
+cubit.cmd('mesh surface 13') 
 
-cubit.cmd('surface 41 27 54 size auto factor 5')    
-cubit.cmd('surface 41 27 54 scheme trimesh')    
-cubit.cmd('mesh surface 41 27 54')    
-cubit.cmd('surface 48 32 37 scheme mirror source surface 41 27 54 source vertex 60 target vertex 44 nosmoothing')
-cubit.cmd('mesh surface 48 32 37')
+cubit.cmd('surface 16 size auto factor 5')    
+cubit.cmd('surface 16 scheme trimesh')    
+cubit.cmd('mesh surface 16')    
+cubit.cmd('surface 14 scheme mirror source surface 16 source vertex 15 target vertex 14 nosmoothing')
+cubit.cmd('mesh surface 14')
 
 #============================================================= 
 #Mesh volume 
@@ -71,9 +57,9 @@ cubit.cmd('mesh volume all')
 #Defining blocks for elastic, transversely-isotropic and potential flow problems  
 #============================================================= 
  
-vol=['7', '8,9,10,11,12', '8', '9', '10', '11', '12']  
-mat=['MAT_ELASTIC_1','MAT_ELASTIC_TRANSISO_1','PotentialFlow_1','PotentialFlow_2','PotentialFlow_3','PotentialFlow_4','PotentialFlow_5']  
-for i in range(0, 7):  
+vol=['3', '4', '4']  
+mat=['MAT_ELASTIC_1','MAT_ELASTIC_TRANSISO_1','PotentialFlow_1']  
+for i in range(0, 3):  
     cubit.cmd('set duplicate block elements on') 
     str1='block  ' + str(i+1) +' volume '+vol[i]; cubit.cmd(str1)  
     str1='block  ' + str(i+1) +' name "'+mat[i] + '"'; cubit.cmd(str1)  
@@ -83,7 +69,9 @@ for i in range(0, 7):
 #============================================================= 
   
 cubit.cmd('block 1 attribute count 2')  
-Em=3.5e3; Enu=0.3;  #gig to mega as we used dimension in mm  
+#Em=3.5e3; Enu=0.3;  #gig to mega as we used dimension in mm
+#Em=4.2e3; Enu=0.34;  # 3501-6 Epoxy: WWFE
+Em=5.8e3; Enu=0.38;   # 3501-6 Epoxy: Gotsis & Chamis
 
 Elastic=[str(Em), str(Enu)]  
 for i in range(0, 2):  
@@ -98,7 +86,10 @@ for i in range(0, 2):
 #Ep=Em; Ez=Em; nup=Enu; nupz=Enu;  Gzp=Em/(2*(1+Enu));  
 
 cubit.cmd('block 2 attribute count 5')    
-Ep=10*Em; Ez=20*Em; nup=0.26; nupz=0.26; Gzp=5*Em;    
+#Ep=10*Em; Ez=20*Em; nup=0.26; nupz=0.26; Gzp=5*Em; 
+#Ep=15e3; Ez=225e3; nup=0.0714; nupz=0.0133; Gzp=15e3;           # AS4 carbon fibre: WWFE
+Ep=14.96e3; Ez=208.34e3; nup=0.0841; nupz=0.0144; Gzp=14.96e3;   # AS4 carbon fibre: Gotsis & Chamis
+
    
 TransIso=[str(Ep), str(Ez), str(nup), str(nupz), str(Gzp)]   
 for i in range(0, 5):   
@@ -110,20 +101,20 @@ for i in range(0, 5):
  
 alpha_interf=500 
 cubit.cmd('set duplicate block elements on')  
-str1='block 8 surface 22 23 31 28 26'; cubit.cmd(str1)  
-str1='block 8 name "MAT_INTERF_1"'; cubit.cmd(str1)  
-cubit.cmd('block 8 attribute count 4')  
-str1='block 8 attribute index 1 '+str(alpha_interf); cubit.cmd(str1)    #now we use 4 parameters for interface  
-str1='block 8 attribute index 2 '+str(0.0); cubit.cmd(str1)  
-str1='block 8 attribute index 3 '+str(0.0); cubit.cmd(str1)  
-str1='block 8 attribute index 4 '+str(0.0); cubit.cmd(str1)   
+str1='block 4 surface 10'; cubit.cmd(str1)  
+str1='block 4 name "MAT_INTERF_1"'; cubit.cmd(str1)  
+cubit.cmd('block 4 attribute count 4')  
+str1='block 4 attribute index 1 '+str(alpha_interf); cubit.cmd(str1)    #now we use 4 parameters for interface  
+str1='block 4 attribute index 2 '+str(0.0); cubit.cmd(str1)  
+str1='block 4 attribute index 3 '+str(0.0); cubit.cmd(str1)  
+str1='block 4 attribute index 4 '+str(0.0); cubit.cmd(str1)   
 
 #============================================================= 
 #Defining interfaces 
 #============================================================= 
  
-Interface=['22', '23', '31', '28', '26']   
-for i in range(0, 5):   
+Interface=['10']   
+for i in range(0, 1):   
     str1='sideset ' + str(i+1) +' surface '+Interface[i]; cubit.cmd(str1)   
     str1='sideset ' + str(i+1) +' name "interface'+str(i+1); cubit.cmd(str1)   
     
@@ -131,8 +122,8 @@ for i in range(0, 5):
 #Defining pressures for potential flow problem  
 #============================================================= 
  
-Pres=['34', '35','39','40','43','42','49','50', '53', '52']; count=0;  count1=len(Interface);
-for i in range(0, 5):  
+Pres=['18', '19']; count=0;  count1=len(Interface);
+for i in range(0, 1):  
     str1='create pressure '+str(count+1)+' on surface '+str(Pres[count])+' magnitude 1';  cubit.cmd(str1)  
     str1='create pressure '+str(count+2)+' on surface '+str(Pres[count+1])+' magnitude -1';  cubit.cmd(str1) 
     str1='sideset '+str(count1+1)+' name "PressureIO_' + str(i+1) + '_1"'; cubit.cmd(str1) 
@@ -142,17 +133,17 @@ for i in range(0, 5):
 #============================================================= 
 #Defining surfaces for dispacement, traction and periodic boundary conditions  
 #============================================================= 
-  
-cubit.cmd('sideset 101 surface 24 35 40 42 50 52 51 30 38 48 32 37')  # all -ve boundary surfaces for periodic boundary conditions  
-cubit.cmd('sideset 102 surface 29 34 39 43 49 53 44 25 47 41 27 54')  # all +ve boundary surfaces  for periodic boundary conditions  
-cubit.cmd('sideset 103 surface 29 34 39 43 49 53 44 25 47 48 32 37 24 35 40 42 50 52 51 30 38 41 27 54')  # all boundary surfaces  
+
+cubit.cmd('sideset 101 surface 12 19 13 16')  # all -ve boundary surfaces for periodic boundary conditions  
+cubit.cmd('sideset 102 surface 11 18 15 14')  # all +ve boundary surfaces  for periodic boundary conditions  
+cubit.cmd('sideset 103 surface 12 19 13 16 11 18 15 14')  # all boundary surfaces  
 
 #============================================================= 
 #Definign zero proessrues for potential flow problem (This should be of the same order as PotentialFlow blocks )
 #============================================================= 
  
-zeroPressureNode=[1, 33, 51, 25, 43]
-for i in range(0, 5):  
+zeroPressureNode=[109]
+for i in range(0, 1):  
     str1='nodeset ' + str(i+1) + ' node ' + str(zeroPressureNode[i]); cubit.cmd(str1) 
     str1='nodeset ' + str(i+1)+' name "ZeroPressure_' + str(i+1)+ '"'; cubit.cmd(str1)    
     
@@ -161,3 +152,5 @@ for i in range(0, 5):
 #============================================================= 
  
 cubit.cmd('save as "/Users/nxz6/MyBuild/mofem-cephas/mofem_v0.2/users_modules/stochastic/meshes/RVE_UD.cub" overwrite')    
+
+

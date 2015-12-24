@@ -23,7 +23,7 @@ create Displacement on surface 4 dof 1 fix 0
 # Edge -z
 create Displacement on surface 2 dof 3 fix 0
 
-create force 1 on surface 6 vector 1300 0 0 0 0 0 
+create force 1 on surface 6 vector 1007.18 0 0 0 0 0 
 
 
 volume all scheme Tetmesh
@@ -31,7 +31,6 @@ volume all size auto factor 9
 mesh volume all
 
 block 1 tet 1 to 8 and 10 to 126 
-block 1 tet all
 block 1 name 'MAT_ELASTIC'
 block 1 attribute count 2
 block 1 attribute index 1 1000

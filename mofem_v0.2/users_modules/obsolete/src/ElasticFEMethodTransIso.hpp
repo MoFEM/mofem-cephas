@@ -49,8 +49,8 @@ namespace ObosleteUsersModules {
     TransverseIsotropicStiffnessMatrix(double nu_p, double nu_pz, double E_p, double E_z, double G_zp){
 
       double nu_zp=(nu_pz*E_z)/E_p;
-      // double nu_zp = nu_pz;
-      // nu_pz=(nu_zp*E_p)/E_z;
+      //double nu_zp = nu_pz;
+      //nu_pz=(nu_zp*E_p)/E_z;
       double delta=((1+nu_p)*(1-nu_p-(2*nu_pz*nu_zp)))/(E_p*E_p*E_z);
 
       StiffnessMatrix.resize(6);
@@ -661,7 +661,7 @@ namespace ObosleteUsersModules {
 
       double def_VAL2[3] = {0,0,0};
       rval = moab.tag_get_handle( "POT_FLOW_FIBRE_DIR",3,MB_TYPE_DOUBLE,th_fibre_dir,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL2); CHKERR_THROW(rval);
-      cout<<"The fibre direction"<<endl;
+      //cout<<"The fibre direction"<<endl;
 
       };
 

@@ -29,6 +29,197 @@
 namespace MoFEM {
   struct FE2_Macro_Solver_MCS {
     ublas::matrix<FieldData> Dmat;
+    ublas::matrix<double> Dmat_1st_Ply;
+    ublas::matrix<double> Dmat_2nd_Ply;
+    ublas::matrix<double> Dmat_3rd_Ply;
+    ublas::matrix<double> Dmat_4th_Ply;
+    
+    //------------------------------------------------------------------------------
+    // To transform constitutive matrix
+    //
+    
+    virtual PetscErrorCode Dmat_Transformation(double theta, ublas::matrix<FieldData> Dmat_123, ublas::matrix<FieldData> &Dmat_xyz) {
+      PetscFunctionBegin;
+      
+      double l1, l2, l3, m1, m2, m3, n1, n2, n3;
+      l1=cos(theta);
+      m1=sin(theta);
+      n1=0.0;
+      l2=-sin(theta);
+      m2=cos(theta);
+      n2=0.0;
+      l3=0.0;
+      m3=0.0;
+      n3=1.0;
+      
+      ublas::matrix<FieldData> T_strain;    T_strain.resize(6,6); T_strain.clear();
+      T_strain(0,0)=l1*l1;
+      T_strain(0,1)=m1*m1;
+      T_strain(0,2)=n1*n1;
+      T_strain(0,3)=l1*m1;
+      T_strain(0,4)=m1*n1;
+      T_strain(0,5)=l1*n1;
+      
+      T_strain(1,0)=l2*l2;
+      T_strain(1,1)=m2*m2;
+      T_strain(1,2)=n2*n2;
+      T_strain(1,3)=l2*m2;
+      T_strain(1,4)=m2*n2;
+      T_strain(1,5)=l2*n2;
+      
+      T_strain(2,0)=l3*l3;
+      T_strain(2,1)=m3*m3;
+      T_strain(2,2)=n3*n3;
+      T_strain(2,3)=l3*m3;
+      T_strain(2,4)=m3*n3;
+      T_strain(2,5)=l3*n3;
+      
+      T_strain(3,0)=2*l1*l2;
+      T_strain(3,1)=2*m1*m2;
+      T_strain(3,2)=2*n1*n2;
+      T_strain(3,3)=l1*m2+m1*l2;
+      T_strain(3,4)=m1*n2+n1*m2;
+      T_strain(3,5)=l1*n2+n1*l2;
+      
+      T_strain(4,0)=2*l2*l3;
+      T_strain(4,1)=2*m2*m3;
+      T_strain(4,2)=2*n2*n3;
+      T_strain(4,3)=l2*m3+m2*l3;
+      T_strain(4,4)=m2*n3+n2*m3;
+      T_strain(4,5)=l2*n3+n2*l3;
+      
+      T_strain(5,0)=2*l1*l3;
+      T_strain(5,1)=2*m1*m3;
+      T_strain(5,2)=2*n1*n3;
+      T_strain(5,3)=l1*m3+m1*l3;
+      T_strain(5,4)=m1*n3+n1*m3;
+      T_strain(5,5)=l1*n3+n1*l3;
+      
+      //cout<<"\n\nT_strain = "<<T_strain<<endl;
+      
+      ublas::matrix<FieldData> Mat1=prod(Dmat_123,T_strain);
+      Dmat_xyz = prod(trans(T_strain), Mat1);
+      
+      
+      PetscFunctionReturn(0);
+    }
+    
+    virtual PetscErrorCode Dmat_Transformation_r_Theta(double theta, ublas::matrix<FieldData> Dmat_123, ublas::matrix<FieldData> &Dmat_xyz) {
+      PetscFunctionBegin;
+      
+      double l1, l2, l3, m1, m2, m3, n1, n2, n3;
+      double l1_r, l2_r, l3_r, m1_r, m2_r, m3_r, n1_r, n2_r, n3_r;
+      l1   =  cos(theta); l1_r = -sin(theta);
+      m1   =  sin(theta); m1_r =  cos(theta);
+      n1   =  0.0;        n1_r =  0.0;
+      l2   = -sin(theta); l2_r = -cos(theta);
+      m2   =  cos(theta); m2_r = -sin(theta);
+      n2   =  0.0;        n2_r =  0.0;
+      l3   =  0.0;        l3_r =  0.0;
+      m3   =  0.0;        m3_r =  0.0;
+      n3   =  1.0;        n3_r =  0.0;
+      
+      ublas::matrix<FieldData> T_strain;    T_strain.resize(6,6); T_strain.clear();
+      T_strain(0,0) = l1*l1;
+      T_strain(0,1) = m1*m1;
+      T_strain(0,2) = n1*n1;
+      T_strain(0,3) = l1*m1;
+      T_strain(0,4) = m1*n1;
+      T_strain(0,5) = l1*n1;
+      
+      T_strain(1,0) = l2*l2;
+      T_strain(1,1) = m2*m2;
+      T_strain(1,2) = n2*n2;
+      T_strain(1,3) = l2*m2;
+      T_strain(1,4) = m2*n2;
+      T_strain(1,5) = l2*n2;
+      
+      T_strain(2,0) = l3*l3;
+      T_strain(2,1) = m3*m3;
+      T_strain(2,2) = n3*n3;
+      T_strain(2,3) = l3*m3;
+      T_strain(2,4) = m3*n3;
+      T_strain(2,5) = l3*n3;
+      
+      T_strain(3,0) = 2*l1*l2;
+      T_strain(3,1) = 2*m1*m2;
+      T_strain(3,2) = 2*n1*n2;
+      T_strain(3,3) = l1*m2+m1*l2;
+      T_strain(3,4) = m1*n2+n1*m2;
+      T_strain(3,5) = l1*n2+n1*l2;
+      
+      T_strain(4,0) = 2*l2*l3;
+      T_strain(4,1) = 2*m2*m3;
+      T_strain(4,2) = 2*n2*n3;
+      T_strain(4,3) = l2*m3+m2*l3;
+      T_strain(4,4) = m2*n3+n2*m3;
+      T_strain(4,5) = l2*n3+n2*l3;
+      
+      T_strain(5,0) = 2*l1*l3;
+      T_strain(5,1) = 2*m1*m3;
+      T_strain(5,2) = 2*n1*n3;
+      T_strain(5,3) = l1*m3+m1*l3;
+      T_strain(5,4) = m1*n3+n1*m3;
+      T_strain(5,5) = l1*n3+n1*l3;
+      
+      ublas::matrix<FieldData> T_strain_r_Theta;    T_strain_r_Theta.resize(6,6); T_strain_r_Theta.clear();
+      T_strain_r_Theta(0,0) = 2*l1*l1_r;
+      T_strain_r_Theta(0,1) = 2*m1*m1_r;
+      T_strain_r_Theta(0,2) = 2*n1*n1_r;
+      T_strain_r_Theta(0,3) = l1_r*m1 + l1*m1_r;
+      T_strain_r_Theta(0,4) = m1_r*n1 + m1*n1_r;
+      T_strain_r_Theta(0,5) = l1_r*n1 + l1*n1_r;
+      
+      T_strain_r_Theta(1,0) = 2*l2*l2_r;
+      T_strain_r_Theta(1,1) = 2*m2*m2_r;
+      T_strain_r_Theta(1,2) = 2*n2*n2_r;
+      T_strain_r_Theta(1,3) = l2_r*m2 + l2*m2_r;
+      T_strain_r_Theta(1,4) = m2_r*n2 + m2*n2_r;
+      T_strain_r_Theta(1,5) = l2_r*n2 + l2*n2_r;
+      
+      T_strain_r_Theta(2,0) = 2*l3*l3_r;
+      T_strain_r_Theta(2,1) = 2*m3*m3_r;
+      T_strain_r_Theta(2,2) = 2*n3*n3_r;
+      T_strain_r_Theta(2,3) = l3_r*m3 + l3*m3_r;
+      T_strain_r_Theta(2,4) = m3_r*n3 + m3*n3_r;
+      T_strain_r_Theta(2,5) = l3_r*n3 + l3*n3_r;
+      
+      T_strain_r_Theta(3,0) = 2*(l1_r*l2 + l1*l2_r);
+      T_strain_r_Theta(3,1) = 2*(m1_r*m2 + m1*m2_r);
+      T_strain_r_Theta(3,2) = 2*(n1_r*n2 + n1*n2_r);
+      T_strain_r_Theta(3,3) = l1_r*m2 + l1*m2_r + m1_r*l2 + m1*l2_r;
+      T_strain_r_Theta(3,4) = m1_r*n2 + m1*n2_r + n1_r*m2 + n1*m2_r;
+      T_strain_r_Theta(3,5) = l1_r*n2 + l1*n2_r + n1_r*l2 + n1*l2_r;
+      
+      T_strain_r_Theta(4,0) = 2*(l2_r*l3 + l2*l3_r);
+      T_strain_r_Theta(4,1) = 2*(m2_r*m3 + m2*m3_r);
+      T_strain_r_Theta(4,2) = 2*(n2_r*n3 + n2*n3_r);
+      T_strain_r_Theta(4,3) = l2_r*m3 + l2*m3_r + m2_r*l3 + m2*l3_r;
+      T_strain_r_Theta(4,4) = m2_r*n3 + m2*n3_r + n2_r*m3 + n2*m3_r;
+      T_strain_r_Theta(4,5) = l2_r*n3 + l2*n3_r + n2_r*l3 + n2*l3_r;
+      
+      T_strain_r_Theta(5,0) = 2*(l1_r*l3 + l1*l3_r);
+      T_strain_r_Theta(5,1) = 2*(m1_r*m3 + m1*m3_r);
+      T_strain_r_Theta(5,2) = 2*(n1_r*n3 + n1*n3_r);
+      T_strain_r_Theta(5,3) = l1_r*m3 + l1*m3_r + m1_r*l3 + m1*l3_r;
+      T_strain_r_Theta(5,4) = m1_r*n3 + m1*n3_r + n1_r*m3 + n1*m3_r;
+      T_strain_r_Theta(5,5) = l1_r*n3 + l1*n3_r + n1_r*l3 + n1*l3_r;
+      
+      T_strain_r_Theta = T_strain_r_Theta*(M_PI/180);
+      
+      //cout<<"\n\nT_strain = "<<T_strain<<endl;
+      
+      ublas::matrix<FieldData> Mat1 = prod(Dmat_123,T_strain);
+      ublas::matrix<FieldData> Mat2 = prod(trans(T_strain_r_Theta), Mat1);
+      
+      ublas::matrix<FieldData> Mat3 = prod(Dmat_123,T_strain_r_Theta);
+      ublas::matrix<FieldData> Mat4 = prod(trans(T_strain), Mat3);
+      
+      Dmat_xyz = Mat2 + Mat4;
+      
+      
+      PetscFunctionReturn(0);
+    }
     
     // =========================================================================
     //
@@ -632,6 +823,223 @@ namespace MoFEM {
       //  B.VIII. FINISH
       //
       // ===========================================================================
+      //Destroy matrices
+      ierr = VecDestroy(&F); CHKERRQ(ierr);
+      ierr = VecDestroy(&D); CHKERRQ(ierr);
+      ierr = MatDestroy(&A); CHKERRQ(ierr);
+      ierr = KSPDestroy(&solver_Macro); CHKERRQ(ierr);
+      
+      PetscFunctionReturn(0);
+    }
+    
+    // =========================================================================
+    //
+    //  B.VI. SOLUTION PHASE:
+    //        Solve Macroscale FE equation
+    //
+    // =========================================================================
+    
+    virtual PetscErrorCode Macro_FE_Laminate(FieldInterface &m_field_Macro,
+                                        ublas::vector<double> TheVariables,
+                                        int num_rvars,
+                                        vector<string> vars_name,
+                                        ublas::vector<double> PlyAngle,
+                                        PetscInt NO_Layers) {
+      PetscFunctionBegin;
+      
+      ErrorCode rval;
+      PetscErrorCode ierr;
+      
+      /*************************************************************************
+       *
+       *  0. PREPARATION FOR PROCESSING SOLVE
+       *
+       ************************************************************************/
+      //create matrices
+      
+      Vec F, D;
+      
+      ierr = m_field_Macro.VecCreateGhost("ELASTIC_PROBLEM_MACRO",ROW,&F); CHKERRQ(ierr);
+      ierr = m_field_Macro.VecCreateGhost("ELASTIC_PROBLEM_MACRO",COL,&D); CHKERRQ(ierr);
+      
+      /*************************************************************************
+       *
+       *  1. Assembling global stiffness matrix K
+       *     and external force vector F
+       ************************************************************************/
+      Mat A;
+      ierr = m_field_Macro.MatCreateMPIAIJWithArrays("ELASTIC_PROBLEM_MACRO",&A); CHKERRQ(ierr);
+      
+      struct MyElasticFEMethod_Macro: public FE2_ElasticFEMethod {
+        MyElasticFEMethod_Macro(FieldInterface& _m_field_Macro,Mat _A,Vec _D,Vec& _F, ublas::matrix<FieldData> _Dmat,string _field_name):
+        FE2_ElasticFEMethod(_m_field_Macro,_A,_D,_F, _Dmat, _field_name) {};
+        
+        virtual PetscErrorCode RhsAndLhs() {
+          PetscFunctionBegin;
+          
+          ierr = Lhs(); CHKERRQ(ierr);
+          
+          PetscFunctionReturn(0);
+        }
+      };
+      
+      
+      Projection10NodeCoordsOnField ent_method_material_Macro(m_field_Macro,"MESH_NODE_POSITIONS");
+      ierr = m_field_Macro.loop_dofs("MESH_NODE_POSITIONS",ent_method_material_Macro); CHKERRQ(ierr);
+      
+      //Assemble F and A
+      DisplacementBCFEMethodPreAndPostProc my_dirichlet_bc(m_field_Macro,"DISP_MACRO",A,D,F);
+      
+      
+      /*****************************************************************************
+       *
+       * Read the saved Dmat mechancial (from the computational homgenisaiton of the 0deg RVE)
+       *
+       ****************************************************************************/
+      
+      double theta;
+      
+      /*Dmat.clear();
+       Dmat(0,0) = 1.2894e5; Dmat(0,1) = 0.0525e5; Dmat(0,2) = 0.0525e5;
+       Dmat(1,0) = 0.0525e5; Dmat(1,1) = 0.1331e5; Dmat(1,2) = 0.0545e5;
+       Dmat(2,0) = 0.0525e5; Dmat(2,1) = 0.0545e5; Dmat(2,2) = 0.1331e5;
+       Dmat(3,3) = 0.0660e5; Dmat(4,4) = 0.0393e5; Dmat(5,5) = 0.0660e5;*/
+      // First-layer
+      theta = PlyAngle(0)*(M_PI/180.0); //rotation angle about the Z-axis
+      Dmat_1st_Ply.resize(6,6);   Dmat_1st_Ply.clear();
+      ierr = Dmat_Transformation(theta, Dmat, Dmat_1st_Ply); CHKERRQ(ierr);
+      // Second-layer
+      if (NO_Layers > 1) {
+        theta = PlyAngle(1)*(M_PI/180.0); //rotation angle about the Z-axis
+        Dmat_2nd_Ply.resize(6,6);   Dmat_2nd_Ply.clear();
+        ierr = Dmat_Transformation(theta, Dmat, Dmat_2nd_Ply); CHKERRQ(ierr);//cout<<"\n\nLayer 2: \t"<<PlyAngle(1)<<"\n"<<Dmat_2nd_Ply<<endl;
+      }
+      // Third-layer
+      if (NO_Layers > 2) {
+        theta = PlyAngle(2)*(M_PI/180.0); //rotation angle about the Z-axis
+        Dmat_3rd_Ply.resize(6,6);   Dmat_3rd_Ply.clear();
+        ierr = Dmat_Transformation(theta, Dmat, Dmat_3rd_Ply); CHKERRQ(ierr);//cout<<"\n\nLayer 3: \t"<<PlyAngle(2)<<"\n"<<Dmat_3rd_Ply<<endl;
+      }
+      // Fourth-layer
+      if (NO_Layers > 3) {
+        theta = PlyAngle(3)*(M_PI/180.0); //rotation angle about the Z-axis
+        Dmat_4th_Ply.resize(6,6);   Dmat_4th_Ply.clear();
+        ierr = Dmat_Transformation(theta, Dmat, Dmat_4th_Ply); CHKERRQ(ierr);//cout<<"\n\nLayer 4: \t"<<PlyAngle(3)<<"\n"<<Dmat_4th_Ply<<endl;
+      }
+      
+      MyElasticFEMethod_Macro my_fe_1st_ply(m_field_Macro,A,D,F,Dmat_1st_Ply,"DISP_MACRO");
+      MyElasticFEMethod_Macro my_fe_2nd_ply(m_field_Macro,A,D,F,Dmat_2nd_Ply,"DISP_MACRO");
+      MyElasticFEMethod_Macro my_fe_3rd_ply(m_field_Macro,A,D,F,Dmat_3rd_Ply,"DISP_MACRO");
+      MyElasticFEMethod_Macro my_fe_4th_ply(m_field_Macro,A,D,F,Dmat_4th_Ply,"DISP_MACRO");
+      
+      ierr = VecZeroEntries(F); CHKERRQ(ierr);
+      ierr = VecZeroEntries(D); CHKERRQ(ierr);
+      ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      ierr = MatZeroEntries(A); CHKERRQ(ierr);
+      
+      ierr = m_field_Macro.set_global_VecCreateGhost("ELASTIC_PROBLEM_MACRO",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      
+      //preproc
+      ierr = m_field_Macro.problem_basic_method_preProcess("ELASTIC_PROBLEM_MACRO",my_dirichlet_bc); CHKERRQ(ierr);
+      //loop elems
+      //PetscBarrier(PETSC_NULL);
+      // First layer
+      ierr = m_field_Macro.loop_finite_elements("ELASTIC_PROBLEM_MACRO","ELASTIC_1st_Ply", my_fe_1st_ply);  CHKERRQ(ierr);
+      // Second layer
+      if (NO_Layers > 1) {
+        ierr = m_field_Macro.loop_finite_elements("ELASTIC_PROBLEM_MACRO","ELASTIC_2nd_Ply", my_fe_2nd_ply);  CHKERRQ(ierr);
+      }
+      // Third layer
+      if (NO_Layers > 2) {
+        ierr = m_field_Macro.loop_finite_elements("ELASTIC_PROBLEM_MACRO","ELASTIC_3rd_Ply", my_fe_3rd_ply);  CHKERRQ(ierr);
+      }
+      // Fourth layer
+      if (NO_Layers > 3) {
+        ierr = m_field_Macro.loop_finite_elements("ELASTIC_PROBLEM_MACRO","ELASTIC_4th_Ply", my_fe_4th_ply);  CHKERRQ(ierr);
+      }
+      
+      
+      //forces and preassures on surface
+      boost::ptr_map<string,NeummanForcesSurface> neumann_forces;
+      
+      // Check whether force is considered as random variable or not
+      int idx_force = 100;
+      for (int ii = 1; ii<=num_rvars; ii++) {
+        string VariableName;
+        VariableName = vars_name[ii];
+        if (VariableName.compare(0,5,"force") == 0) {
+          idx_force = ii;cout<<"The force is: "<<TheVariables(ii-1)<<endl;
+        }
+      }
+      
+      
+      if (idx_force==100) {
+        MetaNeummanForces Zeroth_FE;
+        ierr = Zeroth_FE.setNeumannFiniteElementOperators(m_field_Macro,neumann_forces,F,"DISP_MACRO"); CHKERRQ(ierr);
+      } else {
+        MyMetaNeummanForces Zeroth_FE;
+        ierr = Zeroth_FE.setNeumannFiniteElementOperators(m_field_Macro,
+                                                          neumann_forces,F,
+                                                          "DISP_MACRO",
+                                                          "MESH_NODE_POSITIONS",
+                                                          TheVariables(idx_force-1)); CHKERRQ(ierr);
+      }
+      
+      boost::ptr_map<string,NeummanForcesSurface>::iterator mit = neumann_forces.begin();
+      for(;mit!=neumann_forces.end();mit++) {
+        ierr = m_field_Macro.loop_finite_elements("ELASTIC_PROBLEM_MACRO",mit->first,mit->second->getLoopFe()); CHKERRQ(ierr);
+      }
+      
+      //postproc
+      ierr = m_field_Macro.problem_basic_method_postProcess("ELASTIC_PROBLEM_MACRO",my_dirichlet_bc); CHKERRQ(ierr);
+      
+      //set matrix possitives define and symetric for cholesky and icc preceonditionser
+      ierr = MatSetOption(A,MAT_SPD,PETSC_TRUE); CHKERRQ(ierr);
+      
+      ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
+      ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
+      
+      //VecCopy(ElemForce,F);
+      
+      
+      /*************************************************************************
+       *
+       *  2. SOLVE THE FINITE ELEMENT EQUILIBRIUM EQUATION
+       *     [K][U] = [F]
+       *
+       ************************************************************************/
+      //Solver
+      KSP solver_Macro;
+      ierr = KSPCreate(PETSC_COMM_WORLD,&solver_Macro); CHKERRQ(ierr);
+      ierr = KSPSetOperators(solver_Macro,A,A); CHKERRQ(ierr);
+      ierr = KSPSetFromOptions(solver_Macro); CHKERRQ(ierr);
+      ierr = KSPSetUp(solver_Macro); CHKERRQ(ierr);
+      
+      //MatView(A,PETSC_VIEWER_STDOUT_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
+      
+      // elastic analys
+      ierr = KSPSolve(solver_Macro,F,D); CHKERRQ(ierr);
+      ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      
+      //Save data on mesh
+      ierr = m_field_Macro.set_global_ghost_vector("ELASTIC_PROBLEM_MACRO",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      
+      //VecView(D,PETSC_VIEWER_STDOUT_WORLD);
+      //VecView(F,PETSC_VIEWER_STDOUT_WORLD);
+      
+      cout<<"Solving the zeroth-order equation is finish. \n";
+      
+      
+      /***************************************************************************
+       *
+       *  4. FINISH
+       *
+       **************************************************************************/
+      
       //Destroy matrices
       ierr = VecDestroy(&F); CHKERRQ(ierr);
       ierr = VecDestroy(&D); CHKERRQ(ierr);

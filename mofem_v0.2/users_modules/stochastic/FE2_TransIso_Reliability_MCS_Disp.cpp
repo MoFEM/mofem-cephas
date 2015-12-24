@@ -87,13 +87,15 @@ struct Stochastic_Model {
   double transf_type;                    // Type of joint distribution
   double R0_method;                      // Method for computation of the modified Nataf correlation matrix
   int flag_sens;                         // Flag for computation of sensitivities w.r.t. parameters
+  int ExaminedPly;
   vector<string> NameVars;               // Name of random variables
   ublas::matrix<double> correlation;     // Correlation matrix
   ublas::matrix<double> marg;            // Marginal distribution for each random variable
   ublas::matrix<double> mod_correlation; // modified correlation matrix
   ublas::matrix<double> Lo;              // Chelosky decomposition
   ublas::matrix<double> inv_Lo;          // inverse of matrix Lo
-  ublas::matrix<double> MatStrength;     // Material strength
+  ublas::vector<double> MatStrength;     // Material strength
+  ublas::vector<double> PlyAngle;        // Angle of orientation
 };
 
 
@@ -737,9 +739,31 @@ int main(int argc, char *argv[]) {
   
   LimitStateFunction_MCS TheLSF;
   
-  ofstream MCSFile;
-  MCSFile.open("//mnt//home//Dropbox//DURACOMP_Cal//009_MoFEM//04_ReliabilityAnalysis//Result_MCS.txt",ofstream::out);
-  double val_G, val_G_TH;
+  ofstream MCSFile_MS;
+  MCSFile_MS.open("//mnt//home//Dropbox//DURACOMP_Cal//009_MoFEM//04_ReliabilityAnalysis//Result_MCS_MS.txt",ofstream::out);
+  
+  ofstream MCSFile_Hashin;
+  MCSFile_Hashin.open("//mnt//home//Dropbox//DURACOMP_Cal//009_MoFEM//04_ReliabilityAnalysis//Result_MCS_Hashin.txt",ofstream::out);
+  
+  ofstream MCSFile_TW;
+  MCSFile_TW.open("//mnt//home//Dropbox//DURACOMP_Cal//009_MoFEM//04_ReliabilityAnalysis//Result_MCS_TW.txt",ofstream::out);
+  
+  ofstream MCSFile_TH;
+  MCSFile_TH.open("//mnt//home//Dropbox//DURACOMP_Cal//009_MoFEM//04_ReliabilityAnalysis//Result_MCS_TH.txt",ofstream::out);
+  
+  ofstream MCSFile_RC;
+  MCSFile_RC.open("//mnt//home//Dropbox//DURACOMP_Cal//009_MoFEM//04_ReliabilityAnalysis//Result_MCS_RC.txt",ofstream::out);
+  
+  ofstream MCSFile_Hoffman;
+  MCSFile_Hoffman.open("//mnt//home//Dropbox//DURACOMP_Cal//009_MoFEM//04_ReliabilityAnalysis//Result_MCS_Hoffman.txt",ofstream::out);
+  
+  double val_G;
+  double val_G_MS_LD, val_G_MS_TD, val_G_MS_Shear;
+  double val_G_HF, val_G_HM;
+  double val_G_TW_2D, val_G_TW;
+  double val_G_TH_2D, val_G_TH;
+  double val_G_RCF, val_G_RCM;
+  double val_G_Hoffman_2D, val_G_Hoffman;
   int no_fail = 0;
   int no_mcs = 120000;
   ublas::vector<double> x;
@@ -787,7 +811,9 @@ int main(int argc, char *argv[]) {
     FE2_PostProcStressForReliability_Zeroth Calc_Stress(m_field_Macro,"DISP_MACRO",Dmat);
     ierr = m_field_Macro.loop_finite_elements("ELASTIC_PROBLEM_MACRO","ELASTIC_FE_MACRO_REL",Calc_Stress);  CHKERRQ(ierr);
     StressGP.clear(); StressGP = Calc_Stress.StressGP; cout<<"Stress at GP: "<<StressGP<<endl;
+    
     cout<<"\n"<<FailureCriterion<<endl;
+    
     ////////////////////////////////////////////////////////////////////////////
     //                                                                        //
     //        STEP 4: evaluate limit state function                           //
@@ -795,15 +821,53 @@ int main(int argc, char *argv[]) {
     ////////////////////////////////////////////////////////////////////////////
     
     switch (FailureCriterion) {
+      case 0: {
+        //
+        // Tsai-Wu failure criteria
+        //
+        NameOfFailureCriterion = "All failure criteria";
+        cout<<"\nAll failure criteria are considered!\n";
+        // Maximum stress
+        ierr = TheLSF.gfun_ply_MS_LD(x,probdata.NameVars,probdata.MatStrength,StressGP,val_G_MS_LD); CHKERRQ(ierr);
+        ierr = TheLSF.gfun_ply_MS_TD(x,probdata.NameVars,probdata.MatStrength,StressGP,val_G_MS_TD); CHKERRQ(ierr);
+        ierr = TheLSF.gfun_ply_MS_Shear(x,probdata.NameVars,probdata.MatStrength,StressGP,val_G_MS_Shear); CHKERRQ(ierr);
+        // Hashin
+        ierr = TheLSF.gfun_ply_HF(x,probdata.NameVars,probdata.MatStrength,StressGP,val_G_HF); CHKERRQ(ierr);
+        ierr = TheLSF.gfun_ply_HM(x,probdata.NameVars,probdata.MatStrength,StressGP,val_G_HM); CHKERRQ(ierr);
+        // Tsai Wu
+        ierr = TheLSF.gfun_ply_Tsai_Wu_0(x,probdata.NameVars,probdata.MatStrength,StressGP,val_G); CHKERRQ(ierr);
+        ierr = TheLSF.gfun_ply_Tsai_Wu_2D(x,probdata.NameVars,probdata.MatStrength,StressGP,val_G_TW_2D); CHKERRQ(ierr);
+        ierr = TheLSF.gfun_ply_Tsai_Wu(x,probdata.NameVars,probdata.MatStrength,StressGP,val_G_TW); CHKERRQ(ierr);
+        // Tsai Hill
+        ierr = TheLSF.gfun_ply_Tsai_Hill_2D(x,probdata.NameVars,probdata.MatStrength,StressGP,val_G_TH_2D); CHKERRQ(ierr);
+        ierr = TheLSF.gfun_ply_Tsai_Hill(x,probdata.NameVars,probdata.MatStrength,StressGP,val_G_TH); CHKERRQ(ierr);
+        // Richard Christensen
+        ierr = TheLSF.gfun_ply_RCF(x,probdata.NameVars,probdata.MatStrength,StressGP,val_G_RCF); CHKERRQ(ierr);
+        ierr = TheLSF.gfun_ply_RCM(x,probdata.NameVars,probdata.MatStrength,StressGP,val_G_RCM); CHKERRQ(ierr);
+        // Hoffman
+        ierr = TheLSF.gfun_ply_Hoffman_2D(x,probdata.NameVars,probdata.MatStrength,StressGP,val_G_Hoffman_2D); CHKERRQ(ierr);
+        ierr = TheLSF.gfun_ply_Hoffman(x,probdata.NameVars,probdata.MatStrength,StressGP,val_G_Hoffman); CHKERRQ(ierr);
+        
+        cout<<"MS "<<val_G_MS_LD<<"\t"<<val_G_MS_TD<<"\t"<<val_G_MS_Shear<<endl;
+        cout<<"Hashin "<<val_G_HF<<"\t"<<val_G_HF<<"\n";
+        cout<<"TW "<<val_G_TW_2D<<"\t"<<val_G_TW<<"\n";
+        cout<<"TH "<<val_G_TH_2D<<"\t"<<val_G_TH<<"\n";
+        cout<<"RC "<<val_G_RCF<<"\t"<<val_G_RCM<<"\n";
+        cout<<"Hoffman "<<val_G_Hoffman_2D<<"\t"<<val_G_Hoffman<<"\n";
+        
+        if (val_G<0) { no_fail++;}
+        break;
+      }
       case 1:
         //
         // Tsai-Wu failure criteria
         //
         NameOfFailureCriterion = "Tsai-Wu";
-        ierr = TheLSF.gfun_ply_Tsai_Wu(x,probdata.NameVars,probdata.MatStrength,StressGP,val_G); CHKERRQ(ierr);
-        ierr = TheLSF.gfun_ply_Tsai_Hill(x,probdata.NameVars,probdata.MatStrength,StressGP,val_G_TH); CHKERRQ(ierr);
-        cout<<"\n The value of limit state function is: "<<val_G<<"\t"<<val_G_TH<<endl;
-        // count failure number
+        // Tsai Wu
+        ierr = TheLSF.gfun_ply_Tsai_Wu_0(x,probdata.NameVars,probdata.MatStrength,StressGP,val_G); CHKERRQ(ierr);
+        ierr = TheLSF.gfun_ply_Tsai_Wu_2D(x,probdata.NameVars,probdata.MatStrength,StressGP,val_G_TW_2D); CHKERRQ(ierr);
+        ierr = TheLSF.gfun_ply_Tsai_Wu(x,probdata.NameVars,probdata.MatStrength,StressGP,val_G_TW); CHKERRQ(ierr);
+
         if (val_G<0) { no_fail++;}
         break;
       case 2:
@@ -821,11 +885,18 @@ int main(int argc, char *argv[]) {
     //                                                                        //
     ////////////////////////////////////////////////////////////////////////////
     
+    MCSFile_MS<<setprecision(15)<<val_G_MS_LD<<"\t"<<val_G_MS_LD<<"\t"<<val_G_MS_LD<<"\n";
+    MCSFile_Hashin<<setprecision(15)<<val_G_HF<<"\t"<<val_G_HF<<"\n";
+    MCSFile_TW<<setprecision(15)<<val_G_TW_2D<<"\t"<<val_G_TW<<"\n";
+    MCSFile_TH<<setprecision(15)<<val_G_TH_2D<<"\t"<<val_G_TH<<"\n";
+    MCSFile_RC<<setprecision(15)<<val_G_RCF<<"\t"<<val_G_RCM<<"\n";
+    MCSFile_Hoffman<<setprecision(15)<<val_G_Hoffman_2D<<"\t"<<val_G_Hoffman<<"\n";
+    /*
     MCSFile<<setprecision(15)<<val_G<<"\t"<<val_G_TH;
     for (int i=0;i<probdata.num_vars;i++) {
       MCSFile<<"\t"<<x(i);
     }
-    MCSFile<<"\n";
+    MCSFile<<"\n";*/
     
     rel_t2 = clock();
     rel_calc_time  = (double)(rel_t2 - rel_t1)/CLOCKS_PER_SEC;

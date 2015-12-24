@@ -1,0 +1,71 @@
+#!python
+cubit.cmd('reset')
+
+# Geometry (all dimension for macro is in meter [mm])'
+h=0.25; l=8*h;  b=8*h;  e=1e-6;  u=2*l*e; 
+
+str1='brick x ' + str(l) + ' y ' + str(b) +' z ' + str(h);   cubit.cmd(str1)
+str1='brick x ' + str(l) + ' y ' + str(b) +' z ' + str(h);   cubit.cmd(str1)
+str1='move volume 2 x 0 y 0 z '+str(h)+'include_merged';   cubit.cmd(str1)
+str1='move volume all x '+str(l/2) +' y '+ str(b/2) + ' z '+str(0)+'include_merged';   cubit.cmd(str1) 
+cubit.cmd('volume all copy reflect x') 
+cubit.cmd('volume all copy reflect y') 
+str1='move volume all x '+str(l) +' y '+ str(b) + ' z '+str(h/2)+'include_merged';   cubit.cmd(str1) 
+ 
+cubit.cmd('imprint volume all ')  
+cubit.cmd('merge volume all ')  
+ 
+#cubit.cmd('curve 72 60 interval 20')     
+#cubit.cmd('curve 72 60 scheme equal')     
+#cubit.cmd('mesh curve 72 60')     
+#cubit.cmd('volume all scheme tetmesh')     
+#cubit.cmd('volume all sizing function type skeleton scale 8 time_accuracy_level 2 min_size auto max_size auto max_gradient 1.1 min_depth 2 max_depth 7 min_num_layers_3d 1 min_num_layers_2d 1 min_num_layers_1d 1 max_span_ang_surf 45 max_span_ang_curve 45')      
+#cubit.cmd('volume all sizing function type skeleton')     
+#cubit.cmd('mesh volume all ')     
+  
+cubit.cmd('volume all size auto factor 6')     
+cubit.cmd('volume all scheme tetmesh')     
+cubit.cmd('mesh volume all ')     
+      
+#Material Blocks 1 for 0 deg       
+cubit.cmd('set duplicate block elements on')       
+cubit.cmd('block 1 volume 1 3 5 7')         
+cubit.cmd('block 1 name "MAT_ELASTIC_Pos45"')       
+cubit.cmd('block 1 attribute count 2')       
+cubit.cmd('block 1 attribute index 1 200')   #Young's modulus  (This will not be used in the calculation)       
+cubit.cmd('block 1 attribute index 2 0.3')   #Poisson's ratio (This will not be used in the calculation)       
+       
+#Material Blocks 1 for 90 deg       
+cubit.cmd('block 2 volume 2 4 6 8')         
+cubit.cmd('block 2 name "MAT_ELASTIC_Neg45"')       
+cubit.cmd('block 2 attribute count 2')       
+cubit.cmd('block 2 attribute index 1 200')   #Young's modulus  (This will not be used in the calculation)       
+cubit.cmd('block 2 attribute index 2 0.3')   #Poisson's ratio (This will not be used in the calculation)       
+       
+#Applied displacement       
+str1='create displacement on vertex 7 dof 1 fix 0 ';  cubit.cmd(str1)       
+str1='create displacement on surface 26 38 14 2  dof 3 fix 0 ';  cubit.cmd(str1)       
+str1='create displacement on surface 41 47 29 35  dof 2 fix ' + str(0);  cubit.cmd(str1)       
+str1='create displacement on surface 23 17 11 5   dof 2 fix ' + str(u);  cubit.cmd(str1)       
+    
+cubit.cmd('save as "/Users/zahur/Documents/moFEM/mofem-cephas/mofem_v0.2/users_modules/composite_laminates/meshes/Laminated_Plate_Pos45_Neg45.cub" overwrite')        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

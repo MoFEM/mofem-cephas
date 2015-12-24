@@ -144,7 +144,10 @@ struct NatafTransformation {
           break;
       }
       
-      cout<<i<<"th variable \t"<<z(i)<<endl;
+      if (i == 0) { cout<<"Value of 1st variable \t"<<z(i)<<endl; }
+      else if (i == 1) { cout<<"Value of 2nd variable \t"<<z(i)<<endl; }
+      else if (i == 2) { cout<<"Value of 3rd variable \t"<<z(i)<<endl; }
+      else { cout<<"Value of "<<i+1<<"th variable \t"<<z(i)<<endl;}
     }
     u = prod(inv_Lo,z); // u = Lo^{-1} z
     
@@ -281,7 +284,10 @@ struct NatafTransformation {
           break;
       }
       
-      cout<<i<<"th variable \t"<<x(i)<<"\t"<<u(i)<<endl;
+      if (i == 0) { cout<<"Value of 1st variable \t"<<x(i)<<"\t"<<u(i)<<endl; }
+      else if (i == 1) { cout<<"Value of 2nd variable \t"<<x(i)<<"\t"<<u(i)<<endl; }
+      else if (i == 2) { cout<<"Value of 3rd variable \t"<<x(i)<<"\t"<<u(i)<<endl; }
+      else { cout<<"Value of "<<i+1<<"th variable \t"<<x(i)<<"\t"<<u(i)<<endl;}
     }
     
     PetscFunctionReturn(0);
@@ -687,11 +693,11 @@ struct NatafTransformation {
           
         }
         else {
-          // cout<<"Other cases"<<endl;
-          
+          //cout<<"Other cases"<<endl;
+          //cout<<"Number of variables "<<num_vars<<endl;
           // Get coefficients from coefficient matrix
           for (int k = 0; k<10; k++) {
-            rcoef[k] = coef[jvar][ivar][k];
+            rcoef[k] = coef[jdisttype][idisttype][k];
           }
           //
           Vi = MargProb(ivar,2);
@@ -725,7 +731,7 @@ struct NatafTransformation {
       }
       //cout<<endl;
     }
-    
+    //cout<<"\n\nModified correlation matrix: "<<ModifiedCorrMat<<endl;
     PetscFunctionReturn(0);
   }
   

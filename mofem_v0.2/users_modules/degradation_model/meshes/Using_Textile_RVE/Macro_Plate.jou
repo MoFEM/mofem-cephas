@@ -38,7 +38,7 @@ block 4 attribute count 1
 
 #Mechanical Macro material properties (Matrix part)
 block 5 volume 1  
-block 5 name 'MAT_ELASTIC'
+block 5 name 'MAT_ELASTIC_First'
 block 5 attribute count 2
 block 5 attribute index 1 1   #Young's modulus  (This will not be used in the calculation)
 block 5 attribute index 2 0   #Poisson's ratio (This will not be used in the calculation)

@@ -85,9 +85,12 @@ mpirun -np 1 ./trans_iso_RVE_Geom_disp \
 
 make ../homogenisation/TransIso_Potential_Flow_NoInt && \
 mpirun -np 1 ../homogenisation/TransIso_Potential_Flow_NoInt \
--my_file /mnt/home/Dropbox/DURACOMP_Cal/009_MOFEM/Meshes/RVE_TISO/RVE_UD.cub \
+-my_file /mnt/home/MyBuild/mofem-cephas/mofem_v0.2/users_modules/stochastic/meshes/RVE_UD.cub \
 -ksp_type fgmres -ksp_gmres_restart 1000 \
 -pc_type asm -sub_pc_type lu -ksp_monitor -my_order 1
+
+
+#-my_file /mnt/home/Dropbox/DURACOMP_Cal/009_MOFEM/Meshes/RVE_TISO/RVE_UD.cub \
 
 # Step 2: RVE homogenisation calculation & structural level FE
 
@@ -143,6 +146,32 @@ copy out put files from build folder to specific folder
 -------------------------------------------------------------
 cp input.dat /mnt/home/Desktop/
 
+
+make ../homogenisation/Cube_Disp_HOG && \
+mpirun -np 1 ../homogenisation/Cube_Disp_HOG \
+-my_file /mnt/home/MyBuild/mofem-cephas/mofem_v0.2/users_modules/composite_laminates/meshes/Laminated_Plate_RVE_0deg.cub \
+-ksp_type fgmres -pc_type lu \
+-pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1
+
+
+make PSFE2_Composite_Laminate && \
+mpirun -np 1 ./PSFE2_Composite_Laminate \
+-my_file /mnt/home/MyBuild/mofem-cephas/mofem_v0.2/users_modules/composite_laminates/meshes/Laminated_Plate_Poster.cub \
+-ksp_type fgmres -pc_type lu \
+-pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1
+
+
+make PSFE2_Composite_Laminate && \
+mpirun -np 1 ./PSFE2_Composite_Laminate \
+-my_file_macro /mnt/home/MyBuild/mofem-cephas/mofem_v0.2/users_modules/composite_laminates/meshes/Laminated_Plate_Poster.cub \
+-my_file_RVE solution_RVE.h5m \
+-ksp_type fgmres -pc_type lu \
+-pc_factor_mat_solver_package superlu_dist -ksp_monitor \
+-my_order_RVE 1 -my_order_Macro 1
+
+superlu_dist
+
+
 ******************************************************************************************
 *                                                                                        *
 * Example run CompStruct_Rel for performing reliability analysis                         *
@@ -153,33 +182,182 @@ cp input.dat /mnt/home/Desktop/
 
 make CompStruct_Rel && mpirun -np 1 ./CompStruct_Rel
 
-
+# Case 1: single layer laminate
+# Reliability calculated by FORM method
 
 make MsFE_Reliability_Disp && \
 mpirun -np 1 ./MsFE_Reliability_Disp \
--my_file_macro /mnt/home/MyBuild/mofem-cephas/mofem_v0.2/users_modules/stochastic/meshes/LShape_REL99.cub \
--my_prob_data_file //mnt//home//Dropbox//DURACOMP_Cal//009_MoFEM//04_ReliabilityAnalysis//Input_probdata_UD_Ply.txt \
+-my_file_macro /mnt/home/MyBuild/mofem-cephas/mofem_v0.2/users_modules/stochastic/meshes/Laminate_REL_1L.cub \
+-my_prob_data_file //mnt//home//Dropbox//DURACOMP_Cal//009_MoFEM//04_ReliabilityAnalysis//Input_probdata_UD_Ply_12_vars.txt \
 -my_file_RVE solution_RVE.h5m \
 -ksp_type fgmres -pc_type lu \
 -pc_factor_mat_solver_package mumps -ksp_monitor -my_order 1
 
-
-
-make MsFE_Reliability_Disp && \
-mpirun -np 1 ./MsFE_Reliability_Disp \
--my_file_macro /mnt/home/MyBuild/mofem-cephas/mofem_v0.2/users_modules/stochastic/meshes/Plate_SFSF_REL16.cub \
--my_prob_data_file //mnt//home//Dropbox//DURACOMP_Cal//009_MoFEM//04_ReliabilityAnalysis//Input_probdata_UD_Ply01.txt \
--my_file_RVE solution_RVE.h5m \
--ksp_type fgmres -pc_type lu \
--pc_factor_mat_solver_package mumps -ksp_monitor -my_order 1
-
-
+# Reliability calculated by MCS method
 make FE2_TransIso_Reliability_MCS_Disp && \
 mpirun -np 1 ./FE2_TransIso_Reliability_MCS_Disp \
--my_file_macro /mnt/home/MyBuild/mofem-cephas/mofem_v0.2/users_modules/stochastic/meshes/Plate_SFSF_REL16.cub \
--my_prob_data_file //mnt//home//Dropbox//DURACOMP_Cal//009_MoFEM//04_ReliabilityAnalysis//Input_probdata_UD_Ply01.txt \
+-my_file_macro /mnt/home/MyBuild/mofem-cephas/mofem_v0.2/users_modules/stochastic/meshes/Laminate_REL_1L.cub \
+-my_prob_data_file //mnt//home//Dropbox//DURACOMP_Cal//009_MoFEM//04_ReliabilityAnalysis//Input_probdata_CFRP_1_Ply_12_vars.txt \
 -my_file_RVE solution_RVE.h5m \
 -ksp_type fgmres -pc_type lu \
--pc_factor_mat_solver_package mumps -ksp_monitor -my_order 1
+-pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 1
+
+
+make Reliability_MCS_Laminate_Disp && \
+mpirun -np 1 ./Reliability_MCS_Laminate_Disp \
+-my_file_macro /mnt/home/MyBuild/mofem-cephas/mofem_v0.2/users_modules/stochastic/meshes/WWFE_Laminate_Type_3.cub \
+-my_prob_data_file //mnt//home//Dropbox//DURACOMP_Cal//009_MoFEM//04_ReliabilityAnalysis//Input_probdata_CFRP_1_Ply_12_vars.txt \
+-my_file_RVE solution_RVE.h5m \
+-ksp_type fgmres -pc_type lu \
+-pc_factor_mat_solver_package superlu_dist -ksp_monitor \
+-my_order_RVE 1 -my_order_Macro 1 -my_NO_Layers 4
+
+# ----------------------------------------------------
+# Case 2: multiple layers laminate (up to four layers)
+# Reliability calculated by FORM method
+# ----------------------------------------------------
+
+make MsFE_Reliability_Laminate_Disp && \
+mpirun -np 1 ./MsFE_Reliability_Laminate_Disp \
+-my_file_macro /mnt/home/MyBuild/mofem-cephas/mofem_v0.2/users_modules/stochastic/meshes/WWFE_Laminate_Type_3.cub \
+-my_prob_data_file //mnt//home//Dropbox//DURACOMP_Cal//009_MoFEM//04_ReliabilityAnalysis//Input_probdata_CFRP_1_Ply_12_vars.txt \
+-my_file_RVE solution_RVE.h5m \
+-ksp_type fgmres -pc_type lu \
+-pc_factor_mat_solver_package superlu_dist -ksp_monitor \
+-my_order_RVE 1 -my_order_Macro 1 -my_NO_Layers 4
+
+
+make PSFE2_Composite_Laminate && \
+mpirun -np 1 ./PSFE2_Composite_Laminate \
+-my_file_macro /mnt/home/MyBuild/mofem-cephas/mofem_v0.2/users_modules/composite_laminates/meshes/Laminated_Plate_Poster.cub \
+-my_file_RVE solution_RVE.h5m \
+-ksp_type fgmres -pc_type lu \
+-pc_factor_mat_solver_package superlu_dist -ksp_monitor \
+-my_order_RVE 1 -my_order_Macro 1
+
+
+
+******************************************************************************************
+*                                                                                        *
+* Example run MsFE_Degradation_Reliability_Laminate_Disp                                 *
+*  for performing time-dependent reliability analysis with consideration temperature and *
+*  moisture induced degradation                                                          *
+*                                                                                        *
+******************************************************************************************
+
+# Step 1: thermal conductivity
+
+make ../degradation_model/Thermal_Disp_MRhs && \
+mpirun -np 1 ../degradation_model/Thermal_Disp_MRhs \
+-my_file /mnt/home/MyBuild/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/Using_Textile_RVE/Textile_RVE_Thermal.cub \
+-ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist \
+-ksp_monitor -my_output_file_Dmat thermal_Dmat.out -my_order 1
+
+# Step 2: moisture diffusivity
+
+make ../degradation_model/MoistureTrans_Disp_MRhs_with_incl && \
+mpirun -np 1 ../degradation_model/MoistureTrans_Disp_MRhs_with_incl \
+-my_file /mnt/home/MyBuild/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/Using_Textile_RVE/Textile_RVE_moisture.cub \
+-ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist \
+-ksp_monitor -my_output_file_Dmat diffusion_Dmat.out -my_order 1
+
+# Step 3: Unsteady thermal macro problem 
+
+make ../degradation_model/thermal_unsteady_inputDmat && \
+mpirun -np 1 ../degradation_model/thermal_unsteady_inputDmat \
+-my_file /mnt/home/MyBuild/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/\
+Using_Textile_RVE/Macro_Plate.cub \
+-ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor \
+-snes_type newtonls -snes_linesearch_type basic -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 -snes_monitor \
+-ts_monitor -ts_type beuler -ts_dt 86400 -ts_final_time 864000 -snes_lag_jacobian -2 \
+-my_order 1 -my_max_post_proc_ref_level 0
+  
+# Step 4: Unsteady moisture macro problem   
+  
+make ../degradation_model/diffusion_unsteady_inputDmat && \
+mpirun -np 1 ../degradation_model/diffusion_unsteady_inputDmat \
+-my_file solution.h5m \
+-ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor \
+-snes_type newtonls -snes_linesearch_type basic -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 -snes_monitor \
+-ts_monitor -ts_type beuler -ts_dt 86400 -ts_final_time 864000 -snes_lag_jacobian -2 \
+-my_order 1 -my_max_post_proc_ref_level 0  
+
+# Step 5: Calculate wt which will be used to calculate degredaiton (1-wt) (time here in days)
+
+make ../degradation_model/wt_unsteady_macro && \
+mpirun -np 1 ../degradation_model/wt_unsteady_macro \
+-my_file solution_mois.h5m \
+-ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor \
+-snes_type newtonls -snes_linesearch_type basic -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 -snes_monitor \
+-ts_monitor -ts_type beuler -ts_dt 1 -ts_final_time 10 -snes_lag_jacobian -2 \
+-my_order 1 -my_max_post_proc_ref_level 0 \
+-my_saturation_conc 1
+
+# Step 6: Run potential flow calculation to identify fibre direction
+
+mpirun -np 1 ../homogenisation/TransIso_Potential_Flow_NoInt \
+-my_file /mnt/home/MyBuild/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/trans_iso/Textile_RVE_Mechanical.cub \
+-ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor -my_order 2
+
+# ***************************************************
+#
+# Step 7: FE2 method for mechanical problem with RVE 
+#
+# ***************************************************
+
+make PSFE2_Degradation_TransIso_Disp && \
+mpirun -np 1 ./PSFE2_Degradation_TransIso_Disp \
+-my_file_Macro solution_wt.h5m \
+-my_file_RVE solution_RVE.h5m \
+-ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist \
+-my_max_post_proc_ref_level 0 -my_order 1
+
+# ***************************************************
+#
+# Step 8: FE2 method for mechanical problem with RVE  
+#
+# ***************************************************
+
+make MsFE_Degradation_Reliability_Laminate_Disp && \
+mpirun -np 1 ./MsFE_Degradation_Reliability_Laminate_Disp \
+-my_file_macro solution_wt.h5m \
+-my_prob_data_file //mnt//home//Dropbox//DURACOMP_Cal//009_MoFEM//04_ReliabilityAnalysis//Input_probdata_FORMAX_Ply_1_var.txt \
+-my_file_RVE solution_RVE.h5m \
+-ksp_type fgmres -pc_type lu \
+-pc_factor_mat_solver_package superlu_dist \
+-my_order_RVE 1 -my_order_Macro 1 -my_NO_Layers 1
+
+// -ksp_monitor
+// -ksp_final_residual 
+
+
+make ../degradation_model/mech_macro_transIso_Disp && \
+mpirun -np 1 ../degradation_model/mech_macro_transIso_Disp \
+-my_file_Macro solution_wt.h5m -my_file_RVE solution_RVE.h5m \
+-ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist \
+-my_max_post_proc_ref_level 0 -my_order 1
+
+Conversion from .h5m to vtk
+============================================================
+
+/opt/petsc/arch-linux2-c-opt/bin/mbconvert FE2_out_10.h5m FE2_out_10.vtk
+
+cp FE2_out_10.vtk /mnt/home/Desktop/
+
+
+One file conversion
+/opt/petsc/arch-linux2-c-opt/bin/mbconvert out.h5m out.vtk
+
+/opt/petsc/arch-linux2-c-opt/bin/mbconvert FE2_out_0.h5m FE2_out_0.vtk
+/opt/petsc/arch-linux2-c-opt/bin/mbconvert FE2_out_8.h5m FE2_out_8.vtk
+/opt/petsc/arch-linux2-c-opt/bin/mbconvert FE2_out_10.h5m FE2_out_10.vtk
+/opt/petsc/arch-linux2-c-opt/bin/mbconvert FE2_out_16.h5m FE2_out_16.vtk
+
+All files conversion using script
+./do_vtk1.sh FE2_out_*.h5m
+
+cp *.vtk /mnt/home/Desktop/Results/
+
+rm *.vtk *.info *.h5m *.out
 
 

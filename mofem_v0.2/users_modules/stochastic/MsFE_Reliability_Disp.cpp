@@ -29,6 +29,7 @@ using namespace MoFEM;
 #include <FEMethod_LowLevelStudent.hpp>
 #include <FEMethod_UpLevelStudent.hpp>
 
+#include <PostProcOnRefMesh.hpp>
 #include <PostProcVertexMethod.hpp>
 #include <PostProcDisplacementAndStrainOnRefindedMesh.hpp>
 
@@ -118,7 +119,7 @@ struct Stochastic_Model {
   ublas::matrix<double> mod_correlation; // modified correlation matrix
   ublas::matrix<double> Lo;              // Chelosky decomposition
   ublas::matrix<double> inv_Lo;          // inverse of matrix Lo
-  ublas::matrix<double> MatStrength;     // Material strength
+  ublas::vector<double> MatStrength;     // Material strength
 };
 
 //------------------------------------------------------------------------------
@@ -1207,7 +1208,7 @@ int main(int argc, char *argv[]) {
     //ierr = TheLSF.gfun(x,val_G,grad_g); CHKERRQ(ierr);
     
     switch (FailureCriterion) {
-      case 1:
+      case 1:{
         //
         // Tsai-Wu failure criteria
         //
@@ -1220,7 +1221,8 @@ int main(int argc, char *argv[]) {
                                   StressGP_r_F,
                                   val_G,grad_g); CHKERRQ(ierr);
         break;
-      case 2:
+      }
+      case 2: {
         //
         // Tsai-Hill failure criteria
         //
@@ -1233,6 +1235,77 @@ int main(int argc, char *argv[]) {
                                          StressGP_r_F,
                                          val_G,grad_g); CHKERRQ(ierr);
         break;
+      }
+      case 3: {
+        //
+        // Maximum stress criterion
+        //
+        NameOfFailureCriterion = "Maximum stress";
+        ierr = TheLSF.gfun_ply_MS_TD(x,probdata.NameVars,probdata.MatStrength,
+                                     StressGP,
+                                     StressGP_r_Em,StressGP_r_NUm,
+                                     StressGP_r_NUp,StressGP_r_NUpz,
+                                     StressGP_r_Ep,StressGP_r_Ez,StressGP_r_Gzp,
+                                     StressGP_r_F,
+                                     val_G,grad_g); CHKERRQ(ierr);
+        break;
+      }
+      case 41: {
+        //
+        // Maximum stress criterion
+        //
+        NameOfFailureCriterion = "Christensen - Matrix controlled failure";
+        ierr = TheLSF.gfun_ply_RCM(x,probdata.NameVars,probdata.MatStrength,
+                                  StressGP,
+                                  StressGP_r_Em,StressGP_r_NUm,
+                                  StressGP_r_NUp,StressGP_r_NUpz,
+                                  StressGP_r_Ep,StressGP_r_Ez,StressGP_r_Gzp,
+                                  StressGP_r_F,
+                                  val_G,grad_g); CHKERRQ(ierr);
+        break;
+      }
+      case 42: {
+        //
+        // Maximum stress criterion
+        //
+        NameOfFailureCriterion = "Christensen - Fibre controlled failure";
+        ierr = TheLSF.gfun_ply_RCF(x,probdata.NameVars,probdata.MatStrength,
+                                   StressGP,
+                                   StressGP_r_Em,StressGP_r_NUm,
+                                   StressGP_r_NUp,StressGP_r_NUpz,
+                                   StressGP_r_Ep,StressGP_r_Ez,StressGP_r_Gzp,
+                                   StressGP_r_F,
+                                   val_G,grad_g); CHKERRQ(ierr);
+        break;
+      }
+      case 51: {
+        //
+        // Hashin criterion - Matrix mode
+        //
+        NameOfFailureCriterion = "Hashin - Matrix controlled failure";
+        ierr = TheLSF.gfun_ply_HM(x,probdata.NameVars,probdata.MatStrength,
+                                  StressGP,
+                                  StressGP_r_Em,StressGP_r_NUm,
+                                  StressGP_r_NUp,StressGP_r_NUpz,
+                                  StressGP_r_Ep,StressGP_r_Ez,StressGP_r_Gzp,
+                                  StressGP_r_F,
+                                  val_G,grad_g); CHKERRQ(ierr);
+        break;
+      }
+      case 52: {
+        //
+        // Hashin criterion - Matrix mode
+        //
+        NameOfFailureCriterion = "Hashin - Fibre controlled failure";
+        ierr = TheLSF.gfun_ply_HF(x,probdata.NameVars,probdata.MatStrength,
+                                  StressGP,
+                                  StressGP_r_Em,StressGP_r_NUm,
+                                  StressGP_r_NUp,StressGP_r_NUpz,
+                                  StressGP_r_Ep,StressGP_r_Ez,StressGP_r_Gzp,
+                                  StressGP_r_F,
+                                  val_G,grad_g); CHKERRQ(ierr);
+        break;
+      }
     }
     
     

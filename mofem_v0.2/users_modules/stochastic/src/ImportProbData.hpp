@@ -25,9 +25,13 @@ struct ImportProbData {
   
   ublas::matrix<double> MargProb;    // Marginal probability distribution function
   ublas::matrix<double> CorrMat;     // Correlation matrix
-  ublas::matrix<double> MatStrength; // Material strength
+  ublas::vector<double> MatStrength; // Material strength
+  ublas::vector<double> PlyAngle;    // Ply angle of orientation
   vector<string> NameVars;           // Name of random variables
   int NumVars;                       // Number of variables
+  int NumLayers;                     // Number of layers
+  int ExaminedLayer;                 // Examined layer
+  int TimePoint;                     // Time point for selection of wt in degradation analysis
   int FailureCriterion;              // Type of failure criterion
   
   
@@ -79,11 +83,17 @@ struct ImportProbData {
     char prob_data_file_name[255];
     PetscBool flg = PETSC_TRUE;
     ierr = PetscOptionsGetString(PETSC_NULL,"-my_prob_data_file",prob_data_file_name,255,&flg); CHKERRQ(ierr);
-    
+    if(flg != PETSC_TRUE) {
+      SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_prob_data_file (PROB_DATA FILE NEEDED)!!!");
+    }
     
     ifstream ProbDataFile;
     //ProbDataFile.open("//mnt//home//Dropbox//DURACOMP_Cal//009_MoFEM//04_ReliabilityAnalysis//Input_probdata.txt",ifstream::in);
     ProbDataFile.open(prob_data_file_name,ifstream::in);
+    if (!ProbDataFile) {
+      cout << "\n\nFile does not exists!\n" << endl;
+      exit(EXIT_FAILURE);
+    }
     
     char   buffer[256];
     string stringbuf;
@@ -92,13 +102,13 @@ struct ImportProbData {
     //int    *pos;
     ublas::vector<int> pos;
     int    cnt;
-    int    MAR_IX, COR_IX, STR_IX;
-    MAR_IX = 0; COR_IX = 0; STR_IX = 0;
+    int    MAR_IX, COR_IX, STR_IX, ANG_IX, TIME_IX;
+    MAR_IX = 0; COR_IX = 0; STR_IX = 0; ANG_IX = 0; TIME_IX = 0;
     
     while (!ProbDataFile.eof()) {
       ProbDataFile.getline(buffer,200);
       if (strlen(buffer)>0) {
-        if (isdigit(buffer[0]) == 0) {
+        if (isalpha(buffer[0])) {//(isdigit(buffer[0]) == 0) {
           stringbuf = (string)buffer;
           if (stringbuf.compare(0,3,"NUM") == 0) {
             // cout<<"Next line is data for number of variables"<<endl;
@@ -124,12 +134,28 @@ struct ImportProbData {
             // cout<<"Next lines are data for names of variables"<<endl;
             datatype = "FAILURE";
           }
+          else if (stringbuf.compare(0,3,"LAY") == 0) {
+           // cout<<"Next line is data for correlation matrix"<<endl;
+           datatype = "LAYER";
+           }
+          else if (stringbuf.compare(0,3,"EXA") == 0) {
+            // cout<<"Next line is data for correlation matrix"<<endl;
+            datatype = "EXAMINED";
+          }
+          else if (stringbuf.compare(0,3,"ANG") == 0) {
+           // cout<<"Next lines are data for angle of orietations"<<endl;
+           datatype = "ANGLE";
+           }
+          else if (stringbuf.compare(0,4,"TIME") == 0) {
+            // cout<<"Next lines are data for angle of orietations"<<endl;
+            datatype = "TIME";
+          }
           stringbuf.clear();
         }
         else {
           ierr = str_cnt(buffer,',',cnt); CHKERRQ(ierr);
           //pos = new int[cnt];
-          cout<<"the number of specified character: \t"<<cnt<<endl;
+          //cout<<"the number of specified character: \t"<<cnt<<endl;
           pos.resize(cnt+1);pos.clear();
           ierr = str_pos(buffer,',',pos); CHKERRQ(ierr);
           stringbuf = (string)buffer;//cout<<buffer<<endl;
@@ -176,10 +202,10 @@ struct ImportProbData {
               substringbuf.clear();
             }
           }
-          else if (datatype.compare(0,3,"STR") == 0) { // material strenth
+          else if (datatype.compare(0,3,"STR") == 0) { // material strength
             // Declaration
             if (STR_IX ==0) {
-              MatStrength.resize(6,cnt);
+              MatStrength.resize(6);
             }
             STR_IX ++;
             
@@ -191,7 +217,7 @@ struct ImportProbData {
               else {
                 substringbuf = stringbuf.substr(pos(i-1)+1,(pos(i)-pos(i-1))-1);
               }
-              MatStrength(STR_IX-1, i-1) = atof(substringbuf.c_str());
+              MatStrength(STR_IX-1) = atof(substringbuf.c_str());
               substringbuf.clear();
             }
           }
@@ -199,7 +225,7 @@ struct ImportProbData {
             // Insert data into probdata
             for (int i=1; i<=cnt;i++) {
               substringbuf = stringbuf.substr(pos(i-1)+1,(pos(i)-pos(i-1))-1);
-              //cout<<substringbuf<<endl;
+              cout<<substringbuf<<endl;
               NameVars.push_back(substringbuf);
               substringbuf.clear();
             }
@@ -207,6 +233,37 @@ struct ImportProbData {
           else if (datatype.compare(0,7,"FAILURE") == 0) {
             substringbuf = stringbuf.substr(0,pos(1));
             FailureCriterion = atoi(substringbuf.c_str());
+          }
+          else if (datatype.compare(0,3,"LAY") == 0) { // number of layers
+           substringbuf = stringbuf.substr(0,pos(1));
+           NumLayers = atoi(substringbuf.c_str());
+          }
+          else if (datatype.compare(0,3,"EXA") == 0) { // number of layers
+            substringbuf = stringbuf.substr(0,pos(1));
+            ExaminedLayer = atoi(substringbuf.c_str());
+          }
+          else if (datatype.compare(0,4,"TIME") == 0) { // examined time point
+            substringbuf = stringbuf.substr(0,pos(1));
+            TimePoint = atoi(substringbuf.c_str());
+          }
+          else if (datatype.compare(0,5,"ANGLE") == 0) { // material strength
+           // Declaration
+           if (ANG_IX ==0) {
+             PlyAngle.resize(NumLayers);
+           }
+           ANG_IX ++;
+           
+           // Insert data into probdata
+           for (int i=1; i<=cnt;i++) {
+             if (i == 1) {
+               substringbuf = stringbuf.substr(0,pos(i));
+             }
+             else {
+               substringbuf = stringbuf.substr(pos(i-1)+1,(pos(i)-pos(i-1))-1);
+             }
+             PlyAngle(ANG_IX-1) = atof(substringbuf.c_str());//cout<<"\n Layer angle \n"<<substringbuf<<endl;
+             substringbuf.clear();
+           }
           }
           // free dynamically allocated memory
           //delete [] pos;
@@ -216,7 +273,7 @@ struct ImportProbData {
       }
     }
     //delete [] pos;
-    cout<<"Marginal probability data:\t"<<MargProb<<endl;
+    //cout<<"Marginal probability data:\t"<<MargProb<<endl;
     ProbDataFile.close();
     //cout<<"Number of names: "<<NameVars.size()<<endl;
     PetscFunctionReturn(0);

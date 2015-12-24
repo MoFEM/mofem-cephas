@@ -28,6 +28,7 @@ namespace ObosleteUsersModules {
     
     ublas::matrix<double> Dmat;
     ublas::matrix<double> StressGP;
+    ublas::matrix<double> StrainGP;
     
     Tag th_stress,th_prin_stress_vect1,th_prin_stress_vect2,th_prin_stress_vect3,th_prin_stress_vals;
     
@@ -53,7 +54,7 @@ namespace ObosleteUsersModules {
       PetscFunctionBegin;
       cout<<"Post-processing for zeroth order"<<endl;
       
-      try {
+      try {//EntityHandle fe_ent = VolumeElementForcesAndSourcesCore(mField)::UserDataOperator()::getMoFEMFEPtr()->get_ent();
         
         //Loop over elements
         ierr = do_operator(); CHKERRQ(ierr);
@@ -151,8 +152,12 @@ namespace ObosleteUsersModules {
           //cout<<"Principal stress at GP "<<gg<<" : \t"<<prin_vals_vect<<endl;
           if (gg==0) {
             cout.precision(15);
+            // Output stresses at Gauss point
             StressGP.resize(3,3); StressGP.clear();
             StressGP = Stress;
+            // Output straines at Gauss point
+            StrainGP.resize(3,3); StrainGP.clear();
+            StrainGP = Strain;
             //cout<<"Cauchy stress at GP "<<gg<<" : \t"<<Stress<<endl;
           }
           //Tag principle stress vectors 1, 2, 3
@@ -182,6 +187,7 @@ namespace ObosleteUsersModules {
     ublas::matrix<double> Dmat;
     ublas::matrix<double> Dmat_r;
     ublas::matrix<double> StressGP_r;
+    ublas::matrix<double> StrainGP_r;
     string zeroth_field;
     string first_field;
     
@@ -333,7 +339,12 @@ namespace ObosleteUsersModules {
           //cout.precision(15);
           //cout<<"1st order derivative of Cauchy stress at GP "<<gg<<" : \t"<<dStress_dx<<endl;
           //cout<<"1st order derivative of principa stress at GP "<<gg<<" :\t"<<dprin_vals_vect<<endl;
-          if (gg==0) {StressGP_r.resize(3,3); StressGP_r.clear(); StressGP_r = dStress_dx;}
+          if (gg==0) {
+            // Output 1st-order derivative of stress at Gauss point
+            StressGP_r.resize(3,3); StressGP_r.clear(); StressGP_r = dStress_dx;
+            // Output 1st-order derivative of strain at Gauss point
+            StrainGP_r.resize(3,3); StrainGP_r.clear(); StrainGP_r = Strain_du;
+          }
           //Tag principle stress vectors 1, 2, 3
           rval = moab_post_proc.tag_set_data(th_prin_stress_vect1,&mit->second,1,&dprin_stress_dx_vect1[0]); CHKERR_PETSC(rval);
           rval = moab_post_proc.tag_set_data(th_prin_stress_vect2,&mit->second,1,&dprin_stress_dx_vect2[0]); CHKERR_PETSC(rval);

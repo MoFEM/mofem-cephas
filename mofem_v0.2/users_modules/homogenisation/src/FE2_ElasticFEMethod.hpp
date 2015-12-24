@@ -80,7 +80,7 @@ namespace MoFEM {
     
     virtual PetscErrorCode Fint() {
       PetscFunctionBegin;
-      cout<<"Fint "<<endl;
+      //cout<<"Fint "<<endl;
       try {
         
         //Higher order approximation of geometry

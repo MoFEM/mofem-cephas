@@ -66,8 +66,6 @@ struct MoistureTransportElement: public ThermalElement {
     // loop over all blocksets
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_MOISTURESET,it)) {
 
-      if(it->get_name().compare(0,12,"MAT_MOISTURE") == 0) {
-
       if(it->get_name().compare(0,12,"MAT_MOISTURE") == 0){
 
         Mat_Moisture diffusion_data;
