@@ -306,7 +306,15 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
 
       if(oit->getOpType()&UserDataOperator::OPROW) {
         try {
-          ierr = oit->opRhs(*op_data[0]); CHKERRQ(ierr);
+          ierr = oit->opRhs(
+            *op_data[0],
+            oit->doVerticesRow,
+            oit->doEdgesRow,
+            oit->doQuadsRow,
+            oit->doTrisRow,
+            false,
+            false
+          ); CHKERRQ(ierr);
         } catch (exception& ex) {
           ostringstream ss;
           ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
@@ -317,7 +325,15 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
 
       if(oit->getOpType()&UserDataOperator::OPCOL) {
         try {
-          ierr = oit->opRhs(*op_data[1]); CHKERRQ(ierr);
+          ierr = oit->opRhs(
+            *op_data[1],
+            oit->doVerticesCol,
+            oit->doEdgesCol,
+            oit->doQuadsCol,
+            oit->doTrisCol,
+            false,
+            false
+          ); CHKERRQ(ierr);
         } catch (exception& ex) {
           ostringstream ss;
           ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;

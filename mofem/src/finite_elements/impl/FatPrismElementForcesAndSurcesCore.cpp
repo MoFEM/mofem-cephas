@@ -685,7 +685,7 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
             oit->doEdgesRow,
             oit->doQuadsRow,
             oit->doTrisRow,
-            oit->doTetsRow,
+            false,
             oit->doPrismsRow
           ); CHKERRQ(ierr);
         } catch (exception& ex) {
@@ -703,7 +703,7 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
             oit->doEdgesCol,
             oit->doQuadsCol,
             oit->doTrisCol,
-            oit->doTetsCol,
+            false,
             oit->doPrismsCol
           ); CHKERRQ(ierr);
         } catch (exception& ex) {

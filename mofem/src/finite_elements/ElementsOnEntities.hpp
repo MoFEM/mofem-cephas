@@ -384,9 +384,9 @@ struct ForcesAndSurcesCore: public FEMethod {
     inline void setOpType(const OpType type) { opType = type; }
     inline void addOpType(const OpType type) { opType |= type; }
 
-    UserDataOperator(const string &_field_name,const char type):
-      rowFieldName(_field_name),
-      colFieldName(_field_name),
+    UserDataOperator(const string &field_name,const char type):
+      rowFieldName(field_name),
+      colFieldName(field_name),
       doVerticesRow(true),
       doEdgesRow(true),
       doQuadsRow(true),
@@ -408,6 +408,18 @@ struct ForcesAndSurcesCore: public FEMethod {
       ):
       rowFieldName(_row_field_name),
       colFieldName(_col_field_name),
+      doVerticesRow(true),
+      doEdgesRow(true),
+      doQuadsRow(true),
+      doTrisRow(true),
+      doTetsRow(true),
+      doPrismsRow(true),
+      doVerticesCol(true),
+      doEdgesCol(true),
+      doQuadsCol(true),
+      doTrisCol(true),
+      doTetsCol(true),
+      doPrismsCol(true),
       sYmm(true),
       opType(type),
       ptrFE(NULL) {}
