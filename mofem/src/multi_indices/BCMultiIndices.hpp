@@ -302,6 +302,14 @@ typedef multi_index_container<
 	  const_mem_fun<CubitMeshSets,unsigned long int,&CubitMeshSets::get_cubit_bc_type_mask_meshset_types_ulong> > >
   > > CubitMeshSet_multiIndex;
 
+  struct CubitMeshSets_change_add_bit_to_cubit_bc_type {
+    CubitBCType bit;
+    CubitMeshSets_change_add_bit_to_cubit_bc_type(const CubitBCType &_bit): bit(_bit) {};
+    void operator()(CubitMeshSets &e) {
+      e.cubit_bc_type |= bit;
+    }
+  };
+
 }
 
 #endif // __BCMULTIINDICES_HPP__

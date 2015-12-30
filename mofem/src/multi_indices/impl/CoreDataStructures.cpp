@@ -25,6 +25,7 @@
 #include <MaterialBlocks.hpp>
 #include <CubitBCData.hpp>
 #include <TagMultiIndices.hpp>
+#include <CoordSysMultiIndices.hpp>
 #include <FieldMultiIndices.hpp>
 #include <EntsMultiIndices.hpp>
 #include <DofsMultiIndices.hpp>
@@ -52,26 +53,32 @@ const bool PetscLocalIdx_mi_tag::IamNotPartitioned = false;
 const bool Part_mi_tag::IamNotPartitioned = false;
 
 //fields
-MoFEMField::MoFEMField(Interface &moab,const EntityHandle _meshset): meshset(_meshset),
-  tag_id_data(NULL),tag_space_data(NULL),tag_rank_data(NULL),tag_name_data(NULL),tag_name_size(0) {
+MoFEMField::MoFEMField(Interface &moab,const EntityHandle meshset,const CoordSys *coord_sys_ptr):
+  meshSet(meshset),
+  coordSysPtr(coord_sys_ptr),
+  tag_id_data(NULL),
+  tag_space_data(NULL),
+  tag_rank_data(NULL),
+  tag_name_data(NULL),
+  tag_name_size(0) {
   //Change those tags only by modifiers
   ErrorCode rval;
   //id
   Tag th_field_id;
   rval = moab.tag_get_handle("_FieldId",th_field_id); CHKERR(rval);
-  rval = moab.tag_get_by_ptr(th_field_id,&meshset,1,(const void **)&tag_id_data); CHKERR_THROW(rval);
+  rval = moab.tag_get_by_ptr(th_field_id,&meshSet,1,(const void **)&tag_id_data); CHKERR_THROW(rval);
   //space
   Tag th_field_space;
   rval = moab.tag_get_handle("_FieldSpace",th_field_space); CHKERR(rval);
-  rval = moab.tag_get_by_ptr(th_field_space,&meshset,1,(const void **)&tag_space_data); CHKERR_THROW(rval);
+  rval = moab.tag_get_by_ptr(th_field_space,&meshSet,1,(const void **)&tag_space_data); CHKERR_THROW(rval);
   //name
   Tag th_field_name;
   rval = moab.tag_get_handle("_FieldName",th_field_name); CHKERR(rval);
-  rval = moab.tag_get_by_ptr(th_field_name,&meshset,1,(const void **)&tag_name_data,&tag_name_size); CHKERR_THROW(rval);
+  rval = moab.tag_get_by_ptr(th_field_name,&meshSet,1,(const void **)&tag_name_data,&tag_name_size); CHKERR_THROW(rval);
   //name prefix
   Tag th_field_name_data_name_prefix;
   rval = moab.tag_get_handle("_FieldName_DataNamePrefix",th_field_name_data_name_prefix); CHKERR(rval);
-  rval = moab.tag_get_by_ptr(th_field_name_data_name_prefix,&meshset,1,(const void **)&tag_name_prefix_data,&tag_name_prefix_size); CHKERR_THROW(rval);
+  rval = moab.tag_get_by_ptr(th_field_name_data_name_prefix,&meshSet,1,(const void **)&tag_name_prefix_data,&tag_name_prefix_size); CHKERR_THROW(rval);
   string name_data_prefix((char *)tag_name_prefix_data,tag_name_prefix_size);
   //data
   string tag_data_name = name_data_prefix+get_name();
@@ -86,7 +93,7 @@ MoFEMField::MoFEMField(Interface &moab,const EntityHandle _meshset): meshset(_me
   Tag th_rank;
   string Tag_rank_name = "_Field_Rank_"+get_name();
   rval = moab.tag_get_handle(Tag_rank_name.c_str(),th_rank); CHKERR_THROW(rval);
-  rval = moab.tag_get_by_ptr(th_rank,&meshset,1,(const void **)&tag_rank_data); CHKERR_THROW(rval);
+  rval = moab.tag_get_by_ptr(th_rank,&meshSet,1,(const void **)&tag_rank_data); CHKERR_THROW(rval);
   //dof rank
   string Tag_dof_rank_name = "_Field_Dof_Rank_"+get_name();
   rval = moab.tag_get_handle(Tag_dof_rank_name.c_str(),th_DofRank); CHKERR_THROW(rval);
@@ -130,7 +137,7 @@ MoFEMField::MoFEMField(Interface &moab,const EntityHandle _meshset): meshset(_me
 
 ostream& operator<<(ostream& os,const MoFEMField& e) {
   os << "name "<<e.get_name_ref()<<" BitFieldId "<< e.get_id().to_ulong() << " bit number " << e.get_bit_number()
-    << " space " << FieldSpaceNames[e.get_space()] << " rank " << e.get_max_rank() << " meshset " << e.meshset;
+    << " space " << FieldSpaceNames[e.get_space()] << " rank " << e.get_max_rank() << " meshset " << e.meshSet;
   return os;
 }
 

@@ -67,65 +67,6 @@ struct ltstr
 { inline bool operator()(const string &s1, const string& s2) const
   { return strcmp(s1.c_str(), s2.c_str()) < 0; } };
 
-struct CubitMeshSets_change_add_bit_to_cubit_bc_type {
-  CubitBCType bit;
-  CubitMeshSets_change_add_bit_to_cubit_bc_type(const CubitBCType &_bit): bit(_bit) {};
-  void operator()(CubitMeshSets &e) {
-    e.cubit_bc_type |= bit;
-  }
-};
-
-typedef multi_index_container<
-  const MoFEMEntity*,
-  indexed_by<
-    hashed_non_unique<
-      tag<Ent_mi_tag>, const_mem_fun<MoFEMEntity,EntityHandle,&MoFEMEntity::get_ent> >
-  > > MoFEMEntity_multiIndex_ent_view;
-
-typedef multi_index_container<
-  const NumeredDofMoFEMEntity*,
-  indexed_by<
-    ordered_unique<
-      member<NumeredDofMoFEMEntity,const DofIdx,&NumeredDofMoFEMEntity::petsc_gloabl_dof_idx> >
- > > NumeredDofMoFEMEntity_multiIndex_global_index_view;
-
-struct MoFEMFiniteElement_col_change_bit_add {
-  BitFieldId f_id_col;
-  MoFEMFiniteElement_col_change_bit_add(const BitFieldId _f_id_col): f_id_col(_f_id_col) {};
-  void operator()(MoFEMFiniteElement &MoFEMFiniteElement);
-};
-struct MoFEMFiniteElement_row_change_bit_add {
-  BitFieldId f_id_row;
-  MoFEMFiniteElement_row_change_bit_add(const BitFieldId _f_id_row): f_id_row(_f_id_row) {};
-  void operator()(MoFEMFiniteElement &MoFEMFiniteElement);
-};
-struct EntMoFEMFiniteElement_change_bit_add {
-  BitFieldId f_id_data;
-  EntMoFEMFiniteElement_change_bit_add(const BitFieldId _f_id_data): f_id_data(_f_id_data) {};
-  void operator()(MoFEMFiniteElement &MoFEMFiniteElement);
-};
-
-struct MoFEMFiniteElement_col_change_bit_off {
-  BitFieldId f_id_col;
-  MoFEMFiniteElement_col_change_bit_off(const BitFieldId _f_id_col): f_id_col(_f_id_col) {};
-  void operator()(MoFEMFiniteElement &MoFEMFiniteElement);
-};
-struct MoFEMFiniteElement_row_change_bit_off {
-  BitFieldId f_id_row;
-  MoFEMFiniteElement_row_change_bit_off(const BitFieldId _f_id_row): f_id_row(_f_id_row) {};
-  void operator()(MoFEMFiniteElement &MoFEMFiniteElement);
-};
-struct EntMoFEMFiniteElement_change_bit_off {
-  BitFieldId f_id_data;
-  EntMoFEMFiniteElement_change_bit_off(const BitFieldId _f_id_data): f_id_data(_f_id_data) {};
-  void operator()(MoFEMFiniteElement &MoFEMFiniteElement);
-};
-
-struct MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_change_ByWhat {
-  ByWhat by;
-  MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_change_ByWhat(const ByWhat _by): by(_by) {}
-  void operator()(MoFEMEntityEntMoFEMFiniteElementAdjacencyMap &e) { e.by_other |= by; }
-};
 
 template<typename Tag>
 void get_vector_by_multi_index_tag(vector<DofMoFEMEntity> &vec_dof,const DofMoFEMEntity_multiIndex &dofs,Tag* = 0) {

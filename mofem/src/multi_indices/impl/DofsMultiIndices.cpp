@@ -30,25 +30,21 @@
 #include <MaterialBlocks.hpp>
 #include <CubitBCData.hpp>
 #include <TagMultiIndices.hpp>
+#include <CoordSysMultiIndices.hpp>
 #include <FieldMultiIndices.hpp>
 #include <EntsMultiIndices.hpp>
 #include <DofsMultiIndices.hpp>
-#include <FEMMultiIndices.hpp>
-#include <ProblemsMultiIndices.hpp>
-#include <AdjacencyMultiIndices.hpp>
-#include <BCMultiIndices.hpp>
-#include <CoreDataStructures.hpp>
 
 namespace MoFEM {
 
 //moab dof
-DofMoFEMEntityNoCoordSys::DofMoFEMEntityNoCoordSys(
-  const MoFEMEntity *Entity_ptr,
+DofMoFEMEntity::DofMoFEMEntity(
+  const MoFEMEntity *entity_ptr,
   const ApproximationOrder dof_order,
   const ApproximationRank dof_rank,
   const DofIdx _dof
 ):
-interface_MoFEMEntity<MoFEMEntity>(Entity_ptr),
+interface_MoFEMEntity<MoFEMEntity>(entity_ptr),
 dof(_dof),
 active(false) {
 
@@ -75,16 +71,6 @@ active(false) {
   global_uid = get_global_unique_id_calculate();
   short_uid = get_non_nonunique_short_id_calculate();
 
-}
-
-ostream& operator<<(ostream& os,const DofMoFEMEntityNoCoordSys& e) {
-  os << "dof_uid " << e.get_global_unique_id()
-  << " dof_order " << e.get_dof_order()
-  << " dof_rank " << e.get_dof_rank()
-  << " dof " << e.dof
-  << " active " << e.active
-  << " " << *(e.field_ptr);
-  return os;
 }
 
 ostream& operator<<(ostream& os,const DofMoFEMEntity& e) {

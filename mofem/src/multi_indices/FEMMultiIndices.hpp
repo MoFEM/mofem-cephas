@@ -523,6 +523,38 @@ struct NumeredMoFEMFiniteElement_change_part {
   }
 };
 
+struct MoFEMFiniteElement_col_change_bit_add {
+  BitFieldId f_id_col;
+  MoFEMFiniteElement_col_change_bit_add(const BitFieldId _f_id_col): f_id_col(_f_id_col) {};
+  void operator()(MoFEMFiniteElement &MoFEMFiniteElement);
+};
+struct MoFEMFiniteElement_row_change_bit_add {
+  BitFieldId f_id_row;
+  MoFEMFiniteElement_row_change_bit_add(const BitFieldId _f_id_row): f_id_row(_f_id_row) {};
+  void operator()(MoFEMFiniteElement &MoFEMFiniteElement);
+};
+struct EntMoFEMFiniteElement_change_bit_add {
+  BitFieldId f_id_data;
+  EntMoFEMFiniteElement_change_bit_add(const BitFieldId _f_id_data): f_id_data(_f_id_data) {};
+  void operator()(MoFEMFiniteElement &MoFEMFiniteElement);
+};
+
+struct MoFEMFiniteElement_col_change_bit_off {
+  BitFieldId f_id_col;
+  MoFEMFiniteElement_col_change_bit_off(const BitFieldId _f_id_col): f_id_col(_f_id_col) {};
+  void operator()(MoFEMFiniteElement &MoFEMFiniteElement);
+};
+struct MoFEMFiniteElement_row_change_bit_off {
+  BitFieldId f_id_row;
+  MoFEMFiniteElement_row_change_bit_off(const BitFieldId _f_id_row): f_id_row(_f_id_row) {};
+  void operator()(MoFEMFiniteElement &MoFEMFiniteElement);
+};
+struct EntMoFEMFiniteElement_change_bit_off {
+  BitFieldId f_id_data;
+  EntMoFEMFiniteElement_change_bit_off(const BitFieldId _f_id_data): f_id_data(_f_id_data) {};
+  void operator()(MoFEMFiniteElement &MoFEMFiniteElement);
+};
+
 }
 
 #endif // __FEMMULTIINDICES_HPP__

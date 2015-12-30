@@ -29,7 +29,7 @@ namespace MoFEM {
  \bug active is obsolete and should be removed
 
  */
-struct DofMoFEMEntityNoCoordSys: public interface_MoFEMEntity<MoFEMEntity> {
+struct DofMoFEMEntity: public interface_MoFEMEntity<MoFEMEntity> {
 
   typedef interface_MoFEMField<MoFEMEntity> interface_type_MoFEMField;
   typedef interface_MoFEMEntity<MoFEMEntity> interface_type_MoFEMEntity;
@@ -61,8 +61,8 @@ struct DofMoFEMEntityNoCoordSys: public interface_MoFEMEntity<MoFEMEntity> {
   GlobalUId global_uid;
   ShortId short_uid;
 
-  DofMoFEMEntityNoCoordSys(
-    const MoFEMEntity *Entity_ptr,
+  DofMoFEMEntity(
+    const MoFEMEntity *entity_ptr,
     const ApproximationOrder dof_order,
     const ApproximationRank dof_rank,
     const DofIdx _dof
@@ -102,28 +102,9 @@ struct DofMoFEMEntityNoCoordSys: public interface_MoFEMEntity<MoFEMEntity> {
   inline ApproximationRank get_dof_rank() const { return ((ApproximationRank*)field_ptr->tag_dof_rank_data)[dof]; };
   //check if node is active
   inline int get_active() const { return active ? 1 : 0; }
-  friend ostream& operator<<(ostream& os,const DofMoFEMEntityNoCoordSys& e);
-
-};
-
-/**
- * \brief keeps information about indexed dofs and its coordinate system
- * \ingroup dof_multi_indices
-
-*/
-struct DofMoFEMEntity: public DofMoFEMEntityNoCoordSys {
-
-  DofMoFEMEntity(
-    const MoFEMEntity *Entity_ptr,
-    const ApproximationOrder dof_order,
-    const ApproximationRank dof_rank,
-    const DofIdx _dof
-  ):
-  DofMoFEMEntityNoCoordSys(Entity_ptr,dof_order,dof_rank,_dof) {
-  }
+  friend ostream& operator<<(ostream& os,const DofMoFEMEntity& e);
 
   inline const DofMoFEMEntity* get_DofMoFEMEntity_ptr() const { return const_cast<DofMoFEMEntity*>(this); };
-  friend ostream& operator<<(ostream& os,const DofMoFEMEntity& e);
 
 };
 
@@ -236,51 +217,51 @@ typedef multi_index_container<
   indexed_by<
     //uniqe
     ordered_unique<
-      tag<Unique_mi_tag>, const_mem_fun<DofMoFEMEntityNoCoordSys,GlobalUId,&DofMoFEMEntityNoCoordSys::get_global_unique_id> >,
+      tag<Unique_mi_tag>, const_mem_fun<DofMoFEMEntity,GlobalUId,&DofMoFEMEntity::get_global_unique_id> >,
     ordered_unique<
       tag<Composite_Ent_and_ShortId_mi_tag>,
         composite_key<
         DofMoFEMEntity,
-          const_mem_fun<DofMoFEMEntityNoCoordSys,EntityHandle,&DofMoFEMEntityNoCoordSys::get_ent>,
-          const_mem_fun<DofMoFEMEntityNoCoordSys,ShortId,&DofMoFEMEntityNoCoordSys::get_non_nonunique_short_id>
+          const_mem_fun<DofMoFEMEntity,EntityHandle,&DofMoFEMEntity::get_ent>,
+          const_mem_fun<DofMoFEMEntity,ShortId,&DofMoFEMEntity::get_non_nonunique_short_id>
         > >,
     ordered_unique<
       tag<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>,
       composite_key<
         DofMoFEMEntity,
-          const_mem_fun<DofMoFEMEntityNoCoordSys::interface_type_MoFEMField,boost::string_ref,&DofMoFEMEntityNoCoordSys::get_name_ref>,
-          const_mem_fun<DofMoFEMEntityNoCoordSys,EntityHandle,&DofMoFEMEntityNoCoordSys::get_ent>,
-          const_mem_fun<DofMoFEMEntityNoCoordSys,DofIdx,&DofMoFEMEntityNoCoordSys::get_EntDofIdx>
+          const_mem_fun<DofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&DofMoFEMEntity::get_name_ref>,
+          const_mem_fun<DofMoFEMEntity,EntityHandle,&DofMoFEMEntity::get_ent>,
+          const_mem_fun<DofMoFEMEntity,DofIdx,&DofMoFEMEntity::get_EntDofIdx>
     > >,
     //non_unique
     ordered_non_unique<
-      tag<FieldName_mi_tag>, const_mem_fun<DofMoFEMEntityNoCoordSys::interface_type_MoFEMField,boost::string_ref,&DofMoFEMEntityNoCoordSys::get_name_ref> >,
+      tag<FieldName_mi_tag>, const_mem_fun<DofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&DofMoFEMEntity::get_name_ref> >,
     ordered_non_unique<
-      tag<Ent_mi_tag>, const_mem_fun<DofMoFEMEntityNoCoordSys,EntityHandle,&DofMoFEMEntityNoCoordSys::get_ent> >,
+      tag<Ent_mi_tag>, const_mem_fun<DofMoFEMEntity,EntityHandle,&DofMoFEMEntity::get_ent> >,
     ordered_non_unique<
-      tag<BitFieldId_mi_tag>, const_mem_fun<DofMoFEMEntityNoCoordSys::interface_type_MoFEMField,const BitFieldId&,&DofMoFEMEntityNoCoordSys::get_id>, LtBit<BitFieldId> >,
+      tag<BitFieldId_mi_tag>, const_mem_fun<DofMoFEMEntity::interface_type_MoFEMField,const BitFieldId&,&DofMoFEMEntity::get_id>, LtBit<BitFieldId> >,
     ordered_non_unique<
       tag<Composite_Name_And_Ent_mi_tag>,
       composite_key<
         DofMoFEMEntity,
-        const_mem_fun<DofMoFEMEntityNoCoordSys::interface_type_MoFEMField,boost::string_ref,&DofMoFEMEntityNoCoordSys::get_name_ref>,
-        const_mem_fun<DofMoFEMEntityNoCoordSys,EntityHandle,&DofMoFEMEntityNoCoordSys::get_ent>
+        const_mem_fun<DofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&DofMoFEMEntity::get_name_ref>,
+        const_mem_fun<DofMoFEMEntity,EntityHandle,&DofMoFEMEntity::get_ent>
       > >,
       ordered_non_unique<
         tag<Composite_Name_And_Type_mi_tag>,
       composite_key<
         DofMoFEMEntity,
-        const_mem_fun<DofMoFEMEntityNoCoordSys::interface_type_MoFEMField,boost::string_ref,&DofMoFEMEntityNoCoordSys::get_name_ref>,
-        const_mem_fun<DofMoFEMEntityNoCoordSys::interface_type_RefMoFEMEntity,EntityType,&DofMoFEMEntityNoCoordSys::get_ent_type>
+        const_mem_fun<DofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&DofMoFEMEntity::get_name_ref>,
+        const_mem_fun<DofMoFEMEntity::interface_type_RefMoFEMEntity,EntityType,&DofMoFEMEntity::get_ent_type>
       > >,
         ordered_non_unique<
         tag<Composite_Name_Ent_Order_And_Rank_mi_tag>,
         composite_key<
         DofMoFEMEntity,
-          const_mem_fun<DofMoFEMEntityNoCoordSys::interface_type_MoFEMField,boost::string_ref,&DofMoFEMEntityNoCoordSys::get_name_ref>,
-          const_mem_fun<DofMoFEMEntityNoCoordSys,EntityHandle,&DofMoFEMEntityNoCoordSys::get_ent>,
-          const_mem_fun<DofMoFEMEntityNoCoordSys,ApproximationOrder,&DofMoFEMEntityNoCoordSys::get_dof_order>,
-          const_mem_fun<DofMoFEMEntityNoCoordSys,ApproximationRank,&DofMoFEMEntityNoCoordSys::get_dof_rank>
+          const_mem_fun<DofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&DofMoFEMEntity::get_name_ref>,
+          const_mem_fun<DofMoFEMEntity,EntityHandle,&DofMoFEMEntity::get_ent>,
+          const_mem_fun<DofMoFEMEntity,ApproximationOrder,&DofMoFEMEntity::get_dof_order>,
+          const_mem_fun<DofMoFEMEntity,ApproximationRank,&DofMoFEMEntity::get_dof_rank>
         > >
   > > DofMoFEMEntity_multiIndex;
 
@@ -291,7 +272,7 @@ typedef multi_index_container<
   const DofMoFEMEntity*,
   indexed_by<
     ordered_unique<
-      member<DofMoFEMEntityNoCoordSys,const GlobalUId,&DofMoFEMEntityNoCoordSys::global_uid> >
+      member<DofMoFEMEntity,const GlobalUId,&DofMoFEMEntity::global_uid> >
   > > DofMoFEMEntity_multiIndex_uid_view;
 
 /** \brief multi-index view on DofMoFEMEntity activity
@@ -301,9 +282,9 @@ typedef multi_index_container<
   const DofMoFEMEntity*,
   indexed_by<
     ordered_unique<
-      const_mem_fun<DofMoFEMEntityNoCoordSys,GlobalUId,&DofMoFEMEntityNoCoordSys::get_global_unique_id> >,
+      const_mem_fun<DofMoFEMEntity,GlobalUId,&DofMoFEMEntity::get_global_unique_id> >,
     ordered_non_unique<
-      const_mem_fun<DofMoFEMEntityNoCoordSys,int,&DofMoFEMEntityNoCoordSys::get_active> >
+      const_mem_fun<DofMoFEMEntity,int,&DofMoFEMEntity::get_active> >
   > > DofMoFEMEntity_multiIndex_active_view;
 
 /** \brief multi-index view on DofMoFEMEntity order
@@ -313,7 +294,7 @@ typedef multi_index_container<
   const DofMoFEMEntity*,
   indexed_by<
     ordered_non_unique<
-      const_mem_fun<DofMoFEMEntityNoCoordSys,ApproximationOrder,&DofMoFEMEntityNoCoordSys::get_dof_order> >
+      const_mem_fun<DofMoFEMEntity,ApproximationOrder,&DofMoFEMEntity::get_dof_order> >
   > > DofMoFEMEntity_multiIndex_order_view;
 
 /** \brief multi-index view on DofMoFEMEntity type
@@ -551,6 +532,13 @@ struct NumeredDofMoFEMEntity_mofem_index_change {
     dof.dof_idx = mofem_idx;
   }
 };
+
+typedef multi_index_container<
+  const NumeredDofMoFEMEntity*,
+  indexed_by<
+    ordered_unique<
+      member<NumeredDofMoFEMEntity,const DofIdx,&NumeredDofMoFEMEntity::petsc_gloabl_dof_idx> >
+ > > NumeredDofMoFEMEntity_multiIndex_global_index_view;
 
 }
 #endif // __DOFSMULTIINDICES_HPP__

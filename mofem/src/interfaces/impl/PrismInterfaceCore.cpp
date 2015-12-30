@@ -1,5 +1,6 @@
 /** \file PrismInterfaceCore.cpp
- * \brief FIXME this is no so good implementation
+ & \brief Inserting prims interface elements
+ * \todo FIXME this is no so good implementation
  */
 
 /* MoFEM is free software: you can redistribute it and/or modify it under
@@ -26,6 +27,7 @@
 #include <MaterialBlocks.hpp>
 #include <CubitBCData.hpp>
 #include <TagMultiIndices.hpp>
+#include <CoordSysMultiIndices.hpp>
 #include <FieldMultiIndices.hpp>
 #include <EntsMultiIndices.hpp>
 #include <DofsMultiIndices.hpp>

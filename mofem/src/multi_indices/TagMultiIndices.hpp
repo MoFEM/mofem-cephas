@@ -116,6 +116,8 @@ namespace MoFEM {
   struct Composite_SeriesName_And_Step_mi_tag {};
   struct Composite_SeriesName_And_Time_mi_tag {};
 
+  struct CoordSysID_mi_tag {};
+  struct CoordSysName_mi_tag {};
 
 }
 

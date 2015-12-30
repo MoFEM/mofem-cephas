@@ -52,6 +52,7 @@ struct Core:
   //Database
   ErrorCode rval;
   PetscErrorCode ierr;
+
   //Data and low level methods
   Tag th_Part;
   Tag th_RefType,th_RefParentHandle,th_RefBitLevel,th_RefBitLevel_Mask,th_RefBitEdge,th_RefFEMeshset;
@@ -66,6 +67,9 @@ struct Core:
   Tag nsTag,ssTag,nsTag_data,ssTag_data,bhTag,bhTag_header;
   Tag th_ElemType;
   Tag th_SeriesName;
+  Tag th_CoordSystem;
+  Tag th_FieldCoordSystem;
+  Tag th_CoordSysName;
 
   int *fShift,*feShift,*pShift;
   int verbose;
@@ -73,6 +77,8 @@ struct Core:
   //ref
   RefMoFEMEntity_multiIndex refinedEntities;		///< refined entities
   RefMoFEMElement_multiIndex refinedFiniteElements;	///< refined elements
+  //coordinate sysrems
+  CoordSys_multiIndex coordinateSystems;
   //field
   MoFEMField_multiIndex moabFields;			///< field
   MoFEMEntity_multiIndex entsMoabField;			///< entities on field

@@ -15,6 +15,7 @@
 add_library(mofem_multi_indices
   impl/CoreDataStructures.cpp
   impl/EntsMultiIndices.cpp
+  impl/CoordSysMultiIndices.cpp
   impl/DofsMultiIndices.cpp
   impl/FEMMultiIndices.cpp
   impl/ProblemsMultiIndices.cpp
@@ -22,18 +23,5 @@ add_library(mofem_multi_indices
   impl/BCMultiIndices.cpp
 )
 
-#install(FILES 
-#  AdjacencyMultiIndices.hpp
-#  BCMultiIndices.hpp
-#  CoreDataStructures.hpp
-#  DofsMultiIndices.hpp
-#  EntsMultiIndices.hpp
-#  FEMMultiIndices.hpp
-#  FieldMultiIndices.hpp
-#  ProblemsMultiIndices.hpp
-#  SeriesMultiIndices.hpp
-#  TagMultiIndices.hpp
-#  DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
 
 install(TARGETS mofem_multi_indices DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
-

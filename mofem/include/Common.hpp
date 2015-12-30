@@ -86,7 +86,6 @@ typedef bitset<BITFIELDID_SIZE> BitFieldId;
 typedef bitset<BITFEID_SIZE> BitFEId;
 typedef bitset<BITPROBLEMID_SIZE> BitProblemId;
 typedef bitset<BITINTERFACEUID_SIZE> BitIntefaceId;
-typedef bitset<BITCOORDSYS_SIZE> BitCoordSysId;
 
 //AUX STRUCTURES
 

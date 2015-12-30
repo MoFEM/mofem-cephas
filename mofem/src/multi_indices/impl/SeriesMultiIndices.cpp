@@ -25,14 +25,10 @@
 #include <MaterialBlocks.hpp>
 #include <CubitBCData.hpp>
 #include <TagMultiIndices.hpp>
+#include <CoordSysMultiIndices.hpp>
 #include <FieldMultiIndices.hpp>
 #include <EntsMultiIndices.hpp>
 #include <DofsMultiIndices.hpp>
-#include <FEMMultiIndices.hpp>
-#include <ProblemsMultiIndices.hpp>
-#include <AdjacencyMultiIndices.hpp>
-#include <BCMultiIndices.hpp>
-#include <CoreDataStructures.hpp>
 #include <SeriesMultiIndices.hpp>
 
 namespace MoFEM {

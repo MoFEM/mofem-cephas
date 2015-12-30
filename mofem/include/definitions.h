@@ -46,6 +46,16 @@ enum MoFEMInterfaces {
   PRISMSFROMSURFACE_INTERFACE = 1<<3|1<<8 ///< create prisms from surface elements
 };
 
+/** \brief Coordinate systems
+*/
+enum MoFEMCoordSystems {
+  NO_CORD_SYSTEM_ON_THE_MESHSET = 0,
+  CARTESIAN_COORD_SYSTEM,
+  POLAR_COORD_SYSTEM,
+  SPHERICAL_COORD_SYSTEM,
+  LAST_MOFEM_COORD_SYSTEM
+};
+
 /** \brief Error handling
   *
   * This is complementary to PETSC error codes. The numerical values for
@@ -138,7 +148,6 @@ enum CubitBC {
 #define BITFEID_SIZE 32 /*max number of finite elements*/
 #define BITPROBLEMID_SIZE 32 /*max number of problems*/
 #define BITINTERFACEUID_SIZE 32
-#define BITCOORDSYS_SIZE 8
 
 //// default comunicator number
 #define MYPCOMM_INDEX 0

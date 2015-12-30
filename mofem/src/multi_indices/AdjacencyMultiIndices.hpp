@@ -1,6 +1,6 @@
 /** \file AdjacencyMultiIndices.hpp
- * \brief Myltindex containes, data structures for mofem adjacencies and other low-level functions 
- * 
+ * \brief Myltindex containes, data structures for mofem adjacencies and other low-level functions
+ *
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or (at your
@@ -41,7 +41,7 @@ struct MoFEMEntityEntMoFEMFiniteElementAdjacencyMap {
   friend ostream& operator<<(ostream& os,const MoFEMEntityEntMoFEMFiniteElementAdjacencyMap &e);
 };
 
-/** 
+/**
  * @relates multi_index_container
  * \brief MultiIndex container keeps Adjacencies Element and dof entities adjacencies and vice veras.
 
@@ -50,7 +50,7 @@ typedef multi_index_container<
   MoFEMEntityEntMoFEMFiniteElementAdjacencyMap,
   indexed_by<
     ordered_unique<
-      tag<Composite_Unique_mi_tag>,       
+      tag<Composite_Unique_mi_tag>,
       composite_key<
 	MoFEMEntityEntMoFEMFiniteElementAdjacencyMap,
 	const_mem_fun<MoFEMEntityEntMoFEMFiniteElementAdjacencyMap,GlobalUId,&MoFEMEntityEntMoFEMFiniteElementAdjacencyMap::get_ent_unique_id>,
@@ -62,6 +62,12 @@ typedef multi_index_container<
     ordered_non_unique<
       tag<Ent_mi_tag>, const_mem_fun<MoFEMEntityEntMoFEMFiniteElementAdjacencyMap,EntityHandle,&MoFEMEntityEntMoFEMFiniteElementAdjacencyMap::get_ent_entity_handle> >
   > > MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_multiIndex;
+
+  struct MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_change_ByWhat {
+    ByWhat by;
+    MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_change_ByWhat(const ByWhat _by): by(_by) {}
+    void operator()(MoFEMEntityEntMoFEMFiniteElementAdjacencyMap &e) { e.by_other |= by; }
+  };
 
 }
 
