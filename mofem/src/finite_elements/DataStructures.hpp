@@ -38,6 +38,8 @@ namespace MoFEM {
   typedef ublas::vector<const FEDofMoFEMEntity*,DofsAllacator > VectorDofs;
   typedef ublas::vector<double,DoubleAllacator > VectorDouble;
   typedef ublas::matrix<double,ublas::row_major, DoubleMatrixAllacator > MatrixDouble;
+  typedef ublas::matrix<double,ublas::row_major,ublas::bounded_array<double,9> > MatrixDouble3by3;
+  typedef ublas::vector<double,ublas::bounded_array<double,3> > VectorDouble3;
 
   // shallow adaptor classes
   typedef ublas::vector<double,ublas::shallow_array_adaptor<double> > VectorAdaptor;

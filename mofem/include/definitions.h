@@ -138,6 +138,7 @@ enum CubitBC {
 #define BITFEID_SIZE 32 /*max number of finite elements*/
 #define BITPROBLEMID_SIZE 32 /*max number of problems*/
 #define BITINTERFACEUID_SIZE 32
+#define BITCOORDSYS_SIZE 8
 
 //// default comunicator number
 #define MYPCOMM_INDEX 0
