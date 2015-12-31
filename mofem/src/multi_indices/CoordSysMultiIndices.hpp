@@ -23,8 +23,21 @@
 namespace MoFEM {
 
   /** \brief Structure for Coordinate system of two-point tensor
+
+  Because tensors have a geometric interpretation, their underlying physical
+  meaning is independent of the coordinate system in which they are defined; the
+  numerical value of a tensor depends on the coordinate system, and so any
+  numerical instantiation of a tensor field is incomplete without a specification
+  of its coordinate system.
+
+  In this data structure a generic two-point tensors are considered, see \cite
+  marsden1994mathematical. To each field \ref MoFEM::MoFEMField a CoordSys data
+  structure can be attached, carrying information about tensor structure
+  approximated by the field.
+
   */
   struct CoordSys {
+
     EntityHandle meshSet; 		      ///< keeps entities for this meshset
     const int* tagIdData;
     const int* tagCoordSysDim;
@@ -36,12 +49,14 @@ namespace MoFEM {
     /** \brief Get tensor dimension
 
     This is general two point tensor \f$\mathbf{T}\f$ of type
+    \f[
     \left(
     \begin{array}{cc}
     q & l \\
     p & m
     \end{array}
     \right)
+    \f]
     at point \f$\mathbf{X} \in \mathcal{B}\f$ over mapping
     \f[
     \phi: \mathcal{B} \to \mathcal{S}
@@ -63,9 +78,9 @@ namespace MoFEM {
     )
     \to \mathbb{R}
     \f]
-    where \f$\mathbf{x} = \phi(\mathbf{X})\f$.
+    where \f$\mathbf{x} = \phi(\mathbf{X})\f$. See details in \cite marsden1994mathematical
 
-    See details in \cite marsden1994mathematical
+    \param d = 0,1,2,3 is equivalent to q,l,o and m respectively.
 
     */
     inline int getDim(const int d = 0) const {
