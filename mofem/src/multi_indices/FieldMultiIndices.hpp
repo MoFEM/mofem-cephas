@@ -42,7 +42,7 @@ struct MoFEMField {
 
   Tag th_FieldData,th_AppOrder;
   Tag th_AppDofOrder,th_DofRank;
-  
+
   BitFieldId* tag_id_data; 		///< tag keeps field id
   FieldSpace* tag_space_data;		///< tag keeps field space
   ApproximationRank* tag_rank_data; 	///< tag keeps field rank (dimension, f.e. Temperature field has rank 1, displacements field in 3d has rank 3)
@@ -145,6 +145,18 @@ typedef multi_index_container<
     >
 > > MoFEMField_multiIndex_view;
 
+/** \brief Set field coordinate system
+ * \ingroup ent_multi_indices
+  */
+struct MoFEMFieldChangeCoordinateSystem {
+  const CoordSys *csPtr;
+  MoFEMFieldChangeCoordinateSystem(const CoordSys *cs_ptr):
+  csPtr(cs_ptr) {
+  }
+  void operator()(MoFEMField &e) {
+    e.coordSysPtr = csPtr;
+  }
+};
 
 }
 

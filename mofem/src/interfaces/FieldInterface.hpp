@@ -71,13 +71,13 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode check_number_of_ents_in_ents_field() = 0;
 
   /**
-    * \brief check data consistency in finiteElementsMoFEMEnts
+    * \brief check data consistency in entsFiniteElements
     *
     */
   virtual PetscErrorCode check_number_of_ents_in_ents_finite_element(const string& name) = 0;
 
   /**
-    * \brief check data consistency in finiteElementsMoFEMEnts
+    * \brief check data consistency in entsFiniteElements
     *
     */
   virtual PetscErrorCode check_number_of_ents_in_ents_finite_element() = 0;

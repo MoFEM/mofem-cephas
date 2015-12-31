@@ -80,16 +80,16 @@ struct Core:
   //coordinate sysrems
   CoordSys_multiIndex coordinateSystems;
   //field
-  MoFEMField_multiIndex moabFields;			///< field
-  MoFEMEntity_multiIndex entsMoabField;			///< entities on field
-  DofMoFEMEntity_multiIndex dofsMoabField;		///< dofs on fiels
+  MoFEMField_multiIndex fIelds;			///< field
+  MoFEMEntity_multiIndex entsFields;			///< entities on field
+  DofMoFEMEntity_multiIndex dofsField;		///< dofs on fiels
   //finite element
   MoFEMFiniteElement_multiIndex finiteElements;		///< finite elements
-  EntMoFEMFiniteElement_multiIndex finiteElementsMoFEMEnts;			///< finite element entities
+  EntMoFEMFiniteElement_multiIndex entsFiniteElements;			///< finite element entities
   //entFEAdjacencies
   MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_multiIndex entFEAdjacencies;	///< adjacencies of elements to dofs
-  //moFEMProblems
-  MoFEMProblem_multiIndex moFEMProblems;					///< problems
+  //pRoblems
+  MoFEMProblem_multiIndex pRoblems;					///< problems
   //cubit
   CubitMeshSet_multiIndex cubitMeshsets;					///< cubit meshsets
   //series
@@ -612,6 +612,10 @@ struct Core:
     const int operation_type = Interface::INTERSECT,
     const int verb = 0
   );
+
+  //Coordinate systems
+  PetscErrorCode add_coordinate_system(enum MoFEMCoordSystems cs_id,const string name);
+  PetscErrorCode set_field_coordinate_system(const string field_name,const string cs_name);
 
   //Petsc Logs
   PetscLogEvent USER_EVENT_preProcess;
