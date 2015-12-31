@@ -21,8 +21,6 @@
 
 namespace MoFEM {
 
-extern const char *FieldSpaceNames[];
-
 const int prism_adj_edges[] = { 6,7,8, -1,-1,-1, 0,1,2 };
 const int prism_edges_conn[6][2] = { {0,1},{1,2},{2,0}, {3,4}, {4,5}, {5,3} };
 

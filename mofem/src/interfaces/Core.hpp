@@ -70,6 +70,7 @@ struct Core:
   Tag th_CoordSystem;
   Tag th_FieldCoordSystem;
   Tag th_CoordSysName;
+  Tag th_CoordSysDim;
 
   int *fShift,*feShift,*pShift;
   int verbose;
@@ -614,7 +615,7 @@ struct Core:
   );
 
   //Coordinate systems
-  PetscErrorCode add_coordinate_system(enum MoFEMCoordSystems cs_id,const string name);
+  PetscErrorCode add_coordinate_system(enum CoordSystems cs_id,const int cs_dim[],const string name);
   PetscErrorCode set_field_coordinate_system(const string field_name,const string cs_name);
 
   //Petsc Logs

@@ -368,6 +368,10 @@ Core::Core(Interface& _moab,MPI_Comm _comm,int _verbose):
   rval = moab.tag_get_handle(
     "_CoordSysId",1,MB_TYPE_INTEGER,th_CoordSystem,MB_TAG_CREAT|MB_TAG_SPARSE,&def_coord_system
   ); CHKERR_THROW(rval);
+  int def_coord_sys_dim = 0;
+  rval = moab.tag_get_handle(
+    "_CoordSysDim",4,MB_TYPE_INTEGER,th_CoordSysDim,MB_TAG_CREAT|MB_TAG_SPARSE,&def_coord_sys_dim
+  ); CHKERR_THROW(rval);
   rval = moab.tag_get_handle(
     "_FieldCoordSysId",1,MB_TYPE_INTEGER,th_FieldCoordSystem,MB_TAG_CREAT|MB_TAG_SPARSE,&def_coord_system
   ); CHKERR_THROW(rval);
@@ -796,7 +800,9 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
       rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERR_PETSC(rval);
       int id = CARTESIAN_COORD_SYSTEM;
       rval = moab.tag_set_data(th_CoordSystem,&meshset,1,&id); CHKERR_PETSC(rval);
-      string sys_name_str = "CARTESIAN_GENERIC";
+      int dim[] = { 3,0,0,0 };
+      rval = moab.tag_set_data(th_CoordSysDim,&meshset,1,dim); CHKERR_PETSC(rval);
+      string sys_name_str = "CARTESIAN_GENERIC_3D";
       void const* sys_name[] = { sys_name_str.c_str() };
       int sys_name_size[1];
       sys_name_size[0] = sys_name_str.size();
@@ -815,6 +821,8 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
       rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERR_PETSC(rval);
       int id = UNDEFINED_COORD_SYSTEM;
       rval = moab.tag_set_data(th_CoordSystem,&meshset,1,&id); CHKERR_PETSC(rval);
+      int dim[] = { 0,0,0,0 };
+      rval = moab.tag_set_data(th_CoordSysDim,&meshset,1,dim); CHKERR_PETSC(rval);
       string sys_name_str = "UNDEFINED_CS";
       void const* sys_name[] = { sys_name_str.c_str() };
       int sys_name_size[1];
@@ -1017,12 +1025,12 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode Core::add_coordinate_system(enum MoFEMCoordSystems cs_id,const string name) {
+PetscErrorCode Core::add_coordinate_system(enum CoordSystems cs_id,const int cs_dim[],const string name) {
   PetscFunctionBegin;
   EntityHandle meshset;
   rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERR_PETSC(rval);
-  int id = CARTESIAN_COORD_SYSTEM;
-  rval = moab.tag_set_data(th_CoordSystem,&meshset,1,&id); CHKERR_PETSC(rval);
+  rval = moab.tag_set_data(th_CoordSystem,&meshset,1,&cs_id); CHKERR_PETSC(rval);
+  rval = moab.tag_set_data(th_CoordSysDim,&meshset,1,cs_dim); CHKERR_PETSC(rval);
   void const* sys_name[] = { name.c_str() };
   int sys_name_size[1];
   sys_name_size[0] = name.size();

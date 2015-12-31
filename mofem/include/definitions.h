@@ -46,15 +46,30 @@ enum MoFEMInterfaces {
   PRISMSFROMSURFACE_INTERFACE = 1<<3|1<<8 ///< create prisms from surface elements
 };
 
+
+
 /** \brief Coordinate systems
 */
-enum MoFEMCoordSystems {
+enum CoordSystems {
   NO_CORD_SYSTEM_ON_THE_MESHSET = 0,
   UNDEFINED_COORD_SYSTEM,
   CARTESIAN_COORD_SYSTEM,
-  POLAR_COORD_SYSTEM,
+  CYLINDRICAL_COORD_SYSTEM,
   SPHERICAL_COORD_SYSTEM,
+  POLAR_COORD_SYSTEM,
+  USER_COORD_SYSTEM,
   LAST_MOFEM_COORD_SYSTEM
+};
+
+const static char *CoordSystemsNames[] = {
+  "NO_CORD_SYSTEM_ON_THE_MESHSET",
+  "UNDEFINED_COORD_SYSTEM",
+  "CARTESIAN_COORD_SYSTEM",
+  "CYLINDRICAL_COORD_SYSTEM",
+  "SPHERICAL_COORD_SYSTEM",
+  "POLAR_COORD_SYSTEM",
+  "USER_COORD_SYSTEM",
+  "LAST_MOFEM_COORD_SYSTEM"
 };
 
 /** \brief Error handling
@@ -65,7 +80,7 @@ enum MoFEMCoordSystems {
   * MoAB error messages are defined in naob/Types.hpp
   *
   */
-enum MoFEMErrorCode {
+enum MoFEMErrorCodes {
   MOFEM_SUCESS = 0,
   MOFEM_DATA_INCONSISTENCY = 100,
   MOFEM_NOT_IMPLEMENTED = 101,
@@ -87,6 +102,16 @@ enum FieldSpace {
   HCURL,	///< field with continuous tangents
   L2,		///< field with C-1 continuity
   LASTSPACE 	///< FieldSpace in [ 0, LASTSPACE )
+};
+
+const static char *FieldSpaceNames[] = {
+  "", // empty space
+  "NOFIELD",
+  "H1",
+  "HDIV",
+  "HCURL",
+  "L2",
+  "LASTSPACE"
 };
 
 /// \brief Those types control how functions respond on arguments, f.e. error handling

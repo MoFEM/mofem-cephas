@@ -410,6 +410,20 @@ struct FieldInterface: public FieldUnknownInterface {
    */
   virtual PetscErrorCode seed_ref_level_MESHSET(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1) = 0;
 
+  /** \brief Add coordinate system
+    *
+    * \param cs_id see \ref CoordSystems for options
+    * \param name unique name of coordinate system
+    */
+  virtual PetscErrorCode add_coordinate_system(enum CoordSystems cs_id,const int cs_dim[],const string name) = 0;
+
+  /** \brief Set coordinate system to field
+    *
+    * \param name of field
+    * \param name unique name of coordinate system
+    *
+    */
+  virtual PetscErrorCode set_field_coordinate_system(const string field_name,const string cs_name) = 0;
 
   /**\brief add all ents from ref level given by bit to meshset
     * \ingroup mofem_ref_ents

@@ -62,6 +62,31 @@ struct MoFEMField {
   inline EntityHandle get_meshset() const { return meshSet; };
 
   inline int getCoordSysId() const { return coordSysPtr->getId(); }
+
+  /**
+    * \brief Get dimension of general two-point tensor \ref MoFEM::CoordSys::getDim
+
+    See details here \ref MoFEM::CoordSys::getDim
+
+    */
+  inline int getCoordSysDim(const int d = 0) const { return coordSysPtr->getDim(d); }
+  inline PetscErrorCode get_E_Base(const double m[]) const {
+    PetscFunctionBegin;
+    PetscFunctionReturn(coordSysPtr->get_E_Base(m));
+  }
+  inline PetscErrorCode get_E_DualBase(const double m[]) const {
+    PetscFunctionBegin;
+    PetscFunctionReturn(coordSysPtr->get_E_DualBase(m));
+  }
+  inline PetscErrorCode get_e_Base(const double m[]) const {
+    PetscFunctionBegin;
+    PetscFunctionReturn(coordSysPtr->get_e_Base(m));
+  }
+  inline PetscErrorCode get_e_DualBase(const double m[]) const {
+    PetscFunctionBegin;
+    PetscFunctionReturn(coordSysPtr->get_e_DualBase(m));
+  }
+
   inline EntityHandle getCoordSysMeshSet() const { return coordSysPtr->getMeshSet(); }
   inline string getCoordSysName() const { return coordSysPtr->getName(); };
   inline boost::string_ref getCoordSysNameRef() const {
@@ -104,6 +129,30 @@ struct interface_MoFEMField {
   inline EntityHandle get_meshset() const { return field_ptr->get_meshset(); };
 
   inline int getCoordSysId() const { return field_ptr->getCoordSysId(); }
+
+  /**
+    * \brief Get dimension of general two-point tensor \ref MoFEM::CoordSys::getDim
+
+    See details here \ref MoFEM::CoordSys::getDim
+
+    */
+  inline int getCoordSysDim(const int d = 0) const { return field_ptr->getCoordSysDim(d); }
+  inline PetscErrorCode get_E_Base(const double m[]) const {
+    PetscFunctionBegin;
+    PetscFunctionReturn(field_ptr->get_E_Base(m));
+  }
+  inline PetscErrorCode get_E_DualBase(const double m[]) const {
+    PetscFunctionBegin;
+    PetscFunctionReturn(field_ptr->get_E_DualBase(m));
+  }
+  inline PetscErrorCode get_e_Base(const double m[]) const {
+    PetscFunctionBegin;
+    PetscFunctionReturn(field_ptr->get_e_Base(m));
+  }
+  inline PetscErrorCode get_e_DualBase(const double m[]) const {
+    PetscFunctionBegin;
+    PetscFunctionReturn(field_ptr->get_e_DualBase(m));
+  }
   inline EntityHandle getCoordSysMeshSet() const { return field_ptr->getCoordSysMeshSet(); }
   inline string getCoordSysName() const { return field_ptr->getCoordSysName(); };
   inline boost::string_ref getCoordSysNameRef() const {

@@ -37,16 +37,6 @@
 
 namespace MoFEM {
 
-const char *FieldSpaceNames[] = {
-  "", // empty space
-  "NOFIELD",
-  "H1",
-  "HDIV",
-  "HCURL",
-  "L2",
-  "LASTSPACE"
-};
-
 const bool Idx_mi_tag::IamNotPartitioned = true;
 const bool PetscGlobalIdx_mi_tag::IamNotPartitioned = false;
 const bool PetscLocalIdx_mi_tag::IamNotPartitioned = false;

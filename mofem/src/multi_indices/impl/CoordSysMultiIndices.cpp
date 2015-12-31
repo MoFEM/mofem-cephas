@@ -39,6 +39,10 @@ namespace MoFEM {
     Tag th_coord_sys_id;
     rval = moab.tag_get_handle("_CoordSysId",th_coord_sys_id); CHKERR_THROW(rval);
     rval = moab.tag_get_by_ptr(th_coord_sys_id,&meshSet,1,(const void **)&tagIdData); CHKERR_THROW(rval);
+    // dim
+    Tag th_coord_sys_dim;
+    rval = moab.tag_get_handle("_CoordSysDim",th_coord_sys_dim); CHKERR_THROW(rval);
+    rval = moab.tag_get_by_ptr(th_coord_sys_dim,&meshSet,1,(const void **)&tagCoordSysDim); CHKERR_THROW(rval);
     // Coord Sys Name
     Tag th_coord_sys_name;
     rval = moab.tag_get_handle("_CoordSysName",th_coord_sys_name); CHKERR(rval);
