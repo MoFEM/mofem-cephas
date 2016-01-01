@@ -46,32 +46,6 @@ enum MoFEMInterfaces {
   PRISMSFROMSURFACE_INTERFACE = 1<<3|1<<8 ///< create prisms from surface elements
 };
 
-
-
-/** \brief Coordinate systems
-*/
-enum CoordSystems {
-  NO_CORD_SYSTEM_ON_THE_MESHSET = 0,
-  UNDEFINED_COORD_SYSTEM,
-  CARTESIAN_COORD_SYSTEM,
-  CYLINDRICAL_COORD_SYSTEM,
-  SPHERICAL_COORD_SYSTEM,
-  POLAR_COORD_SYSTEM,
-  USER_COORD_SYSTEM,
-  LAST_MOFEM_COORD_SYSTEM
-};
-
-const static char *CoordSystemsNames[] = {
-  "NO_CORD_SYSTEM_ON_THE_MESHSET",
-  "UNDEFINED_COORD_SYSTEM",
-  "CARTESIAN_COORD_SYSTEM",
-  "CYLINDRICAL_COORD_SYSTEM",
-  "SPHERICAL_COORD_SYSTEM",
-  "POLAR_COORD_SYSTEM",
-  "USER_COORD_SYSTEM",
-  "LAST_MOFEM_COORD_SYSTEM"
-};
-
 /** \brief Error handling
   *
   * This is complementary to PETSC error codes. The numerical values for

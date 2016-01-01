@@ -290,7 +290,7 @@ PetscErrorCode ForcesAndSurcesCore::getNodesIndices(
   ierr = getNumberOfNodes(num_nodes); CHKERRQ(ierr);
   int max_nb_dofs = 0;
   if(dit!=hi_dit) {
-    max_nb_dofs = dit->get_max_rank()*num_nodes;
+    max_nb_dofs = dit->get_nb_of_coeffs()*num_nodes;
   }
 
   if(distance(dit,hi_dit)!=max_nb_dofs) {
@@ -305,14 +305,14 @@ PetscErrorCode ForcesAndSurcesCore::getNodesIndices(
   for(;dit!=hi_dit;dit++) {
     int idx = dit->get_petsc_gloabl_dof_idx();
     int side_number = dit->side_number_ptr->side_number;
-    int pos = side_number*dit->get_max_rank()+dit->get_dof_rank();
+    int pos = side_number*dit->get_nb_of_coeffs()+dit->get_dof_coeff_idx();
     nodes_indices[pos] = idx;
     int  brother_side_number = dit->side_number_ptr->brother_side_number;
     if(brother_side_number!=-1) {
-      if(nodes_indices.size()<(unsigned int)(brother_side_number*dit->get_max_rank()+dit->get_max_rank())) {
-        nodes_indices.resize(brother_side_number*dit->get_max_rank()+dit->get_max_rank());
+      if(nodes_indices.size()<(unsigned int)(brother_side_number*dit->get_nb_of_coeffs()+dit->get_nb_of_coeffs())) {
+        nodes_indices.resize(brother_side_number*dit->get_nb_of_coeffs()+dit->get_nb_of_coeffs());
       }
-      nodes_indices[brother_side_number*dit->get_max_rank()+dit->get_dof_rank()] = idx;
+      nodes_indices[brother_side_number*dit->get_nb_of_coeffs()+dit->get_dof_coeff_idx()] = idx;
     }
   }
   PetscFunctionReturn(0);
@@ -467,7 +467,7 @@ PetscErrorCode ForcesAndSurcesCore::getNoFieldIndices(
   indices.resize(distance(dit,hi_dit));
   for(;dit!=hi_dit;dit++) {
     int idx = dit->get_petsc_gloabl_dof_idx();
-    indices[dit->get_dof_rank()] = idx;
+    indices[dit->get_dof_coeff_idx()] = idx;
   }
   PetscFunctionReturn(0);
 }
@@ -520,10 +520,10 @@ PetscErrorCode ForcesAndSurcesCore::getProblemNodesIndices(const string &field_n
     if(dit!=hi_dit) {
 
       if(!nn) {
-        nodes_indices.resize(dit->get_max_rank()*distance(siit,hi_siit));
+        nodes_indices.resize(dit->get_nb_of_coeffs()*distance(siit,hi_siit));
       }
       for(;dit!=hi_dit;dit++) {
-        nodes_indices[siit->side_number*dit->get_max_rank()+dit->get_dof_rank()] = dit->get_petsc_gloabl_dof_idx();
+        nodes_indices[siit->side_number*dit->get_nb_of_coeffs()+dit->get_dof_coeff_idx()] = dit->get_petsc_gloabl_dof_idx();
       }
 
     }
@@ -608,7 +608,7 @@ PetscErrorCode ForcesAndSurcesCore::getNodesFieldData(
     ierr = getNumberOfNodes(num_nodes); CHKERRQ(ierr);
     int max_nb_dofs = 0;
     if(dit!=hi_dit) {
-      max_nb_dofs = dit->get_max_rank()*num_nodes;
+      max_nb_dofs = dit->get_nb_of_coeffs()*num_nodes;
     }
 
     if(distance(dit,hi_dit)!=max_nb_dofs) {
@@ -624,14 +624,14 @@ PetscErrorCode ForcesAndSurcesCore::getNodesFieldData(
       if(side_number == -1) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
       }
-      int pos = side_number*dit->get_max_rank()+dit->get_dof_rank();
+      int pos = side_number*dit->get_nb_of_coeffs()+dit->get_dof_coeff_idx();
       nodes_field_data[pos] = val;
       int  brother_side_number = dit->side_number_ptr->brother_side_number;
       if(brother_side_number!=-1) {
-        if(nodes_field_data.size()<(unsigned int)(brother_side_number*dit->get_max_rank()+dit->get_max_rank())) {
-          nodes_field_data.resize(brother_side_number*dit->get_max_rank()+dit->get_max_rank());
+        if(nodes_field_data.size()<(unsigned int)(brother_side_number*dit->get_nb_of_coeffs()+dit->get_nb_of_coeffs())) {
+          nodes_field_data.resize(brother_side_number*dit->get_nb_of_coeffs()+dit->get_nb_of_coeffs());
         }
-        nodes_field_data[brother_side_number*dit->get_max_rank()+dit->get_dof_rank()] = val;
+        nodes_field_data[brother_side_number*dit->get_nb_of_coeffs()+dit->get_dof_coeff_idx()] = val;
       }
     }
   } catch (exception& ex) {
@@ -698,7 +698,7 @@ PetscErrorCode ForcesAndSurcesCore::getNoFieldFieldData(
   hi_dit = dofs.get<FieldName_mi_tag>().upper_bound(field_name);
   ent_field_data.resize(distance(dit,hi_dit));
   for(;dit!=hi_dit;dit++) {
-    ent_field_data[dit->get_dof_rank()] = dit->get_FieldData();
+    ent_field_data[dit->get_dof_coeff_idx()] = dit->get_FieldData();
   }
   PetscFunctionReturn(0);
 }
@@ -780,7 +780,7 @@ PetscErrorCode ForcesAndSurcesCore::getNodesFieldDofs(
   ierr = getNumberOfNodes(num_nodes); CHKERRQ(ierr);
   int max_nb_dofs = 0;
   if(dit!=hi_dit) {
-    max_nb_dofs = dit->get_max_rank()*num_nodes;
+    max_nb_dofs = dit->get_nb_of_coeffs()*num_nodes;
   }
 
   if(distance(dit,hi_dit)!=max_nb_dofs) {
@@ -794,13 +794,13 @@ PetscErrorCode ForcesAndSurcesCore::getNodesFieldDofs(
 
   for(;dit!=hi_dit;dit++) {
     int side_number = dit->side_number_ptr->side_number;
-    nodes_field_dofs[side_number*dit->get_max_rank()+dit->get_dof_rank()] = &*dit;
+    nodes_field_dofs[side_number*dit->get_nb_of_coeffs()+dit->get_dof_coeff_idx()] = &*dit;
     int brother_side_number = dit->side_number_ptr->brother_side_number;
     if(brother_side_number!=-1) {
-      if(nodes_field_dofs.size()<(unsigned int)(brother_side_number*dit->get_max_rank()+dit->get_max_rank())) {
-        nodes_field_dofs.resize(brother_side_number*dit->get_max_rank()+dit->get_max_rank(),false);
+      if(nodes_field_dofs.size()<(unsigned int)(brother_side_number*dit->get_nb_of_coeffs()+dit->get_nb_of_coeffs())) {
+        nodes_field_dofs.resize(brother_side_number*dit->get_nb_of_coeffs()+dit->get_nb_of_coeffs(),false);
       }
-      nodes_field_dofs[brother_side_number*dit->get_max_rank()+dit->get_dof_rank()] = &*dit;
+      nodes_field_dofs[brother_side_number*dit->get_nb_of_coeffs()+dit->get_dof_coeff_idx()] = &*dit;
     }
   }
   PetscFunctionReturn(0);
@@ -857,7 +857,7 @@ PetscErrorCode ForcesAndSurcesCore::getNoFieldFieldDofs(
   hi_dit = dofs.get<FieldName_mi_tag>().upper_bound(field_name);
   nodes_dofs.resize(distance(dit,hi_dit));
   for(;dit!=hi_dit;dit++) {
-    nodes_dofs[dit->get_dof_rank()] = &*dit;
+    nodes_dofs[dit->get_dof_coeff_idx()] = &*dit;
   }
   PetscFunctionReturn(0);
 }

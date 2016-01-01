@@ -77,7 +77,7 @@ struct FieldApproximationH1 {
 
       const FENumeredDofMoFEMEntity *dof_ptr;
       ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(row_data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
-      int rank = dof_ptr->get_max_rank();
+      int rank = dof_ptr->get_nb_of_coeffs();
 
       int nb_row_dofs = row_data.getIndices().size()/rank;
       int nb_col_dofs = col_data.getIndices().size()/rank;
@@ -183,7 +183,7 @@ struct FieldApproximationH1 {
 
       const FENumeredDofMoFEMEntity *dof_ptr;
       ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
-      unsigned int rank = dof_ptr->get_max_rank();
+      unsigned int rank = dof_ptr->get_nb_of_coeffs();
 
       int nb_row_dofs = data.getIndices().size()/rank;
 
@@ -301,7 +301,7 @@ struct FieldApproximationH1 {
       PetscErrorCode ierr;
       const FENumeredDofMoFEMEntity *dof_ptr;
       ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(row_data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
-      int rank = dof_ptr->get_max_rank();
+      int rank = dof_ptr->get_nb_of_coeffs();
       int nb_row_dofs = row_data.getIndices().size()/rank;
       int nb_col_dofs = col_data.getIndices().size()/rank;
       NN.resize(nb_row_dofs,nb_col_dofs,false);
@@ -390,7 +390,7 @@ struct FieldApproximationH1 {
       //PetscAttachDebugger();
       const FENumeredDofMoFEMEntity *dof_ptr;
       ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
-      unsigned int rank = dof_ptr->get_max_rank();
+      unsigned int rank = dof_ptr->get_nb_of_coeffs();
 
       int nb_row_dofs = data.getIndices().size()/rank;
 

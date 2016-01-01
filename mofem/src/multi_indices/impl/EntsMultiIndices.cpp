@@ -122,7 +122,7 @@ ostream& operator<<(ostream& os,const MoFEMEntity& e) {
 }
 void MoFEMEntity_change_order::operator()(MoFEMEntity &e) {
   ErrorCode rval;
-  int nb_dofs = e.get_order_nb_dofs(order)*e.get_max_rank();
+  int nb_dofs = e.get_order_nb_dofs(order)*e.get_nb_of_coeffs();
   ApproximationOrder& ent_order = *((ApproximationOrder*)e.tag_order_data);
   ent_order = order;
   EntityHandle ent = e.get_ent();

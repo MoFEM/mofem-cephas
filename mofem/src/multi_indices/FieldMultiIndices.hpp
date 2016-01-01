@@ -61,8 +61,6 @@ struct MoFEMField {
 
   inline EntityHandle get_meshset() const { return meshSet; };
 
-  inline int getCoordSysId() const { return coordSysPtr->getId(); }
-
   /**
     * \brief Get dimension of general two-point tensor \ref MoFEM::CoordSys::getDim
 
@@ -97,7 +95,12 @@ struct MoFEMField {
   inline boost::string_ref get_name_ref() const { return boost::string_ref((char *)tag_name_data,tag_name_size); };
   inline string get_name() const { return string((char *)tag_name_data,tag_name_size); };
   inline FieldSpace get_space() const { return *tag_space_data; };
-  inline ApproximationRank get_max_rank() const { return *tag_rank_data; };
+  DEPRECATED inline ApproximationRank get_max_rank() const { return *tag_rank_data; };
+
+  /* \brief get number of field coefficients
+  */
+  inline ApproximationRank get_nb_of_coeffs() const { return *tag_rank_data; };
+
 
   /**
     * \brief get number of set bit in Field ID.
@@ -164,7 +167,14 @@ struct interface_MoFEMField {
   inline boost::string_ref get_name_ref() const { return field_ptr->get_name_ref(); };
   inline string get_name() const { return field_ptr->get_name(); };
   inline FieldSpace get_space() const { return field_ptr->get_space(); };
-  inline ApproximationRank get_max_rank() const { return field_ptr->get_max_rank(); };
+
+  DEPRECATED inline ApproximationRank get_max_rank() const { return field_ptr->get_nb_of_coeffs(); };
+
+  /* \brief get number of field coefficients
+  */
+  inline ApproximationRank get_nb_of_coeffs() const { return field_ptr->get_nb_of_coeffs(); };
+
+
   inline const MoFEMField* get_MoFEMField_ptr() const { return field_ptr->get_MoFEMField_ptr(); };
 };
 

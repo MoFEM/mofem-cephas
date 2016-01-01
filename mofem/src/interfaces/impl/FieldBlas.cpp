@@ -61,7 +61,7 @@ PetscErrorCode Core::field_axpy(const double alpha,const string& field_name_x,co
   if(x_fit->get_space() != y_fit->get_space()) {
     SETERRQ2(PETSC_COMM_SELF,1,"space for field < %s > and field <%s> are not compatible",field_name_x.c_str(),field_name_y.c_str());
   }
-  if(x_fit->get_max_rank() != y_fit->get_max_rank()) {
+  if(x_fit->get_nb_of_coeffs() != y_fit->get_nb_of_coeffs()) {
     SETERRQ2(PETSC_COMM_SELF,1,"rank for field < %s > and field <%s> are not compatible",field_name_x.c_str(),field_name_y.c_str());
   }
   MoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator x_eit;
@@ -72,10 +72,10 @@ PetscErrorCode Core::field_axpy(const double alpha,const string& field_name_x,co
       ApproximationOrder dof_order = x_eit->tag_dof_order_data[dd];
       ApproximationRank dof_rank = x_eit->tag_dof_rank_data[dd];
       FieldData data = x_eit->tag_FieldData[dd];
-      DofMoFEMEntity_multiIndex::index<Composite_Name_Ent_Order_And_Rank_mi_tag>::type::iterator dit;
-      dit = dofsField.get<Composite_Name_Ent_Order_And_Rank_mi_tag>().find(
+      DofMoFEMEntity_multiIndex::index<Composite_Name_Ent_Order_And_CoeffIdx_mi_tag>::type::iterator dit;
+      dit = dofsField.get<Composite_Name_Ent_Order_And_CoeffIdx_mi_tag>().find(
 	boost::make_tuple(field_name_y.c_str(),x_eit->get_ent(),dof_order,dof_rank));
-      if(dit == dofsField.get<Composite_Name_Ent_Order_And_Rank_mi_tag>().end()) {
+      if(dit == dofsField.get<Composite_Name_Ent_Order_And_CoeffIdx_mi_tag>().end()) {
 	if(creat_if_missing) {
 	  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"not yet implemented");
 	} else {

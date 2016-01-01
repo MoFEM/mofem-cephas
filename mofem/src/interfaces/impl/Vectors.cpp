@@ -145,23 +145,25 @@ PetscErrorCode Core::ISCreateProblemOrder(const string &problem,RowColData rc,in
   ierr = ISCreateGeneral(comm,size,id,PETSC_OWN_POINTER,is); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::ISCreateProblemFieldAndRank(const string &problem,RowColData rc,const string &field,int min_rank,int max_rank,IS *is,int verb) {
+PetscErrorCode Core::ISCreateProblemFieldAndRank(
+  const string &problem,RowColData rc,const string &field,int min_coeff_idx,int max_coeff_idx,IS *is,int verb
+) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type pRoblems_by_name;
   pRoblems_by_name &pRoblems_set = pRoblems.get<Problem_mi_tag>();
   pRoblems_by_name::iterator p = pRoblems_set.find(problem);
   if(p==pRoblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"no such problem %s (top tip check spelling)",problem.c_str());
-  typedef NumeredDofMoFEMEntity_multiIndex::index<Composite_Name_Part_And_Rank_mi_tag>::type dofs_by_name_and_rank;
+  typedef NumeredDofMoFEMEntity_multiIndex::index<Composite_Name_Part_And_CoeffIdx_mi_tag>::type dofs_by_name_and_rank;
   dofs_by_name_and_rank::iterator it,hi_it;
   switch(rc) {
     case ROW:
-    it = p->numered_dofs_rows.get<Composite_Name_Part_And_Rank_mi_tag>().lower_bound(boost::make_tuple(field,rAnk,min_rank));
-    hi_it = p->numered_dofs_rows.get<Composite_Name_Part_And_Rank_mi_tag>().upper_bound(boost::make_tuple(field,rAnk,max_rank));
+    it = p->numered_dofs_rows.get<Composite_Name_Part_And_CoeffIdx_mi_tag>().lower_bound(boost::make_tuple(field,rAnk,min_coeff_idx));
+    hi_it = p->numered_dofs_rows.get<Composite_Name_Part_And_CoeffIdx_mi_tag>().upper_bound(boost::make_tuple(field,rAnk,max_coeff_idx));
     break;
     case COL:
-    it = p->numered_dofs_cols.get<Composite_Name_Part_And_Rank_mi_tag>().lower_bound(boost::make_tuple(field,rAnk,min_rank));
-    hi_it = p->numered_dofs_cols.get<Composite_Name_Part_And_Rank_mi_tag>().upper_bound(boost::make_tuple(field,rAnk,max_rank));
+    it = p->numered_dofs_cols.get<Composite_Name_Part_And_CoeffIdx_mi_tag>().lower_bound(boost::make_tuple(field,rAnk,min_coeff_idx));
+    hi_it = p->numered_dofs_cols.get<Composite_Name_Part_And_CoeffIdx_mi_tag>().upper_bound(boost::make_tuple(field,rAnk,max_coeff_idx));
     break;
     default:
      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
@@ -520,7 +522,7 @@ PetscErrorCode Core::set_other_local_ghost_vector(
       FieldSpaceNames[cpy_fit->get_space()]
     );
   }
-  if(miit->get_max_rank() != cpy_fit->get_max_rank()) {
+  if(miit->get_nb_of_coeffs() != cpy_fit->get_nb_of_coeffs()) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"fields have to have same rank");
   }
   switch(scatter_mode) {
@@ -627,7 +629,7 @@ PetscErrorCode Core::set_other_global_ghost_vector(
   if(miit->get_space() != cpy_fit->get_space()) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"fields have to have same space");
   }
-  if(miit->get_max_rank() != cpy_fit->get_max_rank()) {
+  if(miit->get_nb_of_coeffs() != cpy_fit->get_nb_of_coeffs()) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"fields have to have same rank");
   }
   switch (scatter_mode) {
@@ -681,7 +683,7 @@ PetscErrorCode Core::set_other_global_ghost_vector(
           diit = dofsField.get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(field_name,miit->get_ent()));
           hi_diit = dofsField.get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(field_name,miit->get_ent()));
           for(;diit!=hi_diit;diit++) {
-            DofMoFEMEntity mdof(&*(p_e_miit.first),diit->get_dof_order(),diit->get_dof_rank(),diit->get_EntDofIdx());
+            DofMoFEMEntity mdof(&*(p_e_miit.first),diit->get_dof_order(),diit->get_dof_coeff_idx(),diit->get_EntDofIdx());
             pair<DofMoFEMEntity_multiIndex::iterator,bool> cpy_p_diit;
             cpy_p_diit = dofsField.insert(mdof);
             if(cpy_p_diit.second) {

@@ -840,9 +840,9 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const string &problem_name,i
             int nb_dofs_on_ent = distance(dit,hi_dit);
 
             int max_order = cit->get_max_order();
-            if(cit->get_max_rank()*cit->get_order_nb_dofs(max_order)!=nb_dofs_on_ent) {
+            if(cit->get_nb_of_coeffs()*cit->get_order_nb_dofs(max_order)!=nb_dofs_on_ent) {
               cerr << "Warning: Number of Dofs in Col diffrent than number of dofs for given entity order "
-              << cit->get_max_rank()*cit->get_order_nb_dofs(max_order) << " " << nb_dofs_on_ent  << endl;
+              << cit->get_nb_of_coeffs()*cit->get_order_nb_dofs(max_order) << " " << nb_dofs_on_ent  << endl;
             }
 
           }
@@ -857,9 +857,9 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const string &problem_name,i
           int nb_dofs_on_ent = distance(dit,hi_dit);
 
           int max_order = rit->get_max_order();
-          if(rit->get_max_rank()*rit->get_order_nb_dofs(max_order) != nb_dofs_on_ent) {
+          if(rit->get_nb_of_coeffs()*rit->get_order_nb_dofs(max_order) != nb_dofs_on_ent) {
             cerr << "Warning: Number of Dofs in Row diffrent than number of dofs for given entity order "
-            << rit->get_max_rank()*rit->get_order_nb_dofs(max_order) << " " << nb_dofs_on_ent << endl;
+            << rit->get_nb_of_coeffs()*rit->get_order_nb_dofs(max_order) << " " << nb_dofs_on_ent << endl;
           }
 
         }

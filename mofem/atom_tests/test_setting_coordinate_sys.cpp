@@ -71,7 +71,7 @@ int main(int argc, char *argv[]) {
   //Coord system
   {
     int cs_dim[] = {0,3,0,3};
-    ierr = m_field.add_coordinate_system(USER_COORD_SYSTEM,cs_dim,"BASE_FOR_TWO_POINT_TENSOR"); CHKERRQ(ierr);
+    ierr = m_field.add_coordinate_system(cs_dim,"BASE_FOR_TWO_POINT_TENSOR"); CHKERRQ(ierr);
   }
 
   //Fields
@@ -88,21 +88,16 @@ int main(int argc, char *argv[]) {
   //build field
   ierr = m_field.build_fields(); CHKERRQ(ierr);
 
-  int cs_id;
   int cs_dim[4];
   string cs_name;
 
   //Open mesh_file_name.txt for writing
   for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(m_field,"FIELD_A",dof_ptr)) {
 
-    cs_id = dof_ptr->getCoordSysId();
     for(int alpha = 0;alpha<4;alpha++) {
       cs_dim[alpha] = dof_ptr->getCoordSysDim(alpha);
     }
 
-    if(cs_id!=USER_COORD_SYSTEM) {
-      SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong base id is %d should be %d",cs_id,USER_COORD_SYSTEM);
-    }
     if(cs_dim[1]!=3) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong base dim");
     }

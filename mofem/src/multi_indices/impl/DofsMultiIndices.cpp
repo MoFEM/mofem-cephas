@@ -76,7 +76,7 @@ active(false) {
 ostream& operator<<(ostream& os,const DofMoFEMEntity& e) {
   os << "dof_uid " << e.get_global_unique_id()
   << " dof_order " << e.get_dof_order()
-  << " dof_rank " << e.get_dof_rank()
+  << " dof_rank " << e.get_dof_coeff_idx()
   << " dof " << e.dof
   << " active " << e.active
   << " " << *(e.field_ptr);

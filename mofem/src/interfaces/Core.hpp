@@ -17,7 +17,6 @@
 #ifndef __MOABFIELD_CORE_HPP__
 #define __MOABFIELD_CORE_HPP__
 
-
 namespace MoFEM {
 
 /** \brief Core FieldInterface class
@@ -67,8 +66,7 @@ struct Core:
   Tag nsTag,ssTag,nsTag_data,ssTag_data,bhTag,bhTag_header;
   Tag th_ElemType;
   Tag th_SeriesName;
-  Tag th_CoordSystem;
-  Tag th_FieldCoordSystem;
+  Tag th_CoordSysMeshSet;
   Tag th_CoordSysName;
   Tag th_CoordSysDim;
 
@@ -361,7 +359,7 @@ struct Core:
 
   //field
   PetscErrorCode add_field(
-    const string& name,const FieldSpace space,const ApproximationRank rank,enum MoFEMTypes bh = MF_EXCL,int verb = -1
+    const string& name,const FieldSpace space,const ApproximationRank nb_cooficients,enum MoFEMTypes bh = MF_EXCL,int verb = -1
   );
   PetscErrorCode add_ents_to_field_by_VERTICEs(const Range &nodes,const BitFieldId id,int verb = -1);
   PetscErrorCode add_ents_to_field_by_VERTICEs(const Range &nodes,const string& name,int verb = -1);
@@ -519,7 +517,9 @@ struct Core:
   /// get IS for order
   PetscErrorCode ISCreateProblemOrder(const string &problem,RowColData rc,int min_order,int max_order,IS *is,int verb = -1);
   /// get IS for field and rank
-  PetscErrorCode ISCreateProblemFieldAndRank(const string &problem,RowColData rc,const string &field,int min_rank,int max_rank,IS *is,int verb = -1);
+  PetscErrorCode ISCreateProblemFieldAndRank(
+    const string &problem,RowColData rc,const string &field,int min_coeff_idx,int max_coeff_idx,IS *is,int verb = -1
+  );
 
   //scatter from problem filed to other problem field
   PetscErrorCode ISCreateFromProblemFieldToOtherProblemField(
@@ -615,7 +615,7 @@ struct Core:
   );
 
   //Coordinate systems
-  PetscErrorCode add_coordinate_system(enum CoordSystems cs_id,const int cs_dim[],const string name);
+  PetscErrorCode add_coordinate_system(const int cs_dim[],const string name);
   PetscErrorCode set_field_coordinate_system(const string field_name,const string cs_name);
 
   //Petsc Logs

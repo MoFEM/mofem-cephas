@@ -328,7 +328,7 @@ struct KelvinVoigtDamper {
         if(nb_dofs == 0) {
           PetscFunctionReturn(0);
         }
-        int rank = data.getFieldDofs()[0]->get_max_rank();
+        int rank = data.getFieldDofs()[0]->get_nb_of_coeffs();
         int nb_gauss_pts = data.getN().size1();
 
         // Initialize

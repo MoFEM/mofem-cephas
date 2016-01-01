@@ -1,5 +1,5 @@
 /** \file CoordSysMultiIndices.cpp
- * \brief MoFEM Coordinate system
+ * \brief Tensor coordinate system
  */
 
 /* MoFEM is free software: you can redistribute it and/or modify it under
@@ -31,14 +31,9 @@ namespace MoFEM {
 
   CoordSys::CoordSys(Interface &moab,const EntityHandle meshset):
   meshSet(meshset),
-  tagIdData(NULL),
   tagCoordSysName(NULL) {
     // Change those tags only by modifiers
     ErrorCode rval;
-    // Id
-    Tag th_coord_sys_id;
-    rval = moab.tag_get_handle("_CoordSysId",th_coord_sys_id); CHKERR_THROW(rval);
-    rval = moab.tag_get_by_ptr(th_coord_sys_id,&meshSet,1,(const void **)&tagIdData); CHKERR_THROW(rval);
     // dim
     Tag th_coord_sys_dim;
     rval = moab.tag_get_handle("_CoordSysDim",th_coord_sys_dim); CHKERR_THROW(rval);

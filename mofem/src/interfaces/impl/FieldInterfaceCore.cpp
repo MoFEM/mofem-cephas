@@ -48,7 +48,7 @@ namespace MoFEM {
 const static int debug = 1;
 
 PetscErrorCode Core::add_field(
-  const string& name,const FieldSpace space,const ApproximationRank rank,enum MoFEMTypes bh,int verb
+  const string& name,const FieldSpace space,const ApproximationRank nb_of_coefficients,enum MoFEMTypes bh,int verb
 ) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
@@ -110,7 +110,7 @@ PetscErrorCode Core::add_field(
       Tag_rank_name.c_str(),sizeof(ApproximationRank),MB_TYPE_OPAQUE,
       th_Rank,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_rank
     ); CHKERR_PETSC(rval);
-    rval = moab.tag_set_data(th_Rank,&meshset,1,&rank); CHKERR_PETSC(rval);
+    rval = moab.tag_set_data(th_Rank,&meshset,1,&nb_of_coefficients); CHKERR_PETSC(rval);
     //dof rank
     string Tag_dof_rank_name = "_Field_Dof_Rank_"+name;
     rval = moab.tag_get_handle(
@@ -120,13 +120,13 @@ PetscErrorCode Core::add_field(
     //add meshset
     pair<MoFEMField_multiIndex::iterator,bool> p;
     try {
-      CoordSys_multiIndex::index<CoordSysID_mi_tag>::type::iterator undefined_cs_it;
-      undefined_cs_it = coordinateSystems.get<CoordSysID_mi_tag>().find(UNDEFINED_COORD_SYSTEM);
-      if(undefined_cs_it==coordinateSystems.get<CoordSysID_mi_tag>().end()) {
-        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Generic Cartesian system not found");
+      CoordSys_multiIndex::index<CoordSysName_mi_tag>::type::iterator undefined_cs_it;
+      undefined_cs_it = coordinateSystems.get<CoordSysName_mi_tag>().find("UNDEFINED");
+      if(undefined_cs_it==coordinateSystems.get<CoordSysName_mi_tag>().end()) {
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Undefined system not found");
       }
-      int coord_sys_id = undefined_cs_it->getId();
-      rval = moab.tag_set_data(th_FieldCoordSystem,&meshset,1,&coord_sys_id); CHKERR_PETSC(rval);
+      EntityHandle coord_sys_id = undefined_cs_it->getMeshSet();
+      rval = moab.tag_set_data(th_CoordSysMeshSet,&meshset,1,&coord_sys_id); CHKERR_PETSC(rval);
       p = fIelds.insert(MoFEMField(moab,meshset,&*undefined_cs_it));
       if(bh == MF_EXCL) {
         if(!p.second) SETERRQ1(
@@ -958,7 +958,7 @@ PetscErrorCode Core::dofs_NoField(const BitFieldId id,map<EntityType,int> &dof_c
   assert(e_miit.first->get_ent()==miit->meshSet);
   ApproximationRank rank = 0;
   //create dofs on this entity (nb. of dofs is equal to rank)
-  for(;rank<e_miit.first->get_max_rank();rank++) {
+  for(;rank<e_miit.first->get_nb_of_coeffs();rank++) {
     pair<DofMoFEMEntity_multiIndex::iterator,bool> d_miit;
     //check if dof is in darabase
     d_miit.first = dofsField.project<0>(
@@ -1066,7 +1066,7 @@ PetscErrorCode Core::dofs_L2H1HcurlHdiv(const BitFieldId id,map<EntityType,int> 
       //loop nb. dofs at order oo
       for(int dd = 0;dd<e_miit->get_order_nb_dofs_diff(oo);dd++) {
         //loop rank
-        for(int rr = 0;rr<e_miit->get_max_rank();rr++,DD++) {
+        for(int rr = 0;rr<e_miit->get_nb_of_coeffs();rr++,DD++) {
           pair<DofMoFEMEntity_multiIndex::iterator,bool> d_miit;
           try {
             DofMoFEMEntity mdof(&*(e_miit),oo,rr,DD);
@@ -1103,7 +1103,7 @@ PetscErrorCode Core::dofs_L2H1HcurlHdiv(const BitFieldId id,map<EntityType,int> 
         }
       }
     }
-    if(DD != e_miit->get_max_rank()*e_miit->get_order_nb_dofs(e_miit->get_max_order())) {
+    if(DD != e_miit->get_nb_of_coeffs()*e_miit->get_order_nb_dofs(e_miit->get_max_order())) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
     }
   }

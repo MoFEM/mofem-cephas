@@ -98,8 +98,20 @@ struct DofMoFEMEntity: public interface_MoFEMEntity<MoFEMEntity> {
   inline ShortId get_non_nonunique_short_id_calculate() const { return get_non_nonunique_short_id(dof,get_MoFEMEntity_ptr()); }
   inline EntityHandle get_ent() const { return field_ptr->get_ent(); };
   //inline EntityType get_ent_type() const { return field_ptr->get_ent_type(); };
-  inline ApproximationOrder get_dof_order() const { return ((ApproximationOrder*)field_ptr->tag_dof_order_data)[dof]; };
-  inline ApproximationRank get_dof_rank() const { return ((ApproximationRank*)field_ptr->tag_dof_rank_data)[dof]; };
+  inline ApproximationOrder get_dof_order() const {
+    return ((ApproximationOrder*)field_ptr->tag_dof_order_data)[dof];
+  };
+
+  DEPRECATED inline ApproximationRank get_dof_rank() const {
+    return ((ApproximationRank*)field_ptr->tag_dof_rank_data)[dof];
+  };
+
+  /** \brief Get dof coefficient
+  */
+  inline ApproximationRank get_dof_coeff_idx() const {
+    return ((ApproximationRank*)field_ptr->tag_dof_rank_data)[dof];
+  };
+
   //check if node is active
   inline int get_active() const { return active ? 1 : 0; }
   friend ostream& operator<<(ostream& os,const DofMoFEMEntity& e);
@@ -122,7 +134,15 @@ struct interface_DofMoFEMEntity: public interface_MoFEMEntity<T> {
   inline FieldData& get_FieldData() const { return interface_MoFEMEntity<T>::field_ptr->get_FieldData(); }
   inline EntityHandle get_ent() const { return interface_MoFEMEntity<T>::field_ptr->get_ent(); };
   inline ApproximationOrder get_dof_order() const { return interface_MoFEMEntity<T>::field_ptr->get_dof_order(); };
-  inline ApproximationRank get_dof_rank() const { return interface_MoFEMEntity<T>::field_ptr->get_dof_rank(); };
+
+  DEPRECATED inline ApproximationRank get_dof_rank() const {
+    return interface_MoFEMEntity<T>::field_ptr->get_dof_coeff_idx();
+  };
+
+  inline ApproximationRank get_dof_coeff_idx() const {
+    return interface_MoFEMEntity<T>::field_ptr->get_dof_coeff_idx();
+  };
+
   inline int get_active() const { return interface_MoFEMEntity<T>::field_ptr->get_active(); }
   inline const DofMoFEMEntity* get_DofMoFEMEntity_ptr() const {
     return interface_MoFEMEntity<T>::field_ptr->get_DofMoFEMEntity_ptr();
@@ -255,13 +275,13 @@ typedef multi_index_container<
         const_mem_fun<DofMoFEMEntity::interface_type_RefMoFEMEntity,EntityType,&DofMoFEMEntity::get_ent_type>
       > >,
         ordered_non_unique<
-        tag<Composite_Name_Ent_Order_And_Rank_mi_tag>,
+        tag<Composite_Name_Ent_Order_And_CoeffIdx_mi_tag>,
         composite_key<
         DofMoFEMEntity,
           const_mem_fun<DofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&DofMoFEMEntity::get_name_ref>,
           const_mem_fun<DofMoFEMEntity,EntityHandle,&DofMoFEMEntity::get_ent>,
           const_mem_fun<DofMoFEMEntity,ApproximationOrder,&DofMoFEMEntity::get_dof_order>,
-          const_mem_fun<DofMoFEMEntity,ApproximationRank,&DofMoFEMEntity::get_dof_rank>
+          const_mem_fun<DofMoFEMEntity,ApproximationRank,&DofMoFEMEntity::get_dof_coeff_idx>
         > >
   > > DofMoFEMEntity_multiIndex;
 
@@ -445,12 +465,12 @@ typedef multi_index_container<
 	      const_mem_fun<NumeredDofMoFEMEntity::interface_type_DofMoFEMEntity,ApproximationOrder,&NumeredDofMoFEMEntity::get_dof_order>
 	    > >,
     ordered_non_unique<
-      tag<Composite_Name_Part_And_Rank_mi_tag>,
+      tag<Composite_Name_Part_And_CoeffIdx_mi_tag>,
       composite_key<
 	     NumeredDofMoFEMEntity,
 	      const_mem_fun<NumeredDofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&NumeredDofMoFEMEntity::get_name_ref>,
 	      member<NumeredDofMoFEMEntity,unsigned int,&NumeredDofMoFEMEntity::part>,
-	      const_mem_fun<NumeredDofMoFEMEntity::interface_type_DofMoFEMEntity,ApproximationRank,&NumeredDofMoFEMEntity::get_dof_rank>
+	      const_mem_fun<NumeredDofMoFEMEntity::interface_type_DofMoFEMEntity,ApproximationRank,&NumeredDofMoFEMEntity::get_dof_coeff_idx>
 	    > >,
     ordered_non_unique<
       tag<Composite_Name_And_Part_mi_tag>,

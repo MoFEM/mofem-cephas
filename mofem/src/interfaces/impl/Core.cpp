@@ -364,16 +364,13 @@ Core::Core(Interface& _moab,MPI_Comm _comm,int _verbose):
   ); CHKERR_THROW(rval);
 
   //Coordinate systems
-  const int def_coord_system = NO_CORD_SYSTEM_ON_THE_MESHSET;
-  rval = moab.tag_get_handle(
-    "_CoordSysId",1,MB_TYPE_INTEGER,th_CoordSystem,MB_TAG_CREAT|MB_TAG_SPARSE,&def_coord_system
-  ); CHKERR_THROW(rval);
   int def_coord_sys_dim = 0;
   rval = moab.tag_get_handle(
     "_CoordSysDim",4,MB_TYPE_INTEGER,th_CoordSysDim,MB_TAG_CREAT|MB_TAG_SPARSE,&def_coord_sys_dim
   ); CHKERR_THROW(rval);
+  EntityHandle def_coor_sys_meshset = 0;
   rval = moab.tag_get_handle(
-    "_FieldCoordSysId",1,MB_TYPE_INTEGER,th_FieldCoordSystem,MB_TAG_CREAT|MB_TAG_SPARSE,&def_coord_system
+    "_CoordSysMeshSet",1,MB_TYPE_HANDLE,th_CoordSysMeshSet,MB_TAG_CREAT|MB_TAG_SPARSE,&def_coor_sys_meshset
   ); CHKERR_THROW(rval);
   rval = moab.tag_get_handle(
     "_CoordSysName",def_val_len,MB_TYPE_OPAQUE,
@@ -779,9 +776,9 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
   mit = meshsets.begin();
   for(;mit!=meshsets.end();mit++) {
     try {
-      int cs_id;
-      rval = moab.tag_get_data(th_CoordSystem,&*mit,1,&cs_id); CHKERR_PETSC(rval);
-      if(cs_id!=NO_CORD_SYSTEM_ON_THE_MESHSET) {
+      int cs_dim[4];
+      rval = moab.tag_get_data(th_CoordSysDim,&*mit,1,&cs_dim); CHKERR_PETSC(rval);
+      if(cs_dim[0]+cs_dim[1]+cs_dim[2]+cs_dim[3]) {
         CoordSys coord_sys(moab,*mit);
         pair<CoordSys_multiIndex ::iterator,bool> p = coordinateSystems.insert(coord_sys);
         if(!p.second) {
@@ -793,16 +790,14 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
     }
   }
   { // Create cartesian coordinate system if not exist
-    CoordSys_multiIndex::index<CoordSysID_mi_tag>::type::iterator csit;
-    csit = coordinateSystems.get<CoordSysID_mi_tag>().find(CARTESIAN_COORD_SYSTEM);
-    if(csit==coordinateSystems.get<CoordSysID_mi_tag>().end()) {
+    CoordSys_multiIndex::index<CoordSysName_mi_tag >::type::iterator csit;
+    csit = coordinateSystems.get<CoordSysName_mi_tag >().find("CARTESIAN3D");
+    if(csit==coordinateSystems.get<CoordSysName_mi_tag >().end()) {
       EntityHandle meshset;
       rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERR_PETSC(rval);
-      int id = CARTESIAN_COORD_SYSTEM;
-      rval = moab.tag_set_data(th_CoordSystem,&meshset,1,&id); CHKERR_PETSC(rval);
       int dim[] = { 3,0,0,0 };
       rval = moab.tag_set_data(th_CoordSysDim,&meshset,1,dim); CHKERR_PETSC(rval);
-      string sys_name_str = "CARTESIAN_GENERIC_3D";
+      string sys_name_str = "CARTESIAN3D";
       void const* sys_name[] = { sys_name_str.c_str() };
       int sys_name_size[1];
       sys_name_size[0] = sys_name_str.size();
@@ -815,15 +810,13 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"MeshSet to coord system not inserted");
       }
     }
-    csit = coordinateSystems.get<CoordSysID_mi_tag>().find(UNDEFINED_COORD_SYSTEM);
-    if(csit==coordinateSystems.get<CoordSysID_mi_tag>().end()) {
+    csit = coordinateSystems.get<CoordSysName_mi_tag>().find("UNDEFINED");
+    if(csit==coordinateSystems.get<CoordSysName_mi_tag>().end()) {
       EntityHandle meshset;
       rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERR_PETSC(rval);
-      int id = UNDEFINED_COORD_SYSTEM;
-      rval = moab.tag_set_data(th_CoordSystem,&meshset,1,&id); CHKERR_PETSC(rval);
-      int dim[] = { 0,0,0,0 };
+      int dim[] = { -1,0,0,0 };
       rval = moab.tag_set_data(th_CoordSysDim,&meshset,1,dim); CHKERR_PETSC(rval);
-      string sys_name_str = "UNDEFINED_CS";
+      string sys_name_str = "UNDEFINED";
       void const* sys_name[] = { sys_name_str.c_str() };
       int sys_name_size[1];
       sys_name_size[0] = sys_name_str.size();
@@ -838,10 +831,10 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
     }
   }
   //PetscSynchronizedFlush(comm,PETSC_STDOUT);
-  CoordSys_multiIndex::index<CoordSysID_mi_tag>::type::iterator undefined_cs_it;
-  undefined_cs_it = coordinateSystems.get<CoordSysID_mi_tag>().find(UNDEFINED_COORD_SYSTEM);
-  if(undefined_cs_it==coordinateSystems.get<CoordSysID_mi_tag>().end()) {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Generic Cartesian system not found");
+  CoordSys_multiIndex::index<CoordSysName_mi_tag>::type::iterator undefined_cs_it;
+  undefined_cs_it = coordinateSystems.get<CoordSysName_mi_tag>().find("UNDEFINED");
+  if(undefined_cs_it==coordinateSystems.get<CoordSysName_mi_tag>().end()) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Undefined system not found");
   }
   mit = meshsets.begin();
   for(;mit!=meshsets.end();mit++) {
@@ -852,14 +845,16 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
     if(field_id!=0) {
       pair<MoFEMField_multiIndex::iterator,bool> p;
       try {
-        int coord_sys_id;
-        rval = moab.tag_get_data(th_FieldCoordSystem,&*mit,1,&coord_sys_id); CHKERR_PETSC(rval);
-        CoordSys_multiIndex::index<CoordSysID_mi_tag>::type::iterator cs_it = undefined_cs_it;
-        if(coord_sys_id) {
-          cs_it = coordinateSystems.get<CoordSysID_mi_tag>().find(coord_sys_id);
-          if(cs_it==coordinateSystems.get<CoordSysID_mi_tag>().end()) {
+        EntityHandle coord_sys_id;
+        rval = moab.tag_get_data(th_CoordSysMeshSet,&*mit,1,&coord_sys_id); CHKERR_PETSC(rval);
+        CoordSys_multiIndex::index<Meshset_mi_tag>::type::iterator cs_it;
+        if(coord_sys_id!=0) {
+          cs_it = coordinateSystems.get<Meshset_mi_tag>().find(coord_sys_id);
+          if(cs_it==coordinateSystems.get<Meshset_mi_tag>().end()) {
             SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Unknown Coordinate System");
           }
+        } else {
+          cs_it = coordinateSystems.project<Meshset_mi_tag>(undefined_cs_it);
         }
         p = fIelds.insert(MoFEMField(moab,*mit,&*cs_it));
         if(verb > 0) {
@@ -1025,11 +1020,10 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode Core::add_coordinate_system(enum CoordSystems cs_id,const int cs_dim[],const string name) {
+PetscErrorCode Core::add_coordinate_system(const int cs_dim[],const string name) {
   PetscFunctionBegin;
   EntityHandle meshset;
   rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERR_PETSC(rval);
-  rval = moab.tag_set_data(th_CoordSystem,&meshset,1,&cs_id); CHKERR_PETSC(rval);
   rval = moab.tag_set_data(th_CoordSysDim,&meshset,1,cs_dim); CHKERR_PETSC(rval);
   void const* sys_name[] = { name.c_str() };
   int sys_name_size[1];
@@ -1060,6 +1054,47 @@ PetscErrorCode Core::set_field_coordinate_system(const string field_name,const s
     SETERRQ1(
       PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Coord system < %s > not found",cs_name.c_str()
     );
+  }
+  int dim = 1;
+  for(int alpha = 0;alpha<4;alpha++) {
+    if(cs_it->getDim(alpha)>0) {
+      dim *= cs_it->getDim(alpha);
+    }
+  }
+  switch(field_it->get_space()) {
+    case H1:
+    if(field_it->get_nb_of_coeffs()!=dim) {
+      SETERRQ2(
+        PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
+        "dimension mismatch of field and coordinate system"
+        "cs dim %d field rank %d",
+        dim,field_it->get_nb_of_coeffs()
+      );
+    }
+    break;
+    case HDIV:
+    case HCURL:
+    if(3*field_it->get_nb_of_coeffs()!=dim) {
+      SETERRQ2(
+        PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
+        "dimension mismatch of field and coordinate system"
+        "cs dim %d field rank %d",
+        dim,field_it->get_nb_of_coeffs()
+      );
+    }
+    break;
+    case L2:
+    if(field_it->get_nb_of_coeffs()!=dim) {
+      SETERRQ2(
+        PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
+        "dimension mismatch of field and coordinate system"
+        "cs dim %d field rank %d",
+        dim,field_it->get_nb_of_coeffs()
+      );
+    }
+    case NOFIELD:
+    case LASTSPACE:
+    {};
   }
   bool success = fIelds.modify(fIelds.project<0>(field_it),MoFEMFieldChangeCoordinateSystem(&*cs_it));
   if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");

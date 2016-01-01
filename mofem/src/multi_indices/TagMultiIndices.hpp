@@ -98,8 +98,8 @@ namespace MoFEM {
   struct Composite_Name_And_Ent_And_EndDofIdx_mi_tag {};
   struct Composite_Name_And_Ent_mi_tag {};
   struct Composite_Part_And_Oder_mi_tag {};
-  struct Composite_Name_Ent_And_Rank_mi_tag {};
-  struct Composite_Name_Ent_Order_And_Rank_mi_tag {};
+  struct Composite_Name_Ent_And_CoeffIdx_mi_tag {};
+  struct Composite_Name_Ent_Order_And_CoeffIdx_mi_tag {};
   struct Composite_Name_And_Type_mi_tag {};
   struct Composite_Name_Type_And_Side_Number_mi_tag {};
   struct Composite_Name_Ent_And_Part_mi_tag {};
@@ -107,7 +107,7 @@ namespace MoFEM {
   struct Composite_Ent_and_ShortId_mi_tag {};
   struct Composite_EntType_and_Space_mi_tag {};
   struct Composite_Part_And_Ent_mi_tag {};
-  struct Composite_Name_Part_And_Rank_mi_tag {};
+  struct Composite_Name_Part_And_CoeffIdx_mi_tag {};
   struct Composite_Name_And_HasLocalIdx_mi_tag {};
 
   struct SeriesID_mi_tag {};
@@ -116,7 +116,6 @@ namespace MoFEM {
   struct Composite_SeriesName_And_Step_mi_tag {};
   struct Composite_SeriesName_And_Time_mi_tag {};
 
-  struct CoordSysID_mi_tag {};
   struct CoordSysName_mi_tag {};
 
 }

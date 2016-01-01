@@ -23,6 +23,7 @@
 namespace MoFEM {
 
   /** \brief Structure for Coordinate system of two-point tensor
+  * \ingroup coordsys_multi_indices
 
   Because tensors have a geometric interpretation, their underlying physical
   meaning is independent of the coordinate system in which they are defined; the
@@ -30,21 +31,21 @@ namespace MoFEM {
   numerical instantiation of a tensor field is incomplete without a specification
   of its coordinate system.
 
-  In this data structure a generic two-point tensors are considered, see \cite
-  marsden1994mathematical. To each field \ref MoFEM::MoFEMField a CoordSys data
+  In this data structure a generic two-point tensors are considered,
+  see \cite  marsden1994mathematical. To each field \ref MoFEM::MoFEMField a CoordSys data
   structure can be attached, carrying information about tensor structure
   approximated by the field.
+
+
 
   */
   struct CoordSys {
 
     EntityHandle meshSet; 		      ///< keeps entities for this meshset
-    const int* tagIdData;
     const int* tagCoordSysDim;
     const char* tagCoordSysName; 		///< tag keeps name of the field
     int tagCoordSysNameSize;
     CoordSys(Interface &moab,const EntityHandle meshset);
-    inline int getId() const { return *tagIdData; };
 
     /** \brief Get tensor dimension
 
@@ -83,9 +84,10 @@ namespace MoFEM {
     \param d = 0,1,2,3 is equivalent to q,l,o and m respectively.
 
     */
-    inline int getDim(const int d = 0) const {
+    inline int getDim(const int d) const {
       return tagCoordSysDim[d];
     };
+
 
     virtual PetscErrorCode get_E_Base(const double m[]) const {
       PetscFunctionBegin;
@@ -119,13 +121,11 @@ namespace MoFEM {
   typedef multi_index_container<
     CoordSys,
     indexed_by<
-      ordered_non_unique<
-        tag<CoordSysID_mi_tag>, const_mem_fun<CoordSys,int,&CoordSys::getId> >,
       ordered_unique<
         tag<Meshset_mi_tag>, member<CoordSys,EntityHandle,&CoordSys::meshSet>
       >,
       ordered_unique<
-        tag<CoordSysName_mi_tag >, const_mem_fun<CoordSys,boost::string_ref,&CoordSys::getNameRef>
+        tag<CoordSysName_mi_tag>, const_mem_fun<CoordSys,boost::string_ref,&CoordSys::getNameRef>
       >
   > > CoordSys_multiIndex;
 
@@ -134,6 +134,6 @@ namespace MoFEM {
 #endif //__COORDSYSMULTIINDICES_HPP__
 
 /***************************************************************************//**
- * \defgroup coordsys_multi_indices Coordinate system of general tenor field
+ * \defgroup coordsys_multi_indices Coordinate system of tensor field
  * \ingroup mofem
  ******************************************************************************/

@@ -131,7 +131,7 @@ int main(int argc, char *argv[]) {
     for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(m_field,"SPATIAL_POSITION",dof_ptr)) {
       if(dof_ptr->get_ent_type()!=MBVERTEX) continue;
       EntityHandle ent = dof_ptr->get_ent();
-      int dof_rank = dof_ptr->get_dof_rank();
+      int dof_rank = dof_ptr->get_dof_coeff_idx();
       double &fval = dof_ptr->get_FieldData();
       if(node!=ent) {
         rval = moab.get_coords(&ent,1,coords); CHKERR_PETSC(rval);

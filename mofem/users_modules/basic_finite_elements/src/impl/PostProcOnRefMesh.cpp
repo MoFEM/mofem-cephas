@@ -61,7 +61,7 @@ PetscErrorCode PostProcCommonOnRefMesh::OpGetFieldValues::doWork(
   }
 
   const MoFEM::FEDofMoFEMEntity *dof_ptr = data.getFieldDofs()[0];
-  int rank = dof_ptr->get_max_rank();
+  int rank = dof_ptr->get_nb_of_coeffs();
 
   int tag_length = rank;
   FieldSpace space = dof_ptr->get_space();
@@ -190,7 +190,7 @@ PetscErrorCode PostProcCommonOnRefMesh::OpGetFieldGradientValues::doWork(
   }
 
   const MoFEM::FEDofMoFEMEntity *dof_ptr = data.getFieldDofs()[0];
-  int rank = dof_ptr->get_max_rank();
+  int rank = dof_ptr->get_nb_of_coeffs();
 
   int tag_length = rank*3;
   FieldSpace space = dof_ptr->get_space();
