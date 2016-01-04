@@ -364,7 +364,7 @@ Core::Core(Interface& _moab,MPI_Comm _comm,int _verbose):
   ); CHKERR_THROW(rval);
 
   //Coordinate systems
-  int def_coord_sys_dim = 0;
+  const int def_coord_sys_dim[] = { 0,0,0,0 };
   rval = moab.tag_get_handle(
     "_CoordSysDim",4,MB_TYPE_INTEGER,th_CoordSysDim,MB_TAG_CREAT|MB_TAG_SPARSE,&def_coord_sys_dim
   ); CHKERR_THROW(rval);
@@ -776,7 +776,7 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
   mit = meshsets.begin();
   for(;mit!=meshsets.end();mit++) {
     try {
-      int cs_dim[4];
+      int cs_dim[] = { 0,0,0,0 };
       rval = moab.tag_get_data(th_CoordSysDim,&*mit,1,&cs_dim); CHKERR_PETSC(rval);
       if(cs_dim[0]+cs_dim[1]+cs_dim[2]+cs_dim[3]) {
         CoordSys coord_sys(moab,*mit);
