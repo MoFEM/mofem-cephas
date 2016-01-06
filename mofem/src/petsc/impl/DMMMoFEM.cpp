@@ -106,7 +106,9 @@ PetscBool DMCtx::isProblemsBuild = PETSC_FALSE;
 
 DMCtx::DMCtx():
   mField_ptr(PETSC_NULL),
-  kspCtx(NULL),snesCtx(NULL),tsCtx(NULL),
+  kspCtx(NULL),
+  snesCtx(NULL),
+  tsCtx(NULL),
   isPartitioned(PETSC_FALSE),
   isSquareMatrix(PETSC_TRUE),
   verbosity(0) {
@@ -158,7 +160,9 @@ PetscErrorCode DMDestroy_MoFEM(DM dm) {
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode DMMoFEMCreateMoFEM(DM dm,MoFEM::FieldInterface *m_field_ptr,const char problem_name[],const MoFEM::BitRefLevel &bit_level) {
+PetscErrorCode DMMoFEMCreateMoFEM(
+  DM dm,MoFEM::FieldInterface *m_field_ptr,const char problem_name[],const MoFEM::BitRefLevel &bit_level
+) {
   PetscErrorCode ierr;
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;
@@ -402,6 +406,17 @@ PetscErrorCode DMMoFEMGetSnesCtx(DM dm,MoFEM::SnesCtx **snes_ctx) {
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;
   *snes_ctx = dm_field->snesCtx;
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode DMMoFEMSetSnesCtx(DM dm,MoFEM::SnesCtx * const snes_ctx) {
+  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
+  PetscFunctionBegin;
+  DMCtx *dm_field = (DMCtx*)dm->data;
+  if(dm_field->snesCtx) {
+    delete dm_field->snesCtx;
+  }
+  dm_field->snesCtx = snes_ctx;
   PetscFunctionReturn(0);
 }
 

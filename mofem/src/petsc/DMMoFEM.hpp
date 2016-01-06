@@ -174,6 +174,16 @@ PetscErrorCode DMMoFEMGetKspCtx(DM dm,MoFEM::KspCtx **ksp_ctx);
   */
 PetscErrorCode DMMoFEMGetSnesCtx(DM dm,MoFEM::SnesCtx **snes_ctx);
 
+/**
+  * \brief Set MoFEM::SnesCtx data structure
+  * \ingroup dm
+
+  It take over pointer, do not delete it, DM will destroy pointer
+  when is destroyed.
+
+  */
+PetscErrorCode DMMoFEMSetSnesCtx(DM dm,MoFEM::SnesCtx * const snes_ctx);
+
 #endif
 
 #ifdef __MOABTS_HPP__
