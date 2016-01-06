@@ -78,7 +78,7 @@ enum FieldSpace {
   LASTSPACE 	///< FieldSpace in [ 0, LASTSPACE )
 };
 
-const static char *FieldSpaceNames[] = {
+const static char * const FieldSpaceNames[] = {
   "", // empty space
   "NOFIELD",
   "H1",
