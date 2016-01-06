@@ -165,6 +165,19 @@ add_test(field_axpy_compare ${CMAKE_COMMAND} -E compare_files
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/field_axpy_test.txt
   ${CMAKE_BINARY_DIR}/atom_tests/field_axpy_test.txt)
 
+#test coord sys
+add_executable(test_setting_coordinate_sys test_setting_coordinate_sys.cpp)
+target_link_libraries(test_setting_coordinate_sys
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+add_test(test_setting_coordinate_sys ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/test_setting_coordinate_sys -my_file elasticity_atom_test_01X_pressure.h5m)
+
 #mesh refine
 cm_export_file("../meshes/templar.h5m" export_atom_tests)
 

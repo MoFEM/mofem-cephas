@@ -98,18 +98,24 @@ if (...) {
     possible (the enumeration name indicates the general purpose of the
     enumeration, so e.g. we use EQUAL, not EQUAL_MESH)
 
+  - It is advised that names of vectors should start with "v", e.g. VectorDouble v_coordinate_vector;
+    VectorDouble vCoordinateVector, respectively for local variables and class members.
+
+  - It is advised names of vectors should start with "m", e.g. MatrixDouble m_deformation_gradient;
+    MatrixDouble mDeformationGradient, respectively for local variables and class members.
+
   - Use a verb-noun method to name routines that perform some
     operation-on-a-given-object. Most names are constructed by concatenating
     several words, use mixed-case formatting or underscore to ease reading. \code
-calculateKineticEnergy ( . . . )
-calculate_kinetic_energy ( . . . )
-\endcode
-or any other derivatives.
+    calculateKineticEnergy ( . . . )
+    calculate_kinetic_energy ( . . . )
+    \endcode
+    or any other derivatives.
 
   - Avoid elusive names, open to subjective interpretation like \code
-Analyze ( . . . ) / / subroutine or function or method
-nnsmcomp1 / / variable
-\endcode
+    Analyze ( . . . ) / / subroutine or function or method
+    nnsmcomp1 / / variable
+    \endcode
 
   - Each class header should be fully commented.
 

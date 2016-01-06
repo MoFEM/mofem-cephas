@@ -117,7 +117,7 @@ struct ThermalStressElement {
 
           const FENumeredDofMoFEMEntity *dof_ptr;
           ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
-          int rank = dof_ptr->get_max_rank();
+          int rank = dof_ptr->get_nb_of_coeffs();
           if(rank != 3) {
             SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
           }

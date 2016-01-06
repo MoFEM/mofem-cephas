@@ -47,7 +47,7 @@ NodalForce::OpNodalForce::OpNodalForce(const string field_name,Vec _F,bCForce &d
 
     const FENumeredDofMoFEMEntity *dof_ptr;
     ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
-    int rank = dof_ptr->get_max_rank();
+    int rank = dof_ptr->get_nb_of_coeffs();
 
     if(data.getIndices().size()!=(unsigned int)rank) {
       SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");

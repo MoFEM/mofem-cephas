@@ -1,7 +1,7 @@
 /** \file Vectors.cpp
  * \brief Mylti-index containers, data structures and other low-level functions
  */
- 
+
 /* MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or (at your
@@ -26,6 +26,7 @@
 #include <MaterialBlocks.hpp>
 #include <CubitBCData.hpp>
 #include <TagMultiIndices.hpp>
+#include <CoordSysMultiIndices.hpp>
 #include <FieldMultiIndices.hpp>
 #include <EntsMultiIndices.hpp>
 #include <DofsMultiIndices.hpp>
@@ -49,11 +50,11 @@ namespace MoFEM {
 
 PetscErrorCode Core::VecCreateSeq(const string &name,RowColData rc,Vec *V) {
   PetscFunctionBegin;
-  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type moFEMProblems_by_name;
+  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type pRoblems_by_name;
   //typedef NumeredDofMoFEMEntity_multiIndex::index<PetscLocalIdx_mi_tag>::type dofs_by_local_idx;
-  moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<Problem_mi_tag>();
-  moFEMProblems_by_name::iterator p_miit = moFEMProblems_set.find(name);
-  if(p_miit==moFEMProblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"no such problem %s (top tip check spelling)",name.c_str());
+  pRoblems_by_name &pRoblems_set = pRoblems.get<Problem_mi_tag>();
+  pRoblems_by_name::iterator p_miit = pRoblems_set.find(name);
+  if(p_miit==pRoblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"no such problem %s (top tip check spelling)",name.c_str());
   DofIdx nb_local_dofs,nb_ghost_dofs;
   switch (rc) {
     case ROW:
@@ -72,11 +73,11 @@ PetscErrorCode Core::VecCreateSeq(const string &name,RowColData rc,Vec *V) {
 }
 PetscErrorCode Core::VecCreateGhost(const string &name,RowColData rc,Vec *V) {
   PetscFunctionBegin;
-  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type moFEMProblems_by_name;
+  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type pRoblems_by_name;
   typedef NumeredDofMoFEMEntity_multiIndex::index<PetscLocalIdx_mi_tag>::type dofs_by_local_idx;
-  moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<Problem_mi_tag>();
-  moFEMProblems_by_name::iterator p_miit = moFEMProblems_set.find(name);
-  if(p_miit==moFEMProblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"no such problem %s (top tip check spelling)",name.c_str());
+  pRoblems_by_name &pRoblems_set = pRoblems.get<Problem_mi_tag>();
+  pRoblems_by_name::iterator p_miit = pRoblems_set.find(name);
+  if(p_miit==pRoblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"no such problem %s (top tip check spelling)",name.c_str());
   DofIdx nb_dofs,nb_local_dofs,nb_ghost_dofs;
   dofs_by_local_idx *dofs;
   switch (rc) {
@@ -108,10 +109,10 @@ PetscErrorCode Core::VecCreateGhost(const string &name,RowColData rc,Vec *V) {
 PetscErrorCode Core::ISCreateProblemOrder(const string &problem,RowColData rc,int min_order,int max_order,IS *is,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type moFEMProblems_by_name;
-  moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<Problem_mi_tag>();
-  moFEMProblems_by_name::iterator p = moFEMProblems_set.find(problem);
-  if(p==moFEMProblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"no such problem %s (top tip check spelling)",problem.c_str());
+  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type pRoblems_by_name;
+  pRoblems_by_name &pRoblems_set = pRoblems.get<Problem_mi_tag>();
+  pRoblems_by_name::iterator p = pRoblems_set.find(problem);
+  if(p==pRoblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"no such problem %s (top tip check spelling)",problem.c_str());
   typedef NumeredDofMoFEMEntity_multiIndex::index<Composite_Part_And_Oder_mi_tag>::type dofs_order;
   dofs_order::iterator it,hi_it;
   switch(rc) {
@@ -144,23 +145,25 @@ PetscErrorCode Core::ISCreateProblemOrder(const string &problem,RowColData rc,in
   ierr = ISCreateGeneral(comm,size,id,PETSC_OWN_POINTER,is); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::ISCreateProblemFieldAndRank(const string &problem,RowColData rc,const string &field,int min_rank,int max_rank,IS *is,int verb) {
+PetscErrorCode Core::ISCreateProblemFieldAndRank(
+  const string &problem,RowColData rc,const string &field,int min_coeff_idx,int max_coeff_idx,IS *is,int verb
+) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type moFEMProblems_by_name;
-  moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<Problem_mi_tag>();
-  moFEMProblems_by_name::iterator p = moFEMProblems_set.find(problem);
-  if(p==moFEMProblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"no such problem %s (top tip check spelling)",problem.c_str());
-  typedef NumeredDofMoFEMEntity_multiIndex::index<Composite_Name_Part_And_Rank_mi_tag>::type dofs_by_name_and_rank;
+  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type pRoblems_by_name;
+  pRoblems_by_name &pRoblems_set = pRoblems.get<Problem_mi_tag>();
+  pRoblems_by_name::iterator p = pRoblems_set.find(problem);
+  if(p==pRoblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"no such problem %s (top tip check spelling)",problem.c_str());
+  typedef NumeredDofMoFEMEntity_multiIndex::index<Composite_Name_Part_And_CoeffIdx_mi_tag>::type dofs_by_name_and_rank;
   dofs_by_name_and_rank::iterator it,hi_it;
   switch(rc) {
     case ROW:
-    it = p->numered_dofs_rows.get<Composite_Name_Part_And_Rank_mi_tag>().lower_bound(boost::make_tuple(field,rAnk,min_rank));
-    hi_it = p->numered_dofs_rows.get<Composite_Name_Part_And_Rank_mi_tag>().upper_bound(boost::make_tuple(field,rAnk,max_rank));
+    it = p->numered_dofs_rows.get<Composite_Name_Part_And_CoeffIdx_mi_tag>().lower_bound(boost::make_tuple(field,rAnk,min_coeff_idx));
+    hi_it = p->numered_dofs_rows.get<Composite_Name_Part_And_CoeffIdx_mi_tag>().upper_bound(boost::make_tuple(field,rAnk,max_coeff_idx));
     break;
     case COL:
-    it = p->numered_dofs_cols.get<Composite_Name_Part_And_Rank_mi_tag>().lower_bound(boost::make_tuple(field,rAnk,min_rank));
-    hi_it = p->numered_dofs_cols.get<Composite_Name_Part_And_Rank_mi_tag>().upper_bound(boost::make_tuple(field,rAnk,max_rank));
+    it = p->numered_dofs_cols.get<Composite_Name_Part_And_CoeffIdx_mi_tag>().lower_bound(boost::make_tuple(field,rAnk,min_coeff_idx));
+    hi_it = p->numered_dofs_cols.get<Composite_Name_Part_And_CoeffIdx_mi_tag>().upper_bound(boost::make_tuple(field,rAnk,max_coeff_idx));
     break;
     default:
      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
@@ -195,12 +198,12 @@ PetscErrorCode Core::ISCreateFromProblemFieldToOtherProblemField(
     vector<int> &idx,vector<int> &idy,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type moFEMProblems_by_name;
-  moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<Problem_mi_tag>();
-  moFEMProblems_by_name::iterator p_x = moFEMProblems_set.find(x_problem);
-  if(p_x==moFEMProblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"no such problem %s (top tip check spelling)",x_problem.c_str());
-  moFEMProblems_by_name::iterator p_y = moFEMProblems_set.find(y_problem);
-  if(p_y==moFEMProblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"no such problem %s (top tip check spelling)",y_problem.c_str());
+  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type pRoblems_by_name;
+  pRoblems_by_name &pRoblems_set = pRoblems.get<Problem_mi_tag>();
+  pRoblems_by_name::iterator p_x = pRoblems_set.find(x_problem);
+  if(p_x==pRoblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"no such problem %s (top tip check spelling)",x_problem.c_str());
+  pRoblems_by_name::iterator p_y = pRoblems_set.find(y_problem);
+  if(p_y==pRoblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"no such problem %s (top tip check spelling)",y_problem.c_str());
   typedef NumeredDofMoFEMEntity_multiIndex::index<PetscLocalIdx_mi_tag>::type dofs_by_glob_idx;
   dofs_by_glob_idx::iterator y_dit,hi_y_dit;
   switch (y_rc) {
@@ -275,12 +278,12 @@ PetscErrorCode Core::ISCreateFromProblemToOtherProblem(
   const string &x_problem,RowColData x_rc,const string &y_problem,RowColData y_rc,vector<int> &idx,vector<int> &idy,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type moFEMProblems_by_name;
-  moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<Problem_mi_tag>();
-  moFEMProblems_by_name::iterator p_x = moFEMProblems_set.find(x_problem);
-  if(p_x==moFEMProblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"no such problem %s (top tip check spelling)",x_problem.c_str());
-  moFEMProblems_by_name::iterator p_y = moFEMProblems_set.find(y_problem);
-  if(p_y==moFEMProblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"no such problem %s (top tip check spelling)",y_problem.c_str());
+  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type pRoblems_by_name;
+  pRoblems_by_name &pRoblems_set = pRoblems.get<Problem_mi_tag>();
+  pRoblems_by_name::iterator p_x = pRoblems_set.find(x_problem);
+  if(p_x==pRoblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"no such problem %s (top tip check spelling)",x_problem.c_str());
+  pRoblems_by_name::iterator p_y = pRoblems_set.find(y_problem);
+  if(p_y==pRoblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"no such problem %s (top tip check spelling)",y_problem.c_str());
   typedef NumeredDofMoFEMEntity_multiIndex::index<PetscLocalIdx_mi_tag>::type dofs_by_glob_idx;
   dofs_by_glob_idx::iterator y_dit,hi_y_dit;
   switch (y_rc) {
@@ -416,10 +419,10 @@ PetscErrorCode Core::set_local_ghost_vector(const MoFEMProblem *problem_ptr,RowC
 }
 PetscErrorCode Core::set_local_ghost_vector(const string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) {
   PetscFunctionBegin;
-  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type moFEMProblems_by_name;
-  moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<Problem_mi_tag>();
-  moFEMProblems_by_name::iterator p_miit = moFEMProblems_set.find(name);
-  if(p_miit==moFEMProblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem < %s > not found (top tip: check spelling)",name.c_str());
+  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type pRoblems_by_name;
+  pRoblems_by_name &pRoblems_set = pRoblems.get<Problem_mi_tag>();
+  pRoblems_by_name::iterator p_miit = pRoblems_set.find(name);
+  if(p_miit==pRoblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem < %s > not found (top tip: check spelling)",name.c_str());
   ierr = set_local_ghost_vector(&*p_miit,rc,V,mode,scatter_mode); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
@@ -478,10 +481,10 @@ PetscErrorCode Core::set_global_ghost_vector(const MoFEMProblem *problem_ptr,Row
 }
 PetscErrorCode Core::set_global_ghost_vector(const string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) {
   PetscFunctionBegin;
-  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type moFEMProblems_by_name;
-  moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<Problem_mi_tag>();
-  moFEMProblems_by_name::iterator p_miit = moFEMProblems_set.find(name);
-  if(p_miit==moFEMProblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem < %s > not found (top tip: check spelling)",name.c_str());
+  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type pRoblems_by_name;
+  pRoblems_by_name &pRoblems_set = pRoblems.get<Problem_mi_tag>();
+  pRoblems_by_name::iterator p_miit = pRoblems_set.find(name);
+  if(p_miit==pRoblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem < %s > not found (top tip: check spelling)",name.c_str());
   ierr = set_global_ghost_vector(&*p_miit,rc,V,mode,scatter_mode); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
@@ -500,8 +503,8 @@ PetscErrorCode Core::set_other_local_ghost_vector(
     default:
      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
   }
-  MoFEMField_multiIndex::index<FieldName_mi_tag>::type::iterator cpy_fit = moabFields.get<FieldName_mi_tag>().find(cpy_field_name);
-  if(cpy_fit==moabFields.get<FieldName_mi_tag>().end()) {
+  MoFEMField_multiIndex::index<FieldName_mi_tag>::type::iterator cpy_fit = fIelds.get<FieldName_mi_tag>().find(cpy_field_name);
+  if(cpy_fit==fIelds.get<FieldName_mi_tag>().end()) {
     SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"cpy field < %s > not found, (top tip: check spelling)",cpy_field_name.c_str());
   }
   DofsByNameAndLocalIdx::iterator miit = dofs->lower_bound(boost::make_tuple(field_name,1));
@@ -519,7 +522,7 @@ PetscErrorCode Core::set_other_local_ghost_vector(
       FieldSpaceNames[cpy_fit->get_space()]
     );
   }
-  if(miit->get_max_rank() != cpy_fit->get_max_rank()) {
+  if(miit->get_nb_of_coeffs() != cpy_fit->get_nb_of_coeffs()) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"fields have to have same rank");
   }
   switch(scatter_mode) {
@@ -539,10 +542,10 @@ PetscErrorCode Core::set_other_local_ghost_vector(
       for(;miit!=hi_miit;miit++) {
         //if(miit->get_name_ref()!=field_name) continue;
         DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>::type::iterator diiiit;
-        diiiit = dofsMoabField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().find(
+        diiiit = dofsField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().find(
           boost::make_tuple(cpy_field_name,miit->get_ent(),miit->get_EntDofIdx())
         );
-        if(diiiit==dofsMoabField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().end()) {
+        if(diiiit==dofsField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().end()) {
           SETERRQ(
             PETSC_COMM_SELF,MOFEM_NOT_FOUND,
             "equivalent dof does not exist, use set_other_global_ghost_vector to create dofs entries"
@@ -561,10 +564,10 @@ PetscErrorCode Core::set_other_local_ghost_vector(
       for(;miit!=hi_miit;miit++) {
         //if(miit->get_name_ref()!=field_name) continue;
         DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>::type::iterator diiiit;
-        diiiit = dofsMoabField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().find(
+        diiiit = dofsField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().find(
           boost::make_tuple(cpy_field_name,miit->get_ent(),miit->get_EntDofIdx())
         );
-        if(diiiit==dofsMoabField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().end()) {
+        if(diiiit==dofsField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().end()) {
           SETERRQ(
             PETSC_COMM_SELF,
             MOFEM_DATA_INCONSISTENCY,
@@ -587,10 +590,10 @@ PetscErrorCode Core::set_other_local_ghost_vector(
 ) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type moFEMProblems_by_name;
-  moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<Problem_mi_tag>();
-  moFEMProblems_by_name::iterator p_miit = moFEMProblems_set.find(name);
-  if(p_miit==moFEMProblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem < %s > not found",name.c_str());
+  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type pRoblems_by_name;
+  pRoblems_by_name &pRoblems_set = pRoblems.get<Problem_mi_tag>();
+  pRoblems_by_name::iterator p_miit = pRoblems_set.find(name);
+  if(p_miit==pRoblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem < %s > not found",name.c_str());
   ierr = set_other_local_ghost_vector(&*p_miit,field_name,cpy_field_name,rc,V,mode,scatter_mode,verb); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
@@ -614,8 +617,8 @@ PetscErrorCode Core::set_other_global_ghost_vector(
     default:
      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"not implemented");
   }
-  MoFEMField_multiIndex::index<FieldName_mi_tag>::type::iterator cpy_fit = moabFields.get<FieldName_mi_tag>().find(cpy_field_name);
-  if(cpy_fit==moabFields.get<FieldName_mi_tag>().end()) {
+  MoFEMField_multiIndex::index<FieldName_mi_tag>::type::iterator cpy_fit = fIelds.get<FieldName_mi_tag>().find(cpy_field_name);
+  if(cpy_fit==fIelds.get<FieldName_mi_tag>().end()) {
     SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"cpy field < %s > not found, (top tip: check spelling)",cpy_field_name.c_str());
   }
   dofs_by_name::iterator miit = dofs->lower_bound(field_name);
@@ -626,7 +629,7 @@ PetscErrorCode Core::set_other_global_ghost_vector(
   if(miit->get_space() != cpy_fit->get_space()) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"fields have to have same space");
   }
-  if(miit->get_max_rank() != cpy_fit->get_max_rank()) {
+  if(miit->get_nb_of_coeffs() != cpy_fit->get_nb_of_coeffs()) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"fields have to have same rank");
   }
   switch (scatter_mode) {
@@ -656,8 +659,8 @@ PetscErrorCode Core::set_other_global_ghost_vector(
           SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency: nb. of dofs and declared nb. dofs in database");
         }
         DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>::type::iterator diiiit;
-        diiiit = dofsMoabField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().find(boost::make_tuple(cpy_field_name,miit->get_ent(),miit->get_EntDofIdx()));
-        if(diiiit==dofsMoabField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().end()) {
+        diiiit = dofsField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().find(boost::make_tuple(cpy_field_name,miit->get_ent(),miit->get_EntDofIdx()));
+        if(diiiit==dofsField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().end()) {
           EntityHandle ent = miit->get_ent();
           rval = moab.add_entities(cpy_fit->get_meshset(),&ent,1); CHKERR_PETSC(rval);
           //create field moabent
@@ -665,31 +668,31 @@ PetscErrorCode Core::set_other_global_ghost_vector(
           pair<MoFEMEntity_multiIndex::iterator,bool> p_e_miit;
           try {
             MoFEMEntity moabent(moab,cpy_fit->get_MoFEMField_ptr(),miit->get_RefMoFEMEntity_ptr());
-            p_e_miit = entsMoabField.insert(moabent);
+            p_e_miit = entsFields.insert(moabent);
           } catch (const std::exception& ex) {
             ostringstream ss;
             ss << "throw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
             SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,ss.str().c_str());
           }
           if(p_e_miit.first->get_max_order()<order) {
-            bool success = entsMoabField.modify(p_e_miit.first,MoFEMEntity_change_order(moab,order));
+            bool success = entsFields.modify(p_e_miit.first,MoFEMEntity_change_order(moab,order));
             if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
           }
           //create field moabdof
           DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator hi_diit,diit;
-          diit = dofsMoabField.get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(field_name,miit->get_ent()));
-          hi_diit = dofsMoabField.get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(field_name,miit->get_ent()));
+          diit = dofsField.get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(field_name,miit->get_ent()));
+          hi_diit = dofsField.get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(field_name,miit->get_ent()));
           for(;diit!=hi_diit;diit++) {
-            DofMoFEMEntity mdof(&*(p_e_miit.first),diit->get_dof_order(),diit->get_dof_rank(),diit->get_EntDofIdx());
+            DofMoFEMEntity mdof(&*(p_e_miit.first),diit->get_dof_order(),diit->get_dof_coeff_idx(),diit->get_EntDofIdx());
             pair<DofMoFEMEntity_multiIndex::iterator,bool> cpy_p_diit;
-            cpy_p_diit = dofsMoabField.insert(mdof);
+            cpy_p_diit = dofsField.insert(mdof);
             if(cpy_p_diit.second) {
-              bool success = dofsMoabField.modify(cpy_p_diit.first,DofMoFEMEntity_active_change(true));
+              bool success = dofsField.modify(cpy_p_diit.first,DofMoFEMEntity_active_change(true));
               if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
             }
           }
-          diiiit = dofsMoabField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().find(boost::make_tuple(cpy_field_name,miit->get_ent(),miit->get_EntDofIdx()));
-          if(diiiit==dofsMoabField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
+          diiiit = dofsField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().find(boost::make_tuple(cpy_field_name,miit->get_ent(),miit->get_EntDofIdx()));
+          if(diiiit==dofsField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
         }
         if(alpha) diiiit->get_FieldData() = 0;
         diiiit->get_FieldData() += array[miit->get_petsc_gloabl_dof_idx()];
@@ -707,8 +710,8 @@ PetscErrorCode Core::set_other_global_ghost_vector(
     case SCATTER_FORWARD: {
       for(;miit!=hi_miit;miit++) {
         DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>::type::iterator diiiit;
-        diiiit = dofsMoabField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().find(boost::make_tuple(cpy_field_name,miit->get_ent(),miit->get_EntDofIdx()));
-        if(diiiit==dofsMoabField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().end()) {
+        diiiit = dofsField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().find(boost::make_tuple(cpy_field_name,miit->get_ent(),miit->get_EntDofIdx()));
+        if(diiiit==dofsField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().end()) {
           SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"no data to fill the vector (top tip: you want scatter forward or scatter reverse?)");
         }
         ierr = VecSetValue(V,miit->get_petsc_gloabl_dof_idx(),diiiit->get_FieldData(),mode); CHKERRQ(ierr);
@@ -728,10 +731,10 @@ PetscErrorCode Core::set_other_global_ghost_vector(
   int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type moFEMProblems_by_name;
-  moFEMProblems_by_name &moFEMProblems_set = moFEMProblems.get<Problem_mi_tag>();
-  moFEMProblems_by_name::iterator p_miit = moFEMProblems_set.find(name);
-  if(p_miit==moFEMProblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem < %s > not found",name.c_str());
+  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type pRoblems_by_name;
+  pRoblems_by_name &pRoblems_set = pRoblems.get<Problem_mi_tag>();
+  pRoblems_by_name::iterator p_miit = pRoblems_set.find(name);
+  if(p_miit==pRoblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem < %s > not found",name.c_str());
   ierr = set_other_global_ghost_vector(&*p_miit,field_name,cpy_field_name,rc,V,mode,scatter_mode,verb); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }

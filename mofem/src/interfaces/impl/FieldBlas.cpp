@@ -25,6 +25,7 @@
 #include <MaterialBlocks.hpp>
 #include <CubitBCData.hpp>
 #include <TagMultiIndices.hpp>
+#include <CoordSysMultiIndices.hpp>
 #include <FieldMultiIndices.hpp>
 #include <EntsMultiIndices.hpp>
 #include <DofsMultiIndices.hpp>
@@ -49,32 +50,32 @@ namespace MoFEM {
 PetscErrorCode Core::field_axpy(const double alpha,const string& field_name_x,const string& field_name_y,
   bool error_if_missing,bool creat_if_missing) {
   PetscFunctionBegin;
-  MoFEMField_multiIndex::index<FieldName_mi_tag>::type::iterator x_fit = moabFields.get<FieldName_mi_tag>().find(field_name_x);
-  if(x_fit==moabFields.get<FieldName_mi_tag>().end()) {
+  MoFEMField_multiIndex::index<FieldName_mi_tag>::type::iterator x_fit = fIelds.get<FieldName_mi_tag>().find(field_name_x);
+  if(x_fit==fIelds.get<FieldName_mi_tag>().end()) {
     SETERRQ1(PETSC_COMM_SELF,1,"x field < %s > not found, (top tip: check spelling)",field_name_x.c_str());
   }
-  MoFEMField_multiIndex::index<FieldName_mi_tag>::type::iterator y_fit = moabFields.get<FieldName_mi_tag>().find(field_name_y);
-  if(y_fit==moabFields.get<FieldName_mi_tag>().end()) {
+  MoFEMField_multiIndex::index<FieldName_mi_tag>::type::iterator y_fit = fIelds.get<FieldName_mi_tag>().find(field_name_y);
+  if(y_fit==fIelds.get<FieldName_mi_tag>().end()) {
     SETERRQ1(PETSC_COMM_SELF,1,"y field < %s > not found, (top tip: check spelling)",field_name_y.c_str());
   }
   if(x_fit->get_space() != y_fit->get_space()) {
     SETERRQ2(PETSC_COMM_SELF,1,"space for field < %s > and field <%s> are not compatible",field_name_x.c_str(),field_name_y.c_str());
   }
-  if(x_fit->get_max_rank() != y_fit->get_max_rank()) {
+  if(x_fit->get_nb_of_coeffs() != y_fit->get_nb_of_coeffs()) {
     SETERRQ2(PETSC_COMM_SELF,1,"rank for field < %s > and field <%s> are not compatible",field_name_x.c_str(),field_name_y.c_str());
   }
   MoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator x_eit;
-  x_eit = entsMoabField.get<FieldName_mi_tag>().lower_bound(field_name_x.c_str());
-  for(;x_eit!=entsMoabField.get<FieldName_mi_tag>().upper_bound(field_name_x.c_str());x_eit++) {
+  x_eit = entsFields.get<FieldName_mi_tag>().lower_bound(field_name_x.c_str());
+  for(;x_eit!=entsFields.get<FieldName_mi_tag>().upper_bound(field_name_x.c_str());x_eit++) {
     int nb_dofs_on_x_entity = x_eit->tag_FieldData_size/sizeof(FieldData);
     for(int dd = 0;dd<nb_dofs_on_x_entity;dd++) {
       ApproximationOrder dof_order = x_eit->tag_dof_order_data[dd];
       ApproximationRank dof_rank = x_eit->tag_dof_rank_data[dd];
       FieldData data = x_eit->tag_FieldData[dd];
-      DofMoFEMEntity_multiIndex::index<Composite_Name_Ent_Order_And_Rank_mi_tag>::type::iterator dit;
-      dit = dofsMoabField.get<Composite_Name_Ent_Order_And_Rank_mi_tag>().find(
+      DofMoFEMEntity_multiIndex::index<Composite_Name_Ent_Order_And_CoeffIdx_mi_tag>::type::iterator dit;
+      dit = dofsField.get<Composite_Name_Ent_Order_And_CoeffIdx_mi_tag>().find(
 	boost::make_tuple(field_name_y.c_str(),x_eit->get_ent(),dof_order,dof_rank));
-      if(dit == dofsMoabField.get<Composite_Name_Ent_Order_And_Rank_mi_tag>().end()) {
+      if(dit == dofsField.get<Composite_Name_Ent_Order_And_CoeffIdx_mi_tag>().end()) {
 	if(creat_if_missing) {
 	  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"not yet implemented");
 	} else {
@@ -95,8 +96,8 @@ PetscErrorCode Core::field_axpy(const double alpha,const string& field_name_x,co
 PetscErrorCode Core::set_field(const double val,const EntityType type,const string& field_name) {
   PetscFunctionBegin;
   DofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag >::type::iterator dit,hi_dit;
-  dit = dofsMoabField.get<Composite_Name_And_Type_mi_tag >().lower_bound(boost::make_tuple(field_name,type));
-  hi_dit = dofsMoabField.get<Composite_Name_And_Type_mi_tag >().upper_bound(boost::make_tuple(field_name,type));
+  dit = dofsField.get<Composite_Name_And_Type_mi_tag >().lower_bound(boost::make_tuple(field_name,type));
+  hi_dit = dofsField.get<Composite_Name_And_Type_mi_tag >().upper_bound(boost::make_tuple(field_name,type));
   for(;dit!=hi_dit;dit++) {
     dit->get_FieldData() = val;
   }
@@ -105,8 +106,8 @@ PetscErrorCode Core::set_field(const double val,const EntityType type,const stri
 PetscErrorCode Core::set_field(const double val,const EntityType type,const Range &ents,const string& field_name) {
   PetscFunctionBegin;
   DofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag >::type::iterator dit,hi_dit;
-  dit = dofsMoabField.get<Composite_Name_And_Type_mi_tag >().lower_bound(boost::make_tuple(field_name,type));
-  hi_dit = dofsMoabField.get<Composite_Name_And_Type_mi_tag >().upper_bound(boost::make_tuple(field_name,type));
+  dit = dofsField.get<Composite_Name_And_Type_mi_tag >().lower_bound(boost::make_tuple(field_name,type));
+  hi_dit = dofsField.get<Composite_Name_And_Type_mi_tag >().upper_bound(boost::make_tuple(field_name,type));
   EntityHandle ent,last = 0;
   bool cont;
   for(;dit!=hi_dit;dit++) {
@@ -127,8 +128,8 @@ PetscErrorCode Core::set_field(const double val,const EntityType type,const Rang
 PetscErrorCode Core::field_scale(const double alpha,const string& field_name) {
   PetscFunctionBegin;
   DofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator dit,hi_dit;
-  dit = dofsMoabField.get<FieldName_mi_tag>().lower_bound(field_name);
-  hi_dit = dofsMoabField.get<FieldName_mi_tag>().upper_bound(field_name);
+  dit = dofsField.get<FieldName_mi_tag>().lower_bound(field_name);
+  hi_dit = dofsField.get<FieldName_mi_tag>().upper_bound(field_name);
   for(;dit!=hi_dit;dit++) {
     dit->get_FieldData() *= alpha;
   }

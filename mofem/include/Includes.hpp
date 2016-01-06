@@ -84,7 +84,7 @@ extern "C" {
 #include <MBTagConventions.hpp>
 #include <moab/Skinner.hpp>
 
-//Namespaces
+//Name spaces
 using namespace moab;
 using namespace std;
 using boost::multi_index_container;

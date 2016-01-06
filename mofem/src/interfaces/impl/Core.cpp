@@ -26,6 +26,7 @@
 #include <MaterialBlocks.hpp>
 #include <CubitBCData.hpp>
 #include <TagMultiIndices.hpp>
+#include <CoordSysMultiIndices.hpp>
 #include <FieldMultiIndices.hpp>
 #include <EntsMultiIndices.hpp>
 #include <DofsMultiIndices.hpp>
@@ -251,8 +252,10 @@ Core::Core(Interface& _moab,MPI_Comm _comm,int _verbose):
   stringstream strs_version;
   strs_version << "MoFEM_version_" << MoFEM_VERSION_MAJOR << "." << MoFEM_VERSION_MINOR << "." << MoFEM_VERSION_BUILD;
   string version = strs_version.str();
-  rval = moab.tag_get_handle("_MoFEM_VERSION",version.size()*sizeof(char),MB_TYPE_OPAQUE,
-    th_version,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,NULL); CHKERR_THROW(rval);
+  rval = moab.tag_get_handle(
+    "_MoFEM_VERSION",version.size()*sizeof(char),MB_TYPE_OPAQUE,
+    th_version,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,NULL
+  ); CHKERR_THROW(rval);
   const char *ptr_version = version.c_str();
   rval = moab.tag_set_data(th_version,&root_meshset,1,ptr_version); CHKERR_THROW(rval);
 
@@ -266,60 +269,113 @@ Core::Core(Interface& _moab,MPI_Comm _comm,int _verbose):
   const int def_type[] = {0,0};
   rval = moab.tag_get_handle("_RefType",2,MB_TYPE_INTEGER,th_RefType,MB_TAG_CREAT|MB_TAG_SPARSE,def_type); CHKERR_THROW(rval);
   BitRefLevel def_bit_level = 0;
-  rval = moab.tag_get_handle("_RefBitLevel",sizeof(BitRefLevel),MB_TYPE_OPAQUE,
-    th_RefBitLevel,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_bit_level); CHKERR_THROW(rval);
+  rval = moab.tag_get_handle(
+    "_RefBitLevel",sizeof(BitRefLevel),MB_TYPE_OPAQUE,
+    th_RefBitLevel,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_bit_level
+  ); CHKERR_THROW(rval);
   BitRefLevel def_bit_level_mask = BitRefLevel().set();
-  rval = moab.tag_get_handle("_RefBitLevelMask",sizeof(BitRefLevel),MB_TYPE_OPAQUE,
-    th_RefBitLevel_Mask,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_bit_level_mask); CHKERR_THROW(rval);
+  rval = moab.tag_get_handle(
+    "_RefBitLevelMask",sizeof(BitRefLevel),MB_TYPE_OPAQUE,
+    th_RefBitLevel_Mask,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_bit_level_mask
+  ); CHKERR_THROW(rval);
   BitRefEdges def_bit_egde = 0;
-  rval = moab.tag_get_handle("_RefBitEdge",sizeof(BitRefEdges),MB_TYPE_OPAQUE,
-    th_RefBitEdge,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_bit_egde); CHKERR_THROW(rval);
+  rval = moab.tag_get_handle(
+    "_RefBitEdge",sizeof(BitRefEdges),MB_TYPE_OPAQUE,
+    th_RefBitEdge,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_bit_egde
+  ); CHKERR_THROW(rval);
 
   //Tags Field
   const unsigned long int def_id = 0;
-  rval = moab.tag_get_handle("_FieldId",sizeof(BitFieldId),MB_TYPE_OPAQUE,
-    th_FieldId,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_id); CHKERR_THROW(rval);
+  rval = moab.tag_get_handle(
+    "_FieldId",sizeof(BitFieldId),MB_TYPE_OPAQUE,
+    th_FieldId,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_id
+  ); CHKERR_THROW(rval);
   FieldSpace def_space = LASTSPACE;
-  rval = moab.tag_get_handle("_FieldSpace",sizeof(FieldSpace),MB_TYPE_OPAQUE,
-    th_FieldSpace,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_space); CHKERR_THROW(rval);
+  rval = moab.tag_get_handle(
+    "_FieldSpace",sizeof(FieldSpace),MB_TYPE_OPAQUE,
+    th_FieldSpace,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_space
+  ); CHKERR_THROW(rval);
   const int def_val_len = 0;
-  rval = moab.tag_get_handle("_FieldName",def_val_len,MB_TYPE_OPAQUE,
-    th_FieldName,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES|MB_TAG_VARLEN,NULL); CHKERR_THROW(rval);
-  rval = moab.tag_get_handle("_FieldName_DataNamePrefix",def_val_len,MB_TYPE_OPAQUE,
-    th_FieldName_DataNamePrefix,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES|MB_TAG_VARLEN,NULL); CHKERR_THROW(rval);
+  rval = moab.tag_get_handle(
+    "_FieldName",def_val_len,MB_TYPE_OPAQUE,
+    th_FieldName,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES|MB_TAG_VARLEN,NULL
+  ); CHKERR_THROW(rval);
+  rval = moab.tag_get_handle(
+    "_FieldName_DataNamePrefix",def_val_len,MB_TYPE_OPAQUE,
+    th_FieldName_DataNamePrefix,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES|MB_TAG_VARLEN,NULL
+  ); CHKERR_THROW(rval);
 
   //Tags FE
-  rval = moab.tag_get_handle("_FEId",sizeof(BitFEId),MB_TYPE_OPAQUE,
-    th_FEId,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_id); CHKERR_THROW(rval);
-  rval = moab.tag_get_handle("_FEName",def_val_len,MB_TYPE_OPAQUE,
-    th_FEName,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES|MB_TAG_VARLEN,NULL); CHKERR_THROW(rval);
-  rval = moab.tag_get_handle("_FEIdCol",sizeof(BitFieldId),MB_TYPE_OPAQUE,
-    th_FEIdCol,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_id); CHKERR_THROW(rval);
-  rval = moab.tag_get_handle("_FEIdRow",sizeof(BitFieldId),MB_TYPE_OPAQUE,
-    th_FEIdRow,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_id); CHKERR_THROW(rval);
-  rval = moab.tag_get_handle("_FEIdData",sizeof(BitFieldId),MB_TYPE_OPAQUE,
-    th_FEIdData,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_id); CHKERR_THROW(rval);
+  rval = moab.tag_get_handle(
+    "_FEId",sizeof(BitFEId),MB_TYPE_OPAQUE,
+    th_FEId,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_id
+  ); CHKERR_THROW(rval);
+  rval = moab.tag_get_handle(
+    "_FEName",def_val_len,MB_TYPE_OPAQUE,
+    th_FEName,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES|MB_TAG_VARLEN,NULL
+  ); CHKERR_THROW(rval);
+  rval = moab.tag_get_handle(
+    "_FEIdCol",sizeof(BitFieldId),MB_TYPE_OPAQUE,
+    th_FEIdCol,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_id
+  ); CHKERR_THROW(rval);
+  rval = moab.tag_get_handle(
+    "_FEIdRow",sizeof(BitFieldId),MB_TYPE_OPAQUE,
+    th_FEIdRow,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_id
+  ); CHKERR_THROW(rval);
+  rval = moab.tag_get_handle(
+    "_FEIdData",sizeof(BitFieldId),MB_TYPE_OPAQUE,
+    th_FEIdData,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_id
+  ); CHKERR_THROW(rval);
 
   //Tags Problem
   rval = moab.tag_get_handle("_ProblemId",sizeof(BitProblemId),MB_TYPE_OPAQUE,
-    th_ProblemId,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_id); CHKERR_THROW(rval);
+    th_ProblemId,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_id
+  ); CHKERR_THROW(rval);
   rval = moab.tag_get_handle("_ProblemFEId",sizeof(BitFEId),MB_TYPE_OPAQUE,
-    th_ProblemFEId,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_id); CHKERR_THROW(rval);
+    th_ProblemFEId,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_id
+  ); CHKERR_THROW(rval);
   rval = moab.tag_get_handle("_ProblemName",def_val_len,MB_TYPE_OPAQUE,
-    th_ProblemName,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES|MB_TAG_VARLEN,NULL); CHKERR_THROW(rval);
+    th_ProblemName,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES|MB_TAG_VARLEN,NULL
+  ); CHKERR_THROW(rval);
   DofIdx def_nbdofs = 0;
-  rval = moab.tag_get_handle("_ProblemNbDofsRow",sizeof(DofIdx),MB_TYPE_OPAQUE,
-    th_ProblemNbDofsRow,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_nbdofs); CHKERR_THROW(rval);
-  rval = moab.tag_get_handle("_ProblemNbDofsCol",sizeof(DofIdx),MB_TYPE_OPAQUE,
-    th_ProblemNbDofsCol,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_nbdofs); CHKERR_THROW(rval);
-  rval = moab.tag_get_handle("_ProblemLocalNbDofsRow",sizeof(DofIdx),MB_TYPE_OPAQUE,
-    th_ProblemLocalNbDofRow,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_nbdofs); CHKERR_THROW(rval);
-  rval = moab.tag_get_handle("_ProblemGhostNbDofsRow",sizeof(DofIdx),MB_TYPE_OPAQUE,
-    th_ProblemGhostNbDofRow,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_nbdofs); CHKERR_THROW(rval);
-  rval = moab.tag_get_handle("_ProblemLocalNbDofsCol",sizeof(DofIdx),MB_TYPE_OPAQUE,
-    th_ProblemLocalNbDofCol,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_nbdofs); CHKERR_THROW(rval);
-  rval = moab.tag_get_handle("_ProblemGhostNbDofsCol",sizeof(DofIdx),MB_TYPE_OPAQUE,
-    th_ProblemGhostNbDofCol,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_nbdofs); CHKERR_THROW(rval);
+  rval = moab.tag_get_handle(
+    "_ProblemNbDofsRow",sizeof(DofIdx),MB_TYPE_OPAQUE,
+    th_ProblemNbDofsRow,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_nbdofs
+  ); CHKERR_THROW(rval);
+  rval = moab.tag_get_handle(
+    "_ProblemNbDofsCol",sizeof(DofIdx),MB_TYPE_OPAQUE,
+    th_ProblemNbDofsCol,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_nbdofs
+  ); CHKERR_THROW(rval);
+  rval = moab.tag_get_handle(
+    "_ProblemLocalNbDofsRow",sizeof(DofIdx),MB_TYPE_OPAQUE,
+    th_ProblemLocalNbDofRow,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_nbdofs
+  ); CHKERR_THROW(rval);
+  rval = moab.tag_get_handle(
+    "_ProblemGhostNbDofsRow",sizeof(DofIdx),MB_TYPE_OPAQUE,
+    th_ProblemGhostNbDofRow,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_nbdofs
+  ); CHKERR_THROW(rval);
+  rval = moab.tag_get_handle(
+    "_ProblemLocalNbDofsCol",sizeof(DofIdx),MB_TYPE_OPAQUE,
+    th_ProblemLocalNbDofCol,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_nbdofs
+  ); CHKERR_THROW(rval);
+  rval = moab.tag_get_handle(
+    "_ProblemGhostNbDofsCol",sizeof(DofIdx),MB_TYPE_OPAQUE,
+    th_ProblemGhostNbDofCol,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_nbdofs
+  ); CHKERR_THROW(rval);
+
+  //Coordinate systems
+  const int def_coord_sys_dim[] = { 0,0,0,0 };
+  rval = moab.tag_get_handle(
+    "_CoordSysDim",4,MB_TYPE_INTEGER,th_CoordSysDim,MB_TAG_CREAT|MB_TAG_SPARSE,&def_coord_sys_dim
+  ); CHKERR_THROW(rval);
+  EntityHandle def_coor_sys_meshset = 0;
+  rval = moab.tag_get_handle(
+    "_CoordSysMeshSet",1,MB_TYPE_HANDLE,th_CoordSysMeshSet,MB_TAG_CREAT|MB_TAG_SPARSE,&def_coor_sys_meshset
+  ); CHKERR_THROW(rval);
+  rval = moab.tag_get_handle(
+    "_CoordSysName",def_val_len,MB_TYPE_OPAQUE,
+    th_CoordSysName,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES|MB_TAG_VARLEN,NULL
+  ); CHKERR_THROW(rval);
 
   //Global Variables
   //Fields
@@ -403,7 +459,7 @@ MPI_Comm Core::get_comm() {
 }
 BitFieldId Core::get_BitFieldId(const string& name) const {
   typedef MoFEMField_multiIndex::index<FieldName_mi_tag>::type field_set_by_name;
-  const field_set_by_name &set = moabFields.get<FieldName_mi_tag>();
+  const field_set_by_name &set = fIelds.get<FieldName_mi_tag>();
   field_set_by_name::iterator miit = set.find(name);
   if(miit==set.end()) {
     THROW_AT_LINE("field < "+name+" > not in database (top tip: check spelling)");
@@ -412,16 +468,16 @@ BitFieldId Core::get_BitFieldId(const string& name) const {
 }
 string Core::get_BitFieldId_name(const BitFieldId id) const {
   typedef MoFEMField_multiIndex::index<BitFieldId_mi_tag>::type field_set_by_id;
-  const field_set_by_id &set = moabFields.get<BitFieldId_mi_tag>();
+  const field_set_by_id &set = fIelds.get<BitFieldId_mi_tag>();
   field_set_by_id::iterator miit = set.find(id);
   return miit->get_name();
 }
 EntityHandle Core::get_field_meshset(const BitFieldId id) const {
   typedef MoFEMField_multiIndex::index<BitFieldId_mi_tag>::type field_set_by_id;
-  const field_set_by_id &set = moabFields.get<BitFieldId_mi_tag>();
+  const field_set_by_id &set = fIelds.get<BitFieldId_mi_tag>();
   field_set_by_id::iterator miit = set.find(id);
   if(miit==set.end()) THROW_AT_LINE("field not in database (top tip: check spelling)");
-  return miit->meshset;
+  return miit->meshSet;
 }
 EntityHandle Core::get_field_meshset(const string& name) const {
   return get_field_meshset(get_BitFieldId(name));
@@ -429,14 +485,14 @@ EntityHandle Core::get_field_meshset(const string& name) const {
 
 bool Core::check_field(const string &name) const {
   typedef MoFEMField_multiIndex::index<FieldName_mi_tag>::type field_set_by_name;
-  const field_set_by_name &set = moabFields.get<FieldName_mi_tag>();
+  const field_set_by_name &set = fIelds.get<FieldName_mi_tag>();
   field_set_by_name::iterator miit = set.find(name);
   if(miit==set.end()) return false;
   return true;
 }
 const MoFEMField* Core::get_field_structure(const string& name) {
   typedef MoFEMField_multiIndex::index<FieldName_mi_tag>::type field_set_by_name;
-  const field_set_by_name &set = moabFields.get<FieldName_mi_tag>();
+  const field_set_by_name &set = fIelds.get<FieldName_mi_tag>();
   field_set_by_name::iterator miit = set.find(name);
   if(miit==set.end()) {
     throw MoFEMException(
@@ -471,13 +527,13 @@ PetscErrorCode Core::clearMap() {
   PetscFunctionBegin;
   refinedEntities.clear();
   refinedFiniteElements.clear();
-  moabFields.clear();
-  entsMoabField.clear();
-  dofsMoabField.clear();
+  fIelds.clear();
+  entsFields.clear();
+  dofsField.clear();
   finiteElements.clear();
-  finiteElementsMoFEMEnts.clear();
+  entsFiniteElements.clear();
   entFEAdjacencies.clear();
-  moFEMProblems.clear();
+  pRoblems.clear();
   cubitMeshsets.clear();
   PetscFunctionReturn(0);
 }
@@ -490,7 +546,8 @@ PetscErrorCode Core::addPrismToDatabase(const EntityHandle prism,int verb) {
     if(p_ent.second) {
       pair<RefMoFEMElement_multiIndex::iterator,bool> p_MoFEMFiniteElement;
       p_MoFEMFiniteElement = refinedFiniteElements.insert(
-	ptrWrapperRefMoFEMElement(new RefMoFEMElement_PRISM(moab,&*p_ent.first)));
+	      ptrWrapperRefMoFEMElement(new RefMoFEMElement_PRISM(moab,&*p_ent.first))
+      );
       int num_nodes;
       const EntityHandle* conn;
       rval = moab.get_connectivity(prism,conn,num_nodes,true); CHKERR_THROW(rval);
@@ -679,5 +736,371 @@ PetscErrorCode Core::synchronise_entities(Range &ents,int verb) {
 
   PetscFunctionReturn(0);
 }
+
+PetscErrorCode Core::rebuild_database(int verb) {
+  PetscFunctionBegin;
+  if(verb==-1) verb = verbose;
+  ierr = clearMap(); CHKERRQ(ierr);
+  ierr = initialiseDatabseInformationFromMesh(verb); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
+  PetscFunctionBegin;
+  if(verb==-1) verb = verbose;
+  Range meshsets;
+  rval = moab.get_entities_by_type(0,MBENTITYSET,meshsets,true);  CHKERR_PETSC(rval);
+  //loop all meshsets in moab to find meshets with boundary conditions
+  Range::iterator mit = meshsets.begin();
+  for(;mit!=meshsets.end();mit++) {
+    try {
+      //check if meshset is cubit meshset
+      CubitMeshSets base_meshset(moab,*mit);
+      if((base_meshset.cubit_bc_type&CubitBCType(NODESET|SIDESET|BLOCKSET)).any()) {
+        pair<CubitMeshSet_multiIndex::iterator,bool> p = cubitMeshsets.insert(base_meshset);
+        if(!p.second) {
+          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"meshset not inserted");
+        }
+        if(verb > 0) {
+          ostringstream ss;
+          ss << "read cubit" << base_meshset << endl;
+          //PetscSynchronizedPrintf(comm,ss.str().c_str());
+          PetscPrintf(comm,ss.str().c_str());
+        }
+      }
+    } catch (MoFEMException const &e) {
+      SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+    }
+  }
+  //loop all meshsehset to find coordinate system
+  mit = meshsets.begin();
+  for(;mit!=meshsets.end();mit++) {
+    try {
+      int cs_dim[] = { 0,0,0,0 };
+      rval = moab.tag_get_data(th_CoordSysDim,&*mit,1,&cs_dim); CHKERR_PETSC(rval);
+      if(cs_dim[0]+cs_dim[1]+cs_dim[2]+cs_dim[3]) {
+        CoordSys coord_sys(moab,*mit);
+        pair<CoordSys_multiIndex ::iterator,bool> p = coordinateSystems.insert(coord_sys);
+        if(!p.second) {
+          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"meshset to coord system not inserted");
+        }
+      }
+    } catch (MoFEMException const &e) {
+      SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+    }
+  }
+  { // Create cartesian coordinate system if not exist
+    CoordSys_multiIndex::index<CoordSysName_mi_tag >::type::iterator csit;
+    csit = coordinateSystems.get<CoordSysName_mi_tag >().find("CARTESIAN3D");
+    if(csit==coordinateSystems.get<CoordSysName_mi_tag >().end()) {
+      EntityHandle meshset;
+      rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERR_PETSC(rval);
+      int dim[] = { 3,0,0,0 };
+      rval = moab.tag_set_data(th_CoordSysDim,&meshset,1,dim); CHKERR_PETSC(rval);
+      string sys_name_str = "CARTESIAN3D";
+      void const* sys_name[] = { sys_name_str.c_str() };
+      int sys_name_size[1];
+      sys_name_size[0] = sys_name_str.size();
+      rval = moab.tag_set_by_ptr(
+        th_CoordSysName,&meshset,1,sys_name,sys_name_size
+      ); CHKERR_PETSC(rval);
+      CoordSys coord_sys(moab,meshset);
+      pair<CoordSys_multiIndex ::iterator,bool> p = coordinateSystems.insert(coord_sys);
+      if(!p.second) {
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"MeshSet to coord system not inserted");
+      }
+    }
+    csit = coordinateSystems.get<CoordSysName_mi_tag>().find("UNDEFINED");
+    if(csit==coordinateSystems.get<CoordSysName_mi_tag>().end()) {
+      EntityHandle meshset;
+      rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERR_PETSC(rval);
+      int dim[] = { -1,0,0,0 };
+      rval = moab.tag_set_data(th_CoordSysDim,&meshset,1,dim); CHKERR_PETSC(rval);
+      string sys_name_str = "UNDEFINED";
+      void const* sys_name[] = { sys_name_str.c_str() };
+      int sys_name_size[1];
+      sys_name_size[0] = sys_name_str.size();
+      rval = moab.tag_set_by_ptr(
+        th_CoordSysName,&meshset,1,sys_name,sys_name_size
+      ); CHKERR_PETSC(rval);
+      CoordSys coord_sys(moab,meshset);
+      pair<CoordSys_multiIndex ::iterator,bool> p = coordinateSystems.insert(coord_sys);
+      if(!p.second) {
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"MeshSet to coord system not inserted");
+      }
+    }
+  }
+  //PetscSynchronizedFlush(comm,PETSC_STDOUT);
+  CoordSys_multiIndex::index<CoordSysName_mi_tag>::type::iterator undefined_cs_it;
+  undefined_cs_it = coordinateSystems.get<CoordSysName_mi_tag>().find("UNDEFINED");
+  if(undefined_cs_it==coordinateSystems.get<CoordSysName_mi_tag>().end()) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Undefined system not found");
+  }
+  mit = meshsets.begin();
+  for(;mit!=meshsets.end();mit++) {
+    BitFieldId field_id;
+    //get bit id form field tag
+    rval = moab.tag_get_data(th_FieldId,&*mit,1,&field_id); CHKERR_PETSC(rval);
+    //check if meshset if field meshset
+    if(field_id!=0) {
+      pair<MoFEMField_multiIndex::iterator,bool> p;
+      try {
+        EntityHandle coord_sys_id;
+        rval = moab.tag_get_data(th_CoordSysMeshSet,&*mit,1,&coord_sys_id); CHKERR_PETSC(rval);
+        CoordSys_multiIndex::index<Meshset_mi_tag>::type::iterator cs_it;
+        if(coord_sys_id!=0) {
+          cs_it = coordinateSystems.get<Meshset_mi_tag>().find(coord_sys_id);
+          if(cs_it==coordinateSystems.get<Meshset_mi_tag>().end()) {
+            SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Unknown Coordinate System");
+          }
+        } else {
+          cs_it = coordinateSystems.project<Meshset_mi_tag>(undefined_cs_it);
+        }
+        p = fIelds.insert(MoFEMField(moab,*mit,&*cs_it));
+        if(verb > 0) {
+          ostringstream ss;
+          ss << "read field " << *p.first << endl;;
+          PetscPrintf(comm,ss.str().c_str());
+        }
+      } catch (MoFEMException const &e) {
+        SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+      }
+      if(p.first->get_space()==NOFIELD) {
+        assert(p.first->meshSet == *mit);
+        //add field to ref ents
+        pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ref_ent = refinedEntities.insert(RefMoFEMEntity(moab,*mit));
+        NOT_USED(p_ref_ent);
+      } else {
+        Range ents;
+        rval = moab.get_entities_by_handle(*mit,ents,false); CHKERR_PETSC(rval);
+        if(verb > 1) {
+          ostringstream ss;
+          ss << "read field ents " << ents.size() << endl;;
+          PetscPrintf(comm,ss.str().c_str());
+        }
+        Range::iterator eit = ents.begin();
+        for(;eit!=ents.end();eit++) {
+          pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ref_ent = refinedEntities.insert(RefMoFEMEntity(moab,*eit));
+          try {
+            MoFEMEntity moabent(moab,&*p.first,&*p_ref_ent.first);
+            pair<MoFEMEntity_multiIndex::iterator,bool> p_ent = entsFields.insert(moabent);
+            NOT_USED(p_ent);
+          } catch (const std::exception& ex) {
+            ostringstream ss;
+            ss << ex.what() << endl;
+            SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+          }
+        }
+      }
+    }
+    BitFieldId fe_id;
+    //get bit id from fe tag
+    rval = moab.tag_get_data(th_FEId,&*mit,1,&fe_id); CHKERR_PETSC(rval);
+    //check if meshset is finite element meshset
+    if(fe_id!=0) {
+      pair<MoFEMFiniteElement_multiIndex::iterator,bool> p = finiteElements.insert(MoFEMFiniteElement(moab,*mit));
+      if(verb > 0) {
+        ostringstream ss;
+        ss << "read finite element " << *p.first << endl;;
+        PetscPrintf(comm,ss.str().c_str());
+      }
+      NOT_USED(p);
+      assert(p.first->meshset == *mit);
+      Range ents;
+      rval = moab.get_entities_by_type(*mit,MBENTITYSET,ents,false); CHKERR_PETSC(rval);
+      rval = moab.get_entities_by_handle(*mit,ents,true); CHKERR_PETSC(rval);
+      Range::iterator eit = ents.begin();
+      for(;eit!=ents.end();eit++) {
+        pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ref_ent = refinedEntities.insert(RefMoFEMEntity(moab,*eit));
+        pair<RefMoFEMElement_multiIndex::iterator,bool> p_MoFEMFiniteElement;
+        try {
+          switch (moab.type_from_handle(*eit)) {
+            case MBVERTEX:
+            p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_VERTEX(moab,&*p_ref_ent.first)));
+            break;
+            case MBEDGE:
+            p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_EDGE(moab,&*p_ref_ent.first)));
+            break;
+            case MBTRI:
+            p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_TRI(moab,&*p_ref_ent.first)));
+            break;
+            case MBTET:
+            p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_TET(moab,&*p_ref_ent.first)));
+            break;
+            case MBPRISM:
+            ierr = addPrismToDatabase(*eit,verb); CHKERRQ(ierr);
+            p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_PRISM(moab,&*p_ref_ent.first)));
+            break;
+            case MBENTITYSET:
+            p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_MESHSET(moab,&*p_ref_ent.first)));
+            break;
+            default:
+            SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Only finite elements of type MBTET, MBPRISM and MBENTITYSET are implemented");
+          }
+          if(p_MoFEMFiniteElement.second) {
+            //PetscPrintf(comm,"Warrning: this entity should be already in refined finite elements database");
+            //SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, this entity should be already in refined finite elements database");
+          }
+        } catch (MoFEMException const &e) {
+          SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+        }
+      }
+    }
+    BitProblemId problem_id;
+    //get bit id form problem tag
+    rval = moab.tag_get_data(th_ProblemId,&*mit,1,&problem_id); CHKERR_PETSC(rval);
+    //check if meshset if problem meshset
+    if(problem_id!=0) {
+      pair<MoFEMProblem_multiIndex::iterator,bool> p = pRoblems.insert(MoFEMProblem(moab,*mit));
+      if(verb > 0) {
+        ostringstream ss;
+        ss << "read problem " << *p.first << endl;;
+        PetscPrintf(comm,ss.str().c_str());
+      }
+    }
+    //check if meshset is Series meshset
+    {
+      const void* tag_name_data;
+      int tag_name_size;
+      rval = moab.tag_get_by_ptr(th_SeriesName,&*mit,1,(const void **)&tag_name_data,&tag_name_size);
+      if(rval == MB_SUCCESS) {
+        pair<Series_multiIndex::iterator,bool> p = sEries.insert(MoFEMSeries(moab,*mit));
+        if(verb > 0) {
+          ostringstream ss;
+          ss << "read series " << *p.first << endl;
+          PetscPrintf(comm,ss.str().c_str());
+        }
+      }
+    }
+  }
+  //build ref entities meshset
+  for(int dd = 0;dd<=3;dd++) {
+    Range ents;
+    rval = moab.get_entities_by_dimension(0,dd,ents,false); CHKERR_PETSC(rval);
+    Range::iterator eit = ents.begin();
+    for(;eit!=ents.end();eit++) {
+      switch (moab.type_from_handle(*eit)) {
+        case MBVERTEX:
+        case MBEDGE:
+        case MBTRI:
+        case MBTET:
+        case MBPRISM:
+        break;
+        default:
+        continue;
+      }
+      RefMoFEMEntity mofem_ent(moab,*eit);
+      BitRefLevel bit = mofem_ent.get_BitRefLevel();
+      if(bit.none()) {
+        continue;
+      }
+      pair<RefMoFEMEntity_multiIndex::iterator,bool> p;
+      p = refinedEntities.insert(mofem_ent);
+    }
+  }
+  //build series steps
+  for(Series_multiIndex::iterator sit = sEries.begin();sit!=sEries.end();sit++) {
+    int nb_steps;
+    ierr = sit->get_nb_steps(moab,nb_steps); CHKERRQ(ierr);
+    int ss = 0;
+    for(;ss<nb_steps;ss++) {
+      pair<SeriesStep_multiIndex::iterator,bool> p = seriesSteps.insert(MoFEMSeriesStep(moab,&*sit,ss));
+      if(verb > 0) {
+        ostringstream ss;
+        ss << "add series step " << *p.first << endl;
+        PetscPrintf(comm,ss.str().c_str());
+      }
+    }
+  }
+  if(verb > 2) {
+    list_fields();
+    list_finite_elements();
+    list_problem();
+  }
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode Core::add_coordinate_system(const int cs_dim[],const string name) {
+  PetscFunctionBegin;
+  EntityHandle meshset;
+  rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERR_PETSC(rval);
+  rval = moab.tag_set_data(th_CoordSysDim,&meshset,1,cs_dim); CHKERR_PETSC(rval);
+  void const* sys_name[] = { name.c_str() };
+  int sys_name_size[1];
+  sys_name_size[0] = name.size();
+  rval = moab.tag_set_by_ptr(
+    th_CoordSysName,&meshset,1,sys_name,sys_name_size
+  ); CHKERR_PETSC(rval);
+  CoordSys coord_sys(moab,meshset);
+  pair<CoordSys_multiIndex ::iterator,bool> p = coordinateSystems.insert(coord_sys);
+  if(!p.second) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"MeshSet to coord system not inserted");
+  }
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode Core::set_field_coordinate_system(const string field_name,const string cs_name) {
+  PetscFunctionBegin;
+  MoFEMField_multiIndex::index<FieldName_mi_tag>::type::iterator field_it;
+  field_it = fIelds.get<FieldName_mi_tag>().find(field_name);
+  if(field_it==fIelds.get<FieldName_mi_tag>().end()) {
+    SETERRQ1(
+      PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Field < %s > not found",field_name.c_str()
+    );
+  }
+  CoordSys_multiIndex::index<CoordSysName_mi_tag>::type::iterator cs_it;
+  cs_it = coordinateSystems.get<CoordSysName_mi_tag>().find(cs_name);
+  if(cs_it==coordinateSystems.get<CoordSysName_mi_tag>().end()) {
+    SETERRQ1(
+      PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Coord system < %s > not found",cs_name.c_str()
+    );
+  }
+  int dim = 1;
+  for(int alpha = 0;alpha<4;alpha++) {
+    if(cs_it->getDim(alpha)>0) {
+      dim *= cs_it->getDim(alpha);
+    }
+  }
+  switch(field_it->get_space()) {
+    case H1:
+    if(field_it->get_nb_of_coeffs()!=dim) {
+      SETERRQ2(
+        PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
+        "dimension mismatch of field and coordinate system"
+        "cs dim %d field rank %d",
+        dim,field_it->get_nb_of_coeffs()
+      );
+    }
+    break;
+    case HDIV:
+    case HCURL:
+    if(3*field_it->get_nb_of_coeffs()!=dim) {
+      SETERRQ2(
+        PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
+        "dimension mismatch of field and coordinate system"
+        "cs dim %d field rank %d",
+        dim,field_it->get_nb_of_coeffs()
+      );
+    }
+    break;
+    case L2:
+    if(field_it->get_nb_of_coeffs()!=dim) {
+      SETERRQ2(
+        PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
+        "dimension mismatch of field and coordinate system"
+        "cs dim %d field rank %d",
+        dim,field_it->get_nb_of_coeffs()
+      );
+    }
+    case NOFIELD:
+    case LASTSPACE:
+    {};
+  }
+  bool success = fIelds.modify(fIelds.project<0>(field_it),MoFEMFieldChangeCoordinateSystem(&*cs_it));
+  if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+  PetscFunctionReturn(0);
+}
+
+
 
 }

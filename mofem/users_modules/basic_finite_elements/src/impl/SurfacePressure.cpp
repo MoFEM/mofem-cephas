@@ -56,7 +56,7 @@ PetscErrorCode NeummanForcesSurface::OpNeumannForce::doWork(
 
   const FENumeredDofMoFEMEntity *dof_ptr;
   ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
-  int rank = dof_ptr->get_max_rank();
+  int rank = dof_ptr->get_nb_of_coeffs();
   int nb_row_dofs = data.getIndices().size()/rank;
 
   Nf.resize(data.getIndices().size(),false);
@@ -125,7 +125,7 @@ PetscErrorCode NeummanForcesSurface::OpNeumannPreassure::doWork(
 
   const FENumeredDofMoFEMEntity *dof_ptr;
   ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
-  int rank = dof_ptr->get_max_rank();
+  int rank = dof_ptr->get_nb_of_coeffs();
 
   int nb_row_dofs = data.getIndices().size()/rank;
 
@@ -200,7 +200,7 @@ PetscErrorCode NeummanForcesSurface::OpNeumannFlux::doWork(
 
   const FENumeredDofMoFEMEntity *dof_ptr;
   ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
-  int rank = dof_ptr->get_max_rank();
+  int rank = dof_ptr->get_nb_of_coeffs();
 
   int nb_row_dofs = data.getIndices().size()/rank;
 

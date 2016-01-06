@@ -1,5 +1,5 @@
 /** \file arc_length_interface.cpp
-  * \brief Example of arc-length with witerface element
+  * \brief Example of arc-length with interface element
 
 */
 
@@ -74,17 +74,18 @@ static char help[] = "...\n\n";
 
 #define DATAFILENAME "load_disp.txt"
 
-struct MyArcLengthIntElemFEMethod: public ArcLengthIntElemFEMethod {
-  FieldInterface& m_field;
+struct ArcLengthElement: public ArcLengthIntElemFEMethod {
+  FieldInterface& mField;
   Range PostProcNodes;
-  MyArcLengthIntElemFEMethod(FieldInterface& _m_field,ArcLengthCtx *_arc_ptr):
-    ArcLengthIntElemFEMethod(_m_field.get_moab(),_arc_ptr),m_field(_m_field) {
+  ArcLengthElement(FieldInterface& m_field,ArcLengthCtx *arc_ptr):
+  ArcLengthIntElemFEMethod(m_field.get_moab(),arc_ptr),
+  mField(m_field) {
 
-    for(_IT_CUBITMESHSETS_BY_NAME_FOR_LOOP_(m_field,"LoadPath",cit)) {
-	EntityHandle meshset = cit->get_meshset();
-	Range nodes;
-	rval = mOab.get_entities_by_type(meshset,MBVERTEX,nodes,true); CHKERR_THROW(rval);
-	PostProcNodes.merge(nodes);
+    for(_IT_CUBITMESHSETS_BY_NAME_FOR_LOOP_(mField,"LoadPath",cit)) {
+      EntityHandle meshset = cit->get_meshset();
+      Range nodes;
+      rval = mOab.get_entities_by_type(meshset,MBVERTEX,nodes,true); CHKERR_THROW(rval);
+      PostProcNodes.merge(nodes);
     }
 
     PetscPrintf(PETSC_COMM_WORLD,"Nb. PostProcNodes %lu\n",PostProcNodes.size());
@@ -107,10 +108,10 @@ struct MyArcLengthIntElemFEMethod: public ArcLengthIntElemFEMethod {
       double coords[3];
       rval = mOab.get_coords(&*nit,1,coords);  CHKERR_THROW(rval);
       for(;dit!=hi_dit;dit++) {
-        PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e -> ",lit->get_name().c_str(),lit->get_dof_rank(),lit->get_FieldData());
-        PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e ",dit->get_name().c_str(),dit->get_dof_rank(),dit->get_FieldData());
+        PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e -> ",lit->get_name().c_str(),lit->get_dof_coeff_idx(),lit->get_FieldData());
+        PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e ",dit->get_name().c_str(),dit->get_dof_coeff_idx(),dit->get_FieldData());
         PetscPrintf(PETSC_COMM_WORLD,"-> %3.4f %3.4f %3.4f\n",coords[0],coords[1],coords[2]);
-        if (dit->get_dof_rank()==0) {//print displacement and load factor in x-dir
+        if (dit->get_dof_coeff_idx()==0) {//print displacement and load factor in x-dir
           PetscFPrintf(PETSC_COMM_WORLD,datafile,"%6.4e %6.4e ",dit->get_FieldData(),lit->get_FieldData());
         }
       }
@@ -121,16 +122,19 @@ struct MyArcLengthIntElemFEMethod: public ArcLengthIntElemFEMethod {
   }
 };
 
-struct MyPrePostProcessFEMethodRhs: public FEMethod {
+struct AssembleRhsVectors: public FEMethod {
 
-  FieldInterface& m_field;
-  Vec &F_body_force;
-  ArcLengthCtx *arc_ptr;
+  FieldInterface& mField;
+  Vec &bodyForce;
+  ArcLengthCtx *arcPtr;
 
-  MyPrePostProcessFEMethodRhs(FieldInterface& _m_field,
-    Vec &_F_body_force,ArcLengthCtx *_arc_ptr):
-    m_field(_m_field),F_body_force(_F_body_force),
-    arc_ptr(_arc_ptr) {}
+  AssembleRhsVectors(
+    FieldInterface& m_field,Vec &body_force,ArcLengthCtx *arc_ptr
+  ):
+  mField(m_field),
+  bodyForce(body_force),
+  arcPtr(arc_ptr) {
+  }
 
   PetscErrorCode ierr;
 
@@ -164,9 +168,9 @@ struct MyPrePostProcessFEMethodRhs: public FEMethod {
         ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
         ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
         //add F_lambda
-        ierr = VecAXPY(snes_f,arc_ptr->getFieldData(),arc_ptr->F_lambda); CHKERRQ(ierr);
-        ierr = VecAXPY(snes_f,-1.,F_body_force); CHKERRQ(ierr);
-        PetscPrintf(PETSC_COMM_WORLD,"\tlambda = %6.4e\n",arc_ptr->getFieldData());
+        ierr = VecAXPY(snes_f,arcPtr->getFieldData(),arcPtr->F_lambda); CHKERRQ(ierr);
+        ierr = VecAXPY(snes_f,-1.,bodyForce); CHKERRQ(ierr);
+        PetscPrintf(PETSC_COMM_WORLD,"\tlambda = %6.4e\n",arcPtr->getFieldData());
         //snes_f norm
         double fnorm;
         ierr = VecNorm(snes_f,NORM_2,&fnorm); CHKERRQ(ierr);
@@ -500,10 +504,10 @@ int main(int argc, char *argv[]) {
       cout << mydata;
 
       #ifdef OLDINTERFACEMETHOD
-	h = mydata.data.alpha;
-	beta = mydata.data.beta;
-	ft = mydata.data.ft;
-	Gf = mydata.data.Gf;
+      h = mydata.data.alpha;
+      beta = mydata.data.beta;
+      ft = mydata.data.ft;
+      Gf = mydata.data.Gf;
       #endif
 
       interface_materials.push_back(new CohesiveInterfaceElement::PhysicalEquation(m_field));
@@ -532,10 +536,10 @@ int main(int argc, char *argv[]) {
 
 
   ArcLengthCtx* arc_ctx = new ArcLengthCtx(m_field,"ELASTIC_MECHANICS");
-  MyArcLengthIntElemFEMethod* my_arc_method_ptr = new MyArcLengthIntElemFEMethod(m_field,arc_ctx);
-  MyArcLengthIntElemFEMethod& my_arc_method = *my_arc_method_ptr;
+  ArcLengthElement* my_arc_method_ptr = new ArcLengthElement(m_field,arc_ctx);
+  ArcLengthElement& my_arc_method = *my_arc_method_ptr;
   ArcLengthSnesCtx snes_ctx(m_field,"ELASTIC_MECHANICS",arc_ctx);
-  MyPrePostProcessFEMethodRhs pre_post_proc_fe(m_field,F_body_force,arc_ctx);
+  AssembleRhsVectors pre_post_proc_fe(m_field,F_body_force,arc_ctx);
 
   DisplacementBCFEMethodPreAndPostProc my_dirichlet_bc(m_field,"DISPLACEMENT",Aij,D,F);
   ierr = m_field.get_problem("ELASTIC_MECHANICS",&my_dirichlet_bc.problemPtr); CHKERRQ(ierr);
@@ -583,7 +587,7 @@ int main(int argc, char *argv[]) {
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,SIDESET|PRESSURESET,it)) {
     ierr = neumann_forces.at(fe_name_str).addPreassure("DISPLACEMENT",arc_ctx->F_lambda,it->get_msId()); CHKERRQ(ierr);
   }
-  //add npdal
+  //add nodal forces
   boost::ptr_map<string,NodalForce> nodal_forces;
   fe_name_str ="FORCE_FE";
   nodal_forces.insert(fe_name_str,new NodalForce(m_field));
@@ -689,7 +693,9 @@ int main(int argc, char *argv[]) {
 	    post_proc.postProcMesh,
 	    post_proc.mapGaussPts,
 	    "DISPLACEMENT",
-	    post_proc.commonData));
+	    post_proc.commonData
+    )
+  );
 
   bool converged_state  = false;
   for(;step<max_steps;step++) {

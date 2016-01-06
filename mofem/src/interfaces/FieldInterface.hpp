@@ -71,13 +71,13 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode check_number_of_ents_in_ents_field() = 0;
 
   /**
-    * \brief check data consistency in finiteElementsMoFEMEnts
+    * \brief check data consistency in entsFiniteElements
     *
     */
   virtual PetscErrorCode check_number_of_ents_in_ents_finite_element(const string& name) = 0;
 
   /**
-    * \brief check data consistency in finiteElementsMoFEMEnts
+    * \brief check data consistency in entsFiniteElements
     *
     */
   virtual PetscErrorCode check_number_of_ents_in_ents_finite_element() = 0;
@@ -374,7 +374,7 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode seed_ref_level_2D(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1) = 0;
 
   /**
-  * \brief seed 3D entities (Volume entities only) in the meshset and their adjacencies (only TETs adjacencies) in a particular BitRefLevel
+  * \brief seed 2D entities in the meshset and their adjacencies (only TETs adjacencies) in a particular BitRefLevel
   *
   * \param EntityHandle MeshSet
   * \param BitRefLevel bitLevel
@@ -399,7 +399,7 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode seed_ref_level_3D(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1) = 0;
 
   /**
-   * \brief seed 3D entities (Volume entities only) in the range and their adjacencies (only TETs adjacencies) in a particular BitRefLevel
+   * \brief seed entities in the range and their adjacencies in a particular BitRefLevel
    */
   virtual PetscErrorCode seed_ref_level(const Range &ents,const BitRefLevel &bit,int verb = -1) = 0;
 
@@ -410,6 +410,20 @@ struct FieldInterface: public FieldUnknownInterface {
    */
   virtual PetscErrorCode seed_ref_level_MESHSET(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1) = 0;
 
+  /** \brief Add coordinate system
+    *
+    * \param cs_id see \ref CoordSystems for options
+    * \param name unique name of coordinate system
+    */
+  virtual PetscErrorCode add_coordinate_system(const int cs_dim[],const string name) = 0;
+
+  /** \brief Set coordinate system to field
+    *
+    * \param name of field
+    * \param name unique name of coordinate system
+    *
+    */
+  virtual PetscErrorCode set_field_coordinate_system(const string field_name,const string cs_name) = 0;
 
   /**\brief add all ents from ref level given by bit to meshset
     * \ingroup mofem_ref_ents
@@ -453,12 +467,21 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode get_entities_by_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,Range &ents) = 0;
 
   /**\brief add ref level to entities
-   *
+
+   Add bit level to entities
+   \param bit bit level to add
+   \paran ents range of entities to which bit level is added
+
    */
   virtual PetscErrorCode add_ref_level_to_entities(const BitRefLevel &bit,Range &ents) = 0;
 
   /**\brief add ref level to entities
-   *
+
+    Set bit level to entities
+    Add bit level to entities
+    \param bit bit level to add
+    \paran ents range of entities to which bit level is set
+
    */
   virtual PetscErrorCode set_ref_level_to_entities(const BitRefLevel &bit,Range &ents) = 0;
 
@@ -555,9 +578,11 @@ struct FieldInterface: public FieldUnknownInterface {
     *
     * \param name of the field
     * \param space approximation space (H1, Hdiv, Hcurl, L2 and NoField (dofs adjacent to meshset)
-    * \prama rank of the field, f.e. temperature has rank 1, displacement in 3d has rank 3
+    * \prama nb_of_cooficients of the field, f.e. temperature has nb_of_cooficients 1, displacement in 3d has nb_of_cooficients 3
     */
-  virtual PetscErrorCode add_field(const string& name,const FieldSpace space,const ApproximationRank rank,enum MoFEMTypes bh = MF_EXCL,int verb = -1) = 0;
+  virtual PetscErrorCode add_field(
+    const string& name,const FieldSpace space,const ApproximationRank nb_of_cooficients,enum MoFEMTypes bh = MF_EXCL,int verb = -1
+  ) = 0;
 
   /**
     * \brief set field entities on vertices
@@ -936,18 +961,18 @@ struct FieldInterface: public FieldUnknownInterface {
    */
   virtual PetscErrorCode remove_ents_from_finite_element_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1) = 0;
 
-  /** \brief remove elements from given refinement level to finite element database
+  /** \brief remove entities from given refinement level to finite element database
    *
    */
   virtual PetscErrorCode remove_ents_from_finite_element(const string &name,const EntityHandle meshset,const EntityType type,int verb = -1) = 0;
 
-  /** \brief remove elements from finite element database
+  /** \brief remove entities from finite element database
    * \ingroup mofem_fe
    *
    */
   virtual PetscErrorCode remove_ents_from_finite_element(const string &name,const Range &ents,int verb = -1) = 0;
 
-  /** \brief add TET elements from given refinement level to finite element database given by name
+  /** \brief add TET entities from given refinement level to finite element database given by name
    * \ingroup mofem_fe
    *
    * \param BitRefLevel bit
@@ -1373,12 +1398,14 @@ struct FieldInterface: public FieldUnknownInterface {
     * \param problem name
     * \param rc ROW or COL
     * \param field name
-    * \param min_rank
-    * \param max_rank
+    * \param min_coeff_idx
+    * \param max_coeff_idx
     * \retval is out value
 
     */
-  virtual PetscErrorCode ISCreateProblemFieldAndRank(const string &problem,RowColData rc,const string &field,int min_rank,int max_rank,IS *is,int verb = -1) = 0;
+  virtual PetscErrorCode ISCreateProblemFieldAndRank(
+    const string &problem,RowColData rc,const string &field,int min_coeff_idx,int max_coeff_idx,IS *is,int verb = -1
+  ) = 0;
 
   /**
     * \brief create scatter for vectors form one to another problem (collective)

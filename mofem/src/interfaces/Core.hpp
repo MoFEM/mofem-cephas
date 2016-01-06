@@ -17,7 +17,6 @@
 #ifndef __MOABFIELD_CORE_HPP__
 #define __MOABFIELD_CORE_HPP__
 
-
 namespace MoFEM {
 
 /** \brief Core FieldInterface class
@@ -52,6 +51,7 @@ struct Core:
   //Database
   ErrorCode rval;
   PetscErrorCode ierr;
+
   //Data and low level methods
   Tag th_Part;
   Tag th_RefType,th_RefParentHandle,th_RefBitLevel,th_RefBitLevel_Mask,th_RefBitEdge,th_RefFEMeshset;
@@ -66,6 +66,9 @@ struct Core:
   Tag nsTag,ssTag,nsTag_data,ssTag_data,bhTag,bhTag_header;
   Tag th_ElemType;
   Tag th_SeriesName;
+  Tag th_CoordSysMeshSet;
+  Tag th_CoordSysName;
+  Tag th_CoordSysDim;
 
   int *fShift,*feShift,*pShift;
   int verbose;
@@ -73,17 +76,19 @@ struct Core:
   //ref
   RefMoFEMEntity_multiIndex refinedEntities;		///< refined entities
   RefMoFEMElement_multiIndex refinedFiniteElements;	///< refined elements
+  //coordinate sysrems
+  CoordSys_multiIndex coordinateSystems;
   //field
-  MoFEMField_multiIndex moabFields;			///< field
-  MoFEMEntity_multiIndex entsMoabField;			///< entities on field
-  DofMoFEMEntity_multiIndex dofsMoabField;		///< dofs on fiels
+  MoFEMField_multiIndex fIelds;			///< field
+  MoFEMEntity_multiIndex entsFields;			///< entities on field
+  DofMoFEMEntity_multiIndex dofsField;		///< dofs on fiels
   //finite element
   MoFEMFiniteElement_multiIndex finiteElements;		///< finite elements
-  EntMoFEMFiniteElement_multiIndex finiteElementsMoFEMEnts;			///< finite element entities
+  EntMoFEMFiniteElement_multiIndex entsFiniteElements;			///< finite element entities
   //entFEAdjacencies
   MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_multiIndex entFEAdjacencies;	///< adjacencies of elements to dofs
-  //moFEMProblems
-  MoFEMProblem_multiIndex moFEMProblems;					///< problems
+  //pRoblems
+  MoFEMProblem_multiIndex pRoblems;					///< problems
   //cubit
   CubitMeshSet_multiIndex cubitMeshsets;					///< cubit meshsets
   //series
@@ -354,7 +359,7 @@ struct Core:
 
   //field
   PetscErrorCode add_field(
-    const string& name,const FieldSpace space,const ApproximationRank rank,enum MoFEMTypes bh = MF_EXCL,int verb = -1
+    const string& name,const FieldSpace space,const ApproximationRank nb_cooficients,enum MoFEMTypes bh = MF_EXCL,int verb = -1
   );
   PetscErrorCode add_ents_to_field_by_VERTICEs(const Range &nodes,const BitFieldId id,int verb = -1);
   PetscErrorCode add_ents_to_field_by_VERTICEs(const Range &nodes,const string& name,int verb = -1);
@@ -512,7 +517,9 @@ struct Core:
   /// get IS for order
   PetscErrorCode ISCreateProblemOrder(const string &problem,RowColData rc,int min_order,int max_order,IS *is,int verb = -1);
   /// get IS for field and rank
-  PetscErrorCode ISCreateProblemFieldAndRank(const string &problem,RowColData rc,const string &field,int min_rank,int max_rank,IS *is,int verb = -1);
+  PetscErrorCode ISCreateProblemFieldAndRank(
+    const string &problem,RowColData rc,const string &field,int min_coeff_idx,int max_coeff_idx,IS *is,int verb = -1
+  );
 
   //scatter from problem filed to other problem field
   PetscErrorCode ISCreateFromProblemFieldToOtherProblemField(
@@ -606,6 +613,10 @@ struct Core:
     const int operation_type = Interface::INTERSECT,
     const int verb = 0
   );
+
+  //Coordinate systems
+  PetscErrorCode add_coordinate_system(const int cs_dim[],const string name);
+  PetscErrorCode set_field_coordinate_system(const string field_name,const string cs_name);
 
   //Petsc Logs
   PetscLogEvent USER_EVENT_preProcess;

@@ -54,7 +54,7 @@ enum MoFEMInterfaces {
   * MoAB error messages are defined in naob/Types.hpp
   *
   */
-enum MoFEMErrorCode {
+enum MoFEMErrorCodes {
   MOFEM_SUCESS = 0,
   MOFEM_DATA_INCONSISTENCY = 100,
   MOFEM_NOT_IMPLEMENTED = 101,
@@ -76,6 +76,16 @@ enum FieldSpace {
   HCURL,	///< field with continuous tangents
   L2,		///< field with C-1 continuity
   LASTSPACE 	///< FieldSpace in [ 0, LASTSPACE )
+};
+
+const static char *FieldSpaceNames[] = {
+  "", // empty space
+  "NOFIELD",
+  "H1",
+  "HDIV",
+  "HCURL",
+  "L2",
+  "LASTSPACE"
 };
 
 /// \brief Those types control how functions respond on arguments, f.e. error handling
