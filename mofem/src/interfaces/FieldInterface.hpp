@@ -961,18 +961,18 @@ struct FieldInterface: public FieldUnknownInterface {
    */
   virtual PetscErrorCode remove_ents_from_finite_element_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1) = 0;
 
-  /** \brief remove elements from given refinement level to finite element database
+  /** \brief remove entities from given refinement level to finite element database
    *
    */
   virtual PetscErrorCode remove_ents_from_finite_element(const string &name,const EntityHandle meshset,const EntityType type,int verb = -1) = 0;
 
-  /** \brief remove elements from finite element database
+  /** \brief remove entities from finite element database
    * \ingroup mofem_fe
    *
    */
   virtual PetscErrorCode remove_ents_from_finite_element(const string &name,const Range &ents,int verb = -1) = 0;
 
-  /** \brief add TET elements from given refinement level to finite element database given by name
+  /** \brief add TET entities from given refinement level to finite element database given by name
    * \ingroup mofem_fe
    *
    * \param BitRefLevel bit
