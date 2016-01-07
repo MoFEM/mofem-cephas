@@ -250,8 +250,8 @@ int main(int argc, char *argv[]) {
       ierr = getTrisColIndices(data_col,"FIELD2"); CHKERRQ(ierr);
       ierr = getTetsRowIndices(data_row,"FIELD1"); CHKERRQ(ierr);
       ierr = getTetsColIndices(data_col,"FIELD2"); CHKERRQ(ierr);
-      ierr = getFaceNodes(data_row); CHKERRQ(ierr);
-      ierr = getFaceNodes(data_col); CHKERRQ(ierr);
+      ierr = getFaceTriNodes(data_row); CHKERRQ(ierr);
+      ierr = getFaceTriNodes(data_col); CHKERRQ(ierr);
 
       ierr = shapeTETFunctions_H1(data_row,G_TET_X4,G_TET_Y4,G_TET_Z4,4); CHKERRQ(ierr);
       ierr = shapeTETFunctions_H1(data_col,G_TET_X4,G_TET_Y4,G_TET_Z4,4); CHKERRQ(ierr);

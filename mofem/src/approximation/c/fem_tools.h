@@ -58,6 +58,20 @@ extern "C" {
 #define diffN_MBTRI2x ( 0. )		///< derivative of triangle shape function
 #define diffN_MBTRI2y ( 1. )		///< derivative of triangle shape function
 
+//MBQUAD
+#define N_MBQUAD0(x, y) ( (1.-x)*(1.-y) ) ///< quad shape function
+#define N_MBQUAD1(x, y) ( x*(1-y) )       ///< quad shape function
+#define N_MBQUAD2(x, y) ( x*y )           ///< quad shape function
+#define N_MBQUAD3(x, y) ( (1.-x)*(y) )    ///< quad shape function
+#define diffN_MBQUAD0x(y) ( -(1.-y) )
+#define diffN_MBQUAD0y(x) ( -(1.-x) )
+#define diffN_MBQUAD1x(y) ( (1.-y) )
+#define diffN_MBQUAD1y(x) ( -x )
+#define diffN_MBQUAD2x(y) ( y )
+#define diffN_MBQUAD2y(x) ( x )
+#define diffN_MBQUAD3x(y) ( -y )
+#define diffN_MBQUAD3y(x) ( (1.-x) )
+
 //MBEDGE
 #define N_MBEDGE0(x) ( 1.-(x) )		///< edge shape function
 #define N_MBEDGE1(x) ( x ) 		///< edge shape function
@@ -119,16 +133,16 @@ PetscErrorCode ShapeFaceDiffNormalMBTRI(double *diffN,const double *coords,doubl
 void ShapeJacMBTRI(double *diffN,const double *coords,double *Jac);
 /// calculate derivatives of shape functions in space
 void ShapeDiffMBTRIinvJ(double *diffN,double *invJac,double *diffNinvJac);
-/// caluate shape functions
+/// calculate shape functions
 PetscErrorCode ShapeMBTET(double *N,const double *G_X,const double *G_Y,const double *G_Z,int DIM);
-/// calulare derivatives of shape functions
+/// calculate derivatives of shape functions
 PetscErrorCode ShapeDiffMBTET(double *diffN);
-/// determinad of jacobian
-double ShapeDetJacMBTET(double *Jac);
+/// determined of jacobian
+double ShapeDetJacVolume(double *jac);
 /// calculate jacobian
-PetscErrorCode ShapeJacMBTET(double *diffN,const double *coords,double *Jac);
+PetscErrorCode ShapeJacMBTET(double *diffN,const double *coords,double *jac);
 // calculate inverse of jacobian
-PetscErrorCode ShapeInvJacMBTET(double *Jac);
+PetscErrorCode ShapeInvJacVolume(double *jac);
 /// calculate TET volume
 double ShapeVolumeMBTET(double *diffN,const double *coords);
 /// calculate shape functions derivatives in space

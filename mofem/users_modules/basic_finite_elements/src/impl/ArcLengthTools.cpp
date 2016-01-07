@@ -1,6 +1,7 @@
 /** \file ArcLengthTools.hpp
- *
- * FIXME: DESCRIPTION
+
+ Implementation of Arc Length element
+
  */
 
 /* This file is part of MoFEM.
@@ -40,35 +41,35 @@ PetscErrorCode ArcLengthCtx::setAlphaBeta(double alpha,double beta) {
 }
 
 ArcLengthCtx::ArcLengthCtx(FieldInterface &m_field,const string &problem_name):
-  mField(m_field),dlambda(0),diag(0),dx2(0),F_lambda2(0),res_lambda(0) {
+  mField(m_field),
+  dlambda(0),
+  diag(0),
+  dx2(0),
+  F_lambda2(0),
+  res_lambda(0) {
   ierr = m_field.VecCreateGhost(problem_name,ROW,&F_lambda); CHKERRABORT(PETSC_COMM_WORLD,ierr);
   ierr = VecSetOption(F_lambda,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); CHKERRABORT(PETSC_COMM_WORLD,ierr);
   ierr = m_field.VecCreateGhost(problem_name,ROW,&db); CHKERRABORT(PETSC_COMM_WORLD,ierr);
   ierr = m_field.VecCreateGhost(problem_name,ROW,&x_lambda); CHKERRABORT(PETSC_COMM_WORLD,ierr);
   ierr = m_field.VecCreateGhost(problem_name,ROW,&x0); CHKERRABORT(PETSC_COMM_WORLD,ierr);
   ierr = m_field.VecCreateGhost(problem_name,ROW,&dx); CHKERRABORT(PETSC_COMM_WORLD,ierr);
-
   const MoFEMProblem *problem_ptr;
   ierr = m_field.get_problem(problem_name,&problem_ptr); CHKERRABORT(PETSC_COMM_WORLD,ierr);
-
   NumeredDofMoFEMEntity_multiIndex& dofs_ptr_no_const
     = const_cast<NumeredDofMoFEMEntity_multiIndex&>(problem_ptr->numered_dofs_rows);
-
   NumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator hi_dit;
   dIt = dofs_ptr_no_const.get<FieldName_mi_tag>().lower_bound("LAMBDA");
   hi_dit = dofs_ptr_no_const.get<FieldName_mi_tag>().upper_bound("LAMBDA");
   if(distance(dIt,hi_dit)!=1) {
-
     PetscTraceBackErrorHandler(
       PETSC_COMM_WORLD,
       __LINE__,PETSC_FUNCTION_NAME,__FILE__,
-      MOFEM_DATA_INCONSISTENCT,PETSC_ERROR_INITIAL,"can not find unique LAMBDA (load factor)",PETSC_NULL
+      MOFEM_DATA_INCONSISTENCY,PETSC_ERROR_INITIAL,"can not find unique LAMBDA (load factor)",PETSC_NULL
     );
     PetscMPIAbortErrorHandler(PETSC_COMM_WORLD,
       __LINE__,PETSC_FUNCTION_NAME,__FILE__,
-      MOFEM_DATA_INCONSISTENCT,PETSC_ERROR_INITIAL,"can not find unique LAMBDA (load factor)",PETSC_NULL
+      MOFEM_DATA_INCONSISTENCY,PETSC_ERROR_INITIAL,"can not find unique LAMBDA (load factor)",PETSC_NULL
     );
-
   }
 }
 
@@ -109,7 +110,7 @@ PetscErrorCode ArcLengthMatShell::setLambda(Vec ksp_x,double *lambda,ScatterMode
       }
       break;
       default:
-      SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
     }
 
   }
@@ -157,7 +158,7 @@ PetscErrorCode PrePostProcessForArcLength::preProcess() {
     }
     break;
     default:
-      SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
   }
 
   PetscFunctionReturn(0);
@@ -183,7 +184,7 @@ PetscErrorCode PrePostProcessForArcLength::postProcess() {
     }
     break;
     default:
-      SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
   }
 
   PetscFunctionReturn(0);
@@ -231,7 +232,7 @@ PetscErrorCode PCApplyArcLength(PC pc,Vec pc_f,Vec pc_x) {
     << " db_dot_pc_x=" << db_dot_pc_x
     << " db_dot_x_lambda=" << db_dot_x_lambda
     << " ctx->arcPtr->diag=" << ctx->arcPtr->diag;
-    SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,ss.str().c_str());
   }
   ierr = VecAXPY(pc_x,ddlambda,ctx->arcPtr->x_lambda); CHKERRQ(ierr);
   ierr = MatCtx->setLambda(pc_x,&ddlambda,SCATTER_REVERSE); CHKERRQ(ierr);
@@ -274,17 +275,17 @@ PetscErrorCode SphericalArcLengthControl::preProcess() {
       break;
     }
     case CTX_TSSETIJACOBIAN: {
-	snes_ctx = CTX_SNESSETJACOBIAN;
-	snes_B = ts_B;
-	break;
+      snes_ctx = CTX_SNESSETJACOBIAN;
+      snes_B = ts_B;
+      break;
     }
     default:
     break;
   }
   switch(snes_ctx) {
     case CTX_SNESSETFUNCTION: {
-	ierr = calculateDxAndDlambda(snes_x); CHKERRQ(ierr);
-	ierr = calculateDb(); CHKERRQ(ierr);
+      ierr = calculateDxAndDlambda(snes_x); CHKERRQ(ierr);
+      ierr = calculateDb(); CHKERRQ(ierr);
     }
     break;
     case CTX_SNESSETJACOBIAN: {
@@ -386,7 +387,7 @@ PetscErrorCode SphericalArcLengthControl::calculateInitDlambda(double *dlambda) 
   if(!(*dlambda == *dlambda)) {
     ostringstream sss;
     sss << "s " << arcPtr->s << " " << arcPtr->beta << " " << arcPtr->F_lambda2;
-    SETERRQ(PETSC_COMM_SELF,1,sss.str().c_str());
+    SETERRQ(PETSC_COMM_SELF,MOFEM_IMPOSIBLE_CASE,sss.str().c_str());
   }
   PetscFunctionReturn(0);
 }
@@ -399,13 +400,13 @@ PetscErrorCode SphericalArcLengthControl::setDlambdaToX(Vec x,double dlambda) {
     ierr = VecGetArray(x,&array); CHKERRQ(ierr);
     double lambda_old = array[arcPtr->getPetscLocalDofIdx()];
     if(!(dlambda == dlambda)) {
-	ostringstream sss;
-	sss << "s " << arcPtr->s << " " << arcPtr->beta << " " << arcPtr->F_lambda2;
-	SETERRQ(PETSC_COMM_SELF,1,sss.str().c_str());
+      ostringstream sss;
+      sss << "s " << arcPtr->s << " " << arcPtr->beta << " " << arcPtr->F_lambda2;
+      SETERRQ(PETSC_COMM_SELF,1,sss.str().c_str());
     }
     array[arcPtr->getPetscLocalDofIdx()] = lambda_old + dlambda;
     PetscPrintf(arcPtr->mField.get_comm(),"\tlambda = %6.4e, %6.4e (%6.4e)\n",
-	lambda_old, array[arcPtr->getPetscLocalDofIdx()], dlambda);
+    lambda_old, array[arcPtr->getPetscLocalDofIdx()], dlambda);
     ierr = VecRestoreArray(x,&array); CHKERRQ(ierr);
   }
   PetscFunctionReturn(0);

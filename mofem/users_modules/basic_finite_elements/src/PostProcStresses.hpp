@@ -33,7 +33,7 @@ struct PostPorcStress: public VolumeElementForcesAndSourcesCore::UserDataOperato
   vector<EntityHandle> &mapGaussPts;
 
   NonlinearElasticElement::BlockData &dAta;
-  PostPocOnRefinedMesh::CommonData &commonData;
+  PostProcVolumeOnRefinedMesh::CommonData &commonData;
   bool fieldDisp;
 
   PostPorcStress(
@@ -41,7 +41,7 @@ struct PostPorcStress: public VolumeElementForcesAndSourcesCore::UserDataOperato
     vector<EntityHandle> &map_gauss_pts,
     const string field_name,
     NonlinearElasticElement::BlockData &data,
-    PostPocOnRefinedMesh::CommonData &common_data,
+    PostProcVolumeOnRefinedMesh::CommonData &common_data,
     bool field_disp = false
   ):
   VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
@@ -96,10 +96,10 @@ struct PostPorcStress: public VolumeElementForcesAndSourcesCore::UserDataOperato
 
     int nb_gauss_pts = data.getN().size1();
     if(mapGaussPts.size()!=(unsigned int)nb_gauss_pts) {
-      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
     }
     if(commonData.gradMap[rowFieldName].size()!=(unsigned int)nb_gauss_pts) {
-      SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency, filed <%s> not found",rowFieldName.c_str());
+      SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency, filed <%s> not found",rowFieldName.c_str());
     }
 
     ublas::matrix<double> H,invH;

@@ -26,29 +26,41 @@
 /**
  * \brief Store variables for ArcLength analysis
  * \ingroup arc_length_control
- *
- * r_lambda = f_lambda - s
- * f_lambda = alpha*f(dx*dx) + beta^2*(dlambda*sqrt(F_lambda*F_lambda)
- *
- * dx = x-x0
- *
- * db*ddx + diag*ddlambda - r_lambda = 0
- *
- * User need to implement functions calculating f_lambda, i.e. f(dx*dx) and
- * derivative, db
- *
- * alpha,beta parameters
- * dlambda is load factor
- * s arc-length radius
- * F_lambda reference load vector
- * F_lambda2 dot product of F_lambda
- * diag value on matrix diagonal
- * x0  displacement vector at beginning of step
- * x current displacement vector
- * dx2 dot product of dx vector
- * db derivative of f(dx*dx), i.e. db = d[ f(dx*dx) ]/dx
- *
- * x_lambda is solution of eq. K*x_lambda = F_lambda
+
+ The constrain function if given by
+ \f[
+ r_\lambda = f_\lambda(\mathbf{x},\lambda) - s^2
+ \f]
+ where \f$f_\lambda(\mathbf{x},\lambda)\f$ is some constrain function, which has general form given by
+ \f[
+ f_\lambda(\mathbf{x},\lambda) = \alpha f(\|\Delta\mathbf{x}\|^2) +
+ \beta^2 \Delta\lambda^2 \| \mathbf{F}_{\lambda} \|^2
+ \f]
+ where \f$f(\|\Delta\mathbf{x}\|^2)\f$ is some user defined function evaluating
+ increments vector of degrees of freedom  \f$\Delta\mathbf{x}\f$. The increment
+ vector is
+ \f[
+ \Delta \mathbf{x} = \mathbf{x}-\mathbf{x}_0.
+ \f]
+ For convenience we assume that
+ \f[
+ \frac{\partial f}{\partial \mathbf{x}}\Delta \mathbf{x}
+ =
+ \textrm{d}\mathbf{b} \Delta \mathbf{x},
+ \f]
+ as result linearized constrain equation takes form
+ \f[
+ \textrm{d}\mathbf{b} \delta \Delta x +
+ D \delta \Delta\lambda - r_{\lambda} = 0
+ \f]
+ where
+ \f[
+ D = 2\beta^2 \Delta\lambda \| \mathbf{F}_{\lambda} \|^2.
+ \f]
+
+ User need to implement functions calculating \f$f(\mathbf{x},\lambda)\f$, i.e. function
+ \f$f(\|\Delta\mathbf{x}\|^2)\f$  and its derivative, \f$\textrm{d}\mathbf{b}\f$.
+
  */
 struct ArcLengthCtx {
 
@@ -85,6 +97,7 @@ struct ArcLengthCtx {
   ~ArcLengthCtx();
 
   NumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator dIt;
+
   DofIdx getPetscGloablDofIdx() { return dIt->get_petsc_gloabl_dof_idx(); };
   DofIdx getPetscLocalDofIdx() { return dIt->get_petsc_local_dof_idx(); };
   FieldData& getFieldData() { return dIt->get_FieldData(); }
@@ -98,16 +111,40 @@ struct ArcLengthCtx {
  */
 struct ArcLengthSnesCtx: public SnesCtx {
   ArcLengthCtx* arcPtr;
-  ArcLengthSnesCtx(FieldInterface &m_field,const string &problem_name,ArcLengthCtx* arc_ptr):
-    SnesCtx(m_field,problem_name),arcPtr(arc_ptr) {}
+  ArcLengthSnesCtx(
+    FieldInterface &m_field,const string &problem_name,ArcLengthCtx* arc_ptr
+  ):
+  SnesCtx(m_field,problem_name),
+  arcPtr(arc_ptr) {
+  }
 };
 
 /** \brief shell matrix for arc-length method
  * \ingroup arc_length_control
- *
- * Shell matrix which has structure
- * [ K 		-dF_lambda]
- * [ db		 diag	]
+
+ Shell matrix which has structure:
+ \f[
+ \left[
+  \begin{array}{cc}
+   \mathbf{K} & -\mathbf{F}_\lambda \\
+   \textrm{d}\mathbf{b} & D
+  \end{array}
+  \right]
+ \left\{
+ \begin{array}{c}
+ \delta \Delta \mathbf{x} \\
+ \delta \Delta \lambda
+ \end{array}
+ \right\}
+ =
+ \left[
+  \begin{array}{c}
+    -\mathbf{f}_\textrm{int} \\
+    -r_\lambda
+  \end{array}
+  \right]  
+ \f]
+
  */
 struct ArcLengthMatShell {
 
@@ -183,14 +220,20 @@ struct PrePostProcessForArcLength: public FEMethod {
 
 };
 
-/** \brief Implementation of cylindrical arc-length method, i.e. alpha*dx*x + dlmabda^2*beta^2*F_lamda*F_lambda = s^2
+/** \brief Implementation of spherical arc-length method
   * \ingroup arc_length_control
-  *
-  * This is particular implementation of ArcLength control, i.e. spherical arc
-  * length control. If beta is set to 0 and alpha is non-zero it is cylindrical
-  * arc-length control. Works well with general problem with non-linear
-  * geometry. It not guarantee dissipative loading path in case of physical
-  * nonlinearities.
+
+  \f[
+  \alpha \| \Delta\mathbf{x} \|^2
+  + \Delta\lambda^2 \beta^2 \| \mathbf{F}_\lambda \|^2
+  = s^2
+  \f]
+
+  This is particular implementation of ArcLength control, i.e. spherical arc
+  length control. If beta is set to 0 and alpha is non-zero it is cylindrical
+  arc-length control. Works well with general problem with non-linear
+  geometry. It not guarantee dissipative loading path in case of physical
+  nonlinearities.
   *
   */
 struct SphericalArcLengthControl: public FEMethod {
@@ -205,14 +248,24 @@ struct SphericalArcLengthControl: public FEMethod {
   PetscErrorCode operator()();
   PetscErrorCode postProcess();
 
-  /**
-    * alpha*dx*x + dlmabda^2*beta^2*F_lamda*F_lambda
-    */
+  /** \brief Calculate f_lambda(dx,lambda)
+
+  \f[
+  f_\lambda(\Delta\mathbf{x},\lambda) =
+  \alpha \| \Delta\mathbf{x} \|^2
+  + \Delta\lambda^2 \beta^2 \| \mathbf{F}_\lambda \|^2
+  \f]
+
+  */
   double calculateLambdaInt();
 
-  /**
-    * db(x)/dx  = 2*dx
-    */
+  /** \brief Calculate db
+
+  \f[
+  \textrm{d}\mathbf{b} = 2 \alpha \Delta\mathbf{x}
+  \f]
+
+  */
   PetscErrorCode calculateDb();
   PetscErrorCode calculateDxAndDlambda(Vec x);
   PetscErrorCode calculateInitDlambda(double *dlambda);

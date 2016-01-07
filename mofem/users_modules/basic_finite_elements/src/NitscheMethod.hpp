@@ -174,7 +174,7 @@ struct NitscheMethod {
           pair<CommonData::Container::iterator,bool> p;
           p = commonData.facesContainer.insert(gauss_pt_data);
           if(!p.second) {
-            SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data not inserted");
+            SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data not inserted");
           }
           CommonData::MultiIndexData &p_data = const_cast<CommonData::MultiIndexData&>(*p.first);
           VectorDouble &shape_fun = p_data.shapeFunctions;
@@ -261,7 +261,7 @@ struct NitscheMethod {
               upper_bound(boost::make_tuple(blockData.faceElemName,commonData.fAces[ff]));
             if(it == problemPtr->numeredFiniteElements.get<Composite_Name_And_Ent_mi_tag>().end()) {
               SETERRQ1(
-                PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"No finite element found < %s >",
+                PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"No finite element found < %s >",
                 blockData.faceElemName.c_str()
               );
             }
@@ -622,7 +622,7 @@ struct NitscheMethod {
 
 
         if(gg != (int)getGaussPts().size2()) {
-          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"wrong number of gauss pts");
+          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong number of gauss pts");
         }
 
         ierr = MatSetValues(

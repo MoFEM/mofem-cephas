@@ -165,6 +165,19 @@ add_test(field_axpy_compare ${CMAKE_COMMAND} -E compare_files
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/field_axpy_test.txt
   ${CMAKE_BINARY_DIR}/atom_tests/field_axpy_test.txt)
 
+#test coord sys
+add_executable(test_setting_coordinate_sys test_setting_coordinate_sys.cpp)
+target_link_libraries(test_setting_coordinate_sys
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+add_test(test_setting_coordinate_sys ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/test_setting_coordinate_sys -my_file elasticity_atom_test_01X_pressure.h5m)
+
 #mesh refine
 cm_export_file("../meshes/templar.h5m" export_atom_tests)
 
@@ -589,18 +602,35 @@ endif(NETGEN_LIBRARY)
 
 add_executable(node_merge node_merge.cpp)
 target_link_libraries(node_merge
-    mofem_interfaces
-    mofem_multi_indices
-    mofem_petsc
-    mofem_approx
-    mofem_cblas
-    mofem_third_party
-    ${PROJECT_LIBS})
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
 
 cm_export_file("../meshes/node_merge_test.h5m" export_atom_tests)
 add_test(node_merge ${MPI_RUN} -np 1
-  ${CMAKE_CURRENT_BINARY_DIR}/node_merge -my_file node_merge_test.h5m)
+  ${CMAKE_CURRENT_BINARY_DIR}/node_merge -my_file node_merge_test.h5m
+)
 
+add_executable(prisms_elements_from_surface prisms_elements_from_surface.cpp)
+target_link_libraries(prisms_elements_from_surface
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+cm_export_file("../meshes/rectangle_surface_mesh.cub" export_atom_tests)
+add_test(prisms_elements_from_surface ${MPI_RUN} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/prisms_elements_from_surface -my_file rectangle_surface_mesh.cub
+)
 
 if(ADOL-C_LIBRARY)
 

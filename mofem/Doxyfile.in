@@ -822,7 +822,8 @@ FILE_PATTERNS          = *.c \
                          *.for \
                          *.vhd \
                          *.vhdl \
-                         *.cmake
+                         *.cmake \
+                         *.jou
 
 
 # The RECURSIVE tag can be used to specify whether or not subdirectories should

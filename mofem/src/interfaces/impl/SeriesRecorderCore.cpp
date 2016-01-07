@@ -1,13 +1,8 @@
 /** \file SeriesRecorderCore.cpp
- * \brief Myltindex containes, data structures and other low-level functions 
- * 
- * Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl) <br>
- *
- * The MoFEM package is copyrighted by Lukasz Kaczmarczyk. 
- * It can be freely used for educational and research purposes 
- * by other institutions. If you use this softwre pleas cite my work. 
- *
- * MoFEM is free software: you can redistribute it and/or modify it under
+ * \brief Mylti-index containers, data structures and other low-level functions
+ */
+
+/* MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or (at your
  * option) any later version.
@@ -21,29 +16,37 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 */
 
-#include <moab/ParallelComm.hpp>
-
-#include <petscsys.h>
-#include <petscvec.h> 
-#include <petscmat.h> 
-#include <petscsnes.h> 
-#include <petscts.h> 
-
+#include <Includes.hpp>
+#include <version.h>
 #include <definitions.h>
-#include <h1_hdiv_hcurl_l2.h>
-
 #include <Common.hpp>
 
-#include <LoopMethods.hpp>
+#include <h1_hdiv_hcurl_l2.h>
 
-#include <boost/ptr_container/ptr_map.hpp>
-#include <Core.hpp>
-
+#include <MaterialBlocks.hpp>
+#include <CubitBCData.hpp>
+#include <TagMultiIndices.hpp>
+#include <CoordSysMultiIndices.hpp>
+#include <FieldMultiIndices.hpp>
+#include <EntsMultiIndices.hpp>
+#include <DofsMultiIndices.hpp>
+#include <FEMMultiIndices.hpp>
+#include <ProblemsMultiIndices.hpp>
+#include <AdjacencyMultiIndices.hpp>
+#include <BCMultiIndices.hpp>
 #include <CoreDataStructures.hpp>
+#include <SeriesMultiIndices.hpp>
+
+#include <LoopMethods.hpp>
+#include <FieldInterface.hpp>
+#include <MeshRefinment.hpp>
+#include <PrismInterface.hpp>
+#include <SeriesRecorder.hpp>
+#include <Core.hpp>
 
 namespace MoFEM {
 
-const static int debug = 1;
+// const static int debug = 1;
 
 PetscErrorCode Core::add_series_recorder(const string &series_name) {
   PetscFunctionBegin;
@@ -99,7 +102,7 @@ PetscErrorCode Core::record_problem(const string& serie_name,const MoFEMProblem 
       ierr = const_cast<MoFEMSeries*>(&*sit)->push_dofs(problemPtr->numered_dofs_cols.begin(),problemPtr->numered_dofs_cols.end()); CHKERRQ(ierr);
       break;
     default:
-      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
   }
   PetscFunctionReturn(0);
 }
@@ -119,11 +122,11 @@ PetscErrorCode Core::record_field(const string& serie_name,const string& field_n
   if(sit==sEries.get<SeriesName_mi_tag>().end()) {
     SETERRQ1(PETSC_COMM_SELF,1,"serie recorder <%s> not exist",serie_name.c_str());
   }
-  DofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator dit = dofsMoabField.get<FieldName_mi_tag>().lower_bound(field_name);
-  if(dit == dofsMoabField.get<FieldName_mi_tag>().end()) {
+  DofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator dit = dofsField.get<FieldName_mi_tag>().lower_bound(field_name);
+  if(dit == dofsField.get<FieldName_mi_tag>().end()) {
     SETERRQ1(PETSC_COMM_SELF,1,"field <%s> not exist",field_name.c_str());
   }
-  DofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator hi_dit = dofsMoabField.get<FieldName_mi_tag>().upper_bound(field_name);
+  DofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator hi_dit = dofsField.get<FieldName_mi_tag>().upper_bound(field_name);
   for(;dit!=hi_dit;dit++) {
     const BitRefLevel &dof_bit = dit->get_BitRefLevel();
     if((dof_bit&mask) != dof_bit) continue;
@@ -209,7 +212,7 @@ PetscErrorCode Core::load_series_data(const string& serie_name,const int step_nu
   if(sit == seriesSteps.get<Composite_SeriesName_And_Step_mi_tag>().end()) {
     SETERRQ2(PETSC_COMM_SELF,1,"series <%s> and step %d not found",serie_name.c_str(),step_number);
   }
-  ierr = sit->get(moab,dofsMoabField); CHKERRQ(ierr);
+  ierr = sit->get(moab,dofsField); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 SeriesStep_multiIndex::index<SeriesName_mi_tag>::type::iterator Core::get_series_steps_byName_begin(const string& name) {

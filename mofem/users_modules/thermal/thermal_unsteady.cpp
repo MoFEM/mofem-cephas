@@ -73,7 +73,7 @@ struct BlockOptionData {
 struct MonitorPostProc: public FEMethod {
 
   FieldInterface &mField;
-  PostPocOnRefinedMesh postProc;
+  PostProcVolumeOnRefinedMesh postProc;
 
   bool iNit;
   int pRT;

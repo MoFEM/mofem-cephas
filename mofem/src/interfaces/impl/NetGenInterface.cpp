@@ -1,11 +1,11 @@
 /** \file NetGenInterface.cpp
  * \brief NetGen inteface for resmeshing and on the fly mesh craetion
- * 
+ *
  * Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl) <br>
  *
- * The MoFEM package is copyrighted by Lukasz Kaczmarczyk. 
- * It can be freely used for educational and research purposes 
- * by other institutions. If you use this softwre pleas cite my work. 
+ * The MoFEM package is copyrighted by Lukasz Kaczmarczyk.
+ * It can be freely used for educational and research purposes
+ * by other institutions. If you use this softwre pleas cite my work.
  *
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -21,32 +21,43 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 */
 
-#include <petscsys.h>
-#include <petscvec.h> 
-#include <petscmat.h> 
-#include <petscsnes.h> 
-#include <petscts.h> 
+#include <Includes.hpp>
 
-#include <moab/ParallelComm.hpp>
-#include <boost/ptr_container/ptr_map.hpp>
-
-#include <version.h>
+//SRC APPROXIMATION
+#include <config.h>
 #include <definitions.h>
 #include <h1_hdiv_hcurl_l2.h>
 #include <fem_tools.h>
 
 #include <Common.hpp>
-#include <LoopMethods.hpp>
-#include <Core.hpp>
 
+//SRC/MULTI-INDICES
+#include <MaterialBlocks.hpp>
+#include <CubitBCData.hpp>
+#include <TagMultiIndices.hpp>
+#include <FieldMultiIndices.hpp>
+#include <EntsMultiIndices.hpp>
+#include <DofsMultiIndices.hpp>
+#include <FEMMultiIndices.hpp>
+#include <ProblemsMultiIndices.hpp>
+#include <AdjacencyMultiIndices.hpp>
+#include <BCMultiIndices.hpp>
+#include <SeriesMultiIndices.hpp>
+
+//SRC/INTERFACES
+#include <LoopMethods.hpp>
 #include <FieldInterface.hpp>
+#include <MeshRefinment.hpp>
+#include <PrismInterface.hpp>
+#include <SeriesRecorder.hpp>
+#include <Core.hpp>
 
 #ifdef WITH_NETGEN
 
 /*
-  
+
   Interface to the netgen meshing kernel
-  
+
 */
 #include <mystdlib.h>
 #include <myadt.hpp>
@@ -87,7 +98,7 @@ PetscErrorCode NetGenInterface::queryInterface(const MOFEMuuid& uuid, FieldUnkno
     *iface = dynamic_cast<FieldUnknownInterface*>(this);
     PetscFunctionReturn(0);
   }
-  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"unknown inteface");
+  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown inteface");
   PetscFunctionReturn(0);
 }
 
@@ -150,7 +161,7 @@ PetscErrorCode NetGenInterface::stlSetSurfaceEdges(Ng_STL_Geometry *stl_geom,Ran
     rval = m_field.get_moab().get_connectivity(*eit,conn,num_nodes,true); CHKERR_PETSC(rval);
     double coords[6];
     rval = m_field.get_moab().get_coords(conn,2,coords); CHKERR_PETSC(rval);
-  
+
     Ng_STL_AddEdge(stl_geom,&coords[3*0],&coords[3*1]);
 
   }
@@ -230,7 +241,7 @@ PetscErrorCode NetGenInterface::setSurfaceElements(Ng_Mesh *mesh,vector<EntityHa
 }
 PetscErrorCode NetGenInterface::getPoints(Ng_Mesh *mesh,vector<EntityHandle> &pts) {
   PetscFunctionBegin;
-  FieldInterface& m_field = cOre;	
+  FieldInterface& m_field = cOre;
   ErrorCode rval;
 
   int nb_pts = Ng_GetNP(mesh);
@@ -257,14 +268,14 @@ PetscErrorCode NetGenInterface::getPoints(Ng_Mesh *mesh,vector<EntityHandle> &pt
 
 PetscErrorCode NetGenInterface::getSurfaceElements(Ng_Mesh *mesh,vector<EntityHandle> &pts,vector<EntityHandle> &elms) {
   PetscFunctionBegin;
-  FieldInterface& m_field = cOre;	
+  FieldInterface& m_field = cOre;
   ErrorCode rval;
   //PetscErrorCode ierr;
 
   Tag th_geom_info;
   int def_marker = 0;
   rval = m_field.get_moab().tag_get_handle(
-    "NETGEN_GEOMINFO",1,MB_TYPE_INTEGER,th_geom_info,MB_TAG_CREAT|MB_TAG_SPARSE,&def_marker); CHKERR_PETSC(rval); 
+    "NETGEN_GEOMINFO",1,MB_TYPE_INTEGER,th_geom_info,MB_TAG_CREAT|MB_TAG_SPARSE,&def_marker); CHKERR_PETSC(rval);
 
   int ne;
   ne = Ng_GetNSE(mesh);
@@ -281,7 +292,7 @@ PetscErrorCode NetGenInterface::getSurfaceElements(Ng_Mesh *mesh,vector<EntityHa
 	for(int nn = 0;nn<3;nn++) {
 	  conn[nn] = pts[pi[nn]-1];
 	}
-	rval = m_field.get_moab().create_element(MBTRI,conn,3,elem); CHKERR_PETSC(rval);	
+	rval = m_field.get_moab().create_element(MBTRI,conn,3,elem); CHKERR_PETSC(rval);
 	elms.push_back(elem);
 	for(int nn = 0;nn<3;nn++) {
 	  //cerr << "GeomInfo " << el.GeomInfoPi(nn+1) << endl;
@@ -302,7 +313,7 @@ PetscErrorCode NetGenInterface::getSurfaceElements(Ng_Mesh *mesh,vector<EntityHa
 PetscErrorCode NetGenInterface::getVolumeElements(Ng_Mesh *mesh,vector<EntityHandle> &pts,vector<EntityHandle> &elms) {
   PetscFunctionBegin;
 
-  FieldInterface& m_field = cOre;	
+  FieldInterface& m_field = cOre;
   ErrorCode rval;
 
   int ne;
@@ -321,7 +332,7 @@ PetscErrorCode NetGenInterface::getVolumeElements(Ng_Mesh *mesh,vector<EntityHan
 	conn0 = conn[0];
 	conn[0] = conn[1];
 	conn[1] = conn0;
-	rval = m_field.get_moab().create_element(MBTET,conn,4,elem); CHKERR_PETSC(rval);	
+	rval = m_field.get_moab().create_element(MBTET,conn,4,elem); CHKERR_PETSC(rval);
 	elms.push_back(elem);
 	break;
       case NG_PYRAMID:

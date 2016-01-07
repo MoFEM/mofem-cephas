@@ -360,7 +360,7 @@ int main(int argc, char *argv[]) {
   ierr = VecDestroy(&E); CHKERRQ(ierr);
   ierr = KSPDestroy(&solver); CHKERRQ(ierr);
 
-  PostPocOnRefinedMesh post_proc(m_field);
+  PostProcVolumeOnRefinedMesh post_proc(m_field);
   ierr = post_proc.generateReferenceElementMesh(); CHKERRQ(ierr);
 
   ierr = post_proc.addFieldValuesPostProc("VALUES"); CHKERRQ(ierr);
@@ -374,7 +374,7 @@ int main(int argc, char *argv[]) {
   rval = post_proc.postProcMesh.write_file("out_fluxes.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
   ierr = post_proc.clearOperators(); CHKERRQ(ierr);
 
-  PostPocOnRefinedMesh post_proc_error(m_field,false,0);
+  PostProcVolumeOnRefinedMesh post_proc_error(m_field,false,0);
   ierr = post_proc_error.generateReferenceElementMesh(); CHKERRQ(ierr);
   ierr = post_proc_error.addFieldValuesPostProc("ERROR"); CHKERRQ(ierr);
   ierr = m_field.loop_finite_elements("ULTRAWEAK_CALCULATE_ERROR","ULTRAWEAK_ERROR",post_proc_error);  CHKERRQ(ierr);

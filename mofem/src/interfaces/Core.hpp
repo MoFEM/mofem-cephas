@@ -17,11 +17,6 @@
 #ifndef __MOABFIELD_CORE_HPP__
 #define __MOABFIELD_CORE_HPP__
 
-#include "FieldInterface.hpp"
-#include "MeshRefinment.hpp"
-#include "PrismInterface.hpp"
-#include "SeriesRecorder.hpp"
-
 namespace MoFEM {
 
 /** \brief Core FieldInterface class
@@ -56,6 +51,7 @@ struct Core:
   //Database
   ErrorCode rval;
   PetscErrorCode ierr;
+
   //Data and low level methods
   Tag th_Part;
   Tag th_RefType,th_RefParentHandle,th_RefBitLevel,th_RefBitLevel_Mask,th_RefBitEdge,th_RefFEMeshset;
@@ -70,6 +66,9 @@ struct Core:
   Tag nsTag,ssTag,nsTag_data,ssTag_data,bhTag,bhTag_header;
   Tag th_ElemType;
   Tag th_SeriesName;
+  Tag th_CoordSysMeshSet;
+  Tag th_CoordSysName;
+  Tag th_CoordSysDim;
 
   int *fShift,*feShift,*pShift;
   int verbose;
@@ -77,17 +76,19 @@ struct Core:
   //ref
   RefMoFEMEntity_multiIndex refinedEntities;		///< refined entities
   RefMoFEMElement_multiIndex refinedFiniteElements;	///< refined elements
+  //coordinate sysrems
+  CoordSys_multiIndex coordinateSystems;
   //field
-  MoFEMField_multiIndex moabFields;			///< field
-  MoFEMEntity_multiIndex entsMoabField;			///< entities on field
-  DofMoFEMEntity_multiIndex dofsMoabField;		///< dofs on fiels
+  MoFEMField_multiIndex fIelds;			///< field
+  MoFEMEntity_multiIndex entsFields;			///< entities on field
+  DofMoFEMEntity_multiIndex dofsField;		///< dofs on fiels
   //finite element
   MoFEMFiniteElement_multiIndex finiteElements;		///< finite elements
-  EntMoFEMFiniteElement_multiIndex finiteElementsMoFEMEnts;			///< finite element entities
+  EntMoFEMFiniteElement_multiIndex entsFiniteElements;			///< finite element entities
   //entFEAdjacencies
   MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_multiIndex entFEAdjacencies;	///< adjacencies of elements to dofs
-  //moFEMProblems
-  MoFEMProblem_multiIndex moFEMProblems;					///< problems
+  //pRoblems
+  MoFEMProblem_multiIndex pRoblems;					///< problems
   //cubit
   CubitMeshSet_multiIndex cubitMeshsets;					///< cubit meshsets
   //series
@@ -219,25 +220,25 @@ struct Core:
     try {
       FieldInterface& thism_field = *this;
       for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(thism_field,type,it)) {
-	ierr = it->get_bc_data_structure(data); CHKERRQ(ierr);
-	ostringstream ss;
-	ss << *it << endl;
-	ss << data << endl;
-	Range tets,tris,edges,nodes;
-	rval = moab.get_entities_by_type(it->meshset,MBTET,tets,true); CHKERR_PETSC(rval);
-	rval = moab.get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
-	rval = moab.get_entities_by_type(it->meshset,MBEDGE,edges,true); CHKERR_PETSC(rval);
-	rval = moab.get_entities_by_type(it->meshset,MBVERTEX,nodes,true); CHKERR_PETSC(rval);
-	ss << "name "<< it->get_name() << endl;
-	ss << "msId "<< it->get_msId() << " nb. tets " << tets.size() << endl;
-	ss << "msId "<< it->get_msId() << " nb. tris " << tris.size() << endl;
-	ss << "msId "<< it->get_msId() << " nb. edges " << edges.size() << endl;
-	ss << "msId "<< it->get_msId() << " nb. nodes " << nodes.size() << endl;
-	ss << endl;
-	PetscPrintf(comm,ss.str().c_str());
+        ierr = it->get_bc_data_structure(data); CHKERRQ(ierr);
+        ostringstream ss;
+        ss << *it << endl;
+        ss << data << endl;
+        Range tets,tris,edges,nodes;
+        rval = moab.get_entities_by_type(it->meshset,MBTET,tets,true); CHKERR_PETSC(rval);
+        rval = moab.get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
+        rval = moab.get_entities_by_type(it->meshset,MBEDGE,edges,true); CHKERR_PETSC(rval);
+        rval = moab.get_entities_by_type(it->meshset,MBVERTEX,nodes,true); CHKERR_PETSC(rval);
+        ss << "name "<< it->get_name() << endl;
+        ss << "msId "<< it->get_msId() << " nb. tets " << tets.size() << endl;
+        ss << "msId "<< it->get_msId() << " nb. tris " << tris.size() << endl;
+        ss << "msId "<< it->get_msId() << " nb. edges " << edges.size() << endl;
+        ss << "msId "<< it->get_msId() << " nb. nodes " << nodes.size() << endl;
+        ss << endl;
+        PetscPrintf(comm,ss.str().c_str());
       }
-    } catch (const char* msg) {
-      SETERRQ(PETSC_COMM_SELF,1,msg);
+    } catch (MoFEMException const &e) {
+      SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
     }
     PetscFunctionReturn(0);
   }
@@ -358,7 +359,8 @@ struct Core:
 
   //field
   PetscErrorCode add_field(
-    const string& name,const FieldSpace space,const ApproximationRank rank,enum MoFEMTypes bh = MF_EXCL,int verb = -1);
+    const string& name,const FieldSpace space,const ApproximationRank nb_cooficients,enum MoFEMTypes bh = MF_EXCL,int verb = -1
+  );
   PetscErrorCode add_ents_to_field_by_VERTICEs(const Range &nodes,const BitFieldId id,int verb = -1);
   PetscErrorCode add_ents_to_field_by_VERTICEs(const Range &nodes,const string& name,int verb = -1);
   PetscErrorCode add_ents_to_field_by_VERTICEs(const EntityHandle meshset,const BitFieldId id,int verb = -1);
@@ -373,6 +375,12 @@ struct Core:
   PetscErrorCode add_ents_to_field_by_TETs(const EntityHandle meshset,const BitFieldId id,int verb = -1);
   PetscErrorCode add_ents_to_field_by_TETs(const Range &tets,const string& name,int verb = -1);
   PetscErrorCode add_ents_to_field_by_TETs(const EntityHandle meshset,const string& name,int verb = -1);
+  PetscErrorCode add_ents_to_field_by_QUADs(const Range &prisms,const BitFieldId id,int verb = -1);
+  PetscErrorCode add_ents_to_field_by_QUADs(const Range &prisms,const string& name,int verb = -1);
+  PetscErrorCode add_ents_to_field_by_QUADs(EntityHandle meshset,const string& name,int verb = -1);
+  PetscErrorCode add_ents_to_field_by_PRISMs(const Range &prisms,const BitFieldId id,int verb = -1);
+  PetscErrorCode add_ents_to_field_by_PRISMs(const Range &prisms,const string& name,int verb = -1);
+  PetscErrorCode add_ents_to_field_by_PRISMs(EntityHandle meshset,const string& name,int verb = -1);
   PetscErrorCode remove_ents_from_field_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
   PetscErrorCode remove_ents_from_field(const string& name,const EntityHandle meshset,const EntityType type,int verb = -1);
   PetscErrorCode remove_ents_from_field(const string& name,const Range &ents,int verb = -1);
@@ -434,6 +442,7 @@ struct Core:
   PetscErrorCode remove_ents_from_finite_element_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
   PetscErrorCode remove_ents_from_finite_element(const string &name,const EntityHandle meshset,const EntityType type,int verb = -1);
   PetscErrorCode remove_ents_from_finite_element(const string &name,const Range &ents,int verb = -1);
+  PetscErrorCode delete_finite_element(const string name,int verb = -1);
 
   //other auxiliary functions for finite element
   BitFEId get_BitFEId(const string& name) const;
@@ -445,7 +454,9 @@ struct Core:
   //problem
   PetscErrorCode add_problem(const BitProblemId id,const string& name);
   PetscErrorCode add_problem(const string& name,enum MoFEMTypes bh = MF_EXCL,int verb = -1);
+  PetscErrorCode delete_problem(const string name);
   PetscErrorCode modify_problem_add_finite_element(const string &name_problem,const string &MoFEMFiniteElement_name);
+  PetscErrorCode modify_problem_unset_finite_element(const string &name_problem,const string &MoFEMFiniteElement_name);
   PetscErrorCode modify_problem_ref_level_add_bit(const string &name_problem,const BitRefLevel &bit);
   PetscErrorCode modify_problem_ref_level_set_bit(const string &name_problem,const BitRefLevel &bit);
   PetscErrorCode modify_problem_dof_mask_ref_level_set_bit(const string &name_problem,const BitRefLevel &bit);
@@ -473,6 +484,7 @@ struct Core:
 
   //problem building
   PetscErrorCode build_problem(const string &name,int verb = -1);
+  PetscErrorCode clear_problem(const string &name,int verb = -1);
   PetscErrorCode build_problem(MoFEMProblem *problem_ptr,int verb = -1);
   PetscErrorCode build_problems(int verb = -1);
   PetscErrorCode clear_problems(int verb = -1);
@@ -505,7 +517,9 @@ struct Core:
   /// get IS for order
   PetscErrorCode ISCreateProblemOrder(const string &problem,RowColData rc,int min_order,int max_order,IS *is,int verb = -1);
   /// get IS for field and rank
-  PetscErrorCode ISCreateProblemFieldAndRank(const string &problem,RowColData rc,const string &field,int min_rank,int max_rank,IS *is,int verb = -1);
+  PetscErrorCode ISCreateProblemFieldAndRank(
+    const string &problem,RowColData rc,const string &field,int min_coeff_idx,int max_coeff_idx,IS *is,int verb = -1
+  );
 
   //scatter from problem filed to other problem field
   PetscErrorCode ISCreateFromProblemFieldToOtherProblemField(
@@ -599,6 +613,10 @@ struct Core:
     const int operation_type = Interface::INTERSECT,
     const int verb = 0
   );
+
+  //Coordinate systems
+  PetscErrorCode add_coordinate_system(const int cs_dim[],const string name);
+  PetscErrorCode set_field_coordinate_system(const string field_name,const string cs_name);
 
   //Petsc Logs
   PetscLogEvent USER_EVENT_preProcess;

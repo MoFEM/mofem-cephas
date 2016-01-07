@@ -1,0 +1,280 @@
+/* This file is part of MoFEM.
+ * MoFEM is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
+ *
+ * MoFEM is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+ * License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+
+#include <MoFEM.hpp>
+#include <PrismsFromSurfaceInterface.hpp>
+
+#include <boost/iostreams/tee.hpp>
+#include <boost/iostreams/stream.hpp>
+#include <fstream>
+#include <iostream>
+
+namespace bio = boost::iostreams;
+using bio::tee_device;
+using bio::stream;
+
+using namespace MoFEM;
+
+MoABErrorCode rval;
+PetscErrorCode ierr;
+
+static char help[] = "...\n\n";
+static int debug = 1;
+
+int main(int argc, char *argv[]) {
+
+  PetscInitialize(&argc,&argv,(char *)0,help);
+
+  try {
+
+    moab::Core mb_instance;
+    Interface& moab = mb_instance;
+    int rank;
+    MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
+
+    //Read parameters from line command
+    PetscBool flg = PETSC_TRUE;
+    char mesh_file_name[255];
+    ierr = PetscOptionsGetString(PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+    if(flg != PETSC_TRUE) {
+      SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
+    }
+
+    //Read mesh to MOAB
+    const char *option;
+    option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
+    rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
+    ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
+    if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
+
+    //Create MoFEM (Joseph) databas
+    MoFEM::Core core(moab);
+    FieldInterface& m_field = core;
+
+    PrismsFromSurfaceInterface *prisms_from_surface_interface;
+    ierr = m_field.query_interface(prisms_from_surface_interface); CHKERRQ(ierr);
+
+    Range tris;
+    rval = moab.get_entities_by_type(0,MBTRI,tris,false); CHKERR_PETSC(rval);
+    Range prisms;
+    ierr = prisms_from_surface_interface->createPrisms(tris,prisms); CHKERRQ(ierr);
+
+    EntityHandle meshset;
+    rval = moab.create_meshset(MESHSET_SET,meshset); CHKERR_PETSC(rval);
+    rval = moab.add_entities(meshset,prisms); CHKERR_PETSC(rval);
+
+    BitRefLevel bit_level0;
+    bit_level0.set(0);
+    ierr = m_field.seed_ref_level_3D(meshset,bit_level0); CHKERRQ(ierr);
+    ierr = prisms_from_surface_interface->seedPrismsEntities(prisms,bit_level0); CHKERRQ(ierr);
+
+    //Fields
+    ierr = m_field.add_field("FIELD1",H1,1); CHKERRQ(ierr);
+    ierr = m_field.add_ents_to_field_by_PRISMs(meshset,"FIELD1",10); CHKERRQ(ierr);
+
+    ierr = m_field.set_field_order(0,MBVERTEX,"FIELD1",1); CHKERRQ(ierr);
+    ierr = m_field.set_field_order(0,MBEDGE,"FIELD1",3,10); CHKERRQ(ierr);
+    ierr = m_field.build_fields(10); CHKERRQ(ierr);
+
+    // ierr = m_field.list_dofs_by_field_name("FIELD1"); CHKERRQ(ierr);
+
+    const DofMoFEMEntity_multiIndex *dofs_ptr;
+    ierr = m_field.get_dofs(&dofs_ptr); CHKERRQ(ierr);
+    PetscPrintf(PETSC_COMM_WORLD,"dofs_ptr.size() = %d\n",dofs_ptr->size());
+    if(dofs_ptr->size()!=564) {
+      SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency 323!=%d",dofs_ptr->size());
+    }
+
+    ierr = m_field.set_field_order(0,MBQUAD,"FIELD1",4,10); CHKERRQ(ierr);
+    ierr = m_field.set_field_order(0,MBPRISM,"FIELD1",6,10); CHKERRQ(ierr);
+    ierr = m_field.build_fields(10); CHKERRQ(ierr);
+
+    PetscPrintf(PETSC_COMM_WORLD,"dofs_ptr.size() = %d\n",dofs_ptr->size());
+    if(dofs_ptr->size()!=724) {
+      SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency 483!=%d",dofs_ptr->size());
+    }
+
+    ierr = m_field.set_field_order(0,MBTRI,"FIELD1",3); CHKERRQ(ierr);
+    ierr = m_field.build_fields(); CHKERRQ(ierr);
+
+    if(debug) {
+      rval = moab.write_file("prism_mesh.vtk","VTK","",&meshset,1); CHKERR_PETSC(rval);
+    }
+
+    //FE
+    ierr = m_field.add_finite_element("TEST_FE1"); CHKERRQ(ierr);
+
+    //Define rows/cols and element data
+    ierr = m_field.modify_finite_element_add_field_row("TEST_FE1","FIELD1"); CHKERRQ(ierr);
+    ierr = m_field.modify_finite_element_add_field_col("TEST_FE1","FIELD1"); CHKERRQ(ierr);
+    ierr = m_field.modify_finite_element_add_field_data("TEST_FE1","FIELD1"); CHKERRQ(ierr);
+
+    ierr = m_field.add_ents_to_finite_element_by_PRISMs(prisms,"TEST_FE1"); CHKERRQ(ierr);
+
+    //build finite elemnts
+    ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
+    // //build adjacencies
+    ierr = m_field.build_adjacencies(bit_level0); CHKERRQ(ierr);
+    //list elements
+    // ierr = m_field.list_adjacencies(); CHKERRQ(ierr);
+
+    //Problem
+    ierr = m_field.add_problem("TEST_PROBLEM"); CHKERRQ(ierr);
+
+    //set finite elements for problem
+    ierr = m_field.modify_problem_add_finite_element("TEST_PROBLEM","TEST_FE1"); CHKERRQ(ierr);
+    //set refinment level for problem
+    ierr = m_field.modify_problem_ref_level_add_bit("TEST_PROBLEM",bit_level0); CHKERRQ(ierr);
+
+    //build problem
+    ierr = m_field.build_problems(); CHKERRQ(ierr);
+    //partition
+    ierr = m_field.partition_simple_problem("TEST_PROBLEM"); CHKERRQ(ierr);
+    ierr = m_field.partition_finite_elements("TEST_PROBLEM"); CHKERRQ(ierr);
+    //what are ghost nodes, see Petsc Manual
+    ierr = m_field.partition_ghost_dofs("TEST_PROBLEM"); CHKERRQ(ierr);
+
+    typedef tee_device<ostream, ofstream> TeeDevice;
+    typedef stream<TeeDevice> TeeStream;
+
+    ofstream ofs("prisms_elements_from_surface.txt");
+    TeeDevice my_tee(cout, ofs);
+    TeeStream my_split(my_tee);
+
+    struct MyOp: public FatPrismElementForcesAndSurcesCore::UserDataOperator {
+
+      TeeStream &mySplit;
+      MyOp(TeeStream &mySplit,const char type):
+        FatPrismElementForcesAndSurcesCore::UserDataOperator("FIELD1","FIELD1",type),
+        mySplit(mySplit)
+      {}
+
+      PetscErrorCode doWork(
+        int side,
+        EntityType type,
+        DataForcesAndSurcesCore::EntData &data
+      ) {
+        PetscFunctionBegin;
+
+        // if(data.getFieldData().empty()) PetscFunctionReturn(0);
+
+
+
+        // const double eps = 1e-4;
+        // for(
+        //   ublas::unbounded_array<double>::iterator it = getNormal().data().begin();
+        //   it!=getNormal().data().end();it++
+        // ) {
+        //   *it = fabs(*it)<eps ? 0.0 : *it;
+        // }
+        // for(
+        //   ublas::unbounded_array<double>::iterator it = getNormals_at_GaussPtF3().data().begin();
+        //   it!=getNormals_at_GaussPtF3().data().end();it++
+        // ) {
+        //   *it = fabs(*it)<eps ? 0.0 : *it;
+        // }
+        // for(
+        //   ublas::unbounded_array<double>::iterator it = getTangent1_at_GaussPtF3().data().begin();
+        //   it!=getTangent1_at_GaussPtF3().data().end();it++
+        // ) {
+        //   *it = fabs(*it)<eps ? 0.0 : *it;
+        // }
+        // for(
+        //   ublas::unbounded_array<double>::iterator it = getTangent2_at_GaussPtF3().data().begin();
+        //   it!=getTangent2_at_GaussPtF3().data().end();it++
+        // ) {
+        //   *it = fabs(*it)<eps ? 0.0 : *it;
+        // }
+        // for(
+        //   ublas::unbounded_array<double>::iterator it = getNormals_at_GaussPtF4().data().begin();
+        //   it!=getNormals_at_GaussPtF4().data().end();it++
+        // ) {
+        //   *it = fabs(*it)<eps ? 0.0 : *it;
+        // }
+        // for(
+        //   ublas::unbounded_array<double>::iterator it = getTangent1_at_GaussPtF4().data().begin();
+        //   it!=getTangent1_at_GaussPtF4().data().end();it++
+        // ) {
+        //   *it = fabs(*it)<eps ? 0.0 : *it;
+        // }
+        // for(
+        //   ublas::unbounded_array<double>::iterator it = getTangent2_at_GaussPtF4().data().begin();
+        //   it!=getTangent2_at_GaussPtF4().data().end();it++
+        // ) {
+        //   *it = fabs(*it)<eps ? 0.0 : *it;
+        // }
+        //
+        mySplit << "NH1" << endl;
+        mySplit << "side: " << side << " type: " << type << endl;
+        data.getN() *= 1e4;
+        data.getDiffN() *= 1e4;
+        mySplit << data << endl;
+        mySplit << "getTroughThicknessDataStructure" << endl;
+        mySplit << getTroughThicknessDataStructure().dataOnEntities[type][side] << endl;
+
+        // mySplit << "integration pts " << getGaussPts() << endl;
+        // mySplit << "coords at integration pts " << getCoordsAtGaussPts() << endl;
+        mySplit << endl << endl;
+
+        // mySplit << setprecision(3) << getCoords() << endl;
+        // mySplit << setprecision(3) << getCoordsAtGaussPts() << endl;
+        // mySplit << setprecision(3) << getArea(0) << endl;
+        // mySplit << setprecision(3) << getArea(1) << endl;
+        // mySplit << setprecision(3) << "normal F3 " << getNormalF3() << endl;
+        // mySplit << setprecision(3) << "normal F4 " << getNormalF4() << endl;
+        // mySplit << setprecision(3) << "normal at Gauss pt F3 " << getNormals_at_GaussPtF3() << endl;
+        // mySplit << setprecision(3) << getTangent1_at_GaussPtF3() << endl;
+        // mySplit << setprecision(3) << getTangent2_at_GaussPtF3() << endl;
+        // mySplit << setprecision(3) << "normal at Gauss pt F4 " << getNormals_at_GaussPtF4() << endl;
+        // mySplit << setprecision(3) << getTangent1_at_GaussPtF4() << endl;
+        // mySplit << setprecision(3) << getTangent2_at_GaussPtF4() << endl;
+        PetscFunctionReturn(0);
+      }
+
+      PetscErrorCode doWork(
+        int row_side,int col_side,
+        EntityType row_type,EntityType col_type,
+        DataForcesAndSurcesCore::EntData &row_data,
+        DataForcesAndSurcesCore::EntData &col_data
+      ) {
+        PetscFunctionBegin;
+
+        // if(row_data.getFieldData().empty()) PetscFunctionReturn(0);
+        //
+        // mySplit << "NH1NH1" << endl;
+        // mySplit << "row side: " << row_side << " row_type: " << row_type << endl;
+        // mySplit << row_data << endl;
+        // mySplit << "NH1NH1" << endl;
+        // mySplit << "col side: " << col_side << " col_type: " << col_type << endl;
+        // mySplit << row_data << endl;
+
+        PetscFunctionReturn(0);
+      }
+
+    };
+
+    FatPrismElementForcesAndSurcesCore fe1(m_field);
+    fe1.getOpPtrVector().push_back(new MyOp(my_split,ForcesAndSurcesCore::UserDataOperator::OPROW));
+    //fe1.getOpPtrVector().push_back(new MyOp(my_split,ForcesAndSurcesCore::UserDataOperator::OPROWCOL));
+    ierr = m_field.loop_finite_elements("TEST_PROBLEM","TEST_FE1",fe1);  CHKERRQ(ierr);
+
+
+  } catch (MoFEMException const &e) {
+    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+  }
+
+  PetscFinalize();
+  return 0;
+
+}

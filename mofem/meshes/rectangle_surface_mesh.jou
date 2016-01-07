@@ -1,0 +1,15 @@
+reset
+
+create surface rectangle width 1 zplane 
+create Displacement  on curve 1 2  3 4 dof 1 dof 2 dof 3 dof 4 dof 5 dof 6 fix 0
+create pressure  on surface 1  magnitude 1
+#create force  on vertex 4  force value 1 direction   z
+
+surface all scheme TriMesh
+surface all size auto factor 6
+
+mesh surface all
+
+#set duplicate block elements on
+#block 2 surface 1
+#block 2 element type TRISHELL6

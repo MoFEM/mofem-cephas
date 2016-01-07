@@ -14,24 +14,32 @@
 
 */
 
-#include <moab/ParallelComm.hpp>
-
-#include <petscsys.h>
-#include <petscvec.h>
-#include <petscmat.h>
-#include <petscsnes.h>
-#include <petscts.h>
-
+#include <Includes.hpp>
 #include <definitions.h>
+#include <Common.hpp>
+
 #include <h1_hdiv_hcurl_l2.h>
 
-#include <Common.hpp>
-#include <LoopMethods.hpp>
-
-#include <boost/ptr_container/ptr_map.hpp>
-#include <Core.hpp>
-
+#include <MaterialBlocks.hpp>
+#include <CubitBCData.hpp>
+#include <TagMultiIndices.hpp>
+#include <CoordSysMultiIndices.hpp>
+#include <FieldMultiIndices.hpp>
+#include <EntsMultiIndices.hpp>
+#include <DofsMultiIndices.hpp>
+#include <FEMMultiIndices.hpp>
+#include <ProblemsMultiIndices.hpp>
+#include <AdjacencyMultiIndices.hpp>
+#include <BCMultiIndices.hpp>
 #include <CoreDataStructures.hpp>
+#include <SeriesMultiIndices.hpp>
+
+#include <LoopMethods.hpp>
+#include <FieldInterface.hpp>
+#include <MeshRefinment.hpp>
+#include <PrismInterface.hpp>
+#include <SeriesRecorder.hpp>
+#include <Core.hpp>
 
 namespace MoFEM {
 
@@ -145,16 +153,16 @@ PetscErrorCode CreateRowComressedADJMatrix::createMat(
 
   // Find problem by name FIXME: this should be outsourced to other function,
   // where to this function only problem pointer is passed.
-  ProblemsByName &moFEMProblems_set = moFEMProblems.get<Problem_mi_tag>();
-  ProblemsByName::iterator p_miit = moFEMProblems_set.find(name);
-  if(p_miit==moFEMProblems_set.end()) SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"problem < %s > is not found (top tip: check spelling)",name.c_str());
+  ProblemsByName &pRoblems_set = pRoblems.get<Problem_mi_tag>();
+  ProblemsByName::iterator p_miit = pRoblems_set.find(name);
+  if(p_miit==pRoblems_set.end()) SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"problem < %s > is not found (top tip: check spelling)",name.c_str());
 
   // Get multi-indices for rows and columns
   const NumeredDofMoFEMEntitysByIdx &dofs_row_by_idx = p_miit->numered_dofs_rows.get<TAG>();
   const NumeredDofMoFEMEntitysByIdx &dofs_col_by_idx = p_miit->numered_dofs_cols.get<TAG>();
   DofIdx nb_dofs_row = p_miit->get_nb_dofs_row();
   if(nb_dofs_row == 0) {
-    SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"problem <%s> has zero rows",name.c_str());
+    SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"problem <%s> has zero rows",name.c_str());
   }
 
   // Get adjacencies form other processors
@@ -329,7 +337,7 @@ PetscErrorCode CreateRowComressedADJMatrix::createMat(
             DofByGlobalPetscIndex::iterator dit;
             dit = p_miit->numered_dofs_rows.get<PetscGlobalIdx_mi_tag>().find(row_idx);
             if(dit==p_miit->numered_dofs_rows.get<PetscGlobalIdx_mi_tag>().end()) {
-              SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"dof %d can not be found in problem",row_idx);
+              SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"dof %d can not be found in problem",row_idx);
             }
 
           }
@@ -420,7 +428,7 @@ PetscErrorCode CreateRowComressedADJMatrix::createMat(
           mit = adjacent_dofs_on_other_parts.find(row_last_evaluated_idx);
           if(mit == adjacent_dofs_on_other_parts.end()) {
             cerr << *miit_row << endl;
-            SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency row_last_evaluated_idx = %d",row_last_evaluated_idx);
+            SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency row_last_evaluated_idx = %d",row_last_evaluated_idx);
           }
 
           dofs_vec.insert(dofs_vec.end(),mit->second.begin(),mit->second.end());
@@ -560,10 +568,10 @@ PetscErrorCode Core::MatCreateSeqAIJWithArrays(const string &name,Mat *Aij,Petsc
 PetscErrorCode Core::partition_problem(const string &name,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-  if(!(*build_MoFEM&(1<<0))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"fields not build");
-  if(!(*build_MoFEM&(1<<1))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"FEs not build");
-  if(!(*build_MoFEM&(1<<2))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"entFEAdjacencies not build");
-  if(!(*build_MoFEM&(1<<3))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"moFEMProblems not build");
+  if(!(*build_MoFEM&(1<<0))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"fields not build");
+  if(!(*build_MoFEM&(1<<1))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"FEs not build");
+  if(!(*build_MoFEM&(1<<2))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"entFEAdjacencies not build");
+  if(!(*build_MoFEM&(1<<3))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"pRoblems not build");
   if(verb>0) {
     PetscPrintf(comm,"Partition problem %s\n",name.c_str());
   }
@@ -572,9 +580,9 @@ PetscErrorCode Core::partition_problem(const string &name,int verb) {
   typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
 
   // Find problem pointer by name
-  ProblemsByName &moFEMProblems_set = moFEMProblems.get<Problem_mi_tag>();
-  ProblemsByName::iterator p_miit = moFEMProblems_set.find(name);
-  if(p_miit==moFEMProblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem with name %s not defined (top tip check spelling)",name.c_str());
+  ProblemsByName &pRoblems_set = pRoblems.get<Problem_mi_tag>();
+  ProblemsByName::iterator p_miit = pRoblems_set.find(name);
+  if(p_miit==pRoblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem with name %s not defined (top tip check spelling)",name.c_str());
   DofIdx nb_dofs_row = p_miit->get_nb_dofs_row();
 
   int *i,*j;
@@ -586,8 +594,8 @@ PetscErrorCode Core::partition_problem(const string &name,int verb) {
   try {
     CreateRowComressedADJMatrix *core_ptr = static_cast<CreateRowComressedADJMatrix*>(const_cast<Core*>(this));
     ierr = core_ptr->createMat<Idx_mi_tag>(name,&Adj,MATMPIADJ,&i,&j,PETSC_NULL,true,verb); CHKERRQ(ierr);
-  } catch (const char* msg) {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_CHAR_THROW,msg);
+  } catch (MoFEMException const &e) {
+    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
   } catch (const std::exception& ex) {
     ostringstream ss;
     ss << "throw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
@@ -664,13 +672,13 @@ PetscErrorCode Core::partition_problem(const string &name,int verb) {
 
     for(;miit_dofs_row!=dofs_row_by_idx_no_const.end();miit_dofs_row++,miit_dofs_col++) {
       if(miit_dofs_col==dofs_col_by_idx_no_const.end()) {
-        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"check finite element definition, nb. of rows is not equal to number for columns");
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"check finite element definition, nb. of rows is not equal to number for columns");
       }
       if(miit_dofs_row->get_global_unique_id()!=miit_dofs_col->get_global_unique_id()) {
-        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"check finite element definition, nb. of rows is not equal to columns");
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"check finite element definition, nb. of rows is not equal to columns");
       }
       if(miit_dofs_row->dof_idx!=miit_dofs_col->dof_idx) {
-        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"check finite element definition, nb. of rows is not equal to columns");
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"check finite element definition, nb. of rows is not equal to columns");
       }
       assert(petsc_idx[miit_dofs_row->dof_idx]>=0);
       assert(petsc_idx[miit_dofs_row->dof_idx]<(int)p_miit->get_nb_dofs_row());
@@ -696,8 +704,8 @@ PetscErrorCode Core::partition_problem(const string &name,int verb) {
       }
     }
 
-  } catch (const char* msg) {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_CHAR_THROW,msg);
+  } catch (MoFEMException const &e) {
+    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
   } catch (const std::exception& ex) {
     ostringstream ss;
     ss << "throw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
@@ -746,17 +754,17 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const string &problem_name,i
       PetscFunctionBegin;
 
       if(refinedFiniteElementsPtr->find(fePtr->get_ent())==refinedFiniteElementsPtr->end()) {
-        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
       }
 
       FENumeredDofMoFEMEntity_multiIndex::iterator rit = rowPtr->begin();
       for(;rit!=rowPtr->end();rit++) {
 
         if(refinedEntitiesPtr->find(rit->get_ent())==refinedEntitiesPtr->end()) {
-          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
         }
         if(!rit->get_active()) {
-          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
         }
 
         MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_multiIndex::index<Composite_Unique_mi_tag>::type::iterator ait;
@@ -769,14 +777,14 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const string &problem_name,i
           ss << "fe: " << fePtr->get_BitRefLevel() << endl;
           ss << "problem: " << problemPtr->get_BitRefLevel() << endl;
           PetscPrintf(mFieldPtr->get_comm(),"%s",ss.str().c_str());
-          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"adjacencies data inconsistency");
+          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"adjacencies data inconsistency");
         } else {
           LocalUId uid = ait->get_ent_unique_id();
           if(entitiesPtr->find(uid) == entitiesPtr->end()) {
-            SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+            SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
           }
           if(dofsPtr->find(rit->get_global_unique_id())==dofsPtr->end()) {
-            SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+            SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
           }
         }
         int row = rit->get_petsc_gloabl_dof_idx();
@@ -785,22 +793,22 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const string &problem_name,i
         for(;cit!=colPtr->end();cit++) {
 
           if(refinedEntitiesPtr->find(cit->get_ent())==refinedEntitiesPtr->end()) {
-            SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+            SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
           }
           if(!cit->get_active()) {
-            SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+            SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
           }
           int col = cit->get_petsc_gloabl_dof_idx();
           ait = adjacenciesPtr->get<Composite_Unique_mi_tag>().find(boost::make_tuple(cit->get_MoFEMEntity_ptr()->get_global_unique_id(),fePtr->get_global_unique_id()));
           if(ait==adjacenciesPtr->end()) {
-            SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"adjacencies data inconsistency");
+            SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"adjacencies data inconsistency");
           } else {
             LocalUId uid = ait->get_ent_unique_id();
             if(entitiesPtr->find(uid) == entitiesPtr->end()) {
-              SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+              SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
             }
             if(dofsPtr->find(cit->get_global_unique_id())==dofsPtr->end()) {
-              SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+              SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
             }
           }
 
@@ -832,9 +840,9 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const string &problem_name,i
             int nb_dofs_on_ent = distance(dit,hi_dit);
 
             int max_order = cit->get_max_order();
-            if(cit->get_max_rank()*cit->get_order_nb_dofs(max_order)!=nb_dofs_on_ent) {
+            if(cit->get_nb_of_coeffs()*cit->get_order_nb_dofs(max_order)!=nb_dofs_on_ent) {
               cerr << "Warning: Number of Dofs in Col diffrent than number of dofs for given entity order "
-              << cit->get_max_rank()*cit->get_order_nb_dofs(max_order) << " " << nb_dofs_on_ent  << endl;
+              << cit->get_nb_of_coeffs()*cit->get_order_nb_dofs(max_order) << " " << nb_dofs_on_ent  << endl;
             }
 
           }
@@ -849,9 +857,9 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const string &problem_name,i
           int nb_dofs_on_ent = distance(dit,hi_dit);
 
           int max_order = rit->get_max_order();
-          if(rit->get_max_rank()*rit->get_order_nb_dofs(max_order) != nb_dofs_on_ent) {
+          if(rit->get_nb_of_coeffs()*rit->get_order_nb_dofs(max_order) != nb_dofs_on_ent) {
             cerr << "Warning: Number of Dofs in Row diffrent than number of dofs for given entity order "
-            << rit->get_max_rank()*rit->get_order_nb_dofs(max_order) << " " << nb_dofs_on_ent << endl;
+            << rit->get_nb_of_coeffs()*rit->get_order_nb_dofs(max_order) << " " << nb_dofs_on_ent << endl;
           }
 
         }
@@ -900,9 +908,9 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const string &problem_name,i
 
   typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
   //find p_miit
-  ProblemsByName &moFEMProblems_set = moFEMProblems.get<Problem_mi_tag>();
-  ProblemsByName::iterator p_miit = moFEMProblems_set.find(problem_name);
-  if(p_miit == moFEMProblems_set.end()) {
+  ProblemsByName &pRoblems_set = pRoblems.get<Problem_mi_tag>();
+  ProblemsByName::iterator p_miit = pRoblems_set.find(problem_name);
+  if(p_miit == pRoblems_set.end()) {
     SETERRQ1(PETSC_COMM_SELF,1,"problem < %s > not found (top tip: check spelling)",problem_name.c_str());
   }
   if(verb>0) {

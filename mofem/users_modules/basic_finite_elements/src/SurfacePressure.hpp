@@ -58,10 +58,13 @@ struct NeummanForcesSurface {
     Vec F;
     bCForce &dAta;
     boost::ptr_vector<MethodForForceScaling> &methodsOp;
+    bool hoGeometry;
 
     OpNeumannForce(
       const string field_name,Vec _F,bCForce &data,
-      boost::ptr_vector<MethodForForceScaling> &methods_op);
+      boost::ptr_vector<MethodForForceScaling> &methods_op,
+      bool ho_geometry = false
+    );
 
     ublas::vector<FieldData> Nf;
 
@@ -79,8 +82,10 @@ struct NeummanForcesSurface {
 
     OpNeumannPreassure(
       const string field_name,Vec _F,
-      bCPreassure &data,boost::ptr_vector<MethodForForceScaling> &methods_op,
-      bool ho_geometry = false);
+      bCPreassure &data,
+      boost::ptr_vector<MethodForForceScaling> &methods_op,
+      bool ho_geometry = false
+    );
 
     ublas::vector<FieldData> Nf;
 
@@ -98,8 +103,10 @@ struct NeummanForcesSurface {
 
     OpNeumannFlux(
       const string field_name,Vec _F,
-      bCPreassure &data,boost::ptr_vector<MethodForForceScaling> &methods_op,
-      bool ho_geometry);
+      bCPreassure &data,
+      boost::ptr_vector<MethodForForceScaling> &methods_op,
+      bool ho_geometry
+    );
 
     ublas::vector<FieldData> Nf;
 
@@ -107,10 +114,8 @@ struct NeummanForcesSurface {
 
   };
 
-  DEPRECATED typedef OpNeumannFlux OpNeumannPreassureFlux;
-
   /// Add force element operator  (integration on face)
-  PetscErrorCode addForce(const string field_name,Vec F,int ms_id);
+  PetscErrorCode addForce(const string field_name,Vec F,int ms_id,bool ho_geometry = false);
 
   /// Add pressure element operator (integration on face)
   PetscErrorCode addPreassure(const string field_name,Vec F,int ms_id,bool ho_geometry = false);
@@ -170,8 +175,9 @@ struct MetaNeummanForces {
     string fe_name;
     fe_name = "FORCE_FE";
     neumann_forces.insert(fe_name,new NeummanForcesSurface(mField));
+    bool ho_geometry = mField.check_field(mesh_nodals_positions);
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET|FORCESET,it)) {
-      ierr = neumann_forces.at(fe_name).addForce(field_name,F,it->get_msId());  CHKERRQ(ierr);
+      ierr = neumann_forces.at(fe_name).addForce(field_name,F,it->get_msId(),ho_geometry);  CHKERRQ(ierr);
       /*ForceCubitBcData data;
       ierr = it->get_bc_data_structure(data); CHKERRQ(ierr);
       my_split << *it << endl;
@@ -180,7 +186,6 @@ struct MetaNeummanForces {
     fe_name = "PRESSURE_FE";
     neumann_forces.insert(fe_name,new NeummanForcesSurface(mField));
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SIDESET|PRESSURESET,it)) {
-      bool ho_geometry = mField.check_field(mesh_nodals_positions);
       ierr =  neumann_forces.at(fe_name).addPreassure(field_name,F,it->get_msId(),ho_geometry); CHKERRQ(ierr);
       /*PressureCubitBcData data;
       ierr = it->get_bc_data_structure(data); CHKERRQ(ierr);

@@ -11,25 +11,32 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 */
 
-#include <petscsys.h>
-#include <petscvec.h> 
-#include <petscmat.h> 
-#include <petscsnes.h> 
-#include <petscts.h> 
-
-#include <moab/ParallelComm.hpp>
-
+#include <Includes.hpp>
+// #include <version.h>
 #include <definitions.h>
-#include <h1_hdiv_hcurl_l2.h>
-#include <fem_tools.h>
-
 #include <Common.hpp>
+
+#include <h1_hdiv_hcurl_l2.h>
+
+#include <MaterialBlocks.hpp>
+#include <CubitBCData.hpp>
+#include <TagMultiIndices.hpp>
+#include <CoordSysMultiIndices.hpp>
+#include <FieldMultiIndices.hpp>
+#include <EntsMultiIndices.hpp>
+#include <DofsMultiIndices.hpp>
+#include <FEMMultiIndices.hpp>
+#include <ProblemsMultiIndices.hpp>
+#include <AdjacencyMultiIndices.hpp>
+#include <BCMultiIndices.hpp>
+#include <CoreDataStructures.hpp>
+#include <SeriesMultiIndices.hpp>
 
 #include <LoopMethods.hpp>
 #include <FieldInterface.hpp>
-
-#include <boost/ptr_container/ptr_vector.hpp>
-#include <boost/ptr_container/ptr_map.hpp>
+#include <MeshRefinment.hpp>
+#include <PrismInterface.hpp>
+#include <SeriesRecorder.hpp>
 #include <Core.hpp>
 
 //Tree
@@ -50,7 +57,7 @@ namespace MoFEM {
 PetscErrorCode BitLevelCouplerInterface::queryInterface(const MOFEMuuid& uuid, FieldUnknownInterface** iface) {
   PetscFunctionBegin;
   *iface = NULL;
-  if(uuid == IDD_MOFENBitLevelCoupler) {
+  if(uuid == IDD_MOFEMBitLevelCoupler) {
     *iface = dynamic_cast<BitLevelCouplerInterface*>(this);
     PetscFunctionReturn(0);
   }
@@ -58,7 +65,7 @@ PetscErrorCode BitLevelCouplerInterface::queryInterface(const MOFEMuuid& uuid, F
     *iface = dynamic_cast<FieldUnknownInterface*>(this);
     PetscFunctionReturn(0);
   }
-  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"unknown interface");
+  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown interface");
   PetscFunctionReturn(0);
 }
 
@@ -198,7 +205,7 @@ PetscErrorCode BitLevelCouplerInterface::buidlAdjacenciesVerticesOnTets(const Bi
   FieldInterface& m_field = cOre;
   //build Tree
   bool init_tree = false;
-  
+
   //find parents of all nodes, if node has no parent then tetrahedral containing that node is searched
   //node on tetrahedra my by part of face or edge on that tetrahedral, this need to be verified
   const RefMoFEMEntity_multiIndex *refined_ptr;
@@ -243,7 +250,7 @@ PetscErrorCode BitLevelCouplerInterface::buidlAdjacenciesVerticesOnTets(const Bi
     ierr = getParent(coords,parent,false,iter_tol,inside_tol,verb); CHKERRQ(ierr);
     ierr = chanegParent(refined_ptr->project<0>(it),parent,vertex_elements); CHKERRQ(ierr);
     if(throw_error && parent == 0) {
-      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
   	  "tets or any other entity for node not found");
     }
 
@@ -322,7 +329,7 @@ PetscErrorCode BitLevelCouplerInterface::buidlAdjacenciesEdgesFacesVolumes(
 	cit = refined_ptr->get<Ent_mi_tag>().find(conn_parents[nn]);
       }
       if((cit->get_BitRefLevel()&parent_level).none()) {
-	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"parent of vertex is not on parent bit level");
+	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"parent of vertex is not on parent bit level");
       }
       int ent_dim = m_field.get_moab().dimension_from_handle(conn_parents[nn]);
       max_dim = ent_dim > max_dim ? ent_dim : max_dim;
@@ -350,7 +357,7 @@ PetscErrorCode BitLevelCouplerInterface::buidlAdjacenciesEdgesFacesVolumes(
 	ierr = chanegParent(refined_ptr->project<0>(it),0,elements); CHKERRQ(ierr);
 	if(verb > 1) {
 	  cout << "parent not found\n";
-	}	
+	}
       }
 
     }
@@ -388,7 +395,7 @@ PetscErrorCode BitLevelCouplerInterface::chanegParent(RefMoFEMEntity_multiIndex:
       }
       parent_is_set = true;
     }
-  } 
+  }
 
   if(!parent_is_set) {
     RefMoFEMEntity_change_parent modifier(m_field.get_moab(),parent);
@@ -433,7 +440,7 @@ PetscErrorCode BitLevelCouplerInterface::verifyParent(RefMoFEMEntity_multiIndex:
   PetscFunctionBegin;
 
   if(parent != it->get_parent_ent()) {
-    SETERRQ3(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency %lu != %lu for ent %lu",
+    SETERRQ3(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency %lu != %lu for ent %lu",
       parent,it->get_parent_ent(),it->get_ref_ent());
   }
 

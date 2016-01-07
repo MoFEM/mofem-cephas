@@ -15,23 +15,34 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 */
 
-#include <petscsys.h>
-#include <petscvec.h>
-#include <petscmat.h>
-#include <petscsnes.h>
-#include <petscts.h>
-
-#include <moab/ParallelComm.hpp>
-#include <boost/ptr_container/ptr_map.hpp>
-
-//#include <version.h>
+#include <Includes.hpp>
+// #include <version.h>
 #include <definitions.h>
-
 #include <Common.hpp>
+
+#include <h1_hdiv_hcurl_l2.h>
+
+#include <MaterialBlocks.hpp>
+#include <CubitBCData.hpp>
+#include <TagMultiIndices.hpp>
+#include <CoordSysMultiIndices.hpp>
+#include <FieldMultiIndices.hpp>
+#include <EntsMultiIndices.hpp>
+#include <DofsMultiIndices.hpp>
+#include <FEMMultiIndices.hpp>
+#include <ProblemsMultiIndices.hpp>
+#include <AdjacencyMultiIndices.hpp>
+#include <BCMultiIndices.hpp>
+#include <CoreDataStructures.hpp>
+#include <SeriesMultiIndices.hpp>
+
 #include <LoopMethods.hpp>
+#include <FieldInterface.hpp>
+#include <MeshRefinment.hpp>
+#include <PrismInterface.hpp>
+#include <SeriesRecorder.hpp>
 #include <Core.hpp>
 
-#include <FieldInterface.hpp>
 #include <NodeMerger.hpp>
 
 namespace MoFEM {
@@ -39,7 +50,7 @@ namespace MoFEM {
 PetscErrorCode NodeMergerInterface::queryInterface(const MOFEMuuid& uuid, FieldUnknownInterface** iface) {
   PetscFunctionBegin;
   *iface = NULL;
-  if(uuid == IDD_MOFENNodeMerger) {
+  if(uuid == IDD_MOFEMNodeMerger) {
     *iface = dynamic_cast<NodeMergerInterface*>(this);
     PetscFunctionReturn(0);
   }
@@ -47,7 +58,7 @@ PetscErrorCode NodeMergerInterface::queryInterface(const MOFEMuuid& uuid, FieldU
     *iface = dynamic_cast<FieldUnknownInterface*>(this);
     PetscFunctionReturn(0);
   }
-  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"unknown inteface");
+  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown interface");
   PetscFunctionReturn(0);
 }
 

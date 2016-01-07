@@ -170,7 +170,7 @@ int main(int argc, char *argv[]) {
   map<EntityHandle,double> m0,m1,m2;
   for(_IT_NUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_(problemPtr,dit)) {
 
-    if(dit->get_dof_rank()!=1) continue;
+    if(dit->get_dof_coeff_idx()!=1) continue;
 
     my_split.precision(3);
     my_split.setf(std::ios::fixed);
