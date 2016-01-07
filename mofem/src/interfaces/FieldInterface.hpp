@@ -71,13 +71,13 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode check_number_of_ents_in_ents_field() = 0;
 
   /**
-    * \brief check data consistency in finiteElementsMoFEMEnts
+    * \brief check data consistency in entsFiniteElements
     *
     */
   virtual PetscErrorCode check_number_of_ents_in_ents_finite_element(const string& name) = 0;
 
   /**
-    * \brief check data consistency in finiteElementsMoFEMEnts
+    * \brief check data consistency in entsFiniteElements
     *
     */
   virtual PetscErrorCode check_number_of_ents_in_ents_finite_element() = 0;
@@ -105,14 +105,6 @@ struct FieldInterface: public FieldUnknownInterface {
     */
   virtual PetscErrorCode add_cubit_msId(const CubitBCType cubit_bc_tyep,const int msId) = 0;
 
-  /// DEPRECATED use add_cubit_msId instead
-  DEPRECATED PetscErrorCode add_Cubit_msId(const CubitBCType cubit_bc_type,const int msId) {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
-    ierr = add_cubit_msId(cubit_bc_type,msId); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
-
   /**
     * \brief delete cubit meshset
     * \ingroup mopfem_bc
@@ -124,28 +116,12 @@ struct FieldInterface: public FieldUnknownInterface {
     */
   virtual PetscErrorCode delete_cubit_msId(const CubitBCType cubit_bc_type,const int msId) = 0;
 
-  /// DEPRECATED use add_cubit_msId instead
-  DEPRECATED PetscErrorCode delete_Cubit_msId(const CubitBCType cubit_bc_type,const int msId) {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
-    ierr = delete_cubit_msId(cubit_bc_type,msId); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
-
   /**
     * \brief get cubit meshset
     * \ingroup mofem_bc
 
     */
   virtual PetscErrorCode get_cubit_msId(const int msId,const CubitBCType cubit_bc_type,const CubitMeshSets **cubit_meshset_ptr) = 0;
-
-  /// DEPRECATED use get_cubit_msId
-  DEPRECATED PetscErrorCode get_Cubit_msId(const int msId,const CubitBCType cubit_bc_type,const CubitMeshSets **cubit_meshset_ptr) {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
-    ierr = get_cubit_msId(msId,cubit_bc_type,cubit_meshset_ptr); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
 
   /**
     * \brief get entities from CUBIT/meshset of a particular entity dimension
@@ -165,14 +141,6 @@ struct FieldInterface: public FieldUnknownInterface {
     */
   virtual PetscErrorCode get_cubit_msId_entities_by_dimension(const int msId,const unsigned int cubit_bc_type, const int dimension,Range &entities,const bool recursive = false) = 0;
 
-  /// DEPRECATED use get_cubit_msId_entities_by_dimension
-  DEPRECATED PetscErrorCode get_Cubit_msId_entities_by_dimension(const int msId,const unsigned int cubit_bc_type, const int dimension,Range &entities,const bool recursive = false) {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
-    ierr = get_cubit_msId_entities_by_dimension(msId,cubit_bc_type,dimension,entities,recursive); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
-
   /**
     * \brief get entities related to CUBIT/meshset,
     * \ingroup mofem_bc
@@ -187,14 +155,6 @@ struct FieldInterface: public FieldUnknownInterface {
     */
   virtual PetscErrorCode get_cubit_msId_entities_by_dimension(const int msId,const unsigned int cubit_bc_type, Range &entities,const bool recursive = false) = 0;
 
-  /// DEPRECATED use get_cubit_msId_entities_by_dimension
-  DEPRECATED PetscErrorCode get_Cubit_msId_entities_by_dimension(const int msId,const unsigned int cubit_bc_type, Range &entities,const bool recursive = false) {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
-    ierr = get_cubit_msId_entities_by_dimension(msId,cubit_bc_type,entities,recursive); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
-
   /**
     * \ingroup mofem_bc
     * \brief get meshset from CUBIT Id and CUBIT type
@@ -205,14 +165,6 @@ struct FieldInterface: public FieldUnknownInterface {
     */
   virtual PetscErrorCode get_cubit_msId_meshset(const int msId,const unsigned int cubit_bc_type,EntityHandle &meshset) = 0;
 
-  /// DEPRECATED use get_cubit_msId_meshset
-  DEPRECATED PetscErrorCode get_Cubit_msId_meshset(const int msId,const unsigned int cubit_bc_type,EntityHandle &meshset) {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
-    ierr = get_cubit_msId_meshset(msId,cubit_bc_type,meshset); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
-
   /**
     * \ingroup mofem_bc
     * \brief get all CUBIT meshsets by CUBIT type
@@ -221,14 +173,6 @@ struct FieldInterface: public FieldUnknownInterface {
     * \param meshsets is range of meshsets
     */
   virtual PetscErrorCode get_cubit_meshsets(const unsigned int cubit_bc_type,Range &meshsets) = 0;
-
-  /// DEPRECATED use get_cubit_meshsets
-  DEPRECATED PetscErrorCode get_Cubit_meshsets(const unsigned int cubit_bc_type,Range &meshsets) {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
-    ierr = get_cubit_meshsets(cubit_bc_type,meshsets); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
 
    /**
     * \ingroup mofem_bc
@@ -371,25 +315,6 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode print_cubit_displacement_set() = 0;
   virtual PetscErrorCode print_cubit_pressure_set() = 0;
   virtual PetscErrorCode print_cubit_force_set() = 0;
-
-  virtual PetscErrorCode print_cubit_temperature() = 0;
-  // DEPRECATED use printCubitTEMPERATURESET
-  DEPRECATED PetscErrorCode printCubitTEMPERATURESET() {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
-    ierr = print_cubit_temperature(); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
-
-  virtual PetscErrorCode print_cubit_heat_flux_set() = 0;
-  // DEPRECATED use get_cubit_meshsets
-  DEPRECATED PetscErrorCode printCubitHeatFluxSet() {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
-    ierr = print_cubit_heat_flux_set(); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
-
   virtual PetscErrorCode print_cubit_materials_set() = 0;
 
   virtual PetscErrorCode rebuild_database(int verb = -1) = 0;
@@ -449,7 +374,7 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode seed_ref_level_2D(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1) = 0;
 
   /**
-  * \brief seed 3D entities (Volume entities only) in the meshset and their adjacencies (only TETs adjacencies) in a particular BitRefLevel
+  * \brief seed 2D entities in the meshset and their adjacencies (only TETs adjacencies) in a particular BitRefLevel
   *
   * \param EntityHandle MeshSet
   * \param BitRefLevel bitLevel
@@ -474,7 +399,7 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode seed_ref_level_3D(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1) = 0;
 
   /**
-   * \brief seed 3D entities (Volume entities only) in the range and their adjacencies (only TETs adjacencies) in a particular BitRefLevel
+   * \brief seed entities in the range and their adjacencies in a particular BitRefLevel
    */
   virtual PetscErrorCode seed_ref_level(const Range &ents,const BitRefLevel &bit,int verb = -1) = 0;
 
@@ -485,6 +410,20 @@ struct FieldInterface: public FieldUnknownInterface {
    */
   virtual PetscErrorCode seed_ref_level_MESHSET(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1) = 0;
 
+  /** \brief Add coordinate system
+    *
+    * \param cs_id see \ref CoordSystems for options
+    * \param name unique name of coordinate system
+    */
+  virtual PetscErrorCode add_coordinate_system(const int cs_dim[],const string name) = 0;
+
+  /** \brief Set coordinate system to field
+    *
+    * \param name of field
+    * \param name unique name of coordinate system
+    *
+    */
+  virtual PetscErrorCode set_field_coordinate_system(const string field_name,const string cs_name) = 0;
 
   /**\brief add all ents from ref level given by bit to meshset
     * \ingroup mofem_ref_ents
@@ -528,12 +467,21 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode get_entities_by_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,Range &ents) = 0;
 
   /**\brief add ref level to entities
-   *
+
+   Add bit level to entities
+   \param bit bit level to add
+   \paran ents range of entities to which bit level is added
+
    */
   virtual PetscErrorCode add_ref_level_to_entities(const BitRefLevel &bit,Range &ents) = 0;
 
   /**\brief add ref level to entities
-   *
+
+    Set bit level to entities
+    Add bit level to entities
+    \param bit bit level to add
+    \paran ents range of entities to which bit level is set
+
    */
   virtual PetscErrorCode set_ref_level_to_entities(const BitRefLevel &bit,Range &ents) = 0;
 
@@ -630,9 +578,11 @@ struct FieldInterface: public FieldUnknownInterface {
     *
     * \param name of the field
     * \param space approximation space (H1, Hdiv, Hcurl, L2 and NoField (dofs adjacent to meshset)
-    * \prama rank of the field, f.e. temperature has rank 1, displacement in 3d has rank 3
+    * \prama nb_of_cooficients of the field, f.e. temperature has nb_of_cooficients 1, displacement in 3d has nb_of_cooficients 3
     */
-  virtual PetscErrorCode add_field(const string& name,const FieldSpace space,const ApproximationRank rank,enum MoFEMTypes bh = MF_EXCL,int verb = -1) = 0;
+  virtual PetscErrorCode add_field(
+    const string& name,const FieldSpace space,const ApproximationRank nb_of_cooficients,enum MoFEMTypes bh = MF_EXCL,int verb = -1
+  ) = 0;
 
   /**
     * \brief set field entities on vertices
@@ -703,6 +653,66 @@ struct FieldInterface: public FieldUnknownInterface {
     * \param name of the field
     */
   virtual PetscErrorCode add_ents_to_field_by_TETs(const Range &tets,const string& name,int verb = -1) = 0;
+
+  /**
+    * \brief set field entities from adjacencies of quads
+    * \ingroup mofem_field
+    *
+    * The lower dimension entities are added depending on the space type
+    * \param quads range of quads
+    * \param id field id
+    */
+  virtual PetscErrorCode add_ents_to_field_by_QUADs(const Range &quads,const BitFieldId id,int verb = -1) = 0;
+
+  /**
+    * \brief set field entities from adjacencies of quads
+    * \ingroup mofem_field
+    *
+    * The lower dimension entities are added depending on the space type
+    * \param quads range contains set quads
+    * \param name of the field
+    */
+  virtual PetscErrorCode add_ents_to_field_by_QUADs(const Range &quads,const string& name,int verb = -1) = 0;
+
+  /**
+    * \brief set field entities from adjacencies of quads
+    * \ingroup mofem_field
+    *
+    * The lower dimension entities are added depending on the space type
+    * \param meshset contains set quads
+    * \param name of the field
+    */
+  virtual PetscErrorCode add_ents_to_field_by_QUADs(EntityHandle meshset,const string& name,int verb = -1) = 0;
+
+  /**
+    * \brief set field entities from adjacencies of prisms
+    * \ingroup mofem_field
+    *
+    * The lower dimension entities are added depending on the space type
+    * \param prisms range of prisms
+    * \param id field id
+    */
+  virtual PetscErrorCode add_ents_to_field_by_PRISMs(const Range &prisms,const BitFieldId id,int verb = -1) = 0;
+
+  /**
+    * \brief set field entities from adjacencies of prisms
+    * \ingroup mofem_field
+    *
+    * The lower dimension entities are added depending on the space type
+    * \param prisms range contains set prisms
+    * \param name of the field
+    */
+  virtual PetscErrorCode add_ents_to_field_by_PRISMs(const Range &prisms,const string& name,int verb = -1) = 0;
+
+  /**
+    * \brief set field entities from adjacencies of prisms
+    * \ingroup mofem_field
+    *
+    * The lower dimension entities are added depending on the space type
+    * \param meshset contains set prisms
+    * \param name of the field
+    */
+  virtual PetscErrorCode add_ents_to_field_by_PRISMs(EntityHandle meshset,const string& name,int verb = -1) = 0;
 
   /**
     * \brief remove entities from field
@@ -951,18 +961,18 @@ struct FieldInterface: public FieldUnknownInterface {
    */
   virtual PetscErrorCode remove_ents_from_finite_element_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1) = 0;
 
-  /** \brief remove elements from given refinement level to finite element database
+  /** \brief remove entities from given refinement level to finite element database
    *
    */
   virtual PetscErrorCode remove_ents_from_finite_element(const string &name,const EntityHandle meshset,const EntityType type,int verb = -1) = 0;
 
-  /** \brief remove elements from given refinement level to finite element database
+  /** \brief remove entities from finite element database
    * \ingroup mofem_fe
    *
    */
   virtual PetscErrorCode remove_ents_from_finite_element(const string &name,const Range &ents,int verb = -1) = 0;
 
-  /** \brief add TET elements from given refinement level to finite element database given by name
+  /** \brief add TET entities from given refinement level to finite element database given by name
    * \ingroup mofem_fe
    *
    * \param BitRefLevel bit
@@ -989,10 +999,15 @@ struct FieldInterface: public FieldUnknownInterface {
   /// list adjacencies
   virtual PetscErrorCode list_adjacencies() const = 0;
 
-  /** \brief add Finite Element Problem
+  /** \brief Add problem
    * \ingroup mofem_problems
    */
   virtual PetscErrorCode add_problem(const string& name,enum MoFEMTypes bh = MF_EXCL,int verb = -1) = 0;
+
+  /** \brief Delete problem
+  * \ingroup mofem_problems
+  */
+  virtual PetscErrorCode delete_problem(const string name) = 0;
 
   /** \brief add finite element to problem, this add entities assigned to finite element to a particular problem
    * \ingroup mofem_problems
@@ -1001,6 +1016,17 @@ struct FieldInterface: public FieldUnknownInterface {
    * \param name Finite Element name
    */
   virtual PetscErrorCode modify_problem_add_finite_element(const string &name_problem,const string &MoFEMFiniteElement_name) = 0;
+
+  /** \brief unset finite element from problem, this remove entities assigned to finite element to a particular problem
+   * \ingroup mofem_problems
+   *
+   *  Note: If problem is build, it need to be cleaned to make this effective
+   *
+   * \param name Problem name
+   * \param name Finite Element name
+   */
+  virtual PetscErrorCode modify_problem_unset_finite_element(const string &name_problem,const string &MoFEMFiniteElement_name) = 0;
+
 
   /** \brief add ref level to problem
    * \ingroup mofem_problems
@@ -1018,7 +1044,6 @@ struct FieldInterface: public FieldUnknownInterface {
    *\endcode
    * Two Problems exist and solved independently, both are elastic, but solved using different mesh refinement <br>
   */
-
   virtual PetscErrorCode modify_problem_ref_level_add_bit(const string &name_problem,const BitRefLevel &bit) = 0;
 
   /** \brief set ref level for problem
@@ -1165,6 +1190,11 @@ struct FieldInterface: public FieldUnknownInterface {
    */
   virtual PetscErrorCode build_problem(MoFEMProblem *problem_ptr,int verb = -1) = 0;
 
+  /** \brief clear problem
+   * \ingroup mofem_problems
+   */
+  virtual PetscErrorCode clear_problem(const string &name,int verb = -1) = 0;
+
   /** \brief build problem data structures
    * \ingroup mofem_problems
    */
@@ -1206,13 +1236,6 @@ struct FieldInterface: public FieldUnknownInterface {
    */
   virtual PetscErrorCode partition_simple_problem(const string &name,int verb = -1) = 0;
 
-  DEPRECATED PetscErrorCode simple_partition_problem(const string &name,int verb = -1) {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
-    ierr = partition_simple_problem(name,verb); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
-
   /** \brief partition problem dofs (collective)
    * \ingroup mofem_problems
    *
@@ -1238,15 +1261,6 @@ struct FieldInterface: public FieldUnknownInterface {
     const string &name,const string &problem_for_rows,bool copy_rows,const string &problem_for_cols,bool copy_cols,int verb = -1
   ) = 0;
 
-
-  DEPRECATED PetscErrorCode compose_problem(
-    const string &name,const string &problem_for_rows,bool copy_rows,const string &problem_for_cols,bool copy_cols,int verb = -1
-  ) {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
-    ierr = partition_compose_problem(name,problem_for_rows,copy_rows,problem_for_cols,copy_cols,verb); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
 
   /** \brief determine ghost nodes
    * \ingroup mofem_field
@@ -1384,12 +1398,14 @@ struct FieldInterface: public FieldUnknownInterface {
     * \param problem name
     * \param rc ROW or COL
     * \param field name
-    * \param min_rank
-    * \param max_rank
+    * \param min_coeff_idx
+    * \param max_coeff_idx
     * \retval is out value
 
     */
-  virtual PetscErrorCode ISCreateProblemFieldAndRank(const string &problem,RowColData rc,const string &field,int min_rank,int max_rank,IS *is,int verb = -1) = 0;
+  virtual PetscErrorCode ISCreateProblemFieldAndRank(
+    const string &problem,RowColData rc,const string &field,int min_coeff_idx,int max_coeff_idx,IS *is,int verb = -1
+  ) = 0;
 
   /**
     * \brief create scatter for vectors form one to another problem (collective)
@@ -1442,14 +1458,6 @@ struct FieldInterface: public FieldUnknownInterface {
     */
   virtual PetscErrorCode set_local_ghost_vector(const MoFEMProblem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) = 0;
 
-  /// DEPRECATED use set_local_ghost_vector instead
-  DEPRECATED PetscErrorCode set_local_VecCreateGhost(const MoFEMProblem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
-    ierr = set_local_ghost_vector(problem_ptr,rc,V,mode,scatter_mode); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
-
   /**
     * \brief set values of vector from/to meshdatabase
     * \ingroup mofem_vectors
@@ -1466,14 +1474,6 @@ struct FieldInterface: public FieldUnknownInterface {
     *
     */
   virtual PetscErrorCode set_local_ghost_vector(const string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) = 0;
-
-  /// DEPRECATED use set_local_ghost_vector instead
-  DEPRECATED PetscErrorCode set_local_VecCreateGhost(const string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
-    ierr = set_local_ghost_vector(name,rc,V,mode,scatter_mode); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
 
   /**
     * \brief set values of vector from/to mesh database (collective)
@@ -1492,14 +1492,6 @@ struct FieldInterface: public FieldUnknownInterface {
     */
   virtual PetscErrorCode set_global_ghost_vector(const MoFEMProblem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) = 0;
 
-  /// DEPRECATED use set_global_ghost_vector instead
-  DEPRECATED PetscErrorCode set_global_VecCreateGhost(const MoFEMProblem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
-    ierr = set_global_ghost_vector(problem_ptr,rc,V,mode,scatter_mode); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
-
   /**
     * \brief set values of vector from/to mesh database (collective)
     * \ingroup mofem_vectors
@@ -1516,14 +1508,6 @@ struct FieldInterface: public FieldUnknownInterface {
     *
     */
   virtual PetscErrorCode set_global_ghost_vector(const string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) = 0;
-
-  /// DEPRECATED use set_global_ghost_vector instead
-  PetscErrorCode set_global_VecCreateGhost(const string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
-    ierr = set_global_ghost_vector(name,rc,V,mode,scatter_mode); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
 
   /** \brief Copy vector to field which is not part of the problem
     * \ingroup mofem_vectors
@@ -1542,15 +1526,6 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode set_other_local_ghost_vector(
     const MoFEMProblem *problem_ptr,const string& fiel_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1) = 0;
 
-  /// DEPRECATED use set_other_local_ghost_vector instead
-  DEPRECATED PetscErrorCode set_other_local_VecCreateGhost(
-    const MoFEMProblem *problem_ptr,const string& fiel_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1) {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
-    ierr = set_other_local_ghost_vector(problem_ptr,fiel_name,cpy_field_name,rc,V,mode,scatter_mode,verb); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
-
   /** \brief Copy vector to field which is not part of the problem
     * \ingroup mofem_vectors
     *
@@ -1567,15 +1542,6 @@ struct FieldInterface: public FieldUnknownInterface {
     */
   virtual PetscErrorCode set_other_local_ghost_vector(
     const string &name,const string& field_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1) = 0;
-
-  /// DEPRECATED use set_other_local_ghost_vector instead
-  DEPRECATED PetscErrorCode set_other_local_VecCreateGhost(
-    const string &name,const string& field_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1) {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
-    ierr = set_other_local_ghost_vector(name,field_name,cpy_field_name,rc,V,mode,scatter_mode,verb); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
 
   /** \brief Copy vector to field which is not part of the problem (collective)
     * \ingroup mofem_vectors
@@ -1596,15 +1562,6 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode set_other_global_ghost_vector(
     const MoFEMProblem *problem_ptr,const string& field_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1) = 0;
 
-  /// DEPRECATED use set_other_global_ghost_vector instead
-  DEPRECATED PetscErrorCode set_other_global_VecCreateGhost(
-    const MoFEMProblem *problem_ptr,const string& field_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1) {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
-    ierr = set_other_global_ghost_vector(problem_ptr,field_name,cpy_field_name,rc,V,mode,scatter_mode,verb); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
-
   /** \brief Copy vector to field which is not part of the problem (collective)
     * \ingroup mofem_vectors
 
@@ -1623,15 +1580,6 @@ struct FieldInterface: public FieldUnknownInterface {
     */
   virtual PetscErrorCode set_other_global_ghost_vector(
     const string &name,const string& field_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1) = 0;
-
-  /// DEPRECATED use set_other_global_ghost_vector instead
-  DEPRECATED PetscErrorCode set_other_global_VecCreateGhost(
-    const string &name,const string& field_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1) {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
-    ierr = set_other_global_ghost_vector(name,field_name,cpy_field_name,rc,V,mode,scatter_mode,verb); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
 
   /** \brief axpy fields
     * \ingroup mofem_field_algebra

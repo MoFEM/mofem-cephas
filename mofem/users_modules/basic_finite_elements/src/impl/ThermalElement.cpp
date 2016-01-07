@@ -294,7 +294,7 @@ PetscErrorCode ThermalElement::OpHeatFlux::doWork(int side,EntityType type,DataF
 
   const FENumeredDofMoFEMEntity *dof_ptr;
   ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
-  int rank = dof_ptr->get_max_rank();
+  int rank = dof_ptr->get_nb_of_coeffs();
 
   int nb_dofs = data.getIndices().size()/rank;
 
@@ -408,7 +408,7 @@ PetscErrorCode ThermalElement::OpRadiationRhs::doWork(int side,EntityType type,D
 
   const FENumeredDofMoFEMEntity *dof_ptr;
   ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
-  int rank = dof_ptr->get_max_rank();
+  int rank = dof_ptr->get_nb_of_coeffs();
   int nb_row_dofs = data.getIndices().size()/rank;
 
   Nf.resize(data.getIndices().size());
@@ -464,7 +464,7 @@ PetscErrorCode ThermalElement::OpConvectionRhs::doWork(
 
   const FENumeredDofMoFEMEntity *dof_ptr;
   ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
-  int rank = dof_ptr->get_max_rank();
+  int rank = dof_ptr->get_nb_of_coeffs();
 
   int nb_row_dofs = data.getIndices().size()/rank;
 

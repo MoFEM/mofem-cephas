@@ -61,14 +61,38 @@ PetscErrorCode DMMoFEMGetSquareProblem(DM dm,PetscBool *square_problem);
 PetscErrorCode DMMoFEMAddElement(DM dm,const char fe_name[]);
 
 /**
+  * \brief unset element from dm
+  * \ingroup dm
+  */
+PetscErrorCode DMMoFEMUnSetElement(DM dm,const char fe_name[]);
+
+/**
   * \brief set local (or ghosted) vector values on mesh for partition only
   * \ingroup dm
+
+  * \param l vector
+  * \param mode see petsc manual for VecSetValue (ADD_VALUES or INSERT_VALUES)
+  * \param scatter_mode see petsc manual for ScatterMode (The available modes are: SCATTER_FORWARD or SCATTER_REVERSE)
+  *
+  * SCATTER_REVERSE set data to field entities from V vector.
+  *
+  * SCATTER_FORWARD set vector V from data field entities
+
   */
 PetscErrorCode DMoFEMMeshToLocalVector(DM dm,Vec l,InsertMode mode,ScatterMode scatter_mode);
 
 /**
   * \brief set ghosted vector values on all existing mesh entities
   * \ingroup dm
+
+  * \param g vector
+  * \param mode see petsc manual for VecSetValue (ADD_VALUES or INSERT_VALUES)
+  * \param scatter_mode see petsc manual for ScatterMode (The available modes are: SCATTER_FORWARD or SCATTER_REVERSE)
+  *
+  * SCATTER_REVERSE set data to field entities from V vector.
+  *
+  * SCATTER_FORWARD set vector V from data field entities
+
   */
 PetscErrorCode DMoFEMMeshToGlobalVector(DM dm,Vec g,InsertMode mode,ScatterMode scatter_mode);
 
@@ -149,6 +173,16 @@ PetscErrorCode DMMoFEMGetKspCtx(DM dm,MoFEM::KspCtx **ksp_ctx);
   * \ingroup dm
   */
 PetscErrorCode DMMoFEMGetSnesCtx(DM dm,MoFEM::SnesCtx **snes_ctx);
+
+/**
+  * \brief Set MoFEM::SnesCtx data structure
+  * \ingroup dm
+
+  It take over pointer, do not delete it, DM will destroy pointer
+  when is destroyed.
+
+  */
+PetscErrorCode DMMoFEMSetSnesCtx(DM dm,MoFEM::SnesCtx * const snes_ctx);
 
 #endif
 

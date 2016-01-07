@@ -25,7 +25,7 @@
 PetscErrorCode L2_FaceShapeFunctions_MBTRI(int p,double *N,double *diffN,double *L2N,double *diff_L2N,int GDIM) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
-  int P = NBFACE_L2(p);
+  int P = NBFACETRI_L2(p);
   if(P==0) PetscFunctionReturn(0);
   double diff_ksiL01[2],diff_ksiL20[2];
   int dd = 0;
@@ -72,7 +72,7 @@ PetscErrorCode L2_FaceShapeFunctions_MBTRI(int p,double *N,double *diffN,double 
 PetscErrorCode L2_ShapeFunctions_MBTET(int p,double *N,double *diffN,double *L2N,double *diff_L2N,int GDIM) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
-  int P = NBVOLUME_L2(p);
+  int P = NBVOLUMETET_L2(p);
   if(P==0) PetscFunctionReturn(0);
   double diff_ksiL0[3],diff_ksiL1[3],diff_ksiL2[3];
   int dd = 0;
@@ -129,10 +129,10 @@ PetscErrorCode L2_ShapeFunctions_MBTET(int p,double *N,double *diffN,double *L2N
 PetscErrorCode L2_VolumeShapeDiffMBTETinvJ(int base_p,int p,double *volume_diffN,double *invJac,double *volume_diffNinvJac,int GDIM) {
   PetscFunctionBegin;
   int ii,gg;
-  for(ii = 0;ii<NBVOLUME_L2(p);ii++) { 
+  for(ii = 0;ii<NBVOLUMETET_L2(p);ii++) { 
     for(gg = 0;gg<GDIM;gg++) {
-      int shift1 = NBVOLUME_L2(base_p)*gg;
-      int shift2 = NBVOLUME_L2(p)*gg;
+      int shift1 = NBVOLUMETET_L2(base_p)*gg;
+      int shift2 = NBVOLUMETET_L2(p)*gg;
       cblas_dgemv(CblasRowMajor,CblasTrans,3,3,1.,
 	invJac,3,&(volume_diffN)[3*shift1+3*ii],1,0.,&(volume_diffNinvJac)[3*shift2+3*ii],1); 
   }} 

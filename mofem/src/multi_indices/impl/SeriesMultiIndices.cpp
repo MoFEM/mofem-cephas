@@ -1,13 +1,8 @@
 /** \file SeriesMultiIndices.cpp
- * \brief Data strutures for time steries and load series storage,
- *  
- * Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl) <br>
- *
- * The MoFEM package is copyrighted by Lukasz Kaczmarczyk. 
- * It can be freely used for educational and research purposes 
- * by other institutions. If you use this softwre pleas cite my work. 
- *
- * MoFEM is free software: you can redistribute it and/or modify it under
+ * \brief Data structures for time series and load series storage,
+ */
+
+/* MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or (at your
  * option) any later version.
@@ -21,18 +16,24 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 */
 
-#include <petscsys.h>
-#include <cblas.h>
-
+#include <Includes.hpp>
 #include <definitions.h>
+#include <Common.hpp>
+
 #include <h1_hdiv_hcurl_l2.h>
 
-#include <Common.hpp>
-#include <CoreDataStructures.hpp>
+#include <MaterialBlocks.hpp>
+#include <CubitBCData.hpp>
+#include <TagMultiIndices.hpp>
+#include <CoordSysMultiIndices.hpp>
+#include <FieldMultiIndices.hpp>
+#include <EntsMultiIndices.hpp>
+#include <DofsMultiIndices.hpp>
+#include <SeriesMultiIndices.hpp>
 
 namespace MoFEM {
 
-MoFEMSeries::MoFEMSeries(Interface &moab,const EntityHandle _meshset): 
+MoFEMSeries::MoFEMSeries(Interface &moab,const EntityHandle _meshset):
   meshset(_meshset),tag_name_data(NULL),tag_name_size(0),
   record_begin(false),record_end(false) {
   ErrorCode rval;
@@ -40,7 +41,7 @@ MoFEMSeries::MoFEMSeries(Interface &moab,const EntityHandle _meshset):
   Tag th_SeriesName;
   rval = moab.tag_get_handle("_SeriesName",th_SeriesName); CHKERR(rval);
   rval = moab.tag_get_by_ptr(th_SeriesName,&meshset,1,(const void **)&tag_name_data,&tag_name_size); CHKERR_THROW(rval);
- 
+
   const int def_val_len = 0;
 
   //time
@@ -53,7 +54,7 @@ MoFEMSeries::MoFEMSeries(Interface &moab,const EntityHandle _meshset):
   string Tag_DataHandles_SeriesName = "_SeriesDataHandles_"+get_name();
   rval = moab.tag_get_handle(Tag_DataHandles_SeriesName.c_str(),def_val_len,MB_TYPE_HANDLE,
     th_SeriesDataHandles,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_VARLEN,NULL); CHKERR_THROW(rval);
- 
+
   //uids
   string Tag_DataUIDs_SeriesName = "_SeriesDataUIDs_"+get_name();
   rval = moab.tag_get_handle(Tag_DataUIDs_SeriesName.c_str(),def_val_len,MB_TYPE_OPAQUE,
@@ -76,7 +77,7 @@ PetscErrorCode MoFEMSeries::get_nb_steps(Interface &moab,int &nb_steps) const {
 PetscErrorCode MoFEMSeries::push_dofs(const EntityHandle ent,const ShortId uid,const FieldData val) {
   PetscFunctionBegin;
   if(!record_begin) {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"you neet to set recording");
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"you neet to set recording");
   }
   handles.push_back(ent);
   uids.push_back(uid);
@@ -84,19 +85,19 @@ PetscErrorCode MoFEMSeries::push_dofs(const EntityHandle ent,const ShortId uid,c
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode MoFEMSeries::begin() { 
+PetscErrorCode MoFEMSeries::begin() {
   PetscFunctionBegin;
   if(record_begin) {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"recording already  begin");
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"recording already  begin");
   }
   record_begin = true;
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode MoFEMSeries::end(double t) { 
+PetscErrorCode MoFEMSeries::end(double t) {
   PetscFunctionBegin;
   if(!record_begin) {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"recording not begin it can not be ended");
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"recording not begin it can not be ended");
   }
   record_begin = false;
   record_end = true;
@@ -110,10 +111,10 @@ PetscErrorCode MoFEMSeries::read(Interface &moab) {
   ErrorCode rval;
 
   if(record_begin) {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"all series data will be lost");
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"all series data will be lost");
   }
   if(record_end) {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"all series data will be lost");
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"all series data will be lost");
   }
 
   vector<EntityHandle> contained;
@@ -126,7 +127,7 @@ PetscErrorCode MoFEMSeries::read(Interface &moab) {
   ia.push_back(0);
 
   for(unsigned int mm = 0;mm<contained.size();mm++) {
-    //time 
+    //time
     {
       double t;
       rval = moab.tag_set_data(th_SeriesTime,&meshset,1,&t);  CHKERR(rval);
@@ -148,7 +149,7 @@ PetscErrorCode MoFEMSeries::read(Interface &moab) {
       uids.insert(uids.end(),tag_data,&tag_data[nb]);
     }
     if(handles.size() != uids.size()) {
-      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
     }
     //data
     {
@@ -159,7 +160,7 @@ PetscErrorCode MoFEMSeries::read(Interface &moab) {
       data.insert(data.end(),tag_data,&tag_data[nb]);
     }
     if(data.size() != uids.size()) {
-      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
     }
     ia.push_back(data.size());
   }
@@ -171,10 +172,10 @@ PetscErrorCode MoFEMSeries::save(Interface &moab) const {
   PetscFunctionBegin;
 
   if(record_begin) {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"switch off recording");
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"switch off recording");
   }
   if(!record_end) {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"finish recording");
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"finish recording");
   }
 
   ErrorCode rval;
@@ -196,7 +197,7 @@ PetscErrorCode MoFEMSeries::save(Interface &moab) const {
   contained.resize(0);
   rval = moab.get_contained_meshsets(meshset,contained); CHKERR_PETSC(rval);
   if(contained.size() != ia.size()-1) {
-    SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency nb_contained != ia.size()-1 %d!=%d",contained.size(),ia.size()-1);
+    SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency nb_contained != ia.size()-1 %d!=%d",contained.size(),ia.size()-1);
   }
 
   //time
@@ -216,7 +217,7 @@ PetscErrorCode MoFEMSeries::save(Interface &moab) const {
     int tag_sizes[] = { (ia[ii]-ia[ii-1])*sizeof(ShortId) };
     rval = moab.tag_set_by_ptr(th_SeriesDataUIDs,&contained[ii-1],1,tag_data,tag_sizes); CHKERR_PETSC(rval);
   }
-  
+
   //data
   for(unsigned int ii = 1;ii<ia.size();ii++) {
     void const* tag_data[] = { &data[ia[ii-1]] };
@@ -227,20 +228,20 @@ PetscErrorCode MoFEMSeries::save(Interface &moab) const {
   PetscFunctionReturn(0);
 }
 
-MoFEMSeriesStep::MoFEMSeriesStep(Interface &moab,const MoFEMSeries *_MoFEMSeries_ptr,const int _step_number): 
+MoFEMSeriesStep::MoFEMSeriesStep(Interface &moab,const MoFEMSeries *_MoFEMSeries_ptr,const int _step_number):
   interface_MoFEMSeries<MoFEMSeries>(_MoFEMSeries_ptr),step_number(_step_number) {
   PetscErrorCode ierr;
   ierr = get_time_init(moab); CHKERRABORT(PETSC_COMM_WORLD,ierr);
 }
 
-PetscErrorCode MoFEMSeriesStep::get(Interface &moab,DofMoFEMEntity_multiIndex &dofsMoabField) const {
+PetscErrorCode MoFEMSeriesStep::get(Interface &moab,DofMoFEMEntity_multiIndex &dofsField) const {
   PetscFunctionBegin;
   ErrorCode rval;
 
   vector<EntityHandle> contained;
   rval = moab.get_contained_meshsets(ptr->meshset,contained); CHKERR_PETSC(rval);
   if(contained.size()<=(unsigned int)step_number) {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
   }
 
   EntityHandle *handles_ptr;
@@ -253,16 +254,16 @@ PetscErrorCode MoFEMSeriesStep::get(Interface &moab,DofMoFEMEntity_multiIndex &d
   uids_size /= sizeof(ShortId);
 
   if(handles_size != uids_size) {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
   }
 
-  FieldData *data_ptr; 
+  FieldData *data_ptr;
   int data_size;
   rval = moab.tag_get_by_ptr(ptr->th_SeriesData,&contained[step_number],1,(const void **)&data_ptr,&data_size); CHKERR_PETSC(rval);
   data_size /= sizeof(FieldData);
 
   if(data_size != uids_size) {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
   }
 
   for(int ii = 0;ii<uids_size;ii++) {
@@ -270,8 +271,8 @@ PetscErrorCode MoFEMSeriesStep::get(Interface &moab,DofMoFEMEntity_multiIndex &d
     ShortId uid = uids_ptr[ii];
     FieldData val = data_ptr[ii];
     DofMoFEMEntity_multiIndex::index<Composite_Ent_and_ShortId_mi_tag>::type::iterator dit;
-    dit = dofsMoabField.get<Composite_Ent_and_ShortId_mi_tag>().find(boost::make_tuple(ent,uid));
-    if(dit!=dofsMoabField.get<Composite_Ent_and_ShortId_mi_tag>().end()) {
+    dit = dofsField.get<Composite_Ent_and_ShortId_mi_tag>().find(boost::make_tuple(ent,uid));
+    if(dit!=dofsField.get<Composite_Ent_and_ShortId_mi_tag>().end()) {
       //cerr << *dit << endl;
       dit->get_FieldData() = val;
     } else {
@@ -289,7 +290,7 @@ PetscErrorCode MoFEMSeriesStep::get_time_init(Interface &moab) {
   vector<EntityHandle> contained;
   rval = moab.get_contained_meshsets(ptr->meshset,contained); CHKERR_PETSC(rval);
   if(contained.size()<=(unsigned int)step_number) {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"data inconsistency");
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
   }
   double *time_ptr;
   int size;

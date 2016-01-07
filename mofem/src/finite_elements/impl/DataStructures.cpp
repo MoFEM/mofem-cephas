@@ -18,32 +18,35 @@
 * You should have received a copy of the GNU Lesser General Public
 * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#include <petscsys.h>
-#include <petscvec.h>
-#include <petscmat.h>
-#include <petscsnes.h>
-#include <petscts.h>
-
+#include <Includes.hpp>
+// #include <version.h>
 #include <definitions.h>
-#include <h1_hdiv_hcurl_l2.h>
-#include <fem_tools.h>
-
 #include <Common.hpp>
+
+#include <h1_hdiv_hcurl_l2.h>
+
+#include <MaterialBlocks.hpp>
+#include <CubitBCData.hpp>
+#include <TagMultiIndices.hpp>
+#include <CoordSysMultiIndices.hpp>
+#include <FieldMultiIndices.hpp>
+#include <EntsMultiIndices.hpp>
+#include <DofsMultiIndices.hpp>
+#include <FEMMultiIndices.hpp>
+#include <ProblemsMultiIndices.hpp>
+#include <AdjacencyMultiIndices.hpp>
+#include <BCMultiIndices.hpp>
+#include <CoreDataStructures.hpp>
+#include <SeriesMultiIndices.hpp>
 
 #include <LoopMethods.hpp>
 #include <FieldInterface.hpp>
+#include <MeshRefinment.hpp>
+#include <PrismInterface.hpp>
+#include <SeriesRecorder.hpp>
+#include <Core.hpp>
 
-#define BOOST_UBLAS_SHALLOW_ARRAY_ADAPTOR
-
-#include <boost/numeric/ublas/storage.hpp>
-#include <boost/numeric/ublas/matrix.hpp>
-#include <boost/numeric/ublas/matrix_proxy.hpp>
-#include <boost/numeric/ublas/io.hpp>
-
-#include <boost/ptr_container/ptr_vector.hpp>
-#include <boost/ptr_container/ptr_map.hpp>
-
-#include <ForcesAndSurcesCore.hpp>
+#include <DataStructures.hpp>
 
 #ifdef __cplusplus
 extern "C" {
@@ -93,11 +96,15 @@ void cOnstructor(DataForcesAndSurcesCore *data,EntityType type,T) {
       data->dataOnEntities[MBEDGE].push_back(new T());
     }
     for(int ff = 0;ff<5;ff++) {
+      data->dataOnEntities[MBQUAD].push_back(new T());
+    }
+    for(int ff = 0;ff<5;ff++) {
       data->dataOnEntities[MBTRI].push_back(new T());
     }
+    data->dataOnEntities[MBPRISM].push_back(new T());
     break;
     default:
-    throw("not implemenyed");
+    throw MoFEMException(MOFEM_NOT_IMPLEMENTED);
   }
 
 }
@@ -121,8 +128,14 @@ DerivedDataForcesAndSurcesCore::DerivedDataForcesAndSurcesCore(DataForcesAndSurc
   for(it = data.dataOnEntities[MBTRI].begin();it!=data.dataOnEntities[MBTRI].end();it++) {
     dataOnEntities[MBTRI].push_back(new DerivedEntData(*it));
   }
+  for(it = data.dataOnEntities[MBQUAD].begin();it!=data.dataOnEntities[MBQUAD].end();it++) {
+    dataOnEntities[MBQUAD].push_back(new DerivedEntData(*it));
+  }
   for(it = data.dataOnEntities[MBTET].begin();it!=data.dataOnEntities[MBTET].end();it++) {
     dataOnEntities[MBTET].push_back(new DerivedEntData(*it));
+  }
+  for(it = data.dataOnEntities[MBPRISM].begin();it!=data.dataOnEntities[MBPRISM].end();it++) {
+    dataOnEntities[MBPRISM].push_back(new DerivedEntData(*it));
   }
 }
 

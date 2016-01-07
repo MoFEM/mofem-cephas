@@ -244,15 +244,15 @@ typedef multi_index_container<
     ordered_non_unique<
       tag<Composite_EntType_and_ParentEntType_mi_tag>,
       composite_key<
-	RefMoFEMEntity,
-	const_mem_fun<RefMoFEMEntity::BasicMoFEMEntity,EntityType,&RefMoFEMEntity::get_ent_type>,
-	const_mem_fun<RefMoFEMEntity,EntityType,&RefMoFEMEntity::get_parent_ent_type> > >,
+      	RefMoFEMEntity,
+      	const_mem_fun<RefMoFEMEntity::BasicMoFEMEntity,EntityType,&RefMoFEMEntity::get_ent_type>,
+      	const_mem_fun<RefMoFEMEntity,EntityType,&RefMoFEMEntity::get_parent_ent_type> > >,
     ordered_non_unique<
       tag<Composite_Ent_And_ParentEntType_mi_tag>,
       composite_key<
-	RefMoFEMEntity,
-	const_mem_fun<RefMoFEMEntity,EntityHandle,&RefMoFEMEntity::get_parent_ent>,
-	const_mem_fun<RefMoFEMEntity::BasicMoFEMEntity,EntityType,&RefMoFEMEntity::get_ent_type> > >
+      	RefMoFEMEntity,
+      	const_mem_fun<RefMoFEMEntity,EntityHandle,&RefMoFEMEntity::get_parent_ent>,
+      	const_mem_fun<RefMoFEMEntity::BasicMoFEMEntity,EntityType,&RefMoFEMEntity::get_ent_type> > >
   > > RefMoFEMEntity_multiIndex;
 
 /** \brief multi-index view of RefMoFEMEntity by parent entity
@@ -493,11 +493,18 @@ typedef multi_index_container<
     ordered_non_unique<
       tag<Composite_Name_And_Ent_mi_tag>,
       composite_key<
-	MoFEMEntity,
-	const_mem_fun<MoFEMEntity::interface_type_MoFEMField,boost::string_ref,&MoFEMEntity::get_name_ref>,
-	const_mem_fun<MoFEMEntity,EntityHandle,&MoFEMEntity::get_ent>
+      	MoFEMEntity,
+      	const_mem_fun<MoFEMEntity::interface_type_MoFEMField,boost::string_ref,&MoFEMEntity::get_name_ref>,
+      	const_mem_fun<MoFEMEntity,EntityHandle,&MoFEMEntity::get_ent>
       > >
   > > MoFEMEntity_multiIndex;
+
+  typedef multi_index_container<
+    const MoFEMEntity*,
+    indexed_by<
+      hashed_non_unique<
+        tag<Ent_mi_tag>, const_mem_fun<MoFEMEntity,EntityHandle,&MoFEMEntity::get_ent> >
+  > > MoFEMEntity_multiIndex_ent_view;
 
 }
 

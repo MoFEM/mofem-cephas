@@ -21,7 +21,7 @@
 
 namespace MoFEM {
 
-static const MOFEMuuid IDD_MOFENBitLevelCoupler = MOFEMuuid( BitIntefaceId(BITLEVELCOUPLER_INTERFACE) );
+static const MOFEMuuid IDD_MOFEMBitLevelCoupler = MOFEMuuid( BitIntefaceId(BITLEVELCOUPLER_INTERFACE) );
 
 /** \brief Interface set parent for verrtices, edges, triangles and tetrahedrons. 
   * \ingroup mofem

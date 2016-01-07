@@ -23,6 +23,11 @@
 struct MethodForForceScaling {
 
   virtual PetscErrorCode scaleNf(const FEMethod *fe,ublas::vector<FieldData> &Nf) = 0;
+  virtual PetscErrorCode getForceScale(const double ts_t,double &scale) {
+    PetscFunctionBegin;
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
+    PetscFunctionReturn(0);
+  }
 
   static PetscErrorCode applyScale(
     const FEMethod *fe,

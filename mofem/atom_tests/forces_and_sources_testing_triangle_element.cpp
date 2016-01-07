@@ -203,18 +203,18 @@ int main(int argc, char *argv[]) {
       ierr = getPorblemColIndices("FIELD1",col_type,col_side,col_indices); CHKERRQ(ierr);
 
       if(row_indices.size()!=row_data.getIndices().size()) {
-        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"row inconsistency");
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"row inconsistency");
       }
 
       if(col_indices.size()!=col_data.getIndices().size()) {
-        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"col inconsistency");
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"col inconsistency");
       }
 
       for(unsigned int rr = 0;rr<row_indices.size();rr++) {
         if(row_indices[rr] != row_data.getIndices()[rr]) {
           cerr << row_indices << endl;
           cerr << row_data.getIndices() << endl;
-          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"row inconsistency");
+          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"row inconsistency");
         }
       }
 
@@ -222,7 +222,7 @@ int main(int argc, char *argv[]) {
         if(col_indices[cc] != col_data.getIndices()[cc]) {
           cerr << col_indices << endl;
           cerr << col_data.getIndices() << endl;
-          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"row inconsistency");
+          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"row inconsistency");
         }
       }
 

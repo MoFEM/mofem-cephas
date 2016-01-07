@@ -102,7 +102,7 @@ struct PCMGSetUpViaApproxOrdersCtx {
 
       //if no dofs on level kk finish here
       if(is_glob_size[kk]==0) {
-	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCT,"no dofs at level");
+	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"no dofs at level");
       }
 
     }

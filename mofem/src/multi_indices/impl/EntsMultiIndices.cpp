@@ -15,16 +15,24 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 */
 
-#include <moab/ParallelComm.hpp>
-
-#include <petscsys.h>
-#include <cblas.h>
-
+#include <Includes.hpp>
 #include <definitions.h>
+#include <Common.hpp>
+
 #include <h1_hdiv_hcurl_l2.h>
 
-#include <Common.hpp>
-#include <CoreDataStructures.hpp>
+#include <MaterialBlocks.hpp>
+#include <CubitBCData.hpp>
+#include <TagMultiIndices.hpp>
+#include <CoordSysMultiIndices.hpp>
+#include <FieldMultiIndices.hpp>
+#include <EntsMultiIndices.hpp>
+#include <DofsMultiIndices.hpp>
+#include <FEMMultiIndices.hpp>
+// #include <ProblemsMultiIndices.hpp>
+// #include <AdjacencyMultiIndices.hpp>
+// #include <BCMultiIndices.hpp>
+// #include <CoreDataStructures.hpp>
 
 namespace MoFEM {
 
@@ -35,6 +43,7 @@ BasicMoFEMEntity::BasicMoFEMEntity(Interface &moab,const EntityHandle _ent):
     case MBVERTEX:
     case MBEDGE:
     case MBTRI:
+    case MBQUAD:
     case MBTET:
     case MBPRISM:
     case MBENTITYSET:
@@ -113,7 +122,7 @@ ostream& operator<<(ostream& os,const MoFEMEntity& e) {
 }
 void MoFEMEntity_change_order::operator()(MoFEMEntity &e) {
   ErrorCode rval;
-  int nb_dofs = e.get_order_nb_dofs(order)*e.get_max_rank();
+  int nb_dofs = e.get_order_nb_dofs(order)*e.get_nb_of_coeffs();
   ApproximationOrder& ent_order = *((ApproximationOrder*)e.tag_order_data);
   ent_order = order;
   EntityHandle ent = e.get_ent();

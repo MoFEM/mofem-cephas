@@ -146,24 +146,23 @@ PetscErrorCode NonlinearElasticElement::OpGetDataAtGaussPts::doWork(
       PetscFunctionReturn(0);
     }
     int nb_gauss_pts = data.getN().size1();
-    int rank = data.getFieldDofs()[0]->get_max_rank();
+    int rank = data.getFieldDofs()[0]->get_nb_of_coeffs();
 
     //initialize
-    VectorDouble& values = data.getFieldData();
-    valuesAtGaussPts.resize(nb_gauss_pts);
-    gradientAtGaussPts.resize(nb_gauss_pts);
-    for(int gg = 0;gg<nb_gauss_pts;gg++) {
-      valuesAtGaussPts[gg].resize(rank,false);
-      gradientAtGaussPts[gg].resize(rank,3,false);
-    }
-
     if(type == zeroAtType) {
+      valuesAtGaussPts.resize(nb_gauss_pts);
+      gradientAtGaussPts.resize(nb_gauss_pts);
+      for(int gg = 0;gg<nb_gauss_pts;gg++) {
+        valuesAtGaussPts[gg].resize(rank,false);
+        gradientAtGaussPts[gg].resize(rank,3,false);
+      }
       for(int gg = 0;gg<nb_gauss_pts;gg++) {
         valuesAtGaussPts[gg].clear();
         gradientAtGaussPts[gg].clear();
       }
     }
 
+    VectorDouble& values = data.getFieldData();
     //cerr << valuesAtGaussPts[0] << " : ";
     for(int gg = 0;gg<nb_gauss_pts;gg++) {
       VectorAdaptor N = data.getN(gg,nb_dofs/rank);

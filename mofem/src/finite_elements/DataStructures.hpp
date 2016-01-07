@@ -38,6 +38,8 @@ namespace MoFEM {
   typedef ublas::vector<const FEDofMoFEMEntity*,DofsAllacator > VectorDofs;
   typedef ublas::vector<double,DoubleAllacator > VectorDouble;
   typedef ublas::matrix<double,ublas::row_major, DoubleMatrixAllacator > MatrixDouble;
+  typedef ublas::matrix<double,ublas::row_major,ublas::bounded_array<double,9> > MatrixDouble3by3;
+  typedef ublas::vector<double,ublas::bounded_array<double,3> > VectorDouble3;
 
   // shallow adaptor classes
   typedef ublas::vector<double,ublas::shallow_array_adaptor<double> > VectorAdaptor;
@@ -76,7 +78,7 @@ struct DataForcesAndSurcesCore {
 
     /** \brief get shape functions
       * this return matrix (nb. of rows is equal to nb. of Gauss pts, nb. of
-      * columns is equalt to number of shape functions on this entity
+      * columns is equal to number of shape functions on this entity
       */
     virtual const MatrixDouble& getN() const { return N; }
 
@@ -144,11 +146,8 @@ struct DataForcesAndSurcesCore {
     * shape functions are calculated once for element, using maximal
     * approximation order on given entity.
     *
-    * Specifying add ional parameters, only first nb_dofs are indicated as a
-    * row of shape function matrix.
-    *
-    * \param gg nb. of Gauss point
-    * \param number of of shape functions
+    * \param gg number of Gauss point
+    * \param nb_dofs number of of shape functions returned
 
     */
     inline const VectorAdaptor getN(int gg,const int nb_dofs) {
@@ -164,11 +163,8 @@ struct DataForcesAndSurcesCore {
     * shape functions are calculated once for element, using maximal
     * approximation order on given entity.
     *
-    * Specifying add ional parameters, only first nb_dofs are indicated as a
-    * row of shape function derivative matrix.
-    *
     * \param gg nb. of Gauss point
-    * \param number of of shape functions
+    * \param nb_dofs number of of shape functions
     *
     */
     inline const MatrixAdaptor getDiffN(int gg,const int nb_dofs) {
@@ -277,9 +273,11 @@ struct DataForcesAndSurcesCore {
 struct DerivedDataForcesAndSurcesCore: public DataForcesAndSurcesCore  {
 
   struct DerivedEntData: public DataForcesAndSurcesCore::EntData {
+
     DataForcesAndSurcesCore::EntData &entData;
     DerivedEntData(DataForcesAndSurcesCore::EntData &ent_data):
-      entData(ent_data),oRder(0) {}
+    entData(ent_data),oRder(0) {}
+
     const VectorInt& getIndices() const { return iNdices; }
     VectorInt& getIndices() { return iNdices; }
     const VectorDouble& getFieldData() const { return fieldData; }

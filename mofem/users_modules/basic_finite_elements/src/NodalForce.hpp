@@ -125,24 +125,6 @@ struct MetaNodalForces {
     PetscFunctionReturn(0);
   }
 
-  /// Depreciated, changed name to addElement
-  static DEPRECATED PetscErrorCode addNodalForceElement (FieldInterface &mField,const string field_name) {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
-    ierr = addElement(mField,field_name); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
-
-  /// Depreciated, changed name to setOperators
-  static DEPRECATED PetscErrorCode setNodalForceElementOperators(
-    FieldInterface &m_field, boost::ptr_map<string,NodalForce> &nodal_forces,Vec &F,const string field_name
-  ) {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
-    ierr = setOperators(m_field,nodal_forces,F,field_name); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
-
 };
 
 #endif //__NODAL_FORCES_HPP__

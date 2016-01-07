@@ -61,7 +61,7 @@ struct TimeSeries {
   bool dirichletBcSet;
   int readFile,debug;
 
-  PostPocOnRefinedMesh postProc;
+  PostProcVolumeOnRefinedMesh postProc;
 
   TimeSeries(FieldInterface &m_field,
     HelmholtzElement& helmholtz_element,

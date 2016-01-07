@@ -32,12 +32,14 @@ FaceElementForcesAndSourcesCore(m_field) {
 
 NeummanForcesSurface::OpNeumannForce::OpNeumannForce(
   const string field_name,Vec _F,bCForce &data,
-  boost::ptr_vector<MethodForForceScaling> &methods_op
+  boost::ptr_vector<MethodForForceScaling> &methods_op,
+  bool ho_geometry
 ):
 FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
 F(_F),
 dAta(data),
-methodsOp(methods_op) {
+methodsOp(methods_op),
+hoGeometry(ho_geometry) {
 
 }
 
@@ -54,15 +56,21 @@ PetscErrorCode NeummanForcesSurface::OpNeumannForce::doWork(
 
   const FENumeredDofMoFEMEntity *dof_ptr;
   ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
-  int rank = dof_ptr->get_max_rank();
+  int rank = dof_ptr->get_nb_of_coeffs();
   int nb_row_dofs = data.getIndices().size()/rank;
 
-  Nf.resize(data.getIndices().size());
+  Nf.resize(data.getIndices().size(),false);
   Nf.clear();
 
   for (unsigned int gg = 0;gg<data.getN().size1();gg++) {
 
-    double val = getArea()*getGaussPts()(2,gg);
+    double val = getGaussPts()(2,gg);
+    if(hoGeometry) {
+      val *= 0.5*cblas_dnrm2(3,&getNormals_at_GaussPt()(gg,0),1);
+    } else {
+      val *= getArea();
+    }
+
     for (int rr = 0;rr<rank;rr++) {
 
       double force;
@@ -117,12 +125,12 @@ PetscErrorCode NeummanForcesSurface::OpNeumannPreassure::doWork(
 
   const FENumeredDofMoFEMEntity *dof_ptr;
   ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
-  int rank = dof_ptr->get_max_rank();
+  int rank = dof_ptr->get_nb_of_coeffs();
 
   int nb_row_dofs = data.getIndices().size()/rank;
 
-  Nf.resize(data.getIndices().size());
-  bzero(&*Nf.data().begin(),data.getIndices().size()*sizeof(FieldData));
+  Nf.resize(data.getIndices().size(),false);
+  Nf.clear();
 
   //cerr << getNormal() << endl;
   //cerr << getNormals_at_GaussPt() << endl;
@@ -143,6 +151,12 @@ PetscErrorCode NeummanForcesSurface::OpNeumannPreassure::doWork(
     }
 
   }
+
+  // if(type == MBTRI) {
+  //   cerr << "Tri " << getMoFEMFEPtr()->get_ent() << " getN " << data.getN() << endl;
+  //   cerr << "Tri " << getMoFEMFEPtr()->get_ent() << " getDiffN " << data.getDiffN() << endl;
+  //   cerr << "Tri " << getMoFEMFEPtr()->get_ent() << " Indices " << data.getIndices() << endl;
+  // }
 
   /*cerr << "VecSetValues\n";
   cerr << Nf << endl;
@@ -186,11 +200,11 @@ PetscErrorCode NeummanForcesSurface::OpNeumannFlux::doWork(
 
   const FENumeredDofMoFEMEntity *dof_ptr;
   ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
-  int rank = dof_ptr->get_max_rank();
+  int rank = dof_ptr->get_nb_of_coeffs();
 
   int nb_row_dofs = data.getIndices().size()/rank;
 
-  Nf.resize(data.getIndices().size());
+  Nf.resize(data.getIndices().size(),false);
   Nf.clear();
   //cerr << getNormal() << endl;
   //cerr << getNormals_at_GaussPt() << endl;
@@ -200,7 +214,7 @@ PetscErrorCode NeummanForcesSurface::OpNeumannFlux::doWork(
     double val = getGaussPts()(2,gg);
     double flux;
     if(hoGeometry) {
-      double area = cblas_dnrm2(3,&getNormals_at_GaussPt()(gg,0),1);
+      double area = 0.5*cblas_dnrm2(3,&getNormals_at_GaussPt()(gg,0),1);
       flux = dAta.data.data.value1*area;
     } else {
       flux = dAta.data.data.value1*getArea();
@@ -227,7 +241,7 @@ PetscErrorCode NeummanForcesSurface::OpNeumannFlux::doWork(
 }
 
 
-PetscErrorCode NeummanForcesSurface::addForce(const string field_name,Vec F,int ms_id) {
+PetscErrorCode NeummanForcesSurface::addForce(const string field_name,Vec F,int ms_id,bool ho_geometry) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
   ErrorCode rval;
@@ -235,7 +249,7 @@ PetscErrorCode NeummanForcesSurface::addForce(const string field_name,Vec F,int 
   ierr = mField.get_cubit_msId(ms_id,NODESET,&cubit_meshset_ptr); CHKERRQ(ierr);
   ierr = cubit_meshset_ptr->get_bc_data_structure(mapForce[ms_id].data); CHKERRQ(ierr);
   rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBTRI,mapForce[ms_id].tRis,true); CHKERR_PETSC(rval);
-  fe.getOpPtrVector().push_back(new OpNeumannForce(field_name,F,mapForce[ms_id],methodsOp));
+  fe.getOpPtrVector().push_back(new OpNeumannForce(field_name,F,mapForce[ms_id],methodsOp,ho_geometry));
   PetscFunctionReturn(0);
 }
 

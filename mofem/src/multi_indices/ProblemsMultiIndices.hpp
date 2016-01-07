@@ -1,7 +1,8 @@
 /** \file ProblemsMultiIndices.hpp
- * \brief Myltindex containes, data structures for problems and other low-level functions
- *
- * MoFEM is free software: you can redistribute it and/or modify it under
+ * \brief Mylti-index containers, data structures for problems and other low-level functions
+ */
+
+/* MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or (at your
  * option) any later version.
@@ -367,45 +368,54 @@ typedef multi_index_container<
 /** \brief add ref level to problem
   * \ingroup problems_multi_indices
   */
-struct problem_change_ref_level_bit_add {
+struct ProblemChangeRefLevelBitAdd {
   BitRefLevel bit;
-  problem_change_ref_level_bit_add(const BitRefLevel _bit): bit(_bit) {};
+  ProblemChangeRefLevelBitAdd(const BitRefLevel _bit): bit(_bit) {};
   void operator()(MoFEMProblem &p) { *(p.tag_BitRefLevel) |= bit; };
 };
 
 /** \brief set ref level to problem
   * \ingroup problems_multi_indices
   */
-struct problem_change_ref_level_bit_set {
+struct ProblemChangeRefLevelBitSet {
   BitRefLevel bit;
-  problem_change_ref_level_bit_set(const BitRefLevel _bit): bit(_bit) {};
+  ProblemChangeRefLevelBitSet(const BitRefLevel _bit): bit(_bit) {};
   void operator()(MoFEMProblem &p) { *(p.tag_BitRefLevel) = bit; };
 };
 
 /** \brief set prof dof bit ref mask
   * \ingroup problems_multi_indices
   */
-struct problem_change_ref_level_bit_dof_mask_set {
+struct ProblemChangeRefLevelBitDofMaskSet {
   BitRefLevel bit;
-  problem_change_ref_level_bit_dof_mask_set(const BitRefLevel _bit): bit(_bit) {};
+  ProblemChangeRefLevelBitDofMaskSet(const BitRefLevel _bit): bit(_bit) {};
   void operator()(MoFEMProblem &p) { *(p.tag_BitRefLevel_DofMask) = bit; };
 };
 
 /** \brief add finite element to problem
   * \ingroup problems_multi_indices
   */
-struct problem_MoFEMFiniteElement_change_bit_add {
+struct ProblemFiniteElementChangeBitAdd {
   BitFEId f_id;
-  problem_MoFEMFiniteElement_change_bit_add(const BitFEId _f_id): f_id(_f_id) {};
+  ProblemFiniteElementChangeBitAdd(const BitFEId _f_id): f_id(_f_id) {};
+  void operator()(MoFEMProblem &p);
+};
+
+/** \brief remove finite element from problem
+  * \ingroup problems_multi_indices
+  */
+struct ProblemFiniteElementChangeBitUnSet {
+  BitFEId f_id;
+  ProblemFiniteElementChangeBitUnSet(const BitFEId _f_id): f_id(_f_id) {};
   void operator()(MoFEMProblem &p);
 };
 
 /** \brief increase nb. dof in row
   * \ingroup problems_multi_indices
   */
-struct problem_add_row_dof {
+struct ProblemAddRowDof {
   const DofMoFEMEntity *dof_ptr;
-  problem_add_row_dof(const DofMoFEMEntity *_dof_ptr);
+  ProblemAddRowDof(const DofMoFEMEntity *_dof_ptr);
   pair<NumeredDofMoFEMEntity_multiIndex::iterator,bool> p;
   void operator()(MoFEMProblem &e);
 };
@@ -413,9 +423,9 @@ struct problem_add_row_dof {
 /** \brief increase nb. dof in col
   * \ingroup problems_multi_indices
   */
-struct problem_add_col_dof {
+struct ProblemAddColDof {
   const DofMoFEMEntity *dof_ptr;
-  problem_add_col_dof(const DofMoFEMEntity *_dof_ptr);
+  ProblemAddColDof(const DofMoFEMEntity *_dof_ptr);
   pair<NumeredDofMoFEMEntity_multiIndex::iterator,bool> p;
   void operator()(MoFEMProblem &e);
 };
@@ -423,37 +433,37 @@ struct problem_add_col_dof {
 /** \brief zero nb. of dofs in row
   * \ingroup problems_multi_indices
   */
-struct problem_zero_nb_rows_change {
+struct ProblemZeroNbRowsChange {
   void operator()(MoFEMProblem &e);
 };
 
 /** \brief zero nb. of dofs in col
   * \ingroup problems_multi_indices
   */
-struct problem_zero_nb_cols_change {
+struct ProblemZeroNbColsChange {
   void operator()(MoFEMProblem &e);
 };
 
 /** \brief clear problem finite elements
   * \ingroup problems_multi_indices
   */
-struct problem_clear_numered_finiteElementsPtr_change {
+struct ProblemClearNumeredFiniteElementsChange {
   void operator()(MoFEMProblem &e);
 };
 
 /** \brief number dofs in row
   * \ingroup problems_multi_indices
   */
-struct problem_row_number_change {
-  problem_row_number_change() {};
+struct ProblemRowNumberChange {
+  ProblemRowNumberChange() {};
   void operator()(MoFEMProblem &e);
 };
 
 /** \brief number dofs in col
   * \ingroup problems_multi_indices
   */
-struct problem_col_number_change {
-  problem_col_number_change() {};
+struct ProblemColNumberChange {
+  ProblemColNumberChange() {};
   void operator()(MoFEMProblem &e);
 };
 

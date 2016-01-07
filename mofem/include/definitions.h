@@ -1,7 +1,8 @@
 /** \file definitions.h
  * \brief useful compiler directives and definitions
- *
- * MoFEM is free software: you can redistribute it and/or modify it under
+ */
+
+/* MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or (at your
  * option) any later version.
@@ -41,7 +42,8 @@ enum MoFEMInterfaces {
   TETGEN_INTERFACE = 1<<3|1<<4,		///< used to generate mesh using TetGen
   NETGEN_INTERFACE = 1<<3|1<<5,		///< used to generate mesh using NetGen
   NODEMERGER_INTERFACE = 1<<3|1<<6,	///< used to merge nodes
-  BITLEVELCOUPLER_INTERFACE = 1<<3|1<<7 ///< used to couple bit levels by finding parent children relation
+  BITLEVELCOUPLER_INTERFACE = 1<<3|1<<7, ///< used to couple bit levels by finding parent children relation
+  PRISMSFROMSURFACE_INTERFACE = 1<<3|1<<8 ///< create prisms from surface elements
 };
 
 /** \brief Error handling
@@ -49,17 +51,17 @@ enum MoFEMInterfaces {
   * This is complementary to PETSC error codes. The numerical values for
   * these are defined in include/petscerror.h. The names are defined in err.c
   *
-  * MoAB error messeges are defined in naob/Types.hpp
+  * MoAB error messages are defined in naob/Types.hpp
   *
   */
-enum MoFEMErrorCode {
+enum MoFEMErrorCodes {
   MOFEM_SUCESS = 0,
-  MOFEM_DATA_INCONSISTENCT = 100,
+  MOFEM_DATA_INCONSISTENCY = 100,
   MOFEM_NOT_IMPLEMENTED = 101,
   MOFEM_NOT_FOUND = 102,
   MOFEM_OPERATION_UNSUCCESSFUL = 103,
   MOFEM_IMPOSIBLE_CASE = 104,
-  MOFEM_CHAR_THROW = 105,
+  MOFEM_MOFEMEXCEPTION_THROW = 105,
   MOFEM_STD_EXCEPTION_THROW = 106,
   MOFEM_INVALID_DATA = 107,
   MOFEM_ATOM_TEST_INVALID = 108,
@@ -74,6 +76,16 @@ enum FieldSpace {
   HCURL,	///< field with continuous tangents
   L2,		///< field with C-1 continuity
   LASTSPACE 	///< FieldSpace in [ 0, LASTSPACE )
+};
+
+const static char * const FieldSpaceNames[] = {
+  "", // empty space
+  "NOFIELD",
+  "H1",
+  "HDIV",
+  "HCURL",
+  "L2",
+  "LASTSPACE"
 };
 
 /// \brief Those types control how functions respond on arguments, f.e. error handling
@@ -93,14 +105,41 @@ enum ByWhat {
   BYALL = 1<<0|1<<1|1<<2
 };
 
+/**
+  * Types of sets and boundary conditions
+  *
+  */
+enum CubitBC {
+  UNKNOWNSET = 0,
+  NODESET = 1<<0,
+  SIDESET = 1<<1,
+  BLOCKSET = 1<<2,
+  MATERIALSET = 1<<3,
+  DISPLACEMENTSET = 1<<4,
+  FORCESET = 1<<5,
+  PRESSURESET = 1<<6,
+  VELOCITYSET = 1<<7,
+  ACCELERATIONSET = 1<<8,
+  TEMPERATURESET = 1<<9,
+  HEATFLUXSET = 1<<10,
+  INTERFACESET = 1<<11,
+  UNKNOWNCUBITNAME = 1<< 12,
+  MAT_ELASTICSET = 1<<13,	///< block name is "MAT_ELASTIC"
+  MAT_INTERFSET = 1 <<14,
+  MAT_THERMALSET = 1<<15,	///< block name is "MAT_THERMAL"
+  BODYFORCESSET = 1<<16,	///< block name is "BODY_FORCES"
+  MAT_MOISTURESET = 1<<17, 	///< block name is "MAT_MOISTURE"
+  LASTCUBITSET
+};
+
 //taken from http://stackoverflow.com/questions/295120/c-mark-as-deprecated
 #ifdef __GNUC__
-#define DEPRECATED __attribute__((deprecated))
+  #define DEPRECATED __attribute__((deprecated))
 #elif defined(_MSC_VER)
-#define DEPRECATED __declspec(deprecated)
+  #define DEPRECATED __declspec(deprecated)
 #else
-#pragma message("WARNING: You need to implement DEPRECATED for this compiler")
-#define DEPRECATED
+  #pragma message("WARNING: You need to implement DEPRECATED for this compiler")
+  #define DEPRECATED
 #endif
 
 #define BITREFEDGES_SIZE 6 /*number of edges on tetrahedral*/
@@ -143,10 +182,11 @@ enum ByWhat {
 #define CHKERR(a) do { \
   ErrorCode val = (a); \
   if (MB_SUCCESS != val) { \
-    std::cerr << "Error code  " << val << " at " << __FILE__ << ":" << __LINE__ << std::endl; \
+    cerr << "Error code  " << val << " at " << __FILE__ << ":" << __LINE__ << std::endl; \
     assert(1); \
   } \
 } while (false)
+
 
 /// check moab error and communicate it using petsc interface
 #define CHKERR_PETSC(a) do { \
@@ -164,16 +204,17 @@ enum ByWhat {
   if (MB_SUCCESS != val) { \
     std::ostringstream ss; \
     ss << "Error code  " << val << " at " << __FILE__ << ":" << __LINE__ << std::endl; \
-    std::string str(ss.str()); \
-    throw str.c_str(); \
+    throw MoFEMException(MOFEM_MOAB_ERROR,ss.str().c_str() ); \
   } \
 } while (false)
 
 #define THROW_AT_LINE(a) { \
   std::ostringstream ss; \
   ss << a << " " << " at " << __FILE__ << ":" << __LINE__ << std::endl; \
-  std::string str(ss.str()); \
-  throw str.c_str(); \
+  throw MoFEMException( MOFEM_MOFEMEXCEPTION_THROW,ss.str().c_str() ); \
 }
+
+#define SSTR( x ) dynamic_cast< std::ostringstream & >( \
+  ( std::ostringstream() << std::dec << x ) ).str()
 
 #endif //__DEFINITONS_H__

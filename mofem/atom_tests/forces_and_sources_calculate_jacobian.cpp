@@ -190,7 +190,7 @@ int main(int argc, char *argv[]) {
       ierr = getEdgesOrder(data,H1); CHKERRQ(ierr);
       ierr = getTrisOrder(data,H1); CHKERRQ(ierr);
       ierr = getTetsOrder(data,H1); CHKERRQ(ierr);
-      ierr = getFaceNodes(data); CHKERRQ(ierr);
+      ierr = getFaceTriNodes(data); CHKERRQ(ierr);
       ierr = shapeTETFunctions_H1(data,G_TET_X4,G_TET_Y4,G_TET_Z4,4); CHKERRQ(ierr);
 
       ierr = getRowNodesIndices(data,"FIELD1"); CHKERRQ(ierr);
@@ -212,7 +212,7 @@ int main(int argc, char *argv[]) {
 
       invJac.resize(3,3);
       ierr = ShapeJacMBTET(&*data.dataOnEntities[MBVERTEX][0].getDiffN().data().begin(),&*coords.begin(),&*invJac.data().begin()); CHKERRQ(ierr);
-      ierr = ShapeInvJacMBTET(&*invJac.data().begin()); CHKERRQ(ierr);
+      ierr = ShapeInvJacVolume(&*invJac.data().begin()); CHKERRQ(ierr);
 
       try {
         ierr = opSetInvJac.opRhs(data); CHKERRQ(ierr);

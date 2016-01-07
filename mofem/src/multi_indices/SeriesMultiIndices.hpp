@@ -1,5 +1,5 @@
 /** \file SeriesMultiIndices.hpp
- * \brief Myltindex containes, for mofem fields data structures and other low-level functions
+ * \brief Myltindex containers, for mofem fields data structures and other low-level functions
  *
 
  * MoFEM is free software: you can redistribute it and/or modify it under
@@ -27,7 +27,7 @@ struct MoFEMSeries {
 
   EntityHandle meshset;
   const void* tag_name_data;		///< tag keeps name of the series
-  int tag_name_size; 			///< number of bits necessery to keep field series
+  int tag_name_size; 			///< number of bits necessary to keep field series
 
   bool record_begin;
   bool record_end;
@@ -105,7 +105,7 @@ struct MoFEMSeriesStep: public interface_MoFEMSeries<MoFEMSeries> {
   MoFEMSeriesStep(Interface &moab,const MoFEMSeries *_MoFEMSeries_ptr,const int _step_number);
 
   inline int get_step_number() const { return step_number; };
-  PetscErrorCode get(Interface &moab,DofMoFEMEntity_multiIndex &dofsMoabField) const;
+  PetscErrorCode get(Interface &moab,DofMoFEMEntity_multiIndex &dofsField) const;
 
   double time;
   PetscErrorCode get_time_init(Interface &moab);

@@ -1,4 +1,4 @@
-/** \file h1_hdiv_hcurl_l2.h
+  /** \file h1_hdiv_hcurl_l2.h
   \brief Functions to approximate hierarchical spaces
 */
 
@@ -20,36 +20,38 @@ extern "C" {
 #endif
 
 /// number of dofs for L2 space
-#define NBVOLUME_L2(P) ((P+1)*(P+2)*(P+3)/6)
-#define NBFACE_L2(P) ((P+1)*(P+2)/2)
+#define NBVOLUMETET_L2(P) ((P+1)*(P+2)*(P+3)/6)
+#define NBFACETRI_L2(P) ((P+1)*(P+2)/2)
 #define NBEDGE_L2(P) (P+1)
 /// number of dofs on edge for H1 space
 #define NBEDGE_H1(P) ((P>0) ? (P-1) : 0)
 /// number of dofs on face for H1 space
-#define NBFACE_H1(P) ((P>1) ? ((P-2)*(P-1)/2) : 0)
+#define NBFACETRI_H1(P) ((P>1) ? ((P-2)*(P-1)/2) : 0)
+#define NBFACEQUAD_H1(P) ((P>2) ? ((P-3)*(P-2)/2) : 0)
 /// number of dofs on volume for H1 space
-#define NBVOLUME_H1(P) ((P>2) ? ((P-3)*(P-2)*(P-1)/6) : 0)
+#define NBVOLUMETET_H1(P) ((P>2) ? ((P-3)*(P-2)*(P-1)/6) : 0)
+#define NBVOLUMEPRISM_H1(P) ((P>4) ? ((P-5)*(P-4)*(P-3)/6) : 0)
 //HCURL
 #define NBEDGE_HCURL(P) (P+1)
-#define NBFACE_HCURL(P) ((P>0) ? (P-1)*(P+1) : 0)
-#define NBVOLUME_HCURL(P) ((P>1) ? (P-2)*(P-1)*(P+1)/2 : 0)
+#define NBFACETRI_HCURL(P) ((P>0) ? (P-1)*(P+1) : 0)
+#define NBVOLUMETET_HCURL(P) ((P>1) ? (P-2)*(P-1)*(P+1)/2 : 0)
 //HDIV
 #define NBEDGE_HDIV(P) (0)
-#define NBFACE_HDIV(P) ((P>0) ? (P+1)*(P+2)/2 : 0)
-#define NBVOLUME_HDIV(P) ((P>1) ? (P-1)*(P+1)*(P+2)/2 : 0)
-#define NBFACE_EDGE_HDIV(P) ((P>0) ? P : 0)
-#define NBFACE_FACE_HDIV(P) ((P>2) ? ((P-2)*(P-2)+(P-2))/2 : 0)
-#define NBVOLUME_EDGE_HDIV(P) ((P>1) ? P-1 : 0)
-#define NBVOLUME_FACE_HDIV(P) ((P>2) ? ((P-2)*(P-2)+(P-2)) : 0)
-#define NBVOLUME_VOLUME_HDIV(P) ((P>3) ? ((P-3)*(P-2)*(P-1)/2) : 0)
+#define NBFACETRI_HDIV(P) ((P>0) ? (P+1)*(P+2)/2 : 0)
+#define NBVOLUMETET_HDIV(P) ((P>1) ? (P-1)*(P+1)*(P+2)/2 : 0)
+#define NBFACETRI_EDGE_HDIV(P) ((P>0) ? P : 0)
+#define NBFACETRI_FACE_HDIV(P) ((P>2) ? ((P-2)*(P-2)+(P-2))/2 : 0)
+#define NBVOLUMETET_EDGE_HDIV(P) ((P>1) ? P-1 : 0)
+#define NBVOLUMETET_FACE_HDIV(P) ((P>2) ? ((P-2)*(P-2)+(P-2)) : 0)
+#define NBVOLUMETET_VOLUME_HDIV(P) ((P>3) ? ((P-3)*(P-2)*(P-1)/2) : 0)
 
 /**
  * \brief Calculate Lagrange approximation basis
  *
  * \param p is approximation order
  * \param s is is position [-1,1]
- * \parem L appeoximation functions
- * \param diffL direvatives
+ * \parem L approximation functions
+ * \param diffL derivatives
  * \param dim dimension
  */
 PetscErrorCode Legendre_polynomials(int p,double s,double *diff_s,double *L,double *diffL,const int dim);
@@ -61,7 +63,7 @@ PetscErrorCode L2_VolumeShapeDiffMBTETinvJ(int base_p,int p,double *volume_diffN
 /**
  * \brief H1_EdgeShapeFunctions_MBTRI
  *
- * \param sense of edges, it is array of inegers dim 3 (3-egdes of triangle)
+ * \param sense of edges, it is array of integers dim 3 (3-egdes of triangle)
  * \param p of edges
  */
 PetscErrorCode H1_EdgeShapeFunctions_MBTRI(int *sense,int *p,double *N,double *diffN,double *edgeN[3],double *diff_edgeN[3],int GDIM);
@@ -75,6 +77,12 @@ PetscErrorCode H1_VolumeShapeDiffMBTETinvJ(int base_p,int p,double *volume_diffN
 PetscErrorCode H1_EdgeGradientOfDeformation_hierachical(int p,double *diffN,double *dofs,double *F);
 PetscErrorCode H1_FaceGradientOfDeformation_hierachical(int p,double *diffN,double *dofs,double *F);
 PetscErrorCode H1_VolumeGradientOfDeformation_hierachical(int p,double *diffN,double *dofs,double *F);
+PetscErrorCode H1_QuadShapeFunctions_MBPRISM(
+  int *faces_nodes,int *p,double *N,double *diffN,double *faceN[],double *diff_faceN[],int GDIM
+);
+PetscErrorCode H1_VolumeShapeFunctions_MBPRISM(
+  int p,double *N,double *diffN,double *volumeN,double *diff_volumeN,int GDIM
+);
 
 // Hdiv shape functions
 

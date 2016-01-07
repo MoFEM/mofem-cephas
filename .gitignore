@@ -24,6 +24,8 @@ moisture_transport
 ground_surface_temperature
 gels
 small_strain_plasticity
+obsolete
+solid_shell_prism_element
 
 _Store
 *.swp
@@ -33,3 +35,4 @@ _Store
 .atom-build.json
 
 
+.build-tools.cson

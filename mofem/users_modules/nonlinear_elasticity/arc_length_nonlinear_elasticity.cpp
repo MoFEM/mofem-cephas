@@ -236,7 +236,7 @@ int main(int argc, char *argv[]) {
   ierr = elastic.setOperators("SPATIAL_POSITION"); CHKERRQ(ierr);
 
   //post_processing
-  PostPocOnRefinedMesh post_proc(m_field);
+  PostProcVolumeOnRefinedMesh post_proc(m_field);
   ierr = post_proc.generateReferenceElementMesh(); CHKERRQ(ierr);
   ierr = post_proc.addFieldValuesPostProc("SPATIAL_POSITION"); CHKERRQ(ierr);
   ierr = post_proc.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
@@ -249,7 +249,8 @@ int main(int argc, char *argv[]) {
 	    post_proc.mapGaussPts,
 	    "SPATIAL_POSITION",
 	    sit->second,
-	    post_proc.commonData));
+	    post_proc.commonData)
+    );
   }
 
   //build field
@@ -304,7 +305,7 @@ int main(int argc, char *argv[]) {
   PetscInt M,N;
   ierr = MatGetSize(Aij,&M,&N); CHKERRQ(ierr);
   PetscInt m,n;
-  MatGetLocalSize(Aij,&m,&n);
+  ierr = MatGetLocalSize(Aij,&m,&n); CHKERRQ(ierr);
   ArcLengthMatShell* mat_ctx = new ArcLengthMatShell(Aij,arc_ctx,"ELASTIC_MECHANICS");
   Mat ShellAij;
   ierr = MatCreateShell(PETSC_COMM_WORLD,m,n,M,N,(void*)mat_ctx,&ShellAij); CHKERRQ(ierr);
@@ -343,40 +344,40 @@ int main(int argc, char *argv[]) {
   ierr = m_field.get_problem("ELASTIC_MECHANICS",&my_dirichlet_bc.problemPtr); CHKERRQ(ierr);
   ierr = my_dirichlet_bc.iNitalize(); CHKERRQ(ierr);
 
-  struct MyPrePostProcessFEMethod: public FEMethod {
+  struct AssembleRhsVectors: public FEMethod {
 
-    FieldInterface& m_field;
-    ArcLengthCtx *arc_ptr;
-
-    SpatialPositionsBCFEMethodPreAndPostProc *bC;
+    ArcLengthCtx *arcPtr;
     Range &nodeSet;
 
-    MyPrePostProcessFEMethod(FieldInterface& _m_field,
-      ArcLengthCtx *_arc_ptr,SpatialPositionsBCFEMethodPreAndPostProc *bc,Range &node_set):
-      m_field(_m_field),arc_ptr(_arc_ptr),bC(bc),nodeSet(node_set) {}
+    AssembleRhsVectors(
+      ArcLengthCtx *arc_ptr,
+      Range &node_set
+    ):
+    arcPtr(arc_ptr),
+    nodeSet(node_set) {}
 
     PetscErrorCode ierr;
 
-      PetscErrorCode preProcess() {
-        PetscFunctionBegin;
+    PetscErrorCode preProcess() {
+      PetscFunctionBegin;
 
-	//PetscAttachDebugger();
-        switch(snes_ctx) {
-          case CTX_SNESSETFUNCTION: {
-            ierr = VecZeroEntries(snes_f); CHKERRQ(ierr);
-            ierr = VecGhostUpdateBegin(snes_f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-            ierr = VecGhostUpdateEnd(snes_f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-            ierr = VecZeroEntries(arc_ptr->F_lambda); CHKERRQ(ierr);
-            ierr = VecGhostUpdateBegin(arc_ptr->F_lambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-            ierr = VecGhostUpdateEnd(arc_ptr->F_lambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-          }
-          break;
-          default:
-            SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+      //PetscAttachDebugger();
+      switch(snes_ctx) {
+        case CTX_SNESSETFUNCTION: {
+          ierr = VecZeroEntries(snes_f); CHKERRQ(ierr);
+          ierr = VecGhostUpdateBegin(snes_f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+          ierr = VecGhostUpdateEnd(snes_f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+          ierr = VecZeroEntries(arcPtr->F_lambda); CHKERRQ(ierr);
+          ierr = VecGhostUpdateBegin(arcPtr->F_lambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+          ierr = VecGhostUpdateEnd(arcPtr->F_lambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
         }
-
-        PetscFunctionReturn(0);
+        break;
+        default:
+        SETERRQ(PETSC_COMM_SELF,1,"not implemented");
       }
+
+      PetscFunctionReturn(0);
+    }
 
     PetscErrorCode postProcess() {
       PetscFunctionBegin;
@@ -404,8 +405,8 @@ int main(int argc, char *argv[]) {
         dit = numered_dofs_rows.get<Ent_mi_tag>().lower_bound(*nit);
         hi_dit = numered_dofs_rows.get<Ent_mi_tag>().upper_bound(*nit);
         for(;dit!=hi_dit;dit++) {
-          PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e -> ","LAMBDA",0,arc_ptr->getFieldData());
-          PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e\n",dit->get_name().c_str(),dit->get_dof_rank(),dit->get_FieldData());
+          PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e -> ","LAMBDA",0,arcPtr->getFieldData());
+          PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e\n",dit->get_name().c_str(),dit->get_dof_coeff_idx(),dit->get_FieldData());
         }
       }
       PetscFunctionReturn(0);
@@ -413,16 +414,17 @@ int main(int argc, char *argv[]) {
 
   };
 
-  struct AssembleLambdaFEMethod: public FEMethod {
+  struct AddLambdaVectorToFinternal: public FEMethod {
 
-    FieldInterface& m_field;
-    ArcLengthCtx *arc_ptr;
-
+    ArcLengthCtx *arcPtr;
     SpatialPositionsBCFEMethodPreAndPostProc *bC;
 
-    AssembleLambdaFEMethod(FieldInterface& _m_field,
-      ArcLengthCtx *_arc_ptr,SpatialPositionsBCFEMethodPreAndPostProc *bc):
-      m_field(_m_field),arc_ptr(_arc_ptr),bC(bc) {}
+    AddLambdaVectorToFinternal(
+      ArcLengthCtx *arc_ptr,
+      SpatialPositionsBCFEMethodPreAndPostProc *bc
+    ):
+    arcPtr(arc_ptr),
+    bC(bc) {}
 
     PetscErrorCode ierr;
 
@@ -439,20 +441,20 @@ int main(int argc, char *argv[]) {
       switch(snes_ctx) {
         case CTX_SNESSETFUNCTION: {
           //F_lambda
-          ierr = VecGhostUpdateBegin(arc_ptr->F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-          ierr = VecGhostUpdateEnd(arc_ptr->F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-          ierr = VecAssemblyBegin(arc_ptr->F_lambda); CHKERRQ(ierr);
-          ierr = VecAssemblyEnd(arc_ptr->F_lambda); CHKERRQ(ierr);
+          ierr = VecGhostUpdateBegin(arcPtr->F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+          ierr = VecGhostUpdateEnd(arcPtr->F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+          ierr = VecAssemblyBegin(arcPtr->F_lambda); CHKERRQ(ierr);
+          ierr = VecAssemblyEnd(arcPtr->F_lambda); CHKERRQ(ierr);
           for(vector<int>::iterator vit = bC->dofsIndices.begin();vit!=bC->dofsIndices.end();vit++) {
-            ierr = VecSetValue(arc_ptr->F_lambda,*vit,0,INSERT_VALUES); CHKERRQ(ierr);
+            ierr = VecSetValue(arcPtr->F_lambda,*vit,0,INSERT_VALUES); CHKERRQ(ierr);
           }
-          ierr = VecAssemblyBegin(arc_ptr->F_lambda); CHKERRQ(ierr);
-          ierr = VecAssemblyEnd(arc_ptr->F_lambda); CHKERRQ(ierr);
-          ierr = VecDot(arc_ptr->F_lambda,arc_ptr->F_lambda,&arc_ptr->F_lambda2); CHKERRQ(ierr);
-          PetscPrintf(PETSC_COMM_WORLD,"\tFlambda2 = %6.4e\n",arc_ptr->F_lambda2);
+          ierr = VecAssemblyBegin(arcPtr->F_lambda); CHKERRQ(ierr);
+          ierr = VecAssemblyEnd(arcPtr->F_lambda); CHKERRQ(ierr);
+          ierr = VecDot(arcPtr->F_lambda,arcPtr->F_lambda,&arcPtr->F_lambda2); CHKERRQ(ierr);
+          PetscPrintf(PETSC_COMM_WORLD,"\tFlambda2 = %6.4e\n",arcPtr->F_lambda2);
           //add F_lambda
-          ierr = VecAXPY(snes_f,arc_ptr->getFieldData(),arc_ptr->F_lambda); CHKERRQ(ierr);
-          PetscPrintf(PETSC_COMM_WORLD,"\tlambda = %6.4e\n",arc_ptr->getFieldData());
+          ierr = VecAXPY(snes_f,arcPtr->getFieldData(),arcPtr->F_lambda); CHKERRQ(ierr);
+          PetscPrintf(PETSC_COMM_WORLD,"\tlambda = %6.4e\n",arcPtr->getFieldData());
           double fnorm;
           ierr = VecNorm(snes_f,NORM_2,&fnorm); CHKERRQ(ierr);
           PetscPrintf(PETSC_COMM_WORLD,"\tfnorm = %6.4e\n",fnorm);
@@ -466,8 +468,8 @@ int main(int argc, char *argv[]) {
 
   };
 
-  MyPrePostProcessFEMethod pre_post_method(m_field,arc_ctx,&my_dirichlet_bc,node_set);
-  AssembleLambdaFEMethod assemble_F_lambda(m_field,arc_ctx,&my_dirichlet_bc);
+  AssembleRhsVectors pre_post_method(arc_ctx,node_set);
+  AddLambdaVectorToFinternal assemble_F_lambda(arc_ctx,&my_dirichlet_bc);
 
   SNES snes;
   ierr = SNESCreate(PETSC_COMM_WORLD,&snes); CHKERRQ(ierr);
@@ -580,10 +582,14 @@ int main(int argc, char *argv[]) {
 
   if(step>1) {
     ierr = m_field.set_other_global_ghost_vector(
-      "ELASTIC_MECHANICS","SPATIAL_POSITION","X0_SPATIAL_POSITION",COL,arc_ctx->x0,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      "ELASTIC_MECHANICS","SPATIAL_POSITION","X0_SPATIAL_POSITION",
+      COL,arc_ctx->x0,INSERT_VALUES,SCATTER_FORWARD
+    ); CHKERRQ(ierr);
     double x0_nrm;
     ierr = VecNorm(arc_ctx->x0,NORM_2,&x0_nrm);  CHKERRQ(ierr);
-    ierr = PetscPrintf(PETSC_COMM_WORLD,"\tRead x0_nrm = %6.4e dlambda = %6.4e\n",x0_nrm,arc_ctx->dlambda);
+    ierr = PetscPrintf(
+      PETSC_COMM_WORLD,"\tRead x0_nrm = %6.4e dlambda = %6.4e\n",x0_nrm,arc_ctx->dlambda
+    );
     ierr = arc_ctx->setAlphaBeta(1,0); CHKERRQ(ierr);
   } else {
     ierr = arc_ctx->setS(step_size); CHKERRQ(ierr);
