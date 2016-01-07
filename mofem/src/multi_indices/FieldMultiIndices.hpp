@@ -31,9 +31,17 @@ typedef int (*FieldOrderTable[MBMAXTYPE])(const int order);
 typedef int (*FieldOrderFunct)(const int order);
 
 /**
-  * \brief keeps data about field
+  * \brief Provide data structure for (tensor) field approximation.
   * \ingroup dof_multi_indices
-  *
+
+  The MoFEMField is intended to provide support for fields, with a strong bias
+  towards supporting first and best the capabilities required for scientific
+  computing applications. Since we work with discrete spaces, data structure
+  has to carry information about type of approximation space, its regularity
+
+  Note: Some concepts and ideas are taken from iFiedl Interface specification
+  <https://redmine.scorec.rpi.edu/anonsvn/itaps/software/trunk/tools/doxygen/html/ifield.html>
+
   */
 struct MoFEMField {
 
