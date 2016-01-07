@@ -394,7 +394,7 @@ PetscErrorCode SphericalArcLengthControl::calculateInitDlambda(double *dlambda) 
 
 PetscErrorCode SphericalArcLengthControl::setDlambdaToX(Vec x,double dlambda) {
   PetscFunctionBegin;
-  //check if locl dof idx is non zero, i.e. that lambda is acessible from this processor
+  //check if local dof idx is non zero, i.e. that lambda is accessible from this processor
   if(arcPtr->getPetscLocalDofIdx()!=-1) {
     double *array;
     ierr = VecGetArray(x,&array); CHKERRQ(ierr);
@@ -405,8 +405,11 @@ PetscErrorCode SphericalArcLengthControl::setDlambdaToX(Vec x,double dlambda) {
       SETERRQ(PETSC_COMM_SELF,1,sss.str().c_str());
     }
     array[arcPtr->getPetscLocalDofIdx()] = lambda_old + dlambda;
-    PetscPrintf(arcPtr->mField.get_comm(),"\tlambda = %6.4e, %6.4e (%6.4e)\n",
-    lambda_old, array[arcPtr->getPetscLocalDofIdx()], dlambda);
+    PetscPrintf(
+      arcPtr->mField.get_comm(),
+      "\tlambda = %6.4e, %6.4e (%6.4e)\n",
+      lambda_old,array[arcPtr->getPetscLocalDofIdx()],dlambda
+    );
     ierr = VecRestoreArray(x,&array); CHKERRQ(ierr);
   }
   PetscFunctionReturn(0);
