@@ -1,10 +1,11 @@
 # **MoFEM (Cephas)** #
 
-Is a next stage MoFEM development. Cephas is version of Joseph stripped from unnecessary or obsolete implementation. Is a rock on which different finite elements implementations are build. Is not full framework where whole FE application is implemented.
+Is a next stage MoFEM development. Cephas is version of Joseph stripped from
+unnecessary or obsolete implementation. Is a rock on which different finite
+elements implementations are build. Is not full framework where whole FE
+application is implemented.
 
-The objective is to have implementation with reach abstraction (able to implement nontrivial finite elements) while being small and compassable.
+The objective is to have implementation with reach abstraction (able to
+implement nontrivial finite elements) while being small and compassable.
 
-**MoFEM (Mesh Oriented Finite Element Method)** is a new finite element analysis code tailored for the solution of multi-physics problems with arbitrary levels of approximation, different levels of mesh refinement and optimised for high-performance computing. MoFEM is the blend of the **[Boost](http://www.boost.org) MultiIndex** containers, **[MOAB](https://trac.mcs.anl.gov/projects/ITAPS/wiki/MOAB)** (Mesh Oriented Database) and **[PETSc](http://www.mcs.anl.gov/petsc/)** (Portable, Extensible Toolkit for Scientific Computation). MoFEM is developed in C++ and it is open-source software under the [GNU](http://www.gnu.org/licenses/) Lesser General Public License. The current version of MoFEM has full support for **[CUBIT](https://cubit.sandia.gov/)**/**[TRELIS](http://csimsoft.com/)** v13 for pre-processing and **[ParaView](http://www.paraview.org/)** v4.1 for post-processing. 
-
-
-[Go to Home Page](https://bitbucket.org/likask/mofem-joseph/wiki/Home)
+[Go to Documentation Page](http://userweb.eng.gla.ac.uk/lukasz.kaczmarczyk/MoFem/html/index.html)
