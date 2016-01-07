@@ -1,6 +1,7 @@
 /** \file ArcLengthTools.hpp
- *
- * FIXME: DESCRIPTION
+
+ Implementation of Arc Length element
+
  */
 
 /* This file is part of MoFEM.
@@ -109,7 +110,7 @@ PetscErrorCode ArcLengthMatShell::setLambda(Vec ksp_x,double *lambda,ScatterMode
       }
       break;
       default:
-      SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
     }
 
   }
@@ -157,7 +158,7 @@ PetscErrorCode PrePostProcessForArcLength::preProcess() {
     }
     break;
     default:
-      SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
   }
 
   PetscFunctionReturn(0);
@@ -183,7 +184,7 @@ PetscErrorCode PrePostProcessForArcLength::postProcess() {
     }
     break;
     default:
-      SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
   }
 
   PetscFunctionReturn(0);
@@ -231,7 +232,7 @@ PetscErrorCode PCApplyArcLength(PC pc,Vec pc_f,Vec pc_x) {
     << " db_dot_pc_x=" << db_dot_pc_x
     << " db_dot_x_lambda=" << db_dot_x_lambda
     << " ctx->arcPtr->diag=" << ctx->arcPtr->diag;
-    SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,ss.str().c_str());
   }
   ierr = VecAXPY(pc_x,ddlambda,ctx->arcPtr->x_lambda); CHKERRQ(ierr);
   ierr = MatCtx->setLambda(pc_x,&ddlambda,SCATTER_REVERSE); CHKERRQ(ierr);
@@ -274,17 +275,17 @@ PetscErrorCode SphericalArcLengthControl::preProcess() {
       break;
     }
     case CTX_TSSETIJACOBIAN: {
-	snes_ctx = CTX_SNESSETJACOBIAN;
-	snes_B = ts_B;
-	break;
+      snes_ctx = CTX_SNESSETJACOBIAN;
+      snes_B = ts_B;
+      break;
     }
     default:
     break;
   }
   switch(snes_ctx) {
     case CTX_SNESSETFUNCTION: {
-	ierr = calculateDxAndDlambda(snes_x); CHKERRQ(ierr);
-	ierr = calculateDb(); CHKERRQ(ierr);
+      ierr = calculateDxAndDlambda(snes_x); CHKERRQ(ierr);
+      ierr = calculateDb(); CHKERRQ(ierr);
     }
     break;
     case CTX_SNESSETJACOBIAN: {
@@ -386,7 +387,7 @@ PetscErrorCode SphericalArcLengthControl::calculateInitDlambda(double *dlambda) 
   if(!(*dlambda == *dlambda)) {
     ostringstream sss;
     sss << "s " << arcPtr->s << " " << arcPtr->beta << " " << arcPtr->F_lambda2;
-    SETERRQ(PETSC_COMM_SELF,1,sss.str().c_str());
+    SETERRQ(PETSC_COMM_SELF,MOFEM_IMPOSIBLE_CASE,sss.str().c_str());
   }
   PetscFunctionReturn(0);
 }
@@ -399,13 +400,13 @@ PetscErrorCode SphericalArcLengthControl::setDlambdaToX(Vec x,double dlambda) {
     ierr = VecGetArray(x,&array); CHKERRQ(ierr);
     double lambda_old = array[arcPtr->getPetscLocalDofIdx()];
     if(!(dlambda == dlambda)) {
-	ostringstream sss;
-	sss << "s " << arcPtr->s << " " << arcPtr->beta << " " << arcPtr->F_lambda2;
-	SETERRQ(PETSC_COMM_SELF,1,sss.str().c_str());
+      ostringstream sss;
+      sss << "s " << arcPtr->s << " " << arcPtr->beta << " " << arcPtr->F_lambda2;
+      SETERRQ(PETSC_COMM_SELF,1,sss.str().c_str());
     }
     array[arcPtr->getPetscLocalDofIdx()] = lambda_old + dlambda;
     PetscPrintf(arcPtr->mField.get_comm(),"\tlambda = %6.4e, %6.4e (%6.4e)\n",
-	lambda_old, array[arcPtr->getPetscLocalDofIdx()], dlambda);
+    lambda_old, array[arcPtr->getPetscLocalDofIdx()], dlambda);
     ierr = VecRestoreArray(x,&array); CHKERRQ(ierr);
   }
   PetscFunctionReturn(0);
