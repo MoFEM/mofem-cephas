@@ -674,7 +674,7 @@ int main(int argc, char *argv[]) {
       "ELASTIC_MECHANICS","DISPLACEMENT","X0_DISPLACEMENT",COL,arc_ctx->x0,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     double x0_nrm;
     ierr = VecNorm(arc_ctx->x0,NORM_2,&x0_nrm);  CHKERRQ(ierr);
-    ierr = PetscPrintf(PETSC_COMM_WORLD,"\tRead x0_nrm = %6.4e dlambda = %6.4e\n",x0_nrm,arc_ctx->dlambda);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"\tRead x0_nrm = %6.4e dlambda = %6.4e\n",x0_nrm,arc_ctx->dLambda);
     ierr = arc_ctx->setAlphaBeta(1,0); CHKERRQ(ierr);
   } else {
     ierr = arc_ctx->setS(0); CHKERRQ(ierr);
@@ -713,7 +713,7 @@ int main(int argc, char *argv[]) {
       ierr = my_arc_method.calculate_dx_and_dlambda(D); CHKERRQ(ierr);
       ierr = my_arc_method.calculate_lambda_int(step_size); CHKERRQ(ierr);
       ierr = arc_ctx->setS(step_size); CHKERRQ(ierr);
-      double dlambda = arc_ctx->dlambda;
+      double dlambda = arc_ctx->dLambda;
       double dx_nrm;
       ierr = VecNorm(arc_ctx->dx,NORM_2,&dx_nrm);  CHKERRQ(ierr);
       ierr = PetscPrintf(PETSC_COMM_WORLD,
@@ -730,8 +730,9 @@ int main(int argc, char *argv[]) {
       //step_size0_1 = step_size0*(step_stize1/step_size)
       step_size *= reduction;
       ierr = arc_ctx->setS(step_size); CHKERRQ(ierr);
-      double dlambda = reduction*arc_ctx->dlambda; double dx_nrm;
+      double dlambda = reduction*arc_ctx->dLambda;
       ierr = VecScale(arc_ctx->dx,reduction); CHKERRQ(ierr);
+      double dx_nrm;
       ierr = VecNorm(arc_ctx->dx,NORM_2,&dx_nrm);  CHKERRQ(ierr);
       ierr = PetscPrintf(PETSC_COMM_WORLD,
         "Load Step %D step_size = %6.4e dlambda0 = %6.4e dx_nrm = %6.4e dx2 = %6.4e\n",

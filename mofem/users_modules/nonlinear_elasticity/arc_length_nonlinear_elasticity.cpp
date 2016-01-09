@@ -587,7 +587,9 @@ int main(int argc, char *argv[]) {
     double x0_nrm;
     ierr = VecNorm(arc_ctx->x0,NORM_2,&x0_nrm);  CHKERRQ(ierr);
     ierr = PetscPrintf(
-      PETSC_COMM_WORLD,"\tRead x0_nrm = %6.4e dlambda = %6.4e\n",x0_nrm,arc_ctx->dlambda
+      PETSC_COMM_WORLD,
+      "\tRead x0_nrm = %6.4e dlambda = %6.4e\n",
+      x0_nrm,arc_ctx->dLambda
     );
     ierr = arc_ctx->setAlphaBeta(1,0); CHKERRQ(ierr);
   } else {
@@ -623,7 +625,7 @@ int main(int argc, char *argv[]) {
       step_size = sqrt(arc_method.calculateLambdaInt());
       step_size0 = step_size;
       ierr = arc_ctx->setS(step_size); CHKERRQ(ierr);
-      double dlambda = arc_ctx->dlambda;
+      double dlambda = arc_ctx->dLambda;
       double dx_nrm;
       ierr = VecNorm(arc_ctx->dx,NORM_2,&dx_nrm);  CHKERRQ(ierr);
       ierr = PetscPrintf(PETSC_COMM_WORLD,
@@ -648,7 +650,7 @@ int main(int argc, char *argv[]) {
         step_size = min_reduction*step_size0;
       }
       ierr = arc_ctx->setS(step_size); CHKERRQ(ierr);
-      double dlambda = reduction*arc_ctx->dlambda;
+      double dlambda = reduction*arc_ctx->dLambda;
       double dx_nrm;
       ierr = VecScale(arc_ctx->dx,reduction); CHKERRQ(ierr);
       ierr = VecNorm(arc_ctx->dx,NORM_2,&dx_nrm);  CHKERRQ(ierr);
@@ -676,7 +678,7 @@ int main(int argc, char *argv[]) {
 
       double x0_nrm;
       ierr = VecNorm(arc_ctx->x0,NORM_2,&x0_nrm);  CHKERRQ(ierr);
-      ierr = PetscPrintf(PETSC_COMM_WORLD,"\tRead x0_nrm = %6.4e dlambda = %6.4e\n",x0_nrm,arc_ctx->dlambda);
+      ierr = PetscPrintf(PETSC_COMM_WORLD,"\tRead x0_nrm = %6.4e dlambda = %6.4e\n",x0_nrm,arc_ctx->dLambda);
       ierr = arc_ctx->setAlphaBeta(1,0); CHKERRQ(ierr);
 
 

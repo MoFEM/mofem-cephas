@@ -70,8 +70,11 @@ struct ArcLengthCtx {
   double beta; 	///< force scaling factor
   double alpha; ///< displacement scaling factor
 
-  double dlambda;	///< increment of load factor
-  double diag;		///< diagonal value
+  Vec ghosTdLambda;
+  double dLambda;	///< increment of load factor
+  Vec ghostDiag;
+  double dIag;		///< diagonal value
+
   double dx2;		///< inner_prod(dX,dX)
   double F_lambda2;	///< inner_prod(F_lambda,F_lambda);
   double res_lambda;	///< f_lambda - s
@@ -94,7 +97,7 @@ struct ArcLengthCtx {
   PetscErrorCode setAlphaBeta(double alpha,double beta);
 
   ArcLengthCtx(FieldInterface &m_field,const string &problem_name);
-  ~ArcLengthCtx();
+  virtual ~ArcLengthCtx();
 
   NumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator dIt;
 
@@ -142,7 +145,7 @@ struct ArcLengthSnesCtx: public SnesCtx {
     -\mathbf{f}_\textrm{int} \\
     -r_\lambda
   \end{array}
-  \right]  
+  \right]
  \f]
 
  */
@@ -174,7 +177,7 @@ struct PCArcLengthCtx {
   Mat shellAij,Aij;
   ArcLengthCtx* arcPtr;
   PCArcLengthCtx(Mat shell_Aij,Mat _Aij,ArcLengthCtx* arc_ptr);
-  ~PCArcLengthCtx();
+  virtual ~PCArcLengthCtx();
 
   friend PetscErrorCode PCApplyArcLength(PC pc,Vec pc_f,Vec pc_x);
   friend PetscErrorCode PCSetupArcLength(PC pc);
@@ -239,10 +242,9 @@ struct PrePostProcessForArcLength: public FEMethod {
 struct SphericalArcLengthControl: public FEMethod {
 
   ArcLengthCtx* arcPtr;
-  Vec ghostDiag;
 
   SphericalArcLengthControl(ArcLengthCtx *arc_ptr);
-  ~SphericalArcLengthControl();
+  virtual ~SphericalArcLengthControl();
 
   PetscErrorCode preProcess();
   PetscErrorCode operator()();
