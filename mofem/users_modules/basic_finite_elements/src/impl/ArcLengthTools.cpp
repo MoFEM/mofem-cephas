@@ -381,12 +381,13 @@ PetscErrorCode SphericalArcLengthControl::calculateDxAndDlambda(Vec x) {
     array[arcPtr->getPetscLocalDofIdx()] = 0;
     ierr = VecRestoreArray(arcPtr->dx,&array); CHKERRQ(ierr);
   }
-  ierr = VecSetValue(arcPtr->ghosTdLambda,0,arcPtr->dLambda,INSERT_VALUES); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(arcPtr->ghosTdLambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(arcPtr->ghosTdLambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   //dx2
   ierr = VecDot(arcPtr->dx,arcPtr->dx,&arcPtr->dx2); CHKERRQ(ierr);
-  PetscPrintf(arcPtr->mField.get_comm(),"\tdlambda = %6.4e dx2 = %6.4e\n",arcPtr->dLambda,arcPtr->dx2);
+  PetscPrintf(
+    arcPtr->mField.get_comm(),"\tdlambda = %6.4e dx2 = %6.4e\n",arcPtr->dLambda,arcPtr->dx2
+  );
   PetscFunctionReturn(0);
 }
 

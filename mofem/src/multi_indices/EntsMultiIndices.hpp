@@ -104,7 +104,7 @@ struct BasicMoFEMEntity {
     */
   inline unsigned char get_pstatus() const { return *pstatus_val_ptr; }
 
-  /** \berief get sharid processors
+  /** \berief get shared processors
 
   Returning list to shared processors. Lists end with -1. Returns NULL if not
   sharing processors.

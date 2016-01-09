@@ -71,7 +71,7 @@ PetscErrorCode Core::add_field(
     if(space == NOFIELD) {
       pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ref_ent = refinedEntities.insert(RefMoFEMEntity(moab,meshset));
       bool success = refinedEntities.modify(p_ref_ent.first,RefMoFEMEntity_change_add_bit(BitRefLevel().set()));
-      if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsucceeded");
+      if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification not succeeded");
     }
     //name
     void const* tag_data[] = { name.c_str() };
