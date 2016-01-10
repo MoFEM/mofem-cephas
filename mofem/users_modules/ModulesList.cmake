@@ -46,6 +46,31 @@ foreach(LOOP_MODULE ${INSTLLED_MODULES})
   include(${LOOP_MODULE})
 endforeach(LOOP_MODULE)
 
+# git pull for all users modules
+add_custom_target(
+  update_users_modules
+)
+foreach(LOOP_MODULE ${INSTLLED_MODULES})
+  # message(STATUS "${LOOP_MODULE}")
+  string(REGEX REPLACE
+    "/+InstalledAddModule.cmake" ""
+    MODULE_DIRECTORY ${LOOP_MODULE}
+  )
+  # message(STATUS "${MODULE_DIRECTORY}")
+  string(REGEX REPLACE
+    ".*/+" ""
+    UPDATE_MODULE_NAME ${MODULE_DIRECTORY}
+  )
+  message(STATUS "Add custom target ... update_${UPDATE_MODULE_NAME}")
+  add_custom_target(
+    update_${UPDATE_MODULE_NAME}
+    COMMAND git pull
+    WORKING_DIRECTORY ${MODULE_DIRECTORY}
+    COMMENT "Update module ... ${UPDATE_MODULE_NAME}" VERBATIM
+  )
+  add_dependencies(update_users_modules update_${UPDATE_MODULE_NAME})
+endforeach(LOOP_MODULE)
+
 # Users Programs
 add_subdirectory(
   ${UM_SOURCE_DIR}/thermal
