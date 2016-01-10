@@ -1789,18 +1789,18 @@ PetscErrorCode Core::build_finite_element_uids_view(EntMoFEMFiniteElement &ent_f
   for(unsigned int ii = 0;ii<BitFieldId().size();ii++) {
     // common field id for Row, Col and Data
     BitFieldId id_common = 0;
-    //check if the field (ii) is added to finite element
+    // check if the field (ii) is added to finite element
     for(int ss = 0;ss<Last;ss++) {
       id_common |= FEAdj_fields[ss]&BitFieldId().set(ii);
     }
     if( id_common.none() ) continue;
-    //find in database data associated with the field (ii)
+    // find in database data associated with the field (ii)
     field_by_id::iterator miit = fIelds_by_id.find(BitFieldId().set(ii));
     if(miit==fIelds_by_id.end()) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
     }
-    //resolve entities on element, those entities are used to build tag with dof
-    //uids on finite element tag
+    // resolve entities on element, those entities are used to build tag with dof
+    // uids on finite element tag
     ierr = ent_fe.get_element_adjacency(moab,&*miit,adj_ents); CHKERRQ(ierr);
     //loop over adjacent to finite entities, and find dofs on those entities
     //this part is to build MoFEMFiniteElement_dof_uid_view
@@ -1827,10 +1827,15 @@ PetscErrorCode Core::build_finite_element_uids_view(EntMoFEMFiniteElement &ent_f
         << moab.type_from_handle(*eit2) << " bits ENT " << bit_ref_ent << endl;
         ss << "inconsitency in database entity" << " type "
         << moab.type_from_handle(ent_fe.get_ent()) << " bits FE  " << bit_ref_MoFEMFiniteElement << endl;
+        ss << "element entity " << endl << *ref_ent_miit << endl;
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,ss.str().c_str());
       }
-      dof_set_type::iterator ents_miit2 = dof_set.lower_bound(boost::make_tuple(miit->get_name_ref(),ref_ent_miit->get_ref_ent()));
-      dof_set_type::iterator ents_hi_miit2 = dof_set.upper_bound(boost::make_tuple(miit->get_name_ref(),ref_ent_miit->get_ref_ent()));
+      dof_set_type::iterator ents_miit2 = dof_set.lower_bound(
+        boost::make_tuple(miit->get_name_ref(),ref_ent_miit->get_ref_ent())
+      );
+      dof_set_type::iterator ents_hi_miit2 = dof_set.upper_bound(
+        boost::make_tuple(miit->get_name_ref(),ref_ent_miit->get_ref_ent())
+      );
       for(int ss = 0;ss<Last;ss++) {
         if( !(FEAdj_fields[ss].test(ii)) ) continue;
         dof_set_type::iterator ents_miit3 = ents_miit2;
