@@ -3,7 +3,7 @@
 
   Arc-length in that version controls gap opening
 
-*/ 
+*/
 
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
@@ -25,7 +25,7 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
   PetscErrorCode ierr;
 
   ArcLengthCtx* arcPtr;
-  Vec GhostDiag,GhostLambdaInt;
+  Vec GhostLambdaInt;
   Range Faces3,Faces4;
   Range Edges3,Edges4;
   Range Nodes3,Nodes4;
@@ -38,10 +38,8 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
     PetscInt ghosts[1] = { 0 };
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mOab,MYPCOMM_INDEX);
     if(pcomm->rank() == 0) {
-      VecCreateGhost(PETSC_COMM_WORLD,1,1,0,ghosts,&GhostDiag);
       VecCreateGhost(PETSC_COMM_WORLD,1,1,0,ghosts,&GhostLambdaInt);
     } else {
-      VecCreateGhost(PETSC_COMM_WORLD,0,1,1,ghosts,&GhostDiag);
       VecCreateGhost(PETSC_COMM_WORLD,0,1,1,ghosts,&GhostLambdaInt);
     }
     Range prisms;
@@ -69,7 +67,6 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
 
   }
   ~ArcLengthIntElemFEMethod() {
-    VecDestroy(&GhostDiag);
     VecDestroy(&GhostLambdaInt);
   }
 
@@ -147,7 +144,7 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
     ierr = VecGhostUpdateBegin(GhostLambdaInt,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(GhostLambdaInt,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGetArray(GhostLambdaInt,&array_int_lambda); CHKERRQ(ierr);
-    _lambda_int_ = arcPtr->alpha*array_int_lambda[0] + arcPtr->dlambda*arcPtr->beta*sqrt(arcPtr->F_lambda2);
+    _lambda_int_ = arcPtr->alpha*array_int_lambda[0] + arcPtr->dLambda*arcPtr->beta*sqrt(arcPtr->F_lambda2);
     /*PetscSynchronizedPrintf(PETSC_COMM_WORLD,
       "array_int_lambda[0] = %6.4e arcPtr->F_lambda2 = %6.4e\n",
       array_int_lambda[0],arcPtr->F_lambda2);
@@ -195,10 +192,9 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
       }
       break;
       case CTX_SNESSETJACOBIAN: {
-	//calculate diagonal therm
-	double diag = arcPtr->beta*sqrt(arcPtr->F_lambda2);
-	ierr = VecSetValue(GhostDiag,0,diag,INSERT_VALUES); CHKERRQ(ierr);
-	ierr = MatSetValue(snes_B,arcPtr->getPetscGloablDofIdx(),arcPtr->getPetscGloablDofIdx(),1,ADD_VALUES); CHKERRQ(ierr);
+        //calculate diagonal therm
+        arcPtr->dIag = arcPtr->beta*sqrt(arcPtr->F_lambda2);
+        ierr = MatSetValue(snes_B,arcPtr->getPetscGloablDofIdx(),arcPtr->getPetscGloablDofIdx(),1,ADD_VALUES); CHKERRQ(ierr);
       }
       break;
       default:
@@ -212,17 +208,11 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
     PetscFunctionBegin;
     switch(snes_ctx) {
       case CTX_SNESSETJACOBIAN: {
-	ierr = VecAssemblyBegin(GhostDiag); CHKERRQ(ierr);
-	ierr = VecAssemblyEnd(GhostDiag); CHKERRQ(ierr);
-	ierr = VecGhostUpdateBegin(GhostDiag,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	ierr = VecGhostUpdateEnd(GhostDiag,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-	double *diag;
-	ierr = VecGetArray(GhostDiag,&diag); CHKERRQ(ierr);
-	arcPtr->diag = *diag;
-	ierr = VecRestoreArray(GhostDiag,&diag); CHKERRQ(ierr);
-	PetscPrintf(PETSC_COMM_WORLD,"\tdiag = %6.4e\n",arcPtr->diag);
-	ierr = MatAssemblyBegin(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-	ierr = MatAssemblyEnd(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+        ierr = VecGhostUpdateBegin(arcPtr->ghostDiag,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+        ierr = VecGhostUpdateEnd(arcPtr->ghostDiag,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+        PetscPrintf(PETSC_COMM_WORLD,"\tdiag = %6.4e\n",arcPtr->dIag);
+        ierr = MatAssemblyBegin(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
+        ierr = MatAssemblyEnd(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
       }
       break;
       default:
@@ -240,16 +230,16 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
     if(arcPtr->getPetscLocalDofIdx()!=-1) {
       double *array;
       ierr = VecGetArray(arcPtr->dx,&array); CHKERRQ(ierr);
-      arcPtr->dlambda = array[arcPtr->getPetscLocalDofIdx()];
+      arcPtr->dLambda = array[arcPtr->getPetscLocalDofIdx()];
       array[arcPtr->getPetscLocalDofIdx()] = 0;
       ierr = VecRestoreArray(arcPtr->dx,&array); CHKERRQ(ierr);
     }
     //brodcast dlambda
-    int part = arcPtr->getPart();
-    MPI_Bcast(&(arcPtr->dlambda),1,MPI_DOUBLE,part,PETSC_COMM_WORLD);
+    ierr = VecGhostUpdateBegin(arcPtr->ghosTdLambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecGhostUpdateEnd(arcPtr->ghosTdLambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     //calculate dx2 (dot product)
     ierr = VecDot(arcPtr->dx,arcPtr->dx,&arcPtr->dx2); CHKERRQ(ierr);
-    PetscPrintf(PETSC_COMM_WORLD,"\tdlambda = %6.4e dx2 = %6.4e\n",arcPtr->dlambda,arcPtr->dx2);
+    PetscPrintf(PETSC_COMM_WORLD,"\tdlambda = %6.4e dx2 = %6.4e\n",arcPtr->dLambda,arcPtr->dx2);
     PetscFunctionReturn(0);
   }
 

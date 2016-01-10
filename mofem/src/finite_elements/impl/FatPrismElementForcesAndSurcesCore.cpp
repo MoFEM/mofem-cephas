@@ -286,7 +286,7 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
         // linear xi,eta, ho terms for eta
         int order = dataH1TroughThickness.dataOnEntities[MBEDGE][ee].getOrder();
         int nb_dofs = NBEDGE_H1(order);
-        if(nb_dofs!=dataH1TroughThickness.dataOnEntities[MBEDGE][ee].getN().size2()) {
+        if((unsigned int)nb_dofs!=dataH1TroughThickness.dataOnEntities[MBEDGE][ee].getN().size2()) {
           SETERRQ2(
             PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"nb_dofs != nb_dofs",
             nb_dofs,dataH1TroughThickness.dataOnEntities[MBEDGE][ee].getN().size2()
