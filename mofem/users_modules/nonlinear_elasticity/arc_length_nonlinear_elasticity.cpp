@@ -177,17 +177,28 @@ int main(int argc, char *argv[]) {
     ierr = m_field.add_ents_to_field_by_TETs(0,"SPATIAL_POSITION"); CHKERRQ(ierr);
     ierr = m_field.add_ents_to_field_by_TETs(0,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
 
-    //this entity will carray data for this finite element
-    EntityHandle meshset_FE_ARC_LENGTH;
-    rval = moab.create_meshset(MESHSET_SET,meshset_FE_ARC_LENGTH); CHKERR_PETSC(rval);
-    //get LAMBDA field meshset
-    EntityHandle meshset_field_LAMBDA = m_field.get_field_meshset("LAMBDA");
-    //add LAMBDA field meshset to finite element ARC_LENGTH
-    rval = moab.add_entities(meshset_FE_ARC_LENGTH,&meshset_field_LAMBDA,1); CHKERR_PETSC(rval);
-    //add finite element ARC_LENGTH meshset to refinment database (all ref bit leveles)
-    ierr = m_field.seed_ref_level_MESHSET(meshset_FE_ARC_LENGTH,BitRefLevel().set()); CHKERRQ(ierr);
-    //finally add created meshset to the ARC_LENGTH finite element
-    ierr = m_field.add_ents_to_finite_element_by_MESHSET(meshset_FE_ARC_LENGTH,"ARC_LENGTH",false); CHKERRQ(ierr);
+    {
+      //Add dummy no-field vertex
+      EntityHandle no_field_vertex;
+      {
+        const double coords[] = {0,0,0};
+        rval = m_field.get_moab().create_vertex(coords,no_field_vertex); CHKERR_PETSC(rval);
+        Range range_no_field_vertex;
+        range_no_field_vertex.insert(no_field_vertex);
+        ierr = m_field.seed_ref_level(range_no_field_vertex,BitRefLevel().set()); CHKERRQ(ierr);
+        EntityHandle lambda_meshset = m_field.get_field_meshset("LAMBDA");
+        rval = m_field.get_moab().add_entities(lambda_meshset,range_no_field_vertex); CHKERR_PETSC(rval);
+      }
+      //this entity will carray data for this finite element
+      EntityHandle meshset_fe_arc_length;
+      {
+        rval = moab.create_meshset(MESHSET_SET,meshset_fe_arc_length); CHKERR_PETSC(rval);
+        rval = moab.add_entities(meshset_fe_arc_length,&no_field_vertex,1); CHKERR_PETSC(rval);
+        ierr = m_field.seed_ref_level_MESHSET(meshset_fe_arc_length,BitRefLevel().set()); CHKERRQ(ierr);
+      }
+      //finally add created meshset to the ARC_LENGTH finite element
+      ierr = m_field.add_ents_to_finite_element_by_MESHSET(meshset_fe_arc_length,"ARC_LENGTH",false); CHKERRQ(ierr);
+    }
 
     //set app. order
     ierr = m_field.set_field_order(0,MBTET,"SPATIAL_POSITION",order); CHKERRQ(ierr);
