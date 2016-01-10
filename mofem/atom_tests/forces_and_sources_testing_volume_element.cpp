@@ -73,6 +73,18 @@ int main(int argc, char *argv[]) {
   ierr = m_field.add_field("FIELD3",NOFIELD,3); CHKERRQ(ierr);
   ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,3); CHKERRQ(ierr);
 
+  {
+    // Creating and adding no field entities.
+    const double coords[] = {0,0,0};
+    EntityHandle no_field_vertex;
+    rval = m_field.get_moab().create_vertex(coords,no_field_vertex); CHKERR_PETSC(rval);
+    Range range_no_field_vertex;
+    range_no_field_vertex.insert(no_field_vertex);
+    ierr = m_field.seed_ref_level(range_no_field_vertex,BitRefLevel().set()); CHKERRQ(ierr);
+    EntityHandle meshset = m_field.get_field_meshset("FIELD3");
+    rval = m_field.get_moab().add_entities(meshset,range_no_field_vertex); CHKERR_PETSC(rval);
+  }
+
   //FE
   ierr = m_field.add_finite_element("TEST_FE1"); CHKERRQ(ierr);
   ierr = m_field.add_finite_element("TEST_FE2"); CHKERRQ(ierr);
@@ -199,11 +211,25 @@ int main(int argc, char *argv[]) {
       ierr = getPorblemColIndices("FIELD2",col_type,col_side,col_indices); CHKERRQ(ierr);
 
       if(row_indices.size()!=row_data.getIndices().size()) {
-        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"row inconsistency");
+        cerr << row_indices << endl;
+        cerr << row_data.getIndices() << endl;
+        SETERRQ2(
+          PETSC_COMM_SELF,
+          MOFEM_DATA_INCONSISTENCY,
+          "row inconsistency %d != %d",
+          row_indices.size(),
+          row_data.getIndices().size()
+        );
       }
 
       if(col_indices.size()!=col_data.getIndices().size()) {
-        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"col inconsistency");
+        SETERRQ2(
+          PETSC_COMM_SELF,
+          MOFEM_DATA_INCONSISTENCY,
+          "row inconsistency %d != %d",
+          col_indices.size(),
+          col_data.getIndices().size()
+        );
       }
 
       for(unsigned int rr = 0;rr<row_indices.size();rr++) {
@@ -242,7 +268,7 @@ int main(int argc, char *argv[]) {
 
       if(type != MBENTITYSET) PetscFunctionReturn(0);
 
-      my_split << "NPFIELD" << endl;
+      my_split << "NOFIELD" << endl;
       my_split << "side: " << side << " type: " << type << endl;
       my_split << data << endl;
       PetscFunctionReturn(0);

@@ -506,11 +506,13 @@ PetscErrorCode ForcesAndSurcesCore::getProblemNodesIndices(const string &field_n
   nodes_indices.resize(0);
 
   SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fePtr->get_side_number_table());
-  SideNumber_multiIndex::nth_index<2>::type::iterator siit = side_table.get<2>().lower_bound(MBVERTEX);
-  SideNumber_multiIndex::nth_index<2>::type::iterator hi_siit = side_table.get<2>().upper_bound(MBVERTEX);
+  SideNumber_multiIndex::nth_index<1>::type::iterator siit = side_table.get<1>().lower_bound(boost::make_tuple(MBVERTEX,0));
+  SideNumber_multiIndex::nth_index<1>::type::iterator hi_siit = side_table.get<1>().lower_bound(boost::make_tuple(MBVERTEX,10000));
 
   int nn = 0;
   for(;siit!=hi_siit;siit++,nn++) {
+
+    if(siit->side_number == -1) continue;
 
     const EntityHandle ent = siit->ent;
     NumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>::type::iterator dit,hi_dit;
@@ -547,6 +549,8 @@ PetscErrorCode ForcesAndSurcesCore::getProblemTypeIndices(
   SideNumber_multiIndex::nth_index<1>::type::iterator hi_siit = side_table.get<1>().upper_bound(boost::make_tuple(type,side_number));
 
   for(;siit!=hi_siit;siit++) {
+
+    if(siit->side_number == -1) continue;
 
     const EntityHandle ent = siit->ent;
     NumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>::type::iterator dit,hi_dit;
