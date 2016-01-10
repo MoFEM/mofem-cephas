@@ -177,6 +177,7 @@ int main(int argc, char *argv[]) {
     ierr = m_field.add_ents_to_field_by_TETs(0,"SPATIAL_POSITION"); CHKERRQ(ierr);
     ierr = m_field.add_ents_to_field_by_TETs(0,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
 
+    // Setting up LAMBDA field and ARC_LENGTH interface
     {
       //Add dummy no-field vertex
       EntityHandle no_field_vertex;
