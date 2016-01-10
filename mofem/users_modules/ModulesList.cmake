@@ -41,14 +41,10 @@ file(
   ?*/InstalledAddModule.cmake
 )
 
-foreach(LOOP_MODULE ${INSTLLED_MODULES})
-  message(STATUS "Add module ... ${LOOP_MODULE}")
-  include(${LOOP_MODULE})
-endforeach(LOOP_MODULE)
-
 # git pull for all users modules
 add_custom_target(
   update_users_modules
+  COMMENT "Update all modules ..." VERBATIM
 )
 foreach(LOOP_MODULE ${INSTLLED_MODULES})
   # message(STATUS "${LOOP_MODULE}")
@@ -61,6 +57,8 @@ foreach(LOOP_MODULE ${INSTLLED_MODULES})
     ".*/+" ""
     UPDATE_MODULE_NAME ${MODULE_DIRECTORY}
   )
+  message(STATUS "Add module ... ${MODULE_DIRECTORY}")
+  include(${LOOP_MODULE})
   message(STATUS "Add custom target ... update_${UPDATE_MODULE_NAME}")
   add_custom_target(
     update_${UPDATE_MODULE_NAME}
