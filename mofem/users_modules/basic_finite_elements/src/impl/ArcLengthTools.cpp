@@ -272,7 +272,8 @@ PetscErrorCode PCSetupArcLength(PC pc) {
 }
 
 SphericalArcLengthControl::SphericalArcLengthControl(ArcLengthCtx *arc_ptr):
-  FEMethod(),arcPtr(arc_ptr) {
+FEMethod(),
+arcPtr(arc_ptr) {
 }
 
 SphericalArcLengthControl::~SphericalArcLengthControl() {
@@ -317,7 +318,6 @@ double SphericalArcLengthControl::calculateLambdaInt() {
 
 PetscErrorCode SphericalArcLengthControl::calculateDb() {
   PetscFunctionBegin;
-  //db
   ierr = VecCopy(arcPtr->dx,arcPtr->db); CHKERRQ(ierr);
   ierr = VecScale(arcPtr->db,2*arcPtr->alpha); CHKERRQ(ierr);
   PetscFunctionReturn(0);
@@ -328,7 +328,9 @@ PetscErrorCode SphericalArcLengthControl::operator()() {
   switch(snes_ctx) {
     case CTX_SNESSETFUNCTION: {
       arcPtr->res_lambda = calculateLambdaInt() - pow(arcPtr->s,2);
-      ierr = VecSetValue(snes_f,arcPtr->getPetscGloablDofIdx(),arcPtr->res_lambda,ADD_VALUES); CHKERRQ(ierr);
+      ierr = VecSetValue(
+        snes_f,arcPtr->getPetscGloablDofIdx(),arcPtr->res_lambda,ADD_VALUES
+      ); CHKERRQ(ierr);
       PetscPrintf(arcPtr->mField.get_comm(),"\tres_lambda = %6.4e\n",arcPtr->res_lambda);
     }
     break;
