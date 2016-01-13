@@ -86,7 +86,7 @@ struct PCMGSetUpViaApproxOrdersCtx {
       //if is last level, take all remaining orders dofs, if any left
       int order_at_next_level = kk+coarseOrder;
       if(kk == nbLevels-1) {
-	order_at_next_level = 100;
+        order_at_next_level = 100;
       }
 
       //get indices up to up to give approximation order
@@ -95,14 +95,14 @@ struct PCMGSetUpViaApproxOrdersCtx {
       ierr = ISGetLocalSize(is_vec[kk],&is_loc_size[kk]); CHKERRQ(ierr);
 
       if(verb>0) {
-	PetscSynchronizedPrintf(mFieldPtr->get_comm(),
-	  "Nb. dofs at level [ %d ] global %u local %d\n",
-	  kk,is_glob_size[kk],is_loc_size[kk]);
+        PetscSynchronizedPrintf(mFieldPtr->get_comm(),
+        "Nb. dofs at level [ %d ] global %u local %d\n",
+        kk,is_glob_size[kk],is_loc_size[kk]);
       }
 
       //if no dofs on level kk finish here
       if(is_glob_size[kk]==0) {
-	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"no dofs at level");
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"no dofs at level");
       }
 
     }

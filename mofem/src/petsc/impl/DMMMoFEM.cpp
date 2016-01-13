@@ -44,12 +44,12 @@
 #include <SnesCtx.hpp>
 #include <TsCtx.hpp>
 
-#undef PETSC_VERSION_RELEASE
-#define PETSC_VERSION_RELEASE 1
+// #undef PETSC_VERSION_RELEASE
+// #define PETSC_VERSION_RELEASE 1
 
 #if PETSC_VERSION_GE(3,6,0)
   #include <petsc/private/dmimpl.h> /*I  "petscdm.h"   I*/
-  #include <petsc/private/vecimpl.h> /*I  "petscdm.h"   I*/
+  // #include <petsc/private/vecimpl.h> /*I  "petscdm.h"   I*/
 #else
   #include <petsc-private/dmimpl.h> /*I  "petscdm.h"   I*/
   #include <petsc-private/vecimpl.h> /*I  "petscdm.h"   I*/
@@ -99,7 +99,6 @@ struct DMCtx {
   friend PetscErrorCode DMGlobalToLocalEnd_MoFEM(DM dm,Vec,InsertMode,Vec);
   friend PetscErrorCode DMLocalToGlobalBegin_MoFEM(DM,Vec,InsertMode,Vec);
   friend PetscErrorCode DMLocalToGlobalEnd_MoFEM(DM,Vec,InsertMode,Vec);
-
 };
 
 PetscBool DMCtx::isProblemsBuild = PETSC_FALSE;
@@ -507,8 +506,9 @@ PetscErrorCode DMSetFromOptions_MoFEM(DM dm) {
   #endif
   ierr = PetscOptionsBool(
     "-dm_is_partitioned",
-    "set if mesh is partitioned (works which native MOAB file formata, i.e. h5m","DMSetUp",
-    dm_field->isPartitioned,&dm_field->isPartitioned,NULL);CHKERRQ(ierr);
+    "set if mesh is partitioned (works which native MOAB file format, i.e. h5m","DMSetUp",
+    dm_field->isPartitioned,&dm_field->isPartitioned,NULL
+  ); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 

@@ -259,7 +259,7 @@ struct SphericalArcLengthControl: public FEMethod {
   \f]
 
   */
-  double calculateLambdaInt();
+  virtual double calculateLambdaInt();
 
   /** \brief Calculate db
 
@@ -268,10 +268,10 @@ struct SphericalArcLengthControl: public FEMethod {
   \f]
 
   */
-  PetscErrorCode calculateDb();
-  PetscErrorCode calculateDxAndDlambda(Vec x);
-  PetscErrorCode calculateInitDlambda(double *dlambda);
-  PetscErrorCode setDlambdaToX(Vec x,double dlambda);
+  virtual PetscErrorCode calculateDb();
+  virtual PetscErrorCode calculateDxAndDlambda(Vec x);
+  virtual PetscErrorCode calculateInitDlambda(double *dlambda);
+  virtual PetscErrorCode setDlambdaToX(Vec x,double dlambda);
 
 };
 
