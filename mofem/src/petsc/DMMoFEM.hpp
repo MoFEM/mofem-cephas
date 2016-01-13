@@ -35,6 +35,12 @@ PetscErrorCode DMRegister_MoFEM(const char sname[]);
 PetscErrorCode DMMoFEMCreateMoFEM(DM dm,MoFEM::FieldInterface *m_field_ptr,const char problem_name[],const MoFEM::BitRefLevel &bit_level);
 
 /**
+  * \brief Get pointer to problem data structure
+  * \ingroup dm
+  */
+PetscErrorCode DMMoFEMGetProblemPtr(DM dm,const MoFEM::MoFEMProblem **problem_ptr);
+
+/**
   * \brief set squared problem
   * \ingroup dm
 

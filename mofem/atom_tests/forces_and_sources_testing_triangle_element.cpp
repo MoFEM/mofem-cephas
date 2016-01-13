@@ -72,6 +72,18 @@ int main(int argc, char *argv[]) {
   ierr = m_field.add_field("FIELD1",H1,3); CHKERRQ(ierr);
   ierr = m_field.add_field("FIELD2",NOFIELD,3); CHKERRQ(ierr);
 
+  {
+    // Creating and adding no field entities.
+    const double coords[] = {0,0,0};
+    EntityHandle no_field_vertex;
+    rval = m_field.get_moab().create_vertex(coords,no_field_vertex); CHKERR_PETSC(rval);
+    Range range_no_field_vertex;
+    range_no_field_vertex.insert(no_field_vertex);
+    ierr = m_field.seed_ref_level(range_no_field_vertex,BitRefLevel().set()); CHKERRQ(ierr);
+    EntityHandle meshset = m_field.get_field_meshset("FIELD2");
+    rval = m_field.get_moab().add_entities(meshset,range_no_field_vertex); CHKERR_PETSC(rval);
+  }
+
   //FE
   ierr = m_field.add_finite_element("TEST_FE1"); CHKERRQ(ierr);
   ierr = m_field.add_finite_element("TEST_FE2"); CHKERRQ(ierr);

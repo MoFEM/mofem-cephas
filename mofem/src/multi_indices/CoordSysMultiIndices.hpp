@@ -25,9 +25,16 @@ namespace MoFEM {
   /** \brief Structure for Coordinate system of two-point tensor
   * \ingroup coordsys_multi_indices
 
+  Scientific computing applications deal in physical quantities expressed as
+  tensors: scalars such as temperature, vectors such as velocity, and
+  second-order tensors such as stress. In practice, these are formally tensor
+  fields: a tensor field assigns a tensor to each point in a mathematical space
+  (typically a Euclidean space or manifold).
+
   Because tensors have a geometric interpretation, their underlying physical
-  meaning is independent of the coordinate system in which they are defined; the
-  numerical value of a tensor depends on the coordinate system, and so any
+  meaning is independent of the coordinate system, very often on two coordinate
+  systems in reference and current configuration, in which they are defined; the
+  numerical value of a tensor depends on the coordinate systems, and so any
   numerical instantiation of a tensor field is incomplete without a specification
   of its coordinate system.
 
@@ -36,7 +43,8 @@ namespace MoFEM {
   structure can be attached, carrying information about tensor structure
   approximated by the field.
 
-
+  Note: Some concepts and ideas are taken from iFiedl Interface specification
+  <https://redmine.scorec.rpi.edu/anonsvn/itaps/software/trunk/tools/doxygen/html/ifield.html>
 
   */
   struct CoordSys {

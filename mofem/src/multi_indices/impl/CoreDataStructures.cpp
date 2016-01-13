@@ -118,7 +118,10 @@ MoFEMField::MoFEMField(Interface &moab,const EntityHandle meshset,const CoordSys
       forder_table[MBTET] = fNBVOLUMETET_L2;
       break;
     case NOFIELD:
-      forder_table[MBENTITYSET] = fNBENTITYSET_NOFIELD;
+    for(EntityType t = MBVERTEX;t<MBMAXTYPE;t++) {
+      // Concept of approximation order make no sense is there is no field
+      forder_table[t] = fNBENTITYSET_NOFIELD;
+    }
       break;
     default:
       THROW_AT_LINE("not implemented");

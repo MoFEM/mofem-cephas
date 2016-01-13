@@ -79,7 +79,7 @@ struct DMCtx {
   static PetscBool isProblemsBuild;
 
   //pouinter to data structures
-  const MoFEMProblem *problemPtr;	//< pinter to problem data struture
+  const MoFEMProblem *problemPtr;	//< pinter to problem data structure
 
   DMCtx();
   virtual ~DMCtx();
@@ -191,6 +191,20 @@ PetscErrorCode DMMoFEMCreateMoFEM(
   MPI_Comm_size(comm,&dm_field->sIze);
   MPI_Comm_rank(comm,&dm_field->rAnk);
 
+  // Problem structure
+  ierr = dm_field->mField_ptr->get_problem(dm_field->problemName,&dm_field->problemPtr); CHKERRQ(ierr);
+
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode DMMoFEMGetProblemPtr(DM dm,const MoFEM::MoFEMProblem **problem_ptr) {
+  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
+  PetscFunctionBegin;
+  DMCtx *dm_field = (DMCtx*)dm->data;
+  if(!dm->data) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"data structure for MoFEM not yet created");
+  }
+  *problem_ptr = dm_field->problemPtr;
   PetscFunctionReturn(0);
 }
 
@@ -514,8 +528,6 @@ PetscErrorCode DMSetUp_MoFEM(DM dm) {
     dm_field->isProblemsBuild = PETSC_TRUE;
   }
   ierr = dm_field->mField_ptr->partition_ghost_dofs(dm_field->problemName); CHKERRQ(ierr);
-  // dmmofem struture
-  ierr = dm_field->mField_ptr->get_problem(dm_field->problemName,&dm_field->problemPtr); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 

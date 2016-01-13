@@ -525,11 +525,13 @@ struct NonlinearElasticElement {
 
   PetscErrorCode setBlocks(
     FunctionsToCalculatePiolaKirchhoffI<double> *materialDoublePtr,
-    FunctionsToCalculatePiolaKirchhoffI<adouble> *materialAdoublePtr);
+    FunctionsToCalculatePiolaKirchhoffI<adouble> *materialAdoublePtr
+  );
 
   PetscErrorCode addElement(string element_name,
     string spatial_position_field_name,
-    string material_position_field_name = "MESH_NODE_POSITIONS",bool ale = false);
+    string material_position_field_name = "MESH_NODE_POSITIONS",bool ale = false
+  );
 
   /** \brief Set operators to calculate left hand tangent matrix and right hand residual
     *
