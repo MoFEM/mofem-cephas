@@ -84,12 +84,12 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
     vector<int>::iterator vit = is_prism_damaged.begin();
     for(;pit!=prisms.end();pit++,vit++) {
       if(*vit>0) {
-	Range nodes;
-	rval = mOab.get_connectivity(&*pit,1,nodes,true); CHKERR_PETSC(rval);
-	for(Range::iterator nit = nodes.begin();nit!=nodes.end();nit++) {
-	  Faces3.erase(*nit);
-	  Faces4.erase(*nit);
-	}
+        Range nodes;
+        rval = mOab.get_connectivity(&*pit,1,nodes,true); CHKERR_PETSC(rval);
+        for(Range::iterator nit = nodes.begin();nit!=nodes.end();nit++) {
+          Faces3.erase(*nit);
+          Faces4.erase(*nit);
+        }
       }
     }
     PetscFunctionReturn(0);
@@ -100,9 +100,9 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
     PetscFunctionBegin;
     switch(snes_ctx) {
       case CTX_SNESSETFUNCTION: {
-	ierr = calculate_dx_and_dlambda(snes_x); CHKERRQ(ierr);
-	ierr = calculate_db(); CHKERRQ(ierr);
-	ierr = calculate_lambda_int(lambda_int); CHKERRQ(ierr);
+        ierr = calculate_dx_and_dlambda(snes_x); CHKERRQ(ierr);
+        ierr = calculate_db(); CHKERRQ(ierr);
+        ierr = calculate_lambda_int(lambda_int); CHKERRQ(ierr);
       }
       break;
       default:
@@ -129,10 +129,10 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
       if(dit->get_ent_type() != MBVERTEX) continue;
       if(pcomm->rank() != dit->get_part()) continue;
       if(Nodes3.find(dit->get_ent())!=Nodes3.end()) {
-	array_int_lambda[0] += array[dit->petsc_local_dof_idx];
+        array_int_lambda[0] += array[dit->petsc_local_dof_idx];
       }
       if(Nodes4.find(dit->get_ent())!=Nodes4.end()) {
-	array_int_lambda[0] -= array[dit->petsc_local_dof_idx];
+        array_int_lambda[0] -= array[dit->petsc_local_dof_idx];
       }
     }
     //PetscSynchronizedPrintf(PETSC_COMM_WORLD,
@@ -161,18 +161,19 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
     NumeredDofMoFEMEntity_multiIndex::index<PetscLocalIdx_mi_tag>::type::iterator dit,hi_dit;
     dit = problemPtr->numered_dofs_rows.get<PetscLocalIdx_mi_tag>().lower_bound(0);
     hi_dit = problemPtr->numered_dofs_rows.get<PetscLocalIdx_mi_tag>().upper_bound(
-      problemPtr->get_nb_local_dofs_row()+problemPtr->get_nb_ghost_dofs_row());
+      problemPtr->get_nb_local_dofs_row()+problemPtr->get_nb_ghost_dofs_row()
+    );
     double *array;
     ierr = VecGetArray(arcPtr->db,&array); CHKERRQ(ierr);
     for(;dit!=hi_dit;dit++) {
       if(dit->get_ent_type() != MBVERTEX) {
-	array[dit->petsc_local_dof_idx] = 0;
-	continue;
+        array[dit->petsc_local_dof_idx] = 0;
+        continue;
       }
       if(Nodes3.find(dit->get_ent())!=Nodes3.end()) {
-	array[dit->petsc_local_dof_idx] = +arcPtr->alpha;
+        array[dit->petsc_local_dof_idx] = +arcPtr->alpha;
       } else if(Nodes4.find(dit->get_ent())!=Nodes4.end()) {
-	  array[dit->petsc_local_dof_idx] = -arcPtr->alpha;
+        array[dit->petsc_local_dof_idx] = -arcPtr->alpha;
       } else array[dit->petsc_local_dof_idx] = 0;
     }
     ierr = VecRestoreArray(arcPtr->db,&array); CHKERRQ(ierr);
@@ -184,11 +185,11 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
 
     switch(snes_ctx) {
       case CTX_SNESSETFUNCTION: {
-	//calculate residual for arc length row
-	arcPtr->res_lambda = lambda_int - arcPtr->s;
-	ierr = VecSetValue(snes_f,arcPtr->getPetscGloablDofIdx(),arcPtr->res_lambda,ADD_VALUES); CHKERRQ(ierr);
-	PetscPrintf(PETSC_COMM_SELF,"\tres_lambda = %6.4e lambda_int = %6.4e s = %6.4e\n",
-	  arcPtr->res_lambda,lambda_int,arcPtr->s);
+        //calculate residual for arc length row
+        arcPtr->res_lambda = lambda_int - arcPtr->s;
+        ierr = VecSetValue(snes_f,arcPtr->getPetscGloablDofIdx(),arcPtr->res_lambda,ADD_VALUES); CHKERRQ(ierr);
+        PetscPrintf(PETSC_COMM_SELF,"\tres_lambda = %6.4e lambda_int = %6.4e s = %6.4e\n",
+        arcPtr->res_lambda,lambda_int,arcPtr->s);
       }
       break;
       case CTX_SNESSETJACOBIAN: {
@@ -244,40 +245,43 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
   }
 
   PetscErrorCode calculate_init_dlambda(double *dlambda) {
+    PetscFunctionBegin;
 
-      PetscFunctionBegin;
+    *dlambda = arcPtr->s/(arcPtr->beta*sqrt(arcPtr->F_lambda2));
+    PetscPrintf(
+      PETSC_COMM_WORLD,
+      "\tInit dlambda = %6.4e s = %6.4e beta = %6.4e F_lambda2 = %6.4e\n",
+      *dlambda,arcPtr->s,arcPtr->beta,arcPtr->F_lambda2
+    );
+    double a = *dlambda;
+    if(a - a != 0) {
+      ostringstream sss;
+      sss << "s " << arcPtr->s << " " << arcPtr->beta << " " << arcPtr->F_lambda2;
+      SETERRQ(PETSC_COMM_SELF,1,sss.str().c_str());
+    }
 
-      *dlambda = arcPtr->s/(arcPtr->beta*sqrt(arcPtr->F_lambda2));
-      PetscPrintf(PETSC_COMM_WORLD,"\tInit dlambda = %6.4e s = %6.4e beta = %6.4e F_lambda2 = %6.4e\n",*dlambda,arcPtr->s,arcPtr->beta,arcPtr->F_lambda2);
-      double a = *dlambda;
-      if(a - a != 0) {
-	ostringstream sss;
-	sss << "s " << arcPtr->s << " " << arcPtr->beta << " " << arcPtr->F_lambda2;
-	SETERRQ(PETSC_COMM_SELF,1,sss.str().c_str());
-      }
-
-      PetscFunctionReturn(0);
+    PetscFunctionReturn(0);
   }
 
   PetscErrorCode set_dlambda_to_x(Vec &x,double dlambda) {
-      PetscFunctionBegin;
+    PetscFunctionBegin;
 
-      if(arcPtr->getPetscLocalDofIdx()!=-1) {
-	double *array;
-	ierr = VecGetArray(x,&array); CHKERRQ(ierr);
-	double lambda_old = array[arcPtr->getPetscLocalDofIdx()];
-	if(!(dlambda == dlambda)) {
-	  ostringstream sss;
-	  sss << "s " << arcPtr->s << " " << arcPtr->beta << " " << arcPtr->F_lambda2;
-	  SETERRQ(PETSC_COMM_SELF,1,sss.str().c_str());
-	}
-	array[arcPtr->getPetscLocalDofIdx()] = lambda_old + dlambda;
-	PetscPrintf(PETSC_COMM_WORLD,"\tlambda = %6.4e, %6.4e (%6.4e)\n",
-	  lambda_old, array[arcPtr->getPetscLocalDofIdx()], dlambda);
-	ierr = VecRestoreArray(x,&array); CHKERRQ(ierr);
+    if(arcPtr->getPetscLocalDofIdx()!=-1) {
+      double *array;
+      ierr = VecGetArray(x,&array); CHKERRQ(ierr);
+      double lambda_old = array[arcPtr->getPetscLocalDofIdx()];
+      if(!(dlambda == dlambda)) {
+        ostringstream sss;
+        sss << "s " << arcPtr->s << " " << arcPtr->beta << " " << arcPtr->F_lambda2;
+        SETERRQ(PETSC_COMM_SELF,1,sss.str().c_str());
       }
+      array[arcPtr->getPetscLocalDofIdx()] = lambda_old + dlambda;
+      PetscPrintf(PETSC_COMM_WORLD,"\tlambda = %6.4e, %6.4e (%6.4e)\n",
+      lambda_old, array[arcPtr->getPetscLocalDofIdx()], dlambda);
+      ierr = VecRestoreArray(x,&array); CHKERRQ(ierr);
+    }
 
-      PetscFunctionReturn(0);
+    PetscFunctionReturn(0);
   }
 
 };

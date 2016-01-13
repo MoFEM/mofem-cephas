@@ -2041,8 +2041,8 @@ PetscErrorCode Core::partition_finite_elements(
   EntMoFEMFiniteElement_multiIndex::iterator miit2 = entsFiniteElements.begin();
   EntMoFEMFiniteElement_multiIndex::iterator hi_miit2 = entsFiniteElements.end();
   for(;miit2!=hi_miit2;miit2++) {
-    if((miit2->get_id()&p_miit->get_BitFEId()).none()) continue; // if element is not part of prblem
-    if((miit2->get_BitRefLevel()&p_miit->get_BitRefLevel())!=p_miit->get_BitRefLevel()) continue; // if entity is not problem refinment level
+    if((miit2->get_id()&p_miit->get_BitFEId()).none()) continue; // if element is not part of problem
+    if((miit2->get_BitRefLevel()&p_miit->get_BitRefLevel())!=p_miit->get_BitRefLevel()) continue; // if entity is not problem refinement level
     NumeredMoFEMFiniteElement numered_fe(&*miit2);
     FENumeredDofMoFEMEntity_multiIndex &rows_dofs = numered_fe.rows_dofs;
     FENumeredDofMoFEMEntity_multiIndex &cols_dofs = numered_fe.cols_dofs;
