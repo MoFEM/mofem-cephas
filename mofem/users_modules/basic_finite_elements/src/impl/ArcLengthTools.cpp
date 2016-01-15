@@ -47,10 +47,12 @@ ArcLengthCtx::ArcLengthCtx(FieldInterface &m_field,const string &problem_name):
   res_lambda(0) {
   ierr = m_field.VecCreateGhost(problem_name,ROW,&F_lambda); CHKERRABORT(PETSC_COMM_WORLD,ierr);
   ierr = VecSetOption(F_lambda,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); CHKERRABORT(PETSC_COMM_WORLD,ierr);
-  ierr = m_field.VecCreateGhost(problem_name,ROW,&db); CHKERRABORT(PETSC_COMM_WORLD,ierr);
-  ierr = m_field.VecCreateGhost(problem_name,ROW,&x_lambda); CHKERRABORT(PETSC_COMM_WORLD,ierr);
-  ierr = m_field.VecCreateGhost(problem_name,ROW,&x0); CHKERRABORT(PETSC_COMM_WORLD,ierr);
-  ierr = m_field.VecCreateGhost(problem_name,ROW,&dx); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+  ierr = VecDuplicate(F_lambda,&db); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+  ierr = VecDuplicate(F_lambda,&x_lambda); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+  ierr = VecDuplicate(F_lambda,&x0); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+  ierr = VecDuplicate(F_lambda,&dx); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+  ierr = VecDuplicate(F_lambda,&dx0); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+
   const MoFEMProblem *problem_ptr;
   ierr = m_field.get_problem(problem_name,&problem_ptr); CHKERRABORT(PETSC_COMM_WORLD,ierr);
   NumeredDofMoFEMEntity_multiIndex& dofs_ptr_no_const
@@ -97,6 +99,7 @@ ArcLengthCtx::~ArcLengthCtx() {
   ierr = VecDestroy(&x_lambda); CHKERRABORT(PETSC_COMM_WORLD,ierr);
   ierr = VecDestroy(&x0); CHKERRABORT(PETSC_COMM_WORLD,ierr);
   ierr = VecDestroy(&dx); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+  ierr = VecDestroy(&dx0); CHKERRABORT(PETSC_COMM_WORLD,ierr);
   ierr = VecDestroy(&ghosTdLambda); CHKERRABORT(PETSC_COMM_WORLD,ierr);
   ierr = VecDestroy(&ghostDiag); CHKERRABORT(PETSC_COMM_WORLD,ierr);
 }
@@ -310,19 +313,6 @@ PetscErrorCode SphericalArcLengthControl::preProcess() {
   PetscFunctionReturn(0);
 }
 
-double SphericalArcLengthControl::calculateLambdaInt() {
-  PetscFunctionBegin;
-  return arcPtr->alpha*arcPtr->dx2 + pow(arcPtr->dLambda,2)*pow(arcPtr->beta,2)*arcPtr->F_lambda2;
-  PetscFunctionReturn(0);
-}
-
-PetscErrorCode SphericalArcLengthControl::calculateDb() {
-  PetscFunctionBegin;
-  ierr = VecCopy(arcPtr->dx,arcPtr->db); CHKERRQ(ierr);
-  ierr = VecScale(arcPtr->db,2*arcPtr->alpha); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
-}
-
 PetscErrorCode SphericalArcLengthControl::operator()() {
   PetscFunctionBegin;
   switch(snes_ctx) {
@@ -367,6 +357,19 @@ PetscErrorCode SphericalArcLengthControl::postProcess() {
     default:
     break;
   }
+  PetscFunctionReturn(0);
+}
+
+double SphericalArcLengthControl::calculateLambdaInt() {
+  PetscFunctionBegin;
+  return arcPtr->alpha*arcPtr->dx2 + pow(arcPtr->dLambda,2)*pow(arcPtr->beta,2)*arcPtr->F_lambda2;
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode SphericalArcLengthControl::calculateDb() {
+  PetscFunctionBegin;
+  ierr = VecCopy(arcPtr->dx,arcPtr->db); CHKERRQ(ierr);
+  ierr = VecScale(arcPtr->db,2*arcPtr->alpha); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 

@@ -83,6 +83,7 @@ struct ArcLengthCtx {
   Vec x_lambda;		///< solution of eq. K*x_lambda = F_lambda
   Vec x0;		///< displacement vector at beginning of step
   Vec dx;		///< dx = x-x0
+  Vec dx0;	///< increment of displacements at first iteration
 
   /**
     * \brief set arc radius
