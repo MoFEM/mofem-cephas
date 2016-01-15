@@ -69,13 +69,15 @@ struct ForcesAndSurcesCore: public FEMethod {
   /// \brief get node indices
   PetscErrorCode getNodesIndices(const string &field_name,
     FENumeredDofMoFEMEntity_multiIndex &dofs,
-    VectorInt &nodes_indices
+    VectorInt &nodes_indices,
+    VectorInt &local_nodes_indices
   );
 
   /// \brief get indices by type (generic function)
   PetscErrorCode getTypeIndices(const string &field_name,
     FENumeredDofMoFEMEntity_multiIndex &dofs,EntityType type,int side_number,
-    VectorInt &indices
+    VectorInt &indices,
+    VectorInt &local_indices
   );
 
   /// \brief get indices by type (generic function)
