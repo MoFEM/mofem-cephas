@@ -378,6 +378,8 @@ PetscErrorCode SphericalArcLengthControl::calculateDxAndDlambda(Vec x) {
   //dx
   ierr = VecCopy(x,arcPtr->dx); CHKERRQ(ierr);
   ierr = VecAXPY(arcPtr->dx,-1,arcPtr->x0); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(arcPtr->dx,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(arcPtr->dx,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   //dlambda
   if(arcPtr->getPetscLocalDofIdx()!=-1) {
     double *array;
