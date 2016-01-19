@@ -83,7 +83,6 @@ struct ArcLengthCtx {
   Vec x_lambda;		///< solution of eq. K*x_lambda = F_lambda
   Vec x0;		///< displacement vector at beginning of step
   Vec dx;		///< dx = x-x0
-  Vec dx0;	///< increment of displacements at first iteration
 
   /**
     * \brief set arc radius
@@ -109,6 +108,8 @@ struct ArcLengthCtx {
 
 };
 
+#ifdef __SNESCTX_HPP__
+
 /**
  * \brief It is ctx structure passed to SNES solver
  * \ingroup arc_length_control
@@ -122,6 +123,26 @@ struct ArcLengthSnesCtx: public SnesCtx {
   arcPtr(arc_ptr) {
   }
 };
+
+#endif //__SNESCTX_HPP__
+
+#ifdef __TSCTX_HPP__
+
+/**
+ * \brief It is ctx structure passed to SNES solver
+ * \ingroup arc_length_control
+ */
+struct ArcLengthTsCtx: public TsCtx {
+  ArcLengthCtx* arcPtr;
+  ArcLengthTsCtx(
+    FieldInterface &m_field,const string &problem_name,ArcLengthCtx* arc_ptr
+  ):
+  TsCtx(m_field,problem_name),
+  arcPtr(arc_ptr) {
+  }
+};
+
+#endif // __TSCTX_HPP__
 
 /** \brief shell matrix for arc-length method
  * \ingroup arc_length_control

@@ -51,7 +51,6 @@ ArcLengthCtx::ArcLengthCtx(FieldInterface &m_field,const string &problem_name):
   ierr = VecDuplicate(F_lambda,&x_lambda); CHKERRABORT(PETSC_COMM_WORLD,ierr);
   ierr = VecDuplicate(F_lambda,&x0); CHKERRABORT(PETSC_COMM_WORLD,ierr);
   ierr = VecDuplicate(F_lambda,&dx); CHKERRABORT(PETSC_COMM_WORLD,ierr);
-  ierr = VecDuplicate(F_lambda,&dx0); CHKERRABORT(PETSC_COMM_WORLD,ierr);
 
   const MoFEMProblem *problem_ptr;
   ierr = m_field.get_problem(problem_name,&problem_ptr); CHKERRABORT(PETSC_COMM_WORLD,ierr);
@@ -99,7 +98,6 @@ ArcLengthCtx::~ArcLengthCtx() {
   ierr = VecDestroy(&x_lambda); CHKERRABORT(PETSC_COMM_WORLD,ierr);
   ierr = VecDestroy(&x0); CHKERRABORT(PETSC_COMM_WORLD,ierr);
   ierr = VecDestroy(&dx); CHKERRABORT(PETSC_COMM_WORLD,ierr);
-  ierr = VecDestroy(&dx0); CHKERRABORT(PETSC_COMM_WORLD,ierr);
   ierr = VecDestroy(&ghosTdLambda); CHKERRABORT(PETSC_COMM_WORLD,ierr);
   ierr = VecDestroy(&ghostDiag); CHKERRABORT(PETSC_COMM_WORLD,ierr);
 }
@@ -287,11 +285,13 @@ PetscErrorCode SphericalArcLengthControl::preProcess() {
   switch (ts_ctx) {
     case CTX_TSSETIFUNCTION: {
       snes_ctx = CTX_SNESSETFUNCTION;
+      snes_x = ts_u;
       snes_f = ts_F;
       break;
     }
     case CTX_TSSETIJACOBIAN: {
       snes_ctx = CTX_SNESSETJACOBIAN;
+      snes_x = ts_u;
       snes_B = ts_B;
       break;
     }
