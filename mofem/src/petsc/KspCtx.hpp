@@ -16,8 +16,8 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef __MOABKSP_HPP__
-#define __MOABKSP_HPP__
+#ifndef __KSPCTX_HPP__
+#define __KSPCTX_HPP__
 
 namespace MoFEM {
 
@@ -82,4 +82,4 @@ PetscErrorCode KspMat(KSP ksp,Mat A,Mat B,void *ctx);
 
 
 
-#endif // __MOABKSP_HPP__
+#endif // __KSPCTX_HPP__
