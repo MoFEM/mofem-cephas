@@ -247,7 +247,7 @@ cmake \
 -DADOL-C_DIR=/usr \
 -DTETGEN_DIR=/opt/tetgen1.5.0 \
 -DBUILD_SHARED_LIBS=yes \
--DCMAKE_INSTALL_PREFIX=$MOFEM_INSTALL_DIR/release/usr_mods \
+-DCMAKE_INSTALL_PREFIX=$MOFEM_INSTALL_DIR/release/users_modules \
 /mnt/home/*mofem_source_code_directory*
 ~~~~~~
 
