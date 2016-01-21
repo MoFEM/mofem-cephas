@@ -119,10 +119,18 @@ ctest -D Experimental
 
 ###7. Configuration, compilation and testing user modules
 
+Before you start this version, change directory to install directory
 ~~~~~~
-# Change to your $MOFEM_INSTALL_DIR
 cd $MOFEM_INSTALL_DIR/user_modules
+~~~~~~
+Some elements still using some obsolete implementation which is gradually
+removed. At this stage you need to install "obsolete" user modules:
+~~~~~~
+git clone https://bitbucket.org/likask/mofem_um_obsolete obsolete
+~~~~~~
+List of some additional users modules is available on the main page.
 
+~~~~~~
 # Configuration:
 cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS="-Wall"  -DCMAKE_CXX_FLAGS="-Wall -Wno-bind-to-temporary-copy -Wno-overloaded-virtual" -DCMAKE_EXE_LINKER_FLAGS="-L$MOFEM_INSTALL_DIR/local/lib" user_modules
 

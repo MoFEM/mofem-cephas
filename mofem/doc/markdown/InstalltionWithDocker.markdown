@@ -265,7 +265,11 @@ make install
 To build the user’s modules run:
 
 ~~~~~~
-cd $MOFEM_INSTALL_DIR/release/usr_mods
+cd $MOFEM_INSTALL_DIR/release/users_modules
+
+# Install "obsolete module" code needed by some examples. See list
+# of available users modules on main page.
+git clone https://bitbucket.org/likask/mofem_um_obsolete obsolete
 
 cmake -DCMAKE_BUILD_TYPE=Release users_modules
 make -j 4
