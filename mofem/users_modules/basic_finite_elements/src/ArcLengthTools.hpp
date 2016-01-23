@@ -112,6 +112,9 @@ struct ArcLengthCtx {
   /** \brief Get value of load factor
   */
   FieldData& getFieldData() { return dIt->get_FieldData(); }
+
+  /** \brief Get proc owning lambda dof
+  */
   int getPart() { return dIt->get_part(); };
 
 };
