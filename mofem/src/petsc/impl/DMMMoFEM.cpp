@@ -463,6 +463,17 @@ PetscErrorCode DMMoFEMGetTsCtx(DM dm,MoFEM::TsCtx **ts_ctx) {
   PetscFunctionReturn(0);
 }
 
+PetscErrorCode DMMoFEMSetTsCtx(DM dm,MoFEM::TsCtx * const ts_ctx) {
+  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
+  PetscFunctionBegin;
+  DMCtx *dm_field = (DMCtx*)dm->data;
+  if(dm_field->tsCtx) {
+    delete dm_field->tsCtx;
+  }
+  dm_field->tsCtx = ts_ctx;
+  PetscFunctionReturn(0);
+}
+
 PetscErrorCode DMCreateGlobalVector_MoFEM(DM dm,Vec *g) {
   PetscErrorCode ierr;
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);

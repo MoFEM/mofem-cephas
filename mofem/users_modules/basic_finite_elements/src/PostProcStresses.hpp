@@ -111,6 +111,9 @@ struct PostPorcStress: public VolumeElementForcesAndSourcesCore::UserDataOperato
       commonData.fieldMap,commonData.gradMap
     ); CHKERRQ(ierr);
 
+    nonLinearElementCommonData.dataAtGaussPts = commonData.fieldMap;
+    nonLinearElementCommonData.gradAtGaussPts = commonData.gradMap;
+
     for(int gg = 0;gg<nb_gauss_pts;gg++) {
 
       dAta.materialDoublePtr->gG = gg;

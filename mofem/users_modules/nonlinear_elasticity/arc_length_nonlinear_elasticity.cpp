@@ -511,11 +511,13 @@ int main(int argc, char *argv[]) {
   ierr = SNESGetKSP(snes,&ksp); CHKERRQ(ierr);
   PC pc;
   ierr = KSPGetPC(ksp,&pc); CHKERRQ(ierr);
-  PCArcLengthCtx* pc_ctx = new PCArcLengthCtx(Aij,ShellAij,arc_ctx);
+  PCArcLengthCtx* pc_ctx = new PCArcLengthCtx(ShellAij,Aij,arc_ctx);
   ierr = PCSetType(pc,PCSHELL); CHKERRQ(ierr);
   ierr = PCShellSetContext(pc,pc_ctx); CHKERRQ(ierr);
   ierr = PCShellSetApply(pc,PCApplyArcLength); CHKERRQ(ierr);
   ierr = PCShellSetSetUp(pc,PCSetupArcLength); CHKERRQ(ierr);
+  ierr = KSPSetPC(ksp,pc); CHKERRQ(ierr);
+
 
   if(flg == PETSC_TRUE) {
     PetscReal rtol,atol,dtol;

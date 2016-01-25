@@ -70,6 +70,9 @@ struct DataForcesAndSurcesCore {
     /// \brief get global indices of dofs on entity
     virtual const VectorInt& getIndices() const { return iNdices; }
 
+    /// \brief get local indices of dofs on entity
+    virtual const VectorInt& getLocalIndices() const { return localIndices; }
+
     /// \brief get dofs values
     virtual const VectorDouble& getFieldData() const { return fieldData; }
 
@@ -103,6 +106,7 @@ struct DataForcesAndSurcesCore {
     virtual int& getSense() { return sEnse; }
     virtual ApproximationOrder& getOrder() { return oRder; }
     virtual VectorInt& getIndices() { return iNdices; }
+    virtual VectorInt& getLocalIndices() { return localIndices; }
     virtual VectorDouble& getFieldData() { return fieldData; }
     virtual VectorDofs& getFieldDofs() { return dOfs; }
     virtual MatrixDouble& getN() { return N; }
@@ -238,6 +242,7 @@ struct DataForcesAndSurcesCore {
     int sEnse;
     ApproximationOrder oRder;
     VectorInt iNdices;
+    VectorInt localIndices;
     VectorDofs dOfs;
     VectorDouble fieldData;
     MatrixDouble N;

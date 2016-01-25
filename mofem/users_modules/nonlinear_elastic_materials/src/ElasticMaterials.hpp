@@ -216,7 +216,7 @@ struct ElasticMaterials {
       additional_parameters = collect_unrecognized(parsed.options,po::include_positional);
       for(vector<string>::iterator vit = additional_parameters.begin();
       vit!=additional_parameters.end();vit++) {
-        ierr = PetscPrintf(PETSC_COMM_WORLD,"** WARRNING Unrecognised option %s\n",vit->c_str()); CHKERRQ(ierr);
+        ierr = PetscPrintf(PETSC_COMM_WORLD,"** WARNING Unrecognized option %s\n",vit->c_str()); CHKERRQ(ierr);
       }
     } catch (exception& ex) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,"error parsing material elastic configuration file");

@@ -143,7 +143,8 @@ ostream& operator<<(ostream& os,const DataForcesAndSurcesCore::EntData &e) {
   os <<
     "sEnse: " << e.getSense() << endl <<
     "oRder: " << e.getOrder() << endl <<
-    "iNdices: " << e.getIndices() << endl;
+    "global indices: " << e.getIndices() << endl <<
+    "local indices: " << e.getLocalIndices() << endl;
   os.precision(2);
   os <<
     "fieldData: " << std::fixed << e.getFieldData() << endl;
