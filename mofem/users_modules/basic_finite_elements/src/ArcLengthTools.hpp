@@ -70,14 +70,17 @@ struct ArcLengthCtx {
   double beta; 	///< force scaling factor
   double alpha; ///< displacement scaling factor
 
-  double dlambda;	///< increment of load factor
-  double diag;		///< diagonal value
+  Vec ghosTdLambda;
+  double dLambda;	///< increment of load factor
+  Vec ghostDiag;
+  double dIag;		///< diagonal value
+
   double dx2;		///< inner_prod(dX,dX)
   double F_lambda2;	///< inner_prod(F_lambda,F_lambda);
   double res_lambda;	///< f_lambda - s
   Vec F_lambda;		///< F_lambda reference load vector
   Vec db;		///< db derivative of f(dx*dx), i.e. db = d[ f(dx*dx) ]/dx
-  Vec x_lambda;		///< solution of eq. K*x_lambda = F_lambda
+  Vec xLambda;		///< solution of eq. K*xLambda = F_lambda
   Vec x0;		///< displacement vector at beginning of step
   Vec dx;		///< dx = x-x0
 
@@ -94,16 +97,29 @@ struct ArcLengthCtx {
   PetscErrorCode setAlphaBeta(double alpha,double beta);
 
   ArcLengthCtx(FieldInterface &m_field,const string &problem_name);
-  ~ArcLengthCtx();
+  virtual ~ArcLengthCtx();
 
   NumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator dIt;
 
+  /** \brief Get global index of load factor
+  */
   DofIdx getPetscGloablDofIdx() { return dIt->get_petsc_gloabl_dof_idx(); };
+
+  /** \brief Get local index of load factor
+  */
   DofIdx getPetscLocalDofIdx() { return dIt->get_petsc_local_dof_idx(); };
+
+  /** \brief Get value of load factor
+  */
   FieldData& getFieldData() { return dIt->get_FieldData(); }
+
+  /** \brief Get proc owning lambda dof
+  */
   int getPart() { return dIt->get_part(); };
 
 };
+
+#ifdef __SNESCTX_HPP__
 
 /**
  * \brief It is ctx structure passed to SNES solver
@@ -118,6 +134,26 @@ struct ArcLengthSnesCtx: public SnesCtx {
   arcPtr(arc_ptr) {
   }
 };
+
+#endif //__SNESCTX_HPP__
+
+#ifdef __TSCTX_HPP__
+
+/**
+ * \brief It is ctx structure passed to SNES solver
+ * \ingroup arc_length_control
+ */
+struct ArcLengthTsCtx: public TsCtx {
+  ArcLengthCtx* arcPtr;
+  ArcLengthTsCtx(
+    FieldInterface &m_field,const string &problem_name,ArcLengthCtx* arc_ptr
+  ):
+  TsCtx(m_field,problem_name),
+  arcPtr(arc_ptr) {
+  }
+};
+
+#endif // __TSCTX_HPP__
 
 /** \brief shell matrix for arc-length method
  * \ingroup arc_length_control
@@ -142,7 +178,7 @@ struct ArcLengthSnesCtx: public SnesCtx {
     -\mathbf{f}_\textrm{int} \\
     -r_\lambda
   \end{array}
-  \right]  
+  \right]
  \f]
 
  */
@@ -173,8 +209,10 @@ struct PCArcLengthCtx {
   PC pC;
   Mat shellAij,Aij;
   ArcLengthCtx* arcPtr;
-  PCArcLengthCtx(Mat shell_Aij,Mat _Aij,ArcLengthCtx* arc_ptr);
-  ~PCArcLengthCtx();
+  PCArcLengthCtx(
+    Mat shell_Aij,Mat _Aij,ArcLengthCtx* arc_ptr
+  );
+  virtual ~PCArcLengthCtx();
 
   friend PetscErrorCode PCApplyArcLength(PC pc,Vec pc_f,Vec pc_x);
   friend PetscErrorCode PCSetupArcLength(PC pc);
@@ -183,9 +221,9 @@ struct PCArcLengthCtx {
 /**
  * apply operator for Arc Length pre-conditioner
  * solves K*pc_x = pc_f
- * solves K*x_lambda = -dF_lambda
- * solves ddlambda = ( res_lambda - db*x_lambda )/( diag + db*pc_x )
- * calculate pc_x = pc_x + ddlambda*x_lambda
+ * solves K*xLambda = -dF_lambda
+ * solves ddlambda = ( res_lambda - db*xLambda )/( diag + db*pc_x )
+ * calculate pc_x = pc_x + ddlambda*xLambda
  */
 PetscErrorCode PCApplyArcLength(PC pc,Vec pc_f,Vec pc_x);
 
@@ -234,15 +272,14 @@ struct PrePostProcessForArcLength: public FEMethod {
   arc-length control. Works well with general problem with non-linear
   geometry. It not guarantee dissipative loading path in case of physical
   nonlinearities.
-  *
+
   */
 struct SphericalArcLengthControl: public FEMethod {
 
   ArcLengthCtx* arcPtr;
-  Vec ghostDiag;
 
   SphericalArcLengthControl(ArcLengthCtx *arc_ptr);
-  ~SphericalArcLengthControl();
+  virtual ~SphericalArcLengthControl();
 
   PetscErrorCode preProcess();
   PetscErrorCode operator()();
@@ -257,7 +294,7 @@ struct SphericalArcLengthControl: public FEMethod {
   \f]
 
   */
-  double calculateLambdaInt();
+  virtual double calculateLambdaInt();
 
   /** \brief Calculate db
 
@@ -266,10 +303,10 @@ struct SphericalArcLengthControl: public FEMethod {
   \f]
 
   */
-  PetscErrorCode calculateDb();
-  PetscErrorCode calculateDxAndDlambda(Vec x);
-  PetscErrorCode calculateInitDlambda(double *dlambda);
-  PetscErrorCode setDlambdaToX(Vec x,double dlambda);
+  virtual PetscErrorCode calculateDb();
+  virtual PetscErrorCode calculateDxAndDlambda(Vec x);
+  virtual PetscErrorCode calculateInitDlambda(double *dlambda);
+  virtual PetscErrorCode setDlambdaToX(Vec x,double dlambda);
 
 };
 

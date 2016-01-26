@@ -217,15 +217,13 @@ PetscErrorCode CreateRowComressedADJMatrix::createMat(
       if((pstatus & PSTATUS_NOT_OWNED) && (pstatus&(PSTATUS_SHARED|PSTATUS_MULTISHARED))) {
 
         if( (mofem_ent_ptr == NULL) ? 1 : mofem_ent_ptr->get_global_unique_id() != mit_row->get_MoFEMEntity_ptr()->get_global_unique_id() ) {
-
           // get entity adjacencies
           ierr = getEntityAdjacenies<TAG>(p_miit,mit_row,mofem_ent_ptr,dofs_col_view,verb); CHKERRQ(ierr);
-
           // Add that row. Patterns is that first index is row index, second is
           // size of adjacencies after that follows column adjacencies.
-          dofs_vec[mit_row->get_owner_proc()].push_back(TAG::get_index(mit_row)); 	// row index
-          dofs_vec[mit_row->get_owner_proc()].push_back(dofs_col_view.size()); 	// nb. of column adjacencies
-
+          int owner = mit_row->get_owner_proc();
+          dofs_vec[owner].push_back(TAG::get_index(mit_row)); 	// row index
+          dofs_vec[owner].push_back(dofs_col_view.size()); 	// nb. of column adjacencies
           // add adjacent cools
           NumeredDofMoFEMEntity_multiIndex_uid_view_hashed::iterator cvit;
           cvit = dofs_col_view.begin();
@@ -244,13 +242,10 @@ PetscErrorCode CreateRowComressedADJMatrix::createMat(
               zz << *(*cvit) << endl;
               SETERRQ(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,zz.str().c_str());
             }
-            dofs_vec[mit_row->get_owner_proc()].push_back(col_idx);
+            dofs_vec[owner].push_back(col_idx);
           }
-
         }
-
       }
-
     }
 
     // Make sure it is a PETSc comm
@@ -423,28 +418,28 @@ PetscErrorCode CreateRowComressedADJMatrix::createMat(
 
         unsigned char pstatus = miit_row->get_pstatus();
         if( pstatus>0 ) {
-
           map<int,vector<int> >::iterator mit;
           mit = adjacent_dofs_on_other_parts.find(row_last_evaluated_idx);
           if(mit == adjacent_dofs_on_other_parts.end()) {
             cerr << *miit_row << endl;
-            SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency row_last_evaluated_idx = %d",row_last_evaluated_idx);
+            SETERRQ1(
+              PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
+              "data inconsistency row_last_evaluated_idx = %d",
+              row_last_evaluated_idx
+            );
+          } else {
+            dofs_vec.insert(dofs_vec.end(),mit->second.begin(),mit->second.end());
           }
-
-          dofs_vec.insert(dofs_vec.end(),mit->second.begin(),mit->second.end());
-
         }
+
         sort(dofs_vec.begin(),dofs_vec.end());
         vector<DofIdx>::iterator new_end = unique(dofs_vec.begin(),dofs_vec.end());
         int new_size = distance(dofs_vec.begin(),new_end);
         dofs_vec.resize(new_size);
-
         if(verb>2) {
-
           stringstream ss;
           ss << "rank " << rAnk << ": dofs_vec for " << *mofem_ent_ptr << endl;
           PetscSynchronizedPrintf(comm,"%s",ss.str().c_str());
-
         }
 
       }

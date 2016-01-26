@@ -7,26 +7,29 @@
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
 # FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
 # License for more details.
-# 
+#
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
-include_directories("${UM_SOURCE_DIR}/elasticity/src")
-include_directories("${UM_SOURCE_DIR}/cohesive_interface/src")
+include_directories(${UM_SOURCE_DIR}/elasticity/src)
+include_directories(${UM_SOURCE_DIR}/nonlinear_elasticity)
+include_directories(${UM_SOURCE_DIR}/nonlinear_elastic_materials/src)
+include_directories(${UM_SOURCE_DIR}/cohesive_interface/src)
 
 add_executable(arc_length_interface
-  ${UM_SOURCE_DIR}/cohesive_interface/arc_length_interface.cpp)
+  ${UM_SOURCE_DIR}/cohesive_interface/arc_length_interface.cpp
+)
 target_link_libraries(arc_length_interface
   users_modules
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
   mofem_petsc
-  users_modules_obsolete
   mofem_approx
   mofem_third_party
   mofem_cblas
-  ${MoFEM_PROJECT_LIBS})
+  ${MoFEM_PROJECT_LIBS}
+)
 
 cm_export_file("PeelTestHalfCrack.h5m" export_files_cohesive_element)
 

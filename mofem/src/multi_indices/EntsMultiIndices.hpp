@@ -47,14 +47,17 @@ typedef multi_index_container<
   SideNumber,
   indexed_by<
     hashed_unique<
-      member<SideNumber,EntityHandle,&SideNumber::ent> >,
+      member<SideNumber,EntityHandle,&SideNumber::ent>
+    >,
     ordered_non_unique<
       composite_key<
-	SideNumber,
-	const_mem_fun<SideNumber,EntityType,&SideNumber::get_ent_type>,
-	member<SideNumber,int,&SideNumber::side_number> > >,
+      SideNumber,
+      const_mem_fun<SideNumber,EntityType,&SideNumber::get_ent_type>,
+      member<SideNumber,int,&SideNumber::side_number> >
+    >,
     ordered_non_unique<
-      const_mem_fun<SideNumber,EntityType,&SideNumber::get_ent_type> >
+      const_mem_fun<SideNumber,EntityType,&SideNumber::get_ent_type>
+    >
   > > SideNumber_multiIndex;
 
 /**
@@ -104,7 +107,7 @@ struct BasicMoFEMEntity {
     */
   inline unsigned char get_pstatus() const { return *pstatus_val_ptr; }
 
-  /** \berief get sharid processors
+  /** \berief get shared processors
 
   Returning list to shared processors. Lists end with -1. Returns NULL if not
   sharing processors.

@@ -58,7 +58,7 @@ include(cmake/ExportFile.cmake)
 
 set(MoFEM_VERSION_MAJOR 0)
 set(MoFEM_VERSION_MINOR 3)
-set(MoFEM_VERSION_BUILD 2)
+set(MoFEM_VERSION_BUILD 3)
 
 #git revision
 include(cmake/GetGitRevisionDescription.cmake)
@@ -112,7 +112,8 @@ resolve_libraries(PROJECT_LIBS "
   ${PETSCVAR_PETSC_WITH_EXTERNAL_LIB}
   ${TAO_LIBRARY}
   ${MPI_F90_LIB}
-  ${MPI_F77_LIB}")
+  ${MPI_F77_LIB}"
+)
 
 message(STATUS ${PROJECT_LIBS})
 file(COPY

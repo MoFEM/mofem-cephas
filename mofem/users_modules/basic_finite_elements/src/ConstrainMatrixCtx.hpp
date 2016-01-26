@@ -1,6 +1,6 @@
 /** \file ConstrainMatrixCtx.hpp
  *
- * Can be used if constains are linear, i.e. are not function of time.
+ * Can be used if constrains are linear, i.e. are not function of time.
  */
 
 /* This file is part of MoFEM.

@@ -44,24 +44,18 @@
 #include <SeriesRecorder.hpp>
 #include <Core.hpp>
 
-namespace MoFEM {
+#include <boost/scoped_array.hpp>
 
-#ifndef __INTEL_COMPILER
-  #define SIZEOFUID 16
-#else
-  #define SIZEOFUID 24
-#endif
+namespace MoFEM {
 
 struct __attribute__ ((__packed__)) IdxDataType {
   int globalDof;
-  char uId[SIZEOFUID];
-  IdxDataType() {}
+  char uId[sizeof(UId)];
   IdxDataType(const GlobalUId &uid,int global_dof):
     globalDof(global_dof) {
-    bcopy(&uid,uId,SIZEOFUID);
+    bcopy(&uid,uId,sizeof(UId));
   }
 };
-
 
 const static int debug = 1;
 
@@ -167,9 +161,13 @@ PetscErrorCode Core::build_partitioned_problem(MoFEMProblem *problem_ptr,bool sq
     ierr = PetscLayoutDestroy(&layout); CHKERRQ(ierr);
   }
 
-  if(sizeof(UId) != SIZEOFUID) {
-    SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"check size of UId, size of UId is %u",sizeof(UId));
-  }
+  // if(sizeof(UId) != SIZEOFUID) {
+  //   SETERRQ2(
+  //     PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
+  //     "check size of UId, size of UId is %u != %u",
+  //     sizeof(UId),SIZEOFUID
+  //   );
+  // }
 
   //set local and global indices on own dofs
   const size_t idx_data_type_size = sizeof(IdxDataType);

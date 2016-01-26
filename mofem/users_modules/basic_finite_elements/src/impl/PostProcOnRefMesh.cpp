@@ -630,12 +630,6 @@ PetscErrorCode PostProcFatPrismOnRefinedMesh::setGaussPtsTrianglesOnly(int order
   if(gaussPtsTrianglesOnly.size1()==0 || gaussPtsTrianglesOnly.size2()==0) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"post-process mesh not generated");
   }
-  if(elementsMap.find(fePtr->get_ent())!=elementsMap.end()) {
-    PetscFunctionReturn(0);
-  }
-  // if(elementsMap.size()>0) {
-  //   PetscFunctionReturn(0);
-  // }
 
   // PetscErrorCode ierr;
   MoABErrorCode rval;
@@ -643,7 +637,9 @@ PetscErrorCode PostProcFatPrismOnRefinedMesh::setGaussPtsTrianglesOnly(int order
   int num_nodes;
   EntityHandle prism;
 
-  {
+  if(elementsMap.find(fePtr->get_ent())!=elementsMap.end()) {
+    prism = elementsMap[fePtr->get_ent()];
+  } else {
     ublas::vector<EntityHandle> prism_conn(6);
     ublas::matrix<double> coords_prism(6,3);
     ublas::vector<double> coords(3);
@@ -670,9 +666,9 @@ PetscErrorCode PostProcFatPrismOnRefinedMesh::setGaussPtsTrianglesOnly(int order
       }
     }
     rval = postProcMesh.create_element(MBPRISM,&prism_conn[0],6,prism); CHKERR_PETSC(rval);
-  }
-  elementsMap[fePtr->get_ent()] = prism;
-  {
+
+    elementsMap[fePtr->get_ent()] = prism;
+
     Range faces;
     rval = postProcMesh.get_adjacencies(&prism,1,2,true,faces); CHKERR_PETSC(rval);
     Range edges;
@@ -689,6 +685,8 @@ PetscErrorCode PostProcFatPrismOnRefinedMesh::setGaussPtsTrianglesOnly(int order
     rval = postProcMesh.delete_entities(edges); CHKERR_PETSC(rval);
     rval = postProcMesh.delete_entities(faces); CHKERR_PETSC(rval);
   }
+
+  // Set values which map nodes with integration points on the prism
   {
     const int conn_gauss_pts_map[] = { 0,3,6, 1,4,7, 9,12,15, 2,5,8, 10,13,16 };
     rval = postProcMesh.get_connectivity(prism,conn,num_nodes,false); CHKERR_PETSC(rval);
@@ -701,6 +699,7 @@ PetscErrorCode PostProcFatPrismOnRefinedMesh::setGaussPtsTrianglesOnly(int order
       mapGaussPts[no_conn_gauss_pts_map[nn]] = 0;
     }
   }
+
   // rval = postProcMesh.delete_entities(&prism,1); CHKERR_PETSC(rval);
   PetscFunctionReturn(0);
 }

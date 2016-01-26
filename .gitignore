@@ -26,6 +26,7 @@ gels
 small_strain_plasticity
 obsolete
 solid_shell_prism_element
+soft_tissue_materials
 
 _Store
 *.swp

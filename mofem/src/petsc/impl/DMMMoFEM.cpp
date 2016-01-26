@@ -44,12 +44,12 @@
 #include <SnesCtx.hpp>
 #include <TsCtx.hpp>
 
-#undef PETSC_VERSION_RELEASE
-#define PETSC_VERSION_RELEASE 1
+// #undef PETSC_VERSION_RELEASE
+// #define PETSC_VERSION_RELEASE 1
 
 #if PETSC_VERSION_GE(3,6,0)
   #include <petsc/private/dmimpl.h> /*I  "petscdm.h"   I*/
-  #include <petsc/private/vecimpl.h> /*I  "petscdm.h"   I*/
+  // #include <petsc/private/vecimpl.h> /*I  "petscdm.h"   I*/
 #else
   #include <petsc-private/dmimpl.h> /*I  "petscdm.h"   I*/
   #include <petsc-private/vecimpl.h> /*I  "petscdm.h"   I*/
@@ -79,7 +79,7 @@ struct DMCtx {
   static PetscBool isProblemsBuild;
 
   //pouinter to data structures
-  const MoFEMProblem *problemPtr;	//< pinter to problem data struture
+  const MoFEMProblem *problemPtr;	//< pinter to problem data structure
 
   DMCtx();
   virtual ~DMCtx();
@@ -99,7 +99,6 @@ struct DMCtx {
   friend PetscErrorCode DMGlobalToLocalEnd_MoFEM(DM dm,Vec,InsertMode,Vec);
   friend PetscErrorCode DMLocalToGlobalBegin_MoFEM(DM,Vec,InsertMode,Vec);
   friend PetscErrorCode DMLocalToGlobalEnd_MoFEM(DM,Vec,InsertMode,Vec);
-
 };
 
 PetscBool DMCtx::isProblemsBuild = PETSC_FALSE;
@@ -191,6 +190,20 @@ PetscErrorCode DMMoFEMCreateMoFEM(
   MPI_Comm_size(comm,&dm_field->sIze);
   MPI_Comm_rank(comm,&dm_field->rAnk);
 
+  // Problem structure
+  ierr = dm_field->mField_ptr->get_problem(dm_field->problemName,&dm_field->problemPtr); CHKERRQ(ierr);
+
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode DMMoFEMGetProblemPtr(DM dm,const MoFEM::MoFEMProblem **problem_ptr) {
+  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
+  PetscFunctionBegin;
+  DMCtx *dm_field = (DMCtx*)dm->data;
+  if(!dm->data) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"data structure for MoFEM not yet created");
+  }
+  *problem_ptr = dm_field->problemPtr;
   PetscFunctionReturn(0);
 }
 
@@ -450,6 +463,17 @@ PetscErrorCode DMMoFEMGetTsCtx(DM dm,MoFEM::TsCtx **ts_ctx) {
   PetscFunctionReturn(0);
 }
 
+PetscErrorCode DMMoFEMSetTsCtx(DM dm,MoFEM::TsCtx * const ts_ctx) {
+  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
+  PetscFunctionBegin;
+  DMCtx *dm_field = (DMCtx*)dm->data;
+  if(dm_field->tsCtx) {
+    delete dm_field->tsCtx;
+  }
+  dm_field->tsCtx = ts_ctx;
+  PetscFunctionReturn(0);
+}
+
 PetscErrorCode DMCreateGlobalVector_MoFEM(DM dm,Vec *g) {
   PetscErrorCode ierr;
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
@@ -493,8 +517,9 @@ PetscErrorCode DMSetFromOptions_MoFEM(DM dm) {
   #endif
   ierr = PetscOptionsBool(
     "-dm_is_partitioned",
-    "set if mesh is partitioned (works which native MOAB file formata, i.e. h5m","DMSetUp",
-    dm_field->isPartitioned,&dm_field->isPartitioned,NULL);CHKERRQ(ierr);
+    "set if mesh is partitioned (works which native MOAB file format, i.e. h5m","DMSetUp",
+    dm_field->isPartitioned,&dm_field->isPartitioned,NULL
+  ); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -514,8 +539,6 @@ PetscErrorCode DMSetUp_MoFEM(DM dm) {
     dm_field->isProblemsBuild = PETSC_TRUE;
   }
   ierr = dm_field->mField_ptr->partition_ghost_dofs(dm_field->problemName); CHKERRQ(ierr);
-  // dmmofem struture
-  ierr = dm_field->mField_ptr->get_problem(dm_field->problemName,&dm_field->problemPtr); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 

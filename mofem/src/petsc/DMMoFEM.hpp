@@ -35,6 +35,12 @@ PetscErrorCode DMRegister_MoFEM(const char sname[]);
 PetscErrorCode DMMoFEMCreateMoFEM(DM dm,MoFEM::FieldInterface *m_field_ptr,const char problem_name[],const MoFEM::BitRefLevel &bit_level);
 
 /**
+  * \brief Get pointer to problem data structure
+  * \ingroup dm
+  */
+PetscErrorCode DMMoFEMGetProblemPtr(DM dm,const MoFEM::MoFEMProblem **problem_ptr);
+
+/**
   * \brief set squared problem
   * \ingroup dm
 
@@ -156,7 +162,7 @@ PetscErrorCode DMMoFEMTSSetIFunction(DM dm,const char fe_name[],MoFEM::FEMethod 
   */
 PetscErrorCode DMMoFEMTSSetIJacobian(DM dm,const char fe_name[],MoFEM::FEMethod *method,MoFEM::FEMethod *pre_only,MoFEM::FEMethod *post_only);
 
-#ifdef __MOABKSP_HPP__
+#ifdef __KSPCTX_HPP__
 
 /**
   * \brief get MoFEM::KspCtx data structure
@@ -164,9 +170,9 @@ PetscErrorCode DMMoFEMTSSetIJacobian(DM dm,const char fe_name[],MoFEM::FEMethod 
   */
 PetscErrorCode DMMoFEMGetKspCtx(DM dm,MoFEM::KspCtx **ksp_ctx);
 
-#endif
+#endif //__KSPCTX_HPP__
 
-#ifdef __MOABSNES_HPP__
+#ifdef __SNESCTX_HPP__
 
 /**
   * \brief get MoFEM::SnesCtx data structure
@@ -184,9 +190,9 @@ PetscErrorCode DMMoFEMGetSnesCtx(DM dm,MoFEM::SnesCtx **snes_ctx);
   */
 PetscErrorCode DMMoFEMSetSnesCtx(DM dm,MoFEM::SnesCtx * const snes_ctx);
 
-#endif
+#endif //__SNESCTX_HPP__
 
-#ifdef __MOABTS_HPP__
+#ifdef __TSCTX_HPP__
 
 /**
   * \brief get MoFEM::TsCtx data structure
@@ -194,7 +200,17 @@ PetscErrorCode DMMoFEMSetSnesCtx(DM dm,MoFEM::SnesCtx * const snes_ctx);
   */
 PetscErrorCode DMMoFEMGetTsCtx(DM dm,MoFEM::TsCtx **ts_ctx);
 
-#endif
+/**
+  * \brief Set MoFEM::TsCtx data structure
+  * \ingroup dm
+
+  It take over pointer, do not delete it, DM will destroy pointer
+  when is destroyed.
+
+  */
+PetscErrorCode DMMoFEMSetTsCtx(DM dm,MoFEM::TsCtx * const ts_ctx);
+
+#endif //__TSCTX_HPP__
 
 /** sets if read mesh is partitioned
   * \ingroup dm

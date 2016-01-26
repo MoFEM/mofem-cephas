@@ -16,8 +16,8 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef __MOABSNES_HPP__
-#define __MOABSNES_HPP__
+#ifndef __SNESCTX_HPP__
+#define __SNESCTX_HPP__
 
 namespace MoFEM {
 
@@ -78,4 +78,4 @@ PetscErrorCode SnesMat(SNES snes,Vec x,Mat A,Mat B,void *ctx);
 
 }
 
-#endif // __MOABSNES_HPP__
+#endif // __SNESCTX_HPP__

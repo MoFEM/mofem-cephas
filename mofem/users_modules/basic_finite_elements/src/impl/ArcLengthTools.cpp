@@ -42,17 +42,16 @@ PetscErrorCode ArcLengthCtx::setAlphaBeta(double alpha,double beta) {
 
 ArcLengthCtx::ArcLengthCtx(FieldInterface &m_field,const string &problem_name):
   mField(m_field),
-  dlambda(0),
-  diag(0),
   dx2(0),
   F_lambda2(0),
   res_lambda(0) {
   ierr = m_field.VecCreateGhost(problem_name,ROW,&F_lambda); CHKERRABORT(PETSC_COMM_WORLD,ierr);
   ierr = VecSetOption(F_lambda,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE); CHKERRABORT(PETSC_COMM_WORLD,ierr);
-  ierr = m_field.VecCreateGhost(problem_name,ROW,&db); CHKERRABORT(PETSC_COMM_WORLD,ierr);
-  ierr = m_field.VecCreateGhost(problem_name,ROW,&x_lambda); CHKERRABORT(PETSC_COMM_WORLD,ierr);
-  ierr = m_field.VecCreateGhost(problem_name,ROW,&x0); CHKERRABORT(PETSC_COMM_WORLD,ierr);
-  ierr = m_field.VecCreateGhost(problem_name,ROW,&dx); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+  ierr = VecDuplicate(F_lambda,&db); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+  ierr = VecDuplicate(F_lambda,&xLambda); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+  ierr = VecDuplicate(F_lambda,&x0); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+  ierr = VecDuplicate(F_lambda,&dx); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+
   const MoFEMProblem *problem_ptr;
   ierr = m_field.get_problem(problem_name,&problem_ptr); CHKERRABORT(PETSC_COMM_WORLD,ierr);
   NumeredDofMoFEMEntity_multiIndex& dofs_ptr_no_const
@@ -64,21 +63,43 @@ ArcLengthCtx::ArcLengthCtx(FieldInterface &m_field,const string &problem_name):
     PetscTraceBackErrorHandler(
       PETSC_COMM_WORLD,
       __LINE__,PETSC_FUNCTION_NAME,__FILE__,
-      MOFEM_DATA_INCONSISTENCY,PETSC_ERROR_INITIAL,"can not find unique LAMBDA (load factor)",PETSC_NULL
+      MOFEM_DATA_INCONSISTENCY,PETSC_ERROR_INITIAL,
+      "can not find unique LAMBDA (load factor)",PETSC_NULL
     );
     PetscMPIAbortErrorHandler(PETSC_COMM_WORLD,
       __LINE__,PETSC_FUNCTION_NAME,__FILE__,
-      MOFEM_DATA_INCONSISTENCY,PETSC_ERROR_INITIAL,"can not find unique LAMBDA (load factor)",PETSC_NULL
+      MOFEM_DATA_INCONSISTENCY,PETSC_ERROR_INITIAL,
+      "can not find unique LAMBDA (load factor)",PETSC_NULL
     );
   }
+  if((unsigned int)mField.getCommRank()==dIt->get_part()) {
+    ierr = VecCreateGhostWithArray(
+      mField.get_comm(),1,1,0,PETSC_NULL,&dLambda,&ghosTdLambda
+    ); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+    ierr = VecCreateGhostWithArray(
+      mField.get_comm(),1,1,0,PETSC_NULL,&dIag,&ghostDiag
+    ); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+  } else {
+    int one[] = {0};
+    ierr = VecCreateGhostWithArray(
+      mField.get_comm(),0,1,1,one,&dLambda,&ghosTdLambda
+    ); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+    ierr = VecCreateGhostWithArray(
+      mField.get_comm(),0,1,1,one,&dIag,&ghostDiag
+    ); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+  }
+  dLambda = 0;
+  dIag = 0;
 }
 
 ArcLengthCtx::~ArcLengthCtx() {
   ierr = VecDestroy(&F_lambda); CHKERRABORT(PETSC_COMM_WORLD,ierr);
   ierr = VecDestroy(&db); CHKERRABORT(PETSC_COMM_WORLD,ierr);
-  ierr = VecDestroy(&x_lambda); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+  ierr = VecDestroy(&xLambda); CHKERRABORT(PETSC_COMM_WORLD,ierr);
   ierr = VecDestroy(&x0); CHKERRABORT(PETSC_COMM_WORLD,ierr);
   ierr = VecDestroy(&dx); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+  ierr = VecDestroy(&ghosTdLambda); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+  ierr = VecDestroy(&ghostDiag); CHKERRABORT(PETSC_COMM_WORLD,ierr);
 }
 
 ArcLengthMatShell::ArcLengthMatShell(Mat aij,ArcLengthCtx *arc_ptr,string problem_name):
@@ -201,7 +222,7 @@ PetscErrorCode ArcLengthMatMultShellOp(Mat A,Vec x,Vec f) {
   double db_dot_x;
   ierr = VecDot(ctx->arcPtr->db,x,&db_dot_x); CHKERRQ(ierr);
   double f_lambda;
-  f_lambda = ctx->arcPtr->diag*lambda + db_dot_x;
+  f_lambda = ctx->arcPtr->dIag*lambda + db_dot_x;
   ierr = ctx->setLambda(f,&f_lambda,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecAXPY(f,lambda,ctx->arcPtr->F_lambda); CHKERRQ(ierr);
   PetscFunctionReturn(0);
@@ -214,28 +235,28 @@ PetscErrorCode PCApplyArcLength(PC pc,Vec pc_f,Vec pc_x) {
   PCArcLengthCtx *ctx = (PCArcLengthCtx*)void_ctx;
   void *void_MatCtx;
   MatShellGetContext(ctx->shellAij,&void_MatCtx);
-  ArcLengthMatShell *MatCtx = (ArcLengthMatShell*)void_MatCtx;
+  ArcLengthMatShell *mat_ctx = (ArcLengthMatShell*)void_MatCtx;
   ierr = PCApply(ctx->pC,pc_f,pc_x); CHKERRQ(ierr);
-  ierr = PCApply(ctx->pC,ctx->arcPtr->F_lambda,ctx->arcPtr->x_lambda); CHKERRQ(ierr);
+  ierr = PCApply(ctx->pC,ctx->arcPtr->F_lambda,ctx->arcPtr->xLambda); CHKERRQ(ierr);
   double db_dot_pc_x,db_dot_x_lambda;
   ierr = VecDot(ctx->arcPtr->db,pc_x,&db_dot_pc_x); CHKERRQ(ierr);
-  ierr = VecDot(ctx->arcPtr->db,ctx->arcPtr->x_lambda,&db_dot_x_lambda); CHKERRQ(ierr);
-  double denominator = ctx->arcPtr->diag+db_dot_x_lambda;
+  ierr = VecDot(ctx->arcPtr->db,ctx->arcPtr->xLambda,&db_dot_x_lambda); CHKERRQ(ierr);
+  double denominator = ctx->arcPtr->dIag+db_dot_x_lambda;
   double res_lambda;
-  ierr = MatCtx->setLambda(pc_f,&res_lambda,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = mat_ctx->setLambda(pc_f,&res_lambda,SCATTER_FORWARD); CHKERRQ(ierr);
   double ddlambda = (res_lambda - db_dot_pc_x)/denominator;
-  if(ddlambda != ddlambda) {
+  if(ddlambda != ddlambda || denominator == 0) {
     ostringstream ss;
     ss
     << "problem with ddlambda=" << res_lambda
     << " ddlamnda=" << ddlambda
     << " db_dot_pc_x=" << db_dot_pc_x
     << " db_dot_x_lambda=" << db_dot_x_lambda
-    << " ctx->arcPtr->diag=" << ctx->arcPtr->diag;
+    << " diag=" << ctx->arcPtr->dIag;
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,ss.str().c_str());
   }
-  ierr = VecAXPY(pc_x,ddlambda,ctx->arcPtr->x_lambda); CHKERRQ(ierr);
-  ierr = MatCtx->setLambda(pc_x,&ddlambda,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = VecAXPY(pc_x,ddlambda,ctx->arcPtr->xLambda); CHKERRQ(ierr);
+  ierr = mat_ctx->setLambda(pc_x,&ddlambda,SCATTER_REVERSE); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -252,18 +273,11 @@ PetscErrorCode PCSetupArcLength(PC pc) {
 }
 
 SphericalArcLengthControl::SphericalArcLengthControl(ArcLengthCtx *arc_ptr):
-  FEMethod(),arcPtr(arc_ptr) {
-  PetscInt ghosts[1] = { 0 };
-  ParallelComm* pcomm = ParallelComm::get_pcomm(&arc_ptr->mField.get_moab(),MYPCOMM_INDEX);
-  if(pcomm->rank() == 0) {
-    VecCreateGhost(arc_ptr->mField.get_comm(),1,1,0,ghosts,&ghostDiag);
-  } else {
-    VecCreateGhost(arc_ptr->mField.get_comm(),0,1,1,ghosts,&ghostDiag);
-  }
+FEMethod(),
+arcPtr(arc_ptr) {
 }
 
 SphericalArcLengthControl::~SphericalArcLengthControl() {
-  VecDestroy(&ghostDiag);
 }
 
 PetscErrorCode SphericalArcLengthControl::preProcess() {
@@ -271,11 +285,13 @@ PetscErrorCode SphericalArcLengthControl::preProcess() {
   switch (ts_ctx) {
     case CTX_TSSETIFUNCTION: {
       snes_ctx = CTX_SNESSETFUNCTION;
+      snes_x = ts_u;
       snes_f = ts_F;
       break;
     }
     case CTX_TSSETIJACOBIAN: {
       snes_ctx = CTX_SNESSETJACOBIAN;
+      snes_x = ts_u;
       snes_B = ts_B;
       break;
     }
@@ -297,33 +313,22 @@ PetscErrorCode SphericalArcLengthControl::preProcess() {
   PetscFunctionReturn(0);
 }
 
-double SphericalArcLengthControl::calculateLambdaInt() {
-  PetscFunctionBegin;
-  return arcPtr->alpha*arcPtr->dx2 + pow(arcPtr->dlambda,2)*pow(arcPtr->beta,2)*arcPtr->F_lambda2;
-  PetscFunctionReturn(0);
-}
-
-PetscErrorCode SphericalArcLengthControl::calculateDb() {
-  PetscFunctionBegin;
-  //db
-  ierr = VecCopy(arcPtr->dx,arcPtr->db); CHKERRQ(ierr);
-  ierr = VecScale(arcPtr->db,2*arcPtr->alpha); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
-}
-
 PetscErrorCode SphericalArcLengthControl::operator()() {
   PetscFunctionBegin;
   switch(snes_ctx) {
     case CTX_SNESSETFUNCTION: {
       arcPtr->res_lambda = calculateLambdaInt() - pow(arcPtr->s,2);
-      ierr = VecSetValue(snes_f,arcPtr->getPetscGloablDofIdx(),arcPtr->res_lambda,ADD_VALUES); CHKERRQ(ierr);
+      ierr = VecSetValue(
+        snes_f,arcPtr->getPetscGloablDofIdx(),arcPtr->res_lambda,ADD_VALUES
+      ); CHKERRQ(ierr);
       PetscPrintf(arcPtr->mField.get_comm(),"\tres_lambda = %6.4e\n",arcPtr->res_lambda);
     }
     break;
     case CTX_SNESSETJACOBIAN: {
-      double diag = 2*arcPtr->dlambda*pow(arcPtr->beta,2)*arcPtr->F_lambda2;
-      ierr = VecSetValue(ghostDiag,0,diag,INSERT_VALUES); CHKERRQ(ierr);
-      ierr = MatSetValue(snes_B,arcPtr->getPetscGloablDofIdx(),arcPtr->getPetscGloablDofIdx(),1,ADD_VALUES); CHKERRQ(ierr);
+      arcPtr->dIag = 2*arcPtr->dLambda*pow(arcPtr->beta,2)*arcPtr->F_lambda2;
+      ierr = MatSetValue(
+        snes_B,arcPtr->getPetscGloablDofIdx(),arcPtr->getPetscGloablDofIdx(),1,ADD_VALUES
+      ); CHKERRQ(ierr);
     }
     break;
     default:
@@ -335,23 +340,34 @@ PetscErrorCode SphericalArcLengthControl::operator()() {
 
 PetscErrorCode SphericalArcLengthControl::postProcess() {
   PetscFunctionBegin;
+  switch (ts_ctx) {
+    case CTX_TSSETIFUNCTION: {
+      snes_ctx = CTX_SNESSETFUNCTION;
+      snes_x = ts_u;
+      snes_f = ts_F;
+      break;
+    }
+    case CTX_TSSETIJACOBIAN: {
+      snes_ctx = CTX_SNESSETJACOBIAN;
+      snes_x = ts_u;
+      snes_B = ts_B;
+      break;
+    }
+    default:
+    break;
+  }
   switch(snes_ctx) {
     case CTX_SNESSETFUNCTION: {
       PetscPrintf(arcPtr->mField.get_comm(),"\tlambda = %6.4e\n",arcPtr->getFieldData());
     }
     break;
     case CTX_SNESSETJACOBIAN: {
+      // VecView(arcPtr->ghostDiag,PETSC_VIEWER_STDOUT_WORLD);
+      ierr = VecGhostUpdateBegin(arcPtr->ghostDiag,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      ierr = VecGhostUpdateEnd(arcPtr->ghostDiag,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
       ierr = MatAssemblyBegin(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
       ierr = MatAssemblyEnd(snes_B,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
-      ierr = VecAssemblyBegin(ghostDiag); CHKERRQ(ierr);
-      ierr = VecAssemblyEnd(ghostDiag); CHKERRQ(ierr);
-      ierr = VecGhostUpdateBegin(ghostDiag,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-      ierr = VecGhostUpdateEnd(ghostDiag,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-      double *diag;
-      ierr = VecGetArray(ghostDiag,&diag); CHKERRQ(ierr);
-      arcPtr->diag = *diag;
-      ierr = VecRestoreArray(ghostDiag,&diag); CHKERRQ(ierr);
-      PetscPrintf(arcPtr->mField.get_comm(),"\tdiag = %6.4e\n",arcPtr->diag);
+      PetscPrintf(arcPtr->mField.get_comm(),"\tdiag = %6.4e\n",arcPtr->dIag);
     }
     break;
     default:
@@ -360,24 +376,41 @@ PetscErrorCode SphericalArcLengthControl::postProcess() {
   PetscFunctionReturn(0);
 }
 
+double SphericalArcLengthControl::calculateLambdaInt() {
+  PetscFunctionBegin;
+  return arcPtr->alpha*arcPtr->dx2 + pow(arcPtr->dLambda,2)*pow(arcPtr->beta,2)*arcPtr->F_lambda2;
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode SphericalArcLengthControl::calculateDb() {
+  PetscFunctionBegin;
+  ierr = VecCopy(arcPtr->dx,arcPtr->db); CHKERRQ(ierr);
+  ierr = VecScale(arcPtr->db,2*arcPtr->alpha); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
 PetscErrorCode SphericalArcLengthControl::calculateDxAndDlambda(Vec x) {
   PetscFunctionBegin;
   //dx
   ierr = VecCopy(x,arcPtr->dx); CHKERRQ(ierr);
   ierr = VecAXPY(arcPtr->dx,-1,arcPtr->x0); CHKERRQ(ierr);
+  ierr = VecGhostUpdateBegin(arcPtr->dx,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(arcPtr->dx,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   //dlambda
   if(arcPtr->getPetscLocalDofIdx()!=-1) {
     double *array;
     ierr = VecGetArray(arcPtr->dx,&array); CHKERRQ(ierr);
-    arcPtr->dlambda = array[arcPtr->getPetscLocalDofIdx()];
+    arcPtr->dLambda = array[arcPtr->getPetscLocalDofIdx()];
     array[arcPtr->getPetscLocalDofIdx()] = 0;
     ierr = VecRestoreArray(arcPtr->dx,&array); CHKERRQ(ierr);
   }
-  int part = arcPtr->getPart();
-  MPI_Bcast(&(arcPtr->dlambda),1,MPI_DOUBLE,part,arcPtr->mField.get_comm());
+  ierr = VecGhostUpdateBegin(arcPtr->ghosTdLambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecGhostUpdateEnd(arcPtr->ghosTdLambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   //dx2
   ierr = VecDot(arcPtr->dx,arcPtr->dx,&arcPtr->dx2); CHKERRQ(ierr);
-  PetscPrintf(arcPtr->mField.get_comm(),"\tdlambda = %6.4e dx2 = %6.4e\n",arcPtr->dlambda,arcPtr->dx2);
+  PetscPrintf(
+    arcPtr->mField.get_comm(),"\tdlambda = %6.4e dx2 = %6.4e\n",arcPtr->dLambda,arcPtr->dx2
+  );
   PetscFunctionReturn(0);
 }
 
@@ -394,7 +427,7 @@ PetscErrorCode SphericalArcLengthControl::calculateInitDlambda(double *dlambda) 
 
 PetscErrorCode SphericalArcLengthControl::setDlambdaToX(Vec x,double dlambda) {
   PetscFunctionBegin;
-  //check if locl dof idx is non zero, i.e. that lambda is acessible from this processor
+  //check if local dof idx is non zero, i.e. that lambda is accessible from this processor
   if(arcPtr->getPetscLocalDofIdx()!=-1) {
     double *array;
     ierr = VecGetArray(x,&array); CHKERRQ(ierr);
@@ -405,8 +438,11 @@ PetscErrorCode SphericalArcLengthControl::setDlambdaToX(Vec x,double dlambda) {
       SETERRQ(PETSC_COMM_SELF,1,sss.str().c_str());
     }
     array[arcPtr->getPetscLocalDofIdx()] = lambda_old + dlambda;
-    PetscPrintf(arcPtr->mField.get_comm(),"\tlambda = %6.4e, %6.4e (%6.4e)\n",
-    lambda_old, array[arcPtr->getPetscLocalDofIdx()], dlambda);
+    PetscPrintf(
+      arcPtr->mField.get_comm(),
+      "\tlambda = %6.4e, %6.4e (%6.4e)\n",
+      lambda_old,array[arcPtr->getPetscLocalDofIdx()],dlambda
+    );
     ierr = VecRestoreArray(x,&array); CHKERRQ(ierr);
   }
   PetscFunctionReturn(0);
