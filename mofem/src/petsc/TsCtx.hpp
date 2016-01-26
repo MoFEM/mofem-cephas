@@ -16,8 +16,8 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef __MOABTS_HPP__
-#define __MOABTS_HPP__
+#ifndef __TSCTX_HPP__
+#define __TSCTX_HPP__
 
 namespace MoFEM {
 
@@ -55,9 +55,9 @@ struct TsCtx {
   PetscLogEvent USER_EVENT_TsCtxMonitor;
 
   bool zeroMatrix;
-  TsCtx(FieldInterface &m_field,const string &_problem_name):
+  TsCtx(FieldInterface &m_field,const string &problem_name):
     mField(m_field),moab(m_field.get_moab()),
-    problemName(_problem_name),
+    problemName(problem_name),
     zeroMatrix(true) {
     PetscLogEventRegister("LoopTsIFunction",0,&USER_EVENT_TsCtxIFunction);
     PetscLogEventRegister("LoopTsIJacobian",0,&USER_EVENT_TsCtxIJacobian);
@@ -92,4 +92,4 @@ PetscErrorCode f_TSMonitorSet(TS ts,PetscInt step,PetscReal t,Vec u,void *ctx);
 
 }
 
-#endif // __MOABTS_HPP__
+#endif // __TSCTX_HPP__

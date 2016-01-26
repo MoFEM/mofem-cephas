@@ -25,7 +25,6 @@ target_link_libraries(arc_length_interface
   mofem_interfaces
   mofem_multi_indices
   mofem_petsc
-  users_modules_obsolete
   mofem_approx
   mofem_third_party
   mofem_cblas
