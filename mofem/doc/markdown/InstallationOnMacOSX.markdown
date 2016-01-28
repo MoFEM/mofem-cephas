@@ -22,12 +22,13 @@ mkdir $MOFEM_INSTALL_DIR
 ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
 brew update
 brew tap homebrew/science
+brew tap homebrew/versions
 brew install cmake
 brew install --with-x11 gnuplot
 brew install --with-graphviz doxygen
 brew install wget
 brew install boost
-brew install gcc
+brew install homebrew/versions/gcc49 --with-fortran
 brew install gnu-sed
 ~~~~~~
 
@@ -74,8 +75,11 @@ make install
 ####5.3 Boost 1.57
 
 ~~~~~~
-wget
+cd $MOFEM_INSTALL_DIR
+# Download boost from http://www.boost.org/users/history/version_1_57_0.html
+# and place it in mofem install directory ($MOFEM_INSTALL_DIR)
 tar -xvvzf boost_1_57_0.tar.gz
+cd boost_1_57_0
 ./bootstrap.sh --prefix=$MOFEM_INSTALL_DIR/local
 ./b2 install
 ~~~~~~
@@ -126,7 +130,7 @@ cd $MOFEM_INSTALL_DIR/users_modules
 Some elements still using some obsolete implementation which is gradually
 removed. At this stage you need to install "obsolete" user modules:
 ~~~~~~
-git clone https://bitbucket.org/likask/mofem_um_obsolete obsolete
+git clone https://bitbucket.org/likask/mofem_um_obsolete users_modules/obsolete
 ~~~~~~
 List of some additional users modules is available on the main page.
 
