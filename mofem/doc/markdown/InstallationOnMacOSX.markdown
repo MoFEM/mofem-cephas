@@ -2,7 +2,7 @@
 
 If you have any problems, feedback or would like to suggest corrections,
 please email [cmatgu@googlegroups.com](mailto:cmatgu@googlegroups.com).
-Before you strat you need to install
+Before you start you need to install
 XCode [https://developer.apple.com/xcode/downloads/](https://developer.apple.com/xcode/downloads/)
 and XQuartz
 [http://xquartz.macosforge.org/landing/](http://xquartz.macosforge.org/landing/).
@@ -30,6 +30,11 @@ brew install wget
 brew install boost
 brew install homebrew/versions/gcc49 --with-fortran
 brew install gnu-sed
+~~~~~~
+
+Set the default fortran compiler
+~~~~~~
+ln -s /usr/local/bin/gfortran-4.9 /usr/local/bin/gfortran`
 ~~~~~~
 
 ###3. Install PETSc and other libraries
