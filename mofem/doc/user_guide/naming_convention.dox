@@ -37,7 +37,7 @@ Some guidance about branches:
 
 \section Source Code Style and Best Practices
 
-MoFEM code should follow MoAB code style and best pratices listed here
+MoFEM code should follow MoAB code style and best practices listed here
 <http://www.mcs.anl.gov/~fathom/moab-docs/html/styleguide.html>.
 
 - Style:
