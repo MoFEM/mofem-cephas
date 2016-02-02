@@ -340,9 +340,9 @@ struct SmallStrainTranverslyIsotropic: public NonlinearElasticElement::Functions
       double nrm2_ax_vector = norm_2(axVectorDouble);
       const double eps = 1e-12;
       if(nrm2_ax_vector<eps) {
-        axVectorDouble[0] = 1;
+        axVectorDouble[0] = 0;
         axVectorDouble[1] = 0;
-        axVectorDouble[2] = 0;
+        axVectorDouble[2] = 1;
         nrm2_ax_vector = 1;
       }
       axAngleDouble = asin(nrm2_ax_vector);
