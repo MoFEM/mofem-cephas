@@ -75,8 +75,8 @@ struct BodyFroceConstantField {
       Nf.resize(data.getIndices().size());
       bzero(&*Nf.data().begin(),data.getIndices().size()*sizeof(FieldData));
 
-      for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
 
+      for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
         double val = getVolume()*getGaussPts()(3,gg);
         if(getHoGaussPtsDetJac().size()>0) {
           val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
@@ -97,10 +97,13 @@ struct BodyFroceConstantField {
           cblas_daxpy(nb_row_dofs,val*acc,&data.getN()(gg,0),1,&Nf[rr],rank);
 
         }
-
       }
+      // cerr << dAta.data.acceleration_x << endl;
+      // cerr << dAta.data.acceleration_y << endl;
+      // cerr << dAta.data.acceleration_z << endl;
+      // cerr << dAta.data.density << endl;
+      // cerr << Nf << endl;
 
-      //cerr << Nf << endl;
       ierr = VecSetValues(F,data.getIndices().size(),
         &data.getIndices()[0],&Nf[0],ADD_VALUES
       ); CHKERRQ(ierr);

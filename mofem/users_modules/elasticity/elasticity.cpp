@@ -544,6 +544,7 @@ int main(int argc, char *argv[]) {
   }
 
   elastic.getLoopFeEnergy().snes_ctx = SnesMethod::CTX_SNESNONE;
+  elastic.getLoopFeEnergy().eNergy = 0;
   ierr = DMoFEMLoopFiniteElements(dm,"ELASTIC",&elastic.getLoopFeEnergy()); CHKERRQ(ierr);
   PetscPrintf(PETSC_COMM_WORLD,"Elastic energy %6.4e\n",elastic.getLoopFeEnergy().eNergy);
 

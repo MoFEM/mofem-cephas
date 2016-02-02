@@ -253,7 +253,11 @@ struct SmallStrainTranverslyIsotropic: public NonlinearElasticElement::Functions
   ublas::vector<TYPE> voigtStress;
 
   /** \brief Calculate global stress
-  *
+
+  This is small strain approach, i.e. Piola stress
+  is like a Cauchy stress, since configurations are notation
+  distinguished.
+
   */
   virtual PetscErrorCode calculateP_PiolaKirchhoffI(
     const NonlinearElasticElement::BlockData block_data,
@@ -334,6 +338,13 @@ struct SmallStrainTranverslyIsotropic: public NonlinearElasticElement::Functions
       axVectorDouble[1] = normalizedPhi[2]*zVec[0]-normalizedPhi[0]*zVec[2];
       axVectorDouble[2] = normalizedPhi[0]*zVec[1]-normalizedPhi[1]*zVec[0];
       double nrm2_ax_vector = norm_2(axVectorDouble);
+      const double eps = 1e-12;
+      if(nrm2_ax_vector<eps) {
+        axVectorDouble[0] = 1;
+        axVectorDouble[1] = 0;
+        axVectorDouble[2] = 0;
+        nrm2_ax_vector = 1;
+      }
       axAngleDouble = asin(nrm2_ax_vector);
 
     } catch (const std::exception& ex) {
