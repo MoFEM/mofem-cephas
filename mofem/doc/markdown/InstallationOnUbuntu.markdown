@@ -95,7 +95,7 @@ cd $MOFEM_INSTALL_DIR/users_modules
 Some elements still using some obsolete implementation which is gradually
 removed. At this stage you need to install "obsolete" user modules:
 ~~~~~~
-git clone https://bitbucket.org/likask/mofem_um_obsolete obsolete
+git clone https://bitbucket.org/likask/mofem_um_obsolete users_modules/obsolete
 ~~~~~~
 List of some additional users modules is available on the main page.
 

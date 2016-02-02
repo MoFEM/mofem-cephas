@@ -32,7 +32,6 @@ if(ADOL-C_LIBRARY)
     mofem_interfaces
     mofem_multi_indices
     mofem_petsc
-    users_modules_obsolete
     mofem_approx
     mofem_third_party
     mofem_cblas

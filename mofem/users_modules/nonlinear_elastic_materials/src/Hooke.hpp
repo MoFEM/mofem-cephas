@@ -88,7 +88,7 @@ struct Hooke: public NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoff
       }
       ePs += trans(ePs);
       ePs *= 0.5;
-      //cerr << ePs << endl;
+      // cerr << this->F << " : " << ePs << endl;
       this->eNergy = 0;
       tR = 0;
       for(int dd = 0;dd<3;dd++) {

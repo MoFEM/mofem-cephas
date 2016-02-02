@@ -99,7 +99,8 @@ struct NonlinearElasticElement {
     int iD;
     double E;
     double PoissonRatio;
-    double k1,k2,d1_X,d1_Y,d1_Z,d2_X,d2_Y,d2_Z;
+    //Eberlein Fibres stiffness properties
+    double k1,k2;
     Range tEts; ///< constrains elements in block set
     FunctionsToCalculatePiolaKirchhoffI<adouble> *materialAdoublePtr;
     FunctionsToCalculatePiolaKirchhoffI<double> *materialDoublePtr;

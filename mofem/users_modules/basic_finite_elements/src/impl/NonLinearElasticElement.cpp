@@ -522,7 +522,7 @@ PetscErrorCode NonlinearElasticElement::OpEnergy::doWork(
       noalias(dAta.materialDoublePtr->F) = F[gg];
       if(fieldDisp) {
         for(int dd = 0;dd<3;dd++) {
-          dAta.materialAdoublePtr->F(dd,dd) += 1;
+          dAta.materialDoublePtr->F(dd,dd) += 1;
         }
       }
       ierr = dAta.materialDoublePtr->calculateElasticEnergy(dAta,getMoFEMFEPtr()); CHKERRQ(ierr);
