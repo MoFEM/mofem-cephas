@@ -294,8 +294,8 @@ PetscErrorCode ForcesAndSurcesCore::getNodesIndices(
   }
 
   if(distance(dit,hi_dit)!=max_nb_dofs) {
-    nodes_indices.resize(max_nb_dofs);
-    local_nodes_indices.resize(max_nb_dofs);
+    nodes_indices.resize(max_nb_dofs,false);
+    local_nodes_indices.resize(max_nb_dofs,false);
     for(int dd = 0;dd<max_nb_dofs;dd++) {
       nodes_indices[dd] = -1;
       local_nodes_indices[dd] = -1;
