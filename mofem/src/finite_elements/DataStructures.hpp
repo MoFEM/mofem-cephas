@@ -178,7 +178,7 @@ struct DataForcesAndSurcesCore {
         double *data = &getDiffN()(gg,0);
         return MatrixAdaptor(nb_dofs,dim,ublas::shallow_array_adaptor<double>(dim*nb_dofs,data));
       } else {
-        // in some cases, f.e. for derivatives of nodal shape functions ony one
+        // in some cases, f.e. for derivatives of nodal shape functions only one
         // gauss point is needed
         return MatrixAdaptor(getN().size1(),getN().size2(),ublas::shallow_array_adaptor<double>(getDiffN().data().size(),&getDiffN().data()[0]));
       }
