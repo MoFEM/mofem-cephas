@@ -155,7 +155,12 @@ There are two ways of solving this problem:
 
 1. Hack
 
-  Add this to your ~/.bashrc: `DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:$MOFEM_INSTALL_DIR/local/lib64`
+  Add this to your ~/.bashrc:
+  ~~~~~
+  export MOFEM_INSTALL_DIR=$HOME/mofem_installation
+  export PATH=$PATH:$MOFEM_INSTALL_DIR/petsc/arch-darwin-c-opt/bin
+  export DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:$MOFEM_INSTALL_DIR/local/lib64:$MOFEM_INSTALL_DIR/local/lib
+  ~~~~~
 
   Note: you'll need to reload the current session for this to take effect
 
