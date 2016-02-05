@@ -141,6 +141,11 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
         cblas_dcopy(
           nb_gauss_pts,QUAD_3D_TABLE[rule]->weights,1,&gaussPts(3,0),1
         );
+        dataH1.dataOnEntities[MBVERTEX][0].getN().resize(nb_gauss_pts,4,false);
+        double *shape_ptr = dataH1.dataOnEntities[MBVERTEX][0].getN().data().begin();
+        cblas_dcopy(
+          4*nb_gauss_pts,QUAD_3D_TABLE[rule]->points,1,shape_ptr,1
+        );
       } else {
         SETERRQ2(
           PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"rule > quadrature order %d < %d",
@@ -156,10 +161,17 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
     } else {
       ierr = setGaussPts(order); CHKERRQ(ierr);
       nb_gauss_pts = gaussPts.size2();
+      dataH1.dataOnEntities[MBVERTEX][0].getN().resize(nb_gauss_pts,4,false);
+      ierr = ShapeMBTET(
+        &*dataH1.dataOnEntities[MBVERTEX][0].getN().data().begin(),
+        &gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0),nb_gauss_pts
+      ); CHKERRQ(ierr);
     }
     if(nb_gauss_pts == 0) PetscFunctionReturn(0);
 
-    ierr = shapeTETFunctions_H1(dataH1,&gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0),nb_gauss_pts); CHKERRQ(ierr);
+    ierr = shapeTETFunctions_H1(
+      dataH1,&gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0),nb_gauss_pts
+    ); CHKERRQ(ierr);
 
     if((dataH1.spacesOnEntities[MBTRI]).test(HDIV)) {
       ierr = shapeTETFunctions_Hdiv(dataHdiv,&gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0),nb_gauss_pts); CHKERRQ(ierr);

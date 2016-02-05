@@ -97,6 +97,11 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
       cblas_dcopy(
         nb_gauss_pts,QUAD_1D_TABLE[rule]->weights,1,&gaussPts(1,0),1
       );
+      dataH1.dataOnEntities[MBVERTEX][0].getN().resize(nb_gauss_pts,2,false);
+      double *shape_ptr = &*dataH1.dataOnEntities[MBVERTEX][0].getN().data().begin();
+      cblas_dcopy(
+        2*nb_gauss_pts,QUAD_1D_TABLE[rule]->points,1,shape_ptr,1
+      );
     } else {
       SETERRQ2(
         PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"rule > quadrature order %d < %d",

@@ -171,6 +171,11 @@ int main(int argc, char *argv[]) {
       ierr = getTrisOrder(data,H1); CHKERRQ(ierr);
       ierr = getTetsOrder(data,H1); CHKERRQ(ierr);
       ierr = getFaceTriNodes(data); CHKERRQ(ierr);
+
+      data.dataOnEntities[MBVERTEX][0].getN().resize(4,4,false);
+      ierr = ShapeMBTET(
+        &*data.dataOnEntities[MBVERTEX][0].getN().data().begin(),G_TET_X4,G_TET_Y4,G_TET_Z4,4
+      ); CHKERRQ(ierr);
       ierr = shapeTETFunctions_H1(data,G_TET_X4,G_TET_Y4,G_TET_Z4,4); CHKERRQ(ierr);
 
       ierr = getRowNodesIndices(data,"FIELD1"); CHKERRQ(ierr);
