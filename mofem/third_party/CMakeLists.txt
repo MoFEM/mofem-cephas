@@ -15,6 +15,7 @@
 
 include_directories("${PROJECT_SOURCE_DIR}/third_party")
 include_directories("${PROJECT_SOURCE_DIR}/third_party/cblas")
+include_directories("${PROJECT_SOURCE_DIR}/third_party/phg-quadrule")
 
 add_library(mofem_third_party
   #triangle_ncc_rule.c
@@ -23,6 +24,8 @@ add_library(mofem_third_party
   gm_rule.c
   tetcircumcenter.c
   tricircumcenter.c
+  phg-quadrule/quad-gauss.c
+  phg-quadrule/quad.c
 )
 
 add_subdirectory("${PROJECT_SOURCE_DIR}/third_party/cblas")
