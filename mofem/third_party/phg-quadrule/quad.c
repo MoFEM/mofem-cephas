@@ -22,18 +22,30 @@
 
 /* Numerical Quadrature */
 
-#include "quad.h"
-#include "quad-gauss.h"
-#include "quad-permu.h"
-#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
+# define _F(n)	n		/* no suffix */
 #define FALSE 0
 #define TRUE 1
 
-const int phgRank = 0;
+inline void phgFree(void *ptr) {
+  free(ptr);
+}
+inline void* phgAlloc(size_t size) {
+  return malloc(size);
+}
+inline void* phgRealloc_(
+  void *ptr,size_t size,size_t size_old
+) {
+  return realloc(ptr,size);
+}
+
+#include "quad.h"
+#include "quad-permu.h"
+#include <math.h>
+#include <stdlib.h>
+#include <string.h>
 
 #ifdef Length
 # undef Length
@@ -95,7 +107,7 @@ init_table(int n0, QUAD **table0, int *n, QUAD ***table)
     }									\
     if (order >= nquad) {						\
 	if (/*qgen_func == NULL*/FALSE) {				\
-	    if (!warned && phgRank == 0) {				\
+	    if (!warned) {				\
 		printf("%dD quad rule of order %d unavailable.\n",	\
 				table[0]->dim, order);			\
 		warned = TRUE;						\
@@ -112,7 +124,7 @@ init_table(int n0, QUAD **table0, int *n, QUAD ***table)
 	}								\
     }									\
     if (table[order] == NULL) {						\
-	if (FALSE && table[0]->dim > 1 && phgRank == 0) {		\
+	if (FALSE && table[0]->dim > 1) {		\
 	    printf("using %dD-%d tensor product quadrature rule.\n",\
 			table[0]->dim, order);				\
 	}								\
@@ -2436,66 +2448,6 @@ QUAD QUAD_3D_P14_ = {
 static QUAD **quad_list = NULL;
 static size_t quad_list_count = 0, quad_list_allocated = 0;
 
-#if 0
-static inline QUAD_CACHE *
-#else
-static QUAD_CACHE *
-#endif
-get_cache(void **clist_ptr, QUAD *quad)
-/* returns the cache in '**clist' matching 'quad' */
-{
-    QUAD_CACHE_LIST *clist;
-    QUAD_CACHE *cache;
-
-    if (quad->id < 0) {
-#if USE_OMP
-#pragma omp critical (get_cache1)
-      if (quad->id < 0) {
-#endif	/* USE_OMP */
-	/* assign an id to quad */
-	if (quad_list_count >= quad_list_allocated) {
-	    quad_list = phgRealloc_(quad_list,
-				(quad_list_allocated + 8) * sizeof(*quad_list),
-				quad_list_allocated * sizeof(*quad_list));
-	    quad_list_allocated += 8;
-	}
-	quad_list[quad_list_count] = quad;
-	quad_list_count++;
-	quad->id = quad_list_count - 1;
-#if USE_OMP
-      }
-#endif	/* USE_OMP */
-    }
-
-    assert(quad->id < quad_list_count && quad_list[quad->id] == quad);
-
-    if ((clist = *clist_ptr) == NULL) {
-#if USE_OMP
-#pragma omp critical (get_cache2)
-      if ((clist = *clist_ptr) == NULL)
-#endif	/* USE_OMP */
-	*clist_ptr = clist = phgCalloc(phgMaxThreads, sizeof(*clist));
-    }
-    clist += phgThreadId;
-
-    if (clist->n <= quad->id) {
-	/* expand the list to quad->id + 1 entries */
-	clist->caches = phgRealloc_(clist->caches,
-				   (quad->id + 1) * sizeof(*cache),
-				   clist->n * sizeof(*cache));
-	while (clist->n <= quad->id)
-	    clist->caches[clist->n++] = NULL;
-    }
-
-    if ((cache = clist->caches[quad->id]) == NULL) {
-	cache = clist->caches[quad->id] = phgAlloc(sizeof(*cache));
-	cache->e = NULL;
-	cache->data = NULL;
-    }
-
-    return cache;
-}
-
 void
 phgQuadReset(void)
 {
@@ -2513,66 +2465,4 @@ phgQuadReset(void)
     phgQuadGetQuad1D(-1);
     phgQuadGetQuad2D(-1);
     phgQuadGetQuad3D(-1);
-}
-
-void
-phgQuadClearDofCache(void **clist0, QUAD *quad, char final)
-/* clear one or all cached DOF (basis) values in clist */
-{
-    QUAD_CACHE_LIST **clist, *pl;
-    int i, n;
-
-    if (quad == NULL) {
-#if USE_OMP
-	assert(phgThreadId == 0);
-#pragma omp parallel for schedule(static)
-	for (i = 0; i < phgMaxThreads; i++)
-#endif	/* USE_OMP */
-	phgQuadGetFuncValues(NULL, NULL, 0, NULL, NULL);
-    }
-
-    if (*(clist = (QUAD_CACHE_LIST **)clist0) == NULL ||
-	(quad != NULL && quad->id == -1))
-	return;
-
-#if USE_OMP
-    for (pl = *clist; pl < *clist + phgMaxThreads; pl++) {
-#else	/* USE_OMP */
-    pl = *clist;
-#endif	/* USE_OMP */
-
-    /* clear cache for 'quad' */
-    if (quad != NULL) {
-	i = quad->id;
-	assert(i < quad_list_count && quad_list[i] == quad);
-	n = i + 1;
-    }
-    else {
-	i = 0;
-	n = pl->n;
-    }
-
-    for (; i < n; i++) {
-	if (pl->caches[i] == NULL)
-	    continue;
-	pl->caches[i]->e = NULL;
-	phgFree(pl->caches[i]->data);
-	pl->caches[i]->data = NULL;
-	if (final) {
-	    phgFree(pl->caches[i]);
-	    pl->caches[i] = NULL;
-	}
-    }
-
-    if (quad == NULL && final)
-	phgFree(pl->caches);
-
-#if USE_OMP
-    }
-#endif	/* USE_OMP */
-
-    if (quad == NULL && final) {
-	phgFree(*clist);
-	*clist = NULL;
-    }
 }
