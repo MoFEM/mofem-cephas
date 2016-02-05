@@ -146,7 +146,6 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
     }
     if(nb_gauss_pts == 0) PetscFunctionReturn(0);
 
-
     ierr = shapeFlatPRISMFunctions_H1(dataH1,&gaussPts(0,0),&gaussPts(1,0),nb_gauss_pts); CHKERRQ(ierr);
     if(dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
       ierr = shapeFlatPRISMFunctions_Hdiv(dataHdiv,&gaussPts(0,0),&gaussPts(1,0),nb_gauss_pts); CHKERRQ(ierr); CHKERRQ(ierr);

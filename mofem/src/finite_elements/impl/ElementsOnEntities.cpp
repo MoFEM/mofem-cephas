@@ -1026,8 +1026,8 @@ PetscErrorCode ForcesAndSurcesCore::shapeTETFunctions_H1(
 ) {
   PetscFunctionBegin;
 
-  data.dataOnEntities[MBVERTEX][0].getN().resize(G_DIM,4,false);
-  ierr = ShapeMBTET(&*data.dataOnEntities[MBVERTEX][0].getN().data().begin(),G_X,G_Y,G_Z,G_DIM); CHKERRQ(ierr);
+  // data.dataOnEntities[MBVERTEX][0].getN().resize(G_DIM,4,false);
+  // ierr = ShapeMBTET(&*data.dataOnEntities[MBVERTEX][0].getN().data().begin(),G_X,G_Y,G_Z,G_DIM); CHKERRQ(ierr);
   data.dataOnEntities[MBVERTEX][0].getDiffN().resize(4,3,false);
   ierr = ShapeDiffMBTET(&*data.dataOnEntities[MBVERTEX][0].getDiffN().data().begin()); CHKERRQ(ierr);
 
@@ -1347,8 +1347,8 @@ PetscErrorCode ForcesAndSurcesCore::shapeTRIFunctions_H1(
   const double *G_X,const double *G_Y,const int G_DIM) {
   PetscFunctionBegin;
 
-  data.dataOnEntities[MBVERTEX][0].getN().resize(G_DIM,3,false);
-  ierr = ShapeMBTRI(&*data.dataOnEntities[MBVERTEX][0].getN().data().begin(),G_X,G_Y,G_DIM); CHKERRQ(ierr);
+  // data.dataOnEntities[MBVERTEX][0].getN().resize(G_DIM,3,false);
+  // ierr = ShapeMBTRI(&*data.dataOnEntities[MBVERTEX][0].getN().data().begin(),G_X,G_Y,G_DIM); CHKERRQ(ierr);
   data.dataOnEntities[MBVERTEX][0].getDiffN().resize(3,2,false);
   ierr = ShapeDiffMBTRI(&*data.dataOnEntities[MBVERTEX][0].getDiffN().data().begin()); CHKERRQ(ierr);
 
@@ -1423,8 +1423,9 @@ PetscErrorCode ForcesAndSurcesCore::shapeFlatPRISMFunctions_H1(
     rval = mField.get_moab().get_connectivity(siit3->ent,conn_face3,num_nodes,true); CHKERR_PETSC(rval);
     rval = mField.get_moab().get_connectivity(siit4->ent,conn_face4,num_nodes,true); CHKERR_PETSC(rval);
 
-    MatrixDouble N(G_DIM,3),diffN(3,2);
+    MatrixDouble N(G_DIM,3);
     ierr = ShapeMBTRI(&*N.data().begin(),G_X,G_Y,G_DIM); CHKERRQ(ierr);
+    MatrixDouble diffN(3,2);
     ierr = ShapeDiffMBTRI(&*diffN.data().begin()); CHKERRQ(ierr);
     data.dataOnEntities[MBVERTEX][0].getN().resize(G_DIM,6,false);
     data.dataOnEntities[MBVERTEX][0].getDiffN().resize(G_DIM,12,false);
@@ -1583,12 +1584,12 @@ PetscErrorCode ForcesAndSurcesCore::shapeEDGEFunctions_H1(
 ) {
   PetscFunctionBegin;
 
-  data.dataOnEntities[MBVERTEX][0].getN().resize(G_DIM,2,false);
-  ierr = ShapeMBEDGE(
-    &*data.dataOnEntities[MBVERTEX][0].getN().data().begin(),
-    G_X,
-    G_DIM
-  ); CHKERRQ(ierr);
+  // data.dataOnEntities[MBVERTEX][0].getN().resize(G_DIM,2,false);
+  // ierr = ShapeMBEDGE(
+  //   &*data.dataOnEntities[MBVERTEX][0].getN().data().begin(),
+  //   G_X,
+  //   G_DIM
+  // ); CHKERRQ(ierr);
   data.dataOnEntities[MBVERTEX][0].getDiffN().resize(2,1,false);
   ierr = ShapeDiffMBEDGE(
     &*data.dataOnEntities[MBVERTEX][0].getDiffN().data().begin()
