@@ -24,7 +24,7 @@ add_library(mofem_third_party
   gm_rule.c
   tetcircumcenter.c
   tricircumcenter.c
-  phg-quadrule/quad-gauss.c
+  phg-quadrule/quad.c
 )
 
 add_subdirectory("${PROJECT_SOURCE_DIR}/third_party/cblas")

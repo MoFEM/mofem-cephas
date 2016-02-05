@@ -158,21 +158,5 @@ extern QUAD QUAD_3D_P13_;
 extern QUAD QUAD_3D_P14_;
 #define QUAD_3D_P14 (&QUAD_3D_P14_)
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-    void phgQuadFree(QUAD **quad);
-
-    void phgQuadReset(void);
-    void phgQuadClearDofCache(void **clist, QUAD *quad, char final);
-
-    QUAD *phgQuadGetQuad1D(int order);
-    QUAD *phgQuadGetQuad2D(int order);
-    QUAD *phgQuadGetQuad3D(int order);
-
-#ifdef __cplusplus
-}
-#endif
 #define PHG_QUAD_H
 #endif

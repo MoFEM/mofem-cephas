@@ -22,164 +22,17 @@
 
 /* Numerical Quadrature */
 
-#include <stdio.h>
-#include <stdlib.h>
-
-# define _F(n)	n		/* no suffix */
+#define _F(n)	n		/* no suffix */
 #define FALSE 0
 #define TRUE 1
 
-inline void phgFree(void *ptr) {
-  free(ptr);
-}
-inline void* phgAlloc(size_t size) {
-  return malloc(size);
-}
-inline void* phgRealloc_(
-  void *ptr,size_t size,size_t size_old
-) {
-  return realloc(ptr,size);
-}
-
 #include "quad.h"
 #include "quad-permu.h"
-#include <math.h>
-#include <stdlib.h>
-#include <string.h>
 
 #ifdef Length
 # undef Length
 #endif
 #define Length(wts)	(sizeof(wts) / (sizeof(wts[0])))
-
-typedef QUAD *(*QGEN_FUNC) (int dim, int order);
-
-void
-phgQuadFree(QUAD **quad)
-{
-    if ((*quad) == NULL)
-	return;
-    phgFree((*quad)->name);
-    phgFree((*quad)->points);
-    phgFree((*quad)->weights);
-    phgFree((*quad));
-
-    *quad = NULL;
-}
-
-static void
-init_table(int n0, QUAD **table0, int *n, QUAD ***table)
-{
-#if USE_OMP
-#pragma omp critical (init_table)
-#endif	/* USE_OMP */
-    if (*table == NULL) {
-	void *p = phgAlloc(n0 * sizeof(*table0));
-	memcpy(p, table0, n0 * sizeof(*table0));
-	*n = n0;
-	*table = p;
-    }
-}
-
-#define nquad0	(sizeof(table0) / sizeof(*table0))
-#define GetQuadrature(qgen_func) {					\
-    static int nquad;							\
-    static QUAD **table = NULL;						\
-    static char warned = FALSE;					\
-									\
-    if (order < 0) {							\
-	/* free dynamically generated quadrature rules */		\
-	if (table != NULL) {						\
-	    int i, j;							\
-	    for (i = nquad0; i < nquad; i++) {				\
-		for (j = i + 1; j < nquad && table[j] == table[i]; j++)	\
-		    table[j] = NULL;					\
-		phgQuadFree(&table[i]);					\
-	    }								\
-	    phgFree(table);						\
-	    table = NULL;						\
-	}								\
-	return NULL;							\
-    }									\
-    if (table == NULL) {						\
-	/* initialization */						\
-	init_table(nquad0, table0, &nquad, &table);			\
-    }									\
-    if (order >= nquad) {						\
-	if (/*qgen_func == NULL*/FALSE) {				\
-	    if (!warned) {				\
-		printf("%dD quad rule of order %d unavailable.\n",	\
-				table[0]->dim, order);			\
-		warned = TRUE;						\
-	    }								\
-	    order = nquad - 1;						\
-	}								\
-	else {								\
-	    if (qgen_func == phgQuadTensorProductRule)			\
-		order = (order / 2) * 2	+ 1;				\
-	    table = phgRealloc_(table, (order + 1) * sizeof(*table),	\
-					nquad * sizeof(*table));	\
-	    memset(table + nquad, 0, (order - nquad + 1) * sizeof(*table)); \
-	    nquad = order + 1;						\
-	}								\
-    }									\
-    if (table[order] == NULL) {						\
-	if (FALSE && table[0]->dim > 1) {		\
-	    printf("using %dD-%d tensor product quadrature rule.\n",\
-			table[0]->dim, order);				\
-	}								\
-	table[order] = (qgen_func)(table[0]->dim, order);		\
-	if (order > nquad0 && qgen_func == phgQuadTensorProductRule)	\
-	    table[order - 1] = table[order];				\
-    }									\
-    return table[order];						\
-}
-
-QUAD *
-phgQuadGetQuad1D(int order)
-{
-    /* Table of static 1D quadrature rules */
-    static QUAD *table0[] = { QUAD_1D_P1,
-	QUAD_1D_P1,	QUAD_1D_P2,	QUAD_1D_P3,
-	QUAD_1D_P4,	QUAD_1D_P5,	QUAD_1D_P6,
-	QUAD_1D_P7,	QUAD_1D_P8,	QUAD_1D_P9,
-	QUAD_1D_P10,	QUAD_1D_P11,	QUAD_1D_P12,
-	QUAD_1D_P13,	QUAD_1D_P14,	QUAD_1D_P15,
-	QUAD_1D_P16,	QUAD_1D_P17,	QUAD_1D_P18,
-	QUAD_1D_P19,	QUAD_1D_P20,	QUAD_1D_P21
-    };
-    GetQuadrature(phgQuadTensorProductRule)
-}
-
-QUAD *
-phgQuadGetQuad2D(int order)
-{
-    /* Table of static 2D quadrature rules */
-    static QUAD *table0[] = { QUAD_2D_P1,
-	QUAD_2D_P1,	QUAD_2D_P2,	QUAD_2D_P3,	QUAD_2D_P4,
-	QUAD_2D_P5,	QUAD_2D_P6,	QUAD_2D_P7,	QUAD_2D_P8,
-	QUAD_2D_P9,	QUAD_2D_P10,	QUAD_2D_P11,	QUAD_2D_P12,
-	QUAD_2D_P13,	QUAD_2D_P14,	QUAD_2D_P15,	QUAD_2D_P16,
-	QUAD_2D_P17,	QUAD_2D_P18,	QUAD_2D_P19,	QUAD_2D_P20,
-	QUAD_2D_P21,	QUAD_2D_P22,	QUAD_2D_P23,	QUAD_2D_P24,
-	QUAD_2D_P25,	QUAD_2D_P26,	QUAD_2D_P27,	QUAD_2D_P28,
-	QUAD_2D_P29
-    };
-    GetQuadrature(phgQuadTensorProductRule)
-}
-
-QUAD *
-phgQuadGetQuad3D(int order)
-{
-    /* Table of static 3D quadrature (cubature) rules */
-    static QUAD *table0[] = { QUAD_3D_P1,
-	QUAD_3D_P1,	QUAD_3D_P2,	QUAD_3D_P3,	QUAD_3D_P4,
-	QUAD_3D_P5,	QUAD_3D_P6,	QUAD_3D_P7,	QUAD_3D_P8,
-	QUAD_3D_P9,	QUAD_3D_P10,	QUAD_3D_P11,	QUAD_3D_P12,
-	QUAD_3D_P13,	QUAD_3D_P14
-    };
-    GetQuadrature(phgQuadTensorProductRule)
-}
 
 /*--------------------------- 1D quadrature rules ------------------------*/
 
@@ -2433,36 +2286,3 @@ QUAD QUAD_3D_P14_ = {
     QUAD_3D_P14_wts,		/* weights */
     -1				/* id */
 };
-
-/*------------------ functions computing order of a basis -------------------*/
-
-#if 1
-# define BasisOrder(u, e, i) (!DofIsHP(u) ? (u)->type->order : \
-	(u)->hp->info->types[(u)->hp->elem_order[e->index]]->order)
-#else	/* 0|1 */
-#endif	/* 0|1 */
-
-
-/*---------------- functions managing caches and quad_list ------------------*/
-
-static QUAD **quad_list = NULL;
-static size_t quad_list_count = 0, quad_list_allocated = 0;
-
-void
-phgQuadReset(void)
-{
-    int i;
-
-    /* Free quad_list entries */
-    for (i = 0; i < quad_list_count; i++) {
-	quad_list[i]->id = -1;
-    }
-    phgFree(quad_list);
-    quad_list = NULL;
-    quad_list_count = quad_list_allocated = 0;
-
-    /* The calls below will free dynamically generated quadrature rules */
-    phgQuadGetQuad1D(-1);
-    phgQuadGetQuad2D(-1);
-    phgQuadGetQuad3D(-1);
-}
