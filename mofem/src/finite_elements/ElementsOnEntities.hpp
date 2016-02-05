@@ -294,7 +294,7 @@ struct ForcesAndSurcesCore: public FEMethod {
    https://github.com/johannesgerer/jburkardt-m/tree/master/gm_rule
    http://people.sc.fsu.edu/~jburkardt/cpp_src/gm_rule/gm_rule.html
   **/
-  virtual int getRule(int order) { return order; };
+  virtual int getRule(int order) { return 2*order; };
 
   /** \brief set user specific integration rule
 

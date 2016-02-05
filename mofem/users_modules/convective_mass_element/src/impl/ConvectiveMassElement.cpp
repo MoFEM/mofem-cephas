@@ -48,7 +48,7 @@ initV(false) {
   meshPositionsFieldName = "NoNE";
 }
 
-int ConvectiveMassElement::MyVolumeFE::getRule(int order) { return order; };
+int ConvectiveMassElement::MyVolumeFE::getRule(int order) { return 2*order; };
 
 PetscErrorCode ConvectiveMassElement::MyVolumeFE::preProcess() {
   PetscFunctionBegin;
