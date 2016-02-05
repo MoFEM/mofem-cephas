@@ -57,10 +57,12 @@ extern "C" {
 #endif
   #include <cblas.h>
   #include <lapack_wrap.h>
-  #include <gm_rule.h>
+  // #include <gm_rule.h>
+  #include <quad.h>
 #ifdef __cplusplus
 }
 #endif
+
 
 namespace MoFEM {
 
@@ -140,14 +142,42 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
     // integration pts on the triangles surfaces
     int rule = getRuleTrianglesOnly(order_triangles_only);
     if(rule >= 0) {
-      nb_gauss_pts_on_faces = gm_rule_size(rule,2);
-      gaussPtsTrianglesOnly.resize(3,nb_gauss_pts_on_faces,false);
-      ierr = Grundmann_Moeller_integration_points_2D_TRI(
-        rule,
-        &gaussPtsTrianglesOnly(0,0),
-        &gaussPtsTrianglesOnly(1,0),
-        &gaussPtsTrianglesOnly(2,0)
-      ); CHKERRQ(ierr);
+      if(rule<QUAD_2D_TABLE_SIZE) {
+        if(QUAD_2D_TABLE[rule]->dim!=2) {
+          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong dimension");
+        }
+        if(QUAD_2D_TABLE[rule]->order<rule) {
+          SETERRQ2(
+            PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong order %d != %d",
+            QUAD_2D_TABLE[rule]->order,rule
+          );
+        }
+        nb_gauss_pts_on_faces = QUAD_2D_TABLE[rule]->npoints;
+        gaussPtsTrianglesOnly.resize(3,nb_gauss_pts_on_faces,false);
+        cblas_dcopy(
+          nb_gauss_pts_on_faces,&QUAD_2D_TABLE[rule]->points[1],3,&gaussPtsTrianglesOnly(0,0),1
+        );
+        cblas_dcopy(
+          nb_gauss_pts_on_faces,&QUAD_2D_TABLE[rule]->points[2],3,&gaussPtsTrianglesOnly(1,0),1
+        );
+        cblas_dcopy(
+          nb_gauss_pts_on_faces,QUAD_2D_TABLE[rule]->weights,1,&gaussPtsTrianglesOnly(2,0),1
+        );
+      } else {
+        SETERRQ2(
+          PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"rule > quadrature order %d < %d",
+          rule,QUAD_2D_TABLE_SIZE
+        );
+        nb_gauss_pts_on_faces = 0;
+      }
+      // nb_gauss_pts_on_faces = gm_rule_size(rule,2);
+      // gaussPtsTrianglesOnly.resize(3,nb_gauss_pts_on_faces,false);
+      // ierr = Grundmann_Moeller_integration_points_2D_TRI(
+      //   rule,
+      //   &gaussPtsTrianglesOnly(0,0),
+      //   &gaussPtsTrianglesOnly(1,0),
+      //   &gaussPtsTrianglesOnly(2,0)
+      // ); CHKERRQ(ierr);
     } else {
       ierr = setGaussPtsTrianglesOnly(order_triangles_only); CHKERRQ(ierr);
       nb_gauss_pts_on_faces = gaussPtsTrianglesOnly.size2();
@@ -188,13 +218,38 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
     // integration points
     int rule = getRuleThroughThickness(order_thickness);
     if(rule >= 0) {
-      nb_gauss_pts_through_thickness = gm_rule_size(rule,1);
-      gaussPtsThroughThickness.resize(2,nb_gauss_pts_through_thickness,false);
-      ierr = Grundmann_Moeller_integration_points_1D_EDGE(
-        rule,
-        &gaussPtsThroughThickness(0,0),
-        &gaussPtsThroughThickness(1,0)
-      ); CHKERRQ(ierr);
+      if(rule<QUAD_1D_TABLE_SIZE) {
+        if(QUAD_1D_TABLE[rule]->dim!=1) {
+          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong dimension");
+        }
+        if(QUAD_1D_TABLE[rule]->order<rule) {
+          SETERRQ2(
+            PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong order %d != %d",
+            QUAD_1D_TABLE[rule]->order,rule
+          );
+        }
+        nb_gauss_pts_through_thickness = QUAD_1D_TABLE[rule]->npoints;
+        gaussPtsThroughThickness.resize(2,nb_gauss_pts_through_thickness,false);
+        cblas_dcopy(
+          nb_gauss_pts_through_thickness,&QUAD_1D_TABLE[rule]->points[1],2,&gaussPtsThroughThickness(0,0),1
+        );
+        cblas_dcopy(
+          nb_gauss_pts_through_thickness,QUAD_1D_TABLE[rule]->weights,1,&gaussPtsThroughThickness(1,0),1
+        );
+      } else {
+        SETERRQ2(
+          PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"rule > quadrature order %d < %d",
+          rule,QUAD_1D_TABLE_SIZE
+        );
+        nb_gauss_pts_through_thickness = 0;
+      }
+      // nb_gauss_pts_through_thickness = gm_rule_size(rule,1);
+      // gaussPtsThroughThickness.resize(2,nb_gauss_pts_through_thickness,false);
+      // ierr = Grundmann_Moeller_integration_points_1D_EDGE(
+      //   rule,
+      //   &gaussPtsThroughThickness(0,0),
+      //   &gaussPtsThroughThickness(1,0)
+      // ); CHKERRQ(ierr);
       // cerr << gaussPtsThroughThickness << endl;
     } else {
       ierr = setGaussPtsThroughThickness(order_thickness); CHKERRQ(ierr);

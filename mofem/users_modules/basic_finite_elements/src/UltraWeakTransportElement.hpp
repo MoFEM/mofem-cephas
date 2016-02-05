@@ -35,7 +35,7 @@ struct UltraWeakTransportElement {
   /// \brief  definition of volume element
   struct MyVolumeFE: public VolumeElementForcesAndSourcesCore {
     MyVolumeFE(FieldInterface &m_field): VolumeElementForcesAndSourcesCore(m_field) {}
-    int getRule(int order) { return order; };
+    int getRule(int order) { return 2*order; };
   };
 
   MyVolumeFE feVol;
@@ -45,7 +45,7 @@ struct UltraWeakTransportElement {
     */
   struct MyTriFE: public FaceElementForcesAndSourcesCore {
     MyTriFE(FieldInterface &m_field): FaceElementForcesAndSourcesCore(m_field) {}
-    int getRule(int order) { return order; };
+    int getRule(int order) { return 2*order; };
   };
 
   MyTriFE feTriFluxValue;

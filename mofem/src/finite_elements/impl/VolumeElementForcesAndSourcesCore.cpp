@@ -57,7 +57,8 @@ extern "C" {
 #endif
   #include <cblas.h>
   #include <lapack_wrap.h>
-  #include <gm_rule.h>
+  // #include <gm_rule.h>
+  #include <quad.h>
 #ifdef __cplusplus
 }
 #endif
@@ -116,14 +117,42 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
     int nb_gauss_pts;
     int rule = getRule(order);
     if(rule >= 0) {
-      //if(mField.check_field(meshPositionsFieldName)) {
-      //rule += 1;
-      //}
-      nb_gauss_pts = gm_rule_size(rule,3);
-      gaussPts.resize(4,nb_gauss_pts,false);
-      ierr = Grundmann_Moeller_integration_points_3D_TET(
-        rule,&gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0),&gaussPts(3,0)
-      ); CHKERRQ(ierr);
+      if(rule<QUAD_3D_TABLE_SIZE) {
+        if(QUAD_3D_TABLE[rule]->dim!=3) {
+          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong dimension");
+        }
+        if(QUAD_3D_TABLE[rule]->order<rule) {
+          SETERRQ2(
+            PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong order %d != %d",
+            QUAD_3D_TABLE[rule]->order,rule
+          );
+        }
+        nb_gauss_pts = QUAD_3D_TABLE[rule]->npoints;
+        gaussPts.resize(4,nb_gauss_pts,false);
+        cblas_dcopy(
+          nb_gauss_pts,&QUAD_3D_TABLE[rule]->points[1],4,&gaussPts(0,0),1
+        );
+        cblas_dcopy(
+          nb_gauss_pts,&QUAD_3D_TABLE[rule]->points[2],4,&gaussPts(1,0),1
+        );
+        cblas_dcopy(
+          nb_gauss_pts,&QUAD_3D_TABLE[rule]->points[3],4,&gaussPts(2,0),1
+        );
+        cblas_dcopy(
+          nb_gauss_pts,QUAD_3D_TABLE[rule]->weights,1,&gaussPts(3,0),1
+        );
+      } else {
+        SETERRQ2(
+          PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"rule > quadrature order %d < %d",
+          rule,QUAD_3D_TABLE_SIZE
+        );
+        nb_gauss_pts = 0;
+      }
+      // nb_gauss_pts = gm_rule_size(rule,3);
+      // gaussPts.resize(4,nb_gauss_pts,false);
+      // ierr = Grundmann_Moeller_integration_points_3D_TET(
+      //   rule,&gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0),&gaussPts(3,0)
+      // ); CHKERRQ(ierr);
     } else {
       ierr = setGaussPts(order); CHKERRQ(ierr);
       nb_gauss_pts = gaussPts.size2();

@@ -56,7 +56,7 @@ extern "C" {
 #endif
   #include <cblas.h>
   #include <lapack_wrap.h>
-  #include <gm_rule.h>
+  // #include <gm_rule.h>
 #ifdef __cplusplus
 }
 #endif

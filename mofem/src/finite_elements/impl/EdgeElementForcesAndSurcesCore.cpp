@@ -57,7 +57,8 @@ extern "C" {
 #endif
   #include <cblas.h>
   #include <lapack_wrap.h>
-  #include <gm_rule.h>
+  // #include <gm_rule.h>
+  #include <quad.h>
 #ifdef __cplusplus
 }
 #endif
@@ -76,12 +77,42 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
   dataH1.dataOnEntities[MBEDGE][0].getSense() = 1; // set sense to 1, this is this entity
   int order = dataH1.dataOnEntities[MBEDGE][0].getOrder();
   int rule = getRule(order);
-  int nb_gauss_pts = gm_rule_size(rule,1);
-  gaussPts.resize(2,nb_gauss_pts,false);
+  int nb_gauss_pts;
+  {
+    if(rule<QUAD_1D_TABLE_SIZE) {
+      if(QUAD_1D_TABLE[rule]->dim!=1) {
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong dimension");
+      }
+      if(QUAD_1D_TABLE[rule]->order<rule) {
+        SETERRQ2(
+          PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong order %d != %d",
+          QUAD_1D_TABLE[rule]->order,rule
+        );
+      }
+      nb_gauss_pts = QUAD_1D_TABLE[rule]->npoints;
+      gaussPts.resize(2,nb_gauss_pts,false);
+      cblas_dcopy(
+        nb_gauss_pts,&QUAD_1D_TABLE[rule]->points[1],2,&gaussPts(0,0),1
+      );
+      cblas_dcopy(
+        nb_gauss_pts,QUAD_1D_TABLE[rule]->weights,1,&gaussPts(1,0),1
+      );
+    } else {
+      SETERRQ2(
+        PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"rule > quadrature order %d < %d",
+        rule,QUAD_1D_TABLE_SIZE
+      );
+      nb_gauss_pts = 0;
+    }
+  }
+  // {
+  //   nb_gauss_pts = gm_rule_size(rule,1);
+  //   gaussPts.resize(2,nb_gauss_pts,false);
+  //   ierr = Grundmann_Moeller_integration_points_1D_EDGE(
+  //     rule,&gaussPts(0,0),&gaussPts(1,0)
+  //   ); CHKERRQ(ierr);
+  // }
 
-  ierr = Grundmann_Moeller_integration_points_1D_EDGE(
-    rule,&gaussPts(0,0),&gaussPts(1,0)
-  ); CHKERRQ(ierr);
   ierr = shapeEDGEFunctions_H1(dataH1,0,&gaussPts(0,0),nb_gauss_pts); CHKERRQ(ierr);
 
   EntityHandle ent = fePtr->get_ent();
